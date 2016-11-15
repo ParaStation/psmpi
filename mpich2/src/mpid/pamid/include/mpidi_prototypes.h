@@ -28,6 +28,10 @@
 #ifndef __include_mpidi_prototypes_h__
 #define __include_mpidi_prototypes_h__
 
+#if CUDA_AWARE_SUPPORT
+#include <cuda_runtime_api.h>
+#endif
+
 
 /**
  * \addtogroup MPID_RECVQ
@@ -55,11 +59,11 @@ void           MPIDI_Recvq_insert_ool      (MPID_Request *q,MPID_Request *e);
 /** \} */
 
 void MPIDI_Buffer_copy(const void     * const sbuf,
-                       int                    scount,
+                       MPI_Aint               scount,
                        MPI_Datatype           sdt,
                        int            *       smpi_errno,
                        void           * const rbuf,
-                       int                    rcount,
+                       MPI_Aint               rcount,
                        MPI_Datatype           rdt,
                        MPIDI_msg_sz_t *       rsz,
                        int            *       rmpi_errno);
@@ -73,7 +77,7 @@ void MPIDI_RecvMsg_procnull(MPID_Comm     * comm,
                             unsigned        is_blocking,
                             MPI_Status    * status,
                             MPID_Request ** request);
-void MPIDI_RecvMsg_Unexp(MPID_Request * rreq, void * buf, int count, MPI_Datatype datatype);
+void MPIDI_RecvMsg_Unexp(MPID_Request * rreq, void * buf, MPI_Aint count, MPI_Datatype datatype);
 
 /**
  * \defgroup MPID_CALLBACKS MPID callbacks for communication
@@ -266,6 +270,13 @@ pami_result_t MPIDI_Register_algorithms_ext(void                 *cookie,
                                             size_t               *num_algorithms);
 int MPIDI_collsel_pami_tune_parse_params(int argc, char ** argv);
 void MPIDI_collsel_pami_tune_cleanup();
+#if CUDA_AWARE_SUPPORT
+int CudaMemcpy( void* dst, const void* src, size_t count, int kind );
+int CudaPointerGetAttributes( struct cudaPointerAttributes* attributes, const void* ptr );
+const char * CudaGetErrorString( int error);
+#endif
+inline bool MPIDI_enable_cuda();
+inline bool MPIDI_cuda_is_device_buf(const void* ptr);
 void MPIDI_Coll_Comm_create (MPID_Comm *comm);
 void MPIDI_Coll_Comm_destroy(MPID_Comm *comm);
 void MPIDI_Comm_coll_query  (MPID_Comm *comm);
@@ -415,6 +426,12 @@ int MPIDO_Ialltoallw(const void *sendbuf, const int *sendcounts, const int *send
                      void *recvbuf, const int *recvcounts, const int *recvdispls,
                      const MPI_Datatype * recvtypes,
                      MPID_Comm *comm_ptr, MPID_Request **request);
+
+int MPIDO_Reduce_scatter(const void *sendbuf, void *recvbuf, int *recvcounts, MPI_Datatype datatype,
+                 MPI_Op op, MPID_Comm *comm_ptr, int *mpierrno);
+
+int MPIDO_Reduce_scatter_block(const void *sendbuf, void *recvbuf, int recvcount, 
+                 MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr, int *mpierrno);
 
 int MPIDO_Ireduce_scatter_block(const void *sendbuf, void *recvbuf, int recvcount,
                                 MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr,

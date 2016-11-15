@@ -400,8 +400,8 @@ static int MPIDI_Initialize_tmp_comm(struct MPID_Comm **comm_pptr,
 
     /* sanity: the INVALID context ID value could potentially conflict with the
      * dynamic proccess space */
-    MPIU_Assert(tmp_comm->context_id     != MPIR_INVALID_CONTEXT_ID);
-    MPIU_Assert(tmp_comm->recvcontext_id != MPIR_INVALID_CONTEXT_ID);
+    MPIU_Assert(tmp_comm->context_id     != MPIU_INVALID_CONTEXT_ID);
+    MPIU_Assert(tmp_comm->recvcontext_id != MPIU_INVALID_CONTEXT_ID);
 
     /* FIXME - we probably need a unique context_id. */
     tmp_comm->remote_size = 1;
@@ -509,8 +509,8 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     pg_translation *local_translation = NULL, *remote_translation = NULL;
     pg_node *pg_list = NULL;
     MPIDI_PG_t **remote_pg = NULL;
-    MPIR_Context_id_t recvcontext_id = MPIR_INVALID_CONTEXT_ID;
-    int errflag = FALSE;
+    MPIU_Context_id_t recvcontext_id = MPIU_INVALID_CONTEXT_ID;
+    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
     long long comm_cntr, lcomm_cntr;
 
     /* Get the context ID here because we need to send it to the remote side */
@@ -562,7 +562,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 	TRACE_ERR("connect:sending 3 ints, %d, %d, %d, and receiving 2 ints with sendtag=%d recvtag=%d\n", send_ints[0], send_ints[1], send_ints[2], sendtag, recvtag);
         mpi_errno = MPIC_Sendrecv(send_ints, 3, MPI_INT, 0,
                                   sendtag++, recv_ints, 3, MPI_INT,
-                                  0, recvtag++, tmp_comm->handle,
+                                  0, recvtag++, tmp_comm,
                                   MPI_STATUS_IGNORE, &errflag);
         if (mpi_errno != MPI_SUCCESS) {
             /* this is a no_port error because we may fail to connect
@@ -571,7 +571,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 	}
 
         mpi_errno = MPIC_Sendrecv_replace(&comm_cntr, 1, MPI_LONG_LONG_INT, 0,
-                                  sendtag++, 0, recvtag++, tmp_comm->handle,
+                                  sendtag++, 0, recvtag++, tmp_comm,
                                   MPI_STATUS_IGNORE, &errflag);
         if (mpi_errno != MPI_SUCCESS) {
             /* this is a no_port error because we may fail to connect
@@ -611,7 +611,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 	mpi_errno = MPIC_Sendrecv(local_translation, local_comm_size * 3,
 				  MPI_INT, 0, sendtag++,
 				  remote_translation, remote_comm_size * 3,
-				  MPI_INT, 0, recvtag++, tmp_comm->handle,
+				  MPI_INT, 0, recvtag++, tmp_comm,
 				  MPI_STATUS_IGNORE, &errflag);
 	if (mpi_errno) {
 	    TRACE_ERR("MPIC_Sendrecv returned with mpi_errno=%d\n", mpi_errno);
@@ -676,7 +676,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     {
         mpi_errno = MPIC_Sendrecv(&i, 0, MPI_INT, 0,
                                   sendtag++, &j, 0, MPI_INT,
-                                  0, recvtag++, tmp_comm->handle,
+                                  0, recvtag++, tmp_comm,
                                   MPI_STATUS_IGNORE, &errflag);
         if (mpi_errno != MPI_SUCCESS) {
 	    TRACE_ERR("MPIC_Sendrecv returned with mpi_errno=%d\n", mpi_errno);
@@ -815,7 +815,7 @@ static int MPIDI_ReceivePGAndDistribute( struct MPID_Comm *tmp_comm, struct MPID
     int  rank = comm_ptr->rank;
     int  mpi_errno = 0;
     int  recvtag = *recvtag_p;
-    int errflag = FALSE;
+    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
 
     TRACE_ERR("MPIDI_ReceivePGAndDistribute - n_remote_pgs=%d\n", n_remote_pgs);
     for (i=0; i<n_remote_pgs; i++) {
@@ -823,14 +823,14 @@ static int MPIDI_ReceivePGAndDistribute( struct MPID_Comm *tmp_comm, struct MPID
 	if (rank == root) {
 	    /* First, receive the pg description from the partner */
 	    mpi_errno = MPIC_Recv(&j, 1, MPI_INT, 0, recvtag++,
-				  tmp_comm->handle, MPI_STATUS_IGNORE, &errflag);
+				  tmp_comm, MPI_STATUS_IGNORE, &errflag);
 	    *recvtag_p = recvtag;
 	    if (mpi_errno != MPI_SUCCESS) {
 		TRACE_ERR("MPIC_Recv returned with mpi_errno=%d\n", mpi_errno);
 	    }
 	    pg_str = (char*)MPIU_Malloc(j);
 	    mpi_errno = MPIC_Recv(pg_str, j, MPI_CHAR, 0, recvtag++,
-				  tmp_comm->handle, MPI_STATUS_IGNORE, &errflag);
+				  tmp_comm, MPI_STATUS_IGNORE, &errflag);
 	    *recvtag_p = recvtag;
 	    if (mpi_errno != MPI_SUCCESS) {
 		TRACE_ERR("MPIC_Recv returned with mpi_errno=%d\n", mpi_errno);
@@ -1088,13 +1088,13 @@ static int MPIDI_SendPGtoPeerAndFree( struct MPID_Comm *tmp_comm, int *sendtag_p
     int mpi_errno = 0;
     int sendtag = *sendtag_p, i;
     pg_node *pg_iter;
-    int errflag = FALSE;
+    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
 
     while (pg_list != NULL) {
 	pg_iter = pg_list;
         i = pg_iter->lenStr;
 	TRACE_ERR("connect:sending 1 int: %d\n", i);
-	mpi_errno = MPIC_Send(&i, 1, MPI_INT, 0, sendtag++, tmp_comm->handle, &errflag);
+	mpi_errno = MPIC_Send(&i, 1, MPI_INT, 0, sendtag++, tmp_comm, &errflag);
 	*sendtag_p = sendtag;
 	if (mpi_errno != MPI_SUCCESS) {
 	    TRACE_ERR("MPIC_Send returned with mpi_errno=%d\n", mpi_errno);
@@ -1102,7 +1102,7 @@ static int MPIDI_SendPGtoPeerAndFree( struct MPID_Comm *tmp_comm, int *sendtag_p
 
 	TRACE_ERR("connect:sending string length %d\n", i);
 	mpi_errno = MPIC_Send(pg_iter->str, i, MPI_CHAR, 0, sendtag++,
-			      tmp_comm->handle, &errflag);
+			      tmp_comm, &errflag);
 	*sendtag_p = sendtag;
 	if (mpi_errno != MPI_SUCCESS) {
 	    TRACE_ERR("MPIC_Send returned with mpi_errno=%d\n", mpi_errno);
@@ -1149,7 +1149,7 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
     pg_translation *local_translation = NULL, *remote_translation = NULL;
     pg_node *pg_list = NULL;
     MPIDI_PG_t **remote_pg = NULL;
-    int errflag = FALSE;
+    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
     char send_char[16], recv_char[16], remote_taskids[16];
     long long comm_cntr, lcomm_cntr;
     int leader_taskid;
@@ -1208,7 +1208,7 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
 	TRACE_ERR("accept:sending 3 ints, %d, %d, %d, and receiving 2 ints with sendtag=%d recvtag=%d\n", send_ints[0], send_ints[1], send_ints[2], sendtag, recvtag);
         mpi_errno = MPIC_Sendrecv(send_ints, 3, MPI_INT, 0,
                                   sendtag++, recv_ints, 3, MPI_INT,
-                                  0, recvtag++, tmp_comm->handle,
+                                  0, recvtag++, tmp_comm,
                                   MPI_STATUS_IGNORE, &errflag);
         if (mpi_errno != MPI_SUCCESS) {
 	    TRACE_ERR("MPIC_Sendrecv returned with mpi_errno=%d\n", mpi_errno);
@@ -1218,14 +1218,14 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
 	TRACE_ERR("accept:sending 1 string and receiving 1 string\n", send_char, recv_char);
         mpi_errno = MPIC_Sendrecv(send_char, 1, MPI_CHAR, 0,
                                      sendtag++, recv_char, 3, MPI_CHAR,
-                                     0, recvtag++, tmp_comm->handle,
+                                     0, recvtag++, tmp_comm,
                                      MPI_STATUS_IGNORE, &errflag);
         if (mpi_errno != MPI_SUCCESS) {
 	    TRACE_ERR("MPIC_Sendrecv returned with mpi_errno=%d\n", mpi_errno);
 	}
 #endif
         mpi_errno = MPIC_Sendrecv_replace(&comm_cntr, 1, MPI_LONG_LONG_INT, 0,
-                                  sendtag++, 0, recvtag++, tmp_comm->handle,
+                                  sendtag++, 0, recvtag++, tmp_comm,
                                   MPI_STATUS_IGNORE, &errflag);
         if (mpi_errno != MPI_SUCCESS) {
             /* this is a no_port error because we may fail to connect
@@ -1266,7 +1266,7 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
 	mpi_errno = MPIC_Sendrecv(local_translation, local_comm_size * 3,
 				  MPI_INT, 0, sendtag++,
 				  remote_translation, remote_comm_size * 3,
-				  MPI_INT, 0, recvtag++, tmp_comm->handle,
+				  MPI_INT, 0, recvtag++, tmp_comm,
                                   MPI_STATUS_IGNORE, &errflag);
 	for (i=0; i<remote_comm_size; i++)
 	{
@@ -1331,7 +1331,7 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
     {
         mpi_errno = MPIC_Sendrecv(&i, 0, MPI_INT, 0,
                                   sendtag++, &j, 0, MPI_INT,
-                                  0, recvtag++, tmp_comm->handle,
+                                  0, recvtag++, tmp_comm,
                                   MPI_STATUS_IGNORE, &errflag);
         if (mpi_errno != MPI_SUCCESS) {
 	    TRACE_ERR("MPIC_Sendrecv returned with mpi_errno=%d\n", mpi_errno);
@@ -1384,7 +1384,7 @@ static int MPIDI_SetupNewIntercomm( struct MPID_Comm *comm_ptr, int remote_comm_
 			      struct MPID_Comm *intercomm )
 {
     int mpi_errno = MPI_SUCCESS, i, j, index=0;
-    int errflag = FALSE;
+    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
     int total_rem_world_cnts, p=0;
     char *world_tasks, *cp1;
     conn_info *tmp_node;
@@ -1683,7 +1683,7 @@ int MPID_PG_BCast( MPID_Comm *peercomm_p, MPID_Comm *comm_p, int root )
     pg_translation *local_translation = 0;
     pg_node *pg_list, *pg_next, *pg_head = 0;
     int rank, i, peer_comm_size;
-    int errflag = FALSE;
+    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
     MPIU_CHKLMEM_DECL(1);
 
     peer_comm_size = comm_p->local_size;

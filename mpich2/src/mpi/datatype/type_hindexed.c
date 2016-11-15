@@ -96,7 +96,7 @@ int MPI_Type_hindexed(int count,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_HINDEXED);
 
 #   ifdef HAVE_ERROR_CHECKING
@@ -159,13 +159,13 @@ int MPI_Type_hindexed(int count,
 				           &oldtype);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    MPIU_OBJ_PUBLISH_HANDLE(*newtype, new_handle);
+    MPID_OBJ_PUBLISH_HANDLE(*newtype, new_handle);
     /* ... end of body of routine ... */
 
   fn_exit:
     MPIU_CHKLMEM_FREEALL();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_HINDEXED);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

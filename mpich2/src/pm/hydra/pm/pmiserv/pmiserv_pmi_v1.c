@@ -456,11 +456,12 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
                 exec->wdir = HYDU_strdup(info_val);
             }
             else if (!strcmp(info_key, "host") || !strcmp(info_key, "hosts")) {
-                char *host = strtok(info_val, ",");
+                char *saveptr;
+                char *host = strtok_r(info_val, ",", &saveptr);
                 while (host) {
                     status = HYDU_process_mfile_token(host, 1, &pg->user_node_list);
                     HYDU_ERR_POP(status, "error creating node list\n");
-                    host = strtok(NULL, ",");
+                    host = strtok_r(NULL, ",", &saveptr);
                 }
             }
             else if (!strcmp(info_key, "hostfile")) {
@@ -591,7 +592,7 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
     status = HYD_pmcd_pmi_fill_in_exec_launch_info(pg);
     HYDU_ERR_POP(status, "unable to fill in executable arguments\n");
 
-    status = HYDT_bsci_launch_procs(proxy_stash.strlist, pg->proxy_list, NULL);
+    status = HYDT_bsci_launch_procs(proxy_stash.strlist, pg->proxy_list, HYD_FALSE, NULL);
     HYDU_ERR_POP(status, "launcher cannot launch processes\n");
 
     {
@@ -773,6 +774,38 @@ static HYD_status fn_lookup_name(int fd, int pid, int pgid, char *args[])
     goto fn_exit;
 }
 
+static HYD_status fn_abort(int fd, int pid, int pgid, char *args[])
+{
+    int token_count;
+    struct HYD_pmcd_token *tokens;
+    /* set a default exit code of 1 */
+    int exitcode = 1;
+    HYD_status status = HYD_SUCCESS;
+
+    HYDU_FUNC_ENTER();
+
+    status = HYD_pmcd_pmi_args_to_tokens(args, &tokens, &token_count);
+    HYDU_ERR_POP(status, "unable to convert args to tokens\n");
+
+    if (HYD_pmcd_pmi_find_token_keyval(tokens, token_count, "exitcode") == NULL)
+        HYDU_ERR_POP(status, "cannot find token: exitcode\n");
+
+    exitcode = atoi(HYD_pmcd_pmi_find_token_keyval(tokens, token_count, "exitcode"));
+
+  fn_exit:
+    /* clean everything up and exit */
+    status = HYDT_bsci_wait_for_completion(0);
+    exit(exitcode);
+
+    /* never get here */
+    HYDU_FUNC_EXIT();
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
+
+
 /* TODO: abort, create_kvs, destroy_kvs, getbyidx */
 static struct HYD_pmcd_pmi_handle pmi_v1_handle_fns_foo[] = {
     {"barrier_in", fn_barrier_in},
@@ -782,6 +815,7 @@ static struct HYD_pmcd_pmi_handle pmi_v1_handle_fns_foo[] = {
     {"publish_name", fn_publish_name},
     {"unpublish_name", fn_unpublish_name},
     {"lookup_name", fn_lookup_name},
+    {"abort", fn_abort},
     {"\0", NULL}
 };
 

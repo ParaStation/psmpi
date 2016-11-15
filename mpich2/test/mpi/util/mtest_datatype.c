@@ -45,28 +45,46 @@ static void *MTestTypeFree(MTestDatatype * mtype)
         free(mtype->index);
     if (mtype->old_datatypes)
         free(mtype->old_datatypes);
-    mtype->buf = 0;
-    mtype->displs = 0;
-    mtype->displ_in_bytes = 0;
-    mtype->index = 0;
-    mtype->old_datatypes = 0;
+    mtype->buf = NULL;
+    mtype->displs = NULL;
+    mtype->displ_in_bytes = NULL;
+    mtype->index = NULL;
+    mtype->old_datatypes = NULL;
 
     return 0;
 }
 
 static inline void MTestTypeReset(MTestDatatype * mtype)
 {
-    mtype->InitBuf = 0;
-    mtype->FreeBuf = 0;
-    mtype->CheckBuf = 0;
-    mtype->datatype = 0;
     mtype->isBasic = 0;
     mtype->printErrors = 0;
-    mtype->buf = 0;
-    mtype->index = 0;
-    mtype->displs = 0;
-    mtype->displ_in_bytes = 0;
-    mtype->old_datatypes = 0;
+    mtype->buf = NULL;
+
+    mtype->datatype = MPI_DATATYPE_NULL;
+    mtype->count = 0;
+    mtype->nblock = 0;
+    mtype->index = NULL;
+
+    mtype->stride = 0;
+    mtype->blksize = 0;
+    mtype->displ_in_bytes = NULL;
+
+    mtype->displs = NULL;
+    mtype->basesize = 0;
+
+    mtype->old_datatypes = NULL;
+
+    mtype->arr_sizes[0] = 0;
+    mtype->arr_sizes[1] = 0;
+    mtype->arr_subsizes[0] = 0;
+    mtype->arr_subsizes[1] = 0;
+    mtype->arr_starts[0] = 0;
+    mtype->arr_starts[1] = 0;
+    mtype->order = 0;
+
+    mtype->InitBuf = NULL;
+    mtype->FreeBuf = NULL;
+    mtype->CheckBuf = NULL;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -77,15 +95,17 @@ static inline void MTestTypeReset(MTestDatatype * mtype)
  */
 static void *MTestTypeContigInit(MTestDatatype * mtype)
 {
-    MPI_Aint size;
+    MPI_Aint extent = 0, lb = 0, size;
     int merr;
 
     if (mtype->count > 0) {
         unsigned char *p;
         MPI_Aint i, totsize;
-        merr = MPI_Type_extent(mtype->datatype, &size);
+        merr = MPI_Type_get_extent(mtype->datatype, &lb, &extent);
         if (merr)
             MTestPrintError(merr);
+
+        size = extent + lb;
         totsize = size * mtype->count;
         if (!mtype->buf) {
             mtype->buf = (void *) malloc(totsize);
@@ -117,13 +137,15 @@ static int MTestTypeContigCheckbuf(MTestDatatype * mtype)
     unsigned char *p;
     unsigned char expected;
     int err = 0, merr;
-    MPI_Aint i, totsize, size;
+    MPI_Aint i, totsize, size, extent = 0, lb = 0;
 
     p = (unsigned char *) mtype->buf;
     if (p) {
-        merr = MPI_Type_extent(mtype->datatype, &size);
+        merr = MPI_Type_get_extent(mtype->datatype, &lb, &extent);
         if (merr)
             MTestPrintError(merr);
+
+        size = lb + extent;
         totsize = size * mtype->count;
         for (i = 0; i < totsize; i++) {
             expected = (unsigned char) (0xff ^ (i & 0xff));
@@ -149,17 +171,19 @@ static int MTestTypeContigCheckbuf(MTestDatatype * mtype)
  */
 static void *MTestTypeVectorInit(MTestDatatype * mtype)
 {
-    MPI_Aint size, totsize, dt_offset, byte_offset;
+    MPI_Aint extent = 0, lb = 0, size, totsize, dt_offset, byte_offset;
     int merr;
 
     if (mtype->count > 0) {
         unsigned char *p;
-        int j, k, nc;
-        MPI_Aint i;
+        MPI_Aint k, j;
+        int i, nc;
 
-        merr = MPI_Type_extent(mtype->datatype, &size);
+        merr = MPI_Type_get_extent(mtype->datatype, &lb, &extent);
         if (merr)
             MTestPrintError(merr);
+
+        size = extent + lb;
         totsize = mtype->count * size;
         if (!mtype->buf) {
             mtype->buf = (void *) malloc(totsize);
@@ -172,8 +196,8 @@ static void *MTestTypeVectorInit(MTestDatatype * mtype)
         }
 
         /* First, set to -1 */
-        for (i = 0; i < totsize; i++)
-            p[i] = 0xff;
+        for (k = 0; k < totsize; k++)
+            p[k] = 0xff;
 
         /* Now, set the actual elements to the successive values.
          * We require that the base type is a contiguous type */
@@ -207,15 +231,17 @@ static int MTestTypeVectorCheckbuf(MTestDatatype * mtype)
     unsigned char *p;
     unsigned char expected;
     int i, err = 0, merr;
-    MPI_Aint size = 0, byte_offset, dt_offset;
+    MPI_Aint size = 0, byte_offset, dt_offset, extent, lb;
 
     p = (unsigned char *) mtype->buf;
     if (p) {
-        int j, k, nc;
-        merr = MPI_Type_extent(mtype->datatype, &size);
+        MPI_Aint k, j;
+        int nc;
+        merr = MPI_Type_get_extent(mtype->datatype, &lb, &extent);
         if (merr)
             MTestPrintError(merr);
 
+        size = extent + lb;
         nc = 0;
         dt_offset = 0;
         /* For each datatype */
@@ -229,7 +255,7 @@ static int MTestTypeVectorCheckbuf(MTestDatatype * mtype)
                     if (p[byte_offset + j] != expected) {
                         err++;
                         if (mtype->printErrors && err < 10) {
-                            printf("Data expected = %x but got p[%d,%d] = %x\n", expected, i, j,
+                            printf("Data expected = %x but got p[%d,%ld] = %x\n", expected, i, j,
                                    p[byte_offset + j]);
                             fflush(stdout);
                         }
@@ -253,18 +279,20 @@ static int MTestTypeVectorCheckbuf(MTestDatatype * mtype)
  */
 static void *MTestTypeIndexedInit(MTestDatatype * mtype)
 {
-    MPI_Aint size = 0, totsize, dt_offset, offset;
+    MPI_Aint extent = 0, lb = 0, size, totsize, dt_offset, offset;
     int merr;
 
     if (mtype->count > 0) {
         unsigned char *p;
-        int j, k, b, nc;
-        MPI_Aint i;
+        MPI_Aint k, b;
+        int i, j, nc;
 
         /* Allocate buffer */
-        merr = MPI_Type_extent(mtype->datatype, &size);
+        merr = MPI_Type_get_extent(mtype->datatype, &lb, &extent);
         if (merr)
             MTestPrintError(merr);
+
+        size = extent + lb;
         totsize = size * mtype->count;
 
         if (!mtype->buf) {
@@ -278,8 +306,8 @@ static void *MTestTypeIndexedInit(MTestDatatype * mtype)
         }
 
         /* First, set to -1 */
-        for (i = 0; i < totsize; i++)
-            p[i] = 0xff;
+        for (k = 0; k < totsize; k++)
+            p[k] = 0xff;
 
         /* Now, set the actual elements to the successive values.
          * We require that the base type is a contiguous type */
@@ -320,15 +348,17 @@ static int MTestTypeIndexedCheckbuf(MTestDatatype * mtype)
     unsigned char *p;
     unsigned char expected;
     int err = 0, merr;
-    MPI_Aint size = 0, offset, dt_offset;
+    MPI_Aint size = 0, offset, dt_offset, extent = 0, lb = 0;
 
     p = (unsigned char *) mtype->buf;
     if (p) {
-        int i, j, k, b, nc;
-        merr = MPI_Type_extent(mtype->datatype, &size);
+        MPI_Aint k, b;
+        int i, j, nc;
+        merr = MPI_Type_get_extent(mtype->datatype, &lb, &extent);
         if (merr)
             MTestPrintError(merr);
 
+        size = lb + extent;
         nc = 0;
         dt_offset = 0;
         /* For each datatype */
@@ -368,18 +398,19 @@ static int MTestTypeIndexedCheckbuf(MTestDatatype * mtype)
  */
 static void *MTestTypeIndexedBlockInit(MTestDatatype * mtype)
 {
-    MPI_Aint size = 0, totsize, offset, dt_offset;
+    MPI_Aint extent = 0, lb = 0, size, totsize, offset, dt_offset;
     int merr;
 
     if (mtype->count > 0) {
         unsigned char *p;
-        int k, j, nc;
-        MPI_Aint i;
+        MPI_Aint k, j;
+        int i, nc;
 
         /* Allocate the send/recv buffer */
-        merr = MPI_Type_extent(mtype->datatype, &size);
+        merr = MPI_Type_get_extent(mtype->datatype, &lb, &extent);
         if (merr)
             MTestPrintError(merr);
+        size = extent + lb;
         totsize = size * mtype->count;
 
         if (!mtype->buf) {
@@ -393,8 +424,8 @@ static void *MTestTypeIndexedBlockInit(MTestDatatype * mtype)
         }
 
         /* First, set to -1 */
-        for (i = 0; i < totsize; i++)
-            p[i] = 0xff;
+        for (k = 0; k < totsize; k++)
+            p[k] = 0xff;
 
         /* Now, set the actual elements to the successive values.
          * We require that the base type is a contiguous type */
@@ -431,15 +462,17 @@ static int MTestTypeIndexedBlockCheckbuf(MTestDatatype * mtype)
     unsigned char *p;
     unsigned char expected;
     int err = 0, merr;
-    MPI_Aint size = 0, offset, dt_offset;
+    MPI_Aint size = 0, offset, dt_offset, lb = 0, extent = 0;
 
     p = (unsigned char *) mtype->buf;
     if (p) {
-        int i, j, k, nc;
-        merr = MPI_Type_extent(mtype->datatype, &size);
+        MPI_Aint j, k;
+        int i, nc;
+        merr = MPI_Type_get_extent(mtype->datatype, &lb, &extent);
         if (merr)
             MTestPrintError(merr);
 
+        size = lb + extent;
         nc = 0;
         dt_offset = 0;
         /* For each datatype */
@@ -453,7 +486,7 @@ static int MTestTypeIndexedBlockCheckbuf(MTestDatatype * mtype)
                     if (p[offset + j] != expected) {
                         err++;
                         if (mtype->printErrors && err < 10) {
-                            printf("Data expected = %x but got p[%d,%d] = %x\n",
+                            printf("Data expected = %x but got p[%d,%ld] = %x\n",
                                    expected, i, j, p[offset + j]);
                             fflush(stdout);
                         }
@@ -475,18 +508,20 @@ static int MTestTypeIndexedBlockCheckbuf(MTestDatatype * mtype)
  */
 static void *MTestTypeSubarrayInit(MTestDatatype * mtype)
 {
-    MPI_Aint size = 0, totsize, offset, dt_offset, byte_offset;
+    MPI_Aint extent = 0, lb = 0, size, totsize, offset, dt_offset, byte_offset;
     int merr;
 
     if (mtype->count > 0) {
         unsigned char *p;
-        int k, j, b, nc;
-        MPI_Aint i;
+        MPI_Aint k;
+        int j, b, i, nc;
 
         /* Allocate the send/recv buffer */
-        merr = MPI_Type_extent(mtype->datatype, &size);
+        merr = MPI_Type_get_extent(mtype->datatype, &lb, &extent);
         if (merr)
             MTestPrintError(merr);
+
+        size = extent + lb;
         totsize = size * mtype->count;
 
         if (!mtype->buf) {
@@ -500,8 +535,8 @@ static void *MTestTypeSubarrayInit(MTestDatatype * mtype)
         }
 
         /* First, set to -1 */
-        for (i = 0; i < totsize; i++)
-            p[i] = 0xff;
+        for (k = 0; k < totsize; k++)
+            p[k] = 0xff;
 
         /* Now, set the actual elements to the successive values.
          * We require that the base type is a contiguous type. */
@@ -548,14 +583,17 @@ static int MTestTypeSubarrayCheckbuf(MTestDatatype * mtype)
     unsigned char *p;
     unsigned char expected;
     int err = 0, merr;
-    MPI_Aint size, offset, dt_offset, byte_offset;
+    MPI_Aint size, offset, dt_offset, byte_offset, lb = 0, extent = 0;
 
     p = (unsigned char *) mtype->buf;
     if (p) {
-        int j, k, i, b, nc;
-        merr = MPI_Type_extent(mtype->datatype, &size);
+        MPI_Aint k;
+        int j, b, i, nc;
+        merr = MPI_Type_get_extent(mtype->datatype, &lb, &extent);
         if (merr)
             MTestPrintError(merr);
+
+        size = lb + extent;
 
         int ncol, sub_ncol, sub_nrow, sub_col_start, sub_row_start;
         ncol = mtype->arr_sizes[1];
@@ -597,7 +635,7 @@ static int MTestTypeSubarrayCheckbuf(MTestDatatype * mtype)
 }
 
 /* ------------------------------------------------------------------------ */
-/* Datatype creators                                                      */
+/* Datatype creators                                                        */
 /* ------------------------------------------------------------------------ */
 
 /*
@@ -607,9 +645,10 @@ static int MTestTypeSubarrayCheckbuf(MTestDatatype * mtype)
  * nblock:   Number of blocks.
  * blocklen: Number of elements in each block. The total number of elements in
  *           this datatype is set as (nblock * blocklen).
+ * lb:       Lower bound of the new datatype (ignored).
  * oldtype:  Datatype of element.
  */
-static int MTestTypeContiguousCreate(int nblock, int blocklen, int stride,
+static int MTestTypeContiguousCreate(int nblock, int blocklen, int stride, int lb,
                                      MPI_Datatype oldtype, const char *typename_prefix,
                                      MTestDatatype * mtype)
 {
@@ -651,9 +690,10 @@ static int MTestTypeContiguousCreate(int nblock, int blocklen, int stride,
  * nblock:   Number of blocks.
  * blocklen: Number of elements in each block.
  * stride:   Strided number of elements between blocks.
+ * lb:       Lower bound of the new datatype (ignored).
  * oldtype:  Datatype of element.
  */
-static int MTestTypeVectorCreate(int nblock, int blocklen, int stride,
+static int MTestTypeVectorCreate(int nblock, int blocklen, int stride, int lb,
                                  MPI_Datatype oldtype, const char *typename_prefix,
                                  MTestDatatype * mtype)
 {
@@ -699,9 +739,10 @@ static int MTestTypeVectorCreate(int nblock, int blocklen, int stride,
  * nblock:   Number of blocks.
  * blocklen: Number of elements in each block.
  * stride:   Strided number of elements between blocks.
+ * lb:       Lower bound of the new datatype (ignored).
  * oldtype:  Datatype of element.
  */
-static int MTestTypeHvectorCreate(int nblock, int blocklen, int stride,
+static int MTestTypeHvectorCreate(int nblock, int blocklen, int stride, int lb,
                                   MPI_Datatype oldtype, const char *typename_prefix,
                                   MTestDatatype * mtype)
 {
@@ -750,9 +791,10 @@ static int MTestTypeHvectorCreate(int nblock, int blocklen, int stride,
  * blocklen: Number of elements in each block. Each block has the same length.
  * stride:   Strided number of elements between two adjacent blocks. The
  *           displacement of each block is set as (index of current block * stride).
+ * lb:       Lower bound of the new datatype.
  * oldtype:  Datatype of element.
  */
-static int MTestTypeIndexedCreate(int nblock, int blocklen, int stride,
+static int MTestTypeIndexedCreate(int nblock, int blocklen, int stride, int lb,
                                   MPI_Datatype oldtype, const char *typename_prefix,
                                   MTestDatatype * mtype)
 {
@@ -778,8 +820,8 @@ static int MTestTypeIndexedCreate(int nblock, int blocklen, int stride,
     mtype->nblock = nblock;
     for (i = 0; i < nblock; i++) {
         mtype->index[i] = blocklen;
-        mtype->displs[i] = stride * i;  /*stride between the start of two blocks */
-        mtype->displ_in_bytes[i] = stride * i * mtype->basesize;
+        mtype->displs[i] = lb + stride * i;     /*stride between the start of two blocks */
+        mtype->displ_in_bytes[i] = (lb + stride * i) * mtype->basesize;
     }
 
     /* Indexed uses displacement in oldtypes */
@@ -791,8 +833,8 @@ static int MTestTypeIndexedCreate(int nblock, int blocklen, int stride,
         MTestPrintError(merr);
 
     memset(type_name, 0, sizeof(type_name));
-    sprintf(type_name, "%s %s (%d nblock %d blocklen %d stride)", typename_prefix, "index", nblock,
-            blocklen, stride);
+    sprintf(type_name, "%s %s (%d nblock %d blocklen %d stride %d lb)", typename_prefix,
+            "index", nblock, blocklen, stride, lb);
     merr = MPI_Type_set_name(mtype->datatype, (char *) type_name);
     if (merr)
         MTestPrintError(merr);
@@ -812,9 +854,10 @@ static int MTestTypeIndexedCreate(int nblock, int blocklen, int stride,
  * blocklen: Number of elements in each block. Each block has the same length.
  * stride:   Strided number of elements between two adjacent blocks. The byte
  *           displacement of each block is set as (index of current block * stride * size of oldtype).
+ * lb:       Lower bound of the new datatype.
  * oldtype:  Datatype of element.
  */
-static inline int MTestTypeHindexedCreate(int nblock, int blocklen, int stride,
+static inline int MTestTypeHindexedCreate(int nblock, int blocklen, int stride, int lb,
                                           MPI_Datatype oldtype, const char *typename_prefix,
                                           MTestDatatype * mtype)
 {
@@ -839,7 +882,7 @@ static inline int MTestTypeHindexedCreate(int nblock, int blocklen, int stride,
     mtype->nblock = nblock;
     for (i = 0; i < nblock; i++) {
         mtype->index[i] = blocklen;
-        mtype->displ_in_bytes[i] = stride * i * mtype->basesize;
+        mtype->displ_in_bytes[i] = (lb + stride * i) * mtype->basesize;
     }
 
     /* Hindexed uses displacement in bytes */
@@ -852,8 +895,8 @@ static inline int MTestTypeHindexedCreate(int nblock, int blocklen, int stride,
         MTestPrintError(merr);
 
     memset(type_name, 0, sizeof(type_name));
-    sprintf(type_name, "%s %s (%d nblock %d blocklen %d stride)", typename_prefix, "hindex", nblock,
-            blocklen, stride);
+    sprintf(type_name, "%s %s (%d nblock %d blocklen %d stride %d lb)", typename_prefix,
+            "hindex", nblock, blocklen, stride, lb);
     merr = MPI_Type_set_name(mtype->datatype, (char *) type_name);
     if (merr)
         MTestPrintError(merr);
@@ -875,9 +918,10 @@ static inline int MTestTypeHindexedCreate(int nblock, int blocklen, int stride,
  * blocklen: Number of elements in each block.
  * stride:   Strided number of elements between two adjacent blocks. The
  *           displacement of each block is set as (index of current block * stride).
+ * lb:       Lower bound of the new datatype.
  * oldtype:  Datatype of element.
  */
-static int MTestTypeIndexedBlockCreate(int nblock, int blocklen, int stride,
+static int MTestTypeIndexedBlockCreate(int nblock, int blocklen, int stride, int lb,
                                        MPI_Datatype oldtype, const char *typename_prefix,
                                        MTestDatatype * mtype)
 {
@@ -902,8 +946,8 @@ static int MTestTypeIndexedBlockCreate(int nblock, int blocklen, int stride,
     mtype->nblock = nblock;
     mtype->blksize = blocklen * mtype->basesize;
     for (i = 0; i < nblock; i++) {
-        mtype->displs[i] = stride * i;
-        mtype->displ_in_bytes[i] = stride * i * mtype->basesize;
+        mtype->displs[i] = lb + stride * i;
+        mtype->displ_in_bytes[i] = (lb + stride * i) * mtype->basesize;
     }
 
     /* Indexed-block uses displacement in oldtypes */
@@ -916,8 +960,8 @@ static int MTestTypeIndexedBlockCreate(int nblock, int blocklen, int stride,
         MTestPrintError(merr);
 
     memset(type_name, 0, sizeof(type_name));
-    sprintf(type_name, "%s %s (%d nblock %d blocklen %d stride)", typename_prefix, "index_block",
-            nblock, blocklen, stride);
+    sprintf(type_name, "%s %s (%d nblock %d blocklen %d stride %d lb)", typename_prefix,
+            "index_block", nblock, blocklen, stride, lb);
     merr = MPI_Type_set_name(mtype->datatype, (char *) type_name);
     if (merr)
         MTestPrintError(merr);
@@ -937,9 +981,10 @@ static int MTestTypeIndexedBlockCreate(int nblock, int blocklen, int stride,
  * blocklen: Number of elements in each block.
  * stride:   Strided number of elements between two adjacent blocks. The byte
  *           displacement of each block is set as (index of current block * stride * size of oldtype).
+ * lb:       Lower bound of the new datatype.
  * oldtype:  Datatype of element.
  */
-static int MTestTypeHindexedBlockCreate(int nblock, int blocklen, int stride,
+static int MTestTypeHindexedBlockCreate(int nblock, int blocklen, int stride, int lb,
                                         MPI_Datatype oldtype, const char *typename_prefix,
                                         MTestDatatype * mtype)
 {
@@ -963,7 +1008,7 @@ static int MTestTypeHindexedBlockCreate(int nblock, int blocklen, int stride,
     mtype->nblock = nblock;
     mtype->blksize = blocklen * mtype->basesize;
     for (i = 0; i < nblock; i++) {
-        mtype->displ_in_bytes[i] = stride * i * mtype->basesize;
+        mtype->displ_in_bytes[i] = (lb + stride * i) * mtype->basesize;
     }
 
     /* Hindexed-block uses displacement in bytes */
@@ -976,8 +1021,8 @@ static int MTestTypeHindexedBlockCreate(int nblock, int blocklen, int stride,
         MTestPrintError(merr);
 
     memset(type_name, 0, sizeof(type_name));
-    sprintf(type_name, "%s %s (%d nblock %d blocklen %d stride)", typename_prefix, "hindex_block",
-            nblock, blocklen, stride);
+    sprintf(type_name, "%s %s (%d nblock %d blocklen %d stride %d lb)", typename_prefix,
+            "hindex_block", nblock, blocklen, stride, lb);
     merr = MPI_Type_set_name(mtype->datatype, (char *) type_name);
     if (merr)
         MTestPrintError(merr);
@@ -998,9 +1043,10 @@ static int MTestTypeHindexedBlockCreate(int nblock, int blocklen, int stride,
  * blocklen: Number of elements in each block. Each block has the same length.
  * stride:   Strided number of elements between two adjacent blocks. The byte
  *           displacement of each block is set as (index of current block * stride * size of oldtype).
+ * lb:       Lower bound of the new datatype.
  * oldtype:  Datatype of element. Each block has the same oldtype.
  */
-static int MTestTypeStructCreate(int nblock, int blocklen, int stride,
+static int MTestTypeStructCreate(int nblock, int blocklen, int stride, int lb,
                                  MPI_Datatype oldtype, const char *typename_prefix,
                                  MTestDatatype * mtype)
 {
@@ -1026,7 +1072,7 @@ static int MTestTypeStructCreate(int nblock, int blocklen, int stride,
     mtype->nblock = nblock;
     mtype->blksize = blocklen * mtype->basesize;
     for (i = 0; i < nblock; i++) {
-        mtype->displ_in_bytes[i] = stride * i * mtype->basesize;
+        mtype->displ_in_bytes[i] = (lb + stride * i) * mtype->basesize;
         mtype->old_datatypes[i] = oldtype;
         mtype->index[i] = blocklen;
     }
@@ -1041,8 +1087,8 @@ static int MTestTypeStructCreate(int nblock, int blocklen, int stride,
         MTestPrintError(merr);
 
     memset(type_name, 0, sizeof(type_name));
-    sprintf(type_name, "%s %s (%d nblock %d blocklen %d stride)", typename_prefix, "struct",
-            nblock, blocklen, stride);
+    sprintf(type_name, "%s %s (%d nblock %d blocklen %d stride %d lb)", typename_prefix,
+            "struct", nblock, blocklen, stride, lb);
     merr = MPI_Type_set_name(mtype->datatype, (char *) type_name);
     if (merr)
         MTestPrintError(merr);
@@ -1058,15 +1104,15 @@ static int MTestTypeStructCreate(int nblock, int blocklen, int stride,
 /*
  * Setup order-C subarray type info and handlers.
  *
- * A 2D-subarray datatype specified with order C and located in the left-middle
+ * A 2D-subarray datatype specified with order C and located in the right-bottom
  * of the full array is created by using input parameters.
- * Number of elements in the dimensions of the full array: {nblock + 2, stride}
+ * Number of elements in the dimensions of the full array: {nblock + lb, stride}
  * Number of elements in the dimensions of the subarray: {nblock, blocklen}
  * Starting of the subarray in each dimension: {1, stride - blocklen}
  * order: MPI_ORDER_C
  * oldtype: oldtype
  */
-static int MTestTypeSubArrayOrderCCreate(int nblock, int blocklen, int stride,
+static int MTestTypeSubArrayOrderCCreate(int nblock, int blocklen, int stride, int lb,
                                          MPI_Datatype oldtype, const char *typename_prefix,
                                          MTestDatatype * mtype)
 {
@@ -1079,11 +1125,11 @@ static int MTestTypeSubArrayOrderCCreate(int nblock, int blocklen, int stride,
     if (merr)
         MTestPrintError(merr);
 
-    mtype->arr_sizes[0] = nblock + 2;   /* {row, col} */
+    mtype->arr_sizes[0] = nblock + lb;  /* {row, col} */
     mtype->arr_sizes[1] = stride;
     mtype->arr_subsizes[0] = nblock;    /* {row, col} */
     mtype->arr_subsizes[1] = blocklen;
-    mtype->arr_starts[0] = 1;   /* {row, col} */
+    mtype->arr_starts[0] = lb;  /* {row, col} */
     mtype->arr_starts[1] = stride - blocklen;
     mtype->order = MPI_ORDER_C;
 
@@ -1115,15 +1161,15 @@ static int MTestTypeSubArrayOrderCCreate(int nblock, int blocklen, int stride,
 /*
  * Setup order-Fortran subarray type info and handlers.
  *
- * A 2D-subarray datatype specified with order Fortran and located in the middle
+ * A 2D-subarray datatype specified with order Fortran and located in the right
  * bottom of the full array is created by using input parameters.
- * Number of elements in the dimensions of the full array: {stride, nblock + 2}
+ * Number of elements in the dimensions of the full array: {stride, nblock + lb}
  * Number of elements in the dimensions of the subarray: {blocklen, nblock}
- * Starting of the subarray in each dimension: {stride - blocklen, 1}
+ * Starting of the subarray in each dimension: {stride - blocklen, lb}
  * order: MPI_ORDER_FORTRAN
  * oldtype: oldtype
  */
-static int MTestTypeSubArrayOrderFortranCreate(int nblock, int blocklen, int stride,
+static int MTestTypeSubArrayOrderFortranCreate(int nblock, int blocklen, int stride, int lb,
                                                MPI_Datatype oldtype, const char *typename_prefix,
                                                MTestDatatype * mtype)
 {
@@ -1138,11 +1184,11 @@ static int MTestTypeSubArrayOrderFortranCreate(int nblock, int blocklen, int str
 
     /* use the same row and col as that of order-c subarray for buffer
      * initialization and check because we access buffer in order-c */
-    mtype->arr_sizes[0] = nblock + 2;   /* {row, col} */
+    mtype->arr_sizes[0] = nblock + lb;  /* {row, col} */
     mtype->arr_sizes[1] = stride;
     mtype->arr_subsizes[0] = nblock;    /* {row, col} */
     mtype->arr_subsizes[1] = blocklen;
-    mtype->arr_starts[0] = 1;   /* {row, col} */
+    mtype->arr_starts[0] = lb;  /* {row, col} */
     mtype->arr_starts[1] = stride - blocklen;
     mtype->order = MPI_ORDER_FORTRAN;
 
@@ -1239,15 +1285,17 @@ int MTestTypeDupCreate(MPI_Datatype oldtype, MTestDatatype * mtype)
  */
 void *MTestTypeInitRecv(MTestDatatype * mtype)
 {
-    MPI_Aint size;
+    MPI_Aint size, extent = 0, lb = 0;
     int merr;
 
     if (mtype->count > 0) {
         signed char *p;
         MPI_Aint i, totsize;
-        merr = MPI_Type_extent(mtype->datatype, &size);
+        merr = MPI_Type_get_extent(mtype->datatype, &lb, &extent);
         if (merr)
             MTestPrintError(merr);
+
+        size = extent + lb;
         totsize = size * mtype->count;
         if (!mtype->buf) {
             mtype->buf = (void *) malloc(totsize);

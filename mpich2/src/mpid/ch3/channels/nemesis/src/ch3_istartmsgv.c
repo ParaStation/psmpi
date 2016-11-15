@@ -24,15 +24,15 @@
 
 /* NOTE - The completion action associated with a request created by CH3_iStartMsgv() is alway null (onDataAvail = 0).  This
    implies that CH3_iStartMsgv() can only be used when the entire message can be described by a single iovec of size
-   MPID_IOV_LIMIT. */
+   MPL_IOV_LIMIT. */
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_iStartMsgv
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request **sreq_ptr)
+#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPL_IOV *iov, int n_iov, MPID_Request **sreq_ptr)
 {
-    MPID_Request * sreq = NULL;
+    MPID_Request * sreq = *sreq_ptr = NULL;
     int mpi_errno = MPI_SUCCESS;
     int in_cs = FALSE;
     int again = 0;
@@ -41,7 +41,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
-    MPIU_ERR_CHKANDJUMP1(vc->state == MPIDI_VC_STATE_MORIBUND, mpi_errno, MPIX_ERR_PROC_FAILED, "**comm_fail", "**comm_fail %d", vc->pg_rank);
+    MPIR_ERR_CHKANDJUMP1(vc->state == MPIDI_VC_STATE_MORIBUND, mpi_errno, MPIX_ERR_PROC_FAILED, "**comm_fail", "**comm_fail %d", vc->pg_rank);
 
     if (vc->ch.iStartContigMsg)
     {
@@ -49,11 +49,11 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request
         switch (n_iov)
         {
         case 1:
-            mpi_errno = vc->ch.iStartContigMsg(vc, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN, NULL, 0, sreq_ptr);
+            mpi_errno = vc->ch.iStartContigMsg(vc, iov[0].MPL_IOV_BUF, iov[0].MPL_IOV_LEN, NULL, 0, sreq_ptr);
             break;
         case 2:
-            mpi_errno = vc->ch.iStartContigMsg(vc, iov[0].MPID_IOV_BUF, iov[0].MPID_IOV_LEN,
-                                               iov[1].MPID_IOV_BUF, iov[1].MPID_IOV_LEN, sreq_ptr);
+            mpi_errno = vc->ch.iStartContigMsg(vc, iov[0].MPL_IOV_BUF, iov[0].MPL_IOV_LEN,
+                                               iov[1].MPL_IOV_BUF, iov[1].MPL_IOV_LEN, sreq_ptr);
             break;
         default:
             mpi_errno = MPID_nem_send_iov(vc, &sreq, iov, n_iov);
@@ -63,21 +63,21 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request
         goto fn_exit;
     }
 
-    MPIU_Assert (n_iov <= MPID_IOV_LIMIT);
-    MPIU_Assert (iov[0].MPID_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
+    MPIU_Assert (n_iov <= MPL_IOV_LIMIT);
+    MPIU_Assert (iov[0].MPL_IOV_LEN <= sizeof(MPIDI_CH3_Pkt_t));
 
     /* The channel uses a fixed length header, the size of which is
      * the maximum of all possible packet headers */
-    iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
-    MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)iov[0].MPID_IOV_BUF);
+    iov[0].MPL_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
+    MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)iov[0].MPL_IOV_BUF);
 
-    MPIU_THREAD_CS_ENTER(MPIDCOMM,);
+    MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     in_cs = TRUE;
 
     if (MPIDI_CH3I_Sendq_empty(MPIDI_CH3I_shm_sendq))
         /* MT */
     {
-	MPID_IOV *remaining_iov = iov;
+	MPL_IOV *remaining_iov = iov;
 	int remaining_n_iov = n_iov;
 
         MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "iStartMsgv");
@@ -85,30 +85,31 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request
                 int total = 0;
                 int i;
                 for (i = 0; i < n_iov; ++i)
-                    total += iov[i].MPID_IOV_LEN;
+                    total += iov[i].MPL_IOV_LEN;
 
                 MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "   + len=%d ", total);
             });
-	mpi_errno = MPID_nem_mpich_sendv_header (&remaining_iov, &remaining_n_iov, vc, &again);
-        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+	mpi_errno = MPID_nem_mpich_sendv_header (&remaining_iov, &remaining_n_iov,
+	                                         NULL, 0, vc, &again);
+        if (mpi_errno) MPIR_ERR_POP (mpi_errno);
 	while (!again && (remaining_n_iov > 0))
 	{
             MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
                     int total = 0;
                     int i;
                     for (i = 0; i < remaining_n_iov; ++i)
-                        total += remaining_iov[i].MPID_IOV_LEN;
+                        total += remaining_iov[i].MPL_IOV_LEN;
                     MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "   + len=%d ", total);
                 });
 
 	    mpi_errno = MPID_nem_mpich_sendv (&remaining_iov, &remaining_n_iov, vc, &again);
-            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+            if (mpi_errno) MPIR_ERR_POP (mpi_errno);
 	}
         MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {
                 int total = 0;
                 int i;
                 for (i = 0; i < remaining_n_iov; ++i)
-                    total += remaining_iov[i].MPID_IOV_LEN;
+                    total += remaining_iov[i].MPL_IOV_LEN;
                 MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "   - len=%d ", total);
             });
 
@@ -132,9 +133,9 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request
 	    if ( iov == remaining_iov )
 	    {
 		/* header was not sent, so iov[0] might point to something on the stack */
-		sreq->dev.pending_pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
-		sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->dev.pending_pkt;
-		sreq->dev.iov[0].MPID_IOV_LEN = iov[0].MPID_IOV_LEN;
+		sreq->dev.pending_pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPL_IOV_BUF;
+		sreq->dev.iov[0].MPL_IOV_BUF = (char *) &sreq->dev.pending_pkt;
+		sreq->dev.iov[0].MPL_IOV_LEN = iov[0].MPL_IOV_LEN;
 	    }
 	    MPIDI_CH3I_Sendq_enqueue(&MPIDI_CH3I_shm_sendq, sreq);
 	    MPIU_Assert (MPIDI_CH3I_shm_active_send == NULL);
@@ -152,9 +153,9 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request
 	MPIU_Object_set_ref(sreq, 2);
 	sreq->kind = MPID_REQUEST_SEND;
 
-	sreq->dev.pending_pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
-	sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->dev.pending_pkt;
-	sreq->dev.iov[0].MPID_IOV_LEN = iov[0].MPID_IOV_LEN;
+	sreq->dev.pending_pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPL_IOV_BUF;
+	sreq->dev.iov[0].MPL_IOV_BUF = (char *) &sreq->dev.pending_pkt;
+	sreq->dev.iov[0].MPL_IOV_LEN = iov[0].MPL_IOV_LEN;
 
 	/* copy iov */
 	for (i = 1; i < n_iov; ++i)
@@ -175,7 +176,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request
                check to see if we can send any now */
             MPIDI_CH3I_Sendq_enqueue(&MPIDI_CH3I_shm_sendq, sreq);
             mpi_errno = MPIDI_CH3I_Shm_send_progress();
-            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         }
     }
 
@@ -183,7 +184,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request
 
  fn_exit:
     if (in_cs) {
-        MPIU_THREAD_CS_EXIT(MPIDCOMM,);
+        MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     }
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
     return mpi_errno;

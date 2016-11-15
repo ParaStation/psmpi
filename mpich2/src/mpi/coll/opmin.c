@@ -15,7 +15,7 @@
 #undef FUNCNAME
 #define FUNCNAME MPIR_MINF
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPIR_MINF (
     void *invec,
     void *inoutvec,
@@ -38,9 +38,9 @@ void MPIR_MINF (
 #undef MPIR_OP_TYPE_MACRO
         /* --BEGIN ERROR HANDLING-- */
         default: {
-            MPIU_THREADPRIV_DECL;
-            MPIU_THREADPRIV_GET;
-            MPIU_THREADPRIV_FIELD(op_errno) = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_MIN" );
+            MPID_THREADPRIV_DECL;
+            MPID_THREADPRIV_GET;
+            MPID_THREADPRIV_FIELD(op_errno) = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_MIN" );
             break;
         }
         /* --END ERROR HANDLING-- */
@@ -51,7 +51,7 @@ void MPIR_MINF (
 #undef FUNCNAME
 #define FUNCNAME MPIR_MINF_check_dtype
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_MINF_check_dtype ( MPI_Datatype type )
 {
     switch (type) {

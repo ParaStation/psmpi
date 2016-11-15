@@ -1,10 +1,7 @@
 <dir>
-<file name="mpid_thread.c" info="1424465293"/>
-<file name="mpid_thread.h" info="1424465293"/>
+<file name="mpidu_thread_fallback.h" info="1447123141"/>
 </dir>
 <data>
-<fileinfo name="mpid_thread.c">
-</fileinfo>
-<fileinfo name="mpid_thread.h">
+<fileinfo name="mpidu_thread_fallback.h">
 </fileinfo>
 </data>

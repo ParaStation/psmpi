@@ -54,15 +54,12 @@
 #define MPI_THREAD_MULTIPLE 3
 #endif
 
-/* For thread support */
-#include "mpiimplthread.h"
-
 /* Error reporting routines */
 #include "mpierror.h"
 #include "mpierrs.h"
 
 /* FIXME: This is extracted from mpi.h.in, where it may not be appropriate */
-#define MPICH_ERR_LAST_CLASS 72     /* It is also helpful to know the
+#define MPICH_ERR_LAST_CLASS 74     /* It is also helpful to know the
 				       last valid class */
 
 #include "mpifunc.h"
@@ -134,7 +131,5 @@
 #else
 #define MPIU_UNREFERENCED_ARG(a)
 #endif
-
-#include "mpiimplthreadpost.h"
 
 #endif

@@ -1,4 +1,4 @@
-.TH mpifort 1 "2/20/2015" " " "MPI"
+.TH mpifort 1 "11/9/2015" " " "MPI"
 .SH NAME
 mpifort \-  Compiles and links MPI programs written in Fortran 90 
 .SH DESCRIPTION
@@ -112,18 +112,18 @@ To compile a single file
 .I foo.f
 , use
 .nf
-mpifort \\-c foo.f
+mpifort -c foo.f
 .fi
 
 
 To link the output and make an executable, use
 .nf
-mpifort \\-o foo foo.o
+mpifort -o foo foo.o
 .fi
 
 Combining compilation and linking in a single command
 .nf
-mpifort \\-o foo foo.f
+mpifort -o foo foo.f
 .fi
 
 is a convenient way to build simple programs.
@@ -181,8 +181,8 @@ with the lines
 .PD 1
 
 .nf
-PROFILE_PRELIB="\\-L/usr/local/myprof/lib \\-lmyprof"
-PROFILE_INCPATHS="\\-I/usr/local/myprof/include"
+PROFILE_PRELIB="-L/usr/local/myprof/lib -lmyprof"
+PROFILE_INCPATHS="-I/usr/local/myprof/include"
 .fi
 
 and place it in the sysconfdir directory (this directory is set at

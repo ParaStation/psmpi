@@ -28,7 +28,7 @@ int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val, int *flag
 #undef FUNCNAME
 #define FUNCNAME MPIR_WinGetAttr
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_WinGetAttr( MPI_Win win, int win_keyval, void *attribute_val, 
 		     int *flag, MPIR_AttrType outAttrType )
 {
@@ -38,7 +38,7 @@ int MPIR_WinGetAttr( MPI_Win win, int win_keyval, void *attribute_val,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPIR_WIN_GET_ATTR);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -52,10 +52,10 @@ int MPIR_WinGetAttr( MPI_Win win, int win_keyval, void *attribute_val,
             /* A common user error is to pass the address of a 4-byte
 	       int when the address of a pointer (or an address-sized int)
 	       should have been used.  We can test for this specific
-	       case.  Note that this code assumes sizeof(MPIR_Pint) is
+	       case.  Note that this code assumes sizeof(MPIU_Pint) is
 	       a power of 2. */
-	    if ((MPIR_Pint)attribute_val & (sizeof(MPIR_Pint)-1)) {
-		MPIU_ERR_SETANDSTMT(mpi_errno,MPI_ERR_ARG,goto fn_fail,"**attrnotptr");
+	    if ((MPIU_Pint)attribute_val & (sizeof(MPIU_Pint)-1)) {
+		MPIR_ERR_SETANDSTMT(mpi_errno,MPI_ERR_ARG,goto fn_fail,"**attrnotptr");
 	    }
 #           endif
         }
@@ -94,7 +94,7 @@ int MPIR_WinGetAttr( MPI_Win win, int win_keyval, void *attribute_val,
 #ifdef HAVE_FORTRAN_BINDING
 	/* Note that this routine only has a Fortran 90 binding,
 	   so the attribute value is an address-sized int */
-	MPIR_Pint  *attr_int = (MPIR_Pint *)attribute_val;
+	MPIU_Pint  *attr_int = (MPIU_Pint *)attribute_val;
 #endif
 	*flag = 1;
 
@@ -127,7 +127,7 @@ int MPIR_WinGetAttr( MPI_Win win, int win_keyval, void *attribute_val,
 	case MPIR_ATTR_C_TO_FORTRAN(MPI_WIN_BASE):
 	    /* The Fortran routine that matches this routine should
 	       provide an address-sized integer, not an MPI_Fint */
-	    *attr_int = MPI_VOID_PTR_CAST_TO_MPI_AINT(win_ptr->base);
+	    *attr_int = MPIU_VOID_PTR_CAST_TO_MPI_AINT(win_ptr->base);
 	    break;
         case MPIR_ATTR_C_TO_FORTRAN(MPI_WIN_SIZE):
 	    /* We do not need to copy because we return the value,
@@ -180,11 +180,11 @@ int MPIR_WinGetAttr( MPI_Win win, int win_keyval, void *attribute_val,
 			*(void**)attribute_val = &(p->value);
 		    }
 		    else {
-			*(void**)attribute_val = (void *)(MPIR_Pint)(p->value);
+			*(void**)attribute_val = (void *)(MPIU_Pint)(p->value);
 		    }
 		}
 		else
-		    *(void**)attribute_val = (void *)(MPIR_Pint)(p->value);
+		    *(void**)attribute_val = (void *)(MPIU_Pint)(p->value);
 		
 		break;
 	    }
@@ -198,7 +198,7 @@ int MPIR_WinGetAttr( MPI_Win win, int win_keyval, void *attribute_val,
   fn_exit:
 #endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPIR_WIN_GET_ATTR);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
     /* --BEGIN ERROR HANDLING-- */
@@ -221,7 +221,7 @@ int MPIR_WinGetAttr( MPI_Win win, int win_keyval, void *attribute_val,
 #undef FUNCNAME
 #define FUNCNAME MPI_Win_get_attr
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Win_get_attr - Get attribute cached on an MPI window object
 

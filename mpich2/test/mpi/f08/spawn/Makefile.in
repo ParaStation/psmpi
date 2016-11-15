@@ -121,7 +121,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = testlist
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 connaccf90_SOURCES = connaccf90.f90
@@ -210,7 +210,7 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in \
+am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/testlist.in \
 	$(top_srcdir)/Makefile_f08.mtest
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 VPATH = @VPATH@
@@ -340,6 +340,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -374,6 +375,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -391,6 +393,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -449,6 +452,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+testlist: $(top_builddir)/config.status $(srcdir)/testlist.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)

@@ -77,13 +77,14 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *indx,
     int active_flag;
     int init_req_array;
     int found_nonnull_req;
+    int last_disabled_anysource = -1;
     int mpi_errno = MPI_SUCCESS;
     MPIU_CHKLMEM_DECL(1);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WAITANY);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_WAITANY);
 
     /* Check the arguments */
@@ -155,7 +156,7 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *indx,
                 continue;
             /* we found at least one non-null request */
             found_nonnull_req = TRUE;
-            
+
             if (request_ptrs[i]->kind == MPID_UREQUEST && request_ptrs[i]->greq_fns->poll_fn != NULL)
 	    {
                 /* this is a generalized request; make progress on it */
@@ -184,7 +185,11 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *indx,
 			goto break_l1;
 		    }
 		}
-	    }
+            } else if (unlikely(MPIR_CVAR_ENABLE_FT &&
+                        MPID_Request_is_anysource(request_ptrs[i]) &&
+                        !MPID_Comm_AS_enabled(request_ptrs[i]->comm))) {
+                last_disabled_anysource = i;
+            }
 	}
         init_req_array = FALSE;
 
@@ -195,6 +200,15 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *indx,
             if (status != NULL)    /* could be null if count=0 */
                 MPIR_Status_set_empty(status);
             goto break_l1;
+        }
+
+        /* If none of the requests completed, mark the last anysource request
+         * as pending failure and break out. */
+        if (unlikely(last_disabled_anysource != -1))
+        {
+            MPIR_ERR_SET(mpi_errno, MPIX_ERR_PROC_FAILED_PENDING, "**failure_pending");
+            if (status != MPI_STATUS_IGNORE) status->MPI_ERROR = mpi_errno;
+            goto fn_progress_end_fail;
         }
 
 	mpi_errno = MPID_Progress_wait(&progress_state);
@@ -212,7 +226,7 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *indx,
     }
 
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITANY);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_progress_end_fail:

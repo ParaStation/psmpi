@@ -59,7 +59,7 @@ int MPI_File_open(MPI_Comm comm, ROMIO_CONST char *filename, int amode,
     HPMP_IO_OPEN_START(fl_xmpi, comm);
 #endif /* MPI_hpux */
 
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    ROMIO_THREAD_CS_ENTER();
 
     /* --BEGIN ERROR HANDLING-- */
     MPIO_CHECK_COMM(comm, myname, error_code);
@@ -198,7 +198,7 @@ int MPI_File_open(MPI_Comm comm, ROMIO_CONST char *filename, int amode,
 #endif /* MPI_hpux */
 
 fn_exit:
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    ROMIO_THREAD_CS_EXIT();
     return error_code;
 fn_fail:
     /* --BEGIN ERROR HANDLING-- */

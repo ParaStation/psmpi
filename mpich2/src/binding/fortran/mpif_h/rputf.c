@@ -266,5 +266,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_rput_( void*, MPI_Fint *, MPI_Fint *, M
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_rput_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Aint * v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *v8, MPI_Fint *v9, MPI_Fint *ierr ){
+    if (v1 == MPIR_F_MPI_BOTTOM) v1 = MPI_BOTTOM;
     *ierr = MPI_Rput( v1, (int)*v2, (MPI_Datatype)(*v3), (int)*v4, *v5, (int)*v6, (MPI_Datatype)(*v7), (MPI_Win)*v8, (MPI_Request *)(v9) );
 }

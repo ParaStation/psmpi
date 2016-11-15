@@ -266,5 +266,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_neighbor_alltoallv_( void*, MPI_Fint []
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_neighbor_alltoallv_ ( void*v1, MPI_Fint v2[], MPI_Fint v3[], MPI_Fint *v4, void*v5, MPI_Fint v6[], MPI_Fint v7[], MPI_Fint *v8, MPI_Fint *v9, MPI_Fint *ierr ){
+    if (v1 == MPIR_F_MPI_BOTTOM) v1 = MPI_BOTTOM;
+    if (v5 == MPIR_F_MPI_BOTTOM) v5 = MPI_BOTTOM;
     *ierr = MPI_Neighbor_alltoallv( v1, v2, v3, (MPI_Datatype)(*v4), v5, v6, v7, (MPI_Datatype)(*v8), (MPI_Comm)(*v9) );
 }

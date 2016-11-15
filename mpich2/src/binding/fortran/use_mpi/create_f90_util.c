@@ -17,7 +17,7 @@
 
 /* This gives the maximum number of distinct types returned by any one of the
    MPI_Type_create_f90_xxx routines */
-#define MAX_F90_TYPES 16
+#define MAX_F90_TYPES 64
 typedef struct { int combiner; int r, p;
     MPI_Datatype d; } F90Predefined;
 static int nAlloc = 0;
@@ -36,7 +36,7 @@ static int MPIR_FreeF90Datatypes( void *d )
 #undef FUNCNAME
 #define FUNCNAME MPIR_Create_unnamed_predefined
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Create_unnamed_predefined( MPI_Datatype old, int combiner, 
 				    int r, int p, 
 				    MPI_Datatype *new_ptr )
@@ -57,7 +57,7 @@ int MPIR_Create_unnamed_predefined( MPI_Datatype old, int combiner,
     }
 
     /* Create a new type and remember it */
-    if (nAlloc > MAX_F90_TYPES) {
+    if (nAlloc >= MAX_F90_TYPES) {
 	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
 				     "MPIF_Create_unnamed_predefined", __LINE__,
 				     MPI_ERR_INTERN, "**f90typetoomany", 0 );
@@ -76,7 +76,7 @@ int MPIR_Create_unnamed_predefined( MPI_Datatype old, int combiner,
 
     /* Create a contiguous type from one instance of the named type */
     mpi_errno = MPID_Type_contiguous( 1, old, &type->d );
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
     /* Initialize the contents data */
     {
@@ -102,7 +102,7 @@ int MPIR_Create_unnamed_predefined( MPI_Datatype old, int combiner,
 	mpi_errno = MPID_Datatype_set_contents(new_dtp, combiner,
 					       nvals, 0, 0, vals,
 					       NULL, NULL );
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
         /* FIXME should we be setting type->is_permanent=TRUE here too?  If so,
          * will the cleanup code handle it correctly and not freak out? */
@@ -110,18 +110,20 @@ int MPIR_Create_unnamed_predefined( MPI_Datatype old, int combiner,
 #ifndef NDEBUG
         {
             MPI_Datatype old_basic = MPI_DATATYPE_NULL;
+            MPI_Datatype new_basic = MPI_DATATYPE_NULL;
             /* we used MPID_Type_contiguous and then stomped it's contents
-             * information, so make sure that the eltype is usable by
+             * information, so make sure that the basic_type is usable by
              * MPID_Type_commit */
             MPID_Datatype_get_basic_type(old, old_basic);
-            MPIU_Assert(new_dtp->eltype == old_basic);
+            MPID_Datatype_get_basic_type(new_dtp->handle, new_basic);
+            MPIU_Assert(new_basic == old_basic);
         }
 #endif
 
         /* the MPI Standard requires that these types are pre-committed
          * (MPI-2.2, sec 16.2.5, pg 492) */
         mpi_errno = MPID_Type_commit(&type->d);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     }
 
     *new_ptr       = type->d;

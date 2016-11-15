@@ -29,7 +29,7 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup) __a
 #undef FUNCNAME
 #define FUNCNAME MPIR_Group_union_impl
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Group_union_impl(MPID_Group *group_ptr1, MPID_Group *group_ptr2, MPID_Group **new_group_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -96,7 +96,7 @@ int MPIR_Group_union_impl(MPID_Group *group_ptr1, MPID_Group *group_ptr2, MPID_G
     
     /* Allocate a new group and lrank_to_lpid array */
     mpi_errno = MPIR_Group_create( nnew, new_group_ptr );
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
     /* If this process is in group1, then we can set the rank now. 
        If we are not in this group, this assignment will set the
@@ -106,7 +106,6 @@ int MPIR_Group_union_impl(MPID_Group *group_ptr1, MPID_Group *group_ptr2, MPID_G
     /* Add group1 */
     size1 = group_ptr1->size;
     for (i = 0; i < size1; i++) {
-        (*new_group_ptr)->lrank_to_lpid[i].lrank = i;
         (*new_group_ptr)->lrank_to_lpid[i].lpid  = 
             group_ptr1->lrank_to_lpid[i].lpid;
     }
@@ -123,7 +122,6 @@ int MPIR_Group_union_impl(MPID_Group *group_ptr1, MPID_Group *group_ptr2, MPID_G
     k = size1;
     for (i = 0; i < size2; i++) {
         if (group_ptr2->lrank_to_lpid[i].flag) {
-            (*new_group_ptr)->lrank_to_lpid[k].lrank = k;
             (*new_group_ptr)->lrank_to_lpid[k].lpid = group_ptr2->lrank_to_lpid[i].lpid;
             if ((*new_group_ptr)->rank == MPI_UNDEFINED &&
                 group_ptr2->lrank_to_lpid[i].lpid == mylpid)
@@ -147,7 +145,7 @@ int MPIR_Group_union_impl(MPID_Group *group_ptr1, MPID_Group *group_ptr2, MPID_G
 #undef FUNCNAME
 #define FUNCNAME MPI_Group_union
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /*@
 
@@ -181,7 +179,7 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,); 
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX); 
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_UNION);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -220,13 +218,13 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group *newgroup)
     mpi_errno = MPIR_Group_union_impl(group_ptr1, group_ptr2, &new_group_ptr);
     if (mpi_errno) goto fn_fail;
 
-    MPIU_OBJ_PUBLISH_HANDLE(*newgroup, new_group_ptr->handle);
+    MPID_OBJ_PUBLISH_HANDLE(*newgroup, new_group_ptr->handle);
 
     /* ... end of body of routine ... */
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_UNION);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

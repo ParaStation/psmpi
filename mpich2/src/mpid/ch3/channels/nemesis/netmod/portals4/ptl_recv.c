@@ -10,19 +10,22 @@
 #undef FUNCNAME
 #define FUNCNAME dequeue_req
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static void dequeue_req(const ptl_event_t *e)
 {
     int found;
     MPID_Request *const rreq = e->user_ptr;
-    int s_len, r_len;
+    MPI_Aint s_len, r_len;
 
     /* At this point we know the ME is unlinked. Invalidate the handle to
        prevent further accesses, e.g. an attempted cancel. */
     REQ_PTL(rreq)->put_me = PTL_INVALID_HANDLE;
 
     found = MPIDI_CH3U_Recvq_DP(rreq);
-    MPIU_Assert(found);
+    /* an MPI_ANY_SOURCE request may have been previously removed from the
+       CH3 queue by an FDP (find and dequeue posted) operation */
+    if (rreq->dev.match.parts.rank != MPI_ANY_SOURCE)
+        MPIU_Assert(found);
 
     rreq->status.MPI_ERROR = MPI_SUCCESS;
     rreq->status.MPI_SOURCE = NPTL_MATCH_GET_RANK(e->match_bits);
@@ -36,16 +39,16 @@ static void dequeue_req(const ptl_event_t *e)
     if (s_len > r_len) {
         /* truncated data */
         MPIR_STATUS_SET_COUNT(rreq->status, r_len);
-        MPIU_ERR_SET2(rreq->status.MPI_ERROR, MPI_ERR_TRUNCATE, "**truncate", "**truncate %d %d", s_len, r_len);
+        MPIR_ERR_SET2(rreq->status.MPI_ERROR, MPI_ERR_TRUNCATE, "**truncate", "**truncate %d %d", s_len, r_len);
+    } else {
+        MPIR_STATUS_SET_COUNT(rreq->status, s_len);
     }
-    
-    MPIR_STATUS_SET_COUNT(rreq->status, s_len);
 }
 
 #undef FUNCNAME
 #define FUNCNAME handler_recv_complete
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int handler_recv_complete(const ptl_event_t *e)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -60,14 +63,17 @@ static int handler_recv_complete(const ptl_event_t *e)
 
     if (REQ_PTL(rreq)->md != PTL_INVALID_HANDLE) {
         ret = PtlMDRelease(REQ_PTL(rreq)->md);
-        MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlmdrelease", "**ptlmdrelease %s", MPID_nem_ptl_strerror(ret));
+        MPIR_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlmdrelease", "**ptlmdrelease %s", MPID_nem_ptl_strerror(ret));
     }
 
     for (i = 0; i < MPID_NEM_PTL_NUM_CHUNK_BUFFERS; ++i)
         if (REQ_PTL(rreq)->chunk_buffer[i])
             MPIU_Free(REQ_PTL(rreq)->chunk_buffer[i]);
     
-    MPIDI_CH3U_Request_complete(rreq);
+    mpi_errno = MPID_Request_complete(rreq);
+    if (mpi_errno) {
+        MPIR_ERR_POP(mpi_errno);
+    }
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_HANDLER_RECV_COMPLETE);
@@ -79,7 +85,7 @@ static int handler_recv_complete(const ptl_event_t *e)
 #undef FUNCNAME
 #define FUNCNAME handler_recv_dequeue_complete
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int handler_recv_dequeue_complete(const ptl_event_t *e)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -110,11 +116,17 @@ static int handler_recv_dequeue_complete(const ptl_event_t *e)
             last = e->mlength;
             MPID_Segment_unpack(rreq->dev.segment_ptr, rreq->dev.segment_first, &last, e->start);
             if (last != e->mlength)
-                MPIU_ERR_SET(rreq->status.MPI_ERROR, MPI_ERR_TYPE, "**dtypemismatch");
+                MPIR_ERR_SET(rreq->status.MPI_ERROR, MPI_ERR_TYPE, "**dtypemismatch");
         }
     } else {
-        if (!is_contig && data_sz != e->mlength)
-            MPIU_ERR_SET(rreq->status.MPI_ERROR, MPI_ERR_TYPE, "**dtypemismatch");
+        /* Data was placed directly into the user buffer, so datatype mismatch
+           is harder to detect. We use a simple check ensuring the received bytes
+           are a multiple of a single basic element. Currently, we do not detect
+           mismatches with datatypes constructed of more than one basic type */
+        MPI_Datatype dt_basic_type;
+        MPID_Datatype_get_basic_type(rreq->dev.datatype, dt_basic_type);
+        if (dt_basic_type != MPI_DATATYPE_NULL && (e->mlength % MPID_Datatype_get_basic_size(dt_basic_type)) != 0)
+            MPIR_ERR_SET(rreq->status.MPI_ERROR, MPI_ERR_TYPE, "**dtypemismatch");
     }
     
     mpi_errno = handler_recv_complete(e);
@@ -129,7 +141,7 @@ static int handler_recv_dequeue_complete(const ptl_event_t *e)
 #undef FUNCNAME
 #define FUNCNAME handler_recv_big_get
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int handler_recv_big_get(const ptl_event_t *e)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -154,7 +166,7 @@ static int handler_recv_big_get(const ptl_event_t *e)
         mpi_errno = handler_recv_complete(e);
     }
 
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_HANDLER_RECV_UNPACK);
@@ -166,7 +178,7 @@ static int handler_recv_big_get(const ptl_event_t *e)
 #undef FUNCNAME
 #define FUNCNAME big_get
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static void big_get(void *buf, ptl_size_t left_to_get, MPIDI_VC_t *vc, ptl_match_bits_t match_bits, MPID_Request *rreq)
 {
     int ret;
@@ -201,12 +213,14 @@ static void big_get(void *buf, ptl_size_t left_to_get, MPIDI_VC_t *vc, ptl_match
 #undef FUNCNAME
 #define FUNCNAME handler_recv_unpack_complete
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int handler_recv_unpack_complete(const ptl_event_t *e)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Request *const rreq = e->user_ptr;
     void *buf;
+    MPI_Aint last;
+
     MPIDI_STATE_DECL(MPID_STATE_HANDLER_RECV_UNPACK_COMPLETE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_HANDLER_RECV_UNPACK_COMPLETE);
@@ -218,13 +232,12 @@ static int handler_recv_unpack_complete(const ptl_event_t *e)
     else
         buf = REQ_PTL(rreq)->chunk_buffer[0];
 
-    mpi_errno = MPID_nem_ptl_unpack_byte(rreq->dev.segment_ptr, rreq->dev.segment_first,
-                                         rreq->dev.segment_first + e->mlength, buf,
-                                         &REQ_PTL(rreq)->overflow[0]);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    last = rreq->dev.segment_first + e->mlength;
+    MPID_Segment_unpack(rreq->dev.segment_ptr, rreq->dev.segment_first, &last, buf);
+    MPIU_Assert(last == rreq->dev.segment_first + e->mlength);
     
     mpi_errno = handler_recv_complete(e);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_HANDLER_RECV_UNPACK_COMPLETE);
@@ -236,7 +249,7 @@ static int handler_recv_unpack_complete(const ptl_event_t *e)
 #undef FUNCNAME
 #define FUNCNAME handler_recv_dequeue_unpack_complete
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int handler_recv_dequeue_unpack_complete(const ptl_event_t *e)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -259,7 +272,7 @@ static int handler_recv_dequeue_unpack_complete(const ptl_event_t *e)
 #undef FUNCNAME
 #define FUNCNAME handler_recv_dequeue_large
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int handler_recv_dequeue_large(const ptl_event_t *e)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -301,7 +314,7 @@ static int handler_recv_dequeue_large(const ptl_event_t *e)
     if (!(e->hdr_data & NPTL_LARGE)) {
         /* all data has already been received; we're done */
         mpi_errno = handler_recv_complete(e);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         goto fn_exit;
     }
         
@@ -317,7 +330,7 @@ static int handler_recv_dequeue_large(const ptl_event_t *e)
     /* noncontig recv buffer */
     
     last = rreq->dev.segment_size;
-    rreq->dev.iov_count = MPID_IOV_LIMIT;
+    rreq->dev.iov_count = MPL_IOV_LIMIT;
     MPID_Segment_pack_vector(rreq->dev.segment_ptr, rreq->dev.segment_first, &last, rreq->dev.iov, &rreq->dev.iov_count);
 
     if (last == rreq->dev.segment_size && rreq->dev.segment_size <= MPIDI_nem_ptl_ni_limits.max_msg_size + PTL_LARGE_THRESHOLD) {
@@ -330,12 +343,12 @@ static int handler_recv_dequeue_large(const ptl_event_t *e)
         md.eq_handle = MPIDI_nem_ptl_origin_eq;
         md.ct_handle = PTL_CT_NONE;
         ret = PtlMDBind(MPIDI_nem_ptl_ni, &md, &REQ_PTL(rreq)->md);
-        MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlmdbind", "**ptlmdbind %s", MPID_nem_ptl_strerror(ret));
+        MPIR_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlmdbind", "**ptlmdbind %s", MPID_nem_ptl_strerror(ret));
 
         REQ_PTL(rreq)->event_handler = handler_recv_complete;
         ret = MPID_nem_ptl_rptl_get(REQ_PTL(rreq)->md, 0, rreq->dev.segment_size - rreq->dev.segment_first, vc_ptl->id, vc_ptl->ptg,
                      e->match_bits, 0, rreq);
-        MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlget", "**ptlget %s", MPID_nem_ptl_strerror(ret));
+        MPIR_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlget", "**ptlget %s", MPID_nem_ptl_strerror(ret));
         goto fn_exit;
     }
         
@@ -359,7 +372,7 @@ static int handler_recv_dequeue_large(const ptl_event_t *e)
 #undef FUNCNAME
 #define FUNCNAME handler_recv_dequeue_unpack_large
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int handler_recv_dequeue_unpack_large(const ptl_event_t *e)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -380,7 +393,7 @@ static int handler_recv_dequeue_unpack_large(const ptl_event_t *e)
     if (!(e->hdr_data & NPTL_LARGE)) {
         /* all data has already been received; we're done */
         mpi_errno = handler_recv_unpack_complete(e);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         goto fn_exit;
     }
 
@@ -413,7 +426,7 @@ static int handler_recv_dequeue_unpack_large(const ptl_event_t *e)
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_ptl_recv_posted
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_ptl_recv_posted(MPIDI_VC_t *vc, MPID_Request *rreq)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -446,7 +459,7 @@ int MPID_nem_ptl_recv_posted(MPIDI_VC_t *vc, MPID_Request *rreq)
     } else {
         if (!vc_ptl->id_initialized) {
             mpi_errno = MPID_nem_ptl_init_id(vc);
-            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         }
         me.match_id = vc_ptl->id;
     }
@@ -462,26 +475,30 @@ int MPID_nem_ptl_recv_posted(MPIDI_VC_t *vc, MPID_Request *rreq)
     me.min_free = 0;
 
     MPIDI_Datatype_get_info(rreq->dev.user_count, rreq->dev.datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
-    MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "count=%d datatype=%#x contig=%d data_sz=%lu", rreq->dev.user_count, rreq->dev.datatype, dt_contig, data_sz));
+    MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "count="MPI_AINT_FMT_DEC_SPEC" datatype=%#x contig=%d data_sz=%lu", rreq->dev.user_count, rreq->dev.datatype, dt_contig, data_sz));
 
     if (data_sz <= PTL_LARGE_THRESHOLD) {
         if (dt_contig) {
             /* small contig message */
+            void *start = (char *)rreq->dev.user_buf + dt_true_lb;
             MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "Small contig message");
-            me.start = (char *)rreq->dev.user_buf + dt_true_lb;
+            if (start == NULL)
+                me.start = &dummy;
+            else
+                me.start = start;
             me.length = data_sz;
             REQ_PTL(rreq)->event_handler = handler_recv_dequeue_complete;
         } else {
             /* small noncontig */
             MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "Small noncontig message");
             rreq->dev.segment_ptr = MPID_Segment_alloc();
-            MPIU_ERR_CHKANDJUMP1(rreq->dev.segment_ptr == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Segment_alloc");
+            MPIR_ERR_CHKANDJUMP1(rreq->dev.segment_ptr == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Segment_alloc");
             MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, rreq->dev.datatype, rreq->dev.segment_ptr, 0);
             rreq->dev.segment_first = 0;
             rreq->dev.segment_size = data_sz;
 
             last = rreq->dev.segment_size;
-            rreq->dev.iov_count = MPID_IOV_LIMIT;
+            rreq->dev.iov_count = MPL_IOV_LIMIT;
             MPID_Segment_pack_vector(rreq->dev.segment_ptr, rreq->dev.segment_first, &last, rreq->dev.iov, &rreq->dev.iov_count);
 
             if (last == rreq->dev.segment_size) {
@@ -513,13 +530,13 @@ int MPID_nem_ptl_recv_posted(MPIDI_VC_t *vc, MPID_Request *rreq)
             /* large noncontig */
             MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "Large noncontig message");
             rreq->dev.segment_ptr = MPID_Segment_alloc();
-            MPIU_ERR_CHKANDJUMP1(rreq->dev.segment_ptr == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Segment_alloc");
+            MPIR_ERR_CHKANDJUMP1(rreq->dev.segment_ptr == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Segment_alloc");
             MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, rreq->dev.datatype, rreq->dev.segment_ptr, 0);
             rreq->dev.segment_first = 0;
             rreq->dev.segment_size = data_sz;
 
             last = PTL_LARGE_THRESHOLD;
-            rreq->dev.iov_count = MPID_IOV_LIMIT;
+            rreq->dev.iov_count = MPL_IOV_LIMIT;
             MPID_Segment_pack_vector(rreq->dev.segment_ptr, rreq->dev.segment_first, &last, rreq->dev.iov, &rreq->dev.iov_count);
 
             if (last == PTL_LARGE_THRESHOLD) {
@@ -543,8 +560,8 @@ int MPID_nem_ptl_recv_posted(MPIDI_VC_t *vc, MPID_Request *rreq)
         
     }
 
-    ret = MPID_nem_ptl_me_append(MPIDI_nem_ptl_ni, MPIDI_nem_ptl_pt, &me, PTL_PRIORITY_LIST, rreq, &REQ_PTL(rreq)->put_me);
-    MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlmeappend", "**ptlmeappend %s", MPID_nem_ptl_strerror(ret));
+    ret = PtlMEAppend(MPIDI_nem_ptl_ni, MPIDI_nem_ptl_pt, &me, PTL_PRIORITY_LIST, rreq, &REQ_PTL(rreq)->put_me);
+    MPIR_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlmeappend", "**ptlmeappend %s", MPID_nem_ptl_strerror(ret));
     DBG_MSG_MEAPPEND("REG", vc ? vc->pg_rank : MPI_ANY_SOURCE, me, rreq);
     MPIU_DBG_MSG_P(CH3_CHANNEL, VERBOSE, "    buf=%p", me.start);
     MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "MPIDI_nem_ptl_pt = %d", MPIDI_nem_ptl_pt);
@@ -562,7 +579,7 @@ int MPID_nem_ptl_recv_posted(MPIDI_VC_t *vc, MPID_Request *rreq)
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_ptl_anysource_posted
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPID_nem_ptl_anysource_posted(MPID_Request *rreq)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -583,7 +600,7 @@ void MPID_nem_ptl_anysource_posted(MPID_Request *rreq)
 #undef FUNCNAME
 #define FUNCNAME cancel_recv
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int cancel_recv(MPID_Request *rreq, int *cancelled)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -597,15 +614,12 @@ static int cancel_recv(MPID_Request *rreq, int *cancelled)
     /* An invalid handle indicates the operation has been completed
        and the matching list entry unlinked. At that point, the operation
        cannot be cancelled. */
-    if (REQ_PTL(rreq)->put_me != PTL_INVALID_HANDLE) {
-        ptl_err = PtlMEUnlink(REQ_PTL(rreq)->put_me);
-        if (ptl_err == PTL_OK)
-            *cancelled = TRUE;
-        /* FIXME: if we properly invalidate matching list entry handles, we should be
-           able to ensure an unlink operation results in either PTL_OK or PTL_IN_USE.
-           Anything else would be an error. For now, though, we assume anything but PTL_OK
-           is uncancelable and return. */
-    }
+    if (REQ_PTL(rreq)->put_me == PTL_INVALID_HANDLE)
+        goto fn_exit;
+
+    ptl_err = PtlMEUnlink(REQ_PTL(rreq)->put_me);
+    if (ptl_err == PTL_OK)
+        *cancelled = TRUE;
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_CANCEL_RECV);
@@ -618,7 +632,7 @@ static int cancel_recv(MPID_Request *rreq, int *cancelled)
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_ptl_anysource_matched
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_ptl_anysource_matched(MPID_Request *rreq)
 {
     int mpi_errno, cancelled;
@@ -635,7 +649,7 @@ int MPID_nem_ptl_anysource_matched(MPID_Request *rreq)
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_PTL_ANYSOURCE_MATCHED);
-    return MPI_SUCCESS;
+    return !cancelled;
  fn_fail:
     goto fn_exit;
 }
@@ -645,7 +659,7 @@ int MPID_nem_ptl_anysource_matched(MPID_Request *rreq)
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_ptl_cancel_recv
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_ptl_cancel_recv(MPIDI_VC_t *vc,  MPID_Request *rreq)
 {
     int mpi_errno, cancelled;
@@ -672,8 +686,8 @@ int MPID_nem_ptl_cancel_recv(MPIDI_VC_t *vc,  MPID_Request *rreq)
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_ptl_lmt_start_recv
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPID_nem_ptl_lmt_start_recv(MPIDI_VC_t *vc,  MPID_Request *rreq, MPID_IOV s_cookie)
+#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPID_nem_ptl_lmt_start_recv(MPIDI_VC_t *vc,  MPID_Request *rreq, MPL_IOV s_cookie)
 {
     /* This function should only be called as a result of an Mrecv because of the CH3 protocol for
        Rendezvous Mrecvs. The regular CH3 protocol is not optimal for portals, since we don't need
@@ -702,7 +716,7 @@ int MPID_nem_ptl_lmt_start_recv(MPIDI_VC_t *vc,  MPID_Request *rreq, MPID_IOV s_
                             rreq->dev.match.parts.rank);
     MPIDI_CH3U_Request_increment_cc(rreq, &was_incomplete);
     MPIU_Assert(was_incomplete == 0);
-    MPIU_Object_add_ref(rreq);
+    MPIR_Request_add_ref(rreq);
 
     MPIDI_Datatype_get_info(rreq->dev.user_count, rreq->dev.datatype, dt_contig, data_sz, dt_ptr,
                             dt_true_lb);
@@ -718,7 +732,7 @@ int MPID_nem_ptl_lmt_start_recv(MPIDI_VC_t *vc,  MPID_Request *rreq, MPID_IOV s_
         MPI_Aint last;
 
         rreq->dev.segment_ptr = MPID_Segment_alloc();
-        MPIU_ERR_CHKANDJUMP1(rreq->dev.segment_ptr == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem",
+        MPIR_ERR_CHKANDJUMP1(rreq->dev.segment_ptr == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem",
                              "**nomem %s", "MPID_Segment_alloc");
         MPID_Segment_init(rreq->dev.user_buf, rreq->dev.user_count, rreq->dev.datatype,
                           rreq->dev.segment_ptr, 0);
@@ -729,7 +743,7 @@ int MPID_nem_ptl_lmt_start_recv(MPIDI_VC_t *vc,  MPID_Request *rreq, MPID_IOV s_
         MPIU_Assert(last == PTL_LARGE_THRESHOLD);
         rreq->dev.segment_first = PTL_LARGE_THRESHOLD;
         last = rreq->dev.segment_size;
-        rreq->dev.iov_count = MPID_IOV_LIMIT;
+        rreq->dev.iov_count = MPL_IOV_LIMIT;
         MPID_Segment_pack_vector(rreq->dev.segment_ptr, rreq->dev.segment_first, &last, rreq->dev.iov,
                                  &rreq->dev.iov_count);
         if (last == rreq->dev.segment_size && last <= MPIDI_nem_ptl_ni_limits.max_msg_size + PTL_LARGE_THRESHOLD) {
@@ -742,13 +756,13 @@ int MPID_nem_ptl_lmt_start_recv(MPIDI_VC_t *vc,  MPID_Request *rreq, MPID_IOV s_
             md.eq_handle = MPIDI_nem_ptl_origin_eq;
             md.ct_handle = PTL_CT_NONE;
             ret = PtlMDBind(MPIDI_nem_ptl_ni, &md, &REQ_PTL(rreq)->md);
-            MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlmdbind", "**ptlmdbind %s",
+            MPIR_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlmdbind", "**ptlmdbind %s",
                                  MPID_nem_ptl_strerror(ret));
 
             REQ_PTL(rreq)->event_handler = handler_recv_complete;
             ret = MPID_nem_ptl_rptl_get(REQ_PTL(rreq)->md, 0, rreq->dev.segment_size - rreq->dev.segment_first,
                                         vc_ptl->id, vc_ptl->ptg, match_bits, 0, rreq);
-            MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlget", "**ptlget %s",
+            MPIR_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlget", "**ptlget %s",
                                  MPID_nem_ptl_strerror(ret));
         }
         else {
@@ -760,7 +774,7 @@ int MPID_nem_ptl_lmt_start_recv(MPIDI_VC_t *vc,  MPID_Request *rreq, MPID_IOV s_
         }
     }
     MPIU_Free(rreq->dev.tmpbuf);
-    rreq->ch.lmt_tmp_cookie.MPID_IOV_LEN = 0;  /* Required for do_cts in mpid_nem_lmt.c */
+    rreq->ch.lmt_tmp_cookie.MPL_IOV_LEN = 0;  /* Required for do_cts in mpid_nem_lmt.c */
 
  fn_exit:
     MPIU_CHKPMEM_COMMIT();

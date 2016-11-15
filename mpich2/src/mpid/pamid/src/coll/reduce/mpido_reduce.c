@@ -117,6 +117,51 @@ int MPIDO_Reduce(const void *sendbuf,
    {
       if(unlikely(verbose))
          fprintf(stderr,"Using MPICH reduce algorithm\n");
+#if CUDA_AWARE_SUPPORT
+      if(MPIDI_Process.cuda_aware_support_on)
+      {
+         MPI_Aint dt_extent;
+         MPID_Datatype_get_extent_macro(datatype, dt_extent);
+         char *scbuf = NULL;
+         char *rcbuf = NULL;
+         int is_send_dev_buf = MPIDI_cuda_is_device_buf(sendbuf);
+         int is_recv_dev_buf = MPIDI_cuda_is_device_buf(recvbuf);
+         if(is_send_dev_buf)
+         {
+           scbuf = MPIU_Malloc(dt_extent * count);
+           cudaError_t cudaerr = CudaMemcpy(scbuf, sendbuf, dt_extent * count, cudaMemcpyDeviceToHost);
+           if (cudaSuccess != cudaerr) 
+             fprintf(stderr, "cudaMemcpy failed: %s\n", CudaGetErrorString(cudaerr));
+         }
+         else
+           scbuf = sendbuf;
+         if(is_recv_dev_buf)
+         {
+           rcbuf = MPIU_Malloc(dt_extent * count);
+           if(sendbuf == MPI_IN_PLACE)
+           {
+             cudaError_t cudaerr = CudaMemcpy(rcbuf, recvbuf, dt_extent * count, cudaMemcpyDeviceToHost);
+             if (cudaSuccess != cudaerr)
+               fprintf(stderr, "cudaMemcpy failed: %s\n", CudaGetErrorString(cudaerr));
+           }
+           else
+             memset(rcbuf, 0, dt_extent * count);
+         }
+         else
+           rcbuf = recvbuf;
+         int cuda_res =  MPIR_Reduce(scbuf, rcbuf, count, datatype, op, root, comm_ptr, mpierrno);
+         if(is_send_dev_buf)MPIU_Free(scbuf);
+         if(is_recv_dev_buf)
+         {
+           cudaError_t cudaerr = CudaMemcpy(recvbuf, rcbuf, dt_extent * count, cudaMemcpyHostToDevice);
+           if (cudaSuccess != cudaerr)
+             fprintf(stderr, "cudaMemcpy failed: %s\n", CudaGetErrorString(cudaerr));
+           MPIU_Free(rcbuf);
+         }
+         return cuda_res;
+      }
+      else
+#endif
       return MPIR_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm_ptr, mpierrno);
    }
 

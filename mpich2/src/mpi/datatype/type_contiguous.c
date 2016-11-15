@@ -28,7 +28,7 @@ int MPI_Type_contiguous(int count, MPI_Datatype oldtype, MPI_Datatype *newtype) 
 #undef FUNCNAME
 #define FUNCNAME MPIR_Type_contiguous_impl
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Type_contiguous_impl(int count,
                               MPI_Datatype oldtype,
                               MPI_Datatype *newtype)
@@ -55,7 +55,7 @@ int MPIR_Type_contiguous_impl(int count,
 
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    MPIU_OBJ_PUBLISH_HANDLE(*newtype, new_handle);
+    MPID_OBJ_PUBLISH_HANDLE(*newtype, new_handle);
 
  fn_exit:
     return mpi_errno;
@@ -63,14 +63,60 @@ int MPIR_Type_contiguous_impl(int count,
 
     goto fn_exit;
 }
+#undef FUNCNAME
+#define FUNCNAME MPIR_Type_contiguous_x_impl
+#undef FCNAME
+#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPIR_Type_contiguous_x_impl(MPI_Count count,
+                              MPI_Datatype oldtype,
+			      MPI_Datatype *newtype)
+{
+    /* to make 'count' fit MPI-3 type processing routines (which take integer
+     * counts), we construct a type consisting of N INT_MAX chunks followed by
+     * a remainder.  e.g for a count of 4000000000 bytes you would end up with
+     * one 2147483647-byte chunk followed immediately by a 1852516353-byte
+     * chunk */
+    MPI_Datatype chunks, remainder;
+    MPI_Aint lb, extent, disps[2];
+    int blocklens[2];
+    MPI_Datatype types[2];
+    int mpi_errno;
 
+    /* truly stupendously large counts will overflow an integer with this math,
+     * but that is a problem for a few decades from now.  Sorry, few decades
+     * from now! */
+    MPIU_Assert(count/INT_MAX == (int)(count/INT_MAX));
+    int c = (int)(count/INT_MAX); /* OK to cast until 'count' is 256 bits */
+    int r = count%INT_MAX;
+
+    mpi_errno = MPIR_Type_vector_impl(c, INT_MAX, INT_MAX, oldtype, &chunks);
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    mpi_errno = MPIR_Type_contiguous_impl(r, oldtype, &remainder);
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
+    MPIR_Type_get_extent_impl(oldtype, &lb, &extent);
+
+    blocklens[0] = 1;      blocklens[1] = 1;
+    disps[0]     = 0;      disps[1]     = c*extent*INT_MAX;
+    types[0]     = chunks; types[1]     = remainder;
+
+    mpi_errno = MPIR_Type_create_struct_impl(2, blocklens, disps, types, newtype);
+
+    MPIR_Type_free_impl(&chunks);
+    MPIR_Type_free_impl(&remainder);
+
+fn_exit:
+    return mpi_errno;
+fn_fail:
+    goto fn_exit;
+}
 #endif
 
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Type_contiguous
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Type_contiguous - Creates a contiguous datatype
 
@@ -100,7 +146,7 @@ int MPI_Type_contiguous(int count,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CONTIGUOUS);
 
 #   ifdef HAVE_ERROR_CHECKING
@@ -125,13 +171,13 @@ int MPI_Type_contiguous(int count,
     /* ... body of routine ... */
 
     mpi_errno = MPIR_Type_contiguous_impl(count, oldtype, newtype);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
     /* ... end of body of routine ... */
     
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CONTIGUOUS);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

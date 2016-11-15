@@ -364,6 +364,7 @@ foreach $_ (@ARGV) {
 #
 # The Type_create_f90_xxx routines are only available as part of the
 # extended Fortran support, and are excluded from the f77 routines.
+# Aint_add/diff do not have the ierror argument
 %special_routines = ( 'Init' => 1, 'Init_thread' => 1, 'Pcontrol' => '1',
 		      'Address' => 1, 'Get_address' => 1,
 		      'Keyval_create' => 1, 'Status_f2c' => 1,
@@ -371,6 +372,8 @@ foreach $_ (@ARGV) {
 		      'Type_create_f90_integer' => 1,
 		      'Type_create_f90_real' => 1,
 		      'Type_create_f90_complex' => 1,
+		      'Aint_add' => 1,
+		      'Aint_diff' => 1,
 		      );
 
 # Some routines have special needs and must call a different routine.  For
@@ -2360,7 +2363,7 @@ sub handle_array_in_arg {
 # where an address is larger than an MPI_Fint.  This is correct; these
 # routines are for the MPI-1 routines that use an MPI_Fint where the 
 # C code uses a void * (MPI_Aint in MPI-2).  
-# Instead of using MPI_Aint, we use MPIR_Pint.  This allows the MPI 
+# Instead of using MPI_Aint, we use MPIU_Pint.  This allows the MPI 
 # implementation to set MPI_Aint to be *larger* than a pointer-sized-int,
 # which is needed (as a temporary workaround) on systems like Blue Gene, which 
 # have 4 byte pointers but file systems that need 8 byte datatypes (not just 
@@ -2377,7 +2380,7 @@ sub addrint_in_decl {
 }
 sub addrint_in_arg {
     my $count = $_[0];
-    print $OUTFD "(void *)((MPIR_Pint)*(MPI_Fint *)v$count)";
+    print $OUTFD "(void *)((MPIU_Pint)*(MPI_Fint *)v$count)";
 }
 
 sub attrint_ctof {
@@ -2396,7 +2399,7 @@ sub attrint_ctof {
         *(MPI_Fint*)$cvar = 0;
     }
     else {
-        *(MPI_Fint*)$cvar = (MPI_Fint)(MPIR_Pint)attr$cvar;
+        *(MPI_Fint*)$cvar = (MPI_Fint)(MPIU_Pint)attr$cvar;
     }\n";
 }
 
@@ -3322,7 +3325,7 @@ sub chararray_ftoc {
     }
     print $OUTFD "\
       p$count = (char **)$malloc( asize$count * sizeof(char *) );
-      ptmp    = (char *)$malloc( asize$count * (d$count + 1) );
+      if (asize$count-1 > 0) ptmp = (char *)$malloc( asize$count * (d$count + 1) );
       for (i=0; i<asize$count-1; i++) {
           char *p = v$count + i * d$count, *pin, *pdest;
           int j;
@@ -3339,7 +3342,7 @@ sub chararray_ftoc {
     /* Null terminate the array */
     p$count\[asize$count-1\] = 0;
     }\n";
-    $clean_up .= "    $free( p$count\[0\] );\n    $free( p$count );\n";
+    $clean_up .= "    if (asize$count-1 > 0) $free( p$count\[0\] );\n    $free( p$count );\n";
 }
 
 # Add null to 2-dimensional arrays of input strings.  Used only 
@@ -4231,11 +4234,7 @@ sub build_specials {
     *ierr = MPI_Address( v1, &a );\n";
     &specialInitStatement( $OUTFD );
     print $OUTFD "\
-#ifdef USE_POINTER_FOR_BOTTOM
     b = a;
-#else
-    b = a - (MPIR_Pint) MPIR_F_MPI_BOTTOM;
-#endif
     *v2 = (MPI_Fint)( b );
 #ifdef HAVE_AINT_LARGER_THAN_FINT
     /* Check for truncation */
@@ -4270,9 +4269,6 @@ sub build_specials {
     *ierr = MPI_Get_address( v1, &a );\n";
     &specialInitStatement( $OUTFD );
     print $OUTFD "\
-#ifndef USE_POINTER_FOR_BOTTOM
-    a = a - (MPIR_Pint) MPIR_F_MPI_BOTTOM;
-#endif
     *v2 =  a;
 }\n";
     close ($OUTFD);
@@ -4287,17 +4283,14 @@ sub build_specials {
     &set_weak_decl( "MPI_Wtime", "void", "double" );
     &set_weak_decl( "PMPI_Wtime", "void", "double" );
     &print_header( "mpi_", "MPI_Wtime", "wtime", "" );
-    # mpichtimer.h is needed for the timer definitions
+    # mpiu_timer.h is needed for the timer definitions
     print $OUTFD "#include \"mpichconf.h\"\n";
-    print $OUTFD "#include \"mpichtimer.h\"\n";
+    print $OUTFD "#include \"mpiu_timer.h\"\n";
     &print_routine_type_decl( $OUTFD, $out_prefix, "wtime" );
     print $OUTFD "( void ) ";
     #&print_attr;
     print $OUTFD "{\n";
-    print $OUTFD "    double d; MPID_Time_t t;\n
-    MPID_Wtime( &t );
-    MPID_Wtime_todouble( &t, &d );
-    return d;\n";
+    print $OUTFD "return MPI_Wtime();\n";
     print $OUTFD "}\n";
     close ($OUTFD);
     &ReplaceIfDifferent( $filename, $filename . ".new" );
@@ -4319,16 +4312,14 @@ sub build_specials {
     &set_weak_decl( "MPI_Wtick", "void", "double" );
     &set_weak_decl( "PMPI_Wtick", "void", "double" );
     &print_header( "mpi_", "MPI_Wtick", "wtick", "" );
-    # mpichtimer.h is needed for the timer definitions
+    # mpiu_timer.h is needed for the timer definitions
     print $OUTFD "#include \"mpichconf.h\"\n";
-    print $OUTFD "#include \"mpichtimer.h\"\n";
+    print $OUTFD "#include \"mpiu_timer.h\"\n";
     &print_routine_type_decl( $OUTFD, $out_prefix, "wtick" );
     print $OUTFD "( void ) ";
     #&print_attr;
     print $OUTFD "{\n";
-    print $OUTFD "    double d; 
-    d = MPID_Wtick( );
-    return d;\n";
+    print $OUTFD "return MPI_Wtick();\n";
     print $OUTFD "}\n";
     close ($OUTFD);
     &ReplaceIfDifferent( $filename, $filename . ".new" );
@@ -4338,6 +4329,55 @@ sub build_specials {
         &print_routine_type_decl( PROTOFD, $out_prefix, "wtick" );
 	print PROTOFD "( void )";
 	&print_attr( PROTOFD, $out_prefix."wtick_" );
+        print PROTOFD ";\n";
+    }
+    $returnType = "void";
+
+    # MPI_Aint_add/diff do not have the ierror argument.
+    $OUTFD = "AINTADD";
+    $filename = "aint_addf.c";
+    open( $OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
+    $returnType = "MPI_Aint";
+    &set_weak_decl( "MPI_Aint_add", "MPI_Aint *, MPI_Aint *", "MPI_Aint" );
+    &set_weak_decl( "PMPI_Aint_add", "MPI_Aint *, MPI_Aint *", "MPI_Aint" );
+    &print_header( "mpi_", "MPI_Aint_add", "aint_add", "MPI_Aint *, MPI_Aint *");
+    &print_routine_type_decl( $OUTFD, "mpi_", "aint_add" );
+    print $OUTFD "(MPI_Aint *base, MPI_Aint *disp)\n";
+    print $OUTFD "{\n";
+    print $OUTFD "    return MPI_Aint_add(*base, *disp);\n";
+    print $OUTFD "}\n";
+    close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
+    if ($build_prototypes) {
+        print PROTOFD "extern ";
+        &print_routine_type_decl( PROTOFD, "mpi_", "aint_add" );
+        print PROTOFD "( MPI_Aint *, MPI_Aint * )";
+        &print_attr( PROTOFD, "mpi_"."aint_add_" );
+        print PROTOFD ";\n";
+    }
+    $returnType = "void";
+
+    $OUTFD = "AINTDIFF";
+    $filename = "aint_difff.c";
+    open( $OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
+    $files[$#files+1] = $filename;
+    $returnType = "MPI_Aint";
+    &set_weak_decl( "MPI_Aint_diff", "MPI_Aint *, MPI_Aint *", "MPI_Aint" );
+    &set_weak_decl( "PMPI_Aint_diff", "MPI_Aint *, MPI_Aint *", "MPI_Aint" );
+    &print_header( "mpi_", "MPI_Aint_diff", "aint_diff", "MPI_Aint *, MPI_Aint *");
+    &print_routine_type_decl( $OUTFD, "mpi_", "aint_diff" );
+    print $OUTFD "(MPI_Aint *addr1, MPI_Aint *addr2)\n";
+    print $OUTFD "{\n";
+    print $OUTFD "    return MPI_Aint_diff(*addr1, *addr2);\n";
+    print $OUTFD "}\n";
+    close ($OUTFD);
+    &ReplaceIfDifferent( $filename, $filename . ".new" );
+    if ($build_prototypes) {
+        print PROTOFD "extern ";
+        &print_routine_type_decl( PROTOFD, "mpi_", "aint_diff" );
+        print PROTOFD "( MPI_Aint *, MPI_Aint * )";
+        &print_attr( PROTOFD, "mpi_"."aint_diff_" );
         print PROTOFD ";\n";
     }
     $returnType = "void";
@@ -4357,7 +4397,7 @@ sub build_specials {
 
     print $OUTFD " 
 /* The F77 attr copy function prototype and calling convention */
-typedef void (FORT_CALL F77_CopyFunction) (MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *,MPI_Fint *, MPI_Fint *, MPI_Fint *);
+typedef void (FORT_CALL F77_CopyFunction) (MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint *);
 
 /* Helper proxy function to thunk the attr copy function call into F77 calling convention */
 static
@@ -4376,21 +4416,21 @@ MPIR_Comm_copy_attr_f77_proxy(
     MPI_Fint ierr = 0;
     MPI_Fint fhandle = (MPI_Fint)comm;
     MPI_Fint fkeyval = (MPI_Fint)keyval;
-    MPI_Fint fvalue = (MPI_Fint) MPI_VOID_PTR_CAST_TO_MPI_AINT (value);
-    MPI_Fint* fextra  = (MPI_Fint*)extra_state;
-    MPI_Fint fnew = 0;
+    MPI_Aint fvalue = MPIU_VOID_PTR_CAST_TO_MPI_AINT (value);
+    MPI_Aint *fextra = (MPI_Aint *)extra_state;
+    MPI_Aint fnew = 0;
     MPI_Fint fflag = 0;
 
     ((F77_CopyFunction*)user_function)( &fhandle, &fkeyval, fextra, &fvalue, &fnew, &fflag, &ierr );
 
     *flag = MPIR_FROM_FLOG(fflag);
-    *new_value = MPI_AINT_CAST_TO_VOID_PTR ((MPI_Aint) fnew);
+    *new_value = MPIU_AINT_CAST_TO_VOID_PTR ((MPI_Aint) fnew);
     return (int)ierr;
 }
 
 
 /* The F77 attr delete function prototype and calling convention */
-typedef void (FORT_CALL F77_DeleteFunction) (MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *);
+typedef void (FORT_CALL F77_DeleteFunction) (MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *, MPI_Fint *);
 
 /* Helper proxy function to thunk the attr delete function call into F77 calling convention */
 static
@@ -4407,8 +4447,8 @@ MPIR_Comm_delete_attr_f77_proxy(
     MPI_Fint ierr = 0;
     MPI_Fint fhandle = (MPI_Fint)comm;
     MPI_Fint fkeyval = (MPI_Fint)keyval;
-    MPI_Fint fvalue = (MPI_Fint) MPI_VOID_PTR_CAST_TO_MPI_AINT (value);
-    MPI_Fint* fextra  = (MPI_Fint*)extra_state;
+    MPI_Aint fvalue = MPIU_VOID_PTR_CAST_TO_MPI_AINT (value);
+    MPI_Aint *fextra = (MPI_Aint *)extra_state;
 
     ((F77_DeleteFunction*)user_function)( &fhandle, &fkeyval, &fvalue, fextra, &ierr );
     return (int)ierr;
@@ -4730,6 +4770,31 @@ sub print_mpif_int {
     print MPIFFD "       PARAMETER ($key=$value)\n";
 }
 
+# Change the non-zero addressed F77/90 MPI_BOTTOM to C's MPI_BOTTOM, which
+# in MPICH is (void*)0. Note that MPI_BOTTOM can only appear at choice
+# buffer positions. For simplicity, we treat all void * parameters as
+# possible choice buffers. It is a little bit overkilling, but never
+# hurts, since if in the user's Fortran source code MPI_BOTTOM is passed
+# to a non-choice buffer parameter, either the program is already wrong,
+# or the parameter is non-significant.
+#
+# To make this adjustment work, MPI_Get_Address, MPI_Address should return
+# address as if MPI_BOTTOM was at address zero.
+#
+# See discussion of the MPI_BOTTOM problem on p.652 of MPI-3.0
+
+sub adjust_mpi_bottom {
+    my $OUTFD = $_[0];
+    my @params = split(/\s*,\s*/, $_[1]);
+    my $count = 1;
+    foreach my $param (@params) {
+        if ($param =~ /void.*\*/) {
+            printf $OUTFD "    if (v$count == MPIR_F_MPI_BOTTOM) v$count = MPI_BOTTOM;\n";
+        }
+        $count++;
+    }
+}
+
 sub ReadAndProcessInterface {
     my $prototype_file = $_[0];
     my $protectMPIO = $_[1];      # Wrap MPI-IO routines in ifdefs MPI_MODE_RDONLY
@@ -4878,6 +4943,7 @@ sub ReadAndProcessInterface {
                         &printCallForFint( $routine_prefix, $routine_name, $args );
                     }
                     &print_special_decls( $routine_name );
+                    &adjust_mpi_bottom($OUTFD, $args);
                     if (defined($ChangeCall{$routine_name})) {
                         my ($newName,$extraArgs) = 
                             split(/:/,$ChangeCall{$routine_name} );
@@ -5363,7 +5429,7 @@ MPIR_Type_copy_attr_f90_proxy(
     MPI_Fint ierr = 0;
     MPI_Fint fhandle = (MPI_Fint)datatype;
     MPI_Fint fkeyval = (MPI_Fint)keyval;
-    MPI_Aint fvalue = MPI_VOID_PTR_CAST_TO_MPI_AINT (value);
+    MPI_Aint fvalue = MPIU_VOID_PTR_CAST_TO_MPI_AINT (value);
     MPI_Aint* fextra  = (MPI_Aint*)extra_state;
     MPI_Aint fnew = 0;
     MPI_Fint fflag = 0;
@@ -5371,7 +5437,7 @@ MPIR_Type_copy_attr_f90_proxy(
     ((F90_CopyFunction*)user_function)( &fhandle, &fkeyval, fextra, &fvalue, &fnew, &fflag, &ierr );
 
     *flag = MPIR_FROM_FLOG(fflag);
-    *new_value = MPI_AINT_CAST_TO_VOID_PTR (fnew);
+    *new_value = MPIU_AINT_CAST_TO_VOID_PTR (fnew);
     return (int)ierr;
 }
 
@@ -5394,7 +5460,7 @@ MPIR_Type_delete_attr_f90_proxy(
     MPI_Fint ierr = 0;
     MPI_Fint fhandle = (MPI_Fint)datatype;
     MPI_Fint fkeyval = (MPI_Fint)keyval;
-    MPI_Aint fvalue = MPI_VOID_PTR_CAST_TO_MPI_AINT (value);
+    MPI_Aint fvalue = MPIU_VOID_PTR_CAST_TO_MPI_AINT (value);
     MPI_Aint* fextra  = (MPI_Aint*)extra_state;
 
     ((F90_DeleteFunction*)user_function)( &fhandle, &fkeyval, &fvalue, fextra, &ierr );
@@ -5427,7 +5493,7 @@ MPIR_Comm_copy_attr_f90_proxy(
     MPI_Fint ierr = 0;
     MPI_Fint fhandle = (MPI_Fint)comm;
     MPI_Fint fkeyval = (MPI_Fint)keyval;
-    MPI_Aint fvalue = MPI_VOID_PTR_CAST_TO_MPI_AINT (value);
+    MPI_Aint fvalue = MPIU_VOID_PTR_CAST_TO_MPI_AINT (value);
     MPI_Aint* fextra  = (MPI_Aint*)extra_state;
     MPI_Aint fnew = 0;
     MPI_Fint fflag = 0;
@@ -5435,7 +5501,7 @@ MPIR_Comm_copy_attr_f90_proxy(
     ((F90_CopyFunction*)user_function)( &fhandle, &fkeyval, fextra, &fvalue, &fnew, &fflag, &ierr );
 
     *flag = MPIR_FROM_FLOG(fflag);
-    *new_value = MPI_AINT_CAST_TO_VOID_PTR (fnew);
+    *new_value = MPIU_AINT_CAST_TO_VOID_PTR (fnew);
     return (int)ierr;
 }
 
@@ -5458,7 +5524,7 @@ MPIR_Comm_delete_attr_f90_proxy(
     MPI_Fint ierr = 0;
     MPI_Fint fhandle = (MPI_Fint)comm;
     MPI_Fint fkeyval = (MPI_Fint)keyval;
-    MPI_Aint fvalue = MPI_VOID_PTR_CAST_TO_MPI_AINT (value);
+    MPI_Aint fvalue = MPIU_VOID_PTR_CAST_TO_MPI_AINT (value);
     MPI_Aint* fextra  = (MPI_Aint*)extra_state;
 
     ((F90_DeleteFunction*)user_function)( &fhandle, &fkeyval, &fvalue, fextra, &ierr );
@@ -5491,7 +5557,7 @@ MPIR_Win_copy_attr_f90_proxy(
     MPI_Fint ierr = 0;
     MPI_Fint fhandle = (MPI_Fint)win;
     MPI_Fint fkeyval = (MPI_Fint)keyval;
-    MPI_Aint fvalue = MPI_VOID_PTR_CAST_TO_MPI_AINT (value);
+    MPI_Aint fvalue = MPIU_VOID_PTR_CAST_TO_MPI_AINT (value);
     MPI_Aint* fextra  = (MPI_Aint*)extra_state;
     MPI_Aint fnew = 0;
     MPI_Fint fflag = 0;
@@ -5499,7 +5565,7 @@ MPIR_Win_copy_attr_f90_proxy(
     ((F90_CopyFunction*)user_function)( &fhandle, &fkeyval, fextra, &fvalue, &fnew, &fflag, &ierr );
 
     *flag = MPIR_FROM_FLOG(fflag);
-    *new_value = MPI_AINT_CAST_TO_VOID_PTR (fnew);
+    *new_value = MPIU_AINT_CAST_TO_VOID_PTR (fnew);
     return (int)ierr;
 }
 
@@ -5522,7 +5588,7 @@ MPIR_Win_delete_attr_f90_proxy(
     MPI_Fint ierr = 0;
     MPI_Fint fhandle = (MPI_Fint)win;
     MPI_Fint fkeyval = (MPI_Fint)keyval;
-    MPI_Aint fvalue = MPI_VOID_PTR_CAST_TO_MPI_AINT (value);
+    MPI_Aint fvalue = MPIU_VOID_PTR_CAST_TO_MPI_AINT (value);
     MPI_Aint* fextra  = (MPI_Aint*)extra_state;
 
     ((F90_DeleteFunction*)user_function)( &fhandle, &fkeyval, &fvalue, fextra, &ierr );

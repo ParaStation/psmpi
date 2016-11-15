@@ -22,7 +22,7 @@
 #undef FUNCNAME
 #define FUNCNAME MPIR_LXOR
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPIR_LXOR (
     void *invec,
     void *inoutvec,
@@ -73,9 +73,9 @@ void MPIR_LXOR (
 #undef MPIR_OP_TYPE_MACRO
         /* --BEGIN ERROR HANDLING-- */
         default: {
-            MPIU_THREADPRIV_DECL;
-            MPIU_THREADPRIV_GET;
-            MPIU_THREADPRIV_FIELD(op_errno) = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_LXOR" );
+            MPID_THREADPRIV_DECL;
+            MPID_THREADPRIV_GET;
+            MPID_THREADPRIV_FIELD(op_errno) = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_LXOR" );
             break;
         }
         /* --END ERROR HANDLING-- */
@@ -86,7 +86,7 @@ void MPIR_LXOR (
 #undef FUNCNAME
 #define FUNCNAME MPIR_LXOR
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_LXOR_check_dtype ( MPI_Datatype type )
 {
     switch (type) {

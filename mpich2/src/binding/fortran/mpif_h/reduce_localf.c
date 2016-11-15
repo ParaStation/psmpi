@@ -266,5 +266,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_reduce_local_( void*, void*, MPI_Fint *
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_reduce_local_ ( void*v1, void*v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *ierr ){
+    if (v1 == MPIR_F_MPI_BOTTOM) v1 = MPI_BOTTOM;
+    if (v2 == MPIR_F_MPI_BOTTOM) v2 = MPI_BOTTOM;
     *ierr = MPI_Reduce_local( v1, v2, (int)*v3, (MPI_Datatype)(*v4), (MPI_Op)*v5 );
 }

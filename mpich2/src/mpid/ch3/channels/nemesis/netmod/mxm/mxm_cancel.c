@@ -12,7 +12,7 @@
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_mxm_cancel_send
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_mxm_cancel_send(MPIDI_VC_t * vc, MPID_Request * req)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -47,7 +47,7 @@ int MPID_nem_mxm_cancel_send(MPIDI_VC_t * vc, MPID_Request * req)
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_mxm_cancel_recv
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_mxm_cancel_recv(MPIDI_VC_t * vc, MPID_Request * req)
 {
     int mpi_errno ATTRIBUTE((unused)) = MPI_SUCCESS;
@@ -59,7 +59,7 @@ int MPID_nem_mxm_cancel_recv(MPIDI_VC_t * vc, MPID_Request * req)
     if (likely(!_mxm_req_test(&req_area->mxm_req->item.base))) {
         ret = mxm_req_cancel_recv(&req_area->mxm_req->item.recv);
         if ((MXM_OK == ret) || (MXM_ERR_NO_PROGRESS == ret)) {
-            _mxm_req_wait(&req_area-> mxm_req->item.base);
+            _mxm_req_wait(&req_area->mxm_req->item.base);
         }
         else {
             mpi_errno = MPI_ERR_INTERN;

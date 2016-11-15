@@ -28,6 +28,11 @@ noinst_PROGRAMS = \
     baseattrwinf08  \
     winattrf08      \
     winattr2f08
+
+if BUILD_MPIX_TESTS
+noinst_PROGRAMS += aintf08
+endif
+
 ## this test was commented out in the simplemake version...
 ##    allocmem
 

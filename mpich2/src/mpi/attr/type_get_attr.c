@@ -42,7 +42,7 @@ int MPIR_TypeGetAttr( MPI_Datatype datatype, int type_keyval, void *attribute_va
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPIR_TYPE_GET_ATTR);
     
     /* Validate parameters, especially handles needing to be converted */
@@ -56,10 +56,10 @@ int MPIR_TypeGetAttr( MPI_Datatype datatype, int type_keyval, void *attribute_va
             /* A common user error is to pass the address of a 4-byte
 	       int when the address of a pointer (or an address-sized int)
 	       should have been used.  We can test for this specific
-	       case.  Note that this code assumes sizeof(MPIR_Pint) is 
+	       case.  Note that this code assumes sizeof(MPIU_Pint) is 
 	       a power of 2. */
-	    if ((MPIR_Pint)attribute_val & (sizeof(MPIR_Pint)-1)) {
-		MPIU_ERR_SETANDSTMT(mpi_errno,MPI_ERR_ARG,goto fn_fail,"**attrnotptr");
+	    if ((MPIU_Pint)attribute_val & (sizeof(MPIU_Pint)-1)) {
+		MPIR_ERR_SETANDSTMT(mpi_errno,MPI_ERR_ARG,goto fn_fail,"**attrnotptr");
 	    }
 #           endif
         }
@@ -113,11 +113,11 @@ int MPIR_TypeGetAttr( MPI_Datatype datatype, int type_keyval, void *attribute_va
 		    *(void**)attribute_val = &(p->value);
 		}
 		else {
-		    *(void**)attribute_val = (void *)(MPIR_Pint)(p->value);
+		    *(void**)attribute_val = (void *)(MPIU_Pint)(p->value);
 		}
 	    }
 	    else
-		*(void**)attribute_val = (void *)(MPIR_Pint)(p->value);
+		*(void**)attribute_val = (void *)(MPIU_Pint)(p->value);
 	    
 	    break;
 	}
@@ -130,7 +130,7 @@ int MPIR_TypeGetAttr( MPI_Datatype datatype, int type_keyval, void *attribute_va
   fn_exit:
 #endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPIR_TYPE_GET_ATTR);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
     /* --BEGIN ERROR HANDLING-- */
@@ -153,7 +153,7 @@ int MPIR_TypeGetAttr( MPI_Datatype datatype, int type_keyval, void *attribute_va
 #undef FUNCNAME
 #define FUNCNAME MPI_Type_get_attr
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /*@
    MPI_Type_get_attr - Retrieves attribute value by key

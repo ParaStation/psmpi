@@ -15,8 +15,8 @@
 #undef FUNCNAME
 #define FUNCNAME MPIDI_Isend_self
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int rank, int tag, MPID_Comm * comm, int context_offset,
+#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPIDI_Isend_self(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag, MPID_Comm * comm, int context_offset,
 		     int type, MPID_Request ** request)
 {
     MPIDI_Message_match match;
@@ -39,18 +39,20 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
     match.parts.tag = tag;
     match.parts.context_id = comm->context_id + context_offset;
 
-    MPIU_THREAD_CS_ENTER(MSGQUEUE,);
+    MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_POBJ_MSGQ_MUTEX);
 
     rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&match, &found);
     /* --BEGIN ERROR HANDLING-- */
     if (rreq == NULL)
     {
-        /* Set the refcount to 0 since the user will never have a chance to
-         * release their reference */
-        MPIU_Object_set_ref(sreq, 0);
-        MPIDI_CH3_Request_destroy(sreq);
+        /* We release the send request twice, once to release the
+         * progress engine reference and the second to release the
+         * user reference since the user will never have a chance to
+         * release their reference. */
+        MPID_Request_release(sreq);
+        MPID_Request_release(sreq);
 	sreq = NULL;
-        MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**nomem", 
+        MPIR_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**nomem", 
 		      "**nomemuereq %d", MPIDI_CH3U_Recvq_count_unexp());
 	goto fn_exit;
     }
@@ -59,9 +61,13 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
     /* If the completion counter is 0, that means that the communicator to
      * which this message is being sent has been revoked and we shouldn't
      * bother finishing this. */
-    if (!found && rreq->cc == 0) {
-        MPIU_Object_set_ref(sreq, 0);
-        MPIDI_CH3_Request_destroy(sreq);
+    if (!found && MPID_cc_get(rreq->cc) == 0) {
+        /* We release the send request twice, once to release the
+         * progress engine reference and the second to release the
+         * user reference since the user will never have a chance to
+         * release their reference. */
+        MPID_Request_release(sreq);
+        MPID_Request_release(sreq);
         sreq = NULL;
         goto fn_exit;
     }
@@ -79,7 +85,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	MPIDI_msg_sz_t data_sz;
 	
         /* we found a posted req, which we now own, so we can release the CS */
-        MPIU_THREAD_CS_EXIT(MSGQUEUE,);
+        MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_POBJ_MSGQ_MUTEX);
 
 	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,
 		     "found posted receive request; copying data");
@@ -87,11 +93,15 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	MPIDI_CH3U_Buffer_copy(buf, count, datatype, &sreq->status.MPI_ERROR,
 			       rreq->dev.user_buf, rreq->dev.user_count, rreq->dev.datatype, &data_sz, &rreq->status.MPI_ERROR);
 	MPIR_STATUS_SET_COUNT(rreq->status, data_sz);
-	MPID_REQUEST_SET_COMPLETED(rreq);
-	MPID_Request_release(rreq);
-	/* sreq has never been seen by the user or outside this thread, so it is safe to reset ref_count and cc */
-	MPIU_Object_set_ref(sreq, 1);
-        MPID_cc_set(&sreq->cc, 0);
+        mpi_errno = MPID_Request_complete(rreq);
+        if (mpi_errno != MPI_SUCCESS) {
+            MPIR_ERR_POP(mpi_errno);
+        }
+
+        mpi_errno = MPID_Request_complete(sreq);
+        if (mpi_errno != MPI_SUCCESS) {
+            MPIR_ERR_POP(mpi_errno);
+        }
     }
     else
     {
@@ -127,15 +137,17 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	    MPIR_STATUS_SET_COUNT(rreq->status, 0);
 	    
 	    /* sreq has never been seen by the user or outside this thread, so it is safe to reset ref_count and cc */
-	    MPIU_Object_set_ref(sreq, 1);
-            MPID_cc_set(&sreq->cc, 0);
+            mpi_errno = MPID_Request_complete(sreq);
+            if (mpi_errno != MPI_SUCCESS) {
+                MPIR_ERR_POP(mpi_errno);
+            }
 	    /* --END ERROR HANDLING-- */
 	}
 	    
 	MPIDI_Request_set_msg_type(rreq, MPIDI_REQUEST_SELF_MSG);
 
         /* can release now that we've set fields in the unexpected request */
-        MPIU_THREAD_CS_EXIT(MSGQUEUE,);
+        MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_POBJ_MSGQ_MUTEX);
 
         /* kick the progress engine in case another thread that is performing a
            blocking recv or probe is waiting in the progress engine */
@@ -146,4 +158,6 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
     *request = sreq;
 
     return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }

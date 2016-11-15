@@ -111,6 +111,9 @@
 /* Define if we know the value of Fortran true and false */
 #undef F77_TRUE_VALUE_SET
 
+/* Define FALSE */
+#undef FALSE
+
 /* Directory to use in namepub */
 #undef FILE_NAMEPUB_BASEDIR
 
@@ -238,15 +241,6 @@
 /* Define if Fortran is supported */
 #undef HAVE_FORTRAN_BINDING
 
-/* Define if using gcc on a system with an IA64 class chip */
-#undef HAVE_GCC_AND_IA64_ASM
-
-/* Define if using gcc on a system with an Intel Pentium class chip */
-#undef HAVE_GCC_AND_PENTIUM_ASM
-
-/* Define if using gcc on a system with an AMD x86_64 class chip */
-#undef HAVE_GCC_AND_X86_64_ASM
-
 /* Define if GNU __attribute__ is supported */
 #undef HAVE_GCC_ATTRIBUTE
 
@@ -258,9 +252,6 @@
 
 /* Define to 1 if you have the `gethrtime' function. */
 #undef HAVE_GETHRTIME
-
-/* Define to 1 if you have the `getpagesize' function. */
-#undef HAVE_GETPAGESIZE
 
 /* Define to 1 if you have the `getpid' function. */
 #undef HAVE_GETPID
@@ -304,9 +295,6 @@
 /* Define to 1 if you have the `cr' library (-lcr). */
 #undef HAVE_LIBCR
 
-/* Define to 1 if you have the `dcfa' library (-ldcfa). */
-#undef HAVE_LIBDCFA
-
 /* Define to 1 if you have the `fabric' library (-lfabric). */
 #undef HAVE_LIBFABRIC
 
@@ -319,14 +307,14 @@
 /* Define to 1 if you have the `ibverbs' library (-libverbs). */
 #undef HAVE_LIBIBVERBS
 
+/* Define to 1 if you have the `llc' library (-lllc). */
+#undef HAVE_LIBLLC
+
+/* Define to 1 if you have the `memcached' library (-lmemcached). */
+#undef HAVE_LIBMEMCACHED
+
 /* Define to 1 if you have the `mxm' library (-lmxm). */
 #undef HAVE_LIBMXM
-
-/* Define to 1 if you have the `myriexpress' library (-lmyriexpress). */
-#undef HAVE_LIBMYRIEXPRESS
-
-/* Define to 1 if you have the `nmad' library (-lnmad). */
-#undef HAVE_LIBNMAD
 
 /* Define to 1 if you have the `portals' library (-lportals). */
 #undef HAVE_LIBPORTALS
@@ -414,7 +402,7 @@
 /* Define to 1 if you have the <netinet/tcp.h> header file. */
 #undef HAVE_NETINET_TCP_H
 
-/* Define to 1 if you have the <net/if.h> header file. */
+/* Define if you have the <net/if.h> header file. */
 #undef HAVE_NET_IF_H
 
 /* Define if the Fortran types are not available in C */
@@ -458,12 +446,6 @@
 
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
-
-/* Define if PTHREAD_MUTEX_RECURSIVE is available in pthread.h */
-#undef HAVE_PTHREAD_MUTEX_RECURSIVE
-
-/* Define if PTHREAD_MUTEX_RECURSIVE_NP is available in pthread.h */
-#undef HAVE_PTHREAD_MUTEX_RECURSIVE_NP
 
 /* Define to 1 if you have the `pthread_yield' function. */
 #undef HAVE_PTHREAD_YIELD
@@ -754,26 +736,30 @@
 /* Define to enable mutex debugging */
 #undef MPICH_DEBUG_MUTEX
 
-/* Define to check nesting in mutexes */
-#undef MPICH_DEBUG_MUTEXNESTING
-
 /* define to enable error messages */
 #undef MPICH_ERROR_MSG_LEVEL
 
 /* Define as the name of the debugger support library */
 #undef MPICH_INFODLL_LOC
 
+/* MPICH is configured to require thread safety */
+#undef MPICH_IS_THREADED
+
+/* Define to an expression that will result in an error checking mutex type.
+   */
+#undef MPICH_PTHREAD_MUTEX_ERRORCHECK_VALUE
+
+/* Method used to implement atomic updates and access */
+#undef MPICH_THREAD_GRANULARITY
+
 /* Level of thread support selected at compile time */
 #undef MPICH_THREAD_LEVEL
 
-/* Define to enable multirail support in newmad module */
-#undef MPID_MAD_MODULE_MULTIRAIL
+/* set to the name of the thread package */
+#undef MPICH_THREAD_PACKAGE_NAME
 
-/* Release date of the IB netmod */
-#undef MPID_NEM_IB_RELEASE_DATE
-
-/* Version of the IB netmod */
-#undef MPID_NEM_IB_VERSION
+/* If the compiler supports a TLS storage class define it to that here */
+#undef MPICH_TLS_SPECIFIER
 
 /* Define to turn on the inlining optimizations in Nemesis code */
 #undef MPID_NEM_INLINE
@@ -835,13 +821,6 @@
 /* limits.h _MAX constant for MPI_Offset */
 #undef MPIR_OFFSET_MAX
 
-/* MPIR_PINT_FMT_DEC_SPEC is the format specifier for printing Pint as a
-   decimal */
-#undef MPIR_PINT_FMT_DEC_SPEC
-
-/* MPIR_Pint is a pointer-sized integer */
-#undef MPIR_Pint
-
 /* C type to use for MPI_REAL16 */
 #undef MPIR_REAL16_CTYPE
 
@@ -851,15 +830,8 @@
 /* C type to use for MPI_REAL8 */
 #undef MPIR_REAL8_CTYPE
 
-/* MPIR_UPINT_FMT_DEC_SPEC is the format specifier for printing Upint as a
-   decimal */
-#undef MPIR_UPINT_FMT_DEC_SPEC
-
 /* MPIR_Ucount is an unsigned MPI_Count-sized integer */
 #undef MPIR_Ucount
-
-/* MPIR_Upint is an unsigned pointer-sized integer */
-#undef MPIR_Upint
 
 /* Method used to allocate MPI object handles */
 #undef MPIU_HANDLE_ALLOCATION_METHOD
@@ -867,14 +839,15 @@
 /* Define to enable timing mutexes */
 #undef MPIU_MUTEX_WAIT_TIME
 
+/* MPIU_PINT_FMT_DEC_SPEC is the format specifier for printing Pint as a
+   decimal */
+#undef MPIU_PINT_FMT_DEC_SPEC
+
+/* MPIU_Pint is a pointer-sized integer */
+#undef MPIU_Pint
+
 /* Set to a type that can express the size of the entire address space */
 #undef MPIU_SIZE_T
-
-/* Method used to implement atomic updates and access */
-#undef MPIU_THREAD_GRANULARITY
-
-/* set to the name of the thread package */
-#undef MPIU_THREAD_PACKAGE_NAME
 
 /* Method used to implement refcount updates */
 #undef MPIU_THREAD_REFCOUNT
@@ -883,8 +856,12 @@
    */
 #undef MPIU_THREAD_SUPPRESS_PREDEFINED_REFCOUNTS
 
-/* If the compiler supports a TLS storage class define it to that here */
-#undef MPIU_TLS_SPECIFIER
+/* MPIU_UPINT_FMT_DEC_SPEC is the format specifier for printing Upint as a
+   decimal */
+#undef MPIU_UPINT_FMT_DEC_SPEC
+
+/* MPIU_Upint is an unsigned pointer-sized integer */
+#undef MPIU_Upint
 
 /* Define if /bin must be in path */
 #undef NEEDS_BIN_IN_PATH
@@ -963,10 +940,6 @@
 
 /* Define to turn on the prefetching optimization in Nemesis code */
 #undef PREFETCH_CELL
-
-/* Define to an expression that will result in an error checking mutex type.
-   */
-#undef PTHREAD_MUTEX_ERRORCHECK_VALUE
 
 /* The size of `bool', as computed by sizeof. */
 #undef SIZEOF_BOOL
@@ -1090,16 +1063,15 @@
 /* Define to 1 if strerror_r returns char *. */
 #undef STRERROR_R_CHAR_P
 
+/* Define TRUE */
+#undef TRUE
+
 /* Define if MPI_Aint should be used instead of void * for storing attribute
    values */
 #undef USE_AINT_FOR_ATTRVAL
 
 /* Define if alloca should be used if available */
 #undef USE_ALLOCA
-
-/* Define if assembly language atomic update macros should be used (if
-   available) */
-#undef USE_ATOMIC_UPDATES
 
 /* Define if performing coverage tests */
 #undef USE_COVERAGE

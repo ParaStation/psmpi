@@ -94,7 +94,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = fileerrret$(EXEEXT) openerr$(EXEEXT)
+noinst_PROGRAMS = fileerrret$(EXEEXT) openerr$(EXEEXT) \
+	file_errhdl$(EXEEXT)
 subdir = errors/io
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -114,6 +115,12 @@ CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+file_errhdl_SOURCES = file_errhdl.c
+file_errhdl_OBJECTS = file_errhdl.$(OBJEXT)
+file_errhdl_LDADD = $(LDADD)
+file_errhdl_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 fileerrret_SOURCES = fileerrret.c
 fileerrret_OBJECTS = fileerrret.$(OBJEXT)
 fileerrret_LDADD = $(LDADD)
@@ -154,8 +161,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = fileerrret.c openerr.c
-DIST_SOURCES = fileerrret.c openerr.c
+SOURCES = file_errhdl.c fileerrret.c openerr.c
+DIST_SOURCES = file_errhdl.c fileerrret.c openerr.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -310,6 +317,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -344,6 +352,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -361,6 +370,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -411,6 +421,10 @@ $(am__aclocal_m4_deps):
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 
+file_errhdl$(EXEEXT): $(file_errhdl_OBJECTS) $(file_errhdl_DEPENDENCIES) $(EXTRA_file_errhdl_DEPENDENCIES) 
+	@rm -f file_errhdl$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(file_errhdl_OBJECTS) $(file_errhdl_LDADD) $(LIBS)
+
 fileerrret$(EXEEXT): $(fileerrret_OBJECTS) $(fileerrret_DEPENDENCIES) $(EXTRA_fileerrret_DEPENDENCIES) 
 	@rm -f fileerrret$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(fileerrret_OBJECTS) $(fileerrret_LDADD) $(LIBS)
@@ -425,6 +439,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file_errhdl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fileerrret.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/openerr.Po@am__quote@
 

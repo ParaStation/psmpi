@@ -266,5 +266,8 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_compare_and_swap_( void*, void*, void*,
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_compare_and_swap_ ( void*v1, void*v2, void*v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Aint * v6, MPI_Fint *v7, MPI_Fint *ierr ){
+    if (v1 == MPIR_F_MPI_BOTTOM) v1 = MPI_BOTTOM;
+    if (v2 == MPIR_F_MPI_BOTTOM) v2 = MPI_BOTTOM;
+    if (v3 == MPIR_F_MPI_BOTTOM) v3 = MPI_BOTTOM;
     *ierr = MPI_Compare_and_swap( v1, v2, v3, (MPI_Datatype)(*v4), (int)*v5, *v6, (MPI_Win)*v7 );
 }

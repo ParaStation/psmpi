@@ -280,7 +280,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_ ( MPI_Fint *v1, char *v2 F
       asize2 = (int)*v1 + 1;
 
       p2 = (char **)MPIU_Malloc( asize2 * sizeof(char *) );
-      ptmp    = (char *)MPIU_Malloc( asize2 * (d2 + 1) );
+      if (asize2-1 > 0) ptmp = (char *)MPIU_Malloc( asize2 * (d2 + 1) );
       for (i=0; i<asize2-1; i++) {
           char *p = v2 + i * d2, *pin, *pdest;
           int j;
@@ -364,7 +364,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_ ( MPI_Fint *v1, char *v2 F
 
     if ((MPI_Fint*)v9 == MPI_F_ERRCODES_IGNORE) { v9 = (MPI_Fint *)MPI_ERRCODES_IGNORE; }
     *ierr = MPI_Comm_spawn_multiple( (int)*v1, p2, p3, v4, (MPI_Info *)(v5), (int)*v6, (MPI_Comm)(*v7), (MPI_Comm *)(v8), (int *)v9 );
-    MPIU_Free( p2[0] );
+    if (asize2-1 > 0) MPIU_Free( p2[0] );
     MPIU_Free( p2 );
     if (v3 != (char *)MPI_ARGVS_NULL) { 
         int i; 

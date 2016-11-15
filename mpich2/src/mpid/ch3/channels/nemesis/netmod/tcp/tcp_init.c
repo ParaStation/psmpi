@@ -104,7 +104,9 @@ MPID_nem_netmod_funcs_t MPIDI_nem_tcp_funcs = {
     MPID_nem_tcp_vc_init,
     MPID_nem_tcp_vc_destroy,
     MPID_nem_tcp_vc_terminate,
-    NULL /* anysource iprobe */
+    NULL, /* anysource iprobe */
+    NULL, /* anysource_improbe */
+    MPID_nem_tcp_get_ordering
 };
 
 /* in case there are no packet types defined (e.g., they're ifdef'ed out) make sure the array is not zero length */
@@ -114,7 +116,7 @@ static MPIDI_CH3_PktHandler_Fcn *pkt_handlers[MPIDI_NEM_TCP_PKT_NUM_TYPES ? MPID
 #undef FUNCNAME
 #define FUNCNAME set_up_listener
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int set_up_listener(void)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -124,17 +126,17 @@ static int set_up_listener(void)
     MPIDI_FUNC_ENTER(MPID_STATE_SET_UP_LISTENER);
 
     MPID_nem_tcp_g_lstn_plfd.fd = MPID_nem_tcp_g_lstn_sc.fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    MPIU_ERR_CHKANDJUMP2(MPID_nem_tcp_g_lstn_sc.fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", "**sock_create %s %d", MPIU_Strerror(errno), errno);
+    MPIR_ERR_CHKANDJUMP2(MPID_nem_tcp_g_lstn_sc.fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", "**sock_create %s %d", MPIU_Strerror(errno), errno);
 
     mpi_errno = MPID_nem_tcp_set_sockopts(MPID_nem_tcp_g_lstn_sc.fd);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
     MPID_nem_tcp_g_lstn_plfd.events = POLLIN;
     mpi_errno = MPID_nem_tcp_bind(MPID_nem_tcp_g_lstn_sc.fd);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
     ret = listen(MPID_nem_tcp_g_lstn_sc.fd, SOMAXCONN);
-    MPIU_ERR_CHKANDJUMP2(ret == -1, mpi_errno, MPI_ERR_OTHER, "**listen", "**listen %s %d", MPIU_Strerror(errno), errno);  
+    MPIR_ERR_CHKANDJUMP2(ret == -1, mpi_errno, MPI_ERR_OTHER, "**listen", "**listen %s %d", MPIU_Strerror(errno), errno);  
     MPID_nem_tcp_g_lstn_sc.state.lstate = LISTEN_STATE_LISTENING;
     MPID_nem_tcp_g_lstn_sc.handler = MPID_nem_tcp_state_listening_handler;
 
@@ -149,7 +151,7 @@ fn_fail:
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_tcp_init
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_tcp_init (MPIDI_PG_t *pg_p, int pg_rank, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -160,20 +162,20 @@ int MPID_nem_tcp_init (MPIDI_PG_t *pg_p, int pg_rank, char **bc_val_p, int *val_
     MPID_nem_net_module_vc_dbg_print_sendq = MPID_nem_tcp_vc_dbg_print_sendq;
 
     /* first make sure that our private fields in the vc fit into the area provided  */
-    MPIU_Assert(sizeof(MPID_nem_tcp_vc_area) <= MPID_NEM_VC_NETMOD_AREA_LEN);
+    MPIU_Assert(sizeof(MPID_nem_tcp_vc_area) <= MPIDI_NEM_VC_NETMOD_AREA_LEN);
 
     /* set up listener socket */
     mpi_errno = set_up_listener();
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     
     /* create business card */
     mpi_errno = MPID_nem_tcp_get_business_card(pg_rank, bc_val_p, val_max_sz_p);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
     mpi_errno = MPID_nem_tcp_sm_init();
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     mpi_errno = MPID_nem_tcp_send_init();
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
 #ifdef HAVE_SIGNAL
     {
@@ -185,11 +187,11 @@ int MPID_nem_tcp_init (MPIDI_PG_t *pg_p, int pg_rank, char **bc_val_p, int *val_
         void *ret;
 
         ret = signal(SIGPIPE, SIG_IGN);
-        MPIU_ERR_CHKANDJUMP1(ret == SIG_ERR, mpi_errno, MPI_ERR_OTHER, "**signal", "**signal %s", MPIU_Strerror(errno));
+        MPIR_ERR_CHKANDJUMP1(ret == SIG_ERR, mpi_errno, MPI_ERR_OTHER, "**signal", "**signal %s", MPIU_Strerror(errno));
         if (ret != SIG_DFL && ret != SIG_IGN) {
             /* The app has set its own signal handler.  Replace the previous handler. */
             ret = signal(SIGPIPE, ret);
-            MPIU_ERR_CHKANDJUMP1(ret == SIG_ERR, mpi_errno, MPI_ERR_OTHER, "**signal", "**signal %s", MPIU_Strerror(errno));
+            MPIR_ERR_CHKANDJUMP1(ret == SIG_ERR, mpi_errno, MPI_ERR_OTHER, "**signal", "**signal %s", MPIU_Strerror(errno));
         }
     }
 #endif
@@ -208,7 +210,7 @@ int MPID_nem_tcp_init (MPIDI_PG_t *pg_p, int pg_rank, char **bc_val_p, int *val_
 #undef FUNCNAME
 #define FUNCNAME ckpt_restart
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int ckpt_restart(void)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -223,24 +225,24 @@ static int ckpt_restart(void)
     /* First, clean up.  We didn't shut anything down before the
        checkpoint, so we need to go close and free any resources */
     mpi_errno = MPID_nem_tcp_ckpt_cleanup();
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     mpi_errno = MPID_nem_tcp_send_finalize();
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     mpi_errno = MPID_nem_tcp_sm_finalize();
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
     /* Initialize the new business card */
     mpi_errno = MPIDI_CH3I_BCInit(&bc_val, &val_max_sz);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     publish_bc_orig = bc_val;
     
     /* Now we can restart */
     mpi_errno = MPID_nem_tcp_init(MPIDI_Process.my_pg, MPIDI_Process.my_pg_rank, &bc_val, &val_max_sz);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     
     /* publish business card */
     mpi_errno = MPIDI_PG_SetConnInfo(MPIDI_Process.my_pg_rank, (const char *)publish_bc_orig);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     MPIU_Free(publish_bc_orig);
 
     for (i = 0; i < MPIDI_Process.my_pg->size; ++i) {
@@ -252,7 +254,7 @@ static int ckpt_restart(void)
         vc_ch = &vc->ch;
         if (!vc_ch->is_local) {
             mpi_errno = vc_ch->ckpt_restart_vc(vc);
-            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         }
     }
     
@@ -297,7 +299,7 @@ static int GetSockInterfaceAddr(int myRank, char *ifname, int maxIfname,
     MPIU_Assert(maxIfname);
     ifname[0] = '\0';
 
-    MPIU_ERR_CHKANDJUMP(MPIR_CVAR_CH3_INTERFACE_HOSTNAME && MPIR_CVAR_NEMESIS_TCP_NETWORK_IFACE, mpi_errno, MPI_ERR_OTHER, "**ifname_and_hostname");
+    MPIR_ERR_CHKANDJUMP(MPIR_CVAR_CH3_INTERFACE_HOSTNAME && MPIR_CVAR_NEMESIS_TCP_NETWORK_IFACE, mpi_errno, MPI_ERR_OTHER, "**ifname_and_hostname");
     
     /* Set "not found" for ifaddr */
     ifaddr->len = 0;
@@ -306,7 +308,7 @@ static int GetSockInterfaceAddr(int myRank, char *ifname, int maxIfname,
     if (MPIR_CVAR_NEMESIS_TCP_NETWORK_IFACE) {
 	int len;
         mpi_errno = MPIDI_Get_IP_for_iface(MPIR_CVAR_NEMESIS_TCP_NETWORK_IFACE, ifaddr, &ifaddrFound);
-        MPIU_ERR_CHKANDJUMP1(mpi_errno || !ifaddrFound, mpi_errno, MPI_ERR_OTHER, "**iface_notfound", "**iface_notfound %s", MPIR_CVAR_NEMESIS_TCP_NETWORK_IFACE);
+        MPIR_ERR_CHKANDJUMP1(mpi_errno || !ifaddrFound, mpi_errno, MPI_ERR_OTHER, "**iface_notfound", "**iface_notfound %s", MPIR_CVAR_NEMESIS_TCP_NETWORK_IFACE);
         
         MPIU_DBG_MSG_FMT(CH3_CONNECT, VERBOSE, (MPIU_DBG_FDEST,
                                                 "ifaddrFound=TRUE ifaddr->type=%d ifaddr->len=%d ifaddr->ifaddr[0-3]=%d.%d.%d.%d",
@@ -315,7 +317,7 @@ static int GetSockInterfaceAddr(int myRank, char *ifname, int maxIfname,
 
         /* In this case, ifname is only used for debugging purposes */
 	mpi_errno = MPID_Get_processor_name(ifname, maxIfname, &len );
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         goto fn_exit;
     }
 
@@ -327,7 +329,7 @@ static int GetSockInterfaceAddr(int myRank, char *ifname, int maxIfname,
 	   environment to each process.  There's no way to do this with
            the param interface, so we need to use getenv() here. */
 	char namebuf[1024];
-	MPIU_Snprintf( namebuf, sizeof(namebuf), 
+	MPL_snprintf( namebuf, sizeof(namebuf), 
 		       "MPICH_INTERFACE_HOSTNAME_R%d", myRank );
 	ifname_string = getenv( namebuf );
 
@@ -349,7 +351,7 @@ static int GetSockInterfaceAddr(int myRank, char *ifname, int maxIfname,
 
 	/* User did not specify a hostname.  Look it up. */
 	mpi_errno = MPID_Get_processor_name(ifname, maxIfname, &len );
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
 	ifname_string = ifname;
 
@@ -358,7 +360,7 @@ static int GetSockInterfaceAddr(int myRank, char *ifname, int maxIfname,
 	   this platform.  Otherwise, we'll drop into the next step that uses 
 	   the ifname */
 	mpi_errno = MPIDI_GetIPInterface( ifaddr, &ifaddrFound );
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     }
     else {
 	/* Copy this name into the output name */
@@ -374,7 +376,7 @@ static int GetSockInterfaceAddr(int myRank, char *ifname, int maxIfname,
             if (info || h_errno != TRY_AGAIN)
                 break;
         }
-        MPIU_ERR_CHKANDJUMP2(!info || !info->h_addr_list, mpi_errno, MPI_ERR_OTHER, "**gethostbyname", "**gethostbyname %s %d", ifname_string, h_errno);
+        MPIR_ERR_CHKANDJUMP2(!info || !info->h_addr_list, mpi_errno, MPI_ERR_OTHER, "**gethostbyname", "**gethostbyname %s %d", ifname_string, h_errno);
         
         /* Use the primary address */
         ifaddr->len  = info->h_length;
@@ -384,7 +386,7 @@ static int GetSockInterfaceAddr(int myRank, char *ifname, int maxIfname,
                no address */
             ifaddr->len = 0;
             ifaddr->type = -1;
-            MPIU_ERR_INTERNAL(mpi_errno, "Address too long to fit in field");
+            MPIR_ERR_INTERNAL(mpi_errno, "Address too long to fit in field");
         } else {
             MPIU_Memcpy( ifaddr->ifaddr, info->h_addr_list[0], ifaddr->len );
 	}
@@ -400,7 +402,7 @@ fn_fail:
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_tcp_get_business_card
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_tcp_get_business_card (int my_rank, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -415,35 +417,35 @@ int MPID_nem_tcp_get_business_card (int my_rank, char **bc_val_p, int *val_max_s
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_TCP_GET_BUSINESS_CARD);
     
     mpi_errno = GetSockInterfaceAddr(my_rank, ifname, sizeof(ifname), &ifaddr);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     
     
     str_errno = MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p, MPIDI_CH3I_HOST_DESCRIPTION_KEY, ifname);
     if (str_errno) {
-        MPIU_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
-        MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
+        MPIR_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
 
     len = sizeof(sock_id);
     ret = getsockname (MPID_nem_tcp_g_lstn_sc.fd, (struct sockaddr *)&sock_id, &len);
-    MPIU_ERR_CHKANDJUMP1 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**getsockname", "**getsockname %s", MPIU_Strerror (errno));
+    MPIR_ERR_CHKANDJUMP1 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**getsockname", "**getsockname %s", MPIU_Strerror (errno));
 
     str_errno = MPIU_Str_add_int_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_PORT_KEY, ntohs(sock_id.sin_port));
     if (str_errno) {
-        MPIU_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
-        MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
+        MPIR_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
     
     if (ifaddr.len > 0 && ifaddr.type == AF_INET)
     {
         unsigned char *p;
         p = (unsigned char *)(ifaddr.ifaddr);
-        MPIU_Snprintf( ifname, sizeof(ifname), "%u.%u.%u.%u", p[0], p[1], p[2], p[3] );
+        MPL_snprintf( ifname, sizeof(ifname), "%u.%u.%u.%u", p[0], p[1], p[2], p[3] );
         MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"ifname = %s",ifname );
         str_errno = MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p, MPIDI_CH3I_IFNAME_KEY, ifname);
         if (str_errno) {
-            MPIU_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
-            MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
+            MPIR_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+            MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
         }
     }
     
@@ -461,7 +463,7 @@ int MPID_nem_tcp_get_business_card (int my_rank, char **bc_val_p, int *val_max_s
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_tcp_connect_to_root
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_tcp_connect_to_root (const char *business_card, MPIDI_VC_t *new_vc)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -475,12 +477,12 @@ int MPID_nem_tcp_connect_to_root (const char *business_card, MPIDI_VC_t *new_vc)
 
     mpi_errno = MPID_nem_tcp_get_addr_port_from_bc(business_card, &addr, &vc_tcp->sock_id.sin_port);
     vc_tcp->sock_id.sin_addr.s_addr = addr.s_addr;
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
     mpi_errno = MPIDI_GetTagFromPort(business_card, &new_vc->port_name_tag);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     mpi_errno = MPID_nem_tcp_connect(new_vc);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_TCP_CONNECT_TO_ROOT);
@@ -493,7 +495,7 @@ int MPID_nem_tcp_connect_to_root (const char *business_card, MPIDI_VC_t *new_vc)
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_tcp_vc_init
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_tcp_vc_init (MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -542,7 +544,7 @@ int MPID_nem_tcp_vc_init (MPIDI_VC_t *vc)
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_tcp_vc_destroy
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_tcp_vc_destroy(MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -561,7 +563,7 @@ int MPID_nem_tcp_vc_destroy(MPIDI_VC_t *vc)
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_tcp_get_addr_port_from_bc
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_tcp_get_addr_port_from_bc(const char *business_card, struct in_addr *addr, in_port_t *port)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -576,7 +578,7 @@ int MPID_nem_tcp_get_addr_port_from_bc(const char *business_card, struct in_addr
     /*     fprintf(stdout, FCNAME " Enter\n"); fflush(stdout); */
     /* desc_str is only used for debugging
     ret = MPIU_Str_get_string_arg (business_card, MPIDI_CH3I_HOST_DESCRIPTION_KEY, desc_str, sizeof(desc_str));
-    MPIU_ERR_CHKANDJUMP (ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missinghost");
+    MPIR_ERR_CHKANDJUMP (ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missinghost");
     */
 
     /* sizeof(in_port_t) != sizeof(int) on most platforms, so we need to use
@@ -584,16 +586,16 @@ int MPID_nem_tcp_get_addr_port_from_bc(const char *business_card, struct in_addr
     ret = MPIU_Str_get_int_arg (business_card, MPIDI_CH3I_PORT_KEY, &port_int);
     /* MPIU_STR_FAIL is not a valid MPI error code so we store the result in ret
      * instead of mpi_errno. */
-    MPIU_ERR_CHKANDJUMP (ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missingport");
+    MPIR_ERR_CHKANDJUMP (ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missingport");
     MPIU_Assert((port_int >> (8*sizeof(*port))) == 0); /* ensure port_int isn't too large for *port */
     *port = htons((in_port_t)port_int);
 
     ret = MPIU_Str_get_string_arg(business_card, MPIDI_CH3I_IFNAME_KEY, ifname, sizeof(ifname));
-    MPIU_ERR_CHKANDJUMP (ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missingifname");
+    MPIR_ERR_CHKANDJUMP (ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missingifname");
 
     ret = inet_pton (AF_INET, (const char *)ifname, addr);
-    MPIU_ERR_CHKANDJUMP(ret == 0, mpi_errno,MPI_ERR_OTHER,"**ifnameinvalid");
-    MPIU_ERR_CHKANDJUMP(ret < 0, mpi_errno, MPI_ERR_OTHER, "**afinetinvalid");
+    MPIR_ERR_CHKANDJUMP(ret == 0, mpi_errno,MPI_ERR_OTHER,"**ifnameinvalid");
+    MPIR_ERR_CHKANDJUMP(ret < 0, mpi_errno, MPI_ERR_OTHER, "**afinetinvalid");
     
  fn_exit:
 /*     fprintf(stdout, FCNAME " Exit\n"); fflush(stdout); */
@@ -611,7 +613,7 @@ int MPID_nem_tcp_get_addr_port_from_bc(const char *business_card, struct in_addr
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_tcp_bind
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_tcp_bind (int sockfd)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -622,7 +624,7 @@ int MPID_nem_tcp_bind (int sockfd)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_TCP_BIND);
    
-    MPIU_ERR_CHKANDJUMP(MPIR_CVAR_CH3_PORT_RANGE.low < 0 || MPIR_CVAR_CH3_PORT_RANGE.low > MPIR_CVAR_CH3_PORT_RANGE.high, mpi_errno, MPI_ERR_OTHER, "**badportrange");
+    MPIR_ERR_CHKANDJUMP(MPIR_CVAR_CH3_PORT_RANGE.low < 0 || MPIR_CVAR_CH3_PORT_RANGE.low > MPIR_CVAR_CH3_PORT_RANGE.high, mpi_errno, MPI_ERR_OTHER, "**badportrange");
 
     /* default MPICH_PORT_RANGE is {0,0} so bind will use any available port */
     ret = 0;
@@ -638,10 +640,10 @@ int MPID_nem_tcp_bind (int sockfd)
             break;
         
         /* check for real error */
-        MPIU_ERR_CHKANDJUMP3 (errno != EADDRINUSE && errno != EADDRNOTAVAIL, mpi_errno, MPI_ERR_OTHER, "**sock|poll|bind", "**sock|poll|bind %d %d %s", port, errno, MPIU_Strerror (errno));
+        MPIR_ERR_CHKANDJUMP3 (errno != EADDRINUSE && errno != EADDRNOTAVAIL, mpi_errno, MPI_ERR_OTHER, "**sock|poll|bind", "**sock|poll|bind %d %d %s", port, errno, MPIU_Strerror (errno));
     }
     /* check if an available port was found */
-    MPIU_ERR_CHKANDJUMP3 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**sock|poll|bind", "**sock|poll|bind %d %d %s", port-1, errno, MPIU_Strerror (errno));
+    MPIR_ERR_CHKANDJUMP3 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**sock|poll|bind", "**sock|poll|bind %d %d %s", port-1, errno, MPIU_Strerror (errno));
 
  fn_exit:
 /*     if (ret == 0) */
@@ -658,7 +660,7 @@ int MPID_nem_tcp_bind (int sockfd)
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_tcp_vc_terminate
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_tcp_vc_terminate(MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -671,11 +673,11 @@ int MPID_nem_tcp_vc_terminate(MPIDI_VC_t *vc)
         /* VC is terminated as a result of a fault.  Complete
            outstanding sends with an error and terminate
            connection immediately. */
-        MPIU_ERR_SET1(req_errno, MPIX_ERR_PROC_FAILED, "**comm_fail", "**comm_fail %d", vc->pg_rank);
+        MPIR_ERR_SET1(req_errno, MPIX_ERR_PROC_FAILED, "**comm_fail", "**comm_fail %d", vc->pg_rank);
         mpi_errno = MPID_nem_tcp_error_out_send_queue(vc, req_errno);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         mpi_errno = MPID_nem_tcp_vc_terminated(vc);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     } else {
         MPID_nem_tcp_vc_area *vc_tcp = VC_TCP(vc);
         /* VC is terminated as a result of the close protocol.
@@ -685,7 +687,7 @@ int MPID_nem_tcp_vc_terminate(MPIDI_VC_t *vc)
             /* The sendq is empty, so we can immediately terminate
                the connection. */
             mpi_errno = MPID_nem_tcp_vc_terminated(vc);
-            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         }
         /* else: just return.  We'll call vc_terminated() from the
            commrdy_handler once the sendq is empty. */
@@ -702,7 +704,7 @@ int MPID_nem_tcp_vc_terminate(MPIDI_VC_t *vc)
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_tcp_vc_terminated
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_tcp_vc_terminated(MPIDI_VC_t *vc)
 {
     /* This is called when the VC is to be terminated once all queued
@@ -713,10 +715,10 @@ int MPID_nem_tcp_vc_terminated(MPIDI_VC_t *vc)
     MPIDI_FUNC_ENTER(MPID_NEM_TCP_VC_TERMINATED);
 
     mpi_errno = MPID_nem_tcp_cleanup(vc);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     
     mpi_errno = MPIDI_CH3U_Handle_connection(vc, MPIDI_VC_EVENT_TERMINATED);
-    if(mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if(mpi_errno) MPIR_ERR_POP(mpi_errno);
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_NEM_TCP_VC_TERMINATED);
@@ -726,3 +728,12 @@ int MPID_nem_tcp_vc_terminated(MPIDI_VC_t *vc)
     goto fn_exit;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_tcp_get_ordering
+#undef FCNAME
+#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPID_nem_tcp_get_ordering(int *ordering)
+{
+    (*ordering) = 1;
+    return MPI_SUCCESS;
+}

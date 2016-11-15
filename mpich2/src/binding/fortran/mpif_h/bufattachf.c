@@ -266,5 +266,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_buffer_attach_( void*, MPI_Fint *, MPI_
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach_ ( void*v1, MPI_Fint *v2, MPI_Fint *ierr ){
+    if (v1 == MPIR_F_MPI_BOTTOM) v1 = MPI_BOTTOM;
     *ierr = MPI_Buffer_attach( v1, (int)*v2 );
 }

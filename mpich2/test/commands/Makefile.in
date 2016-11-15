@@ -121,36 +121,33 @@ am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_attr_alias.m4 \
 	$(top_srcdir)/confdb/ltversion.m4 \
 	$(top_srcdir)/confdb/lt~obsolete.m4 \
 	$(top_srcdir)/maint/version.m4 $(top_srcdir)/subsys_include.m4 \
-	$(top_srcdir)/src/mpid/pamid/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/common/hcoll/subconfigure.m4 \
-	$(top_srcdir)/src/pm/subconfigure.m4 \
-	$(top_srcdir)/src/pm/remshell/subconfigure.m4 \
 	$(top_srcdir)/src/binding/fortran/use_mpi/subconfigure.m4 \
+	$(top_srcdir)/src/pm/subconfigure.m4 \
 	$(top_srcdir)/src/pm/gforker/subconfigure.m4 \
-	$(top_srcdir)/src/pm/util/subconfigure.m4 \
 	$(top_srcdir)/src/pmi/subconfigure.m4 \
-	$(top_srcdir)/src/pmi/slurm/subconfigure.m4 \
 	$(top_srcdir)/src/pmi/pmi2/subconfigure.m4 \
+	$(top_srcdir)/src/pmi/slurm/subconfigure.m4 \
 	$(top_srcdir)/src/pmi/pmi2/simple/subconfigure.m4 \
 	$(top_srcdir)/src/pmi/pmi2/poe/subconfigure.m4 \
 	$(top_srcdir)/src/pmi/simple/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/pamid/subconfigure.m4 \
+	$(top_srcdir)/src/pm/remshell/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch3/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/common/datatype/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/newmad/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/scif/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/portals4/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/mx/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/ib/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/ofi/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/tcp/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/common/thread/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/common/sched/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch3/channels/sock/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/common/sock/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/common/sock/poll/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/common/sched/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/common/thread/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/common/datatype/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch3/util/sock/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/mxm/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/portals4/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/ofi/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/tcp/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/llc/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/common/sock/poll/subconfigure.m4 \
+	$(top_srcdir)/src/pm/util/subconfigure.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -327,6 +324,7 @@ C_LINKPATH_SHL = @C_LINKPATH_SHL@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DEVICE = @DEVICE@
+DISABLE_TAG_SUPPORT = @DISABLE_TAG_SUPPORT@
 DLLIMPORT = @DLLIMPORT@
 DLLTOOL = @DLLTOOL@
 DOCTEXT = @DOCTEXT@
@@ -337,7 +335,67 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
-EXTERNAL_LIBS = @EXTERNAL_LIBS@
+F08_2INT = @F08_2INT@
+F08_AINT = @F08_AINT@
+F08_BYTE = @F08_BYTE@
+F08_CHAR = @F08_CHAR@
+F08_COMPLEX16 = @F08_COMPLEX16@
+F08_COMPLEX32 = @F08_COMPLEX32@
+F08_COMPLEX8 = @F08_COMPLEX8@
+F08_COUNT = @F08_COUNT@
+F08_CXX_BOOL = @F08_CXX_BOOL@
+F08_CXX_DOUBLE_COMPLEX = @F08_CXX_DOUBLE_COMPLEX@
+F08_CXX_FLOAT_COMPLEX = @F08_CXX_FLOAT_COMPLEX@
+F08_CXX_LONG_DOUBLE_COMPLEX = @F08_CXX_LONG_DOUBLE_COMPLEX@
+F08_C_AINT = @F08_C_AINT@
+F08_C_BOOL = @F08_C_BOOL@
+F08_C_COMPLEX = @F08_C_COMPLEX@
+F08_C_COUNT = @F08_C_COUNT@
+F08_C_DOUBLE_COMPLEX = @F08_C_DOUBLE_COMPLEX@
+F08_C_FLOAT_COMPLEX = @F08_C_FLOAT_COMPLEX@
+F08_C_LONG_DOUBLE_COMPLEX = @F08_C_LONG_DOUBLE_COMPLEX@
+F08_C_OFFSET = @F08_C_OFFSET@
+F08_DOUBLE = @F08_DOUBLE@
+F08_DOUBLE_INT = @F08_DOUBLE_INT@
+F08_FLOAT = @F08_FLOAT@
+F08_FLOAT_INT = @F08_FLOAT_INT@
+F08_INT = @F08_INT@
+F08_INT16_T = @F08_INT16_T@
+F08_INT32_T = @F08_INT32_T@
+F08_INT64_T = @F08_INT64_T@
+F08_INT8_T = @F08_INT8_T@
+F08_INTEGER1 = @F08_INTEGER1@
+F08_INTEGER16 = @F08_INTEGER16@
+F08_INTEGER2 = @F08_INTEGER2@
+F08_INTEGER4 = @F08_INTEGER4@
+F08_INTEGER8 = @F08_INTEGER8@
+F08_LB = @F08_LB@
+F08_LONG = @F08_LONG@
+F08_LONG_DOUBLE = @F08_LONG_DOUBLE@
+F08_LONG_DOUBLE_INT = @F08_LONG_DOUBLE_INT@
+F08_LONG_INT = @F08_LONG_INT@
+F08_LONG_LONG = @F08_LONG_LONG@
+F08_LONG_LONG_INT = @F08_LONG_LONG_INT@
+F08_OFFSET = @F08_OFFSET@
+F08_PACKED = @F08_PACKED@
+F08_REAL16 = @F08_REAL16@
+F08_REAL4 = @F08_REAL4@
+F08_REAL8 = @F08_REAL8@
+F08_SHORT = @F08_SHORT@
+F08_SHORT_INT = @F08_SHORT_INT@
+F08_SIGNED_CHAR = @F08_SIGNED_CHAR@
+F08_UB = @F08_UB@
+F08_UINT16_T = @F08_UINT16_T@
+F08_UINT32_T = @F08_UINT32_T@
+F08_UINT64_T = @F08_UINT64_T@
+F08_UINT8_T = @F08_UINT8_T@
+F08_UNSIGNED = @F08_UNSIGNED@
+F08_UNSIGNED_CHAR = @F08_UNSIGNED_CHAR@
+F08_UNSIGNED_INT = @F08_UNSIGNED_INT@
+F08_UNSIGNED_LONG = @F08_UNSIGNED_LONG@
+F08_UNSIGNED_LONG_LONG = @F08_UNSIGNED_LONG_LONG@
+F08_UNSIGNED_SHORT = @F08_UNSIGNED_SHORT@
+F08_WCHAR = @F08_WCHAR@
 F77 = $(MPIF77)
 F77CPP = @F77CPP@
 F77_COMPLEX16 = @F77_COMPLEX16@
@@ -416,17 +474,31 @@ MPICHLIB_CPPFLAGS = @MPICHLIB_CPPFLAGS@
 MPICHLIB_CXXFLAGS = @MPICHLIB_CXXFLAGS@
 MPICHLIB_FCFLAGS = @MPICHLIB_FCFLAGS@
 MPICHLIB_FFLAGS = @MPICHLIB_FFLAGS@
-MPICHLIB_LDFLAGS = @MPICHLIB_LDFLAGS@
-MPICHLIB_LIBS = @MPICHLIB_LIBS@
+MPICH_MPICC_CFLAGS = @MPICH_MPICC_CFLAGS@
+MPICH_MPICC_CPPFLAGS = @MPICH_MPICC_CPPFLAGS@
+MPICH_MPICC_LDFLAGS = @MPICH_MPICC_LDFLAGS@
+MPICH_MPICC_LIBS = @MPICH_MPICC_LIBS@
+MPICH_MPICXX_CPPFLAGS = @MPICH_MPICXX_CPPFLAGS@
+MPICH_MPICXX_CXXFLAGS = @MPICH_MPICXX_CXXFLAGS@
+MPICH_MPICXX_LDFLAGS = @MPICH_MPICXX_LDFLAGS@
+MPICH_MPICXX_LIBS = @MPICH_MPICXX_LIBS@
+MPICH_MPIF77_CPPFLAGS = @MPICH_MPIF77_CPPFLAGS@
+MPICH_MPIF77_FFLAGS = @MPICH_MPIF77_FFLAGS@
+MPICH_MPIF77_LDFLAGS = @MPICH_MPIF77_LDFLAGS@
+MPICH_MPIF77_LIBS = @MPICH_MPIF77_LIBS@
+MPICH_MPIFORT_CPPFLAGS = @MPICH_MPIFORT_CPPFLAGS@
+MPICH_MPIFORT_FCFLAGS = @MPICH_MPIFORT_FCFLAGS@
+MPICH_MPIFORT_LDFLAGS = @MPICH_MPIFORT_LDFLAGS@
+MPICH_MPIFORT_LIBS = @MPICH_MPIFORT_LIBS@
 MPICH_NUMVERSION = @MPICH_NUMVERSION@
 MPICH_RELEASE_DATE = @MPICH_RELEASE_DATE@
 MPICH_TIMER_KIND = @MPICH_TIMER_KIND@
+MPICH_TIMER_TYPE = @MPICH_TIMER_TYPE@
 MPICH_VERSION = @MPICH_VERSION@
 MPICONSTMODNAME = @MPICONSTMODNAME@
 MPICPP_NAME = @MPICPP_NAME@
 MPICXXLIBNAME = @MPICXXLIBNAME@
 MPICXX_NAME = @MPICXX_NAME@
-MPID_TIMER_TYPE = @MPID_TIMER_TYPE@
 MPIF77_NAME = @MPIF77_NAME@
 MPIF90_NAME = @MPIF90_NAME@
 MPIFCLIBNAME = @MPIFCLIBNAME@
@@ -438,9 +510,9 @@ MPIR_CXX_BOOL = @MPIR_CXX_BOOL@
 MPIR_CXX_COMPLEX = @MPIR_CXX_COMPLEX@
 MPIR_CXX_DOUBLE_COMPLEX = @MPIR_CXX_DOUBLE_COMPLEX@
 MPIR_CXX_LONG_DOUBLE_COMPLEX = @MPIR_CXX_LONG_DOUBLE_COMPLEX@
-MPIR_PINT = @MPIR_PINT@
 MPISIZEOFMODNAME = @MPISIZEOFMODNAME@
 MPIU_DLL_SPEC_DEF = @MPIU_DLL_SPEC_DEF@
+MPIU_PINT = @MPIU_PINT@
 MPI_2COMPLEX = @MPI_2COMPLEX@
 MPI_2DOUBLE_COMPLEX = @MPI_2DOUBLE_COMPLEX@
 MPI_2DOUBLE_PRECISION = @MPI_2DOUBLE_PRECISION@
@@ -463,11 +535,21 @@ MPI_COUNT_DATATYPE = @MPI_COUNT_DATATYPE@
 MPI_C_BOOL = @MPI_C_BOOL@
 MPI_C_DOUBLE_COMPLEX = @MPI_C_DOUBLE_COMPLEX@
 MPI_C_FLOAT_COMPLEX = @MPI_C_FLOAT_COMPLEX@
+MPI_C_INTERFACE_CDESC_NAME = @MPI_C_INTERFACE_CDESC_NAME@
+MPI_C_INTERFACE_GLUE_NAME = @MPI_C_INTERFACE_GLUE_NAME@
+MPI_C_INTERFACE_NAME = @MPI_C_INTERFACE_NAME@
+MPI_C_INTERFACE_NOBUF_NAME = @MPI_C_INTERFACE_NOBUF_NAME@
+MPI_C_INTERFACE_TYPES_NAME = @MPI_C_INTERFACE_TYPES_NAME@
 MPI_C_LONG_DOUBLE_COMPLEX = @MPI_C_LONG_DOUBLE_COMPLEX@
 MPI_DOUBLE = @MPI_DOUBLE@
 MPI_DOUBLE_COMPLEX = @MPI_DOUBLE_COMPLEX@
 MPI_DOUBLE_INT = @MPI_DOUBLE_INT@
 MPI_DOUBLE_PRECISION = @MPI_DOUBLE_PRECISION@
+MPI_F08_CALLBACKS_NAME = @MPI_F08_CALLBACKS_NAME@
+MPI_F08_COMPILE_CONSTANTS_NAME = @MPI_F08_COMPILE_CONSTANTS_NAME@
+MPI_F08_LINK_CONSTANTS_NAME = @MPI_F08_LINK_CONSTANTS_NAME@
+MPI_F08_NAME = @MPI_F08_NAME@
+MPI_F08_TYPES_NAME = @MPI_F08_TYPES_NAME@
 MPI_F77_2INT = @MPI_F77_2INT@
 MPI_F77_AINT = @MPI_F77_AINT@
 MPI_F77_BYTE = @MPI_F77_BYTE@
@@ -582,6 +664,7 @@ PAPI_INCLUDE = @PAPI_INCLUDE@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PMPILIBNAME = @PMPILIBNAME@
+PMPI_F08_NAME = @PMPI_F08_NAME@
 RANLIB = @RANLIB@
 REQD = @REQD@
 REQI1 = @REQI1@

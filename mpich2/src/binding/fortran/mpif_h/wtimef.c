@@ -266,11 +266,7 @@ extern FORT_DLL_SPEC double FORT_CALL pmpi_wtime_(void) __attribute__((weak,alia
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 #include "mpichconf.h"
-#include "mpichtimer.h"
+#include "mpiu_timer.h"
 FORT_DLL_SPEC double FORT_CALL mpi_wtime_ ( void ) {
-    double d; MPID_Time_t t;
-
-    MPID_Wtime( &t );
-    MPID_Wtime_todouble( &t, &d );
-    return d;
+return MPI_Wtime();
 }

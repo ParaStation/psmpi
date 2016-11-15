@@ -10,7 +10,6 @@
 #include "adio_cb_config_list.h"
 
 #include "mpio.h"
-
 static int is_aggregator(int rank, ADIO_File fd);
 static int uses_generic_read(ADIO_File fd);
 static int uses_generic_write(ADIO_File fd);
@@ -71,6 +70,9 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 
     fd->err_handler = ADIOI_DFLT_ERR_HANDLER;
 
+    fd->io_buf_window = MPI_WIN_NULL;
+    fd->io_buf_put_amounts_window = MPI_WIN_NULL;
+
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &procs);
 /* create and initialize info object */
@@ -124,8 +126,8 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     /* Instead of repeatedly allocating this buffer in collective read/write,
      * allocating up-front might make memory management on small platforms
      * (e.g. Blue Gene) more efficent */
-    fd->io_buf = ADIOI_Malloc(fd->hints->cb_buffer_size);
 
+    fd->io_buf = ADIOI_Malloc(fd->hints->cb_buffer_size);
      /* deferred open: 
      * we can only do this optimization if 'fd->hints->deferred_open' is set
      * (which means the user hinted 'no_indep_rw' and collective buffering).
@@ -150,12 +152,6 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 	if (*error_code != MPI_SUCCESS) 
 	    goto fn_exit;
     }
-    /* for debugging, it can be helpful to see the hints selected */
-    p = getenv("ROMIO_PRINT_HINTS");
-    if (rank == 0 && p != NULL ) {
-	ADIOI_Info_print_keyvals(fd->info);
-    }
-
     fd->is_open = 0;
     fd->my_cb_nodes_index = -2;
     fd->is_agg = is_aggregator(rank, fd);
@@ -170,6 +166,13 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
     /* scalable open: one process opens and broadcasts results to everyone */
 
     ADIOI_OpenColl(fd, rank, access_mode, error_code);
+
+    /* for debugging, it can be helpful to see the hints selected. Some file
+     * systes set up the hints in the open call (e.g. lustre) */
+    p = getenv("ROMIO_PRINT_HINTS");
+    if (rank == 0 && p != NULL ) {
+	ADIOI_Info_print_keyvals(fd->info);
+    }
 
  fn_exit:
     MPI_Allreduce(error_code, &max_error_code, 1, MPI_INT, MPI_MAX, comm);

@@ -17,7 +17,8 @@ AM_DEFAULT_SOURCE_EXT = .f90
 noinst_PROGRAMS =                   \
     attrmpi1f90                       \
     baseattrf90 baseattr2f90            \
-    commattrf90 commattr2f90 commattr3f90 \
+    commattrf90 commattr2f90            \
+    commattr3f90 commattr4f90           \
     typeattrf90 typeattr2f90 typeattr3f90
 
 ## attraints.h will be distributed because it's listed in AC_CONFIG_FILES/AC_OUTPUT

@@ -135,3 +135,7 @@ extern int MPIR_File_read_ordered_begin_cdesc(MPI_File x0, CFI_cdesc_t* x1, int 
 extern int MPIR_File_read_ordered_end_cdesc(MPI_File x0, CFI_cdesc_t* x1, MPI_Status * x2);
 extern int MPIR_File_write_ordered_begin_cdesc(MPI_File x0, CFI_cdesc_t* x1, int x2, MPI_Datatype x3);
 extern int MPIR_File_write_ordered_end_cdesc(MPI_File x0, CFI_cdesc_t* x1, MPI_Status * x2);
+extern int MPIR_File_iread_at_all_cdesc(MPI_File x0, MPI_Offset x1, CFI_cdesc_t* x2, int x3, MPI_Datatype x4, MPI_Request * x5);
+extern int MPIR_File_iwrite_at_all_cdesc(MPI_File x0, MPI_Offset x1, CFI_cdesc_t* x2, int x3, MPI_Datatype x4, MPI_Request * x5);
+extern int MPIR_File_iread_all_cdesc(MPI_File x0, CFI_cdesc_t* x1, int x2, MPI_Datatype x3, MPI_Request * x4);
+extern int MPIR_File_iwrite_all_cdesc(MPI_File x0, CFI_cdesc_t* x1, int x2, MPI_Datatype x3, MPI_Request * x4);

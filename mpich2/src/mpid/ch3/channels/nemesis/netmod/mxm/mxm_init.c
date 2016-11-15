@@ -71,7 +71,8 @@ MPID_nem_netmod_funcs_t MPIDI_nem_mxm_funcs = {
     MPID_nem_mxm_vc_destroy,
     MPID_nem_mxm_vc_terminate,
     MPID_nem_mxm_anysource_iprobe,
-    MPID_nem_mxm_anysource_improbe
+    MPID_nem_mxm_anysource_improbe,
+    MPID_nem_mxm_get_ordering
 };
 
 static MPIDI_Comm_ops_t comm_ops = {
@@ -82,7 +83,7 @@ static MPIDI_Comm_ops_t comm_ops = {
     MPID_nem_mxm_ssend, /* ssend */
     MPID_nem_mxm_isend, /* isend */
     MPID_nem_mxm_isend, /* irsend */
-    MPID_nem_mxm_issend,/* issend */
+    MPID_nem_mxm_issend,        /* issend */
 
     NULL,       /* send_init */
     NULL,       /* bsend_init */
@@ -116,7 +117,7 @@ static int _mxm_conf(void);
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_mxm_init
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_mxm_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_max_sz_p)
 {
     int r;
@@ -126,8 +127,8 @@ int MPID_nem_mxm_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     MPIDI_FUNC_ENTER(MPID_STATE_MXM_INIT);
 
     /* first make sure that our private fields in the vc and req fit into the area provided  */
-    MPIU_Assert(sizeof(MPID_nem_mxm_vc_area) <= MPID_NEM_VC_NETMOD_AREA_LEN);
-    MPIU_Assert(sizeof(MPID_nem_mxm_req_area) <= MPID_NEM_REQ_NETMOD_AREA_LEN);
+    MPIU_Assert(sizeof(MPID_nem_mxm_vc_area) <= MPIDI_NEM_VC_NETMOD_AREA_LEN);
+    MPIU_Assert(sizeof(MPID_nem_mxm_req_area) <= MPIDI_NEM_REQ_NETMOD_AREA_LEN);
 
 
     /* mpich-specific initialization of mxm */
@@ -135,7 +136,7 @@ int MPID_nem_mxm_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
      * before resetting it */
     if (getenv("MXM_TLS") == NULL) {
         r = MPL_putenv("MXM_TLS=rc,dc,ud");
-        MPIU_ERR_CHKANDJUMP(r, mpi_errno, MPI_ERR_OTHER, "**putenv");
+        MPIR_ERR_CHKANDJUMP(r, mpi_errno, MPI_ERR_OTHER, "**putenv");
     }
 
     /* [PB @ 2014-10-06] If hugepage support is not enabled, we force
@@ -147,36 +148,36 @@ int MPID_nem_mxm_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     if (MPIR_CVAR_NEMESIS_MXM_HUGEPAGE == 0) {
         if (getenv("MXM_MEM_ALLOC") == NULL) {
             r = MPL_putenv("MXM_MEM_ALLOC=mmap,libc,sysv");
-            MPIU_ERR_CHKANDJUMP(r, mpi_errno, MPI_ERR_OTHER, "**putenv");
+            MPIR_ERR_CHKANDJUMP(r, mpi_errno, MPI_ERR_OTHER, "**putenv");
         }
     }
 
 
     mpi_errno = _mxm_init(pg_rank, pg_p->size);
     if (mpi_errno)
-        MPIU_ERR_POP(mpi_errno);
+        MPIR_ERR_POP(mpi_errno);
 
     mpi_errno = MPID_nem_mxm_get_business_card(pg_rank, bc_val_p, val_max_sz_p);
     if (mpi_errno)
-        MPIU_ERR_POP(mpi_errno);
+        MPIR_ERR_POP(mpi_errno);
 
     mpi_errno =
         MPIDI_CH3I_Register_anysource_notification(MPID_nem_mxm_anysource_posted,
                                                    MPID_nem_mxm_anysource_matched);
     if (mpi_errno)
-        MPIU_ERR_POP(mpi_errno);
+        MPIR_ERR_POP(mpi_errno);
 
     mpi_errno = MPID_nem_register_initcomp_cb(_mxm_post_init);
     if (mpi_errno)
-        MPIU_ERR_POP(mpi_errno);
+        MPIR_ERR_POP(mpi_errno);
 
     mpi_errno = MPIDI_CH3U_Comm_register_create_hook(_mxm_add_comm, NULL);
     if (mpi_errno)
-        MPIU_ERR_POP(mpi_errno);
+        MPIR_ERR_POP(mpi_errno);
 
     mpi_errno = MPIDI_CH3U_Comm_register_destroy_hook(_mxm_del_comm, NULL);
     if (mpi_errno)
-        MPIU_ERR_POP(mpi_errno);
+        MPIR_ERR_POP(mpi_errno);
 
     MPIDI_Anysource_improbe_fn = MPID_nem_mxm_anysource_improbe;
 
@@ -190,7 +191,7 @@ int MPID_nem_mxm_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_mxm_finalize
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_mxm_finalize(void)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -202,7 +203,7 @@ int MPID_nem_mxm_finalize(void)
 
     mpi_errno = _mxm_fini();
     if (mpi_errno)
-        MPIU_ERR_POP(mpi_errno);
+        MPIR_ERR_POP(mpi_errno);
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MXM_FINALIZE);
@@ -214,7 +215,7 @@ int MPID_nem_mxm_finalize(void)
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_mxm_get_business_card
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_mxm_get_business_card(int my_rank, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -226,8 +227,8 @@ int MPID_nem_mxm_get_business_card(int my_rank, char **bc_val_p, int *val_max_sz
     str_errno = MPIU_Str_add_binary_arg(bc_val_p, val_max_sz_p, MXM_MPICH_ENDPOINT_KEY,
                                         _mxm_obj.mxm_ep_addr, _mxm_obj.mxm_ep_addr_size);
     if (str_errno) {
-        MPIU_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
-        MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
+        MPIR_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
 
   fn_exit:
@@ -240,7 +241,7 @@ int MPID_nem_mxm_get_business_card(int my_rank, char **bc_val_p, int *val_max_sz
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_mxm_connect_to_root
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_mxm_connect_to_root(const char *business_card, MPIDI_VC_t * new_vc)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -248,7 +249,7 @@ int MPID_nem_mxm_connect_to_root(const char *business_card, MPIDI_VC_t * new_vc)
     MPIDI_STATE_DECL(MPID_STATE_MXM_CONNECT_TO_ROOT);
     MPIDI_FUNC_ENTER(MPID_STATE_MXM_CONNECT_TO_ROOT);
 
-    MPIU_ERR_SETFATAL(mpi_errno, MPI_ERR_OTHER, "**notimpl");
+    MPIR_ERR_SETFATAL(mpi_errno, MPI_ERR_OTHER, "**notimpl");
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MXM_CONNECT_TO_ROOT);
@@ -260,7 +261,7 @@ int MPID_nem_mxm_connect_to_root(const char *business_card, MPIDI_VC_t * new_vc)
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_mxm_vc_init
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_mxm_vc_init(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -283,19 +284,19 @@ int MPID_nem_mxm_vc_init(MPIDI_VC_t * vc)
 #else
         mpi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
         if (mpi_errno)
-            MPIU_ERR_POP(mpi_errno);
+            MPIR_ERR_POP(mpi_errno);
 #endif
 
         business_card = (char *) MPIU_Malloc(val_max_sz);
         mpi_errno = vc->pg->getConnInfo(vc->pg_rank, business_card, val_max_sz, vc->pg);
         if (mpi_errno)
-            MPIU_ERR_POP(mpi_errno);
+            MPIR_ERR_POP(mpi_errno);
 
         vc_area->ctx = vc;
         vc_area->mxm_ep = &_mxm_obj.endpoint[vc->pg_rank];
         mpi_errno = _mxm_connect(&_mxm_obj.endpoint[vc->pg_rank], business_card, vc_area);
         if (mpi_errno)
-            MPIU_ERR_POP(mpi_errno);
+            MPIR_ERR_POP(mpi_errno);
 
         MPIU_Free(business_card);
     }
@@ -326,7 +327,7 @@ int MPID_nem_mxm_vc_init(MPIDI_VC_t * vc)
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_mxm_vc_destroy
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_mxm_vc_destroy(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -343,7 +344,7 @@ int MPID_nem_mxm_vc_destroy(MPIDI_VC_t * vc)
     if (vc_area->ctx == vc) {
         mpi_errno = _mxm_disconnect(vc_area->mxm_ep);
         if (mpi_errno)
-            MPIU_ERR_POP(mpi_errno);
+            MPIR_ERR_POP(mpi_errno);
     }
 #endif
 
@@ -357,7 +358,7 @@ int MPID_nem_mxm_vc_destroy(MPIDI_VC_t * vc)
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_mxm_vc_terminate
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_mxm_vc_terminate(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -370,7 +371,7 @@ int MPID_nem_mxm_vc_terminate(MPIDI_VC_t * vc)
         /* VC is terminated as a result of a fault.  Complete
          * outstanding sends with an error and terminate connection
          * immediately. */
-        MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**comm_fail", "**comm_fail %d", vc->pg_rank);
+        MPIR_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**comm_fail", "**comm_fail %d", vc->pg_rank);
     }
     else {
         while (vc_area->pending_sends > 0)
@@ -379,13 +380,23 @@ int MPID_nem_mxm_vc_terminate(MPIDI_VC_t * vc)
 
     mpi_errno = MPIDI_CH3U_Handle_connection(vc, MPIDI_VC_EVENT_TERMINATED);
     if (mpi_errno)
-        MPIU_ERR_POP(mpi_errno);
+        MPIR_ERR_POP(mpi_errno);
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MXM_VC_TERMINATE);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPID_nem_mxm_get_ordering
+#undef FCNAME
+#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPID_nem_mxm_get_ordering(int *ordering)
+{
+    (*ordering) = 1;
+    return MPI_SUCCESS;
 }
 
 static int _mxm_conf(void)
@@ -412,8 +423,10 @@ static int _mxm_conf(void)
              "%ld.%ld", (cur_ver >> MXM_MAJOR_BIT) & 0xff, (cur_ver >> MXM_MINOR_BIT) & 0xff);
 #endif
 
-    _mxm_obj.conf.bulk_connect = cur_ver < MXM_VERSION(3, 2) ? 0 : MPIR_CVAR_NEMESIS_MXM_BULK_CONNECT;
-    _mxm_obj.conf.bulk_disconnect = cur_ver < MXM_VERSION(3, 2) ? 0 : MPIR_CVAR_NEMESIS_MXM_BULK_DISCONNECT;
+    _mxm_obj.conf.bulk_connect =
+        cur_ver < MXM_VERSION(3, 2) ? 0 : MPIR_CVAR_NEMESIS_MXM_BULK_CONNECT;
+    _mxm_obj.conf.bulk_disconnect =
+        cur_ver < MXM_VERSION(3, 2) ? 0 : MPIR_CVAR_NEMESIS_MXM_BULK_DISCONNECT;
 
     if (cur_ver < MXM_VERSION(3, 2) &&
         (_mxm_obj.conf.bulk_connect || _mxm_obj.conf.bulk_disconnect)) {
@@ -440,35 +453,35 @@ static int _mxm_init(int rank, int size)
     ret = _mxm_conf();
 
     ret = mxm_config_read_opts(&_mxm_obj.mxm_ctx_opts, &_mxm_obj.mxm_ep_opts, "MPICH2", NULL, 0);
-    MPIU_ERR_CHKANDJUMP1(ret != MXM_OK,
+    MPIR_ERR_CHKANDJUMP1(ret != MXM_OK,
                          mpi_errno, MPI_ERR_OTHER,
                          "**mxm_config_read_opts",
                          "**mxm_config_read_opts %s", mxm_error_string(ret));
 
     ret = mxm_init(_mxm_obj.mxm_ctx_opts, &_mxm_obj.mxm_context);
-    MPIU_ERR_CHKANDJUMP1(ret != MXM_OK,
+    MPIR_ERR_CHKANDJUMP1(ret != MXM_OK,
                          mpi_errno, MPI_ERR_OTHER,
                          "**mxm_init", "**mxm_init %s", mxm_error_string(ret));
 
     ret =
         mxm_set_am_handler(_mxm_obj.mxm_context, MXM_MPICH_HID_ADI_MSG, MPID_nem_mxm_get_adi_msg,
                            0);
-    MPIU_ERR_CHKANDJUMP1(ret != MXM_OK, mpi_errno, MPI_ERR_OTHER, "**mxm_set_am_handler",
+    MPIR_ERR_CHKANDJUMP1(ret != MXM_OK, mpi_errno, MPI_ERR_OTHER, "**mxm_set_am_handler",
                          "**mxm_set_am_handler %s", mxm_error_string(ret));
 
     ret = mxm_mq_create(_mxm_obj.mxm_context, MXM_MPICH_MQ_ID, &_mxm_obj.mxm_mq);
-    MPIU_ERR_CHKANDJUMP1(ret != MXM_OK,
+    MPIR_ERR_CHKANDJUMP1(ret != MXM_OK,
                          mpi_errno, MPI_ERR_OTHER,
                          "**mxm_mq_create", "**mxm_mq_create %s", mxm_error_string(ret));
 
     ret = mxm_ep_create(_mxm_obj.mxm_context, _mxm_obj.mxm_ep_opts, &_mxm_obj.mxm_ep);
-    MPIU_ERR_CHKANDJUMP1(ret != MXM_OK,
+    MPIR_ERR_CHKANDJUMP1(ret != MXM_OK,
                          mpi_errno, MPI_ERR_OTHER,
                          "**mxm_ep_create", "**mxm_ep_create %s", mxm_error_string(ret));
 
     _mxm_obj.mxm_ep_addr_size = MXM_MPICH_MAX_ADDR_SIZE;
     ret = mxm_ep_get_address(_mxm_obj.mxm_ep, &_mxm_obj.mxm_ep_addr, &_mxm_obj.mxm_ep_addr_size);
-    MPIU_ERR_CHKANDJUMP1(ret != MXM_OK,
+    MPIR_ERR_CHKANDJUMP1(ret != MXM_OK,
                          mpi_errno, MPI_ERR_OTHER,
                          "**mxm_ep_get_address", "**mxm_ep_get_address %s", mxm_error_string(ret));
 
@@ -514,6 +527,8 @@ static int _mxm_fini(void)
 
         if (_mxm_obj.endpoint)
             MPIU_Free(_mxm_obj.endpoint);
+
+        _mxm_barrier();
 
         if (_mxm_obj.mxm_ep)
             mxm_ep_destroy(_mxm_obj.mxm_ep);
@@ -567,10 +582,10 @@ static int _mxm_connect(MPID_nem_mxm_ep_t * ep, const char *business_card,
     str_errno =
         MPIU_Str_get_binary_arg(business_card, MXM_MPICH_ENDPOINT_KEY, mxm_ep_addr,
                                 sizeof(mxm_ep_addr), &len);
-    MPIU_ERR_CHKANDJUMP(str_errno, mpi_errno, MPI_ERR_OTHER, "**buscard");
+    MPIR_ERR_CHKANDJUMP(str_errno, mpi_errno, MPI_ERR_OTHER, "**buscard");
 
     ret = mxm_ep_connect(_mxm_obj.mxm_ep, mxm_ep_addr, &ep->mxm_conn);
-    MPIU_ERR_CHKANDJUMP1(ret != MXM_OK,
+    MPIR_ERR_CHKANDJUMP1(ret != MXM_OK,
                          mpi_errno, MPI_ERR_OTHER,
                          "**mxm_ep_connect", "**mxm_ep_connect %s", mxm_error_string(ret));
 
@@ -595,7 +610,7 @@ static int _mxm_disconnect(MPID_nem_mxm_ep_t * ep)
 
     if (ep->mxm_conn) {
         ret = mxm_ep_disconnect(ep->mxm_conn);
-        MPIU_ERR_CHKANDJUMP1(ret != MXM_OK,
+        MPIR_ERR_CHKANDJUMP1(ret != MXM_OK,
                              mpi_errno, MPI_ERR_OTHER,
                              "**mxm_ep_disconnect",
                              "**mxm_ep_disconnect %s", mxm_error_string(ret));
@@ -615,36 +630,53 @@ static int _mxm_add_comm(MPID_Comm * comm, void *param)
 {
     int mpi_errno = MPI_SUCCESS;
     mxm_error_t ret = MXM_OK;
-    mxm_mq_h mxm_mq;
+    mxm_mq_h *mq_h_v;
+    MPIU_CHKPMEM_DECL(1);
+
+    MPIU_CHKPMEM_MALLOC(mq_h_v, mxm_mq_h *, sizeof(mxm_mq_h) * 2, mpi_errno,
+                        "mxm_mq_h_context_ptr");
 
     _dbg_mxm_output(6, "Add COMM comm %p (rank %d type %d context %d | %d size %d | %d) \n",
                     comm, comm->rank, comm->comm_kind,
-                    comm->context_id, comm->recvcontext_id,
-                    comm->local_size, comm->remote_size);
+                    comm->context_id, comm->recvcontext_id, comm->local_size, comm->remote_size);
 
-    ret = mxm_mq_create(_mxm_obj.mxm_context, comm->context_id, &mxm_mq);
-    MPIU_ERR_CHKANDJUMP1(ret != MXM_OK,
+    ret = mxm_mq_create(_mxm_obj.mxm_context, comm->recvcontext_id, &mq_h_v[0]);
+    MPIR_ERR_CHKANDJUMP1(ret != MXM_OK,
                          mpi_errno, MPI_ERR_OTHER,
                          "**mxm_mq_create", "**mxm_mq_create %s", mxm_error_string(ret));
 
-    comm->dev.ch.netmod_priv = (void *) mxm_mq;
+    if (comm->recvcontext_id != comm->context_id) {
+        ret = mxm_mq_create(_mxm_obj.mxm_context, comm->context_id, &mq_h_v[1]);
+        MPIR_ERR_CHKANDJUMP1(ret != MXM_OK,
+                             mpi_errno, MPI_ERR_OTHER,
+                             "**mxm_mq_create", "**mxm_mq_create %s", mxm_error_string(ret));
+    }
+    else
+        memcpy(&mq_h_v[1], &mq_h_v[0], sizeof(mxm_mq_h));
+
+    comm->dev.ch.netmod_priv = (void *) mq_h_v;
 
   fn_exit:
+    MPIU_CHKPMEM_COMMIT();
     return mpi_errno;
   fn_fail:
+    MPIU_CHKPMEM_REAP();
     goto fn_exit;
 }
 
 static int _mxm_del_comm(MPID_Comm * comm, void *param)
 {
     int mpi_errno = MPI_SUCCESS;
-    mxm_mq_h mxm_mq = (mxm_mq_h) comm->dev.ch.netmod_priv;
+    mxm_mq_h *mxm_mq = (mxm_mq_h *) comm->dev.ch.netmod_priv;
 
-    _dbg_mxm_output(6, "Del COMM comm %p (rank %d type %d) \n",
-                    comm, comm->rank, comm->comm_kind);
+    _dbg_mxm_output(6, "Del COMM comm %p (rank %d type %d) \n", comm, comm->rank, comm->comm_kind);
 
-    if (mxm_mq)
-        mxm_mq_destroy(mxm_mq);
+    if (mxm_mq[1] != mxm_mq[0])
+        mxm_mq_destroy(mxm_mq[1]);
+    if (mxm_mq[0])
+        mxm_mq_destroy(mxm_mq[0]);
+
+    MPIU_Free(mxm_mq);
 
     comm->dev.ch.netmod_priv = NULL;
 

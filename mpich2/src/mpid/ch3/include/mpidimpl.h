@@ -32,9 +32,9 @@
 
 #include "mpid_sched.h"
 
-/* We need to match the size of MPIR_Pint to the relevant Format control
+/* We need to match the size of MPIU_Pint to the relevant Format control
  */
-#define MPIDI_MSG_SZ_FMT MPIR_PINT_FMT_DEC_SPEC
+#define MPIDI_MSG_SZ_FMT MPIU_PINT_FMT_DEC_SPEC
 
 #if !defined(MPIDI_IOV_DENSITY_MIN)
 #   define MPIDI_IOV_DENSITY_MIN (16 * 1024)
@@ -44,6 +44,10 @@
    !defined(gethostname)
 int gethostname(char *name, size_t len);
 # endif
+
+/* Default PMI version to use */
+#define MPIDI_CH3I_DEFAULT_PMI_VERSION 1
+#define MPIDI_CH3I_DEFAULT_PMI_SUBVERSION 1
 
 /* group of processes detected to have failed.  This is a subset of
    comm_world group. */
@@ -91,6 +95,13 @@ typedef struct MPIDI_PG
        device space because it is necessary for the device to be able to 
        find a particular process group. */
     void * id;
+
+    /* Flag to mark a procress group which is finalizing. This means thay
+       the VCs for this process group are closing, (normally becuase
+       MPI_Finalize was called). This is required to avoid a reconnection
+       of the VCs when the PG is closed due to unused elements in the event
+       queue  */
+    int finalize;
 
     /* Replacement abstraction for connection information */
     /* Connection information needed to access processes in this process 
@@ -244,12 +255,12 @@ extern MPIDI_Process_t MPIDI_Process;
 #  define MPIDI_Request_tls_alloc(req) \
     do { \
         int i;                                                         \
-        MPIU_THREADPRIV_DECL;                                          \
-        MPIU_THREADPRIV_GET;                                           \
-        if (!MPIU_THREADPRIV_FIELD(request_handles)) {                 \
+        MPID_THREADPRIV_DECL;                                          \
+        MPID_THREADPRIV_GET;                                           \
+        if (!MPID_THREADPRIV_FIELD(request_handles)) {                 \
             MPID_Request *prev, *cur;                                  \
             /* batch allocate a linked list of requests */             \
-            MPIU_THREAD_CS_ENTER(HANDLEALLOC,);                        \
+            MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_POBJ_HANDLE_MUTEX);                        \
             prev = MPIU_Handle_obj_alloc_unsafe(&MPID_Request_mem);    \
             prev->next = NULL;                                         \
             assert(prev);                                              \
@@ -259,13 +270,13 @@ extern MPIDI_Process_t MPIDI_Process;
                 cur->next = prev;                                      \
                 prev = cur;                                            \
             }                                                          \
-            MPIU_THREAD_CS_EXIT(HANDLEALLOC,);                         \
-            MPIU_THREADPRIV_FIELD(request_handles) = cur;              \
-            MPIU_THREADPRIV_FIELD(request_handle_count) += MPID_REQUEST_TLS_MAX;    \
+            MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_POBJ_HANDLE_MUTEX);                         \
+            MPID_THREADPRIV_FIELD(request_handles) = cur;              \
+            MPID_THREADPRIV_FIELD(request_handle_count) += MPID_REQUEST_TLS_MAX;    \
         }                                                              \
-        (req) = MPIU_THREADPRIV_FIELD(request_handles);                \
-        MPIU_THREADPRIV_FIELD(request_handles) = req->next;            \
-        MPIU_THREADPRIV_FIELD(request_handle_count) -= 1;              \
+        (req) = MPID_THREADPRIV_FIELD(request_handles);                \
+        MPID_THREADPRIV_FIELD(request_handles) = req->next;            \
+        MPID_THREADPRIV_FIELD(request_handle_count) -= 1;              \
     } while (0)
 #elif MPIU_HANDLE_ALLOCATION_METHOD == MPIU_HANDLE_ALLOCATION_MUTEX
 #  define MPIDI_Request_tls_alloc(req_) \
@@ -277,18 +288,6 @@ extern MPIDI_Process_t MPIDI_Process;
 #else
 #  error MPIU_HANDLE_ALLOCATION_METHOD not defined
 #endif
-
-#define MPIDI_CH3U_Request_complete(req_)			\
-{								\
-    int incomplete__;						\
-								\
-    MPIDI_CH3U_Request_decrement_cc((req_), &incomplete__);	\
-    if (!incomplete__)						\
-    {								\
-	MPID_Request_release(req_);				\
-	MPIDI_CH3_Progress_signal_completion();			\
-    }								\
-}
 
 
 /* If the channel doesn't initialize anything in the request, 
@@ -318,73 +317,29 @@ extern MPIDI_Process_t MPIDI_Process;
 */
 #define MPIDI_Request_create_sreq(sreq_, mpi_errno_, FAIL_)	\
 {								\
-    (sreq_) = MPIU_Handle_obj_alloc(&MPID_Request_mem);         \
-    if ((sreq_) == NULL)					\
-    {								\
-	MPIU_DBG_MSG(CH3_CHANNEL,TYPICAL,"unable to allocate a request");\
-	(mpi_errno_) = MPIR_ERR_MEMALLOCFAILED;			\
-	FAIL_;							\
-    }								\
-    MPIU_DBG_MSG_P(CH3_CHANNEL,VERBOSE,                         \
-	       "allocated request, handle=0x%08x", (sreq_)->handle);\
-    								\
+    (sreq_) = MPID_Request_create();                            \
     MPIU_Object_set_ref((sreq_), 2);				\
     (sreq_)->kind = MPID_REQUEST_SEND;				\
     (sreq_)->comm = comm;					\
-    (sreq_)->greq_fns = NULL;                                   \
-    MPID_cc_set(&(sreq_)->cc, 1);                               \
-    (sreq_)->cc_ptr		   = &(sreq_)->cc;              \
     (sreq_)->partner_request   = NULL;                          \
     MPIR_Comm_add_ref(comm);					\
-    (sreq_)->status.MPI_ERROR	   = MPI_SUCCESS;               \
-    MPIR_STATUS_SET_CANCEL_BIT((sreq_)->status, FALSE);	        \
-    (sreq_)->dev.state = 0;                                     \
-    (sreq_)->dev.cancel_pending = FALSE;                        \
     (sreq_)->dev.match.parts.rank = rank;			\
     (sreq_)->dev.match.parts.tag = tag;				\
     (sreq_)->dev.match.parts.context_id = comm->context_id + context_offset;	\
     (sreq_)->dev.user_buf = (void *) buf;			\
     (sreq_)->dev.user_count = count;				\
     (sreq_)->dev.datatype = datatype;				\
-    (sreq_)->dev.datatype_ptr	   = NULL;                      \
-    (sreq_)->dev.segment_ptr	   = NULL;                      \
-    (sreq_)->dev.OnDataAvail	   = NULL;                      \
-    (sreq_)->dev.OnFinal	   = NULL;                      \
     (sreq_)->dev.iov_count	   = 0;                         \
-    (sreq_)->dev.iov_offset	   = 0;                         \
     MPIDI_Request_clear_dbg(sreq_);                             \
 }
 
 /* This is the receive request version of MPIDI_Request_create_sreq */
 #define MPIDI_Request_create_rreq(rreq_, mpi_errno_, FAIL_)	\
 {								\
-    (rreq_) = MPIU_Handle_obj_alloc(&MPID_Request_mem);         \
-    if ((rreq_) == NULL)					\
-    {								\
-	MPIU_DBG_MSG(CH3_CHANNEL,TYPICAL,"unable to allocate a request");\
-	(mpi_errno_) = MPIR_ERR_MEMALLOCFAILED;			\
-	FAIL_;							\
-    }								\
-    MPIU_DBG_MSG_P(CH3_CHANNEL,VERBOSE,                         \
-	       "allocated request, handle=0x%08x", (rreq_)->handle);\
-    								\
+    (rreq_) = MPID_Request_create();                            \
     MPIU_Object_set_ref((rreq_), 2);				\
     (rreq_)->kind = MPID_REQUEST_RECV;				\
-    (rreq_)->comm = NULL;					\
-    (rreq_)->greq_fns = NULL;                                   \
-    MPID_cc_set(&(rreq_)->cc, 1);                               \
-    (rreq_)->cc_ptr		   = &(rreq_)->cc;              \
-    (rreq_)->status.MPI_ERROR	   = MPI_SUCCESS;               \
-    MPIR_STATUS_SET_CANCEL_BIT((rreq_)->status, FALSE);	        \
     (rreq_)->partner_request   = NULL;                          \
-    (rreq_)->dev.state = 0;                                     \
-    (rreq_)->dev.cancel_pending = FALSE;                        \
-    (rreq_)->dev.datatype_ptr = NULL;                           \
-    (rreq_)->dev.segment_ptr = NULL;                            \
-    (rreq_)->dev.iov_offset   = 0;                              \
-    (rreq_)->dev.OnDataAvail	   = NULL;                      \
-    (rreq_)->dev.OnFinal	   = NULL;                      \
-     MPIDI_CH3_REQUEST_INIT(rreq_);\
 }
 
 /* creates a new, trivially complete recv request that is suitable for
@@ -454,14 +409,17 @@ extern MPIDI_Process_t MPIDI_Process;
 #define MPIDI_REQUEST_TYPE_SSEND 3
 /* We need a BSEND type for persistent bsends (see mpid_startall.c) */
 #define MPIDI_REQUEST_TYPE_BSEND 4
-#define MPIDI_REQUEST_TYPE_PUT_RESP 5
-#define MPIDI_REQUEST_TYPE_GET_RESP 6
-#define MPIDI_REQUEST_TYPE_ACCUM_RESP 7
-#define MPIDI_REQUEST_TYPE_PUT_RESP_DERIVED_DT 8
-#define MPIDI_REQUEST_TYPE_GET_RESP_DERIVED_DT 9
-#define MPIDI_REQUEST_TYPE_ACCUM_RESP_DERIVED_DT 10
-#define MPIDI_REQUEST_TYPE_PT_SINGLE_PUT 11
-#define MPIDI_REQUEST_TYPE_PT_SINGLE_ACCUM 12
+#define MPIDI_REQUEST_TYPE_PUT_RECV 5                    /* target is receiving PUT data */
+#define MPIDI_REQUEST_TYPE_GET_RESP 6                    /* target is sending GET response data */
+#define MPIDI_REQUEST_TYPE_ACCUM_RECV 7                  /* target is receiving ACC data */
+#define MPIDI_REQUEST_TYPE_PUT_RECV_DERIVED_DT 8         /* target is receiving derived DT info for PUT data */
+#define MPIDI_REQUEST_TYPE_GET_RECV_DERIVED_DT 9         /* target is receiving derived DT info for GET data */
+#define MPIDI_REQUEST_TYPE_ACCUM_RECV_DERIVED_DT 10      /* target is receiving derived DT info for ACC data */
+#define MPIDI_REQUEST_TYPE_GET_ACCUM_RECV 11             /* target is receiving GACC data */
+#define MPIDI_REQUEST_TYPE_GET_ACCUM_RECV_DERIVED_DT 12  /* target is receiving derived DT info for GACC data */
+#define MPIDI_REQUEST_TYPE_GET_ACCUM_RESP 13             /* target is sending GACC response data */
+#define MPIDI_REQUEST_TYPE_FOP_RECV 14                   /* target is receiving FOP data */
+#define MPIDI_REQUEST_TYPE_FOP_RESP 15                   /* target is sending FOP response data */
 
 
 #define MPIDI_Request_get_type(req_)						\
@@ -541,7 +499,7 @@ extern MPIDI_Process_t MPIDI_Process;
 /*------------------
   BEGIN COMM SECTION
   ------------------*/
-#define MPIDI_Comm_get_vc(comm_, rank_, vcp_) *(vcp_) = (comm_)->vcr[(rank_)]
+#define MPIDI_Comm_get_vc(comm_, rank_, vcp_) *(vcp_) = (comm_)->dev.vcrt->vcr_table[(rank_)]
 
 #ifdef USE_MPIDI_DBG_PRINT_VC
 void MPIDI_DBG_PrintVC(MPIDI_VC_t *vc);
@@ -554,7 +512,7 @@ void MPIDI_DBG_PrintVCState(MPIDI_VC_t *vc);
 #endif
 
 #define MPIDI_Comm_get_vc_set_active(comm_, rank_, vcp_) do {           \
-        *(vcp_) = (comm_)->vcr[(rank_)];                                \
+        *(vcp_) = (comm_)->dev.vcrt->vcr_table[(rank_)];                \
         if ((*(vcp_))->state == MPIDI_VC_STATE_INACTIVE)                \
         {                                                               \
             MPIDI_DBG_PrintVCState2(*(vcp_), MPIDI_VC_STATE_ACTIVE);     \
@@ -595,6 +553,11 @@ void MPIDI_DBG_PrintVCState(MPIDI_VC_t *vc);
    the MPICH routines and which are internal to the device implementation */
 typedef int (*MPIDI_PG_Compare_ids_fn_t)(void * id1, void * id2);
 typedef int (*MPIDI_PG_Destroy_fn_t)(MPIDI_PG_t * pg);
+
+int MPIDI_VCRT_Create(int size, struct MPIDI_VCRT **vcrt_ptr);
+int MPIDI_VCRT_Add_ref(struct MPIDI_VCRT *vcrt);
+int MPIDI_VCRT_Release(struct MPIDI_VCRT *vcrt, int isDisconnect);
+int MPIDI_VCR_Dup(MPIDI_VCR orig_vcr, MPIDI_VCR * new_vcr);
 
 int MPIDI_PG_Init( int *, char ***, 
 		   MPIDI_PG_Compare_ids_fn_t, MPIDI_PG_Destroy_fn_t);
@@ -688,35 +651,35 @@ typedef struct MPIDI_Comm_ops
     /* Overriding calls in case of matching-capable interfaces */
     int (*recv_posted)(struct MPIDI_VC *vc, struct MPID_Request *req);
     
-    int (*send)(struct MPIDI_VC *vc, const void *buf, int count, MPI_Datatype datatype,
+    int (*send)(struct MPIDI_VC *vc, const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		int dest, int tag, MPID_Comm *comm, int context_offset,
 		struct MPID_Request **request);
-    int (*rsend)(struct MPIDI_VC *vc, const void *buf, int count, MPI_Datatype datatype,
+    int (*rsend)(struct MPIDI_VC *vc, const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		 int dest, int tag, MPID_Comm *comm, int context_offset,
 		 struct MPID_Request **request);
-    int (*ssend)(struct MPIDI_VC *vc, const void *buf, int count, MPI_Datatype datatype,
+    int (*ssend)(struct MPIDI_VC *vc, const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		 int dest, int tag, MPID_Comm *comm, int context_offset,
 		 struct MPID_Request **request );
-    int (*isend)(struct MPIDI_VC *vc, const void *buf, int count, MPI_Datatype datatype,
+    int (*isend)(struct MPIDI_VC *vc, const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		 int dest, int tag, MPID_Comm *comm, int context_offset,
 		 struct MPID_Request **request );
-    int (*irsend)(struct MPIDI_VC *vc, const void *buf, int count, MPI_Datatype datatype,
+    int (*irsend)(struct MPIDI_VC *vc, const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		  int dest, int tag, MPID_Comm *comm, int context_offset,
 		  struct MPID_Request **request );
-    int (*issend)(struct MPIDI_VC *vc, const void *buf, int count, MPI_Datatype datatype,
+    int (*issend)(struct MPIDI_VC *vc, const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		  int dest, int tag, MPID_Comm *comm, int context_offset,
 		  struct MPID_Request **request );
     
-    int (*send_init)(struct MPIDI_VC *vc, const void *buf, int count, MPI_Datatype datatype,
+    int (*send_init)(struct MPIDI_VC *vc, const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		     int dest, int tag, MPID_Comm *comm, int context_offset,
 		     struct MPID_Request **request );
     int (*bsend_init)(struct MPIDI_VC *vc, const void *buf, int count, MPI_Datatype datatype,
 		      int dest, int tag, MPID_Comm *comm, int context_offset,
 		      struct MPID_Request **request);
-    int (*rsend_init)(struct MPIDI_VC *vc, const void *buf, int count, MPI_Datatype datatype,
+    int (*rsend_init)(struct MPIDI_VC *vc, const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		      int dest, int tag, MPID_Comm *comm, int context_offset,
 		      struct MPID_Request **request );
-    int (*ssend_init)(struct MPIDI_VC *vc, const void *buf, int count, MPI_Datatype datatype,
+    int (*ssend_init)(struct MPIDI_VC *vc, const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		      int dest, int tag, MPID_Comm *comm, int context_offset,
 		      struct MPID_Request **request );
     int (*startall)(struct MPIDI_VC *vc, int count,  struct MPID_Request *requests[]);
@@ -785,7 +748,7 @@ typedef struct MPIDI_VC
 
     /* rendezvous function pointers.  Called to send a rendevous
        message or when one is matched */
-    int (* rndvSend_fn)( struct MPID_Request **sreq_p, const void * buf, int count, 
+    int (* rndvSend_fn)( struct MPID_Request **sreq_p, const void * buf, MPI_Aint count,
                          MPI_Datatype datatype, int dt_contig, MPIDI_msg_sz_t data_sz, 
                          MPI_Aint dt_true_lb, int rank, int tag,
                          struct MPID_Comm * comm, int context_offset );
@@ -819,11 +782,23 @@ typedef enum MPIDI_VC_Event
 }
 MPIDI_VC_Event_t;
 
-#ifndef HAVE_MPIDI_VCRT
-#define HAVE_MPIDI_VCRT
-typedef struct MPIDI_VCRT * MPID_VCRT;
-typedef struct MPIDI_VC * MPID_VCR;
-#endif
+/*S
+ * MPIDI_VCRT - virtual connection reference table
+ *
+ * handle - this element is not used, but exists so that we may use the
+ * MPIU_Object routines for reference counting
+ *
+ * ref_count - number of references to this table
+ *
+ * vcr_table - array of virtual connection references
+ S*/
+typedef struct MPIDI_VCRT
+{
+    MPIU_OBJECT_HEADER; /* adds handle and ref_count fields */
+    int size;
+    MPIDI_VC_t * vcr_table[1];
+}
+MPIDI_VCRT_t;
 
 /* number of VCs that are in MORIBUND state */
 extern int MPIDI_Failed_vc_count;
@@ -919,6 +894,11 @@ extern MPIDI_CH3U_SRBuf_element_t * MPIDI_CH3U_SRBuf_pool;
 /*-------------------------------
   END SEND/RECEIVE BUFFER SECTION
   -------------------------------*/
+
+/* define ACC stream size as the SRBuf size */
+#if !defined(MPIDI_CH3U_Acc_stream_size)
+#define MPIDI_CH3U_Acc_stream_size MPIDI_CH3U_SRBuf_size
+#endif
 
 /*----------------------------
   BEGIN DEBUGGING TOOL SECTION
@@ -1036,14 +1016,14 @@ extern char *MPIDI_DBG_parent_str;
     }
 #   define MPIDI_err_printf(func, fmt, ...)				\
     {									\
-        MPIU_Error_printf("[%d] ERROR - %s(): " fmt "\n", MPIR_Process.comm_world->rank, func, __VA_ARGS__);    \
+        MPL_error_printf("[%d] ERROR - %s(): " fmt "\n", MPIR_Process.comm_world->rank, func, __VA_ARGS__);    \
         fflush(stdout);							\
     }
 #endif
 
 /* This is used to quote a name in a definition (see FUNCNAME/FCNAME below) */
-#define MPIDI_QUOTE(A) MPIDI_QUOTE2(A)
-#define MPIDI_QUOTE2(A) #A
+#define MPL_QUOTE(A) MPL_QUOTE2(A)
+#define MPL_QUOTE2(A) #A
 
 #ifdef MPICH_DBG_OUTPUT
     void MPIDI_DBG_Print_packet(MPIDI_CH3_Pkt_t *pkt);
@@ -1059,7 +1039,7 @@ const char * MPIDI_VC_GetStateString(int);
 
 
 /* Prototypes for internal device routines */
-int MPIDI_Isend_self(const void *, int, MPI_Datatype, int, int, MPID_Comm *, 
+int MPIDI_Isend_self(const void *, MPI_Aint, MPI_Datatype, int, int, MPID_Comm *,
 		     int, int, MPID_Request **);
 
 /*--------------------------
@@ -1099,15 +1079,14 @@ int MPIDI_CH3_Complete_Acceptq_dequeue(MPIDI_VC_t * vc);
   END MPI PORT SECTION 
   --------------------------*/
 
-/* part of mpid_vc.c, this routine completes any pending operations 
-   on a communicator */
-int MPIDI_CH3U_Comm_FinishPending( MPID_Comm * );
-
 #define MPIDI_MAX_KVS_VALUE_LEN    4096
 
 /* ------------------------------------------------------------------------- */
 /* mpirma.h (in src/mpi/rma?) */
 /* ------------------------------------------------------------------------- */
+
+int MPIDI_RMA_init(void);
+void MPIDI_RMA_finalize(void);
 
 /* The Win_fns table contains pointers to the channel's implementation of the
  * RMA window creation routines.  The channel must provide the init function,
@@ -1121,13 +1100,39 @@ typedef struct {
     int (*allocate_shm)(MPI_Aint, int, MPID_Info *, MPID_Comm *, void *, MPID_Win **);
     int (*create_dynamic)(MPID_Info *, MPID_Comm *, MPID_Win **);
     int (*detect_shm)(MPID_Win **);
+    int (*gather_info)(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *, MPID_Win **);
+    int (*shared_query)(MPID_Win *, int, MPI_Aint *, int *, void *);
 } MPIDI_CH3U_Win_fns_t;
 
 extern MPIDI_CH3U_Win_fns_t MPIDI_CH3U_Win_fns;
 
+typedef struct {
+    int (*win_init)(MPI_Aint, int, int, int, MPID_Info *, MPID_Comm *, MPID_Win **);
+    int (*win_free)(MPID_Win **);
+} MPIDI_CH3U_Win_hooks_t;
+
+extern MPIDI_CH3U_Win_hooks_t MPIDI_CH3U_Win_hooks;
+
+typedef struct MPIDI_CH3U_Win_pkt_ordering {
+
+    /* Ordered AM flush.
+     * It means whether AM flush is guaranteed to be finished after all previous
+     * RMA operations. It initialized by Nemesis and used by CH3.
+     * Note that we use single global flag for all targets including both
+     * intra-node and inter-node processes.*/
+    int am_flush_ordered;
+} MPIDI_CH3U_Win_pkt_ordering_t;
+
+extern MPIDI_CH3U_Win_pkt_ordering_t MPIDI_CH3U_Win_pkt_orderings;
+
 /* CH3 and Channel window functions initializers */
 int MPIDI_Win_fns_init(MPIDI_CH3U_Win_fns_t *win_fns);
 int MPIDI_CH3_Win_fns_init(MPIDI_CH3U_Win_fns_t *win_fns);
+
+/* Channel window hooks initializer */
+int MPIDI_CH3_Win_hooks_init(MPIDI_CH3U_Win_hooks_t *win_hooks);
+
+int MPIDI_CH3_Win_pkt_orderings_init(MPIDI_CH3U_Win_pkt_ordering_t * win_pkt_orderings);
 
 /* Default window creation functions provided by CH3 */
 int MPIDI_CH3U_Win_create(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *,
@@ -1137,104 +1142,58 @@ int MPIDI_CH3U_Win_allocate(MPI_Aint size, int disp_unit, MPID_Info *info,
 int MPIDI_CH3U_Win_allocate_no_shm(MPI_Aint size, int disp_unit, MPID_Info *info,
                                    MPID_Comm *comm_ptr, void *baseptr, MPID_Win **win_ptr);
 int MPIDI_CH3U_Win_create_dynamic(MPID_Info *info, MPID_Comm *comm, MPID_Win **win);
-
+int MPIDI_CH3U_Win_shared_query(MPID_Win * win_ptr, int target_rank, MPI_Aint * size,
+                                int *disp_unit, void *baseptr);
 
 /* MPI RMA Utility functions */
 
-int MPIDI_CH3U_Win_create_gather(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *,
+int MPIDI_CH3U_Win_gather_info(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *,
                                  MPID_Win **);
 
 
-/* MPI-2 RMA Routines */
+#ifdef MPIDI_CH3I_HAS_ALLOC_MEM
+void* MPIDI_CH3I_Alloc_mem(size_t size, MPID_Info *info_ptr);
+/* fallback to MPIU_Malloc if channel does not have its own RMA memory allocator */
+#else
+#define MPIDI_CH3I_Alloc_mem(size, info_ptr)    MPIU_Malloc(size)
+#endif
 
-int MPIDI_Win_create(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *,
-                     MPID_Win **);
-int MPIDI_Win_free(MPID_Win **); 
-
-int MPIDI_Put(const void *, int, MPI_Datatype, int, MPI_Aint, int,
-              MPI_Datatype, MPID_Win *); 
-int MPIDI_Get(void *, int, MPI_Datatype, int, MPI_Aint, int,
-              MPI_Datatype, MPID_Win *);
-int MPIDI_Accumulate(const void *, int, MPI_Datatype, int, MPI_Aint, int,
-                     MPI_Datatype, MPI_Op, MPID_Win *);
-
-int MPIDI_Win_fence(int, MPID_Win *);
-int MPIDI_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr);
-int MPIDI_Win_start(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr);
-int MPIDI_Win_test(MPID_Win *win_ptr, int *flag);
-int MPIDI_Win_wait(MPID_Win *win_ptr);
-int MPIDI_Win_complete(MPID_Win *win_ptr);
-
-int MPIDI_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr);
-int MPIDI_Win_unlock(int dest, MPID_Win *win_ptr);
-
-/* MPI-3 RMA Routines */
-
-int MPIDI_Win_allocate(MPI_Aint size, int disp_unit, MPID_Info *info,
-                       MPID_Comm *comm, void *baseptr, MPID_Win **win);
-int MPIDI_Win_allocate_shared(MPI_Aint size, MPID_Info *info_ptr, MPID_Comm *comm_ptr,
-                              void **baseptr, MPID_Win **win_ptr);
-int MPIDI_Win_create_dynamic(MPID_Info *info, MPID_Comm *comm, MPID_Win **win);
-int MPIDI_Win_attach(MPID_Win *win, void *base, MPI_Aint size);
-int MPIDI_Win_detach(MPID_Win *win, const void *base);
-int MPIDI_Win_shared_query(MPID_Win *win_ptr, int rank, MPI_Aint *size, int *disp_unit, void *base);
-
-int MPIDI_Win_set_info(MPID_Win *win, MPID_Info *info);
-int MPIDI_Win_get_info(MPID_Win *win, MPID_Info **info_used);
-
-int MPIDI_Get_accumulate(const void *origin_addr, int origin_count,
-                         MPI_Datatype origin_datatype, void *result_addr, int result_count,
-                         MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
-                         int target_count, MPI_Datatype target_datatype, MPI_Op op, MPID_Win *win);
-int MPIDI_Fetch_and_op(const void *origin_addr, void *result_addr,
-                       MPI_Datatype datatype, int target_rank, MPI_Aint target_disp,
-                       MPI_Op op, MPID_Win *win);
-int MPIDI_Compare_and_swap(const void *origin_addr, const void *compare_addr,
-                           void *result_addr, MPI_Datatype datatype, int target_rank,
-                           MPI_Aint target_disp, MPID_Win *win);
-int MPIDI_Rput(const void *origin_addr, int origin_count,
-               MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp,
-               int target_count, MPI_Datatype target_datatype, MPID_Win *win,
-               MPID_Request **request);
-int MPIDI_Rget(void *origin_addr, int origin_count,
-               MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp,
-               int target_count, MPI_Datatype target_datatype, MPID_Win *win,
-               MPID_Request **request);
-int MPIDI_Raccumulate(const void *origin_addr, int origin_count,
-                      MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp,
-                      int target_count, MPI_Datatype target_datatype, MPI_Op op, MPID_Win *win,
-                      MPID_Request **request);
-int MPIDI_Rget_accumulate(const void *origin_addr, int origin_count,
-                          MPI_Datatype origin_datatype, void *result_addr, int result_count,
-                          MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
-                          int target_count, MPI_Datatype target_datatype, MPI_Op op, MPID_Win *win,
-                          MPID_Request **request);
-
-int MPIDI_Win_lock_all(int assert, MPID_Win *win);
-int MPIDI_Win_unlock_all(MPID_Win *win);
-int MPIDI_Win_flush(int rank, MPID_Win *win);
-int MPIDI_Win_flush_all(MPID_Win *win);
-int MPIDI_Win_flush_local(int rank, MPID_Win *win);
-int MPIDI_Win_flush_local_all(MPID_Win *win);
-int MPIDI_Win_sync(MPID_Win *win);
-
-
-void *MPIDI_Alloc_mem(size_t size, MPID_Info *info_ptr);
-int MPIDI_Free_mem(void *ptr);
+#ifdef MPIDI_CH3I_HAS_FREE_MEM
+int MPIDI_CH3I_Free_mem(void *ptr);
+#else
+#define MPIDI_CH3I_Free_mem(ptr)    MPIU_Free(ptr);
+#endif
 
 /* Pvars */
-void MPIDI_CH3_RMA_Init_Pvars(void);
+void MPIDI_CH3_RMA_Init_sync_pvars(void);
+void MPIDI_CH3_RMA_Init_pkthandler_pvars(void);
 
 /* internal */
 int MPIDI_CH3I_Release_lock(MPID_Win * win_ptr);
 int MPIDI_CH3I_Try_acquire_win_lock(MPID_Win * win_ptr, int requested_lock);
-int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC_t * vc, MPID_Win *win_ptr, int source_win_hdl);
-int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t * vc, MPID_Win *win_ptr, int source_win_hdl);
-int MPIDI_CH3_Start_rma_op_target(MPID_Win *win_ptr, MPIDI_CH3_Pkt_flags_t flags);
-int MPIDI_CH3_Finish_rma_op_target(MPIDI_VC_t *vc, MPID_Win *win_ptr, int is_rma_update,
-                                   MPIDI_CH3_Pkt_flags_t flags, MPI_Win source_win_handle);
 
 int MPIDI_CH3I_Progress_finalize(void);
+
+
+/* Internal RMA operation routines.
+ * Called by normal RMA operations and request-based RMA operations . */
+int MPIDI_CH3I_Put(const void *origin_addr, int origin_count, MPI_Datatype
+                   origin_datatype, int target_rank, MPI_Aint target_disp,
+                   int target_count, MPI_Datatype target_datatype, MPID_Win * win_ptr,
+                   MPID_Request * ureq);
+int MPIDI_CH3I_Get(void *origin_addr, int origin_count, MPI_Datatype
+                   origin_datatype, int target_rank, MPI_Aint target_disp,
+                   int target_count, MPI_Datatype target_datatype, MPID_Win * win_ptr,
+                   MPID_Request * ureq);
+int MPIDI_CH3I_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype
+                          origin_datatype, int target_rank, MPI_Aint target_disp,
+                          int target_count, MPI_Datatype target_datatype, MPI_Op op,
+                          MPID_Win * win_ptr, MPID_Request * ureq);
+int MPIDI_CH3I_Get_accumulate(const void *origin_addr, int origin_count,
+                              MPI_Datatype origin_datatype, void *result_addr, int result_count,
+                              MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
+                              int target_count, MPI_Datatype target_datatype, MPI_Op op,
+                              MPID_Win * win_ptr, MPID_Request * ureq);
 
 /*@
   MPIDI_CH3_Progress_signal_completion - Inform the progress engine that a 
@@ -1252,9 +1211,7 @@ int MPIDI_CH3I_Progress_finalize(void);
   This code is designed to support one particular model of thread-safety.
   It is common to many of the channels and was moved into this file because
   the MPIDI_CH3_Progress_signal_completion reference is used by the 
-  macro the implements MPID_Request_set_completed.  Note that there is 
-  a function version of MPID_Request_set_completed for use by greq_complete.c
-
+  function the implements MPID_Request_complete.
 @*/
 
 /*
@@ -1268,12 +1225,12 @@ int MPIDI_CH3I_Progress_finalize(void);
 #ifndef MPIDI_CH3I_INCR_PROGRESS_COMPLETION_COUNT
 #define MPIDI_CH3I_INCR_PROGRESS_COMPLETION_COUNT                                \
     do {                                                                         \
-        MPIU_THREAD_CS_ENTER(COMPLETION,);                                       \
+        MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_POBJ_COMPLETION_MUTEX);                                       \
         ++MPIDI_CH3I_progress_completion_count;                                  \
         MPIU_DBG_MSG_D(CH3_PROGRESS,VERBOSE,                                     \
                      "just incremented MPIDI_CH3I_progress_completion_count=%d", \
                      MPIDI_CH3I_progress_completion_count);                      \
-        MPIU_THREAD_CS_EXIT(COMPLETION,);                                        \
+        MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_POBJ_COMPLETION_MUTEX);                                        \
     } while (0)
 #endif
 
@@ -1406,7 +1363,7 @@ int MPIDI_CH3_iStartMsg(MPIDI_VC_t * vc, void * pkt, MPIDI_msg_sz_t pkt_sz,
   If the send completes immediately, the channel implementation should return 
   NULL.
 @*/
-int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPID_IOV * iov, int iov_n, 
+int MPIDI_CH3_iStartMsgv(MPIDI_VC_t * vc, MPL_IOV * iov, int iov_n, 
 			 MPID_Request **sreq_ptr);
 
 
@@ -1470,7 +1427,7 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * pkt,
   If the send completes immediately, the channel implementation still must 
   call the OnDataAvail routine in the request, if any.
 @*/
-int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPID_IOV * iov, 
+int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPID_Request * sreq, MPL_IOV * iov, 
 		     int iov_n);
 
 /*@
@@ -1500,25 +1457,24 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU_matchonly(int source, int tag, int context_i
                                    int *foundp);
 MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int source, int tag, 
                                           int context_id, MPID_Comm *comm, void *user_buf,
-                                           int user_count, MPI_Datatype datatype, int * foundp);
+                                           MPI_Aint user_count, MPI_Datatype datatype, int * foundp);
 int MPIDI_CH3U_Recvq_DP(MPID_Request * rreq);
 MPID_Request * MPIDI_CH3U_Recvq_FDP_or_AEU(MPIDI_Message_match * match, 
 					   int * found);
 int MPIDI_CH3U_Recvq_count_unexp(void);
 int MPIDI_CH3U_Complete_posted_with_error(MPIDI_VC_t *vc);
-int MPIDI_CH3U_Complete_disabled_anysources(void);
 int MPIDI_CH3U_Clean_recvq(MPID_Comm *comm_ptr);
 
 
 int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, 
-				     MPID_IOV * const iov, int * const iov_n);
+				     MPL_IOV * const iov, int * const iov_n);
 int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq);
 int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq);
 int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq);
 
-void MPIDI_CH3U_Buffer_copy(const void * const sbuf, int scount, 
+void MPIDI_CH3U_Buffer_copy(const void * const sbuf, MPI_Aint scount,
 			    MPI_Datatype sdt, int * smpi_errno,
-			    void * const rbuf, int rcount, MPI_Datatype rdt, 
+			    void * const rbuf, MPI_Aint rcount, MPI_Datatype rdt,
 			    MPIDI_msg_sz_t * rdata_sz, int * rmpi_errno);
 int MPIDI_CH3U_Post_data_receive(int found, MPID_Request ** rreqp);
 int MPIDI_CH3U_Post_data_receive_found(MPID_Request * rreqp);
@@ -1530,7 +1486,7 @@ int MPIDI_CH3U_Receive_data_unexpected(MPID_Request * rreq, char *buf, MPIDI_msg
 int MPIDI_CH3I_Comm_init(void);
 
 int MPIDI_CH3I_Comm_handle_failed_procs(MPID_Group *new_failed_procs);
-void MPIDI_CH3I_Comm_find(MPIR_Context_id_t context_id, MPID_Comm **comm);
+void MPIDI_CH3I_Comm_find(MPIU_Context_id_t context_id, MPID_Comm **comm);
 
 /* The functions below allow channels to register functions to be
    called immediately after a communicator has been created, and
@@ -1787,8 +1743,8 @@ int MPIDI_CH3_PktHandler_Put( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
 			      MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_Accumulate( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
 				     MPIDI_msg_sz_t *, MPID_Request ** );
-int MPIDI_CH3_PktHandler_Accumulate_Immed( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-				     MPIDI_msg_sz_t *, MPID_Request ** );
+int MPIDI_CH3_PktHandler_GetAccumulate( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
+                                        MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_CAS( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
                               MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_CASResp( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
@@ -1805,20 +1761,18 @@ int MPIDI_CH3_PktHandler_GetResp( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
 				 MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_Lock( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
 			      MPIDI_msg_sz_t *, MPID_Request ** );
-int MPIDI_CH3_PktHandler_LockGranted( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
+int MPIDI_CH3_PktHandler_LockAck( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
 				      MPIDI_msg_sz_t *, MPID_Request ** );
+int MPIDI_CH3_PktHandler_LockOpAck( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
+                                    MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_Unlock( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
                                  MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_Flush( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
                                 MPIDI_msg_sz_t *, MPID_Request ** );
-int MPIDI_CH3_PktHandler_PtRMADone( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-				    MPIDI_msg_sz_t *, MPID_Request ** );
-int MPIDI_CH3_PktHandler_LockPutUnlock( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-					MPIDI_msg_sz_t *, MPID_Request ** );
-int MPIDI_CH3_PktHandler_LockAccumUnlock( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-					  MPIDI_msg_sz_t *, MPID_Request ** );
-int MPIDI_CH3_PktHandler_LockGetUnlock( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
-					MPIDI_msg_sz_t *, MPID_Request ** );
+int MPIDI_CH3_PktHandler_Ack( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
+                              MPIDI_msg_sz_t *, MPID_Request ** );
+int MPIDI_CH3_PktHandler_DecrAtCnt( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
+                                    MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_FlowCntlUpdate( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 					 MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
@@ -1828,6 +1782,8 @@ int MPIDI_CH3_PktHandler_EndCH3( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
 int MPIDI_CH3_PktHandler_Revoke(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
                                 MPIDI_msg_sz_t *buflen, MPID_Request **rreqp);
 int MPIDI_CH3_PktHandler_Init( MPIDI_CH3_PktHandler_Fcn *[], int );
+
+int MPIDI_CH3I_RMA_Make_progress_global(int *made_progress);
 
 #ifdef MPICH_DBG_OUTPUT
 int MPIDI_CH3_PktPrint_CancelSendReq( FILE *, MPIDI_CH3_Pkt_t * );
@@ -1843,7 +1799,7 @@ int MPIDI_CH3_PktPrint_EagerSyncAck( FILE *fp, MPIDI_CH3_Pkt_t *pkt );
 
 /* Routines to create packets (used in implementing MPI communications */
 int MPIDI_CH3_EagerNoncontigSend( MPID_Request **, MPIDI_CH3_Pkt_type_t, 
-				  const void *, int, 
+				  const void *, MPI_Aint,
 				  MPI_Datatype, MPIDI_msg_sz_t, int, int, MPID_Comm *, 
 				  int );
 int MPIDI_CH3_EagerContigSend( MPID_Request **, MPIDI_CH3_Pkt_type_t, 
@@ -1857,7 +1813,7 @@ int MPIDI_CH3_EagerContigIsend( MPID_Request **, MPIDI_CH3_Pkt_type_t,
 				int, MPID_Comm *, int );
 
 
-int MPIDI_CH3_RndvSend( MPID_Request **, const void *, int, MPI_Datatype, 
+int MPIDI_CH3_RndvSend( MPID_Request **, const void *, MPI_Aint, MPI_Datatype,
 			int, MPIDI_msg_sz_t, MPI_Aint, int, int, MPID_Comm *, int );
 
 int MPIDI_CH3_EagerSyncNoncontigSend( MPID_Request **, const void *, int, 
@@ -1871,7 +1827,7 @@ int MPIDI_CH3_SendNoncontig_iov( struct MPIDI_VC *vc, struct MPID_Request *sreq,
 /* Routines to ack packets, called in the receive routines when a 
    message is matched */
 int MPIDI_CH3_EagerSyncAck( MPIDI_VC_t *, MPID_Request * );
-int MPIDI_CH3_RecvFromSelf( MPID_Request *, void *, int, MPI_Datatype );
+int MPIDI_CH3_RecvFromSelf( MPID_Request *, void *, MPI_Aint, MPI_Datatype );
 int MPIDI_CH3_RecvRndv( MPIDI_VC_t *, MPID_Request * );
 
 /* Handler routines to continuing after an IOV is processed (assigned to the
@@ -1885,80 +1841,39 @@ int MPIDI_CH3_ReqHandler_UnpackSRBufReloadIOV( MPIDI_VC_t *, MPID_Request *,
 					       int * );
 int MPIDI_CH3_ReqHandler_UnpackSRBufComplete( MPIDI_VC_t *, MPID_Request *,
 					      int * );
-int MPIDI_CH3_ReqHandler_PutRespDerivedDTComplete( MPIDI_VC_t *, 
+int MPIDI_CH3_ReqHandler_PutDerivedDTRecvComplete( MPIDI_VC_t *,
 						   MPID_Request *, int * );
-int MPIDI_CH3_ReqHandler_PutAccumRespComplete( MPIDI_VC_t *, MPID_Request *,
-					       int * );
-int MPIDI_CH3_ReqHandler_AccumRespDerivedDTComplete( MPIDI_VC_t *, 
-						     MPID_Request *,
-						     int * );
-int MPIDI_CH3_ReqHandler_GetAccumRespComplete( MPIDI_VC_t *vc, 
-                                               MPID_Request *rreq, 
-                                               int *complete );
-int MPIDI_CH3_ReqHandler_SinglePutAccumComplete( MPIDI_VC_t *, MPID_Request *,
-						 int * );
-int MPIDI_CH3_ReqHandler_GetRespDerivedDTComplete( MPIDI_VC_t *, 
+int MPIDI_CH3_ReqHandler_PutRecvComplete( MPIDI_VC_t *, MPID_Request *,
+                                          int * );
+int MPIDI_CH3_ReqHandler_AccumRecvComplete( MPIDI_VC_t *, MPID_Request *,
+                                            int * );
+int MPIDI_CH3_ReqHandler_GaccumRecvComplete( MPIDI_VC_t *, MPID_Request *,
+                                             int * );
+int MPIDI_CH3_ReqHandler_FOPRecvComplete( MPIDI_VC_t *, MPID_Request *,
+                                          int * );
+int MPIDI_CH3_ReqHandler_AccumMetadataRecvComplete( MPIDI_VC_t *,
+                                                    MPID_Request *,
+                                                    int * );
+int MPIDI_CH3_ReqHandler_GaccumMetadataRecvComplete( MPIDI_VC_t *,
+                                                     MPID_Request *,
+                                                     int * );
+int MPIDI_CH3_ReqHandler_GetDerivedDTRecvComplete( MPIDI_VC_t *,
 						   MPID_Request *, int * );
-int MPIDI_CH3_ReqHandler_FOPComplete( MPIDI_VC_t *, MPID_Request *, int * );
-
+int MPIDI_CH3_ReqHandler_PiggybackLockOpRecvComplete( MPIDI_VC_t *,
+                                                      MPID_Request *, int * );
 /* Send Handlers */
 int MPIDI_CH3_ReqHandler_SendReloadIOV( MPIDI_VC_t *vc, MPID_Request *sreq, 
 					int *complete );
-int MPIDI_CH3_ReqHandler_GetSendRespComplete( MPIDI_VC_t *, MPID_Request *,
-					      int * );
-/* Thread Support */
-#ifdef MPICH_IS_THREADED
-#if MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL
-/* There is a single, global lock, held for the duration of an MPI call */
-#define MPIU_THREAD_CS_ENTER_CH3COMM(context_)
-#define MPIU_THREAD_CS_EXIT_CH3COMM(context_)
-
-#define MPIU_THREAD_CS_ENTER_LMT(_context)
-#define MPIU_THREAD_CS_EXIT_LMT(_context)
-
-#elif MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT
-
-#define MPIU_THREAD_CS_ENTER_POBJ_MUTEX(mutex_p_)                                                           \
-    do {                                                                                                    \
-        MPIU_DBG_MSG_P(THREAD,VERBOSE,"attempting to ENTER per-object CS, mutex=%s", MPIU_QUOTE(mutex_p_)); \
-        /* FIXME do we need nest checking here? the existing macros won't work unmodified...*/              \
-        MPID_Thread_mutex_lock(mutex_p_);                                                                   \
-    } while (0)
-#define MPIU_THREAD_CS_EXIT_POBJ_MUTEX(mutex_p_)                                                            \
-    do {                                                                                                    \
-        MPIU_DBG_MSG_P(THREAD,VERBOSE,"attempting to EXIT per-object CS, mutex=%s", MPIU_QUOTE(mutex_p_));  \
-        /* FIXME do we need nest checking here? the existing macros won't work unmodified...*/              \
-        MPID_Thread_mutex_unlock(mutex_p_);                                                                 \
-    } while (0)
-
-/* There is a per object lock */
-#define MPIU_THREAD_CS_ENTER_CH3COMM(context_)                      \
-    do {                                                            \
-        if (MPIU_ISTHREADED)                                        \
-            MPIU_THREAD_CS_ENTER_POBJ_MUTEX(&context_->pobj_mutex); \
-    } while (0)
-#define MPIU_THREAD_CS_EXIT_CH3COMM(context_)                       \
-    do {                                                            \
-        if (MPIU_ISTHREADED)                                        \
-            MPIU_THREAD_CS_EXIT_POBJ_MUTEX(&context_->pobj_mutex);  \
-    } while (0)
-
-/* MT FIXME making LMT into MPIDCOMM for now because of overwhelming deadlock
- * issues */
-#define MPIU_THREAD_CS_ENTER_LMT(context_) MPIU_THREAD_CS_ENTER_MPIDCOMM(context_)
-#define MPIU_THREAD_CS_EXIT_LMT(context_)  MPIU_THREAD_CS_EXIT_MPIDCOMM(context_)
-
-#elif MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_SINGLE
-/* No thread support, make all operations a no-op */
-/* FIXME incomplete? or already handled by the upper level? */
-/* FIXME does it make sense to have (MPICH_IS_THREADED && _GRANULARITY==_SINGLE) ? */
-
-#else
-#error Unrecognized thread granularity
-#endif
-#else
-
-#endif /* MPICH_IS_THREADED */
+int MPIDI_CH3_ReqHandler_GetSendComplete( MPIDI_VC_t *, MPID_Request *,
+                                          int * );
+int MPIDI_CH3_ReqHandler_GaccumSendComplete( MPIDI_VC_t *, MPID_Request *,
+                                             int * );
+int MPIDI_CH3_ReqHandler_CASSendComplete( MPIDI_VC_t *, MPID_Request *,
+                                          int * );
+int MPIDI_CH3_ReqHandler_FOPSendComplete( MPIDI_VC_t *, MPID_Request *,
+                                          int * );
+/* RMA operation request handler */
+int MPIDI_CH3_Req_handler_rma_op_complete(MPID_Request *);
 
 #define MPIDI_CH3_GET_EAGER_THRESHOLD(eager_threshold_p, comm, vc)  \
     do {                                                            \
@@ -1967,5 +1882,16 @@ int MPIDI_CH3_ReqHandler_GetSendRespComplete( MPIDI_VC_t *, MPID_Request *,
         else                                                        \
             *(eager_threshold_p) = (vc)->eager_max_msg_sz;          \
     } while (0)
+
+
+int MPIDI_CH3I_Progress_register_hook(int (*progress_fn)(int*), int *id);
+int MPIDI_CH3I_Progress_deregister_hook(int id);
+int MPIDI_CH3I_Progress_activate_hook(int id);
+int MPIDI_CH3I_Progress_deactivate_hook(int id);
+
+#define MPID_Progress_register_hook(fn_, id_) MPIDI_CH3I_Progress_register_hook(fn_, id_)
+#define MPID_Progress_deregister_hook(id_) MPIDI_CH3I_Progress_deregister_hook(id_)
+#define MPID_Progress_activate_hook(id_) MPIDI_CH3I_Progress_activate_hook(id_)
+#define MPID_Progress_deactivate_hook(id_) MPIDI_CH3I_Progress_deactivate_hook(id_)
 
 #endif /* !defined(MPICH_MPIDIMPL_H_INCLUDED) */

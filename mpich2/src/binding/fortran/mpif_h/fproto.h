@@ -360,6 +360,10 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_register_datarep_ ( char *v1 FORT_MIXED_
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ) FUNC_ATTRIBUTES(mpi_file_set_atomicity_);
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_atomicity_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ) FUNC_ATTRIBUTES(mpi_file_get_atomicity_);
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_sync_ ( MPI_Fint *v1, MPI_Fint *ierr ) FUNC_ATTRIBUTES(mpi_file_sync_);
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_iread_at_all_ ( MPI_Fint *v1, MPI_Offset *v2, void*v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *ierr ) FUNC_ATTRIBUTES(mpi_file_iread_at_all_);
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_iwrite_at_all_ ( MPI_Fint *v1, MPI_Offset *v2, void*v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *ierr ) FUNC_ATTRIBUTES(mpi_file_iwrite_at_all_);
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_iread_all_ ( MPI_Fint *v1, void*v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *ierr ) FUNC_ATTRIBUTES(mpi_file_iread_all_);
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_iwrite_all_ ( MPI_Fint *v1, void*v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *ierr ) FUNC_ATTRIBUTES(mpi_file_iwrite_all_);
 extern FORT_DLL_SPEC void FORT_CALL mpi_init_ ( MPI_Fint * ) FUNC_ATTRIBUTES(mpi_init_);
 extern FORT_DLL_SPEC void FORT_CALL mpi_init_thread_ ( MPI_Fint *, MPI_Fint *, MPI_Fint * ) FUNC_ATTRIBUTES(mpi_init_thread_);
 extern FORT_DLL_SPEC void FORT_CALL mpi_pcontrol_ ( MPI_Fint * ) FUNC_ATTRIBUTES(mpi_pcontrol_);
@@ -367,6 +371,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_address_ ( void*, MPI_Fint *, MPI_Fint *
 extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_ ( void*, MPI_Aint *, MPI_Fint * ) FUNC_ATTRIBUTES(mpi_get_address_);
 extern FORT_DLL_SPEC double FORT_CALL mpi_wtime_ ( void ) FUNC_ATTRIBUTES(mpi_wtime_);
 extern FORT_DLL_SPEC double FORT_CALL mpi_wtick_ ( void ) FUNC_ATTRIBUTES(mpi_wtick_);
+extern FORT_DLL_SPEC MPI_Aint FORT_CALL mpi_aint_add_ ( MPI_Aint *, MPI_Aint * ) FUNC_ATTRIBUTES(mpi_aint_add_);
+extern FORT_DLL_SPEC MPI_Aint FORT_CALL mpi_aint_diff_ ( MPI_Aint *, MPI_Aint * ) FUNC_ATTRIBUTES(mpi_aint_diff_);
 extern FORT_DLL_SPEC void FORT_CALL mpi_keyval_create_ ( MPI_Copy_function, MPI_Delete_function, MPI_Fint *, void*, MPI_Fint * ) FUNC_ATTRIBUTES(mpi_keyval_create_);
 extern FORT_DLL_SPEC void FORT_CALL mpi_dup_fn_ ( MPI_Fint*, MPI_Fint*, void*, void**, void**, MPI_Fint*, MPI_Fint * ) FUNC_ATTRIBUTES(mpi_dup_fn_);
 extern FORT_DLL_SPEC void FORT_CALL mpi_null_delete_fn_ ( MPI_Fint*, MPI_Fint*, void*, void*, MPI_Fint * ) FUNC_ATTRIBUTES(mpi_null_delete_fn_);

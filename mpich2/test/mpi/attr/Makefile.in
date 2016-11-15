@@ -93,7 +93,10 @@ noinst_PROGRAMS = attrt$(EXEEXT) attrend$(EXEEXT) attrend2$(EXEEXT) \
 	attrorder$(EXEEXT) attrordercomm$(EXEEXT) \
 	attrordertype$(EXEEXT) baseattr2$(EXEEXT) \
 	baseattrcomm$(EXEEXT) fkeyval$(EXEEXT) fkeyvalcomm$(EXEEXT) \
-	fkeyvaltype$(EXEEXT) keyval_double_free$(EXEEXT)
+	fkeyvaltype$(EXEEXT) keyval_double_free$(EXEEXT) \
+	keyval_double_free_comm$(EXEEXT) \
+	keyval_double_free_type$(EXEEXT) \
+	keyval_double_free_win$(EXEEXT)
 subdir = attr
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -221,6 +224,24 @@ keyval_double_free_LDADD = $(LDADD)
 keyval_double_free_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+keyval_double_free_comm_SOURCES = keyval_double_free_comm.c
+keyval_double_free_comm_OBJECTS = keyval_double_free_comm.$(OBJEXT)
+keyval_double_free_comm_LDADD = $(LDADD)
+keyval_double_free_comm_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+keyval_double_free_type_SOURCES = keyval_double_free_type.c
+keyval_double_free_type_OBJECTS = keyval_double_free_type.$(OBJEXT)
+keyval_double_free_type_LDADD = $(LDADD)
+keyval_double_free_type_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+keyval_double_free_win_SOURCES = keyval_double_free_win.c
+keyval_double_free_win_OBJECTS = keyval_double_free_win.$(OBJEXT)
+keyval_double_free_win_LDADD = $(LDADD)
+keyval_double_free_win_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -253,12 +274,14 @@ SOURCES = attr2type.c attrdeleteget.c attrend.c attrend2.c attrerr.c \
 	attrerrcomm.c attrerrtype.c attric.c attrorder.c \
 	attrordercomm.c attrordertype.c attrt.c baseattr2.c \
 	baseattrcomm.c fkeyval.c fkeyvalcomm.c fkeyvaltype.c \
-	keyval_double_free.c
+	keyval_double_free.c keyval_double_free_comm.c \
+	keyval_double_free_type.c keyval_double_free_win.c
 DIST_SOURCES = attr2type.c attrdeleteget.c attrend.c attrend2.c \
 	attrerr.c attrerrcomm.c attrerrtype.c attric.c attrorder.c \
 	attrordercomm.c attrordertype.c attrt.c baseattr2.c \
 	baseattrcomm.c fkeyval.c fkeyvalcomm.c fkeyvaltype.c \
-	keyval_double_free.c
+	keyval_double_free.c keyval_double_free_comm.c \
+	keyval_double_free_type.c keyval_double_free_win.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -413,6 +436,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -447,6 +471,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -464,6 +489,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -586,6 +612,18 @@ keyval_double_free$(EXEEXT): $(keyval_double_free_OBJECTS) $(keyval_double_free_
 	@rm -f keyval_double_free$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(keyval_double_free_OBJECTS) $(keyval_double_free_LDADD) $(LIBS)
 
+keyval_double_free_comm$(EXEEXT): $(keyval_double_free_comm_OBJECTS) $(keyval_double_free_comm_DEPENDENCIES) $(EXTRA_keyval_double_free_comm_DEPENDENCIES) 
+	@rm -f keyval_double_free_comm$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(keyval_double_free_comm_OBJECTS) $(keyval_double_free_comm_LDADD) $(LIBS)
+
+keyval_double_free_type$(EXEEXT): $(keyval_double_free_type_OBJECTS) $(keyval_double_free_type_DEPENDENCIES) $(EXTRA_keyval_double_free_type_DEPENDENCIES) 
+	@rm -f keyval_double_free_type$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(keyval_double_free_type_OBJECTS) $(keyval_double_free_type_LDADD) $(LIBS)
+
+keyval_double_free_win$(EXEEXT): $(keyval_double_free_win_OBJECTS) $(keyval_double_free_win_DEPENDENCIES) $(EXTRA_keyval_double_free_win_DEPENDENCIES) 
+	@rm -f keyval_double_free_win$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(keyval_double_free_win_OBJECTS) $(keyval_double_free_win_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -610,6 +648,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fkeyvalcomm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fkeyvaltype.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/keyval_double_free.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/keyval_double_free_comm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/keyval_double_free_type.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/keyval_double_free_win.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\

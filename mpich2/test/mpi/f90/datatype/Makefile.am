@@ -15,7 +15,9 @@ EXTRA_DIST = testlist
 AM_DEFAULT_SOURCE_EXT = .f90
 
 noinst_PROGRAMS = typenamef90 typesnamef90 typecntsf90 typesubf90 typem2f90 gaddressf90 \
-                  packef90 allctypesf90 hindex1f90 hindexed_blockf90 typename3f90
+                  packef90 allctypesf90 hindex1f90 hindexed_blockf90 typename3f90 bottom
+
+bottom_SOURCES=bottomc.c bottomf90.f90
 
 ## typeaints.h will be distributed because it's listed in AC_CONFIG_FILES/AC_OUTPUT
 

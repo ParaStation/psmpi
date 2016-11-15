@@ -7,8 +7,8 @@
 #include "mpiimpl.h"
 #include "mpidu_sock.h"
 
-#define MPIDI_QUOTE(A) MPIDI_QUOTE2(A)
-#define MPIDI_QUOTE2(A) #A
+#define MPL_QUOTE(A) MPL_QUOTE2(A)
+#define MPL_QUOTE2(A) #A
 
 #define SOCKI_TCP_BUFFER_SIZE       32*1024
 #define SOCKI_DESCRIPTION_LENGTH    256
@@ -26,11 +26,11 @@ typedef struct sock_buffer
 {
     DWORD num_bytes;
     OVERLAPPED ovl;
-    MPID_IOV tiov;
+    MPL_IOV tiov;
 #ifdef USE_SOCK_IOV_COPY
-    MPID_IOV iov[MPID_IOV_MAXLEN];
+    MPL_IOV iov[MPL_IOV_MAXLEN];
 #else
-    MPID_IOV *iov;
+    MPL_IOV *iov;
 #endif
     int iovlen;
     int index;
@@ -106,7 +106,7 @@ static void translate_error(int error, char *msg, char *prepend)
 	if (prepend == NULL)
 	    memcpy(msg, str, num_bytes+1);
 	else
-	    MPIU_Snprintf(msg, 1024, "%s%s", prepend, (const char*)str);
+	    MPL_snprintf(msg, 1024, "%s%s", prepend, (const char*)str);
 	LocalFree(str);
 	strtok(msg, "\r\n");
     }
@@ -123,7 +123,7 @@ static char *get_error_string(int error_code)
 #undef FUNCNAME
 #define FUNCNAME easy_create
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int easy_create_ranged(SOCKET *sock, int port, unsigned long addr)
 {
     int mpi_errno=MPI_SUCCESS;
@@ -142,7 +142,7 @@ static int easy_create_ranged(SOCKET *sock, int port, unsigned long addr)
 	return mpi_errno;
     }
     
-    MPIU_ERR_CHKANDJUMP(MPIR_CVAR_CH3_PORT_RANGE.low < 0 || MPIR_CVAR_CH3_PORT_RANGE.low > MPIR_CVAR_CH3_PORT_RANGE.high, mpi_errno, MPI_ERR_OTHER, "**badportrange");
+    MPIR_ERR_CHKANDJUMP(MPIR_CVAR_CH3_PORT_RANGE.low < 0 || MPIR_CVAR_CH3_PORT_RANGE.low > MPIR_CVAR_CH3_PORT_RANGE.high, mpi_errno, MPI_ERR_OTHER, "**badportrange");
     if (port == 0 && MPIR_CVAR_CH3_PORT_RANGE.low != 0 && MPIR_CVAR_CH3_PORT_RANGE.high != 0)
     {
 	use_range = 1;
@@ -232,7 +232,7 @@ static int easy_create_ranged(SOCKET *sock, int port, unsigned long addr)
 #undef FUNCNAME
 #define FUNCNAME easy_create
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int easy_create(SOCKET *sock, int port, unsigned long addr)
 {
     int mpi_errno;
@@ -334,7 +334,7 @@ static inline void init_state_struct(sock_state_t *p)
     p->pending_operations = 0;
     p->read.total = 0;
     p->read.num_bytes = 0;
-    p->read.tiov.MPID_IOV_BUF = NULL;
+    p->read.tiov.MPL_IOV_BUF = NULL;
 #ifndef USE_SOCK_IOV_COPY
     p->read.iov = NULL;
 #endif
@@ -345,7 +345,7 @@ static inline void init_state_struct(sock_state_t *p)
     p->read.progress_update = NULL;
     p->write.total = 0;
     p->write.num_bytes = 0;
-    p->write.tiov.MPID_IOV_BUF = NULL;
+    p->write.tiov.MPL_IOV_BUF = NULL;
 #ifndef USE_SOCK_IOV_COPY
     p->write.iov = NULL;
 #endif
@@ -369,7 +369,7 @@ static inline void init_state_struct(sock_state_t *p)
 #undef FUNCNAME
 #define FUNCNAME post_next_accept
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int post_next_accept(sock_state_t * context)
 {
     int mpi_errno;
@@ -396,7 +396,7 @@ static inline int post_next_accept(sock_state_t * context)
 	mpi_errno = WSAGetLastError();
 	if (mpi_errno == ERROR_IO_PENDING)
 	    return MPI_SUCCESS;
-	/*MPIU_Error_printf("AcceptEx failed with error %d\n", error);fflush(stdout);*/
+	/*MPL_error_printf("AcceptEx failed with error %d\n", error);fflush(stdout);*/
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s %d", get_error_string(mpi_errno), mpi_errno);
 	return mpi_errno;
     }
@@ -408,7 +408,7 @@ static inline int post_next_accept(sock_state_t * context)
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_init
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_init()
 {
     int mpi_errno;
@@ -489,7 +489,7 @@ int MPIDU_Sock_init()
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_finalize
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_finalize()
 {
     int mpi_errno;
@@ -666,7 +666,7 @@ static int socki_get_host_list(char *hostname, socki_host_name_t **listp)
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_hostname_to_host_description
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_hostname_to_host_description(char *hostname, char *host_description, int len)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -694,7 +694,7 @@ int MPIDU_Sock_hostname_to_host_description(char *hostname, char *host_descripti
     {
         MPIU_DBG_PRINTF(("adding host: %s\n", iter->host));
         str_errno = MPIU_Str_add_string(&host_description, &len, iter->host);
-        MPIU_ERR_CHKANDJUMP(str_errno, mpi_errno, MPIDU_SOCK_ERR_NOMEM, "**desc_len");
+        MPIR_ERR_CHKANDJUMP(str_errno, mpi_errno, MPIDU_SOCK_ERR_NOMEM, "**desc_len");
 
         iter = iter->next;
     }
@@ -711,7 +711,7 @@ int MPIDU_Sock_hostname_to_host_description(char *hostname, char *host_descripti
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_get_host_description
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_get_host_description(int myRank, 
 				    char * host_description, int len)
 {
@@ -763,7 +763,7 @@ int MPIDU_Sock_get_host_description(int myRank,
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_create_set
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_create_set(MPIDU_Sock_set_t * set)
 {
     int mpi_errno;
@@ -793,7 +793,7 @@ int MPIDU_Sock_create_set(MPIDU_Sock_set_t * set)
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_destroy_set
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_destroy_set(MPIDU_Sock_set_t set)
 {
     int mpi_errno;
@@ -826,7 +826,7 @@ int MPIDU_Sock_destroy_set(MPIDU_Sock_set_t set)
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_native_to_sock
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_native_to_sock(MPIDU_Sock_set_t set, MPIDU_SOCK_NATIVE_FD fd, void *user_ptr, MPIDU_Sock_t *sock_ptr)
 {
     int mpi_errno;
@@ -884,7 +884,7 @@ int MPIDU_Sock_native_to_sock(MPIDU_Sock_set_t set, MPIDU_SOCK_NATIVE_FD fd, voi
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_listen
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_listen(MPIDU_Sock_set_t set, void * user_ptr, int * port, MPIDU_Sock_t * sock)
 {
     int mpi_errno;
@@ -965,7 +965,7 @@ int MPIDU_Sock_listen(MPIDU_Sock_set_t set, void * user_ptr, int * port, MPIDU_S
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_accept
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_accept(MPIDU_Sock_t listener_sock, MPIDU_Sock_set_t set, void * user_ptr, MPIDU_Sock_t * sock)
 {
     int mpi_errno;
@@ -1122,7 +1122,7 @@ static unsigned int GetMask(char *pszMask)
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_post_connect
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_post_connect(MPIDU_Sock_set_t set, void * user_ptr, char * host_description, int port, MPIDU_Sock_t * sock)
 {
     int mpi_errno;
@@ -1331,7 +1331,7 @@ int MPIDU_Sock_post_connect(MPIDU_Sock_set_t set, void * user_ptr, char * host_d
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_set_user_ptr
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_set_user_ptr(MPIDU_Sock_t sock, void * user_ptr)
 {
     int mpi_errno;
@@ -1358,7 +1358,7 @@ int MPIDU_Sock_set_user_ptr(MPIDU_Sock_t sock, void * user_ptr)
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_post_close
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
 {
     int mpi_errno;
@@ -1417,7 +1417,7 @@ int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
 	{
 	    int i, n = 0;
 	    for (i=0; i<sock->read.iovlen; i++)
-		n += sock->read.iov[i].MPID_IOV_LEN;
+		n += sock->read.iov[i].MPL_IOV_LEN;
 	    MPIU_DBG_PRINTF(("sock_post_close(%d) called while sock is reading: %d bytes out of %d, index %d, iovlen %d.\n",
 		MPIDU_Sock_get_sock_id(sock), sock->read.total, n, sock->read.index, sock->read.iovlen));
 	}
@@ -1425,7 +1425,7 @@ int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
 	{
 	    int i, n = 0;
 	    for (i=0; i<sock->write.iovlen; i++)
-		n += sock->write.iov[i].MPID_IOV_LEN;
+		n += sock->write.iov[i].MPL_IOV_LEN;
 	    MPIU_DBG_PRINTF(("sock_post_close(%d) called while sock is writing: %d bytes out of %d, index %d, iovlen %d.\n",
 		MPIDU_Sock_get_sock_id(sock), sock->write.total, n, sock->write.index, sock->write.iovlen));
 	}
@@ -1524,7 +1524,7 @@ int MPIDU_Sock_post_close(MPIDU_Sock_t sock)
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_post_read
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_post_read(MPIDU_Sock_t sock, void * buf, MPIU_Size_t minbr, MPIU_Size_t maxbr,
                          MPIDU_Sock_progress_update_func_t fn)
 {
@@ -1533,8 +1533,8 @@ int MPIDU_Sock_post_read(MPIDU_Sock_t sock, void * buf, MPIU_Size_t minbr, MPIU_
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_POST_READ);
     MPIU_UNREFERENCED_ARG(maxbr);
-    sock->read.tiov.MPID_IOV_BUF = (MPID_IOV_BUF_CAST)buf;
-    sock->read.tiov.MPID_IOV_LEN = minbr;
+    sock->read.tiov.MPL_IOV_BUF = (MPL_IOV_BUF_CAST)buf;
+    sock->read.tiov.MPL_IOV_LEN = minbr;
     mpi_errno = MPIDU_Sock_post_readv(sock, &sock->read.tiov, 1, fn);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_READ);
     return mpi_errno;
@@ -1543,8 +1543,8 @@ int MPIDU_Sock_post_read(MPIDU_Sock_t sock, void * buf, MPIU_Size_t minbr, MPIU_
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_post_readv
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDU_Sock_post_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIDU_Sock_progress_update_func_t fn)
+#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPIDU_Sock_post_readv(MPIDU_Sock_t sock, MPL_IOV * iov, int iov_n, MPIDU_Sock_progress_update_func_t fn)
 {
     int iter;
     int mpi_errno = MPI_SUCCESS;
@@ -1567,12 +1567,12 @@ int MPIDU_Sock_post_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIDU_So
     }
     /*sock->rt1 = PMPI_Wtime();*/
     /* strip any trailing empty buffers */
-    while (iov_n && iov[iov_n-1].MPID_IOV_LEN == 0)
+    while (iov_n && iov[iov_n-1].MPL_IOV_LEN == 0)
 	iov_n--;
     sock->read.total = 0;
 #ifdef USE_SOCK_IOV_COPY
     MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
-    memcpy(sock->read.iov, iov, sizeof(MPID_IOV) * n);
+    memcpy(sock->read.iov, iov, sizeof(MPL_IOV) * n);
     MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 #else
     sock->read.iov = iov;
@@ -1584,7 +1584,7 @@ int MPIDU_Sock_post_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIDU_So
 #ifdef MPICH_DBG_OUTPUT
     for (i=0; i<iov_n; i++)
     {
-	MPIU_DBG_PRINTF(("sock_post_readv - iov[%d].len = %d\n", i, iov[i].MPID_IOV_LEN));
+	MPIU_DBG_PRINTF(("sock_post_readv - iov[%d].len = %d\n", i, iov[i].MPL_IOV_LEN));
     }
 #endif
     for (iter=0; iter<10; iter++)
@@ -1650,7 +1650,7 @@ int MPIDU_Sock_post_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIDU_So
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_post_write
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_post_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t min, MPIU_Size_t max, MPIDU_Sock_progress_update_func_t fn)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -1658,8 +1658,8 @@ int MPIDU_Sock_post_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t min, MPIU_S
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_POST_WRITE);
     MPIU_UNREFERENCED_ARG(max);
-    sock->write.tiov.MPID_IOV_BUF = (MPID_IOV_BUF_CAST)buf;
-    sock->write.tiov.MPID_IOV_LEN = min;
+    sock->write.tiov.MPL_IOV_BUF = (MPL_IOV_BUF_CAST)buf;
+    sock->write.tiov.MPL_IOV_LEN = min;
     mpi_errno = MPIDU_Sock_post_writev(sock, &sock->write.tiov, 1, fn);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_POST_WRITE);
     return mpi_errno;
@@ -1668,8 +1668,8 @@ int MPIDU_Sock_post_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t min, MPIU_S
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_post_writev
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDU_Sock_post_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIDU_Sock_progress_update_func_t fn)
+#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPIDU_Sock_post_writev(MPIDU_Sock_t sock, MPL_IOV * iov, int iov_n, MPIDU_Sock_progress_update_func_t fn)
 {
     int mpi_errno = MPI_SUCCESS;
     int iter;
@@ -1686,7 +1686,7 @@ int MPIDU_Sock_post_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIDU_S
     sock->write.total = 0;
 #ifdef USE_SOCK_IOV_COPY
     MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
-    memcpy(sock->write.iov, iov, sizeof(MPID_IOV) * iov_n);
+    memcpy(sock->write.iov, iov, sizeof(MPL_IOV) * iov_n);
     MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 #else
     sock->write.iov = iov;
@@ -1698,7 +1698,7 @@ int MPIDU_Sock_post_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIDU_S
 #ifdef MPICH_DBG_OUTPUT
     for (i=0; i<iov_n; i++)
     {
-	MPIU_DBG_PRINTF(("sock_post_writev - iov[%d].len = %d\n", i, iov[i].MPID_IOV_LEN));
+	MPIU_DBG_PRINTF(("sock_post_writev - iov[%d].len = %d\n", i, iov[i].MPL_IOV_LEN));
     }
 #endif
     for (iter=0; iter<10; iter++)
@@ -1762,7 +1762,7 @@ int MPIDU_Sock_post_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIDU_S
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_wait
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 {
     /*double t1, t2;*/
@@ -1780,13 +1780,14 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
     for (;;) 
     {
 #if defined(MPICH_IS_THREADED)
-#       if (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL)
+#       if (MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY_GLOBAL)
 	{
+            int err;
 	    /* Release the lock so that other threads may make progress while this thread waits for something to do */
 	    MPIU_DBG_MSG(THREAD,TYPICAL,"Exit global critical section");
-	    MPIU_THREAD_CHECK_BEGIN 
-	    MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex);
-	    MPIU_THREAD_CHECK_END
+	    MPIU_THREAD_CHECK_BEGIN;
+	    MPID_Thread_mutex_unlock(&MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX, &err);
+	    MPIU_THREAD_CHECK_END;
 	}
 #       else
 #           error selected multi-threaded implementation is not supported
@@ -1804,13 +1805,14 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 	    /*printf("[%d] GetQueuedCompletionStatus took %.3f seconds for sock: %d\n", getpid(), t2-t1, sock->sock);*/
 	    MPIDI_FUNC_EXIT(MPID_STATE_GETQUEUEDCOMPLETIONSTATUS);
 #if defined(MPICH_IS_THREADED)
-#           if (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL)
+#           if (MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY_GLOBAL)
 	    {
+                int err;
 		/* Reaquire the lock before processing any of the information returned from GetQueuedCompletionStatus */
 		MPIU_DBG_MSG(THREAD,TYPICAL,"Enter global critical section");
-		MPIU_THREAD_CHECK_BEGIN 
-		MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex);
-		MPIU_THREAD_CHECK_END
+		MPIU_THREAD_CHECK_BEGIN;
+		MPID_Thread_mutex_lock(&MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX, &err);
+		MPIU_THREAD_CHECK_END;
 	    }
 #           else
 #               error selected multi-threaded implementation is not supported
@@ -1889,17 +1891,17 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 		    sock->read.total += num_bytes;
 		    while (num_bytes)
 		    {
-			if (sock->read.iov[sock->read.index].MPID_IOV_LEN <= num_bytes)
+			if (sock->read.iov[sock->read.index].MPL_IOV_LEN <= num_bytes)
 			{
-			    num_bytes -= sock->read.iov[sock->read.index].MPID_IOV_LEN;
+			    num_bytes -= sock->read.iov[sock->read.index].MPL_IOV_LEN;
 			    sock->read.index++;
 			    sock->read.iovlen--;
 			}
 			else
 			{
-			    sock->read.iov[sock->read.index].MPID_IOV_LEN -= num_bytes;
-			    sock->read.iov[sock->read.index].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)(
-				(char*)(sock->read.iov[sock->read.index].MPID_IOV_BUF) + num_bytes);
+			    sock->read.iov[sock->read.index].MPL_IOV_LEN -= num_bytes;
+			    sock->read.iov[sock->read.index].MPL_IOV_BUF = (MPL_IOV_BUF_CAST)(
+				(char*)(sock->read.iov[sock->read.index].MPL_IOV_BUF) + num_bytes);
 			    num_bytes = 0;
 			}
 		    }
@@ -2122,21 +2124,21 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 			sock->write.total += num_bytes;
 			while (num_bytes)
 			{
-			    if (sock->write.iov[sock->write.index].MPID_IOV_LEN <= num_bytes)
+			    if (sock->write.iov[sock->write.index].MPL_IOV_LEN <= num_bytes)
 			    {
 				/*MPIU_DBG_PRINTF(("sock_wait: write.index %d, len %d\n", sock->write.index, 
-				sock->write.iov[sock->write.index].MPID_IOV_LEN));*/
-				num_bytes -= sock->write.iov[sock->write.index].MPID_IOV_LEN;
+				sock->write.iov[sock->write.index].MPL_IOV_LEN));*/
+				num_bytes -= sock->write.iov[sock->write.index].MPL_IOV_LEN;
 				sock->write.index++;
 				sock->write.iovlen--;
 			    }
 			    else
 			    {
 				/*MPIU_DBG_PRINTF(("sock_wait: partial data written [%d].len = %d, num_bytes = %d\n", sock->write.index,
-				sock->write.iov[sock->write.index].MPID_IOV_LEN, num_bytes));*/
-				sock->write.iov[sock->write.index].MPID_IOV_LEN -= num_bytes;
-				sock->write.iov[sock->write.index].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)(
-				    (char*)(sock->write.iov[sock->write.index].MPID_IOV_BUF) + num_bytes);
+				sock->write.iov[sock->write.index].MPL_IOV_LEN, num_bytes));*/
+				sock->write.iov[sock->write.index].MPL_IOV_LEN -= num_bytes;
+				sock->write.iov[sock->write.index].MPL_IOV_BUF = (MPL_IOV_BUF_CAST)(
+				    (char*)(sock->write.iov[sock->write.index].MPL_IOV_BUF) + num_bytes);
 				num_bytes = 0;
 			    }
 			}
@@ -2321,8 +2323,8 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 		    if (sock->sock != INVALID_SOCKET)
 		    {
 			MPIU_DBG_PRINTF(("unmatched ovl: pending: %d, state = %d\n", sock->pending_operations, sock->state));
-			/*MPIU_Error_printf("In sock_wait(), returned overlapped structure does not match the current read or write ovl: 0x%x\n", ovl);*/
-			MPIU_Snprintf(error_msg, 1024, "In sock_wait(), returned overlapped structure does not match the current read or write ovl: 0x%p\n", ovl);
+			/*MPL_error_printf("In sock_wait(), returned overlapped structure does not match the current read or write ovl: 0x%x\n", ovl);*/
+			MPL_snprintf(error_msg, 1024, "In sock_wait(), returned overlapped structure does not match the current read or write ovl: 0x%p\n", ovl);
 			MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
 			return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", error_msg);
 		    }
@@ -2377,7 +2379,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 		out->op_type = MPIDU_SOCK_OP_ACCEPT;
 		if (sock->listen_sock == INVALID_SOCKET)
 		{
-		    MPIU_Error_printf("returning MPIDU_SOCK_OP_ACCEPT with an INVALID_SOCKET for the listener\n");
+		    MPL_error_printf("returning MPIDU_SOCK_OP_ACCEPT with an INVALID_SOCKET for the listener\n");
 		}
 		out->num_bytes = num_bytes;
 		out->error = MPI_SUCCESS;
@@ -2387,8 +2389,8 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 	    }
 	    else
 	    {
-		/*MPIU_Error_printf("sock type is not a SOCKET or a LISTENER, it's %d\n", sock->type);*/
-		MPIU_Snprintf(error_msg, 1024, "sock type is not a SOCKET or a LISTENER, it's %d\n", sock->type);
+		/*MPL_error_printf("sock type is not a SOCKET or a LISTENER, it's %d\n", sock->type);*/
+		MPL_snprintf(error_msg, 1024, "sock type is not a SOCKET or a LISTENER, it's %d\n", sock->type);
 		MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_WAIT);
 		return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPIDU_SOCK_ERR_FAIL, "**fail", "**fail %s", error_msg);
 	    }
@@ -2396,13 +2398,14 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 	else
 	{
 #if defined(MPICH_IS_THREADED)
-#           if (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL)
+#           if (MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY_GLOBAL)
 	    {
+                int err;
 		/* Reaquire the lock before processing any of the information returned from GetQueuedCompletionStatus */
 		MPIU_DBG_MSG(THREAD,TYPICAL,"Enter global critical section");
-		MPIU_THREAD_CHECK_BEGIN 
-		MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex);
-		MPIU_THREAD_CHECK_END
+		MPIU_THREAD_CHECK_BEGIN;
+		MPID_Thread_mutex_lock(&MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX, &err);
+		MPIU_THREAD_CHECK_END;
 	    }
 #           else
 #               error selected multi-threaded implementation is not supported
@@ -2637,7 +2640,7 @@ int MPIDU_Sock_wait(MPIDU_Sock_set_t set, int timeout, MPIDU_Sock_event_t * out)
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_wakeup
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_wakeup(MPIDU_Sock_set_t set)
 {
     /* post a completion event to wake up sock_wait */
@@ -2648,11 +2651,11 @@ int MPIDU_Sock_wakeup(MPIDU_Sock_set_t set)
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_read
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_read(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t * num_read)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_IOV iov;
+    MPL_IOV iov;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_READ);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_READ);
@@ -2666,8 +2669,8 @@ int MPIDU_Sock_read(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t 
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_readv
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDU_Sock_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t * num_read)
+#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPIDU_Sock_readv(MPIDU_Sock_t sock, MPL_IOV * iov, int iov_n, MPIU_Size_t * num_read)
 {
     int mpi_errno = MPI_SUCCESS;
     DWORD nFlags = 0;
@@ -2735,11 +2738,11 @@ int MPIDU_Sock_readv(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t *
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_write
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t * num_written)
 {
     int mpi_errno;
-    MPID_IOV iov;
+    MPL_IOV iov;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_WRITE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SOCK_WRITE);
@@ -2753,8 +2756,8 @@ int MPIDU_Sock_write(MPIDU_Sock_t sock, void * buf, MPIU_Size_t len, MPIU_Size_t
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_writev
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t * num_written)
+#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPL_IOV * iov, int iov_n, MPIU_Size_t * num_written)
 {
     int mpi_errno;
     DWORD num_written_local;
@@ -2810,7 +2813,7 @@ int MPIDU_Sock_writev(MPIDU_Sock_t sock, MPID_IOV * iov, int iov_n, MPIU_Size_t 
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_get_sock_id
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_get_sock_id(MPIDU_Sock_t sock)
 {
     int ret_val;
@@ -2833,7 +2836,7 @@ int MPIDU_Sock_get_sock_id(MPIDU_Sock_t sock)
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_get_sock_set_id
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_get_sock_set_id(MPIDU_Sock_set_t set)
 {
     int ret_val;
@@ -2848,7 +2851,7 @@ int MPIDU_Sock_get_sock_set_id(MPIDU_Sock_set_t set)
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_get_error_class_string
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_get_error_class_string(int error, char *error_string, int length)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_SOCK_GET_ERROR_CLASS_STRING);
@@ -2908,7 +2911,7 @@ int MPIDU_Sock_get_error_class_string(int error, char *error_string, int length)
 	MPIU_Strncpy(error_string, "no new connection available", length);
 	break;
     default:
-	MPIU_Snprintf(error_string, length, "unknown socket error %d", error);
+	MPL_snprintf(error_string, length, "unknown socket error %d", error);
 	break;
     }
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SOCK_GET_ERROR_CLASS_STRING);

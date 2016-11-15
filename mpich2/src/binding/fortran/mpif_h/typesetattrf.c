@@ -266,5 +266,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_set_attr_( MPI_Fint *, MPI_Fint *,
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_type_set_attr_ ( MPI_Fint *v1, MPI_Fint *v2, void*v3, MPI_Fint *ierr ){
+    if (v3 == MPIR_F_MPI_BOTTOM) v3 = MPI_BOTTOM;
    *ierr = MPIR_TypeSetAttr( (MPI_Datatype)(*v1), (int)*v2, (void *)(*(MPI_Aint *)v3), MPIR_ATTR_AINT );
 }

@@ -59,7 +59,8 @@ static HYD_status proxy_list_to_node_str(struct HYD_proxy *proxy_list, char **no
     goto fn_exit;
 }
 
-HYD_status HYDT_bscd_slurm_launch_procs(char **args, struct HYD_proxy *proxy_list, int *control_fd)
+HYD_status HYDT_bscd_slurm_launch_procs(char **args, struct HYD_proxy *proxy_list, int use_rmk,
+                                        int *control_fd)
 {
     int num_hosts, idx, i;
     int *pid, *fd_list;
@@ -83,7 +84,7 @@ HYD_status HYDT_bscd_slurm_launch_procs(char **args, struct HYD_proxy *proxy_lis
     idx = 0;
     targs[idx++] = HYDU_strdup(path);
 
-    if (strcmp(HYDT_bsci_info.rmk, "slurm")) {
+    if (use_rmk == HYD_FALSE || strcmp(HYDT_bsci_info.rmk, "slurm")) {
         targs[idx++] = HYDU_strdup("--nodelist");
 
         status = proxy_list_to_node_str(proxy_list, &node_list_str);
@@ -101,6 +102,11 @@ HYD_status HYDT_bscd_slurm_launch_procs(char **args, struct HYD_proxy *proxy_lis
 
     targs[idx++] = HYDU_strdup("-n");
     targs[idx++] = HYDU_int_to_str(num_hosts);
+
+    /* Force srun to ignore stdin to avoid issues with
+     * unexpected files open on fd 0 */
+    targs[idx++] = HYDU_strdup("--input");
+    targs[idx++] = HYDU_strdup("none");
 
     MPL_env2str("HYDRA_LAUNCHER_EXTRA_ARGS", (const char **) &extra_arg_list);
     if (extra_arg_list) {

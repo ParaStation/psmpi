@@ -108,7 +108,8 @@ noinst_PROGRAMS = winscale1f08$(EXEEXT) winscale2f08$(EXEEXT) \
 	winnamef08$(EXEEXT) wingroupf08$(EXEEXT) winaccf08$(EXEEXT) \
 	winaccf08$(EXEEXT) c2f2cwinf08$(EXEEXT) \
 	baseattrwinf08$(EXEEXT) winattrf08$(EXEEXT) \
-	winattr2f08$(EXEEXT)
+	winattr2f08$(EXEEXT) $(am__EXEEXT_1)
+@BUILD_MPIX_TESTS_TRUE@am__append_1 = aintf08
 subdir = f08/rma
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -125,9 +126,14 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = testlist
 CONFIG_CLEAN_VPATH_FILES =
+@BUILD_MPIX_TESTS_TRUE@am__EXEEXT_1 = aintf08$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
+aintf08_SOURCES = aintf08.f90
+aintf08_OBJECTS = aintf08.$(OBJEXT)
+aintf08_LDADD = $(LDADD)
+aintf08_DEPENDENCIES = $(top_builddir)/f08/util/mtestf08.o
 baseattrwinf08_SOURCES = baseattrwinf08.f90
 baseattrwinf08_OBJECTS = baseattrwinf08.$(OBJEXT)
 baseattrwinf08_LDADD = $(LDADD)
@@ -216,14 +222,14 @@ AM_V_FCLD = $(am__v_FCLD_@AM_V@)
 am__v_FCLD_ = $(am__v_FCLD_@AM_DEFAULT_V@)
 am__v_FCLD_0 = @echo "  FCLD    " $@;
 am__v_FCLD_1 = 
-SOURCES = baseattrwinf08.f90 $(c2f2cwinf08_SOURCES) winaccf08.f90 \
-	winattr2f08.f90 winattrf08.f90 winerrf08.f90 winfencef08.f90 \
-	wingetf08.f90 wingroupf08.f90 winnamef08.f90 winscale1f08.f90 \
-	winscale2f08.f90
-DIST_SOURCES = baseattrwinf08.f90 $(c2f2cwinf08_SOURCES) winaccf08.f90 \
-	winattr2f08.f90 winattrf08.f90 winerrf08.f90 winfencef08.f90 \
-	wingetf08.f90 wingroupf08.f90 winnamef08.f90 winscale1f08.f90 \
-	winscale2f08.f90
+SOURCES = aintf08.f90 baseattrwinf08.f90 $(c2f2cwinf08_SOURCES) \
+	winaccf08.f90 winattr2f08.f90 winattrf08.f90 winerrf08.f90 \
+	winfencef08.f90 wingetf08.f90 wingroupf08.f90 winnamef08.f90 \
+	winscale1f08.f90 winscale2f08.f90
+DIST_SOURCES = aintf08.f90 baseattrwinf08.f90 $(c2f2cwinf08_SOURCES) \
+	winaccf08.f90 winattr2f08.f90 winattrf08.f90 winerrf08.f90 \
+	winfencef08.f90 wingetf08.f90 wingroupf08.f90 winnamef08.f90 \
+	winscale1f08.f90 winscale2f08.f90
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -248,7 +254,7 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in \
+am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/testlist.in \
 	$(top_srcdir)/Makefile_f08.mtest $(top_srcdir)/confdb/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 VPATH = @VPATH@
@@ -378,6 +384,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -412,6 +419,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -429,6 +437,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -482,9 +491,15 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+testlist: $(top_builddir)/config.status $(srcdir)/testlist.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+
+aintf08$(EXEEXT): $(aintf08_OBJECTS) $(aintf08_DEPENDENCIES) $(EXTRA_aintf08_DEPENDENCIES) 
+	@rm -f aintf08$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(aintf08_OBJECTS) $(aintf08_LDADD) $(LIBS)
 
 baseattrwinf08$(EXEEXT): $(baseattrwinf08_OBJECTS) $(baseattrwinf08_DEPENDENCIES) $(EXTRA_baseattrwinf08_DEPENDENCIES) 
 	@rm -f baseattrwinf08$(EXEEXT)

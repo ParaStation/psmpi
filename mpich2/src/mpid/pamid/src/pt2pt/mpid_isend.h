@@ -30,7 +30,7 @@
 static inline unsigned
 MPIDI_Context_hash(pami_task_t rank, unsigned ctxt, unsigned bias, unsigned ncontexts)
 {
-#if (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT)
+#if (MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY_PER_OBJECT)
   return (( rank + ctxt + bias ) & (ncontexts-1));
 #else
   /* The 'global' mpich lock mode only supports a single context. See
@@ -80,7 +80,7 @@ MPIDI_Context_local(MPID_Request * req)
  */
 static inline int
 MPID_Isend_inline(const void    * buf,
-                  int             count,
+                  MPI_Aint        count,
                   MPI_Datatype    datatype,
                   int             rank,
                   int             tag,

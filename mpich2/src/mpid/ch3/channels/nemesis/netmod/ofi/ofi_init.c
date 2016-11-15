@@ -12,13 +12,39 @@
 static inline int dump_and_choose_providers(info_t * prov, info_t ** prov_use);
 static inline int compile_time_checking();
 
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+cvars:
+    - name        : MPIR_CVAR_OFI_USE_PROVIDER
+      category    : DEVELOPER
+      type        : string
+      default     : NULL
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_MPIDEV_DETAIL
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        If non-null, choose an OFI provider by name
+
+    - name        : MPIR_CVAR_OFI_DUMP_PROVIDERS
+      category    : DEVELOPER
+      type        : boolean
+      default     : false
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_MPIDEV_DETAIL
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        If true, dump provider information at init
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
 #undef FCNAME
 #define FCNAME DECL_FUNC(MPID_nem_ofi_init)
 int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_max_sz_p)
 {
     int ret, fi_version, i, len, pmi_errno;
     int mpi_errno = MPI_SUCCESS;
-    info_t hints, *prov_tagged, *prov_use;
+    info_t *hints, *prov_tagged, *prov_use;
     cq_attr_t cq_attr;
     av_attr_t av_attr;
     char kvsname[OFI_KVSAPPSTRLEN], key[OFI_KVSAPPSTRLEN], bc[OFI_KVSAPPSTRLEN];
@@ -51,13 +77,15 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     /*           We expect to register all memory up front for use with this    */
     /*           endpoint, so the netmod requires dynamic memory regions        */
     /* ------------------------------------------------------------------------ */
-    memset(&hints, 0, sizeof(hints));
-    hints.mode = FI_CONTEXT;
-    hints.ep_type = FI_EP_RDM;  /* Reliable datagram         */
-    hints.caps = FI_TAGGED;     /* Tag matching interface    */
-    hints.caps |= FI_BUFFERED_RECV;     /* Buffered receives         */
-    hints.caps |= FI_CANCEL;    /* Support cancel            */
-    hints.caps |= FI_DYNAMIC_MR;        /* Global dynamic mem region */
+    hints                   = fi_allocinfo();
+    hints->mode             = FI_CONTEXT;
+    hints->ep_attr->type    = FI_EP_RDM;      /* Reliable datagram         */
+    hints->caps             = FI_TAGGED;      /* Tag matching interface    */
+    hints->tx_attr->msg_order = FI_ORDER_SAS;
+    hints->rx_attr->msg_order = FI_ORDER_SAS;
+
+    hints->ep_attr->mem_tag_format = MEM_TAG_FORMAT;
+    MPIU_Assert(pg_p->size < ((1 << MPID_RANK_BITS) - 1));
 
     /* ------------------------------------------------------------------------ */
     /* FI_VERSION provides binary backward and forward compatibility support    */
@@ -71,26 +99,21 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     /* remote node or service.  this does not necessarily allocate resources.   */
     /* Pass NULL for name/service because we want a list of providers supported */
     /* ------------------------------------------------------------------------ */
-    domain_attr_t domain_attr;
-    memset(&domain_attr, 0, sizeof(domain_attr));
-
-    tx_attr_t tx_attr;
-    memset(&tx_attr, 0, sizeof(tx_attr));
-
-    domain_attr.threading = FI_THREAD_ENDPOINT;
-    domain_attr.control_progress = FI_PROGRESS_AUTO;
-    domain_attr.data_progress = FI_PROGRESS_AUTO;
-    hints.domain_attr = &domain_attr;
-    hints.tx_attr = &tx_attr;
-
-    FI_RC(fi_getinfo(fi_version,        /* Interface version requested               */
-                     NULL,      /* Optional name or fabric to resolve        */
-                     NULL,      /* Service name or port number to request    */
-                     0ULL,      /* Flag:  node/service specify local address */
-                     &hints,    /* In:  Hints to filter available providers  */
-                     &prov_tagged),     /* Out: List of providers that match hints   */
+    hints->domain_attr->threading        = FI_THREAD_ENDPOINT;
+    hints->domain_attr->control_progress = FI_PROGRESS_AUTO;
+    hints->domain_attr->data_progress    = FI_PROGRESS_AUTO;
+    char *provname;
+    provname                             = MPIR_CVAR_OFI_USE_PROVIDER?
+      MPIU_Strdup(MPIR_CVAR_OFI_USE_PROVIDER):NULL;
+    hints->fabric_attr->prov_name        = provname;
+    FI_RC(fi_getinfo(fi_version,    /* Interface version requested               */
+                     NULL,          /* Optional name or fabric to resolve        */
+                     NULL,          /* Service name or port number to request    */
+                     0ULL,          /* Flag:  node/service specify local address */
+                     hints,         /* In:  Hints to filter available providers  */
+                     &prov_tagged), /* Out: List of providers that match hints   */
           getinfo);
-    MPIU_ERR_CHKANDJUMP4(prov_tagged == NULL, mpi_errno, MPI_ERR_OTHER,
+    MPIR_ERR_CHKANDJUMP4(prov_tagged == NULL, mpi_errno, MPI_ERR_OTHER,
                          "**ofi_getinfo", "**ofi_getinfo %s %d %s %s",
                          __SHORT_FILE__, __LINE__, FCNAME, "No tag matching provider found");
     /* ------------------------------------------------------------------------ */
@@ -105,6 +128,8 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
                     &gl_data.fabric,    /* Out:  Fabric descriptor */
                     NULL), openfabric); /* Context: fabric events  */
 
+    gl_data.iov_limit = prov_use->tx_attr->iov_limit;
+    gl_data.api_set = API_SET_1;
     /* ------------------------------------------------------------------------ */
     /* Create the access domain, which is the physical or virtual network or    */
     /* hardware port/collection of ports.  Returns a domain object that can be  */
@@ -137,21 +162,11 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     /* The objects include:                                                     */
     /*     * completion queue for events                                        */
     /*     * address vector of other endpoint addresses                         */
-    /*     * dynamic memory-spanning memory region                              */
     /* Other objects could be created (for example), but are unused in netmod   */
     /*     * counters for incoming writes                                       */
     /*     * completion counters for put and get                                */
     /* ------------------------------------------------------------------------ */
-    FI_RC(fi_mr_reg(gl_data.domain,     /* In:  Domain Object              */
-                    0,  /* In:  Lower memory address       */
-                    UINTPTR_MAX,        /* In:  Upper memory address       */
-                    FI_SEND | FI_RECV,  /* In:  Expose MR for read/write   */
-                    0ULL,       /* In:  base MR offset             */
-                    0ULL,       /* In:  requested key              */
-                    0ULL,       /* In:  No flags                   */
-                    &gl_data.mr,        /* Out: memregion object           */
-                    NULL), mr_reg);     /* Context: memregion events       */
-
+    gl_data.mr = NULL;
     memset(&cq_attr, 0, sizeof(cq_attr));
     cq_attr.format = FI_CQ_FORMAT_TAGGED;
     FI_RC(fi_cq_open(gl_data.domain,    /* In:  Domain Object         */
@@ -169,7 +184,6 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     /* --------------------------------------------- */
     /* Bind the MR, CQ and AV to the endpoint object */
     /* --------------------------------------------- */
-    FI_RC(fi_ep_bind(gl_data.endpoint, (fid_t) gl_data.mr, 0), bind);
     FI_RC(fi_ep_bind(gl_data.endpoint, (fid_t) gl_data.cq, FI_SEND | FI_RECV), bind);
     FI_RC(fi_ep_bind(gl_data.endpoint, (fid_t) gl_data.av, 0), bind);
 
@@ -182,6 +196,12 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     /* --------------------------- */
     /* Free providers info         */
     /* --------------------------- */
+    if(provname) {
+      MPIU_Free(provname);
+      hints->fabric_attr->prov_name = NULL;
+    }
+
+    fi_freeinfo(hints);
     fi_freeinfo(prov_use);
 
     /* ---------------------------------------------------- */
@@ -196,7 +216,7 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     /* Get our business card            */
     /* -------------------------------- */
     my_bc = *bc_val_p;
-    MPI_RC(MPID_nem_ofi_get_business_card(pg_rank, bc_val_p, val_max_sz_p));
+    MPIDI_CH3I_NM_OFI_RC(MPID_nem_ofi_get_business_card(pg_rank, bc_val_p, val_max_sz_p));
 
     /* -------------------------------- */
     /* Publish the business card        */
@@ -211,12 +231,13 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     /* -------------------------------- */
     /* Set the MPI maximum tag value    */
     /* -------------------------------- */
-    MPIR_Process.attrs.tag_ub = (1 << MPID_TAG_SHIFT) - 1;
+    MPIR_Process.attrs.tag_ub = (1 << MPID_TAG_BITS) - 1;
 
     /* --------------------------------- */
     /* Wait for all the ranks to publish */
     /* their business card               */
     /* --------------------------------- */
+    gl_data.rts_cts_in_flight = 0;
     PMI_Barrier();
 
     /* --------------------------------- */
@@ -233,7 +254,7 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
         ret = MPIU_Str_get_binary_arg(bc, "OFI",
                                       (char *) &addrs[i * gl_data.bound_addrlen],
                                       gl_data.bound_addrlen, &len);
-        MPIU_ERR_CHKANDJUMP((ret != MPIU_STR_SUCCESS && ret != MPIU_STR_NOMEM) ||
+        MPIR_ERR_CHKANDJUMP((ret != MPIU_STR_SUCCESS && ret != MPIU_STR_NOMEM) ||
                             (size_t) len != gl_data.bound_addrlen,
                             mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
     }
@@ -270,7 +291,7 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     /* required, like connection management and      */
     /* startcontig messages                          */
     /* --------------------------------------------- */
-    MPI_RC(MPID_nem_ofi_cm_init(pg_p, pg_rank));
+    MPIDI_CH3I_NM_OFI_RC(MPID_nem_ofi_cm_init(pg_p, pg_rank));
   fn_exit:
     if (fi_addrs)
         MPIU_Free(fi_addrs);
@@ -286,173 +307,90 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
 int MPID_nem_ofi_finalize(void)
 {
     int mpi_errno = MPI_SUCCESS;
-    int ret = 0;
+    MPIR_Errflag_t ret = MPIR_ERR_NONE;
     BEGIN_FUNC(FCNAME);
 
-    /* --------------------------------------------- */
-    /* Syncronization                                */
-    /* Barrier across all ranks in this world        */
-    /* --------------------------------------------- */
-    MPIR_Barrier_impl(MPIR_Process.comm_world, &ret);
-
+    while(gl_data.rts_cts_in_flight) {
+        MPID_nem_ofi_poll(0);
+    }
     /* --------------------------------------------- */
     /* Finalize connection management routines       */
     /* Cancels any persistent/global requests and    */
     /* frees any resources from cm_init()            */
     /* --------------------------------------------- */
-    MPI_RC(MPID_nem_ofi_cm_finalize());
+    MPIDI_CH3I_NM_OFI_RC(MPID_nem_ofi_cm_finalize());
 
-    FI_RC(fi_close((fid_t) gl_data.mr), mrclose);
-    FI_RC(fi_close((fid_t) gl_data.av), avclose);
     FI_RC(fi_close((fid_t) gl_data.endpoint), epclose);
+    FI_RC(fi_close((fid_t) gl_data.av), avclose);
     FI_RC(fi_close((fid_t) gl_data.cq), cqclose);
     FI_RC(fi_close((fid_t) gl_data.domain), domainclose);
     FI_RC(fi_close((fid_t) gl_data.fabric), fabricclose);
     END_FUNC_RC(FCNAME);
 }
 
+#undef FCNAME
+#define FCNAME DECL_FUNC(MPID_nem_ofi_get_ordering)
+int MPID_nem_ofi_get_ordering(int *ordering)
+{
+    (*ordering) = 1;
+    return MPI_SUCCESS;
+}
+
 static inline int compile_time_checking()
 {
-    OFI_COMPILE_TIME_ASSERT(sizeof(MPID_nem_ofi_vc_t) <= MPID_NEM_VC_NETMOD_AREA_LEN);
-    OFI_COMPILE_TIME_ASSERT(sizeof(MPID_nem_ofi_req_t) <= MPID_NEM_REQ_NETMOD_AREA_LEN);
-    OFI_COMPILE_TIME_ASSERT(sizeof(iovec_t) == sizeof(MPID_IOV));
+    OFI_COMPILE_TIME_ASSERT(sizeof(MPID_nem_ofi_vc_t) <= MPIDI_NEM_VC_NETMOD_AREA_LEN);
+    OFI_COMPILE_TIME_ASSERT(sizeof(MPID_nem_ofi_req_t) <= MPIDI_NEM_REQ_NETMOD_AREA_LEN);
+    OFI_COMPILE_TIME_ASSERT(sizeof(iovec_t) == sizeof(MPL_IOV));
     MPIU_Assert(((void *) &(((iovec_t *) 0)->iov_base)) ==
-                ((void *) &(((MPID_IOV *) 0)->MPID_IOV_BUF)));
+                ((void *) &(((MPL_IOV *) 0)->MPL_IOV_BUF)));
     MPIU_Assert(((void *) &(((iovec_t *) 0)->iov_len)) ==
-                ((void *) &(((MPID_IOV *) 0)->MPID_IOV_LEN)));
-    MPIU_Assert(sizeof(((iovec_t *) 0)->iov_len) == sizeof(((MPID_IOV *) 0)->MPID_IOV_LEN));
+                ((void *) &(((MPL_IOV *) 0)->MPL_IOV_LEN)));
+    MPIU_Assert(sizeof(((iovec_t *) 0)->iov_len) == sizeof(((MPL_IOV *) 0)->MPL_IOV_LEN));
 
     /* ------------------------------------------------------------------------ */
     /* Generate the MPICH catalog files                                         */
-    /* The high level mpich build scripts inspect MPIU_ERR_ macros to generate  */
+    /* The high level mpich build scripts inspect MPIR_ERR_ macros to generate  */
     /* the message catalog.  However, this netmod buries the messages under the */
     /* FI_RC macros, so the catalog doesn't get generated.  The build system    */
-    /* likely needs a MPIU_ERR_REGISTER macro                                   */
+    /* likely needs a MPIR_ERR_REGISTER macro                                   */
     /* ------------------------------------------------------------------------ */
 #if 0
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_avmap", "**ofi_avmap %s %d %s %s", a, b, a, a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_tsend", "**ofi_tsend %s %d %s %s", a, b, a, a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_trecv", "**ofi_trecv %s %d %s %s", a, b, a, a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_getinfo", "**ofi_getinfo %s %d %s %s", a, b, a, a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_openep", "**ofi_openep %s %d %s %s", a, b, a, a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_openfabric", "**ofi_openfabric %s %d %s %s", a, b, a, a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_opendomain", "**ofi_opendomain %s %d %s %s", a, b, a, a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_opencq", "**ofi_opencq %s %d %s %s", a, b, a, a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_avopen", "**ofi_avopen %s %d %s %s", a, b, a, a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_bind", "**ofi_bind %s %d %s %s", a, b, a, a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_ep_enable", "**ofi_ep_enable %s %d %s %s", a, b, a, a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_getname", "**ofi_getname %s %d %s %s", a, b, a, a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_avclose", "**ofi_avclose %s %d %s %s", a, b, a, a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_epclose", "**ofi_epclose %s %d %s %s", a, b, a, a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_cqclose", "**ofi_cqclose %s %d %s %s", a, b, a, a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_fabricclose", "**ofi_fabricclose %s %d %s %s", a, b, a,
-                  a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_domainclose", "**ofi_domainclose %s %d %s %s", a, b, a,
-                  a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_tsearch", "**ofi_tsearch %s %d %s %s", a, b, a, a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_poll", "**ofi_poll %s %d %s %s", a, b, a, a);
-    MPIU_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_cancel", "**ofi_cancel %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_avmap", "**ofi_avmap %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_tsend", "**ofi_tsend %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_trecv", "**ofi_trecv %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_getinfo", "**ofi_getinfo %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_openep", "**ofi_openep %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_openfabric", "**ofi_openfabric %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_opendomain", "**ofi_opendomain %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_opencq", "**ofi_opencq %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_avopen", "**ofi_avopen %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_bind", "**ofi_bind %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_ep_enable", "**ofi_ep_enable %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_getname", "**ofi_getname %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_avclose", "**ofi_avclose %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_epclose", "**ofi_epclose %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_cqclose", "**ofi_cqclose %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_fabricclose", "**ofi_fabricclose %s %d %s %s", a, b, a,a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_domainclose", "**ofi_domainclose %s %d %s %s", a, b, a,a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_peek", "**ofi_peek %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_poll", "**ofi_poll %s %d %s %s", a, b, a, a);
+    MPIR_ERR_SET2(e, MPI_ERR_OTHER, "**ofi_cancel", "**ofi_cancel %s %d %s %s", a, b, a, a);
 #endif
     return 0;
 }
 
 
-/*
-=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
-
-cvars:
-    - name        : MPIR_CVAR_DUMP_PROVIDERS
-      category    : DEVELOPER
-      type        : boolean
-      default     : false
-      class       : device
-      verbosity   : MPI_T_VERBOSITY_MPIDEV_DETAIL
-      scope       : MPI_T_SCOPE_LOCAL
-      description : >-
-        If true, dump provider information at init
-
-=== END_MPI_T_CVAR_INFO_BLOCK ===
-*/
 static inline int dump_and_choose_providers(info_t * prov, info_t ** prov_use)
 {
-    info_t *p = prov;
-    int i = 0;
-    *prov_use = prov;
-    if (MPIR_CVAR_DUMP_PROVIDERS) {
-        fprintf(stdout, "Dumping Providers(first=%p):\n", prov);
-        while (p) {
-            fprintf(stdout, " ********** Provider %d (%p) *********\n", i++, p);
-            fprintf(stdout, "%-18s: %-#20" PRIx64 "\n", "caps", p->caps);
-            fprintf(stdout, "%-18s: %-#20" PRIx64 "\n", "mode", p->mode);
-            fprintf(stdout, "%-18s: %-#20" PRIx32 "\n", "ep_type", p->ep_type);
-            fprintf(stdout, "%-18s: %-#20" PRIx32 "\n", "addr_format", p->addr_format);
-            fprintf(stdout, "%-18s: %-20lu\n", "src_addrlen", p->src_addrlen);
-            fprintf(stdout, "%-18s: %-20lu\n", "dest_addrlen", p->dest_addrlen);
-            fprintf(stdout, "%-18s: %-20p\n", "src_addr", p->src_addr);
-            fprintf(stdout, "%-18s: %-20p\n", "dest_addr", p->dest_addr);
-            fprintf(stdout, "%-18s: %-20p\n", "connreq", p->connreq);
-            fprintf(stdout, "%-18s: %-20p\n", "tx_attr", p->tx_attr);
-            fprintf(stdout, "       %-18s: %-#20" PRIx64 "\n", ".caps", p->tx_attr->caps);
-            fprintf(stdout, "       %-18s: %-#20" PRIx64 "\n", ".mode", p->tx_attr->mode);
-            fprintf(stdout, "       %-18s: %-#20" PRIx64 "\n", ".op_flags", p->tx_attr->op_flags);
-            fprintf(stdout, "       %-18s: %-#20" PRIx64 "\n", ".msg_order", p->tx_attr->msg_order);
-            fprintf(stdout, "       %-18s: %-20lu\n", ".inject_size", p->tx_attr->inject_size);
-            fprintf(stdout, "       %-18s: %-20lu\n", ".size", p->tx_attr->size);
-            fprintf(stdout, "       %-18s: %-20lu\n", ".iov_limit", p->tx_attr->iov_limit);
-            fprintf(stdout, "%-18s: %-20p\n", "rx_attr", p->rx_attr);
-            fprintf(stdout, "       %-18s: %-#20" PRIx64 "\n", ".caps", p->rx_attr->caps);
-            fprintf(stdout, "       %-18s: %-#20" PRIx64 "\n", ".mode", p->rx_attr->mode);
-            fprintf(stdout, "       %-18s: %-#20" PRIx64 "\n", ".op_flags", p->rx_attr->op_flags);
-            fprintf(stdout, "       %-18s: %-#20" PRIx64 "\n", ".msg_order", p->rx_attr->msg_order);
-            fprintf(stdout, "       %-18s: %-20lu\n", ".total_buffered_recv",
-                    p->rx_attr->total_buffered_recv);
-            fprintf(stdout, "       %-18s: %-20lu\n", ".size", p->rx_attr->size);
-            fprintf(stdout, "       %-18s: %-20lu\n", ".iov_limit", p->rx_attr->iov_limit);
-            fprintf(stdout, "%-18s: %-20p\n", "ep_attr", p->ep_attr);
-            fprintf(stdout, "       %-18s: %-#20" PRIx32 "\n", ".protocol", p->ep_attr->protocol);
-            fprintf(stdout, "       %-18s: %-20lu\n", ".max_msg_size", p->ep_attr->max_msg_size);
-            fprintf(stdout, "       %-18s: %-20lu\n", ".inject_size", p->ep_attr->inject_size);
-            fprintf(stdout, "       %-18s: %-20lu\n", ".total_buffered_recv",
-                    p->ep_attr->total_buffered_recv);
-            fprintf(stdout, "       %-18s: %-20lu\n", ".max_order_raw_size",
-                    p->ep_attr->max_order_raw_size);
-            fprintf(stdout, "       %-18s: %-20lu\n", ".max_order_war_size",
-                    p->ep_attr->max_order_war_size);
-            fprintf(stdout, "       %-18s: %-20lu\n", ".max_order_waw_size",
-                    p->ep_attr->max_order_waw_size);
-            fprintf(stdout, "       %-18s: %-20lu\n", ".mem_tag_format",
-                    p->ep_attr->mem_tag_format);
-            fprintf(stdout, "       %-18s: %-20lu\n", ".msg_order", p->ep_attr->msg_order);
-            fprintf(stdout, "       %-18s: %-20lu\n", ".tx_ctx_cnt", p->ep_attr->tx_ctx_cnt);
-            fprintf(stdout, "       %-18s: %-20lu\n", ".rx_ctx_cnt", p->ep_attr->rx_ctx_cnt);
-            fprintf(stdout, "%-18s: %-20p\n", "domain_attr", p->domain_attr);
-            fprintf(stdout, "           %-18s: %-20s\n", ".name", p->domain_attr->name);
-            fprintf(stdout, "           %-18s: %-#20" PRIx32 "\n", ".threading",
-                    p->domain_attr->threading);
-            fprintf(stdout, "           %-18s: %-#20" PRIx32 "\n", ".control_progress",
-                    p->domain_attr->control_progress);
-            fprintf(stdout, "           %-18s: %-#20" PRIx32 "\n", ".data_progress",
-                    p->domain_attr->data_progress);
-            fprintf(stdout, "           %-18s: %-20lu\n", ".mr_key_size",
-                    p->domain_attr->mr_key_size);
-            fprintf(stdout, "           %-18s: %-20lu\n", ".cq_data_size",
-                    p->domain_attr->cq_data_size);
-            fprintf(stdout, "           %-18s: %-20lu\n", ".ep_cnt", p->domain_attr->ep_cnt);
-            fprintf(stdout, "           %-18s: %-20lu\n", ".tx_ctx_cnt",
-                    p->domain_attr->tx_ctx_cnt);
-            fprintf(stdout, "           %-18s: %-20lu\n", ".rx_ctx_cnt",
-                    p->domain_attr->rx_ctx_cnt);
-            fprintf(stdout, "           %-18s: %-20lu\n", ".max_ep_tx_ctx",
-                    p->domain_attr->max_ep_tx_ctx);
-            fprintf(stdout, "           %-18s: %-20lu\n", ".max_ep_rx_ctx",
-                    p->domain_attr->max_ep_rx_ctx);
-            fprintf(stdout, "%-18s: %-20p\n", "fabric_attr", p->fabric_attr);
-            fprintf(stdout, "           %-18s: %-20s\n", ".name", p->fabric_attr->name);
-            fprintf(stdout, "           %-18s: %-20s\n", ".prov_name", p->fabric_attr->prov_name);
-            fprintf(stdout, "           %-18s: %-#20" PRIx32 "\n", ".prov_version",
-                    p->fabric_attr->prov_version);
-            p = p->next;
-        }
+  info_t *p = prov;
+  int     i = 0;
+  *prov_use = prov;
+  if (MPIR_CVAR_OFI_DUMP_PROVIDERS) {
+    fprintf(stdout, "Dumping Providers(first=%p):\n", prov);
+    while(p) {
+      fprintf(stdout, "%s", fi_tostr(p, FI_TYPE_INFO));
+      p=p->next;
     }
-    return i;
+  }
+  return i;
 }

@@ -58,7 +58,7 @@ int MPI_Type_dup(MPI_Datatype oldtype, MPI_Datatype *newtype)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_DUP);
     
     /* Validate parameters, especially handles needing to be converted */
@@ -106,7 +106,7 @@ int MPI_Type_dup(MPI_Datatype oldtype, MPI_Datatype *newtype)
 				           &oldtype);
 
     mpi_errno = MPID_Type_commit(&new_handle);
-    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+    if (mpi_errno) { MPIR_ERR_POP(mpi_errno); }
 
     /* Copy attributes, executing the attribute copy functions */
     /* This accesses the attribute dup function through the perprocess
@@ -129,12 +129,12 @@ int MPI_Type_dup(MPI_Datatype oldtype, MPI_Datatype *newtype)
 
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    MPIU_OBJ_PUBLISH_HANDLE(*newtype, new_handle);
+    MPID_OBJ_PUBLISH_HANDLE(*newtype, new_handle);
     /* ... end of body of routine ... */
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_DUP);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

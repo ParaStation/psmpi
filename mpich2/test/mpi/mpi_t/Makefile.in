@@ -95,7 +95,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = mpi_t_str$(EXEEXT) mpit_vars$(EXEEXT) \
-	cvarwrite$(EXEEXT)
+	cvarwrite$(EXEEXT) getindex$(EXEEXT)
 subdir = mpi_t
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -119,6 +119,12 @@ cvarwrite_SOURCES = cvarwrite.c
 cvarwrite_OBJECTS = cvarwrite.$(OBJEXT)
 cvarwrite_LDADD = $(LDADD)
 cvarwrite_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+getindex_SOURCES = getindex.c
+getindex_OBJECTS = getindex.$(OBJEXT)
+getindex_LDADD = $(LDADD)
+getindex_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 mpi_t_str_SOURCES = mpi_t_str.c
@@ -161,8 +167,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = cvarwrite.c mpi_t_str.c mpit_vars.c
-DIST_SOURCES = cvarwrite.c mpi_t_str.c mpit_vars.c
+SOURCES = cvarwrite.c getindex.c mpi_t_str.c mpit_vars.c
+DIST_SOURCES = cvarwrite.c getindex.c mpi_t_str.c mpit_vars.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -317,6 +323,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -351,6 +358,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -368,6 +376,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -422,6 +431,10 @@ cvarwrite$(EXEEXT): $(cvarwrite_OBJECTS) $(cvarwrite_DEPENDENCIES) $(EXTRA_cvarw
 	@rm -f cvarwrite$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(cvarwrite_OBJECTS) $(cvarwrite_LDADD) $(LIBS)
 
+getindex$(EXEEXT): $(getindex_OBJECTS) $(getindex_DEPENDENCIES) $(EXTRA_getindex_DEPENDENCIES) 
+	@rm -f getindex$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(getindex_OBJECTS) $(getindex_LDADD) $(LIBS)
+
 mpi_t_str$(EXEEXT): $(mpi_t_str_OBJECTS) $(mpi_t_str_DEPENDENCIES) $(EXTRA_mpi_t_str_DEPENDENCIES) 
 	@rm -f mpi_t_str$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(mpi_t_str_OBJECTS) $(mpi_t_str_LDADD) $(LIBS)
@@ -437,6 +450,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cvarwrite.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getindex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpi_t_str.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpit_vars.Po@am__quote@
 

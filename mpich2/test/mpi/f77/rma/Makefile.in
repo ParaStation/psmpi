@@ -98,7 +98,8 @@ noinst_PROGRAMS = winscale1f$(EXEEXT) winscale2f$(EXEEXT) \
 	winfencef$(EXEEXT) wingetf$(EXEEXT) winerrf$(EXEEXT) \
 	winnamef$(EXEEXT) wingroupf$(EXEEXT) winaccf$(EXEEXT) \
 	winaccf$(EXEEXT) c2f2cwinf$(EXEEXT) baseattrwinf$(EXEEXT) \
-	winattrf$(EXEEXT) winattr2f$(EXEEXT)
+	winattrf$(EXEEXT) winattr2f$(EXEEXT) $(am__EXEEXT_1)
+@BUILD_MPIX_TESTS_TRUE@am__append_1 = aintf
 subdir = f77/rma
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -115,9 +116,14 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
-CONFIG_CLEAN_FILES = addsize.h
+CONFIG_CLEAN_FILES = addsize.h testlist
 CONFIG_CLEAN_VPATH_FILES =
+@BUILD_MPIX_TESTS_TRUE@am__EXEEXT_1 = aintf$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
+aintf_SOURCES = aintf.f
+aintf_OBJECTS = aintf.$(OBJEXT)
+aintf_LDADD = $(LDADD)
+aintf_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
 baseattrwinf_SOURCES = baseattrwinf.f
 baseattrwinf_OBJECTS = baseattrwinf.$(OBJEXT)
 baseattrwinf_LDADD = $(LDADD)
@@ -206,10 +212,10 @@ AM_V_F77LD = $(am__v_F77LD_@AM_V@)
 am__v_F77LD_ = $(am__v_F77LD_@AM_DEFAULT_V@)
 am__v_F77LD_0 = @echo "  F77LD   " $@;
 am__v_F77LD_1 = 
-SOURCES = baseattrwinf.f $(c2f2cwinf_SOURCES) winaccf.f winattr2f.f \
-	winattrf.f winerrf.f winfencef.f wingetf.f wingroupf.f \
-	winnamef.f winscale1f.f winscale2f.f
-DIST_SOURCES = baseattrwinf.f $(c2f2cwinf_SOURCES) winaccf.f \
+SOURCES = aintf.f baseattrwinf.f $(c2f2cwinf_SOURCES) winaccf.f \
+	winattr2f.f winattrf.f winerrf.f winfencef.f wingetf.f \
+	wingroupf.f winnamef.f winscale1f.f winscale2f.f
+DIST_SOURCES = aintf.f baseattrwinf.f $(c2f2cwinf_SOURCES) winaccf.f \
 	winattr2f.f winattrf.f winerrf.f winfencef.f wingetf.f \
 	wingroupf.f winnamef.f winscale1f.f winscale2f.f
 am__can_run_installinfo = \
@@ -237,7 +243,8 @@ am__define_uniq_tagged_files = \
 ETAGS = etags
 CTAGS = ctags
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/addsize.h.in \
-	$(top_srcdir)/Makefile_f77.mtest $(top_srcdir)/confdb/depcomp
+	$(srcdir)/testlist.in $(top_srcdir)/Makefile_f77.mtest \
+	$(top_srcdir)/confdb/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 VPATH = @VPATH@
 ACLOCAL = @ACLOCAL@
@@ -366,6 +373,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -400,6 +408,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -417,6 +426,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -477,9 +487,15 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 $(am__aclocal_m4_deps):
 addsize.h: $(top_builddir)/config.status $(srcdir)/addsize.h.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+testlist: $(top_builddir)/config.status $(srcdir)/testlist.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+
+aintf$(EXEEXT): $(aintf_OBJECTS) $(aintf_DEPENDENCIES) $(EXTRA_aintf_DEPENDENCIES) 
+	@rm -f aintf$(EXEEXT)
+	$(AM_V_F77LD)$(F77LINK) $(aintf_OBJECTS) $(aintf_LDADD) $(LIBS)
 
 baseattrwinf$(EXEEXT): $(baseattrwinf_OBJECTS) $(baseattrwinf_DEPENDENCIES) $(EXTRA_baseattrwinf_DEPENDENCIES) 
 	@rm -f baseattrwinf$(EXEEXT)

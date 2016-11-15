@@ -277,7 +277,7 @@ int main(int argc, char **argv)
         MPI_Imrecv(recvbuf, count, MPI_INT, &msg, &rreq);
         check(rreq != MPI_REQUEST_NULL);
         completed = 0;
-        MPI_Test(&rreq, &completed, &s2); /* single test should always succeed */
+        MPI_Test(&rreq, &completed, &s2);       /* single test should always succeed */
         check(completed);
         /* recvbuf should remain unmodified */
         check(recvbuf[0] == 0x01234567);
@@ -351,7 +351,7 @@ int main(int argc, char **argv)
         MPI_Imrecv(recvbuf, count, MPI_INT, &msg, &rreq);
         check(rreq != MPI_REQUEST_NULL);
         completed = 0;
-        MPI_Test(&rreq, &completed, &s2); /* single test should always succeed */
+        MPI_Test(&rreq, &completed, &s2);       /* single test should always succeed */
         check(completed);
         /* recvbuf should remain unmodified */
         check(recvbuf[0] == 0x01234567);
@@ -522,6 +522,62 @@ int main(int argc, char **argv)
     }
     MPI_Type_free(&vectype);
 
+    /* test 12: order test */
+    if (rank == 0) {
+        MPI_Request lrequest[2];
+        sendbuf[0] = 0xdeadbeef;
+        sendbuf[1] = 0xfeedface;
+        sendbuf[2] = 0xdeadbeef;
+        sendbuf[3] = 0xfeedface;
+        sendbuf[4] = 0xdeadbeef;
+        sendbuf[5] = 0xfeedface;
+        MPI_Isend(&sendbuf[0], 4, MPI_INT, 1, 6, MPI_COMM_WORLD, &lrequest[0]);
+        MPI_Isend(&sendbuf[4], 2, MPI_INT, 1, 6, MPI_COMM_WORLD, &lrequest[1]);
+        MPI_Waitall(2, &lrequest[0], MPI_STATUSES_IGNORE);
+    }
+    else {
+        memset(&s1, 0xab, sizeof(MPI_Status));
+        memset(&s2, 0xab, sizeof(MPI_Status));
+        /* the error field should remain unmodified */
+        s1.MPI_ERROR = MPI_ERR_DIMS;
+        s2.MPI_ERROR = MPI_ERR_TOPOLOGY;
+
+        msg = MPI_MESSAGE_NULL;
+        MPI_Mprobe(0, 6, MPI_COMM_WORLD, &msg, &s1);
+        check(s1.MPI_SOURCE == 0);
+        check(s1.MPI_TAG == 6);
+        check(s1.MPI_ERROR == MPI_ERR_DIMS);
+        check(msg != MPI_MESSAGE_NULL);
+
+        count = -1;
+        MPI_Get_count(&s1, MPI_INT, &count);
+        check(count == 4);
+
+        recvbuf[0] = 0x01234567;
+        recvbuf[1] = 0x89abcdef;
+        MPI_Recv(recvbuf, 2, MPI_INT, 0, 6, MPI_COMM_WORLD, &s2);
+        check(s2.MPI_SOURCE == 0);
+        check(s2.MPI_TAG == 6);
+        check(recvbuf[0] == 0xdeadbeef);
+        check(recvbuf[1] == 0xfeedface);
+
+        recvbuf[0] = 0x01234567;
+        recvbuf[1] = 0x89abcdef;
+        recvbuf[2] = 0x01234567;
+        recvbuf[3] = 0x89abcdef;
+        s2.MPI_ERROR = MPI_ERR_TOPOLOGY;
+
+        MPI_Mrecv(recvbuf, count, MPI_INT, &msg, &s2);
+        check(recvbuf[0] == 0xdeadbeef);
+        check(recvbuf[1] == 0xfeedface);
+        check(recvbuf[2] == 0xdeadbeef);
+        check(recvbuf[3] == 0xfeedface);
+        check(s2.MPI_SOURCE == 0);
+        check(s2.MPI_TAG == 6);
+        check(s2.MPI_ERROR == MPI_ERR_TOPOLOGY);
+        check(msg == MPI_MESSAGE_NULL);
+    }
+
     free(sendbuf);
     free(recvbuf);
 
@@ -549,7 +605,7 @@ int main(int argc, char **argv)
 
 #endif /* TEST_MPROBE_ROUTINES */
 
-epilogue:
+  epilogue:
     MPI_Reduce((rank == 0 ? MPI_IN_PLACE : &errs), &errs, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     if (rank == 0) {
         if (errs) {
@@ -564,4 +620,3 @@ epilogue:
 
     return 0;
 }
-

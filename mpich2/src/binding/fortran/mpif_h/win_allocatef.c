@@ -266,5 +266,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_( MPI_Aint *, MPI_Fint *, 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_ ( MPI_Aint * v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, void*v5, MPI_Fint *v6, MPI_Fint *ierr ){
+    if (v5 == MPIR_F_MPI_BOTTOM) v5 = MPI_BOTTOM;
     *ierr = MPI_Win_allocate( *v1, (int)*v2, (MPI_Info)(*v3), (MPI_Comm)(*v4), v5, v6 );
 }

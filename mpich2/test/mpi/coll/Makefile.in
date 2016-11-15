@@ -96,36 +96,44 @@ build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = allgather2$(EXEEXT) allgather3$(EXEEXT) \
 	allgatherv2$(EXEEXT) allgatherv3$(EXEEXT) allgatherv4$(EXEEXT) \
-	allred$(EXEEXT) allred2$(EXEEXT) allred3$(EXEEXT) \
-	allred4$(EXEEXT) allred5$(EXEEXT) allred6$(EXEEXT) \
-	allredmany$(EXEEXT) alltoall1$(EXEEXT) alltoallv$(EXEEXT) \
-	alltoallv0$(EXEEXT) alltoallw1$(EXEEXT) alltoallw2$(EXEEXT) \
-	alltoallw_zeros$(EXEEXT) bcast2$(EXEEXT) bcast3$(EXEEXT) \
-	bcasttest$(EXEEXT) bcastzerotype$(EXEEXT) coll2$(EXEEXT) \
-	coll3$(EXEEXT) coll4$(EXEEXT) coll5$(EXEEXT) coll6$(EXEEXT) \
-	coll7$(EXEEXT) coll8$(EXEEXT) coll9$(EXEEXT) coll10$(EXEEXT) \
-	coll11$(EXEEXT) coll12$(EXEEXT) coll13$(EXEEXT) \
-	exscan$(EXEEXT) exscan2$(EXEEXT) gather$(EXEEXT) \
-	gather2$(EXEEXT) iallred$(EXEEXT) ibarrier$(EXEEXT) \
+	allgather_struct$(EXEEXT) allred$(EXEEXT) allred2$(EXEEXT) \
+	allred3$(EXEEXT) allred4$(EXEEXT) allred5$(EXEEXT) \
+	allred6$(EXEEXT) allredmany$(EXEEXT) alltoall1$(EXEEXT) \
+	alltoallv$(EXEEXT) alltoallv0$(EXEEXT) alltoallw1$(EXEEXT) \
+	alltoallw2$(EXEEXT) alltoallw_zeros$(EXEEXT) \
+	bcast_full$(EXEEXT) bcast_min_datatypes$(EXEEXT) \
+	bcast_comm_world$(EXEEXT) bcasttest$(EXEEXT) \
+	bcastzerotype$(EXEEXT) coll2$(EXEEXT) coll3$(EXEEXT) \
+	coll4$(EXEEXT) coll5$(EXEEXT) coll6$(EXEEXT) coll7$(EXEEXT) \
+	coll8$(EXEEXT) coll9$(EXEEXT) coll10$(EXEEXT) coll11$(EXEEXT) \
+	coll12$(EXEEXT) coll13$(EXEEXT) exscan$(EXEEXT) \
+	exscan2$(EXEEXT) gather$(EXEEXT) gather2$(EXEEXT) \
+	gather_big$(EXEEXT) iallred$(EXEEXT) ibarrier$(EXEEXT) \
 	icallgather$(EXEEXT) icallgatherv$(EXEEXT) \
 	icallreduce$(EXEEXT) icalltoall$(EXEEXT) icalltoallv$(EXEEXT) \
 	icalltoallw$(EXEEXT) icbarrier$(EXEEXT) icbcast$(EXEEXT) \
 	icgather$(EXEEXT) icgatherv$(EXEEXT) icreduce$(EXEEXT) \
 	icscatter$(EXEEXT) icscatterv$(EXEEXT) longuser$(EXEEXT) \
 	nonblocking$(EXEEXT) nonblocking2$(EXEEXT) \
-	nonblocking3$(EXEEXT) nonblocking4$(EXEEXT) \
-	op_commutative$(EXEEXT) opband$(EXEEXT) opbor$(EXEEXT) \
-	opbxor$(EXEEXT) opland$(EXEEXT) oplor$(EXEEXT) oplxor$(EXEEXT) \
-	opmax$(EXEEXT) opmaxloc$(EXEEXT) opmin$(EXEEXT) \
-	opminloc$(EXEEXT) opprod$(EXEEXT) opsum$(EXEEXT) red3$(EXEEXT) \
-	red4$(EXEEXT) red_scat_block$(EXEEXT) red_scat_block2$(EXEEXT) \
+	nonblocking3$(EXEEXT) op_commutative$(EXEEXT) opband$(EXEEXT) \
+	opbor$(EXEEXT) opbxor$(EXEEXT) opland$(EXEEXT) oplor$(EXEEXT) \
+	oplxor$(EXEEXT) opmax$(EXEEXT) opmaxloc$(EXEEXT) \
+	opmin$(EXEEXT) opminloc$(EXEEXT) opprod$(EXEEXT) \
+	opsum$(EXEEXT) red3$(EXEEXT) red4$(EXEEXT) \
+	red_scat_block$(EXEEXT) red_scat_block2$(EXEEXT) \
 	redscat$(EXEEXT) redscat2$(EXEEXT) redscat3$(EXEEXT) \
 	redscatblk3$(EXEEXT) redscatinter$(EXEEXT) \
 	redscatbkinter$(EXEEXT) reduce$(EXEEXT) reduce_local$(EXEEXT) \
 	scantst$(EXEEXT) scatter2$(EXEEXT) scatter3$(EXEEXT) \
 	scattern$(EXEEXT) scatterv$(EXEEXT) uoplong$(EXEEXT) \
 	nballtoall1$(EXEEXT) nbredscat$(EXEEXT) nbredscat3$(EXEEXT) \
-	nbredscatinter$(EXEEXT) nbcoll2$(EXEEXT)
+	nbredscatinter$(EXEEXT) nbcoll2$(EXEEXT) nbicbarrier$(EXEEXT) \
+	nbicallgather$(EXEEXT) nbicallgatherv$(EXEEXT) \
+	nbicallreduce$(EXEEXT) nbicbcast$(EXEEXT) \
+	nbicalltoall$(EXEEXT) nbicalltoallw$(EXEEXT) \
+	nbicalltoallv$(EXEEXT) nbicgather$(EXEEXT) \
+	nbicgatherv$(EXEEXT) nbicreduce$(EXEEXT) nbicscatter$(EXEEXT) \
+	nbicscatterv$(EXEEXT)
 subdir = coll
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -142,7 +150,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = testlist
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 allgather2_SOURCES = allgather2.c
@@ -155,6 +163,12 @@ allgather3_SOURCES = allgather3.c
 allgather3_OBJECTS = allgather3.$(OBJEXT)
 allgather3_LDADD = $(LDADD)
 allgather3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+allgather_struct_SOURCES = allgather_struct.c
+allgather_struct_OBJECTS = allgather_struct.$(OBJEXT)
+allgather_struct_LDADD = $(LDADD)
+allgather_struct_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 allgatherv2_SOURCES = allgatherv2.c
@@ -250,16 +264,22 @@ alltoallw_zeros_LDADD = $(LDADD)
 alltoallw_zeros_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
-bcast2_SOURCES = bcast2.c
-bcast2_OBJECTS = bcast2.$(OBJEXT)
-bcast2_LDADD = $(LDADD)
-bcast2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+am_bcast_comm_world_OBJECTS = bcast_comm_world-bcast.$(OBJEXT)
+bcast_comm_world_OBJECTS = $(am_bcast_comm_world_OBJECTS)
+bcast_comm_world_LDADD = $(LDADD)
+bcast_comm_world_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
-bcast3_SOURCES = bcast3.c
-bcast3_OBJECTS = bcast3.$(OBJEXT)
-bcast3_LDADD = $(LDADD)
-bcast3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+am_bcast_full_OBJECTS = bcast.$(OBJEXT)
+bcast_full_OBJECTS = $(am_bcast_full_OBJECTS)
+bcast_full_LDADD = $(LDADD)
+bcast_full_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_bcast_min_datatypes_OBJECTS = bcast_min_datatypes-bcast.$(OBJEXT)
+bcast_min_datatypes_OBJECTS = $(am_bcast_min_datatypes_OBJECTS)
+bcast_min_datatypes_LDADD = $(LDADD)
+bcast_min_datatypes_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 bcasttest_SOURCES = bcasttest.c
@@ -370,6 +390,12 @@ gather2_LDADD = $(LDADD)
 gather2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+gather_big_SOURCES = gather_big.c
+gather_big_OBJECTS = gather_big.$(OBJEXT)
+gather_big_LDADD = $(LDADD)
+gather_big_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 iallred_SOURCES = iallred.c
 iallred_OBJECTS = iallred.$(OBJEXT)
 iallred_LDADD = $(LDADD)
@@ -466,22 +492,114 @@ longuser_LDADD = $(LDADD)
 longuser_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
-am_nballtoall1_OBJECTS = alltoall1.$(OBJEXT)
+am_nballtoall1_OBJECTS = nballtoall1-alltoall1.$(OBJEXT)
 nballtoall1_OBJECTS = $(am_nballtoall1_OBJECTS)
-nballtoall1_DEPENDENCIES = $(LDADD) ../util/nbc_pmpi_adapter.$(OBJEXT)
-am_nbcoll2_OBJECTS = coll2.$(OBJEXT)
+nballtoall1_LDADD = $(LDADD)
+nballtoall1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nbcoll2_OBJECTS = nbcoll2-coll2.$(OBJEXT)
 nbcoll2_OBJECTS = $(am_nbcoll2_OBJECTS)
-nbcoll2_DEPENDENCIES = $(LDADD) ../util/nbc_pmpi_adapter.$(OBJEXT)
-am_nbredscat_OBJECTS = redscat.$(OBJEXT)
+nbcoll2_LDADD = $(LDADD)
+nbcoll2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nbicallgather_OBJECTS = nbicallgather-icallgather.$(OBJEXT)
+nbicallgather_OBJECTS = $(am_nbicallgather_OBJECTS)
+nbicallgather_LDADD = $(LDADD)
+nbicallgather_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nbicallgatherv_OBJECTS = nbicallgatherv-icallgatherv.$(OBJEXT)
+nbicallgatherv_OBJECTS = $(am_nbicallgatherv_OBJECTS)
+nbicallgatherv_LDADD = $(LDADD)
+nbicallgatherv_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nbicallreduce_OBJECTS = nbicallreduce-icallreduce.$(OBJEXT)
+nbicallreduce_OBJECTS = $(am_nbicallreduce_OBJECTS)
+nbicallreduce_LDADD = $(LDADD)
+nbicallreduce_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nbicalltoall_OBJECTS = nbicalltoall-icalltoall.$(OBJEXT)
+nbicalltoall_OBJECTS = $(am_nbicalltoall_OBJECTS)
+nbicalltoall_LDADD = $(LDADD)
+nbicalltoall_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nbicalltoallv_OBJECTS = nbicalltoallv-icalltoallv.$(OBJEXT)
+nbicalltoallv_OBJECTS = $(am_nbicalltoallv_OBJECTS)
+nbicalltoallv_LDADD = $(LDADD)
+nbicalltoallv_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nbicalltoallw_OBJECTS = nbicalltoallw-icalltoallw.$(OBJEXT)
+nbicalltoallw_OBJECTS = $(am_nbicalltoallw_OBJECTS)
+nbicalltoallw_LDADD = $(LDADD)
+nbicalltoallw_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nbicbarrier_OBJECTS = nbicbarrier-icbarrier.$(OBJEXT)
+nbicbarrier_OBJECTS = $(am_nbicbarrier_OBJECTS)
+nbicbarrier_LDADD = $(LDADD)
+nbicbarrier_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nbicbcast_OBJECTS = nbicbcast-icbcast.$(OBJEXT)
+nbicbcast_OBJECTS = $(am_nbicbcast_OBJECTS)
+nbicbcast_LDADD = $(LDADD)
+nbicbcast_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nbicgather_OBJECTS = nbicgather-icgather.$(OBJEXT)
+nbicgather_OBJECTS = $(am_nbicgather_OBJECTS)
+nbicgather_LDADD = $(LDADD)
+nbicgather_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nbicgatherv_OBJECTS = nbicgatherv-icgatherv.$(OBJEXT)
+nbicgatherv_OBJECTS = $(am_nbicgatherv_OBJECTS)
+nbicgatherv_LDADD = $(LDADD)
+nbicgatherv_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nbicreduce_OBJECTS = nbicreduce-icreduce.$(OBJEXT)
+nbicreduce_OBJECTS = $(am_nbicreduce_OBJECTS)
+nbicreduce_LDADD = $(LDADD)
+nbicreduce_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nbicscatter_OBJECTS = nbicscatter-icscatter.$(OBJEXT)
+nbicscatter_OBJECTS = $(am_nbicscatter_OBJECTS)
+nbicscatter_LDADD = $(LDADD)
+nbicscatter_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nbicscatterv_OBJECTS = nbicscatterv-icscatterv.$(OBJEXT)
+nbicscatterv_OBJECTS = $(am_nbicscatterv_OBJECTS)
+nbicscatterv_LDADD = $(LDADD)
+nbicscatterv_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nbredscat_OBJECTS = nbredscat-redscat.$(OBJEXT)
 nbredscat_OBJECTS = $(am_nbredscat_OBJECTS)
-nbredscat_DEPENDENCIES = $(LDADD) ../util/nbc_pmpi_adapter.$(OBJEXT)
-am_nbredscat3_OBJECTS = redscat3.$(OBJEXT)
+nbredscat_LDADD = $(LDADD)
+nbredscat_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nbredscat3_OBJECTS = nbredscat3-redscat3.$(OBJEXT)
 nbredscat3_OBJECTS = $(am_nbredscat3_OBJECTS)
-nbredscat3_DEPENDENCIES = $(LDADD) ../util/nbc_pmpi_adapter.$(OBJEXT)
-am_nbredscatinter_OBJECTS = redscatinter.$(OBJEXT)
+nbredscat3_LDADD = $(LDADD)
+nbredscat3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nbredscatinter_OBJECTS = nbredscatinter-redscatinter.$(OBJEXT)
 nbredscatinter_OBJECTS = $(am_nbredscatinter_OBJECTS)
-nbredscatinter_DEPENDENCIES = $(LDADD) \
-	../util/nbc_pmpi_adapter.$(OBJEXT)
+nbredscatinter_LDADD = $(LDADD)
+nbredscatinter_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 nonblocking_SOURCES = nonblocking.c
 nonblocking_OBJECTS = nonblocking.$(OBJEXT)
 nonblocking_LDADD = $(LDADD)
@@ -498,12 +616,6 @@ nonblocking3_SOURCES = nonblocking3.c
 nonblocking3_OBJECTS = nonblocking3.$(OBJEXT)
 nonblocking3_LDADD = $(LDADD)
 nonblocking3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-nonblocking4_SOURCES = nonblocking4.c
-nonblocking4_OBJECTS = nonblocking4.$(OBJEXT)
-nonblocking4_LDADD = $(LDADD)
-nonblocking4_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 op_commutative_SOURCES = op_commutative.c
@@ -708,6 +820,10 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include
 depcomp = $(SHELL) $(top_srcdir)/confdb/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 AM_V_CC = $(am__v_CC_@AM_V@)
@@ -720,46 +836,64 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = allgather2.c allgather3.c allgatherv2.c allgatherv3.c \
-	allgatherv4.c allred.c allred2.c allred3.c allred4.c allred5.c \
-	allred6.c allredmany.c alltoall1.c alltoallv.c alltoallv0.c \
-	alltoallw1.c alltoallw2.c alltoallw_zeros.c bcast2.c bcast3.c \
+SOURCES = allgather2.c allgather3.c allgather_struct.c allgatherv2.c \
+	allgatherv3.c allgatherv4.c allred.c allred2.c allred3.c \
+	allred4.c allred5.c allred6.c allredmany.c alltoall1.c \
+	alltoallv.c alltoallv0.c alltoallw1.c alltoallw2.c \
+	alltoallw_zeros.c $(bcast_comm_world_SOURCES) \
+	$(bcast_full_SOURCES) $(bcast_min_datatypes_SOURCES) \
 	bcasttest.c bcastzerotype.c coll10.c coll11.c coll12.c \
 	coll13.c coll2.c coll3.c coll4.c coll5.c coll6.c coll7.c \
 	coll8.c coll9.c exscan.c exscan2.c gather.c gather2.c \
-	iallred.c ibarrier.c icallgather.c icallgatherv.c \
+	gather_big.c iallred.c ibarrier.c icallgather.c icallgatherv.c \
 	icallreduce.c icalltoall.c icalltoallv.c icalltoallw.c \
 	icbarrier.c icbcast.c icgather.c icgatherv.c icreduce.c \
 	icscatter.c icscatterv.c longuser.c $(nballtoall1_SOURCES) \
-	$(nbcoll2_SOURCES) $(nbredscat_SOURCES) $(nbredscat3_SOURCES) \
+	$(nbcoll2_SOURCES) $(nbicallgather_SOURCES) \
+	$(nbicallgatherv_SOURCES) $(nbicallreduce_SOURCES) \
+	$(nbicalltoall_SOURCES) $(nbicalltoallv_SOURCES) \
+	$(nbicalltoallw_SOURCES) $(nbicbarrier_SOURCES) \
+	$(nbicbcast_SOURCES) $(nbicgather_SOURCES) \
+	$(nbicgatherv_SOURCES) $(nbicreduce_SOURCES) \
+	$(nbicscatter_SOURCES) $(nbicscatterv_SOURCES) \
+	$(nbredscat_SOURCES) $(nbredscat3_SOURCES) \
 	$(nbredscatinter_SOURCES) nonblocking.c nonblocking2.c \
-	nonblocking3.c nonblocking4.c op_commutative.c opband.c \
-	opbor.c opbxor.c opland.c oplor.c oplxor.c opmax.c opmaxloc.c \
-	opmin.c opminloc.c opprod.c opsum.c red3.c red4.c \
-	red_scat_block.c red_scat_block2.c redscat.c redscat2.c \
-	redscat3.c redscatbkinter.c redscatblk3.c redscatinter.c \
-	reduce.c reduce_local.c scantst.c scatter2.c scatter3.c \
-	scattern.c scatterv.c uoplong.c
-DIST_SOURCES = allgather2.c allgather3.c allgatherv2.c allgatherv3.c \
-	allgatherv4.c allred.c allred2.c allred3.c allred4.c allred5.c \
-	allred6.c allredmany.c alltoall1.c alltoallv.c alltoallv0.c \
-	alltoallw1.c alltoallw2.c alltoallw_zeros.c bcast2.c bcast3.c \
+	nonblocking3.c op_commutative.c opband.c opbor.c opbxor.c \
+	opland.c oplor.c oplxor.c opmax.c opmaxloc.c opmin.c \
+	opminloc.c opprod.c opsum.c red3.c red4.c red_scat_block.c \
+	red_scat_block2.c redscat.c redscat2.c redscat3.c \
+	redscatbkinter.c redscatblk3.c redscatinter.c reduce.c \
+	reduce_local.c scantst.c scatter2.c scatter3.c scattern.c \
+	scatterv.c uoplong.c
+DIST_SOURCES = allgather2.c allgather3.c allgather_struct.c \
+	allgatherv2.c allgatherv3.c allgatherv4.c allred.c allred2.c \
+	allred3.c allred4.c allred5.c allred6.c allredmany.c \
+	alltoall1.c alltoallv.c alltoallv0.c alltoallw1.c alltoallw2.c \
+	alltoallw_zeros.c $(bcast_comm_world_SOURCES) \
+	$(bcast_full_SOURCES) $(bcast_min_datatypes_SOURCES) \
 	bcasttest.c bcastzerotype.c coll10.c coll11.c coll12.c \
 	coll13.c coll2.c coll3.c coll4.c coll5.c coll6.c coll7.c \
 	coll8.c coll9.c exscan.c exscan2.c gather.c gather2.c \
-	iallred.c ibarrier.c icallgather.c icallgatherv.c \
+	gather_big.c iallred.c ibarrier.c icallgather.c icallgatherv.c \
 	icallreduce.c icalltoall.c icalltoallv.c icalltoallw.c \
 	icbarrier.c icbcast.c icgather.c icgatherv.c icreduce.c \
 	icscatter.c icscatterv.c longuser.c $(nballtoall1_SOURCES) \
-	$(nbcoll2_SOURCES) $(nbredscat_SOURCES) $(nbredscat3_SOURCES) \
+	$(nbcoll2_SOURCES) $(nbicallgather_SOURCES) \
+	$(nbicallgatherv_SOURCES) $(nbicallreduce_SOURCES) \
+	$(nbicalltoall_SOURCES) $(nbicalltoallv_SOURCES) \
+	$(nbicalltoallw_SOURCES) $(nbicbarrier_SOURCES) \
+	$(nbicbcast_SOURCES) $(nbicgather_SOURCES) \
+	$(nbicgatherv_SOURCES) $(nbicreduce_SOURCES) \
+	$(nbicscatter_SOURCES) $(nbicscatterv_SOURCES) \
+	$(nbredscat_SOURCES) $(nbredscat3_SOURCES) \
 	$(nbredscatinter_SOURCES) nonblocking.c nonblocking2.c \
-	nonblocking3.c nonblocking4.c op_commutative.c opband.c \
-	opbor.c opbxor.c opland.c oplor.c oplxor.c opmax.c opmaxloc.c \
-	opmin.c opminloc.c opprod.c opsum.c red3.c red4.c \
-	red_scat_block.c red_scat_block2.c redscat.c redscat2.c \
-	redscat3.c redscatbkinter.c redscatblk3.c redscatinter.c \
-	reduce.c reduce_local.c scantst.c scatter2.c scatter3.c \
-	scattern.c scatterv.c uoplong.c
+	nonblocking3.c op_commutative.c opband.c opbor.c opbxor.c \
+	opland.c oplor.c oplxor.c opmax.c opmaxloc.c opmin.c \
+	opminloc.c opprod.c opsum.c red3.c red4.c red_scat_block.c \
+	red_scat_block2.c redscat.c redscat2.c redscat3.c \
+	redscatbkinter.c redscatblk3.c redscatinter.c reduce.c \
+	reduce_local.c scantst.c scatter2.c scatter3.c scattern.c \
+	scatterv.c uoplong.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -784,8 +918,8 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/Makefile.mtest \
-	$(top_srcdir)/confdb/depcomp
+am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/testlist.in \
+	$(top_srcdir)/Makefile.mtest $(top_srcdir)/confdb/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 VPATH = @VPATH@
 ACLOCAL = @ACLOCAL@
@@ -914,6 +1048,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -948,6 +1083,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -965,6 +1101,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -976,22 +1113,51 @@ LDADD = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 CLEANFILES = summary.xml summary.tap summary.junit.xml
-EXTRA_DIST = testlist
+EXTRA_DIST = testlist.in
 allgatherv4_LDADD = $(LDADD) -lm
+bcast_full_SOURCES = bcast.c
+bcast_min_datatypes_CPPFLAGS = -DBCAST_MIN_DATATYPES_ONLY $(AM_CPPFLAGS)
+bcast_min_datatypes_SOURCES = bcast.c
+bcast_comm_world_CPPFLAGS = -DBCAST_COMM_WORLD_ONLY $(AM_CPPFLAGS)
+bcast_comm_world_SOURCES = bcast.c
 
-# Create tests of the nonblocking collectives by reusing the blocking tests,
-# using the MPI profiling interface to intercept the blocking call and
-# replace it with a MPI_Ixxx/MPI_Wait pair.
+# Generate tests of the nonblocking collectives by reusing the blocking tests.
 nballtoall1_SOURCES = alltoall1.c
-nballtoall1_LDADD = $(LDADD) ../util/nbc_pmpi_adapter.$(OBJEXT)
+nballtoall1_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
 nbredscat_SOURCES = redscat.c
-nbredscat_LDADD = $(LDADD) ../util/nbc_pmpi_adapter.$(OBJEXT)
+nbredscat_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
 nbredscat3_SOURCES = redscat3.c
-nbredscat3_LDADD = $(LDADD) ../util/nbc_pmpi_adapter.$(OBJEXT)
+nbredscat3_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
 nbredscatinter_SOURCES = redscatinter.c
-nbredscatinter_LDADD = $(LDADD) ../util/nbc_pmpi_adapter.$(OBJEXT)
+nbredscatinter_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
 nbcoll2_SOURCES = coll2.c
-nbcoll2_LDADD = $(LDADD) ../util/nbc_pmpi_adapter.$(OBJEXT)
+nbcoll2_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+nbicbarrier_SOURCES = icbarrier.c
+nbicbarrier_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+nbicallgather_SOURCES = icallgather.c
+nbicallgather_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+nbicallgatherv_SOURCES = icallgatherv.c
+nbicallgatherv_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+nbicallreduce_SOURCES = icallreduce.c
+nbicallreduce_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+nbicalltoall_SOURCES = icalltoall.c
+nbicalltoall_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+nbicalltoallv_SOURCES = icalltoallv.c
+nbicalltoallv_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+nbicalltoallw_SOURCES = icalltoallw.c
+nbicalltoallw_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+nbicbcast_SOURCES = icbcast.c
+nbicbcast_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+nbicgather_SOURCES = icgather.c
+nbicgather_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+nbicgatherv_SOURCES = icgatherv.c
+nbicgatherv_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+nbicreduce_SOURCES = icreduce.c
+nbicreduce_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+nbicscatter_SOURCES = icscatter.c
+nbicscatter_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+nbicscatterv_SOURCES = icscatterv.c
+nbicscatterv_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -1026,6 +1192,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+testlist: $(top_builddir)/config.status $(srcdir)/testlist.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
@@ -1037,6 +1205,10 @@ allgather2$(EXEEXT): $(allgather2_OBJECTS) $(allgather2_DEPENDENCIES) $(EXTRA_al
 allgather3$(EXEEXT): $(allgather3_OBJECTS) $(allgather3_DEPENDENCIES) $(EXTRA_allgather3_DEPENDENCIES) 
 	@rm -f allgather3$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(allgather3_OBJECTS) $(allgather3_LDADD) $(LIBS)
+
+allgather_struct$(EXEEXT): $(allgather_struct_OBJECTS) $(allgather_struct_DEPENDENCIES) $(EXTRA_allgather_struct_DEPENDENCIES) 
+	@rm -f allgather_struct$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(allgather_struct_OBJECTS) $(allgather_struct_LDADD) $(LIBS)
 
 allgatherv2$(EXEEXT): $(allgatherv2_OBJECTS) $(allgatherv2_DEPENDENCIES) $(EXTRA_allgatherv2_DEPENDENCIES) 
 	@rm -f allgatherv2$(EXEEXT)
@@ -1102,13 +1274,17 @@ alltoallw_zeros$(EXEEXT): $(alltoallw_zeros_OBJECTS) $(alltoallw_zeros_DEPENDENC
 	@rm -f alltoallw_zeros$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(alltoallw_zeros_OBJECTS) $(alltoallw_zeros_LDADD) $(LIBS)
 
-bcast2$(EXEEXT): $(bcast2_OBJECTS) $(bcast2_DEPENDENCIES) $(EXTRA_bcast2_DEPENDENCIES) 
-	@rm -f bcast2$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(bcast2_OBJECTS) $(bcast2_LDADD) $(LIBS)
+bcast_comm_world$(EXEEXT): $(bcast_comm_world_OBJECTS) $(bcast_comm_world_DEPENDENCIES) $(EXTRA_bcast_comm_world_DEPENDENCIES) 
+	@rm -f bcast_comm_world$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(bcast_comm_world_OBJECTS) $(bcast_comm_world_LDADD) $(LIBS)
 
-bcast3$(EXEEXT): $(bcast3_OBJECTS) $(bcast3_DEPENDENCIES) $(EXTRA_bcast3_DEPENDENCIES) 
-	@rm -f bcast3$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(bcast3_OBJECTS) $(bcast3_LDADD) $(LIBS)
+bcast_full$(EXEEXT): $(bcast_full_OBJECTS) $(bcast_full_DEPENDENCIES) $(EXTRA_bcast_full_DEPENDENCIES) 
+	@rm -f bcast_full$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(bcast_full_OBJECTS) $(bcast_full_LDADD) $(LIBS)
+
+bcast_min_datatypes$(EXEEXT): $(bcast_min_datatypes_OBJECTS) $(bcast_min_datatypes_DEPENDENCIES) $(EXTRA_bcast_min_datatypes_DEPENDENCIES) 
+	@rm -f bcast_min_datatypes$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(bcast_min_datatypes_OBJECTS) $(bcast_min_datatypes_LDADD) $(LIBS)
 
 bcasttest$(EXEEXT): $(bcasttest_OBJECTS) $(bcasttest_DEPENDENCIES) $(EXTRA_bcasttest_DEPENDENCIES) 
 	@rm -f bcasttest$(EXEEXT)
@@ -1182,6 +1358,10 @@ gather2$(EXEEXT): $(gather2_OBJECTS) $(gather2_DEPENDENCIES) $(EXTRA_gather2_DEP
 	@rm -f gather2$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(gather2_OBJECTS) $(gather2_LDADD) $(LIBS)
 
+gather_big$(EXEEXT): $(gather_big_OBJECTS) $(gather_big_DEPENDENCIES) $(EXTRA_gather_big_DEPENDENCIES) 
+	@rm -f gather_big$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(gather_big_OBJECTS) $(gather_big_LDADD) $(LIBS)
+
 iallred$(EXEEXT): $(iallred_OBJECTS) $(iallred_DEPENDENCIES) $(EXTRA_iallred_DEPENDENCIES) 
 	@rm -f iallred$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(iallred_OBJECTS) $(iallred_LDADD) $(LIBS)
@@ -1254,6 +1434,58 @@ nbcoll2$(EXEEXT): $(nbcoll2_OBJECTS) $(nbcoll2_DEPENDENCIES) $(EXTRA_nbcoll2_DEP
 	@rm -f nbcoll2$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(nbcoll2_OBJECTS) $(nbcoll2_LDADD) $(LIBS)
 
+nbicallgather$(EXEEXT): $(nbicallgather_OBJECTS) $(nbicallgather_DEPENDENCIES) $(EXTRA_nbicallgather_DEPENDENCIES) 
+	@rm -f nbicallgather$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nbicallgather_OBJECTS) $(nbicallgather_LDADD) $(LIBS)
+
+nbicallgatherv$(EXEEXT): $(nbicallgatherv_OBJECTS) $(nbicallgatherv_DEPENDENCIES) $(EXTRA_nbicallgatherv_DEPENDENCIES) 
+	@rm -f nbicallgatherv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nbicallgatherv_OBJECTS) $(nbicallgatherv_LDADD) $(LIBS)
+
+nbicallreduce$(EXEEXT): $(nbicallreduce_OBJECTS) $(nbicallreduce_DEPENDENCIES) $(EXTRA_nbicallreduce_DEPENDENCIES) 
+	@rm -f nbicallreduce$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nbicallreduce_OBJECTS) $(nbicallreduce_LDADD) $(LIBS)
+
+nbicalltoall$(EXEEXT): $(nbicalltoall_OBJECTS) $(nbicalltoall_DEPENDENCIES) $(EXTRA_nbicalltoall_DEPENDENCIES) 
+	@rm -f nbicalltoall$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nbicalltoall_OBJECTS) $(nbicalltoall_LDADD) $(LIBS)
+
+nbicalltoallv$(EXEEXT): $(nbicalltoallv_OBJECTS) $(nbicalltoallv_DEPENDENCIES) $(EXTRA_nbicalltoallv_DEPENDENCIES) 
+	@rm -f nbicalltoallv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nbicalltoallv_OBJECTS) $(nbicalltoallv_LDADD) $(LIBS)
+
+nbicalltoallw$(EXEEXT): $(nbicalltoallw_OBJECTS) $(nbicalltoallw_DEPENDENCIES) $(EXTRA_nbicalltoallw_DEPENDENCIES) 
+	@rm -f nbicalltoallw$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nbicalltoallw_OBJECTS) $(nbicalltoallw_LDADD) $(LIBS)
+
+nbicbarrier$(EXEEXT): $(nbicbarrier_OBJECTS) $(nbicbarrier_DEPENDENCIES) $(EXTRA_nbicbarrier_DEPENDENCIES) 
+	@rm -f nbicbarrier$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nbicbarrier_OBJECTS) $(nbicbarrier_LDADD) $(LIBS)
+
+nbicbcast$(EXEEXT): $(nbicbcast_OBJECTS) $(nbicbcast_DEPENDENCIES) $(EXTRA_nbicbcast_DEPENDENCIES) 
+	@rm -f nbicbcast$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nbicbcast_OBJECTS) $(nbicbcast_LDADD) $(LIBS)
+
+nbicgather$(EXEEXT): $(nbicgather_OBJECTS) $(nbicgather_DEPENDENCIES) $(EXTRA_nbicgather_DEPENDENCIES) 
+	@rm -f nbicgather$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nbicgather_OBJECTS) $(nbicgather_LDADD) $(LIBS)
+
+nbicgatherv$(EXEEXT): $(nbicgatherv_OBJECTS) $(nbicgatherv_DEPENDENCIES) $(EXTRA_nbicgatherv_DEPENDENCIES) 
+	@rm -f nbicgatherv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nbicgatherv_OBJECTS) $(nbicgatherv_LDADD) $(LIBS)
+
+nbicreduce$(EXEEXT): $(nbicreduce_OBJECTS) $(nbicreduce_DEPENDENCIES) $(EXTRA_nbicreduce_DEPENDENCIES) 
+	@rm -f nbicreduce$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nbicreduce_OBJECTS) $(nbicreduce_LDADD) $(LIBS)
+
+nbicscatter$(EXEEXT): $(nbicscatter_OBJECTS) $(nbicscatter_DEPENDENCIES) $(EXTRA_nbicscatter_DEPENDENCIES) 
+	@rm -f nbicscatter$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nbicscatter_OBJECTS) $(nbicscatter_LDADD) $(LIBS)
+
+nbicscatterv$(EXEEXT): $(nbicscatterv_OBJECTS) $(nbicscatterv_DEPENDENCIES) $(EXTRA_nbicscatterv_DEPENDENCIES) 
+	@rm -f nbicscatterv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nbicscatterv_OBJECTS) $(nbicscatterv_LDADD) $(LIBS)
+
 nbredscat$(EXEEXT): $(nbredscat_OBJECTS) $(nbredscat_DEPENDENCIES) $(EXTRA_nbredscat_DEPENDENCIES) 
 	@rm -f nbredscat$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(nbredscat_OBJECTS) $(nbredscat_LDADD) $(LIBS)
@@ -1277,10 +1509,6 @@ nonblocking2$(EXEEXT): $(nonblocking2_OBJECTS) $(nonblocking2_DEPENDENCIES) $(EX
 nonblocking3$(EXEEXT): $(nonblocking3_OBJECTS) $(nonblocking3_DEPENDENCIES) $(EXTRA_nonblocking3_DEPENDENCIES) 
 	@rm -f nonblocking3$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(nonblocking3_OBJECTS) $(nonblocking3_LDADD) $(LIBS)
-
-nonblocking4$(EXEEXT): $(nonblocking4_OBJECTS) $(nonblocking4_DEPENDENCIES) $(EXTRA_nonblocking4_DEPENDENCIES) 
-	@rm -f nonblocking4$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(nonblocking4_OBJECTS) $(nonblocking4_LDADD) $(LIBS)
 
 op_commutative$(EXEEXT): $(op_commutative_OBJECTS) $(op_commutative_DEPENDENCIES) $(EXTRA_op_commutative_DEPENDENCIES) 
 	@rm -f op_commutative$(EXEEXT)
@@ -1414,6 +1642,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allgather2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allgather3.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allgather_struct.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allgatherv2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allgatherv3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allgatherv4.Po@am__quote@
@@ -1430,8 +1659,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alltoallw1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alltoallw2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alltoallw_zeros.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcast2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcast3.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcast.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcast_comm_world-bcast.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcast_min_datatypes-bcast.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcasttest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcastzerotype.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/coll10.Po@am__quote@
@@ -1450,6 +1680,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exscan2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gather.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gather2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gather_big.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iallred.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ibarrier.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icallgather.Po@am__quote@
@@ -1466,10 +1697,27 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icscatter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icscatterv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/longuser.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nballtoall1-alltoall1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbcoll2-coll2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbicallgather-icallgather.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbicallgatherv-icallgatherv.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbicallreduce-icallreduce.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbicalltoall-icalltoall.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbicalltoallv-icalltoallv.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbicalltoallw-icalltoallw.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbicbarrier-icbarrier.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbicbcast-icbcast.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbicgather-icgather.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbicgatherv-icgatherv.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbicreduce-icreduce.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbicscatter-icscatter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbicscatterv-icscatterv.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbredscat-redscat.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbredscat3-redscat3.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbredscatinter-redscatinter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nonblocking.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nonblocking2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nonblocking3.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nonblocking4.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/op_commutative.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opband.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opbor.Po@am__quote@
@@ -1517,6 +1765,286 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+bcast_comm_world-bcast.o: bcast.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast_comm_world_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bcast_comm_world-bcast.o -MD -MP -MF $(DEPDIR)/bcast_comm_world-bcast.Tpo -c -o bcast_comm_world-bcast.o `test -f 'bcast.c' || echo '$(srcdir)/'`bcast.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bcast_comm_world-bcast.Tpo $(DEPDIR)/bcast_comm_world-bcast.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bcast.c' object='bcast_comm_world-bcast.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast_comm_world_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bcast_comm_world-bcast.o `test -f 'bcast.c' || echo '$(srcdir)/'`bcast.c
+
+bcast_comm_world-bcast.obj: bcast.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast_comm_world_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bcast_comm_world-bcast.obj -MD -MP -MF $(DEPDIR)/bcast_comm_world-bcast.Tpo -c -o bcast_comm_world-bcast.obj `if test -f 'bcast.c'; then $(CYGPATH_W) 'bcast.c'; else $(CYGPATH_W) '$(srcdir)/bcast.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bcast_comm_world-bcast.Tpo $(DEPDIR)/bcast_comm_world-bcast.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bcast.c' object='bcast_comm_world-bcast.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast_comm_world_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bcast_comm_world-bcast.obj `if test -f 'bcast.c'; then $(CYGPATH_W) 'bcast.c'; else $(CYGPATH_W) '$(srcdir)/bcast.c'; fi`
+
+bcast_min_datatypes-bcast.o: bcast.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast_min_datatypes_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bcast_min_datatypes-bcast.o -MD -MP -MF $(DEPDIR)/bcast_min_datatypes-bcast.Tpo -c -o bcast_min_datatypes-bcast.o `test -f 'bcast.c' || echo '$(srcdir)/'`bcast.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bcast_min_datatypes-bcast.Tpo $(DEPDIR)/bcast_min_datatypes-bcast.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bcast.c' object='bcast_min_datatypes-bcast.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast_min_datatypes_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bcast_min_datatypes-bcast.o `test -f 'bcast.c' || echo '$(srcdir)/'`bcast.c
+
+bcast_min_datatypes-bcast.obj: bcast.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast_min_datatypes_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bcast_min_datatypes-bcast.obj -MD -MP -MF $(DEPDIR)/bcast_min_datatypes-bcast.Tpo -c -o bcast_min_datatypes-bcast.obj `if test -f 'bcast.c'; then $(CYGPATH_W) 'bcast.c'; else $(CYGPATH_W) '$(srcdir)/bcast.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bcast_min_datatypes-bcast.Tpo $(DEPDIR)/bcast_min_datatypes-bcast.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bcast.c' object='bcast_min_datatypes-bcast.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast_min_datatypes_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bcast_min_datatypes-bcast.obj `if test -f 'bcast.c'; then $(CYGPATH_W) 'bcast.c'; else $(CYGPATH_W) '$(srcdir)/bcast.c'; fi`
+
+nballtoall1-alltoall1.o: alltoall1.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nballtoall1_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nballtoall1-alltoall1.o -MD -MP -MF $(DEPDIR)/nballtoall1-alltoall1.Tpo -c -o nballtoall1-alltoall1.o `test -f 'alltoall1.c' || echo '$(srcdir)/'`alltoall1.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nballtoall1-alltoall1.Tpo $(DEPDIR)/nballtoall1-alltoall1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='alltoall1.c' object='nballtoall1-alltoall1.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nballtoall1_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nballtoall1-alltoall1.o `test -f 'alltoall1.c' || echo '$(srcdir)/'`alltoall1.c
+
+nballtoall1-alltoall1.obj: alltoall1.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nballtoall1_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nballtoall1-alltoall1.obj -MD -MP -MF $(DEPDIR)/nballtoall1-alltoall1.Tpo -c -o nballtoall1-alltoall1.obj `if test -f 'alltoall1.c'; then $(CYGPATH_W) 'alltoall1.c'; else $(CYGPATH_W) '$(srcdir)/alltoall1.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nballtoall1-alltoall1.Tpo $(DEPDIR)/nballtoall1-alltoall1.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='alltoall1.c' object='nballtoall1-alltoall1.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nballtoall1_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nballtoall1-alltoall1.obj `if test -f 'alltoall1.c'; then $(CYGPATH_W) 'alltoall1.c'; else $(CYGPATH_W) '$(srcdir)/alltoall1.c'; fi`
+
+nbcoll2-coll2.o: coll2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbcoll2_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbcoll2-coll2.o -MD -MP -MF $(DEPDIR)/nbcoll2-coll2.Tpo -c -o nbcoll2-coll2.o `test -f 'coll2.c' || echo '$(srcdir)/'`coll2.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbcoll2-coll2.Tpo $(DEPDIR)/nbcoll2-coll2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='coll2.c' object='nbcoll2-coll2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbcoll2_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbcoll2-coll2.o `test -f 'coll2.c' || echo '$(srcdir)/'`coll2.c
+
+nbcoll2-coll2.obj: coll2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbcoll2_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbcoll2-coll2.obj -MD -MP -MF $(DEPDIR)/nbcoll2-coll2.Tpo -c -o nbcoll2-coll2.obj `if test -f 'coll2.c'; then $(CYGPATH_W) 'coll2.c'; else $(CYGPATH_W) '$(srcdir)/coll2.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbcoll2-coll2.Tpo $(DEPDIR)/nbcoll2-coll2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='coll2.c' object='nbcoll2-coll2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbcoll2_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbcoll2-coll2.obj `if test -f 'coll2.c'; then $(CYGPATH_W) 'coll2.c'; else $(CYGPATH_W) '$(srcdir)/coll2.c'; fi`
+
+nbicallgather-icallgather.o: icallgather.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicallgather_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicallgather-icallgather.o -MD -MP -MF $(DEPDIR)/nbicallgather-icallgather.Tpo -c -o nbicallgather-icallgather.o `test -f 'icallgather.c' || echo '$(srcdir)/'`icallgather.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicallgather-icallgather.Tpo $(DEPDIR)/nbicallgather-icallgather.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icallgather.c' object='nbicallgather-icallgather.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicallgather_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicallgather-icallgather.o `test -f 'icallgather.c' || echo '$(srcdir)/'`icallgather.c
+
+nbicallgather-icallgather.obj: icallgather.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicallgather_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicallgather-icallgather.obj -MD -MP -MF $(DEPDIR)/nbicallgather-icallgather.Tpo -c -o nbicallgather-icallgather.obj `if test -f 'icallgather.c'; then $(CYGPATH_W) 'icallgather.c'; else $(CYGPATH_W) '$(srcdir)/icallgather.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicallgather-icallgather.Tpo $(DEPDIR)/nbicallgather-icallgather.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icallgather.c' object='nbicallgather-icallgather.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicallgather_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicallgather-icallgather.obj `if test -f 'icallgather.c'; then $(CYGPATH_W) 'icallgather.c'; else $(CYGPATH_W) '$(srcdir)/icallgather.c'; fi`
+
+nbicallgatherv-icallgatherv.o: icallgatherv.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicallgatherv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicallgatherv-icallgatherv.o -MD -MP -MF $(DEPDIR)/nbicallgatherv-icallgatherv.Tpo -c -o nbicallgatherv-icallgatherv.o `test -f 'icallgatherv.c' || echo '$(srcdir)/'`icallgatherv.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicallgatherv-icallgatherv.Tpo $(DEPDIR)/nbicallgatherv-icallgatherv.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icallgatherv.c' object='nbicallgatherv-icallgatherv.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicallgatherv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicallgatherv-icallgatherv.o `test -f 'icallgatherv.c' || echo '$(srcdir)/'`icallgatherv.c
+
+nbicallgatherv-icallgatherv.obj: icallgatherv.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicallgatherv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicallgatherv-icallgatherv.obj -MD -MP -MF $(DEPDIR)/nbicallgatherv-icallgatherv.Tpo -c -o nbicallgatherv-icallgatherv.obj `if test -f 'icallgatherv.c'; then $(CYGPATH_W) 'icallgatherv.c'; else $(CYGPATH_W) '$(srcdir)/icallgatherv.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicallgatherv-icallgatherv.Tpo $(DEPDIR)/nbicallgatherv-icallgatherv.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icallgatherv.c' object='nbicallgatherv-icallgatherv.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicallgatherv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicallgatherv-icallgatherv.obj `if test -f 'icallgatherv.c'; then $(CYGPATH_W) 'icallgatherv.c'; else $(CYGPATH_W) '$(srcdir)/icallgatherv.c'; fi`
+
+nbicallreduce-icallreduce.o: icallreduce.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicallreduce_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicallreduce-icallreduce.o -MD -MP -MF $(DEPDIR)/nbicallreduce-icallreduce.Tpo -c -o nbicallreduce-icallreduce.o `test -f 'icallreduce.c' || echo '$(srcdir)/'`icallreduce.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicallreduce-icallreduce.Tpo $(DEPDIR)/nbicallreduce-icallreduce.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icallreduce.c' object='nbicallreduce-icallreduce.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicallreduce_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicallreduce-icallreduce.o `test -f 'icallreduce.c' || echo '$(srcdir)/'`icallreduce.c
+
+nbicallreduce-icallreduce.obj: icallreduce.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicallreduce_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicallreduce-icallreduce.obj -MD -MP -MF $(DEPDIR)/nbicallreduce-icallreduce.Tpo -c -o nbicallreduce-icallreduce.obj `if test -f 'icallreduce.c'; then $(CYGPATH_W) 'icallreduce.c'; else $(CYGPATH_W) '$(srcdir)/icallreduce.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicallreduce-icallreduce.Tpo $(DEPDIR)/nbicallreduce-icallreduce.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icallreduce.c' object='nbicallreduce-icallreduce.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicallreduce_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicallreduce-icallreduce.obj `if test -f 'icallreduce.c'; then $(CYGPATH_W) 'icallreduce.c'; else $(CYGPATH_W) '$(srcdir)/icallreduce.c'; fi`
+
+nbicalltoall-icalltoall.o: icalltoall.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicalltoall_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicalltoall-icalltoall.o -MD -MP -MF $(DEPDIR)/nbicalltoall-icalltoall.Tpo -c -o nbicalltoall-icalltoall.o `test -f 'icalltoall.c' || echo '$(srcdir)/'`icalltoall.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicalltoall-icalltoall.Tpo $(DEPDIR)/nbicalltoall-icalltoall.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icalltoall.c' object='nbicalltoall-icalltoall.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicalltoall_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicalltoall-icalltoall.o `test -f 'icalltoall.c' || echo '$(srcdir)/'`icalltoall.c
+
+nbicalltoall-icalltoall.obj: icalltoall.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicalltoall_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicalltoall-icalltoall.obj -MD -MP -MF $(DEPDIR)/nbicalltoall-icalltoall.Tpo -c -o nbicalltoall-icalltoall.obj `if test -f 'icalltoall.c'; then $(CYGPATH_W) 'icalltoall.c'; else $(CYGPATH_W) '$(srcdir)/icalltoall.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicalltoall-icalltoall.Tpo $(DEPDIR)/nbicalltoall-icalltoall.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icalltoall.c' object='nbicalltoall-icalltoall.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicalltoall_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicalltoall-icalltoall.obj `if test -f 'icalltoall.c'; then $(CYGPATH_W) 'icalltoall.c'; else $(CYGPATH_W) '$(srcdir)/icalltoall.c'; fi`
+
+nbicalltoallv-icalltoallv.o: icalltoallv.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicalltoallv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicalltoallv-icalltoallv.o -MD -MP -MF $(DEPDIR)/nbicalltoallv-icalltoallv.Tpo -c -o nbicalltoallv-icalltoallv.o `test -f 'icalltoallv.c' || echo '$(srcdir)/'`icalltoallv.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicalltoallv-icalltoallv.Tpo $(DEPDIR)/nbicalltoallv-icalltoallv.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icalltoallv.c' object='nbicalltoallv-icalltoallv.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicalltoallv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicalltoallv-icalltoallv.o `test -f 'icalltoallv.c' || echo '$(srcdir)/'`icalltoallv.c
+
+nbicalltoallv-icalltoallv.obj: icalltoallv.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicalltoallv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicalltoallv-icalltoallv.obj -MD -MP -MF $(DEPDIR)/nbicalltoallv-icalltoallv.Tpo -c -o nbicalltoallv-icalltoallv.obj `if test -f 'icalltoallv.c'; then $(CYGPATH_W) 'icalltoallv.c'; else $(CYGPATH_W) '$(srcdir)/icalltoallv.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicalltoallv-icalltoallv.Tpo $(DEPDIR)/nbicalltoallv-icalltoallv.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icalltoallv.c' object='nbicalltoallv-icalltoallv.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicalltoallv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicalltoallv-icalltoallv.obj `if test -f 'icalltoallv.c'; then $(CYGPATH_W) 'icalltoallv.c'; else $(CYGPATH_W) '$(srcdir)/icalltoallv.c'; fi`
+
+nbicalltoallw-icalltoallw.o: icalltoallw.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicalltoallw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicalltoallw-icalltoallw.o -MD -MP -MF $(DEPDIR)/nbicalltoallw-icalltoallw.Tpo -c -o nbicalltoallw-icalltoallw.o `test -f 'icalltoallw.c' || echo '$(srcdir)/'`icalltoallw.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicalltoallw-icalltoallw.Tpo $(DEPDIR)/nbicalltoallw-icalltoallw.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icalltoallw.c' object='nbicalltoallw-icalltoallw.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicalltoallw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicalltoallw-icalltoallw.o `test -f 'icalltoallw.c' || echo '$(srcdir)/'`icalltoallw.c
+
+nbicalltoallw-icalltoallw.obj: icalltoallw.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicalltoallw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicalltoallw-icalltoallw.obj -MD -MP -MF $(DEPDIR)/nbicalltoallw-icalltoallw.Tpo -c -o nbicalltoallw-icalltoallw.obj `if test -f 'icalltoallw.c'; then $(CYGPATH_W) 'icalltoallw.c'; else $(CYGPATH_W) '$(srcdir)/icalltoallw.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicalltoallw-icalltoallw.Tpo $(DEPDIR)/nbicalltoallw-icalltoallw.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icalltoallw.c' object='nbicalltoallw-icalltoallw.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicalltoallw_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicalltoallw-icalltoallw.obj `if test -f 'icalltoallw.c'; then $(CYGPATH_W) 'icalltoallw.c'; else $(CYGPATH_W) '$(srcdir)/icalltoallw.c'; fi`
+
+nbicbarrier-icbarrier.o: icbarrier.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicbarrier_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicbarrier-icbarrier.o -MD -MP -MF $(DEPDIR)/nbicbarrier-icbarrier.Tpo -c -o nbicbarrier-icbarrier.o `test -f 'icbarrier.c' || echo '$(srcdir)/'`icbarrier.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicbarrier-icbarrier.Tpo $(DEPDIR)/nbicbarrier-icbarrier.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icbarrier.c' object='nbicbarrier-icbarrier.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicbarrier_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicbarrier-icbarrier.o `test -f 'icbarrier.c' || echo '$(srcdir)/'`icbarrier.c
+
+nbicbarrier-icbarrier.obj: icbarrier.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicbarrier_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicbarrier-icbarrier.obj -MD -MP -MF $(DEPDIR)/nbicbarrier-icbarrier.Tpo -c -o nbicbarrier-icbarrier.obj `if test -f 'icbarrier.c'; then $(CYGPATH_W) 'icbarrier.c'; else $(CYGPATH_W) '$(srcdir)/icbarrier.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicbarrier-icbarrier.Tpo $(DEPDIR)/nbicbarrier-icbarrier.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icbarrier.c' object='nbicbarrier-icbarrier.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicbarrier_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicbarrier-icbarrier.obj `if test -f 'icbarrier.c'; then $(CYGPATH_W) 'icbarrier.c'; else $(CYGPATH_W) '$(srcdir)/icbarrier.c'; fi`
+
+nbicbcast-icbcast.o: icbcast.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicbcast_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicbcast-icbcast.o -MD -MP -MF $(DEPDIR)/nbicbcast-icbcast.Tpo -c -o nbicbcast-icbcast.o `test -f 'icbcast.c' || echo '$(srcdir)/'`icbcast.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicbcast-icbcast.Tpo $(DEPDIR)/nbicbcast-icbcast.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icbcast.c' object='nbicbcast-icbcast.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicbcast_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicbcast-icbcast.o `test -f 'icbcast.c' || echo '$(srcdir)/'`icbcast.c
+
+nbicbcast-icbcast.obj: icbcast.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicbcast_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicbcast-icbcast.obj -MD -MP -MF $(DEPDIR)/nbicbcast-icbcast.Tpo -c -o nbicbcast-icbcast.obj `if test -f 'icbcast.c'; then $(CYGPATH_W) 'icbcast.c'; else $(CYGPATH_W) '$(srcdir)/icbcast.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicbcast-icbcast.Tpo $(DEPDIR)/nbicbcast-icbcast.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icbcast.c' object='nbicbcast-icbcast.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicbcast_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicbcast-icbcast.obj `if test -f 'icbcast.c'; then $(CYGPATH_W) 'icbcast.c'; else $(CYGPATH_W) '$(srcdir)/icbcast.c'; fi`
+
+nbicgather-icgather.o: icgather.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicgather_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicgather-icgather.o -MD -MP -MF $(DEPDIR)/nbicgather-icgather.Tpo -c -o nbicgather-icgather.o `test -f 'icgather.c' || echo '$(srcdir)/'`icgather.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicgather-icgather.Tpo $(DEPDIR)/nbicgather-icgather.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icgather.c' object='nbicgather-icgather.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicgather_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicgather-icgather.o `test -f 'icgather.c' || echo '$(srcdir)/'`icgather.c
+
+nbicgather-icgather.obj: icgather.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicgather_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicgather-icgather.obj -MD -MP -MF $(DEPDIR)/nbicgather-icgather.Tpo -c -o nbicgather-icgather.obj `if test -f 'icgather.c'; then $(CYGPATH_W) 'icgather.c'; else $(CYGPATH_W) '$(srcdir)/icgather.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicgather-icgather.Tpo $(DEPDIR)/nbicgather-icgather.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icgather.c' object='nbicgather-icgather.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicgather_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicgather-icgather.obj `if test -f 'icgather.c'; then $(CYGPATH_W) 'icgather.c'; else $(CYGPATH_W) '$(srcdir)/icgather.c'; fi`
+
+nbicgatherv-icgatherv.o: icgatherv.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicgatherv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicgatherv-icgatherv.o -MD -MP -MF $(DEPDIR)/nbicgatherv-icgatherv.Tpo -c -o nbicgatherv-icgatherv.o `test -f 'icgatherv.c' || echo '$(srcdir)/'`icgatherv.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicgatherv-icgatherv.Tpo $(DEPDIR)/nbicgatherv-icgatherv.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icgatherv.c' object='nbicgatherv-icgatherv.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicgatherv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicgatherv-icgatherv.o `test -f 'icgatherv.c' || echo '$(srcdir)/'`icgatherv.c
+
+nbicgatherv-icgatherv.obj: icgatherv.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicgatherv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicgatherv-icgatherv.obj -MD -MP -MF $(DEPDIR)/nbicgatherv-icgatherv.Tpo -c -o nbicgatherv-icgatherv.obj `if test -f 'icgatherv.c'; then $(CYGPATH_W) 'icgatherv.c'; else $(CYGPATH_W) '$(srcdir)/icgatherv.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicgatherv-icgatherv.Tpo $(DEPDIR)/nbicgatherv-icgatherv.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icgatherv.c' object='nbicgatherv-icgatherv.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicgatherv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicgatherv-icgatherv.obj `if test -f 'icgatherv.c'; then $(CYGPATH_W) 'icgatherv.c'; else $(CYGPATH_W) '$(srcdir)/icgatherv.c'; fi`
+
+nbicreduce-icreduce.o: icreduce.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicreduce_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicreduce-icreduce.o -MD -MP -MF $(DEPDIR)/nbicreduce-icreduce.Tpo -c -o nbicreduce-icreduce.o `test -f 'icreduce.c' || echo '$(srcdir)/'`icreduce.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicreduce-icreduce.Tpo $(DEPDIR)/nbicreduce-icreduce.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icreduce.c' object='nbicreduce-icreduce.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicreduce_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicreduce-icreduce.o `test -f 'icreduce.c' || echo '$(srcdir)/'`icreduce.c
+
+nbicreduce-icreduce.obj: icreduce.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicreduce_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicreduce-icreduce.obj -MD -MP -MF $(DEPDIR)/nbicreduce-icreduce.Tpo -c -o nbicreduce-icreduce.obj `if test -f 'icreduce.c'; then $(CYGPATH_W) 'icreduce.c'; else $(CYGPATH_W) '$(srcdir)/icreduce.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicreduce-icreduce.Tpo $(DEPDIR)/nbicreduce-icreduce.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icreduce.c' object='nbicreduce-icreduce.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicreduce_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicreduce-icreduce.obj `if test -f 'icreduce.c'; then $(CYGPATH_W) 'icreduce.c'; else $(CYGPATH_W) '$(srcdir)/icreduce.c'; fi`
+
+nbicscatter-icscatter.o: icscatter.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicscatter_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicscatter-icscatter.o -MD -MP -MF $(DEPDIR)/nbicscatter-icscatter.Tpo -c -o nbicscatter-icscatter.o `test -f 'icscatter.c' || echo '$(srcdir)/'`icscatter.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicscatter-icscatter.Tpo $(DEPDIR)/nbicscatter-icscatter.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icscatter.c' object='nbicscatter-icscatter.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicscatter_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicscatter-icscatter.o `test -f 'icscatter.c' || echo '$(srcdir)/'`icscatter.c
+
+nbicscatter-icscatter.obj: icscatter.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicscatter_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicscatter-icscatter.obj -MD -MP -MF $(DEPDIR)/nbicscatter-icscatter.Tpo -c -o nbicscatter-icscatter.obj `if test -f 'icscatter.c'; then $(CYGPATH_W) 'icscatter.c'; else $(CYGPATH_W) '$(srcdir)/icscatter.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicscatter-icscatter.Tpo $(DEPDIR)/nbicscatter-icscatter.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icscatter.c' object='nbicscatter-icscatter.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicscatter_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicscatter-icscatter.obj `if test -f 'icscatter.c'; then $(CYGPATH_W) 'icscatter.c'; else $(CYGPATH_W) '$(srcdir)/icscatter.c'; fi`
+
+nbicscatterv-icscatterv.o: icscatterv.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicscatterv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicscatterv-icscatterv.o -MD -MP -MF $(DEPDIR)/nbicscatterv-icscatterv.Tpo -c -o nbicscatterv-icscatterv.o `test -f 'icscatterv.c' || echo '$(srcdir)/'`icscatterv.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicscatterv-icscatterv.Tpo $(DEPDIR)/nbicscatterv-icscatterv.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icscatterv.c' object='nbicscatterv-icscatterv.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicscatterv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicscatterv-icscatterv.o `test -f 'icscatterv.c' || echo '$(srcdir)/'`icscatterv.c
+
+nbicscatterv-icscatterv.obj: icscatterv.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicscatterv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbicscatterv-icscatterv.obj -MD -MP -MF $(DEPDIR)/nbicscatterv-icscatterv.Tpo -c -o nbicscatterv-icscatterv.obj `if test -f 'icscatterv.c'; then $(CYGPATH_W) 'icscatterv.c'; else $(CYGPATH_W) '$(srcdir)/icscatterv.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbicscatterv-icscatterv.Tpo $(DEPDIR)/nbicscatterv-icscatterv.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icscatterv.c' object='nbicscatterv-icscatterv.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbicscatterv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbicscatterv-icscatterv.obj `if test -f 'icscatterv.c'; then $(CYGPATH_W) 'icscatterv.c'; else $(CYGPATH_W) '$(srcdir)/icscatterv.c'; fi`
+
+nbredscat-redscat.o: redscat.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbredscat_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbredscat-redscat.o -MD -MP -MF $(DEPDIR)/nbredscat-redscat.Tpo -c -o nbredscat-redscat.o `test -f 'redscat.c' || echo '$(srcdir)/'`redscat.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbredscat-redscat.Tpo $(DEPDIR)/nbredscat-redscat.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='redscat.c' object='nbredscat-redscat.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbredscat_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbredscat-redscat.o `test -f 'redscat.c' || echo '$(srcdir)/'`redscat.c
+
+nbredscat-redscat.obj: redscat.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbredscat_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbredscat-redscat.obj -MD -MP -MF $(DEPDIR)/nbredscat-redscat.Tpo -c -o nbredscat-redscat.obj `if test -f 'redscat.c'; then $(CYGPATH_W) 'redscat.c'; else $(CYGPATH_W) '$(srcdir)/redscat.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbredscat-redscat.Tpo $(DEPDIR)/nbredscat-redscat.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='redscat.c' object='nbredscat-redscat.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbredscat_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbredscat-redscat.obj `if test -f 'redscat.c'; then $(CYGPATH_W) 'redscat.c'; else $(CYGPATH_W) '$(srcdir)/redscat.c'; fi`
+
+nbredscat3-redscat3.o: redscat3.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbredscat3_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbredscat3-redscat3.o -MD -MP -MF $(DEPDIR)/nbredscat3-redscat3.Tpo -c -o nbredscat3-redscat3.o `test -f 'redscat3.c' || echo '$(srcdir)/'`redscat3.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbredscat3-redscat3.Tpo $(DEPDIR)/nbredscat3-redscat3.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='redscat3.c' object='nbredscat3-redscat3.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbredscat3_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbredscat3-redscat3.o `test -f 'redscat3.c' || echo '$(srcdir)/'`redscat3.c
+
+nbredscat3-redscat3.obj: redscat3.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbredscat3_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbredscat3-redscat3.obj -MD -MP -MF $(DEPDIR)/nbredscat3-redscat3.Tpo -c -o nbredscat3-redscat3.obj `if test -f 'redscat3.c'; then $(CYGPATH_W) 'redscat3.c'; else $(CYGPATH_W) '$(srcdir)/redscat3.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbredscat3-redscat3.Tpo $(DEPDIR)/nbredscat3-redscat3.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='redscat3.c' object='nbredscat3-redscat3.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbredscat3_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbredscat3-redscat3.obj `if test -f 'redscat3.c'; then $(CYGPATH_W) 'redscat3.c'; else $(CYGPATH_W) '$(srcdir)/redscat3.c'; fi`
+
+nbredscatinter-redscatinter.o: redscatinter.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbredscatinter_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbredscatinter-redscatinter.o -MD -MP -MF $(DEPDIR)/nbredscatinter-redscatinter.Tpo -c -o nbredscatinter-redscatinter.o `test -f 'redscatinter.c' || echo '$(srcdir)/'`redscatinter.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbredscatinter-redscatinter.Tpo $(DEPDIR)/nbredscatinter-redscatinter.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='redscatinter.c' object='nbredscatinter-redscatinter.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbredscatinter_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbredscatinter-redscatinter.o `test -f 'redscatinter.c' || echo '$(srcdir)/'`redscatinter.c
+
+nbredscatinter-redscatinter.obj: redscatinter.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbredscatinter_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nbredscatinter-redscatinter.obj -MD -MP -MF $(DEPDIR)/nbredscatinter-redscatinter.Tpo -c -o nbredscatinter-redscatinter.obj `if test -f 'redscatinter.c'; then $(CYGPATH_W) 'redscatinter.c'; else $(CYGPATH_W) '$(srcdir)/redscatinter.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nbredscatinter-redscatinter.Tpo $(DEPDIR)/nbredscatinter-redscatinter.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='redscatinter.c' object='nbredscatinter-redscatinter.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nbredscatinter_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nbredscatinter-redscatinter.obj `if test -f 'redscatinter.c'; then $(CYGPATH_W) 'redscatinter.c'; else $(CYGPATH_W) '$(srcdir)/redscatinter.c'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -1735,11 +2263,6 @@ testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
 		-mpiexec=${MPIEXEC} -xmlfile=summary.xml \
 		-tapfile=summary.tap -junitfile=summary.junit.xml
-
-# This is here instead of Makefile.mtest because it is only used in this 
-# set of tests
-$(top_builddir)/util/nbc_pmpi_adapter.$(OBJEXT): $(top_srcdir)/util/nbc_pmpi_adapter.c
-	(cd $(top_builddir)/util && $(MAKE) nbc_pmpi_adapter.$(OBJEXT))
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

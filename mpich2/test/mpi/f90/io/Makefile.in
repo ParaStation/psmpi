@@ -112,8 +112,12 @@ noinst_PROGRAMS = iwriteatf90$(EXEEXT) iwritef90$(EXEEXT) \
 	fileinfof90$(EXEEXT) shpositionf90$(EXEEXT) \
 	atomicityf90$(EXEEXT) miscfilef90$(EXEEXT) \
 	setviewcurf90$(EXEEXT) c2f90multio$(EXEEXT) \
-	c2f2ciof90$(EXEEXT)
-@MAINTAINER_MODE_TRUE@am__append_1 = Makefile.am-stamp  Makefile.ap
+	c2f2ciof90$(EXEEXT) $(am__EXEEXT_1)
+@BUILD_MPIX_TESTS_TRUE@am__append_1 = \
+@BUILD_MPIX_TESTS_TRUE@    i_setviewcurf90  \
+@BUILD_MPIX_TESTS_TRUE@    iwriteatallf90
+
+@MAINTAINER_MODE_TRUE@am__append_2 = Makefile.am-stamp  Makefile.ap
 subdir = f90/io
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -130,8 +134,10 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = testlist
 CONFIG_CLEAN_VPATH_FILES =
+@BUILD_MPIX_TESTS_TRUE@am__EXEEXT_1 = i_setviewcurf90$(EXEEXT) \
+@BUILD_MPIX_TESTS_TRUE@	iwriteatallf90$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 atomicityf90_SOURCES = atomicityf90.f90
 atomicityf90_OBJECTS = atomicityf90.$(OBJEXT)
@@ -152,6 +158,14 @@ fileinfof90_SOURCES = fileinfof90.f90
 fileinfof90_OBJECTS = fileinfof90.$(OBJEXT)
 fileinfof90_LDADD = $(LDADD)
 fileinfof90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+i_setviewcurf90_SOURCES = i_setviewcurf90.f90
+i_setviewcurf90_OBJECTS = i_setviewcurf90.$(OBJEXT)
+i_setviewcurf90_LDADD = $(LDADD)
+i_setviewcurf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+nodist_iwriteatallf90_OBJECTS = iwriteatallf90.$(OBJEXT)
+iwriteatallf90_OBJECTS = $(nodist_iwriteatallf90_OBJECTS)
+iwriteatallf90_LDADD = $(LDADD)
+iwriteatallf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
 nodist_iwriteatf90_OBJECTS = iwriteatf90.$(OBJEXT)
 iwriteatf90_OBJECTS = $(nodist_iwriteatf90_OBJECTS)
 iwriteatf90_LDADD = $(LDADD)
@@ -254,6 +268,7 @@ am__v_FCLD_0 = @echo "  FCLD    " $@;
 am__v_FCLD_1 = 
 SOURCES = atomicityf90.f90 $(c2f2ciof90_SOURCES) \
 	$(c2f90multio_SOURCES) fileerrf90.f90 fileinfof90.f90 \
+	i_setviewcurf90.f90 $(nodist_iwriteatallf90_SOURCES) \
 	$(nodist_iwriteatf90_SOURCES) $(nodist_iwritef90_SOURCES) \
 	$(nodist_iwriteshf90_SOURCES) miscfilef90.f90 \
 	setviewcurf90.f90 shpositionf90.f90 \
@@ -264,7 +279,8 @@ SOURCES = atomicityf90.f90 $(c2f2ciof90_SOURCES) \
 	$(nodist_writeordf90_SOURCES) $(nodist_writeshf90_SOURCES)
 DIST_SOURCES = atomicityf90.f90 $(c2f2ciof90_SOURCES) \
 	$(c2f90multio_SOURCES) fileerrf90.f90 fileinfof90.f90 \
-	miscfilef90.f90 setviewcurf90.f90 shpositionf90.f90
+	i_setviewcurf90.f90 miscfilef90.f90 setviewcurf90.f90 \
+	shpositionf90.f90
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -289,7 +305,7 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in \
+am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/testlist.in \
 	$(top_srcdir)/Makefile_f90.mtest $(top_srcdir)/confdb/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 VPATH = @VPATH@
@@ -419,6 +435,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -453,6 +470,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -470,6 +488,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -486,7 +505,7 @@ AM_FFLAGS = -I.
 
 # just in case
 CLEANFILES = summary.xml summary.tap gen-src-tmp gen-src-stamp
-EXTRA_DIST = testlist ioharness.defn ioharness.tlt $(am__append_1)
+EXTRA_DIST = testlist.in ioharness.defn ioharness.tlt $(am__append_2)
 
 # avoid having to write many "foo_SOURCES = foo.f90" lines
 AM_DEFAULT_SOURCE_EXT = .f90
@@ -494,6 +513,7 @@ AM_DEFAULT_SOURCE_EXT = .f90
 # We don't want to distribute these source files because they are created by
 # "testmerge", hence "nodist_foo_SOURCES"
 nodist_iwriteatf90_SOURCES = iwriteatf90.f90
+nodist_iwriteatallf90_SOURCES = iwriteatallf90.f90
 nodist_iwritef90_SOURCES = iwritef90.f90
 nodist_iwriteshf90_SOURCES = iwriteshf90.f90
 nodist_writeallbef90_SOURCES = writeallbef90.f90
@@ -518,6 +538,7 @@ c2f2ciof90_SOURCES = c2f2ciof90.f90 c2f902cio.c
 # these files are genereated using testmerge (see below)
 generated_io_sources = \
     iwriteatf90.f90        \
+    iwriteatallf90.f90     \
     iwritef90.f90          \
     iwriteshf90.f90        \
     writeallbef90.f90      \
@@ -566,6 +587,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+testlist: $(top_builddir)/config.status $(srcdir)/testlist.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
@@ -589,6 +612,14 @@ fileerrf90$(EXEEXT): $(fileerrf90_OBJECTS) $(fileerrf90_DEPENDENCIES) $(EXTRA_fi
 fileinfof90$(EXEEXT): $(fileinfof90_OBJECTS) $(fileinfof90_DEPENDENCIES) $(EXTRA_fileinfof90_DEPENDENCIES) 
 	@rm -f fileinfof90$(EXEEXT)
 	$(AM_V_FCLD)$(FCLINK) $(fileinfof90_OBJECTS) $(fileinfof90_LDADD) $(LIBS)
+
+i_setviewcurf90$(EXEEXT): $(i_setviewcurf90_OBJECTS) $(i_setviewcurf90_DEPENDENCIES) $(EXTRA_i_setviewcurf90_DEPENDENCIES) 
+	@rm -f i_setviewcurf90$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(i_setviewcurf90_OBJECTS) $(i_setviewcurf90_LDADD) $(LIBS)
+
+iwriteatallf90$(EXEEXT): $(iwriteatallf90_OBJECTS) $(iwriteatallf90_DEPENDENCIES) $(EXTRA_iwriteatallf90_DEPENDENCIES) 
+	@rm -f iwriteatallf90$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(iwriteatallf90_OBJECTS) $(iwriteatallf90_LDADD) $(LIBS)
 
 iwriteatf90$(EXEEXT): $(iwriteatf90_OBJECTS) $(iwriteatf90_DEPENDENCIES) $(EXTRA_iwriteatf90_DEPENDENCIES) 
 	@rm -f iwriteatf90$(EXEEXT)

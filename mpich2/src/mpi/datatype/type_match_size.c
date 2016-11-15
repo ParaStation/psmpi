@@ -83,17 +83,14 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
     MPI_Datatype matched_datatype = MPI_DATATYPE_NULL;
     int i;
     MPI_Aint tsize;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_MATCH_SIZE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
-    /* FIXME: This routine does not require the allfunc critical section */
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    /* FIXME: This routine does not require the global critical section */
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_MATCH_SIZE);
 
-    MPIU_THREADPRIV_GET;
-    
     /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -167,14 +164,14 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 	break;
     default:
 	/* --BEGIN ERROR HANDLING-- */
-	MPIU_ERR_SETANDSTMT(mpi_errno, MPI_ERR_ARG, break, "**typematchnoclass");
+	MPIR_ERR_SETANDSTMT(mpi_errno, MPI_ERR_ARG, break, "**typematchnoclass");
 	/* --END ERROR HANDLING-- */
     }
 
     if (mpi_errno == MPI_SUCCESS) {
 	if (matched_datatype == MPI_DATATYPE_NULL) {
 	    /* --BEGIN ERROR HANDLING-- */
-	    MPIU_ERR_SETANDSTMT2(mpi_errno, MPI_ERR_ARG,;, "**typematchsize", "**typematchsize %s %d", tname, size);
+	    MPIR_ERR_SETANDSTMT2(mpi_errno, MPI_ERR_ARG,;, "**typematchsize", "**typematchsize %s %d", tname, size);
 	    /* --END ERROR HANDLING-- */
 	}
 	else {
@@ -187,7 +184,7 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_MATCH_SIZE);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

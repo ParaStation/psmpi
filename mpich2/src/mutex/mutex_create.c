@@ -11,7 +11,6 @@
 #include <strings.h>
 
 #include <mpi.h>
-#include <mpitypedefs.h>
 #include "muteximpl.h"
 
 
@@ -23,7 +22,7 @@
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPIX_Mutex_create as PMPIX_Mutex_create
 #elif defined(HAVE_WEAK_ATTRIBUTE)
-int MPIX_Mutex_create(int my_count, MPI_Comm comm, MPIX_Mutex * hdl_out) __attribute__((weak,alias("MPIX_Mutex_create")));
+int MPIX_Mutex_create(int my_count, MPI_Comm comm, MPIX_Mutex * hdl_out) __attribute__((weak,alias("PMPIX_Mutex_create")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -37,7 +36,7 @@ int MPIX_Mutex_create(int my_count, MPI_Comm comm, MPIX_Mutex * hdl_out) __attri
 #undef FUNCNAME
 #define FUNCNAME MPIX_Mutex_create
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /** Create a group of MPI mutexes.  Collective on the given communicator.
   *

@@ -108,8 +108,9 @@ noinst_PROGRAMS = winscale1f90$(EXEEXT) winscale2f90$(EXEEXT) \
 	winnamef90$(EXEEXT) wingroupf90$(EXEEXT) winaccf90$(EXEEXT) \
 	winaccf90$(EXEEXT) c2f2cwinf90$(EXEEXT) \
 	baseattrwinf90$(EXEEXT) winattrf90$(EXEEXT) \
-	winattr2f90$(EXEEXT)
-@MAINTAINER_MODE_TRUE@am__append_1 = Makefile.am-stamp  
+	winattr2f90$(EXEEXT) $(am__EXEEXT_1)
+@BUILD_MPIX_TESTS_TRUE@am__append_1 = aintf90
+@MAINTAINER_MODE_TRUE@am__append_2 = Makefile.am-stamp  
 subdir = f90/rma
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -126,9 +127,14 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = testlist
 CONFIG_CLEAN_VPATH_FILES =
+@BUILD_MPIX_TESTS_TRUE@am__EXEEXT_1 = aintf90$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
+aintf90_SOURCES = aintf90.f90
+aintf90_OBJECTS = aintf90.$(OBJEXT)
+aintf90_LDADD = $(LDADD)
+aintf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
 baseattrwinf90_SOURCES = baseattrwinf90.f90
 baseattrwinf90_OBJECTS = baseattrwinf90.$(OBJEXT)
 baseattrwinf90_LDADD = $(LDADD)
@@ -217,14 +223,14 @@ AM_V_FCLD = $(am__v_FCLD_@AM_V@)
 am__v_FCLD_ = $(am__v_FCLD_@AM_DEFAULT_V@)
 am__v_FCLD_0 = @echo "  FCLD    " $@;
 am__v_FCLD_1 = 
-SOURCES = baseattrwinf90.f90 $(c2f2cwinf90_SOURCES) winaccf90.f90 \
-	winattr2f90.f90 winattrf90.f90 winerrf90.f90 winfencef90.f90 \
-	wingetf90.f90 wingroupf90.f90 winnamef90.f90 winscale1f90.f90 \
-	winscale2f90.f90
-DIST_SOURCES = baseattrwinf90.f90 $(c2f2cwinf90_SOURCES) winaccf90.f90 \
-	winattr2f90.f90 winattrf90.f90 winerrf90.f90 winfencef90.f90 \
-	wingetf90.f90 wingroupf90.f90 winnamef90.f90 winscale1f90.f90 \
-	winscale2f90.f90
+SOURCES = aintf90.f90 baseattrwinf90.f90 $(c2f2cwinf90_SOURCES) \
+	winaccf90.f90 winattr2f90.f90 winattrf90.f90 winerrf90.f90 \
+	winfencef90.f90 wingetf90.f90 wingroupf90.f90 winnamef90.f90 \
+	winscale1f90.f90 winscale2f90.f90
+DIST_SOURCES = aintf90.f90 baseattrwinf90.f90 $(c2f2cwinf90_SOURCES) \
+	winaccf90.f90 winattr2f90.f90 winattrf90.f90 winerrf90.f90 \
+	winfencef90.f90 wingetf90.f90 wingroupf90.f90 winnamef90.f90 \
+	winscale1f90.f90 winscale2f90.f90
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -249,7 +255,7 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in \
+am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/testlist.in \
 	$(top_srcdir)/Makefile_f90.mtest $(top_srcdir)/confdb/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 VPATH = @VPATH@
@@ -379,6 +385,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -413,6 +420,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -430,6 +438,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -446,7 +455,7 @@ LDADD = $(top_builddir)/f90/util/mtestf90.o
 # see include note in Makefile_f90.mtest
 AM_FFLAGS = -I. -I../attr
 CLEANFILES = summary.xml summary.tap
-EXTRA_DIST = testlist.in $(am__append_1)
+EXTRA_DIST = testlist.in $(am__append_2)
 
 # avoid having to write many "foo_SOURCES = foo.f90" lines
 AM_DEFAULT_SOURCE_EXT = .f90
@@ -491,9 +500,15 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+testlist: $(top_builddir)/config.status $(srcdir)/testlist.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+
+aintf90$(EXEEXT): $(aintf90_OBJECTS) $(aintf90_DEPENDENCIES) $(EXTRA_aintf90_DEPENDENCIES) 
+	@rm -f aintf90$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(aintf90_OBJECTS) $(aintf90_LDADD) $(LIBS)
 
 baseattrwinf90$(EXEEXT): $(baseattrwinf90_OBJECTS) $(baseattrwinf90_DEPENDENCIES) $(EXTRA_baseattrwinf90_DEPENDENCIES) 
 	@rm -f baseattrwinf90$(EXEEXT)

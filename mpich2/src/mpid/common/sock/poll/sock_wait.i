@@ -7,7 +7,7 @@
 
 /* Make sure that we can properly ensure atomic access to the poll routine */
 #ifdef MPICH_IS_THREADED
-#if !(MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL)
+#if !(MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY_GLOBAL)
 #error selected multi-threaded implementation is not supported
 #endif
 #endif
@@ -42,7 +42,7 @@ static int MPIDU_Socki_handle_connect(struct pollfd * const pollfd,
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Sock_wait
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 		    struct MPIDU_Sock_event * eventp)
 {
@@ -138,6 +138,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 		if (n_fds == 0 && millisecond_timeout != 0)
 		{
 		    int pollfds_active_elems = sock_set->poll_array_elems;
+                    int err;
 		
 		    /* The abstraction here is a shared (blocking) resource that
 		       the threads must coordinate.  That means not holding 
@@ -155,9 +156,9 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 		       progress while this thread waits for something to 
 		       do */
 		    MPIU_DBG_MSG(THREAD,TYPICAL,"Exit global critical section (sock_wait)");
-		    /* 		    MPIU_THREAD_CS_EXIT(MPIDCOMM,);
-				    MPIU_THREAD_CS_EXIT(ALLFUNC,); */
-		    MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex);
+		    /* 		    MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
+				    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX); */
+		    MPID_Thread_mutex_unlock(&MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX, &err);
 			    
 		    MPIDI_FUNC_ENTER(MPID_STATE_POLL);
 		    n_fds = poll(sock_set->pollfds_active, 
@@ -167,9 +168,9 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 		    /* Reaquire the lock before processing any of the 
 		       information returned from poll */
 		    MPIU_DBG_MSG(THREAD,TYPICAL,"Enter global critical section (sock_wait)");
-		    /* 		    MPIU_THREAD_CS_ENTER(ALLFUNC,);
-				    MPIU_THREAD_CS_ENTER(MPIDCOMM,); */
-		    MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex);
+		    /* 		    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
+				    MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX); */
+		    MPID_Thread_mutex_lock(&MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX, &err);
 
 		    /*
 		     * Update pollfds array if changes were posted while we 
@@ -317,7 +318,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 	else if ((MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE) && pollinfo->type == MPIDU_SOCKI_TYPE_INTERRUPTER)
 		{
 		    char c[16];
-		    int nb;
+		    ssize_t nb;
 
 		    do
 		    {
@@ -395,7 +396,7 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Socki_handle_pollhup
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int MPIDU_Socki_handle_pollhup(struct pollfd * const pollfd, struct pollinfo * const pollinfo)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -471,7 +472,7 @@ static int MPIDU_Socki_handle_pollhup(struct pollfd * const pollfd, struct polli
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Socki_handle_pollerr
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int MPIDU_Socki_handle_pollerr(struct pollfd * const pollfd, struct pollinfo * const pollinfo)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -567,10 +568,10 @@ static int MPIDU_Socki_handle_pollerr(struct pollfd * const pollfd, struct polli
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Socki_handle_read
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int MPIDU_Socki_handle_read(struct pollfd * const pollfd, struct pollinfo * const pollinfo)
 {
-    int nb;
+    ssize_t nb;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_READ);
     MPIDI_STATE_DECL(MPID_STATE_READV);
@@ -686,10 +687,10 @@ static int MPIDU_Socki_handle_read(struct pollfd * const pollfd, struct pollinfo
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Socki_handle_write
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int MPIDU_Socki_handle_write(struct pollfd * const pollfd, struct pollinfo * const pollinfo)
 {
-    int nb;
+    ssize_t nb;
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_WRITE);
     MPIDI_STATE_DECL(MPID_STATE_WRITEV);
@@ -779,7 +780,7 @@ static int MPIDU_Socki_handle_write(struct pollfd * const pollfd, struct pollinf
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Socki_handle_connect
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int MPIDU_Socki_handle_connect(struct pollfd * const pollfd, struct pollinfo * const pollinfo)
 {
     struct sockaddr_in addr;

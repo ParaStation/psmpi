@@ -88,7 +88,7 @@ int MPI_Rput(const void *origin_addr, int origin_count, MPI_Datatype
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_RPUT);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -156,10 +156,9 @@ int MPI_Rput(const void *origin_addr, int origin_count, MPI_Datatype
 
     /* ... body of routine ...  */
     
-    mpi_errno = MPIU_RMA_CALL(win_ptr,
-                              Rput(origin_addr, origin_count, origin_datatype,
-                                  target_rank, target_disp, target_count,
-                                  target_datatype, win_ptr, &request_ptr));
+    mpi_errno = MPID_Rput(origin_addr, origin_count, origin_datatype,
+                          target_rank, target_disp, target_count,
+                          target_datatype, win_ptr, &request_ptr);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     *request = request_ptr->handle;
@@ -168,7 +167,7 @@ int MPI_Rput(const void *origin_addr, int origin_count, MPI_Datatype
 
   fn_exit:
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_RPUT);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

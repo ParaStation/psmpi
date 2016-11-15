@@ -53,7 +53,7 @@ static hook_elt *destroy_hooks_tail = NULL;
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Comm_init
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Comm_init(void)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -68,7 +68,7 @@ int MPIDI_CH3I_Comm_init(void)
 
     /* register hooks for keeping track of communicators */
     mpi_errno = MPIDI_CH3U_Comm_register_create_hook(comm_created, NULL);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
 #if defined HAVE_LIBHCOLL
     if (MPIR_CVAR_CH3_ENABLE_HCOLL) {
@@ -81,7 +81,7 @@ int MPIDI_CH3I_Comm_init(void)
              * Test to make sure it's available before choosing to
              * enable or disable it. */
             r = MPL_putenv("HCOLL_ENABLE_MCAST_ALL=0");
-            MPIU_ERR_CHKANDJUMP(r, mpi_errno, MPI_ERR_OTHER, "**putenv");
+            MPIR_ERR_CHKANDJUMP(r, mpi_errno, MPI_ERR_OTHER, "**putenv");
         }
 
 #if defined MPID_CH3I_CH_HCOLL_BCOL
@@ -93,19 +93,19 @@ int MPIDI_CH3I_Comm_init(void)
             MPL_snprintf(envstr, size, "HCOLL_BCOL=%s", MPID_CH3I_CH_HCOLL_BCOL);
 
             r = MPL_putenv(envstr);
-            MPIU_ERR_CHKANDJUMP(r, mpi_errno, MPI_ERR_OTHER, "**putenv");
+            MPIR_ERR_CHKANDJUMP(r, mpi_errno, MPI_ERR_OTHER, "**putenv");
         }
 #endif
 
         mpi_errno = MPIDI_CH3U_Comm_register_create_hook(hcoll_comm_create, NULL);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         mpi_errno = MPIDI_CH3U_Comm_register_destroy_hook(hcoll_comm_destroy, NULL);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     }
 #endif
 
     mpi_errno = MPIDI_CH3U_Comm_register_destroy_hook(comm_destroyed, NULL);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_COMM_INIT);
@@ -118,22 +118,191 @@ int MPIDI_CH3I_Comm_init(void)
 }
 
 
+static void dup_vcrt(struct MPIDI_VCRT *src_vcrt, struct MPIDI_VCRT **dest_vcrt,
+                     MPIR_Comm_map_t *mapper, int src_comm_size, int vcrt_size,
+                     int vcrt_offset)
+{
+    int flag, i;
+
+    /* try to find the simple case where the new comm is a simple
+     * duplicate of the previous comm.  in that case, we simply add a
+     * reference to the previous VCRT instead of recreating it. */
+    if (mapper->type == MPIR_COMM_MAP_DUP && src_comm_size == vcrt_size) {
+        *dest_vcrt = src_vcrt;
+        MPIDI_VCRT_Add_ref(src_vcrt);
+        return;
+    }
+    else if (mapper->type == MPIR_COMM_MAP_IRREGULAR &&
+             mapper->src_mapping_size == vcrt_size) {
+        /* if the mapping array is exactly the same as the original
+         * comm's VC list, there is no need to create a new VCRT.
+         * instead simply point to the original comm's VCRT and bump
+         * up it's reference count */
+        flag = 1;
+        for (i = 0; i < mapper->src_mapping_size; i++)
+            if (mapper->src_mapping[i] != i)
+                flag = 0;
+
+        if (flag) {
+            *dest_vcrt = src_vcrt;
+            MPIDI_VCRT_Add_ref(src_vcrt);
+            return;
+        }
+    }
+
+    /* we are in the more complex case where we need to allocate a new
+     * VCRT */
+
+    if (!vcrt_offset)
+        MPIDI_VCRT_Create(vcrt_size, dest_vcrt);
+
+    if (mapper->type == MPIR_COMM_MAP_DUP) {
+        for (i = 0; i < src_comm_size; i++)
+            MPIDI_VCR_Dup(src_vcrt->vcr_table[i],
+                          &((*dest_vcrt)->vcr_table[i + vcrt_offset]));
+    }
+    else {
+        for (i = 0; i < mapper->src_mapping_size; i++)
+            MPIDI_VCR_Dup(src_vcrt->vcr_table[mapper->src_mapping[i]],
+                          &((*dest_vcrt)->vcr_table[i + vcrt_offset]));
+    }
+}
+
+static inline int map_size(MPIR_Comm_map_t map)
+{
+    if (map.type == MPIR_COMM_MAP_IRREGULAR)
+        return map.src_mapping_size;
+    else if (map.dir == MPIR_COMM_MAP_DIR_L2L || map.dir == MPIR_COMM_MAP_DIR_L2R)
+        return map.src_comm->local_size;
+    else
+        return map.src_comm->remote_size;
+}
+
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Comm_create_hook
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Comm_create_hook(MPID_Comm *comm)
 {
     int mpi_errno = MPI_SUCCESS;
     hook_elt *elt;
+    MPIR_Comm_map_t *mapper;
+    MPID_Comm *src_comm;
+    int vcrt_size, vcrt_offset;
     
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_COMM_CREATE_HOOK);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_COMM_CREATE_HOOK);
 
+    /* initialize the is_disconnected variable to FALSE.  this will be
+     * set to TRUE if the communicator is freed by an
+     * MPI_COMM_DISCONNECT call. */
+    comm->dev.is_disconnected = 0;
+
+    /* do some sanity checks */
+    MPL_LL_FOREACH(comm->mapper_head, mapper) {
+        if (mapper->src_comm->comm_kind == MPID_INTRACOMM)
+            MPIU_Assert(mapper->dir == MPIR_COMM_MAP_DIR_L2L ||
+                        mapper->dir == MPIR_COMM_MAP_DIR_L2R);
+        if (comm->comm_kind == MPID_INTRACOMM)
+            MPIU_Assert(mapper->dir == MPIR_COMM_MAP_DIR_L2L ||
+                        mapper->dir == MPIR_COMM_MAP_DIR_R2L);
+    }
+
+    /* First, handle all the mappers that contribute to the local part
+     * of the comm */
+    vcrt_size = 0;
+    MPL_LL_FOREACH(comm->mapper_head, mapper) {
+        if (mapper->dir == MPIR_COMM_MAP_DIR_L2R ||
+            mapper->dir == MPIR_COMM_MAP_DIR_R2R)
+            continue;
+
+        vcrt_size += map_size(*mapper);
+    }
+    vcrt_offset = 0;
+    MPL_LL_FOREACH(comm->mapper_head, mapper) {
+        src_comm = mapper->src_comm;
+
+        if (mapper->dir == MPIR_COMM_MAP_DIR_L2R ||
+            mapper->dir == MPIR_COMM_MAP_DIR_R2R)
+            continue;
+
+        if (mapper->dir == MPIR_COMM_MAP_DIR_L2L) {
+            if (src_comm->comm_kind == MPID_INTRACOMM && comm->comm_kind == MPID_INTRACOMM) {
+                dup_vcrt(src_comm->dev.vcrt, &comm->dev.vcrt, mapper, mapper->src_comm->local_size,
+                         vcrt_size, vcrt_offset);
+            }
+            else if (src_comm->comm_kind == MPID_INTRACOMM && comm->comm_kind == MPID_INTERCOMM)
+                dup_vcrt(src_comm->dev.vcrt, &comm->dev.local_vcrt, mapper, mapper->src_comm->local_size,
+                         vcrt_size, vcrt_offset);
+            else if (src_comm->comm_kind == MPID_INTERCOMM && comm->comm_kind == MPID_INTRACOMM) {
+                dup_vcrt(src_comm->dev.local_vcrt, &comm->dev.vcrt, mapper, mapper->src_comm->local_size,
+                         vcrt_size, vcrt_offset);
+            }
+            else
+                dup_vcrt(src_comm->dev.local_vcrt, &comm->dev.local_vcrt, mapper,
+                         mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+        }
+        else {  /* mapper->dir == MPIR_COMM_MAP_DIR_R2L */
+            MPIU_Assert(src_comm->comm_kind == MPID_INTERCOMM);
+            if (comm->comm_kind == MPID_INTRACOMM) {
+                dup_vcrt(src_comm->dev.vcrt, &comm->dev.vcrt, mapper, mapper->src_comm->remote_size,
+                         vcrt_size, vcrt_offset);
+            }
+            else
+                dup_vcrt(src_comm->dev.vcrt, &comm->dev.local_vcrt, mapper, mapper->src_comm->remote_size,
+                         vcrt_size, vcrt_offset);
+        }
+        vcrt_offset += map_size(*mapper);
+    }
+
+    /* Next, handle all the mappers that contribute to the remote part
+     * of the comm (only valid for intercomms) */
+    vcrt_size = 0;
+    MPL_LL_FOREACH(comm->mapper_head, mapper) {
+        if (mapper->dir == MPIR_COMM_MAP_DIR_L2L ||
+            mapper->dir == MPIR_COMM_MAP_DIR_R2L)
+            continue;
+
+        vcrt_size += map_size(*mapper);
+    }
+    vcrt_offset = 0;
+    MPL_LL_FOREACH(comm->mapper_head, mapper) {
+        src_comm = mapper->src_comm;
+
+        if (mapper->dir == MPIR_COMM_MAP_DIR_L2L ||
+            mapper->dir == MPIR_COMM_MAP_DIR_R2L)
+            continue;
+
+        MPIU_Assert(comm->comm_kind == MPID_INTERCOMM);
+
+        if (mapper->dir == MPIR_COMM_MAP_DIR_L2R) {
+            if (src_comm->comm_kind == MPID_INTRACOMM)
+                dup_vcrt(src_comm->dev.vcrt, &comm->dev.vcrt, mapper, mapper->src_comm->local_size,
+                         vcrt_size, vcrt_offset);
+            else
+                dup_vcrt(src_comm->dev.local_vcrt, &comm->dev.vcrt, mapper,
+                         mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+        }
+        else {  /* mapper->dir == MPIR_COMM_MAP_DIR_R2R */
+            MPIU_Assert(src_comm->comm_kind == MPID_INTERCOMM);
+            dup_vcrt(src_comm->dev.vcrt, &comm->dev.vcrt, mapper, mapper->src_comm->remote_size,
+                     vcrt_size, vcrt_offset);
+        }
+        vcrt_offset += map_size(*mapper);
+    }
+
+    if (comm->comm_kind == MPID_INTERCOMM) {
+        /* setup the vcrt for the local_comm in the intercomm */
+        if (comm->local_comm) {
+            comm->local_comm->dev.vcrt = comm->dev.local_vcrt;
+            MPIDI_VCRT_Add_ref(comm->dev.local_vcrt);
+        }
+    }
+
     MPL_LL_FOREACH(create_hooks_head, elt) {
         mpi_errno = elt->hook_fn(comm, elt->param);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);;
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);;
     }
 
  fn_exit:
@@ -146,7 +315,7 @@ int MPIDI_CH3I_Comm_create_hook(MPID_Comm *comm)
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Comm_destroy_hook
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Comm_destroy_hook(MPID_Comm *comm)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -157,7 +326,15 @@ int MPIDI_CH3I_Comm_destroy_hook(MPID_Comm *comm)
 
     MPL_LL_FOREACH(destroy_hooks_head, elt) {
         mpi_errno = elt->hook_fn(comm, elt->param);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+    }
+
+    mpi_errno = MPIDI_VCRT_Release(comm->dev.vcrt, comm->dev.is_disconnected);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+
+    if (comm->comm_kind == MPID_INTERCOMM) {
+        mpi_errno = MPIDI_VCRT_Release(comm->dev.local_vcrt, comm->dev.is_disconnected);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     }
 
  fn_exit:
@@ -171,7 +348,7 @@ int MPIDI_CH3I_Comm_destroy_hook(MPID_Comm *comm)
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Comm_register_create_hook
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Comm_register_create_hook(int (*hook_fn)(struct MPID_Comm *, void *), void *param)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -200,7 +377,7 @@ int MPIDI_CH3U_Comm_register_create_hook(int (*hook_fn)(struct MPID_Comm *, void
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Comm_register_destroy_hook
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Comm_register_destroy_hook(int (*hook_fn)(struct MPID_Comm *, void *), void *param)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -228,7 +405,7 @@ int MPIDI_CH3U_Comm_register_destroy_hook(int (*hook_fn)(struct MPID_Comm *, voi
 #undef FUNCNAME
 #define FUNCNAME register_hook_finalize
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int register_hook_finalize(void *param)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -258,7 +435,7 @@ static int register_hook_finalize(void *param)
 #undef FUNCNAME
 #define FUNCNAME comm_created
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int comm_created(MPID_Comm *comm, void *param)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -286,7 +463,7 @@ int comm_created(MPID_Comm *comm, void *param)
 #undef FUNCNAME
 #define FUNCNAME comm_destroyed
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int comm_destroyed(MPID_Comm *comm, void *param)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -310,7 +487,7 @@ int comm_destroyed(MPID_Comm *comm, void *param)
 #undef FUNCNAME
 #define FUNCNAME nonempty_intersection
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int nonempty_intersection(MPID_Comm *comm, MPID_Group *group, int *flag)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -355,7 +532,7 @@ static int nonempty_intersection(MPID_Comm *comm, MPID_Group *group, int *flag)
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Comm_handle_failed_procs
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Comm_handle_failed_procs(MPID_Group *new_failed_procs)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -374,7 +551,7 @@ int MPIDI_CH3I_Comm_handle_failed_procs(MPID_Group *new_failed_procs)
             continue;
 
         mpi_errno = nonempty_intersection(comm, new_failed_procs, &flag);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
         if (flag) {
             MPIU_DBG_MSG_FMT(CH3_OTHER, VERBOSE,
@@ -384,11 +561,9 @@ int MPIDI_CH3I_Comm_handle_failed_procs(MPID_Group *new_failed_procs)
         }
     }
 
-    /* Now that we've marked communicators with disable anysource, we
-       complete-with-an-error all anysource receives posted on those
-       communicators */
-    mpi_errno = MPIDI_CH3U_Complete_disabled_anysources();
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    /* Signal that something completed here to allow the progress engine to
+     * break out and return control to the user. */
+    MPIDI_CH3_Progress_signal_completion();
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_COMM_HANDLE_FAILED_PROCS);
@@ -397,7 +572,7 @@ int MPIDI_CH3I_Comm_handle_failed_procs(MPID_Group *new_failed_procs)
     goto fn_exit;
 }
 
-void MPIDI_CH3I_Comm_find(MPIR_Context_id_t context_id, MPID_Comm **comm)
+void MPIDI_CH3I_Comm_find(MPIU_Context_id_t context_id, MPID_Comm **comm)
 {
     MPIDI_STATE_DECL(MPIDI_STATE_MPIDI_CH3I_COMM_FIND);
     MPIDI_FUNC_ENTER(MPIDI_STATE_MPIDI_CH3I_COMM_FIND);

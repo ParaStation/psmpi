@@ -7,8 +7,8 @@
 
 #include "mpishared.h"
 
+#include "mpiimpl.h"
 #include "mpidu_sock.h"
-/*#include "mpiimpl.h"*/
 #ifdef HAVE_STRING_H
 /* Include for memcpy and memset */
 #include <string.h>
@@ -106,7 +106,7 @@ struct pollinfo
     {
 	struct
 	{
-	    MPID_IOV * ptr;
+	    MPL_IOV * ptr;
 	    int count;
 	    int offset;
 	} iov;
@@ -124,7 +124,7 @@ struct pollinfo
     {
 	struct
 	{
-	    MPID_IOV * ptr;
+	    MPL_IOV * ptr;
 	    int count;
 	    int offset;
 	} iov;

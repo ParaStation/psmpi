@@ -2,6 +2,8 @@
 
 static int hcoll_initialized = 0;
 static int hcoll_comm_world_initialized = 0;
+static int hcoll_progress_hook_id = 0;
+
 int hcoll_enable = 1;
 int hcoll_enable_barrier = 1;
 int hcoll_enable_bcast = 1;
@@ -17,12 +19,14 @@ int world_comm_destroying = 0;
 #undef FUNCNAME
 #define FUNCNAME hcoll_destroy
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 
 int hcoll_destroy(void *param ATTRIBUTE((unused)))
 {
     if (1 == hcoll_initialized) {
         hcoll_finalize();
+        MPID_Progress_deactivate_hook(hcoll_progress_hook_id);
+        MPID_Progress_deregister_hook(hcoll_progress_hook_id);
     }
     hcoll_initialized = 0;
     return 0;
@@ -50,7 +54,7 @@ static int hcoll_comm_attr_del_fn(MPI_Comm comm, int keyval, void *attr_val, voi
 #undef FUNCNAME
 #define FUNCNAME hcoll_initialize
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int hcoll_initialize(void)
 {
     int mpi_errno;
@@ -74,19 +78,26 @@ int hcoll_initialize(void)
      */
     hcoll_set_runtime_tag_offset(INT_MAX / 2, MPI_TAG_UB);
     if (mpi_errno)
-        MPIU_ERR_POP(mpi_errno);
+        MPIR_ERR_POP(mpi_errno);
     mpi_errno = hcoll_init();
     if (mpi_errno)
-        MPIU_ERR_POP(mpi_errno);
+        MPIR_ERR_POP(mpi_errno);
 
-    hcoll_initialized = 1;
+    if (!hcoll_initialized) {
+        hcoll_initialized = 1;
+        mpi_errno = MPID_Progress_register_hook(hcoll_do_progress,
+                                                &hcoll_progress_hook_id);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+
+        MPID_Progress_activate_hook(hcoll_progress_hook_id);
+    }
     MPIR_Add_finalize(hcoll_destroy, 0, 0);
 
     mpi_errno =
         MPIR_Comm_create_keyval_impl(MPI_NULL_COPY_FN, hcoll_comm_attr_del_fn,
                                      &hcoll_comm_attr_keyval, NULL);
     if (mpi_errno)
-        MPIU_ERR_POP(mpi_errno);
+        MPIR_ERR_POP(mpi_errno);
 
     CHECK_ENABLE_ENV_VARS(BARRIER, barrier);
     CHECK_ENABLE_ENV_VARS(BCAST, bcast);
@@ -112,7 +123,7 @@ int hcoll_initialize(void)
 #undef FUNCNAME
 #define FUNCNAME hcoll_comm_create
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int hcoll_comm_create(MPID_Comm * comm_ptr, void *param)
 {
     int mpi_errno;
@@ -122,7 +133,7 @@ int hcoll_comm_create(MPID_Comm * comm_ptr, void *param)
     if (0 == hcoll_initialized) {
         mpi_errno = hcoll_initialize();
         if (mpi_errno)
-            MPIU_ERR_POP(mpi_errno);
+            MPIR_ERR_POP(mpi_errno);
     }
     if (0 == hcoll_enable) {
         goto fn_exit;
@@ -152,7 +163,7 @@ int hcoll_comm_create(MPID_Comm * comm_ptr, void *param)
                               (rte_grp_handle_t) comm_ptr, &context_destroyed);
         MPIU_Assert(context_destroyed);
         comm_ptr->hcoll_priv.is_hcoll_init = 0;
-        MPIU_ERR_POP(mpi_errno);
+        MPIR_ERR_POP(mpi_errno);
     }
     comm_ptr->hcoll_priv.hcoll_origin_coll_fns = comm_ptr->coll_fns;
     comm_ptr->coll_fns = (MPID_Collops *) MPIU_Malloc(sizeof(MPID_Collops));
@@ -180,7 +191,7 @@ int hcoll_comm_create(MPID_Comm * comm_ptr, void *param)
 #undef FUNCNAME
 #define FUNCNAME hcoll_comm_destroy
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int hcoll_comm_destroy(MPID_Comm * comm_ptr, void *param)
 {
     int mpi_errno;
@@ -213,11 +224,11 @@ int hcoll_comm_destroy(MPID_Comm * comm_ptr, void *param)
     goto fn_exit;
 }
 
-int hcoll_do_progress(void)
+int hcoll_do_progress(int *made_progress)
 {
-    if (1 == hcoll_initialized) {
-        hcoll_progress_fn();
-    }
+    if (made_progress)
+        *made_progress = 0;
+    hcoll_progress_fn();
 
     return MPI_SUCCESS;
 }

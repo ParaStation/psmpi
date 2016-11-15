@@ -297,7 +297,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_ ( char *v1 FORT_MIXED_LEN(d1), char
       }
 
       p2 = (char **)MPIU_Malloc( asize2 * sizeof(char *) );
-      ptmp    = (char *)MPIU_Malloc( asize2 * (d2 + 1) );
+      if (asize2-1 > 0) ptmp = (char *)MPIU_Malloc( asize2 * (d2 + 1) );
       for (i=0; i<asize2-1; i++) {
           char *p = v2 + i * d2, *pin, *pdest;
           int j;
@@ -318,6 +318,6 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_ ( char *v1 FORT_MIXED_LEN(d1), char
     if ((MPI_Fint*)v8 == MPI_F_ERRCODES_IGNORE) { v8 = (MPI_Fint *)MPI_ERRCODES_IGNORE; }
     *ierr = MPI_Comm_spawn( p1, p2, (int)*v3, (MPI_Info)(*v4), (int)*v5, (MPI_Comm)(*v6), (MPI_Comm *)(v7), (int *)v8 );
     MPIU_Free( p1 );
-    MPIU_Free( p2[0] );
+    if (asize2-1 > 0) MPIU_Free( p2[0] );
     MPIU_Free( p2 );
 }

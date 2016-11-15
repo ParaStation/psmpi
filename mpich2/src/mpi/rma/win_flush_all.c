@@ -62,7 +62,7 @@ int MPI_Win_flush_all(MPI_Win win)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_FLUSH_ALL);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -97,14 +97,14 @@ int MPI_Win_flush_all(MPI_Win win)
 
     /* ... body of routine ...  */
     
-    mpi_errno = MPIU_RMA_CALL(win_ptr,Win_flush_all(win_ptr));
+    mpi_errno = MPID_Win_flush_all(win_ptr);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_FLUSH_ALL);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

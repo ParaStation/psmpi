@@ -1,4 +1,4 @@
-#! @PERL@ -w
+#! /usr/bin/env perl
 # -*- Mode: perl; -*-
 #
 # This script extracts information from files produced by gcov showing what
@@ -37,6 +37,8 @@
 # it is an executable statement, we can't just ignore breaks, and we can't
 # determine which type the break is without parsing the program :(.
 #
+use warnings;
+
 $includeFileInOutput = 0;
 $skipErrExits = 1;
 $outputUncovered = 1;
@@ -168,6 +170,10 @@ for my $filename (@TopFilenames) {
 	# Check for a "pmpi" directory - one that was used to merge 
 	# PMPI and MPI outputs.  If found, we skip to the next directory
 	if ($filename =~ /\-pmpi$/) { next; }
+	# Added to handle a change in the naming convention for object files
+	# in MPICH, which now needs a -mpi directory as well as the -pmpi
+	# directory needed to handle the pmpi object files.
+	if ($filename =~ /\-mpi$/) { next; }
 	# Expand the directory into a list of files.  If there are 
 	# subdirectories, expand them too (e.g., get a list of 
 	# *every* file within the directory tree. 
@@ -286,13 +292,13 @@ L:  while (<FD>) {
 	}
 
 	# If requested, skip obvious error checking lines
-	# The errflag set should really be an MPIU_ERR macro; the
+	# The errflag set should really be an MPIR_ERR macro; the
 	# test is designed to accept only lines that set that flag
 	# and nothing else.
 	if ($skipErrExits && 
 	    (/FUNC_EXIT.*STATE/ || /MPIR_Err_return_/ || 
-	     /MPIU_ERR_SET/ || /MPIU_ERR_POP/ || /goto\s+fn_fail/ ||
-	     /MPIU_ERR_ADD/ || /\*errflag\s*=\s*[^;]*;\s*$/ || 
+	     /MPIR_ERR_SET/ || /MPIR_ERR_POP/ || /goto\s+fn_fail/ ||
+	     /MPIR_ERR_ADD/ || /\*errflag\s*=\s*[^;]*;\s*$/ || 
 	     /fn_fail:/ || /MPIR_Err_create_code/)) {
 	    next;
 	}
@@ -406,8 +412,8 @@ L2: while (<FD>) {
 	# The format of the line also changed
 	if ($skipErrExits && 
 	    (/FUNC_EXIT.*STATE/ || /MPIR_Err_return_/ || 
-	     /MPIU_ERR_SET/ || /MPIU_ERR_POP/ || /goto\s+fn_fail/ ||
-	     /MPIU_ERR_ADD/ || /\*errflag\s*=\s*[^;]*;\s*$/ || 
+	     /MPIR_ERR_SET/ || /MPIR_ERR_POP/ || /goto\s+fn_fail/ ||
+	     /MPIR_ERR_ADD/ || /\*errflag\s*=\s*[^;]*;\s*$/ || 
             /fn_fail:/ || /MPIR_Err_create_code/)) {
 	    # If requested, skip obvious error checking lines
 	    $newstate = "skip";
@@ -778,8 +784,10 @@ sub ExpandDir {
 	    next;
 	}
 	elsif (-d "$dir/$filename") {
-	    # Skip pmpi directories used for mergeing gcov output
+	    # Skip pmpi directories used for merging gcov output
 	    if ($filename =~ /\-pmpi$/) { next; }
+	    # Skip mpi directories used for handling name-mangled files
+	    if ($filename =~ /\-mpi$/) { next; }
 	    $otherdirs[$#otherdirs+1] = "$dir/$filename";
 	}
 	elsif ($filename =~ /(.*\.gcov)$/) {

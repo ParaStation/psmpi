@@ -12,7 +12,7 @@ int (*MPIDI_Anysource_iprobe_fn)(int tag, MPID_Comm * comm, int context_offset, 
 #undef FUNCNAME
 #define FUNCNAME MPID_Iprobe
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_Iprobe(int source, int tag, MPID_Comm *comm, int context_offset, 
 		int *flag, MPI_Status *status)
 {
@@ -34,9 +34,9 @@ int MPID_Iprobe(int source, int tag, MPID_Comm *comm, int context_offset,
 
     /* Check to make sure the communicator hasn't already been revoked */
     if (comm->revoked &&
-            MPIR_AGREE_TAG != MPIR_TAG_MASK_ERROR_BIT(tag & ~MPIR_Process.tagged_coll_mask) &&
-            MPIR_SHRINK_TAG != MPIR_TAG_MASK_ERROR_BIT(tag & ~MPIR_Process.tagged_coll_mask)) {
-        MPIU_ERR_SETANDJUMP(mpi_errno,MPIX_ERR_REVOKED,"**revoked");
+            MPIR_AGREE_TAG != MPIR_TAG_MASK_ERROR_BITS(tag & ~MPIR_Process.tagged_coll_mask) &&
+            MPIR_SHRINK_TAG != MPIR_TAG_MASK_ERROR_BITS(tag & ~MPIR_Process.tagged_coll_mask)) {
+        MPIR_ERR_SETANDJUMP(mpi_errno,MPIX_ERR_REVOKED,"**revoked");
     }
 
 #ifdef ENABLE_COMM_OVERRIDES
@@ -46,25 +46,25 @@ int MPID_Iprobe(int source, int tag, MPID_Comm *comm, int context_offset,
                If still not found, call progress, and check again. */
 
             /* check shm*/
-            MPIU_THREAD_CS_ENTER(MSGQUEUE,);
+            MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_POBJ_MSGQ_MUTEX);
             found = MPIDI_CH3U_Recvq_FU(source, tag, context, status);
-            MPIU_THREAD_CS_EXIT(MSGQUEUE,);
+            MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_POBJ_MSGQ_MUTEX);
             if (!found) {
                 /* not found, check network */
                 mpi_errno = MPIDI_Anysource_iprobe_fn(tag, comm, context_offset, &found, status);
-                if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+                if (mpi_errno) MPIR_ERR_POP(mpi_errno);
                 if (!found) {
                     /* still not found, make some progress*/
                     mpi_errno = MPIDI_CH3_Progress_poke();
-                    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+                    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
                     /* check shm again */
-                    MPIU_THREAD_CS_ENTER(MSGQUEUE,);
+                    MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_POBJ_MSGQ_MUTEX);
                     found = MPIDI_CH3U_Recvq_FU(source, tag, context, status);
-                    MPIU_THREAD_CS_EXIT(MSGQUEUE,);
+                    MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_POBJ_MSGQ_MUTEX);
                     if (!found) {
                         /* check network again */
                         mpi_errno = MPIDI_Anysource_iprobe_fn(tag, comm, context_offset, &found, status);
-                        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+                        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
                     }
                 }
             }
@@ -76,7 +76,7 @@ int MPID_Iprobe(int source, int tag, MPID_Comm *comm, int context_offset,
             MPIDI_Comm_get_vc_set_active(comm, source, &vc);
             if (vc->comm_ops && vc->comm_ops->iprobe) {
                 mpi_errno = vc->comm_ops->iprobe(vc, source, tag, comm, context_offset, &found, status);
-                if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+                if (mpi_errno) MPIR_ERR_POP(mpi_errno);
                 *flag = found;
                 goto fn_exit;
             }
@@ -90,9 +90,9 @@ int MPID_Iprobe(int source, int tag, MPID_Comm *comm, int context_offset,
        a request.  Note that in some cases it will be possible to 
        atomically query the unexpected receive list (which is what the
        probe routines are for). */
-    MPIU_THREAD_CS_ENTER(MSGQUEUE,);
+    MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_POBJ_MSGQ_MUTEX);
     found = MPIDI_CH3U_Recvq_FU( source, tag, context, status );
-    MPIU_THREAD_CS_EXIT(MSGQUEUE,);
+    MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_POBJ_MSGQ_MUTEX);
     if (!found) {
 	/* Always try to advance progress before returning failure
 	   from the iprobe test.  */
@@ -101,9 +101,9 @@ int MPID_Iprobe(int source, int tag, MPID_Comm *comm, int context_offset,
 	   a second test of the receive queue if we knew that nothing
 	   had changed */
 	mpi_errno = MPID_Progress_poke();
-	MPIU_THREAD_CS_ENTER(MSGQUEUE,);
+	MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_POBJ_MSGQ_MUTEX);
 	found = MPIDI_CH3U_Recvq_FU( source, tag, context, status );
-	MPIU_THREAD_CS_EXIT(MSGQUEUE,);
+	MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_POBJ_MSGQ_MUTEX);
     }
 	
     *flag = found;

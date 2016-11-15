@@ -68,7 +68,7 @@ int MPI_Win_detach(MPI_Win win, const void *base)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_DETACH);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -102,15 +102,14 @@ int MPI_Win_detach(MPI_Win win, const void *base)
 
     if (base == NULL) goto fn_exit;
     
-    mpi_errno = MPIU_RMA_CALL(win_ptr,
-                              Win_detach(win_ptr, base));
+    mpi_errno = MPID_Win_detach(win_ptr, base);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
 
   fn_exit:
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_DETACH);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

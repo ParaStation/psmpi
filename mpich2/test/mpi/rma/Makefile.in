@@ -98,20 +98,25 @@ noinst_PROGRAMS = allocmem$(EXEEXT) test1$(EXEEXT) test2$(EXEEXT) \
 	test2_shm$(EXEEXT) test3$(EXEEXT) test3_shm$(EXEEXT) \
 	test4$(EXEEXT) test5$(EXEEXT) lockcontention$(EXEEXT) \
 	lockcontention2$(EXEEXT) lockcontention3$(EXEEXT) \
-	lockopts$(EXEEXT) contention_put$(EXEEXT) \
-	contention_putget$(EXEEXT) put_base$(EXEEXT) \
-	put_bottom$(EXEEXT) locknull$(EXEEXT) wintest$(EXEEXT) \
-	wintest_shm$(EXEEXT) transpose1$(EXEEXT) transpose2$(EXEEXT) \
-	transpose3$(EXEEXT) transpose3_shm$(EXEEXT) \
-	transpose4$(EXEEXT) transpose5$(EXEEXT) transpose6$(EXEEXT) \
-	transpose7$(EXEEXT) fetchandadd$(EXEEXT) \
-	fetchandadd_tree$(EXEEXT) winname$(EXEEXT) putfence1$(EXEEXT) \
-	putfidx$(EXEEXT) epochtest$(EXEEXT) getfence1$(EXEEXT) \
-	accfence1$(EXEEXT) accfence2$(EXEEXT) adlb_mimic1$(EXEEXT) \
-	putpscw1$(EXEEXT) accpscw1$(EXEEXT) getgroup$(EXEEXT) \
-	contig_displ$(EXEEXT) test1_am$(EXEEXT) test2_am$(EXEEXT) \
-	test2_am_shm$(EXEEXT) test3_am$(EXEEXT) test3_am_shm$(EXEEXT) \
-	test4_am$(EXEEXT) test5_am$(EXEEXT) fetchandadd_am$(EXEEXT) \
+	lockopts$(EXEEXT) lock_dt$(EXEEXT) lock_dt_flush$(EXEEXT) \
+	lock_dt_flushlocal$(EXEEXT) lockall_dt$(EXEEXT) \
+	lockall_dt_flush$(EXEEXT) lockall_dt_flushall$(EXEEXT) \
+	lockall_dt_flushlocal$(EXEEXT) \
+	lockall_dt_flushlocalall$(EXEEXT) lock_contention_dt$(EXEEXT) \
+	contention_put$(EXEEXT) contention_putget$(EXEEXT) \
+	put_base$(EXEEXT) put_bottom$(EXEEXT) locknull$(EXEEXT) \
+	wintest$(EXEEXT) wintest_shm$(EXEEXT) transpose1$(EXEEXT) \
+	transpose2$(EXEEXT) transpose3$(EXEEXT) \
+	transpose3_shm$(EXEEXT) transpose4$(EXEEXT) \
+	transpose5$(EXEEXT) transpose6$(EXEEXT) transpose7$(EXEEXT) \
+	fetchandadd$(EXEEXT) fetchandadd_tree$(EXEEXT) \
+	winname$(EXEEXT) putfence1$(EXEEXT) putfidx$(EXEEXT) \
+	epochtest$(EXEEXT) getfence1$(EXEEXT) accfence1$(EXEEXT) \
+	accfence2$(EXEEXT) adlb_mimic1$(EXEEXT) putpscw1$(EXEEXT) \
+	accpscw1$(EXEEXT) getgroup$(EXEEXT) contig_displ$(EXEEXT) \
+	test1_am$(EXEEXT) test2_am$(EXEEXT) test2_am_shm$(EXEEXT) \
+	test3_am$(EXEEXT) test3_am_shm$(EXEEXT) test4_am$(EXEEXT) \
+	test5_am$(EXEEXT) fetchandadd_am$(EXEEXT) \
 	fetchandadd_tree_am$(EXEEXT) accfence2_am$(EXEEXT) \
 	test1_dt$(EXEEXT) attrorderwin$(EXEEXT) wincall$(EXEEXT) \
 	fkeyvalwin$(EXEEXT) baseattrwin$(EXEEXT) nullpscw$(EXEEXT) \
@@ -155,7 +160,18 @@ noinst_PROGRAMS = allocmem$(EXEEXT) test1$(EXEEXT) test2$(EXEEXT) \
 	fence_shm$(EXEEXT) get-struct$(EXEEXT) \
 	rput_local_comp$(EXEEXT) racc_local_comp$(EXEEXT) \
 	at_complete$(EXEEXT) atomic_rmw_fop$(EXEEXT) \
-	atomic_rmw_cas$(EXEEXT) atomic_rmw_gacc$(EXEEXT)
+	atomic_rmw_cas$(EXEEXT) atomic_rmw_gacc$(EXEEXT) \
+	atomic_get$(EXEEXT) acc-pairtype$(EXEEXT) manyget$(EXEEXT) \
+	derived-acc-flush_local$(EXEEXT) \
+	large-acc-flush_local$(EXEEXT) large-small-acc$(EXEEXT) \
+	put_flush_get$(EXEEXT) acc_flush_get$(EXEEXT) \
+	gacc_flush_get$(EXEEXT) fop_flush_get$(EXEEXT) \
+	cas_flush_get$(EXEEXT) win_shared_put_flush_load$(EXEEXT) \
+	win_shared_acc_flush_load$(EXEEXT) \
+	win_shared_gacc_flush_load$(EXEEXT) \
+	win_shared_fop_flush_load$(EXEEXT) \
+	win_shared_cas_flush_load$(EXEEXT) $(am__EXEEXT_1)
+@BUILD_MPIX_TESTS_TRUE@am__append_1 = aint
 subdir = rma
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -174,11 +190,24 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
 CONFIG_CLEAN_FILES = testlist
 CONFIG_CLEAN_VPATH_FILES =
+@BUILD_MPIX_TESTS_TRUE@am__EXEEXT_1 = aint$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 acc_loc_SOURCES = acc-loc.c
 acc_loc_OBJECTS = acc-loc.$(OBJEXT)
 acc_loc_LDADD = $(LDADD)
 acc_loc_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+acc_pairtype_SOURCES = acc-pairtype.c
+acc_pairtype_OBJECTS = acc-pairtype.$(OBJEXT)
+acc_pairtype_LDADD = $(LDADD)
+acc_pairtype_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_acc_flush_get_OBJECTS = acc_flush_get-wrma_flush_get.$(OBJEXT)
+acc_flush_get_OBJECTS = $(am_acc_flush_get_OBJECTS)
+acc_flush_get_LDADD = $(LDADD)
+acc_flush_get_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 accfence1_SOURCES = accfence1.c
@@ -211,6 +240,12 @@ adlb_mimic1_LDADD = $(LDADD)
 adlb_mimic1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+aint_SOURCES = aint.c
+aint_OBJECTS = aint.$(OBJEXT)
+aint_LDADD = $(LDADD)
+aint_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 allocmem_SOURCES = allocmem.c
 allocmem_OBJECTS = allocmem.$(OBJEXT)
 allocmem_LDADD = $(LDADD)
@@ -221,6 +256,12 @@ at_complete_SOURCES = at_complete.c
 at_complete_OBJECTS = at_complete.$(OBJEXT)
 at_complete_LDADD = $(LDADD)
 at_complete_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+atomic_get_SOURCES = atomic_get.c
+atomic_get_OBJECTS = atomic_get.$(OBJEXT)
+atomic_get_LDADD = $(LDADD)
+atomic_get_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 atomic_rmw_cas_SOURCES = atomic_rmw_cas.c
@@ -259,6 +300,12 @@ baseattrwin_LDADD = $(LDADD)
 baseattrwin_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+am_cas_flush_get_OBJECTS = cas_flush_get-wrma_flush_get.$(OBJEXT)
+cas_flush_get_OBJECTS = $(am_cas_flush_get_OBJECTS)
+cas_flush_get_LDADD = $(LDADD)
+cas_flush_get_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 compare_and_swap_SOURCES = compare_and_swap.c
 compare_and_swap_OBJECTS = compare_and_swap.$(OBJEXT)
 compare_and_swap_LDADD = $(LDADD)
@@ -281,6 +328,12 @@ contig_displ_SOURCES = contig_displ.c
 contig_displ_OBJECTS = contig_displ.$(OBJEXT)
 contig_displ_LDADD = $(LDADD)
 contig_displ_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+derived_acc_flush_local_SOURCES = derived-acc-flush_local.c
+derived_acc_flush_local_OBJECTS = derived-acc-flush_local.$(OBJEXT)
+derived_acc_flush_local_LDADD = $(LDADD)
+derived_acc_flush_local_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 epochtest_SOURCES = epochtest.c
@@ -373,6 +426,18 @@ flush_LDADD = $(LDADD)
 flush_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+am_fop_flush_get_OBJECTS = fop_flush_get-wrma_flush_get.$(OBJEXT)
+fop_flush_get_OBJECTS = $(am_fop_flush_get_OBJECTS)
+fop_flush_get_LDADD = $(LDADD)
+fop_flush_get_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_gacc_flush_get_OBJECTS = gacc_flush_get-wrma_flush_get.$(OBJEXT)
+gacc_flush_get_OBJECTS = $(am_gacc_flush_get_OBJECTS)
+gacc_flush_get_LDADD = $(LDADD)
+gacc_flush_get_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 get_struct_SOURCES = get-struct.c
 get_struct_OBJECTS = get-struct.$(OBJEXT)
 get_struct_LDADD = $(LDADD)
@@ -461,6 +526,18 @@ getgroup_LDADD = $(LDADD)
 getgroup_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+large_acc_flush_local_SOURCES = large-acc-flush_local.c
+large_acc_flush_local_OBJECTS = large-acc-flush_local.$(OBJEXT)
+large_acc_flush_local_LDADD = $(LDADD)
+large_acc_flush_local_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+large_small_acc_SOURCES = large-small-acc.c
+large_small_acc_OBJECTS = large-small-acc.$(OBJEXT)
+large_small_acc_LDADD = $(LDADD)
+large_small_acc_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 linked_list_SOURCES = linked_list.c
 linked_list_OBJECTS = linked_list.$(OBJEXT)
 linked_list_LDADD = $(LDADD)
@@ -511,6 +588,60 @@ linked_list_lockall_LDADD = $(LDADD)
 linked_list_lockall_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+lock_contention_dt_SOURCES = lock_contention_dt.c
+lock_contention_dt_OBJECTS = lock_contention_dt.$(OBJEXT)
+lock_contention_dt_LDADD = $(LDADD)
+lock_contention_dt_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+lock_dt_SOURCES = lock_dt.c
+lock_dt_OBJECTS = lock_dt.$(OBJEXT)
+lock_dt_LDADD = $(LDADD)
+lock_dt_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+lock_dt_flush_SOURCES = lock_dt_flush.c
+lock_dt_flush_OBJECTS = lock_dt_flush.$(OBJEXT)
+lock_dt_flush_LDADD = $(LDADD)
+lock_dt_flush_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+lock_dt_flushlocal_SOURCES = lock_dt_flushlocal.c
+lock_dt_flushlocal_OBJECTS = lock_dt_flushlocal.$(OBJEXT)
+lock_dt_flushlocal_LDADD = $(LDADD)
+lock_dt_flushlocal_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+lockall_dt_SOURCES = lockall_dt.c
+lockall_dt_OBJECTS = lockall_dt.$(OBJEXT)
+lockall_dt_LDADD = $(LDADD)
+lockall_dt_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+lockall_dt_flush_SOURCES = lockall_dt_flush.c
+lockall_dt_flush_OBJECTS = lockall_dt_flush.$(OBJEXT)
+lockall_dt_flush_LDADD = $(LDADD)
+lockall_dt_flush_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+lockall_dt_flushall_SOURCES = lockall_dt_flushall.c
+lockall_dt_flushall_OBJECTS = lockall_dt_flushall.$(OBJEXT)
+lockall_dt_flushall_LDADD = $(LDADD)
+lockall_dt_flushall_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+lockall_dt_flushlocal_SOURCES = lockall_dt_flushlocal.c
+lockall_dt_flushlocal_OBJECTS = lockall_dt_flushlocal.$(OBJEXT)
+lockall_dt_flushlocal_LDADD = $(LDADD)
+lockall_dt_flushlocal_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+lockall_dt_flushlocalall_SOURCES = lockall_dt_flushlocalall.c
+lockall_dt_flushlocalall_OBJECTS = lockall_dt_flushlocalall.$(OBJEXT)
+lockall_dt_flushlocalall_LDADD = $(LDADD)
+lockall_dt_flushlocalall_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 lockcontention_SOURCES = lockcontention.c
 lockcontention_OBJECTS = lockcontention.$(OBJEXT)
 lockcontention_LDADD = $(LDADD)
@@ -539,6 +670,12 @@ lockopts_SOURCES = lockopts.c
 lockopts_OBJECTS = lockopts.$(OBJEXT)
 lockopts_LDADD = $(LDADD)
 lockopts_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+manyget_SOURCES = manyget.c
+manyget_OBJECTS = manyget.$(OBJEXT)
+manyget_LDADD = $(LDADD)
+manyget_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 manyrma2_SOURCES = manyrma2.c
@@ -636,6 +773,12 @@ put_bottom_SOURCES = put_bottom.c
 put_bottom_OBJECTS = put_bottom.$(OBJEXT)
 put_bottom_LDADD = $(LDADD)
 put_bottom_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_put_flush_get_OBJECTS = put_flush_get-wrma_flush_get.$(OBJEXT)
+put_flush_get_OBJECTS = $(am_put_flush_get_OBJECTS)
+put_flush_get_LDADD = $(LDADD)
+put_flush_get_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 putfence1_SOURCES = putfence1.c
@@ -906,6 +1049,22 @@ win_shared_LDADD = $(LDADD)
 win_shared_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+am_win_shared_acc_flush_load_OBJECTS =  \
+	win_shared_acc_flush_load-win_shared_rma_flush_load.$(OBJEXT)
+win_shared_acc_flush_load_OBJECTS =  \
+	$(am_win_shared_acc_flush_load_OBJECTS)
+win_shared_acc_flush_load_LDADD = $(LDADD)
+win_shared_acc_flush_load_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_win_shared_cas_flush_load_OBJECTS =  \
+	win_shared_cas_flush_load-win_shared_rma_flush_load.$(OBJEXT)
+win_shared_cas_flush_load_OBJECTS =  \
+	$(am_win_shared_cas_flush_load_OBJECTS)
+win_shared_cas_flush_load_LDADD = $(LDADD)
+win_shared_cas_flush_load_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 am_win_shared_create_allocshm_OBJECTS =  \
 	win_shared_create_allocshm-win_shared_create.$(OBJEXT)
 win_shared_create_allocshm_OBJECTS =  \
@@ -921,6 +1080,22 @@ win_shared_create_no_allocshm_OBJECTS =  \
 	$(am_win_shared_create_no_allocshm_OBJECTS)
 win_shared_create_no_allocshm_LDADD = $(LDADD)
 win_shared_create_no_allocshm_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_win_shared_fop_flush_load_OBJECTS =  \
+	win_shared_fop_flush_load-win_shared_rma_flush_load.$(OBJEXT)
+win_shared_fop_flush_load_OBJECTS =  \
+	$(am_win_shared_fop_flush_load_OBJECTS)
+win_shared_fop_flush_load_LDADD = $(LDADD)
+win_shared_fop_flush_load_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_win_shared_gacc_flush_load_OBJECTS = win_shared_gacc_flush_load-win_shared_rma_flush_load.$(OBJEXT)
+win_shared_gacc_flush_load_OBJECTS =  \
+	$(am_win_shared_gacc_flush_load_OBJECTS)
+win_shared_gacc_flush_load_LDADD = $(LDADD)
+win_shared_gacc_flush_load_DEPENDENCIES =  \
 	$(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
@@ -940,6 +1115,14 @@ win_shared_put_flush_get_SOURCES = win_shared_put_flush_get.c
 win_shared_put_flush_get_OBJECTS = win_shared_put_flush_get.$(OBJEXT)
 win_shared_put_flush_get_LDADD = $(LDADD)
 win_shared_put_flush_get_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_win_shared_put_flush_load_OBJECTS =  \
+	win_shared_put_flush_load-win_shared_rma_flush_load.$(OBJEXT)
+win_shared_put_flush_load_OBJECTS =  \
+	$(am_win_shared_put_flush_load_OBJECTS)
+win_shared_put_flush_load_LDADD = $(LDADD)
+win_shared_put_flush_load_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 win_shared_zerobyte_SOURCES = win_shared_zerobyte.c
@@ -1016,65 +1199,20 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = acc-loc.c accfence1.c accfence2.c accfence2_am.c accpscw1.c \
-	adlb_mimic1.c allocmem.c at_complete.c atomic_rmw_cas.c \
-	atomic_rmw_fop.c atomic_rmw_gacc.c attrorderwin.c badrma.c \
-	baseattrwin.c compare_and_swap.c contention_put.c \
-	contention_putget.c contig_displ.c epochtest.c fence_shm.c \
-	$(fetch_and_op_char_SOURCES) $(fetch_and_op_double_SOURCES) \
-	$(fetch_and_op_int_SOURCES) $(fetch_and_op_long_SOURCES) \
-	$(fetch_and_op_long_double_SOURCES) \
-	$(fetch_and_op_short_SOURCES) fetchandadd.c fetchandadd_am.c \
-	fetchandadd_tree.c fetchandadd_tree_am.c fkeyvalwin.c flush.c \
-	get-struct.c get_acc_local.c $(get_accumulate_double_SOURCES) \
-	$(get_accumulate_double_derived_SOURCES) \
-	$(get_accumulate_int_SOURCES) \
-	$(get_accumulate_int_derived_SOURCES) \
-	$(get_accumulate_long_SOURCES) \
-	$(get_accumulate_long_derived_SOURCES) \
-	$(get_accumulate_short_SOURCES) \
-	$(get_accumulate_short_derived_SOURCES) getfence1.c getgroup.c \
-	linked_list.c linked_list_bench_lock_all.c \
-	linked_list_bench_lock_excl.c linked_list_bench_lock_shr.c \
-	$(linked_list_bench_lock_shr_nocheck_SOURCES) \
-	linked_list_fop.c linked_list_lockall.c lockcontention.c \
-	lockcontention2.c lockcontention3.c locknull.c lockopts.c \
-	manyrma2.c $(manyrma2_shm_SOURCES) manyrma3.c mixedsync.c \
-	$(mutex_bench_SOURCES) $(mutex_bench_shared_SOURCES) \
-	$(mutex_bench_shm_SOURCES) $(mutex_bench_shm_ordered_SOURCES) \
-	nb_test.c nullpscw.c $(nullpscw_shm_SOURCES) pscw_ordering.c \
-	$(pscw_ordering_shm_SOURCES) put_base.c put_bottom.c \
-	putfence1.c putfidx.c putpscw1.c racc_local_comp.c \
-	req_example.c $(req_example_shm_SOURCES) reqops.c rma-contig.c \
-	rmanull.c rmazero.c rput_local_comp.c selfrma.c \
-	strided_acc_indexed.c strided_acc_onelock.c \
-	strided_acc_subarray.c strided_get_indexed.c \
-	strided_getacc_indexed.c strided_getacc_indexed_shared.c \
-	strided_putget_indexed.c strided_putget_indexed_shared.c \
-	test1.c test1_am.c test1_dt.c test2.c test2_am.c \
-	$(test2_am_shm_SOURCES) $(test2_shm_SOURCES) test3.c \
-	test3_am.c $(test3_am_shm_SOURCES) $(test3_shm_SOURCES) \
-	test4.c test4_am.c test5.c test5_am.c transpose1.c \
-	transpose2.c transpose3.c $(transpose3_shm_SOURCES) \
-	transpose4.c transpose5.c transpose6.c transpose7.c \
-	win_dynamic_acc.c win_flavors.c win_info.c win_large_shm.c \
-	win_shared.c $(win_shared_create_allocshm_SOURCES) \
-	$(win_shared_create_no_allocshm_SOURCES) \
-	win_shared_noncontig.c win_shared_noncontig_put.c \
-	win_shared_put_flush_get.c win_shared_zerobyte.c win_zero.c \
-	wincall.c window_creation.c winname.c wintest.c \
-	$(wintest_shm_SOURCES)
-DIST_SOURCES = acc-loc.c accfence1.c accfence2.c accfence2_am.c \
-	accpscw1.c adlb_mimic1.c allocmem.c at_complete.c \
+SOURCES = acc-loc.c acc-pairtype.c $(acc_flush_get_SOURCES) \
+	accfence1.c accfence2.c accfence2_am.c accpscw1.c \
+	adlb_mimic1.c aint.c allocmem.c at_complete.c atomic_get.c \
 	atomic_rmw_cas.c atomic_rmw_fop.c atomic_rmw_gacc.c \
-	attrorderwin.c badrma.c baseattrwin.c compare_and_swap.c \
-	contention_put.c contention_putget.c contig_displ.c \
-	epochtest.c fence_shm.c $(fetch_and_op_char_SOURCES) \
+	attrorderwin.c badrma.c baseattrwin.c $(cas_flush_get_SOURCES) \
+	compare_and_swap.c contention_put.c contention_putget.c \
+	contig_displ.c derived-acc-flush_local.c epochtest.c \
+	fence_shm.c $(fetch_and_op_char_SOURCES) \
 	$(fetch_and_op_double_SOURCES) $(fetch_and_op_int_SOURCES) \
 	$(fetch_and_op_long_SOURCES) \
 	$(fetch_and_op_long_double_SOURCES) \
 	$(fetch_and_op_short_SOURCES) fetchandadd.c fetchandadd_am.c \
 	fetchandadd_tree.c fetchandadd_tree_am.c fkeyvalwin.c flush.c \
+	$(fop_flush_get_SOURCES) $(gacc_flush_get_SOURCES) \
 	get-struct.c get_acc_local.c $(get_accumulate_double_SOURCES) \
 	$(get_accumulate_double_derived_SOURCES) \
 	$(get_accumulate_int_SOURCES) \
@@ -1083,20 +1221,25 @@ DIST_SOURCES = acc-loc.c accfence1.c accfence2.c accfence2_am.c \
 	$(get_accumulate_long_derived_SOURCES) \
 	$(get_accumulate_short_SOURCES) \
 	$(get_accumulate_short_derived_SOURCES) getfence1.c getgroup.c \
-	linked_list.c linked_list_bench_lock_all.c \
-	linked_list_bench_lock_excl.c linked_list_bench_lock_shr.c \
+	large-acc-flush_local.c large-small-acc.c linked_list.c \
+	linked_list_bench_lock_all.c linked_list_bench_lock_excl.c \
+	linked_list_bench_lock_shr.c \
 	$(linked_list_bench_lock_shr_nocheck_SOURCES) \
-	linked_list_fop.c linked_list_lockall.c lockcontention.c \
-	lockcontention2.c lockcontention3.c locknull.c lockopts.c \
-	manyrma2.c $(manyrma2_shm_SOURCES) manyrma3.c mixedsync.c \
+	linked_list_fop.c linked_list_lockall.c lock_contention_dt.c \
+	lock_dt.c lock_dt_flush.c lock_dt_flushlocal.c lockall_dt.c \
+	lockall_dt_flush.c lockall_dt_flushall.c \
+	lockall_dt_flushlocal.c lockall_dt_flushlocalall.c \
+	lockcontention.c lockcontention2.c lockcontention3.c \
+	locknull.c lockopts.c manyget.c manyrma2.c \
+	$(manyrma2_shm_SOURCES) manyrma3.c mixedsync.c \
 	$(mutex_bench_SOURCES) $(mutex_bench_shared_SOURCES) \
 	$(mutex_bench_shm_SOURCES) $(mutex_bench_shm_ordered_SOURCES) \
 	nb_test.c nullpscw.c $(nullpscw_shm_SOURCES) pscw_ordering.c \
 	$(pscw_ordering_shm_SOURCES) put_base.c put_bottom.c \
-	putfence1.c putfidx.c putpscw1.c racc_local_comp.c \
-	req_example.c $(req_example_shm_SOURCES) reqops.c rma-contig.c \
-	rmanull.c rmazero.c rput_local_comp.c selfrma.c \
-	strided_acc_indexed.c strided_acc_onelock.c \
+	$(put_flush_get_SOURCES) putfence1.c putfidx.c putpscw1.c \
+	racc_local_comp.c req_example.c $(req_example_shm_SOURCES) \
+	reqops.c rma-contig.c rmanull.c rmazero.c rput_local_comp.c \
+	selfrma.c strided_acc_indexed.c strided_acc_onelock.c \
 	strided_acc_subarray.c strided_get_indexed.c \
 	strided_getacc_indexed.c strided_getacc_indexed_shared.c \
 	strided_putget_indexed.c strided_putget_indexed_shared.c \
@@ -1107,11 +1250,76 @@ DIST_SOURCES = acc-loc.c accfence1.c accfence2.c accfence2_am.c \
 	transpose2.c transpose3.c $(transpose3_shm_SOURCES) \
 	transpose4.c transpose5.c transpose6.c transpose7.c \
 	win_dynamic_acc.c win_flavors.c win_info.c win_large_shm.c \
-	win_shared.c $(win_shared_create_allocshm_SOURCES) \
+	win_shared.c $(win_shared_acc_flush_load_SOURCES) \
+	$(win_shared_cas_flush_load_SOURCES) \
+	$(win_shared_create_allocshm_SOURCES) \
 	$(win_shared_create_no_allocshm_SOURCES) \
-	win_shared_noncontig.c win_shared_noncontig_put.c \
-	win_shared_put_flush_get.c win_shared_zerobyte.c win_zero.c \
-	wincall.c window_creation.c winname.c wintest.c \
+	$(win_shared_fop_flush_load_SOURCES) \
+	$(win_shared_gacc_flush_load_SOURCES) win_shared_noncontig.c \
+	win_shared_noncontig_put.c win_shared_put_flush_get.c \
+	$(win_shared_put_flush_load_SOURCES) win_shared_zerobyte.c \
+	win_zero.c wincall.c window_creation.c winname.c wintest.c \
+	$(wintest_shm_SOURCES)
+DIST_SOURCES = acc-loc.c acc-pairtype.c $(acc_flush_get_SOURCES) \
+	accfence1.c accfence2.c accfence2_am.c accpscw1.c \
+	adlb_mimic1.c aint.c allocmem.c at_complete.c atomic_get.c \
+	atomic_rmw_cas.c atomic_rmw_fop.c atomic_rmw_gacc.c \
+	attrorderwin.c badrma.c baseattrwin.c $(cas_flush_get_SOURCES) \
+	compare_and_swap.c contention_put.c contention_putget.c \
+	contig_displ.c derived-acc-flush_local.c epochtest.c \
+	fence_shm.c $(fetch_and_op_char_SOURCES) \
+	$(fetch_and_op_double_SOURCES) $(fetch_and_op_int_SOURCES) \
+	$(fetch_and_op_long_SOURCES) \
+	$(fetch_and_op_long_double_SOURCES) \
+	$(fetch_and_op_short_SOURCES) fetchandadd.c fetchandadd_am.c \
+	fetchandadd_tree.c fetchandadd_tree_am.c fkeyvalwin.c flush.c \
+	$(fop_flush_get_SOURCES) $(gacc_flush_get_SOURCES) \
+	get-struct.c get_acc_local.c $(get_accumulate_double_SOURCES) \
+	$(get_accumulate_double_derived_SOURCES) \
+	$(get_accumulate_int_SOURCES) \
+	$(get_accumulate_int_derived_SOURCES) \
+	$(get_accumulate_long_SOURCES) \
+	$(get_accumulate_long_derived_SOURCES) \
+	$(get_accumulate_short_SOURCES) \
+	$(get_accumulate_short_derived_SOURCES) getfence1.c getgroup.c \
+	large-acc-flush_local.c large-small-acc.c linked_list.c \
+	linked_list_bench_lock_all.c linked_list_bench_lock_excl.c \
+	linked_list_bench_lock_shr.c \
+	$(linked_list_bench_lock_shr_nocheck_SOURCES) \
+	linked_list_fop.c linked_list_lockall.c lock_contention_dt.c \
+	lock_dt.c lock_dt_flush.c lock_dt_flushlocal.c lockall_dt.c \
+	lockall_dt_flush.c lockall_dt_flushall.c \
+	lockall_dt_flushlocal.c lockall_dt_flushlocalall.c \
+	lockcontention.c lockcontention2.c lockcontention3.c \
+	locknull.c lockopts.c manyget.c manyrma2.c \
+	$(manyrma2_shm_SOURCES) manyrma3.c mixedsync.c \
+	$(mutex_bench_SOURCES) $(mutex_bench_shared_SOURCES) \
+	$(mutex_bench_shm_SOURCES) $(mutex_bench_shm_ordered_SOURCES) \
+	nb_test.c nullpscw.c $(nullpscw_shm_SOURCES) pscw_ordering.c \
+	$(pscw_ordering_shm_SOURCES) put_base.c put_bottom.c \
+	$(put_flush_get_SOURCES) putfence1.c putfidx.c putpscw1.c \
+	racc_local_comp.c req_example.c $(req_example_shm_SOURCES) \
+	reqops.c rma-contig.c rmanull.c rmazero.c rput_local_comp.c \
+	selfrma.c strided_acc_indexed.c strided_acc_onelock.c \
+	strided_acc_subarray.c strided_get_indexed.c \
+	strided_getacc_indexed.c strided_getacc_indexed_shared.c \
+	strided_putget_indexed.c strided_putget_indexed_shared.c \
+	test1.c test1_am.c test1_dt.c test2.c test2_am.c \
+	$(test2_am_shm_SOURCES) $(test2_shm_SOURCES) test3.c \
+	test3_am.c $(test3_am_shm_SOURCES) $(test3_shm_SOURCES) \
+	test4.c test4_am.c test5.c test5_am.c transpose1.c \
+	transpose2.c transpose3.c $(transpose3_shm_SOURCES) \
+	transpose4.c transpose5.c transpose6.c transpose7.c \
+	win_dynamic_acc.c win_flavors.c win_info.c win_large_shm.c \
+	win_shared.c $(win_shared_acc_flush_load_SOURCES) \
+	$(win_shared_cas_flush_load_SOURCES) \
+	$(win_shared_create_allocshm_SOURCES) \
+	$(win_shared_create_no_allocshm_SOURCES) \
+	$(win_shared_fop_flush_load_SOURCES) \
+	$(win_shared_gacc_flush_load_SOURCES) win_shared_noncontig.c \
+	win_shared_noncontig_put.c win_shared_put_flush_get.c \
+	$(win_shared_put_flush_load_SOURCES) win_shared_zerobyte.c \
+	win_zero.c wincall.c window_creation.c winname.c wintest.c \
 	$(wintest_shm_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -1267,6 +1475,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -1301,6 +1510,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -1318,6 +1528,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -1398,6 +1609,26 @@ linked_list_bench_lock_shr_nocheck_CPPFLAGS = -DUSE_MODE_NOCHECK $(AM_CPPFLAGS)
 win_shared_create_allocshm_SOURCES = win_shared_create.c
 win_shared_create_no_allocshm_SOURCES = win_shared_create.c
 win_shared_create_allocshm_CPPFLAGS = -DUSE_INFO_ALLOC_SHM $(AM_CPPFLAGS)
+put_flush_get_SOURCES = wrma_flush_get.c
+acc_flush_get_SOURCES = wrma_flush_get.c
+gacc_flush_get_SOURCES = wrma_flush_get.c
+fop_flush_get_SOURCES = wrma_flush_get.c
+cas_flush_get_SOURCES = wrma_flush_get.c
+put_flush_get_CPPFLAGS = -DTEST_PUT $(AM_CPPFLAGS)
+acc_flush_get_CPPFLAGS = -DTEST_ACC $(AM_CPPFLAGS)
+gacc_flush_get_CPPFLAGS = -DTEST_GACC $(AM_CPPFLAGS)
+fop_flush_get_CPPFLAGS = -DTEST_FOP $(AM_CPPFLAGS)
+cas_flush_get_CPPFLAGS = -DTEST_CAS $(AM_CPPFLAGS)
+win_shared_put_flush_load_SOURCES = win_shared_rma_flush_load.c
+win_shared_acc_flush_load_SOURCES = win_shared_rma_flush_load.c
+win_shared_gacc_flush_load_SOURCES = win_shared_rma_flush_load.c
+win_shared_fop_flush_load_SOURCES = win_shared_rma_flush_load.c
+win_shared_cas_flush_load_SOURCES = win_shared_rma_flush_load.c
+win_shared_put_flush_load_CPPFLAGS = -DTEST_PUT $(AM_CPPFLAGS)
+win_shared_acc_flush_load_CPPFLAGS = -DTEST_ACC $(AM_CPPFLAGS)
+win_shared_gacc_flush_load_CPPFLAGS = -DTEST_GACC $(AM_CPPFLAGS)
+win_shared_fop_flush_load_CPPFLAGS = -DTEST_FOP $(AM_CPPFLAGS)
+win_shared_cas_flush_load_CPPFLAGS = -DTEST_CAS $(AM_CPPFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -1442,6 +1673,14 @@ acc-loc$(EXEEXT): $(acc_loc_OBJECTS) $(acc_loc_DEPENDENCIES) $(EXTRA_acc_loc_DEP
 	@rm -f acc-loc$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(acc_loc_OBJECTS) $(acc_loc_LDADD) $(LIBS)
 
+acc-pairtype$(EXEEXT): $(acc_pairtype_OBJECTS) $(acc_pairtype_DEPENDENCIES) $(EXTRA_acc_pairtype_DEPENDENCIES) 
+	@rm -f acc-pairtype$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(acc_pairtype_OBJECTS) $(acc_pairtype_LDADD) $(LIBS)
+
+acc_flush_get$(EXEEXT): $(acc_flush_get_OBJECTS) $(acc_flush_get_DEPENDENCIES) $(EXTRA_acc_flush_get_DEPENDENCIES) 
+	@rm -f acc_flush_get$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(acc_flush_get_OBJECTS) $(acc_flush_get_LDADD) $(LIBS)
+
 accfence1$(EXEEXT): $(accfence1_OBJECTS) $(accfence1_DEPENDENCIES) $(EXTRA_accfence1_DEPENDENCIES) 
 	@rm -f accfence1$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(accfence1_OBJECTS) $(accfence1_LDADD) $(LIBS)
@@ -1462,6 +1701,10 @@ adlb_mimic1$(EXEEXT): $(adlb_mimic1_OBJECTS) $(adlb_mimic1_DEPENDENCIES) $(EXTRA
 	@rm -f adlb_mimic1$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(adlb_mimic1_OBJECTS) $(adlb_mimic1_LDADD) $(LIBS)
 
+aint$(EXEEXT): $(aint_OBJECTS) $(aint_DEPENDENCIES) $(EXTRA_aint_DEPENDENCIES) 
+	@rm -f aint$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(aint_OBJECTS) $(aint_LDADD) $(LIBS)
+
 allocmem$(EXEEXT): $(allocmem_OBJECTS) $(allocmem_DEPENDENCIES) $(EXTRA_allocmem_DEPENDENCIES) 
 	@rm -f allocmem$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(allocmem_OBJECTS) $(allocmem_LDADD) $(LIBS)
@@ -1469,6 +1712,10 @@ allocmem$(EXEEXT): $(allocmem_OBJECTS) $(allocmem_DEPENDENCIES) $(EXTRA_allocmem
 at_complete$(EXEEXT): $(at_complete_OBJECTS) $(at_complete_DEPENDENCIES) $(EXTRA_at_complete_DEPENDENCIES) 
 	@rm -f at_complete$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(at_complete_OBJECTS) $(at_complete_LDADD) $(LIBS)
+
+atomic_get$(EXEEXT): $(atomic_get_OBJECTS) $(atomic_get_DEPENDENCIES) $(EXTRA_atomic_get_DEPENDENCIES) 
+	@rm -f atomic_get$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(atomic_get_OBJECTS) $(atomic_get_LDADD) $(LIBS)
 
 atomic_rmw_cas$(EXEEXT): $(atomic_rmw_cas_OBJECTS) $(atomic_rmw_cas_DEPENDENCIES) $(EXTRA_atomic_rmw_cas_DEPENDENCIES) 
 	@rm -f atomic_rmw_cas$(EXEEXT)
@@ -1494,6 +1741,10 @@ baseattrwin$(EXEEXT): $(baseattrwin_OBJECTS) $(baseattrwin_DEPENDENCIES) $(EXTRA
 	@rm -f baseattrwin$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(baseattrwin_OBJECTS) $(baseattrwin_LDADD) $(LIBS)
 
+cas_flush_get$(EXEEXT): $(cas_flush_get_OBJECTS) $(cas_flush_get_DEPENDENCIES) $(EXTRA_cas_flush_get_DEPENDENCIES) 
+	@rm -f cas_flush_get$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cas_flush_get_OBJECTS) $(cas_flush_get_LDADD) $(LIBS)
+
 compare_and_swap$(EXEEXT): $(compare_and_swap_OBJECTS) $(compare_and_swap_DEPENDENCIES) $(EXTRA_compare_and_swap_DEPENDENCIES) 
 	@rm -f compare_and_swap$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(compare_and_swap_OBJECTS) $(compare_and_swap_LDADD) $(LIBS)
@@ -1509,6 +1760,10 @@ contention_putget$(EXEEXT): $(contention_putget_OBJECTS) $(contention_putget_DEP
 contig_displ$(EXEEXT): $(contig_displ_OBJECTS) $(contig_displ_DEPENDENCIES) $(EXTRA_contig_displ_DEPENDENCIES) 
 	@rm -f contig_displ$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(contig_displ_OBJECTS) $(contig_displ_LDADD) $(LIBS)
+
+derived-acc-flush_local$(EXEEXT): $(derived_acc_flush_local_OBJECTS) $(derived_acc_flush_local_DEPENDENCIES) $(EXTRA_derived_acc_flush_local_DEPENDENCIES) 
+	@rm -f derived-acc-flush_local$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(derived_acc_flush_local_OBJECTS) $(derived_acc_flush_local_LDADD) $(LIBS)
 
 epochtest$(EXEEXT): $(epochtest_OBJECTS) $(epochtest_DEPENDENCIES) $(EXTRA_epochtest_DEPENDENCIES) 
 	@rm -f epochtest$(EXEEXT)
@@ -1566,6 +1821,14 @@ flush$(EXEEXT): $(flush_OBJECTS) $(flush_DEPENDENCIES) $(EXTRA_flush_DEPENDENCIE
 	@rm -f flush$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(flush_OBJECTS) $(flush_LDADD) $(LIBS)
 
+fop_flush_get$(EXEEXT): $(fop_flush_get_OBJECTS) $(fop_flush_get_DEPENDENCIES) $(EXTRA_fop_flush_get_DEPENDENCIES) 
+	@rm -f fop_flush_get$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(fop_flush_get_OBJECTS) $(fop_flush_get_LDADD) $(LIBS)
+
+gacc_flush_get$(EXEEXT): $(gacc_flush_get_OBJECTS) $(gacc_flush_get_DEPENDENCIES) $(EXTRA_gacc_flush_get_DEPENDENCIES) 
+	@rm -f gacc_flush_get$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(gacc_flush_get_OBJECTS) $(gacc_flush_get_LDADD) $(LIBS)
+
 get-struct$(EXEEXT): $(get_struct_OBJECTS) $(get_struct_DEPENDENCIES) $(EXTRA_get_struct_DEPENDENCIES) 
 	@rm -f get-struct$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(get_struct_OBJECTS) $(get_struct_LDADD) $(LIBS)
@@ -1614,6 +1877,14 @@ getgroup$(EXEEXT): $(getgroup_OBJECTS) $(getgroup_DEPENDENCIES) $(EXTRA_getgroup
 	@rm -f getgroup$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(getgroup_OBJECTS) $(getgroup_LDADD) $(LIBS)
 
+large-acc-flush_local$(EXEEXT): $(large_acc_flush_local_OBJECTS) $(large_acc_flush_local_DEPENDENCIES) $(EXTRA_large_acc_flush_local_DEPENDENCIES) 
+	@rm -f large-acc-flush_local$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(large_acc_flush_local_OBJECTS) $(large_acc_flush_local_LDADD) $(LIBS)
+
+large-small-acc$(EXEEXT): $(large_small_acc_OBJECTS) $(large_small_acc_DEPENDENCIES) $(EXTRA_large_small_acc_DEPENDENCIES) 
+	@rm -f large-small-acc$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(large_small_acc_OBJECTS) $(large_small_acc_LDADD) $(LIBS)
+
 linked_list$(EXEEXT): $(linked_list_OBJECTS) $(linked_list_DEPENDENCIES) $(EXTRA_linked_list_DEPENDENCIES) 
 	@rm -f linked_list$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(linked_list_OBJECTS) $(linked_list_LDADD) $(LIBS)
@@ -1642,6 +1913,42 @@ linked_list_lockall$(EXEEXT): $(linked_list_lockall_OBJECTS) $(linked_list_locka
 	@rm -f linked_list_lockall$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(linked_list_lockall_OBJECTS) $(linked_list_lockall_LDADD) $(LIBS)
 
+lock_contention_dt$(EXEEXT): $(lock_contention_dt_OBJECTS) $(lock_contention_dt_DEPENDENCIES) $(EXTRA_lock_contention_dt_DEPENDENCIES) 
+	@rm -f lock_contention_dt$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(lock_contention_dt_OBJECTS) $(lock_contention_dt_LDADD) $(LIBS)
+
+lock_dt$(EXEEXT): $(lock_dt_OBJECTS) $(lock_dt_DEPENDENCIES) $(EXTRA_lock_dt_DEPENDENCIES) 
+	@rm -f lock_dt$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(lock_dt_OBJECTS) $(lock_dt_LDADD) $(LIBS)
+
+lock_dt_flush$(EXEEXT): $(lock_dt_flush_OBJECTS) $(lock_dt_flush_DEPENDENCIES) $(EXTRA_lock_dt_flush_DEPENDENCIES) 
+	@rm -f lock_dt_flush$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(lock_dt_flush_OBJECTS) $(lock_dt_flush_LDADD) $(LIBS)
+
+lock_dt_flushlocal$(EXEEXT): $(lock_dt_flushlocal_OBJECTS) $(lock_dt_flushlocal_DEPENDENCIES) $(EXTRA_lock_dt_flushlocal_DEPENDENCIES) 
+	@rm -f lock_dt_flushlocal$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(lock_dt_flushlocal_OBJECTS) $(lock_dt_flushlocal_LDADD) $(LIBS)
+
+lockall_dt$(EXEEXT): $(lockall_dt_OBJECTS) $(lockall_dt_DEPENDENCIES) $(EXTRA_lockall_dt_DEPENDENCIES) 
+	@rm -f lockall_dt$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(lockall_dt_OBJECTS) $(lockall_dt_LDADD) $(LIBS)
+
+lockall_dt_flush$(EXEEXT): $(lockall_dt_flush_OBJECTS) $(lockall_dt_flush_DEPENDENCIES) $(EXTRA_lockall_dt_flush_DEPENDENCIES) 
+	@rm -f lockall_dt_flush$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(lockall_dt_flush_OBJECTS) $(lockall_dt_flush_LDADD) $(LIBS)
+
+lockall_dt_flushall$(EXEEXT): $(lockall_dt_flushall_OBJECTS) $(lockall_dt_flushall_DEPENDENCIES) $(EXTRA_lockall_dt_flushall_DEPENDENCIES) 
+	@rm -f lockall_dt_flushall$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(lockall_dt_flushall_OBJECTS) $(lockall_dt_flushall_LDADD) $(LIBS)
+
+lockall_dt_flushlocal$(EXEEXT): $(lockall_dt_flushlocal_OBJECTS) $(lockall_dt_flushlocal_DEPENDENCIES) $(EXTRA_lockall_dt_flushlocal_DEPENDENCIES) 
+	@rm -f lockall_dt_flushlocal$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(lockall_dt_flushlocal_OBJECTS) $(lockall_dt_flushlocal_LDADD) $(LIBS)
+
+lockall_dt_flushlocalall$(EXEEXT): $(lockall_dt_flushlocalall_OBJECTS) $(lockall_dt_flushlocalall_DEPENDENCIES) $(EXTRA_lockall_dt_flushlocalall_DEPENDENCIES) 
+	@rm -f lockall_dt_flushlocalall$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(lockall_dt_flushlocalall_OBJECTS) $(lockall_dt_flushlocalall_LDADD) $(LIBS)
+
 lockcontention$(EXEEXT): $(lockcontention_OBJECTS) $(lockcontention_DEPENDENCIES) $(EXTRA_lockcontention_DEPENDENCIES) 
 	@rm -f lockcontention$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(lockcontention_OBJECTS) $(lockcontention_LDADD) $(LIBS)
@@ -1661,6 +1968,10 @@ locknull$(EXEEXT): $(locknull_OBJECTS) $(locknull_DEPENDENCIES) $(EXTRA_locknull
 lockopts$(EXEEXT): $(lockopts_OBJECTS) $(lockopts_DEPENDENCIES) $(EXTRA_lockopts_DEPENDENCIES) 
 	@rm -f lockopts$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(lockopts_OBJECTS) $(lockopts_LDADD) $(LIBS)
+
+manyget$(EXEEXT): $(manyget_OBJECTS) $(manyget_DEPENDENCIES) $(EXTRA_manyget_DEPENDENCIES) 
+	@rm -f manyget$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(manyget_OBJECTS) $(manyget_LDADD) $(LIBS)
 
 manyrma2$(EXEEXT): $(manyrma2_OBJECTS) $(manyrma2_DEPENDENCIES) $(EXTRA_manyrma2_DEPENDENCIES) 
 	@rm -f manyrma2$(EXEEXT)
@@ -1721,6 +2032,10 @@ put_base$(EXEEXT): $(put_base_OBJECTS) $(put_base_DEPENDENCIES) $(EXTRA_put_base
 put_bottom$(EXEEXT): $(put_bottom_OBJECTS) $(put_bottom_DEPENDENCIES) $(EXTRA_put_bottom_DEPENDENCIES) 
 	@rm -f put_bottom$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(put_bottom_OBJECTS) $(put_bottom_LDADD) $(LIBS)
+
+put_flush_get$(EXEEXT): $(put_flush_get_OBJECTS) $(put_flush_get_DEPENDENCIES) $(EXTRA_put_flush_get_DEPENDENCIES) 
+	@rm -f put_flush_get$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(put_flush_get_OBJECTS) $(put_flush_get_LDADD) $(LIBS)
 
 putfence1$(EXEEXT): $(putfence1_OBJECTS) $(putfence1_DEPENDENCIES) $(EXTRA_putfence1_DEPENDENCIES) 
 	@rm -f putfence1$(EXEEXT)
@@ -1914,6 +2229,14 @@ win_shared$(EXEEXT): $(win_shared_OBJECTS) $(win_shared_DEPENDENCIES) $(EXTRA_wi
 	@rm -f win_shared$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(win_shared_OBJECTS) $(win_shared_LDADD) $(LIBS)
 
+win_shared_acc_flush_load$(EXEEXT): $(win_shared_acc_flush_load_OBJECTS) $(win_shared_acc_flush_load_DEPENDENCIES) $(EXTRA_win_shared_acc_flush_load_DEPENDENCIES) 
+	@rm -f win_shared_acc_flush_load$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(win_shared_acc_flush_load_OBJECTS) $(win_shared_acc_flush_load_LDADD) $(LIBS)
+
+win_shared_cas_flush_load$(EXEEXT): $(win_shared_cas_flush_load_OBJECTS) $(win_shared_cas_flush_load_DEPENDENCIES) $(EXTRA_win_shared_cas_flush_load_DEPENDENCIES) 
+	@rm -f win_shared_cas_flush_load$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(win_shared_cas_flush_load_OBJECTS) $(win_shared_cas_flush_load_LDADD) $(LIBS)
+
 win_shared_create_allocshm$(EXEEXT): $(win_shared_create_allocshm_OBJECTS) $(win_shared_create_allocshm_DEPENDENCIES) $(EXTRA_win_shared_create_allocshm_DEPENDENCIES) 
 	@rm -f win_shared_create_allocshm$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(win_shared_create_allocshm_OBJECTS) $(win_shared_create_allocshm_LDADD) $(LIBS)
@@ -1921,6 +2244,14 @@ win_shared_create_allocshm$(EXEEXT): $(win_shared_create_allocshm_OBJECTS) $(win
 win_shared_create_no_allocshm$(EXEEXT): $(win_shared_create_no_allocshm_OBJECTS) $(win_shared_create_no_allocshm_DEPENDENCIES) $(EXTRA_win_shared_create_no_allocshm_DEPENDENCIES) 
 	@rm -f win_shared_create_no_allocshm$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(win_shared_create_no_allocshm_OBJECTS) $(win_shared_create_no_allocshm_LDADD) $(LIBS)
+
+win_shared_fop_flush_load$(EXEEXT): $(win_shared_fop_flush_load_OBJECTS) $(win_shared_fop_flush_load_DEPENDENCIES) $(EXTRA_win_shared_fop_flush_load_DEPENDENCIES) 
+	@rm -f win_shared_fop_flush_load$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(win_shared_fop_flush_load_OBJECTS) $(win_shared_fop_flush_load_LDADD) $(LIBS)
+
+win_shared_gacc_flush_load$(EXEEXT): $(win_shared_gacc_flush_load_OBJECTS) $(win_shared_gacc_flush_load_DEPENDENCIES) $(EXTRA_win_shared_gacc_flush_load_DEPENDENCIES) 
+	@rm -f win_shared_gacc_flush_load$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(win_shared_gacc_flush_load_OBJECTS) $(win_shared_gacc_flush_load_LDADD) $(LIBS)
 
 win_shared_noncontig$(EXEEXT): $(win_shared_noncontig_OBJECTS) $(win_shared_noncontig_DEPENDENCIES) $(EXTRA_win_shared_noncontig_DEPENDENCIES) 
 	@rm -f win_shared_noncontig$(EXEEXT)
@@ -1933,6 +2264,10 @@ win_shared_noncontig_put$(EXEEXT): $(win_shared_noncontig_put_OBJECTS) $(win_sha
 win_shared_put_flush_get$(EXEEXT): $(win_shared_put_flush_get_OBJECTS) $(win_shared_put_flush_get_DEPENDENCIES) $(EXTRA_win_shared_put_flush_get_DEPENDENCIES) 
 	@rm -f win_shared_put_flush_get$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(win_shared_put_flush_get_OBJECTS) $(win_shared_put_flush_get_LDADD) $(LIBS)
+
+win_shared_put_flush_load$(EXEEXT): $(win_shared_put_flush_load_OBJECTS) $(win_shared_put_flush_load_DEPENDENCIES) $(EXTRA_win_shared_put_flush_load_DEPENDENCIES) 
+	@rm -f win_shared_put_flush_load$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(win_shared_put_flush_load_OBJECTS) $(win_shared_put_flush_load_LDADD) $(LIBS)
 
 win_shared_zerobyte$(EXEEXT): $(win_shared_zerobyte_OBJECTS) $(win_shared_zerobyte_DEPENDENCIES) $(EXTRA_win_shared_zerobyte_DEPENDENCIES) 
 	@rm -f win_shared_zerobyte$(EXEEXT)
@@ -1969,23 +2304,29 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/acc-loc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/acc-pairtype.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/acc_flush_get-wrma_flush_get.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/accfence1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/accfence2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/accfence2_am.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/accpscw1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adlb_mimic1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/aint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allocmem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/at_complete.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atomic_get.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atomic_rmw_cas.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atomic_rmw_fop.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/atomic_rmw_gacc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/attrorderwin.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/badrma.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/baseattrwin.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cas_flush_get-wrma_flush_get.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compare_and_swap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/contention_put.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/contention_putget.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/contig_displ.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/derived-acc-flush_local.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/epochtest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fence_shm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fetch_and_op_char-fetch_and_op.Po@am__quote@
@@ -2000,6 +2341,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fetchandadd_tree_am.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fkeyvalwin.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/flush.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fop_flush_get-wrma_flush_get.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gacc_flush_get-wrma_flush_get.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-struct.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get_acc_local.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get_accumulate_double-get_accumulate.Po@am__quote@
@@ -2012,6 +2355,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get_accumulate_short_derived-get_accumulate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getfence1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getgroup.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large-acc-flush_local.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large-small-acc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linked_list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linked_list_bench_lock_all.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linked_list_bench_lock_excl.Po@am__quote@
@@ -2019,11 +2364,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linked_list_bench_lock_shr_nocheck-linked_list_bench_lock_shr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linked_list_fop.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linked_list_lockall.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lock_contention_dt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lock_dt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lock_dt_flush.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lock_dt_flushlocal.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lockall_dt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lockall_dt_flush.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lockall_dt_flushall.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lockall_dt_flushlocal.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lockall_dt_flushlocalall.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lockcontention.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lockcontention2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lockcontention3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locknull.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lockopts.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manyget.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manyrma2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manyrma2_shm-manyrma2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manyrma3.Po@am__quote@
@@ -2043,6 +2398,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pscw_ordering_shm-pscw_ordering.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/put_base.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/put_bottom.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/put_flush_get-wrma_flush_get.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/putfence1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/putfidx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/putpscw1.Po@am__quote@
@@ -2091,11 +2447,16 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_info.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_large_shm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shared.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shared_acc_flush_load-win_shared_rma_flush_load.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shared_cas_flush_load-win_shared_rma_flush_load.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shared_create.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shared_create_allocshm-win_shared_create.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shared_fop_flush_load-win_shared_rma_flush_load.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shared_gacc_flush_load-win_shared_rma_flush_load.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shared_noncontig.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shared_noncontig_put.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shared_put_flush_get.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shared_put_flush_load-win_shared_rma_flush_load.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shared_zerobyte.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_zero.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wincall.Po@am__quote@
@@ -2119,6 +2480,34 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+acc_flush_get-wrma_flush_get.o: wrma_flush_get.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(acc_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT acc_flush_get-wrma_flush_get.o -MD -MP -MF $(DEPDIR)/acc_flush_get-wrma_flush_get.Tpo -c -o acc_flush_get-wrma_flush_get.o `test -f 'wrma_flush_get.c' || echo '$(srcdir)/'`wrma_flush_get.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/acc_flush_get-wrma_flush_get.Tpo $(DEPDIR)/acc_flush_get-wrma_flush_get.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wrma_flush_get.c' object='acc_flush_get-wrma_flush_get.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(acc_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o acc_flush_get-wrma_flush_get.o `test -f 'wrma_flush_get.c' || echo '$(srcdir)/'`wrma_flush_get.c
+
+acc_flush_get-wrma_flush_get.obj: wrma_flush_get.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(acc_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT acc_flush_get-wrma_flush_get.obj -MD -MP -MF $(DEPDIR)/acc_flush_get-wrma_flush_get.Tpo -c -o acc_flush_get-wrma_flush_get.obj `if test -f 'wrma_flush_get.c'; then $(CYGPATH_W) 'wrma_flush_get.c'; else $(CYGPATH_W) '$(srcdir)/wrma_flush_get.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/acc_flush_get-wrma_flush_get.Tpo $(DEPDIR)/acc_flush_get-wrma_flush_get.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wrma_flush_get.c' object='acc_flush_get-wrma_flush_get.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(acc_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o acc_flush_get-wrma_flush_get.obj `if test -f 'wrma_flush_get.c'; then $(CYGPATH_W) 'wrma_flush_get.c'; else $(CYGPATH_W) '$(srcdir)/wrma_flush_get.c'; fi`
+
+cas_flush_get-wrma_flush_get.o: wrma_flush_get.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cas_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cas_flush_get-wrma_flush_get.o -MD -MP -MF $(DEPDIR)/cas_flush_get-wrma_flush_get.Tpo -c -o cas_flush_get-wrma_flush_get.o `test -f 'wrma_flush_get.c' || echo '$(srcdir)/'`wrma_flush_get.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cas_flush_get-wrma_flush_get.Tpo $(DEPDIR)/cas_flush_get-wrma_flush_get.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wrma_flush_get.c' object='cas_flush_get-wrma_flush_get.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cas_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cas_flush_get-wrma_flush_get.o `test -f 'wrma_flush_get.c' || echo '$(srcdir)/'`wrma_flush_get.c
+
+cas_flush_get-wrma_flush_get.obj: wrma_flush_get.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cas_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cas_flush_get-wrma_flush_get.obj -MD -MP -MF $(DEPDIR)/cas_flush_get-wrma_flush_get.Tpo -c -o cas_flush_get-wrma_flush_get.obj `if test -f 'wrma_flush_get.c'; then $(CYGPATH_W) 'wrma_flush_get.c'; else $(CYGPATH_W) '$(srcdir)/wrma_flush_get.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cas_flush_get-wrma_flush_get.Tpo $(DEPDIR)/cas_flush_get-wrma_flush_get.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wrma_flush_get.c' object='cas_flush_get-wrma_flush_get.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cas_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cas_flush_get-wrma_flush_get.obj `if test -f 'wrma_flush_get.c'; then $(CYGPATH_W) 'wrma_flush_get.c'; else $(CYGPATH_W) '$(srcdir)/wrma_flush_get.c'; fi`
 
 fetch_and_op_char-fetch_and_op.o: fetch_and_op.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(fetch_and_op_char_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT fetch_and_op_char-fetch_and_op.o -MD -MP -MF $(DEPDIR)/fetch_and_op_char-fetch_and_op.Tpo -c -o fetch_and_op_char-fetch_and_op.o `test -f 'fetch_and_op.c' || echo '$(srcdir)/'`fetch_and_op.c
@@ -2203,6 +2592,34 @@ fetch_and_op_short-fetch_and_op.obj: fetch_and_op.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='fetch_and_op.c' object='fetch_and_op_short-fetch_and_op.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(fetch_and_op_short_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o fetch_and_op_short-fetch_and_op.obj `if test -f 'fetch_and_op.c'; then $(CYGPATH_W) 'fetch_and_op.c'; else $(CYGPATH_W) '$(srcdir)/fetch_and_op.c'; fi`
+
+fop_flush_get-wrma_flush_get.o: wrma_flush_get.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(fop_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT fop_flush_get-wrma_flush_get.o -MD -MP -MF $(DEPDIR)/fop_flush_get-wrma_flush_get.Tpo -c -o fop_flush_get-wrma_flush_get.o `test -f 'wrma_flush_get.c' || echo '$(srcdir)/'`wrma_flush_get.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/fop_flush_get-wrma_flush_get.Tpo $(DEPDIR)/fop_flush_get-wrma_flush_get.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wrma_flush_get.c' object='fop_flush_get-wrma_flush_get.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(fop_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o fop_flush_get-wrma_flush_get.o `test -f 'wrma_flush_get.c' || echo '$(srcdir)/'`wrma_flush_get.c
+
+fop_flush_get-wrma_flush_get.obj: wrma_flush_get.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(fop_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT fop_flush_get-wrma_flush_get.obj -MD -MP -MF $(DEPDIR)/fop_flush_get-wrma_flush_get.Tpo -c -o fop_flush_get-wrma_flush_get.obj `if test -f 'wrma_flush_get.c'; then $(CYGPATH_W) 'wrma_flush_get.c'; else $(CYGPATH_W) '$(srcdir)/wrma_flush_get.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/fop_flush_get-wrma_flush_get.Tpo $(DEPDIR)/fop_flush_get-wrma_flush_get.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wrma_flush_get.c' object='fop_flush_get-wrma_flush_get.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(fop_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o fop_flush_get-wrma_flush_get.obj `if test -f 'wrma_flush_get.c'; then $(CYGPATH_W) 'wrma_flush_get.c'; else $(CYGPATH_W) '$(srcdir)/wrma_flush_get.c'; fi`
+
+gacc_flush_get-wrma_flush_get.o: wrma_flush_get.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gacc_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gacc_flush_get-wrma_flush_get.o -MD -MP -MF $(DEPDIR)/gacc_flush_get-wrma_flush_get.Tpo -c -o gacc_flush_get-wrma_flush_get.o `test -f 'wrma_flush_get.c' || echo '$(srcdir)/'`wrma_flush_get.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/gacc_flush_get-wrma_flush_get.Tpo $(DEPDIR)/gacc_flush_get-wrma_flush_get.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wrma_flush_get.c' object='gacc_flush_get-wrma_flush_get.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gacc_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gacc_flush_get-wrma_flush_get.o `test -f 'wrma_flush_get.c' || echo '$(srcdir)/'`wrma_flush_get.c
+
+gacc_flush_get-wrma_flush_get.obj: wrma_flush_get.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gacc_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT gacc_flush_get-wrma_flush_get.obj -MD -MP -MF $(DEPDIR)/gacc_flush_get-wrma_flush_get.Tpo -c -o gacc_flush_get-wrma_flush_get.obj `if test -f 'wrma_flush_get.c'; then $(CYGPATH_W) 'wrma_flush_get.c'; else $(CYGPATH_W) '$(srcdir)/wrma_flush_get.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/gacc_flush_get-wrma_flush_get.Tpo $(DEPDIR)/gacc_flush_get-wrma_flush_get.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wrma_flush_get.c' object='gacc_flush_get-wrma_flush_get.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gacc_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o gacc_flush_get-wrma_flush_get.obj `if test -f 'wrma_flush_get.c'; then $(CYGPATH_W) 'wrma_flush_get.c'; else $(CYGPATH_W) '$(srcdir)/wrma_flush_get.c'; fi`
 
 get_accumulate_double-get_accumulate.o: get_accumulate.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(get_accumulate_double_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT get_accumulate_double-get_accumulate.o -MD -MP -MF $(DEPDIR)/get_accumulate_double-get_accumulate.Tpo -c -o get_accumulate_double-get_accumulate.o `test -f 'get_accumulate.c' || echo '$(srcdir)/'`get_accumulate.c
@@ -2456,6 +2873,20 @@ pscw_ordering_shm-pscw_ordering.obj: pscw_ordering.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pscw_ordering_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pscw_ordering_shm-pscw_ordering.obj `if test -f 'pscw_ordering.c'; then $(CYGPATH_W) 'pscw_ordering.c'; else $(CYGPATH_W) '$(srcdir)/pscw_ordering.c'; fi`
 
+put_flush_get-wrma_flush_get.o: wrma_flush_get.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(put_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT put_flush_get-wrma_flush_get.o -MD -MP -MF $(DEPDIR)/put_flush_get-wrma_flush_get.Tpo -c -o put_flush_get-wrma_flush_get.o `test -f 'wrma_flush_get.c' || echo '$(srcdir)/'`wrma_flush_get.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/put_flush_get-wrma_flush_get.Tpo $(DEPDIR)/put_flush_get-wrma_flush_get.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wrma_flush_get.c' object='put_flush_get-wrma_flush_get.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(put_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o put_flush_get-wrma_flush_get.o `test -f 'wrma_flush_get.c' || echo '$(srcdir)/'`wrma_flush_get.c
+
+put_flush_get-wrma_flush_get.obj: wrma_flush_get.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(put_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT put_flush_get-wrma_flush_get.obj -MD -MP -MF $(DEPDIR)/put_flush_get-wrma_flush_get.Tpo -c -o put_flush_get-wrma_flush_get.obj `if test -f 'wrma_flush_get.c'; then $(CYGPATH_W) 'wrma_flush_get.c'; else $(CYGPATH_W) '$(srcdir)/wrma_flush_get.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/put_flush_get-wrma_flush_get.Tpo $(DEPDIR)/put_flush_get-wrma_flush_get.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wrma_flush_get.c' object='put_flush_get-wrma_flush_get.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(put_flush_get_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o put_flush_get-wrma_flush_get.obj `if test -f 'wrma_flush_get.c'; then $(CYGPATH_W) 'wrma_flush_get.c'; else $(CYGPATH_W) '$(srcdir)/wrma_flush_get.c'; fi`
+
 req_example_shm-req_example.o: req_example.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(req_example_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT req_example_shm-req_example.o -MD -MP -MF $(DEPDIR)/req_example_shm-req_example.Tpo -c -o req_example_shm-req_example.o `test -f 'req_example.c' || echo '$(srcdir)/'`req_example.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/req_example_shm-req_example.Tpo $(DEPDIR)/req_example_shm-req_example.Po
@@ -2540,6 +2971,34 @@ transpose3_shm-transpose3.obj: transpose3.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transpose3_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o transpose3_shm-transpose3.obj `if test -f 'transpose3.c'; then $(CYGPATH_W) 'transpose3.c'; else $(CYGPATH_W) '$(srcdir)/transpose3.c'; fi`
 
+win_shared_acc_flush_load-win_shared_rma_flush_load.o: win_shared_rma_flush_load.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_acc_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT win_shared_acc_flush_load-win_shared_rma_flush_load.o -MD -MP -MF $(DEPDIR)/win_shared_acc_flush_load-win_shared_rma_flush_load.Tpo -c -o win_shared_acc_flush_load-win_shared_rma_flush_load.o `test -f 'win_shared_rma_flush_load.c' || echo '$(srcdir)/'`win_shared_rma_flush_load.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/win_shared_acc_flush_load-win_shared_rma_flush_load.Tpo $(DEPDIR)/win_shared_acc_flush_load-win_shared_rma_flush_load.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='win_shared_rma_flush_load.c' object='win_shared_acc_flush_load-win_shared_rma_flush_load.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_acc_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o win_shared_acc_flush_load-win_shared_rma_flush_load.o `test -f 'win_shared_rma_flush_load.c' || echo '$(srcdir)/'`win_shared_rma_flush_load.c
+
+win_shared_acc_flush_load-win_shared_rma_flush_load.obj: win_shared_rma_flush_load.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_acc_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT win_shared_acc_flush_load-win_shared_rma_flush_load.obj -MD -MP -MF $(DEPDIR)/win_shared_acc_flush_load-win_shared_rma_flush_load.Tpo -c -o win_shared_acc_flush_load-win_shared_rma_flush_load.obj `if test -f 'win_shared_rma_flush_load.c'; then $(CYGPATH_W) 'win_shared_rma_flush_load.c'; else $(CYGPATH_W) '$(srcdir)/win_shared_rma_flush_load.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/win_shared_acc_flush_load-win_shared_rma_flush_load.Tpo $(DEPDIR)/win_shared_acc_flush_load-win_shared_rma_flush_load.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='win_shared_rma_flush_load.c' object='win_shared_acc_flush_load-win_shared_rma_flush_load.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_acc_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o win_shared_acc_flush_load-win_shared_rma_flush_load.obj `if test -f 'win_shared_rma_flush_load.c'; then $(CYGPATH_W) 'win_shared_rma_flush_load.c'; else $(CYGPATH_W) '$(srcdir)/win_shared_rma_flush_load.c'; fi`
+
+win_shared_cas_flush_load-win_shared_rma_flush_load.o: win_shared_rma_flush_load.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_cas_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT win_shared_cas_flush_load-win_shared_rma_flush_load.o -MD -MP -MF $(DEPDIR)/win_shared_cas_flush_load-win_shared_rma_flush_load.Tpo -c -o win_shared_cas_flush_load-win_shared_rma_flush_load.o `test -f 'win_shared_rma_flush_load.c' || echo '$(srcdir)/'`win_shared_rma_flush_load.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/win_shared_cas_flush_load-win_shared_rma_flush_load.Tpo $(DEPDIR)/win_shared_cas_flush_load-win_shared_rma_flush_load.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='win_shared_rma_flush_load.c' object='win_shared_cas_flush_load-win_shared_rma_flush_load.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_cas_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o win_shared_cas_flush_load-win_shared_rma_flush_load.o `test -f 'win_shared_rma_flush_load.c' || echo '$(srcdir)/'`win_shared_rma_flush_load.c
+
+win_shared_cas_flush_load-win_shared_rma_flush_load.obj: win_shared_rma_flush_load.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_cas_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT win_shared_cas_flush_load-win_shared_rma_flush_load.obj -MD -MP -MF $(DEPDIR)/win_shared_cas_flush_load-win_shared_rma_flush_load.Tpo -c -o win_shared_cas_flush_load-win_shared_rma_flush_load.obj `if test -f 'win_shared_rma_flush_load.c'; then $(CYGPATH_W) 'win_shared_rma_flush_load.c'; else $(CYGPATH_W) '$(srcdir)/win_shared_rma_flush_load.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/win_shared_cas_flush_load-win_shared_rma_flush_load.Tpo $(DEPDIR)/win_shared_cas_flush_load-win_shared_rma_flush_load.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='win_shared_rma_flush_load.c' object='win_shared_cas_flush_load-win_shared_rma_flush_load.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_cas_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o win_shared_cas_flush_load-win_shared_rma_flush_load.obj `if test -f 'win_shared_rma_flush_load.c'; then $(CYGPATH_W) 'win_shared_rma_flush_load.c'; else $(CYGPATH_W) '$(srcdir)/win_shared_rma_flush_load.c'; fi`
+
 win_shared_create_allocshm-win_shared_create.o: win_shared_create.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_create_allocshm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT win_shared_create_allocshm-win_shared_create.o -MD -MP -MF $(DEPDIR)/win_shared_create_allocshm-win_shared_create.Tpo -c -o win_shared_create_allocshm-win_shared_create.o `test -f 'win_shared_create.c' || echo '$(srcdir)/'`win_shared_create.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/win_shared_create_allocshm-win_shared_create.Tpo $(DEPDIR)/win_shared_create_allocshm-win_shared_create.Po
@@ -2553,6 +3012,48 @@ win_shared_create_allocshm-win_shared_create.obj: win_shared_create.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='win_shared_create.c' object='win_shared_create_allocshm-win_shared_create.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_create_allocshm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o win_shared_create_allocshm-win_shared_create.obj `if test -f 'win_shared_create.c'; then $(CYGPATH_W) 'win_shared_create.c'; else $(CYGPATH_W) '$(srcdir)/win_shared_create.c'; fi`
+
+win_shared_fop_flush_load-win_shared_rma_flush_load.o: win_shared_rma_flush_load.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_fop_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT win_shared_fop_flush_load-win_shared_rma_flush_load.o -MD -MP -MF $(DEPDIR)/win_shared_fop_flush_load-win_shared_rma_flush_load.Tpo -c -o win_shared_fop_flush_load-win_shared_rma_flush_load.o `test -f 'win_shared_rma_flush_load.c' || echo '$(srcdir)/'`win_shared_rma_flush_load.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/win_shared_fop_flush_load-win_shared_rma_flush_load.Tpo $(DEPDIR)/win_shared_fop_flush_load-win_shared_rma_flush_load.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='win_shared_rma_flush_load.c' object='win_shared_fop_flush_load-win_shared_rma_flush_load.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_fop_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o win_shared_fop_flush_load-win_shared_rma_flush_load.o `test -f 'win_shared_rma_flush_load.c' || echo '$(srcdir)/'`win_shared_rma_flush_load.c
+
+win_shared_fop_flush_load-win_shared_rma_flush_load.obj: win_shared_rma_flush_load.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_fop_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT win_shared_fop_flush_load-win_shared_rma_flush_load.obj -MD -MP -MF $(DEPDIR)/win_shared_fop_flush_load-win_shared_rma_flush_load.Tpo -c -o win_shared_fop_flush_load-win_shared_rma_flush_load.obj `if test -f 'win_shared_rma_flush_load.c'; then $(CYGPATH_W) 'win_shared_rma_flush_load.c'; else $(CYGPATH_W) '$(srcdir)/win_shared_rma_flush_load.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/win_shared_fop_flush_load-win_shared_rma_flush_load.Tpo $(DEPDIR)/win_shared_fop_flush_load-win_shared_rma_flush_load.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='win_shared_rma_flush_load.c' object='win_shared_fop_flush_load-win_shared_rma_flush_load.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_fop_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o win_shared_fop_flush_load-win_shared_rma_flush_load.obj `if test -f 'win_shared_rma_flush_load.c'; then $(CYGPATH_W) 'win_shared_rma_flush_load.c'; else $(CYGPATH_W) '$(srcdir)/win_shared_rma_flush_load.c'; fi`
+
+win_shared_gacc_flush_load-win_shared_rma_flush_load.o: win_shared_rma_flush_load.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_gacc_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT win_shared_gacc_flush_load-win_shared_rma_flush_load.o -MD -MP -MF $(DEPDIR)/win_shared_gacc_flush_load-win_shared_rma_flush_load.Tpo -c -o win_shared_gacc_flush_load-win_shared_rma_flush_load.o `test -f 'win_shared_rma_flush_load.c' || echo '$(srcdir)/'`win_shared_rma_flush_load.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/win_shared_gacc_flush_load-win_shared_rma_flush_load.Tpo $(DEPDIR)/win_shared_gacc_flush_load-win_shared_rma_flush_load.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='win_shared_rma_flush_load.c' object='win_shared_gacc_flush_load-win_shared_rma_flush_load.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_gacc_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o win_shared_gacc_flush_load-win_shared_rma_flush_load.o `test -f 'win_shared_rma_flush_load.c' || echo '$(srcdir)/'`win_shared_rma_flush_load.c
+
+win_shared_gacc_flush_load-win_shared_rma_flush_load.obj: win_shared_rma_flush_load.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_gacc_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT win_shared_gacc_flush_load-win_shared_rma_flush_load.obj -MD -MP -MF $(DEPDIR)/win_shared_gacc_flush_load-win_shared_rma_flush_load.Tpo -c -o win_shared_gacc_flush_load-win_shared_rma_flush_load.obj `if test -f 'win_shared_rma_flush_load.c'; then $(CYGPATH_W) 'win_shared_rma_flush_load.c'; else $(CYGPATH_W) '$(srcdir)/win_shared_rma_flush_load.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/win_shared_gacc_flush_load-win_shared_rma_flush_load.Tpo $(DEPDIR)/win_shared_gacc_flush_load-win_shared_rma_flush_load.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='win_shared_rma_flush_load.c' object='win_shared_gacc_flush_load-win_shared_rma_flush_load.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_gacc_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o win_shared_gacc_flush_load-win_shared_rma_flush_load.obj `if test -f 'win_shared_rma_flush_load.c'; then $(CYGPATH_W) 'win_shared_rma_flush_load.c'; else $(CYGPATH_W) '$(srcdir)/win_shared_rma_flush_load.c'; fi`
+
+win_shared_put_flush_load-win_shared_rma_flush_load.o: win_shared_rma_flush_load.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_put_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT win_shared_put_flush_load-win_shared_rma_flush_load.o -MD -MP -MF $(DEPDIR)/win_shared_put_flush_load-win_shared_rma_flush_load.Tpo -c -o win_shared_put_flush_load-win_shared_rma_flush_load.o `test -f 'win_shared_rma_flush_load.c' || echo '$(srcdir)/'`win_shared_rma_flush_load.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/win_shared_put_flush_load-win_shared_rma_flush_load.Tpo $(DEPDIR)/win_shared_put_flush_load-win_shared_rma_flush_load.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='win_shared_rma_flush_load.c' object='win_shared_put_flush_load-win_shared_rma_flush_load.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_put_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o win_shared_put_flush_load-win_shared_rma_flush_load.o `test -f 'win_shared_rma_flush_load.c' || echo '$(srcdir)/'`win_shared_rma_flush_load.c
+
+win_shared_put_flush_load-win_shared_rma_flush_load.obj: win_shared_rma_flush_load.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_put_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT win_shared_put_flush_load-win_shared_rma_flush_load.obj -MD -MP -MF $(DEPDIR)/win_shared_put_flush_load-win_shared_rma_flush_load.Tpo -c -o win_shared_put_flush_load-win_shared_rma_flush_load.obj `if test -f 'win_shared_rma_flush_load.c'; then $(CYGPATH_W) 'win_shared_rma_flush_load.c'; else $(CYGPATH_W) '$(srcdir)/win_shared_rma_flush_load.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/win_shared_put_flush_load-win_shared_rma_flush_load.Tpo $(DEPDIR)/win_shared_put_flush_load-win_shared_rma_flush_load.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='win_shared_rma_flush_load.c' object='win_shared_put_flush_load-win_shared_rma_flush_load.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(win_shared_put_flush_load_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o win_shared_put_flush_load-win_shared_rma_flush_load.obj `if test -f 'win_shared_rma_flush_load.c'; then $(CYGPATH_W) 'win_shared_rma_flush_load.c'; else $(CYGPATH_W) '$(srcdir)/win_shared_rma_flush_load.c'; fi`
 
 wintest_shm-wintest.o: wintest.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wintest_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wintest_shm-wintest.o -MD -MP -MF $(DEPDIR)/wintest_shm-wintest.Tpo -c -o wintest_shm-wintest.o `test -f 'wintest.c' || echo '$(srcdir)/'`wintest.c

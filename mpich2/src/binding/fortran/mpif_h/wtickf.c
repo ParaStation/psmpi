@@ -266,9 +266,7 @@ extern FORT_DLL_SPEC double FORT_CALL pmpi_wtick_(void) __attribute__((weak,alia
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 #include "mpichconf.h"
-#include "mpichtimer.h"
+#include "mpiu_timer.h"
 FORT_DLL_SPEC double FORT_CALL mpi_wtick_ ( void ) {
-    double d; 
-    d = MPID_Wtick( );
-    return d;
+return MPI_Wtick();
 }

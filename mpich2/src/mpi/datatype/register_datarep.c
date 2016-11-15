@@ -55,12 +55,12 @@ int MPI_Register_datarep(char *datarep,
 {
     static const char FCNAME[] = "MPI_Register_datarep";
     int mpi_errno = MPI_SUCCESS;
-    MPIU_THREADPRIV_DECL;
+    MPID_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_REGISTER_DATAREP);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_REGISTER_DATAREP);
     
     /* Validate parameters and objects (post conversion) */
@@ -85,7 +85,7 @@ int MPI_Register_datarep(char *datarep,
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_REGISTER_DATAREP);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

@@ -111,7 +111,7 @@ static int external32_basic_convert(char *dest_buf,
     else
     {
         /* TODO */
-	MPIU_Error_printf( "Conversion of types whose size is not the same as the size in external32 is not supported\n" );
+	MPL_error_printf( "Conversion of types whose size is not the same as the size in external32 is not supported\n" );
 	MPID_Abort( 0, MPI_SUCCESS, 1, "Aborting with internal error" );
 	/* There is no way to return an error code, so an abort is the 
 	   only choice (the return value of this routine is not 
@@ -159,7 +159,7 @@ static int external32_float_convert(char *dest_buf,
     else
     {
         /* TODO */
-	MPIU_Error_printf( "Conversion of types whose size is not the same as the size in external32 is not supported\n" );
+	MPL_error_printf( "Conversion of types whose size is not the same as the size in external32 is not supported\n" );
 	MPID_Abort( 0, MPI_SUCCESS, 1, "Aborting with internal error" );
 	/* There is no way to return an error code, so an abort is the 
 	   only choice (the return value of this routine is not 
@@ -171,7 +171,7 @@ static int external32_float_convert(char *dest_buf,
 #undef FUNCNAME
 #define FUNCNAME MPID_Segment_contig_pack_external32_to_buf
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int MPID_Segment_contig_pack_external32_to_buf(DLOOP_Offset *blocks_p,
                                                       DLOOP_Type el_type,
                                                       DLOOP_Offset rel_off,
@@ -234,7 +234,7 @@ static int MPID_Segment_contig_pack_external32_to_buf(DLOOP_Offset *blocks_p,
 #undef FUNCNAME
 #define FUNCNAME MPID_Segment_contig_unpack_external32_to_buf
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int MPID_Segment_contig_unpack_external32_to_buf(DLOOP_Offset *blocks_p,
                                                         DLOOP_Type el_type,
                                                         DLOOP_Offset rel_off,
@@ -297,7 +297,7 @@ static int MPID_Segment_contig_unpack_external32_to_buf(DLOOP_Offset *blocks_p,
 #undef FUNCNAME
 #define FUNCNAME MPID_Segment_pack_external32
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPID_Segment_pack_external32(struct DLOOP_Segment *segp,
 				  DLOOP_Offset first,
 				  DLOOP_Offset *lastp, 
@@ -326,7 +326,7 @@ void MPID_Segment_pack_external32(struct DLOOP_Segment *segp,
 #undef FUNCNAME
 #define FUNCNAME MPID_Segment_unpack_external32
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPID_Segment_unpack_external32(struct DLOOP_Segment *segp,
 				    DLOOP_Offset first,
 				    DLOOP_Offset *lastp,

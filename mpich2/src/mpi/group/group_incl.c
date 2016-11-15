@@ -29,7 +29,7 @@ int MPI_Group_incl(MPI_Group group, int n, const int ranks[], MPI_Group *newgrou
 #undef FUNCNAME
 #define FUNCNAME MPIR_Group_incl_impl
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Group_incl_impl(MPID_Group *group_ptr, int n, const int ranks[], MPID_Group **new_group_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -49,7 +49,6 @@ int MPIR_Group_incl_impl(MPID_Group *group_ptr, int n, const int ranks[], MPID_G
     
     (*new_group_ptr)->rank = MPI_UNDEFINED;
     for (i = 0; i < n; i++) {
-        (*new_group_ptr)->lrank_to_lpid[i].lrank = i;
         (*new_group_ptr)->lrank_to_lpid[i].lpid = group_ptr->lrank_to_lpid[ranks[i]].lpid;
         if (ranks[i] == group_ptr->rank)
             (*new_group_ptr)->rank = i;
@@ -72,7 +71,7 @@ int MPIR_Group_incl_impl(MPID_Group *group_ptr, int n, const int ranks[], MPID_G
 #undef FUNCNAME
 #define FUNCNAME MPI_Group_incl
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /*@
 
@@ -110,7 +109,7 @@ int MPI_Group_incl(MPI_Group group, int n, const int ranks[], MPI_Group *newgrou
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_INCL);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -156,13 +155,13 @@ int MPI_Group_incl(MPI_Group group, int n, const int ranks[], MPI_Group *newgrou
     mpi_errno = MPIR_Group_incl_impl(group_ptr, n, ranks, &new_group_ptr);
     if (mpi_errno) goto fn_fail;
     
-    MPIU_OBJ_PUBLISH_HANDLE(*newgroup, new_group_ptr->handle);
+    MPID_OBJ_PUBLISH_HANDLE(*newgroup, new_group_ptr->handle);
 
     /* ... end of body of routine ... */
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_INCL);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

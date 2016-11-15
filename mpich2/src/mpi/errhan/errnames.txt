@@ -189,6 +189,9 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 **memcpyalias:memcpy arguments alias each other
 **memcpyalias %p %p %L:memcpy arguments alias each other, dst=%p src=%p len=%L
 
+**invalidpkt: Invalid packet type
+**invalidpkt %d: Invalid packet type (%d)
+
 **rmatypenotatomic: Datatype not permitted for atomic operations
 **rmatypenotatomic %D: Datatype (%D) not permitted for atomic operations
 **winflavor: Window flavor is not compatible with the given operation
@@ -393,6 +396,8 @@ be in the range 0 to %d
 **rmaattach:Memory cannot be attached
 **rmashared:Memory cannot be shared
 **rmaflavor:Incorrect window flavor
+**rmanoop:No RMA operation resources can be freed from the window
+**rmanotarget:No RMA target resources can be freed from the window
 **assert:Invalid assert argument
 **lockassertval:Invalid assert argument passed to MPI_Win_lock
 **lockassertval %d: Invalid assert argument (%d) passed to MPI_Win_lock
@@ -429,12 +434,12 @@ unexpected messages queued.
 #**argnull %s:Invalid null parameter %s
 **commstack:Internal overflow in stack used for MPI_Comm_split
 
-**cond_create:MPIU_Thread_cond_create failed
-**cond_create %s:MPIU_Thread_cond_create failed: %s
-**mutex_create:MPIU_Thread_mutex_create failed
-**mutex_create %s:MPIU_Thread_mutex_create failed: %s
-**thread_create:MPIU_Thread_create failed
-**thread_create %s:MPIU_Thread_create failed: %s
+**cond_create:MPID_Thread_cond_create failed
+**cond_create %s:MPID_Thread_cond_create failed: %s
+**mutex_create:MPID_Thread_mutex_create failed
+**mutex_create %s:MPID_Thread_mutex_create failed: %s
+**thread_create:MPID_Thread_create failed
+**thread_create %s:MPID_Thread_create failed: %s
 
 #
 # Errors common to several devices
@@ -455,6 +460,7 @@ unexpected messages queued.
 **opnotpredefined:only predefined ops are valid
 
 **init:Initialization failed
+**progresshookstoomany: too many progress hooks are registered
 
 #
 # To be removed
@@ -1581,42 +1587,6 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpi_get_elements_x %p %D %p: MPI_Get_elements_x(status=%p, datatype=%D, count=%p)
 **mpi_status_set_elements_x: MPI_Status_set_elements_x failed
 **mpi_status_set_elements_x %p %D %c: MPI_Status_set_elements_x(status=%p, datatype=%D, count=%c)
-
-# SCIF netmod functions
-
-**scif_open:scif_open failed
-**scif_open %s:scif_open failed (scif_open failed with error '%s')
-**scif_bind:scif_bind failed
-**scif_bind %s:scif_bind failed (scif_bind failed with error '%s')
-**scif_listen:scif_listen failed
-**scif_listen %s:scif_listen failed (scif_listen failed with error '%s')
-**scif_connect:scif_connect failed
-**scif_connect %s:scif_connect failed (scif_connect failed with error '%s')
-**scif_accept:scif_accept failed
-**scif_accept %s:scif_accept failed (scif_accept failed with error '%s')
-**scif_send:scif_send failed
-**scif_send %s:scif_send failed (scif_send failed with error '%s')
-**scif_recv:scif_recv failed
-**scif_recv %s:scif_recv failed (scif_recv failed with error '%s')
-**scif_get_nodeIDs:scif_get_nodeIDs failed
-**scif_get_nodeIDs %s %d:scif_get_nodeIDs failed (scif_get_nodeIDs failed with error '%s', error number = %d)
-**scif_init_shmsend:failed to init shared memory for send
-**scif_init_shmsend %s:failed to init shared memory for send (scif_init_shmsend failed with error '%s')
-**scif_init_shmrecv:failed to init shared memory for recv
-**scif_init_shmrecv %s:failed to init shared memory for recv (scif_init_shmrecv failed with error '%s')
-**argstr_missingnode:failed to get node from business card
-**scif_writev:scif_writev failed
-**scif_writev %s:scif_writev failed (scif_writev failed with error '%s')
-**scif_read:scif_read failed
-**scif_scif_read %s:scif_scif_read failed (scif_scif_read failed with error '%s')
-**scif_readv:scif_readv failed
-**scif_scif_readv %s:scif_scif_readv (scif_scif_readv failed with error '%s')
-**scif_poll_send:scif_poll_send failed
-**scif_poll_send %s:scif_poll_send failed (scif_poll_send failed with error '%s')
-**poll error:poll error
-**loadsendiov:sendiov failed
-**MPIDI_PG_Get_vc:MPIDI_PG_Get_vc failed
-**MPIDI_PG_Get_vc %s:MPIDI_PG_Get_vc failed (MPIDI_PG_Get_vc failed with error '%s')
 
 # Datarep conversion function not supported by ROMIO (Temproary until implemented)
 **drconvnotsupported:Read and Write datarep conversions are currently not supported by MPI-IO

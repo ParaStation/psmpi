@@ -572,11 +572,12 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
                 exec->wdir = HYDU_strdup(info_val);
             }
             else if (!strcmp(info_key, "host") || !strcmp(info_key, "hosts")) {
-                char *host = strtok(info_val, ",");
+                char *saveptr;
+                char *host = strtok_r(info_val, ",", &saveptr);
                 while (host) {
                     status = HYDU_process_mfile_token(host, 1, &pg->user_node_list);
                     HYDU_ERR_POP(status, "error creating node list\n");
-                    host = strtok(NULL, ",");
+                    host = strtok_r(NULL, ",", &saveptr);
                 }
             }
             else if (!strcmp(info_key, "hostfile")) {
@@ -706,7 +707,7 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
     status = HYD_pmcd_pmi_fill_in_exec_launch_info(pg);
     HYDU_ERR_POP(status, "unable to fill in executable arguments\n");
 
-    status = HYDT_bsci_launch_procs(proxy_stash.strlist, pg->proxy_list, NULL);
+    status = HYDT_bsci_launch_procs(proxy_stash.strlist, pg->proxy_list, HYD_FALSE, NULL);
     HYDU_ERR_POP(status, "launcher cannot launch processes\n");
 
     {

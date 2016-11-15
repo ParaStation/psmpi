@@ -38,6 +38,8 @@
 
 #include "opa_primitives.h"
 
+
+
 #if (MPIU_HANDLE_ALLOCATION_METHOD == MPIU_HANDLE_ALLOCATION_THREAD_LOCAL) && defined(__BGQ__)
 struct MPID_Request;
 typedef struct
@@ -105,6 +107,11 @@ typedef struct
 #if QUEUE_BINARY_SEARCH_SUPPORT
   unsigned queue_binary_search_support_on;
 #endif
+
+#if CUDA_AWARE_SUPPORT
+  unsigned cuda_aware_support_on;
+#endif
+
   unsigned verbose;        /**< The current level of verbosity for end-of-job stats. */
   unsigned statistics;     /**< The current level of stats collection.               */
   unsigned rma_pending;    /**< The max num outstanding requests during an RMA op    */
@@ -141,6 +148,7 @@ typedef struct
 
   unsigned mpir_nbc;         /**< Enable MPIR_* non-blocking collectives implementations. */
   int  numTasks;             /* total number of tasks on a job                            */
+  unsigned typed_onesided;       /**< Enable typed PAMI calls for derived types within MPID_Put and MPID_Get. */
 #ifdef DYNAMIC_TASKING
   struct MPIDI_PG_t * my_pg; /**< Process group I belong to */
   int                 my_pg_rank; /**< Rank in process group */
@@ -270,7 +278,7 @@ struct MPIDI_Request
   MPIDI_MsgEnvelope     envelope;
 
   void                 *userbuf;      /**< User buffer                */
-  unsigned              userbufcount; /**< Userbuf data count         */
+  MPI_Aint              userbufcount; /**< Userbuf data count         */
   MPI_Datatype          datatype;     /**< Data type of message       */
   pami_task_t           peer_pami;    /**< The other guy's rank (in PAMI) */
   unsigned              peer_comm;    /**< The other guy's rank (in the orig communicator) */

@@ -267,5 +267,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_buffer_detach_( void*, MPI_Fint *, MPI_
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_buffer_detach_ ( void*v1, MPI_Fint *v2, MPI_Fint *ierr ){
     void *t1 = v1;
+    if (v1 == MPIR_F_MPI_BOTTOM) v1 = MPI_BOTTOM;
     *ierr = MPI_Buffer_detach( &t1, v2 );
 }

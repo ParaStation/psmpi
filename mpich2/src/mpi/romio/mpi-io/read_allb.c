@@ -67,7 +67,7 @@ int MPIOI_File_read_all_begin(MPI_File fh,
     ADIO_File adio_fh;
     void *xbuf=NULL, *e32_buf=NULL;
 
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    ROMIO_THREAD_CS_ENTER();
 
     adio_fh = MPIO_File_resolve(fh);
 
@@ -132,7 +132,7 @@ int MPIOI_File_read_all_begin(MPI_File fh,
     }
 
 fn_exit:
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    ROMIO_THREAD_CS_EXIT();
 
     return error_code;
 }

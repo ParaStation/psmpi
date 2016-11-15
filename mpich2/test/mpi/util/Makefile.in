@@ -294,6 +294,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -328,6 +329,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -345,6 +347,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -352,11 +355,9 @@ top_srcdir = @top_srcdir@
 AM_CPPFLAGS = -I${srcdir}/../include -I../include
 mtestcheck_SOURCES = mtestcheck.c mtest.c
 
-# exploiting the NBC PMPI adapter is still very much a manual process...
-# mtest_datatype.c and mtest_datatype_gen.c also needed
 # FIXME: mtest_datatype.h belongs with the other include files, in
 # ../include
-EXTRA_DIST = nbc_pmpi_adapter.c mtest_datatype.c mtest_datatype.h \
+EXTRA_DIST = mtest_datatype.c mtest_datatype.h \
 	mtest_datatype_gen.c
 
 all: all-am
@@ -633,8 +634,7 @@ uninstall-am:
 mtest.$(OBJEXT): mtest.c
 mtest_datatype.$(OBJEXT): mtest_datatype.c mtest_datatype.h
 dtypes.$(OBJEXT): dtypes.c
-nbc_pmpi_adapter.$(OBJEXT): nbc_pmpi_adapter.c
-all-local: mtest.$(OBJEXT) dtypes.$(OBJEXT) nbc_pmpi_adapter.$(OBJEXT)
+all-local: mtest.$(OBJEXT) dtypes.$(OBJEXT)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

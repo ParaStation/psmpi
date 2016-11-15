@@ -14,7 +14,7 @@ int MPIDI_Sock_update_sock_set( struct MPIDU_Sock_set *, int );
 static int MPIDU_Socki_os_to_mpi_errno(struct pollinfo * pollinfo, 
 		     int os_errno, const char * fcname, int line, int * conn_failed);
 
-static int MPIDU_Socki_adjust_iov(ssize_t nb, MPID_IOV * const iov, 
+static int MPIDU_Socki_adjust_iov(ssize_t nb, MPL_IOV * const iov, 
 				  const int count, int * const offsetp);
 
 static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, 
@@ -358,10 +358,10 @@ static struct MPIDU_Socki_eventq_table *MPIDU_Socki_eventq_table_head=NULL;
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Socki_wakeup
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int MPIDU_Socki_wakeup(struct MPIDU_Sock_set * sock_set)
 {
-    MPIU_THREAD_CHECK_BEGIN
+    MPIU_THREAD_CHECK_BEGIN;
     if (sock_set->wakeup_posted == FALSE)
     {
 	for(;;)
@@ -380,7 +380,7 @@ static int MPIDU_Socki_wakeup(struct MPIDU_Sock_set * sock_set)
 	
 	sock_set->wakeup_posted = TRUE;
     }
-    MPIU_THREAD_CHECK_END
+    MPIU_THREAD_CHECK_END;
     return MPIDU_SOCK_SUCCESS;
 }
 /* end MPIDU_Socki_wakeup() */
@@ -388,7 +388,7 @@ static int MPIDU_Socki_wakeup(struct MPIDU_Sock_set * sock_set)
 #undef FUNCNAME
 #define FUNCNAME MPIDI_Sock_update_sock_set
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_Sock_update_sock_set( struct MPIDU_Sock_set *sock_set, 
 				int pollfds_active_elems )
 {
@@ -443,7 +443,7 @@ int MPIDI_Sock_update_sock_set( struct MPIDU_Sock_set *sock_set,
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Socki_os_to_mpi_errno
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 /* --BEGIN ERROR HANDLING-- */
 static int MPIDU_Socki_os_to_mpi_errno(struct pollinfo * pollinfo, int os_errno, const char * fcname, int line, int * disconnected)
 {
@@ -524,7 +524,7 @@ static int MPIDU_Socki_os_to_mpi_errno(struct pollinfo * pollinfo, int os_errno,
  * values.  If the iovec has been consumed, return
  * true; otherwise return false.
  *
- * The input is an iov (MPID_IOV is just an iov) and the offset into which 
+ * The input is an iov (MPL_IOV is just an iov) and the offset into which 
  * to start (start with entry iov[*offsetp]) and remove nb bytes from the iov.
  * The use of the offsetp term allows use to remove values from the iov without
  * making a copy to shift down elements when only part of the iov is
@@ -533,22 +533,22 @@ static int MPIDU_Socki_os_to_mpi_errno(struct pollinfo * pollinfo, int os_errno,
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Socki_adjust_iov
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
-static int MPIDU_Socki_adjust_iov(ssize_t nb, MPID_IOV * const iov, const int count, int * const offsetp)
+#define FCNAME MPL_QUOTE(FUNCNAME)
+static int MPIDU_Socki_adjust_iov(ssize_t nb, MPL_IOV * const iov, const int count, int * const offsetp)
 {
     int offset = *offsetp;
     
     while (offset < count)
     {
-	if (iov[offset].MPID_IOV_LEN <= nb)
+	if (iov[offset].MPL_IOV_LEN <= nb)
 	{
-	    nb -= iov[offset].MPID_IOV_LEN;
+	    nb -= iov[offset].MPL_IOV_LEN;
 	    offset++;
 	}
 	else
 	{
-	    iov[offset].MPID_IOV_BUF = (char *) iov[offset].MPID_IOV_BUF + nb;
-	    iov[offset].MPID_IOV_LEN -= nb;
+	    iov[offset].MPL_IOV_BUF = (char *) iov[offset].MPL_IOV_BUF + nb;
+	    iov[offset].MPL_IOV_LEN -= nb;
 	    *offsetp = offset;
 	    return FALSE;
 	}
@@ -563,7 +563,7 @@ static int MPIDU_Socki_adjust_iov(ssize_t nb, MPID_IOV * const iov, const int co
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Socki_sock_alloc
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU_Sock ** sockp)
 {
     struct MPIDU_Sock * sock = NULL;
@@ -722,12 +722,12 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
 
 #   ifdef MPICH_IS_THREADED
     {
-    MPIU_THREAD_CHECK_BEGIN
+        MPIU_THREAD_CHECK_BEGIN;
 	if (sock_set->pollfds_active != NULL)
 	{
 	    sock_set->pollfds_updated = TRUE;
 	}
-    MPIU_THREAD_CHECK_END
+        MPIU_THREAD_CHECK_END;
     }
 #   endif
     
@@ -763,7 +763,7 @@ static int MPIDU_Socki_sock_alloc(struct MPIDU_Sock_set * sock_set, struct MPIDU
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Socki_sock_free
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static void MPIDU_Socki_sock_free(struct MPIDU_Sock * sock)
 {
     struct pollfd * pollfd = MPIDU_Socki_sock_get_pollfd(sock);
@@ -831,7 +831,7 @@ static void MPIDU_Socki_sock_free(struct MPIDU_Sock * sock)
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Socki_event_enqueue
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int MPIDU_Socki_event_enqueue(struct pollinfo * pollinfo, MPIDU_Sock_op_t op, MPIU_Size_t num_bytes,
 				     void * user_ptr, int error)
 {
@@ -904,7 +904,7 @@ fn_exit:
 #undef FUNCNAME
 #define FUNCNAME MPIDU_Socki_event_dequeue
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIDU_Socki_event_dequeue(struct MPIDU_Sock_set * sock_set, int * set_elem, struct MPIDU_Sock_event * eventp)
 {
     struct MPIDU_Socki_eventq_elem * eventq_elem;
@@ -999,7 +999,7 @@ int MPIDU_Sock_SetSockBufferSize( int fd, int firm )
 	bufsz_len = sizeof(bufsz);
 	rc = setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &bufsz, bufsz_len);
 	if (rc == -1) {
-	    MPIU_ERR_SETANDJUMP3(mpi_errno,MPIDU_SOCK_ERR_FAIL, 
+	    MPIR_ERR_SETANDJUMP3(mpi_errno,MPIDU_SOCK_ERR_FAIL, 
 				 "**sock|poll|setsndbufsz",
 				 "**sock|poll|setsndbufsz %d %d %s", 
 				 bufsz, errno, MPIU_Strerror(errno));
@@ -1008,7 +1008,7 @@ int MPIDU_Sock_SetSockBufferSize( int fd, int firm )
 	bufsz_len = sizeof(bufsz);
 	rc = setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &bufsz, bufsz_len);
 	if (rc == -1) {
-	    MPIU_ERR_SETANDJUMP3(mpi_errno,MPIDU_SOCK_ERR_FAIL, 
+	    MPIR_ERR_SETANDJUMP3(mpi_errno,MPIDU_SOCK_ERR_FAIL, 
 				 "**sock|poll|setrcvbufsz",
 				 "**sock|poll|setrcvbufsz %d %d %s", 
 				 bufsz, errno, MPIU_Strerror(errno));
@@ -1020,7 +1020,7 @@ int MPIDU_Sock_SetSockBufferSize( int fd, int firm )
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (rc == 0) {
 		if (bufsz < sockBufSize * 0.9) {
-		MPIU_Msg_printf("WARNING: send socket buffer size differs from requested size (requested=%d, actual=%d)\n",
+		MPL_msg_printf("WARNING: send socket buffer size differs from requested size (requested=%d, actual=%d)\n",
 				sockBufSize, bufsz);
 		}
 	    }
@@ -1031,7 +1031,7 @@ int MPIDU_Sock_SetSockBufferSize( int fd, int firm )
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (rc == 0) {
 		if (bufsz < sockBufSize * 0.9) {
-		    MPIU_Msg_printf("WARNING: receive socket buffer size differs from requested size (requested=%d, actual=%d)\n",
+		    MPL_msg_printf("WARNING: receive socket buffer size differs from requested size (requested=%d, actual=%d)\n",
 				    sockBufSize, bufsz);
 		}
 	    }

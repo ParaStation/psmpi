@@ -271,5 +271,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_reduce_scatter_ ( void*v1, void*v2, MPI_Fint v3
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
 #endif
     if (v1 == MPIR_F_MPI_IN_PLACE) v1 = MPI_IN_PLACE;
+    if (v1 == MPIR_F_MPI_BOTTOM) v1 = MPI_BOTTOM;
+    if (v2 == MPIR_F_MPI_BOTTOM) v2 = MPI_BOTTOM;
     *ierr = MPI_Reduce_scatter( v1, v2, v3, (MPI_Datatype)(*v4), (MPI_Op)*v5, (MPI_Comm)(*v6) );
 }

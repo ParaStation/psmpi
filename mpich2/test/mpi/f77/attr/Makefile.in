@@ -96,8 +96,8 @@ build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = attrmpi1f$(EXEEXT) baseattrf$(EXEEXT) \
 	baseattr2f$(EXEEXT) commattrf$(EXEEXT) commattr2f$(EXEEXT) \
-	commattr3f$(EXEEXT) typeattrf$(EXEEXT) typeattr2f$(EXEEXT) \
-	typeattr3f$(EXEEXT)
+	commattr3f$(EXEEXT) commattr4f$(EXEEXT) typeattrf$(EXEEXT) \
+	typeattr2f$(EXEEXT) typeattr3f$(EXEEXT)
 subdir = f77/attr
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -137,6 +137,10 @@ commattr3f_SOURCES = commattr3f.f
 commattr3f_OBJECTS = commattr3f.$(OBJEXT)
 commattr3f_LDADD = $(LDADD)
 commattr3f_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
+commattr4f_SOURCES = commattr4f.f
+commattr4f_OBJECTS = commattr4f.$(OBJEXT)
+commattr4f_LDADD = $(LDADD)
+commattr4f_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
 commattrf_SOURCES = commattrf.f
 commattrf_OBJECTS = commattrf.$(OBJEXT)
 commattrf_LDADD = $(LDADD)
@@ -179,9 +183,11 @@ am__v_F77LD_ = $(am__v_F77LD_@AM_DEFAULT_V@)
 am__v_F77LD_0 = @echo "  F77LD   " $@;
 am__v_F77LD_1 = 
 SOURCES = attrmpi1f.f baseattr2f.f baseattrf.f commattr2f.f \
-	commattr3f.f commattrf.f typeattr2f.f typeattr3f.f typeattrf.f
+	commattr3f.f commattr4f.f commattrf.f typeattr2f.f \
+	typeattr3f.f typeattrf.f
 DIST_SOURCES = attrmpi1f.f baseattr2f.f baseattrf.f commattr2f.f \
-	commattr3f.f commattrf.f typeattr2f.f typeattr3f.f typeattrf.f
+	commattr3f.f commattr4f.f commattrf.f typeattr2f.f \
+	typeattr3f.f typeattrf.f
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -336,6 +342,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -370,6 +377,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -387,6 +395,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -464,6 +473,10 @@ commattr2f$(EXEEXT): $(commattr2f_OBJECTS) $(commattr2f_DEPENDENCIES) $(EXTRA_co
 commattr3f$(EXEEXT): $(commattr3f_OBJECTS) $(commattr3f_DEPENDENCIES) $(EXTRA_commattr3f_DEPENDENCIES) 
 	@rm -f commattr3f$(EXEEXT)
 	$(AM_V_F77LD)$(F77LINK) $(commattr3f_OBJECTS) $(commattr3f_LDADD) $(LIBS)
+
+commattr4f$(EXEEXT): $(commattr4f_OBJECTS) $(commattr4f_DEPENDENCIES) $(EXTRA_commattr4f_DEPENDENCIES) 
+	@rm -f commattr4f$(EXEEXT)
+	$(AM_V_F77LD)$(F77LINK) $(commattr4f_OBJECTS) $(commattr4f_LDADD) $(LIBS)
 
 commattrf$(EXEEXT): $(commattrf_OBJECTS) $(commattrf_DEPENDENCIES) $(EXTRA_commattrf_DEPENDENCIES) 
 	@rm -f commattrf$(EXEEXT)

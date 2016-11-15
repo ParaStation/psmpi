@@ -98,7 +98,22 @@ noinst_PROGRAMS = rdwrord$(EXEEXT) rdwrzero$(EXEEXT) \
 	getextent$(EXEEXT) setinfo$(EXEEXT) setviewcur$(EXEEXT) \
 	i_noncontig$(EXEEXT) async$(EXEEXT) async_any$(EXEEXT) \
 	userioerr$(EXEEXT) resized$(EXEEXT) resized2$(EXEEXT) \
-	bigtype$(EXEEXT) hindexed_io$(EXEEXT)
+	bigtype$(EXEEXT) hindexed_io$(EXEEXT) \
+	simple_collective$(EXEEXT) $(am__EXEEXT_1)
+@BUILD_MPIX_TESTS_TRUE@am__append_1 = \
+@BUILD_MPIX_TESTS_TRUE@    i_bigtype           \
+@BUILD_MPIX_TESTS_TRUE@    i_hindexed_io       \
+@BUILD_MPIX_TESTS_TRUE@    i_rdwrord           \
+@BUILD_MPIX_TESTS_TRUE@    i_setviewcur        \
+@BUILD_MPIX_TESTS_TRUE@    i_aggregation1      \
+@BUILD_MPIX_TESTS_TRUE@    i_aggregation2      \
+@BUILD_MPIX_TESTS_TRUE@    i_coll_test         \
+@BUILD_MPIX_TESTS_TRUE@    i_darray_read       \
+@BUILD_MPIX_TESTS_TRUE@    i_hindexed          \
+@BUILD_MPIX_TESTS_TRUE@    i_noncontig_coll    \
+@BUILD_MPIX_TESTS_TRUE@    i_noncontig_coll2   \
+@BUILD_MPIX_TESTS_TRUE@    i_types_with_zeros
+
 subdir = io
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -115,8 +130,20 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = testlist
 CONFIG_CLEAN_VPATH_FILES =
+@BUILD_MPIX_TESTS_TRUE@am__EXEEXT_1 = i_bigtype$(EXEEXT) \
+@BUILD_MPIX_TESTS_TRUE@	i_hindexed_io$(EXEEXT) \
+@BUILD_MPIX_TESTS_TRUE@	i_rdwrord$(EXEEXT) \
+@BUILD_MPIX_TESTS_TRUE@	i_setviewcur$(EXEEXT) \
+@BUILD_MPIX_TESTS_TRUE@	i_aggregation1$(EXEEXT) \
+@BUILD_MPIX_TESTS_TRUE@	i_aggregation2$(EXEEXT) \
+@BUILD_MPIX_TESTS_TRUE@	i_coll_test$(EXEEXT) \
+@BUILD_MPIX_TESTS_TRUE@	i_darray_read$(EXEEXT) \
+@BUILD_MPIX_TESTS_TRUE@	i_hindexed$(EXEEXT) \
+@BUILD_MPIX_TESTS_TRUE@	i_noncontig_coll$(EXEEXT) \
+@BUILD_MPIX_TESTS_TRUE@	i_noncontig_coll2$(EXEEXT) \
+@BUILD_MPIX_TESTS_TRUE@	i_types_with_zeros$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 async_SOURCES = async.c
 async_OBJECTS = async.$(OBJEXT)
@@ -148,10 +175,82 @@ hindexed_io_LDADD = $(LDADD)
 hindexed_io_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+i_aggregation1_SOURCES = i_aggregation1.c
+i_aggregation1_OBJECTS = i_aggregation1.$(OBJEXT)
+i_aggregation1_LDADD = $(LDADD)
+i_aggregation1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+i_aggregation2_SOURCES = i_aggregation2.c
+i_aggregation2_OBJECTS = i_aggregation2.$(OBJEXT)
+i_aggregation2_LDADD = $(LDADD)
+i_aggregation2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+i_bigtype_SOURCES = i_bigtype.c
+i_bigtype_OBJECTS = i_bigtype.$(OBJEXT)
+i_bigtype_LDADD = $(LDADD)
+i_bigtype_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+i_coll_test_SOURCES = i_coll_test.c
+i_coll_test_OBJECTS = i_coll_test.$(OBJEXT)
+i_coll_test_LDADD = $(LDADD)
+i_coll_test_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+i_darray_read_SOURCES = i_darray_read.c
+i_darray_read_OBJECTS = i_darray_read.$(OBJEXT)
+i_darray_read_LDADD = $(LDADD)
+i_darray_read_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+i_hindexed_SOURCES = i_hindexed.c
+i_hindexed_OBJECTS = i_hindexed.$(OBJEXT)
+i_hindexed_LDADD = $(LDADD)
+i_hindexed_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+i_hindexed_io_SOURCES = i_hindexed_io.c
+i_hindexed_io_OBJECTS = i_hindexed_io.$(OBJEXT)
+i_hindexed_io_LDADD = $(LDADD)
+i_hindexed_io_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 i_noncontig_SOURCES = i_noncontig.c
 i_noncontig_OBJECTS = i_noncontig.$(OBJEXT)
 i_noncontig_LDADD = $(LDADD)
 i_noncontig_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+i_noncontig_coll_SOURCES = i_noncontig_coll.c
+i_noncontig_coll_OBJECTS = i_noncontig_coll.$(OBJEXT)
+i_noncontig_coll_LDADD = $(LDADD)
+i_noncontig_coll_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+i_noncontig_coll2_SOURCES = i_noncontig_coll2.c
+i_noncontig_coll2_OBJECTS = i_noncontig_coll2.$(OBJEXT)
+i_noncontig_coll2_LDADD = $(LDADD)
+i_noncontig_coll2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+i_rdwrord_SOURCES = i_rdwrord.c
+i_rdwrord_OBJECTS = i_rdwrord.$(OBJEXT)
+i_rdwrord_LDADD = $(LDADD)
+i_rdwrord_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+i_setviewcur_SOURCES = i_setviewcur.c
+i_setviewcur_OBJECTS = i_setviewcur.$(OBJEXT)
+i_setviewcur_LDADD = $(LDADD)
+i_setviewcur_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+i_types_with_zeros_SOURCES = i_types_with_zeros.c
+i_types_with_zeros_OBJECTS = i_types_with_zeros.$(OBJEXT)
+i_types_with_zeros_LDADD = $(LDADD)
+i_types_with_zeros_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 rdwrord_SOURCES = rdwrord.c
@@ -190,6 +289,12 @@ setviewcur_LDADD = $(LDADD)
 setviewcur_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+simple_collective_SOURCES = simple_collective.c
+simple_collective_OBJECTS = simple_collective.$(OBJEXT)
+simple_collective_LDADD = $(LDADD)
+simple_collective_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 userioerr_SOURCES = userioerr.c
 userioerr_OBJECTS = userioerr.$(OBJEXT)
 userioerr_LDADD = $(LDADD)
@@ -225,11 +330,19 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = async.c async_any.c bigtype.c getextent.c hindexed_io.c \
-	i_noncontig.c rdwrord.c rdwrzero.c resized.c resized2.c \
-	setinfo.c setviewcur.c userioerr.c
+	i_aggregation1.c i_aggregation2.c i_bigtype.c i_coll_test.c \
+	i_darray_read.c i_hindexed.c i_hindexed_io.c i_noncontig.c \
+	i_noncontig_coll.c i_noncontig_coll2.c i_rdwrord.c \
+	i_setviewcur.c i_types_with_zeros.c rdwrord.c rdwrzero.c \
+	resized.c resized2.c setinfo.c setviewcur.c \
+	simple_collective.c userioerr.c
 DIST_SOURCES = async.c async_any.c bigtype.c getextent.c hindexed_io.c \
-	i_noncontig.c rdwrord.c rdwrzero.c resized.c resized2.c \
-	setinfo.c setviewcur.c userioerr.c
+	i_aggregation1.c i_aggregation2.c i_bigtype.c i_coll_test.c \
+	i_darray_read.c i_hindexed.c i_hindexed_io.c i_noncontig.c \
+	i_noncontig_coll.c i_noncontig_coll2.c i_rdwrord.c \
+	i_setviewcur.c i_types_with_zeros.c rdwrord.c rdwrzero.c \
+	resized.c resized2.c setinfo.c setviewcur.c \
+	simple_collective.c userioerr.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -254,8 +367,8 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/Makefile.mtest \
-	$(top_srcdir)/confdb/depcomp
+am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/testlist.in \
+	$(top_srcdir)/Makefile.mtest $(top_srcdir)/confdb/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 VPATH = @VPATH@
 ACLOCAL = @ACLOCAL@
@@ -384,6 +497,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -418,6 +532,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -435,6 +550,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -481,6 +597,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+testlist: $(top_builddir)/config.status $(srcdir)/testlist.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
@@ -505,9 +623,57 @@ hindexed_io$(EXEEXT): $(hindexed_io_OBJECTS) $(hindexed_io_DEPENDENCIES) $(EXTRA
 	@rm -f hindexed_io$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(hindexed_io_OBJECTS) $(hindexed_io_LDADD) $(LIBS)
 
+i_aggregation1$(EXEEXT): $(i_aggregation1_OBJECTS) $(i_aggregation1_DEPENDENCIES) $(EXTRA_i_aggregation1_DEPENDENCIES) 
+	@rm -f i_aggregation1$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(i_aggregation1_OBJECTS) $(i_aggregation1_LDADD) $(LIBS)
+
+i_aggregation2$(EXEEXT): $(i_aggregation2_OBJECTS) $(i_aggregation2_DEPENDENCIES) $(EXTRA_i_aggregation2_DEPENDENCIES) 
+	@rm -f i_aggregation2$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(i_aggregation2_OBJECTS) $(i_aggregation2_LDADD) $(LIBS)
+
+i_bigtype$(EXEEXT): $(i_bigtype_OBJECTS) $(i_bigtype_DEPENDENCIES) $(EXTRA_i_bigtype_DEPENDENCIES) 
+	@rm -f i_bigtype$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(i_bigtype_OBJECTS) $(i_bigtype_LDADD) $(LIBS)
+
+i_coll_test$(EXEEXT): $(i_coll_test_OBJECTS) $(i_coll_test_DEPENDENCIES) $(EXTRA_i_coll_test_DEPENDENCIES) 
+	@rm -f i_coll_test$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(i_coll_test_OBJECTS) $(i_coll_test_LDADD) $(LIBS)
+
+i_darray_read$(EXEEXT): $(i_darray_read_OBJECTS) $(i_darray_read_DEPENDENCIES) $(EXTRA_i_darray_read_DEPENDENCIES) 
+	@rm -f i_darray_read$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(i_darray_read_OBJECTS) $(i_darray_read_LDADD) $(LIBS)
+
+i_hindexed$(EXEEXT): $(i_hindexed_OBJECTS) $(i_hindexed_DEPENDENCIES) $(EXTRA_i_hindexed_DEPENDENCIES) 
+	@rm -f i_hindexed$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(i_hindexed_OBJECTS) $(i_hindexed_LDADD) $(LIBS)
+
+i_hindexed_io$(EXEEXT): $(i_hindexed_io_OBJECTS) $(i_hindexed_io_DEPENDENCIES) $(EXTRA_i_hindexed_io_DEPENDENCIES) 
+	@rm -f i_hindexed_io$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(i_hindexed_io_OBJECTS) $(i_hindexed_io_LDADD) $(LIBS)
+
 i_noncontig$(EXEEXT): $(i_noncontig_OBJECTS) $(i_noncontig_DEPENDENCIES) $(EXTRA_i_noncontig_DEPENDENCIES) 
 	@rm -f i_noncontig$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(i_noncontig_OBJECTS) $(i_noncontig_LDADD) $(LIBS)
+
+i_noncontig_coll$(EXEEXT): $(i_noncontig_coll_OBJECTS) $(i_noncontig_coll_DEPENDENCIES) $(EXTRA_i_noncontig_coll_DEPENDENCIES) 
+	@rm -f i_noncontig_coll$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(i_noncontig_coll_OBJECTS) $(i_noncontig_coll_LDADD) $(LIBS)
+
+i_noncontig_coll2$(EXEEXT): $(i_noncontig_coll2_OBJECTS) $(i_noncontig_coll2_DEPENDENCIES) $(EXTRA_i_noncontig_coll2_DEPENDENCIES) 
+	@rm -f i_noncontig_coll2$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(i_noncontig_coll2_OBJECTS) $(i_noncontig_coll2_LDADD) $(LIBS)
+
+i_rdwrord$(EXEEXT): $(i_rdwrord_OBJECTS) $(i_rdwrord_DEPENDENCIES) $(EXTRA_i_rdwrord_DEPENDENCIES) 
+	@rm -f i_rdwrord$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(i_rdwrord_OBJECTS) $(i_rdwrord_LDADD) $(LIBS)
+
+i_setviewcur$(EXEEXT): $(i_setviewcur_OBJECTS) $(i_setviewcur_DEPENDENCIES) $(EXTRA_i_setviewcur_DEPENDENCIES) 
+	@rm -f i_setviewcur$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(i_setviewcur_OBJECTS) $(i_setviewcur_LDADD) $(LIBS)
+
+i_types_with_zeros$(EXEEXT): $(i_types_with_zeros_OBJECTS) $(i_types_with_zeros_DEPENDENCIES) $(EXTRA_i_types_with_zeros_DEPENDENCIES) 
+	@rm -f i_types_with_zeros$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(i_types_with_zeros_OBJECTS) $(i_types_with_zeros_LDADD) $(LIBS)
 
 rdwrord$(EXEEXT): $(rdwrord_OBJECTS) $(rdwrord_DEPENDENCIES) $(EXTRA_rdwrord_DEPENDENCIES) 
 	@rm -f rdwrord$(EXEEXT)
@@ -533,6 +699,10 @@ setviewcur$(EXEEXT): $(setviewcur_OBJECTS) $(setviewcur_DEPENDENCIES) $(EXTRA_se
 	@rm -f setviewcur$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(setviewcur_OBJECTS) $(setviewcur_LDADD) $(LIBS)
 
+simple_collective$(EXEEXT): $(simple_collective_OBJECTS) $(simple_collective_DEPENDENCIES) $(EXTRA_simple_collective_DEPENDENCIES) 
+	@rm -f simple_collective$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(simple_collective_OBJECTS) $(simple_collective_LDADD) $(LIBS)
+
 userioerr$(EXEEXT): $(userioerr_OBJECTS) $(userioerr_DEPENDENCIES) $(EXTRA_userioerr_DEPENDENCIES) 
 	@rm -f userioerr$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(userioerr_OBJECTS) $(userioerr_LDADD) $(LIBS)
@@ -548,13 +718,26 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bigtype.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getextent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hindexed_io.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i_aggregation1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i_aggregation2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i_bigtype.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i_coll_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i_darray_read.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i_hindexed.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i_hindexed_io.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i_noncontig.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i_noncontig_coll.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i_noncontig_coll2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i_rdwrord.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i_setviewcur.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i_types_with_zeros.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rdwrord.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rdwrzero.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resized.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resized2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/setinfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/setviewcur.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_collective.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/userioerr.Po@am__quote@
 
 .c.o:

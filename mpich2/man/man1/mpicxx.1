@@ -1,4 +1,4 @@
-.TH mpicxx 1 "2/20/2015" " " "MPI"
+.TH mpicxx 1 "11/9/2015" " " "MPI"
 .SH NAME
 mpicxx \-  Compiles and links MPI programs written in C++ 
 .SH DESCRIPTION
@@ -126,18 +126,18 @@ To compile a single file
 .I foo.c
 , use
 .nf
-mpicxx \\-c foo.cxx
+mpicxx -c foo.cxx
 .fi
 
 
 To link the output and make an executable, use
 .nf
-mpicxx \\-o foo foo.o
+mpicxx -o foo foo.o
 .fi
 
 Combining compilation and linking in a single command
 .nf
-mpicxx \\-o foo foo.cxx
+mpicxx -o foo foo.cxx
 .fi
 
 is a convenient way to build simple programs.
@@ -195,8 +195,8 @@ with the lines
 .PD 1
 
 .nf
-PROFILE_PRELIB="\\-L/usr/local/myprof/lib \\-lmyprof"
-PROFILE_INCPATHS="\\-I/usr/local/myprof/include"
+PROFILE_PRELIB="-L/usr/local/myprof/lib -lmyprof"
+PROFILE_INCPATHS="-I/usr/local/myprof/include"
 .fi
 
 and place it in the sysconfdir directory (this directory is set at

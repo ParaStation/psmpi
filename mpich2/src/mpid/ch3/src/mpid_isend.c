@@ -26,8 +26,8 @@
 #undef FUNCNAME
 #define FUNCNAME MPID_Isend
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank, 
+#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
 	       int tag, MPID_Comm * comm, int context_offset,
                MPID_Request ** request)
 {
@@ -52,10 +52,10 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
 
     /* Check to make sure the communicator hasn't already been revoked */
     if (comm->revoked &&
-            MPIR_AGREE_TAG != MPIR_TAG_MASK_ERROR_BIT(tag & ~MPIR_Process.tagged_coll_mask) &&
-            MPIR_SHRINK_TAG != MPIR_TAG_MASK_ERROR_BIT(tag & ~MPIR_Process.tagged_coll_mask)) {
+            MPIR_AGREE_TAG != MPIR_TAG_MASK_ERROR_BITS(tag & ~MPIR_Process.tagged_coll_mask) &&
+            MPIR_SHRINK_TAG != MPIR_TAG_MASK_ERROR_BITS(tag & ~MPIR_Process.tagged_coll_mask)) {
         MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"Communicator revoked. MPID_ISEND returning");
-        MPIU_ERR_SETANDJUMP(mpi_errno,MPIX_ERR_REVOKED,"**revoked");
+        MPIR_ERR_SETANDJUMP(mpi_errno,MPIX_ERR_REVOKED,"**revoked");
     }
     
     if (rank == comm->rank && comm->comm_kind != MPID_INTERCOMM)
@@ -111,15 +111,15 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
 	MPIDI_Pkt_set_seqnum(eager_pkt, seqnum);
 	MPIDI_Request_set_seqnum(sreq, seqnum);
 	
-	MPIU_THREAD_CS_ENTER(CH3COMM,vc);
+	MPID_THREAD_CS_ENTER(POBJ, vc->pobj_mutex);
 	mpi_errno = MPIDI_CH3_iSend(vc, sreq, eager_pkt, sizeof(*eager_pkt));
-	MPIU_THREAD_CS_EXIT(CH3COMM,vc);
+	MPID_THREAD_CS_EXIT(POBJ, vc->pobj_mutex);
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{
             MPID_Request_release(sreq);
 	    sreq = NULL;
-            MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**ch3|eagermsg");
+            MPIR_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**ch3|eagermsg");
 	    goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */

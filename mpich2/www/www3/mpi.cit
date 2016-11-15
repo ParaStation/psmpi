@@ -180,6 +180,8 @@ man:+MPI_Get_processor_name++MPI_Get_processor_name++++man+--your-url-here--/MPI
 man:+MPI_Pcontrol++MPI_Pcontrol++++man+--your-url-here--/MPI_Pcontrol.html#MPI_Pcontrol
 man:+MPI_Get_version++MPI_Get_version++++man+--your-url-here--/MPI_Get_version.html#MPI_Get_version
 man:+MPI_Get_library_version++MPI_Get_library_version++++man+--your-url-here--/MPI_Get_library_version.html#MPI_Get_library_version
+man:+MPI_Aint_add++MPI_Aint_add++++man+--your-url-here--/MPI_Aint_add.html#MPI_Aint_add
+man:+MPI_Aint_diff++MPI_Aint_diff++++man+--your-url-here--/MPI_Aint_diff.html#MPI_Aint_diff
 man:+MPI_Bsend++MPI_Bsend++++man+--your-url-here--/MPI_Bsend.html#MPI_Bsend
 man:+MPI_Bsend_init++MPI_Bsend_init++++man+--your-url-here--/MPI_Bsend_init.html#MPI_Bsend_init
 man:+MPI_Buffer_attach++MPI_Buffer_attach++++man+--your-url-here--/MPI_Buffer_attach.html#MPI_Buffer_attach
@@ -334,6 +336,9 @@ man:+MPI_T_pvar_session_free++MPI_T_pvar_session_free++++man+--your-url-here--/M
 man:+MPI_T_pvar_start++MPI_T_pvar_start++++man+--your-url-here--/MPI_T_pvar_start.html#MPI_T_pvar_start
 man:+MPI_T_pvar_stop++MPI_T_pvar_stop++++man+--your-url-here--/MPI_T_pvar_stop.html#MPI_T_pvar_stop
 man:+MPI_T_pvar_write++MPI_T_pvar_write++++man+--your-url-here--/MPI_T_pvar_write.html#MPI_T_pvar_write
+man:+MPI_T_category_get_index++MPI_T_category_get_index++++man+--your-url-here--/MPI_T_category_get_index.html#MPI_T_category_get_index
+man:+MPI_T_cvar_get_index++MPI_T_cvar_get_index++++man+--your-url-here--/MPI_T_cvar_get_index.html#MPI_T_cvar_get_index
+man:+MPI_T_pvar_get_index++MPI_T_pvar_get_index++++man+--your-url-here--/MPI_T_pvar_get_index.html#MPI_T_pvar_get_index
 man:+MPI_File_close++MPI_File_close++++man+--your-url-here--/MPI_File_close.html#MPI_File_close
 man:+MPI_File_delete++MPI_File_delete++++man+--your-url-here--/MPI_File_delete.html#MPI_File_delete
 man:+MPI_File_c2f++MPI_File_c2f++++man+--your-url-here--/MPI_File_c2f.html#MPI_File_c2f
@@ -350,10 +355,14 @@ man:+MPI_File_get_position_shared++MPI_File_get_position_shared++++man+--your-ur
 man:+MPI_File_get_size++MPI_File_get_size++++man+--your-url-here--/MPI_File_get_size.html#MPI_File_get_size
 man:+MPI_File_get_view++MPI_File_get_view++++man+--your-url-here--/MPI_File_get_view.html#MPI_File_get_view
 man:+MPI_File_iread++MPI_File_iread++++man+--your-url-here--/MPI_File_iread.html#MPI_File_iread
+man:+MPI_File_iread_all++MPI_File_iread_all++++man+--your-url-here--/MPI_File_iread_all.html#MPI_File_iread_all
 man:+MPI_File_iread_at++MPI_File_iread_at++++man+--your-url-here--/MPI_File_iread_at.html#MPI_File_iread_at
+man:+MPI_File_iread_at_all++MPI_File_iread_at_all++++man+--your-url-here--/MPI_File_iread_at_all.html#MPI_File_iread_at_all
 man:+MPI_File_iread_shared++MPI_File_iread_shared++++man+--your-url-here--/MPI_File_iread_shared.html#MPI_File_iread_shared
 man:+MPI_File_iwrite++MPI_File_iwrite++++man+--your-url-here--/MPI_File_iwrite.html#MPI_File_iwrite
+man:+MPI_File_iwrite_all++MPI_File_iwrite_all++++man+--your-url-here--/MPI_File_iwrite_all.html#MPI_File_iwrite_all
 man:+MPI_File_iwrite_at++MPI_File_iwrite_at++++man+--your-url-here--/MPI_File_iwrite_at.html#MPI_File_iwrite_at
+man:+MPI_File_iwrite_at_all++MPI_File_iwrite_at_all++++man+--your-url-here--/MPI_File_iwrite_at_all.html#MPI_File_iwrite_at_all
 man:+MPI_File_iwrite_shared++MPI_File_iwrite_shared++++man+--your-url-here--/MPI_File_iwrite_shared.html#MPI_File_iwrite_shared
 man:+MPI_File_open++MPI_File_open++++man+--your-url-here--/MPI_File_open.html#MPI_File_open
 man:+MPI_File_preallocate++MPI_File_preallocate++++man+--your-url-here--/MPI_File_preallocate.html#MPI_File_preallocate

@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#! /usr/bin/env perl
 # -*- Mode: perl; -*-
 # Tested with -w 10/28/05
 # 
