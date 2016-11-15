@@ -132,6 +132,7 @@ am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_attr_alias.m4 \
 	$(top_srcdir)/src/binding/fortran/use_mpi/subconfigure.m4 \
 	$(top_srcdir)/src/pm/subconfigure.m4 \
 	$(top_srcdir)/src/pm/gforker/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/psp/subconfigure.m4 \
 	$(top_srcdir)/src/pmi/subconfigure.m4 \
 	$(top_srcdir)/src/pmi/pmi2/subconfigure.m4 \
 	$(top_srcdir)/src/pmi/slurm/subconfigure.m4 \
@@ -669,6 +670,9 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PMPILIBNAME = @PMPILIBNAME@
 PMPI_F08_NAME = @PMPI_F08_NAME@
+PSCOM_CPPFLAGS = @PSCOM_CPPFLAGS@
+PSCOM_LDFLAGS = @PSCOM_LDFLAGS@
+PSCOM_RPATHLINK = @PSCOM_RPATHLINK@
 RANLIB = @RANLIB@
 REQD = @REQD@
 REQI1 = @REQI1@

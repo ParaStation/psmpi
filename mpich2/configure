@@ -1037,6 +1037,11 @@ QUEUE_BINARY_SEARCH_SUPPORT_FALSE
 QUEUE_BINARY_SEARCH_SUPPORT_TRUE
 BUILD_PAMID_FALSE
 BUILD_PAMID_TRUE
+PSCOM_RPATHLINK
+PSCOM_LDFLAGS
+PSCOM_CPPFLAGS
+BUILD_PSP_FALSE
+BUILD_PSP_TRUE
 BUILD_FC_BINDING_FALSE
 BUILD_FC_BINDING_TRUE
 BUILD_HCOLL_FALSE
@@ -1362,6 +1367,9 @@ FC
 FCFLAGS
 F77
 FFLAGS
+PSCOM_CPPFLAGS
+PSCOM_LDFLAGS
+PSCOM_RPATHLINK
 PAMILIBNAME
 MPILIBNAME
 PMPILIBNAME
@@ -2361,6 +2369,15 @@ Some influential environment variables:
   FCFLAGS     Fortran compiler flags
   F77         Fortran 77 compiler command
   FFLAGS      Fortran 77 compiler flags
+  PSCOM_CPPFLAGS
+              C preprocessor flags for PSCOM headers (default:
+              "-I/opt/parastation/include")
+  PSCOM_LDFLAGS
+              linker flags for PSCOM libraries (default:
+              "-L/opt/parastation/lib64")
+  PSCOM_RPATHLINK
+              mpicc wrapper option for -Wl,-rpath-link (default:
+              "-Wl,-rpath-link=/opt/parastation/lib64")
   PAMILIBNAME can be used to override the name of the PAMI library (default:
               "pami")
   MPILIBNAME  can be used to override the name of the MPI library (default:
@@ -4679,6 +4696,20 @@ FCFLAGS="$FCFLAGS $MPICHLIB_FCFLAGS"
 
 
 # end of src/pm/gforker/subconfigure.m4
+
+# start of src/mpid/psp/subconfigure.m4
+
+# dependencies
+# ======================================================================
+# todo: check whether we need all of them
+
+# prereq (formerly mpich2prereq, setup_device, etc.)
+# ======================================================================
+
+# main part
+# ======================================================================
+
+# end of src/mpid/psp/subconfigure.m4
 
 # start of src/pmi/subconfigure.m4
 
@@ -12514,10 +12545,7 @@ fi
   link_all_deplibs=yes
   allow_undefined_flag=$_lt_dar_allow_undefined
   case $cc_basename in
-     ifort*|nagfor*)
-        lt_prog_compiler_wl='-Wl,'
-        _lt_dar_can_shared=yes
-      ;;
+     ifort*|nagfor*) _lt_dar_can_shared=yes ;;
      *) _lt_dar_can_shared=$GCC ;;
   esac
   if test yes = "$_lt_dar_can_shared"; then
@@ -13835,6 +13863,9 @@ fi
   # before this can be enabled.
   hardcode_into_libs=yes
 
+  # Add ABI-specific directories to the system library path.
+  sys_lib_dlsearch_path_spec="/lib64 /usr/lib64 /lib /usr/lib"
+
   # Ideally, we could use ldconfig to report *all* directores which are
   # searched for libraries, however this is still not possible.  Aside from not
   # being certain /sbin/ldconfig is available, command
@@ -13843,7 +13874,7 @@ fi
   # appending ld.so.conf contents (and includes) to the search path.
   if test -f /etc/ld.so.conf; then
     lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
+    sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -16117,10 +16148,7 @@ fi
   link_all_deplibs_CXX=yes
   allow_undefined_flag_CXX=$_lt_dar_allow_undefined
   case $cc_basename in
-     ifort*|nagfor*)
-        lt_prog_compiler_wl_CXX='-Wl,'
-        _lt_dar_can_shared=yes
-      ;;
+     ifort*|nagfor*) _lt_dar_can_shared=yes ;;
      *) _lt_dar_can_shared=$GCC ;;
   esac
   if test yes = "$_lt_dar_can_shared"; then
@@ -18291,6 +18319,9 @@ fi
   # before this can be enabled.
   hardcode_into_libs=yes
 
+  # Add ABI-specific directories to the system library path.
+  sys_lib_dlsearch_path_spec="/lib64 /usr/lib64 /lib /usr/lib"
+
   # Ideally, we could use ldconfig to report *all* directores which are
   # searched for libraries, however this is still not possible.  Aside from not
   # being certain /sbin/ldconfig is available, command
@@ -18299,7 +18330,7 @@ fi
   # appending ld.so.conf contents (and includes) to the search path.
   if test -f /etc/ld.so.conf; then
     lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
+    sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -20500,10 +20531,7 @@ fi
   link_all_deplibs_FC=yes
   allow_undefined_flag_FC=$_lt_dar_allow_undefined
   case $cc_basename in
-     ifort*|nagfor*)
-        lt_prog_compiler_wl_FC='-Wl,'
-        _lt_dar_can_shared=yes
-      ;;
+     ifort*|nagfor*) _lt_dar_can_shared=yes ;;
      *) _lt_dar_can_shared=$GCC ;;
   esac
   if test yes = "$_lt_dar_can_shared"; then
@@ -21605,6 +21633,9 @@ fi
   # before this can be enabled.
   hardcode_into_libs=yes
 
+  # Add ABI-specific directories to the system library path.
+  sys_lib_dlsearch_path_spec="/lib64 /usr/lib64 /lib /usr/lib"
+
   # Ideally, we could use ldconfig to report *all* directores which are
   # searched for libraries, however this is still not possible.  Aside from not
   # being certain /sbin/ldconfig is available, command
@@ -21613,7 +21644,7 @@ fi
   # appending ld.so.conf contents (and includes) to the search path.
   if test -f /etc/ld.so.conf; then
     lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
+    sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -23712,10 +23743,7 @@ fi
   link_all_deplibs_F77=yes
   allow_undefined_flag_F77=$_lt_dar_allow_undefined
   case $cc_basename in
-     ifort*|nagfor*)
-        lt_prog_compiler_wl_F77='-Wl,'
-        _lt_dar_can_shared=yes
-      ;;
+     ifort*|nagfor*) _lt_dar_can_shared=yes ;;
      *) _lt_dar_can_shared=$GCC ;;
   esac
   if test yes = "$_lt_dar_can_shared"; then
@@ -24817,6 +24845,9 @@ fi
   # before this can be enabled.
   hardcode_into_libs=yes
 
+  # Add ABI-specific directories to the system library path.
+  sys_lib_dlsearch_path_spec="/lib64 /usr/lib64 /lib /usr/lib"
+
   # Ideally, we could use ldconfig to report *all* directores which are
   # searched for libraries, however this is still not possible.  Aside from not
   # being certain /sbin/ldconfig is available, command
@@ -24825,7 +24856,7 @@ fi
   # appending ld.so.conf contents (and includes) to the search path.
   if test -f /etc/ld.so.conf; then
     lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
+    sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -26376,6 +26407,69 @@ fi
 
 
 ## end expansion of PAC_SUBCFG_PREREQ_src_pm_gforker
+
+## begin expansion of PAC_SUBCFG_PREREQ_src_mpid_psp
+
+
+ if test "$device_name" = "psp"; then
+  BUILD_PSP_TRUE=
+  BUILD_PSP_FALSE='#'
+else
+  BUILD_PSP_TRUE='#'
+  BUILD_PSP_FALSE=
+fi
+
+if test -z "$BUILD_PSP_TRUE"; then :
+
+
+# maximum length of a processor name, as used by
+# MPI_GET_PROCESSOR_NAME
+MPID_MAX_PROCESSOR_NAME=1024
+
+# maximum length of an error string
+MPID_MAX_ERROR_STRING=1024
+
+#
+# MPID_NO_SPAWN=yes
+if test "$PSP_THREADING" != "multiple" ; then
+    MPID_MAX_THREAD_LEVEL=MPI_THREAD_SERIALIZED
+    echo "        mpid/psp : set MPID_MAX_THREAD_LEVEL=MPI_THREAD_SERIALIZED"
+else
+    MPID_MAX_THREAD_LEVEL=MPI_THREAD_MULTIPLE
+    echo "        mpid/psp : set MPID_MAX_THREAD_LEVEL=MPI_THREAD_MULTIPLE"
+fi
+
+PSCOM_CPPFLAGS="${PSCOM_CPPFLAGS-"-I/opt/parastation/include"}"
+PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
+PSCOM_RPATHLINK="${PSCOM_RPATHLINK-"${PSCOM_LDFLAGS//-L/-Wl,-rpath-link=}"}"
+# AX_CHECK_LIBRARY([PSCOM], [pscom.h], [pscom])
+
+
+
+
+
+
+	if echo "$WRAPPER_LDFLAGS" | $FGREP -e "\<${PSCOM_RPATHLINK}\>" >/dev/null 2>&1; then :
+  echo "WRAPPER_LDFLAGS(='$WRAPPER_LDFLAGS') contains '${PSCOM_RPATHLINK}', not appending" >&5
+else
+  echo "WRAPPER_LDFLAGS(='$WRAPPER_LDFLAGS') does not contain '${PSCOM_RPATHLINK}', appending" >&5
+		WRAPPER_LDFLAGS="$WRAPPER_LDFLAGS ${PSCOM_RPATHLINK}"
+
+fi
+
+
+
+
+
+
+# todo: check whether we need all of them
+build_mpid_common_sched=yes
+build_mpid_common_datatype=yes
+build_mpid_common_thread=yes
+
+
+fi
+## end expansion of PAC_SUBCFG_PREREQ_src_mpid_psp
 
 ## begin expansion of PAC_SUBCFG_PREREQ_src_pmi
 
@@ -45881,6 +45975,17 @@ done
 fi
 ## end expansion of PAC_SUBCFG_BODY_src_pm_gforker
 
+## begin expansion of PAC_SUBCFG_BODY_src_mpid_psp
+
+if test -z "$BUILD_PSP_TRUE"; then :
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: RUNNING CONFIGURE FOR PSP DEVICE" >&5
+$as_echo "$as_me: RUNNING CONFIGURE FOR PSP DEVICE" >&6;}
+
+
+fi
+## end expansion of PAC_SUBCFG_BODY_src_mpid_psp
+
 ## begin expansion of PAC_SUBCFG_BODY_src_pmi
 
 
@@ -57721,6 +57826,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILD_FC_BINDING_TRUE}" && test -z "${BUILD_FC_BINDING_FALSE}"; then
   as_fn_error $? "conditional \"BUILD_FC_BINDING\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${BUILD_PSP_TRUE}" && test -z "${BUILD_PSP_FALSE}"; then
+  as_fn_error $? "conditional \"BUILD_PSP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${BUILD_PAMID_TRUE}" && test -z "${BUILD_PAMID_FALSE}"; then

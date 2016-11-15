@@ -48,8 +48,8 @@
 /* Application checkpointing enabled */
 #undef ENABLE_CHECKPOINTING
 
-/* define to add per-vc function pointers to override send and recv functions,
-   registered in ib_init.c */
+/* define to add per-vc function pointers to override send and recv functions
+   */
 #undef ENABLE_COMM_OVERRIDES
 
 /* Define if FTB is enabled */
@@ -606,7 +606,7 @@
 /* Define to 1 if you have the <sys/shm.h> header file. */
 #undef HAVE_SYS_SHM_H
 
-/* Define if you have the <sys/socket.h> header file. */
+/* Define to 1 if you have the <sys/socket.h> header file. */
 #undef HAVE_SYS_SOCKET_H
 
 /* Define to 1 if you have the <sys/sockio.h> header file. */
