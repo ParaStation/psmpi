@@ -84,12 +84,6 @@ int MPID_Comm_failure_get_acked(MPID_Comm *comm_ptr, MPID_Group **failed_group_p
   return 0;
 }
 
-int MPID_Comm_agree(MPID_Comm *comm_ptr, uint32_t *bitarray, int *flag, int new_fail)
-{
-  MPID_abort();
-  return 0;
-}
-
 int MPID_Comm_get_all_failed_procs(MPID_Comm *comm_ptr, MPID_Group **failed_group, int tag)
 {
   MPID_abort();
@@ -99,5 +93,20 @@ int MPID_Comm_get_all_failed_procs(MPID_Comm *comm_ptr, MPID_Group **failed_grou
 int MPID_Comm_revoke(MPID_Comm *comm_ptr, int is_remote)
 {
   MPID_abort();
+  return 0;
+}
+
+int MPID_Comm_AS_enabled(MPID_Comm *comm_ptr)
+{
+  /* This function must return 1 in the default case and should not be ignored
+   * by the implementation. */
+  return 1;
+}
+
+int MPID_Request_is_anysource(MPID_Request *request_ptr)
+{
+  /* This function must not abort in the default case since it is used in many
+   * MPI functions. As long as the device does not implement FT, it doesn't
+   * matter what this function returns. */
   return 0;
 }

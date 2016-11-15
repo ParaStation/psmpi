@@ -269,21 +269,33 @@ PAC_PREFIX_ALL_FLAGS(USER)
 # as include paths).
 #
 # All libraries that are detected by MPICH as needed for some of its
-# functionality (such as -lpthread) should be added to EXTERNAL_LIBS
+# functionality (such as -lpthread) should be added to WRAPPER_LIBS
 # so executables built within MPICH use them.  If inter-library
 # dependencies are not supported on the platform, these libraries are
 # added to the MPICH wrappers (mpicc and friends) as well.
 PAC_PREFIX_ALL_FLAGS(WRAPPER)
-WRAPPER_CFLAGS="$CFLAGS $MPICH_MPICC_FLAGS"
-WRAPPER_CPPFLAGS="$CPPFLAGS $MPICH_MPICPP_FLAGS"
-WRAPPER_CXXFLAGS="$CXXFLAGS $MPICH_MPICXX_FLAGS"
-WRAPPER_FFLAGS="$FFLAGS $MPICH_MPIF77_FLAGS"
-WRAPPER_FCFLAGS="$FCFLAGS $MPICH_MPIFC_FLAGS"
-WRAPPER_LDFLAGS="$MPICH_LDFLAGS"
-WRAPPER_LIBS="$MPICH_LIBS"
-EXTERNAL_LIBS=""
-export EXTERNAL_LIBS
-AC_SUBST(EXTERNAL_LIBS)
+
+# MPICH_MPIx_FLAGS are used by mpicc and friends.  They are like
+# WRAPPER flags, but these are provided by the user.
+AC_SUBST(MPICH_MPICC_CPPFLAGS)
+AC_SUBST(MPICH_MPICC_CFLAGS)
+AC_SUBST(MPICH_MPICC_LDFLAGS)
+AC_SUBST(MPICH_MPICC_LIBS)
+
+AC_SUBST(MPICH_MPICXX_CPPFLAGS)
+AC_SUBST(MPICH_MPICXX_CXXFLAGS)
+AC_SUBST(MPICH_MPICXX_LDFLAGS)
+AC_SUBST(MPICH_MPICXX_LIBS)
+
+AC_SUBST(MPICH_MPIF77_CPPFLAGS)
+AC_SUBST(MPICH_MPIF77_FFLAGS)
+AC_SUBST(MPICH_MPIF77_LDFLAGS)
+AC_SUBST(MPICH_MPIF77_LIBS)
+
+AC_SUBST(MPICH_MPIFORT_CPPFLAGS)
+AC_SUBST(MPICH_MPIFORT_FCFLAGS)
+AC_SUBST(MPICH_MPIFORT_LDFLAGS)
+AC_SUBST(MPICH_MPIFORT_LIBS)
 
 # Add MPICHLIB_* to the appropriate flags
 AC_ARG_VAR(MPICHLIB_CFLAGS,
@@ -296,17 +308,11 @@ AC_ARG_VAR(MPICHLIB_FFLAGS,
 	[extra FFLAGS used in building MPICH libraries])
 AC_ARG_VAR(MPICHLIB_FCFLAGS,
 	[extra FCFLAGS used in building MPICH libraries])
-AC_ARG_VAR(MPICHLIB_LDFLAGS,
-	[extra LDFLAGS used in building MPICH libraries])
-AC_ARG_VAR(MPICHLIB_LIBS,
-	[extra LIBS used in building MPICH libraries])
 CFLAGS="$CFLAGS $MPICHLIB_CFLAGS"
 CPPFLAGS="$CPPFLAGS $MPICHLIB_CPPFLAGS"
 CXXFLAGS="$CXXFLAGS $MPICHLIB_CXXFLAGS"
 FFLAGS="$FFLAGS $MPICHLIB_FFLAGS"
 FCFLAGS="$FCFLAGS $MPICHLIB_FCFLAGS"
-LDFLAGS="$LDFLAGS $MPICHLIB_LDFLAGS"
-LIBS="$LIBS $MPICHLIB_LIBS"
 
 dnl include all subsystem m4 fragments now that the core autoconf functionality
 dnl has been setup.  No fragment should do anything except define
@@ -507,11 +513,11 @@ AC_ARG_ENABLE(refcount,
 	AC_HELP_STRING([--enable-refcount=type],
 			[Choose the method for ensuring atomic updates
                          to the reference counts for MPI objects.
-                         Values may be lock, lock-free, none.  The
+                         Values may be lock-free or none.  The
                          default depends on the thread-cs choice; for
                          global it is none (because none is required),
-                         for per-object it is lock, and for lock-free
-                         it is lock-free]),,enable_refcount=default)
+                         for per-object and lock-free, lock-free]),,
+                         enable_refcount=default)
 
 AC_ARG_ENABLE(mutex-timing,
 	AC_HELP_STRING([--enable-mutex-timing], [calculate the time spent waiting on mutexes]),
@@ -1177,7 +1183,7 @@ else
     AS_IF([test -s "${with_mpl_prefix}/include/mplconfig.h"],
           [:],[AC_MSG_ERROR([the MPL installation in "${with_mpl_prefix}" appears broken])])
     PAC_APPEND_FLAG([-I${with_mpl_prefix}/include],[CPPFLAGS])
-    PAC_PREPEND_FLAG([-l${MPLLIBNAME}],[EXTERNAL_LIBS])
+    PAC_PREPEND_FLAG([-l${MPLLIBNAME}],[WRAPPER_LIBS])
     PAC_APPEND_FLAG([-L${with_mpl_prefix}/lib],[WRAPPER_LDFLAGS])
     mpllibdir="-L${with_mpl_prefix}/lib"
 fi
@@ -1241,7 +1247,7 @@ if test "$with_openpa_prefix" = "embedded" ; then
         AC_MSG_WARN([Attempted to use the embedded OpenPA source tree in "src/openpa", but it is missing.  Configuration or compilation may fail later.])
     fi
 elif test "$with_openpa_prefix" = "system" ; then
-    PAC_PREPEND_FLAG([-l${OPALIBNAME}],[EXTERNAL_LIBS])
+    PAC_PREPEND_FLAG([-l${OPALIBNAME}],[WRAPPER_LIBS])
 elif test "$with_openpa_prefix" = "no" ; then
     # The user doesn't want to use OPA.  This may or may not cause MPICH to
     # fail to configure/build, depending on many other factors.
@@ -1252,7 +1258,7 @@ else
     AS_IF([test -s "${with_openpa_prefix}/include/opa_primitives.h" -a -s "${with_openpa_prefix}/include/opa_config.h"],
           [:],[AC_MSG_ERROR([the OpenPA installation in "${with_openpa_prefix}" appears broken])])
     PAC_APPEND_FLAG([-I${with_openpa_prefix}/include],[CPPFLAGS])
-    PAC_PREPEND_FLAG([-l${OPALIBNAME}],[EXTERNAL_LIBS])
+    PAC_PREPEND_FLAG([-l${OPALIBNAME}],[WRAPPER_LIBS])
     if test -d ${with_openpa_prefix}/lib64 ; then
         PAC_APPEND_FLAG([-L${with_openpa_prefix}/lib64],[WRAPPER_LDFLAGS])
         opalibdir="-L${with_openpa_prefix}/lib64"
@@ -1343,6 +1349,10 @@ fi
 export MPICH_THREAD_LEVEL
 AC_DEFINE_UNQUOTED(MPICH_THREAD_LEVEL,$MPICH_THREAD_LEVEL,[Level of thread support selected at compile time])
 
+if test "$MPICH_THREAD_LEVEL" = "MPI_THREAD_MULTIPLE" ; then
+   AC_DEFINE([MPICH_IS_THREADED],[1],[MPICH is configured to require thread safety])
+fi
+
 # If not in MPI_THREAD_SINGLE, we need -D_REENTRANT to get thread-safe "errno".
 # Most POSIX systems provide this by default when using -lpthread, but we only use it in MPI_THREAD_MULTIPLE.
 # Some systems (Solaris) still require an explicit define in any case.
@@ -1351,23 +1361,20 @@ if test "$MPICH_THREAD_LEVEL" != "MPI_THREAD_SINGLE"; then
 fi
 
 # Check for value thread_cs choice; set the refcount default if necessary
-thread_granularity=MPIU_THREAD_GRANULARITY_SINGLE
+thread_granularity=MPICH_THREAD_GRANULARITY_SINGLE
 thread_refcount=MPIU_REFCOUNT_NONE
 if test "$enable_threads" = "multiple" ; then
     case $enable_thread_cs in 
     global)
-    thread_granularity=MPIU_THREAD_GRANULARITY_GLOBAL
+    thread_granularity=MPICH_THREAD_GRANULARITY_GLOBAL
     if test "$enable_refcount" = "default" ; then enable_refcount=none ; fi
     ;;
-    brief-global|brief_global)
-    AC_MSG_ERROR([--enable-thread-cs=brief-global is no longer supported, please select a different granularity])
-    ;;
     per-object|per_object)
-    thread_granularity=MPIU_THREAD_GRANULARITY_PER_OBJECT
-    if test "$enable_refcount" = "default" ; then enable_refcount=lock ; fi
+    thread_granularity=MPICH_THREAD_GRANULARITY_PER_OBJECT
+    if test "$enable_refcount" = "default" ; then enable_refcount=lock-free ; fi
     ;;
     lock-free|lock_free|lockfree)
-    thread_granularity=MPIU_THREAD_GRANULARITY_LOCK_FREE
+    thread_granularity=MPICH_THREAD_GRANULARITY_LOCK_FREE
     if test "$enable_refcount" = "default" ; then enable_refcount=lock-free ; fi
     if test "$enable_predefined_refcount" = "default" ; then enable_predefined_refcount=no ; fi
     AC_MSG_ERROR([--enable-thread-cs=lock-free is not supported yet, please select a different granularity])
@@ -1378,9 +1385,6 @@ if test "$enable_threads" = "multiple" ; then
     esac
 
     case $enable_refcount in
-    lock)
-    thread_refcount=MPIU_REFCOUNT_LOCK
-    ;;
     lock-free|lock_free|lockfree)
     thread_refcount=MPIU_REFCOUNT_LOCKFREE
     ;;
@@ -1392,7 +1396,7 @@ if test "$enable_threads" = "multiple" ; then
     ;;
     esac
 fi
-AC_DEFINE_UNQUOTED([MPIU_THREAD_GRANULARITY],$thread_granularity,[Method used to implement atomic updates and access])
+AC_DEFINE_UNQUOTED([MPICH_THREAD_GRANULARITY],$thread_granularity,[Method used to implement atomic updates and access])
 
 if test "$enable_predefined_refcount" = "no" ; then
     AC_DEFINE([MPIU_THREAD_SUPPRESS_PREDEFINED_REFCOUNTS],[1],[define to disable reference counting predefined objects like MPI_COMM_WORLD])
@@ -1481,10 +1485,14 @@ done
 IFS="$save_IFS"
 
 if test "$enable_append_g" = "yes" ; then
-    CFLAGS="$CFLAGS -g"
-    CXXFLAGS="$CXXFLAGS -g"
-    FFLAGS="$FFLAGS -g"
-    FCFLAGS="$FCFLAGS -g"
+    PAC_APPEND_FLAG([-g],[CFLAGS])
+    PAC_APPEND_FLAG([-g],[CXXFLAGS])
+    PAC_APPEND_FLAG([-g],[FFLAGS])
+    PAC_APPEND_FLAG([-g],[FCFLAGS])
+    PAC_APPEND_FLAG([-g],[WRAPPER_CFLAGS])
+    PAC_APPEND_FLAG([-g],[WRAPPER_CXXFLAGS])
+    PAC_APPEND_FLAG([-g],[WRAPPER_FFLAGS])
+    PAC_APPEND_FLAG([-g],[WRAPPER_FCFLAGS])
 fi
 if test -n "$perform_meminit" ; then
     AC_DEFINE(MPICH_DEBUG_MEMINIT,1,[Define to enable preinitialization of memory used by structures and unions])
@@ -1501,9 +1509,6 @@ if test -n "$perform_memtracing" ; then
     if test -n "$perform_memarena" ; then
         AC_DEFINE(MPICH_DEBUG_MEMARENA,1,[Define if each function exit should confirm memory arena correctness])
     fi
-fi
-if test -n "$perform_mutexnesting" ; then 
-    AC_DEFINE(MPICH_DEBUG_MUTEXNESTING,1,[Define to check nesting in mutexes])
 fi
 USE_DBG_LOGGING=0
 if test -n "$perform_dbglog" ; then
@@ -2200,6 +2205,20 @@ MPIMODNAME=mpi
 MPICONSTMODNAME=mpi_constants
 MPISIZEOFMODNAME=mpi_sizeofs
 MPIBASEMODNAME=mpi_base
+
+# F08 binding stuff
+MPI_F08_LINK_CONSTANTS_NAME=mpi_f08_link_constants
+PMPI_F08_NAME=pmpi_f08
+MPI_F08_CALLBACKS_NAME=mpi_f08_callbacks
+MPI_C_INTERFACE_NAME=mpi_c_interface
+MPI_C_INTERFACE_GLUE_NAME=mpi_c_interface_glue
+MPI_F08_TYPES_NAME=mpi_f08_types
+MPI_C_INTERFACE_NOBUF_NAME=mpi_c_interface_nobuf
+MPI_F08_COMPILE_CONSTANTS_NAME=mpi_f08_compile_constants
+MPI_F08_NAME=mpi_f08
+MPI_C_INTERFACE_TYPES_NAME=mpi_c_interface_types
+MPI_C_INTERFACE_CDESC_NAME=mpi_c_interface_cdesc
+
 if test "$enable_fc" = "yes" ; then
     # determine rpath and other shared library flags for FC
     fc_shlib_conf=src/env/fc_shlib.conf
@@ -2250,16 +2269,50 @@ if test "$enable_fc" = "yes" ; then
         MPICONSTMODNAME=MPI_CONSTANTS
 	MPISIZEOFMODNAME=MPI_SIZEOFS
 	MPIBASEMODNAME=MPI_BASE
+        MPI_F08_NAME=MPI_F08
+        MPI_F08_LINK_CONSTANTS_NAME=MPI_F08_LINK_CONSTANTS
+        MPI_F08_CALLBACKS_NAME=MPI_F08_CALLBACKS
+        MPI_F08_TYPES_NAME=MPI_F08_TYPES
+        MPI_F08_COMPILE_CONSTANTS_NAME=MPI_F08_COMPILE_CONSTANTS
+        PMPI_F08_NAME=PMPI_F08
+        MPI_C_INTERFACE_NAME=MPI_C_INTERFACE
+        MPI_C_INTERFACE_NOBUF_NAME=MPI_C_INTERFACE_NOBUF
+        MPI_C_INTERFACE_GLUE_NAME=MPI_C_INTERFACE_GLUE
+        MPI_C_INTERFACE_TYPES_NAME=MPI_C_INTERFACE_TYPES
+        MPI_C_INTERFACE_CDESC_NAME=MPI_C_INTERFACE_CDESC
     else
         MPIMODNAME=mpi
         MPICONSTMODNAME=mpi_constants
 	MPISIZEOFMODNAME=mpi_sizeofs
 	MPIBASEMODNAME=mpi_base
+        MPI_F08_NAME=mpi_f08
+        MPI_F08_LINK_CONSTANTS_NAME=mpi_f08_link_constants
+        MPI_F08_CALLBACKS_NAME=mpi_f08_callbacks
+        MPI_F08_TYPES_NAME=mpi_f08_types
+        MPI_F08_COMPILE_CONSTANTS_NAME=mpi_f08_compile_constants
+        PMPI_F08_NAME=pmpi_f08
+        MPI_C_INTERFACE_NAME=mpi_c_interface
+        MPI_C_INTERFACE_NOBUF_NAME=mpi_c_interface_nobuf
+        MPI_C_INTERFACE_GLUE_NAME=mpi_c_interface_glue
+        MPI_C_INTERFACE_TYPES_NAME=mpi_c_interface_types
+        MPI_C_INTERFACE_CDESC_NAME=mpi_c_interface_cdesc
     fi
     AC_SUBST(MPIMODNAME)
     AC_SUBST(MPICONSTMODNAME)
     AC_SUBST(MPISIZEOFMODNAME)
     AC_SUBST(MPIBASEMODNAME)
+
+    AC_SUBST(MPI_F08_NAME)
+    AC_SUBST(MPI_F08_LINK_CONSTANTS_NAME)
+    AC_SUBST(MPI_F08_CALLBACKS_NAME)
+    AC_SUBST(MPI_F08_TYPES_NAME)
+    AC_SUBST(MPI_F08_COMPILE_CONSTANTS_NAME)
+    AC_SUBST(PMPI_F08_NAME)
+    AC_SUBST(MPI_C_INTERFACE_NAME)
+    AC_SUBST(MPI_C_INTERFACE_NOBUF_NAME)
+    AC_SUBST(MPI_C_INTERFACE_GLUE_NAME)
+    AC_SUBST(MPI_C_INTERFACE_TYPES_NAME)
+    AC_SUBST(MPI_C_INTERFACE_CDESC_NAME)
 
     # Assume that all Fortran 90 compilers accept -I for include directories
     FCINC=-I
@@ -2297,6 +2350,18 @@ if test "X$modincdir" = "X" ; then
 fi
 export modincdir
 AC_SUBST(modincdir)
+
+AC_LANG_PUSH([C])
+AC_MSG_CHECKING([whether TRUE has been defined])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[return TRUE;])],
+                  [has_true_upper_case=yes],
+	          [has_true_upper_case=no])
+AC_MSG_RESULT($has_true_upper_case)
+if test "$has_true_upper_case" = "no" ; then
+   AC_DEFINE(TRUE,1,[Define TRUE])
+   AC_DEFINE(FALSE,0,[Define FALSE])
+fi
+AC_LANG_POP([C])
 
 # ----------------------------------------------------------------------------
 # We previously allowed "default" as a valid value for $enable_cxx.  Now we
@@ -2699,6 +2764,7 @@ fi
 if test -n "$nameserv_name" ; then
    AC_DEFINE(HAVE_NAMEPUB_SERVICE,1,[Define if a name publishing service is available])
 fi
+export nameserv_name
 AM_CONDITIONAL([BUILD_NAMEPUB_FILE],[test "X$nameserv_name" = "Xfile"])
 AM_CONDITIONAL([BUILD_NAMEPUB_PMI],[test "X$nameserv_name" = "Xpmi"])
 
@@ -4378,6 +4444,29 @@ AC_SUBST([MPI_F77_CXX_FLOAT_COMPLEX])
 AC_SUBST([MPI_F77_CXX_DOUBLE_COMPLEX])
 AC_SUBST([MPI_F77_CXX_LONG_DOUBLE_COMPLEX])
 
+# ------------------------------------------------------------------------
+# Test if  type_tag_for_datatype is agnostic to modifiers such as const, volatile, and restrict
+# if not, the type tags are disabled to avoid compiler warings. A new type_tag for const etc. does
+# does not help, since only the latest type_tag definition is used. Type tags are defined in mpi.h,
+# therefore, they must be also be activated/deavtivated there
+PAC_PUSH_FLAG([CFLAGS])
+PAC_APPEND_FLAG([-Werror],[CFLAGS])
+AC_TRY_COMPILE([
+typedef int TEST_Datatype;
+#define TEST_INT ((TEST_Datatype)0x44)
+static const TEST_Datatype test_int  __attribute__((type_tag_for_datatype(TEST,int)))  = TEST_INT;
+void test(const void* buffer, TEST_Datatype datatype)__attribute__((pointer_with_type_tag(TEST,1,2)));],[
+const int buf[10];
+test(buf, TEST_INT);],ac_attr_support=yes, ac_attr_support=no)
+if test "$ac_attr_support" = yes
+then
+    DISABLE_TAG_SUPPORT="#undef NO_TAGS_WITH_MODIFIERS"
+else
+    DISABLE_TAG_SUPPORT="#define NO_TAGS_WITH_MODIFIERS 1"
+fi
+PAC_POP_FLAG([CFLAGS])
+AC_SUBST(DISABLE_TAG_SUPPORT)
+
 # ----------------------------------------------------------------------------
 # Check for the alignment rules moves with types int64_t etc.  These
 # are used in the datatype code to perform pack and unpack operations.  
@@ -4462,102 +4551,7 @@ int main(int argc, char **argv )
          AC_DEFINE(HAVE_ANY_INT32_T_ALIGNMENT,1,[Define if int32_t works with any alignment])
     fi
 fi
-# Check for special compile characteristics
-# If we are either gcc or icc, see if we can use __asm__
-# We test on prog_gcc to allow gcc by any name; if we are using
-# icc, the value of CC must be icc for this test to pass
-if test "$ac_cv_prog_gcc" = "yes" -o "$ac_cv_prog_CC" = "icc" ; then
-AC_MSG_CHECKING([for gcc __asm__ and pentium cmpxchgl instruction])
-AC_TRY_RUN([
-int main(int argc, char *argv[])
-{
-long int compval = 10;
-volatile long int *p = &compval;
-long int oldval = 10;
-long int newval = 20;
-char ret;
-long int readval;
-__asm__ __volatile__ ("lock; cmpxchgl %3, %1; sete %0"
-	: "=q" (ret), "=m" (*p), "=a" (readval)
-	: "r" (newval), "m" (*p), "a" (oldval) : "memory");
-return (compval == 20) ? 0 : -1;
-}
-], AC_MSG_RESULT(yes)
-   AC_DEFINE(HAVE_GCC_AND_PENTIUM_ASM, 1,[Define if using gcc on a system with an Intel Pentium class chip])
-   lac_cv_use_atomic_updates="yes", 
-AC_MSG_RESULT(no), AC_MSG_RESULT(not checking when cross compiling))
-fi
-if test "$lac_cv_use_atomic_updates" = "yes" ; then
-    AC_DEFINE(USE_ATOMIC_UPDATES,, [Define if assembly language atomic update macros should be used (if available)])
-fi
 
-# check for x86_64
-if test "$ac_cv_prog_gcc" = "yes" ; then
-AC_MSG_CHECKING([for gcc __asm__ and AMD x86_64 cmpxchgq instruction])
-AC_TRY_RUN([
-int main(int argc, char *argv[])
-{
-long int compval = 10;
-volatile long int *p = &compval;
-long int oldval = 10;
-long int newval = 20;
-char ret;
-long int readval;
-__asm__ __volatile__ ("lock; cmpxchgq %3, %1; sete %0"
-	: "=q" (ret), "=m" (*p), "=a" (readval)
-	: "r" (newval), "m" (*p), "a" (oldval) : "memory");
-return (compval == 20) ? 0 : -1;
-}
-], AC_MSG_RESULT(yes)
-   AC_DEFINE(HAVE_GCC_AND_X86_64_ASM, 1,[Define if using gcc on a system with an AMD x86_64 class chip]), 
-AC_MSG_RESULT(no), AC_MSG_RESULT(not checking when cross compiling))
-fi
-dnl
-dnl check for asm() format
-dnl 
-dnl AC_MSG_CHECKING([for asm() and pentium cmpxchgl instruction])
-dnl AC_TRY_RUN([
-dnl int main(int argc, char *argv[])
-dnl {
-dnl long int compval = 10;
-dnl volatile long int *p = &compval;
-dnl long int oldval = 10;
-dnl long int newval = 20;
-dnl char ret;
-dnl long int readval;
-dnl asm("lock; cmpxchgl %3, %1; sete %0"
-dnl 	: "=q" (ret), "=m" (*p), "=a" (readval)
-dnl 	: "r" (newval), "m" (*p), "a" (oldval) : "memory");
-dnl return (compval == 20) ? 0 : -1;
-dnl }
-dnl ], AC_MSG_RESULT(yes)
-dnl    AC_DEFINE(HAVE_PENTIUM_ASM, 1,[Define if using asm() on a system with an Intel Pentium class chip]),
-dnl AC_MSG_RESULT(no), AC_MSG_RESULT(not checking when cross compiling))
-dnl
-dnl
-dnl check for IA64
-dnl 
-if test "$ac_cv_prog_gcc" = "yes" ; then
-AC_MSG_CHECKING([for gcc __asm__ and IA64 xchg4 instruction])
-AC_TRY_RUN([
-unsigned long _InterlockedExchange(volatile void *ptr, unsigned long x)
-{
-   unsigned long result;
-   __asm__ __volatile ("xchg4 %0=[%1],%2" : "=r" (result)
-       : "r" (ptr), "r" (x) : "memory");
-   return result;
-}
-int main(int argc, char *argv[])
-{
-long val = 1;
-volatile long *p = &val;
-long oldval = _InterlockedExchange(p, (unsigned long)2);
-return (oldval == 1 && val == 2) ? 0 : -1;
-}
-], AC_MSG_RESULT(yes)
-   AC_DEFINE(HAVE_GCC_AND_IA64_ASM, 1,[Define if using gcc on a system with an IA64 class chip]), 
-AC_MSG_RESULT(no), AC_MSG_RESULT(not checking when cross compiling))
-fi
 # -----------------------------------------------------------------------------
 # Check for support of enable-coverage.  Put this near the end of the tests
 # because the coverage options may affect the other tests.
@@ -4648,19 +4642,6 @@ fi
 
 PAC_C_MACRO_VA_ARGS
 
-dnl
-dnl If internationalization selected, try to find the needed functions
-dnl if test "$enable_internat" = "yes" ; then
-dnl     AC_CHECK_HEADERS(libintl.h)
-dnl     AC_CHECK_FUNCS(gettext dgettext)
-dnl     if test "$ac_cv_header_libintl" = "yes" -a \
-dnl 	    "$ac_cv_func_gettext" = "yes" -a \
-dnl 	    "$ac_cv_func_dgettext" = "yes" ; then
-dnl 	AC_DEFINE(USE_GETTEXT,1,[Define if messages should use gettext])
-dnl     else
-dnl         AC_MSG_WARN([Cannot use internationalization because necessary headers and functions are not available])
-dnl     fi
-dnl fi
 # Check for alloca function.  May set HAVE_ALLOCA_H and HAVE_ALLOCA
 AC_FUNC_ALLOCA
 # We don't use alloca unless USE_ALLOCA is also set.
@@ -4725,7 +4706,7 @@ fi
 # Support for timers.  The following code processes the 
 #  --enable-timer-type=name argument and selects the timer based on 
 # both that field and what configure is able to determine is available.
-# The file src/include/mpichtimer.h is also created.
+# The file src/include/mpiu_timer.h is also created.
 # Note that at least the handling of the "device" option must come *after* 
 # the setup_device script is loaded so that the device can set the appropriate
 # fields.  For now, we've split this so that there is an update to the timer
@@ -4734,8 +4715,8 @@ fi
 # FIXME DJG setup_device has been eliminated in favor of subconfigure.m4 files
 # ----------------------------------------------------------------------------
 # Default type for timer stamp.
-MPID_TIMER_TYPE=long
-AC_SUBST(MPID_TIMER_TYPE)
+MPICH_TIMER_TYPE=long
+AC_SUBST(MPICH_TIMER_TYPE)
 
 # If the device specified a timer type, use that by default.  Else,
 # try to detect a type that works on this system.
@@ -4822,7 +4803,7 @@ fi
 case "$timer_type" in
 
     gethrtime)
-    MPID_TIMER_TYPE=hrtime_t
+    MPICH_TIMER_TYPE=hrtime_t
     AC_CHECK_FUNC(gethrtime,,[
          AC_MSG_ERROR([Requested timer gethrtime is not available])
 ])
@@ -4832,7 +4813,7 @@ case "$timer_type" in
     missing_function=no
     AC_SEARCH_LIBS([clock_gettime],[rt],,AC_MSG_ERROR([clock_gettime is not available]))
     AC_SEARCH_LIBS([clock_getres],[rt],,AC_MSG_ERROR([clock_getres is not available]))
-    MPID_TIMER_TYPE="struct timespec"
+    MPICH_TIMER_TYPE="struct timespec"
     # AIX does not always define struct timespec (!)
     # Make sure that we can use struct timespec
     AC_CACHE_CHECK([whether struct timespec is defined in time.h],
@@ -4888,7 +4869,7 @@ pac_cv_posix_clock_realtime=no)
     ;;
 
     gettimeofday)
-    MPID_TIMER_TYPE="struct timeval"
+    MPICH_TIMER_TYPE="struct timeval"
     # We may have already tested for gettimeofday.  If we got a "yes",
     # we're good to go
     if test "$ac_cv_func_gettimeofday" != "yes" ; then
@@ -4992,7 +4973,7 @@ dnl platform.
     if test "$cpu_gcc_x86_cycle" = "no" ; then
         AC_MSG_ERROR([Linux86 cycle counter is not available on this system and or with the $CC compiler])
     fi
-    MPID_TIMER_TYPE="long long"
+    MPICH_TIMER_TYPE="long long"
     ;;
 
     gcc_ia64_cycle)
@@ -5010,7 +4991,7 @@ pac_cv_ia64_cycle,[
     if test "$pac_cv_gcc_ia64_cycle" != "yes" ; then
         AC_MSG_ERROR([IPF cycle counter is not available on this system and or with the $CC compiler])
      fi
-     MPID_TIMER_TYPE="long"
+     MPICH_TIMER_TYPE="long"
      ;;
 
     linuxalpha_cycle)
@@ -5020,14 +5001,14 @@ pac_cv_ia64_cycle,[
     mach_absolute_time)
     AC_CHECK_FUNC(mach_absolute_time,,[AC_MSG_ERROR([mach_absolute_time is not available])])
     AC_CHECK_FUNC(mach_timebase_info,,[AC_MSG_ERROR([mach_timebase_info is not available])])
-    MPID_TIMER_TYPE="uint64_t"
+    MPICH_TIMER_TYPE="uint64_t"
     ;;
 
     device)
     # The device selected should export the datatype for the timer
     # in MPID_DEVICE_TIMER_TYPE if something other than long is needed
     if test -n "$MPID_DEVICE_TIMER_TYPE" ; then
-       MPID_TIMER_TYPE=$MPID_DEVICE_TIMER_TYPE
+       MPICH_TIMER_TYPE=$MPID_DEVICE_TIMER_TYPE
     fi
     ;;
 
@@ -5038,7 +5019,7 @@ esac
 # Convert timer type to upper case
 timer_type=`echo $timer_type | \
     tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
-MPICH_TIMER_KIND=USE_$timer_type
+MPICH_TIMER_KIND=MPIU_$timer_type
 AC_SUBST(MPICH_TIMER_KIND)
 # ----------------------------------------------------------------------------
 # End of code for timer support (except for ac_ OUTPUT)
@@ -5119,41 +5100,41 @@ for type in int long long_long short ; do
     if test "$len" = "$ac_cv_sizeof_void_p" ; then
         case $type in
             int)
-                MPIR_PINT_FMT_DEC_SPEC="\"%d\""
-                MPIR_UPINT_FMT_DEC_SPEC="\"%u\""
+                MPIU_PINT_FMT_DEC_SPEC="\"%d\""
+                MPIU_UPINT_FMT_DEC_SPEC="\"%u\""
                 ;;
             long)
-                MPIR_PINT_FMT_DEC_SPEC="\"%ld\""
-                MPIR_UPINT_FMT_DEC_SPEC="\"%lu\""
+                MPIU_PINT_FMT_DEC_SPEC="\"%ld\""
+                MPIU_UPINT_FMT_DEC_SPEC="\"%lu\""
                 ;;
             long_long)
-                MPIR_PINT_FMT_DEC_SPEC="\"%lld\""
-                MPIR_UPINT_FMT_DEC_SPEC="\"%llu\""
+                MPIU_PINT_FMT_DEC_SPEC="\"%lld\""
+                MPIU_UPINT_FMT_DEC_SPEC="\"%llu\""
                 ;;
             short)
-                MPIR_PINT_FMT_DEC_SPEC="\"%hd\""
-                MPIR_UPINT_FMT_DEC_SPEC="\"%hu\""
+                MPIU_PINT_FMT_DEC_SPEC="\"%hd\""
+                MPIU_UPINT_FMT_DEC_SPEC="\"%hu\""
                 ;;
             *)
-                AC_MSG_WARN([unable to determine format specifiers for MPIR_Pint, defaulting to int])
-                MPIR_PINT_FMT_DEC_SPEC="\"%d\""
-                MPIR_UPINT_FMT_DEC_SPEC="\"%u\""
+                AC_MSG_WARN([unable to determine format specifiers for MPIU_Pint, defaulting to int])
+                MPIU_PINT_FMT_DEC_SPEC="\"%d\""
+                MPIU_UPINT_FMT_DEC_SPEC="\"%u\""
             ;;
         esac
-        MPIR_PINT=`echo $type | sed -e 's/_/ /'`
+        MPIU_PINT=`echo $type | sed -e 's/_/ /'`
         break
     fi
 done
-AC_DEFINE_UNQUOTED(MPIR_Pint,$MPIR_PINT,[MPIR_Pint is a pointer-sized integer])
-# allow @MPIR_PINT@ substitution in glue_romio.h
-AC_SUBST([MPIR_PINT])
+AC_DEFINE_UNQUOTED(MPIU_Pint,$MPIU_PINT,[MPIU_Pint is a pointer-sized integer])
+# allow @MPIU_PINT@ substitution in glue_romio.h
+AC_SUBST([MPIU_PINT])
 
-AC_DEFINE_UNQUOTED(MPIR_PINT_FMT_DEC_SPEC,
-    $MPIR_PINT_FMT_DEC_SPEC,[MPIR_PINT_FMT_DEC_SPEC is the format
+AC_DEFINE_UNQUOTED(MPIU_PINT_FMT_DEC_SPEC,
+    $MPIU_PINT_FMT_DEC_SPEC,[MPIU_PINT_FMT_DEC_SPEC is the format
     specifier for printing Pint as a decimal])
-AC_DEFINE_UNQUOTED(MPIR_Upint,unsigned $MPIR_PINT,[MPIR_Upint is an unsigned pointer-sized integer])
-AC_DEFINE_UNQUOTED(MPIR_UPINT_FMT_DEC_SPEC,
-    $MPIR_UPINT_FMT_DEC_SPEC,[MPIR_UPINT_FMT_DEC_SPEC is the format
+AC_DEFINE_UNQUOTED(MPIU_Upint,unsigned $MPIU_PINT,[MPIU_Upint is an unsigned pointer-sized integer])
+AC_DEFINE_UNQUOTED(MPIU_UPINT_FMT_DEC_SPEC,
+    $MPIU_UPINT_FMT_DEC_SPEC,[MPIU_UPINT_FMT_DEC_SPEC is the format
     specifier for printing Upint as a decimal])
 
 # ----------------------------------------------------------------------------
@@ -5181,7 +5162,7 @@ export MPI_F77_AINT
 # ----------------------------------------------------------------------------
 
 # define MPIU_Size_t - used to express the size of objects
-# This is used in src/include/mpitypedefs.h to define MPIU_SIZE_T, 
+# This is used in mpiu_type_defs.h to define MPIU_SIZE_T, 
 # and is used in various parts of ch3 and mpid/common/sock.  
 # This is used to handle the potential problem that a message is 
 # too long to fit with an int.  However, we may still need to make
@@ -5228,7 +5209,7 @@ if test "$timer_type" = "DEVICE" ; then
     # The device selected should export the datatype for the timer
     # in MPID_DEVICE_TIMER_TYPE if something other than long is needed
     if test -n "$MPID_DEVICE_TIMER_TYPE" ; then 
-       MPID_TIMER_TYPE=$MPID_DEVICE_TIMER_TYPE
+       MPICH_TIMER_TYPE=$MPID_DEVICE_TIMER_TYPE
     fi
 fi
 
@@ -5272,7 +5253,7 @@ if test "${thread_pkg_required}" = "yes" -a "${with_thread_package}" = "none" ; 
    AC_ERROR([if no thread package is available, use --enable-threads=single or funneled])
 fi
 
-MPIU_THREAD_PACKAGE_NAME=MPIU_THREAD_PACKAGE_INVALID
+MPICH_THREAD_PACKAGE_NAME=MPICH_THREAD_PACKAGE_INVALID
 case $with_thread_package in 
     posix|pthreads)
 	with_thread_package=posix
@@ -5288,7 +5269,6 @@ case $with_thread_package in
         AC_CHECK_LIB([pthread],[pthread_key_create],have_pthreads=yes)
 	if test "$have_pthreads" = "yes" ; then
 	   PAC_PREPEND_FLAG([-lpthread],[LIBS])
-	   PAC_PREPEND_FLAG([-lpthread],[EXTERNAL_LIBS])
 	fi
 
         AC_CHECK_FUNCS(pthread_yield)
@@ -5319,25 +5299,6 @@ void f1(void *a) { return; }],
             fi
     
         fi
-	# Check for PTHREAD_MUTEX_RECURSIVE_NP and PTHREAD_MUTEX_RECURSIVE
-	AC_CACHE_CHECK([whether pthread.h defines PTHREAD_MUTEX_RECURSIVE_NP],
-	pac_cv_has_pthread_mutex_recursive_np,[
-        AC_TRY_COMPILE([#include <pthread.h>],
-                       [int a=PTHREAD_MUTEX_RECURSIVE_NP;],
-		       pac_cv_has_pthread_mutex_recursive_np=yes,
-		       pac_cv_has_pthread_mutex_recursive_np=no)])
-	AC_CACHE_CHECK([whether pthread.h defines PTHREAD_MUTEX_RECURSIVE],
-	pac_cv_has_pthread_mutex_recursive,[
-        AC_TRY_COMPILE([#include <pthread.h>],
-                       [int a=PTHREAD_MUTEX_RECURSIVE;],
-		       pac_cv_has_pthread_mutex_recursive=yes,
-		       pac_cv_has_pthread_mutex_recursive=no)])
-        if test "$pac_cv_has_pthread_mutex_recursive_np" = yes ; then
-	    AC_DEFINE(HAVE_PTHREAD_MUTEX_RECURSIVE_NP,1,[Define if PTHREAD_MUTEX_RECURSIVE_NP is available in pthread.h])
-	fi		       
-        if test "$pac_cv_has_pthread_mutex_recursive" = yes ; then
-	    AC_DEFINE(HAVE_PTHREAD_MUTEX_RECURSIVE,1,[Define if PTHREAD_MUTEX_RECURSIVE is available in pthread.h])
-	fi		       
 
         # Check for PTHREAD_MUTEX_ERRORCHECK_NP and PTHREAD_MUTEX_ERRORCHECK
         AC_CACHE_CHECK([whether pthread.h defines PTHREAD_MUTEX_ERRORCHECK_NP],
@@ -5354,16 +5315,16 @@ void f1(void *a) { return; }],
                        pac_cv_has_pthread_mutex_errorcheck=no)])
 
         if test "$pac_cv_has_pthread_mutex_errorcheck" = yes ; then
-            AC_DEFINE(PTHREAD_MUTEX_ERRORCHECK_VALUE,PTHREAD_MUTEX_ERRORCHECK,
+            AC_DEFINE(MPICH_PTHREAD_MUTEX_ERRORCHECK_VALUE,PTHREAD_MUTEX_ERRORCHECK,
                       [Define to an expression that will result in an error checking mutex type.])
         elif test "$pac_cv_has_pthread_mutex_errorcheck_np" = yes ; then
-            AC_DEFINE(PTHREAD_MUTEX_ERRORCHECK_VALUE,PTHREAD_MUTEX_ERRORCHECK_NP,
+            AC_DEFINE(MPICH_PTHREAD_MUTEX_ERRORCHECK_VALUE,PTHREAD_MUTEX_ERRORCHECK_NP,
                       [Define to an expression that will result in an error checking mutex type.])
         fi
 
 	PAC_FUNC_NEEDS_DECL([#include <pthread.h>],pthread_mutexattr_settype)
 
-        MPIU_THREAD_PACKAGE_NAME=MPIU_THREAD_PACKAGE_POSIX
+        MPICH_THREAD_PACKAGE_NAME=MPICH_THREAD_PACKAGE_POSIX
 	;;
     solaris)
 	AC_CHECK_HEADERS(thread.h)
@@ -5373,16 +5334,16 @@ void f1(void *a) { return; }],
 	   AC_MSG_ERROR([unable to find Solaris threads library])
 	fi
 	# FIXME: need to add -mt if using solaris compilers
-        MPIU_THREAD_PACKAGE_NAME=MPIU_THREAD_PACKAGE_SOLARIS
+        MPICH_THREAD_PACKAGE_NAME=MPICH_THREAD_PACKAGE_SOLARIS
 	;;
     win|windows)
         with_thread_package=win
-        MPIU_THREAD_PACKAGE_NAME=MPIU_THREAD_PACKAGE_WIN
+        MPICH_THREAD_PACKAGE_NAME=MPICH_THREAD_PACKAGE_WIN
         AC_MSG_ERROR([The 'win' thread package is not supported via autoconf builds at this time.])
         ;;
     no|none)
 	with_thread_package=none
-        MPIU_THREAD_PACKAGE_NAME=MPIU_THREAD_PACKAGE_NONE
+        MPICH_THREAD_PACKAGE_NAME=MPICH_THREAD_PACKAGE_NONE
 	;;
     *)
 	AC_MSG_ERROR([The specified thread package, $with_thread_package, is not supported.]) 
@@ -5391,9 +5352,9 @@ esac
 
 # Define and export the selected thread library so that other packages
 # know what's used in MPICH
-AC_DEFINE_UNQUOTED([MPIU_THREAD_PACKAGE_NAME],[$MPIU_THREAD_PACKAGE_NAME],[set to the name of the thread package])
+AC_DEFINE_UNQUOTED([MPICH_THREAD_PACKAGE_NAME],[$MPICH_THREAD_PACKAGE_NAME],[set to the name of the thread package])
 
-# check for compiler-support for thread-local storage (MPIU_TLS_SPECIFIER)
+# check for compiler-support for thread-local storage (MPICH_TLS_SPECIFIER)
 AX_TLS
 
 AC_CHECK_FUNCS(getpid)
@@ -5512,7 +5473,7 @@ AC_ARG_ENABLE(checkpointing,
         PAC_SET_HEADER_LIB_PATH(blcr)
 	PAC_PUSH_FLAG([LIBS])
 	PAC_CHECK_HEADER_LIB_FATAL(blcr, libcr.h, cr, cr_init)
-	PAC_APPEND_FLAG([-lblcr],[EXTERNAL_LIBS])
+	PAC_APPEND_FLAG([-lcr],[WRAPPER_LIBS])
 	PAC_POP_FLAG([LIBS])
         AC_DEFINE(ENABLE_CHECKPOINTING,1,[Application checkpointing enabled])
       fi ],
@@ -5978,13 +5939,6 @@ AC_OUTPUT_COMMANDS([chmod a+x test/commands/cmdtests])
 
 AC_DEFINE(HAVE_MPICHCONF,1,[Define so that we can test whether the mpichconf.h file has been included])
 
-# If the platform does not support inter-library dependencies,
-# add the LDFLAGS/LIBS we got so far to WRAPPERs
-if test "$INTERLIB_DEPS" = "no" ; then
-   WRAPPER_LDFLAGS="$WRAPPER_LDFLAGS $LDFLAGS"
-   WRAPPER_LIBS="$WRAPPER_LIBS $EXTERNAL_LIBS"
-fi
-
 if test "$USE_PMI2_API" = "yes" ; then
    AC_DEFINE(USE_PMI2_API, 1, [Define if PMI2 API must be used])
 fi
@@ -6000,6 +5954,42 @@ if test "X$enable_shared" = "Xyes" ; then
     AS_CASE([$host],
         [*-*-darwin*],
         [
+
+        # The linker on Darwin does not allow common symbols, thus libtool
+        # adds the -fno-common option by default for shared libraries.
+        # However, the common symbols defined in different shared libraries
+        # and object files still can not be treated as the same symbol.
+        # For example:
+        # with gfortran, the same common block in the shared libraries and
+        # the object files will have different memory locations separately;
+        # with ifort, the same common block in different shared libraries
+        # will get the same memory location but still get a different location
+        # in the object file.
+
+        # The -Wl,-commons,use_dylibs option asks linker to check dylibs for
+        # definitions and use them to replace tentative definitions(commons)
+        # from object files, thus it solves the issue of the common symbol
+        # mismatch between the object file and the dylibs (i.e., by setting
+        # the address of a common symbol to the place located in the first
+        # dylib that is linked with the object file and contains this symbol).
+        # It needs to be added only in the linking stage for the final
+        # executable file.
+
+        # On the other hand, the -flat-namespace option allows linker to
+        # unify the same common symbols in different dylibs. It needs to be
+        # added in linking stage for both the shared library and the final
+        # executable file.
+
+        # In Fortran programs, we implement global definitions such as MPI_BOTTOM
+        # as common symbols. We check the address of the user input and translate it
+        # to the C global definition if it is equal to the internal pre-stored address
+        # in the Fortran binding layer. Without -flat-namespace, we may get different
+        # addresses and thus treat the predefined constant as a normal buffer.
+
+        # Although gfortran works fine by only adding -flat-namespace, and
+        # ifort works by only adding -Wl,-commons,use_dylibs, we should add
+        # both options here as a generic solution to make sure everything safe.
+
         # sanity check that -Wl,-flat_namespace works on darwin, unless the user
         # asked us not to add it
         if test "X$enable_two_level_namespace" = "Xno"; then
@@ -6027,35 +6017,155 @@ if test "X$enable_shared" = "Xyes" ; then
         # We only need to bother with -Wl,-commons,-use_dylibs if we are
         # building fortran bindings (no common block usage in our C libs).
         if test "X$enable_f77" = "Xyes" ; then
-            # We also don't need this argument if flat_namespace is used.
-            if test "X$enable_two_level_namespace" != "Xno" ; then
-                # TODO, move this into a PAC macro with real autoconf caching
-                pac_cv_wl_commons_use_dylibs_works=no
-                AC_MSG_CHECKING([if the F77 compiler accepts -Wl,-commons,use_dylibs])
-                AC_LANG_PUSH([Fortran 77])
-                PAC_PUSH_FLAG([LDFLAGS])
-                PAC_APPEND_FLAG([-Wl,-commons,use_dylibs], [LDFLAGS])
-                AC_LINK_IFELSE([AC_LANG_PROGRAM([],[      INTEGER i])],
-                               [AC_MSG_RESULT([yes])
-                                pac_cv_wl_commons_use_dylibs_works=yes],
-                               [AC_MSG_RESULT([no])])
-                PAC_POP_FLAG([LDFLAGS])
-                AC_LANG_POP([Fortran 77])
+            # TODO, move this into a PAC macro with real autoconf caching
+            pac_cv_wl_commons_use_dylibs_works=no
+            AC_MSG_CHECKING([if the F77 compiler accepts -Wl,-commons,use_dylibs])
+            AC_LANG_PUSH([Fortran 77])
+            PAC_PUSH_FLAG([LDFLAGS])
+            PAC_APPEND_FLAG([-Wl,-commons,use_dylibs], [LDFLAGS])
+            AC_LINK_IFELSE([AC_LANG_PROGRAM([],[      INTEGER i])],
+                           [AC_MSG_RESULT([yes])
+                            pac_cv_wl_commons_use_dylibs_works=yes],
+                           [AC_MSG_RESULT([no])])
+            PAC_POP_FLAG([LDFLAGS])
+            AC_LANG_POP([Fortran 77])
 
-                # Add the flag to the WRAPPER_LDFLAGS, since this common block issue
-                # is really only a problem for dynamically linked user programs.
-                #
-                # Technically we may not be able to use the same form of the argument
-                # for all four compilers (CC/CXX/F77/FC).  But we only think this is
-                # necessary for Darwin for now, so this unconditional, single-var
-                # approximation will work for now.
-                if test "X$pac_cv_wl_commons_use_dylibs_works" = "Xyes" ; then
-                    PAC_APPEND_FLAG([-Wl,-commons,use_dylibs], [WRAPPER_LDFLAGS])
-                fi
+            # Add the flag to the WRAPPER_LDFLAGS, since this common block issue
+            # is really only a problem for dynamically linked user programs.
+            #
+            # Technically we may not be able to use the same form of the argument
+            # for all four compilers (CC/CXX/F77/FC).  But we only think this is
+            # necessary for Darwin for now, so this unconditional, single-var
+            # approximation will work for now.
+            if test "X$pac_cv_wl_commons_use_dylibs_works" = "Xyes" ; then
+                PAC_APPEND_FLAG([-Wl,-commons,use_dylibs], [WRAPPER_LDFLAGS])
             fi
         fi
         ]
     )
+fi
+
+# Set F08 versions of datatypes, which have type MPI_Datatype and are not integers anymore.
+# If the correspoinding F77 datatypes exist, i.e., not MPI_DATATYPE_NULL, we simply use their
+# integer value (already converted into decimal) in F08 counterparts. Otherwise, we use
+# MPI_VAL value of F08 MPI_DATATYPE_NULL.
+# We put the code at the end to ensure all F77 datatypes have been set.
+
+if test "X$f08_works" = "Xyes"; then
+    for type in INTEGER1 INTEGER2 INTEGER4 INTEGER8 INTEGER16 \
+                REAL4 REAL8 REAL16 \
+                COMPLEX8 COMPLEX16 COMPLEX32; do
+        eval f77typename=F77_$type
+        eval f77typevalue=\$$f77typename
+        if test "$f77typevalue" = MPI_DATATYPE_NULL ; then
+            eval F08_$type=MPI_DATATYPE_NULL%MPI_VAL
+        else
+            eval F08_$type=$f77typevalue
+        fi
+    done
+    AC_SUBST(F08_INTEGER1)
+    AC_SUBST(F08_INTEGER2)
+    AC_SUBST(F08_INTEGER4)
+    AC_SUBST(F08_INTEGER8)
+    AC_SUBST(F08_INTEGER16)
+    AC_SUBST(F08_REAL4)
+    AC_SUBST(F08_REAL8)
+    AC_SUBST(F08_REAL16)
+    AC_SUBST(F08_COMPLEX8)
+    AC_SUBST(F08_COMPLEX16)
+    AC_SUBST(F08_COMPLEX32)
+
+    for type in PACKED UB LB BYTE \
+                CHAR SIGNED_CHAR UNSIGNED_CHAR WCHAR SHORT \
+                UNSIGNED_SHORT UNSIGNED INT LONG UNSIGNED_INT UNSIGNED_LONG \
+                FLOAT DOUBLE LONG_DOUBLE LONG_LONG_INT \
+                UNSIGNED_LONG_LONG LONG_LONG FLOAT_INT DOUBLE_INT \
+                LONG_INT SHORT_INT "2INT" LONG_DOUBLE_INT \
+                INT8_T INT16_T INT32_T INT64_T            \
+                UINT8_T UINT16_T UINT32_T UINT64_T        \
+                C_BOOL C_FLOAT_COMPLEX C_COMPLEX C_DOUBLE_COMPLEX  C_LONG_DOUBLE_COMPLEX \
+                AINT OFFSET COUNT \
+                CXX_BOOL CXX_FLOAT_COMPLEX CXX_DOUBLE_COMPLEX CXX_LONG_DOUBLE_COMPLEX; do
+        eval f77typename=MPI_F77_$type
+        eval f77typevalue=\$$f77typename
+        if test "$f77typevalue" = MPI_DATATYPE_NULL ; then
+            eval F08_$type=MPI_DATATYPE_NULL%MPI_VAL
+        else
+            eval F08_$type=$f77typevalue
+        fi
+    done
+    AC_SUBST(F08_PACKED)
+    AC_SUBST(F08_UB)
+    AC_SUBST(F08_LB)
+    AC_SUBST(F08_BYTE)
+    AC_SUBST(F08_CHAR)
+    AC_SUBST(F08_SIGNED_CHAR)
+    AC_SUBST(F08_UNSIGNED_CHAR)
+    AC_SUBST(F08_WCHAR)
+    AC_SUBST(F08_SHORT)
+    AC_SUBST(F08_UNSIGNED_SHORT)
+    AC_SUBST(F08_UNSIGNED)
+    AC_SUBST(F08_INT)
+    AC_SUBST(F08_LONG)
+    AC_SUBST(F08_UNSIGNED_INT)
+    AC_SUBST(F08_UNSIGNED_LONG)
+    AC_SUBST(F08_FLOAT)
+    AC_SUBST(F08_DOUBLE)
+    AC_SUBST(F08_LONG_DOUBLE)
+    AC_SUBST(F08_LONG_LONG_INT)
+    AC_SUBST(F08_UNSIGNED_LONG_LONG)
+    AC_SUBST(F08_LONG_LONG)
+    AC_SUBST(F08_FLOAT_INT)
+    AC_SUBST(F08_DOUBLE_INT)
+    AC_SUBST(F08_LONG_INT)
+    AC_SUBST(F08_SHORT_INT)
+    AC_SUBST(F08_2INT)
+    AC_SUBST(F08_LONG_DOUBLE_INT)
+    AC_SUBST(F08_INT8_T)
+    AC_SUBST(F08_INT16_T)
+    AC_SUBST(F08_INT32_T)
+    AC_SUBST(F08_INT64_T)
+    AC_SUBST(F08_UINT8_T)
+    AC_SUBST(F08_UINT16_T)
+    AC_SUBST(F08_UINT32_T)
+    AC_SUBST(F08_UINT64_T)
+    AC_SUBST(F08_C_BOOL)
+    AC_SUBST(F08_C_FLOAT_COMPLEX)
+    AC_SUBST(F08_C_COMPLEX)
+    AC_SUBST(F08_C_DOUBLE_COMPLEX)
+    AC_SUBST(F08_C_LONG_DOUBLE_COMPLEX)
+    AC_SUBST(F08_AINT)
+    AC_SUBST(F08_OFFSET)
+    AC_SUBST(F08_COUNT)
+    AC_SUBST(F08_CXX_BOOL)
+    AC_SUBST(F08_CXX_FLOAT_COMPLEX)
+    AC_SUBST(F08_CXX_DOUBLE_COMPLEX)
+    AC_SUBST(F08_CXX_LONG_DOUBLE_COMPLEX)
+
+    AS_CASE([$MPI_AINT],
+        [short],       [F08_C_AINT="c_short"],
+        [int],         [F08_C_AINT="c_int"],
+        [long],        [F08_C_AINT="c_long"],
+        ['long long'], [F08_C_AINT="c_long_long"],
+        [AC_MSG_ERROR([unable to determine C MPI_AINT type in Fortran 2008])])
+
+    AS_CASE([$MPI_COUNT],
+        [short],       [F08_C_COUNT="c_short"],
+        [int],         [F08_C_COUNT="c_int"],
+        [long],        [F08_C_COUNT="c_long"],
+        ['long long'], [F08_C_COUNT="c_long_long"],
+        [AC_MSG_ERROR([unable to determine C MPI_COUNT type in Fortran 2008])])
+
+    AS_CASE([$MPI_OFFSET],
+        [short],       [F08_C_OFFSET="c_short"],
+        [int],         [F08_C_OFFSET="c_int"],
+        [long],        [F08_C_OFFSET="c_long"],
+        ['long long'], [F08_C_OFFSET="c_long_long"],
+        [AC_MSG_ERROR([unable to determine C MPI_OFFSET type in Fortran 2008])])
+
+    AC_SUBST(F08_C_AINT)
+    AC_SUBST(F08_C_COUNT)
+    AC_SUBST(F08_C_OFFSET)
 fi
 
 ########################################################################
@@ -6076,7 +6186,6 @@ AC_OUTPUT(Makefile \
           src/include/mpichinfo.h \
 	  mpich-doxygen \
           src/include/glue_romio.h \
-          src/include/mpichtimer.h \
           src/binding/cxx/mpicxx.h \
 	  src/binding/fortran/mpif_h/mpif.h \
 	  src/binding/fortran/mpif_h/setbotf.f \
@@ -6084,6 +6193,8 @@ AC_OUTPUT(Makefile \
 	  src/binding/fortran/use_mpi/mpi_sizeofs.f90 \
 	  src/binding/fortran/use_mpi/mpi_base.f90 \
 	  src/binding/fortran/use_mpi/mpi_constants.f90 \
+	  src/binding/fortran/use_mpi_f08/mpi_f08_compile_constants.f90 \
+	  src/binding/fortran/use_mpi_f08/mpi_c_interface_types.f90 \
 	  src/packaging/pkgconfig/mpich.pc \
 	  src/packaging/envmods/mpich.module \
           src/env/mpixxx_opts.conf \
@@ -6097,6 +6208,7 @@ AC_OUTPUT(Makefile \
 	  src/env/mpifort.bash \
           src/env/parkill \
 	  src/util/dbg/getfuncstack \
+	  src/util/timers/mpiu_timer.h \
           src/include/mpi.h \
           doc/design/Makefile \
           doc/installguide/Makefile \

@@ -7,6 +7,10 @@
 #include "ptl_impl.h"
 #include "rptl.h"
 
+/* FIXME: turn this into a CVAR, or fraction of the event limit from
+   rptl_init */
+#define PER_TARGET_THRESHOLD 50
+
 /*
  * Prereqs:
  *
@@ -66,7 +70,7 @@ struct rptl_info rptl_info;
 #undef FUNCNAME
 #define FUNCNAME find_target
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int find_target(ptl_process_t id, struct rptl_target **target)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -93,6 +97,7 @@ static int find_target(ptl_process_t id, struct rptl_target **target)
         t->op_pool = NULL;
         t->data_op_list = NULL;
         t->control_op_list = NULL;
+        t->issued_data_ops = 0;
     }
 
     *target = t;
@@ -118,7 +123,7 @@ static int rptl_put(ptl_handle_md_t md_handle, ptl_size_t local_offset, ptl_size
 #undef FUNCNAME
 #define FUNCNAME poke_progress
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int poke_progress(void)
 {
     int ret = PTL_OK;
@@ -220,7 +225,7 @@ static int poke_progress(void)
             /* we should not get any NACKs on the control portal */
             assert(op->state != RPTL_OP_STATE_NACKED);
 
-            if (rptl_info.origin_events_left < 2) {
+            if (rptl_info.origin_events_left < 2 || target->issued_data_ops > PER_TARGET_THRESHOLD) {
                 /* too few origin events left.  we can't issue this op
                  * or any following op to this target in order to
                  * maintain ordering */
@@ -228,6 +233,7 @@ static int poke_progress(void)
             }
 
             rptl_info.origin_events_left -= 2;
+            target->issued_data_ops++;
 
             /* force request for an ACK even if the user didn't ask
              * for it.  replace the user pointer with the OP id. */
@@ -255,7 +261,7 @@ static int poke_progress(void)
                 if (op->state == RPTL_OP_STATE_NACKED)
                     break;
 
-                if (rptl_info.origin_events_left < 2) {
+                if (rptl_info.origin_events_left < 2 || target->issued_data_ops > PER_TARGET_THRESHOLD) {
                     /* too few origin events left.  we can't issue
                      * this op or any following op to this target in
                      * order to maintain ordering */
@@ -263,6 +269,7 @@ static int poke_progress(void)
                 }
 
                 rptl_info.origin_events_left -= 2;
+                target->issued_data_ops++;
 
                 /* force request for an ACK even if the user didn't
                  * ask for it.  replace the user pointer with the OP
@@ -283,7 +290,7 @@ static int poke_progress(void)
                 if (op->state == RPTL_OP_STATE_NACKED)
                     break;
 
-                if (rptl_info.origin_events_left < 1) {
+                if (rptl_info.origin_events_left < 1 || target->issued_data_ops > PER_TARGET_THRESHOLD) {
                     /* too few origin events left.  we can't issue
                      * this op or any following op to this target in
                      * order to maintain ordering */
@@ -291,6 +298,7 @@ static int poke_progress(void)
                 }
 
                 rptl_info.origin_events_left--;
+                target->issued_data_ops++;
 
                 ret = PtlGet(op->u.get.md_handle, op->u.get.local_offset, op->u.get.length,
                              op->u.get.target_id, op->u.get.pt_index, op->u.get.match_bits,
@@ -314,7 +322,7 @@ static int poke_progress(void)
 #undef FUNCNAME
 #define FUNCNAME rptl_put
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int rptl_put(ptl_handle_md_t md_handle, ptl_size_t local_offset, ptl_size_t length,
                     ptl_ack_req_t ack_req, ptl_process_t target_id, ptl_pt_index_t pt_index,
                     ptl_match_bits_t match_bits, ptl_size_t remote_offset, void *user_ptr,
@@ -375,7 +383,7 @@ static int rptl_put(ptl_handle_md_t md_handle, ptl_size_t local_offset, ptl_size
 #undef FUNCNAME
 #define FUNCNAME rptl_put
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_ptl_rptl_put(ptl_handle_md_t md_handle, ptl_size_t local_offset, ptl_size_t length,
                           ptl_ack_req_t ack_req, ptl_process_t target_id, ptl_pt_index_t pt_index,
                           ptl_match_bits_t match_bits, ptl_size_t remote_offset, void *user_ptr,
@@ -389,7 +397,7 @@ int MPID_nem_ptl_rptl_put(ptl_handle_md_t md_handle, ptl_size_t local_offset, pt
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_ptl_rptl_get
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_ptl_rptl_get(ptl_handle_md_t md_handle, ptl_size_t local_offset, ptl_size_t length,
                           ptl_process_t target_id, ptl_pt_index_t pt_index,
                           ptl_match_bits_t match_bits, ptl_size_t remote_offset, void *user_ptr)
@@ -440,7 +448,7 @@ int MPID_nem_ptl_rptl_get(ptl_handle_md_t md_handle, ptl_size_t local_offset, pt
 #undef FUNCNAME
 #define FUNCNAME send_pause_messages
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int send_pause_messages(struct rptl *rptl)
 {
     int i, mpi_errno = MPI_SUCCESS;
@@ -487,7 +495,7 @@ static int send_pause_messages(struct rptl *rptl)
 #undef FUNCNAME
 #define FUNCNAME clear_nacks
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int clear_nacks(ptl_process_t target_id)
 {
     struct rptl_target *target;
@@ -524,7 +532,7 @@ static int clear_nacks(ptl_process_t target_id)
 #undef FUNCNAME
 #define FUNCNAME get_event_info
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int get_event_info(ptl_event_t * event, struct rptl **ret_rptl, struct rptl_op **ret_op)
 {
     struct rptl *rptl;
@@ -539,6 +547,8 @@ static int get_event_info(ptl_event_t * event, struct rptl **ret_rptl, struct rp
         op = (struct rptl_op *) event->user_ptr;
 
         rptl_info.origin_events_left++;
+        if (event->type != PTL_EVENT_SEND)
+            op->target->issued_data_ops--;
 
         /* see if there are any pending ops to be issued */
         ret = poke_progress();
@@ -573,7 +583,7 @@ static int get_event_info(ptl_event_t * event, struct rptl **ret_rptl, struct rp
 #undef FUNCNAME
 #define FUNCNAME stash_event
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int stash_event(struct rptl_op *op, ptl_event_t event)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -626,7 +636,7 @@ static int pending_event_valid = 0;
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_ptl_rptl_eqget
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_ptl_rptl_eqget(ptl_handle_eq_t eq_handle, ptl_event_t * event)
 {
     struct rptl_op *op = NULL;

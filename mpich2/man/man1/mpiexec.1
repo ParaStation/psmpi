@@ -1,4 +1,4 @@
-.TH mpiexec 1 "2/20/2015" " " "MPI"
+.TH mpiexec 1 "11/9/2015" " " "MPI"
 .SH NAME
 mpiexec \-  Run an MPI program 
 .SH SYNOPSIS
@@ -23,7 +23,7 @@ the MPI program
 .I a.out
 on 4 processes:
 .nf
-mpiexec \\-n 4 a.out
+mpiexec -n 4 a.out
 .fi
 
 
@@ -73,7 +73,7 @@ of processes (see the MPI-2 specification for more details)
 - file containing specifications of host/program,
 one per line, with # as a comment indicator, e.g., the usual
 mpiexec input, but with ":" replaced with a newline.  That is,
-the configfile contains lines with \\-soft, \\-n etc.
+the configfile contains lines with -soft, -n etc.
 .PD 1
 
 Additional arguments that are specific to the MPICH implementation
@@ -102,7 +102,7 @@ on 4 processes and
 on 8 processes, use:
 
 .nf
-mpiexec \\-n 4 ocean : \\-n 8 air
+mpiexec -n 4 ocean : -n 8 air
 .fi
 
 

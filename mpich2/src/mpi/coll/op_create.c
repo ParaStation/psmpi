@@ -108,7 +108,7 @@ int MPI_Op_create(MPI_User_function *user_fn, int commute, MPI_Op *op)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_OP_CREATE);
 
     /* ... body of routine ...  */
@@ -129,12 +129,12 @@ int MPI_Op_create(MPI_User_function *user_fn, int commute, MPI_Op *op)
 				   const int *, const MPI_Datatype *))user_fn;
     MPIU_Object_set_ref(op_ptr,1);
 
-    MPIU_OBJ_PUBLISH_HANDLE(*op, op_ptr->handle);
+    MPID_OBJ_PUBLISH_HANDLE(*op, op_ptr->handle);
     /* ... end of body of routine ... */
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OP_CREATE);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
     
   fn_fail:

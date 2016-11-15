@@ -72,7 +72,7 @@ int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_GET);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -138,18 +138,17 @@ int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    
-    mpi_errno = MPIU_RMA_CALL(win_ptr,
-			      Get(origin_addr, origin_count, origin_datatype,
-				  target_rank, target_disp, target_count,
-				  target_datatype, win_ptr));
+
+    mpi_errno = MPID_Get(origin_addr, origin_count, origin_datatype,
+                         target_rank, target_disp, target_count,
+                         target_datatype, win_ptr);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
 
   fn_exit:
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_GET);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

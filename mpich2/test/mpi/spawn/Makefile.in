@@ -104,7 +104,8 @@ noinst_PROGRAMS = namepub$(EXEEXT) spawn1$(EXEEXT) spawninfo1$(EXEEXT) \
 	multiple_ports2$(EXEEXT) spaiccreate$(EXEEXT) \
 	spaiccreate2$(EXEEXT) disconnect$(EXEEXT) disconnect2$(EXEEXT) \
 	disconnect3$(EXEEXT) pgroup_connect_test$(EXEEXT) \
-	pgroup_intercomm_test$(EXEEXT) concurrent_spawns$(EXEEXT)
+	pgroup_intercomm_test$(EXEEXT) concurrent_spawns$(EXEEXT) \
+	spawn-rootargs$(EXEEXT)
 subdir = spawn
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -121,7 +122,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = testlist
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 concurrent_spawns_SOURCES = concurrent_spawns.c
@@ -229,6 +230,12 @@ spaiccreate2_LDADD = $(LDADD)
 spaiccreate2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+spawn_rootargs_SOURCES = spawn-rootargs.c
+spawn_rootargs_OBJECTS = spawn-rootargs.$(OBJEXT)
+spawn_rootargs_LDADD = $(LDADD)
+spawn_rootargs_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 spawn1_SOURCES = spawn1.c
 spawn1_OBJECTS = spawn1.$(OBJEXT)
 spawn1_LDADD = $(LDADD)
@@ -316,17 +323,17 @@ SOURCES = concurrent_spawns.c disconnect.c disconnect2.c disconnect3.c \
 	disconnect_reconnect3.c join.c multiple_ports.c \
 	multiple_ports2.c namepub.c pgroup_connect_test.c \
 	pgroup_intercomm_test.c selfconacc.c spaconacc.c spaconacc2.c \
-	spaiccreate.c spaiccreate2.c spawn1.c spawn2.c spawnargv.c \
-	spawninfo1.c spawnintra.c spawnmanyarg.c spawnminfo1.c \
-	spawnmult2.c taskmaster.c
+	spaiccreate.c spaiccreate2.c spawn-rootargs.c spawn1.c \
+	spawn2.c spawnargv.c spawninfo1.c spawnintra.c spawnmanyarg.c \
+	spawnminfo1.c spawnmult2.c taskmaster.c
 DIST_SOURCES = concurrent_spawns.c disconnect.c disconnect2.c \
 	disconnect3.c disconnect_reconnect.c disconnect_reconnect2.c \
 	disconnect_reconnect3.c join.c multiple_ports.c \
 	multiple_ports2.c namepub.c pgroup_connect_test.c \
 	pgroup_intercomm_test.c selfconacc.c spaconacc.c spaconacc2.c \
-	spaiccreate.c spaiccreate2.c spawn1.c spawn2.c spawnargv.c \
-	spawninfo1.c spawnintra.c spawnmanyarg.c spawnminfo1.c \
-	spawnmult2.c taskmaster.c
+	spaiccreate.c spaiccreate2.c spawn-rootargs.c spawn1.c \
+	spawn2.c spawnargv.c spawninfo1.c spawnintra.c spawnmanyarg.c \
+	spawnminfo1.c spawnmult2.c taskmaster.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -351,8 +358,8 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/Makefile.mtest \
-	$(top_srcdir)/confdb/depcomp
+am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/testlist.in \
+	$(top_srcdir)/Makefile.mtest $(top_srcdir)/confdb/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 VPATH = @VPATH@
 ACLOCAL = @ACLOCAL@
@@ -481,6 +488,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -515,6 +523,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -532,6 +541,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -579,6 +589,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+testlist: $(top_builddir)/config.status $(srcdir)/testlist.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
@@ -655,6 +667,10 @@ spaiccreate2$(EXEEXT): $(spaiccreate2_OBJECTS) $(spaiccreate2_DEPENDENCIES) $(EX
 	@rm -f spaiccreate2$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(spaiccreate2_OBJECTS) $(spaiccreate2_LDADD) $(LIBS)
 
+spawn-rootargs$(EXEEXT): $(spawn_rootargs_OBJECTS) $(spawn_rootargs_DEPENDENCIES) $(EXTRA_spawn_rootargs_DEPENDENCIES) 
+	@rm -f spawn-rootargs$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(spawn_rootargs_OBJECTS) $(spawn_rootargs_LDADD) $(LIBS)
+
 spawn1$(EXEEXT): $(spawn1_OBJECTS) $(spawn1_DEPENDENCIES) $(EXTRA_spawn1_DEPENDENCIES) 
 	@rm -f spawn1$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(spawn1_OBJECTS) $(spawn1_LDADD) $(LIBS)
@@ -715,6 +731,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spaconacc2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spaiccreate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spaiccreate2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn-rootargs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawnargv.Po@am__quote@

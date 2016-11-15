@@ -24,7 +24,7 @@
 /*
  * \brief
  */
-
+#include <dlfcn.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -35,7 +35,6 @@
 #include "mpidi_util.h"
 
 #define PAMI_TUNE_MAX_ITER 2000
-#define _DEBUG  1
 /* Short hand for sizes */
 #define ONE  (1)
 #define ONEK (1<<10)
@@ -44,6 +43,9 @@
 
 #define PAMI_ASYNC_EXT_ATTR 2000
 
+#if CUDA_AWARE_SUPPORT
+void * pamidCudaPtr = NULL;
+#endif
 #if (MPIDI_PRINTENV || MPIDI_STATISTICS || MPIDI_BANNER)
 MPIDI_printenv_t  *mpich_env=NULL;
 extern char* mp_euilib;
@@ -706,13 +708,6 @@ int MPIDI_Print_mpenv(int rank,int size)
                 memset(gatherer,0,task_count*sizeof(MPIDI_printenv_t));
         }
 
-        #ifdef _DEBUG
-        printf("task_count = %d\n", task_count);
-        printf("calling _mpi_gather(%p,%d,%d,%p,%d,%d,%d,%d,%p,%d)\n",
-            &sender,sizeof(MPIDI_printenv_t),MPI_BYTE,gatherer,sizeof(MPIDI_printenv_t),MPI_BYTE,
-            0, MPI_COMM_WORLD,NULL,0);
-        fflush(stdout);
-        #endif
 
         mpi_errno = MPI_SUCCESS;
         MPID_Comm_get_ptr( comm, comm_ptr );
@@ -723,11 +718,6 @@ int MPIDI_Print_mpenv(int rank,int size)
             /* for communication errors, just record the error but continue */
             errflag = TRUE;
         }
-
-        #ifdef _DEBUG
-        printf("returned from _mpi_gather\n");
-        fflush(stdout);
-        #endif
 
         /* work through results and compare */
 
@@ -1921,11 +1911,95 @@ void MPIDI_collsel_pami_tune_cleanup()
   MPIDI_collsel_free_advisor_params(&MPIDI_Collsel_advisor_params);
 }
 
+
+
+/**********************************************************/
+/*                 CUDA Utilities                         */
+/**********************************************************/
+#if CUDA_AWARE_SUPPORT
+int CudaMemcpy(void* dst, const void* src, size_t count, int kind)
+{
+  return (*pamidCudaMemcpy)(dst, src, count, kind);
+}
+int CudaPointerGetAttributes(struct cudaPointerAttributes* attributes, const void* ptr)
+{
+  return  (*pamidCudaPointerGetAttributes)(attributes, ptr);
+}
+const char*  CudaGetErrorString( int error)
+{
+  return (*pamidCudaGetErrorString)(error);
+}
+#endif
+
+inline bool MPIDI_enable_cuda()
+{
+  bool result = false;
+#if CUDA_AWARE_SUPPORT
+  pamidCudaPtr = dlopen("libcudart.so", RTLD_NOW|RTLD_GLOBAL);
+  if(pamidCudaPtr == NULL)
+  {
+    TRACE_ERR("failed to open libcudart.so error=%s\n", dlerror());
+    return result;
+  }
+  else
+  {
+    pamidCudaMemcpy =  (int (*)())dlsym(pamidCudaPtr, "cudaMemcpy");
+    if(pamidCudaMemcpy == NULL)
+    {
+      dlclose(pamidCudaPtr);
+      return result;
+    }
+    pamidCudaPointerGetAttributes = (int (*)())dlsym(pamidCudaPtr, "cudaPointerGetAttributes");
+    if(pamidCudaPointerGetAttributes == NULL)
+    {
+      dlclose(pamidCudaPtr);
+      return result;
+    }
+    pamidCudaGetErrorString = (const char* (*)())dlsym(pamidCudaPtr, "cudaGetErrorString");
+    if(pamidCudaGetErrorString == NULL)
+    {
+      dlclose(pamidCudaPtr);
+      return result;
+    }
+    result = true;
+  }
+#endif
+  return result;
+}
+
+inline bool MPIDI_cuda_is_device_buf(const void* ptr)
+{
+  bool result = false;
+#if CUDA_AWARE_SUPPORT
+  if(MPIDI_Process.cuda_aware_support_on)
+  {
+    if(ptr != MPI_IN_PLACE)
+    {
+      struct cudaPointerAttributes cuda_attr;
+      cudaError_t e= CudaPointerGetAttributes  ( & cuda_attr, ptr);
+
+      if (e != cudaSuccess)
+          result = false;
+      else if (cuda_attr.memoryType ==  cudaMemoryTypeDevice)
+          result = true;
+      else
+          result = false;
+    }
+  }
+#endif
+  return result;
+}
+
+
+/**********************************************************/
+/*                End CUDA Utilities                      */
+/**********************************************************/
+
 #if defined(MPID_USE_NODE_IDS)
 #undef FUNCNAME
 #define FUNCNAME MPID_Get_node_id
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 static int _g_max_node_id = -1;
 int MPID_Get_node_id(MPID_Comm *comm, int rank, MPID_Node_id_t *id_p)
 {
@@ -1955,7 +2029,7 @@ int MPID_Get_node_id(MPID_Comm *comm, int rank, MPID_Node_id_t *id_p)
 #undef FUNCNAME
 #define FUNCNAME MPID_Get_max_node_id
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPID_Get_max_node_id(MPID_Comm *comm, MPID_Node_id_t *max_id_p)
 {
   int mpi_errno = MPI_SUCCESS;

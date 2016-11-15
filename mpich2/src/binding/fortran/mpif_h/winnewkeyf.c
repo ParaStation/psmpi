@@ -287,7 +287,7 @@ MPIR_Win_copy_attr_f90_proxy(
     MPI_Fint ierr = 0;
     MPI_Fint fhandle = (MPI_Fint)win;
     MPI_Fint fkeyval = (MPI_Fint)keyval;
-    MPI_Aint fvalue = MPI_VOID_PTR_CAST_TO_MPI_AINT (value);
+    MPI_Aint fvalue = MPIU_VOID_PTR_CAST_TO_MPI_AINT (value);
     MPI_Aint* fextra  = (MPI_Aint*)extra_state;
     MPI_Aint fnew = 0;
     MPI_Fint fflag = 0;
@@ -295,7 +295,7 @@ MPIR_Win_copy_attr_f90_proxy(
     ((F90_CopyFunction*)user_function)( &fhandle, &fkeyval, fextra, &fvalue, &fnew, &fflag, &ierr );
 
     *flag = MPIR_FROM_FLOG(fflag);
-    *new_value = MPI_AINT_CAST_TO_VOID_PTR (fnew);
+    *new_value = MPIU_AINT_CAST_TO_VOID_PTR (fnew);
     return (int)ierr;
 }
 
@@ -318,13 +318,14 @@ MPIR_Win_delete_attr_f90_proxy(
     MPI_Fint ierr = 0;
     MPI_Fint fhandle = (MPI_Fint)win;
     MPI_Fint fkeyval = (MPI_Fint)keyval;
-    MPI_Aint fvalue = MPI_VOID_PTR_CAST_TO_MPI_AINT (value);
+    MPI_Aint fvalue = MPIU_VOID_PTR_CAST_TO_MPI_AINT (value);
     MPI_Aint* fextra  = (MPI_Aint*)extra_state;
 
     ((F90_DeleteFunction*)user_function)( &fhandle, &fkeyval, &fvalue, fextra, &ierr );
     return (int)ierr;
 }
 FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval_ ( MPI_Win_copy_attr_function*v1, MPI_Win_delete_attr_function*v2, MPI_Fint *v3, void*v4, MPI_Fint *ierr ){
+    if (v4 == MPIR_F_MPI_BOTTOM) v4 = MPI_BOTTOM;
     *ierr = MPI_Win_create_keyval( v1, v2, v3, v4 );
 
     if (*ierr == MPI_SUCCESS) {

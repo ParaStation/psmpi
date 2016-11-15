@@ -123,7 +123,7 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 lib@MPLLIBNAME@_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
 am_lib@MPLLIBNAME@_la_OBJECTS = src/mplstr.lo src/mpltrmem.lo \
-	src/mplenv.lo src/mplsock.lo
+	src/mplenv.lo src/mplmsg.lo src/mplsock.lo
 lib@MPLLIBNAME@_la_OBJECTS = $(am_lib@MPLLIBNAME@_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -180,7 +180,8 @@ am__can_run_installinfo = \
   esac
 am__include_HEADERS_DIST = include/mpl.h include/mpl_utlist.h \
 	include/mpl_valgrind.h include/mplconfig.h include/mplenv.h \
-	include/mplstr.h include/mpltrmem.h include/mplsock.h
+	include/mplstr.h include/mpltrmem.h include/mplmsg.h \
+	include/mpliov.h include/mplsock.h
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -211,7 +212,8 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(includedir)"
 am__noinst_HEADERS_DIST = include/mpl.h include/mpl_utlist.h \
 	include/mpl_valgrind.h include/mplconfig.h include/mplenv.h \
-	include/mplstr.h include/mpltrmem.h include/mplsock.h
+	include/mplstr.h include/mpltrmem.h include/mplmsg.h \
+	include/mpliov.h include/mplsock.h
 HEADERS = $(include_HEADERS) $(noinst_HEADERS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
@@ -560,7 +562,13 @@ top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I confdb
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
 noinst_LTLIBRARIES = lib@MPLLIBNAME@.la
-lib@MPLLIBNAME@_la_SOURCES = src/mplstr.c src/mpltrmem.c src/mplenv.c src/mplsock.c
+lib@MPLLIBNAME@_la_SOURCES = \
+	src/mplstr.c \
+	src/mpltrmem.c \
+	src/mplenv.c \
+	src/mplmsg.c \
+	src/mplsock.c
+
 lib@MPLLIBNAME@_la_LDFLAGS = ${lib@MPLLIBNAME@_so_versionflags}
 MPL_TESTS = strsep
 strsep_SOURCES = test/strsep.c
@@ -573,6 +581,8 @@ mpl_headers = \
     include/mplenv.h       \
     include/mplstr.h       \
     include/mpltrmem.h     \
+    include/mplmsg.h       \
+    include/mpliov.h       \
     include/mplsock.h
 
 @MPL_EMBEDDED_MODE_TRUE@noinst_HEADERS = $(mpl_headers)
@@ -658,6 +668,7 @@ src/$(DEPDIR)/$(am__dirstamp):
 src/mplstr.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/mpltrmem.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/mplenv.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/mplmsg.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 src/mplsock.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 
 lib@MPLLIBNAME@.la: $(lib@MPLLIBNAME@_la_OBJECTS) $(lib@MPLLIBNAME@_la_DEPENDENCIES) $(EXTRA_lib@MPLLIBNAME@_la_DEPENDENCIES) 
@@ -694,6 +705,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mplenv.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mplmsg.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mplsock.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mplstr.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mpltrmem.Plo@am__quote@

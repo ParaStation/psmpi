@@ -103,7 +103,10 @@ noinst_PROGRAMS = commcreate1$(EXEEXT) dup$(EXEEXT) dupic$(EXEEXT) \
 	comm_create_group$(EXEEXT) comm_group_half$(EXEEXT) \
 	comm_group_rand$(EXEEXT) probe-intercomm$(EXEEXT) \
 	comm_idup$(EXEEXT) comm_idup_mul$(EXEEXT) \
-	comm_idup_overlap$(EXEEXT) comm_info$(EXEEXT)
+	comm_idup_overlap$(EXEEXT) comm_idup_isend$(EXEEXT) \
+	comm_idup_nb$(EXEEXT) comm_idup_iallreduce$(EXEEXT) \
+	comm_idup_comm$(EXEEXT) comm_idup_comm2$(EXEEXT) \
+	comm_create_group_idup$(EXEEXT) comm_info$(EXEEXT)
 subdir = comm
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -153,6 +156,12 @@ comm_create_group_LDADD = $(LDADD)
 comm_create_group_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+comm_create_group_idup_SOURCES = comm_create_group_idup.c
+comm_create_group_idup_OBJECTS = comm_create_group_idup.$(OBJEXT)
+comm_create_group_idup_LDADD = $(LDADD)
+comm_create_group_idup_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 comm_group_half_SOURCES = comm_group_half.c
 comm_group_half_OBJECTS = comm_group_half.$(OBJEXT)
 comm_group_half_LDADD = $(LDADD)
@@ -171,10 +180,40 @@ comm_idup_LDADD = $(LDADD)
 comm_idup_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+comm_idup_comm_SOURCES = comm_idup_comm.c
+comm_idup_comm_OBJECTS = comm_idup_comm.$(OBJEXT)
+comm_idup_comm_LDADD = $(LDADD)
+comm_idup_comm_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+comm_idup_comm2_SOURCES = comm_idup_comm2.c
+comm_idup_comm2_OBJECTS = comm_idup_comm2.$(OBJEXT)
+comm_idup_comm2_LDADD = $(LDADD)
+comm_idup_comm2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+comm_idup_iallreduce_SOURCES = comm_idup_iallreduce.c
+comm_idup_iallreduce_OBJECTS = comm_idup_iallreduce.$(OBJEXT)
+comm_idup_iallreduce_LDADD = $(LDADD)
+comm_idup_iallreduce_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+comm_idup_isend_SOURCES = comm_idup_isend.c
+comm_idup_isend_OBJECTS = comm_idup_isend.$(OBJEXT)
+comm_idup_isend_LDADD = $(LDADD)
+comm_idup_isend_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 comm_idup_mul_SOURCES = comm_idup_mul.c
 comm_idup_mul_OBJECTS = comm_idup_mul.$(OBJEXT)
 comm_idup_mul_LDADD = $(LDADD)
 comm_idup_mul_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+comm_idup_nb_SOURCES = comm_idup_nb.c
+comm_idup_nb_OBJECTS = comm_idup_nb.$(OBJEXT)
+comm_idup_nb_LDADD = $(LDADD)
+comm_idup_nb_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 comm_idup_overlap_SOURCES = comm_idup_overlap.c
@@ -302,14 +341,18 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = cmfree.c cmsplit.c cmsplit2.c cmsplit_type.c \
-	comm_create_group.c comm_group_half.c comm_group_rand.c \
-	comm_idup.c comm_idup_mul.c comm_idup_overlap.c comm_info.c \
+	comm_create_group.c comm_create_group_idup.c comm_group_half.c \
+	comm_group_rand.c comm_idup.c comm_idup_comm.c \
+	comm_idup_comm2.c comm_idup_iallreduce.c comm_idup_isend.c \
+	comm_idup_mul.c comm_idup_nb.c comm_idup_overlap.c comm_info.c \
 	commcreate1.c commname.c ctxalloc.c ctxsplit.c dup.c \
 	dup_with_info.c dupic.c ic1.c ic2.c iccreate.c icgroup.c icm.c \
 	icsplit.c probe-intercomm.c
 DIST_SOURCES = cmfree.c cmsplit.c cmsplit2.c cmsplit_type.c \
-	comm_create_group.c comm_group_half.c comm_group_rand.c \
-	comm_idup.c comm_idup_mul.c comm_idup_overlap.c comm_info.c \
+	comm_create_group.c comm_create_group_idup.c comm_group_half.c \
+	comm_group_rand.c comm_idup.c comm_idup_comm.c \
+	comm_idup_comm2.c comm_idup_iallreduce.c comm_idup_isend.c \
+	comm_idup_mul.c comm_idup_nb.c comm_idup_overlap.c comm_info.c \
 	commcreate1.c commname.c ctxalloc.c ctxsplit.c dup.c \
 	dup_with_info.c dupic.c ic1.c ic2.c iccreate.c icgroup.c icm.c \
 	icsplit.c probe-intercomm.c
@@ -467,6 +510,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -501,6 +545,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -518,6 +563,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -588,6 +634,10 @@ comm_create_group$(EXEEXT): $(comm_create_group_OBJECTS) $(comm_create_group_DEP
 	@rm -f comm_create_group$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(comm_create_group_OBJECTS) $(comm_create_group_LDADD) $(LIBS)
 
+comm_create_group_idup$(EXEEXT): $(comm_create_group_idup_OBJECTS) $(comm_create_group_idup_DEPENDENCIES) $(EXTRA_comm_create_group_idup_DEPENDENCIES) 
+	@rm -f comm_create_group_idup$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(comm_create_group_idup_OBJECTS) $(comm_create_group_idup_LDADD) $(LIBS)
+
 comm_group_half$(EXEEXT): $(comm_group_half_OBJECTS) $(comm_group_half_DEPENDENCIES) $(EXTRA_comm_group_half_DEPENDENCIES) 
 	@rm -f comm_group_half$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(comm_group_half_OBJECTS) $(comm_group_half_LDADD) $(LIBS)
@@ -600,9 +650,29 @@ comm_idup$(EXEEXT): $(comm_idup_OBJECTS) $(comm_idup_DEPENDENCIES) $(EXTRA_comm_
 	@rm -f comm_idup$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(comm_idup_OBJECTS) $(comm_idup_LDADD) $(LIBS)
 
+comm_idup_comm$(EXEEXT): $(comm_idup_comm_OBJECTS) $(comm_idup_comm_DEPENDENCIES) $(EXTRA_comm_idup_comm_DEPENDENCIES) 
+	@rm -f comm_idup_comm$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(comm_idup_comm_OBJECTS) $(comm_idup_comm_LDADD) $(LIBS)
+
+comm_idup_comm2$(EXEEXT): $(comm_idup_comm2_OBJECTS) $(comm_idup_comm2_DEPENDENCIES) $(EXTRA_comm_idup_comm2_DEPENDENCIES) 
+	@rm -f comm_idup_comm2$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(comm_idup_comm2_OBJECTS) $(comm_idup_comm2_LDADD) $(LIBS)
+
+comm_idup_iallreduce$(EXEEXT): $(comm_idup_iallreduce_OBJECTS) $(comm_idup_iallreduce_DEPENDENCIES) $(EXTRA_comm_idup_iallreduce_DEPENDENCIES) 
+	@rm -f comm_idup_iallreduce$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(comm_idup_iallreduce_OBJECTS) $(comm_idup_iallreduce_LDADD) $(LIBS)
+
+comm_idup_isend$(EXEEXT): $(comm_idup_isend_OBJECTS) $(comm_idup_isend_DEPENDENCIES) $(EXTRA_comm_idup_isend_DEPENDENCIES) 
+	@rm -f comm_idup_isend$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(comm_idup_isend_OBJECTS) $(comm_idup_isend_LDADD) $(LIBS)
+
 comm_idup_mul$(EXEEXT): $(comm_idup_mul_OBJECTS) $(comm_idup_mul_DEPENDENCIES) $(EXTRA_comm_idup_mul_DEPENDENCIES) 
 	@rm -f comm_idup_mul$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(comm_idup_mul_OBJECTS) $(comm_idup_mul_LDADD) $(LIBS)
+
+comm_idup_nb$(EXEEXT): $(comm_idup_nb_OBJECTS) $(comm_idup_nb_DEPENDENCIES) $(EXTRA_comm_idup_nb_DEPENDENCIES) 
+	@rm -f comm_idup_nb$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(comm_idup_nb_OBJECTS) $(comm_idup_nb_LDADD) $(LIBS)
 
 comm_idup_overlap$(EXEEXT): $(comm_idup_overlap_OBJECTS) $(comm_idup_overlap_DEPENDENCIES) $(EXTRA_comm_idup_overlap_DEPENDENCIES) 
 	@rm -f comm_idup_overlap$(EXEEXT)
@@ -679,10 +749,16 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cmsplit2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cmsplit_type.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_create_group.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_create_group_idup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_group_half.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_group_rand.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_idup.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_idup_comm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_idup_comm2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_idup_iallreduce.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_idup_isend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_idup_mul.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_idup_nb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_idup_overlap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_info.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/commcreate1.Po@am__quote@

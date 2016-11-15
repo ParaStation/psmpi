@@ -14,10 +14,12 @@
 extern "C" {
 #endif
 
+@DISABLE_TAG_SUPPORT@
 #undef MPICH_DEFINE_ATTR_TYPE_TYPES
 #if defined(__has_attribute)
 #  if __has_attribute(pointer_with_type_tag) && \
       __has_attribute(type_tag_for_datatype) && \
+      !defined(NO_TAGS_WITH_MODIFIERS) &&\
       !defined(MPICH_NO_ATTR_TYPE_TAGS)
 #    define MPICH_DEFINE_ATTR_TYPE_TYPES 1
 #    define MPICH_ATTR_POINTER_WITH_TYPE_TAG(buffer_idx, type_idx)  __attribute__((pointer_with_type_tag(MPI,buffer_idx,type_idx)))
@@ -84,7 +86,7 @@ extern "C" {
 #define MPI_DATATYPE_NULL  ((MPI_Datatype)0x0c000000)
 #define MPI_REQUEST_NULL   ((MPI_Request)0x2c000000)
 #define MPI_ERRHANDLER_NULL ((MPI_Errhandler)0x14000000)
-#define MPI_MESSAGE_NULL   ((MPI_Message)MPI_REQUEST_NULL)
+#define MPI_MESSAGE_NULL   ((MPI_Message)0x2c000000)
 #define MPI_MESSAGE_NO_PROC ((MPI_Message)0x6c000000)
 
 /* Results of the compare operations. */
@@ -453,7 +455,7 @@ typedef int (MPI_Copy_function) ( MPI_Comm, int, void *, void *, void *, int * )
 typedef int (MPI_Delete_function) ( MPI_Comm, int, void *, void * );
 
 #define MPI_VERSION    3
-#define MPI_SUBVERSION 0
+#define MPI_SUBVERSION 1
 #define MPICH_NAME     3
 #define MPICH         1
 #define MPICH_HAS_C2F  1
@@ -865,12 +867,14 @@ typedef int (MPIX_Grequest_wait_function)(int, void **, double, MPI_Status *);
 #define MPI_T_ERR_PVAR_NO_STARTSTOP 70  /* Pvar can't be started or stopped */
 #define MPI_T_ERR_PVAR_NO_WRITE     71  /* Pvar can't be written or reset */
 #define MPI_T_ERR_PVAR_NO_ATOMIC    72  /* Pvar can't be R/W atomically */
+#define MPI_T_ERR_INVALID_NAME      73  /* Name doesn't match */
+#define MPI_T_ERR_INVALID           74  /* Generic error code for MPI_T added in MPI-3.1 */
 
 
 #define MPI_ERR_LASTCODE    0x3fffffff  /* Last valid error code for a 
 					   predefined error class */
 /* WARNING: this is also defined in mpishared.h.  Update both locations */
-#define MPICH_ERR_LAST_CLASS 72     /* It is also helpful to know the
+#define MPICH_ERR_LAST_CLASS 74     /* It is also helpful to know the
 				       last valid class */
 
 #define MPICH_ERR_FIRST_MPIX 100 /* Define a gap here because sock is
@@ -1490,6 +1494,9 @@ int MPI_Type_size_x(MPI_Datatype datatype, MPI_Count *size);
 /* Noncollective communicator creation */
 int MPI_Comm_create_group(MPI_Comm comm, MPI_Group group, int tag, MPI_Comm *newcomm);
 
+/* MPI_Aint addressing arithmetic */
+MPI_Aint MPI_Aint_add(MPI_Aint base, MPI_Aint disp);
+MPI_Aint MPI_Aint_diff(MPI_Aint addr1, MPI_Aint addr2);
 
 /* MPI_T interface */
 /* The MPI_T routines are available only in C bindings - tell tools that they
@@ -1530,6 +1537,9 @@ int MPI_T_category_get_cvars(int cat_index, int len, int indices[]);
 int MPI_T_category_get_pvars(int cat_index, int len, int indices[]);
 int MPI_T_category_get_categories(int cat_index, int len, int indices[]);
 int MPI_T_category_changed(int *stamp);
+int MPI_T_cvar_get_index(const char *name, int *cvar_index);
+int MPI_T_pvar_get_index(const char *name, int var_class, int *pvar_index);
+int MPI_T_category_get_index(const char *name, int *cat_index);
 /* End Skip Prototypes */
 
 
@@ -2130,6 +2140,9 @@ int PMPI_Type_get_extent_x(MPI_Datatype datatype, MPI_Count *lb, MPI_Count *exte
 int PMPI_Type_get_true_extent_x(MPI_Datatype datatype, MPI_Count *lb, MPI_Count *extent);
 int PMPI_Type_size_x(MPI_Datatype datatype, MPI_Count *size);
 
+/* MPI_Aint addressing arithmetic */
+MPI_Aint PMPI_Aint_add(MPI_Aint base, MPI_Aint disp);
+MPI_Aint PMPI_Aint_diff(MPI_Aint addr1, MPI_Aint addr2);
 
 /* MPI_T interface */
 /* The MPI_T routines are available only in C bindings - tell tools that they
@@ -2170,6 +2183,9 @@ int PMPI_T_category_get_cvars(int cat_index, int len, int indices[]);
 int PMPI_T_category_get_pvars(int cat_index, int len, int indices[]);
 int PMPI_T_category_get_categories(int cat_index, int len, int indices[]);
 int PMPI_T_category_changed(int *stamp);
+int PMPI_T_cvar_get_index(const char *name, int *cvar_index);
+int PMPI_T_pvar_get_index(const char *name, int var_class, int *pvar_index);
+int PMPI_T_category_get_index(const char *name, int *cat_index);
 /* End Skip Prototypes */
 
 
@@ -2180,7 +2196,6 @@ int PMPIX_Comm_failure_get_acked(MPI_Comm comm, MPI_Group *failedgrp);
 int PMPIX_Comm_revoke(MPI_Comm comm);
 int PMPIX_Comm_shrink(MPI_Comm comm, MPI_Comm *newcomm);
 int PMPIX_Comm_agree(MPI_Comm comm, int *flag);
-
 
 #endif  /* MPI_BUILD_PROFILING */
 /* End of MPI bindings */

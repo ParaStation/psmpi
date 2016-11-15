@@ -7,7 +7,6 @@
 
 #include "adio.h"
 #include "adio_extern.h"
-
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -115,6 +114,7 @@ void ADIO_Close(ADIO_File fd, int *error_code)
     MPI_Info_free(&(fd->info));
 
     if (fd->io_buf != NULL) ADIOI_Free(fd->io_buf);
+    ADIOI_OneSidedCleanup(fd);
 
     /* memory for fd is freed in MPI_File_close */
 }

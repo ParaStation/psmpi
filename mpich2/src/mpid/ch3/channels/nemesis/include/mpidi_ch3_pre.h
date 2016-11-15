@@ -7,6 +7,7 @@
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 #include "mpid_nem_pre.h"
+#include "mpid_nem_generic_queue.h"
 
 #if defined(HAVE_NETINET_IN_H)
     #include <netinet/in.h>
@@ -44,8 +45,32 @@ typedef enum MPIDI_CH3I_VC_state
 MPIDI_CH3I_VC_state_t;
 
 /* size of private data area in vc and req for network modules */
-#define MPID_NEM_VC_NETMOD_AREA_LEN 128
-#define MPID_NEM_REQ_NETMOD_AREA_LEN 192
+#define MPIDI_NEM_VC_NETMOD_AREA_LEN 128
+#define MPIDI_NEM_REQ_NETMOD_AREA_LEN 192
+
+/* define functions for access MPID_nem_lmt_rts_queue_t */
+typedef GENERIC_Q_DECL(struct MPID_Request) MPID_nem_lmt_rts_queue_t;
+#define MPID_nem_lmt_rtsq_empty(q) GENERIC_Q_EMPTY (q)
+#define MPID_nem_lmt_rtsq_head(q) GENERIC_Q_HEAD (q)
+#define MPID_nem_lmt_rtsq_enqueue(qp, ep) do {                                          \
+        MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST,                         \
+                          "MPID_nem_lmt_rtsq_enqueue req=%p (handle=%#x), queue=%p",    \
+                          ep, (ep)->handle, qp));                                       \
+        GENERIC_Q_ENQUEUE (qp, ep, dev.next);                                           \
+    } while (0)
+#define MPID_nem_lmt_rtsq_dequeue(qp, epp)  do {                                        \
+        GENERIC_Q_DEQUEUE (qp, epp, dev.next);                                          \
+        MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST,                         \
+                          "MPID_nem_lmt_rtsq_dequeue req=%p (handle=%#x), queue=%p",    \
+                          *(epp), *(epp) ? (*(epp))->handle : -1, qp));                 \
+    } while (0)
+#define MPID_nem_lmt_rtsq_search_remove(qp, req_id, epp) do {                           \
+        GENERIC_Q_SEARCH_REMOVE(qp, _e->handle == (req_id), epp,                        \
+                struct MPID_Request, dev.next);                                         \
+        MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST,                         \
+                    "MPID_nem_lmt_rtsq_search_remove req=%p (handle=%#x), queue=%p",    \
+                    *(epp), req_id, qp));                                               \
+} while (0)
 
 typedef struct MPIDI_CH3I_VC
 {
@@ -94,9 +119,9 @@ typedef struct MPIDI_CH3I_VC
 
     /* LMT function pointers */
     int (* lmt_initiate_lmt)(struct MPIDI_VC *vc, union MPIDI_CH3_Pkt *rts_pkt, struct MPID_Request *req);
-    int (* lmt_start_recv)(struct MPIDI_VC *vc, struct MPID_Request *req, MPID_IOV s_cookie);
-    int (* lmt_start_send)(struct MPIDI_VC *vc, struct MPID_Request *sreq, MPID_IOV r_cookie);
-    int (* lmt_handle_cookie)(struct MPIDI_VC *vc, struct MPID_Request *req, MPID_IOV cookie);
+    int (* lmt_start_recv)(struct MPIDI_VC *vc, struct MPID_Request *req, MPL_IOV s_cookie);
+    int (* lmt_start_send)(struct MPIDI_VC *vc, struct MPID_Request *sreq, MPL_IOV r_cookie);
+    int (* lmt_handle_cookie)(struct MPIDI_VC *vc, struct MPID_Request *req, MPL_IOV cookie);
     int (* lmt_done_send)(struct MPIDI_VC *vc, struct MPID_Request *req);
     int (* lmt_done_recv)(struct MPIDI_VC *vc, struct MPID_Request *req);
     int (* lmt_vc_terminated)(struct MPIDI_VC *vc);
@@ -110,6 +135,7 @@ typedef struct MPIDI_CH3I_VC
     struct {struct MPID_nem_lmt_shm_wait_element *head, *tail;} lmt_queue;
     struct MPID_nem_lmt_shm_wait_element *lmt_active_lmt;
     int lmt_enqueued; /* FIXME: used for debugging */
+    MPID_nem_lmt_rts_queue_t lmt_rts_queue;
 
     /* Pointer to per-vc packet handlers */
     MPIDI_CH3_PktHandler_Fcn **pkt_handler;
@@ -117,7 +143,7 @@ typedef struct MPIDI_CH3I_VC
     
     union
     {
-        char padding[MPID_NEM_VC_NETMOD_AREA_LEN];
+        char padding[MPIDI_NEM_VC_NETMOD_AREA_LEN];
 
         /* Temporary helper field for ticket #1679.  Should force proper pointer
          * alignment on finnicky platforms like SPARC.  Proper fix is to stop
@@ -143,12 +169,12 @@ struct MPIDI_CH3I_Request
     MPI_Request          lmt_req_id;     /* request id of remote side */
     struct MPID_Request *lmt_req;        /* pointer to original send/recv request */
     MPIDI_msg_sz_t       lmt_data_sz;    /* data size to be transferred, after checking for truncation */
-    MPID_IOV             lmt_tmp_cookie; /* temporary storage for received cookie */
+    MPL_IOV             lmt_tmp_cookie; /* temporary storage for received cookie */
     void                *s_cookie;       /* temporary storage for the cookie data in case the packet can't be sent immediately */
 
     union
     {
-        char padding[MPID_NEM_REQ_NETMOD_AREA_LEN];
+        char padding[MPIDI_NEM_REQ_NETMOD_AREA_LEN];
 
         /* Temporary helper field for ticket #1679.  Should force proper pointer
          * alignment on finnicky platforms like SPARC.  Proper fix is to stop
@@ -172,8 +198,8 @@ struct MPIDI_CH3I_Request
         MPIDI_DBG_PRINTF((55, FCNAME, "  cc = %d\n", (req)->cc));			\
         for (i = 0; i < (req)->iov_count; ++i)                                          \
             MPIDI_DBG_PRINTF((55, FCNAME, "  dev.iov[%d] = (%p, %d)\n", i,		\
-                              (req)->dev.iov[i+(req)->dev.iov_offset].MPID_IOV_BUF,     \
-                              (req)->dev.iov[i+(req)->dev.iov_offset].MPID_IOV_LEN));  \
+                              (req)->dev.iov[i+(req)->dev.iov_offset].MPL_IOV_BUF,     \
+                              (req)->dev.iov[i+(req)->dev.iov_offset].MPL_IOV_LEN));  \
     MPIDI_DBG_PRINTF((55, FCNAME, "  dev.iov_count = %d\n",                             \
                       (req)->dev.iov_count));                                           \
     MPIDI_DBG_PRINTF((55, FCNAME, "  dev.state = 0x%x\n", (req)->dev.state));           \
@@ -202,6 +228,7 @@ MPIDI_CH3I_Progress_state;
 #define MPIDI_CH3_PROGRESS_STATE_DECL MPIDI_CH3I_Progress_state ch;
 
 extern OPA_int_t MPIDI_CH3I_progress_completion_count;
+
 #define MPIDI_CH3I_INCR_PROGRESS_COMPLETION_COUNT do {                                  \
         OPA_write_barrier();                                                            \
         OPA_incr_int(&MPIDI_CH3I_progress_completion_count);                            \

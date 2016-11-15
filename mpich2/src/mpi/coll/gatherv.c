@@ -72,7 +72,7 @@ int MPI_Gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void 
 #undef FUNCNAME
 #define FUNCNAME MPIR_Gatherv
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Gatherv ( 
 	const void *sendbuf,
 	int sendcount,
@@ -83,20 +83,18 @@ int MPIR_Gatherv (
 	MPI_Datatype recvtype,
 	int root,
 	MPID_Comm *comm_ptr,
-        int *errflag )
+        MPIR_Errflag_t *errflag )
 {
     int        comm_size, rank;
     int        mpi_errno = MPI_SUCCESS;
     int mpi_errno_ret = MPI_SUCCESS;
-    MPI_Comm comm;
     MPI_Aint       extent;
     int            i, reqs;
     int min_procs;
-    MPI_Request *reqarray;
+    MPID_Request **reqarray;
     MPI_Status *starray;
     MPIU_CHKLMEM_DECL(2);
-    
-    comm = comm_ptr->handle;
+
     rank = comm_ptr->rank;
     
     /* check if multiple threads are calling this collective function */
@@ -112,10 +110,10 @@ int MPIR_Gatherv (
 
         MPID_Datatype_get_extent_macro(recvtype, extent);
 	/* each node can make sure it is not going to overflow aint */
-        MPID_Ensure_Aint_fits_in_pointer(MPI_VOID_PTR_CAST_TO_MPI_AINT recvbuf +
+        MPIU_Ensure_Aint_fits_in_pointer(MPIU_VOID_PTR_CAST_TO_MPI_AINT recvbuf +
 					 displs[rank] * extent);
 
-        MPIU_CHKLMEM_MALLOC(reqarray, MPI_Request *, comm_size * sizeof(MPI_Request), mpi_errno, "reqarray");
+        MPIU_CHKLMEM_MALLOC(reqarray, MPID_Request **, comm_size * sizeof(MPID_Request *), mpi_errno, "reqarray");
         MPIU_CHKLMEM_MALLOC(starray, MPI_Status *, comm_size * sizeof(MPI_Status), mpi_errno, "starray");
 
         reqs = 0;
@@ -126,21 +124,21 @@ int MPIR_Gatherv (
                         mpi_errno = MPIR_Localcopy(sendbuf, sendcount, sendtype,
                                                    ((char *)recvbuf+displs[rank]*extent), 
                                                    recvcounts[rank], recvtype);
-                        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+                        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
                     }
                 }
                 else {
                     mpi_errno = MPIC_Irecv(((char *)recvbuf+displs[i]*extent),
                                               recvcounts[i], recvtype, i,
-                                              MPIR_GATHERV_TAG, comm,
+                                              MPIR_GATHERV_TAG, comm_ptr,
                                               &reqarray[reqs++]);
-                    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+                    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
                 }
             }
         }
         /* ... then wait for *all* of them to finish: */
         mpi_errno = MPIC_Waitall(reqs, reqarray, starray, errflag);
-        if (mpi_errno&& mpi_errno != MPI_ERR_IN_STATUS) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno&& mpi_errno != MPI_ERR_IN_STATUS) MPIR_ERR_POP(mpi_errno);
         
         /* --BEGIN ERROR HANDLING-- */
         if (mpi_errno == MPI_ERR_IN_STATUS) {
@@ -149,9 +147,9 @@ int MPIR_Gatherv (
                     mpi_errno = starray[i].MPI_ERROR;
                     if (mpi_errno) {
                         /* for communication errors, just record the error but continue */
-                        *errflag = TRUE;
-                        MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**fail");
-                        MPIU_ERR_ADD(mpi_errno_ret, mpi_errno);
+                        *errflag = MPIR_ERR_GET_CLASS(mpi_errno);
+                        MPIR_ERR_SET(mpi_errno, *errflag, "**fail");
+                        MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
                     }
                 }
             }
@@ -174,22 +172,22 @@ int MPIR_Gatherv (
 
             if (comm_size >= min_procs) {
                 mpi_errno = MPIC_Ssend(sendbuf, sendcount, sendtype, root,
-                                          MPIR_GATHERV_TAG, comm, errflag);
+                                          MPIR_GATHERV_TAG, comm_ptr, errflag);
                 if (mpi_errno) {
                     /* for communication errors, just record the error but continue */
-                    *errflag = TRUE;
-                    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**fail");
-                    MPIU_ERR_ADD(mpi_errno_ret, mpi_errno);
+                    *errflag = MPIR_ERR_GET_CLASS(mpi_errno);
+                    MPIR_ERR_SET(mpi_errno, *errflag, "**fail");
+                    MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
                 }
             }
             else {
                 mpi_errno = MPIC_Send(sendbuf, sendcount, sendtype, root,
-                                         MPIR_GATHERV_TAG, comm, errflag);
+                                         MPIR_GATHERV_TAG, comm_ptr, errflag);
                 if (mpi_errno) {
                     /* for communication errors, just record the error but continue */
-                    *errflag = TRUE;
-                    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**fail");
-                    MPIU_ERR_ADD(mpi_errno_ret, mpi_errno);
+                    *errflag = MPIR_ERR_GET_CLASS(mpi_errno);
+                    MPIR_ERR_SET(mpi_errno, *errflag, "**fail");
+                    MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
                 }
             }
         }
@@ -202,8 +200,8 @@ fn_exit:
     MPIU_CHKLMEM_FREEALL();
     if (mpi_errno_ret)
         mpi_errno = mpi_errno_ret;
-    else if (*errflag)
-        MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+    else if (*errflag != MPIR_ERR_NONE)
+        MPIR_ERR_SET(mpi_errno, *errflag, "**coll_fail");
     return mpi_errno;
 fn_fail:
     goto fn_exit;
@@ -216,10 +214,10 @@ fn_fail:
 #undef FUNCNAME
 #define FUNCNAME MPIR_Gatherv_impl
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Gatherv_impl(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                       void *recvbuf, const int *recvcounts, const int *displs, MPI_Datatype recvtype,
-                      int root, MPID_Comm *comm_ptr, int *errflag)
+                      int root, MPID_Comm *comm_ptr, MPIR_Errflag_t *errflag)
 {
     int mpi_errno = MPI_SUCCESS;
         
@@ -228,13 +226,13 @@ int MPIR_Gatherv_impl(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 	mpi_errno = comm_ptr->coll_fns->Gatherv(sendbuf, sendcount, sendtype,
                                                 recvbuf, recvcounts, displs, recvtype,
                                                 root, comm_ptr, errflag);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 	/* --END USEREXTENSION-- */
     } else {
         mpi_errno = MPIR_Gatherv(sendbuf, sendcount, sendtype,
                                  recvbuf, recvcounts, displs, recvtype,
                                  root, comm_ptr, errflag);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     }
 
  fn_exit:
@@ -249,7 +247,7 @@ int MPIR_Gatherv_impl(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 #undef FUNCNAME
 #define FUNCNAME MPI_Gatherv
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 
 MPI_Gatherv - Gathers into specified locations from all processes in a group
@@ -289,12 +287,12 @@ int MPI_Gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    int errflag = FALSE;
+    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GATHERV);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_COLL_FUNC_ENTER(MPID_STATE_MPI_GATHERV);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -426,7 +424,7 @@ int MPI_Gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     
   fn_exit:
     MPID_MPI_COLL_FUNC_EXIT(MPID_STATE_MPI_GATHERV);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

@@ -266,5 +266,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_attach_( MPI_Fint *, void*, MPI_Ain
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_win_attach_ ( MPI_Fint *v1, void*v2, MPI_Aint * v3, MPI_Fint *ierr ){
+    if (v2 == MPIR_F_MPI_BOTTOM) v2 = MPI_BOTTOM;
     *ierr = MPI_Win_attach( (MPI_Win)*v1, v2, *v3 );
 }

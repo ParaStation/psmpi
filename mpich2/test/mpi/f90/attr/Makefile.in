@@ -106,9 +106,10 @@ host_triplet = @host@
 noinst_PROGRAMS = attrmpi1f90$(EXEEXT) baseattrf90$(EXEEXT) \
 	baseattr2f90$(EXEEXT) commattrf90$(EXEEXT) \
 	commattr2f90$(EXEEXT) commattr3f90$(EXEEXT) \
-	typeattrf90$(EXEEXT) typeattr2f90$(EXEEXT) \
-	typeattr3f90$(EXEEXT) fandcattrf90$(EXEEXT) \
-	baseattr3f90$(EXEEXT) attrlangf90$(EXEEXT)
+	commattr4f90$(EXEEXT) typeattrf90$(EXEEXT) \
+	typeattr2f90$(EXEEXT) typeattr3f90$(EXEEXT) \
+	fandcattrf90$(EXEEXT) baseattr3f90$(EXEEXT) \
+	attrlangf90$(EXEEXT)
 @MAINTAINER_MODE_TRUE@am__append_1 = Makefile.am-stamp testlist.ap Makefile.ap
 subdir = f90/attr
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -157,6 +158,10 @@ commattr3f90_SOURCES = commattr3f90.f90
 commattr3f90_OBJECTS = commattr3f90.$(OBJEXT)
 commattr3f90_LDADD = $(LDADD)
 commattr3f90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+commattr4f90_SOURCES = commattr4f90.f90
+commattr4f90_OBJECTS = commattr4f90.$(OBJEXT)
+commattr4f90_LDADD = $(LDADD)
+commattr4f90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
 commattrf90_SOURCES = commattrf90.f90
 commattrf90_OBJECTS = commattrf90.$(OBJEXT)
 commattrf90_LDADD = $(LDADD)
@@ -219,12 +224,14 @@ am__v_FCLD_0 = @echo "  FCLD    " $@;
 am__v_FCLD_1 = 
 SOURCES = $(attrlangf90_SOURCES) attrmpi1f90.f90 baseattr2f90.f90 \
 	$(baseattr3f90_SOURCES) baseattrf90.f90 commattr2f90.f90 \
-	commattr3f90.f90 commattrf90.f90 $(fandcattrf90_SOURCES) \
-	typeattr2f90.f90 typeattr3f90.f90 typeattrf90.f90
+	commattr3f90.f90 commattr4f90.f90 commattrf90.f90 \
+	$(fandcattrf90_SOURCES) typeattr2f90.f90 typeattr3f90.f90 \
+	typeattrf90.f90
 DIST_SOURCES = $(attrlangf90_SOURCES) attrmpi1f90.f90 baseattr2f90.f90 \
 	$(baseattr3f90_SOURCES) baseattrf90.f90 commattr2f90.f90 \
-	commattr3f90.f90 commattrf90.f90 $(fandcattrf90_SOURCES) \
-	typeattr2f90.f90 typeattr3f90.f90 typeattrf90.f90
+	commattr3f90.f90 commattr4f90.f90 commattrf90.f90 \
+	$(fandcattrf90_SOURCES) typeattr2f90.f90 typeattr3f90.f90 \
+	typeattrf90.f90
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -379,6 +386,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -413,6 +421,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -430,6 +439,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -517,6 +527,10 @@ commattr2f90$(EXEEXT): $(commattr2f90_OBJECTS) $(commattr2f90_DEPENDENCIES) $(EX
 commattr3f90$(EXEEXT): $(commattr3f90_OBJECTS) $(commattr3f90_DEPENDENCIES) $(EXTRA_commattr3f90_DEPENDENCIES) 
 	@rm -f commattr3f90$(EXEEXT)
 	$(AM_V_FCLD)$(FCLINK) $(commattr3f90_OBJECTS) $(commattr3f90_LDADD) $(LIBS)
+
+commattr4f90$(EXEEXT): $(commattr4f90_OBJECTS) $(commattr4f90_DEPENDENCIES) $(EXTRA_commattr4f90_DEPENDENCIES) 
+	@rm -f commattr4f90$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(commattr4f90_OBJECTS) $(commattr4f90_LDADD) $(LIBS)
 
 commattrf90$(EXEEXT): $(commattrf90_OBJECTS) $(commattrf90_DEPENDENCIES) $(EXTRA_commattrf90_DEPENDENCIES) 
 	@rm -f commattrf90$(EXEEXT)

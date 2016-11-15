@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 # Copyright © 2009-2014 Inria.  All rights reserved.
-# Copyright © 2009-2013 Université Bordeaux 1
+# Copyright © 2009-2013 Université Bordeaux
 # Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
 
@@ -94,9 +94,6 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-TESTS = hwloc-hello$(EXEEXT) $(am__EXEEXT_1)
-@HWLOC_HAVE_CXX_TRUE@am__append_1 = hwloc-hello-cpp
-check_PROGRAMS = $(am__EXEEXT_2)
 subdir = doc
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/hwloc.m4 \
@@ -119,16 +116,6 @@ CONFIG_HEADER = $(top_builddir)/include/private/autogen/config.h \
 	$(top_builddir)/include/hwloc/autogen/config.h
 CONFIG_CLEAN_FILES = doxygen-config.cfg
 CONFIG_CLEAN_VPATH_FILES =
-@HWLOC_HAVE_CXX_TRUE@am__EXEEXT_1 = hwloc-hello-cpp$(EXEEXT)
-am__EXEEXT_2 = hwloc-hello$(EXEEXT) $(am__EXEEXT_1)
-hwloc_hello_SOURCES = hwloc-hello.c
-hwloc_hello_OBJECTS = hwloc-hello.$(OBJEXT)
-AM_V_lt = $(am__v_lt_@AM_V@)
-am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
-am__v_lt_0 = --silent
-am__v_lt_1 = 
-am_hwloc_hello_cpp_OBJECTS = hwloc-hello-cpp.$(OBJEXT)
-hwloc_hello_cpp_OBJECTS = $(am_hwloc_hello_cpp_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -141,48 +128,16 @@ AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
-DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include/private/autogen -I$(top_builddir)/include/hwloc/autogen
-depcomp = $(SHELL) $(top_srcdir)/./config/depcomp
-am__depfiles_maybe = depfiles
-am__mv = mv -f
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CFLAGS) $(CFLAGS)
-AM_V_CC = $(am__v_CC_@AM_V@)
-am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
-am__v_CC_0 = @echo "  CC      " $@;
-am__v_CC_1 = 
-CCLD = $(CC)
-LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-AM_V_CCLD = $(am__v_CCLD_@AM_V@)
-am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
-am__v_CCLD_0 = @echo "  CCLD    " $@;
-am__v_CCLD_1 = 
-CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-LTCXXCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CXXFLAGS) $(CXXFLAGS)
-AM_V_CXX = $(am__v_CXX_@AM_V@)
-am__v_CXX_ = $(am__v_CXX_@AM_DEFAULT_V@)
-am__v_CXX_0 = @echo "  CXX     " $@;
-am__v_CXX_1 = 
-CXXLD = $(CXX)
-CXXLINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
-am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
-am__v_CXXLD_0 = @echo "  CXXLD   " $@;
-am__v_CXXLD_1 = 
-SOURCES = hwloc-hello.c $(hwloc_hello_cpp_SOURCES)
-DIST_SOURCES = hwloc-hello.c $(hwloc_hello_cpp_SOURCES)
+SOURCES =
+DIST_SOURCES =
+RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
+	ctags-recursive dvi-recursive html-recursive info-recursive \
+	install-data-recursive install-dvi-recursive \
+	install-exec-recursive install-html-recursive \
+	install-info-recursive install-pdf-recursive \
+	install-ps-recursive install-recursive installcheck-recursive \
+	installdirs-recursive pdf-recursive ps-recursive \
+	tags-recursive uninstall-recursive
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -241,6 +196,7 @@ am__installdirs = "$(DESTDIR)$(man3dir)" "$(DESTDIR)$(man3_bitmapdir)" \
 	"$(DESTDIR)$(man3_object_typesdir)" \
 	"$(DESTDIR)$(man3_objectsdir)" \
 	"$(DESTDIR)$(man3_openfabricsdir)" \
+	"$(DESTDIR)$(man3_syntheticexportdir)" \
 	"$(DESTDIR)$(man3_tinkerdir)" "$(DESTDIR)$(man3_xmlexportdir)" \
 	"$(DESTDIR)$(pdfdir)"
 NROFF = nroff
@@ -259,8 +215,16 @@ DATA = $(man3_bitmap_DATA) $(man3_configuration_DATA) \
 	$(man3_membinding_DATA) $(man3_myriexpress_DATA) \
 	$(man3_object_sets_DATA) $(man3_object_strings_DATA) \
 	$(man3_object_types_DATA) $(man3_objects_DATA) \
-	$(man3_openfabrics_DATA) $(man3_tinker_DATA) \
-	$(man3_xmlexport_DATA) $(pdf_DATA)
+	$(man3_openfabrics_DATA) $(man3_syntheticexport_DATA) \
+	$(man3_tinker_DATA) $(man3_xmlexport_DATA) $(pdf_DATA)
+RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
+  distclean-recursive maintainer-clean-recursive
+am__recursive_targets = \
+  $(RECURSIVE_TARGETS) \
+  $(RECURSIVE_CLEAN_TARGETS) \
+  $(am__extra_recursive_targets)
+AM_RECURSIVE_TARGETS = $(am__recursive_targets:-recursive=) TAGS CTAGS \
+	distdir
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -280,187 +244,35 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__tty_colors_dummy = \
-  mgn= red= grn= lgn= blu= brg= std=; \
-  am__color_tests=no
-am__tty_colors = { \
-  $(am__tty_colors_dummy); \
-  if test "X$(AM_COLOR_TESTS)" = Xno; then \
-    am__color_tests=no; \
-  elif test "X$(AM_COLOR_TESTS)" = Xalways; then \
-    am__color_tests=yes; \
-  elif test "X$$TERM" != Xdumb && { test -t 1; } 2>/dev/null; then \
-    am__color_tests=yes; \
-  fi; \
-  if test $$am__color_tests = yes; then \
-    red='[0;31m'; \
-    grn='[0;32m'; \
-    lgn='[1;32m'; \
-    blu='[1;34m'; \
-    mgn='[0;35m'; \
-    brg='[1m'; \
-    std='[m'; \
-  fi; \
-}
-am__recheck_rx = ^[ 	]*:recheck:[ 	]*
-am__global_test_result_rx = ^[ 	]*:global-test-result:[ 	]*
-am__copy_in_global_log_rx = ^[ 	]*:copy-in-global-log:[ 	]*
-# A command that, given a newline-separated list of test names on the
-# standard input, print the name of the tests that are to be re-run
-# upon "make recheck".
-am__list_recheck_tests = $(AWK) '{ \
-  recheck = 1; \
-  while ((rc = (getline line < ($$0 ".trs"))) != 0) \
-    { \
-      if (rc < 0) \
-        { \
-          if ((getline line2 < ($$0 ".log")) < 0) \
-	    recheck = 0; \
-          break; \
-        } \
-      else if (line ~ /$(am__recheck_rx)[nN][Oo]/) \
-        { \
-          recheck = 0; \
-          break; \
-        } \
-      else if (line ~ /$(am__recheck_rx)[yY][eE][sS]/) \
-        { \
-          break; \
-        } \
-    }; \
-  if (recheck) \
-    print $$0; \
-  close ($$0 ".trs"); \
-  close ($$0 ".log"); \
-}'
-# A command that, given a newline-separated list of test names on the
-# standard input, create the global log from their .trs and .log files.
-am__create_global_log = $(AWK) ' \
-function fatal(msg) \
-{ \
-  print "fatal: making $@: " msg | "cat >&2"; \
-  exit 1; \
-} \
-function rst_section(header) \
-{ \
-  print header; \
-  len = length(header); \
-  for (i = 1; i <= len; i = i + 1) \
-    printf "="; \
-  printf "\n\n"; \
-} \
-{ \
-  copy_in_global_log = 1; \
-  global_test_result = "RUN"; \
-  while ((rc = (getline line < ($$0 ".trs"))) != 0) \
-    { \
-      if (rc < 0) \
-         fatal("failed to read from " $$0 ".trs"); \
-      if (line ~ /$(am__global_test_result_rx)/) \
-        { \
-          sub("$(am__global_test_result_rx)", "", line); \
-          sub("[ 	]*$$", "", line); \
-          global_test_result = line; \
-        } \
-      else if (line ~ /$(am__copy_in_global_log_rx)[nN][oO]/) \
-        copy_in_global_log = 0; \
-    }; \
-  if (copy_in_global_log) \
-    { \
-      rst_section(global_test_result ": " $$0); \
-      while ((rc = (getline line < ($$0 ".log"))) != 0) \
-      { \
-        if (rc < 0) \
-          fatal("failed to read from " $$0 ".log"); \
-        print line; \
-      }; \
-      printf "\n"; \
-    }; \
-  close ($$0 ".trs"); \
-  close ($$0 ".log"); \
-}'
-# Restructured Text title.
-am__rst_title = { sed 's/.*/   &   /;h;s/./=/g;p;x;s/ *$$//;p;g' && echo; }
-# Solaris 10 'make', and several other traditional 'make' implementations,
-# pass "-e" to $(SHELL), and POSIX 2008 even requires this.  Work around it
-# by disabling -e (using the XSI extension "set +e") if it's set.
-am__sh_e_setup = case $$- in *e*) set +e;; esac
-# Default flags passed to test drivers.
-am__common_driver_flags = \
-  --color-tests "$$am__color_tests" \
-  --enable-hard-errors "$$am__enable_hard_errors" \
-  --expect-failure "$$am__expect_failure"
-# To be inserted before the command running the test.  Creates the
-# directory for the log if needed.  Stores in $dir the directory
-# containing $f, in $tst the test, in $log the log.  Executes the
-# developer- defined test setup AM_TESTS_ENVIRONMENT (if any), and
-# passes TESTS_ENVIRONMENT.  Set up options for the wrapper that
-# will run the test scripts (or their associated LOG_COMPILER, if
-# thy have one).
-am__check_pre = \
-$(am__sh_e_setup);					\
-$(am__vpath_adj_setup) $(am__vpath_adj)			\
-$(am__tty_colors);					\
-srcdir=$(srcdir); export srcdir;			\
-case "$@" in						\
-  */*) am__odir=`echo "./$@" | sed 's|/[^/]*$$||'`;;	\
-    *) am__odir=.;; 					\
-esac;							\
-test "x$$am__odir" = x"." || test -d "$$am__odir" 	\
-  || $(MKDIR_P) "$$am__odir" || exit $$?;		\
-if test -f "./$$f"; then dir=./;			\
-elif test -f "$$f"; then dir=;				\
-else dir="$(srcdir)/"; fi;				\
-tst=$$dir$$f; log='$@'; 				\
-if test -n '$(DISABLE_HARD_ERRORS)'; then		\
-  am__enable_hard_errors=no; 				\
-else							\
-  am__enable_hard_errors=yes; 				\
-fi; 							\
-case " $(XFAIL_TESTS) " in				\
-  *[\ \	]$$f[\ \	]* | *[\ \	]$$dir$$f[\ \	]*) \
-    am__expect_failure=yes;;				\
-  *)							\
-    am__expect_failure=no;;				\
-esac; 							\
-$(AM_TESTS_ENVIRONMENT) $(TESTS_ENVIRONMENT)
-# A shell command to get the names of the tests scripts with any registered
-# extension removed (i.e., equivalently, the names of the test logs, with
-# the '.log' extension removed).  The result is saved in the shell variable
-# '$bases'.  This honors runtime overriding of TESTS and TEST_LOGS.  Sadly,
-# we cannot use something simpler, involving e.g., "$(TEST_LOGS:.log=)",
-# since that might cause problem with VPATH rewrites for suffix-less tests.
-# See also 'test-harness-vpath-rewrite.sh' and 'test-trs-basic.sh'.
-am__set_TESTS_bases = \
-  bases='$(TEST_LOGS)'; \
-  bases=`for i in $$bases; do echo $$i; done | sed 's/\.log$$//'`; \
-  bases=`echo $$bases`
-RECHECK_LOGS = $(TEST_LOGS)
-AM_RECURSIVE_TARGETS = check recheck
-TEST_SUITE_LOG = test-suite.log
-TEST_EXTENSIONS = @EXEEXT@ .test
-LOG_DRIVER = $(SHELL) $(top_srcdir)/./config/test-driver
-LOG_COMPILE = $(LOG_COMPILER) $(AM_LOG_FLAGS) $(LOG_FLAGS)
-am__set_b = \
-  case '$@' in \
-    */*) \
-      case '$*' in \
-        */*) b='$*';; \
-          *) b=`echo '$@' | sed 's/\.log$$//'`; \
-       esac;; \
-    *) \
-      b='$*';; \
-  esac
-am__test_logs1 = $(TESTS:=.log)
-am__test_logs2 = $(am__test_logs1:@EXEEXT@.log=.log)
-TEST_LOGS = $(am__test_logs2:.test.log=.log)
-TEST_LOG_DRIVER = $(SHELL) $(top_srcdir)/./config/test-driver
-TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
-	$(TEST_LOG_FLAGS)
+DIST_SUBDIRS = $(SUBDIRS)
 am__DIST_COMMON = $(srcdir)/Makefile.in \
-	$(srcdir)/doxygen-config.cfg.in $(top_srcdir)/./config/depcomp \
-	$(top_srcdir)/./config/test-driver
+	$(srcdir)/doxygen-config.cfg.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+am__relativize = \
+  dir0=`pwd`; \
+  sed_first='s,^\([^/]*\)/.*$$,\1,'; \
+  sed_rest='s,^[^/]*/*,,'; \
+  sed_last='s,^.*/\([^/]*\)$$,\1,'; \
+  sed_butlast='s,/*[^/]*$$,,'; \
+  while test -n "$$dir1"; do \
+    first=`echo "$$dir1" | sed -e "$$sed_first"`; \
+    if test "$$first" != "."; then \
+      if test "$$first" = ".."; then \
+        dir2=`echo "$$dir0" | sed -e "$$sed_last"`/"$$dir2"; \
+        dir0=`echo "$$dir0" | sed -e "$$sed_butlast"`; \
+      else \
+        first2=`echo "$$dir2" | sed -e "$$sed_first"`; \
+        if test "$$first2" = "$$first"; then \
+          dir2=`echo "$$dir2" | sed -e "$$sed_rest"`; \
+        else \
+          dir2="../$$dir2"; \
+        fi; \
+        dir0="$$dir0"/"$$first"; \
+      fi; \
+    fi; \
+    dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
+  done; \
+  reldir="$$dir2"
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
@@ -529,8 +341,6 @@ HWLOC_NVML_LIBS = @HWLOC_NVML_LIBS@
 HWLOC_OPENCL_LIBS = @HWLOC_OPENCL_LIBS@
 HWLOC_PCIACCESS_CFLAGS = @HWLOC_PCIACCESS_CFLAGS@
 HWLOC_PCIACCESS_LIBS = @HWLOC_PCIACCESS_LIBS@
-HWLOC_PCIUTILS_CFLAGS = @HWLOC_PCIUTILS_CFLAGS@
-HWLOC_PCIUTILS_LIBS = @HWLOC_PCIUTILS_LIBS@
 HWLOC_PLUGINS_DIR = @HWLOC_PLUGINS_DIR@
 HWLOC_PLUGINS_PATH = @HWLOC_PLUGINS_PATH@
 HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
@@ -579,7 +389,6 @@ PDFLATEX = @PDFLATEX@
 PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 SED = @SED@
-SED_I = @SED_I@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -782,11 +591,11 @@ EXTRA_DIST = \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/HWLOC_OBJ_GROUP.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/HWLOC_OBJ_MACHINE.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/HWLOC_OBJ_MISC.3 \
-@HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/HWLOC_OBJ_NODE.3 \
+@HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/HWLOC_OBJ_NUMANODE.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/HWLOC_OBJ_OS_DEVICE.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/HWLOC_OBJ_PU.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/HWLOC_OBJ_PCI_DEVICE.3 \
-@HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/HWLOC_OBJ_SOCKET.3 \
+@HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/HWLOC_OBJ_PACKAGE.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/HWLOC_OBJ_SYSTEM.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/HWLOC_OBJ_TYPE_MAX.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_obj_type_t.3 \
@@ -834,6 +643,7 @@ EXTRA_DIST = \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_topology_init.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_topology_load.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_topology_destroy.3 \
+@HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_topology_dup.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_topology_check.3
 
 @HWLOC_INSTALL_DOXYGEN_TRUE@man3_configurationdir = $(man3dir)
@@ -863,7 +673,8 @@ EXTRA_DIST = \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_topology_cpubind_support.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_topology_membind_support.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_topology_support.3 \
-@HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_topology_get_support.3
+@HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_topology_set_userdata.3 \
+@HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_topology_get_userdata.3
 
 @HWLOC_INSTALL_DOXYGEN_TRUE@man3_levelsdir = $(man3dir)
 @HWLOC_INSTALL_DOXYGEN_TRUE@man3_levels_DATA = \
@@ -960,8 +771,7 @@ EXTRA_DIST = \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/HWLOC_RESTRICT_FLAG_ADAPT_IO.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/HWLOC_RESTRICT_FLAG_ADAPT_MISC.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_restrict_flags_e.3 \
-@HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_topology_restrict.3 \
-@HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_topology_dup.3
+@HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_topology_restrict.3
 
 @HWLOC_INSTALL_DOXYGEN_TRUE@man3_customdir = $(man3dir)
 @HWLOC_INSTALL_DOXYGEN_TRUE@man3_custom_DATA = \
@@ -979,6 +789,11 @@ EXTRA_DIST = \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_export_obj_userdata.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_export_obj_userdata_base64.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_topology_set_userdata_import_callback.3
+
+@HWLOC_INSTALL_DOXYGEN_TRUE@man3_syntheticexportdir = $(man3dir)
+@HWLOC_INSTALL_DOXYGEN_TRUE@man3_syntheticexport_DATA = \
+@HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwlocality_syntheticexport.3 \
+@HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_topology_export_synthetic.3
 
 @HWLOC_INSTALL_DOXYGEN_TRUE@man3_bitmapdir = $(man3dir)
 @HWLOC_INSTALL_DOXYGEN_TRUE@man3_bitmap_DATA = \
@@ -1213,11 +1028,6 @@ EXTRA_DIST = \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_ibv_get_device_osdev.3 \
 @HWLOC_INSTALL_DOXYGEN_TRUE@        $(DOX_MAN_DIR)/man3/hwloc_ibv_get_device_osdev_by_name.3
 
-hwloc_hello_LDADD = $(HWLOC_top_builddir)/src/libhwloc.la
-hwloc_hello_DEPENDENCIES = $(hwloc_hello_LDADD)
-hwloc_hello_cpp_SOURCES = hwloc-hello-cpp.cpp
-hwloc_hello_cpp_LDADD = $(HWLOC_top_builddir)/src/libhwloc.la
-hwloc_hello_cpp_DEPENDENCIES = $(hwloc_hello_LDADD)
 
 #
 # Only remove the actual generated documentation files for maintainers
@@ -1231,11 +1041,11 @@ MAINTAINERCLEANFILES = $(DOX_TAG) \
     $(DOX_LETTERPDF) \
     $(DOX_HTML_README)
 
+SUBDIRS = examples
 all: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) all-am
+	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .c .cpp .lo .log .o .obj .test .test$(EXEEXT) .trs
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -1267,80 +1077,6 @@ $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 $(am__aclocal_m4_deps):
 doxygen-config.cfg: $(top_builddir)/config.status $(srcdir)/doxygen-config.cfg.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-
-clean-checkPROGRAMS:
-	@list='$(check_PROGRAMS)'; test -n "$$list" || exit 0; \
-	echo " rm -f" $$list; \
-	rm -f $$list || exit $$?; \
-	test -n "$(EXEEXT)" || exit 0; \
-	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
-	echo " rm -f" $$list; \
-	rm -f $$list
-
-hwloc-hello$(EXEEXT): $(hwloc_hello_OBJECTS) $(hwloc_hello_DEPENDENCIES) $(EXTRA_hwloc_hello_DEPENDENCIES) 
-	@rm -f hwloc-hello$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(hwloc_hello_OBJECTS) $(hwloc_hello_LDADD) $(LIBS)
-
-hwloc-hello-cpp$(EXEEXT): $(hwloc_hello_cpp_OBJECTS) $(hwloc_hello_cpp_DEPENDENCIES) $(EXTRA_hwloc_hello_cpp_DEPENDENCIES) 
-	@rm -f hwloc-hello-cpp$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(hwloc_hello_cpp_OBJECTS) $(hwloc_hello_cpp_LDADD) $(LIBS)
-
-mostlyclean-compile:
-	-rm -f *.$(OBJEXT)
-
-distclean-compile:
-	-rm -f *.tab.c
-
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc-hello-cpp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc-hello.Po@am__quote@
-
-.c.o:
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
-
-.c.obj:
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-.c.lo:
-@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
-@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
-
-.cpp.o:
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ $<
-
-.cpp.obj:
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
-@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-.cpp.lo:
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
-@am__fastdepCXX_TRUE@	$(LTCXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
-@am__fastdepCXX_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -1976,6 +1712,27 @@ uninstall-man3_openfabricsDATA:
 	@list='$(man3_openfabrics_DATA)'; test -n "$(man3_openfabricsdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(man3_openfabricsdir)'; $(am__uninstall_files_from_dir)
+install-man3_syntheticexportDATA: $(man3_syntheticexport_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(man3_syntheticexport_DATA)'; test -n "$(man3_syntheticexportdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(man3_syntheticexportdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(man3_syntheticexportdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(man3_syntheticexportdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(man3_syntheticexportdir)" || exit $$?; \
+	done
+
+uninstall-man3_syntheticexportDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(man3_syntheticexport_DATA)'; test -n "$(man3_syntheticexportdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(man3_syntheticexportdir)'; $(am__uninstall_files_from_dir)
 install-man3_tinkerDATA: $(man3_tinker_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(man3_tinker_DATA)'; test -n "$(man3_tinkerdir)" || list=; \
@@ -2040,14 +1797,61 @@ uninstall-pdfDATA:
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(pdfdir)'; $(am__uninstall_files_from_dir)
 
+# This directory's subdirectories are mostly independent; you can cd
+# into them and run 'make' without going through this Makefile.
+# To change the values of 'make' variables: instead of editing Makefiles,
+# (1) if the variable is set in 'config.status', edit 'config.status'
+#     (which will cause the Makefiles to be regenerated when you run 'make');
+# (2) otherwise, pass the desired values on the 'make' command line.
+$(am__recursive_targets):
+	@fail=; \
+	if $(am__make_keepgoing); then \
+	  failcom='fail=yes'; \
+	else \
+	  failcom='exit 1'; \
+	fi; \
+	dot_seen=no; \
+	target=`echo $@ | sed s/-recursive//`; \
+	case "$@" in \
+	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
+	  *) list='$(SUBDIRS)' ;; \
+	esac; \
+	for subdir in $$list; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    dot_seen=yes; \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	  || eval $$failcom; \
+	done; \
+	if test "$$dot_seen" = "no"; then \
+	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
+	fi; test -z "$$fail"
+
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
-tags: tags-am
+tags: tags-recursive
 TAGS: tags
 
 tags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
 	set x; \
 	here=`pwd`; \
+	if ($(ETAGS) --etags-include --version) >/dev/null 2>&1; then \
+	  include_option=--etags-include; \
+	  empty_fix=.; \
+	else \
+	  include_option=--include; \
+	  empty_fix=; \
+	fi; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    test ! -f $$subdir/TAGS || \
+	      set "$$@" "$$include_option=$$here/$$subdir/TAGS"; \
+	  fi; \
+	done; \
 	$(am__define_uniq_tagged_files); \
 	shift; \
 	if test -z "$(ETAGS_ARGS)$$*$$unique"; then :; else \
@@ -2060,7 +1864,7 @@ tags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
 	      $$unique; \
 	  fi; \
 	fi
-ctags: ctags-am
+ctags: ctags-recursive
 
 CTAGS: ctags
 ctags-am: $(TAGS_DEPENDENCIES) $(am__tagged_files)
@@ -2073,7 +1877,7 @@ GTAGS:
 	here=`$(am__cd) $(top_builddir) && pwd` \
 	  && $(am__cd) $(top_srcdir) \
 	  && gtags -i $(GTAGS_ARGS) "$$here"
-cscopelist: cscopelist-am
+cscopelist: cscopelist-recursive
 
 cscopelist-am: $(am__tagged_files)
 	list='$(am__tagged_files)'; \
@@ -2091,176 +1895,6 @@ cscopelist-am: $(am__tagged_files)
 
 distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
-
-# Recover from deleted '.trs' file; this should ensure that
-# "rm -f foo.log; make foo.trs" re-run 'foo.test', and re-create
-# both 'foo.log' and 'foo.trs'.  Break the recipe in two subshells
-# to avoid problems with "make -n".
-.log.trs:
-	rm -f $< $@
-	$(MAKE) $(AM_MAKEFLAGS) $<
-
-# Leading 'am--fnord' is there to ensure the list of targets does not
-# expand to empty, as could happen e.g. with make check TESTS=''.
-am--fnord $(TEST_LOGS) $(TEST_LOGS:.log=.trs): $(am__force_recheck)
-am--force-recheck:
-	@:
-
-$(TEST_SUITE_LOG): $(TEST_LOGS)
-	@$(am__set_TESTS_bases); \
-	am__f_ok () { test -f "$$1" && test -r "$$1"; }; \
-	redo_bases=`for i in $$bases; do \
-	              am__f_ok $$i.trs && am__f_ok $$i.log || echo $$i; \
-	            done`; \
-	if test -n "$$redo_bases"; then \
-	  redo_logs=`for i in $$redo_bases; do echo $$i.log; done`; \
-	  redo_results=`for i in $$redo_bases; do echo $$i.trs; done`; \
-	  if $(am__make_dryrun); then :; else \
-	    rm -f $$redo_logs && rm -f $$redo_results || exit 1; \
-	  fi; \
-	fi; \
-	if test -n "$$am__remaking_logs"; then \
-	  echo "fatal: making $(TEST_SUITE_LOG): possible infinite" \
-	       "recursion detected" >&2; \
-	elif test -n "$$redo_logs"; then \
-	  am__remaking_logs=yes $(MAKE) $(AM_MAKEFLAGS) $$redo_logs; \
-	fi; \
-	if $(am__make_dryrun); then :; else \
-	  st=0;  \
-	  errmsg="fatal: making $(TEST_SUITE_LOG): failed to create"; \
-	  for i in $$redo_bases; do \
-	    test -f $$i.trs && test -r $$i.trs \
-	      || { echo "$$errmsg $$i.trs" >&2; st=1; }; \
-	    test -f $$i.log && test -r $$i.log \
-	      || { echo "$$errmsg $$i.log" >&2; st=1; }; \
-	  done; \
-	  test $$st -eq 0 || exit 1; \
-	fi
-	@$(am__sh_e_setup); $(am__tty_colors); $(am__set_TESTS_bases); \
-	ws='[ 	]'; \
-	results=`for b in $$bases; do echo $$b.trs; done`; \
-	test -n "$$results" || results=/dev/null; \
-	all=`  grep "^$$ws*:test-result:"           $$results | wc -l`; \
-	pass=` grep "^$$ws*:test-result:$$ws*PASS"  $$results | wc -l`; \
-	fail=` grep "^$$ws*:test-result:$$ws*FAIL"  $$results | wc -l`; \
-	skip=` grep "^$$ws*:test-result:$$ws*SKIP"  $$results | wc -l`; \
-	xfail=`grep "^$$ws*:test-result:$$ws*XFAIL" $$results | wc -l`; \
-	xpass=`grep "^$$ws*:test-result:$$ws*XPASS" $$results | wc -l`; \
-	error=`grep "^$$ws*:test-result:$$ws*ERROR" $$results | wc -l`; \
-	if test `expr $$fail + $$xpass + $$error` -eq 0; then \
-	  success=true; \
-	else \
-	  success=false; \
-	fi; \
-	br='==================='; br=$$br$$br$$br$$br; \
-	result_count () \
-	{ \
-	    if test x"$$1" = x"--maybe-color"; then \
-	      maybe_colorize=yes; \
-	    elif test x"$$1" = x"--no-color"; then \
-	      maybe_colorize=no; \
-	    else \
-	      echo "$@: invalid 'result_count' usage" >&2; exit 4; \
-	    fi; \
-	    shift; \
-	    desc=$$1 count=$$2; \
-	    if test $$maybe_colorize = yes && test $$count -gt 0; then \
-	      color_start=$$3 color_end=$$std; \
-	    else \
-	      color_start= color_end=; \
-	    fi; \
-	    echo "$${color_start}# $$desc $$count$${color_end}"; \
-	}; \
-	create_testsuite_report () \
-	{ \
-	  result_count $$1 "TOTAL:" $$all   "$$brg"; \
-	  result_count $$1 "PASS: " $$pass  "$$grn"; \
-	  result_count $$1 "SKIP: " $$skip  "$$blu"; \
-	  result_count $$1 "XFAIL:" $$xfail "$$lgn"; \
-	  result_count $$1 "FAIL: " $$fail  "$$red"; \
-	  result_count $$1 "XPASS:" $$xpass "$$red"; \
-	  result_count $$1 "ERROR:" $$error "$$mgn"; \
-	}; \
-	{								\
-	  echo "$(PACKAGE_STRING): $(subdir)/$(TEST_SUITE_LOG)" |	\
-	    $(am__rst_title);						\
-	  create_testsuite_report --no-color;				\
-	  echo;								\
-	  echo ".. contents:: :depth: 2";				\
-	  echo;								\
-	  for b in $$bases; do echo $$b; done				\
-	    | $(am__create_global_log);					\
-	} >$(TEST_SUITE_LOG).tmp || exit 1;				\
-	mv $(TEST_SUITE_LOG).tmp $(TEST_SUITE_LOG);			\
-	if $$success; then						\
-	  col="$$grn";							\
-	 else								\
-	  col="$$red";							\
-	  test x"$$VERBOSE" = x || cat $(TEST_SUITE_LOG);		\
-	fi;								\
-	echo "$${col}$$br$${std}"; 					\
-	echo "$${col}Testsuite summary for $(PACKAGE_STRING)$${std}";	\
-	echo "$${col}$$br$${std}"; 					\
-	create_testsuite_report --maybe-color;				\
-	echo "$$col$$br$$std";						\
-	if $$success; then :; else					\
-	  echo "$${col}See $(subdir)/$(TEST_SUITE_LOG)$${std}";		\
-	  if test -n "$(PACKAGE_BUGREPORT)"; then			\
-	    echo "$${col}Please report to $(PACKAGE_BUGREPORT)$${std}";	\
-	  fi;								\
-	  echo "$$col$$br$$std";					\
-	fi;								\
-	$$success || exit 1
-
-check-TESTS:
-	@list='$(RECHECK_LOGS)';           test -z "$$list" || rm -f $$list
-	@list='$(RECHECK_LOGS:.log=.trs)'; test -z "$$list" || rm -f $$list
-	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
-	@set +e; $(am__set_TESTS_bases); \
-	log_list=`for i in $$bases; do echo $$i.log; done`; \
-	trs_list=`for i in $$bases; do echo $$i.trs; done`; \
-	log_list=`echo $$log_list`; trs_list=`echo $$trs_list`; \
-	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) TEST_LOGS="$$log_list"; \
-	exit $$?;
-recheck: all $(check_PROGRAMS)
-	@test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
-	@set +e; $(am__set_TESTS_bases); \
-	bases=`for i in $$bases; do echo $$i; done \
-	         | $(am__list_recheck_tests)` || exit 1; \
-	log_list=`for i in $$bases; do echo $$i.log; done`; \
-	log_list=`echo $$log_list`; \
-	$(MAKE) $(AM_MAKEFLAGS) $(TEST_SUITE_LOG) \
-	        am__force_recheck=am--force-recheck \
-	        TEST_LOGS="$$log_list"; \
-	exit $$?
-hwloc-hello.log: hwloc-hello$(EXEEXT)
-	@p='hwloc-hello$(EXEEXT)'; \
-	b='hwloc-hello'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-hwloc-hello-cpp.log: hwloc-hello-cpp$(EXEEXT)
-	@p='hwloc-hello-cpp$(EXEEXT)'; \
-	b='hwloc-hello-cpp'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-.test.log:
-	@p='$<'; \
-	$(am__set_b); \
-	$(am__check_pre) $(TEST_LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_TEST_LOG_DRIVER_FLAGS) $(TEST_LOG_DRIVER_FLAGS) -- $(TEST_LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-@am__EXEEXT_TRUE@.test$(EXEEXT).log:
-@am__EXEEXT_TRUE@	@p='$<'; \
-@am__EXEEXT_TRUE@	$(am__set_b); \
-@am__EXEEXT_TRUE@	$(am__check_pre) $(TEST_LOG_DRIVER) --test-name "$$f" \
-@am__EXEEXT_TRUE@	--log-file $$b.log --trs-file $$b.trs \
-@am__EXEEXT_TRUE@	$(am__common_driver_flags) $(AM_TEST_LOG_DRIVER_FLAGS) $(TEST_LOG_DRIVER_FLAGS) -- $(TEST_LOG_COMPILE) \
-@am__EXEEXT_TRUE@	"$$tst" $(AM_TESTS_FD_REDIRECT)
 
 distdir: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
@@ -2292,26 +1926,50 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
+	@list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    $(am__make_dryrun) \
+	      || test -d "$(distdir)/$$subdir" \
+	      || $(MKDIR_P) "$(distdir)/$$subdir" \
+	      || exit 1; \
+	    dir1=$$subdir; dir2="$(distdir)/$$subdir"; \
+	    $(am__relativize); \
+	    new_distdir=$$reldir; \
+	    dir1=$$subdir; dir2="$(top_distdir)"; \
+	    $(am__relativize); \
+	    new_top_distdir=$$reldir; \
+	    echo " (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir="$$new_top_distdir" distdir="$$new_distdir" \\"; \
+	    echo "     am__remove_distdir=: am__skip_length_check=: am__skip_mode_fix=: distdir)"; \
+	    ($(am__cd) $$subdir && \
+	      $(MAKE) $(AM_MAKEFLAGS) \
+	        top_distdir="$$new_top_distdir" \
+	        distdir="$$new_distdir" \
+		am__remove_distdir=: \
+		am__skip_length_check=: \
+		am__skip_mode_fix=: \
+	        distdir) \
+	      || exit 1; \
+	  fi; \
+	done
 check-am: all-am
-	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS)
-	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) check-am
+	$(MAKE) $(AM_MAKEFLAGS) check-recursive
 all-am: Makefile $(MANS) $(DATA) all-local
-installdirs:
-	for dir in "$(DESTDIR)$(man3dir)" "$(DESTDIR)$(man3_bitmapdir)" "$(DESTDIR)$(man3_configurationdir)" "$(DESTDIR)$(man3_cpubindingdir)" "$(DESTDIR)$(man3_creationdir)" "$(DESTDIR)$(man3_cudadir)" "$(DESTDIR)$(man3_customdir)" "$(DESTDIR)$(man3_diffdir)" "$(DESTDIR)$(man3_glibc_scheddir)" "$(DESTDIR)$(man3_helper_advanced_iodir)" "$(DESTDIR)$(man3_helper_ancestorsdir)" "$(DESTDIR)$(man3_helper_distancesdir)" "$(DESTDIR)$(man3_helper_distributedir)" "$(DESTDIR)$(man3_helper_find_cachedir)" "$(DESTDIR)$(man3_helper_find_coveringdir)" "$(DESTDIR)$(man3_helper_find_insidedir)" "$(DESTDIR)$(man3_helper_find_miscdir)" "$(DESTDIR)$(man3_helper_nodeset_convertdir)" "$(DESTDIR)$(man3_helper_topology_setsdir)" "$(DESTDIR)$(man3_levelsdir)" "$(DESTDIR)$(man3_linuxdir)" "$(DESTDIR)$(man3_linux_libnumadir)" "$(DESTDIR)$(man3_membindingdir)" "$(DESTDIR)$(man3_myriexpressdir)" "$(DESTDIR)$(man3_object_setsdir)" "$(DESTDIR)$(man3_object_stringsdir)" "$(DESTDIR)$(man3_object_typesdir)" "$(DESTDIR)$(man3_objectsdir)" "$(DESTDIR)$(man3_openfabricsdir)" "$(DESTDIR)$(man3_tinkerdir)" "$(DESTDIR)$(man3_xmlexportdir)" "$(DESTDIR)$(pdfdir)"; do \
+installdirs: installdirs-recursive
+installdirs-am:
+	for dir in "$(DESTDIR)$(man3dir)" "$(DESTDIR)$(man3_bitmapdir)" "$(DESTDIR)$(man3_configurationdir)" "$(DESTDIR)$(man3_cpubindingdir)" "$(DESTDIR)$(man3_creationdir)" "$(DESTDIR)$(man3_cudadir)" "$(DESTDIR)$(man3_customdir)" "$(DESTDIR)$(man3_diffdir)" "$(DESTDIR)$(man3_glibc_scheddir)" "$(DESTDIR)$(man3_helper_advanced_iodir)" "$(DESTDIR)$(man3_helper_ancestorsdir)" "$(DESTDIR)$(man3_helper_distancesdir)" "$(DESTDIR)$(man3_helper_distributedir)" "$(DESTDIR)$(man3_helper_find_cachedir)" "$(DESTDIR)$(man3_helper_find_coveringdir)" "$(DESTDIR)$(man3_helper_find_insidedir)" "$(DESTDIR)$(man3_helper_find_miscdir)" "$(DESTDIR)$(man3_helper_nodeset_convertdir)" "$(DESTDIR)$(man3_helper_topology_setsdir)" "$(DESTDIR)$(man3_levelsdir)" "$(DESTDIR)$(man3_linuxdir)" "$(DESTDIR)$(man3_linux_libnumadir)" "$(DESTDIR)$(man3_membindingdir)" "$(DESTDIR)$(man3_myriexpressdir)" "$(DESTDIR)$(man3_object_setsdir)" "$(DESTDIR)$(man3_object_stringsdir)" "$(DESTDIR)$(man3_object_typesdir)" "$(DESTDIR)$(man3_objectsdir)" "$(DESTDIR)$(man3_openfabricsdir)" "$(DESTDIR)$(man3_syntheticexportdir)" "$(DESTDIR)$(man3_tinkerdir)" "$(DESTDIR)$(man3_xmlexportdir)" "$(DESTDIR)$(pdfdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) install-am
-install-exec: install-exec-am
-install-data: install-data-am
-uninstall: uninstall-am
+	$(MAKE) $(AM_MAKEFLAGS) install-recursive
+install-exec: install-exec-recursive
+install-data: install-data-recursive
+uninstall: uninstall-recursive
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-am
+installcheck: installcheck-recursive
 install-strip:
 	if test -z '$(STRIP)'; then \
 	  $(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
@@ -2323,9 +1981,6 @@ install-strip:
 	    "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'" install; \
 	fi
 mostlyclean-generic:
-	-test -z "$(TEST_LOGS)" || rm -f $(TEST_LOGS)
-	-test -z "$(TEST_LOGS:.log=.trs)" || rm -f $(TEST_LOGS:.log=.trs)
-	-test -z "$(TEST_SUITE_LOG)" || rm -f $(TEST_SUITE_LOG)
 
 clean-generic:
 
@@ -2338,26 +1993,23 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
-clean: clean-am
+clean: clean-recursive
 
-clean-am: clean-checkPROGRAMS clean-generic clean-libtool clean-local \
-	mostlyclean-am
+clean-am: clean-generic clean-libtool mostlyclean-am
 
-distclean: distclean-am
-	-rm -rf ./$(DEPDIR)
+distclean: distclean-recursive
 	-rm -f Makefile
-distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-tags
+distclean-am: clean-am distclean-generic distclean-tags
 
-dvi: dvi-am
+dvi: dvi-recursive
 
 dvi-am:
 
-html: html-am
+html: html-recursive
 
 html-am:
 
-info: info-am
+info: info-recursive
 
 info-am:
 
@@ -2380,50 +2032,49 @@ install-data-am: install-man install-man3_bitmapDATA \
 	install-man3_membindingDATA install-man3_myriexpressDATA \
 	install-man3_object_setsDATA install-man3_object_stringsDATA \
 	install-man3_object_typesDATA install-man3_objectsDATA \
-	install-man3_openfabricsDATA install-man3_tinkerDATA \
-	install-man3_xmlexportDATA install-pdfDATA
+	install-man3_openfabricsDATA install-man3_syntheticexportDATA \
+	install-man3_tinkerDATA install-man3_xmlexportDATA \
+	install-pdfDATA
 
-install-dvi: install-dvi-am
+install-dvi: install-dvi-recursive
 
 install-dvi-am:
 
 install-exec-am:
 
-install-html: install-html-am
+install-html: install-html-recursive
 
 install-html-am:
 
-install-info: install-info-am
+install-info: install-info-recursive
 
 install-info-am:
 
 install-man: install-man3
 
-install-pdf: install-pdf-am
+install-pdf: install-pdf-recursive
 
 install-pdf-am:
 
-install-ps: install-ps-am
+install-ps: install-ps-recursive
 
 install-ps-am:
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-am
-	-rm -rf ./$(DEPDIR)
+maintainer-clean: maintainer-clean-recursive
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-am
+mostlyclean: mostlyclean-recursive
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool
+mostlyclean-am: mostlyclean-generic mostlyclean-libtool
 
-pdf: pdf-am
+pdf: pdf-recursive
 
 pdf-am:
 
-ps: ps-am
+ps: ps-recursive
 
 ps-am:
 
@@ -2447,17 +2098,18 @@ uninstall-am: uninstall-man uninstall-man3_bitmapDATA \
 	uninstall-man3_myriexpressDATA uninstall-man3_object_setsDATA \
 	uninstall-man3_object_stringsDATA \
 	uninstall-man3_object_typesDATA uninstall-man3_objectsDATA \
-	uninstall-man3_openfabricsDATA uninstall-man3_tinkerDATA \
+	uninstall-man3_openfabricsDATA \
+	uninstall-man3_syntheticexportDATA uninstall-man3_tinkerDATA \
 	uninstall-man3_xmlexportDATA uninstall-pdfDATA
 
 uninstall-man: uninstall-man3
 
-.MAKE: all check check-am install install-am install-strip
+.MAKE: $(am__recursive_targets) all check install install-am \
+	install-strip
 
-.PHONY: CTAGS GTAGS TAGS all all-am all-local check check-TESTS \
-	check-am clean clean-checkPROGRAMS clean-generic clean-libtool \
-	clean-local cscopelist-am ctags ctags-am distclean \
-	distclean-compile distclean-generic distclean-libtool \
+.PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am all-local \
+	check check-am clean clean-generic clean-libtool cscopelist-am \
+	ctags ctags-am distclean distclean-generic distclean-libtool \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am install-dvi \
 	install-dvi-am install-exec install-exec-am install-html \
@@ -2481,13 +2133,13 @@ uninstall-man: uninstall-man3
 	install-man3_membindingDATA install-man3_myriexpressDATA \
 	install-man3_object_setsDATA install-man3_object_stringsDATA \
 	install-man3_object_typesDATA install-man3_objectsDATA \
-	install-man3_openfabricsDATA install-man3_tinkerDATA \
-	install-man3_xmlexportDATA install-pdf install-pdf-am \
-	install-pdfDATA install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	recheck tags tags-am uninstall uninstall-am uninstall-man \
+	install-man3_openfabricsDATA install-man3_syntheticexportDATA \
+	install-man3_tinkerDATA install-man3_xmlexportDATA install-pdf \
+	install-pdf-am install-pdfDATA install-ps install-ps-am \
+	install-strip installcheck installcheck-am installdirs \
+	installdirs-am maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
+	ps ps-am tags tags-am uninstall uninstall-am uninstall-man \
 	uninstall-man3 uninstall-man3_bitmapDATA \
 	uninstall-man3_configurationDATA uninstall-man3_cpubindingDATA \
 	uninstall-man3_creationDATA uninstall-man3_cudaDATA \
@@ -2508,7 +2160,8 @@ uninstall-man: uninstall-man3
 	uninstall-man3_myriexpressDATA uninstall-man3_object_setsDATA \
 	uninstall-man3_object_stringsDATA \
 	uninstall-man3_object_typesDATA uninstall-man3_objectsDATA \
-	uninstall-man3_openfabricsDATA uninstall-man3_tinkerDATA \
+	uninstall-man3_openfabricsDATA \
+	uninstall-man3_syntheticexportDATA uninstall-man3_tinkerDATA \
 	uninstall-man3_xmlexportDATA uninstall-pdfDATA
 
 .PRECIOUS: Makefile
@@ -2639,6 +2292,7 @@ uninstall-man: uninstall-man3
 @HWLOC_BUILD_DOXYGEN_TRUE@$(man3_tinker_DATA): $(DOX_TAG)
 @HWLOC_BUILD_DOXYGEN_TRUE@$(man3_custom_DATA): $(DOX_TAG)
 @HWLOC_BUILD_DOXYGEN_TRUE@$(man3_xmlexport_DATA): $(DOX_TAG)
+@HWLOC_BUILD_DOXYGEN_TRUE@$(man3_syntheticexport_DATA): $(DOX_TAG)
 @HWLOC_BUILD_DOXYGEN_TRUE@$(man3_bitmap_DATA): $(DOX_TAG)
 @HWLOC_BUILD_DOXYGEN_TRUE@$(man3_helper_find_inside_DATA): $(DOX_TAG)
 @HWLOC_BUILD_DOXYGEN_TRUE@$(man3_helper_find_covering_DATA): $(DOX_TAG)
@@ -2667,12 +2321,6 @@ uninstall-man: uninstall-man3
 # built at the same time during a parallel build (e.g., "make -j X").
 # So arbitrarily make the A4 PDF dependent upon the Letter PDF.
 @HWLOC_BUILD_DOXYGEN_TRUE@$(DOX_A4PDF): $(DOX_TAG) $(DOX_LETTERPDF)
-
-hwloc-hello-cpp.cpp: $(srcdir)/hwloc-hello.c
-	cp -f $(srcdir)/hwloc-hello.c $@
-
-clean-local:
-	rm -f hwloc-hello-cpp.cpp
 
 #
 # Rules for creating the top-level README file.  There does not appear

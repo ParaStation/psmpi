@@ -363,12 +363,18 @@ mpi_f77_sources += src/binding/fortran/mpif_h/sendf.c \
 	src/binding/fortran/mpif_h/file_set_atomicityf.c \
 	src/binding/fortran/mpif_h/file_get_atomicityf.c \
 	src/binding/fortran/mpif_h/file_syncf.c \
+	src/binding/fortran/mpif_h/file_iread_at_allf.c \
+	src/binding/fortran/mpif_h/file_iwrite_at_allf.c \
+	src/binding/fortran/mpif_h/file_iread_allf.c \
+	src/binding/fortran/mpif_h/file_iwrite_allf.c \
 	src/binding/fortran/mpif_h/initf.c \
 	src/binding/fortran/mpif_h/initthreadf.c \
 	src/binding/fortran/mpif_h/pcontrolf.c \
 	src/binding/fortran/mpif_h/addressf.c \
 	src/binding/fortran/mpif_h/getaddressf.c \
 	src/binding/fortran/mpif_h/wtimef.c src/binding/fortran/mpif_h/wtickf.c \
+	src/binding/fortran/mpif_h/aint_addf.c \
+	src/binding/fortran/mpif_h/aint_difff.c \
 	src/binding/fortran/mpif_h/keyval_createf.c \
 	src/binding/fortran/mpif_h/dup_fnf.c \
 	src/binding/fortran/mpif_h/null_del_fnf.c \

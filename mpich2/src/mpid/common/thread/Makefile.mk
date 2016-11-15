@@ -6,14 +6,10 @@
 ###
 
 if BUILD_MPID_COMMON_THREAD
-if THREAD_SERIALIZED_OR_MULTIPLE
 
 # so that clients can successfully include mpid_thread.h
 AM_CPPFLAGS += -I$(top_srcdir)/src/mpid/common/thread
 
-noinst_HEADERS += src/mpid/common/thread/mpid_thread.h
-mpi_core_sources += src/mpid/common/thread/mpid_thread.c
+noinst_HEADERS += src/mpid/common/thread/mpidu_thread_fallback.h
 
-endif THREAD_SERIALIZED_OR_MULTIPLE
 endif BUILD_MPID_COMMON_THREAD
-

@@ -83,7 +83,7 @@ int MPI_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_COMPARE_AND_SWAP);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -119,7 +119,7 @@ int MPI_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 
             /* Check if datatype is a C integer, Fortran Integer,
                logical, or byte, per the classes given on page 165. */
-            MPIR_ERRTEST_TYPE_RMA_ATOMIC(datatype, "datatype", mpi_errno);
+            MPIR_ERRTEST_TYPE_RMA_ATOMIC(datatype, mpi_errno);
 
             if (win_ptr->create_flavor != MPI_WIN_FLAVOR_DYNAMIC)
                 MPIR_ERRTEST_DISP(target_disp, mpi_errno);
@@ -133,17 +133,17 @@ int MPI_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 
     /* ... body of routine ...  */
     
-    mpi_errno = MPIU_RMA_CALL(win_ptr,Compare_and_swap(origin_addr, 
-                                         compare_addr, result_addr, 
-                                         datatype, target_rank,
-                                         target_disp, win_ptr));
+    mpi_errno = MPID_Compare_and_swap(origin_addr,
+                                      compare_addr, result_addr,
+                                      datatype, target_rank,
+                                      target_disp, win_ptr);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
 
   fn_exit:
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_COMPARE_AND_SWAP);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

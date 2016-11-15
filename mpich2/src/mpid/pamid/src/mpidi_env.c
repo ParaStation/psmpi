@@ -547,7 +547,7 @@ MPIDI_Env_setup(int rank, int requested)
     unsigned value = (unsigned)-1;
     char* names[] = {"PAMID_THREAD_MULTIPLE", NULL};
     ENV_Unsigned(names, &value, 1, &found_deprecated_env_var, rank);
-#if (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT)
+#if (MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY_PER_OBJECT)
     /* Any mpich work function posted to a context that eventually initiates
      * other communcation transfers will hang on a lock attempt if the
      * 'context post' feature is not enabled. Until this code flow is fixed
@@ -610,7 +610,7 @@ MPIDI_Env_setup(int rank, int requested)
 
     if (value != -1)
     {
-#if (MPIU_THREAD_GRANULARITY != MPIU_THREAD_GRANULARITY_PER_OBJECT)
+#if (MPICH_THREAD_GRANULARITY != MPICH_THREAD_GRANULARITY_PER_OBJECT)
       /* The 'global' mpich lock mode only supports a single context.
        * See discussion in mpich/src/mpid/pamid/src/mpid_init.c for more
        * information.
@@ -643,7 +643,7 @@ MPIDI_Env_setup(int rank, int requested)
     ENV_Unsigned(names, &value, 1, &found_deprecated_env_var, rank);
     if (value != -1)
     {
-#if (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT)
+#if (MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY_PER_OBJECT)
       MPIDI_Process.perobj.context_post.requested = (value > 0);
 #else
       found_deprecated_env_var++;
@@ -665,7 +665,7 @@ MPIDI_Env_setup(int rank, int requested)
     {
       if (value != ASYNC_PROGRESS_MODE_DISABLED)
       {
-#if (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT)
+#if (MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY_PER_OBJECT)
         if (value == ASYNC_PROGRESS_MODE_LOCKED &&
             MPIDI_Process.perobj.context_post.requested == 0)
         {
@@ -679,7 +679,7 @@ MPIDI_Env_setup(int rank, int requested)
             fprintf(stderr, "The environment variable \"PAMID_ASYNC_PROGRESS=1\" requires \"PAMID_CONTEXT_POST=1\".\n");
         }
 
-#else /* (MPIU_THREAD_GRANULARITY != MPIU_THREAD_GRANULARITY_PER_OBJECT) */
+#else /* (MPICH_THREAD_GRANULARITY != MPICH_THREAD_GRANULARITY_PER_OBJECT) */
         if (value == ASYNC_PROGRESS_MODE_LOCKED)
         {
           /* The only valid async progress mode when using the 'global' mpich
@@ -938,6 +938,11 @@ MPIDI_Env_setup(int rank, int requested)
     ENV_Unsigned(names, &MPIDI_Process.mpir_nbc, 1, &found_deprecated_env_var, rank);
   }
 
+  /* Enable typed PAMI calls for derived types within MPID_Put and MPID_Get. */
+  {
+    char* names[] = {"PAMID_TYPED_ONESIDED", NULL};
+    ENV_Unsigned(names, &MPIDI_Process.typed_onesided, 1, &found_deprecated_env_var, rank);
+  }
   /* Check for deprecated collectives environment variables. These variables are
    * used in src/mpid/pamid/src/comm/mpid_selectcolls.c */
   {
@@ -1086,7 +1091,7 @@ MPIDI_Env_setup(int rank, int requested)
         MPIDI_Process.mp_interrupts=user_interrupts;
         MPIDI_Process.perobj.context_post.requested = 0;
         MPIDI_Process.async_progress.mode    = ASYNC_PROGRESS_MODE_TRIGGER;
-#if (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT)
+#if (MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY_PER_OBJECT)
         MPIDI_Process.avail_contexts         = MPIDI_MAX_CONTEXTS;
 #else
         MPIDI_Process.avail_contexts         = 1;
@@ -1139,6 +1144,31 @@ MPIDI_Env_setup(int rank, int requested)
     char* names[] = {"MP_S_USE_QUEUE_BINARY_SEARCH_SUPPORT", NULL};
     ENV_Char(names, &MPIDI_Process.queue_binary_search_support_on);
 #endif
+
+#if CUDA_AWARE_SUPPORT
+    char* names[] = {"MP_CUDA_AWARE", NULL};
+    ENV_Char(names, &MPIDI_Process.cuda_aware_support_on);
+    if(MPIDI_Process.cuda_aware_support_on && MPIDI_enable_cuda() == false)
+    {
+      MPIDI_Process.cuda_aware_support_on = false;
+      if(rank == 0)
+      {
+        fprintf(stderr, "Error loading libcudart\n");fflush(stderr);sleep(1);exit(1);
+      }
+    }
+    else if(MPIDI_Process.cuda_aware_support_on)
+    {
+      if(MPIDI_Process.optimized.collectives == MPID_COLL_FCA)
+        if(rank == 0)
+        {
+          fprintf(stderr, "Warning: FCA is not supported with CUDA Aware support\n");fflush(stderr);
+        }
+
+      MPIDI_Process.optimized.collectives = MPID_COLL_CUDA;
+      MPIDI_Process.optimized.select_colls = 0;
+    }
+#endif
+
   /* Exit if any deprecated environment variables were specified. */
   if (found_deprecated_env_var)
     {

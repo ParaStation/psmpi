@@ -266,5 +266,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_alloc_mem_( MPI_Aint *, MPI_Fint *, voi
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_alloc_mem_ ( MPI_Aint * v1, MPI_Fint *v2, void*v3, MPI_Fint *ierr ){
+    if (v3 == MPIR_F_MPI_BOTTOM) v3 = MPI_BOTTOM;
     *ierr = MPI_Alloc_mem( *v1, (MPI_Info)(*v2), v3 );
 }

@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 # Copyright © 2009-2014 Inria.  All rights reserved.
-# Copyright © 2009-2010 Université Bordeaux 1
+# Copyright © 2009-2010 Université Bordeaux
 # Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
 # Copyright © 2011      Oracle and/or its affiliates.  All rights reserved.
 # See COPYING in top-level directory.
@@ -248,7 +248,6 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
-EXTERNAL_LIBS = @EXTERNAL_LIBS@
 FGREP = @FGREP@
 GCOV = @GCOV@
 GREP = @GREP@
@@ -277,11 +276,11 @@ HWLOC_NVML_LIBS = @HWLOC_NVML_LIBS@
 HWLOC_OPENCL_LIBS = @HWLOC_OPENCL_LIBS@
 HWLOC_PCIACCESS_CFLAGS = @HWLOC_PCIACCESS_CFLAGS@
 HWLOC_PCIACCESS_LIBS = @HWLOC_PCIACCESS_LIBS@
-HWLOC_PCIUTILS_CFLAGS = @HWLOC_PCIUTILS_CFLAGS@
-HWLOC_PCIUTILS_LIBS = @HWLOC_PCIUTILS_LIBS@
 HWLOC_PLUGINS_DIR = @HWLOC_PLUGINS_DIR@
 HWLOC_PLUGINS_PATH = @HWLOC_PLUGINS_PATH@
+HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
 HWLOC_REQUIRES = @HWLOC_REQUIRES@
+HWLOC_VERSION = @HWLOC_VERSION@
 HWLOC_X11_LIBS = @HWLOC_X11_LIBS@
 HWLOC_top_builddir = @HWLOC_top_builddir@
 HWLOC_top_srcdir = @HWLOC_top_srcdir@
@@ -321,6 +320,7 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL = @PERL@
 PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 SED = @SED@
@@ -328,6 +328,7 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
+WRAPPER_LIBS = @WRAPPER_LIBS@
 XMKMF = @XMKMF@
 X_CFLAGS = @X_CFLAGS@
 X_EXTRA_LIBS = @X_EXTRA_LIBS@
@@ -411,7 +412,7 @@ top_srcdir = @top_srcdir@
 @HWLOC_BUILD_STANDALONE_TRUE@	$(am__append_1) $(am__append_2) \
 @HWLOC_BUILD_STANDALONE_TRUE@	$(am__append_3)
 @HWLOC_BUILD_STANDALONE_TRUE@include_hwloc_autogendir = $(includedir)/hwloc/autogen
-@HWLOC_BUILD_STANDALONE_TRUE@nodist_include_hwloc_autogen_HEADERS = hwloc/autogen/config.h 
+@HWLOC_BUILD_STANDALONE_TRUE@nodist_include_hwloc_autogen_HEADERS = hwloc/autogen/config.h
 @HWLOC_BUILD_STANDALONE_TRUE@noinst_HEADERS = \
 @HWLOC_BUILD_STANDALONE_TRUE@        private/private.h \
 @HWLOC_BUILD_STANDALONE_TRUE@        private/debug.h \

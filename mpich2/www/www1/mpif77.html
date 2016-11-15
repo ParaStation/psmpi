@@ -71,18 +71,18 @@ for more details.
 <H2>Examples</H2>
 To compile a single file <tt>foo.f</tt>, use
 <PRE>
-   mpif77 \-c foo.f
+   mpif77 -c foo.f
 </PRE>
 
 <P>
 To link the output and make an executable, use
 <PRE>
-   mpif77 \-o foo foo.o
+   mpif77 -o foo foo.o
 </PRE>
 
 Combining compilation and linking in a single command
 <PRE>
-   mpif77 \-o foo foo.f
+   mpif77 -o foo foo.f
 </PRE>
 
 is a convenient way to build simple programs.
@@ -114,8 +114,8 @@ you could create the file <tt>myprof.conf</tt> with the lines
 </DL>
 <P>
 <PRE>
-    PROFILE_PRELIB="\-L/usr/local/myprof/lib \-lmyprof"
-    PROFILE_INCPATHS="\-I/usr/local/myprof/include"
+    PROFILE_PRELIB="-L/usr/local/myprof/lib -lmyprof"
+    PROFILE_INCPATHS="-I/usr/local/myprof/include"
 </PRE>
 
 and place it in the sysconfdir directory (this directory is set at
@@ -123,7 +123,7 @@ configure time when MPICH is built).  Then using the command-line
 argument <tt>\-profile=myprof</tt> will cause these
 definitions to be added to the relevant compile commands.
 <P>
-<H2>See Also</H2>
+<H0>See Also</H0>
  mpicc, mpicxx, mpifort, mpiexec
 <br>
 </BODY></HTML>

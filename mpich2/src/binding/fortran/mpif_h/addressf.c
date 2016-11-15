@@ -276,11 +276,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_address_ ( void*v1, MPI_Fint *v2, MPI_Fint *ier
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
 #endif
 
-#ifdef USE_POINTER_FOR_BOTTOM
     b = a;
-#else
-    b = a - (MPIR_Pint) MPIR_F_MPI_BOTTOM;
-#endif
     *v2 = (MPI_Fint)( b );
 #ifdef HAVE_AINT_LARGER_THAN_FINT
     /* Check for truncation */

@@ -95,7 +95,7 @@ int MPIU_dbg_init(int rank)
 	   than once */
 	if (MPIU_dbg_fp == NULL)
 	{
-	    MPIU_Snprintf(fn, 128, "mpich-dbg-%d.log", dbg_rank);
+	    MPL_snprintf(fn, 128, "mpich-dbg-%d.log", dbg_rank);
 	    MPIU_dbg_fp = fopen(fn, "w");
 	    setvbuf(MPIU_dbg_fp, NULL, _IONBF, 0);
 	}
@@ -386,33 +386,36 @@ static void dbg_init_tls(void)
 static FILE *get_fp(void)
 {
 #ifdef MPICH_IS_THREADED
+    int err;
     /* if we're not initialized, use the static fp, since there should
      * only be one thread in here until then */
-    if (mpiu_dbg_initialized == MPIU_DBG_INITIALIZED && MPIU_ISTHREADED) {
+    MPIU_THREAD_CHECK_BEGIN;
+    if (mpiu_dbg_initialized == MPIU_DBG_INITIALIZED) {
         FILE *fp;
-        MPID_Thread_tls_get(&dbg_tls_key, &fp);
+        MPID_Thread_tls_get(&dbg_tls_key, (void **) &fp, &err);
         return fp;
     }
-    else
-        return static_dbg_fp;
-#else
-    return static_dbg_fp;
+    MPIU_THREAD_CHECK_END;
 #endif
+
+    return static_dbg_fp;
 }
 
 static void set_fp(FILE *fp)
 {
 #ifdef MPICH_IS_THREADED
+    int err;
     /* if we're not initialized, use the static fp, since there should
      * only be one thread in here until then */
-    if (mpiu_dbg_initialized == MPIU_DBG_INITIALIZED && MPIU_ISTHREADED) {
-        MPID_Thread_tls_set(&dbg_tls_key, (void *)fp);
+    MPIU_THREAD_CHECK_BEGIN;
+    if (mpiu_dbg_initialized == MPIU_DBG_INITIALIZED) {
+        MPID_Thread_tls_set(&dbg_tls_key, (void *)fp, &err);
+        return;
     }
-    else
-        static_dbg_fp = fp;
-#else
-    static_dbg_fp = fp;
+    MPIU_THREAD_CHECK_END;
 #endif
+
+    static_dbg_fp = fp;
 }
 
 
@@ -470,7 +473,7 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
 	case 1:
 	    va_start(list,fmat);
 	    str = va_arg(list,char *);
-	    MPIU_Snprintf( stmp, sizeof(stmp), fmat, str );
+	    MPL_snprintf( stmp, sizeof(stmp), fmat, str );
 	    va_end(list);
 	    fprintf( dbg_fp, "%d\t%d\t%llx[%d]\t%d\t%f\t%s\t%d\t%s\n",
 		     worldNum, worldRank, threadID, pid, class, curtime, 
@@ -479,7 +482,7 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
 	case 2: 
 	    va_start(list,fmat);
 	    i = va_arg(list,int);
-	    MPIU_Snprintf( stmp, sizeof(stmp), fmat, i);
+	    MPL_snprintf( stmp, sizeof(stmp), fmat, i);
 	    va_end(list);
 	    fprintf( dbg_fp, "%d\t%d\t%llx[%d]\t%d\t%f\t%s\t%d\t%s\n",
 		     worldNum, worldRank, threadID, pid, class, curtime, 
@@ -488,7 +491,7 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
 	case 3: 
 	    va_start(list,fmat);
 	    p = va_arg(list,void *);
-	    MPIU_Snprintf( stmp, sizeof(stmp), fmat, p);
+	    MPL_snprintf( stmp, sizeof(stmp), fmat, p);
 	    va_end(list);
 	    fprintf( dbg_fp, "%d\t%d\t%llx[%d]\t%d\t%f\t%s\t%d\t%s\n",
 		     worldNum, worldRank, threadID, pid, class, curtime, 
@@ -779,14 +782,14 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int has_args, int has_env,
             fclose(dbg_fp);
             ret = rename(temp_filename, filename);
             if(ret){
-                MPIU_Error_printf("Could not rename temp log file to %s\n", filename );
+                MPL_error_printf("Could not rename temp log file to %s\n", filename );
                 goto fn_fail;
             }
             else{
                 dbg_fp = fopen(filename, "a+");
                 set_fp(dbg_fp);
                 if(dbg_fp == NULL){
-                    MPIU_Error_printf("Error re-opening log file, %s\n", filename);
+                    MPL_error_printf("Error re-opening log file, %s\n", filename);
                     goto fn_fail;
                 }
             }
@@ -837,7 +840,7 @@ Environment variables\n\
 #undef FUNCNAME
 #define FUNCNAME MPIU_DBG_Open_temp_file
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int MPIU_DBG_Open_temp_file(FILE **dbg_fp)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -865,7 +868,7 @@ static int MPIU_DBG_Open_temp_file(FILE **dbg_fp)
  fn_exit:
     return mpi_errno;
  fn_fail:
-    MPIU_Error_printf( "Could not open log file %s\n", temp_filename );
+    MPL_error_printf( "Could not open log file %s\n", temp_filename );
     mpiu_dbg_initialized = MPIU_DBG_ERROR;
     mpi_errno = MPI_ERR_INTERN;
     goto fn_exit;
@@ -876,7 +879,7 @@ static int MPIU_DBG_Open_temp_file(FILE **dbg_fp)
 #undef FUNCNAME
 #define FUNCNAME MPIU_DBG_Open_temp_file
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int MPIU_DBG_Open_temp_file(FILE **dbg_fp)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -905,7 +908,7 @@ static int MPIU_DBG_Open_temp_file(FILE **dbg_fp)
  fn_exit:
     return mpi_errno;
  fn_fail:
-    MPIU_Error_printf( "Could not open log file %s\n", temp_filename );
+    MPL_error_printf( "Could not open log file %s\n", temp_filename );
     mpiu_dbg_initialized = MPIU_DBG_ERROR;
     mpi_errno = MPI_ERR_INTERN;
     goto fn_exit;
@@ -921,7 +924,7 @@ static int MPIU_DBG_Open_temp_file(FILE **dbg_fp)
 #undef FUNCNAME
 #define FUNCNAME MPIU_DBG_Open_temp_file
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static int MPIU_DBG_Open_temp_file(FILE **dbg_fp)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -940,7 +943,7 @@ static int MPIU_DBG_Open_temp_file(FILE **dbg_fp)
  fn_exit:
     return mpi_errno;
  fn_fail:
-    MPIU_Error_printf( "Could not open log file %s\n", temp_filename );
+    MPL_error_printf( "Could not open log file %s\n", temp_filename );
     mpiu_dbg_initialized = MPIU_DBG_ERROR;
     mpi_errno = MPI_ERR_INTERN;
     goto fn_exit;
@@ -1024,7 +1027,7 @@ static int MPIU_DBG_Get_filename(char *filename, int len)
             p++;
             if (*p == 'd') {
                 char rankAsChar[20];
-                MPIU_Snprintf( rankAsChar, sizeof(rankAsChar), "%d", 
+                MPL_snprintf( rankAsChar, sizeof(rankAsChar), "%d", 
                                worldRank );
                 *pDest = 0;
                 MPIU_Strnapp( filename, rankAsChar, len );
@@ -1037,7 +1040,7 @@ static int MPIU_DBG_Get_filename(char *filename, int len)
                 MPIU_Thread_self(&tid);
                 threadID = (unsigned long long int)tid;
 
-                MPIU_Snprintf( threadIDAsChar, sizeof(threadIDAsChar), 
+                MPL_snprintf( threadIDAsChar, sizeof(threadIDAsChar), 
                                "%llx", threadID );
                 *pDest = 0;
                 MPIU_Strnapp( filename, threadIDAsChar, len );
@@ -1061,7 +1064,7 @@ static int MPIU_DBG_Get_filename(char *filename, int len)
 #else
                 int pid = -1;
 #endif /* HAVE_GETPID */
-                MPIU_Snprintf( pidAsChar, sizeof(pidAsChar), "%d", (int)pid );
+                MPL_snprintf( pidAsChar, sizeof(pidAsChar), "%d", (int)pid );
                 *pDest = 0;
                 MPIU_Strnapp( filename, pidAsChar, len );
                 pDest += strlen(pidAsChar);
@@ -1110,7 +1113,7 @@ static int MPIU_DBG_OpenFile(FILE **dbg_fp)
 
             *dbg_fp = fopen( filename, "w" );
             if (!*dbg_fp) {
-                MPIU_Error_printf( "Could not open log file %s\n", filename );
+                MPL_error_printf( "Could not open log file %s\n", filename );
                 if (mpi_errno) goto fn_fail;
             }
         }

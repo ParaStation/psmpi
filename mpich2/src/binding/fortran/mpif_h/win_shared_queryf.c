@@ -266,5 +266,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_shared_query_( MPI_Fint *, MPI_Fint
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_win_shared_query_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Aint * v3, MPI_Fint *v4, void*v5, MPI_Fint *ierr ){
+    if (v5 == MPIR_F_MPI_BOTTOM) v5 = MPI_BOTTOM;
     *ierr = MPI_Win_shared_query( (MPI_Win)*v1, (int)*v2, v3, v4, v5 );
 }

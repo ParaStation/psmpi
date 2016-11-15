@@ -271,5 +271,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_ialltoallw_ ( void*v1, MPI_Fint v2[], MPI_Fint 
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
 #endif
     if (v1 == MPIR_F_MPI_IN_PLACE) v1 = MPI_IN_PLACE;
+    if (v1 == MPIR_F_MPI_BOTTOM) v1 = MPI_BOTTOM;
+    if (v5 == MPIR_F_MPI_BOTTOM) v5 = MPI_BOTTOM;
     *ierr = MPI_Ialltoallw( v1, v2, v3, (MPI_Datatype *)(v4), v5, v6, v7, (MPI_Datatype *)(v8), (MPI_Comm)(*v9), (MPI_Request *)(v10) );
 }

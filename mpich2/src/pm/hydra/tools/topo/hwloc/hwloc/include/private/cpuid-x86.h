@@ -1,5 +1,5 @@
 /*
- * Copyright © 2010-2012 Université Bordeaux 1
+ * Copyright © 2010-2012, 2014 Université Bordeaux
  * Copyright © 2010 Cisco Systems, Inc.  All rights reserved.
  * Copyright © 2014 Inria.  All rights reserved.
  *
@@ -16,7 +16,7 @@ static __hwloc_inline int hwloc_have_x86_cpuid(void)
 {
   int ret;
   unsigned tmp, tmp2;
-  asm(
+  __asm__(
       "mov $0,%0\n\t"   /* Not supported a priori */
 
       "pushfl   \n\t"   /* Save flags */
@@ -32,14 +32,14 @@ static __hwloc_inline int hwloc_have_x86_cpuid(void)
       "pushfl   \n\t"                                           \
       "pop %1   \n\t"                                           \
       "cmp %1,%2\n\t"   /* Compare with expected value */       \
-      "jnz Lhwloc1\n\t"   /* Unexpected, failure */               \
+      "jnz 0f\n\t"   /* Unexpected, failure */               \
 
       TRY_TOGGLE        /* Try to set/clear */
       TRY_TOGGLE        /* Try to clear/set */
 
       "mov $1,%0\n\t"   /* Passed the test! */
 
-      "Lhwloc1: \n\t"
+      "0: \n\t"
       "popfl    \n\t"   /* Restore flags */
 
       : "=r" (ret), "=&r" (tmp), "=&r" (tmp2));
@@ -64,7 +64,7 @@ static __hwloc_inline void hwloc_x86_cpuid(unsigned *eax, unsigned *ebx, unsigne
    * use them :/ */
 #ifdef HWLOC_X86_64_ARCH
   hwloc_uint64_t sav_rbx;
-  asm(
+  __asm__(
   "mov %%rbx,%2\n\t"
   "cpuid\n\t"
   "xchg %2,%%rbx\n\t"
@@ -72,14 +72,12 @@ static __hwloc_inline void hwloc_x86_cpuid(unsigned *eax, unsigned *ebx, unsigne
   : "+a" (*eax), "=m" (*ebx), "=&r"(sav_rbx),
     "+c" (*ecx), "=&d" (*edx));
 #elif defined(HWLOC_X86_32_ARCH)
-  unsigned long sav_ebx;
-  asm(
-  "mov %%ebx,%2\n\t"
+  __asm__(
+  "xchg %%ebx,%1\n\t"
   "cpuid\n\t"
-  "xchg %2,%%ebx\n\t"
-  "movl %k2,%1\n\t"
-  : "+a" (*eax), "=m" (*ebx), "=&r"(sav_ebx),
-    "+c" (*ecx), "=&d" (*edx));
+  "xchg %%ebx,%1\n\t"
+  : "=a" (*eax), "=r" (*ebx), "=c"(*ecx), "=d" (*edx)
+  : "0" (*eax), "2" (*ecx));
 #else
 #error unknown architecture
 #endif

@@ -96,7 +96,8 @@ build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = cfree$(EXEEXT) ccreate1$(EXEEXT) manysplit$(EXEEXT) \
 	userdup$(EXEEXT) too_many_comms$(EXEEXT) \
-	too_many_comms2$(EXEEXT) too_many_comms3$(EXEEXT)
+	too_many_comms2$(EXEEXT) too_many_comms3$(EXEEXT) \
+	too_many_icomms$(EXEEXT) too_many_icomms2$(EXEEXT)
 subdir = errors/comm
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -152,6 +153,18 @@ too_many_comms3_LDADD = $(LDADD)
 too_many_comms3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+too_many_icomms_SOURCES = too_many_icomms.c
+too_many_icomms_OBJECTS = too_many_icomms.$(OBJEXT)
+too_many_icomms_LDADD = $(LDADD)
+too_many_icomms_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+too_many_icomms2_SOURCES = too_many_icomms2.c
+too_many_icomms2_OBJECTS = too_many_icomms2.$(OBJEXT)
+too_many_icomms2_LDADD = $(LDADD)
+too_many_icomms2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 userdup_SOURCES = userdup.c
 userdup_OBJECTS = userdup.$(OBJEXT)
 userdup_LDADD = $(LDADD)
@@ -187,9 +200,11 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = ccreate1.c cfree.c manysplit.c too_many_comms.c \
-	too_many_comms2.c too_many_comms3.c userdup.c
+	too_many_comms2.c too_many_comms3.c too_many_icomms.c \
+	too_many_icomms2.c userdup.c
 DIST_SOURCES = ccreate1.c cfree.c manysplit.c too_many_comms.c \
-	too_many_comms2.c too_many_comms3.c userdup.c
+	too_many_comms2.c too_many_comms3.c too_many_icomms.c \
+	too_many_icomms2.c userdup.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -344,6 +359,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -378,6 +394,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -395,6 +412,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -469,6 +487,14 @@ too_many_comms3$(EXEEXT): $(too_many_comms3_OBJECTS) $(too_many_comms3_DEPENDENC
 	@rm -f too_many_comms3$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(too_many_comms3_OBJECTS) $(too_many_comms3_LDADD) $(LIBS)
 
+too_many_icomms$(EXEEXT): $(too_many_icomms_OBJECTS) $(too_many_icomms_DEPENDENCIES) $(EXTRA_too_many_icomms_DEPENDENCIES) 
+	@rm -f too_many_icomms$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(too_many_icomms_OBJECTS) $(too_many_icomms_LDADD) $(LIBS)
+
+too_many_icomms2$(EXEEXT): $(too_many_icomms2_OBJECTS) $(too_many_icomms2_DEPENDENCIES) $(EXTRA_too_many_icomms2_DEPENDENCIES) 
+	@rm -f too_many_icomms2$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(too_many_icomms2_OBJECTS) $(too_many_icomms2_LDADD) $(LIBS)
+
 userdup$(EXEEXT): $(userdup_OBJECTS) $(userdup_DEPENDENCIES) $(EXTRA_userdup_DEPENDENCIES) 
 	@rm -f userdup$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(userdup_OBJECTS) $(userdup_LDADD) $(LIBS)
@@ -485,6 +511,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/too_many_comms.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/too_many_comms2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/too_many_comms3.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/too_many_icomms.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/too_many_icomms2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/userdup.Po@am__quote@
 
 .c.o:

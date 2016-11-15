@@ -298,7 +298,7 @@ int _mpi_world_exiting_handler(int world_id)
 /*  struct worldExitReq *req = (struct worldExitReq *)cookie; */
   MPID_Comm *comm = MPIR_Process.comm_world;
 
-  MPIU_THREAD_CS_ENTER(ALLFUNC,);
+  MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
   ref_count = MPIDI_get_refcnt_of_world(world_id);
   TRACE_ERR("_mpi_world_exiting_handler: invoked for world %d exiting ref_count=%d my comm_word_size=%d\n", world_id, ref_count, world_size);
   if(ref_count == 0) {
@@ -322,9 +322,9 @@ int _mpi_world_exiting_handler(int world_id)
 
   TRACE_ERR("_mpi_world_exiting_handler: Out of _mpi_reduce_for_dyntask for exiting world %d reduce_state=%d\n",world_id, reduce_state);
 
-  MPIU_THREAD_CS_EXIT(ALLFUNC,);
+  MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
   if(comm->rank == 0) {
-    MPIU_Snprintf(world_id_str, sizeof(world_id_str), "%d", world_id);
+    MPL_snprintf(world_id_str, sizeof(world_id_str), "%d", world_id);
     PMI2_Abort(0, world_id_str);
     if((reduce_state != world_size)) {
       TRACE_ERR("root is exiting with error\n");
@@ -389,7 +389,7 @@ int _mpi_reduce_for_dyntask(int *sendbuf, int *recvbuf)
   int         numchildren, parent=0, i, result=0,tag, remaining_child_count;
   MPID_Comm   *comm_ptr;
   int         mpi_errno;
-  int         errflag = FALSE;
+  MPIR_Errflag_t errflag = MPIR_ERR_NONE;
 
   int TASKS= world_size;
   children = MPIU_Malloc(TASKS*sizeof(int));
@@ -413,7 +413,7 @@ int _mpi_reduce_for_dyntask(int *sendbuf, int *recvbuf)
     remaining_child_count = i;
     child_rank = (children[i])% TASKS;
     TRACE_ERR("_mpi_reduce_for_dyntask - recv from child_rank%d child_taskid=%d\n", child_rank, pg_world->vct[child_rank].taskid);
-    mpi_errno = MPIC_Recv(recvbuf, sizeof(int),MPI_BYTE, child_rank, tag, comm_ptr->handle, MPI_STATUS_IGNORE, &errflag);
+    mpi_errno = MPIC_Recv(recvbuf, sizeof(int),MPI_BYTE, child_rank, tag, comm_ptr, MPI_STATUS_IGNORE, &errflag);
     TRACE_ERR("_mpi_reduce_for_dyntask - recv DONE from child_rank%d child_taskid=%d\n", child_rank, pg_world->vct[child_rank].taskid);
 
     if(world_rank != parent)
@@ -422,7 +422,7 @@ int _mpi_reduce_for_dyntask(int *sendbuf, int *recvbuf)
         parent_rank = (parent) % TASKS;
         result += *recvbuf;
         TRACE_ERR("_mpi_reduce_for_dyntask - send to parent_rank=%d parent taskid=%d \n", parent_rank, pg_world->vct[parent_rank].taskid);
-        MPIC_Send(&result, sizeof(int), MPI_BYTE, parent_rank, tag, comm_ptr->handle, &errflag);
+        MPIC_Send(&result, sizeof(int), MPI_BYTE, parent_rank, tag, comm_ptr, &errflag);
       }
       else
       {
@@ -438,7 +438,7 @@ int _mpi_reduce_for_dyntask(int *sendbuf, int *recvbuf)
   if(world_rank != parent && numchildren == 0) {
     parent_rank = (parent) % TASKS;
     TRACE_ERR("_mpi_reduce_for_dyntask - send to parent_rank=%d parent_task_id=%d\n", parent_rank, pg_world->vct[parent_rank].taskid);
-    MPIC_Send(sendbuf, sizeof(int), MPI_BYTE, parent_rank, tag, comm_ptr->handle, &errflag);
+    MPIC_Send(sendbuf, sizeof(int), MPI_BYTE, parent_rank, tag, comm_ptr, &errflag);
   }
 
   if(world_rank == 0) {

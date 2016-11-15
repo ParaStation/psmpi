@@ -58,6 +58,7 @@ void ADIOI_Flatten_datatype(MPI_Datatype datatype)
     flat->next = NULL;
     flat->blocklens = NULL;
     flat->indices = NULL;
+    flat->lb_idx = flat->ub_idx = -1;
 
     flat->count = ADIOI_Count_contiguous_blocks(datatype, &curr_index);
 #ifdef FLATTEN_DEBUG 
@@ -97,7 +98,6 @@ void ADIOI_Flatten_datatype(MPI_Datatype datatype)
              );
   }
 #endif
-
 }
 
 /* ADIOI_Flatten()
@@ -108,6 +108,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
 		  ADIO_Offset st_offset, MPI_Count *curr_index)
 {
     int i, k, m, n, basic_num, nonzeroth, is_hindexed_block=0;
+    int lb_updated=0;
     int combiner, old_combiner, old_is_contig;
     int nints, nadds, ntypes, old_nints, old_nadds, old_ntypes;
     /* By using ADIO_Offset we preserve +/- sign and 
@@ -693,6 +694,10 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
 		    flat->indices[j] = st_offset + adds[n];
 		    MPI_Type_size_x(types[n], &old_size);
 		    flat->blocklens[j] = blocklength * old_size;
+		    if (types[n] == MPI_LB)
+			flat->lb_idx = j;
+		    if (types[n] == MPI_UB)
+			flat->ub_idx = j;
 #ifdef FLATTEN_DEBUG
 		    DBG_FPRINTF(stderr,"ADIOI_Flatten:: simple adds[%#X] "MPI_AINT_FMT_HEX_SPEC", flat->indices[%#llX] %#llX, flat->blocklens[%#llX] %#llX\n",n,adds[n],j, flat->indices[j], j, flat->blocklens[j]);
 #endif
@@ -732,17 +737,31 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
 
     /* handle the Lb */
 	j = *curr_index;
-	flat->indices[j] = st_offset + adds[0];
-	/* this zero-length blocklens[] element, unlike eleswhere in the
-	 * flattening code, is correct and is used to indicate a lower bound
-	 * marker */
-	flat->blocklens[j] = 0;
+	/* when we process resized types, we (recursively) process the lower
+	 * bound, the type being resized, then the upper bound.  In the
+	 * resized-of-resized case, we might find ourselves updating the upper
+	 * bound based on the inner type, but the lower bound based on the
+	 * upper type.  check both lb and ub to prevent mixing updates */
+	if (flat->lb_idx == -1 && flat->ub_idx == -1) {
+	    flat->indices[j] = st_offset + adds[0];
+	    /* this zero-length blocklens[] element, unlike eleswhere in the
+	     * flattening code, is correct and is used to indicate a lower bound
+	     * marker */
+	    flat->blocklens[j] = 0;
+	    flat->lb_idx = *curr_index;
+	    lb_updated=1;
 
-        #ifdef FLATTEN_DEBUG 
-        DBG_FPRINTF(stderr,"ADIOI_Flatten:: simple adds[%#X] "MPI_AINT_FMT_HEX_SPEC", flat->indices[%#llX] %#llX, flat->blocklens[%#llX] %#llX\n",0,adds[0],j, flat->indices[j], j, flat->blocklens[j]);
-        #endif
+	    #ifdef FLATTEN_DEBUG
+	    DBG_FPRINTF(stderr,"ADIOI_Flatten:: simple adds[%#X] "MPI_AINT_FMT_HEX_SPEC", flat->indices[%#llX] %#llX, flat->blocklens[%#llX] %#llX\n",0,adds[0],j, flat->indices[j], j, flat->blocklens[j]);
+	    #endif
 
-	(*curr_index)++;
+	    (*curr_index)++;
+	} else {
+	    /* skipped over this chunk because something else higher-up in the
+	     * type construction set this for us already */
+	    flat->count--;
+	    st_offset -= adds[0];
+	}
 
 	/* handle the datatype */
 
@@ -768,11 +787,20 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
 	}
 
 	/* take care of the extent as a UB */
-	j = *curr_index;
-	flat->indices[j] = st_offset + adds[0] + adds[1];
-	/* again, zero-element ok: an upper-bound marker explicitly set by the
-	 * constructor of this resized type */
-	flat->blocklens[j] = 0;
+	/* see note above about mixing updates for why we check lb and ub */
+	if ((flat->lb_idx == -1 && flat->ub_idx == -1) || lb_updated) {
+	    j = *curr_index;
+	    flat->indices[j] = st_offset + adds[0] + adds[1];
+	    /* again, zero-element ok: an upper-bound marker explicitly set by the
+	     * constructor of this resized type */
+	    flat->blocklens[j] = 0;
+	    flat->ub_idx = *curr_index;
+	} else {
+	    /* skipped over this chunk because something else higher-up in the
+	     * type construction set this for us already */
+	    flat->count--;
+	    (*curr_index)--;
+	}
 
         #ifdef FLATTEN_DEBUG 
         DBG_FPRINTF(stderr,"ADIOI_Flatten:: simple adds[%#X] "MPI_AINT_FMT_HEX_SPEC", flat->indices[%#llX] %#llX, flat->blocklens[%#llX] %#llX\n",1,adds[1],j, flat->indices[j], j, flat->blocklens[j]);
@@ -1165,4 +1193,13 @@ void ADIOI_Delete_flattened(MPI_Datatype datatype)
 	if (flat->indices) ADIOI_Free(flat->indices);
 	ADIOI_Free(flat);
     }
+}
+
+ADIOI_Flatlist_node * ADIOI_Flatten_and_find(MPI_Datatype datatype)
+{
+    ADIOI_Flatlist_node *node;
+    ADIOI_Flatten_datatype(datatype);
+    node = ADIOI_Flatlist;
+    while (node->type != datatype) node = node->next;
+    return node;
 }

@@ -32,9 +32,9 @@ int MPIO_Testall(int count, MPIO_Request requests[], int *flag,
 		 MPI_Status statuses[])
 {
     int done, i, err; 
-    MPIU_THREADPRIV_DECL;
+    MPID_THREADPRIV_DECL;
 
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    ROMIO_THREAD_CS_ENTER();
     if (count == 1)  {
 	    err = MPIO_Test( requests, flag, statuses );
 	    goto fn_exit;
@@ -71,7 +71,7 @@ int MPIO_Testall(int count, MPIO_Request requests[], int *flag,
 
     err = MPI_SUCCESS;
 fn_exit:
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    ROMIO_THREAD_CS_EXIT();
     return err;
 }
 

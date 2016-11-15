@@ -268,6 +268,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_get_attr_( MPI_Fint *, MPI_Fint *,
 FORT_DLL_SPEC void FORT_CALL mpi_type_get_attr_ ( MPI_Fint *v1, MPI_Fint *v2, void*v3, MPI_Fint *v4, MPI_Fint *ierr ){
     void *attrv3;
     int l4;
+    if (v3 == MPIR_F_MPI_BOTTOM) v3 = MPI_BOTTOM;
    *ierr = MPIR_TypeGetAttr( (MPI_Datatype)(*v1), (int)*v2, &attrv3, &l4, MPIR_ATTR_AINT );
 
     if ((int)*ierr || !l4) {

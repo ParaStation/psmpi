@@ -51,6 +51,9 @@
 /* Define to 1 if you have the `cpuset_setid' function. */
 #undef HAVE_CPUSET_SETID
 
+/* Define to 1 if you have the <ctype.h> header file. */
+#undef HAVE_CTYPE_H
+
 /* Define to 1 if we have -lcuda */
 #undef HAVE_CUDA
 
@@ -72,6 +75,18 @@
    */
 #undef HAVE_DECL_FABSF
 
+/* Define to 1 if you have the declaration of `getexecname', and to 0 if you
+   don't. */
+#undef HAVE_DECL_GETEXECNAME
+
+/* Define to 1 if you have the declaration of `GetModuleFileName', and to 0 if
+   you don't. */
+#undef HAVE_DECL_GETMODULEFILENAME
+
+/* Define to 1 if you have the declaration of `getprogname', and to 0 if you
+   don't. */
+#undef HAVE_DECL_GETPROGNAME
+
 /* Define to 1 if you have the declaration of `HW_NCPU', and to 0 if you
    don't. */
 #undef HAVE_DECL_HW_NCPU
@@ -79,10 +94,6 @@
 /* Define to 1 if you have the declaration of
    `nvmlDeviceGetMaxPcieLinkGeneration', and to 0 if you don't. */
 #undef HAVE_DECL_NVMLDEVICEGETMAXPCIELINKGENERATION
-
-/* Define to 1 if you have the declaration of `PCI_LOOKUP_NO_NUMBERS', and to
-   0 if you don't. */
-#undef HAVE_DECL_PCI_LOOKUP_NO_NUMBERS
 
 /* Define to 1 if you have the declaration of `pthread_getaffinity_np', and to
    0 if you don't. */
@@ -181,6 +192,9 @@
 /* Define to 1 if you have the `host_info' function. */
 #undef HAVE_HOST_INFO
 
+/* Define to 1 if you have the `hstrerror' function. */
+#undef HAVE_HSTRERROR
+
 /* Define if hwloc is available */
 #undef HAVE_HWLOC
 
@@ -226,11 +240,11 @@
 /* Define to 1 if we have -llgrp */
 #undef HAVE_LIBLGRP
 
-/* Define to 1 if you have the `pci' library (-lpci). */
-#undef HAVE_LIBPCI
-
 /* Define to 1 if you have the `torque' library (-ltorque). */
 #undef HAVE_LIBTORQUE
+
+/* Define to 1 if you have the <libudev.h> header file. */
+#undef HAVE_LIBUDEV_H
 
 /* Define to 1 if the system has the type `LOGICAL_PROCESSOR_RELATIONSHIP'. */
 #undef HAVE_LOGICAL_PROCESSOR_RELATIONSHIP
@@ -277,9 +291,6 @@
 /* Define to 1 if you have the `openat' function. */
 #undef HAVE_OPENAT
 
-/* Define to 1 if you have the <pci/pci.h> header file. */
-#undef HAVE_PCI_PCI_H
-
 /* Define to 1 if you have the <picl.h> header file. */
 #undef HAVE_PICL_H
 
@@ -300,6 +311,9 @@
 
 /* Define to 1 if the system has the type `PROCESSOR_RELATIONSHIP'. */
 #undef HAVE_PROCESSOR_RELATIONSHIP
+
+/* Define to '1' if program_invocation_name is present and usable */
+#undef HAVE_PROGRAM_INVOCATION_NAME
 
 /* Define to 1 if the system has the type `PSAPI_WORKING_SET_EX_BLOCK'. */
 #undef HAVE_PSAPI_WORKING_SET_EX_BLOCK
@@ -463,6 +477,9 @@
 /* define if the compiler defines __func__ */
 #undef HAVE__FUNC__
 
+/* Define to '1' if __progname is present and usable */
+#undef HAVE___PROGNAME
+
 /* Define to 1 on AIX */
 #undef HWLOC_AIX_SYS
 
@@ -574,6 +591,9 @@
 /* Define to 1 if function `flsl' is declared by system headers */
 #undef HWLOC_HAVE_DECL_FLSL
 
+/* Define to 1 if function `strncasecmp' is declared by system headers */
+#undef HWLOC_HAVE_DECL_STRNCASECMP
+
 /* Define to 1 if you have the `ffs' function. */
 #undef HWLOC_HAVE_FFS
 
@@ -588,9 +608,6 @@
 
 /* Define to 1 if you have the GL module components. */
 #undef HWLOC_HAVE_GL
-
-/* Define to 1 if you have the `libpciaccess' library. */
-#undef HWLOC_HAVE_LIBPCIACCESS
 
 /* Define to 1 if you have the `libxml2' library. */
 #undef HWLOC_HAVE_LIBXML2
@@ -613,18 +630,6 @@
 
 /* Define to 1 if you have the `OpenCL' library. */
 #undef HWLOC_HAVE_OPENCL
-
-/* Define to 1 if `libpci' struct pci_dev has a `device_class' field. */
-#undef HWLOC_HAVE_PCIDEV_DEVICE_CLASS
-
-/* Define to 1 if `libpci' struct pci_dev has a `domain' field. */
-#undef HWLOC_HAVE_PCIDEV_DOMAIN
-
-/* Define to 1 if you have the pciutils `libpci' library. */
-#undef HWLOC_HAVE_PCIUTILS
-
-/* Define to 1 if `libpci' has the `pci_find_cap' function. */
-#undef HWLOC_HAVE_PCI_FIND_CAP
 
 /* Define to 1 if the hwloc library should support dynamically-loaded plugins
    */
@@ -692,6 +697,10 @@
 
 /* Define to 1 on unsupported systems */
 #undef HWLOC_UNSUPPORTED_SYS
+
+/* The library version, always available, even in embedded mode, contrary to
+   VERSION */
+#undef HWLOC_VERSION
 
 /* Define to 1 on WINDOWS */
 #undef HWLOC_WIN_SYS
@@ -770,6 +779,9 @@
 
 /* Define if gettimeofday needs a declaration */
 #undef NEEDS_GETTIMEOFDAY_DECL
+
+/* Define if hstrerror needs a declaration */
+#undef NEEDS_HSTRERROR_DECL
 
 /* Define if killpg needs a declaration */
 #undef NEEDS_KILLPG_DECL
@@ -877,9 +889,6 @@
 
 /* Define this to the process ID type */
 #undef hwloc_pid_t
-
-/* Define this to either strncasecmp or strncmp */
-#undef hwloc_strncasecmp
 
 /* Define this to the thread ID type */
 #undef hwloc_thread_t

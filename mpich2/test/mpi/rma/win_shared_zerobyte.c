@@ -15,7 +15,7 @@ const int verbose = 0;
 
 int main(int argc, char **argv)
 {
-    int i, j, rank, nproc;
+    int i, rank, nproc;
     int shm_rank, shm_nproc;
     MPI_Aint size;
     int errors = 0, all_errors = 0;
@@ -54,7 +54,8 @@ int main(int argc, char **argv)
     MPI_Win_shared_query(shm_win, MPI_PROC_NULL, &size, &disp_unit, &abs_base);
 
     if (verbose)
-        printf("%d -- allocate shared: my_base = %p, absolute base = %p\n", shm_rank, my_base, abs_base);
+        printf("%d -- allocate shared: my_base = %p, absolute base = %p\n", shm_rank, my_base,
+               abs_base);
 
     for (i = 0; i < shm_nproc; i++) {
         MPI_Win_shared_query(shm_win, i, &size, &disp_unit, &bases[i]);

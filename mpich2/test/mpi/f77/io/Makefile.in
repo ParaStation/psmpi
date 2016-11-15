@@ -100,7 +100,12 @@ noinst_PROGRAMS = iwriteatf$(EXEEXT) iwritef$(EXEEXT) \
 	writeordbef$(EXEEXT) writeshf$(EXEEXT) writeatallf$(EXEEXT) \
 	writeatallbef$(EXEEXT) fileerrf$(EXEEXT) fileinfof$(EXEEXT) \
 	shpositionf$(EXEEXT) atomicityf$(EXEEXT) miscfilef$(EXEEXT) \
-	setviewcurf$(EXEEXT) c2fmultio$(EXEEXT) c2f2ciof$(EXEEXT)
+	setviewcurf$(EXEEXT) c2fmultio$(EXEEXT) c2f2ciof$(EXEEXT) \
+	$(am__EXEEXT_1)
+@BUILD_MPIX_TESTS_TRUE@am__append_1 = \
+@BUILD_MPIX_TESTS_TRUE@    i_setviewcurf  \
+@BUILD_MPIX_TESTS_TRUE@    iwriteatallf
+
 subdir = f77/io
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -117,8 +122,10 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
-CONFIG_CLEAN_FILES = iooffset.h iodisp.h ioaint.h
+CONFIG_CLEAN_FILES = iooffset.h iodisp.h ioaint.h testlist
 CONFIG_CLEAN_VPATH_FILES =
+@BUILD_MPIX_TESTS_TRUE@am__EXEEXT_1 = i_setviewcurf$(EXEEXT) \
+@BUILD_MPIX_TESTS_TRUE@	iwriteatallf$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 atomicityf_SOURCES = atomicityf.f
 atomicityf_OBJECTS = atomicityf.$(OBJEXT)
@@ -139,6 +146,14 @@ fileinfof_SOURCES = fileinfof.f
 fileinfof_OBJECTS = fileinfof.$(OBJEXT)
 fileinfof_LDADD = $(LDADD)
 fileinfof_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
+i_setviewcurf_SOURCES = i_setviewcurf.f
+i_setviewcurf_OBJECTS = i_setviewcurf.$(OBJEXT)
+i_setviewcurf_LDADD = $(LDADD)
+i_setviewcurf_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
+nodist_iwriteatallf_OBJECTS = iwriteatallf.$(OBJEXT)
+iwriteatallf_OBJECTS = $(nodist_iwriteatallf_OBJECTS)
+iwriteatallf_LDADD = $(LDADD)
+iwriteatallf_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
 nodist_iwriteatf_OBJECTS = iwriteatf.$(OBJEXT)
 iwriteatf_OBJECTS = $(nodist_iwriteatf_OBJECTS)
 iwriteatf_LDADD = $(LDADD)
@@ -240,7 +255,8 @@ am__v_F77LD_ = $(am__v_F77LD_@AM_DEFAULT_V@)
 am__v_F77LD_0 = @echo "  F77LD   " $@;
 am__v_F77LD_1 = 
 SOURCES = atomicityf.f $(c2f2ciof_SOURCES) $(c2fmultio_SOURCES) \
-	fileerrf.f fileinfof.f $(nodist_iwriteatf_SOURCES) \
+	fileerrf.f fileinfof.f i_setviewcurf.f \
+	$(nodist_iwriteatallf_SOURCES) $(nodist_iwriteatf_SOURCES) \
 	$(nodist_iwritef_SOURCES) $(nodist_iwriteshf_SOURCES) \
 	miscfilef.f setviewcurf.f shpositionf.f \
 	$(nodist_writeallbef_SOURCES) $(nodist_writeallf_SOURCES) \
@@ -249,7 +265,8 @@ SOURCES = atomicityf.f $(c2f2ciof_SOURCES) $(c2fmultio_SOURCES) \
 	$(nodist_writeordbef_SOURCES) $(nodist_writeordf_SOURCES) \
 	$(nodist_writeshf_SOURCES)
 DIST_SOURCES = atomicityf.f $(c2f2ciof_SOURCES) $(c2fmultio_SOURCES) \
-	fileerrf.f fileinfof.f miscfilef.f setviewcurf.f shpositionf.f
+	fileerrf.f fileinfof.f i_setviewcurf.f miscfilef.f \
+	setviewcurf.f shpositionf.f
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -276,7 +293,8 @@ ETAGS = etags
 CTAGS = ctags
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/ioaint.h.in \
 	$(srcdir)/iodisp.h.in $(srcdir)/iooffset.h.in \
-	$(top_srcdir)/Makefile_f77.mtest $(top_srcdir)/confdb/depcomp
+	$(srcdir)/testlist.in $(top_srcdir)/Makefile_f77.mtest \
+	$(top_srcdir)/confdb/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 VPATH = @VPATH@
 ACLOCAL = @ACLOCAL@
@@ -405,6 +423,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -439,6 +458,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -456,6 +476,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -472,7 +493,7 @@ LDADD = $(top_builddir)/f77/util/mtestf.o
 
 # just in case
 CLEANFILES = summary.xml summary.tap gen-src-tmp gen-src-stamp
-EXTRA_DIST = testlist ioharness.defn ioharness.tlt
+EXTRA_DIST = testlist.in ioharness.defn ioharness.tlt
 
 # avoid having to write many "foo_SOURCES = foo.f" lines
 AM_DEFAULT_SOURCE_EXT = .f
@@ -480,6 +501,7 @@ AM_DEFAULT_SOURCE_EXT = .f
 # We don't want to distribute these source files because they are created by
 # "testmerge", hence "nodist_foo_SOURCES"
 nodist_iwriteatf_SOURCES = iwriteatf.f
+nodist_iwriteatallf_SOURCES = iwriteatallf.f
 nodist_iwritef_SOURCES = iwritef.f
 nodist_iwriteshf_SOURCES = iwriteshf.f
 nodist_writeallbef_SOURCES = writeallbef.f
@@ -502,6 +524,7 @@ c2f2ciof_SOURCES = c2f2cio.c c2f2ciof.f
 # these files are genereated using testmerge (see below)
 generated_io_sources = \
     iwriteatf.f        \
+    iwriteatallf.f     \
     iwritef.f          \
     iwriteshf.f        \
     writeallbef.f      \
@@ -555,6 +578,8 @@ iodisp.h: $(top_builddir)/config.status $(srcdir)/iodisp.h.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 ioaint.h: $(top_builddir)/config.status $(srcdir)/ioaint.h.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+testlist: $(top_builddir)/config.status $(srcdir)/testlist.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
@@ -578,6 +603,14 @@ fileerrf$(EXEEXT): $(fileerrf_OBJECTS) $(fileerrf_DEPENDENCIES) $(EXTRA_fileerrf
 fileinfof$(EXEEXT): $(fileinfof_OBJECTS) $(fileinfof_DEPENDENCIES) $(EXTRA_fileinfof_DEPENDENCIES) 
 	@rm -f fileinfof$(EXEEXT)
 	$(AM_V_F77LD)$(F77LINK) $(fileinfof_OBJECTS) $(fileinfof_LDADD) $(LIBS)
+
+i_setviewcurf$(EXEEXT): $(i_setviewcurf_OBJECTS) $(i_setviewcurf_DEPENDENCIES) $(EXTRA_i_setviewcurf_DEPENDENCIES) 
+	@rm -f i_setviewcurf$(EXEEXT)
+	$(AM_V_F77LD)$(F77LINK) $(i_setviewcurf_OBJECTS) $(i_setviewcurf_LDADD) $(LIBS)
+
+iwriteatallf$(EXEEXT): $(iwriteatallf_OBJECTS) $(iwriteatallf_DEPENDENCIES) $(EXTRA_iwriteatallf_DEPENDENCIES) 
+	@rm -f iwriteatallf$(EXEEXT)
+	$(AM_V_F77LD)$(F77LINK) $(iwriteatallf_OBJECTS) $(iwriteatallf_LDADD) $(LIBS)
 
 iwriteatf$(EXEEXT): $(iwriteatf_OBJECTS) $(iwriteatf_DEPENDENCIES) $(EXTRA_iwriteatf_DEPENDENCIES) 
 	@rm -f iwriteatf$(EXEEXT)

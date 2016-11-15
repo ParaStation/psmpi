@@ -10,13 +10,14 @@
 #include <errno.h>
 #include <math.h>
 
+#include "mpl.h"   /* MPL_error_printf */
+
 #include "mpichconf.h" /* HAVE_SNPRINTF */
-#include "mpimem.h"    /* MPIU_Snprintf */
-#include "mpibase.h"   /* MPIU_Error_printf */
+#include "mpimem.h"    /* MPL_snprintf */
 
 #include "mpi.h"
 /*#define RLOG_timestamp PMPI_Wtime*/
-#include "mpichtimer.h"
+#include "mpiu_timer.h"
 static double RLOG_timestamp(void)
 {
     double d;
@@ -35,7 +36,7 @@ static int WriteFileData(const char *pBuffer, int length, FILE *fout)
 	num_written = (int)fwrite(pBuffer, 1, length, fout);
 	if (num_written == -1)
 	{
-	    MPIU_Error_printf("Error: fwrite failed - %s\n", strerror(errno));
+	    MPL_error_printf("Error: fwrite failed - %s\n", strerror(errno));
 	    return errno;
 	}
 
@@ -73,13 +74,13 @@ RLOG_Struct* RLOG_InitLog(int rank, int size)
     pRLOG->nRecursion = 0;
     pRLOG->nCurEventId = RLOG_FIRST_EVENT_ID;
     pRLOG->dFirstTimestamp = 0.0;
-    MPIU_Snprintf(pRLOG->pszFileName, 256, "log%d.irlog", rank);
+    MPL_snprintf(pRLOG->pszFileName, 256, "log%d.irlog", rank);
 
     pRLOG->pOutput = NULL;
     pRLOG->pOutput = IRLOG_CreateOutputStruct(pRLOG->pszFileName);
     if (pRLOG->pOutput == NULL)
     {
-	MPIU_Error_printf("RLOG Error: unable to allocate an output structure.\n");
+	MPL_error_printf("RLOG Error: unable to allocate an output structure.\n");
 	MPIU_Free(pRLOG);
 	return NULL;
     }
@@ -120,12 +121,12 @@ int RLOG_FinishLog(RLOG_Struct* pRLOG)
 
 void RLOG_EnableLogging(RLOG_Struct* pRLOG)
 {
-    pRLOG->bLogging = RLOG_TRUE;
+    pRLOG->bLogging = TRUE;
 }
 
 void RLOG_DisableLogging(RLOG_Struct* pRLOG)
 {
-    pRLOG->bLogging = RLOG_FALSE;
+    pRLOG->bLogging = FALSE;
 }
 
 void RLOG_SaveFirstTimestamp(RLOG_Struct* pRLOG)
@@ -166,7 +167,7 @@ void WriteCurrentDataAndLogEvent(RLOG_Struct *pRLOG, int event, double starttime
 #ifndef RLOG_LogEvent
 void RLOG_LogEvent(RLOG_Struct *pRLOG, int event, double starttime, double endtime, int recursion)
 {
-    if (pRLOG->bLogging == RLOG_FALSE)
+    if (pRLOG->bLogging == FALSE)
 	return;
 
     if (pRLOG->pOutput->pCurHeader + sizeof(RLOG_HEADER) + sizeof(RLOG_EVENT) > pRLOG->pOutput->pEnd)
@@ -190,7 +191,7 @@ void RLOG_LogEvent(RLOG_Struct *pRLOG, int event, double starttime, double endti
 
 void RLOG_LogSend(RLOG_Struct* pRLOG, int dest, int tag, int size)
 {
-    if (pRLOG->bLogging == RLOG_FALSE)
+    if (pRLOG->bLogging == FALSE)
 	return;
 
     if (pRLOG->pOutput->pCurHeader + sizeof(RLOG_HEADER) + sizeof(RLOG_IARROW) > pRLOG->pOutput->pEnd)
@@ -217,7 +218,7 @@ void RLOG_LogSend(RLOG_Struct* pRLOG, int dest, int tag, int size)
 
 void RLOG_LogRecv(RLOG_Struct* pRLOG, int src, int tag, int size)
 {
-    if (pRLOG->bLogging == RLOG_FALSE)
+    if (pRLOG->bLogging == FALSE)
 	return;
 
     if (pRLOG->pOutput->pCurHeader + sizeof(RLOG_HEADER) + sizeof(RLOG_IARROW) > pRLOG->pOutput->pEnd)
@@ -247,7 +248,7 @@ void RLOG_LogCommID(RLOG_Struct* pRLOG, int comm_id)
     RLOG_HEADER *pHeader;
     RLOG_COMM *pComm;
 
-    if (pRLOG->bLogging == RLOG_FALSE)
+    if (pRLOG->bLogging == FALSE)
 	return;
 
     if (pRLOG->pOutput->pCurHeader + sizeof(RLOG_HEADER) + sizeof(RLOG_COMM) > pRLOG->pOutput->pEnd)
@@ -379,7 +380,7 @@ static char *get_random_color_str(void)
 {
     unsigned char r,g,b;
     random_color(&r, &g, &b);
-    MPIU_Snprintf(random_color_str, MAX_RANDOM_COLOR_STR, "%3d %3d %3d", (int)r, (int)g, (int)b);
+    MPL_snprintf(random_color_str, MAX_RANDOM_COLOR_STR, "%3d %3d %3d", (int)r, (int)g, (int)b);
     return random_color_str;
 }
 
@@ -388,7 +389,7 @@ void RLOG_DescribeState(RLOG_Struct* pRLOG, int state, char *name, char *color)
     RLOG_HEADER *pHeader;
     RLOG_STATE *pState;
 
-    if (pRLOG->bLogging == RLOG_FALSE)
+    if (pRLOG->bLogging == FALSE)
 	return;
 
     if (pRLOG->pOutput->pCurHeader + sizeof(RLOG_HEADER) + sizeof(RLOG_STATE) > pRLOG->pOutput->pEnd)

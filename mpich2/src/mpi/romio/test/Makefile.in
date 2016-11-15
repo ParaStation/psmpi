@@ -132,7 +132,8 @@ am__EXEEXT_1 = simple$(EXEEXT) perf$(EXEEXT) async$(EXEEXT) \
 	status$(EXEEXT) noncontig_coll2$(EXEEXT) aggregation1$(EXEEXT) \
 	aggregation2$(EXEEXT) async-multiple$(EXEEXT) \
 	ordered_fp$(EXEEXT) hindexed$(EXEEXT) external32$(EXEEXT) \
-	types_with_zeros$(EXEEXT) darray_read$(EXEEXT)
+	types_with_zeros$(EXEEXT) darray_read$(EXEEXT) \
+	syshints$(EXEEXT)
 am__EXEEXT_2 = fcoll_test$(EXEEXT) fperf$(EXEEXT) fmisc$(EXEEXT) \
 	pfcoll_test$(EXEEXT)
 @BUILD_F77_TESTS_TRUE@am__EXEEXT_3 = $(am__EXEEXT_2)
@@ -271,6 +272,10 @@ status_SOURCES = status.c
 status_OBJECTS = status.$(OBJEXT)
 status_LDADD = $(LDADD)
 status_DEPENDENCIES = $(am__DEPENDENCIES_2)
+syshints_SOURCES = syshints.c
+syshints_OBJECTS = syshints.$(OBJEXT)
+syshints_LDADD = $(LDADD)
+syshints_DEPENDENCIES = $(am__DEPENDENCIES_2)
 types_with_zeros_SOURCES = types_with_zeros.c
 types_with_zeros_OBJECTS = types_with_zeros.$(OBJEXT)
 types_with_zeros_LDADD = $(LDADD)
@@ -331,7 +336,7 @@ SOURCES = aggregation1.c aggregation2.c async.c async-multiple.c \
 	large_array.c large_file.c misc.c noncontig.c noncontig_coll.c \
 	noncontig_coll2.c ordered_fp.c perf.c $(pfcoll_test_SOURCES) \
 	psimple.c shared_fp.c simple.c split_coll.c status.c \
-	types_with_zeros.c
+	syshints.c types_with_zeros.c
 DIST_SOURCES = aggregation1.c aggregation2.c async.c async-multiple.c \
 	atomicity.c coll_perf.c coll_test.c darray_read.c error.c \
 	excl.c external32.c $(am__fcoll_test_SOURCES_DIST) file_info.c \
@@ -339,7 +344,7 @@ DIST_SOURCES = aggregation1.c aggregation2.c async.c async-multiple.c \
 	i_noncontig.c large_array.c large_file.c misc.c noncontig.c \
 	noncontig_coll.c noncontig_coll2.c ordered_fp.c perf.c \
 	$(am__pfcoll_test_SOURCES_DIST) psimple.c shared_fp.c simple.c \
-	split_coll.c status.c types_with_zeros.c
+	split_coll.c status.c syshints.c types_with_zeros.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -581,7 +586,7 @@ AM_FFLAGS = $(USER_FFLAGS)
 CTESTS = simple perf async coll_test coll_perf misc file_info excl large_array \
      atomicity noncontig i_noncontig noncontig_coll split_coll shared_fp \
      large_file psimple error status noncontig_coll2 aggregation1 aggregation2 \
-     async-multiple ordered_fp hindexed external32 types_with_zeros darray_read
+     async-multiple ordered_fp hindexed external32 types_with_zeros darray_read syshints
 
 FTESTS = fcoll_test fperf fmisc pfcoll_test 
 @BUILD_F77_TESTS_TRUE@fperf_SOURCES = fperf.f
@@ -769,6 +774,10 @@ status$(EXEEXT): $(status_OBJECTS) $(status_DEPENDENCIES) $(EXTRA_status_DEPENDE
 	@rm -f status$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(status_OBJECTS) $(status_LDADD) $(LIBS)
 
+syshints$(EXEEXT): $(syshints_OBJECTS) $(syshints_DEPENDENCIES) $(EXTRA_syshints_DEPENDENCIES) 
+	@rm -f syshints$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(syshints_OBJECTS) $(syshints_LDADD) $(LIBS)
+
 types_with_zeros$(EXEEXT): $(types_with_zeros_OBJECTS) $(types_with_zeros_DEPENDENCIES) $(EXTRA_types_with_zeros_DEPENDENCIES) 
 	@rm -f types_with_zeros$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(types_with_zeros_OBJECTS) $(types_with_zeros_LDADD) $(LIBS)
@@ -806,6 +815,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/split_coll.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/status.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/syshints.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/types_with_zeros.Po@am__quote@
 
 .c.o:

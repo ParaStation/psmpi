@@ -273,6 +273,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_file_write_all_end_ ( MPI_Fint *v1, void*v2, MP
 #endif
 
     if (v3 == MPI_F_STATUS_IGNORE) { v3 = (MPI_Fint*)MPI_STATUS_IGNORE; }
+    if (v2 == MPIR_F_MPI_BOTTOM) v2 = MPI_BOTTOM;
     *ierr = MPI_File_write_all_end( MPI_File_f2c(*v1), v2, (MPI_Status *)v3 );
 #else
 *ierr = MPI_ERR_INTERN;

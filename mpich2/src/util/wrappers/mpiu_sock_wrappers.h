@@ -16,22 +16,14 @@
 /* FIXME: Add more comments */
 /* FIXME: Ensure this header is only loaded when needed */
 
+#include "mpl.h"
 #include "mpichconf.h"
 #include "mpi.h"
-#include "mpiiov.h"
 #include "mpierror.h"
 #include "mpierrs.h"
 #include "mpimem.h"
 #include "mpidbg.h"
 #include "mpiutil.h"
-#ifdef HAVE_EXECUTIVE_PE
-    #include "mpiu_ex.h"
-#endif
-#ifdef USE_NT_SOCK
-    #ifdef HAVE_EXECUTIVE_PE
-    #include <mswsock.h>
-    #endif
-#endif
 
 #ifdef USE_NT_SOCK
 
@@ -42,14 +34,11 @@
 
 #   define MPIU_SOCKW_SOCKFD_INVALID    INVALID_SOCKET
 #   define MPIU_SOCKW_EINTR WSAEINTR
-#   ifdef HAVE_EXECUTIVE_PE
-    static const GUID MPIU_SOCKW_GUID_CONNECTEX = WSAID_CONNECTEX;
-#   endif
 
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Inet_addr
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 #   define MPIU_SOCKW_Inet_addr(ipv4_dd_str, inaddr) (              \
         ((*(inaddr) = inet_addr(ipv4_dd_str))                       \
             != INADDR_NONE)                                         \
@@ -64,7 +53,7 @@
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_init
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Init(void )
 {
     WSADATA wsaData;
@@ -89,7 +78,7 @@ static inline int MPIU_SOCKW_Init(void )
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Finalize
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 #   define MPIU_SOCKW_Finalize()    (                               \
         (WSACleanup() == 0)                                         \
         ? MPI_SUCCESS                                               \
@@ -103,7 +92,7 @@ static inline int MPIU_SOCKW_Init(void )
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Sock_open
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 #   define MPIU_SOCKW_Sock_open(domain, type, protocol, sock_ptr) ( \
         ((*sock_ptr = WSASocket(domain, type, protocol, NULL, 0,    \
             WSA_FLAG_OVERLAPPED)) != INVALID_SOCKET)                \
@@ -118,7 +107,7 @@ static inline int MPIU_SOCKW_Init(void )
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Sock_close
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 #   define MPIU_SOCKW_Sock_close(sock)    (                         \
         (closesocket(sock) != SOCKET_ERROR)                         \
         ? MPI_SUCCESS                                               \
@@ -132,7 +121,7 @@ static inline int MPIU_SOCKW_Init(void )
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Bind
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 #   define MPIU_SOCKW_Bind(sock, addr, addr_len) (                  \
         (bind(sock, (struct sockaddr *)addr, addr_len)              \
             != SOCKET_ERROR)                                        \
@@ -148,7 +137,7 @@ static inline int MPIU_SOCKW_Init(void )
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Bind_port_range
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Bind_port_range(
     MPIU_SOCKW_Sockfd_t sock, struct sockaddr_in *sin, 
     unsigned short int low_port, unsigned short int high_port)
@@ -169,12 +158,12 @@ static inline int MPIU_SOCKW_Bind_port_range(
         else{
             int err;
             err = MPIU_OSW_Get_errno();
-            MPIU_ERR_CHKANDJUMP2( ((err != WSAEADDRINUSE) &&
+            MPIR_ERR_CHKANDJUMP2( ((err != WSAEADDRINUSE) &&
                 (err != WSAEADDRNOTAVAIL)), mpi_errno, MPI_ERR_OTHER,
                 "**bind", "**bind %s %d", MPIU_OSW_Strerror(err), err);
         }
     }
-    MPIU_ERR_CHKANDJUMP2(!done, mpi_errno, MPI_ERR_OTHER,
+    MPIR_ERR_CHKANDJUMP2(!done, mpi_errno, MPI_ERR_OTHER,
         "**bindportrange", "**bindportrange %d %d", low_port, high_port);
 
 fn_exit:
@@ -186,7 +175,7 @@ fn_fail:
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Listen
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 #   define MPIU_SOCKW_Listen(sock, backlog)  (                      \
         (listen(sock, backlog) != SOCKET_ERROR)                     \
         ? MPI_SUCCESS                                               \
@@ -200,7 +189,7 @@ fn_fail:
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Accept
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 #   define MPIU_SOCKW_Accept(sock, addr, addr_len,                  \
         new_sock_ptr)(                                              \
         ((*new_sock_ptr = accept(sock, addr, addr_len))             \
@@ -217,39 +206,10 @@ fn_fail:
         )                                                           \
     )
 
-#ifdef HAVE_EXECUTIVE_PE /* Have Executive Progress engine*/
-#   undef FUNCNAME
-#   define FUNCNAME MPIU_SOCKW_Accept_ex
-#   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
-static inline int MPIU_SOCKW_Accept_ex(MPIU_SOCKW_Sockfd_t sock,
-    void *addr, int addr_len, MPIU_SOCKW_Sockfd_t *new_sock_ptr,
-    MPIU_EXOVERLAPPED *ov, int *nb_ptr)
-{
-    int mpi_errno = MPI_SUCCESS;
-    int err;
-    /* See MSDN docs regarding size of the buffer to AcceptEx() call */
-    MPIU_Assert(addr_len >= 2 * sizeof(struct sockaddr_in)+ 32);
-
-    /* FIXME: Try receiving data with AcceptEx() call to improve perf */
-    if( !AcceptEx(sock, *new_sock_ptr, addr, 0, addr_len/2, addr_len/2,
-        (LPDWORD )nb_ptr, &(ov->ov)) ){
-        err = MPIU_OSW_Get_errno();
-		MPIU_ERR_CHKANDJUMP2((err != ERROR_IO_PENDING), mpi_errno,
-			MPI_ERR_OTHER, "**sock_accept", "**sock_accept %s %d",
-			MPIU_OSW_Strerror(err), err);
-    }
- fn_exit:
-    return mpi_errno;
- fn_fail:
-    goto fn_exit;
-}            
-#endif
-
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Connect
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Connect(
     MPIU_SOCKW_Sockfd_t sockfd, struct sockaddr *addr, 
     int addr_len, int *is_pending)
@@ -260,7 +220,7 @@ static inline int MPIU_SOCKW_Connect(
         int err;
         err = MPIU_OSW_Get_errno();
 
-        MPIU_ERR_CHKANDJUMP2((err != WSAEWOULDBLOCK), mpi_errno,
+        MPIR_ERR_CHKANDJUMP2((err != WSAEWOULDBLOCK), mpi_errno,
             MPI_ERR_OTHER, "**sock_connect", "**sock_connect %s %d",
             MPIU_OSW_Strerror(err), err);
 
@@ -273,58 +233,10 @@ fn_fail:
     goto fn_exit;
 }
 
-#ifdef HAVE_EXECUTIVE_PE
-#   undef FUNCNAME
-#   define FUNCNAME MPIU_SOCKW_Connect_ex
-#   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
-static inline int MPIU_SOCKW_Connect_ex(
-    MPIU_SOCKW_Sockfd_t sockfd, struct sockaddr_in *addr, 
-    int addr_len, MPIU_EXOVERLAPPED *ov)
-{
-    int mpi_errno = MPI_SUCCESS, err;
-    int nb;
-    LPFN_CONNECTEX pfn_ConnectEx;
-
-    /*
-     * Query the entry point every time since different providers
-     * have different entry points
-     */
-    err = WSAIoctl(
-                 sockfd,
-                 SIO_GET_EXTENSION_FUNCTION_POINTER,
-                 (LPVOID)&MPIU_SOCKW_GUID_CONNECTEX,
-                 sizeof(MPIU_SOCKW_GUID_CONNECTEX),
-                 (LPVOID)&pfn_ConnectEx,
-                 sizeof(pfn_ConnectEx),
-                 (LPDWORD )&nb,
-                 NULL,
-                 NULL
-                 );
-
-    if(err == SOCKET_ERROR){
-        err = MPIU_OSW_Get_errno();
-        MPIU_ERR_SETANDJUMP2(mpi_errno, MPI_ERR_OTHER, "**fail",
-            "**fail %s %d", MPIU_OSW_Strerror(err), err);
-    }
-
-    if(!pfn_ConnectEx(sockfd, (struct sockaddr *)addr, addr_len, NULL, 0, (LPDWORD )&nb, &(ov->ov))){
-        err = MPIU_OSW_Get_errno();
-		MPIU_ERR_CHKANDJUMP2((err != ERROR_IO_PENDING), mpi_errno,
-			MPI_ERR_OTHER, "**sock_connect", "**sock_connect %s %d",
-			MPIU_OSW_Strerror(err), err);
-    }
-fn_exit:
-    return mpi_errno;
-fn_fail:
-    goto fn_exit;
-}
-#endif
-
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Read
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 #   define MPIU_SOCKW_Read(sock, buf, buf_len, nb_rd_ptr)(          \
         ((*nb_rd_ptr = recv(sock, buf, buf_len, 0x0))               \
             != SOCKET_ERROR)                                        \
@@ -344,9 +256,9 @@ fn_fail:
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Readv
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Readv(MPIU_SOCKW_Sockfd_t sock,
-    MPID_IOV *iov, int iov_cnt, int *nb_rd_ptr)
+    MPL_IOV *iov, int iov_cnt, int *nb_rd_ptr)
 {
     DWORD flags = 0;
     int err;
@@ -356,7 +268,7 @@ static inline int MPIU_SOCKW_Readv(MPIU_SOCKW_Sockfd_t sock,
     if(WSARecv(sock, iov, iov_cnt, (LPDWORD )nb_rd_ptr, &flags, NULL, NULL)
         == SOCKET_ERROR){
         err = MPIU_OSW_Get_errno();
-        MPIU_ERR_CHKANDJUMP2(!( (err == WSAEWOULDBLOCK) ||
+        MPIR_ERR_CHKANDJUMP2(!( (err == WSAEWOULDBLOCK) ||
             (err == WSA_IO_PENDING) || (err == WSAEINTR) ),
             mpi_errno, MPI_ERR_OTHER, "**sock_read",
             "**sock_read %s %d", MPIU_OSW_Strerror(err), err);
@@ -370,44 +282,10 @@ fn_fail:
     goto fn_exit;
 }
 
-#ifdef HAVE_EXECUTIVE_PE /* Have Executive Progress engine*/
-#   undef FUNCNAME
-#   define FUNCNAME MPIU_SOCKW_Readv_ex
-#   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
-static inline int MPIU_SOCKW_Readv_ex(MPIU_SOCKW_Sockfd_t sock,
-    MPID_IOV *iov, int iov_cnt, int *nb_rd_ptr, MPIU_EXOVERLAPPED *ov)
-{
-    DWORD flags = 0;
-    int err;
-    int mpi_errno = MPI_SUCCESS;
-
-    memset(MPIU_EX_GET_OVERLAPPED_PTR(ov), 0x0, sizeof(OVERLAPPED));
-    if(WSARecv(sock, iov, iov_cnt, (LPDWORD )nb_rd_ptr, &flags, MPIU_EX_GET_OVERLAPPED_PTR(ov), NULL)
-        == SOCKET_ERROR){
-        err = MPIU_OSW_Get_errno();
-        MPIU_ERR_CHKANDJUMP2(!( (err == WSAEWOULDBLOCK) ||
-            (err == WSA_IO_PENDING) || (err == WSAEINTR) ), mpi_errno,
-            MPI_ERR_OTHER, "**sock_read", "**sock_read %s %d",
-            MPIU_OSW_Strerror(err), err);
-
-        if(nb_rd_ptr){
-            *nb_rd_ptr = -1;
-        }
-    }
-
-fn_exit:
-    return mpi_errno;
-fn_fail:
-    goto fn_exit;
-}
-#endif /* HAVE_EXECUTIVE_PE */
-
-
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Write
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 #   define MPIU_SOCKW_Write(sock, buf, buf_len, nb_wr_ptr)(         \
         ((*nb_wr_ptr = send(sock, buf, buf_len, 0x0))               \
             != SOCKET_ERROR)                                        \
@@ -428,7 +306,7 @@ fn_fail:
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Writev
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 #   define MPIU_SOCKW_Writev(sock, iov, iov_cnt, nb_wr_ptr)(        \
         (WSASend(sock, iov, iov_cnt, nb_wr_ptr, 0x0, NULL, NULL)    \
             != SOCKET_ERROR)                                        \
@@ -445,42 +323,10 @@ fn_fail:
         )                                                           \
     )
 
-#ifdef HAVE_EXECUTIVE_PE /* Have Executive Progress engine*/
-#   undef FUNCNAME
-#   define FUNCNAME MPIU_SOCKW_Writev_ex
-#   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
-static inline int MPIU_SOCKW_Writev_ex(MPIU_SOCKW_Sockfd_t sock,
-    MPID_IOV *iov, int iov_cnt, int *nb_wr_ptr, MPIU_EXOVERLAPPED *ov)
-{
-    int err;
-    int mpi_errno = MPI_SUCCESS;
-
-    memset(MPIU_EX_GET_OVERLAPPED_PTR(ov), 0x0, sizeof(OVERLAPPED));
-    if(WSASend(sock, iov, iov_cnt, (LPDWORD )nb_wr_ptr, 0x0, MPIU_EX_GET_OVERLAPPED_PTR(ov), NULL)
-        == SOCKET_ERROR){
-        err = MPIU_OSW_Get_errno();
-        MPIU_ERR_CHKANDJUMP2(!( (err == WSAEWOULDBLOCK) ||
-            (err == WSA_IO_PENDING) || (err == WSAEINTR) ), mpi_errno,
-            MPI_ERR_OTHER, "**sock_write", "**sock_write %s %d",
-            MPIU_OSW_Strerror(err), err);
-
-        if(nb_wr_ptr){
-            *nb_wr_ptr = -1;
-        }
-    }
-
-fn_exit:
-    return mpi_errno;
-fn_fail:
-    goto fn_exit;
-}
-#endif /* HAVE_EXECUTIVE_PE */
-
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Sock_cntrl_nb
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 #   define MPIU_SOCKW_Sock_cntrl_nb(sock, is_nb)(                   \
         (ioctlsocket(sock, FIONBIO, (u_long *)&is_nb)               \
             != SOCKET_ERROR)                                        \
@@ -495,7 +341,7 @@ fn_fail:
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Sock_setopt
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 #   define MPIU_SOCKW_Sock_setopt(sock, level, opt_name,opt_val_ptr,\
         opt_len) (                                                  \
         (setsockopt(sock, level, opt_name,                          \
@@ -512,7 +358,7 @@ fn_fail:
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Sock_getopt
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 #   define MPIU_SOCKW_Sock_getopt(sock, level, opt_name,opt_val_ptr,\
         opt_len_ptr) (                                              \
         (getsockopt(sock, level, opt_name, opt_val_ptr, opt_len_ptr)\
@@ -528,7 +374,7 @@ fn_fail:
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Sock_has_error
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Sock_has_error(MPIU_SOCKW_Sockfd_t sock)
 {
     int has_error = 0;
@@ -631,7 +477,7 @@ typedef MPIU_SOCKW_Timeval_t_ *MPIU_SOCKW_Timeval_hnd_t;
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Timeval_hnd_init
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Timeval_hnd_init(
     MPIU_SOCKW_Timeval_hnd_t *hnd_ptr)
 {
@@ -641,7 +487,7 @@ static inline int MPIU_SOCKW_Timeval_hnd_init(
 
     *hnd_ptr = (MPIU_SOCKW_Timeval_hnd_t)
                 MPIU_Malloc(sizeof(MPIU_SOCKW_Timeval_t_));
-    MPIU_ERR_CHKANDJUMP1( !(*hnd_ptr), mpi_errno, MPI_ERR_OTHER,
+    MPIR_ERR_CHKANDJUMP1( !(*hnd_ptr), mpi_errno, MPI_ERR_OTHER,
         "**nomem", "**nomem %s", "handle to timeval");
 
 fn_exit:
@@ -656,7 +502,7 @@ fn_fail:
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Timeval_hnd_set
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Timeval_hnd_set(
     MPIU_SOCKW_Timeval_hnd_t hnd, int tv_msec)
 {
@@ -673,7 +519,7 @@ static inline int MPIU_SOCKW_Timeval_hnd_set(
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Timeval_hnd_finalize
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Timeval_hnd_finalize(
     MPIU_SOCKW_Timeval_hnd_t *hnd_ptr)
 {
@@ -707,7 +553,7 @@ static inline int MPIU_SOCKW_Timeval_hnd_finalize(
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Waitset_hnd_init
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Waitset_hnd_init(
             MPIU_SOCKW_Waitset_hnd_t *hnd_ptr, int nfds)
 {
@@ -723,7 +569,7 @@ static inline int MPIU_SOCKW_Waitset_hnd_init(
     *hnd_ptr = (MPIU_SOCKW_Waitset_hnd_t) MPIU_Malloc(
             sizeof(MPIU_SOCKW_Waitset_));
 
-    MPIU_ERR_CHKANDJUMP1(!(*hnd_ptr), mpi_errno, MPI_ERR_OTHER,
+    MPIR_ERR_CHKANDJUMP1(!(*hnd_ptr), mpi_errno, MPI_ERR_OTHER,
         "**nomem", "**nomem %s", "handle to waitset");
 
     (*hnd_ptr)->nevents = 0;
@@ -741,7 +587,7 @@ static inline int MPIU_SOCKW_Waitset_hnd_init(
     (*hnd_ptr)->fdset = (MPIU_SOCKW_Waitset_sock_hnd_ *)
         MPIU_Malloc(FD_SETSIZE * sizeof(MPIU_SOCKW_Waitset_sock_hnd_));
 
-    MPIU_ERR_CHKANDJUMP1(!((*hnd_ptr)->fdset), mpi_errno, MPI_ERR_OTHER,
+    MPIR_ERR_CHKANDJUMP1(!((*hnd_ptr)->fdset), mpi_errno, MPI_ERR_OTHER,
         "**nomem", "**nomem %s", "fdset array in waitSet");
 
 fn_exit:
@@ -753,7 +599,7 @@ fn_fail:
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Waitset_hnd_finalize
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Waitset_hnd_finalize(
             MPIU_SOCKW_Waitset_hnd_t *hnd_ptr)
 {
@@ -773,7 +619,7 @@ static inline int MPIU_SOCKW_Waitset_hnd_finalize(
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Waitset_has_more_evnts
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 #   define MPIU_SOCKW_Waitset_has_more_evnts(waitset_hnd) (           \
         waitset_hnd->nevents                                         \
     )
@@ -781,7 +627,7 @@ static inline int MPIU_SOCKW_Waitset_hnd_finalize(
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Waitset_wait
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Waitset_wait(
     MPIU_SOCKW_Waitset_hnd_t hnd, MPIU_SOCKW_Timeval_hnd_t timeout)
 {
@@ -808,7 +654,7 @@ static inline int MPIU_SOCKW_Waitset_wait(
     hnd->nevents = select(nfds,&(hnd->tmp_read_fds),
                             &(hnd->tmp_write_fds),
                             &(hnd->tmp_except_fds), timeout); 
-    MPIU_ERR_CHKANDJUMP2((hnd->nevents == SOCKET_ERROR), mpi_errno,
+    MPIR_ERR_CHKANDJUMP2((hnd->nevents == SOCKET_ERROR), mpi_errno,
         MPI_ERR_OTHER, "**select", "**select %s %d",
         MPIU_OSW_Strerror(MPIU_OSW_Get_errno()),MPIU_OSW_Get_errno());
 
@@ -821,7 +667,7 @@ fn_fail:
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Waitset_get_sock_evnts
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Waitset_get_sock_evnts_(
     MPIU_SOCKW_Waitset_hnd_t waitset_hnd, MPIU_SOCKW_Sockfd_t sock,
     int *flag_ptr)
@@ -863,7 +709,7 @@ static inline int MPIU_SOCKW_Waitset_get_sock_evnts_(
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Waitset_get_nxt_sock_with_evnt
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Waitset_get_nxt_sock_with_evnt(
     MPIU_SOCKW_Waitset_hnd_t waitset_hnd,
     MPIU_SOCKW_Waitset_sock_hnd_t *sock_hnd_ptr)
@@ -896,7 +742,7 @@ static inline int MPIU_SOCKW_Waitset_get_nxt_sock_with_evnt(
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Waitset_add_sock
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Waitset_add_sock(
     MPIU_SOCKW_Waitset_hnd_t waitset_hnd, MPIU_SOCKW_Sockfd_t sock,
     int flag, void *user_ptr, MPIU_SOCKW_Waitset_sock_hnd_t *sock_hnd_ptr)
@@ -944,7 +790,7 @@ static inline int MPIU_SOCKW_Waitset_add_sock(
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Waitset_set_sock
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Waitset_set_sock(
     MPIU_SOCKW_Waitset_hnd_t waitset_hnd,
     MPIU_SOCKW_Waitset_sock_hnd_t sock_hnd, int flag)
@@ -978,7 +824,7 @@ static inline int MPIU_SOCKW_Waitset_set_sock(
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Waitset_clr_sock
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Waitset_clr_sock(
     MPIU_SOCKW_Waitset_hnd_t waitset_hnd,
     MPIU_SOCKW_Waitset_sock_hnd_t sock_hnd, int flag)
@@ -1013,7 +859,7 @@ static inline int MPIU_SOCKW_Waitset_clr_sock(
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Waitset_rem_sock
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Waitset_rem_sock(
     MPIU_SOCKW_Waitset_hnd_t waitset_hnd,
     MPIU_SOCKW_Waitset_sock_hnd_t *sock_hnd_ptr)
@@ -1050,7 +896,7 @@ static inline int MPIU_SOCKW_Waitset_rem_sock(
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Waitset_sock_hnd_get_sockfd
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Waitset_sock_hnd_get_sockfd(
     MPIU_SOCKW_Waitset_sock_hnd_t sock_hnd,
     MPIU_SOCKW_Sockfd_t *sockfd_ptr)
@@ -1068,7 +914,7 @@ static inline int MPIU_SOCKW_Waitset_sock_hnd_get_sockfd(
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Waitset_sock_hnd_get_user_ptr
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Waitset_sock_hnd_get_user_ptr(
     MPIU_SOCKW_Waitset_sock_hnd_t sock_hnd, void **userp_ptr)
 {
@@ -1085,7 +931,7 @@ static inline int MPIU_SOCKW_Waitset_sock_hnd_get_user_ptr(
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Waitset_sock_hnd_set_user_ptr
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIU_SOCKW_Waitset_sock_hnd_set_user_ptr(
     MPIU_SOCKW_Waitset_sock_hnd_t sock_hnd, void *user_ptr)
 {
@@ -1101,7 +947,7 @@ static inline int MPIU_SOCKW_Waitset_sock_hnd_set_user_ptr(
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Waitset_is_sock_readable
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 #   define MPIU_SOCKW_Waitset_is_sock_readable(sock_hnd)(              \
         (MPIU_SOCKW_Waitset_sock_hnd_is_init_(sock_hnd))                \
         ? (sock_hnd->event_flag & MPIU_SOCKW_FLAG_SOCK_IS_READABLE_) \
@@ -1111,7 +957,7 @@ static inline int MPIU_SOCKW_Waitset_sock_hnd_set_user_ptr(
 #   undef FUNCNAME
 #   define FUNCNAME MPIU_SOCKW_Waitset_is_sock_writeable
 #   undef FCNAME
-#   define FCNAME MPIU_QUOTE(FUNCNAME)
+#   define FCNAME MPL_QUOTE(FUNCNAME)
 #   define MPIU_SOCKW_Waitset_is_sock_writeable(sock_hnd)(             \
         (MPIU_SOCKW_Waitset_sock_hnd_is_init_(sock_hnd))                \
         ? (sock_hnd->event_flag & MPIU_SOCKW_FLAG_SOCK_IS_WRITEABLE_)\

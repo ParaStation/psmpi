@@ -33,9 +33,6 @@ int MPIR_Group_init(void)
     MPID_Group_builtin[0].idx_of_first_lpid = -1;
     MPID_Group_builtin[0].lrank_to_lpid = NULL;
 
-    /* the mutex is probably never used, but initializing it doesn't hurt */
-    MPIU_THREAD_MPI_OBJ_INIT(&MPID_Group_builtin[0]);
-
     /* TODO hook for device here? */
     return mpi_errno;
 }
@@ -102,7 +99,7 @@ int MPIR_Group_create( int nproc, MPID_Group **new_group_ptr )
  * in group rank order).  Instead it builds the traversal order (in increasing
  * lpid order) through the maparray given by the "next_lpid" fields.
  */
-static int MPIR_Mergesort_lpidarray( MPID_Group_pmap_t maparray[], int n )
+static int mergesort_lpidarray( MPID_Group_pmap_t maparray[], int n )
 {
     int idx1, idx2, first_idx, cur_idx, next_lpid, idx2_offset;
 
@@ -128,8 +125,8 @@ static int MPIR_Mergesort_lpidarray( MPID_Group_pmap_t maparray[], int n )
 
     /* Sort each half */
     idx2_offset = n/2;
-    idx1 = MPIR_Mergesort_lpidarray( maparray, n/2 );
-    idx2 = MPIR_Mergesort_lpidarray( maparray + idx2_offset, n - n/2 ) + idx2_offset;
+    idx1 = mergesort_lpidarray( maparray, n/2 );
+    idx2 = mergesort_lpidarray( maparray + idx2_offset, n - n/2 ) + idx2_offset;
     /* merge the results */
     /* There are three lists:
        first_idx - points to the HEAD of the sorted, merged list
@@ -206,8 +203,8 @@ void MPIR_Group_setup_lpid_list( MPID_Group *group_ptr )
 {
     if (group_ptr->idx_of_first_lpid == -1) {
 	group_ptr->idx_of_first_lpid = 
-	    MPIR_Mergesort_lpidarray( group_ptr->lrank_to_lpid, 
-				      group_ptr->size );
+	    mergesort_lpidarray( group_ptr->lrank_to_lpid,
+                                 group_ptr->size );
     }
 }
 
@@ -285,7 +282,7 @@ int MPIR_Group_check_valid_ranges( MPID_Group *group_ptr,
     int i, j, size, first, last, stride, mpi_errno = MPI_SUCCESS;
 
     if (n < 0) {
-	MPIU_ERR_SETANDSTMT2(mpi_errno,MPI_ERR_ARG,;,
+	MPIR_ERR_SETANDSTMT2(mpi_errno,MPI_ERR_ARG,;,
                              "**argneg", "**argneg %s %d", "n", n );
 	return mpi_errno;
     }
@@ -369,36 +366,36 @@ int MPIR_Group_check_valid_ranges( MPID_Group *group_ptr,
 
     return mpi_errno;
 }
-/* Given a group and a VCR, check that the group is a subset of the processes
-   defined by the VCR.
 
-   We sort the lpids for the group and the vcr.  If the group has an
-   lpid that is not in the vcr, then report an error.
+/* Given a group and a comm, check that the group is a subset of the processes
+   defined by the comm.
+
+   We sort the lpids for the group and the comm.  If the group has an
+   lpid that is not in the comm, then report an error.
 */
-int MPIR_GroupCheckVCRSubset( MPID_Group *group_ptr, int vsize, MPID_VCR *vcr,
-			      int *idx )
+int MPIR_Group_check_subset( MPID_Group *group_ptr, MPID_Comm *comm_ptr )
 {
     int mpi_errno = MPI_SUCCESS;
     int g1_idx, g2_idx, l1_pid, l2_pid, i;
     MPID_Group_pmap_t *vmap=0;
+    int vsize = comm_ptr->comm_kind == MPID_INTERCOMM ? comm_ptr->local_size :
+        comm_ptr->remote_size;
     MPIU_CHKLMEM_DECL(1);
 
     MPIU_Assert(group_ptr != NULL);
-    MPIU_Assert(vcr != NULL);
 
     MPIU_CHKLMEM_MALLOC(vmap,MPID_Group_pmap_t*,
 			vsize*sizeof(MPID_Group_pmap_t),mpi_errno, "" );
     /* Initialize the vmap */
     for (i=0; i<vsize; i++) {
-	MPID_VCR_Get_lpid( vcr[i], &vmap[i].lpid );
-	vmap[i].lrank     = i;
+	MPID_Comm_get_lpid(comm_ptr, i, &vmap[i].lpid, FALSE);
 	vmap[i].next_lpid = 0;
 	vmap[i].flag      = 0;
     }
     
     MPIR_Group_setup_lpid_list( group_ptr );
     g1_idx = group_ptr->idx_of_first_lpid;
-    g2_idx = MPIR_Mergesort_lpidarray( vmap, vsize );
+    g2_idx = mergesort_lpidarray( vmap, vsize );
     MPIU_DBG_MSG_FMT(COMM,VERBOSE,(MPIU_DBG_FDEST,
 			   "initial indices: %d %d\n", g1_idx, g2_idx ));
     while (g1_idx >= 0 && g2_idx >= 0) {
@@ -424,7 +421,7 @@ int MPIR_GroupCheckVCRSubset( MPID_Group *group_ptr, int vsize, MPID_VCR *vcr,
     }
 
     if (g1_idx >= 0) {
-	MPIU_ERR_SET1(mpi_errno, MPI_ERR_GROUP,
+	MPIR_ERR_SET1(mpi_errno, MPI_ERR_GROUP,
 		      "**groupnotincomm", "**groupnotincomm %d", g1_idx );
     }
 

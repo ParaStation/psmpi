@@ -9,10 +9,11 @@
 #undef FUNCNAME
 #define FUNCNAME MPID_Cancel_recv
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_Cancel_recv(MPID_Request * rreq)
 {
     int netmod_cancelled = TRUE;
+    int mpi_errno = MPI_SUCCESS;
 
     MPIDI_STATE_DECL(MPID_STATE_MPID_CANCEL_RECV);
     
@@ -39,8 +40,10 @@ int MPID_Cancel_recv(MPID_Request * rreq)
 		       "request 0x%08x cancelled", rreq->handle);
         MPIR_STATUS_SET_CANCEL_BIT(rreq->status, TRUE);
         MPIR_STATUS_SET_COUNT(rreq->status, 0);
-	MPID_REQUEST_SET_COMPLETED(rreq);
-	MPID_Request_release(rreq);
+        mpi_errno = MPID_Request_complete(rreq);
+        if (mpi_errno != MPI_SUCCESS) {
+            MPIR_ERR_POP(mpi_errno);
+        }
     }
     else
     {
@@ -48,6 +51,9 @@ int MPID_Cancel_recv(MPID_Request * rreq)
 	    "request 0x%08x already matched, unable to cancel", rreq->handle);
     }
 
+ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_CANCEL_RECV);
-    return MPI_SUCCESS;
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }

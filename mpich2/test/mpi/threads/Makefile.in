@@ -313,6 +313,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -347,6 +348,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -364,6 +366,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -376,8 +379,8 @@ LDADD = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 CLEANFILES = summary.xml summary.tap summary.junit.xml
 EXTRA_DIST = testlist.in
-SUBDIRS = util pt2pt comm init mpi_t $(spawndir) rma
-DIST_SUBDIRS = util pt2pt comm init mpi_t spawn rma
+SUBDIRS = util pt2pt comm init mpi_t $(spawndir) rma coll
+DIST_SUBDIRS = util pt2pt comm init mpi_t spawn rma coll
 all: all-recursive
 
 .SUFFIXES:

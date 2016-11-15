@@ -272,7 +272,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_keyval_create_( MPI_Copy_function, MPI_
 #endif
  
 /* The F77 attr copy function prototype and calling convention */
-typedef void (FORT_CALL F77_CopyFunction) (MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *,MPI_Fint *, MPI_Fint *, MPI_Fint *);
+typedef void (FORT_CALL F77_CopyFunction) (MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint *);
 
 /* Helper proxy function to thunk the attr copy function call into F77 calling convention */
 static
@@ -291,21 +291,21 @@ MPIR_Comm_copy_attr_f77_proxy(
     MPI_Fint ierr = 0;
     MPI_Fint fhandle = (MPI_Fint)comm;
     MPI_Fint fkeyval = (MPI_Fint)keyval;
-    MPI_Fint fvalue = (MPI_Fint) MPI_VOID_PTR_CAST_TO_MPI_AINT (value);
-    MPI_Fint* fextra  = (MPI_Fint*)extra_state;
-    MPI_Fint fnew = 0;
+    MPI_Aint fvalue = MPIU_VOID_PTR_CAST_TO_MPI_AINT (value);
+    MPI_Aint *fextra = (MPI_Aint *)extra_state;
+    MPI_Aint fnew = 0;
     MPI_Fint fflag = 0;
 
     ((F77_CopyFunction*)user_function)( &fhandle, &fkeyval, fextra, &fvalue, &fnew, &fflag, &ierr );
 
     *flag = MPIR_FROM_FLOG(fflag);
-    *new_value = MPI_AINT_CAST_TO_VOID_PTR ((MPI_Aint) fnew);
+    *new_value = MPIU_AINT_CAST_TO_VOID_PTR ((MPI_Aint) fnew);
     return (int)ierr;
 }
 
 
 /* The F77 attr delete function prototype and calling convention */
-typedef void (FORT_CALL F77_DeleteFunction) (MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *);
+typedef void (FORT_CALL F77_DeleteFunction) (MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *, MPI_Fint *);
 
 /* Helper proxy function to thunk the attr delete function call into F77 calling convention */
 static
@@ -322,8 +322,8 @@ MPIR_Comm_delete_attr_f77_proxy(
     MPI_Fint ierr = 0;
     MPI_Fint fhandle = (MPI_Fint)comm;
     MPI_Fint fkeyval = (MPI_Fint)keyval;
-    MPI_Fint fvalue = (MPI_Fint) MPI_VOID_PTR_CAST_TO_MPI_AINT (value);
-    MPI_Fint* fextra  = (MPI_Fint*)extra_state;
+    MPI_Aint fvalue = MPIU_VOID_PTR_CAST_TO_MPI_AINT (value);
+    MPI_Aint *fextra = (MPI_Aint *)extra_state;
 
     ((F77_DeleteFunction*)user_function)( &fhandle, &fkeyval, &fvalue, fextra, &ierr );
     return (int)ierr;

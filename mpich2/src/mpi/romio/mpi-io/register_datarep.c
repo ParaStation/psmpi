@@ -62,7 +62,7 @@ int MPI_Register_datarep(ROMIO_CONST char *datarep,
     ADIOI_Datarep *adio_datarep;
     static char myname[] = "MPI_REGISTER_DATAREP";
 
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    ROMIO_THREAD_CS_ENTER();
 
     /* --BEGIN ERROR HANDLING-- */
     /* check datarep name (use strlen instead of strnlen because
@@ -139,7 +139,7 @@ int MPI_Register_datarep(ROMIO_CONST char *datarep,
     error_code = MPI_SUCCESS;
 
 fn_exit:
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    ROMIO_THREAD_CS_EXIT();
 
     return error_code;
 }

@@ -35,7 +35,7 @@ int MPID_Type_dup(MPI_Datatype oldtype,
     if (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN) {
 	/* create a new type and commit it. */
 	mpi_errno = MPID_Type_contiguous(1, oldtype, newtype);
-	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+	if (mpi_errno) { MPIR_ERR_POP(mpi_errno); }
     }
     else {
       	/* allocate new datatype object and handle */
@@ -72,9 +72,9 @@ int MPID_Type_dup(MPI_Datatype oldtype,
 	new_dtp->cache_id      = -1;   /* ??? */
 	new_dtp->name[0]       = 0;    /* The Object name is not copied on
 					  a dup */
-	new_dtp->n_elements    = old_dtp->n_elements;
-	new_dtp->element_size  = old_dtp->element_size;
-	new_dtp->eltype        = old_dtp->eltype;
+	new_dtp->n_builtin_elements    = old_dtp->n_builtin_elements;
+	new_dtp->builtin_element_size  = old_dtp->builtin_element_size;
+	new_dtp->basic_type        = old_dtp->basic_type;
 	
 	new_dtp->dataloop       = NULL;
 	new_dtp->dataloop_size  = old_dtp->dataloop_size;
@@ -82,7 +82,6 @@ int MPID_Type_dup(MPI_Datatype oldtype,
 	new_dtp->hetero_dloop       = NULL;
 	new_dtp->hetero_dloop_size  = old_dtp->hetero_dloop_size;
 	new_dtp->hetero_dloop_depth = old_dtp->hetero_dloop_depth;
-
 	*newtype = new_dtp->handle;
 
 	if (old_dtp->is_committed) {
@@ -98,7 +97,11 @@ int MPID_Type_dup(MPI_Datatype oldtype,
 				  old_dtp->hetero_dloop_size,
 				  &new_dtp->hetero_dloop);
 	    }
-	}
+
+#ifdef MPID_Dev_datatype_commit_hook
+            MPID_Dev_datatype_dup_hook(new_dtp);
+#endif /* MPID_Dev_datatype_commit_hook */
+      }
     }
 
     MPIU_DBG_MSG_D(DATATYPE,VERBOSE, "dup type %x created.", *newtype);

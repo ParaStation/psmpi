@@ -21,7 +21,7 @@ can be specified by using the colon notation (for MPMD - Multiple Program
 Multiple Data applications).   For example, the following command will run
 the MPI program <tt>a.out</tt> on 4 processes:
 <PRE>
-    mpiexec \-n 4 a.out
+    mpiexec -n 4 a.out
 </PRE>
 
 <P>
@@ -46,7 +46,7 @@ of processes (see the MPI-2 specification for more details)
 <DT><B>-configfile &lt;name&gt; </B><DD>file containing specifications of host/program,
 one per line, with # as a comment indicator, e.g., the usual
 mpiexec input, but with ":" replaced with a newline.  That is,
-the configfile contains lines with \-soft, \-n etc.
+the configfile contains lines with -soft, -n etc.
 </DL>
 <P>
 Additional arguments that are specific to the MPICH implementation
@@ -62,7 +62,7 @@ for MPMD (multiple program multiple data) programming.  For example,
 to run the program <tt>ocean</tt> on 4 processes and <tt>air</tt> on 8 processes, use:
 <P>
 <PRE>
-    mpiexec \-n 4 ocean : \-n 8 air
+    mpiexec -n 4 ocean : -n 8 air
 </PRE>
 
 <P>

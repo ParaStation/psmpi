@@ -122,7 +122,7 @@
 
 /* mpi.h includes the definitions of MPI_Fint */
 #include "mpi.h"
-#include "mpitypedefs.h"
+#include "mpiutil.h"
 
 /* Include prototypes of helper functions.
    These include MPIR_Keyval_set_fortran, fortran90, and 
@@ -160,11 +160,6 @@ typedef MPI_Aint MPI_FAint;
 #include "mpi_fortlogical.h"
 
 
-/* If Cray-style pointers are supported, we don't need to check for a 
-   "special" address. */
-#ifdef USE_POINTER_FOR_BOTTOM
-#define MPIR_F_PTR(a) (a)
-#else
 /* MPIR_F_MPI_BOTTOM is the address of the Fortran MPI_BOTTOM value */
 extern FORT_DLL_SPEC int  MPIR_F_NeedInit;
 extern FORT_DLL_SPEC void *MPIR_F_MPI_BOTTOM;
@@ -199,8 +194,6 @@ extern FORT_DLL_SPEC void *MPI_F_ARGVS_NULL;
 #endif
 /* Provide a prototype for the mpirinitf function */
 extern void mpirinitf_( void );
-
-#endif
 
 /*  
  * These are hooks for Fortran characters.

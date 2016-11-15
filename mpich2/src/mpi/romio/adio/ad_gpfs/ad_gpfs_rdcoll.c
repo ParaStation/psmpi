@@ -114,6 +114,7 @@ void ADIOI_GPFS_ReadStridedColl(ADIO_File fd, void *buf, int count,
     ADIO_Offset *offset_list = NULL, *st_offsets = NULL, *fd_start = NULL,
 	*fd_end = NULL, *end_offsets = NULL;
     ADIO_Offset *gpfs_offsets0 = NULL, *gpfs_offsets = NULL;
+    ADIO_Offset *count_sizes;
     int  ii;
     ADIO_Offset *len_list = NULL;
     int *buf_idx = NULL;
@@ -174,7 +175,36 @@ void ADIOI_GPFS_ReadStridedColl(ADIO_File fd, void *buf, int count,
 	st_offsets   = (ADIO_Offset *) ADIOI_Malloc(nprocs*sizeof(ADIO_Offset));
 	end_offsets  = (ADIO_Offset *) ADIOI_Malloc(nprocs*sizeof(ADIO_Offset));
 
+    ADIO_Offset my_count_size=0;
+    /* One-sided aggregation needs the amount of data per rank as well because the difference in
+     * starting and ending offsets for 1 byte is 0 the same as 0 bytes so it cannot be distiguished.
+     */
+    if ((gpfsmpio_read_aggmethod == 1) || (gpfsmpio_read_aggmethod == 2)) {
+        count_sizes = (ADIO_Offset *) ADIOI_Malloc(nprocs*sizeof(ADIO_Offset));
+        MPI_Count buftype_size;
+        MPI_Type_size_x(datatype, &buftype_size);
+        my_count_size = (ADIO_Offset) count  * (ADIO_Offset)buftype_size;
+    }
     if (gpfsmpio_tunegather) {
+      if ((gpfsmpio_read_aggmethod == 1) || (gpfsmpio_read_aggmethod == 2)) {
+        gpfs_offsets0 = (ADIO_Offset *) ADIOI_Malloc(3*nprocs*sizeof(ADIO_Offset));
+        gpfs_offsets  = (ADIO_Offset *) ADIOI_Malloc(3*nprocs*sizeof(ADIO_Offset));
+        for (ii=0; ii<nprocs; ii++)  {
+          gpfs_offsets0[ii*3]   = 0;
+          gpfs_offsets0[ii*3+1] = 0;
+          gpfs_offsets0[ii*3+2] = 0;
+        }
+        gpfs_offsets0[myrank*3]   = start_offset;
+        gpfs_offsets0[myrank*3+1] =   end_offset;
+        gpfs_offsets0[myrank*3+2] =   my_count_size;
+        MPI_Allreduce( gpfs_offsets0, gpfs_offsets, nprocs*3, ADIO_OFFSET, MPI_MAX, fd->comm );
+        for (ii=0; ii<nprocs; ii++)  {
+          st_offsets [ii] = gpfs_offsets[ii*3]  ;
+          end_offsets[ii] = gpfs_offsets[ii*3+1];
+          count_sizes[ii] = gpfs_offsets[ii*3+2];
+        }
+      }
+      else {
 	    gpfs_offsets0 = (ADIO_Offset *) ADIOI_Malloc(2*nprocs*sizeof(ADIO_Offset));
 	    gpfs_offsets  = (ADIO_Offset *) ADIOI_Malloc(2*nprocs*sizeof(ADIO_Offset));
 	    for (ii=0; ii<nprocs; ii++)  {
@@ -190,6 +220,7 @@ void ADIOI_GPFS_ReadStridedColl(ADIO_File fd, void *buf, int count,
 		st_offsets [ii] = gpfs_offsets[ii*2]  ;
 		end_offsets[ii] = gpfs_offsets[ii*2+1];
 	    }
+      }
 	    ADIOI_Free( gpfs_offsets0 );
 	    ADIOI_Free( gpfs_offsets  );
     } else {
@@ -197,6 +228,10 @@ void ADIOI_GPFS_ReadStridedColl(ADIO_File fd, void *buf, int count,
                       ADIO_OFFSET, fd->comm);
         MPI_Allgather(&end_offset, 1, ADIO_OFFSET, end_offsets, 1,
                       ADIO_OFFSET, fd->comm);
+        if ((gpfsmpio_read_aggmethod == 1) || (gpfsmpio_read_aggmethod == 2)) {
+	      MPI_Allgather(&count_sizes, 1, ADIO_OFFSET, count_sizes, 1,
+                        ADIO_OFFSET, fd->comm);
+        }
     }
 
     GPFSMPIO_T_CIO_SET_GET( r, 1, 1, GPFSMPIO_CIO_T_PATANA, GPFSMPIO_CIO_T_GATHER )
@@ -259,18 +294,69 @@ void ADIOI_GPFS_ReadStridedColl(ADIO_File fd, void *buf, int count,
      * needs to be mapped to an actual rank in the communicator later.
      *
      */
-    if (gpfsmpio_tuneblocking)
+    int currentNonZeroDataIndex = 0;
+    if ((gpfsmpio_read_aggmethod == 1) || (gpfsmpio_read_aggmethod == 2)) {
+      /* Take out the 0-data offsets by shifting the indexes with data to the
+       * front and keeping track of the non-zero data index for use as the
+       * length.  By doing this we will optimally use all available aggs
+       * and spread the actual data across them instead of having offsets
+       * with empty data potentially dilute the file domains and create
+       * problems for the one-sided aggregation.
+       */
+      for (i=0; i<nprocs; i++) {
+        if (count_sizes[i] > 0) {
+          st_offsets[currentNonZeroDataIndex] = st_offsets[i];
+          end_offsets[currentNonZeroDataIndex] = end_offsets[i];
+          currentNonZeroDataIndex++;
+        }
+      }
+    }
+    if (gpfsmpio_tuneblocking) {
+    if ((gpfsmpio_read_aggmethod == 1) || (gpfsmpio_read_aggmethod == 2)) {
+    ADIOI_GPFS_Calc_file_domains(fd, st_offsets, end_offsets, currentNonZeroDataIndex,
+			    nprocs_for_coll, &min_st_offset,
+			    &fd_start, &fd_end, &fd_size, fd->fs_ptr);
+    }
+    else {
     ADIOI_GPFS_Calc_file_domains(fd, st_offsets, end_offsets, nprocs,
 			    nprocs_for_coll, &min_st_offset,
 			    &fd_start, &fd_end, &fd_size, fd->fs_ptr);
-    else
+    }
+    }
+    else {
+    if ((gpfsmpio_read_aggmethod == 1) || (gpfsmpio_read_aggmethod == 2)) {
+    ADIOI_Calc_file_domains(st_offsets, end_offsets, currentNonZeroDataIndex,
+			    nprocs_for_coll, &min_st_offset,
+			    &fd_start, &fd_end,
+			    fd->hints->min_fdomain_size, &fd_size,
+			    fd->hints->striping_unit);
+	}
+    else {
     ADIOI_Calc_file_domains(st_offsets, end_offsets, nprocs,
 			    nprocs_for_coll, &min_st_offset,
 			    &fd_start, &fd_end,
 			    fd->hints->min_fdomain_size, &fd_size, 
 			    fd->hints->striping_unit);
+	}
+    }
 
     GPFSMPIO_T_CIO_SET_GET( r, 1, 1, GPFSMPIO_CIO_T_MYREQ, GPFSMPIO_CIO_T_FD_PART );
+    if ((gpfsmpio_read_aggmethod == 1) || (gpfsmpio_read_aggmethod == 2)) {
+    /* If the user has specified to use a one-sided aggregation method then do that at
+     * this point instead of the two-phase I/O.
+     */
+      ADIOI_OneSidedReadAggregation(fd, offset_list, len_list, contig_access_count, buf,
+		    datatype,error_code, st_offsets, end_offsets, currentNonZeroDataIndex, fd_start, fd_end);
+      GPFSMPIO_T_CIO_REPORT( 0, fd, myrank, nprocs)
+      ADIOI_Free(offset_list);
+      ADIOI_Free(len_list);
+      ADIOI_Free(st_offsets);
+      ADIOI_Free(end_offsets);
+      ADIOI_Free(fd_start);
+      ADIOI_Free(fd_end);
+      ADIOI_Free(count_sizes);
+	  goto fn_exit;
+    }
     if (gpfsmpio_p2pcontig==1) {
 	/* For some simple yet common(?) workloads, full-on two-phase I/O is
 	 * overkill.  We can establish sub-groups of processes and their
@@ -519,9 +605,7 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
 
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     if (!buftype_is_contig) {
-	ADIOI_Flatten_datatype(datatype);
-	flat_buf = ADIOI_Flatlist;
-        while (flat_buf->type != datatype) flat_buf = flat_buf->next;
+	flat_buf = ADIOI_Flatten_and_find(datatype);
     }
     MPI_Type_extent(datatype, &buftype_extent);
 
@@ -609,7 +693,7 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
 		    }
 		    if (req_off < real_off + real_size) {
 			count[i]++;
-      ADIOI_Assert((((ADIO_Offset)(MPIR_Upint)read_buf)+req_off-real_off) == (ADIO_Offset)(MPIR_Upint)(read_buf+req_off-real_off));
+      ADIOI_Assert((((ADIO_Offset)(MPIU_Upint)read_buf)+req_off-real_off) == (ADIO_Offset)(MPIU_Upint)(read_buf+req_off-real_off));
 			MPI_Address(read_buf+req_off-real_off, 
                                &(others_req[i].mem_ptrs[j]));
       ADIOI_Assert((real_off + real_size - req_off) == (int)(real_off + real_size - req_off));
@@ -693,7 +777,7 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
 
 	if (for_next_iter) {
 	    tmp_buf = (char *) ADIOI_Malloc(for_next_iter);
-      ADIOI_Assert((((ADIO_Offset)(MPIR_Upint)read_buf)+real_size-for_next_iter) == (ADIO_Offset)(MPIR_Upint)(read_buf+real_size-for_next_iter));
+      ADIOI_Assert((((ADIO_Offset)(MPIU_Upint)read_buf)+real_size-for_next_iter) == (ADIO_Offset)(MPIU_Upint)(read_buf+real_size-for_next_iter));
       ADIOI_Assert((for_next_iter+coll_bufsize) == (size_t)(for_next_iter+coll_bufsize));
 	    memcpy(tmp_buf, read_buf+real_size-for_next_iter, for_next_iter);
 	    ADIOI_Free(fd->io_buf);
@@ -908,7 +992,7 @@ static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
 { \
     while (size) { \
 	size_in_buf = ADIOI_MIN(size, flat_buf_sz); \
-  ADIOI_Assert((((ADIO_Offset)(MPIR_Upint)buf) + user_buf_idx) == (ADIO_Offset)(MPIR_Upint)(buf + user_buf_idx)); \
+  ADIOI_Assert((((ADIO_Offset)(MPIU_Upint)buf) + user_buf_idx) == (ADIO_Offset)(MPIU_Upint)(buf + user_buf_idx)); \
   ADIOI_Assert(size_in_buf == (size_t)size_in_buf); \
 	memcpy(((char *) buf) + user_buf_idx, \
 	       &(recv_buf[p][recv_buf_idx[p]]), size_in_buf); \

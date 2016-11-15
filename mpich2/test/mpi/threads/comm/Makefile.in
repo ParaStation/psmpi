@@ -89,8 +89,10 @@ build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = ctxdup$(EXEEXT) dup_leak_test$(EXEEXT) \
 	comm_dup_deadlock$(EXEEXT) comm_create_threads$(EXEEXT) \
-	comm_create_group_threads$(EXEEXT) comm_idup$(EXEEXT) \
-	ctxidup$(EXEEXT)
+	comm_create_group_threads$(EXEEXT) \
+	comm_create_group_threads2$(EXEEXT) comm_idup$(EXEEXT) \
+	idup_deadlock$(EXEEXT) ctxidup$(EXEEXT) idup_nb$(EXEEXT) \
+	idup_comm_gen$(EXEEXT)
 subdir = threads/comm
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -107,7 +109,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = testlist
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 comm_create_group_threads_SOURCES = comm_create_group_threads.c
@@ -115,6 +117,15 @@ comm_create_group_threads_OBJECTS =  \
 	comm_create_group_threads.$(OBJEXT)
 comm_create_group_threads_LDADD = $(LDADD)
 comm_create_group_threads_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o \
+	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+comm_create_group_threads2_SOURCES = comm_create_group_threads2.c
+comm_create_group_threads2_OBJECTS =  \
+	comm_create_group_threads2.$(OBJEXT)
+comm_create_group_threads2_LDADD = $(LDADD)
+comm_create_group_threads2_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
@@ -160,6 +171,27 @@ dup_leak_test_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+idup_comm_gen_SOURCES = idup_comm_gen.c
+idup_comm_gen_OBJECTS = idup_comm_gen.$(OBJEXT)
+idup_comm_gen_LDADD = $(LDADD)
+idup_comm_gen_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o \
+	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+idup_deadlock_SOURCES = idup_deadlock.c
+idup_deadlock_OBJECTS = idup_deadlock.$(OBJEXT)
+idup_deadlock_LDADD = $(LDADD)
+idup_deadlock_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o \
+	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+idup_nb_SOURCES = idup_nb.c
+idup_nb_OBJECTS = idup_nb.$(OBJEXT)
+idup_nb_LDADD = $(LDADD)
+idup_nb_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o \
+	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -188,12 +220,14 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = comm_create_group_threads.c comm_create_threads.c \
+SOURCES = comm_create_group_threads.c comm_create_group_threads2.c \
+	comm_create_threads.c comm_dup_deadlock.c comm_idup.c ctxdup.c \
+	ctxidup.c dup_leak_test.c idup_comm_gen.c idup_deadlock.c \
+	idup_nb.c
+DIST_SOURCES = comm_create_group_threads.c \
+	comm_create_group_threads2.c comm_create_threads.c \
 	comm_dup_deadlock.c comm_idup.c ctxdup.c ctxidup.c \
-	dup_leak_test.c
-DIST_SOURCES = comm_create_group_threads.c comm_create_threads.c \
-	comm_dup_deadlock.c comm_idup.c ctxdup.c ctxidup.c \
-	dup_leak_test.c
+	dup_leak_test.c idup_comm_gen.c idup_deadlock.c idup_nb.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -218,8 +252,8 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/Makefile.mtest \
-	$(top_srcdir)/confdb/depcomp \
+am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/testlist.in \
+	$(top_srcdir)/Makefile.mtest $(top_srcdir)/confdb/depcomp \
 	$(top_srcdir)/threads/Makefile_threads.mtest
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 VPATH = @VPATH@
@@ -349,6 +383,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -383,6 +418,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -400,6 +436,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -410,9 +447,9 @@ AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 LDADD = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o \
-	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+	$(top_builddir)/threads/util/mtestthread.$(OBJEXT) @threadlib@
 CLEANFILES = summary.xml summary.tap summary.junit.xml
-EXTRA_DIST = testlist
+EXTRA_DIST = testlist.in
 all: all-am
 
 .SUFFIXES:
@@ -447,6 +484,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+testlist: $(top_builddir)/config.status $(srcdir)/testlist.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
@@ -454,6 +493,10 @@ clean-noinstPROGRAMS:
 comm_create_group_threads$(EXEEXT): $(comm_create_group_threads_OBJECTS) $(comm_create_group_threads_DEPENDENCIES) $(EXTRA_comm_create_group_threads_DEPENDENCIES) 
 	@rm -f comm_create_group_threads$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(comm_create_group_threads_OBJECTS) $(comm_create_group_threads_LDADD) $(LIBS)
+
+comm_create_group_threads2$(EXEEXT): $(comm_create_group_threads2_OBJECTS) $(comm_create_group_threads2_DEPENDENCIES) $(EXTRA_comm_create_group_threads2_DEPENDENCIES) 
+	@rm -f comm_create_group_threads2$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(comm_create_group_threads2_OBJECTS) $(comm_create_group_threads2_LDADD) $(LIBS)
 
 comm_create_threads$(EXEEXT): $(comm_create_threads_OBJECTS) $(comm_create_threads_DEPENDENCIES) $(EXTRA_comm_create_threads_DEPENDENCIES) 
 	@rm -f comm_create_threads$(EXEEXT)
@@ -479,6 +522,18 @@ dup_leak_test$(EXEEXT): $(dup_leak_test_OBJECTS) $(dup_leak_test_DEPENDENCIES) $
 	@rm -f dup_leak_test$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(dup_leak_test_OBJECTS) $(dup_leak_test_LDADD) $(LIBS)
 
+idup_comm_gen$(EXEEXT): $(idup_comm_gen_OBJECTS) $(idup_comm_gen_DEPENDENCIES) $(EXTRA_idup_comm_gen_DEPENDENCIES) 
+	@rm -f idup_comm_gen$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(idup_comm_gen_OBJECTS) $(idup_comm_gen_LDADD) $(LIBS)
+
+idup_deadlock$(EXEEXT): $(idup_deadlock_OBJECTS) $(idup_deadlock_DEPENDENCIES) $(EXTRA_idup_deadlock_DEPENDENCIES) 
+	@rm -f idup_deadlock$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(idup_deadlock_OBJECTS) $(idup_deadlock_LDADD) $(LIBS)
+
+idup_nb$(EXEEXT): $(idup_nb_OBJECTS) $(idup_nb_DEPENDENCIES) $(EXTRA_idup_nb_DEPENDENCIES) 
+	@rm -f idup_nb$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(idup_nb_OBJECTS) $(idup_nb_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -486,12 +541,16 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_create_group_threads.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_create_group_threads2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_create_threads.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_dup_deadlock.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_idup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ctxdup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ctxidup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dup_leak_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/idup_comm_gen.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/idup_deadlock.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/idup_nb.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\

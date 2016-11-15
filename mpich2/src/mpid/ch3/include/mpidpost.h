@@ -17,20 +17,6 @@
  */
 
 /*@
-  MPIDI_CH3_Request_destroy - Release resources in use by an existing request 
-  object.
-
-  Input Parameters:
-. req - pointer to the request object
-
-  IMPLEMENTORS:
-  MPIDI_CH3_Request_destroy() must call MPIDI_CH3U_Request_destroy() before 
-  request object is freed.
-@*/
-void MPIDI_CH3_Request_destroy(MPID_Request * req);
-
-
-/*@
   MPIDI_CH3_Progress_start - Mark the beginning of a progress epoch.
 
   Input Parameters:
@@ -147,18 +133,6 @@ int MPIDI_CH3_Comm_connect(char * port_name, int root, MPID_Comm * comm_ptr,
 			   MPID_Comm ** newcomm);
 
 
-/*@
-  MPIDI_CH3U_Request_destroy - Free resources associated with the channel 
-  device (ch3) component of a request.
-
-  Input Parameters:
-. req - pointer to the request object
-
-  IMPLEMENTORS:
-  This routine must be called by MPIDI_CH3_Request_destroy().
-@*/
-void MPIDI_CH3U_Request_destroy(MPID_Request * req);
-
 /* Include definitions from the channel which require items defined by this 
    file (mpidimpl.h) or the file it includes
    (mpiimpl.h). */
@@ -188,61 +162,6 @@ void MPIDI_CH3U_Request_destroy(MPID_Request * req);
  * Device level request management macros
  */
 
-/* We only export release and set completed on requests, since 
- * other uses (such as incrementing the ref count) are done solely 
- * by the device */
-
-#define MPID_Request_release(req_)			\
-{							\
-    int inuse_;					        \
-							\
-    MPIR_Request_release_ref((req_), &inuse_);	        \
-    if (inuse_ == 0)					\
-    {							\
-	MPIDI_CH3_Request_destroy(req_);		\
-    }							\
-}
-
-/* MT note: The following order of operations is _essential_ for correct
- * operation of the fine-grained multithreading code.  Assume that
- * _signal_completion() acquires and releases a mutex in order to update the
- * global completion counter (it does for fine-grained ch3:nemesis).  Further,
- * assume the following standard pattern is used by the request consumer to wait
- * for completion:
- *
- *   if (req is not complete (req->cc!=0)) {
- *     // progress_enter:
- *     acquire mutex;
- *     my_count = global_count;
- *     release mutex;
- *
- *     while (req is not complete (req->cc!=0)) {
- *       progress_wait(&my_count);
- *     }
- *   }
- *
- * Where progress_wait will attempt to make progress forever as long as
- * (my_count==global_count).  If it is possible for the consumer to see the
- * global completion count before seeing the request's completion counter drop
- * to zero, the consumer could spin in progress_wait forever without a chance to
- * retest the request.
- *
- * If the mutex approach is dropped in favor of atomic access, additional memory
- * barriers must be inserted.  The mutex acquire/release currently enforces
- * sufficient ordering constraints provided the statement order below is not
- * accidentally inverted.
- *
- * See also the note above the MSGQUEUE CS macros and request completion in
- * mpiimplthread.h.
- */
-/* MPID_Request_set_completed (the function) is defined in ch3u_request.c */
-#define MPID_REQUEST_SET_COMPLETED(req_)	\
-{						\
-    MPID_cc_set((req_)->cc_ptr, 0);             \
-    /* MT do not reorder! see note above*/      \
-    MPIDI_CH3_Progress_signal_completion();	\
-}
-
 
 /*
  * Device level progress engine macros
@@ -255,13 +174,13 @@ void MPIDI_CH3U_Request_destroy(MPID_Request * req);
 
 /* Dynamic process support */
 int MPID_GPID_GetAllInComm( MPID_Comm *comm_ptr, int local_size, 
-			    int local_gpids[], int *singlePG );
-int MPID_GPID_Get( MPID_Comm *comm_ptr, int rank, int gpid[] );
-int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] );
-int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr, 
+			    MPID_Gpid local_gpids[], int *singlePG );
+int MPID_GPID_Get( MPID_Comm *comm_ptr, int rank, MPID_Gpid *gpid );
+int MPID_GPID_ToLpidArray( int size, MPID_Gpid gpid[], int lpid[] );
+int MPID_Create_intercomm_from_lpids( MPID_Comm *newcomm_ptr,
 			    int size, const int lpids[] );
 int MPID_PG_ForwardPGInfo( MPID_Comm *peer_ptr, MPID_Comm *comm_ptr, 
-			   int nPGids, const int gpids[], 
+			   int nPGids, const MPID_Gpid gpids[],
 			   int root );
 /* PG_ForwardPGInfo is used as the implementation of the intercomm-create
    hook that is needed with dynamic processes because of limitations

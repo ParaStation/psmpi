@@ -46,30 +46,21 @@ PMPI_LOCAL int MPIR_Ibsend_free( void *extra )
 {
     ibsend_req_info *ibsend_info = (ibsend_req_info *)extra;
 
-    /* Release the MPID_Request (there is still another ref pending
-     within the bsendutil functions) */
-    /* XXX DJG FIXME-MT should we be checking this? */
-    if (MPIU_Object_get_ref(ibsend_info->req) > 1) {
-        int inuse;
-	/* Note that this should mean that the request was 
-	   cancelled (that would have decremented the ref count)
-	 */
-        MPIR_Request_release_ref( ibsend_info->req, &inuse );
-    }
-
     MPIU_Free( ibsend_info );
+
     return MPI_SUCCESS;
 }
 #undef FUNCNAME
 #define FUNCNAME MPIR_Ibsend_cancel
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 PMPI_LOCAL int MPIR_Ibsend_cancel( void *extra, int complete )
 {
     int mpi_errno = MPI_SUCCESS;
     ibsend_req_info *ibsend_info = (ibsend_req_info *)extra;
     MPI_Status status;
     MPID_Request *req = ibsend_info->req;
+    MPI_Request req_hdl = req->handle;
 
     /* FIXME: There should be no unreferenced args! */
     /* Note that this value should always be 1 because 
@@ -80,11 +71,17 @@ PMPI_LOCAL int MPIR_Ibsend_cancel( void *extra, int complete )
 
     /* Try to cancel the underlying request */
     mpi_errno = MPIR_Cancel_impl(req);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-    mpi_errno = MPIR_Wait_impl( &req->handle, &status );
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+    mpi_errno = MPIR_Wait_impl( &req_hdl, &status );
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     MPIR_Test_cancelled_impl( &status, &ibsend_info->cancelled );
-    
+
+    /* If the cancelation is successful, free the memory in the
+       attached buffer used by the request */
+    if (ibsend_info->cancelled) {
+        mpi_errno = MPIR_Bsend_free_req_seg(ibsend_info->req);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+    }
  fn_exit:
     return mpi_errno;
  fn_fail:
@@ -94,7 +91,7 @@ PMPI_LOCAL int MPIR_Ibsend_cancel( void *extra, int complete )
 #undef FUNCNAME
 #define FUNCNAME MPIR_Ibsend_impl
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Ibsend_impl(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
                      MPID_Comm *comm_ptr, MPI_Request *request)
 {
@@ -116,13 +113,11 @@ int MPIR_Ibsend_impl(const void *buf, int count, MPI_Datatype datatype, int dest
     ibinfo->cancelled = 0;
     mpi_errno = MPIR_Grequest_start_impl( MPIR_Ibsend_query, MPIR_Ibsend_free,
                                           MPIR_Ibsend_cancel, ibinfo, &new_request_ptr );
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     /* The request is immediately complete because the MPIR_Bsend_isend has
        already moved the data out of the user's buffer */
-    MPIR_Request_add_ref( request_ptr );
-    /* Request count is now 2 (set to 1 in Grequest_start) */
     MPIR_Grequest_complete_impl(new_request_ptr);
-    MPIU_OBJ_PUBLISH_HANDLE(*request, new_request_ptr->handle);
+    MPID_OBJ_PUBLISH_HANDLE(*request, new_request_ptr->handle);
   
  fn_exit:
     return mpi_errno;
@@ -136,7 +131,7 @@ int MPIR_Ibsend_impl(const void *buf, int count, MPI_Datatype datatype, int dest
 #undef FUNCNAME
 #define FUNCNAME MPI_Ibsend
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Ibsend - Starts a nonblocking buffered send
 
@@ -174,7 +169,7 @@ int MPI_Ibsend(const void *buf, int count, MPI_Datatype datatype, int dest, int 
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_PT2PT_FUNC_ENTER_FRONT(MPID_STATE_MPI_IBSEND);
 
     /* Validate handle parameters needing to be converted */
@@ -237,7 +232,7 @@ int MPI_Ibsend(const void *buf, int count, MPI_Datatype datatype, int dest, int 
 
   fn_exit:
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_IBSEND);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
     
   fn_fail:

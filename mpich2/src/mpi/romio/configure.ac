@@ -133,8 +133,6 @@ MPI_OFFSET_KIND2="!"
 TEST_CC=""
 TEST_F77=""
 #
-have_aio=no
-#
 known_mpi_impls="mpich_mpi mpich_mpi sgi_mpi hp_mpi cray_mpi lam_mpi open_mpi_mpi"
 
 dnl An m4 macro for use with m4_foreach_w and friends.  You should modify this
@@ -794,7 +792,10 @@ if test -n "$file_system_panfs"; then
 	AC_DEFINE(ROMIO_PANFS,1,[Define for ROMIO with PANFS]),
 	AC_MSG_ERROR([PANFS support requested but cannot find pan_fs_client_cw_mode.h header file])
     )
+    AC_CHECK_TYPES([pan_fs_client_raidn_encoding_t], , ,
+		   [[#include <pan_fs_client_cw_mode.h>]])
 fi
+AM_CONDITIONAL([BUILD_PANFS_OPEN6], [test "X$ac_cv_type_pan_fs_client_raidn_encoding_t" = "Xyes"])
 
 if test -n "$file_system_ufs"; then
     AC_DEFINE(ROMIO_UFS,1,[Define for ROMIO with UFS])
@@ -973,13 +974,13 @@ fi
 AS_IF([test -n "$file_system_gpfs"],
     [SYSDEP_INC=-I${prefix}/include], [SYSDEP_INC=])
 
-if test -n "$file_system_gpfs"; then
-AC_CHECK_HEADERS([gpfs.h gpfs_fcntl.h])
-AS_IF([test "$ac_cv_header_gpfs_h" = "yes" -o "$ac_cv_header_gpfs_fcntl_h" = "yes"], [
-  AC_SEARCH_LIBS([gpfs_fcntl], [gpfs], [],
-    [AC_MSG_ERROR([Library containing gpfs_fcntl symbols not found])])
-])
-fi
+AS_IF([test -n "$file_system_gpfs"],
+	AC_CHECK_HEADERS([gpfs.h gpfs_fcntl.h])
+	AS_IF([test "$ac_cv_header_gpfs_h" = "yes" -o "$ac_cv_header_gpfs_fcntl_h" = "yes"], [
+	  AC_SEARCH_LIBS([gpfs_fcntl], [gpfs], [],
+	    [AC_MSG_ERROR([Library containing gpfs_fcntl symbols not found])])
+	])
+	)
 # Check for presence and characteristics of async. I/O calls if
 # not disabled.
 
@@ -1003,34 +1004,13 @@ if test "x$disable_aio" = "xno" ; then
 fi
 
 if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
-    AC_CHECK_HEADERS(signal.h)
-    # Just because aio.h is found by CPP doesn't mean that we can use it
-    # We try to compile it, not just read it.
-    AC_MSG_CHECKING([if aio.h exists and can be compiled])
-    AC_TRY_COMPILE([
-#include <sys/types.h>
-#include <aio.h>],
-[],have_aio_h=yes,have_aio_h=no)
-    AC_MSG_RESULT($have_aio_h)
-    if test "$have_aio_h" = yes ; then
-        AC_DEFINE(HAVE_AIO_H,1,[Define if aio.h exists and can be compiled])
-    fi
-
-    AC_MSG_CHECKING([if sys/aio.h exists and can be compiled])
-    AC_TRY_COMPILE([
-#include <sys/types.h>
-#include <sys/aio.h>],
-[],have_sys_aio_h=yes,have_sys_aio_h=no)
-    AC_MSG_RESULT($have_sys_aio_h)
-    if test "$have_sys_aio_h" = yes ; then
-        AC_DEFINE(HAVE_SYS_AIO_H,1,[Define if sys/aio.h exists and can be compiled])
-    fi
-    if test "$have_aio_h" = "no" -a "$have_sys_aio_h" = "no" ; then
+    AC_CHECK_HEADERS([signal.h aio.h sys/aio.h] )
+    if test "$ac_cv_header_aio_h" = "no" -a "$ac_cv_header_sys_aio_h" = "no" ; then
     	disable_aio=yes
     fi
 fi
 
-if test "$have_aio_h" = "yes" -o "$have_sys_aio_h" = "yes" -o "x$disable_aio" = "xno"; then
+if test "$ac_cv_header_aio_h" = "yes" -o "$ac_cv_header_sys_aio_h" = "yes" -o "x$disable_aio" = "xno"; then
 
     # Check that aio is available (many systems appear to have aio
     # either installed improperly or turned off).
@@ -1146,126 +1126,50 @@ if test "$have_aio_h" = "yes" -o "$have_sys_aio_h" = "yes" -o "x$disable_aio" = 
 	AC_DEFINE(ROMIO_HAVE_AIO_SUSPEND_TWO_ARGS, 1, Define if aio_suspend needs two arguments)
     fi
 
-    AC_MSG_CHECKING([for aio_fildes member of aiocb structure])
-    AC_TRY_COMPILE([
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_AIO_H
-#include <aio.h>
-#endif
-#ifdef HAVE_SYS_AIO_H
-#include <sys/aio.h>
-#endif
-	],[
-	struct aiocb a;
-	a.aio_fildes = 0;
-	],
-	AC_MSG_RESULT(yes)
-	AC_DEFINE(ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_FILDES, 1, [Define if aiocb has aio_fildes member]),
-	AC_MSG_RESULT(no)
-    )
-    AC_MSG_CHECKING(for aio_whence member of aiocb structure)
-    AC_TRY_COMPILE([
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_AIO_H
-#include <aio.h>
-#endif
-#ifdef HAVE_SYS_AIO_H
-#include <sys/aio.h>
-#endif
-#include <sys/types.h>
-#include <unistd.h>
-	],[
-	struct aiocb a;
-	a.aio_whence = SEEK_SET;
-	],
-	AC_MSG_RESULT(yes)
-	AC_DEFINE(ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_WHENCE, 1, [Define if aiocb has aio_whence member]),
-	AC_MSG_RESULT(no)
-    )
-    AC_MSG_CHECKING(for aio_handle member of aiocb structure)
-    AC_TRY_COMPILE([
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_AIO_H
-#include <aio.h>
-#endif
-#ifdef HAVE_SYS_AIO_H
-#include <sys/aio.h>
-#endif
-	],[
-	struct aiocb a;
-	aio_handle_t h;
-
-	a.aio_handle = h;
-	],
-	AC_MSG_RESULT(yes)
-	AC_DEFINE(ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_HANDLE, 1, [Define if aiocb has aio_handle member]),
-	AC_MSG_RESULT(no)
-    )
-    AC_MSG_CHECKING(for aio_reqprio member of aiocb structure)
-    AC_TRY_COMPILE([
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_AIO_H
-#include <aio.h>
-#endif
-#ifdef HAVE_SYS_AIO_H
-#include <sys/aio.h>
-#endif
-	],[
-	struct aiocb a;
-
-	a.aio_reqprio = 0;
-	],
-	AC_MSG_RESULT(yes)
-	AC_DEFINE(ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_REQPRIO, 1, [Define if aiocb has aio_reqprio member]),
-	AC_MSG_RESULT(no)
-    )	
-    AC_MSG_CHECKING(for aio_sigevent member of aiocb structure)
-    AC_TRY_COMPILE([
-#ifdef HAVE_SIGNAL_H
-#include <signal.h>
-#endif
-#ifdef HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#ifdef HAVE_AIO_H
-#include <aio.h>
-#endif
-#ifdef HAVE_SYS_AIO_H
-#include <sys/aio.h>
-#endif
-	],[
-	struct aiocb a;
-
-	a.aio_sigevent.sigev_signo = 0;
-	],
-	AC_MSG_RESULT(yes)
-	AC_DEFINE(ROMIO_HAVE_STRUCT_AIOCB_WITH_AIO_SIGEVENT, 1, [Define if aiocb has aio_sigevent member]),
-	AC_MSG_RESULT(no)
-    )
-	
+    AC_CHECK_MEMBERS(
+		     [struct aiocb.aio_fildes,
+		      struct aiocb.aio_whence,
+		      struct aiocb.aio_handle,
+		      struct aiocb.aio_reqprio,
+		      struct aiocb.aio_sigevent],
+		      [],
+		      [],
+		      [[#ifdef HAVE_AIO_H
+		       #include <aio.h>
+		       #endif
+		       #ifdef HAVE_SYS_AIO_H
+		       #include <sys/aio.h>
+		       #endif] ]  )
 fi
 
+# the aio-lite package provides an aio facility in case system aio library is
+# buggy or does not perform well.  for example, one fortran test does not pass
+# its non-blocking collective I/O test
+# See http://trac.mpich.org/projects/mpich/ticket/2201 for one such failure.
+
+AC_ARG_WITH([aio-lite],
+	    [AS_HELP_STRING([--with-aio-lite],
+			    [use alternate external aio implementation])],
+	    [with_aiolite=yes],
+	    [])
+AS_IF([test "x$with_aiolite" == xyes],
+      AC_CHECK_LIB([aio-lite], [lio_listio],
+		   [], [], [-lpthread]
+		   )
+      AC_CHECK_HEADERS([aio-lite.h])
+     )
 # End of aio-related tests
+
+# Linux aio library seems to have problems when they are used in our NBC I/O
+# implementation. We let the code know when the host OS is Linux so that the
+# NBC I/O implementation uses blocking I/O operations.
+# See http://trac.mpich.org/projects/mpich/ticket/2201.
+
+# compute canonical system types
+AC_CANONICAL_HOST
+AS_CASE([$host_os],
+        [linux*], AC_DEFINE(ROMIO_RUN_ON_LINUX,1,[Define if run on Linux]))
+# End of OS check
 
 #
 # Check for statfs (many) and specifically f_fstypename field (BSD)
@@ -1415,6 +1319,14 @@ if test "$ac_cv_header_unistd_h" = "yes" ; then
         fi
     fi
 fi
+
+# pread and pwrite are useful to ROMIO: if implemented well, they help us avoid
+# an extra system call.  But --enable-strict or CFLAGS="--std=c99" does not
+# expose this feature.  If we define XOPEN_SOURCE in ROMIO, we cause headaches
+# for some versions of lustre, quota.h, and caddr_t.  see if we need to provide
+# our own pread/pwrite
+
+AC_CHECK_DECLS([pwrite])
 
 
 ####################################################################
@@ -1624,7 +1536,7 @@ if test $WITHIN_KNOWN_MPI_IMPL = no ; then
    PAC_TEST_MPI_GREQUEST
    PAC_TEST_MPIU_FUNCS
    AC_DEFINE(PRINT_ERR_MSG,1,[Define for printing error messages])
-   AC_CHECK_TYPE(MPI_Count,[],[AC_DEFINE_UNQUOTED([MPI_Count],[MPI_Aint],[Define to "MPI_Aint" if MPI does not provide MPI_Count]) ])
+   AC_CHECK_TYPE([MPI_Count],[],[AC_DEFINE_UNQUOTED([MPI_Count],[MPI_Aint],[Define to "MPI_Aint" if MPI does not provide MPI_Count]) ], [[#include <mpi.h>]])
    PAC_TEST_NEEDS_CONST
    AC_CHECK_DECLS([MPI_COMBINER_HINDEXED_BLOCK], [], [], [[#include <mpi.h>]])
    AC_CHECK_FUNCS(MPI_Type_size_x MPI_Status_set_elements_x)
@@ -1650,7 +1562,8 @@ fi
 AC_CHECK_FUNCS(lstat)
 if test "$ac_cv_func_lstat" = "yes" ; then
     # Do we need to declare lstat?
-    PAC_FUNC_NEEDS_DECL([#include <unistd.h>],lstat)
+    PAC_FUNC_NEEDS_DECL([#include <unistd.h>
+                         #include <sys/stat.h>],lstat)
 fi
 AC_CHECK_FUNCS(readlink)
 if test "$ac_cv_func_readlink" = "yes" ; then

@@ -69,7 +69,7 @@ int MPI_Win_attach(MPI_Win win, void *base, MPI_Aint size)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_ATTACH);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -120,15 +120,14 @@ int MPI_Win_attach(MPI_Win win, void *base, MPI_Aint size)
    
     if (size == 0) goto fn_exit;
 
-    mpi_errno = MPIU_RMA_CALL(win_ptr,
-                              Win_attach(win_ptr, base, size));
+    mpi_errno = MPID_Win_attach(win_ptr, base, size);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
 
   fn_exit:
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_ATTACH);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

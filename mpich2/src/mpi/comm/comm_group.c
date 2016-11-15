@@ -29,11 +29,10 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group) __attribute__((weak,alias("P
 #undef FUNCNAME
 #define FUNCNAME MPIR_Comm_group_impl
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Comm_group_impl(MPID_Comm *comm_ptr, MPID_Group **group_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_VCR   *local_vcr;
     int i, lpid, n;
     int comm_world_size = MPIR_Process.comm_world->local_size;
     MPID_MPI_STATE_DECL(MPID_STATE_MPIR_COMM_GROUP_IMPL);
@@ -44,19 +43,11 @@ int MPIR_Comm_group_impl(MPID_Comm *comm_ptr, MPID_Group **group_ptr)
     if (!comm_ptr->local_group) {
 	n = comm_ptr->local_size;
 	mpi_errno = MPIR_Group_create( n, group_ptr );
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         
-	/* Make sure that we get the correct group */
-	if (comm_ptr->comm_kind == MPID_INTERCOMM) {
-	    local_vcr = comm_ptr->local_vcr;
-	}
-	else
-	    local_vcr = comm_ptr->vcr;
-
         (*group_ptr)->is_local_dense_monotonic = TRUE;
 	for (i=0; i<n; i++) {
-	    (void) MPID_VCR_Get_lpid( local_vcr[i], &lpid );
-	    (*group_ptr)->lrank_to_lpid[i].lrank = i;
+	    (void) MPID_Comm_get_lpid( comm_ptr, i, &lpid, FALSE );
 	    (*group_ptr)->lrank_to_lpid[i].lpid  = lpid;
             if (lpid > comm_world_size ||
                 (i > 0 && (*group_ptr)->lrank_to_lpid[i-1].lpid != (lpid-1)))
@@ -93,7 +84,7 @@ int MPIR_Comm_group_impl(MPID_Comm *comm_ptr, MPID_Group **group_ptr)
 #undef FUNCNAME
 #define FUNCNAME MPI_Comm_group
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 
 MPI_Comm_group - Accesses the group associated with given communicator
@@ -124,7 +115,7 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_GROUP);
     
     /* Validate parameters, especially handles needing to be converted */
@@ -165,7 +156,7 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_GROUP);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

@@ -26,6 +26,7 @@ int MPID_nem_mxm_connect_to_root(const char *business_card, MPIDI_VC_t * new_vc)
 int MPID_nem_mxm_vc_init(MPIDI_VC_t * vc);
 int MPID_nem_mxm_vc_destroy(MPIDI_VC_t * vc);
 int MPID_nem_mxm_vc_terminate(MPIDI_VC_t * vc);
+int MPID_nem_mxm_get_ordering(int *ordering);
 
 /* alternate interface */
 int MPID_nem_mxm_iSendContig(MPIDI_VC_t * vc, MPID_Request * sreq, void *hdr, MPIDI_msg_sz_t hdr_sz,
@@ -37,13 +38,16 @@ int MPID_nem_mxm_SendNoncontig(MPIDI_VC_t * vc, MPID_Request * sreq, void *heade
 
 /* direct interface */
 int MPID_nem_mxm_recv(MPIDI_VC_t * vc, MPID_Request * rreq);
-int MPID_nem_mxm_send(MPIDI_VC_t * vc, const void *buf, int count, MPI_Datatype datatype, int rank,
-                      int tag, MPID_Comm * comm, int context_offset, MPID_Request ** sreq_p);
-int MPID_nem_mxm_ssend(MPIDI_VC_t * vc, const void *buf, int count, MPI_Datatype datatype, int rank,
-                       int tag, MPID_Comm * comm, int context_offset, MPID_Request ** sreq_p);
-int MPID_nem_mxm_isend(MPIDI_VC_t * vc, const void *buf, int count, MPI_Datatype datatype, int rank,
-                       int tag, MPID_Comm * comm, int context_offset, MPID_Request ** sreq_p);
-int MPID_nem_mxm_issend(MPIDI_VC_t * vc, const void *buf, int count, MPI_Datatype datatype,
+int MPID_nem_mxm_send(MPIDI_VC_t * vc, const void *buf, MPI_Aint count, MPI_Datatype datatype,
+                      int rank, int tag, MPID_Comm * comm, int context_offset,
+                      MPID_Request ** sreq_p);
+int MPID_nem_mxm_ssend(MPIDI_VC_t * vc, const void *buf, MPI_Aint count, MPI_Datatype datatype,
+                       int rank, int tag, MPID_Comm * comm, int context_offset,
+                       MPID_Request ** sreq_p);
+int MPID_nem_mxm_isend(MPIDI_VC_t * vc, const void *buf, MPI_Aint count, MPI_Datatype datatype,
+                       int rank, int tag, MPID_Comm * comm, int context_offset,
+                       MPID_Request ** sreq_p);
+int MPID_nem_mxm_issend(MPIDI_VC_t * vc, const void *buf, MPI_Aint count, MPI_Datatype datatype,
                         int rank, int tag, MPID_Comm * comm, int context_offset,
                         MPID_Request ** sreq_p);
 int MPID_nem_mxm_cancel_send(MPIDI_VC_t * vc, MPID_Request * sreq);
@@ -132,7 +136,7 @@ static inline list_item_t *list_dequeue(list_head_t * list_head)
 #define MXM_MPICH_MAX_ADDR_SIZE 512
 #define MXM_MPICH_ENDPOINT_KEY "endpoint_id"
 #define MXM_MPICH_MAX_REQ 100
-#define MXM_MPICH_MAX_IOV 2
+#define MXM_MPICH_MAX_IOV 3
 
 
 /* The vc provides a generic buffer in which network modules can store
@@ -295,7 +299,7 @@ static inline int _mxm_eager_threshold(void)
 /*
  * Tag management section
  */
-static inline mxm_tag_t _mxm_tag_mpi2mxm(int mpi_tag, MPIR_Context_id_t context_id)
+static inline mxm_tag_t _mxm_tag_mpi2mxm(int mpi_tag, MPIU_Context_id_t context_id)
 {
     mxm_tag_t mxm_tag;
 
@@ -312,7 +316,7 @@ static inline int _mxm_tag_mxm2mpi(mxm_tag_t mxm_tag)
 
 static inline mxm_tag_t _mxm_tag_mask(int mpi_tag)
 {
-    return (mpi_tag == MPI_ANY_TAG ? 0x80000000U : 0xffffffffU);
+    return (mpi_tag == MPI_ANY_TAG ? 0x80000000U : ~(MPIR_TAG_PROC_FAILURE_BIT | MPIR_TAG_ERROR_BIT));
 }
 
 /*
@@ -370,19 +374,19 @@ static inline void _dbg_mxm_hexdump(void *ptr, int buflen)
     len = 80 * (buflen / 16 + 1);
     str = (char *) MPIU_Malloc(len);
     for (i = 0; i < buflen; i += 16) {
-        cur_len += MPIU_Snprintf(str + cur_len, len - cur_len, "%06x: ", i);
+        cur_len += MPL_snprintf(str + cur_len, len - cur_len, "%06x: ", i);
         for (j = 0; j < 16; j++)
             if (i + j < buflen)
-                cur_len += MPIU_Snprintf(str + cur_len, len - cur_len, "%02x ", buf[i + j]);
+                cur_len += MPL_snprintf(str + cur_len, len - cur_len, "%02x ", buf[i + j]);
             else
-                cur_len += MPIU_Snprintf(str + cur_len, len - cur_len, "   ");
-        cur_len += MPIU_Snprintf(str + cur_len, len - cur_len, " ");
+                cur_len += MPL_snprintf(str + cur_len, len - cur_len, "   ");
+        cur_len += MPL_snprintf(str + cur_len, len - cur_len, " ");
         for (j = 0; j < 16; j++)
             if (i + j < buflen)
                 cur_len +=
-                    MPIU_Snprintf(str + cur_len, len - cur_len, "%c",
+                    MPL_snprintf(str + cur_len, len - cur_len, "%c",
                                   isprint(buf[i + j]) ? buf[i + j] : '.');
-        cur_len += MPIU_Snprintf(str + cur_len, len - cur_len, "\n");
+        cur_len += MPL_snprintf(str + cur_len, len - cur_len, "\n");
     }
     _dbg_mxm_out(8, NULL, 1, NULL, NULL, -1, "%s", str);
     MPIU_Free(str);
@@ -394,7 +398,7 @@ static inline char *_tag_val_to_str(int tag, char *out, int max)
         MPIU_Strncpy(out, "MPI_ANY_TAG", max);
     }
     else {
-        MPIU_Snprintf(out, max, "%d", tag);
+        MPL_snprintf(out, max, "%d", tag);
     }
     return out;
 }
@@ -405,7 +409,7 @@ static inline char *_rank_val_to_str(int rank, char *out, int max)
         MPIU_Strncpy(out, "MPI_ANY_SOURCE", max);
     }
     else {
-        MPIU_Snprintf(out, max, "%d", rank);
+        MPL_snprintf(out, max, "%d", rank);
     }
     return out;
 }

@@ -29,17 +29,18 @@ int MPI_T_pvar_read(MPI_T_pvar_session session, MPI_T_pvar_handle handle, void *
 #undef FUNCNAME
 #define FUNCNAME MPIR_T_pvar_read_impl
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_T_pvar_read_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle, void *restrict buf)
 {
     int i, mpi_errno = MPI_SUCCESS;
 
     /* Reading a never started pvar, or a stopped and then reset wartermark,
-     * will run into this nasty situation. Wait for an error code to be defined
-     * by the Standard. Currently, use MPI_ERR_OTHER.
+     * will run into this nasty situation. MPI-3.0 did not define what error
+     * code should be returned. We returned a generic MPI error code. With MPI-3.1
+     * approved, we changed it to MPI_T_ERR_INVALID.
      */
     if (!MPIR_T_pvar_is_oncestarted(handle)) {
-        mpi_errno = MPI_ERR_OTHER;
+        mpi_errno = MPI_T_ERR_INVALID;
         goto fn_fail;
     }
 
@@ -208,7 +209,7 @@ fn_fail:
 #undef FUNCNAME
 #define FUNCNAME MPI_T_pvar_read
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_T_pvar_read - Read the value of a performance variable
 

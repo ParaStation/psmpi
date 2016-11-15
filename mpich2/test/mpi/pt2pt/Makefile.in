@@ -98,16 +98,17 @@ noinst_PROGRAMS = anyall$(EXEEXT) bottom$(EXEEXT) bsend1$(EXEEXT) \
 	bsend2$(EXEEXT) bsend3$(EXEEXT) bsend4$(EXEEXT) \
 	bsend5$(EXEEXT) bsendalign$(EXEEXT) cancelrecv$(EXEEXT) \
 	cancelanysrc$(EXEEXT) isendself$(EXEEXT) \
-	issendselfcancel$(EXEEXT) sendself$(EXEEXT) eagerdt$(EXEEXT) \
-	isendselfprobe$(EXEEXT) bsendfrag$(EXEEXT) \
-	bsendpending$(EXEEXT) icsend$(EXEEXT) rqstatus$(EXEEXT) \
-	rqfreeb$(EXEEXT) greq1$(EXEEXT) scancel$(EXEEXT) \
-	scancel2$(EXEEXT) rcancel$(EXEEXT) pscancel$(EXEEXT) \
-	sendflood$(EXEEXT) sendrecv1$(EXEEXT) sendrecv2$(EXEEXT) \
-	sendrecv3$(EXEEXT) waitany-null$(EXEEXT) pingping$(EXEEXT) \
-	probe-unexp$(EXEEXT) probenull$(EXEEXT) inactivereq$(EXEEXT) \
-	waittestnull$(EXEEXT) sendall$(EXEEXT) large_message$(EXEEXT) \
-	mprobe$(EXEEXT) big_count_status$(EXEEXT)
+	issendselfcancel$(EXEEXT) isendirecv$(EXEEXT) \
+	sendself$(EXEEXT) eagerdt$(EXEEXT) isendselfprobe$(EXEEXT) \
+	bsendfrag$(EXEEXT) bsendpending$(EXEEXT) icsend$(EXEEXT) \
+	rqstatus$(EXEEXT) rqfreeb$(EXEEXT) greq1$(EXEEXT) \
+	scancel$(EXEEXT) scancel2$(EXEEXT) rcancel$(EXEEXT) \
+	pscancel$(EXEEXT) scancel_unmatch$(EXEEXT) sendflood$(EXEEXT) \
+	sendrecv1$(EXEEXT) sendrecv2$(EXEEXT) sendrecv3$(EXEEXT) \
+	waitany-null$(EXEEXT) pingping$(EXEEXT) probe-unexp$(EXEEXT) \
+	probenull$(EXEEXT) inactivereq$(EXEEXT) waittestnull$(EXEEXT) \
+	sendall$(EXEEXT) large_message$(EXEEXT) mprobe$(EXEEXT) \
+	big_count_status$(EXEEXT)
 subdir = pt2pt
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -229,6 +230,12 @@ inactivereq_LDADD = $(LDADD)
 inactivereq_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+isendirecv_SOURCES = isendirecv.c
+isendirecv_OBJECTS = isendirecv.$(OBJEXT)
+isendirecv_LDADD = $(LDADD)
+isendirecv_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 isendself_SOURCES = isendself.c
 isendself_OBJECTS = isendself.$(OBJEXT)
 isendself_LDADD = $(LDADD)
@@ -313,6 +320,12 @@ scancel2_LDADD = $(LDADD)
 scancel2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+scancel_unmatch_SOURCES = scancel_unmatch.c
+scancel_unmatch_OBJECTS = scancel_unmatch.$(OBJEXT)
+scancel_unmatch_LDADD = $(LDADD)
+scancel_unmatch_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 sendall_SOURCES = sendall.c
 sendall_OBJECTS = sendall.$(OBJEXT)
 sendall_LDADD = $(LDADD)
@@ -392,21 +405,21 @@ am__v_CCLD_1 =
 SOURCES = anyall.c big_count_status.c bottom.c bsend1.c bsend2.c \
 	bsend3.c bsend4.c bsend5.c bsendalign.c bsendfrag.c \
 	bsendpending.c cancelanysrc.c cancelrecv.c eagerdt.c greq1.c \
-	icsend.c inactivereq.c isendself.c isendselfprobe.c \
-	issendselfcancel.c large_message.c mprobe.c pingping.c \
-	probe-unexp.c probenull.c pscancel.c rcancel.c rqfreeb.c \
-	rqstatus.c scancel.c scancel2.c sendall.c sendflood.c \
-	sendrecv1.c sendrecv2.c sendrecv3.c sendself.c waitany-null.c \
-	waittestnull.c
+	icsend.c inactivereq.c isendirecv.c isendself.c \
+	isendselfprobe.c issendselfcancel.c large_message.c mprobe.c \
+	pingping.c probe-unexp.c probenull.c pscancel.c rcancel.c \
+	rqfreeb.c rqstatus.c scancel.c scancel2.c scancel_unmatch.c \
+	sendall.c sendflood.c sendrecv1.c sendrecv2.c sendrecv3.c \
+	sendself.c waitany-null.c waittestnull.c
 DIST_SOURCES = anyall.c big_count_status.c bottom.c bsend1.c bsend2.c \
 	bsend3.c bsend4.c bsend5.c bsendalign.c bsendfrag.c \
 	bsendpending.c cancelanysrc.c cancelrecv.c eagerdt.c greq1.c \
-	icsend.c inactivereq.c isendself.c isendselfprobe.c \
-	issendselfcancel.c large_message.c mprobe.c pingping.c \
-	probe-unexp.c probenull.c pscancel.c rcancel.c rqfreeb.c \
-	rqstatus.c scancel.c scancel2.c sendall.c sendflood.c \
-	sendrecv1.c sendrecv2.c sendrecv3.c sendself.c waitany-null.c \
-	waittestnull.c
+	icsend.c inactivereq.c isendirecv.c isendself.c \
+	isendselfprobe.c issendselfcancel.c large_message.c mprobe.c \
+	pingping.c probe-unexp.c probenull.c pscancel.c rcancel.c \
+	rqfreeb.c rqstatus.c scancel.c scancel2.c scancel_unmatch.c \
+	sendall.c sendflood.c sendrecv1.c sendrecv2.c sendrecv3.c \
+	sendself.c waitany-null.c waittestnull.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -561,6 +574,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -595,6 +609,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -612,6 +627,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -730,6 +746,10 @@ inactivereq$(EXEEXT): $(inactivereq_OBJECTS) $(inactivereq_DEPENDENCIES) $(EXTRA
 	@rm -f inactivereq$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(inactivereq_OBJECTS) $(inactivereq_LDADD) $(LIBS)
 
+isendirecv$(EXEEXT): $(isendirecv_OBJECTS) $(isendirecv_DEPENDENCIES) $(EXTRA_isendirecv_DEPENDENCIES) 
+	@rm -f isendirecv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(isendirecv_OBJECTS) $(isendirecv_LDADD) $(LIBS)
+
 isendself$(EXEEXT): $(isendself_OBJECTS) $(isendself_DEPENDENCIES) $(EXTRA_isendself_DEPENDENCIES) 
 	@rm -f isendself$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(isendself_OBJECTS) $(isendself_LDADD) $(LIBS)
@@ -786,6 +806,10 @@ scancel2$(EXEEXT): $(scancel2_OBJECTS) $(scancel2_DEPENDENCIES) $(EXTRA_scancel2
 	@rm -f scancel2$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(scancel2_OBJECTS) $(scancel2_LDADD) $(LIBS)
 
+scancel_unmatch$(EXEEXT): $(scancel_unmatch_OBJECTS) $(scancel_unmatch_DEPENDENCIES) $(EXTRA_scancel_unmatch_DEPENDENCIES) 
+	@rm -f scancel_unmatch$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(scancel_unmatch_OBJECTS) $(scancel_unmatch_LDADD) $(LIBS)
+
 sendall$(EXEEXT): $(sendall_OBJECTS) $(sendall_DEPENDENCIES) $(EXTRA_sendall_DEPENDENCIES) 
 	@rm -f sendall$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(sendall_OBJECTS) $(sendall_LDADD) $(LIBS)
@@ -841,6 +865,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/greq1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icsend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inactivereq.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isendirecv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isendself.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isendselfprobe.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/issendselfcancel.Po@am__quote@
@@ -855,6 +880,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rqstatus.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scancel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scancel2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scancel_unmatch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sendall.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sendflood.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sendrecv1.Po@am__quote@

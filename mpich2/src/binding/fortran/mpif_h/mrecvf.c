@@ -272,5 +272,6 @@ FORT_DLL_SPEC void FORT_CALL mpi_mrecv_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, M
 #endif
 
     if (v5 == MPI_F_STATUS_IGNORE) { v5 = (MPI_Fint*)MPI_STATUS_IGNORE; }
+    if (v1 == MPIR_F_MPI_BOTTOM) v1 = MPI_BOTTOM;
     *ierr = MPI_Mrecv( v1, (int)*v2, (MPI_Datatype)(*v3), (MPI_Message *)(v4), (MPI_Status *)v5 );
 }

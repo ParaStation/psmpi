@@ -100,7 +100,8 @@ noinst_PROGRAMS = die$(EXEEXT) abort$(EXEEXT) sendalive$(EXEEXT) \
 	gather$(EXEEXT) reduce$(EXEEXT) bcast$(EXEEXT) \
 	scatter$(EXEEXT) failure_ack$(EXEEXT) anysource$(EXEEXT) \
 	revoke_nofail$(EXEEXT) shrink$(EXEEXT) agree$(EXEEXT) \
-	multi_isendalive$(EXEEXT)
+	multi_isendalive$(EXEEXT) agree_shrink$(EXEEXT) \
+	revoke_shrink$(EXEEXT) nbccoll$(EXEEXT)
 subdir = ft
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -130,6 +131,12 @@ agree_SOURCES = agree.c
 agree_OBJECTS = agree.$(OBJEXT)
 agree_LDADD = $(LDADD)
 agree_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+agree_shrink_SOURCES = agree_shrink.c
+agree_shrink_OBJECTS = agree_shrink.$(OBJEXT)
+agree_shrink_LDADD = $(LDADD)
+agree_shrink_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 anysource_SOURCES = anysource.c
@@ -192,6 +199,12 @@ multi_isendalive_LDADD = $(LDADD)
 multi_isendalive_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+nbccoll_SOURCES = nbccoll.c
+nbccoll_OBJECTS = nbccoll.$(OBJEXT)
+nbccoll_LDADD = $(LDADD)
+nbccoll_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 recvdead_SOURCES = recvdead.c
 recvdead_OBJECTS = recvdead.$(OBJEXT)
 recvdead_LDADD = $(LDADD)
@@ -208,6 +221,12 @@ revoke_nofail_SOURCES = revoke_nofail.c
 revoke_nofail_OBJECTS = revoke_nofail.$(OBJEXT)
 revoke_nofail_LDADD = $(LDADD)
 revoke_nofail_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+revoke_shrink_SOURCES = revoke_shrink.c
+revoke_shrink_OBJECTS = revoke_shrink.$(OBJEXT)
+revoke_shrink_LDADD = $(LDADD)
+revoke_shrink_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 scatter_SOURCES = scatter.c
@@ -262,14 +281,16 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = abort.c agree.c anysource.c barrier.c bcast.c die.c \
-	failure_ack.c gather.c irecvdead.c isendalive.c isenddead.c \
-	multi_isendalive.c recvdead.c reduce.c revoke_nofail.c \
-	scatter.c sendalive.c senddead.c shrink.c
-DIST_SOURCES = abort.c agree.c anysource.c barrier.c bcast.c die.c \
-	failure_ack.c gather.c irecvdead.c isendalive.c isenddead.c \
-	multi_isendalive.c recvdead.c reduce.c revoke_nofail.c \
-	scatter.c sendalive.c senddead.c shrink.c
+SOURCES = abort.c agree.c agree_shrink.c anysource.c barrier.c bcast.c \
+	die.c failure_ack.c gather.c irecvdead.c isendalive.c \
+	isenddead.c multi_isendalive.c nbccoll.c recvdead.c reduce.c \
+	revoke_nofail.c revoke_shrink.c scatter.c sendalive.c \
+	senddead.c shrink.c
+DIST_SOURCES = abort.c agree.c agree_shrink.c anysource.c barrier.c \
+	bcast.c die.c failure_ack.c gather.c irecvdead.c isendalive.c \
+	isenddead.c multi_isendalive.c nbccoll.c recvdead.c reduce.c \
+	revoke_nofail.c revoke_shrink.c scatter.c sendalive.c \
+	senddead.c shrink.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -424,6 +445,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -458,6 +480,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -475,6 +498,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -533,6 +557,10 @@ agree$(EXEEXT): $(agree_OBJECTS) $(agree_DEPENDENCIES) $(EXTRA_agree_DEPENDENCIE
 	@rm -f agree$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(agree_OBJECTS) $(agree_LDADD) $(LIBS)
 
+agree_shrink$(EXEEXT): $(agree_shrink_OBJECTS) $(agree_shrink_DEPENDENCIES) $(EXTRA_agree_shrink_DEPENDENCIES) 
+	@rm -f agree_shrink$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(agree_shrink_OBJECTS) $(agree_shrink_LDADD) $(LIBS)
+
 anysource$(EXEEXT): $(anysource_OBJECTS) $(anysource_DEPENDENCIES) $(EXTRA_anysource_DEPENDENCIES) 
 	@rm -f anysource$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(anysource_OBJECTS) $(anysource_LDADD) $(LIBS)
@@ -573,6 +601,10 @@ multi_isendalive$(EXEEXT): $(multi_isendalive_OBJECTS) $(multi_isendalive_DEPEND
 	@rm -f multi_isendalive$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(multi_isendalive_OBJECTS) $(multi_isendalive_LDADD) $(LIBS)
 
+nbccoll$(EXEEXT): $(nbccoll_OBJECTS) $(nbccoll_DEPENDENCIES) $(EXTRA_nbccoll_DEPENDENCIES) 
+	@rm -f nbccoll$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nbccoll_OBJECTS) $(nbccoll_LDADD) $(LIBS)
+
 recvdead$(EXEEXT): $(recvdead_OBJECTS) $(recvdead_DEPENDENCIES) $(EXTRA_recvdead_DEPENDENCIES) 
 	@rm -f recvdead$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(recvdead_OBJECTS) $(recvdead_LDADD) $(LIBS)
@@ -584,6 +616,10 @@ reduce$(EXEEXT): $(reduce_OBJECTS) $(reduce_DEPENDENCIES) $(EXTRA_reduce_DEPENDE
 revoke_nofail$(EXEEXT): $(revoke_nofail_OBJECTS) $(revoke_nofail_DEPENDENCIES) $(EXTRA_revoke_nofail_DEPENDENCIES) 
 	@rm -f revoke_nofail$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(revoke_nofail_OBJECTS) $(revoke_nofail_LDADD) $(LIBS)
+
+revoke_shrink$(EXEEXT): $(revoke_shrink_OBJECTS) $(revoke_shrink_DEPENDENCIES) $(EXTRA_revoke_shrink_DEPENDENCIES) 
+	@rm -f revoke_shrink$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(revoke_shrink_OBJECTS) $(revoke_shrink_LDADD) $(LIBS)
 
 scatter$(EXEEXT): $(scatter_OBJECTS) $(scatter_DEPENDENCIES) $(EXTRA_scatter_DEPENDENCIES) 
 	@rm -f scatter$(EXEEXT)
@@ -609,6 +645,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/abort.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/agree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/agree_shrink.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/anysource.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/barrier.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcast.Po@am__quote@
@@ -619,9 +656,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isendalive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isenddead.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/multi_isendalive.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbccoll.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recvdead.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reduce.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/revoke_nofail.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/revoke_shrink.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scatter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sendalive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/senddead.Po@am__quote@

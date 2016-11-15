@@ -24,8 +24,8 @@
 #define RPTLU_ERR_POP(ret, ...)                                         \
     {                                                                   \
         if (ret) {                                                      \
-            MPIU_Error_printf("%s (%d): ", RPTLU_FUNC, __LINE__);       \
-            MPIU_Error_printf(__VA_ARGS__);                             \
+            MPL_error_printf("%s (%d): ", RPTLU_FUNC, __LINE__);       \
+            MPL_error_printf(__VA_ARGS__);                             \
             goto fn_fail;                                               \
         }                                                               \
     }
@@ -158,6 +158,8 @@ struct rptl_target {
 
     struct rptl_target *next;
     struct rptl_target *prev;
+
+    int issued_data_ops;
 };
 
 struct rptl_info {

@@ -120,6 +120,10 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_c/file_read_ordered_end_cdesc.c \
 	src/binding/fortran/use_mpi_f08/wrappers_c/file_write_ordered_begin_cdesc.c \
 	src/binding/fortran/use_mpi_f08/wrappers_c/file_write_ordered_end_cdesc.c \
+	src/binding/fortran/use_mpi_f08/wrappers_c/file_iread_at_all_cdesc.c \
+	src/binding/fortran/use_mpi_f08/wrappers_c/file_iwrite_at_all_cdesc.c \
+	src/binding/fortran/use_mpi_f08/wrappers_c/file_iread_all_cdesc.c \
+	src/binding/fortran/use_mpi_f08/wrappers_c/file_iwrite_all_cdesc.c \
 	src/binding/fortran/use_mpi_f08/wrappers_c/cdesc.c \
 	src/binding/fortran/use_mpi_f08/wrappers_c/comm_spawn_c.c \
 	src/binding/fortran/use_mpi_f08/wrappers_c/comm_spawn_multiple_c.c \

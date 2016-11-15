@@ -18,7 +18,6 @@
 
 /* FIXME: These should be removed */
 #define MPIDI_DEV_IMPLEMENTS_KVS
-#define MPIDI_DEV_IMPLEMENTS_ABORT
 
 /* FIXME: Are the following packet extensions?  Can the socket connect/accept
    packets be made part of the util/sock support? */
@@ -79,8 +78,7 @@ MPIDI_CH3I_Progress_state;
    and must be available to the routines in src/mpi */
 extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
 
-
-/* MPICH_IS_THREADED isn't defined yet (handled by mpiimplthread.h) */
+/* MPICH_IS_THREADED isn't defined yet */
 #if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
 #define MPIDI_CH3I_PROGRESS_WAKEUP                                                                \
     do {                                                                                          \

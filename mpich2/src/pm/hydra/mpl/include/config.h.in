@@ -55,6 +55,9 @@
 /* Define to 1 if you have the `strdup' function. */
 #undef HAVE_STRDUP
 
+/* Define to 1 if you have the `strerror' function. */
+#undef HAVE_STRERROR
+
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
@@ -108,6 +111,9 @@
 
 /* Define if strdup needs a declaration */
 #undef NEEDS_STRDUP_DECL
+
+/* Define if strerror needs a declaration */
+#undef NEEDS_STRERROR_DECL
 
 /* Define if strncmp needs a declaration */
 #undef NEEDS_STRNCMP_DECL

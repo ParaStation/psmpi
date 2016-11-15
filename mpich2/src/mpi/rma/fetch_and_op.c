@@ -88,7 +88,7 @@ int MPI_Fetch_and_op(const void *origin_addr, void *result_addr,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_FETCH_AND_OP);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -117,15 +117,17 @@ int MPI_Fetch_and_op(const void *origin_addr, void *result_addr,
             if (mpi_errno) goto fn_fail;
 
             if (op != MPI_NO_OP) {
+                /* NOTE: when op is MPI_NO_OP, origin_addr is allowed to be NULL.
+                 * In such case, MPI_Fetch_and_op equals to an atomic GET. */
                 MPIR_ERRTEST_ARGNULL(origin_addr, "origin_addr", mpi_errno);
             }
 
             MPIR_ERRTEST_ARGNULL(result_addr, "result_addr", mpi_errno);
             MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 
-            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+            if (!MPIR_DATATYPE_IS_PREDEFINED(datatype))
             {
-                MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_TYPE, "**typenotpredefined");
+                MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_TYPE, "**typenotpredefined");
             }
 
             if (win_ptr->create_flavor != MPI_WIN_FLAVOR_DYNAMIC)
@@ -138,7 +140,7 @@ int MPI_Fetch_and_op(const void *origin_addr, void *result_addr,
 
             if (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN)
             {
-                MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OP, "**opnotpredefined");
+                MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OP, "**opnotpredefined");
             }
         }
         MPID_END_ERROR_CHECKS;
@@ -147,17 +149,17 @@ int MPI_Fetch_and_op(const void *origin_addr, void *result_addr,
 
     /* ... body of routine ...  */
     
-    mpi_errno = MPIU_RMA_CALL(win_ptr,Fetch_and_op(origin_addr, 
-                                         result_addr, datatype,
-                                         target_rank, target_disp,
-                                         op, win_ptr));
+    mpi_errno = MPID_Fetch_and_op(origin_addr,
+                                  result_addr, datatype,
+                                  target_rank, target_disp,
+                                  op, win_ptr);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
 
   fn_exit:
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_FETCH_AND_OP);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

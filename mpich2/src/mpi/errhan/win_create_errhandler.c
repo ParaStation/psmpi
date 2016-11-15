@@ -59,7 +59,7 @@ int MPI_Win_create_errhandler(MPI_Win_errhandler_function *win_errhandler_fn,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_CREATE_ERRHANDLER);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -77,19 +77,19 @@ int MPI_Win_create_errhandler(MPI_Win_errhandler_function *win_errhandler_fn,
     /* ... body of routine ...  */
     
     errhan_ptr = (MPID_Errhandler *)MPIU_Handle_obj_alloc( &MPID_Errhandler_mem );
-    MPIU_ERR_CHKANDJUMP1(!errhan_ptr,mpi_errno,MPI_ERR_OTHER,"**nomem",
+    MPIR_ERR_CHKANDJUMP1(!errhan_ptr,mpi_errno,MPI_ERR_OTHER,"**nomem",
 			 "**nomem %s", "MPI_Errhandler");
     errhan_ptr->language = MPID_LANG_C;
     errhan_ptr->kind	 = MPID_WIN;
     MPIU_Object_set_ref(errhan_ptr,1);
     errhan_ptr->errfn.C_Win_Handler_function = win_errhandler_fn;
 
-    MPIU_OBJ_PUBLISH_HANDLE(*errhandler, errhan_ptr->handle);
+    MPID_OBJ_PUBLISH_HANDLE(*errhandler, errhan_ptr->handle);
     /* ... end of body of routine ... */
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_CREATE_ERRHANDLER);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

@@ -1,4 +1,4 @@
-.TH mpicc 1 "2/20/2015" " " "MPI"
+.TH mpicc 1 "11/9/2015" " " "MPI"
 .SH NAME
 mpicc \-  Compiles and links MPI programs written in C 
 .SH DESCRIPTION
@@ -126,18 +126,18 @@ To compile a single file
 .I foo.c
 , use
 .nf
-mpicc \\-c foo.c
+mpicc -c foo.c
 .fi
 
 
 To link the output and make an executable, use
 .nf
-mpicc \\-o foo foo.o
+mpicc -o foo foo.o
 .fi
 
 Combining compilation and linking in a single command
 .nf
-mpicc \\-o foo foo.c
+mpicc -o foo foo.c
 .fi
 
 is a convenient way to build simple programs.
@@ -195,8 +195,8 @@ with the lines
 .PD 1
 
 .nf
-PROFILE_PRELIB="\\-L/usr/local/myprof/lib \\-lmyprof"
-PROFILE_INCPATHS="\\-I/usr/local/myprof/include"
+PROFILE_PRELIB="-L/usr/local/myprof/lib -lmyprof"
+PROFILE_INCPATHS="-I/usr/local/myprof/include"
 .fi
 
 and place it in the sysconfdir directory (this directory is set at

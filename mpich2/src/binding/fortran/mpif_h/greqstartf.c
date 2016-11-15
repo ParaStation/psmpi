@@ -266,6 +266,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_grequest_start_( MPI_Grequest_query_fun
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_grequest_start_ ( MPI_Grequest_query_function*v1, MPI_Grequest_free_function*v2, MPI_Grequest_cancel_function*v3, void*v4, MPI_Fint *v5, MPI_Fint *ierr ){
+    if (v4 == MPIR_F_MPI_BOTTOM) v4 = MPI_BOTTOM;
     *ierr = MPI_Grequest_start( v1, v2, v3, v4, (MPI_Request *)(v5) );
 
     if (*ierr == MPI_SUCCESS) {

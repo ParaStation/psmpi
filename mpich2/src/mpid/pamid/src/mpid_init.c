@@ -56,7 +56,7 @@ MPIDI_Process_t  MPIDI_Process = {
   .verbose               = 0,
   .statistics            = 0,
 
-#if (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT)
+#if (MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY_PER_OBJECT)
   .avail_contexts        = MPIDI_MAX_CONTEXTS,
   .async_progress = {
     .active              = 0,
@@ -119,6 +119,9 @@ MPIDI_Process_t  MPIDI_Process = {
 #ifdef QUEUE_BINARY_SEARCH_SUPPORT
   .queue_binary_search_support_on = 0,
 #endif
+#if CUDA_AWARE_SUPPORT
+  .cuda_aware_support_on = 0,
+#endif
   .rma_pending           = 1000,
   .shmem_pt2pt           = 1,
   .smp_detect            = MPIDI_SMP_DETECT_DEFAULT,
@@ -132,6 +135,7 @@ MPIDI_Process_t  MPIDI_Process = {
 
   .mpir_nbc              = 1,
   .numTasks              = 0,
+  .typed_onesided        = 0,
 };
 
 
@@ -330,7 +334,7 @@ static struct
 #undef FUNCNAME
 #define FUNCNAME split_type
 #undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 static int split_type(MPID_Comm * comm_ptr, int stype, int key,
                       MPID_Info *info_ptr, MPID_Comm ** newcomm_ptr)
 {
@@ -637,8 +641,8 @@ void MPIDI_Init_collsel_extension()
     MPIDI_Process.optimized.auto_select_colls = MPID_AUTO_SELECT_COLLS_NONE;
 
 #ifndef __BGQ__
-  //If collective selection will be disabled, check on fca, if both not required, disable pami alltogether
-  if(MPIDI_Process.optimized.auto_select_colls == MPID_AUTO_SELECT_COLLS_NONE && MPIDI_Process.optimized.collectives != MPID_COLL_FCA)
+  //If collective selection will be disabled, check on fca and CUDA if both not required, disable pami alltogether
+  if(MPIDI_Process.optimized.auto_select_colls == MPID_AUTO_SELECT_COLLS_NONE && MPIDI_Process.optimized.collectives != MPID_COLL_FCA && MPIDI_Process.optimized.collectives != MPID_COLL_CUDA)
     MPIDI_Process.optimized.collectives = MPID_COLL_OFF;
 #endif
 }
@@ -671,7 +675,7 @@ MPIDI_PAMI_context_init(int* threading, int *size)
 #endif
   int  numTasks;
 
-#if (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT)
+#if (MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY_PER_OBJECT)
   /*
    * ASYNC_PROGRESS_MODE_LOCKED requires context post because the async thread
    * will hold the context lock indefinitely; the only option for an application
@@ -690,7 +694,7 @@ MPIDI_PAMI_context_init(int* threading, int *size)
       MPIDI_Process.perobj.context_post.requested == 0)
     MPID_Abort (NULL, 0, 1, "'locking' async progress requires context post");
 
-#else /* MPIU_THREAD_GRANULARITY != MPIU_THREAD_GRANULARITY_PER_OBJECT */
+#else /* MPICH_THREAD_GRANULARITY != MPICH_THREAD_GRANULARITY_PER_OBJECT */
   /*
    * ASYNC_PROGRESS_MODE_LOCKED is not applicable in the "global lock" thread
    * mode. See discussion in src/mpid/pamid/src/mpid_progress.h for more
@@ -705,7 +709,7 @@ MPIDI_PAMI_context_init(int* threading, int *size)
   /* ----------------------------------
    *  Figure out the context situation
    * ---------------------------------- */
-#if (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT)
+#if (MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY_PER_OBJECT)
 
   /* Limit the number of requested contexts by the maximum number of contexts
    * allowed.  The default number of requested contexts depends on the mpich
@@ -740,7 +744,7 @@ MPIDI_PAMI_context_init(int* threading, int *size)
     --MPIDI_Process.avail_contexts;
   MPID_assert_always(MPIDI_Process.avail_contexts);
 
-#else /* (MPIU_THREAD_GRANULARITY != MPIU_THREAD_GRANULARITY_PER_OBJECT) */
+#else /* (MPICH_THREAD_GRANULARITY != MPICH_THREAD_GRANULARITY_PER_OBJECT) */
 
   /* Only a single context is supported in the 'global' mpich lock mode.
    *
@@ -1013,6 +1017,7 @@ MPIDI_PAMI_init(int* rank, int* size, int* threading)
              "  optimized.num_requests: %u\n"
              "  mpir_nbc              : %u\n" 
              "  numTasks              : %u\n",
+             "  typed_onesided        : %u\n",
              MPIDI_Process.verbose,
              MPIDI_Process.statistics,
              MPIDI_Process.avail_contexts,
@@ -1049,7 +1054,8 @@ MPIDI_PAMI_init(int* rank, int* size, int* threading)
              MPIDI_Process.optimized.memory,
              MPIDI_Process.optimized.num_requests,
              MPIDI_Process.mpir_nbc, 
-             MPIDI_Process.numTasks);
+             MPIDI_Process.numTasks,
+             MPIDI_Process.typed_onesided);
       switch (*threading)
         {
           case MPI_THREAD_MULTIPLE:
@@ -1065,8 +1071,8 @@ MPIDI_PAMI_init(int* rank, int* size, int* threading)
             printf("mpi thread level        : 'MPI_THREAD_SINGLE'\n");
             break;
         }
-      printf("MPIU_THREAD_GRANULARITY : '%s'\n",
-             (MPIU_THREAD_GRANULARITY==MPIU_THREAD_GRANULARITY_PER_OBJECT)?"per object":"global");
+      printf("MPICH_THREAD_GRANULARITY : '%s'\n",
+             (MPICH_THREAD_GRANULARITY==MPICH_THREAD_GRANULARITY_PER_OBJECT)?"per object":"global");
 #ifdef ASSERT_LEVEL
       printf("ASSERT_LEVEL            : %d\n", ASSERT_LEVEL);
 #else

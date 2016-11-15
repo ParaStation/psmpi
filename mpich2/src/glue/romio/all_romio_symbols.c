@@ -513,6 +513,48 @@ void MPIR_All_romio_symbols(void)
     }
 
     {
+        MPI_File fh = MPI_FILE_NULL;
+        MPI_Offset offset = 0;
+        void* buf = NULL;
+        int count = 0;
+        MPI_Datatype datatype = MPI_DATATYPE_NULL;
+        MPI_Request* request = NULL;
+
+        MPI_File_iread_at_all(fh, offset, buf, count, datatype, request);
+    }
+
+    {
+        MPI_File fh = MPI_FILE_NULL;
+        MPI_Offset offset = 0;
+        const void* buf = NULL;
+        int count = 0;
+        MPI_Datatype datatype = MPI_DATATYPE_NULL;
+        MPI_Request* request = NULL;
+
+        MPI_File_iwrite_at_all(fh, offset, buf, count, datatype, request);
+    }
+
+    {
+        MPI_File fh = MPI_FILE_NULL;
+        void* buf = NULL;
+        int count = 0;
+        MPI_Datatype datatype = MPI_DATATYPE_NULL;
+        MPI_Request* request = NULL;
+
+        MPI_File_iread_all(fh, buf, count, datatype, request);
+    }
+
+    {
+        MPI_File fh = MPI_FILE_NULL;
+        const void* buf = NULL;
+        int count = 0;
+        MPI_Datatype datatype = MPI_DATATYPE_NULL;
+        MPI_Request* request = NULL;
+
+        MPI_File_iwrite_all(fh, buf, count, datatype, request);
+    }
+
+    {
         MPI_Fint fh = 0;
 
         MPI_File_f2c(fh);

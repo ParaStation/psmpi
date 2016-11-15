@@ -88,9 +88,9 @@ int MPI_Comm_set_name(MPI_Comm comm, const char *comm_name)
 
     /* ... body of routine ...  */
 
-    MPIU_THREAD_CS_ENTER(MPI_OBJ, comm_ptr);
+    MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_POBJ_COMM_MUTEX(comm_ptr));
     MPIU_Strncpy( comm_ptr->name, comm_name, MPI_MAX_OBJECT_NAME );
-    MPIU_THREAD_CS_EXIT(MPI_OBJ, comm_ptr);
+    MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_POBJ_COMM_MUTEX(comm_ptr));
 
     /* ... end of body of routine ... */
 

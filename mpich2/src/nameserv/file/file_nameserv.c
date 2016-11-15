@@ -175,7 +175,7 @@ int MPID_NS_Publish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 	case ENOMEM:
 	    reason "Insufficient kernel memory available";
 	default:
-	    MPIU_Snprintf( rstr, sizeof(rstr), "errno = %d", errno );
+	    MPL_snprintf( rstr, sizeof(rstr), "errno = %d", errno );
 	}
 #endif
 	err = MPIR_Err_create_code( 
@@ -213,7 +213,7 @@ int MPID_NS_Lookup( MPID_NS_Handle handle, const MPID_Info *info_ptr,
     if (!fp) {
 	/* --BEGIN ERROR HANDLING-- */
 	port[0] = 0;
-	MPIU_ERR_SET1( mpi_errno, MPI_ERR_NAME, 
+	MPIR_ERR_SET1( mpi_errno, MPI_ERR_NAME, 
 		      "**namepubnotpub", "**namepubnotpub %s", service_name );
 	/* --END ERROR HANDLING-- */
     }
@@ -223,7 +223,7 @@ int MPID_NS_Lookup( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 	if (!fgets( port, MPI_MAX_PORT_NAME, fp )) {
 	    /* --BEGIN ERROR HANDLING-- */
 	    port[0] = 0;
-	    MPIU_ERR_SET1( mpi_errno, MPI_ERR_NAME, 
+	    MPIR_ERR_SET1( mpi_errno, MPI_ERR_NAME, 
 			   "**namepubnotfound", "**namepubnotfound %s", 
 			   service_name );
 	    /* --END ERROR HANDLING-- */

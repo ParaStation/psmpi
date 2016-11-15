@@ -14,11 +14,10 @@
 
 @SET_MAKE@
 
-# Copyright © 2009-2014 Inria.  All rights reserved.
-# Copyright © 2009-2011 Université Bordeaux 1
+# Copyright © 2009-2015 Inria.  All rights reserved.
+# Copyright © 2009-2011 Université Bordeaux
 # Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
-
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -114,37 +113,8 @@ DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/private/autogen/config.h \
 	$(top_builddir)/include/hwloc/autogen/config.h
-CONFIG_CLEAN_FILES = hwloc-gather-topology test-topology.sh
+CONFIG_CLEAN_FILES = test-topology.sh
 CONFIG_CLEAN_VPATH_FILES =
-am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
-am__vpath_adj = case $$p in \
-    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
-    *) f=$$p;; \
-  esac;
-am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
-am__install_max = 40
-am__nobase_strip_setup = \
-  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
-am__nobase_strip = \
-  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
-am__nobase_list = $(am__nobase_strip_setup); \
-  for p in $$list; do echo "$$p $$p"; done | \
-  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
-  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
-    if (++n[$$2] == $(am__install_max)) \
-      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
-    END { for (dir in files) print dir, files[dir] }'
-am__base_list = \
-  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
-  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__uninstall_files_from_dir = { \
-  test -z "$$files" \
-    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
-    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
-         $(am__cd) "$$dir" && rm -f $$files; }; \
-  }
-am__installdirs = "$(DESTDIR)$(bindir)"
-SCRIPTS = $(bin_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -221,6 +191,33 @@ am__tty_colors = { \
     std='[m'; \
   fi; \
 }
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
+am__install_max = 40
+am__nobase_strip_setup = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
+am__nobase_strip = \
+  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
+am__nobase_list = $(am__nobase_strip_setup); \
+  for p in $$list; do echo "$$p $$p"; done | \
+  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
+  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
+    if (++n[$$2] == $(am__install_max)) \
+      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
+    END { for (dir in files) print dir, files[dir] }'
+am__base_list = \
+  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
+  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
+am__uninstall_files_from_dir = { \
+  test -z "$$files" \
+    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
+    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
+         $(am__cd) "$$dir" && rm -f $$files; }; \
+  }
 am__recheck_rx = ^[ 	]*:recheck:[ 	]*
 am__global_test_result_rx = ^[ 	]*:global-test-result:[ 	]*
 am__copy_in_global_log_rx = ^[ 	]*:copy-in-global-log:[ 	]*
@@ -376,9 +373,7 @@ TEST_LOG_DRIVER = $(SHELL) $(top_srcdir)/./config/test-driver
 TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
 	$(TEST_LOG_FLAGS)
 DIST_SUBDIRS = $(SUBDIRS)
-am__DIST_COMMON = $(srcdir)/Makefile.in \
-	$(srcdir)/hwloc-gather-topology.in \
-	$(srcdir)/test-topology.sh.in \
+am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/test-topology.sh.in \
 	$(top_srcdir)/./config/test-driver README
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
@@ -474,8 +469,6 @@ HWLOC_NVML_LIBS = @HWLOC_NVML_LIBS@
 HWLOC_OPENCL_LIBS = @HWLOC_OPENCL_LIBS@
 HWLOC_PCIACCESS_CFLAGS = @HWLOC_PCIACCESS_CFLAGS@
 HWLOC_PCIACCESS_LIBS = @HWLOC_PCIACCESS_LIBS@
-HWLOC_PCIUTILS_CFLAGS = @HWLOC_PCIUTILS_CFLAGS@
-HWLOC_PCIUTILS_LIBS = @HWLOC_PCIUTILS_LIBS@
 HWLOC_PLUGINS_DIR = @HWLOC_PLUGINS_DIR@
 HWLOC_PLUGINS_PATH = @HWLOC_PLUGINS_PATH@
 HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
@@ -524,7 +517,6 @@ PDFLATEX = @PDFLATEX@
 PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 SED = @SED@
-SED_I = @SED_I@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -611,6 +603,7 @@ sysfs_outputs = \
 		256ppc-8n8s4t.output \
 		256ppc-8n8s4t-nocache.output \
 		256ppc-8n8s4t-nosys.output \
+		28em64t-2s2n7c-buggycoresiblings.output \
 		32amd64-4s2n4c-cgroup.output \
 		32amd64-4s2n4c-cgroup.xml.output \
 		32ppc-4n4c2c.output \
@@ -628,6 +621,7 @@ sysfs_outputs = \
 		16amd64-8n2c-cpusets.xml.output \
 		16amd64-8n2c-cpusets_noadmin.output \
 		16em64t-4s2ca2c-cpusetreorder.output \
+		16em64t-4s2ca2c-cpusetreorder-merge.output \
 		16em64t-4s2c2t.output \
 		16em64t-4s2c2t-offlines.output \
 		16em64t-4s2c2t-offlines.xml.output \
@@ -640,6 +634,7 @@ sysfs_outputs = \
 		24em64t-2n6c2t+2mic.olddriver.output \
 		32em64t-2n8c+1mic.output \
 		40intel64-2g2n4c+pci.output \
+		40intel64-4n10c+pci-conflicts.output \
 		48amd64-4d2n6c-sparse.output \
 		64amd64-4s2n4ca2co.output \
 		64fake-4n2s2ca2c2t.output \
@@ -669,6 +664,7 @@ sysfs_tarballs = \
 		256ppc-8n8s4t.tar.bz2 \
 		256ppc-8n8s4t-nocache.source \
 		256ppc-8n8s4t-nosys.source \
+		28em64t-2s2n7c-buggycoresiblings.tar.bz2 \
 		32amd64-4s2n4c-cgroup.tar.bz2 \
 		32amd64-4s2n4c-cgroup.xml.source \
 		32ppc-4n4c2c.tar.bz2 \
@@ -686,6 +682,7 @@ sysfs_tarballs = \
 		16amd64-8n2c-cpusets.xml.source \
 		16amd64-8n2c-cpusets_noadmin.source \
 		16em64t-4s2ca2c-cpusetreorder.tar.bz2 \
+		16em64t-4s2ca2c-cpusetreorder-merge.source \
 		16em64t-4s2c2t.tar.bz2 \
 		16em64t-4s2c2t-offlines.tar.bz2 \
 		16em64t-4s2c2t-offlines.xml.source \
@@ -698,6 +695,7 @@ sysfs_tarballs = \
 		24em64t-2n6c2t+2mic.olddriver.tar.bz2 \
 		32em64t-2n8c+1mic.tar.bz2 \
 		40intel64-2g2n4c+pci.tar.bz2 \
+		40intel64-4n10c+pci-conflicts.tar.bz2 \
 		48amd64-4d2n6c-sparse.tar.bz2 \
 		64amd64-4s2n4ca2co.tar.bz2 \
 		64fake-4n2s2ca2c2t.tar.bz2 \
@@ -727,6 +725,7 @@ sysfs_options = \
 		16amd64-4n4c-cgroup-distance-merge.options \
 		16amd64-8n2c-cpusets.xml.options \
 		16amd64-8n2c-cpusets_noadmin.options \
+		16em64t-4s2ca2c-cpusetreorder-merge.options \
 		16em64t-4s2c2t-offlines.xml.options \
 		16em64t-4s2c2t-offlines_noadmin.options \
 		16em64t-4s2c2t_ncaches.options \
@@ -742,16 +741,17 @@ sysfs_options = \
 # modifying the environment of lstopo
 sysfs_envs = \
 		2i386-2t-hugepagesizecount.xml.env \
+		16amd64-8n2c-cpusets.xml.env \
 		32amd64-4s2n4c-cgroup.env \
 		32amd64-4s2n4c-cgroup.xml.env \
 		40intel64-2g2n4c+pci.env \
+		40intel64-4n10c+pci-conflicts.env \
 		96em64t-4n4d3ca2co-forcecpuinfo.env
 
 @HWLOC_HAVE_BUNZIPP_TRUE@@HWLOC_HAVE_OPENAT_TRUE@TESTS = $(sysfs_outputs)
 EXTRA_DIST = $(sysfs_outputs) $(sysfs_tarballs) $(sysfs_excludes) $(sysfs_options) $(sysfs_envs)
 LOG_COMPILER = $(builddir)/test-topology.sh
-bin_SCRIPTS = hwloc-gather-topology
-SUBDIRS = gather
+SUBDIRS = . gather
 all: all-recursive
 
 .SUFFIXES:
@@ -785,45 +785,8 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-hwloc-gather-topology: $(top_builddir)/config.status $(srcdir)/hwloc-gather-topology.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 test-topology.sh: $(top_builddir)/config.status $(srcdir)/test-topology.sh.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-install-binSCRIPTS: $(bin_SCRIPTS)
-	@$(NORMAL_INSTALL)
-	@list='$(bin_SCRIPTS)'; test -n "$(bindir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(bindir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(bindir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  if test -f "$$d$$p"; then echo "$$d$$p"; echo "$$p"; else :; fi; \
-	done | \
-	sed -e 'p;s,.*/,,;n' \
-	    -e 'h;s|.*|.|' \
-	    -e 'p;x;s,.*/,,;$(transform)' | sed 'N;N;N;s,\n, ,g' | \
-	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1; } \
-	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
-	    if ($$2 == $$4) { files[d] = files[d] " " $$1; \
-	      if (++n[d] == $(am__install_max)) { \
-		print "f", d, files[d]; n[d] = 0; files[d] = "" } } \
-	    else { print "f", d "/" $$4, $$1 } } \
-	  END { for (d in files) print "f", d, files[d] }' | \
-	while read type dir files; do \
-	     if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
-	     test -z "$$files" || { \
-	       echo " $(INSTALL_SCRIPT) $$files '$(DESTDIR)$(bindir)$$dir'"; \
-	       $(INSTALL_SCRIPT) $$files "$(DESTDIR)$(bindir)$$dir" || exit $$?; \
-	     } \
-	; done
-
-uninstall-binSCRIPTS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(bin_SCRIPTS)'; test -n "$(bindir)" || exit 0; \
-	files=`for p in $$list; do echo "$$p"; done | \
-	       sed -e 's,.*/,,;$(transform)'`; \
-	dir='$(DESTDIR)$(bindir)'; $(am__uninstall_files_from_dir)
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -1141,6 +1104,13 @@ recheck: all
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+28em64t-2s2n7c-buggycoresiblings.output.log: 28em64t-2s2n7c-buggycoresiblings.output
+	@p='28em64t-2s2n7c-buggycoresiblings.output'; \
+	b='28em64t-2s2n7c-buggycoresiblings.output'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 32amd64-4s2n4c-cgroup.output.log: 32amd64-4s2n4c-cgroup.output
 	@p='32amd64-4s2n4c-cgroup.output'; \
 	b='32amd64-4s2n4c-cgroup.output'; \
@@ -1260,6 +1230,13 @@ recheck: all
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+16em64t-4s2ca2c-cpusetreorder-merge.output.log: 16em64t-4s2ca2c-cpusetreorder-merge.output
+	@p='16em64t-4s2ca2c-cpusetreorder-merge.output'; \
+	b='16em64t-4s2ca2c-cpusetreorder-merge.output'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 16em64t-4s2c2t.output.log: 16em64t-4s2c2t.output
 	@p='16em64t-4s2c2t.output'; \
 	b='16em64t-4s2c2t.output'; \
@@ -1340,6 +1317,13 @@ recheck: all
 40intel64-2g2n4c+pci.output.log: 40intel64-2g2n4c+pci.output
 	@p='40intel64-2g2n4c+pci.output'; \
 	b='40intel64-2g2n4c+pci.output'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+40intel64-4n10c+pci-conflicts.output.log: 40intel64-4n10c+pci-conflicts.output
+	@p='40intel64-4n10c+pci-conflicts.output'; \
+	b='40intel64-4n10c+pci-conflicts.output'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1501,12 +1485,9 @@ distdir: $(DISTFILES)
 check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: check-recursive
-all-am: Makefile $(SCRIPTS)
+all-am: Makefile
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(bindir)"; do \
-	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
-	done
 install: install-recursive
 install-exec: install-exec-recursive
 install-data: install-data-recursive
@@ -1566,9 +1547,8 @@ install-dvi: install-dvi-recursive
 
 install-dvi-am:
 
-install-exec-am: install-binSCRIPTS
-	@$(NORMAL_INSTALL)
-	$(MAKE) $(AM_MAKEFLAGS) install-exec-hook
+install-exec-am:
+
 install-html: install-html-recursive
 
 install-html-am:
@@ -1605,32 +1585,26 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-binSCRIPTS
+uninstall-am:
 
-.MAKE: $(am__recursive_targets) check-am install-am install-exec-am \
-	install-strip
+.MAKE: $(am__recursive_targets) check-am install-am install-strip
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am check \
 	check-TESTS check-am clean clean-generic clean-libtool \
 	cscopelist-am ctags ctags-am distclean distclean-generic \
 	distclean-libtool distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-binSCRIPTS \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-exec-hook install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
-	ps ps-am recheck tags tags-am uninstall uninstall-am \
-	uninstall-binSCRIPTS
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am recheck tags tags-am \
+	uninstall uninstall-am
 
 .PRECIOUS: Makefile
 
-
-install-exec-hook:
-	$(SED) -e 's/HWLOC_top_builddir\/utils/bindir/' -e '/HWLOC_top_builddir/d' $(DESTDIR)$(bindir)/hwloc-gather-topology > $(DESTDIR)$(bindir)/hwloc-gather-topology.tmp && mv -f $(DESTDIR)$(bindir)/hwloc-gather-topology.tmp $(DESTDIR)$(bindir)/hwloc-gather-topology
-	chmod +x $(DESTDIR)$(bindir)/hwloc-gather-topology
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

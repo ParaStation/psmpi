@@ -9,7 +9,7 @@
 
 include $(top_srcdir)/Makefile_f90.mtest
 
-EXTRA_DIST = testlist
+EXTRA_DIST = testlist.in
 
 # avoid having to write many "foo_SOURCES = foo.f90" lines
 AM_DEFAULT_SOURCE_EXT = .f90
@@ -36,10 +36,17 @@ noinst_PROGRAMS = \
     c2f90multio \
     c2f2ciof90
 
+if BUILD_MPIX_TESTS
+noinst_PROGRAMS += \
+    i_setviewcurf90  \
+    iwriteatallf90
+endif
+
 
 # We don't want to distribute these source files because they are created by
 # "testmerge", hence "nodist_foo_SOURCES"
 nodist_iwriteatf90_SOURCES     = iwriteatf90.f90
+nodist_iwriteatallf90_SOURCES  = iwriteatallf90.f90
 nodist_iwritef90_SOURCES       = iwritef90.f90
 nodist_iwriteshf90_SOURCES     = iwriteshf90.f90
 nodist_writeallbef90_SOURCES   = writeallbef90.f90
@@ -70,6 +77,7 @@ c2f2ciof90_SOURCES = c2f2ciof90.f90 c2f902cio.c
 # these files are genereated using testmerge (see below)
 generated_io_sources = \
     iwriteatf90.f90        \
+    iwriteatallf90.f90     \
     iwritef90.f90          \
     iwriteshf90.f90        \
     writeallbef90.f90      \

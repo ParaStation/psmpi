@@ -29,9 +29,9 @@ int MPI_Pack(const void *inbuf, int incount, MPI_Datatype datatype, void *outbuf
 #undef FUNCNAME
 #define FUNCNAME MPIR_Pack_impl
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Pack_impl(const void *inbuf,
-                   int incount,
+                   MPI_Aint incount,
                    MPI_Datatype datatype,
                    void *outbuf,
                    MPI_Aint outsize,
@@ -73,10 +73,10 @@ int MPIR_Pack_impl(const void *inbuf,
     /* TODO: CHECK RETURN VALUES?? */
     /* TODO: SHOULD THIS ALL BE IN A MPID_PACK??? */
     segp = MPID_Segment_alloc();
-    MPIU_ERR_CHKANDJUMP1(segp == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Segment");
+    MPIR_ERR_CHKANDJUMP1(segp == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Segment");
     
     mpi_errno = MPID_Segment_init(inbuf, incount, datatype, segp, 0);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
     /* NOTE: the use of buffer values and positions in MPI_Pack and in
      * MPID_Segment_pack are quite different.  See code or docs or something.
@@ -85,7 +85,7 @@ int MPIR_Pack_impl(const void *inbuf,
     last  = SEGMENT_IGNORE_LAST;
 
     /* Ensure that pointer increment fits in a pointer */
-    MPID_Ensure_Aint_fits_in_pointer((MPI_VOID_PTR_CAST_TO_MPI_AINT outbuf) +
+    MPIU_Ensure_Aint_fits_in_pointer((MPIU_VOID_PTR_CAST_TO_MPI_AINT outbuf) +
 				     (MPI_Aint) *position);
 
     MPID_Segment_pack(segp,
@@ -94,7 +94,7 @@ int MPIR_Pack_impl(const void *inbuf,
 		      (void *) ((char *) outbuf + *position));
 
     /* Ensure that calculation fits into an int datatype. */
-    MPID_Ensure_Aint_fits_in_int((MPI_Aint)*position + last);
+    MPIU_Ensure_Aint_fits_in_int((MPI_Aint)*position + last);
 
     *position = (int)((MPI_Aint)*position + last);
 
@@ -111,7 +111,7 @@ int MPIR_Pack_impl(const void *inbuf,
 #undef FUNCNAME
 #define FUNCNAME MPI_Pack
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Pack - Packs a datatype into contiguous memory
 
@@ -220,20 +220,20 @@ int MPI_Pack(const void *inbuf,
 
 	if (tmp_sz * incount > outsize - *position) {
 	    if (*position < 0) {
-		MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_ARG,
+		MPIR_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_ARG,
 				     "**argposneg","**argposneg %d",
 				     *position);
 	    }
 	    else if (outsize < 0) {
-		MPIU_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_ARG,"**argneg",
+		MPIR_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_ARG,"**argneg",
 				     "**argneg %s %d","outsize",outsize);
 	    }
 	    else if (incount < 0) {
-		MPIU_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_ARG,"**argneg",
+		MPIR_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_ARG,"**argneg",
 				     "**argneg %s %d","incount",incount);
 	    }
 	    else {
-		MPIU_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_ARG,"**argpackbuf",
+		MPIR_ERR_SETANDJUMP2(mpi_errno,MPI_ERR_ARG,"**argpackbuf",
 				     "**argpackbuf %d %d", tmp_sz * incount,
 				     outsize - *position);
 	    }

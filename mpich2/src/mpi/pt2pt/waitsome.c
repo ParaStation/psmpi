@@ -96,13 +96,14 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[],
     int n_inactive;
     int active_flag;
     int rc;
+    int disabled_anysource = FALSE;
     int mpi_errno = MPI_SUCCESS;
     MPIU_CHKLMEM_DECL(1);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WAITSOME);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_WAITSOME);
 
     /* Check the arguments */
@@ -159,6 +160,16 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[],
 		MPID_END_ERROR_CHECKS;
 	    }
 #           endif	    
+
+            /* If one of the requests is an anysource on a communicator that's
+             * disabled such communication, convert this operation to a testall
+             * instead to prevent getting stuck in the progress engine. */
+            if (unlikely(MPIR_CVAR_ENABLE_FT &&
+                        MPID_Request_is_anysource(request_ptrs[i]) &&
+                        !MPID_Request_is_complete(request_ptrs[i]) &&
+                        !MPID_Comm_AS_enabled(request_ptrs[i]->comm))) {
+                disabled_anysource = TRUE;
+            }
 	}
 	else
 	{
@@ -172,7 +183,12 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[],
 	*outcount = MPI_UNDEFINED;
 	goto fn_exit;
     }
-    
+
+    if (unlikely(disabled_anysource)) {
+        mpi_errno = MPI_Testsome(incount, array_of_requests, outcount, array_of_indices, array_of_statuses);
+        goto fn_exit;
+    }
+
     /* Bill Gropp says MPI_Waitsome() is expected to try to make
        progress even if some requests have already completed;  
        therefore, we kick the pipes once and then fall into a loop
@@ -194,34 +210,45 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[],
 	if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	for (i = 0; i < incount; i++)
 	{
-            if (request_ptrs[i] != NULL && MPID_Request_is_complete(request_ptrs[i]))
+            if (request_ptrs[i] != NULL)
 	    {
-		status_ptr = (array_of_statuses != MPI_STATUSES_IGNORE) ? &array_of_statuses[n_active] : MPI_STATUS_IGNORE;
-		rc = MPIR_Request_complete(&array_of_requests[i], request_ptrs[i], status_ptr, &active_flag);
-		if (active_flag)
-		{
-		    array_of_indices[n_active] = i;
-		    n_active += 1;
-		    
-		    if (rc == MPI_SUCCESS)
-		    { 
-			request_ptrs[i] = NULL;
-		    }
-		    else
-		    {
-			mpi_errno = MPI_ERR_IN_STATUS;
-			if (status_ptr != MPI_STATUS_IGNORE)
-			{
-			    status_ptr->MPI_ERROR = rc;
-			}
-		    }
-		}
-		else
-		{
-		    request_ptrs[i] = NULL;
-		    n_inactive += 1;
-		}
-	    }
+                if (MPID_Request_is_complete(request_ptrs[i]))
+                {
+                    status_ptr = (array_of_statuses != MPI_STATUSES_IGNORE) ? &array_of_statuses[n_active] : MPI_STATUS_IGNORE;
+                    rc = MPIR_Request_complete(&array_of_requests[i], request_ptrs[i], status_ptr, &active_flag);
+                    if (active_flag)
+                    {
+                        array_of_indices[n_active] = i;
+                        n_active += 1;
+
+                        if (rc == MPI_SUCCESS)
+                        {
+                            request_ptrs[i] = NULL;
+                        }
+                        else
+                        {
+                            mpi_errno = MPI_ERR_IN_STATUS;
+                            if (status_ptr != MPI_STATUS_IGNORE)
+                            {
+                                status_ptr->MPI_ERROR = rc;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        request_ptrs[i] = NULL;
+                        n_inactive += 1;
+                    }
+                } else if (unlikely(MPIR_CVAR_ENABLE_FT &&
+                            MPID_Request_is_anysource(request_ptrs[i]) &&
+                            !MPID_Comm_AS_enabled(request_ptrs[i]->comm)))
+                {
+                    mpi_errno = MPI_ERR_IN_STATUS;
+                    MPIR_ERR_SET(rc, MPIX_ERR_PROC_FAILED_PENDING, "**failure_pending");
+                    status_ptr = (array_of_statuses != MPI_STATUSES_IGNORE) ? &array_of_statuses[n_active] : MPI_STATUS_IGNORE;
+                    if (status_ptr != MPI_STATUS_IGNORE) status_ptr->MPI_ERROR = rc;
+                }
+            }
 	}
 
 	if (mpi_errno == MPI_ERR_IN_STATUS)
@@ -270,7 +297,7 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[],
     }
 
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITSOME);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

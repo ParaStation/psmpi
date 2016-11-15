@@ -251,7 +251,7 @@ host_triplet = @host@
 @BUILD_AD_PANFS_TRUE@am__append_21 = adio/ad_panfs/ad_panfs.h
 @BUILD_AD_PANFS_TRUE@am__append_22 = \
 @BUILD_AD_PANFS_TRUE@    adio/ad_panfs/ad_panfs.c        \
-@BUILD_AD_PANFS_TRUE@    adio/ad_panfs/ad_panfs_open.c   \
+@BUILD_AD_PANFS_TRUE@    $(panfs_open)                   \
 @BUILD_AD_PANFS_TRUE@    adio/ad_panfs/ad_panfs_hints.c  \
 @BUILD_AD_PANFS_TRUE@    adio/ad_panfs/ad_panfs_read.c   \
 @BUILD_AD_PANFS_TRUE@    adio/ad_panfs/ad_panfs_resize.c \
@@ -473,19 +473,21 @@ am__libpromio_la_SOURCES_DIST = mpi-io/fortran/closef.c \
 	mpi-io/get_atom.c mpi-io/get_bytoff.c mpi-io/get_extent.c \
 	mpi-io/get_group.c mpi-io/get_info.c mpi-io/get_posn.c \
 	mpi-io/get_posn_sh.c mpi-io/get_size.c mpi-io/get_view.c \
-	mpi-io/iread.c mpi-io/iread_at.c mpi-io/iread_sh.c \
-	mpi-io/iwrite.c mpi-io/iwrite_at.c mpi-io/iwrite_sh.c \
-	mpi-io/open.c mpi-io/prealloc.c mpi-io/rd_atallb.c \
-	mpi-io/rd_atalle.c mpi-io/read.c mpi-io/read_all.c \
-	mpi-io/read_allb.c mpi-io/read_alle.c mpi-io/read_at.c \
-	mpi-io/read_atall.c mpi-io/read_ord.c mpi-io/read_ordb.c \
-	mpi-io/read_orde.c mpi-io/read_sh.c mpi-io/register_datarep.c \
-	mpi-io/seek.c mpi-io/seek_sh.c mpi-io/set_atom.c \
-	mpi-io/set_info.c mpi-io/set_size.c mpi-io/set_view.c \
-	mpi-io/wr_atallb.c mpi-io/wr_atalle.c mpi-io/write.c \
-	mpi-io/write_all.c mpi-io/write_allb.c mpi-io/write_alle.c \
-	mpi-io/write_at.c mpi-io/write_atall.c mpi-io/write_ord.c \
-	mpi-io/write_ordb.c mpi-io/write_orde.c mpi-io/write_sh.c
+	mpi-io/iread.c mpi-io/iread_all.c mpi-io/iread_at.c \
+	mpi-io/iread_atall.c mpi-io/iread_sh.c mpi-io/iwrite.c \
+	mpi-io/iwrite_all.c mpi-io/iwrite_at.c mpi-io/iwrite_atall.c \
+	mpi-io/iwrite_sh.c mpi-io/open.c mpi-io/prealloc.c \
+	mpi-io/rd_atallb.c mpi-io/rd_atalle.c mpi-io/read.c \
+	mpi-io/read_all.c mpi-io/read_allb.c mpi-io/read_alle.c \
+	mpi-io/read_at.c mpi-io/read_atall.c mpi-io/read_ord.c \
+	mpi-io/read_ordb.c mpi-io/read_orde.c mpi-io/read_sh.c \
+	mpi-io/register_datarep.c mpi-io/seek.c mpi-io/seek_sh.c \
+	mpi-io/set_atom.c mpi-io/set_info.c mpi-io/set_size.c \
+	mpi-io/set_view.c mpi-io/wr_atallb.c mpi-io/wr_atalle.c \
+	mpi-io/write.c mpi-io/write_all.c mpi-io/write_allb.c \
+	mpi-io/write_alle.c mpi-io/write_at.c mpi-io/write_atall.c \
+	mpi-io/write_ord.c mpi-io/write_ordb.c mpi-io/write_orde.c \
+	mpi-io/write_sh.c
 am__dirstamp = $(am__leading_dot)dirstamp
 @BUILD_F77_BINDINGS_TRUE@am__objects_1 = mpi-io/fortran/libpromio_la-closef.lo \
 @BUILD_F77_BINDINGS_TRUE@	mpi-io/fortran/libpromio_la-deletef.lo \
@@ -555,9 +557,13 @@ am__objects_2 = $(am__objects_1) mpi-io/libpromio_la-close.lo \
 	mpi-io/libpromio_la-get_posn_sh.lo \
 	mpi-io/libpromio_la-get_size.lo \
 	mpi-io/libpromio_la-get_view.lo mpi-io/libpromio_la-iread.lo \
+	mpi-io/libpromio_la-iread_all.lo \
 	mpi-io/libpromio_la-iread_at.lo \
+	mpi-io/libpromio_la-iread_atall.lo \
 	mpi-io/libpromio_la-iread_sh.lo mpi-io/libpromio_la-iwrite.lo \
+	mpi-io/libpromio_la-iwrite_all.lo \
 	mpi-io/libpromio_la-iwrite_at.lo \
+	mpi-io/libpromio_la-iwrite_atall.lo \
 	mpi-io/libpromio_la-iwrite_sh.lo mpi-io/libpromio_la-open.lo \
 	mpi-io/libpromio_la-prealloc.lo \
 	mpi-io/libpromio_la-rd_atallb.lo \
@@ -630,27 +636,28 @@ am__libromio_la_SOURCES_DIST = mpi-io/fortran/closef.c \
 	mpi-io/get_atom.c mpi-io/get_bytoff.c mpi-io/get_extent.c \
 	mpi-io/get_group.c mpi-io/get_info.c mpi-io/get_posn.c \
 	mpi-io/get_posn_sh.c mpi-io/get_size.c mpi-io/get_view.c \
-	mpi-io/iread.c mpi-io/iread_at.c mpi-io/iread_sh.c \
-	mpi-io/iwrite.c mpi-io/iwrite_at.c mpi-io/iwrite_sh.c \
-	mpi-io/open.c mpi-io/prealloc.c mpi-io/rd_atallb.c \
-	mpi-io/rd_atalle.c mpi-io/read.c mpi-io/read_all.c \
-	mpi-io/read_allb.c mpi-io/read_alle.c mpi-io/read_at.c \
-	mpi-io/read_atall.c mpi-io/read_ord.c mpi-io/read_ordb.c \
-	mpi-io/read_orde.c mpi-io/read_sh.c mpi-io/register_datarep.c \
-	mpi-io/seek.c mpi-io/seek_sh.c mpi-io/set_atom.c \
-	mpi-io/set_info.c mpi-io/set_size.c mpi-io/set_view.c \
-	mpi-io/wr_atallb.c mpi-io/wr_atalle.c mpi-io/write.c \
-	mpi-io/write_all.c mpi-io/write_allb.c mpi-io/write_alle.c \
-	mpi-io/write_at.c mpi-io/write_atall.c mpi-io/write_ord.c \
-	mpi-io/write_ordb.c mpi-io/write_orde.c mpi-io/write_sh.c \
-	mpi-io/glue/default/mpio_file.c mpi-io/glue/default/mpio_err.c \
-	mpi-io/glue/mpich/mpio_file.c mpi-io/glue/mpich/mpio_err.c \
-	mpi-io/glue/large_count.c mpi-io/mpich_fileutil.c \
-	mpi-io/mpir-mpioinit.c mpi-io/mpiu_greq.c \
-	mpi-io/mpiu_external32.c mpi-io/ioreq_c2f.c mpi-io/ioreq_f2c.c \
-	mpi-io/iotest.c mpi-io/iotestall.c mpi-io/iotestany.c \
-	mpi-io/iotestsome.c mpi-io/iowait.c mpi-io/iowaitall.c \
-	mpi-io/iowaitany.c mpi-io/iowaitsome.c \
+	mpi-io/iread.c mpi-io/iread_all.c mpi-io/iread_at.c \
+	mpi-io/iread_atall.c mpi-io/iread_sh.c mpi-io/iwrite.c \
+	mpi-io/iwrite_all.c mpi-io/iwrite_at.c mpi-io/iwrite_atall.c \
+	mpi-io/iwrite_sh.c mpi-io/open.c mpi-io/prealloc.c \
+	mpi-io/rd_atallb.c mpi-io/rd_atalle.c mpi-io/read.c \
+	mpi-io/read_all.c mpi-io/read_allb.c mpi-io/read_alle.c \
+	mpi-io/read_at.c mpi-io/read_atall.c mpi-io/read_ord.c \
+	mpi-io/read_ordb.c mpi-io/read_orde.c mpi-io/read_sh.c \
+	mpi-io/register_datarep.c mpi-io/seek.c mpi-io/seek_sh.c \
+	mpi-io/set_atom.c mpi-io/set_info.c mpi-io/set_size.c \
+	mpi-io/set_view.c mpi-io/wr_atallb.c mpi-io/wr_atalle.c \
+	mpi-io/write.c mpi-io/write_all.c mpi-io/write_allb.c \
+	mpi-io/write_alle.c mpi-io/write_at.c mpi-io/write_atall.c \
+	mpi-io/write_ord.c mpi-io/write_ordb.c mpi-io/write_orde.c \
+	mpi-io/write_sh.c mpi-io/glue/default/mpio_file.c \
+	mpi-io/glue/default/mpio_err.c mpi-io/glue/mpich/mpio_file.c \
+	mpi-io/glue/mpich/mpio_err.c mpi-io/glue/large_count.c \
+	mpi-io/mpich_fileutil.c mpi-io/mpir-mpioinit.c \
+	mpi-io/mpiu_greq.c mpi-io/mpiu_external32.c mpi-io/ioreq_c2f.c \
+	mpi-io/ioreq_f2c.c mpi-io/iotest.c mpi-io/iotestall.c \
+	mpi-io/iotestany.c mpi-io/iotestsome.c mpi-io/iowait.c \
+	mpi-io/iowaitall.c mpi-io/iowaitany.c mpi-io/iowaitsome.c \
 	adio/ad_gpfs/ad_gpfs_aggrs.c adio/ad_gpfs/ad_gpfs_close.c \
 	adio/ad_gpfs/ad_gpfs_flush.c adio/ad_gpfs/ad_gpfs_tuning.c \
 	adio/ad_gpfs/ad_gpfs.c adio/ad_gpfs/ad_gpfs_open.c \
@@ -684,28 +691,28 @@ am__libromio_la_SOURCES_DIST = mpi-io/fortran/closef.c \
 	adio/ad_nfs/ad_nfs_getsh.c adio/ad_nfs/ad_nfs.c \
 	adio/ad_nfs/ad_nfs_resize.c adio/ad_nfs/ad_nfs_features.c \
 	adio/ad_panfs/ad_panfs.c adio/ad_panfs/ad_panfs_open.c \
-	adio/ad_panfs/ad_panfs_hints.c adio/ad_panfs/ad_panfs_read.c \
-	adio/ad_panfs/ad_panfs_resize.c adio/ad_panfs/ad_panfs_write.c \
-	adio/ad_pfs/ad_pfs_read.c adio/ad_pfs/ad_pfs_open.c \
-	adio/ad_pfs/ad_pfs_write.c adio/ad_pfs/ad_pfs_done.c \
-	adio/ad_pfs/ad_pfs_fcntl.c adio/ad_pfs/ad_pfs_iread.c \
-	adio/ad_pfs/ad_pfs_iwrite.c adio/ad_pfs/ad_pfs_wait.c \
-	adio/ad_pfs/ad_pfs_flush.c adio/ad_pfs/ad_pfs_hints.c \
-	adio/ad_pfs/ad_pfs.c adio/ad_piofs/ad_piofs_read.c \
-	adio/ad_piofs/ad_piofs_open.c adio/ad_piofs/ad_piofs_write.c \
-	adio/ad_piofs/ad_piofs_fcntl.c adio/ad_piofs/ad_piofs_hints.c \
-	adio/ad_piofs/ad_piofs.c adio/ad_pvfs/ad_pvfs_close.c \
-	adio/ad_pvfs/ad_pvfs_read.c adio/ad_pvfs/ad_pvfs_open.c \
-	adio/ad_pvfs/ad_pvfs_write.c adio/ad_pvfs/ad_pvfs_fcntl.c \
-	adio/ad_pvfs/ad_pvfs_flush.c adio/ad_pvfs/ad_pvfs_resize.c \
-	adio/ad_pvfs/ad_pvfs_hints.c adio/ad_pvfs/ad_pvfs_delete.c \
-	adio/ad_pvfs/ad_pvfs.c adio/ad_pvfs2/ad_pvfs2_close.c \
-	adio/ad_pvfs2/ad_pvfs2_read.c adio/ad_pvfs2/ad_pvfs2_open.c \
-	adio/ad_pvfs2/ad_pvfs2_write.c adio/ad_pvfs2/ad_pvfs2_fcntl.c \
-	adio/ad_pvfs2/ad_pvfs2_flush.c adio/ad_pvfs2/ad_pvfs2_resize.c \
-	adio/ad_pvfs2/ad_pvfs2_hints.c adio/ad_pvfs2/ad_pvfs2_delete.c \
-	adio/ad_pvfs2/ad_pvfs2.c adio/ad_pvfs2/ad_pvfs2_common.c \
-	adio/ad_pvfs2/ad_pvfs2_aio.c \
+	adio/ad_panfs/ad_panfs_open6.c adio/ad_panfs/ad_panfs_hints.c \
+	adio/ad_panfs/ad_panfs_read.c adio/ad_panfs/ad_panfs_resize.c \
+	adio/ad_panfs/ad_panfs_write.c adio/ad_pfs/ad_pfs_read.c \
+	adio/ad_pfs/ad_pfs_open.c adio/ad_pfs/ad_pfs_write.c \
+	adio/ad_pfs/ad_pfs_done.c adio/ad_pfs/ad_pfs_fcntl.c \
+	adio/ad_pfs/ad_pfs_iread.c adio/ad_pfs/ad_pfs_iwrite.c \
+	adio/ad_pfs/ad_pfs_wait.c adio/ad_pfs/ad_pfs_flush.c \
+	adio/ad_pfs/ad_pfs_hints.c adio/ad_pfs/ad_pfs.c \
+	adio/ad_piofs/ad_piofs_read.c adio/ad_piofs/ad_piofs_open.c \
+	adio/ad_piofs/ad_piofs_write.c adio/ad_piofs/ad_piofs_fcntl.c \
+	adio/ad_piofs/ad_piofs_hints.c adio/ad_piofs/ad_piofs.c \
+	adio/ad_pvfs/ad_pvfs_close.c adio/ad_pvfs/ad_pvfs_read.c \
+	adio/ad_pvfs/ad_pvfs_open.c adio/ad_pvfs/ad_pvfs_write.c \
+	adio/ad_pvfs/ad_pvfs_fcntl.c adio/ad_pvfs/ad_pvfs_flush.c \
+	adio/ad_pvfs/ad_pvfs_resize.c adio/ad_pvfs/ad_pvfs_hints.c \
+	adio/ad_pvfs/ad_pvfs_delete.c adio/ad_pvfs/ad_pvfs.c \
+	adio/ad_pvfs2/ad_pvfs2_close.c adio/ad_pvfs2/ad_pvfs2_read.c \
+	adio/ad_pvfs2/ad_pvfs2_open.c adio/ad_pvfs2/ad_pvfs2_write.c \
+	adio/ad_pvfs2/ad_pvfs2_fcntl.c adio/ad_pvfs2/ad_pvfs2_flush.c \
+	adio/ad_pvfs2/ad_pvfs2_resize.c adio/ad_pvfs2/ad_pvfs2_hints.c \
+	adio/ad_pvfs2/ad_pvfs2_delete.c adio/ad_pvfs2/ad_pvfs2.c \
+	adio/ad_pvfs2/ad_pvfs2_common.c adio/ad_pvfs2/ad_pvfs2_aio.c \
 	adio/ad_pvfs2/ad_pvfs2_read_list_classic.c \
 	adio/ad_pvfs2/ad_pvfs2_io_list.c \
 	adio/ad_pvfs2/ad_pvfs2_io_dtype.c \
@@ -753,7 +760,8 @@ am__libromio_la_SOURCES_DIST = mpi-io/fortran/closef.c \
 	adio/common/ad_get_sh_fp.c adio/common/ad_hints.c \
 	adio/common/ad_init.c adio/common/ad_io_coll.c \
 	adio/common/ad_iopen.c adio/common/ad_iread.c \
-	adio/common/ad_iread_fake.c adio/common/ad_iwrite.c \
+	adio/common/ad_iread_coll.c adio/common/ad_iread_fake.c \
+	adio/common/ad_iwrite.c adio/common/ad_iwrite_coll.c \
 	adio/common/ad_iwrite_fake.c adio/common/ad_open.c \
 	adio/common/ad_opencoll.c adio/common/ad_opencoll_failsafe.c \
 	adio/common/ad_opencoll_scalable.c adio/common/ad_prealloc.c \
@@ -774,7 +782,8 @@ am__libromio_la_SOURCES_DIST = mpi-io/fortran/closef.c \
 	adio/common/shfp_fname.c adio/common/status_setb.c \
 	adio/common/strfns.c adio/common/system_hints.c \
 	adio/common/hint_fns.c adio/common/ad_threaded_io.c \
-	adio/common/p2p_aggregation.c adio/common/utils.c
+	adio/common/p2p_aggregation.c \
+	adio/common/onesided_aggregation.c adio/common/utils.c
 @BUILD_F77_BINDINGS_TRUE@am__objects_3 = mpi-io/fortran/closef.lo \
 @BUILD_F77_BINDINGS_TRUE@	mpi-io/fortran/deletef.lo \
 @BUILD_F77_BINDINGS_TRUE@	mpi-io/fortran/fsyncf.lo \
@@ -835,20 +844,21 @@ am__objects_4 = $(am__objects_3) mpi-io/close.lo mpi-io/delete.lo \
 	mpi-io/get_amode.lo mpi-io/get_atom.lo mpi-io/get_bytoff.lo \
 	mpi-io/get_extent.lo mpi-io/get_group.lo mpi-io/get_info.lo \
 	mpi-io/get_posn.lo mpi-io/get_posn_sh.lo mpi-io/get_size.lo \
-	mpi-io/get_view.lo mpi-io/iread.lo mpi-io/iread_at.lo \
-	mpi-io/iread_sh.lo mpi-io/iwrite.lo mpi-io/iwrite_at.lo \
-	mpi-io/iwrite_sh.lo mpi-io/open.lo mpi-io/prealloc.lo \
-	mpi-io/rd_atallb.lo mpi-io/rd_atalle.lo mpi-io/read.lo \
-	mpi-io/read_all.lo mpi-io/read_allb.lo mpi-io/read_alle.lo \
-	mpi-io/read_at.lo mpi-io/read_atall.lo mpi-io/read_ord.lo \
-	mpi-io/read_ordb.lo mpi-io/read_orde.lo mpi-io/read_sh.lo \
-	mpi-io/register_datarep.lo mpi-io/seek.lo mpi-io/seek_sh.lo \
-	mpi-io/set_atom.lo mpi-io/set_info.lo mpi-io/set_size.lo \
-	mpi-io/set_view.lo mpi-io/wr_atallb.lo mpi-io/wr_atalle.lo \
-	mpi-io/write.lo mpi-io/write_all.lo mpi-io/write_allb.lo \
-	mpi-io/write_alle.lo mpi-io/write_at.lo mpi-io/write_atall.lo \
-	mpi-io/write_ord.lo mpi-io/write_ordb.lo mpi-io/write_orde.lo \
-	mpi-io/write_sh.lo
+	mpi-io/get_view.lo mpi-io/iread.lo mpi-io/iread_all.lo \
+	mpi-io/iread_at.lo mpi-io/iread_atall.lo mpi-io/iread_sh.lo \
+	mpi-io/iwrite.lo mpi-io/iwrite_all.lo mpi-io/iwrite_at.lo \
+	mpi-io/iwrite_atall.lo mpi-io/iwrite_sh.lo mpi-io/open.lo \
+	mpi-io/prealloc.lo mpi-io/rd_atallb.lo mpi-io/rd_atalle.lo \
+	mpi-io/read.lo mpi-io/read_all.lo mpi-io/read_allb.lo \
+	mpi-io/read_alle.lo mpi-io/read_at.lo mpi-io/read_atall.lo \
+	mpi-io/read_ord.lo mpi-io/read_ordb.lo mpi-io/read_orde.lo \
+	mpi-io/read_sh.lo mpi-io/register_datarep.lo mpi-io/seek.lo \
+	mpi-io/seek_sh.lo mpi-io/set_atom.lo mpi-io/set_info.lo \
+	mpi-io/set_size.lo mpi-io/set_view.lo mpi-io/wr_atallb.lo \
+	mpi-io/wr_atalle.lo mpi-io/write.lo mpi-io/write_all.lo \
+	mpi-io/write_allb.lo mpi-io/write_alle.lo mpi-io/write_at.lo \
+	mpi-io/write_atall.lo mpi-io/write_ord.lo mpi-io/write_ordb.lo \
+	mpi-io/write_orde.lo mpi-io/write_sh.lo
 @MPIO_GLUE_DEFAULT_TRUE@am__objects_5 =  \
 @MPIO_GLUE_DEFAULT_TRUE@	mpi-io/glue/default/mpio_file.lo \
 @MPIO_GLUE_DEFAULT_TRUE@	mpi-io/glue/default/mpio_err.lo
@@ -913,13 +923,17 @@ am__objects_8 = mpi-io/ioreq_c2f.lo mpi-io/ioreq_f2c.lo \
 @BUILD_AD_NFS_TRUE@	adio/ad_nfs/ad_nfs.lo \
 @BUILD_AD_NFS_TRUE@	adio/ad_nfs/ad_nfs_resize.lo \
 @BUILD_AD_NFS_TRUE@	adio/ad_nfs/ad_nfs_features.lo
-@BUILD_AD_PANFS_TRUE@am__objects_18 = adio/ad_panfs/ad_panfs.lo \
-@BUILD_AD_PANFS_TRUE@	adio/ad_panfs/ad_panfs_open.lo \
+@BUILD_PANFS_OPEN6_FALSE@am__objects_18 =  \
+@BUILD_PANFS_OPEN6_FALSE@	adio/ad_panfs/ad_panfs_open.lo
+@BUILD_PANFS_OPEN6_TRUE@am__objects_18 =  \
+@BUILD_PANFS_OPEN6_TRUE@	adio/ad_panfs/ad_panfs_open6.lo
+@BUILD_AD_PANFS_TRUE@am__objects_19 = adio/ad_panfs/ad_panfs.lo \
+@BUILD_AD_PANFS_TRUE@	$(am__objects_18) \
 @BUILD_AD_PANFS_TRUE@	adio/ad_panfs/ad_panfs_hints.lo \
 @BUILD_AD_PANFS_TRUE@	adio/ad_panfs/ad_panfs_read.lo \
 @BUILD_AD_PANFS_TRUE@	adio/ad_panfs/ad_panfs_resize.lo \
 @BUILD_AD_PANFS_TRUE@	adio/ad_panfs/ad_panfs_write.lo
-@BUILD_AD_PFS_TRUE@am__objects_19 = adio/ad_pfs/ad_pfs_read.lo \
+@BUILD_AD_PFS_TRUE@am__objects_20 = adio/ad_pfs/ad_pfs_read.lo \
 @BUILD_AD_PFS_TRUE@	adio/ad_pfs/ad_pfs_open.lo \
 @BUILD_AD_PFS_TRUE@	adio/ad_pfs/ad_pfs_write.lo \
 @BUILD_AD_PFS_TRUE@	adio/ad_pfs/ad_pfs_done.lo \
@@ -930,13 +944,13 @@ am__objects_8 = mpi-io/ioreq_c2f.lo mpi-io/ioreq_f2c.lo \
 @BUILD_AD_PFS_TRUE@	adio/ad_pfs/ad_pfs_flush.lo \
 @BUILD_AD_PFS_TRUE@	adio/ad_pfs/ad_pfs_hints.lo \
 @BUILD_AD_PFS_TRUE@	adio/ad_pfs/ad_pfs.lo
-@BUILD_AD_PIOFS_TRUE@am__objects_20 = adio/ad_piofs/ad_piofs_read.lo \
+@BUILD_AD_PIOFS_TRUE@am__objects_21 = adio/ad_piofs/ad_piofs_read.lo \
 @BUILD_AD_PIOFS_TRUE@	adio/ad_piofs/ad_piofs_open.lo \
 @BUILD_AD_PIOFS_TRUE@	adio/ad_piofs/ad_piofs_write.lo \
 @BUILD_AD_PIOFS_TRUE@	adio/ad_piofs/ad_piofs_fcntl.lo \
 @BUILD_AD_PIOFS_TRUE@	adio/ad_piofs/ad_piofs_hints.lo \
 @BUILD_AD_PIOFS_TRUE@	adio/ad_piofs/ad_piofs.lo
-@BUILD_AD_PVFS_TRUE@am__objects_21 = adio/ad_pvfs/ad_pvfs_close.lo \
+@BUILD_AD_PVFS_TRUE@am__objects_22 = adio/ad_pvfs/ad_pvfs_close.lo \
 @BUILD_AD_PVFS_TRUE@	adio/ad_pvfs/ad_pvfs_read.lo \
 @BUILD_AD_PVFS_TRUE@	adio/ad_pvfs/ad_pvfs_open.lo \
 @BUILD_AD_PVFS_TRUE@	adio/ad_pvfs/ad_pvfs_write.lo \
@@ -946,7 +960,7 @@ am__objects_8 = mpi-io/ioreq_c2f.lo mpi-io/ioreq_f2c.lo \
 @BUILD_AD_PVFS_TRUE@	adio/ad_pvfs/ad_pvfs_hints.lo \
 @BUILD_AD_PVFS_TRUE@	adio/ad_pvfs/ad_pvfs_delete.lo \
 @BUILD_AD_PVFS_TRUE@	adio/ad_pvfs/ad_pvfs.lo
-@BUILD_AD_PVFS2_TRUE@am__objects_22 = adio/ad_pvfs2/ad_pvfs2_close.lo \
+@BUILD_AD_PVFS2_TRUE@am__objects_23 = adio/ad_pvfs2/ad_pvfs2_close.lo \
 @BUILD_AD_PVFS2_TRUE@	adio/ad_pvfs2/ad_pvfs2_read.lo \
 @BUILD_AD_PVFS2_TRUE@	adio/ad_pvfs2/ad_pvfs2_open.lo \
 @BUILD_AD_PVFS2_TRUE@	adio/ad_pvfs2/ad_pvfs2_write.lo \
@@ -963,11 +977,11 @@ am__objects_8 = mpi-io/ioreq_c2f.lo mpi-io/ioreq_f2c.lo \
 @BUILD_AD_PVFS2_TRUE@	adio/ad_pvfs2/ad_pvfs2_io_dtype.lo \
 @BUILD_AD_PVFS2_TRUE@	adio/ad_pvfs2/ad_pvfs2_write_list_classic.lo \
 @BUILD_AD_PVFS2_TRUE@	adio/ad_pvfs2/ad_pvfs2_features.lo
-@BUILD_AD_SFS_TRUE@am__objects_23 = adio/ad_sfs/ad_sfs_open.lo \
+@BUILD_AD_SFS_TRUE@am__objects_24 = adio/ad_sfs/ad_sfs_open.lo \
 @BUILD_AD_SFS_TRUE@	adio/ad_sfs/ad_sfs_fcntl.lo \
 @BUILD_AD_SFS_TRUE@	adio/ad_sfs/ad_sfs_flush.lo \
 @BUILD_AD_SFS_TRUE@	adio/ad_sfs/ad_sfs.lo
-@BUILD_AD_TESTFS_TRUE@am__objects_24 =  \
+@BUILD_AD_TESTFS_TRUE@am__objects_25 =  \
 @BUILD_AD_TESTFS_TRUE@	adio/ad_testfs/ad_testfs_close.lo \
 @BUILD_AD_TESTFS_TRUE@	adio/ad_testfs/ad_testfs_read.lo \
 @BUILD_AD_TESTFS_TRUE@	adio/ad_testfs/ad_testfs_rdcoll.lo \
@@ -985,16 +999,16 @@ am__objects_8 = mpi-io/ioreq_c2f.lo mpi-io/ioreq_f2c.lo \
 @BUILD_AD_TESTFS_TRUE@	adio/ad_testfs/ad_testfs_hints.lo \
 @BUILD_AD_TESTFS_TRUE@	adio/ad_testfs/ad_testfs_delete.lo \
 @BUILD_AD_TESTFS_TRUE@	adio/ad_testfs/ad_testfs.lo
-@BUILD_AD_UFS_TRUE@am__objects_25 = adio/ad_ufs/ad_ufs.lo \
+@BUILD_AD_UFS_TRUE@am__objects_26 = adio/ad_ufs/ad_ufs.lo \
 @BUILD_AD_UFS_TRUE@	adio/ad_ufs/ad_ufs_open.lo
-@BUILD_AD_XFS_TRUE@am__objects_26 = adio/ad_xfs/ad_xfs.lo \
+@BUILD_AD_XFS_TRUE@am__objects_27 = adio/ad_xfs/ad_xfs.lo \
 @BUILD_AD_XFS_TRUE@	adio/ad_xfs/ad_xfs_fcntl.lo \
 @BUILD_AD_XFS_TRUE@	adio/ad_xfs/ad_xfs_hints.lo \
 @BUILD_AD_XFS_TRUE@	adio/ad_xfs/ad_xfs_open.lo \
 @BUILD_AD_XFS_TRUE@	adio/ad_xfs/ad_xfs_read.lo \
 @BUILD_AD_XFS_TRUE@	adio/ad_xfs/ad_xfs_resize.lo \
 @BUILD_AD_XFS_TRUE@	adio/ad_xfs/ad_xfs_write.lo
-@BUILD_AD_ZOIDFS_TRUE@am__objects_27 = adio/ad_zoidfs/ad_zoidfs.lo \
+@BUILD_AD_ZOIDFS_TRUE@am__objects_28 = adio/ad_zoidfs/ad_zoidfs.lo \
 @BUILD_AD_ZOIDFS_TRUE@	adio/ad_zoidfs/ad_zoidfs_close.lo \
 @BUILD_AD_ZOIDFS_TRUE@	adio/ad_zoidfs/ad_zoidfs_common.lo \
 @BUILD_AD_ZOIDFS_TRUE@	adio/ad_zoidfs/ad_zoidfs_delete.lo \
@@ -1006,15 +1020,15 @@ am__objects_8 = mpi-io/ioreq_c2f.lo mpi-io/ioreq_f2c.lo \
 @BUILD_AD_ZOIDFS_TRUE@	adio/ad_zoidfs/ad_zoidfs_features.lo \
 @BUILD_AD_ZOIDFS_TRUE@	adio/ad_zoidfs/ad_zoidfs_read_list.lo \
 @BUILD_AD_ZOIDFS_TRUE@	adio/ad_zoidfs/ad_zoidfs_write_list.lo
-am__objects_28 = $(am__objects_5) $(am__objects_6) $(am__objects_7) \
+am__objects_29 = $(am__objects_5) $(am__objects_6) $(am__objects_7) \
 	mpi-io/mpich_fileutil.lo mpi-io/mpir-mpioinit.lo \
 	mpi-io/mpiu_greq.lo mpi-io/mpiu_external32.lo $(am__objects_9) \
 	$(am__objects_10) $(am__objects_11) $(am__objects_12) \
 	$(am__objects_13) $(am__objects_14) $(am__objects_15) \
-	$(am__objects_16) $(am__objects_17) $(am__objects_18) \
-	$(am__objects_19) $(am__objects_20) $(am__objects_21) \
-	$(am__objects_22) $(am__objects_23) $(am__objects_24) \
-	$(am__objects_25) $(am__objects_26) $(am__objects_27) \
+	$(am__objects_16) $(am__objects_17) $(am__objects_19) \
+	$(am__objects_20) $(am__objects_21) $(am__objects_22) \
+	$(am__objects_23) $(am__objects_24) $(am__objects_25) \
+	$(am__objects_26) $(am__objects_27) $(am__objects_28) \
 	adio/common/ad_aggregate.lo adio/common/ad_aggregate_new.lo \
 	adio/common/ad_close.lo adio/common/ad_coll_build_req_new.lo \
 	adio/common/ad_coll_exch_new.lo adio/common/ad_darray.lo \
@@ -1025,7 +1039,8 @@ am__objects_28 = $(am__objects_5) $(am__objects_6) $(am__objects_7) \
 	adio/common/ad_get_sh_fp.lo adio/common/ad_hints.lo \
 	adio/common/ad_init.lo adio/common/ad_io_coll.lo \
 	adio/common/ad_iopen.lo adio/common/ad_iread.lo \
-	adio/common/ad_iread_fake.lo adio/common/ad_iwrite.lo \
+	adio/common/ad_iread_coll.lo adio/common/ad_iread_fake.lo \
+	adio/common/ad_iwrite.lo adio/common/ad_iwrite_coll.lo \
 	adio/common/ad_iwrite_fake.lo adio/common/ad_open.lo \
 	adio/common/ad_opencoll.lo adio/common/ad_opencoll_failsafe.lo \
 	adio/common/ad_opencoll_scalable.lo adio/common/ad_prealloc.lo \
@@ -1046,13 +1061,14 @@ am__objects_28 = $(am__objects_5) $(am__objects_6) $(am__objects_7) \
 	adio/common/shfp_fname.lo adio/common/status_setb.lo \
 	adio/common/strfns.lo adio/common/system_hints.lo \
 	adio/common/hint_fns.lo adio/common/ad_threaded_io.lo \
-	adio/common/p2p_aggregation.lo adio/common/utils.lo
-am__objects_29 =
+	adio/common/p2p_aggregation.lo \
+	adio/common/onesided_aggregation.lo adio/common/utils.lo
+am__objects_30 =
 @BUILD_ROMIO_EMBEDDED_FALSE@am_libromio_la_OBJECTS = $(am__objects_4) \
-@BUILD_ROMIO_EMBEDDED_FALSE@	$(am__objects_28) \
-@BUILD_ROMIO_EMBEDDED_FALSE@	$(am__objects_29)
+@BUILD_ROMIO_EMBEDDED_FALSE@	$(am__objects_29) \
+@BUILD_ROMIO_EMBEDDED_FALSE@	$(am__objects_30)
 @BUILD_ROMIO_EMBEDDED_TRUE@am_libromio_la_OBJECTS = $(am__objects_4) \
-@BUILD_ROMIO_EMBEDDED_TRUE@	$(am__objects_28) $(am__objects_29)
+@BUILD_ROMIO_EMBEDDED_TRUE@	$(am__objects_29) $(am__objects_30)
 libromio_la_OBJECTS = $(am_libromio_la_OBJECTS)
 @BUILD_ROMIO_EMBEDDED_FALSE@am_libromio_la_rpath = -rpath $(libdir)
 @BUILD_ROMIO_EMBEDDED_TRUE@am_libromio_la_rpath =
@@ -1486,20 +1502,21 @@ romio_mpi_sources = $(am__append_4) mpi-io/close.c mpi-io/delete.c \
 	mpi-io/get_amode.c mpi-io/get_atom.c mpi-io/get_bytoff.c \
 	mpi-io/get_extent.c mpi-io/get_group.c mpi-io/get_info.c \
 	mpi-io/get_posn.c mpi-io/get_posn_sh.c mpi-io/get_size.c \
-	mpi-io/get_view.c mpi-io/iread.c mpi-io/iread_at.c \
-	mpi-io/iread_sh.c mpi-io/iwrite.c mpi-io/iwrite_at.c \
-	mpi-io/iwrite_sh.c mpi-io/open.c mpi-io/prealloc.c \
-	mpi-io/rd_atallb.c mpi-io/rd_atalle.c mpi-io/read.c \
-	mpi-io/read_all.c mpi-io/read_allb.c mpi-io/read_alle.c \
-	mpi-io/read_at.c mpi-io/read_atall.c mpi-io/read_ord.c \
-	mpi-io/read_ordb.c mpi-io/read_orde.c mpi-io/read_sh.c \
-	mpi-io/register_datarep.c mpi-io/seek.c mpi-io/seek_sh.c \
-	mpi-io/set_atom.c mpi-io/set_info.c mpi-io/set_size.c \
-	mpi-io/set_view.c mpi-io/wr_atallb.c mpi-io/wr_atalle.c \
-	mpi-io/write.c mpi-io/write_all.c mpi-io/write_allb.c \
-	mpi-io/write_alle.c mpi-io/write_at.c mpi-io/write_atall.c \
-	mpi-io/write_ord.c mpi-io/write_ordb.c mpi-io/write_orde.c \
-	mpi-io/write_sh.c
+	mpi-io/get_view.c mpi-io/iread.c mpi-io/iread_all.c \
+	mpi-io/iread_at.c mpi-io/iread_atall.c mpi-io/iread_sh.c \
+	mpi-io/iwrite.c mpi-io/iwrite_all.c mpi-io/iwrite_at.c \
+	mpi-io/iwrite_atall.c mpi-io/iwrite_sh.c mpi-io/open.c \
+	mpi-io/prealloc.c mpi-io/rd_atallb.c mpi-io/rd_atalle.c \
+	mpi-io/read.c mpi-io/read_all.c mpi-io/read_allb.c \
+	mpi-io/read_alle.c mpi-io/read_at.c mpi-io/read_atall.c \
+	mpi-io/read_ord.c mpi-io/read_ordb.c mpi-io/read_orde.c \
+	mpi-io/read_sh.c mpi-io/register_datarep.c mpi-io/seek.c \
+	mpi-io/seek_sh.c mpi-io/set_atom.c mpi-io/set_info.c \
+	mpi-io/set_size.c mpi-io/set_view.c mpi-io/wr_atallb.c \
+	mpi-io/wr_atalle.c mpi-io/write.c mpi-io/write_all.c \
+	mpi-io/write_allb.c mpi-io/write_alle.c mpi-io/write_at.c \
+	mpi-io/write_atall.c mpi-io/write_ord.c mpi-io/write_ordb.c \
+	mpi-io/write_orde.c mpi-io/write_sh.c
 
 # regular old source files that implement ROMIO, such as ADIO code
 
@@ -1523,7 +1540,8 @@ romio_other_sources = $(am__append_1) $(am__append_2) $(am__append_3) \
 	adio/common/ad_get_sh_fp.c adio/common/ad_hints.c \
 	adio/common/ad_init.c adio/common/ad_io_coll.c \
 	adio/common/ad_iopen.c adio/common/ad_iread.c \
-	adio/common/ad_iread_fake.c adio/common/ad_iwrite.c \
+	adio/common/ad_iread_coll.c adio/common/ad_iread_fake.c \
+	adio/common/ad_iwrite.c adio/common/ad_iwrite_coll.c \
 	adio/common/ad_iwrite_fake.c adio/common/ad_open.c \
 	adio/common/ad_opencoll.c adio/common/ad_opencoll_failsafe.c \
 	adio/common/ad_opencoll_scalable.c adio/common/ad_prealloc.c \
@@ -1544,7 +1562,8 @@ romio_other_sources = $(am__append_1) $(am__append_2) $(am__append_3) \
 	adio/common/shfp_fname.c adio/common/status_setb.c \
 	adio/common/strfns.c adio/common/system_hints.c \
 	adio/common/hint_fns.c adio/common/ad_threaded_io.c \
-	adio/common/p2p_aggregation.c adio/common/utils.c
+	adio/common/p2p_aggregation.c \
+	adio/common/onesided_aggregation.c adio/common/utils.c
 
 # code that may need to be "up" called from the MPI library and/or is
 # MPI-implementation-specific in some way
@@ -1571,6 +1590,10 @@ mpio_extra_sources = \
     mpi-io/get_errh.c \
     mpi-io/set_errh.c
 
+@BUILD_PANFS_OPEN6_FALSE@panfs_open = adio/ad_panfs/ad_panfs_open.c
+
+# override open with one that uses newer features
+@BUILD_PANFS_OPEN6_TRUE@panfs_open = adio/ad_panfs/ad_panfs_open6.c
 
 # Build a libtool convenience library that the enclosing MPI implementation can
 # use by adding it to the right _LIBADD variable.
@@ -1922,13 +1945,21 @@ mpi-io/libpromio_la-get_view.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
 mpi-io/libpromio_la-iread.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
+mpi-io/libpromio_la-iread_all.lo: mpi-io/$(am__dirstamp) \
+	mpi-io/$(DEPDIR)/$(am__dirstamp)
 mpi-io/libpromio_la-iread_at.lo: mpi-io/$(am__dirstamp) \
+	mpi-io/$(DEPDIR)/$(am__dirstamp)
+mpi-io/libpromio_la-iread_atall.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
 mpi-io/libpromio_la-iread_sh.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
 mpi-io/libpromio_la-iwrite.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
+mpi-io/libpromio_la-iwrite_all.lo: mpi-io/$(am__dirstamp) \
+	mpi-io/$(DEPDIR)/$(am__dirstamp)
 mpi-io/libpromio_la-iwrite_at.lo: mpi-io/$(am__dirstamp) \
+	mpi-io/$(DEPDIR)/$(am__dirstamp)
+mpi-io/libpromio_la-iwrite_atall.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
 mpi-io/libpromio_la-iwrite_sh.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
@@ -2143,13 +2174,21 @@ mpi-io/get_view.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
 mpi-io/iread.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
+mpi-io/iread_all.lo: mpi-io/$(am__dirstamp) \
+	mpi-io/$(DEPDIR)/$(am__dirstamp)
 mpi-io/iread_at.lo: mpi-io/$(am__dirstamp) \
+	mpi-io/$(DEPDIR)/$(am__dirstamp)
+mpi-io/iread_atall.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
 mpi-io/iread_sh.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
 mpi-io/iwrite.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
+mpi-io/iwrite_all.lo: mpi-io/$(am__dirstamp) \
+	mpi-io/$(DEPDIR)/$(am__dirstamp)
 mpi-io/iwrite_at.lo: mpi-io/$(am__dirstamp) \
+	mpi-io/$(DEPDIR)/$(am__dirstamp)
+mpi-io/iwrite_atall.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
 mpi-io/iwrite_sh.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
@@ -2427,6 +2466,8 @@ adio/ad_panfs/$(DEPDIR)/$(am__dirstamp):
 adio/ad_panfs/ad_panfs.lo: adio/ad_panfs/$(am__dirstamp) \
 	adio/ad_panfs/$(DEPDIR)/$(am__dirstamp)
 adio/ad_panfs/ad_panfs_open.lo: adio/ad_panfs/$(am__dirstamp) \
+	adio/ad_panfs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_panfs/ad_panfs_open6.lo: adio/ad_panfs/$(am__dirstamp) \
 	adio/ad_panfs/$(DEPDIR)/$(am__dirstamp)
 adio/ad_panfs/ad_panfs_hints.lo: adio/ad_panfs/$(am__dirstamp) \
 	adio/ad_panfs/$(DEPDIR)/$(am__dirstamp)
@@ -2711,9 +2752,13 @@ adio/common/ad_iopen.lo: adio/common/$(am__dirstamp) \
 	adio/common/$(DEPDIR)/$(am__dirstamp)
 adio/common/ad_iread.lo: adio/common/$(am__dirstamp) \
 	adio/common/$(DEPDIR)/$(am__dirstamp)
+adio/common/ad_iread_coll.lo: adio/common/$(am__dirstamp) \
+	adio/common/$(DEPDIR)/$(am__dirstamp)
 adio/common/ad_iread_fake.lo: adio/common/$(am__dirstamp) \
 	adio/common/$(DEPDIR)/$(am__dirstamp)
 adio/common/ad_iwrite.lo: adio/common/$(am__dirstamp) \
+	adio/common/$(DEPDIR)/$(am__dirstamp)
+adio/common/ad_iwrite_coll.lo: adio/common/$(am__dirstamp) \
 	adio/common/$(DEPDIR)/$(am__dirstamp)
 adio/common/ad_iwrite_fake.lo: adio/common/$(am__dirstamp) \
 	adio/common/$(DEPDIR)/$(am__dirstamp)
@@ -2796,6 +2841,8 @@ adio/common/hint_fns.lo: adio/common/$(am__dirstamp) \
 adio/common/ad_threaded_io.lo: adio/common/$(am__dirstamp) \
 	adio/common/$(DEPDIR)/$(am__dirstamp)
 adio/common/p2p_aggregation.lo: adio/common/$(am__dirstamp) \
+	adio/common/$(DEPDIR)/$(am__dirstamp)
+adio/common/onesided_aggregation.lo: adio/common/$(am__dirstamp) \
 	adio/common/$(DEPDIR)/$(am__dirstamp)
 adio/common/utils.lo: adio/common/$(am__dirstamp) \
 	adio/common/$(DEPDIR)/$(am__dirstamp)
@@ -2908,6 +2955,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_panfs/$(DEPDIR)/ad_panfs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_panfs/$(DEPDIR)/ad_panfs_hints.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_panfs/$(DEPDIR)/ad_panfs_open.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_panfs/$(DEPDIR)/ad_panfs_open6.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_panfs/$(DEPDIR)/ad_panfs_read.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_panfs/$(DEPDIR)/ad_panfs_resize.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_panfs/$(DEPDIR)/ad_panfs_write.Plo@am__quote@
@@ -3017,8 +3065,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/ad_io_coll.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/ad_iopen.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/ad_iread.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/ad_iread_coll.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/ad_iread_fake.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/ad_iwrite.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/ad_iwrite_coll.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/ad_iwrite_fake.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/ad_open.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/ad_opencoll.Plo@am__quote@
@@ -3055,6 +3105,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/iscontig.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/lock.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/malloc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/onesided_aggregation.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/p2p_aggregation.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/shfp_fname.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/status_setb.Plo@am__quote@
@@ -3087,10 +3138,14 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/iowaitany.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/iowaitsome.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/iread.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/iread_all.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/iread_at.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/iread_atall.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/iread_sh.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/iwrite.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/iwrite_all.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/iwrite_at.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/iwrite_atall.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/iwrite_sh.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/libpromio_la-close.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/libpromio_la-delete.Plo@am__quote@
@@ -3108,10 +3163,14 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/libpromio_la-get_size.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/libpromio_la-get_view.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/libpromio_la-iread.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/libpromio_la-iread_all.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/libpromio_la-iread_at.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/libpromio_la-iread_atall.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/libpromio_la-iread_sh.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/libpromio_la-iwrite.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/libpromio_la-iwrite_all.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/libpromio_la-iwrite_at.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/libpromio_la-iwrite_atall.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/libpromio_la-iwrite_sh.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/libpromio_la-open.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/libpromio_la-prealloc.Plo@am__quote@
@@ -3820,12 +3879,26 @@ mpi-io/libpromio_la-iread.lo: mpi-io/iread.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpromio_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mpi-io/libpromio_la-iread.lo `test -f 'mpi-io/iread.c' || echo '$(srcdir)/'`mpi-io/iread.c
 
+mpi-io/libpromio_la-iread_all.lo: mpi-io/iread_all.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpromio_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mpi-io/libpromio_la-iread_all.lo -MD -MP -MF mpi-io/$(DEPDIR)/libpromio_la-iread_all.Tpo -c -o mpi-io/libpromio_la-iread_all.lo `test -f 'mpi-io/iread_all.c' || echo '$(srcdir)/'`mpi-io/iread_all.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) mpi-io/$(DEPDIR)/libpromio_la-iread_all.Tpo mpi-io/$(DEPDIR)/libpromio_la-iread_all.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mpi-io/iread_all.c' object='mpi-io/libpromio_la-iread_all.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpromio_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mpi-io/libpromio_la-iread_all.lo `test -f 'mpi-io/iread_all.c' || echo '$(srcdir)/'`mpi-io/iread_all.c
+
 mpi-io/libpromio_la-iread_at.lo: mpi-io/iread_at.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpromio_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mpi-io/libpromio_la-iread_at.lo -MD -MP -MF mpi-io/$(DEPDIR)/libpromio_la-iread_at.Tpo -c -o mpi-io/libpromio_la-iread_at.lo `test -f 'mpi-io/iread_at.c' || echo '$(srcdir)/'`mpi-io/iread_at.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) mpi-io/$(DEPDIR)/libpromio_la-iread_at.Tpo mpi-io/$(DEPDIR)/libpromio_la-iread_at.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mpi-io/iread_at.c' object='mpi-io/libpromio_la-iread_at.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpromio_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mpi-io/libpromio_la-iread_at.lo `test -f 'mpi-io/iread_at.c' || echo '$(srcdir)/'`mpi-io/iread_at.c
+
+mpi-io/libpromio_la-iread_atall.lo: mpi-io/iread_atall.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpromio_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mpi-io/libpromio_la-iread_atall.lo -MD -MP -MF mpi-io/$(DEPDIR)/libpromio_la-iread_atall.Tpo -c -o mpi-io/libpromio_la-iread_atall.lo `test -f 'mpi-io/iread_atall.c' || echo '$(srcdir)/'`mpi-io/iread_atall.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) mpi-io/$(DEPDIR)/libpromio_la-iread_atall.Tpo mpi-io/$(DEPDIR)/libpromio_la-iread_atall.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mpi-io/iread_atall.c' object='mpi-io/libpromio_la-iread_atall.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpromio_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mpi-io/libpromio_la-iread_atall.lo `test -f 'mpi-io/iread_atall.c' || echo '$(srcdir)/'`mpi-io/iread_atall.c
 
 mpi-io/libpromio_la-iread_sh.lo: mpi-io/iread_sh.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpromio_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mpi-io/libpromio_la-iread_sh.lo -MD -MP -MF mpi-io/$(DEPDIR)/libpromio_la-iread_sh.Tpo -c -o mpi-io/libpromio_la-iread_sh.lo `test -f 'mpi-io/iread_sh.c' || echo '$(srcdir)/'`mpi-io/iread_sh.c
@@ -3841,12 +3914,26 @@ mpi-io/libpromio_la-iwrite.lo: mpi-io/iwrite.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpromio_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mpi-io/libpromio_la-iwrite.lo `test -f 'mpi-io/iwrite.c' || echo '$(srcdir)/'`mpi-io/iwrite.c
 
+mpi-io/libpromio_la-iwrite_all.lo: mpi-io/iwrite_all.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpromio_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mpi-io/libpromio_la-iwrite_all.lo -MD -MP -MF mpi-io/$(DEPDIR)/libpromio_la-iwrite_all.Tpo -c -o mpi-io/libpromio_la-iwrite_all.lo `test -f 'mpi-io/iwrite_all.c' || echo '$(srcdir)/'`mpi-io/iwrite_all.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) mpi-io/$(DEPDIR)/libpromio_la-iwrite_all.Tpo mpi-io/$(DEPDIR)/libpromio_la-iwrite_all.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mpi-io/iwrite_all.c' object='mpi-io/libpromio_la-iwrite_all.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpromio_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mpi-io/libpromio_la-iwrite_all.lo `test -f 'mpi-io/iwrite_all.c' || echo '$(srcdir)/'`mpi-io/iwrite_all.c
+
 mpi-io/libpromio_la-iwrite_at.lo: mpi-io/iwrite_at.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpromio_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mpi-io/libpromio_la-iwrite_at.lo -MD -MP -MF mpi-io/$(DEPDIR)/libpromio_la-iwrite_at.Tpo -c -o mpi-io/libpromio_la-iwrite_at.lo `test -f 'mpi-io/iwrite_at.c' || echo '$(srcdir)/'`mpi-io/iwrite_at.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) mpi-io/$(DEPDIR)/libpromio_la-iwrite_at.Tpo mpi-io/$(DEPDIR)/libpromio_la-iwrite_at.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mpi-io/iwrite_at.c' object='mpi-io/libpromio_la-iwrite_at.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpromio_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mpi-io/libpromio_la-iwrite_at.lo `test -f 'mpi-io/iwrite_at.c' || echo '$(srcdir)/'`mpi-io/iwrite_at.c
+
+mpi-io/libpromio_la-iwrite_atall.lo: mpi-io/iwrite_atall.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpromio_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mpi-io/libpromio_la-iwrite_atall.lo -MD -MP -MF mpi-io/$(DEPDIR)/libpromio_la-iwrite_atall.Tpo -c -o mpi-io/libpromio_la-iwrite_atall.lo `test -f 'mpi-io/iwrite_atall.c' || echo '$(srcdir)/'`mpi-io/iwrite_atall.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) mpi-io/$(DEPDIR)/libpromio_la-iwrite_atall.Tpo mpi-io/$(DEPDIR)/libpromio_la-iwrite_atall.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mpi-io/iwrite_atall.c' object='mpi-io/libpromio_la-iwrite_atall.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpromio_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mpi-io/libpromio_la-iwrite_atall.lo `test -f 'mpi-io/iwrite_atall.c' || echo '$(srcdir)/'`mpi-io/iwrite_atall.c
 
 mpi-io/libpromio_la-iwrite_sh.lo: mpi-io/iwrite_sh.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpromio_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mpi-io/libpromio_la-iwrite_sh.lo -MD -MP -MF mpi-io/$(DEPDIR)/libpromio_la-iwrite_sh.Tpo -c -o mpi-io/libpromio_la-iwrite_sh.lo `test -f 'mpi-io/iwrite_sh.c' || echo '$(srcdir)/'`mpi-io/iwrite_sh.c

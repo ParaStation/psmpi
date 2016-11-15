@@ -108,7 +108,7 @@ int MPI_Get_accumulate(const void *origin_addr, int origin_count,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_GET_ACCUMULATE);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -137,6 +137,10 @@ int MPI_Get_accumulate(const void *origin_addr, int origin_count,
             if (mpi_errno) goto fn_fail;
 
             if (op != MPI_NO_OP) {
+                /* NOTE: when op is MPI_NO_OP, origin_addr is allowed to be NULL,
+                 * origin_datatype is allowed to be MPI_DATATYPE_NULL, and
+                 * origin_count is allowed to be 0. In such case, MPI_Get_accumulate
+                 * equals to an atomic GET. */
                 MPIR_ERRTEST_COUNT(origin_count, mpi_errno);
                 MPIR_ERRTEST_DATATYPE(origin_datatype, "origin_datatype", mpi_errno);
                 MPIR_ERRTEST_USERBUFFER(origin_addr, origin_count, origin_datatype, mpi_errno);
@@ -193,19 +197,19 @@ int MPI_Get_accumulate(const void *origin_addr, int origin_count,
 
     /* ... body of routine ...  */
     
-    mpi_errno = MPIU_RMA_CALL(win_ptr,Get_accumulate(origin_addr, origin_count, 
-                                         origin_datatype,
-                                         result_addr, result_count,
-                                         result_datatype,
-                                         target_rank, target_disp, target_count,
-                                         target_datatype, op, win_ptr));
+    mpi_errno = MPID_Get_accumulate(origin_addr, origin_count,
+                                    origin_datatype,
+                                    result_addr, result_count,
+                                    result_datatype,
+                                    target_rank, target_disp, target_count,
+                                    target_datatype, op, win_ptr);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
 
   fn_exit:
     MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_GET_ACCUMULATE);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

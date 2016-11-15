@@ -25,6 +25,7 @@ typedef enum MPIDI_CH3I_Conn_state
     CONN_STATE_CONNECTED,
     CONN_STATE_CLOSING,
     CONN_STATE_CLOSED,
+    CONN_STATE_DISCARD,
     CONN_STATE_FAILED
 } MPIDI_CH3I_Conn_state;
 
@@ -37,7 +38,7 @@ typedef struct MPIDI_CH3I_Connection
     struct MPID_Request * recv_active;
     MPIDI_CH3_Pkt_t pkt;
     char * pg_id;
-    MPID_IOV iov[2];
+    MPL_IOV iov[2];
 } MPIDI_CH3I_Connection_t;
 
 

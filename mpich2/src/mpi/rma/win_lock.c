@@ -82,7 +82,7 @@ int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_LOCK);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -112,14 +112,14 @@ int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
             if (mpi_errno) goto fn_fail;
 	    
 	    if (assert != 0 && assert != MPI_MODE_NOCHECK) {
-		MPIU_ERR_SET1(mpi_errno,MPI_ERR_ARG,
+		MPIR_ERR_SET1(mpi_errno,MPI_ERR_ARG,
 			      "**lockassertval", 
 			      "**lockassertval %d", assert );
 		if (mpi_errno) goto fn_fail;
 	    }
             if (lock_type != MPI_LOCK_SHARED && 
 		lock_type != MPI_LOCK_EXCLUSIVE) {
-		MPIU_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**locktype" );
+		MPIR_ERR_SET(mpi_errno,MPI_ERR_OTHER, "**locktype" );
                 if (mpi_errno) goto fn_fail;
 	    }
 
@@ -136,15 +136,14 @@ int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
 
     /* ... body of routine ...  */
     
-    mpi_errno = MPIU_RMA_CALL(win_ptr,
-			      Win_lock(lock_type, rank, assert, win_ptr));
+    mpi_errno = MPID_Win_lock(lock_type, rank, assert, win_ptr);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_LOCK);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:

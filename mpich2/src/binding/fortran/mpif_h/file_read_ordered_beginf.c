@@ -267,6 +267,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_file_read_ordered_begin_( MPI_Fint *, v
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_file_read_ordered_begin_ ( MPI_Fint *v1, void*v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *ierr ){
 #ifdef MPI_MODE_RDONLY
+    if (v2 == MPIR_F_MPI_BOTTOM) v2 = MPI_BOTTOM;
     *ierr = MPI_File_read_ordered_begin( MPI_File_f2c(*v1), v2, (int)*v3, (MPI_Datatype)(*v4) );
 #else
 *ierr = MPI_ERR_INTERN;

@@ -42,7 +42,7 @@ int MPIR_WinSetAttr( MPI_Win win, int win_keyval, void *attribute_val,
     
     /* The thread lock prevents a valid attr delete on the same window
        but in a different thread from causing problems */
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPIR_WIN_SET_ATTR);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -100,19 +100,19 @@ int MPIR_WinSetAttr( MPI_Win win, int win_keyval, void *attribute_val,
 		goto fn_fail;
 	    }
 	    /* --END ERROR HANDLING-- */
-	    p->value    = (MPID_AttrVal_t)(MPIR_Pint)attribute_val;
+	    p->value    = (MPID_AttrVal_t)(MPIU_Pint)attribute_val;
 	    p->attrType = attrType;
 	    /* Does not change the reference count on the keyval */
 	    break;
 	}
 	else if (p->keyval->handle > keyval_ptr->handle) {
 	    MPID_Attribute *new_p = MPID_Attr_alloc();
-	    MPIU_ERR_CHKANDJUMP1(!new_p,mpi_errno,MPI_ERR_OTHER,
+	    MPIR_ERR_CHKANDJUMP1(!new_p,mpi_errno,MPI_ERR_OTHER,
 				 "**nomem", "**nomem %s", "MPID_Attribute" );
 	    new_p->keyval	 = keyval_ptr;
 	    new_p->attrType      = attrType;
 	    new_p->pre_sentinal	 = 0;
-	    new_p->value	 = (MPID_AttrVal_t)(MPIR_Pint)attribute_val;
+	    new_p->value	 = (MPID_AttrVal_t)(MPIU_Pint)attribute_val;
 	    new_p->post_sentinal = 0;
 	    new_p->next		 = p->next;
 	    MPIR_Keyval_add_ref( keyval_ptr );
@@ -125,13 +125,13 @@ int MPIR_WinSetAttr( MPI_Win win, int win_keyval, void *attribute_val,
     if (!p)
     {
 	MPID_Attribute *new_p = MPID_Attr_alloc();
-	MPIU_ERR_CHKANDJUMP1(!new_p,mpi_errno,MPI_ERR_OTHER,
+	MPIR_ERR_CHKANDJUMP1(!new_p,mpi_errno,MPI_ERR_OTHER,
 			     "**nomem", "**nomem %s", "MPID_Attribute" );
 	/* Did not find in list.  Add at end */
 	new_p->attrType      = attrType;
 	new_p->keyval	     = keyval_ptr;
 	new_p->pre_sentinal  = 0;
-	new_p->value	     = (MPID_AttrVal_t)(MPIR_Pint)attribute_val;
+	new_p->value	     = (MPID_AttrVal_t)(MPIU_Pint)attribute_val;
 	new_p->post_sentinal = 0;
 	new_p->next	     = 0;
 	MPIR_Keyval_add_ref( keyval_ptr );
@@ -147,7 +147,7 @@ int MPIR_WinSetAttr( MPI_Win win, int win_keyval, void *attribute_val,
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPIR_WIN_SET_ATTR);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,); 
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX); 
     return mpi_errno;
 
   fn_fail:
@@ -168,7 +168,7 @@ int MPIR_WinSetAttr( MPI_Win win, int win_keyval, void *attribute_val,
 #undef FUNCNAME
 #define FUNCNAME MPI_Win_set_attr
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /*@
    MPI_Win_set_attr - Stores attribute value associated with a key

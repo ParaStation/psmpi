@@ -367,6 +367,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_register_datarep_ ( char *v1 FORT_MIXED_LEN(d1)
     if (v3 == (MPI_Datarep_conversion_function *)mpi_conversion_fn_null_){
          v3 = 0;
     }
+    if (v5 == MPIR_F_MPI_BOTTOM) v5 = MPI_BOTTOM;
     *ierr = MPI_Register_datarep( p1, v2, v3, v4, v5 );
     MPIU_Free( p1 );
 #else

@@ -21,7 +21,7 @@ static int ReadFileData(char *pBuffer, int length, FILE *fin)
 	num_read = fread(pBuffer, 1, length, fin);
 	if (num_read == -1)
 	{
-	    MPIU_Error_printf("Error: fread failed - %s\n", strerror(errno));
+	    MPL_error_printf("Error: fread failed - %s\n", strerror(errno));
 	    return errno;
 	}
 	if (num_read == 0 && length)
@@ -44,7 +44,7 @@ static int WriteFileData(const char *pBuffer, int length, FILE *fout)
 	num_written = fwrite(pBuffer, 1, length, fout);
 	if (num_written == -1)
 	{
-	    MPIU_Error_printf("Error: fwrite failed - %s\n", strerror(errno));
+	    MPL_error_printf("Error: fwrite failed - %s\n", strerror(errno));
 	    return errno;
 	}
 	if (num_written == 0 && length)
@@ -84,7 +84,7 @@ RLOG_IOStruct *RLOG_CreateInputStruct(const char *filename)
     pInput = (RLOG_IOStruct*)MPIU_Malloc(sizeof(RLOG_IOStruct));
     if (pInput == NULL)
     {
-	MPIU_Error_printf("malloc failed - %s\n", strerror(errno));
+	MPL_error_printf("malloc failed - %s\n", strerror(errno));
 	return NULL;
     }
     pInput->ppCurEvent = NULL;
@@ -98,7 +98,7 @@ RLOG_IOStruct *RLOG_CreateInputStruct(const char *filename)
     pInput->f = fopen(filename, "rb");
     if (pInput->f == NULL)
     {
-	MPIU_Error_printf("fopen(%s) failed, error: %s\n", filename, strerror(errno));
+	MPL_error_printf("fopen(%s) failed, error: %s\n", filename, strerror(errno));
 	MPIU_Free(pInput);
 	return NULL;
     }
@@ -113,7 +113,7 @@ RLOG_IOStruct *RLOG_CreateInputStruct(const char *filename)
 	    /*printf("type: RLOG_HEADER_SECTION, length: %d\n", length);*/
 	    if (length != sizeof(RLOG_FILE_HEADER))
 	    {
-		MPIU_Error_printf("error in header size %d != %d\n", length, 
+		MPL_error_printf("error in header size %d != %d\n", length, 
 				  (int)sizeof(RLOG_FILE_HEADER));
 	    }
 	    if (ReadFileData((char*)&pInput->header, sizeof(RLOG_FILE_HEADER), pInput->f))
@@ -162,7 +162,7 @@ RLOG_IOStruct *RLOG_CreateInputStruct(const char *filename)
 	    fread(&cur_rank, sizeof(int), 1, pInput->f);
 	    if (cur_rank - min_rank >= pInput->nNumRanks)
 	    {
-		MPIU_Error_printf("Error: event section out of range - %d <= %d <= %d\n", pInput->header.nMinRank, cur_rank, pInput->header.nMaxRank);
+		MPL_error_printf("Error: event section out of range - %d <= %d <= %d\n", pInput->header.nMinRank, cur_rank, pInput->header.nMaxRank);
 		MPIU_Free(pInput);
 		return NULL;
 	    }
@@ -237,7 +237,7 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
     pArray = (RLOG_ARROW*)MPIU_Malloc(nNumArrows * sizeof(RLOG_ARROW));
     if (pArray)
     {
-	MPIU_Msg_printf("Modifying %d arrows\n", nNumArrows);
+	MPL_msg_printf("Modifying %d arrows\n", nNumArrows);
 	/* read the arrows */
 	fseek(f, 0, SEEK_CUR);
 	error = ReadFileData((char*)pArray, nNumArrows * sizeof(RLOG_ARROW), f);
@@ -252,18 +252,18 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
 	{
 	    arrow = pArray[i];
 
-	    bModified = RLOG_FALSE;
+	    bModified = FALSE;
 	    index = (arrow.leftright == RLOG_ARROW_RIGHT) ? arrow.src - nMin : arrow.dest - nMin;
 	    if (index >= 0 && index < n && pOffsets[index] != 0)
 	    {
 		arrow.start_time += pOffsets[index];
-		bModified = RLOG_TRUE;
+		bModified = TRUE;
 	    }
 	    index = (arrow.leftright == RLOG_ARROW_RIGHT) ? arrow.dest - nMin : arrow.src - nMin;
 	    if (index >= 0 && index < n && pOffsets[index] != 0)
 	    {
 		arrow.end_time += pOffsets[index];
-		bModified = RLOG_TRUE;
+		bModified = TRUE;
 	    }
 	    if (bModified)
 	    {
@@ -295,7 +295,7 @@ static int ModifyArrows(FILE *f, int nNumArrows, int nMin, double *pOffsets, int
     }
     else
     {
-	MPIU_Error_printf("Error: unable to allocate an array big enough to hold %d arrows\n", nNumArrows);
+	MPL_error_printf("Error: unable to allocate an array big enough to hold %d arrows\n", nNumArrows);
 	return -1;
     }
     return 0;
@@ -307,7 +307,7 @@ int ModifyEvents(FILE *f, int nNumEvents, int nMin, double *pOffsets, int n)
     int i, index;
     int error;
 
-    MPIU_Msg_printf("Modifying %d events\n", nNumEvents);
+    MPL_msg_printf("Modifying %d events\n", nNumEvents);
     fseek(f, 0, SEEK_CUR);
     for (i=0; i<nNumEvents; i++)
     {
@@ -347,7 +347,7 @@ int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
     pInput = (RLOG_IOStruct*)MPIU_Malloc(sizeof(RLOG_IOStruct));
     if (pInput == NULL)
     {
-	MPIU_Error_printf("malloc failed - %s\n", strerror(errno));
+	MPL_error_printf("malloc failed - %s\n", strerror(errno));
 	return -1;
     }
     pInput->ppCurEvent = NULL;
@@ -361,7 +361,7 @@ int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
     pInput->f = fopen(filename, "rb+");
     if (pInput->f == NULL)
     {
-	MPIU_Error_printf("fopen(%s) failed, error: %s\n", filename, strerror(errno));
+	MPL_error_printf("fopen(%s) failed, error: %s\n", filename, strerror(errno));
 	MPIU_Free(pInput);
 	return -1;
     }
@@ -421,7 +421,7 @@ int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
 	    error = ModifyArrows(pInput->f, pInput->nNumArrows, pInput->header.nMinRank, pOffsets, n);
 	    if (error)
 	    {
-		MPIU_Error_printf("Modifying the arrow section failed, error %d\n", error);
+		MPL_error_printf("Modifying the arrow section failed, error %d\n", error);
 		RLOG_CloseInputStruct(&pInput);
 		return -1;
 	    }
@@ -432,7 +432,7 @@ int RLOG_ModifyEvents(const char *filename, double *pOffsets, int n)
 	    fread(&cur_rank, sizeof(int), 1, pInput->f);
 	    if (cur_rank - min_rank >= pInput->nNumRanks)
 	    {
-		MPIU_Error_printf("Error: event section out of range - %d <= %d <= %d\n", pInput->header.nMinRank, cur_rank, pInput->header.nMaxRank);
+		MPL_error_printf("Error: event section out of range - %d <= %d <= %d\n", pInput->header.nMinRank, cur_rank, pInput->header.nMaxRank);
 		RLOG_CloseInputStruct(&pInput);
 		return -1;
 	    }
@@ -784,10 +784,10 @@ RLOG_BOOL FindMinGlobalEvent(RLOG_IOStruct *pInput, int *rank, int *level, int *
 {
     int i,j;
     double dmin = RLOG_MAX_DOUBLE;
-    RLOG_BOOL found = RLOG_FALSE;
+    RLOG_BOOL found = FALSE;
 
     if (pInput == NULL)
-	return RLOG_FALSE;
+	return FALSE;
 
     for (i=0; i<pInput->nNumRanks; i++)
     {
@@ -801,7 +801,7 @@ RLOG_BOOL FindMinGlobalEvent(RLOG_IOStruct *pInput, int *rank, int *level, int *
 		    *level = j;
 		    *index = pInput->ppCurGlobalEvent[i][j];
 		    dmin = pInput->gppCurEvent[i][j].start_time;
-		    found = RLOG_TRUE;
+		    found = TRUE;
 		}
 	    }
 	}
@@ -814,10 +814,10 @@ RLOG_BOOL FindMaxGlobalEvent(RLOG_IOStruct *pInput, int *rank, int *level, int *
 {
     int i,j;
     double dmax = RLOG_MIN_DOUBLE;
-    RLOG_BOOL found = RLOG_FALSE;
+    RLOG_BOOL found = FALSE;
 
     if (pInput == NULL)
-	return RLOG_FALSE;
+	return FALSE;
 
     for (i=0; i<pInput->nNumRanks; i++)
     {
@@ -831,7 +831,7 @@ RLOG_BOOL FindMaxGlobalEvent(RLOG_IOStruct *pInput, int *rank, int *level, int *
 		    *level = j;
 		    *index = pInput->ppCurGlobalEvent[i][j];
 		    dmax = pInput->gppPrevEvent[i][j].start_time;
-		    found = RLOG_TRUE;
+		    found = TRUE;
 		}
 	    }
 	}
@@ -844,7 +844,7 @@ int RLOG_ResetGlobalIter(RLOG_IOStruct *pInput)
 {
     int i,j, n;
     RLOG_EVENT min_event = {0};
-    RLOG_BOOL bMinSet = RLOG_FALSE;
+    RLOG_BOOL bMinSet = FALSE;
 
     if (pInput == NULL)
 	return -1;
@@ -870,7 +870,7 @@ int RLOG_ResetGlobalIter(RLOG_IOStruct *pInput)
 	    if (!bMinSet)
 	    {
 		min_event = pInput->gppCurEvent[pInput->header.nMinRank+i][0];
-		bMinSet = RLOG_TRUE;
+		bMinSet = TRUE;
 	    }
 	    /* save the rank with the earliest event */
 	    if (min_event.start_time > pInput->gppCurEvent[i][0].start_time)
@@ -1040,7 +1040,7 @@ int RLOG_FindGlobalEventBeforeTimestamp(RLOG_IOStruct *pInput, double timestamp,
 		/*
 		if (pInput->ppCurGlobalEvent[i][j] != 0);
 		{
-		    MPIU_Error_printf("RLOG_FindGlobalEventBeforeTimestamp: Error, start_time > timestamp, %g > %g", pInput->gppPrevEvent[i][j].start_time, timestamp);
+		    MPL_error_printf("RLOG_FindGlobalEventBeforeTimestamp: Error, start_time > timestamp, %g > %g", pInput->gppPrevEvent[i][j].start_time, timestamp);
 		    return -1;
 		}
 		*/

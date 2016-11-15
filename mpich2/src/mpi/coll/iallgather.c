@@ -54,7 +54,7 @@ static int dtp_release_ref(MPID_Comm *comm, int tag, void *state)
 #undef FUNCNAME
 #define FUNCNAME MPIR_Iallgather_rec_dbl
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Iallgather_rec_dbl(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPID_Comm *comm_ptr, MPID_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -79,7 +79,7 @@ int MPIR_Iallgather_rec_dbl(const void *sendbuf, int sendcount, MPI_Datatype sen
     MPID_Datatype_get_extent_macro( recvtype, recvtype_extent );
 
     /* This is the largest offset we add to recvbuf */
-    MPID_Ensure_Aint_fits_in_pointer(MPI_VOID_PTR_CAST_TO_MPI_AINT recvbuf +
+    MPIU_Ensure_Aint_fits_in_pointer(MPIU_VOID_PTR_CAST_TO_MPI_AINT recvbuf +
                                      (comm_size * recvcount * recvtype_extent));
 
     /*  copy local data into recvbuf */
@@ -87,7 +87,7 @@ int MPIR_Iallgather_rec_dbl(const void *sendbuf, int sendcount, MPI_Datatype sen
         mpi_errno = MPID_Sched_copy(sendbuf, sendcount, sendtype,
                                     ((char *)recvbuf + rank*recvcount*recvtype_extent),
                                     recvcount, recvtype, s);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         MPID_SCHED_BARRIER(s);
     }
 
@@ -121,16 +121,16 @@ int MPIR_Iallgather_rec_dbl(const void *sendbuf, int sendcount, MPI_Datatype sen
         if (dst < comm_size) {
             mpi_errno = MPID_Sched_send_defer(((char *)recvbuf + send_offset),
                                               &ss->curr_count, recvtype, dst, comm_ptr, s);
-            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            if (mpi_errno) MPIR_ERR_POP(mpi_errno);
             /* send-recv, no sched barrier here */
             mpi_errno = MPID_Sched_recv_status(((char *)recvbuf + recv_offset),
                                                ((comm_size-dst_tree_root)*recvcount),
                                                recvtype, dst, comm_ptr, &ss->status, s);
-            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            if (mpi_errno) MPIR_ERR_POP(mpi_errno);
             MPID_SCHED_BARRIER(s);
 
             mpi_errno = MPID_Sched_cb(&get_count, ss, s);
-            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            if (mpi_errno) MPIR_ERR_POP(mpi_errno);
             MPID_SCHED_BARRIER(s);
         }
 
@@ -187,7 +187,7 @@ int MPIR_Iallgather_rec_dbl(const void *sendbuf, int sendcount, MPI_Datatype sen
                     mpi_errno = MPID_Sched_send_defer(((char *)recvbuf + offset),
                                                       &ss->last_recv_count,
                                                       recvtype, dst, comm_ptr, s);
-                    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+                    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
                     MPID_SCHED_BARRIER(s);
                 }
                 /* recv only if this proc. doesn't have data and sender
@@ -203,7 +203,7 @@ int MPIR_Iallgather_rec_dbl(const void *sendbuf, int sendcount, MPI_Datatype sen
                                                        recvtype, dst, comm_ptr, &ss->status, s);
                     MPID_SCHED_BARRIER(s);
                     mpi_errno = MPID_Sched_cb(&get_count, ss, s);
-                    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+                    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
                     MPID_SCHED_BARRIER(s);
                 }
 
@@ -219,7 +219,7 @@ int MPIR_Iallgather_rec_dbl(const void *sendbuf, int sendcount, MPI_Datatype sen
 
     if (recv_dtp) {
         mpi_errno = MPID_Sched_cb(dtp_release_ref, recv_dtp, s);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     }
 
     MPIR_SCHED_CHKPMEM_COMMIT(s);
@@ -233,7 +233,7 @@ fn_fail:
 #undef FUNCNAME
 #define FUNCNAME MPIR_Iallgather_bruck
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Iallgather_bruck(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPID_Comm *comm_ptr, MPID_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -250,7 +250,7 @@ int MPIR_Iallgather_bruck(const void *sendbuf, int sendcount, MPI_Datatype sendt
     MPIR_Type_get_true_extent_impl(recvtype, &recvtype_true_lb, &recvtype_true_extent);
 
     /* This is the largest offset we add to recvbuf */
-    MPID_Ensure_Aint_fits_in_pointer(MPI_VOID_PTR_CAST_TO_MPI_AINT recvbuf +
+    MPIU_Ensure_Aint_fits_in_pointer(MPIU_VOID_PTR_CAST_TO_MPI_AINT recvbuf +
                                      (comm_size * recvcount * recvtype_extent));
 
     /* allocate a temporary buffer of the same size as recvbuf. */
@@ -267,14 +267,14 @@ int MPIR_Iallgather_bruck(const void *sendbuf, int sendcount, MPI_Datatype sendt
     if (sendbuf != MPI_IN_PLACE) {
         mpi_errno = MPID_Sched_copy(sendbuf, sendcount, sendtype,
                                     tmp_buf, recvcount, recvtype, s);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         MPID_SCHED_BARRIER(s);
     }
     else {
         mpi_errno = MPID_Sched_copy(((char *)recvbuf + rank * recvcount * recvtype_extent),
                                     recvcount, recvtype, tmp_buf,
                                     recvcount, recvtype, s);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         MPID_SCHED_BARRIER(s);
     }
 
@@ -287,11 +287,11 @@ int MPIR_Iallgather_bruck(const void *sendbuf, int sendcount, MPI_Datatype sendt
         dst = (rank - pof2 + comm_size) % comm_size;
 
         mpi_errno = MPID_Sched_send(tmp_buf, curr_cnt, recvtype, dst, comm_ptr, s);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         /* logically sendrecv, so no barrier here */
         mpi_errno = MPID_Sched_recv(((char *)tmp_buf + curr_cnt*recvtype_extent),
                                     curr_cnt, recvtype, src, comm_ptr, s);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         MPID_SCHED_BARRIER(s);
 
         curr_cnt *= 2;
@@ -306,11 +306,11 @@ int MPIR_Iallgather_bruck(const void *sendbuf, int sendcount, MPI_Datatype sendt
         dst = (rank - pof2 + comm_size) % comm_size;
 
         mpi_errno = MPID_Sched_send(tmp_buf, rem * recvcount, recvtype, dst, comm_ptr, s);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         /* logically sendrecv, so no barrier here */
         mpi_errno = MPID_Sched_recv(((char *)tmp_buf + curr_cnt*recvtype_extent),
                                     (rem * recvcount), recvtype, src, comm_ptr, s);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         MPID_SCHED_BARRIER(s);
     }
 
@@ -320,14 +320,14 @@ int MPIR_Iallgather_bruck(const void *sendbuf, int sendcount, MPI_Datatype sendt
     mpi_errno = MPID_Sched_copy(tmp_buf, ((comm_size-rank)*recvcount), recvtype,
                                 ((char *) recvbuf + rank*recvcount*recvtype_extent),
                                 ((comm_size-rank)*recvcount), recvtype, s);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     MPID_SCHED_BARRIER(s);
 
     if (rank) {
         mpi_errno = MPID_Sched_copy(((char *) tmp_buf + (comm_size-rank)*recvcount*recvtype_extent),
                                    rank*recvcount, recvtype,
                                    recvbuf, rank*recvcount, recvtype, s);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     }
 
     MPIR_SCHED_CHKPMEM_COMMIT(s);
@@ -341,7 +341,7 @@ fn_fail:
 #undef FUNCNAME
 #define FUNCNAME MPIR_Iallgather_ring
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Iallgather_ring(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPID_Comm *comm_ptr, MPID_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -355,7 +355,7 @@ int MPIR_Iallgather_ring(const void *sendbuf, int sendcount, MPI_Datatype sendty
     MPID_Datatype_get_extent_macro(recvtype, recvtype_extent);
 
     /* This is the largest offset we add to recvbuf */
-    MPID_Ensure_Aint_fits_in_pointer(MPI_VOID_PTR_CAST_TO_MPI_AINT recvbuf +
+    MPIU_Ensure_Aint_fits_in_pointer(MPIU_VOID_PTR_CAST_TO_MPI_AINT recvbuf +
                                      (comm_size * recvcount * recvtype_extent));
 
     /* First, load the "local" version in the recvbuf. */
@@ -363,7 +363,7 @@ int MPIR_Iallgather_ring(const void *sendbuf, int sendcount, MPI_Datatype sendty
         mpi_errno = MPID_Sched_copy(sendbuf, sendcount, sendtype,
                                     ((char *)recvbuf + rank*recvcount*recvtype_extent),
                                     recvcount, recvtype, s);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         MPID_SCHED_BARRIER(s);
     }
 
@@ -377,11 +377,11 @@ int MPIR_Iallgather_ring(const void *sendbuf, int sendcount, MPI_Datatype sendty
     for (i=1; i<comm_size; i++) {
         mpi_errno = MPID_Sched_send(((char *)recvbuf + j*recvcount*recvtype_extent),
                                      recvcount, recvtype, right, comm_ptr, s);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         /* concurrent, no barrier here */
         mpi_errno = MPID_Sched_recv(((char *)recvbuf + jnext*recvcount*recvtype_extent),
                                      recvcount, recvtype, left, comm_ptr, s);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         MPID_SCHED_BARRIER(s);
 
         j = jnext;
@@ -442,7 +442,7 @@ fn_fail:
 #undef FUNCNAME
 #define FUNCNAME MPIR_Iallgather_intra
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Iallgather_intra(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPID_Comm *comm_ptr, MPID_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -461,19 +461,19 @@ int MPIR_Iallgather_intra(const void *sendbuf, int sendcount, MPI_Datatype sendt
         /* Short or medium size message and power-of-two no. of processes. Use
          * recursive doubling algorithm */
         mpi_errno = MPIR_Iallgather_rec_dbl(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm_ptr, s);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     }
     else if (tot_bytes < MPIR_CVAR_ALLGATHER_SHORT_MSG_SIZE) {
         /* Short message and non-power-of-two no. of processes. Use
          * Bruck algorithm (see description above). */
         mpi_errno = MPIR_Iallgather_bruck(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm_ptr, s);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     }
     else {
         /* long message or medium-size message and non-power-of-two no. of
          * processes. use ring algorithm. */
         mpi_errno = MPIR_Iallgather_ring(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm_ptr, s);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     }
 
 fn_exit:
@@ -485,7 +485,7 @@ fn_fail:
 #undef FUNCNAME
 #define FUNCNAME MPIR_Iallgather_inter
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Iallgather_inter(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPID_Comm *comm_ptr, MPID_Sched_t s)
 {
     /* Intercommunicator Allgather.
@@ -511,7 +511,7 @@ int MPIR_Iallgather_inter(const void *sendbuf, int sendcount, MPI_Datatype sendt
         MPID_Datatype_get_extent_macro( sendtype, send_extent );
         extent = MPIR_MAX(send_extent, true_extent);
 
-        MPID_Ensure_Aint_fits_in_pointer(extent * sendcount * local_size);
+        MPIU_Ensure_Aint_fits_in_pointer(extent * sendcount * local_size);
         MPIR_SCHED_CHKPMEM_MALLOC(tmp_buf, void*, extent*sendcount*local_size, mpi_errno, "tmp_buf");
 
         /* adjust for potential negative lower bound in datatype */
@@ -529,7 +529,7 @@ int MPIR_Iallgather_inter(const void *sendbuf, int sendcount, MPI_Datatype sendt
         mpi_errno = newcomm_ptr->coll_fns->Igather_sched(sendbuf, sendcount, sendtype,
                                                    tmp_buf, sendcount, sendtype,
                                                    0, newcomm_ptr, s);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         MPID_SCHED_BARRIER(s);
     }
 
@@ -542,7 +542,7 @@ int MPIR_Iallgather_inter(const void *sendbuf, int sendcount, MPI_Datatype sendt
             root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
             mpi_errno = comm_ptr->coll_fns->Ibcast_sched(tmp_buf, sendcount*local_size,
                                                    sendtype, root, comm_ptr, s);
-            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         }
 
         /* no sched barrier, bcasts are logically concurrent */
@@ -552,7 +552,7 @@ int MPIR_Iallgather_inter(const void *sendbuf, int sendcount, MPI_Datatype sendt
             root = 0;
             mpi_errno = comm_ptr->coll_fns->Ibcast_sched(recvbuf, recvcount*remote_size,
                                                    recvtype, root, comm_ptr, s);
-            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         }
         MPID_SCHED_BARRIER(s);
     }
@@ -562,7 +562,7 @@ int MPIR_Iallgather_inter(const void *sendbuf, int sendcount, MPI_Datatype sendt
             root = 0;
             mpi_errno = comm_ptr->coll_fns->Ibcast_sched(recvbuf, recvcount*remote_size,
                                                    recvtype, root, comm_ptr, s);
-            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         }
 
         /* no sched barrier, bcasts are logically concurrent */
@@ -572,7 +572,7 @@ int MPIR_Iallgather_inter(const void *sendbuf, int sendcount, MPI_Datatype sendt
             root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
             mpi_errno = comm_ptr->coll_fns->Ibcast_sched(tmp_buf, sendcount*local_size,
                                                    sendtype, root, comm_ptr, s);
-            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         }
         MPID_SCHED_BARRIER(s);
     }
@@ -588,7 +588,7 @@ fn_fail:
 #undef FUNCNAME
 #define FUNCNAME MPIR_Iallgather_impl
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Iallgather_impl(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPID_Comm *comm_ptr, MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -604,26 +604,26 @@ int MPIR_Iallgather_impl(const void *sendbuf, int sendcount, MPI_Datatype sendty
         mpi_errno = comm_ptr->coll_fns->Iallgather_req(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype,comm_ptr, &reqp);
         if (reqp) {
             *request = reqp->handle;
-            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            if (mpi_errno) MPIR_ERR_POP(mpi_errno);
             goto fn_exit;
         }
         /* --END USEREXTENSION-- */
     }
 
     mpi_errno = MPID_Sched_next_tag(comm_ptr, &tag);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     mpi_errno = MPID_Sched_create(&s);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
     MPIU_Assert(comm_ptr->coll_fns != NULL);
     MPIU_Assert(comm_ptr->coll_fns->Iallgather_sched != NULL);
     mpi_errno = comm_ptr->coll_fns->Iallgather_sched(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm_ptr, s);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
     mpi_errno = MPID_Sched_start(&s, comm_ptr, tag, &reqp);
     if (reqp)
         *request = reqp->handle;
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
 fn_exit:
     return mpi_errno;
@@ -636,7 +636,7 @@ fn_fail:
 #undef FUNCNAME
 #define FUNCNAME MPI_Iallgather
 #undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
+#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Iallgather - Gathers data from all tasks and distribute the combined data
                  to all tasks in a nonblocking way
@@ -667,7 +667,7 @@ int MPI_Iallgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_IALLGATHER);
 
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_IALLGATHER);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -718,7 +718,7 @@ int MPI_Iallgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
             MPIR_ERRTEST_ARGNULL(request,"request", mpi_errno);
 
             /* catch common aliasing cases */
-            if (recvbuf != MPI_IN_PLACE && sendtype == recvtype && sendcount == recvcount && sendcount != 0) {
+            if (comm_ptr->comm_kind == MPID_INTRACOMM && recvbuf != MPI_IN_PLACE && sendtype == recvtype && sendcount == recvcount && sendcount != 0) {
                 int recvtype_size;
                 MPID_Datatype_get_size_macro(recvtype, recvtype_size);
                 MPIR_ERRTEST_ALIAS_COLL(sendbuf, (char*)recvbuf + comm_ptr->rank*recvcount*recvtype_size, mpi_errno);
@@ -733,13 +733,13 @@ int MPI_Iallgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     /* ... body of routine ...  */
 
     mpi_errno = MPIR_Iallgather_impl(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm_ptr, request);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
     /* ... end of body of routine ... */
 
 fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IALLGATHER);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
 fn_fail:

@@ -94,8 +94,9 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = noalias$(EXEEXT) rerr$(EXEEXT) bcastlength$(EXEEXT) \
-	reduce_local$(EXEEXT)
+noinst_PROGRAMS = noalias$(EXEEXT) noalias2$(EXEEXT) noalias3$(EXEEXT) \
+	rerr$(EXEEXT) bcastlength$(EXEEXT) reduce_local$(EXEEXT) \
+	nb_noalias$(EXEEXT) nb_rerr$(EXEEXT) ibcastlength$(EXEEXT)
 subdir = errors/coll
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -121,10 +122,40 @@ bcastlength_LDADD = $(LDADD)
 bcastlength_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+am_ibcastlength_OBJECTS = ibcastlength-bcastlength.$(OBJEXT)
+ibcastlength_OBJECTS = $(am_ibcastlength_OBJECTS)
+ibcastlength_LDADD = $(LDADD)
+ibcastlength_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nb_noalias_OBJECTS = nb_noalias-noalias.$(OBJEXT)
+nb_noalias_OBJECTS = $(am_nb_noalias_OBJECTS)
+nb_noalias_LDADD = $(LDADD)
+nb_noalias_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+am_nb_rerr_OBJECTS = nb_rerr-rerr.$(OBJEXT)
+nb_rerr_OBJECTS = $(am_nb_rerr_OBJECTS)
+nb_rerr_LDADD = $(LDADD)
+nb_rerr_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 noalias_SOURCES = noalias.c
 noalias_OBJECTS = noalias.$(OBJEXT)
 noalias_LDADD = $(LDADD)
 noalias_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+noalias2_SOURCES = noalias2.c
+noalias2_OBJECTS = noalias2.$(OBJEXT)
+noalias2_LDADD = $(LDADD)
+noalias2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+noalias3_SOURCES = noalias3.c
+noalias3_OBJECTS = noalias3.$(OBJEXT)
+noalias3_LDADD = $(LDADD)
+noalias3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 reduce_local_SOURCES = reduce_local.c
@@ -155,6 +186,10 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include
 depcomp = $(SHELL) $(top_srcdir)/confdb/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 AM_V_CC = $(am__v_CC_@AM_V@)
@@ -167,8 +202,12 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = bcastlength.c noalias.c reduce_local.c rerr.c
-DIST_SOURCES = bcastlength.c noalias.c reduce_local.c rerr.c
+SOURCES = bcastlength.c $(ibcastlength_SOURCES) $(nb_noalias_SOURCES) \
+	$(nb_rerr_SOURCES) noalias.c noalias2.c noalias3.c \
+	reduce_local.c rerr.c
+DIST_SOURCES = bcastlength.c $(ibcastlength_SOURCES) \
+	$(nb_noalias_SOURCES) $(nb_rerr_SOURCES) noalias.c noalias2.c \
+	noalias3.c reduce_local.c rerr.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -323,6 +362,7 @@ build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
 ckpointdir = @ckpointdir@
+comm_overlap = @comm_overlap@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -357,6 +397,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
+namepub_tests = @namepub_tests@
 nocxxdistgraph = @nocxxdistgraph@
 nslib = @nslib@
 oldincludedir = @oldincludedir@
@@ -374,6 +415,7 @@ spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+threadlib = @threadlib@
 threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -386,6 +428,12 @@ LDADD = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 CLEANFILES = summary.xml summary.tap summary.junit.xml
 EXTRA_DIST = testlist
+ibcastlength_SOURCES = bcastlength.c
+ibcastlength_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+nb_noalias_SOURCES = noalias.c
+nb_noalias_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+nb_rerr_SOURCES = rerr.c
+nb_rerr_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -428,9 +476,29 @@ bcastlength$(EXEEXT): $(bcastlength_OBJECTS) $(bcastlength_DEPENDENCIES) $(EXTRA
 	@rm -f bcastlength$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(bcastlength_OBJECTS) $(bcastlength_LDADD) $(LIBS)
 
+ibcastlength$(EXEEXT): $(ibcastlength_OBJECTS) $(ibcastlength_DEPENDENCIES) $(EXTRA_ibcastlength_DEPENDENCIES) 
+	@rm -f ibcastlength$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ibcastlength_OBJECTS) $(ibcastlength_LDADD) $(LIBS)
+
+nb_noalias$(EXEEXT): $(nb_noalias_OBJECTS) $(nb_noalias_DEPENDENCIES) $(EXTRA_nb_noalias_DEPENDENCIES) 
+	@rm -f nb_noalias$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nb_noalias_OBJECTS) $(nb_noalias_LDADD) $(LIBS)
+
+nb_rerr$(EXEEXT): $(nb_rerr_OBJECTS) $(nb_rerr_DEPENDENCIES) $(EXTRA_nb_rerr_DEPENDENCIES) 
+	@rm -f nb_rerr$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nb_rerr_OBJECTS) $(nb_rerr_LDADD) $(LIBS)
+
 noalias$(EXEEXT): $(noalias_OBJECTS) $(noalias_DEPENDENCIES) $(EXTRA_noalias_DEPENDENCIES) 
 	@rm -f noalias$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(noalias_OBJECTS) $(noalias_LDADD) $(LIBS)
+
+noalias2$(EXEEXT): $(noalias2_OBJECTS) $(noalias2_DEPENDENCIES) $(EXTRA_noalias2_DEPENDENCIES) 
+	@rm -f noalias2$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(noalias2_OBJECTS) $(noalias2_LDADD) $(LIBS)
+
+noalias3$(EXEEXT): $(noalias3_OBJECTS) $(noalias3_DEPENDENCIES) $(EXTRA_noalias3_DEPENDENCIES) 
+	@rm -f noalias3$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(noalias3_OBJECTS) $(noalias3_LDADD) $(LIBS)
 
 reduce_local$(EXEEXT): $(reduce_local_OBJECTS) $(reduce_local_DEPENDENCIES) $(EXTRA_reduce_local_DEPENDENCIES) 
 	@rm -f reduce_local$(EXEEXT)
@@ -447,7 +515,12 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcastlength.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ibcastlength-bcastlength.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nb_noalias-noalias.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nb_rerr-rerr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/noalias.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/noalias2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/noalias3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reduce_local.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rerr.Po@am__quote@
 
@@ -466,6 +539,48 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+ibcastlength-bcastlength.o: bcastlength.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ibcastlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ibcastlength-bcastlength.o -MD -MP -MF $(DEPDIR)/ibcastlength-bcastlength.Tpo -c -o ibcastlength-bcastlength.o `test -f 'bcastlength.c' || echo '$(srcdir)/'`bcastlength.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ibcastlength-bcastlength.Tpo $(DEPDIR)/ibcastlength-bcastlength.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bcastlength.c' object='ibcastlength-bcastlength.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ibcastlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ibcastlength-bcastlength.o `test -f 'bcastlength.c' || echo '$(srcdir)/'`bcastlength.c
+
+ibcastlength-bcastlength.obj: bcastlength.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ibcastlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ibcastlength-bcastlength.obj -MD -MP -MF $(DEPDIR)/ibcastlength-bcastlength.Tpo -c -o ibcastlength-bcastlength.obj `if test -f 'bcastlength.c'; then $(CYGPATH_W) 'bcastlength.c'; else $(CYGPATH_W) '$(srcdir)/bcastlength.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ibcastlength-bcastlength.Tpo $(DEPDIR)/ibcastlength-bcastlength.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bcastlength.c' object='ibcastlength-bcastlength.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ibcastlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ibcastlength-bcastlength.obj `if test -f 'bcastlength.c'; then $(CYGPATH_W) 'bcastlength.c'; else $(CYGPATH_W) '$(srcdir)/bcastlength.c'; fi`
+
+nb_noalias-noalias.o: noalias.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nb_noalias_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nb_noalias-noalias.o -MD -MP -MF $(DEPDIR)/nb_noalias-noalias.Tpo -c -o nb_noalias-noalias.o `test -f 'noalias.c' || echo '$(srcdir)/'`noalias.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nb_noalias-noalias.Tpo $(DEPDIR)/nb_noalias-noalias.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='noalias.c' object='nb_noalias-noalias.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nb_noalias_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nb_noalias-noalias.o `test -f 'noalias.c' || echo '$(srcdir)/'`noalias.c
+
+nb_noalias-noalias.obj: noalias.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nb_noalias_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nb_noalias-noalias.obj -MD -MP -MF $(DEPDIR)/nb_noalias-noalias.Tpo -c -o nb_noalias-noalias.obj `if test -f 'noalias.c'; then $(CYGPATH_W) 'noalias.c'; else $(CYGPATH_W) '$(srcdir)/noalias.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nb_noalias-noalias.Tpo $(DEPDIR)/nb_noalias-noalias.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='noalias.c' object='nb_noalias-noalias.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nb_noalias_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nb_noalias-noalias.obj `if test -f 'noalias.c'; then $(CYGPATH_W) 'noalias.c'; else $(CYGPATH_W) '$(srcdir)/noalias.c'; fi`
+
+nb_rerr-rerr.o: rerr.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nb_rerr_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nb_rerr-rerr.o -MD -MP -MF $(DEPDIR)/nb_rerr-rerr.Tpo -c -o nb_rerr-rerr.o `test -f 'rerr.c' || echo '$(srcdir)/'`rerr.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nb_rerr-rerr.Tpo $(DEPDIR)/nb_rerr-rerr.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='rerr.c' object='nb_rerr-rerr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nb_rerr_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nb_rerr-rerr.o `test -f 'rerr.c' || echo '$(srcdir)/'`rerr.c
+
+nb_rerr-rerr.obj: rerr.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nb_rerr_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nb_rerr-rerr.obj -MD -MP -MF $(DEPDIR)/nb_rerr-rerr.Tpo -c -o nb_rerr-rerr.obj `if test -f 'rerr.c'; then $(CYGPATH_W) 'rerr.c'; else $(CYGPATH_W) '$(srcdir)/rerr.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nb_rerr-rerr.Tpo $(DEPDIR)/nb_rerr-rerr.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='rerr.c' object='nb_rerr-rerr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nb_rerr_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nb_rerr-rerr.obj `if test -f 'rerr.c'; then $(CYGPATH_W) 'rerr.c'; else $(CYGPATH_W) '$(srcdir)/rerr.c'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

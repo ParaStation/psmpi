@@ -266,5 +266,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_get_accumulate_( void*, MPI_Fint *, MPI
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_get_accumulate_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, void*v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Aint * v8, MPI_Fint *v9, MPI_Fint *v10, MPI_Fint *v11, MPI_Fint *v12, MPI_Fint *ierr ){
+    if (v1 == MPIR_F_MPI_BOTTOM) v1 = MPI_BOTTOM;
+    if (v4 == MPIR_F_MPI_BOTTOM) v4 = MPI_BOTTOM;
     *ierr = MPI_Get_accumulate( v1, (int)*v2, (MPI_Datatype)(*v3), v4, (int)*v5, (MPI_Datatype)(*v6), (int)*v7, *v8, (int)*v9, (MPI_Datatype)(*v10), (MPI_Op)*v11, (MPI_Win)*v12 );
 }
