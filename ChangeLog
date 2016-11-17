@@ -1,3 +1,15 @@
+2016-11-17  Jens Hauke  <hauke@par-tec.com>	-	5.1.6-1
+
+
+2016-07-22  Carsten Clauss <clauss@par-tec.com>
+
+	* Enhancement: Increased the number of available contexts to 16k
+	for the PSP device.
+
+	* Improve scaling of MPI_Comm_spawn
+
+	* Fixed op MPI_MAXLOC for MPI_Accumulated
+
 2015-11-30  Jens Hauke  <hauke@par-tec.com>	-	5.1.5-1
 
 	* Remove -O3 flag from mpicc wrapper script
