@@ -17,8 +17,24 @@
 #include <stdint.h>
 #include "mpid_sched_pre.h"
 
-#define MPID_CONTEXT_SUBCOMM_WIDTH (0)
+/* When MPID_PSP_USE_SMP_AWARE_COLLOPS is defined, the MPICH macro MPID_USE_NODE_IDS is set.
+ * In this case, the two functions MPID_Get_node_id() and MPID_Get_max_node_id() have to be
+ * implemented within the PSP/ADI3 layer for identifying SMP nodes for applying SMP-aware
+ * communication topologies for collective MPI operations within the upper MPICH layer. */
+#define MPID_PSP_USE_SMP_AWARE_COLLOPS
+/* If this macro is set, the usage of the SMP-aware collective is enabled default but can
+ * also be disabled again when calling mpiexec by setting PSP_SMP_AWARE_COLLOPS=0 */
+
+#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
+#define MPID_USE_NODE_IDS
+typedef int MPID_Node_id_t;
+#endif
+
+/* increase the number of available contexts: */
 #define MPID_CONTEXT_DYNAMIC_PROC_WIDTH (0)
+#ifndef MPID_USE_NODE_IDS
+#define MPID_CONTEXT_SUBCOMM_WIDTH (0)
+#endif
 
 /*********************************************
  * PSCOM Network header

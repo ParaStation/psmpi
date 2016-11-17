@@ -16,6 +16,49 @@
 static int ENABLE_REAL_DISCONNECT = 1;
 static int ENABLE_LAZY_DISCONNECT = 1;
 
+#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
+#ifndef MPID_USE_NODE_IDS
+#error "PSP: The SMP-aware collops features requires that USE_NODE_IDS is enabled for MPICH!"
+#endif
+int MPID_Get_node_id(MPID_Comm *comm, int rank, MPID_Node_id_t *id_p)
+{
+	int i;
+	int errflag;
+	int my_node_id = -1;
+	int* node_id_table;
+
+	if(!MPIDI_Process.env.enable_smp_aware_collops) {
+		/* just pretend that each rank lives on its own node: */
+		*id_p = rank;
+		return 0;
+	}
+
+	for(i=0; i<comm->local_size; i++) {
+		if( (comm->vcr[i]->con->type == PSCOM_CON_TYPE_SHM) || (comm->rank == i) ) {
+			my_node_id = i;
+			break;
+		}
+	}
+
+	assert(my_node_id >= 0);
+
+	node_id_table = MPIU_Malloc(comm->local_size * sizeof(int));
+
+	MPIR_Allgather_impl(&my_node_id, 1, MPI_INT, node_id_table, 1, MPI_INT, comm, &errflag);
+
+	*id_p = node_id_table[rank];
+
+	MPIU_Free(node_id_table);
+
+	return 0;
+}
+
+int MPID_Get_max_node_id(MPID_Comm *comm, MPID_Node_id_t *max_id_p)
+{
+	*max_id_p = comm->local_size;
+	return 0;
+}
+#endif
 
 /*
 typedef struct MPIDIx_VCRT * MPID_VCRT;

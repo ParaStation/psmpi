@@ -32,6 +32,9 @@ MPIDI_Process_t MPIDI_Process = {
 		dinit(enable_collectives)	0,
 		dinit(enable_ondemand)		0,
 		dinit(enable_ondemand_spawn)	0,
+#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
+		dinit(enable_smp_aware_collops)	1,
+#endif
 	},
 };
 
@@ -503,6 +506,10 @@ int MPID_Init(int *argc, char ***argv,
 	/* enable_ondemand_spawn defaults to enable_ondemand */
 	MPIDI_Process.env.enable_ondemand_spawn = MPIDI_Process.env.enable_ondemand;
 	pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand_spawn, "PSP_ONDEMAND_SPAWN");
+#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
+	/* use the MPICH-provided SMP-awareness for collective operations */
+	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_aware_collops, "PSP_SMP_AWARE_COLLOPS");
+#endif
 	/*
 	pscom_env_get_uint(&mpir_allgather_short_msg,	"PSP_ALLGATHER_SHORT_MSG");
 	pscom_env_get_uint(&mpir_allgather_long_msg,	"PSP_ALLGATHER_LONG_MSG");
