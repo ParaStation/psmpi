@@ -23,9 +23,12 @@ static int ENABLE_LAZY_DISCONNECT = 1;
 int MPID_Get_node_id(MPID_Comm *comm, int rank, MPID_Node_id_t *id_p)
 {
 	int i;
+	int rc;
 	int errflag;
 	int my_node_id = -1;
 	int* node_id_table;
+	int remote_node_id;
+	pscom_connection_t* peer_con;
 
 	if(!MPIDI_Process.env.enable_smp_aware_collops) {
 		/* just pretend that each rank lives on its own node: */
@@ -44,7 +47,39 @@ int MPID_Get_node_id(MPID_Comm *comm, int rank, MPID_Node_id_t *id_p)
 
 	node_id_table = MPIU_Malloc(comm->local_size * sizeof(int));
 
-	MPIR_Allgather_impl(&my_node_id, 1, MPI_INT, node_id_table, 1, MPI_INT, comm, &errflag);
+	/* We assume here that this is a _collective_ function!
+	   However, we do not make use of the upper MPICH collops here since they
+	   might get in conflict with the still uninitialized SMP-awareness...
+	   FIX ME if I'm wrong!
+	*/
+	if(comm->rank != 0) {
+
+		/* gather: */
+		peer_con = comm->vcr[0]->con;
+		assert(peer_con);
+		pscom_send(peer_con, NULL, 0, &my_node_id, sizeof(int));
+
+		/* bcast: */
+		rc = pscom_recv_from(peer_con, NULL, 0, node_id_table, comm->local_size*sizeof(int));
+
+	} else {
+
+		/* gather: */
+		node_id_table[0] = my_node_id;
+		for(i=1; i<comm->local_size; i++) {
+			peer_con = comm->vcr[i]->con;
+			assert(peer_con);
+			rc = pscom_recv_from(peer_con, NULL, 0, &remote_node_id, sizeof(int));
+			assert(rc == PSCOM_SUCCESS);
+			node_id_table[i] = remote_node_id;
+		}
+
+		/* bcast: */
+		for(i=1; i<comm->local_size; i++) {
+			peer_con = comm->vcr[i]->con;
+			pscom_send(peer_con, NULL, 0, node_id_table, comm->local_size*sizeof(int));
+		}
+	}
 
 	*id_p = node_id_table[rank];
 
