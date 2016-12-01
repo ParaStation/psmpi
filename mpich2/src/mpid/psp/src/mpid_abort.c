@@ -19,7 +19,7 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code,
 {
 	/* printf("ps--- %s() called\n", __func__); */
 
-	MPIU_Error_printf("%s", error_msg);
+	MPL_error_printf("%s", error_msg);
 
 	exit(exit_code);
 	return MPI_ERR_INTERN;

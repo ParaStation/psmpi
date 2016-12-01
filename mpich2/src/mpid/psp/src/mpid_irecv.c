@@ -338,7 +338,7 @@ void prepare_source(MPID_Request *req, pscom_connection_t *con, pscom_socket_t *
 }
 
 
-int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
+int MPID_Irecv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
 	       MPID_Comm * comm, int context_offset, MPID_Request ** request)
 {
 	MPID_Request *req;
@@ -538,6 +538,27 @@ int MPID_Iprobe(int rank, int tag, MPID_Comm * comm, int context_offset, int * f
 	/* --- */
  err_rank:
 	return  MPI_ERR_RANK;
+}
+
+
+int MPID_Comm_AS_enabled(MPID_Comm *comm_ptr)
+{
+	/* This function must return 1 in the default case and should not be ignored
+	 * by the implementation. */
+	return 1;
+}
+
+
+int MPID_Request_is_anysource(MPID_Request *request_ptr)
+{
+	int ret = 0;
+
+	if (request_ptr->kind == MPID_REQUEST_RECV &&
+	    request_ptr->dev.kind.recv.common.pscom_req) {
+		ret = request_ptr->dev.kind.recv.common.pscom_req->connection == NULL;
+	}
+
+	return ret;
 }
 
 #include "mpid_mprobe.c"

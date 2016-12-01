@@ -218,7 +218,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
 {
 	/* from MPIDI_Win_create() */
 	int mpi_errno = MPI_SUCCESS, i, comm_size, rank;
-	int errflag = 0;
+	MPIR_Errflag_t errflag = 0;
 	MPID_Wincreate_msg *tmp_buf;
 	MPID_Win *win_ptr;
 
@@ -231,7 +231,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
 	rank = comm_ptr->rank;
 
 	win_ptr = (MPID_Win *)MPIU_Handle_obj_alloc( &MPID_Win_mem );
-	MPIU_ERR_CHKANDJUMP(!win_ptr, mpi_errno, MPI_ERR_OTHER, "**nomem");
+	MPIR_ERR_CHKANDJUMP(!win_ptr, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
 	(*_win_ptr) = win_ptr;
 
@@ -253,7 +253,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
 */
 	mpi_errno = MPIR_Comm_dup_impl(comm_ptr, &win_ptr->comm_ptr);
 
-	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+	if (mpi_errno) { MPIR_ERR_POP(mpi_errno); }
 
 	/* allocate memory for the base addresses, disp_units, and
 	   completion counters of all processes */
@@ -301,7 +301,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
 	mpi_errno = MPIR_Allgather_impl(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
 					tmp_buf, sizeof(MPID_Wincreate_msg), MPI_BYTE,
 					comm_ptr, &errflag); /* ToDo: errflag usage! */
-	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+	if (mpi_errno) { MPIR_ERR_POP(mpi_errno); }
 
 	for (i=0; i<comm_size; i++) {
 		MPID_Win_rank_info *ri = win_ptr->rank_info + i;
@@ -722,7 +722,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPID_Info *info,
 	int shmid = -1;
 	void *shm = NULL;
 	void **base_pp = (void **) base_ptr;
-	int errflag = 0;
+	MPIR_Errflag_t errflag = 0;
 	int mpi_errno = MPI_SUCCESS;
 
 	void **ptr_buf;

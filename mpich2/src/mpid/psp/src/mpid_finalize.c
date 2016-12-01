@@ -39,7 +39,7 @@ int MPID_Finalize(void)
 /*	fprintf(stderr, "%d waitall\n", MPIDI_Process.my_pg_rank); */
 
 	{
-		int errflag = 0;
+		MPIR_Errflag_t errflag = MPIR_ERR_NONE;
 		int timeout;
 		MPIU_THREADPRIV_DECL;
 		MPIU_THREADPRIV_GET;
@@ -71,20 +71,20 @@ int MPID_Finalize(void)
 	/* Release standard communicators */
 #ifdef MPID_NEEDS_ICOMM_WORLD
 	/* psp don't need icomm. But this might change? */
-	MPIR_Comm_release_always(MPIR_Process.icomm_world, 0);
+	MPIR_Comm_release_always(MPIR_Process.icomm_world);
 #endif
-	MPIR_Comm_release_always(MPIR_Process.comm_self, 0);
-	MPIR_Comm_release_always(MPIR_Process.comm_world, 0);
+	MPIR_Comm_release_always(MPIR_Process.comm_self);
+	MPIR_Comm_release_always(MPIR_Process.comm_world);
 
 	/* Cleanup standard comm's */
-	/* MPID_VCRT_Release(MPIR_Process.comm_world->vcrt, 0);
-	   MPID_VCRT_Release(MPIR_Process.comm_self->vcrt, 0);*/
+	/* MPID_VCRT_Release(MPIR_Process.comm_world->vcrt);
+	   MPID_VCRT_Release(MPIR_Process.comm_self->vcrt);*/
 
 	/* Cleanups */
 	MPIDI_PG_t* pg_ptr = MPIDI_Process.my_pg->next;
 	while(pg_ptr) {
 		pg_ptr = MPIDI_PG_Destroy(pg_ptr);
-        }
+	}
 	MPIDI_PG_Destroy(MPIDI_Process.my_pg);
 
 	MPIU_Free(MPIDI_Process.grank2con);

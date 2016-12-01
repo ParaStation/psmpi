@@ -23,7 +23,7 @@ typedef struct MPID_PSP_Datatype_s
 	int		dataloop_size;
 	void		*dataloop;  /* Used with Dataloop_update(enc_dataloop, ptrdiff) on remote */
 	int		dataloop_depth;
-	int		eltype;
+	int		basic_type;
 	MPI_Aint	ub, lb, true_ub, true_lb; /* Old MPI1 stuff */
 
 	/* boolean fields: */
@@ -90,7 +90,7 @@ void MPID_PSP_Datatype_encode(MPID_PSP_Datatype_info *info, void *encode)
 	enc_dtp->dataloop_size	= dtp->dataloop_size;
 	enc_dtp->dataloop	= dtp->dataloop;
 	enc_dtp->dataloop_depth	= dtp->dataloop_depth;
-	enc_dtp->eltype		= dtp->eltype;
+	enc_dtp->basic_type	= dtp->basic_type;
 	enc_dtp->ub		= dtp->ub;
 	enc_dtp->lb		= dtp->lb;
 	enc_dtp->true_ub	= dtp->true_ub;
@@ -152,9 +152,9 @@ MPI_Datatype MPID_PSP_Datatype_decode(void *encode)
 	dtp->is_permanent	= 0;
 	dtp->is_committed	= 1;
 
-	dtp->eltype		= enc_dtp->eltype;
-	dtp->n_elements		= 0;	/* ToDo: Correct value ??? */
-	dtp->element_size	= 0;	/* ToDo: Correct value ??? */
+	dtp->basic_type		= enc_dtp->basic_type;
+	dtp->n_builtin_elements = 0;	/* ToDo: Correct value ??? */
+	dtp->builtin_element_size = 0;	/* ToDo: Correct value ??? */
 
 	dtp->is_contig		= enc_dtp->is_contig;
 	dtp->max_contig_blocks	= enc_dtp->max_contig_blocks;

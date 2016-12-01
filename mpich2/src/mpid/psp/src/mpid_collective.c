@@ -32,7 +32,7 @@
 
 /* not declared static because it is called in ch3_comm_connect/accept */
 static
-int MPID_PSP_Barrier(MPID_Comm *comm_ptr, int *errflag)
+int MPID_PSP_Barrier(MPID_Comm *comm_ptr, MPIR_Errflag_t *errflag)
 {
 	if (comm_ptr->group) {
 		pscom_barrier(comm_ptr->group);
@@ -135,7 +135,7 @@ MPI_Bcast - Broadcasts a message from the process with rank "root" to
 */
 static
 int MPID_PSP_Bcast(void *buffer, int count, MPI_Datatype datatype, int root,
-		   MPID_Comm *comm_ptr, int *errflag)
+		   MPID_Comm *comm_ptr, MPIR_Errflag_t *errflag)
 {
 	int mpi_errno;
 

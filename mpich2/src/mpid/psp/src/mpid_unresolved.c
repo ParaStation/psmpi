@@ -18,7 +18,7 @@
  rest of MPI_Init completes.  */
 int MPID_InitCompleted( void )
 {
-    return MPI_SUCCESS;
+	return MPI_SUCCESS;
 }
 
 
@@ -72,4 +72,20 @@ int MPID_Win_get_info(MPID_Win *win, MPID_Info **info_used)
 	assert(mpi_errno == MPI_SUCCESS);
 
 	return mpi_errno;
+}
+
+
+MPI_Aint MPID_Aint_add(MPI_Aint base, MPI_Aint disp)
+{
+	// WTF?
+	// result =  MPIU_VOID_PTR_CAST_TO_MPI_AINT ((char*)MPIU_AINT_CAST_TO_VOID_PTR(base) + disp);
+	return base + disp;
+}
+
+
+MPI_Aint MPID_Aint_diff(MPI_Aint addr1, MPI_Aint addr2)
+{
+	// WTF?
+	// result =  MPIU_PTR_DISP_CAST_TO_MPI_AINT ((char*)MPIU_AINT_CAST_TO_VOID_PTR(addr1) - (char*)MPIU_AINT_CAST_TO_VOID_PTR(addr2));
+	return addr1 - addr2;
 }

@@ -17,6 +17,13 @@
 #include <stdint.h>
 #include "mpid_sched_pre.h"
 
+#include "mpid_thread.h"
+
+/* We simply use the fallback timer functionality and do not define
+ * our own */
+#include "mpid_timers_fallback.h"
+
+
 #define MPID_CONTEXT_SUBCOMM_WIDTH (0)
 #define MPID_CONTEXT_DYNAMIC_PROC_WIDTH (0)
 
@@ -187,13 +194,7 @@ struct PSCOM_req_user
 #include "pscom.h"
 
 
-/* Virtual connections */
-/* structs MPIDIx_VCRT and MPIDIx_VC are from mpid_vc.c */
-
-typedef struct MPIDIx_VCRT * MPID_VCRT;
-typedef struct MPIDIx_VC * MPID_VCR;
-
-typedef MPIR_Pint MPIDI_msg_sz_t;
+typedef size_t MPIDI_msg_sz_t;
 
 #define MPID_PROGRESS_STATE_DECL int foo;
 
@@ -323,7 +324,7 @@ struct MPID_DEV_Request_persistent
 	struct MPID_Comm	*comm;
 	int		context_offset;
 
-	int (*call)(const void * buf, int count, MPI_Datatype datatype, int rank,
+	int (*call)(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
 		    int tag, struct MPID_Comm * comm, int context_offset, struct MPID_Request ** request);
 };
 
@@ -417,10 +418,18 @@ typedef struct MPID_Win_rank_info
 	enum MPID_PSP_Win_epoch_states epoch_state; /* this is for error detection */ \
 	int epoch_lock_count;  /* number of pending locks (for error detection, too) */
 
-#define MPID_DEV_COMM_DECL			\
-	pscom_socket_t	*pscom_socket;		\
-	pscom_group_t	*group;			\
-	pscom_request_t *bcast_request;
+typedef struct MPID_VCRT MPID_VCRT_t;
+typedef struct MPID_VC MPID_VC_t;
+
+typedef struct MPIDI_VCON MPIDI_VCON;
+
+#define MPID_DEV_COMM_DECL						\
+	pscom_socket_t	*pscom_socket;					\
+	pscom_group_t	*group;						\
+	pscom_request_t *bcast_request;					\
+	MPID_VC_t	**vcr; /* virtual connection reference table */	\
+	MPID_VC_t	**local_vcr; /* virtual connection reference table */
+
 
 /* Somewhere in the middle of the GCC 2.96 development cycle, we implemented
    a mechanism by which the user can annotate likely branch directions and
@@ -444,17 +453,17 @@ int MPID_PSP_comm_destroy_hook(struct MPID_Comm * comm);
 #define MPID_Dev_comm_create_hook(comm) MPID_PSP_comm_create_hook(comm)
 #define MPID_Dev_comm_destroy_hook(comm) MPID_PSP_comm_destroy_hook(comm)
 
+/* Progress hooks. */
+#define MPID_Progress_register_hook(fn_, id_) MPI_SUCCESS
+#define MPID_Progress_deregister_hook(id_) MPI_SUCCESS
+#define MPID_Progress_activate_hook(id_)
+#define MPID_Progress_deactivate_hook(id_)
+
 
 /* Tell Intercomm create and friends that the GPID routines have been
    implemented */
 #define HAVE_GPID_ROUTINES
 
-struct MPID_Comm;
-int MPID_GPID_GetAllInComm(struct MPID_Comm *comm_ptr, int local_size,
-			   int local_gpids[], int *singlePG);
-int MPID_GPID_ToLpidArray(int size, int gpid[], int lpid[]);
-int MPID_VCR_CommFromLpids(struct MPID_Comm *newcomm_ptr,
-			   int size, const int lpids[]);
-
+#define MPID_DEV_GPID_DECL int gpid[2];
 
 #endif /* _MPIDPRE_H_ */

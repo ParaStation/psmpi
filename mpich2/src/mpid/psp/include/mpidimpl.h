@@ -31,17 +31,41 @@ typedef char pscom_port_str_t[PSCOM_PORT_MAXLEN];
 
 pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPID_Comm *comm, MPID_Comm *intercomm);
 
-typedef struct MPIDI_PG
-{
+
+/* Virtual connections */
+/* structs MPIDIx_VCRT and MPIDIx_VC are from mpid_vc.c */
+
+typedef struct MPIDI_PG MPIDI_PG_t;
+
+
+struct MPIDI_PG {
 	struct MPIDI_PG * next;
 	int refcnt;
 	int size;
 	int id_num;
-	MPID_VCR *vcr;
+	MPID_VC_t **vcr;
 	int * lpids;
 	pscom_connection_t **cons;
 
-} MPIDI_PG_t;
+};
+
+
+struct MPID_VC {
+	pscom_connection_t *con;
+	int lpid;
+	int pg_rank;
+	MPIDI_PG_t * pg;
+	int refcnt;
+};
+
+
+MPID_VC_t **MPID_VCRT_Create(int size);
+MPID_VC_t **MPID_VCRT_Dup(MPID_VC_t **vcrt, int size);
+void MPID_VCRT_Release(MPID_VC_t **vcrt, unsigned size);
+
+MPID_VC_t *MPID_VC_Dup(MPID_VC_t *orig_vcr);
+MPID_VC_t *MPID_VC_Create(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid);
+
 
 int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr);
 MPIDI_PG_t* MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr);
@@ -122,18 +146,6 @@ int MPID_Win_lock_internal(int dest, MPID_Win *win_ptr);
 int MPID_Win_unlock_internal(int dest, MPID_Win *win_ptr);
 int MPID_Win_wait_local_completion(int rank, MPID_Win *win_ptr);
 
-int MPID_VCR_Initialize(MPID_VCR *vcr_ptr, MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid);
-int MPID_VCR_DeleteFromPG(MPID_VCR vcr);
-
-
-struct MPIDIx_VC {
-	pscom_connection_t *con;
-	int lpid;
-	int pg_rank;
-	MPIDI_PG_t * pg;
-	int refcnt;
-};
-
 
 void mpid_debug_init(void);
 const char *mpid_msgtype_str(enum MPID_PSP_MSGTYPE msg_type);
@@ -153,9 +165,9 @@ const char *mpid_msgtype_str(enum MPID_PSP_MSGTYPE msg_type);
 #define MPID_PSP_LOCKFREE_CALL(code) code;
 #else
 #define MPID_PSP_LOCKFREE_CALL(code) do {				\
-	MPIU_THREAD_CS_EXIT(ALLFUNC,);					\
+	MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);	\
 	code;								\
-	MPIU_THREAD_CS_ENTER(ALLFUNC,);					\
+	MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);	\
 } while (0);
 #endif
 

@@ -261,7 +261,7 @@ void MPID_PSP_RecvCtrl(int tag, int recvcontext_id, int src_rank, pscom_connecti
 }
 
 
-int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
+int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
 	       int tag, MPID_Comm * comm, int context_offset, MPID_Request ** request)
 {
 	int mpi_errno;
@@ -271,7 +271,7 @@ int MPID_Isend(const void * buf, int count, MPI_Datatype datatype, int rank,
 }
 
 
-int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank, int tag,
+int MPID_Issend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
 		MPID_Comm * comm, int context_offset, MPID_Request ** request)
 {
 	int mpi_errno;

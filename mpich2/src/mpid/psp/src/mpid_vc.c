@@ -16,23 +16,14 @@
 static int ENABLE_REAL_DISCONNECT = 1;
 static int ENABLE_LAZY_DISCONNECT = 1;
 
-
-/*
-typedef struct MPIDIx_VCRT * MPID_VCRT;
-typedef struct MPIDIx_VC * MPID_VCR;
-*/
-
-struct MPIDIx_VCRT {
-	unsigned int refcnt;
-	unsigned int size;
-	MPID_VCR vcr[0];
-};
+static
+int MPID_VCR_DeleteFromPG(MPID_VC_t *vcr);
 
 
 static
-MPID_VCR new_VCR(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid)
+MPID_VC_t *new_VCR(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid)
 {
-	MPID_VCR vcr = MPIU_Malloc(sizeof(*vcr));
+	MPID_VC_t *vcr = MPIU_Malloc(sizeof(*vcr));
 	assert(vcr);
 
 	vcr->con = con;
@@ -55,7 +46,7 @@ MPID_VCR new_VCR(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid
 
 
 static
-void VCR_put(MPID_VCR vcr, int isDisconnect)
+void VCR_put(MPID_VC_t *vcr, int isDisconnect)
 {
 	vcr->refcnt--;
 
@@ -74,7 +65,7 @@ void VCR_put(MPID_VCR vcr, int isDisconnect)
 
 
 static
-MPID_VCR VCR_get(MPID_VCR vcr)
+MPID_VC_t *VCR_get(MPID_VC_t *vcr)
 {
 	vcr->refcnt++;
 	return vcr;
@@ -83,132 +74,92 @@ MPID_VCR VCR_get(MPID_VCR vcr)
 
 #define FCNAME "MPID_VCRT_Create"
 #define FUNCNAME MPID_VCRT_Create
-int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
+MPID_VC_t **MPID_VCRT_Create(int size)
 {
 	int mpi_errno = MPI_SUCCESS;
-	struct MPIDIx_VCRT * vcrt;
+	MPID_VC_t **vcrt;
 
 	MPIDI_STATE_DECL(MPID_STATE_MPID_VCRT_CREATE);
 	MPIDI_FUNC_ENTER(MPID_STATE_MPID_VCRT_CREATE);
 
 	assert(size >= 0);
 
-	vcrt = MPIU_Malloc(sizeof(*vcrt) + size * sizeof(vcrt->vcr[0]));
+	vcrt = MPIU_Malloc(size * sizeof(*vcrt));
 
-	Dprintf("(size=%d, vcrt_ptr=%p), vcrt=%p", size, vcrt_ptr, vcrt);
+	Dprintf("(size=%d), vcrt=%p", size, vcrt);
 
 	if (vcrt) {
 		int i;
-		vcrt->refcnt = 1;
-		vcrt->size = size;
-		*vcrt_ptr = vcrt;
 		for (i = 0; i < size; i++) {
-			vcrt->vcr[i] = NULL;
+			vcrt[i] = NULL;
 		}
 	} else { /* Error */
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	}
 
 	MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_CREATE);
-	return mpi_errno;
+	return vcrt;
 }
 #undef FUNCNAME
 #undef FCNAME
 
 
+MPID_VC_t **MPID_VCRT_Dup(MPID_VC_t **vcrt, int size)
+{
+	MPID_VC_t **vcrt_new = MPID_VCRT_Create(size);
+	int i;
+
+	for (i = 0; i < size; i++) {
+		if (vcrt[i]) {
+			vcrt_new[i] = MPID_VC_Dup(vcrt[i]);
+		}
+	}
+	return vcrt_new;
+}
+
+
 static
-void MPID_VCRT_Destroy(MPID_VCRT vcrt, int isDisconnect)
+void MPID_VCRT_Destroy(MPID_VC_t **vcrt, unsigned size)
 {
 	int i;
 	if (!vcrt) return;
 
-	for (i = 0; i < vcrt->size; i++) {
-		MPID_VCR vcr = vcrt->vcr[i];
-		vcrt->vcr[i] = NULL;
-		if (vcr) VCR_put(vcr, isDisconnect);
+	for (i = 0; i < size; i++) {
+		MPID_VC_t *vcr = vcrt[i];
+		vcrt[i] = NULL;
+		if (vcr) VCR_put(vcr, 0);
 	}
 
 	MPIU_Free(vcrt);
 }
 
 
-int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
+void MPID_VCRT_Release(MPID_VC_t **vcrt, unsigned size)
 {
-	Dprintf("(vcrt=%p), refcnt=%d", vcrt, vcrt->refcnt);
+	Dprintf("(vcrt=%p), size=%u",
+		vcrt, size);
 
-	vcrt->refcnt++;
-
-	return MPI_SUCCESS;
+	MPID_VCRT_Destroy(vcrt, size);
 }
 
-int MPID_VCRT_Release(MPID_VCRT vcrt, int isDisconnect)
-{
-	Dprintf("(vcrt=%p), refcnt=%d, isDisconnect=%d",
-		vcrt, vcrt->refcnt, isDisconnect);
-
-	vcrt->refcnt--;
-
-	if (vcrt->refcnt <= 0) {
-		assert(vcrt->refcnt == 0);
-		MPID_VCRT_Destroy(vcrt, isDisconnect);
-	}
-
-	return MPI_SUCCESS;
-}
-
-int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
-{
-	Dprintf("(vcrt=%p, vc_pptr=%p)", vcrt, vc_pptr);
-
-	*vc_pptr = vcrt->vcr;
-	return MPI_SUCCESS;
-}
 
 /* used in mpid_init.c to set comm_world */
-int MPID_VCR_Initialize(MPID_VCR *vcr_ptr, MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid)
+MPID_VC_t *MPID_VC_Create(MPIDI_PG_t *pg, int pg_rank, pscom_connection_t *con, int lpid)
 {
-	Dprintf("(vcr_ptr=%p, con=%p, lpid=%d)", vcr_ptr, con, lpid);
+	Dprintf("(con=%p, lpid=%d)", con, lpid);
 
-	assert(!(*vcr_ptr)); /* vcr must be uninitialized. */
-	/* if (*vcr_ptr) VCR_put(*vcr_ptr); */
-
-	*vcr_ptr = new_VCR(pg, pg_rank, con, lpid);
-
-	return MPI_SUCCESS;
+	return new_VCR(pg, pg_rank, con, lpid);
 }
 
-/*@
-  MPID_VCR_Dup - Create a duplicate reference to a virtual connection
-  @*/
-int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr)
+/* Create a duplicate reference to a virtual connection */
+MPID_VC_t *MPID_VC_Dup(MPID_VC_t *orig_vcr)
 {
-	Dprintf("(orig_vcr=%p, new_vcr=%p)", orig_vcr, new_vcr);
-
-	*new_vcr = VCR_get(orig_vcr);
-
-	return MPI_SUCCESS;
+	return VCR_get(orig_vcr);
 }
 
-/*@
-   MPID_VCR_Get_lpid - Get the local process id that corresponds to a
-   virtual connection reference.
 
-   Notes:
-   The local process ids are described elsewhere.  Basically, they are
-   a nonnegative number by which this process can refer to other processes
-   to which it is connected.  These are local process ids because different
-   processes may use different ids to identify the same target process
-  @*/
-int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr)
-{
-	*lpid_ptr = vcr->lpid;
-
-	Dprintf("(vcr=%p, lpid_ptr=%p), lpid=%d", vcr, lpid_ptr, *lpid_ptr);
-
-	return MPI_SUCCESS;
-}
-
-int MPID_VCR_DeleteFromPG(MPID_VCR vcr)
+static
+int MPID_VCR_DeleteFromPG(MPID_VC_t *vcr)
 {
 	MPIDI_PG_t * pg = vcr->pg;
 
@@ -232,6 +183,18 @@ int MPID_VCR_DeleteFromPG(MPID_VCR vcr)
 
 	vcr->pg_rank = -1;
 	vcr->pg = NULL;
+
+	return MPI_SUCCESS;
+}
+
+
+int MPID_Comm_get_lpid(MPID_Comm *comm_ptr, int idx, int * lpid_ptr, MPIU_BOOL is_remote)
+{
+	if (comm_ptr->comm_kind == MPID_INTRACOMM || is_remote) {
+		*lpid_ptr = comm_ptr->vcr[idx]->lpid;
+	} else {
+		*lpid_ptr = comm_ptr->local_vcr[idx]->lpid;
+	}
 
 	return MPI_SUCCESS;
 }

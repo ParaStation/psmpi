@@ -12,7 +12,7 @@
 
 #include "mpidimpl.h"
 
-int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int tag,
+int MPID_Send(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
 	      MPID_Comm * comm, int context_offset, MPID_Request ** request)
 {
 	int mpi_errno;
@@ -28,7 +28,7 @@ int MPID_Send(const void * buf, int count, MPI_Datatype datatype, int rank, int 
 }
 
 
-int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int tag,
+int MPID_Ssend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
 	       MPID_Comm * comm, int context_offset, MPID_Request ** request)
 {
 	int mpi_errno;
@@ -45,7 +45,7 @@ int MPID_Ssend(const void * buf, int count, MPI_Datatype datatype, int rank, int
 
 
 /* immediate ready send (mapped to immediate send) */
-int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, int tag,
+int MPID_Irsend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
 		MPID_Comm * comm, int context_offset, MPID_Request ** request)
 {
 	return MPID_Isend(buf, count, datatype, rank, tag, comm, context_offset, request);

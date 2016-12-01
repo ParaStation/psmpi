@@ -141,7 +141,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 	MPID_Comm *comm_ptr;
 	int * recvcnts;
 	unsigned int total_rma_puts_accs;
-	int errflag = 0;
+	MPIR_Errflag_t errflag = 0;
 
 	if(win_ptr->epoch_state != MPID_PSP_EPOCH_NONE && win_ptr->epoch_state != MPID_PSP_EPOCH_FENCE && win_ptr->epoch_state != MPID_PSP_EPOCH_FENCE_ISSUED) {
 		return MPI_ERR_RMA_SYNC;

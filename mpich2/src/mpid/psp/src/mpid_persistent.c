@@ -16,9 +16,9 @@
 
 
 static
-int MPID_PSP_persistent_init(const void *buf, int count, MPI_Datatype datatype, int rank, int tag,
+int MPID_PSP_persistent_init(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
 			     MPID_Comm *comm, int context_offset, MPID_Request **request,
-			     int (*call)(const void * buf, int count, MPI_Datatype datatype, int rank,
+			     int (*call)(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
 					 int tag, struct MPID_Comm * comm, int context_offset, MPID_Request ** request),
 			     MPID_Request_kind_t type)
 {
@@ -63,7 +63,7 @@ err_request_recv_create:
 
 
 static
-int MPID_PSP_Bsend(const void * buf, int count, MPI_Datatype datatype, int rank, int tag,
+int MPID_PSP_Bsend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
 		   MPID_Comm * comm, int context_offset, MPID_Request ** request)
 {
 	/* See src/mpid/ch3/src/mpid_startall.c:105   "MPID_Startall(): case MPIDI_REQUEST_TYPE_BSEND:"*/
@@ -92,7 +92,7 @@ int MPID_Recv_init(void *buf, int count, MPI_Datatype datatype, int rank, int ta
 {
 	return MPID_PSP_persistent_init(buf, count, datatype, rank, tag, comm,
 					context_offset, request,
-					(int (*)(const void *, int, MPI_Datatype, int, int, struct MPID_Comm *, int, MPID_Request **))MPID_Irecv,
+					(int (*)(const void *, MPI_Aint, MPI_Datatype, int, int, struct MPID_Comm *, int, MPID_Request **))MPID_Irecv,
 					MPID_PREQUEST_RECV);
 }
 

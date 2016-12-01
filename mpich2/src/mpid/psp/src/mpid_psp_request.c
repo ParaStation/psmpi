@@ -373,7 +373,7 @@ void MPID_DEV_Request_persistent_destroy(MPID_Request *req)
 		MPID_PSP_Datatype_release(preq->datatype);
 	}
 	if (preq->comm) {
-		MPIR_Comm_release(preq->comm, 0);
+		MPIR_Comm_release(preq->comm);
 	}
 	MPID_DEV_Request_common_destroy(req);
 }
@@ -391,7 +391,7 @@ void MPID_DEV_Request_ureq_destroy(MPID_Request *req)
 void MPID_DEV_Request_coll_destroy(MPID_Request *req)
 {
 	if (req->comm) {
-		MPIR_Comm_release(req->comm, 0);
+		MPIR_Comm_release(req->comm);
 	}
 
 	MPID_DEV_Request_common_destroy(req);
@@ -434,4 +434,10 @@ MPID_Request * MPID_Request_create(void)
 	req->kind = MPID_REQUEST_UNDEFINED;
 
 	return req;
+}
+
+
+int MPID_Request_complete(MPID_Request *req)
+{
+	// ToDo: What to do here? Calling MPID_PSP_Subrequest_completed(req) ?
 }
