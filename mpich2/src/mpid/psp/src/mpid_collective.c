@@ -258,6 +258,17 @@ int MPID_PSP_comm_create_hook(MPID_Comm * comm)
 		return MPI_SUCCESS;
 	}
 
+	if (comm->mapper_head) {
+		/* Copy VCs from src_comm to comm. src_comm is hidden in comm->mapper_head. */
+		MPID_Comm * src_comm = comm->mapper_head->src_comm;
+		assert(comm->mapper_head == comm->mapper_tail);
+		assert(comm->local_size == src_comm->local_size);
+		assert(comm->remote_size == src_comm->remote_size);
+
+		comm->vcr  = MPID_VCRT_Dup(src_comm->vcr, src_comm->remote_size);
+	}
+
+
 	comm->group = NULL;
 
 	/* ToDo: Fixme! Hack: Use pscom_socket from the rank 0 connection. This will fail

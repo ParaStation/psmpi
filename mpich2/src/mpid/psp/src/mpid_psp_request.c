@@ -401,12 +401,6 @@ void MPID_DEV_Request_coll_destroy(MPID_Request *req)
 /******************************************************************/
 
 
-void MPID_Request_set_completed(MPID_Request *req)
-{
-	_MPID_Request_set_completed(req);
-}
-
-
 /*@
   MPID_Request_create - Create and return a bare request
 
@@ -440,4 +434,5 @@ MPID_Request * MPID_Request_create(void)
 int MPID_Request_complete(MPID_Request *req)
 {
 	// ToDo: What to do here? Calling MPID_PSP_Subrequest_completed(req) ?
+	return MPI_SUCCESS;
 }

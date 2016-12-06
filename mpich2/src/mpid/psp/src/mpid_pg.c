@@ -685,21 +685,21 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 									pscom_send(con, NULL, 0, &MPIDI_Process.my_pg->id_num, sizeof(int));
 									rc = pscom_recv_from(con, NULL, 0, &remote_pg_id, sizeof(int));
 									assert(rc == PSCOM_SUCCESS);
-									assert(remote_pg_id == gpid_ptr[0]);
+									assert(remote_pg_id == gpid_ptr->gpid[0]);
 
 									pscom_send(con, NULL, 0, &MPIR_Process.comm_world->rank, sizeof(int));
 									rc = pscom_recv_from(con, NULL, 0, &remote_pg_rank, sizeof(int));
 									assert(rc == PSCOM_SUCCESS);
-									assert(remote_pg_rank == gpid_ptr[1]);
+									assert(remote_pg_rank == gpid_ptr->gpid[1]);
 								} else {
 									rc = pscom_recv_from(con, NULL, 0, &remote_pg_id, sizeof(int));
 									assert(rc == PSCOM_SUCCESS);
-									assert(remote_pg_id == gpid_ptr[0]);
+									assert(remote_pg_id == gpid_ptr->gpid[0]);
 									pscom_send(con, NULL, 0, &MPIDI_Process.my_pg->id_num, sizeof(int));
 
 									rc = pscom_recv_from(con, NULL, 0, &remote_pg_rank, sizeof(int));
 									assert(rc == PSCOM_SUCCESS);
-									assert(remote_pg_rank == gpid_ptr[1]);
+									assert(remote_pg_rank == gpid_ptr->gpid[1]);
 									pscom_send(con, NULL, 0, &MPIR_Process.comm_world->rank, sizeof(int));
 								}
 							}
@@ -751,7 +751,7 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr)
 	pg->refcnt = 0;
 
 	for(i=0; i<pg_size; i++) {
-		pg->vcr[i] = NULL;
+		assert(pg->vcr[i] == NULL);
 		pg->lpids[i] = -1;
 		pg->cons[i] = NULL;
 	}
