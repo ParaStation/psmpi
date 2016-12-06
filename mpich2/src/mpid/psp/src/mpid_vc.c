@@ -23,74 +23,35 @@ static int ENABLE_LAZY_DISCONNECT = 1;
 int MPID_Get_node_id(MPID_Comm *comm, int rank, MPID_Node_id_t *id_p)
 {
 	int i;
-	int rc;
-	int errflag;
-	int my_node_id = -1;
-	int* node_id_table;
-	int remote_node_id;
-	pscom_connection_t* peer_con;
+	int pg_check_id;
 
-	if(!MPIDI_Process.env.enable_smp_aware_collops) {
-		/* just pretend that each rank lives on its own node: */
+	if(!MPIDI_Process.env.enable_smp_aware_collops ||  !MPIDI_Process.node_id_table) {
+		/* Just pretend that each rank lives on its own node: */
 		*id_p = rank;
 		return 0;
 	}
 
-	for(i=0; i<comm->local_size; i++) {
-		if( (comm->vcr[i]->con->type == PSCOM_CON_TYPE_SHM) || (comm->rank == i) ) {
-			my_node_id = i;
-			break;
+	pg_check_id = comm->vcr[0]->pg->id_num;
+	for(i=1; i<comm->local_size; i++) {
+		if(comm->vcr[i]->pg->id_num != pg_check_id) {
+			/* This communicator spans more than one MPICH Process Group (PG)!
+			   As we create the node_id_table on an MPI_COMM_WORLD basis, we
+			   have to fallback here to the non smp-aware collops...
+			   (FIXME: Are we sure that this will be detected here by all ranks within comm?)
+			*/
+			*id_p = rank;
+			return 0;
 		}
 	}
 
-	assert(my_node_id >= 0);
-
-	node_id_table = MPIU_Malloc(comm->local_size * sizeof(int));
-
-	/* We assume here that this is a _collective_ function!
-	   However, we do not make use of the upper MPICH collops here since they
-	   might get in conflict with the still uninitialized SMP-awareness...
-	   FIX ME if I'm wrong!
-	*/
-	if(comm->rank != 0) {
-
-		/* gather: */
-		peer_con = comm->vcr[0]->con;
-		assert(peer_con);
-		pscom_send(peer_con, NULL, 0, &my_node_id, sizeof(int));
-
-		/* bcast: */
-		rc = pscom_recv_from(peer_con, NULL, 0, node_id_table, comm->local_size*sizeof(int));
-
-	} else {
-
-		/* gather: */
-		node_id_table[0] = my_node_id;
-		for(i=1; i<comm->local_size; i++) {
-			peer_con = comm->vcr[i]->con;
-			assert(peer_con);
-			rc = pscom_recv_from(peer_con, NULL, 0, &remote_node_id, sizeof(int));
-			assert(rc == PSCOM_SUCCESS);
-			node_id_table[i] = remote_node_id;
-		}
-
-		/* bcast: */
-		for(i=1; i<comm->local_size; i++) {
-			peer_con = comm->vcr[i]->con;
-			pscom_send(peer_con, NULL, 0, node_id_table, comm->local_size*sizeof(int));
-		}
-	}
-
-	*id_p = node_id_table[rank];
-
-	MPIU_Free(node_id_table);
+	*id_p = MPIDI_Process.node_id_table[comm->vcr[rank]->pg_rank];
 
 	return 0;
 }
 
 int MPID_Get_max_node_id(MPID_Comm *comm, MPID_Node_id_t *max_id_p)
 {
-	*max_id_p = comm->local_size;
+	*max_id_p = MPIDI_Process.my_pg_size;
 	return 0;
 }
 #endif
