@@ -161,7 +161,29 @@ int MPID_PSP_Bcast(void *buffer, int count, MPI_Datatype datatype, int root,
 
 
 static
-void group_init(MPID_Comm *comm_ptr)
+MPID_Collops mpid_psp_collective_functions = {
+	~0,    /* ref_count */
+	&MPID_PSP_Barrier, /* Barrier */
+	&MPID_PSP_Bcast, /* Bcast */
+	NULL, /* Gather */
+	NULL, /* Gatherv */
+	NULL, /* Scatter */
+	NULL, /* Scatterv */
+	NULL, /* Allgather */
+	NULL, /* Allgatherv */
+	NULL, /* Alltoall */
+	NULL, /* Alltoallv */
+	NULL, /* Alltoallw */
+	NULL, /* Reduce */
+	NULL, /* Allreduce */
+	NULL, /* Reduce_scatter */
+	NULL, /* Scan */
+	NULL, /* Exscan */
+	NULL  /* Reduce_scatter_block */
+};
+
+
+void MPID_PSP_group_init(MPID_Comm *comm_ptr)
 {
 	unsigned comm_size = comm_ptr->local_size;
 	unsigned rank;
@@ -171,6 +193,8 @@ void group_init(MPID_Comm *comm_ptr)
 	pscom_socket_t *sock;
 	unsigned group_id = comm_ptr->context_id;
 	pscom_request_t *req;
+
+	comm_ptr->coll_fns = &mpid_psp_collective_functions;
 
 	connections = MPIU_Malloc(comm_size * sizeof(*connections));
 	assert(connections);
@@ -211,8 +235,7 @@ void group_init(MPID_Comm *comm_ptr)
 }
 
 
-static
-void group_cleanup(MPID_Comm *comm_ptr)
+void MPID_PSP_group_cleanup(MPID_Comm *comm_ptr)
 {
 	if (comm_ptr->group) {
 		pscom_group_close(comm_ptr->group);
@@ -222,91 +245,4 @@ void group_cleanup(MPID_Comm *comm_ptr)
 		pscom_request_free(comm_ptr->bcast_request);
 		comm_ptr->bcast_request = NULL;
 	}
-}
-
-
-static
-MPID_Collops mpid_psp_collective_functions = {
-	~0,    /* ref_count */
-	&MPID_PSP_Barrier, /* Barrier */
-	&MPID_PSP_Bcast, /* Bcast */
-	NULL, /* Gather */
-	NULL, /* Gatherv */
-	NULL, /* Scatter */
-	NULL, /* Scatterv */
-	NULL, /* Allgather */
-	NULL, /* Allgatherv */
-	NULL, /* Alltoall */
-	NULL, /* Alltoallv */
-	NULL, /* Alltoallw */
-	NULL, /* Reduce */
-	NULL, /* Allreduce */
-	NULL, /* Reduce_scatter */
-	NULL, /* Scan */
-	NULL, /* Exscan */
-	NULL  /* Reduce_scatter_block */
-};
-
-
-int MPID_PSP_comm_create_hook(MPID_Comm * comm)
-{
-	pscom_connection_t *con1st;
-	int i;
-
-	if (comm->comm_kind == MPID_INTERCOMM) {
-		/* do nothing on Intercomms */
-		return MPI_SUCCESS;
-	}
-
-	if (comm->mapper_head) {
-		/* Copy VCs from src_comm to comm. src_comm is hidden in comm->mapper_head. */
-		MPID_Comm * src_comm = comm->mapper_head->src_comm;
-		assert(comm->mapper_head == comm->mapper_tail);
-		assert(comm->local_size == src_comm->local_size);
-		assert(comm->remote_size == src_comm->remote_size);
-
-		comm->vcr  = MPID_VCRT_Dup(src_comm->vcr, src_comm->remote_size);
-	}
-
-
-	comm->group = NULL;
-
-	/* ToDo: Fixme! Hack: Use pscom_socket from the rank 0 connection. This will fail
-	   with mixed Intra and Inter communicator connections. */
-	con1st = MPID_PSCOM_rank2connection(comm, 0);
-	comm->pscom_socket = con1st ? con1st->socket : NULL;
-
-	/* Test if connections from different sockets are used ... */
-	for (i = 0; i < comm->local_size; i++) {
-		if (comm->pscom_socket && MPID_PSCOM_rank2connection(comm, i) &&
-		    (MPID_PSCOM_rank2connection(comm, i)->socket != comm->pscom_socket)) {
-			/* ... and disallow the usage of comm->pscom_socket in this case.
-			   This will disallow ANY_SOURCE receives on that communicator! */
-			comm->pscom_socket = NULL;
-			break;
-		}
-	}
-
-	if (!MPIDI_Process.env.enable_collectives) return MPI_SUCCESS;
-
-	comm->coll_fns = &mpid_psp_collective_functions;
-
-	group_init(comm);
-
-	D(printf("%s (comm:%p(%s, id:%08x, size:%u))\n",
-		 __func__, comm, comm->name, comm->context_id, comm->local_size););
-	return MPI_SUCCESS;
-}
-
-
-int MPID_PSP_comm_destroy_hook(MPID_Comm * comm)
-{
-	if (!MPIDI_Process.env.enable_collectives) return MPI_SUCCESS;
-
-	/* ToDo: Use comm Barrier before cleanup! */
-
-	group_cleanup(comm);
-
-	D(printf("%s\n", __func__););
-	return MPI_SUCCESS;
 }

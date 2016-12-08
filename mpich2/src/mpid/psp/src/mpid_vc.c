@@ -188,3 +188,73 @@ int MPID_Comm_get_lpid(MPID_Comm *comm_ptr, int idx, int * lpid_ptr, MPIU_BOOL i
 
 	return MPI_SUCCESS;
 }
+
+
+int MPID_PSP_comm_create_hook(MPID_Comm * comm)
+{
+	pscom_connection_t *con1st;
+	int i;
+
+	if (comm->comm_kind == MPID_INTERCOMM) {
+		/* do nothing on Intercomms */
+		return MPI_SUCCESS;
+	}
+
+	if (comm->mapper_head) {
+		/* Copy VCs from src_comm to comm. src_comm is hidden in comm->mapper_head. */
+		MPID_Comm * src_comm = comm->mapper_head->src_comm;
+		assert(comm->mapper_head == comm->mapper_tail);
+		assert(comm->local_size == src_comm->local_size);
+		assert(comm->remote_size == src_comm->remote_size);
+
+		comm->vcr  = MPID_VCRT_Dup(src_comm->vcr, src_comm->remote_size);
+	}
+
+
+	comm->group = NULL;
+
+	/* ToDo: Fixme! Hack: Use pscom_socket from the rank 0 connection. This will fail
+	   with mixed Intra and Inter communicator connections. */
+	con1st = MPID_PSCOM_rank2connection(comm, 0);
+	comm->pscom_socket = con1st ? con1st->socket : NULL;
+
+	/* Test if connections from different sockets are used ... */
+	for (i = 0; i < comm->local_size; i++) {
+		if (comm->pscom_socket && MPID_PSCOM_rank2connection(comm, i) &&
+		    (MPID_PSCOM_rank2connection(comm, i)->socket != comm->pscom_socket)) {
+			/* ... and disallow the usage of comm->pscom_socket in this case.
+			   This will disallow ANY_SOURCE receives on that communicator! */
+			comm->pscom_socket = NULL;
+			break;
+		}
+	}
+
+	if (!MPIDI_Process.env.enable_collectives) return MPI_SUCCESS;
+
+	MPID_PSP_group_init(comm);
+
+	/*
+	printf("%s (comm:%p(%s, id:%08x, size:%u))\n",
+	       __func__, comm, comm->name, comm->context_id, comm->local_size););
+	*/
+	return MPI_SUCCESS;
+}
+
+
+int MPID_PSP_comm_destroy_hook(MPID_Comm * comm)
+{
+	MPID_VCRT_Release(comm->vcr, comm->remote_size);
+	comm->vcr = NULL;
+
+	if (comm->comm_kind == MPID_INTERCOMM) {
+		MPID_VCRT_Release(comm->local_vcr, comm->local_size);
+	}
+
+	if (!MPIDI_Process.env.enable_collectives) return MPI_SUCCESS;
+
+	/* ToDo: Use comm Barrier before cleanup! */
+
+	MPID_PSP_group_cleanup(comm);
+
+	return MPI_SUCCESS;
+}

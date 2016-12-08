@@ -146,6 +146,8 @@ int MPID_Win_lock_internal(int dest, MPID_Win *win_ptr);
 int MPID_Win_unlock_internal(int dest, MPID_Win *win_ptr);
 int MPID_Win_wait_local_completion(int rank, MPID_Win *win_ptr);
 
+void MPID_PSP_group_init(MPID_Comm *comm_ptr);
+void MPID_PSP_group_cleanup(MPID_Comm *comm_ptr);
 
 void mpid_debug_init(void);
 const char *mpid_msgtype_str(enum MPID_PSP_MSGTYPE msg_type);

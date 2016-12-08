@@ -834,7 +834,7 @@ MPIDI_PG_t* MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr)
 
 	MPIU_Free(pg_ptr->cons);
 	MPIU_Free(pg_ptr->lpids);
-	MPIU_Free(pg_ptr->vcr);
+	MPID_VCRT_Release(pg_ptr->vcr, pg_ptr->size);
 	MPIU_Free(pg_ptr);
 
 	return pg_next;
