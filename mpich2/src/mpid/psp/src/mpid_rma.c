@@ -545,7 +545,7 @@ typedef struct _MPID_PSP_shm_attr_t
 	pthread_mutex_t* lock;
 } MPID_PSP_shm_attr_t;
 
-static int MPID_PSP_shm_attr_delete_fn(MPI_Comm, int, void*, void*);
+static int MPID_PSP_shm_attr_delete_fn(MPI_Win, int, void*, void*);
 static int MPID_PSP_split_type(MPID_Comm*, int, int, MPID_Info*, MPID_Comm**);
 static void MPID_PSP_shm_rma_set_attr(MPID_Win*, MPID_PSP_shm_attr_t*);
 static void MPID_PSP_shm_rma_get_attr(MPID_Win*, MPID_PSP_shm_attr_t**);
@@ -680,11 +680,11 @@ int MPID_PSP_split_type(MPID_Comm * comm_ptr, int split_type, int key,
 }
 
 static
-int MPID_PSP_shm_attr_delete_fn(MPI_Comm comm, int keyval, void *attribute_val, void *extra_state)
+int MPID_PSP_shm_attr_delete_fn(MPI_Win win, int keyval, void *attribute_val, void *extra_state)
 {
 	int i;
 	MPID_PSP_shm_attr_t *attr = (MPID_PSP_shm_attr_t*)attribute_val;
-	MPID_Comm *comm_ptr = NULL;
+	MPID_Win *win_ptr = NULL;
 
 	if(attr) {
 
@@ -699,8 +699,10 @@ int MPID_PSP_shm_attr_delete_fn(MPI_Comm comm, int keyval, void *attribute_val, 
 		MPIU_Free(attr->disp_buf);
 		MPIU_Free(attr->shmid_buf);
 
-		MPID_Comm_get_ptr(comm, comm_ptr);
-		if(comm_ptr->rank == 0) {
+		MPID_Win_get_ptr(win, win_ptr);
+		assert(win_ptr);
+		assert(win_ptr->comm_ptr);
+		if(win_ptr->comm_ptr->rank == 0) {
 			pthread_mutex_destroy(attr->lock);
 		}
 		shmdt(attr->lock);
