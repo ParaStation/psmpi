@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include "mpidimpl.h"
+#include "mpl_utlist.h"
 
 static int ENABLE_REAL_DISCONNECT = 1;
 static int ENABLE_LAZY_DISCONNECT = 1;
@@ -94,17 +95,171 @@ MPID_VC_t **MPID_VCRT_Create(int size)
 }
 
 
+static
+void vcr_copy(MPID_VC_t **vcr_dest, MPID_VC_t **vcr_src, unsigned vcr_size)
+{
+	unsigned i;
+	for (i = 0; i < vcr_size; i++) {
+		if (vcr_src[i]) {
+			vcr_dest[i] = MPID_VC_Dup(vcr_src[i]);
+		}
+	}
+}
+
+
 MPID_VC_t **MPID_VCRT_Dup(MPID_VC_t **vcrt, int size)
 {
 	MPID_VC_t **vcrt_new = MPID_VCRT_Create(size);
-	int i;
 
-	for (i = 0; i < size; i++) {
-		if (vcrt[i]) {
-			vcrt_new[i] = MPID_VC_Dup(vcrt[i]);
+	vcr_copy(vcrt_new, vcrt, size);
+
+	return vcrt_new;
+}
+
+
+static
+MPID_VC_t **comm_local_vcr(MPID_Comm * comm) {
+	if (comm->comm_kind == MPID_INTRACOMM) {
+		return comm->vcr;
+	} else {
+		assert(comm->comm_kind == MPID_INTERCOMM);
+		return comm->local_vcr;
+	}
+}
+
+
+static
+MPID_VC_t **comm_remote_vcr(MPID_Comm * comm) {
+	assert(comm->comm_kind == MPID_INTRACOMM);
+	return comm->vcr;
+}
+
+
+/*
+ * mapper tools
+ * This should be implemented in a higher sw layer.
+ */
+static
+unsigned mapper_size(MPIR_Comm_map_t *mapper)
+{
+	if (mapper->type == MPIR_COMM_MAP_IRREGULAR) {
+		return mapper->src_mapping_size;
+	} else if (mapper->dir == MPIR_COMM_MAP_DIR_L2L || mapper->dir == MPIR_COMM_MAP_DIR_L2R) {
+		return mapper->src_comm->local_size;
+	} else {
+		assert(mapper->dir == MPIR_COMM_MAP_DIR_R2L || mapper->dir == MPIR_COMM_MAP_DIR_R2R);
+		return mapper->src_comm->remote_size;
+	}
+}
+
+
+static
+MPID_VC_t **mapper_src_vcr(MPIR_Comm_map_t *mapper)
+{
+	if (mapper->dir == MPIR_COMM_MAP_DIR_L2L || mapper->dir == MPIR_COMM_MAP_DIR_L2R) {
+		return comm_local_vcr(mapper->src_comm);
+	} else {
+		assert(mapper->dir == MPIR_COMM_MAP_DIR_R2L || mapper->dir == MPIR_COMM_MAP_DIR_R2R);
+		return comm_remote_vcr(mapper->src_comm);
+	}
+}
+
+
+/*
+ * mapper_list tools
+ * This should be implemented in a higher sw layer.
+ */
+static
+unsigned mapper_list_dest_local_size(MPIR_Comm_map_t *mapper_head)
+{
+	MPIR_Comm_map_t *mapper;
+	unsigned size = 0;
+	MPL_LL_FOREACH(mapper_head, mapper) {
+		if (mapper->dir == MPIR_COMM_MAP_DIR_L2L ||
+		    mapper->dir == MPIR_COMM_MAP_DIR_R2L) {
+			size += mapper_size(mapper);
 		}
 	}
-	return vcrt_new;
+	return size;
+}
+
+
+static
+unsigned mapper_list_dest_remote_size(MPIR_Comm_map_t *mapper_head)
+{
+	MPIR_Comm_map_t *mapper;
+	unsigned size = 0;
+	MPL_LL_FOREACH(mapper_head, mapper) {
+		if (mapper->dir == MPIR_COMM_MAP_DIR_L2R ||
+		    mapper->dir == MPIR_COMM_MAP_DIR_R2R) {
+			size += mapper_size(mapper);
+		}
+	}
+	return size;
+}
+
+
+static
+void mapper_list_map_vcr(MPIR_Comm_map_t *mapper_head,
+			 MPID_VC_t **vcr_dest_local, unsigned vcr_dest_local_size_max,
+			 MPID_VC_t **vcr_dest_remote, unsigned vcr_dest_remote_size_max)
+{
+	MPIR_Comm_map_t *mapper;
+
+	MPL_LL_FOREACH(mapper_head, mapper) {
+		MPID_VC_t **vcr_src = mapper_src_vcr(mapper);
+		unsigned size = mapper_size(mapper);
+
+		switch (mapper->dir) {
+		case MPIR_COMM_MAP_DIR_L2L:
+		case MPIR_COMM_MAP_DIR_R2L:
+			assert(size <= vcr_dest_local_size_max);
+
+			vcr_copy(vcr_dest_local, vcr_src, size);
+
+			vcr_dest_local += size;
+			vcr_dest_local_size_max -= size;
+			break;
+		case MPIR_COMM_MAP_DIR_L2R:
+		case MPIR_COMM_MAP_DIR_R2R:
+			assert(size <= vcr_dest_remote_size_max);
+
+			vcr_copy(vcr_dest_remote, vcr_src, size);
+
+			vcr_dest_remote += size;
+			vcr_dest_remote_size_max -= size;
+			break;
+		}
+	}
+	assert(vcr_dest_local_size_max == 0);
+	assert(vcr_dest_remote_size_max == 0);
+}
+
+
+static
+void MPID_VCRT_Create_mapper(MPID_Comm * comm, MPIR_Comm_map_t *mapper_head)
+{
+	unsigned vcr_local_size = mapper_list_dest_local_size(mapper_head);
+	MPID_VC_t **vcr_local = MPID_VCRT_Create(vcr_local_size);
+
+	unsigned vcr_remote_size = 0;
+	MPID_VC_t **vcr_remote = NULL;
+
+	if (comm->comm_kind == MPID_INTRACOMM) {
+		// vcr is local, vcr_local is unused
+		comm->vcr = vcr_local;
+	} else {
+		assert(comm->comm_kind == MPID_INTERCOMM);
+
+		vcr_remote_size = mapper_list_dest_remote_size(mapper_head);
+		vcr_remote = MPID_VCRT_Create(vcr_remote_size);
+
+		// vcr is remote, vcr_local is local
+		comm->vcr = vcr_remote;
+		comm->local_vcr = vcr_local;
+	}
+
+	mapper_list_map_vcr(mapper_head, vcr_local, vcr_local_size, vcr_remote, vcr_remote_size);
 }
 
 
@@ -201,13 +356,7 @@ int MPID_PSP_comm_create_hook(MPID_Comm * comm)
 	}
 
 	if (comm->mapper_head) {
-		/* Copy VCs from src_comm to comm. src_comm is hidden in comm->mapper_head. */
-		MPID_Comm * src_comm = comm->mapper_head->src_comm;
-		assert(comm->mapper_head == comm->mapper_tail);
-		assert(comm->local_size == src_comm->local_size);
-		assert(comm->remote_size == src_comm->remote_size);
-
-		comm->vcr  = MPID_VCRT_Dup(src_comm->vcr, src_comm->remote_size);
+		MPID_VCRT_Create_mapper(comm, comm->mapper_head);
 	}
 
 

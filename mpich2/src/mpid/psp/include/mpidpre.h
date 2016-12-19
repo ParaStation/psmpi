@@ -427,8 +427,10 @@ typedef struct MPIDI_VCON MPIDI_VCON;
 	pscom_socket_t	*pscom_socket;					\
 	pscom_group_t	*group;						\
 	pscom_request_t *bcast_request;					\
-	MPID_VC_t	**vcr; /* virtual connection reference table */	\
-	MPID_VC_t	**local_vcr; /* virtual connection reference table */
+	MPID_VC_t	**vcr; /* virtual connection reference table.	\
+				  INTRA: local  INTER: remote */	\
+	MPID_VC_t	**local_vcr; /* virtual connection reference table \
+					INTRA: unused INTER: local */
 
 
 /* Somewhere in the middle of the GCC 2.96 development cycle, we implemented
