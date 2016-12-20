@@ -101,7 +101,30 @@ void vcr_copy(MPID_VC_t **vcr_dest, MPID_VC_t **vcr_src, unsigned vcr_size)
 	unsigned i;
 	for (i = 0; i < vcr_size; i++) {
 		if (vcr_src[i]) {
+			/*
+			printf("%s:%u:%s copy (%p[%u] , %p[%u] ) con:%p\n",
+			       __FILE__, __LINE__, __func__,
+			       vcr_dest, i, vcr_src, i, vcr_src[i]->con);
+			*/
 			vcr_dest[i] = MPID_VC_Dup(vcr_src[i]);
+		}
+	}
+}
+
+
+static
+void vcr_map(MPID_VC_t **vcr_dest, MPID_VC_t **vcr_src, unsigned vcr_size, int *mapping)
+{
+	unsigned i;
+	for (i = 0; i < vcr_size; i++) {
+		MPID_VC_t *vc_src = vcr_src[mapping[i]];
+		if (vc_src) {
+			/*
+			printf("%s:%u:%s map (%p[%u] , %p[%u] ) con:%p\n",
+			       __FILE__, __LINE__, __func__,
+			       vcr_dest, i, vcr_src, mapping[i], vc_src->con);
+			*/
+			vcr_dest[i] = MPID_VC_Dup(vc_src);
 		}
 	}
 }
@@ -208,6 +231,7 @@ void mapper_list_map_vcr(MPIR_Comm_map_t *mapper_head,
 
 	MPL_LL_FOREACH(mapper_head, mapper) {
 		MPID_VC_t **vcr_src = mapper_src_vcr(mapper);
+		MPID_VC_t **vcr_dest = NULL;
 		unsigned size = mapper_size(mapper);
 
 		switch (mapper->dir) {
@@ -215,7 +239,7 @@ void mapper_list_map_vcr(MPIR_Comm_map_t *mapper_head,
 		case MPIR_COMM_MAP_DIR_R2L:
 			assert(size <= vcr_dest_local_size_max);
 
-			vcr_copy(vcr_dest_local, vcr_src, size);
+			vcr_dest = vcr_dest_local;
 
 			vcr_dest_local += size;
 			vcr_dest_local_size_max -= size;
@@ -224,11 +248,17 @@ void mapper_list_map_vcr(MPIR_Comm_map_t *mapper_head,
 		case MPIR_COMM_MAP_DIR_R2R:
 			assert(size <= vcr_dest_remote_size_max);
 
-			vcr_copy(vcr_dest_remote, vcr_src, size);
+			vcr_dest = vcr_dest_remote;
 
 			vcr_dest_remote += size;
 			vcr_dest_remote_size_max -= size;
 			break;
+		}
+		if (mapper->type == MPIR_COMM_MAP_DUP) {
+			vcr_copy(vcr_dest, vcr_src, size);
+		} else {
+			assert(mapper->type == MPIR_COMM_MAP_IRREGULAR);
+			vcr_map(vcr_dest, vcr_src, size, mapper->src_mapping);
 		}
 	}
 	assert(vcr_dest_local_size_max == 0);
