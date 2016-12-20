@@ -94,6 +94,12 @@ MPID_VC_t **MPID_VCRT_Create(int size)
 	return vcrt;
 }
 
+//	pscom_connection_t *con;
+//	int lpid;
+//	int pg_rank;
+//	MPIDI_PG_t * pg;
+//	int refcnt;
+
 
 static
 void vcr_copy(MPID_VC_t **vcr_dest, MPID_VC_t **vcr_src, unsigned vcr_size)
@@ -153,7 +159,6 @@ MPID_VC_t **comm_local_vcr(MPID_Comm * comm) {
 
 static
 MPID_VC_t **comm_remote_vcr(MPID_Comm * comm) {
-	assert(comm->comm_kind == MPID_INTRACOMM);
 	return comm->vcr;
 }
 
@@ -280,12 +285,16 @@ void MPID_VCRT_Create_mapper(MPID_Comm * comm, MPIR_Comm_map_t *mapper_head)
 		comm->vcr = vcr_local;
 	} else {
 		assert(comm->comm_kind == MPID_INTERCOMM);
+		if (!comm->vcr) {
+			vcr_remote_size = mapper_list_dest_remote_size(mapper_head);
+			vcr_remote = MPID_VCRT_Create(vcr_remote_size);
 
-		vcr_remote_size = mapper_list_dest_remote_size(mapper_head);
-		vcr_remote = MPID_VCRT_Create(vcr_remote_size);
-
-		// vcr is remote, vcr_local is local
-		comm->vcr = vcr_remote;
+			// vcr is remote, vcr_local is local
+			comm->vcr = vcr_remote;
+		} else {
+			// vcr already set by MPID_Create_intercomm_from_lpids();
+		}
+		// assert(!comm->local_vcr);
 		comm->local_vcr = vcr_local;
 	}
 
@@ -380,13 +389,13 @@ int MPID_PSP_comm_create_hook(MPID_Comm * comm)
 	pscom_connection_t *con1st;
 	int i;
 
+	if (comm->mapper_head) {
+		MPID_VCRT_Create_mapper(comm, comm->mapper_head);
+	}
+
 	if (comm->comm_kind == MPID_INTERCOMM) {
 		/* do nothing on Intercomms */
 		return MPI_SUCCESS;
-	}
-
-	if (comm->mapper_head) {
-		MPID_VCRT_Create_mapper(comm, comm->mapper_head);
 	}
 
 
