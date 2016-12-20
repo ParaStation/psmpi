@@ -9,6 +9,7 @@ win_sync_err_unlockall 2 mpiversion=3.0
 win_sync_err_reqops 2 mpiversion=3.0
 win_flavor_err_shm 2 mpiversion=3.0
 win_flavor_err_dyn 2 mpiversion=3.0
+win_shm_multiple 4 mpiversion=3.0
 spawn_isend 2
 spawn_ssend 2
 spawn_anysrc 2 timeLimit=30

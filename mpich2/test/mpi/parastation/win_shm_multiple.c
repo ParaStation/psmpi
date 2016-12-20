@@ -77,5 +77,9 @@ int main(int argc, char *argv[])
 
         MPI_Finalize();
 
+	if(comm_world_rank == 0) {
+		printf(" No Errors\n");
+	}
+
         return 0;
 }

@@ -6234,6 +6234,7 @@ mpich2/test/mpi/parastation/spawn_universe.c \
 mpich2/test/mpi/parastation/testlist \
 mpich2/test/mpi/parastation/win_flavor_err_dyn.c \
 mpich2/test/mpi/parastation/win_flavor_err_shm.c \
+mpich2/test/mpi/parastation/win_shm_multiple.c \
 mpich2/test/mpi/parastation/win_sync_err_flush.c \
 mpich2/test/mpi/parastation/win_sync_err_flushall.c \
 mpich2/test/mpi/parastation/win_sync_err_lockall_at.c \
