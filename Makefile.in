@@ -71,7 +71,7 @@ HYDRA_BIN += mpiexec mpirun
 HYDRA_BIN += mpiexec.hydra hydra_pmi_proxy hydra_persist hydra_nameserver
 HYDRA_FILES += $(HYDRA_BIN:%=bin/%) $(HYDRA_BIN:%=bin/%.py) $(HYDRA_BIN:%=bin/%.pyc) $(HYDRA_BIN:%=bin/%.pyo)
 HYDRA_FILES += share/man/man1/mpiexec.1 share/doc/www1/mpiexec.html
-LA_FILES += libmpichcxx.la libfmpich.la libmpl.la libopa.la libmpich.la libmpichf90.la
+LA_FILES += lib*.la
 
 
 install_mpich2:
