@@ -1,3 +1,7 @@
+2017-02-07  Jens Hauke  <hauke@par-tec.com>	-	5.1.8-1
+
+	* Packaging: Removing .la files from the distribution.
+
 2016-12-22  Carsten Clauss <clauss@par-tec.com>	-	5.1.7-1
 
 	* Fix for segfaults when freeing multiple SHARED-MEMORY windows
