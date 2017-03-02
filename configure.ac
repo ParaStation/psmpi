@@ -375,7 +375,5 @@ fi
 
 #
 # Local Variables:
-#  compile-command: "autoconf"
+#  compile-command: "module load automake-1.15 && autoreconf -vif"
 # End:
-#
-#
