@@ -1,3 +1,7 @@
+2017-03-02  Carsten Clauss <clauss@par-tec.com>	-	5.1.9-1
+
+	* Fixed integer overflow in MPID_Win_allocate_shared()
+
 2017-02-07  Jens Hauke  <hauke@par-tec.com>	-	5.1.8-1
 
 	* Packaging: Removing .la files from the distribution.
