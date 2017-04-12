@@ -61,7 +61,6 @@ struct MPID_VC {
 
 MPID_VC_t **MPID_VCRT_Create(int size);
 MPID_VC_t **MPID_VCRT_Dup(MPID_VC_t **vcrt, int size);
-void MPID_VCRT_Release(MPID_VC_t **vcrt, unsigned size);
 
 MPID_VC_t *MPID_VC_Dup(MPID_VC_t *orig_vcr);
 MPID_VC_t *MPID_VC_Create(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid);

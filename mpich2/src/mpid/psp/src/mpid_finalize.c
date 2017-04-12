@@ -76,10 +76,6 @@ int MPID_Finalize(void)
 	MPIR_Comm_release_always(MPIR_Process.comm_self);
 	MPIR_Comm_release_always(MPIR_Process.comm_world);
 
-	/* Cleanup standard comm's */
-	/* MPID_VCRT_Release(MPIR_Process.comm_world->vcrt);
-	   MPID_VCRT_Release(MPIR_Process.comm_self->vcrt);*/
-
 	/* Cleanups */
 	MPIDI_PG_t* pg_ptr = MPIDI_Process.my_pg->next;
 	while(pg_ptr) {

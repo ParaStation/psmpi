@@ -133,16 +133,6 @@ void MPID_VCRT_Destroy(MPID_VC_t **vcrt, unsigned size)
 	MPIU_Free(vcrt);
 }
 
-
-void MPID_VCRT_Release(MPID_VC_t **vcrt, unsigned size)
-{
-	Dprintf("(vcrt=%p), size=%u",
-		vcrt, size);
-
-	MPID_VCRT_Destroy(vcrt, size);
-}
-
-
 /* used in mpid_init.c to set comm_world */
 MPID_VC_t *MPID_VC_Create(MPIDI_PG_t *pg, int pg_rank, pscom_connection_t *con, int lpid)
 {
