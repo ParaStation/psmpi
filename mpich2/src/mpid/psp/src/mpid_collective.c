@@ -253,6 +253,8 @@ int MPID_PSP_comm_create_hook(MPID_Comm * comm)
 	pscom_connection_t *con1st;
 	int i;
 
+	MPID_PSP_comm_add_map(comm);
+
 	if (comm->comm_kind == MPID_INTERCOMM) {
 		/* do nothing on Intercomms */
 		return MPI_SUCCESS;

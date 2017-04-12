@@ -65,6 +65,7 @@ MPID_VC_t **MPID_VCRT_Dup(MPID_VC_t **vcrt, int size);
 MPID_VC_t *MPID_VC_Dup(MPID_VC_t *orig_vcr);
 MPID_VC_t *MPID_VC_Create(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid);
 
+int MPID_PSP_comm_add_map(MPID_Comm * comm);
 
 int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr);
 MPIDI_PG_t* MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr);

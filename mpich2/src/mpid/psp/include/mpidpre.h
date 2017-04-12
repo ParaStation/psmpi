@@ -427,6 +427,7 @@ typedef struct MPIDI_VCON MPIDI_VCON;
 	pscom_socket_t	*pscom_socket;					\
 	pscom_group_t	*group;						\
 	pscom_request_t *bcast_request;					\
+	int              is_disconnected;				\
 	MPID_VC_t	**vcr; /* virtual connection reference table */	\
 	MPID_VC_t	**local_vcr; /* virtual connection reference table */
 

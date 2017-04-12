@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include "mpidimpl.h"
+#include "mpl_utlist.h"
 
 static int ENABLE_REAL_DISCONNECT = 1;
 static int ENABLE_LAZY_DISCONNECT = 1;
@@ -72,15 +73,10 @@ MPID_VC_t *VCR_get(MPID_VC_t *vcr)
 }
 
 
-#define FCNAME "MPID_VCRT_Create"
-#define FUNCNAME MPID_VCRT_Create
 MPID_VC_t **MPID_VCRT_Create(int size)
 {
-	int mpi_errno = MPI_SUCCESS;
+	int i;
 	MPID_VC_t **vcrt;
-
-	MPIDI_STATE_DECL(MPID_STATE_MPID_VCRT_CREATE);
-	MPIDI_FUNC_ENTER(MPID_STATE_MPID_VCRT_CREATE);
 
 	assert(size >= 0);
 
@@ -88,20 +84,14 @@ MPID_VC_t **MPID_VCRT_Create(int size)
 
 	Dprintf("(size=%d), vcrt=%p", size, vcrt);
 
-	if (vcrt) {
-		int i;
-		for (i = 0; i < size; i++) {
-			vcrt[i] = NULL;
-		}
-	} else { /* Error */
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	assert(vcrt);
+
+	for (i = 0; i < size; i++) {
+		vcrt[i] = NULL;
 	}
 
-	MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_CREATE);
 	return vcrt;
 }
-#undef FUNCNAME
-#undef FCNAME
 
 
 MPID_VC_t **MPID_VCRT_Dup(MPID_VC_t **vcrt, int size)
@@ -187,4 +177,186 @@ int MPID_Comm_get_lpid(MPID_Comm *comm_ptr, int idx, int * lpid_ptr, MPIU_BOOL i
 	}
 
 	return MPI_SUCCESS;
+}
+
+
+static void dup_vcrt(MPID_VC_t **src_vcrt, MPID_VC_t ***dest_vcrt,
+		     MPIR_Comm_map_t *mapper, int src_comm_size, int vcrt_size,
+                     int vcrt_offset)
+{
+	int flag, i;
+
+	/* try to find the simple case where the new comm is a simple
+	 * duplicate of the previous comm.  in that case, we simply add a
+	 * reference to the previous VCRT instead of recreating it. */
+	if (mapper->type == MPIR_COMM_MAP_DUP && src_comm_size == vcrt_size) {
+		*dest_vcrt = src_vcrt;
+		return;
+	}
+	else if (mapper->type == MPIR_COMM_MAP_IRREGULAR &&
+		 mapper->src_mapping_size == vcrt_size) {
+		/* if the mapping array is exactly the same as the original
+		 * comm's VC list, there is no need to create a new VCRT.
+		 * instead simply point to the original comm's VCRT and bump
+		 * up it's reference count */
+		flag = 1;
+		for (i = 0; i < mapper->src_mapping_size; i++)
+			if (mapper->src_mapping[i] != i)
+				flag = 0;
+
+		if (flag) {
+			*dest_vcrt = src_vcrt;
+			return;
+		}
+	}
+
+	/* we are in the more complex case where we need to allocate a new
+	 * VCRT */
+
+	if (!vcrt_offset) {
+		(*dest_vcrt) = MPID_VCRT_Create(vcrt_size);
+	}
+
+	if (mapper->type == MPIR_COMM_MAP_DUP) {
+		for (i = 0; i < src_comm_size; i++)
+			(*dest_vcrt)[i + vcrt_offset] = MPID_VC_Dup(src_vcrt[i]);
+	}
+	else {
+		for (i = 0; i < mapper->src_mapping_size; i++)
+			(*dest_vcrt)[i + vcrt_offset] = MPID_VC_Dup(src_vcrt[mapper->src_mapping[i]]);
+	}
+}
+
+static inline int map_size(MPIR_Comm_map_t map)
+{
+	if (map.type == MPIR_COMM_MAP_IRREGULAR)
+		return map.src_mapping_size;
+	else if (map.dir == MPIR_COMM_MAP_DIR_L2L || map.dir == MPIR_COMM_MAP_DIR_L2R)
+		return map.src_comm->local_size;
+	else
+		return map.src_comm->remote_size;
+}
+
+#undef FUNCNAME
+#define FUNCNAME MPID_PSP_comm_add_map
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+int MPID_PSP_comm_add_map(MPID_Comm * comm)
+{
+	int mpi_errno = MPI_SUCCESS;
+	MPIR_Comm_map_t *mapper;
+	MPID_Comm *src_comm;
+	int vcrt_size, vcrt_offset;
+
+	/* initialize the is_disconnected variable to FALSE.  this will be
+	 * set to TRUE if the communicator is freed by an
+	 * MPI_COMM_DISCONNECT call. */
+
+	comm->is_disconnected = 0;
+
+	/* do some sanity checks */
+	MPL_LL_FOREACH(comm->mapper_head, mapper) {
+		if (mapper->src_comm->comm_kind == MPID_INTRACOMM)
+			MPIU_Assert(mapper->dir == MPIR_COMM_MAP_DIR_L2L ||
+				    mapper->dir == MPIR_COMM_MAP_DIR_L2R);
+		if (comm->comm_kind == MPID_INTRACOMM)
+			MPIU_Assert(mapper->dir == MPIR_COMM_MAP_DIR_L2L ||
+				    mapper->dir == MPIR_COMM_MAP_DIR_R2L);
+	}
+
+	/* First, handle all the mappers that contribute to the local part
+	 * of the comm */
+	vcrt_size = 0;
+	MPL_LL_FOREACH(comm->mapper_head, mapper) {
+		if (mapper->dir == MPIR_COMM_MAP_DIR_L2R ||
+		    mapper->dir == MPIR_COMM_MAP_DIR_R2R)
+			continue;
+
+		vcrt_size += map_size(*mapper);
+	}
+
+	vcrt_offset = 0;
+	MPL_LL_FOREACH(comm->mapper_head, mapper) {
+		src_comm = mapper->src_comm;
+
+		if (mapper->dir == MPIR_COMM_MAP_DIR_L2R ||
+		    mapper->dir == MPIR_COMM_MAP_DIR_R2R)
+			continue;
+
+		if (mapper->dir == MPIR_COMM_MAP_DIR_L2L) {
+			if (src_comm->comm_kind == MPID_INTRACOMM && comm->comm_kind == MPID_INTRACOMM) {
+				dup_vcrt(src_comm->vcr, &comm->vcr, mapper, mapper->src_comm->local_size,
+					 vcrt_size, vcrt_offset);
+			}
+			else if (src_comm->comm_kind == MPID_INTRACOMM && comm->comm_kind == MPID_INTERCOMM)
+				dup_vcrt(src_comm->vcr, &comm->local_vcr, mapper, mapper->src_comm->local_size,
+					 vcrt_size, vcrt_offset);
+			else if (src_comm->comm_kind == MPID_INTERCOMM && comm->comm_kind == MPID_INTRACOMM) {
+				dup_vcrt(src_comm->local_vcr, &comm->vcr, mapper, mapper->src_comm->local_size,
+					 vcrt_size, vcrt_offset);
+			}
+			else
+				dup_vcrt(src_comm->local_vcr, &comm->local_vcr, mapper,
+					 mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+		}
+		else {  /* mapper->dir == MPIR_COMM_MAP_DIR_R2L */
+			MPIU_Assert(src_comm->comm_kind == MPID_INTERCOMM);
+			if (comm->comm_kind == MPID_INTRACOMM) {
+				dup_vcrt(src_comm->vcr, &comm->vcr, mapper, mapper->src_comm->remote_size,
+					 vcrt_size, vcrt_offset);
+			}
+			else
+				dup_vcrt(src_comm->vcr, &comm->local_vcr, mapper, mapper->src_comm->remote_size,
+					 vcrt_size, vcrt_offset);
+		}
+		vcrt_offset += map_size(*mapper);
+	}
+
+	/* Next, handle all the mappers that contribute to the remote part
+	 * of the comm (only valid for intercomms) */
+	vcrt_size = 0;
+	MPL_LL_FOREACH(comm->mapper_head, mapper) {
+		if (mapper->dir == MPIR_COMM_MAP_DIR_L2L ||
+		    mapper->dir == MPIR_COMM_MAP_DIR_R2L)
+			continue;
+
+		vcrt_size += map_size(*mapper);
+	}
+	vcrt_offset = 0;
+	MPL_LL_FOREACH(comm->mapper_head, mapper) {
+		src_comm = mapper->src_comm;
+
+		if (mapper->dir == MPIR_COMM_MAP_DIR_L2L ||
+		    mapper->dir == MPIR_COMM_MAP_DIR_R2L)
+			continue;
+
+		MPIU_Assert(comm->comm_kind == MPID_INTERCOMM);
+
+		if (mapper->dir == MPIR_COMM_MAP_DIR_L2R) {
+			if (src_comm->comm_kind == MPID_INTRACOMM)
+				dup_vcrt(src_comm->vcr, &comm->vcr, mapper, mapper->src_comm->local_size,
+					 vcrt_size, vcrt_offset);
+			else
+				dup_vcrt(src_comm->local_vcr, &comm->vcr, mapper,
+					 mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+		}
+		else {  /* mapper->dir == MPIR_COMM_MAP_DIR_R2R */
+			MPIU_Assert(src_comm->comm_kind == MPID_INTERCOMM);
+			dup_vcrt(src_comm->vcr, &comm->vcr, mapper, mapper->src_comm->remote_size,
+				 vcrt_size, vcrt_offset);
+		}
+		vcrt_offset += map_size(*mapper);
+	}
+
+	if (comm->comm_kind == MPID_INTERCOMM) {
+		/* setup the vcrt for the local_comm in the intercomm */
+		if (comm->local_comm) {
+			comm->local_comm->vcr = comm->local_vcr;
+		}
+	}
+
+fn_exit:
+	return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
