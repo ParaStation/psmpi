@@ -197,11 +197,19 @@ int MPID_Comm_get_lpid(MPID_Comm *comm_ptr, int idx, int * lpid_ptr, MPIU_BOOL i
 }
 
 
-/* Code adopted (and adapted) from CH3: */
+/*
+ * Mapper Tools
+ *
+ * Code adopted (and adapted) from CH3.
+ *
+ * (This should be implemented in a higher SW layer...)
+ *
+ */
 
-static void dup_vcrt(MPID_VCRT_t* src_vcrt, MPID_VCRT_t **dest_vcrt,
-		     MPIR_Comm_map_t *mapper, int src_comm_size, int vcrt_size,
-                     int vcrt_offset)
+static
+void MPID_PSP_mapper_dup_vcrt(MPID_VCRT_t* src_vcrt, MPID_VCRT_t **dest_vcrt,
+			      MPIR_Comm_map_t *mapper, int src_comm_size, int vcrt_size,
+			      int vcrt_offset)
 {
 	int flag, i;
 
@@ -246,127 +254,164 @@ static void dup_vcrt(MPID_VCRT_t* src_vcrt, MPID_VCRT_t **dest_vcrt,
 	}
 }
 
-static inline int map_size(MPIR_Comm_map_t map)
+static
+unsigned MPID_PSP_mapper_size(MPIR_Comm_map_t *mapper)
 {
-	if (map.type == MPIR_COMM_MAP_IRREGULAR)
-		return map.src_mapping_size;
-	else if (map.dir == MPIR_COMM_MAP_DIR_L2L || map.dir == MPIR_COMM_MAP_DIR_L2R)
-		return map.src_comm->local_size;
-	else
-		return map.src_comm->remote_size;
+	if (mapper->type == MPIR_COMM_MAP_IRREGULAR) {
+		return mapper->src_mapping_size;
+	} else if (mapper->dir == MPIR_COMM_MAP_DIR_L2L || mapper->dir == MPIR_COMM_MAP_DIR_L2R) {
+		return mapper->src_comm->local_size;
+	} else {
+		assert(mapper->dir == MPIR_COMM_MAP_DIR_R2L || mapper->dir == MPIR_COMM_MAP_DIR_R2R);
+		return mapper->src_comm->remote_size;
+	}
+}
+
+
+/*
+ * mapper_list tools
+ * This should be implemented in a higher sw layer.
+ */
+static
+unsigned MPID_PSP_mapper_list_dest_local_size(MPIR_Comm_map_t *mapper_head)
+{
+	MPIR_Comm_map_t *mapper;
+	unsigned size = 0;
+	MPL_LL_FOREACH(mapper_head, mapper) {
+		if (mapper->dir == MPIR_COMM_MAP_DIR_L2L ||
+		    mapper->dir == MPIR_COMM_MAP_DIR_R2L) {
+			size += MPID_PSP_mapper_size(mapper);
+		}
+	}
+	return size;
+}
+
+
+static
+unsigned MPID_PSP_mapper_list_dest_remote_size(MPIR_Comm_map_t *mapper_head)
+{
+	MPIR_Comm_map_t *mapper;
+	unsigned size = 0;
+	MPL_LL_FOREACH(mapper_head, mapper) {
+		if (mapper->dir == MPIR_COMM_MAP_DIR_L2R ||
+		    mapper->dir == MPIR_COMM_MAP_DIR_R2R) {
+			size += MPID_PSP_mapper_size(mapper);
+		}
+	}
+	return size;
+}
+
+
+static
+void MPID_PSP_mapper_list_map_local_vcr(MPID_Comm *comm, int vcrt_size)
+{
+	MPID_Comm *src_comm;
+	MPIR_Comm_map_t *mapper;
+	int vcrt_offset = 0;
+
+	MPL_LL_FOREACH(comm->mapper_head, mapper) {
+		src_comm = mapper->src_comm;
+
+		switch(mapper->dir) {
+
+		case MPIR_COMM_MAP_DIR_L2R:
+		case MPIR_COMM_MAP_DIR_R2R:
+			break;
+
+		case MPIR_COMM_MAP_DIR_L2L:
+			if (src_comm->comm_kind == MPID_INTRACOMM && comm->comm_kind == MPID_INTRACOMM) {
+				MPID_PSP_mapper_dup_vcrt(src_comm->vcrt, &comm->vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
+			}
+			else if (src_comm->comm_kind == MPID_INTRACOMM && comm->comm_kind == MPID_INTERCOMM) {
+				MPID_PSP_mapper_dup_vcrt(src_comm->vcrt, &comm->local_vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+				MPID_PSP_comm_set_local_vcrt(comm, comm->local_vcrt);
+			}
+			else if (src_comm->comm_kind == MPID_INTERCOMM && comm->comm_kind == MPID_INTRACOMM) {
+				MPID_PSP_mapper_dup_vcrt(src_comm->local_vcrt, &comm->vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
+			}
+			else {
+				MPID_PSP_mapper_dup_vcrt(src_comm->local_vcrt, &comm->local_vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+				MPID_PSP_comm_set_local_vcrt(comm, comm->local_vcrt);
+			}
+			vcrt_offset += MPID_PSP_mapper_size(mapper);
+			break;
+
+		case MPIR_COMM_MAP_DIR_R2L:
+			MPIU_Assert(src_comm->comm_kind == MPID_INTERCOMM);
+			if (comm->comm_kind == MPID_INTRACOMM) {
+				MPID_PSP_mapper_dup_vcrt(src_comm->vcrt, &comm->vcrt, mapper, mapper->src_comm->remote_size, vcrt_size, vcrt_offset);
+				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
+			}
+			else {
+				MPID_PSP_mapper_dup_vcrt(src_comm->vcrt, &comm->local_vcrt, mapper, mapper->src_comm->remote_size, vcrt_size, vcrt_offset);
+				MPID_PSP_comm_set_vcrt(comm, comm->local_vcrt);
+			}
+			vcrt_offset += MPID_PSP_mapper_size(mapper);
+			break;
+
+		default: assert(0);
+		}
+	}
+}
+
+static
+void MPID_PSP_mapper_list_map_remote_vcr(MPID_Comm *comm, int vcrt_size)
+{
+	MPID_Comm *src_comm;
+	MPIR_Comm_map_t *mapper;
+	int vcrt_offset = 0;
+
+	MPL_LL_FOREACH(comm->mapper_head, mapper) {
+		src_comm = mapper->src_comm;
+
+		switch(mapper->dir) {
+
+		case MPIR_COMM_MAP_DIR_L2L:
+		case MPIR_COMM_MAP_DIR_R2L:
+			break;
+
+		case MPIR_COMM_MAP_DIR_L2R:
+			MPIU_Assert(comm->comm_kind == MPID_INTERCOMM);
+			if (src_comm->comm_kind == MPID_INTRACOMM) {
+				MPID_PSP_mapper_dup_vcrt(src_comm->vcrt, &comm->vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
+			}
+			else {
+				MPID_PSP_mapper_dup_vcrt(src_comm->local_vcrt, &comm->vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
+			}
+			vcrt_offset += MPID_PSP_mapper_size(mapper);
+			break;
+
+		case MPIR_COMM_MAP_DIR_R2R:
+			MPIU_Assert(comm->comm_kind == MPID_INTERCOMM);
+			MPIU_Assert(src_comm->comm_kind == MPID_INTERCOMM);
+			MPID_PSP_mapper_dup_vcrt(src_comm->vcrt, &comm->vcrt, mapper, mapper->src_comm->remote_size, vcrt_size, vcrt_offset);
+			MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
+			vcrt_offset +=MPID_PSP_mapper_size(mapper);
+			break;
+
+		default: assert(0);
+		}
+	}
 }
 
 
 void MPID_PSP_comm_add_map(MPID_Comm * comm)
 {
-	MPIR_Comm_map_t *mapper;
-	MPID_Comm *src_comm;
-	int vcrt_size, vcrt_offset;
-
-	/* initialize the is_disconnected variable to FALSE.  this will be
-	 * set to TRUE if the communicator is freed by an
-	 * MPI_COMM_DISCONNECT call. */
+	int vcrt_size;
 
 	comm->is_disconnected = 0;
 
-	/* do some sanity checks */
-	MPL_LL_FOREACH(comm->mapper_head, mapper) {
-		if (mapper->src_comm->comm_kind == MPID_INTRACOMM)
-			MPIU_Assert(mapper->dir == MPIR_COMM_MAP_DIR_L2L ||
-				    mapper->dir == MPIR_COMM_MAP_DIR_L2R);
-		if (comm->comm_kind == MPID_INTRACOMM)
-			MPIU_Assert(mapper->dir == MPIR_COMM_MAP_DIR_L2L ||
-				    mapper->dir == MPIR_COMM_MAP_DIR_R2L);
-	}
+	if(!comm->mapper_head) return;
 
-	/* First, handle all the mappers that contribute to the local part
-	 * of the comm */
-	vcrt_size = 0;
-	MPL_LL_FOREACH(comm->mapper_head, mapper) {
-		if (mapper->dir == MPIR_COMM_MAP_DIR_L2R ||
-		    mapper->dir == MPIR_COMM_MAP_DIR_R2R)
-			continue;
+	vcrt_size = MPID_PSP_mapper_list_dest_local_size(comm->mapper_head);
+	MPID_PSP_mapper_list_map_local_vcr(comm, vcrt_size);
 
-		vcrt_size += map_size(*mapper);
-	}
-
-	vcrt_offset = 0;
-	MPL_LL_FOREACH(comm->mapper_head, mapper) {
-		src_comm = mapper->src_comm;
-
-		if (mapper->dir == MPIR_COMM_MAP_DIR_L2R ||
-		    mapper->dir == MPIR_COMM_MAP_DIR_R2R)
-			continue;
-
-		if (mapper->dir == MPIR_COMM_MAP_DIR_L2L) {
-			if (src_comm->comm_kind == MPID_INTRACOMM && comm->comm_kind == MPID_INTRACOMM) {
-				dup_vcrt(src_comm->vcrt, &comm->vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
-				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
-			}
-			else if (src_comm->comm_kind == MPID_INTRACOMM && comm->comm_kind == MPID_INTERCOMM) {
-				dup_vcrt(src_comm->vcrt, &comm->local_vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
-				MPID_PSP_comm_set_local_vcrt(comm, comm->local_vcrt);
-			}
-			else if (src_comm->comm_kind == MPID_INTERCOMM && comm->comm_kind == MPID_INTRACOMM) {
-				dup_vcrt(src_comm->local_vcrt, &comm->vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
-				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
-			}
-			else {
-				dup_vcrt(src_comm->local_vcrt, &comm->local_vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
-				MPID_PSP_comm_set_local_vcrt(comm, comm->local_vcrt);
-			}
-		}
-		else {  /* mapper->dir == MPIR_COMM_MAP_DIR_R2L */
-			MPIU_Assert(src_comm->comm_kind == MPID_INTERCOMM);
-			if (comm->comm_kind == MPID_INTRACOMM) {
-				dup_vcrt(src_comm->vcrt, &comm->vcrt, mapper, mapper->src_comm->remote_size, vcrt_size, vcrt_offset);
-				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
-			}
-			else {
-				dup_vcrt(src_comm->vcrt, &comm->local_vcrt, mapper, mapper->src_comm->remote_size, vcrt_size, vcrt_offset);
-				MPID_PSP_comm_set_vcrt(comm, comm->local_vcrt);
-			}
-		}
-		vcrt_offset += map_size(*mapper);
-	}
-
-	/* Next, handle all the mappers that contribute to the remote part
-	 * of the comm (only valid for intercomms) */
-	vcrt_size = 0;
-	MPL_LL_FOREACH(comm->mapper_head, mapper) {
-		if (mapper->dir == MPIR_COMM_MAP_DIR_L2L ||
-		    mapper->dir == MPIR_COMM_MAP_DIR_R2L)
-			continue;
-
-		vcrt_size += map_size(*mapper);
-	}
-	vcrt_offset = 0;
-	MPL_LL_FOREACH(comm->mapper_head, mapper) {
-		src_comm = mapper->src_comm;
-
-		if (mapper->dir == MPIR_COMM_MAP_DIR_L2L ||
-		    mapper->dir == MPIR_COMM_MAP_DIR_R2L)
-			continue;
-
-		MPIU_Assert(comm->comm_kind == MPID_INTERCOMM);
-
-		if (mapper->dir == MPIR_COMM_MAP_DIR_L2R) {
-			if (src_comm->comm_kind == MPID_INTRACOMM) {
-				dup_vcrt(src_comm->vcrt, &comm->vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
-				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
-			}
-			else {
-				dup_vcrt(src_comm->local_vcrt, &comm->vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
-				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
-			}
-		}
-		else {  /* mapper->dir == MPIR_COMM_MAP_DIR_R2R */
-			MPIU_Assert(src_comm->comm_kind == MPID_INTERCOMM);
-			dup_vcrt(src_comm->vcrt, &comm->vcrt, mapper, mapper->src_comm->remote_size, vcrt_size, vcrt_offset);
-			MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
-		}
-		vcrt_offset += map_size(*mapper);
-	}
+	vcrt_size = MPID_PSP_mapper_list_dest_remote_size(comm->mapper_head);
+	MPID_PSP_mapper_list_map_remote_vcr(comm, vcrt_size);
 
 	if (comm->comm_kind == MPID_INTERCOMM) {
 		/* setup the vcrt for the local_comm in the intercomm */
