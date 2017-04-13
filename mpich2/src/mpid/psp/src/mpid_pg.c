@@ -45,7 +45,7 @@ int MPID_GPID_GetAllInComm(MPID_Comm *comm_ptr, int local_size,
 				if(singlePG) *singlePG = 0;
 			}
 		}
-		gpid += 2;
+		gpid++;
 	}
 	return 0;
 }
@@ -610,7 +610,8 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 				pg = pg->next;
 
 			} while (pg);
-			gpid_ptr += 2;
+
+			gpid_ptr++;
 		}
 
 
@@ -713,7 +714,8 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 				pg = pg->next;
 
 			} while (pg);
-			gpid_ptr += 2;
+
+			gpid_ptr++;
 		}
 
 		MPIU_Free(local_gpids_by_comm);
