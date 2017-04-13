@@ -17,7 +17,7 @@ int MPID_GPID_Get( MPID_Comm *comm_ptr, int rank, MPID_Gpid *gpid )
 {
 	MPID_VC_t *vc;
 
-	vc = comm_ptr->vcr[rank];
+	vc = comm_ptr->vcrt->vcr[rank];
 
 	/* Get the process group id as an int */
 	gpid->gpid[0] = vc->pg->id_num;
@@ -134,11 +134,14 @@ int MPID_Create_intercomm_from_lpids(MPID_Comm *newcomm_ptr, int size, const int
 {
 	int mpi_errno = MPI_SUCCESS;
 	MPID_Comm *commworld_ptr;
+	MPID_VCRT_t *vcrt;
 	int i;
 
 	commworld_ptr = MPIR_Process.comm_world;
 	/* Setup the communicator's vc table: remote group */
-	newcomm_ptr->vcr = MPID_VCRT_Create(size);
+	vcrt = MPID_VCRT_Create(size);
+	assert(vcrt);
+	MPID_PSP_comm_set_vcrt(newcomm_ptr, vcrt);
 
 	for (i=0; i<size; i++) {
 		MPID_VC_t *vcr = NULL;
@@ -742,7 +745,7 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr)
 	MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_PG_CREATE);
 
 	MPIU_CHKPMEM_MALLOC(pg, MPIDI_PG_t* ,sizeof(MPIDI_PG_t), mpi_errno, "pg");
-	pg->vcr = MPID_VCRT_Create(pg_size);
+	MPIU_CHKPMEM_MALLOC(pg->vcr, MPID_VC_t**, sizeof(MPID_VC_t)*pg_size, mpi_errno,"pg->vcr");
 	MPIU_CHKPMEM_MALLOC(pg->lpids, int*, sizeof(int)*pg_size, mpi_errno,"pg->lpids");
 	MPIU_CHKPMEM_MALLOC(pg->cons, pscom_connection_t **, sizeof(pscom_connection_t*)*pg_size, mpi_errno,"pg->cons");
 
@@ -751,7 +754,7 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr)
 	pg->refcnt = 0;
 
 	for(i=0; i<pg_size; i++) {
-		assert(pg->vcr[i] == NULL);
+		pg->vcr[i] = NULL;
 		pg->lpids[i] = -1;
 		pg->cons[i] = NULL;
 	}

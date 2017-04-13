@@ -428,8 +428,10 @@ typedef struct MPIDI_VCON MPIDI_VCON;
 	pscom_group_t	*group;						\
 	pscom_request_t *bcast_request;					\
 	int              is_disconnected;				\
-	MPID_VC_t	**vcr; /* virtual connection reference table */	\
-	MPID_VC_t	**local_vcr; /* virtual connection reference table */
+	MPID_VCRT_t	*vcrt; /* virtual connection reference table */ \
+	MPID_VC_t	**vcr; /* alias to the array of virtual connections in vcrt  */	\
+	MPID_VCRT_t	*local_vcrt; /* local virtual connection reference table */ \
+	MPID_VC_t	**local_vcr; /* alias to the array of local virtual connections in local vcrt */
 
 
 /* Somewhere in the middle of the GCC 2.96 development cycle, we implemented

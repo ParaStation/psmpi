@@ -584,6 +584,7 @@ int MPID_Init(int *argc, char ***argv,
 		int grank;
 		MPIDI_PG_t * pg_ptr;
 		int pg_id_num;
+		MPID_VCRT_t * vcrt;
 
 		comm = MPIR_Process.comm_world;
 
@@ -592,8 +593,9 @@ int MPID_Init(int *argc, char ***argv,
 		comm->local_size  = pg_size;
 		comm->pscom_socket = socket;
 
-		comm->vcr = MPID_VCRT_Create(comm->remote_size);
-		assert(comm->vcr);
+		vcrt = MPID_VCRT_Create(comm->remote_size);
+		assert(vcrt);
+		MPID_PSP_comm_set_vcrt(comm, vcrt);
 
 		MPIDI_PG_Convert_id(pg_id_name, &pg_id_num);
 		MPIDI_PG_Create(pg_size, pg_id_num, &pg_ptr);
@@ -620,6 +622,7 @@ int MPID_Init(int *argc, char ***argv,
 	 */
 	{
 		MPID_Comm * comm;
+		MPID_VCRT_t * vcrt;
 
 		comm = MPIR_Process.comm_self;
 		comm->rank        = 0;
@@ -627,8 +630,9 @@ int MPID_Init(int *argc, char ***argv,
 		comm->local_size  = 1;
 		comm->pscom_socket = socket;
 
-		comm->vcr = MPID_VCRT_Create(comm->remote_size);
-		assert(comm->vcr);
+		vcrt = MPID_VCRT_Create(comm->remote_size);
+		assert(vcrt);
+		MPID_PSP_comm_set_vcrt(comm, vcrt);
 
 		comm->vcr[0] = MPID_VC_Dup(MPIR_Process.comm_world->vcr[pg_rank]);
 

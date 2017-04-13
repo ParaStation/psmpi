@@ -72,55 +72,72 @@ MPID_VC_t *VCR_get(MPID_VC_t *vcr)
 	return vcr;
 }
 
-
-MPID_VC_t **MPID_VCRT_Create(int size)
+MPID_VCRT_t *MPID_VCRT_Create(int size)
 {
 	int i;
-	MPID_VC_t **vcrt;
+	MPID_VCRT_t * vcrt;
 
 	assert(size >= 0);
 
-	vcrt = MPIU_Malloc(size * sizeof(*vcrt));
+	vcrt = MPIU_Malloc(sizeof(MPID_VCRT_t) + size * sizeof(MPID_VC_t));
 
 	Dprintf("(size=%d), vcrt=%p", size, vcrt);
 
 	assert(vcrt);
 
+	vcrt->refcnt = 1;
+	vcrt->size = size;
+
 	for (i = 0; i < size; i++) {
-		vcrt[i] = NULL;
+		vcrt->vcr[i] = NULL;
 	}
 
 	return vcrt;
 }
 
-
-MPID_VC_t **MPID_VCRT_Dup(MPID_VC_t **vcrt, int size)
+static
+int MPID_VCRT_Add_ref(MPID_VCRT_t *vcrt)
 {
-	MPID_VC_t **vcrt_new = MPID_VCRT_Create(size);
-	int i;
+	Dprintf("(vcrt=%p), refcnt=%d", vcrt, vcrt->refcnt);
 
-	for (i = 0; i < size; i++) {
-		if (vcrt[i]) {
-			vcrt_new[i] = MPID_VC_Dup(vcrt[i]);
-		}
-	}
-	return vcrt_new;
+	vcrt->refcnt++;
+
+	return MPI_SUCCESS;
 }
 
+MPID_VCRT_t *MPID_VCRT_Dup(MPID_VCRT_t *vcrt)
+{
+	MPID_VCRT_Add_ref(vcrt);
+	return vcrt;
+}
 
 static
-void MPID_VCRT_Destroy(MPID_VC_t **vcrt, unsigned size)
+void MPID_VCRT_Destroy(MPID_VCRT_t *vcrt, int isDisconnect)
 {
 	int i;
 	if (!vcrt) return;
 
-	for (i = 0; i < size; i++) {
-		MPID_VC_t *vcr = vcrt[i];
-		vcrt[i] = NULL;
-		if (vcr) VCR_put(vcr, 0);
+	for (i = 0; i < vcrt->size; i++) {
+		MPID_VC_t *vcr = vcrt->vcr[i];
+		vcrt->vcr[i] = NULL;
+		if (vcr) VCR_put(vcr, isDisconnect);
 	}
 
 	MPIU_Free(vcrt);
+}
+
+int MPID_VCRT_Release(MPID_VCRT_t *vcrt, int isDisconnect)
+{
+	Dprintf("(vcrt=%p), refcnt=%d, isDisconnect=%d", vcrt, vcrt->refcnt, isDisconnect);
+
+	vcrt->refcnt--;
+
+	if (vcrt->refcnt <= 0) {
+		assert(vcrt->refcnt == 0);
+		MPID_VCRT_Destroy(vcrt, isDisconnect);
+	}
+
+	return MPI_SUCCESS;
 }
 
 /* used in mpid_init.c to set comm_world */
@@ -180,7 +197,9 @@ int MPID_Comm_get_lpid(MPID_Comm *comm_ptr, int idx, int * lpid_ptr, MPIU_BOOL i
 }
 
 
-static void dup_vcrt(MPID_VC_t **src_vcrt, MPID_VC_t ***dest_vcrt,
+/* Code adopted (and adapted) from CH3: */
+
+static void dup_vcrt(MPID_VCRT_t* src_vcrt, MPID_VCRT_t **dest_vcrt,
 		     MPIR_Comm_map_t *mapper, int src_comm_size, int vcrt_size,
                      int vcrt_offset)
 {
@@ -190,7 +209,7 @@ static void dup_vcrt(MPID_VC_t **src_vcrt, MPID_VC_t ***dest_vcrt,
 	 * duplicate of the previous comm.  in that case, we simply add a
 	 * reference to the previous VCRT instead of recreating it. */
 	if (mapper->type == MPIR_COMM_MAP_DUP && src_comm_size == vcrt_size) {
-		*dest_vcrt = src_vcrt;
+		*dest_vcrt = MPID_VCRT_Dup(src_vcrt);
 		return;
 	}
 	else if (mapper->type == MPIR_COMM_MAP_IRREGULAR &&
@@ -205,7 +224,7 @@ static void dup_vcrt(MPID_VC_t **src_vcrt, MPID_VC_t ***dest_vcrt,
 				flag = 0;
 
 		if (flag) {
-			*dest_vcrt = src_vcrt;
+			*dest_vcrt = MPID_VCRT_Dup(src_vcrt);;
 			return;
 		}
 	}
@@ -214,16 +233,16 @@ static void dup_vcrt(MPID_VC_t **src_vcrt, MPID_VC_t ***dest_vcrt,
 	 * VCRT */
 
 	if (!vcrt_offset) {
-		(*dest_vcrt) = MPID_VCRT_Create(vcrt_size);
+		*dest_vcrt = MPID_VCRT_Create(vcrt_size);
 	}
 
 	if (mapper->type == MPIR_COMM_MAP_DUP) {
 		for (i = 0; i < src_comm_size; i++)
-			(*dest_vcrt)[i + vcrt_offset] = MPID_VC_Dup(src_vcrt[i]);
+			(*dest_vcrt)->vcr[i + vcrt_offset] = MPID_VC_Dup(src_vcrt->vcr[i]);
 	}
 	else {
 		for (i = 0; i < mapper->src_mapping_size; i++)
-			(*dest_vcrt)[i + vcrt_offset] = MPID_VC_Dup(src_vcrt[mapper->src_mapping[i]]);
+			(*dest_vcrt)->vcr[i + vcrt_offset] = MPID_VC_Dup(src_vcrt->vcr[mapper->src_mapping[i]]);
 	}
 }
 
@@ -237,13 +256,9 @@ static inline int map_size(MPIR_Comm_map_t map)
 		return map.src_comm->remote_size;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPID_PSP_comm_add_map
-#undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPID_PSP_comm_add_map(MPID_Comm * comm)
+
+void MPID_PSP_comm_add_map(MPID_Comm * comm)
 {
-	int mpi_errno = MPI_SUCCESS;
 	MPIR_Comm_map_t *mapper;
 	MPID_Comm *src_comm;
 	int vcrt_size, vcrt_offset;
@@ -285,29 +300,32 @@ int MPID_PSP_comm_add_map(MPID_Comm * comm)
 
 		if (mapper->dir == MPIR_COMM_MAP_DIR_L2L) {
 			if (src_comm->comm_kind == MPID_INTRACOMM && comm->comm_kind == MPID_INTRACOMM) {
-				dup_vcrt(src_comm->vcr, &comm->vcr, mapper, mapper->src_comm->local_size,
-					 vcrt_size, vcrt_offset);
+				dup_vcrt(src_comm->vcrt, &comm->vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
 			}
-			else if (src_comm->comm_kind == MPID_INTRACOMM && comm->comm_kind == MPID_INTERCOMM)
-				dup_vcrt(src_comm->vcr, &comm->local_vcr, mapper, mapper->src_comm->local_size,
-					 vcrt_size, vcrt_offset);
+			else if (src_comm->comm_kind == MPID_INTRACOMM && comm->comm_kind == MPID_INTERCOMM) {
+				dup_vcrt(src_comm->vcrt, &comm->local_vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+				MPID_PSP_comm_set_local_vcrt(comm, comm->local_vcrt);
+			}
 			else if (src_comm->comm_kind == MPID_INTERCOMM && comm->comm_kind == MPID_INTRACOMM) {
-				dup_vcrt(src_comm->local_vcr, &comm->vcr, mapper, mapper->src_comm->local_size,
-					 vcrt_size, vcrt_offset);
+				dup_vcrt(src_comm->local_vcrt, &comm->vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
 			}
-			else
-				dup_vcrt(src_comm->local_vcr, &comm->local_vcr, mapper,
-					 mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+			else {
+				dup_vcrt(src_comm->local_vcrt, &comm->local_vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+				MPID_PSP_comm_set_local_vcrt(comm, comm->local_vcrt);
+			}
 		}
 		else {  /* mapper->dir == MPIR_COMM_MAP_DIR_R2L */
 			MPIU_Assert(src_comm->comm_kind == MPID_INTERCOMM);
 			if (comm->comm_kind == MPID_INTRACOMM) {
-				dup_vcrt(src_comm->vcr, &comm->vcr, mapper, mapper->src_comm->remote_size,
-					 vcrt_size, vcrt_offset);
+				dup_vcrt(src_comm->vcrt, &comm->vcrt, mapper, mapper->src_comm->remote_size, vcrt_size, vcrt_offset);
+				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
 			}
-			else
-				dup_vcrt(src_comm->vcr, &comm->local_vcr, mapper, mapper->src_comm->remote_size,
-					 vcrt_size, vcrt_offset);
+			else {
+				dup_vcrt(src_comm->vcrt, &comm->local_vcrt, mapper, mapper->src_comm->remote_size, vcrt_size, vcrt_offset);
+				MPID_PSP_comm_set_vcrt(comm, comm->local_vcrt);
+			}
 		}
 		vcrt_offset += map_size(*mapper);
 	}
@@ -333,17 +351,19 @@ int MPID_PSP_comm_add_map(MPID_Comm * comm)
 		MPIU_Assert(comm->comm_kind == MPID_INTERCOMM);
 
 		if (mapper->dir == MPIR_COMM_MAP_DIR_L2R) {
-			if (src_comm->comm_kind == MPID_INTRACOMM)
-				dup_vcrt(src_comm->vcr, &comm->vcr, mapper, mapper->src_comm->local_size,
-					 vcrt_size, vcrt_offset);
-			else
-				dup_vcrt(src_comm->local_vcr, &comm->vcr, mapper,
-					 mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+			if (src_comm->comm_kind == MPID_INTRACOMM) {
+				dup_vcrt(src_comm->vcrt, &comm->vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
+			}
+			else {
+				dup_vcrt(src_comm->local_vcrt, &comm->vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
+				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
+			}
 		}
 		else {  /* mapper->dir == MPIR_COMM_MAP_DIR_R2R */
 			MPIU_Assert(src_comm->comm_kind == MPID_INTERCOMM);
-			dup_vcrt(src_comm->vcr, &comm->vcr, mapper, mapper->src_comm->remote_size,
-				 vcrt_size, vcrt_offset);
+			dup_vcrt(src_comm->vcrt, &comm->vcrt, mapper, mapper->src_comm->remote_size, vcrt_size, vcrt_offset);
+			MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
 		}
 		vcrt_offset += map_size(*mapper);
 	}
@@ -351,12 +371,10 @@ int MPID_PSP_comm_add_map(MPID_Comm * comm)
 	if (comm->comm_kind == MPID_INTERCOMM) {
 		/* setup the vcrt for the local_comm in the intercomm */
 		if (comm->local_comm) {
-			comm->local_comm->vcr = comm->local_vcr;
+			MPID_VCRT_t *vcrt;
+			vcrt = MPID_VCRT_Dup(comm->local_vcrt);
+			assert(vcrt);
+			MPID_PSP_comm_set_vcrt(comm->local_comm, vcrt);
 		}
 	}
-
-fn_exit:
-	return mpi_errno;
-fn_fail:
-    goto fn_exit;
 }

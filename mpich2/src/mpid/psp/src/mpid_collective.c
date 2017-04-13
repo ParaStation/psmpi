@@ -292,6 +292,12 @@ int MPID_PSP_comm_create_hook(MPID_Comm * comm)
 
 int MPID_PSP_comm_destroy_hook(MPID_Comm * comm)
 {
+	MPID_VCRT_Release(comm->vcrt, comm->is_disconnected);
+
+	if (comm->comm_kind == MPID_INTERCOMM) {
+		MPID_VCRT_Release(comm->local_vcrt, comm->is_disconnected);
+	}
+
 	if (!MPIDI_Process.env.enable_collectives) return MPI_SUCCESS;
 
 	/* ToDo: Use comm Barrier before cleanup! */
@@ -300,4 +306,21 @@ int MPID_PSP_comm_destroy_hook(MPID_Comm * comm)
 
 	D(printf("%s\n", __func__););
 	return MPI_SUCCESS;
+}
+
+
+void MPID_PSP_comm_set_vcrt(MPID_Comm *comm, MPID_VCRT_t *vcrt)
+{
+	assert(vcrt);
+
+	comm->vcrt = vcrt;
+	comm->vcr  = vcrt->vcr;
+}
+
+void MPID_PSP_comm_set_local_vcrt(MPID_Comm *comm, MPID_VCRT_t *vcrt)
+{
+	assert(vcrt);
+
+	comm->local_vcrt = vcrt;
+	comm->local_vcr  = vcrt->vcr;
 }
