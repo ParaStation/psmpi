@@ -180,7 +180,7 @@ void init_intercomm(MPID_Comm *comm, MPIU_Context_id_t remote_context_id, unsign
 {
 	/* compare with SetupNewIntercomm() in /src/mpid/ch3/src/ch3u_port.c:1143*/
 	int mpi_errno;
-	MPID_VCRT_t *vcrt;
+	MPIDI_VCRT_t *vcrt;
 
 	intercomm->context_id     = remote_context_id;
 	/* intercomm->recvcontext_id already set in create_intercomm */
@@ -199,17 +199,17 @@ void init_intercomm(MPID_Comm *comm, MPIU_Context_id_t remote_context_id, unsign
 	intercomm->coll_fns     = NULL;
 
 	/* Point local vcr at those of incoming intracommunicator */
-	vcrt = MPID_VCRT_Dup(comm->vcrt);
+	vcrt = MPIDI_VCRT_Dup(comm->vcrt);
 	assert(vcrt);
 	MPID_PSP_comm_set_local_vcrt(intercomm, vcrt);
 
 	if(create_vcrt_flag) {
-		vcrt = MPID_VCRT_Create(intercomm->remote_size);
+		vcrt = MPIDI_VCRT_Create(intercomm->remote_size);
 		assert(vcrt);
 		MPID_PSP_comm_set_vcrt(intercomm, vcrt);
 	}
 
-	/* MPID_VCR_Initialize() will be called later for every intercomm->remote_size rank */
+	/* MPIDI_VCR_Initialize() will be called later for every intercomm->remote_size rank */
 
 	mpi_errno = MPIR_Comm_commit(intercomm);
 	assert(mpi_errno == MPI_SUCCESS);

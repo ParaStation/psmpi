@@ -15,7 +15,7 @@
 
 int MPID_GPID_Get( MPID_Comm *comm_ptr, int rank, MPID_Gpid *gpid )
 {
-	MPID_VC_t *vc;
+	MPIDI_VC_t *vc;
 
 	vc = comm_ptr->vcrt->vcr[rank];
 
@@ -93,7 +93,7 @@ int MPID_GPID_ToLpidArray(int size, MPID_Gpid gpid[], int lpid[])
 						int k = pg->size;
 
 						pg->size = gpid->gpid[1]+1;
-						pg->vcr = MPIU_Realloc(pg->vcr, sizeof(MPID_VC_t*)*pg->size);
+						pg->vcr = MPIU_Realloc(pg->vcr, sizeof(MPIDI_VC_t*)*pg->size);
 						pg->lpids = MPIU_Realloc(pg->lpids, sizeof(int)*pg->size);
 						pg->cons = MPIU_Realloc(pg->cons, sizeof(pscom_connection_t*)*pg->size);
 
@@ -134,17 +134,17 @@ int MPID_Create_intercomm_from_lpids(MPID_Comm *newcomm_ptr, int size, const int
 {
 	int mpi_errno = MPI_SUCCESS;
 	MPID_Comm *commworld_ptr;
-	MPID_VCRT_t *vcrt;
+	MPIDI_VCRT_t *vcrt;
 	int i;
 
 	commworld_ptr = MPIR_Process.comm_world;
 	/* Setup the communicator's vc table: remote group */
-	vcrt = MPID_VCRT_Create(size);
+	vcrt = MPIDI_VCRT_Create(size);
 	assert(vcrt);
 	MPID_PSP_comm_set_vcrt(newcomm_ptr, vcrt);
 
 	for (i=0; i<size; i++) {
-		MPID_VC_t *vcr = NULL;
+		MPIDI_VC_t *vcr = NULL;
 
 		/* For rank i in the new communicator, find the corresponding
 		   virtual connection.  For lpids less than the size of comm_world,
@@ -183,7 +183,7 @@ int MPID_Create_intercomm_from_lpids(MPID_Comm *newcomm_ptr, int size, const int
 		}
 
 		/* Note that his will increment the ref count for the associate PG if necessary.  */
-		newcomm_ptr->vcr[i] = MPID_VC_Dup(vcr);
+		newcomm_ptr->vcr[i] = MPIDI_VC_Dup(vcr);
 	}
 
 fn_exit:
@@ -666,12 +666,12 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 							assert(con);
 
 							if(pg->lpids[j] > 0) {
-								pg->vcr[j] = MPID_VC_Create(pg, j, con, pg->lpids[j]);
+								pg->vcr[j] = MPIDI_VC_Create(pg, j, con, pg->lpids[j]);
 							} else {
 								if (!MPIDI_Process.next_lpid) MPIDI_Process.next_lpid = MPIR_Process.comm_world->local_size;
 
 								/* Using the next so far unused lpid > np.*/
-								pg->vcr[j] = MPID_VC_Create(pg, j, con, MPIDI_Process.next_lpid++);
+								pg->vcr[j] = MPIDI_VC_Create(pg, j, con, MPIDI_Process.next_lpid++);
 							}
 
 							/* Sanity check and connection warm-up: */
@@ -747,7 +747,7 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr)
 	MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_PG_CREATE);
 
 	MPIU_CHKPMEM_MALLOC(pg, MPIDI_PG_t* ,sizeof(MPIDI_PG_t), mpi_errno, "pg");
-	MPIU_CHKPMEM_MALLOC(pg->vcr, MPID_VC_t**, sizeof(MPID_VC_t)*pg_size, mpi_errno,"pg->vcr");
+	MPIU_CHKPMEM_MALLOC(pg->vcr, MPIDI_VC_t**, sizeof(MPIDI_VC_t)*pg_size, mpi_errno,"pg->vcr");
 	MPIU_CHKPMEM_MALLOC(pg->lpids, int*, sizeof(int)*pg_size, mpi_errno,"pg->lpids");
 	MPIU_CHKPMEM_MALLOC(pg->cons, pscom_connection_t **, sizeof(pscom_connection_t*)*pg_size, mpi_errno,"pg->cons");
 

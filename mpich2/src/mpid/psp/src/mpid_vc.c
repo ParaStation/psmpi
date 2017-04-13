@@ -18,13 +18,13 @@ static int ENABLE_REAL_DISCONNECT = 1;
 static int ENABLE_LAZY_DISCONNECT = 1;
 
 static
-int MPID_VCR_DeleteFromPG(MPID_VC_t *vcr);
+int MPIDI_VCR_DeleteFromPG(MPIDI_VC_t *vcr);
 
 
 static
-MPID_VC_t *new_VCR(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid)
+MPIDI_VC_t *new_VCR(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid)
 {
-	MPID_VC_t *vcr = MPIU_Malloc(sizeof(*vcr));
+	MPIDI_VC_t *vcr = MPIU_Malloc(sizeof(*vcr));
 	assert(vcr);
 
 	vcr->con = con;
@@ -47,13 +47,13 @@ MPID_VC_t *new_VCR(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lp
 
 
 static
-void VCR_put(MPID_VC_t *vcr, int isDisconnect)
+void VCR_put(MPIDI_VC_t *vcr, int isDisconnect)
 {
 	vcr->refcnt--;
 
 	if(ENABLE_REAL_DISCONNECT && isDisconnect && (vcr->refcnt == 1)) {
 
-		MPID_VCR_DeleteFromPG(vcr);
+		MPIDI_VCR_DeleteFromPG(vcr);
 
 		if(!ENABLE_LAZY_DISCONNECT) {
 			/* Finally, tear down this connection: */
@@ -66,20 +66,20 @@ void VCR_put(MPID_VC_t *vcr, int isDisconnect)
 
 
 static
-MPID_VC_t *VCR_get(MPID_VC_t *vcr)
+MPIDI_VC_t *VCR_get(MPIDI_VC_t *vcr)
 {
 	vcr->refcnt++;
 	return vcr;
 }
 
-MPID_VCRT_t *MPID_VCRT_Create(int size)
+MPIDI_VCRT_t *MPIDI_VCRT_Create(int size)
 {
 	int i;
-	MPID_VCRT_t * vcrt;
+	MPIDI_VCRT_t * vcrt;
 
 	assert(size >= 0);
 
-	vcrt = MPIU_Malloc(sizeof(MPID_VCRT_t) + size * sizeof(MPID_VC_t));
+	vcrt = MPIU_Malloc(sizeof(MPIDI_VCRT_t) + size * sizeof(MPIDI_VC_t));
 
 	Dprintf("(size=%d), vcrt=%p", size, vcrt);
 
@@ -96,7 +96,7 @@ MPID_VCRT_t *MPID_VCRT_Create(int size)
 }
 
 static
-int MPID_VCRT_Add_ref(MPID_VCRT_t *vcrt)
+int MPIDI_VCRT_Add_ref(MPIDI_VCRT_t *vcrt)
 {
 	Dprintf("(vcrt=%p), refcnt=%d", vcrt, vcrt->refcnt);
 
@@ -105,20 +105,20 @@ int MPID_VCRT_Add_ref(MPID_VCRT_t *vcrt)
 	return MPI_SUCCESS;
 }
 
-MPID_VCRT_t *MPID_VCRT_Dup(MPID_VCRT_t *vcrt)
+MPIDI_VCRT_t *MPIDI_VCRT_Dup(MPIDI_VCRT_t *vcrt)
 {
-	MPID_VCRT_Add_ref(vcrt);
+	MPIDI_VCRT_Add_ref(vcrt);
 	return vcrt;
 }
 
 static
-void MPID_VCRT_Destroy(MPID_VCRT_t *vcrt, int isDisconnect)
+void MPIDI_VCRT_Destroy(MPIDI_VCRT_t *vcrt, int isDisconnect)
 {
 	int i;
 	if (!vcrt) return;
 
 	for (i = 0; i < vcrt->size; i++) {
-		MPID_VC_t *vcr = vcrt->vcr[i];
+		MPIDI_VC_t *vcr = vcrt->vcr[i];
 		vcrt->vcr[i] = NULL;
 		if (vcr) VCR_put(vcr, isDisconnect);
 	}
@@ -126,7 +126,7 @@ void MPID_VCRT_Destroy(MPID_VCRT_t *vcrt, int isDisconnect)
 	MPIU_Free(vcrt);
 }
 
-int MPID_VCRT_Release(MPID_VCRT_t *vcrt, int isDisconnect)
+int MPIDI_VCRT_Release(MPIDI_VCRT_t *vcrt, int isDisconnect)
 {
 	Dprintf("(vcrt=%p), refcnt=%d, isDisconnect=%d", vcrt, vcrt->refcnt, isDisconnect);
 
@@ -134,14 +134,14 @@ int MPID_VCRT_Release(MPID_VCRT_t *vcrt, int isDisconnect)
 
 	if (vcrt->refcnt <= 0) {
 		assert(vcrt->refcnt == 0);
-		MPID_VCRT_Destroy(vcrt, isDisconnect);
+		MPIDI_VCRT_Destroy(vcrt, isDisconnect);
 	}
 
 	return MPI_SUCCESS;
 }
 
 /* used in mpid_init.c to set comm_world */
-MPID_VC_t *MPID_VC_Create(MPIDI_PG_t *pg, int pg_rank, pscom_connection_t *con, int lpid)
+MPIDI_VC_t *MPIDI_VC_Create(MPIDI_PG_t *pg, int pg_rank, pscom_connection_t *con, int lpid)
 {
 	Dprintf("(con=%p, lpid=%d)", con, lpid);
 
@@ -149,14 +149,14 @@ MPID_VC_t *MPID_VC_Create(MPIDI_PG_t *pg, int pg_rank, pscom_connection_t *con, 
 }
 
 /* Create a duplicate reference to a virtual connection */
-MPID_VC_t *MPID_VC_Dup(MPID_VC_t *orig_vcr)
+MPIDI_VC_t *MPIDI_VC_Dup(MPIDI_VC_t *orig_vcr)
 {
 	return VCR_get(orig_vcr);
 }
 
 
 static
-int MPID_VCR_DeleteFromPG(MPID_VC_t *vcr)
+int MPIDI_VCR_DeleteFromPG(MPIDI_VC_t *vcr)
 {
 	MPIDI_PG_t * pg = vcr->pg;
 
@@ -207,7 +207,7 @@ int MPID_Comm_get_lpid(MPID_Comm *comm_ptr, int idx, int * lpid_ptr, MPIU_BOOL i
  */
 
 static
-void MPID_PSP_mapper_dup_vcrt(MPID_VCRT_t* src_vcrt, MPID_VCRT_t **dest_vcrt,
+void MPID_PSP_mapper_dup_vcrt(MPIDI_VCRT_t* src_vcrt, MPIDI_VCRT_t **dest_vcrt,
 			      MPIR_Comm_map_t *mapper, int src_comm_size, int vcrt_size,
 			      int vcrt_offset)
 {
@@ -217,7 +217,7 @@ void MPID_PSP_mapper_dup_vcrt(MPID_VCRT_t* src_vcrt, MPID_VCRT_t **dest_vcrt,
 	 * duplicate of the previous comm.  in that case, we simply add a
 	 * reference to the previous VCRT instead of recreating it. */
 	if (mapper->type == MPIR_COMM_MAP_DUP && src_comm_size == vcrt_size) {
-		*dest_vcrt = MPID_VCRT_Dup(src_vcrt);
+		*dest_vcrt = MPIDI_VCRT_Dup(src_vcrt);
 		return;
 	}
 	else if (mapper->type == MPIR_COMM_MAP_IRREGULAR &&
@@ -232,7 +232,7 @@ void MPID_PSP_mapper_dup_vcrt(MPID_VCRT_t* src_vcrt, MPID_VCRT_t **dest_vcrt,
 				flag = 0;
 
 		if (flag) {
-			*dest_vcrt = MPID_VCRT_Dup(src_vcrt);;
+			*dest_vcrt = MPIDI_VCRT_Dup(src_vcrt);;
 			return;
 		}
 	}
@@ -241,16 +241,16 @@ void MPID_PSP_mapper_dup_vcrt(MPID_VCRT_t* src_vcrt, MPID_VCRT_t **dest_vcrt,
 	 * VCRT */
 
 	if (!vcrt_offset) {
-		*dest_vcrt = MPID_VCRT_Create(vcrt_size);
+		*dest_vcrt = MPIDI_VCRT_Create(vcrt_size);
 	}
 
 	if (mapper->type == MPIR_COMM_MAP_DUP) {
 		for (i = 0; i < src_comm_size; i++)
-			(*dest_vcrt)->vcr[i + vcrt_offset] = MPID_VC_Dup(src_vcrt->vcr[i]);
+			(*dest_vcrt)->vcr[i + vcrt_offset] = MPIDI_VC_Dup(src_vcrt->vcr[i]);
 	}
 	else {
 		for (i = 0; i < mapper->src_mapping_size; i++)
-			(*dest_vcrt)->vcr[i + vcrt_offset] = MPID_VC_Dup(src_vcrt->vcr[mapper->src_mapping[i]]);
+			(*dest_vcrt)->vcr[i + vcrt_offset] = MPIDI_VC_Dup(src_vcrt->vcr[mapper->src_mapping[i]]);
 	}
 }
 
@@ -416,8 +416,8 @@ void MPID_PSP_comm_add_map(MPID_Comm * comm)
 	if (comm->comm_kind == MPID_INTERCOMM) {
 		/* setup the vcrt for the local_comm in the intercomm */
 		if (comm->local_comm) {
-			MPID_VCRT_t *vcrt;
-			vcrt = MPID_VCRT_Dup(comm->local_vcrt);
+			MPIDI_VCRT_t *vcrt;
+			vcrt = MPIDI_VCRT_Dup(comm->local_vcrt);
 			assert(vcrt);
 			MPID_PSP_comm_set_vcrt(comm->local_comm, vcrt);
 		}

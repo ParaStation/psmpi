@@ -39,17 +39,17 @@ struct MPIDI_PG {
 	int refcnt;
 	int size;
 	int id_num;
-	MPID_VC_t **vcr;
+	MPIDI_VC_t **vcr;
 	int * lpids;
 	pscom_connection_t **cons;
 
 };
 
 
-typedef struct MPID_VCRT MPID_VCRT_t;
-typedef struct MPID_VC MPID_VC_t;
+typedef struct MPIDI_VCRT MPIDI_VCRT_t;
+typedef struct MPIDI_VC MPIDI_VC_t;
 
-struct MPID_VC {
+struct MPIDI_VC {
 	pscom_connection_t *con;
 	int lpid;
 	int pg_rank;
@@ -57,22 +57,22 @@ struct MPID_VC {
 	int refcnt;
 };
 
-struct MPID_VCRT {
+struct MPIDI_VCRT {
 	int size;
 	int refcnt;
-	struct MPID_VC* vcr[0];
+	struct MPIDI_VC* vcr[0];
 };
 
 
-MPID_VCRT_t *MPID_VCRT_Create(int size);
-MPID_VCRT_t *MPID_VCRT_Dup(MPID_VCRT_t *vcrt);
-int MPID_VCRT_Release(MPID_VCRT_t *vcrt, int isDisconnect);
+MPIDI_VCRT_t *MPIDI_VCRT_Create(int size);
+MPIDI_VCRT_t *MPIDI_VCRT_Dup(MPIDI_VCRT_t *vcrt);
+int MPIDI_VCRT_Release(MPIDI_VCRT_t *vcrt, int isDisconnect);
 
-MPID_VC_t *MPID_VC_Dup(MPID_VC_t *orig_vcr);
-MPID_VC_t *MPID_VC_Create(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid);
+MPIDI_VC_t *MPIDI_VC_Dup(MPIDI_VC_t *orig_vcr);
+MPIDI_VC_t *MPIDI_VC_Create(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid);
 
-void MPID_PSP_comm_set_vcrt(MPID_Comm *comm, MPID_VCRT_t *vcrt);
-void MPID_PSP_comm_set_local_vcrt(MPID_Comm *comm, MPID_VCRT_t *vcrt);
+void MPID_PSP_comm_set_vcrt(MPID_Comm *comm, MPIDI_VCRT_t *vcrt);
+void MPID_PSP_comm_set_local_vcrt(MPID_Comm *comm, MPIDI_VCRT_t *vcrt);
 void MPID_PSP_comm_add_map(MPID_Comm * comm);
 
 int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr);

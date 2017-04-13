@@ -418,8 +418,8 @@ typedef struct MPID_Win_rank_info
 	enum MPID_PSP_Win_epoch_states epoch_state; /* this is for error detection */ \
 	int epoch_lock_count;  /* number of pending locks (for error detection, too) */
 
-typedef struct MPID_VCRT MPID_VCRT_t;
-typedef struct MPID_VC MPID_VC_t;
+typedef struct MPIDI_VCRT MPIDI_VCRT_t;
+typedef struct MPIDI_VC MPIDI_VC_t;
 
 typedef struct MPIDI_VCON MPIDI_VCON;
 
@@ -428,10 +428,10 @@ typedef struct MPIDI_VCON MPIDI_VCON;
 	pscom_group_t	*group;						\
 	pscom_request_t *bcast_request;					\
 	int              is_disconnected;				\
-	MPID_VCRT_t	*vcrt; /* virtual connection reference table */ \
-	MPID_VC_t	**vcr; /* alias to the array of virtual connections in vcrt  */	\
-	MPID_VCRT_t	*local_vcrt; /* local virtual connection reference table */ \
-	MPID_VC_t	**local_vcr; /* alias to the array of local virtual connections in local vcrt */
+	MPIDI_VCRT_t	*vcrt; /* virtual connection reference table */ \
+	MPIDI_VC_t	**vcr; /* alias to the array of virtual connections in vcrt  */	\
+	MPIDI_VCRT_t	*local_vcrt; /* local virtual connection reference table */ \
+	MPIDI_VC_t	**local_vcr; /* alias to the array of local virtual connections in local vcrt */
 
 
 /* Somewhere in the middle of the GCC 2.96 development cycle, we implemented
