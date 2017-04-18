@@ -192,13 +192,13 @@ fn_exit:
 	return MPI_SUCCESS;
 fn_completed:
 	if(request) {
-		_MPID_Request_set_completed(*request);
+		MPID_PSP_Request_set_completed(*request);
 	}
 	return MPI_SUCCESS;
 	/* --- */
 err_exit:
 	if(request) {
-		_MPID_Request_set_completed(*request);
+		MPID_PSP_Request_set_completed(*request);
 		MPID_DEV_Request_release_ref(*request, MPID_REQUEST_SEND);
 	}
 	return mpi_error;

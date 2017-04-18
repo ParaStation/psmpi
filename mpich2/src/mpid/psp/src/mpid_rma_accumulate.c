@@ -226,13 +226,13 @@ fn_exit:
 	return MPI_SUCCESS;
 fn_completed:
 	if(request) {
-		_MPID_Request_set_completed(*request);
+		MPID_PSP_Request_set_completed(*request);
 	}
 	return MPI_SUCCESS;
 	/* --- */
 err_exit:
 	if(request) {
-		_MPID_Request_set_completed(*request);
+		MPID_PSP_Request_set_completed(*request);
 		MPID_DEV_Request_release_ref(*request, MPID_REQUEST_SEND);
 	}
 	return mpi_error;
@@ -332,7 +332,7 @@ int MPID_Get_accumulate_generic(const void *origin_addr, int origin_count,
 
 		if(request) {
 			*request = MPID_DEV_Request_send_create(win_ptr->comm_ptr);
-			_MPID_Request_set_completed(*request);
+			MPID_PSP_Request_set_completed(*request);
 		}
 
 		return MPI_SUCCESS;

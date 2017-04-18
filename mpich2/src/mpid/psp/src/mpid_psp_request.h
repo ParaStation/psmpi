@@ -93,7 +93,7 @@ void MPID_DEV_Request_release_ref(MPID_Request *req, MPID_Request_kind_t kind)
 
 
 static inline
-void _MPID_Request_set_completed(MPID_Request *req)
+void MPID_PSP_Request_set_completed(MPID_Request *req)
 {
 	*(req->cc_ptr) = 0;
 }

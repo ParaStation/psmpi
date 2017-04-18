@@ -136,7 +136,7 @@ int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype, MPID_Request *messa
 	if (message == NULL) {
 		req = MPID_DEV_Request_recv_create(NULL);
 		MPIR_Status_set_procnull(&req->status);
-		_MPID_Request_set_completed(req);
+		MPID_PSP_Request_set_completed(req);
 		*request = req;
 		return MPI_SUCCESS;
 	}
@@ -161,7 +161,7 @@ int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype, MPID_Request *messa
 	} else {
 		assert(rank == MPI_PROC_NULL);
 		/* MPIR_Status_set_procnull(&req->status); already called in MPID_Mprobe or MPID_Improbe */
-		_MPID_Request_set_completed(req);
+		MPID_PSP_Request_set_completed(req);
 	}
 
 	*request = req;
