@@ -108,10 +108,11 @@ void MPID_PSP_Subrequest_add(MPID_Request *req)
 
 
 static inline
-void MPID_PSP_Subrequest_completed(MPID_Request *req)
+int MPID_PSP_Subrequest_completed(MPID_Request *req)
 {
 	/* ToDo: should be explicit atomic */
 	(*(req->cc_ptr))--;
+	return ((*(req->cc_ptr)) == 0);
 }
 
 

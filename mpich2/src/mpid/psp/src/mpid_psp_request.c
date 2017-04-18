@@ -439,5 +439,9 @@ MPID_Request * MPID_Request_create(void)
 
 int MPID_Request_complete(MPID_Request *req)
 {
-	// ToDo: What to do here? Calling MPID_PSP_Subrequest_completed(req) ?
+	if(MPID_PSP_Subrequest_completed(req)) {
+		MPID_Request_release(req);
+	}
+
+	return MPI_SUCCESS;
 }
