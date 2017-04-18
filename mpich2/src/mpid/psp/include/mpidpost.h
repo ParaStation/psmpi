@@ -29,11 +29,6 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_ptr, MPID_Comm *comm_ptr,
 
 int MPID_GPID_Get(MPID_Comm *comm_ptr, int rank, MPID_Gpid gpid[]);
 
-#define MPID_REQUEST_SET_COMPLETED(req_)	\
-{						\
-    MPID_cc_set((req_)->cc_ptr, 0);             \
-}
-
 #define MPID_ICCREATE_REMOTECOMM_HOOK(peer_comm_ptr, local_comm_ptr, remote_size, remote_gpids, local_leader) \
   MPID_PG_ForwardPGInfo(peer_comm_ptr, local_comm_ptr, remote_size, remote_gpids, local_leader, remote_leader, cts_tag, NULL, NULL, NULL)
 
