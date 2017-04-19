@@ -122,7 +122,6 @@ int MPID_Progress_wait(MPID_Progress_state * state)
 
 	/* Make progress on nonblocking collectives */
 	mpi_errno = MPIDU_Sched_progress(&made_progress);
-	printf("MPIDU_Sched_progress(): %d\n", made_progress);
 	assert(mpi_errno == MPI_SUCCESS);
 
 	if (!made_progress) {
@@ -155,7 +154,6 @@ int MPID_Progress_test(void)
 
 	/* Make progress on nonblocking collectives */
 	mpi_errno = MPIDU_Sched_progress(&made_progress);
-	printf("MPIDU_Sched_progress(): %d\n", made_progress);
 	assert(mpi_errno == MPI_SUCCESS);
 
 	pscom_test_any();
