@@ -372,7 +372,7 @@ int MPID_Irecv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int 
 	} else switch (rank) {
 	case MPI_PROC_NULL:
 		MPIR_Status_set_procnull(&req->status);
-		_MPID_Request_set_completed(req);
+		MPID_PSP_Request_set_completed(req);
 		break;
 	case MPI_ROOT:
 	default:

@@ -35,7 +35,7 @@ int MPID_PSP_persistent_init(const void *buf, MPI_Aint count, MPI_Datatype datat
 	if (unlikely(!req)) goto err_request_recv_create;
 
 	req->partner_request = NULL;
-	_MPID_Request_set_completed(req); /* an inactive persistent request is a completed request. */
+	MPID_PSP_Request_set_completed(req); /* an inactive persistent request is a completed request. */
 
 	preq = &req->dev.kind.persistent;
 

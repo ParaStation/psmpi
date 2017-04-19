@@ -584,6 +584,7 @@ int MPID_Init(int *argc, char ***argv,
 		int grank;
 		MPIDI_PG_t * pg_ptr;
 		int pg_id_num;
+		MPIDI_VCRT_t * vcrt;
 
 		comm = MPIR_Process.comm_world;
 
@@ -592,8 +593,9 @@ int MPID_Init(int *argc, char ***argv,
 		comm->local_size  = pg_size;
 		comm->pscom_socket = socket;
 
-		comm->vcr = MPID_VCRT_Create(comm->remote_size);
-		assert(comm->vcr);
+		vcrt = MPIDI_VCRT_Create(comm->remote_size);
+		assert(vcrt);
+		MPID_PSP_comm_set_vcrt(comm, vcrt);
 
 		MPIDI_PG_Convert_id(pg_id_name, &pg_id_num);
 		MPIDI_PG_Create(pg_size, pg_id_num, &pg_ptr);
@@ -607,8 +609,8 @@ int MPID_Init(int *argc, char ***argv,
 
 			pscom_connection_t *con = grank2con_get(grank);
 
-			pg_ptr->vcr[grank] = MPID_VC_Create(pg_ptr, grank, con, grank);
-			comm->vcr[grank] = MPID_VC_Dup(pg_ptr->vcr[grank]);
+			pg_ptr->vcr[grank] = MPIDI_VC_Create(pg_ptr, grank, con, grank);
+			comm->vcr[grank] = MPIDI_VC_Dup(pg_ptr->vcr[grank]);
 		}
 
 		mpi_errno = MPIR_Comm_commit(comm);
@@ -620,6 +622,7 @@ int MPID_Init(int *argc, char ***argv,
 	 */
 	{
 		MPID_Comm * comm;
+		MPIDI_VCRT_t * vcrt;
 
 		comm = MPIR_Process.comm_self;
 		comm->rank        = 0;
@@ -627,10 +630,11 @@ int MPID_Init(int *argc, char ***argv,
 		comm->local_size  = 1;
 		comm->pscom_socket = socket;
 
-		comm->vcr = MPID_VCRT_Create(comm->remote_size);
-		assert(comm->vcr);
+		vcrt = MPIDI_VCRT_Create(comm->remote_size);
+		assert(vcrt);
+		MPID_PSP_comm_set_vcrt(comm, vcrt);
 
-		comm->vcr[0] = MPID_VC_Dup(MPIR_Process.comm_world->vcr[pg_rank]);
+		comm->vcr[0] = MPIDI_VC_Dup(MPIR_Process.comm_world->vcr[pg_rank]);
 
 		mpi_errno = MPIR_Comm_commit(comm);
 		assert(mpi_errno == MPI_SUCCESS);

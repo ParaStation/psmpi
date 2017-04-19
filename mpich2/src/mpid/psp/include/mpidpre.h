@@ -418,8 +418,8 @@ typedef struct MPID_Win_rank_info
 	enum MPID_PSP_Win_epoch_states epoch_state; /* this is for error detection */ \
 	int epoch_lock_count;  /* number of pending locks (for error detection, too) */
 
-typedef struct MPID_VCRT MPID_VCRT_t;
-typedef struct MPID_VC MPID_VC_t;
+typedef struct MPIDI_VCRT MPIDI_VCRT_t;
+typedef struct MPIDI_VC MPIDI_VC_t;
 
 typedef struct MPIDI_VCON MPIDI_VCON;
 
@@ -427,10 +427,11 @@ typedef struct MPIDI_VCON MPIDI_VCON;
 	pscom_socket_t	*pscom_socket;					\
 	pscom_group_t	*group;						\
 	pscom_request_t *bcast_request;					\
-	MPID_VC_t	**vcr; /* virtual connection reference table.	\
-				  INTRA: local  INTER: remote */	\
-	MPID_VC_t	**local_vcr; /* virtual connection reference table \
-					INTRA: unused INTER: local */
+	int              is_disconnected;				\
+	MPIDI_VCRT_t	*vcrt; /* virtual connection reference table */ \
+	MPIDI_VC_t	**vcr; /* alias to the array of virtual connections in vcrt  */	\
+	MPIDI_VCRT_t	*local_vcrt; /* local virtual connection reference table */ \
+	MPIDI_VC_t	**local_vcr; /* alias to the array of local virtual connections in local vcrt */
 
 
 /* Somewhere in the middle of the GCC 2.96 development cycle, we implemented
@@ -457,7 +458,7 @@ int MPID_PSP_comm_destroy_hook(struct MPID_Comm * comm);
 
 /* Progress hooks. */
 #define MPID_Progress_register_hook(fn_, id_) MPI_SUCCESS
-#define MPID_Progress_deregister_hook(id_) MPI_SUCCESS
+#define MPID_Progress_deregister_hook(id_)
 #define MPID_Progress_activate_hook(id_)
 #define MPID_Progress_deactivate_hook(id_)
 

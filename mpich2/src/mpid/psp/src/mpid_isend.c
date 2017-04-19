@@ -167,7 +167,7 @@ int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int ra
 	} else switch (rank) {
 	case MPI_PROC_NULL:
 		MPIR_Status_set_procnull(&req->status);
-		_MPID_Request_set_completed(req);
+		MPID_PSP_Request_set_completed(req);
 		break;
 	case MPI_ANY_SOURCE:
 	case MPI_ROOT:

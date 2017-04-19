@@ -79,6 +79,8 @@ void MPID_PSP_Request_init(MPID_Request *req)
 	req->status.count_hi_and_cancelled = 0;
 	req->comm = NULL;
 
+	req->errflag = MPIR_ERR_NONE;
+
 	creq = &req->dev.kind.common;
 	preq = creq->pscom_req;
 
@@ -408,14 +410,15 @@ void MPID_DEV_Request_coll_destroy(MPID_Request *req)
   A pointer to a new request object.
 
   Notes:
-  This routine is intended for use by 'MPI_Grequest_start' only.  Note that
-  once a request is created with this routine, any progress engine must assume
-  that an outside function can complete a request with
-  'MPID_Request_set_completed'.
+  This routine is intended for use by 'MPI_Grequest_start' only.  Note that 
+  once a request is created with this routine, any progress engine must assume 
+  that an outside function can complete a request with 
+  'MPID_Request_complete'.
 
   The request object returned by this routine should be initialized such that
   ref_count is one and handle contains a valid handle referring to the object.
   @*/
+
 MPID_Request * MPID_Request_create(void)
 {
 	MPID_Request * req;
@@ -431,8 +434,24 @@ MPID_Request * MPID_Request_create(void)
 }
 
 
+/*@
+  MPID_Request_complete - Complete a request
+
+  Input Parameter:
+. request - request to complete
+
+  Notes:
+  This routine is called to decrement the completion count of a
+  request object.  If the completion count of the request object has
+  reached zero, the reference count for the object will be
+  decremented.
+  @*/
+
 int MPID_Request_complete(MPID_Request *req)
 {
-	// ToDo: What to do here? Calling MPID_PSP_Subrequest_completed(req) ?
+	if(MPID_PSP_Subrequest_completed(req)) {
+		MPID_Request_release(req);
+	}
+
 	return MPI_SUCCESS;
 }

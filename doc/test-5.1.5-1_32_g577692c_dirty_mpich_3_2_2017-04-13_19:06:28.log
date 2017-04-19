@@ -1,0 +1,2092 @@
+zam871
+package pscom is not installed
+package psmgmt is not installed
+5.1.5-1_32_g577692c_dirty_mpich_3_2
+/opt/parastation/bin/mpiexec
+make[1]: Entering directory '/home/clauss/Work/psmpi/build/mpich2'
+( cd test && make  testing )
+make[2]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test'
+(NOXMLCLOSE=YES && export NOXMLCLOSE && cd mpi && make testing)
+make[3]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi'
+./runtests -srcdir=/home/clauss/Work/psmpi/mpich2/test/mpi -tests=testlist \
+	-mpiexec=/opt/parastation/bin/mpiexec -xmlfile=summary.xml \
+	-tapfile=summary.tap -junitfile=summary.junit.xml
+Looking in ./testlist
+Processing directory parastation
+Looking in ./parastation/testlist
+Processing directory attr
+Looking in ./attr/testlist
+Processing directory coll
+Looking in ./coll/testlist
+Program nonblocking exited without No Errors
+Program nonblocking exited without No Errors
+Program nonblocking exited without No Errors
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Program nonblocking2 exited without No Errors
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Program nonblocking2 exited without No Errors
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Program nonblocking2 exited without No Errors
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking2: nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Program nonblocking2 exited without No Errors
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Program nonblocking3 exited without No Errors
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Program nonblocking3 exited without No Errors
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Program nonblocking3 exited without No Errors
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nonblocking3: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nonblocking3: nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Program nonblocking3 exited without No Errors
+Program iallred exited without No Errors
+Program ibarrier exited without No Errors
+Program nballtoall1 exited without No Errors
+Unexpected output in nbcoll2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbcoll2: nbcoll2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbcoll2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbcoll2: nbcoll2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbcoll2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbcoll2: nbcoll2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbcoll2: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbcoll2: nbcoll2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Program nbcoll2 exited without No Errors
+Program nbredscat exited without No Errors
+Program nbredscat exited without No Errors
+Program nbredscat3 exited without No Errors
+Program nbredscatinter exited without No Errors
+Unexpected output in nbicbcast: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicbcast: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicbcast: nbicbcast: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicbcast: nbicbcast: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicbcast: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicbcast: nbicbcast: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicbcast: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicbcast: nbicbcast: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicbcast: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicbcast: nbicbcast: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Program nbicbcast exited without No Errors
+Program nbicallreduce exited without No Errors
+Unexpected output in nbicreduce: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicreduce: nbicreduce: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicreduce: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicreduce: nbicreduce: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicreduce: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicreduce: nbicreduce: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicreduce: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicreduce: nbicreduce: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicreduce: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicreduce: nbicreduce: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicreduce: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicreduce: nbicreduce: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Program nbicreduce exited without No Errors
+Unexpected output in nbicscatter: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicscatter: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicscatter: nbicscatter: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicscatter: nbicscatter: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicscatter: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicscatter: nbicscatter: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicscatter: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicscatter: nbicscatter: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicscatter: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicscatter: nbicscatter: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicscatter: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicscatter: nbicscatter: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicscatter: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicscatter: nbicscatter: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicscatter: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicscatter: nbicscatter: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Program nbicscatter exited without No Errors
+Unexpected output in nbicgather: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicgather: nbicgather: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicgather: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicgather: nbicgather: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicgather: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicgather: nbicgather: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicgather: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicgather: nbicgather: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicgather: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicgather: nbicgather: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicgather: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicgather: nbicgather: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicgather: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicgather: nbicgather: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Program nbicgather exited without No Errors
+Program nbicallgather exited without No Errors
+Program nbicbarrier exited without No Errors
+Program nbicallgatherv exited without No Errors
+Unexpected output in nbicgatherv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicgatherv: nbicgatherv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicgatherv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicgatherv: nbicgatherv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicgatherv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicgatherv: nbicgatherv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicgatherv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicgatherv: nbicgatherv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicgatherv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicgatherv: nbicgatherv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicgatherv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicgatherv: nbicgatherv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicgatherv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicgatherv: nbicgatherv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicgatherv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicgatherv: nbicgatherv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Program nbicgatherv exited without No Errors
+Unexpected output in nbicscatterv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicscatterv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicscatterv: nbicscatterv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicscatterv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicscatterv: nbicscatterv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicscatterv: nbicscatterv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicscatterv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicscatterv: nbicscatterv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicscatterv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicscatterv: nbicscatterv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicscatterv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicscatterv: nbicscatterv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicscatterv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicscatterv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicscatterv: nbicscatterv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicscatterv: nbicscatterv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Program nbicscatterv exited without No Errors
+Program nbicalltoall exited without No Errors
+Unexpected output in nbicalltoallv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicalltoallv: nbicalltoallv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Unexpected output in nbicalltoallv: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in nbicalltoallv: nbicalltoallv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+Program nbicalltoallv exited without No Errors
+Program nbicalltoallw exited without No Errors
+Processing directory comm
+Looking in ./comm/testlist
+Program comm_idup exited without No Errors
+Program comm_idup exited without No Errors
+Program comm_idup exited without No Errors
+Program comm_idup_mul exited without No Errors
+Program comm_idup_overlap exited without No Errors
+Program comm_idup_iallreduce exited without No Errors
+Program comm_idup_nb exited without No Errors
+Program comm_idup_isend exited without No Errors
+Program comm_idup_comm exited without No Errors
+Program comm_idup_comm2 exited without No Errors
+Program comm_create_group_idup exited without No Errors
+Processing directory datatype
+Looking in ./datatype/testlist
+Program darray-pack exited without No Errors
+Processing directory errhan
+Looking in ./errhan/testlist
+Processing directory group
+Looking in ./group/testlist
+Processing directory info
+Looking in ./info/testlist
+Processing directory init
+Looking in ./init/testlist
+Some programs (version) may still be running:
+pids = 5792 30154 
+The executable (version) will not be removed.
+Processing directory mpi_t
+Looking in ./mpi_t/testlist
+Processing directory pt2pt
+Looking in ./pt2pt/testlist
+Unexpected output in bsend3: Deadlock detected! Process 2939 will wait forever.
+Unexpected output in bsend3: ('wait' called without outstanding send or recv requests).
+Unexpected output in bsend3: Requests:
+Unexpected output in bsend3: Sockets:
+Unexpected output in bsend3:   sock#0x1d82d40 listen:    -1 demand:   0(   0)  src:(134.94.169.164,2939,(nil),r0000000) anyrecv:     0
+Unexpected output in bsend3:   Connections:
+Unexpected output in bsend3:     con#0x1d85708 type:  loop state:    open dest:(134.94.169.164,2939,0x1d85708,r0000000) recvcnt:    0
+Unexpected output in bsend3: Fds:
+Unexpected output in bsend3: 
+Unexpected output in bsend3: Reqs:6 GenReqs: (cnt:1  used:0)
+Program bsend3 exited without No Errors
+Unexpected output in bsend4: Deadlock detected! Process 2988 will wait forever.
+Unexpected output in bsend4: ('wait' called without outstanding send or recv requests).
+Unexpected output in bsend4: Requests:
+Unexpected output in bsend4: Sockets:
+Unexpected output in bsend4:   sock#0x9fed40 listen:    -1 demand:   0(   0)  src:(134.94.169.164,2988,(nil),r0000000) anyrecv:     0
+Unexpected output in bsend4:   Connections:
+Unexpected output in bsend4:     con#0xa01708 type:  loop state:    open dest:(134.94.169.164,2988,0xa01708,r0000000) recvcnt:    0
+Unexpected output in bsend4: Fds:
+Unexpected output in bsend4: 
+Unexpected output in bsend4: Reqs:5 GenReqs: (cnt:1  used:0)
+Program bsend4 exited without No Errors
+Unexpected output in rqfreeb: In direct memory block for handle type REQUEST, 1 handles are still allocated
+Unexpected output in rqfreeb: [0] 56 at [0x0000000000a7ab18], ss/Work/psmpi/mpich2/src/mpi/pt2pt/greq_start.c[96]
+Unexpected output in greq1: Deadlock detected! Process 3615 will wait forever.
+Unexpected output in greq1: ('wait' called without outstanding send or recv requests).
+Unexpected output in greq1: Requests:
+Unexpected output in greq1: Sockets:
+Unexpected output in greq1:   sock#0x23ddd40 listen:    -1 demand:   0(   0)  src:(134.94.169.164,3615,(nil),r0000000) anyrecv:     0
+Unexpected output in greq1:   Connections:
+Unexpected output in greq1:     con#0x23e0708 type:  loop state:    open dest:(134.94.169.164,3615,0x23e0708,r0000000) recvcnt:    0
+Unexpected output in greq1: Fds:
+Unexpected output in greq1: 
+Unexpected output in greq1: Reqs:3 GenReqs: (cnt:0  used:0)
+Program greq1 exited without No Errors
+Processing directory rma
+Looking in ./rma/testlist
+Unexpected output in getfence1: Deadlock detected! Process 4713 will wait forever.
+Unexpected output in getfence1: ('wait' called without outstanding send or recv requests).
+Unexpected output in getfence1: Requests:
+Unexpected output in getfence1: Sockets:
+Unexpected output in getfence1:   sock#0x885d40 listen:    -1 demand:   0(   0)  src:(134.94.169.164,4713,(nil),r0000000) anyrecv:     1
+Unexpected output in getfence1:   Connections:
+Unexpected output in getfence1:     con#0x8887e8 type:  loop state:    open dest:(134.94.169.164,4713,0x8887e8,r0000000) recvcnt:    1
+Unexpected output in getfence1:     con#0x888b88 type:   shm state:    norw dest:(134.94.169.164,4714,0x25e39a8,r0000001) recvcnt:    2
+Unexpected output in getfence1: Fds:
+Unexpected output in getfence1: 
+Unexpected output in getfence1: Reqs:11160 GenReqs: (cnt:724  used:724)
+Unexpected output in getfence1: ReqsAnySrc:4173 RecvQAnySrc:43085
+Program getfence1 exited without No Errors
+Unexpected output in win_info: 2: no_locks is not defined
+Unexpected output in win_info: 2: no_locks is not defined
+Unexpected output in win_info: 1: no_locks is not defined
+Unexpected output in win_info: 1: no_locks is not defined
+Unexpected output in win_info: 0: no_locks is not defined
+Unexpected output in win_info: 0: no_locks is not defined
+Unexpected output in win_info: 3: no_locks is not defined
+Unexpected output in win_info: 3: no_locks is not defined
+Program win_info exited without No Errors
+Program acc-pairtype exited without No Errors
+Program large-acc-flush_local exited without No Errors
+Processing directory spawn
+Looking in ./spawn/testlist
+Unexpected output in namepub: Error in Publish_name: "Invalid service name (see MPI_Publish_name), error stack:
+Unexpected output in namepub: MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+Unexpected output in namepub: MPID_NS_Publish(59)..: Lookup failed for service name MyTest"
+Unexpected output in namepub: [cli_0]: getval cmd failed
+Unexpected output in namepub: Error in Lookup name: "Invalid service name (see MPI_Publish_name), error stack:
+Unexpected output in namepub: MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x7ffd30456330) failed
+Unexpected output in namepub: MPI_Lookup_name(129): 
+Unexpected output in namepub: MPID_NS_Lookup(85)..: Lookup failed for service name MyTest"
+Unexpected output in namepub: Lookup name returned name after it was unpublished
+Unexpected output in namepub: [cli_0]: expecting cmd=lookup_result, got unpublish_result
+Unexpected output in namepub: [cli_1]: getval cmd failed
+Unexpected output in namepub: Lookup name returned name after it was unpublished
+Unexpected output in namepub:  Found 4 errors
+Unexpected output in namepub: [cli_1]: expecting cmd=finalize_ack, got lookup_result
+Unexpected output in namepub: readFromPMIClient: lost connection to the PMI client
+Unexpected output in namepub: [cli_0]: getval cmd failed
+Unexpected output in namepub: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: readFromPMIClient: lost connection to the PMI client
+Unexpected output in namepub: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: __PMI_send(r1): failed sending cmd=finalize_ack
+Unexpected output in namepub:  from pmi_finalize:1357
+Unexpected output in namepub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: __PMI_send(r0): failed sending cmd=finalize_ack
+Unexpected output in namepub:  from pmi_finalize:1357
+Program namepub exited without No Errors
+Program spawninfo1 exited without No Errors
+Program spawnminfo1 exited without No Errors
+Processing directory topo
+Looking in ./topo/testlist
+Program neighb_coll exited without No Errors
+Processing directory io
+Looking in ./io/testlist
+Unexpected output in i_noncontig: Deadlock detected! Process 22144 will wait forever.
+Unexpected output in i_noncontig: ('wait' called without outstanding send or recv requests).
+Unexpected output in i_noncontig: Requests:
+Unexpected output in i_noncontig: Sockets:
+Unexpected output in i_noncontig:   sock#0xe03d40 listen:    -1 demand:   0(   0)  src:(134.94.169.164,22144,(nil),r0000001) anyrecv:     0
+Unexpected output in i_noncontig:   Connections:
+Unexpected output in i_noncontig:     con#0xe067e8 type:  loop state:    open dest:(134.94.169.164,22144,0xe067e8,r0000001) recvcnt:    0
+Unexpected output in i_noncontig:     con#0xe069a8 type:   shm state:    open dest:(134.94.169.164,22143,0x261cb88,r0000000) recvcnt:    0
+Unexpected output in i_noncontig: Fds:
+Unexpected output in i_noncontig: 
+Unexpected output in i_noncontig: Reqs:5 GenReqs: (cnt:0  used:0)
+Unexpected output in i_noncontig: Deadlock detected! Process 22143 will wait forever.
+Unexpected output in i_noncontig: ('wait' called without outstanding send or recv requests).
+Unexpected output in i_noncontig: Requests:
+Unexpected output in i_noncontig: Sockets:
+Unexpected output in i_noncontig:   sock#0x2619d40 listen:    -1 demand:   0(   0)  src:(134.94.169.164,22143,(nil),r0000000) anyrecv:     0
+Unexpected output in i_noncontig:   Connections:
+Unexpected output in i_noncontig:     con#0x261c7e8 type:  loop state:    open dest:(134.94.169.164,22143,0x261c7e8,r0000000) recvcnt:    0
+Unexpected output in i_noncontig:     con#0x261cb88 type:   shm state:    open dest:(134.94.169.164,22144,0xe069a8,r0000001) recvcnt:    0
+Unexpected output in i_noncontig: Fds:
+Unexpected output in i_noncontig: 
+Unexpected output in i_noncontig: Reqs:5 GenReqs: (cnt:0  used:0)
+Program i_noncontig exited without No Errors
+Program async exited without No Errors
+Some programs (async) may still be running:
+pids = 1994 2036 
+The executable (async) will not be removed.
+Unexpected output in async_any: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in async_any: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in async_any: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in async_any: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Program async_any exited without No Errors
+Unexpected output in i_bigtype: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in i_bigtype: i_bigtype: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:157: MPID_Progress_test: Assertion `mpi_errno == 0' failed.
+Program i_bigtype exited without No Errors
+Unexpected output in i_hindexed_io: INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+Unexpected output in i_hindexed_io: i_hindexed_io: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:157: MPID_Progress_test: Assertion `mpi_errno == 0' failed.
+Program i_hindexed_io exited without No Errors
+Program i_rdwrord exited without No Errors
+Program i_setviewcur exited without No Errors
+Program i_aggregation1 exited without No Errors
+Program i_aggregation2 exited without No Errors
+Program i_coll_test exited without No Errors
+Program i_darray_read exited without No Errors
+Program i_hindexed exited without No Errors
+Program i_noncontig_coll exited without No Errors
+Program i_noncontig_coll2 exited without No Errors
+Program i_types_with_zeros exited without No Errors
+Processing directory f77
+Looking in ./f77/testlist
+Processing directory attr
+Looking in ./f77/attr/testlist
+Processing directory coll
+Looking in ./f77/coll/testlist
+Program nonblockingf exited without No Errors
+Program nonblocking_inpf exited without No Errors
+Processing directory datatype
+Looking in ./f77/datatype/testlist
+Processing directory pt2pt
+Looking in ./f77/pt2pt/testlist
+Unexpected output in greqf: Deadlock detected! Process 27960 will wait forever.
+Unexpected output in greqf: ('wait' called without outstanding send or recv requests).
+Unexpected output in greqf: Requests:
+Unexpected output in greqf: Sockets:
+Unexpected output in greqf:   sock#0xf4fdb0 listen:    -1 demand:   0(   0)  src:(134.94.169.164,27960,(nil),r0000000) anyrecv:     0
+Unexpected output in greqf:   Connections:
+Unexpected output in greqf:     con#0xf52778 type:  loop state:    open dest:(134.94.169.164,27960,0xf52778,r0000000) recvcnt:    0
+Unexpected output in greqf: Fds:
+Unexpected output in greqf: 
+Unexpected output in greqf: Reqs:3 GenReqs: (cnt:0  used:0)
+Program greqf exited without No Errors
+Processing directory info
+Looking in ./f77/info/testlist
+Processing directory spawn
+Looking in ./f77/spawn/testlist
+Unexpected output in namepubf:  Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
+Unexpected output in namepubf: MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+Unexpected output in namepubf: MPID_NS_Publish(59)..: Lookup failed for service name MyTest
+Unexpected output in namepubf:  Error in Lookup nameInvalid service name (see MPI_Publish_name), error stack:
+Unexpected output in namepubf: MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x20a1318) failed
+Unexpected output in namepubf: MPI_Lookup_name(129): 
+Unexpected output in namepubf: MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
+Unexpected output in namepubf: [cli_0]: getval cmd failed
+Unexpected output in namepubf: [cli_0]: expecting cmd=lookup_result, got unpublish_result
+Unexpected output in namepubf: [cli_1]: getval cmd failed
+Unexpected output in namepubf:  Lookup name returned name after it was unpublished
+Unexpected output in namepubf:  Lookup name returned name after it was unpublished
+Unexpected output in namepubf:   Found            4  errors
+Unexpected output in namepubf: [cli_0]: getval cmd failed
+Unexpected output in namepubf: [cli_1]: expecting cmd=finalize_ack, got lookup_result
+Unexpected output in namepubf: readFromPMIClient: lost connection to the PMI client
+Unexpected output in namepubf: readFromPMIClient: lost connection to the PMI client
+Unexpected output in namepubf: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: __PMI_send(r0): failed sending cmd=finalize_ack
+Unexpected output in namepubf:  from pmi_finalize:1357
+Unexpected output in namepubf: __PMI_send(r1): failed sending cmd=finalize_ack
+Unexpected output in namepubf:  from pmi_finalize:1357
+Program namepubf exited without No Errors
+Unexpected output in connaccf: [cli_1]: getval cmd failed
+Unexpected output in connaccf:  lookup name returned a value before published
+Unexpected output in connaccf: [cli_0]: getval cmd failed
+Unexpected output in connaccf: Fatal error in MPI_Lookup_name: Invalid service name (see MPI_Publish_name), error stack:
+Unexpected output in connaccf: MPI_Lookup_name(149): MPI_Lookup_name(service="fservtest", MPI_INFO_NULL, port=0xfd8ba8) failed
+Unexpected output in connaccf: MPI_Lookup_name(129): 
+Unexpected output in connaccf: MPID_NS_Lookup(85)..: Lookup failed for service name fservtest
+Program connaccf exited without No Errors
+Unexpected output in spawnmultf:  Found arg a                                                                                but expected -p        
+Unexpected output in spawnmultf:  Found arg b=c                                                                              but expected 27        
+Unexpected output in spawnmultf:  Found arg d e                                                                              but expected -echo     
+Unexpected output in spawnmultf:  Wrong number of arguments (           5 )
+Unexpected output in spawnmultf:   Found            4  errors
+Program spawnmultf exited without No Errors
+Processing directory io
+Looking in ./f77/io/testlist
+Unexpected output in iwriteatf: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwriteatf: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwriteatf: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwriteatf: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwriteatf: 
+Unexpected output in iwriteatf: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in iwriteatf: 
+Unexpected output in iwriteatf: Backtrace for this error:
+Unexpected output in iwriteatf: 
+Unexpected output in iwriteatf: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in iwriteatf: 
+Unexpected output in iwriteatf: Backtrace for this error:
+Unexpected output in iwriteatf: 
+Unexpected output in iwriteatf: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in iwriteatf: 
+Unexpected output in iwriteatf: Backtrace for this error:
+Unexpected output in iwriteatf: 
+Unexpected output in iwriteatf: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in iwriteatf: 
+Unexpected output in iwriteatf: Backtrace for this error:
+Unexpected output in iwriteatf: #0  0x7FAEF1B8ED47
+Unexpected output in iwriteatf: #0  0x7FAA55C17D47
+Unexpected output in iwriteatf: #0  0x7FD1848B0D47
+Unexpected output in iwriteatf: #0  0x7F659F1E7D47
+Unexpected output in iwriteatf: #1  0x7FAEF1B8F34E
+Unexpected output in iwriteatf: #1  0x7FAA55C1834E
+Unexpected output in iwriteatf: #1  0x7FD1848B134E
+Unexpected output in iwriteatf: #1  0x7F659F1E834E
+Unexpected output in iwriteatf: #2  0x7FAEF10AA11F
+Unexpected output in iwriteatf: #2  0x7FD183DCC11F
+Unexpected output in iwriteatf: #2  0x7F659E70311F
+Unexpected output in iwriteatf: #2  0x7FAA5513311F
+Unexpected output in iwriteatf: #3  0x7F659E74F2FA
+Unexpected output in iwriteatf: #4  0x7F659E73791E
+Unexpected output in iwriteatf: #3  0x7FAA5517F2FA
+Unexpected output in iwriteatf: #3  0x7FAEF10F62FA
+Unexpected output in iwriteatf: #3  0x7FD183E182FA
+Unexpected output in iwriteatf: #4  0x7FAEF10DE91E
+Unexpected output in iwriteatf: #4  0x7FD183E0091E
+Unexpected output in iwriteatf: #4  0x7FAA5516791E
+Unexpected output in iwriteatf: #5  0x7FAA5602C924
+Unexpected output in iwriteatf: #6  0x7FAA56023C92
+Unexpected output in iwriteatf: #5  0x7F659F5FC924
+Unexpected output in iwriteatf: #5  0x7FAEF1FA3924
+Unexpected output in iwriteatf: #6  0x7F659F5F3C92
+Unexpected output in iwriteatf: #6  0x7FAEF1F9AC92
+Unexpected output in iwriteatf: #7  0x7F659F5EF433
+Unexpected output in iwriteatf: #8  0x7F659F5AE279
+Unexpected output in iwriteatf: #7  0x7FAEF1F96433
+Unexpected output in iwriteatf: #9  0x7F659F5AE7BA
+Unexpected output in iwriteatf: #8  0x7FAEF1F55279
+Unexpected output in iwriteatf: #10  0x7F659F96153D
+Unexpected output in iwriteatf: #9  0x7FAEF1F557BA
+Unexpected output in iwriteatf: #7  0x7FAA5601F433
+Unexpected output in iwriteatf: #8  0x7FAA55FDE279
+Unexpected output in iwriteatf: #9  0x7FAA55FDE7BA
+Unexpected output in iwriteatf: #10  0x7FAA5639153D
+Unexpected output in iwriteatf: #11  0x4017FA in MAIN__ at iwriteatf.f:109
+Unexpected output in iwriteatf: #10  0x7FAEF230853D
+Unexpected output in iwriteatf: #11  0x4017FA in MAIN__ at iwriteatf.f:109
+Unexpected output in iwriteatf: #11  0x4017FA in MAIN__ at iwriteatf.f:109
+Program iwriteatf exited without No Errors
+Unexpected output in iwritef: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwritef: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwritef: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwritef: 
+Unexpected output in iwritef: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in iwritef: 
+Unexpected output in iwritef: Backtrace for this error:
+Unexpected output in iwritef: 
+Unexpected output in iwritef: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in iwritef: 
+Unexpected output in iwritef: Backtrace for this error:
+Unexpected output in iwritef: 
+Unexpected output in iwritef: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in iwritef: 
+Unexpected output in iwritef: Backtrace for this error:
+Unexpected output in iwritef: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwritef: 
+Unexpected output in iwritef: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in iwritef: 
+Unexpected output in iwritef: Backtrace for this error:
+Unexpected output in iwritef: #0  0x7FD48C29DD47
+Unexpected output in iwritef: #0  0x7F73036EFD47
+Unexpected output in iwritef: #0  0x7FEC70CC6D47
+Unexpected output in iwritef: #0  0x7FC513C4ED47
+Unexpected output in iwritef: #1  0x7FD48C29E34E
+Unexpected output in iwritef: #1  0x7F73036F034E
+Unexpected output in iwritef: #1  0x7FEC70CC734E
+Unexpected output in iwritef: #1  0x7FC513C4F34E
+Unexpected output in iwritef: #2  0x7FD48B7B911F
+Unexpected output in iwritef: #2  0x7F7302C0B11F
+Unexpected output in iwritef: #2  0x7FC51316A11F
+Unexpected output in iwritef: #3  0x7FD48B8052FA
+Unexpected output in iwritef: #3  0x7F7302C572FA
+Unexpected output in iwritef: #4  0x7F7302C3F91E
+Unexpected output in iwritef: #3  0x7FC5131B62FA
+Unexpected output in iwritef: #4  0x7FD48B7ED91E
+Unexpected output in iwritef: #4  0x7FC51319E91E
+Unexpected output in iwritef: #5  0x7FD48C6B2924
+Unexpected output in iwritef: #5  0x7FC514063924
+Unexpected output in iwritef: #6  0x7FC51405AC92
+Unexpected output in iwritef: #6  0x7FD48C6A9C92
+Unexpected output in iwritef: #2  0x7FEC701E211F
+Unexpected output in iwritef: #3  0x7FEC7022E2FA
+Unexpected output in iwritef: #4  0x7FEC7021691E
+Unexpected output in iwritef: #5  0x7FEC710DB924
+Unexpected output in iwritef: #6  0x7FEC710D2C92
+Unexpected output in iwritef: #7  0x7FC514056433
+Unexpected output in iwritef: #7  0x7FD48C6A5433
+Unexpected output in iwritef: #5  0x7F7303B04924
+Unexpected output in iwritef: #6  0x7F7303AFBC92
+Unexpected output in iwritef: #7  0x7F7303AF7433
+Unexpected output in iwritef: #8  0x7FC514015279
+Unexpected output in iwritef: #8  0x7FD48C664279
+Unexpected output in iwritef: #9  0x7FC5140157BA
+Unexpected output in iwritef: #8  0x7F7303AB6279
+Unexpected output in iwritef: #9  0x7F7303AB67BA
+Unexpected output in iwritef: #7  0x7FEC710CE433
+Unexpected output in iwritef: #8  0x7FEC7108D279
+Unexpected output in iwritef: #9  0x7FEC7108D7BA
+Unexpected output in iwritef: #9  0x7FD48C6647BA
+Unexpected output in iwritef: #10  0x7FC5143C853D
+Unexpected output in iwritef: #10  0x7FD48CA1753D
+Unexpected output in iwritef: #10  0x7FEC7144053D
+Unexpected output in iwritef: #10  0x7F7303E6953D
+Unexpected output in iwritef: #11  0x4018CE in MAIN__ at iwritef.f:124
+Unexpected output in iwritef: #11  0x4018CE in MAIN__ at iwritef.f:124
+Unexpected output in iwritef: #11  0x4018CE in MAIN__ at iwritef.f:124
+Unexpected output in iwritef: #11  0x4018CE in MAIN__ at iwritef.f:124
+Program iwritef exited without No Errors
+Program iwriteshf exited without No Errors
+Program i_setviewcurf exited without No Errors
+Program iwriteatallf exited without No Errors
+Processing directory rma
+Looking in ./f77/rma/testlist
+Processing directory init
+Looking in ./f77/init/testlist
+Processing directory comm
+Looking in ./f77/comm/testlist
+Processing directory ext
+Looking in ./f77/ext/testlist
+Processing directory topo
+Looking in ./f77/topo/testlist
+Processing directory profile
+Looking in ./f77/profile/testlist
+Processing directory cxx
+Looking in ./cxx/testlist
+Processing directory attr
+Looking in ./cxx/attr/testlist
+Processing directory pt2pt
+Looking in ./cxx/pt2pt/testlist
+Processing directory comm
+Looking in ./cxx/comm/testlist
+Processing directory coll
+Looking in ./cxx/coll/testlist
+Processing directory errhan
+Looking in ./cxx/errhan/testlist
+Processing directory init
+Looking in ./cxx/init/testlist
+Processing directory info
+Looking in ./cxx/info/testlist
+Processing directory datatype
+Looking in ./cxx/datatype/testlist
+Processing directory topo
+Looking in ./cxx/topo/testlist
+Processing directory io
+Looking in ./cxx/io/testlist
+Unexpected output in iwriteatx: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwriteatx: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwriteatx: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwriteatx: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Program iwriteatx exited without No Errors
+Unexpected output in iwritex: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwritex: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwritex: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwritex: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Program iwritex exited without No Errors
+Program iwriteshx exited without No Errors
+Unexpected output in iwriteatnosx: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwriteatnosx: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwriteatnosx: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwriteatnosx: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Program iwriteatnosx exited without No Errors
+Unexpected output in iwritenosx: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwritenosx: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwritenosx: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwritenosx: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Program iwritenosx exited without No Errors
+Program iwriteshnosx exited without No Errors
+Processing directory spawn
+Looking in ./cxx/spawn/testlist
+Unexpected output in namepubx: Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
+Unexpected output in namepubx: MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+Unexpected output in namepubx: MPID_NS_Publish(59)..: Lookup failed for service name MyTest
+Unexpected output in namepubx: Error in Lookup name Invalid service name (see MPI_Publish_name), error stack:
+Unexpected output in namepubx: MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x1ec5840) failed
+Unexpected output in namepubx: MPI_Lookup_name(129): 
+Unexpected output in namepubx: MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
+Unexpected output in namepubx: [cli_1]: getval cmd failed
+Unexpected output in namepubx: [cli_0]: getval cmd failed
+Unexpected output in namepubx: Lookup name returned name after it was unpublished
+Unexpected output in namepubx: The name returned was 
+Unexpected output in namepubx: [cli_0]: expecting cmd=lookup_result, got unpublish_result
+Unexpected output in namepubx: Lookup name returned name after it was unpublished
+Unexpected output in namepubx: The name returned was 
+Unexpected output in namepubx:  Found 4 errors
+Unexpected output in namepubx: [cli_0]: getval cmd failed
+Unexpected output in namepubx: readFromPMIClient: lost connection to the PMI client
+Unexpected output in namepubx: [cli_1]: expecting cmd=finalize_ack, got lookup_result
+Unexpected output in namepubx: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: readFromPMIClient: lost connection to the PMI client
+Unexpected output in namepubx: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: __PMI_send(r0): failed sending cmd=finalize_ack
+Unexpected output in namepubx:  from pmi_finalize:1357
+Unexpected output in namepubx: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: __PMI_send(r1): failed sending cmd=finalize_ack
+Unexpected output in namepubx:  from pmi_finalize:1357
+Program namepubx exited without No Errors
+Processing directory rma
+Looking in ./cxx/rma/testlist
+Processing directory f90
+Looking in ./f90/testlist
+Processing directory attr
+Looking in ./f90/attr/testlist
+Processing directory coll
+Looking in ./f90/coll/testlist
+Program nonblockingf90 exited without No Errors
+Program nonblocking_inpf90 exited without No Errors
+Processing directory comm
+Looking in ./f90/comm/testlist
+Processing directory ext
+Looking in ./f90/ext/testlist
+Processing directory info
+Looking in ./f90/info/testlist
+Processing directory init
+Looking in ./f90/init/testlist
+Processing directory io
+Looking in ./f90/io/testlist
+Unexpected output in iwriteatf90: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwriteatf90: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwriteatf90: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwriteatf90: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwriteatf90: 
+Unexpected output in iwriteatf90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in iwriteatf90: 
+Unexpected output in iwriteatf90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in iwriteatf90: 
+Unexpected output in iwriteatf90: Backtrace for this error:
+Unexpected output in iwriteatf90: 
+Unexpected output in iwriteatf90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in iwriteatf90: 
+Unexpected output in iwriteatf90: Backtrace for this error:
+Unexpected output in iwriteatf90: 
+Unexpected output in iwriteatf90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in iwriteatf90: 
+Unexpected output in iwriteatf90: Backtrace for this error:
+Unexpected output in iwriteatf90: 
+Unexpected output in iwriteatf90: Backtrace for this error:
+Unexpected output in iwriteatf90: #0  0x7F7557312D47
+Unexpected output in iwriteatf90: #0  0x7FF5F68C5D47
+Unexpected output in iwriteatf90: #0  0x7FFA3E786D47
+Unexpected output in iwriteatf90: #0  0x7FB9347E2D47
+Unexpected output in iwriteatf90: #1  0x7F755731334E
+Unexpected output in iwriteatf90: #1  0x7FF5F68C634E
+Unexpected output in iwriteatf90: #1  0x7FFA3E78734E
+Unexpected output in iwriteatf90: #1  0x7FB9347E334E
+Unexpected output in iwriteatf90: #2  0x7F755682E11F
+Unexpected output in iwriteatf90: #2  0x7FFA3DCA211F
+Unexpected output in iwriteatf90: #2  0x7FB933CFE11F
+Unexpected output in iwriteatf90: #3  0x7F755687A2FA
+Unexpected output in iwriteatf90: #3  0x7FFA3DCEE2FA
+Unexpected output in iwriteatf90: #4  0x7F755686291E
+Unexpected output in iwriteatf90: #4  0x7FFA3DCD691E
+Unexpected output in iwriteatf90: #3  0x7FB933D4A2FA
+Unexpected output in iwriteatf90: #4  0x7FB933D3291E
+Unexpected output in iwriteatf90: #5  0x7F7557727924
+Unexpected output in iwriteatf90: #5  0x7FFA3EB9B924
+Unexpected output in iwriteatf90: #6  0x7FFA3EB92C92
+Unexpected output in iwriteatf90: #6  0x7F755771EC92
+Unexpected output in iwriteatf90: #2  0x7FF5F5DE111F
+Unexpected output in iwriteatf90: #3  0x7FF5F5E2D2FA
+Unexpected output in iwriteatf90: #4  0x7FF5F5E1591E
+Unexpected output in iwriteatf90: #5  0x7FF5F6CDA924
+Unexpected output in iwriteatf90: #6  0x7FF5F6CD1C92
+Unexpected output in iwriteatf90: #7  0x7FFA3EB8E433
+Unexpected output in iwriteatf90: #7  0x7F755771A433
+Unexpected output in iwriteatf90: #5  0x7FB934BF7924
+Unexpected output in iwriteatf90: #6  0x7FB934BEEC92
+Unexpected output in iwriteatf90: #7  0x7FB934BEA433
+Unexpected output in iwriteatf90: #8  0x7FFA3EB4D279
+Unexpected output in iwriteatf90: #8  0x7F75576D9279
+Unexpected output in iwriteatf90: #7  0x7FF5F6CCD433
+Unexpected output in iwriteatf90: #8  0x7FF5F6C8C279
+Unexpected output in iwriteatf90: #9  0x7FF5F6C8C7BA
+Unexpected output in iwriteatf90: #9  0x7F75576D97BA
+Unexpected output in iwriteatf90: #9  0x7FFA3EB4D7BA
+Unexpected output in iwriteatf90: #10  0x7FFA3EF0053D
+Unexpected output in iwriteatf90: #8  0x7FB934BA9279
+Unexpected output in iwriteatf90: #9  0x7FB934BA97BA
+Unexpected output in iwriteatf90: #10  0x7F7557A8C53D
+Unexpected output in iwriteatf90: #10  0x7FF5F703F53D
+Unexpected output in iwriteatf90: #10  0x7FB934F5C53D
+Unexpected output in iwriteatf90: #11  0x4017D3 in MAIN__ at iwriteatf90.f90:107
+Unexpected output in iwriteatf90: #11  0x4017D3 in MAIN__ at iwriteatf90.f90:107
+Unexpected output in iwriteatf90: #11  0x4017D3 in MAIN__ at iwriteatf90.f90:107
+Unexpected output in iwriteatf90: #11  0x4017D3 in MAIN__ at iwriteatf90.f90:107
+Program iwriteatf90 exited without No Errors
+Unexpected output in iwritef90: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwritef90: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwritef90: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwritef90: 
+Unexpected output in iwritef90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in iwritef90: 
+Unexpected output in iwritef90: Backtrace for this error:
+Unexpected output in iwritef90: 
+Unexpected output in iwritef90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in iwritef90: 
+Unexpected output in iwritef90: Backtrace for this error:
+Unexpected output in iwritef90: Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Unexpected output in iwritef90: 
+Unexpected output in iwritef90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in iwritef90: 
+Unexpected output in iwritef90: Backtrace for this error:
+Unexpected output in iwritef90: 
+Unexpected output in iwritef90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in iwritef90: 
+Unexpected output in iwritef90: Backtrace for this error:
+Unexpected output in iwritef90: #0  0x7F74D8E98D47
+Unexpected output in iwritef90: #0  0x7F64FA0E5D47
+Unexpected output in iwritef90: #0  0x7F41295C4D47
+Unexpected output in iwritef90: #0  0x7FA3B4600D47
+Unexpected output in iwritef90: #1  0x7F74D8E9934E
+Unexpected output in iwritef90: #1  0x7F64FA0E634E
+Unexpected output in iwritef90: #1  0x7F41295C534E
+Unexpected output in iwritef90: #2  0x7F74D83B411F
+Unexpected output in iwritef90: #2  0x7F64F960111F
+Unexpected output in iwritef90: #3  0x7F74D84002FA
+Unexpected output in iwritef90: #3  0x7F64F964D2FA
+Unexpected output in iwritef90: #4  0x7F74D83E891E
+Unexpected output in iwritef90: #1  0x7FA3B460134E
+Unexpected output in iwritef90: #2  0x7FA3B3B1C11F
+Unexpected output in iwritef90: #3  0x7FA3B3B682FA
+Unexpected output in iwritef90: #4  0x7FA3B3B5091E
+Unexpected output in iwritef90: #5  0x7FA3B4A15924
+Unexpected output in iwritef90: #5  0x7F74D92AD924
+Unexpected output in iwritef90: #6  0x7FA3B4A0CC92
+Unexpected output in iwritef90: #6  0x7F74D92A4C92
+Unexpected output in iwritef90: #7  0x7FA3B4A08433
+Unexpected output in iwritef90: #8  0x7FA3B49C7279
+Unexpected output in iwritef90: #7  0x7F74D92A0433
+Unexpected output in iwritef90: #8  0x7F74D925F279
+Unexpected output in iwritef90: #9  0x7FA3B49C77BA
+Unexpected output in iwritef90: #9  0x7F74D925F7BA
+Unexpected output in iwritef90: #10  0x7F74D961253D
+Unexpected output in iwritef90: #10  0x7FA3B4D7A53D
+Unexpected output in iwritef90: #2  0x7F4128AE011F
+Unexpected output in iwritef90: #3  0x7F4128B2C2FA
+Unexpected output in iwritef90: #4  0x7F4128B1491E
+Unexpected output in iwritef90: #5  0x7F41299D9924
+Unexpected output in iwritef90: #6  0x7F41299D0C92
+Unexpected output in iwritef90: #7  0x7F41299CC433
+Unexpected output in iwritef90: #8  0x7F412998B279
+Unexpected output in iwritef90: #9  0x7F412998B7BA
+Unexpected output in iwritef90: #10  0x7F4129D3E53D
+Unexpected output in iwritef90: #11  0x4018A7 in MAIN__ at iwritef90.f90:122
+Unexpected output in iwritef90: #11  0x4018A7 in MAIN__ at iwritef90.f90:122
+Unexpected output in iwritef90: #11  0x4018A7 in MAIN__ at iwritef90.f90:122
+Unexpected output in iwritef90: #4  0x7F64F963591E
+Unexpected output in iwritef90: #5  0x7F64FA4FA924
+Unexpected output in iwritef90: #6  0x7F64FA4F1C92
+Unexpected output in iwritef90: #7  0x7F64FA4ED433
+Unexpected output in iwritef90: #8  0x7F64FA4AC279
+Unexpected output in iwritef90: #9  0x7F64FA4AC7BA
+Unexpected output in iwritef90: #10  0x7F64FA85F53D
+Unexpected output in iwritef90: #11  0x4018A7 in MAIN__ at iwritef90.f90:122
+Program iwritef90 exited without No Errors
+Program iwriteshf90 exited without No Errors
+Program i_setviewcurf90 exited without No Errors
+Program iwriteatallf90 exited without No Errors
+Processing directory misc
+Looking in ./f90/misc/testlist
+Processing directory pt2pt
+Looking in ./f90/pt2pt/testlist
+Unexpected output in greqf90: Deadlock detected! Process 8311 will wait forever.
+Unexpected output in greqf90: ('wait' called without outstanding send or recv requests).
+Unexpected output in greqf90: Requests:
+Unexpected output in greqf90: Sockets:
+Unexpected output in greqf90:   sock#0x2285db0 listen:    -1 demand:   0(   0)  src:(134.94.169.164,8311,(nil),r0000000) anyrecv:     0
+Unexpected output in greqf90:   Connections:
+Unexpected output in greqf90:     con#0x2288778 type:  loop state:    open dest:(134.94.169.164,8311,0x2288778,r0000000) recvcnt:    0
+Unexpected output in greqf90: Fds:
+Unexpected output in greqf90: 
+Unexpected output in greqf90: Reqs:3 GenReqs: (cnt:0  used:0)
+Program greqf90 exited without No Errors
+Processing directory datatype
+Looking in ./f90/datatype/testlist
+Processing directory f90types
+Looking in ./f90/f90types/testlist
+Processing directory rma
+Looking in ./f90/rma/testlist
+Processing directory spawn
+Looking in ./f90/spawn/testlist
+Unexpected output in namepubf90:  Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
+Unexpected output in namepubf90: MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+Unexpected output in namepubf90: MPID_NS_Publish(59)..: Lookup failed for service name MyTest
+Unexpected output in namepubf90:  Error in Lookup nameInvalid service name (see MPI_Publish_name), error stack:
+Unexpected output in namepubf90: MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x18db318) failed
+Unexpected output in namepubf90: MPI_Lookup_name(129): 
+Unexpected output in namepubf90: MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
+Unexpected output in namepubf90: [cli_0]: getval cmd failed
+Unexpected output in namepubf90: [cli_1]: getval cmd failed
+Unexpected output in namepubf90: [cli_0]: expecting cmd=lookup_result, got unpublish_result
+Unexpected output in namepubf90:  Lookup name returned name after it was unpublished
+Unexpected output in namepubf90:  Lookup name returned name after it was unpublished
+Unexpected output in namepubf90:   Found            4  errors
+Unexpected output in namepubf90: readFromPMIClient: lost connection to the PMI client
+Unexpected output in namepubf90: [cli_0]: getval cmd failed
+Unexpected output in namepubf90: readFromPMIClient: lost connection to the PMI client
+Unexpected output in namepubf90: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: [cli_1]: expecting cmd=finalize_ack, got lookup_result
+Unexpected output in namepubf90: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: __PMI_send(r0): failed sending cmd=finalize_ack
+Unexpected output in namepubf90:  from pmi_finalize:1357
+Unexpected output in namepubf90: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: __PMI_send(r1): failed sending cmd=finalize_ack
+Unexpected output in namepubf90:  from pmi_finalize:1357
+Program namepubf90 exited without No Errors
+Unexpected output in connaccf90: [cli_1]: getval cmd failed
+Unexpected output in connaccf90: [cli_0]: getval cmd failed
+Unexpected output in connaccf90:  lookup name returned a value before published
+Unexpected output in connaccf90: Fatal error in MPI_Lookup_name: Invalid service name (see MPI_Publish_name), error stack:
+Unexpected output in connaccf90: MPI_Lookup_name(149): MPI_Lookup_name(service="fservtest", MPI_INFO_NULL, port=0x1715ba8) failed
+Unexpected output in connaccf90: MPI_Lookup_name(129): 
+Unexpected output in connaccf90: MPID_NS_Lookup(85)..: Lookup failed for service name fservtest
+Program connaccf90 exited without No Errors
+Unexpected output in spawnmultf90:  Found arg a                                                                                but expected -p        
+Unexpected output in spawnmultf90:  Found arg b=c                                                                              but expected 27        
+Unexpected output in spawnmultf90:  Found arg d e                                                                              but expected -echo     
+Unexpected output in spawnmultf90:  Wrong number of arguments (           5 )
+Unexpected output in spawnmultf90:   Found            4  errors
+Program spawnmultf90 exited without No Errors
+Unexpected output in spawnmultf03:  Found arg a                                                                                but expected -p        
+Unexpected output in spawnmultf03:  Found arg b=c                                                                              but expected 27        
+Unexpected output in spawnmultf03:  Found arg d e                                                                              but expected -echo     
+Unexpected output in spawnmultf03:  Wrong number of arguments (           5 )
+Unexpected output in spawnmultf03:   Found            4  errors
+Program spawnmultf03 exited without No Errors
+Processing directory timer
+Looking in ./f90/timer/testlist
+Processing directory topo
+Looking in ./f90/topo/testlist
+Processing directory profile
+Looking in ./f90/profile/testlist
+Processing directory errors
+Looking in ./errors/testlist
+Processing directory attr
+Looking in ./errors/attr/testlist
+Processing directory coll
+Looking in ./errors/coll/testlist
+Program bcastlength exited without No Errors
+Processing directory comm
+Looking in ./errors/comm/testlist
+Program too_many_icomms exited without No Errors
+Program too_many_icomms2 exited without No Errors
+Processing directory group
+Looking in ./errors/group/testlist
+Processing directory pt2pt
+Looking in ./errors/pt2pt/testlist
+Processing directory topo
+Looking in ./errors/topo/testlist
+Processing directory rma
+Looking in ./errors/rma/testlist
+Processing directory spawn
+Looking in ./errors/spawn/testlist
+Unexpected output in unpub: [cli_0]: getval cmd failed
+Unexpected output in unpub: readFromPMIClient: lost connection to the PMI client
+Unexpected output in unpub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in unpub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in unpub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in unpub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in unpub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in unpub: __PMI_send(r0): failed sending cmd=finalize_ack
+Unexpected output in unpub:  from pmi_finalize:1357
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: expecting cmd=finalize_ack, got lookup_result
+Unexpected output in lookup_name: readFromPMIClient: lost connection to the PMI client
+Unexpected output in lookup_name: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in lookup_name: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in lookup_name: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in lookup_name: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in lookup_name: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in lookup_name: __PMI_send(r0): failed sending cmd=finalize_ack
+Unexpected output in lookup_name:  from pmi_finalize:1357
+Processing directory io
+Looking in ./errors/io/testlist
+Processing directory f77
+Looking in ./errors/f77/testlist
+Processing directory io
+Looking in ./errors/f77/io/testlist
+Processing directory cxx
+Looking in ./errors/cxx/testlist
+Processing directory errhan
+Looking in ./errors/cxx/errhan/testlist
+Processing directory io
+Looking in ./errors/cxx/io/testlist
+Processing directory f90
+Looking in ./errors/f90/testlist
+Processing directory io
+Looking in ./errors/f90/io/testlist
+Processing directory impls
+Looking in ./impls/testlist
+106 tests failed out of 934
+Details in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.xml
+TAP formatted results in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.tap
+JUNIT formatted results in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.junit.xml
+make[3]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi'
+(XMLFILE=../mpi/summary.xml && XMLCONTINUE=YES && \
+export XMLFILE && export XMLCONTINUE && \
+cd commands && make testing)
+make[3]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test/commands'
+make[3]: Nothing to be done for 'testing'.
+make[3]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test/commands'
+make[2]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test'
+make[1]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2'
+./coll/nonblocking np=4:
+
+-------------------------------------------------
+./coll/nonblocking np=5:
+
+-------------------------------------------------
+./coll/nonblocking np=10:
+
+-------------------------------------------------
+./coll/nonblocking2 np=1:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./coll/nonblocking2 np=4:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./coll/nonblocking2 np=5:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./coll/nonblocking2 np=10:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+nonblocking2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./coll/nonblocking3 np=1:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./coll/nonblocking3 np=4:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./coll/nonblocking3 np=5:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./coll/nonblocking3 np=10:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nonblocking3: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./coll/iallred np=2:
+
+-------------------------------------------------
+./coll/ibarrier np=2:
+
+-------------------------------------------------
+./coll/nballtoall1 np=8:
+
+-------------------------------------------------
+./coll/nbcoll2 np=5:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbcoll2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbcoll2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbcoll2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbcoll2: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./coll/nbredscat np=4:
+
+-------------------------------------------------
+./coll/nbredscat np=8:
+
+-------------------------------------------------
+./coll/nbredscat3 np=8:
+
+-------------------------------------------------
+./coll/nbredscatinter np=8:
+
+-------------------------------------------------
+./coll/nbicbcast np=8:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicbcast: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+nbicbcast: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicbcast: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicbcast: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicbcast: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./coll/nbicallreduce np=8:
+
+-------------------------------------------------
+./coll/nbicreduce np=8:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicreduce: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicreduce: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicreduce: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicreduce: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicreduce: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicreduce: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./coll/nbicscatter np=8:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicscatter: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+nbicscatter: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicscatter: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicscatter: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicscatter: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicscatter: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicscatter: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicscatter: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./coll/nbicgather np=8:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicgather: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicgather: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicgather: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicgather: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicgather: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicgather: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicgather: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./coll/nbicallgather np=8:
+
+-------------------------------------------------
+./coll/nbicbarrier np=8:
+
+-------------------------------------------------
+./coll/nbicallgatherv np=8:
+
+-------------------------------------------------
+./coll/nbicgatherv np=8:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicgatherv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicgatherv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicgatherv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicgatherv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicgatherv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicgatherv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicgatherv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicgatherv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./coll/nbicscatterv np=8:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicscatterv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicscatterv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+nbicscatterv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicscatterv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicscatterv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicscatterv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicscatterv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+nbicscatterv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./coll/nbicalltoall np=8:
+
+-------------------------------------------------
+./coll/nbicalltoallv np=8:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicalltoallv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+nbicalltoallv: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:125: MPID_Progress_wait: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./coll/nbicalltoallw np=8:
+
+-------------------------------------------------
+./comm/comm_idup np=2:
+
+-------------------------------------------------
+./comm/comm_idup np=4:
+
+-------------------------------------------------
+./comm/comm_idup np=9:
+
+-------------------------------------------------
+./comm/comm_idup_mul np=2:
+
+-------------------------------------------------
+./comm/comm_idup_overlap np=2:
+
+-------------------------------------------------
+./comm/comm_idup_iallreduce np=6:
+
+-------------------------------------------------
+./comm/comm_idup_nb np=6:
+
+-------------------------------------------------
+./comm/comm_idup_isend np=6:
+
+-------------------------------------------------
+./comm/comm_idup_comm np=6:
+
+-------------------------------------------------
+./comm/comm_idup_comm2 np=6:
+
+-------------------------------------------------
+./comm/comm_create_group_idup np=4:
+
+-------------------------------------------------
+./datatype/darray-pack np=72:
+
+-------------------------------------------------
+./pt2pt/bsend3 np=1:
+Deadlock detected! Process 2939 will wait forever.
+('wait' called without outstanding send or recv requests).
+Requests:
+Sockets:
+  sock#0x1d82d40 listen:    -1 demand:   0(   0)  src:(134.94.169.164,2939,(nil),r0000000) anyrecv:     0
+  Connections:
+    con#0x1d85708 type:  loop state:    open dest:(134.94.169.164,2939,0x1d85708,r0000000) recvcnt:    0
+Fds:
+
+Reqs:6 GenReqs: (cnt:1  used:0)
+
+-------------------------------------------------
+./pt2pt/bsend4 np=1:
+Deadlock detected! Process 2988 will wait forever.
+('wait' called without outstanding send or recv requests).
+Requests:
+Sockets:
+  sock#0x9fed40 listen:    -1 demand:   0(   0)  src:(134.94.169.164,2988,(nil),r0000000) anyrecv:     0
+  Connections:
+    con#0xa01708 type:  loop state:    open dest:(134.94.169.164,2988,0xa01708,r0000000) recvcnt:    0
+Fds:
+
+Reqs:5 GenReqs: (cnt:1  used:0)
+
+-------------------------------------------------
+./pt2pt/rqfreeb np=4:
+ No Errors
+In direct memory block for handle type REQUEST, 1 handles are still allocated
+[0] 56 at [0x0000000000a7ab18], ss/Work/psmpi/mpich2/src/mpi/pt2pt/greq_start.c[96]
+
+-------------------------------------------------
+./pt2pt/greq1 np=1:
+Deadlock detected! Process 3615 will wait forever.
+('wait' called without outstanding send or recv requests).
+Requests:
+Sockets:
+  sock#0x23ddd40 listen:    -1 demand:   0(   0)  src:(134.94.169.164,3615,(nil),r0000000) anyrecv:     0
+  Connections:
+    con#0x23e0708 type:  loop state:    open dest:(134.94.169.164,3615,0x23e0708,r0000000) recvcnt:    0
+Fds:
+
+Reqs:3 GenReqs: (cnt:0  used:0)
+
+-------------------------------------------------
+./rma/getfence1 np=2:
+Deadlock detected! Process 4713 will wait forever.
+('wait' called without outstanding send or recv requests).
+Requests:
+Sockets:
+  sock#0x885d40 listen:    -1 demand:   0(   0)  src:(134.94.169.164,4713,(nil),r0000000) anyrecv:     1
+  Connections:
+    con#0x8887e8 type:  loop state:    open dest:(134.94.169.164,4713,0x8887e8,r0000000) recvcnt:    1
+    con#0x888b88 type:   shm state:    norw dest:(134.94.169.164,4714,0x25e39a8,r0000001) recvcnt:    2
+Fds:
+
+Reqs:11160 GenReqs: (cnt:724  used:724)
+ReqsAnySrc:4173 RecvQAnySrc:43085
+
+-------------------------------------------------
+./rma/win_info np=4:
+2: no_locks is not defined
+2: no_locks is not defined
+1: no_locks is not defined
+1: no_locks is not defined
+0: no_locks is not defined
+0: no_locks is not defined
+3: no_locks is not defined
+3: no_locks is not defined
+
+-------------------------------------------------
+./rma/acc-pairtype np=2:
+
+-------------------------------------------------
+./rma/large-acc-flush_local np=3:
+
+-------------------------------------------------
+./spawn/namepub np=2:
+Error in Publish_name: "Invalid service name (see MPI_Publish_name), error stack:
+MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+MPID_NS_Publish(59)..: Lookup failed for service name MyTest"
+[cli_0]: getval cmd failed
+Error in Lookup name: "Invalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x7ffd30456330) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name MyTest"
+Lookup name returned name after it was unpublished
+[cli_0]: expecting cmd=lookup_result, got unpublish_result
+[cli_1]: getval cmd failed
+Lookup name returned name after it was unpublished
+ Found 4 errors
+[cli_1]: expecting cmd=finalize_ack, got lookup_result
+readFromPMIClient: lost connection to the PMI client
+[cli_0]: getval cmd failed
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+readFromPMIClient: lost connection to the PMI client
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r1): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+
+-------------------------------------------------
+./spawn/spawninfo1 np=1:
+
+-------------------------------------------------
+./spawn/spawnminfo1 np=1:
+
+-------------------------------------------------
+./topo/neighb_coll np=4:
+
+-------------------------------------------------
+./io/i_noncontig np=2:
+Deadlock detected! Process 22144 will wait forever.
+('wait' called without outstanding send or recv requests).
+Requests:
+Sockets:
+  sock#0xe03d40 listen:    -1 demand:   0(   0)  src:(134.94.169.164,22144,(nil),r0000001) anyrecv:     0
+  Connections:
+    con#0xe067e8 type:  loop state:    open dest:(134.94.169.164,22144,0xe067e8,r0000001) recvcnt:    0
+    con#0xe069a8 type:   shm state:    open dest:(134.94.169.164,22143,0x261cb88,r0000000) recvcnt:    0
+Fds:
+
+Reqs:5 GenReqs: (cnt:0  used:0)
+Deadlock detected! Process 22143 will wait forever.
+('wait' called without outstanding send or recv requests).
+Requests:
+Sockets:
+  sock#0x2619d40 listen:    -1 demand:   0(   0)  src:(134.94.169.164,22143,(nil),r0000000) anyrecv:     0
+  Connections:
+    con#0x261c7e8 type:  loop state:    open dest:(134.94.169.164,22143,0x261c7e8,r0000000) recvcnt:    0
+    con#0x261cb88 type:   shm state:    open dest:(134.94.169.164,22144,0xe069a8,r0000001) recvcnt:    0
+Fds:
+
+Reqs:5 GenReqs: (cnt:0  used:0)
+
+-------------------------------------------------
+./io/async np=4:
+
+-------------------------------------------------
+./io/async_any np=4:
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+
+-------------------------------------------------
+./io/i_bigtype np=1:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+i_bigtype: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:157: MPID_Progress_test: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./io/i_hindexed_io np=1:
+INTERNAL ERROR: invalid error code efefefef (Ring Index out of range) in MPIDU_Sched_progress_state:921
+i_hindexed_io: /home/clauss/Work/psmpi/mpich2/src/mpid/psp/src/mpid_progress.c:157: MPID_Progress_test: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./io/i_rdwrord np=4:
+
+-------------------------------------------------
+./io/i_setviewcur np=4:
+
+-------------------------------------------------
+./io/i_aggregation1 np=4:
+
+-------------------------------------------------
+./io/i_aggregation2 np=4:
+
+-------------------------------------------------
+./io/i_coll_test np=4:
+
+-------------------------------------------------
+./io/i_darray_read np=4:
+
+-------------------------------------------------
+./io/i_hindexed np=4:
+
+-------------------------------------------------
+./io/i_noncontig_coll np=2:
+
+-------------------------------------------------
+./io/i_noncontig_coll2 np=4:
+
+-------------------------------------------------
+./io/i_types_with_zeros np=2:
+
+-------------------------------------------------
+./f77/coll/nonblockingf np=4:
+
+-------------------------------------------------
+./f77/coll/nonblocking_inpf np=4:
+
+-------------------------------------------------
+./f77/pt2pt/greqf np=1:
+Deadlock detected! Process 27960 will wait forever.
+('wait' called without outstanding send or recv requests).
+Requests:
+Sockets:
+  sock#0xf4fdb0 listen:    -1 demand:   0(   0)  src:(134.94.169.164,27960,(nil),r0000000) anyrecv:     0
+  Connections:
+    con#0xf52778 type:  loop state:    open dest:(134.94.169.164,27960,0xf52778,r0000000) recvcnt:    0
+Fds:
+
+Reqs:3 GenReqs: (cnt:0  used:0)
+
+-------------------------------------------------
+./f77/spawn/namepubf np=2:
+ Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
+MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+MPID_NS_Publish(59)..: Lookup failed for service name MyTest
+ Error in Lookup nameInvalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x20a1318) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
+[cli_0]: getval cmd failed
+[cli_0]: expecting cmd=lookup_result, got unpublish_result
+[cli_1]: getval cmd failed
+ Lookup name returned name after it was unpublished
+ Lookup name returned name after it was unpublished
+  Found            4  errors
+[cli_0]: getval cmd failed
+[cli_1]: expecting cmd=finalize_ack, got lookup_result
+readFromPMIClient: lost connection to the PMI client
+readFromPMIClient: lost connection to the PMI client
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+__PMI_send(r1): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+
+-------------------------------------------------
+./f77/spawn/connaccf np=2:
+[cli_1]: getval cmd failed
+ lookup name returned a value before published
+[cli_0]: getval cmd failed
+Fatal error in MPI_Lookup_name: Invalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="fservtest", MPI_INFO_NULL, port=0xfd8ba8) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name fservtest
+
+-------------------------------------------------
+./f77/spawn/spawnmultf np=1:
+ Found arg a                                                                                but expected -p        
+ Found arg b=c                                                                              but expected 27        
+ Found arg d e                                                                              but expected -echo     
+ Wrong number of arguments (           5 )
+  Found            4  errors
+
+-------------------------------------------------
+./f77/io/iwriteatf np=4:
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7FAEF1B8ED47
+#0  0x7FAA55C17D47
+#0  0x7FD1848B0D47
+#0  0x7F659F1E7D47
+#1  0x7FAEF1B8F34E
+#1  0x7FAA55C1834E
+#1  0x7FD1848B134E
+#1  0x7F659F1E834E
+#2  0x7FAEF10AA11F
+#2  0x7FD183DCC11F
+#2  0x7F659E70311F
+#2  0x7FAA5513311F
+#3  0x7F659E74F2FA
+#4  0x7F659E73791E
+#3  0x7FAA5517F2FA
+#3  0x7FAEF10F62FA
+#3  0x7FD183E182FA
+#4  0x7FAEF10DE91E
+#4  0x7FD183E0091E
+#4  0x7FAA5516791E
+#5  0x7FAA5602C924
+#6  0x7FAA56023C92
+#5  0x7F659F5FC924
+#5  0x7FAEF1FA3924
+#6  0x7F659F5F3C92
+#6  0x7FAEF1F9AC92
+#7  0x7F659F5EF433
+#8  0x7F659F5AE279
+#7  0x7FAEF1F96433
+#9  0x7F659F5AE7BA
+#8  0x7FAEF1F55279
+#10  0x7F659F96153D
+#9  0x7FAEF1F557BA
+#7  0x7FAA5601F433
+#8  0x7FAA55FDE279
+#9  0x7FAA55FDE7BA
+#10  0x7FAA5639153D
+#11  0x4017FA in MAIN__ at iwriteatf.f:109
+#10  0x7FAEF230853D
+#11  0x4017FA in MAIN__ at iwriteatf.f:109
+#11  0x4017FA in MAIN__ at iwriteatf.f:109
+
+-------------------------------------------------
+./f77/io/iwritef np=4:
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7FD48C29DD47
+#0  0x7F73036EFD47
+#0  0x7FEC70CC6D47
+#0  0x7FC513C4ED47
+#1  0x7FD48C29E34E
+#1  0x7F73036F034E
+#1  0x7FEC70CC734E
+#1  0x7FC513C4F34E
+#2  0x7FD48B7B911F
+#2  0x7F7302C0B11F
+#2  0x7FC51316A11F
+#3  0x7FD48B8052FA
+#3  0x7F7302C572FA
+#4  0x7F7302C3F91E
+#3  0x7FC5131B62FA
+#4  0x7FD48B7ED91E
+#4  0x7FC51319E91E
+#5  0x7FD48C6B2924
+#5  0x7FC514063924
+#6  0x7FC51405AC92
+#6  0x7FD48C6A9C92
+#2  0x7FEC701E211F
+#3  0x7FEC7022E2FA
+#4  0x7FEC7021691E
+#5  0x7FEC710DB924
+#6  0x7FEC710D2C92
+#7  0x7FC514056433
+#7  0x7FD48C6A5433
+#5  0x7F7303B04924
+#6  0x7F7303AFBC92
+#7  0x7F7303AF7433
+#8  0x7FC514015279
+#8  0x7FD48C664279
+#9  0x7FC5140157BA
+#8  0x7F7303AB6279
+#9  0x7F7303AB67BA
+#7  0x7FEC710CE433
+#8  0x7FEC7108D279
+#9  0x7FEC7108D7BA
+#9  0x7FD48C6647BA
+#10  0x7FC5143C853D
+#10  0x7FD48CA1753D
+#10  0x7FEC7144053D
+#10  0x7F7303E6953D
+#11  0x4018CE in MAIN__ at iwritef.f:124
+#11  0x4018CE in MAIN__ at iwritef.f:124
+#11  0x4018CE in MAIN__ at iwritef.f:124
+#11  0x4018CE in MAIN__ at iwritef.f:124
+
+-------------------------------------------------
+./f77/io/iwriteshf np=4:
+
+-------------------------------------------------
+./f77/io/i_setviewcurf np=4:
+
+-------------------------------------------------
+./f77/io/iwriteatallf np=4:
+
+-------------------------------------------------
+./cxx/io/iwriteatx np=4:
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+
+-------------------------------------------------
+./cxx/io/iwritex np=4:
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+
+-------------------------------------------------
+./cxx/io/iwriteshx np=4:
+
+-------------------------------------------------
+./cxx/io/iwriteatnosx np=4:
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+
+-------------------------------------------------
+./cxx/io/iwritenosx np=4:
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+
+-------------------------------------------------
+./cxx/io/iwriteshnosx np=4:
+
+-------------------------------------------------
+./cxx/spawn/namepubx np=2:
+Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
+MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+MPID_NS_Publish(59)..: Lookup failed for service name MyTest
+Error in Lookup name Invalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x1ec5840) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
+[cli_1]: getval cmd failed
+[cli_0]: getval cmd failed
+Lookup name returned name after it was unpublished
+The name returned was 
+[cli_0]: expecting cmd=lookup_result, got unpublish_result
+Lookup name returned name after it was unpublished
+The name returned was 
+ Found 4 errors
+[cli_0]: getval cmd failed
+readFromPMIClient: lost connection to the PMI client
+[cli_1]: expecting cmd=finalize_ack, got lookup_result
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+readFromPMIClient: lost connection to the PMI client
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r1): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+
+-------------------------------------------------
+./f90/coll/nonblockingf90 np=4:
+
+-------------------------------------------------
+./f90/coll/nonblocking_inpf90 np=4:
+
+-------------------------------------------------
+./f90/io/iwriteatf90 np=4:
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Backtrace for this error:
+#0  0x7F7557312D47
+#0  0x7FF5F68C5D47
+#0  0x7FFA3E786D47
+#0  0x7FB9347E2D47
+#1  0x7F755731334E
+#1  0x7FF5F68C634E
+#1  0x7FFA3E78734E
+#1  0x7FB9347E334E
+#2  0x7F755682E11F
+#2  0x7FFA3DCA211F
+#2  0x7FB933CFE11F
+#3  0x7F755687A2FA
+#3  0x7FFA3DCEE2FA
+#4  0x7F755686291E
+#4  0x7FFA3DCD691E
+#3  0x7FB933D4A2FA
+#4  0x7FB933D3291E
+#5  0x7F7557727924
+#5  0x7FFA3EB9B924
+#6  0x7FFA3EB92C92
+#6  0x7F755771EC92
+#2  0x7FF5F5DE111F
+#3  0x7FF5F5E2D2FA
+#4  0x7FF5F5E1591E
+#5  0x7FF5F6CDA924
+#6  0x7FF5F6CD1C92
+#7  0x7FFA3EB8E433
+#7  0x7F755771A433
+#5  0x7FB934BF7924
+#6  0x7FB934BEEC92
+#7  0x7FB934BEA433
+#8  0x7FFA3EB4D279
+#8  0x7F75576D9279
+#7  0x7FF5F6CCD433
+#8  0x7FF5F6C8C279
+#9  0x7FF5F6C8C7BA
+#9  0x7F75576D97BA
+#9  0x7FFA3EB4D7BA
+#10  0x7FFA3EF0053D
+#8  0x7FB934BA9279
+#9  0x7FB934BA97BA
+#10  0x7F7557A8C53D
+#10  0x7FF5F703F53D
+#10  0x7FB934F5C53D
+#11  0x4017D3 in MAIN__ at iwriteatf90.f90:107
+#11  0x4017D3 in MAIN__ at iwriteatf90.f90:107
+#11  0x4017D3 in MAIN__ at iwriteatf90.f90:107
+#11  0x4017D3 in MAIN__ at iwriteatf90.f90:107
+
+-------------------------------------------------
+./f90/io/iwritef90 np=4:
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+Assertion failed in file /home/clauss/Work/psmpi/mpich2/src/mpi/pt2pt/mpir_request.c at line 680: MPID_Request_is_complete(request_ptrs[i])
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7F74D8E98D47
+#0  0x7F64FA0E5D47
+#0  0x7F41295C4D47
+#0  0x7FA3B4600D47
+#1  0x7F74D8E9934E
+#1  0x7F64FA0E634E
+#1  0x7F41295C534E
+#2  0x7F74D83B411F
+#2  0x7F64F960111F
+#3  0x7F74D84002FA
+#3  0x7F64F964D2FA
+#4  0x7F74D83E891E
+#1  0x7FA3B460134E
+#2  0x7FA3B3B1C11F
+#3  0x7FA3B3B682FA
+#4  0x7FA3B3B5091E
+#5  0x7FA3B4A15924
+#5  0x7F74D92AD924
+#6  0x7FA3B4A0CC92
+#6  0x7F74D92A4C92
+#7  0x7FA3B4A08433
+#8  0x7FA3B49C7279
+#7  0x7F74D92A0433
+#8  0x7F74D925F279
+#9  0x7FA3B49C77BA
+#9  0x7F74D925F7BA
+#10  0x7F74D961253D
+#10  0x7FA3B4D7A53D
+#2  0x7F4128AE011F
+#3  0x7F4128B2C2FA
+#4  0x7F4128B1491E
+#5  0x7F41299D9924
+#6  0x7F41299D0C92
+#7  0x7F41299CC433
+#8  0x7F412998B279
+#9  0x7F412998B7BA
+#10  0x7F4129D3E53D
+#11  0x4018A7 in MAIN__ at iwritef90.f90:122
+#11  0x4018A7 in MAIN__ at iwritef90.f90:122
+#11  0x4018A7 in MAIN__ at iwritef90.f90:122
+#4  0x7F64F963591E
+#5  0x7F64FA4FA924
+#6  0x7F64FA4F1C92
+#7  0x7F64FA4ED433
+#8  0x7F64FA4AC279
+#9  0x7F64FA4AC7BA
+#10  0x7F64FA85F53D
+#11  0x4018A7 in MAIN__ at iwritef90.f90:122
+
+-------------------------------------------------
+./f90/io/iwriteshf90 np=4:
+
+-------------------------------------------------
+./f90/io/i_setviewcurf90 np=4:
+
+-------------------------------------------------
+./f90/io/iwriteatallf90 np=4:
+
+-------------------------------------------------
+./f90/pt2pt/greqf90 np=1:
+Deadlock detected! Process 8311 will wait forever.
+('wait' called without outstanding send or recv requests).
+Requests:
+Sockets:
+  sock#0x2285db0 listen:    -1 demand:   0(   0)  src:(134.94.169.164,8311,(nil),r0000000) anyrecv:     0
+  Connections:
+    con#0x2288778 type:  loop state:    open dest:(134.94.169.164,8311,0x2288778,r0000000) recvcnt:    0
+Fds:
+
+Reqs:3 GenReqs: (cnt:0  used:0)
+
+-------------------------------------------------
+./f90/spawn/namepubf90 np=2:
+ Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
+MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+MPID_NS_Publish(59)..: Lookup failed for service name MyTest
+ Error in Lookup nameInvalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x18db318) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
+[cli_0]: getval cmd failed
+[cli_1]: getval cmd failed
+[cli_0]: expecting cmd=lookup_result, got unpublish_result
+ Lookup name returned name after it was unpublished
+ Lookup name returned name after it was unpublished
+  Found            4  errors
+readFromPMIClient: lost connection to the PMI client
+[cli_0]: getval cmd failed
+readFromPMIClient: lost connection to the PMI client
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+[cli_1]: expecting cmd=finalize_ack, got lookup_result
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r1): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+
+-------------------------------------------------
+./f90/spawn/connaccf90 np=2:
+[cli_1]: getval cmd failed
+[cli_0]: getval cmd failed
+ lookup name returned a value before published
+Fatal error in MPI_Lookup_name: Invalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="fservtest", MPI_INFO_NULL, port=0x1715ba8) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name fservtest
+
+-------------------------------------------------
+./f90/spawn/spawnmultf90 np=1:
+ Found arg a                                                                                but expected -p        
+ Found arg b=c                                                                              but expected 27        
+ Found arg d e                                                                              but expected -echo     
+ Wrong number of arguments (           5 )
+  Found            4  errors
+
+-------------------------------------------------
+./f90/spawn/spawnmultf03 np=1:
+ Found arg a                                                                                but expected -p        
+ Found arg b=c                                                                              but expected 27        
+ Found arg d e                                                                              but expected -echo     
+ Wrong number of arguments (           5 )
+  Found            4  errors
+
+-------------------------------------------------
+./errors/coll/bcastlength np=4:
+
+-------------------------------------------------
+./errors/comm/too_many_icomms np=4:
+
+-------------------------------------------------
+./errors/comm/too_many_icomms2 np=4:
+
+-------------------------------------------------
+./errors/spawn/unpub np=1:
+ No Errors
+[cli_0]: getval cmd failed
+readFromPMIClient: lost connection to the PMI client
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+
+-------------------------------------------------
+./errors/spawn/lookup_name np=1:
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+ No Errors
+[cli_0]: expecting cmd=finalize_ack, got lookup_result
+readFromPMIClient: lost connection to the PMI client
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+
+-------------------------------------------------
+106 tests failed out of 934
