@@ -458,7 +458,7 @@ int MPID_PSP_comm_destroy_hook(struct MPID_Comm * comm);
 
 /* Progress hooks. */
 #define MPID_Progress_register_hook(fn_, id_) MPI_SUCCESS
-#define MPID_Progress_deregister_hook(id_) MPI_SUCCESS
+#define MPID_Progress_deregister_hook(id_)
 #define MPID_Progress_activate_hook(id_)
 #define MPID_Progress_deactivate_hook(id_)
 

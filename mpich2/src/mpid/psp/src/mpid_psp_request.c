@@ -79,6 +79,8 @@ void MPID_PSP_Request_init(MPID_Request *req)
 	req->status.count_hi_and_cancelled = 0;
 	req->comm = NULL;
 
+	req->errflag = MPIR_ERR_NONE;
+
 	creq = &req->dev.kind.common;
 	preq = creq->pscom_req;
 
