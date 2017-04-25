@@ -15,7 +15,7 @@
 #define FUNCNAME MPID_Issend
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_Issend(const void * buf, int count, MPI_Datatype datatype, int rank, int tag, MPID_Comm * comm, int context_offset,
+int MPID_Issend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag, MPID_Comm * comm, int context_offset,
 		MPID_Request ** request)
 {
     MPIDI_msg_sz_t data_sz;
