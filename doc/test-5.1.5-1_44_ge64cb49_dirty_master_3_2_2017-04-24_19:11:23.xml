@@ -1,7 +1,7 @@
 <?xml version='1.0' ?>
 <?xml-stylesheet href="TestResults.xsl" type="text/xsl" ?>
 <MPITESTRESULTS>
-<DATE>2014-03-17-14-45</DATE>
+<DATE>2017-04-24-19-11</DATE>
 <MPISOURCE></MPISOURCE>
 <MPITEST>
 <NAME>mprobe</NAME>
@@ -12,6 +12,114 @@
 <MPITEST>
 <NAME>locknull</NAME>
 <NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>get-acc-loc</NAME>
+<NP>4</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_sync_err_flush</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_sync_err_flushall</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_sync_err_lockall_pt</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_sync_err_lockall_at</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_sync_err_unlockall</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_sync_err_reqops</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_flavor_err_shm</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_flavor_err_dyn</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawn_isend</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawn_ssend</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawn_anysrc</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawn_rma</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawn_universe</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>num_contexts_2k</NAME>
+<NP>1</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>num_contexts_4k</NAME>
+<NP>1</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>num_contexts_8k</NAME>
+<NP>1</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>num_contexts_16k</NAME>
+<NP>1</NP>
 <WORKDIR>./parastation</WORKDIR>
 <STATUS>pass</STATUS>
 </MPITEST>
@@ -65,6 +173,12 @@
 </MPITEST>
 <MPITEST>
 <NAME>attrerrtype</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrdeleteget</NAME>
 <NP>1</NP>
 <WORKDIR>./attr</WORKDIR>
 <STATUS>pass</STATUS>
@@ -125,6 +239,24 @@
 </MPITEST>
 <MPITEST>
 <NAME>keyval_double_free</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>keyval_double_free_comm</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>keyval_double_free_type</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>keyval_double_free_win</NAME>
 <NP>1</NP>
 <WORKDIR>./attr</WORKDIR>
 <STATUS>pass</STATUS>
@@ -316,6 +448,12 @@
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>allgather_struct</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>bcasttest</NAME>
 <NP>4</NP>
 <WORKDIR>./coll</WORKDIR>
@@ -334,19 +472,19 @@
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
-<NAME>bcast2</NAME>
+<NAME>bcast_full</NAME>
 <NP>4</NP>
 <WORKDIR>./coll</WORKDIR>
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
-<NAME>bcast2</NAME>
+<NAME>bcast_min_datatypes</NAME>
 <NP>10</NP>
 <WORKDIR>./coll</WORKDIR>
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
-<NAME>bcast3</NAME>
+<NAME>bcast_comm_world</NAME>
 <NP>10</NP>
 <WORKDIR>./coll</WORKDIR>
 <STATUS>pass</STATUS>
@@ -1000,6 +1138,84 @@
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>nbicbcast</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nbicallreduce</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nbicreduce</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nbicscatter</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nbicgather</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nbicallgather</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nbicbarrier</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nbicallgatherv</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nbicgatherv</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nbicscatterv</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nbicalltoall</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nbicalltoallv</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nbicalltoallw</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>dup</NAME>
 <NP>2</NP>
 <WORKDIR>./comm</WORKDIR>
@@ -1168,6 +1384,52 @@
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>comm_idup_mul</NAME>
+<NP>2</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_idup_overlap</NAME>
+<NP>2</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_idup_iallreduce</NAME>
+<NP>6</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_idup_nb</NAME>
+<NP>6</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_idup_isend</NAME>
+<NP>6</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_idup_comm</NAME>
+<NP>6</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>comm_idup_comm2</NAME>
+<NP>6</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
 <NAME>dup_with_info</NAME>
 <NP>2</NP>
 <WORKDIR>./comm</WORKDIR>
@@ -1188,6 +1450,12 @@
 <MPITEST>
 <NAME>comm_info</NAME>
 <NP>6</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_create_group_idup</NAME>
+<NP>4</NP>
 <WORKDIR>./comm</WORKDIR>
 <STATUS>pass</STATUS>
 </MPITEST>
@@ -1246,6 +1514,12 @@
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>structpack2</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>typecommit</NAME>
 <NP>1</NP>
 <WORKDIR>./datatype</WORKDIR>
@@ -1283,6 +1557,18 @@
 </MPITEST>
 <MPITEST>
 <NAME>tresized2</NAME>
+<NP>2</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>sendrecvt2</NAME>
+<NP>2</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>sendrecvt4</NAME>
 <NP>2</NP>
 <WORKDIR>./datatype</WORKDIR>
 <STATUS>pass</STATUS>
@@ -1358,6 +1644,16 @@
 <NP>9</NP>
 <WORKDIR>./datatype</WORKDIR>
 <STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>darray-pack</NAME>
+<NP>72</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+&lt;PSP:r0000012:Receive unknown msg_type 4096&gt;
+&lt;PSP:r0000012:Receive unknown msg_type 104&gt;
+</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>darray-cyclic</NAME>
@@ -1480,8 +1776,26 @@
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>vecblklen</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>hvecblklen</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>longdouble</NAME>
 <NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>dataalign</NAME>
+<NP>2</NP>
 <WORKDIR>./datatype</WORKDIR>
 <STATUS>pass</STATUS>
 </MPITEST>
@@ -1518,6 +1832,18 @@
 <MPITEST>
 <NAME>predef_eh</NAME>
 <NP>2</NP>
+<WORKDIR>./errhan</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>errstring2</NAME>
+<NP>1</NP>
+<WORKDIR>./errhan</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>dynamic_errcode_predefined_errclass</NAME>
+<NP>1</NP>
 <WORKDIR>./errhan</WORKDIR>
 <STATUS>pass</STATUS>
 </MPITEST>
@@ -1600,6 +1926,12 @@
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>infoget</NAME>
+<NP>1</NP>
+<WORKDIR>./info</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>infoenv</NAME>
 <NP>1</NP>
 <WORKDIR>./info</WORKDIR>
@@ -1655,6 +1987,24 @@
 </MPITEST>
 <MPITEST>
 <NAME>mpi_t_str</NAME>
+<NP>1</NP>
+<WORKDIR>./mpi_t</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>mpit_vars</NAME>
+<NP>1</NP>
+<WORKDIR>./mpi_t</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>cvarwrite</NAME>
+<NP>1</NP>
+<WORKDIR>./mpi_t</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>getindex</NAME>
 <NP>1</NP>
 <WORKDIR>./mpi_t</WORKDIR>
 <STATUS>pass</STATUS>
@@ -1768,6 +2118,18 @@
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>issendselfcancel</NAME>
+<NP>1</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>isendirecv</NAME>
+<NP>10</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>bsendfrag</NAME>
 <NP>2</NP>
 <WORKDIR>./pt2pt</WORKDIR>
@@ -1810,44 +2172,10 @@
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
-<NAME>scancel</NAME>
-<NP>2</NP>
-<WORKDIR>./pt2pt</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Failed to cancel an Isend request
-Failed to cancel an Ibsend request
-Failed to cancel an Isend request
-Failed to cancel an Ibsend request
-Failed to cancel an Isend request
-Failed to cancel an Ibsend request
-Failed to cancel an Isend request
-Failed to cancel an Ibsend request
- Found 8 errors
-</TESTDIFF>
-</MPITEST>
-<MPITEST>
 <NAME>scancel2</NAME>
 <NP>2</NP>
 <WORKDIR>./pt2pt</WORKDIR>
 <STATUS>pass</STATUS>
-</MPITEST>
-<MPITEST>
-<NAME>pscancel</NAME>
-<NP>2</NP>
-<WORKDIR>./pt2pt</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Failed to cancel a persistent send request
-Failed to cancel a persistent bsend request
-Failed to cancel a persistent send request
-Failed to cancel a persistent bsend request
-Failed to cancel a persistent send request
-Failed to cancel a persistent bsend request
-Failed to cancel a persistent send request
-Failed to cancel a persistent bsend request
- Found 8 errors
-</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>rcancel</NAME>
@@ -1856,7 +2184,7 @@ Failed to cancel a persistent bsend request
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
-<NAME>cancelrecv</NAME>
+<NAME>cancelanysrc</NAME>
 <NP>2</NP>
 <WORKDIR>./pt2pt</WORKDIR>
 <STATUS>pass</STATUS>
@@ -1892,6 +2220,12 @@ Failed to cancel a persistent bsend request
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>big_count_status</NAME>
+<NP>1</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>winname</NAME>
 <NP>2</NP>
 <WORKDIR>./rma</WORKDIR>
@@ -1905,7 +2239,7 @@ Failed to cancel a persistent bsend request
 </MPITEST>
 <MPITEST>
 <NAME>putfence1</NAME>
-<NP>4</NP>
+<NP>2</NP>
 <WORKDIR>./rma</WORKDIR>
 <STATUS>pass</STATUS>
 </MPITEST>
@@ -1917,9 +2251,23 @@ Failed to cancel a persistent bsend request
 </MPITEST>
 <MPITEST>
 <NAME>getfence1</NAME>
-<NP>4</NP>
+<NP>2</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>pass</STATUS>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Deadlock detected! Process 24044 will wait forever.
+('wait' called without outstanding send or recv requests).
+Requests:
+Sockets:
+  sock#0x1bccd40 listen:    -1 demand:   0(   0)  src:(134.94.169.164,24044,(nil),r0000000) anyrecv:     1
+  Connections:
+    con#0x1bcf7e8 type:  loop state:    open dest:(134.94.169.164,24044,0x1bcf7e8,r0000000) recvcnt:    1
+    con#0x1bcfb88 type:   shm state:    norw dest:(134.94.169.164,24045,0x17e19a8,r0000001) recvcnt:    2
+Fds:
+
+Reqs:11060 GenReqs: (cnt:624  used:624)
+ReqsAnySrc:4173 RecvQAnySrc:43185
+</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>accfence1</NAME>
@@ -1976,6 +2324,12 @@ Failed to cancel a persistent bsend request
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>transpose3_shm</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>transpose5</NAME>
 <NP>2</NP>
 <WORKDIR>./rma</WORKDIR>
@@ -2006,7 +2360,19 @@ Failed to cancel a persistent bsend request
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>test2_shm</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>test3</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>test3_shm</NAME>
 <NP>2</NP>
 <WORKDIR>./rma</WORKDIR>
 <STATUS>pass</STATUS>
@@ -2054,6 +2420,60 @@ Failed to cancel a persistent bsend request
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>lock_dt</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>lock_dt_flush</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>lock_dt_flushlocal</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>lockall_dt</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>lockall_dt_flush</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>lockall_dt_flushall</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>lockall_dt_flushlocal</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>lockall_dt_flushlocalall</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>lock_contention_dt</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>transpose4</NAME>
 <NP>2</NP>
 <WORKDIR>./rma</WORKDIR>
@@ -2078,6 +2498,12 @@ Failed to cancel a persistent bsend request
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>wintest_shm</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>contig_displ</NAME>
 <NP>1</NP>
 <WORKDIR>./rma</WORKDIR>
@@ -2096,7 +2522,19 @@ Failed to cancel a persistent bsend request
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>test2_am_shm</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>test3_am</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>test3_am_shm</NAME>
 <NP>2</NP>
 <WORKDIR>./rma</WORKDIR>
 <STATUS>pass</STATUS>
@@ -2139,6 +2577,12 @@ Failed to cancel a persistent bsend request
 </MPITEST>
 <MPITEST>
 <NAME>nullpscw</NAME>
+<NP>7</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nullpscw_shm</NAME>
 <NP>7</NP>
 <WORKDIR>./rma</WORKDIR>
 <STATUS>pass</STATUS>
@@ -2195,51 +2639,13 @@ Failed to cancel a persistent bsend request
 <NAME>rmanull</NAME>
 <NP>2</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 11
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
-This typically refers to a problem with your application.
-Please see the FAQ page for debugging suggestions
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>rmazero</NAME>
 <NP>2</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Get_accumulate() not implemented
-Warning: MPID_Get_accumulate() not implemented
-Zero-byte op Get accumulate: Error class 44 (Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1ff8150, origin_count=0, MPI_INT, result_addr=0x1ff7d40, result_count=0, MPI_INT, target_rank=0, target_disp=0, target_count=0, MPI_INT, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation )
-Zero-byte op Get accumulate: Error class 44 (Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x248c150, origin_count=0, MPI_INT, result_addr=0x248bd40, result_count=0, MPI_INT, target_rank=0, target_disp=0, target_count=0, MPI_INT, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation )
-Zero-byte op Get accumulate: Error class 44 (Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1ff8150, origin_count=0, MPI_INT, result_addr=0x1ff7d40, result_count=0, MPI_INT, target_rank=0, target_disp=0, target_count=0, MPI_INT, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation )
-Zero-byte op Rput: Error class 44 (Unsupported file operation , error stack:
-MPI_Rput(172): MPI_Rput(origin_addr=0x1ff8150, origin_count=0, MPI_INT, target_rank=0, target_disp=0, target_count=0, MPI_INT, win=0xa0000000, request=0x7fff5dfbffdc) failed
-(unknown)(): Unsupported file operation )
-Warning: MPID_Rput() not implemented
-Fatal error in PMPI_Wait: Invalid MPI_Request, error stack:
-PMPI_Wait(180): MPI_Wait(request=0x7fff5dfbffdc, status=0x1) failed
-PMPI_Wait(133): Invalid MPI_Request
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>strided_acc_indexed</NAME>
@@ -2275,65 +2681,19 @@ PMPI_Wait(133): Invalid MPI_Request
 <NAME>strided_putget_indexed_shared</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Win_allocate_shared() not implemented
-Warning: MPID_Win_allocate_shared() not implemented
-Warning: MPID_Win_allocate_shared() not implemented
-Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
-PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=65536, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fffc096a190, win=0x7fffc096a180) failed
-(unknown)(): Unsupported file operation Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
-PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=65536, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff75338f10, win=0x7fff75338f00) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>strided_getacc_indexed</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Get_accumulate() not implemented
-Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x2092ce0, origin_count=1, dtype=USER&lt;indexed&gt;, result_addr=0x20a2cf0, result_count=1, dtype=USER&lt;indexed&gt;, target_rank=1, target_disp=0, target_count=1, dtype=USER&lt;indexed&gt;, MPI_REPLACE, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x2277ce0, origin_count=1, dtype=USER&lt;indexed&gt;, result_addr=0x2287cf0, result_count=1, dtype=USER&lt;indexed&gt;, target_rank=2, target_disp=0, target_count=1, dtype=USER&lt;indexed&gt;, MPI_REPLACE, win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>strided_getacc_indexed_shared</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Win_allocate_shared() not implemented
-Warning: MPID_Win_allocate_shared() not implemented
-Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
-PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=65536, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff0cf57850, win=0x7fff0cf57840) failed
-(unknown)(): Unsupported file operation Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
-PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=65536, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fffc445af00, win=0x7fffc445aef0) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>window_creation</NAME>
@@ -2369,33 +2729,13 @@ PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=65536, MPI_INFO_NULL
 <NAME>win_flavors</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-2: MPI_Win_create - Error, bad flavor (0)
-2: MPI_Win_create - Error, bad model (0)
-3: MPI_Win_create - Error, bad flavor (0)
-3: MPI_Win_create - Error, bad model (0)
-0: MPI_Win_create - Error, bad flavor (0)
-0: MPI_Win_create - Error, bad model (0)
-1: MPI_Win_create - Error, bad flavor (0)
-1: MPI_Win_create - Error, bad model (0)
-Warning: MPID_Win_allocate() not implemented
-Warning: MPID_Win_allocate() not implemented
-Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
-MPI_Win_allocate(161): MPI_Win_allocate(size=8, disp_unit=1, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff316871b0, win=0x7fff3168718c) failed
-(unknown)(): Unsupported file operation Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
-MPI_Win_allocate(161): MPI_Win_allocate(size=0, disp_unit=1, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7ffff1676f00, win=0x7ffff1676edc) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_allocate() not implemented
-Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
-MPI_Win_allocate(161): MPI_Win_allocate(size=24, disp_unit=1, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff9bb7e740, win=0x7fff9bb7e71c) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_flavors</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>manyrma2</NAME>
@@ -2404,564 +2744,202 @@ MPI_Win_allocate(161): MPI_Win_allocate(size=24, disp_unit=1, MPI_INFO_NULL, MPI
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>manyrma2_shm</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>manyrma3</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>win_shared</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Win_allocate_shared() not implemented
-Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
-PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff795b9030, win=0x7fff795b9018) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
-Warning: MPID_Win_allocate_shared() not implemented
-Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
-PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fffbccdc380, win=0x7fffbccdc368) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
-Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
-PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff4e7bdbd0, win=0x7fff4e7bdbb8) failed
-(unknown)(): Unsupported file operation Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
-PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff6a754050, win=0x7fff6a754038) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_shared_create_allocshm</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_shared_create_no_allocshm</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>win_shared_noncontig</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Win_allocate_shared() not implemented
-Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
-PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fffb8ffae18, win=0x7fffb8ffadf8) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
-Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
-PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff6b86efe8, win=0x7fff6b86efc8) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
-Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
-PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff81de4f38, win=0x7fff81de4f18) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
-Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
-PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff1884d668, win=0x7fff1884d648) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>win_shared_noncontig_put</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Win_allocate_shared() not implemented
-Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
-PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff854b1698, win=0x7fff854b1660) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
-Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
-PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff5e333968, win=0x7fff5e333930) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
-Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
-PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7ffff4bbf1a8, win=0x7ffff4bbf170) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_zero</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>win_dynamic_acc</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Win_create_dynamic() not implemented
-Warning: MPID_Win_create_dynamic() not implemented
-Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
-MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff1f61425c) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>get_acc_local</NAME>
 <NP>1</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x404e24, origin_count=1, MPI_INT, result_addr=0x7fff2efc15d4, result_count=1, MPI_INT, target_rank=0, target_disp=0, target_count=1, MPI_INT, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>linked_list</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Win_create_dynamic() not implemented
-Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
-MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff3c42005c) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>linked_list_fop</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Win_create_dynamic() not implemented
-Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
-MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff62f8d71c) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
-Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
-MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffe86888ac) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>compare_and_swap</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Compare_and_swap() not implemented
-Warning: MPID_Compare_and_swap() not implemented
-Fatal error in MPI_Compare_and_swap: Unsupported file operation , error stack:
-MPI_Compare_and_swap(149): MPI_Compare_and_swap(origin_addr=0x7fff56653d10, compare_addr=0x7fff56653cd0, result_addr=0x7fff56653d20, MPI_INT, target_rank=0, target_disp=0, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Compare_and_swap() not implemented
-Fatal error in MPI_Compare_and_swap: Unsupported file operation , error stack:
-MPI_Compare_and_swap(149): MPI_Compare_and_swap(origin_addr=0x7ffffdf8d390, compare_addr=0x7ffffdf8d350, result_addr=0x7ffffdf8d3a0, MPI_INT, target_rank=2, target_disp=0, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Fatal error in MPI_Compare_and_swap: Unsupported file operation , error stack:
-MPI_Compare_and_swap(149): MPI_Compare_and_swap(origin_addr=0x7fff11ef33c0, compare_addr=0x7fff11ef3380, result_addr=0x7fff11ef33d0, MPI_INT, target_rank=3, target_disp=0, win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>fetch_and_op_char</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Fetch_and_op() not implemented
-Warning: MPID_Fetch_and_op() not implemented
-Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
-MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffa087e8a0, result_addr=0x7fffa087e8b0, MPI_CHAR, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
-Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
-MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff0819e410, result_addr=0x7fff0819e420, MPI_CHAR, target_rank=3, target_disp=0, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
-MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff5a996f70, result_addr=0x7fff5a996f80, MPI_CHAR, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>fetch_and_op_short</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Fetch_and_op() not implemented
-Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
-MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff95719be0, result_addr=0x7fff95719bf0, MPI_SHORT, target_rank=0, target_disp=0, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
-Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
-MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff48834380, result_addr=0x7fff48834390, MPI_SHORT, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
-Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
-MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff23d705c0, result_addr=0x7fff23d705d0, MPI_SHORT, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>fetch_and_op_int</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Fetch_and_op() not implemented
-Warning: MPID_Fetch_and_op() not implemented
-Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
-MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff02a34880, result_addr=0x7fff02a34890, MPI_INT, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
-MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffe75674f0, result_addr=0x7fffe7567500, MPI_INT, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
-Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
-MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff9c09eb80, result_addr=0x7fff9c09eb90, MPI_INT, target_rank=0, target_disp=0, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>fetch_and_op_long</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Fetch_and_op() not implemented
-Warning: MPID_Fetch_and_op() not implemented
-Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
-MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7ffffa69ae50, result_addr=0x7ffffa69ae60, MPI_LONG, target_rank=3, target_disp=0, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>fetch_and_op_double</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Fetch_and_op() not implemented
-Warning: MPID_Fetch_and_op() not implemented
-Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
-MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff9e8d8020, result_addr=0x7fff9e8d8030, MPI_DOUBLE, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
-MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff3ae2c7b0, result_addr=0x7fff3ae2c7c0, MPI_DOUBLE, target_rank=3, target_disp=0, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
-Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
-MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff429a8c70, result_addr=0x7fff429a8c80, MPI_DOUBLE, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>fetch_and_op_long_double</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Fetch_and_op() not implemented
-Warning: MPID_Fetch_and_op() not implemented
-Warning: MPID_Fetch_and_op() not implemented
-Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
-MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffb24b6bb0, result_addr=0x7fffb24b6bc0, MPI_LONG_DOUBLE, target_rank=0, target_disp=0, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
-MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffc7a49500, result_addr=0x7fffc7a49510, MPI_LONG_DOUBLE, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
-MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffe467c240, result_addr=0x7fffe467c250, MPI_LONG_DOUBLE, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>get_accumulate_double</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Get_accumulate() not implemented
-Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x104e7d0, origin_count=5, MPI_DOUBLE, result_addr=0x1051d80, result_count=5, MPI_DOUBLE, target_rank=2, target_disp=0, target_count=5, MPI_DOUBLE, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xf667d0, origin_count=5, MPI_DOUBLE, result_addr=0xf69d80, result_count=5, MPI_DOUBLE, target_rank=3, target_disp=0, target_count=5, MPI_DOUBLE, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>get_accumulate_double_derived</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Get_accumulate() not implemented
-Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1c337d0, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0x1c36d80, result_count=5, dtype=USER&lt;contig&gt;, target_rank=0, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x22b47d0, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0x22b7d80, result_count=5, dtype=USER&lt;contig&gt;, target_rank=1, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x132d7d0, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0x1330d80, result_count=5, dtype=USER&lt;contig&gt;, target_rank=3, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>get_accumulate_int</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x9947d0, origin_count=5, MPI_INT, result_addr=0x997d30, result_count=5, MPI_INT, target_rank=0, target_disp=0, target_count=5, MPI_INT, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xe6e7d0, origin_count=5, MPI_INT, result_addr=0xe71d30, result_count=5, MPI_INT, target_rank=1, target_disp=0, target_count=5, MPI_INT, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xcdd7d0, origin_count=5, MPI_INT, result_addr=0xce0d30, result_count=5, MPI_INT, target_rank=3, target_disp=0, target_count=5, MPI_INT, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>get_accumulate_int_derived</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Get_accumulate() not implemented
-Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x10147d0, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0x1017d30, result_count=5, dtype=USER&lt;contig&gt;, target_rank=1, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x7df7d0, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0x7e2d30, result_count=5, dtype=USER&lt;contig&gt;, target_rank=2, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
-
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>get_accumulate_long</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1e2a7d0, origin_count=5, MPI_LONG, result_addr=0x1e2dd80, result_count=5, MPI_LONG, target_rank=0, target_disp=0, target_count=5, MPI_LONG, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x10077d0, origin_count=5, MPI_LONG, result_addr=0x100add0, result_count=5, MPI_LONG, target_rank=1, target_disp=0, target_count=5, MPI_LONG, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1a6a7d0, origin_count=5, MPI_LONG, result_addr=0x1a6dd80, result_count=5, MPI_LONG, target_rank=2, target_disp=0, target_count=5, MPI_LONG, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1c527d0, origin_count=5, MPI_LONG, result_addr=0x1c55d80, result_count=5, MPI_LONG, target_rank=3, target_disp=0, target_count=5, MPI_LONG, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>get_accumulate_long_derived</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xee27d0, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0xee5d80, result_count=5, dtype=USER&lt;contig&gt;, target_rank=0, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xd3b7d0, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0xd3edd0, result_count=5, dtype=USER&lt;contig&gt;, target_rank=1, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xa467d0, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0xa49d80, result_count=5, dtype=USER&lt;contig&gt;, target_rank=3, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>get_accumulate_short</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Get_accumulate() not implemented
-Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xd8ed00, origin_count=5, MPI_SHORT, result_addr=0xd8ecd0, result_count=5, MPI_SHORT, target_rank=0, target_disp=0, target_count=5, MPI_SHORT, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x256ad00, origin_count=5, MPI_SHORT, result_addr=0x256acd0, result_count=5, MPI_SHORT, target_rank=1, target_disp=0, target_count=5, MPI_SHORT, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>get_accumulate_short_derived</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x2562d00, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0x2562cd0, result_count=5, dtype=USER&lt;contig&gt;, target_rank=0, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x797d00, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0x797cd0, result_count=5, dtype=USER&lt;contig&gt;, target_rank=2, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
-Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
-MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1170d00, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0x1170cd0, result_count=5, dtype=USER&lt;contig&gt;, target_rank=3, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>flush</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Win_flush_all() not implemented
-Warning: MPID_Win_flush_all() not implemented
-Fatal error in MPI_Win_flush_all: Unsupported file operation , error stack:
-MPI_Win_flush_all(113): MPI_Win_flush_all(win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>reqops</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Win_lock_all() not implemented
-Fatal error in MPI_Win_lock_all: Unsupported file operation , error stack:
-MPI_Win_lock_all(147): MPI_Win_lock_all(assert=0, win=0xa0000000) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>req_example</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Win_allocate() not implemented
-Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
-MPI_Win_allocate(161): MPI_Win_allocate(size=800000, disp_unit=8, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fffd4365598, win=0x7fffd4365590) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>req_example_shm</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>rput_local_comp</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>racc_local_comp</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>win_info</NAME>
@@ -2969,48 +2947,21 @@ MPI_Win_allocate(161): MPI_Win_allocate(size=800000, disp_unit=8, MPI_INFO_NULL,
 <WORKDIR>./rma</WORKDIR>
 <STATUS>fail</STATUS>
 <TESTDIFF>
-Warning: MPID_Win_allocate() not implemented
-Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
-MPI_Win_allocate(161): MPI_Win_allocate(size=4, disp_unit=4, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff2f809418, win=0x7fff2f809410) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_allocate() not implemented
-Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
-MPI_Win_allocate(161): MPI_Win_allocate(size=4, disp_unit=4, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff55990628, win=0x7fff55990620) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_allocate() not implemented
-Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
-MPI_Win_allocate(161): MPI_Win_allocate(size=4, disp_unit=4, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fffca24b2c8, win=0x7fffca24b2c0) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_allocate() not implemented
-Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
-MPI_Win_allocate(161): MPI_Win_allocate(size=4, disp_unit=4, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff63458458, win=0x7fff63458450) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
+0: no_locks is not defined
+0: no_locks is not defined
+2: no_locks is not defined
+2: no_locks is not defined
+1: no_locks is not defined
+1: no_locks is not defined
+3: no_locks is not defined
+3: no_locks is not defined
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>linked_list_lockall</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Win_create_dynamic() not implemented
-Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
-MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff9df2746c) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
-Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
-MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff30db8eec) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
-
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>pscw_ordering</NAME>
@@ -3019,137 +2970,269 @@ MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORL
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>pscw_ordering_shm</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>linked_list_bench_lock_all</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Win_create_dynamic() not implemented
-Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
-MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffdbe636b8) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>linked_list_bench_lock_excl</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Win_create_dynamic() not implemented
-Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
-MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff3fbaf788) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
-Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
-MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffe2499488) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
-Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
-MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7ffff773db08) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>linked_list_bench_lock_shr</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Win_create_dynamic() not implemented
-Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
-MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff511c37b8) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
-Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
-MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff52181a88) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>linked_list_bench_lock_shr_nocheck</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Win_create_dynamic() not implemented
-Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
-MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffa69fb4b8) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
-Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
-MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff0e810ff8) failed
-(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
-Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
-MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffb981dcb8) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>mutex_bench</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Warning: MPID_Win_allocate() not implemented
-Warning: MPID_Win_allocate() not implemented
-Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
-MPI_Win_allocate(161): MPI_Win_allocate(size=8, disp_unit=4, MPI_INFO_NULL, comm=0x84000000, base=0x13907e0, win=0x13907d8) failed
-(unknown)(): Unsupported file operation Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
-MPI_Win_allocate(161): MPI_Win_allocate(size=8, disp_unit=4, MPI_INFO_NULL, comm=0x84000000, base=0x23b97e0, win=0x23b97d8) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>mutex_bench_shared</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>mutex_bench_shm</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>mutex_bench_shm_ordered</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>rma-contig</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>badrma</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>acc-loc</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fence_shm</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_shared_zerobyte</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_shared_put_flush_get</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>get-struct</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>at_complete</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>atomic_rmw_fop</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>atomic_rmw_cas</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>atomic_rmw_gacc</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>atomic_get</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>aint</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>acc-pairtype</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
 <STATUS>fail</STATUS>
 <TESTDIFF>
-Warning: MPID_Win_allocate_shared() not implemented
-Warning: MPID_Win_allocate_shared() not implemented
-Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
-PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=8, MPI_INFO_NULL, comm=0x84000001, baseptr=0x194cf40, win=0x194cf38) failed
-(unknown)(): Unsupported file operation 
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
 </TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>manyget</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>derived-acc-flush_local</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>large-acc-flush_local</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>large-small-acc</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_shared_put_flush_load</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_shared_acc_flush_load</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_shared_gacc_flush_load</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_shared_fop_flush_load</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_shared_cas_flush_load</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>put_flush_get</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>acc_flush_get</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>gacc_flush_get</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fop_flush_get</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>cas_flush_get</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>namepub</NAME>
 <NP>2</NP>
 <WORKDIR>./spawn</WORKDIR>
-<STATUS>pass</STATUS>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Error in Publish_name: "Invalid service name (see MPI_Publish_name), error stack:
+MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+MPID_NS_Publish(59)..: Lookup failed for service name MyTest"
+Error in Lookup name: "Invalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x7fff8e12c420) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name MyTest"
+[cli_0]: getval cmd failed
+[cli_0]: expecting cmd=lookup_result, got unpublish_result
+Lookup name returned name after it was unpublished
+ Found 4 errors
+[cli_1]: getval cmd failed
+[cli_1]: expecting cmd=finalize_ack, got lookup_result
+[cli_0]: getval cmd failed
+Lookup name returned name after it was unpublished
+readFromPMIClient: lost connection to the PMI client
+readFromPMIClient: lost connection to the PMI client
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+__PMI_send(r1): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>spawn1</NAME>
@@ -3167,13 +3250,17 @@ PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=8, MPI_INFO_NULL, co
 <NAME>spawninfo1</NAME>
 <NP>1</NP>
 <WORKDIR>./spawn</WORKDIR>
-<STATUS>pass</STATUS>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>spawnminfo1</NAME>
 <NP>1</NP>
 <WORKDIR>./spawn</WORKDIR>
-<STATUS>pass</STATUS>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>spawnintra</NAME>
@@ -3185,17 +3272,7 @@ PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=8, MPI_INFO_NULL, co
 <NAME>spawnintra</NAME>
 <NP>2</NP>
 <WORKDIR>./spawn</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-[mpiexec@phoenix] APPLICATION TIMED OUT
-[proxy:0:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
-[proxy:0:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:77): callback returned error status
-[proxy:0:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
-[mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
-[mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
-[mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:188): launcher returned error waiting for completion
-[mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:331): process manager error waiting for completion
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>spawnargv</NAME>
@@ -3237,33 +3314,7 @@ PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=8, MPI_INFO_NULL, co
 <NAME>spaiccreate</NAME>
 <NP>2</NP>
 <WORKDIR>./spawn</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Fatal error in PMPI_Intercomm_create: Invalid communicator, error stack:
-PMPI_Intercomm_create(597).....: MPI_Intercomm_create(MPI_COMM_WORLD, local_leader=0, comm=0x84000000, remote_leader=0, tag=123, newintercomm=0x7fff22ed12dc) failed
-MPIR_Intercomm_create_impl(267): 
-MPIR_CheckDisjointLpids(86)....: Local and remote groups in MPI_Intercomm_create must not contain the same processes; both contain process 0Fatal error in PMPI_Intercomm_create: Other MPI error, error stack:
-PMPI_Intercomm_create(597)..........: MPI_Intercomm_create(MPI_COMM_WORLD, local_leader=0, MPI_COMM_NULL, remote_leader=0, tag=123, newintercomm=0x7fff5b3fb37c) failed
-MPIR_Intercomm_create_impl(295).....: 
-MPIR_Get_contextid(806).............: 
-MPIR_Get_contextid_sparse_group(864): 
-MPIR_Allreduce_impl(719)............: 
-MPIR_Allreduce_intra(362)...........: 
-mpid_irecv_done(100)................: read from socket failed - request state:recv(pde)done
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 1
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-[proxy:1:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
-[proxy:1:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:77): callback returned error status
-[proxy:1:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
-[mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
-[mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
-[mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:217): launcher returned error waiting for completion
-[mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:331): process manager error waiting for completion
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>taskmaster</NAME>
@@ -3281,17 +3332,7 @@ mpid_irecv_done(100)................: read from socket failed - request state:re
 <NAME>join</NAME>
 <NP>2</NP>
 <WORKDIR>./spawn</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-[mpiexec@phoenix] APPLICATION TIMED OUT
-[proxy:0:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
-[proxy:0:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:77): callback returned error status
-[proxy:0:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
-[mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
-[mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
-[mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:188): launcher returned error waiting for completion
-[mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:331): process manager error waiting for completion
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>disconnect_reconnect</NAME>
@@ -3397,6 +3438,18 @@ mpid_irecv_done(100)................: read from socket failed - request state:re
 </MPITEST>
 <MPITEST>
 <NAME>dims2</NAME>
+<NP>1</NP>
+<WORKDIR>./topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>dims3</NAME>
+<NP>1</NP>
+<WORKDIR>./topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>dims4</NAME>
 <NP>1</NP>
 <WORKDIR>./topo</WORKDIR>
 <STATUS>pass</STATUS>
@@ -3510,6 +3563,102 @@ mpid_irecv_done(100)................: read from socket failed - request state:re
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>resized2</NAME>
+<NP>1</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bigtype</NAME>
+<NP>1</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>hindexed_io</NAME>
+<NP>1</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>simple_collective</NAME>
+<NP>1</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>i_bigtype</NAME>
+<NP>1</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>i_hindexed_io</NAME>
+<NP>1</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>i_rdwrord</NAME>
+<NP>4</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>i_setviewcur</NAME>
+<NP>4</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>i_aggregation1</NAME>
+<NP>4</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>i_aggregation2</NAME>
+<NP>4</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>i_coll_test</NAME>
+<NP>4</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>i_darray_read</NAME>
+<NP>4</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>i_hindexed</NAME>
+<NP>4</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>i_noncontig_coll</NAME>
+<NP>2</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>i_noncontig_coll2</NAME>
+<NP>4</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>i_types_with_zeros</NAME>
+<NP>2</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>attrmpi1f</NAME>
 <NP>1</NP>
 <WORKDIR>./f77/attr</WORKDIR>
@@ -3541,6 +3690,12 @@ mpid_irecv_done(100)................: read from socket failed - request state:re
 </MPITEST>
 <MPITEST>
 <NAME>commattr3f</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commattr4f</NAME>
 <NP>1</NP>
 <WORKDIR>./f77/attr</WORKDIR>
 <STATUS>pass</STATUS>
@@ -3702,6 +3857,12 @@ mpid_irecv_done(100)................: read from socket failed - request state:re
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>bottom</NAME>
+<NP>2</NP>
+<WORKDIR>./f77/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>statusesf</NAME>
 <NP>1</NP>
 <WORKDIR>./f77/pt2pt</WORKDIR>
@@ -3741,7 +3902,40 @@ mpid_irecv_done(100)................: read from socket failed - request state:re
 <NAME>namepubf</NAME>
 <NP>2</NP>
 <WORKDIR>./f77/spawn</WORKDIR>
-<STATUS>pass</STATUS>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+ Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
+MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+MPID_NS_Publish(59)..: Lookup failed for service name MyTest
+ Error in Lookup nameInvalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x1bc2318) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
+[cli_0]: getval cmd failed
+[cli_0]: expecting cmd=lookup_result, got unpublish_result
+ Lookup name returned name after it was unpublished
+[cli_1]: getval cmd failed
+ Lookup name returned name after it was unpublished
+  Found            4  errors
+readFromPMIClient: lost connection to the PMI client
+[cli_1]: expecting cmd=finalize_ack, got lookup_result
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+[cli_0]: getval cmd failed
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+readFromPMIClient: lost connection to the PMI client
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r1): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>spawnf</NAME>
@@ -3759,13 +3953,29 @@ mpid_irecv_done(100)................: read from socket failed - request state:re
 <NAME>connaccf</NAME>
 <NP>2</NP>
 <WORKDIR>./f77/spawn</WORKDIR>
-<STATUS>pass</STATUS>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+[cli_1]: getval cmd failed
+ lookup name returned a value before published
+[cli_0]: getval cmd failed
+Fatal error in MPI_Lookup_name: Invalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="fservtest", MPI_INFO_NULL, port=0x10c4ba8) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name fservtest
+</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>spawnmultf</NAME>
 <NP>1</NP>
 <WORKDIR>./f77/spawn</WORKDIR>
-<STATUS>pass</STATUS>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+ Found arg a                                                                                but expected -p        
+ Found arg b=c                                                                              but expected 27        
+ Found arg d e                                                                              but expected -echo     
+ Wrong number of arguments (           5 )
+  Found            4  errors
+</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>spawnmult2f</NAME>
@@ -3894,145 +4104,40 @@ mpid_irecv_done(100)................: read from socket failed - request state:re
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>i_setviewcurf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>iwriteatallf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>winscale1f</NAME>
 <NP>4</NP>
 <WORKDIR>./f77/rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-#0  0x7F01BD3F2037
-#1  0x7F01BD3F2604
-#2  0x378FA35CCF
-#3  0x7F01BCF7F735
-#4  0x7F01BDBABC63
-#5  0x7F01BDC4032F
-#6  0x7F01BDB9F879
-#7  0x4015E8 in MAIN__ at winscale1f.f:?
-#0  0x7F2E24F56037
-#1  0x7F2E24F56604
-#2  0x378FA35CCF
-#3  0x7F2E24AE3735
-#4  0x7F2E2570FC63
-#5  0x7F2E257A432F
-#6  0x7F2E25703879
-#7  0x401649 in MAIN__ at winscale1f.f:?
-
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 11
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
-This typically refers to a problem with your application.
-Please see the FAQ page for debugging suggestions
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>winfencef</NAME>
 <NP>4</NP>
 <WORKDIR>./f77/rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-#0  0x7F58B8F65037
-#1  0x7F58B8F65604
-#2  0x378FA35CCF
-#3  0x7F58B8AF2735
-#4  0x7F58B971EC63
-#5  0x7F58B97B332F
-#6  0x7F58B9712879
-#7  0x4012F6 in MAIN__ at winfencef.f:?
-
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 11
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
-This typically refers to a problem with your application.
-Please see the FAQ page for debugging suggestions
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>wingetf</NAME>
 <NP>5</NP>
 <WORKDIR>./f77/rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-#0  0x7F37E3628037
-#1  0x7F37E3628604
-#2  0x378FA35CCF
-#3  0x7F37E31B918B
-#4  0x7F37E31B4FDC
-#5  0x7F37E3DE17B6
-#6  0x7F37E3E7521F
-#7  0x7F37E3DD5839
-#8  0x401356 in MAIN__ at wingetf.f:?
-
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 11
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
-This typically refers to a problem with your application.
-Please see the FAQ page for debugging suggestions
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>winscale2f</NAME>
 <NP>4</NP>
 <WORKDIR>./f77/rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-#0  0x7FF2D20F1037
-#1  0x7FF2D20F1604
-#2  0x378FA35CCF
-#3  0x7FF2D1C7E735
-#4  0x7FF2D28AAC63
-#5  0x7FF2D293F32F
-#6  0x7FF2D289E879
-#7  0x4015E8 in MAIN__ at winscale2f.f:?
-
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 11
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
-This typically refers to a problem with your application.
-Please see the FAQ page for debugging suggestions
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>winerrf</NAME>
@@ -4056,35 +4161,7 @@ Please see the FAQ page for debugging suggestions
 <NAME>winaccf</NAME>
 <NP>4</NP>
 <WORKDIR>./f77/rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-#0  0x7FA252B4B037
-#1  0x7FA252B4B604
-#2  0x378FA35CCF
-#3  0x7FA2526D8735
-#4  0x7FA253303B5B
-#5  0x7FA2533970AF
-#6  0x7FA2532F87F4
-#7  0x401379 in MAIN__ at winaccf.f:?
-
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 11
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
-This typically refers to a problem with your application.
-Please see the FAQ page for debugging suggestions
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>c2f2cwinf</NAME>
@@ -4107,6 +4184,12 @@ Please see the FAQ page for debugging suggestions
 <MPITEST>
 <NAME>winattr2f</NAME>
 <NP>1</NP>
+<WORKDIR>./f77/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>aintf</NAME>
+<NP>2</NP>
 <WORKDIR>./f77/rma</WORKDIR>
 <STATUS>pass</STATUS>
 </MPITEST>
@@ -4168,6 +4251,12 @@ Please see the FAQ page for debugging suggestions
 <NAME>dgraph_unwgtf</NAME>
 <NP>4</NP>
 <WORKDIR>./f77/topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>profile1f</NAME>
+<NP>2</NP>
+<WORKDIR>./f77/profile</WORKDIR>
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
@@ -4238,6 +4327,12 @@ Please see the FAQ page for debugging suggestions
 </MPITEST>
 <MPITEST>
 <NAME>ureduce</NAME>
+<NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>ureducelocal</NAME>
 <NP>5</NP>
 <WORKDIR>./cxx/coll</WORKDIR>
 <STATUS>pass</STATUS>
@@ -4335,6 +4430,12 @@ Please see the FAQ page for debugging suggestions
 <MPITEST>
 <NAME>reduceboolx</NAME>
 <NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>redscatblk</NAME>
+<NP>4</NP>
 <WORKDIR>./cxx/coll</WORKDIR>
 <STATUS>pass</STATUS>
 </MPITEST>
@@ -4588,7 +4689,42 @@ Please see the FAQ page for debugging suggestions
 <NAME>namepubx</NAME>
 <NP>2</NP>
 <WORKDIR>./cxx/spawn</WORKDIR>
-<STATUS>pass</STATUS>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
+MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+MPID_NS_Publish(59)..: Lookup failed for service name MyTest
+Error in Lookup name Invalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x1c8b840) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
+[cli_0]: getval cmd failed
+[cli_0]: expecting cmd=lookup_result, got unpublish_result
+[cli_1]: getval cmd failed
+Lookup name returned name after it was unpublished
+The name returned was 
+Lookup name returned name after it was unpublished
+The name returned was 
+ Found 4 errors
+[cli_0]: getval cmd failed
+readFromPMIClient: lost connection to the PMI client
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+[cli_1]: expecting cmd=finalize_ack, got lookup_result
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+readFromPMIClient: lost connection to the PMI client
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r1): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>spawnintrax</NAME>
@@ -4600,17 +4736,7 @@ Please see the FAQ page for debugging suggestions
 <NAME>spawnintrax</NAME>
 <NP>2</NP>
 <WORKDIR>./cxx/spawn</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-[mpiexec@phoenix] APPLICATION TIMED OUT
-[proxy:0:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
-[proxy:0:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:77): callback returned error status
-[proxy:0:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
-[mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
-[mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
-[mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:188): launcher returned error waiting for completion
-[mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:331): process manager error waiting for completion
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>spawnargvx</NAME>
@@ -4646,55 +4772,19 @@ Please see the FAQ page for debugging suggestions
 <NAME>winfencex</NAME>
 <NP>4</NP>
 <WORKDIR>./cxx/rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 11
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
-This typically refers to a problem with your application.
-Please see the FAQ page for debugging suggestions
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>winscale1x</NAME>
 <NP>4</NP>
 <WORKDIR>./cxx/rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 11
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
-This typically refers to a problem with your application.
-Please see the FAQ page for debugging suggestions
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>winscale2x</NAME>
 <NP>4</NP>
 <WORKDIR>./cxx/rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 11
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
-This typically refers to a problem with your application.
-Please see the FAQ page for debugging suggestions
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>fkeyvalwinx</NAME>
@@ -4734,6 +4824,12 @@ Please see the FAQ page for debugging suggestions
 </MPITEST>
 <MPITEST>
 <NAME>commattr3f90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commattr4f90</NAME>
 <NP>1</NP>
 <WORKDIR>./f90/attr</WORKDIR>
 <STATUS>pass</STATUS>
@@ -5021,6 +5117,18 @@ Please see the FAQ page for debugging suggestions
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>i_setviewcurf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>iwriteatallf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>sizeof2</NAME>
 <NP>1</NP>
 <WORKDIR>./f90/misc</WORKDIR>
@@ -5117,6 +5225,12 @@ Please see the FAQ page for debugging suggestions
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>bottom</NAME>
+<NP>2</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>structf</NAME>
 <NP>2</NP>
 <WORKDIR>./f90/datatype</WORKDIR>
@@ -5180,161 +5294,25 @@ Please see the FAQ page for debugging suggestions
 <NAME>winscale1f90</NAME>
 <NP>4</NP>
 <WORKDIR>./f90/rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-#0  #0  0x7F069ACA6037
-#1  0x7F069ACA6604
-#2  0x378FA35CCF
-#3  0x7F069A833735
-#4  0x7F069B45EC63
-#5  0x7F069B4F332F
-#6  0x7F069B452879
-#7  0x401631 in MAIN__ at winscale1f90.f90:?
-
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 11
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
-This typically refers to a problem with your application.
-Please see the FAQ page for debugging suggestions
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>winfencef90</NAME>
 <NP>4</NP>
 <WORKDIR>./f90/rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-
-Backtrace for this error:
-#0  0x7FE23170C037
-#1  0x7FE23170C604
-#2  0x378FA35CCF
-#3  0x7FE231299735
-#0  0x7F5E04454037
-#1  0x7F5E04454604
-#2  0x#4  378FA35CCF
-#3  0x7F5E03FE1735
-0x7FE231EC4C63
-#5  0x7FE231F5932F
-#6  0x7FE231EB8879
-#7  0x401363 in MAIN__ at winfencef90.f90:?
-#4  0x7F5E04C0CC63
-#5  0x7F5E04CA132F
-#6  0x7F5E04C00879
-#7  
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 11
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
-This typically refers to a problem with your application.
-Please see the FAQ page for debugging suggestions
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>wingetf90</NAME>
 <NP>5</NP>
 <WORKDIR>./f90/rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-#0  0x7F9EF118E037
-#1  0x7F9EF118E604
-#2  0x378FA35CCF
-#3  0x7F9EF0D1F18B
-#4  0x7F9EF0D1AFDC
-#5  0x7F9EF19467B6
-#0  0x7FD870570037
-#1  0x7FD870570604
-#2  0x378FA35CCF
-#3  0x7FD87010118B
-#4  0x7FD8700FCFDC
-#5  0x7FD870D287B6
-#6  0x7FD870DBC21F
-#7  0x7FD870D1C839
-#8  0x401305 in MAIN__ at wingetf90.f90:?
-#6  0x7F9EF19DA21F
-#7  0x7F9EF193A839
-#8  0x401362 in MAIN__ at wingetf90.f90:?
-
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 11
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
-This typically refers to a problem with your application.
-Please see the FAQ page for debugging suggestions
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>winscale2f90</NAME>
 <NP>4</NP>
 <WORKDIR>./f90/rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-#0  0x7FA2676C7037
-#1  0x7FA2676C7604
-#2  0x378FA35CCF
-#3  0x7FA267254735
-#4  0x7FA267E7FC63
-#5  0x7FA267F1432F
-#6  0x7FA267E73879
-#7  0x4015D0 in MAIN__ at winscale2f90.f90:?
-#0  0x7FC5DB4EC037
-#1  0x7FC5DB4EC604
-#2  0x378FA35CCF
-#3  0x7FC5DB079735
-#4  0x7FC5DBCA4C63
-#5  0x7FC5DBD3932F
-#6  0x7FC5DBC98879
-
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 11
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
-This typically refers to a problem with your application.
-Please see the FAQ page for debugging suggestions
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>winerrf90</NAME>
@@ -5358,43 +5336,7 @@ Please see the FAQ page for debugging suggestions
 <NAME>winaccf90</NAME>
 <NP>4</NP>
 <WORKDIR>./f90/rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-
-Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
-
-Backtrace for this error:
-#0  0x7F500BD69037
-#1  0x7F500BD69604
-#0  0x7F6A83C80037
-#1  0x7F6A83C80604
-#2  #2  0x378FA35CCF
-0x#3  0x7F6A8380D735
-378FA35CCF#4  0x7F6A84437B5B
-
-#5  0x7F6A844CB0AF
-#6  0x7F6A8442C7F4
-#3  #7  0x401375 in MAIN__ at winaccf90.f90:?
-0x7F500B8F6735
-#4  0x7F500C520B5B
-#5  0x7F500C5B40AF
-#6  0x7F500C5157F4
-#7  0x40130B in MAIN__ at winaccf90.f90:?
-
-===================================================================================
-=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
-=   EXIT CODE: 11
-=   CLEANING UP REMAINING PROCESSES
-=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
-===================================================================================
-YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
-This typically refers to a problem with your application.
-Please see the FAQ page for debugging suggestions
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>c2f2cwinf90</NAME>
@@ -5421,10 +5363,49 @@ Please see the FAQ page for debugging suggestions
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>aintf90</NAME>
+<NP>2</NP>
+<WORKDIR>./f90/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>namepubf90</NAME>
 <NP>2</NP>
 <WORKDIR>./f90/spawn</WORKDIR>
-<STATUS>pass</STATUS>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+ Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
+MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+MPID_NS_Publish(59)..: Lookup failed for service name MyTest
+ Error in Lookup nameInvalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x1e46318) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
+[cli_0]: getval cmd failed
+[cli_0]: expecting cmd=lookup_result, got unpublish_result
+[cli_1]: getval cmd failed
+ Lookup name returned name after it was unpublished
+ Lookup name returned name after it was unpublished
+  Found            4  errors
+readFromPMIClient: lost connection to the PMI client
+readFromPMIClient: lost connection to the PMI client
+[cli_1]: expecting cmd=finalize_ack, got lookup_result
+[cli_0]: getval cmd failed
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r1): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>spawnf90</NAME>
@@ -5442,13 +5423,29 @@ Please see the FAQ page for debugging suggestions
 <NAME>connaccf90</NAME>
 <NP>2</NP>
 <WORKDIR>./f90/spawn</WORKDIR>
-<STATUS>pass</STATUS>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+[cli_1]: getval cmd failed
+ lookup name returned a value before published
+[cli_0]: getval cmd failed
+Fatal error in MPI_Lookup_name: Invalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="fservtest", MPI_INFO_NULL, port=0x690ba8) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name fservtest
+</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>spawnmultf90</NAME>
 <NP>1</NP>
 <WORKDIR>./f90/spawn</WORKDIR>
-<STATUS>pass</STATUS>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+ Found arg a                                                                                but expected -p        
+ Found arg b=c                                                                              but expected 27        
+ Found arg d e                                                                              but expected -echo     
+ Wrong number of arguments (           5 )
+  Found            4  errors
+</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>spawnmult2f90</NAME>
@@ -5466,7 +5463,14 @@ Please see the FAQ page for debugging suggestions
 <NAME>spawnmultf03</NAME>
 <NP>1</NP>
 <WORKDIR>./f90/spawn</WORKDIR>
-<STATUS>pass</STATUS>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+ Found arg a                                                                                but expected -p        
+ Found arg b=c                                                                              but expected 27        
+ Found arg d e                                                                              but expected -echo     
+ Wrong number of arguments (           5 )
+  Found            4  errors
+</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>wtimef90</NAME>
@@ -5490,5 +5494,365 @@ Please see the FAQ page for debugging suggestions
 <NAME>dgraph_unwgtf90</NAME>
 <NP>4</NP>
 <WORKDIR>./f90/topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>profile1f90</NAME>
+<NP>2</NP>
+<WORKDIR>./f90/profile</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>keyvalmis</NAME>
+<NP>1</NP>
+<WORKDIR>./errors/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>noalias</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>noalias2</NAME>
+<NP>4</NP>
+<WORKDIR>./errors/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>noalias3</NAME>
+<NP>4</NP>
+<WORKDIR>./errors/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>rerr</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nb_rerr</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>reduce_local</NAME>
+<NP>1</NP>
+<WORKDIR>./errors/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bcastlength</NAME>
+<NP>4</NP>
+<WORKDIR>./errors/coll</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>cfree</NAME>
+<NP>4</NP>
+<WORKDIR>./errors/comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>ccreate1</NAME>
+<NP>8</NP>
+<WORKDIR>./errors/comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>userdup</NAME>
+<NP>4</NP>
+<WORKDIR>./errors/comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>manysplit</NAME>
+<NP>4</NP>
+<WORKDIR>./errors/comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>too_many_comms</NAME>
+<NP>4</NP>
+<WORKDIR>./errors/comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>too_many_icomms</NAME>
+<NP>4</NP>
+<WORKDIR>./errors/comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>too_many_comms2</NAME>
+<NP>4</NP>
+<WORKDIR>./errors/comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>too_many_comms3</NAME>
+<NP>4</NP>
+<WORKDIR>./errors/comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>too_many_icomms2</NAME>
+<NP>4</NP>
+<WORKDIR>./errors/comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>gerr</NAME>
+<NP>1</NP>
+<WORKDIR>./errors/group</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>proberank</NAME>
+<NP>1</NP>
+<WORKDIR>./errors/pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>truncmsg1</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>truncmsg2</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>errinstatts</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>errinstatta</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>errinstatws</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>errinstatwa</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>cartsmall</NAME>
+<NP>4</NP>
+<WORKDIR>./errors/topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>winerr</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>winerr2</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>cas_type_check</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_sync_unlock</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_sync_free_pt</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_sync_free_at</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_sync_complete</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_sync_lock_at</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_sync_lock_pt</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_sync_lock_fence</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_sync_nested</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_sync_op</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>badport</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>unpub</NAME>
+<NP>1</NP>
+<WORKDIR>./errors/spawn</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+ No Errors
+readFromPMIClient: lost connection to the PMI client
+[cli_0]: getval cmd failed
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>lookup_name</NAME>
+<NP>1</NP>
+<WORKDIR>./errors/spawn</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+ No Errors
+[cli_0]: expecting cmd=finalize_ack, got lookup_result
+readFromPMIClient: lost connection to the PMI client
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>fileerrret</NAME>
+<NP>1</NP>
+<WORKDIR>./errors/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>openerr</NAME>
+<NP>1</NP>
+<WORKDIR>./errors/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>file_errhdl</NAME>
+<NP>1</NP>
+<WORKDIR>./errors/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>uerrhandf</NAME>
+<NP>1</NP>
+<WORKDIR>./errors/f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>errgetx</NAME>
+<NP>1</NP>
+<WORKDIR>./errors/cxx/errhan</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>errsetx</NAME>
+<NP>1</NP>
+<WORKDIR>./errors/cxx/errhan</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>throwtest</NAME>
+<NP>1</NP>
+<WORKDIR>./errors/cxx/errhan</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commerrx</NAME>
+<NP>2</NP>
+<WORKDIR>./errors/cxx/errhan</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fileerrretx</NAME>
+<NP>1</NP>
+<WORKDIR>./errors/cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>errgetfilex</NAME>
+<NP>1</NP>
+<WORKDIR>./errors/cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>throwtestfilex</NAME>
+<NP>1</NP>
+<WORKDIR>./errors/cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>uerrhandf90</NAME>
+<NP>1</NP>
+<WORKDIR>./errors/f90/io</WORKDIR>
 <STATUS>pass</STATUS>
 </MPITEST>

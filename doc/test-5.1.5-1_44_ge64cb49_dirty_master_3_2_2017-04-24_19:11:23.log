@@ -1,0 +1,682 @@
+zam871
+package pscom is not installed
+package psmgmt is not installed
+5.1.5-1_44_ge64cb49_dirty_master_3_2
+/opt/parastation/bin/mpiexec
+make[1]: Entering directory '/home/clauss/Work/psmpi/build/mpich2'
+( cd test && make  testing )
+make[2]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test'
+(NOXMLCLOSE=YES && export NOXMLCLOSE && cd mpi && make testing)
+make[3]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi'
+./runtests -srcdir=/home/clauss/Work/psmpi/mpich2/test/mpi -tests=testlist \
+	-mpiexec=/opt/parastation/bin/mpiexec -xmlfile=summary.xml \
+	-tapfile=summary.tap -junitfile=summary.junit.xml
+Looking in ./testlist
+Processing directory parastation
+Looking in ./parastation/testlist
+Processing directory attr
+Looking in ./attr/testlist
+Processing directory coll
+Looking in ./coll/testlist
+Processing directory comm
+Looking in ./comm/testlist
+Program comm_idup_comm exited without No Errors
+Program comm_idup_comm2 exited without No Errors
+Processing directory datatype
+Looking in ./datatype/testlist
+Unexpected output in darray-pack: <PSP:r0000012:Receive unknown msg_type 4096>
+Unexpected output in darray-pack: <PSP:r0000012:Receive unknown msg_type 104>
+Program darray-pack exited without No Errors
+Processing directory errhan
+Looking in ./errhan/testlist
+Processing directory group
+Looking in ./group/testlist
+Processing directory info
+Looking in ./info/testlist
+Processing directory init
+Looking in ./init/testlist
+Some programs (version) may still be running:
+pids = 23542 31360 
+The executable (version) will not be removed.
+Processing directory mpi_t
+Looking in ./mpi_t/testlist
+Processing directory pt2pt
+Looking in ./pt2pt/testlist
+Processing directory rma
+Looking in ./rma/testlist
+Unexpected output in getfence1: Deadlock detected! Process 24044 will wait forever.
+Unexpected output in getfence1: ('wait' called without outstanding send or recv requests).
+Unexpected output in getfence1: Requests:
+Unexpected output in getfence1: Sockets:
+Unexpected output in getfence1:   sock#0x1bccd40 listen:    -1 demand:   0(   0)  src:(134.94.169.164,24044,(nil),r0000000) anyrecv:     1
+Unexpected output in getfence1:   Connections:
+Unexpected output in getfence1:     con#0x1bcf7e8 type:  loop state:    open dest:(134.94.169.164,24044,0x1bcf7e8,r0000000) recvcnt:    1
+Unexpected output in getfence1:     con#0x1bcfb88 type:   shm state:    norw dest:(134.94.169.164,24045,0x17e19a8,r0000001) recvcnt:    2
+Unexpected output in getfence1: Fds:
+Unexpected output in getfence1: 
+Unexpected output in getfence1: Reqs:11060 GenReqs: (cnt:624  used:624)
+Unexpected output in getfence1: ReqsAnySrc:4173 RecvQAnySrc:43185
+Program getfence1 exited without No Errors
+Unexpected output in win_info: 0: no_locks is not defined
+Unexpected output in win_info: 0: no_locks is not defined
+Unexpected output in win_info: 2: no_locks is not defined
+Unexpected output in win_info: 2: no_locks is not defined
+Unexpected output in win_info: 1: no_locks is not defined
+Unexpected output in win_info: 1: no_locks is not defined
+Unexpected output in win_info: 3: no_locks is not defined
+Unexpected output in win_info: 3: no_locks is not defined
+Program win_info exited without No Errors
+Program acc-pairtype exited without No Errors
+Program large-acc-flush_local exited without No Errors
+Processing directory spawn
+Looking in ./spawn/testlist
+Unexpected output in namepub: Error in Publish_name: "Invalid service name (see MPI_Publish_name), error stack:
+Unexpected output in namepub: MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+Unexpected output in namepub: MPID_NS_Publish(59)..: Lookup failed for service name MyTest"
+Unexpected output in namepub: Error in Lookup name: "Invalid service name (see MPI_Publish_name), error stack:
+Unexpected output in namepub: MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x7fff8e12c420) failed
+Unexpected output in namepub: MPI_Lookup_name(129): 
+Unexpected output in namepub: MPID_NS_Lookup(85)..: Lookup failed for service name MyTest"
+Unexpected output in namepub: [cli_0]: getval cmd failed
+Unexpected output in namepub: [cli_0]: expecting cmd=lookup_result, got unpublish_result
+Unexpected output in namepub: Lookup name returned name after it was unpublished
+Unexpected output in namepub:  Found 4 errors
+Unexpected output in namepub: [cli_1]: getval cmd failed
+Unexpected output in namepub: [cli_1]: expecting cmd=finalize_ack, got lookup_result
+Unexpected output in namepub: [cli_0]: getval cmd failed
+Unexpected output in namepub: Lookup name returned name after it was unpublished
+Unexpected output in namepub: readFromPMIClient: lost connection to the PMI client
+Unexpected output in namepub: readFromPMIClient: lost connection to the PMI client
+Unexpected output in namepub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepub: __PMI_send(r0): failed sending cmd=finalize_ack
+Unexpected output in namepub:  from pmi_finalize:1357
+Unexpected output in namepub: __PMI_send(r1): failed sending cmd=finalize_ack
+Unexpected output in namepub:  from pmi_finalize:1357
+Program namepub exited without No Errors
+Program spawninfo1 exited without No Errors
+Program spawnminfo1 exited without No Errors
+Processing directory topo
+Looking in ./topo/testlist
+Processing directory io
+Looking in ./io/testlist
+Some programs (async) may still be running:
+pids = 2001 2044 
+The executable (async) will not be removed.
+Processing directory f77
+Looking in ./f77/testlist
+Processing directory attr
+Looking in ./f77/attr/testlist
+Processing directory coll
+Looking in ./f77/coll/testlist
+Processing directory datatype
+Looking in ./f77/datatype/testlist
+Processing directory pt2pt
+Looking in ./f77/pt2pt/testlist
+Processing directory info
+Looking in ./f77/info/testlist
+Processing directory spawn
+Looking in ./f77/spawn/testlist
+Unexpected output in namepubf:  Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
+Unexpected output in namepubf: MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+Unexpected output in namepubf: MPID_NS_Publish(59)..: Lookup failed for service name MyTest
+Unexpected output in namepubf:  Error in Lookup nameInvalid service name (see MPI_Publish_name), error stack:
+Unexpected output in namepubf: MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x1bc2318) failed
+Unexpected output in namepubf: MPI_Lookup_name(129): 
+Unexpected output in namepubf: MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
+Unexpected output in namepubf: [cli_0]: getval cmd failed
+Unexpected output in namepubf: [cli_0]: expecting cmd=lookup_result, got unpublish_result
+Unexpected output in namepubf:  Lookup name returned name after it was unpublished
+Unexpected output in namepubf: [cli_1]: getval cmd failed
+Unexpected output in namepubf:  Lookup name returned name after it was unpublished
+Unexpected output in namepubf:   Found            4  errors
+Unexpected output in namepubf: readFromPMIClient: lost connection to the PMI client
+Unexpected output in namepubf: [cli_1]: expecting cmd=finalize_ack, got lookup_result
+Unexpected output in namepubf: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: [cli_0]: getval cmd failed
+Unexpected output in namepubf: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: readFromPMIClient: lost connection to the PMI client
+Unexpected output in namepubf: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: __PMI_send(r1): failed sending cmd=finalize_ack
+Unexpected output in namepubf:  from pmi_finalize:1357
+Unexpected output in namepubf: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf: __PMI_send(r0): failed sending cmd=finalize_ack
+Unexpected output in namepubf:  from pmi_finalize:1357
+Program namepubf exited without No Errors
+Unexpected output in connaccf: [cli_1]: getval cmd failed
+Unexpected output in connaccf:  lookup name returned a value before published
+Unexpected output in connaccf: [cli_0]: getval cmd failed
+Unexpected output in connaccf: Fatal error in MPI_Lookup_name: Invalid service name (see MPI_Publish_name), error stack:
+Unexpected output in connaccf: MPI_Lookup_name(149): MPI_Lookup_name(service="fservtest", MPI_INFO_NULL, port=0x10c4ba8) failed
+Unexpected output in connaccf: MPI_Lookup_name(129): 
+Unexpected output in connaccf: MPID_NS_Lookup(85)..: Lookup failed for service name fservtest
+Program connaccf exited without No Errors
+Unexpected output in spawnmultf:  Found arg a                                                                                but expected -p        
+Unexpected output in spawnmultf:  Found arg b=c                                                                              but expected 27        
+Unexpected output in spawnmultf:  Found arg d e                                                                              but expected -echo     
+Unexpected output in spawnmultf:  Wrong number of arguments (           5 )
+Unexpected output in spawnmultf:   Found            4  errors
+Program spawnmultf exited without No Errors
+Processing directory io
+Looking in ./f77/io/testlist
+Processing directory rma
+Looking in ./f77/rma/testlist
+Processing directory init
+Looking in ./f77/init/testlist
+Processing directory comm
+Looking in ./f77/comm/testlist
+Processing directory ext
+Looking in ./f77/ext/testlist
+Processing directory topo
+Looking in ./f77/topo/testlist
+Processing directory profile
+Looking in ./f77/profile/testlist
+Processing directory cxx
+Looking in ./cxx/testlist
+Processing directory attr
+Looking in ./cxx/attr/testlist
+Processing directory pt2pt
+Looking in ./cxx/pt2pt/testlist
+Processing directory comm
+Looking in ./cxx/comm/testlist
+Processing directory coll
+Looking in ./cxx/coll/testlist
+Processing directory errhan
+Looking in ./cxx/errhan/testlist
+Processing directory init
+Looking in ./cxx/init/testlist
+Processing directory info
+Looking in ./cxx/info/testlist
+Processing directory datatype
+Looking in ./cxx/datatype/testlist
+Processing directory topo
+Looking in ./cxx/topo/testlist
+Processing directory io
+Looking in ./cxx/io/testlist
+Processing directory spawn
+Looking in ./cxx/spawn/testlist
+Unexpected output in namepubx: Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
+Unexpected output in namepubx: MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+Unexpected output in namepubx: MPID_NS_Publish(59)..: Lookup failed for service name MyTest
+Unexpected output in namepubx: Error in Lookup name Invalid service name (see MPI_Publish_name), error stack:
+Unexpected output in namepubx: MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x1c8b840) failed
+Unexpected output in namepubx: MPI_Lookup_name(129): 
+Unexpected output in namepubx: MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
+Unexpected output in namepubx: [cli_0]: getval cmd failed
+Unexpected output in namepubx: [cli_0]: expecting cmd=lookup_result, got unpublish_result
+Unexpected output in namepubx: [cli_1]: getval cmd failed
+Unexpected output in namepubx: Lookup name returned name after it was unpublished
+Unexpected output in namepubx: The name returned was 
+Unexpected output in namepubx: Lookup name returned name after it was unpublished
+Unexpected output in namepubx: The name returned was 
+Unexpected output in namepubx:  Found 4 errors
+Unexpected output in namepubx: [cli_0]: getval cmd failed
+Unexpected output in namepubx: readFromPMIClient: lost connection to the PMI client
+Unexpected output in namepubx: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: [cli_1]: expecting cmd=finalize_ack, got lookup_result
+Unexpected output in namepubx: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: readFromPMIClient: lost connection to the PMI client
+Unexpected output in namepubx: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: __PMI_send(r0): failed sending cmd=finalize_ack
+Unexpected output in namepubx:  from pmi_finalize:1357
+Unexpected output in namepubx: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubx: __PMI_send(r1): failed sending cmd=finalize_ack
+Unexpected output in namepubx:  from pmi_finalize:1357
+Program namepubx exited without No Errors
+Processing directory rma
+Looking in ./cxx/rma/testlist
+Processing directory f90
+Looking in ./f90/testlist
+Processing directory attr
+Looking in ./f90/attr/testlist
+Processing directory coll
+Looking in ./f90/coll/testlist
+Processing directory comm
+Looking in ./f90/comm/testlist
+Processing directory ext
+Looking in ./f90/ext/testlist
+Processing directory info
+Looking in ./f90/info/testlist
+Processing directory init
+Looking in ./f90/init/testlist
+Processing directory io
+Looking in ./f90/io/testlist
+Processing directory misc
+Looking in ./f90/misc/testlist
+Processing directory pt2pt
+Looking in ./f90/pt2pt/testlist
+Processing directory datatype
+Looking in ./f90/datatype/testlist
+Processing directory f90types
+Looking in ./f90/f90types/testlist
+Processing directory rma
+Looking in ./f90/rma/testlist
+Processing directory spawn
+Looking in ./f90/spawn/testlist
+Unexpected output in namepubf90:  Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
+Unexpected output in namepubf90: MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+Unexpected output in namepubf90: MPID_NS_Publish(59)..: Lookup failed for service name MyTest
+Unexpected output in namepubf90:  Error in Lookup nameInvalid service name (see MPI_Publish_name), error stack:
+Unexpected output in namepubf90: MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x1e46318) failed
+Unexpected output in namepubf90: MPI_Lookup_name(129): 
+Unexpected output in namepubf90: MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
+Unexpected output in namepubf90: [cli_0]: getval cmd failed
+Unexpected output in namepubf90: [cli_0]: expecting cmd=lookup_result, got unpublish_result
+Unexpected output in namepubf90: [cli_1]: getval cmd failed
+Unexpected output in namepubf90:  Lookup name returned name after it was unpublished
+Unexpected output in namepubf90:  Lookup name returned name after it was unpublished
+Unexpected output in namepubf90:   Found            4  errors
+Unexpected output in namepubf90: readFromPMIClient: lost connection to the PMI client
+Unexpected output in namepubf90: readFromPMIClient: lost connection to the PMI client
+Unexpected output in namepubf90: [cli_1]: expecting cmd=finalize_ack, got lookup_result
+Unexpected output in namepubf90: [cli_0]: getval cmd failed
+Unexpected output in namepubf90: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: do_send(r1): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in namepubf90: __PMI_send(r1): failed sending cmd=finalize_ack
+Unexpected output in namepubf90:  from pmi_finalize:1357
+Unexpected output in namepubf90: __PMI_send(r0): failed sending cmd=finalize_ack
+Unexpected output in namepubf90:  from pmi_finalize:1357
+Program namepubf90 exited without No Errors
+Unexpected output in connaccf90: [cli_1]: getval cmd failed
+Unexpected output in connaccf90:  lookup name returned a value before published
+Unexpected output in connaccf90: [cli_0]: getval cmd failed
+Unexpected output in connaccf90: Fatal error in MPI_Lookup_name: Invalid service name (see MPI_Publish_name), error stack:
+Unexpected output in connaccf90: MPI_Lookup_name(149): MPI_Lookup_name(service="fservtest", MPI_INFO_NULL, port=0x690ba8) failed
+Unexpected output in connaccf90: MPI_Lookup_name(129): 
+Unexpected output in connaccf90: MPID_NS_Lookup(85)..: Lookup failed for service name fservtest
+Program connaccf90 exited without No Errors
+Unexpected output in spawnmultf90:  Found arg a                                                                                but expected -p        
+Unexpected output in spawnmultf90:  Found arg b=c                                                                              but expected 27        
+Unexpected output in spawnmultf90:  Found arg d e                                                                              but expected -echo     
+Unexpected output in spawnmultf90:  Wrong number of arguments (           5 )
+Unexpected output in spawnmultf90:   Found            4  errors
+Program spawnmultf90 exited without No Errors
+Unexpected output in spawnmultf03:  Found arg a                                                                                but expected -p        
+Unexpected output in spawnmultf03:  Found arg b=c                                                                              but expected 27        
+Unexpected output in spawnmultf03:  Found arg d e                                                                              but expected -echo     
+Unexpected output in spawnmultf03:  Wrong number of arguments (           5 )
+Unexpected output in spawnmultf03:   Found            4  errors
+Program spawnmultf03 exited without No Errors
+Processing directory timer
+Looking in ./f90/timer/testlist
+Processing directory topo
+Looking in ./f90/topo/testlist
+Processing directory profile
+Looking in ./f90/profile/testlist
+Processing directory errors
+Looking in ./errors/testlist
+Processing directory attr
+Looking in ./errors/attr/testlist
+Processing directory coll
+Looking in ./errors/coll/testlist
+Program bcastlength exited without No Errors
+Processing directory comm
+Looking in ./errors/comm/testlist
+Processing directory group
+Looking in ./errors/group/testlist
+Processing directory pt2pt
+Looking in ./errors/pt2pt/testlist
+Processing directory topo
+Looking in ./errors/topo/testlist
+Processing directory rma
+Looking in ./errors/rma/testlist
+Processing directory spawn
+Looking in ./errors/spawn/testlist
+Unexpected output in unpub: readFromPMIClient: lost connection to the PMI client
+Unexpected output in unpub: [cli_0]: getval cmd failed
+Unexpected output in unpub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in unpub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in unpub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in unpub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in unpub: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in unpub: __PMI_send(r0): failed sending cmd=finalize_ack
+Unexpected output in unpub:  from pmi_finalize:1357
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: getval cmd failed
+Unexpected output in lookup_name: [cli_0]: expecting cmd=finalize_ack, got lookup_result
+Unexpected output in lookup_name: readFromPMIClient: lost connection to the PMI client
+Unexpected output in lookup_name: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in lookup_name: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in lookup_name: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in lookup_name: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in lookup_name: do_send(r0): got error 9 on PMI socket: Bad file descriptor
+Unexpected output in lookup_name: __PMI_send(r0): failed sending cmd=finalize_ack
+Unexpected output in lookup_name:  from pmi_finalize:1357
+Processing directory io
+Looking in ./errors/io/testlist
+Processing directory f77
+Looking in ./errors/f77/testlist
+Processing directory io
+Looking in ./errors/f77/io/testlist
+Processing directory cxx
+Looking in ./errors/cxx/testlist
+Processing directory errhan
+Looking in ./errors/cxx/errhan/testlist
+Processing directory io
+Looking in ./errors/cxx/io/testlist
+Processing directory f90
+Looking in ./errors/f90/testlist
+Processing directory io
+Looking in ./errors/f90/io/testlist
+Processing directory impls
+Looking in ./impls/testlist
+21 tests failed out of 934
+Details in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.xml
+TAP formatted results in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.tap
+JUNIT formatted results in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.junit.xml
+make[3]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi'
+(XMLFILE=../mpi/summary.xml && XMLCONTINUE=YES && \
+export XMLFILE && export XMLCONTINUE && \
+cd commands && make testing)
+make[3]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test/commands'
+make[3]: Nothing to be done for 'testing'.
+make[3]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test/commands'
+make[2]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test'
+make[1]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2'
+./comm/comm_idup_comm np=6:
+
+-------------------------------------------------
+./comm/comm_idup_comm2 np=6:
+
+-------------------------------------------------
+./datatype/darray-pack np=72:
+<PSP:r0000012:Receive unknown msg_type 4096>
+<PSP:r0000012:Receive unknown msg_type 104>
+
+-------------------------------------------------
+./rma/getfence1 np=2:
+Deadlock detected! Process 24044 will wait forever.
+('wait' called without outstanding send or recv requests).
+Requests:
+Sockets:
+  sock#0x1bccd40 listen:    -1 demand:   0(   0)  src:(134.94.169.164,24044,(nil),r0000000) anyrecv:     1
+  Connections:
+    con#0x1bcf7e8 type:  loop state:    open dest:(134.94.169.164,24044,0x1bcf7e8,r0000000) recvcnt:    1
+    con#0x1bcfb88 type:   shm state:    norw dest:(134.94.169.164,24045,0x17e19a8,r0000001) recvcnt:    2
+Fds:
+
+Reqs:11060 GenReqs: (cnt:624  used:624)
+ReqsAnySrc:4173 RecvQAnySrc:43185
+
+-------------------------------------------------
+./rma/win_info np=4:
+0: no_locks is not defined
+0: no_locks is not defined
+2: no_locks is not defined
+2: no_locks is not defined
+1: no_locks is not defined
+1: no_locks is not defined
+3: no_locks is not defined
+3: no_locks is not defined
+
+-------------------------------------------------
+./rma/acc-pairtype np=2:
+
+-------------------------------------------------
+./rma/large-acc-flush_local np=3:
+
+-------------------------------------------------
+./spawn/namepub np=2:
+Error in Publish_name: "Invalid service name (see MPI_Publish_name), error stack:
+MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+MPID_NS_Publish(59)..: Lookup failed for service name MyTest"
+Error in Lookup name: "Invalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x7fff8e12c420) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name MyTest"
+[cli_0]: getval cmd failed
+[cli_0]: expecting cmd=lookup_result, got unpublish_result
+Lookup name returned name after it was unpublished
+ Found 4 errors
+[cli_1]: getval cmd failed
+[cli_1]: expecting cmd=finalize_ack, got lookup_result
+[cli_0]: getval cmd failed
+Lookup name returned name after it was unpublished
+readFromPMIClient: lost connection to the PMI client
+readFromPMIClient: lost connection to the PMI client
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+__PMI_send(r1): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+
+-------------------------------------------------
+./spawn/spawninfo1 np=1:
+
+-------------------------------------------------
+./spawn/spawnminfo1 np=1:
+
+-------------------------------------------------
+./f77/spawn/namepubf np=2:
+ Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
+MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+MPID_NS_Publish(59)..: Lookup failed for service name MyTest
+ Error in Lookup nameInvalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x1bc2318) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
+[cli_0]: getval cmd failed
+[cli_0]: expecting cmd=lookup_result, got unpublish_result
+ Lookup name returned name after it was unpublished
+[cli_1]: getval cmd failed
+ Lookup name returned name after it was unpublished
+  Found            4  errors
+readFromPMIClient: lost connection to the PMI client
+[cli_1]: expecting cmd=finalize_ack, got lookup_result
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+[cli_0]: getval cmd failed
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+readFromPMIClient: lost connection to the PMI client
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r1): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+
+-------------------------------------------------
+./f77/spawn/connaccf np=2:
+[cli_1]: getval cmd failed
+ lookup name returned a value before published
+[cli_0]: getval cmd failed
+Fatal error in MPI_Lookup_name: Invalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="fservtest", MPI_INFO_NULL, port=0x10c4ba8) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name fservtest
+
+-------------------------------------------------
+./f77/spawn/spawnmultf np=1:
+ Found arg a                                                                                but expected -p        
+ Found arg b=c                                                                              but expected 27        
+ Found arg d e                                                                              but expected -echo     
+ Wrong number of arguments (           5 )
+  Found            4  errors
+
+-------------------------------------------------
+./cxx/spawn/namepubx np=2:
+Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
+MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+MPID_NS_Publish(59)..: Lookup failed for service name MyTest
+Error in Lookup name Invalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x1c8b840) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
+[cli_0]: getval cmd failed
+[cli_0]: expecting cmd=lookup_result, got unpublish_result
+[cli_1]: getval cmd failed
+Lookup name returned name after it was unpublished
+The name returned was 
+Lookup name returned name after it was unpublished
+The name returned was 
+ Found 4 errors
+[cli_0]: getval cmd failed
+readFromPMIClient: lost connection to the PMI client
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+[cli_1]: expecting cmd=finalize_ack, got lookup_result
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+readFromPMIClient: lost connection to the PMI client
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r1): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+
+-------------------------------------------------
+./f90/spawn/namepubf90 np=2:
+ Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
+MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
+MPID_NS_Publish(59)..: Lookup failed for service name MyTest
+ Error in Lookup nameInvalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x1e46318) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
+[cli_0]: getval cmd failed
+[cli_0]: expecting cmd=lookup_result, got unpublish_result
+[cli_1]: getval cmd failed
+ Lookup name returned name after it was unpublished
+ Lookup name returned name after it was unpublished
+  Found            4  errors
+readFromPMIClient: lost connection to the PMI client
+readFromPMIClient: lost connection to the PMI client
+[cli_1]: expecting cmd=finalize_ack, got lookup_result
+[cli_0]: getval cmd failed
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r1): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r1): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+
+-------------------------------------------------
+./f90/spawn/connaccf90 np=2:
+[cli_1]: getval cmd failed
+ lookup name returned a value before published
+[cli_0]: getval cmd failed
+Fatal error in MPI_Lookup_name: Invalid service name (see MPI_Publish_name), error stack:
+MPI_Lookup_name(149): MPI_Lookup_name(service="fservtest", MPI_INFO_NULL, port=0x690ba8) failed
+MPI_Lookup_name(129): 
+MPID_NS_Lookup(85)..: Lookup failed for service name fservtest
+
+-------------------------------------------------
+./f90/spawn/spawnmultf90 np=1:
+ Found arg a                                                                                but expected -p        
+ Found arg b=c                                                                              but expected 27        
+ Found arg d e                                                                              but expected -echo     
+ Wrong number of arguments (           5 )
+  Found            4  errors
+
+-------------------------------------------------
+./f90/spawn/spawnmultf03 np=1:
+ Found arg a                                                                                but expected -p        
+ Found arg b=c                                                                              but expected 27        
+ Found arg d e                                                                              but expected -echo     
+ Wrong number of arguments (           5 )
+  Found            4  errors
+
+-------------------------------------------------
+./errors/coll/bcastlength np=4:
+
+-------------------------------------------------
+./errors/spawn/unpub np=1:
+ No Errors
+readFromPMIClient: lost connection to the PMI client
+[cli_0]: getval cmd failed
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+
+-------------------------------------------------
+./errors/spawn/lookup_name np=1:
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+[cli_0]: getval cmd failed
+ No Errors
+[cli_0]: expecting cmd=finalize_ack, got lookup_result
+readFromPMIClient: lost connection to the PMI client
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+do_send(r0): got error 9 on PMI socket: Bad file descriptor
+__PMI_send(r0): failed sending cmd=finalize_ack
+ from pmi_finalize:1357
+
+-------------------------------------------------
+21 tests failed out of 934
