@@ -18,9 +18,19 @@
 static inline
 void MPID_DEV_Request_common_wait(MPID_Request *req)
 {
+	static unsigned int progress_counter = 0;
+	int made_progress;
 	pscom_request_t *preq = req->dev.kind.common.pscom_req;
 
 	MPID_PSP_LOCKFREE_CALL(pscom_wait(preq));
+
+	/* The progress counting here is just for reducing the scheduling impact onto pt2pt
+	    latencies if a lot of non-blocking collectives are pending without progress: */
+	progress_counter++;
+	if(progress_counter % 128 == 0) {
+		MPIDU_Sched_progress(&made_progress);
+		if(made_progress) progress_counter--;
+	}
 }
 
 
