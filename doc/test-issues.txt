@@ -26,6 +26,11 @@ not ok 274 - ./datatype/darray-pack 72
 ## <PSP:r0000012:Receive unknown msg_type 4096>
 ## <PSP:r0000012:Receive unknown msg_type 104>
 ----------------
+* Analysis:
+- 72 procs are too many for local testing!
+* Solution:
+- mark benchmark as @largetest@
+----------------
 
 
 =================
@@ -52,6 +57,12 @@ not ok 374 - ./rma/getfence1 2
 ## Reqs:11060 GenReqs: (cnt:624  used:624)
 ## ReqsAnySrc:4173 RecvQAnySrc:43185
 ----------------
+* Analysis:
+- data sets are too big
+* Solution:
+- marked test as @largetest@
+- added version with reduced data sizes to parastation test set
+----------------
 not ok 487 - ./rma/win_info 4
   ---
   Directory: ./rma
@@ -68,6 +79,11 @@ not ok 487 - ./rma/win_info 4
 ## 1: no_locks is not defined
 ## 3: no_locks is not defined
 ## 3: no_locks is not defined
+-----------------
+* Analysis:
+- test checks for MPICH-specific behavior
+* Solution:
+- commented out this test in testlist
 ----------------
 not ok 512 - ./rma/acc-pairtype 2
   ---
@@ -88,6 +104,12 @@ not ok 515 - ./rma/large-acc-flush_local 3
   Date: "Mon Apr 24 20:13:06 2017"
   ...
 ## Test output (expected 'No Errors'):
+-----------------
+* Analysis:
+- erroneous test code: MPI_SUM is not defined on MPI_BYTE (see 5.9.2 in standard)
+* Solution:
+- commented out this test in testlist
+- added fixed version to parastation test set
 ----------------
 
 
@@ -112,6 +134,14 @@ not ok 237 - ./comm/comm_idup_comm2 6
   ...
 ## Test output (expected 'No Errors'):
 ----------------
+* Analysis:
+- deadlock due to lacking progress for non-blocking collectives called within comm_idup
+* Solution:
+- We need to make progress for non-blockinbg collectives
+  even in MPID_PSP_Wait(request) from time to time
+- added call of MPIDU_Sched_progress() within MPID_PSP_Wait()
+----------------
+
 
 
 =================
@@ -125,6 +155,11 @@ not ok 889 - ./errors/coll/bcastlength 4
   Date: "Mon Apr 24 20:19:08 2017"
   ...
 ## Test output (expected 'No Errors'):
+----------------
+* Analysis:
+- test checks for MPICH-specific behavior
+* Solution:
+- commented out this test in testlist
 ----------------
 
 
@@ -234,4 +269,10 @@ not ok 922 - ./errors/spawn/lookup_name 1
   Num-procs: 1
   Date: "Mon Apr 24 20:19:20 2017"
   ...
+-----------------
+* Analysis:
+- the failure of these tests is most probably due to the missing nameserver support of psmgmt
+* Solution:
+- use Hydra's mpiexec instead Solution:
 ----------------
+

@@ -2,7 +2,7 @@ winname 2
 allocmem 2
 putfence1 2
 putfidx 4
-getfence1 2
+@largetest@getfence1 2
 accfence1 4
 adlb_mimic1 3
 accfence2 4
@@ -117,7 +117,7 @@ req_example 4 mpiversion=3.0
 req_example_shm 4 mpiversion=3.0
 rput_local_comp 2 mpiversion=3.0
 racc_local_comp 2 mpiversion=3.0
-win_info 4 mpiversion=3.0
+#win_info 4 mpiversion=3.0
 linked_list_lockall 4 mpiversion=3.0
 pscw_ordering 4 mpiversion=3.0
 pscw_ordering_shm 4 mpiversion=3.0
@@ -145,7 +145,7 @@ aint 2 mpiversion=3.1
 acc-pairtype 2
 manyget 2
 derived-acc-flush_local 3 mpiversion=3.0
-large-acc-flush_local 3 mpiversion=3.0
+#large-acc-flush_local 3 mpiversion=3.0
 large-small-acc 2
 win_shared_put_flush_load 3 mpiversion=3.0
 win_shared_acc_flush_load 3 mpiversion=3.0

@@ -20,3 +20,7 @@ num_contexts_2k 1
 num_contexts_4k 1
 num_contexts_8k 1
 num_contexts_16k 1
+#
+# Fixed tests from MPICH:
+getfence1 2
+large-acc-flush_local 3 mpiversion=3.0

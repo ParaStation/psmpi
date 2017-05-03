@@ -5,5 +5,5 @@ noalias3 4 mpiversion=3.0
 rerr 2
 nb_rerr 2  mpiversion=3.0
 reduce_local 1
-bcastlength 4
+#bcastlength 4
 ibcastlength 4 mpiversion=3.0 xfail=ticket2300

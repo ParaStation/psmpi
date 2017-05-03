@@ -105,7 +105,8 @@ noinst_PROGRAMS = locknull$(EXEEXT) get-acc-loc$(EXEEXT) \
 	spawn_universe$(EXEEXT) spawn_univ_comm$(EXEEXT) \
 	spawn_univ_anysrc$(EXEEXT) num_contexts_2k$(EXEEXT) \
 	num_contexts_4k$(EXEEXT) num_contexts_8k$(EXEEXT) \
-	num_contexts_16k$(EXEEXT)
+	num_contexts_16k$(EXEEXT) getfence1$(EXEEXT) \
+	large-acc-flush_local$(EXEEXT)
 subdir = parastation
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -130,6 +131,18 @@ get_acc_loc_SOURCES = get-acc-loc.c
 get_acc_loc_OBJECTS = get-acc-loc.$(OBJEXT)
 get_acc_loc_LDADD = $(LDADD)
 get_acc_loc_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+getfence1_SOURCES = getfence1.c
+getfence1_OBJECTS = getfence1.$(OBJEXT)
+getfence1_LDADD = $(LDADD)
+getfence1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+large_acc_flush_local_SOURCES = large-acc-flush_local.c
+large_acc_flush_local_OBJECTS = large-acc-flush_local.$(OBJEXT)
+large_acc_flush_local_LDADD = $(LDADD)
+large_acc_flush_local_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 locknull_SOURCES = locknull.c
@@ -277,22 +290,22 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = get-acc-loc.c locknull.c $(mprobe_SOURCES) \
-	num_contexts_16k.c num_contexts_2k.c num_contexts_4k.c \
-	num_contexts_8k.c spawn_anysrc.c spawn_isend.c spawn_rma.c \
-	spawn_ssend.c spawn_univ_anysrc.c spawn_univ_comm.c \
-	spawn_universe.c win_flavor_err_dyn.c win_flavor_err_shm.c \
-	win_sync_err_flush.c win_sync_err_flushall.c \
-	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
-	win_sync_err_unlockall.c
-DIST_SOURCES = get-acc-loc.c locknull.c $(mprobe_SOURCES) \
-	num_contexts_16k.c num_contexts_2k.c num_contexts_4k.c \
-	num_contexts_8k.c spawn_anysrc.c spawn_isend.c spawn_rma.c \
-	spawn_ssend.c spawn_univ_anysrc.c spawn_univ_comm.c \
-	spawn_universe.c win_flavor_err_dyn.c win_flavor_err_shm.c \
-	win_sync_err_flush.c win_sync_err_flushall.c \
-	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
-	win_sync_err_unlockall.c
+SOURCES = get-acc-loc.c getfence1.c large-acc-flush_local.c locknull.c \
+	$(mprobe_SOURCES) num_contexts_16k.c num_contexts_2k.c \
+	num_contexts_4k.c num_contexts_8k.c spawn_anysrc.c \
+	spawn_isend.c spawn_rma.c spawn_ssend.c spawn_univ_anysrc.c \
+	spawn_univ_comm.c spawn_universe.c win_flavor_err_dyn.c \
+	win_flavor_err_shm.c win_sync_err_flush.c \
+	win_sync_err_flushall.c win_sync_err_lockall_at.c \
+	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
+DIST_SOURCES = get-acc-loc.c getfence1.c large-acc-flush_local.c \
+	locknull.c $(mprobe_SOURCES) num_contexts_16k.c \
+	num_contexts_2k.c num_contexts_4k.c num_contexts_8k.c \
+	spawn_anysrc.c spawn_isend.c spawn_rma.c spawn_ssend.c \
+	spawn_univ_anysrc.c spawn_univ_comm.c spawn_universe.c \
+	win_flavor_err_dyn.c win_flavor_err_shm.c win_sync_err_flush.c \
+	win_sync_err_flushall.c win_sync_err_lockall_at.c \
+	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -599,6 +612,14 @@ get-acc-loc$(EXEEXT): $(get_acc_loc_OBJECTS) $(get_acc_loc_DEPENDENCIES) $(EXTRA
 	@rm -f get-acc-loc$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(get_acc_loc_OBJECTS) $(get_acc_loc_LDADD) $(LIBS)
 
+getfence1$(EXEEXT): $(getfence1_OBJECTS) $(getfence1_DEPENDENCIES) $(EXTRA_getfence1_DEPENDENCIES) 
+	@rm -f getfence1$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(getfence1_OBJECTS) $(getfence1_LDADD) $(LIBS)
+
+large-acc-flush_local$(EXEEXT): $(large_acc_flush_local_OBJECTS) $(large_acc_flush_local_DEPENDENCIES) $(EXTRA_large_acc_flush_local_DEPENDENCIES) 
+	@rm -f large-acc-flush_local$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(large_acc_flush_local_OBJECTS) $(large_acc_flush_local_LDADD) $(LIBS)
+
 locknull$(EXEEXT): $(locknull_OBJECTS) $(locknull_DEPENDENCIES) $(EXTRA_locknull_DEPENDENCIES) 
 	@rm -f locknull$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(locknull_OBJECTS) $(locknull_LDADD) $(LIBS)
@@ -686,6 +707,8 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-acc-loc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getfence1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large-acc-flush_local.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locknull.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mprobe.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/num_contexts_16k.Po@am__quote@
