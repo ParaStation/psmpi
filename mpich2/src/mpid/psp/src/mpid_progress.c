@@ -14,11 +14,12 @@
 #include "mpidimpl.h"
 #include "mpid_psp_request.h"
 
+#define PSP_NBC_PROGRESS_DELAY 100
 
 static inline
 void MPID_DEV_Request_common_wait(MPID_Request *req)
 {
-	static unsigned int progress_counter = 0;
+	static unsigned int counter_to_nbc_progress = 0;
 	int made_progress;
 	pscom_request_t *preq = req->dev.kind.common.pscom_req;
 
@@ -26,10 +27,11 @@ void MPID_DEV_Request_common_wait(MPID_Request *req)
 
 	/* The progress counting here is just for reducing the scheduling impact onto pt2pt
 	    latencies if a lot of non-blocking collectives are pending without progress: */
-	progress_counter++;
-	if(progress_counter % 128 == 0) {
+	counter_to_nbc_progress++;
+	if(counter_to_nbc_progress == PSP_NBC_PROGRESS_DELAY) {
 		MPIDU_Sched_progress(&made_progress);
-		if(made_progress) progress_counter--;
+		if(made_progress) counter_to_nbc_progress--;
+		else counter_to_nbc_progress = 0;
 	}
 }
 
