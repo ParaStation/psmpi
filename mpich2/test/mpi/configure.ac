@@ -684,7 +684,7 @@ AC_CHECK_TYPES([_Bool, float _Complex, double _Complex, long double _Complex])
 AC_CHECK_SIZEOF(void *,8)
 # for tests that require large mem
 largetest="#"
-if test $ac_cv_sizeof_void_p -ge 8; then
+if test $ac_cv_sizeof_void_p -ge 8 && test "$enable_largetest" = "yes" ; then
     largetest=""
 fi
 AC_SUBST(largetest)
