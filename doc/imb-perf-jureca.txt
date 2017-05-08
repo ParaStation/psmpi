@@ -1,0 +1,621 @@
+=====================================
+  IMB Performance Results on JURECA
+=====================================
+
+* PingPong Min. Latency:
+- 5.1.9-1:  1.12 us
+- 5.2.0-1:  1.11 us
+
+* SendRecv Min. Latency:
+- 5.1.9-1:  1.08 us
+- 5.2.0-1:  1.09 us
+
+PingPong Peak Throughput:
+* 5.1.9-1:   11141.73 Mbytes/sec
+* 5.2.0-1:   11236.50 Mbytes/sec
+
+SendRecv Peak Throughput:
+* 5.1.9-1:  13774.40 Mbytes/sec
+* 5.2.0-1:  13509.31 Mbytes/sec
+
+====================================================================================================
+
+> date
+Mon May  8 14:33:27 CEST 2017
+> which mpicc
+/homec/partec/clauss/psmpi/build/install/bin/mpicc
+> mpicc -show
+icc -Wl,-rpath-link=/opt/parastation/lib64 -I/homec/partec/clauss/psmpi/build/install/include -L/homec/partec/clauss/psmpi/build/install/lib -Wl,-rpath -Wl,/homec/partec/clauss/psmpi/build/install/lib -Wl,--enable-new-dtags -lmpi
+> ldd IMB-MPI1 
+        linux-vdso.so.1 =>  (0x00007ffc873f4000)
+        libmpi.so.12 => /usr/local/software/jureca/Stages/2017a/software/psmpi/5.1.9-1-iccifort-2017.2.174-GCC-5.4.0/lib/libmpi.so.12 (0x00002b5f92705000)
+        libm.so.6 => /usr/lib64/libm.so.6 (0x00002b5f92b82000)
+        libgcc_s.so.1 => /usr/local/software/jureca/Stages/2017a/software/GCCcore/5.4.0/lib64/libgcc_s.so.1 (0x00002b5f92519000)
+        libc.so.6 => /usr/lib64/libc.so.6 (0x00002b5f92e84000)
+        libdl.so.2 => /usr/lib64/libdl.so.2 (0x00002b5f93245000)
+        libpscom.so => /usr/local/software/jureca/Stages/2017a/software/pscom/Default/lib/libpscom.so (0x00002b5f93449000)
+        librt.so.1 => /usr/lib64/librt.so.1 (0x00002b5f9368f000)
+        libiomp5.so => /usr/local/software/jureca/Stages/2017a/software/imkl/2017.2.174-ipsmpi-2017a/lib/intel64/libiomp5.so (0x00002b5f93897000)
+        libpthread.so.0 => /usr/lib64/libpthread.so.0 (0x00002b5f93c39000)
+        libifport.so.5 => /usr/local/software/jureca/Stages/2017a/software/ifort/2017.2.174-GCC-5.4.0/compilers_and_libraries_2017.2.174/linux/compiler/lib/intel64/libifport.so.5 (0x00002b5f93e55000)
+        libifcoremt.so.5 => /usr/local/software/jureca/Stages/2017a/software/ifort/2017.2.174-GCC-5.4.0/compilers_and_libraries_2017.2.174/linux/compiler/lib/intel64/libifcoremt.so.5 (0x00002b5f94084000)
+        libimf.so => /usr/local/software/jureca/Stages/2017a/software/ifort/2017.2.174-GCC-5.4.0/compilers_and_libraries_2017.2.174/linux/compiler/lib/intel64/libimf.so (0x00002b5f94414000)
+        libsvml.so => /usr/local/software/jureca/Stages/2017a/software/ifort/2017.2.174-GCC-5.4.0/compilers_and_libraries_2017.2.174/linux/compiler/lib/intel64/libsvml.so (0x00002b5f94900000)
+        libintlc.so.5 => /usr/local/software/jureca/Stages/2017a/software/ifort/2017.2.174-GCC-5.4.0/compilers_and_libraries_2017.2.174/linux/compiler/lib/intel64/libintlc.so.5 (0x00002b5f9580b000)
+        /lib64/ld-linux-x86-64.so.2 (0x00002b5f924e3000)
+> srun -n 2 hostname
+jrc0080
+jrc0081
+> PSP_DEBUG=3 srun -n 2 ./IMB-MPI1 PingPong Sendrecv
+<PSP:jrc0080:29170:set PSP_DEBUG = 3>
+<PSP:jrc0080:29170:# Version(PSCOM): Mar 29 2017 (5.1.2-1)>
+<PSP:jrc0080:29170:default PSP_SO_SNDBUF = 32768>
+<PSP:jrc0080:29170:default PSP_SO_RCVBUF = 32768>
+<PSP:jrc0080:29170:default PSP_TCP_NODELAY = 1>
+<PSP:jrc0080:29170:default PSP_TCP_BACKLOG = 262144>
+<PSP:jrc0080:29170:default PSP_SCHED_YIELD = 0>
+<PSP:jrc0080:29170:default PSP_UNEXPECTED_RECEIVES = 0>
+<PSP:jrc0080:29170:default PSP_RENDEZVOUS = auto>
+<PSP:jrc0080:29170:default PSP_RENDEZVOUS_SHM = auto>
+<PSP:jrc0081:13547:set PSP_DEBUG = 3>
+<PSP:jrc0081:13547:# Version(PSCOM): Mar 29 2017 (5.1.2-1)>
+<PSP:jrc0081:13547:default PSP_SO_SNDBUF = 32768>
+<PSP:jrc0081:13547:default PSP_SO_RCVBUF = 32768>
+<PSP:jrc0081:13547:default PSP_TCP_NODELAY = 1>
+<PSP:jrc0081:13547:default PSP_TCP_BACKLOG = 262144>
+<PSP:jrc0081:13547:default PSP_SCHED_YIELD = 0>
+<PSP:jrc0081:13547:default PSP_UNEXPECTED_RECEIVES = 0>
+<PSP:jrc0081:13547:default PSP_RENDEZVOUS = auto>
+<PSP:jrc0081:13547:default PSP_RENDEZVOUS_SHM = auto>
+<PSP:jrc0081:13547:default PSP_RENDEZVOUS_DAPL = auto>
+<PSP:jrc0081:13547:default PSP_RENDEZVOUS_ELAN = auto>
+<PSP:jrc0081:13547:default PSP_RENDEZVOUS_EXTOLL = auto>
+<PSP:jrc0081:13547:default PSP_RENDEZVOUS_VELO = 1024>
+<PSP:jrc0081:13547:default PSP_RENDEZVOUS_OPENIB = 40000>
+<PSP:jrc0081:13547:default PSP_RENDEZVOUS_UCP = auto>
+<PSP:jrc0081:13547:default PSP_SIGQUIT = 0>
+<PSP:jrc0081:13547:default PSP_SIGSUSPEND = 0>
+<PSP:jrc0081:13547:default PSP_READAHEAD = 100>
+<PSP:jrc0081:13547:d<PSP:jrc0080:29170:default PSP_RENDEZVOUS_DAPL = auto>
+<PSP:jrc0080:29170:default PSP_RENDEZVOUS_ELAN = auto>
+<PSP:jrc0080:29170:default PSP_RENDEZVOUS_EXTOLL = auto>
+efault PSP_RETRY = 10>
+<PSP:jrc0081:135<PSP:jrc0080:29170:default PSP_RENDEZVOUS_VELO = 1024>
+<PSP:jrc0080:29170:default PSP_RENDEZVOUS_OPENIB = 40000>
+47:defaul<PSP:jrc0080:29170:default PSP_RENDEZVOUS_UCP = auto>
+t PSP_GUARD = 1>
+<PSP:jrc0081:13547:default PSP_NETWORK = <null>>
+<PSP:jrc0081:13547:default PSP_PLUGINDIR = >
+<PSP:jrc0081:13547:default PSP_DEBUG_REQ = 0>
+<PSP:jrc0081:13547:default PSP_DEBUG_STATS = 1>
+<PSP:jrc0081:13547:default PSP_IPROBE_COUNT = 0>
+<PSP:jrc0081:13547:default PSP_COLLECTIVES = 0>
+<PSP:jrc0081:13547:default PSP_ONDEMAND = 0>
+<PSP:jrc0081:13547:default PSP_ONDEMAND_SPAWN = 0>
+<PSP:jrc0080:29170:default PSP_SIGQUIT = 0>
+<PSP:jrc0080:29170:default PSP_SIGSUSPEND = 0>
+<PSP:jrc0081:13547:default PSP_TCP = 1>
+<PSP:jrc0081:13547:Register arch tcp with priority 01.02>
+<PSP:jrc0081:13547:default PSP_SHM = 1>
+<PSP:jrc0080:29170:default PSP_READAHEAD = 100>
+<PSP:jrc0081:13547:Register arch shm with priority 01.90>
+<PSP:jrc0081:13547:default PSP_P4S = 1>
+<PSP:jrc0081:13547:Register arch p4s with priority 01.10>
+<PSP:jrc0081:13547:set PSP_PSM = 0>
+<PSP:jrc0081:13547:Arch psm is disabled>
+<PSP:jrc0080:29170:default PSP_RETRY = 10>
+<PSP:jrc0080:29170:default PSP_GUARD = 1>
+<PSP:jrc0081:13547:default PSP_OPENIB = 1>
+<PSP:jrc0080:29170:default PSP_NETWORK = <null>>
+<PSP:jrc0080:29170:default PSP_PLUGINDIR = >
+<PSP:jrc0080:29170:default PSP_DEBUG_REQ = 0>
+<PSP:jrc0080:29170:default PSP_DEBUG_STATS = 1>
+<PSP:jrc0080:29170:default PSP_IPROBE_COUNT = 0>
+<PSP:jrc0080:29170:default PSP_COLLECTIVES = 0>
+<PSP:jrc0080:29170:default PSP_ONDEMAND = 0>
+<PSP:jrc0080:29170:default PSP_ONDEMAND_SPAWN = 0>
+<PSP:jrc0080:29170:default PSP_TCP = 1>
+<PSP:jrc0080:29170:Register arch tcp with priority 01.02>
+<PSP:jrc0080:29170:default PSP_SHM = 1>
+<PSP:jrc0080:29170:Register arch shm with priority 01.90>
+<PSP:jrc0080:29170:default PSP_P4S = 1>
+<PSP:jrc0080:29170:Register arch p4s with priority 01.10>
+<PSP:jrc0080:29170:set PSP_PSM = 0>
+<PSP:jrc0080:29170:Arch psm is disabled>
+<PSP:jrc0080:29170:default PSP_OPENIB = 1>
+<PSP:jrc0080:29170:Using   libpscom4openib.so>
+<PSP:jrc0080:29170:Register arch openib with priority 01.20>
+<PSP:jrc0080:29170:default PSP_OFED = 0>
+<PSP:jrc0080:29170:Arch ofed is disabled>
+<PSP:jrc0080:29170:default PSP_MVAPI = 1>
+<PSP:jrc0080:29170:Loading libpscom4mvapi.so failed : libpscom4mvapi.so: cannot open shared object file: No such file or directory>
+<PSP:jrc0080:29170:default PSP_GM = 1>
+<PSP:jrc0080:29170:Loading libpscom4gm.so failed : libpscom4gm.so: cannot open shared object file: No such file or directory>
+<PSP:jrc0080:29170:default PSP_ELAN = 0>
+<PSP:jrc0080:29170:Arch elan is disabled>
+<PSP:jrc0080:29170:default PSP_VELO = auto>
+<PSP:jrc0080:29170:default PSP_EXTOLL = 1>
+<PSP:jrc0080:29170:Loading libpscom4extoll.so failed : libpscom4extoll.so: cannot open shared object file: No such file or directory>
+<PSP:jrc0080:29170:Arch velo is disabled>
+<PSP:jrc0080:29170:set PSP_DAPL = 0>
+<PSP:jrc0080:29170:Arch dapl is disabled>
+<PSP:jrc0080:29170:default PSP_MXM = 0>
+<PSP:jrc0080:29170:Arch mxm is disabled>
+<PSP:jrc0080:29170:default PSP_UCP = 0>
+<PSP:jrc0080:29170:Arch ucp is disabled>
+<PSP:jrc0080:29170:default PSP_OPENIB_HCA = <null>>
+<PSP:jrc0080:29170:default PSP_OPENIB_PORT = 0>
+<PSP:jrc0080:29170:default PSP_OPENIB_PATH_MTU = 3>
+<PSP:jrc0080:29170:default PSP_OPENIB_RECVQ_SIZE = 16>
+<PSP:jrc0080:29170:default PSP_OPENIB_GLOBAL_SENDQ = 0>
+<PSP:jrc0080:29170:default PSP_OPENIB_COMPQ_SIZE = 40000>
+<PSP:jrc0080:29170:default PSP_OPENIB_SENDQ_SIZE = 16>
+<PSP:jrc0081:13547:Using   libpscom4openib.so>
+<PSP:jrc0081:13547:Register arch openib with priority 01.20>
+<PSP:jrc0081:13547:default PSP_OFED = 0>
+<PSP:jrc0081:13547:Arch ofed is disabled>
+<PSP:jrc0081:13547:default PSP_MVAPI = 1>
+<PSP:jrc0080:29170:default PSP_OPENIB_PENDING_TOKENS = 10>
+<PSP:jrc0080:29170:default PSP_OPENIB_EVENT_CNT = 1>
+<PSP:jrc0080:29170:default PSP_OPENIB_IGNORE_WRONG_OPCODES = 0>
+<PSP:jrc0081:13547:Loading libpscom4mvapi.so failed : libpscom4mvapi.so: cannot open shared object file: No such file or directory>
+<PSP:jrc0080:29170:default PSP_OPENIB_LID_OFFSET = 0>
+<PSP:jrc0081:13547:default PSP_GM = 1>
+<PSP:jrc0080:29170:default PSP_OPENIB_MCACHE_SIZE = 8>
+<PSP:jrc0080:29170:PSP_MALLOC disabled : libpsmalloc.so not linked.>
+<PSP:jrc0081:13547:Loading libpscom4gm.so failed : libpscom4gm.so: cannot open shared object file: No such file or directory>
+<PSP:jrc0081:13547:default PSP_ELAN = 0>
+<PSP:jrc0081:13547:Arch elan is disabled>
+<PSP:jrc0080:29170:Socket name: r0000000>
+<PSP:jrc0081:13547:default PSP_VELO = auto>
+<PSP:jrc0081:13547:default PSP_EXTOLL = 1>
+<PSP:jrc0081:13547:Loading libpscom4extoll.so failed : libpscom4extoll.so: cannot open shared object file: No such file or directory>
+<PSP:jrc0081:13547:Arch velo is disabled>
+<PSP:jrc0081:13547:set PSP_DAPL = 0>
+<PSP:jrc0081:13547:Arch dapl is disabled>
+<PSP:jrc0081:13547:default PSP_MXM = 0>
+<PSP:jrc0081:13547:Arch mxm is disabled>
+<PSP:jrc0081:13547:default PSP_UCP = 0>
+<PSP:jrc0081:13547:Arch ucp is disabled>
+<PSP:jrc0081:13547:default PSP_OPENIB_HCA = <null>>
+<PSP:jrc0081:13547:default PSP_OPENIB_PORT = 0>
+<PSP:jrc0081:13547:default PSP_OPENIB_PATH_MTU = 3>
+<PSP:jrc0081:13547:default PSP_OPENIB_RECVQ_SIZE = 16>
+<PSP:jrc0081:13547:default PSP_OPENIB_GLOBAL_SENDQ = 0>
+<PSP:jrc0081:13547:default PSP_OPENIB_COMPQ_SIZE = 40000>
+<PSP:jrc0081:13547:default PSP_OPENIB_SENDQ_SIZE = 16>
+<PSP:jrc0081:13547:default PSP_OPENIB_PENDING_TOKENS = 10>
+<PSP:jrc0081:13547:default PSP_OPENIB_EVENT_CNT = 1>
+<PSP:jrc0081:13547:default PSP_OPENIB_IGNORE_WRONG_OPCODES = 0>
+<PSP:jrc0081:13547:default PSP_OPENIB_LID_OFFSET = 0>
+<PSP:jrc0081:13547:default PSP_OPENIB_MCACHE_SIZE = 8>
+<PSP:jrc0081:13547:PSP_MALLOC disabled : libpsmalloc.so not linked.>
+<PSP:jrc0081:13547:Socket name: r0000001>
+<PSP:r0000000:CONNECT (10.8.1.80,29170,0xc2afb8,r0000000) to (10.8.1.80,29170,0xc2afb8,r0000000) via loop>
+<PSP:r0000001:CONNECT (10.8.1.81,13547,0xc38fb8,r0000001) to (10.8.1.81,13547,0xc38fb8,r0000001) via loop>
+<PSP:r0000001:setsockopt(4, SOL_SOCKET, SO_SNDBUF, [32768], 4) = 0 : Success>
+<PSP:r0000001:setsockopt(4, SOL_SOCKET, SO_RCVBUF, [32768], 4) = 0 : Success>
+<PSP:r0000001:setsockopt(4, IPPROTO_TCP, TCP_NODELAY, [1], 4) = 0 : Success>
+<PSP:r0000000:setsockopt(4, SOL_SOCKET, SO_SNDBUF, [32768], 4) = 0 : Success>
+<PSP:r0000000:setsockopt(4, SOL_SOCKET, SO_RCVBUF, [32768], 4) = 0 : Success>
+<PSP:r0000000:setsockopt(4, IPPROTO_TCP, TCP_NODELAY, [1], 4) = 0 : Success>
+<PSP:r0000001:ib:IB port <mlx5_0:1>: ACTIVE*>
+<PSP:r0000001:ib:using port <mlx5_0:1>>
+<PSP:r0000000:ib:IB port <mlx5_0:1>: ACTIVE*>
+<PSP:r0000000:ib:using port <mlx5_0:1>>
+<PSP:r0000001:CONNECT (10.8.1.81,13547,0xc39178,r0000001) to (10.8.1.80,29170,0xc2b358,r0000000) via openib>
+<PSP:r0000000:ACCEPT  (10.8.1.81,13547,0xc39178,r0000001) to (10.8.1.80,29170,0xc2b358,r0000000) via openib>
+#------------------------------------------------------------
+#    Intel (R) MPI Benchmarks 2017, MPI-1 part    
+#------------------------------------------------------------
+# Date                  : Mon May  8 14:34:05 2017
+# Machine               : x86_64
+# System                : Linux
+# Release               : 3.10.0-514.16.1.el7.x86_64
+# Version               : #1 SMP Wed Apr 12 15:04:24 UTC 2017
+# MPI Version           : 3.0
+# MPI Thread Environment: 
+
+
+# Calling sequence was: 
+
+# ./IMB-MPI1 PingPong Sendrecv
+
+# Minimum message length in bytes:   0
+# Maximum message length in bytes:   4194304
+#
+# MPI_Datatype                   :   MPI_BYTE 
+# MPI_Datatype for reductions    :   MPI_FLOAT
+# MPI_Op                         :   MPI_SUM  
+#
+#
+
+# List of Benchmarks to run:
+
+# PingPong
+# Sendrecv
+
+#---------------------------------------------------
+# Benchmarking PingPong 
+# #processes = 2 
+#---------------------------------------------------
+       #bytes #repetitions      t[usec]   Mbytes/sec
+            0         1000         1.16         0.00
+            1         1000         1.12         0.85
+            2         1000         1.15         1.66
+            4         1000         1.12         3.39
+            8         1000         1.14         6.71
+           16         1000         1.10        13.82
+           32         1000         1.16        26.29
+           64         1000         1.51        40.45
+          128         1000         1.54        79.21
+          256         1000         1.62       150.41
+          512         1000         1.72       284.39
+         1024         1000         1.99       491.57
+         2048         1000         2.21       882.90
+         4096         1000         2.72      1438.58
+         8192         1000         3.76      2079.32
+        16384         1000         5.68      2750.55
+        32768         1000         7.70      4059.09
+        65536          640        13.07      4781.54
+       131072          320        19.33      6467.95
+       262144          160        31.57      7918.26
+       524288           80        53.27      9386.38
+      1048576           40        98.29     10174.48
+      2097152           20       184.15     10860.45
+      4194304           10       359.01     11141.73
+
+#-----------------------------------------------------------------------------
+# Benchmarking Sendrecv 
+# #processes = 2 
+#-----------------------------------------------------------------------------
+       #bytes #repetitions  t_min[usec]  t_max[usec]  t_avg[usec]   Mbytes/sec
+            0         1000         1.08         1.09         1.09         0.00
+            1         1000         1.09         1.09         1.09         1.75
+            2         1000         1.09         1.09         1.09         3.51
+            4         1000         1.10         1.10         1.10         6.96
+            8         1000         1.10         1.11         1.11        13.80
+           16         1000         1.11         1.11         1.11        27.39
+           32         1000         1.12         1.12         1.12        54.36
+           64         1000         1.50         1.50         1.50        81.58
+          128         1000         1.51         1.51         1.51       161.62
+          256         1000         1.61         1.61         1.61       304.13
+          512         1000         1.70         1.71         1.70       572.71
+         1024         1000         1.97         1.97         1.97       993.45
+         2048         1000         2.17         2.18         2.17      1795.70
+         4096         1000         2.66         2.66         2.66      2935.94
+         8192         1000         3.72         3.72         3.72      4204.53
+        16384         1000         5.73         5.73         5.73      5454.52
+        32768         1000         8.25         8.25         8.25      7576.64
+        65536          640        13.80        13.80        13.80      9055.55
+       131072          320        22.59        22.60        22.59     11064.21
+       262144          160        40.21        40.22        40.21     12432.63
+       524288           80        75.62        75.62        75.62     13223.42
+      1048576           40       145.16       145.20       145.18     13774.40
+      2097152           20       293.76       293.83       293.79     13613.45
+      4194304           10       583.79       583.96       583.88     13699.60
+
+
+# All processes entering MPI_Finalize
+
+<PSP:r0000001:DISCONNECT (10.8.1.81,13547,0xc39178,r0000001) to (10.8.1.80,29170,0xc2b358,r0000000) via openib>
+<PSP:r0000000:connection to (10.8.1.80,29170,0xc2afb8,r0000000) (type:loop,state:open) : read : End of file>
+<PSP:r0000000:DISCONNECT (10.8.1.80,29170,0xc2afb8,r0000000) to (10.8.1.80,29170,0xc2afb8,r0000000) via loop>
+<PSP:r0000000:DISCONNECT (10.8.1.80,29170,0xc2b358,r0000000) to (10.8.1.81,13547,0xc39178,r0000001) via openib>
+<PSP:r0000001:pscom guard con:0xc38ff0 closed>
+<PSP:r0000000:pscom_cleanup()>
+<PSP:r0000000:Reqs:20383 GenReqs: (cnt:0  used:0)>
+<PSP:r0000000:ReqsAnySrc:36566 RecvQAnySrc:36566>
+<PSP:r0000000:Byee.>
+<PSP:r0000001:connection to (10.8.1.81,13547,0xc38fb8,r0000001) (type:loop,state:open) : read : End of file>
+<PSP:r0000001:DISCONNECT (10.8.1.81,13547,0xc38fb8,r0000001) to (10.8.1.81,13547,0xc38fb8,r0000001) via loop>
+<PSP:r0000001:pscom_cleanup()>
+<PSP:r0000001:Reqs:20383 GenReqs: (cnt:0  used:0)>
+<PSP:r0000001:ReqsAnySrc:36566 RecvQAnySrc:36566>
+<PSP:r0000001:Byee.>
+
+===========================================================================================================================
+
+> date
+Mon May  8 14:15:12 CEST 2017
+> which mpicc
+~/psmpi/build/install/bin/mpicc
+> ( cd ~/psmpi ; git log | head )
+commit 81a97071fa988e017c18cd563fd70485c6acb5a1
+Merge: 4f6274d 691ddf2
+Author: clauss <clauss@par-tec.com>
+Date:   Mon May 8 11:52:11 2017 +0200
+
+    Merge branch 'master' into master-3.2
+    
+    Conflicts:
+        mpich2/src/mpid/psp/include/mpidpre.h
+        mpich2/src/mpid/psp/src/mpid_vc.c
+> icc -Wl,-rpath-link=/opt/parastation/lib64 -I/homec/partec/clauss/psmpi/build/install/include -L/homec/partec/clauss/psmpi/build/install/lib -Wl,-rpath -Wl,/homec/partec/clauss/psmpi/build/install/lib -Wl,--enable-new-dtags -lmpi
+> ldd IMB-MPI1 
+        linux-vdso.so.1 =>  (0x00007ffe23f71000)
+        libmpi.so.12 => /homec/partec/clauss/psmpi/build/install/lib/libmpi.so.12 (0x00002aaf2d5c6000)
+        libm.so.6 => /usr/lib64/libm.so.6 (0x00002aaf2da62000)
+        libgcc_s.so.1 => /usr/local/software/jureca/Stages/2017a/software/GCCcore/5.4.0/lib64/libgcc_s.so.1 (0x00002aaf2d3da000)
+        libc.so.6 => /usr/lib64/libc.so.6 (0x00002aaf2dd64000)
+        libdl.so.2 => /usr/lib64/libdl.so.2 (0x00002aaf2e125000)
+        libpscom.so => /usr/local/software/jureca/Stages/2017a/software/pscom/Default/lib/libpscom.so (0x00002aaf2e329000)
+        libpthread.so.0 => /usr/lib64/libpthread.so.0 (0x00002aaf2e56f000)
+        librt.so.1 => /usr/lib64/librt.so.1 (0x00002aaf2e78b000)
+        libifport.so.5 => /usr/local/software/jureca/Stages/2017a/software/ifort/2017.2.174-GCC-5.4.0/compilers_and_libraries_2017.2.174/linux/compiler/lib/intel64/libifport.so.5 (0x00002aaf2e993000)
+        libifcoremt.so.5 => /usr/local/software/jureca/Stages/2017a/software/ifort/2017.2.174-GCC-5.4.0/compilers_and_libraries_2017.2.174/linux/compiler/lib/intel64/libifcoremt.so.5 (0x00002aaf2ebc2000)
+        libimf.so => /usr/local/software/jureca/Stages/2017a/software/ifort/2017.2.174-GCC-5.4.0/compilers_and_libraries_2017.2.174/linux/compiler/lib/intel64/libimf.so (0x00002aaf2ef52000)
+        libsvml.so => /usr/local/software/jureca/Stages/2017a/software/ifort/2017.2.174-GCC-5.4.0/compilers_and_libraries_2017.2.174/linux/compiler/lib/intel64/libsvml.so (0x00002aaf2f43e000)
+        libintlc.so.5 => /usr/local/software/jureca/Stages/2017a/software/ifort/2017.2.174-GCC-5.4.0/compilers_and_libraries_2017.2.174/linux/compiler/lib/intel64/libintlc.so.5 (0x00002aaf30349000)
+        /lib64/ld-linux-x86-64.so.2 (0x00002aaf2d3a4000)
+> srun -n 2 hostname
+jrc0081
+jrc0080
+> PSP_DEBUG=3 srun -n 2 ./IMB-MPI1 PingPong Sendrecv            
+<PSP:jrc0080:24108:set PSP_DEBUG = 3>
+<PSP:jrc0080:24108:# Version(PSCOM): Mar 29 2017 (5.1.2-1)>
+<PSP:jrc0080:24108:default PSP_SO_SNDBUF = 32768>
+<PSP:jrc0080:24108:default PSP_SO_RCVBUF = 32768>
+<PSP:jrc0080:24108:default PSP_TCP_NODELAY = 1>
+<PSP:jrc0080:24108:default PSP_TCP_BACKLOG = 262144>
+<PSP:jrc0080:24108:default PSP_SCHED_YIELD = 0>
+<PSP:jrc0080:24108:default PSP_UNEXPECTED_RECEIVES = 0>
+<PSP:jrc0080:24108:default PSP_RENDEZVOUS = auto>
+<PSP:jrc0080:24108:default PSP_RENDEZVOUS_SHM = auto>
+<PSP:jrc0080:24108:default PSP_RENDEZVOUS_DAPL = auto>
+<PSP:jrc0080:24108:default PSP_RENDEZVOUS_ELAN = auto>
+<PSP:jrc0080:24108:default PSP_RENDEZVOUS_EXTOLL = auto>
+<PSP:jrc0080:24108:default PSP_RENDEZVOUS_VELO = 1024>
+<PSP:jrc0080:24108:default PSP_RENDEZVOUS_OPENIB = 40000>
+<PSP:jrc0081:8559:set PSP_DEBUG = 3>
+<PSP:jrc0081:8559:# Version(PSCOM): Mar 29 2017 (5.1.2-1)>
+<PSP:jrc0081:8559:default PSP_SO_SNDBUF = 32768>
+<PSP:jrc0081:8559:default PSP_SO_RCVBUF = 32768>
+<PSP:jrc0081:8559:default PSP_TCP_NODELAY = 1>
+<PSP:jrc0081:8559:default PSP_TCP_BACKLOG = 262144>
+<PSP:jrc0081:8559:default PSP_SCHED_YIELD = 0>
+<PSP:jrc0081:8559:default PSP_UNEXPECTED_RECEIVES = 0>
+<PSP:jrc0081:8559:default PSP_RENDEZVOUS = auto>
+<PSP:jrc0081:8559:default PSP_RENDEZVOUS_SHM = auto>
+<PSP:jrc0081:8559:default PSP_RENDEZVOUS_DAPL = auto>
+<PSP:jrc0080:24108:default PSP_RENDEZVOUS_UCP = auto>
+<PSP:jrc0080:24108:default PSP_SIGQUIT = 0>
+<PSP:jrc0080:24108:default PSP_SIGSUSPEND = 0>
+<PSP:jrc0081:8559:default PSP_RENDEZVOUS_ELAN = auto>
+<PSP:jrc0081:8559:default PSP_RENDEZVOUS_EXTOLL = auto>
+<PSP:jrc0081:8559:default PSP_RENDEZVOUS_VELO = 1024>
+<PSP:jrc0081:8559:default PSP_RENDEZVOUS_OPENIB = 40000>
+<PSP:jrc0081:8559:default PSP_RENDEZVOUS_UCP = auto>
+<PSP:jrc0081:8559:default PSP_SIGQUIT = 0>
+<PSP:jrc0081:8559:default PSP_SIGSUSPEND = 0>
+<PSP:jrc0081:8559:default PSP_READAHEAD = 100>
+<PSP:jrc0081:8559:default PSP_RETRY = 10>
+<PSP:jrc0081:8559:default PSP_GUARD = 1>
+<PSP:jrc0080:24108:default PSP_READAHEAD = 100>
+<PSP:jrc0081:8559:default PSP_NETWORK = <null>>
+<PSP:jrc0081:8559:default PSP_PLUGINDIR = >
+<PSP:jrc0080:24108:default PSP_RETRY = 10>
+<PSP:jrc0080:24108:default PSP_GUARD = 1>
+<PSP:jrc0081:8559:default PSP_DEBUG_REQ = 0>
+<PSP:jrc0081:8559:default PSP_DEBUG_STATS = 1>
+<PSP:jrc0080:24108:default PSP_NETWORK = <null>>
+<PSP:jrc0080:24108:default PSP_PLUGINDIR = >
+<PSP:jrc0081:8559:default PSP_IPROBE_COUNT = 0>
+<PSP:jrc0080:24108:default PSP_DEBUG_REQ = 0>
+<PSP:jrc0081:8559:default PSP_COLLECTIVES = 0>
+<PSP:jrc0081:8559:default PSP_ONDEMAND = 0>
+<PSP:jrc0081:8559:default PSP_ONDEMAND_SPAWN = 0>
+<PSP:jrc0080:24108:default PSP_DEBUG_STATS = 1>
+<PSP:jrc0080:24108:default PSP_IPROBE_COUNT = 0>
+<PSP:jrc0081:8559:default PSP_TCP = 1>
+<PSP:jrc0081:8559:Register arch tcp with priority 01.02>
+<PSP:jrc0081:8559:default PSP_SHM = 1>
+<PSP:jrc0081:8559:Register arch shm with priority 01.90>
+<PSP:jrc0081:8559:default PSP_P4S = 1>
+<PSP:jrc0081:8559:Register arch p4s with priority 01.10>
+<PSP:jrc0081:8559:set PSP_PSM = 0>
+<PSP:jrc0081:8559:Arch psm is disabled>
+<PSP:jrc0081:8559:default PSP_OPENIB = 1>
+<PSP:jrc0080:24108:default PSP_COLLECTIVES = 0>
+<PSP:jrc0080:24108:default PSP_ONDEMAND = 0>
+<PSP:jrc0080:24108:default PSP_ONDEMAND_SPAWN = 0>
+<PSP:jrc0080:24108:default PSP_TCP = 1>
+<PSP:jrc0080:24108:Register arch tcp with priority 01.02>
+<PSP:jrc0080:24108:default PSP_SHM = 1>
+<PSP:jrc0080:24108:Register arch shm with priority 01.90>
+<PSP:jrc0080:24108:default PSP_P4S = 1>
+<PSP:jrc0080:24108:Register arch p4s with priority 01.10>
+<PSP:jrc0080:24108:set PSP_PSM = 0>
+<PSP:jrc0080:24108:Arch psm is disabled>
+<PSP:jrc0080:24108:default PSP_OPENIB = 1>
+<PSP:jrc0080:24108:Using   libpscom4openib.so>
+<PSP:jrc0080:24108:Register arch openib with priority 01.20>
+<PSP:jrc0080:24108:default PSP_OFED = 0>
+<PSP:jrc0080:24108:Arch ofed is disabled>
+<PSP:jrc0080:24108:default PSP_MVAPI = 1>
+<PSP:jrc0080:24108:Loading libpscom4mvapi.so failed : libpscom4mvapi.so: cannot open shared object file: No such file or directory>
+<PSP:jrc0080:24108:default PSP_GM = 1>
+<PSP:jrc0080:24108:Loading libpscom4gm.so failed : libpscom4gm.so: cannot open shared object file: No such file or directory>
+<PSP:jrc0080:24108:default PSP_ELAN = 0>
+<PSP:jrc0080:24108:Arch elan is disabled>
+<PSP:jrc0080:24108:default PSP_VELO = auto>
+<PSP:jrc0080:24108:default PSP_EXTOLL = 1>
+<PSP:jrc0080:24108:Loading libpscom4extoll.so failed : libpscom4extoll.so: cannot open shared object file: No such file or directory>
+<PSP:jrc0080:24108:Arch velo is disabled>
+<PSP:jrc0080:24108:set PSP_DAPL = 0>
+<PSP:jrc0080:24108:Arch dapl is disabled>
+<PSP:jrc0080:24108:default PSP_MXM = 0>
+<PSP:jrc0080:24108:Arch mxm is disabled>
+<PSP:jrc0080:24108:default PSP_UCP = 0>
+<PSP:jrc0080:24108:Arch ucp is disabled>
+<PSP:jrc0080:24108:default PSP_OPENIB_HCA = <null>>
+<PSP:jrc0080:24108:default PSP_OPENIB_PORT = 0>
+<PSP:jrc0080:24108:default PSP_OPENIB_PATH_MTU = 3>
+<PSP:jrc0080:24108:default PSP_OPENIB_RECVQ_SIZE = 16>
+<PSP:jrc0080:24108:default PSP_OPENIB_GLOBAL_SENDQ = 0>
+<PSP:jrc0080:24108:default PSP_OPENIB_COMPQ_SIZE = 40000>
+<PSP:jrc0080:24108:default PSP_OPENIB_SENDQ_SIZE = 16>
+<PSP:jrc0080:24108:default PSP_OPENIB_PENDING_TOKENS = 10>
+<PSP:jrc0080:24108:default PSP_OPENIB_EVENT_CNT = 1>
+<PSP:jrc0080:24108:default PSP_OPENIB_IGNORE_WRONG_OPCODES = 0>
+<PSP:jrc0080:24108:default PSP_OPENIB_LID_OFFSET = 0>
+<PSP:jrc0080:24108:default PSP_OPENIB_MCACHE_SIZE = 8>
+<PSP:jrc0080:24108:PSP_MALLOC disabled : libpsmalloc.so not linked.>
+<PSP:jrc0080:24108:Socket name: r0000000>
+<PSP:jrc0081:8559:Using   libpscom4openib.so>
+<PSP:jrc0081:8559:Register arch openib with priority 01.20>
+<PSP:jrc0081:8559:default PSP_OFED = 0>
+<PSP:jrc0081:8559:Arch ofed is disabled>
+<PSP:jrc0081:8559:default PSP_MVAPI = 1>
+<PSP:jrc0081:8559:Loading libpscom4mvapi.so failed : libpscom4mvapi.so: cannot open shared object file: No such file or directory>
+<PSP:jrc0081:8559:default PSP_GM = 1>
+<PSP:jrc0081:8559:Loading libpscom4gm.so failed : libpscom4gm.so: cannot open shared object file: No such file or directory>
+<PSP:jrc0081:8559:default PSP_ELAN = 0>
+<PSP:jrc0081:8559:Arch elan is disabled>
+<PSP:jrc0081:8559:default PSP_VELO = auto>
+<PSP:jrc0081:8559:default PSP_EXTOLL = 1>
+<PSP:jrc0081:8559:Loading libpscom4extoll.so failed : libpscom4extoll.so: cannot open shared object file: No such file or directory>
+<PSP:jrc0081:8559:Arch velo is disabled>
+<PSP:jrc0081:8559:set PSP_DAPL = 0>
+<PSP:jrc0081:8559:Arch dapl is disabled>
+<PSP:jrc0081:8559:default PSP_MXM = 0>
+<PSP:jrc0081:8559:Arch mxm is disabled>
+<PSP:jrc0081:8559:default PSP_UCP = 0>
+<PSP:jrc0081:8559:Arch ucp is disabled>
+<PSP:jrc0081:8559:default PSP_OPENIB_HCA = <null>>
+<PSP:jrc0081:8559:default PSP_OPENIB_PORT = 0>
+<PSP:jrc0081:8559:default PSP_OPENIB_PATH_MTU = 3>
+<PSP:jrc0081:8559:default PSP_OPENIB_RECVQ_SIZE = 16>
+<PSP:jrc0081:8559:default PSP_OPENIB_GLOBAL_SENDQ = 0>
+<PSP:jrc0081:8559:default PSP_OPENIB_COMPQ_SIZE = 40000>
+<PSP:jrc0081:8559:default PSP_OPENIB_SENDQ_SIZE = 16>
+<PSP:jrc0081:8559:default PSP_OPENIB_PENDING_TOKENS = 10>
+<PSP:jrc0081:8559:default PSP_OPENIB_EVENT_CNT = 1>
+<PSP:jrc0081:8559:default PSP_OPENIB_IGNORE_WRONG_OPCODES = 0>
+<PSP:jrc0081:8559:default PSP_OPENIB_LID_OFFSET = 0>
+<PSP:jrc0081:8559:default PSP_OPENIB_MCACHE_SIZE = 8>
+<PSP:jrc0081:8559:PSP_MALLOC disabled : libpsmalloc.so not linked.>
+<PSP:jrc0081:8559:Socket name: r0000001>
+<PSP:r0000000:CONNECT (10.8.1.80,24108,0x8606e8,r0000000) to (10.8.1.80,24108,0x8606e8,r0000000) via loop>
+<PSP:r0000001:CONNECT (10.8.1.81,8559,0x16636e8,r0000001) to (10.8.1.81,8559,0x16636e8,r0000001) via loop>
+<PSP:r0000001:setsockopt(4, SOL_SOCKET, SO_SNDBUF, [32768], 4) = 0 : Success>
+<PSP:r0000001:setsockopt(4, SOL_SOCKET, SO_RCVBUF, [32768], 4) = 0 : Success>
+<PSP:r0000001:setsockopt(4, IPPROTO_TCP, TCP_NODELAY, [1], 4) = 0 : Success>
+<PSP:r0000000:setsockopt(4, SOL_SOCKET, SO_SNDBUF, [32768], 4) = 0 : Success>
+<PSP:r0000000:setsockopt(4, SOL_SOCKET, SO_RCVBUF, [32768], 4) = 0 : Success>
+<PSP:r0000000:setsockopt(4, IPPROTO_TCP, TCP_NODELAY, [1], 4) = 0 : Success>
+<PSP:r0000001:ib:IB port <mlx5_0:1>: ACTIVE*>
+<PSP:r0000001:ib:using port <mlx5_0:1>>
+<PSP:r0000000:ib:IB port <mlx5_0:1>: ACTIVE*>
+<PSP:r0000000:ib:using port <mlx5_0:1>>
+<PSP:r0000000:ACCEPT  (10.8.1.81,8559,0x16638a8,r0000001) to (10.8.1.80,24108,0x860a88,r0000000) via openib>
+<PSP:r0000001:CONNECT (10.8.1.81,8559,0x16638a8,r0000001) to (10.8.1.80,24108,0x860a88,r0000000) via openib>
+#------------------------------------------------------------
+#    Intel (R) MPI Benchmarks 2017, MPI-1 part    
+#------------------------------------------------------------
+# Date                  : Mon May  8 14:17:29 2017
+# Machine               : x86_64
+# System                : Linux
+# Release               : 3.10.0-514.16.1.el7.x86_64
+# Version               : #1 SMP Wed Apr 12 15:04:24 UTC 2017
+# MPI Version           : 3.1
+# MPI Thread Environment: 
+
+
+# Calling sequence was: 
+
+# ./IMB-MPI1 PingPong Sendrecv
+
+# Minimum message length in bytes:   0
+# Maximum message length in bytes:   4194304
+#
+# MPI_Datatype                   :   MPI_BYTE 
+# MPI_Datatype for reductions    :   MPI_FLOAT
+# MPI_Op                         :   MPI_SUM  
+#
+#
+
+# List of Benchmarks to run:
+
+# PingPong
+# Sendrecv
+
+#---------------------------------------------------
+# Benchmarking PingPong 
+# #processes = 2 
+#---------------------------------------------------
+       #bytes #repetitions      t[usec]   Mbytes/sec
+            0         1000         1.13         0.00
+            1         1000         1.13         0.84
+            2         1000         1.11         1.73
+            4         1000         1.15         3.32
+            8         1000         1.12         6.82
+           16         1000         1.12        13.61
+           32         1000         1.14        26.82
+           64         1000         1.49        40.95
+          128         1000         1.53        79.67
+          256         1000         1.60       152.52
+          512         1000         1.71       285.75
+         1024         1000         1.87       521.09
+         2048         1000         2.15       908.96
+         4096         1000         2.63      1482.51
+         8192         1000         3.73      2091.86
+        16384         1000         5.38      2903.61
+        32768         1000         7.66      4078.48
+        65536          640        13.03      4796.99
+       131072          320        20.02      6243.61
+       262144          160        31.53      7928.93
+       524288           80        53.84      9286.88
+      1048576           40        98.09     10194.58
+      2097152           20       183.24     10914.50
+      4194304           10       355.98     11236.50
+
+#-----------------------------------------------------------------------------
+# Benchmarking Sendrecv 
+# #processes = 2 
+#-----------------------------------------------------------------------------
+       #bytes #repetitions  t_min[usec]  t_max[usec]  t_avg[usec]   Mbytes/sec
+            0         1000         1.10         1.10         1.10         0.00
+            1         1000         1.11         1.11         1.11         1.72
+            2         1000         1.10         1.10         1.10         3.48
+            4         1000         1.09         1.09         1.09         6.99
+            8         1000         1.10         1.10         1.10        13.86
+           16         1000         1.10         1.10         1.10        27.72
+           32         1000         1.11         1.11         1.11        55.16
+           64         1000         1.47         1.47         1.47        83.13
+          128         1000         1.50         1.50         1.50       162.67
+          256         1000         1.58         1.58         1.58       308.95
+          512         1000         1.68         1.69         1.68       579.51
+         1024         1000         1.95         1.95         1.95      1003.06
+         2048         1000         2.16         2.16         2.16      1809.39
+         4096         1000         2.65         2.65         2.65      2947.03
+         8192         1000         3.70         3.70         3.70      4221.05
+        16384         1000         5.68         5.68         5.68      5500.06
+        32768         1000         8.25         8.25         8.25      7573.57
+        65536          640        13.92        13.92        13.92      8981.38
+       131072          320        22.49        22.49        22.49     11113.68
+       262144          160        39.28        39.28        39.28     12729.78
+       524288           80        75.29        75.31        75.30     13278.37
+      1048576           40       142.59       142.62       142.60     14023.08
+      2097152           20       296.81       296.81       296.81     13476.76
+      4194304           10       592.18       592.18       592.18     13509.31
+
+
+# All processes entering MPI_Finalize
+
+<PSP:r0000000:connection to (10.8.1.80,24108,0x8606e8,r0000000) (type:loop,state:open) : read : End of file>
+<PSP:r0000000:DISCONNECT (10.8.1.80,24108,0x8606e8,r0000000) to (10.8.1.80,24108,0x8606e8,r0000000) via loop>
+<PSP:r0000000:DISCONNECT (10.8.1.80,24108,0x860a88,r0000000) to (10.8.1.81,8559,0x16638a8,r0000001) via openib>
+<PSP:r0000001:DISCONNECT (10.8.1.81,8559,0x16638a8,r0000001) to (10.8.1.80,24108,0x860a88,r0000000) via openib>
+<PSP:r0000000:pscom_cleanup()>
+<PSP:r0000000:Reqs:20383 GenReqs: (cnt:0  used:0)>
+<PSP:r0000000:ReqsAnySrc:36566 RecvQAnySrc:36566>
+<PSP:r0000000:Byee.>
+<PSP:r0000001:pscom guard con:0x1663720 closed>
+<PSP:r0000001:connection to (10.8.1.81,8559,0x16636e8,r0000001) (type:loop,state:open) : read : End of file>
+<PSP:r0000001:DISCONNECT (10.8.1.81,8559,0x16636e8,r0000001) to (10.8.1.81,8559,0x16636e8,r0000001) via loop>
+<PSP:r0000001:pscom_cleanup()>
+<PSP:r0000001:Reqs:20383 GenReqs: (cnt:0  used:0)>
+<PSP:r0000001:ReqsAnySrc:36566 RecvQAnySrc:36566>
+<PSP:r0000001:Byee.>
+
