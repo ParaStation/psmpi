@@ -100,7 +100,8 @@ noinst_PROGRAMS = locknull$(EXEEXT) get-acc-loc$(EXEEXT) \
 	win_sync_err_lockall_pt$(EXEEXT) \
 	win_sync_err_lockall_at$(EXEEXT) \
 	win_sync_err_unlockall$(EXEEXT) win_flavor_err_shm$(EXEEXT) \
-	win_flavor_err_dyn$(EXEEXT) spawn_isend$(EXEEXT) \
+	win_flavor_err_dyn$(EXEEXT) win_shm_multiple$(EXEEXT) \
+	win_shm_large$(EXEEXT) spawn_isend$(EXEEXT) \
 	spawn_anysrc$(EXEEXT) spawn_ssend$(EXEEXT) spawn_rma$(EXEEXT) \
 	spawn_universe$(EXEEXT) spawn_univ_comm$(EXEEXT) \
 	spawn_univ_anysrc$(EXEEXT) num_contexts_2k$(EXEEXT) \
@@ -232,6 +233,18 @@ win_flavor_err_shm_LDADD = $(LDADD)
 win_flavor_err_shm_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+win_shm_large_SOURCES = win_shm_large.c
+win_shm_large_OBJECTS = win_shm_large.$(OBJEXT)
+win_shm_large_LDADD = $(LDADD)
+win_shm_large_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+win_shm_multiple_SOURCES = win_shm_multiple.c
+win_shm_multiple_OBJECTS = win_shm_multiple.$(OBJEXT)
+win_shm_multiple_LDADD = $(LDADD)
+win_shm_multiple_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 win_sync_err_flush_SOURCES = win_sync_err_flush.c
 win_sync_err_flush_OBJECTS = win_sync_err_flush.$(OBJEXT)
 win_sync_err_flush_LDADD = $(LDADD)
@@ -295,15 +308,17 @@ SOURCES = get-acc-loc.c getfence1.c large-acc-flush_local.c locknull.c \
 	num_contexts_4k.c num_contexts_8k.c spawn_anysrc.c \
 	spawn_isend.c spawn_rma.c spawn_ssend.c spawn_univ_anysrc.c \
 	spawn_univ_comm.c spawn_universe.c win_flavor_err_dyn.c \
-	win_flavor_err_shm.c win_sync_err_flush.c \
-	win_sync_err_flushall.c win_sync_err_lockall_at.c \
-	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
+	win_flavor_err_shm.c win_shm_large.c win_shm_multiple.c \
+	win_sync_err_flush.c win_sync_err_flushall.c \
+	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
+	win_sync_err_unlockall.c
 DIST_SOURCES = get-acc-loc.c getfence1.c large-acc-flush_local.c \
 	locknull.c $(mprobe_SOURCES) num_contexts_16k.c \
 	num_contexts_2k.c num_contexts_4k.c num_contexts_8k.c \
 	spawn_anysrc.c spawn_isend.c spawn_rma.c spawn_ssend.c \
 	spawn_univ_anysrc.c spawn_univ_comm.c spawn_universe.c \
-	win_flavor_err_dyn.c win_flavor_err_shm.c win_sync_err_flush.c \
+	win_flavor_err_dyn.c win_flavor_err_shm.c win_shm_large.c \
+	win_shm_multiple.c win_sync_err_flush.c \
 	win_sync_err_flushall.c win_sync_err_lockall_at.c \
 	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
 am__can_run_installinfo = \
@@ -680,6 +695,14 @@ win_flavor_err_shm$(EXEEXT): $(win_flavor_err_shm_OBJECTS) $(win_flavor_err_shm_
 	@rm -f win_flavor_err_shm$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(win_flavor_err_shm_OBJECTS) $(win_flavor_err_shm_LDADD) $(LIBS)
 
+win_shm_large$(EXEEXT): $(win_shm_large_OBJECTS) $(win_shm_large_DEPENDENCIES) $(EXTRA_win_shm_large_DEPENDENCIES) 
+	@rm -f win_shm_large$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(win_shm_large_OBJECTS) $(win_shm_large_LDADD) $(LIBS)
+
+win_shm_multiple$(EXEEXT): $(win_shm_multiple_OBJECTS) $(win_shm_multiple_DEPENDENCIES) $(EXTRA_win_shm_multiple_DEPENDENCIES) 
+	@rm -f win_shm_multiple$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(win_shm_multiple_OBJECTS) $(win_shm_multiple_LDADD) $(LIBS)
+
 win_sync_err_flush$(EXEEXT): $(win_sync_err_flush_OBJECTS) $(win_sync_err_flush_DEPENDENCIES) $(EXTRA_win_sync_err_flush_DEPENDENCIES) 
 	@rm -f win_sync_err_flush$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(win_sync_err_flush_OBJECTS) $(win_sync_err_flush_LDADD) $(LIBS)
@@ -724,6 +747,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_universe.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_flavor_err_dyn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_flavor_err_shm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shm_large.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shm_multiple.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_sync_err_flush.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_sync_err_flushall.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_sync_err_lockall_at.Po@am__quote@

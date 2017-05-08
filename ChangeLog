@@ -1,3 +1,30 @@
+2017-03-02  Carsten Clauss <clauss@par-tec.com>	-	5.1.9-1
+
+	* Fixed integer overflow in MPID_Win_allocate_shared()
+
+2017-02-07  Jens Hauke  <hauke@par-tec.com>	-	5.1.8-1
+
+	* Packaging: Removing .la files from the distribution.
+
+2016-12-22  Carsten Clauss <clauss@par-tec.com>	-	5.1.7-1
+
+	* Fix for segfaults when freeing multiple SHARED-MEMORY windows
+
+	* Prepare SMP aware collective operations
+	(#define MPID_PSP_USE_SMP_AWARE_COLLOPS to enable)
+
+2016-11-17  Jens Hauke  <hauke@par-tec.com>	-	5.1.6-1
+
+
+2016-07-22  Carsten Clauss <clauss@par-tec.com>
+
+	* Enhancement: Increased the number of available contexts to 16k
+	for the PSP device.
+
+	* Improve scaling of MPI_Comm_spawn
+
+	* Fixed op MPI_MAXLOC for MPI_Accumulated
+
 2015-11-30  Jens Hauke  <hauke@par-tec.com>	-	5.1.5-1
 
 	* Remove -O3 flag from mpicc wrapper script

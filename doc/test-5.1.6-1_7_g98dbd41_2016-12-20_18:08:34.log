@@ -1,0 +1,292 @@
+zam871
+package pscom is not installed
+package psmgmt is not installed
+5.1.6-1_7_g98dbd41
+/home/clauss/Work/psmpi/build/install/bin/mpiexec.hydra
+make[1]: Entering directory '/home/clauss/Work/psmpi/build/mpich2'
+( cd test && make  testing )
+make[2]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test'
+(NOXMLCLOSE=YES && export NOXMLCLOSE && cd mpi && make testing)
+make[3]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi'
+./runtests -srcdir=/home/clauss/Work/psmpi/mpich2/test/mpi -tests=testlist \
+	-mpiexec=/home/clauss/Work/psmpi/build/install/bin/mpiexec.hydra -xmlfile=summary.xml \
+	-tapfile=summary.tap -junitfile=summary.junit.xml
+Looking in ./testlist
+Processing directory parastation
+Looking in ./parastation/testlist
+Processing directory attr
+Looking in ./attr/testlist
+Processing directory coll
+Looking in ./coll/testlist
+Processing directory comm
+Looking in ./comm/testlist
+Processing directory datatype
+Looking in ./datatype/testlist
+Unexpected output in large_type_sendrec: 
+Unexpected output in large_type_sendrec: ===================================================================================
+Unexpected output in large_type_sendrec: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in large_type_sendrec: =   PID 9539 RUNNING AT zam871
+Unexpected output in large_type_sendrec: =   EXIT CODE: 9
+Unexpected output in large_type_sendrec: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in large_type_sendrec: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in large_type_sendrec: ===================================================================================
+Unexpected output in large_type_sendrec: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Killed (signal 9)
+Unexpected output in large_type_sendrec: This typically refers to a problem with your application.
+Unexpected output in large_type_sendrec: Please see the FAQ page for debugging suggestions
+Program large_type_sendrec exited without No Errors
+Unexpected output in large_vec: 
+Unexpected output in large_vec: ===================================================================================
+Unexpected output in large_vec: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in large_vec: =   PID 9586 RUNNING AT zam871
+Unexpected output in large_vec: =   EXIT CODE: 9
+Unexpected output in large_vec: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in large_vec: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in large_vec: ===================================================================================
+Unexpected output in large_vec: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Killed (signal 9)
+Unexpected output in large_vec: This typically refers to a problem with your application.
+Unexpected output in large_vec: Please see the FAQ page for debugging suggestions
+Program large_vec exited without No Errors
+Processing directory errhan
+Looking in ./errhan/testlist
+Processing directory group
+Looking in ./group/testlist
+Processing directory info
+Looking in ./info/testlist
+Processing directory init
+Looking in ./init/testlist
+Some programs (version) may still be running:
+pids = 18623 26061 
+The executable (version) will not be removed.
+Processing directory mpi_t
+Looking in ./mpi_t/testlist
+Processing directory pt2pt
+Looking in ./pt2pt/testlist
+Processing directory rma
+Looking in ./rma/testlist
+Unexpected output in putfence1: 
+Unexpected output in putfence1: ===================================================================================
+Unexpected output in putfence1: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in putfence1: =   PID 13458 RUNNING AT zam871
+Unexpected output in putfence1: =   EXIT CODE: 9
+Unexpected output in putfence1: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in putfence1: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in putfence1: ===================================================================================
+Unexpected output in putfence1: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Killed (signal 9)
+Unexpected output in putfence1: This typically refers to a problem with your application.
+Unexpected output in putfence1: Please see the FAQ page for debugging suggestions
+Program putfence1 exited without No Errors
+Unexpected output in getfence1: 
+Unexpected output in getfence1: ===================================================================================
+Unexpected output in getfence1: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in getfence1: =   PID 13569 RUNNING AT zam871
+Unexpected output in getfence1: =   EXIT CODE: 9
+Unexpected output in getfence1: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in getfence1: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in getfence1: ===================================================================================
+Unexpected output in getfence1: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Killed (signal 9)
+Unexpected output in getfence1: This typically refers to a problem with your application.
+Unexpected output in getfence1: Please see the FAQ page for debugging suggestions
+Program getfence1 exited without No Errors
+Processing directory spawn
+Looking in ./spawn/testlist
+Processing directory topo
+Looking in ./topo/testlist
+Processing directory io
+Looking in ./io/testlist
+Some programs (async) may still be running:
+pids = 1974 2065 
+The executable (async) will not be removed.
+Processing directory f77
+Looking in ./f77/testlist
+Processing directory attr
+Looking in ./f77/attr/testlist
+Processing directory coll
+Looking in ./f77/coll/testlist
+Processing directory datatype
+Looking in ./f77/datatype/testlist
+Processing directory pt2pt
+Looking in ./f77/pt2pt/testlist
+Processing directory info
+Looking in ./f77/info/testlist
+Processing directory spawn
+Looking in ./f77/spawn/testlist
+Processing directory io
+Looking in ./f77/io/testlist
+Processing directory rma
+Looking in ./f77/rma/testlist
+Processing directory init
+Looking in ./f77/init/testlist
+Processing directory comm
+Looking in ./f77/comm/testlist
+Processing directory ext
+Looking in ./f77/ext/testlist
+Processing directory topo
+Looking in ./f77/topo/testlist
+Processing directory profile
+Looking in ./f77/profile/testlist
+Processing directory cxx
+Looking in ./cxx/testlist
+Processing directory attr
+Looking in ./cxx/attr/testlist
+Processing directory pt2pt
+Looking in ./cxx/pt2pt/testlist
+Processing directory comm
+Looking in ./cxx/comm/testlist
+Processing directory coll
+Looking in ./cxx/coll/testlist
+Processing directory errhan
+Looking in ./cxx/errhan/testlist
+Processing directory init
+Looking in ./cxx/init/testlist
+Processing directory info
+Looking in ./cxx/info/testlist
+Processing directory datatype
+Looking in ./cxx/datatype/testlist
+Processing directory topo
+Looking in ./cxx/topo/testlist
+Processing directory io
+Looking in ./cxx/io/testlist
+Processing directory spawn
+Looking in ./cxx/spawn/testlist
+Processing directory rma
+Looking in ./cxx/rma/testlist
+Processing directory f90
+Looking in ./f90/testlist
+Processing directory attr
+Looking in ./f90/attr/testlist
+Processing directory coll
+Looking in ./f90/coll/testlist
+Processing directory comm
+Looking in ./f90/comm/testlist
+Processing directory ext
+Looking in ./f90/ext/testlist
+Processing directory info
+Looking in ./f90/info/testlist
+Processing directory init
+Looking in ./f90/init/testlist
+Processing directory io
+Looking in ./f90/io/testlist
+Processing directory misc
+Looking in ./f90/misc/testlist
+Processing directory pt2pt
+Looking in ./f90/pt2pt/testlist
+Processing directory datatype
+Looking in ./f90/datatype/testlist
+Processing directory f90types
+Looking in ./f90/f90types/testlist
+Processing directory rma
+Looking in ./f90/rma/testlist
+Processing directory spawn
+Looking in ./f90/spawn/testlist
+Processing directory timer
+Looking in ./f90/timer/testlist
+Processing directory topo
+Looking in ./f90/topo/testlist
+Processing directory profile
+Looking in ./f90/profile/testlist
+Processing directory errors
+Looking in ./errors/testlist
+Processing directory attr
+Looking in ./errors/attr/testlist
+Processing directory coll
+Looking in ./errors/coll/testlist
+Processing directory comm
+Looking in ./errors/comm/testlist
+Processing directory group
+Looking in ./errors/group/testlist
+Processing directory pt2pt
+Looking in ./errors/pt2pt/testlist
+Processing directory topo
+Looking in ./errors/topo/testlist
+Processing directory rma
+Looking in ./errors/rma/testlist
+Processing directory spawn
+Looking in ./errors/spawn/testlist
+Processing directory io
+Looking in ./errors/io/testlist
+Processing directory f77
+Looking in ./errors/f77/testlist
+Processing directory io
+Looking in ./errors/f77/io/testlist
+Processing directory cxx
+Looking in ./errors/cxx/testlist
+Processing directory errhan
+Looking in ./errors/cxx/errhan/testlist
+Processing directory io
+Looking in ./errors/cxx/io/testlist
+Processing directory f90
+Looking in ./errors/f90/testlist
+Processing directory io
+Looking in ./errors/f90/io/testlist
+Processing directory impls
+Looking in ./impls/testlist
+4 tests failed out of 856
+Details in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.xml
+TAP formatted results in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.tap
+JUNIT formatted results in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.junit.xml
+make[3]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi'
+(XMLFILE=../mpi/summary.xml && XMLCONTINUE=YES && \
+export XMLFILE && export XMLCONTINUE && \
+cd commands && make testing)
+make[3]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test/commands'
+make[3]: Nothing to be done for 'testing'.
+make[3]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test/commands'
+make[2]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test'
+make[1]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2'
+./datatype/large_type_sendrec np=2:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 9539 RUNNING AT zam871
+=   EXIT CODE: 9
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Killed (signal 9)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./datatype/large_vec np=3:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 9586 RUNNING AT zam871
+=   EXIT CODE: 9
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Killed (signal 9)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/putfence1 np=4:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 13458 RUNNING AT zam871
+=   EXIT CODE: 9
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Killed (signal 9)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/getfence1 np=4:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 13569 RUNNING AT zam871
+=   EXIT CODE: 9
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Killed (signal 9)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+4 tests failed out of 856

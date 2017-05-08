@@ -28,10 +28,16 @@ MPIDI_Process_t MPIDI_Process = {
 	dinit(my_pg_rank)	-1,
 	dinit(my_pg_size)	0,
 	dinit(pg_id_name)	NULL,
+#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
+	dinit(node_id_table)    NULL,
+#endif
 	dinit(env)		{
 		dinit(enable_collectives)	0,
 		dinit(enable_ondemand)		0,
 		dinit(enable_ondemand_spawn)	0,
+#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
+		dinit(enable_smp_aware_collops)	1,
+#endif
 	},
 };
 
@@ -503,6 +509,10 @@ int MPID_Init(int *argc, char ***argv,
 	/* enable_ondemand_spawn defaults to enable_ondemand */
 	MPIDI_Process.env.enable_ondemand_spawn = MPIDI_Process.env.enable_ondemand;
 	pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand_spawn, "PSP_ONDEMAND_SPAWN");
+#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
+	/* use the MPICH-provided SMP-awareness for collective operations */
+	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_aware_collops, "PSP_SMP_AWARE_COLLOPS");
+#endif
 	/*
 	pscom_env_get_uint(&mpir_allgather_short_msg,	"PSP_ALLGATHER_SHORT_MSG");
 	pscom_env_get_uint(&mpir_allgather_long_msg,	"PSP_ALLGATHER_LONG_MSG");
@@ -571,6 +581,60 @@ int MPID_Init(int *argc, char ***argv,
 	if (!MPIDI_Process.env.enable_ondemand) {
 		/* Create and establish all connections */
 		if (InitPortConnections(socket) != MPI_SUCCESS) goto fn_fail;
+
+#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
+		if(MPIDI_Process.env.enable_smp_aware_collops) {
+
+			int grank;
+                        int my_node_id = -1;
+                        int remote_node_id = -1;
+                        int* node_id_table;
+
+			for (grank = 0; grank < pg_size; grank++) {
+				pscom_connection_t *con = grank2con_get(grank);
+				if( (con->type == PSCOM_CON_TYPE_SHM) || (pg_rank == grank) ) {
+					my_node_id = grank;
+					break;
+				}
+			}
+
+			assert(my_node_id > -1);
+
+                        node_id_table = MPIU_Malloc(pg_size * sizeof(int));
+
+                        if(pg_rank != 0) {
+
+                                /* gather: */
+                                pscom_connection_t *con = grank2con_get(0);
+                                assert(con);
+                                pscom_send(con, NULL, 0, &my_node_id, sizeof(int));
+
+                                /* bcast: */
+                                rc = pscom_recv_from(con, NULL, 0, node_id_table, pg_size*sizeof(int));
+                                assert(rc == PSCOM_SUCCESS);
+
+                        } else {
+
+                                /* gather: */
+                                node_id_table[0] = my_node_id;
+                                for(grank=1; grank < pg_size; grank++) {
+                                        pscom_connection_t *con = grank2con_get(grank);
+                                        assert(con);
+                                        rc = pscom_recv_from(con, NULL, 0, &remote_node_id, sizeof(int));
+                                        assert(rc == PSCOM_SUCCESS);
+                                        node_id_table[grank] = remote_node_id;
+                                }
+
+                                /* bcast: */
+                                for(grank=1; grank < pg_size; grank++) {
+                                        pscom_connection_t *con = grank2con_get(grank);
+                                        pscom_send(con, NULL, 0, node_id_table, pg_size*sizeof(int));
+                                }
+                        }
+
+			MPIDI_Process.node_id_table = node_id_table;
+		}
+#endif
 	} else {
 		/* Create all connections as "on demand" connections. */
 		if (InitPscomConnections(socket) != MPI_SUCCESS) goto fn_fail;

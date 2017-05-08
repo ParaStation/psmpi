@@ -17,9 +17,50 @@
 static int ENABLE_REAL_DISCONNECT = 1;
 static int ENABLE_LAZY_DISCONNECT = 1;
 
+
+#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
+#ifndef MPID_USE_NODE_IDS
+#error "PSP: The SMP-aware collops features requires that USE_NODE_IDS is enabled for MPICH!"
+#endif
+int MPID_Get_node_id(MPID_Comm *comm, int rank, MPID_Node_id_t *id_p)
+{
+	int i;
+	int pg_check_id;
+
+	if(!MPIDI_Process.env.enable_smp_aware_collops ||  !MPIDI_Process.node_id_table) {
+		/* Just pretend that each rank lives on its own node: */
+		*id_p = rank;
+		return 0;
+	}
+
+	pg_check_id = comm->vcr[0]->pg->id_num;
+	for(i=1; i<comm->local_size; i++) {
+		if(comm->vcr[i]->pg->id_num != pg_check_id) {
+			/* This communicator spans more than one MPICH Process Group (PG)!
+			   As we create the node_id_table on an MPI_COMM_WORLD basis, we
+			   have to fallback here to the non smp-aware collops...
+			   (FIXME: Are we sure that this will be detected here by all ranks within comm?)
+			*/
+			*id_p = rank;
+			return 0;
+		}
+	}
+
+	*id_p = MPIDI_Process.node_id_table[comm->vcr[rank]->pg_rank];
+
+	return 0;
+}
+
+int MPID_Get_max_node_id(MPID_Comm *comm, MPID_Node_id_t *max_id_p)
+{
+	*max_id_p = MPIDI_Process.my_pg_size;
+	return 0;
+}
+#endif
+
+
 static
 int MPIDI_VCR_DeleteFromPG(MPIDI_VC_t *vcr);
-
 
 static
 MPIDI_VC_t *new_VCR(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid)

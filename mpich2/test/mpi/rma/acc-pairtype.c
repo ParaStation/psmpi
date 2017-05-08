@@ -61,11 +61,13 @@ int main(int argc, char *argv[])
         for (i = 0; i < DATA_SIZE; i++) {
             if (i % 5 < 3) {
                 if (tar_buf[i].a != 1.0 || tar_buf[i].b != 1) {
+                    printf("tar_buf[i].a = %f (expected 1.0) | tar_buf[i].b = %d (expected 1)\n", tar_buf[i].a, tar_buf[i].b);
                     errors++;
                 }
             }
             else {
                 if (tar_buf[i].a != 0.0 || tar_buf[i].b != 0) {
+                    printf("tar_buf[i].a = %f (expected 0.0) | tar_buf[i].b = %d (expected 0)\n", tar_buf[i].a, tar_buf[i].b);
                     errors++;
                 }
             }

@@ -94,10 +94,17 @@ typedef struct MPIDI_Process
 
 	int shm_attr_key;
 
+#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
+	int* node_id_table;
+#endif
+
 	struct {
 		unsigned enable_collectives;
 		unsigned enable_ondemand;
 		unsigned enable_ondemand_spawn;
+#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
+		unsigned enable_smp_aware_collops;
+#endif
 	} env;
 } MPIDI_Process_t;
 

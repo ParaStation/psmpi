@@ -537,15 +537,15 @@ struct MPID_CommOps MPID_PSP_Comm_fns;
 
 typedef struct _MPID_PSP_shm_attr_t
 {
+	int local_size;
 	void **ptr_buf;
-	int *size_buf;
 	int *disp_buf;
 	int *shmid_buf;
-	int local_size;
+	MPI_Aint *size_buf;
 	pthread_mutex_t* lock;
 } MPID_PSP_shm_attr_t;
 
-static int MPID_PSP_shm_attr_delete_fn(MPI_Comm, int, void*, void*);
+static int MPID_PSP_shm_attr_delete_fn(MPI_Win, int, void*, void*);
 static int MPID_PSP_split_type(MPID_Comm*, int, int, MPID_Info*, MPID_Comm**);
 static void MPID_PSP_shm_rma_set_attr(MPID_Win*, MPID_PSP_shm_attr_t*);
 static void MPID_PSP_shm_rma_get_attr(MPID_Win*, MPID_PSP_shm_attr_t**);
@@ -680,11 +680,11 @@ int MPID_PSP_split_type(MPID_Comm * comm_ptr, int split_type, int key,
 }
 
 static
-int MPID_PSP_shm_attr_delete_fn(MPI_Comm comm, int keyval, void *attribute_val, void *extra_state)
+int MPID_PSP_shm_attr_delete_fn(MPI_Win win, int keyval, void *attribute_val, void *extra_state)
 {
 	int i;
 	MPID_PSP_shm_attr_t *attr = (MPID_PSP_shm_attr_t*)attribute_val;
-	MPID_Comm *comm_ptr = NULL;
+	MPID_Win *win_ptr = NULL;
 
 	if(attr) {
 
@@ -699,8 +699,10 @@ int MPID_PSP_shm_attr_delete_fn(MPI_Comm comm, int keyval, void *attribute_val, 
 		MPIU_Free(attr->disp_buf);
 		MPIU_Free(attr->shmid_buf);
 
-		MPID_Comm_get_ptr(comm, comm_ptr);
-		if(comm_ptr->rank == 0) {
+		MPID_Win_get_ptr(win, win_ptr);
+		assert(win_ptr);
+		assert(win_ptr->comm_ptr);
+		if(win_ptr->comm_ptr->rank == 0) {
 			pthread_mutex_destroy(attr->lock);
 		}
 		shmdt(attr->lock);
@@ -718,32 +720,32 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPID_Info *info,
 {
 	int i;
 	int contig = 1;
-	int total = 0;
 	int shmid = -1;
 	void *shm = NULL;
 	void **base_pp = (void **) base_ptr;
 	MPIR_Errflag_t errflag = 0;
 	int mpi_errno = MPI_SUCCESS;
+	MPI_Aint total_size = 0;
 
 	void **ptr_buf;
-	int *size_buf;
 	int *disp_buf;
 	int *shmid_buf;
+	MPI_Aint *size_buf;
 
 	if(size < 0) {
 		mpi_errno = MPI_ERR_SIZE;
 		goto fn_fail;
 	}
 
-	size_buf = MPIU_Malloc(comm_ptr->local_size * sizeof(int));
-	disp_buf = MPIU_Malloc(comm_ptr->local_size * sizeof(int));
+	disp_buf  = MPIU_Malloc(comm_ptr->local_size * sizeof(int));
 	shmid_buf = MPIU_Malloc(comm_ptr->local_size * sizeof(int));
-	ptr_buf = MPIU_Malloc(comm_ptr->local_size * sizeof(void*));
+	ptr_buf   = MPIU_Malloc(comm_ptr->local_size * sizeof(void*));
+	size_buf  = MPIU_Malloc(comm_ptr->local_size * sizeof(MPI_Aint));
 
 	/* Initialize shmid_buf[] */
 	for (i = 0; i < comm_ptr->local_size; i++) shmid_buf[i] = -1;
 
-	mpi_errno = MPIR_Allgather_impl(&size, 1, MPI_INT, size_buf, 1, MPI_INT, comm_ptr, &errflag);
+	mpi_errno = MPIR_Allgather_impl(&size, 1, MPI_AINT, size_buf, 1, MPI_AINT, comm_ptr, &errflag);
 	if (mpi_errno) {
 		goto fn_fail;
 	}
@@ -769,19 +771,19 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPID_Info *info,
 		      | shared memory and let the other procs then attach to it.
 		     */
 
-		mpi_errno = MPIR_Allgather_impl(&size, 1, MPI_INT, size_buf, 1, MPI_INT, comm_ptr, &errflag);
+		mpi_errno = MPIR_Allgather_impl(&size, 1, MPI_AINT, size_buf, 1, MPI_AINT, comm_ptr, &errflag);
 		if (mpi_errno) {
 			goto fn_fail;
 		}
 
-		for(i=0; i<comm_ptr->local_size; i++) total += size_buf[i];
+		for(i=0; i<comm_ptr->local_size; i++) total_size += size_buf[i];
 
-		if(total > 0) {
+		if(total_size > 0) {
 
 			if(comm_ptr->rank == 0) {
 
 				/* create one big SHMEM segment: */
-				shmid = shmget(0, total, IPC_CREAT | 0777);
+				shmid = shmget(0, total_size, IPC_CREAT | 0777);
 				if (shmid == -1) goto err_shmget;
 
 				shm = shmat(shmid, 0, 0);
