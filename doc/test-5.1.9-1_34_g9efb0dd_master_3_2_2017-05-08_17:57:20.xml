@@ -1,7 +1,7 @@
 <?xml version='1.0' ?>
 <?xml-stylesheet href="TestResults.xsl" type="text/xsl" ?>
 <MPITESTRESULTS>
-<DATE>2017-04-24-19-11</DATE>
+<DATE>2017-05-08-17-57</DATE>
 <MPISOURCE></MPISOURCE>
 <MPITEST>
 <NAME>mprobe</NAME>
@@ -70,6 +70,18 @@
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>win_shm_multiple</NAME>
+<NP>4</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_shm_large</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>spawn_isend</NAME>
 <NP>2</NP>
 <WORKDIR>./parastation</WORKDIR>
@@ -120,6 +132,18 @@
 <MPITEST>
 <NAME>num_contexts_16k</NAME>
 <NP>1</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>getfence1</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>large-acc-flush_local</NAME>
+<NP>3</NP>
 <WORKDIR>./parastation</WORKDIR>
 <STATUS>pass</STATUS>
 </MPITEST>
@@ -1417,17 +1441,13 @@
 <NAME>comm_idup_comm</NAME>
 <NP>6</NP>
 <WORKDIR>./comm</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>comm_idup_comm2</NAME>
 <NP>6</NP>
 <WORKDIR>./comm</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>dup_with_info</NAME>
@@ -1644,16 +1664,6 @@
 <NP>9</NP>
 <WORKDIR>./datatype</WORKDIR>
 <STATUS>pass</STATUS>
-</MPITEST>
-<MPITEST>
-<NAME>darray-pack</NAME>
-<NP>72</NP>
-<WORKDIR>./datatype</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-&lt;PSP:r0000012:Receive unknown msg_type 4096&gt;
-&lt;PSP:r0000012:Receive unknown msg_type 104&gt;
-</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>darray-cyclic</NAME>
@@ -2248,26 +2258,6 @@
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
 <STATUS>pass</STATUS>
-</MPITEST>
-<MPITEST>
-<NAME>getfence1</NAME>
-<NP>2</NP>
-<WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Deadlock detected! Process 24044 will wait forever.
-('wait' called without outstanding send or recv requests).
-Requests:
-Sockets:
-  sock#0x1bccd40 listen:    -1 demand:   0(   0)  src:(134.94.169.164,24044,(nil),r0000000) anyrecv:     1
-  Connections:
-    con#0x1bcf7e8 type:  loop state:    open dest:(134.94.169.164,24044,0x1bcf7e8,r0000000) recvcnt:    1
-    con#0x1bcfb88 type:   shm state:    norw dest:(134.94.169.164,24045,0x17e19a8,r0000001) recvcnt:    2
-Fds:
-
-Reqs:11060 GenReqs: (cnt:624  used:624)
-ReqsAnySrc:4173 RecvQAnySrc:43185
-</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>accfence1</NAME>
@@ -2942,22 +2932,6 @@ ReqsAnySrc:4173 RecvQAnySrc:43185
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
-<NAME>win_info</NAME>
-<NP>4</NP>
-<WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-0: no_locks is not defined
-0: no_locks is not defined
-2: no_locks is not defined
-2: no_locks is not defined
-1: no_locks is not defined
-1: no_locks is not defined
-3: no_locks is not defined
-3: no_locks is not defined
-</TESTDIFF>
-</MPITEST>
-<MPITEST>
 <NAME>linked_list_lockall</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
@@ -3107,6 +3081,21 @@ ReqsAnySrc:4173 RecvQAnySrc:43185
 <WORKDIR>./rma</WORKDIR>
 <STATUS>fail</STATUS>
 <TESTDIFF>
+tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
+tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
+tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
+tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
+tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
+tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
+tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
+tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
+tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
+tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
+tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
+tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
+tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
+tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
+tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -3120,14 +3109,6 @@ ReqsAnySrc:4173 RecvQAnySrc:43185
 <NP>3</NP>
 <WORKDIR>./rma</WORKDIR>
 <STATUS>pass</STATUS>
-</MPITEST>
-<MPITEST>
-<NAME>large-acc-flush_local</NAME>
-<NP>3</NP>
-<WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>large-small-acc</NAME>
@@ -3199,40 +3180,7 @@ ReqsAnySrc:4173 RecvQAnySrc:43185
 <NAME>namepub</NAME>
 <NP>2</NP>
 <WORKDIR>./spawn</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Error in Publish_name: "Invalid service name (see MPI_Publish_name), error stack:
-MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
-MPID_NS_Publish(59)..: Lookup failed for service name MyTest"
-Error in Lookup name: "Invalid service name (see MPI_Publish_name), error stack:
-MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x7fff8e12c420) failed
-MPI_Lookup_name(129): 
-MPID_NS_Lookup(85)..: Lookup failed for service name MyTest"
-[cli_0]: getval cmd failed
-[cli_0]: expecting cmd=lookup_result, got unpublish_result
-Lookup name returned name after it was unpublished
- Found 4 errors
-[cli_1]: getval cmd failed
-[cli_1]: expecting cmd=finalize_ack, got lookup_result
-[cli_0]: getval cmd failed
-Lookup name returned name after it was unpublished
-readFromPMIClient: lost connection to the PMI client
-readFromPMIClient: lost connection to the PMI client
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-__PMI_send(r0): failed sending cmd=finalize_ack
- from pmi_finalize:1357
-__PMI_send(r1): failed sending cmd=finalize_ack
- from pmi_finalize:1357
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>spawn1</NAME>
@@ -3250,17 +3198,13 @@ __PMI_send(r1): failed sending cmd=finalize_ack
 <NAME>spawninfo1</NAME>
 <NP>1</NP>
 <WORKDIR>./spawn</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>spawnminfo1</NAME>
 <NP>1</NP>
 <WORKDIR>./spawn</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>spawnintra</NAME>
@@ -3902,40 +3846,7 @@ __PMI_send(r1): failed sending cmd=finalize_ack
 <NAME>namepubf</NAME>
 <NP>2</NP>
 <WORKDIR>./f77/spawn</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
- Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
-MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
-MPID_NS_Publish(59)..: Lookup failed for service name MyTest
- Error in Lookup nameInvalid service name (see MPI_Publish_name), error stack:
-MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x1bc2318) failed
-MPI_Lookup_name(129): 
-MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
-[cli_0]: getval cmd failed
-[cli_0]: expecting cmd=lookup_result, got unpublish_result
- Lookup name returned name after it was unpublished
-[cli_1]: getval cmd failed
- Lookup name returned name after it was unpublished
-  Found            4  errors
-readFromPMIClient: lost connection to the PMI client
-[cli_1]: expecting cmd=finalize_ack, got lookup_result
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-[cli_0]: getval cmd failed
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-readFromPMIClient: lost connection to the PMI client
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-__PMI_send(r1): failed sending cmd=finalize_ack
- from pmi_finalize:1357
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-__PMI_send(r0): failed sending cmd=finalize_ack
- from pmi_finalize:1357
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>spawnf</NAME>
@@ -3953,29 +3864,13 @@ __PMI_send(r0): failed sending cmd=finalize_ack
 <NAME>connaccf</NAME>
 <NP>2</NP>
 <WORKDIR>./f77/spawn</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-[cli_1]: getval cmd failed
- lookup name returned a value before published
-[cli_0]: getval cmd failed
-Fatal error in MPI_Lookup_name: Invalid service name (see MPI_Publish_name), error stack:
-MPI_Lookup_name(149): MPI_Lookup_name(service="fservtest", MPI_INFO_NULL, port=0x10c4ba8) failed
-MPI_Lookup_name(129): 
-MPID_NS_Lookup(85)..: Lookup failed for service name fservtest
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>spawnmultf</NAME>
 <NP>1</NP>
 <WORKDIR>./f77/spawn</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
- Found arg a                                                                                but expected -p        
- Found arg b=c                                                                              but expected 27        
- Found arg d e                                                                              but expected -echo     
- Wrong number of arguments (           5 )
-  Found            4  errors
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>spawnmult2f</NAME>
@@ -4689,42 +4584,7 @@ MPID_NS_Lookup(85)..: Lookup failed for service name fservtest
 <NAME>namepubx</NAME>
 <NP>2</NP>
 <WORKDIR>./cxx/spawn</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
-MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
-MPID_NS_Publish(59)..: Lookup failed for service name MyTest
-Error in Lookup name Invalid service name (see MPI_Publish_name), error stack:
-MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x1c8b840) failed
-MPI_Lookup_name(129): 
-MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
-[cli_0]: getval cmd failed
-[cli_0]: expecting cmd=lookup_result, got unpublish_result
-[cli_1]: getval cmd failed
-Lookup name returned name after it was unpublished
-The name returned was 
-Lookup name returned name after it was unpublished
-The name returned was 
- Found 4 errors
-[cli_0]: getval cmd failed
-readFromPMIClient: lost connection to the PMI client
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-[cli_1]: expecting cmd=finalize_ack, got lookup_result
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-readFromPMIClient: lost connection to the PMI client
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-__PMI_send(r0): failed sending cmd=finalize_ack
- from pmi_finalize:1357
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-__PMI_send(r1): failed sending cmd=finalize_ack
- from pmi_finalize:1357
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>spawnintrax</NAME>
@@ -5372,40 +5232,7 @@ __PMI_send(r1): failed sending cmd=finalize_ack
 <NAME>namepubf90</NAME>
 <NP>2</NP>
 <WORKDIR>./f90/spawn</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
- Error in Publish_name Invalid service name (see MPI_Publish_name), error stack:
-MPI_Publish_name(133): MPI_Publish_name(service="MyTest", MPI_INFO_NULL, port="otherhost:122") failed
-MPID_NS_Publish(59)..: Lookup failed for service name MyTest
- Error in Lookup nameInvalid service name (see MPI_Publish_name), error stack:
-MPI_Lookup_name(149): MPI_Lookup_name(service="MyTest", MPI_INFO_NULL, port=0x1e46318) failed
-MPI_Lookup_name(129): 
-MPID_NS_Lookup(85)..: Lookup failed for service name MyTest
-[cli_0]: getval cmd failed
-[cli_0]: expecting cmd=lookup_result, got unpublish_result
-[cli_1]: getval cmd failed
- Lookup name returned name after it was unpublished
- Lookup name returned name after it was unpublished
-  Found            4  errors
-readFromPMIClient: lost connection to the PMI client
-readFromPMIClient: lost connection to the PMI client
-[cli_1]: expecting cmd=finalize_ack, got lookup_result
-[cli_0]: getval cmd failed
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r1): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-__PMI_send(r1): failed sending cmd=finalize_ack
- from pmi_finalize:1357
-__PMI_send(r0): failed sending cmd=finalize_ack
- from pmi_finalize:1357
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>spawnf90</NAME>
@@ -5423,29 +5250,13 @@ __PMI_send(r0): failed sending cmd=finalize_ack
 <NAME>connaccf90</NAME>
 <NP>2</NP>
 <WORKDIR>./f90/spawn</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-[cli_1]: getval cmd failed
- lookup name returned a value before published
-[cli_0]: getval cmd failed
-Fatal error in MPI_Lookup_name: Invalid service name (see MPI_Publish_name), error stack:
-MPI_Lookup_name(149): MPI_Lookup_name(service="fservtest", MPI_INFO_NULL, port=0x690ba8) failed
-MPI_Lookup_name(129): 
-MPID_NS_Lookup(85)..: Lookup failed for service name fservtest
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>spawnmultf90</NAME>
 <NP>1</NP>
 <WORKDIR>./f90/spawn</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
- Found arg a                                                                                but expected -p        
- Found arg b=c                                                                              but expected 27        
- Found arg d e                                                                              but expected -echo     
- Wrong number of arguments (           5 )
-  Found            4  errors
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>spawnmult2f90</NAME>
@@ -5463,14 +5274,7 @@ MPID_NS_Lookup(85)..: Lookup failed for service name fservtest
 <NAME>spawnmultf03</NAME>
 <NP>1</NP>
 <WORKDIR>./f90/spawn</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
- Found arg a                                                                                but expected -p        
- Found arg b=c                                                                              but expected 27        
- Found arg d e                                                                              but expected -echo     
- Wrong number of arguments (           5 )
-  Found            4  errors
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>wtimef90</NAME>
@@ -5543,14 +5347,6 @@ MPID_NS_Lookup(85)..: Lookup failed for service name fservtest
 <NP>1</NP>
 <WORKDIR>./errors/coll</WORKDIR>
 <STATUS>pass</STATUS>
-</MPITEST>
-<MPITEST>
-<NAME>bcastlength</NAME>
-<NP>4</NP>
-<WORKDIR>./errors/coll</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-</TESTDIFF>
 </MPITEST>
 <MPITEST>
 <NAME>cfree</NAME>
@@ -5742,47 +5538,13 @@ MPID_NS_Lookup(85)..: Lookup failed for service name fservtest
 <NAME>unpub</NAME>
 <NP>1</NP>
 <WORKDIR>./errors/spawn</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
- No Errors
-readFromPMIClient: lost connection to the PMI client
-[cli_0]: getval cmd failed
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-__PMI_send(r0): failed sending cmd=finalize_ack
- from pmi_finalize:1357
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>lookup_name</NAME>
 <NP>1</NP>
 <WORKDIR>./errors/spawn</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-[cli_0]: getval cmd failed
-[cli_0]: getval cmd failed
-[cli_0]: getval cmd failed
-[cli_0]: getval cmd failed
-[cli_0]: getval cmd failed
-[cli_0]: getval cmd failed
-[cli_0]: getval cmd failed
-[cli_0]: getval cmd failed
-[cli_0]: getval cmd failed
-[cli_0]: getval cmd failed
- No Errors
-[cli_0]: expecting cmd=finalize_ack, got lookup_result
-readFromPMIClient: lost connection to the PMI client
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-do_send(r0): got error 9 on PMI socket: Bad file descriptor
-__PMI_send(r0): failed sending cmd=finalize_ack
- from pmi_finalize:1357
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>fileerrret</NAME>
