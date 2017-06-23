@@ -27,11 +27,13 @@ int MPID_Get_node_id(MPID_Comm *comm, int rank, MPID_Node_id_t *id_p)
 	int i;
 	int pg_check_id;
 
-	if(!MPIDI_Process.env.enable_smp_aware_collops ||  !MPIDI_Process.node_id_table) {
+	if(!MPIDI_Process.env.enable_smp_aware_collops) {
 		/* Just pretend that each rank lives on its own node: */
 		*id_p = rank;
 		return 0;
 	}
+
+	assert(MPIDI_Process.node_id_table);
 
 	pg_check_id = comm->vcr[0]->pg->id_num;
 	for(i=1; i<comm->local_size; i++) {
@@ -53,6 +55,11 @@ int MPID_Get_node_id(MPID_Comm *comm, int rank, MPID_Node_id_t *id_p)
 
 int MPID_Get_max_node_id(MPID_Comm *comm, MPID_Node_id_t *max_id_p)
 {
+	if(!MPIDI_Process.node_id_table) {
+		/* Most likely that SMP-awareness has been disabled due to process spawning... */
+		return  MPI_ERR_OTHER;
+	}
+
 	*max_id_p = MPIDI_Process.my_pg_size;
 	return 0;
 }
