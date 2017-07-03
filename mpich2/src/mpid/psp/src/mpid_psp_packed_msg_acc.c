@@ -53,9 +53,11 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 #endif
 
 struct acc_params {
-	void		*msg;
-	unsigned int	msg_sz;
+	void		  *msg;
+	unsigned int	   msg_sz;
 	MPI_User_function *uop;
+	MPI_Op             op;
+	MPI_Datatype       dtype;
 };
 
 
@@ -72,8 +74,18 @@ int MPID_Segment_contig_acc(DLOOP_Offset *blocks_p,
 	struct acc_params *acc_params = v_paramp;
 /*	printf("%s() with type %08x\n", __func__, el_type); */
 
-	el_size = MPID_Datatype_get_basic_size(el_type);
-	size = *blocks_p * (DLOOP_Offset) el_size;
+	if( (acc_params->op == MPI_MINLOC || acc_params->op == MPI_MAXLOC) && el_type == MPI_BYTE ) {
+		/* Corner case of composed but built-in datatypes that degraded to MPI_BYTE when treated as derived:
+		   Contrary to the allowed datatypes for MPI_Accumulate, these are composed of different predefined
+		   types (e.g. MPI_DOUBLE_INT) and can only be used meaningfully with MPI_MINLOC/MAXLOC as ops... */
+		el_type = acc_params->dtype;
+		size  = count;
+		count = 1;
+	} else {
+		/* Usual case of common built-in datatypes... */
+		el_size = MPID_Datatype_get_basic_size(el_type);
+		size = *blocks_p * (DLOOP_Offset) el_size;
+	}
 
 	/* replace would be: memcpy((char *) bufp + rel_off, paramp->u.unpack.unpack_buffer, size); */
 
@@ -85,6 +97,44 @@ int MPID_Segment_contig_acc(DLOOP_Offset *blocks_p,
 	acc_params->msg = (char *) acc_params->msg + size;
 
 	return 0;
+}
+
+static
+int MPID_Segment_vector_acc(DLOOP_Offset *blocks_p,
+			    DLOOP_Count count,
+			    DLOOP_Count blklen,
+			    DLOOP_Offset stride,
+			    DLOOP_Type el_type,
+			    DLOOP_Offset rel_off,
+			    DLOOP_Buffer bufp,
+			    void *v_paramp)
+{
+	int i;
+	int el_size;
+	DLOOP_Offset size;
+	struct acc_params *acc_params = v_paramp;
+
+	if( (acc_params->op == MPI_MINLOC || acc_params->op == MPI_MAXLOC) && el_type == MPI_BYTE ) {
+		/* Corner case of composed but built-in datatypes that degraded to MPI_BYTE when treated as derived:
+		   (see also MPID_Segment_contig_acc) */
+		el_type = acc_params->dtype;
+		size   = blklen;
+		blklen = 1;
+	} else {
+
+		el_size = MPID_Datatype_get_basic_size(el_type);
+		size = blklen * (DLOOP_Offset) el_size;
+	}
+
+	for(i=0; i<count; i++) {
+
+		acc_params->uop(acc_params->msg,
+				(char *) bufp + rel_off + i * stride /* target */,
+				&blklen /* count */,
+				&el_type);
+
+		acc_params->msg = (char *) acc_params->msg + size;
+	}
 }
 
 
@@ -120,6 +170,9 @@ void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Data
 
 	MPID_Segment_init(target_addr, target_count, datatype, &segment, 0);
 
+	acc_params.op = op;
+	MPID_PSP_Datatype_get_basic_type(datatype, acc_params.dtype);
+
 	acc_params.msg = msg;
 	acc_params.msg_sz = msg_sz;
 	/* get the function by indexing into the op table */
@@ -129,8 +182,8 @@ void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Data
 
 	MPID_Segment_manipulate(&segment, /* first */0, &last,
 				MPID_Segment_contig_acc,
-				/* ToDo: implement MPID_Segment_{vectpr,blkidx,index}_acc! */
-				NULL /* MPID_Segment_vector_acc */,
+				MPID_Segment_vector_acc,
+				/* ToDo: implement MPID_Segment_{blkidx,index}_acc! */
 				NULL /* MPID_Segment_blkidx_acc */,
 				NULL /* MPID_Segment_index_acc */,
 				NULL /* sizefn */,

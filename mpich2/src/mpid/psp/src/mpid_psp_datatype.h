@@ -33,13 +33,38 @@ void MPID_PSP_Datatype_get_info(MPI_Datatype datatype, MPID_PSP_Datatype_info *i
 static inline
 int MPID_is_predefined_datatype(MPI_Datatype datatype)
 {
-	return (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)/* ||
+	return (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) ||
 		(datatype == MPI_FLOAT_INT) ||
 		(datatype == MPI_DOUBLE_INT) ||
 		(datatype == MPI_LONG_INT) ||
 		(datatype == MPI_SHORT_INT) ||
-		(datatype == MPI_LONG_DOUBLE_INT)*/;
+		(datatype == MPI_LONG_DOUBLE_INT);
 }
+
+/* This is only slightly different to the macro in  mpid/common/datatype/mpid_datatype.h
+   in that it does not return MPI_DATATYPE_NULL for composed types like MPI_DOUBLE_INT */
+#define MPID_PSP_Datatype_get_basic_type(a,basic_type_) do {            \
+    void *ptr;                                                          \
+    switch (HANDLE_GET_KIND(a)) {                                       \
+        case HANDLE_KIND_DIRECT:                                        \
+            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);                 \
+            basic_type_ = ((MPID_Datatype *) ptr)->basic_type;          \
+            break;                                                      \
+        case HANDLE_KIND_INDIRECT:                                      \
+            ptr = ((MPID_Datatype *)                                    \
+                   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem)); \
+            basic_type_ = ((MPID_Datatype *) ptr)->basic_type;          \
+            break;                                                      \
+        case HANDLE_KIND_BUILTIN:                                       \
+            basic_type_ = a;                                            \
+            break;                                                      \
+        case HANDLE_KIND_INVALID:                                       \
+        default:                                                        \
+            basic_type_ = 0;                                            \
+            break;                                                      \
+    }                                                                   \
+} while(0)
+
 
 static inline
 int MPID_PSP_Datatype_is_contig(MPID_PSP_Datatype_info *info)
