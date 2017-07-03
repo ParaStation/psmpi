@@ -130,11 +130,13 @@ int MPID_Segment_vector_acc(DLOOP_Offset *blocks_p,
 
 		acc_params->uop(acc_params->msg,
 				(char *) bufp + rel_off + i * stride /* target */,
-				&blklen /* count */,
+				(int*) &blklen /* count */,
 				&el_type);
 
 		acc_params->msg = (char *) acc_params->msg + size;
 	}
+
+	return 0;
 }
 
 

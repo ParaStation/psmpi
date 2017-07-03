@@ -214,7 +214,7 @@ err_alloc_dtp:
 
 void MPID_PSP_Datatype_release(MPI_Datatype datatype)
 {
-	if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+	if(!MPID_is_predefined_datatype(datatype)) {
 		MPID_Datatype *dtp;
 		MPID_Datatype_get_ptr(datatype, dtp);
 		MPID_Datatype_release(dtp);
@@ -224,7 +224,7 @@ void MPID_PSP_Datatype_release(MPI_Datatype datatype)
 
 void MPID_PSP_Datatype_add_ref(MPI_Datatype datatype)
 {
-	if (datatype != HANDLE_KIND_BUILTIN) {
+	if(!MPID_is_predefined_datatype(datatype)) {
 		MPID_Datatype *dtp;
 		MPID_Datatype_get_ptr(datatype, dtp);
 		MPID_Datatype_add_ref(dtp);
