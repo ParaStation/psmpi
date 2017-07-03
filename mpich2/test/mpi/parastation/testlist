@@ -22,6 +22,10 @@ num_contexts_2k 1
 num_contexts_4k 1
 num_contexts_8k 1
 num_contexts_16k 1
+acc-pairtype 2
+acc-vecsum 2
+get-acc-pairtype 2 mpiversion=3.0
+get-acc-shm-pairtype 2 mpiversion=3.0
 #
 # Fixed tests from MPICH:
 getfence1 2

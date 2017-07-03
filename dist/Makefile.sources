@@ -6319,7 +6319,11 @@ mpich2/test/mpi/mpi_t/mpit_vars.c \
 mpich2/test/mpi/mpi_t/testlist \
 mpich2/test/mpi/parastation/Makefile.am \
 mpich2/test/mpi/parastation/Makefile.in \
+mpich2/test/mpi/parastation/acc-pairtype.c \
+mpich2/test/mpi/parastation/acc-vecsum.c \
 mpich2/test/mpi/parastation/get-acc-loc.c \
+mpich2/test/mpi/parastation/get-acc-pairtype.c \
+mpich2/test/mpi/parastation/get-acc-shm-pairtype.c \
 mpich2/test/mpi/parastation/getfence1.c \
 mpich2/test/mpi/parastation/large-acc-flush_local.c \
 mpich2/test/mpi/parastation/locknull.c \

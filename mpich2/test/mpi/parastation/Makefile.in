@@ -107,7 +107,9 @@ noinst_PROGRAMS = locknull$(EXEEXT) get-acc-loc$(EXEEXT) \
 	spawn_univ_anysrc$(EXEEXT) num_contexts_2k$(EXEEXT) \
 	num_contexts_4k$(EXEEXT) num_contexts_8k$(EXEEXT) \
 	num_contexts_16k$(EXEEXT) getfence1$(EXEEXT) \
-	large-acc-flush_local$(EXEEXT)
+	large-acc-flush_local$(EXEEXT) acc-pairtype$(EXEEXT) \
+	acc-vecsum$(EXEEXT) get-acc-pairtype$(EXEEXT) \
+	get-acc-shm-pairtype$(EXEEXT)
 subdir = parastation
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -128,10 +130,34 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
+acc_pairtype_SOURCES = acc-pairtype.c
+acc_pairtype_OBJECTS = acc-pairtype.$(OBJEXT)
+acc_pairtype_LDADD = $(LDADD)
+acc_pairtype_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+acc_vecsum_SOURCES = acc-vecsum.c
+acc_vecsum_OBJECTS = acc-vecsum.$(OBJEXT)
+acc_vecsum_LDADD = $(LDADD)
+acc_vecsum_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 get_acc_loc_SOURCES = get-acc-loc.c
 get_acc_loc_OBJECTS = get-acc-loc.$(OBJEXT)
 get_acc_loc_LDADD = $(LDADD)
 get_acc_loc_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+get_acc_pairtype_SOURCES = get-acc-pairtype.c
+get_acc_pairtype_OBJECTS = get-acc-pairtype.$(OBJEXT)
+get_acc_pairtype_LDADD = $(LDADD)
+get_acc_pairtype_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+get_acc_shm_pairtype_SOURCES = get-acc-shm-pairtype.c
+get_acc_shm_pairtype_OBJECTS = get-acc-shm-pairtype.$(OBJEXT)
+get_acc_shm_pairtype_LDADD = $(LDADD)
+get_acc_shm_pairtype_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 getfence1_SOURCES = getfence1.c
@@ -303,22 +329,24 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = get-acc-loc.c getfence1.c large-acc-flush_local.c locknull.c \
-	$(mprobe_SOURCES) num_contexts_16k.c num_contexts_2k.c \
-	num_contexts_4k.c num_contexts_8k.c spawn_anysrc.c \
-	spawn_isend.c spawn_rma.c spawn_ssend.c spawn_univ_anysrc.c \
-	spawn_univ_comm.c spawn_universe.c win_flavor_err_dyn.c \
-	win_flavor_err_shm.c win_shm_large.c win_shm_multiple.c \
-	win_sync_err_flush.c win_sync_err_flushall.c \
-	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
-	win_sync_err_unlockall.c
-DIST_SOURCES = get-acc-loc.c getfence1.c large-acc-flush_local.c \
+SOURCES = acc-pairtype.c acc-vecsum.c get-acc-loc.c get-acc-pairtype.c \
+	get-acc-shm-pairtype.c getfence1.c large-acc-flush_local.c \
 	locknull.c $(mprobe_SOURCES) num_contexts_16k.c \
 	num_contexts_2k.c num_contexts_4k.c num_contexts_8k.c \
 	spawn_anysrc.c spawn_isend.c spawn_rma.c spawn_ssend.c \
 	spawn_univ_anysrc.c spawn_univ_comm.c spawn_universe.c \
 	win_flavor_err_dyn.c win_flavor_err_shm.c win_shm_large.c \
 	win_shm_multiple.c win_sync_err_flush.c \
+	win_sync_err_flushall.c win_sync_err_lockall_at.c \
+	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
+DIST_SOURCES = acc-pairtype.c acc-vecsum.c get-acc-loc.c \
+	get-acc-pairtype.c get-acc-shm-pairtype.c getfence1.c \
+	large-acc-flush_local.c locknull.c $(mprobe_SOURCES) \
+	num_contexts_16k.c num_contexts_2k.c num_contexts_4k.c \
+	num_contexts_8k.c spawn_anysrc.c spawn_isend.c spawn_rma.c \
+	spawn_ssend.c spawn_univ_anysrc.c spawn_univ_comm.c \
+	spawn_universe.c win_flavor_err_dyn.c win_flavor_err_shm.c \
+	win_shm_large.c win_shm_multiple.c win_sync_err_flush.c \
 	win_sync_err_flushall.c win_sync_err_lockall_at.c \
 	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
 am__can_run_installinfo = \
@@ -623,9 +651,25 @@ clean-binPROGRAMS:
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 
+acc-pairtype$(EXEEXT): $(acc_pairtype_OBJECTS) $(acc_pairtype_DEPENDENCIES) $(EXTRA_acc_pairtype_DEPENDENCIES) 
+	@rm -f acc-pairtype$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(acc_pairtype_OBJECTS) $(acc_pairtype_LDADD) $(LIBS)
+
+acc-vecsum$(EXEEXT): $(acc_vecsum_OBJECTS) $(acc_vecsum_DEPENDENCIES) $(EXTRA_acc_vecsum_DEPENDENCIES) 
+	@rm -f acc-vecsum$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(acc_vecsum_OBJECTS) $(acc_vecsum_LDADD) $(LIBS)
+
 get-acc-loc$(EXEEXT): $(get_acc_loc_OBJECTS) $(get_acc_loc_DEPENDENCIES) $(EXTRA_get_acc_loc_DEPENDENCIES) 
 	@rm -f get-acc-loc$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(get_acc_loc_OBJECTS) $(get_acc_loc_LDADD) $(LIBS)
+
+get-acc-pairtype$(EXEEXT): $(get_acc_pairtype_OBJECTS) $(get_acc_pairtype_DEPENDENCIES) $(EXTRA_get_acc_pairtype_DEPENDENCIES) 
+	@rm -f get-acc-pairtype$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(get_acc_pairtype_OBJECTS) $(get_acc_pairtype_LDADD) $(LIBS)
+
+get-acc-shm-pairtype$(EXEEXT): $(get_acc_shm_pairtype_OBJECTS) $(get_acc_shm_pairtype_DEPENDENCIES) $(EXTRA_get_acc_shm_pairtype_DEPENDENCIES) 
+	@rm -f get-acc-shm-pairtype$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(get_acc_shm_pairtype_OBJECTS) $(get_acc_shm_pairtype_LDADD) $(LIBS)
 
 getfence1$(EXEEXT): $(getfence1_OBJECTS) $(getfence1_DEPENDENCIES) $(EXTRA_getfence1_DEPENDENCIES) 
 	@rm -f getfence1$(EXEEXT)
@@ -729,7 +773,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/acc-pairtype.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/acc-vecsum.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-acc-loc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-acc-pairtype.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-acc-shm-pairtype.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getfence1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large-acc-flush_local.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locknull.Po@am__quote@
