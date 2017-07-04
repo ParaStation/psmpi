@@ -1,28 +1,8 @@
-For 5.2.0-1 preview (master-3.2 g9efb0dd)
+For 5.2.0-1 preview (master-3.2)
 
 with hydra's mpiexec, confset=default, largetests disabled
 
-1 tests failed out of 933
-Summary written to /home/clauss/Work/psmpi/doc/test-5.1.9-1_34_g9efb0dd_master_3_2_2017-05-08_17:57:20*
-
--------------------------------------------------
-
-./rma/acc-pairtype np=2:
-tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
-tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
-tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
-tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
-tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
-tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
-tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
-tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
-tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
-tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
-tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
-tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
-tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
-tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
-tar_buf[i].a = 0.000000 (expected 1.0) | tar_buf[i].b = 0 (expected 1)
-
--------------------------------------------------
+ All 937 tests passed!
+ 0 tests failed out of 937
+ Summary written to /home/clauss/Work/psmpi/doc/test-5.1.9-1_39_gcc9327f_master_3_2_2017-07-03_17:36:30*
 
