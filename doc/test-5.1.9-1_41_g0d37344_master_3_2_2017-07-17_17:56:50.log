@@ -1,0 +1,2454 @@
+zam871
+package pscom is not installed
+package psmgmt is not installed
+5.1.9-1_41_g0d37344_master_3_2
+/home/clauss/Work/psmpi/build/install/bin/mpiexec.hydra
+make[1]: Entering directory '/home/clauss/Work/psmpi/build/mpich2'
+( cd test && make  testing )
+make[2]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test'
+(NOXMLCLOSE=YES && export NOXMLCLOSE && cd mpi && make testing)
+make[3]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi'
+./runtests -srcdir=/home/clauss/Work/psmpi/mpich2/test/mpi -tests=testlist \
+	-mpiexec=/home/clauss/Work/psmpi/build/install/bin/mpiexec.hydra -xmlfile=summary.xml \
+	-tapfile=summary.tap -junitfile=summary.junit.xml
+Looking in ./testlist
+Processing directory parastation
+Looking in ./parastation/testlist
+Unexpected output in acc-pairtype: Deadlock detected! Process 18573 will wait forever.
+Unexpected output in acc-pairtype: ('wait' called without outstanding send or recv requests).
+Unexpected output in acc-pairtype: Requests:
+Unexpected output in acc-pairtype: Sockets:
+Unexpected output in acc-pairtype: 
+Unexpected output in acc-pairtype: ===================================================================================
+Unexpected output in acc-pairtype: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in acc-pairtype: =   PID 18574 RUNNING AT zam871
+Unexpected output in acc-pairtype: =   EXIT CODE: 11
+Unexpected output in acc-pairtype: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in acc-pairtype: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in acc-pairtype: ===================================================================================
+Unexpected output in acc-pairtype: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in acc-pairtype: This typically refers to a problem with your application.
+Unexpected output in acc-pairtype: Please see the FAQ page for debugging suggestions
+Program acc-pairtype exited without No Errors
+Unexpected output in get-acc-pairtype: Deadlock detected! Process 18667 will wait forever.
+Unexpected output in get-acc-pairtype: ('wait' called without outstanding send or recv requests).
+Unexpected output in get-acc-pairtype: Requests:
+Unexpected output in get-acc-pairtype: Sockets:
+Unexpected output in get-acc-pairtype:   sock#0x18416a0 listen:    -1 demand:   0(   0)  src:(134.94.169.164,18667,(nil),r0000000) anyrecv:     2
+Unexpected output in get-acc-pairtype:   Connections:
+Unexpected output in get-acc-pairtype:     con#0x1843e20 type:  loop state:    open dest:(134.94.169.164,18667,0x1843e20,r0000000) recvcnt:    1
+Unexpected output in get-acc-pairtype:     con#0x18441e0 type:   shm state:    norw dest:(134.94.169.164,18668,0x932ff0,r0000001) recvcnt:    1
+Unexpected output in get-acc-pairtype: Fds:
+Unexpected output in get-acc-pairtype: 
+Unexpected output in get-acc-pairtype: Reqs:16 GenReqs: (cnt:1  used:0)
+Unexpected output in get-acc-pairtype: ReqsAnySrc:4 RecvQAnySrc:8
+Unexpected output in get-acc-pairtype: 
+Unexpected output in get-acc-pairtype: ===================================================================================
+Unexpected output in get-acc-pairtype: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in get-acc-pairtype: =   PID 18668 RUNNING AT zam871
+Unexpected output in get-acc-pairtype: =   EXIT CODE: 11
+Unexpected output in get-acc-pairtype: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in get-acc-pairtype: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in get-acc-pairtype: ===================================================================================
+Unexpected output in get-acc-pairtype: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in get-acc-pairtype: This typically refers to a problem with your application.
+Unexpected output in get-acc-pairtype: Please see the FAQ page for debugging suggestions
+Program get-acc-pairtype exited without No Errors
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = f7 but got p[8] = ff
+Unexpected output in getfence1: Data expected = f6 but got p[9] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = f7 but got p[8] = ff
+Unexpected output in getfence1: Data expected = f6 but got p[9] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = f7 but got p[8] = ff
+Unexpected output in getfence1: Data expected = f6 but got p[9] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = f7 but got p[8] = ff
+Unexpected output in getfence1: Data expected = f6 but got p[9] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = f7 but got p[8] = ff
+Unexpected output in getfence1: Data expected = f6 but got p[9] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = f7 but got p[8] = ff
+Unexpected output in getfence1: Data expected = f6 but got p[9] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = f7 but got p[8] = ff
+Unexpected output in getfence1: Data expected = f6 but got p[9] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = f7 but got p[8] = ff
+Unexpected output in getfence1: Data expected = f6 but got p[9] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = f7 but got p[8] = ff
+Unexpected output in getfence1: Data expected = f6 but got p[9] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = f7 but got p[8] = ff
+Unexpected output in getfence1: Data expected = f6 but got p[9] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = f7 but got p[8] = ff
+Unexpected output in getfence1: Data expected = f6 but got p[9] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = f7 but got p[8] = ff
+Unexpected output in getfence1: Data expected = f6 but got p[9] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = f7 but got p[8] = ff
+Unexpected output in getfence1: Data expected = f6 but got p[9] = ff
+Unexpected output in getfence1: Data expected = fe but got p[1] = ff
+Unexpected output in getfence1: Data expected = fd but got p[2] = ff
+Unexpected output in getfence1: Data expected = fc but got p[3] = ff
+Unexpected output in getfence1: Data expected = fb but got p[4] = ff
+Unexpected output in getfence1: Data expected = fa but got p[5] = ff
+Unexpected output in getfence1: Data expected = f9 but got p[6] = ff
+Unexpected output in getfence1: Data expected = f8 but got p[7] = ff
+Unexpected output in getfence1: Data expected = f7 but got p[8] = ff
+Unexpected output in getfence1: Data expected = f6 but got p[9] = ff
+Unexpected output in getfence1: 
+Unexpected output in getfence1: ===================================================================================
+Unexpected output in getfence1: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in getfence1: =   PID 18761 RUNNING AT zam871
+Unexpected output in getfence1: =   EXIT CODE: 11
+Unexpected output in getfence1: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in getfence1: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in getfence1: ===================================================================================
+Unexpected output in getfence1: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in getfence1: This typically refers to a problem with your application.
+Unexpected output in getfence1: Please see the FAQ page for debugging suggestions
+Program getfence1 exited without No Errors
+Processing directory attr
+Looking in ./attr/testlist
+Processing directory coll
+Looking in ./coll/testlist
+Processing directory comm
+Looking in ./comm/testlist
+Processing directory datatype
+Looking in ./datatype/testlist
+Processing directory errhan
+Looking in ./errhan/testlist
+Processing directory group
+Looking in ./group/testlist
+Processing directory info
+Looking in ./info/testlist
+Processing directory init
+Looking in ./init/testlist
+Some programs (version) may still be running:
+pids = 9492 17321 
+The executable (version) will not be removed.
+Processing directory mpi_t
+Looking in ./mpi_t/testlist
+Processing directory pt2pt
+Looking in ./pt2pt/testlist
+Processing directory rma
+Looking in ./rma/testlist
+Unexpected output in putfence1: [mpiexec@zam871] APPLICATION TIMED OUT
+Program putfence1 exited without No Errors
+Unexpected output in accfence1: Fatal error in MPI_Win_fence: Other MPI error, error stack:
+Unexpected output in accfence1: MPI_Win_fence(126)............: MPI_Win_fence(assert=0, win=0xa0000000) failed
+Unexpected output in accfence1: MPIR_Reduce_scatter_impl(1072): 
+Unexpected output in accfence1: MPIR_Reduce_scatter(1035).....: 
+Unexpected output in accfence1: MPIR_Reduce_scatter_intra(462): 
+Unexpected output in accfence1: mpid_irecv_done(101)..........: read from socket failed - request state:recv(pde)done
+Unexpected output in accfence1: ===================================================================================
+Unexpected output in accfence1: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in accfence1: =   PID 7223 RUNNING AT zam871
+Unexpected output in accfence1: =   EXIT CODE: 11
+Unexpected output in accfence1: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in accfence1: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in accfence1: ===================================================================================
+Unexpected output in accfence1: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in accfence1: This typically refers to a problem with your application.
+Unexpected output in accfence1: Please see the FAQ page for debugging suggestions
+Program accfence1 exited without No Errors
+Unexpected output in putpscw1: MTestTypeSubarrayCheckbuf error
+Unexpected output in putpscw1: MTestTypeSubarrayCheckbuf error
+Unexpected output in putpscw1: 
+Unexpected output in putpscw1: ===================================================================================
+Unexpected output in putpscw1: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in putpscw1: =   PID 7374 RUNNING AT zam871
+Unexpected output in putpscw1: =   EXIT CODE: 11
+Unexpected output in putpscw1: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in putpscw1: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in putpscw1: ===================================================================================
+Unexpected output in putpscw1: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in putpscw1: This typically refers to a problem with your application.
+Unexpected output in putpscw1: Please see the FAQ page for debugging suggestions
+Program putpscw1 exited without No Errors
+Unexpected output in accpscw1: MTestTypeSubarrayCheckbuf error
+Unexpected output in accpscw1: MTestTypeSubarrayCheckbuf error
+Unexpected output in accpscw1: 
+Unexpected output in accpscw1: ===================================================================================
+Unexpected output in accpscw1: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in accpscw1: =   PID 7425 RUNNING AT zam871
+Unexpected output in accpscw1: =   EXIT CODE: 11
+Unexpected output in accpscw1: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in accpscw1: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in accpscw1: ===================================================================================
+Unexpected output in accpscw1: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in accpscw1: This typically refers to a problem with your application.
+Unexpected output in accpscw1: Please see the FAQ page for debugging suggestions
+Program accpscw1 exited without No Errors
+Unexpected output in transpose1: *** Error in `./transpose1': free(): invalid next size (fast): 0x00000000009ce290 ***
+Unexpected output in transpose1: ======= Backtrace: =========
+Unexpected output in transpose1: /lib64/libc.so.6(+0x727df)[0x7f40f42407df]
+Unexpected output in transpose1: /lib64/libc.so.6(+0x7804e)[0x7f40f424604e]
+Unexpected output in transpose1: /lib64/libc.so.6(+0x78d56)[0x7f40f4246d56]
+Unexpected output in transpose1: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(+0x1197ce)[0x7f40f46917ce]
+Unexpected output in transpose1: /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2(pscom_unlock+0x1ef)[0x7f40f3f8f1bf]
+Unexpected output in transpose1: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Progress_wait+0x18)[0x7f40f468a098]
+Unexpected output in transpose1: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIC_Wait+0x55)[0x7f40f465aec5]
+Unexpected output in transpose1: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIC_Sendrecv+0x22a)[0x7f40f465b68a]
+Unexpected output in transpose1: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter_intra+0x2464)[0x7f40f45db774]
+Unexpected output in transpose1: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter+0x1b)[0x7f40f45dc85b]
+Unexpected output in transpose1: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter_impl+0x39)[0x7f40f45dc909]
+Unexpected output in transpose1: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Win_fence+0x74)[0x7f40f46922f4]
+Unexpected output in transpose1: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(PMPI_Win_fence+0x18a)[0x7f40f463e43a]
+Unexpected output in transpose1: ./transpose1[0x4024b1]
+Unexpected output in transpose1: /lib64/libc.so.6(__libc_start_main+0xf5)[0x7f40f41efb05]
+Unexpected output in transpose1: ./transpose1[0x4020e9]
+Unexpected output in transpose1: ======= Memory map: ========
+Unexpected output in transpose1: 00400000-0040b000 r-xp 00000000 08:03 5116089                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose1
+Unexpected output in transpose1: 0060a000-0060b000 r--p 0000a000 08:03 5116089                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose1
+Unexpected output in transpose1: 0060b000-0060c000 rw-p 0000b000 08:03 5116089                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose1
+Unexpected output in transpose1: 009ba000-009db000 rw-p 00000000 00:00 0                                  [heap]
+Unexpected output in transpose1: 7f40ec000000-7f40ec021000 rw-p 00000000 00:00 0 
+Unexpected output in transpose1: 7f40ec021000-7f40f0000000 ---p 00000000 00:00 0 
+Unexpected output in transpose1: 7f40f1a83000-7f40f1e54000 rw-p 00000000 00:00 0 
+Unexpected output in transpose1: 7f40f1e54000-7f40f1e55000 ---p 00000000 00:00 0 
+Unexpected output in transpose1: 7f40f1e55000-7f40f2655000 rw-p 00000000 00:00 0                          [stack:7527]
+Unexpected output in transpose1: 7f40f2655000-7f40f2671000 r-xp 00000000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose1: 7f40f2671000-7f40f2870000 ---p 0001c000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose1: 7f40f2870000-7f40f2872000 r--p 0001b000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose1: 7f40f2872000-7f40f2873000 rw-p 0001d000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose1: 7f40f2873000-7f40f28ce000 r-xp 00000000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose1: 7f40f28ce000-7f40f2acd000 ---p 0005b000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose1: 7f40f2acd000-7f40f2ad0000 r--p 0005a000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose1: 7f40f2ad0000-7f40f2ad4000 rw-p 0005d000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose1: 7f40f2ad4000-7f40f2ad6000 rw-p 00000000 00:00 0 
+Unexpected output in transpose1: 7f40f2ad6000-7f40f2ae7000 r-xp 00000000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose1: 7f40f2ae7000-7f40f2ce6000 ---p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose1: 7f40f2ce6000-7f40f2ce7000 r--p 00010000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose1: 7f40f2ce7000-7f40f2ce8000 rw-p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose1: 7f40f2ce8000-7f40f2cef000 r-xp 00000000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose1: 7f40f2cef000-7f40f2eee000 ---p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose1: 7f40f2eee000-7f40f2eef000 r--p 00006000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose1: 7f40f2eef000-7f40f2ef0000 rw-p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose1: 7f40f2ef0000-7f40f2ef3000 r-xp 00000000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose1: 7f40f2ef3000-7f40f30f2000 ---p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose1: 7f40f30f2000-7f40f30f3000 r--p 00002000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose1: 7f40f30f3000-7f40f30f4000 rw-p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose1: 7f40f30f4000-7f40f312f000 r-xp 00000000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose1: 7f40f312f000-7f40f332e000 ---p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose1: 7f40f332e000-7f40f332f000 r--p 0003a000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose1: 7f40f332f000-7f40f3330000 rw-p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose1: 7f40f3330000-7f40f3346000 r-xp 00000000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose1: 7f40f3346000-7f40f3545000 ---p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose1: 7f40f3545000-7f40f3546000 r--p 00015000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose1: 7f40f3546000-7f40f3547000 rw-p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose1: 7f40f3547000-7f40f3647000 r-xp 00000000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose1: 7f40f3647000-7f40f3846000 ---p 00100000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose1: 7f40f3846000-7f40f3847000 r--p 000ff000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose1: 7f40f3847000-7f40f3848000 rw-p 00100000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose1: 7f40f3848000-7f40f3960000 r-xp 00000000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose1: 7f40f3960000-7f40f3b5f000 ---p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose1: 7f40f3b5f000-7f40f3b60000 r--p 00117000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose1: 7f40f3b60000-7f40f3b62000 rw-p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose1: 7f40f3b62000-7f40f3b69000 r-xp 00000000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose1: 7f40f3b69000-7f40f3d68000 ---p 00007000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose1: 7f40f3d68000-7f40f3d69000 r--p 00006000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose1: 7f40f3d69000-7f40f3d6a000 rw-p 00007000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose1: 7f40f3d6a000-7f40f3d82000 r-xp 00000000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose1: 7f40f3d82000-7f40f3f81000 ---p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose1: 7f40f3f81000-7f40f3f82000 r--p 00017000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose1: 7f40f3f82000-7f40f3f83000 rw-p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose1: 7f40f3f83000-7f40f3f87000 rw-p 00000000 00:00 0 
+Unexpected output in transpose1: 7f40f3f87000-7f40f3faa000 r-xp 00000000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose1: 7f40f3faa000-7f40f41aa000 ---p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose1: 7f40f41aa000-7f40f41ab000 r--p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose1: 7f40f41ab000-7f40f41bc000 rw-p 00024000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose1: 7f40f41bc000-7f40f41ce000 rw-p 00000000 00:00 0 
+Unexpected output in transpose1: 7f40f41ce000-7f40f436f000 r-xp 00000000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose1: 7f40f436f000-7f40f456e000 ---p 001a1000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose1: 7f40f456e000-7f40f4572000 r--p 001a0000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose1: 7f40f4572000-7f40f4574000 rw-p 001a4000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose1: 7f40f4574000-7f40f4578000 rw-p 00000000 00:00 0 
+Unexpected output in transpose1: 7f40f4578000-7f40f4740000 r-xp 00000000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose1: 7f40f4740000-7f40f4940000 ---p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose1: 7f40f4940000-7f40f494d000 r--p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose1: 7f40f494d000-7f40f4951000 rw-p 001d5000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose1: 7f40f4951000-7f40f499c000 rw-p 00000000 00:00 0 
+Unexpected output in transpose1: 7f40f499c000-7f40f49bc000 r-xp 00000000 08:02 18648                      /lib64/ld-2.19.so
+Unexpected output in transpose1: 7f40f4b4c000-7f40f4b81000 r--s 00000000 00:11 14746                      /run/nscd/dbK2CzxF (deleted)
+Unexpected output in transpose1: 7f40f4b81000-7f40f4b88000 rw-p 00000000 00:00 0 
+Unexpected output in transpose1: 7f40f4b9a000-7f40f4b9b000 rw-p 00000000 00:00 0 
+Unexpected output in transpose1: 7f40f4b9b000-7f40f4bab000 rw-s 00000000 00:04 977960983                  /SYSV00000000 (deleted)
+Unexpected output in transpose1: 7f40f4bab000-7f40f4bbb000 rw-s 00000000 00:04 977928214                  /SYSV00000000 (deleted)
+Unexpected output in transpose1: 7f40f4bbb000-7f40f4bbc000 rw-p 00000000 00:00 0 
+Unexpected output in transpose1: 7f40f4bbc000-7f40f4bbd000 r--p 00020000 08:02 18648                      /lib64/ld-2.19.so
+Unexpected output in transpose1: 7f40f4bbd000-7f40f4bbe000 rw-p 00021000 08:02 18648                      /lib64/ld-2.19.so
+Unexpected output in transpose1: 7f40f4bbe000-7f40f4bbf000 rw-p 00000000 00:00 0 
+Unexpected output in transpose1: 7fff26e18000-7fff26e3a000 rw-p 00000000 00:00 0                          [stack]
+Unexpected output in transpose1: 7fff26fae000-7fff26fb0000 r-xp 00000000 00:00 0                          [vdso]
+Unexpected output in transpose1: 7fff26fb0000-7fff26fb2000 r--p 00000000 00:00 0                          [vvar]
+Unexpected output in transpose1: ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+Unexpected output in transpose1: 
+Unexpected output in transpose1: ===================================================================================
+Unexpected output in transpose1: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in transpose1: =   PID 7525 RUNNING AT zam871
+Unexpected output in transpose1: =   EXIT CODE: 6
+Unexpected output in transpose1: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in transpose1: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in transpose1: ===================================================================================
+Unexpected output in transpose1: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Aborted (signal 6)
+Unexpected output in transpose1: This typically refers to a problem with your application.
+Unexpected output in transpose1: Please see the FAQ page for debugging suggestions
+Program transpose1 exited without No Errors
+Unexpected output in transpose2: *** Error in `./transpose2': free(): invalid next size (fast): 0x0000000002463340 ***
+Unexpected output in transpose2: ======= Backtrace: =========
+Unexpected output in transpose2: /lib64/libc.so.6(+0x727df)[0x7f7a42d677df]
+Unexpected output in transpose2: /lib64/libc.so.6(+0x7804e)[0x7f7a42d6d04e]
+Unexpected output in transpose2: /lib64/libc.so.6(+0x78d56)[0x7f7a42d6dd56]
+Unexpected output in transpose2: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(+0x1197ce)[0x7f7a431b87ce]
+Unexpected output in transpose2: /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2(pscom_unlock+0x1ef)[0x7f7a42ab61bf]
+Unexpected output in transpose2: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Progress_wait+0x18)[0x7f7a431b1098]
+Unexpected output in transpose2: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIC_Wait+0x55)[0x7f7a43181ec5]
+Unexpected output in transpose2: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIC_Sendrecv+0x22a)[0x7f7a4318268a]
+Unexpected output in transpose2: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter_intra+0x2464)[0x7f7a43102774]
+Unexpected output in transpose2: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter+0x1b)[0x7f7a4310385b]
+Unexpected output in transpose2: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter_impl+0x39)[0x7f7a43103909]
+Unexpected output in transpose2: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Win_fence+0x74)[0x7f7a431b92f4]
+Unexpected output in transpose2: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(PMPI_Win_fence+0x18a)[0x7f7a4316543a]
+Unexpected output in transpose2: ./transpose2[0x4024be]
+Unexpected output in transpose2: /lib64/libc.so.6(__libc_start_main+0xf5)[0x7f7a42d16b05]
+Unexpected output in transpose2: ./transpose2[0x4020e9]
+Unexpected output in transpose2: ======= Memory map: ========
+Unexpected output in transpose2: 00400000-0040b000 r-xp 00000000 08:03 5116090                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose2
+Unexpected output in transpose2: 0060a000-0060b000 r--p 0000a000 08:03 5116090                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose2
+Unexpected output in transpose2: 0060b000-0060c000 rw-p 0000b000 08:03 5116090                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose2
+Unexpected output in transpose2: 02451000-02472000 rw-p 00000000 00:00 0                                  [heap]
+Unexpected output in transpose2: 7f7a3c000000-7f7a3c021000 rw-p 00000000 00:00 0 
+Unexpected output in transpose2: 7f7a3c021000-7f7a40000000 ---p 00000000 00:00 0 
+Unexpected output in transpose2: 7f7a4097b000-7f7a4097c000 ---p 00000000 00:00 0 
+Unexpected output in transpose2: 7f7a4097c000-7f7a4117c000 rw-p 00000000 00:00 0                          [stack:7579]
+Unexpected output in transpose2: 7f7a4117c000-7f7a41198000 r-xp 00000000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose2: 7f7a41198000-7f7a41397000 ---p 0001c000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose2: 7f7a41397000-7f7a41399000 r--p 0001b000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose2: 7f7a41399000-7f7a4139a000 rw-p 0001d000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose2: 7f7a4139a000-7f7a413f5000 r-xp 00000000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose2: 7f7a413f5000-7f7a415f4000 ---p 0005b000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose2: 7f7a415f4000-7f7a415f7000 r--p 0005a000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose2: 7f7a415f7000-7f7a415fb000 rw-p 0005d000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose2: 7f7a415fb000-7f7a415fd000 rw-p 00000000 00:00 0 
+Unexpected output in transpose2: 7f7a415fd000-7f7a4160e000 r-xp 00000000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose2: 7f7a4160e000-7f7a4180d000 ---p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose2: 7f7a4180d000-7f7a4180e000 r--p 00010000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose2: 7f7a4180e000-7f7a4180f000 rw-p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose2: 7f7a4180f000-7f7a41816000 r-xp 00000000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose2: 7f7a41816000-7f7a41a15000 ---p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose2: 7f7a41a15000-7f7a41a16000 r--p 00006000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose2: 7f7a41a16000-7f7a41a17000 rw-p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose2: 7f7a41a17000-7f7a41a1a000 r-xp 00000000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose2: 7f7a41a1a000-7f7a41c19000 ---p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose2: 7f7a41c19000-7f7a41c1a000 r--p 00002000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose2: 7f7a41c1a000-7f7a41c1b000 rw-p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose2: 7f7a41c1b000-7f7a41c56000 r-xp 00000000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose2: 7f7a41c56000-7f7a41e55000 ---p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose2: 7f7a41e55000-7f7a41e56000 r--p 0003a000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose2: 7f7a41e56000-7f7a41e57000 rw-p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose2: 7f7a41e57000-7f7a41e6d000 r-xp 00000000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose2: 7f7a41e6d000-7f7a4206c000 ---p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose2: 7f7a4206c000-7f7a4206d000 r--p 00015000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose2: 7f7a4206d000-7f7a4206e000 rw-p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose2: 7f7a4206e000-7f7a4216e000 r-xp 00000000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose2: 7f7a4216e000-7f7a4236d000 ---p 00100000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose2: 7f7a4236d000-7f7a4236e000 r--p 000ff000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose2: 7f7a4236e000-7f7a4236f000 rw-p 00100000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose2: 7f7a4236f000-7f7a42487000 r-xp 00000000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose2: 7f7a42487000-7f7a42686000 ---p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose2: 7f7a42686000-7f7a42687000 r--p 00117000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose2: 7f7a42687000-7f7a42689000 rw-p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose2: 7f7a42689000-7f7a42690000 r-xp 00000000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose2: 7f7a42690000-7f7a4288f000 ---p 00007000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose2: 7f7a4288f000-7f7a42890000 r--p 00006000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose2: 7f7a42890000-7f7a42891000 rw-p 00007000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose2: 7f7a42891000-7f7a428a9000 r-xp 00000000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose2: 7f7a428a9000-7f7a42aa8000 ---p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose2: 7f7a42aa8000-7f7a42aa9000 r--p 00017000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose2: 7f7a42aa9000-7f7a42aaa000 rw-p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose2: 7f7a42aaa000-7f7a42aae000 rw-p 00000000 00:00 0 
+Unexpected output in transpose2: 7f7a42aae000-7f7a42ad1000 r-xp 00000000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose2: 7f7a42ad1000-7f7a42cd1000 ---p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose2: 7f7a42cd1000-7f7a42cd2000 r--p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose2: 7f7a42cd2000-7f7a42ce3000 rw-p 00024000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose2: 7f7a42ce3000-7f7a42cf5000 rw-p 00000000 00:00 0 
+Unexpected output in transpose2: 7f7a42cf5000-7f7a42e96000 r-xp 00000000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose2: 7f7a42e96000-7f7a43095000 ---p 001a1000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose2: 7f7a43095000-7f7a43099000 r--p 001a0000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose2: 7f7a43099000-7f7a4309b000 rw-p 001a4000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose2: 7f7a4309b000-7f7a4309f000 rw-p 00000000 00:00 0 
+Unexpected output in transpose2: 7f7a4309f000-7f7a43267000 r-xp 00000000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose2: 7f7a43267000-7f7a43467000 ---p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose2: 7f7a43467000-7f7a43474000 r--p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose2: 7f7a43474000-7f7a43478000 rw-p 001d5000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose2: 7f7a43478000-7f7a434c3000 rw-p 00000000 00:00 0 
+Unexpected output in transpose2: 7f7a434c3000-7f7a434e3000 r-xp 00000000 08:02 18648                      /lib64/ld-2.19.so
+Unexpected output in transpose2: 7f7a43673000-7f7a436a8000 r--s 00000000 00:11 14746                      /run/nscd/dbK2CzxF (deleted)
+Unexpected output in transpose2: 7f7a436a8000-7f7a436af000 rw-p 00000000 00:00 0 
+Unexpected output in transpose2: 7f7a436c1000-7f7a436c2000 rw-p 00000000 00:00 0 
+Unexpected output in transpose2: 7f7a436c2000-7f7a436d2000 rw-s 00000000 00:04 978026519                  /SYSV00000000 (deleted)
+Unexpected output in transpose2: 7f7a436d2000-7f7a436e2000 rw-s 00000000 00:04 977993750                  /SYSV00000000 (deleted)
+Unexpected output in transpose2: 7f7a436e2000-7f7a436e3000 rw-p 00000000 00:00 0 
+Unexpected output in transpose2: 7f7a436e3000-7f7a436e4000 r--p 00020000 08:02 18648                      /lib64/ld-2.19.so
+Unexpected output in transpose2: 7f7a436e4000-7f7a436e5000 rw-p 00021000 08:02 18648                      /lib64/ld-2.19.so
+Unexpected output in transpose2: 7f7a436e5000-7f7a436e6000 rw-p 00000000 00:00 0 
+Unexpected output in transpose2: 7ffeb40a2000-7ffeb40c4000 rw-p 00000000 00:00 0                          [stack]
+Unexpected output in transpose2: 7ffeb41b4000-7ffeb41b6000 r-xp 00000000 00:00 0                          [vdso]
+Unexpected output in transpose2: 7ffeb41b6000-7ffeb41b8000 r--p 00000000 00:00 0                          [vvar]
+Unexpected output in transpose2: ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+Unexpected output in transpose2: 
+Unexpected output in transpose2: ===================================================================================
+Unexpected output in transpose2: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in transpose2: =   PID 7577 RUNNING AT zam871
+Unexpected output in transpose2: =   EXIT CODE: 6
+Unexpected output in transpose2: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in transpose2: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in transpose2: ===================================================================================
+Unexpected output in transpose2: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Aborted (signal 6)
+Unexpected output in transpose2: This typically refers to a problem with your application.
+Unexpected output in transpose2: Please see the FAQ page for debugging suggestions
+Program transpose2 exited without No Errors
+Unexpected output in transpose3: *** Error in `./transpose3': free(): invalid next size (fast): 0x000000000108bf70 ***
+Unexpected output in transpose3: ======= Backtrace: =========
+Unexpected output in transpose3: /lib64/libc.so.6(+0x727df)[0x7fc9552e17df]
+Unexpected output in transpose3: /lib64/libc.so.6(+0x7804e)[0x7fc9552e704e]
+Unexpected output in transpose3: /lib64/libc.so.6(+0x78d56)[0x7fc9552e7d56]
+Unexpected output in transpose3: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(+0x1197ce)[0x7fc9557327ce]
+Unexpected output in transpose3: /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2(pscom_unlock+0x1ef)[0x7fc9550301bf]
+Unexpected output in transpose3: /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2(pscom_wait+0x15)[0x7fc955037cd5]
+Unexpected output in transpose3: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_PSP_Wait+0x21)[0x7fc95572b101]
+Unexpected output in transpose3: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Win_wait+0xc9)[0x7fc9557338d9]
+Unexpected output in transpose3: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPI_Win_wait+0x177)[0x7fc9556e1fe7]
+Unexpected output in transpose3: ./transpose3[0x4026b5]
+Unexpected output in transpose3: /lib64/libc.so.6(__libc_start_main+0xf5)[0x7fc955290b05]
+Unexpected output in transpose3: ./transpose3[0x4022e9]
+Unexpected output in transpose3: ======= Memory map: ========
+Unexpected output in transpose3: 00400000-0040b000 r-xp 00000000 08:03 5116091                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose3
+Unexpected output in transpose3: 0060a000-0060b000 r--p 0000a000 08:03 5116091                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose3
+Unexpected output in transpose3: 0060b000-0060c000 rw-p 0000b000 08:03 5116091                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose3
+Unexpected output in transpose3: 01070000-01091000 rw-p 00000000 00:00 0                                  [heap]
+Unexpected output in transpose3: 7fc94c000000-7fc94c021000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3: 7fc94c021000-7fc950000000 ---p 00000000 00:00 0 
+Unexpected output in transpose3: 7fc952ef5000-7fc952ef6000 ---p 00000000 00:00 0 
+Unexpected output in transpose3: 7fc952ef6000-7fc9536f6000 rw-p 00000000 00:00 0                          [stack:7625]
+Unexpected output in transpose3: 7fc9536f6000-7fc953712000 r-xp 00000000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose3: 7fc953712000-7fc953911000 ---p 0001c000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose3: 7fc953911000-7fc953913000 r--p 0001b000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose3: 7fc953913000-7fc953914000 rw-p 0001d000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose3: 7fc953914000-7fc95396f000 r-xp 00000000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose3: 7fc95396f000-7fc953b6e000 ---p 0005b000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose3: 7fc953b6e000-7fc953b71000 r--p 0005a000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose3: 7fc953b71000-7fc953b75000 rw-p 0005d000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose3: 7fc953b75000-7fc953b77000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3: 7fc953b77000-7fc953b88000 r-xp 00000000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose3: 7fc953b88000-7fc953d87000 ---p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose3: 7fc953d87000-7fc953d88000 r--p 00010000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose3: 7fc953d88000-7fc953d89000 rw-p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose3: 7fc953d89000-7fc953d90000 r-xp 00000000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose3: 7fc953d90000-7fc953f8f000 ---p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose3: 7fc953f8f000-7fc953f90000 r--p 00006000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose3: 7fc953f90000-7fc953f91000 rw-p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose3: 7fc953f91000-7fc953f94000 r-xp 00000000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose3: 7fc953f94000-7fc954193000 ---p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose3: 7fc954193000-7fc954194000 r--p 00002000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose3: 7fc954194000-7fc954195000 rw-p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose3: 7fc954195000-7fc9541d0000 r-xp 00000000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose3: 7fc9541d0000-7fc9543cf000 ---p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose3: 7fc9543cf000-7fc9543d0000 r--p 0003a000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose3: 7fc9543d0000-7fc9543d1000 rw-p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose3: 7fc9543d1000-7fc9543e7000 r-xp 00000000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose3: 7fc9543e7000-7fc9545e6000 ---p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose3: 7fc9545e6000-7fc9545e7000 r--p 00015000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose3: 7fc9545e7000-7fc9545e8000 rw-p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose3: 7fc9545e8000-7fc9546e8000 r-xp 00000000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose3: 7fc9546e8000-7fc9548e7000 ---p 00100000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose3: 7fc9548e7000-7fc9548e8000 r--p 000ff000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose3: 7fc9548e8000-7fc9548e9000 rw-p 00100000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose3: 7fc9548e9000-7fc954a01000 r-xp 00000000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose3: 7fc954a01000-7fc954c00000 ---p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose3: 7fc954c00000-7fc954c01000 r--p 00117000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose3: 7fc954c01000-7fc954c03000 rw-p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose3: 7fc954c03000-7fc954c0a000 r-xp 00000000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose3: 7fc954c0a000-7fc954e09000 ---p 00007000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose3: 7fc954e09000-7fc954e0a000 r--p 00006000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose3: 7fc954e0a000-7fc954e0b000 rw-p 00007000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose3: 7fc954e0b000-7fc954e23000 r-xp 00000000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose3: 7fc954e23000-7fc955022000 ---p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose3: 7fc955022000-7fc955023000 r--p 00017000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose3: 7fc955023000-7fc955024000 rw-p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose3: 7fc955024000-7fc955028000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3: 7fc955028000-7fc95504b000 r-xp 00000000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose3: 7fc95504b000-7fc95524b000 ---p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose3: 7fc95524b000-7fc95524c000 r--p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose3: 7fc95524c000-7fc95525d000 rw-p 00024000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose3: 7fc95525d000-7fc95526f000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3: 7fc95526f000-7fc955410000 r-xp 00000000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose3: 7fc955410000-7fc95560f000 ---p 001a1000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose3: 7fc95560f000-7fc955613000 r--p 001a0000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose3: 7fc955613000-7fc955615000 rw-p 001a4000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose3: 7fc955615000-7fc955619000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3: 7fc955619000-7fc9557e1000 r-xp 00000000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose3: 7fc9557e1000-7fc9559e1000 ---p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose3: 7fc9559e1000-7fc9559ee000 r--p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose3: 7fc9559ee000-7fc9559f2000 rw-p 001d5000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose3: 7fc9559f2000-7fc955a3d000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3: 7fc955a3d000-7fc955a5d000 r-xp 00000000 08:02 18648                      /lib64/ld-2.19.so
+Unexpected output in transpose3: 7fc955bed000-7fc955c22000 r--s 00000000 00:11 14746                      /run/nscd/dbK2CzxF (deleted)
+Unexpected output in transpose3: 7fc955c22000-7fc955c29000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3: 7fc955c3b000-7fc955c3c000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3: 7fc955c3c000-7fc955c4c000 rw-s 00000000 00:04 978092055                  /SYSV00000000 (deleted)
+Unexpected output in transpose3: 7fc955c4c000-7fc955c5c000 rw-s 00000000 00:04 978059286                  /SYSV00000000 (deleted)
+Unexpected output in transpose3: 7fc955c5c000-7fc955c5d000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3: 7fc955c5d000-7fc955c5e000 r--p 00020000 08:02 18648                      /lib64/ld-2.19.so
+Unexpected output in transpose3: 7fc955c5e000-7fc955c5f000 rw-p 00021000 08:02 18648                      /lib64/ld-2.19.so
+Unexpected output in transpose3: 7fc955c5f000-7fc955c60000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3: 7ffed1980000-7ffed19a2000 rw-p 00000000 00:00 0                          [stack]
+Unexpected output in transpose3: 7ffed19f5000-7ffed19f7000 r-xp 00000000 00:00 0                          [vdso]
+Unexpected output in transpose3: 7ffed19f7000-7ffed19f9000 r--p 00000000 00:00 0                          [vvar]
+Unexpected output in transpose3: ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+Unexpected output in transpose3: 
+Unexpected output in transpose3: ===================================================================================
+Unexpected output in transpose3: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in transpose3: =   PID 7624 RUNNING AT zam871
+Unexpected output in transpose3: =   EXIT CODE: 6
+Unexpected output in transpose3: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in transpose3: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in transpose3: ===================================================================================
+Unexpected output in transpose3: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Aborted (signal 6)
+Unexpected output in transpose3: This typically refers to a problem with your application.
+Unexpected output in transpose3: Please see the FAQ page for debugging suggestions
+Program transpose3 exited without No Errors
+Unexpected output in transpose3_shm: *** Error in `./transpose3_shm': free(): invalid next size (fast): 0x0000000002097f70 ***
+Unexpected output in transpose3_shm: ======= Backtrace: =========
+Unexpected output in transpose3_shm: /lib64/libc.so.6(+0x727df)[0x7f63a7f7a7df]
+Unexpected output in transpose3_shm: /lib64/libc.so.6(+0x7804e)[0x7f63a7f8004e]
+Unexpected output in transpose3_shm: /lib64/libc.so.6(+0x78d56)[0x7f63a7f80d56]
+Unexpected output in transpose3_shm: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(+0x1197ce)[0x7f63a83cb7ce]
+Unexpected output in transpose3_shm: /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2(pscom_unlock+0x1ef)[0x7f63a7cc91bf]
+Unexpected output in transpose3_shm: /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2(pscom_wait+0x15)[0x7f63a7cd0cd5]
+Unexpected output in transpose3_shm: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_PSP_Wait+0x21)[0x7f63a83c4101]
+Unexpected output in transpose3_shm: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Win_wait+0xc9)[0x7f63a83cc8d9]
+Unexpected output in transpose3_shm: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPI_Win_wait+0x177)[0x7f63a837afe7]
+Unexpected output in transpose3_shm: ./transpose3_shm[0x4026f7]
+Unexpected output in transpose3_shm: /lib64/libc.so.6(__libc_start_main+0xf5)[0x7f63a7f29b05]
+Unexpected output in transpose3_shm: ./transpose3_shm[0x402339]
+Unexpected output in transpose3_shm: ======= Memory map: ========
+Unexpected output in transpose3_shm: 00400000-0040b000 r-xp 00000000 08:03 5116092                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose3_shm
+Unexpected output in transpose3_shm: 0060a000-0060b000 r--p 0000a000 08:03 5116092                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose3_shm
+Unexpected output in transpose3_shm: 0060b000-0060c000 rw-p 0000b000 08:03 5116092                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose3_shm
+Unexpected output in transpose3_shm: 0207c000-0209d000 rw-p 00000000 00:00 0                                  [heap]
+Unexpected output in transpose3_shm: 7f63a0000000-7f63a0021000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3_shm: 7f63a0021000-7f63a4000000 ---p 00000000 00:00 0 
+Unexpected output in transpose3_shm: 7f63a5b8e000-7f63a5b8f000 ---p 00000000 00:00 0 
+Unexpected output in transpose3_shm: 7f63a5b8f000-7f63a638f000 rw-p 00000000 00:00 0                          [stack:7671]
+Unexpected output in transpose3_shm: 7f63a638f000-7f63a63ab000 r-xp 00000000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose3_shm: 7f63a63ab000-7f63a65aa000 ---p 0001c000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose3_shm: 7f63a65aa000-7f63a65ac000 r--p 0001b000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose3_shm: 7f63a65ac000-7f63a65ad000 rw-p 0001d000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose3_shm: 7f63a65ad000-7f63a6608000 r-xp 00000000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose3_shm: 7f63a6608000-7f63a6807000 ---p 0005b000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose3_shm: 7f63a6807000-7f63a680a000 r--p 0005a000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose3_shm: 7f63a680a000-7f63a680e000 rw-p 0005d000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose3_shm: 7f63a680e000-7f63a6810000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3_shm: 7f63a6810000-7f63a6821000 r-xp 00000000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose3_shm: 7f63a6821000-7f63a6a20000 ---p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose3_shm: 7f63a6a20000-7f63a6a21000 r--p 00010000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose3_shm: 7f63a6a21000-7f63a6a22000 rw-p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose3_shm: 7f63a6a22000-7f63a6a29000 r-xp 00000000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose3_shm: 7f63a6a29000-7f63a6c28000 ---p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose3_shm: 7f63a6c28000-7f63a6c29000 r--p 00006000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose3_shm: 7f63a6c29000-7f63a6c2a000 rw-p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose3_shm: 7f63a6c2a000-7f63a6c2d000 r-xp 00000000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose3_shm: 7f63a6c2d000-7f63a6e2c000 ---p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose3_shm: 7f63a6e2c000-7f63a6e2d000 r--p 00002000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose3_shm: 7f63a6e2d000-7f63a6e2e000 rw-p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose3_shm: 7f63a6e2e000-7f63a6e69000 r-xp 00000000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose3_shm: 7f63a6e69000-7f63a7068000 ---p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose3_shm: 7f63a7068000-7f63a7069000 r--p 0003a000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose3_shm: 7f63a7069000-7f63a706a000 rw-p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose3_shm: 7f63a706a000-7f63a7080000 r-xp 00000000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose3_shm: 7f63a7080000-7f63a727f000 ---p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose3_shm: 7f63a727f000-7f63a7280000 r--p 00015000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose3_shm: 7f63a7280000-7f63a7281000 rw-p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose3_shm: 7f63a7281000-7f63a7381000 r-xp 00000000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose3_shm: 7f63a7381000-7f63a7580000 ---p 00100000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose3_shm: 7f63a7580000-7f63a7581000 r--p 000ff000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose3_shm: 7f63a7581000-7f63a7582000 rw-p 00100000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose3_shm: 7f63a7582000-7f63a769a000 r-xp 00000000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose3_shm: 7f63a769a000-7f63a7899000 ---p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose3_shm: 7f63a7899000-7f63a789a000 r--p 00117000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose3_shm: 7f63a789a000-7f63a789c000 rw-p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose3_shm: 7f63a789c000-7f63a78a3000 r-xp 00000000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose3_shm: 7f63a78a3000-7f63a7aa2000 ---p 00007000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose3_shm: 7f63a7aa2000-7f63a7aa3000 r--p 00006000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose3_shm: 7f63a7aa3000-7f63a7aa4000 rw-p 00007000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose3_shm: 7f63a7aa4000-7f63a7abc000 r-xp 00000000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose3_shm: 7f63a7abc000-7f63a7cbb000 ---p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose3_shm: 7f63a7cbb000-7f63a7cbc000 r--p 00017000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose3_shm: 7f63a7cbc000-7f63a7cbd000 rw-p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose3_shm: 7f63a7cbd000-7f63a7cc1000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3_shm: 7f63a7cc1000-7f63a7ce4000 r-xp 00000000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose3_shm: 7f63a7ce4000-7f63a7ee4000 ---p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose3_shm: 7f63a7ee4000-7f63a7ee5000 r--p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose3_shm: 7f63a7ee5000-7f63a7ef6000 rw-p 00024000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose3_shm: 7f63a7ef6000-7f63a7f08000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3_shm: 7f63a7f08000-7f63a80a9000 r-xp 00000000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose3_shm: 7f63a80a9000-7f63a82a8000 ---p 001a1000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose3_shm: 7f63a82a8000-7f63a82ac000 r--p 001a0000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose3_shm: 7f63a82ac000-7f63a82ae000 rw-p 001a4000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose3_shm: 7f63a82ae000-7f63a82b2000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3_shm: 7f63a82b2000-7f63a847a000 r-xp 00000000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose3_shm: 7f63a847a000-7f63a867a000 ---p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose3_shm: 7f63a867a000-7f63a8687000 r--p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose3_shm: 7f63a8687000-7f63a868b000 rw-p 001d5000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose3_shm: 7f63a868b000-7f63a86d6000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3_shm: 7f63a86d6000-7f63a86f6000 r-xp 00000000 08:02 18648                      /lib64/ld-2.19.so
+Unexpected output in transpose3_shm: 7f63a8886000-7f63a88bb000 r--s 00000000 00:11 14746                      /run/nscd/dbK2CzxF (deleted)
+Unexpected output in transpose3_shm: 7f63a88bb000-7f63a88c2000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3_shm: 7f63a88d4000-7f63a88d5000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3_shm: 7f63a88d5000-7f63a88e5000 rw-s 00000000 00:04 978157591                  /SYSV00000000 (deleted)
+Unexpected output in transpose3_shm: 7f63a88e5000-7f63a88f5000 rw-s 00000000 00:04 978124822                  /SYSV00000000 (deleted)
+Unexpected output in transpose3_shm: 7f63a88f5000-7f63a88f6000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3_shm: 7f63a88f6000-7f63a88f7000 r--p 00020000 08:02 18648                      /lib64/ld-2.19.so
+Unexpected output in transpose3_shm: 7f63a88f7000-7f63a88f8000 rw-p 00021000 08:02 18648                      /lib64/ld-2.19.so
+Unexpected output in transpose3_shm: 7f63a88f8000-7f63a88f9000 rw-p 00000000 00:00 0 
+Unexpected output in transpose3_shm: 7ffc06f18000-7ffc06f3a000 rw-p 00000000 00:00 0                          [stack]
+Unexpected output in transpose3_shm: 7ffc06f3c000-7ffc06f3e000 r-xp 00000000 00:00 0                          [vdso]
+Unexpected output in transpose3_shm: 7ffc06f3e000-7ffc06f40000 r--p 00000000 00:00 0                          [vvar]
+Unexpected output in transpose3_shm: ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+Unexpected output in transpose3_shm: 
+Unexpected output in transpose3_shm: ===================================================================================
+Unexpected output in transpose3_shm: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in transpose3_shm: =   PID 7670 RUNNING AT zam871
+Unexpected output in transpose3_shm: =   EXIT CODE: 6
+Unexpected output in transpose3_shm: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in transpose3_shm: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in transpose3_shm: ===================================================================================
+Unexpected output in transpose3_shm: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Aborted (signal 6)
+Unexpected output in transpose3_shm: This typically refers to a problem with your application.
+Unexpected output in transpose3_shm: Please see the FAQ page for debugging suggestions
+Program transpose3_shm exited without No Errors
+Unexpected output in transpose5: 
+Unexpected output in transpose5: ===================================================================================
+Unexpected output in transpose5: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in transpose5: =   PID 7717 RUNNING AT zam871
+Unexpected output in transpose5: =   EXIT CODE: 11
+Unexpected output in transpose5: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in transpose5: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in transpose5: ===================================================================================
+Unexpected output in transpose5: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in transpose5: This typically refers to a problem with your application.
+Unexpected output in transpose5: Please see the FAQ page for debugging suggestions
+Program transpose5 exited without No Errors
+Unexpected output in transpose7: Error: A[0][0]=-1 should be 0
+Unexpected output in transpose7: Error: A[0][1]=-1 should be 1000
+Unexpected output in transpose7: Error: A[0][2]=-1 should be 2000
+Unexpected output in transpose7: Error: A[0][3]=-1 should be 3000
+Unexpected output in transpose7: Error: A[0][4]=-1 should be 4000
+Unexpected output in transpose7: Error: A[0][5]=-1 should be 5000
+Unexpected output in transpose7: Error: A[0][6]=-1 should be 6000
+Unexpected output in transpose7: Error: A[0][7]=-1 should be 7000
+Unexpected output in transpose7: Error: A[0][8]=-1 should be 8000
+Unexpected output in transpose7: Error: A[0][9]=-1 should be 9000
+Unexpected output in transpose7: Error: A[0][10]=-1 should be 10000
+Unexpected output in transpose7: Error: A[0][11]=-1 should be 11000
+Unexpected output in transpose7: Error: A[0][12]=-1 should be 12000
+Unexpected output in transpose7: Error: A[0][13]=-1 should be 13000
+Unexpected output in transpose7: Error: A[0][14]=-1 should be 14000
+Unexpected output in transpose7: Error: A[0][15]=-1 should be 15000
+Unexpected output in transpose7: Error: A[0][16]=-1 should be 16000
+Unexpected output in transpose7: Error: A[0][17]=-1 should be 17000
+Unexpected output in transpose7: Error: A[0][18]=-1 should be 18000
+Unexpected output in transpose7: Error: A[0][19]=-1 should be 19000
+Unexpected output in transpose7: Error: A[0][20]=-1 should be 20000
+Unexpected output in transpose7: Error: A[0][21]=-1 should be 21000
+Unexpected output in transpose7: Error: A[0][22]=-1 should be 22000
+Unexpected output in transpose7: Error: A[0][23]=-1 should be 23000
+Unexpected output in transpose7: Error: A[0][24]=-1 should be 24000
+Unexpected output in transpose7: Error: A[0][25]=-1 should be 25000
+Unexpected output in transpose7: Error: A[0][26]=-1 should be 26000
+Unexpected output in transpose7: Error: A[0][27]=-1 should be 27000
+Unexpected output in transpose7: Error: A[0][28]=-1 should be 28000
+Unexpected output in transpose7: Error: A[0][29]=-1 should be 29000
+Unexpected output in transpose7: Error: A[0][30]=-1 should be 30000
+Unexpected output in transpose7: Error: A[0][31]=-1 should be 31000
+Unexpected output in transpose7: Error: A[0][32]=-1 should be 32000
+Unexpected output in transpose7: Error: A[0][33]=-1 should be 33000
+Unexpected output in transpose7: Error: A[0][34]=-1 should be 34000
+Unexpected output in transpose7: Error: A[0][35]=-1 should be 35000
+Unexpected output in transpose7: Error: A[0][36]=-1 should be 36000
+Unexpected output in transpose7: Error: A[0][37]=-1 should be 37000
+Unexpected output in transpose7: Error: A[0][38]=-1 should be 38000
+Unexpected output in transpose7: Error: A[0][39]=-1 should be 39000
+Unexpected output in transpose7: Error: A[0][40]=-1 should be 40000
+Unexpected output in transpose7: Error: A[0][41]=-1 should be 41000
+Unexpected output in transpose7: Error: A[0][42]=-1 should be 42000
+Unexpected output in transpose7: Error: A[0][43]=-1 should be 43000
+Unexpected output in transpose7: Error: A[0][44]=-1 should be 44000
+Unexpected output in transpose7: Error: A[0][45]=-1 should be 45000
+Unexpected output in transpose7: Error: A[0][46]=-1 should be 46000
+Unexpected output in transpose7: Error: A[0][47]=-1 should be 47000
+Unexpected output in transpose7: Error: A[0][48]=-1 should be 48000
+Unexpected output in transpose7: Error: A[0][49]=-1 should be 49000
+Unexpected output in transpose7: Total number of errors: 1000000
+Unexpected output in transpose7:  Found 1000000 errors
+Program transpose7 exited without No Errors
+Unexpected output in lock_dt: 
+Unexpected output in lock_dt: ===================================================================================
+Unexpected output in lock_dt: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in lock_dt: =   PID 8453 RUNNING AT zam871
+Unexpected output in lock_dt: =   EXIT CODE: 11
+Unexpected output in lock_dt: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in lock_dt: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in lock_dt: ===================================================================================
+Unexpected output in lock_dt: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in lock_dt: This typically refers to a problem with your application.
+Unexpected output in lock_dt: Please see the FAQ page for debugging suggestions
+Program lock_dt exited without No Errors
+Unexpected output in lock_dt_flush: 
+Unexpected output in lock_dt_flush: ===================================================================================
+Unexpected output in lock_dt_flush: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in lock_dt_flush: =   PID 8500 RUNNING AT zam871
+Unexpected output in lock_dt_flush: =   EXIT CODE: 11
+Unexpected output in lock_dt_flush: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in lock_dt_flush: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in lock_dt_flush: ===================================================================================
+Unexpected output in lock_dt_flush: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in lock_dt_flush: This typically refers to a problem with your application.
+Unexpected output in lock_dt_flush: Please see the FAQ page for debugging suggestions
+Program lock_dt_flush exited without No Errors
+Unexpected output in lock_dt_flushlocal: Deadlock detected! Process 8546 will wait forever.
+Unexpected output in lock_dt_flushlocal: ('wait' called without outstanding send or recv requests).
+Unexpected output in lock_dt_flushlocal: Requests:
+Unexpected output in lock_dt_flushlocal: Sockets:
+Unexpected output in lock_dt_flushlocal:   sock#0x20916a0 listen:    -1 demand:   0(   0)  src:(134.94.169.164,8546,(nil),r0000000) anyrecv:     2
+Unexpected output in lock_dt_flushlocal:   Connections:
+Unexpected output in lock_dt_flushlocal:     con#0x2093e20 type:  loop state:    open dest:(134.94.169.164,8546,0x2093e20,r0000000) recvcnt:    1
+Unexpected output in lock_dt_flushlocal:     con#0x20941e0 type:   shm state:    norw dest:(134.94.169.164,8547,0x149cff0,r0000001) recvcnt:    1
+Unexpected output in lock_dt_flushlocal: Fds:
+Unexpected output in lock_dt_flushlocal: 
+Unexpected output in lock_dt_flushlocal: 
+Unexpected output in lock_dt_flushlocal: ===================================================================================
+Unexpected output in lock_dt_flushlocal: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in lock_dt_flushlocal: =   PID 8547 RUNNING AT zam871
+Unexpected output in lock_dt_flushlocal: =   EXIT CODE: 11
+Unexpected output in lock_dt_flushlocal: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in lock_dt_flushlocal: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in lock_dt_flushlocal: ===================================================================================
+Unexpected output in lock_dt_flushlocal: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in lock_dt_flushlocal: This typically refers to a problem with your application.
+Unexpected output in lock_dt_flushlocal: Please see the FAQ page for debugging suggestions
+Program lock_dt_flushlocal exited without No Errors
+Unexpected output in lockall_dt: 
+Unexpected output in lockall_dt: ===================================================================================
+Unexpected output in lockall_dt: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in lockall_dt: =   PID 8596 RUNNING AT zam871
+Unexpected output in lockall_dt: =   EXIT CODE: 11
+Unexpected output in lockall_dt: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in lockall_dt: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in lockall_dt: ===================================================================================
+Unexpected output in lockall_dt: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in lockall_dt: This typically refers to a problem with your application.
+Unexpected output in lockall_dt: Please see the FAQ page for debugging suggestions
+Program lockall_dt exited without No Errors
+Unexpected output in lockall_dt_flush: 
+Unexpected output in lockall_dt_flush: ===================================================================================
+Unexpected output in lockall_dt_flush: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in lockall_dt_flush: =   PID 8647 RUNNING AT zam871
+Unexpected output in lockall_dt_flush: =   EXIT CODE: 11
+Unexpected output in lockall_dt_flush: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in lockall_dt_flush: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in lockall_dt_flush: ===================================================================================
+Unexpected output in lockall_dt_flush: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in lockall_dt_flush: This typically refers to a problem with your application.
+Unexpected output in lockall_dt_flush: Please see the FAQ page for debugging suggestions
+Program lockall_dt_flush exited without No Errors
+Unexpected output in lockall_dt_flushall: 
+Unexpected output in lockall_dt_flushall: ===================================================================================
+Unexpected output in lockall_dt_flushall: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in lockall_dt_flushall: =   PID 8696 RUNNING AT zam871
+Unexpected output in lockall_dt_flushall: =   EXIT CODE: 11
+Unexpected output in lockall_dt_flushall: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in lockall_dt_flushall: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in lockall_dt_flushall: ===================================================================================
+Unexpected output in lockall_dt_flushall: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in lockall_dt_flushall: This typically refers to a problem with your application.
+Unexpected output in lockall_dt_flushall: Please see the FAQ page for debugging suggestions
+Program lockall_dt_flushall exited without No Errors
+Unexpected output in lockall_dt_flushlocal: Data expected = fe but got p[0,0,1] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = fd but got p[0,0,2] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = fc but got p[0,0,3] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = fb but got p[0,0,4] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = fa but got p[0,0,5] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = f9 but got p[0,0,6] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = f8 but got p[0,0,7] = ff
+Unexpected output in lockall_dt_flushlocal: MTestTypeSubarrayCheckbuf error
+Unexpected output in lockall_dt_flushlocal: Data expected = fe but got p[0,0,1] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = fd but got p[0,0,2] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = fc but got p[0,0,3] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = fb but got p[0,0,4] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = fa but got p[0,0,5] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = f9 but got p[0,0,6] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = f8 but got p[0,0,7] = ff
+Unexpected output in lockall_dt_flushlocal: MTestTypeSubarrayCheckbuf error
+Unexpected output in lockall_dt_flushlocal: Data expected = fe but got p[0,0,1] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = fd but got p[0,0,2] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = fc but got p[0,0,3] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = fb but got p[0,0,4] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = fa but got p[0,0,5] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = f9 but got p[0,0,6] = ff
+Unexpected output in lockall_dt_flushlocal: Data expected = f8 but got p[0,0,7] = ff
+Unexpected output in lockall_dt_flushlocal: MTestTypeSubarrayCheckbuf error
+Unexpected output in lockall_dt_flushlocal: 
+Unexpected output in lockall_dt_flushlocal: ===================================================================================
+Unexpected output in lockall_dt_flushlocal: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in lockall_dt_flushlocal: =   PID 8752 RUNNING AT zam871
+Unexpected output in lockall_dt_flushlocal: =   EXIT CODE: 11
+Unexpected output in lockall_dt_flushlocal: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in lockall_dt_flushlocal: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in lockall_dt_flushlocal: ===================================================================================
+Unexpected output in lockall_dt_flushlocal: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in lockall_dt_flushlocal: This typically refers to a problem with your application.
+Unexpected output in lockall_dt_flushlocal: Please see the FAQ page for debugging suggestions
+Program lockall_dt_flushlocal exited without No Errors
+Unexpected output in lockall_dt_flushlocalall: 
+Unexpected output in lockall_dt_flushlocalall: ===================================================================================
+Unexpected output in lockall_dt_flushlocalall: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in lockall_dt_flushlocalall: =   PID 8805 RUNNING AT zam871
+Unexpected output in lockall_dt_flushlocalall: =   EXIT CODE: 11
+Unexpected output in lockall_dt_flushlocalall: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in lockall_dt_flushlocalall: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in lockall_dt_flushlocalall: ===================================================================================
+Unexpected output in lockall_dt_flushlocalall: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in lockall_dt_flushlocalall: This typically refers to a problem with your application.
+Unexpected output in lockall_dt_flushlocalall: Please see the FAQ page for debugging suggestions
+Program lockall_dt_flushlocalall exited without No Errors
+Unexpected output in lock_contention_dt: 
+Unexpected output in lock_contention_dt: ===================================================================================
+Unexpected output in lock_contention_dt: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in lock_contention_dt: =   PID 8854 RUNNING AT zam871
+Unexpected output in lock_contention_dt: =   EXIT CODE: 11
+Unexpected output in lock_contention_dt: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in lock_contention_dt: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in lock_contention_dt: ===================================================================================
+Unexpected output in lock_contention_dt: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in lock_contention_dt: This typically refers to a problem with your application.
+Unexpected output in lock_contention_dt: Please see the FAQ page for debugging suggestions
+Program lock_contention_dt exited without No Errors
+Unexpected output in transpose4: *** Error in `./transpose4': free(): invalid next size (fast): 0x0000000002531340 ***
+Unexpected output in transpose4: ======= Backtrace: =========
+Unexpected output in transpose4: /lib64/libc.so.6(+0x727df)[0x7f82ba5327df]
+Unexpected output in transpose4: /lib64/libc.so.6(+0x7804e)[0x7f82ba53804e]
+Unexpected output in transpose4: /lib64/libc.so.6(+0x78d56)[0x7f82ba538d56]
+Unexpected output in transpose4: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(+0x1197ce)[0x7f82ba9837ce]
+Unexpected output in transpose4: /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2(pscom_unlock+0x1ef)[0x7f82ba2811bf]
+Unexpected output in transpose4: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Progress_wait+0x18)[0x7f82ba97c098]
+Unexpected output in transpose4: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIC_Wait+0x55)[0x7f82ba94cec5]
+Unexpected output in transpose4: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIC_Sendrecv+0x22a)[0x7f82ba94d68a]
+Unexpected output in transpose4: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter_intra+0x2464)[0x7f82ba8cd774]
+Unexpected output in transpose4: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter+0x1b)[0x7f82ba8ce85b]
+Unexpected output in transpose4: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter_impl+0x39)[0x7f82ba8ce909]
+Unexpected output in transpose4: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Win_fence+0x74)[0x7f82ba9842f4]
+Unexpected output in transpose4: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Win_free+0x3f)[0x7f82ba981edf]
+Unexpected output in transpose4: /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPI_Win_free+0x15d)[0x7f82ba930d4d]
+Unexpected output in transpose4: ./transpose4[0x4024cc]
+Unexpected output in transpose4: /lib64/libc.so.6(__libc_start_main+0xf5)[0x7f82ba4e1b05]
+Unexpected output in transpose4: ./transpose4[0x402139]
+Unexpected output in transpose4: ======= Memory map: ========
+Unexpected output in transpose4: 00400000-0040b000 r-xp 00000000 08:03 5116093                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose4
+Unexpected output in transpose4: 0060a000-0060b000 r--p 0000a000 08:03 5116093                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose4
+Unexpected output in transpose4: 0060b000-0060c000 rw-p 0000b000 08:03 5116093                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose4
+Unexpected output in transpose4: 0251f000-02540000 rw-p 00000000 00:00 0                                  [heap]
+Unexpected output in transpose4: 7f82b4000000-7f82b4021000 rw-p 00000000 00:00 0 
+Unexpected output in transpose4: 7f82b4021000-7f82b8000000 ---p 00000000 00:00 0 
+Unexpected output in transpose4: 7f82b8146000-7f82b8147000 ---p 00000000 00:00 0 
+Unexpected output in transpose4: 7f82b8147000-7f82b8947000 rw-p 00000000 00:00 0                          [stack:8907]
+Unexpected output in transpose4: 7f82b8947000-7f82b8963000 r-xp 00000000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose4: 7f82b8963000-7f82b8b62000 ---p 0001c000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose4: 7f82b8b62000-7f82b8b64000 r--p 0001b000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose4: 7f82b8b64000-7f82b8b65000 rw-p 0001d000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+Unexpected output in transpose4: 7f82b8b65000-7f82b8bc0000 r-xp 00000000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose4: 7f82b8bc0000-7f82b8dbf000 ---p 0005b000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose4: 7f82b8dbf000-7f82b8dc2000 r--p 0005a000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose4: 7f82b8dc2000-7f82b8dc6000 rw-p 0005d000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+Unexpected output in transpose4: 7f82b8dc6000-7f82b8dc8000 rw-p 00000000 00:00 0 
+Unexpected output in transpose4: 7f82b8dc8000-7f82b8dd9000 r-xp 00000000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose4: 7f82b8dd9000-7f82b8fd8000 ---p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose4: 7f82b8fd8000-7f82b8fd9000 r--p 00010000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose4: 7f82b8fd9000-7f82b8fda000 rw-p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+Unexpected output in transpose4: 7f82b8fda000-7f82b8fe1000 r-xp 00000000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose4: 7f82b8fe1000-7f82b91e0000 ---p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose4: 7f82b91e0000-7f82b91e1000 r--p 00006000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose4: 7f82b91e1000-7f82b91e2000 rw-p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+Unexpected output in transpose4: 7f82b91e2000-7f82b91e5000 r-xp 00000000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose4: 7f82b91e5000-7f82b93e4000 ---p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose4: 7f82b93e4000-7f82b93e5000 r--p 00002000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose4: 7f82b93e5000-7f82b93e6000 rw-p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+Unexpected output in transpose4: 7f82b93e6000-7f82b9421000 r-xp 00000000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose4: 7f82b9421000-7f82b9620000 ---p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose4: 7f82b9620000-7f82b9621000 r--p 0003a000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose4: 7f82b9621000-7f82b9622000 rw-p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+Unexpected output in transpose4: 7f82b9622000-7f82b9638000 r-xp 00000000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose4: 7f82b9638000-7f82b9837000 ---p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose4: 7f82b9837000-7f82b9838000 r--p 00015000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose4: 7f82b9838000-7f82b9839000 rw-p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+Unexpected output in transpose4: 7f82b9839000-7f82b9939000 r-xp 00000000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose4: 7f82b9939000-7f82b9b38000 ---p 00100000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose4: 7f82b9b38000-7f82b9b39000 r--p 000ff000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose4: 7f82b9b39000-7f82b9b3a000 rw-p 00100000 08:02 18663                      /lib64/libm-2.19.so
+Unexpected output in transpose4: 7f82b9b3a000-7f82b9c52000 r-xp 00000000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose4: 7f82b9c52000-7f82b9e51000 ---p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose4: 7f82b9e51000-7f82b9e52000 r--p 00117000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose4: 7f82b9e52000-7f82b9e54000 rw-p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+Unexpected output in transpose4: 7f82b9e54000-7f82b9e5b000 r-xp 00000000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose4: 7f82b9e5b000-7f82ba05a000 ---p 00007000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose4: 7f82ba05a000-7f82ba05b000 r--p 00006000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose4: 7f82ba05b000-7f82ba05c000 rw-p 00007000 08:02 18688                      /lib64/librt-2.19.so
+Unexpected output in transpose4: 7f82ba05c000-7f82ba074000 r-xp 00000000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose4: 7f82ba074000-7f82ba273000 ---p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose4: 7f82ba273000-7f82ba274000 r--p 00017000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose4: 7f82ba274000-7f82ba275000 rw-p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+Unexpected output in transpose4: 7f82ba275000-7f82ba279000 rw-p 00000000 00:00 0 
+Unexpected output in transpose4: 7f82ba279000-7f82ba29c000 r-xp 00000000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose4: 7f82ba29c000-7f82ba49c000 ---p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose4: 7f82ba49c000-7f82ba49d000 r--p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose4: 7f82ba49d000-7f82ba4ae000 rw-p 00024000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+Unexpected output in transpose4: 7f82ba4ae000-7f82ba4c0000 rw-p 00000000 00:00 0 
+Unexpected output in transpose4: 7f82ba4c0000-7f82ba661000 r-xp 00000000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose4: 7f82ba661000-7f82ba860000 ---p 001a1000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose4: 7f82ba860000-7f82ba864000 r--p 001a0000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose4: 7f82ba864000-7f82ba866000 rw-p 001a4000 08:02 18655                      /lib64/libc-2.19.so
+Unexpected output in transpose4: 7f82ba866000-7f82ba86a000 rw-p 00000000 00:00 0 
+Unexpected output in transpose4: 7f82ba86a000-7f82baa32000 r-xp 00000000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose4: 7f82baa32000-7f82bac32000 ---p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose4: 7f82bac32000-7f82bac3f000 r--p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose4: 7f82bac3f000-7f82bac43000 rw-p 001d5000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+Unexpected output in transpose4: 7f82bac43000-7f82bac8e000 rw-p 00000000 00:00 0 
+Unexpected output in transpose4: 7f82bac8e000-7f82bacae000 r-xp 00000000 08:02 18648                      /lib64/ld-2.19.so
+Unexpected output in transpose4: 7f82bae3e000-7f82bae73000 r--s 00000000 00:11 14746                      /run/nscd/dbK2CzxF (deleted)
+Unexpected output in transpose4: 7f82bae73000-7f82bae7a000 rw-p 00000000 00:00 0 
+Unexpected output in transpose4: 7f82bae8c000-7f82bae8d000 rw-p 00000000 00:00 0 
+Unexpected output in transpose4: 7f82bae8d000-7f82bae9d000 rw-s 00000000 00:04 985694231                  /SYSV00000000 (deleted)
+Unexpected output in transpose4: 7f82bae9d000-7f82baead000 rw-s 00000000 00:04 985661462                  /SYSV00000000 (deleted)
+Unexpected output in transpose4: 7f82baead000-7f82baeae000 rw-p 00000000 00:00 0 
+Unexpected output in transpose4: 7f82baeae000-7f82baeaf000 r--p 00020000 08:02 18648                      /lib64/ld-2.19.so
+Unexpected output in transpose4: 7f82baeaf000-7f82baeb0000 rw-p 00021000 08:02 18648                      /lib64/ld-2.19.so
+Unexpected output in transpose4: 7f82baeb0000-7f82baeb1000 rw-p 00000000 00:00 0 
+Unexpected output in transpose4: 7ffd88c7e000-7ffd88ca0000 rw-p 00000000 00:00 0                          [stack]
+Unexpected output in transpose4: 7ffd88d7a000-7ffd88d7c000 r-xp 00000000 00:00 0                          [vdso]
+Unexpected output in transpose4: 7ffd88d7c000-7ffd88d7e000 r--p 00000000 00:00 0                          [vvar]
+Unexpected output in transpose4: ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+Unexpected output in transpose4: Deadlock detected! Process 8904 will wait forever.
+Unexpected output in transpose4: ('wait' called without outstanding send or recv requests).
+Unexpected output in transpose4: Requests:
+Unexpected output in transpose4: Sockets:
+Unexpected output in transpose4:   sock#0x9656a0 listen:    -1 demand:   0(   0)  src:(134.94.169.164,8904,(nil),r0000000) anyrecv:     2
+Unexpected output in transpose4:   Connections:
+Unexpected output in transpose4:     con#0x967e20 type:  loop state:    open dest:(134.94.169.164,8904,0x967e20,r0000000) recvcnt:    1
+Unexpected output in transpose4: 
+Unexpected output in transpose4: ===================================================================================
+Unexpected output in transpose4: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in transpose4: =   PID 8905 RUNNING AT zam871
+Unexpected output in transpose4: =   EXIT CODE: 6
+Unexpected output in transpose4: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in transpose4: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in transpose4: ===================================================================================
+Unexpected output in transpose4: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Aborted (signal 6)
+Unexpected output in transpose4: This typically refers to a problem with your application.
+Unexpected output in transpose4: Please see the FAQ page for debugging suggestions
+Program transpose4 exited without No Errors
+Unexpected output in epochtest: [mpiexec@zam871] APPLICATION TIMED OUT
+Unexpected output in epochtest: [proxy:0:0@zam871] HYD_pmcd_pmip_control_cmd_cb (/home/clauss/Work/psmpi/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:885): assert (!closed) failed
+Unexpected output in epochtest: [proxy:0:0@zam871] HYDT_dmxu_poll_wait_for_event (/home/clauss/Work/psmpi/mpich2/src/pm/hydra/tools/demux/demux_poll.c:76): callback returned error status
+Unexpected output in epochtest: [proxy:0:0@zam871] main (/home/clauss/Work/psmpi/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+Program epochtest exited without No Errors
+Unexpected output in strided_acc_subarray: 
+Unexpected output in strided_acc_subarray: ===================================================================================
+Unexpected output in strided_acc_subarray: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in strided_acc_subarray: =   PID 10961 RUNNING AT zam871
+Unexpected output in strided_acc_subarray: =   EXIT CODE: 11
+Unexpected output in strided_acc_subarray: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in strided_acc_subarray: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in strided_acc_subarray: ===================================================================================
+Unexpected output in strided_acc_subarray: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in strided_acc_subarray: This typically refers to a problem with your application.
+Unexpected output in strided_acc_subarray: Please see the FAQ page for debugging suggestions
+Program strided_acc_subarray exited without No Errors
+Unexpected output in acc-pairtype: Deadlock detected! Process 14605 will wait forever.
+Unexpected output in acc-pairtype: ('wait' called without outstanding send or recv requests).
+Unexpected output in acc-pairtype: Requests:
+Unexpected output in acc-pairtype: Sockets:
+Unexpected output in acc-pairtype:   sock#0x25af6a0 listen:    -1 demand:   0(   0)  src:(134.94.169.164,14605,(nil),r0000000) anyrecv:     2
+Unexpected output in acc-pairtype:   Connections:
+Unexpected output in acc-pairtype: 
+Unexpected output in acc-pairtype: ===================================================================================
+Unexpected output in acc-pairtype: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in acc-pairtype: =   PID 14606 RUNNING AT zam871
+Unexpected output in acc-pairtype: =   EXIT CODE: 11
+Unexpected output in acc-pairtype: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in acc-pairtype: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in acc-pairtype: ===================================================================================
+Unexpected output in acc-pairtype: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in acc-pairtype: This typically refers to a problem with your application.
+Unexpected output in acc-pairtype: Please see the FAQ page for debugging suggestions
+Program acc-pairtype exited without No Errors
+Processing directory spawn
+Looking in ./spawn/testlist
+Processing directory topo
+Looking in ./topo/testlist
+Processing directory io
+Looking in ./io/testlist
+Some programs (async) may still be running:
+pids = 1996 2032 
+The executable (async) will not be removed.
+Processing directory f77
+Looking in ./f77/testlist
+Processing directory attr
+Looking in ./f77/attr/testlist
+Processing directory coll
+Looking in ./f77/coll/testlist
+Processing directory datatype
+Looking in ./f77/datatype/testlist
+Processing directory pt2pt
+Looking in ./f77/pt2pt/testlist
+Processing directory info
+Looking in ./f77/info/testlist
+Processing directory spawn
+Looking in ./f77/spawn/testlist
+Processing directory io
+Looking in ./f77/io/testlist
+Processing directory rma
+Looking in ./f77/rma/testlist
+Processing directory init
+Looking in ./f77/init/testlist
+Processing directory comm
+Looking in ./f77/comm/testlist
+Processing directory ext
+Looking in ./f77/ext/testlist
+Processing directory topo
+Looking in ./f77/topo/testlist
+Processing directory profile
+Looking in ./f77/profile/testlist
+Processing directory cxx
+Looking in ./cxx/testlist
+Processing directory attr
+Looking in ./cxx/attr/testlist
+Processing directory pt2pt
+Looking in ./cxx/pt2pt/testlist
+Processing directory comm
+Looking in ./cxx/comm/testlist
+Processing directory coll
+Looking in ./cxx/coll/testlist
+Processing directory errhan
+Looking in ./cxx/errhan/testlist
+Processing directory init
+Looking in ./cxx/init/testlist
+Processing directory info
+Looking in ./cxx/info/testlist
+Processing directory datatype
+Looking in ./cxx/datatype/testlist
+Processing directory topo
+Looking in ./cxx/topo/testlist
+Processing directory io
+Looking in ./cxx/io/testlist
+Processing directory spawn
+Looking in ./cxx/spawn/testlist
+Processing directory rma
+Looking in ./cxx/rma/testlist
+Processing directory f90
+Looking in ./f90/testlist
+Processing directory attr
+Looking in ./f90/attr/testlist
+Processing directory coll
+Looking in ./f90/coll/testlist
+Processing directory comm
+Looking in ./f90/comm/testlist
+Processing directory ext
+Looking in ./f90/ext/testlist
+Processing directory info
+Looking in ./f90/info/testlist
+Processing directory init
+Looking in ./f90/init/testlist
+Processing directory io
+Looking in ./f90/io/testlist
+Processing directory misc
+Looking in ./f90/misc/testlist
+Processing directory pt2pt
+Looking in ./f90/pt2pt/testlist
+Processing directory datatype
+Looking in ./f90/datatype/testlist
+Processing directory f90types
+Looking in ./f90/f90types/testlist
+Processing directory rma
+Looking in ./f90/rma/testlist
+Processing directory spawn
+Looking in ./f90/spawn/testlist
+Processing directory timer
+Looking in ./f90/timer/testlist
+Processing directory topo
+Looking in ./f90/topo/testlist
+Processing directory profile
+Looking in ./f90/profile/testlist
+Processing directory errors
+Looking in ./errors/testlist
+Processing directory attr
+Looking in ./errors/attr/testlist
+Processing directory coll
+Looking in ./errors/coll/testlist
+Processing directory comm
+Looking in ./errors/comm/testlist
+Processing directory group
+Looking in ./errors/group/testlist
+Processing directory pt2pt
+Looking in ./errors/pt2pt/testlist
+Processing directory topo
+Looking in ./errors/topo/testlist
+Processing directory rma
+Looking in ./errors/rma/testlist
+Processing directory spawn
+Looking in ./errors/spawn/testlist
+Processing directory io
+Looking in ./errors/io/testlist
+Processing directory f77
+Looking in ./errors/f77/testlist
+Processing directory io
+Looking in ./errors/f77/io/testlist
+Processing directory cxx
+Looking in ./errors/cxx/testlist
+Processing directory errhan
+Looking in ./errors/cxx/errhan/testlist
+Processing directory io
+Looking in ./errors/cxx/io/testlist
+Processing directory f90
+Looking in ./errors/f90/testlist
+Processing directory io
+Looking in ./errors/f90/io/testlist
+26 tests failed out of 937
+Details in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.xml
+TAP formatted results in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.tap
+JUNIT formatted results in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.junit.xml
+make[3]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi'
+(XMLFILE=../mpi/summary.xml && XMLCONTINUE=YES && \
+export XMLFILE && export XMLCONTINUE && \
+cd commands && make testing)
+make[3]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test/commands'
+make[3]: Nothing to be done for 'testing'.
+make[3]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test/commands'
+make[2]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test'
+make[1]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2'
+./parastation/acc-pairtype np=2:
+Deadlock detected! Process 18573 will wait forever.
+('wait' called without outstanding send or recv requests).
+Requests:
+Sockets:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 18574 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./parastation/get-acc-pairtype np=2:
+Deadlock detected! Process 18667 will wait forever.
+('wait' called without outstanding send or recv requests).
+Requests:
+Sockets:
+  sock#0x18416a0 listen:    -1 demand:   0(   0)  src:(134.94.169.164,18667,(nil),r0000000) anyrecv:     2
+  Connections:
+    con#0x1843e20 type:  loop state:    open dest:(134.94.169.164,18667,0x1843e20,r0000000) recvcnt:    1
+    con#0x18441e0 type:   shm state:    norw dest:(134.94.169.164,18668,0x932ff0,r0000001) recvcnt:    1
+Fds:
+
+Reqs:16 GenReqs: (cnt:1  used:0)
+ReqsAnySrc:4 RecvQAnySrc:8
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 18668 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./parastation/getfence1 np=2:
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = f7 but got p[8] = ff
+Data expected = f6 but got p[9] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = f7 but got p[8] = ff
+Data expected = f6 but got p[9] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = f7 but got p[8] = ff
+Data expected = f6 but got p[9] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = f7 but got p[8] = ff
+Data expected = f6 but got p[9] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = f7 but got p[8] = ff
+Data expected = f6 but got p[9] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = f7 but got p[8] = ff
+Data expected = f6 but got p[9] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = f7 but got p[8] = ff
+Data expected = f6 but got p[9] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = f7 but got p[8] = ff
+Data expected = f6 but got p[9] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = f7 but got p[8] = ff
+Data expected = f6 but got p[9] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = f7 but got p[8] = ff
+Data expected = f6 but got p[9] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = f7 but got p[8] = ff
+Data expected = f6 but got p[9] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = f7 but got p[8] = ff
+Data expected = f6 but got p[9] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = f7 but got p[8] = ff
+Data expected = f6 but got p[9] = ff
+Data expected = fe but got p[1] = ff
+Data expected = fd but got p[2] = ff
+Data expected = fc but got p[3] = ff
+Data expected = fb but got p[4] = ff
+Data expected = fa but got p[5] = ff
+Data expected = f9 but got p[6] = ff
+Data expected = f8 but got p[7] = ff
+Data expected = f7 but got p[8] = ff
+Data expected = f6 but got p[9] = ff
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 18761 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/putfence1 np=2:
+[mpiexec@zam871] APPLICATION TIMED OUT
+
+-------------------------------------------------
+./rma/accfence1 np=4:
+Fatal error in MPI_Win_fence: Other MPI error, error stack:
+MPI_Win_fence(126)............: MPI_Win_fence(assert=0, win=0xa0000000) failed
+MPIR_Reduce_scatter_impl(1072): 
+MPIR_Reduce_scatter(1035).....: 
+MPIR_Reduce_scatter_intra(462): 
+mpid_irecv_done(101)..........: read from socket failed - request state:recv(pde)done
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 7223 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/putpscw1 np=4:
+MTestTypeSubarrayCheckbuf error
+MTestTypeSubarrayCheckbuf error
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 7374 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/accpscw1 np=4:
+MTestTypeSubarrayCheckbuf error
+MTestTypeSubarrayCheckbuf error
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 7425 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/transpose1 np=2:
+*** Error in `./transpose1': free(): invalid next size (fast): 0x00000000009ce290 ***
+======= Backtrace: =========
+/lib64/libc.so.6(+0x727df)[0x7f40f42407df]
+/lib64/libc.so.6(+0x7804e)[0x7f40f424604e]
+/lib64/libc.so.6(+0x78d56)[0x7f40f4246d56]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(+0x1197ce)[0x7f40f46917ce]
+/home/clauss/Work/pscom/build/install/lib64/libpscom.so.2(pscom_unlock+0x1ef)[0x7f40f3f8f1bf]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Progress_wait+0x18)[0x7f40f468a098]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIC_Wait+0x55)[0x7f40f465aec5]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIC_Sendrecv+0x22a)[0x7f40f465b68a]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter_intra+0x2464)[0x7f40f45db774]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter+0x1b)[0x7f40f45dc85b]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter_impl+0x39)[0x7f40f45dc909]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Win_fence+0x74)[0x7f40f46922f4]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(PMPI_Win_fence+0x18a)[0x7f40f463e43a]
+./transpose1[0x4024b1]
+/lib64/libc.so.6(__libc_start_main+0xf5)[0x7f40f41efb05]
+./transpose1[0x4020e9]
+======= Memory map: ========
+00400000-0040b000 r-xp 00000000 08:03 5116089                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose1
+0060a000-0060b000 r--p 0000a000 08:03 5116089                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose1
+0060b000-0060c000 rw-p 0000b000 08:03 5116089                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose1
+009ba000-009db000 rw-p 00000000 00:00 0                                  [heap]
+7f40ec000000-7f40ec021000 rw-p 00000000 00:00 0 
+7f40ec021000-7f40f0000000 ---p 00000000 00:00 0 
+7f40f1a83000-7f40f1e54000 rw-p 00000000 00:00 0 
+7f40f1e54000-7f40f1e55000 ---p 00000000 00:00 0 
+7f40f1e55000-7f40f2655000 rw-p 00000000 00:00 0                          [stack:7527]
+7f40f2655000-7f40f2671000 r-xp 00000000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7f40f2671000-7f40f2870000 ---p 0001c000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7f40f2870000-7f40f2872000 r--p 0001b000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7f40f2872000-7f40f2873000 rw-p 0001d000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7f40f2873000-7f40f28ce000 r-xp 00000000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7f40f28ce000-7f40f2acd000 ---p 0005b000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7f40f2acd000-7f40f2ad0000 r--p 0005a000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7f40f2ad0000-7f40f2ad4000 rw-p 0005d000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7f40f2ad4000-7f40f2ad6000 rw-p 00000000 00:00 0 
+7f40f2ad6000-7f40f2ae7000 r-xp 00000000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7f40f2ae7000-7f40f2ce6000 ---p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7f40f2ce6000-7f40f2ce7000 r--p 00010000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7f40f2ce7000-7f40f2ce8000 rw-p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7f40f2ce8000-7f40f2cef000 r-xp 00000000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7f40f2cef000-7f40f2eee000 ---p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7f40f2eee000-7f40f2eef000 r--p 00006000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7f40f2eef000-7f40f2ef0000 rw-p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7f40f2ef0000-7f40f2ef3000 r-xp 00000000 08:02 18661                      /lib64/libdl-2.19.so
+7f40f2ef3000-7f40f30f2000 ---p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+7f40f30f2000-7f40f30f3000 r--p 00002000 08:02 18661                      /lib64/libdl-2.19.so
+7f40f30f3000-7f40f30f4000 rw-p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+7f40f30f4000-7f40f312f000 r-xp 00000000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7f40f312f000-7f40f332e000 ---p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7f40f332e000-7f40f332f000 r--p 0003a000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7f40f332f000-7f40f3330000 rw-p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7f40f3330000-7f40f3346000 r-xp 00000000 08:02 58                         /lib64/libgcc_s.so.1
+7f40f3346000-7f40f3545000 ---p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+7f40f3545000-7f40f3546000 r--p 00015000 08:02 58                         /lib64/libgcc_s.so.1
+7f40f3546000-7f40f3547000 rw-p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+7f40f3547000-7f40f3647000 r-xp 00000000 08:02 18663                      /lib64/libm-2.19.so
+7f40f3647000-7f40f3846000 ---p 00100000 08:02 18663                      /lib64/libm-2.19.so
+7f40f3846000-7f40f3847000 r--p 000ff000 08:02 18663                      /lib64/libm-2.19.so
+7f40f3847000-7f40f3848000 rw-p 00100000 08:02 18663                      /lib64/libm-2.19.so
+7f40f3848000-7f40f3960000 r-xp 00000000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7f40f3960000-7f40f3b5f000 ---p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7f40f3b5f000-7f40f3b60000 r--p 00117000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7f40f3b60000-7f40f3b62000 rw-p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7f40f3b62000-7f40f3b69000 r-xp 00000000 08:02 18688                      /lib64/librt-2.19.so
+7f40f3b69000-7f40f3d68000 ---p 00007000 08:02 18688                      /lib64/librt-2.19.so
+7f40f3d68000-7f40f3d69000 r--p 00006000 08:02 18688                      /lib64/librt-2.19.so
+7f40f3d69000-7f40f3d6a000 rw-p 00007000 08:02 18688                      /lib64/librt-2.19.so
+7f40f3d6a000-7f40f3d82000 r-xp 00000000 08:02 18684                      /lib64/libpthread-2.19.so
+7f40f3d82000-7f40f3f81000 ---p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+7f40f3f81000-7f40f3f82000 r--p 00017000 08:02 18684                      /lib64/libpthread-2.19.so
+7f40f3f82000-7f40f3f83000 rw-p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+7f40f3f83000-7f40f3f87000 rw-p 00000000 00:00 0 
+7f40f3f87000-7f40f3faa000 r-xp 00000000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7f40f3faa000-7f40f41aa000 ---p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7f40f41aa000-7f40f41ab000 r--p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7f40f41ab000-7f40f41bc000 rw-p 00024000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7f40f41bc000-7f40f41ce000 rw-p 00000000 00:00 0 
+7f40f41ce000-7f40f436f000 r-xp 00000000 08:02 18655                      /lib64/libc-2.19.so
+7f40f436f000-7f40f456e000 ---p 001a1000 08:02 18655                      /lib64/libc-2.19.so
+7f40f456e000-7f40f4572000 r--p 001a0000 08:02 18655                      /lib64/libc-2.19.so
+7f40f4572000-7f40f4574000 rw-p 001a4000 08:02 18655                      /lib64/libc-2.19.so
+7f40f4574000-7f40f4578000 rw-p 00000000 00:00 0 
+7f40f4578000-7f40f4740000 r-xp 00000000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7f40f4740000-7f40f4940000 ---p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7f40f4940000-7f40f494d000 r--p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7f40f494d000-7f40f4951000 rw-p 001d5000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7f40f4951000-7f40f499c000 rw-p 00000000 00:00 0 
+7f40f499c000-7f40f49bc000 r-xp 00000000 08:02 18648                      /lib64/ld-2.19.so
+7f40f4b4c000-7f40f4b81000 r--s 00000000 00:11 14746                      /run/nscd/dbK2CzxF (deleted)
+7f40f4b81000-7f40f4b88000 rw-p 00000000 00:00 0 
+7f40f4b9a000-7f40f4b9b000 rw-p 00000000 00:00 0 
+7f40f4b9b000-7f40f4bab000 rw-s 00000000 00:04 977960983                  /SYSV00000000 (deleted)
+7f40f4bab000-7f40f4bbb000 rw-s 00000000 00:04 977928214                  /SYSV00000000 (deleted)
+7f40f4bbb000-7f40f4bbc000 rw-p 00000000 00:00 0 
+7f40f4bbc000-7f40f4bbd000 r--p 00020000 08:02 18648                      /lib64/ld-2.19.so
+7f40f4bbd000-7f40f4bbe000 rw-p 00021000 08:02 18648                      /lib64/ld-2.19.so
+7f40f4bbe000-7f40f4bbf000 rw-p 00000000 00:00 0 
+7fff26e18000-7fff26e3a000 rw-p 00000000 00:00 0                          [stack]
+7fff26fae000-7fff26fb0000 r-xp 00000000 00:00 0                          [vdso]
+7fff26fb0000-7fff26fb2000 r--p 00000000 00:00 0                          [vvar]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 7525 RUNNING AT zam871
+=   EXIT CODE: 6
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Aborted (signal 6)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/transpose2 np=2:
+*** Error in `./transpose2': free(): invalid next size (fast): 0x0000000002463340 ***
+======= Backtrace: =========
+/lib64/libc.so.6(+0x727df)[0x7f7a42d677df]
+/lib64/libc.so.6(+0x7804e)[0x7f7a42d6d04e]
+/lib64/libc.so.6(+0x78d56)[0x7f7a42d6dd56]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(+0x1197ce)[0x7f7a431b87ce]
+/home/clauss/Work/pscom/build/install/lib64/libpscom.so.2(pscom_unlock+0x1ef)[0x7f7a42ab61bf]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Progress_wait+0x18)[0x7f7a431b1098]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIC_Wait+0x55)[0x7f7a43181ec5]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIC_Sendrecv+0x22a)[0x7f7a4318268a]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter_intra+0x2464)[0x7f7a43102774]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter+0x1b)[0x7f7a4310385b]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter_impl+0x39)[0x7f7a43103909]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Win_fence+0x74)[0x7f7a431b92f4]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(PMPI_Win_fence+0x18a)[0x7f7a4316543a]
+./transpose2[0x4024be]
+/lib64/libc.so.6(__libc_start_main+0xf5)[0x7f7a42d16b05]
+./transpose2[0x4020e9]
+======= Memory map: ========
+00400000-0040b000 r-xp 00000000 08:03 5116090                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose2
+0060a000-0060b000 r--p 0000a000 08:03 5116090                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose2
+0060b000-0060c000 rw-p 0000b000 08:03 5116090                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose2
+02451000-02472000 rw-p 00000000 00:00 0                                  [heap]
+7f7a3c000000-7f7a3c021000 rw-p 00000000 00:00 0 
+7f7a3c021000-7f7a40000000 ---p 00000000 00:00 0 
+7f7a4097b000-7f7a4097c000 ---p 00000000 00:00 0 
+7f7a4097c000-7f7a4117c000 rw-p 00000000 00:00 0                          [stack:7579]
+7f7a4117c000-7f7a41198000 r-xp 00000000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7f7a41198000-7f7a41397000 ---p 0001c000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7f7a41397000-7f7a41399000 r--p 0001b000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7f7a41399000-7f7a4139a000 rw-p 0001d000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7f7a4139a000-7f7a413f5000 r-xp 00000000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7f7a413f5000-7f7a415f4000 ---p 0005b000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7f7a415f4000-7f7a415f7000 r--p 0005a000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7f7a415f7000-7f7a415fb000 rw-p 0005d000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7f7a415fb000-7f7a415fd000 rw-p 00000000 00:00 0 
+7f7a415fd000-7f7a4160e000 r-xp 00000000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7f7a4160e000-7f7a4180d000 ---p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7f7a4180d000-7f7a4180e000 r--p 00010000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7f7a4180e000-7f7a4180f000 rw-p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7f7a4180f000-7f7a41816000 r-xp 00000000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7f7a41816000-7f7a41a15000 ---p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7f7a41a15000-7f7a41a16000 r--p 00006000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7f7a41a16000-7f7a41a17000 rw-p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7f7a41a17000-7f7a41a1a000 r-xp 00000000 08:02 18661                      /lib64/libdl-2.19.so
+7f7a41a1a000-7f7a41c19000 ---p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+7f7a41c19000-7f7a41c1a000 r--p 00002000 08:02 18661                      /lib64/libdl-2.19.so
+7f7a41c1a000-7f7a41c1b000 rw-p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+7f7a41c1b000-7f7a41c56000 r-xp 00000000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7f7a41c56000-7f7a41e55000 ---p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7f7a41e55000-7f7a41e56000 r--p 0003a000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7f7a41e56000-7f7a41e57000 rw-p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7f7a41e57000-7f7a41e6d000 r-xp 00000000 08:02 58                         /lib64/libgcc_s.so.1
+7f7a41e6d000-7f7a4206c000 ---p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+7f7a4206c000-7f7a4206d000 r--p 00015000 08:02 58                         /lib64/libgcc_s.so.1
+7f7a4206d000-7f7a4206e000 rw-p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+7f7a4206e000-7f7a4216e000 r-xp 00000000 08:02 18663                      /lib64/libm-2.19.so
+7f7a4216e000-7f7a4236d000 ---p 00100000 08:02 18663                      /lib64/libm-2.19.so
+7f7a4236d000-7f7a4236e000 r--p 000ff000 08:02 18663                      /lib64/libm-2.19.so
+7f7a4236e000-7f7a4236f000 rw-p 00100000 08:02 18663                      /lib64/libm-2.19.so
+7f7a4236f000-7f7a42487000 r-xp 00000000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7f7a42487000-7f7a42686000 ---p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7f7a42686000-7f7a42687000 r--p 00117000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7f7a42687000-7f7a42689000 rw-p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7f7a42689000-7f7a42690000 r-xp 00000000 08:02 18688                      /lib64/librt-2.19.so
+7f7a42690000-7f7a4288f000 ---p 00007000 08:02 18688                      /lib64/librt-2.19.so
+7f7a4288f000-7f7a42890000 r--p 00006000 08:02 18688                      /lib64/librt-2.19.so
+7f7a42890000-7f7a42891000 rw-p 00007000 08:02 18688                      /lib64/librt-2.19.so
+7f7a42891000-7f7a428a9000 r-xp 00000000 08:02 18684                      /lib64/libpthread-2.19.so
+7f7a428a9000-7f7a42aa8000 ---p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+7f7a42aa8000-7f7a42aa9000 r--p 00017000 08:02 18684                      /lib64/libpthread-2.19.so
+7f7a42aa9000-7f7a42aaa000 rw-p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+7f7a42aaa000-7f7a42aae000 rw-p 00000000 00:00 0 
+7f7a42aae000-7f7a42ad1000 r-xp 00000000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7f7a42ad1000-7f7a42cd1000 ---p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7f7a42cd1000-7f7a42cd2000 r--p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7f7a42cd2000-7f7a42ce3000 rw-p 00024000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7f7a42ce3000-7f7a42cf5000 rw-p 00000000 00:00 0 
+7f7a42cf5000-7f7a42e96000 r-xp 00000000 08:02 18655                      /lib64/libc-2.19.so
+7f7a42e96000-7f7a43095000 ---p 001a1000 08:02 18655                      /lib64/libc-2.19.so
+7f7a43095000-7f7a43099000 r--p 001a0000 08:02 18655                      /lib64/libc-2.19.so
+7f7a43099000-7f7a4309b000 rw-p 001a4000 08:02 18655                      /lib64/libc-2.19.so
+7f7a4309b000-7f7a4309f000 rw-p 00000000 00:00 0 
+7f7a4309f000-7f7a43267000 r-xp 00000000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7f7a43267000-7f7a43467000 ---p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7f7a43467000-7f7a43474000 r--p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7f7a43474000-7f7a43478000 rw-p 001d5000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7f7a43478000-7f7a434c3000 rw-p 00000000 00:00 0 
+7f7a434c3000-7f7a434e3000 r-xp 00000000 08:02 18648                      /lib64/ld-2.19.so
+7f7a43673000-7f7a436a8000 r--s 00000000 00:11 14746                      /run/nscd/dbK2CzxF (deleted)
+7f7a436a8000-7f7a436af000 rw-p 00000000 00:00 0 
+7f7a436c1000-7f7a436c2000 rw-p 00000000 00:00 0 
+7f7a436c2000-7f7a436d2000 rw-s 00000000 00:04 978026519                  /SYSV00000000 (deleted)
+7f7a436d2000-7f7a436e2000 rw-s 00000000 00:04 977993750                  /SYSV00000000 (deleted)
+7f7a436e2000-7f7a436e3000 rw-p 00000000 00:00 0 
+7f7a436e3000-7f7a436e4000 r--p 00020000 08:02 18648                      /lib64/ld-2.19.so
+7f7a436e4000-7f7a436e5000 rw-p 00021000 08:02 18648                      /lib64/ld-2.19.so
+7f7a436e5000-7f7a436e6000 rw-p 00000000 00:00 0 
+7ffeb40a2000-7ffeb40c4000 rw-p 00000000 00:00 0                          [stack]
+7ffeb41b4000-7ffeb41b6000 r-xp 00000000 00:00 0                          [vdso]
+7ffeb41b6000-7ffeb41b8000 r--p 00000000 00:00 0                          [vvar]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 7577 RUNNING AT zam871
+=   EXIT CODE: 6
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Aborted (signal 6)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/transpose3 np=2:
+*** Error in `./transpose3': free(): invalid next size (fast): 0x000000000108bf70 ***
+======= Backtrace: =========
+/lib64/libc.so.6(+0x727df)[0x7fc9552e17df]
+/lib64/libc.so.6(+0x7804e)[0x7fc9552e704e]
+/lib64/libc.so.6(+0x78d56)[0x7fc9552e7d56]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(+0x1197ce)[0x7fc9557327ce]
+/home/clauss/Work/pscom/build/install/lib64/libpscom.so.2(pscom_unlock+0x1ef)[0x7fc9550301bf]
+/home/clauss/Work/pscom/build/install/lib64/libpscom.so.2(pscom_wait+0x15)[0x7fc955037cd5]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_PSP_Wait+0x21)[0x7fc95572b101]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Win_wait+0xc9)[0x7fc9557338d9]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPI_Win_wait+0x177)[0x7fc9556e1fe7]
+./transpose3[0x4026b5]
+/lib64/libc.so.6(__libc_start_main+0xf5)[0x7fc955290b05]
+./transpose3[0x4022e9]
+======= Memory map: ========
+00400000-0040b000 r-xp 00000000 08:03 5116091                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose3
+0060a000-0060b000 r--p 0000a000 08:03 5116091                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose3
+0060b000-0060c000 rw-p 0000b000 08:03 5116091                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose3
+01070000-01091000 rw-p 00000000 00:00 0                                  [heap]
+7fc94c000000-7fc94c021000 rw-p 00000000 00:00 0 
+7fc94c021000-7fc950000000 ---p 00000000 00:00 0 
+7fc952ef5000-7fc952ef6000 ---p 00000000 00:00 0 
+7fc952ef6000-7fc9536f6000 rw-p 00000000 00:00 0                          [stack:7625]
+7fc9536f6000-7fc953712000 r-xp 00000000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7fc953712000-7fc953911000 ---p 0001c000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7fc953911000-7fc953913000 r--p 0001b000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7fc953913000-7fc953914000 rw-p 0001d000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7fc953914000-7fc95396f000 r-xp 00000000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7fc95396f000-7fc953b6e000 ---p 0005b000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7fc953b6e000-7fc953b71000 r--p 0005a000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7fc953b71000-7fc953b75000 rw-p 0005d000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7fc953b75000-7fc953b77000 rw-p 00000000 00:00 0 
+7fc953b77000-7fc953b88000 r-xp 00000000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7fc953b88000-7fc953d87000 ---p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7fc953d87000-7fc953d88000 r--p 00010000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7fc953d88000-7fc953d89000 rw-p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7fc953d89000-7fc953d90000 r-xp 00000000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7fc953d90000-7fc953f8f000 ---p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7fc953f8f000-7fc953f90000 r--p 00006000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7fc953f90000-7fc953f91000 rw-p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7fc953f91000-7fc953f94000 r-xp 00000000 08:02 18661                      /lib64/libdl-2.19.so
+7fc953f94000-7fc954193000 ---p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+7fc954193000-7fc954194000 r--p 00002000 08:02 18661                      /lib64/libdl-2.19.so
+7fc954194000-7fc954195000 rw-p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+7fc954195000-7fc9541d0000 r-xp 00000000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7fc9541d0000-7fc9543cf000 ---p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7fc9543cf000-7fc9543d0000 r--p 0003a000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7fc9543d0000-7fc9543d1000 rw-p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7fc9543d1000-7fc9543e7000 r-xp 00000000 08:02 58                         /lib64/libgcc_s.so.1
+7fc9543e7000-7fc9545e6000 ---p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+7fc9545e6000-7fc9545e7000 r--p 00015000 08:02 58                         /lib64/libgcc_s.so.1
+7fc9545e7000-7fc9545e8000 rw-p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+7fc9545e8000-7fc9546e8000 r-xp 00000000 08:02 18663                      /lib64/libm-2.19.so
+7fc9546e8000-7fc9548e7000 ---p 00100000 08:02 18663                      /lib64/libm-2.19.so
+7fc9548e7000-7fc9548e8000 r--p 000ff000 08:02 18663                      /lib64/libm-2.19.so
+7fc9548e8000-7fc9548e9000 rw-p 00100000 08:02 18663                      /lib64/libm-2.19.so
+7fc9548e9000-7fc954a01000 r-xp 00000000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7fc954a01000-7fc954c00000 ---p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7fc954c00000-7fc954c01000 r--p 00117000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7fc954c01000-7fc954c03000 rw-p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7fc954c03000-7fc954c0a000 r-xp 00000000 08:02 18688                      /lib64/librt-2.19.so
+7fc954c0a000-7fc954e09000 ---p 00007000 08:02 18688                      /lib64/librt-2.19.so
+7fc954e09000-7fc954e0a000 r--p 00006000 08:02 18688                      /lib64/librt-2.19.so
+7fc954e0a000-7fc954e0b000 rw-p 00007000 08:02 18688                      /lib64/librt-2.19.so
+7fc954e0b000-7fc954e23000 r-xp 00000000 08:02 18684                      /lib64/libpthread-2.19.so
+7fc954e23000-7fc955022000 ---p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+7fc955022000-7fc955023000 r--p 00017000 08:02 18684                      /lib64/libpthread-2.19.so
+7fc955023000-7fc955024000 rw-p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+7fc955024000-7fc955028000 rw-p 00000000 00:00 0 
+7fc955028000-7fc95504b000 r-xp 00000000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7fc95504b000-7fc95524b000 ---p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7fc95524b000-7fc95524c000 r--p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7fc95524c000-7fc95525d000 rw-p 00024000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7fc95525d000-7fc95526f000 rw-p 00000000 00:00 0 
+7fc95526f000-7fc955410000 r-xp 00000000 08:02 18655                      /lib64/libc-2.19.so
+7fc955410000-7fc95560f000 ---p 001a1000 08:02 18655                      /lib64/libc-2.19.so
+7fc95560f000-7fc955613000 r--p 001a0000 08:02 18655                      /lib64/libc-2.19.so
+7fc955613000-7fc955615000 rw-p 001a4000 08:02 18655                      /lib64/libc-2.19.so
+7fc955615000-7fc955619000 rw-p 00000000 00:00 0 
+7fc955619000-7fc9557e1000 r-xp 00000000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7fc9557e1000-7fc9559e1000 ---p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7fc9559e1000-7fc9559ee000 r--p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7fc9559ee000-7fc9559f2000 rw-p 001d5000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7fc9559f2000-7fc955a3d000 rw-p 00000000 00:00 0 
+7fc955a3d000-7fc955a5d000 r-xp 00000000 08:02 18648                      /lib64/ld-2.19.so
+7fc955bed000-7fc955c22000 r--s 00000000 00:11 14746                      /run/nscd/dbK2CzxF (deleted)
+7fc955c22000-7fc955c29000 rw-p 00000000 00:00 0 
+7fc955c3b000-7fc955c3c000 rw-p 00000000 00:00 0 
+7fc955c3c000-7fc955c4c000 rw-s 00000000 00:04 978092055                  /SYSV00000000 (deleted)
+7fc955c4c000-7fc955c5c000 rw-s 00000000 00:04 978059286                  /SYSV00000000 (deleted)
+7fc955c5c000-7fc955c5d000 rw-p 00000000 00:00 0 
+7fc955c5d000-7fc955c5e000 r--p 00020000 08:02 18648                      /lib64/ld-2.19.so
+7fc955c5e000-7fc955c5f000 rw-p 00021000 08:02 18648                      /lib64/ld-2.19.so
+7fc955c5f000-7fc955c60000 rw-p 00000000 00:00 0 
+7ffed1980000-7ffed19a2000 rw-p 00000000 00:00 0                          [stack]
+7ffed19f5000-7ffed19f7000 r-xp 00000000 00:00 0                          [vdso]
+7ffed19f7000-7ffed19f9000 r--p 00000000 00:00 0                          [vvar]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 7624 RUNNING AT zam871
+=   EXIT CODE: 6
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Aborted (signal 6)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/transpose3_shm np=2:
+*** Error in `./transpose3_shm': free(): invalid next size (fast): 0x0000000002097f70 ***
+======= Backtrace: =========
+/lib64/libc.so.6(+0x727df)[0x7f63a7f7a7df]
+/lib64/libc.so.6(+0x7804e)[0x7f63a7f8004e]
+/lib64/libc.so.6(+0x78d56)[0x7f63a7f80d56]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(+0x1197ce)[0x7f63a83cb7ce]
+/home/clauss/Work/pscom/build/install/lib64/libpscom.so.2(pscom_unlock+0x1ef)[0x7f63a7cc91bf]
+/home/clauss/Work/pscom/build/install/lib64/libpscom.so.2(pscom_wait+0x15)[0x7f63a7cd0cd5]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_PSP_Wait+0x21)[0x7f63a83c4101]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Win_wait+0xc9)[0x7f63a83cc8d9]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPI_Win_wait+0x177)[0x7f63a837afe7]
+./transpose3_shm[0x4026f7]
+/lib64/libc.so.6(__libc_start_main+0xf5)[0x7f63a7f29b05]
+./transpose3_shm[0x402339]
+======= Memory map: ========
+00400000-0040b000 r-xp 00000000 08:03 5116092                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose3_shm
+0060a000-0060b000 r--p 0000a000 08:03 5116092                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose3_shm
+0060b000-0060c000 rw-p 0000b000 08:03 5116092                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose3_shm
+0207c000-0209d000 rw-p 00000000 00:00 0                                  [heap]
+7f63a0000000-7f63a0021000 rw-p 00000000 00:00 0 
+7f63a0021000-7f63a4000000 ---p 00000000 00:00 0 
+7f63a5b8e000-7f63a5b8f000 ---p 00000000 00:00 0 
+7f63a5b8f000-7f63a638f000 rw-p 00000000 00:00 0                          [stack:7671]
+7f63a638f000-7f63a63ab000 r-xp 00000000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7f63a63ab000-7f63a65aa000 ---p 0001c000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7f63a65aa000-7f63a65ac000 r--p 0001b000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7f63a65ac000-7f63a65ad000 rw-p 0001d000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7f63a65ad000-7f63a6608000 r-xp 00000000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7f63a6608000-7f63a6807000 ---p 0005b000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7f63a6807000-7f63a680a000 r--p 0005a000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7f63a680a000-7f63a680e000 rw-p 0005d000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7f63a680e000-7f63a6810000 rw-p 00000000 00:00 0 
+7f63a6810000-7f63a6821000 r-xp 00000000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7f63a6821000-7f63a6a20000 ---p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7f63a6a20000-7f63a6a21000 r--p 00010000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7f63a6a21000-7f63a6a22000 rw-p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7f63a6a22000-7f63a6a29000 r-xp 00000000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7f63a6a29000-7f63a6c28000 ---p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7f63a6c28000-7f63a6c29000 r--p 00006000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7f63a6c29000-7f63a6c2a000 rw-p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7f63a6c2a000-7f63a6c2d000 r-xp 00000000 08:02 18661                      /lib64/libdl-2.19.so
+7f63a6c2d000-7f63a6e2c000 ---p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+7f63a6e2c000-7f63a6e2d000 r--p 00002000 08:02 18661                      /lib64/libdl-2.19.so
+7f63a6e2d000-7f63a6e2e000 rw-p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+7f63a6e2e000-7f63a6e69000 r-xp 00000000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7f63a6e69000-7f63a7068000 ---p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7f63a7068000-7f63a7069000 r--p 0003a000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7f63a7069000-7f63a706a000 rw-p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7f63a706a000-7f63a7080000 r-xp 00000000 08:02 58                         /lib64/libgcc_s.so.1
+7f63a7080000-7f63a727f000 ---p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+7f63a727f000-7f63a7280000 r--p 00015000 08:02 58                         /lib64/libgcc_s.so.1
+7f63a7280000-7f63a7281000 rw-p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+7f63a7281000-7f63a7381000 r-xp 00000000 08:02 18663                      /lib64/libm-2.19.so
+7f63a7381000-7f63a7580000 ---p 00100000 08:02 18663                      /lib64/libm-2.19.so
+7f63a7580000-7f63a7581000 r--p 000ff000 08:02 18663                      /lib64/libm-2.19.so
+7f63a7581000-7f63a7582000 rw-p 00100000 08:02 18663                      /lib64/libm-2.19.so
+7f63a7582000-7f63a769a000 r-xp 00000000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7f63a769a000-7f63a7899000 ---p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7f63a7899000-7f63a789a000 r--p 00117000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7f63a789a000-7f63a789c000 rw-p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7f63a789c000-7f63a78a3000 r-xp 00000000 08:02 18688                      /lib64/librt-2.19.so
+7f63a78a3000-7f63a7aa2000 ---p 00007000 08:02 18688                      /lib64/librt-2.19.so
+7f63a7aa2000-7f63a7aa3000 r--p 00006000 08:02 18688                      /lib64/librt-2.19.so
+7f63a7aa3000-7f63a7aa4000 rw-p 00007000 08:02 18688                      /lib64/librt-2.19.so
+7f63a7aa4000-7f63a7abc000 r-xp 00000000 08:02 18684                      /lib64/libpthread-2.19.so
+7f63a7abc000-7f63a7cbb000 ---p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+7f63a7cbb000-7f63a7cbc000 r--p 00017000 08:02 18684                      /lib64/libpthread-2.19.so
+7f63a7cbc000-7f63a7cbd000 rw-p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+7f63a7cbd000-7f63a7cc1000 rw-p 00000000 00:00 0 
+7f63a7cc1000-7f63a7ce4000 r-xp 00000000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7f63a7ce4000-7f63a7ee4000 ---p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7f63a7ee4000-7f63a7ee5000 r--p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7f63a7ee5000-7f63a7ef6000 rw-p 00024000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7f63a7ef6000-7f63a7f08000 rw-p 00000000 00:00 0 
+7f63a7f08000-7f63a80a9000 r-xp 00000000 08:02 18655                      /lib64/libc-2.19.so
+7f63a80a9000-7f63a82a8000 ---p 001a1000 08:02 18655                      /lib64/libc-2.19.so
+7f63a82a8000-7f63a82ac000 r--p 001a0000 08:02 18655                      /lib64/libc-2.19.so
+7f63a82ac000-7f63a82ae000 rw-p 001a4000 08:02 18655                      /lib64/libc-2.19.so
+7f63a82ae000-7f63a82b2000 rw-p 00000000 00:00 0 
+7f63a82b2000-7f63a847a000 r-xp 00000000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7f63a847a000-7f63a867a000 ---p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7f63a867a000-7f63a8687000 r--p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7f63a8687000-7f63a868b000 rw-p 001d5000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7f63a868b000-7f63a86d6000 rw-p 00000000 00:00 0 
+7f63a86d6000-7f63a86f6000 r-xp 00000000 08:02 18648                      /lib64/ld-2.19.so
+7f63a8886000-7f63a88bb000 r--s 00000000 00:11 14746                      /run/nscd/dbK2CzxF (deleted)
+7f63a88bb000-7f63a88c2000 rw-p 00000000 00:00 0 
+7f63a88d4000-7f63a88d5000 rw-p 00000000 00:00 0 
+7f63a88d5000-7f63a88e5000 rw-s 00000000 00:04 978157591                  /SYSV00000000 (deleted)
+7f63a88e5000-7f63a88f5000 rw-s 00000000 00:04 978124822                  /SYSV00000000 (deleted)
+7f63a88f5000-7f63a88f6000 rw-p 00000000 00:00 0 
+7f63a88f6000-7f63a88f7000 r--p 00020000 08:02 18648                      /lib64/ld-2.19.so
+7f63a88f7000-7f63a88f8000 rw-p 00021000 08:02 18648                      /lib64/ld-2.19.so
+7f63a88f8000-7f63a88f9000 rw-p 00000000 00:00 0 
+7ffc06f18000-7ffc06f3a000 rw-p 00000000 00:00 0                          [stack]
+7ffc06f3c000-7ffc06f3e000 r-xp 00000000 00:00 0                          [vdso]
+7ffc06f3e000-7ffc06f40000 r--p 00000000 00:00 0                          [vvar]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 7670 RUNNING AT zam871
+=   EXIT CODE: 6
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Aborted (signal 6)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/transpose5 np=2:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 7717 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/transpose7 np=2:
+Error: A[0][0]=-1 should be 0
+Error: A[0][1]=-1 should be 1000
+Error: A[0][2]=-1 should be 2000
+Error: A[0][3]=-1 should be 3000
+Error: A[0][4]=-1 should be 4000
+Error: A[0][5]=-1 should be 5000
+Error: A[0][6]=-1 should be 6000
+Error: A[0][7]=-1 should be 7000
+Error: A[0][8]=-1 should be 8000
+Error: A[0][9]=-1 should be 9000
+Error: A[0][10]=-1 should be 10000
+Error: A[0][11]=-1 should be 11000
+Error: A[0][12]=-1 should be 12000
+Error: A[0][13]=-1 should be 13000
+Error: A[0][14]=-1 should be 14000
+Error: A[0][15]=-1 should be 15000
+Error: A[0][16]=-1 should be 16000
+Error: A[0][17]=-1 should be 17000
+Error: A[0][18]=-1 should be 18000
+Error: A[0][19]=-1 should be 19000
+Error: A[0][20]=-1 should be 20000
+Error: A[0][21]=-1 should be 21000
+Error: A[0][22]=-1 should be 22000
+Error: A[0][23]=-1 should be 23000
+Error: A[0][24]=-1 should be 24000
+Error: A[0][25]=-1 should be 25000
+Error: A[0][26]=-1 should be 26000
+Error: A[0][27]=-1 should be 27000
+Error: A[0][28]=-1 should be 28000
+Error: A[0][29]=-1 should be 29000
+Error: A[0][30]=-1 should be 30000
+Error: A[0][31]=-1 should be 31000
+Error: A[0][32]=-1 should be 32000
+Error: A[0][33]=-1 should be 33000
+Error: A[0][34]=-1 should be 34000
+Error: A[0][35]=-1 should be 35000
+Error: A[0][36]=-1 should be 36000
+Error: A[0][37]=-1 should be 37000
+Error: A[0][38]=-1 should be 38000
+Error: A[0][39]=-1 should be 39000
+Error: A[0][40]=-1 should be 40000
+Error: A[0][41]=-1 should be 41000
+Error: A[0][42]=-1 should be 42000
+Error: A[0][43]=-1 should be 43000
+Error: A[0][44]=-1 should be 44000
+Error: A[0][45]=-1 should be 45000
+Error: A[0][46]=-1 should be 46000
+Error: A[0][47]=-1 should be 47000
+Error: A[0][48]=-1 should be 48000
+Error: A[0][49]=-1 should be 49000
+Total number of errors: 1000000
+ Found 1000000 errors
+
+-------------------------------------------------
+./rma/lock_dt np=2:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 8453 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/lock_dt_flush np=2:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 8500 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/lock_dt_flushlocal np=2:
+Deadlock detected! Process 8546 will wait forever.
+('wait' called without outstanding send or recv requests).
+Requests:
+Sockets:
+  sock#0x20916a0 listen:    -1 demand:   0(   0)  src:(134.94.169.164,8546,(nil),r0000000) anyrecv:     2
+  Connections:
+    con#0x2093e20 type:  loop state:    open dest:(134.94.169.164,8546,0x2093e20,r0000000) recvcnt:    1
+    con#0x20941e0 type:   shm state:    norw dest:(134.94.169.164,8547,0x149cff0,r0000001) recvcnt:    1
+Fds:
+
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 8547 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/lockall_dt np=4:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 8596 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/lockall_dt_flush np=4:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 8647 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/lockall_dt_flushall np=4:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 8696 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/lockall_dt_flushlocal np=4:
+Data expected = fe but got p[0,0,1] = ff
+Data expected = fd but got p[0,0,2] = ff
+Data expected = fc but got p[0,0,3] = ff
+Data expected = fb but got p[0,0,4] = ff
+Data expected = fa but got p[0,0,5] = ff
+Data expected = f9 but got p[0,0,6] = ff
+Data expected = f8 but got p[0,0,7] = ff
+MTestTypeSubarrayCheckbuf error
+Data expected = fe but got p[0,0,1] = ff
+Data expected = fd but got p[0,0,2] = ff
+Data expected = fc but got p[0,0,3] = ff
+Data expected = fb but got p[0,0,4] = ff
+Data expected = fa but got p[0,0,5] = ff
+Data expected = f9 but got p[0,0,6] = ff
+Data expected = f8 but got p[0,0,7] = ff
+MTestTypeSubarrayCheckbuf error
+Data expected = fe but got p[0,0,1] = ff
+Data expected = fd but got p[0,0,2] = ff
+Data expected = fc but got p[0,0,3] = ff
+Data expected = fb but got p[0,0,4] = ff
+Data expected = fa but got p[0,0,5] = ff
+Data expected = f9 but got p[0,0,6] = ff
+Data expected = f8 but got p[0,0,7] = ff
+MTestTypeSubarrayCheckbuf error
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 8752 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/lockall_dt_flushlocalall np=4:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 8805 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/lock_contention_dt np=4:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 8854 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/transpose4 np=2:
+*** Error in `./transpose4': free(): invalid next size (fast): 0x0000000002531340 ***
+======= Backtrace: =========
+/lib64/libc.so.6(+0x727df)[0x7f82ba5327df]
+/lib64/libc.so.6(+0x7804e)[0x7f82ba53804e]
+/lib64/libc.so.6(+0x78d56)[0x7f82ba538d56]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(+0x1197ce)[0x7f82ba9837ce]
+/home/clauss/Work/pscom/build/install/lib64/libpscom.so.2(pscom_unlock+0x1ef)[0x7f82ba2811bf]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Progress_wait+0x18)[0x7f82ba97c098]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIC_Wait+0x55)[0x7f82ba94cec5]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIC_Sendrecv+0x22a)[0x7f82ba94d68a]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter_intra+0x2464)[0x7f82ba8cd774]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter+0x1b)[0x7f82ba8ce85b]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPIR_Reduce_scatter_impl+0x39)[0x7f82ba8ce909]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Win_fence+0x74)[0x7f82ba9842f4]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPID_Win_free+0x3f)[0x7f82ba981edf]
+/home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12(MPI_Win_free+0x15d)[0x7f82ba930d4d]
+./transpose4[0x4024cc]
+/lib64/libc.so.6(__libc_start_main+0xf5)[0x7f82ba4e1b05]
+./transpose4[0x402139]
+======= Memory map: ========
+00400000-0040b000 r-xp 00000000 08:03 5116093                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose4
+0060a000-0060b000 r--p 0000a000 08:03 5116093                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose4
+0060b000-0060c000 rw-p 0000b000 08:03 5116093                            /home/clauss/Work/psmpi/build/mpich2/test/mpi/rma/transpose4
+0251f000-02540000 rw-p 00000000 00:00 0                                  [heap]
+7f82b4000000-7f82b4021000 rw-p 00000000 00:00 0 
+7f82b4021000-7f82b8000000 ---p 00000000 00:00 0 
+7f82b8146000-7f82b8147000 ---p 00000000 00:00 0 
+7f82b8147000-7f82b8947000 rw-p 00000000 00:00 0                          [stack:8907]
+7f82b8947000-7f82b8963000 r-xp 00000000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7f82b8963000-7f82b8b62000 ---p 0001c000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7f82b8b62000-7f82b8b64000 r--p 0001b000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7f82b8b64000-7f82b8b65000 rw-p 0001d000 08:02 181143                     /usr/lib64/libnl-3.so.200.20.0
+7f82b8b65000-7f82b8bc0000 r-xp 00000000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7f82b8bc0000-7f82b8dbf000 ---p 0005b000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7f82b8dbf000-7f82b8dc2000 r--p 0005a000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7f82b8dc2000-7f82b8dc6000 rw-p 0005d000 08:02 184246                     /usr/lib64/libnl-route-3.so.200.20.0
+7f82b8dc6000-7f82b8dc8000 rw-p 00000000 00:00 0 
+7f82b8dc8000-7f82b8dd9000 r-xp 00000000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7f82b8dd9000-7f82b8fd8000 ---p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7f82b8fd8000-7f82b8fd9000 r--p 00010000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7f82b8fd9000-7f82b8fda000 rw-p 00011000 08:02 162305                     /usr/lib64/libibverbs.so.1.0.0
+7f82b8fda000-7f82b8fe1000 r-xp 00000000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7f82b8fe1000-7f82b91e0000 ---p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7f82b91e0000-7f82b91e1000 r--p 00006000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7f82b91e1000-7f82b91e2000 rw-p 00007000 08:03 3016614                    /home/clauss/Work/pscom/build/install/lib64/libpscom4openib.so
+7f82b91e2000-7f82b91e5000 r-xp 00000000 08:02 18661                      /lib64/libdl-2.19.so
+7f82b91e5000-7f82b93e4000 ---p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+7f82b93e4000-7f82b93e5000 r--p 00002000 08:02 18661                      /lib64/libdl-2.19.so
+7f82b93e5000-7f82b93e6000 rw-p 00003000 08:02 18661                      /lib64/libdl-2.19.so
+7f82b93e6000-7f82b9421000 r-xp 00000000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7f82b9421000-7f82b9620000 ---p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7f82b9620000-7f82b9621000 r--p 0003a000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7f82b9621000-7f82b9622000 rw-p 0003b000 08:02 165371                     /usr/lib64/libquadmath.so.0.0.0
+7f82b9622000-7f82b9638000 r-xp 00000000 08:02 58                         /lib64/libgcc_s.so.1
+7f82b9638000-7f82b9837000 ---p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+7f82b9837000-7f82b9838000 r--p 00015000 08:02 58                         /lib64/libgcc_s.so.1
+7f82b9838000-7f82b9839000 rw-p 00016000 08:02 58                         /lib64/libgcc_s.so.1
+7f82b9839000-7f82b9939000 r-xp 00000000 08:02 18663                      /lib64/libm-2.19.so
+7f82b9939000-7f82b9b38000 ---p 00100000 08:02 18663                      /lib64/libm-2.19.so
+7f82b9b38000-7f82b9b39000 r--p 000ff000 08:02 18663                      /lib64/libm-2.19.so
+7f82b9b39000-7f82b9b3a000 rw-p 00100000 08:02 18663                      /lib64/libm-2.19.so
+7f82b9b3a000-7f82b9c52000 r-xp 00000000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7f82b9c52000-7f82b9e51000 ---p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7f82b9e51000-7f82b9e52000 r--p 00117000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7f82b9e52000-7f82b9e54000 rw-p 00118000 08:02 140452                     /usr/lib64/libgfortran.so.3.0.0
+7f82b9e54000-7f82b9e5b000 r-xp 00000000 08:02 18688                      /lib64/librt-2.19.so
+7f82b9e5b000-7f82ba05a000 ---p 00007000 08:02 18688                      /lib64/librt-2.19.so
+7f82ba05a000-7f82ba05b000 r--p 00006000 08:02 18688                      /lib64/librt-2.19.so
+7f82ba05b000-7f82ba05c000 rw-p 00007000 08:02 18688                      /lib64/librt-2.19.so
+7f82ba05c000-7f82ba074000 r-xp 00000000 08:02 18684                      /lib64/libpthread-2.19.so
+7f82ba074000-7f82ba273000 ---p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+7f82ba273000-7f82ba274000 r--p 00017000 08:02 18684                      /lib64/libpthread-2.19.so
+7f82ba274000-7f82ba275000 rw-p 00018000 08:02 18684                      /lib64/libpthread-2.19.so
+7f82ba275000-7f82ba279000 rw-p 00000000 00:00 0 
+7f82ba279000-7f82ba29c000 r-xp 00000000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7f82ba29c000-7f82ba49c000 ---p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7f82ba49c000-7f82ba49d000 r--p 00023000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7f82ba49d000-7f82ba4ae000 rw-p 00024000 08:03 3016609                    /home/clauss/Work/pscom/build/install/lib64/libpscom.so.2.0.0
+7f82ba4ae000-7f82ba4c0000 rw-p 00000000 00:00 0 
+7f82ba4c0000-7f82ba661000 r-xp 00000000 08:02 18655                      /lib64/libc-2.19.so
+7f82ba661000-7f82ba860000 ---p 001a1000 08:02 18655                      /lib64/libc-2.19.so
+7f82ba860000-7f82ba864000 r--p 001a0000 08:02 18655                      /lib64/libc-2.19.so
+7f82ba864000-7f82ba866000 rw-p 001a4000 08:02 18655                      /lib64/libc-2.19.so
+7f82ba866000-7f82ba86a000 rw-p 00000000 00:00 0 
+7f82ba86a000-7f82baa32000 r-xp 00000000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7f82baa32000-7f82bac32000 ---p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7f82bac32000-7f82bac3f000 r--p 001c8000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7f82bac3f000-7f82bac43000 rw-p 001d5000 08:03 1839359                    /home/clauss/Work/psmpi/build/install/lib64/libmpi.so.12.1.0
+7f82bac43000-7f82bac8e000 rw-p 00000000 00:00 0 
+7f82bac8e000-7f82bacae000 r-xp 00000000 08:02 18648                      /lib64/ld-2.19.so
+7f82bae3e000-7f82bae73000 r--s 00000000 00:11 14746                      /run/nscd/dbK2CzxF (deleted)
+7f82bae73000-7f82bae7a000 rw-p 00000000 00:00 0 
+7f82bae8c000-7f82bae8d000 rw-p 00000000 00:00 0 
+7f82bae8d000-7f82bae9d000 rw-s 00000000 00:04 985694231                  /SYSV00000000 (deleted)
+7f82bae9d000-7f82baead000 rw-s 00000000 00:04 985661462                  /SYSV00000000 (deleted)
+7f82baead000-7f82baeae000 rw-p 00000000 00:00 0 
+7f82baeae000-7f82baeaf000 r--p 00020000 08:02 18648                      /lib64/ld-2.19.so
+7f82baeaf000-7f82baeb0000 rw-p 00021000 08:02 18648                      /lib64/ld-2.19.so
+7f82baeb0000-7f82baeb1000 rw-p 00000000 00:00 0 
+7ffd88c7e000-7ffd88ca0000 rw-p 00000000 00:00 0                          [stack]
+7ffd88d7a000-7ffd88d7c000 r-xp 00000000 00:00 0                          [vdso]
+7ffd88d7c000-7ffd88d7e000 r--p 00000000 00:00 0                          [vvar]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+Deadlock detected! Process 8904 will wait forever.
+('wait' called without outstanding send or recv requests).
+Requests:
+Sockets:
+  sock#0x9656a0 listen:    -1 demand:   0(   0)  src:(134.94.169.164,8904,(nil),r0000000) anyrecv:     2
+  Connections:
+    con#0x967e20 type:  loop state:    open dest:(134.94.169.164,8904,0x967e20,r0000000) recvcnt:    1
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 8905 RUNNING AT zam871
+=   EXIT CODE: 6
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Aborted (signal 6)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/epochtest np=4:
+[mpiexec@zam871] APPLICATION TIMED OUT
+[proxy:0:0@zam871] HYD_pmcd_pmip_control_cmd_cb (/home/clauss/Work/psmpi/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:885): assert (!closed) failed
+[proxy:0:0@zam871] HYDT_dmxu_poll_wait_for_event (/home/clauss/Work/psmpi/mpich2/src/pm/hydra/tools/demux/demux_poll.c:76): callback returned error status
+[proxy:0:0@zam871] main (/home/clauss/Work/psmpi/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+
+-------------------------------------------------
+./rma/strided_acc_subarray np=2:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 10961 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/acc-pairtype np=2:
+Deadlock detected! Process 14605 will wait forever.
+('wait' called without outstanding send or recv requests).
+Requests:
+Sockets:
+  sock#0x25af6a0 listen:    -1 demand:   0(   0)  src:(134.94.169.164,14605,(nil),r0000000) anyrecv:     2
+  Connections:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 14606 RUNNING AT zam871
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+26 tests failed out of 937
