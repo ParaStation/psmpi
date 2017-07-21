@@ -154,6 +154,9 @@ int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_da
 		pscom_request_t *req = pscom_request_create(xheader_len, 0);
 		MPID_PSCOM_XHeader_Rma_get_req_t *xheader = &req->xheader.user.get_req;
 
+		/* encoded datatype too large for xheader? */
+		assert(xheader_len < (1<<(8*sizeof(((struct PSCOM_header_net*)0)->xheader_len))));
+
 		MPID_PSP_Datatype_encode(&dt_info, &xheader->encoded_type);
 
 		{ /* Post a receive */

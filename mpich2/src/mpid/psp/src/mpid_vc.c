@@ -262,17 +262,17 @@ int MPID_PSP_comm_create_hook(MPID_Comm * comm)
 
 	comm->group = NULL;
 
-	/* ToDo: Fixme! Hack: Use pscom_socket from the rank 0 connection. This will fail
-	   with mixed Intra and Inter communicator connections. */
+	/* Use pscom_socket from the rank 0 connection ... */
 	con1st = MPID_PSCOM_rank2connection(comm, 0);
 	comm->pscom_socket = con1st ? con1st->socket : NULL;
 
-	/* Test if connections from different sockets are used ... */
+	/* ... and test if connections from different sockets are used ... */
 	for (i = 0; i < comm->local_size; i++) {
 		if (comm->pscom_socket && MPID_PSCOM_rank2connection(comm, i) &&
 		    (MPID_PSCOM_rank2connection(comm, i)->socket != comm->pscom_socket)) {
 			/* ... and disallow the usage of comm->pscom_socket in this case.
-			   This will disallow ANY_SOURCE receives on that communicator! */
+			   This will disallow ANY_SOURCE receives on that communicator for older pscoms
+			   ... but should be fixed/handled within the pscom layer as of pscom 5.2.0 */
 			comm->pscom_socket = NULL;
 			break;
 		}

@@ -136,7 +136,7 @@ typedef struct pscom_request_sr {
 
 typedef struct MPID_PSP_packed_msg {
 	char		*msg;
-	unsigned int	msg_sz;
+	size_t		msg_sz;
 	char		*tmp_buf;
 } MPID_PSP_packed_msg_t;
 

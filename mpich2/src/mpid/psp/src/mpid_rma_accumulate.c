@@ -176,6 +176,9 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 		pscom_request_t *req = pscom_request_create(xheader_len, sizeof(pscom_request_accumulate_send_t));
 		MPID_PSCOM_XHeader_Rma_accumulate_t *xheader = &req->xheader.user.accumulate;
 
+		/* encoded datatype too large for xheader? */
+		assert(xheader_len < (1<<(8*sizeof(((struct PSCOM_header_net*)0)->xheader_len))));
+
 		req->user->type.accumulate_send.msg = msg;
 		req->user->type.accumulate_send.win_ptr = win_ptr;
 

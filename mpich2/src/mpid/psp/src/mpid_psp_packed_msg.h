@@ -23,7 +23,7 @@ int MPID_PSP_packed_msg_prepare(const void *addr, int count, MPI_Datatype dataty
 				MPID_PSP_packed_msg_t *msg)
 {
 	int		contig;
-	unsigned int	data_sz;
+	size_t		data_sz;
 	MPID_Datatype	*dtp;
 	MPI_Aint	true_lb;
 
@@ -93,7 +93,7 @@ int MPID_PSP_packed_msg_need_unpack(const MPID_PSP_packed_msg_t *msg)
  */
 static inline
 int MPID_PSP_packed_msg_unpack(const void *addr, int count, MPI_Datatype datatype,
-				const MPID_PSP_packed_msg_t *msg, unsigned int data_len)
+                               const MPID_PSP_packed_msg_t *msg, size_t data_len)
 {
 	if (msg->tmp_buf) {
 		MPID_Segment segment;

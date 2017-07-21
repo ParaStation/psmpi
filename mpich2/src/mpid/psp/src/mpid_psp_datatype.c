@@ -17,10 +17,10 @@
 typedef struct MPID_PSP_Datatype_s
 {
 	MPI_Datatype	datatype;	/* must be the first! */
-	int		max_contig_blocks;
-	int		size;
+	MPI_Aint	max_contig_blocks;
+	MPI_Aint	size;
 	MPI_Aint	extent;
-	int		dataloop_size;
+	MPI_Aint	dataloop_size;
 	void		*dataloop;  /* Used with Dataloop_update(enc_dataloop, ptrdiff) on remote */
 	int		dataloop_depth;
 	int		basic_type;

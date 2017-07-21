@@ -141,7 +141,7 @@ void MPID_do_recv_rma_flush_req(pscom_request_t *req);
 void MPID_enable_receive_dispach(pscom_socket_t *socket);
 
 void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Datatype datatype,
-			     void *msg, unsigned int msg_sz, MPI_Op op);
+			     void *msg, size_t msg_sz, MPI_Op op);
 
 void MPID_req_queue_cleanup(void);
 

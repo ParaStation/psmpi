@@ -144,6 +144,9 @@ int MPID_Put_generic(const void *origin_addr, int origin_count, MPI_Datatype ori
 		pscom_request_t *req = pscom_request_create(xheader_len, sizeof(pscom_request_put_send_t));
 		MPID_PSCOM_XHeader_Rma_put_t *xheader = &req->xheader.user.put;
 
+		/* encoded datatype too large for xheader? */
+		assert(xheader_len < (1<<(8*sizeof(((struct PSCOM_header_net*)0)->xheader_len))));
+
 		req->user->type.put_send.msg = msg;
 		req->user->type.put_send.win_ptr = win_ptr;
 

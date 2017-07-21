@@ -54,7 +54,7 @@ void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 
 struct acc_params {
 	void		  *msg;
-	unsigned int	   msg_sz;
+	size_t		   msg_sz;
 	MPI_User_function *uop;
 	MPI_Op             op;
 	MPI_Datatype       dtype;
@@ -164,7 +164,7 @@ MPI_User_function *get_op(MPI_Op op)
 
 
 void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Datatype datatype,
-			     void *msg, unsigned int msg_sz, MPI_Op op)
+			     void *msg, size_t msg_sz, MPI_Op op)
 {
 	MPID_Segment segment;
 	DLOOP_Offset last = msg_sz;
