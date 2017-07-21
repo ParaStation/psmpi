@@ -254,13 +254,13 @@ int MPID_PSP_comm_create_hook(MPID_Comm * comm)
 		MPID_PSP_comm_create_mapper(comm);
 	}
 
+	comm->group = NULL;
+
 	if (comm->comm_kind == MPID_INTERCOMM) {
 		/* do nothing on Intercomms */
+		comm->pscom_socket = NULL;
 		return MPI_SUCCESS;
 	}
-
-
-	comm->group = NULL;
 
 	/* Use pscom_socket from the rank 0 connection ... */
 	con1st = MPID_PSCOM_rank2connection(comm, 0);
