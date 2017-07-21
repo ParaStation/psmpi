@@ -19,6 +19,7 @@ dist/Makefile.sources \
 dist/psmpi.spec.templ \
 dist/rpm_depgen \
 doc/Makefile.in \
+doc/imb-perf-jureca.txt \
 mpich2/.mailmap \
 mpich2/CHANGES \
 mpich2/COPYRIGHT \
@@ -6325,7 +6326,9 @@ mpich2/test/mpi/parastation/get-acc-loc.c \
 mpich2/test/mpi/parastation/get-acc-pairtype.c \
 mpich2/test/mpi/parastation/get-acc-shm-pairtype.c \
 mpich2/test/mpi/parastation/getfence1.c \
+mpich2/test/mpi/parastation/intercomm_anysrc.c \
 mpich2/test/mpi/parastation/large-acc-flush_local.c \
+mpich2/test/mpi/parastation/large_msg_typed.c \
 mpich2/test/mpi/parastation/locknull.c \
 mpich2/test/mpi/parastation/mprobe.c \
 mpich2/test/mpi/parastation/num_contexts_16k.c \

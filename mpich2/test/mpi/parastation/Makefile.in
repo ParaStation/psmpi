@@ -106,7 +106,8 @@ noinst_PROGRAMS = locknull$(EXEEXT) get-acc-loc$(EXEEXT) \
 	spawn_universe$(EXEEXT) spawn_univ_comm$(EXEEXT) \
 	spawn_univ_anysrc$(EXEEXT) num_contexts_2k$(EXEEXT) \
 	num_contexts_4k$(EXEEXT) num_contexts_8k$(EXEEXT) \
-	num_contexts_16k$(EXEEXT) getfence1$(EXEEXT) \
+	num_contexts_16k$(EXEEXT) large_msg_typed$(EXEEXT) \
+	intercomm_anysrc$(EXEEXT) getfence1$(EXEEXT) \
 	large-acc-flush_local$(EXEEXT) acc-pairtype$(EXEEXT) \
 	acc-vecsum$(EXEEXT) get-acc-pairtype$(EXEEXT) \
 	get-acc-shm-pairtype$(EXEEXT)
@@ -166,10 +167,22 @@ getfence1_LDADD = $(LDADD)
 getfence1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+intercomm_anysrc_SOURCES = intercomm_anysrc.c
+intercomm_anysrc_OBJECTS = intercomm_anysrc.$(OBJEXT)
+intercomm_anysrc_LDADD = $(LDADD)
+intercomm_anysrc_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 large_acc_flush_local_SOURCES = large-acc-flush_local.c
 large_acc_flush_local_OBJECTS = large-acc-flush_local.$(OBJEXT)
 large_acc_flush_local_LDADD = $(LDADD)
 large_acc_flush_local_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+large_msg_typed_SOURCES = large_msg_typed.c
+large_msg_typed_OBJECTS = large_msg_typed.$(OBJEXT)
+large_msg_typed_LDADD = $(LDADD)
+large_msg_typed_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 locknull_SOURCES = locknull.c
@@ -330,23 +343,25 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = acc-pairtype.c acc-vecsum.c get-acc-loc.c get-acc-pairtype.c \
-	get-acc-shm-pairtype.c getfence1.c large-acc-flush_local.c \
+	get-acc-shm-pairtype.c getfence1.c intercomm_anysrc.c \
+	large-acc-flush_local.c large_msg_typed.c locknull.c \
+	$(mprobe_SOURCES) num_contexts_16k.c num_contexts_2k.c \
+	num_contexts_4k.c num_contexts_8k.c spawn_anysrc.c \
+	spawn_isend.c spawn_rma.c spawn_ssend.c spawn_univ_anysrc.c \
+	spawn_univ_comm.c spawn_universe.c win_flavor_err_dyn.c \
+	win_flavor_err_shm.c win_shm_large.c win_shm_multiple.c \
+	win_sync_err_flush.c win_sync_err_flushall.c \
+	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
+	win_sync_err_unlockall.c
+DIST_SOURCES = acc-pairtype.c acc-vecsum.c get-acc-loc.c \
+	get-acc-pairtype.c get-acc-shm-pairtype.c getfence1.c \
+	intercomm_anysrc.c large-acc-flush_local.c large_msg_typed.c \
 	locknull.c $(mprobe_SOURCES) num_contexts_16k.c \
 	num_contexts_2k.c num_contexts_4k.c num_contexts_8k.c \
 	spawn_anysrc.c spawn_isend.c spawn_rma.c spawn_ssend.c \
 	spawn_univ_anysrc.c spawn_univ_comm.c spawn_universe.c \
 	win_flavor_err_dyn.c win_flavor_err_shm.c win_shm_large.c \
 	win_shm_multiple.c win_sync_err_flush.c \
-	win_sync_err_flushall.c win_sync_err_lockall_at.c \
-	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
-DIST_SOURCES = acc-pairtype.c acc-vecsum.c get-acc-loc.c \
-	get-acc-pairtype.c get-acc-shm-pairtype.c getfence1.c \
-	large-acc-flush_local.c locknull.c $(mprobe_SOURCES) \
-	num_contexts_16k.c num_contexts_2k.c num_contexts_4k.c \
-	num_contexts_8k.c spawn_anysrc.c spawn_isend.c spawn_rma.c \
-	spawn_ssend.c spawn_univ_anysrc.c spawn_univ_comm.c \
-	spawn_universe.c win_flavor_err_dyn.c win_flavor_err_shm.c \
-	win_shm_large.c win_shm_multiple.c win_sync_err_flush.c \
 	win_sync_err_flushall.c win_sync_err_lockall_at.c \
 	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
 am__can_run_installinfo = \
@@ -675,9 +690,17 @@ getfence1$(EXEEXT): $(getfence1_OBJECTS) $(getfence1_DEPENDENCIES) $(EXTRA_getfe
 	@rm -f getfence1$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(getfence1_OBJECTS) $(getfence1_LDADD) $(LIBS)
 
+intercomm_anysrc$(EXEEXT): $(intercomm_anysrc_OBJECTS) $(intercomm_anysrc_DEPENDENCIES) $(EXTRA_intercomm_anysrc_DEPENDENCIES) 
+	@rm -f intercomm_anysrc$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(intercomm_anysrc_OBJECTS) $(intercomm_anysrc_LDADD) $(LIBS)
+
 large-acc-flush_local$(EXEEXT): $(large_acc_flush_local_OBJECTS) $(large_acc_flush_local_DEPENDENCIES) $(EXTRA_large_acc_flush_local_DEPENDENCIES) 
 	@rm -f large-acc-flush_local$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(large_acc_flush_local_OBJECTS) $(large_acc_flush_local_LDADD) $(LIBS)
+
+large_msg_typed$(EXEEXT): $(large_msg_typed_OBJECTS) $(large_msg_typed_DEPENDENCIES) $(EXTRA_large_msg_typed_DEPENDENCIES) 
+	@rm -f large_msg_typed$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(large_msg_typed_OBJECTS) $(large_msg_typed_LDADD) $(LIBS)
 
 locknull$(EXEEXT): $(locknull_OBJECTS) $(locknull_DEPENDENCIES) $(EXTRA_locknull_DEPENDENCIES) 
 	@rm -f locknull$(EXEEXT)
@@ -779,7 +802,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-acc-pairtype.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-acc-shm-pairtype.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getfence1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intercomm_anysrc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large-acc-flush_local.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large_msg_typed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locknull.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mprobe.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/num_contexts_16k.Po@am__quote@
