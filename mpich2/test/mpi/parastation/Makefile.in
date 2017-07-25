@@ -107,10 +107,10 @@ noinst_PROGRAMS = locknull$(EXEEXT) get-acc-loc$(EXEEXT) \
 	spawn_univ_anysrc$(EXEEXT) num_contexts_2k$(EXEEXT) \
 	num_contexts_4k$(EXEEXT) num_contexts_8k$(EXEEXT) \
 	num_contexts_16k$(EXEEXT) large_msg_typed$(EXEEXT) \
-	intercomm_anysrc$(EXEEXT) getfence1$(EXEEXT) \
-	large-acc-flush_local$(EXEEXT) acc-pairtype$(EXEEXT) \
-	acc-vecsum$(EXEEXT) get-acc-pairtype$(EXEEXT) \
-	get-acc-shm-pairtype$(EXEEXT)
+	intercomm_anysrc$(EXEEXT) large-acc-flush_local$(EXEEXT) \
+	acc-pairtype$(EXEEXT) acc-vecsum$(EXEEXT) \
+	get-acc-pairtype$(EXEEXT) get-acc-shm-pairtype$(EXEEXT) \
+	putfence1$(EXEEXT) getfence1$(EXEEXT)
 subdir = parastation
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -216,6 +216,12 @@ num_contexts_8k_SOURCES = num_contexts_8k.c
 num_contexts_8k_OBJECTS = num_contexts_8k.$(OBJEXT)
 num_contexts_8k_LDADD = $(LDADD)
 num_contexts_8k_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+putfence1_SOURCES = putfence1.c
+putfence1_OBJECTS = putfence1.$(OBJEXT)
+putfence1_LDADD = $(LDADD)
+putfence1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 spawn_anysrc_SOURCES = spawn_anysrc.c
@@ -346,7 +352,7 @@ SOURCES = acc-pairtype.c acc-vecsum.c get-acc-loc.c get-acc-pairtype.c \
 	get-acc-shm-pairtype.c getfence1.c intercomm_anysrc.c \
 	large-acc-flush_local.c large_msg_typed.c locknull.c \
 	$(mprobe_SOURCES) num_contexts_16k.c num_contexts_2k.c \
-	num_contexts_4k.c num_contexts_8k.c spawn_anysrc.c \
+	num_contexts_4k.c num_contexts_8k.c putfence1.c spawn_anysrc.c \
 	spawn_isend.c spawn_rma.c spawn_ssend.c spawn_univ_anysrc.c \
 	spawn_univ_comm.c spawn_universe.c win_flavor_err_dyn.c \
 	win_flavor_err_shm.c win_shm_large.c win_shm_multiple.c \
@@ -358,10 +364,10 @@ DIST_SOURCES = acc-pairtype.c acc-vecsum.c get-acc-loc.c \
 	intercomm_anysrc.c large-acc-flush_local.c large_msg_typed.c \
 	locknull.c $(mprobe_SOURCES) num_contexts_16k.c \
 	num_contexts_2k.c num_contexts_4k.c num_contexts_8k.c \
-	spawn_anysrc.c spawn_isend.c spawn_rma.c spawn_ssend.c \
-	spawn_univ_anysrc.c spawn_univ_comm.c spawn_universe.c \
-	win_flavor_err_dyn.c win_flavor_err_shm.c win_shm_large.c \
-	win_shm_multiple.c win_sync_err_flush.c \
+	putfence1.c spawn_anysrc.c spawn_isend.c spawn_rma.c \
+	spawn_ssend.c spawn_univ_anysrc.c spawn_univ_comm.c \
+	spawn_universe.c win_flavor_err_dyn.c win_flavor_err_shm.c \
+	win_shm_large.c win_shm_multiple.c win_sync_err_flush.c \
 	win_sync_err_flushall.c win_sync_err_lockall_at.c \
 	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
 am__can_run_installinfo = \
@@ -726,6 +732,10 @@ num_contexts_8k$(EXEEXT): $(num_contexts_8k_OBJECTS) $(num_contexts_8k_DEPENDENC
 	@rm -f num_contexts_8k$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(num_contexts_8k_OBJECTS) $(num_contexts_8k_LDADD) $(LIBS)
 
+putfence1$(EXEEXT): $(putfence1_OBJECTS) $(putfence1_DEPENDENCIES) $(EXTRA_putfence1_DEPENDENCIES) 
+	@rm -f putfence1$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(putfence1_OBJECTS) $(putfence1_LDADD) $(LIBS)
+
 spawn_anysrc$(EXEEXT): $(spawn_anysrc_OBJECTS) $(spawn_anysrc_DEPENDENCIES) $(EXTRA_spawn_anysrc_DEPENDENCIES) 
 	@rm -f spawn_anysrc$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(spawn_anysrc_OBJECTS) $(spawn_anysrc_LDADD) $(LIBS)
@@ -811,6 +821,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/num_contexts_2k.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/num_contexts_4k.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/num_contexts_8k.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/putfence1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_anysrc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_isend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_rma.Po@am__quote@

@@ -1,6 +1,6 @@
 winname 2
 allocmem 2
-putfence1 2
+@largetest@putfence1 2
 putfidx 4
 @largetest@getfence1 2
 accfence1 4

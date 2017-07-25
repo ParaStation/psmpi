@@ -30,5 +30,6 @@ get-acc-pairtype 2 mpiversion=3.0
 get-acc-shm-pairtype 2 mpiversion=3.0
 #
 # Fixed tests from MPICH:
+putfence1 2
 getfence1 2
 large-acc-flush_local 3 mpiversion=3.0

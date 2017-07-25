@@ -6335,6 +6335,7 @@ mpich2/test/mpi/parastation/num_contexts_16k.c \
 mpich2/test/mpi/parastation/num_contexts_2k.c \
 mpich2/test/mpi/parastation/num_contexts_4k.c \
 mpich2/test/mpi/parastation/num_contexts_8k.c \
+mpich2/test/mpi/parastation/putfence1.c \
 mpich2/test/mpi/parastation/reqops_fixed.c \
 mpich2/test/mpi/parastation/spawn_anysrc.c \
 mpich2/test/mpi/parastation/spawn_isend.c \
