@@ -1,7 +1,7 @@
 <?xml version='1.0' ?>
 <?xml-stylesheet href="TestResults.xsl" type="text/xsl" ?>
 <MPITESTRESULTS>
-<DATE>2017-07-03-17-36</DATE>
+<DATE>2017-07-26-18-53</DATE>
 <MPISOURCE></MPISOURCE>
 <MPITEST>
 <NAME>mprobe</NAME>
@@ -112,6 +112,30 @@
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
+<NAME>spawn_univ_comm</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawn_univ_anysrc</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>intercomm_anysrc</NAME>
+<NP>4</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>large_msg_typed</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
 <NAME>num_contexts_2k</NAME>
 <NP>1</NP>
 <WORKDIR>./parastation</WORKDIR>
@@ -155,6 +179,12 @@
 </MPITEST>
 <MPITEST>
 <NAME>get-acc-shm-pairtype</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>putfence1</NAME>
 <NP>2</NP>
 <WORKDIR>./parastation</WORKDIR>
 <STATUS>pass</STATUS>
@@ -2267,12 +2297,6 @@
 </MPITEST>
 <MPITEST>
 <NAME>allocmem</NAME>
-<NP>2</NP>
-<WORKDIR>./rma</WORKDIR>
-<STATUS>pass</STATUS>
-</MPITEST>
-<MPITEST>
-<NAME>putfence1</NAME>
 <NP>2</NP>
 <WORKDIR>./rma</WORKDIR>
 <STATUS>pass</STATUS>

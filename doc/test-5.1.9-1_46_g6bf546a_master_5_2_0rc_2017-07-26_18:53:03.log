@@ -1,7 +1,7 @@
 zam871
 package pscom is not installed
 package psmgmt is not installed
-5.1.5-1_50_gc68b23a_master_3_2
+5.1.9-1_46_g6bf546a_5_2_0rc
 /home/clauss/Work/psmpi/build/install/bin/mpiexec.hydra
 make[1]: Entering directory '/home/clauss/Work/psmpi/build/mpich2'
 ( cd test && make  testing )
@@ -31,7 +31,7 @@ Looking in ./info/testlist
 Processing directory init
 Looking in ./init/testlist
 Some programs (version) may still be running:
-pids = 6916 30990 
+pids = 21757 29581 
 The executable (version) will not be removed.
 Processing directory mpi_t
 Looking in ./mpi_t/testlist
@@ -39,7 +39,6 @@ Processing directory pt2pt
 Looking in ./pt2pt/testlist
 Processing directory rma
 Looking in ./rma/testlist
-Program acc-pairtype exited without No Errors
 Processing directory spawn
 Looking in ./spawn/testlist
 Processing directory topo
@@ -47,7 +46,7 @@ Looking in ./topo/testlist
 Processing directory io
 Looking in ./io/testlist
 Some programs (async) may still be running:
-pids = 1989 2030 
+pids = 1896 2023 
 The executable (async) will not be removed.
 Processing directory f77
 Looking in ./f77/testlist
@@ -119,20 +118,6 @@ Processing directory init
 Looking in ./f90/init/testlist
 Processing directory io
 Looking in ./f90/io/testlist
-Failed to build iwriteatallf90; make[4]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi/f90/io'
-make[5]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi/f90/io'
-../../maint/testmerge -defn=/home/clauss/Work/psmpi/mpich2/test/mpi/maint/common.defn \
-	/home/clauss/Work/psmpi/mpich2/test/mpi/f90/io/ioharness.defn /home/clauss/Work/psmpi/mpich2/test/mpi/f90/io/ioharness.tlt
-Opening /home/clauss/Work/psmpi/mpich2/test/mpi/maint/common.defn..
-make[5]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi/f90/io'
-  FC       iwriteatallf90.o
-gfortran: error: iwriteatallf90.f90: No such file or directory
-gfortran: fatal error: no input files
-compilation terminated.
-Makefile:710: recipe for target 'iwriteatallf90.o' failed
-make[4]: *** [iwriteatallf90.o] Error 1
-make[4]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi/f90/io'
-
 Processing directory misc
 Looking in ./f90/misc/testlist
 Processing directory pt2pt
@@ -185,10 +170,7 @@ Processing directory f90
 Looking in ./errors/f90/testlist
 Processing directory io
 Looking in ./errors/f90/io/testlist
-Processing directory impls
-Looking in ./impls/testlist
-2 tests failed out of 931
-Details in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.xml
+ All 941 tests passed!
 TAP formatted results in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.tap
 JUNIT formatted results in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.junit.xml
 make[3]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi'
@@ -200,23 +182,4 @@ make[3]: Nothing to be done for 'testing'.
 make[3]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test/commands'
 make[2]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test'
 make[1]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2'
-./rma/acc-pairtype np=2:
-
--------------------------------------------------
-./f90/io/iwriteatallf90 np=:
-Failed to build iwriteatallf90; make[4]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi/f90/io'
-make[5]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi/f90/io'
-../../maint/testmerge -defn=/home/clauss/Work/psmpi/mpich2/test/mpi/maint/common.defn \
-	/home/clauss/Work/psmpi/mpich2/test/mpi/f90/io/ioharness.defn /home/clauss/Work/psmpi/mpich2/test/mpi/f90/io/ioharness.tlt
-Opening /home/clauss/Work/psmpi/mpich2/test/mpi/maint/common.defn..
-make[5]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi/f90/io'
-  FC       iwriteatallf90.o
-gfortran: error: iwriteatallf90.f90: No such file or directory
-gfortran: fatal error: no input files
-compilation terminated.
-Makefile:710: recipe for target 'iwriteatallf90.o' failed
-make[4]: *** [iwriteatallf90.o] Error 1
-make[4]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi/f90/io'
-
--------------------------------------------------
-2 tests failed out of 931
+0 tests failed out of 941

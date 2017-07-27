@@ -1,8 +1,8 @@
-For 5.2.0-1 preview (master-3.2)
+For 5.2.0-1 preview (MPICH 3.2-based, tested with pscom-5.2-0rc)
 
 with hydra's mpiexec, confset=default, largetests disabled
 
- All 937 tests passed!
- 0 tests failed out of 937
- Summary written to /home/clauss/Work/psmpi/doc/test-5.1.9-1_39_gcc9327f_master_3_2_2017-07-03_17:36:30*
+ All 941 tests passed!
+ 0 tests failed out of 941
+ Summary written to test-5.1.9-1_46_g6bf546a_master_5_2_0rc_2017-07-26_18:53:03.*
 
