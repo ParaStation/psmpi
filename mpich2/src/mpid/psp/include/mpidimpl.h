@@ -46,9 +46,6 @@ struct MPIDI_PG {
 };
 
 
-typedef struct MPIDI_VCRT MPIDI_VCRT_t;
-typedef struct MPIDI_VC MPIDI_VC_t;
-
 struct MPIDI_VC {
 	pscom_connection_t *con;
 	int lpid;
