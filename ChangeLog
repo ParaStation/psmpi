@@ -1,3 +1,13 @@
+2017-08-04  Carsten Clauss <clauss@par-tec.com>	-	5.2.0-1
+
+	* Update to mpich version 3.2
+
+	* Fix: Usage of MPI_ANY_SOURCE on Intercommunicators (requires
+	pscom-5.2.0)
+
+	* Fix: Handling of composed datatypes like MPI_DOUBLE_INT for
+	MPI_Accumulate
+
 2017-03-02  Carsten Clauss <clauss@par-tec.com>	-	5.1.9-1
 
 	* Fixed integer overflow in MPID_Win_allocate_shared()
