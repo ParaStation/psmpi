@@ -11,6 +11,7 @@
 
 #include <mpi.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
@@ -70,6 +71,9 @@ int main(int argc, char *argv[])
         MPI_Comm_size(comm_shmem, &comm_shmem_size);
         MPI_Comm_rank(comm_shmem, &comm_shmem_rank);
 
+	// In the ONDEMAND case, it is quite likely that comm_shmem equals COMM_SELF! Just skip this test then...
+	if(getenv("PSP_ONDEMAND") && (strcmp(getenv("PSP_ONDEMAND"), "1") == 0)) goto finalize;
+
 	assert(sizeof(MPI_Aint) == sizeof(long));
 	assert(sizeof(size_t) == sizeof(unsigned long));
 
@@ -92,6 +96,7 @@ int main(int argc, char *argv[])
 
         MPI_Comm_free(&comm_shmem);
 
+finalize:
         MPI_Finalize();
 
 	if(comm_world_rank == 0) {
