@@ -101,8 +101,9 @@ noinst_PROGRAMS = locknull$(EXEEXT) get-acc-loc$(EXEEXT) \
 	win_sync_err_lockall_at$(EXEEXT) \
 	win_sync_err_unlockall$(EXEEXT) win_flavor_err_shm$(EXEEXT) \
 	win_flavor_err_dyn$(EXEEXT) win_shm_multiple$(EXEEXT) \
-	win_shm_large$(EXEEXT) spawn_isend$(EXEEXT) \
-	spawn_anysrc$(EXEEXT) spawn_ssend$(EXEEXT) spawn_rma$(EXEEXT) \
+	win_shm_large$(EXEEXT) split_type_integrity$(EXEEXT) \
+	spawn_isend$(EXEEXT) spawn_anysrc$(EXEEXT) \
+	spawn_ssend$(EXEEXT) spawn_rma$(EXEEXT) \
 	spawn_universe$(EXEEXT) spawn_univ_comm$(EXEEXT) \
 	spawn_univ_anysrc$(EXEEXT) num_contexts_2k$(EXEEXT) \
 	num_contexts_4k$(EXEEXT) num_contexts_8k$(EXEEXT) \
@@ -266,6 +267,12 @@ spawn_universe_LDADD = $(LDADD)
 spawn_universe_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
+split_type_integrity_SOURCES = split_type_integrity.c
+split_type_integrity_OBJECTS = split_type_integrity.$(OBJEXT)
+split_type_integrity_LDADD = $(LDADD)
+split_type_integrity_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 win_flavor_err_dyn_SOURCES = win_flavor_err_dyn.c
 win_flavor_err_dyn_OBJECTS = win_flavor_err_dyn.$(OBJEXT)
 win_flavor_err_dyn_LDADD = $(LDADD)
@@ -354,11 +361,11 @@ SOURCES = acc-pairtype.c acc-vecsum.c get-acc-loc.c get-acc-pairtype.c \
 	$(mprobe_SOURCES) num_contexts_16k.c num_contexts_2k.c \
 	num_contexts_4k.c num_contexts_8k.c putfence1.c spawn_anysrc.c \
 	spawn_isend.c spawn_rma.c spawn_ssend.c spawn_univ_anysrc.c \
-	spawn_univ_comm.c spawn_universe.c win_flavor_err_dyn.c \
-	win_flavor_err_shm.c win_shm_large.c win_shm_multiple.c \
-	win_sync_err_flush.c win_sync_err_flushall.c \
-	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
-	win_sync_err_unlockall.c
+	spawn_univ_comm.c spawn_universe.c split_type_integrity.c \
+	win_flavor_err_dyn.c win_flavor_err_shm.c win_shm_large.c \
+	win_shm_multiple.c win_sync_err_flush.c \
+	win_sync_err_flushall.c win_sync_err_lockall_at.c \
+	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
 DIST_SOURCES = acc-pairtype.c acc-vecsum.c get-acc-loc.c \
 	get-acc-pairtype.c get-acc-shm-pairtype.c getfence1.c \
 	intercomm_anysrc.c large-acc-flush_local.c large_msg_typed.c \
@@ -366,10 +373,11 @@ DIST_SOURCES = acc-pairtype.c acc-vecsum.c get-acc-loc.c \
 	num_contexts_2k.c num_contexts_4k.c num_contexts_8k.c \
 	putfence1.c spawn_anysrc.c spawn_isend.c spawn_rma.c \
 	spawn_ssend.c spawn_univ_anysrc.c spawn_univ_comm.c \
-	spawn_universe.c win_flavor_err_dyn.c win_flavor_err_shm.c \
-	win_shm_large.c win_shm_multiple.c win_sync_err_flush.c \
-	win_sync_err_flushall.c win_sync_err_lockall_at.c \
-	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
+	spawn_universe.c split_type_integrity.c win_flavor_err_dyn.c \
+	win_flavor_err_shm.c win_shm_large.c win_shm_multiple.c \
+	win_sync_err_flush.c win_sync_err_flushall.c \
+	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
+	win_sync_err_unlockall.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -764,6 +772,10 @@ spawn_universe$(EXEEXT): $(spawn_universe_OBJECTS) $(spawn_universe_DEPENDENCIES
 	@rm -f spawn_universe$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(spawn_universe_OBJECTS) $(spawn_universe_LDADD) $(LIBS)
 
+split_type_integrity$(EXEEXT): $(split_type_integrity_OBJECTS) $(split_type_integrity_DEPENDENCIES) $(EXTRA_split_type_integrity_DEPENDENCIES) 
+	@rm -f split_type_integrity$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(split_type_integrity_OBJECTS) $(split_type_integrity_LDADD) $(LIBS)
+
 win_flavor_err_dyn$(EXEEXT): $(win_flavor_err_dyn_OBJECTS) $(win_flavor_err_dyn_DEPENDENCIES) $(EXTRA_win_flavor_err_dyn_DEPENDENCIES) 
 	@rm -f win_flavor_err_dyn$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(win_flavor_err_dyn_OBJECTS) $(win_flavor_err_dyn_LDADD) $(LIBS)
@@ -829,6 +841,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_univ_anysrc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_univ_comm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_universe.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/split_type_integrity.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_flavor_err_dyn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_flavor_err_shm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shm_large.Po@am__quote@

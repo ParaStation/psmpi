@@ -6344,6 +6344,7 @@ mpich2/test/mpi/parastation/spawn_ssend.c \
 mpich2/test/mpi/parastation/spawn_univ_anysrc.c \
 mpich2/test/mpi/parastation/spawn_univ_comm.c \
 mpich2/test/mpi/parastation/spawn_universe.c \
+mpich2/test/mpi/parastation/split_type_integrity.c \
 mpich2/test/mpi/parastation/testlist \
 mpich2/test/mpi/parastation/win_flavor_err_dyn.c \
 mpich2/test/mpi/parastation/win_flavor_err_shm.c \
