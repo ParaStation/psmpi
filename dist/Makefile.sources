@@ -6327,6 +6327,7 @@ mpich2/test/mpi/parastation/get-acc-pairtype.c \
 mpich2/test/mpi/parastation/get-acc-shm-pairtype.c \
 mpich2/test/mpi/parastation/getfence1.c \
 mpich2/test/mpi/parastation/intercomm_anysrc.c \
+mpich2/test/mpi/parastation/intercomm_stress.c \
 mpich2/test/mpi/parastation/large-acc-flush_local.c \
 mpich2/test/mpi/parastation/large_msg_typed.c \
 mpich2/test/mpi/parastation/locknull.c \

@@ -108,10 +108,11 @@ noinst_PROGRAMS = locknull$(EXEEXT) get-acc-loc$(EXEEXT) \
 	spawn_univ_anysrc$(EXEEXT) num_contexts_2k$(EXEEXT) \
 	num_contexts_4k$(EXEEXT) num_contexts_8k$(EXEEXT) \
 	num_contexts_16k$(EXEEXT) large_msg_typed$(EXEEXT) \
-	intercomm_anysrc$(EXEEXT) large-acc-flush_local$(EXEEXT) \
-	acc-pairtype$(EXEEXT) acc-vecsum$(EXEEXT) \
-	get-acc-pairtype$(EXEEXT) get-acc-shm-pairtype$(EXEEXT) \
-	putfence1$(EXEEXT) getfence1$(EXEEXT)
+	intercomm_anysrc$(EXEEXT) intercomm_stress$(EXEEXT) \
+	large-acc-flush_local$(EXEEXT) acc-pairtype$(EXEEXT) \
+	acc-vecsum$(EXEEXT) get-acc-pairtype$(EXEEXT) \
+	get-acc-shm-pairtype$(EXEEXT) putfence1$(EXEEXT) \
+	getfence1$(EXEEXT)
 subdir = parastation
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -172,6 +173,12 @@ intercomm_anysrc_SOURCES = intercomm_anysrc.c
 intercomm_anysrc_OBJECTS = intercomm_anysrc.$(OBJEXT)
 intercomm_anysrc_LDADD = $(LDADD)
 intercomm_anysrc_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+intercomm_stress_SOURCES = intercomm_stress.c
+intercomm_stress_OBJECTS = intercomm_stress.$(OBJEXT)
+intercomm_stress_LDADD = $(LDADD)
+intercomm_stress_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 large_acc_flush_local_SOURCES = large-acc-flush_local.c
@@ -357,18 +364,7 @@ am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = acc-pairtype.c acc-vecsum.c get-acc-loc.c get-acc-pairtype.c \
 	get-acc-shm-pairtype.c getfence1.c intercomm_anysrc.c \
-	large-acc-flush_local.c large_msg_typed.c locknull.c \
-	$(mprobe_SOURCES) num_contexts_16k.c num_contexts_2k.c \
-	num_contexts_4k.c num_contexts_8k.c putfence1.c spawn_anysrc.c \
-	spawn_isend.c spawn_rma.c spawn_ssend.c spawn_univ_anysrc.c \
-	spawn_univ_comm.c spawn_universe.c split_type_integrity.c \
-	win_flavor_err_dyn.c win_flavor_err_shm.c win_shm_large.c \
-	win_shm_multiple.c win_sync_err_flush.c \
-	win_sync_err_flushall.c win_sync_err_lockall_at.c \
-	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
-DIST_SOURCES = acc-pairtype.c acc-vecsum.c get-acc-loc.c \
-	get-acc-pairtype.c get-acc-shm-pairtype.c getfence1.c \
-	intercomm_anysrc.c large-acc-flush_local.c large_msg_typed.c \
+	intercomm_stress.c large-acc-flush_local.c large_msg_typed.c \
 	locknull.c $(mprobe_SOURCES) num_contexts_16k.c \
 	num_contexts_2k.c num_contexts_4k.c num_contexts_8k.c \
 	putfence1.c spawn_anysrc.c spawn_isend.c spawn_rma.c \
@@ -378,6 +374,18 @@ DIST_SOURCES = acc-pairtype.c acc-vecsum.c get-acc-loc.c \
 	win_sync_err_flush.c win_sync_err_flushall.c \
 	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
 	win_sync_err_unlockall.c
+DIST_SOURCES = acc-pairtype.c acc-vecsum.c get-acc-loc.c \
+	get-acc-pairtype.c get-acc-shm-pairtype.c getfence1.c \
+	intercomm_anysrc.c intercomm_stress.c large-acc-flush_local.c \
+	large_msg_typed.c locknull.c $(mprobe_SOURCES) \
+	num_contexts_16k.c num_contexts_2k.c num_contexts_4k.c \
+	num_contexts_8k.c putfence1.c spawn_anysrc.c spawn_isend.c \
+	spawn_rma.c spawn_ssend.c spawn_univ_anysrc.c \
+	spawn_univ_comm.c spawn_universe.c split_type_integrity.c \
+	win_flavor_err_dyn.c win_flavor_err_shm.c win_shm_large.c \
+	win_shm_multiple.c win_sync_err_flush.c \
+	win_sync_err_flushall.c win_sync_err_lockall_at.c \
+	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -708,6 +716,10 @@ intercomm_anysrc$(EXEEXT): $(intercomm_anysrc_OBJECTS) $(intercomm_anysrc_DEPEND
 	@rm -f intercomm_anysrc$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(intercomm_anysrc_OBJECTS) $(intercomm_anysrc_LDADD) $(LIBS)
 
+intercomm_stress$(EXEEXT): $(intercomm_stress_OBJECTS) $(intercomm_stress_DEPENDENCIES) $(EXTRA_intercomm_stress_DEPENDENCIES) 
+	@rm -f intercomm_stress$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(intercomm_stress_OBJECTS) $(intercomm_stress_LDADD) $(LIBS)
+
 large-acc-flush_local$(EXEEXT): $(large_acc_flush_local_OBJECTS) $(large_acc_flush_local_DEPENDENCIES) $(EXTRA_large_acc_flush_local_DEPENDENCIES) 
 	@rm -f large-acc-flush_local$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(large_acc_flush_local_OBJECTS) $(large_acc_flush_local_LDADD) $(LIBS)
@@ -825,6 +837,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-acc-shm-pairtype.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getfence1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intercomm_anysrc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intercomm_stress.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large-acc-flush_local.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large_msg_typed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locknull.Po@am__quote@

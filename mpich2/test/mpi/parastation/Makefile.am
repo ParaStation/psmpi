@@ -24,6 +24,6 @@ noinst_PROGRAMS =  \
     win_shm_multiple win_shm_large split_type_integrity \
     spawn_isend spawn_anysrc spawn_ssend spawn_rma spawn_universe spawn_univ_comm spawn_univ_anysrc \
     num_contexts_2k num_contexts_4k num_contexts_8k num_contexts_16k \
-    large_msg_typed intercomm_anysrc \
+    large_msg_typed intercomm_anysrc intercomm_stress \
     large-acc-flush_local acc-pairtype acc-vecsum get-acc-pairtype get-acc-shm-pairtype \
     putfence1 getfence1

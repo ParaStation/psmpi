@@ -20,6 +20,7 @@ spawn_universe 2
 spawn_univ_comm 2 timeLimit=30
 spawn_univ_anysrc 2 timeLimit=30
 intercomm_anysrc 4
+intercomm_stress 4 timeLimit=60
 large_msg_typed 2  timeLimit=60
 num_contexts_2k 1
 num_contexts_4k 1
