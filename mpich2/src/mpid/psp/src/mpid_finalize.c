@@ -33,12 +33,44 @@ void sig_finalize_timeout(int signo)
 
 int MPID_Finalize(void)
 {
+	MPIDI_PG_t *pg_ptr;
+
 	MPIDI_STATE_DECL(MPID_STATE_MPID_FINALIZE);
 	MPIDI_FUNC_ENTER(MPID_STATE_MPID_FINALIZE);
-/* ToDo: */
-/*	fprintf(stderr, "%d waitall\n", MPIDI_Process.my_pg_rank); */
 
-	{
+	if(!_getenv_i("PSP_FINALIZE_BARRIER", 1)) {
+
+		/* A sparse synchronization scheme (!experimental!) that just uses the actually established connections: */
+
+		int j;
+
+		pg_ptr = MPIDI_Process.my_pg;
+
+		pscom_test_any();
+
+		for(j=0; j<pg_ptr->size; j++) {
+
+			if( (j != MPIDI_Process.my_pg_rank) &&
+			    (( (pg_ptr->cons[j]->type != PSCOM_CON_TYPE_ONDEMAND) && (pg_ptr->cons[j]->state == PSCOM_CON_STATE_RW) ) ||
+			     ( (pg_ptr->cons[j]->type == PSCOM_CON_TYPE_ONDEMAND) && (pg_ptr->cons[j]->state != PSCOM_CON_STATE_RW) ) ))
+			{
+				MPID_PSP_SendCtrl(0, MPID_CONTEXT_INTRA_COLL, MPIDI_Process.my_pg_rank, pg_ptr->cons[j], MPID_PSP_MSGTYPE_FINALIZE_TOKEN);
+			}
+		}
+		for(j=0; j<pg_ptr->size; j++) {
+
+			if( (j != MPIDI_Process.my_pg_rank) &&
+			    (( (pg_ptr->cons[j]->type != PSCOM_CON_TYPE_ONDEMAND) && (pg_ptr->cons[j]->state == PSCOM_CON_STATE_RW) ) ||
+			     ( (pg_ptr->cons[j]->type == PSCOM_CON_TYPE_ONDEMAND) && (pg_ptr->cons[j]->state != PSCOM_CON_STATE_RW) ) ))
+			{
+				MPID_PSP_RecvCtrl(0, MPID_CONTEXT_INTRA_COLL, j, pg_ptr->cons[j],  MPID_PSP_MSGTYPE_FINALIZE_TOKEN);
+			}
+		}
+
+	} else {
+
+		/* The common barrier synchronization across comm_world within MPI Finalize: */
+
 		MPIR_Errflag_t errflag = MPIR_ERR_NONE;
 		int timeout;
 		MPIU_THREADPRIV_DECL;
@@ -67,7 +99,6 @@ int MPID_Finalize(void)
 /*	fprintf(stderr, "%d PMI_Finalize\n", MPIDI_Process.my_pg_rank); */
 	PMI_Finalize();
 
-
 	/* Release standard communicators */
 #ifdef MPID_NEEDS_ICOMM_WORLD
 	/* psp don't need icomm. But this might change? */
@@ -77,7 +108,7 @@ int MPID_Finalize(void)
 	MPIR_Comm_release_always(MPIR_Process.comm_world);
 
 	/* Cleanups */
-	MPIDI_PG_t* pg_ptr = MPIDI_Process.my_pg->next;
+	pg_ptr = MPIDI_Process.my_pg->next;
 	while(pg_ptr) {
 		pg_ptr = MPIDI_PG_Destroy(pg_ptr);
 	}
