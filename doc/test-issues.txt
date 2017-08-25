@@ -1,8 +1,13 @@
-For 5.2.0-1 preview (MPICH 3.2-based, tested with pscom-5.2-0rc)
+For 5.2.0-1 (MPICH 3.2-based, tested with pscom-5.2-1-1rc)
 
 with hydra's mpiexec, confset=default, largetests disabled
 
- All 941 tests passed!
- 0 tests failed out of 941
- Summary written to test-5.1.9-1_46_g6bf546a_master_5_2_0rc_2017-07-26_18:53:03.*
+With PSP_ONDEMAND=0:
+ All 943 tests passed!
+ 0 tests failed out of 943
+ Summary written to test-5.2.0-1_3_g3c52e28_pscom-5.2.1_2017-08-25_07:58:00.*
 
+With PSP_ONDEMAND=1:
+ All 943 tests passed!
+ 0 tests failed out of 943
+ Summary written to test-5.2.0-1_3_g3c52e28_pscom-5.2.1-ondemand_2017-08-25_07:04:41
