@@ -11,6 +11,7 @@
  */
 
 #include "mpidimpl.h"
+#include "pmi.h"
 
 static
 int _getenv_i(const char *env_name, int _default)
