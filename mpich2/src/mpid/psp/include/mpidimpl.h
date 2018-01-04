@@ -99,9 +99,7 @@ typedef struct MPIDI_Process
 		unsigned enable_collectives;
 		unsigned enable_ondemand;
 		unsigned enable_ondemand_spawn;
-#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
-		unsigned enable_smp_aware_collops;
-#endif
+		unsigned enable_smp_awareness;
 	} env;
 } MPIDI_Process_t;
 

@@ -27,7 +27,7 @@ int MPID_Get_node_id(MPID_Comm *comm, int rank, MPID_Node_id_t *id_p)
 	int i;
 	int pg_check_id;
 
-	if(!MPIDI_Process.env.enable_smp_aware_collops) {
+	if(!MPIDI_Process.env.enable_smp_awareness) {
 		/* Just pretend that each rank lives on its own node: */
 		*id_p = rank;
 		return 0;

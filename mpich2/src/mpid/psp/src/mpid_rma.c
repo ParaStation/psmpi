@@ -645,7 +645,7 @@ int get_my_shmem_split_color(MPID_Comm * comm_ptr)
 {
 	int i, color = MPI_UNDEFINED;
 
-	if(MPIDI_Process.env.enable_ondemand) return comm_ptr->rank;
+	if(!MPIDI_Process.env.enable_smp_awareness || MPIDI_Process.env.enable_ondemand) return comm_ptr->rank;
 
 	for(i=0; i<comm_ptr->local_size; i++) {
 		if( (comm_ptr->vcr[i]->con->type == PSCOM_CON_TYPE_SHM) || (comm_ptr->rank == i) ) {
