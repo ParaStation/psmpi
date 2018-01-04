@@ -98,7 +98,7 @@ void prepare_cleanup(MPID_Request *req)
 
 
 static
-int prepare_data(MPID_Request *req, const void *buf, int count, MPI_Datatype datatype)
+int prepare_data(MPID_Request *req, const void *buf, int count, MPI_Datatype datatype, size_t *len)
 {
 	struct MPID_DEV_Request_send *sreq = &req->dev.kind.send;
 	pscom_request_t *preq = sreq->common.pscom_req;
@@ -114,6 +114,8 @@ int prepare_data(MPID_Request *req, const void *buf, int count, MPI_Datatype dat
 
 	MPIR_STATUS_SET_COUNT(req->status, preq->data_len);
 	MPIR_STATUS_SET_CANCEL_BIT(req->status, FALSE)
+
+	*len = preq->data_len;
 
 	return MPI_SUCCESS;
 	/* --- */
@@ -137,6 +139,30 @@ int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int ra
 {
 	int mpi_errno = MPI_SUCCESS;
 	MPID_Request *req;
+	size_t len;
+
+#ifdef MPID_PSP_CREATE_HISTOGRAM
+	if ( unlikely(MPIDI_Process.env.enable_histogram) && unlikely( MPIDI_Process.histo.points == 0) ) {
+
+		int idx;
+		int limit;
+
+		MPIDI_Process.histo.points = 1;
+
+		for (limit = MPIDI_Process.histo.min_size; limit < MPIDI_Process.histo.max_size; limit <<= MPIDI_Process.histo.step_width) {
+			MPIDI_Process.histo.points++;
+		}
+
+		MPIDI_Process.histo.limit = MPIU_Malloc(MPIDI_Process.histo.points*sizeof(int));
+		MPIDI_Process.histo.count = MPIU_Malloc(MPIDI_Process.histo.points*sizeof(long long int));
+
+		for (idx = 0, limit = MPIDI_Process.histo.min_size; idx < MPIDI_Process.histo.points; ++idx, limit <<= MPIDI_Process.histo.step_width)
+		{
+			MPIDI_Process.histo.limit[idx] = limit;
+			MPIDI_Process.histo.count[idx] = 0;
+		}
+	}
+#endif
 
 /*
   printf("#%d ps--- %s() called\n", MPIDI_Process.my_pg_rank, __func__);
@@ -151,7 +177,7 @@ int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int ra
 	if (unlikely(!req)) goto err_request_send_create;
 
 	if (rank >= 0) {
-		mpi_errno = prepare_data(req, buf, count, datatype);
+		mpi_errno = prepare_data(req, buf, count, datatype, &len);
 		if (unlikely(mpi_errno != MPI_SUCCESS)) goto err_prepare_data_failed;
 
 		copy_data(req, buf, count, datatype);
@@ -162,6 +188,18 @@ int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int ra
 
 		MPID_PSP_Request_enqueue(req);
 
+#ifdef MPID_PSP_CREATE_HISTOGRAM
+		if (unlikely(MPIDI_Process.env.enable_histogram)) {
+
+			int idx;
+			for (idx = 0; idx < MPIDI_Process.histo.points; ++idx) {
+				if ( len <= MPIDI_Process.histo.limit[idx] || (idx == MPIDI_Process.histo.points-1) ) {
+					++MPIDI_Process.histo.count[idx];
+					break;
+				}
+			}
+		}
+#endif
 		pscom_post_send(req->dev.kind.send.common.pscom_req);
 
 	} else switch (rank) {

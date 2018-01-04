@@ -23,6 +23,11 @@
  * our own */
 #include "mpid_timers_fallback.h"
 
+/* When MPID_PSP_CREATE_HISTOGRAM is defined and PSP_HISTOGRAM=1 is set, some statistics
+ * about the distribution of message sizes will be gathered during the run by all processes
+ * and eventually accumulated and printed by world rank 0 within the MPI_Finalize call. */ 
+#undef MPID_PSP_CREATE_HISTOGRAM
+
 /* When MPID_PSP_USE_SMP_AWARE_COLLOPS is defined, the MPICH macro MPID_USE_NODE_IDS is set.
  * In this case, the two functions MPID_Get_node_id() and MPID_Get_max_node_id() have to be
  * implemented within the PSP/ADI3 layer for identifying SMP nodes for applying SMP-aware

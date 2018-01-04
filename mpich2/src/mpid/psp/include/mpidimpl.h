@@ -94,13 +94,25 @@ typedef struct MPIDI_Process
 #ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
 	int* node_id_table;
 #endif
-
 	struct {
 		unsigned enable_collectives;
 		unsigned enable_ondemand;
 		unsigned enable_ondemand_spawn;
 		unsigned enable_smp_awareness;
+#ifdef MPID_PSP_CREATE_HISTOGRAM
+		unsigned enable_histogram;
+#endif
 	} env;
+#ifdef MPID_PSP_CREATE_HISTOGRAM
+	struct {
+		int max_size;
+		int min_size;
+		int step_width;
+		int points;
+		unsigned int* limit;
+		unsigned long long int* count;
+	} histo;
+#endif
 } MPIDI_Process_t;
 
 extern MPIDI_Process_t MPIDI_Process;

@@ -89,6 +89,38 @@ int MPID_Finalize(void)
 		}
 	}
 
+#ifdef MPID_PSP_CREATE_HISTOGRAM
+	if (MPIDI_Process.env.enable_histogram && MPIDI_Process.histo.points > 0) {
+
+		int idx;
+		MPIR_Errflag_t errflag = MPIR_ERR_NONE;
+
+		if (MPIR_Process.comm_world->rank != 0) {
+			MPIR_Reduce_impl(MPIDI_Process.histo.count, NULL, MPIDI_Process.histo.points, MPI_LONG_LONG_INT, MPI_SUM, 0, MPIR_Process.comm_world, &errflag);
+		} else {
+			MPIR_Reduce_impl(MPI_IN_PLACE, MPIDI_Process.histo.count, MPIDI_Process.histo.points, MPI_LONG_LONG_INT, MPI_SUM, 0, MPIR_Process.comm_world, &errflag);
+
+			/* determine digits for formated printing */
+			int max_limit = MPIDI_Process.histo.limit[MPIDI_Process.histo.points-1];
+			int max_digits;
+
+			for (max_digits = 0; max_limit > 0; ++max_digits) {
+				max_limit /= 10;
+			}
+
+			/* print the histogram */
+			printf("%*s  freq\n", max_digits, "bin");
+			for (idx=0; idx < MPIDI_Process.histo.points; idx++) {
+				printf("%*d  %lld\n", max_digits, MPIDI_Process.histo.limit[idx], MPIDI_Process.histo.count[idx]);
+			}
+		}
+
+		MPIU_Free(MPIDI_Process.histo.limit);
+		MPIU_Free(MPIDI_Process.histo.count);
+	}
+#endif
+
+
 /*	fprintf(stderr, "%d cleanup queue\n", MPIDI_Process.my_pg_rank); */
 	MPID_req_queue_cleanup();
 

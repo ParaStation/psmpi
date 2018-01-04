@@ -36,7 +36,18 @@ MPIDI_Process_t MPIDI_Process = {
 		dinit(enable_ondemand)		0,
 		dinit(enable_ondemand_spawn)	0,
 		dinit(enable_smp_awareness)	1,
+#ifdef MPID_PSP_CREATE_HISTOGRAM
+		dinit(enable_histogram)		0,
+#endif
 	},
+#ifdef MPID_PSP_CREATE_HISTOGRAM
+	dinit(histo)		{
+		dinit(max_size)      64*1024*1024,
+		dinit(min_size)                64,
+		dinit(step_width)               1,
+		dinit(points)                   0,
+	},
+#endif
 };
 
 #define PMICALL(func) do {										\
@@ -511,6 +522,13 @@ int MPID_Init(int *argc, char ***argv,
 	/* take SMP-related locality-information into account (e.g. for MPI_Win_allocate_shared) */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
 
+#ifdef MPID_PSP_CREATE_HISTOGRAM
+	/* collect statistics information and print them at the end of a run */
+	pscom_env_get_uint(&MPIDI_Process.env.enable_histogram, "PSP_HISTOGRAM");
+	pscom_env_get_uint(&MPIDI_Process.histo.max_size,   "PSP_HISTOGRAM_MAX");
+	pscom_env_get_uint(&MPIDI_Process.histo.min_size,   "PSP_HISTOGRAM_MIN");
+	pscom_env_get_uint(&MPIDI_Process.histo.step_width, "PSP_HISTOGRAM_SHIFT");
+#endif
 	/*
 	pscom_env_get_uint(&mpir_allgather_short_msg,	"PSP_ALLGATHER_SHORT_MSG");
 	pscom_env_get_uint(&mpir_allgather_long_msg,	"PSP_ALLGATHER_LONG_MSG");
