@@ -651,6 +651,8 @@ enable_option_checking
 with_hydra
 with_confset
 with_mpichconf
+with_profile
+with_profdir
 with_threading
 with_modulefile
 '
@@ -1279,6 +1281,7 @@ Optional Packages:
 
 	   gcc        : Use Gnu compiler (gcc)
 	   intel      : Use intel compiler (icc)
+	   icc        : like intel
 	   pgi	      : Portland group compiler (pgcc)
 	   psc	      : Pathscale compiler (pathcc)
 	   cellgcc    : ppu-gcc
@@ -1291,6 +1294,12 @@ Optional Packages:
 
 
   --with-mpichconf=opts  Additional mpich configuration options
+
+
+  --with-profile=use|gen Use profile for guided optimization
+
+
+  --with-profdir=path    Set path to profile directory
 
 
   --with-threading      Enable threading 'multiple' in device psp
@@ -1940,6 +1949,31 @@ fi
 
 
 
+# Check whether --with-profile was given.
+if test "${with_profile+set}" = set; then :
+  withval=$with_profile;
+	ENABLE_PROFILE="$withval"
+	if test "$ENABLE_PROFILE" = "yes" ; then
+		ENABLE_PROFILE="use"
+	fi
+
+fi
+
+
+
+# Check whether --with-profdir was given.
+if test "${with_profdir+set}" = set; then :
+  withval=$with_profdir;
+	PROFILE_DIR="$withval"
+
+else
+
+	PROFILE_DIR="${TOP_SRCDIR}/profile"
+
+fi
+
+
+
 
 #Some influential environment variables:
 #  CC          C compiler command
@@ -2005,7 +2039,16 @@ case $CONFSET in
 	fi
 	MODULEFILE_CONFSET=""
 	EXTRA_VERSION_INFO=" compiler: $(gcc --version|head -n 1)"
+
+	if test "$ENABLE_PROFILE" = "use" ; then
+		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -fprofile-use -fprofile-dir=$PROFILE_DIR -Wno-error=coverage-mismatch"
+	else
+		if test "$ENABLE_PROFILE" = "gen" ; then
+			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -fprofile-generate -fprofile-dir=$PROFILE_DIR"
+		fi
+	fi
 	;;
+"icc"|\
 "intel")
 	echo "Using confset=intel"
 	CONF_OPS="--with-device=psp"
@@ -2025,6 +2068,14 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS FC='ifort -reentrancy threaded'"
 	CONF_OPS="$CONF_OPS"
 	EXTRA_VERSION_INFO=" compiler: $(icc -V 2>&1 |head -n 1)"
+
+	if test "$ENABLE_PROFILE" = "use" ; then
+		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -prof-use -prof-dir=$PROFILE_DIR"
+        else
+                if test "$ENABLE_PROFILE" = "gen" ; then
+			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -prof-gen -prof-dir=$PROFILE_DIR"
+                fi
+        fi
 	;;
 "pgi")
 	echo "Using confset=pgi"
@@ -2185,7 +2236,6 @@ case $CONFSET in
 	exit 1
 	;;
 esac
-
 
 
 # Check whether --with-threading was given.

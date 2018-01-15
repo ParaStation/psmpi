@@ -55,6 +55,7 @@ AC_ARG_WITH([confset], [
 
 	   gcc        : Use Gnu compiler (gcc)
 	   intel      : Use intel compiler (icc)
+	   icc        : like intel
 	   pgi	      : Portland group compiler (pgcc)
 	   psc	      : Pathscale compiler (pathcc)
 	   cellgcc    : ppu-gcc
@@ -75,6 +76,23 @@ AC_ARG_WITH([mpichconf], [
   --with-mpichconf[=opts]  Additional mpich configuration options
 ],[
 	MPICHCONF="$withval"
+])
+
+AC_ARG_WITH([profile], [
+  --with-profile[=use|gen] Use profile for guided optimization
+],[
+	ENABLE_PROFILE="$withval"
+	if test "$ENABLE_PROFILE" = "yes" ; then
+		ENABLE_PROFILE="use"
+	fi
+])
+
+AC_ARG_WITH([profdir], [
+  --with-profdir[=path]    Set path to profile directory
+],[
+	PROFILE_DIR="$withval"
+],[
+	PROFILE_DIR="${TOP_SRCDIR}/profile"
 ])
 
 
@@ -143,7 +161,16 @@ case $CONFSET in
 	fi
 	MODULEFILE_CONFSET=""
 	EXTRA_VERSION_INFO=" compiler: $(gcc --version|head -n 1)"
+
+	if test "$ENABLE_PROFILE" = "use" ; then
+		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -fprofile-use -fprofile-dir=$PROFILE_DIR -Wno-error=coverage-mismatch"
+	else
+		if test "$ENABLE_PROFILE" = "gen" ; then
+			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -fprofile-generate -fprofile-dir=$PROFILE_DIR"
+		fi
+	fi
 	;;
+"icc"|\
 "intel")
 	echo "Using confset=intel"
 	CONF_OPS="--with-device=psp"
@@ -163,6 +190,14 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS FC='ifort -reentrancy threaded'"
 	CONF_OPS="$CONF_OPS"
 	EXTRA_VERSION_INFO=" compiler: $(icc -V 2>&1 |head -n 1)"
+
+	if test "$ENABLE_PROFILE" = "use" ; then
+		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -prof-use -prof-dir=$PROFILE_DIR"
+        else
+                if test "$ENABLE_PROFILE" = "gen" ; then
+			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -prof-gen -prof-dir=$PROFILE_DIR"
+                fi
+        fi
 	;;
 "pgi")
 	echo "Using confset=pgi"
@@ -323,7 +358,6 @@ case $CONFSET in
 	exit 1
 	;;
 esac
-
 
 AC_ARG_WITH([threading], [
   --with-threading      Enable threading 'multiple' in device psp
