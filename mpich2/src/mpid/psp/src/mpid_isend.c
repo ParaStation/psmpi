@@ -327,6 +327,7 @@ int MPID_Issend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int ran
 }
 
 #ifdef PSCOM_ALLIN
+#define PSCOM_ALLIN_INCLUDE_TOKEN
 #include "mpid_irecv.c"
 #include "pscom_all.c"
 #endif

@@ -10,7 +10,7 @@
  * Author:	Jens Hauke <hauke@par-tec.com>
  */
 
-#ifndef PSCOM_ALLIN
+#if !defined(PSCOM_ALLIN) || defined(PSCOM_ALLIN_INCLUDE_TOKEN)
 
 #include <assert.h>
 #include "mpidimpl.h"

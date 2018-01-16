@@ -158,6 +158,15 @@ static inline void list_splice(struct list_head *list, struct list_head *head)
 	for (pos = (head)->next, n = pos->next; pos != (head); \
 		pos = n, n = pos->next)
 
+static inline unsigned list_count(struct list_head *head)
+{
+    struct list_head *pos;
+    unsigned count = 0;
+    list_for_each(pos, head) {
+	count++;
+    }
+    return count;
+}
 
 
 #endif /* _LIST_H_ */
