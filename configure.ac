@@ -105,6 +105,7 @@ AC_ARG_WITH([pscom-allin], [
 	export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN -I${PSCOM_ALLIN_DIR}/ -I${PSCOM_ALLIN_DIR}/../../include/ -I${PSCOM_ALLIN_DIR}/../../lib/pscom/"
 	export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -lpthread -ldl"
 	export PSCOM_CPPFLAGS=""
+	export PSCOM_LIBRARY=""
 
 	AC_CHECK_HEADER([infiniband/verbs.h], [have_openib=yes], [have_openib=no])
 	AC_CHECK_HEADER([psm2.h], [have_psm2=yes], [have_psm2=no])
@@ -411,6 +412,9 @@ AC_SUBST([EXTRA_VERSION_INFO])
 # ToDo: directly  use PSCOM_LDFLAGS from mpich2/src/mpid/psp/subconfigure.m4
 PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
 AC_SUBST([PSCOM_LDFLAGS])
+
+PSCOM_LIBRARY="${PSCOM_LIBRARY-"-lpscom"}"
+AC_SUBST([PSCOM_LIBRARY])
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([scripts/generate_modulefile.sh], [chmod +x scripts/generate_modulefile.sh])

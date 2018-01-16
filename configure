@@ -622,6 +622,7 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+PSCOM_LIBRARY
 PSCOM_LDFLAGS
 EXTRA_VERSION_INFO
 MODULEFILE
@@ -3496,6 +3497,7 @@ fi
 	export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN -I${PSCOM_ALLIN_DIR}/ -I${PSCOM_ALLIN_DIR}/../../include/ -I${PSCOM_ALLIN_DIR}/../../lib/pscom/"
 	export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -lpthread -ldl"
 	export PSCOM_CPPFLAGS=""
+	export PSCOM_LIBRARY=""
 
 	ac_fn_c_check_header_mongrel "$LINENO" "infiniband/verbs.h" "ac_cv_header_infiniband_verbs_h" "$ac_includes_default"
 if test "x$ac_cv_header_infiniband_verbs_h" = xyes; then :
@@ -3824,6 +3826,9 @@ fi
 
 # ToDo: directly  use PSCOM_LDFLAGS from mpich2/src/mpid/psp/subconfigure.m4
 PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
+
+
+PSCOM_LIBRARY="${PSCOM_LIBRARY-"-lpscom"}"
 
 
 ac_config_files="$ac_config_files Makefile"

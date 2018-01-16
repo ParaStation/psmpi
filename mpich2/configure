@@ -1038,6 +1038,7 @@ QUEUE_BINARY_SEARCH_SUPPORT_TRUE
 BUILD_PAMID_FALSE
 BUILD_PAMID_TRUE
 PSCOM_RPATHLINK
+PSCOM_LIBRARY
 PSCOM_LDFLAGS
 PSCOM_CPPFLAGS
 BUILD_PSP_FALSE
@@ -1369,6 +1370,7 @@ F77
 FFLAGS
 PSCOM_CPPFLAGS
 PSCOM_LDFLAGS
+PSCOM_LIBRARY
 PSCOM_RPATHLINK
 PAMILIBNAME
 MPILIBNAME
@@ -2375,6 +2377,8 @@ Some influential environment variables:
   PSCOM_LDFLAGS
               linker flags for PSCOM libraries (default:
               "-L/opt/parastation/lib64")
+  PSCOM_LIBRARY
+              file name for PSCOM library (default: "-lpscom")
   PSCOM_RPATHLINK
               mpicc wrapper option for -Wl,-rpath-link (default:
               "-Wl,-rpath-link=/opt/parastation/lib64")
@@ -26429,6 +26433,7 @@ fi
 
 PSCOM_CPPFLAGS="${PSCOM_CPPFLAGS-"-I/opt/parastation/include"}"
 PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
+PSCOM_LIBRARY="${PSCOM_LIBRARY-"-lpscom"}"
 PSCOM_RPATHLINK="${PSCOM_RPATHLINK-"${PSCOM_LDFLAGS//-L/-Wl,-rpath-link=}"}"
 # AX_CHECK_LIBRARY([PSCOM], [pscom.h], [pscom])
 
