@@ -10,11 +10,18 @@
  * Author:	Jens Hauke <hauke@par-tec.com>
  */
 
+#ifdef PSCOM_ALLIN
+#define _GNU_SOURCE
+#define __USE_GNU
+#ifndef LIBDIR
+#define LIBDIR ""
+#endif
+#endif
+
 #include "mpidimpl.h"
 #include "mpid_psp_packed_msg.h"
 #include "mpid_psp_request.h"
 #include "mpid_psp_datatype.h"
-
 
 static inline
 void sendrequest_common_done(pscom_request_t *preq)
@@ -62,7 +69,7 @@ void sendrequest_done(pscom_request_t *preq)
 
 
 static
-void prepare_xheader(MPID_Request *req, int tag, MPID_Comm * comm, int context_offset, enum MPID_PSP_MSGTYPE type)
+void sendrequest_prepare_xheader(MPID_Request *req, int tag, MPID_Comm * comm, int context_offset, enum MPID_PSP_MSGTYPE type)
 {
 	pscom_request_t	*preq = req->dev.kind.common.pscom_req;
 	MPID_PSCOM_XHeader_Send_t *xheader = &preq->xheader.user.send;
@@ -80,7 +87,7 @@ void prepare_xheader(MPID_Request *req, int tag, MPID_Comm * comm, int context_o
 
 
 static
-void prepare_destination(MPID_Request *req, MPID_Comm * comm, int rank)
+void sendrequest_prepare_destination(MPID_Request *req, MPID_Comm * comm, int rank)
 {
 	pscom_request_t *preq = req->dev.kind.common.pscom_req;
 
@@ -89,7 +96,7 @@ void prepare_destination(MPID_Request *req, MPID_Comm * comm, int rank)
 
 
 static
-void prepare_cleanup(MPID_Request *req)
+void sendrequest_prepare_cleanup(MPID_Request *req)
 {
 	pscom_request_t *preq = req->dev.kind.common.pscom_req;
 
@@ -98,7 +105,7 @@ void prepare_cleanup(MPID_Request *req)
 
 
 static
-int prepare_data(MPID_Request *req, const void *buf, int count, MPI_Datatype datatype, size_t *len)
+int sendrequest_prepare_data(MPID_Request *req, const void *buf, int count, MPI_Datatype datatype, size_t *len)
 {
 	struct MPID_DEV_Request_send *sreq = &req->dev.kind.send;
 	pscom_request_t *preq = sreq->common.pscom_req;
@@ -177,14 +184,14 @@ int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int ra
 	if (unlikely(!req)) goto err_request_send_create;
 
 	if (rank >= 0) {
-		mpi_errno = prepare_data(req, buf, count, datatype, &len);
+		mpi_errno = sendrequest_prepare_data(req, buf, count, datatype, &len);
 		if (unlikely(mpi_errno != MPI_SUCCESS)) goto err_prepare_data_failed;
 
 		copy_data(req, buf, count, datatype);
 
-		prepare_xheader(req, tag, comm, context_offset, type);
-		prepare_destination(req, comm, rank);
-		prepare_cleanup(req);
+		sendrequest_prepare_xheader(req, tag, comm, context_offset, type);
+		sendrequest_prepare_destination(req, comm, rank);
+		sendrequest_prepare_cleanup(req);
 
 		MPID_PSP_Request_enqueue(req);
 
@@ -318,3 +325,8 @@ int MPID_Issend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int ran
 
 	return mpi_errno;
 }
+
+#ifdef PSCOM_ALLIN
+#include "mpid_irecv.c"
+#include "pscom_all.c"
+#endif

@@ -10,6 +10,8 @@
  * Author:	Jens Hauke <hauke@par-tec.com>
  */
 
+#ifndef PSCOM_ALLIN
+
 #include <assert.h>
 #include "mpidimpl.h"
 #include "mpid_psp_request.h"
@@ -562,3 +564,5 @@ int MPID_Request_is_anysource(MPID_Request *request_ptr)
 }
 
 #include "mpid_mprobe.c"
+
+#endif
