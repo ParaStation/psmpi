@@ -73,13 +73,13 @@ AC_ARG_WITH([confset], [
 
 
 AC_ARG_WITH([mpichconf], [
-  --with-mpichconf[=opts]  Additional mpich configuration options
+  --with-mpichconf[=opts]   Additional mpich configuration options
 ],[
 	MPICHCONF="$withval"
 ])
 
 AC_ARG_WITH([profile], [
-  --with-profile[=use|gen] Use profile for guided optimization
+  --with-profile[=use|gen]  Use profile for guided optimization
 ],[
 	ENABLE_PROFILE="$withval"
 	if test "$ENABLE_PROFILE" = "yes" ; then
@@ -88,13 +88,36 @@ AC_ARG_WITH([profile], [
 ])
 
 AC_ARG_WITH([profdir], [
-  --with-profdir[=path]    Set path to profile directory
+  --with-profdir[=path]     Set path to profile directory
 ],[
 	PROFILE_DIR="$withval"
 ],[
 	PROFILE_DIR="${TOP_SRCDIR}/profile"
 ])
 
+AC_ARG_WITH([pscom-allin], [
+  --with-pscom-allin[=path] Set path to pscom for source code fusion
+],[
+	PSCOM_ALLIN_DIR="$withval"
+	AC_CHECK_FILE(["${PSCOM_ALLIN_DIR}/lib/all/pscom_all.c"], [
+		PSCOM_ALLIN_DIR="${PSCOM_ALLIN_DIR}/lib/all/"
+	])
+	export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN -I${PSCOM_ALLIN_DIR}/ -I${PSCOM_ALLIN_DIR}/../../include/ -I${PSCOM_ALLIN_DIR}/../../lib/pscom/"
+	export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -lpthread -ldl"
+	export PSCOM_CPPFLAGS=""
+
+	AC_CHECK_HEADER([infiniband/verbs.h], [have_openib=yes], [have_openib=no])
+	AC_CHECK_HEADER([psm2.h], [have_psm2=yes], [have_psm2=no])
+
+	if test "$have_openib" = "yes" ; then
+		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_OPENIB"
+		export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -libverbs"
+	fi
+	if test "$have_psm2" = "yes" ; then
+		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_PSM2"
+		export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -lpsm2"
+	fi
+])
 
 
 #Some influential environment variables:
