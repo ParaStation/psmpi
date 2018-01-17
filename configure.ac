@@ -85,6 +85,11 @@ AC_ARG_WITH([profile], [
 	if test "$ENABLE_PROFILE" = "yes" ; then
 		ENABLE_PROFILE="use"
 	fi
+	if test "$ENABLE_PROFILE" = "gen" ; then
+		if ! test -d "${TOP_SRCDIR}/profile" ; then
+			mkdir "${TOP_SRCDIR}/profile" 2>/dev/null
+		fi
+	fi
 ])
 
 AC_ARG_WITH([profdir], [
