@@ -13,6 +13,10 @@
 #include "mpidimpl.h"
 #include "pmi.h"
 
+// This must be the last include before sysmbols are defined:
+#include "mpid_visibility.h"
+
+
 static
 int _getenv_i(const char *env_name, int _default)
 {

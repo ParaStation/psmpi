@@ -20,6 +20,10 @@
 #include "mpid_psp_packed_msg.h"
 #include "mpid_psp_request.h"
 
+// This must be the last include before sysmbols are defined:
+#include "mpid_visibility.h"
+
+
 static
 int _accept_never(pscom_request_t *request,
 		  pscom_connection_t *connection,

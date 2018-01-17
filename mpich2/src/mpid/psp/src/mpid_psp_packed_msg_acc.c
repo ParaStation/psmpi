@@ -15,6 +15,10 @@
 #include "mpid_psp_packed_msg.h"
 #include "mpid_psp_request.h"
 
+// This must be the last include before sysmbols are defined:
+#include "mpid_visibility.h"
+
+
 #if 0
 void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
 					DLOOP_Offset first,

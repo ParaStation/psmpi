@@ -16,6 +16,10 @@
 #include "mpid_psp_request.h"
 #include "mpid_debug.h"
 
+// This must be the last include before sysmbols are defined:
+#include "mpid_visibility.h"
+
+
 #ifndef MPID_REQUEST_PREALLOC
 #define MPID_REQUEST_PREALLOC 8
 #endif

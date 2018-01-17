@@ -13,6 +13,9 @@
 #include "mpidimpl.h"
 #include "mpiinfo.h"
 
+// This must be the last include before sysmbols are defined:
+#include "mpid_visibility.h"
+
 
 /* This allows each channel to perform final initialization after the
  rest of MPI_Init completes.  */

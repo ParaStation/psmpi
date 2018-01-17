@@ -3550,6 +3550,7 @@ mpich2/src/mpid/pamid/subconfigure.m4 \
 mpich2/src/mpid/psp/Makefile.mk \
 mpich2/src/mpid/psp/include/list.h \
 mpich2/src/mpid/psp/include/mpid_thread.h \
+mpich2/src/mpid/psp/include/mpid_visibility.h \
 mpich2/src/mpid/psp/include/mpidimpl.h \
 mpich2/src/mpid/psp/include/mpidpost.h \
 mpich2/src/mpid/psp/include/mpidpre.h \

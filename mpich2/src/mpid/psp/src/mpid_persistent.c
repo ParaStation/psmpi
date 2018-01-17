@@ -14,6 +14,9 @@
 #include "mpid_psp_request.h"
 #include "mpid_psp_datatype.h"
 
+// This must be the last include before sysmbols are defined:
+#include "mpid_visibility.h"
+
 
 static
 int MPID_PSP_persistent_init(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,

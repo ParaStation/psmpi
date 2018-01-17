@@ -18,6 +18,10 @@
 #include "mpid_debug.h"
 #include "mpid_collective.h"
 
+// This must be the last include before sysmbols are defined:
+#include "mpid_visibility.h"
+
+
 #if defined(__GNUC__)
 #define dinit(name) .name =
 #else

@@ -14,9 +14,12 @@
 #include "mpidimpl.h"
 #include "mpl_utlist.h"
 
+// This must be the last include before sysmbols are defined:
+#include "mpid_visibility.h"
+
+
 static int ENABLE_REAL_DISCONNECT = 1;
 static int ENABLE_LAZY_DISCONNECT = 1;
-
 
 #ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
 #ifndef MPID_USE_NODE_IDS

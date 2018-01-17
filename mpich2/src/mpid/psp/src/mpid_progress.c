@@ -14,7 +14,12 @@
 #include "mpidimpl.h"
 #include "mpid_psp_request.h"
 
+// This must be the last include before sysmbols are defined:
+#include "mpid_visibility.h"
+
+
 #define PSP_NBC_PROGRESS_DELAY 100
+
 
 static inline
 void MPID_DEV_Request_common_wait(MPID_Request *req)

@@ -19,6 +19,8 @@
 
 #include "mpid_thread.h"
 
+#define MPID_PSP_HIDE_VISIBILITY
+
 /* We simply use the fallback timer functionality and do not define
  * our own */
 #include "mpid_timers_fallback.h"

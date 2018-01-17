@@ -18,6 +18,10 @@
 #include "mpid_psp_packed_msg.h"
 #include "mpid_psp_datatype.h"
 
+// This must be the last include before sysmbols are defined:
+#include "mpid_visibility.h"
+
+
 static
 int cb_accept_data(pscom_request_t *request,
 		   pscom_connection_t *connection,

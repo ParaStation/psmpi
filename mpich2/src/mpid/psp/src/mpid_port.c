@@ -17,6 +17,10 @@
 #include "pmi.h"
 #include "mpid_debug.h"
 
+// This must be the last include before sysmbols are defined:
+#include "mpid_visibility.h"
+
+
 /*
 Strategy of a MPID_Open_port, Accept, Connect
 ================================================

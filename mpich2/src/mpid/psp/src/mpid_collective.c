@@ -14,11 +14,16 @@
 #include "mpid_psp_packed_msg.h"
 #include <assert.h>
 
+// This must be the last include before sysmbols are defined:
+#include "mpid_visibility.h"
+
+
 #if 1
 #define D(cmd)
 #else
 #define D(cmd) cmd
 #endif
+
 
 /* define USE_POST_BCAST to use pscom_post_bcast instead of pscom_bcast.
  *  1) pscom_group_bcast.c: #define USE_ASYNCHRONOUS_BCAST 1
