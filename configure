@@ -699,8 +699,8 @@ enable_option_checking
 with_hydra
 with_confset
 with_mpichconf
-with_profile
 with_profdir
+with_profile
 with_pscom_allin
 with_threading
 with_modulefile
@@ -1351,10 +1351,10 @@ Optional Packages:
   --with-mpichconf=opts   Additional mpich configuration options
 
 
-  --with-profile=use|gen  Use profile for guided optimization
-
-
   --with-profdir=path     Set path to profile directory
+
+
+  --with-profile=use|gen  Use profile for guided optimization
 
 
   --with-pscom-allin=path Set path to pscom for source code fusion
@@ -2255,22 +2255,6 @@ fi
 
 
 
-# Check whether --with-profile was given.
-if test "${with_profile+set}" = set; then :
-  withval=$with_profile;
-	ENABLE_PROFILE="$withval"
-	if test "$ENABLE_PROFILE" = "yes" ; then
-		ENABLE_PROFILE="use"
-	fi
-	if test "$ENABLE_PROFILE" = "gen" ; then
-		if ! test -d "${TOP_SRCDIR}/profile" ; then
-			mkdir "${TOP_SRCDIR}/profile" 2>/dev/null
-		fi
-	fi
-
-fi
-
-
 
 # Check whether --with-profdir was given.
 if test "${with_profdir+set}" = set; then :
@@ -2282,6 +2266,24 @@ else
 	PROFILE_DIR="${TOP_SRCDIR}/profile"
 
 fi
+
+
+
+# Check whether --with-profile was given.
+if test "${with_profile+set}" = set; then :
+  withval=$with_profile;
+	ENABLE_PROFILE="$withval"
+	if test "$ENABLE_PROFILE" = "yes" ; then
+		ENABLE_PROFILE="use"
+	fi
+	if test "$ENABLE_PROFILE" = "gen" ; then
+		if ! test -d "${PROFILE_DIR}" ; then
+			mkdir -p "${PROFILE_DIR}" 2>/dev/null
+		fi
+	fi
+
+fi
+
 
 
 ac_ext=c
@@ -3604,6 +3606,8 @@ case $CONFSET in
 	else
 		if test "$ENABLE_PROFILE" = "gen" ; then
 			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -fprofile-generate -fprofile-dir=$PROFILE_DIR"
+			# Fix me! Disable Fortran for avoiding issues when compiling with FDO enabled:
+			CONF_OPS=`echo "$CONF_OPS" | sed -e s/enable-f77/disable-fortran/g`
 		fi
 	fi
 	;;

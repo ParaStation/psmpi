@@ -78,19 +78,6 @@ AC_ARG_WITH([mpichconf], [
 	MPICHCONF="$withval"
 ])
 
-AC_ARG_WITH([profile], [
-  --with-profile[=use|gen]  Use profile for guided optimization
-],[
-	ENABLE_PROFILE="$withval"
-	if test "$ENABLE_PROFILE" = "yes" ; then
-		ENABLE_PROFILE="use"
-	fi
-	if test "$ENABLE_PROFILE" = "gen" ; then
-		if ! test -d "${TOP_SRCDIR}/profile" ; then
-			mkdir "${TOP_SRCDIR}/profile" 2>/dev/null
-		fi
-	fi
-])
 
 AC_ARG_WITH([profdir], [
   --with-profdir[=path]     Set path to profile directory
@@ -99,6 +86,21 @@ AC_ARG_WITH([profdir], [
 ],[
 	PROFILE_DIR="${TOP_SRCDIR}/profile"
 ])
+
+AC_ARG_WITH([profile], [
+  --with-profile[=use|gen]  Use profile for guided optimization
+],[
+	ENABLE_PROFILE="$withval"
+	if test "$ENABLE_PROFILE" = "yes" ; then
+		ENABLE_PROFILE="use"
+	fi
+	if test "$ENABLE_PROFILE" = "gen" ; then
+		if ! test -d "${PROFILE_DIR}" ; then
+			mkdir -p "${PROFILE_DIR}" 2>/dev/null
+		fi
+	fi
+])
+
 
 AC_ARG_WITH([pscom-allin], [
   --with-pscom-allin[=path] Set path to pscom for source code fusion
@@ -196,6 +198,8 @@ case $CONFSET in
 	else
 		if test "$ENABLE_PROFILE" = "gen" ; then
 			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -fprofile-generate -fprofile-dir=$PROFILE_DIR"
+			# Fix me! Disable Fortran for avoiding issues when compiling with FDO enabled:
+			CONF_OPS=`echo "$CONF_OPS" | sed -e s/enable-f77/disable-fortran/g`
 		fi
 	fi
 	;;
