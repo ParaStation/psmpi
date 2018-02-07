@@ -101,9 +101,15 @@ AC_ARG_WITH([profile], [
 	fi
 ])
 
+AC_ARG_WITH([pscom-builtin], [
+  --with-pscom-builtin[=list] Define list of pscom plugins that shall be built-in
+                            Default: openib,psm2 / Needs pscom source code fusion
+],[
+	PSCOM_BUILTIN_PLUGINS="$withval"
+])
 
 AC_ARG_WITH([pscom-allin], [
-  --with-pscom-allin[=path] Set path to pscom for source code fusion
+  --with-pscom-allin[=path]   Enable pscom source code fusion and set path to pscom
 ],[
 	PSCOM_ALLIN_DIR="$withval"
 	AC_CHECK_FILE(["${PSCOM_ALLIN_DIR}/lib/all/pscom_all.c"], [
@@ -127,13 +133,37 @@ AC_ARG_WITH([pscom-allin], [
 	AC_CHECK_HEADER([infiniband/verbs.h], [have_openib=yes], [have_openib=no])
 	AC_CHECK_HEADER([psm2.h], [have_psm2=yes], [have_psm2=no])
 
-	if test "$have_openib" = "yes" ; then
-		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_OPENIB"
-		export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -libverbs"
+	if test -n "$PSCOM_BUILTIN_PLUGINS" ; then
+		IFS=","
+		for plugin in $PSCOM_BUILTIN_PLUGINS ; do
+			case "$plugin" in
+				"openib") openib_enabled="yes" ;;
+				"psm2")   psm2_enabled="yes"   ;;
+			esac
+		done
+		unset IFS
+	else
+		openib_enabled="$have_openib"
+		psm2_enabled="$have_psm2"
 	fi
-	if test "$have_psm2" = "yes" ; then
-		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_PSM2"
-		export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -lpsm2"
+
+	if test "$openib_enabled" = "yes" ; then
+		if test "$have_openib" = "yes" ; then
+			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_OPENIB"
+			export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -libverbs"
+			echo "Including openib as a built-in plugin for pscom"
+		else
+			AC_MSG_ERROR([openib support requested but not found])
+		fi
+	fi
+	if test "$psm2_enabled" = "yes" ; then
+		if test "$have_psm2" = "yes" ; then
+			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_PSM2"
+			export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -lpsm2"
+			echo "Including psm2 as a built-in plugin for pscom"
+		else
+			AC_MSG_ERROR([psm2 support requested but not found])
+		fi
 	fi
 ])
 

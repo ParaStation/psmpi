@@ -701,6 +701,7 @@ with_confset
 with_mpichconf
 with_profdir
 with_profile
+with_pscom_builtin
 with_pscom_allin
 with_threading
 with_modulefile
@@ -1357,7 +1358,11 @@ Optional Packages:
   --with-profile=use|gen  Use profile for guided optimization
 
 
-  --with-pscom-allin=path Set path to pscom for source code fusion
+  --with-pscom-builtin=list Define list of pscom plugins that shall be built-in
+                            Default: openib,psm2 / Needs pscom source code fusion
+
+
+  --with-pscom-allin=path   Enable pscom source code fusion and set path to pscom
 
 
   --with-threading      Enable threading 'multiple' in device psp
@@ -2284,6 +2289,14 @@ if test "${with_profile+set}" = set; then :
 
 fi
 
+
+
+# Check whether --with-pscom-builtin was given.
+if test "${with_pscom_builtin+set}" = set; then :
+  withval=$with_pscom_builtin;
+	PSCOM_BUILTIN_PLUGINS="$withval"
+
+fi
 
 
 ac_ext=c
@@ -3533,13 +3546,37 @@ fi
 
 
 
-	if test "$have_openib" = "yes" ; then
-		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_OPENIB"
-		export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -libverbs"
+	if test -n "$PSCOM_BUILTIN_PLUGINS" ; then
+		IFS=","
+		for plugin in $PSCOM_BUILTIN_PLUGINS ; do
+			case "$plugin" in
+				"openib") openib_enabled="yes" ;;
+				"psm2")   psm2_enabled="yes"   ;;
+			esac
+		done
+		unset IFS
+	else
+		openib_enabled="$have_openib"
+		psm2_enabled="$have_psm2"
 	fi
-	if test "$have_psm2" = "yes" ; then
-		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_PSM2"
-		export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -lpsm2"
+
+	if test "$openib_enabled" = "yes" ; then
+		if test "$have_openib" = "yes" ; then
+			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_OPENIB"
+			export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -libverbs"
+			echo "Including openib as a built-in plugin for pscom"
+		else
+			as_fn_error $? "openib support requested but not found" "$LINENO" 5
+		fi
+	fi
+	if test "$psm2_enabled" = "yes" ; then
+		if test "$have_psm2" = "yes" ; then
+			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_PSM2"
+			export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -lpsm2"
+			echo "Including psm2 as a built-in plugin for pscom"
+		else
+			as_fn_error $? "psm2 support requested but not found" "$LINENO" 5
+		fi
 	fi
 
 fi
