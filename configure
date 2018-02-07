@@ -3506,6 +3506,16 @@ fi
 	export PSCOM_CPPFLAGS=""
 	export PSCOM_LIBRARY=""
 
+	if test -x "${PSCOM_ALLIN_DIR}/../../scripts/vcversion" ; then
+		if ! test -d "${TOP_BUILDDIR}/pscom" ; then
+                        mkdir -p "${TOP_BUILDDIR}/pscom" 2>/dev/null
+                fi
+		PSCOM_VC_VERSION=`${PSCOM_ALLIN_DIR}/../../scripts/vcversion -r ${PSCOM_ALLIN_DIR}/../.. -n`
+		echo "Including pscom version ${PSCOM_VC_VERSION}"
+		echo "#define VC_VERSION \"${PSCOM_VC_VERSION}\"" > "${TOP_BUILDDIR}/pscom/vc_version.h"
+		export MPICHLIB_CFLAGS="-I${TOP_BUILDDIR}/pscom/ ${MPICHLIB_CFLAGS}"
+	fi
+
 	ac_fn_c_check_header_mongrel "$LINENO" "infiniband/verbs.h" "ac_cv_header_infiniband_verbs_h" "$ac_includes_default"
 if test "x$ac_cv_header_infiniband_verbs_h" = xyes; then :
   have_openib=yes

@@ -114,6 +114,16 @@ AC_ARG_WITH([pscom-allin], [
 	export PSCOM_CPPFLAGS=""
 	export PSCOM_LIBRARY=""
 
+	if test -x "${PSCOM_ALLIN_DIR}/../../scripts/vcversion" ; then
+		if ! test -d "${TOP_BUILDDIR}/pscom" ; then
+                        mkdir -p "${TOP_BUILDDIR}/pscom" 2>/dev/null
+                fi
+		PSCOM_VC_VERSION=`${PSCOM_ALLIN_DIR}/../../scripts/vcversion -r ${PSCOM_ALLIN_DIR}/../.. -n`
+		echo "Including pscom version ${PSCOM_VC_VERSION}"
+		echo "#define VC_VERSION \"${PSCOM_VC_VERSION}\"" > "${TOP_BUILDDIR}/pscom/vc_version.h"
+		export MPICHLIB_CFLAGS="-I${TOP_BUILDDIR}/pscom/ ${MPICHLIB_CFLAGS}"
+	fi
+
 	AC_CHECK_HEADER([infiniband/verbs.h], [have_openib=yes], [have_openib=no])
 	AC_CHECK_HEADER([psm2.h], [have_psm2=yes], [have_psm2=no])
 
