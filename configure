@@ -3579,6 +3579,14 @@ fi
 		fi
 	fi
 
+	case $CONFSET in
+		"default"|"gcc"|"intel"|"icc") ;;
+		*) confset_and_allin_does_not_match="yes" ;;
+	esac
+	if test "$confset_and_allin_does_not_match" = "yes" ; then
+		as_fn_error $? "confset=$CONFSET does not allow for --with-pscom-allin" "$LINENO" 5
+	fi
+
 fi
 
 

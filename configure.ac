@@ -165,6 +165,14 @@ AC_ARG_WITH([pscom-allin], [
 			AC_MSG_ERROR([psm2 support requested but not found])
 		fi
 	fi
+
+	case $CONFSET in
+		"default"|"gcc"|"intel"|"icc") ;;
+		*) confset_and_allin_does_not_match="yes" ;;
+	esac
+	if test "$confset_and_allin_does_not_match" = "yes" ; then
+		AC_MSG_ERROR([confset=$CONFSET does not allow for --with-pscom-allin])
+	fi
 ])
 
 
