@@ -41,10 +41,19 @@ int main (int argc, char **argv)
 		return 0;
 	}
 
+	if(argc > 1) {
+		f = atoi(argv[1]);
+	}
+
 	MPI_Type_contiguous (f * DIM * DIM + x, MPI_DOUBLE, &mpi_array);
 	MPI_Type_commit (&mpi_array);
 
 	a = (double *)malloc((f * DIM * DIM + x) * sizeof (double));
+
+	if(!a) {
+		fprintf(stderr, "error: could not allocate %d bytes of memory \n", (f * DIM * DIM + x) * sizeof (double));
+		MPI_Abort(MPI_COMM_WORLD, -1);
+	}
 
 	if (rank == 0) {
 		for (i = 0; i < f * DIM * DIM + x; i++) {
@@ -54,7 +63,7 @@ int main (int argc, char **argv)
 
 	if(rank == 0) {
 
-		if(_VERBOSE_) printf("Sending %ld MB\n", (f * (DIM / 1024) * (DIM / 1024) + (x / 1024)) * sizeof (double));
+		if(_VERBOSE_) printf("Sending >%ld MB\n", ((f * DIM * DIM + x ) * sizeof (double)) / (1024*1024)) ;
 
 		MPI_Send (a, 1, mpi_array, 1, 99, MPI_COMM_WORLD);
 
@@ -78,7 +87,7 @@ int main (int argc, char **argv)
 
 	if(rank == 1) {
 
-		if(_VERBOSE_) printf("Getting %ld MB\n", (f * (DIM / 1024) * (DIM / 1024) + (x / 1024)) * sizeof (double));
+		if(_VERBOSE_) printf("Getting >%ld MB\n", ((f * DIM * DIM + x ) * sizeof (double)) / (1024*1024));
 
 		MPI_Get(a, 1, mpi_array, 0, 0, 1, mpi_array, win);
 		MPI_Win_fence(0, win);
@@ -98,7 +107,7 @@ int main (int argc, char **argv)
 
 	if(rank == 1) {
 
-		if(_VERBOSE_) printf("Accumulating %ld MB\n", (f * (DIM / 1024) * (DIM / 1024) + (x / 1024)) * sizeof (double));
+		if(_VERBOSE_) printf("Accumulating >%ld MB\n", ((f * DIM * DIM + x ) * sizeof (double)) / (1024*1024));
 
 		MPI_Accumulate(a, 1, mpi_array, 0, 0, 1, mpi_array, MPI_SUM, win);
 		MPI_Win_fence(0, win);
