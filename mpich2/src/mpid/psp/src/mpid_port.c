@@ -452,6 +452,7 @@ int MPID_Open_port(MPID_Info *info_ptr, char *port_name)
 	static unsigned portnum = 0;
 	int rc;
 	const char *port_str;
+	int tcp_enabled = 1;
 
 	pscom_socket_t *socket = pscom_open_socket(0, 0);
 	{
@@ -462,7 +463,9 @@ int MPID_Open_port(MPID_Info *info_ptr, char *port_name)
 	}
 
 	/* Allow TCP only. ToDo: Allow RDP connects when they are implemented */
-	pscom_con_type_mask_only(socket, PSCOM_CON_TYPE_TCP);
+	/* If TCP plugin is disabled (no pscom payload via TCP), we cannot enforce TCP... */
+	pscom_env_get_uint(&tcp_enabled, "PSP_TCP");
+	if(tcp_enabled) pscom_con_type_mask_only(socket, PSCOM_CON_TYPE_TCP);
 
 	rc = pscom_listen(socket, PSCOM_ANYPORT);
 	if (rc != PSCOM_SUCCESS) {
