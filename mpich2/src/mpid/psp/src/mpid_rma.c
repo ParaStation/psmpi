@@ -35,6 +35,7 @@ int _accept_never(pscom_request_t *request,
 static
 int is_comm_self_clone(MPID_Comm * comm_ptr)
 {
+#if 0   /* Why so complicated??? */
 	MPID_Comm *comm_self_ptr = NULL;
 	MPID_Group *group_comm, *group_self;
 	int result;
@@ -54,10 +55,37 @@ int is_comm_self_clone(MPID_Comm * comm_ptr)
 	if (result == MPI_IDENT) {
 		return 1;
 	}
+#else   /* I mean, a communicator with only one single rank should be a comm_self clone, right? */
+	if(comm_ptr->local_size == 1) {
+		return 1;
+	}
+#endif
 
 	return 0;
 }
 
+static
+int is_host_local_comm(MPID_Comm * comm_ptr)
+{
+	int i;
+	int host_hash;
+	int *hash_buf;
+	int mpi_errno;
+	MPIR_Errflag_t errflag = 0;
+
+	/* Caution: In case of a hash collision, we may end up in an undefined situation! (error, deadlock, ...) */
+	host_hash = MPID_PSP_get_host_hash();
+
+	hash_buf = MPIU_Malloc(comm_ptr->local_size * sizeof(int));
+	mpi_errno = MPIR_Allgather_impl(&host_hash, 1, MPI_INT, hash_buf, 1, MPI_INT, comm_ptr, &errflag);
+	assert(mpi_errno == MPI_SUCCESS);
+
+	for (i=0; i<comm_ptr->local_size; i++) {
+		if(hash_buf[i] != host_hash) return 0;
+	}
+
+	return 1;
+}
 
 static
 void MPID_PSP_rma_init(pscom_socket_t *socket, pscom_request_t **req)
@@ -649,7 +677,16 @@ int get_my_shmem_split_color(MPID_Comm * comm_ptr)
 {
 	int i, color = MPI_UNDEFINED;
 
-	if(!MPIDI_Process.env.enable_smp_awareness || MPIDI_Process.env.enable_ondemand) return comm_ptr->rank;
+	if(!MPIDI_Process.env.enable_smp_awareness) {
+		return comm_ptr->rank;
+	}
+
+	if(MPIDI_Process.env.enable_ondemand) {
+		/* In the PSP_ONDEMAND=1 case, we cannot check reliably for CON_TYPE_SHM,
+		   so we switch to the host_hash approach, accepting the possibility of
+		   hash collisions that may lead to undefined situations... */
+		return MPID_PSP_get_host_hash();
+	}
 
 	for(i=0; i<comm_ptr->local_size; i++) {
 		if( (comm_ptr->vcr[i]->con->type == PSCOM_CON_TYPE_SHM) || (comm_ptr->rank == i) ) {
@@ -932,8 +969,9 @@ fn_fail:
 	/* --END ERROR HANDLING-- */
 }
 
-int MPID_Win_allocate_shared(MPI_Aint size, int disp_unit, MPID_Info *info_ptr, MPID_Comm *comm_ptr,
-			     void *base_ptr, MPID_Win **win_ptr)
+static
+int MPID_PSP_Win_allocate_shared(MPI_Aint size, int disp_unit, MPID_Info *info_ptr, MPID_Comm *comm_ptr,
+				 void *base_ptr, MPID_Win **win_ptr, int retry)
 {
 	void **base_pp = (void **) base_ptr;
 	int mpi_errno = MPI_SUCCESS;
@@ -945,7 +983,7 @@ int MPID_Win_allocate_shared(MPI_Aint size, int disp_unit, MPID_Info *info_ptr, 
 		int flag = 0;
 		MPID_Attribute *p = comm_ptr->attributes;
 
-		/* Check for the MPI_COMM_TYPE_SHARED attribute in comm: */
+		/* Check for the MPI_COMM_TYPE_SHARED attribute key in comm: */
 		while (p) {
 			if (p->keyval->handle == MPIDI_Process.shm_attr_key) {
 				assert(p->value == NULL);
@@ -974,9 +1012,21 @@ int MPID_Win_allocate_shared(MPI_Aint size, int disp_unit, MPID_Info *info_ptr, 
 			(*win_ptr)->size = size;
 			(*win_ptr)->disp_unit = disp_unit;
 
-		} else {
-			/* This communicator cannot be used with MPID_Win_allocate_shared()! */
-			return MPI_ERR_RMA_SHARED;
+		} else { /* No SHMEM attribute found: */
+
+			if(is_host_local_comm(comm_ptr) && !retry) {
+				/* This communicator has NOT been created with MPI_Comm_split_type(type=SHARED), but
+				   it covers a shared-memory domain (or at least processes running on the same host).
+				   Therefore, attach a new SHMEM attribute key, redo its retrieval and pray for success: */
+				mpi_errno = MPIR_Comm_set_attr_impl(comm_ptr, MPIDI_Process.shm_attr_key, NULL, MPIR_ATTR_PTR);
+				if(mpi_errno) {
+					goto fn_fail;
+				}
+				return MPID_PSP_Win_allocate_shared(size, disp_unit, info_ptr, comm_ptr, base_ptr, win_ptr, 1);
+			} else {
+				/* This communicator cannot be used with MPID_Win_allocate_shared()! */
+				return MPI_ERR_RMA_SHARED;
+			}
 		}
 	} else {
 		mpi_errno = MPID_Win_allocate(size, disp_unit, info_ptr, comm_ptr, base_ptr, win_ptr);
@@ -996,6 +1046,13 @@ fn_fail:
 	goto fn_exit;
 	/* --END ERROR HANDLING-- */
 }
+
+int MPID_Win_allocate_shared(MPI_Aint size, int disp_unit, MPID_Info *info_ptr, MPID_Comm *comm_ptr,
+				 void *base_ptr, MPID_Win **win_ptr)
+{
+	return MPID_PSP_Win_allocate_shared(size, disp_unit, info_ptr, comm_ptr, base_ptr, win_ptr, 0);
+}
+
 
 int MPID_Win_shared_query(MPID_Win *win_ptr, int rank, MPI_Aint *size, int *disp_unit, void *base_ptr)
 {

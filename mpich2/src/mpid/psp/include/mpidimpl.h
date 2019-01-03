@@ -68,6 +68,8 @@ int MPIDI_VCRT_Release(MPIDI_VCRT_t *vcrt, int isDisconnect);
 MPIDI_VC_t *MPIDI_VC_Dup(MPIDI_VC_t *orig_vcr);
 MPIDI_VC_t *MPIDI_VC_Create(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid);
 
+int MPID_PSP_get_host_hash();
+
 void MPID_PSP_comm_set_vcrt(MPID_Comm *comm, MPIDI_VCRT_t *vcrt);
 void MPID_PSP_comm_set_local_vcrt(MPID_Comm *comm, MPIDI_VCRT_t *vcrt);
 void MPID_PSP_comm_create_mapper(MPID_Comm * comm);
