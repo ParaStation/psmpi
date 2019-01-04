@@ -156,7 +156,7 @@ int MPID_Finalize(void)
 	MPIU_Free(MPIDI_Process.pg_id_name);
 	MPIDI_Process.pg_id_name = NULL;
 
-#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	MPIU_Free(MPIDI_Process.node_id_table);
 	MPIDI_Process.node_id_table = NULL;
 #endif

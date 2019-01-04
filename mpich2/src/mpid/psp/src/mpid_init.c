@@ -32,7 +32,8 @@ MPIDI_Process_t MPIDI_Process = {
 	dinit(my_pg_rank)	-1,
 	dinit(my_pg_size)	0,
 	dinit(pg_id_name)	NULL,
-#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
+	dinit(msa_module_id)    0,
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	dinit(node_id_table)    NULL,
 #endif
 	dinit(env)		{
@@ -40,6 +41,11 @@ MPIDI_Process_t MPIDI_Process = {
 		dinit(enable_ondemand)		0,
 		dinit(enable_ondemand_spawn)	0,
 		dinit(enable_smp_awareness)	1,
+		dinit(enable_msa_awareness)	0,
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+		dinit(enable_smp_aware_collops)	0,
+		dinit(enable_msa_aware_collops)	1,
+#endif
 #ifdef MPID_PSP_CREATE_HISTOGRAM
 		dinit(enable_histogram)		0,
 #endif
@@ -523,8 +529,23 @@ int MPID_Init(int *argc, char ***argv,
 	MPIDI_Process.env.enable_ondemand_spawn = MPIDI_Process.env.enable_ondemand;
 	pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand_spawn, "PSP_ONDEMAND_SPAWN");
 
-	/* take SMP-related locality-information into account (e.g. for MPI_Win_allocate_shared) */
+	/* take SMP-related locality information into account (e.g. for MPI_Win_allocate_shared) */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
+
+	/* take MSA-related topology information into account */
+	pscom_env_get_uint(&MPIDI_Process.env.enable_msa_awareness, "PSP_MSA_AWARENESS");
+	if(MPIDI_Process.env.enable_msa_awareness) {
+		pscom_env_get_uint(&MPIDI_Process.msa_module_id, "PSP_MSA_MODULE_ID");
+	}
+
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+	/* use hierarchy-aware collectives on SMP level */
+	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_aware_collops, "PSP_SMP_AWARE_COLLOPS");
+
+	/* use hierarchy-aware collectives on MSA level (disables SMP-aware collops / FIX ME!) */
+	pscom_env_get_uint(&MPIDI_Process.env.enable_msa_aware_collops, "PSP_MSA_AWARE_COLLOPS");
+	if(MPIDI_Process.env.enable_msa_aware_collops) MPIDI_Process.env.enable_smp_aware_collops = 0;
+#endif
 
 #ifdef MPID_PSP_CREATE_HISTOGRAM
 	/* collect statistics information and print them at the end of a run */
@@ -601,64 +622,88 @@ int MPID_Init(int *argc, char ***argv,
 	if (!MPIDI_Process.env.enable_ondemand) {
 		/* Create and establish all connections */
 		if (InitPortConnections(socket) != MPI_SUCCESS) goto fn_fail;
-
-#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
-		if(MPIDI_Process.env.enable_smp_awareness) {
-
-			int grank;
-                        int my_node_id = -1;
-                        int remote_node_id = -1;
-                        int* node_id_table;
-
-			for (grank = 0; grank < pg_size; grank++) {
-				pscom_connection_t *con = grank2con_get(grank);
-				if( (con->type == PSCOM_CON_TYPE_SHM) || (pg_rank == grank) ) {
-					my_node_id = grank;
-					break;
-				}
-			}
-
-			assert(my_node_id > -1);
-
-                        node_id_table = MPIU_Malloc(pg_size * sizeof(int));
-
-                        if(pg_rank != 0) {
-
-                                /* gather: */
-                                pscom_connection_t *con = grank2con_get(0);
-                                assert(con);
-                                pscom_send(con, NULL, 0, &my_node_id, sizeof(int));
-
-                                /* bcast: */
-                                rc = pscom_recv_from(con, NULL, 0, node_id_table, pg_size*sizeof(int));
-                                assert(rc == PSCOM_SUCCESS);
-
-                        } else {
-
-                                /* gather: */
-                                node_id_table[0] = my_node_id;
-                                for(grank=1; grank < pg_size; grank++) {
-                                        pscom_connection_t *con = grank2con_get(grank);
-                                        assert(con);
-                                        rc = pscom_recv_from(con, NULL, 0, &remote_node_id, sizeof(int));
-                                        assert(rc == PSCOM_SUCCESS);
-                                        node_id_table[grank] = remote_node_id;
-                                }
-
-                                /* bcast: */
-                                for(grank=1; grank < pg_size; grank++) {
-                                        pscom_connection_t *con = grank2con_get(grank);
-                                        pscom_send(con, NULL, 0, node_id_table, pg_size*sizeof(int));
-                                }
-                        }
-
-			MPIDI_Process.node_id_table = node_id_table;
-		}
-#endif
 	} else {
 		/* Create all connections as "on demand" connections. */
 		if (InitPscomConnections(socket) != MPI_SUCCESS) goto fn_fail;
 	}
+
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+	{
+		int grank;
+		int my_node_id = -1;
+		int remote_node_id = -1;
+		int* node_id_table;
+
+		if(MPIDI_Process.env.enable_msa_awareness && MPIDI_Process.env.enable_msa_aware_collops) {
+
+			my_node_id = MPIDI_Process.msa_module_id;
+			assert(my_node_id > -1);
+
+		} else if(MPIDI_Process.env.enable_smp_awareness && MPIDI_Process.env.enable_smp_aware_collops) {
+
+			if (!MPIDI_Process.env.enable_ondemand) {
+				/* In the PSP_ONDEMAND=0 case, we can just check the pscom connection types: */
+				for (grank = 0; grank < pg_size; grank++) {
+					pscom_connection_t *con = grank2con_get(grank);
+					if( (con->type == PSCOM_CON_TYPE_SHM) || (pg_rank == grank) ) {
+						my_node_id = grank;
+						break;
+					}
+				}
+			} else {
+				/* In the PSP_ONDEMAND=1 case, we have to use a hash of the host name: */
+				my_node_id = MPID_PSP_get_host_hash();
+				if(my_node_id < 0) my_node_id *= -1;
+			}
+			assert(my_node_id > -1);
+
+		} else {
+			/* No hierarchy-awareness requested */
+			assert(my_node_id == -1);
+		}
+
+		if(my_node_id > -1) {
+
+			node_id_table = MPIU_Malloc(pg_size * sizeof(int));
+
+			if(pg_rank != 0) {
+
+				/* gather: */
+				pscom_connection_t *con = grank2con_get(0);
+				assert(con);
+				pscom_send(con, NULL, 0, &my_node_id, sizeof(int));
+
+				/* bcast: */
+				rc = pscom_recv_from(con, NULL, 0, node_id_table, pg_size*sizeof(int));
+				assert(rc == PSCOM_SUCCESS);
+
+			} else {
+
+				/* gather: */
+				node_id_table[0] = my_node_id;
+				for(grank=1; grank < pg_size; grank++) {
+					pscom_connection_t *con = grank2con_get(grank);
+					assert(con);
+					rc = pscom_recv_from(con, NULL, 0, &remote_node_id, sizeof(int));
+					assert(rc == PSCOM_SUCCESS);
+					node_id_table[grank] = remote_node_id;
+				}
+
+				/* bcast: */
+				for(grank=1; grank < pg_size; grank++) {
+					pscom_connection_t *con = grank2con_get(grank);
+					pscom_send(con, NULL, 0, node_id_table, pg_size*sizeof(int));
+				}
+			}
+
+			MPIDI_Process.node_id_table = node_id_table;
+
+		} else {
+			/* No hierarchy-awareness requested */
+			assert(MPIDI_Process.node_id_table == NULL);
+		}
+	}
+#endif
 
 	/*
 	 * Initialize the MPI_COMM_WORLD object

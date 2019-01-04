@@ -102,15 +102,18 @@ AC_ARG_WITH([profile], [
 ])
 
 AC_ARG_WITH([pscom-builtin], [
-  --with-pscom-builtin[=list] Define list of pscom plugins that shall be built-in
-                            Default: openib,psm2 / Needs pscom source code fusion
+  --with-pscom-builtin[=list]
+                          Define list of pscom plugins that shall be built-in
+                          Default: openib,psm2 / Needs pscom source code fusion
 ],[
 	PSCOM_BUILTIN_PLUGINS="$withval"
 ])
 
 AC_ARG_WITH([pscom-allin], [
-  --with-pscom-allin[=path]   Enable pscom source code fusion and set path to pscom
+  --with-pscom-allin[=path]
+                          Enable pscom source code fusion and set path to pscom
 ],[
+	PSCOM_ALLIN="true"
 	PSCOM_ALLIN_DIR="$withval"
 	AC_CHECK_FILE(["${PSCOM_ALLIN_DIR}/lib/all/pscom_all.c"], [
 		PSCOM_ALLIN_DIR="${PSCOM_ALLIN_DIR}/lib/all/"
@@ -173,8 +176,9 @@ AC_ARG_WITH([pscom-allin], [
 	if test "$confset_and_allin_does_not_match" = "yes" ; then
 		AC_MSG_ERROR([confset=$CONFSET does not allow for --with-pscom-allin])
 	fi
+],[
+	PSCOM_ALLIN="false"
 ])
-
 
 #Some influential environment variables:
 #  CC          C compiler command
@@ -441,7 +445,7 @@ case $CONFSET in
 esac
 
 AC_ARG_WITH([threading], [
-  --with-threading      Enable threading 'multiple' in device psp
+  --with-threading        Enable threading 'multiple' in device psp
 ],[
 	export PSP_THREADING=multiple
 	MODULEFILE_CONFSET="$MODULEFILE_CONFSET${MODULEFILE_CONFSET:+-}mt"
@@ -449,7 +453,7 @@ AC_ARG_WITH([threading], [
 
 AC_ARG_WITH([modulefile], [
   --with-modulefile=filename
-			destinaton of the generated modulefile
+			  Destinaton of the generated modulefile
 ],[
 	MODULEFILE="$withval"
 ],[
@@ -460,7 +464,30 @@ AC_ARG_WITH([modulefile], [
 	fi
 	MODULEFILE="$MODULEFILE-\$(VER)"
 ])
+AC_ARG_WITH([topology-awareness], [
+  --with-topology-awareness
+			  Enable topology/hierarchy awareness for collectives
+],[
+	export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPID_PSP_TOPOLOGY_AWARENESS"
+	ENABLE_TOPOLOGY_AWARENESS="true"
+],[
+	ENABLE_TOPOLOGY_AWARENESS="false"
+])
+AC_SUBST([ENABLE_TOPOLOGY_AWARENESS])
 
+if test "$PSP_THREADING" = "multiple" ; then
+   echo "Preparing psmpi/mpich with MPI_THREAD_MULTIPLE support."
+fi
+if test "$ENABLE_HYDRA" = "true" ; then
+   echo "Preparing psmpi/mpich with Hydra's mpiexec support."
+fi
+if test "$ENABLE_TOPOLOGY_AWARENESS" = "true" ; then
+   echo "Preparing psmpi/mpich with topology-awareness."
+fi
+if test "$PSCOM_ALLIN" = "true" ; then
+   echo "Preparing psmpi/mpich with pscom included."
+fi
+sleep 1
 
 AC_SUBST([CONFSET])
 AC_SUBST([MODULEFILE])
@@ -477,6 +504,7 @@ AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([scripts/generate_modulefile.sh], [chmod +x scripts/generate_modulefile.sh])
 
 AC_OUTPUT
+
 
 if test "${CONFSET}" != "none" ; then
    # Call mpich2 configure:

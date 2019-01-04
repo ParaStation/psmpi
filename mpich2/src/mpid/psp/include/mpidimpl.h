@@ -93,7 +93,9 @@ typedef struct MPIDI_Process
 
 	int shm_attr_key;
 
-#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
+	int msa_module_id;
+
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	int* node_id_table;
 #endif
 	struct {
@@ -101,6 +103,11 @@ typedef struct MPIDI_Process
 		unsigned enable_ondemand;
 		unsigned enable_ondemand_spawn;
 		unsigned enable_smp_awareness;
+		unsigned enable_msa_awareness;
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+		unsigned enable_smp_aware_collops;
+		unsigned enable_msa_aware_collops;
+#endif
 #ifdef MPID_PSP_CREATE_HISTOGRAM
 		unsigned enable_histogram;
 #endif

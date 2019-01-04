@@ -627,6 +627,7 @@ PSCOM_LDFLAGS
 EXTRA_VERSION_INFO
 MODULEFILE
 CONFSET
+ENABLE_TOPOLOGY_AWARENESS
 EGREP
 GREP
 CPP
@@ -705,6 +706,7 @@ with_pscom_builtin
 with_pscom_allin
 with_threading
 with_modulefile
+with_topology_awareness
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1358,18 +1360,24 @@ Optional Packages:
   --with-profile=use|gen  Use profile for guided optimization
 
 
-  --with-pscom-builtin=list Define list of pscom plugins that shall be built-in
-                            Default: openib,psm2 / Needs pscom source code fusion
+  --with-pscom-builtin=list
+                          Define list of pscom plugins that shall be built-in
+                          Default: openib,psm2 / Needs pscom source code fusion
 
 
-  --with-pscom-allin=path   Enable pscom source code fusion and set path to pscom
+  --with-pscom-allin=path
+                          Enable pscom source code fusion and set path to pscom
 
 
-  --with-threading      Enable threading 'multiple' in device psp
+  --with-threading        Enable threading 'multiple' in device psp
 
 
   --with-modulefile=filename
-			destinaton of the generated modulefile
+			  Destinaton of the generated modulefile
+
+
+  --with-topology-awareness
+			  Enable topology/hierarchy awareness for collectives
 
 
 Some influential environment variables:
@@ -3490,6 +3498,7 @@ done
 # Check whether --with-pscom-allin was given.
 if test "${with_pscom_allin+set}" = set; then :
   withval=$with_pscom_allin;
+	PSCOM_ALLIN="true"
 	PSCOM_ALLIN_DIR="$withval"
 	as_ac_File=`$as_echo "ac_cv_file_"${PSCOM_ALLIN_DIR}/lib/all/pscom_all.c"" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for \"${PSCOM_ALLIN_DIR}/lib/all/pscom_all.c\"" >&5
@@ -3587,8 +3596,11 @@ fi
 		as_fn_error $? "confset=$CONFSET does not allow for --with-pscom-allin" "$LINENO" 5
 	fi
 
-fi
+else
 
+	PSCOM_ALLIN="false"
+
+fi
 
 
 #Some influential environment variables:
@@ -3883,6 +3895,33 @@ else
 fi
 
 
+# Check whether --with-topology-awareness was given.
+if test "${with_topology_awareness+set}" = set; then :
+  withval=$with_topology_awareness;
+	export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPID_PSP_TOPOLOGY_AWARENESS"
+	ENABLE_TOPOLOGY_AWARENESS="true"
+
+else
+
+	ENABLE_TOPOLOGY_AWARENESS="false"
+
+fi
+
+
+
+if test "$PSP_THREADING" = "multiple" ; then
+   echo "Preparing psmpi/mpich with MPI_THREAD_MULTIPLE support."
+fi
+if test "$ENABLE_HYDRA" = "true" ; then
+   echo "Preparing psmpi/mpich with Hydra's mpiexec support."
+fi
+if test "$ENABLE_TOPOLOGY_AWARENESS" = "true" ; then
+   echo "Preparing psmpi/mpich with topology-awareness."
+fi
+if test "$PSCOM_ALLIN" = "true" ; then
+   echo "Preparing psmpi/mpich with pscom included."
+fi
+sleep 1
 
 
 
@@ -5060,6 +5099,7 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: unrecognized options: $ac_unrecognized_opts" >&5
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
+
 
 
 if test "${CONFSET}" != "none" ; then

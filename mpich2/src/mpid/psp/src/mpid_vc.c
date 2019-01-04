@@ -21,7 +21,7 @@
 static int ENABLE_REAL_DISCONNECT = 1;
 static int ENABLE_LAZY_DISCONNECT = 1;
 
-#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 #ifndef MPID_USE_NODE_IDS
 #error "PSP: The SMP-aware collops features requires that USE_NODE_IDS is enabled for MPICH!"
 #endif
