@@ -101,26 +101,31 @@ int main(int argc, char *argv[])
                 /* Free the intercomm before the next round of spawns */
                 MPI_Comm_free(&intercomm);
             }
-        }
-        else {
+        } else {
             /* Note that worker also send errs to the parent */
             errs += worker(argc, argv, parentcomm, outargv, np);
             MPI_Comm_free(&parentcomm);
             MPI_Finalize();
-            return 0;
+            return MTestReturnValue(errs);
         }
 
         /* Note that the MTest_Finalize get errs only over COMM_WORLD */
         if (parentcomm == MPI_COMM_NULL) {
             MTest_Finalize(errs);
+        } else {
+            MPI_Finalize();
         }
-    }
-    else {
+        /* free the argument vectors */
+        for (i = 0; i < MAX_ARGV; i++) {
+            free(inargv[i]);
+            free(outargv[i]);
+        }
+
+    } else {
         MTest_Finalize(errs);
     }
 
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }
 
 /* Call this routine if this process is the spawned child */

@@ -1,3 +1,12 @@
+/*
+ *  (C) 2015 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ *
+ *  Portions of this code were written by Intel Corporation.
+ *  Copyright (C) 2011-2012 Intel Corporation.  Intel provides this material
+ *  to Argonne National Laboratory subject to Software Grant and Corporate
+ *  Contributor License Agreement dated February 8, 2012.
+ */
 #if (API_SET != API_SET_1) && (API_SET != API_SET_2)
 #error Undefined API SET
 #endif
@@ -6,9 +15,9 @@
 /* peek_callback called when a successful peek is completed                 */
 /* ------------------------------------------------------------------------ */
 #undef FCNAME
-#define FCNAME DECL_FUNC(peek_callback)
+#define FCNAME MPL_QUOTE(peek_callback)
 static int
-ADD_SUFFIX(peek_callback)(cq_tagged_entry_t * wc, MPID_Request * rreq)
+ADD_SUFFIX(peek_callback)(cq_tagged_entry_t * wc, MPIR_Request * rreq)
 {
     int mpi_errno = MPI_SUCCESS;
     BEGIN_FUNC(FCNAME);
@@ -26,23 +35,25 @@ ADD_SUFFIX(peek_callback)(cq_tagged_entry_t * wc, MPID_Request * rreq)
 }
 
 #undef FCNAME
-#define FCNAME DECL_FUNC(MPID_nem_ofi_iprobe_impl)
+#define FCNAME MPL_QUOTE(MPID_nem_ofi_iprobe_impl)
 int ADD_SUFFIX(MPID_nem_ofi_iprobe_impl)(struct MPIDI_VC *vc,
                              int source,
                              int tag,
-                             MPID_Comm * comm,
+                             MPIR_Comm * comm,
                              int context_offset,
-                             int *flag, MPI_Status * status, MPID_Request ** rreq_ptr)
+                             int *flag, MPI_Status * status, MPIR_Request ** rreq_ptr)
 {
     int ret, mpi_errno = MPI_SUCCESS;
     fi_addr_t remote_proc = 0;
     uint64_t match_bits, mask_bits;
     size_t len;
-    MPID_Request rreq_s, *rreq;
+    MPIR_Request rreq_s, *rreq;
 
     BEGIN_FUNC(FCNAME);
     if (rreq_ptr) {
-        MPIDI_Request_create_rreq(rreq, mpi_errno, goto fn_exit);
+        MPIDI_CH3I_NM_OFI_RC(MPID_nem_ofi_create_req(&rreq, 1));
+        rreq->kind = MPIR_REQUEST_KIND__RECV;
+
         *rreq_ptr = rreq;
         rreq->comm = comm;
         rreq->dev.match.parts.rank = source;
@@ -54,6 +65,8 @@ int ADD_SUFFIX(MPID_nem_ofi_iprobe_impl)(struct MPIDI_VC *vc,
         rreq = &rreq_s;
         rreq->dev.OnDataAvail = NULL;
     }
+
+    REQ_OFI(rreq)->pack_buffer    = NULL;
     REQ_OFI(rreq)->event_callback = ADD_SUFFIX(peek_callback);
     REQ_OFI(rreq)->match_state    = PEEK_INIT;
     OFI_ADDR_INIT(source, vc, remote_proc);
@@ -86,7 +99,7 @@ int ADD_SUFFIX(MPID_nem_ofi_iprobe_impl)(struct MPIDI_VC *vc,
     ret = fi_trecvmsg(gl_data.endpoint,&msg,msgflags);
     if(ret == -ENOMSG) {
       if (rreq_ptr) {
-        MPID_Request_release(rreq);
+        MPIR_Request_free(rreq);
         *rreq_ptr = NULL;
         *flag = 0;
       }
@@ -99,18 +112,33 @@ int ADD_SUFFIX(MPID_nem_ofi_iprobe_impl)(struct MPIDI_VC *vc,
 
     while (PEEK_INIT == REQ_OFI(rreq)->match_state)
         MPID_nem_ofi_poll(MPID_BLOCKING_POLL);
-    *status = rreq->status;
+
+    if (PEEK_NOT_FOUND == REQ_OFI(rreq)->match_state) {
+        if (rreq_ptr) {
+            MPIR_Request_free(rreq);
+            *rreq_ptr = NULL;
+            *flag = 0;
+        }
+        MPID_nem_ofi_poll(MPID_NONBLOCKING_POLL);
+        goto fn_exit;
+    }
+
+    if (status != MPI_STATUS_IGNORE)
+        *status = rreq->status;
+
+    if (rreq_ptr)
+        MPIR_Request_add_ref(rreq);
     *flag = 1;
     END_FUNC_RC(FCNAME);
 }
 
 
 #undef FCNAME
-#define FCNAME DECL_FUNC(MPID_nem_ofi_iprobe)
+#define FCNAME MPL_QUOTE(MPID_nem_ofi_iprobe)
 int ADD_SUFFIX(MPID_nem_ofi_iprobe)(struct MPIDI_VC *vc,
                         int source,
                         int tag,
-                        MPID_Comm * comm, int context_offset, int *flag, MPI_Status * status)
+                        MPIR_Comm * comm, int context_offset, int *flag, MPI_Status * status)
 {
     int rc;
     BEGIN_FUNC(FCNAME);
@@ -122,32 +150,32 @@ int ADD_SUFFIX(MPID_nem_ofi_iprobe)(struct MPIDI_VC *vc,
 }
 
 #undef FCNAME
-#define FCNAME DECL_FUNC(MPID_nem_ofi_improbe)
+#define FCNAME MPL_QUOTE(MPID_nem_ofi_improbe)
 int ADD_SUFFIX(MPID_nem_ofi_improbe)(struct MPIDI_VC *vc,
                          int source,
                          int tag,
-                         MPID_Comm * comm,
+                         MPIR_Comm * comm,
                          int context_offset,
-                         int *flag, MPID_Request ** message, MPI_Status * status)
+                         int *flag, MPIR_Request ** message, MPI_Status * status)
 {
     int old_error = status->MPI_ERROR;
     int s;
     BEGIN_FUNC(FCNAME);
-    *flag = NORMAL_PEEK;
+    *flag = CLAIM_PEEK;
     s = ADD_SUFFIX(MPID_nem_ofi_iprobe_impl)(vc, source,
                                              tag, comm, context_offset, flag, status, message);
     if (*flag) {
         status->MPI_ERROR = old_error;
-        (*message)->kind = MPID_REQUEST_MPROBE;
+        (*message)->kind = MPIR_REQUEST_KIND__MPROBE;
     }
     END_FUNC(FCNAME);
     return s;
 }
 
 #undef FCNAME
-#define FCNAME DECL_FUNC(MPID_nem_ofi_anysource_iprobe)
+#define FCNAME MPL_QUOTE(MPID_nem_ofi_anysource_iprobe)
 int ADD_SUFFIX(MPID_nem_ofi_anysource_iprobe)(int tag,
-                                  MPID_Comm * comm,
+                                  MPIR_Comm * comm,
                                   int context_offset, int *flag, MPI_Status * status)
 {
     int rc;
@@ -160,11 +188,11 @@ int ADD_SUFFIX(MPID_nem_ofi_anysource_iprobe)(int tag,
 }
 
 #undef FCNAME
-#define FCNAME DECL_FUNC(MPID_nem_ofi_anysource_improbe)
+#define FCNAME MPL_QUOTE(MPID_nem_ofi_anysource_improbe)
 int ADD_SUFFIX(MPID_nem_ofi_anysource_improbe)(int tag,
-                                   MPID_Comm * comm,
+                                   MPIR_Comm * comm,
                                    int context_offset,
-                                   int *flag, MPID_Request ** message, MPI_Status * status)
+                                   int *flag, MPIR_Request ** message, MPI_Status * status)
 {
     int rc;
     BEGIN_FUNC(FCNAME);

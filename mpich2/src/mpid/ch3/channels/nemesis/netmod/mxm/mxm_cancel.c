@@ -1,5 +1,9 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
+ *  (C) 2014 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ *
+ *  Portion of this code were written by Mellanox Technologies, Inc.
  *  (C) 2014 Mellanox Technologies, Inc.
  *
  */
@@ -13,7 +17,7 @@
 #define FUNCNAME MPID_nem_mxm_cancel_send
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_nem_mxm_cancel_send(MPIDI_VC_t * vc, MPID_Request * req)
+int MPID_nem_mxm_cancel_send(MPIDI_VC_t * vc, MPIR_Request * req)
 {
     int mpi_errno = MPI_SUCCESS;
     mxm_error_t ret = MXM_OK;
@@ -48,7 +52,7 @@ int MPID_nem_mxm_cancel_send(MPIDI_VC_t * vc, MPID_Request * req)
 #define FUNCNAME MPID_nem_mxm_cancel_recv
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_nem_mxm_cancel_recv(MPIDI_VC_t * vc, MPID_Request * req)
+int MPID_nem_mxm_cancel_recv(MPIDI_VC_t * vc, MPIR_Request * req)
 {
     int mpi_errno ATTRIBUTE((unused)) = MPI_SUCCESS;
     mxm_error_t ret = MXM_OK;

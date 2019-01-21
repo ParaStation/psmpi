@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/rma/aintf.f with f77tof90
+! This file created from f77/rma/aintf.f with f77tof90
 ! -*- Mode: Fortran; -*-
 !
 !
@@ -81,5 +81,4 @@
       call MPI_Win_free(win, ierr)
 
       call MTest_Finalize(errs)
-      call MPI_Finalize(ierr);
       end

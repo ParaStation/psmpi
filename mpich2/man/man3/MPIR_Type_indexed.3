@@ -1,0 +1,49 @@
+.TH MPIR_Type_indexed 3 "11/21/2018" " " "MPI"
+.SH NAME
+MPIR_Type_indexed \-  create an indexed datatype 
+.SH SYNOPSIS
+.nf
+int MPIR_Type_indexed(int count,
+                      const int *blocklength_array,
+                      const void *displacement_array,
+                      int dispinbytes, MPI_Datatype oldtype, MPI_Datatype * newtype)
+.fi
+.SH INPUT PARAMETERS
+.PD 0
+.TP
+.B count 
+- number of blocks in type
+.PD 1
+.PD 0
+.TP
+.B blocklength_array 
+- number of elements in each block
+.PD 1
+.PD 0
+.TP
+.B displacement_array 
+- offsets of blocks from start of type (see next
+parameter for units)
+.PD 1
+.PD 0
+.TP
+.B dispinbytes 
+- if nonzero, then displacements are in bytes (the
+displacement_array is an array of ints), otherwise they in terms of
+extent of oldtype (the displacement_array is an array of MPI_Aints)
+.PD 1
+.PD 0
+.TP
+.B oldtype 
+- type (using handle) of datatype on which new type is based
+.PD 1
+
+.SH OUTPUT PARAMETERS
+.PD 0
+.TP
+.B newtype 
+- handle of new indexed datatype
+.PD 1
+
+.SH RETURN VALUE
+0 on success, -1 on failure.

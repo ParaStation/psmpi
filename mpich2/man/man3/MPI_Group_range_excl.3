@@ -1,23 +1,22 @@
-.TH MPI_Group_range_excl 3 "11/9/2015" " " "MPI"
+.TH MPI_Group_range_excl 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Group_range_excl \-  Produces a group by excluding ranges of processes from an existing group 
 .SH SYNOPSIS
 .nf
-int MPI_Group_range_excl(MPI_Group group, int n, int ranges[][3], 
-                         MPI_Group *newgroup)
+int MPI_Group_range_excl(MPI_Group group, int n, int ranges[][3], MPI_Group * newgroup)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B group 
-- group (handle) 
+- group (handle)
 .PD 1
 .PD 0
 .TP
 .B n 
 - number of elements in array 
 .I ranks
-(integer) 
+(integer)
 .PD 1
 .PD 0
 .TP
@@ -35,10 +34,10 @@ of processes to be excluded from the output group
 .PD 0
 .TP
 .B newgroup 
-- new group derived from above, preserving the 
+- new group derived from above, preserving the
 order in 
 .I group
-(handle) 
+(handle)
 .PD 1
 
 .SH NOTE

@@ -54,8 +54,7 @@ int main(int argc, char *argv[])
             /* Create 3 more processes */
             MPI_Comm_spawn((char *) "./disconnect3", MPI_ARGV_NULL, np,
                            MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm, MPI_ERRCODES_IGNORE);
-        }
-        else {
+        } else {
             intercomm = parentcomm;
         }
 
@@ -93,8 +92,7 @@ int main(int argc, char *argv[])
              * errs += err;
              * }
              */
-        }
-        else {
+        } else {
             IF_VERBOSE(("child rank %d alive.\n", rank));
             /* Child */
             if (size != np) {
@@ -130,13 +128,13 @@ int main(int argc, char *argv[])
          * if both call MTest_Finalize */
         if (parentcomm == MPI_COMM_NULL) {
             MTest_Finalize(errs);
+        } else {
+            MPI_Finalize();
         }
-    }
-    else {
+    } else {
         MTest_Finalize(errs);
     }
 
     IF_VERBOSE(("calling finalize\n"));
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

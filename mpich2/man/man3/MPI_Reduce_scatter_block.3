@@ -1,17 +1,16 @@
-.TH MPI_Reduce_scatter_block 3 "11/9/2015" " " "MPI"
+.TH MPI_Reduce_scatter_block 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Reduce_scatter_block \-  Combines values and scatters the results 
 .SH SYNOPSIS
 .nf
-int MPI_Reduce_scatter_block(const void *sendbuf, void *recvbuf, 
-                             int recvcount, 
-                             MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
+int MPI_Reduce_scatter_block(const void *sendbuf, void *recvbuf,
+                             int recvcount, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B sendbuf 
-- starting address of send buffer (choice) 
+- starting address of send buffer (choice)
 .PD 1
 .PD 0
 .TP
@@ -21,24 +20,24 @@ int MPI_Reduce_scatter_block(const void *sendbuf, void *recvbuf,
 .PD 0
 .TP
 .B datatype 
-- data type of elements of input buffer (handle) 
+- data type of elements of input buffer (handle)
 .PD 1
 .PD 0
 .TP
 .B op 
-- operation (handle) 
+- operation (handle)
 .PD 1
 .PD 0
 .TP
 .B comm 
-- communicator (handle) 
+- communicator (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B recvbuf 
-- starting address of receive buffer (choice) 
+- starting address of receive buffer (choice)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

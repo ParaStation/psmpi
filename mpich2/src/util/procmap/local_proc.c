@@ -5,8 +5,6 @@
  */
 
 #include "mpiimpl.h"
-#include "mpidimpl.h" /* FIXME this is including a ch3 include file!
-                         Implement these functions at the device level. */
 
 #if defined(HAVE_LIMITS_H)
 #include <limits.h>
@@ -18,7 +16,7 @@
 #include <errno.h>
 #endif
 
-/* MPIU_Find_local_and_external -- from the list of processes in comm,
+/* MPIR_Find_local_and_external -- from the list of processes in comm,
    builds a list of local processes, i.e., processes on this same
    node, and a list of external processes, i.e., one process from each
    node.
@@ -51,14 +49,14 @@
                          comm->remote_size.
 */
 #undef FUNCNAME
-#define FUNCNAME MPIU_Find_local_and_external
+#define FUNCNAME MPIR_Find_local_and_external
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
 
-#if defined(MPID_USE_NODE_IDS)
-int MPIU_Find_local_and_external(MPID_Comm *comm, int *local_size_p, int *local_rank_p, int **local_ranks_p,
-                                 int *external_size_p, int *external_rank_p, int **external_ranks_p,
-                                 int **intranode_table_p, int **internode_table_p)
+int MPIR_Find_local_and_external(MPIR_Comm * comm, int *local_size_p, int *local_rank_p,
+                                 int **local_ranks_p, int *external_size_p, int *external_rank_p,
+                                 int **external_ranks_p, int **intranode_table_p,
+                                 int **internode_table_p)
 {
     int mpi_errno = MPI_SUCCESS;
     int *nodes;
@@ -71,31 +69,37 @@ int MPIU_Find_local_and_external(MPID_Comm *comm, int *local_size_p, int *local_
     int *internode_table;
     int *intranode_table;
     int i;
-    MPID_Node_id_t max_node_id;
-    MPID_Node_id_t node_id;
-    MPID_Node_id_t my_node_id;
-    MPIU_CHKLMEM_DECL(1);
-    MPIU_CHKPMEM_DECL(4);
+    int max_node_id;
+    int node_id;
+    int my_node_id;
+    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKPMEM_DECL(4);
 
     /* Scan through the list of processes in comm and add one
-       process from each node to the list of "external" processes.  We
-       add the first process we find from each node.  nodes[] is an
-       array where we keep track of whether we have already added that
-       node to the list. */
-    
-    /* these two will be realloc'ed later to the appropriate size (currently unknown) */
-    /* FIXME: realloc doesn't guarantee that the allocated area will be 
-       shrunk - so using realloc is not an appropriate strategy. */
-    MPIU_CHKPMEM_MALLOC (external_ranks, int *, sizeof(int) * comm->remote_size, mpi_errno, "external_ranks");
-    MPIU_CHKPMEM_MALLOC (local_ranks, int *, sizeof(int) * comm->remote_size, mpi_errno, "local_ranks");
+     * process from each node to the list of "external" processes.  We
+     * add the first process we find from each node.  nodes[] is an
+     * array where we keep track of whether we have already added that
+     * node to the list. */
 
-    MPIU_CHKPMEM_MALLOC (internode_table, int *, sizeof(int) * comm->remote_size, mpi_errno, "internode_table");
-    MPIU_CHKPMEM_MALLOC (intranode_table, int *, sizeof(int) * comm->remote_size, mpi_errno, "intranode_table");
+    /* these two will be realloc'ed later to the appropriate size (currently unknown) */
+    /* FIXME: realloc doesn't guarantee that the allocated area will be
+     * shrunk - so using realloc is not an appropriate strategy. */
+    MPIR_CHKPMEM_MALLOC(external_ranks, int *, sizeof(int) * comm->remote_size, mpi_errno,
+                        "external_ranks", MPL_MEM_COMM);
+    MPIR_CHKPMEM_MALLOC(local_ranks, int *, sizeof(int) * comm->remote_size, mpi_errno,
+                        "local_ranks", MPL_MEM_COMM);
+
+    MPIR_CHKPMEM_MALLOC(internode_table, int *, sizeof(int) * comm->remote_size, mpi_errno,
+                        "internode_table", MPL_MEM_COMM);
+    MPIR_CHKPMEM_MALLOC(intranode_table, int *, sizeof(int) * comm->remote_size, mpi_errno,
+                        "intranode_table", MPL_MEM_COMM);
 
     mpi_errno = MPID_Get_max_node_id(comm, &max_node_id);
-    if (mpi_errno) MPIR_ERR_POP (mpi_errno);
-    MPIU_Assert(max_node_id >= 0);
-    MPIU_CHKLMEM_MALLOC (nodes, int *, sizeof(int) * (max_node_id + 1), mpi_errno, "nodes");
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+    MPIR_Assert(max_node_id >= 0);
+    MPIR_CHKLMEM_MALLOC(nodes, int *, sizeof(int) * (max_node_id + 1), mpi_errno, "nodes",
+                        MPL_MEM_COMM);
 
     /* nodes maps node_id to rank in external_ranks of leader for that node */
     for (i = 0; i < (max_node_id + 1); ++i)
@@ -103,32 +107,32 @@ int MPIU_Find_local_and_external(MPID_Comm *comm, int *local_size_p, int *local_
 
     for (i = 0; i < comm->remote_size; ++i)
         intranode_table[i] = -1;
-    
+
     external_size = 0;
 
     mpi_errno = MPID_Get_node_id(comm, comm->rank, &my_node_id);
-    if (mpi_errno) MPIR_ERR_POP (mpi_errno);
-    MPIU_Assert(my_node_id >= 0);
-    MPIU_Assert(my_node_id <= max_node_id);
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+    MPIR_Assert(my_node_id >= 0);
+    MPIR_Assert(my_node_id <= max_node_id);
 
     local_size = 0;
     local_rank = -1;
     external_rank = -1;
-    
-    for (i = 0; i < comm->remote_size; ++i)
-    {
+
+    for (i = 0; i < comm->remote_size; ++i) {
         mpi_errno = MPID_Get_node_id(comm, i, &node_id);
-        if (mpi_errno) MPIR_ERR_POP (mpi_errno);
+        if (mpi_errno)
+            MPIR_ERR_POP(mpi_errno);
 
         /* The upper level can catch this non-fatal error and should be
-           able to recover gracefully. */
+         * able to recover gracefully. */
         MPIR_ERR_CHKANDJUMP(node_id < 0, mpi_errno, MPI_ERR_OTHER, "**dynamic_node_ids");
 
-        MPIU_Assert(node_id <= max_node_id);
+        MPIR_Assert(node_id <= max_node_id);
 
         /* build list of external processes */
-        if (nodes[node_id] == -1)
-        {
+        if (nodes[node_id] == -1) {
             if (i == comm->rank)
                 external_rank = external_size;
             nodes[node_id] = external_size;
@@ -140,127 +144,108 @@ int MPIU_Find_local_and_external(MPID_Comm *comm, int *local_size_p, int *local_
         internode_table[i] = nodes[node_id];
 
         /* build list of local processes */
-        if (node_id == my_node_id)
-        {
-             if (i == comm->rank)
-                 local_rank = local_size;
+        if (node_id == my_node_id) {
+            if (i == comm->rank)
+                local_rank = local_size;
 
-             intranode_table[i] = local_size;
-             local_ranks[local_size] = i;
-             ++local_size;
+            intranode_table[i] = local_size;
+            local_ranks[local_size] = i;
+            ++local_size;
         }
     }
 
     /*
-    printf("------------------------------------------------------------------------\n");
-    printf("comm = %p\n", comm);
-    printf("comm->size = %d\n", comm->remote_size); 
-    printf("comm->rank = %d\n", comm->rank); 
-    printf("local_size = %d\n", local_size); 
-    printf("local_rank = %d\n", local_rank); 
-    printf("local_ranks = %p\n", local_ranks);
-    for (i = 0; i < local_size; ++i) 
-        printf("  local_ranks[%d] = %d\n", i, local_ranks[i]); 
-    printf("external_size = %d\n", external_size); 
-    printf("external_rank = %d\n", external_rank); 
-    printf("external_ranks = %p\n", external_ranks);
-    for (i = 0; i < external_size; ++i) 
-        printf("  external_ranks[%d] = %d\n", i, external_ranks[i]); 
-    printf("intranode_table = %p\n", intranode_table);
-    for (i = 0; i < comm->remote_size; ++i) 
-        printf("  intranode_table[%d] = %d\n", i, intranode_table[i]); 
-    printf("internode_table = %p\n", internode_table);
-    for (i = 0; i < comm->remote_size; ++i) 
-        printf("  internode_table[%d] = %d\n", i, internode_table[i]); 
-    printf("nodes = %p\n", nodes);
-    for (i = 0; i < (max_node_id + 1); ++i) 
-        printf("  nodes[%d] = %d\n", i, nodes[i]); 
+     * printf("------------------------------------------------------------------------\n");
+     * printf("comm = %p\n", comm);
+     * printf("comm->size = %d\n", comm->remote_size);
+     * printf("comm->rank = %d\n", comm->rank);
+     * printf("local_size = %d\n", local_size);
+     * printf("local_rank = %d\n", local_rank);
+     * printf("local_ranks = %p\n", local_ranks);
+     * for (i = 0; i < local_size; ++i)
+     * printf("  local_ranks[%d] = %d\n", i, local_ranks[i]);
+     * printf("external_size = %d\n", external_size);
+     * printf("external_rank = %d\n", external_rank);
+     * printf("external_ranks = %p\n", external_ranks);
+     * for (i = 0; i < external_size; ++i)
+     * printf("  external_ranks[%d] = %d\n", i, external_ranks[i]);
+     * printf("intranode_table = %p\n", intranode_table);
+     * for (i = 0; i < comm->remote_size; ++i)
+     * printf("  intranode_table[%d] = %d\n", i, intranode_table[i]);
+     * printf("internode_table = %p\n", internode_table);
+     * for (i = 0; i < comm->remote_size; ++i)
+     * printf("  internode_table[%d] = %d\n", i, internode_table[i]);
+     * printf("nodes = %p\n", nodes);
+     * for (i = 0; i < (max_node_id + 1); ++i)
+     * printf("  nodes[%d] = %d\n", i, nodes[i]);
      */
 
     *local_size_p = local_size;
     *local_rank_p = local_rank;
-    *local_ranks_p =  MPIU_Realloc (local_ranks, sizeof(int) * local_size);
-    MPIR_ERR_CHKANDJUMP (*local_ranks_p == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem2");
+    *local_ranks_p = MPL_realloc(local_ranks, sizeof(int) * local_size, MPL_MEM_COMM);
+    MPIR_ERR_CHKANDJUMP(*local_ranks_p == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem2");
 
     *external_size_p = external_size;
     *external_rank_p = external_rank;
-    *external_ranks_p = MPIU_Realloc (external_ranks, sizeof(int) * external_size);
-    MPIR_ERR_CHKANDJUMP (*external_ranks_p == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem2");
+    *external_ranks_p = MPL_realloc(external_ranks, sizeof(int) * external_size, MPL_MEM_COMM);
+    MPIR_ERR_CHKANDJUMP(*external_ranks_p == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem2");
 
     /* no need to realloc */
     if (intranode_table_p)
         *intranode_table_p = intranode_table;
     if (internode_table_p)
         *internode_table_p = internode_table;
-    
-    MPIU_CHKPMEM_COMMIT();
 
- fn_exit:
-    MPIU_CHKLMEM_FREEALL();
+    MPIR_CHKPMEM_COMMIT();
+
+  fn_exit:
+    MPIR_CHKLMEM_FREEALL();
     return mpi_errno;
- fn_fail:
-    MPIU_CHKPMEM_REAP();
+  fn_fail:
+    MPIR_CHKPMEM_REAP();
     goto fn_exit;
 }
 
-#else /* !defined(MPID_USE_NODE_IDS) */
-int MPIU_Find_local_and_external(MPID_Comm *comm, int *local_size_p, int *local_rank_p, int **local_ranks_p,
-                                 int *external_size_p, int *external_rank_p, int **external_ranks_p,
-                                 int **intranode_table_p, int **internode_table_p)
-{
-    int mpi_errno = MPI_SUCCESS;
-    
-    /* The upper level can catch this non-fatal error and should be
-       able to recover gracefully. */
-    MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**notimpl");
-fn_fail:
-    return mpi_errno;
-}
-
-#endif
-
-
 /* maps rank r in comm_ptr to the rank of the leader for r's node in
    comm_ptr->node_roots_comm and returns this value.
-  
+
    This function does NOT use mpich error handling.
  */
 #undef FUNCNAME
-#define FUNCNAME MPIU_Get_internode_rank
+#define FUNCNAME MPIR_Get_internode_rank
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIU_Get_internode_rank(MPID_Comm *comm_ptr, int r)
+int MPIR_Get_internode_rank(MPIR_Comm * comm_ptr, int r)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_Comm_valid_ptr( comm_ptr, mpi_errno, TRUE );
-    MPIU_Assert(mpi_errno == MPI_SUCCESS);
-    MPIU_Assert(r < comm_ptr->remote_size);
-    MPIU_Assert(comm_ptr->comm_kind == MPID_INTRACOMM);
-    MPIU_Assert(comm_ptr->internode_table != NULL);
+    MPIR_Comm_valid_ptr(comm_ptr, mpi_errno, TRUE);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(r < comm_ptr->remote_size);
+    MPIR_Assert(comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM);
+    MPIR_Assert(comm_ptr->internode_table != NULL);
 
     return comm_ptr->internode_table[r];
 }
 
 /* maps rank r in comm_ptr to the rank in comm_ptr->node_comm or -1 if r is not
    a member of comm_ptr->node_comm.
-  
+
    This function does NOT use mpich error handling.
  */
 #undef FUNCNAME
-#define FUNCNAME MPIU_Get_intranode_rank
+#define FUNCNAME MPIR_Get_intranode_rank
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIU_Get_intranode_rank(MPID_Comm *comm_ptr, int r)
+int MPIR_Get_intranode_rank(MPIR_Comm * comm_ptr, int r)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_Comm_valid_ptr( comm_ptr, mpi_errno, TRUE );
-    MPIU_Assert(mpi_errno == MPI_SUCCESS);
-    MPIU_Assert(r < comm_ptr->remote_size);
-    MPIU_Assert(comm_ptr->comm_kind == MPID_INTRACOMM);
-    MPIU_Assert(comm_ptr->intranode_table != NULL);
+    MPIR_Comm_valid_ptr(comm_ptr, mpi_errno, TRUE);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(r < comm_ptr->remote_size);
+    MPIR_Assert(comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM);
+    MPIR_Assert(comm_ptr->intranode_table != NULL);
 
     /* FIXME this could/should be a list of ranks on the local node, which
-       should take up much less space on a typical thin(ish)-node system. */
+     * should take up much less space on a typical thin(ish)-node system. */
     return comm_ptr->intranode_table[r];
 }
-

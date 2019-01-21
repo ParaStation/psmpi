@@ -6,6 +6,7 @@
  */
 #include "mpi.h"
 #include <stdio.h>
+#include <string.h>
 #include "mpitest.h"
 
 /*
@@ -40,6 +41,7 @@ int main(int argc, char *argv[])
 
     if (rank == src) {
         int buf[128], position, cnt;
+        MTEST_VG_MEM_INIT(buf, 128 * sizeof(buf[0]));
         /* sender */
 
         /* Create a datatype and send it (multiple of sizeof(int)) */
@@ -79,8 +81,7 @@ int main(int argc, char *argv[])
         MPI_Pack(&cnt, 1, MPI_INT, buf, 128 * sizeof(int), &position, comm);
         MPI_Pack((void *) "message", 7, MPI_CHAR, buf, 128 * sizeof(int), &position, comm);
         MPI_Send(buf, position, MPI_PACKED, dest, 2, comm);
-    }
-    else if (rank == dest) {
+    } else if (rank == dest) {
         MPI_Status status;
         int buf[128], i, elms, count;
 
@@ -114,7 +115,5 @@ int main(int argc, char *argv[])
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
-
+    return MTestReturnValue(errs);
 }

@@ -16,18 +16,18 @@ HYD_status HYDU_env_to_str(struct HYD_env *env, char **str)
     HYDU_FUNC_ENTER();
 
     i = 0;
-    tmp[i++] = HYDU_strdup("'");
-    tmp[i++] = HYDU_strdup(env->env_name);
-    tmp[i++] = HYDU_strdup("=");
-    tmp[i++] = env->env_value ? HYDU_strdup(env->env_value) : HYDU_strdup("");
-    tmp[i++] = HYDU_strdup("'");
+    tmp[i++] = MPL_strdup("'");
+    tmp[i++] = MPL_strdup(env->env_name);
+    tmp[i++] = MPL_strdup("=");
+    tmp[i++] = env->env_value ? MPL_strdup(env->env_value) : MPL_strdup("");
+    tmp[i++] = MPL_strdup("'");
     tmp[i++] = NULL;
 
     status = HYDU_str_alloc_and_join(tmp, str);
     HYDU_ERR_POP(status, "unable to join strings\n");
 
     for (i = 0; tmp[i]; i++)
-        HYDU_FREE(tmp[i]);
+        MPL_free(tmp[i]);
 
   fn_exit:
     HYDU_FUNC_EXIT();
@@ -49,13 +49,13 @@ HYD_status HYDU_list_inherited_env(struct HYD_env **env_list)
     *env_list = NULL;
     i = 0;
     while (environ[i]) {
-        env_str = HYDU_strdup(environ[i]);
+        env_str = MPL_strdup(environ[i]);
         env_name = strtok(env_str, "=");
 
         status = HYDT_bsci_query_env_inherit(env_name, &ret);
         HYDU_ERR_POP(status, "error querying environment propagation\n");
 
-        HYDU_FREE(env_str);
+        MPL_free(env_str);
         env_str = NULL;
 
         if (!ret) {
@@ -71,7 +71,7 @@ HYD_status HYDU_list_inherited_env(struct HYD_env **env_list)
 
   fn_exit:
     if (env_str)
-        HYDU_FREE(env_str);
+        MPL_free(env_str);
     HYDU_FUNC_EXIT();
     return status;
 
@@ -111,9 +111,9 @@ HYD_status HYDU_env_create(struct HYD_env **env, const char *env_name, const cha
 
     HYDU_FUNC_ENTER();
 
-    HYDU_MALLOC(*env, struct HYD_env *, sizeof(struct HYD_env), status);
-    (*env)->env_name = HYDU_strdup(env_name);
-    (*env)->env_value = env_value ? HYDU_strdup(env_value) : NULL;
+    HYDU_MALLOC_OR_JUMP(*env, struct HYD_env *, sizeof(struct HYD_env), status);
+    (*env)->env_name = MPL_strdup(env_name);
+    (*env)->env_value = env_value ? MPL_strdup(env_value) : NULL;
     (*env)->next = NULL;
 
   fn_exit:
@@ -132,10 +132,10 @@ HYD_status HYDU_env_free(struct HYD_env *env)
     HYDU_FUNC_ENTER();
 
     if (env->env_name)
-        HYDU_FREE(env->env_name);
+        MPL_free(env->env_name);
     if (env->env_value)
-        HYDU_FREE(env->env_value);
-    HYDU_FREE(env);
+        MPL_free(env->env_value);
+    MPL_free(env);
 
     HYDU_FUNC_EXIT();
     return status;
@@ -196,33 +196,29 @@ HYD_status HYDU_append_env_to_list(const char *env_name, const char *env_value,
     /* Add the structure to the end of the list */
     if (*env_list == NULL) {
         *env_list = tenv;
-    }
-    else {
+    } else {
         run = *env_list;
 
         while (1) {
             if (!strcmp(run->env_name, env_name)) {
                 /* If we found an entry for this environment variable, just update it */
                 if (run->env_value != NULL && tenv->env_value != NULL) {
-                    HYDU_FREE(run->env_value);
-                    run->env_value = HYDU_strdup(tenv->env_value);
-                }
-                else if (run->env_value != NULL) {
-                    HYDU_FREE(run->env_value);
+                    MPL_free(run->env_value);
+                    run->env_value = MPL_strdup(tenv->env_value);
+                } else if (run->env_value != NULL) {
+                    MPL_free(run->env_value);
                     run->env_value = NULL;
-                }
-                else if (env_value != NULL) {
-                    run->env_value = HYDU_strdup(tenv->env_value);
+                } else if (env_value != NULL) {
+                    run->env_value = MPL_strdup(tenv->env_value);
                 }
 
-                HYDU_FREE(tenv->env_name);
+                MPL_free(tenv->env_name);
                 if (tenv->env_value)
-                    HYDU_FREE(tenv->env_value);
-                HYDU_FREE(tenv);
+                    MPL_free(tenv->env_value);
+                MPL_free(tenv);
 
                 break;
-            }
-            else if (run->next == NULL) {
+            } else if (run->next == NULL) {
                 run->next = tenv;
                 break;
             }
@@ -246,7 +242,7 @@ HYD_status HYDU_append_env_str_to_list(const char *str, struct HYD_env **env_lis
 
     HYDU_FUNC_ENTER();
 
-    my_str = env_value = HYDU_strdup(str);
+    my_str = env_value = MPL_strdup(str);
     /* don't use strtok, it will mangle env values that contain '=' */
     env_name = MPL_strsep(&env_value, "=");
     HYDU_ASSERT(env_name != NULL, status);
@@ -256,7 +252,7 @@ HYD_status HYDU_append_env_str_to_list(const char *str, struct HYD_env **env_lis
 
   fn_exit:
     if (my_str)
-        HYDU_FREE(my_str);
+        MPL_free(my_str);
     HYDU_FUNC_EXIT();
     return status;
 
@@ -277,9 +273,9 @@ HYD_status HYDU_putenv(struct HYD_env *env, HYD_env_overwrite_t overwrite)
         goto fn_exit;
 
     i = 0;
-    tmp[i++] = HYDU_strdup(env->env_name);
-    tmp[i++] = HYDU_strdup("=");
-    tmp[i++] = env->env_value ? HYDU_strdup(env->env_value) : HYDU_strdup("");
+    tmp[i++] = MPL_strdup(env->env_name);
+    tmp[i++] = MPL_strdup("=");
+    tmp[i++] = env->env_value ? MPL_strdup(env->env_value) : MPL_strdup("");
     tmp[i++] = NULL;
     status = HYDU_str_alloc_and_join(tmp, &str);
     HYDU_ERR_POP(status, "unable to join strings\n");
@@ -287,7 +283,7 @@ HYD_status HYDU_putenv(struct HYD_env *env, HYD_env_overwrite_t overwrite)
     MPL_putenv(str);
 
     for (i = 0; tmp[i]; i++)
-        HYDU_FREE(tmp[i]);
+        MPL_free(tmp[i]);
 
   fn_exit:
     HYDU_FUNC_EXIT();

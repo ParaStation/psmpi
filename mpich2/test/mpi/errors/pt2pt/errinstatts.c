@@ -23,6 +23,9 @@ int main(int argc, char *argv[])
     int errval, errclass;
     int b1[20], b2[20], rank, size, src, dest, i, j;
 
+    MTEST_VG_MEM_INIT(b1, 20 * sizeof(int));
+    MTEST_VG_MEM_INIT(b2, 20 * sizeof(int));
+
     MTest_Init(&argc, &argv);
 
     /* Create some receive requests.  tags 0-9 will succeed, tags 10-19
@@ -81,12 +84,10 @@ int main(int argc, char *argv[])
             printf
                 ("Did not get ERR_IN_STATUS in Testsome (outcount = %d, should equal 2); class returned was %d\n",
                  outcount, errclass);
-        }
-        else if (outcount != 2) {
+        } else if (outcount != 2) {
             errs++;
             printf("Test returned outcount = %d\n", outcount);
-        }
-        else {
+        } else {
             /* Check for success */
             for (i = 0; i < outcount; i++) {
                 j = i;
@@ -94,16 +95,14 @@ int main(int argc, char *argv[])
                 if (s[j].MPI_TAG < 10 && s[j].MPI_ERROR != MPI_SUCCESS) {
                     errs++;
                     printf("correct msg had error class %d\n", s[j].MPI_ERROR);
-                }
-                else if (s[j].MPI_TAG >= 10 && s[j].MPI_ERROR == MPI_SUCCESS) {
+                } else if (s[j].MPI_TAG >= 10 && s[j].MPI_ERROR == MPI_SUCCESS) {
                     errs++;
                     printf("truncated msg had MPI_SUCCESS\n");
                 }
             }
         }
 
-    }
-    else if (rank == src) {
+    } else if (rank == src) {
         /* Wait for Irecvs to be posted before the sender calls send */
         MPI_Ssend(NULL, 0, MPI_INT, dest, 100, comm);
 
@@ -117,7 +116,5 @@ int main(int argc, char *argv[])
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
-
+    return MTestReturnValue(errs);
 }

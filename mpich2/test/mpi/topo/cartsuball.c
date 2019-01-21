@@ -37,8 +37,7 @@ int main(int argc, char *argv[])
             printf("cart sub to size 0 did not give self\n");
         }
         MPI_Comm_free(&newcomm);
-    }
-    else if (newcomm != MPI_COMM_NULL) {
+    } else if (newcomm != MPI_COMM_NULL) {
         errs++;
         printf("cart sub to size 0 did not give null\n");
     }
@@ -48,7 +47,5 @@ int main(int argc, char *argv[])
     MPI_Comm_free(&comm);
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
-
+    return MTestReturnValue(errs);
 }

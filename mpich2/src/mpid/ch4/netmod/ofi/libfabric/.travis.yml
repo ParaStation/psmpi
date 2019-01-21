@@ -1,0 +1,81 @@
+dist: trusty
+sudo: false
+language: c
+compiler:
+    - clang
+    - gcc
+os:
+    - linux
+    - osx
+addons:
+    apt:
+        packages:
+            - rpm
+            - libibverbs-dev
+            - librdmacm-dev
+            - libnl-3-200
+            - libnl-3-dev
+            - libnl-route-3-200
+            - libnl-route-3-dev
+            - libnuma-dev
+    ssh_known_hosts:
+        - www.openfabrics.org
+        - git.kernel.org
+
+env:
+    global:
+        - PREFIX=$HOME/install
+        - PATH=$PREFIX/bin:$PATH
+        - CPPFLAGS="-Werror -I$PREFIX/include"
+        - LDFLAGS=-L$PREFIX/lib
+        - LD_LIBRARY_PATH=$PREFIX/lib
+        - LIBFABRIC_CONFIGURE_ARGS="--prefix=$PREFIX --enable-sockets"
+
+# Brew update GNU Autotools so that autogen can succeed
+before_install:
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update;
+        brew upgrade automake || true; brew upgrade libtool || true;
+      fi
+
+install:
+    - ./autogen.sh
+    # Build verbs only in linux as OS X doesn't have verbs support
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+        LIBRARY_CONFIGURE_ARGS="$LIBFABRIC_CONFIGURE_ARGS --enable-usnic
+        --enable-verbs --enable-mlx=$HOME/mlx";
+        UCX_BRANCH=v1.2.x;
+        git clone --depth 1 -b $UCX_BRANCH https://github.com/openucx/ucx.git && cd ucx && ./autogen.sh && ./configure --prefix=$HOME/mlx CFLAGS="-w" && make -j2 install && cd -;
+      fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" && "`basename $CC`" == "clang" ]]; then
+        ./configure CFLAGS="-Werror $CFLAGS" $LIBFABRIC_CONFIGURE_ARGS
+        --enable-debug && make -j2;
+      fi
+    # Test fabric direct
+    - ./configure --prefix=$PREFIX --enable-direct=sockets --enable-udp=no
+      --enable-psm=no --enable-gni=no --enable-psm2=no --enable-verbs=no
+      --enable-usnic=no --enable-rxm=no --enable-rxd=no --enable-mlx=no
+    - make -j2
+    # Test loadable library option
+    - ./configure --enable-sockets=dl --disable-udp --disable-rxm --disable-rxd
+      --disable-verbs --disable-usnic --disable-mlx --prefix=$PREFIX
+    - make -j2
+    - make install
+    - make test
+    - rm -rf $PREFIX
+    # Test regular build
+    - ./configure $LIBFABRIC_CONFIGURE_ARGS
+    - make -j2
+    - make install
+    - make test
+    - make distcheck
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then make rpm; fi
+
+script:
+    - git clone https://github.com/ofiwg/fabtests.git
+    - cd fabtests
+    - git checkout -b v1.6.x origin/v1.6.x
+    - ./autogen.sh
+    - ./configure --prefix=$PREFIX --with-libfabric=$PREFIX
+    - make -j2
+    - make install
+    - make test

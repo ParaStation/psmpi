@@ -1,4 +1,72 @@
 ===============================================================================
+                               Changes in 3.3
+===============================================================================
+
+ # CH4 Device: A new device layer implementation designed for low software
+   overheads. CH4 has experimental support for OFI and UCX network libraries,
+   and POSIX shared memory. Thanks to Intel, Mellanox, and RIKEN AICS for
+   participating in the CH4 coding effort.
+
+ # Fixed SLURM integration in Hydra for new node list format.
+
+ # Added support for PMIx (https://pmix.github.io/pmix/) client
+   library in CH4 netmods. Note that you must use a compatible PMIx
+   server in this configuration.
+
+ # Better organization of collectives in the MPI layer. The new
+   scheme, which de-couples implementation from selection logic,
+   enables easier integration of additional algorithms.
+
+ # TSP collectives framework: A C++-template style framework for
+   collective algorithms is added to allow single collective
+   implementation to move data over generic or device-specific
+   transport functions.
+
+ # Improvements to derived datatype testing (DTPools -
+   https://wiki.mpich.org/mpich/index.php/DTPools).
+
+ # Added new "non-catastrophic" error codes to expose internal
+   resource exhaustion.
+
+ # Added info hints to MPI_Comm_split_type to support splitting
+   communicators by machine topology. Both on-node (socket, core,
+   etc.) and off-node (switch-level) hints are defined.
+
+ # Improvements to MPI_THREAD_MULTIPLE in CH4 through new thread safety
+   models at the Virtual Network Interface (VNI) level. This introduces two
+   new models that leverage work-queues to offload operations and improve
+   scalability under contention.
+
+ # Message Driven Thread Activation (MDTA). An alternative locking
+   model is defined for MPI_THREAD_MULTIPLE in CH4.
+
+ # Added PMI usage optimizations for business card exchange in CH4
+   netmods.
+
+ # Improvements on MPI_Abort. MPI_Abort invoked on subcommunicators will
+   only abort the connected processes within that communicator.
+`
+ # Cleanup of whitespace (ch3 excluded) using the
+   maint/code-cleanup.sh script. For instructions on how to update
+   PRs/branches based on MPICH before the cleanup, see
+   https://github.com/pmodels/mpich/wiki/Code-Cleanup-Procedure.
+
+ # Removed the PAMI device and poe PMI client.
+
+ # C99 compiler support is now required to build MPICH.
+
+ # Several other minor bug fixes, memory leak fixes, and code cleanup.
+
+   A full list of changes is available at the following link:
+
+     http://git.mpich.org/mpich.git/shortlog/v3.2..v3.3
+
+   A list of bugs that have been fixed is available at the following
+   link:
+
+     https://github.com/pmodels/mpich/milestone/25?closed=1
+
+===============================================================================
                                Changes in 3.2
 ===============================================================================
 
@@ -31,7 +99,7 @@
 
    A full list of changes is available at the following link:
 
-     http://git.mpich.org/mpich.git/shortlog/v3.1.3..v3.2rc1
+     http://git.mpich.org/mpich.git/shortlog/v3.1.3..v3.2
 
    A full list of bugs that have been fixed is available at the
    following link:
@@ -1240,11 +1308,11 @@ www.mcs.anl.gov/mpi/mpich2/mpich2_1_0_6changes.htm.
   reorder == true cases in Cart_create and Graph_create).  
 
 - New memory allocation macros, MPIU_CHK[PL]MEM_*(), have been added to help
-  prevent memory leaks.  See mpich2/src/include/mpimem.h.
+  prevent memory leaks.  See mpich2/src/include/mpir_mem.h.
 
 - New error reporting macros, MPIU_ERR_*, have been added to simplify the error
   handling throughout the code, making the code easier to read.  See
-  mpich2/src/include/mpierrs.h.
+  mpich2/src/include/mpir_err.h.
 
 - Interprocess communication using the Sock interface (sock and ssm channels)
   may now be bound to a particular destination interface using the environment

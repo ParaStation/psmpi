@@ -11,6 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "mpi.h"
+#include "mpitest.h"
 
 MPI_Comm comm_all;
 
@@ -52,8 +53,7 @@ int main(int argc, char *argv[])
         sum = 0;
         if (i == 5 && rank == 1) {
             exit(1);
-        }
-        else if (i != 5) {
+        } else if (i != 5) {
             MPI_Allreduce(&val, &sum, 1, MPI_INT, MPI_SUM, comm_all);
             if (sum != size && rank == 0) {
                 errs++;
@@ -64,8 +64,7 @@ int main(int argc, char *argv[])
 
     if (0 == rank && errs) {
         fprintf(stdout, " Found %d errors\n", errs);
-    }
-    else if (0 == rank) {
+    } else if (0 == rank) {
         fprintf(stdout, " No errors\n");
     }
 
@@ -74,5 +73,5 @@ int main(int argc, char *argv[])
 
     MPI_Finalize();
 
-    return 0;
+    return MTestReturnValue(errs);
 }

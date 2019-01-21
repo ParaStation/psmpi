@@ -275,7 +275,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_info_set_ ( MPI_Fint *v1, char *v2 FORT_MIXED_L
         while (*p == ' ' && p > v2) p--;
         p++;
         while (*pin == ' ' && pin < p) pin++;
-        p2 = (char *)MPIU_Malloc( p-pin + 1 );
+        p2 = (char *)MPL_malloc( p-pin + 1, MPL_MEM_OTHER );
         for (li=0; li<(p-pin); li++) { p2[li] = pin[li]; }
         p2[li] = 0; 
     }
@@ -286,11 +286,11 @@ FORT_DLL_SPEC void FORT_CALL mpi_info_set_ ( MPI_Fint *v1, char *v2 FORT_MIXED_L
         while (*p == ' ' && p > v3) p--;
         p++;
         while (*pin == ' ' && pin < p) pin++;
-        p3 = (char *)MPIU_Malloc( p-pin + 1 );
+        p3 = (char *)MPL_malloc( p-pin + 1, MPL_MEM_OTHER );
         for (li=0; li<(p-pin); li++) { p3[li] = pin[li]; }
         p3[li] = 0; 
     }
     *ierr = MPI_Info_set( (MPI_Info)(*v1), p2, p3 );
-    MPIU_Free( p2 );
-    MPIU_Free( p3 );
+    MPL_free( p2 );
+    MPL_free( p3 );
 }

@@ -1,4 +1,4 @@
-.TH MPI_Buffer_detach 3 "11/9/2015" " " "MPI"
+.TH MPI_Buffer_detach 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Buffer_detach \-  Removes an existing buffer (for use in MPI_Bsend etc) 
 .SH SYNOPSIS
@@ -14,7 +14,7 @@ int MPI_Buffer_detach(void *buffer_addr, int *size)
 .PD 0
 .TP
 .B size 
-- buffer size, in bytes (integer) 
+- buffer size, in bytes (integer)
 .PD 1
 
 .SH NOTES
@@ -26,9 +26,9 @@ the buffer.  For example, consider
 
 .nf
 int size, mysize, idummy;
-void *ptr, *myptr, *dummy;     
-MPI_Buffer_detach( &ptr, &size );
-MPI_Buffer_attach( myptr, mysize );
+void *ptr, *myptr, *dummy;
+MPI_Buffer_detach(&ptr, &size);
+MPI_Buffer_attach(myptr, mysize);
 \&.
 \&.
 \&.
@@ -39,8 +39,8 @@ library code ...
 \&.
 \&.
 \&.
-MPI_Buffer_detach( &dummy, &idummy );
-MPI_Buffer_attach( ptr, size );
+MPI_Buffer_detach(&dummy, &idummy);
+MPI_Buffer_attach(ptr, size);
 .fi
 
 
@@ -55,7 +55,7 @@ contains the text
 
 .nf
 The statements made in this section describe the behavior of MPI for
-buffered-mode sends. When no buffer is currently associated, MPI behaves 
+buffered-mode sends. When no buffer is currently associated, MPI behaves
 as if a zero-sized buffer is associated with the process.
 .fi
 

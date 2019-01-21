@@ -1,59 +1,59 @@
-.TH MPI_Sendrecv_replace 3 "11/9/2015" " " "MPI"
+.TH MPI_Sendrecv_replace 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Sendrecv_replace \-  Sends and receives using a single buffer 
 .SH SYNOPSIS
 .nf
-int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, 
-                       int dest, int sendtag, int source, int recvtag,
-                       MPI_Comm comm, MPI_Status *status)
+int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
+                         int dest, int sendtag, int source, int recvtag,
+                         MPI_Comm comm, MPI_Status * status)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B count 
-- number of elements in send and receive buffer (integer) 
+- number of elements in send and receive buffer (integer)
 .PD 1
 .PD 0
 .TP
 .B datatype 
-- type of elements in send and receive buffer (handle) 
+- type of elements in send and receive buffer (handle)
 .PD 1
 .PD 0
 .TP
 .B dest 
-- rank of destination (integer) 
+- rank of destination (integer)
 .PD 1
 .PD 0
 .TP
 .B sendtag 
-- send message tag (integer) 
+- send message tag (integer)
 .PD 1
 .PD 0
 .TP
 .B source 
-- rank of source (integer) 
+- rank of source (integer)
 .PD 1
 .PD 0
 .TP
 .B recvtag 
-- receive message tag (integer) 
+- receive message tag (integer)
 .PD 1
 .PD 0
 .TP
 .B comm 
-- communicator (handle) 
+- communicator (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B buf 
-- initial address of send and receive buffer (choice) 
+- initial address of send and receive buffer (choice)
 .PD 1
 .PD 0
 .TP
 .B status 
-- status object (Status) 
+- status object (Status)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

@@ -15,7 +15,8 @@
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Get_library_version as PMPI_Get_library_version
 #elif defined(HAVE_WEAK_ATTRIBUTE)
-int MPI_Get_library_version(char *version, int *resultlen) __attribute__((weak,alias("PMPI_Get_library_version")));
+int MPI_Get_library_version(char *version, int *resultlen)
+    __attribute__ ((weak, alias("PMPI_Get_library_version")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -48,11 +49,11 @@ Output Parameters:
 int MPI_Get_library_version(char *version, int *resultlen)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_GET_LIBRARY_VERSION);
+    MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_GET_LIBRARY_VERSION);
 
     /* Note that this routine may be called before MPI_Init */
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_LIBRARY_VERSION);
+    MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPI_GET_LIBRARY_VERSION);
 
     /* Validate parameters and objects (post conversion) */
 #ifdef HAVE_ERROR_CHECKING
@@ -71,24 +72,25 @@ int MPI_Get_library_version(char *version, int *resultlen)
     MPL_snprintf(version, MPI_MAX_LIBRARY_VERSION_STRING,
                  "MPICH Version:\t%s\n"
                  "MPICH Release date:\t%s\n"
+                 "MPICH ABI:\t%s\n"
                  "MPICH Device:\t%s\n"
                  "MPICH configure:\t%s\n"
                  "MPICH CC:\t%s\n"
                  "MPICH CXX:\t%s\n"
                  "MPICH F77:\t%s\n"
                  "MPICH FC:\t%s\n",
-                 MPIR_Version_string, MPIR_Version_date, MPIR_Version_device,
-                 MPIR_Version_configure, MPIR_Version_CC, MPIR_Version_CXX,
-                 MPIR_Version_F77, MPIR_Version_FC);
+                 MPII_Version_string, MPII_Version_date, MPII_Version_ABI, MPII_Version_device,
+                 MPII_Version_configure, MPII_Version_CC, MPII_Version_CXX,
+                 MPII_Version_F77, MPII_Version_FC);
 
-    *resultlen = (int)strlen(version);
+    *resultlen = (int) strlen(version);
 
     /* ... end of body of routine ... */
 
 #ifdef HAVE_ERROR_CHECKING
   fn_exit:
 #endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_LIBRARY_VERSION);
+    MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPI_GET_LIBRARY_VERSION);
     return mpi_errno;
 
     /* --BEGIN ERROR HANDLING-- */

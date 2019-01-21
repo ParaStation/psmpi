@@ -128,123 +128,153 @@ PROGRAMS = $(noinst_PROGRAMS)
 fileerrx_SOURCES = fileerrx.cxx
 fileerrx_OBJECTS = fileerrx.$(OBJEXT)
 fileerrx_LDADD = $(LDADD)
-fileerrx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+fileerrx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 fileinfox_SOURCES = fileinfox.cxx
 fileinfox_OBJECTS = fileinfox.$(OBJEXT)
 fileinfox_LDADD = $(LDADD)
-fileinfox_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+fileinfox_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 filemiscx_SOURCES = filemiscx.cxx
 filemiscx_OBJECTS = filemiscx.$(OBJEXT)
 filemiscx_LDADD = $(LDADD)
-filemiscx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+filemiscx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_iwriteatnosx_OBJECTS = iwriteatnosx.$(OBJEXT)
 iwriteatnosx_OBJECTS = $(nodist_iwriteatnosx_OBJECTS)
 iwriteatnosx_LDADD = $(LDADD)
-iwriteatnosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+iwriteatnosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_iwriteatx_OBJECTS = iwriteatx.$(OBJEXT)
 iwriteatx_OBJECTS = $(nodist_iwriteatx_OBJECTS)
 iwriteatx_LDADD = $(LDADD)
-iwriteatx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+iwriteatx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_iwritenosx_OBJECTS = iwritenosx.$(OBJEXT)
 iwritenosx_OBJECTS = $(nodist_iwritenosx_OBJECTS)
 iwritenosx_LDADD = $(LDADD)
-iwritenosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+iwritenosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_iwriteshnosx_OBJECTS = iwriteshnosx.$(OBJEXT)
 iwriteshnosx_OBJECTS = $(nodist_iwriteshnosx_OBJECTS)
 iwriteshnosx_LDADD = $(LDADD)
-iwriteshnosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+iwriteshnosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_iwriteshx_OBJECTS = iwriteshx.$(OBJEXT)
 iwriteshx_OBJECTS = $(nodist_iwriteshx_OBJECTS)
 iwriteshx_LDADD = $(LDADD)
-iwriteshx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+iwriteshx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_iwritex_OBJECTS = iwritex.$(OBJEXT)
 iwritex_OBJECTS = $(nodist_iwritex_OBJECTS)
 iwritex_LDADD = $(LDADD)
-iwritex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+iwritex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 seekavail_SOURCES = seekavail.cxx
 seekavail_OBJECTS = seekavail.$(OBJEXT)
 seekavail_LDADD = $(LDADD)
-seekavail_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+seekavail_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 setinfox_SOURCES = setinfox.cxx
 setinfox_OBJECTS = setinfox.$(OBJEXT)
 setinfox_LDADD = $(LDADD)
-setinfox_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+setinfox_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 shpositionx_SOURCES = shpositionx.cxx
 shpositionx_OBJECTS = shpositionx.$(OBJEXT)
 shpositionx_LDADD = $(LDADD)
-shpositionx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+shpositionx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writeallbenosx_OBJECTS = writeallbenosx.$(OBJEXT)
 writeallbenosx_OBJECTS = $(nodist_writeallbenosx_OBJECTS)
 writeallbenosx_LDADD = $(LDADD)
-writeallbenosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writeallbenosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writeallbex_OBJECTS = writeallbex.$(OBJEXT)
 writeallbex_OBJECTS = $(nodist_writeallbex_OBJECTS)
 writeallbex_LDADD = $(LDADD)
-writeallbex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writeallbex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writeallnosx_OBJECTS = writeallnosx.$(OBJEXT)
 writeallnosx_OBJECTS = $(nodist_writeallnosx_OBJECTS)
 writeallnosx_LDADD = $(LDADD)
-writeallnosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writeallnosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writeallx_OBJECTS = writeallx.$(OBJEXT)
 writeallx_OBJECTS = $(nodist_writeallx_OBJECTS)
 writeallx_LDADD = $(LDADD)
-writeallx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writeallx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writeatallbenosx_OBJECTS = writeatallbenosx.$(OBJEXT)
 writeatallbenosx_OBJECTS = $(nodist_writeatallbenosx_OBJECTS)
 writeatallbenosx_LDADD = $(LDADD)
-writeatallbenosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writeatallbenosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writeatallbex_OBJECTS = writeatallbex.$(OBJEXT)
 writeatallbex_OBJECTS = $(nodist_writeatallbex_OBJECTS)
 writeatallbex_LDADD = $(LDADD)
-writeatallbex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writeatallbex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writeatallnosx_OBJECTS = writeatallnosx.$(OBJEXT)
 writeatallnosx_OBJECTS = $(nodist_writeatallnosx_OBJECTS)
 writeatallnosx_LDADD = $(LDADD)
-writeatallnosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writeatallnosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writeatallx_OBJECTS = writeatallx.$(OBJEXT)
 writeatallx_OBJECTS = $(nodist_writeatallx_OBJECTS)
 writeatallx_LDADD = $(LDADD)
-writeatallx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writeatallx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writeatnosx_OBJECTS = writeatnosx.$(OBJEXT)
 writeatnosx_OBJECTS = $(nodist_writeatnosx_OBJECTS)
 writeatnosx_LDADD = $(LDADD)
-writeatnosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writeatnosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writeatx_OBJECTS = writeatx.$(OBJEXT)
 writeatx_OBJECTS = $(nodist_writeatx_OBJECTS)
 writeatx_LDADD = $(LDADD)
-writeatx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writeatx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writenosx_OBJECTS = writenosx.$(OBJEXT)
 writenosx_OBJECTS = $(nodist_writenosx_OBJECTS)
 writenosx_LDADD = $(LDADD)
-writenosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writenosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writeordbenosx_OBJECTS = writeordbenosx.$(OBJEXT)
 writeordbenosx_OBJECTS = $(nodist_writeordbenosx_OBJECTS)
 writeordbenosx_LDADD = $(LDADD)
-writeordbenosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writeordbenosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writeordbex_OBJECTS = writeordbex.$(OBJEXT)
 writeordbex_OBJECTS = $(nodist_writeordbex_OBJECTS)
 writeordbex_LDADD = $(LDADD)
-writeordbex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writeordbex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writeordnosx_OBJECTS = writeordnosx.$(OBJEXT)
 writeordnosx_OBJECTS = $(nodist_writeordnosx_OBJECTS)
 writeordnosx_LDADD = $(LDADD)
-writeordnosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writeordnosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writeordx_OBJECTS = writeordx.$(OBJEXT)
 writeordx_OBJECTS = $(nodist_writeordx_OBJECTS)
 writeordx_LDADD = $(LDADD)
-writeordx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writeordx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writeshnosx_OBJECTS = writeshnosx.$(OBJEXT)
 writeshnosx_OBJECTS = $(nodist_writeshnosx_OBJECTS)
 writeshnosx_LDADD = $(LDADD)
-writeshnosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writeshnosx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writeshx_OBJECTS = writeshx.$(OBJEXT)
 writeshx_OBJECTS = $(nodist_writeshx_OBJECTS)
 writeshx_LDADD = $(LDADD)
-writeshx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writeshx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nodist_writex_OBJECTS = writex.$(OBJEXT)
 writex_OBJECTS = $(nodist_writex_OBJECTS)
 writex_LDADD = $(LDADD)
-writex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+writex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -341,6 +371,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -496,6 +527,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -503,8 +535,13 @@ threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
-LDADD = $(top_builddir)/cxx/util/mtest.o
+
+# Add libdtpools support
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_builddir)/dtpoos/include \
+	-I$(top_srcdir)/dtpools/include
+LDADD = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 
 # just in case
 CLEANFILES = summary.xml summary.tap gen-src-tmp gen-src-stamp
@@ -987,6 +1024,9 @@ uninstall-am:
 
 $(top_builddir)/cxx/util/mtest.o: $(top_srcdir)/cxx/util/mtest.cxx
 	(cd $(top_builddir)/cxx/util && $(MAKE) mtest.o)
+
+$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+	(cd $(top_builddir)/dtpools && $(MAKE))
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \

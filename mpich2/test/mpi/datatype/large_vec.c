@@ -26,8 +26,7 @@ int main(int argc, char *argv[])
     /* need large memory */
     if (sizeof(void *) < 8) {
         MTest_Finalize(errs);
-        MPI_Finalize();
-        return 0;
+        return MTestReturnValue(errs);
     }
 
     ierr = MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -42,8 +41,7 @@ int main(int argc, char *argv[])
         printf("malloc of >2GB array failed\n");
         errs++;
         MTest_Finalize(errs);
-        MPI_Finalize();
-        return 0;
+        return MTestReturnValue(errs);
     }
 
     MPI_Type_vector(elems / 2, 1, 2, MPI_LONG_LONG_INT, &dtype);
@@ -55,8 +53,7 @@ int main(int argc, char *argv[])
         /* printf("[%d] sending...\n",rank); */
         ierr = MPI_Send(cols, 1, dtype, 1, 0, MPI_COMM_WORLD);
         ierr = MPI_Send(cols, 1, dtype, 2, 0, MPI_COMM_WORLD);
-    }
-    else {
+    } else {
         /* printf("[%d] receiving...\n",rank); */
         for (i = 0; i < elems; i++)
             cols[i] = -1;
@@ -74,8 +71,8 @@ int main(int argc, char *argv[])
     }
 
     MPI_Type_free(&dtype);
+    free(cols);
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

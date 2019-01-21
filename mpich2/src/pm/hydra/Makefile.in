@@ -101,15 +101,13 @@ bin_PROGRAMS = $(am__EXEEXT_1) hydra_nameserver$(EXEEXT) \
 	$(am__EXEEXT_2) $(am__EXEEXT_3)
 @hydra_have_hwloc_TRUE@am__append_1 = tools/topo/hwloc/topo_hwloc.c
 @hydra_have_hwloc_TRUE@am__append_2 = tools/topo/hwloc/topo_hwloc.h
-@hydra_have_hwloc_TRUE@@hydra_use_embedded_hwloc_TRUE@am__append_3 = -I$(top_srcdir)/tools/topo/hwloc/hwloc/include \
-@hydra_have_hwloc_TRUE@@hydra_use_embedded_hwloc_TRUE@	-I$(top_builddir)/tools/topo/hwloc/hwloc/include
-
+@hydra_have_hwloc_TRUE@@hydra_use_embedded_hwloc_TRUE@am__append_3 = @HWLOC_EMBEDDED_CPPFLAGS@
+@hydra_have_hwloc_TRUE@@hydra_use_embedded_hwloc_TRUE@am__append_4 = @HWLOC_EMBEDDED_CFLAGS@
 
 # Append hwloc to the external subdirs, so it gets built first
-@hydra_have_hwloc_TRUE@@hydra_use_embedded_hwloc_TRUE@am__append_4 = tools/topo/hwloc/hwloc
 @hydra_have_hwloc_TRUE@@hydra_use_embedded_hwloc_TRUE@am__append_5 = tools/topo/hwloc/hwloc
-@hydra_have_hwloc_TRUE@@hydra_use_embedded_hwloc_TRUE@am__append_6 = -L$(top_builddir)/tools/topo/hwloc/hwloc/src
-@hydra_have_hwloc_TRUE@@hydra_use_embedded_hwloc_TRUE@am__append_7 = -lhwloc_embedded
+@hydra_have_hwloc_TRUE@@hydra_use_embedded_hwloc_TRUE@am__append_6 = tools/topo/hwloc/hwloc
+@hydra_have_hwloc_TRUE@@hydra_use_embedded_hwloc_TRUE@am__append_7 = @HWLOC_EMBEDDED_LDADD@ @HWLOC_EMBEDDED_LIBS@
 @hydra_bss_external_TRUE@am__append_8 = \
 @hydra_bss_external_TRUE@    tools/bootstrap/external/common.h \
 @hydra_bss_external_TRUE@    tools/bootstrap/external/ll.h     \
@@ -122,48 +120,48 @@ bin_PROGRAMS = $(am__EXEEXT_1) hydra_nameserver$(EXEEXT) \
 @hydra_bss_external_TRUE@    tools/bootstrap/external/ssh.h
 
 @hydra_bss_external_TRUE@am__append_9 = tools/bootstrap/external/external_common.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/external_common_launch.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/fork_init.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/user_init.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/manual_init.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/rsh_init.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/rsh_env.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/ssh_init.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/ssh.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/ssh_env.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/ssh_finalize.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/slurm_init.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/slurm_launch.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/slurm_env.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/slurm_query_native_int.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/slurm_query_node_list.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/slurm_query_proxy_id.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/ll_init.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/ll_launch.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/ll_query_native_int.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/ll_query_node_list.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/ll_query_proxy_id.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/ll_env.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/lsf_init.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/lsf_query_native_int.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/lsf_query_node_list.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/lsf_env.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/sge_init.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/sge_query_native_int.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/sge_query_node_list.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/sge_env.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/pbs_init.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/pbs_query_native_int.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/pbs_query_node_list.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/cobalt_init.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/cobalt_query_native_int.c \
-@hydra_bss_external_TRUE@	tools/bootstrap/external/cobalt_query_node_list.c
+@hydra_bss_external_TRUE@    tools/bootstrap/external/external_common_launch.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/fork_init.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/user_init.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/manual_init.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/rsh_init.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/rsh_env.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/ssh_init.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/ssh.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/ssh_env.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/ssh_finalize.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/slurm_init.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/slurm_launch.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/slurm_env.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/slurm_query_native_int.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/slurm_query_node_list.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/slurm_query_proxy_id.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/ll_init.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/ll_launch.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/ll_query_native_int.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/ll_query_node_list.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/ll_query_proxy_id.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/ll_env.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/lsf_init.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/lsf_query_native_int.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/lsf_query_node_list.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/lsf_env.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/sge_init.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/sge_query_native_int.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/sge_query_node_list.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/sge_env.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/pbs_init.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/pbs_query_native_int.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/pbs_query_node_list.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/cobalt_init.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/cobalt_query_native_int.c \
+@hydra_bss_external_TRUE@    tools/bootstrap/external/cobalt_query_node_list.c
 
 @hydra_bss_external_TRUE@@hydra_pbs_launcher_TRUE@am__append_10 = \
-@hydra_bss_external_TRUE@@hydra_pbs_launcher_TRUE@	tools/bootstrap/external/pbs_finalize.c \
-@hydra_bss_external_TRUE@@hydra_pbs_launcher_TRUE@	tools/bootstrap/external/pbs_launch.c \
-@hydra_bss_external_TRUE@@hydra_pbs_launcher_TRUE@	tools/bootstrap/external/pbs_wait.c \
-@hydra_bss_external_TRUE@@hydra_pbs_launcher_TRUE@	tools/bootstrap/external/pbs_env.c
+@hydra_bss_external_TRUE@@hydra_pbs_launcher_TRUE@    tools/bootstrap/external/pbs_finalize.c \
+@hydra_bss_external_TRUE@@hydra_pbs_launcher_TRUE@    tools/bootstrap/external/pbs_launch.c \
+@hydra_bss_external_TRUE@@hydra_pbs_launcher_TRUE@    tools/bootstrap/external/pbs_wait.c \
+@hydra_bss_external_TRUE@@hydra_pbs_launcher_TRUE@    tools/bootstrap/external/pbs_env.c
 
 @hydra_bss_persist_TRUE@am__append_11 = hydra_persist
 @hydra_bss_persist_TRUE@am__append_12 = \
@@ -172,18 +170,16 @@ bin_PROGRAMS = $(am__EXEEXT_1) hydra_nameserver$(EXEEXT) \
 @hydra_bss_persist_TRUE@    tools/bootstrap/persist/persist_server.h
 
 @hydra_bss_persist_TRUE@am__append_13 = tools/bootstrap/persist/persist_init.c \
-@hydra_bss_persist_TRUE@	tools/bootstrap/persist/persist_launch.c \
-@hydra_bss_persist_TRUE@	tools/bootstrap/persist/persist_wait.c
+@hydra_bss_persist_TRUE@    tools/bootstrap/persist/persist_launch.c \
+@hydra_bss_persist_TRUE@    tools/bootstrap/persist/persist_wait.c
 
 @hydra_bss_persist_TRUE@am__append_14 = tools/bootstrap/persist/hydra_persist.txt
 @hydra_have_blcr_TRUE@am__append_15 = tools/ckpoint/blcr/ckpoint_blcr.c
 @hydra_have_blcr_TRUE@am__append_16 = tools/ckpoint/blcr/ckpoint_blcr.h
 @hydra_have_poll_TRUE@am__append_17 = tools/demux/demux_poll.c
 @hydra_have_select_TRUE@am__append_18 = tools/demux/demux_select.c
-@hydra_have_ftb_TRUE@am__append_19 = tools/ftb/hydt_ftb.c
-@hydra_have_ftb_FALSE@am__append_20 = tools/ftb/hydt_ftb_dummy.c
-@hydra_pm_pmiserv_TRUE@am__append_21 = -I$(top_srcdir)/pm/utils
-@hydra_pm_pmiserv_TRUE@am__append_22 = \
+@hydra_pm_pmiserv_TRUE@am__append_19 = -I$(top_srcdir)/pm/utils
+@hydra_pm_pmiserv_TRUE@am__append_20 = \
 @hydra_pm_pmiserv_TRUE@    pm/pmiserv/common.h        \
 @hydra_pm_pmiserv_TRUE@    pm/pmiserv/pmi_v2_common.h \
 @hydra_pm_pmiserv_TRUE@    pm/pmiserv/pmip.h          \
@@ -192,40 +188,43 @@ bin_PROGRAMS = $(am__EXEEXT_1) hydra_nameserver$(EXEEXT) \
 @hydra_pm_pmiserv_TRUE@    pm/pmiserv/pmiserv_pmi.h   \
 @hydra_pm_pmiserv_TRUE@    pm/pmiserv/pmiserv_utils.h
 
-@hydra_pm_pmiserv_TRUE@am__append_23 = hydra_pmi_proxy
-@hydra_pm_pmiserv_TRUE@am__append_24 = pm/pmiserv/pmiserv_pmi.c \
-@hydra_pm_pmiserv_TRUE@	pm/pmiserv/pmiserv_pmi_v1.c \
-@hydra_pm_pmiserv_TRUE@	pm/pmiserv/pmiserv_pmi_v2.c \
-@hydra_pm_pmiserv_TRUE@	pm/pmiserv/pmiserv_pmci.c \
-@hydra_pm_pmiserv_TRUE@	pm/pmiserv/pmiserv_cb.c \
-@hydra_pm_pmiserv_TRUE@	pm/pmiserv/pmiserv_utils.c \
-@hydra_pm_pmiserv_TRUE@	pm/pmiserv/common.c \
-@hydra_pm_pmiserv_TRUE@	pm/pmiserv/pmi_v2_common.c
+@hydra_pm_pmiserv_TRUE@am__append_21 = hydra_pmi_proxy
+@hydra_pm_pmiserv_TRUE@am__append_22 = pm/pmiserv/pmiserv_pmi.c \
+@hydra_pm_pmiserv_TRUE@    pm/pmiserv/pmiserv_pmi_v1.c \
+@hydra_pm_pmiserv_TRUE@    pm/pmiserv/pmiserv_pmi_v2.c \
+@hydra_pm_pmiserv_TRUE@    pm/pmiserv/pmiserv_pmci.c \
+@hydra_pm_pmiserv_TRUE@    pm/pmiserv/pmiserv_cb.c \
+@hydra_pm_pmiserv_TRUE@    pm/pmiserv/pmiserv_utils.c \
+@hydra_pm_pmiserv_TRUE@    pm/pmiserv/common.c \
+@hydra_pm_pmiserv_TRUE@    pm/pmiserv/pmi_v2_common.c
 
-@hydra_pm_pmiserv_TRUE@am__append_25 = pm/pmiserv/hydra_pmi_proxy.txt
-@hydra_ui_mpich_TRUE@am__append_26 = -I$(top_srcdir)/ui/utils -DHYDRA_CONF_FILE=\"@sysconfdir@/mpiexec.hydra.conf\"
-@hydra_ui_mpich_TRUE@am__append_27 = ui/mpich/mpiexec.h
-@hydra_ui_mpich_TRUE@am__append_28 = mpiexec.hydra
+@hydra_pm_pmiserv_TRUE@am__append_23 = pm/pmiserv/hydra_pmi_proxy.txt
+@hydra_ui_mpich_TRUE@am__append_24 = -I$(top_srcdir)/ui/utils -DHYDRA_CONF_FILE=\"@sysconfdir@/mpiexec.hydra.conf\"
+@hydra_ui_mpich_TRUE@am__append_25 = ui/mpich/mpiexec.h
+@hydra_ui_mpich_TRUE@am__append_26 = mpiexec.hydra
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
+am__aclocal_m4_deps =  \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_attributes.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_vendor.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_visibility.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_components.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_pkg.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/netloc.m4 \
+	$(top_srcdir)/confdb/aclocal_cache.m4 \
 	$(top_srcdir)/confdb/aclocal_cc.m4 \
 	$(top_srcdir)/confdb/aclocal_coverage.m4 \
 	$(top_srcdir)/confdb/aclocal_libs.m4 \
 	$(top_srcdir)/confdb/aclocal_runlog.m4 \
 	$(top_srcdir)/confdb/aclocal_subcfg.m4 \
 	$(top_srcdir)/confdb/aclocal_util.m4 \
+	$(top_srcdir)/confdb/ax_check_posix_regcomp.m4 \
 	$(top_srcdir)/confdb/libtool.m4 \
 	$(top_srcdir)/confdb/ltoptions.m4 \
 	$(top_srcdir)/confdb/ltsugar.m4 \
 	$(top_srcdir)/confdb/ltversion.m4 \
 	$(top_srcdir)/confdb/lt~obsolete.m4 $(top_srcdir)/version.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_attributes.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_visibility.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_vendor.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_components.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_pkg.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -301,8 +300,7 @@ am__libhydra_la_SOURCES_DIST = utils/alloc/alloc.c utils/args/args.c \
 	tools/bootstrap/persist/persist_wait.c tools/ckpoint/ckpoint.c \
 	tools/ckpoint/blcr/ckpoint_blcr.c tools/demux/demux.c \
 	tools/demux/demux_poll.c tools/demux/demux_select.c \
-	tools/debugger/debugger.c tools/ftb/hydt_ftb.c \
-	tools/ftb/hydt_ftb_dummy.c ui/utils/uiu.c
+	tools/debugger/debugger.c ui/utils/uiu.c
 am__dirstamp = $(am__leading_dot)dirstamp
 @hydra_have_hwloc_TRUE@am__objects_1 = tools/topo/hwloc/topo_hwloc.lo
 @hydra_bss_external_TRUE@am__objects_2 = tools/bootstrap/external/external_common.lo \
@@ -353,8 +351,6 @@ am__dirstamp = $(am__leading_dot)dirstamp
 @hydra_have_blcr_TRUE@	tools/ckpoint/blcr/ckpoint_blcr.lo
 @hydra_have_poll_TRUE@am__objects_6 = tools/demux/demux_poll.lo
 @hydra_have_select_TRUE@am__objects_7 = tools/demux/demux_select.lo
-@hydra_have_ftb_TRUE@am__objects_8 = tools/ftb/hydt_ftb.lo
-@hydra_have_ftb_FALSE@am__objects_9 = tools/ftb/hydt_ftb_dummy.lo
 am_libhydra_la_OBJECTS = utils/alloc/alloc.lo utils/args/args.lo \
 	utils/dbg/dbg.lo utils/env/env.lo utils/launch/launch.lo \
 	utils/others/others.lo utils/signals/signals.lo \
@@ -371,8 +367,7 @@ am_libhydra_la_OBJECTS = utils/alloc/alloc.lo utils/args/args.lo \
 	tools/bootstrap/utils/bscu_cb.lo $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) tools/ckpoint/ckpoint.lo \
 	$(am__objects_5) tools/demux/demux.lo $(am__objects_6) \
-	$(am__objects_7) tools/debugger/debugger.lo $(am__objects_8) \
-	$(am__objects_9) ui/utils/uiu.lo
+	$(am__objects_7) tools/debugger/debugger.lo ui/utils/uiu.lo
 libhydra_la_OBJECTS = $(am_libhydra_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -384,7 +379,7 @@ am__libpm_la_SOURCES_DIST = pm/pmiserv/pmiserv_pmi.c \
 	pm/pmiserv/pmiserv_pmci.c pm/pmiserv/pmiserv_cb.c \
 	pm/pmiserv/pmiserv_utils.c pm/pmiserv/common.c \
 	pm/pmiserv/pmi_v2_common.c
-@hydra_pm_pmiserv_TRUE@am__objects_10 = pm/pmiserv/pmiserv_pmi.lo \
+@hydra_pm_pmiserv_TRUE@am__objects_8 = pm/pmiserv/pmiserv_pmi.lo \
 @hydra_pm_pmiserv_TRUE@	pm/pmiserv/pmiserv_pmi_v1.lo \
 @hydra_pm_pmiserv_TRUE@	pm/pmiserv/pmiserv_pmi_v2.lo \
 @hydra_pm_pmiserv_TRUE@	pm/pmiserv/pmiserv_pmci.lo \
@@ -392,7 +387,7 @@ am__libpm_la_SOURCES_DIST = pm/pmiserv/pmiserv_pmi.c \
 @hydra_pm_pmiserv_TRUE@	pm/pmiserv/pmiserv_utils.lo \
 @hydra_pm_pmiserv_TRUE@	pm/pmiserv/common.lo \
 @hydra_pm_pmiserv_TRUE@	pm/pmiserv/pmi_v2_common.lo
-am_libpm_la_OBJECTS = $(am__objects_10)
+am_libpm_la_OBJECTS = $(am__objects_8)
 libpm_la_OBJECTS = $(am_libpm_la_OBJECTS)
 @hydra_bss_persist_TRUE@am__EXEEXT_1 = hydra_persist$(EXEEXT)
 @hydra_pm_pmiserv_TRUE@am__EXEEXT_2 = hydra_pmi_proxy$(EXEEXT)
@@ -509,10 +504,9 @@ am__noinst_HEADERS_DIST = include/hydra.h include/hydra_server.h \
 	tools/bootstrap/persist/persist_server.h \
 	tools/ckpoint/ckpoint.h tools/ckpoint/blcr/ckpoint_blcr.h \
 	tools/demux/demux.h tools/demux/demux_internal.h \
-	tools/debugger/debugger.h tools/ftb/hydt_ftb.h \
-	pm/include/pmci.h pm/pmiserv/common.h \
-	pm/pmiserv/pmi_v2_common.h pm/pmiserv/pmip.h \
-	pm/pmiserv/pmip_pmi.h pm/pmiserv/pmiserv.h \
+	tools/debugger/debugger.h pm/include/pmci.h \
+	pm/pmiserv/common.h pm/pmiserv/pmi_v2_common.h \
+	pm/pmiserv/pmip.h pm/pmiserv/pmip_pmi.h pm/pmiserv/pmiserv.h \
 	pm/pmiserv/pmiserv_pmi.h pm/pmiserv/pmiserv_utils.h \
 	ui/include/ui.h ui/utils/uiu.h ui/mpich/mpiexec.h
 HEADERS = $(noinst_HEADERS)
@@ -556,7 +550,6 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/hydra-doxygen.cfg.in \
 	$(srcdir)/tools/ckpoint/blcr/Makefile.mk \
 	$(srcdir)/tools/debugger/Makefile.mk \
 	$(srcdir)/tools/demux/Makefile.mk \
-	$(srcdir)/tools/ftb/Makefile.mk \
 	$(srcdir)/tools/nameserver/Makefile.mk \
 	$(srcdir)/tools/topo/Makefile.mk \
 	$(srcdir)/tools/topo/hwloc/Makefile.mk \
@@ -665,17 +658,16 @@ HWLOC_GL_LIBS = @HWLOC_GL_LIBS@
 HWLOC_HAVE_LIBXML2 = @HWLOC_HAVE_LIBXML2@
 HWLOC_HAVE_NVML = @HWLOC_HAVE_NVML@
 HWLOC_HAVE_OPENCL = @HWLOC_HAVE_OPENCL@
-HWLOC_KERRIGHED_CFLAGS = @HWLOC_KERRIGHED_CFLAGS@
-HWLOC_KERRIGHED_LIBS = @HWLOC_KERRIGHED_LIBS@
 HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
 HWLOC_LIBS = @HWLOC_LIBS@
 HWLOC_LIBS_PRIVATE = @HWLOC_LIBS_PRIVATE@
 HWLOC_LIBXML2_CFLAGS = @HWLOC_LIBXML2_CFLAGS@
 HWLOC_LIBXML2_LIBS = @HWLOC_LIBXML2_LIBS@
-HWLOC_LINUX_LIBNUMA_LIBS = @HWLOC_LINUX_LIBNUMA_LIBS@
 HWLOC_MS_LIB = @HWLOC_MS_LIB@
 HWLOC_MS_LIB_ARCH = @HWLOC_MS_LIB_ARCH@
 HWLOC_NVML_LIBS = @HWLOC_NVML_LIBS@
+HWLOC_OPENCL_CFLAGS = @HWLOC_OPENCL_CFLAGS@
+HWLOC_OPENCL_LDFLAGS = @HWLOC_OPENCL_LDFLAGS@
 HWLOC_OPENCL_LIBS = @HWLOC_OPENCL_LIBS@
 HWLOC_PCIACCESS_CFLAGS = @HWLOC_PCIACCESS_CFLAGS@
 HWLOC_PCIACCESS_LIBS = @HWLOC_PCIACCESS_LIBS@
@@ -684,6 +676,7 @@ HWLOC_PLUGINS_PATH = @HWLOC_PLUGINS_PATH@
 HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
 HWLOC_REQUIRES = @HWLOC_REQUIRES@
 HWLOC_VERSION = @HWLOC_VERSION@
+HWLOC_X11_CPPFLAGS = @HWLOC_X11_CPPFLAGS@
 HWLOC_X11_LIBS = @HWLOC_X11_LIBS@
 HWLOC_top_builddir = @HWLOC_top_builddir@
 HWLOC_top_srcdir = @HWLOC_top_srcdir@
@@ -709,6 +702,7 @@ MKDIR_P = @MKDIR_P@
 MPIEXEC_HYDRA_NAME = @MPIEXEC_HYDRA_NAME@
 MPIEXEC_NAME = @MPIEXEC_NAME@
 MPIRUN_NAME = @MPIRUN_NAME@
+MPLLIBNAME = @MPLLIBNAME@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
@@ -783,6 +777,9 @@ localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 mpl_dist_srcdir = @mpl_dist_srcdir@
+mpl_includedir = @mpl_includedir@
+mpl_lib = @mpl_lib@
+mpl_libdir = @mpl_libdir@
 mpl_srcdir = @mpl_srcdir@
 oldincludedir = @oldincludedir@
 pdfdir = @pdfdir@
@@ -801,18 +798,19 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-external_subdirs = @mpl_srcdir@ $(am__append_4)
-external_dist_subdirs = @mpl_dist_srcdir@ $(am__append_5)
-external_ldflags = -L$(top_builddir)/@mpl_srcdir@ $(am__append_6)
-external_libs = -lmpl @WRAPPER_LIBS@ $(am__append_7)
+external_subdirs = @mpl_srcdir@ $(am__append_5)
+external_dist_subdirs = @mpl_dist_srcdir@ $(am__append_6)
+external_includes = @mpl_includedir@
+external_ldflags = @mpl_libdir@
+external_libs = @mpl_lib@ @WRAPPER_LIBS@ $(am__append_7)
 noinst_HEADERS = include/hydra.h include/hydra_server.h \
 	tools/topo/topo.h $(am__append_2) \
 	tools/bootstrap/include/bsci.h tools/bootstrap/utils/bscu.h \
 	$(am__append_8) $(am__append_12) tools/ckpoint/ckpoint.h \
 	$(am__append_16) tools/demux/demux.h \
 	tools/demux/demux_internal.h tools/debugger/debugger.h \
-	tools/ftb/hydt_ftb.h pm/include/pmci.h $(am__append_22) \
-	ui/include/ui.h ui/utils/uiu.h $(am__append_27)
+	pm/include/pmci.h $(am__append_20) ui/include/ui.h \
+	ui/utils/uiu.h $(am__append_25)
 
 # created by confdb/aclocal_cache.m4
 DISTCLEANFILES = config.system
@@ -822,18 +820,16 @@ EXTRA_DIST = autogen.sh
 #.PHONY: mandoc mandoc-local htmldoc htmldoc-local
 SUFFIXES = .man-phony .html-phony .man1-phony .html1-phony .txt
 doc1_src_txt = $(am__append_14) tools/nameserver/hydra_nameserver.txt \
-	$(am__append_25)
-ACLOCAL_AMFLAGS = -I confdb
-AM_CPPFLAGS = -I$(top_srcdir)/include \
-	-I$(top_srcdir)/@mpl_srcdir@/include \
-	-I$(top_builddir)/@mpl_srcdir@/include \
+	$(am__append_23)
+ACLOCAL_AMFLAGS = -I confdb -I tools/topo/hwloc/hwloc/config
+AM_CPPFLAGS = -I$(top_srcdir)/include $(external_includes) \
 	-I$(top_srcdir)/tools/topo $(am__append_3) \
 	-I$(top_srcdir)/tools/bootstrap/include \
 	-I$(top_srcdir)/tools/bootstrap/utils \
 	-I$(top_srcdir)/tools/ckpoint -I$(top_srcdir)/tools/demux \
-	-I$(top_srcdir)/tools/debugger -I$(top_srcdir)/tools/ftb \
-	-I$(top_srcdir)/pm/include $(am__append_21) \
-	-I$(top_srcdir)/ui/include $(am__append_26)
+	-I$(top_srcdir)/tools/debugger -I$(top_srcdir)/pm/include \
+	$(am__append_19) -I$(top_srcdir)/ui/include $(am__append_24)
+AM_CFLAGS = $(am__append_4)
 noinst_LTLIBRARIES = libhydra.la libpm.la
 libhydra_la_SOURCES = utils/alloc/alloc.c utils/args/args.c \
 	utils/dbg/dbg.c utils/env/env.c utils/launch/launch.c \
@@ -850,8 +846,7 @@ libhydra_la_SOURCES = utils/alloc/alloc.c utils/args/args.c \
 	tools/bootstrap/utils/bscu_cb.c $(am__append_9) \
 	$(am__append_10) $(am__append_13) tools/ckpoint/ckpoint.c \
 	$(am__append_15) tools/demux/demux.c $(am__append_17) \
-	$(am__append_18) tools/debugger/debugger.c $(am__append_19) \
-	$(am__append_20) ui/utils/uiu.c
+	$(am__append_18) tools/debugger/debugger.c ui/utils/uiu.c
 tools_libs = 
 @hydra_bss_persist_TRUE@hydra_persist_SOURCES = tools/bootstrap/persist/persist_server.c
 @hydra_bss_persist_TRUE@hydra_persist_CFLAGS = $(AM_CFLAGS)
@@ -863,14 +858,14 @@ hydra_nameserver_CFLAGS = $(AM_CFLAGS)
 hydra_nameserver_LDFLAGS = $(external_ldflags) 
 hydra_nameserver_LDADD = -lhydra $(external_libs)
 hydra_nameserver_DEPENDENCIES = libhydra.la
-libpm_la_SOURCES = $(am__append_24)
+libpm_la_SOURCES = $(am__append_22)
 @hydra_pm_pmiserv_TRUE@hydra_pmi_proxy_SOURCES = pm/pmiserv/pmip.c \
-@hydra_pm_pmiserv_TRUE@	pm/pmiserv/pmip_cb.c \
-@hydra_pm_pmiserv_TRUE@	pm/pmiserv/pmip_utils.c \
-@hydra_pm_pmiserv_TRUE@	pm/pmiserv/pmip_pmi_v1.c \
-@hydra_pm_pmiserv_TRUE@	pm/pmiserv/pmip_pmi_v2.c \
-@hydra_pm_pmiserv_TRUE@	pm/pmiserv/common.c \
-@hydra_pm_pmiserv_TRUE@	pm/pmiserv/pmi_v2_common.c
+@hydra_pm_pmiserv_TRUE@    pm/pmiserv/pmip_cb.c \
+@hydra_pm_pmiserv_TRUE@    pm/pmiserv/pmip_utils.c \
+@hydra_pm_pmiserv_TRUE@    pm/pmiserv/pmip_pmi_v1.c \
+@hydra_pm_pmiserv_TRUE@    pm/pmiserv/pmip_pmi_v2.c \
+@hydra_pm_pmiserv_TRUE@    pm/pmiserv/common.c \
+@hydra_pm_pmiserv_TRUE@    pm/pmiserv/pmi_v2_common.c
 
 @hydra_pm_pmiserv_TRUE@hydra_pmi_proxy_CFLAGS = $(AM_CFLAGS)
 @hydra_pm_pmiserv_TRUE@hydra_pmi_proxy_LDFLAGS = $(external_ldflags) -L$(top_builddir)
@@ -910,7 +905,7 @@ all: all-recursive
 .SUFFIXES: .man-phony .html-phony .man1-phony .html1-phony .txt .c .lo .o .obj
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/utils/Makefile.mk $(srcdir)/utils/alloc/Makefile.mk $(srcdir)/utils/args/Makefile.mk $(srcdir)/utils/dbg/Makefile.mk $(srcdir)/utils/env/Makefile.mk $(srcdir)/utils/launch/Makefile.mk $(srcdir)/utils/others/Makefile.mk $(srcdir)/utils/signals/Makefile.mk $(srcdir)/utils/sock/Makefile.mk $(srcdir)/utils/string/Makefile.mk $(srcdir)/tools/Makefile.mk $(srcdir)/tools/topo/Makefile.mk $(srcdir)/tools/topo/hwloc/Makefile.mk $(srcdir)/tools/bootstrap/Makefile.mk $(srcdir)/tools/bootstrap/src/Makefile.mk $(srcdir)/tools/bootstrap/utils/Makefile.mk $(srcdir)/tools/bootstrap/external/Makefile.mk $(srcdir)/tools/bootstrap/persist/Makefile.mk $(srcdir)/tools/ckpoint/Makefile.mk $(srcdir)/tools/ckpoint/blcr/Makefile.mk $(srcdir)/tools/demux/Makefile.mk $(srcdir)/tools/debugger/Makefile.mk $(srcdir)/tools/nameserver/Makefile.mk $(srcdir)/tools/ftb/Makefile.mk $(srcdir)/pm/Makefile.mk $(srcdir)/pm/pmiserv/Makefile.mk $(srcdir)/ui/Makefile.mk $(srcdir)/ui/utils/Makefile.mk $(srcdir)/ui/mpich/Makefile.mk $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/utils/Makefile.mk $(srcdir)/utils/alloc/Makefile.mk $(srcdir)/utils/args/Makefile.mk $(srcdir)/utils/dbg/Makefile.mk $(srcdir)/utils/env/Makefile.mk $(srcdir)/utils/launch/Makefile.mk $(srcdir)/utils/others/Makefile.mk $(srcdir)/utils/signals/Makefile.mk $(srcdir)/utils/sock/Makefile.mk $(srcdir)/utils/string/Makefile.mk $(srcdir)/tools/Makefile.mk $(srcdir)/tools/topo/Makefile.mk $(srcdir)/tools/topo/hwloc/Makefile.mk $(srcdir)/tools/bootstrap/Makefile.mk $(srcdir)/tools/bootstrap/src/Makefile.mk $(srcdir)/tools/bootstrap/utils/Makefile.mk $(srcdir)/tools/bootstrap/external/Makefile.mk $(srcdir)/tools/bootstrap/persist/Makefile.mk $(srcdir)/tools/ckpoint/Makefile.mk $(srcdir)/tools/ckpoint/blcr/Makefile.mk $(srcdir)/tools/demux/Makefile.mk $(srcdir)/tools/debugger/Makefile.mk $(srcdir)/tools/nameserver/Makefile.mk $(srcdir)/pm/Makefile.mk $(srcdir)/pm/pmiserv/Makefile.mk $(srcdir)/ui/Makefile.mk $(srcdir)/ui/utils/Makefile.mk $(srcdir)/ui/mpich/Makefile.mk $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -932,7 +927,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe);; \
 	esac;
-$(srcdir)/utils/Makefile.mk $(srcdir)/utils/alloc/Makefile.mk $(srcdir)/utils/args/Makefile.mk $(srcdir)/utils/dbg/Makefile.mk $(srcdir)/utils/env/Makefile.mk $(srcdir)/utils/launch/Makefile.mk $(srcdir)/utils/others/Makefile.mk $(srcdir)/utils/signals/Makefile.mk $(srcdir)/utils/sock/Makefile.mk $(srcdir)/utils/string/Makefile.mk $(srcdir)/tools/Makefile.mk $(srcdir)/tools/topo/Makefile.mk $(srcdir)/tools/topo/hwloc/Makefile.mk $(srcdir)/tools/bootstrap/Makefile.mk $(srcdir)/tools/bootstrap/src/Makefile.mk $(srcdir)/tools/bootstrap/utils/Makefile.mk $(srcdir)/tools/bootstrap/external/Makefile.mk $(srcdir)/tools/bootstrap/persist/Makefile.mk $(srcdir)/tools/ckpoint/Makefile.mk $(srcdir)/tools/ckpoint/blcr/Makefile.mk $(srcdir)/tools/demux/Makefile.mk $(srcdir)/tools/debugger/Makefile.mk $(srcdir)/tools/nameserver/Makefile.mk $(srcdir)/tools/ftb/Makefile.mk $(srcdir)/pm/Makefile.mk $(srcdir)/pm/pmiserv/Makefile.mk $(srcdir)/ui/Makefile.mk $(srcdir)/ui/utils/Makefile.mk $(srcdir)/ui/mpich/Makefile.mk $(am__empty):
+$(srcdir)/utils/Makefile.mk $(srcdir)/utils/alloc/Makefile.mk $(srcdir)/utils/args/Makefile.mk $(srcdir)/utils/dbg/Makefile.mk $(srcdir)/utils/env/Makefile.mk $(srcdir)/utils/launch/Makefile.mk $(srcdir)/utils/others/Makefile.mk $(srcdir)/utils/signals/Makefile.mk $(srcdir)/utils/sock/Makefile.mk $(srcdir)/utils/string/Makefile.mk $(srcdir)/tools/Makefile.mk $(srcdir)/tools/topo/Makefile.mk $(srcdir)/tools/topo/hwloc/Makefile.mk $(srcdir)/tools/bootstrap/Makefile.mk $(srcdir)/tools/bootstrap/src/Makefile.mk $(srcdir)/tools/bootstrap/utils/Makefile.mk $(srcdir)/tools/bootstrap/external/Makefile.mk $(srcdir)/tools/bootstrap/persist/Makefile.mk $(srcdir)/tools/ckpoint/Makefile.mk $(srcdir)/tools/ckpoint/blcr/Makefile.mk $(srcdir)/tools/demux/Makefile.mk $(srcdir)/tools/debugger/Makefile.mk $(srcdir)/tools/nameserver/Makefile.mk $(srcdir)/pm/Makefile.mk $(srcdir)/pm/pmiserv/Makefile.mk $(srcdir)/ui/Makefile.mk $(srcdir)/ui/utils/Makefile.mk $(srcdir)/ui/mpich/Makefile.mk $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -1296,16 +1291,6 @@ tools/debugger/$(DEPDIR)/$(am__dirstamp):
 	@: > tools/debugger/$(DEPDIR)/$(am__dirstamp)
 tools/debugger/debugger.lo: tools/debugger/$(am__dirstamp) \
 	tools/debugger/$(DEPDIR)/$(am__dirstamp)
-tools/ftb/$(am__dirstamp):
-	@$(MKDIR_P) tools/ftb
-	@: > tools/ftb/$(am__dirstamp)
-tools/ftb/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) tools/ftb/$(DEPDIR)
-	@: > tools/ftb/$(DEPDIR)/$(am__dirstamp)
-tools/ftb/hydt_ftb.lo: tools/ftb/$(am__dirstamp) \
-	tools/ftb/$(DEPDIR)/$(am__dirstamp)
-tools/ftb/hydt_ftb_dummy.lo: tools/ftb/$(am__dirstamp) \
-	tools/ftb/$(DEPDIR)/$(am__dirstamp)
 ui/utils/$(am__dirstamp):
 	@$(MKDIR_P) ui/utils
 	@: > ui/utils/$(am__dirstamp)
@@ -1470,8 +1455,6 @@ mostlyclean-compile:
 	-rm -f tools/debugger/*.lo
 	-rm -f tools/demux/*.$(OBJEXT)
 	-rm -f tools/demux/*.lo
-	-rm -f tools/ftb/*.$(OBJEXT)
-	-rm -f tools/ftb/*.lo
 	-rm -f tools/nameserver/*.$(OBJEXT)
 	-rm -f tools/topo/*.$(OBJEXT)
 	-rm -f tools/topo/*.lo
@@ -1578,8 +1561,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tools/demux/$(DEPDIR)/demux.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tools/demux/$(DEPDIR)/demux_poll.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tools/demux/$(DEPDIR)/demux_select.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tools/ftb/$(DEPDIR)/hydt_ftb.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tools/ftb/$(DEPDIR)/hydt_ftb_dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tools/nameserver/$(DEPDIR)/hydra_nameserver-hydra_nameserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tools/topo/$(DEPDIR)/topo.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tools/topo/hwloc/$(DEPDIR)/topo_hwloc.Plo@am__quote@
@@ -1760,7 +1741,6 @@ clean-libtool:
 	-rm -rf tools/ckpoint/blcr/.libs tools/ckpoint/blcr/_libs
 	-rm -rf tools/debugger/.libs tools/debugger/_libs
 	-rm -rf tools/demux/.libs tools/demux/_libs
-	-rm -rf tools/ftb/.libs tools/ftb/_libs
 	-rm -rf tools/topo/.libs tools/topo/_libs
 	-rm -rf tools/topo/hwloc/.libs tools/topo/hwloc/_libs
 	-rm -rf ui/utils/.libs ui/utils/_libs
@@ -2123,8 +2103,6 @@ distclean-generic:
 	-rm -f tools/debugger/$(am__dirstamp)
 	-rm -f tools/demux/$(DEPDIR)/$(am__dirstamp)
 	-rm -f tools/demux/$(am__dirstamp)
-	-rm -f tools/ftb/$(DEPDIR)/$(am__dirstamp)
-	-rm -f tools/ftb/$(am__dirstamp)
 	-rm -f tools/nameserver/$(DEPDIR)/$(am__dirstamp)
 	-rm -f tools/nameserver/$(am__dirstamp)
 	-rm -f tools/topo/$(DEPDIR)/$(am__dirstamp)
@@ -2165,7 +2143,7 @@ clean-am: clean-binPROGRAMS clean-generic clean-libtool \
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf pm/pmiserv/$(DEPDIR) tools/bootstrap/external/$(DEPDIR) tools/bootstrap/persist/$(DEPDIR) tools/bootstrap/src/$(DEPDIR) tools/bootstrap/utils/$(DEPDIR) tools/ckpoint/$(DEPDIR) tools/ckpoint/blcr/$(DEPDIR) tools/debugger/$(DEPDIR) tools/demux/$(DEPDIR) tools/ftb/$(DEPDIR) tools/nameserver/$(DEPDIR) tools/topo/$(DEPDIR) tools/topo/hwloc/$(DEPDIR) ui/mpich/$(DEPDIR) ui/utils/$(DEPDIR) utils/alloc/$(DEPDIR) utils/args/$(DEPDIR) utils/dbg/$(DEPDIR) utils/env/$(DEPDIR) utils/launch/$(DEPDIR) utils/others/$(DEPDIR) utils/signals/$(DEPDIR) utils/sock/$(DEPDIR) utils/string/$(DEPDIR)
+	-rm -rf pm/pmiserv/$(DEPDIR) tools/bootstrap/external/$(DEPDIR) tools/bootstrap/persist/$(DEPDIR) tools/bootstrap/src/$(DEPDIR) tools/bootstrap/utils/$(DEPDIR) tools/ckpoint/$(DEPDIR) tools/ckpoint/blcr/$(DEPDIR) tools/debugger/$(DEPDIR) tools/demux/$(DEPDIR) tools/nameserver/$(DEPDIR) tools/topo/$(DEPDIR) tools/topo/hwloc/$(DEPDIR) ui/mpich/$(DEPDIR) ui/utils/$(DEPDIR) utils/alloc/$(DEPDIR) utils/args/$(DEPDIR) utils/dbg/$(DEPDIR) utils/env/$(DEPDIR) utils/launch/$(DEPDIR) utils/others/$(DEPDIR) utils/signals/$(DEPDIR) utils/sock/$(DEPDIR) utils/string/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -2214,7 +2192,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf pm/pmiserv/$(DEPDIR) tools/bootstrap/external/$(DEPDIR) tools/bootstrap/persist/$(DEPDIR) tools/bootstrap/src/$(DEPDIR) tools/bootstrap/utils/$(DEPDIR) tools/ckpoint/$(DEPDIR) tools/ckpoint/blcr/$(DEPDIR) tools/debugger/$(DEPDIR) tools/demux/$(DEPDIR) tools/ftb/$(DEPDIR) tools/nameserver/$(DEPDIR) tools/topo/$(DEPDIR) tools/topo/hwloc/$(DEPDIR) ui/mpich/$(DEPDIR) ui/utils/$(DEPDIR) utils/alloc/$(DEPDIR) utils/args/$(DEPDIR) utils/dbg/$(DEPDIR) utils/env/$(DEPDIR) utils/launch/$(DEPDIR) utils/others/$(DEPDIR) utils/signals/$(DEPDIR) utils/sock/$(DEPDIR) utils/string/$(DEPDIR)
+	-rm -rf pm/pmiserv/$(DEPDIR) tools/bootstrap/external/$(DEPDIR) tools/bootstrap/persist/$(DEPDIR) tools/bootstrap/src/$(DEPDIR) tools/bootstrap/utils/$(DEPDIR) tools/ckpoint/$(DEPDIR) tools/ckpoint/blcr/$(DEPDIR) tools/debugger/$(DEPDIR) tools/demux/$(DEPDIR) tools/nameserver/$(DEPDIR) tools/topo/$(DEPDIR) tools/topo/hwloc/$(DEPDIR) ui/mpich/$(DEPDIR) ui/utils/$(DEPDIR) utils/alloc/$(DEPDIR) utils/args/$(DEPDIR) utils/dbg/$(DEPDIR) utils/env/$(DEPDIR) utils/launch/$(DEPDIR) utils/others/$(DEPDIR) utils/signals/$(DEPDIR) utils/sock/$(DEPDIR) utils/string/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

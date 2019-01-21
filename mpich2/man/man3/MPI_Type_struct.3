@@ -1,21 +1,20 @@
-.TH MPI_Type_struct 3 "11/9/2015" " " "MPI"
+.TH MPI_Type_struct 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Type_struct \-  Creates a struct datatype 
 .SH SYNOPSIS
 .nf
 int MPI_Type_struct(int count,
-                   const int *array_of_blocklengths,
-                   const MPI_Aint *array_of_displacements,
-                   const MPI_Datatype *array_of_types,
-                   MPI_Datatype *newtype)
+                    int *array_of_blocklengths,
+                    MPI_Aint * array_of_displacements,
+                    MPI_Datatype * array_of_types, MPI_Datatype * newtype)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B count 
-- number of blocks (integer) -- also number of 
+- number of blocks (integer) -- also number of
 entries in arrays array_of_types ,
-array_of_displacements  and array_of_blocklengths  
+array_of_displacements  and array_of_blocklengths
 .PD 1
 .PD 0
 .TP
@@ -31,14 +30,14 @@ array_of_displacements  and array_of_blocklengths
 .TP
 .B array_of_types 
 - type of elements in each block (array
-of handles to datatype objects) 
+of handles to datatype objects)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B newtype 
-- new datatype (handle) 
+- new datatype (handle)
 .PD 1
 
 .SH DEPRECATED FUNCTION
@@ -101,7 +100,7 @@ for the structure foo
 blen[0] = 1; array_of_displacements[0] = 0; oldtypes[0] = MPI_INT;
 blen[1] = 1; array_of_displacements[1] = &foo.b - &foo; oldtypes[1] = MPI_CHAR;
 blen[2] = 1; array_of_displacements[2] = sizeof(foo); oldtypes[2] = MPI_UB;
-MPI_Type_struct( 3, blen, array_of_displacements, oldtypes, &newtype );
+MPI_Type_struct(3, blen, array_of_displacements, oldtypes, &newtype);
 .fi
 
 

@@ -1,41 +1,40 @@
-.TH MPI_Type_create_indexed_block 3 "11/9/2015" " " "MPI"
+.TH MPI_Type_create_indexed_block 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Type_create_indexed_block \-  Create an indexed datatype with constant-sized blocks 
 .SH SYNOPSIS
 .nf
 int MPI_Type_create_indexed_block(int count,
-                               int blocklength,
-                               const int array_of_displacements[],
-                               MPI_Datatype oldtype,
-                               MPI_Datatype *newtype)
+                                  int blocklength,
+                                  const int array_of_displacements[],
+                                  MPI_Datatype oldtype, MPI_Datatype * newtype)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B count 
-- length of array of displacements (integer) 
+- length of array of displacements (integer)
 .PD 1
 .PD 0
 .TP
 .B blocklength 
-- size of block (integer) 
+- size of block (integer)
 .PD 1
 .PD 0
 .TP
 .B array_of_displacements 
-- array of displacements (array of integer) 
+- array of displacements (array of integer)
 .PD 1
 .PD 0
 .TP
 .B oldtype 
-- old datatype (handle) 
+- old datatype (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B newtype 
-- new datatype (handle) 
+- new datatype (handle)
 .PD 1
 
 .SH NOTES

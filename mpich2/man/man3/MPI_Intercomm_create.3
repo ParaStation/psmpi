@@ -1,11 +1,10 @@
-.TH MPI_Intercomm_create 3 "11/9/2015" " " "MPI"
+.TH MPI_Intercomm_create 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Intercomm_create \-  Creates an intercommuncator from two intracommunicators 
 .SH SYNOPSIS
 .nf
-int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader, 
-                       MPI_Comm peer_comm, int remote_leader, int tag, 
-                       MPI_Comm *newintercomm)
+int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
+                         MPI_Comm peer_comm, int remote_leader, int tag, MPI_Comm * newintercomm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -21,8 +20,8 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 .PD 0
 .TP
 .B peer_comm 
-- Communicator used to communicate between a 
-designated process in the other communicator.  
+- Communicator used to communicate between a
+designated process in the other communicator.
 Significant only at the process in 
 .I local_comm
 with
@@ -198,7 +197,7 @@ zero and the size of the communicator minus one; ranks in a receive
 .PD 1
 
 .SH SEE ALSO
-MPI_Intercomm_merge, MPI_Comm_free, MPI_Comm_remote_group, 
+MPI_Intercomm_merge, MPI_Comm_free, MPI_Comm_remote_group,
 .br
 MPI_Comm_remote_size
 

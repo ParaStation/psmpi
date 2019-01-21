@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2011 by Argonne National Laboratory.
+ *  (C) 2015 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
@@ -14,7 +14,8 @@
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_T_pvar_get_index as PMPI_T_pvar_get_index
 #elif defined(HAVE_WEAK_ATTRIBUTE)
-int MPI_T_pvar_get_index(const char *name, int var_class, int *pvar_index) __attribute__((weak,alias("PMPI_T_pvar_get_index")));
+int MPI_T_pvar_get_index(const char *name, int var_class, int *pvar_index)
+    __attribute__ ((weak, alias("PMPI_T_pvar_get_index")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -50,28 +51,26 @@ int MPI_T_pvar_get_index(const char *name, int var_class, int *pvar_index)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_PVAR_GET_INDEX);
+    MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_T_PVAR_GET_INDEX);
     MPIR_ERRTEST_MPIT_INITIALIZED(mpi_errno);
     MPIR_T_THREAD_CS_ENTER();
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_T_PVAR_GET_INDEX);
+    MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPI_T_PVAR_GET_INDEX);
 
     /* Validate parameters */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
-        MPID_BEGIN_ERROR_CHECKS
+        MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_ERRTEST_ARGNULL(name, "name", mpi_errno);
             MPIR_ERRTEST_ARGNULL(pvar_index, "pvar_index", mpi_errno);
-            if (var_class < MPIR_T_PVAR_CLASS_FIRST ||
-                var_class >= MPIR_T_PVAR_CLASS_LAST)
-            {
-               mpi_errno = MPI_T_ERR_INVALID_NAME;
-               goto fn_fail;
+            if (var_class < MPIR_T_PVAR_CLASS_FIRST || var_class >= MPIR_T_PVAR_CLASS_LAST) {
+                mpi_errno = MPI_T_ERR_INVALID_NAME;
+                goto fn_fail;
             }
         }
-        MPID_END_ERROR_CHECKS
+        MPID_END_ERROR_CHECKS;
     }
-#   endif /* HAVE_ERROR_CHECKING */
+#endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
 
@@ -89,11 +88,11 @@ int MPI_T_pvar_get_index(const char *name, int var_class, int *pvar_index)
 
     /* ... end of body of routine ... */
 
-fn_exit:
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_T_PVAR_GET_INDEX);
+  fn_exit:
+    MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPI_T_PVAR_GET_INDEX);
     MPIR_T_THREAD_CS_EXIT();
     return mpi_errno;
 
-fn_fail:
+  fn_fail:
     goto fn_exit;
 }

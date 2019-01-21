@@ -114,78 +114,67 @@ alltoall_SOURCES = alltoall.c
 alltoall_OBJECTS = alltoall.$(OBJEXT)
 alltoall_LDADD = $(LDADD)
 alltoall_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
 greq_test_SOURCES = greq_test.c
 greq_test_OBJECTS = greq_test.$(OBJEXT)
 greq_test_LDADD = $(LDADD)
 greq_test_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
 greq_wait_SOURCES = greq_wait.c
 greq_wait_OBJECTS = greq_wait.$(OBJEXT)
 greq_wait_LDADD = $(LDADD)
 greq_wait_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
 ibsend_SOURCES = ibsend.c
 ibsend_OBJECTS = ibsend.$(OBJEXT)
 ibsend_LDADD = $(LDADD)
 ibsend_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
 multisend_SOURCES = multisend.c
 multisend_OBJECTS = multisend.$(OBJEXT)
 multisend_LDADD = $(LDADD)
 multisend_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
 multisend2_SOURCES = multisend2.c
 multisend2_OBJECTS = multisend2.$(OBJEXT)
 multisend2_LDADD = $(LDADD)
 multisend2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
 multisend3_SOURCES = multisend3.c
 multisend3_OBJECTS = multisend3.$(OBJEXT)
 multisend3_LDADD = $(LDADD)
 multisend3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
 multisend4_SOURCES = multisend4.c
 multisend4_OBJECTS = multisend4.$(OBJEXT)
 multisend4_LDADD = $(LDADD)
 multisend4_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
 sendselfth_SOURCES = sendselfth.c
 sendselfth_OBJECTS = sendselfth.$(OBJEXT)
 sendselfth_LDADD = $(LDADD)
 sendselfth_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
 threaded_sr_SOURCES = threaded_sr.c
 threaded_sr_OBJECTS = threaded_sr.$(OBJEXT)
 threaded_sr_LDADD = $(LDADD)
 threaded_sr_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
 threads_SOURCES = threads.c
 threads_OBJECTS = threads.$(OBJEXT)
 threads_LDADD = $(LDADD)
 threads_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -272,6 +261,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -427,6 +417,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -436,12 +427,15 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # AM_CPPFLAGS are used for C++ code as well
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+
+# Add libdtpools support
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_builddir)/dtpoos/include \
+	-I$(top_srcdir)/dtpools/include
 LDADD = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT) @threadlib@
-CLEANFILES = summary.xml summary.tap summary.junit.xml
+CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
 EXTRA_DIST = testlist
 all: all-am
 
@@ -766,16 +760,15 @@ uninstall-am:
 $(top_builddir)/util/mtest.$(OBJEXT): $(top_srcdir)/util/mtest.c
 	(cd $(top_builddir)/util && $(MAKE) mtest.$(OBJEXT))
 
-$(top_builddir)/util/mtest_datatype.$(OBJEXT): $(top_srcdir)/util/mtest_datatype.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype.$(OBJEXT))
+$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+	(cd $(top_builddir)/dtpools && $(MAKE))
 
-$(top_builddir)/util/mtest_datatype_gen.$(OBJEXT): $(top_srcdir)/util/mtest_datatype_gen.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype_gen.$(OBJEXT))
+SUMMARY_BASENAME ?= summary
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
-		-mpiexec=${MPIEXEC} -xmlfile=summary.xml \
-		-tapfile=summary.tap -junitfile=summary.junit.xml
+		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
+		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
 $(top_builddir)/threads/util/mtestthread.$(OBJEXT): $(top_srcdir)/threads/util/mtestthread.c
 	(cd $(top_builddir)/threads/util && $(MAKE) mtestthread.$(OBJEXT))

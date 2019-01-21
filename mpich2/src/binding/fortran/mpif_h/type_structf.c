@@ -272,7 +272,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_type_struct_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_
 
     if (*v1 > 0) {
         int li;
-        l3 = (MPI_Aint *)MPIU_Malloc( *v1 * sizeof(MPI_Aint) );
+        l3 = (MPI_Aint *)MPL_malloc( *v1 * sizeof(MPI_Aint), MPL_MEM_OTHER );
         for (li=0; li<*v1; li++) 
             l3[li] = v3[li];
     }
@@ -283,6 +283,6 @@ FORT_DLL_SPEC void FORT_CALL mpi_type_struct_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_
     *ierr = MPI_Type_struct( (int)*v1, v2, l3, (MPI_Datatype *)(v4), (MPI_Datatype *)(v5) );
 
 #ifdef HAVE_AINT_LARGER_THAN_FINT
-    if (l3) { MPIU_Free(l3); }
+    if (l3) { MPL_free(l3); }
 #endif
 }

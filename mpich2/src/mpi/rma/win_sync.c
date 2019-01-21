@@ -15,7 +15,7 @@
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Win_sync as PMPI_Win_sync
 #elif defined(HAVE_WEAK_ATTRIBUTE)
-int MPI_Win_sync(MPI_Win win) __attribute__((weak,alias("PMPI_Win_sync")));
+int MPI_Win_sync(MPI_Win win) __attribute__ ((weak, alias("PMPI_Win_sync")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -29,7 +29,8 @@ int MPI_Win_sync(MPI_Win win) __attribute__((weak,alias("PMPI_Win_sync")));
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Win_sync
-
+#undef FCNAME
+#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Win_sync - Synchronize public and private copies of the given window.
 
@@ -57,18 +58,17 @@ Input Parameters:
 @*/
 int MPI_Win_sync(MPI_Win win)
 {
-    static const char FCNAME[] = "MPI_Win_sync";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Win *win_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_SYNC);
+    MPIR_Win *win_ptr = NULL;
+    MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_WIN_SYNC);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
-    
+
     MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_SYNC);
+    MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPI_WIN_SYNC);
 
     /* Validate parameters, especially handles needing to be converted */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
@@ -76,47 +76,49 @@ int MPI_Win_sync(MPI_Win win)
         }
         MPID_END_ERROR_CHECKS;
     }
-#   endif
-    
+#endif
+
     /* Convert MPI object handles to object pointers */
-    MPID_Win_get_ptr( win, win_ptr );
+    MPIR_Win_get_ptr(win, win_ptr);
 
     /* Validate parameters and objects (post conversion) */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPID_Win_valid_ptr( win_ptr, mpi_errno );
-            if (mpi_errno) goto fn_fail;
+            MPIR_Win_valid_ptr(win_ptr, mpi_errno);
+            if (mpi_errno)
+                goto fn_fail;
 
             /* TODO: Ensure that window is in a passive mode epoch */
         }
         MPID_END_ERROR_CHECKS;
     }
-#   endif /* HAVE_ERROR_CHECKING */
+#endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    
+
     mpi_errno = MPID_Win_sync(win_ptr);
-    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    if (mpi_errno != MPI_SUCCESS)
+        goto fn_fail;
 
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SYNC);
+    MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPI_WIN_SYNC);
     MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
-        mpi_errno = MPIR_Err_create_code(
-            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_win_sync",
-            "**mpi_win_sync %W", win);
+        mpi_errno =
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+                                 "**mpi_win_sync", "**mpi_win_sync %W", win);
     }
-#   endif
-    mpi_errno = MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
+#endif
+    mpi_errno = MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

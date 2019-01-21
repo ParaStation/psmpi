@@ -1,11 +1,11 @@
-.TH MPI_Iscatterv 3 "11/9/2015" " " "MPI"
+.TH MPI_Iscatterv 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Iscatterv \-  Scatters a buffer in parts to all processes in a communicator in a nonblocking way 
 .SH SYNOPSIS
 .nf
 int MPI_Iscatterv(const void *sendbuf, const int sendcounts[], const int displs[],
                   MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype,
-                  int root, MPI_Comm comm, MPI_Request *request)
+                  int root, MPI_Comm comm, MPI_Request * request)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

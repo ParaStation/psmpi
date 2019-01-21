@@ -125,134 +125,112 @@ abort_SOURCES = abort.c
 abort_OBJECTS = abort.$(OBJEXT)
 abort_LDADD = $(LDADD)
 abort_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 agree_SOURCES = agree.c
 agree_OBJECTS = agree.$(OBJEXT)
 agree_LDADD = $(LDADD)
 agree_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 agree_shrink_SOURCES = agree_shrink.c
 agree_shrink_OBJECTS = agree_shrink.$(OBJEXT)
 agree_shrink_LDADD = $(LDADD)
 agree_shrink_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 anysource_SOURCES = anysource.c
 anysource_OBJECTS = anysource.$(OBJEXT)
 anysource_LDADD = $(LDADD)
 anysource_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 barrier_SOURCES = barrier.c
 barrier_OBJECTS = barrier.$(OBJEXT)
 barrier_LDADD = $(LDADD)
 barrier_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 bcast_SOURCES = bcast.c
 bcast_OBJECTS = bcast.$(OBJEXT)
 bcast_LDADD = $(LDADD)
 bcast_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 die_SOURCES = die.c
 die_OBJECTS = die.$(OBJEXT)
 die_LDADD = $(LDADD)
 die_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 failure_ack_SOURCES = failure_ack.c
 failure_ack_OBJECTS = failure_ack.$(OBJEXT)
 failure_ack_LDADD = $(LDADD)
 failure_ack_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 gather_SOURCES = gather.c
 gather_OBJECTS = gather.$(OBJEXT)
 gather_LDADD = $(LDADD)
 gather_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 irecvdead_SOURCES = irecvdead.c
 irecvdead_OBJECTS = irecvdead.$(OBJEXT)
 irecvdead_LDADD = $(LDADD)
 irecvdead_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 isendalive_SOURCES = isendalive.c
 isendalive_OBJECTS = isendalive.$(OBJEXT)
 isendalive_LDADD = $(LDADD)
 isendalive_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 isenddead_SOURCES = isenddead.c
 isenddead_OBJECTS = isenddead.$(OBJEXT)
 isenddead_LDADD = $(LDADD)
 isenddead_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 multi_isendalive_SOURCES = multi_isendalive.c
 multi_isendalive_OBJECTS = multi_isendalive.$(OBJEXT)
 multi_isendalive_LDADD = $(LDADD)
 multi_isendalive_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nbccoll_SOURCES = nbccoll.c
 nbccoll_OBJECTS = nbccoll.$(OBJEXT)
 nbccoll_LDADD = $(LDADD)
 nbccoll_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 recvdead_SOURCES = recvdead.c
 recvdead_OBJECTS = recvdead.$(OBJEXT)
 recvdead_LDADD = $(LDADD)
 recvdead_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 reduce_SOURCES = reduce.c
 reduce_OBJECTS = reduce.$(OBJEXT)
 reduce_LDADD = $(LDADD)
 reduce_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 revoke_nofail_SOURCES = revoke_nofail.c
 revoke_nofail_OBJECTS = revoke_nofail.$(OBJEXT)
 revoke_nofail_LDADD = $(LDADD)
 revoke_nofail_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 revoke_shrink_SOURCES = revoke_shrink.c
 revoke_shrink_OBJECTS = revoke_shrink.$(OBJEXT)
 revoke_shrink_LDADD = $(LDADD)
 revoke_shrink_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 scatter_SOURCES = scatter.c
 scatter_OBJECTS = scatter.$(OBJEXT)
 scatter_LDADD = $(LDADD)
 scatter_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 sendalive_SOURCES = sendalive.c
 sendalive_OBJECTS = sendalive.$(OBJEXT)
 sendalive_LDADD = $(LDADD)
 sendalive_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 senddead_SOURCES = senddead.c
 senddead_OBJECTS = senddead.$(OBJEXT)
 senddead_LDADD = $(LDADD)
 senddead_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 shrink_SOURCES = shrink.c
 shrink_OBJECTS = shrink.$(OBJEXT)
 shrink_LDADD = $(LDADD)
 shrink_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -341,6 +319,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -496,6 +475,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -505,11 +485,14 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # AM_CPPFLAGS are used for C++ code as well
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+
+# Add libdtpools support
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_builddir)/dtpoos/include \
+	-I$(top_srcdir)/dtpools/include
 LDADD = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-CLEANFILES = summary.xml summary.tap summary.junit.xml
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
 EXTRA_DIST = testlist
 all: all-am
 
@@ -889,16 +872,15 @@ uninstall-am:
 $(top_builddir)/util/mtest.$(OBJEXT): $(top_srcdir)/util/mtest.c
 	(cd $(top_builddir)/util && $(MAKE) mtest.$(OBJEXT))
 
-$(top_builddir)/util/mtest_datatype.$(OBJEXT): $(top_srcdir)/util/mtest_datatype.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype.$(OBJEXT))
+$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+	(cd $(top_builddir)/dtpools && $(MAKE))
 
-$(top_builddir)/util/mtest_datatype_gen.$(OBJEXT): $(top_srcdir)/util/mtest_datatype_gen.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype_gen.$(OBJEXT))
+SUMMARY_BASENAME ?= summary
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
-		-mpiexec=${MPIEXEC} -xmlfile=summary.xml \
-		-tapfile=summary.tap -junitfile=summary.junit.xml
+		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
+		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

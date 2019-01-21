@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/topo/cartcrf.f with f77tof90
+! This file created from f77/topo/cartcrf.f with f77tof90
 ! -*- Mode: Fortran; -*- 
 !
 !  (C) 2004 by Argonne National Laboratory.
@@ -98,5 +98,4 @@
       enddo
       
       call mtest_finalize( errs )
-      call mpi_finalize( ierr )
       end

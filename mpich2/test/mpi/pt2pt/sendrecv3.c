@@ -50,6 +50,7 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "Unable to allocate %d bytes\n", msgSize);
                     MPI_Abort(MPI_COMM_WORLD, 1);
                 }
+                MTEST_VG_MEM_INIT(buf[i], msgSize * sizeof(int));
             }
             partner = (rank + 1) % size;
 
@@ -94,6 +95,5 @@ int main(int argc, char *argv[])
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

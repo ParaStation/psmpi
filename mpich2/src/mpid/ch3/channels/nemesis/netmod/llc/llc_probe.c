@@ -21,18 +21,18 @@
 #define FUNCNAME MPID_nem_llc_probe
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_nem_llc_probe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, int context_offset,
+int MPID_nem_llc_probe(MPIDI_VC_t * vc, int source, int tag, MPIR_Comm * comm, int context_offset,
                        MPI_Status * status)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LLC_PROBE);
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LLC_PROBE);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_LLC_PROBE);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_LLC_PROBE);
     dprintf("llc_probe,source=%d,tag=%d\n", source, tag);
 
     /* NOTE : This function is not used. Because 'vc->comm_ops->probe()' is not used */
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LLC_PROBE);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_LLC_PROBE);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -42,7 +42,7 @@ int MPID_nem_llc_probe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, i
 #define FUNCNAME MPID_nem_llc_iprobe
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_nem_llc_iprobe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, int context_offset,
+int MPID_nem_llc_iprobe(MPIDI_VC_t * vc, int source, int tag, MPIR_Comm * comm, int context_offset,
                         int *flag, MPI_Status * status)
 {
     int mpi_errno = MPI_SUCCESS, llc_errno;
@@ -51,8 +51,8 @@ int MPID_nem_llc_iprobe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, 
     LLC_probe_t probe;
     LLC_match_mask_t mask;
 
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LLC_IPROBE);
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LLC_IPROBE);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_LLC_IPROBE);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_LLC_IPROBE);
     dprintf("llc_iprobe,source=%d,tag=%d\n", source, tag);
 
     mask.rank = ~0;
@@ -66,17 +66,17 @@ int MPID_nem_llc_iprobe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, 
         *(int32_t *) ((uint8_t *) & _tag) = tag;
     }
 
-    *(MPIU_Context_id_t *) ((uint8_t *) & _tag + sizeof(int32_t)) =
+    *(MPIR_Context_id_t *) ((uint8_t *) & _tag + sizeof(int32_t)) =
         comm->recvcontext_id + context_offset;
-    memset((uint8_t *) & _tag + sizeof(int32_t) + sizeof(MPIU_Context_id_t),
-           0, sizeof(LLC_tag_t) - sizeof(int32_t) - sizeof(MPIU_Context_id_t));
+    memset((uint8_t *) & _tag + sizeof(int32_t) + sizeof(MPIR_Context_id_t),
+           0, sizeof(LLC_tag_t) - sizeof(int32_t) - sizeof(MPIR_Context_id_t));
 
     if (source == MPI_ANY_SOURCE) {
         rank = LLC_ANY_SOURCE;
         mask.rank = 0;
     }
     else {
-        MPIU_Assert(vc);
+        MPIR_Assert(vc);
         rank = VC_FIELD(vc, remote_endpoint_addr);
     }
 
@@ -90,7 +90,7 @@ int MPID_nem_llc_iprobe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, 
         else {
             int found = 0;
             found = convert_rank_llc2mpi(comm, probe.rank, &status->MPI_SOURCE);
-            MPIU_Assert(found);
+            MPIR_Assert(found);
         }
         status->MPI_TAG = probe.tag & 0xffffffff;
         MPIR_STATUS_SET_COUNT(*status, probe.len);
@@ -102,7 +102,7 @@ int MPID_nem_llc_iprobe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, 
     }
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LLC_IPROBE);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_LLC_IPROBE);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -112,8 +112,8 @@ int MPID_nem_llc_iprobe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, 
 #define FUNCNAME MPID_nem_llc_improbe
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_nem_llc_improbe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, int context_offset,
-                         int *flag, MPID_Request ** message, MPI_Status * status)
+int MPID_nem_llc_improbe(MPIDI_VC_t * vc, int source, int tag, MPIR_Comm * comm, int context_offset,
+                         int *flag, MPIR_Request ** message, MPI_Status * status)
 {
     int mpi_errno = MPI_SUCCESS;
     int rank;
@@ -122,8 +122,8 @@ int MPID_nem_llc_improbe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm,
     LLC_match_mask_t mask;
     LLC_cmd_t *msg = NULL;
 
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LLC_IMPROBE);
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LLC_IMPROBE);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_LLC_IMPROBE);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_LLC_IMPROBE);
     dprintf("llc_improbe,source=%d,tag=%d\n", source, tag);
 
     mask.rank = ~0;
@@ -137,29 +137,28 @@ int MPID_nem_llc_improbe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm,
         *(int32_t *) ((uint8_t *) & _tag) = tag;
     }
 
-    *(MPIU_Context_id_t *) ((uint8_t *) & _tag + sizeof(int32_t)) =
+    *(MPIR_Context_id_t *) ((uint8_t *) & _tag + sizeof(int32_t)) =
         comm->recvcontext_id + context_offset;
-    memset((uint8_t *) & _tag + sizeof(int32_t) + sizeof(MPIU_Context_id_t),
-           0, sizeof(LLC_tag_t) - sizeof(int32_t) - sizeof(MPIU_Context_id_t));
+    memset((uint8_t *) & _tag + sizeof(int32_t) + sizeof(MPIR_Context_id_t),
+           0, sizeof(LLC_tag_t) - sizeof(int32_t) - sizeof(MPIR_Context_id_t));
 
     if (source == MPI_ANY_SOURCE) {
         rank = LLC_ANY_SOURCE;
         mask.rank = 0;
     }
     else {
-        MPIU_Assert(vc);
+        MPIR_Assert(vc);
         rank = VC_FIELD(vc, remote_endpoint_addr);
     }
 
     msg = LLC_mprobe(LLC_COMM_MPICH, rank, _tag, &mask, &probe);
     if (msg) {
-        MPID_Request *req;
+        MPIR_Request *req;
 
         *flag = 1;
 
-        req = MPID_Request_create();
-        MPIU_Object_set_ref(req, 2);
-        req->kind = MPID_REQUEST_MPROBE;
+        req = MPIR_Request_create(MPIR_REQUEST_KIND__MPROBE);
+        MPIR_Object_set_ref(req, 2);
         req->comm = comm;
         MPIR_Comm_add_ref(comm);
         req->ch.vc = vc;
@@ -173,13 +172,13 @@ int MPID_nem_llc_improbe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm,
         else {
             int found = 0;
             found = convert_rank_llc2mpi(comm, probe.rank, &req->status.MPI_SOURCE);
-            MPIU_Assert(found);
+            MPIR_Assert(found);
         }
         req->status.MPI_TAG = probe.tag & 0xffffffff;
         req->dev.recv_data_sz = probe.len;
         MPIR_STATUS_SET_COUNT(req->status, req->dev.recv_data_sz);
-        req->dev.tmpbuf = MPIU_Malloc(req->dev.recv_data_sz);
-        MPIU_Assert(req->dev.tmpbuf);
+        req->dev.tmpbuf = MPL_malloc(req->dev.recv_data_sz, MPL_MEM_BUFFER);
+        MPIR_Assert(req->dev.tmpbuf);
 
         /* receive message in req->dev.tmpbuf */
         LLC_cmd_t *cmd = LLC_cmd_alloc2(1, 1, 1);
@@ -211,7 +210,7 @@ int MPID_nem_llc_improbe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm,
         /* Wait until the reception of data is completed */
         do {
             mpi_errno = MPID_nem_llc_poll(0);
-        } while (!MPID_Request_is_complete(req));
+        } while (!MPIR_Request_is_complete(req));
 
 //        MPID_Request_complete(req); // This operation is done in llc_poll.
 
@@ -231,7 +230,7 @@ int MPID_nem_llc_improbe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm,
     }
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LLC_IMPROBE);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_LLC_IMPROBE);
     return mpi_errno;
   fn_fail:
     goto fn_exit;

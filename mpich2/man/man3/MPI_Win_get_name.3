@@ -1,4 +1,4 @@
-.TH MPI_Win_get_name 3 "11/9/2015" " " "MPI"
+.TH MPI_Win_get_name 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Win_get_name \-  Get the print name associated with the MPI RMA window 
 .SH SYNOPSIS
@@ -9,20 +9,20 @@ int MPI_Win_get_name(MPI_Win win, char *win_name, int *resultlen)
 .PD 0
 .TP
 .B win 
-- window whose name is to be returned (handle) 
+- window whose name is to be returned (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B win_name 
-- the name previously stored on the window, or a empty string if 
-no such name exists (string) 
+- the name previously stored on the window, or a empty string if
+no such name exists (string)
 .PD 1
 .PD 0
 .TP
 .B resultlen 
-- length of returned name (integer) 
+- length of returned name (integer)
 .PD 1
 
 

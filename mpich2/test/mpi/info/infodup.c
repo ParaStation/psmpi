@@ -54,8 +54,7 @@ int main(int argc, char *argv[])
         if (!flag || !flagdup) {
             errs++;
             printf("Info get failed for key %s\n", key);
-        }
-        else if (strcmp(value, valdup)) {
+        } else if (strcmp(value, valdup)) {
             errs++;
             printf("Info values for key %s not the same after dup\n", key);
         }
@@ -75,7 +74,5 @@ int main(int argc, char *argv[])
     MPI_Info_free(&infodup);
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
-
+    return MTestReturnValue(errs);
 }

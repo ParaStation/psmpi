@@ -34,8 +34,7 @@ int main(int argc, char *argv[])
     if (rc) {
         errs++;
         printf("Unable to create request\n");
-    }
-    else {
+    } else {
         handleA = MPI_Request_c2f(cRequest);
         handleB = MPI_Request_c2f(cRequest);
         if (handleA != handleB) {
@@ -55,7 +54,6 @@ int main(int argc, char *argv[])
      * this test */
 
     MTest_Finalize(errs);
-    MPI_Finalize();
 
-    return 0;
+    return MTestReturnValue(errs);
 }

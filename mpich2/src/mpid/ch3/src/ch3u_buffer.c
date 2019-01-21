@@ -34,20 +34,20 @@ Used indirectly by mpid_irecv, mpid_recv (through MPIDI_CH3_RecvFromSelf) and
 #define FCNAME MPL_QUOTE(FUNCNAME)
 void MPIDI_CH3U_Buffer_copy(
     const void * const sbuf, MPI_Aint scount, MPI_Datatype sdt, int * smpi_errno,
-    void * const rbuf, MPI_Aint rcount, MPI_Datatype rdt, MPIDI_msg_sz_t * rsz,
+    void * const rbuf, MPI_Aint rcount, MPI_Datatype rdt, intptr_t * rsz,
     int * rmpi_errno)
 {
     int sdt_contig;
     int rdt_contig;
     MPI_Aint sdt_true_lb, rdt_true_lb;
-    MPIDI_msg_sz_t sdata_sz;
-    MPIDI_msg_sz_t rdata_sz;
-    MPID_Datatype * sdt_ptr;
-    MPID_Datatype * rdt_ptr;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_BUFFER_COPY);
-    MPIDI_STATE_DECL(MPID_STATE_MEMCPY);
+    intptr_t sdata_sz;
+    intptr_t rdata_sz;
+    MPIR_Datatype* sdt_ptr;
+    MPIR_Datatype* rdt_ptr;
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_CH3U_BUFFER_COPY);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MEMCPY);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_BUFFER_COPY);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_CH3U_BUFFER_COPY);
     *smpi_errno = MPI_SUCCESS;
     *rmpi_errno = MPI_SUCCESS;
 
@@ -57,8 +57,8 @@ void MPIDI_CH3U_Buffer_copy(
     /* --BEGIN ERROR HANDLING-- */
     if (sdata_sz > rdata_sz)
     {
-	MPIU_DBG_MSG_FMT(CH3_OTHER,TYPICAL,(MPIU_DBG_FDEST,
-	    "message truncated, sdata_sz=" MPIDI_MSG_SZ_FMT " rdata_sz=" MPIDI_MSG_SZ_FMT,
+	MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,TYPICAL,(MPL_DBG_FDEST,
+	    "message truncated, sdata_sz=%" PRIdPTR " rdata_sz=%" PRIdPTR,
 			  sdata_sz, rdata_sz));
 	sdata_sz = rdata_sz;
 	*rmpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE, "**truncate", "**truncate %d %d", sdata_sz, rdata_sz );
@@ -73,23 +73,23 @@ void MPIDI_CH3U_Buffer_copy(
     
     if (sdt_contig && rdt_contig)
     {
-	MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
-	MPIU_Memcpy((char *)rbuf + rdt_true_lb, (const char *)sbuf + sdt_true_lb, sdata_sz);
-	MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
+	MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MEMCPY);
+	MPIR_Memcpy((char *)rbuf + rdt_true_lb, (const char *)sbuf + sdt_true_lb, sdata_sz);
+	MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MEMCPY);
 	*rsz = sdata_sz;
     }
     else if (sdt_contig)
     {
-	MPID_Segment seg;
+	MPIR_Segment seg;
 	MPI_Aint last;
 
-	MPID_Segment_init(rbuf, rcount, rdt, &seg, 0);
+	MPIR_Segment_init(rbuf, rcount, rdt, &seg);
 	last = sdata_sz;
-	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST, 
-                          "pre-unpack last=" MPIDI_MSG_SZ_FMT, last ));
-	MPID_Segment_unpack(&seg, 0, &last, (char*)sbuf + sdt_true_lb);
-	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-			 "pre-unpack last=" MPIDI_MSG_SZ_FMT, last ));
+	MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
+                          "pre-unpack last=%" PRIdPTR, last ));
+	MPIR_Segment_unpack(&seg, 0, &last, (char*)sbuf + sdt_true_lb);
+	MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
+			 "pre-unpack last=%" PRIdPTR, last ));
 	/* --BEGIN ERROR HANDLING-- */
 	if (last != sdata_sz)
 	{
@@ -101,16 +101,16 @@ void MPIDI_CH3U_Buffer_copy(
     }
     else if (rdt_contig)
     {
-	MPID_Segment seg;
+	MPIR_Segment seg;
 	MPI_Aint last;
 
-	MPID_Segment_init(sbuf, scount, sdt, &seg, 0);
+	MPIR_Segment_init(sbuf, scount, sdt, &seg);
 	last = sdata_sz;
-	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-			       "pre-pack last=" MPIDI_MSG_SZ_FMT, last ));
-	MPID_Segment_pack(&seg, 0, &last, (char*)rbuf + rdt_true_lb);
-	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-			    "post-pack last=" MPIDI_MSG_SZ_FMT, last ));
+	MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
+			       "pre-pack last=%" PRIdPTR, last ));
+	MPIR_Segment_pack(&seg, 0, &last, (char*)rbuf + rdt_true_lb);
+	MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
+			    "post-pack last=%" PRIdPTR, last ));
 	/* --BEGIN ERROR HANDLING-- */
 	if (last != sdata_sz)
 	{
@@ -123,17 +123,17 @@ void MPIDI_CH3U_Buffer_copy(
     else
     {
 	char * buf;
-	MPIDI_msg_sz_t buf_off;
-	MPID_Segment sseg;
-	MPIDI_msg_sz_t sfirst;
-	MPID_Segment rseg;
-	MPIDI_msg_sz_t rfirst;
+	intptr_t buf_off;
+	MPIR_Segment sseg;
+	intptr_t sfirst;
+	MPIR_Segment rseg;
+	intptr_t rfirst;
 
-	buf = MPIU_Malloc(MPIDI_COPY_BUFFER_SZ);
+	buf = MPL_malloc(MPIDI_COPY_BUFFER_SZ, MPL_MEM_BUFFER);
 	/* --BEGIN ERROR HANDLING-- */
 	if (buf == NULL)
 	{
-	    MPIU_DBG_MSG(CH3_OTHER,TYPICAL,"SRBuf allocation failure");
+	    MPL_DBG_MSG(MPIDI_CH3_DBG_OTHER,TYPICAL,"SRBuf allocation failure");
 	    *smpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	    *rmpi_errno = *smpi_errno;
 	    *rsz = 0;
@@ -141,8 +141,8 @@ void MPIDI_CH3U_Buffer_copy(
 	}
 	/* --END ERROR HANDLING-- */
 
-	MPID_Segment_init(sbuf, scount, sdt, &sseg, 0);
-	MPID_Segment_init(rbuf, rcount, rdt, &rseg, 0);
+	MPIR_Segment_init(sbuf, scount, sdt, &sseg);
+	MPIR_Segment_init(rbuf, rcount, rdt, &rseg);
 
 	sfirst = 0;
 	rfirst = 0;
@@ -162,29 +162,29 @@ void MPIDI_CH3U_Buffer_copy(
 		last = sdata_sz;
 	    }
 	    
-	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-               "pre-pack first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT, 
+	    MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
+               "pre-pack first=%" PRIdPTR ", last=%" PRIdPTR,
 						sfirst, last ));
-	    MPID_Segment_pack(&sseg, sfirst, &last, buf + buf_off);
-	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-               "post-pack first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT, 
+	    MPIR_Segment_pack(&sseg, sfirst, &last, buf + buf_off);
+	    MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
+               "post-pack first=%" PRIdPTR ", last=%" PRIdPTR,
                sfirst, last ));
 	    /* --BEGIN ERROR HANDLING-- */
-	    MPIU_Assert(last > sfirst);
+	    MPIR_Assert(last > sfirst);
 	    /* --END ERROR HANDLING-- */
 	    
 	    buf_end = buf + buf_off + (last - sfirst);
 	    sfirst = last;
 	    
-	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-             "pre-unpack first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT, 
+	    MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
+             "pre-unpack first=%" PRIdPTR ", last=%" PRIdPTR,
 						rfirst, last ));
-	    MPID_Segment_unpack(&rseg, rfirst, &last, buf);
-	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
-             "post-unpack first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT, 
+	    MPIR_Segment_unpack(&rseg, rfirst, &last, buf);
+	    MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
+             "post-unpack first=%" PRIdPTR ", last=%" PRIdPTR,
 						rfirst, last ));
 	    /* --BEGIN ERROR HANDLING-- */
-	    MPIU_Assert(last > rfirst);
+	    MPIR_Assert(last > rfirst);
 	    /* --END ERROR HANDLING-- */
 
 	    rfirst = last;
@@ -207,18 +207,18 @@ void MPIDI_CH3U_Buffer_copy(
 	    buf_off = sfirst - rfirst;
 	    if (buf_off > 0)
 	    {
-		MPIU_DBG_MSG_FMT(CH3_OTHER, VERBOSE, (MPIU_DBG_FDEST,
-                  "moved " MPIDI_MSG_SZ_FMT " bytes to the beginning of the tmp buffer", buf_off));
+		MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER, VERBOSE, (MPL_DBG_FDEST,
+                  "moved %" PRIdPTR " bytes to the beginning of the tmp buffer", buf_off));
 		memmove(buf, buf_end - buf_off, buf_off);
 	    }
 	}
 
 	*rsz = rfirst;
-	MPIU_Free(buf);
+	MPL_free(buf);
     }
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_BUFFER_COPY);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_CH3U_BUFFER_COPY);
 }
 
 
@@ -226,15 +226,15 @@ void MPIDI_CH3U_Buffer_copy(
  * This routine is called by mpid_recv and mpid_irecv when a request
  * matches a send-to-self message 
  */
-int MPIDI_CH3_RecvFromSelf( MPID_Request *rreq, void *buf, MPI_Aint count,
+int MPIDI_CH3_RecvFromSelf( MPIR_Request *rreq, void *buf, MPI_Aint count,
 			    MPI_Datatype datatype )
 {
-    MPID_Request * const sreq = rreq->partner_request;
+    MPIR_Request * const sreq = rreq->dev.partner_request;
     int mpi_errno = MPI_SUCCESS;
 
     if (sreq != NULL)
     {
-	MPIDI_msg_sz_t data_sz;
+	intptr_t data_sz;
 	
 	MPIDI_CH3U_Buffer_copy(sreq->dev.user_buf, sreq->dev.user_count,
 			       sreq->dev.datatype, &sreq->status.MPI_ERROR,

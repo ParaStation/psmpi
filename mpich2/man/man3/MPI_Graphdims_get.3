@@ -1,6 +1,6 @@
-.TH MPI_Graphdims_get 3 "11/9/2015" " " "MPI"
+.TH MPI_Graphdims_get 3 "11/21/2018" " " "MPI"
 .SH NAME
-MPI_Graphdims_get \-  Retrieves graph topology information associated with a  communicator 
+MPI_Graphdims_get \-  Retrieves graph topology information associated with a communicator 
 .SH SYNOPSIS
 .nf
 int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
@@ -9,19 +9,19 @@ int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
 .PD 0
 .TP
 .B comm 
-- communicator for group with graph structure (handle) 
+- communicator for group with graph structure (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B nnodes 
-- number of nodes in graph (integer) 
+- number of nodes in graph (integer)
 .PD 1
 .PD 0
 .TP
 .B nedges 
-- number of edges in graph (integer) 
+- number of edges in graph (integer)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

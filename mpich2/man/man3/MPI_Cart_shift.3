@@ -1,21 +1,20 @@
-.TH MPI_Cart_shift 3 "11/9/2015" " " "MPI"
+.TH MPI_Cart_shift 3 "11/21/2018" " " "MPI"
 .SH NAME
-MPI_Cart_shift \-  Returns the shifted source and destination ranks, given a  shift direction and amount 
+MPI_Cart_shift \-  Returns the shifted source and destination ranks, given a shift direction and amount 
 .SH SYNOPSIS
 .nf
-int MPI_Cart_shift(MPI_Comm comm, int direction, int disp, int *rank_source,
-                  int *rank_dest)
+int MPI_Cart_shift(MPI_Comm comm, int direction, int disp, int *rank_source, int *rank_dest)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B comm 
-- communicator with cartesian structure (handle) 
+- communicator with cartesian structure (handle)
 .PD 1
 .PD 0
 .TP
 .B direction 
-- coordinate dimension of shift (integer) 
+- coordinate dimension of shift (integer)
 .PD 1
 .PD 0
 .TP

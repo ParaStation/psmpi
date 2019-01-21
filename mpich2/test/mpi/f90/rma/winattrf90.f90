@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/rma/winattrf.f with f77tof90
+! This file created from f77/rma/winattrf.f with f77tof90
 ! -*- Mode: Fortran; -*- 
 !
 !  (C) 2003 by Argonne National Laboratory.
@@ -140,7 +140,6 @@
 !
       call mpi_comm_free( comm, ierr )
       call mtest_finalize( errs )
-      call mpi_finalize( ierr )
       end
 !
 ! Note that the copyfn is unused for MPI windows, since there is

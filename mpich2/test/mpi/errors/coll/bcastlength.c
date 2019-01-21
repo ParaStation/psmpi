@@ -22,6 +22,8 @@ int main(int argc, char *argv[])
     char str[MPI_MAX_ERROR_STRING + 1];
     int slen;
 
+    MTEST_VG_MEM_INIT(buf, 10 * sizeof(int));
+
     MTest_Init(&argc, &argv);
 
     MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
@@ -29,8 +31,7 @@ int main(int argc, char *argv[])
 
     if (rank == 0) {
         ierr = MTest_Bcast(buf, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    }
-    else {
+    } else {
         ierr = MTest_Bcast(buf, 10, MPI_INT, 0, MPI_COMM_WORLD);
     }
     if (ierr == MPI_SUCCESS) {
@@ -41,8 +42,7 @@ int main(int argc, char *argv[])
             errs++;
             printf("Did not detect mismatched length (long) on process %d\n", rank);
         }
-    }
-    else {
+    } else {
         if (verbose) {
             MPI_Error_string(ierr, str, &slen);
             printf("Found expected error; message is: %s\n", str);
@@ -51,8 +51,7 @@ int main(int argc, char *argv[])
 
     if (rank == 0) {
         ierr = MTest_Bcast(buf, 10, MPI_INT, 0, MPI_COMM_WORLD);
-    }
-    else {
+    } else {
         ierr = MTest_Bcast(buf, 1, MPI_INT, 0, MPI_COMM_WORLD);
     }
     if (ierr == MPI_SUCCESS) {
@@ -63,8 +62,7 @@ int main(int argc, char *argv[])
             errs++;
             printf("Did not detect mismatched length (short) on process %d\n", rank);
         }
-    }
-    else {
+    } else {
         if (verbose) {
             MPI_Error_string(ierr, str, &slen);
             printf("Found expected error; message is: %s\n", str);
@@ -74,6 +72,5 @@ int main(int argc, char *argv[])
     MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

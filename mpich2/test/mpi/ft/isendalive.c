@@ -7,6 +7,7 @@
 #include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "mpitest.h"
 
 /*
  * This test attempts communication between 2 running processes
@@ -45,8 +46,7 @@ int main(int argc, char **argv)
         err += MPI_Wait(&request, MPI_STATUS_IGNORE);
         if (err) {
             fprintf(stderr, "An error occurred during the recv operation\n");
-        }
-        else {
+        } else {
             printf(" %s\n", buf);
             fflush(stdout);
         }
@@ -54,5 +54,5 @@ int main(int argc, char **argv)
 
     MPI_Finalize();
 
-    return 0;
+    return MTestReturnValue(err);
 }

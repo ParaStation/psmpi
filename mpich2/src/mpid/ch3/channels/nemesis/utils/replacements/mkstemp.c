@@ -4,18 +4,18 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+/* for ATTRIBUTE */
+#include "mpichconf.h"
+#include "mpl.h"
+
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 
-/* for ATTRIBUTE */
-#include "mpichconf.h"
-#include "mpl.h"
-
 /* here to prevent "has no symbols" warnings from ranlib on OS X */
-static int dummy ATTRIBUTE((unused,used)) = 0;
+static int dummy ATTRIBUTE((unused)) MPL_USED = 0;
 
 #if !defined (HAVE_MKSTEMP) || !HAVE_MKSTEMP
 

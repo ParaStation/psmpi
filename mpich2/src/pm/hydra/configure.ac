@@ -132,22 +132,46 @@ PAC_POP_ALL_FLAGS
 
 AC_DEFINE_UNQUOTED(HYDRA_CONFIGURE_ARGS_CLEAN,"`echo $ac_configure_args`",[Configure arguments])
 
-# Dirty hack -- If we are compiling within MPICH, use the MPL in the
-# src/mpl directory. If not, use the one we checked out separately for
-# Hydra.
-if test "$FROM_MPICH" = "yes" ; then
-   mpl_srcdir="../../mpl"
-   mpl_dist_srcdir=
-else
-   mpl_srcdir="mpl"
-   mpl_dist_srcdir="mpl"
-   PAC_CONFIG_SUBDIR(mpl,,AC_ERROR(MPL configure failed))
-fi
-AC_SUBST(mpl_srcdir)
+# MPL
+AC_ARG_VAR([MPLLIBNAME],[can be used to override the name of the MPL library (default: "mpl")])
+MPLLIBNAME=${MPLLIBNAME:-"mpl"}
+export MPLLIBNAME
+AC_SUBST(MPLLIBNAME)
+AC_ARG_WITH([mpl-prefix],
+            [AS_HELP_STRING([[--with-mpl-prefix[=DIR]]],
+                            [use the MPL library installed in DIR. Pass
+                             "embedded" to force usage of the MPL source
+                             distributed with Hydra.])],
+            [],dnl action-if-given
+            [with_mpl_prefix=embedded]) dnl action-if-not-given
+mpl_srcdir=""
+AC_SUBST([mpl_srcdir])
 # Controls whether we recurse into the MPL dir when running "dist" rules like
 # "make distclean".  Technically we are cheating whenever DIST_SUBDIRS is not a
 # superset of SUBDIRS, but we don't want to double-distclean and similar.
 AC_SUBST(mpl_dist_srcdir)
+mpl_includedir=""
+AC_SUBST([mpl_includedir])
+mpl_libdir=""
+AC_SUBST([mpl_libdir])
+mpl_lib=""
+AC_SUBST([mpl_lib])
+if test "$with_mpl_prefix" = "embedded" ; then
+    mpl_srcdir="mpl"
+    mpl_dist_srcdir="mpl"
+    mpl_lib="mpl/lib${MPLLIBNAME}.la"
+    mpl_subdir_args="--disable-versioning --enable-embedded"
+    PAC_CONFIG_SUBDIR_ARGS([mpl],[$mpl_subdir_args],[],[AC_MSG_ERROR(MPL configure failed)])
+    mpl_includedir='-I$(top_builddir)/mpl/include -I$(top_srcdir)/mpl/include'
+else
+    # The user specified an already-installed MPL; just sanity check, don't
+    # subconfigure it
+    AS_IF([test -s "${with_mpl_prefix}/include/mplconfig.h"],
+          [:],[AC_MSG_ERROR([the MPL installation in "${with_mpl_prefix}" appears broken])])
+    mpl_includedir="-I${with_mpl_prefix}/include"
+    mpl_libdir="-L${with_mpl_prefix}/lib"
+    mpl_lib="-l${MPLLIBNAME}"
+fi
 
 # Documentation
 AC_PATH_PROG([DOXYGEN],[doxygen],,$PATH)
@@ -170,8 +194,8 @@ AC_SEARCH_LIBS(gethostbyname,nsl,)
 AC_SEARCH_LIBS(hstrerror, resolv,)
 
 # Check for necessary functions
-AC_CHECK_FUNCS(gettimeofday time strdup sigaction signal usleep alloca unsetenv \
-	       strerror strsignal stat fcntl alarm isatty inet_ntop getpgid \
+AC_CHECK_FUNCS(gettimeofday time sigaction signal usleep alloca unsetenv \
+	       strsignal stat fcntl alarm isatty inet_ntop getpgid \
 	       setsid killpg hstrerror)
 
 if test "$ac_cv_func_hstrerror" = "yes" ; then
@@ -407,16 +431,6 @@ AC_MSG_RESULT([$hydra_topolib_list])
 
 hydra_topolibs="`echo $hydra_topolib_list | sed -e 's/:/ /g' -e 's/,/ /g'`"
 
-# Unconditionally include the hwloc macros, even if we are using an
-# external hwloc (or hwloc is disabled). This is needed for the
-# AM_CONDITIONALS that we will set later.
-m4_include([tools/topo/hwloc/hwloc/config/hwloc.m4])
-m4_include([tools/topo/hwloc/hwloc/config/hwloc_check_attributes.m4])
-m4_include([tools/topo/hwloc/hwloc/config/hwloc_check_visibility.m4])
-m4_include([tools/topo/hwloc/hwloc/config/hwloc_check_vendor.m4])
-m4_include([tools/topo/hwloc/hwloc/config/hwloc_components.m4])
-m4_include([tools/topo/hwloc/hwloc/config/hwloc_pkg.m4])
-
 have_hwloc=no
 for hydra_topolib in ${hydra_topolibs}; do
     case "$hydra_topolib" in
@@ -426,9 +440,6 @@ for hydra_topolib in ${hydra_topolibs}; do
 		   # Only build hwloc in embedded mode
 		   if test "$have_hwloc" = "yes" ; then
 		      hydra_use_embedded_hwloc=yes
-		      CFLAGS="$HWLOC_EMBEDDED_CFLAGS $CFLAGS"
-		      CPPFLAGS="$HWLOC_EMBEDDED_CPPFLAGS $CPPFLAGS"
-		      LIBS="$HWLOC_EMBEDDED_LIBS $LIBS"
 		   fi
                 else
                     AC_CHECK_HEADERS([hwloc.h])
@@ -483,6 +494,20 @@ AM_CONDITIONAL([hydra_use_embedded_hwloc], [test "${hydra_use_embedded_hwloc}" =
 AC_MSG_CHECKING([available processor topology libraries])
 AC_MSG_RESULT([$available_topolibs])
 
+#########################################################################
+# Slurm hostlist parsing
+#########################################################################
+AC_CHECK_HEADERS(slurm/slurm.h)
+AC_CHECK_LIB([slurm],[slurm_hostlist_create],have_libslurm=yes)
+if test "$have_libslurm" = "yes" -a "$ac_cv_header_slurm_slurm_h" = "yes" ; then
+    PAC_PREPEND_FLAG([-lslurm],[LIBS])
+    AC_DEFINE(HAVE_LIBSLURM,1,[Define if libslurm is available])
+fi
+
+#########################################################################
+# POSIX Regcomp
+#########################################################################
+AX_CHECK_POSIX_REGCOMP
 
 #########################################################################
 # Checkpoint/Restart
@@ -634,6 +659,7 @@ for option in $enable_g ; do
         all)
 		PAC_APPEND_FLAG(-g, CFLAGS)
 		AC_DEFINE(USE_MEMORY_TRACING,1,[Define if memory tracing is enabled])
+		AC_DEFINE(PMI_KEY_CHECK,1,[Define if we should check for PMI key collisions])
 		;;
         *)
 		;;
@@ -678,25 +704,6 @@ AC_MSG_RESULT($enable_profiling)
 if test "$enable_profiling" = "yes"; then
    AC_DEFINE(ENABLE_PROFILING,1,[Define if profiling enabled])
 fi
-
-
-#########################################################################
-# FTB integration
-#########################################################################
-# FTB requires pthreads support; add pthreads to LIBS before trying to
-# find FTB
-PAC_PUSH_FLAG([LIBS])
-PAC_PREPEND_FLAG([-lpthread],[LIBS])
-PAC_SET_HEADER_LIB_PATH(ftb)
-PAC_CHECK_HEADER_LIB(libftb.h, ftb, FTB_Connect, have_ftb=yes, have_ftb=no)
-PAC_POP_FLAG([LIBS])
-if test "$have_ftb" = "yes" ; then
-   # FIXME: We need to test to make sure FTB works correctly
-   PAC_APPEND_FLAG([-lpthread],[LIBS])
-   AC_DEFINE(ENABLE_FTB,1,[Define if FTB is enabled])
-   PAC_APPEND_FLAG([-lftb],[WRAPPER_LIBS])
-fi
-AM_CONDITIONAL([hydra_have_ftb], [test "${have_ftb}" = "yes"])
 
 
 #########################################################################

@@ -4,8 +4,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#ifndef MPID_NEM_NETS_H
-#define MPID_NEM_NETS_H
+#ifndef MPID_NEM_NETS_H_INCLUDED
+#define MPID_NEM_NETS_H_INCLUDED
 
 typedef int (* MPID_nem_net_module_init_t)(MPIDI_PG_t *pg_p, int pg_rank,
                                            char **bc_val_p, int *val_max_sz_p);
@@ -21,10 +21,10 @@ typedef int (* MPID_nem_net_module_connect_to_root_t)(const char *business_card,
 typedef int (* MPID_nem_net_module_vc_init_t)(MPIDI_VC_t *vc);
 typedef int (* MPID_nem_net_module_vc_destroy_t)(MPIDI_VC_t *vc);
 typedef int (* MPID_nem_net_module_vc_terminate_t)(MPIDI_VC_t *vc);
-typedef int (* MPID_nem_net_module_anysource_iprobe_t)(int tag, MPID_Comm *comm, int context_offset, int *flag,
+typedef int (* MPID_nem_net_module_anysource_iprobe_t)(int tag, MPIR_Comm *comm, int context_offset, int *flag,
                                                        MPI_Status *status);
-typedef int (* MPID_nem_net_module_anysource_improbe_t)(int tag, MPID_Comm *comm, int context_offset, int *flag,
-                                                        MPID_Request **message, MPI_Status *status);
+typedef int (* MPID_nem_net_module_anysource_improbe_t)(int tag, MPIR_Comm *comm, int context_offset, int *flag,
+                                                        MPIR_Request **message, MPI_Status *status);
 
 typedef void (* MPID_nem_net_module_vc_dbg_print_sendq_t)(FILE *stream, MPIDI_VC_t *vc);
 typedef int (* MPID_nem_net_module_get_ordering_t)(int *ordering);
@@ -62,4 +62,4 @@ extern char MPID_nem_netmod_strings[][MPID_NEM_MAX_NETMOD_STRING_LEN];
 
 int MPID_nem_net_init(void);
 
-#endif /* MPID_NEM_NETS_H */
+#endif /* MPID_NEM_NETS_H_INCLUDED */

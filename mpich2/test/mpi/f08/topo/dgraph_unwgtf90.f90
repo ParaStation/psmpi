@@ -1,6 +1,6 @@
 ! -*- Mode: Fortran; -*-
 !
-!  (C) 2014 by Argonne National Laboratory.
+!  (C) 2011 by Argonne National Laboratory.
 !      See COPYRIGHT in top-level directory.
 !
 !     This program is Fortran version of dgraph_unwgt.c
@@ -209,5 +209,4 @@
       call MPI_Comm_free(dgraph_comm, ierr)
 
       call MTEST_Finalize(errs)
-      call MPI_Finalize(ierr)
       end

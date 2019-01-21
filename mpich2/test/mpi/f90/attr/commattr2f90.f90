@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/attr/commattr2f.f with f77tof90
+! This file created from f77/attr/commattr2f.f with f77tof90
 ! -*- Mode: Fortran; -*- 
 !
 !  (C) 2003 by Argonne National Laboratory.
@@ -100,5 +100,4 @@
       call mpi_comm_free( comm1, ierr )
 
       call mtest_finalize( errs )
-      call mpi_finalize( ierr )
       end

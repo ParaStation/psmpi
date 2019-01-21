@@ -56,8 +56,7 @@ int main(int argc, char *argv[])
                             errs++;
                         }
                     }
-                }
-                else {
+                } else {
                     /* Check for the correct data */
                     for (i = 0; i < count * rsize; i++) {
                         if (buf[i] != i) {
@@ -65,8 +64,7 @@ int main(int argc, char *argv[])
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 /* In the right group */
                 buf = (int *) malloc(count * sizeof(int));
                 for (i = 0; i < count; i++)
@@ -83,6 +81,5 @@ int main(int argc, char *argv[])
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

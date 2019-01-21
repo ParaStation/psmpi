@@ -1,0 +1,3 @@
+noinst_PROGRAMS += packsizex__BASIC__L27
+packsizex__BASIC__L27_CPPFLAGS =  $(AM_CPPFLAGS)
+packsizex__BASIC__L27_SOURCES = packsizex.cxx

@@ -7,11 +7,11 @@
  *  to Argonne National Laboratory subject to Software Grant and Corporate
  *  Contributor License Agreement dated February 8, 2012.
  */
-#ifndef OFI_IMPL_H
-#define OFI_IMPL_H
+#ifndef OFI_IMPL_H_INCLUDED
+#define OFI_IMPL_H_INCLUDED
 
 #include "mpid_nem_impl.h"
-#include "mpihandlemem.h"
+#include "mpir_objects.h"
 #include "pmi.h"
 #include <rdma/fabric.h>
 #include <rdma/fi_errno.h>
@@ -63,31 +63,32 @@ typedef struct fi_cq_tagged_entry cq_tagged_entry_t;
 typedef struct fi_cq_err_entry cq_err_entry_t;
 typedef struct fi_context context_t;
 typedef struct fi_msg_tagged msg_tagged_t;
-typedef int (*event_callback_fn) (cq_tagged_entry_t * wc, MPID_Request *);
-typedef int (*req_fn) (MPIDI_VC_t *, MPID_Request *, int *);
+typedef int (*event_callback_fn) (cq_tagged_entry_t * wc, MPIR_Request *);
+typedef int (*req_fn) (MPIDI_VC_t *, MPIR_Request *, int *);
 
 /* ******************************** */
 /* Global Object for state tracking */
 /* ******************************** */
 typedef struct {
-    char bound_addr[OFI_MAX_ADDR_LEN];       /* This ranks bound address    */
-    fi_addr_t any_addr;         /* Specifies any source        */
-    size_t bound_addrlen;       /* length of the bound address */
-    struct fid_fabric *fabric;  /* fabric object               */
-    struct fid_domain *domain;  /* domain object               */
-    struct fid_ep *endpoint;    /* endpoint object             */
-    struct fid_cq *cq;          /* completion queue            */
-    struct fid_av *av;          /* address vector              */
-    struct fid_mr *mr;          /* memory region               */
-    MPIDI_PG_t *pg_p;           /* MPI Process group           */
-    MPIDI_VC_t *cm_vcs;         /* temporary VC's              */
-    MPID_Request *persistent_req;       /* Unexpected request queue    */
-    MPID_Request *conn_req;     /* Connection request          */
-    MPIDI_Comm_ops_t comm_ops;
-    size_t iov_limit;           /* Max send iovec limit        */
-    int rts_cts_in_flight;
-    int api_set;
-} MPID_nem_ofi_global_t;
+    char bound_addr[OFI_MAX_ADDR_LEN]; /* This ranks bound address    */
+    size_t bound_addrlen;              /* length of the bound address */
+    struct fid_fabric *fabric;         /* fabric object               */
+    struct fid_domain *domain;         /* domain object               */
+    struct fid_ep *endpoint;           /* endpoint object             */
+    struct fid_cq *cq;                 /* completion queue            */
+    struct fid_av *av;                 /* address vector              */
+    struct fid_mr *mr;                 /* memory region               */
+    size_t iov_limit;                  /* Max send iovec limit        */
+    size_t max_buffered_send;          /* Buffered send threshold     */
+    int rts_cts_in_flight;             /* Count of incompleted        */
+                                       /*   RTS-CTS-DATA exchanges    */
+    int api_set;                       /* Used OFI API for send       */
+                                       /*   operations                */
+    MPIR_Request *persistent_req;      /* Unexpected request queue    */
+    MPIR_Request *conn_req;            /* Connection request          */
+    MPIDI_PG_t *pg_p;                  /* MPI Process group           */
+    MPIDI_VC_t *cm_vcs;                /* temporary VC's              */
+} MPID_nem_ofi_global_t __attribute__ ((aligned (MPID_NEM_CACHE_LINE_LEN)));
 
 /* ******************************** */
 /* Device channel specific data     */
@@ -119,7 +120,7 @@ typedef struct {
     MPIDI_VC_t *vc;             /* VC paired with this request */
     uint64_t tag;               /* 64 bit tag request          */
     struct iovec iov[3];        /* scatter gather list         */
-    MPID_Request *parent;       /* Parent request              */
+    MPIR_Request *parent;       /* Parent request              */
 } MPID_nem_ofi_req_t;
 #define REQ_OFI(req) ((MPID_nem_ofi_req_t *)((req)->ch.netmod_area.padding))
 
@@ -129,13 +130,13 @@ typedef struct {
 #undef FUNCNAME
 #define FUNCNAME nothing
 #define BEGIN_FUNC(FUNCNAME)                    \
-  MPIDI_STATE_DECL(FUNCNAME);                   \
-  MPIDI_FUNC_ENTER(FUNCNAME);
+  MPIR_FUNC_VERBOSE_STATE_DECL(FUNCNAME);                   \
+  MPIR_FUNC_VERBOSE_ENTER(FUNCNAME);
 #define END_FUNC(FUNCNAME)                      \
-  MPIDI_FUNC_EXIT(FUNCNAME);
+  MPIR_FUNC_VERBOSE_EXIT(FUNCNAME);
 #define END_FUNC_RC(FUNCNAME) \
   fn_exit:                    \
-  MPIDI_FUNC_EXIT(FUNCNAME);  \
+  MPIR_FUNC_VERBOSE_EXIT(FUNCNAME);  \
   return mpi_errno;           \
 fn_fail:                      \
   goto fn_exit;
@@ -145,7 +146,6 @@ fn_fail:                      \
    ? strrchr(__FILE__,'/')+1                    \
    : __FILE__                                   \
 )
-#define DECL_FUNC(FUNCNAME)  MPL_QUOTE(FUNCNAME)
 #define OFI_COMPILE_TIME_ASSERT(expr_)                                  \
   do { switch(0) { case 0: case (expr_): default: break; } } while (0)
 
@@ -218,12 +218,12 @@ fn_fail:                      \
 #define OFI_ADDR_INIT(src, vc, remote_proc) \
 ({                                          \
   if (MPI_ANY_SOURCE != src) {              \
-    MPIU_Assert(vc != NULL);                \
+    MPIR_Assert(vc != NULL);                \
     VC_READY_CHECK(vc);                     \
     remote_proc = VC_OFI(vc)->direct_addr;  \
   } else {                                  \
-    MPIU_Assert(vc == NULL);                \
-    remote_proc = gl_data.any_addr;         \
+    MPIR_Assert(vc == NULL);                \
+    remote_proc = FI_ADDR_UNSPEC;           \
   }                                         \
 })
 
@@ -233,28 +233,45 @@ fn_fail:                      \
 
 #define PEEK_INIT      0
 #define PEEK_FOUND     1
+#define PEEK_NOT_FOUND 2
 
 #define MEM_TAG_FORMAT (0xFFFF00000000LLU)
 /* ******************************** */
 /* Request manipulation inlines     */
 /* ******************************** */
-static inline void MPID_nem_ofi_init_req(MPID_Request * req)
+static inline void MPID_nem_ofi_init_req(MPIR_Request * req)
 {
     memset(REQ_OFI(req), 0, sizeof(MPID_nem_ofi_req_t));
 }
 
-static inline int MPID_nem_ofi_create_req(MPID_Request ** request, int refcnt)
+static inline int MPID_nem_ofi_create_req(MPIR_Request ** request, int refcnt)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_Request *req;
-    req = MPID_Request_create();
-    MPIU_Assert(req);
-    MPIU_Object_set_ref(req, refcnt);
+    MPIR_Request *req;
+    req = MPIR_Request_create(MPIR_REQUEST_KIND__UNDEFINED);
+    MPIR_Assert(req);
+    MPIR_Object_set_ref(req, refcnt);
     MPID_nem_ofi_init_req(req);
     *request = req;
     return mpi_errno;
 }
 
+static inline int MPID_nem_ofi_create_req_lw(MPIR_Request ** request, int refcnt)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_Request *req;
+
+    MPID_nem_ofi_create_req(&req, refcnt);
+
+    /* resetting the kind and cc here should not add additional
+     * instructions since a good compiler will discard the kind and cc
+     * setting in the above request create anyway */
+    req->kind = MPIR_REQUEST_KIND__SEND;
+    MPIR_cc_set(&req->cc, 0); // request is already completed
+
+    *request = req;
+    return mpi_errno;
+}
 
 /* ************************************************************************** */
 /* MPICH Comm Override and Netmod functions                                   */
@@ -263,42 +280,42 @@ static inline int MPID_nem_ofi_create_req(MPID_Request ** request, int refcnt)
     _ret _fc_name(__VA_ARGS__);                   \
     _ret _fc_name##_2(__VA_ARGS__);
 
-DECLARE_TWO_API_SETS(int, MPID_nem_ofi_recv_posted, struct MPIDI_VC *vc, struct MPID_Request *req);
+DECLARE_TWO_API_SETS(int, MPID_nem_ofi_recv_posted, struct MPIDI_VC *vc, struct MPIR_Request *req);
 
-DECLARE_TWO_API_SETS(int, MPID_nem_ofi_send, struct MPIDI_VC *vc, const void *buf, int count,\
-                     MPI_Datatype datatype, int dest, int tag, MPID_Comm * comm,\
-                     int context_offset, struct MPID_Request **request);
-DECLARE_TWO_API_SETS(int, MPID_nem_ofi_isend, struct MPIDI_VC *vc, const void *buf, int count,\
-                     MPI_Datatype datatype, int dest, int tag, MPID_Comm * comm,\
-                     int context_offset, struct MPID_Request **request);
-DECLARE_TWO_API_SETS(int, MPID_nem_ofi_ssend, struct MPIDI_VC *vc, const void *buf, int count,\
-                     MPI_Datatype datatype, int dest, int tag, MPID_Comm * comm,
-                     int context_offset, struct MPID_Request **request);
-DECLARE_TWO_API_SETS(int, MPID_nem_ofi_issend, struct MPIDI_VC *vc, const void *buf, int count,\
-                     MPI_Datatype datatype, int dest, int tag, MPID_Comm * comm,\
-                     int context_offset, struct MPID_Request **request);
-int MPID_nem_ofi_cancel_send(struct MPIDI_VC *vc, struct MPID_Request *sreq);
-int MPID_nem_ofi_cancel_recv(struct MPIDI_VC *vc, struct MPID_Request *rreq);
+DECLARE_TWO_API_SETS(int, MPID_nem_ofi_send, struct MPIDI_VC *vc, const void *buf, MPI_Aint count,\
+                     MPI_Datatype datatype, int dest, int tag, MPIR_Comm * comm,\
+                     int context_offset, struct MPIR_Request **request);
+DECLARE_TWO_API_SETS(int, MPID_nem_ofi_isend, struct MPIDI_VC *vc, const void *buf, MPI_Aint count,\
+                     MPI_Datatype datatype, int dest, int tag, MPIR_Comm * comm,\
+                     int context_offset, struct MPIR_Request **request);
+DECLARE_TWO_API_SETS(int, MPID_nem_ofi_ssend, struct MPIDI_VC *vc, const void *buf, MPI_Aint count,\
+                     MPI_Datatype datatype, int dest, int tag, MPIR_Comm * comm,
+                     int context_offset, struct MPIR_Request **request);
+DECLARE_TWO_API_SETS(int, MPID_nem_ofi_issend, struct MPIDI_VC *vc, const void *buf, MPI_Aint count,\
+                     MPI_Datatype datatype, int dest, int tag, MPIR_Comm * comm,\
+                     int context_offset, struct MPIR_Request **request);
+int MPID_nem_ofi_cancel_send(struct MPIDI_VC *vc, struct MPIR_Request *sreq);
+int MPID_nem_ofi_cancel_recv(struct MPIDI_VC *vc, struct MPIR_Request *rreq);
 
-DECLARE_TWO_API_SETS(int, MPID_nem_ofi_iprobe, struct MPIDI_VC *vc, int source, int tag, MPID_Comm * comm,
+DECLARE_TWO_API_SETS(int, MPID_nem_ofi_iprobe, struct MPIDI_VC *vc, int source, int tag, MPIR_Comm * comm,
                      int context_offset, int *flag, MPI_Status * status);
-DECLARE_TWO_API_SETS(int, MPID_nem_ofi_improbe,struct MPIDI_VC *vc, int source, int tag, MPID_Comm * comm,
-                     int context_offset, int *flag, MPID_Request ** message,
+DECLARE_TWO_API_SETS(int, MPID_nem_ofi_improbe,struct MPIDI_VC *vc, int source, int tag, MPIR_Comm * comm,
+                     int context_offset, int *flag, MPIR_Request ** message,
                      MPI_Status * status);
-DECLARE_TWO_API_SETS(int, MPID_nem_ofi_anysource_iprobe,int tag, MPID_Comm * comm, int context_offset,
+DECLARE_TWO_API_SETS(int, MPID_nem_ofi_anysource_iprobe,int tag, MPIR_Comm * comm, int context_offset,
                      int *flag, MPI_Status * status);
-DECLARE_TWO_API_SETS(int, MPID_nem_ofi_anysource_improbe,int tag, MPID_Comm * comm, int context_offset,
-                     int *flag, MPID_Request ** message, MPI_Status * status);
-DECLARE_TWO_API_SETS(void, MPID_nem_ofi_anysource_posted, MPID_Request * rreq);
+DECLARE_TWO_API_SETS(int, MPID_nem_ofi_anysource_improbe,int tag, MPIR_Comm * comm, int context_offset,
+                     int *flag, MPIR_Request ** message, MPI_Status * status);
+DECLARE_TWO_API_SETS(void, MPID_nem_ofi_anysource_posted, MPIR_Request * rreq);
 
-int MPID_nem_ofi_anysource_matched(MPID_Request * rreq);
-int MPID_nem_ofi_send_data(cq_tagged_entry_t * wc, MPID_Request * sreq);
-int MPID_nem_ofi_SendNoncontig(MPIDI_VC_t * vc, MPID_Request * sreq,
-                               void *hdr, MPIDI_msg_sz_t hdr_sz);
-int MPID_nem_ofi_iStartContigMsg(MPIDI_VC_t * vc, void *hdr, MPIDI_msg_sz_t hdr_sz,
-                                 void *data, MPIDI_msg_sz_t data_sz, MPID_Request ** sreq_ptr);
-int MPID_nem_ofi_iSendContig(MPIDI_VC_t * vc, MPID_Request * sreq, void *hdr,
-                             MPIDI_msg_sz_t hdr_sz, void *data, MPIDI_msg_sz_t data_sz);
+int MPID_nem_ofi_anysource_matched(MPIR_Request * rreq);
+int MPID_nem_ofi_send_data(cq_tagged_entry_t * wc, MPIR_Request * sreq);
+int MPID_nem_ofi_SendNoncontig(MPIDI_VC_t * vc, MPIR_Request * sreq,
+                               void *hdr, intptr_t hdr_sz);
+int MPID_nem_ofi_iStartContigMsg(MPIDI_VC_t * vc, void *hdr, intptr_t hdr_sz,
+                                 void *data, intptr_t data_sz, MPIR_Request ** sreq_ptr);
+int MPID_nem_ofi_iSendContig(MPIDI_VC_t * vc, MPIR_Request * sreq, void *hdr,
+                             intptr_t hdr_sz, void *data, intptr_t data_sz);
 
 /* ************************************************************************** */
 /* OFI utility functions : not exposed as a netmod public API                 */
@@ -321,4 +338,4 @@ int MPID_nem_ofi_get_ordering(int *ordering);
 extern MPID_nem_ofi_global_t gl_data;
 extern MPIDI_Comm_ops_t _g_comm_ops;
 
-#endif
+#endif /* OFI_IMPL_H_INCLUDED */

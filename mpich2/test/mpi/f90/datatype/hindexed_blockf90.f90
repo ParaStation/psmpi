@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/datatype/hindexed_blockf.f with f77tof90
+! This file created from f77/datatype/hindexed_blockf.f with f77tof90
 ! -*- Mode: Fortran; -*-
 !
 !  (C) 2003 by Argonne National Laboratory.
@@ -174,6 +174,5 @@
       call mpi_type_free( type5, ierr )
 
       call mtest_finalize( errs )
-      call mpi_finalize( ierr )
 
       end

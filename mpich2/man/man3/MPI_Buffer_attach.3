@@ -1,6 +1,6 @@
-.TH MPI_Buffer_attach 3 "11/9/2015" " " "MPI"
+.TH MPI_Buffer_attach 3 "11/21/2018" " " "MPI"
 .SH NAME
-MPI_Buffer_attach \-  Attaches a user-provided buffer for sending  
+MPI_Buffer_attach \-  Attaches a user-provided buffer for sending 
 .SH SYNOPSIS
 .nf
 int MPI_Buffer_attach(void *buffer, int size)
@@ -9,12 +9,12 @@ int MPI_Buffer_attach(void *buffer, int size)
 .PD 0
 .TP
 .B buffer 
-- initial buffer address (choice) 
+- initial buffer address (choice)
 .PD 1
 .PD 0
 .TP
 .B size 
-- buffer size, in bytes (integer) 
+- buffer size, in bytes (integer)
 .PD 1
 
 .SH NOTES
@@ -28,12 +28,12 @@ For the purposes of calculating size, you should use
 
 In other words, in the code
 .nf
-MPI_Buffer_attach( buffer, size );
-MPI_Bsend( ..., count=20, datatype=type1,  ... );
+MPI_Buffer_attach(buffer, size);
+MPI_Bsend(..., count=20, datatype=type1,  ...);
 \&.
 \&.
 \&.
-MPI_Bsend( ..., count=40, datatype=type2, ... );
+MPI_Bsend(..., count=40, datatype=type2, ...);
 .fi
 
 the value of 
@@ -43,8 +43,8 @@ in the
 call should be greater than
 the value computed by
 .nf
-MPI_Pack_size( 20, type1, comm, &s1 );
-MPI_Pack_size( 40, type2, comm, &s2 );
+MPI_Pack_size(20, type1, comm, &s1);
+MPI_Pack_size(40, type2, comm, &s2);
 size = s1 + s2 + 2 * MPI_BSEND_OVERHEAD;
 .fi
 

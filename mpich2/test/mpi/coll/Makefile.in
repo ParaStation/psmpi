@@ -101,15 +101,13 @@ noinst_PROGRAMS = allgather2$(EXEEXT) allgather3$(EXEEXT) \
 	allred6$(EXEEXT) allredmany$(EXEEXT) alltoall1$(EXEEXT) \
 	alltoallv$(EXEEXT) alltoallv0$(EXEEXT) alltoallw1$(EXEEXT) \
 	alltoallw2$(EXEEXT) alltoallw_zeros$(EXEEXT) \
-	bcast_full$(EXEEXT) bcast_min_datatypes$(EXEEXT) \
-	bcast_comm_world$(EXEEXT) bcasttest$(EXEEXT) \
-	bcastzerotype$(EXEEXT) coll2$(EXEEXT) coll3$(EXEEXT) \
-	coll4$(EXEEXT) coll5$(EXEEXT) coll6$(EXEEXT) coll7$(EXEEXT) \
-	coll8$(EXEEXT) coll9$(EXEEXT) coll10$(EXEEXT) coll11$(EXEEXT) \
-	coll12$(EXEEXT) coll13$(EXEEXT) exscan$(EXEEXT) \
-	exscan2$(EXEEXT) gather$(EXEEXT) gather2$(EXEEXT) \
-	gather_big$(EXEEXT) iallred$(EXEEXT) ibarrier$(EXEEXT) \
-	icallgather$(EXEEXT) icallgatherv$(EXEEXT) \
+	bcasttest$(EXEEXT) bcastzerotype$(EXEEXT) coll2$(EXEEXT) \
+	coll3$(EXEEXT) coll4$(EXEEXT) coll5$(EXEEXT) coll6$(EXEEXT) \
+	coll7$(EXEEXT) coll8$(EXEEXT) coll9$(EXEEXT) coll10$(EXEEXT) \
+	coll11$(EXEEXT) coll12$(EXEEXT) coll13$(EXEEXT) \
+	exscan$(EXEEXT) exscan2$(EXEEXT) gather$(EXEEXT) \
+	gather2$(EXEEXT) gather_big$(EXEEXT) iallred$(EXEEXT) \
+	ibarrier$(EXEEXT) icallgather$(EXEEXT) icallgatherv$(EXEEXT) \
 	icallreduce$(EXEEXT) icalltoall$(EXEEXT) icalltoallv$(EXEEXT) \
 	icalltoallw$(EXEEXT) icbarrier$(EXEEXT) icbcast$(EXEEXT) \
 	icgather$(EXEEXT) icgatherv$(EXEEXT) icreduce$(EXEEXT) \
@@ -133,7 +131,9 @@ noinst_PROGRAMS = allgather2$(EXEEXT) allgather3$(EXEEXT) \
 	nbicalltoall$(EXEEXT) nbicalltoallw$(EXEEXT) \
 	nbicalltoallv$(EXEEXT) nbicgather$(EXEEXT) \
 	nbicgatherv$(EXEEXT) nbicreduce$(EXEEXT) nbicscatter$(EXEEXT) \
-	nbicscatterv$(EXEEXT)
+	nbicscatterv$(EXEEXT) neighb_coll$(EXEEXT) \
+	bcast__BASIC__L24$(EXEEXT) bcast__BASIC__L25$(EXEEXT) \
+	bcast__STRUCT__L35$(EXEEXT)
 subdir = coll
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -157,32 +157,27 @@ allgather2_SOURCES = allgather2.c
 allgather2_OBJECTS = allgather2.$(OBJEXT)
 allgather2_LDADD = $(LDADD)
 allgather2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 allgather3_SOURCES = allgather3.c
 allgather3_OBJECTS = allgather3.$(OBJEXT)
 allgather3_LDADD = $(LDADD)
 allgather3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 allgather_struct_SOURCES = allgather_struct.c
 allgather_struct_OBJECTS = allgather_struct.$(OBJEXT)
 allgather_struct_LDADD = $(LDADD)
 allgather_struct_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 allgatherv2_SOURCES = allgatherv2.c
 allgatherv2_OBJECTS = allgatherv2.$(OBJEXT)
 allgatherv2_LDADD = $(LDADD)
 allgatherv2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 allgatherv3_SOURCES = allgatherv3.c
 allgatherv3_OBJECTS = allgatherv3.$(OBJEXT)
 allgatherv3_LDADD = $(LDADD)
 allgatherv3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 allgatherv4_SOURCES = allgatherv4.c
 allgatherv4_OBJECTS = allgatherv4.$(OBJEXT)
 allgatherv4_DEPENDENCIES = $(LDADD)
@@ -190,620 +185,522 @@ allred_SOURCES = allred.c
 allred_OBJECTS = allred.$(OBJEXT)
 allred_LDADD = $(LDADD)
 allred_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 allred2_SOURCES = allred2.c
 allred2_OBJECTS = allred2.$(OBJEXT)
 allred2_LDADD = $(LDADD)
 allred2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 allred3_SOURCES = allred3.c
 allred3_OBJECTS = allred3.$(OBJEXT)
 allred3_LDADD = $(LDADD)
 allred3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 allred4_SOURCES = allred4.c
 allred4_OBJECTS = allred4.$(OBJEXT)
 allred4_LDADD = $(LDADD)
 allred4_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 allred5_SOURCES = allred5.c
 allred5_OBJECTS = allred5.$(OBJEXT)
 allred5_LDADD = $(LDADD)
 allred5_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 allred6_SOURCES = allred6.c
 allred6_OBJECTS = allred6.$(OBJEXT)
 allred6_LDADD = $(LDADD)
 allred6_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 allredmany_SOURCES = allredmany.c
 allredmany_OBJECTS = allredmany.$(OBJEXT)
 allredmany_LDADD = $(LDADD)
 allredmany_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 alltoall1_SOURCES = alltoall1.c
 alltoall1_OBJECTS = alltoall1.$(OBJEXT)
 alltoall1_LDADD = $(LDADD)
 alltoall1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 alltoallv_SOURCES = alltoallv.c
 alltoallv_OBJECTS = alltoallv.$(OBJEXT)
 alltoallv_LDADD = $(LDADD)
 alltoallv_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 alltoallv0_SOURCES = alltoallv0.c
 alltoallv0_OBJECTS = alltoallv0.$(OBJEXT)
 alltoallv0_LDADD = $(LDADD)
 alltoallv0_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 alltoallw1_SOURCES = alltoallw1.c
 alltoallw1_OBJECTS = alltoallw1.$(OBJEXT)
 alltoallw1_LDADD = $(LDADD)
 alltoallw1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 alltoallw2_SOURCES = alltoallw2.c
 alltoallw2_OBJECTS = alltoallw2.$(OBJEXT)
 alltoallw2_LDADD = $(LDADD)
 alltoallw2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 alltoallw_zeros_SOURCES = alltoallw_zeros.c
 alltoallw_zeros_OBJECTS = alltoallw_zeros.$(OBJEXT)
 alltoallw_zeros_LDADD = $(LDADD)
 alltoallw_zeros_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-am_bcast_comm_world_OBJECTS = bcast_comm_world-bcast.$(OBJEXT)
-bcast_comm_world_OBJECTS = $(am_bcast_comm_world_OBJECTS)
-bcast_comm_world_LDADD = $(LDADD)
-bcast_comm_world_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-am_bcast_full_OBJECTS = bcast.$(OBJEXT)
-bcast_full_OBJECTS = $(am_bcast_full_OBJECTS)
-bcast_full_LDADD = $(LDADD)
-bcast_full_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-am_bcast_min_datatypes_OBJECTS = bcast_min_datatypes-bcast.$(OBJEXT)
-bcast_min_datatypes_OBJECTS = $(am_bcast_min_datatypes_OBJECTS)
-bcast_min_datatypes_LDADD = $(LDADD)
-bcast_min_datatypes_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+am_bcast__BASIC__L24_OBJECTS = bcast__BASIC__L24-bcast.$(OBJEXT)
+bcast__BASIC__L24_OBJECTS = $(am_bcast__BASIC__L24_OBJECTS)
+bcast__BASIC__L24_LDADD = $(LDADD)
+bcast__BASIC__L24_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+am_bcast__BASIC__L25_OBJECTS = bcast__BASIC__L25-bcast.$(OBJEXT)
+bcast__BASIC__L25_OBJECTS = $(am_bcast__BASIC__L25_OBJECTS)
+bcast__BASIC__L25_LDADD = $(LDADD)
+bcast__BASIC__L25_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+am_bcast__STRUCT__L35_OBJECTS = bcast__STRUCT__L35-bcast.$(OBJEXT)
+bcast__STRUCT__L35_OBJECTS = $(am_bcast__STRUCT__L35_OBJECTS)
+bcast__STRUCT__L35_LDADD = $(LDADD)
+bcast__STRUCT__L35_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 bcasttest_SOURCES = bcasttest.c
 bcasttest_OBJECTS = bcasttest.$(OBJEXT)
 bcasttest_LDADD = $(LDADD)
 bcasttest_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 bcastzerotype_SOURCES = bcastzerotype.c
 bcastzerotype_OBJECTS = bcastzerotype.$(OBJEXT)
 bcastzerotype_LDADD = $(LDADD)
 bcastzerotype_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 coll10_SOURCES = coll10.c
 coll10_OBJECTS = coll10.$(OBJEXT)
 coll10_LDADD = $(LDADD)
 coll10_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 coll11_SOURCES = coll11.c
 coll11_OBJECTS = coll11.$(OBJEXT)
 coll11_LDADD = $(LDADD)
 coll11_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 coll12_SOURCES = coll12.c
 coll12_OBJECTS = coll12.$(OBJEXT)
 coll12_LDADD = $(LDADD)
 coll12_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 coll13_SOURCES = coll13.c
 coll13_OBJECTS = coll13.$(OBJEXT)
 coll13_LDADD = $(LDADD)
 coll13_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 coll2_SOURCES = coll2.c
 coll2_OBJECTS = coll2.$(OBJEXT)
 coll2_LDADD = $(LDADD)
 coll2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 coll3_SOURCES = coll3.c
 coll3_OBJECTS = coll3.$(OBJEXT)
 coll3_LDADD = $(LDADD)
 coll3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 coll4_SOURCES = coll4.c
 coll4_OBJECTS = coll4.$(OBJEXT)
 coll4_LDADD = $(LDADD)
 coll4_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 coll5_SOURCES = coll5.c
 coll5_OBJECTS = coll5.$(OBJEXT)
 coll5_LDADD = $(LDADD)
 coll5_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 coll6_SOURCES = coll6.c
 coll6_OBJECTS = coll6.$(OBJEXT)
 coll6_LDADD = $(LDADD)
 coll6_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 coll7_SOURCES = coll7.c
 coll7_OBJECTS = coll7.$(OBJEXT)
 coll7_LDADD = $(LDADD)
 coll7_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 coll8_SOURCES = coll8.c
 coll8_OBJECTS = coll8.$(OBJEXT)
 coll8_LDADD = $(LDADD)
 coll8_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 coll9_SOURCES = coll9.c
 coll9_OBJECTS = coll9.$(OBJEXT)
 coll9_LDADD = $(LDADD)
 coll9_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 exscan_SOURCES = exscan.c
 exscan_OBJECTS = exscan.$(OBJEXT)
 exscan_LDADD = $(LDADD)
 exscan_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 exscan2_SOURCES = exscan2.c
 exscan2_OBJECTS = exscan2.$(OBJEXT)
 exscan2_LDADD = $(LDADD)
 exscan2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 gather_SOURCES = gather.c
 gather_OBJECTS = gather.$(OBJEXT)
 gather_LDADD = $(LDADD)
 gather_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 gather2_SOURCES = gather2.c
 gather2_OBJECTS = gather2.$(OBJEXT)
 gather2_LDADD = $(LDADD)
 gather2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 gather_big_SOURCES = gather_big.c
 gather_big_OBJECTS = gather_big.$(OBJEXT)
 gather_big_LDADD = $(LDADD)
 gather_big_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 iallred_SOURCES = iallred.c
 iallred_OBJECTS = iallred.$(OBJEXT)
 iallred_LDADD = $(LDADD)
 iallred_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 ibarrier_SOURCES = ibarrier.c
 ibarrier_OBJECTS = ibarrier.$(OBJEXT)
 ibarrier_LDADD = $(LDADD)
 ibarrier_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 icallgather_SOURCES = icallgather.c
 icallgather_OBJECTS = icallgather.$(OBJEXT)
 icallgather_LDADD = $(LDADD)
 icallgather_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 icallgatherv_SOURCES = icallgatherv.c
 icallgatherv_OBJECTS = icallgatherv.$(OBJEXT)
 icallgatherv_LDADD = $(LDADD)
 icallgatherv_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 icallreduce_SOURCES = icallreduce.c
 icallreduce_OBJECTS = icallreduce.$(OBJEXT)
 icallreduce_LDADD = $(LDADD)
 icallreduce_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 icalltoall_SOURCES = icalltoall.c
 icalltoall_OBJECTS = icalltoall.$(OBJEXT)
 icalltoall_LDADD = $(LDADD)
 icalltoall_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 icalltoallv_SOURCES = icalltoallv.c
 icalltoallv_OBJECTS = icalltoallv.$(OBJEXT)
 icalltoallv_LDADD = $(LDADD)
 icalltoallv_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 icalltoallw_SOURCES = icalltoallw.c
 icalltoallw_OBJECTS = icalltoallw.$(OBJEXT)
 icalltoallw_LDADD = $(LDADD)
 icalltoallw_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 icbarrier_SOURCES = icbarrier.c
 icbarrier_OBJECTS = icbarrier.$(OBJEXT)
 icbarrier_LDADD = $(LDADD)
 icbarrier_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 icbcast_SOURCES = icbcast.c
 icbcast_OBJECTS = icbcast.$(OBJEXT)
 icbcast_LDADD = $(LDADD)
 icbcast_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 icgather_SOURCES = icgather.c
 icgather_OBJECTS = icgather.$(OBJEXT)
 icgather_LDADD = $(LDADD)
 icgather_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 icgatherv_SOURCES = icgatherv.c
 icgatherv_OBJECTS = icgatherv.$(OBJEXT)
 icgatherv_LDADD = $(LDADD)
 icgatherv_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 icreduce_SOURCES = icreduce.c
 icreduce_OBJECTS = icreduce.$(OBJEXT)
 icreduce_LDADD = $(LDADD)
 icreduce_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 icscatter_SOURCES = icscatter.c
 icscatter_OBJECTS = icscatter.$(OBJEXT)
 icscatter_LDADD = $(LDADD)
 icscatter_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 icscatterv_SOURCES = icscatterv.c
 icscatterv_OBJECTS = icscatterv.$(OBJEXT)
 icscatterv_LDADD = $(LDADD)
 icscatterv_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 longuser_SOURCES = longuser.c
 longuser_OBJECTS = longuser.$(OBJEXT)
 longuser_LDADD = $(LDADD)
 longuser_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nballtoall1_OBJECTS = nballtoall1-alltoall1.$(OBJEXT)
 nballtoall1_OBJECTS = $(am_nballtoall1_OBJECTS)
 nballtoall1_LDADD = $(LDADD)
 nballtoall1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nbcoll2_OBJECTS = nbcoll2-coll2.$(OBJEXT)
 nbcoll2_OBJECTS = $(am_nbcoll2_OBJECTS)
 nbcoll2_LDADD = $(LDADD)
 nbcoll2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nbicallgather_OBJECTS = nbicallgather-icallgather.$(OBJEXT)
 nbicallgather_OBJECTS = $(am_nbicallgather_OBJECTS)
 nbicallgather_LDADD = $(LDADD)
 nbicallgather_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nbicallgatherv_OBJECTS = nbicallgatherv-icallgatherv.$(OBJEXT)
 nbicallgatherv_OBJECTS = $(am_nbicallgatherv_OBJECTS)
 nbicallgatherv_LDADD = $(LDADD)
 nbicallgatherv_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nbicallreduce_OBJECTS = nbicallreduce-icallreduce.$(OBJEXT)
 nbicallreduce_OBJECTS = $(am_nbicallreduce_OBJECTS)
 nbicallreduce_LDADD = $(LDADD)
 nbicallreduce_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nbicalltoall_OBJECTS = nbicalltoall-icalltoall.$(OBJEXT)
 nbicalltoall_OBJECTS = $(am_nbicalltoall_OBJECTS)
 nbicalltoall_LDADD = $(LDADD)
 nbicalltoall_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nbicalltoallv_OBJECTS = nbicalltoallv-icalltoallv.$(OBJEXT)
 nbicalltoallv_OBJECTS = $(am_nbicalltoallv_OBJECTS)
 nbicalltoallv_LDADD = $(LDADD)
 nbicalltoallv_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nbicalltoallw_OBJECTS = nbicalltoallw-icalltoallw.$(OBJEXT)
 nbicalltoallw_OBJECTS = $(am_nbicalltoallw_OBJECTS)
 nbicalltoallw_LDADD = $(LDADD)
 nbicalltoallw_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nbicbarrier_OBJECTS = nbicbarrier-icbarrier.$(OBJEXT)
 nbicbarrier_OBJECTS = $(am_nbicbarrier_OBJECTS)
 nbicbarrier_LDADD = $(LDADD)
 nbicbarrier_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nbicbcast_OBJECTS = nbicbcast-icbcast.$(OBJEXT)
 nbicbcast_OBJECTS = $(am_nbicbcast_OBJECTS)
 nbicbcast_LDADD = $(LDADD)
 nbicbcast_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nbicgather_OBJECTS = nbicgather-icgather.$(OBJEXT)
 nbicgather_OBJECTS = $(am_nbicgather_OBJECTS)
 nbicgather_LDADD = $(LDADD)
 nbicgather_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nbicgatherv_OBJECTS = nbicgatherv-icgatherv.$(OBJEXT)
 nbicgatherv_OBJECTS = $(am_nbicgatherv_OBJECTS)
 nbicgatherv_LDADD = $(LDADD)
 nbicgatherv_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nbicreduce_OBJECTS = nbicreduce-icreduce.$(OBJEXT)
 nbicreduce_OBJECTS = $(am_nbicreduce_OBJECTS)
 nbicreduce_LDADD = $(LDADD)
 nbicreduce_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nbicscatter_OBJECTS = nbicscatter-icscatter.$(OBJEXT)
 nbicscatter_OBJECTS = $(am_nbicscatter_OBJECTS)
 nbicscatter_LDADD = $(LDADD)
 nbicscatter_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nbicscatterv_OBJECTS = nbicscatterv-icscatterv.$(OBJEXT)
 nbicscatterv_OBJECTS = $(am_nbicscatterv_OBJECTS)
 nbicscatterv_LDADD = $(LDADD)
 nbicscatterv_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nbredscat_OBJECTS = nbredscat-redscat.$(OBJEXT)
 nbredscat_OBJECTS = $(am_nbredscat_OBJECTS)
 nbredscat_LDADD = $(LDADD)
 nbredscat_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nbredscat3_OBJECTS = nbredscat3-redscat3.$(OBJEXT)
 nbredscat3_OBJECTS = $(am_nbredscat3_OBJECTS)
 nbredscat3_LDADD = $(LDADD)
 nbredscat3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_nbredscatinter_OBJECTS = nbredscatinter-redscatinter.$(OBJEXT)
 nbredscatinter_OBJECTS = $(am_nbredscatinter_OBJECTS)
 nbredscatinter_LDADD = $(LDADD)
 nbredscatinter_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+neighb_coll_SOURCES = neighb_coll.c
+neighb_coll_OBJECTS = neighb_coll.$(OBJEXT)
+neighb_coll_LDADD = $(LDADD)
+neighb_coll_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nonblocking_SOURCES = nonblocking.c
 nonblocking_OBJECTS = nonblocking.$(OBJEXT)
 nonblocking_LDADD = $(LDADD)
 nonblocking_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nonblocking2_SOURCES = nonblocking2.c
 nonblocking2_OBJECTS = nonblocking2.$(OBJEXT)
 nonblocking2_LDADD = $(LDADD)
 nonblocking2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nonblocking3_SOURCES = nonblocking3.c
 nonblocking3_OBJECTS = nonblocking3.$(OBJEXT)
 nonblocking3_LDADD = $(LDADD)
 nonblocking3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 op_commutative_SOURCES = op_commutative.c
 op_commutative_OBJECTS = op_commutative.$(OBJEXT)
 op_commutative_LDADD = $(LDADD)
 op_commutative_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 opband_SOURCES = opband.c
 opband_OBJECTS = opband.$(OBJEXT)
 opband_LDADD = $(LDADD)
 opband_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 opbor_SOURCES = opbor.c
 opbor_OBJECTS = opbor.$(OBJEXT)
 opbor_LDADD = $(LDADD)
 opbor_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 opbxor_SOURCES = opbxor.c
 opbxor_OBJECTS = opbxor.$(OBJEXT)
 opbxor_LDADD = $(LDADD)
 opbxor_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 opland_SOURCES = opland.c
 opland_OBJECTS = opland.$(OBJEXT)
 opland_LDADD = $(LDADD)
 opland_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 oplor_SOURCES = oplor.c
 oplor_OBJECTS = oplor.$(OBJEXT)
 oplor_LDADD = $(LDADD)
 oplor_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 oplxor_SOURCES = oplxor.c
 oplxor_OBJECTS = oplxor.$(OBJEXT)
 oplxor_LDADD = $(LDADD)
 oplxor_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 opmax_SOURCES = opmax.c
 opmax_OBJECTS = opmax.$(OBJEXT)
 opmax_LDADD = $(LDADD)
 opmax_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 opmaxloc_SOURCES = opmaxloc.c
 opmaxloc_OBJECTS = opmaxloc.$(OBJEXT)
 opmaxloc_LDADD = $(LDADD)
 opmaxloc_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 opmin_SOURCES = opmin.c
 opmin_OBJECTS = opmin.$(OBJEXT)
 opmin_LDADD = $(LDADD)
 opmin_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 opminloc_SOURCES = opminloc.c
 opminloc_OBJECTS = opminloc.$(OBJEXT)
 opminloc_LDADD = $(LDADD)
 opminloc_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 opprod_SOURCES = opprod.c
 opprod_OBJECTS = opprod.$(OBJEXT)
 opprod_LDADD = $(LDADD)
 opprod_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 opsum_SOURCES = opsum.c
 opsum_OBJECTS = opsum.$(OBJEXT)
 opsum_LDADD = $(LDADD)
 opsum_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 red3_SOURCES = red3.c
 red3_OBJECTS = red3.$(OBJEXT)
 red3_LDADD = $(LDADD)
 red3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 red4_SOURCES = red4.c
 red4_OBJECTS = red4.$(OBJEXT)
 red4_LDADD = $(LDADD)
 red4_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 red_scat_block_SOURCES = red_scat_block.c
 red_scat_block_OBJECTS = red_scat_block.$(OBJEXT)
 red_scat_block_LDADD = $(LDADD)
 red_scat_block_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 red_scat_block2_SOURCES = red_scat_block2.c
 red_scat_block2_OBJECTS = red_scat_block2.$(OBJEXT)
 red_scat_block2_LDADD = $(LDADD)
 red_scat_block2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 redscat_SOURCES = redscat.c
 redscat_OBJECTS = redscat.$(OBJEXT)
 redscat_LDADD = $(LDADD)
 redscat_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 redscat2_SOURCES = redscat2.c
 redscat2_OBJECTS = redscat2.$(OBJEXT)
 redscat2_LDADD = $(LDADD)
 redscat2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 redscat3_SOURCES = redscat3.c
 redscat3_OBJECTS = redscat3.$(OBJEXT)
 redscat3_LDADD = $(LDADD)
 redscat3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 redscatbkinter_SOURCES = redscatbkinter.c
 redscatbkinter_OBJECTS = redscatbkinter.$(OBJEXT)
 redscatbkinter_LDADD = $(LDADD)
 redscatbkinter_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 redscatblk3_SOURCES = redscatblk3.c
 redscatblk3_OBJECTS = redscatblk3.$(OBJEXT)
 redscatblk3_LDADD = $(LDADD)
 redscatblk3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 redscatinter_SOURCES = redscatinter.c
 redscatinter_OBJECTS = redscatinter.$(OBJEXT)
 redscatinter_LDADD = $(LDADD)
 redscatinter_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 reduce_SOURCES = reduce.c
 reduce_OBJECTS = reduce.$(OBJEXT)
 reduce_LDADD = $(LDADD)
 reduce_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 reduce_local_SOURCES = reduce_local.c
 reduce_local_OBJECTS = reduce_local.$(OBJEXT)
 reduce_local_LDADD = $(LDADD)
 reduce_local_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 scantst_SOURCES = scantst.c
 scantst_OBJECTS = scantst.$(OBJEXT)
 scantst_LDADD = $(LDADD)
 scantst_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 scatter2_SOURCES = scatter2.c
 scatter2_OBJECTS = scatter2.$(OBJEXT)
 scatter2_LDADD = $(LDADD)
 scatter2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 scatter3_SOURCES = scatter3.c
 scatter3_OBJECTS = scatter3.$(OBJEXT)
 scatter3_LDADD = $(LDADD)
 scatter3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 scattern_SOURCES = scattern.c
 scattern_OBJECTS = scattern.$(OBJEXT)
 scattern_LDADD = $(LDADD)
 scattern_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 scatterv_SOURCES = scatterv.c
 scatterv_OBJECTS = scatterv.$(OBJEXT)
 scatterv_LDADD = $(LDADD)
 scatterv_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 uoplong_SOURCES = uoplong.c
 uoplong_OBJECTS = uoplong.$(OBJEXT)
 uoplong_LDADD = $(LDADD)
 uoplong_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -840,8 +737,8 @@ SOURCES = allgather2.c allgather3.c allgather_struct.c allgatherv2.c \
 	allgatherv3.c allgatherv4.c allred.c allred2.c allred3.c \
 	allred4.c allred5.c allred6.c allredmany.c alltoall1.c \
 	alltoallv.c alltoallv0.c alltoallw1.c alltoallw2.c \
-	alltoallw_zeros.c $(bcast_comm_world_SOURCES) \
-	$(bcast_full_SOURCES) $(bcast_min_datatypes_SOURCES) \
+	alltoallw_zeros.c $(bcast__BASIC__L24_SOURCES) \
+	$(bcast__BASIC__L25_SOURCES) $(bcast__STRUCT__L35_SOURCES) \
 	bcasttest.c bcastzerotype.c coll10.c coll11.c coll12.c \
 	coll13.c coll2.c coll3.c coll4.c coll5.c coll6.c coll7.c \
 	coll8.c coll9.c exscan.c exscan2.c gather.c gather2.c \
@@ -857,20 +754,20 @@ SOURCES = allgather2.c allgather3.c allgather_struct.c allgatherv2.c \
 	$(nbicgatherv_SOURCES) $(nbicreduce_SOURCES) \
 	$(nbicscatter_SOURCES) $(nbicscatterv_SOURCES) \
 	$(nbredscat_SOURCES) $(nbredscat3_SOURCES) \
-	$(nbredscatinter_SOURCES) nonblocking.c nonblocking2.c \
-	nonblocking3.c op_commutative.c opband.c opbor.c opbxor.c \
-	opland.c oplor.c oplxor.c opmax.c opmaxloc.c opmin.c \
-	opminloc.c opprod.c opsum.c red3.c red4.c red_scat_block.c \
-	red_scat_block2.c redscat.c redscat2.c redscat3.c \
-	redscatbkinter.c redscatblk3.c redscatinter.c reduce.c \
-	reduce_local.c scantst.c scatter2.c scatter3.c scattern.c \
-	scatterv.c uoplong.c
+	$(nbredscatinter_SOURCES) neighb_coll.c nonblocking.c \
+	nonblocking2.c nonblocking3.c op_commutative.c opband.c \
+	opbor.c opbxor.c opland.c oplor.c oplxor.c opmax.c opmaxloc.c \
+	opmin.c opminloc.c opprod.c opsum.c red3.c red4.c \
+	red_scat_block.c red_scat_block2.c redscat.c redscat2.c \
+	redscat3.c redscatbkinter.c redscatblk3.c redscatinter.c \
+	reduce.c reduce_local.c scantst.c scatter2.c scatter3.c \
+	scattern.c scatterv.c uoplong.c
 DIST_SOURCES = allgather2.c allgather3.c allgather_struct.c \
 	allgatherv2.c allgatherv3.c allgatherv4.c allred.c allred2.c \
 	allred3.c allred4.c allred5.c allred6.c allredmany.c \
 	alltoall1.c alltoallv.c alltoallv0.c alltoallw1.c alltoallw2.c \
-	alltoallw_zeros.c $(bcast_comm_world_SOURCES) \
-	$(bcast_full_SOURCES) $(bcast_min_datatypes_SOURCES) \
+	alltoallw_zeros.c $(bcast__BASIC__L24_SOURCES) \
+	$(bcast__BASIC__L25_SOURCES) $(bcast__STRUCT__L35_SOURCES) \
 	bcasttest.c bcastzerotype.c coll10.c coll11.c coll12.c \
 	coll13.c coll2.c coll3.c coll4.c coll5.c coll6.c coll7.c \
 	coll8.c coll9.c exscan.c exscan2.c gather.c gather2.c \
@@ -886,14 +783,14 @@ DIST_SOURCES = allgather2.c allgather3.c allgather_struct.c \
 	$(nbicgatherv_SOURCES) $(nbicreduce_SOURCES) \
 	$(nbicscatter_SOURCES) $(nbicscatterv_SOURCES) \
 	$(nbredscat_SOURCES) $(nbredscat3_SOURCES) \
-	$(nbredscatinter_SOURCES) nonblocking.c nonblocking2.c \
-	nonblocking3.c op_commutative.c opband.c opbor.c opbxor.c \
-	opland.c oplor.c oplxor.c opmax.c opmaxloc.c opmin.c \
-	opminloc.c opprod.c opsum.c red3.c red4.c red_scat_block.c \
-	red_scat_block2.c redscat.c redscat2.c redscat3.c \
-	redscatbkinter.c redscatblk3.c redscatinter.c reduce.c \
-	reduce_local.c scantst.c scatter2.c scatter3.c scattern.c \
-	scatterv.c uoplong.c
+	$(nbredscatinter_SOURCES) neighb_coll.c nonblocking.c \
+	nonblocking2.c nonblocking3.c op_commutative.c opband.c \
+	opbor.c opbxor.c opland.c oplor.c oplxor.c opmax.c opmaxloc.c \
+	opmin.c opminloc.c opprod.c opsum.c red3.c red4.c \
+	red_scat_block.c red_scat_block2.c redscat.c redscat2.c \
+	redscat3.c redscatbkinter.c redscatblk3.c redscatinter.c \
+	reduce.c reduce_local.c scantst.c scatter2.c scatter3.c \
+	scattern.c scatterv.c uoplong.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -918,8 +815,9 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/testlist.in \
-	$(top_srcdir)/Makefile.mtest $(top_srcdir)/confdb/depcomp
+am__DIST_COMMON = $(srcdir)/Makefile.dtp $(srcdir)/Makefile.in \
+	$(srcdir)/testlist.in $(top_srcdir)/Makefile.mtest \
+	$(top_srcdir)/confdb/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 VPATH = @VPATH@
 ACLOCAL = @ACLOCAL@
@@ -944,6 +842,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -1099,6 +998,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -1108,18 +1008,16 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # AM_CPPFLAGS are used for C++ code as well
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+
+# Add libdtpools support
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_builddir)/dtpoos/include \
+	-I$(top_srcdir)/dtpools/include
 LDADD = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-CLEANFILES = summary.xml summary.tap summary.junit.xml
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
 EXTRA_DIST = testlist.in
 allgatherv4_LDADD = $(LDADD) -lm
-bcast_full_SOURCES = bcast.c
-bcast_min_datatypes_CPPFLAGS = -DBCAST_MIN_DATATYPES_ONLY $(AM_CPPFLAGS)
-bcast_min_datatypes_SOURCES = bcast.c
-bcast_comm_world_CPPFLAGS = -DBCAST_COMM_WORLD_ONLY $(AM_CPPFLAGS)
-bcast_comm_world_SOURCES = bcast.c
 
 # Generate tests of the nonblocking collectives by reusing the blocking tests.
 nballtoall1_SOURCES = alltoall1.c
@@ -1158,11 +1056,17 @@ nbicscatter_SOURCES = icscatter.c
 nbicscatter_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
 nbicscatterv_SOURCES = icscatterv.c
 nbicscatterv_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+bcast__BASIC__L24_CPPFLAGS = $(AM_CPPFLAGS)
+bcast__BASIC__L24_SOURCES = bcast.c
+bcast__BASIC__L25_CPPFLAGS = -DBCAST_COMM_WORLD_ONLY  $(AM_CPPFLAGS)
+bcast__BASIC__L25_SOURCES = bcast.c
+bcast__STRUCT__L35_CPPFLAGS = -DUSE_DTP_POOL_TYPE__STRUCT  $(AM_CPPFLAGS)
+bcast__STRUCT__L35_SOURCES = bcast.c
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/Makefile.mtest $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/Makefile.mtest $(srcdir)/Makefile.dtp $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -1182,7 +1086,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe);; \
 	esac;
-$(top_srcdir)/Makefile.mtest $(am__empty):
+$(top_srcdir)/Makefile.mtest $(srcdir)/Makefile.dtp $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
@@ -1274,17 +1178,17 @@ alltoallw_zeros$(EXEEXT): $(alltoallw_zeros_OBJECTS) $(alltoallw_zeros_DEPENDENC
 	@rm -f alltoallw_zeros$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(alltoallw_zeros_OBJECTS) $(alltoallw_zeros_LDADD) $(LIBS)
 
-bcast_comm_world$(EXEEXT): $(bcast_comm_world_OBJECTS) $(bcast_comm_world_DEPENDENCIES) $(EXTRA_bcast_comm_world_DEPENDENCIES) 
-	@rm -f bcast_comm_world$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(bcast_comm_world_OBJECTS) $(bcast_comm_world_LDADD) $(LIBS)
+bcast__BASIC__L24$(EXEEXT): $(bcast__BASIC__L24_OBJECTS) $(bcast__BASIC__L24_DEPENDENCIES) $(EXTRA_bcast__BASIC__L24_DEPENDENCIES) 
+	@rm -f bcast__BASIC__L24$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(bcast__BASIC__L24_OBJECTS) $(bcast__BASIC__L24_LDADD) $(LIBS)
 
-bcast_full$(EXEEXT): $(bcast_full_OBJECTS) $(bcast_full_DEPENDENCIES) $(EXTRA_bcast_full_DEPENDENCIES) 
-	@rm -f bcast_full$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(bcast_full_OBJECTS) $(bcast_full_LDADD) $(LIBS)
+bcast__BASIC__L25$(EXEEXT): $(bcast__BASIC__L25_OBJECTS) $(bcast__BASIC__L25_DEPENDENCIES) $(EXTRA_bcast__BASIC__L25_DEPENDENCIES) 
+	@rm -f bcast__BASIC__L25$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(bcast__BASIC__L25_OBJECTS) $(bcast__BASIC__L25_LDADD) $(LIBS)
 
-bcast_min_datatypes$(EXEEXT): $(bcast_min_datatypes_OBJECTS) $(bcast_min_datatypes_DEPENDENCIES) $(EXTRA_bcast_min_datatypes_DEPENDENCIES) 
-	@rm -f bcast_min_datatypes$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(bcast_min_datatypes_OBJECTS) $(bcast_min_datatypes_LDADD) $(LIBS)
+bcast__STRUCT__L35$(EXEEXT): $(bcast__STRUCT__L35_OBJECTS) $(bcast__STRUCT__L35_DEPENDENCIES) $(EXTRA_bcast__STRUCT__L35_DEPENDENCIES) 
+	@rm -f bcast__STRUCT__L35$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(bcast__STRUCT__L35_OBJECTS) $(bcast__STRUCT__L35_LDADD) $(LIBS)
 
 bcasttest$(EXEEXT): $(bcasttest_OBJECTS) $(bcasttest_DEPENDENCIES) $(EXTRA_bcasttest_DEPENDENCIES) 
 	@rm -f bcasttest$(EXEEXT)
@@ -1498,6 +1402,10 @@ nbredscatinter$(EXEEXT): $(nbredscatinter_OBJECTS) $(nbredscatinter_DEPENDENCIES
 	@rm -f nbredscatinter$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(nbredscatinter_OBJECTS) $(nbredscatinter_LDADD) $(LIBS)
 
+neighb_coll$(EXEEXT): $(neighb_coll_OBJECTS) $(neighb_coll_DEPENDENCIES) $(EXTRA_neighb_coll_DEPENDENCIES) 
+	@rm -f neighb_coll$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(neighb_coll_OBJECTS) $(neighb_coll_LDADD) $(LIBS)
+
 nonblocking$(EXEEXT): $(nonblocking_OBJECTS) $(nonblocking_DEPENDENCIES) $(EXTRA_nonblocking_DEPENDENCIES) 
 	@rm -f nonblocking$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(nonblocking_OBJECTS) $(nonblocking_LDADD) $(LIBS)
@@ -1659,9 +1567,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alltoallw1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alltoallw2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alltoallw_zeros.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcast.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcast_comm_world-bcast.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcast_min_datatypes-bcast.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcast__BASIC__L24-bcast.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcast__BASIC__L25-bcast.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcast__STRUCT__L35-bcast.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcasttest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcastzerotype.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/coll10.Po@am__quote@
@@ -1715,6 +1623,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbredscat-redscat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbredscat3-redscat3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nbredscatinter-redscatinter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/neighb_coll.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nonblocking.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nonblocking2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nonblocking3.Po@am__quote@
@@ -1766,33 +1675,47 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-bcast_comm_world-bcast.o: bcast.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast_comm_world_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bcast_comm_world-bcast.o -MD -MP -MF $(DEPDIR)/bcast_comm_world-bcast.Tpo -c -o bcast_comm_world-bcast.o `test -f 'bcast.c' || echo '$(srcdir)/'`bcast.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bcast_comm_world-bcast.Tpo $(DEPDIR)/bcast_comm_world-bcast.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bcast.c' object='bcast_comm_world-bcast.o' libtool=no @AMDEPBACKSLASH@
+bcast__BASIC__L24-bcast.o: bcast.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast__BASIC__L24_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bcast__BASIC__L24-bcast.o -MD -MP -MF $(DEPDIR)/bcast__BASIC__L24-bcast.Tpo -c -o bcast__BASIC__L24-bcast.o `test -f 'bcast.c' || echo '$(srcdir)/'`bcast.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bcast__BASIC__L24-bcast.Tpo $(DEPDIR)/bcast__BASIC__L24-bcast.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bcast.c' object='bcast__BASIC__L24-bcast.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast_comm_world_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bcast_comm_world-bcast.o `test -f 'bcast.c' || echo '$(srcdir)/'`bcast.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast__BASIC__L24_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bcast__BASIC__L24-bcast.o `test -f 'bcast.c' || echo '$(srcdir)/'`bcast.c
 
-bcast_comm_world-bcast.obj: bcast.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast_comm_world_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bcast_comm_world-bcast.obj -MD -MP -MF $(DEPDIR)/bcast_comm_world-bcast.Tpo -c -o bcast_comm_world-bcast.obj `if test -f 'bcast.c'; then $(CYGPATH_W) 'bcast.c'; else $(CYGPATH_W) '$(srcdir)/bcast.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bcast_comm_world-bcast.Tpo $(DEPDIR)/bcast_comm_world-bcast.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bcast.c' object='bcast_comm_world-bcast.obj' libtool=no @AMDEPBACKSLASH@
+bcast__BASIC__L24-bcast.obj: bcast.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast__BASIC__L24_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bcast__BASIC__L24-bcast.obj -MD -MP -MF $(DEPDIR)/bcast__BASIC__L24-bcast.Tpo -c -o bcast__BASIC__L24-bcast.obj `if test -f 'bcast.c'; then $(CYGPATH_W) 'bcast.c'; else $(CYGPATH_W) '$(srcdir)/bcast.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bcast__BASIC__L24-bcast.Tpo $(DEPDIR)/bcast__BASIC__L24-bcast.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bcast.c' object='bcast__BASIC__L24-bcast.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast_comm_world_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bcast_comm_world-bcast.obj `if test -f 'bcast.c'; then $(CYGPATH_W) 'bcast.c'; else $(CYGPATH_W) '$(srcdir)/bcast.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast__BASIC__L24_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bcast__BASIC__L24-bcast.obj `if test -f 'bcast.c'; then $(CYGPATH_W) 'bcast.c'; else $(CYGPATH_W) '$(srcdir)/bcast.c'; fi`
 
-bcast_min_datatypes-bcast.o: bcast.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast_min_datatypes_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bcast_min_datatypes-bcast.o -MD -MP -MF $(DEPDIR)/bcast_min_datatypes-bcast.Tpo -c -o bcast_min_datatypes-bcast.o `test -f 'bcast.c' || echo '$(srcdir)/'`bcast.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bcast_min_datatypes-bcast.Tpo $(DEPDIR)/bcast_min_datatypes-bcast.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bcast.c' object='bcast_min_datatypes-bcast.o' libtool=no @AMDEPBACKSLASH@
+bcast__BASIC__L25-bcast.o: bcast.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast__BASIC__L25_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bcast__BASIC__L25-bcast.o -MD -MP -MF $(DEPDIR)/bcast__BASIC__L25-bcast.Tpo -c -o bcast__BASIC__L25-bcast.o `test -f 'bcast.c' || echo '$(srcdir)/'`bcast.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bcast__BASIC__L25-bcast.Tpo $(DEPDIR)/bcast__BASIC__L25-bcast.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bcast.c' object='bcast__BASIC__L25-bcast.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast_min_datatypes_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bcast_min_datatypes-bcast.o `test -f 'bcast.c' || echo '$(srcdir)/'`bcast.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast__BASIC__L25_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bcast__BASIC__L25-bcast.o `test -f 'bcast.c' || echo '$(srcdir)/'`bcast.c
 
-bcast_min_datatypes-bcast.obj: bcast.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast_min_datatypes_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bcast_min_datatypes-bcast.obj -MD -MP -MF $(DEPDIR)/bcast_min_datatypes-bcast.Tpo -c -o bcast_min_datatypes-bcast.obj `if test -f 'bcast.c'; then $(CYGPATH_W) 'bcast.c'; else $(CYGPATH_W) '$(srcdir)/bcast.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bcast_min_datatypes-bcast.Tpo $(DEPDIR)/bcast_min_datatypes-bcast.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bcast.c' object='bcast_min_datatypes-bcast.obj' libtool=no @AMDEPBACKSLASH@
+bcast__BASIC__L25-bcast.obj: bcast.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast__BASIC__L25_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bcast__BASIC__L25-bcast.obj -MD -MP -MF $(DEPDIR)/bcast__BASIC__L25-bcast.Tpo -c -o bcast__BASIC__L25-bcast.obj `if test -f 'bcast.c'; then $(CYGPATH_W) 'bcast.c'; else $(CYGPATH_W) '$(srcdir)/bcast.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bcast__BASIC__L25-bcast.Tpo $(DEPDIR)/bcast__BASIC__L25-bcast.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bcast.c' object='bcast__BASIC__L25-bcast.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast_min_datatypes_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bcast_min_datatypes-bcast.obj `if test -f 'bcast.c'; then $(CYGPATH_W) 'bcast.c'; else $(CYGPATH_W) '$(srcdir)/bcast.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast__BASIC__L25_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bcast__BASIC__L25-bcast.obj `if test -f 'bcast.c'; then $(CYGPATH_W) 'bcast.c'; else $(CYGPATH_W) '$(srcdir)/bcast.c'; fi`
+
+bcast__STRUCT__L35-bcast.o: bcast.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast__STRUCT__L35_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bcast__STRUCT__L35-bcast.o -MD -MP -MF $(DEPDIR)/bcast__STRUCT__L35-bcast.Tpo -c -o bcast__STRUCT__L35-bcast.o `test -f 'bcast.c' || echo '$(srcdir)/'`bcast.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bcast__STRUCT__L35-bcast.Tpo $(DEPDIR)/bcast__STRUCT__L35-bcast.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bcast.c' object='bcast__STRUCT__L35-bcast.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast__STRUCT__L35_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bcast__STRUCT__L35-bcast.o `test -f 'bcast.c' || echo '$(srcdir)/'`bcast.c
+
+bcast__STRUCT__L35-bcast.obj: bcast.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast__STRUCT__L35_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bcast__STRUCT__L35-bcast.obj -MD -MP -MF $(DEPDIR)/bcast__STRUCT__L35-bcast.Tpo -c -o bcast__STRUCT__L35-bcast.obj `if test -f 'bcast.c'; then $(CYGPATH_W) 'bcast.c'; else $(CYGPATH_W) '$(srcdir)/bcast.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bcast__STRUCT__L35-bcast.Tpo $(DEPDIR)/bcast__STRUCT__L35-bcast.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bcast.c' object='bcast__STRUCT__L35-bcast.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bcast__STRUCT__L35_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bcast__STRUCT__L35-bcast.obj `if test -f 'bcast.c'; then $(CYGPATH_W) 'bcast.c'; else $(CYGPATH_W) '$(srcdir)/bcast.c'; fi`
 
 nballtoall1-alltoall1.o: alltoall1.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nballtoall1_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nballtoall1-alltoall1.o -MD -MP -MF $(DEPDIR)/nballtoall1-alltoall1.Tpo -c -o nballtoall1-alltoall1.o `test -f 'alltoall1.c' || echo '$(srcdir)/'`alltoall1.c
@@ -2253,16 +2176,15 @@ uninstall-am:
 $(top_builddir)/util/mtest.$(OBJEXT): $(top_srcdir)/util/mtest.c
 	(cd $(top_builddir)/util && $(MAKE) mtest.$(OBJEXT))
 
-$(top_builddir)/util/mtest_datatype.$(OBJEXT): $(top_srcdir)/util/mtest_datatype.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype.$(OBJEXT))
+$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+	(cd $(top_builddir)/dtpools && $(MAKE))
 
-$(top_builddir)/util/mtest_datatype_gen.$(OBJEXT): $(top_srcdir)/util/mtest_datatype_gen.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype_gen.$(OBJEXT))
+SUMMARY_BASENAME ?= summary
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
-		-mpiexec=${MPIEXEC} -xmlfile=summary.xml \
-		-tapfile=summary.tap -junitfile=summary.junit.xml
+		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
+		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

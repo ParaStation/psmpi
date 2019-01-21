@@ -1,5 +1,5 @@
 # This Makefile.am generated automatically by f77tof90
-# from test/mpi/f77/datatype/Makefile.am.  DO NOT EDIT
+# from f77/datatype/Makefile.am.  DO NOT EDIT
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
@@ -31,8 +31,8 @@ if MAINTAINER_MODE
 # change its contents
 $(srcdir)/Makefile.am: $(srcdir)/Makefile.am-stamp
 
-$(srcdir)/Makefile.am-stamp: $(master_top_srcdir)/test/mpi/f77/datatype/Makefile.am $(master_top_srcdir)/maint/f77tof90
-	( cd $(master_top_srcdir) && ./maint/f77tof90 test/mpi/f77/datatype test/mpi/f90/datatype Makefile.am Makefile.ap )
+$(srcdir)/Makefile.am-stamp: $(top_srcdir)/f77/datatype/Makefile.am $(top_srcdir)/maint/f77tof90
+	( cd $(top_srcdir) && ./maint/f77tof90 f77/datatype f90/datatype Makefile.am Makefile.ap )
 
 MAINTAINERCLEANFILES = Makefile.am-stamp
 EXTRA_DIST += Makefile.am-stamp testlist.ap Makefile.ap
@@ -51,4 +51,3 @@ kinds_SOURCES      = kinds.f90
 trf90_SOURCES      = trf90.f90
 get_elem_d_SOURCES = get_elem_d.f90
 get_elem_u_SOURCES = get_elem_u.f90
-

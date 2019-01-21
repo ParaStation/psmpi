@@ -1,4 +1,4 @@
-/* This file created from test/mpi/f77/io/c2f2cio.c with f77tof90 */
+/* This file created from f77/io/c2f2cio.c with f77tof90 */
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
@@ -90,8 +90,7 @@ void f2cfile_(int *file)
                        MPI_INFO_NULL, &cFile);
     if (rc) {
         *file = 0;
-    }
-    else {
+    } else {
         *file = MPI_File_c2f(cFile);
     }
 }

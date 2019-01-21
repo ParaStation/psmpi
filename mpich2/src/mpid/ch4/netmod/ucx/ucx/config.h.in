@@ -1,0 +1,539 @@
+/* config.h.in.  Generated from configure.ac by autoheader.  */
+
+
+#ifndef UCX_CONFIG_H
+#define UCX_CONFIG_H
+
+
+/* Enable assertions */
+#undef ENABLE_ASSERT
+
+/* Enable collecting data */
+#undef ENABLE_DEBUG_DATA
+
+/* Enable fault injection code */
+#undef ENABLE_FAULT_INJECTION
+
+/* Enable memory tracking */
+#undef ENABLE_MEMTRACK
+
+/* Enable thread support in UCP and UCT */
+#undef ENABLE_MT
+
+/* Enable checking user parameters */
+#undef ENABLE_PARAMS_CHECK
+
+/* Enable statistics */
+#undef ENABLE_STATS
+
+/* Enable symbol override */
+#undef ENABLE_SYMBOL_OVERRIDE
+
+/* Enable tuning */
+#undef ENABLE_TUNING
+
+/* Check attribute [optimize] */
+#undef HAVE_ATTRIBUTE_NOOPTIMIZE
+
+/* user defined cache line size */
+#undef HAVE_CACHE_LINE_SIZE
+
+/* CMA support */
+#undef HAVE_CMA
+
+/* Define to 1 if you have the `cplus_demangle' function. */
+#undef HAVE_CPLUS_DEMANGLE
+
+/* Disable the use of CUDA */
+#undef HAVE_CUDA
+
+/* Define to 1 if you have the <cuda.h> header file. */
+#undef HAVE_CUDA_H
+
+/* Define to 1 if you have the <cuda_runtime.h> header file. */
+#undef HAVE_CUDA_RUNTIME_H
+
+/* Define to 1 if you have the declaration of `asprintf', and to 0 if you
+   don't. */
+#undef HAVE_DECL_ASPRINTF
+
+/* Define to 1 if you have the declaration of `basename', and to 0 if you
+   don't. */
+#undef HAVE_DECL_BASENAME
+
+/* Define to 1 if you have the declaration of `CPU_ISSET', and to 0 if you
+   don't. */
+#undef HAVE_DECL_CPU_ISSET
+
+/* Define to 1 if you have the declaration of `CPU_ZERO', and to 0 if you
+   don't. */
+#undef HAVE_DECL_CPU_ZERO
+
+/* Define to 1 if you have the declaration of `ethtool_cmd_speed', and to 0 if
+   you don't. */
+#undef HAVE_DECL_ETHTOOL_CMD_SPEED
+
+/* Define to 1 if you have the declaration of `fmemopen', and to 0 if you
+   don't. */
+#undef HAVE_DECL_FMEMOPEN
+
+/* Define to 1 if you have the declaration of `F_SETOWN_EX', and to 0 if you
+   don't. */
+#undef HAVE_DECL_F_SETOWN_EX
+
+/* Define to 1 if you have the declaration of `hsaKmtProcessVMRead', and to 0
+   if you don't. */
+#undef HAVE_DECL_HSAKMTPROCESSVMREAD
+
+/* Define to 1 if you have the declaration of `hsaKmtProcessVMWrite', and to 0
+   if you don't. */
+#undef HAVE_DECL_HSAKMTPROCESSVMWRITE
+
+/* Define to 1 if you have the declaration of `ibv_cmd_modify_qp', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IBV_CMD_MODIFY_QP
+
+/* Define to 1 if you have the declaration of `IBV_EVENT_GID_CHANGE', and to 0
+   if you don't. */
+#undef HAVE_DECL_IBV_EVENT_GID_CHANGE
+
+/* Define to 1 if you have the declaration of `IBV_EXP_ACCESS_ALLOCATE_MR',
+   and to 0 if you don't. */
+#undef HAVE_DECL_IBV_EXP_ACCESS_ALLOCATE_MR
+
+/* Define to 1 if you have the declaration of `IBV_EXP_ACCESS_ON_DEMAND', and
+   to 0 if you don't. */
+#undef HAVE_DECL_IBV_EXP_ACCESS_ON_DEMAND
+
+/* Define to 1 if you have the declaration of `IBV_EXP_ATOMIC_HCA_REPLY_BE',
+   and to 0 if you don't. */
+#undef HAVE_DECL_IBV_EXP_ATOMIC_HCA_REPLY_BE
+
+/* Define to 1 if you have the declaration of `IBV_EXP_CQ_IGNORE_OVERRUN', and
+   to 0 if you don't. */
+#undef HAVE_DECL_IBV_EXP_CQ_IGNORE_OVERRUN
+
+/* Define to 1 if you have the declaration of `IBV_EXP_CQ_MODERATION', and to
+   0 if you don't. */
+#undef HAVE_DECL_IBV_EXP_CQ_MODERATION
+
+/* Define to 1 if you have the declaration of `ibv_exp_create_qp', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IBV_EXP_CREATE_QP
+
+/* Define to 1 if you have the declaration of `ibv_exp_create_srq', and to 0
+   if you don't. */
+#undef HAVE_DECL_IBV_EXP_CREATE_SRQ
+
+/* Define to 1 if you have the declaration of
+   `IBV_EXP_DCT_OOO_RW_DATA_PLACEMENT', and to 0 if you don't. */
+#undef HAVE_DECL_IBV_EXP_DCT_OOO_RW_DATA_PLACEMENT
+
+/* Define to 1 if you have the declaration of `IBV_EXP_DEVICE_DC_TRANSPORT',
+   and to 0 if you don't. */
+#undef HAVE_DECL_IBV_EXP_DEVICE_DC_TRANSPORT
+
+/* Define to 1 if you have the declaration of `IBV_EXP_DEVICE_MR_ALLOCATE',
+   and to 0 if you don't. */
+#undef HAVE_DECL_IBV_EXP_DEVICE_MR_ALLOCATE
+
+/* Define to 1 if you have the declaration of `IBV_EXP_MR_INDIRECT_KLMS', and
+   to 0 if you don't. */
+#undef HAVE_DECL_IBV_EXP_MR_INDIRECT_KLMS
+
+/* Define to 1 if you have the declaration of `IBV_EXP_ODP_SUPPORT_IMPLICIT',
+   and to 0 if you don't. */
+#undef HAVE_DECL_IBV_EXP_ODP_SUPPORT_IMPLICIT
+
+/* Define to 1 if you have the declaration of `ibv_exp_post_send', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IBV_EXP_POST_SEND
+
+/* Define to 1 if you have the declaration of `ibv_exp_prefetch_mr', and to 0
+   if you don't. */
+#undef HAVE_DECL_IBV_EXP_PREFETCH_MR
+
+/* Define to 1 if you have the declaration of `IBV_EXP_PREFETCH_WRITE_ACCESS',
+   and to 0 if you don't. */
+#undef HAVE_DECL_IBV_EXP_PREFETCH_WRITE_ACCESS
+
+/* Define to 1 if you have the declaration of `IBV_EXP_QPT_DC_INI', and to 0
+   if you don't. */
+#undef HAVE_DECL_IBV_EXP_QPT_DC_INI
+
+/* Define to 1 if you have the declaration of `IBV_EXP_QP_CREATE_UMR', and to
+   0 if you don't. */
+#undef HAVE_DECL_IBV_EXP_QP_CREATE_UMR
+
+/* Define to 1 if you have the declaration of
+   `IBV_EXP_QP_INIT_ATTR_ATOMICS_ARG', and to 0 if you don't. */
+#undef HAVE_DECL_IBV_EXP_QP_INIT_ATTR_ATOMICS_ARG
+
+/* Define to 1 if you have the declaration of
+   `IBV_EXP_QP_OOO_RW_DATA_PLACEMENT', and to 0 if you don't. */
+#undef HAVE_DECL_IBV_EXP_QP_OOO_RW_DATA_PLACEMENT
+
+/* Define to 1 if you have the declaration of `ibv_exp_reg_mr', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IBV_EXP_REG_MR
+
+/* Define to 1 if you have the declaration of
+   `IBV_EXP_SEND_EXT_ATOMIC_INLINE', and to 0 if you don't. */
+#undef HAVE_DECL_IBV_EXP_SEND_EXT_ATOMIC_INLINE
+
+/* Define to 1 if you have the declaration of `ibv_exp_setenv', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IBV_EXP_SETENV
+
+/* Define to 1 if you have the declaration of
+   `IBV_EXP_WR_EXT_MASKED_ATOMIC_CMP_AND_SWP', and to 0 if you don't. */
+#undef HAVE_DECL_IBV_EXP_WR_EXT_MASKED_ATOMIC_CMP_AND_SWP
+
+/* Define to 1 if you have the declaration of
+   `IBV_EXP_WR_EXT_MASKED_ATOMIC_FETCH_AND_ADD', and to 0 if you don't. */
+#undef HAVE_DECL_IBV_EXP_WR_EXT_MASKED_ATOMIC_FETCH_AND_ADD
+
+/* Define to 1 if you have the declaration of `IBV_EXP_WR_NOP', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IBV_EXP_WR_NOP
+
+/* Define to 1 if you have the declaration of `IBV_EXP_WR_UMR_FILL', and to 0
+   if you don't. */
+#undef HAVE_DECL_IBV_EXP_WR_UMR_FILL
+
+/* Define to 1 if you have the declaration of `IBV_LINK_LAYER_ETHERNET', and
+   to 0 if you don't. */
+#undef HAVE_DECL_IBV_LINK_LAYER_ETHERNET
+
+/* Define to 1 if you have the declaration of `IBV_LINK_LAYER_INFINIBAND', and
+   to 0 if you don't. */
+#undef HAVE_DECL_IBV_LINK_LAYER_INFINIBAND
+
+/* Define to 1 if you have the declaration of `ibv_mlx5_exp_get_cq_info', and
+   to 0 if you don't. */
+#undef HAVE_DECL_IBV_MLX5_EXP_GET_CQ_INFO
+
+/* Define to 1 if you have the declaration of `ibv_mlx5_exp_get_qp_info', and
+   to 0 if you don't. */
+#undef HAVE_DECL_IBV_MLX5_EXP_GET_QP_INFO
+
+/* Define to 1 if you have the declaration of `ibv_mlx5_exp_get_srq_info', and
+   to 0 if you don't. */
+#undef HAVE_DECL_IBV_MLX5_EXP_GET_SRQ_INFO
+
+/* Define to 1 if you have the declaration of `ibv_mlx5_exp_update_cq_ci', and
+   to 0 if you don't. */
+#undef HAVE_DECL_IBV_MLX5_EXP_UPDATE_CQ_CI
+
+/* Define to 1 if you have the declaration of `ibv_wc_status_str', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IBV_WC_STATUS_STR
+
+/* Define to 1 if you have the declaration of `MLX5_WQE_CTRL_SOLICITED', and
+   to 0 if you don't. */
+#undef HAVE_DECL_MLX5_WQE_CTRL_SOLICITED
+
+/* Define to 1 if you have the declaration of `SPEED_UNKNOWN', and to 0 if you
+   don't. */
+#undef HAVE_DECL_SPEED_UNKNOWN
+
+/* Define to 1 if you have the declaration of `strdupa', and to 0 if you
+   don't. */
+#undef HAVE_DECL_STRDUPA
+
+/* Define to 1 if you have the declaration of `__ppc_get_timebase_freq', and
+   to 0 if you don't. */
+#undef HAVE_DECL___PPC_GET_TIMEBASE_FREQ
+
+/* Enable detailed backtrace */
+#undef HAVE_DETAILED_BACKTRACE
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* IB UMR support */
+#undef HAVE_EXP_UMR
+
+/* IB UMR new API */
+#undef HAVE_EXP_UMR_NEW_API
+
+/* Define to 1 if you have the <gdrapi.h> header file. */
+#undef HAVE_GDRAPI_H
+
+/* Disable the use of GDR_COPY */
+#undef HAVE_GDR_COPY
+
+/* high-resolution hardware timer disabled */
+#undef HAVE_HW_TIMER
+
+/* IB support */
+#undef HAVE_IB
+
+/* IB QP Create UMR support */
+#undef HAVE_IBV_EXP_QP_CREATE_UMR
+
+/* Support UMR max caps v2 */
+#undef HAVE_IBV_EXP_QP_CREATE_UMR_CAPS
+
+/* IB extended atomics support */
+#undef HAVE_IB_EXT_ATOMICS
+
+/* Define to 1 if you have the <infiniband/mlx5_hw.h> header file. */
+#undef HAVE_INFINIBAND_MLX5_HW_H
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <jni.h> header file. */
+#undef HAVE_JNI_H
+
+/* Define to 1 if you have the <jni_md.h> header file. */
+#undef HAVE_JNI_MD_H
+
+/* Disable the use of KNEM */
+#undef HAVE_KNEM
+
+/* Define to 1 if you have the <libiberty.h> header file. */
+#undef HAVE_LIBIBERTY_H
+
+/* Define to 1 if you have the <libiberty/libiberty.h> header file. */
+#undef HAVE_LIBIBERTY_LIBIBERTY_H
+
+/* Define to 1 if you have the `rt' library (-lrt). */
+#undef HAVE_LIBRT
+
+/* Define to 1 if you have the `malloc_get_state' function. */
+#undef HAVE_MALLOC_GET_STATE
+
+/* malloc hooks support */
+#undef HAVE_MALLOC_HOOK
+
+/* Define to 1 if you have the `malloc_set_state' function. */
+#undef HAVE_MALLOC_SET_STATE
+
+/* have masked atomic endianness */
+#undef HAVE_MASKED_ATOMICS_ENDIANNESS
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* mlx5 bare-metal support */
+#undef HAVE_MLX5_HW
+
+/* MPI support */
+#undef HAVE_MPI
+
+/* Define to 1 to enable NUMA support */
+#undef HAVE_NUMA
+
+/* Define to 1 if you have the <numaif.h> header file. */
+#undef HAVE_NUMAIF_H
+
+/* Define to 1 if you have the <numa.h> header file. */
+#undef HAVE_NUMA_H
+
+/* Enable profiling */
+#undef HAVE_PROFILING
+
+/* Disable the use of ROCm */
+#undef HAVE_ROCM
+
+/* RTE support */
+#undef HAVE_RTE
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if the system has the type `struct bitmask'. */
+#undef HAVE_STRUCT_BITMASK
+
+/* Define to 1 if the system has the type `struct dl_phdr_info'. */
+#undef HAVE_STRUCT_DL_PHDR_INFO
+
+/* Define to 1 if `element.dct' is a member of `struct ibv_async_event'. */
+#undef HAVE_STRUCT_IBV_ASYNC_EVENT_ELEMENT_DCT
+
+/* Define to 1 if `dc_offload_params' is a member of `struct
+   ibv_exp_create_srq_attr'. */
+#undef HAVE_STRUCT_IBV_EXP_CREATE_SRQ_ATTR_DC_OFFLOAD_PARAMS
+
+/* Define to 1 if `inline_size' is a member of `struct ibv_exp_dct_init_attr'.
+   */
+#undef HAVE_STRUCT_IBV_EXP_DCT_INIT_ATTR_INLINE_SIZE
+
+/* Define to 1 if `exp_device_cap_flags' is a member of `struct
+   ibv_exp_device_attr'. */
+#undef HAVE_STRUCT_IBV_EXP_DEVICE_ATTR_EXP_DEVICE_CAP_FLAGS
+
+/* Define to 1 if `odp_caps' is a member of `struct ibv_exp_device_attr'. */
+#undef HAVE_STRUCT_IBV_EXP_DEVICE_ATTR_ODP_CAPS
+
+/* Define to 1 if `odp_caps.per_transport_caps.dc_odp_caps' is a member of
+   `struct ibv_exp_device_attr'. */
+#undef HAVE_STRUCT_IBV_EXP_DEVICE_ATTR_ODP_CAPS_PER_TRANSPORT_CAPS_DC_ODP_CAPS
+
+/* Define to 1 if `odp_mr_max_size' is a member of `struct
+   ibv_exp_device_attr'. */
+#undef HAVE_STRUCT_IBV_EXP_DEVICE_ATTR_ODP_MR_MAX_SIZE
+
+/* Define to 1 if `max_inl_recv' is a member of `struct ibv_exp_qp_init_attr'.
+   */
+#undef HAVE_STRUCT_IBV_EXP_QP_INIT_ATTR_MAX_INL_RECV
+
+/* Define to 1 if `umr_caps' is a member of `struct ibv_exp_qp_init_attr'. */
+#undef HAVE_STRUCT_IBV_EXP_QP_INIT_ATTR_UMR_CAPS
+
+/* Define to 1 if `bf.need_lock' is a member of `struct ibv_mlx5_qp_info'. */
+#undef HAVE_STRUCT_IBV_MLX5_QP_INFO_BF_NEED_LOCK
+
+/* Define to 1 if `rmac' is a member of `struct mlx5_grh_av'. */
+#undef HAVE_STRUCT_MLX5_GRH_AV_RMAC
+
+/* Define to 1 if `base' is a member of `struct mlx5_wqe_av'. */
+#undef HAVE_STRUCT_MLX5_WQE_AV_BASE
+
+/* Define to 1 if you have the <sys/platform/ppc.h> header file. */
+#undef HAVE_SYS_PLATFORM_PPC_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <sys/uio.h> header file. */
+#undef HAVE_SYS_UIO_H
+
+/* Connection manager support */
+#undef HAVE_TL_CM
+
+/* DC transport support */
+#undef HAVE_TL_DC
+
+/* RC transport support */
+#undef HAVE_TL_RC
+
+/* UD transport support */
+#undef HAVE_TL_UD
+
+/* Define if UGNI transport exists. */
+#undef HAVE_TL_UGNI
+
+/* Use ptmalloc-2.8.6 version */
+#undef HAVE_UCM_PTMALLOC286
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* IB experimental verbs */
+#undef HAVE_VERBS_EXP_H
+
+/* Disable the use of XPMEM */
+#undef HAVE_XPMEM
+
+/* IB Tag Matching support */
+#undef IBV_EXP_HW_TM
+
+/* DC Tag Matching support */
+#undef IBV_EXP_HW_TM_DC
+
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
+#undef LT_OBJDIR
+
+/* Define to 1 to disable Valgrind annotations. */
+#undef NVALGRIND
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Highest log level */
+#undef UCS_MAX_LOG_LEVEL
+
+/* Enable packet header inspection/rewriting in UCT/UD */
+#undef UCT_UD_EP_DEBUG_HOOKS
+
+/* UCX configure flags */
+#undef UCX_CONFIGURE_FLAGS
+
+/* Enable extensions on AIX 3, Interix.  */
+#ifndef _ALL_SOURCE
+# undef _ALL_SOURCE
+#endif
+/* Enable GNU extensions on systems that have them.  */
+#ifndef _GNU_SOURCE
+# undef _GNU_SOURCE
+#endif
+/* Enable threading extensions on Solaris.  */
+#ifndef _POSIX_PTHREAD_SEMANTICS
+# undef _POSIX_PTHREAD_SEMANTICS
+#endif
+/* Enable extensions on HP NonStop.  */
+#ifndef _TANDEM_SOURCE
+# undef _TANDEM_SOURCE
+#endif
+/* Enable general extensions on Solaris.  */
+#ifndef __EXTENSIONS__
+# undef __EXTENSIONS__
+#endif
+
+
+/* Version number of package */
+#undef VERSION
+
+/* Define to 1 if on MINIX. */
+#undef _MINIX
+
+/* Define to 2 if the system does not provide POSIX.1 features except with
+   this defined. */
+#undef _POSIX_1_SOURCE
+
+/* Define to 1 if you need to in order for `stat' and other things to work. */
+#undef _POSIX_SOURCE
+
+/* Define to the equivalent of the C99 'restrict' keyword, or to
+   nothing if this is not supported.  Do not define if restrict is
+   supported directly.  */
+#undef restrict
+/* Work around a bug in Sun C++: it does not support _Restrict or
+   __restrict__, even though the corresponding Sun C compiler ends up with
+   "#define restrict _Restrict" or "#define restrict __restrict__" in the
+   previous line.  Perhaps some future version of Sun C++ will work with
+   restrict; if so, hopefully it defines __RESTRICT like Sun C does.  */
+#if defined __SUNPRO_CC && !defined __RESTRICT
+# define _Restrict
+# define __restrict__
+#endif
+
+
+#endif /* UCX_CONFIG_H */
+

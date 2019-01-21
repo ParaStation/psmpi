@@ -1,9 +1,9 @@
-.TH MPI_Op_create 3 "11/9/2015" " " "MPI"
+.TH MPI_Op_create 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Op_create \-  Creates a user-defined combination function handle 
 .SH SYNOPSIS
 .nf
-int MPI_Op_create(MPI_User_function *user_fn, int commute, MPI_Op *op)
+int MPI_Op_create(MPI_User_function * user_fn, int commute, MPI_Op * op)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -21,14 +21,14 @@ int MPI_Op_create(MPI_User_function *user_fn, int commute, MPI_Op *op)
 .PD 0
 .TP
 .B op 
-- operation (handle) 
+- operation (handle)
 .PD 1
 
 .SH NOTES ON THE USER FUNCTION
 The calling list for the user function type is
 .nf
-typedef void (MPI_User_function) ( void * a, 
-void * b, int * len, MPI_Datatype * ); 
+typedef void (MPI_User_function) (void * a,
+void * b, int * len, MPI_Datatype *);
 .fi
 
 where the operation is 

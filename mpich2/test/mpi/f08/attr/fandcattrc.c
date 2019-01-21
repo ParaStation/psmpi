@@ -48,8 +48,7 @@ int chkcomm2inc_(int *keyval, const int *expected, int *ierr)
     MPI_Comm_get_attr(MPI_COMM_WORLD, *keyval, &val, &flag);
     if (!flag) {
         *ierr = 1;
-    }
-    else {
+    } else {
         if (*val != *expected) {
             /* In some cases, using printf from a c routine linked
              * with a Fortran routine can cause linking difficulties.
@@ -59,7 +58,7 @@ int chkcomm2inc_(int *keyval, const int *expected, int *ierr)
             *ierr = *ierr + 1;
         }
     }
-    return 0;
+    return MTestReturnValue(errs);
 }
 
 /* Attribute delete and copy functions for each type */
@@ -117,5 +116,5 @@ int chkckeyvals_(int *comm_keyval, int *type_keyval, int *win_keyval)
     MPI_Comm_create_keyval(myCommCopyfn, myCommDelfn, comm_keyval, 0);
     MPI_Type_create_keyval(myTypeCopyfn, myTypeDelfn, type_keyval, 0);
     MPI_Win_create_keyval(myWinCopyfn, myWinDelfn, win_keyval, 0);
-    return 0;
+    return MTestReturnValue(errs);
 }

@@ -15,7 +15,7 @@
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Aint_add as PMPI_Aint_add
 #elif defined(HAVE_WEAK_ATTRIBUTE)
-MPI_Aint MPI_Aint_add(MPI_Aint base, MPI_Aint disp) __attribute__((weak,alias("PMPI_Aint_add")));
+MPI_Aint MPI_Aint_add(MPI_Aint base, MPI_Aint disp) __attribute__ ((weak, alias("PMPI_Aint_add")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -47,8 +47,10 @@ to MPI_GET_ADDRESS and disp represents a signed integer displacement. The result
 address is valid only at the process that generated base, and it must correspond
 to a location in the same object referenced by base. The addition is performed in
 a manner that results in the correct MPI_Aint representation of the output address,
-as if the process that originally produced base had called:
+as if the process that originally produced base had called\:
+.vb
     MPI_Get_address((char *) base + disp, &result)
+.ve
 
 .seealso: MPI_Aint_diff
 @*/
@@ -56,13 +58,13 @@ as if the process that originally produced base had called:
 MPI_Aint MPI_Aint_add(MPI_Aint base, MPI_Aint disp)
 {
     MPI_Aint result;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_AINT_ADD);
+    MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_AINT_ADD);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_AINT_ADD);
+    MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPI_AINT_ADD);
     result = MPID_Aint_add(base, disp);
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_AINT_ADD);
+    MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPI_AINT_ADD);
 
     return result;
 }

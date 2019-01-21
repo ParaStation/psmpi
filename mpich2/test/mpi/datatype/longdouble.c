@@ -53,12 +53,11 @@ int main(int argc, char *argv[])
 #endif
         if (errs) {
             printf("found %d errors\n", errs);
-        }
-        else {
+        } else {
             printf(" No errors\n");
         }
     }
 
     MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

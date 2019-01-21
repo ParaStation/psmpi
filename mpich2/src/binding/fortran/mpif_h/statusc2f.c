@@ -8,10 +8,9 @@
  * DO NOT EDIT
  */
 #include "mpi_fortimpl.h"
-/* mpierrs.h and mpierror.h for the error code creation */
-#include "mpierrs.h"
+/* mpir_err.h for the error code creation */
+#include "mpir_err.h"
 #include <stdio.h> 
-#include "mpierror.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Status_c2f */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 

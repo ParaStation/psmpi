@@ -1,4 +1,4 @@
-.TH MPI_Allgatherv 3 "11/9/2015" " " "MPI"
+.TH MPI_Allgatherv 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Allgatherv \-  Gathers data from all tasks and deliver the combined data to all tasks 
 .SH SYNOPSIS
@@ -11,30 +11,30 @@ int MPI_Allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 .PD 0
 .TP
 .B sendbuf 
-- starting address of send buffer (choice) 
+- starting address of send buffer (choice)
 .PD 1
 .PD 0
 .TP
 .B sendcount 
-- number of elements in send buffer (integer) 
+- number of elements in send buffer (integer)
 .PD 1
 .PD 0
 .TP
 .B sendtype 
-- data type of send buffer elements (handle) 
+- data type of send buffer elements (handle)
 .PD 1
 .PD 0
 .TP
 .B recvcounts 
-- integer array (of length group size) 
-containing the number of elements that are to be received from each process 
+- integer array (of length group size)
+containing the number of elements that are to be received from each process
 .PD 1
 .PD 0
 .TP
 .B displs 
-- integer array (of length group size). Entry 
+- integer array (of length group size). Entry
 .I i
-specifies the displacement (relative to recvbuf ) at
+specifies the displacement (relative to recvbuf) at
 which to place the incoming data from process  
 .I i
 
@@ -42,19 +42,19 @@ which to place the incoming data from process
 .PD 0
 .TP
 .B recvtype 
-- data type of receive buffer elements (handle) 
+- data type of receive buffer elements (handle)
 .PD 1
 .PD 0
 .TP
 .B comm 
-- communicator (handle) 
+- communicator (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B recvbuf 
-- address of receive buffer (choice) 
+- address of receive buffer (choice)
 .PD 1
 
 .SH NOTES

@@ -272,12 +272,12 @@ FORT_DLL_SPEC void FORT_CALL mpi_unpack_external_ ( char *v1 FORT_MIXED_LEN(d1),
      int  li;
         while (*p == ' ' && p > v1) p--;
         p++;
-        p1 = (char *)MPIU_Malloc( p-v1 + 1 );
+        p1 = (char *)MPL_malloc( p-v1 + 1, MPL_MEM_OTHER );
         for (li=0; li<(p-v1); li++) { p1[li] = v1[li]; }
         p1[li] = 0; 
     }
     if (v2 == MPIR_F_MPI_BOTTOM) v2 = MPI_BOTTOM;
     if (v5 == MPIR_F_MPI_BOTTOM) v5 = MPI_BOTTOM;
     *ierr = MPI_Unpack_external( p1, v2, *v3, v4, v5, (int)*v6, (MPI_Datatype)(*v7) );
-    MPIU_Free( p1 );
+    MPL_free( p1 );
 }

@@ -57,6 +57,7 @@ MTEST_THREAD_RETURN_TYPE test_intracomm(void *arg)
     MPI_Comm parentcomm = parentcomms[tid];
     MPI_Comm nbrcomm = nbrcomms[tid];
 
+    MPI_Comm_rank(parentcomm, &rank);
     for (i = 0; i < NUM_ITER; i++) {
         cnt = 0;
         if (*(int *) arg == rank)
@@ -70,7 +71,6 @@ MTEST_THREAD_RETURN_TYPE test_intracomm(void *arg)
             MPI_Comm_idup(parentcomm, &comms[j], &reqs[cnt++]);
 
         /* Issue an iscan on parent comm to overlap with the pending idups */
-        MPI_Comm_rank(parentcomm, &rank);
         MPI_Iscan(&rank, &ans[0], 1, MPI_INT, MPI_SUM, parentcomm, &reqs[cnt++]);
         expected[0] = rank * (rank + 1) / 2;
         /* Wait for the first child comm to be ready */
@@ -172,13 +172,11 @@ MTEST_THREAD_RETURN_TYPE test_intercomm(void *arg)
             if (rank == 0) {
                 root = MPI_ROOT;
                 ans[2] = 199;
-            }
-            else {
+            } else {
                 root = MPI_PROC_NULL;
                 ans[2] = 199;   /* not needed, just to make correctness checking easier */
             }
-        }
-        else {
+        } else {
             root = 0;
             ans[2] = 111;       /* garbage value */
         }
@@ -223,7 +221,7 @@ int main(int argc, char **argv)
     MPI_Comm newcomm;
     int toterrs = 0;
 
-    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+    MTest_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
 
     check(provided == MPI_THREAD_MULTIPLE);
     check(NUM_IDUPS1 >= 1 && NUM_IDUPS2 >= 1);
@@ -282,6 +280,5 @@ int main(int argc, char **argv)
         MTestFreeComm(&newcomm);
     }
     MTest_Finalize(toterrs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(toterrs);
 }

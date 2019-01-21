@@ -1,11 +1,11 @@
-.TH MPI_Iscatter 3 "11/9/2015" " " "MPI"
+.TH MPI_Iscatter 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Iscatter \-  Sends data from one process to all other processes in a communicator in a nonblocking way 
 .SH SYNOPSIS
 .nf
 int MPI_Iscatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                  void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
-                 MPI_Comm comm, MPI_Request *request)
+                 MPI_Comm comm, MPI_Request * request)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

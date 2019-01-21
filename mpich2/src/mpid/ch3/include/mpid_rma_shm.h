@@ -4,10 +4,10 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#if !defined(MPID_RMA_SHM_H_INCLUDED)
+#ifndef MPID_RMA_SHM_H_INCLUDED
 #define MPID_RMA_SHM_H_INCLUDED
 
-#include "mpl_utlist.h"
+#include "utlist.h"
 #include "mpid_rma_types.h"
 
 static inline int do_accumulate_op(void *source_buf, int source_count, MPI_Datatype source_dtp,
@@ -254,18 +254,18 @@ static inline int shm_copy(const void *src, int scount, MPI_Datatype stype,
 static inline int MPIDI_CH3I_Shm_put_op(const void *origin_addr, int origin_count, MPI_Datatype
                                         origin_datatype, int target_rank, MPI_Aint target_disp,
                                         int target_count, MPI_Datatype target_datatype,
-                                        MPID_Win * win_ptr)
+                                        MPIR_Win * win_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
     void *base = NULL;
     int disp_unit;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_PUT_OP);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_PUT_OP);
 
-    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_PUT_OP);
+    MPIR_FUNC_VERBOSE_RMA_ENTER(MPID_STATE_MPIDI_CH3I_SHM_PUT_OP);
 
     if (win_ptr->shm_allocated == TRUE) {
         int local_target_rank = win_ptr->comm_ptr->intranode_table[target_rank];
-        MPIU_Assert(local_target_rank >= 0);
+        MPIR_Assert(local_target_rank >= 0);
         base = win_ptr->shm_base_addrs[local_target_rank];
         disp_unit = win_ptr->basic_info_table[target_rank].disp_unit;
     }
@@ -281,7 +281,7 @@ static inline int MPIDI_CH3I_Shm_put_op(const void *origin_addr, int origin_coun
     }
 
   fn_exit:
-    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_PUT_OP);
+    MPIR_FUNC_VERBOSE_RMA_EXIT(MPID_STATE_MPIDI_CH3I_SHM_PUT_OP);
     return mpi_errno;
     /* --BEGIN ERROR HANDLING-- */
   fn_fail:
@@ -297,7 +297,7 @@ static inline int MPIDI_CH3I_Shm_put_op(const void *origin_addr, int origin_coun
 static inline int MPIDI_CH3I_Shm_acc_op(const void *origin_addr, int origin_count, MPI_Datatype
                                         origin_datatype, int target_rank, MPI_Aint target_disp,
                                         int target_count, MPI_Datatype target_datatype, MPI_Op op,
-                                        MPID_Win * win_ptr)
+                                        MPIR_Win * win_ptr)
 {
     void *base = NULL;
     int disp_unit, shm_op = 0;
@@ -308,14 +308,14 @@ static inline int MPIDI_CH3I_Shm_acc_op(const void *origin_addr, int origin_coun
     MPI_Aint predefined_dtp_size, predefined_dtp_extent, predefined_dtp_count;
     MPI_Aint total_len, rest_len;
     MPI_Aint origin_dtp_size;
-    MPID_Datatype *origin_dtp_ptr = NULL;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_ACC_OP);
+    MPIR_Datatype*origin_dtp_ptr = NULL;
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_ACC_OP);
 
-    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_ACC_OP);
+    MPIR_FUNC_VERBOSE_RMA_ENTER(MPID_STATE_MPIDI_CH3I_SHM_ACC_OP);
 
     if (win_ptr->shm_allocated == TRUE) {
         int local_target_rank = win_ptr->comm_ptr->intranode_table[target_rank];
-        MPIU_Assert(local_target_rank >= 0);
+        MPIR_Assert(local_target_rank >= 0);
         shm_op = 1;
         base = win_ptr->shm_base_addrs[local_target_rank];
         disp_unit = win_ptr->basic_info_table[target_rank].disp_unit;
@@ -343,55 +343,55 @@ static inline int MPIDI_CH3I_Shm_acc_op(const void *origin_addr, int origin_coun
     }
 
     /* Get total length of origin data */
-    MPID_Datatype_get_size_macro(origin_datatype, origin_dtp_size);
+    MPIR_Datatype_get_size_macro(origin_datatype, origin_dtp_size);
     total_len = origin_dtp_size * origin_count;
 
-    MPID_Datatype_get_ptr(origin_datatype, origin_dtp_ptr);
-    MPIU_Assert(origin_dtp_ptr != NULL && origin_dtp_ptr->basic_type != MPI_DATATYPE_NULL);
+    MPIR_Datatype_get_ptr(origin_datatype, origin_dtp_ptr);
+    MPIR_Assert(origin_dtp_ptr != NULL && origin_dtp_ptr->basic_type != MPI_DATATYPE_NULL);
     basic_type = origin_dtp_ptr->basic_type;
-    MPID_Datatype_get_size_macro(basic_type, predefined_dtp_size);
+    MPIR_Datatype_get_size_macro(basic_type, predefined_dtp_size);
     predefined_dtp_count = total_len / predefined_dtp_size;
-    MPID_Datatype_get_extent_macro(basic_type, predefined_dtp_extent);
-    MPIU_Assert(predefined_dtp_count > 0 && predefined_dtp_size > 0 && predefined_dtp_extent > 0);
+    MPIR_Datatype_get_extent_macro(basic_type, predefined_dtp_extent);
+    MPIR_Assert(predefined_dtp_count > 0 && predefined_dtp_size > 0 && predefined_dtp_extent > 0);
 
     stream_elem_count = MPIDI_CH3U_Acc_stream_size / predefined_dtp_extent;
     stream_unit_count = (predefined_dtp_count - 1) / stream_elem_count + 1;
-    MPIU_Assert(stream_elem_count > 0 && stream_unit_count > 0);
+    MPIR_Assert(stream_elem_count > 0 && stream_unit_count > 0);
 
     rest_len = total_len;
     for (i = 0; i < stream_unit_count; i++) {
-        MPID_Segment *seg = NULL;
+        MPIR_Segment *seg = NULL;
         void *packed_buf = NULL;
         MPI_Aint first, last;
         int is_predef_contig;
         MPI_Aint stream_offset, stream_size, stream_count;
 
         stream_offset = i * stream_elem_count * predefined_dtp_size;
-        stream_size = MPIR_MIN(stream_elem_count * predefined_dtp_size, rest_len);
+        stream_size = MPL_MIN(stream_elem_count * predefined_dtp_size, rest_len);
         stream_count = stream_size / predefined_dtp_size;
         rest_len -= stream_size;
 
         first = stream_offset;
         last = stream_offset + stream_size;
 
-        packed_buf = MPIU_Malloc(stream_size);
+        packed_buf = MPL_malloc(stream_size, MPL_MEM_BUFFER);
 
-        seg = MPID_Segment_alloc();
+        seg = MPIR_Segment_alloc();
         MPIR_ERR_CHKANDJUMP1(seg == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s",
-                             "MPID_Segment");
-        MPID_Segment_init(origin_addr, origin_count, origin_datatype, seg, 0);
-        MPID_Segment_pack(seg, first, &last, packed_buf);
-        MPID_Segment_free(seg);
+                             "MPIR_Segment");
+        MPIR_Segment_init(origin_addr, origin_count, origin_datatype, seg);
+        MPIR_Segment_pack(seg, first, &last, packed_buf);
+        MPIR_Segment_free(seg);
 
-        MPID_Datatype_is_contig(basic_type, &is_predef_contig);
+        MPIR_Datatype_is_contig(basic_type, &is_predef_contig);
 
         if (!is_predef_contig) {
-            void *tmpbuf = MPIU_Malloc(stream_count * predefined_dtp_extent);
+            void *tmpbuf = MPL_malloc(stream_count * predefined_dtp_extent, MPL_MEM_BUFFER);
             mpi_errno = MPIR_Localcopy(tmpbuf, stream_count, basic_type,
                                        packed_buf, stream_size, MPI_BYTE);
             if (mpi_errno != MPI_SUCCESS)
                 MPIR_ERR_POP(mpi_errno);
-            MPIU_Free(packed_buf);
+            MPL_free(packed_buf);
             packed_buf = tmpbuf;
         }
 
@@ -399,7 +399,7 @@ static inline int MPIDI_CH3I_Shm_acc_op(const void *origin_addr, int origin_coun
             MPIDI_CH3I_SHM_MUTEX_LOCK(win_ptr);
         }
 
-        MPIU_Assert(stream_count == (int) stream_count);
+        MPIR_Assert(stream_count == (int) stream_count);
         mpi_errno = do_accumulate_op((void *) packed_buf, (int) stream_count, basic_type,
                                      (void *) ((char *) base + disp_unit * target_disp),
                                      target_count, target_datatype, stream_offset, op);
@@ -411,11 +411,11 @@ static inline int MPIDI_CH3I_Shm_acc_op(const void *origin_addr, int origin_coun
         if (mpi_errno != MPI_SUCCESS)
             MPIR_ERR_POP(mpi_errno);
 
-        MPIU_Free(packed_buf);
+        MPL_free(packed_buf);
     }
 
   fn_exit:
-    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_ACC_OP);
+    MPIR_FUNC_VERBOSE_RMA_EXIT(MPID_STATE_MPIDI_CH3I_SHM_ACC_OP);
     return mpi_errno;
     /* --BEGIN ERROR HANDLING-- */
   fn_fail:
@@ -433,7 +433,7 @@ static inline int MPIDI_CH3I_Shm_get_acc_op(const void *origin_addr, int origin_
                                             MPI_Datatype result_datatype, int target_rank, MPI_Aint
                                             target_disp, int target_count,
                                             MPI_Datatype target_datatype, MPI_Op op,
-                                            MPID_Win * win_ptr)
+                                            MPIR_Win * win_ptr)
 {
     int disp_unit, shm_locked = 0;
     void *base = NULL;
@@ -443,12 +443,12 @@ static inline int MPIDI_CH3I_Shm_get_acc_op(const void *origin_addr, int origin_
     MPI_Aint predefined_dtp_size, predefined_dtp_extent, predefined_dtp_count;
     MPI_Aint total_len, rest_len;
     MPI_Aint origin_dtp_size;
-    MPID_Datatype *origin_dtp_ptr = NULL;
+    MPIR_Datatype*origin_dtp_ptr = NULL;
     int is_empty_origin = FALSE;
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_GET_ACC_OP);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_GET_ACC_OP);
 
-    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_GET_ACC_OP);
+    MPIR_FUNC_VERBOSE_RMA_ENTER(MPID_STATE_MPIDI_CH3I_SHM_GET_ACC_OP);
 
     /* Judge if origin buffer is empty */
     if (op == MPI_NO_OP)
@@ -456,7 +456,7 @@ static inline int MPIDI_CH3I_Shm_get_acc_op(const void *origin_addr, int origin_
 
     if (win_ptr->shm_allocated == TRUE) {
         int local_target_rank = win_ptr->comm_ptr->intranode_table[target_rank];
-        MPIU_Assert(local_target_rank >= 0);
+        MPIR_Assert(local_target_rank >= 0);
         base = win_ptr->shm_base_addrs[local_target_rank];
         disp_unit = win_ptr->basic_info_table[target_rank].disp_unit;
         MPIDI_CH3I_SHM_MUTEX_LOCK(win_ptr);
@@ -490,59 +490,59 @@ static inline int MPIDI_CH3I_Shm_get_acc_op(const void *origin_addr, int origin_
     }
 
     /* Get total length of origin data */
-    MPID_Datatype_get_size_macro(origin_datatype, origin_dtp_size);
+    MPIR_Datatype_get_size_macro(origin_datatype, origin_dtp_size);
     total_len = origin_dtp_size * origin_count;
 
-    MPID_Datatype_get_ptr(origin_datatype, origin_dtp_ptr);
-    MPIU_Assert(origin_dtp_ptr != NULL && origin_dtp_ptr->basic_type != MPI_DATATYPE_NULL);
+    MPIR_Datatype_get_ptr(origin_datatype, origin_dtp_ptr);
+    MPIR_Assert(origin_dtp_ptr != NULL && origin_dtp_ptr->basic_type != MPI_DATATYPE_NULL);
     basic_type = origin_dtp_ptr->basic_type;
-    MPID_Datatype_get_size_macro(basic_type, predefined_dtp_size);
+    MPIR_Datatype_get_size_macro(basic_type, predefined_dtp_size);
     predefined_dtp_count = total_len / predefined_dtp_size;
-    MPID_Datatype_get_extent_macro(basic_type, predefined_dtp_extent);
-    MPIU_Assert(predefined_dtp_count > 0 && predefined_dtp_size > 0 && predefined_dtp_extent > 0);
+    MPIR_Datatype_get_extent_macro(basic_type, predefined_dtp_extent);
+    MPIR_Assert(predefined_dtp_count > 0 && predefined_dtp_size > 0 && predefined_dtp_extent > 0);
 
     stream_elem_count = MPIDI_CH3U_Acc_stream_size / predefined_dtp_extent;
     stream_unit_count = (predefined_dtp_count - 1) / stream_elem_count + 1;
-    MPIU_Assert(stream_elem_count > 0 && stream_unit_count > 0);
+    MPIR_Assert(stream_elem_count > 0 && stream_unit_count > 0);
 
     rest_len = total_len;
     for (i = 0; i < stream_unit_count; i++) {
-        MPID_Segment *seg = NULL;
+        MPIR_Segment *seg = NULL;
         void *packed_buf = NULL;
         MPI_Aint first, last;
         int is_predef_contig;
         MPI_Aint stream_offset, stream_size, stream_count;
 
         stream_offset = i * stream_elem_count * predefined_dtp_size;
-        stream_size = MPIR_MIN(stream_elem_count * predefined_dtp_size, rest_len);
+        stream_size = MPL_MIN(stream_elem_count * predefined_dtp_size, rest_len);
         stream_count = stream_size / predefined_dtp_size;
         rest_len -= stream_size;
 
         first = stream_offset;
         last = stream_offset + stream_size;
 
-        packed_buf = MPIU_Malloc(stream_size);
+        packed_buf = MPL_malloc(stream_size, MPL_MEM_BUFFER);
 
-        seg = MPID_Segment_alloc();
+        seg = MPIR_Segment_alloc();
         MPIR_ERR_CHKANDJUMP1(seg == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s",
-                             "MPID_Segment");
-        MPID_Segment_init(origin_addr, origin_count, origin_datatype, seg, 0);
-        MPID_Segment_pack(seg, first, &last, packed_buf);
-        MPID_Segment_free(seg);
+                             "MPIR_Segment");
+        MPIR_Segment_init(origin_addr, origin_count, origin_datatype, seg);
+        MPIR_Segment_pack(seg, first, &last, packed_buf);
+        MPIR_Segment_free(seg);
 
-        MPID_Datatype_is_contig(basic_type, &is_predef_contig);
+        MPIR_Datatype_is_contig(basic_type, &is_predef_contig);
 
         if (!is_predef_contig) {
-            void *tmpbuf = MPIU_Malloc(stream_count * predefined_dtp_extent);
+            void *tmpbuf = MPL_malloc(stream_count * predefined_dtp_extent, MPL_MEM_BUFFER);
             mpi_errno = MPIR_Localcopy(tmpbuf, stream_count, basic_type,
                                        packed_buf, stream_size, MPI_BYTE);
             if (mpi_errno != MPI_SUCCESS)
                 MPIR_ERR_POP(mpi_errno);
-            MPIU_Free(packed_buf);
+            MPL_free(packed_buf);
             packed_buf = tmpbuf;
         }
 
-        MPIU_Assert(stream_count == (int) stream_count);
+        MPIR_Assert(stream_count == (int) stream_count);
         mpi_errno = do_accumulate_op((void *) packed_buf, (int) stream_count, basic_type,
                                      (void *) ((char *) base + disp_unit * target_disp),
                                      target_count, target_datatype, stream_offset, op);
@@ -550,7 +550,7 @@ static inline int MPIDI_CH3I_Shm_get_acc_op(const void *origin_addr, int origin_
         if (mpi_errno != MPI_SUCCESS)
             MPIR_ERR_POP(mpi_errno);
 
-        MPIU_Free(packed_buf);
+        MPL_free(packed_buf);
     }
 
     if (shm_locked) {
@@ -559,7 +559,7 @@ static inline int MPIDI_CH3I_Shm_get_acc_op(const void *origin_addr, int origin_
     }
 
   fn_exit:
-    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_ACC_OP);
+    MPIR_FUNC_VERBOSE_RMA_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_ACC_OP);
     return mpi_errno;
     /* --BEGIN ERROR HANDLING-- */
   fn_fail:
@@ -578,18 +578,18 @@ static inline int MPIDI_CH3I_Shm_get_acc_op(const void *origin_addr, int origin_
 static inline int MPIDI_CH3I_Shm_get_op(void *origin_addr, int origin_count,
                                         MPI_Datatype origin_datatype, int target_rank,
                                         MPI_Aint target_disp, int target_count,
-                                        MPI_Datatype target_datatype, MPID_Win * win_ptr)
+                                        MPI_Datatype target_datatype, MPIR_Win * win_ptr)
 {
     void *base = NULL;
     int disp_unit;
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_GET_OP);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_GET_OP);
 
-    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_GET_OP);
+    MPIR_FUNC_VERBOSE_RMA_ENTER(MPID_STATE_MPIDI_CH3I_SHM_GET_OP);
 
     if (win_ptr->shm_allocated == TRUE) {
         int local_target_rank = win_ptr->comm_ptr->intranode_table[target_rank];
-        MPIU_Assert(local_target_rank >= 0);
+        MPIR_Assert(local_target_rank >= 0);
         base = win_ptr->shm_base_addrs[local_target_rank];
         disp_unit = win_ptr->basic_info_table[target_rank].disp_unit;
     }
@@ -605,7 +605,7 @@ static inline int MPIDI_CH3I_Shm_get_op(void *origin_addr, int origin_count,
     }
 
   fn_exit:
-    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_OP);
+    MPIR_FUNC_VERBOSE_RMA_EXIT(MPID_STATE_MPIDI_CH3I_SHM_GET_OP);
     return mpi_errno;
     /* --BEGIN ERROR HANDLING-- */
   fn_fail:
@@ -620,20 +620,20 @@ static inline int MPIDI_CH3I_Shm_get_op(void *origin_addr, int origin_count,
 #define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIDI_CH3I_Shm_cas_op(const void *origin_addr, const void *compare_addr,
                                         void *result_addr, MPI_Datatype datatype, int target_rank,
-                                        MPI_Aint target_disp, MPID_Win * win_ptr)
+                                        MPI_Aint target_disp, MPIR_Win * win_ptr)
 {
     void *base = NULL, *dest_addr = NULL;
     int disp_unit;
     MPI_Aint len;
     int shm_locked = 0;
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_CAS_OP);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_CAS_OP);
 
-    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_CAS_OP);
+    MPIR_FUNC_VERBOSE_RMA_ENTER(MPID_STATE_MPIDI_CH3I_SHM_CAS_OP);
 
     if (win_ptr->shm_allocated == TRUE) {
         int local_target_rank = win_ptr->comm_ptr->intranode_table[target_rank];
-        MPIU_Assert(local_target_rank >= 0);
+        MPIR_Assert(local_target_rank >= 0);
         base = win_ptr->shm_base_addrs[local_target_rank];
         disp_unit = win_ptr->basic_info_table[target_rank].disp_unit;
 
@@ -647,11 +647,11 @@ static inline int MPIDI_CH3I_Shm_cas_op(const void *origin_addr, const void *com
 
     dest_addr = (char *) base + disp_unit * target_disp;
 
-    MPID_Datatype_get_size_macro(datatype, len);
-    MPIU_Memcpy(result_addr, dest_addr, len);
+    MPIR_Datatype_get_size_macro(datatype, len);
+    MPIR_Memcpy(result_addr, dest_addr, len);
 
     if (MPIR_Compare_equal(compare_addr, dest_addr, datatype)) {
-        MPIU_Memcpy(dest_addr, origin_addr, len);
+        MPIR_Memcpy(dest_addr, origin_addr, len);
     }
 
     if (shm_locked) {
@@ -660,7 +660,7 @@ static inline int MPIDI_CH3I_Shm_cas_op(const void *origin_addr, const void *com
     }
 
   fn_exit:
-    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_CAS_OP);
+    MPIR_FUNC_VERBOSE_RMA_EXIT(MPID_STATE_MPIDI_CH3I_SHM_CAS_OP);
     return mpi_errno;
     /* --BEGIN ERROR HANDLING-- */
   fn_fail:
@@ -678,7 +678,7 @@ static inline int MPIDI_CH3I_Shm_cas_op(const void *origin_addr, const void *com
 #define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIDI_CH3I_Shm_fop_op(const void *origin_addr, void *result_addr,
                                         MPI_Datatype datatype, int target_rank,
-                                        MPI_Aint target_disp, MPI_Op op, MPID_Win * win_ptr)
+                                        MPI_Aint target_disp, MPI_Op op, MPIR_Win * win_ptr)
 {
     void *base = NULL, *dest_addr = NULL;
     MPI_User_function *uop = NULL;
@@ -686,13 +686,13 @@ static inline int MPIDI_CH3I_Shm_fop_op(const void *origin_addr, void *result_ad
     MPI_Aint len;
     int one, shm_locked = 0;
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_FOP_OP);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_CH3I_SHM_FOP_OP);
 
-    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_FOP_OP);
+    MPIR_FUNC_VERBOSE_RMA_ENTER(MPID_STATE_MPIDI_CH3I_SHM_FOP_OP);
 
     if (win_ptr->shm_allocated == TRUE) {
         int local_target_rank = win_ptr->comm_ptr->intranode_table[target_rank];
-        MPIU_Assert(local_target_rank >= 0);
+        MPIR_Assert(local_target_rank >= 0);
         base = win_ptr->shm_base_addrs[local_target_rank];
         disp_unit = win_ptr->basic_info_table[target_rank].disp_unit;
 
@@ -706,8 +706,8 @@ static inline int MPIDI_CH3I_Shm_fop_op(const void *origin_addr, void *result_ad
 
     dest_addr = (char *) base + disp_unit * target_disp;
 
-    MPID_Datatype_get_size_macro(datatype, len);
-    MPIU_Memcpy(result_addr, dest_addr, len);
+    MPIR_Datatype_get_size_macro(datatype, len);
+    MPIR_Memcpy(result_addr, dest_addr, len);
 
     uop = MPIR_OP_HDL_TO_FN(op);
     one = 1;
@@ -720,7 +720,7 @@ static inline int MPIDI_CH3I_Shm_fop_op(const void *origin_addr, void *result_ad
     }
 
   fn_exit:
-    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SHM_FOP_OP);
+    MPIR_FUNC_VERBOSE_RMA_EXIT(MPID_STATE_MPIDI_CH3I_SHM_FOP_OP);
     return mpi_errno;
     /* --BEGIN ERROR HANDLING-- */
   fn_fail:

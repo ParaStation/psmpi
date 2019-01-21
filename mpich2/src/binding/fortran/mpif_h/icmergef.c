@@ -267,6 +267,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_intercomm_merge_( MPI_Fint *, MPI_Fint 
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *ierr ){
     int l2;
-    l2 = MPIR_FROM_FLOG(*v2);
+    l2 = MPII_FROM_FLOG(*v2);
     *ierr = MPI_Intercomm_merge( (MPI_Comm)(*v1), l2, (MPI_Comm *)(v3) );
 }

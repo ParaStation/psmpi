@@ -190,6 +190,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -345,6 +346,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -354,12 +356,6 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CPPFLAGS = -I${srcdir}/../include -I../include
 mtestcheck_SOURCES = mtestcheck.c mtest.c
-
-# FIXME: mtest_datatype.h belongs with the other include files, in
-# ../include
-EXTRA_DIST = mtest_datatype.c mtest_datatype.h \
-	mtest_datatype_gen.c
-
 all: all-am
 
 .SUFFIXES:
@@ -632,7 +628,6 @@ uninstall-am:
 
 
 mtest.$(OBJEXT): mtest.c
-mtest_datatype.$(OBJEXT): mtest_datatype.c mtest_datatype.h
 dtypes.$(OBJEXT): dtypes.c
 all-local: mtest.$(OBJEXT) dtypes.$(OBJEXT)
 

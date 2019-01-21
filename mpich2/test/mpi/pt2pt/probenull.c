@@ -24,8 +24,7 @@ int main(int argc, char **argv)
     if (!flag) {
         errs++;
         printf("Iprobe of source=MPI_PROC_NULL returned flag=false\n");
-    }
-    else {
+    } else {
         if (status.MPI_SOURCE != MPI_PROC_NULL) {
             printf("Status.MPI_SOURCE was %d, should be MPI_PROC_NULL\n", status.MPI_SOURCE);
             errs++;
@@ -50,6 +49,5 @@ int main(int argc, char **argv)
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

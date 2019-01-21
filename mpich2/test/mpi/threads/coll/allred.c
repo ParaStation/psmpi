@@ -37,6 +37,8 @@ MTEST_THREAD_RETURN_TYPE test_iallred(void *arg)
     int tid = *(int *) arg;
     int buf[BUF_SIZE];
 
+    MTEST_VG_MEM_INIT(buf, BUF_SIZE * sizeof(int));
+
     if (tid == rank)
         MTestSleep(1);
     MPI_Allreduce(MPI_IN_PLACE, buf, BUF_SIZE, MPI_INT, MPI_BAND, comms[tid]);
@@ -51,7 +53,7 @@ int main(int argc, char **argv)
     int i, provided;
     int errs = 0;
 
-    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+    MTest_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
 
     check(provided == MPI_THREAD_MULTIPLE);
 
@@ -74,7 +76,6 @@ int main(int argc, char **argv)
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
 
-    return 0;
+    return MTestReturnValue(errs);
 }

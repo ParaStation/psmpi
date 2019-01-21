@@ -101,12 +101,14 @@ noinst_PROGRAMS = $(am__EXEEXT_1)
 subdir = test-internal
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cc.m4 \
+	$(top_srcdir)/confdb/aclocal_check_visibility.m4 \
 	$(top_srcdir)/confdb/aclocal_coverage.m4 \
 	$(top_srcdir)/confdb/aclocal_f77.m4 \
 	$(top_srcdir)/confdb/aclocal_fc.m4 \
 	$(top_srcdir)/confdb/aclocal_make.m4 \
 	$(top_srcdir)/confdb/aclocal_romio.m4 \
 	$(top_srcdir)/confdb/aclocal_runlog.m4 \
+	$(top_srcdir)/confdb/aclocal_subcfg.m4 \
 	$(top_srcdir)/confdb/aclocal_util.m4 \
 	$(top_srcdir)/confdb/libtool.m4 \
 	$(top_srcdir)/confdb/ltoptions.m4 \
@@ -306,6 +308,7 @@ MPI_LIB = @MPI_LIB@
 MPI_OFFSET_KIND1 = @MPI_OFFSET_KIND1@
 MPI_OFFSET_KIND2 = @MPI_OFFSET_KIND2@
 MPI_OFFSET_TYPE = @MPI_OFFSET_TYPE@
+MPLLIBNAME = @MPLLIBNAME@
 NEEDS_MPI_FINT = @NEEDS_MPI_FINT@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -344,6 +347,7 @@ TEST_LIBNAME = @TEST_LIBNAME@
 USER_CFLAGS = @USER_CFLAGS@
 USER_FFLAGS = @USER_FFLAGS@
 VERSION = @VERSION@
+VISIBILITY_CFLAGS = @VISIBILITY_CFLAGS@
 WITHIN_KNOWN_MPI_IMPL = @WITHIN_KNOWN_MPI_IMPL@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -390,6 +394,11 @@ master_top_builddir = @master_top_builddir@
 master_top_srcdir = @master_top_srcdir@
 master_topbuild_dir = @master_topbuild_dir@
 mkdir_p = @mkdir_p@
+mpl_dist_srcdir = @mpl_dist_srcdir@
+mpl_includedir = @mpl_includedir@
+mpl_lib = @mpl_lib@
+mpl_libdir = @mpl_libdir@
+mpl_srcdir = @mpl_srcdir@
 oldincludedir = @oldincludedir@
 pdfdir = @pdfdir@
 prefix = @prefix@

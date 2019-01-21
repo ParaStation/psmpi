@@ -1,0 +1,6 @@
+noinst_PROGRAMS += fkeyvaltype__BASIC__L23
+fkeyvaltype__BASIC__L23_CPPFLAGS =  $(AM_CPPFLAGS)
+fkeyvaltype__BASIC__L23_SOURCES = fkeyvaltype.c
+noinst_PROGRAMS += fkeyvaltype__STRUCT__L34
+fkeyvaltype__STRUCT__L34_CPPFLAGS =  -DUSE_DTP_POOL_TYPE__STRUCT  $(AM_CPPFLAGS)
+fkeyvaltype__STRUCT__L34_SOURCES = fkeyvaltype.c

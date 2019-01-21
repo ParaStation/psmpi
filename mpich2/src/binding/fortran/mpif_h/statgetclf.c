@@ -267,6 +267,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_status_set_cancelled_( MPI_Fint *, MPI_
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_status_set_cancelled_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
     int l2;
-    l2 = MPIR_FROM_FLOG(*v2);
+    l2 = MPII_FROM_FLOG(*v2);
     *ierr = MPI_Status_set_cancelled( (MPI_Status *)(v1), l2 );
 }

@@ -1,28 +1,27 @@
-.TH MPI_Group_range_incl 3 "11/9/2015" " " "MPI"
+.TH MPI_Group_range_incl 3 "11/21/2018" " " "MPI"
 .SH NAME
-MPI_Group_range_incl \-  Creates a new group from ranges of ranks in an  existing group 
+MPI_Group_range_incl \-  Creates a new group from ranges of ranks in an existing group 
 .SH SYNOPSIS
 .nf
-int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3], 
-                         MPI_Group *newgroup)
+int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3], MPI_Group * newgroup)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B group 
-- group (handle) 
+- group (handle)
 .PD 1
 .PD 0
 .TP
 .B n 
 - number of triplets in array  
 .I ranges
-(integer) 
+(integer)
 .PD 1
 .PD 0
 .TP
 .B ranges 
-- a one-dimensional array of integer triplets, of the 
+- a one-dimensional array of integer triplets, of the
 form (first rank, last rank, stride) indicating ranks in
 .I group
 or processes to be included in 
@@ -35,7 +34,7 @@ or processes to be included in
 .PD 0
 .TP
 .B newgroup 
-- new group derived from above, in the 
+- new group derived from above, in the
 order defined by  
 .I ranges
 (handle)

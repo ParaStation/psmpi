@@ -1,0 +1,28 @@
+<dir>
+<file name="mpidu_shm_impl.h" info="1542820949"/>
+<file name="mpidu_shm_barrier.c" info="1542820949"/>
+<file name="mpidu_shm.h" info="1542820949"/>
+<file name="mpidu_shm_states.h" info="1542820949"/>
+<file name="mpidu_shm_alloc.c" info="1542820949"/>
+<file name="mpidu_generic_queue.h" info="1542820949"/>
+</dir>
+<data>
+<fileinfo name="mpidu_shm_impl.h">
+</fileinfo>
+<fileinfo name="mpidu_shm_barrier.c">
+MPID_STATE_MPIDU_SHM_BARRIER_INIT MPIDU_shm_barrier_init
+MPID_STATE_MPIDU_SHM_BARRIER MPIDU_shm_barrier
+</fileinfo>
+<fileinfo name="mpidu_shm.h">
+</fileinfo>
+<fileinfo name="mpidu_shm_states.h">
+</fileinfo>
+<fileinfo name="mpidu_shm_alloc.c">
+MPID_STATE_MPIDU_SHM_SEG_ALLOC MPIDU_shm_seg_alloc
+MPID_STATE_MPIDU_SHM_SEG_COMMIT MPIDU_shm_seg_commit
+MPID_STATE_MPIDU_SHM_SEG_DESTROY MPIDU_shm_seg_destroy
+MPID_STATE_MPIDU_SHM_CHECK_ALLOC check_alloc
+</fileinfo>
+<fileinfo name="mpidu_generic_queue.h">
+</fileinfo>
+</data>

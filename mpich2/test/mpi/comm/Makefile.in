@@ -101,7 +101,7 @@ noinst_PROGRAMS = commcreate1$(EXEEXT) dup$(EXEEXT) dupic$(EXEEXT) \
 	cmfree$(EXEEXT) icm$(EXEEXT) cmsplit$(EXEEXT) \
 	cmsplit2$(EXEEXT) cmsplit_type$(EXEEXT) \
 	comm_create_group$(EXEEXT) comm_group_half$(EXEEXT) \
-	comm_group_rand$(EXEEXT) probe-intercomm$(EXEEXT) \
+	comm_group_rand$(EXEEXT) probe_intercomm$(EXEEXT) \
 	comm_idup$(EXEEXT) comm_idup_mul$(EXEEXT) \
 	comm_idup_overlap$(EXEEXT) comm_idup_isend$(EXEEXT) \
 	comm_idup_nb$(EXEEXT) comm_idup_iallreduce$(EXEEXT) \
@@ -130,188 +130,157 @@ cmfree_SOURCES = cmfree.c
 cmfree_OBJECTS = cmfree.$(OBJEXT)
 cmfree_LDADD = $(LDADD)
 cmfree_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 cmsplit_SOURCES = cmsplit.c
 cmsplit_OBJECTS = cmsplit.$(OBJEXT)
 cmsplit_LDADD = $(LDADD)
 cmsplit_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 cmsplit2_SOURCES = cmsplit2.c
 cmsplit2_OBJECTS = cmsplit2.$(OBJEXT)
 cmsplit2_LDADD = $(LDADD)
 cmsplit2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 cmsplit_type_SOURCES = cmsplit_type.c
 cmsplit_type_OBJECTS = cmsplit_type.$(OBJEXT)
 cmsplit_type_LDADD = $(LDADD)
 cmsplit_type_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 comm_create_group_SOURCES = comm_create_group.c
 comm_create_group_OBJECTS = comm_create_group.$(OBJEXT)
 comm_create_group_LDADD = $(LDADD)
 comm_create_group_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 comm_create_group_idup_SOURCES = comm_create_group_idup.c
 comm_create_group_idup_OBJECTS = comm_create_group_idup.$(OBJEXT)
 comm_create_group_idup_LDADD = $(LDADD)
 comm_create_group_idup_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 comm_group_half_SOURCES = comm_group_half.c
 comm_group_half_OBJECTS = comm_group_half.$(OBJEXT)
 comm_group_half_LDADD = $(LDADD)
 comm_group_half_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 comm_group_rand_SOURCES = comm_group_rand.c
 comm_group_rand_OBJECTS = comm_group_rand.$(OBJEXT)
 comm_group_rand_LDADD = $(LDADD)
 comm_group_rand_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 comm_idup_SOURCES = comm_idup.c
 comm_idup_OBJECTS = comm_idup.$(OBJEXT)
 comm_idup_LDADD = $(LDADD)
 comm_idup_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 comm_idup_comm_SOURCES = comm_idup_comm.c
 comm_idup_comm_OBJECTS = comm_idup_comm.$(OBJEXT)
 comm_idup_comm_LDADD = $(LDADD)
 comm_idup_comm_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 comm_idup_comm2_SOURCES = comm_idup_comm2.c
 comm_idup_comm2_OBJECTS = comm_idup_comm2.$(OBJEXT)
 comm_idup_comm2_LDADD = $(LDADD)
 comm_idup_comm2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 comm_idup_iallreduce_SOURCES = comm_idup_iallreduce.c
 comm_idup_iallreduce_OBJECTS = comm_idup_iallreduce.$(OBJEXT)
 comm_idup_iallreduce_LDADD = $(LDADD)
 comm_idup_iallreduce_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 comm_idup_isend_SOURCES = comm_idup_isend.c
 comm_idup_isend_OBJECTS = comm_idup_isend.$(OBJEXT)
 comm_idup_isend_LDADD = $(LDADD)
 comm_idup_isend_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 comm_idup_mul_SOURCES = comm_idup_mul.c
 comm_idup_mul_OBJECTS = comm_idup_mul.$(OBJEXT)
 comm_idup_mul_LDADD = $(LDADD)
 comm_idup_mul_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 comm_idup_nb_SOURCES = comm_idup_nb.c
 comm_idup_nb_OBJECTS = comm_idup_nb.$(OBJEXT)
 comm_idup_nb_LDADD = $(LDADD)
 comm_idup_nb_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 comm_idup_overlap_SOURCES = comm_idup_overlap.c
 comm_idup_overlap_OBJECTS = comm_idup_overlap.$(OBJEXT)
 comm_idup_overlap_LDADD = $(LDADD)
 comm_idup_overlap_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 comm_info_SOURCES = comm_info.c
 comm_info_OBJECTS = comm_info.$(OBJEXT)
 comm_info_LDADD = $(LDADD)
 comm_info_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 commcreate1_SOURCES = commcreate1.c
 commcreate1_OBJECTS = commcreate1.$(OBJEXT)
 commcreate1_LDADD = $(LDADD)
 commcreate1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 commname_SOURCES = commname.c
 commname_OBJECTS = commname.$(OBJEXT)
 commname_LDADD = $(LDADD)
 commname_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 ctxalloc_SOURCES = ctxalloc.c
 ctxalloc_OBJECTS = ctxalloc.$(OBJEXT)
 ctxalloc_LDADD = $(LDADD)
 ctxalloc_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 ctxsplit_SOURCES = ctxsplit.c
 ctxsplit_OBJECTS = ctxsplit.$(OBJEXT)
 ctxsplit_LDADD = $(LDADD)
 ctxsplit_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 dup_SOURCES = dup.c
 dup_OBJECTS = dup.$(OBJEXT)
 dup_LDADD = $(LDADD)
 dup_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 dup_with_info_SOURCES = dup_with_info.c
 dup_with_info_OBJECTS = dup_with_info.$(OBJEXT)
 dup_with_info_LDADD = $(LDADD)
 dup_with_info_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 dupic_SOURCES = dupic.c
 dupic_OBJECTS = dupic.$(OBJEXT)
 dupic_LDADD = $(LDADD)
 dupic_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 ic1_SOURCES = ic1.c
 ic1_OBJECTS = ic1.$(OBJEXT)
 ic1_LDADD = $(LDADD)
 ic1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 ic2_SOURCES = ic2.c
 ic2_OBJECTS = ic2.$(OBJEXT)
 ic2_LDADD = $(LDADD)
 ic2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 iccreate_SOURCES = iccreate.c
 iccreate_OBJECTS = iccreate.$(OBJEXT)
 iccreate_LDADD = $(LDADD)
 iccreate_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 icgroup_SOURCES = icgroup.c
 icgroup_OBJECTS = icgroup.$(OBJEXT)
 icgroup_LDADD = $(LDADD)
 icgroup_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 icm_SOURCES = icm.c
 icm_OBJECTS = icm.$(OBJEXT)
 icm_LDADD = $(LDADD)
 icm_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 icsplit_SOURCES = icsplit.c
 icsplit_OBJECTS = icsplit.$(OBJEXT)
 icsplit_LDADD = $(LDADD)
 icsplit_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-probe_intercomm_SOURCES = probe-intercomm.c
-probe_intercomm_OBJECTS = probe-intercomm.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+probe_intercomm_SOURCES = probe_intercomm.c
+probe_intercomm_OBJECTS = probe_intercomm.$(OBJEXT)
 probe_intercomm_LDADD = $(LDADD)
 probe_intercomm_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -347,7 +316,7 @@ SOURCES = cmfree.c cmsplit.c cmsplit2.c cmsplit_type.c \
 	comm_idup_mul.c comm_idup_nb.c comm_idup_overlap.c comm_info.c \
 	commcreate1.c commname.c ctxalloc.c ctxsplit.c dup.c \
 	dup_with_info.c dupic.c ic1.c ic2.c iccreate.c icgroup.c icm.c \
-	icsplit.c probe-intercomm.c
+	icsplit.c probe_intercomm.c
 DIST_SOURCES = cmfree.c cmsplit.c cmsplit2.c cmsplit_type.c \
 	comm_create_group.c comm_create_group_idup.c comm_group_half.c \
 	comm_group_rand.c comm_idup.c comm_idup_comm.c \
@@ -355,7 +324,7 @@ DIST_SOURCES = cmfree.c cmsplit.c cmsplit2.c cmsplit_type.c \
 	comm_idup_mul.c comm_idup_nb.c comm_idup_overlap.c comm_info.c \
 	commcreate1.c commname.c ctxalloc.c ctxsplit.c dup.c \
 	dup_with_info.c dupic.c ic1.c ic2.c iccreate.c icgroup.c icm.c \
-	icsplit.c probe-intercomm.c
+	icsplit.c probe_intercomm.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -406,6 +375,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -561,6 +531,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -570,11 +541,14 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # AM_CPPFLAGS are used for C++ code as well
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+
+# Add libdtpools support
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_builddir)/dtpoos/include \
+	-I$(top_srcdir)/dtpools/include
 LDADD = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-CLEANFILES = summary.xml summary.tap summary.junit.xml
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
 EXTRA_DIST = testlist
 all: all-am
 
@@ -734,8 +708,8 @@ icsplit$(EXEEXT): $(icsplit_OBJECTS) $(icsplit_DEPENDENCIES) $(EXTRA_icsplit_DEP
 	@rm -f icsplit$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(icsplit_OBJECTS) $(icsplit_LDADD) $(LIBS)
 
-probe-intercomm$(EXEEXT): $(probe_intercomm_OBJECTS) $(probe_intercomm_DEPENDENCIES) $(EXTRA_probe_intercomm_DEPENDENCIES) 
-	@rm -f probe-intercomm$(EXEEXT)
+probe_intercomm$(EXEEXT): $(probe_intercomm_OBJECTS) $(probe_intercomm_DEPENDENCIES) $(EXTRA_probe_intercomm_DEPENDENCIES) 
+	@rm -f probe_intercomm$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(probe_intercomm_OBJECTS) $(probe_intercomm_LDADD) $(LIBS)
 
 mostlyclean-compile:
@@ -774,7 +748,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icgroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icsplit.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/probe-intercomm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/probe_intercomm.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -999,16 +973,15 @@ uninstall-am:
 $(top_builddir)/util/mtest.$(OBJEXT): $(top_srcdir)/util/mtest.c
 	(cd $(top_builddir)/util && $(MAKE) mtest.$(OBJEXT))
 
-$(top_builddir)/util/mtest_datatype.$(OBJEXT): $(top_srcdir)/util/mtest_datatype.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype.$(OBJEXT))
+$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+	(cd $(top_builddir)/dtpools && $(MAKE))
 
-$(top_builddir)/util/mtest_datatype_gen.$(OBJEXT): $(top_srcdir)/util/mtest_datatype_gen.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype_gen.$(OBJEXT))
+SUMMARY_BASENAME ?= summary
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
-		-mpiexec=${MPIEXEC} -xmlfile=summary.xml \
-		-tapfile=summary.tap -junitfile=summary.junit.xml
+		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
+		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

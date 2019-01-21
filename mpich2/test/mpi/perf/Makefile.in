@@ -87,7 +87,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = transp-datatype$(EXEEXT) non_zero_root$(EXEEXT) \
+noinst_PROGRAMS = transp_datatype$(EXEEXT) non_zero_root$(EXEEXT) \
 	sendrecvl$(EXEEXT) twovec$(EXEEXT) dtpack$(EXEEXT) \
 	allredtrace$(EXEEXT) commcreatep$(EXEEXT) allredtrace$(EXEEXT) \
 	commcreatep$(EXEEXT) timer$(EXEEXT) manyrma$(EXEEXT) \
@@ -115,79 +115,68 @@ allredtrace_SOURCES = allredtrace.c
 allredtrace_OBJECTS = allredtrace.$(OBJEXT)
 allredtrace_LDADD = $(LDADD)
 allredtrace_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 commcreatep_SOURCES = commcreatep.c
 commcreatep_OBJECTS = commcreatep.$(OBJEXT)
 commcreatep_LDADD = $(LDADD)
 commcreatep_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 dtpack_SOURCES = dtpack.c
 dtpack_OBJECTS = dtpack-dtpack.$(OBJEXT)
 dtpack_LDADD = $(LDADD)
 dtpack_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 dtpack_LINK = $(CCLD) $(dtpack_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 indexperf_SOURCES = indexperf.c
 indexperf_OBJECTS = indexperf-indexperf.$(OBJEXT)
 indexperf_LDADD = $(LDADD)
 indexperf_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 indexperf_LINK = $(CCLD) $(indexperf_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 manyrma_SOURCES = manyrma.c
 manyrma_OBJECTS = manyrma.$(OBJEXT)
 manyrma_LDADD = $(LDADD)
 manyrma_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nestvec_SOURCES = nestvec.c
 nestvec_OBJECTS = nestvec-nestvec.$(OBJEXT)
 nestvec_LDADD = $(LDADD)
 nestvec_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nestvec_LINK = $(CCLD) $(nestvec_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 nestvec2_SOURCES = nestvec2.c
 nestvec2_OBJECTS = nestvec2-nestvec2.$(OBJEXT)
 nestvec2_LDADD = $(LDADD)
 nestvec2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 nestvec2_LINK = $(CCLD) $(nestvec2_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 non_zero_root_SOURCES = non_zero_root.c
 non_zero_root_OBJECTS = non_zero_root.$(OBJEXT)
 non_zero_root_LDADD = $(LDADD)
 non_zero_root_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 sendrecvl_SOURCES = sendrecvl.c
 sendrecvl_OBJECTS = sendrecvl.$(OBJEXT)
 sendrecvl_LDADD = $(LDADD)
 sendrecvl_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 timer_SOURCES = timer.c
 timer_OBJECTS = timer.$(OBJEXT)
 timer_LDADD = $(LDADD)
 timer_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-transp_datatype_SOURCES = transp-datatype.c
-transp_datatype_OBJECTS = transp-datatype.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+transp_datatype_SOURCES = transp_datatype.c
+transp_datatype_OBJECTS = transp_datatype.$(OBJEXT)
 transp_datatype_LDADD = $(LDADD)
 transp_datatype_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 twovec_SOURCES = twovec.c
 twovec_OBJECTS = twovec.$(OBJEXT)
-twovec_DEPENDENCIES =
+twovec_DEPENDENCIES = $(top_builddir)/util/mtest.o
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -222,10 +211,10 @@ am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = allredtrace.c commcreatep.c dtpack.c indexperf.c manyrma.c \
 	nestvec.c nestvec2.c non_zero_root.c sendrecvl.c timer.c \
-	transp-datatype.c twovec.c
+	transp_datatype.c twovec.c
 DIST_SOURCES = allredtrace.c commcreatep.c dtpack.c indexperf.c \
 	manyrma.c nestvec.c nestvec2.c non_zero_root.c sendrecvl.c \
-	timer.c transp-datatype.c twovec.c
+	timer.c transp_datatype.c twovec.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -276,6 +265,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -431,6 +421,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -440,11 +431,14 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # AM_CPPFLAGS are used for C++ code as well
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+
+# Add libdtpools support
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_builddir)/dtpoos/include \
+	-I$(top_srcdir)/dtpools/include
 LDADD = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-CLEANFILES = summary.xml summary.tap summary.junit.xml
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
 EXTRA_DIST = testlist
 
 # Force all tests to be compiled with optimization 
@@ -456,7 +450,7 @@ dtpack_CFLAGS = -O
 nestvec_CFLAGS = -O
 nestvec2_CFLAGS = -O
 indexperf_CFLAGS = -O
-twovec_LDADD = -lm
+twovec_LDADD = -lm $(top_builddir)/util/mtest.o
 all: all-am
 
 .SUFFIXES:
@@ -535,8 +529,8 @@ timer$(EXEEXT): $(timer_OBJECTS) $(timer_DEPENDENCIES) $(EXTRA_timer_DEPENDENCIE
 	@rm -f timer$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(timer_OBJECTS) $(timer_LDADD) $(LIBS)
 
-transp-datatype$(EXEEXT): $(transp_datatype_OBJECTS) $(transp_datatype_DEPENDENCIES) $(EXTRA_transp_datatype_DEPENDENCIES) 
-	@rm -f transp-datatype$(EXEEXT)
+transp_datatype$(EXEEXT): $(transp_datatype_OBJECTS) $(transp_datatype_DEPENDENCIES) $(EXTRA_transp_datatype_DEPENDENCIES) 
+	@rm -f transp_datatype$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(transp_datatype_OBJECTS) $(transp_datatype_LDADD) $(LIBS)
 
 twovec$(EXEEXT): $(twovec_OBJECTS) $(twovec_DEPENDENCIES) $(EXTRA_twovec_DEPENDENCIES) 
@@ -559,7 +553,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/non_zero_root.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sendrecvl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transp-datatype.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transp_datatype.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/twovec.Po@am__quote@
 
 .c.o:
@@ -841,16 +835,15 @@ uninstall-am:
 $(top_builddir)/util/mtest.$(OBJEXT): $(top_srcdir)/util/mtest.c
 	(cd $(top_builddir)/util && $(MAKE) mtest.$(OBJEXT))
 
-$(top_builddir)/util/mtest_datatype.$(OBJEXT): $(top_srcdir)/util/mtest_datatype.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype.$(OBJEXT))
+$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+	(cd $(top_builddir)/dtpools && $(MAKE))
 
-$(top_builddir)/util/mtest_datatype_gen.$(OBJEXT): $(top_srcdir)/util/mtest_datatype_gen.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype_gen.$(OBJEXT))
+SUMMARY_BASENAME ?= summary
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
-		-mpiexec=${MPIEXEC} -xmlfile=summary.xml \
-		-tapfile=summary.tap -junitfile=summary.junit.xml
+		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
+		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

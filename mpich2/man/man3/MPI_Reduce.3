@@ -1,4 +1,4 @@
-.TH MPI_Reduce 3 "11/9/2015" " " "MPI"
+.TH MPI_Reduce 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Reduce \-  Reduces values on all processes to a single value 
 .SH SYNOPSIS
@@ -10,42 +10,42 @@ int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datat
 .PD 0
 .TP
 .B sendbuf 
-- address of send buffer (choice) 
+- address of send buffer (choice)
 .PD 1
 .PD 0
 .TP
 .B count 
-- number of elements in send buffer (integer) 
+- number of elements in send buffer (integer)
 .PD 1
 .PD 0
 .TP
 .B datatype 
-- data type of elements of send buffer (handle) 
+- data type of elements of send buffer (handle)
 .PD 1
 .PD 0
 .TP
 .B op 
-- reduce operation (handle) 
+- reduce operation (handle)
 .PD 1
 .PD 0
 .TP
 .B root 
-- rank of root process (integer) 
+- rank of root process (integer)
 .PD 1
 .PD 0
 .TP
 .B comm 
-- communicator (handle) 
+- communicator (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B recvbuf 
-- address of receive buffer (choice, 
+- address of receive buffer (choice,
 significant only at 
 .I root
-) 
+)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

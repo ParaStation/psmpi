@@ -1,6 +1,6 @@
 ! -*- Mode: Fortran; -*-
 !
-!  (C) 2014 by Argonne National Laboratory.
+!  (C) 2013 by Argonne National Laboratory.
 !      See COPYRIGHT in top-level directory.
 !
         program main
@@ -71,5 +71,4 @@
         endif
 !
         call MTest_Finalize( errs )
-        call mpi_finalize( ierr )
         end

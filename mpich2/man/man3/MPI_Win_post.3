@@ -1,4 +1,4 @@
-.TH MPI_Win_post 3 "11/9/2015" " " "MPI"
+.TH MPI_Win_post 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Win_post \-  Start an RMA exposure epoch 
 .SH SYNOPSIS
@@ -9,18 +9,18 @@ int MPI_Win_post(MPI_Group group, int assert, MPI_Win win)
 .PD 0
 .TP
 .B group 
-- group of origin processes (handle) 
+- group of origin processes (handle)
 .PD 1
 .PD 0
 .TP
 .B assert 
 - Used to optimize this call; zero may be used as a default.
-See notes. (integer) 
+See notes. (integer)
 .PD 1
 .PD 0
 .TP
 .B win 
-- window object (handle) 
+- window object (handle)
 .PD 1
 
 .SH NOTES
@@ -39,26 +39,26 @@ are:
 .B MPI_MODE_NOCHECK 
 - the matching calls to 
 .I MPI_WIN_START
-have not yet 
+have not yet
 occurred on any origin processes when the call to 
 .I MPI_WIN_POST
-is made. 
-The nocheck option can be specified by a post call if and only if it is 
-specified by each matching start call. 
+is made.
+The nocheck option can be specified by a post call if and only if it is
+specified by each matching start call.
 .PD 1
 .PD 0
 .TP
 .B MPI_MODE_NOSTORE 
-- the local window was not updated by local stores (or 
-local get or receive calls) since last synchronization. This may avoid 
-the need for cache synchronization at the post call. 
+- the local window was not updated by local stores (or
+local get or receive calls) since last synchronization. This may avoid
+the need for cache synchronization at the post call.
 .PD 1
 .PD 0
 .TP
 .B MPI_MODE_NOPUT 
-- the local window will not be updated by put or accumulate 
-calls after the post call, until the ensuing (wait) synchronization. This 
-may avoid the need for cache synchronization at the wait call. 
+- the local window will not be updated by put or accumulate
+calls after the post call, until the ensuing (wait) synchronization. This
+may avoid the need for cache synchronization at the wait call.
 .PD 1
 
 .SH NOTES FOR FORTRAN

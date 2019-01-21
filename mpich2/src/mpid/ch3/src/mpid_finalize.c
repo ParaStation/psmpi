@@ -18,9 +18,9 @@
 int MPID_Finalize(void)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_FINALIZE);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_FINALIZE);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_FINALIZE);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_FINALIZE);
 
     /*
      * Wait for all posted receives to complete.  For now we are not doing 
@@ -95,6 +95,10 @@ int MPID_Finalize(void)
     
     /* Re-enabling the close step because many tests are failing
      * without it, particularly under gforker */
+
+    mpi_errno = MPIDI_Port_finalize();
+    if (mpi_errno) { MPIR_ERR_POP(mpi_errno); }
+
 #if 1
     /* FIXME: The close actions should use the same code as the other
        connection close code */
@@ -107,11 +111,6 @@ int MPID_Finalize(void)
     if (mpi_errno) { MPIR_ERR_POP(mpi_errno); }
 #endif
 
-    /* Note that the CH3I_Progress_finalize call has been removed; the
-       CH3_Finalize routine should call it */
-    mpi_errno = MPIDI_CH3_Finalize();
-    if (mpi_errno) { MPIR_ERR_POP(mpi_errno); }
-
 #ifdef MPID_NEEDS_ICOMM_WORLD
     mpi_errno = MPIR_Comm_release_always(MPIR_Process.icomm_world);
     if (mpi_errno) MPIR_ERR_POP(mpi_errno);
@@ -122,6 +121,11 @@ int MPID_Finalize(void)
 
     mpi_errno = MPIR_Comm_release_always(MPIR_Process.comm_world);
     if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+
+    /* Note that the CH3I_Progress_finalize call has been removed; the
+       CH3_Finalize routine should call it */
+    mpi_errno = MPIDI_CH3_Finalize();
+    if (mpi_errno) { MPIR_ERR_POP(mpi_errno); }
 
     /* Tell the process group code that we're done with the process groups.
        This will notify PMI (with PMI_Finalize) if necessary.  It
@@ -140,19 +144,19 @@ int MPID_Finalize(void)
 	p = MPIDI_CH3U_SRBuf_pool;
 	while (p) {
 	    pNext = p->next;
-	    MPIU_Free(p);
+	    MPL_free(p);
 	    p = pNext;
 	}
     }
 
     MPIDI_RMA_finalize();
     
-    MPIU_Free(MPIDI_failed_procs_string);
+    MPL_free(MPIDI_failed_procs_string);
 
     MPIDU_Ftb_finalize();
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_FINALIZE);
     return mpi_errno;
  fn_fail:
     goto fn_exit;

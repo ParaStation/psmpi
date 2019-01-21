@@ -4,9 +4,6 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-/* This would live in safestr.c, but it requires thread-private storage support
- * from mpiimpl.h and friends.  safestr.c is meant to be able to be used in
- * different software packages, perhaps someday by moving it to MPL. */
 #include "mpiimpl.h"
 
 #if defined(HAVE_STRERROR_R) && defined(NEEDS_STRERROR_R_DECL)
@@ -18,22 +15,26 @@ int strerror_r(int errnum, char *strerrbuf, size_t buflen);
 #endif
 
 /* ideally, provides a thread-safe version of strerror */
-const char *MPIU_Strerror(int errnum)
+const char *MPIR_Strerror(int errnum)
 {
 #if defined(HAVE_STRERROR_R)
     char *buf;
-    MPID_THREADPRIV_DECL;
-    MPID_THREADPRIV_GET;
-    buf = MPID_THREADPRIV_FIELD(strerrbuf);
-#  if defined(STRERROR_R_CHAR_P)
+    MPIR_Per_thread_t *per_thread = NULL;
+    int err = 0;
+
+    MPID_THREADPRIV_KEY_GET_ADDR(MPIR_ThreadInfo.isThreaded, MPIR_Per_thread_key,
+                                 MPIR_Per_thread, per_thread, &err);
+    MPIR_Assert(err == 0);
+    buf = per_thread->strerrbuf;
+#if defined(STRERROR_R_CHAR_P)
     /* strerror_r returns char ptr (old GNU-flavor).  Static strings for known
      * errnums are in returned buf, unknown errnums put a message in buf and
      * return buf */
-    buf = strerror_r(errnum, buf, MPIU_STRERROR_BUF_SIZE);
-#  else
+    buf = strerror_r(errnum, buf, MPIR_STRERROR_BUF_SIZE);
+#else
     /* strerror_r returns an int */
-    strerror_r(errnum, buf, MPIU_STRERROR_BUF_SIZE);
-#  endif
+    strerror_r(errnum, buf, MPIR_STRERROR_BUF_SIZE);
+#endif
     return buf;
 
 #elif defined(HAVE_STRERROR)
@@ -51,7 +52,5 @@ const char *MPIU_Strerror(int errnum)
      * internal header file inclusion bug rather than an actually missing
      * strerror routine */
     return "(strerror() unavailable on this platform)"
-
 #endif
 }
-

@@ -1,5 +1,5 @@
 # This Makefile.am generated automatically by f77tof90
-# from test/mpi/f77/init/Makefile.am.  DO NOT EDIT
+# from f77/init/Makefile.am.  DO NOT EDIT
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
@@ -26,7 +26,6 @@ nodist_checksizes_SOURCES = checksizes.c
 
 DISTCLEANFILES = checksizes.c
 
-
 if MAINTAINER_MODE
 
 # f77tof90 only replaces output files if the contents differ, so we must use a
@@ -35,8 +34,8 @@ if MAINTAINER_MODE
 # change its contents
 $(srcdir)/Makefile.am: $(srcdir)/Makefile.am-stamp
 
-$(srcdir)/Makefile.am-stamp: $(master_top_srcdir)/test/mpi/f77/init/Makefile.am $(master_top_srcdir)/maint/f77tof90
-	( cd $(master_top_srcdir) && ./maint/f77tof90 test/mpi/f77/init test/mpi/f90/init Makefile.am Makefile.ap )
+$(srcdir)/Makefile.am-stamp: $(top_srcdir)/f77/init/Makefile.am $(top_srcdir)/maint/f77tof90
+	( cd $(top_srcdir) && ./maint/f77tof90 f77/init f90/init Makefile.am Makefile.ap )
 
 MAINTAINERCLEANFILES = Makefile.am-stamp
 EXTRA_DIST += Makefile.am-stamp  

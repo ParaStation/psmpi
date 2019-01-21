@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# Copyright © 2009-2015 Inria.  All rights reserved.
+# Copyright © 2009-2018 Inria.  All rights reserved.
 # Copyright © 2009      Université Bordeaux
 # Copyright © 2009-2014 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
@@ -94,29 +94,44 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
+@BUILD_NETLOC_TRUE@@HWLOC_BUILD_STANDALONE_TRUE@am__append_1 = netloc
+# We need doc/ if HWLOC_BUILD_DOXYGEN, or during make install if HWLOC_INSTALL_DOXYGEN.
+# There's no INSTALL_SUBDIRS, so always enter doc/ and check HWLOC_BUILD/INSTALL_DOXYGEN there
+@HWLOC_BUILD_STANDALONE_TRUE@am__append_2 = utils tests \
+@HWLOC_BUILD_STANDALONE_TRUE@	contrib/systemd contrib/misc doc
+@BUILD_NETLOC_FALSE@@HWLOC_BUILD_STANDALONE_TRUE@am__append_3 = netloc
+# JMS Need to compare hwloc.pc and netloc.pc -- I think netloc.pc is
+# missing some things.
+# pkgconfig_DATA += netloc.pc Disabled until the netloc API is public
+@BUILD_NETLOC_TRUE@@HWLOC_BUILD_STANDALONE_TRUE@am__append_4 = netloc.pc
+@BUILD_NETLOCSCOTCH_TRUE@@BUILD_NETLOC_TRUE@@HWLOC_BUILD_STANDALONE_TRUE@am__append_5 = netlocscotch.pc
 
-# Only install entire visual studio subdirectory if we're building in standalone mode
-@HWLOC_BUILD_STANDALONE_TRUE@am__append_1 = contrib/windows
+# Only install entire visual studio subdirectory if we're building in
+# standalone mode
+@HWLOC_BUILD_STANDALONE_TRUE@am__append_6 = contrib/windows
 subdir = tools/topo/hwloc/hwloc
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
+am__aclocal_m4_deps =  \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_attributes.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_vendor.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_visibility.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_components.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_pkg.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/netloc.m4 \
+	$(top_srcdir)/confdb/aclocal_cache.m4 \
 	$(top_srcdir)/confdb/aclocal_cc.m4 \
 	$(top_srcdir)/confdb/aclocal_coverage.m4 \
 	$(top_srcdir)/confdb/aclocal_libs.m4 \
 	$(top_srcdir)/confdb/aclocal_runlog.m4 \
 	$(top_srcdir)/confdb/aclocal_subcfg.m4 \
 	$(top_srcdir)/confdb/aclocal_util.m4 \
+	$(top_srcdir)/confdb/ax_check_posix_regcomp.m4 \
 	$(top_srcdir)/confdb/libtool.m4 \
 	$(top_srcdir)/confdb/ltoptions.m4 \
 	$(top_srcdir)/confdb/ltsugar.m4 \
 	$(top_srcdir)/confdb/ltversion.m4 \
 	$(top_srcdir)/confdb/lt~obsolete.m4 $(top_srcdir)/version.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_attributes.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_visibility.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_vendor.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_components.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_pkg.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -184,8 +199,8 @@ am__uninstall_files_from_dir = { \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
 am__installdirs = "$(DESTDIR)$(pkgdatadir)" \
-	"$(DESTDIR)$(pkgconfigdir)"
-DATA = $(dist_pkgdata_DATA) $(pkgconfig_DATA)
+	"$(DESTDIR)$(hwlocpkgconfigdir)"
+DATA = $(dist_pkgdata_DATA) $(hwlocpkgconfig_DATA)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 am__recursive_targets = \
@@ -281,17 +296,16 @@ HWLOC_GL_LIBS = @HWLOC_GL_LIBS@
 HWLOC_HAVE_LIBXML2 = @HWLOC_HAVE_LIBXML2@
 HWLOC_HAVE_NVML = @HWLOC_HAVE_NVML@
 HWLOC_HAVE_OPENCL = @HWLOC_HAVE_OPENCL@
-HWLOC_KERRIGHED_CFLAGS = @HWLOC_KERRIGHED_CFLAGS@
-HWLOC_KERRIGHED_LIBS = @HWLOC_KERRIGHED_LIBS@
 HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
 HWLOC_LIBS = @HWLOC_LIBS@
 HWLOC_LIBS_PRIVATE = @HWLOC_LIBS_PRIVATE@
 HWLOC_LIBXML2_CFLAGS = @HWLOC_LIBXML2_CFLAGS@
 HWLOC_LIBXML2_LIBS = @HWLOC_LIBXML2_LIBS@
-HWLOC_LINUX_LIBNUMA_LIBS = @HWLOC_LINUX_LIBNUMA_LIBS@
 HWLOC_MS_LIB = @HWLOC_MS_LIB@
 HWLOC_MS_LIB_ARCH = @HWLOC_MS_LIB_ARCH@
 HWLOC_NVML_LIBS = @HWLOC_NVML_LIBS@
+HWLOC_OPENCL_CFLAGS = @HWLOC_OPENCL_CFLAGS@
+HWLOC_OPENCL_LDFLAGS = @HWLOC_OPENCL_LDFLAGS@
 HWLOC_OPENCL_LIBS = @HWLOC_OPENCL_LIBS@
 HWLOC_PCIACCESS_CFLAGS = @HWLOC_PCIACCESS_CFLAGS@
 HWLOC_PCIACCESS_LIBS = @HWLOC_PCIACCESS_LIBS@
@@ -300,6 +314,7 @@ HWLOC_PLUGINS_PATH = @HWLOC_PLUGINS_PATH@
 HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
 HWLOC_REQUIRES = @HWLOC_REQUIRES@
 HWLOC_VERSION = @HWLOC_VERSION@
+HWLOC_X11_CPPFLAGS = @HWLOC_X11_CPPFLAGS@
 HWLOC_X11_LIBS = @HWLOC_X11_LIBS@
 HWLOC_top_builddir = @HWLOC_top_builddir@
 HWLOC_top_srcdir = @HWLOC_top_srcdir@
@@ -325,6 +340,7 @@ MKDIR_P = @MKDIR_P@
 MPIEXEC_HYDRA_NAME = @MPIEXEC_HYDRA_NAME@
 MPIEXEC_NAME = @MPIEXEC_NAME@
 MPIRUN_NAME = @MPIRUN_NAME@
+MPLLIBNAME = @MPLLIBNAME@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
@@ -399,6 +415,9 @@ localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 mpl_dist_srcdir = @mpl_dist_srcdir@
+mpl_includedir = @mpl_includedir@
+mpl_lib = @mpl_lib@
+mpl_libdir = @mpl_libdir@
 mpl_srcdir = @mpl_srcdir@
 oldincludedir = @oldincludedir@
 pdfdir = @pdfdir@
@@ -421,22 +440,6 @@ top_srcdir = @top_srcdir@
 # Note that the -I directory must *exactly* match what was specified
 # via AC_CONFIG_MACRO_DIR in configure.ac.
 ACLOCAL_AMFLAGS = -I ./config
-SUBDIRS = src include
-# SUBDIRS += utils tests
-# We need doc/ if HWLOC_BUILD_DOXYGEN, or during make install if HWLOC_INSTALL_DOXYGEN.
-# There's no INSTALL_SUBDIRS, so always enter doc/ and check HWLOC_BUILD/INSTALL_DOXYGEN there
-# SUBDIRS += doc
-
-# Do not let automake automatically add the non-standalone dirs to the
-# distribution tarball if we're building in embedded mode.
-DIST_SUBDIRS = $(SUBDIRS)
-
-# Only install the pkg file if we're building in standalone mode (and not on Windows)
-@HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_WINDOWS_FALSE@pkgconfigdir = $(libdir)/pkgconfig
-@HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_WINDOWS_FALSE@pkgconfig_DATA = hwloc.pc
-
-# Only install the valgrind suppressions file if we're building in standalone mode
-@HWLOC_BUILD_STANDALONE_TRUE@dist_pkgdata_DATA = contrib/hwloc-valgrind.supp
 
 #
 # "make distcheck" requires that tarballs are able to be able to "make
@@ -444,7 +447,21 @@ DIST_SUBDIRS = $(SUBDIRS)
 #
 EXTRA_DIST = README VERSION COPYING AUTHORS \
 	config/hwloc_get_version.sh config/distscript.sh \
-	$(am__append_1)
+	$(am__append_4) $(am__append_6)
+SUBDIRS = include hwloc $(am__append_1) $(am__append_2)
+
+# Do not let automake automatically add the non-standalone dirs to the
+# distribution tarball if we're building in embedded mode.
+DIST_SUBDIRS = $(SUBDIRS) $(am__append_3)
+
+# Only install the pkg file if we're building in standalone mode (and not on Windows)
+@HWLOC_BUILD_STANDALONE_TRUE@hwlocpkgconfigdir = $(libdir)/pkgconfig
+@HWLOC_BUILD_STANDALONE_TRUE@hwlocpkgconfig_DATA = hwloc.pc \
+@HWLOC_BUILD_STANDALONE_TRUE@	$(am__append_5)
+
+# Only install the valgrind suppressions file if we're building in
+# standalone mode
+@HWLOC_BUILD_STANDALONE_TRUE@dist_pkgdata_DATA = contrib/hwloc-valgrind.supp
 all: all-recursive
 
 .SUFFIXES:
@@ -504,27 +521,27 @@ uninstall-dist_pkgdataDATA:
 	@list='$(dist_pkgdata_DATA)'; test -n "$(pkgdatadir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(pkgdatadir)'; $(am__uninstall_files_from_dir)
-install-pkgconfigDATA: $(pkgconfig_DATA)
+install-hwlocpkgconfigDATA: $(hwlocpkgconfig_DATA)
 	@$(NORMAL_INSTALL)
-	@list='$(pkgconfig_DATA)'; test -n "$(pkgconfigdir)" || list=; \
+	@list='$(hwlocpkgconfig_DATA)'; test -n "$(hwlocpkgconfigdir)" || list=; \
 	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(pkgconfigdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(pkgconfigdir)" || exit 1; \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(hwlocpkgconfigdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(hwlocpkgconfigdir)" || exit 1; \
 	fi; \
 	for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  echo "$$d$$p"; \
 	done | $(am__base_list) | \
 	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(pkgconfigdir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(pkgconfigdir)" || exit $$?; \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(hwlocpkgconfigdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(hwlocpkgconfigdir)" || exit $$?; \
 	done
 
-uninstall-pkgconfigDATA:
+uninstall-hwlocpkgconfigDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(pkgconfig_DATA)'; test -n "$(pkgconfigdir)" || list=; \
+	@list='$(hwlocpkgconfig_DATA)'; test -n "$(hwlocpkgconfigdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(pkgconfigdir)'; $(am__uninstall_files_from_dir)
+	dir='$(DESTDIR)$(hwlocpkgconfigdir)'; $(am__uninstall_files_from_dir)
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run 'make' without going through this Makefile.
@@ -689,7 +706,7 @@ check: check-recursive
 all-am: Makefile $(DATA)
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(pkgconfigdir)"; do \
+	for dir in "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(hwlocpkgconfigdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -722,10 +739,10 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@HWLOC_BUILD_STANDALONE_FALSE@install-data-local:
-@HWLOC_HAVE_WINDOWS_FALSE@install-data-local:
 @HWLOC_BUILD_STANDALONE_FALSE@uninstall-local:
 @HWLOC_HAVE_WINDOWS_FALSE@uninstall-local:
+@HWLOC_BUILD_STANDALONE_FALSE@install-data-local:
+@HWLOC_HAVE_WINDOWS_FALSE@install-data-local:
 clean: clean-recursive
 
 clean-am: clean-generic clean-libtool mostlyclean-am
@@ -747,7 +764,7 @@ info: info-recursive
 info-am:
 
 install-data-am: install-data-local install-dist_pkgdataDATA \
-	install-pkgconfigDATA
+	install-hwlocpkgconfigDATA
 
 install-dvi: install-dvi-recursive
 
@@ -791,8 +808,8 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-dist_pkgdataDATA uninstall-local \
-	uninstall-pkgconfigDATA
+uninstall-am: uninstall-dist_pkgdataDATA uninstall-hwlocpkgconfigDATA \
+	uninstall-local
 
 .MAKE: $(am__recursive_targets) install-am install-strip
 
@@ -803,27 +820,20 @@ uninstall-am: uninstall-dist_pkgdataDATA uninstall-local \
 	html-am info info-am install install-am install-data \
 	install-data-am install-data-local install-dist_pkgdataDATA \
 	install-dvi install-dvi-am install-exec install-exec-am \
-	install-html install-html-am install-info install-info-am \
-	install-man install-pdf install-pdf-am install-pkgconfigDATA \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-dist_pkgdataDATA uninstall-local \
-	uninstall-pkgconfigDATA
+	install-html install-html-am install-hwlocpkgconfigDATA \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs installdirs-am \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am uninstall-dist_pkgdataDATA \
+	uninstall-hwlocpkgconfigDATA uninstall-local
 
 .PRECIOUS: Makefile
 
 
 @HWLOC_BUILD_STANDALONE_TRUE@dist-hook:
 @HWLOC_BUILD_STANDALONE_TRUE@	sh "$(top_srcdir)/config/distscript.sh" "$(top_srcdir)" "$(distdir)" "$(HWLOC_VERSION)"
-
-#
-# Build the documenation and top-level README file
-#
-@HWLOC_BUILD_STANDALONE_TRUE@.PHONY: doc readme
-@HWLOC_BUILD_STANDALONE_TRUE@doc readme:
-@HWLOC_BUILD_STANDALONE_TRUE@	$(MAKE) -C doc
 
 #
 # Winball specific rules
@@ -834,6 +844,13 @@ uninstall-am: uninstall-dist_pkgdataDATA uninstall-local \
 @HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_WINDOWS_TRUE@	sed -e 's/$$/'$$'\015'/ < $(srcdir)/COPYING > $(DESTDIR)$(prefix)/COPYING.txt
 @HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_WINDOWS_TRUE@uninstall-local:
 @HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_WINDOWS_TRUE@	rm -f $(DESTDIR)$(prefix)/README.txt $(DESTDIR)$(prefix)/NEWS.txt $(DESTDIR)$(prefix)/COPYING.txt
+
+#
+# Build the documenation and top-level README file
+#
+@HWLOC_BUILD_STANDALONE_TRUE@.PHONY: doc readme
+@HWLOC_BUILD_STANDALONE_TRUE@doc readme:
+@HWLOC_BUILD_STANDALONE_TRUE@	$(MAKE) -C doc
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -94,8 +94,11 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = allpairf$(EXEEXT) statusesf$(EXEEXT) greqf$(EXEEXT) \
-	mprobef$(EXEEXT)
+noinst_PROGRAMS = sendf$(EXEEXT) ssendf$(EXEEXT) rsendf$(EXEEXT) \
+	isendf$(EXEEXT) irsendf$(EXEEXT) issendf$(EXEEXT) \
+	psendf$(EXEEXT) prsendf$(EXEEXT) pssendf$(EXEEXT) \
+	sendrecvf$(EXEEXT) sendrecvreplf$(EXEEXT) statusesf$(EXEEXT) \
+	greqf$(EXEEXT) mprobef$(EXEEXT)
 subdir = f77/pt2pt
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -115,18 +118,58 @@ CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
 CONFIG_CLEAN_FILES = attr1aints.h
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-allpairf_SOURCES = allpairf.f
-allpairf_OBJECTS = allpairf.$(OBJEXT)
-allpairf_LDADD = $(LDADD)
-allpairf_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
 am_greqf_OBJECTS = greqf.$(OBJEXT) dummyf.$(OBJEXT)
 greqf_OBJECTS = $(am_greqf_OBJECTS)
 greqf_LDADD = $(LDADD)
 greqf_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
+am_irsendf_OBJECTS = irsendf.$(OBJEXT) utilsf.$(OBJEXT)
+irsendf_OBJECTS = $(am_irsendf_OBJECTS)
+irsendf_LDADD = $(LDADD)
+irsendf_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
+am_isendf_OBJECTS = isendf.$(OBJEXT) utilsf.$(OBJEXT)
+isendf_OBJECTS = $(am_isendf_OBJECTS)
+isendf_LDADD = $(LDADD)
+isendf_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
+am_issendf_OBJECTS = issendf.$(OBJEXT) utilsf.$(OBJEXT)
+issendf_OBJECTS = $(am_issendf_OBJECTS)
+issendf_LDADD = $(LDADD)
+issendf_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
 mprobef_SOURCES = mprobef.f
 mprobef_OBJECTS = mprobef.$(OBJEXT)
 mprobef_LDADD = $(LDADD)
 mprobef_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
+am_prsendf_OBJECTS = prsendf.$(OBJEXT) utilsf.$(OBJEXT)
+prsendf_OBJECTS = $(am_prsendf_OBJECTS)
+prsendf_LDADD = $(LDADD)
+prsendf_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
+am_psendf_OBJECTS = psendf.$(OBJEXT) utilsf.$(OBJEXT)
+psendf_OBJECTS = $(am_psendf_OBJECTS)
+psendf_LDADD = $(LDADD)
+psendf_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
+am_pssendf_OBJECTS = pssendf.$(OBJEXT) utilsf.$(OBJEXT)
+pssendf_OBJECTS = $(am_pssendf_OBJECTS)
+pssendf_LDADD = $(LDADD)
+pssendf_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
+am_rsendf_OBJECTS = rsendf.$(OBJEXT) utilsf.$(OBJEXT)
+rsendf_OBJECTS = $(am_rsendf_OBJECTS)
+rsendf_LDADD = $(LDADD)
+rsendf_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
+am_sendf_OBJECTS = sendf.$(OBJEXT) utilsf.$(OBJEXT)
+sendf_OBJECTS = $(am_sendf_OBJECTS)
+sendf_LDADD = $(LDADD)
+sendf_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
+am_sendrecvf_OBJECTS = sendrecvf.$(OBJEXT) utilsf.$(OBJEXT)
+sendrecvf_OBJECTS = $(am_sendrecvf_OBJECTS)
+sendrecvf_LDADD = $(LDADD)
+sendrecvf_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
+am_sendrecvreplf_OBJECTS = sendrecvreplf.$(OBJEXT) utilsf.$(OBJEXT)
+sendrecvreplf_OBJECTS = $(am_sendrecvreplf_OBJECTS)
+sendrecvreplf_LDADD = $(LDADD)
+sendrecvreplf_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
+am_ssendf_OBJECTS = ssendf.$(OBJEXT) utilsf.$(OBJEXT)
+ssendf_OBJECTS = $(am_ssendf_OBJECTS)
+ssendf_LDADD = $(LDADD)
+ssendf_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
 statusesf_SOURCES = statusesf.f
 statusesf_OBJECTS = statusesf.$(OBJEXT)
 statusesf_LDADD = $(LDADD)
@@ -156,8 +199,16 @@ AM_V_F77LD = $(am__v_F77LD_@AM_V@)
 am__v_F77LD_ = $(am__v_F77LD_@AM_DEFAULT_V@)
 am__v_F77LD_0 = @echo "  F77LD   " $@;
 am__v_F77LD_1 = 
-SOURCES = allpairf.f $(greqf_SOURCES) mprobef.f statusesf.f
-DIST_SOURCES = allpairf.f $(greqf_SOURCES) mprobef.f statusesf.f
+SOURCES = $(greqf_SOURCES) $(irsendf_SOURCES) $(isendf_SOURCES) \
+	$(issendf_SOURCES) mprobef.f $(prsendf_SOURCES) \
+	$(psendf_SOURCES) $(pssendf_SOURCES) $(rsendf_SOURCES) \
+	$(sendf_SOURCES) $(sendrecvf_SOURCES) $(sendrecvreplf_SOURCES) \
+	$(ssendf_SOURCES) statusesf.f
+DIST_SOURCES = $(greqf_SOURCES) $(irsendf_SOURCES) $(isendf_SOURCES) \
+	$(issendf_SOURCES) mprobef.f $(prsendf_SOURCES) \
+	$(psendf_SOURCES) $(pssendf_SOURCES) $(rsendf_SOURCES) \
+	$(sendf_SOURCES) $(sendrecvf_SOURCES) $(sendrecvreplf_SOURCES) \
+	$(ssendf_SOURCES) statusesf.f
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -208,6 +259,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -363,6 +415,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -384,6 +437,17 @@ EXTRA_DIST = testlist
 
 # avoid having to write many "foo_SOURCES = foo.f" lines
 AM_DEFAULT_SOURCE_EXT = .f
+sendf_SOURCES = sendf.f utilsf.f
+ssendf_SOURCES = ssendf.f utilsf.f
+rsendf_SOURCES = rsendf.f utilsf.f
+isendf_SOURCES = isendf.f utilsf.f
+irsendf_SOURCES = irsendf.f utilsf.f
+issendf_SOURCES = issendf.f utilsf.f
+psendf_SOURCES = psendf.f utilsf.f
+prsendf_SOURCES = prsendf.f utilsf.f
+pssendf_SOURCES = pssendf.f utilsf.f
+sendrecvf_SOURCES = sendrecvf.f utilsf.f
+sendrecvreplf_SOURCES = sendrecvreplf.f utilsf.f
 greqf_SOURCES = greqf.f dummyf.f
 all: all-am
 
@@ -425,17 +489,57 @@ attr1aints.h: $(top_builddir)/config.status $(srcdir)/attr1aints.h.in
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 
-allpairf$(EXEEXT): $(allpairf_OBJECTS) $(allpairf_DEPENDENCIES) $(EXTRA_allpairf_DEPENDENCIES) 
-	@rm -f allpairf$(EXEEXT)
-	$(AM_V_F77LD)$(F77LINK) $(allpairf_OBJECTS) $(allpairf_LDADD) $(LIBS)
-
 greqf$(EXEEXT): $(greqf_OBJECTS) $(greqf_DEPENDENCIES) $(EXTRA_greqf_DEPENDENCIES) 
 	@rm -f greqf$(EXEEXT)
 	$(AM_V_F77LD)$(F77LINK) $(greqf_OBJECTS) $(greqf_LDADD) $(LIBS)
 
+irsendf$(EXEEXT): $(irsendf_OBJECTS) $(irsendf_DEPENDENCIES) $(EXTRA_irsendf_DEPENDENCIES) 
+	@rm -f irsendf$(EXEEXT)
+	$(AM_V_F77LD)$(F77LINK) $(irsendf_OBJECTS) $(irsendf_LDADD) $(LIBS)
+
+isendf$(EXEEXT): $(isendf_OBJECTS) $(isendf_DEPENDENCIES) $(EXTRA_isendf_DEPENDENCIES) 
+	@rm -f isendf$(EXEEXT)
+	$(AM_V_F77LD)$(F77LINK) $(isendf_OBJECTS) $(isendf_LDADD) $(LIBS)
+
+issendf$(EXEEXT): $(issendf_OBJECTS) $(issendf_DEPENDENCIES) $(EXTRA_issendf_DEPENDENCIES) 
+	@rm -f issendf$(EXEEXT)
+	$(AM_V_F77LD)$(F77LINK) $(issendf_OBJECTS) $(issendf_LDADD) $(LIBS)
+
 mprobef$(EXEEXT): $(mprobef_OBJECTS) $(mprobef_DEPENDENCIES) $(EXTRA_mprobef_DEPENDENCIES) 
 	@rm -f mprobef$(EXEEXT)
 	$(AM_V_F77LD)$(F77LINK) $(mprobef_OBJECTS) $(mprobef_LDADD) $(LIBS)
+
+prsendf$(EXEEXT): $(prsendf_OBJECTS) $(prsendf_DEPENDENCIES) $(EXTRA_prsendf_DEPENDENCIES) 
+	@rm -f prsendf$(EXEEXT)
+	$(AM_V_F77LD)$(F77LINK) $(prsendf_OBJECTS) $(prsendf_LDADD) $(LIBS)
+
+psendf$(EXEEXT): $(psendf_OBJECTS) $(psendf_DEPENDENCIES) $(EXTRA_psendf_DEPENDENCIES) 
+	@rm -f psendf$(EXEEXT)
+	$(AM_V_F77LD)$(F77LINK) $(psendf_OBJECTS) $(psendf_LDADD) $(LIBS)
+
+pssendf$(EXEEXT): $(pssendf_OBJECTS) $(pssendf_DEPENDENCIES) $(EXTRA_pssendf_DEPENDENCIES) 
+	@rm -f pssendf$(EXEEXT)
+	$(AM_V_F77LD)$(F77LINK) $(pssendf_OBJECTS) $(pssendf_LDADD) $(LIBS)
+
+rsendf$(EXEEXT): $(rsendf_OBJECTS) $(rsendf_DEPENDENCIES) $(EXTRA_rsendf_DEPENDENCIES) 
+	@rm -f rsendf$(EXEEXT)
+	$(AM_V_F77LD)$(F77LINK) $(rsendf_OBJECTS) $(rsendf_LDADD) $(LIBS)
+
+sendf$(EXEEXT): $(sendf_OBJECTS) $(sendf_DEPENDENCIES) $(EXTRA_sendf_DEPENDENCIES) 
+	@rm -f sendf$(EXEEXT)
+	$(AM_V_F77LD)$(F77LINK) $(sendf_OBJECTS) $(sendf_LDADD) $(LIBS)
+
+sendrecvf$(EXEEXT): $(sendrecvf_OBJECTS) $(sendrecvf_DEPENDENCIES) $(EXTRA_sendrecvf_DEPENDENCIES) 
+	@rm -f sendrecvf$(EXEEXT)
+	$(AM_V_F77LD)$(F77LINK) $(sendrecvf_OBJECTS) $(sendrecvf_LDADD) $(LIBS)
+
+sendrecvreplf$(EXEEXT): $(sendrecvreplf_OBJECTS) $(sendrecvreplf_DEPENDENCIES) $(EXTRA_sendrecvreplf_DEPENDENCIES) 
+	@rm -f sendrecvreplf$(EXEEXT)
+	$(AM_V_F77LD)$(F77LINK) $(sendrecvreplf_OBJECTS) $(sendrecvreplf_LDADD) $(LIBS)
+
+ssendf$(EXEEXT): $(ssendf_OBJECTS) $(ssendf_DEPENDENCIES) $(EXTRA_ssendf_DEPENDENCIES) 
+	@rm -f ssendf$(EXEEXT)
+	$(AM_V_F77LD)$(F77LINK) $(ssendf_OBJECTS) $(ssendf_LDADD) $(LIBS)
 
 statusesf$(EXEEXT): $(statusesf_OBJECTS) $(statusesf_DEPENDENCIES) $(EXTRA_statusesf_DEPENDENCIES) 
 	@rm -f statusesf$(EXEEXT)

@@ -1,43 +1,43 @@
-.TH MPI_Graph_create 3 "11/9/2015" " " "MPI"
+.TH MPI_Graph_create 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Graph_create \-  Makes a new communicator to which topology information has been attached 
 .SH SYNOPSIS
 .nf
 int MPI_Graph_create(MPI_Comm comm_old, int nnodes, const int indx[],
-                     const int edges[], int reorder, MPI_Comm *comm_graph)
+                     const int edges[], int reorder, MPI_Comm * comm_graph)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B comm_old 
-- input communicator without topology (handle) 
+- input communicator without topology (handle)
 .PD 1
 .PD 0
 .TP
 .B nnodes 
-- number of nodes in graph (integer) 
+- number of nodes in graph (integer)
 .PD 1
 .PD 0
 .TP
 .B indx 
-- array of integers describing node degrees (see below) 
+- array of integers describing node degrees (see below)
 .PD 1
 .PD 0
 .TP
 .B edges 
-- array of integers describing graph edges (see below) 
+- array of integers describing graph edges (see below)
 .PD 1
 .PD 0
 .TP
 .B reorder 
-- ranking may be reordered (true) or not (false) (logical) 
+- ranking may be reordered (true) or not (false) (logical)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B comm_graph 
-- communicator with graph topology added (handle) 
+- communicator with graph topology added (handle)
 .PD 1
 
 .SH NOTES

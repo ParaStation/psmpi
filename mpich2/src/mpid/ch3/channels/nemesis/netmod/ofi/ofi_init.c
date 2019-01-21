@@ -24,7 +24,11 @@ cvars:
       verbosity   : MPI_T_VERBOSITY_MPIDEV_DETAIL
       scope       : MPI_T_SCOPE_LOCAL
       description : >-
-        If non-null, choose an OFI provider by name
+        If non-null, choose an OFI provider by name. If using with the CH4
+        device and using a provider that supports an older version of the
+        libfabric API then the default version of the installed library,
+        specifying the OFI version via the appropriate CVARs is also
+        recommended.
 
     - name        : MPIR_CVAR_OFI_DUMP_PROVIDERS
       category    : DEVELOPER
@@ -39,7 +43,7 @@ cvars:
 === END_MPI_T_CVAR_INFO_BLOCK ===
 */
 #undef FCNAME
-#define FCNAME DECL_FUNC(MPID_nem_ofi_init)
+#define FCNAME MPL_QUOTE(MPID_nem_ofi_init)
 int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_max_sz_p)
 {
     int ret, fi_version, i, len, pmi_errno;
@@ -47,13 +51,13 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     info_t *hints, *prov_tagged, *prov_use;
     cq_attr_t cq_attr;
     av_attr_t av_attr;
-    char kvsname[OFI_KVSAPPSTRLEN], key[OFI_KVSAPPSTRLEN], bc[OFI_KVSAPPSTRLEN];
+    char kvsname[MPIDI_OFI_KVSAPPSTRLEN], key[MPIDI_OFI_KVSAPPSTRLEN], bc[MPIDI_OFI_KVSAPPSTRLEN];
     char *my_bc, *addrs, *null_addr;
     fi_addr_t *fi_addrs = NULL;
     MPIDI_VC_t *vc;
 
     BEGIN_FUNC(FCNAME);
-    MPIU_CHKLMEM_DECL(2);
+    MPIR_CHKLMEM_DECL(2);
 
     compile_time_checking();
     /* ------------------------------------------------------------------------ */
@@ -85,7 +89,7 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     hints->rx_attr->msg_order = FI_ORDER_SAS;
 
     hints->ep_attr->mem_tag_format = MEM_TAG_FORMAT;
-    MPIU_Assert(pg_p->size < ((1 << MPID_RANK_BITS) - 1));
+    MPIR_Assert(pg_p->size < ((1 << MPIDI_OFI_RANK_BITS) - 1));
 
     /* ------------------------------------------------------------------------ */
     /* FI_VERSION provides binary backward and forward compatibility support    */
@@ -104,7 +108,7 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     hints->domain_attr->data_progress    = FI_PROGRESS_AUTO;
     char *provname;
     provname                             = MPIR_CVAR_OFI_USE_PROVIDER?
-      MPIU_Strdup(MPIR_CVAR_OFI_USE_PROVIDER):NULL;
+      MPL_strdup(MPIR_CVAR_OFI_USE_PROVIDER):NULL;
     hints->fabric_attr->prov_name        = provname;
     FI_RC(fi_getinfo(fi_version,    /* Interface version requested               */
                      NULL,          /* Optional name or fabric to resolve        */
@@ -124,11 +128,12 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     /* returns a list.  see man fi_fabric for details                           */
     /* ------------------------------------------------------------------------ */
     dump_and_choose_providers(prov_tagged, &prov_use);
-    FI_RC(fi_fabric(prov_use->fabric_attr,      /* In:   Fabric attributes */
-                    &gl_data.fabric,    /* Out:  Fabric descriptor */
-                    NULL), openfabric); /* Context: fabric events  */
+    FI_RC(fi_fabric(prov_use->fabric_attr, /* In:   Fabric attributes */
+                    &gl_data.fabric,       /* Out:  Fabric descriptor */
+                    NULL), openfabric);    /* Context: fabric events  */
 
     gl_data.iov_limit = prov_use->tx_attr->iov_limit;
+    gl_data.max_buffered_send = prov_use->tx_attr->inject_size;
     gl_data.api_set = API_SET_1;
     /* ------------------------------------------------------------------------ */
     /* Create the access domain, which is the physical or virtual network or    */
@@ -141,7 +146,7 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     /*            In this case, we want remote completion to be set by default  */
     /* ------------------------------------------------------------------------ */
     FI_RC(fi_domain(gl_data.fabric,     /* In:  Fabric object             */
-                    prov_use,   /* In:  default domain attributes */
+                    prov_use,           /* In:  default domain attributes */
                     &gl_data.domain,    /* Out: domain object             */
                     NULL), opendomain); /* Context: Domain events         */
 
@@ -152,10 +157,10 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     /* completion queues, etc.                                                  */
     /* see man fi_endpoint for more details                                     */
     /* ------------------------------------------------------------------------ */
-    FI_RC(fi_endpoint(gl_data.domain,   /* In: Domain Object        */
-                      prov_use, /* In: Configuration object */
-                      &gl_data.endpoint,        /* Out: Endpoint Object     */
-                      NULL), openep);   /* Context: endpoint events */
+    FI_RC(fi_endpoint(gl_data.domain,    /* In: Domain Object        */
+                      prov_use,          /* In: Configuration object */
+                      &gl_data.endpoint, /* Out: Endpoint Object     */
+                      NULL), openep);    /* Context: endpoint events */
 
     /* ------------------------------------------------------------------------ */
     /* Create the objects that will be bound to the endpoint.                   */
@@ -170,14 +175,14 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     memset(&cq_attr, 0, sizeof(cq_attr));
     cq_attr.format = FI_CQ_FORMAT_TAGGED;
     FI_RC(fi_cq_open(gl_data.domain,    /* In:  Domain Object         */
-                     &cq_attr,  /* In:  Configuration object  */
+                     &cq_attr,          /* In:  Configuration object  */
                      &gl_data.cq,       /* Out: CQ Object             */
                      NULL), opencq);    /* Context: CQ events         */
 
     memset(&av_attr, 0, sizeof(av_attr));
-    av_attr.type = FI_AV_MAP;   /* Mapped addressing mode     */
+    av_attr.type = FI_AV_MAP;           /* Mapped addressing mode     */
     FI_RC(fi_av_open(gl_data.domain,    /* In:  Domain Object         */
-                     &av_attr,  /* In:  Configuration object  */
+                     &av_attr,          /* In:  Configuration object  */
                      &gl_data.av,       /* Out: AV Object             */
                      NULL), avopen);    /* Context: AV events         */
 
@@ -197,7 +202,7 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     /* Free providers info         */
     /* --------------------------- */
     if(provname) {
-      MPIU_Free(provname);
+      MPL_free(provname);
       hints->fabric_attr->prov_name = NULL;
     }
 
@@ -222,16 +227,16 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     /* Publish the business card        */
     /* to the KVS                       */
     /* -------------------------------- */
-    PMI_RC(PMI_KVS_Get_my_name(kvsname, OFI_KVSAPPSTRLEN), pmi);
-    sprintf(key, "OFI-%d", pg_rank);
+    PMI_RC(PMI_KVS_Get_my_name(kvsname, MPIDI_OFI_KVSAPPSTRLEN), pmi);
+    MPL_snprintf(key, sizeof(key), "OFI-%d", pg_rank);
 
     PMI_RC(PMI_KVS_Put(kvsname, key, my_bc), pmi);
     PMI_RC(PMI_KVS_Commit(kvsname), pmi);
 
     /* -------------------------------- */
-    /* Set the MPI maximum tag value    */
+    /* Set the number of tag bits       */
     /* -------------------------------- */
-    MPIR_Process.attrs.tag_ub = (1 << MPID_TAG_BITS) - 1;
+    MPIR_Process.tag_bits = MPIDI_OFI_TAG_BITS;
 
     /* --------------------------------- */
     /* Wait for all the ranks to publish */
@@ -245,16 +250,16 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     /* from KVS and store them in local  */
     /* table                             */
     /* --------------------------------- */
-    MPIU_CHKLMEM_MALLOC(addrs, char *, pg_p->size * gl_data.bound_addrlen, mpi_errno, "addrs");
+    MPIR_CHKLMEM_MALLOC(addrs, char *, pg_p->size * gl_data.bound_addrlen, mpi_errno, "addrs", MPL_MEM_ADDRESS);
 
     for (i = 0; i < pg_p->size; ++i) {
-        sprintf(key, "OFI-%d", i);
+        MPL_snprintf(key, sizeof(key), "OFI-%d", i);
 
-        PMI_RC(PMI_KVS_Get(kvsname, key, bc, OFI_KVSAPPSTRLEN), pmi);
-        ret = MPIU_Str_get_binary_arg(bc, "OFI",
+        PMI_RC(PMI_KVS_Get(kvsname, key, bc, MPIDI_OFI_KVSAPPSTRLEN), pmi);
+        ret = MPL_str_get_binary_arg(bc, "OFI",
                                       (char *) &addrs[i * gl_data.bound_addrlen],
                                       gl_data.bound_addrlen, &len);
-        MPIR_ERR_CHKANDJUMP((ret != MPIU_STR_SUCCESS && ret != MPIU_STR_NOMEM) ||
+        MPIR_ERR_CHKANDJUMP((ret != MPL_STR_SUCCESS && ret != MPL_STR_NOMEM) ||
                             (size_t) len != gl_data.bound_addrlen,
                             mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
     }
@@ -264,14 +269,8 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     /* The addressing mode is "map", so we must provide     */
     /* storage to store the per destination addresses       */
     /* ---------------------------------------------------- */
-    fi_addrs = MPIU_Malloc(pg_p->size * sizeof(fi_addr_t));
+    fi_addrs = MPL_malloc(pg_p->size * sizeof(fi_addr_t), MPL_MEM_ADDRESS);
     FI_RC(fi_av_insert(gl_data.av, addrs, pg_p->size, fi_addrs, 0ULL, NULL), avmap);
-
-    /* ---------------------------------------------------- */
-    /* Insert the ANY_SRC address                           */
-    /* ---------------------------------------------------- */
-
-    gl_data.any_addr = FI_ADDR_UNSPEC;
 
     /* --------------------------------- */
     /* Store the direct addresses in     */
@@ -294,8 +293,8 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     MPIDI_CH3I_NM_OFI_RC(MPID_nem_ofi_cm_init(pg_p, pg_rank));
   fn_exit:
     if (fi_addrs)
-        MPIU_Free(fi_addrs);
-    MPIU_CHKLMEM_FREEALL();
+        MPL_free(fi_addrs);
+    MPIR_CHKLMEM_FREEALL();
     END_FUNC(FCNAME);
     return mpi_errno;
   fn_fail:
@@ -303,7 +302,7 @@ int MPID_nem_ofi_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
 }
 
 #undef FCNAME
-#define FCNAME DECL_FUNC(MPID_nem_ofi_finalize)
+#define FCNAME MPL_QUOTE(MPID_nem_ofi_finalize)
 int MPID_nem_ofi_finalize(void)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -329,7 +328,7 @@ int MPID_nem_ofi_finalize(void)
 }
 
 #undef FCNAME
-#define FCNAME DECL_FUNC(MPID_nem_ofi_get_ordering)
+#define FCNAME MPL_QUOTE(MPID_nem_ofi_get_ordering)
 int MPID_nem_ofi_get_ordering(int *ordering)
 {
     (*ordering) = 1;
@@ -341,11 +340,11 @@ static inline int compile_time_checking()
     OFI_COMPILE_TIME_ASSERT(sizeof(MPID_nem_ofi_vc_t) <= MPIDI_NEM_VC_NETMOD_AREA_LEN);
     OFI_COMPILE_TIME_ASSERT(sizeof(MPID_nem_ofi_req_t) <= MPIDI_NEM_REQ_NETMOD_AREA_LEN);
     OFI_COMPILE_TIME_ASSERT(sizeof(iovec_t) == sizeof(MPL_IOV));
-    MPIU_Assert(((void *) &(((iovec_t *) 0)->iov_base)) ==
+    MPIR_Assert(((void *) &(((iovec_t *) 0)->iov_base)) ==
                 ((void *) &(((MPL_IOV *) 0)->MPL_IOV_BUF)));
-    MPIU_Assert(((void *) &(((iovec_t *) 0)->iov_len)) ==
+    MPIR_Assert(((void *) &(((iovec_t *) 0)->iov_len)) ==
                 ((void *) &(((MPL_IOV *) 0)->MPL_IOV_LEN)));
-    MPIU_Assert(sizeof(((iovec_t *) 0)->iov_len) == sizeof(((MPL_IOV *) 0)->MPL_IOV_LEN));
+    MPIR_Assert(sizeof(((iovec_t *) 0)->iov_len) == sizeof(((MPL_IOV *) 0)->MPL_IOV_LEN));
 
     /* ------------------------------------------------------------------------ */
     /* Generate the MPICH catalog files                                         */

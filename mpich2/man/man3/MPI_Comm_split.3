@@ -1,21 +1,21 @@
-.TH MPI_Comm_split 3 "11/9/2015" " " "MPI"
+.TH MPI_Comm_split 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Comm_split \-  Creates new communicators based on colors and keys 
 .SH SYNOPSIS
 .nf
-int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
+int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm * newcomm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B comm 
-- communicator (handle) 
+- communicator (handle)
 .PD 1
 .PD 0
 .TP
 .B color 
-- control of subset assignment (nonnegative integer).  Processes 
-with the same color are in the same new communicator 
+- control of subset assignment (nonnegative integer).  Processes
+with the same color are in the same new communicator
 .PD 1
 .PD 0
 .TP
@@ -27,7 +27,7 @@ with the same color are in the same new communicator
 .PD 0
 .TP
 .B newcomm 
-- new communicator (handle) 
+- new communicator (handle)
 .PD 1
 
 .SH NOTES
@@ -73,7 +73,7 @@ in Fortran.
 .SH ALGORITHM
 .nf
 1. Use MPI_Allgather to get the color and key from each process
-2. Count the number of processes with the same color; create a 
+2. Count the number of processes with the same color; create a
 communicator with that many processes.  If this process has
 .I MPI_UNDEFINED
 as the color, create a process with a single member.

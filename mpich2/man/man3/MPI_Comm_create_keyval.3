@@ -1,11 +1,11 @@
-.TH MPI_Comm_create_keyval 3 "11/9/2015" " " "MPI"
+.TH MPI_Comm_create_keyval 3 "11/21/2018" " " "MPI"
 .SH NAME
-MPI_Comm_create_keyval \-  Create a new attribute key  
+MPI_Comm_create_keyval \-  Create a new attribute key 
 .SH SYNOPSIS
 .nf
-int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn, 
-                         MPI_Comm_delete_attr_function *comm_delete_attr_fn, 
-                         int *comm_keyval, void *extra_state)
+int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function * comm_copy_attr_fn,
+                           MPI_Comm_delete_attr_function * comm_delete_attr_fn,
+                           int *comm_keyval, void *extra_state)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -25,14 +25,14 @@ int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn,
 .PD 0
 .TP
 .B extra_state 
-- Extra state for callback functions 
+- Extra state for callback functions
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B comm_keyval 
-- key value for future access (integer) 
+- key value for future access (integer)
 .PD 1
 
 .SH NOTES

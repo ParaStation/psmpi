@@ -1,41 +1,40 @@
-.TH MPI_Bsend 3 "11/9/2015" " " "MPI"
+.TH MPI_Bsend 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Bsend \-  Basic send with user-provided buffering 
 .SH SYNOPSIS
 .nf
-int MPI_Bsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
-              MPI_Comm comm)
+int MPI_Bsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B buf 
-- initial address of send buffer (choice) 
+- initial address of send buffer (choice)
 .PD 1
 .PD 0
 .TP
 .B count 
-- number of elements in send buffer (nonnegative integer) 
+- number of elements in send buffer (nonnegative integer)
 .PD 1
 .PD 0
 .TP
 .B datatype 
-- datatype of each send buffer element (handle) 
+- datatype of each send buffer element (handle)
 .PD 1
 .PD 0
 .TP
 .B dest 
-- rank of destination (integer) 
+- rank of destination (integer)
 .PD 1
 .PD 0
 .TP
 .B tag 
-- message tag (integer) 
+- message tag (integer)
 .PD 1
 .PD 0
 .TP
 .B comm 
-- communicator (handle) 
+- communicator (handle)
 .PD 1
 
 .SH NOTES
@@ -55,9 +54,9 @@ that the message
 has been received (not just that it should have been received).  For example,
 this code does not allocate enough buffer space
 .nf
-MPI_Buffer_attach( b, n*sizeof(double) + MPI_BSEND_OVERHEAD );
+MPI_Buffer_attach(b, n*sizeof(double) + MPI_BSEND_OVERHEAD);
 for (i=0; i<m; i++) {
-MPI_Bsend( buf, n, MPI_DOUBLE, ... );
+MPI_Bsend(buf, n, MPI_DOUBLE, ...);
 }
 .fi
 
@@ -70,8 +69,8 @@ buffer.
 In C, you can
 force the messages to be delivered by
 .nf
-MPI_Buffer_detach( &b, &n );
-MPI_Buffer_attach( b, n );
+MPI_Buffer_detach(&b, &n);
+MPI_Buffer_attach(b, n);
 .fi
 
 (The 

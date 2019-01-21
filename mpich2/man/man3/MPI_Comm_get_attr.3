@@ -1,16 +1,15 @@
-.TH MPI_Comm_get_attr 3 "11/9/2015" " " "MPI"
+.TH MPI_Comm_get_attr 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Comm_get_attr \-  Retrieves attribute value by key 
 .SH SYNOPSIS
 .nf
-int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, 
-                     int *flag)
+int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *flag)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B comm 
-- communicator to which attribute is attached (handle) 
+- communicator to which attribute is attached (handle)
 .PD 1
 .PD 0
 .TP
@@ -30,7 +29,7 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val,
 .TP
 .B flag 
 - true if an attribute value was extracted;  false if no attribute is
-associated with the key 
+associated with the key
 .PD 1
 
 .SH NOTES

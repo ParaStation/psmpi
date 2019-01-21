@@ -1,4 +1,4 @@
-.TH MPI_Attr_put 3 "11/9/2015" " " "MPI"
+.TH MPI_Attr_put 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Attr_put \-  Stores attribute value associated with a key 
 .SH SYNOPSIS
@@ -9,19 +9,19 @@ int MPI_Attr_put(MPI_Comm comm, int keyval, void *attribute_val)
 .PD 0
 .TP
 .B comm 
-- communicator to which attribute will be attached (handle) 
+- communicator to which attribute will be attached (handle)
 .PD 1
 .PD 0
 .TP
 .B keyval 
 - key value, as returned by  
 .I MPI_KEYVAL_CREATE
-(integer) 
+(integer)
 .PD 1
 .PD 0
 .TP
 .B attribute_val 
-- attribute value 
+- attribute value
 .PD 1
 
 .SH NOTES

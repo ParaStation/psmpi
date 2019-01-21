@@ -1,28 +1,28 @@
-.TH MPI_Testall 3 "11/9/2015" " " "MPI"
+.TH MPI_Testall 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Testall \-  Tests for the completion of all previously initiated requests 
 .SH SYNOPSIS
 .nf
-int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag, 
-               MPI_Status array_of_statuses[])
+int MPI_Testall(int count, MPI_Request array_of_requests[], int *flag,
+                MPI_Status array_of_statuses[])
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B count 
-- lists length (integer) 
+- lists length (integer)
 .PD 1
 .PD 0
 .TP
 .B array_of_requests 
-- array of requests (array of handles) 
+- array of requests (array of handles)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B flag 
-- True if all requests have completed; false otherwise (logical) 
+- True if all requests have completed; false otherwise (logical)
 .PD 1
 .PD 0
 .TP

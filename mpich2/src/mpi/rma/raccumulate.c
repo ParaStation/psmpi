@@ -16,10 +16,10 @@
 #pragma _CRI duplicate MPI_Raccumulate as PMPI_Raccumulate
 #elif defined(HAVE_WEAK_ATTRIBUTE)
 int MPI_Raccumulate(const void *origin_addr, int origin_count,
-                     MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp,
-                     int target_count, MPI_Datatype target_datatype, MPI_Op op, MPI_Win win,
-                     MPI_Request *request)
-                     __attribute__((weak,alias("PMPI_Raccumulate")));
+                    MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp,
+                    int target_count, MPI_Datatype target_datatype, MPI_Op op, MPI_Win win,
+                    MPI_Request * request)
+    __attribute__ ((weak, alias("PMPI_Raccumulate")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -33,7 +33,8 @@ int MPI_Raccumulate(const void *origin_addr, int origin_count,
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Raccumulate
-
+#undef FCNAME
+#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Raccumulate - Accumulate data into the target process using remote memory
 access and return a request handle for the operation.
@@ -78,24 +79,22 @@ predefined datatype (e.g., all 'MPI_INT' or all 'MPI_DOUBLE_PRECISION').
 .seealso: MPI_Accumulate
 @*/
 int MPI_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype
-                   origin_datatype, int target_rank, MPI_Aint
-                   target_disp, int target_count, MPI_Datatype
-                   target_datatype, MPI_Op op, MPI_Win win,
-                   MPI_Request *request) 
+                    origin_datatype, int target_rank, MPI_Aint
+                    target_disp, int target_count, MPI_Datatype
+                    target_datatype, MPI_Op op, MPI_Win win, MPI_Request * request)
 {
-    static const char FCNAME[] = "MPI_Raccumulate";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Win *win_ptr = NULL;
-    MPID_Request *request_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_RACCUMULATE);
+    MPIR_Win *win_ptr = NULL;
+    MPIR_Request *request_ptr = NULL;
+    MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_RACCUMULATE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
-    
+
     MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
-    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_RACCUMULATE);
+    MPIR_FUNC_TERSE_RMA_ENTER(MPID_STATE_MPI_RACCUMULATE);
 
     /* Validate parameters, especially handles needing to be converted */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
@@ -103,21 +102,22 @@ int MPI_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype
         }
         MPID_END_ERROR_CHECKS;
     }
-#   endif /* HAVE_ERROR_CHECKING */
-    
+#endif /* HAVE_ERROR_CHECKING */
+
     /* Convert MPI object handles to object pointers */
-    MPID_Win_get_ptr( win, win_ptr );
+    MPIR_Win_get_ptr(win, win_ptr);
 
     /* Validate parameters and objects (post conversion) */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPID_Comm * comm_ptr;
-            
+            MPIR_Comm *comm_ptr;
+
             /* Validate win_ptr */
-            MPID_Win_valid_ptr( win_ptr, mpi_errno );
-            if (mpi_errno) goto fn_fail;
+            MPIR_Win_valid_ptr(win_ptr, mpi_errno);
+            if (mpi_errno)
+                goto fn_fail;
 
             MPIR_ERRTEST_COUNT(origin_count, mpi_errno);
             MPIR_ERRTEST_DATATYPE(origin_datatype, "origin_datatype", mpi_errno);
@@ -127,26 +127,28 @@ int MPI_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype
             if (win_ptr->create_flavor != MPI_WIN_FLAVOR_DYNAMIC)
                 MPIR_ERRTEST_DISP(target_disp, mpi_errno);
 
-            if (HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN)
-            {
-                MPID_Datatype *datatype_ptr = NULL;
-                
-                MPID_Datatype_get_ptr(origin_datatype, datatype_ptr);
-                MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
-                if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-                MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
-                if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+            if (HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN) {
+                MPIR_Datatype *datatype_ptr = NULL;
+
+                MPIR_Datatype_get_ptr(origin_datatype, datatype_ptr);
+                MPIR_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+                if (mpi_errno != MPI_SUCCESS)
+                    goto fn_fail;
+                MPIR_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+                if (mpi_errno != MPI_SUCCESS)
+                    goto fn_fail;
             }
 
-            if (HANDLE_GET_KIND(target_datatype) != HANDLE_KIND_BUILTIN)
-            {
-                MPID_Datatype *datatype_ptr = NULL;
-                
-                MPID_Datatype_get_ptr(target_datatype, datatype_ptr);
-                MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
-                if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-                MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
-                if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+            if (HANDLE_GET_KIND(target_datatype) != HANDLE_KIND_BUILTIN) {
+                MPIR_Datatype *datatype_ptr = NULL;
+
+                MPIR_Datatype_get_ptr(target_datatype, datatype_ptr);
+                MPIR_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+                if (mpi_errno != MPI_SUCCESS)
+                    goto fn_fail;
+                MPIR_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+                if (mpi_errno != MPI_SUCCESS)
+                    goto fn_fail;
             }
 
             comm_ptr = win_ptr->comm_ptr;
@@ -156,37 +158,39 @@ int MPI_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype
         }
         MPID_END_ERROR_CHECKS;
     }
-#   endif /* HAVE_ERROR_CHECKING */
+#endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    
+
     mpi_errno = MPID_Raccumulate(origin_addr, origin_count,
                                  origin_datatype,
                                  target_rank, target_disp, target_count,
                                  target_datatype, op, win_ptr, &request_ptr);
-    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    if (mpi_errno != MPI_SUCCESS)
+        goto fn_fail;
 
     *request = request_ptr->handle;
 
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_RACCUMULATE);
+    MPIR_FUNC_TERSE_RMA_EXIT(MPID_STATE_MPI_RACCUMULATE);
     MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
-        mpi_errno = MPIR_Err_create_code(
-            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_raccumulate",
-            "**mpi_raccumulate %p %d %D %d %d %d %D %O %W %p", origin_addr, origin_count, origin_datatype,
-            target_rank, target_disp, target_count, target_datatype, op, win, request);
+        mpi_errno =
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+                                 "**mpi_raccumulate",
+                                 "**mpi_raccumulate %p %d %D %d %d %d %D %O %W %p", origin_addr,
+                                 origin_count, origin_datatype, target_rank, target_disp,
+                                 target_count, target_datatype, op, win, request);
     }
-#   endif
-    mpi_errno = MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
+#endif
+    mpi_errno = MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
-

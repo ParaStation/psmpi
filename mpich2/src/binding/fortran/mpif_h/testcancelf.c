@@ -268,5 +268,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_test_cancelled_( MPI_Fint *, MPI_Fint *
 FORT_DLL_SPEC void FORT_CALL mpi_test_cancelled_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
     int l2;
     *ierr = MPI_Test_cancelled( (MPI_Status *)(v1), &l2 );
-    if (*ierr == MPI_SUCCESS) *v2 = MPIR_TO_FLOG(l2);
+    if (*ierr == MPI_SUCCESS) *v2 = MPII_TO_FLOG(l2);
 }

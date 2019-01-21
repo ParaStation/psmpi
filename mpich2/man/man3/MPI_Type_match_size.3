@@ -1,20 +1,20 @@
-.TH MPI_Type_match_size 3 "11/9/2015" " " "MPI"
+.TH MPI_Type_match_size 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Type_match_size \-  Find an MPI datatype matching a specified size 
 .SH SYNOPSIS
 .nf
-int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
+int MPI_Type_match_size(int typeclass, int size, MPI_Datatype * datatype)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B typeclass 
-- generic type specifier (integer) 
+- generic type specifier (integer)
 .PD 1
 .PD 0
 .TP
 .B size 
-- size, in bytes, of representation (integer) 
+- size, in bytes, of representation (integer)
 .PD 1
 
 .SH OUTPUT PARAMETERS
@@ -34,7 +34,7 @@ and
 .I MPI_TYPECLASS_COMPLEX
 , corresponding to the desired typeclass.
 The function returns an MPI datatype matching a local variable of type
-.I ( typeclass, size )
+.I (typeclass, size)
 \&.
 
 

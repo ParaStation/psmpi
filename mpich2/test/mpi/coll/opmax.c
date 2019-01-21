@@ -110,11 +110,11 @@ int main(int argc, char *argv[])
             fprintf(stderr, "unsigned char MAX(>) test failed\n");
         }
     }
-
 #ifdef HAVE_LONG_DOUBLE
     {
         long double ldinbuf[3], ldoutbuf[3];
         /* long double */
+        MTEST_VG_MEM_INIT(ldinbuf, 3 * sizeof(ldinbuf[0]));
         ldinbuf[0] = 1;
         ldinbuf[1] = 0;
         ldinbuf[2] = rank;
@@ -176,6 +176,5 @@ int main(int argc, char *argv[])
 #endif /* HAVE_LONG_LONG */
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

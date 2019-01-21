@@ -15,7 +15,8 @@
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Get_version as PMPI_Get_version
 #elif defined(HAVE_WEAK_ATTRIBUTE)
-int MPI_Get_version(int *version, int *subversion) __attribute__((weak,alias("PMPI_Get_version")));
+int MPI_Get_version(int *version, int *subversion)
+    __attribute__ ((weak, alias("PMPI_Get_version")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -29,7 +30,8 @@ int MPI_Get_version(int *version, int *subversion) __attribute__((weak,alias("PM
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Get_version
-
+#undef FCNAME
+#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Get_version - Return the version number of MPI
 
@@ -44,55 +46,52 @@ Output Parameters:
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Get_version( int *version, int *subversion )
+int MPI_Get_version(int *version, int *subversion)
 {
-#ifdef HAVE_ERROR_CHECKING
-    static const char FCNAME[] = "MPI_Get_version";
-#endif
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_GET_VERSION);
+    MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_GET_VERSION);
 
     /* Note that this routine may be called before MPI_Init */
     /* MPIR_ERRTEST_INITIALIZED_ORDIE(); */
-    
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GET_VERSION);
-    
+
+    MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPI_GET_VERSION);
+
     /* Validate parameters and objects (post conversion) */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_ARGNULL(version,"version",mpi_errno);
-	    MPIR_ERRTEST_ARGNULL(subversion,"subversion",mpi_errno);
+            MPIR_ERRTEST_ARGNULL(version, "version", mpi_errno);
+            MPIR_ERRTEST_ARGNULL(subversion, "subversion", mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
     }
-#   endif /* HAVE_ERROR_CHECKING */
+#endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    
-    *version    = MPI_VERSION;
+
+    *version = MPI_VERSION;
     *subversion = MPI_SUBVERSION;
-    
+
     /* ... end of body of routine ... */
 
 #ifdef HAVE_ERROR_CHECKING
   fn_exit:
 #endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GET_VERSION);
+    MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPI_GET_VERSION);
     return mpi_errno;
-    
+
     /* --BEGIN ERROR HANDLING-- */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
   fn_fail:
     {
-	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_get_version",
-	    "**mpi_get_version %p %p", version, subversion);
+        mpi_errno =
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+                                 "**mpi_get_version", "**mpi_get_version %p %p", version,
+                                 subversion);
     }
-    mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );
+    mpi_errno = MPIR_Err_return_comm(0, FCNAME, mpi_errno);
     goto fn_exit;
-#   endif
+#endif
     /* --END ERROR HANDLING-- */
 }

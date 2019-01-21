@@ -1,0 +1,14 @@
+<dir>
+<file name="scatterv_allcomm_nb.c" info="1542820949"/>
+<file name="scatterv_allcomm_linear.c" info="1542820949"/>
+<file name="scatterv.c" info="1542820949"/>
+</dir>
+<data>
+<fileinfo name="scatterv_allcomm_nb.c">
+</fileinfo>
+<fileinfo name="scatterv_allcomm_linear.c">
+</fileinfo>
+<fileinfo name="scatterv.c">
+MPID_STATE_MPI_SCATTERV MPI_Scatterv
+</fileinfo>
+</data>

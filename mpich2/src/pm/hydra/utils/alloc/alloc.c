@@ -34,31 +34,31 @@ void HYDU_init_user_global(struct HYD_user_global *user_global)
 void HYDU_finalize_user_global(struct HYD_user_global *user_global)
 {
     if (user_global->rmk)
-        HYDU_FREE(user_global->rmk);
+        MPL_free(user_global->rmk);
 
     if (user_global->launcher)
-        HYDU_FREE(user_global->launcher);
+        MPL_free(user_global->launcher);
 
     if (user_global->launcher_exec)
-        HYDU_FREE(user_global->launcher_exec);
+        MPL_free(user_global->launcher_exec);
 
     if (user_global->binding)
-        HYDU_FREE(user_global->binding);
+        MPL_free(user_global->binding);
 
     if (user_global->topolib)
-        HYDU_FREE(user_global->topolib);
+        MPL_free(user_global->topolib);
 
     if (user_global->ckpointlib)
-        HYDU_FREE(user_global->ckpointlib);
+        MPL_free(user_global->ckpointlib);
 
     if (user_global->ckpoint_prefix)
-        HYDU_FREE(user_global->ckpoint_prefix);
+        MPL_free(user_global->ckpoint_prefix);
 
     if (user_global->demux)
-        HYDU_FREE(user_global->demux);
+        MPL_free(user_global->demux);
 
     if (user_global->iface)
-        HYDU_FREE(user_global->iface);
+        MPL_free(user_global->iface);
 
     HYDU_finalize_global_env(&user_global->global_env);
 }
@@ -83,7 +83,7 @@ void HYDU_finalize_global_env(struct HYD_env_global *global_env)
         HYDU_env_free_list(global_env->inherited);
 
     if (global_env->prop)
-        HYDU_FREE(global_env->prop);
+        MPL_free(global_env->prop);
 }
 
 HYD_status HYDU_alloc_node(struct HYD_node **node)
@@ -92,7 +92,7 @@ HYD_status HYDU_alloc_node(struct HYD_node **node)
 
     HYDU_FUNC_ENTER();
 
-    HYDU_MALLOC(*node, struct HYD_node *, sizeof(struct HYD_node), status);
+    HYDU_MALLOC_OR_JUMP(*node, struct HYD_node *, sizeof(struct HYD_node), status);
     (*node)->hostname = NULL;
     (*node)->core_count = 0;
     (*node)->active_processes = 0;
@@ -118,15 +118,15 @@ void HYDU_free_node_list(struct HYD_node *node_list)
         tnode = node->next;
 
         if (node->hostname)
-            HYDU_FREE(node->hostname);
+            MPL_free(node->hostname);
 
         if (node->user)
-            HYDU_FREE(node->user);
+            MPL_free(node->user);
 
         if (node->local_binding)
-            HYDU_FREE(node->local_binding);
+            MPL_free(node->local_binding);
 
-        HYDU_FREE(node);
+        MPL_free(node);
 
         node = tnode;
     }
@@ -136,6 +136,7 @@ void HYDU_init_pg(struct HYD_pg *pg, int pgid)
 {
     pg->pgid = pgid;
     pg->proxy_list = NULL;
+    pg->proxy_count = 0;
     pg->pg_process_count = 0;
     pg->barrier_count = 0;
     pg->spawner_pg = NULL;
@@ -151,7 +152,7 @@ HYD_status HYDU_alloc_pg(struct HYD_pg **pg, int pgid)
 
     HYDU_FUNC_ENTER();
 
-    HYDU_MALLOC(*pg, struct HYD_pg *, sizeof(struct HYD_pg), status);
+    HYDU_MALLOC_OR_JUMP(*pg, struct HYD_pg *, sizeof(struct HYD_pg), status);
     HYDU_init_pg(*pg, pgid);
 
   fn_exit:
@@ -176,7 +177,7 @@ void HYDU_free_pg_list(struct HYD_pg *pg_list)
         if (pg->user_node_list)
             HYDU_free_node_list(pg->user_node_list);
 
-        HYDU_FREE(pg);
+        MPL_free(pg);
 
         pg = tpg;
     }
@@ -188,7 +189,7 @@ static HYD_status alloc_proxy(struct HYD_proxy **proxy, struct HYD_pg *pg, struc
 
     HYDU_FUNC_ENTER();
 
-    HYDU_MALLOC(*proxy, struct HYD_proxy *, sizeof(struct HYD_proxy), status);
+    HYDU_MALLOC_OR_JUMP(*proxy, struct HYD_proxy *, sizeof(struct HYD_proxy), status);
 
     (*proxy)->node = node;
     (*proxy)->pg = pg;
@@ -229,18 +230,18 @@ void HYDU_free_proxy_list(struct HYD_proxy *proxy_list)
 
         if (proxy->exec_launch_info) {
             HYDU_free_strlist(proxy->exec_launch_info);
-            HYDU_FREE(proxy->exec_launch_info);
+            MPL_free(proxy->exec_launch_info);
         }
 
         if (proxy->pid)
-            HYDU_FREE(proxy->pid);
+            MPL_free(proxy->pid);
 
         if (proxy->exit_status)
-            HYDU_FREE(proxy->exit_status);
+            MPL_free(proxy->exit_status);
 
         HYDU_free_exec_list(proxy->exec_list);
 
-        HYDU_FREE(proxy);
+        MPL_free(proxy);
         proxy = tproxy;
     }
 
@@ -253,7 +254,7 @@ HYD_status HYDU_alloc_exec(struct HYD_exec **exec)
 
     HYDU_FUNC_ENTER();
 
-    HYDU_MALLOC(*exec, struct HYD_exec *, sizeof(struct HYD_exec), status);
+    HYDU_MALLOC_OR_JUMP(*exec, struct HYD_exec *, sizeof(struct HYD_exec), status);
     (*exec)->exec[0] = NULL;
     (*exec)->wdir = NULL;
     (*exec)->proc_count = -1;
@@ -282,15 +283,15 @@ void HYDU_free_exec_list(struct HYD_exec *exec_list)
         HYDU_free_strlist(exec->exec);
 
         if (exec->wdir)
-            HYDU_FREE(exec->wdir);
+            MPL_free(exec->wdir);
 
         if (exec->env_prop)
-            HYDU_FREE(exec->env_prop);
+            MPL_free(exec->env_prop);
 
         HYDU_env_free_list(exec->user_env);
         exec->user_env = NULL;
 
-        HYDU_FREE(exec);
+        MPL_free(exec);
         exec = run;
     }
 
@@ -308,16 +309,15 @@ static HYD_status add_exec_to_proxy(struct HYD_exec *exec, struct HYD_proxy *pro
         HYDU_ERR_POP(status, "unable to allocate proxy exec\n");
 
         for (i = 0; exec->exec[i]; i++)
-            proxy->exec_list->exec[i] = HYDU_strdup(exec->exec[i]);
+            proxy->exec_list->exec[i] = MPL_strdup(exec->exec[i]);
         proxy->exec_list->exec[i] = NULL;
 
-        proxy->exec_list->wdir = HYDU_strdup(exec->wdir);
+        proxy->exec_list->wdir = MPL_strdup(exec->wdir);
         proxy->exec_list->proc_count = num_procs;
-        proxy->exec_list->env_prop = exec->env_prop ? HYDU_strdup(exec->env_prop) : NULL;
+        proxy->exec_list->env_prop = exec->env_prop ? MPL_strdup(exec->env_prop) : NULL;
         proxy->exec_list->user_env = HYDU_env_list_dup(exec->user_env);
         proxy->exec_list->appnum = exec->appnum;
-    }
-    else {
+    } else {
         for (texec = proxy->exec_list; texec->next; texec = texec->next);
         status = HYDU_alloc_exec(&texec->next);
         HYDU_ERR_POP(status, "unable to allocate proxy exec\n");
@@ -325,12 +325,12 @@ static HYD_status add_exec_to_proxy(struct HYD_exec *exec, struct HYD_proxy *pro
         texec = texec->next;
 
         for (i = 0; exec->exec[i]; i++)
-            texec->exec[i] = HYDU_strdup(exec->exec[i]);
+            texec->exec[i] = MPL_strdup(exec->exec[i]);
         texec->exec[i] = NULL;
 
-        texec->wdir = HYDU_strdup(exec->wdir);
+        texec->wdir = MPL_strdup(exec->wdir);
         texec->proc_count = num_procs;
-        texec->env_prop = exec->env_prop ? HYDU_strdup(exec->env_prop) : NULL;
+        texec->env_prop = exec->env_prop ? MPL_strdup(exec->env_prop) : NULL;
         texec->user_env = HYDU_env_list_dup(exec->user_env);
         texec->appnum = exec->appnum;
     }
@@ -391,7 +391,7 @@ HYD_status HYDU_create_proxy_list(struct HYD_exec *exec_list, struct HYD_node *n
 
         if (pg->proxy_list == NULL)
             pg->proxy_list = proxy;
-        else
+        else if (last_proxy != NULL)
             last_proxy->next = proxy;
         last_proxy = proxy;
 
@@ -413,8 +413,7 @@ HYD_status HYDU_create_proxy_list(struct HYD_exec *exec_list, struct HYD_node *n
             status = add_exec_to_proxy(exec, pg->proxy_list, exec->proc_count);
             HYDU_ERR_POP(status, "unable to add executable to proxy\n");
         }
-    }
-    else {
+    } else {
         exec = exec_list;
 
         filler_round = 1;
@@ -472,14 +471,14 @@ HYD_status HYDU_create_proxy_list(struct HYD_exec *exec_list, struct HYD_node *n
             proxy->next = proxy->next->next;
             tmp->next = NULL;
             HYDU_free_proxy_list(tmp);
-        }
-        else {
+        } else {
             proxy = proxy->next;
         }
     }
 
     for (proxy = pg->proxy_list, i = 0; proxy; proxy = proxy->next, i++)
         proxy->proxy_id = i;
+    pg->proxy_count = i;
 
   fn_exit:
     HYDU_FUNC_EXIT();
@@ -498,14 +497,13 @@ HYD_status HYDU_correct_wdir(char **wdir)
 
     if (*wdir == NULL) {
         *wdir = HYDU_getcwd();
-    }
-    else if (*wdir[0] != '/') {
+    } else if (*wdir[0] != '/') {
         tmp[0] = HYDU_getcwd();
-        tmp[1] = HYDU_strdup("/");
-        tmp[2] = HYDU_strdup(*wdir);
+        tmp[1] = MPL_strdup("/");
+        tmp[2] = MPL_strdup(*wdir);
         tmp[3] = NULL;
 
-        HYDU_FREE(*wdir);
+        MPL_free(*wdir);
         status = HYDU_str_alloc_and_join(tmp, wdir);
         HYDU_ERR_POP(status, "unable to join strings\n");
         HYDU_free_strlist(tmp);

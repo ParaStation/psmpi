@@ -14,6 +14,7 @@
 #include <string.h>     /* For strncpy */
 #include <stdlib.h>
 #include "mpi.h"
+#include "mpitest.h"
 
 char *mpit_scopeToStr(int scope);
 char *mpit_bindingToStr(int binding);
@@ -35,7 +36,7 @@ int main(int argc, char *argv[])
     required = MPI_THREAD_SINGLE;
 
     MPI_T_init_thread(required, &provided);
-    MPI_Init_thread(&argc, &argv, required, &provided);
+    MTest_Init_thread(&argc, &argv, required, &provided);
 
     if (getenv("MPITEST_VERBOSE"))
         verbose = 1;
@@ -55,9 +56,7 @@ int main(int argc, char *argv[])
      * are freed in MPI_T_finalize().
      */
     MPI_T_finalize();
-    MPI_Finalize();
-
-    fprintf(stdout, " No Errors\n");
+    MTest_Finalize(0);
 
     return 0;
 }
@@ -104,8 +103,7 @@ int PrintControlVars(FILE * fp)
                     mpit_scopeToStr(scope),
                     mpit_bindingToStr(binding),
                     mpit_validDtypeStr(datatype), mpit_verbosityToStr(verbosity), desc);
-        }
-        else if (verbose) {
+        } else if (verbose) {
             fprintf(fp, "\t%s\t%s\t%s\t%s\t%s\t%s\n",
                     name,
                     mpit_scopeToStr(scope),
@@ -150,15 +148,13 @@ int PrintPerfVars(FILE * fp)
             val = perfvarReadInt(i, isContinuous, &isFound);
             if (isFound && verbose)
                 fprintf(fp, "\tValue = %d\n", val);
-        }
-        else if (datatype == MPI_UNSIGNED) {
+        } else if (datatype == MPI_UNSIGNED) {
             int isFound;
             unsigned int val;
             val = perfvarReadUint(i, isContinuous, &isFound);
             if (isFound && verbose)
                 fprintf(fp, "\tValue = %u\n", val);
-        }
-        else if (datatype == MPI_DOUBLE) {
+        } else if (datatype == MPI_DOUBLE) {
             int isFound;
             double val;
             val = perfvarReadDouble(i, isContinuous, &isFound);
@@ -232,7 +228,6 @@ int PrintCategories(FILE * fp)
                                     &isReadonly, &isContinuous, &isAtomic);
                 if (verbose)
                     fprintf(fp, "%s, ", varname);
-
             }
             free(pvarIndex);
             if (verbose)
@@ -254,7 +249,6 @@ int PrintCategories(FILE * fp)
                                         &ncvars, &npvars, &nsubcats);
                 if (verbose)
                     fprintf(fp, "%s, ", catname);
-
             }
             free(subcatIndex);
             if (verbose)
@@ -288,8 +282,7 @@ char *mpit_validDtypeStr(MPI_Datatype datatype)
     else {
         if (datatype == MPI_DATATYPE_NULL) {
             p = "Invalid MPI datatype:NULL";
-        }
-        else {
+        } else {
             static char typename[MPI_MAX_OBJECT_NAME + 9];
             int tlen;
             strncpy(typename, "Invalid:", MPI_MAX_OBJECT_NAME);
@@ -312,30 +305,30 @@ char *mpit_scopeToStr(int scope)
 {
     char *p = 0;
     switch (scope) {
-    case MPI_T_SCOPE_CONSTANT:
-        p = "SCOPE_CONSTANT";
-        break;
-    case MPI_T_SCOPE_READONLY:
-        p = "SCOPE_READONLY";
-        break;
-    case MPI_T_SCOPE_LOCAL:
-        p = "SCOPE_LOCAL";
-        break;
-    case MPI_T_SCOPE_GROUP:
-        p = "SCOPE_GROUP";
-        break;
-    case MPI_T_SCOPE_GROUP_EQ:
-        p = "SCOPE_GROUP_EQ";
-        break;
-    case MPI_T_SCOPE_ALL:
-        p = "SCOPE_ALL";
-        break;
-    case MPI_T_SCOPE_ALL_EQ:
-        p = "SCOPE_ALL_EQ";
-        break;
-    default:
-        p = "Unrecoginized scope";
-        break;
+        case MPI_T_SCOPE_CONSTANT:
+            p = "SCOPE_CONSTANT";
+            break;
+        case MPI_T_SCOPE_READONLY:
+            p = "SCOPE_READONLY";
+            break;
+        case MPI_T_SCOPE_LOCAL:
+            p = "SCOPE_LOCAL";
+            break;
+        case MPI_T_SCOPE_GROUP:
+            p = "SCOPE_GROUP";
+            break;
+        case MPI_T_SCOPE_GROUP_EQ:
+            p = "SCOPE_GROUP_EQ";
+            break;
+        case MPI_T_SCOPE_ALL:
+            p = "SCOPE_ALL";
+            break;
+        case MPI_T_SCOPE_ALL_EQ:
+            p = "SCOPE_ALL_EQ";
+            break;
+        default:
+            p = "Unrecoginized scope";
+            break;
     }
     return p;
 }
@@ -344,41 +337,41 @@ char *mpit_bindingToStr(int binding)
 {
     char *p;
     switch (binding) {
-    case MPI_T_BIND_NO_OBJECT:
-        p = "NO_OBJECT";
-        break;
-    case MPI_T_BIND_MPI_COMM:
-        p = "MPI_COMM";
-        break;
-    case MPI_T_BIND_MPI_DATATYPE:
-        p = "MPI_DATATYPE";
-        break;
-    case MPI_T_BIND_MPI_ERRHANDLER:
-        p = "MPI_ERRHANDLER";
-        break;
-    case MPI_T_BIND_MPI_FILE:
-        p = "MPI_FILE";
-        break;
-    case MPI_T_BIND_MPI_GROUP:
-        p = "MPI_GROUP";
-        break;
-    case MPI_T_BIND_MPI_OP:
-        p = "MPI_OP";
-        break;
-    case MPI_T_BIND_MPI_REQUEST:
-        p = "MPI_REQUEST";
-        break;
-    case MPI_T_BIND_MPI_WIN:
-        p = "MPI_WIN";
-        break;
-    case MPI_T_BIND_MPI_MESSAGE:
-        p = "MPI_MESSAGE";
-        break;
-    case MPI_T_BIND_MPI_INFO:
-        p = "MPI_INFO";
-        break;
-    default:
-        p = "Unknown object binding";
+        case MPI_T_BIND_NO_OBJECT:
+            p = "NO_OBJECT";
+            break;
+        case MPI_T_BIND_MPI_COMM:
+            p = "MPI_COMM";
+            break;
+        case MPI_T_BIND_MPI_DATATYPE:
+            p = "MPI_DATATYPE";
+            break;
+        case MPI_T_BIND_MPI_ERRHANDLER:
+            p = "MPI_ERRHANDLER";
+            break;
+        case MPI_T_BIND_MPI_FILE:
+            p = "MPI_FILE";
+            break;
+        case MPI_T_BIND_MPI_GROUP:
+            p = "MPI_GROUP";
+            break;
+        case MPI_T_BIND_MPI_OP:
+            p = "MPI_OP";
+            break;
+        case MPI_T_BIND_MPI_REQUEST:
+            p = "MPI_REQUEST";
+            break;
+        case MPI_T_BIND_MPI_WIN:
+            p = "MPI_WIN";
+            break;
+        case MPI_T_BIND_MPI_MESSAGE:
+            p = "MPI_MESSAGE";
+            break;
+        case MPI_T_BIND_MPI_INFO:
+            p = "MPI_INFO";
+            break;
+        default:
+            p = "Unknown object binding";
     }
     return p;
 }
@@ -387,39 +380,39 @@ char *mpit_varclassToStr(int varClass)
 {
     char *p = 0;
     switch (varClass) {
-    case MPI_T_PVAR_CLASS_STATE:
-        p = "CLASS_STATE";
-        break;
-    case MPI_T_PVAR_CLASS_LEVEL:
-        p = "CLASS_LEVEL";
-        break;
-    case MPI_T_PVAR_CLASS_SIZE:
-        p = "CLASS_SIZE";
-        break;
-    case MPI_T_PVAR_CLASS_PERCENTAGE:
-        p = "CLASS_PERCENTAGE";
-        break;
-    case MPI_T_PVAR_CLASS_HIGHWATERMARK:
-        p = "CLASS_HIGHWATERMARK";
-        break;
-    case MPI_T_PVAR_CLASS_LOWWATERMARK:
-        p = "CLASS_LOWWATERMARK";
-        break;
-    case MPI_T_PVAR_CLASS_COUNTER:
-        p = "CLASS_COUNTER";
-        break;
-    case MPI_T_PVAR_CLASS_AGGREGATE:
-        p = "CLASS_AGGREGATE";
-        break;
-    case MPI_T_PVAR_CLASS_TIMER:
-        p = "CLASS_TIMER";
-        break;
-    case MPI_T_PVAR_CLASS_GENERIC:
-        p = "CLASS_GENERIC";
-        break;
-    default:
-        p = "Unrecognized pvar class";
-        break;
+        case MPI_T_PVAR_CLASS_STATE:
+            p = "CLASS_STATE";
+            break;
+        case MPI_T_PVAR_CLASS_LEVEL:
+            p = "CLASS_LEVEL";
+            break;
+        case MPI_T_PVAR_CLASS_SIZE:
+            p = "CLASS_SIZE";
+            break;
+        case MPI_T_PVAR_CLASS_PERCENTAGE:
+            p = "CLASS_PERCENTAGE";
+            break;
+        case MPI_T_PVAR_CLASS_HIGHWATERMARK:
+            p = "CLASS_HIGHWATERMARK";
+            break;
+        case MPI_T_PVAR_CLASS_LOWWATERMARK:
+            p = "CLASS_LOWWATERMARK";
+            break;
+        case MPI_T_PVAR_CLASS_COUNTER:
+            p = "CLASS_COUNTER";
+            break;
+        case MPI_T_PVAR_CLASS_AGGREGATE:
+            p = "CLASS_AGGREGATE";
+            break;
+        case MPI_T_PVAR_CLASS_TIMER:
+            p = "CLASS_TIMER";
+            break;
+        case MPI_T_PVAR_CLASS_GENERIC:
+            p = "CLASS_GENERIC";
+            break;
+        default:
+            p = "Unrecognized pvar class";
+            break;
     }
     return p;
 }
@@ -428,36 +421,36 @@ char *mpit_verbosityToStr(int verbosity)
 {
     char *p = 0;
     switch (verbosity) {
-    case MPI_T_VERBOSITY_USER_BASIC:
-        p = "VERBOSITY_USER_BASIC";
-        break;
-    case MPI_T_VERBOSITY_USER_DETAIL:
-        p = "VERBOSITY_USER_DETAIL";
-        break;
-    case MPI_T_VERBOSITY_USER_ALL:
-        p = "VERBOSITY_USER_ALL";
-        break;
-    case MPI_T_VERBOSITY_TUNER_BASIC:
-        p = "VERBOSITY_TUNER_BASIC";
-        break;
-    case MPI_T_VERBOSITY_TUNER_DETAIL:
-        p = "VERBOSITY_TUNER_DETAIL";
-        break;
-    case MPI_T_VERBOSITY_TUNER_ALL:
-        p = "VERBOSITY_TUNER_ALL";
-        break;
-    case MPI_T_VERBOSITY_MPIDEV_BASIC:
-        p = "VERBOSITY_MPIDEV_BASIC";
-        break;
-    case MPI_T_VERBOSITY_MPIDEV_DETAIL:
-        p = "VERBOSITY_MPIDEV_DETAIL";
-        break;
-    case MPI_T_VERBOSITY_MPIDEV_ALL:
-        p = "VERBOSITY_MPIDEV_ALL";
-        break;
-    default:
-        p = "Invalid verbosity";
-        break;
+        case MPI_T_VERBOSITY_USER_BASIC:
+            p = "VERBOSITY_USER_BASIC";
+            break;
+        case MPI_T_VERBOSITY_USER_DETAIL:
+            p = "VERBOSITY_USER_DETAIL";
+            break;
+        case MPI_T_VERBOSITY_USER_ALL:
+            p = "VERBOSITY_USER_ALL";
+            break;
+        case MPI_T_VERBOSITY_TUNER_BASIC:
+            p = "VERBOSITY_TUNER_BASIC";
+            break;
+        case MPI_T_VERBOSITY_TUNER_DETAIL:
+            p = "VERBOSITY_TUNER_DETAIL";
+            break;
+        case MPI_T_VERBOSITY_TUNER_ALL:
+            p = "VERBOSITY_TUNER_ALL";
+            break;
+        case MPI_T_VERBOSITY_MPIDEV_BASIC:
+            p = "VERBOSITY_MPIDEV_BASIC";
+            break;
+        case MPI_T_VERBOSITY_MPIDEV_DETAIL:
+            p = "VERBOSITY_MPIDEV_DETAIL";
+            break;
+        case MPI_T_VERBOSITY_MPIDEV_ALL:
+            p = "VERBOSITY_MPIDEV_ALL";
+            break;
+        default:
+            p = "Invalid verbosity";
+            break;
     }
     return p;
 }
@@ -466,51 +459,51 @@ char *mpit_errclassToStr(int err)
 {
     char *p = 0;
     switch (err) {
-    case MPI_T_ERR_MEMORY:
-        p = "ERR_MEMORY";
-        break;
-    case MPI_T_ERR_NOT_INITIALIZED:
-        p = "ERR_NOT_INITIALIZED";
-        break;
-    case MPI_T_ERR_CANNOT_INIT:
-        p = "ERR_CANNOT_INIT";
-        break;
-    case MPI_T_ERR_INVALID_INDEX:
-        p = "ERR_INVALID_INDEX";
-        break;
-    case MPI_T_ERR_INVALID_ITEM:
-        p = "ERR_INVALID_ITEM";
-        break;
-    case MPI_T_ERR_INVALID_HANDLE:
-        p = "ERR_INVALID_HANDLE";
-        break;
-    case MPI_T_ERR_OUT_OF_HANDLES:
-        p = "ERR_OUT_OF_HANDLES";
-        break;
-    case MPI_T_ERR_OUT_OF_SESSIONS:
-        p = "ERR_OUT_OF_SESSIONS";
-        break;
-    case MPI_T_ERR_INVALID_SESSION:
-        p = "ERR_INVALID_SESSION";
-        break;
-    case MPI_T_ERR_CVAR_SET_NOT_NOW:
-        p = "ERR_CVAR_SET_NOT_NOW";
-        break;
-    case MPI_T_ERR_CVAR_SET_NEVER:
-        p = "ERR_CVAR_SET_NEVER";
-        break;
-    case MPI_T_ERR_PVAR_NO_STARTSTOP:
-        p = "ERR_PVAR_NO_STARTSTOP";
-        break;
-    case MPI_T_ERR_PVAR_NO_WRITE:
-        p = "ERR_PVAR_NO_WRITE";
-        break;
-    case MPI_T_ERR_PVAR_NO_ATOMIC:
-        p = "ERR_PVAR_NO_ATOMIC";
-        break;
-    default:
-        p = "Unknown MPI_T_ERR class";
-        break;
+        case MPI_T_ERR_MEMORY:
+            p = "ERR_MEMORY";
+            break;
+        case MPI_T_ERR_NOT_INITIALIZED:
+            p = "ERR_NOT_INITIALIZED";
+            break;
+        case MPI_T_ERR_CANNOT_INIT:
+            p = "ERR_CANNOT_INIT";
+            break;
+        case MPI_T_ERR_INVALID_INDEX:
+            p = "ERR_INVALID_INDEX";
+            break;
+        case MPI_T_ERR_INVALID_ITEM:
+            p = "ERR_INVALID_ITEM";
+            break;
+        case MPI_T_ERR_INVALID_HANDLE:
+            p = "ERR_INVALID_HANDLE";
+            break;
+        case MPI_T_ERR_OUT_OF_HANDLES:
+            p = "ERR_OUT_OF_HANDLES";
+            break;
+        case MPI_T_ERR_OUT_OF_SESSIONS:
+            p = "ERR_OUT_OF_SESSIONS";
+            break;
+        case MPI_T_ERR_INVALID_SESSION:
+            p = "ERR_INVALID_SESSION";
+            break;
+        case MPI_T_ERR_CVAR_SET_NOT_NOW:
+            p = "ERR_CVAR_SET_NOT_NOW";
+            break;
+        case MPI_T_ERR_CVAR_SET_NEVER:
+            p = "ERR_CVAR_SET_NEVER";
+            break;
+        case MPI_T_ERR_PVAR_NO_STARTSTOP:
+            p = "ERR_PVAR_NO_STARTSTOP";
+            break;
+        case MPI_T_ERR_PVAR_NO_WRITE:
+            p = "ERR_PVAR_NO_WRITE";
+            break;
+        case MPI_T_ERR_PVAR_NO_ATOMIC:
+            p = "ERR_PVAR_NO_ATOMIC";
+            break;
+        default:
+            p = "Unknown MPI_T_ERR class";
+            break;
     }
     return p;
 }

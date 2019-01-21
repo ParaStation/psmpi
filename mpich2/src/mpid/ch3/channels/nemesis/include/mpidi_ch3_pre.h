@@ -4,10 +4,10 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
-#define MPICH_MPIDI_CH3_PRE_H_INCLUDED
+#ifndef MPIDI_CH3_PRE_H_INCLUDED
+#define MPIDI_CH3_PRE_H_INCLUDED
 #include "mpid_nem_pre.h"
-#include "mpid_nem_generic_queue.h"
+#include "mpidu_generic_queue.h"
 
 #if defined(HAVE_NETINET_IN_H)
     #include <netinet/in.h>
@@ -49,25 +49,25 @@ MPIDI_CH3I_VC_state_t;
 #define MPIDI_NEM_REQ_NETMOD_AREA_LEN 192
 
 /* define functions for access MPID_nem_lmt_rts_queue_t */
-typedef GENERIC_Q_DECL(struct MPID_Request) MPID_nem_lmt_rts_queue_t;
+typedef GENERIC_Q_DECL(struct MPIR_Request) MPID_nem_lmt_rts_queue_t;
 #define MPID_nem_lmt_rtsq_empty(q) GENERIC_Q_EMPTY (q)
 #define MPID_nem_lmt_rtsq_head(q) GENERIC_Q_HEAD (q)
 #define MPID_nem_lmt_rtsq_enqueue(qp, ep) do {                                          \
-        MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST,                         \
+        MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_CHANNEL, VERBOSE, (MPL_DBG_FDEST,                         \
                           "MPID_nem_lmt_rtsq_enqueue req=%p (handle=%#x), queue=%p",    \
                           ep, (ep)->handle, qp));                                       \
         GENERIC_Q_ENQUEUE (qp, ep, dev.next);                                           \
     } while (0)
 #define MPID_nem_lmt_rtsq_dequeue(qp, epp)  do {                                        \
         GENERIC_Q_DEQUEUE (qp, epp, dev.next);                                          \
-        MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST,                         \
+        MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_CHANNEL, VERBOSE, (MPL_DBG_FDEST,                         \
                           "MPID_nem_lmt_rtsq_dequeue req=%p (handle=%#x), queue=%p",    \
                           *(epp), *(epp) ? (*(epp))->handle : -1, qp));                 \
     } while (0)
 #define MPID_nem_lmt_rtsq_search_remove(qp, req_id, epp) do {                           \
         GENERIC_Q_SEARCH_REMOVE(qp, _e->handle == (req_id), epp,                        \
-                struct MPID_Request, dev.next);                                         \
-        MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST,                         \
+                struct MPIR_Request, dev.next);                                         \
+        MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_CHANNEL, VERBOSE, (MPL_DBG_FDEST,                         \
                     "MPID_nem_lmt_rtsq_search_remove req=%p (handle=%#x), queue=%p",    \
                     *(epp), req_id, qp));                                               \
 } while (0)
@@ -75,7 +75,7 @@ typedef GENERIC_Q_DECL(struct MPID_Request) MPID_nem_lmt_rts_queue_t;
 typedef struct MPIDI_CH3I_VC
 {
     int pg_rank;
-    struct MPID_Request *recv_active;
+    struct MPIR_Request *recv_active;
 
     int is_local;
     unsigned short send_seqno;
@@ -85,12 +85,12 @@ typedef struct MPIDI_CH3I_VC
     MPID_nem_queue_ptr_t free_queue;
 
 #ifdef ENABLE_CHECKPOINTING
-    MPIDI_msg_sz_t ckpt_msg_len;
+    intptr_t ckpt_msg_len;
     void *ckpt_msg_buf;
 #endif
 
     /* temp buffer to store partially received header */
-    MPIDI_msg_sz_t pending_pkt_len;
+    intptr_t pending_pkt_len;
     union MPIDI_CH3_Pkt *pending_pkt;
 
     /* can be used by netmods to put this vc on a send queue or list */
@@ -101,12 +101,12 @@ typedef struct MPIDI_CH3I_VC
     /* iStartContigMsg -- sends a message consisting of a header (hdr) and contiguous data (data), possibly of 0 size.  If the
        message cannot be sent immediately, the function should create a request and return a pointer in sreq_ptr.  The network
        module should complete the request once the message has been completely sent. */
-    int (* iStartContigMsg)(struct MPIDI_VC *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, void *data, MPIDI_msg_sz_t data_sz,
-                            struct MPID_Request **sreq_ptr);
+    int (* iStartContigMsg)(struct MPIDI_VC *vc, void *hdr, intptr_t hdr_sz, void *data, intptr_t data_sz,
+                            struct MPIR_Request **sreq_ptr);
     /* iSentContig -- sends a message consisting of a header (hdr) and contiguous data (data), possibly of 0 size.  The
        network module should complete the request once the message has been completely sent. */
-    int (* iSendContig)(struct MPIDI_VC *vc, struct MPID_Request *sreq, void *hdr, MPIDI_msg_sz_t hdr_sz,
-                        void *data, MPIDI_msg_sz_t data_sz);
+    int (* iSendContig)(struct MPIDI_VC *vc, struct MPIR_Request *sreq, void *hdr, intptr_t hdr_sz,
+                        void *data, intptr_t data_sz);
 
 #ifdef ENABLE_CHECKPOINTING
     /* ckpt_pause_send -- netmod should stop sending on this vc and queue messages to be sent after ckpt_continue()*/
@@ -118,20 +118,20 @@ typedef struct MPIDI_CH3I_VC
 #endif
 
     /* LMT function pointers */
-    int (* lmt_initiate_lmt)(struct MPIDI_VC *vc, union MPIDI_CH3_Pkt *rts_pkt, struct MPID_Request *req);
-    int (* lmt_start_recv)(struct MPIDI_VC *vc, struct MPID_Request *req, MPL_IOV s_cookie);
-    int (* lmt_start_send)(struct MPIDI_VC *vc, struct MPID_Request *sreq, MPL_IOV r_cookie);
-    int (* lmt_handle_cookie)(struct MPIDI_VC *vc, struct MPID_Request *req, MPL_IOV cookie);
-    int (* lmt_done_send)(struct MPIDI_VC *vc, struct MPID_Request *req);
-    int (* lmt_done_recv)(struct MPIDI_VC *vc, struct MPID_Request *req);
+    int (* lmt_initiate_lmt)(struct MPIDI_VC *vc, union MPIDI_CH3_Pkt *rts_pkt, struct MPIR_Request *req);
+    int (* lmt_start_recv)(struct MPIDI_VC *vc, struct MPIR_Request *req, MPL_IOV s_cookie);
+    int (* lmt_start_send)(struct MPIDI_VC *vc, struct MPIR_Request *sreq, MPL_IOV r_cookie);
+    int (* lmt_handle_cookie)(struct MPIDI_VC *vc, struct MPIR_Request *req, MPL_IOV cookie);
+    int (* lmt_done_send)(struct MPIDI_VC *vc, struct MPIR_Request *req);
+    int (* lmt_done_recv)(struct MPIDI_VC *vc, struct MPIR_Request *req);
     int (* lmt_vc_terminated)(struct MPIDI_VC *vc);
 
     /* LMT shared memory copy-buffer ptr */
     struct MPID_nem_copy_buf *lmt_copy_buf;
-    MPIU_SHMW_Hnd_t lmt_copy_buf_handle;
-    MPIU_SHMW_Hnd_t lmt_recv_copy_buf_handle;
+    MPL_shm_hnd_t lmt_copy_buf_handle;
+    MPL_shm_hnd_t lmt_recv_copy_buf_handle;
     int lmt_buf_num;
-    MPIDI_msg_sz_t lmt_surfeit;
+    intptr_t lmt_surfeit;
     struct {struct MPID_nem_lmt_shm_wait_element *head, *tail;} lmt_queue;
     struct MPID_nem_lmt_shm_wait_element *lmt_active_lmt;
     int lmt_enqueued; /* FIXME: used for debugging */
@@ -164,11 +164,11 @@ struct MPIDI_CH3I_Request
 {
     struct MPIDI_VC     *vc;
     int                  noncontig;
-    MPIDI_msg_sz_t       header_sz;
+    intptr_t       header_sz;
 
     MPI_Request          lmt_req_id;     /* request id of remote side */
-    struct MPID_Request *lmt_req;        /* pointer to original send/recv request */
-    MPIDI_msg_sz_t       lmt_data_sz;    /* data size to be transferred, after checking for truncation */
+    struct MPIR_Request *lmt_req;        /* pointer to original send/recv request */
+    intptr_t       lmt_data_sz;    /* data size to be transferred, after checking for truncation */
     MPL_IOV             lmt_tmp_cookie; /* temporary storage for received cookie */
     void                *s_cookie;       /* temporary storage for the cookie data in case the packet can't be sent immediately */
 
@@ -184,27 +184,27 @@ struct MPIDI_CH3I_Request
 };
 
 /*
- * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)
+ * MPIDI_CH3_REQUEST_DECL (additions to MPIR_Request)
  */
 #define MPIDI_CH3_REQUEST_DECL struct MPIDI_CH3I_Request ch;
 
 
 #if 0
-#define DUMP_REQUEST(req) do {                                                          \
-        int i;                                                                          \
-        MPIDI_DBG_PRINTF((55, FCNAME, "request %p\n", (req)));                          \
-        MPIDI_DBG_PRINTF((55, FCNAME, "  handle = %d\n", (req)->handle));		\
-        MPIDI_DBG_PRINTF((55, FCNAME, "  ref_count = %d\n", (req)->ref_count));         \
-        MPIDI_DBG_PRINTF((55, FCNAME, "  cc = %d\n", (req)->cc));			\
-        for (i = 0; i < (req)->iov_count; ++i)                                          \
-            MPIDI_DBG_PRINTF((55, FCNAME, "  dev.iov[%d] = (%p, %d)\n", i,		\
-                              (req)->dev.iov[i+(req)->dev.iov_offset].MPL_IOV_BUF,     \
-                              (req)->dev.iov[i+(req)->dev.iov_offset].MPL_IOV_LEN));  \
-    MPIDI_DBG_PRINTF((55, FCNAME, "  dev.iov_count = %d\n",                             \
-                      (req)->dev.iov_count));                                           \
-    MPIDI_DBG_PRINTF((55, FCNAME, "  dev.state = 0x%x\n", (req)->dev.state));           \
-    MPIDI_DBG_PRINTF((55, FCNAME, "    type = %d\n",                                    \
-		      MPIDI_Request_get_type(req)));                                    \
+#define DUMP_REQUEST(req) do {                                          \
+        int i;                                                          \
+        MPL_DBG_MSG_P(MPIDI_CH3_DBG_OTHER, TERSE, "request %p\n", (req));        \
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_OTHER, TERSE, "  handle = %d\n", (req)->handle); \
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_OTHER, TERSE, "  ref_count = %d\n", (req)->ref_count); \
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_OTHER, TERSE, "  cc = %d\n", (req)->cc);     \
+        for (i = 0; i < (req)->iov_count; ++i)                          \
+            MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER, TERSE, (MPL_DBG_FDEST, "  dev.iov[%d] = (%p, %d)\n", i, \
+                                                (req)->dev.iov[i+(req)->dev.iov_offset].MPL_IOV_BUF, \
+                                                (req)->dev.iov[i+(req)->dev.iov_offset].MPL_IOV_LEN)); \
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_OTHER, TERSE, "  dev.iov_count = %d\n",      \
+                       (req)->dev.iov_count);                           \
+        MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER, TERSE, (MPL_DBG_FDEST, "  dev.state = 0x%x\n", (req)->dev.state)); \
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_OTHER, TERSE, "    type = %d\n",             \
+                       MPIDI_Request_get_type(req));                    \
     } while (0)
 #else
 #define DUMP_REQUEST(req) do { } while (0)
@@ -215,7 +215,7 @@ struct MPIDI_CH3I_Request
 #define MPIDI_POSTED_RECV_DEQUEUE_HOOK(req) MPIDI_CH3I_Posted_recv_dequeued(req)
 
 /*
- * MPID_Progress_state - device/channel dependent state to be passed between 
+ * MPID_Progress_state - device/channel dependent state to be passed between
  * MPID_Progress_{start,wait,end}
  *
  */
@@ -232,10 +232,10 @@ extern OPA_int_t MPIDI_CH3I_progress_completion_count;
 #define MPIDI_CH3I_INCR_PROGRESS_COMPLETION_COUNT do {                                  \
         OPA_write_barrier();                                                            \
         OPA_incr_int(&MPIDI_CH3I_progress_completion_count);                            \
-        MPIU_DBG_MSG_D(CH3_PROGRESS,VERBOSE,                                            \
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_PROGRESS,VERBOSE,                                            \
                        "just incremented MPIDI_CH3I_progress_completion_count=%d",      \
                        OPA_load_int(&MPIDI_CH3I_progress_completion_count));            \
     } while(0)
 
-#endif /* !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED) */
+#endif /* MPIDI_CH3_PRE_H_INCLUDED */
 

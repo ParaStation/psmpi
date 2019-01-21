@@ -1,53 +1,53 @@
-.TH MPI_Comm_spawn_multiple 3 "11/9/2015" " " "MPI"
+.TH MPI_Comm_spawn_multiple 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Comm_spawn_multiple \-  short description 
 .SH SYNOPSIS
 .nf
 int MPI_Comm_spawn_multiple(int count, char *array_of_commands[],
-                          char **array_of_argv[], const int array_of_maxprocs[],
-                          const MPI_Info array_of_info[], int root, MPI_Comm comm,
-                          MPI_Comm *intercomm, int array_of_errcodes[])
+                            char **array_of_argv[], const int array_of_maxprocs[],
+                            const MPI_Info array_of_info[], int root, MPI_Comm comm,
+                            MPI_Comm * intercomm, int array_of_errcodes[])
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B count 
-- number of commands (positive integer, significant to MPI only at 
-root 
+- number of commands (positive integer, significant to MPI only at
+root
 .PD 1
 .PD 0
 .TP
 .B array_of_commands 
-- programs to be executed (array of strings, significant 
-only at root) 
+- programs to be executed (array of strings, significant
+only at root)
 .PD 1
 .PD 0
 .TP
 .B array_of_argv 
-- arguments for commands (array of array of strings, 
-significant only at root) 
+- arguments for commands (array of array of strings,
+significant only at root)
 .PD 1
 .PD 0
 .TP
 .B array_of_maxprocs 
-- maximum number of processes to start for each command 
-(array of integer, significant only at root) 
+- maximum number of processes to start for each command
+(array of integer, significant only at root)
 .PD 1
 .PD 0
 .TP
 .B array_of_info 
-- info objects telling the runtime system where and how to 
-start processes (array of handles, significant only at root) 
+- info objects telling the runtime system where and how to
+start processes (array of handles, significant only at root)
 .PD 1
 .PD 0
 .TP
 .B root 
-- rank of process in which previous arguments are examined (integer) 
+- rank of process in which previous arguments are examined (integer)
 .PD 1
 .PD 0
 .TP
 .B comm 
-- intracommunicator containing group of spawning processes (handle) 
+- intracommunicator containing group of spawning processes (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
@@ -55,12 +55,12 @@ start processes (array of handles, significant only at root)
 .TP
 .B intercomm 
 - intercommunicator between original group and newly spawned group
-(handle) 
+(handle)
 .PD 1
 .PD 0
 .TP
 .B array_of_errcodes 
-- one error code per process (array of integer) 
+- one error code per process (array of integer)
 .PD 1
 
 .SH NOTES FOR FORTRAN

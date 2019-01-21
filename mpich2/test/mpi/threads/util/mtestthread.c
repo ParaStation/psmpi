@@ -47,11 +47,10 @@ int MTest_Start_thread(MTEST_THREAD_RETURN_TYPE(*fn) (void *p), void *arg)
     threads[nthreads] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE) fn, (LPVOID) arg, 0, NULL);
     if (threads[nthreads] == NULL) {
         return GetLastError();
-    }
-    else {
+    } else {
         nthreads++;
     }
-    return 0;
+    return MTestReturnValue(errs);
 }
 
 int MTest_Join_threads(void)
@@ -62,8 +61,7 @@ int MTest_Join_threads(void)
             if (WaitForSingleObject(threads[i], INFINITE) == WAIT_FAILED) {
                 err = GetLastError();
                 fprintf(stderr, "Error WaitForSingleObject(), err = %d\n", err);
-            }
-            else {
+            } else {
                 CloseHandle(threads[i]);
             }
         }
@@ -82,7 +80,7 @@ int MTest_thread_lock_create(MTEST_THREAD_LOCK_TYPE * lock)
     if (*lock == NULL)
         return -1;
 
-    return 0;
+    return MTestReturnValue(errs);
 }
 
 int MTest_thread_lock(MTEST_THREAD_LOCK_TYPE * lock)
@@ -94,7 +92,7 @@ int MTest_thread_lock(MTEST_THREAD_LOCK_TYPE * lock)
     if (WaitForSingleObject(*lock, INFINITE) != WAIT_OBJECT_0) {
         return -1;
     }
-    return 0;
+    return MTestReturnValue(errs);
 }
 
 int MTest_thread_unlock(MTEST_THREAD_LOCK_TYPE * lock)
@@ -104,7 +102,7 @@ int MTest_thread_unlock(MTEST_THREAD_LOCK_TYPE * lock)
     if (ReleaseMutex(*lock) == 0) {
         return -1;
     }
-    return 0;
+    return MTestReturnValue(errs);
 }
 
 int MTest_thread_lock_free(MTEST_THREAD_LOCK_TYPE * lock)
@@ -114,7 +112,7 @@ int MTest_thread_lock_free(MTEST_THREAD_LOCK_TYPE * lock)
             return -1;
         }
     }
-    return 0;
+    return MTestReturnValue(errs);
 }
 
 #else
@@ -190,7 +188,7 @@ int MTest_thread_lock_free(MTEST_THREAD_LOCK_TYPE * lock)
 }
 #endif
 
-#if defined(HAVE_PTHREAD_BARRIER_INIT) && defined(USE_PTHREADS)
+#if defined(HAVE_PTHREAD_H) && defined(HAVE_PTHREAD_BARRIER_INIT)
 static MTEST_THREAD_LOCK_TYPE barrierLock;
 static pthread_barrier_t barrier;
 static int bcount = -1;

@@ -18,7 +18,7 @@
 #define NUM_IDUPS   5
 
 MPI_Comm comms[NUM_THREADS];
-MPI_Comm errs[NUM_THREADS] = { 0 };
+int errs[NUM_THREADS] = { 0 };
 
 int verbose = 0;
 
@@ -80,8 +80,7 @@ MTEST_THREAD_RETURN_TYPE test_idup(void *arg)
 
     if (rank % 2 == 0) {
         MPI_Comm_create_group(incomm, even_group, 0, &outcomm);
-    }
-    else {
+    } else {
         outcomm = MPI_COMM_NULL;
     }
     MPI_Group_free(&even_group);
@@ -92,11 +91,9 @@ MTEST_THREAD_RETURN_TYPE test_idup(void *arg)
     MPI_Comm_split(incomm, (rank < size / 2), rank, &local_comm);
     if (rank == 0) {
         rleader = size / 2;
-    }
-    else if (rank == size / 2) {
+    } else if (rank == size / 2) {
         rleader = 0;
-    }
-    else {
+    } else {
         rleader = -1;
     }
     isLeft = rank < size / 2;
@@ -126,7 +123,7 @@ int main(int argc, char **argv)
     int toterrs = 0;
     int size;
 
-    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+    MTest_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     if (provided < MPI_THREAD_MULTIPLE) {
@@ -152,6 +149,5 @@ int main(int argc, char **argv)
         toterrs += errs[i];
     }
     MTest_Finalize(toterrs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(toterrs);
 }

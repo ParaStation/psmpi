@@ -1,0 +1,15 @@
+<dir>
+<file name="recexchalgo.c" info="1542820949"/>
+<file name="recexchalgo.h" info="1542820949"/>
+</dir>
+<data>
+<fileinfo name="recexchalgo.c">
+MPID_STATE_MPII_RECEXCHALGO_GET_NEIGHBORS MPII_Recexchalgo_get_neighbors
+MPID_STATE_MPII_RECEXCHALGO_ORGRANK_TO_STEP2RANK MPII_Recexchalgo_origrank_to_step2rank
+MPID_STATE_MPII_RECEXCHALGO_STEP2RANK_TO_ORGRANK MPII_Recexchalgo_step2rank_to_origrank
+MPID_STATE_MPII_RECEXCHALGO_GET_COUNT_AND_OFFSET MPII_Recexchalgo_get_count_and_offset
+MPID_STATE_MPII_RECEXCHALGO_REVERSE_DIGITS MPII_Recexchalgo_reverse_digits_step2
+</fileinfo>
+<fileinfo name="recexchalgo.h">
+</fileinfo>
+</data>

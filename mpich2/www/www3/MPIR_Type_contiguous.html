@@ -1,0 +1,27 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML3.2 EN">
+<HTML>
+<HEAD>
+<META NAME="GENERATOR" CONTENT="DOCTEXT">
+<TITLE>MPIR_Type_contiguous</TITLE>
+</HEAD>
+<BODY BGCOLOR="FFFFFF">
+<A NAME="MPIR_Type_contiguous"><H1>MPIR_Type_contiguous</H1></A>
+create a contiguous datatype 
+<H2>Synopsis</H2>
+<PRE>
+int MPIR_Type_contiguous(int count, MPI_Datatype oldtype, MPI_Datatype * newtype)
+</PRE>
+<H2>Input Parameters</H2>
+<DL>
+<DT><B>count </B><DD>number of elements in the contiguous block
+
+<DT><B>oldtype </B><DD>type (using handle) of datatype on which vector is based
+</DL>
+<P>
+<H2>Output Parameters</H2>
+<DL><DT><B>newtype </B> <DD> handle of new contiguous datatype
+</DL>
+<P>
+<H2>Return Value</H2>
+MPI_SUCCESS on success, MPI error code on failure.
+</BODY></HTML>

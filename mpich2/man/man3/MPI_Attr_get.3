@@ -1,4 +1,4 @@
-.TH MPI_Attr_get 3 "11/9/2015" " " "MPI"
+.TH MPI_Attr_get 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Attr_get \-  Retrieves attribute value by key 
 .SH SYNOPSIS
@@ -9,12 +9,12 @@ int MPI_Attr_get(MPI_Comm comm, int keyval, void *attribute_val, int *flag)
 .PD 0
 .TP
 .B comm 
-- communicator to which attribute is attached (handle) 
+- communicator to which attribute is attached (handle)
 .PD 1
 .PD 0
 .TP
 .B keyval 
-- key value (integer) 
+- key value (integer)
 .PD 1
 
 .SH OUTPUT PARAMETERS
@@ -29,7 +29,7 @@ int MPI_Attr_get(MPI_Comm comm, int keyval, void *attribute_val, int *flag)
 .TP
 .B flag 
 - true if an attribute value was extracted;  false if no attribute is
-associated with the key 
+associated with the key
 .PD 1
 
 .SH NOTES

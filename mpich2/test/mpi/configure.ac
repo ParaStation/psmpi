@@ -81,8 +81,8 @@ if test "X$master_top_srcdir" = "X" -a "$USE_MAINTAINER_MODE" = "yes" ; then
         ;;        
     esac
     # Now, see if we can find the f77tof90 routine
-    if test -x $use_top_srcdir/../../maint/f77tof90 ; then 
-        master_top_srcdir=`cd $use_top_srcdir && cd ../.. && pwd`
+    if test -x $use_top_srcdir/maint/f77tof90 ; then
+        master_top_srcdir=$use_top_srcdir
     else 
         AC_MSG_ERROR([Unable to find master source file - reconfigure using --disable-maintainer_mode])
     fi
@@ -111,10 +111,12 @@ for option in $enable_fortran ; do
         yes|all)
                 enable_f77=yes
                 enable_fc=yes
+                enable_f08=yes
                 ;;
         no|none)
                 enable_f77=no
                 enable_fc=no
+                enable_f08=no
                 ;;
         f77)
                 enable_f77=yes
@@ -133,6 +135,19 @@ for option in $enable_fortran ; do
     esac
 done
 IFS="$save_IFS"
+
+# DTPools switch
+AC_ARG_ENABLE([dtpools],
+              [AC_HELP_STRING([--disable-dtpools],[Disable dtpools tests])],,
+              [enable_dtpools=yes])
+
+if test "x${enable_dtpools}" = "xyes"; then
+    DTP_SWITCH="ON"
+else
+    DTP_SWITCH="OFF"
+fi
+
+AC_SUBST(DTP_SWITCH)
 
 AC_ARG_ENABLE(cxx,
 	[AC_HELP_STRING([--enable-cxx],[Turn on C++ tests (default)])],,[enable_cxx=yes])
@@ -168,6 +183,11 @@ AC_ARG_ENABLE(perftest,
 	[AC_HELP_STRING([--enable-perftest],
 		[Include tests for basic performance consistency (default)])],,
 	[enable_perftest=yes])
+
+AC_ARG_ENABLE(large-tests,
+	[AC_HELP_STRING([--enable-large-tests],
+		[Enable tests which require large (>2GB per proc) amount of memory])],,
+	[enable_large_tests=no])
 
 AC_ARG_ENABLE(ft-tests,
 	[AC_HELP_STRING([--enable-ft-tests],
@@ -225,6 +245,11 @@ AC_ARG_ENABLE(xfail,
 	[AC_HELP_STRING([--enable-xfail],
 		[Run tests marked for expected failure])],,
 	[enable_xfail=no])
+
+AC_ARG_ENABLE(collalgo-tests,
+              [AC_HELP_STRING([--enable-collalgo-tests],
+                              [Run extended collective algorithm tests])],,
+              [enable_collalgo_tests=no])
 
 AC_ARG_WITH(mpi,
 	[AC_HELP_STRING([--with-mpi=dir],
@@ -586,6 +611,10 @@ else
         AC_PATH_PROG(MPIEXEC,$MPIEXEC_NAME)
     fi
 fi
+# Make sure we export CC before configuring DTPools, since MPI is
+# needed to build the library.
+export CC
+AC_CONFIG_SUBDIRS([dtpools])
 
 # Running C compiler tests
 PAC_PROG_CC
@@ -684,10 +713,19 @@ AC_CHECK_TYPES([_Bool, float _Complex, double _Complex, long double _Complex])
 AC_CHECK_SIZEOF(void *,8)
 # for tests that require large mem
 largetest="#"
-if test $ac_cv_sizeof_void_p -ge 8; then
+if test "$enable_large_tests" = "yes" -a $ac_cv_sizeof_void_p -ge 8; then
     largetest=""
 fi
 AC_SUBST(largetest)
+
+# Extended collectives test
+if test "$enable_collalgo_tests" = "yes" ; then
+    source $srcdir/coll/test_coll_algos.sh
+else
+    coll_algo_tests=""
+fi
+AC_SUBST(coll_algo_tests)
+AM_SUBST_NOTMAKE(coll_algo_tests)
 
 
 # Only run the long double complex tests if that type is available
@@ -1224,6 +1262,10 @@ elif test "$enable_fc" = yes ; then
     AC_LANG_POP([Fortran])
 fi
 
+if test "$enable_f08" = "yes" ; then
+    PAC_FC_2008_SUPPORT([enable_f08=yes],[enable_f08=no])
+fi
+
 f08dir="#"
 AC_SUBST(f08dir)
 # FIXME if $FROM_MPICH is no, we should test build an MPI F08 program
@@ -1491,7 +1533,9 @@ if test "$FROM_MPICH" = yes ; then
     F77=$mpibindir/$MPIF77_NAME
     FC=$mpibindir/$MPIFORT_NAME
     CXX=$mpibindir/$MPICXX_NAME
-    MPIEXEC=$mpibindir/$MPIEXEC_NAME
+    if test -z "$MPIEXEC" ; then
+        MPIEXEC=$mpibindir/$MPIEXEC_NAME
+    fi
 
     # Zero out the flags, since they are already contained in the compiler
     # wrapper scripts.  Note that this will kill any flags that have been added
@@ -1528,6 +1572,7 @@ AC_OUTPUT(maint/testmerge \
           Makefile \
           basic/Makefile \
           attr/Makefile \
+          attr/testlist \
           util/Makefile \
           coll/Makefile \
 	  coll/testlist \
@@ -1539,6 +1584,7 @@ AC_OUTPUT(maint/testmerge \
           info/Makefile \
           init/Makefile \
           pt2pt/Makefile \
+          pt2pt/testlist \
           mpi_t/Makefile \
           rma/Makefile \
           rma/testlist \
@@ -1618,12 +1664,14 @@ AC_OUTPUT(maint/testmerge \
      cxx/Makefile \
           cxx/util/Makefile \
           cxx/attr/Makefile \
+          cxx/attr/testlist \
           cxx/pt2pt/Makefile \
           cxx/comm/Makefile \
           cxx/coll/Makefile \
 	  cxx/errhan/Makefile \
           cxx/info/Makefile \
           cxx/datatype/Makefile \
+          cxx/datatype/testlist \
           cxx/io/Makefile \
           cxx/init/Makefile \
           cxx/rma/Makefile \
@@ -1677,6 +1725,7 @@ AC_OUTPUT(maint/testmerge \
 	  cxx/topo/testlist \
           f77/testlist \
           f90/testlist \
+          f08/testlist \
           threads/testlist \
           errors/testlist \
           errors/cxx/testlist \

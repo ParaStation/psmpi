@@ -21,6 +21,7 @@
 
 #include "mpi.h"
 #include <stdio.h>
+#include "mpitest.h"
 
 #define LOOP_SIZE 10000
 #define CHECK_TAG 123
@@ -28,14 +29,14 @@
 int main(int argc, char *argv[])
 {
     int rank, size, k;
-    int errors = 0;
+    int errs = 0;
     int origin_shm, origin_am, dest;
     int *orig_buf = NULL, *result_buf = NULL, *compare_buf = NULL,
         *target_buf = NULL, *check_buf = NULL;
     int target_value = 0;
     MPI_Win win;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -64,13 +65,11 @@ int main(int argc, char *argv[])
             orig_buf[0] = 1;
             compare_buf[0] = 0;
             result_buf[0] = 0;
-        }
-        else if (rank == origin_am) {
+        } else if (rank == origin_am) {
             orig_buf[0] = 0;
             compare_buf[0] = 1;
             result_buf[0] = 0;
-        }
-        else {
+        } else {
             MPI_Win_lock(MPI_LOCK_SHARED, rank, 0, win);
             target_buf[0] = 0;
             MPI_Win_unlock(rank, win);
@@ -91,8 +90,7 @@ int main(int argc, char *argv[])
         /* check results */
         if (rank != dest) {
             MPI_Gather(result_buf, 1, MPI_INT, check_buf, 1, MPI_INT, dest, MPI_COMM_WORLD);
-        }
-        else {
+        } else {
             MPI_Win_lock(MPI_LOCK_SHARED, rank, 0, win);
             target_value = target_buf[0];
             MPI_Win_unlock(rank, win);
@@ -113,7 +111,7 @@ int main(int argc, char *argv[])
                 printf
                     ("Expected results (2): target result = 0, origin_shm result = 0, origin_am result = 1\n");
 
-                errors++;
+                errs++;
             }
 
             MPI_Free_mem(check_buf);
@@ -129,9 +127,6 @@ int main(int argc, char *argv[])
     }
 
   exit_test:
-    if (rank == dest && errors == 0)
-        printf(" No Errors\n");
-
-    MPI_Finalize();
-    return 0;
+    MTest_Finalize(errs);
+    return MTestReturnValue(errs);
 }

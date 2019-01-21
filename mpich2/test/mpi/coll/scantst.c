@@ -35,8 +35,7 @@ void assoc(int *invec, int *inoutvec, int *len, MPI_Datatype * dtype)
             MPI_Comm_rank(MPI_COMM_WORLD, &rank);
             fprintf(stderr, "[%d] inout[0] = %d, in[0] = %d\n", rank, inoutvec[0], invec[0]);
             inoutvec[i] = BAD_ANSWER;
-        }
-        else
+        } else
             inoutvec[i] = invec[i];
     }
 }
@@ -51,7 +50,7 @@ int main(int argc, char **argv)
     MPI_Op op_assoc, op_addem;
     MPI_Comm comm = MPI_COMM_WORLD;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
     MPI_Op_create((MPI_User_function *) assoc, 0, &op_assoc);
     MPI_Op_create((MPI_User_function *) addem, 1, &op_addem);
 
@@ -102,13 +101,7 @@ int main(int argc, char **argv)
     MPI_Op_free(&op_assoc);
     MPI_Op_free(&op_addem);
 
-    MPI_Finalize();
-    if (errors)
-        printf("[%d] done with ERRORS(%d)!\n", rank, errors);
-    else {
-        if (rank == 0)
-            printf(" No Errors\n");
-    }
+    MTest_Finalize(errors);
 
     return errors;
 }

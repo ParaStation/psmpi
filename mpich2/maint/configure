@@ -1740,7 +1740,7 @@ CXXFLAGS='@CXXFLAGS@'
 # autoconf replacement.
 # Note that top_srcdir and srcdir are special cases (they must not
 # be changed in configure.ac because configure uses them to find other files)
-ac_config_files="$ac_config_files checkbuilds getcoverage genstates clmake f77tof90 extractstrings extractcvars extractstates extractfixme createcoverage gcovmerge createhtmlindex cvardirs"
+ac_config_files="$ac_config_files checkbuilds getcoverage genstates clmake extractstrings extractcvars extractstates extractfixme createcoverage gcovmerge createhtmlindex cvardirs getfuncstack"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -2461,7 +2461,6 @@ do
     "getcoverage") CONFIG_FILES="$CONFIG_FILES getcoverage" ;;
     "genstates") CONFIG_FILES="$CONFIG_FILES genstates" ;;
     "clmake") CONFIG_FILES="$CONFIG_FILES clmake" ;;
-    "f77tof90") CONFIG_FILES="$CONFIG_FILES f77tof90" ;;
     "extractstrings") CONFIG_FILES="$CONFIG_FILES extractstrings" ;;
     "extractcvars") CONFIG_FILES="$CONFIG_FILES extractcvars" ;;
     "extractstates") CONFIG_FILES="$CONFIG_FILES extractstates" ;;
@@ -2470,6 +2469,7 @@ do
     "gcovmerge") CONFIG_FILES="$CONFIG_FILES gcovmerge" ;;
     "createhtmlindex") CONFIG_FILES="$CONFIG_FILES createhtmlindex" ;;
     "cvardirs") CONFIG_FILES="$CONFIG_FILES cvardirs" ;;
+    "getfuncstack") CONFIG_FILES="$CONFIG_FILES getfuncstack" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
@@ -2888,7 +2888,7 @@ $as_echo "$as_me: executing $ac_file commands" >&6;}
 
 
   case $ac_file$ac_mode in
-    "default-1":C) chmod a+x checkbuilds getcoverage genstates clmake f77tof90 extractstrings extractcvars extractstates extractfixme createcoverage gcovmerge createhtmlindex ;;
+    "default-1":C) chmod a+x checkbuilds getcoverage genstates clmake extractstrings extractcvars extractstates extractfixme createcoverage gcovmerge createhtmlindex getfuncstack ;;
 
   esac
 done # for ac_tag

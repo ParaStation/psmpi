@@ -1,21 +1,21 @@
-.TH MPI_Testany 3 "11/9/2015" " " "MPI"
+.TH MPI_Testany 3 "11/21/2018" " " "MPI"
 .SH NAME
-MPI_Testany \-  Tests for completion of any previdously initiated  requests 
+MPI_Testany \-  Tests for completion of any previdously initiated requests 
 .SH SYNOPSIS
 .nf
 int MPI_Testany(int count, MPI_Request array_of_requests[], int *indx,
-               int *flag, MPI_Status *status)
+                int *flag, MPI_Status * status)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B count 
-- list length (integer) 
+- list length (integer)
 .PD 1
 .PD 0
 .TP
 .B array_of_requests 
-- array of requests (array of handles) 
+- array of requests (array of handles)
 .PD 1
 
 .SH OUTPUT PARAMETERS
@@ -25,12 +25,12 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *indx,
 - index of operation that completed, or 
 .I MPI_UNDEFINED
 if none
-completed (integer) 
+completed (integer)
 .PD 1
 .PD 0
 .TP
 .B flag 
-- true if one of the operations is complete (logical) 
+- true if one of the operations is complete (logical)
 .PD 1
 .PD 0
 .TP

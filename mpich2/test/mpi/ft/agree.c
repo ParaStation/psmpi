@@ -14,7 +14,7 @@ int main(int argc, char **argv)
     int rank, size, rc, errclass, errs = 0;
     int flag = 1;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
@@ -37,8 +37,7 @@ int main(int argc, char **argv)
                 errclass);
         MPI_Abort(MPI_COMM_WORLD, 1);
         errs++;
-    }
-    else if (0 != flag) {
+    } else if (0 != flag) {
         fprintf(stderr, "[%d] Expected flag to be 0. Received: %d\n", rank, flag);
         errs++;
     }
@@ -55,21 +54,13 @@ int main(int argc, char **argv)
         fprintf(stderr, "[%d] Expected MPI_SUCCESS after agree. Received: %d\n", rank, errclass);
         MPI_Abort(MPI_COMM_WORLD, 1);
         errs++;
-    }
-    else if (0 != flag) {
+    } else if (0 != flag) {
         fprintf(stderr, "[%d] Expected flag to be 0. Received: %d\n", rank, flag);
         MPI_Abort(MPI_COMM_WORLD, 1);
         errs++;
     }
 
-    MPI_Finalize();
+    MTest_Finalize(errs);
 
-    if (0 == rank) {
-        if (errs == 0)
-            fprintf(stdout, " No Errors\n");
-        else
-            fprintf(stdout, " Found %d errors\n", errs);
-    }
-
-    return errs;
+    return MTestReturnValue(errs);
 }

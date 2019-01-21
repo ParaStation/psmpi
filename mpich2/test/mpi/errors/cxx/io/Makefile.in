@@ -118,15 +118,18 @@ PROGRAMS = $(noinst_PROGRAMS)
 errgetfilex_SOURCES = errgetfilex.cxx
 errgetfilex_OBJECTS = errgetfilex.$(OBJEXT)
 errgetfilex_LDADD = $(LDADD)
-errgetfilex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+errgetfilex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 fileerrretx_SOURCES = fileerrretx.cxx
 fileerrretx_OBJECTS = fileerrretx.$(OBJEXT)
 fileerrretx_LDADD = $(LDADD)
-fileerrretx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+fileerrretx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 throwtestfilex_SOURCES = throwtestfilex.cxx
 throwtestfilex_OBJECTS = throwtestfilex.$(OBJEXT)
 throwtestfilex_LDADD = $(LDADD)
-throwtestfilex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+throwtestfilex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -208,6 +211,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -363,6 +367,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -370,8 +375,13 @@ threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
-LDADD = $(top_builddir)/cxx/util/mtest.o
+
+# Add libdtpools support
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_builddir)/dtpoos/include \
+	-I$(top_srcdir)/dtpools/include
+LDADD = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 CLEANFILES = summary.xml summary.tap
 EXTRA_DIST = testlist
 
@@ -659,6 +669,9 @@ uninstall-am:
 
 $(top_builddir)/cxx/util/mtest.o: $(top_srcdir)/cxx/util/mtest.cxx
 	(cd $(top_builddir)/cxx/util && $(MAKE) mtest.o)
+
+$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+	(cd $(top_builddir)/dtpools && $(MAKE))
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \

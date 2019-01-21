@@ -14,7 +14,8 @@
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_T_category_get_cvars as PMPI_T_category_get_cvars
 #elif defined(HAVE_WEAK_ATTRIBUTE)
-int MPI_T_category_get_cvars(int cat_index, int len, int indices[]) __attribute__((weak,alias("PMPI_T_category_get_cvars")));
+int MPI_T_category_get_cvars(int cat_index, int len, int indices[])
+    __attribute__ ((weak, alias("PMPI_T_category_get_cvars")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -36,18 +37,15 @@ int MPIR_T_category_get_cvars_impl(int cat_index, int len, int indices[])
     cat_table_entry_t *cat;
     int i, num_cvars, count;
 
-    cat = (cat_table_entry_t *)utarray_eltptr(cat_table, cat_index);
+    cat = (cat_table_entry_t *) utarray_eltptr(cat_table, cat_index);
     num_cvars = utarray_len(cat->cvar_indices);
     count = len < num_cvars ? len : num_cvars;
 
     for (i = 0; i < count; i++) {
-        indices[i] = *(int *)utarray_eltptr(cat->cvar_indices, i);
+        indices[i] = *(int *) utarray_eltptr(cat->cvar_indices, i);
     }
 
-fn_exit:
     return mpi_errno;
-fn_fail:
-    goto fn_exit;
 }
 
 #endif /* MPICH_MPI_FROM_PMPI */
@@ -77,47 +75,50 @@ int MPI_T_category_get_cvars(int cat_index, int len, int indices[])
 {
     int mpi_errno = MPI_SUCCESS;
 
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_CATEGORY_GET_CVARS);
+    MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_T_CATEGORY_GET_CVARS);
     MPIR_ERRTEST_MPIT_INITIALIZED(mpi_errno);
     MPIR_T_THREAD_CS_ENTER();
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_T_CATEGORY_GET_CVARS);
+    MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPI_T_CATEGORY_GET_CVARS);
 
     /* Validate parameters */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
-        MPID_BEGIN_ERROR_CHECKS
+        MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_ERRTEST_CAT_INDEX(cat_index, mpi_errno);
             if (len != 0)
                 MPIR_ERRTEST_ARGNULL(indices, "indices", mpi_errno);
         }
-        MPID_END_ERROR_CHECKS
+        MPID_END_ERROR_CHECKS;
     }
-#   endif /* HAVE_ERROR_CHECKING */
+#endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
 
-    if (len == 0) goto fn_exit;
+    if (len == 0)
+        goto fn_exit;
 
     mpi_errno = MPIR_T_category_get_cvars_impl(cat_index, len, indices);
-    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
 
     /* ... end of body of routine ... */
 
-fn_exit:
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_T_CATEGORY_GET_CVARS);
+  fn_exit:
+    MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPI_T_CATEGORY_GET_CVARS);
     MPIR_T_THREAD_CS_EXIT();
     return mpi_errno;
 
-fn_fail:
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
-        mpi_errno = MPIR_Err_create_code(
-            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-            "**mpi_t_category_get_cvars", "**mpi_t_category_get_cvars %d %d %p", cat_index, len, indices);
+        mpi_errno =
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+                                 "**mpi_t_category_get_cvars",
+                                 "**mpi_t_category_get_cvars %d %d %p", cat_index, len, indices);
     }
-#   endif
+#endif
     mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */

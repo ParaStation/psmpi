@@ -53,17 +53,17 @@ int MPID_nem_llc_kvs_put_binary(int from, const char *postfix, const uint8_t * b
     char key[256], val[256], str[256];
     int j;
 
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LLC_KVS_PUT_BINARY);
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LLC_KVS_PUT_BINARY);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_LLC_KVS_PUT_BINARY);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_LLC_KVS_PUT_BINARY);
 
     mpi_errno = MPIDI_PG_GetConnKVSname(&kvs_name);
     MPIR_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**MPIDI_PG_GetConnKVSname");
     dprintf("kvs_put_binary,kvs_name=%s\n", kvs_name);
 
-    sprintf(key, "bc/%d/%s", from, postfix);
+    MPL_snprintf(key, sizeof(key), "bc/%d/%s", from, postfix);
     val[0] = 0;
     for (j = 0; j < length; j++) {
-        sprintf(str, "%02x", buf[j]);
+        MPL_snprintf(str, sizeof(str), "%02x", buf[j]);
         strcat(val, str);
     }
     dprintf("kvs_put_binary,rank=%d,from=%d,PMI_KVS_Put(%s, %s, %s)\n",
@@ -71,7 +71,7 @@ int MPID_nem_llc_kvs_put_binary(int from, const char *postfix, const uint8_t * b
     pmi_errno = PMI_KVS_Put(kvs_name, key, val);
     MPIR_ERR_CHKANDJUMP(pmi_errno, mpi_errno, MPI_ERR_OTHER, "**PMI_KVS_Put");
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LLC_KVS_PUT_BINARY);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_LLC_KVS_PUT_BINARY);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -89,14 +89,14 @@ int MPID_nem_llc_kvs_get_binary(int from, const char *postfix, char *buf, int le
     char key[256], val[256], str[256];
     int j;
 
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LLC_KVS_GET_BINARY);
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LLC_KVS_GET_BINARY);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_LLC_KVS_GET_BINARY);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_LLC_KVS_GET_BINARY);
 
     mpi_errno = MPIDI_PG_GetConnKVSname(&kvs_name);
     dprintf("kvs_get_binary,kvs_name=%s\n", kvs_name);
     MPIR_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**MPIDI_PG_GetConnKVSname");
 
-    sprintf(key, "bc/%d/%s", from, postfix);
+    MPL_snprintf(key, sizeof(key), "bc/%d/%s", from, postfix);
     dprintf("kvs_put_binary,rank=%d,from=%d,PMI_KVS_Get(%s, %s, %s)\n",
             MPIDI_Process.my_pg_rank, from, kvs_name, key, val);
     pmi_errno = PMI_KVS_Get(kvs_name, key, val, 256);
@@ -112,7 +112,7 @@ int MPID_nem_llc_kvs_get_binary(int from, const char *postfix, char *buf, int le
     }
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LLC_KVS_GET_BINARY);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_LLC_KVS_GET_BINARY);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -126,9 +126,9 @@ int MPID_nem_llc_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
 {
     int mpi_errno = MPI_SUCCESS, pmi_errno, llc_errno;
 
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LLC_INIT);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_LLC_INIT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LLC_INIT);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_LLC_INIT);
 
     llc_errno = LLC_init(TYPE_MPI);
     MPIR_ERR_CHKANDJUMP(llc_errno, mpi_errno, MPI_ERR_OTHER, "**LLC_init");
@@ -155,7 +155,7 @@ int MPID_nem_llc_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
     MPIDI_Anysource_improbe_fn = MPID_nem_llc_anysource_improbe;
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LLC_INIT);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_LLC_INIT);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -168,12 +168,12 @@ int MPID_nem_llc_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_
 int MPID_nem_llc_get_business_card(int my_rank, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LLC_GET_BUSINESS_CARD);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_LLC_GET_BUSINESS_CARD);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LLC_GET_BUSINESS_CARD);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_LLC_GET_BUSINESS_CARD);
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LLC_GET_BUSINESS_CARD);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_LLC_GET_BUSINESS_CARD);
     return mpi_errno;
     //fn_fail:
     goto fn_exit;
@@ -186,12 +186,12 @@ int MPID_nem_llc_get_business_card(int my_rank, char **bc_val_p, int *val_max_sz
 int MPID_nem_llc_connect_to_root(const char *business_card, MPIDI_VC_t * new_vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LLC_CONNECT_TO_ROOT);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_LLC_CONNECT_TO_ROOT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LLC_CONNECT_TO_ROOT);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_LLC_CONNECT_TO_ROOT);
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LLC_CONNECT_TO_ROOT);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_LLC_CONNECT_TO_ROOT);
     return mpi_errno;
     //fn_fail:
     goto fn_exit;
@@ -205,7 +205,7 @@ int MPID_nem_llc_connect_to_root(const char *business_card, MPIDI_VC_t * new_vc)
 #define FUNCNAME MPID_nem_llc_anysource_iprobe
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_nem_llc_anysource_iprobe(int tag, MPID_Comm * comm, int context_offset, int *flag,
+int MPID_nem_llc_anysource_iprobe(int tag, MPIR_Comm * comm, int context_offset, int *flag,
                                   MPI_Status * status)
 {
     return MPID_nem_llc_iprobe(NULL, MPI_ANY_SOURCE, tag, comm, context_offset, flag, status);
@@ -216,8 +216,8 @@ int MPID_nem_llc_anysource_iprobe(int tag, MPID_Comm * comm, int context_offset,
 #define FUNCNAME MPID_nem_llc_anysource_improbe
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_nem_llc_anysource_improbe(int tag, MPID_Comm * comm, int context_offset, int *flag,
-                                   MPID_Request ** message, MPI_Status * status)
+int MPID_nem_llc_anysource_improbe(int tag, MPIR_Comm * comm, int context_offset, int *flag,
+                                   MPIR_Request ** message, MPI_Status * status)
 {
     return MPID_nem_llc_improbe(NULL, MPI_ANY_SOURCE, tag, comm, context_offset, flag, message,
                                 status);

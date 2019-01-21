@@ -1,21 +1,20 @@
-.TH MPI_Graph_map 3 "11/9/2015" " " "MPI"
+.TH MPI_Graph_map 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Graph_map \-  Maps process to graph topology information 
 .SH SYNOPSIS
 .nf
-int MPI_Graph_map(MPI_Comm comm, int nnodes, const int indx[], const int edges[],
-                  int *newrank)
+int MPI_Graph_map(MPI_Comm comm, int nnodes, const int indx[], const int edges[], int *newrank)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B comm 
-- input communicator (handle) 
+- input communicator (handle)
 .PD 1
 .PD 0
 .TP
 .B nnodes 
-- number of graph nodes (integer) 
+- number of graph nodes (integer)
 .PD 1
 .PD 0
 .TP
@@ -27,7 +26,7 @@ int MPI_Graph_map(MPI_Comm comm, int nnodes, const int indx[], const int edges[]
 .PD 0
 .TP
 .B edges 
-- integer array specifying the graph structure 
+- integer array specifying the graph structure
 .PD 1
 
 .SH OUTPUT PARAMETERS
@@ -36,8 +35,8 @@ int MPI_Graph_map(MPI_Comm comm, int nnodes, const int indx[], const int edges[]
 .B newrank 
 - reordered rank of the calling process; 
 .I MPI_UNDEFINED
-if the 
-calling process does not belong to graph (integer) 
+if the
+calling process does not belong to graph (integer)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

@@ -1,7 +1,7 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
- *  (C) 2015 by Argonne National Laboratory.
+ *  (C) 2012 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
@@ -27,11 +27,11 @@ int main(int argc, char **argv)
 {
     int rank, nproc, mpi_errno;
     int i, ncomm;
-    int errors = 1;
+    int errs = 1;
     MPI_Comm *comm_hdls;
     MPI_Request req;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
@@ -44,14 +44,13 @@ int main(int argc, char **argv)
     for (i = 0; i < MAX_NCOMM; i++) {
         /* Note: the comms we create are all dups of MPI_COMM_WORLD */
         MPI_Comm_idup(MPI_COMM_WORLD, &comm_hdls[i], &req);
-        mpi_errno = MPI_Wait(&req,MPI_STATUSES_IGNORE);
+        mpi_errno = MPI_Wait(&req, MPI_STATUSES_IGNORE);
         if (mpi_errno == MPI_SUCCESS) {
             ncomm++;
-        }
-        else {
+        } else {
             if (verbose)
                 printf("%d: Error creating comm %d\n", rank, i);
-            errors = 0;
+            errs = 0;
             break;
         }
     }
@@ -60,8 +59,7 @@ int main(int argc, char **argv)
         MPI_Comm_free(&comm_hdls[i]);
 
     free(comm_hdls);
-    MTest_Finalize(errors);
-    MPI_Finalize();
+    MTest_Finalize(errs);
 
-    return 0;
+    return MTestReturnValue(errs);
 }

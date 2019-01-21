@@ -1,4 +1,4 @@
-.TH MPI_Dims_create 3 "11/9/2015" " " "MPI"
+.TH MPI_Dims_create 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Dims_create \-  Creates a division of processors in a cartesian grid 
 .SH SYNOPSIS
@@ -9,12 +9,12 @@ int MPI_Dims_create(int nnodes, int ndims, int dims[])
 .PD 0
 .TP
 .B nnodes 
-- number of nodes in a grid (integer) 
+- number of nodes in a grid (integer)
 .PD 1
 .PD 0
 .TP
 .B ndims 
-- number of cartesian dimensions (integer) 
+- number of cartesian dimensions (integer)
 .PD 1
 
 .SH INPUT/OUTPUT PARAMETERS
@@ -23,7 +23,7 @@ int MPI_Dims_create(int nnodes, int ndims, int dims[])
 .B dims 
 - integer array of size  
 .I ndims
-specifying the number of nodes in each 
+specifying the number of nodes in each
 dimension.  A value of 0 indicates that 
 .I MPI_Dims_create
 should fill in a

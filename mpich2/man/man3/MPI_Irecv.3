@@ -1,48 +1,48 @@
-.TH MPI_Irecv 3 "11/9/2015" " " "MPI"
+.TH MPI_Irecv 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Irecv \-  Begins a nonblocking receive 
 .SH SYNOPSIS
 .nf
 int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
-              int tag, MPI_Comm comm, MPI_Request *request)
+              int tag, MPI_Comm comm, MPI_Request * request)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B buf 
-- initial address of receive buffer (choice) 
+- initial address of receive buffer (choice)
 .PD 1
 .PD 0
 .TP
 .B count 
-- number of elements in receive buffer (integer) 
+- number of elements in receive buffer (integer)
 .PD 1
 .PD 0
 .TP
 .B datatype 
-- datatype of each receive buffer element (handle) 
+- datatype of each receive buffer element (handle)
 .PD 1
 .PD 0
 .TP
 .B source 
-- rank of source (integer) 
+- rank of source (integer)
 .PD 1
 .PD 0
 .TP
 .B tag 
-- message tag (integer) 
+- message tag (integer)
 .PD 1
 .PD 0
 .TP
 .B comm 
-- communicator (handle) 
+- communicator (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B request 
-- communication request (handle) 
+- communication request (handle)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

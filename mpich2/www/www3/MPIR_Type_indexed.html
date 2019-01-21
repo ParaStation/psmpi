@@ -1,0 +1,39 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML3.2 EN">
+<HTML>
+<HEAD>
+<META NAME="GENERATOR" CONTENT="DOCTEXT">
+<TITLE>MPIR_Type_indexed</TITLE>
+</HEAD>
+<BODY BGCOLOR="FFFFFF">
+<A NAME="MPIR_Type_indexed"><H1>MPIR_Type_indexed</H1></A>
+create an indexed datatype 
+<H2>Synopsis</H2>
+<PRE>
+int MPIR_Type_indexed(int count,
+                      const int *blocklength_array,
+                      const void *displacement_array,
+                      int dispinbytes, MPI_Datatype oldtype, MPI_Datatype * newtype)
+</PRE>
+<H2>Input Parameters</H2>
+<DL>
+<DT><B>count </B><DD>number of blocks in type
+
+<DT><B>blocklength_array </B><DD>number of elements in each block
+
+<DT><B>displacement_array </B><DD>offsets of blocks from start of type (see next
+parameter for units)
+
+<DT><B>dispinbytes </B><DD>if nonzero, then displacements are in bytes (the
+displacement_array is an array of ints), otherwise they in terms of
+extent of oldtype (the displacement_array is an array of MPI_Aints)
+
+<DT><B>oldtype </B><DD>type (using handle) of datatype on which new type is based
+</DL>
+<P>
+<H2>Output Parameters</H2>
+<DL><DT><B>newtype </B> <DD> handle of new indexed datatype
+</DL>
+<P>
+<H2>Return Value</H2>
+0 on success, -1 on failure.
+</BODY></HTML>

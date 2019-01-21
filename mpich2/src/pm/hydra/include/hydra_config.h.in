@@ -1,8 +1,5 @@
 /* include/hydra_config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define if FTB is enabled */
-#undef ENABLE_FTB
-
 /* Define if profiling enabled */
 #undef ENABLE_PROFILING
 
@@ -63,10 +60,6 @@
 /* Define to 1 if you have the <cuda_runtime_api.h> header file. */
 #undef HAVE_CUDA_RUNTIME_API_H
 
-/* Define to 1 if you have the declaration of `CL_DEVICE_TOPOLOGY_AMD', and to
-   0 if you don't. */
-#undef HAVE_DECL_CL_DEVICE_TOPOLOGY_AMD
-
 /* Define to 1 if you have the declaration of `CTL_HW', and to 0 if you don't.
    */
 #undef HAVE_DECL_CTL_HW
@@ -91,6 +84,10 @@
    don't. */
 #undef HAVE_DECL_HW_NCPU
 
+/* Define to 1 if you have the declaration of `lgrp_latency_cookie', and to 0
+   if you don't. */
+#undef HAVE_DECL_LGRP_LATENCY_COOKIE
+
 /* Define to 1 if you have the declaration of
    `nvmlDeviceGetMaxPcieLinkGeneration', and to 0 if you don't. */
 #undef HAVE_DECL_NVMLDEVICEGETMAXPCIELINKGENERATION
@@ -103,9 +100,28 @@
    0 if you don't. */
 #undef HAVE_DECL_PTHREAD_SETAFFINITY_NP
 
+/* Embedded mode; just assume we do not have Valgrind support */
+#undef HAVE_DECL_RUNNING_ON_VALGRIND
+
+/* Define to 1 if you have the declaration of `sched_getcpu', and to 0 if you
+   don't. */
+#undef HAVE_DECL_SCHED_GETCPU
+
+/* Define to 1 if you have the declaration of `snprintf', and to 0 if you
+   don't. */
+#undef HAVE_DECL_SNPRINTF
+
+/* Define to 1 if you have the declaration of `strcasecmp', and to 0 if you
+   don't. */
+#undef HAVE_DECL_STRCASECMP
+
 /* Define to 1 if you have the declaration of `strtoull', and to 0 if you
    don't. */
 #undef HAVE_DECL_STRTOULL
+
+/* Define to 1 if you have the declaration of `_putenv', and to 0 if you
+   don't. */
+#undef HAVE_DECL__PUTENV
 
 /* Define to 1 if you have the declaration of `_SC_LARGE_PAGESIZE', and to 0
    if you don't. */
@@ -134,6 +150,10 @@
 /* Define to 1 if you have the declaration of `_SC_PAGE_SIZE', and to 0 if you
    don't. */
 #undef HAVE_DECL__SC_PAGE_SIZE
+
+/* Define to 1 if you have the declaration of `_strdup', and to 0 if you
+   don't. */
+#undef HAVE_DECL__STRDUP
 
 /* Define to 1 if you have the <dirent.h> header file. */
 #undef HAVE_DIRENT_H
@@ -225,9 +245,6 @@
 /* Define to 1 if you have the `cr' library (-lcr). */
 #undef HAVE_LIBCR
 
-/* Define to 1 if you have the `ftb' library (-lftb). */
-#undef HAVE_LIBFTB
-
 /* Define to 1 if we have -lgdi32 */
 #undef HAVE_LIBGDI32
 
@@ -239,6 +256,9 @@
 
 /* Define to 1 if we have -llgrp */
 #undef HAVE_LIBLGRP
+
+/* Define if libslurm is available */
+#undef HAVE_LIBSLURM
 
 /* Define to 1 if you have the `torque' library (-ltorque). */
 #undef HAVE_LIBTORQUE
@@ -276,9 +296,6 @@
 /* Define to 1 if you have the <netinet/tcp.h> header file. */
 #undef HAVE_NETINET_TCP_H
 
-/* Define to 1 if you have the <numaif.h> header file. */
-#undef HAVE_NUMAIF_H
-
 /* Define to 1 if the system has the type `NUMA_NODE_RELATIONSHIP'. */
 #undef HAVE_NUMA_NODE_RELATIONSHIP
 
@@ -290,6 +307,9 @@
 
 /* Define to 1 if you have the `openat' function. */
 #undef HAVE_OPENAT
+
+/* Define to 1 if you have the <OpenCL/cl_ext.h> header file. */
+#undef HAVE_OPENCL_CL_EXT_H
 
 /* Define to 1 if you have the <picl.h> header file. */
 #undef HAVE_PICL_H
@@ -303,11 +323,17 @@
 /* Define to 1 if you have the `posix_memalign' function. */
 #undef HAVE_POSIX_MEMALIGN
 
+/* Define this if POSIX compliant regcomp()/regexec() */
+#undef HAVE_POSIX_REGCOMP
+
 /* Define to 1 if the system has the type `PROCESSOR_CACHE_TYPE'. */
 #undef HAVE_PROCESSOR_CACHE_TYPE
 
 /* Define to 1 if the system has the type `PROCESSOR_GROUP_INFO'. */
 #undef HAVE_PROCESSOR_GROUP_INFO
+
+/* Define to 1 if the system has the type `PROCESSOR_NUMBER'. */
+#undef HAVE_PROCESSOR_NUMBER
 
 /* Define to 1 if the system has the type `PROCESSOR_RELATIONSHIP'. */
 #undef HAVE_PROCESSOR_RELATIONSHIP
@@ -358,6 +384,12 @@
 /* Define to 1 if you have the `sigset' function. */
 #undef HAVE_SIGSET
 
+/* Define to 1 if you have the <slurm/slurm.h> header file. */
+#undef HAVE_SLURM_SLURM_H
+
+/* Define to 1 if the system has the type `ssize_t'. */
+#undef HAVE_SSIZE_T
+
 /* Define to 1 if you have the `stat' function. */
 #undef HAVE_STAT
 
@@ -366,12 +398,6 @@
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
-
-/* Define to 1 if you have the `strdup' function. */
-#undef HAVE_STRDUP
-
-/* Define to 1 if you have the `strerror' function. */
-#undef HAVE_STRERROR
 
 /* Define to 1 if you have the `strftime' function. */
 #undef HAVE_STRFTIME
@@ -387,6 +413,9 @@
 
 /* Define to 1 if you have the `strsignal' function. */
 #undef HAVE_STRSIGNAL
+
+/* Define to 1 if you have the `strtoull' function. */
+#undef HAVE_STRTOULL
 
 /* Define to '1' if sysctl is present and usable */
 #undef HAVE_SYSCTL
@@ -455,6 +484,9 @@
 
 /* Define to 1 if you have the `usleep' function. */
 #undef HAVE_USLEEP
+
+/* Define to 1 if you have the <valgrind/valgrind.h> header file. */
+#undef HAVE_VALGRIND_VALGRIND_H
 
 /* Define to 1 if you have the <windows.h> header file. */
 #undef HAVE_WINDOWS_H
@@ -609,17 +641,18 @@
 /* Define to 1 if you have the GL module components. */
 #undef HWLOC_HAVE_GL
 
+/* Define to 1 if you have libudev. */
+#undef HWLOC_HAVE_LIBUDEV
+
 /* Define to 1 if you have the `libxml2' library. */
 #undef HWLOC_HAVE_LIBXML2
 
-/* Define to 1 if building the Linux PCI component */
+/* Define to 1 if building the Linux I/O component */
+#undef HWLOC_HAVE_LINUXIO
+
+/* Define to 1 if enabling Linux-specific PCI discovery in the Linux I/O
+   component */
 #undef HWLOC_HAVE_LINUXPCI
-
-/* Define to 1 if mbind is available. */
-#undef HWLOC_HAVE_MBIND
-
-/* Define to 1 if migrate_pages is available. */
-#undef HWLOC_HAVE_MIGRATE_PAGES
 
 /* Define to 1 if you have the `NVML' library. */
 #undef HWLOC_HAVE_NVML
@@ -644,11 +677,11 @@
 /* Define to 1 if glibc provides a prototype of sched_setaffinity() */
 #undef HWLOC_HAVE_SCHED_SETAFFINITY
 
-/* Define to 1 if set_mempolicy is available. */
-#undef HWLOC_HAVE_SET_MEMPOLICY
-
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HWLOC_HAVE_STDINT_H
+
+/* Define to 1 if function `syscall' is available with 6 parameters */
+#undef HWLOC_HAVE_SYSCALL
 
 /* Define to 1 if you have the `windows.h' header. */
 #undef HWLOC_HAVE_WINDOWS_H
@@ -658,9 +691,6 @@
 
 /* Define to 1 if you have x86 cpuid */
 #undef HWLOC_HAVE_X86_CPUID
-
-/* Define to 1 if the _syscall3 macro works */
-#undef HWLOC_HAVE__SYSCALL3
 
 /* Define to 1 on HP-UX */
 #undef HWLOC_HPUX_SYS
@@ -673,9 +703,6 @@
 
 /* Define to 1 on *NETBSD */
 #undef HWLOC_NETBSD_SYS
-
-/* Define to 1 on OSF */
-#undef HWLOC_OSF_SYS
 
 /* The size of `unsigned int', as computed by sizeof */
 #undef HWLOC_SIZEOF_UNSIGNED_INT
@@ -812,6 +839,9 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* Define if we should check for PMI key collisions */
+#undef PMI_KEY_CHECK
 
 /* The size of `unsigned int', as computed by sizeof. */
 #undef SIZEOF_UNSIGNED_INT

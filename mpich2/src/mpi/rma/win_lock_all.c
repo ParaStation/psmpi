@@ -15,7 +15,7 @@
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Win_lock_all as PMPI_Win_lock_all
 #elif defined(HAVE_WEAK_ATTRIBUTE)
-int MPI_Win_lock_all(int assert, MPI_Win win) __attribute__((weak,alias("PMPI_Win_lock_all")));
+int MPI_Win_lock_all(int assert, MPI_Win win) __attribute__ ((weak, alias("PMPI_Win_lock_all")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -29,7 +29,8 @@ int MPI_Win_lock_all(int assert, MPI_Win win) __attribute__((weak,alias("PMPI_Wi
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Win_lock_all
-
+#undef FCNAME
+#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Win_lock_all - Begin an RMA access epoch at all processes on the given window.
 
@@ -79,18 +80,17 @@ avoided by specifying the assertion 'MPI_MODE_NOCHECK' when possible
 @*/
 int MPI_Win_lock_all(int assert, MPI_Win win)
 {
-    static const char FCNAME[] = "MPI_Win_lock_all";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Win *win_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_LOCK_ALL);
+    MPIR_Win *win_ptr = NULL;
+    MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_WIN_LOCK_ALL);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
-    
+
     MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_LOCK_ALL);
+    MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPI_WIN_LOCK_ALL);
 
     /* Validate parameters, especially handles needing to be converted */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
@@ -98,58 +98,59 @@ int MPI_Win_lock_all(int assert, MPI_Win win)
         }
         MPID_END_ERROR_CHECKS;
     }
-#   endif
-    
+#endif
+
     /* Convert MPI object handles to object pointers */
-    MPID_Win_get_ptr( win, win_ptr );
+    MPIR_Win_get_ptr(win, win_ptr);
 
     /* Validate parameters and objects (post conversion) */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate win_ptr */
-            MPID_Win_valid_ptr( win_ptr, mpi_errno );
-            if (mpi_errno) goto fn_fail;
-            
+            MPIR_Win_valid_ptr(win_ptr, mpi_errno);
+            if (mpi_errno)
+                goto fn_fail;
+
             if (assert != 0 && assert != MPI_MODE_NOCHECK) {
-                MPIR_ERR_SET1(mpi_errno,MPI_ERR_ARG,
-                              "**lockassertval", 
-                              "**lockassertval %d", assert );
-                if (mpi_errno) goto fn_fail;
+                MPIR_ERR_SET1(mpi_errno, MPI_ERR_ARG,
+                              "**lockassertval", "**lockassertval %d", assert);
+                if (mpi_errno)
+                    goto fn_fail;
             }
 
             /* TODO: Validate that window is not already locked */
 
             /* TODO: Validate that window is not already in active mode */
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
-#   endif /* HAVE_ERROR_CHECKING */
+#endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    
+
     mpi_errno = MPID_Win_lock_all(assert, win_ptr);
-    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    if (mpi_errno != MPI_SUCCESS)
+        goto fn_fail;
 
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_LOCK_ALL);
+    MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPI_WIN_LOCK_ALL);
     MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
-        mpi_errno = MPIR_Err_create_code(
-            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_win_lock_all",
-            "**mpi_win_lock_all %A %W", assert, win);
+        mpi_errno =
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+                                 "**mpi_win_lock_all", "**mpi_win_lock_all %A %W", assert, win);
     }
-#   endif
-    mpi_errno = MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
+#endif
+    mpi_errno = MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     MPI_Request requests[2];
     MPI_Status statuses[2];
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
 
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -45,8 +45,7 @@ int main(int argc, char *argv[])
         }
         MPI_Barrier(MPI_COMM_WORLD);
         MPI_Wait(&requests[0], MPI_STATUS_IGNORE);
-    }
-    else if (rank == 1) {
+    } else if (rank == 1) {
         MPI_Barrier(MPI_COMM_WORLD);
         MPI_Recv(&a, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         if (a == 20) {
@@ -56,6 +55,5 @@ int main(int argc, char *argv[])
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

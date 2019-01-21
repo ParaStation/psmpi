@@ -137,7 +137,7 @@ c2f2ciof_LDADD = $(LDADD)
 c2f2ciof_DEPENDENCIES = $(top_builddir)/f77/util/mtestf.o
 am_c2fmultio_OBJECTS = c2fmultio.$(OBJEXT)
 c2fmultio_OBJECTS = $(am_c2fmultio_OBJECTS)
-c2fmultio_DEPENDENCIES =
+c2fmultio_DEPENDENCIES = $(top_builddir)/util/mtest.o
 fileerrf_SOURCES = fileerrf.f
 fileerrf_OBJECTS = fileerrf.$(OBJEXT)
 fileerrf_LDADD = $(LDADD)
@@ -319,6 +319,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -474,6 +475,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -518,7 +520,7 @@ c2fmultio_SOURCES = c2fmultio.c
 # A) prevent the makefile-wide "LDADD=mtestf.o" from affecting this program, or
 # B) link with the fortran compiler, otherwise we'll get link failures from
 # compilers with runtime support libs, such as PGI
-c2fmultio_LDADD = 
+c2fmultio_LDADD = $(top_builddir)/util/mtest.o
 c2f2ciof_SOURCES = c2f2cio.c c2f2ciof.f
 
 # these files are genereated using testmerge (see below)

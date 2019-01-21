@@ -17,14 +17,14 @@
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
-# (C) 2014 by Argonne National Laboratory.
+# (C) 2011 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
 #
 
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
-# (C) 2014 by Argonne National Laboratory.
+# (C) 2011 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
 #
 am__is_gnu_make = { \
@@ -116,7 +116,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = testlist
 CONFIG_CLEAN_VPATH_FILES =
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -172,7 +172,7 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in \
+am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/testlist.in \
 	$(top_srcdir)/Makefile_f08.mtest
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
@@ -223,6 +223,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -378,6 +379,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -431,6 +433,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+testlist: $(top_builddir)/config.status $(srcdir)/testlist.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run 'make' without going through this Makefile.

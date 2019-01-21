@@ -1,12 +1,10 @@
-.TH MPI_Type_create_resized 3 "11/9/2015" " " "MPI"
+.TH MPI_Type_create_resized 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Type_create_resized \-  Create a datatype with a new lower bound and extent from an existing datatype 
 .SH SYNOPSIS
 .nf
 int MPI_Type_create_resized(MPI_Datatype oldtype,
-                          MPI_Aint lb,
-                          MPI_Aint extent,
-                          MPI_Datatype *newtype)
+                            MPI_Aint lb, MPI_Aint extent, MPI_Datatype * newtype)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

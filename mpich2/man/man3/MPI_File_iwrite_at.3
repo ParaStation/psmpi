@@ -1,4 +1,4 @@
-.TH MPI_File_iwrite_at 3 "11/9/2015" " " "MPI"
+.TH MPI_File_iwrite_at 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_File_iwrite_at \-  Nonblocking write using explicit offset 
 .SH SYNOPSIS
@@ -8,8 +8,7 @@ MPI_File_iwrite_at \-  Nonblocking write using explicit offset
 #endif
 
 int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, ROMIO_CONST void *buf,
-                       int count, MPI_Datatype datatype, 
-                       MPIO_Request *request)
+                       int count, MPI_Datatype datatype, MPIO_Request * request)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

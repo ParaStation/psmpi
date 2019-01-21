@@ -1,4 +1,4 @@
-.TH MPI_Cart_coords 3 "11/9/2015" " " "MPI"
+.TH MPI_Cart_coords 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Cart_coords \-  Determines process coords in cartesian topology given rank in group 
 .SH SYNOPSIS
@@ -9,21 +9,21 @@ int MPI_Cart_coords(MPI_Comm comm, int rank, int maxdims, int coords[])
 .PD 0
 .TP
 .B comm 
-- communicator with cartesian structure (handle) 
+- communicator with cartesian structure (handle)
 .PD 1
 .PD 0
 .TP
 .B rank 
 - rank of a process within group of 
 .I comm
-(integer) 
+(integer)
 .PD 1
 .PD 0
 .TP
 .B maxdims 
 - length of vector 
 .I coords
-in the calling program (integer) 
+in the calling program (integer)
 .PD 1
 
 .SH OUTPUT PARAMETERS
@@ -32,8 +32,8 @@ in the calling program (integer)
 .B coords 
 - integer array (of size 
 .I ndims
-) containing the Cartesian 
-coordinates of specified process (integer) 
+) containing the Cartesian
+coordinates of specified process (integer)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

@@ -1,63 +1,62 @@
-.TH MPI_Scatter 3 "11/9/2015" " " "MPI"
+.TH MPI_Scatter 3 "11/21/2018" " " "MPI"
 .SH NAME
-MPI_Scatter \-  Sends data from one process to all other processes in a  communicator 
+MPI_Scatter \-  Sends data from one process to all other processes in a communicator 
 .SH SYNOPSIS
 .nf
 int MPI_Scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
-               void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
-               MPI_Comm comm)
+                void *recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B sendbuf 
-- address of send buffer (choice, significant 
+- address of send buffer (choice, significant
 only at 
 .I root
-) 
+)
 .PD 1
 .PD 0
 .TP
 .B sendcount 
-- number of elements sent to each process 
+- number of elements sent to each process
 (integer, significant only at 
 .I root
-) 
+)
 .PD 1
 .PD 0
 .TP
 .B sendtype 
 - data type of send buffer elements (significant only at 
 .I root
-) 
-(handle) 
+)
+(handle)
 .PD 1
 .PD 0
 .TP
 .B recvcount 
-- number of elements in receive buffer (integer) 
+- number of elements in receive buffer (integer)
 .PD 1
 .PD 0
 .TP
 .B recvtype 
-- data type of receive buffer elements (handle) 
+- data type of receive buffer elements (handle)
 .PD 1
 .PD 0
 .TP
 .B root 
-- rank of sending process (integer) 
+- rank of sending process (integer)
 .PD 1
 .PD 0
 .TP
 .B comm 
-- communicator (handle) 
+- communicator (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B recvbuf 
-- address of receive buffer (choice) 
+- address of receive buffer (choice)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

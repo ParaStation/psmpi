@@ -84,8 +84,9 @@ int main(int argc, char **argv)
     double time;
     MPI_Win llist_win;
     llist_ptr_t head_ptr, tail_ptr;
+    int errs = 0;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &procid);
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
@@ -118,6 +119,8 @@ int main(int argc, char **argv)
     for (; i < my_nelem; i++) {
         llist_ptr_t new_elem_ptr;
         int success = 0;
+
+        MTEST_VG_MEM_INIT(&new_elem_ptr, sizeof(llist_ptr_t));
 
         /* Create a new list element and register it with the window */
         new_elem_ptr.rank = procid;
@@ -169,8 +172,7 @@ int main(int argc, char **argv)
                                (void *) next_tail_ptr.disp);
                     tail_ptr = next_tail_ptr;
                     pollint = MAX(MIN_NPROBE, pollint / 2);
-                }
-                else {
+                } else {
                     for (j = 0; j < pollint; j++)
                         MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag,
                                    MPI_STATUS_IGNORE);
@@ -187,7 +189,6 @@ int main(int argc, char **argv)
     /* Traverse the list and verify that all processes inserted exactly the correct
      * number of elements. */
     if (procid == 0) {
-        int errors = 0;
         int *counts, count = 0;
 
         counts = (int *) malloc(sizeof(int) * nproc);
@@ -239,11 +240,10 @@ int main(int argc, char **argv)
             if (counts[i] != expected) {
                 printf("Error: Rank %d inserted %d elements, expected %d\n", i, counts[i],
                        expected);
-                errors++;
+                errs++;
             }
         }
 
-        printf("%s\n", errors == 0 ? " No Errors" : "FAIL");
         free(counts);
     }
 
@@ -264,6 +264,6 @@ int main(int argc, char **argv)
     for (; my_elems_count > 0; my_elems_count--)
         MPI_Free_mem(my_elems[my_elems_count - 1]);
 
-    MPI_Finalize();
-    return 0;
+    MTest_Finalize(errs);
+    return MTestReturnValue(errs);
 }

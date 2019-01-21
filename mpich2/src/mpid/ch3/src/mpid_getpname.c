@@ -32,11 +32,11 @@ int MPID_Get_processor_name(char * name, int namelen, int * resultlen)
     }
     MPIR_ERR_CHKANDJUMP(processorNameLen <= 0, mpi_errno, MPI_ERR_OTHER, "**procnamefailed");
 
-    /* MPIU_Strncpy only copies until (and including) the null,
+    /* MPL_strncpy only copies until (and including) the null,
        unlike strncpy, it does not blank pad.  This is a good thing
        here, because users don't always allocated MPI_MAX_PROCESSOR_NAME
        characters */
-    MPIU_Strncpy(name, processorName, namelen );
+    MPL_strncpy(name, processorName, namelen );
     if (resultlen)
         *resultlen = processorNameLen;
 
@@ -89,7 +89,7 @@ static inline void setupProcessorName( void )
 }
 
 #elif defined(HAVE_SYSINFO)
-static inline void setupProcessorName( void );
+static inline void setupProcessorName( void )
 {
     if (sysinfo(SI_HOSTNAME, processorName, MPI_MAX_PROCESSOR_NAME) == 0) {
 	processorNameLen = (int)strlen( processorName );
@@ -97,7 +97,7 @@ static inline void setupProcessorName( void );
 }
 
 #else
-static inline void setupProcessorName( void );
+static inline void setupProcessorName( void )
 {
     /* Set the name as the rank of the process */
     MPL_snprintf( processorName, MPI_MAX_PROCESSOR_NAME, "%d", 

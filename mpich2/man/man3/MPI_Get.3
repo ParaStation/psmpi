@@ -1,12 +1,11 @@
-.TH MPI_Get 3 "11/9/2015" " " "MPI"
+.TH MPI_Get 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Get \-  Get data from a memory window on a remote process 
 .SH SYNOPSIS
 .nf
 int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype
             origin_datatype, int target_rank, MPI_Aint target_disp,
-            int target_count, MPI_Datatype target_datatype, MPI_Win
-            win)
+            int target_count, MPI_Datatype target_datatype, MPI_Win win)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -17,38 +16,38 @@ int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype
 .PD 0
 .TP
 .B origin_count 
-- number of entries in origin buffer (nonnegative integer) 
+- number of entries in origin buffer (nonnegative integer)
 .PD 1
 .PD 0
 .TP
 .B origin_datatype 
-- datatype of each entry in origin buffer (handle) 
+- datatype of each entry in origin buffer (handle)
 .PD 1
 .PD 0
 .TP
 .B target_rank 
-- rank of target (nonnegative integer) 
+- rank of target (nonnegative integer)
 .PD 1
 .PD 0
 .TP
 .B target_disp 
-- displacement from window start to the beginning of the 
-target buffer (nonnegative integer) 
+- displacement from window start to the beginning of the
+target buffer (nonnegative integer)
 .PD 1
 .PD 0
 .TP
 .B target_count 
-- number of entries in target buffer (nonnegative integer) 
+- number of entries in target buffer (nonnegative integer)
 .PD 1
 .PD 0
 .TP
 .B target_datatype 
-- datatype of each entry in target buffer (handle) 
+- datatype of each entry in target buffer (handle)
 .PD 1
 .PD 0
 .TP
 .B win 
-- window object used for communication (handle) 
+- window object used for communication (handle)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

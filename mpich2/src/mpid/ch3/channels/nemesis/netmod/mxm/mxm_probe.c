@@ -1,5 +1,9 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
+ *  (C) 2014 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ *
+ *  Portion of this code were written by Mellanox Technologies, Inc.
  *  (C) 2014 Mellanox Technologies, Inc.
  *
  */
@@ -13,7 +17,7 @@
 #define FUNCNAME MPID_nem_mxm_probe
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_nem_mxm_probe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, int context_offset,
+int MPID_nem_mxm_probe(MPIDI_VC_t * vc, int source, int tag, MPIR_Comm * comm, int context_offset,
                        MPI_Status * status)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -22,8 +26,8 @@ int MPID_nem_mxm_probe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, i
     mxm_mq_h *mq_h_v = (mxm_mq_h *) comm->dev.ch.netmod_priv;
     MPID_nem_mxm_vc_area *vc_area = (vc ? VC_BASE(vc) : NULL);
 
-    MPIDI_STATE_DECL(MPID_STATE_MXM_PROBE);
-    MPIDI_FUNC_ENTER(MPID_STATE_MXM_PROBE);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MXM_PROBE);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MXM_PROBE);
 
     mxm_req.base.state = MXM_REQ_NEW;
     mxm_req.base.mq = mq_h_v[0];
@@ -48,7 +52,7 @@ int MPID_nem_mxm_probe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, i
     }
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MXM_PROBE);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MXM_PROBE);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -59,7 +63,7 @@ int MPID_nem_mxm_probe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, i
 #define FUNCNAME MPID_nem_mxm_iprobe
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_nem_mxm_iprobe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, int context_offset,
+int MPID_nem_mxm_iprobe(MPIDI_VC_t * vc, int source, int tag, MPIR_Comm * comm, int context_offset,
                         int *flag, MPI_Status * status)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -68,8 +72,8 @@ int MPID_nem_mxm_iprobe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, 
     mxm_mq_h *mq_h_v = (mxm_mq_h *) comm->dev.ch.netmod_priv;
     MPID_nem_mxm_vc_area *vc_area = (vc ? VC_BASE(vc) : NULL);
 
-    MPIDI_STATE_DECL(MPID_STATE_MXM_IPROBE);
-    MPIDI_FUNC_ENTER(MPID_STATE_MXM_IPROBE);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MXM_IPROBE);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MXM_IPROBE);
 
     mxm_req.base.state = MXM_REQ_NEW;
     mxm_req.base.mq = mq_h_v[0];
@@ -94,7 +98,7 @@ int MPID_nem_mxm_iprobe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, 
     }
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MXM_IPROBE);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MXM_IPROBE);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -105,8 +109,8 @@ int MPID_nem_mxm_iprobe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, 
 #define FUNCNAME MPID_nem_mxm_improbe
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_nem_mxm_improbe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm, int context_offset,
-                         int *flag, MPID_Request ** message, MPI_Status * status)
+int MPID_nem_mxm_improbe(MPIDI_VC_t * vc, int source, int tag, MPIR_Comm * comm, int context_offset,
+                         int *flag, MPIR_Request ** message, MPI_Status * status)
 {
     int mpi_errno = MPI_SUCCESS;
     mxm_error_t err;
@@ -115,8 +119,8 @@ int MPID_nem_mxm_improbe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm,
     mxm_mq_h *mq_h_v = (mxm_mq_h *) comm->dev.ch.netmod_priv;
     MPID_nem_mxm_vc_area *vc_area = (vc ? VC_BASE(vc) : NULL);
 
-    MPIDI_STATE_DECL(MPID_STATE_MXM_IMPROBE);
-    MPIDI_FUNC_ENTER(MPID_STATE_MXM_IMPROBE);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MXM_IMPROBE);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MXM_IMPROBE);
 
     mxm_req.base.state = MXM_REQ_NEW;
     mxm_req.base.mq = mq_h_v[0];
@@ -127,13 +131,12 @@ int MPID_nem_mxm_improbe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm,
 
     err = mxm_req_mprobe(&mxm_req, &mxm_msg);
     if (MXM_OK == err) {
-        MPID_Request *req;
+        MPIR_Request *req;
 
         *flag = 1;
 
-        req = MPID_Request_create();
-        MPIU_Object_set_ref(req, 2);
-        req->kind = MPID_REQUEST_MPROBE;
+        req = MPIR_Request_create(MPIR_REQUEST_KIND__MPROBE);
+        MPIR_Object_set_ref(req, 2);
         req->comm = comm;
         MPIR_Comm_add_ref(comm);
         req->ch.vc = vc;
@@ -146,8 +149,8 @@ int MPID_nem_mxm_improbe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm,
         req->status.MPI_SOURCE = mxm_req.completion.sender_imm;
         req->dev.recv_data_sz = mxm_req.completion.sender_len;
         MPIR_STATUS_SET_COUNT(req->status, req->dev.recv_data_sz);
-        req->dev.tmpbuf = MPIU_Malloc(req->dev.recv_data_sz);
-        MPIU_Assert(req->dev.tmpbuf);
+        req->dev.tmpbuf = MPL_malloc(req->dev.recv_data_sz, MPL_MEM_BUFFER);
+        MPIR_Assert(req->dev.tmpbuf);
 
         mxm_req.base.completed_cb = NULL;
         mxm_req.base.context = req;
@@ -186,7 +189,7 @@ int MPID_nem_mxm_improbe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm,
     }
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MXM_IMPROBE);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MXM_IMPROBE);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -197,7 +200,7 @@ int MPID_nem_mxm_improbe(MPIDI_VC_t * vc, int source, int tag, MPID_Comm * comm,
 #define FUNCNAME MPID_nem_mxm_anysource_iprobe
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_nem_mxm_anysource_iprobe(int tag, MPID_Comm * comm, int context_offset, int *flag,
+int MPID_nem_mxm_anysource_iprobe(int tag, MPIR_Comm * comm, int context_offset, int *flag,
                                   MPI_Status * status)
 {
     return MPID_nem_mxm_iprobe(NULL, MPI_ANY_SOURCE, tag, comm, context_offset, flag, status);
@@ -208,8 +211,8 @@ int MPID_nem_mxm_anysource_iprobe(int tag, MPID_Comm * comm, int context_offset,
 #define FUNCNAME MPID_nem_mxm_anysource_iprobe
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_nem_mxm_anysource_improbe(int tag, MPID_Comm * comm, int context_offset, int *flag,
-                                   MPID_Request ** message, MPI_Status * status)
+int MPID_nem_mxm_anysource_improbe(int tag, MPIR_Comm * comm, int context_offset, int *flag,
+                                   MPIR_Request ** message, MPI_Status * status)
 {
     return MPID_nem_mxm_improbe(NULL, MPI_ANY_SOURCE, tag, comm, context_offset, flag, message,
                                 status);

@@ -1,33 +1,32 @@
-.TH MPI_Win_get_attr 3 "11/9/2015" " " "MPI"
+.TH MPI_Win_get_attr 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Win_get_attr \-  Get attribute cached on an MPI window object 
 .SH SYNOPSIS
 .nf
-int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val, 
-                    int *flag)
+int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val, int *flag)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B win 
-- window to which the attribute is attached (handle) 
+- window to which the attribute is attached (handle)
 .PD 1
 .PD 0
 .TP
 .B win_keyval 
-- key value (integer) 
+- key value (integer)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B attribute_val 
-- attribute value, unless flag is false 
+- attribute value, unless flag is false
 .PD 1
 .PD 0
 .TP
 .B flag 
-- false if no attribute is associated with the key (logical) 
+- false if no attribute is associated with the key (logical)
 .PD 1
 
 .SH NOTES
@@ -36,17 +35,17 @@ The following attributes are predefined for all MPI Window objects:
 .PD 0
 .TP
 .B MPI_WIN_BASE 
-- window base address. 
+- window base address.
 .PD 1
 .PD 0
 .TP
 .B MPI_WIN_SIZE 
-- window size, in bytes. 
+- window size, in bytes.
 .PD 1
 .PD 0
 .TP
 .B MPI_WIN_DISP_UNIT 
-- displacement unit associated with the window. 
+- displacement unit associated with the window.
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

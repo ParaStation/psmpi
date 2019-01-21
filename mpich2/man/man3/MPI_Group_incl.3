@@ -1,22 +1,22 @@
-.TH MPI_Group_incl 3 "11/9/2015" " " "MPI"
+.TH MPI_Group_incl 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Group_incl \-  Produces a group by reordering an existing group and taking only listed members 
 .SH SYNOPSIS
 .nf
-int MPI_Group_incl(MPI_Group group, int n, const int ranks[], MPI_Group *newgroup)
+int MPI_Group_incl(MPI_Group group, int n, const int ranks[], MPI_Group * newgroup)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B group 
-- group (handle) 
+- group (handle)
 .PD 1
 .PD 0
 .TP
 .B n 
 - number of elements in array 
 .I ranks
-(and size of newgroup ) (integer) 
+(and size of newgroup) (integer)
 .PD 1
 .PD 0
 .TP
@@ -25,8 +25,8 @@ int MPI_Group_incl(MPI_Group group, int n, const int ranks[], MPI_Group *newgrou
 .I group
 to appear in 
 .I newgroup
-(array of 
-integers) 
+(array of
+integers)
 .PD 1
 
 .SH OUTPUT PARAMETERS
@@ -35,8 +35,7 @@ integers)
 .B newgroup 
 - new group derived from above, in the order defined by 
 .I ranks
-
-(handle) 
+(handle)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

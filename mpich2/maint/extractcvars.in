@@ -42,8 +42,8 @@ my $alt_ns = "MPIR_PARAM";
 my $dep_ns = "MPICH";
 
 # Default :output source files
-my $header_file = "@abs_srcdir@/../src/include/mpich_cvars.h";
-my $c_file      = "@abs_srcdir@/../src/util/cvar/mpich_cvars.c";
+my $header_file = "@abs_srcdir@/../src/include/mpir_cvars.h";
+my $c_file      = "@abs_srcdir@/../src/util/cvar/mpir_cvars.c";
 my $readme_file = "@abs_srcdir@/../README.envvar";
 
 sub Usage {
@@ -170,7 +170,7 @@ foreach my $p (@cvars) {
 print OUTPUT_H <<EOT;
 
 /* TODO: this should be defined elsewhere */
-#define ${ns}_assert MPIU_Assert
+#define ${ns}_assert MPIR_Assert
 
 /* Arbitrary, simplifies interaction with external interfaces like MPI_T_ */
 #define ${uc_ns}_MAX_STRLEN (384)
@@ -293,6 +293,7 @@ foreach my $p (@cvars) {
     # Register the cvar
     my $desc = $p->{description};
     $desc =~ s/"/\\"/g;
+    $desc =~ s/\n/\\\n/g;
     printf OUTPUT_C qq(    MPIR_T_CVAR_REGISTER_STATIC(\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s);\n),
         qq(        $mpi_dtype,),
         qq(        ${uc_ns}_$p->{name}, /* name */),
@@ -347,10 +348,10 @@ EOT
     if ($p->{type} eq 'string') {
 print OUTPUT_C <<EOT;
     if (tmp_str != NULL) {
-        ${var_name} = MPIU_Strdup(tmp_str);
+        ${var_name} = MPL_strdup(tmp_str);
         ${ns}_assert(${var_name});
         if (${var_name} == NULL) {
-            MPIU_CHKMEM_SETERR(mpi_errno, strlen(tmp_str), "dup of string for ${var_name}");
+            MPIR_CHKMEM_SETERR(mpi_errno, strlen(tmp_str), "dup of string for ${var_name}");
             goto fn_fail;
         }
     }
@@ -385,7 +386,7 @@ foreach my $p (@cvars) {
         # Need to cleanup after whatever was strduped by the init routine
 print OUTPUT_C <<EOT;
     if (${var_name} != NULL) {
-        MPIU_Free(${var_name});
+        MPL_free(${var_name});
         ${var_name} = NULL;
     }
 
@@ -394,10 +395,7 @@ EOT
 }
 
 print OUTPUT_C <<EOT;
-fn_exit:
     return mpi_errno;
-fn_fail:
-    goto fn_exit;
 }
 
 EOT

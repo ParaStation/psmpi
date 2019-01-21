@@ -1,0 +1,8 @@
+<dir>
+<file name="reduce_local.c" info="1542820949"/>
+</dir>
+<data>
+<fileinfo name="reduce_local.c">
+MPID_STATE_MPI_REDUCE_LOCAL MPI_Reduce_local
+</fileinfo>
+</data>

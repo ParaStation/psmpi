@@ -1,9 +1,9 @@
-.TH MPI_Probe 3 "11/9/2015" " " "MPI"
+.TH MPI_Probe 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Probe \-  Blocking test for a message 
 .SH SYNOPSIS
 .nf
-int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
+int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status * status)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -11,26 +11,26 @@ int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
 .B source 
 - source rank, or 
 .I MPI_ANY_SOURCE
-(integer) 
+(integer)
 .PD 1
 .PD 0
 .TP
 .B tag 
 - tag value or 
 .I MPI_ANY_TAG
-(integer) 
+(integer)
 .PD 1
 .PD 0
 .TP
 .B comm 
-- communicator (handle) 
+- communicator (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B status 
-- status object (Status) 
+- status object (Status)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

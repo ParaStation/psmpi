@@ -21,7 +21,7 @@
 #include "mpi.h"
 
 /* Needed for restrict and const definitions */
-#include "mpitestconf.h"
+#include "mpitest.h"
 
 static int verbose = 0;
 
@@ -143,8 +143,7 @@ int TestVecPackDouble(int n, int stride,
         *avgTimeMPI = 0;
         if (verbose)
             printf("Too much noise; discarding measurement\n");
-    }
-    else {
+    } else {
         *avgTimeMPI = mean(t, NTRIALS) / N_REPS;
     }
 
@@ -224,8 +223,7 @@ int TestVecUnPackDouble(int n, int stride,
         *avgTimeMPI = 0;
         if (verbose)
             printf("Too much noise; discarding measurement\n");
-    }
-    else {
+    } else {
         *avgTimeMPI = mean(t, NTRIALS) / N_REPS;
     }
 
@@ -306,8 +304,7 @@ int TestVecPack2Double(int n, int stride,
         *avgTimeMPI = 0;
         if (verbose)
             printf("Too much noise; discarding measurement\n");
-    }
-    else {
+    } else {
         *avgTimeMPI = mean(t, NTRIALS) / N_REPS;
     }
     MPI_Type_free(&vectype);
@@ -396,8 +393,7 @@ int TestIndexPackDouble(int n, int stride,
         *avgTimeMPI = 0;
         if (verbose)
             printf("Too much noise; discarding measurement\n");
-    }
-    else {
+    } else {
         *avgTimeMPI = mean(t, NTRIALS) / N_REPS;
     }
     MPI_Type_free(&indextype);
@@ -441,7 +437,7 @@ int main(int argc, char *argv[])
     void *dest, *src;
     double avgTimeUser, avgTimeMPI;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
     if (getenv("MPITEST_VERBOSE"))
         verbose = 1;
 
@@ -475,17 +471,8 @@ int main(int argc, char *argv[])
     free(dest);
     free(src);
 
-
-
-    if (errs == 0) {
-        printf(" No Errors\n");
-    }
-    else {
-        printf(" Found %d performance problems\n", errs);
-    }
-
     fflush(stdout);
-    MPI_Finalize();
+    MTest_Finalize(errs);
 
-    return 0;
+    return MTestReturnValue(errs);
 }

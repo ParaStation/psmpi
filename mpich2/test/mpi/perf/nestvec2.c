@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "mpitestconf.h"
+#include "mpitest.h"
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
@@ -46,7 +46,7 @@ int main(int argc, char **argv)
     MPI_Aint displacements[2];
     MPI_Datatype typesArray[2];
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
 
     /* Create a struct consisting of a two 32-bit ints, followed by a
      * vector of stride 3 but count 128k (less than a few MB of data area) */
@@ -76,11 +76,11 @@ int main(int argc, char **argv)
     MPI_Type_commit(&vtype);
 
 #if defined(MPICH) && defined(PRINT_DATATYPE_INTERNALS)
-    /* To use MPIDU_Datatype_debug to print the datatype internals,
+    /* To use MPIR_Datatype_debug to print the datatype internals,
      * you must configure MPICH with --enable-g=log */
     if (verbose) {
         printf("Original struct datatype:\n");
-        MPIDU_Datatype_debug(stype, 10);
+        MPIR_Datatype_debug(stype, 10);
     }
 #endif
 
@@ -196,17 +196,10 @@ int main(int argc, char **argv)
         printf("For most informative results, be sure to compile this test with optimization\n");
     }
 
-    if (errs) {
-        printf(" Found %d errors\n", errs);
-    }
-    else {
-        printf(" No Errors\n");
-    }
-
     free(vsource);
     free(outbuf);
     free(outbuf2);
 
-    MPI_Finalize();
-    return 0;
+    MTest_Finalize(errs);
+    return MTestReturnValue(errs);
 }

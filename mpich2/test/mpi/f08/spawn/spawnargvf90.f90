@@ -1,6 +1,6 @@
 ! -*- Mode: Fortran; -*-
 !
-!  (C) 2014 by Argonne National Laboratory.
+!  (C) 2012 by Argonne National Laboratory.
 !      See COPYRIGHT in top-level directory.
 !
 ! This is a special test that requires an getarg/iargc routine
@@ -118,8 +118,9 @@
 !       Note that the MTest_Finalize get errs only over COMM_WORLD
         if (parentcomm .eq. MPI_COMM_NULL) then
            call MTest_Finalize( errs )
+        else
+           call MPI_Finalize( ierr )
         endif
 
  300    continue
-        call MPI_Finalize( ierr )
         end

@@ -265,9 +265,8 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address_( void*, MPI_Aint *, MPI_Fi
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-#include "mpierrs.h"
+#include "mpir_err.h"
 #include <stdio.h>
-#include "mpierror.h"
 FORT_DLL_SPEC void FORT_CALL mpi_get_address_ ( void*v1, MPI_Aint *v2, MPI_Fint *ierr ){
     MPI_Aint a;
     *ierr = MPI_Get_address( v1, &a );

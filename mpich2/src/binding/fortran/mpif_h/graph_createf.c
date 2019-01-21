@@ -267,6 +267,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_graph_create_( MPI_Fint *, MPI_Fint *, 
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_graph_create_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint v3[], MPI_Fint v4[], MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *ierr ){
     int l5;
-    l5 = MPIR_FROM_FLOG(*v5);
+    l5 = MPII_FROM_FLOG(*v5);
     *ierr = MPI_Graph_create( (MPI_Comm)(*v1), (int)*v2, v3, v4, l5, (MPI_Comm *)(v6) );
 }

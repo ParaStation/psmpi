@@ -1,5 +1,5 @@
 !
-!  (C) 2014 by Argonne National Laboratory.
+!  (C) 2008 by Argonne National Laboratory.
 !      See COPYRIGHT in top-level directory.
 !
         program main
@@ -28,5 +28,4 @@
                 print *, ' No Errors'
           endif
 
-          call mpi_finalize(err)
         end

@@ -1,4 +1,4 @@
-.TH MPIX_Comm_agree 3 "11/9/2015" " " "MPI"
+.TH MPIX_Comm_agree 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPIX_Comm_agree \-  Performs agreement operation on comm 
 .SH SYNOPSIS
@@ -19,6 +19,14 @@ int MPIX_Comm_agree(MPI_Comm comm, int *flag)
 - new communicator (handle)
 .PD 1
 
+.SH THREAD AND INTERRUPT SAFETY
+
+This routine is thread-safe.  This means that this routine may be
+safely used by multiple threads without the need for any user-provided
+thread locks.  However, the routine is not interrupt safe.  Typically,
+this is due to the use of memory allocation routines such as 
+.I malloc
+or other non-MPICH runtime routines that are themselves not interrupt-safe.
 
 .SH NOTES FOR FORTRAN
 All MPI routines in Fortran (except for 

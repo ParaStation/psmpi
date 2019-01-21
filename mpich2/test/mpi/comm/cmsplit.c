@@ -43,14 +43,12 @@ int main(int argc, char *argv[])
             errs++;
         }
         MPI_Comm_free(&scomm);
-    }
-    else {
+    } else {
         if (scomm != MPI_COMM_NULL) {
             errs++;
         }
     }
     MPI_Comm_free(&comm);
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

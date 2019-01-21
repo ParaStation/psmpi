@@ -123,74 +123,62 @@ cas_type_check_SOURCES = cas_type_check.c
 cas_type_check_OBJECTS = cas_type_check.$(OBJEXT)
 cas_type_check_LDADD = $(LDADD)
 cas_type_check_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 win_sync_complete_SOURCES = win_sync_complete.c
 win_sync_complete_OBJECTS = win_sync_complete.$(OBJEXT)
 win_sync_complete_LDADD = $(LDADD)
 win_sync_complete_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 win_sync_free_at_SOURCES = win_sync_free_at.c
 win_sync_free_at_OBJECTS = win_sync_free_at.$(OBJEXT)
 win_sync_free_at_LDADD = $(LDADD)
 win_sync_free_at_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 win_sync_free_pt_SOURCES = win_sync_free_pt.c
 win_sync_free_pt_OBJECTS = win_sync_free_pt.$(OBJEXT)
 win_sync_free_pt_LDADD = $(LDADD)
 win_sync_free_pt_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 win_sync_lock_at_SOURCES = win_sync_lock_at.c
 win_sync_lock_at_OBJECTS = win_sync_lock_at.$(OBJEXT)
 win_sync_lock_at_LDADD = $(LDADD)
 win_sync_lock_at_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 win_sync_lock_fence_SOURCES = win_sync_lock_fence.c
 win_sync_lock_fence_OBJECTS = win_sync_lock_fence.$(OBJEXT)
 win_sync_lock_fence_LDADD = $(LDADD)
 win_sync_lock_fence_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 win_sync_lock_pt_SOURCES = win_sync_lock_pt.c
 win_sync_lock_pt_OBJECTS = win_sync_lock_pt.$(OBJEXT)
 win_sync_lock_pt_LDADD = $(LDADD)
 win_sync_lock_pt_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 win_sync_nested_SOURCES = win_sync_nested.c
 win_sync_nested_OBJECTS = win_sync_nested.$(OBJEXT)
 win_sync_nested_LDADD = $(LDADD)
 win_sync_nested_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 win_sync_op_SOURCES = win_sync_op.c
 win_sync_op_OBJECTS = win_sync_op.$(OBJEXT)
 win_sync_op_LDADD = $(LDADD)
 win_sync_op_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 win_sync_unlock_SOURCES = win_sync_unlock.c
 win_sync_unlock_OBJECTS = win_sync_unlock.$(OBJEXT)
 win_sync_unlock_LDADD = $(LDADD)
 win_sync_unlock_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 winerr_SOURCES = winerr.c
 winerr_OBJECTS = winerr.$(OBJEXT)
 winerr_LDADD = $(LDADD)
 winerr_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 winerr2_SOURCES = winerr2.c
 winerr2_OBJECTS = winerr2.$(OBJEXT)
 winerr2_LDADD = $(LDADD)
 winerr2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -277,6 +265,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -432,6 +421,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -441,11 +431,14 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # AM_CPPFLAGS are used for C++ code as well
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+
+# Add libdtpools support
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_builddir)/dtpoos/include \
+	-I$(top_srcdir)/dtpools/include
 LDADD = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-CLEANFILES = summary.xml summary.tap summary.junit.xml
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
 EXTRA_DIST = testlist
 all: all-am
 
@@ -775,16 +768,15 @@ uninstall-am:
 $(top_builddir)/util/mtest.$(OBJEXT): $(top_srcdir)/util/mtest.c
 	(cd $(top_builddir)/util && $(MAKE) mtest.$(OBJEXT))
 
-$(top_builddir)/util/mtest_datatype.$(OBJEXT): $(top_srcdir)/util/mtest_datatype.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype.$(OBJEXT))
+$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+	(cd $(top_builddir)/dtpools && $(MAKE))
 
-$(top_builddir)/util/mtest_datatype_gen.$(OBJEXT): $(top_srcdir)/util/mtest_datatype_gen.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype_gen.$(OBJEXT))
+SUMMARY_BASENAME ?= summary
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
-		-mpiexec=${MPIEXEC} -xmlfile=summary.xml \
-		-tapfile=summary.tap -junitfile=summary.junit.xml
+		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
+		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

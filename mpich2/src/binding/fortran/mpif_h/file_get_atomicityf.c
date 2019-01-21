@@ -269,7 +269,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_file_get_atomicity_ ( MPI_Fint *v1, MPI_Fint *v
 #ifdef MPI_MODE_RDONLY
     int l2;
     *ierr = MPI_File_get_atomicity( MPI_File_f2c(*v1), &l2 );
-    if (*ierr == MPI_SUCCESS) *v2 = MPIR_TO_FLOG(l2);
+    if (*ierr == MPI_SUCCESS) *v2 = MPII_TO_FLOG(l2);
 #else
 *ierr = MPI_ERR_INTERN;
 #endif

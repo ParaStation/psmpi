@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
+#include "mpitest.h"
 
 static MPI_Datatype make_largexfer_type_struct(MPI_Offset nbytes)
 {
@@ -30,8 +31,7 @@ static MPI_Datatype make_largexfer_type_struct(MPI_Offset nbytes)
     if (remainder == 0) {
         MPI_Type_contiguous(chunk_count, chunktype, &memtype);
         MPI_Type_free(&chunktype);
-    }
-    else {
+    } else {
         if (sizeof(MPI_Aint) <= sizeof(int)) {
             return MPI_DATATYPE_NULL;
         }
@@ -81,6 +81,8 @@ static MPI_Datatype make_largexfer_type_hindexed(MPI_Offset nbytes)
     MPI_Type_create_hindexed(count, blocklens, disp, MPI_BYTE, &memtype);
     MPI_Type_commit(&memtype);
 
+    free(blocklens);
+    free(disp);
     return memtype;
 }
 
@@ -88,39 +90,39 @@ static MPI_Datatype make_largexfer_type_hindexed(MPI_Offset nbytes)
 int testtype(MPI_Datatype type, MPI_Offset expected)
 {
     MPI_Count size, lb, extent;
-    int nerrors = 0;
+    int errs = 0;
     MPI_Type_size_x(type, &size);
 
     if (size < 0) {
         printf("ERROR: type size apparently overflowed integer\n");
-        nerrors++;
+        errs++;
     }
 
     if (size != expected) {
         printf("reported type size %lld does not match expected %lld\n", size, expected);
-        nerrors++;
+        errs++;
     }
 
     MPI_Type_get_true_extent_x(type, &lb, &extent);
     if (lb != 0) {
         printf("ERROR: type should have lb of 0, reported %lld\n", lb);
-        nerrors++;
+        errs++;
     }
 
     if (extent != size) {
         printf("ERROR: extent should match size, not %lld\n", extent);
-        nerrors++;
+        errs++;
     }
-    return nerrors;
+    return errs;
 }
 
 
 int main(int argc, char **argv)
 {
 
-    int nerrors = 0, i;
+    int errs = 0, i;
     int rank, size;
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
@@ -140,20 +142,12 @@ int main(int argc, char **argv)
 
     for (i = 0; i < NR_TYPES; i++) {
         if (types[i] != MPI_DATATYPE_NULL) {
-            nerrors += testtype(types[i], expected_sizes[i]);
+            errs += testtype(types[i], expected_sizes[i]);
             MPI_Type_free(&(types[i]));
         }
     }
 
-    MPI_Finalize();
-    if (rank == 0) {
-        if (nerrors) {
-            printf("found %d errors\n", nerrors);
-        }
-        else {
-            printf(" No errors\n");
-        }
-    }
+    MTest_Finalize(errs);
 
-    return 0;
+    return MTestReturnValue(errs);
 }

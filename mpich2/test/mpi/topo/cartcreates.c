@@ -39,15 +39,13 @@ int main(int argc, char *argv[])
         MPI_Barrier(comm);
 
         MPI_Comm_free(&comm);
-    }
-    else if (rank < dims[0]) {
+    } else if (rank < dims[0]) {
         errs++;
         fprintf(stderr, "Communicator returned is null!");
     }
 
     MTest_Finalize(errs);
 
-    MPI_Finalize();
 
-    return 0;
+    return MTestReturnValue(errs);
 }

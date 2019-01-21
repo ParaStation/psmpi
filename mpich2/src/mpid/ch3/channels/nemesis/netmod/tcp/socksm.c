@@ -130,12 +130,12 @@ static inline int is_same_connection(sockconn_t *sc1, sockconn_t *sc2)
     /* Returns TRUE iff sc1 and sc2 connect the same processes */
 
     /* if pg_is_set is TRUE, then either it's the same pg, or pg_id is not NULL */
-    MPIU_Assert(!sc1->pg_is_set || sc1->is_same_pg || sc1->pg_id != NULL);
-    MPIU_Assert(!sc2->pg_is_set || sc2->is_same_pg || sc2->pg_id != NULL);
+    MPIR_Assert(!sc1->pg_is_set || sc1->is_same_pg || sc1->pg_id != NULL);
+    MPIR_Assert(!sc2->pg_is_set || sc2->is_same_pg || sc2->pg_id != NULL);
 
     /* if it's a tmpvc, the pg should not be set */
-    MPIU_Assert(!sc1->is_tmpvc || !sc1->pg_is_set);
-    MPIU_Assert(!sc1->is_tmpvc || !sc1->pg_is_set);
+    MPIR_Assert(!sc1->is_tmpvc || !sc1->pg_is_set);
+    MPIR_Assert(!sc1->is_tmpvc || !sc1->pg_is_set);
 
     return !sc1->is_tmpvc && !sc2->is_tmpvc &&
         sc1->pg_is_set && sc2->pg_is_set &&
@@ -153,15 +153,15 @@ static inline int is_same_connection(sockconn_t *sc1, sockconn_t *sc2)
 static int alloc_sc_plfd_tbls (void)
 {
     int i, mpi_errno = MPI_SUCCESS, idx = -1;
-    MPIU_CHKPMEM_DECL (2);
+    MPIR_CHKPMEM_DECL (2);
 
-    MPIU_Assert(g_sc_tbl == NULL);
-    MPIU_Assert(MPID_nem_tcp_plfd_tbl == NULL);
+    MPIR_Assert(g_sc_tbl == NULL);
+    MPIR_Assert(MPID_nem_tcp_plfd_tbl == NULL);
 
-    MPIU_CHKPMEM_MALLOC (g_sc_tbl, sockconn_t *, g_tbl_capacity * sizeof(sockconn_t), 
-                         mpi_errno, "connection table");
-    MPIU_CHKPMEM_MALLOC (MPID_nem_tcp_plfd_tbl, struct pollfd *, g_tbl_capacity * sizeof(struct pollfd), 
-                         mpi_errno, "pollfd table");
+    MPIR_CHKPMEM_MALLOC (g_sc_tbl, sockconn_t *, g_tbl_capacity * sizeof(sockconn_t),
+                         mpi_errno, "connection table", MPL_MEM_ADDRESS);
+    MPIR_CHKPMEM_MALLOC (MPID_nem_tcp_plfd_tbl, struct pollfd *, g_tbl_capacity * sizeof(struct pollfd),
+                         mpi_errno, "pollfd table", MPL_MEM_ADDRESS);
 #if defined(MPICH_DEBUG_MEMINIT)
     /* We initialize the arrays in order to eliminate spurious valgrind errors
        that occur when poll(2) returns 0.  See valgrind bugzilla#158425 and
@@ -174,22 +174,22 @@ static int alloc_sc_plfd_tbls (void)
         INIT_SC_ENTRY(((sockconn_t *)&g_sc_tbl[i]), i);
         INIT_POLLFD_ENTRY(((struct pollfd *)&MPID_nem_tcp_plfd_tbl[i]));
     }
-    MPIU_CHKPMEM_COMMIT();
+    MPIR_CHKPMEM_COMMIT();
 
     mpi_errno = find_free_entry(&idx);
     if (mpi_errno != MPI_SUCCESS) MPIR_ERR_POP (mpi_errno);
 
-    MPIU_Assert(0 == idx); /* assumed in other parts of this file */
-    MPIU_Memcpy (&g_sc_tbl[idx], &MPID_nem_tcp_g_lstn_sc, sizeof(MPID_nem_tcp_g_lstn_sc));
-    MPIU_Memcpy (&MPID_nem_tcp_plfd_tbl[idx], &MPID_nem_tcp_g_lstn_plfd, sizeof(MPID_nem_tcp_g_lstn_plfd));
-    MPIU_Assert(MPID_nem_tcp_plfd_tbl[idx].fd == g_sc_tbl[idx].fd);
-    MPIU_Assert(MPID_nem_tcp_plfd_tbl[idx].events == POLLIN);
+    MPIR_Assert(0 == idx); /* assumed in other parts of this file */
+    MPIR_Memcpy (&g_sc_tbl[idx], &MPID_nem_tcp_g_lstn_sc, sizeof(MPID_nem_tcp_g_lstn_sc));
+    MPIR_Memcpy (&MPID_nem_tcp_plfd_tbl[idx], &MPID_nem_tcp_g_lstn_plfd, sizeof(MPID_nem_tcp_g_lstn_plfd));
+    MPIR_Assert(MPID_nem_tcp_plfd_tbl[idx].fd == g_sc_tbl[idx].fd);
+    MPIR_Assert(MPID_nem_tcp_plfd_tbl[idx].events == POLLIN);
 
  fn_exit:
     return mpi_errno;
  fn_fail:
-    MPIU_CHKPMEM_REAP();
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPIR_CHKPMEM_REAP();
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -201,8 +201,8 @@ static int free_sc_plfd_tbls (void)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    MPIU_Free(g_sc_tbl);
-    MPIU_Free(MPID_nem_tcp_plfd_tbl);
+    MPL_free(g_sc_tbl);
+    MPL_free(MPID_nem_tcp_plfd_tbl);
     return mpi_errno;
 }
 
@@ -223,17 +223,17 @@ static int expand_sc_plfd_tbls (void)
     sockconn_t *new_sc_tbl = NULL;
     struct pollfd *new_plfd_tbl = NULL;
     int new_capacity = g_tbl_capacity + CONN_PLFD_TBL_GROW_SIZE, i;
-    MPIU_CHKPMEM_DECL (2);
+    MPIR_CHKPMEM_DECL (2);
 
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "expand_sc_plfd_tbls Entry"));
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "expand_sc_plfd_tbls b4 g_sc_tbl[0].fd=%d", g_sc_tbl[0].fd));
-    MPIU_CHKPMEM_MALLOC (new_sc_tbl, sockconn_t *, new_capacity * sizeof(sockconn_t), 
-                         mpi_errno, "expanded connection table");
-    MPIU_CHKPMEM_MALLOC (new_plfd_tbl, struct pollfd *, new_capacity * sizeof(struct pollfd), 
-                         mpi_errno, "expanded pollfd table");
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "expand_sc_plfd_tbls Entry"));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "expand_sc_plfd_tbls b4 g_sc_tbl[0].fd=%d", g_sc_tbl[0].fd));
+    MPIR_CHKPMEM_MALLOC (new_sc_tbl, sockconn_t *, new_capacity * sizeof(sockconn_t),
+                         mpi_errno, "expanded connection table", MPL_MEM_ADDRESS);
+    MPIR_CHKPMEM_MALLOC (new_plfd_tbl, struct pollfd *, new_capacity * sizeof(struct pollfd),
+                         mpi_errno, "expanded pollfd table", MPL_MEM_ADDRESS);
 
-    MPIU_Memcpy (new_sc_tbl, g_sc_tbl, g_tbl_capacity * sizeof(sockconn_t));
-    MPIU_Memcpy (new_plfd_tbl, MPID_nem_tcp_plfd_tbl, g_tbl_capacity * sizeof(struct pollfd));
+    MPIR_Memcpy (new_sc_tbl, g_sc_tbl, g_tbl_capacity * sizeof(sockconn_t));
+    MPIR_Memcpy (new_plfd_tbl, MPID_nem_tcp_plfd_tbl, g_tbl_capacity * sizeof(struct pollfd));
 
     /* VCs have pointers to entries in the sc table.  These
        are updated here after the expand. */
@@ -253,8 +253,8 @@ static int expand_sc_plfd_tbls (void)
         }
     }
 
-    MPIU_Free(g_sc_tbl);
-    MPIU_Free(MPID_nem_tcp_plfd_tbl);
+    MPL_free(g_sc_tbl);
+    MPL_free(MPID_nem_tcp_plfd_tbl);
     g_sc_tbl = new_sc_tbl;
     MPID_nem_tcp_plfd_tbl = new_plfd_tbl;
     for (i = g_tbl_capacity; i < new_capacity; i++) {
@@ -263,29 +263,29 @@ static int expand_sc_plfd_tbls (void)
     }
     g_tbl_capacity = new_capacity;
 
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "expand_sc_plfd_tbls af g_sc_tbl[0].fd=%d", g_sc_tbl[0].fd));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "expand_sc_plfd_tbls af g_sc_tbl[0].fd=%d", g_sc_tbl[0].fd));
     for (i = 0; i < g_tbl_capacity; ++i)
     {
         sockconn_t *sc = &g_sc_tbl[i];
         MPIDI_VC_t *vc = sc->vc;
-        MPIU_AssertDeclValue(MPID_nem_tcp_vc_area *vc_tcp, VC_TCP(vc));
+        MPIR_AssertDeclValue(MPID_nem_tcp_vc_area *vc_tcp, VC_TCP(vc));
        /*         sockconn_t *dbg_sc = g_sc_tbl[i].vc ? VC_FIELD(g_sc_tbl[i].vc, sc) : (sockconn_t*)(-1); */
 
         /* The state is only valid if the FD is valid.  The VC field is only
            valid if the state is valid and COMMRDY. */
-        MPIU_Assert(MPID_nem_tcp_plfd_tbl[i].fd == CONN_INVALID_FD ||
+        MPIR_Assert(MPID_nem_tcp_plfd_tbl[i].fd == CONN_INVALID_FD ||
                     sc->state.cstate != CONN_STATE_TS_COMMRDY ||
                     vc_tcp->sc == sc);
     }
     
     
-    MPIU_CHKPMEM_COMMIT();
+    MPIR_CHKPMEM_COMMIT();
  fn_exit:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "expand_sc_plfd_tbls Exit"));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "expand_sc_plfd_tbls Exit"));
     return mpi_errno;
  fn_fail:
-    MPIU_CHKPMEM_REAP();
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPIR_CHKPMEM_REAP();
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -312,7 +312,7 @@ static int find_free_entry(int *idx)
     if (!Q_EMPTY(freeq)) {
         Q_DEQUEUE(&freeq, ((freenode_t **)&node)); 
         *idx = node->index;
-        MPIU_Free(node);
+        MPL_free(node);
         goto fn_exit;
     }
 
@@ -322,7 +322,7 @@ static int find_free_entry(int *idx)
             goto fn_fail;
     }
 
-    MPIU_Assert(g_tbl_capacity > g_tbl_size);
+    MPIR_Assert(g_tbl_capacity > g_tbl_size);
     *idx = g_tbl_size;
     ++g_tbl_size;
 
@@ -334,7 +334,7 @@ static int find_free_entry(int *idx)
     INIT_POLLFD_ENTRY(&MPID_nem_tcp_plfd_tbl[*idx]);
     return mpi_errno;
  fn_fail:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -349,9 +349,9 @@ static int find_free_entry(int *idx)
 static int found_better_sc(sockconn_t *sc, sockconn_t **fnd_sc)
 {
     int i, found = FALSE;
-    MPIDI_STATE_DECL(MPID_STATE_FOUND_BETTER_SC);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_FOUND_BETTER_SC);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_FOUND_BETTER_SC);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_FOUND_BETTER_SC);
 
     /* tmpvc's can never match a better sc */
     if (sc->is_tmpvc) {
@@ -360,7 +360,7 @@ static int found_better_sc(sockconn_t *sc, sockconn_t **fnd_sc)
     }
 
     /* if we don't know our own pg info, how can we look for a better SC? */
-    MPIU_Assert(sc->pg_is_set);
+    MPIR_Assert(sc->pg_is_set);
 
     for(i = 0; i < g_tbl_size && !found; i++)
     {
@@ -373,21 +373,21 @@ static int found_better_sc(sockconn_t *sc, sockconn_t **fnd_sc)
             switch (sc->state.cstate)
             {
             case CONN_STATE_TC_C_CNTD:
-                MPIU_Assert(fnd_sc == NULL);
+                MPIR_Assert(fnd_sc == NULL);
                 if (istate == CONN_STATE_TS_COMMRDY ||
                     istate == CONN_STATE_TA_C_RANKRCVD ||
                     istate == CONN_STATE_TC_C_TMPVCSENT)
                     found = TRUE;
                 break;
             case CONN_STATE_TA_C_RANKRCVD:
-                MPIU_Assert(fnd_sc != NULL);
+                MPIR_Assert(fnd_sc != NULL);
                 if (istate == CONN_STATE_TS_COMMRDY || istate == CONN_STATE_TC_C_RANKSENT) {
                     found = TRUE;
                     *fnd_sc = iter_sc;
                 }
                 break;                
             case CONN_STATE_TA_C_TMPVCRCVD:
-                MPIU_Assert(fnd_sc != NULL);
+                MPIR_Assert(fnd_sc != NULL);
                 if (istate == CONN_STATE_TS_COMMRDY || istate == CONN_STATE_TC_C_TMPVCSENT) {
                     found = TRUE;
                     *fnd_sc = iter_sc;
@@ -396,7 +396,7 @@ static int found_better_sc(sockconn_t *sc, sockconn_t **fnd_sc)
                 /* Add code for other states here, if need be. */
             default:
                 /* FIXME: need to handle error condition better */
-                MPIU_Assert (0);
+                MPIR_Assert (0);
                 break;
             }
         }
@@ -405,23 +405,23 @@ static int found_better_sc(sockconn_t *sc, sockconn_t **fnd_sc)
 fn_exit:
     if (found) {
         if (fnd_sc) {
-            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE,
-                             (MPIU_DBG_FDEST, "found_better_sc(sc=%p (%s), *fnd_sc=%p (%s)) found=TRUE",
+            MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE,
+                             (MPL_DBG_FDEST, "found_better_sc(sc=%p (%s), *fnd_sc=%p (%s)) found=TRUE",
                               sc, CONN_STATE_STR[sc->state.cstate],
                               *fnd_sc, (*fnd_sc ? CONN_STATE_STR[(*fnd_sc)->state.cstate] : "N/A")));
         }
         else {
-            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE,
-                             (MPIU_DBG_FDEST, "found_better_sc(sc=%p (%s), fnd_sc=(nil)) found=TRUE",
+            MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE,
+                             (MPL_DBG_FDEST, "found_better_sc(sc=%p (%s), fnd_sc=(nil)) found=TRUE",
                               sc, CONN_STATE_STR[sc->state.cstate]));
         }
     }
     else {
-        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE,
-                         (MPIU_DBG_FDEST, "found_better_sc(sc=%p (%s), *fnd_sc=N/A) found=FALSE",
+        MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE,
+                         (MPL_DBG_FDEST, "found_better_sc(sc=%p (%s), *fnd_sc=N/A) found=FALSE",
                           sc, CONN_STATE_STR[sc->state.cstate]));
     }
-    MPIDI_FUNC_EXIT(MPID_STATE_FOUND_BETTER_SC);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_FOUND_BETTER_SC);
     return found;
 }
 
@@ -433,7 +433,7 @@ fn_exit:
 static int vc_is_in_shutdown(MPIDI_VC_t *vc)
 {
     int retval = FALSE;
-    MPIU_Assert(vc != NULL);
+    MPIR_Assert(vc != NULL);
     if (vc->state == MPIDI_VC_STATE_REMOTE_CLOSE ||
         vc->state == MPIDI_VC_STATE_CLOSE_ACKED ||
         vc->state == MPIDI_VC_STATE_CLOSED ||
@@ -445,7 +445,7 @@ static int vc_is_in_shutdown(MPIDI_VC_t *vc)
         retval = TRUE;
     }
 
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "vc_is_in_shutdown(%p)=%s", vc, (retval ? "TRUE" : "FALSE")));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "vc_is_in_shutdown(%p)=%s", vc, (retval ? "TRUE" : "FALSE")));
     return retval;
 }
 
@@ -462,11 +462,11 @@ static int send_id_info(const sockconn_t *const sc)
     int buf_size, iov_cnt = 2;
     ssize_t offset;
     size_t pg_id_len = 0;
-    MPIDI_STATE_DECL(MPID_STATE_SEND_ID_INFO);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_SEND_ID_INFO);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_SEND_ID_INFO);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_SEND_ID_INFO);
 
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "my_pg->id=%s my_pg->rank=%d, sc->pg_rank=%d sc->is_same_pg=%s",
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "my_pg->id=%s my_pg->rank=%d, sc->pg_rank=%d sc->is_same_pg=%s",
                                              (char *)MPIDI_Process.my_pg->id, MPIDI_Process.my_pg_rank, sc->pg_rank,
                                              (sc->is_same_pg ? "TRUE" : "FALSE")));
     if (!sc->is_same_pg)
@@ -475,6 +475,8 @@ static int send_id_info(const sockconn_t *const sc)
 /*     store ending NULL also */
 /*     FIXME better keep pg_id_len itself as part of MPIDI_Process.my_pg structure to */
 /*     avoid computing the length of string everytime this function is called. */
+
+    MPL_VG_MEM_INIT(&hdr, sizeof(hdr));
     
     hdr.pkt_type = MPIDI_NEM_TCP_SOCKSM_PKT_ID_INFO;
     hdr.datalen = sizeof(MPIDI_nem_tcp_idinfo_t) + pg_id_len;    
@@ -494,18 +496,18 @@ static int send_id_info(const sockconn_t *const sc)
     }
     
     offset = MPL_large_writev(sc->fd, iov, iov_cnt);
-    MPIR_ERR_CHKANDJUMP1(offset == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", MPIU_Strerror(errno));
-    MPIR_ERR_CHKANDJUMP1(offset != buf_size, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", MPIU_Strerror(errno));
+    MPIR_ERR_CHKANDJUMP1(offset == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", MPIR_Strerror(errno));
+    MPIR_ERR_CHKANDJUMP1(offset != buf_size, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", MPIR_Strerror(errno));
 /*     FIXME log appropriate error */
 /*     FIXME-Z1  socket is just connected and we are sending a few bytes. So, there should not */
 /*     be a problem of partial data only being written to. If partial data written, */
 /*     handle this. */
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_SEND_ID_INFO);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_SEND_ID_INFO);
     return mpi_errno;
  fn_fail:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d, offset=%lld, errno=%d %s", mpi_errno, (long long)offset, errno, MPIU_Strerror(errno)));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d, offset=%lld, errno=%d %s", mpi_errno, (long long)offset, errno, MPIR_Strerror(errno)));
     goto fn_exit;    
 }
 
@@ -522,16 +524,18 @@ static int send_tmpvc_info(const sockconn_t *const sc)
     struct iovec iov[3];
     int buf_size, iov_cnt = 2;
     ssize_t offset;
-    MPIDI_STATE_DECL(MPID_STATE_SEND_TMPVC_INFO);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_SEND_TMPVC_INFO);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_SEND_TMPVC_INFO);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_SEND_TMPVC_INFO);
 
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "my->pg_rank=%d, sc->pg_rank=%d"
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "my->pg_rank=%d, sc->pg_rank=%d"
                                              , MPIDI_Process.my_pg_rank, sc->pg_rank));
 
 /*     store ending NULL also */
 /*     FIXME better keep pg_id_len itself as part of MPIDI_Process.my_pg structure to */
 /*     avoid computing the length of string everytime this function is called. */
+
+    MPL_VG_MEM_INIT(&hdr, sizeof(hdr));
     
     hdr.pkt_type = MPIDI_NEM_TCP_SOCKSM_PKT_TMPVC_INFO;
     hdr.datalen = sizeof(MPIDI_nem_tcp_portinfo_t);
@@ -544,18 +548,18 @@ static int send_tmpvc_info(const sockconn_t *const sc)
     buf_size = sizeof(hdr) + sizeof(port_info);
     
     offset = MPL_large_writev(sc->fd, iov, iov_cnt);
-    MPIR_ERR_CHKANDJUMP1(offset == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", MPIU_Strerror(errno));
-    MPIR_ERR_CHKANDJUMP1(offset != buf_size, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", MPIU_Strerror(errno));
+    MPIR_ERR_CHKANDJUMP1(offset == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", MPIR_Strerror(errno));
+    MPIR_ERR_CHKANDJUMP1(offset != buf_size, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", MPIR_Strerror(errno));
 /*     FIXME log appropriate error */
 /*     FIXME-Z1  socket is just connected and we are sending a few bytes. So, there should not */
 /*     be a problem of partial data only being written to. If partial data written, */
 /*     handle this. */
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_SEND_TMPVC_INFO);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_SEND_TMPVC_INFO);
     return mpi_errno;
  fn_fail:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d, offset=%lld, errno=%d %s", mpi_errno, (long long)offset, errno, MPIU_Strerror(errno)));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d, offset=%lld, errno=%d %s", mpi_errno, (long long)offset, errno, MPIR_Strerror(errno)));
     goto fn_exit;    
 }
 
@@ -574,11 +578,11 @@ static int recv_id_or_tmpvc_info(sockconn_t *const sc, int *got_sc_eof)
     struct iovec iov[2];
     char *pg_id = NULL;
 
-    MPIU_CHKPMEM_DECL (1);
-    MPIU_CHKLMEM_DECL (1);
-    MPIDI_STATE_DECL(MPID_STATE_RECV_ID_OR_TMPVC_INFO);
+    MPIR_CHKPMEM_DECL (1);
+    MPIR_CHKLMEM_DECL (1);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_RECV_ID_OR_TMPVC_INFO);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_RECV_ID_OR_TMPVC_INFO);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_RECV_ID_OR_TMPVC_INFO);
 
     *got_sc_eof = 0;
 
@@ -590,24 +594,24 @@ static int recv_id_or_tmpvc_info(sockconn_t *const sc, int *got_sc_eof)
         *got_sc_eof = 1;
         goto fn_exit;
     }
-    MPIR_ERR_CHKANDJUMP1(nread == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", MPIU_Strerror(errno));
+    MPIR_ERR_CHKANDJUMP1(nread == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", MPIR_Strerror(errno));
     MPIR_ERR_CHKANDJUMP(nread != hdr_len, mpi_errno, MPI_ERR_OTHER, "**read");  /* FIXME-Z1 */
-    MPIU_Assert(hdr.pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_ID_INFO ||
+    MPIR_Assert(hdr.pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_ID_INFO ||
 		hdr.pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_TMPVC_INFO);
-    MPIU_Assert(hdr.datalen != 0);
+    MPIR_Assert(hdr.datalen != 0);
     
     if (hdr.pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_ID_INFO) {
 	iov[0].iov_base = (void *) &(sc->pg_rank);
 	iov[0].iov_len = sizeof(sc->pg_rank);
 	pg_id_len = hdr.datalen - sizeof(MPIDI_nem_tcp_idinfo_t);
 	if (pg_id_len != 0) {
-	    MPIU_CHKLMEM_MALLOC (pg_id, char *, pg_id_len, mpi_errno, "sockconn pg_id");
+	    MPIR_CHKLMEM_MALLOC (pg_id, char *, pg_id_len, mpi_errno, "sockconn pg_id", MPL_MEM_OTHER);
 	    iov[1].iov_base = (void *)pg_id;
 	    iov[1].iov_len = pg_id_len;
 	    ++iov_cnt;
 	} 
 	nread = MPL_large_readv(sc->fd, iov, iov_cnt);
-        MPIR_ERR_CHKANDJUMP1(nread == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", MPIU_Strerror(errno));
+        MPIR_ERR_CHKANDJUMP1(nread == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", MPIR_Strerror(errno));
 	MPIR_ERR_CHKANDJUMP(nread != hdr.datalen, mpi_errno, MPI_ERR_OTHER, "**read"); /* FIXME-Z1 */
 	if (pg_id_len == 0) {
 	    sc->is_same_pg = TRUE;
@@ -627,24 +631,24 @@ static int recv_id_or_tmpvc_info(sockconn_t *const sc, int *got_sc_eof)
             MPIDI_VC_t *sc_vc = sc->vc;
             MPID_nem_tcp_vc_area *sc_vc_tcp = VC_TCP(sc_vc);
 
-            MPIU_Assert(sc_vc != NULL);
-            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "about to incr sc_ref_count sc=%p sc->vc=%p sc_ref_count=%d", sc, sc_vc, sc_vc_tcp->sc_ref_count));
+            MPIR_Assert(sc_vc != NULL);
+            MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "about to incr sc_ref_count sc=%p sc->vc=%p sc_ref_count=%d", sc, sc_vc, sc_vc_tcp->sc_ref_count));
             ++sc_vc_tcp->sc_ref_count;
         }
         
         /* very important, without this is_same_connection() will always fail */
         sc->pg_is_set = TRUE;
-        MPIU_Assert(!sc->is_tmpvc);
+        MPIR_Assert(!sc->is_tmpvc);
         
-	MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "PKT_ID_INFO: sc->pg_rank=%d sc->is_same_pg=%d sc->fd=%d, sc->vc=%p, sc=%p", sc->pg_rank, sc->is_same_pg, sc->fd, sc->vc, sc));
+	MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_CHANNEL, VERBOSE, (MPL_DBG_FDEST, "PKT_ID_INFO: sc->pg_rank=%d sc->is_same_pg=%d sc->fd=%d, sc->vc=%p, sc=%p", sc->pg_rank, sc->is_same_pg, sc->fd, sc->vc, sc));
     }
     else if (hdr.pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_TMPVC_INFO) {
         MPIDI_VC_t *vc;
         MPID_nem_tcp_vc_area *vc_tcp;
 
-        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "PKT_TMPVC_INFO: sc->fd=%d", sc->fd));
+        MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "PKT_TMPVC_INFO: sc->fd=%d", sc->fd));
         /* create a new VC */
-        MPIU_CHKPMEM_MALLOC (vc, MPIDI_VC_t *, sizeof(MPIDI_VC_t), mpi_errno, "real vc from tmp vc");
+        MPIR_CHKPMEM_MALLOC (vc, MPIDI_VC_t *, sizeof(MPIDI_VC_t), mpi_errno, "real vc from tmp vc", MPL_MEM_ADDRESS);
         /* --BEGIN ERROR HANDLING-- */
         if (vc == NULL) {
             mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", NULL);
@@ -657,7 +661,7 @@ static int recv_id_or_tmpvc_info(sockconn_t *const sc, int *got_sc_eof)
         MPIDI_VC_Init(vc, NULL, 0);
         vc_tcp->state = MPID_NEM_TCP_VC_STATE_CONNECTED; /* FIXME: is it needed ? */
         sc->vc = vc;
-        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "about to incr sc_ref_count sc=%p sc->vc=%p sc_ref_count=%d", sc, sc->vc, vc_tcp->sc_ref_count));
+        MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "about to incr sc_ref_count sc=%p sc->vc=%p sc_ref_count=%d", sc, sc->vc, vc_tcp->sc_ref_count));
         ++vc_tcp->sc_ref_count;
 
         ASSIGN_SC_TO_VC(vc_tcp, sc);
@@ -667,26 +671,26 @@ static int recv_id_or_tmpvc_info(sockconn_t *const sc, int *got_sc_eof)
         iov[0].iov_len = sizeof(sc->vc->port_name_tag);
 
         nread = MPL_large_readv(sc->fd, iov, iov_cnt);
-        MPIR_ERR_CHKANDJUMP1(nread == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", MPIU_Strerror(errno));
+        MPIR_ERR_CHKANDJUMP1(nread == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", MPIR_Strerror(errno));
         MPIR_ERR_CHKANDJUMP(nread != hdr.datalen, mpi_errno, MPI_ERR_OTHER, "**read"); /* FIXME-Z1 */
         sc->is_same_pg = FALSE;
         sc->pg_id = NULL;
         sc->is_tmpvc = TRUE;
 
-        MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "enqueuing on acceptq vc=%p, sc->fd=%d, tag=%d", vc, sc->fd, sc->vc->port_name_tag));
+        MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_CHANNEL, VERBOSE, (MPL_DBG_FDEST, "enqueuing on acceptq vc=%p, sc->fd=%d, tag=%d", vc, sc->fd, sc->vc->port_name_tag));
         MPIDI_CH3I_Acceptq_enqueue(vc, sc->vc->port_name_tag);
 
-        MPIU_Assert(!sc->pg_is_set);
+        MPIR_Assert(!sc->pg_is_set);
     }
 
-    MPIU_CHKPMEM_COMMIT();
+    MPIR_CHKPMEM_COMMIT();
  fn_exit:
-    MPIU_CHKLMEM_FREEALL();
-    MPIDI_FUNC_EXIT(MPID_STATE_RECV_ID_OR_TMPVC_INFO);
+    MPIR_CHKLMEM_FREEALL();
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_RECV_ID_OR_TMPVC_INFO);
     return mpi_errno;
  fn_fail:
-    MPIU_CHKPMEM_REAP();
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPIR_CHKPMEM_REAP();
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -705,22 +709,24 @@ static int send_cmd_pkt(int fd, MPIDI_nem_tcp_socksm_pkt_type_t pkt_type)
     MPIDI_nem_tcp_header_t pkt;
     int pkt_len = sizeof(MPIDI_nem_tcp_header_t);
 
-    MPIU_Assert(pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_ID_ACK ||
+    MPIR_Assert(pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_ID_ACK ||
                 pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_ID_NAK ||
 		pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_TMPVC_ACK ||
 		pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_TMPVC_NAK ||
                 pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_CLOSED);
 
+    MPL_VG_MEM_INIT(&pkt, sizeof(pkt));
+
     pkt.pkt_type = pkt_type;
     pkt.datalen = 0;
 
     CHECK_EINTR (offset, write(fd, &pkt, pkt_len));
-    MPIR_ERR_CHKANDJUMP1(offset == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", MPIU_Strerror(errno));
-    MPIR_ERR_CHKANDJUMP1(offset != pkt_len, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", MPIU_Strerror(errno)); /* FIXME-Z1 */
+    MPIR_ERR_CHKANDJUMP1(offset == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", MPIR_Strerror(errno));
+    MPIR_ERR_CHKANDJUMP1(offset != pkt_len, mpi_errno, MPI_ERR_OTHER, "**write", "**write %s", MPIR_Strerror(errno)); /* FIXME-Z1 */
  fn_exit:
     return mpi_errno;
  fn_fail:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -739,15 +745,15 @@ static int recv_cmd_pkt(int fd, MPIDI_nem_tcp_socksm_pkt_type_t *pkt_type)
     ssize_t nread;
     MPIDI_nem_tcp_header_t pkt;
     int pkt_len = sizeof(MPIDI_nem_tcp_header_t);
-    MPIDI_STATE_DECL(MPID_STATE_RECV_CMD_PKT);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_RECV_CMD_PKT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_RECV_CMD_PKT);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_RECV_CMD_PKT);
 
     CHECK_EINTR (nread, read(fd, &pkt, pkt_len));
-    MPIR_ERR_CHKANDJUMP1(nread == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", MPIU_Strerror(errno));
-    MPIR_ERR_CHKANDJUMP2(nread != pkt_len, mpi_errno, MPI_ERR_OTHER, "**read", "**read %d %s", nread, MPIU_Strerror(errno)); /* FIXME-Z1 */
-    MPIU_Assert(pkt.datalen == 0);
-    MPIU_Assert(pkt.pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_ID_ACK ||
+    MPIR_ERR_CHKANDJUMP1(nread == -1 && errno != EAGAIN, mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", MPIR_Strerror(errno));
+    MPIR_ERR_CHKANDJUMP2(nread != pkt_len, mpi_errno, MPI_ERR_OTHER, "**read", "**read %d %s", nread, MPIR_Strerror(errno)); /* FIXME-Z1 */
+    MPIR_Assert(pkt.datalen == 0);
+    MPIR_Assert(pkt.pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_ID_ACK ||
                 pkt.pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_ID_NAK ||
                 pkt.pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_TMPVC_ACK ||
                 pkt.pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_TMPVC_NAK ||
@@ -755,10 +761,10 @@ static int recv_cmd_pkt(int fd, MPIDI_nem_tcp_socksm_pkt_type_t *pkt_type)
     
     *pkt_type = pkt.pkt_type;
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_RECV_CMD_PKT);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_RECV_CMD_PKT);
     return mpi_errno;
  fn_fail:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -778,12 +784,12 @@ int MPID_nem_tcp_connect(struct MPIDI_VC *const vc)
     int idx = -1;
     int mpi_errno = MPI_SUCCESS;
 
-    MPIU_CHKLMEM_DECL(1);
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_TCP_CONNECT);
+    MPIR_CHKLMEM_DECL(1);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_TCP_CONNECT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_TCP_CONNECT);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_TCP_CONNECT);
 
-    MPIU_Assert(vc != NULL);
+    MPIR_Assert(vc != NULL);
 
     /* Handle error case */
     if (vc_tcp->state == MPID_NEM_TCP_VC_STATE_ERROR ||
@@ -794,7 +800,11 @@ int MPID_nem_tcp_connect(struct MPIDI_VC *const vc)
     /* We have an active connection, start polling more often */
     MPID_nem_tcp_skip_polls = MAX_SKIP_POLLS_ACTIVE;
 
-    MPIDI_CHANGE_VC_STATE(vc, ACTIVE);
+    /* only update VC state when it is not being closed.
+     * Note that we still need change state here if the VC is passively
+     * connected (i.e., server in dynamic process connection) */
+    if (vc->state == MPIDI_VC_STATE_INACTIVE)
+        MPIDI_CHANGE_VC_STATE(vc, ACTIVE);
 
     if (vc_tcp->state == MPID_NEM_TCP_VC_STATE_DISCONNECTED) {
         struct sockaddr_in *sock_addr;
@@ -802,7 +812,7 @@ int MPID_nem_tcp_connect(struct MPIDI_VC *const vc)
         int rc = 0;
 
         if (vc_tcp->connect_retry_count > MPIDI_NEM_TCP_MAX_CONNECT_RETRIES) {
-            MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "exceeded retries, closing sc");
+            MPL_DBG_MSG(MPIDI_NEM_TCP_DBG_DET, VERBOSE, "exceeded retries, closing sc");
             MPIR_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**exceeded_connect_tries", "**exceeded_connect_tries %d", vc->pg_rank);
             mpi_errno = error_closed(vc, mpi_errno);
             MPIR_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**tcp_cleanup_fail");
@@ -811,7 +821,7 @@ int MPID_nem_tcp_connect(struct MPIDI_VC *const vc)
         
         ++vc_tcp->connect_retry_count;
 
-        MPIU_Assert(vc_tcp->sc == NULL);
+        MPIR_Assert(vc_tcp->sc == NULL);
         mpi_errno = find_free_entry(&idx);
         if (mpi_errno != MPI_SUCCESS) MPIR_ERR_POP (mpi_errno);
 
@@ -835,7 +845,7 @@ int MPID_nem_tcp_connect(struct MPIDI_VC *const vc)
             pmi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
             MPIR_ERR_CHKANDJUMP1(pmi_errno, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %d", pmi_errno);
 #endif
-            MPIU_CHKLMEM_MALLOC(bc, char *, val_max_sz, mpi_errno, "bc");
+            MPIR_CHKLMEM_MALLOC(bc, char *, val_max_sz, mpi_errno, "bc", MPL_MEM_OTHER);
             
             sc->is_tmpvc = FALSE;
             
@@ -848,23 +858,23 @@ int MPID_nem_tcp_connect(struct MPIDI_VC *const vc)
         }
         else {
             sc->is_tmpvc = TRUE;
-            MPIU_Assert(!sc->pg_is_set);
+            MPIR_Assert(!sc->pg_is_set);
         }
 
         sock_addr = &(vc_tcp->sock_id);
 
         CHECK_EINTR(sc->fd, socket(AF_INET, SOCK_STREAM, 0));
-        MPIR_ERR_CHKANDJUMP2(sc->fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", "**sock_create %s %d", MPIU_Strerror(errno), errno);
+        MPIR_ERR_CHKANDJUMP2(sc->fd == -1, mpi_errno, MPI_ERR_OTHER, "**sock_create", "**sock_create %s %d", MPIR_Strerror(errno), errno);
 
         plfd->fd = sc->fd;
-	MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "sc->fd=%d, plfd->events=%d, plfd->revents=%d, vc=%p, sc=%p", sc->fd, plfd->events, plfd->revents, vc, sc));
+	MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "sc->fd=%d, plfd->events=%d, plfd->revents=%d, vc=%p, sc=%p", sc->fd, plfd->events, plfd->revents, vc, sc));
         mpi_errno = MPID_nem_tcp_set_sockopts(sc->fd);
         if (mpi_errno) MPIR_ERR_POP (mpi_errno);
 
-        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "connecting to 0x%08X:%d", sock_addr->sin_addr.s_addr, sock_addr->sin_port));
+        MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "connecting to 0x%08X:%d", sock_addr->sin_addr.s_addr, sock_addr->sin_port));
         rc = connect(sc->fd, (SA*)sock_addr, sizeof(*sock_addr));
         /* connect should not be called with CHECK_EINTR macro */
-        MPIR_ERR_CHKANDJUMP2(rc < 0 && errno != EINPROGRESS, mpi_errno, MPI_ERR_OTHER, "**sock_connect", "**sock_connect %d %s", errno, MPIU_Strerror(errno));
+        MPIR_ERR_CHKANDJUMP2(rc < 0 && errno != EINPROGRESS, mpi_errno, MPI_ERR_OTHER, "**sock_connect", "**sock_connect %d %s", errno, MPIR_Strerror(errno));
         
         if (rc == 0) {
             CHANGE_STATE(sc, CONN_STATE_TC_C_CNTD);
@@ -887,20 +897,20 @@ int MPID_nem_tcp_connect(struct MPIDI_VC *const vc)
             }
             /* very important, without this is_same_connection() will always fail */
             sc->pg_is_set = TRUE;
-            MPIU_Assert(!sc->is_tmpvc);
+            MPIR_Assert(!sc->is_tmpvc);
         }
         else { /* (vc->pg == NULL), dynamic proc connection - temp vc */
-            MPIU_Assert(sc->is_tmpvc);
+            MPIR_Assert(sc->is_tmpvc);
         }
 
         ASSIGN_SC_TO_VC(vc_tcp, sc);
         sc->vc = vc;
-        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "about to incr sc_ref_count sc=%p sc->vc=%p sc_ref_count=%d", sc, sc->vc, vc_tcp->sc_ref_count));
+        MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "about to incr sc_ref_count sc=%p sc->vc=%p sc_ref_count=%d", sc, sc->vc, vc_tcp->sc_ref_count));
         ++vc_tcp->sc_ref_count;
     }
     else if (vc_tcp->state == MPID_NEM_TCP_VC_STATE_CONNECTED) {
         sc = vc_tcp->sc;
-        MPIU_Assert(sc != NULL);
+        MPIR_Assert(sc != NULL);
         /* Do nothing here, the caller just needs to wait for the connection
            state machine to work its way through the states.  Doing something at
            this point will almost always just mess up any head-to-head
@@ -908,18 +918,18 @@ int MPID_nem_tcp_connect(struct MPIDI_VC *const vc)
     }
     else {
         /* We already handled the error case at the top of the routine. */
-        MPIU_Assertp(0);
+        MPIR_Assertp(0);
     }
 
  fn_exit:
     /* MPID_nem_tcp_connpoll(); FIXME-Imp should be called? */
-    MPIU_CHKLMEM_FREEALL();
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_TCP_CONNECT);
+    MPIR_CHKLMEM_FREEALL();
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_TCP_CONNECT);
     return mpi_errno;
  fn_fail:
     if (idx != -1)
         close_cleanup_and_free_sc_plfd(&g_sc_tbl[idx]); /* ignore error return */
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -935,17 +945,17 @@ static int cleanup_and_free_sc_plfd(sockconn_t *const sc)
     const int idx = sc->index;
     struct pollfd *const plfd = &MPID_nem_tcp_plfd_tbl[sc->index];
     freenode_t *node;
-    MPIU_CHKPMEM_DECL(1);
-    MPIDI_STATE_DECL(MPID_STATE_CLEANUP_AND_FREE_SC_PLFD);
+    MPIR_CHKPMEM_DECL(1);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_CLEANUP_AND_FREE_SC_PLFD);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_CLEANUP_AND_FREE_SC_PLFD);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_CLEANUP_AND_FREE_SC_PLFD);
 
     if (sc == NULL)
         goto fn_exit;
 
     if (sc_vc) {
-        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "about to decr sc_ref_count sc=%p sc->vc=%p sc_ref_count=%d", sc, sc_vc, sc_vc_tcp->sc_ref_count));
-        MPIU_Assert(sc_vc_tcp->sc_ref_count > 0);
+        MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "about to decr sc_ref_count sc=%p sc->vc=%p sc_ref_count=%d", sc, sc_vc, sc_vc_tcp->sc_ref_count));
+        MPIR_Assert(sc_vc_tcp->sc_ref_count > 0);
         --sc_vc_tcp->sc_ref_count;
     }
     
@@ -960,17 +970,17 @@ static int cleanup_and_free_sc_plfd(sockconn_t *const sc)
     INIT_SC_ENTRY(sc, idx);
     INIT_POLLFD_ENTRY(plfd);
 
-    MPIU_CHKPMEM_MALLOC(node, freenode_t *, sizeof(freenode_t), mpi_errno, "free node");
+    MPIR_CHKPMEM_MALLOC(node, freenode_t *, sizeof(freenode_t), mpi_errno, "free node", MPL_MEM_OTHER);
     node->index = idx;
     Q_ENQUEUE(&freeq, node);
 
-    MPIU_CHKPMEM_COMMIT();
+    MPIR_CHKPMEM_COMMIT();
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_CLEANUP_AND_FREE_SC_PLFD);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_CLEANUP_AND_FREE_SC_PLFD);
     return mpi_errno;
  fn_fail:
-    MPIU_CHKPMEM_REAP();
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPIR_CHKPMEM_REAP();
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -987,24 +997,24 @@ int close_cleanup_and_free_sc_plfd(sockconn_t *const sc)
     int mpi_errno = MPI_SUCCESS;
     int mpi_errno2 = MPI_SUCCESS;
     int rc;
-    MPIDI_STATE_DECL(MPID_STATE_CLOSE_CLEANUP_AND_FREE_SC_PLFD);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_CLOSE_CLEANUP_AND_FREE_SC_PLFD);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_CLOSE_CLEANUP_AND_FREE_SC_PLFD);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_CLOSE_CLEANUP_AND_FREE_SC_PLFD);
 
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "vc=%p, sc=%p, closing fd=%d", sc->vc, sc, sc->fd));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "vc=%p, sc=%p, closing fd=%d", sc->vc, sc, sc->fd));
 
     if (sc == NULL)
         goto fn_exit;
 
     CHECK_EINTR(rc, close(sc->fd));
     if (rc == -1 && errno != EAGAIN && errno != EBADF)
-        MPIR_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**close", "**close %s", MPIU_Strerror(errno));
+        MPIR_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**close", "**close %s", MPIR_Strerror(errno));
 
     mpi_errno2 = cleanup_and_free_sc_plfd(sc);
     if (mpi_errno2) MPIR_ERR_ADD(mpi_errno, mpi_errno2);
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_CLOSE_CLEANUP_AND_FREE_SC_PLFD);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_CLOSE_CLEANUP_AND_FREE_SC_PLFD);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -1024,9 +1034,9 @@ int MPID_nem_tcp_cleanup (struct MPIDI_VC *const vc)
 {
     int mpi_errno = MPI_SUCCESS, i;
     MPID_nem_tcp_vc_area *const vc_tcp = VC_TCP(vc);
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_TCP_CLEANUP);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_TCP_CLEANUP);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_TCP_CLEANUP);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_TCP_CLEANUP);
 
     if (vc_tcp->sc != NULL) {
         mpi_errno = close_cleanup_and_free_sc_plfd(vc_tcp->sc);
@@ -1041,7 +1051,7 @@ int MPID_nem_tcp_cleanup (struct MPIDI_VC *const vc)
                clean him up he'll end up accessing the about-to-be-freed vc. */
             mpi_errno = close_cleanup_and_free_sc_plfd(&g_sc_tbl[i]);
             if (mpi_errno) MPIR_ERR_POP(mpi_errno);
-            MPIU_Assert(g_sc_tbl[i].vc == NULL);
+            MPIR_Assert(g_sc_tbl[i].vc == NULL);
         }
         ++i;
     }
@@ -1049,13 +1059,13 @@ int MPID_nem_tcp_cleanup (struct MPIDI_VC *const vc)
     /* close_cleanup_and_free_sc_plfd can technically cause a reconnect on a per-sc basis, but I
        don't think that it can happen when cleanup is called.  Let's
        assert this for now and remove it if we prove that it can happen. */
-    MPIU_Assert(vc_tcp->sc_ref_count == 0);
+    MPIR_Assert(vc_tcp->sc_ref_count == 0);
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_TCP_CLEANUP);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_TCP_CLEANUP);
     return mpi_errno;
  fn_fail:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -1071,9 +1081,9 @@ int MPID_nem_tcp_ckpt_cleanup(void)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_TCP_CKPT_CLEANUP);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_TCP_CKPT_CLEANUP);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_TCP_CKPT_CLEANUP);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_TCP_CKPT_CLEANUP);
 
     for (i = 0; i < MPIDI_Process.my_pg->size; ++i) {
         MPIDI_VC_t *vc;
@@ -1093,7 +1103,7 @@ int MPID_nem_tcp_ckpt_cleanup(void)
     }
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_TCP_CKPT_CLEANUP);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_TCP_CKPT_CLEANUP);
     return mpi_errno;
  fn_fail:
 
@@ -1109,9 +1119,9 @@ static int state_tc_c_cnting_handler(struct pollfd *const plfd, sockconn_t *cons
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_NEM_TCP_SOCK_STATUS_t status;
-    MPIDI_STATE_DECL(MPID_STATE_STATE_TC_C_CNTING_HANDLER);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_STATE_TC_C_CNTING_HANDLER);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_STATE_TC_C_CNTING_HANDLER);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_STATE_TC_C_CNTING_HANDLER);
    
     status = MPID_nem_tcp_check_sock_status(plfd);
 
@@ -1119,7 +1129,7 @@ static int state_tc_c_cnting_handler(struct pollfd *const plfd, sockconn_t *cons
         CHANGE_STATE(sc, CONN_STATE_TC_C_CNTD);
     }
     else if (status == MPID_NEM_TCP_SOCK_ERROR_EOF) {
-        MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "state_tc_c_cnting_handler(): closing sc");
+        MPL_DBG_MSG(MPIDI_NEM_TCP_DBG_DET, VERBOSE, "state_tc_c_cnting_handler(): closing sc");
         mpi_errno = close_cleanup_and_free_sc_plfd(sc); /* QUIESCENT */
     }
     else { /* status == MPID_NEM_TCP_SOCK_NOEVENT */
@@ -1135,7 +1145,7 @@ static int state_tc_c_cnting_handler(struct pollfd *const plfd, sockconn_t *cons
         */
     }
 
-    MPIDI_FUNC_EXIT(MPID_STATE_STATE_TC_C_CNTING_HANDLER);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_STATE_TC_C_CNTING_HANDLER);
     return mpi_errno;
 }
 
@@ -1146,22 +1156,22 @@ static int state_tc_c_cnting_handler(struct pollfd *const plfd, sockconn_t *cons
 static int state_tc_c_cntd_handler(struct pollfd *const plfd, sockconn_t *const sc)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_STATE_TC_C_CNTD_HANDLER);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_STATE_TC_C_CNTD_HANDLER);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_STATE_TC_C_CNTD_HANDLER);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_STATE_TC_C_CNTD_HANDLER);
 
     if (found_better_sc(sc, NULL)) {
-        MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "state_tc_c_cntd_handler(): closing sc");
+        MPL_DBG_MSG(MPIDI_NEM_TCP_DBG_DET, VERBOSE, "state_tc_c_cntd_handler(): closing sc");
         mpi_errno = close_cleanup_and_free_sc_plfd(sc); /* QUIESCENT */
         goto fn_exit;
     }
     
     if (IS_WRITEABLE(plfd)) {
-        MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "inside if (IS_WRITEABLE(plfd))");
+        MPL_DBG_MSG(MPIDI_NEM_TCP_DBG_DET, VERBOSE, "inside if (IS_WRITEABLE(plfd))");
         if (!sc->is_tmpvc) { /* normal connection */
             mpi_errno = send_id_info(sc);
             if (mpi_errno) {
-                MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "state_tc_c_cntd_handler(): closing sc");
+                MPL_DBG_MSG(MPIDI_NEM_TCP_DBG_DET, VERBOSE, "state_tc_c_cntd_handler(): closing sc");
                 mpi_errno = close_cleanup_and_free_sc_plfd(sc); /* QUIESCENT */
                 mpi_errno = MPI_SUCCESS; /* don't return an error if we fail in the connect protocol, just retry. */
                 goto fn_exit;
@@ -1180,10 +1190,10 @@ static int state_tc_c_cntd_handler(struct pollfd *const plfd, sockconn_t *const 
         /* Remain in the same state */
     }
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_STATE_TC_C_CNTD_HANDLER);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_STATE_TC_C_CNTD_HANDLER);
     return mpi_errno;
  fn_fail:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     mpi_errno = close_cleanup_and_free_sc_plfd(sc); /* QUIESCENT */
     goto fn_exit;
 }
@@ -1198,15 +1208,15 @@ static int state_c_ranksent_handler(struct pollfd *const plfd, sockconn_t *const
     MPID_nem_tcp_vc_area *const sc_vc_tcp = VC_TCP(sc_vc);
     int mpi_errno = MPI_SUCCESS;
     MPIDI_nem_tcp_socksm_pkt_type_t pkt_type;
-    MPIDI_STATE_DECL(MPID_STATE_STATE_C_RANKSENT_HANDLER);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_STATE_C_RANKSENT_HANDLER);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_STATE_C_RANKSENT_HANDLER);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_STATE_C_RANKSENT_HANDLER);
 
     if (IS_READABLE(plfd)) {
         mpi_errno = recv_cmd_pkt(sc->fd, &pkt_type);
         if (mpi_errno) MPIR_ERR_POP(mpi_errno);
         
-        MPIU_Assert(pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_ID_ACK ||
+        MPIR_Assert(pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_ID_ACK ||
                     pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_ID_NAK ||
                     pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_CLOSED);
 
@@ -1217,28 +1227,28 @@ static int state_c_ranksent_handler(struct pollfd *const plfd, sockconn_t *const
 
             MPID_nem_tcp_conn_est (sc_vc);
             sc_vc_tcp->connect_retry_count = 0; /* successfully connected, reset connection retry count */
-            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "c_ranksent_handler(): connection established (sc=%p, sc->vc=%p, fd=%d)", sc, sc->vc, sc->fd));
+            MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "c_ranksent_handler(): connection established (sc=%p, sc->vc=%p, fd=%d)", sc, sc->vc, sc->fd));
             break;
         case MPIDI_NEM_TCP_SOCKSM_PKT_ID_NAK:
-            MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "received NAK, closing sc");
+            MPL_DBG_MSG(MPIDI_NEM_TCP_DBG_DET, VERBOSE, "received NAK, closing sc");
             mpi_errno = close_cleanup_and_free_sc_plfd(sc); /* QUIESCENT */
             break;
         case MPIDI_NEM_TCP_SOCKSM_PKT_CLOSED:
-            MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "received CLOSED, closing sc");
+            MPL_DBG_MSG(MPIDI_NEM_TCP_DBG_DET, VERBOSE, "received CLOSED, closing sc");
             mpi_errno = MPIDI_CH3U_Handle_connection(sc_vc, MPIDI_VC_EVENT_TERMINATED);
             if (mpi_errno) MPIR_ERR_POP(mpi_errno);
             mpi_errno = close_cleanup_and_free_sc_plfd(sc); /* QUIESCENT */
             break;
         default:
-            MPIU_Assert(0);
+            MPIR_Assert(0);
         }
     }
 
 fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_STATE_C_RANKSENT_HANDLER);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_STATE_C_RANKSENT_HANDLER);
     return mpi_errno;
 fn_fail:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     mpi_errno = close_cleanup_and_free_sc_plfd(sc); /* QUIESCENT */
     mpi_errno = MPI_SUCCESS; /* don't return an error if we fail in the connect protocol, just retry. */
     goto fn_exit;
@@ -1254,15 +1264,15 @@ static int state_c_tmpvcsent_handler(struct pollfd *const plfd, sockconn_t *cons
     MPID_nem_tcp_vc_area *const sc_vc_tcp = VC_TCP(sc_vc);
     int mpi_errno = MPI_SUCCESS;
     MPIDI_nem_tcp_socksm_pkt_type_t pkt_type;
-    MPIDI_STATE_DECL(MPID_STATE_STATE_C_TMPVCSENT_HANDLER);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_STATE_C_TMPVCSENT_HANDLER);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_STATE_C_TMPVCSENT_HANDLER);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_STATE_C_TMPVCSENT_HANDLER);
 
     if (IS_READABLE(plfd)) {
         mpi_errno = recv_cmd_pkt(sc->fd, &pkt_type);
         if (mpi_errno) {
             int mpi_errno2 = MPI_SUCCESS;
-            MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "error sending cmd pkt, closing sc");
+            MPL_DBG_MSG(MPIDI_NEM_TCP_DBG_DET, VERBOSE, "error sending cmd pkt, closing sc");
             mpi_errno2 = close_cleanup_and_free_sc_plfd(sc); /* QUIESCENT */
             if (mpi_errno2) {
                 MPIR_ERR_SET(mpi_errno2, MPI_ERR_OTHER, "**tcp_cleanup_fail");
@@ -1273,7 +1283,7 @@ static int state_c_tmpvcsent_handler(struct pollfd *const plfd, sockconn_t *cons
                packet then there really was a problem */
         }
         else {
-            MPIU_Assert(pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_TMPVC_ACK ||
+            MPIR_Assert(pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_TMPVC_ACK ||
                         pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_TMPVC_NAK);
 
             if (pkt_type == MPIDI_NEM_TCP_SOCKSM_PKT_TMPVC_ACK) {
@@ -1281,17 +1291,17 @@ static int state_c_tmpvcsent_handler(struct pollfd *const plfd, sockconn_t *cons
                 ASSIGN_SC_TO_VC(sc_vc_tcp, sc);
                 MPID_nem_tcp_conn_est (sc_vc);
                 sc_vc_tcp->connect_retry_count = 0; /* successfully connected, reset connection retry count */
-                MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "c_tmpvcsent_handler(): connection established (fd=%d, sc=%p, sc->vc=%p)", sc->fd, sc, sc_vc));
+                MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "c_tmpvcsent_handler(): connection established (fd=%d, sc=%p, sc->vc=%p)", sc->fd, sc, sc_vc));
             }
             else { /* pkt_type must be MPIDI_NEM_TCP_SOCKSM_PKT_ID_NAK */
-                MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "state_c_tmpvcsent_handler() 2: closing sc"));
-                MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "received NAK, closing sc");
+                MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "state_c_tmpvcsent_handler() 2: closing sc"));
+                MPL_DBG_MSG(MPIDI_NEM_TCP_DBG_DET, VERBOSE, "received NAK, closing sc");
                 mpi_errno = close_cleanup_and_free_sc_plfd(sc); /* QUIESCENT */
             }
         }
     }
 
-    MPIDI_FUNC_EXIT(MPID_STATE_STATE_C_TMPVCSENT_HANDLER);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_STATE_C_TMPVCSENT_HANDLER);
     return mpi_errno;
 }
 
@@ -1304,13 +1314,13 @@ static int state_l_cntd_handler(struct pollfd *const plfd, sockconn_t *const sc)
     int mpi_errno = MPI_SUCCESS;
     MPID_NEM_TCP_SOCK_STATUS_t status;
     int got_sc_eof = 0;
-    MPIDI_STATE_DECL(MPID_STATE_STATE_L_CNTD_HANDLER);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_STATE_L_CNTD_HANDLER);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_STATE_L_CNTD_HANDLER);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_STATE_L_CNTD_HANDLER);
 
     status = MPID_nem_tcp_check_sock_status(plfd);
     if (status == MPID_NEM_TCP_SOCK_ERROR_EOF) {
-        MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "Received EOF, closing sc");
+        MPL_DBG_MSG(MPIDI_NEM_TCP_DBG_DET, VERBOSE, "Received EOF, closing sc");
         mpi_errno = close_cleanup_and_free_sc_plfd(sc); /* QUIESCENT */
         goto fn_exit;
     }
@@ -1323,7 +1333,7 @@ static int state_l_cntd_handler(struct pollfd *const plfd, sockconn_t *const sc)
         if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
         if (got_sc_eof) {
-            MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "got eof, closing sc");
+            MPL_DBG_MSG(MPIDI_NEM_TCP_DBG_DET, VERBOSE, "got eof, closing sc");
             mpi_errno = close_cleanup_and_free_sc_plfd(sc); /* QUIESCENT */
             goto fn_exit;
         }
@@ -1337,14 +1347,14 @@ static int state_l_cntd_handler(struct pollfd *const plfd, sockconn_t *const sc)
     }
     else {
         /* remain in same state */
-        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "!IS_READABLE(plfd) fd=%d events=%#x revents=%#x", plfd->fd, plfd->events, plfd->revents));
+        MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "!IS_READABLE(plfd) fd=%d events=%#x revents=%#x", plfd->fd, plfd->events, plfd->revents));
     }
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_STATE_L_CNTD_HANDLER);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_STATE_L_CNTD_HANDLER);
     return mpi_errno;
  fn_fail:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     mpi_errno = close_cleanup_and_free_sc_plfd(sc); /* QUIESCENT */
     mpi_errno = MPI_SUCCESS; /* don't return an error if we fail in the connect protocol, just retry. */
     goto fn_exit;
@@ -1361,11 +1371,11 @@ static int state_l_cntd_handler(struct pollfd *const plfd, sockconn_t *const sc)
 static int do_i_win(sockconn_t *rmt_sc)
 {
     int win = FALSE;
-    MPIDI_STATE_DECL(MPID_STATE_DO_I_WIN);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_DO_I_WIN);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_DO_I_WIN);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_DO_I_WIN);
 
-    MPIU_Assert(rmt_sc->pg_is_set);
+    MPIR_Assert(rmt_sc->pg_is_set);
 
     if (rmt_sc->is_same_pg) {
         if (MPIDI_Process.my_pg_rank > rmt_sc->pg_rank)
@@ -1376,12 +1386,12 @@ static int do_i_win(sockconn_t *rmt_sc)
             win = TRUE;
     }
 
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE,
-                     (MPIU_DBG_FDEST, "do_i_win(rmt_sc=%p (%s)) win=%s is_same_pg=%s my_pg_rank=%d rmt_pg_rank=%d",
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE,
+                     (MPL_DBG_FDEST, "do_i_win(rmt_sc=%p (%s)) win=%s is_same_pg=%s my_pg_rank=%d rmt_pg_rank=%d",
                       rmt_sc, CONN_STATE_STR[rmt_sc->state.cstate],
                       (win ? "TRUE" : "FALSE"),(rmt_sc->is_same_pg ? "TRUE" : "FALSE"), MPIDI_Process.my_pg_rank,
                       rmt_sc->pg_rank));
-    MPIDI_FUNC_EXIT(MPID_STATE_DO_I_WIN);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_DO_I_WIN);
     return win;
 }
 
@@ -1397,9 +1407,9 @@ static int state_l_rankrcvd_handler(struct pollfd *const plfd, sockconn_t *const
     MPID_NEM_TCP_SOCK_STATUS_t status;
     sockconn_t *fnd_sc = NULL;
     int snd_nak = FALSE;
-    MPIDI_STATE_DECL(MPID_STATE_STATE_L_RANKRCVD_HANDLER);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_STATE_L_RANKRCVD_HANDLER);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_STATE_L_RANKRCVD_HANDLER);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_STATE_L_RANKRCVD_HANDLER);
 
     status = MPID_nem_tcp_check_sock_status(plfd);
     if (status == MPID_NEM_TCP_SOCK_ERROR_EOF)
@@ -1423,7 +1433,7 @@ static int state_l_rankrcvd_handler(struct pollfd *const plfd, sockconn_t *const
         if (snd_nak) {
             mpi_errno = send_cmd_pkt(sc->fd, MPIDI_NEM_TCP_SOCKSM_PKT_ID_NAK);
             if (mpi_errno) MPIR_ERR_POP(mpi_errno);
-            MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "lost head-to-head, closing sc");
+            MPL_DBG_MSG(MPIDI_NEM_TCP_DBG_DET, VERBOSE, "lost head-to-head, closing sc");
             mpi_errno = close_cleanup_and_free_sc_plfd(sc); /* QUIESCENT */
         } else {
             /* The following line is _crucial_ to correct operation.  We need to
@@ -1440,17 +1450,17 @@ static int state_l_rankrcvd_handler(struct pollfd *const plfd, sockconn_t *const
             
             CHANGE_STATE(sc, CONN_STATE_TS_COMMRDY);
             ASSIGN_SC_TO_VC(sc_vc_tcp, sc);
-            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "connection established: sc=%p, sc->vc=%p, sc->fd=%d, is_same_pg=%s, pg_rank=%d", sc, sc_vc, sc->fd, (sc->is_same_pg ? "TRUE" : "FALSE"), sc->pg_rank));
+            MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "connection established: sc=%p, sc->vc=%p, sc->fd=%d, is_same_pg=%s, pg_rank=%d", sc, sc_vc, sc->fd, (sc->is_same_pg ? "TRUE" : "FALSE"), sc->pg_rank));
             MPID_nem_tcp_conn_est (sc_vc);
             sc_vc_tcp->connect_retry_count = 0; /* successfully connected, reset connection retry count */
         }
     }
 
 fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_STATE_L_RANKRCVD_HANDLER);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_STATE_L_RANKRCVD_HANDLER);
     return mpi_errno;
 fn_fail:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     mpi_errno = close_cleanup_and_free_sc_plfd(sc); /* QUIESCENT */
     mpi_errno = MPI_SUCCESS; /* don't return an error if we fail in the connect protocol, just retry. */
     goto fn_exit;
@@ -1466,13 +1476,13 @@ static int state_l_tmpvcrcvd_handler(struct pollfd *const plfd, sockconn_t *cons
     MPID_nem_tcp_vc_area *const sc_vc_tcp = VC_TCP(sc_vc);
     int mpi_errno = MPI_SUCCESS;
     MPID_NEM_TCP_SOCK_STATUS_t status;
-    MPIDI_STATE_DECL(MPID_STATE_STATE_L_TMPVCRCVD_HANDLER);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_STATE_L_TMPVCRCVD_HANDLER);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_STATE_L_TMPVCRCVD_HANDLER);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_STATE_L_TMPVCRCVD_HANDLER);
 
     status = MPID_nem_tcp_check_sock_status(plfd);
     if (status == MPID_NEM_TCP_SOCK_ERROR_EOF) {
-        MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "Received EOF, closing sc");
+        MPL_DBG_MSG(MPIDI_NEM_TCP_DBG_DET, VERBOSE, "Received EOF, closing sc");
         mpi_errno = close_cleanup_and_free_sc_plfd(sc); /* QUIESCENT */
         goto fn_exit;
     }
@@ -1485,16 +1495,16 @@ static int state_l_tmpvcrcvd_handler(struct pollfd *const plfd, sockconn_t *cons
         ASSIGN_SC_TO_VC(sc_vc_tcp, sc);
         MPID_nem_tcp_conn_est(sc_vc);
         sc_vc_tcp->connect_retry_count = 0; /* successfully connected, reset connection retry count */
-        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "fd=%d: TMPVC_ACK sent, connection established!", sc->fd));
+        MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "fd=%d: TMPVC_ACK sent, connection established!", sc->fd));
     }
 
 fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_STATE_L_TMPVCRCVD_HANDLER);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_STATE_L_TMPVCRCVD_HANDLER);
     return mpi_errno;
  fn_fail:
     {
         int cleanup_errno = MPI_SUCCESS;
-        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+        MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
         mpi_errno = close_cleanup_and_free_sc_plfd(sc); /* QUIESCENT */
         if (cleanup_errno) {
             MPIR_ERR_SET(cleanup_errno, MPI_ERR_OTHER, "**tcp_cleanup_fail");
@@ -1516,12 +1526,12 @@ static int MPID_nem_tcp_recv_handler(sockconn_t *const sc)
        that. */
     const int sc_fd = sc->fd;
     MPIDI_VC_t *const sc_vc = sc->vc;
-    MPIU_AssertDeclValue(MPID_nem_tcp_vc_area *const sc_vc_tcp, VC_TCP(sc_vc));
+    MPIR_AssertDeclValue(MPID_nem_tcp_vc_area *const sc_vc_tcp, VC_TCP(sc_vc));
     int mpi_errno = MPI_SUCCESS;
     ssize_t bytes_recvd;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_TCP_RECV_HANDLER);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_TCP_RECV_HANDLER);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_TCP_RECV_HANDLER);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_TCP_RECV_HANDLER);
 
     if (sc_vc->ch.recv_active == NULL)
     {
@@ -1534,10 +1544,10 @@ static int MPID_nem_tcp_recv_handler(sockconn_t *const sc)
 
             if (bytes_recvd == 0)
             {
-                MPIU_Assert(sc != NULL);
-                MPIU_Assert(sc_vc != NULL);
+                MPIR_Assert(sc != NULL);
+                MPIR_Assert(sc_vc != NULL);
                 /* sc->vc->sc will be NULL if sc->vc->state == _INACTIVE */
-                MPIU_Assert(sc_vc_tcp->sc == NULL || sc_vc_tcp->sc == sc);
+                MPIR_Assert(sc_vc_tcp->sc == NULL || sc_vc_tcp->sc == sc);
 
                 if (vc_is_in_shutdown(sc_vc))
                 {
@@ -1547,7 +1557,7 @@ static int MPID_nem_tcp_recv_handler(sockconn_t *const sc)
                        disconnecting, then we end up with a potential race where
                        the other side performs a tcp close() before we do and we
                        blow up here. */
-                    MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "other side closed, but we're shutting down, closing sc");
+                    MPL_DBG_MSG(MPIDI_NEM_TCP_DBG_DET, VERBOSE, "other side closed, but we're shutting down, closing sc");
                     /* it's really not an error, but we're calling
                        cleanup_on_error because it does what we want it to */
                     mpi_errno = MPID_nem_tcp_cleanup_on_error(sc_vc, MPI_SUCCESS);
@@ -1555,17 +1565,17 @@ static int MPID_nem_tcp_recv_handler(sockconn_t *const sc)
                 }
                 else
                 {
-                    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "ERROR: sock (fd=%d) is closed: bytes_recvd == 0", sc->fd );
+                    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "ERROR: sock (fd=%d) is closed: bytes_recvd == 0", sc->fd );
                     MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**sock_closed");
                 }
             }
             else
             {
-                MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", MPIU_Strerror(errno));
+                MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", MPIR_Strerror(errno));
             }
         }
     
-        MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "New recv " MPIDI_MSG_SZ_FMT " (fd=%d, vc=%p, sc=%p)", bytes_recvd, sc_fd, sc_vc, sc));
+        MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_CHANNEL, VERBOSE, (MPL_DBG_FDEST, "New recv %" PRIdPTR " (fd=%d, vc=%p, sc=%p)", bytes_recvd, sc_fd, sc_vc, sc));
 
         mpi_errno = MPID_nem_handle_pkt(sc_vc, recv_buf, bytes_recvd);
         if (mpi_errno) MPIR_ERR_POP_LABEL(mpi_errno, fn_noncomm_fail);
@@ -1574,12 +1584,12 @@ static int MPID_nem_tcp_recv_handler(sockconn_t *const sc)
     {
         /* there is a pending receive, receive it directly into the user buffer */
         MPIDI_CH3I_VC *const sc_vc_ch = &sc_vc->ch;
-        MPID_Request *const rreq = sc_vc_ch->recv_active;
+        MPIR_Request *const rreq = sc_vc_ch->recv_active;
         MPL_IOV *iov = &rreq->dev.iov[rreq->dev.iov_offset];
-        int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
+        int (*reqFn)(MPIDI_VC_t *, MPIR_Request *, int *);
 
-        MPIU_Assert(rreq->dev.iov_count > 0);
-        MPIU_Assert(rreq->dev.iov_count + rreq->dev.iov_offset <= MPL_IOV_LIMIT);
+        MPIR_Assert(rreq->dev.iov_count > 0);
+        MPIR_Assert(rreq->dev.iov_count + rreq->dev.iov_offset <= MPL_IOV_LIMIT);
 
         bytes_recvd = MPL_large_readv(sc_fd, iov, rreq->dev.iov_count);
         if (bytes_recvd <= 0)
@@ -1590,11 +1600,11 @@ static int MPID_nem_tcp_recv_handler(sockconn_t *const sc)
             if (bytes_recvd == 0) {
                 MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**sock_closed");
             } else {
-                MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", MPIU_Strerror(errno));
+                MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**read", "**read %s", MPIR_Strerror(errno));
             }
         }
 
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "Cont recv %ld", (long int)bytes_recvd);
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "Cont recv %ld", (long int)bytes_recvd);
 
         /* update the iov */
         for (iov = &rreq->dev.iov[rreq->dev.iov_offset]; iov < &rreq->dev.iov[rreq->dev.iov_offset + rreq->dev.iov_count]; ++iov)
@@ -1605,9 +1615,9 @@ static int MPID_nem_tcp_recv_handler(sockconn_t *const sc)
                 iov->MPL_IOV_LEN -= bytes_recvd;
                 rreq->dev.iov_count = (int)(&rreq->dev.iov[rreq->dev.iov_offset + rreq->dev.iov_count] - iov);
                 rreq->dev.iov_offset = iov - rreq->dev.iov;
-                MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "bytes_recvd = %ld", (long int)bytes_recvd);
-                MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "iov len = %ld", (long int)iov->MPL_IOV_LEN);
-                MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "iov_offset = %lld", (long long)rreq->dev.iov_offset);
+                MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "bytes_recvd = %ld", (long int)bytes_recvd);
+                MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "iov len = %ld", (long int)iov->MPL_IOV_LEN);
+                MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "iov_offset = %lld", (long long)rreq->dev.iov_offset);
                 goto fn_exit;
             }
             bytes_recvd -= iov->MPL_IOV_LEN;
@@ -1618,12 +1628,12 @@ static int MPID_nem_tcp_recv_handler(sockconn_t *const sc)
         reqFn = rreq->dev.OnDataAvail;
         if (!reqFn)
         {
-            MPIU_Assert(MPIDI_Request_get_type(rreq) != MPIDI_REQUEST_TYPE_GET_RESP);
+            MPIR_Assert(MPIDI_Request_get_type(rreq) != MPIDI_REQUEST_TYPE_GET_RESP);
             mpi_errno = MPID_Request_complete(rreq);
             if (mpi_errno != MPI_SUCCESS) {
                 MPIR_ERR_POP(mpi_errno);
             }
-            MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "...complete");
+            MPL_DBG_MSG(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "...complete");
             sc_vc_ch->recv_active = NULL;
         }
         else
@@ -1635,18 +1645,18 @@ static int MPID_nem_tcp_recv_handler(sockconn_t *const sc)
 
             if (complete)
             {
-                MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "...complete");
+                MPL_DBG_MSG(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "...complete");
                 sc_vc_ch->recv_active = NULL;
             }
             else
             {
-                MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "...not complete");
+                MPL_DBG_MSG(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "...not complete");
             }
         }
     }
 
 fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_TCP_RECV_HANDLER);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_TCP_RECV_HANDLER);
     return mpi_errno;
 fn_fail: /* comm related failures jump here */
     {
@@ -1674,11 +1684,11 @@ static int state_commrdy_handler(struct pollfd *const plfd, sockconn_t *const sc
        invalid. */
     MPIDI_VC_t *sc_vc = sc->vc;
     MPID_nem_tcp_vc_area *sc_vc_tcp = VC_TCP(sc_vc);
-    MPIDI_STATE_DECL(MPID_STATE_STATE_COMMRDY_HANDLER);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_STATE_COMMRDY_HANDLER);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_STATE_COMMRDY_HANDLER);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_STATE_COMMRDY_HANDLER);
 
-    MPIU_DBG_MSG_P(CH3_CHANNEL, VERBOSE, "vc = %p", sc->vc);
+    MPL_DBG_MSG_P(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "vc = %p", sc->vc);
     if (IS_READABLE(plfd))
     {
         mpi_errno = MPID_nem_tcp_recv_handler(sc);
@@ -1696,7 +1706,7 @@ static int state_commrdy_handler(struct pollfd *const plfd, sockconn_t *const sc
         }
     }
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_STATE_COMMRDY_HANDLER);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_STATE_COMMRDY_HANDLER);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -1710,7 +1720,7 @@ static int state_commrdy_handler(struct pollfd *const plfd, sockconn_t *const sc
 int MPID_nem_tcp_sm_init(void)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIU_CHKPMEM_DECL(1);
+    MPIR_CHKPMEM_DECL(1);
     /* Set the appropriate handlers */
     sc_state_info[CONN_STATE_TS_CLOSED].sc_state_handler = NULL;
     sc_state_info[CONN_STATE_TC_C_CNTING].sc_state_handler = state_tc_c_cnting_handler;
@@ -1740,13 +1750,13 @@ int MPID_nem_tcp_sm_init(void)
     MPID_nem_tcp_plfd_tbl = NULL;
     alloc_sc_plfd_tbls();
     
-    MPIU_CHKPMEM_MALLOC(recv_buf, char*, MPID_NEM_TCP_RECV_MAX_PKT_LEN, mpi_errno, "TCP temporary buffer");
-    MPIU_CHKPMEM_COMMIT();
+    MPIR_CHKPMEM_MALLOC(recv_buf, char*, MPID_NEM_TCP_RECV_MAX_PKT_LEN, mpi_errno, "TCP temporary buffer", MPL_MEM_BUFFER);
+    MPIR_CHKPMEM_COMMIT();
 
  fn_exit:
     return mpi_errno;
  fn_fail:
-    MPIU_CHKPMEM_REAP();
+    MPIR_CHKPMEM_REAP();
     goto fn_exit;
 }
 
@@ -1761,12 +1771,12 @@ int MPID_nem_tcp_sm_finalize(void)
     /* walk the freeq and free all the elements */
     while (!Q_EMPTY(freeq)) {
         Q_DEQUEUE(&freeq, ((freenode_t **)&node)); 
-        MPIU_Free(node);
+        MPL_free(node);
     }
 
     free_sc_plfd_tbls();
 
-    MPIU_Free(recv_buf);
+    MPL_free(recv_buf);
 
     return MPI_SUCCESS;
 }
@@ -1792,8 +1802,8 @@ int MPID_nem_tcp_connpoll(int in_blocking_poll)
     int num_polled = g_tbl_size;
 
     if (num_polled) {
-        MPIU_Assert(MPID_nem_tcp_plfd_tbl != NULL);
-        MPIU_Assert(g_sc_tbl != NULL);
+        MPIR_Assert(MPID_nem_tcp_plfd_tbl != NULL);
+        MPIR_Assert(g_sc_tbl != NULL);
     }
 
     /* To improve shared memory performance, we don't call the poll()
@@ -1807,8 +1817,8 @@ int MPID_nem_tcp_connpoll(int in_blocking_poll)
     num_skipped_polls = 0;
 
     CHECK_EINTR(n, poll(MPID_nem_tcp_plfd_tbl, num_polled, 0));
-    MPIR_ERR_CHKANDJUMP1(n == -1, mpi_errno, MPI_ERR_OTHER, "**poll", "**poll %s", MPIU_Strerror(errno));
-    /* MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "some sc fd poll event")); */
+    MPIR_ERR_CHKANDJUMP1(n == -1, mpi_errno, MPI_ERR_OTHER, "**poll", "**poll %s", MPIR_Strerror(errno));
+    /* MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "some sc fd poll event")); */
     for(i = 0; i < num_polled; i++)
     {
         struct pollfd *it_plfd = &MPID_nem_tcp_plfd_tbl[i];
@@ -1828,9 +1838,9 @@ int MPID_nem_tcp_connpoll(int in_blocking_poll)
                    (Stevens Network Programming Vol 1, pg 184) */
                 rc = read(it_plfd->fd, &dummy, 1);
                 if (rc < 0)
-                    err_str = MPIU_Strerror(errno);
+                    err_str = MPIR_Strerror(errno);
                 
-                MPIU_DBG_MSG(NEM_SOCK_DET, VERBOSE, "error polling fd, closing sc");
+                MPL_DBG_MSG(MPIDI_NEM_TCP_DBG_DET, VERBOSE, "error polling fd, closing sc");
                 if (it_sc->vc) {
                     MPIR_ERR_SET2(req_errno, MPIX_ERR_PROC_FAILED, "**comm_fail", "**comm_fail %d %s", it_sc->vc->pg_rank, err_str);
                     mpi_errno = MPID_nem_tcp_cleanup_on_error(it_sc->vc, req_errno);
@@ -1854,7 +1864,7 @@ int MPID_nem_tcp_connpoll(int in_blocking_poll)
  fn_exit:
     return mpi_errno;
  fn_fail:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -1896,22 +1906,22 @@ int MPID_nem_tcp_state_listening_handler(struct pollfd *const unused_1, sockconn
     socklen_t len;
     SA_IN rmt_addr;
     sockconn_t *l_sc;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_TCP_STATE_LISTENING_HANDLER);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_TCP_STATE_LISTENING_HANDLER);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_TCP_STATE_LISTENING_HANDLER);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_TCP_STATE_LISTENING_HANDLER);
 
     while (1) {
         l_sc = &g_sc_tbl[0];  /* N3 Important */
         len = sizeof(SA_IN);
-        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "before accept"));
+        MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "before accept"));
         if ((connfd = accept(l_sc->fd, (SA *) &rmt_addr, &len)) < 0) {
-            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "after accept, l_sc=%p lstnfd=%d connfd=%d, errno=%d:%s ", l_sc, l_sc->fd, connfd, errno, MPIU_Strerror(errno)));
+            MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "after accept, l_sc=%p lstnfd=%d connfd=%d, errno=%d:%s ", l_sc, l_sc->fd, connfd, errno, MPIR_Strerror(errno)));
             if (errno == EINTR) 
                 continue;
             else if (errno == EWOULDBLOCK || errno == EAGAIN)
                 break; /*  no connection in the listen queue. get out of here.(N1) */
 
-            MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**sock_accept", "**sock_accept %s", MPIU_Strerror(errno));
+            MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**sock_accept", "**sock_accept %s", MPIR_Strerror(errno));
         }
         else {
             int idx = -1;
@@ -1931,15 +1941,15 @@ int MPID_nem_tcp_state_listening_handler(struct pollfd *const unused_1, sockconn
 
             CHANGE_STATE(sc, CONN_STATE_TA_C_CNTD);
 
-            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "accept success, added to table, connfd=%d, sc->vc=%p, sc=%p plfd->events=%#x", connfd, sc->vc, sc, plfd->events)); /* sc->vc should be NULL at this point */
+            MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "accept success, added to table, connfd=%d, sc->vc=%p, sc=%p plfd->events=%#x", connfd, sc->vc, sc, plfd->events)); /* sc->vc should be NULL at this point */
         }
     }
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_TCP_STATE_LISTENING_HANDLER);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_TCP_STATE_LISTENING_HANDLER);
     return mpi_errno;
  fn_fail:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -1954,9 +1964,9 @@ static int error_closed(struct MPIDI_VC *const vc, int req_errno)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_nem_tcp_vc_area * const vc_tcp = VC_TCP(vc);
-    MPIDI_STATE_DECL(MPID_STATE_ERROR_CLOSED);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_ERROR_CLOSED);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_ERROR_CLOSED);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_ERROR_CLOSED);
 
     vc_tcp->state = MPID_NEM_TCP_VC_STATE_ERROR;
 
@@ -1967,7 +1977,7 @@ static int error_closed(struct MPIDI_VC *const vc, int req_errno)
     if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_ERROR_CLOSED);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_ERROR_CLOSED);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -1984,9 +1994,9 @@ int MPID_nem_tcp_cleanup_on_error(MPIDI_VC_t *const vc, int req_errno)
 {
     int mpi_errno = MPI_SUCCESS;
     int mpi_errno2 = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_TCP_CLEANUP_ON_ERROR);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_TCP_CLEANUP_ON_ERROR);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_TCP_CLEANUP_ON_ERROR);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_TCP_CLEANUP_ON_ERROR);
 
     mpi_errno = MPID_nem_tcp_cleanup(vc);
     /* not jumping on error, keep going */
@@ -1995,7 +2005,7 @@ int MPID_nem_tcp_cleanup_on_error(MPIDI_VC_t *const vc, int req_errno)
     if (mpi_errno2) MPIR_ERR_ADD(mpi_errno, mpi_errno2);
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_TCP_CLEANUP_ON_ERROR);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_TCP_CLEANUP_ON_ERROR);
     return mpi_errno;
  fn_fail:
     goto fn_exit;

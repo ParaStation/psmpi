@@ -1,0 +1,40 @@
+<dir>
+<file name="ireduce_scatter.c" info="1542820949"/>
+<file name="ireduce_scatter_gentran_algos.c" info="1542820949"/>
+<file name="ireduce_scatter_tsp_recexch_algos_undef.h" info="1542820949"/>
+<file name="ireduce_scatter_tsp_recexch_algos_prototypes.h" info="1542820949"/>
+<file name="ireduce_scatter_intra_recursive_doubling.c" info="1542820949"/>
+<file name="ireduce_scatter_tsp_recexch_algos.h" info="1542820949"/>
+<file name="ireduce_scatter_intra_recursive_halving.c" info="1542820949"/>
+<file name="ireduce_scatter_inter_remote_reduce_local_scatterv.c" info="1542820949"/>
+<file name="ireduce_scatter_intra_recexch.c" info="1542820949"/>
+<file name="ireduce_scatter_intra_noncommutative.c" info="1542820949"/>
+<file name="ireduce_scatter_intra_pairwise.c" info="1542820949"/>
+</dir>
+<data>
+<fileinfo name="ireduce_scatter.c">
+MPID_STATE_MPI_IREDUCE_SCATTER MPI_Ireduce_scatter
+</fileinfo>
+<fileinfo name="ireduce_scatter_gentran_algos.c">
+</fileinfo>
+<fileinfo name="ireduce_scatter_tsp_recexch_algos_undef.h">
+</fileinfo>
+<fileinfo name="ireduce_scatter_tsp_recexch_algos_prototypes.h">
+</fileinfo>
+<fileinfo name="ireduce_scatter_intra_recursive_doubling.c">
+</fileinfo>
+<fileinfo name="ireduce_scatter_tsp_recexch_algos.h">
+MPID_STATE_MPIR_TSP_IREDUCE_SCATTER_SCHED_INTRA_RECEXCH MPIR_TSP_Ireduce_scatter_sched_intra_recexch
+MPID_STATE_MPIR_TSP_IREDUCE_SCATTER_INTRA_RECEXCH MPIR_TSP_Ireduce_scatter_intra_recexch
+</fileinfo>
+<fileinfo name="ireduce_scatter_intra_recursive_halving.c">
+</fileinfo>
+<fileinfo name="ireduce_scatter_inter_remote_reduce_local_scatterv.c">
+</fileinfo>
+<fileinfo name="ireduce_scatter_intra_recexch.c">
+</fileinfo>
+<fileinfo name="ireduce_scatter_intra_noncommutative.c">
+</fileinfo>
+<fileinfo name="ireduce_scatter_intra_pairwise.c">
+</fileinfo>
+</data>

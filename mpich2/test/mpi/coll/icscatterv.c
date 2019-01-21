@@ -52,8 +52,7 @@ int main(int argc, char *argv[])
                 if (rank == 0) {
                     for (i = 0; i < count * rsize; i++)
                         buf[i] = i;
-                }
-                else {
+                } else {
                     for (i = 0; i < count * rsize; i++)
                         buf[i] = -1;
                 }
@@ -76,8 +75,7 @@ int main(int argc, char *argv[])
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 buf = (int *) malloc(count * sizeof(int));
                 /* In the right group */
                 for (i = 0; i < count; i++)
@@ -104,6 +102,5 @@ int main(int argc, char *argv[])
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

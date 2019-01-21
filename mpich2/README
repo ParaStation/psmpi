@@ -1,8 +1,8 @@
-			MPICH Release 3.2
+			MPICH Release 3.3
 
 MPICH is a high-performance and widely portable implementation of the
-MPI-3.0 standard from the Argonne National Laboratory.  This release
-has all MPI 3.0 functions and features required by the standard with
+MPI-3.1 standard from the Argonne National Laboratory.  This release
+has all MPI 3.1 functions and features required by the standard with
 the exception of support for the "external32" portable I/O format and
 user-defined data representations for I/O.
 
@@ -27,6 +27,8 @@ information on bug fixes and new releases.
 9.  Developer Builds
 10. Multiple Fortran compiler support
 11. ABI Compatibility
+12. Capability Sets
+13. Threads
 
 
 -------------------------------------------------------------------------
@@ -40,9 +42,10 @@ shared memory), Hydra process management) of MPICH up and running.
 
 (a) You will need the following prerequisites.
 
-    - REQUIRED: This tar file mpich-3.2.tar.gz
+    - REQUIRED: This tar file mpich-3.3.tar.gz
 
-    - REQUIRED: A C compiler (gcc is sufficient)
+    - REQUIRED: A C compiler (C99 support is required. See
+      https://wiki.mpich.org/mpich/index.php/Shifting_toward_C99)
 
     - OPTIONAL: A C++ compiler, if C++ applications are to be used
       (g++, etc.). If you do not require support for C++ applications,
@@ -62,14 +65,14 @@ shared memory), Hydra process management) of MPICH up and running.
 
 (b) Unpack the tar file and go to the top level directory:
 
-      tar xzf mpich-3.2.tar.gz
-      cd mpich-3.2
+      tar xzf mpich-3.3.tar.gz
+      cd mpich-3.3
 
     If your tar doesn't accept the z option, use
 
-      gunzip mpich-3.2.tar.gz
-      tar xf mpich-3.2.tar
-      cd mpich-3.2
+      gunzip mpich-3.3.tar.gz
+      tar xf mpich-3.3.tar
+      cd mpich-3.3
 
 (c) Choose an installation directory, say
     /home/<USERNAME>/mpich-install, which is assumed to non-existent
@@ -178,7 +181,7 @@ shared memory), Hydra process management) of MPICH up and running.
     Now we will run an MPI job, using the mpiexec command as specified
     in the MPI standard. There are some examples in the install
     directory, which you have already put in your path, as well as in
-    the directory mpich-3.2/examples. One of them is the classic
+    the directory mpich-3.3/examples. One of them is the classic
     CPI example, which computes the value of pi by numerical
     integration in parallel.
 
@@ -242,14 +245,14 @@ COMPRESS BEFORE SENDING, AS THE FILES CAN BE LARGE.  Note that,
 depending on which step the build failed, some of the files might not
 exist.
 
-    mpich-3.2/c.txt (generated in step 1(d) above)
-    mpich-3.2/m.txt (generated in step 1(e) above)
-    mpich-3.2/mi.txt (generated in step 1(f) above)
-    mpich-3.2/config.log (generated in step 1(d) above)
-    mpich-3.2/src/openpa/config.log (generated in step 1(d) above)
-    mpich-3.2/src/mpl/config.log (generated in step 1(d) above)
-    mpich-3.2/src/pm/hydra/config.log (generated in step 1(d) above)
-    mpich-3.2/src/pm/hydra/tools/topo/hwloc/hwloc/config.log (generated in step 1(d) above)
+    mpich-3.3/c.txt (generated in step 1(d) above)
+    mpich-3.3/m.txt (generated in step 1(e) above)
+    mpich-3.3/mi.txt (generated in step 1(f) above)
+    mpich-3.3/config.log (generated in step 1(d) above)
+    mpich-3.3/src/openpa/config.log (generated in step 1(d) above)
+    mpich-3.3/src/mpl/config.log (generated in step 1(d) above)
+    mpich-3.3/src/pm/hydra/config.log (generated in step 1(d) above)
+    mpich-3.3/src/pm/hydra/tools/topo/hwloc/hwloc/config.log (generated in step 1(d) above)
 
     DID WE MENTION? DO NOT FORGET TO COMPRESS THESE FILES!
 
@@ -264,11 +267,8 @@ the application, including the mpiexec command used, and the host
 file. If possible, please try to reproduce the error with a smaller
 application or benchmark and send that along in your bug report.
 
-4. If you have found a bug in MPICH, we request that you report it at
-our bug tracking system:
-(https://trac.mpich.org/projects/mpich/newticket). Even if you believe
-you have found a bug, we recommend you sending an email to
-discuss@mpich.org first.
+4. If you have found a bug in MPICH, you can report it on our Github
+page (https://github.com/pmodels/mpich/issues).
 
 
 -------------------------------------------------------------------------
@@ -291,13 +291,7 @@ MPICHLIB_xFLAGS): Setting these flags would result in the MPICH
 library being compiled with these flags.  However, these flags will
 *not* be used by mpicc and friends.
 
-(c) MPICH_MAKE_CFLAGS: Setting these flags would result in MPICH's
-configure tests to not use these flags, but the makefile's to use
-them. This is a temporary hack for certain cases that advanced
-developers might be interested in, but which break existing configure
-tests (e.g., -Werror). These are NOT recommended for regular users.
-
-(d) MPICH_MPICC_CFLAGS, MPICH_MPICC_CPPFLAGS, MPICH_MPICC_LDFLAGS,
+(c) MPICH_MPICC_CFLAGS, MPICH_MPICC_CPPFLAGS, MPICH_MPICC_LDFLAGS,
 MPICH_MPICC_LIBS, and so on for MPICXX, MPIF77 and MPIFORT
 (abbreviated as MPICH_MPIX_FLAGS): These flags do *not* affect the
 compilation of the MPICH library itself, but will be internally used
@@ -315,10 +309,6 @@ by mpicc and friends.
   +--------------------+----------------------+------------------------+
   |                    |                      |                        |
   |  MPICHLIB_xFLAGS   |         Yes          |           No           |
-  |                    |                      |                        |
-  +--------------------+----------------------+------------------------+
-  |                    |                      |                        |
-  | MPICH_MAKE_xFLAGS  |         Yes          |           No           |
   |                    |                      |                        |
   +--------------------+----------------------+------------------------+
   |                    |                      |                        |
@@ -377,30 +367,15 @@ Example 2:
 This will cause the MPICH libraries to be built with -O3, and -O3
 will be included in the mpicc and other MPI wrapper script.
 
-Example 3:
-
-There are certain compiler flags that should not be used with MPICH's
-configure, e.g. gcc's -Werror, which would confuse configure and cause
-certain configure tests to fail to detect the correct system features.
-To use -Werror in building MPICH libraries, you can pass the compiler
-flags during the make step through the Makefile variable
-MPICH_MAKE_CFLAGS as follows:
-
-  make MPICH_MAKE_CFLAGS="-Wall -Werror"
-
-The content of MPICH_MAKE_CFLAGS is appended to the CFLAGS in all
-relevant Makefiles.
-
 -------------------------------------------------------------------------
 
 4. Alternate Channels and Devices
 =================================
 
 The communication mechanisms in MPICH are called "devices". MPICH
-supports ch3 (default), as well as many third-party devices that are
-released and maintained by other institutes such as osu_ch3 (from Ohio
-State University for InfiniBand and iWARP), ch_mx (from Myricom for
-Myrinet MX), etc.
+supports ch3 (default) and ch4 (experimental), as well as many
+third-party devices that are released and maintained by other
+institutes.
 
                    *************************************
 
@@ -417,43 +392,6 @@ well as various shared-memory optimizations. To configure MPICH with
 nemesis, you can use the following configure option:
 
   --with-device=ch3:nemesis
-
-The TCP network module gets configured in by default. To specify a
-different network module such as MX, you can use:
-
-  --with-device=ch3:nemesis:mx
-
-If the MX include files and libraries are not in the normal search
-paths, you can specify them with the following options:
-
-  --with-mx-include= and --with-mx-lib=
-
-... or the if lib/ and include/ are in the same directory, you can use
-the following option:
-
-  --with-mx=
-
-If the MX libraries are shared libraries, they need to be in the
-shared library search path. This can be done by adding the path to
-/etc/ld.so.conf, or by setting the LD_LIBRARY_PATH variable in your
-.bashrc (or .tcshrc) file.  It's also possible to set the shared
-library search path in the binary. If you're using gcc, you can do
-this by adding
-
-  LD_LIBRARY_PATH=/path/to/lib
-
-  (and)
-
-  LDFLAGS="-Wl,-rpath -Wl,/path/to/lib"
-
-... as arguments to configure.
-
-By default, MX allows for only eight endpoints per node causing
-ch3:nemesis:mx to give initialization errors with greater than 8
-processes on the same node (this is an MX error and not an inherent
-limitation in the MPICH/Nemesis design). If needed, this can be set
-to a higher number when MX is loaded. We recommend the user to contact
-help@myri.com for details on how to do this.
 
 Shared-memory optimizations are enabled by default to improve
 performance for multi-processor/multi-core platforms. They can be
@@ -537,6 +475,37 @@ in the binary. If you're using gcc, you can do this by adding
 Currently, use of MPI_ANY_SOURCE and MPI dynamic processes are unsupported
 with the portals4 netmod.
 
+ofi network module
+```````````````````
+The ofi netmod provides support for the OFI network programming interface.
+To enable, configure with the following option:
+
+  --with-device=ch3:nemesis:ofi
+
+If the OFI include files and libraries are not in the normal search paths,
+you can specify them with the following options:
+
+  --with-ofi-include= and --with-ofi-lib=
+
+... or the if lib/ and include/ are in the same directory, you can use
+the following option:
+
+  --with-ofi=
+
+If the OFI libraries are shared libraries, they need to be in the
+shared library search path. This can be done by adding the path to
+/etc/ld.so.conf, or by setting the LD_LIBRARY_PATH variable in your
+environment. It's also possible to set the shared library search path
+in the binary. If you're using gcc, you can do this by adding
+
+  LD_LIBRARY_PATH=/path/to/lib
+
+  (and)
+
+  LDFLAGS="-Wl,-rpath -Wl,/path/to/lib"
+
+... as arguments to configure.
+
 
 sock channel
 ------------
@@ -549,31 +518,55 @@ channel can be configured using the following option:
   --with-device=ch3:sock
 
 
-pamid device
-************
-This is the device used on the IBM Blue Gene/Q system.  The following
-configure options can be used:
+ch4 device
+**********
+The ch4 device contains different network and shared memory modules
+for communication. We currently support the ofi and ucx network
+modules, and posix shared memory module.
 
-  ./configure --host=powerpc64-bgq-linux                                \
-              --with-device=pamid:BGQ                                   \
-              --with-file-system=bg+bglockless
+ofi network module
+```````````````````
+The ofi netmod provides support for the OFI network programming interface.
+To enable, configure with the following option:
 
-The Blue Gene/Q cross compilers must either be in the $PATH, or
-explicitly specified using environment variables, before configure.
-For example:
+  --with-device=ch4:ofi
 
-  PATH=$PATH:/bgsys/drivers/ppcfloor/gnu-linux/bin
+If the OFI include files and libraries are not in the normal search paths,
+you can specify them with the following options:
 
-or
+  --with-libfabric-include= and --with-libfabric-lib=
 
-  CC=/bgsys/drivers/ppcfloor/gnu-linux/bin/powerpc64-bgq-linux-gcc
-  CXX=...
-  ...
+... or the if lib/ and include/ are in the same directory, you can use
+the following option:
 
-There are several other configure options that are specific to building
-on a Blue Gene/Q system.  See the wiki page for more information:
+  --with-libfabric=
 
-  https://wiki.mpich.org/mpich/index.php/BGQ
+ucx network module
+``````````````````
+The ucx netmod provides support for the Unified Communication X
+library. It can be built with the following configure option:
+
+  --with-device=ch4:ucx
+
+If the UCX include files and libraries are not in the normal search paths,
+you can specify them with the following options:
+
+  --with-ucx-include= and --with-ucx-lib=
+
+... or the if lib/ and include/ are in the same directory, you can use
+the following option:
+
+  --with-ucx=
+
+By default, the UCX library throws warnings when the system does not
+enable certain features that might hurt performance.  These are
+important warnings that might cause performance degradation on your
+system.  But you might need root privileges to fix some of them.  If
+you would like to disable such warnings, you can set the UCX log level
+to "error" instead of the default "warn" by using:
+
+  UCX_LOG_LEVEL=error
+  export UCX_LOG_LEVEL
 
 -------------------------------------------------------------------------
 
@@ -758,10 +751,10 @@ These instructions can also be found on the MPICH wiki:
 
 9. Developer Builds
 ===================
-For MPICH developers who want to directly work on the svn, there are
-a few additional steps involved (people using the release tarballs do
-not have to follow these steps). Details about these steps can be
-found here:
+For MPICH developers who want to directly work on the primary version
+control system, there are a few additional steps involved (people
+using the release tarballs do not have to follow these steps). Details
+about these steps can be found here:
 http://wiki.mpich.org/mpich/index.php/Getting_And_Building_MPICH
 
 -------------------------------------------------------------------------
@@ -833,3 +826,56 @@ or using Intel MPI using:
 This works irrespective of which MPI implementation your application
 was compiled with, as long as you use one of the MPI implementations
 in the ABI compatibility initiative.
+
+-------------------------------------------------------------------------
+
+12. Capability Sets
+=====================
+
+The CH4 device contains a feature called "capability sets" to simplify
+configuration of MPICH on systems using the OFI netmod. This feature
+configures MPICH to use a predetermined set of OFI features based on the
+provider being used. Capability sets can be configured at compile time or
+runtime. Compile time configuration provides better performance by
+reducing unnecessary code branches, but at the cost of flexibility.
+
+To configure at compile time, the device string should be amended to include
+the OFI provider with the following option:
+
+    --with-device=ch4:ofi:sockets
+
+This will setup the OFI netmod to use the optimal configuration for the
+sockets provider, and will set various compile time constants. These settings
+cannot be changed at runtime.
+
+If runtime configuration is needed, continue to use the device string as before
+(without the OFI provider extension) and set various environment variables to
+achieve a similar configuration. To select the desired provider:
+
+    % export MPIR_CVAR_OFI_USE_PROVIDER=sockets
+
+This will select the OFI provider and the associated MPICH capability set. To
+change the preset configuration, there exists an extended set of environment
+variables. As an example, the immediate data fields can be disabled by using
+the environment variable:
+
+    % export MPIR_CVAR_OFI_ENABLE_DATA=0
+
+A full list of capability set configuration variables can be found in the
+environment variables README.envvar.
+
+-------------------------------------------------------------------------
+
+13. Threads
+===========
+
+MPICH supports multiple threading packages.  The default is posix
+threads (pthreads), but solaris threads, windows threads and argobots
+are also supported.
+
+To configure mpich to work with argobots threads, use the following
+configure options:
+
+    --with-thread-package=argobots \
+        CFLAGS="-I<path_to_argobots/include>" \
+        LDFLAGS="-L<path_to_argobots/lib>"

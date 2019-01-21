@@ -267,5 +267,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_set_attr_( MPI_Fint *, MPI_Fint *, 
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_win_set_attr_ ( MPI_Fint *v1, MPI_Fint *v2, void*v3, MPI_Fint *ierr ){
     if (v3 == MPIR_F_MPI_BOTTOM) v3 = MPI_BOTTOM;
-   *ierr = MPIR_WinSetAttr( (MPI_Win)*v1, (int)*v2, (void *)(*(MPI_Aint *)v3), MPIR_ATTR_AINT );
+   *ierr = MPII_Win_set_attr( (MPI_Win)*v1, (int)*v2, (void *)(*(MPI_Aint *)v3), MPIR_ATTR_AINT );
 }

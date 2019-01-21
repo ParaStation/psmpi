@@ -78,9 +78,7 @@ int main(int argc, char *argv[])
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
-
+    return MTestReturnValue(errs);
 }
 
 int checkAttrs(MPI_Comm comm, int n, int key[], int attrval[])
@@ -93,8 +91,7 @@ int checkAttrs(MPI_Comm comm, int n, int key[], int attrval[])
         if (!flag) {
             errs++;
             fprintf(stderr, "Attribute for key %d not set\n", i);
-        }
-        else if (val_p != &attrval[i]) {
+        } else if (val_p != &attrval[i]) {
             errs++;
             fprintf(stderr, "Atribute value for key %d not correct\n", i);
         }

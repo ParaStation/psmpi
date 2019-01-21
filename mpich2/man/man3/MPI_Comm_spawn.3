@@ -1,57 +1,56 @@
-.TH MPI_Comm_spawn 3 "11/9/2015" " " "MPI"
+.TH MPI_Comm_spawn 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Comm_spawn \-  Spawn up to maxprocs instances of a single MPI application 
 .SH SYNOPSIS
 .nf
 int MPI_Comm_spawn(const char *command, char *argv[], int maxprocs, MPI_Info info,
-                  int root, MPI_Comm comm, MPI_Comm *intercomm,
-                  int array_of_errcodes[])
+                   int root, MPI_Comm comm, MPI_Comm * intercomm, int array_of_errcodes[])
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B command 
-- name of program to be spawned (string, significant only at root) 
+- name of program to be spawned (string, significant only at root)
 .PD 1
 .PD 0
 .TP
 .B argv 
-- arguments to command (array of strings, significant only at root) 
+- arguments to command (array of strings, significant only at root)
 .PD 1
 .PD 0
 .TP
 .B maxprocs 
-- maximum number of processes to start (integer, significant only 
-at root) 
+- maximum number of processes to start (integer, significant only
+at root)
 .PD 1
 .PD 0
 .TP
 .B info 
-- a set of key-value pairs telling the runtime system where and how 
-to start the processes (handle, significant only at root) 
+- a set of key-value pairs telling the runtime system where and how
+to start the processes (handle, significant only at root)
 .PD 1
 .PD 0
 .TP
 .B root 
-- rank of process in which previous arguments are examined (integer) 
+- rank of process in which previous arguments are examined (integer)
 .PD 1
 .PD 0
 .TP
 .B comm 
-- intracommunicator containing group of spawning processes (handle) 
+- intracommunicator containing group of spawning processes (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B intercomm 
-- intercommunicator between original group and the 
-newly spawned group (handle) 
+- intercommunicator between original group and the
+newly spawned group (handle)
 .PD 1
 .PD 0
 .TP
 .B array_of_errcodes 
-- one code per process (array of integer) 
+- one code per process (array of integer)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

@@ -118,19 +118,23 @@ PROGRAMS = $(noinst_PROGRAMS)
 namepubx_SOURCES = namepubx.cxx
 namepubx_OBJECTS = namepubx.$(OBJEXT)
 namepubx_LDADD = $(LDADD)
-namepubx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+namepubx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 selfconaccx_SOURCES = selfconaccx.cxx
 selfconaccx_OBJECTS = selfconaccx.$(OBJEXT)
 selfconaccx_LDADD = $(LDADD)
-selfconaccx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+selfconaccx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 spawnargvx_SOURCES = spawnargvx.cxx
 spawnargvx_OBJECTS = spawnargvx.$(OBJEXT)
 spawnargvx_LDADD = $(LDADD)
-spawnargvx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+spawnargvx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 spawnintrax_SOURCES = spawnintrax.cxx
 spawnintrax_OBJECTS = spawnintrax.$(OBJEXT)
 spawnintrax_LDADD = $(LDADD)
-spawnintrax_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+spawnintrax_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -213,6 +217,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -368,6 +373,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -375,8 +381,13 @@ threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
-LDADD = $(top_builddir)/cxx/util/mtest.o
+
+# Add libdtpools support
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_builddir)/dtpoos/include \
+	-I$(top_srcdir)/dtpools/include
+LDADD = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 CLEANFILES = summary.xml summary.tap
 EXTRA_DIST = testlist
 
@@ -671,6 +682,9 @@ uninstall-am:
 
 $(top_builddir)/cxx/util/mtest.o: $(top_srcdir)/cxx/util/mtest.cxx
 	(cd $(top_builddir)/cxx/util && $(MAKE) mtest.o)
+
+$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+	(cd $(top_builddir)/dtpools && $(MAKE))
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \

@@ -272,10 +272,10 @@ FORT_DLL_SPEC void FORT_CALL mpi_pack_external_size_ ( char *v1 FORT_MIXED_LEN(d
      int  li;
         while (*p == ' ' && p > v1) p--;
         p++;
-        p1 = (char *)MPIU_Malloc( p-v1 + 1 );
+        p1 = (char *)MPL_malloc( p-v1 + 1, MPL_MEM_OTHER );
         for (li=0; li<(p-v1); li++) { p1[li] = v1[li]; }
         p1[li] = 0; 
     }
     *ierr = MPI_Pack_external_size( p1, (int)*v2, (MPI_Datatype)(*v3), v4 );
-    MPIU_Free( p1 );
+    MPL_free( p1 );
 }

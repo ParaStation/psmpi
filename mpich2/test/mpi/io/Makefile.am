@@ -26,7 +26,9 @@ noinst_PROGRAMS = \
     resized2      \
     bigtype       \
     hindexed_io   \
-    simple_collective
+    simple_collective \
+    external32_derived_dtype \
+    tst_fileview
 
 
 if BUILD_MPIX_TESTS

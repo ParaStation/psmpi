@@ -1,16 +1,15 @@
-.TH MPI_Waitall 3 "11/9/2015" " " "MPI"
+.TH MPI_Waitall 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Waitall \-  Waits for all given MPI Requests to complete 
 .SH SYNOPSIS
 .nf
-int MPI_Waitall(int count, MPI_Request array_of_requests[], 
-               MPI_Status array_of_statuses[])
+int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_statuses[])
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B count 
-- list length (integer) 
+- list length (integer)
 .PD 1
 .PD 0
 .TP

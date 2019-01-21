@@ -1,4 +1,4 @@
-/* This file created from test/mpi/f77/ext/c2f2c.c with f77tof90 */
+/* This file created from f77/ext/c2f2c.c with f77tof90 */
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
@@ -178,8 +178,7 @@ MPI_Fint c2frequest_(MPI_Fint * request)
     if (!flag) {
         fprintf(stderr, "Request: Wrong value for flag\n");
         return 1;
-    }
-    else {
+    } else {
         *request = MPI_Request_c2f(req);
     }
     return 0;
@@ -246,7 +245,6 @@ void f2crequest_(MPI_Fint * req)
     MPI_Irecv(NULL, 0, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &cReq);
     MPI_Cancel(&cReq);
     *req = MPI_Request_c2f(cReq);
-
 }
 
 void f2cop_(MPI_Fint * op)

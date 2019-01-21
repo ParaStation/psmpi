@@ -94,15 +94,24 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+target_triplet = @target@
 noinst_PROGRAMS = stdiotest$(EXEEXT) stdintest$(EXEEXT) \
 	stdintest2$(EXEEXT) checkenv1$(EXEEXT) rtest$(EXEEXT) \
 	rtestf$(EXEEXT) rtestx$(EXEEXT) testout$(EXEEXT)
 subdir = test/commands
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_attr_alias.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/src/hwloc/config/hwloc.m4 \
+	$(top_srcdir)/src/hwloc/config/hwloc_check_attributes.m4 \
+	$(top_srcdir)/src/hwloc/config/hwloc_check_vendor.m4 \
+	$(top_srcdir)/src/hwloc/config/hwloc_check_visibility.m4 \
+	$(top_srcdir)/src/hwloc/config/hwloc_components.m4 \
+	$(top_srcdir)/src/hwloc/config/hwloc_pkg.m4 \
+	$(top_srcdir)/src/hwloc/config/netloc.m4 \
+	$(top_srcdir)/confdb/aclocal_attr_alias.m4 \
 	$(top_srcdir)/confdb/aclocal_bugfix.m4 \
 	$(top_srcdir)/confdb/aclocal_cache.m4 \
 	$(top_srcdir)/confdb/aclocal_cc.m4 \
+	$(top_srcdir)/confdb/aclocal_check_visibility.m4 \
 	$(top_srcdir)/confdb/aclocal_coverage.m4 \
 	$(top_srcdir)/confdb/aclocal_cxx.m4 \
 	$(top_srcdir)/confdb/aclocal_f77.m4 \
@@ -112,48 +121,57 @@ am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_attr_alias.m4 \
 	$(top_srcdir)/confdb/aclocal_mpi.m4 \
 	$(top_srcdir)/confdb/aclocal_runlog.m4 \
 	$(top_srcdir)/confdb/aclocal_shl.m4 \
-	$(top_srcdir)/confdb/aclocal_shm.m4 \
 	$(top_srcdir)/confdb/aclocal_subcfg.m4 \
 	$(top_srcdir)/confdb/aclocal_util.m4 \
-	$(top_srcdir)/confdb/ax_tls.m4 $(top_srcdir)/confdb/libtool.m4 \
+	$(top_srcdir)/confdb/libtool.m4 \
 	$(top_srcdir)/confdb/ltoptions.m4 \
 	$(top_srcdir)/confdb/ltsugar.m4 \
 	$(top_srcdir)/confdb/ltversion.m4 \
 	$(top_srcdir)/confdb/lt~obsolete.m4 \
+	$(top_srcdir)/confdb/random_r.m4 \
+	$(top_srcdir)/confdb/stdlib_h.m4 \
 	$(top_srcdir)/maint/version.m4 $(top_srcdir)/subsys_include.m4 \
-	$(top_srcdir)/src/mpid/common/hcoll/subconfigure.m4 \
-	$(top_srcdir)/src/binding/fortran/use_mpi/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch4/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch4/netmod/ucx/subconfigure.m4 \
 	$(top_srcdir)/src/pm/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch4/shm/stubshm/subconfigure.m4 \
+	$(top_srcdir)/src/binding/fortran/use_mpi/subconfigure.m4 \
 	$(top_srcdir)/src/pm/gforker/subconfigure.m4 \
-	$(top_srcdir)/src/pmi/subconfigure.m4 \
-	$(top_srcdir)/src/pmi/pmi2/subconfigure.m4 \
-	$(top_srcdir)/src/pmi/slurm/subconfigure.m4 \
-	$(top_srcdir)/src/pmi/pmi2/simple/subconfigure.m4 \
-	$(top_srcdir)/src/pmi/pmi2/poe/subconfigure.m4 \
-	$(top_srcdir)/src/pmi/simple/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/pamid/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch4/netmod/portals4/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch4/netmod/stubnm/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/common/hcoll/subconfigure.m4 \
 	$(top_srcdir)/src/pm/remshell/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/sock/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/common/sock/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/common/sched/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/common/thread/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/common/datatype/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/util/sock/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/mxm/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/portals4/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/ofi/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/tcp/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/llc/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/common/sock/poll/subconfigure.m4 \
 	$(top_srcdir)/src/pm/util/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch4/shm/posix/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/common/bc/subconfigure.m4 \
+	$(top_srcdir)/src/pmi/subconfigure.m4 \
+	$(top_srcdir)/src/pmi/slurm/subconfigure.m4 \
+	$(top_srcdir)/src/pmi/pmi2/subconfigure.m4 \
+	$(top_srcdir)/src/pmi/pmi2/simple/subconfigure.m4 \
+	$(top_srcdir)/src/pmi/bgq/subconfigure.m4 \
+	$(top_srcdir)/src/pmi/cray/subconfigure.m4 \
+	$(top_srcdir)/src/pmi/simple/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch4/netmod/ofi/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/common/shm/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/ofi/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/portals4/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/llc/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/tcp/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/mxm/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/common/thread/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/common/sched/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/sock/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/util/sock/subconfigure.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/src/include/mpichconf.h
+CONFIG_HEADER = $(top_builddir)/src/include/mpichconf.h \
+	$(top_builddir)/src/hwloc/include/private/autogen/config.h \
+	$(top_builddir)/src/hwloc/include/hwloc/autogen/config.h
 CONFIG_CLEAN_FILES = cmdtests
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
@@ -197,7 +215,7 @@ AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
-DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src/include
+DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src/include -I$(top_builddir)/src/hwloc/include/private/autogen -I$(top_builddir)/src/hwloc/include/hwloc/autogen
 depcomp = $(SHELL) $(top_srcdir)/confdb/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
@@ -297,13 +315,12 @@ AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
 AR_FLAGS = @AR_FLAGS@
 AS = @AS@
-ASSERT_LEVEL = @ASSERT_LEVEL@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BASH = @BASH@
 BASH_SHELL = @BASH_SHELL@
-BGQ_INSTALL_DIR = @BGQ_INSTALL_DIR@
 BSEND_OVERHEAD = @BSEND_OVERHEAD@
 CC = $(MPICC)
 CCDEPMODE = @CCDEPMODE@
@@ -439,10 +456,105 @@ FORTRAN_MPI_OFFSET = @FORTRAN_MPI_OFFSET@
 GCOV = @GCOV@
 GNUCXX_MINORVERSION = @GNUCXX_MINORVERSION@
 GNUCXX_VERSION = @GNUCXX_VERSION@
+GNULIB_ATOLL = @GNULIB_ATOLL@
+GNULIB_CALLOC_POSIX = @GNULIB_CALLOC_POSIX@
+GNULIB_CANONICALIZE_FILE_NAME = @GNULIB_CANONICALIZE_FILE_NAME@
+GNULIB_GETLOADAVG = @GNULIB_GETLOADAVG@
+GNULIB_GETSUBOPT = @GNULIB_GETSUBOPT@
+GNULIB_GRANTPT = @GNULIB_GRANTPT@
+GNULIB_MALLOC_POSIX = @GNULIB_MALLOC_POSIX@
+GNULIB_MBTOWC = @GNULIB_MBTOWC@
+GNULIB_MKDTEMP = @GNULIB_MKDTEMP@
+GNULIB_MKOSTEMP = @GNULIB_MKOSTEMP@
+GNULIB_MKOSTEMPS = @GNULIB_MKOSTEMPS@
+GNULIB_MKSTEMP = @GNULIB_MKSTEMP@
+GNULIB_MKSTEMPS = @GNULIB_MKSTEMPS@
+GNULIB_POSIX_OPENPT = @GNULIB_POSIX_OPENPT@
+GNULIB_PTSNAME = @GNULIB_PTSNAME@
+GNULIB_PTSNAME_R = @GNULIB_PTSNAME_R@
+GNULIB_PUTENV = @GNULIB_PUTENV@
+GNULIB_QSORT_R = @GNULIB_QSORT_R@
+GNULIB_RANDOM = @GNULIB_RANDOM@
+GNULIB_RANDOM_R = @GNULIB_RANDOM_R@
+GNULIB_REALLOC_POSIX = @GNULIB_REALLOC_POSIX@
+GNULIB_REALPATH = @GNULIB_REALPATH@
+GNULIB_RPMATCH = @GNULIB_RPMATCH@
+GNULIB_SECURE_GETENV = @GNULIB_SECURE_GETENV@
+GNULIB_SETENV = @GNULIB_SETENV@
+GNULIB_STRTOD = @GNULIB_STRTOD@
+GNULIB_STRTOLL = @GNULIB_STRTOLL@
+GNULIB_STRTOULL = @GNULIB_STRTOULL@
+GNULIB_SYSTEM_POSIX = @GNULIB_SYSTEM_POSIX@
+GNULIB_UNLOCKPT = @GNULIB_UNLOCKPT@
+GNULIB_UNSETENV = @GNULIB_UNSETENV@
+GNULIB_WCTOMB = @GNULIB_WCTOMB@
+GNULIB__EXIT = @GNULIB__EXIT@
 GREP = @GREP@
+HAVE_ATOLL = @HAVE_ATOLL@
+HAVE_CANONICALIZE_FILE_NAME = @HAVE_CANONICALIZE_FILE_NAME@
 HAVE_CXX_EXCEPTIONS = @HAVE_CXX_EXCEPTIONS@
+HAVE_DECL_GETLOADAVG = @HAVE_DECL_GETLOADAVG@
+HAVE_DECL_SETENV = @HAVE_DECL_SETENV@
+HAVE_DECL_UNSETENV = @HAVE_DECL_UNSETENV@
 HAVE_ERROR_CHECKING = @HAVE_ERROR_CHECKING@
+HAVE_GETSUBOPT = @HAVE_GETSUBOPT@
+HAVE_GRANTPT = @HAVE_GRANTPT@
+HAVE_MKDTEMP = @HAVE_MKDTEMP@
+HAVE_MKOSTEMP = @HAVE_MKOSTEMP@
+HAVE_MKOSTEMPS = @HAVE_MKOSTEMPS@
+HAVE_MKSTEMP = @HAVE_MKSTEMP@
+HAVE_MKSTEMPS = @HAVE_MKSTEMPS@
+HAVE_POSIX_OPENPT = @HAVE_POSIX_OPENPT@
+HAVE_PTSNAME = @HAVE_PTSNAME@
+HAVE_PTSNAME_R = @HAVE_PTSNAME_R@
+HAVE_RANDOM = @HAVE_RANDOM@
+HAVE_RANDOM_H = @HAVE_RANDOM_H@
+HAVE_RANDOM_R = @HAVE_RANDOM_R@
+HAVE_REALPATH = @HAVE_REALPATH@
 HAVE_ROMIO = @HAVE_ROMIO@
+HAVE_RPMATCH = @HAVE_RPMATCH@
+HAVE_SECURE_GETENV = @HAVE_SECURE_GETENV@
+HAVE_SETENV = @HAVE_SETENV@
+HAVE_STRTOD = @HAVE_STRTOD@
+HAVE_STRTOLL = @HAVE_STRTOLL@
+HAVE_STRTOULL = @HAVE_STRTOULL@
+HAVE_STRUCT_RANDOM_DATA = @HAVE_STRUCT_RANDOM_DATA@
+HAVE_SYS_LOADAVG_H = @HAVE_SYS_LOADAVG_H@
+HAVE_UNLOCKPT = @HAVE_UNLOCKPT@
+HAVE__EXIT = @HAVE__EXIT@
+HWLOC_CFLAGS = @HWLOC_CFLAGS@
+HWLOC_CPPFLAGS = @HWLOC_CPPFLAGS@
+HWLOC_CUDA_LIBS = @HWLOC_CUDA_LIBS@
+HWLOC_EMBEDDED_CFLAGS = @HWLOC_EMBEDDED_CFLAGS@
+HWLOC_EMBEDDED_CPPFLAGS = @HWLOC_EMBEDDED_CPPFLAGS@
+HWLOC_EMBEDDED_LDADD = @HWLOC_EMBEDDED_LDADD@
+HWLOC_EMBEDDED_LIBS = @HWLOC_EMBEDDED_LIBS@
+HWLOC_GL_LIBS = @HWLOC_GL_LIBS@
+HWLOC_HAVE_LIBXML2 = @HWLOC_HAVE_LIBXML2@
+HWLOC_HAVE_NVML = @HWLOC_HAVE_NVML@
+HWLOC_HAVE_OPENCL = @HWLOC_HAVE_OPENCL@
+HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
+HWLOC_LIBS = @HWLOC_LIBS@
+HWLOC_LIBS_PRIVATE = @HWLOC_LIBS_PRIVATE@
+HWLOC_LIBXML2_CFLAGS = @HWLOC_LIBXML2_CFLAGS@
+HWLOC_LIBXML2_LIBS = @HWLOC_LIBXML2_LIBS@
+HWLOC_MS_LIB = @HWLOC_MS_LIB@
+HWLOC_MS_LIB_ARCH = @HWLOC_MS_LIB_ARCH@
+HWLOC_NVML_LIBS = @HWLOC_NVML_LIBS@
+HWLOC_OPENCL_CFLAGS = @HWLOC_OPENCL_CFLAGS@
+HWLOC_OPENCL_LDFLAGS = @HWLOC_OPENCL_LDFLAGS@
+HWLOC_OPENCL_LIBS = @HWLOC_OPENCL_LIBS@
+HWLOC_PCIACCESS_CFLAGS = @HWLOC_PCIACCESS_CFLAGS@
+HWLOC_PCIACCESS_LIBS = @HWLOC_PCIACCESS_LIBS@
+HWLOC_PLUGINS_DIR = @HWLOC_PLUGINS_DIR@
+HWLOC_PLUGINS_PATH = @HWLOC_PLUGINS_PATH@
+HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
+HWLOC_REQUIRES = @HWLOC_REQUIRES@
+HWLOC_VERSION = @HWLOC_VERSION@
+HWLOC_X11_CPPFLAGS = @HWLOC_X11_CPPFLAGS@
+HWLOC_X11_LIBS = @HWLOC_X11_LIBS@
+HWLOC_top_builddir = @HWLOC_top_builddir@
+HWLOC_top_srcdir = @HWLOC_top_srcdir@
 INCLUDE_MPICXX_H = @INCLUDE_MPICXX_H@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
@@ -474,6 +586,7 @@ MPICHLIB_CPPFLAGS = @MPICHLIB_CPPFLAGS@
 MPICHLIB_CXXFLAGS = @MPICHLIB_CXXFLAGS@
 MPICHLIB_FCFLAGS = @MPICHLIB_FCFLAGS@
 MPICHLIB_FFLAGS = @MPICHLIB_FFLAGS@
+MPICH_CUSTOM_STRING = @MPICH_CUSTOM_STRING@
 MPICH_MPICC_CFLAGS = @MPICH_MPICC_CFLAGS@
 MPICH_MPICC_CPPFLAGS = @MPICH_MPICC_CPPFLAGS@
 MPICH_MPICC_LDFLAGS = @MPICH_MPICC_LDFLAGS@
@@ -492,8 +605,6 @@ MPICH_MPIFORT_LDFLAGS = @MPICH_MPIFORT_LDFLAGS@
 MPICH_MPIFORT_LIBS = @MPICH_MPIFORT_LIBS@
 MPICH_NUMVERSION = @MPICH_NUMVERSION@
 MPICH_RELEASE_DATE = @MPICH_RELEASE_DATE@
-MPICH_TIMER_KIND = @MPICH_TIMER_KIND@
-MPICH_TIMER_TYPE = @MPICH_TIMER_TYPE@
 MPICH_VERSION = @MPICH_VERSION@
 MPICONSTMODNAME = @MPICONSTMODNAME@
 MPICPP_NAME = @MPICPP_NAME@
@@ -512,7 +623,6 @@ MPIR_CXX_DOUBLE_COMPLEX = @MPIR_CXX_DOUBLE_COMPLEX@
 MPIR_CXX_LONG_DOUBLE_COMPLEX = @MPIR_CXX_LONG_DOUBLE_COMPLEX@
 MPISIZEOFMODNAME = @MPISIZEOFMODNAME@
 MPIU_DLL_SPEC_DEF = @MPIU_DLL_SPEC_DEF@
-MPIU_PINT = @MPIU_PINT@
 MPI_2COMPLEX = @MPI_2COMPLEX@
 MPI_2DOUBLE_COMPLEX = @MPI_2DOUBLE_COMPLEX@
 MPI_2DOUBLE_PRECISION = @MPI_2DOUBLE_PRECISION@
@@ -659,13 +769,29 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
-PAMILIBNAME = @PAMILIBNAME@
 PAPI_INCLUDE = @PAPI_INCLUDE@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
+PKG_CONFIG = @PKG_CONFIG@
 PMPILIBNAME = @PMPILIBNAME@
 PMPI_F08_NAME = @PMPI_F08_NAME@
 RANLIB = @RANLIB@
+REPLACE_CALLOC = @REPLACE_CALLOC@
+REPLACE_CANONICALIZE_FILE_NAME = @REPLACE_CANONICALIZE_FILE_NAME@
+REPLACE_MALLOC = @REPLACE_MALLOC@
+REPLACE_MBTOWC = @REPLACE_MBTOWC@
+REPLACE_MKSTEMP = @REPLACE_MKSTEMP@
+REPLACE_PTSNAME = @REPLACE_PTSNAME@
+REPLACE_PTSNAME_R = @REPLACE_PTSNAME_R@
+REPLACE_PUTENV = @REPLACE_PUTENV@
+REPLACE_QSORT_R = @REPLACE_QSORT_R@
+REPLACE_RANDOM_R = @REPLACE_RANDOM_R@
+REPLACE_REALLOC = @REPLACE_REALLOC@
+REPLACE_REALPATH = @REPLACE_REALPATH@
+REPLACE_SETENV = @REPLACE_SETENV@
+REPLACE_STRTOD = @REPLACE_STRTOD@
+REPLACE_UNSETENV = @REPLACE_UNSETENV@
+REPLACE_WCTOMB = @REPLACE_WCTOMB@
 REQD = @REQD@
 REQI1 = @REQI1@
 REQI2 = @REQI2@
@@ -691,8 +817,8 @@ USER_FCFLAGS = @USER_FCFLAGS@
 USER_FFLAGS = @USER_FFLAGS@
 USER_LDFLAGS = @USER_LDFLAGS@
 USER_LIBS = @USER_LIBS@
-USE_DBG_LOGGING = @USE_DBG_LOGGING@
 VERSION = @VERSION@
+VISIBILITY_CFLAGS = @VISIBILITY_CFLAGS@
 WRAPPER_CFLAGS = @WRAPPER_CFLAGS@
 WRAPPER_CPPFLAGS = @WRAPPER_CPPFLAGS@
 WRAPPER_CXXFLAGS = @WRAPPER_CXXFLAGS@
@@ -704,6 +830,12 @@ WRAPPER_LIBS = @WRAPPER_LIBS@
 WRAPPER_RPATH_LDFLAGS = @WRAPPER_RPATH_LDFLAGS@
 WTIME_DOUBLE_TYPE = @WTIME_DOUBLE_TYPE@
 XARGS_NODATA_OPT = @XARGS_NODATA_OPT@
+XMKMF = @XMKMF@
+X_CFLAGS = @X_CFLAGS@
+X_EXTRA_LIBS = @X_EXTRA_LIBS@
+X_LIBS = @X_LIBS@
+X_PRE_LIBS = @X_PRE_LIBS@
+ZMLIBNAME = @ZMLIBNAME@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -727,6 +859,14 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
+ch4_netmods = @ch4_netmods@
+ch4_nets_array = @ch4_nets_array@
+ch4_nets_array_sz = @ch4_nets_array_sz@
+ch4_nets_func_array = @ch4_nets_func_array@
+ch4_nets_func_decl = @ch4_nets_func_decl@
+ch4_nets_native_func_array = @ch4_nets_native_func_array@
+ch4_nets_native_func_decl = @ch4_nets_native_func_decl@
+ch4_nets_strings = @ch4_nets_strings@
 channel_name = @channel_name@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -741,6 +881,9 @@ host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
 htmldir = @htmldir@
+hwloclib = @hwloclib@
+hwloclibdir = @hwloclibdir@
+hwlocsrcdir = @hwlocsrcdir@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
@@ -755,7 +898,6 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mmx_copy_s = @mmx_copy_s@
 modincdir = @modincdir@
-mpich_libtool_static_flag = @mpich_libtool_static_flag@
 mpllib = @mpllib@
 mpllibdir = @mpllibdir@
 mplsrcdir = @mplsrcdir@
@@ -767,6 +909,10 @@ nemesis_nets_func_decl = @nemesis_nets_func_decl@
 nemesis_nets_macro_defs = @nemesis_nets_macro_defs@
 nemesis_nets_strings = @nemesis_nets_strings@
 nemesis_networks = @nemesis_networks@
+netloclibdir = @netloclibdir@
+ofi_embedded = @ofi_embedded@
+ofilib = @ofilib@
+ofisrcdir = @ofisrcdir@
 oldincludedir = @oldincludedir@
 opalib = @opalib@
 opalibdir = @opalibdir@
@@ -782,10 +928,20 @@ sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
+target = @target@
 target_alias = @target_alias@
+target_cpu = @target_cpu@
+target_os = @target_os@
+target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+ucxdir = @ucxdir@
+ucxlib = @ucxlib@
+with_libfabric = @with_libfabric@
+zmlib = @zmlib@
+zmlibdir = @zmlibdir@
+zmsrcdir = @zmsrcdir@
 MPICC = $(bindir)/mpicc
 MPICXX = $(bindir)/mpicxx
 MPIF77 = $(bindir)/mpif77

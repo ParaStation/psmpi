@@ -274,13 +274,13 @@ FORT_DLL_SPEC void FORT_CALL mpi_file_open_ ( MPI_Fint *v1, char *v2 FORT_MIXED_
      int  li;
         while (*p == ' ' && p > v2) p--;
         p++;
-        p2 = (char *)MPIU_Malloc( p-v2 + 1 );
+        p2 = (char *)MPL_malloc( p-v2 + 1, MPL_MEM_OTHER );
         for (li=0; li<(p-v2); li++) { p2[li] = v2[li]; }
         p2[li] = 0; 
     }
     *ierr = MPI_File_open( (MPI_Comm)(*v1), p2, (int)*v3, (MPI_Info)(*v4), &l5 );
     *v5 = MPI_File_c2f(l5);
-    MPIU_Free( p2 );
+    MPL_free( p2 );
 #else
 *ierr = MPI_ERR_INTERN;
 #endif

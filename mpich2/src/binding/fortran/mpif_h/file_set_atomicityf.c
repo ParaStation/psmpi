@@ -268,7 +268,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_file_set_atomicity_( MPI_Fint *, MPI_Fi
 FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
 #ifdef MPI_MODE_RDONLY
     int l2;
-    l2 = MPIR_FROM_FLOG(*v2);
+    l2 = MPII_FROM_FLOG(*v2);
     *ierr = MPI_File_set_atomicity( MPI_File_f2c(*v1), l2 );
 #else
 *ierr = MPI_ERR_INTERN;

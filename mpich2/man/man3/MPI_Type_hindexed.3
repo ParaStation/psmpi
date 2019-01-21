@@ -1,13 +1,12 @@
-.TH MPI_Type_hindexed 3 "11/9/2015" " " "MPI"
+.TH MPI_Type_hindexed 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Type_hindexed \-  Creates an indexed datatype with offsets in bytes 
 .SH SYNOPSIS
 .nf
 int MPI_Type_hindexed(int count,
-                     const int *array_of_blocklengths,
-                     const MPI_Aint *array_of_displacements,
-                     MPI_Datatype oldtype,
-                     MPI_Datatype *newtype)
+                      int *array_of_blocklengths,
+                      MPI_Aint * array_of_displacements,
+                      MPI_Datatype oldtype, MPI_Datatype * newtype)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -35,7 +34,7 @@ int MPI_Type_hindexed(int count,
 .PD 0
 .TP
 .B newtype 
-- new datatype (handle) 
+- new datatype (handle)
 .PD 1
 
 .SH DEPRECATED FUNCTION

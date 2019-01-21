@@ -1,52 +1,52 @@
-.TH MPI_Recv_init 3 "11/9/2015" " " "MPI"
+.TH MPI_Recv_init 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Recv_init \-  Create a persistent request for a receive 
 .SH SYNOPSIS
 .nf
-int MPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source, 
-                 int tag, MPI_Comm comm, MPI_Request *request)
+int MPI_Recv_init(void *buf, int count, MPI_Datatype datatype, int source,
+                  int tag, MPI_Comm comm, MPI_Request * request)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B buf 
-- initial address of receive buffer (choice) 
+- initial address of receive buffer (choice)
 .PD 1
 .PD 0
 .TP
 .B count 
-- number of elements received (integer) 
+- number of elements received (integer)
 .PD 1
 .PD 0
 .TP
 .B datatype 
-- type of each element (handle) 
+- type of each element (handle)
 .PD 1
 .PD 0
 .TP
 .B source 
 - rank of source or 
 .I MPI_ANY_SOURCE
-(integer) 
+(integer)
 .PD 1
 .PD 0
 .TP
 .B tag 
 - message tag or 
 .I MPI_ANY_TAG
-(integer) 
+(integer)
 .PD 1
 .PD 0
 .TP
 .B comm 
-- communicator (handle) 
+- communicator (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B request 
-- communication request (handle) 
+- communication request (handle)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

@@ -1,10 +1,9 @@
-.TH MPI_Type_get_attr 3 "11/9/2015" " " "MPI"
+.TH MPI_Type_get_attr 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Type_get_attr \-  Retrieves attribute value by key 
 .SH SYNOPSIS
 .nf
-int MPI_Type_get_attr(MPI_Datatype datatype, int type_keyval, void *attribute_val,
-                     int *flag)
+int MPI_Type_get_attr(MPI_Datatype datatype, int type_keyval, void *attribute_val, int *flag)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -15,19 +14,19 @@ int MPI_Type_get_attr(MPI_Datatype datatype, int type_keyval, void *attribute_va
 .PD 0
 .TP
 .B type_keyval 
-- key value (integer) 
+- key value (integer)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B attribute_val 
-- attribute value, unless flag = false 
+- attribute value, unless flag = false
 .PD 1
 .PD 0
 .TP
 .B flag 
-- false if no attribute is associated with the key (logical) 
+- false if no attribute is associated with the key (logical)
 .PD 1
 
 .SH NOTES

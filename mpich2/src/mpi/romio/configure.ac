@@ -28,6 +28,10 @@ AM_MAINTAINER_MODE([enable])
 dnl must come before LT_INIT, which AC_REQUIREs AC_PROG_CC
 PAC_PROG_CC
 AM_PROG_CC_C_O
+PAC_CHECK_VISIBILITY
+AC_SUBST(VISIBILITY_CFLAGS)
+
+AC_USE_SYSTEM_EXTENSIONS
 
 AM_PROG_AR
 
@@ -44,7 +48,7 @@ fi
 
 AC_CONFIG_HEADER(adio/include/romioconf.h)
 AH_TOP([/*
- *  (C) 2011 by Argonne National Laboratory.
+ *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 #ifndef ROMIOCONF_H_INCLUDED
@@ -95,6 +99,50 @@ AC_ARG_VAR([FROM_OMPI],[set to "yes" if building ROMIO inside of Open MPI])
 FROM_OMPI=${FROM_OMPI:-no}
 if test "$FROM_OMPI" = 1 ; then FROM_OMPI=yes ; fi
 
+# MPL
+AC_ARG_VAR([MPLLIBNAME],[can be used to override the name of the MPL library (default: "mpl")])
+MPLLIBNAME=${MPLLIBNAME:-"mpl"}
+export MPLLIBNAME
+AC_SUBST(MPLLIBNAME)
+AC_ARG_WITH([mpl-prefix],
+            [AS_HELP_STRING([[--with-mpl-prefix[=DIR]]],
+                            [use the MPL library installed in DIR. Pass
+                             "embedded" to force usage of the MPL source
+                             distributed with Hydra.])],
+            [],dnl action-if-given
+            [with_mpl_prefix=embedded]) dnl action-if-not-given
+mpl_srcdir=""
+AC_SUBST([mpl_srcdir])
+# Controls whether we recurse into the MPL dir when running "dist" rules like
+# "make distclean".  Technically we are cheating whenever DIST_SUBDIRS is not a
+# superset of SUBDIRS, but we don't want to double-distclean and similar.
+mpl_dist_srcdir=""
+AC_SUBST(mpl_dist_srcdir)
+mpl_includedir=""
+AC_SUBST([mpl_includedir])
+mpl_libdir=""
+AC_SUBST([mpl_libdir])
+mpl_lib=""
+AC_SUBST([mpl_lib])
+if test "$FROM_MPICH" = "no" ; then
+if test "$with_mpl_prefix" = "embedded" ; then
+    mpl_srcdir="mpl"
+    mpl_dist_srcdir="mpl"
+    mpl_subdir_args="--disable-versioning --enable-embedded"
+    PAC_CONFIG_SUBDIR_ARGS([mpl],[$mpl_subdir_args],[],[AC_MSG_ERROR(MPL configure failed)])
+    mpl_includedir='-I$(top_builddir)/mpl/include -I$(top_srcdir)/mpl/include'
+    mpl_lib="mpl/lib${MPLLIBNAME}.la"
+else
+    # The user specified an already-installed MPL; just sanity check, don't
+    # subconfigure it
+    AS_IF([test -s "${with_mpl_prefix}/include/mplconfig.h"],
+          [:],[AC_MSG_ERROR([the MPL installation in "${with_mpl_prefix}" appears broken])])
+    mpl_includedir="-I${with_mpl_prefix}/include"
+    mpl_libdir="-L${with_mpl_prefix}/lib"
+    mpl_lib="-l${MPLLIBNAME}"
+fi
+fi
+
 CFLAGS=${CFLAGS:-""}
 LL="lld"
 AR_LOCAL=""
@@ -139,7 +187,7 @@ dnl An m4 macro for use with m4_foreach_w and friends.  You should modify this
 dnl list if you want to add a known file system.  The list is just whitespace
 dnl separated, so you can use newlines and tabs as well.
 m4_define([known_filesystems_m4_w],
-          [nfs ufs pfs pvfs pvfs2 testfs xfs panfs gridftp lustre gpfs zoidfs hfs piofs sfs])dnl
+          [nfs ufs pvfs2 testfs xfs panfs lustre gpfs ime])dnl
 dnl
 dnl An m4 macro for use with m4_foreach and friends.  Expands to a quoted list of
 dnl quoted elements.  A bit easier to use without unintended expansion than the
@@ -435,7 +483,7 @@ AC_TYPE_OFF_T
 # Header files
 # Find the CPP before the header check
 AC_PROG_CPP
-AC_CHECK_HEADERS([unistd.h fcntl.h malloc.h stddef.h sys/types.h limits.h time.h])
+AC_CHECK_HEADERS([unistd.h fcntl.h malloc.h stddef.h sys/types.h limits.h time.h dirent.h])
 AC_CHECK_HEADERS(mpix.h,,,[#include <mpi.h>])
 #
 
@@ -650,6 +698,11 @@ AM_CONDITIONAL([BUILD_MPIO_ERRHAN],[false])
 # if we don't have weak symbol support, we must build a separate convenience
 # library in order to provide the "PMPI_" symbols
 AM_CONDITIONAL([BUILD_PROFILING_LIB],[test "x$HAVE_WEAK_SYMBOLS" = "x0"])
+# disable visibility if building profiling library
+if test "x$HAVE_WEAK_SYMBOLS" = "x0" ; then
+    VISIBILITY_CFLAGS=""
+fi
+
 
 # weird: we have conflated "buid ROMIO's versions of the fortran bindings" and
 # "build ROMIO"s fortran I/O tests". Of course the common situaiton is that we
@@ -824,16 +877,6 @@ fi
 
 # echo "with_file_system is :"$with_file_system": file_system_args is :"$file_system_args": FILE_SYSTEM is :"$FILE_SYSTEM":"
 
-if test -n "$file_system_hfs"; then
-    AC_DEFINE(ROMIO_HFS,1,[Define for ROMIO with HFS])
-fi
-if test -n "$file_system_sfs"; then
-    AC_DEFINE(ROMIO_SFS,1,[Define for ROMIO with SFS])
-fi
-
-if test -n "$file_system_pfs"; then
-    AC_DEFINE(ROMIO_PFS,1,[Define for ROMIO with PFS])
-fi
 
 if test -n "$file_system_testfs"; then
     AC_DEFINE(ROMIO_TESTFS,1,[Define for ROMIO with TESTFS])
@@ -841,12 +884,31 @@ fi
 #
 # Verify presence of lustre/lustre_user.h
 #
+lustre_lockahead="no"
 if test -n "$file_system_lustre"; then
-    AC_CHECK_HEADERS(lustre/lustre_user.h,
-        AC_DEFINE(ROMIO_LUSTRE,1,[Define for ROMIO with LUSTRE]),
-        AC_MSG_ERROR([LUSTRE support requested but cannot find lustre/lustre_user.h header file])                                        
-    )
+    AC_CHECK_HEADERS([linux/lustre/lustre_user.h lustre/lustre_user.h],
+        break)
+    if test x"$ac_cv_header_linux_lustre_lustre_user_h" = "xyes" -o x"$ac_cv_header_lustre_lustre_user_h" = "xyes" ; then
+        AC_DEFINE(ROMIO_LUSTRE, 1, [Define for ROMIO with LUSTRE])
+    else
+        AC_MSG_ERROR([LUSTRE support requested but cannot find lustre/lustre_user.h header file])
+    fi
+    AC_COMPILE_IFELSE([
+        AC_LANG_SOURCE([
+#include <lustre/lustre_user.h>
+#include <sys/ioctl.h>
+        int main(int argc, char **argv) {
+            int fd=100;
+            struct ladvise_hdr *ladvise_hdr;
+            ioctl(fd, LL_IOC_LADVISE, &ladvise_hdr);
+            return 0; }
+        ])],
+        lustre_lockahead="yes"
+	AC_DEFINE(HAVE_LUSTRE_LOCKAHEAD, 1, [Define if LUSTRE_LOCKAHEAD is enabled.]) )
 fi
+
+# Add conditional compilation of Lustre lockahead sources
+AM_CONDITIONAL([LUSTRE_LOCKAHEAD],[test "$lustre_lockahead" = "yes"])
 
 if test -n "$file_system_xfs"; then
     AC_DEFINE(ROMIO_XFS,1,[Define for ROMIO with XFS])
@@ -887,54 +949,11 @@ int main(int argc, char **argv) {
     fi
 fi
 
-#
-# Verify presence of pvfs.h, issue with int64
-#
-if test -n "$file_system_pvfs"; then
-    CPPFLAGS="$CPPFLAGS $CFLAGS"
-    AC_CHECK_HEADERS(pvfs.h,
-    	AC_DEFINE(ROMIO_PVFS,1,[Define for ROMIO with PVFS]),
-	AC_MSG_ERROR([PVFS support requested but cannot find pvfs.h header file])
-	)
-    # Check for missing int64_t (intel version 8 compiler and -no-gcc
-    # selected)
-    AC_MSG_CHECKING([that pvfs.h can be compiled])
-    AC_TRY_COMPILE([
-#include <pvfs.h>
-        ],[
-        ],pvfs_header_ok=yes,pvfs_header_ok=no
-    )
-    AC_MSG_RESULT($pvfs_header_ok)
-    if test "$pvfs_header_ok" = no -a "$ac_cv_sizeof_long_long" = 8 ; then
-        AC_MSG_CHECKING([if pvfs.h can be compiled if we define int64_t])
-        # Try again, but with int64_t
-        AC_TRY_COMPILE([
-            typedef long long int int64_t;
-#include <pvfs.h>
-            ],[
-            ],
-            pvfs_header_ok="yes with int64 definition"
+if test -n "$file_system_ime"; then
+        AC_CHECK_HEADERS(ime_native.h,
+                AC_DEFINE(ROMIO_IME,1,[Define for ROMIO with IME]),
+                AC_MSG_ERROR([IME support requested but cannot find ime_native.h header file])
         )
-        AC_MSG_RESULT($pvfs_header_ok)
-    fi
-    if test "$pvfs_header_ok" = "yes with int64 definition" ; then
-        AC_DEFINE(ROMIO_PVFS_NEEDS_INT64_DEFINITION,1,[Define if int64_t must be defined for PVFS])
-    fi
-    if test "$pvfs_header_ok" != "no" ; then
-        AC_DEFINE(ROMIO_PVFS,1,[Define for ROMIO with PVFS])
-	AC_DEFINE(HAVE_PVFS_SUPER_MAGIC, 1, [Define if PVFS_SUPER_MAGIC defined.])
-    else
-	AC_MSG_WARN(missing or broken pvfs.h header file; disabling ROMIO PVFS support)
-    fi
-fi
-
-
-
-if test -n "$file_system_zoidfs"; then
-	AC_CHECK_HEADERS(zoidfs.h,
-		AC_DEFINE(ROMIO_ZOIDFS,1,[Define for ROMIO with ZoidFD]),
-		AC_MSG_ERROR([ZoidFS support requested but cannot find zoidfs.h header file])
-	)
 fi
 
 #
@@ -966,10 +985,6 @@ if test -n "$file_system_pvfs2"; then
        )
 fi
 
-
-if test -n "$file_system_gridftp"; then
-	AC_DEFINE(ROMIO_GRIDFTP, 1, [Define for ROMIO with gridftp])
-fi
 
 AS_IF([test -n "$file_system_gpfs"],
     [SYSDEP_INC=-I${prefix}/include], [SYSDEP_INC=])
@@ -1203,12 +1218,54 @@ AC_MSG_RESULT($pac_cv_have_statfs)
 if test "$pac_cv_have_statfs" = yes ; then
     AC_DEFINE(HAVE_STRUCT_STATFS,1,[Define if struct statfs can be compiled])
 fi
-	  
+AC_MSG_CHECKING([for f_type member of statfs structure])
+AC_TRY_COMPILE([
+#ifdef HAVE_SYS_VFS_H
+#include <sys/vfs.h>
+#endif
+#ifdef HAVE_SYS_STATVFS_H
+#include <sys/statvfs.h>
+#endif
+#ifdef HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+#ifdef HAVE_SYS_MOUNT_H
+#include <sys/mount.h>
+#endif
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+    ],[
+    struct statfs f;
+    memset(&f, 0, sizeof(f));
+    f.f_type = 0;
+    ],
+    pac_cv_have_statfs_f_type=yes,
+    pac_cv_have_statfs_f_type=no
+)
+AC_MSG_RESULT($pac_cv_have_statfs_f_type)
+if test $pac_cv_have_statfs_f_type = yes ; then
+    AC_DEFINE(ROMIO_HAVE_STRUCT_STATFS_WITH_F_TYPE, 1,[Define if statfs has f_type])
+fi
+
+
 AC_MSG_CHECKING([for f_fstypename member of statfs structure])
 AC_TRY_COMPILE([
+#ifdef HAVE_SYS_VFS_H
+#include <sys/vfs.h>
+#endif
+#ifdef HAVE_SYS_STATVFS_H
+#include <sys/statvfs.h>
+#endif
+#ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
+#endif
+#ifdef HAVE_SYS_MOUNT_H
 #include <sys/mount.h>
+#endif
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
     ],[
     struct statfs f;
     memset(&f, 0, sizeof(f));
@@ -1290,35 +1347,11 @@ AC_CHECK_TYPE([blksize_t],[],[AC_DEFINE_UNQUOTED([blksize_t],[__blksize_t],[Prov
 	       #endif]] )
 
 #
-# Check for large file support.  Make sure that we can use the off64_t 
-# type (in some cases, it is an array, and the ROMIO code isn't prepared for
-# that).
+# in 2004, solairs defined off_t as a union.  Today (2016) that is not the case
+# and we can simplify this check
 #
-AC_CHECK_HEADERS(unistd.h)
-if test "$ac_cv_header_unistd_h" = "yes" ; then
-    AC_CACHE_CHECK([for large file defines],ac_cv_has_large_file_defines,[
-    AC_TRY_COMPILE([
-#include <unistd.h>
-        ], [
-#ifndef _LFS64_LARGEFILE
-#error no largefile defines
-#endif
-        ],ac_cv_has_large_file_defines=yes,ac_cv_has_large_file_defines=no)])
-    if test "$ac_cv_has_large_file_defines" = "yes" ; then
-        # See if we can use them
-    AC_CACHE_CHECK([whether off64_t is an scalar type],ac_cv_off64_t_scalar,[
-    AC_TRY_COMPILE([
-#define _LARGEFILE64_SOURCE
-#define _FILE_OFFSET_BITS 64
-#include <sys/types.h>
-#include <unistd.h>
-],[off64_t a = 3;],ac_cv_off64_t_scalar=yes,ac_cv_off64_t_scalar=no)])
 
-        if test "$ac_cv_off64_t_scalar" = "yes" ; then
-            CFLAGS="${CFLAGS} -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
-        fi
-    fi
-fi
+AC_SYS_LARGEFILE()
 
 # pread and pwrite are useful to ROMIO: if implemented well, they help us avoid
 # an extra system call.  But --enable-strict or CFLAGS="--std=c99" does not
@@ -1346,10 +1379,6 @@ fi
 
 if test -n "$mpi_sgi"; then
    AC_DEFINE(MPISGI,1,[Define if SGI MPI])
-fi
-
-if test -n "$mpi_lam"; then
-   AC_DEFINE(MPILAM,1,[Define if using LAM/MPI])
 fi
 
 if test -n "$mpi_hp"; then
@@ -1392,8 +1421,6 @@ AC_SUBST(master_topbuild_dir)
 # The following definitions are needed within adio/common/status_setb.c
 if test "$FROM_MPICH" = yes ; then
    AC_DEFINE(ROMIO_INSIDE_MPICH,1,[Define if compiling within MPICH])
-elif test "$FROM_MPILAM" = yes ; then
-   AC_DEFINE(MPILAM,1,[Define if compiling within LAM/MPI])
 fi
 
 if test "$FROM_MPICH" = no ; then
@@ -1455,6 +1482,7 @@ if test $FROM_OMPI = yes ; then
    # Open MPI does have the status set bytes functionality
 
    AC_DEFINE(HAVE_STATUS_SET_BYTES,1,[Define if have MPIR_Status_set_bytes])
+   AC_DEFINE(HAVE_MPI_STATUS_SET_ELEMENTS_X, 1, [Define if MPI library provides MPI_STATUS_SET_ELEMENTS_X])
 
    # Used in the tests/ subdirectory for after ROMIO is built
 
@@ -1473,20 +1501,6 @@ if test $FROM_OMPI = yes ; then
    AC_DEFINE(MPIO_BUILD_PROFILING, 1, [hack to make ROMIO build without profiling])
    DEFINE_HAVE_MPI_GREQUEST="#define HAVE_MPI_GREQUEST"
    AC_DEFINE(HAVE_DECL_MPI_COMBINER_HINDEXED_BLOCK, 1, [Define if MPI library provides HINDEXED_BLOCK datatype])
-elif test $FROM_LAM = yes ; then
-   # LAM does have the status set bytes functionality
-   AC_DEFINE(HAVE_STATUS_SET_BYTES,1,[Define if have MPIR_Status_set_bytes])
-        
-   # Used in the tests/ subdirectory for after ROMIO is built
-   TEST_CC=mpicc
-   TEST_F77=mpifort
-   MPIRUN=mpirun 
-   MPI_LIB=
-   ROMIO_INCLUDE=
-   USER_CFLAGS=
-   USER_FFLAGS=
-   TEST_LIBNAME=
-   EXTRA_DIRS="mpi-io/fortran mpi2-other/info mpi2-other/info/fortran mpi2-other/array mpi2-other/array/fortran"
 elif test $FROM_MPICH = yes ; then
    # For now, separate the mpich from mpich cases
    MPICH_HOME=`dirname $ROMIO_HOME`
@@ -1519,7 +1533,6 @@ elif test $FROM_MPICH = yes ; then
    AC_DEFINE(HAVE_STATUS_SET_BYTES,1,[Define if status_set_bytes available])
    DEFINE_HAVE_MPI_GREQUEST="#define HAVE_MPI_GREQUEST 1"
    DEFINE_HAVE_MPI_GREQUEST_EXTENSIONS="#define HAVE_MPI_GREQUEST_EXTENSIONS 1"
-   AC_DEFINE(HAVE_MPIU_FUNCS,1,[Define if MPICH memory tracing macros defined])
    AC_DEFINE(HAVE_MPIX_H, 1, [])
    AC_DEFINE(HAVE_MPIIO_CONST, const, Set if MPI-IO prototypes use const qualifier)
    AC_DEFINE(HAVE_MPI_TYPE_SIZE_X, 1, [Define if MPI library provides MPI_TYPE_SIZE_X])
@@ -1534,7 +1547,6 @@ fi
 if test $WITHIN_KNOWN_MPI_IMPL = no ; then
    PAC_TEST_MPIR_STATUS_SET_BYTES
    PAC_TEST_MPI_GREQUEST
-   PAC_TEST_MPIU_FUNCS
    AC_DEFINE(PRINT_ERR_MSG,1,[Define for printing error messages])
    AC_CHECK_TYPE([MPI_Count],[],[AC_DEFINE_UNQUOTED([MPI_Count],[MPI_Aint],[Define to "MPI_Aint" if MPI does not provide MPI_Count]) ], [[#include <mpi.h>]])
    PAC_TEST_NEEDS_CONST
@@ -1553,11 +1565,6 @@ AC_CHECK_FUNCS(strdup)
 if test "$ac_cv_func_strdup" = "yes" ; then
     # Do we need to declare strdup?
     PAC_FUNC_NEEDS_DECL([#include <string.h>],strdup)
-fi
-AC_CHECK_FUNCS(snprintf)
-if test "$ac_cv_func_snprintf" = "yes" ; then
-    # Do we need to declare snprintf?
-    PAC_FUNC_NEEDS_DECL([#include <stdio.h>],snprintf)
 fi
 AC_CHECK_FUNCS(lstat)
 if test "$ac_cv_func_lstat" = "yes" ; then
@@ -1640,20 +1647,6 @@ if test -n "$MPIOF_H_INCLUDED"; then
 else 
    F77MPIOINC="include 'mpiof.h'"
 fi
-
-AC_CHECK_HEADERS(unistd.h,
-        AC_MSG_CHECKING([for large file defines])
-        AC_TRY_COMPILE([
-                #include <unistd.h>
-                ], [
-                #ifndef _LFS64_LARGEFILE
-                #error no largefile defines
-                #endif
-                ],
-                CFLAGS="${CFLAGS} -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
-                AC_MSG_RESULT(yes),
-                AC_MSG_RESULT(none) )
-        )
 
 echo "setting SYSDEP_INC to $SYSDEP_INC"
 AC_SUBST(SYSDEP_INC)

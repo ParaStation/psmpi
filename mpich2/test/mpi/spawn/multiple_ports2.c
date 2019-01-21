@@ -38,18 +38,22 @@ int main(int argc, char *argv[])
     int verbose = 0;
     int data = 0;
 
+    MTEST_VG_MEM_INIT(port1, MPI_MAX_PORT_NAME * sizeof(char));
+    MTEST_VG_MEM_INIT(port2, MPI_MAX_PORT_NAME * sizeof(char));
+    MTEST_VG_MEM_INIT(port3, MPI_MAX_PORT_NAME * sizeof(char));
+
     if (getenv("MPITEST_VERBOSE")) {
         verbose = 1;
     }
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if (size < 4) {
         printf("Four processes needed to run this test.\n");
         MPI_Finalize();
-        return 0;
+        return 1;
     }
 
     if (rank == 0) {
@@ -94,8 +98,7 @@ int main(int argc, char *argv[])
         MPI_Comm_disconnect(&comm1);
         MPI_Comm_disconnect(&comm2);
         MPI_Comm_disconnect(&comm3);
-    }
-    else if (rank == 1) {
+    } else if (rank == 1) {
         IF_VERBOSE(("1: receiving port.\n"));
         MPI_Recv(port1, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
 
@@ -112,8 +115,7 @@ int main(int argc, char *argv[])
 
         IF_VERBOSE(("1: disconnecting.\n"));
         MPI_Comm_disconnect(&comm1);
-    }
-    else if (rank == 2) {
+    } else if (rank == 2) {
         IF_VERBOSE(("2: receiving port.\n"));
         MPI_Recv(port2, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
 
@@ -133,8 +135,7 @@ int main(int argc, char *argv[])
 
         IF_VERBOSE(("2: disconnecting.\n"));
         MPI_Comm_disconnect(&comm2);
-    }
-    else if (rank == 3) {
+    } else if (rank == 3) {
         IF_VERBOSE(("3: receiving port.\n"));
         MPI_Recv(port3, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
 
@@ -158,16 +159,6 @@ int main(int argc, char *argv[])
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    MPI_Reduce(&num_errors, &total_num_errors, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-    if (rank == 0) {
-        if (total_num_errors) {
-            printf(" Found %d errors\n", total_num_errors);
-        }
-        else {
-            printf(" No Errors\n");
-        }
-        fflush(stdout);
-    }
-    MPI_Finalize();
-    return total_num_errors;
+    MTest_Finalize(num_errors);
+    return MTestReturnValue(total_num_errors);
 }

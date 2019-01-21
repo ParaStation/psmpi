@@ -94,8 +94,7 @@ int main(int argc, char *argv[])
                 errs++;
                 printf("send request 1 was cancelled!\n");
             }
-        }
-        else {
+        } else {
             /* If all requests are not complete, then neither r nor s
              * may be changed */
             if ((s[0].MPI_ERROR) != -3) {
@@ -129,7 +128,6 @@ int main(int argc, char *argv[])
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
 
-    return 0;
+    return MTestReturnValue(errs);
 }

@@ -41,6 +41,7 @@ int main(int argc, char *argv[])
     MPI_Comm comm;
     MPI_Errhandler newerr, olderr;
 
+    MTEST_VG_MEM_INIT(buf, 2 * sizeof(int));
 
     MTest_Init(&argc, &argv);
     comm = MPI_COMM_WORLD;
@@ -75,6 +76,5 @@ int main(int argc, char *argv[])
     MPI_Errhandler_free(&newerr);
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

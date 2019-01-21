@@ -1,15 +1,15 @@
-.TH MPI_Cart_sub 3 "11/9/2015" " " "MPI"
+.TH MPI_Cart_sub 3 "11/21/2018" " " "MPI"
 .SH NAME
-MPI_Cart_sub \-  Partitions a communicator into subgroups which  form lower-dimensional cartesian subgrids 
+MPI_Cart_sub \-  Partitions a communicator into subgroups which form lower-dimensional cartesian subgrids 
 .SH SYNOPSIS
 .nf
-int MPI_Cart_sub(MPI_Comm comm, const int remain_dims[], MPI_Comm *newcomm)
+int MPI_Cart_sub(MPI_Comm comm, const int remain_dims[], MPI_Comm * newcomm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B comm 
-- communicator with cartesian structure (handle) 
+- communicator with cartesian structure (handle)
 .PD 1
 .PD 0
 .TP
@@ -18,17 +18,17 @@ int MPI_Cart_sub(MPI_Comm comm, const int remain_dims[], MPI_Comm *newcomm)
 .I i
 th entry of remain_dims specifies whether the 
 .I i
-th 
-dimension is kept in the subgrid (true) or is dropped (false) (logical 
-vector) 
+th
+dimension is kept in the subgrid (true) or is dropped (false) (logical
+vector)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B newcomm 
-- communicator containing the subgrid that includes the calling 
-process (handle) 
+- communicator containing the subgrid that includes the calling
+process (handle)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

@@ -45,8 +45,7 @@ int main(int argc, char *argv[])
              * executable and pass an info with ("path", ".") */
             MPI_Comm_spawn((char *) "./spawnargv", inargv, np,
                            MPI_INFO_NULL, 0, MPI_COMM_WORLD, &intercomm, errcodes);
-        }
-        else
+        } else
             intercomm = parentcomm;
 
         /* We now have a valid intercomm */
@@ -71,8 +70,7 @@ int main(int argc, char *argv[])
                 MPI_Recv(&err, 1, MPI_INT, i, 1, intercomm, MPI_STATUS_IGNORE);
                 errs += err;
             }
-        }
-        else {
+        } else {
             /* Child */
             /* FIXME: This assumes that stdout is handled for the children
              * (the error count will still be reported to the parent) */
@@ -112,12 +110,12 @@ int main(int argc, char *argv[])
         /* Note that the MTest_Finalize get errs only over COMM_WORLD */
         if (parentcomm == MPI_COMM_NULL) {
             MTest_Finalize(errs);
+        } else {
+            MPI_Finalize();
         }
-    }
-    else {
+    } else {
         MTest_Finalize(errs);
     }
 
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

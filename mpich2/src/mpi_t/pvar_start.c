@@ -5,7 +5,7 @@
  */
 
 #include "mpiimpl.h"
-#include "mpl_utlist.h" /* For MPL_DL_FOREACH */
+#include "utlist.h"     /* For DL_FOREACH */
 
 /* -- Begin Profiling Symbol Block for routine MPI_T_pvar_start */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -15,7 +15,8 @@
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_T_pvar_start as PMPI_T_pvar_start
 #elif defined(HAVE_WEAK_ATTRIBUTE)
-int MPI_T_pvar_start(MPI_T_pvar_session session, MPI_T_pvar_handle handle) __attribute__((weak,alias("PMPI_T_pvar_start")));
+int MPI_T_pvar_start(MPI_T_pvar_session session, MPI_T_pvar_handle handle)
+    __attribute__ ((weak, alias("PMPI_T_pvar_start")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -42,19 +43,18 @@ int MPIR_T_pvar_start_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle)
          * accum is zero since handle allocation.
          */
         if (handle->get_value == NULL) {
-            MPIU_Memcpy(handle->offset, handle->addr, handle->bytes * handle->count);
+            MPIR_Memcpy(handle->offset, handle->addr, handle->bytes * handle->count);
         } else {
-            handle->get_value(handle->addr, handle->obj_handle,
-                              handle->count, handle->offset);
+            handle->get_value(handle->addr, handle->obj_handle, handle->count, handle->offset);
         }
     } else if (MPIR_T_pvar_is_watermark(handle)) {
         /* To start WATERMARK, if it has not ever been started,
          * we need to set its starting value properly.
          */
-        mark = (MPIR_T_pvar_watermark_t *)handle->addr;
+        mark = (MPIR_T_pvar_watermark_t *) handle->addr;
 
         if (MPIR_T_pvar_is_first(handle)) {
-            MPIU_Assert(mark->first_used);
+            MPIR_Assert(mark->first_used);
             mark->first_started = TRUE;
             if (!MPIR_T_pvar_is_oncestarted(handle))
                 mark->watermark = mark->current;
@@ -67,10 +67,7 @@ int MPIR_T_pvar_start_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle)
     /* OK, let's get started */
     MPIR_T_pvar_set_started(handle);
 
-fn_exit:
     return mpi_errno;
-fn_fail:
-    goto fn_exit;
 }
 
 #endif /* MPICH_MPI_FROM_PMPI */
@@ -107,28 +104,28 @@ int MPI_T_pvar_start(MPI_T_pvar_session session, MPI_T_pvar_handle handle)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_PVAR_START);
+    MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_T_PVAR_START);
     MPIR_ERRTEST_MPIT_INITIALIZED(mpi_errno);
     MPIR_T_THREAD_CS_ENTER();
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_T_PVAR_START);
+    MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPI_T_PVAR_START);
 
     /* Validate parameters, especially handles needing to be converted */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
-        MPID_BEGIN_ERROR_CHECKS
+        MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_ERRTEST_PVAR_SESSION(session, mpi_errno);
             MPIR_ERRTEST_PVAR_HANDLE(handle, mpi_errno);
         }
-        MPID_END_ERROR_CHECKS
+        MPID_END_ERROR_CHECKS;
     }
-#   endif /* HAVE_ERROR_CHECKING */
+#endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
 
     if (handle == MPI_T_PVAR_ALL_HANDLES) {
         MPIR_T_pvar_handle_t *hnd;
-        MPL_DL_FOREACH(session->hlist, hnd) {
+        DL_FOREACH(session->hlist, hnd) {
             if (!MPIR_T_pvar_is_continuous(hnd) && !MPIR_T_pvar_is_started(hnd))
                 mpi_errno = MPIR_T_pvar_start_impl(session, hnd);
         }
@@ -144,26 +141,27 @@ int MPI_T_pvar_start(MPI_T_pvar_session session, MPI_T_pvar_handle handle)
 
         if (!MPIR_T_pvar_is_started(handle)) {
             mpi_errno = MPIR_T_pvar_start_impl(session, handle);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+            if (mpi_errno != MPI_SUCCESS)
+                goto fn_fail;
         }
     }
 
     /* ... end of body of routine ... */
 
-fn_exit:
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_T_PVAR_START);
+  fn_exit:
+    MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPI_T_PVAR_START);
     MPIR_T_THREAD_CS_EXIT();
     return mpi_errno;
 
-fn_fail:
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
-        mpi_errno = MPIR_Err_create_code(
-            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-            "**mpi_t_pvar_start", "**mpi_t_pvar_start %p %p", session, handle);
+        mpi_errno =
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+                                 "**mpi_t_pvar_start", "**mpi_t_pvar_start %p %p", session, handle);
     }
-#   endif
+#endif
     mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */

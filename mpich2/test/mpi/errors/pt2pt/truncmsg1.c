@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
     dest = size - 1;
 
     buf = (int *) malloc(LongLen * sizeof(int));
+    MTEST_VG_MEM_INIT(buf, LongLen * sizeof(int));
     if (!buf) {
         fprintf(stderr, "Unable to allocate communication buffer of size %d\n", LongLen);
         MPI_Abort(MPI_COMM_WORLD, 1);
@@ -46,8 +47,7 @@ int main(int argc, char *argv[])
         if (rank == source) {
             err = MPI_Send(buf, ShortLen, MPI_INT, dest, 0, MPI_COMM_WORLD);
             errs += checkOk(err, "short");
-        }
-        else if (rank == dest) {
+        } else if (rank == dest) {
             err = MPI_Recv(buf, ShortLen - 1, MPI_INT, source, 0, MPI_COMM_WORLD, &status);
             errs += checkTruncError(err, "short");
         }
@@ -56,8 +56,7 @@ int main(int argc, char *argv[])
             MPI_Sendrecv(MPI_BOTTOM, 0, MPI_INT, dest, 1,
                          MPI_BOTTOM, 0, MPI_INT, dest, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             MPI_Send(buf, ShortLen, MPI_INT, dest, 2, MPI_COMM_WORLD);
-        }
-        else if (rank == dest) {
+        } else if (rank == dest) {
             MPI_Request req;
             err = MPI_Irecv(buf, ShortLen - 1, MPI_INT, source, 2, MPI_COMM_WORLD, &req);
             errs += checkOk(err, "irecv-short");
@@ -71,8 +70,7 @@ int main(int argc, char *argv[])
         if (rank == source) {
             err = MPI_Send(buf, MidLen, MPI_INT, dest, 0, MPI_COMM_WORLD);
             errs += checkOk(err, "medium");
-        }
-        else if (rank == dest) {
+        } else if (rank == dest) {
             err = MPI_Recv(buf, MidLen - 1, MPI_INT, source, 0, MPI_COMM_WORLD, &status);
             errs += checkTruncError(err, "medium");
         }
@@ -81,8 +79,7 @@ int main(int argc, char *argv[])
         if (rank == source) {
             err = MPI_Send(buf, LongLen, MPI_INT, dest, 0, MPI_COMM_WORLD);
             errs += checkOk(err, "long");
-        }
-        else if (rank == dest) {
+        } else if (rank == dest) {
             err = MPI_Recv(buf, LongLen - 1, MPI_INT, source, 0, MPI_COMM_WORLD, &status);
             errs += checkTruncError(err, "long");
         }
@@ -91,9 +88,8 @@ int main(int argc, char *argv[])
     free(buf);
     MTest_Finalize(errs);
 
-    MPI_Finalize();
 
-    return 0;
+    return MTestReturnValue(errs);
 }
 
 
@@ -106,8 +102,7 @@ int checkTruncError(int err, const char *msg)
         errs++;
         fprintf(stderr, "MPI_Recv (%s) returned MPI_SUCCESS instead of truncated message\n", msg);
         fflush(stderr);
-    }
-    else {
+    } else {
         MPI_Error_class(err, &errclass);
         if (errclass != MPI_ERR_TRUNCATE) {
             errs++;

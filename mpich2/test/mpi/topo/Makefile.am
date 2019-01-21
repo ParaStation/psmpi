@@ -22,12 +22,11 @@ noinst_PROGRAMS = \
     dims2         \
     dims3         \
     dims4         \
+    dims5         \
     graphmap1     \
     topotest      \
     topodup       \
     graphcr       \
     graphcr2      \
     distgraph1    \
-    dgraph_unwgt  \
-    neighb_coll
-
+    dgraph_unwgt

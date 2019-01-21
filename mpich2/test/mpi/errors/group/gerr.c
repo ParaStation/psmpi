@@ -33,8 +33,7 @@ int main(int argc, char *argv[])
     if (rc == MPI_SUCCESS) {
         errs++;
         printf("Did not detect invalid handle (comm) in group_incl\n");
-    }
-    else {
+    } else {
         if (verbose) {
             MPI_Error_string(rc, str, &slen);
             printf("Found expected error; message is: %s\n", str);
@@ -42,6 +41,5 @@ int main(int argc, char *argv[])
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

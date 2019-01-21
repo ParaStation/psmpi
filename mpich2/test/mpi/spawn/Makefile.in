@@ -105,7 +105,7 @@ noinst_PROGRAMS = namepub$(EXEEXT) spawn1$(EXEEXT) spawninfo1$(EXEEXT) \
 	spaiccreate2$(EXEEXT) disconnect$(EXEEXT) disconnect2$(EXEEXT) \
 	disconnect3$(EXEEXT) pgroup_connect_test$(EXEEXT) \
 	pgroup_intercomm_test$(EXEEXT) concurrent_spawns$(EXEEXT) \
-	spawn-rootargs$(EXEEXT)
+	spawn_rootargs$(EXEEXT)
 subdir = spawn
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -129,44 +129,37 @@ concurrent_spawns_SOURCES = concurrent_spawns.c
 concurrent_spawns_OBJECTS = concurrent_spawns.$(OBJEXT)
 concurrent_spawns_LDADD = $(LDADD)
 concurrent_spawns_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 disconnect_SOURCES = disconnect.c
 disconnect_OBJECTS = disconnect.$(OBJEXT)
 disconnect_LDADD = $(LDADD)
 disconnect_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 disconnect2_SOURCES = disconnect2.c
 disconnect2_OBJECTS = disconnect2.$(OBJEXT)
 disconnect2_LDADD = $(LDADD)
 disconnect2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 disconnect3_SOURCES = disconnect3.c
 disconnect3_OBJECTS = disconnect3.$(OBJEXT)
 disconnect3_LDADD = $(LDADD)
 disconnect3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 disconnect_reconnect_SOURCES = disconnect_reconnect.c
 disconnect_reconnect_OBJECTS = disconnect_reconnect.$(OBJEXT)
 disconnect_reconnect_LDADD = $(LDADD)
 disconnect_reconnect_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 disconnect_reconnect2_SOURCES = disconnect_reconnect2.c
 disconnect_reconnect2_OBJECTS = disconnect_reconnect2.$(OBJEXT)
 disconnect_reconnect2_LDADD = $(LDADD)
 disconnect_reconnect2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 disconnect_reconnect3_SOURCES = disconnect_reconnect3.c
 disconnect_reconnect3_OBJECTS = disconnect_reconnect3.$(OBJEXT)
 disconnect_reconnect3_LDADD = $(LDADD)
 disconnect_reconnect3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 join_SOURCES = join.c
 join_OBJECTS = join.$(OBJEXT)
 join_DEPENDENCIES = $(LDADD)
@@ -174,122 +167,102 @@ multiple_ports_SOURCES = multiple_ports.c
 multiple_ports_OBJECTS = multiple_ports.$(OBJEXT)
 multiple_ports_LDADD = $(LDADD)
 multiple_ports_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 multiple_ports2_SOURCES = multiple_ports2.c
 multiple_ports2_OBJECTS = multiple_ports2.$(OBJEXT)
 multiple_ports2_LDADD = $(LDADD)
 multiple_ports2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 namepub_SOURCES = namepub.c
 namepub_OBJECTS = namepub.$(OBJEXT)
 namepub_LDADD = $(LDADD)
 namepub_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 pgroup_connect_test_SOURCES = pgroup_connect_test.c
 pgroup_connect_test_OBJECTS = pgroup_connect_test.$(OBJEXT)
 pgroup_connect_test_LDADD = $(LDADD)
 pgroup_connect_test_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 pgroup_intercomm_test_SOURCES = pgroup_intercomm_test.c
 pgroup_intercomm_test_OBJECTS = pgroup_intercomm_test.$(OBJEXT)
 pgroup_intercomm_test_LDADD = $(LDADD)
 pgroup_intercomm_test_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 selfconacc_SOURCES = selfconacc.c
 selfconacc_OBJECTS = selfconacc.$(OBJEXT)
 selfconacc_LDADD = $(LDADD)
 selfconacc_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 spaconacc_SOURCES = spaconacc.c
 spaconacc_OBJECTS = spaconacc.$(OBJEXT)
 spaconacc_LDADD = $(LDADD)
 spaconacc_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 spaconacc2_SOURCES = spaconacc2.c
 spaconacc2_OBJECTS = spaconacc2.$(OBJEXT)
 spaconacc2_LDADD = $(LDADD)
 spaconacc2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 spaiccreate_SOURCES = spaiccreate.c
 spaiccreate_OBJECTS = spaiccreate.$(OBJEXT)
 spaiccreate_LDADD = $(LDADD)
 spaiccreate_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 spaiccreate2_SOURCES = spaiccreate2.c
 spaiccreate2_OBJECTS = spaiccreate2.$(OBJEXT)
 spaiccreate2_LDADD = $(LDADD)
 spaiccreate2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-spawn_rootargs_SOURCES = spawn-rootargs.c
-spawn_rootargs_OBJECTS = spawn-rootargs.$(OBJEXT)
-spawn_rootargs_LDADD = $(LDADD)
-spawn_rootargs_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 spawn1_SOURCES = spawn1.c
 spawn1_OBJECTS = spawn1.$(OBJEXT)
 spawn1_LDADD = $(LDADD)
 spawn1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 spawn2_SOURCES = spawn2.c
 spawn2_OBJECTS = spawn2.$(OBJEXT)
 spawn2_LDADD = $(LDADD)
 spawn2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+spawn_rootargs_SOURCES = spawn_rootargs.c
+spawn_rootargs_OBJECTS = spawn_rootargs.$(OBJEXT)
+spawn_rootargs_LDADD = $(LDADD)
+spawn_rootargs_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 spawnargv_SOURCES = spawnargv.c
 spawnargv_OBJECTS = spawnargv.$(OBJEXT)
 spawnargv_LDADD = $(LDADD)
 spawnargv_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 spawninfo1_SOURCES = spawninfo1.c
 spawninfo1_OBJECTS = spawninfo1.$(OBJEXT)
 spawninfo1_LDADD = $(LDADD)
 spawninfo1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 spawnintra_SOURCES = spawnintra.c
 spawnintra_OBJECTS = spawnintra.$(OBJEXT)
 spawnintra_LDADD = $(LDADD)
 spawnintra_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 spawnmanyarg_SOURCES = spawnmanyarg.c
 spawnmanyarg_OBJECTS = spawnmanyarg.$(OBJEXT)
 spawnmanyarg_LDADD = $(LDADD)
 spawnmanyarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 spawnminfo1_SOURCES = spawnminfo1.c
 spawnminfo1_OBJECTS = spawnminfo1.$(OBJEXT)
 spawnminfo1_LDADD = $(LDADD)
 spawnminfo1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 spawnmult2_SOURCES = spawnmult2.c
 spawnmult2_OBJECTS = spawnmult2.$(OBJEXT)
 spawnmult2_LDADD = $(LDADD)
 spawnmult2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 taskmaster_SOURCES = taskmaster.c
 taskmaster_OBJECTS = taskmaster.$(OBJEXT)
 taskmaster_LDADD = $(LDADD)
 taskmaster_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -323,17 +296,17 @@ SOURCES = concurrent_spawns.c disconnect.c disconnect2.c disconnect3.c \
 	disconnect_reconnect3.c join.c multiple_ports.c \
 	multiple_ports2.c namepub.c pgroup_connect_test.c \
 	pgroup_intercomm_test.c selfconacc.c spaconacc.c spaconacc2.c \
-	spaiccreate.c spaiccreate2.c spawn-rootargs.c spawn1.c \
-	spawn2.c spawnargv.c spawninfo1.c spawnintra.c spawnmanyarg.c \
-	spawnminfo1.c spawnmult2.c taskmaster.c
+	spaiccreate.c spaiccreate2.c spawn1.c spawn2.c \
+	spawn_rootargs.c spawnargv.c spawninfo1.c spawnintra.c \
+	spawnmanyarg.c spawnminfo1.c spawnmult2.c taskmaster.c
 DIST_SOURCES = concurrent_spawns.c disconnect.c disconnect2.c \
 	disconnect3.c disconnect_reconnect.c disconnect_reconnect2.c \
 	disconnect_reconnect3.c join.c multiple_ports.c \
 	multiple_ports2.c namepub.c pgroup_connect_test.c \
 	pgroup_intercomm_test.c selfconacc.c spaconacc.c spaconacc2.c \
-	spaiccreate.c spaiccreate2.c spawn-rootargs.c spawn1.c \
-	spawn2.c spawnargv.c spawninfo1.c spawnintra.c spawnmanyarg.c \
-	spawnminfo1.c spawnmult2.c taskmaster.c
+	spaiccreate.c spaiccreate2.c spawn1.c spawn2.c \
+	spawn_rootargs.c spawnargv.c spawninfo1.c spawnintra.c \
+	spawnmanyarg.c spawnminfo1.c spawnmult2.c taskmaster.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -384,6 +357,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -539,6 +513,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -548,11 +523,14 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # AM_CPPFLAGS are used for C++ code as well
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+
+# Add libdtpools support
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_builddir)/dtpoos/include \
+	-I$(top_srcdir)/dtpools/include
 LDADD = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-CLEANFILES = summary.xml summary.tap summary.junit.xml
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
 EXTRA_DIST = testlist
 join_LDADD = $(LDADD) @socklib@ @nslib@
 all: all-am
@@ -667,10 +645,6 @@ spaiccreate2$(EXEEXT): $(spaiccreate2_OBJECTS) $(spaiccreate2_DEPENDENCIES) $(EX
 	@rm -f spaiccreate2$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(spaiccreate2_OBJECTS) $(spaiccreate2_LDADD) $(LIBS)
 
-spawn-rootargs$(EXEEXT): $(spawn_rootargs_OBJECTS) $(spawn_rootargs_DEPENDENCIES) $(EXTRA_spawn_rootargs_DEPENDENCIES) 
-	@rm -f spawn-rootargs$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(spawn_rootargs_OBJECTS) $(spawn_rootargs_LDADD) $(LIBS)
-
 spawn1$(EXEEXT): $(spawn1_OBJECTS) $(spawn1_DEPENDENCIES) $(EXTRA_spawn1_DEPENDENCIES) 
 	@rm -f spawn1$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(spawn1_OBJECTS) $(spawn1_LDADD) $(LIBS)
@@ -678,6 +652,10 @@ spawn1$(EXEEXT): $(spawn1_OBJECTS) $(spawn1_DEPENDENCIES) $(EXTRA_spawn1_DEPENDE
 spawn2$(EXEEXT): $(spawn2_OBJECTS) $(spawn2_DEPENDENCIES) $(EXTRA_spawn2_DEPENDENCIES) 
 	@rm -f spawn2$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(spawn2_OBJECTS) $(spawn2_LDADD) $(LIBS)
+
+spawn_rootargs$(EXEEXT): $(spawn_rootargs_OBJECTS) $(spawn_rootargs_DEPENDENCIES) $(EXTRA_spawn_rootargs_DEPENDENCIES) 
+	@rm -f spawn_rootargs$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(spawn_rootargs_OBJECTS) $(spawn_rootargs_LDADD) $(LIBS)
 
 spawnargv$(EXEEXT): $(spawnargv_OBJECTS) $(spawnargv_DEPENDENCIES) $(EXTRA_spawnargv_DEPENDENCIES) 
 	@rm -f spawnargv$(EXEEXT)
@@ -731,9 +709,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spaconacc2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spaiccreate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spaiccreate2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn-rootargs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_rootargs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawnargv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawninfo1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawnintra.Po@am__quote@
@@ -965,16 +943,15 @@ uninstall-am:
 $(top_builddir)/util/mtest.$(OBJEXT): $(top_srcdir)/util/mtest.c
 	(cd $(top_builddir)/util && $(MAKE) mtest.$(OBJEXT))
 
-$(top_builddir)/util/mtest_datatype.$(OBJEXT): $(top_srcdir)/util/mtest_datatype.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype.$(OBJEXT))
+$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+	(cd $(top_builddir)/dtpools && $(MAKE))
 
-$(top_builddir)/util/mtest_datatype_gen.$(OBJEXT): $(top_srcdir)/util/mtest_datatype_gen.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype_gen.$(OBJEXT))
+SUMMARY_BASENAME ?= summary
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
-		-mpiexec=${MPIEXEC} -xmlfile=summary.xml \
-		-tapfile=summary.tap -junitfile=summary.junit.xml
+		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
+		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

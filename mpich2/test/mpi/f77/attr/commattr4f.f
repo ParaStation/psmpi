@@ -1,3 +1,7 @@
+C -*- Mode: Fortran; -*- 
+C
+C  (C) 2015 by Argonne National Laboratory.
+C      See COPYRIGHT in top-level directory.
 C
       program main
 C
@@ -81,7 +85,6 @@ C
      $     key, ierr)
       call mpi_comm_free_keyval(key,
      $     ierr)
-      call mpi_finalize(ierr)
 
       if (errs .eq. 0) then
          print *, " No Errors"

@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/io/setviewcurf.f with f77tof90
+! This file created from f77/io/setviewcurf.f with f77tof90
 ! -*- Mode: Fortran; -*-
 !
 !  (C) 2003 by Argonne National Laboratory.
@@ -114,6 +114,4 @@
 
       call MTest_Finalize( errs )
 
-      call MPI_Finalize( ierr )
       end
-

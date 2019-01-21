@@ -6,22 +6,22 @@
 
 #include "mpidimpl.h"
 
-int (*MPIDI_Anysource_iprobe_fn)(int tag, MPID_Comm * comm, int context_offset, int *flag,
+int (*MPIDI_Anysource_iprobe_fn)(int tag, MPIR_Comm * comm, int context_offset, int *flag,
                                  MPI_Status * status) = NULL;
 
 #undef FUNCNAME
 #define FUNCNAME MPID_Iprobe
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_Iprobe(int source, int tag, MPID_Comm *comm, int context_offset, 
+int MPID_Iprobe(int source, int tag, MPIR_Comm *comm, int context_offset,
 		int *flag, MPI_Status *status)
 {
     const int context = comm->recvcontext_id + context_offset;
     int found = 0;
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_IPROBE);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_IPROBE);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_IPROBE);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_IPROBE);
 
     if (source == MPI_PROC_NULL)
     {
@@ -34,8 +34,8 @@ int MPID_Iprobe(int source, int tag, MPID_Comm *comm, int context_offset,
 
     /* Check to make sure the communicator hasn't already been revoked */
     if (comm->revoked &&
-            MPIR_AGREE_TAG != MPIR_TAG_MASK_ERROR_BITS(tag & ~MPIR_Process.tagged_coll_mask) &&
-            MPIR_SHRINK_TAG != MPIR_TAG_MASK_ERROR_BITS(tag & ~MPIR_Process.tagged_coll_mask)) {
+            MPIR_AGREE_TAG != MPIR_TAG_MASK_ERROR_BITS(tag & ~MPIR_TAG_COLL_BIT) &&
+            MPIR_SHRINK_TAG != MPIR_TAG_MASK_ERROR_BITS(tag & ~MPIR_TAG_COLL_BIT)) {
         MPIR_ERR_SETANDJUMP(mpi_errno,MPIX_ERR_REVOKED,"**revoked");
     }
 
@@ -109,7 +109,7 @@ int MPID_Iprobe(int source, int tag, MPID_Comm *comm, int context_offset,
     *flag = found;
 
  fn_exit:    
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_IPROBE);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_IPROBE);
     return mpi_errno;
  fn_fail:
     goto fn_exit;

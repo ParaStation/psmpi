@@ -22,9 +22,8 @@ static HYD_status process_mfile_token(char *token, int newline, struct HYD_node 
         entry_count = 1;
         if (hostname)
             HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "unexpected token %s\n", token);
-        hostname = HYDU_strdup(token);
-    }
-    else {      /* Not a new line */
+        hostname = MPL_strdup(token);
+    } else {    /* Not a new line */
         if (entry_count != 2)
             goto fn_exit;
 
@@ -56,8 +55,7 @@ HYD_status HYDT_bscd_sge_query_node_list(struct HYD_node **node_list)
     if (hostfile == NULL) {
         *node_list = NULL;
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "No SGE nodefile found\n");
-    }
-    else {
+    } else {
         status = HYDU_parse_hostfile(hostfile, node_list, process_mfile_token);
         HYDU_ERR_POP(status, "error parsing hostfile\n");
     }

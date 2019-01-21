@@ -1,40 +1,39 @@
-.TH MPI_Waitsome 3 "11/9/2015" " " "MPI"
+.TH MPI_Waitsome 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Waitsome \-  Waits for some given MPI Requests to complete 
 .SH SYNOPSIS
 .nf
-int MPI_Waitsome(int incount, MPI_Request array_of_requests[], 
-                int *outcount, int array_of_indices[],
-                MPI_Status array_of_statuses[])
+int MPI_Waitsome(int incount, MPI_Request array_of_requests[],
+                 int *outcount, int array_of_indices[], MPI_Status array_of_statuses[])
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B incount 
-- length of array_of_requests (integer) 
+- length of array_of_requests (integer)
 .PD 1
 .PD 0
 .TP
 .B array_of_requests 
-- array of requests (array of handles) 
+- array of requests (array of handles)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B outcount 
-- number of completed requests (integer) 
+- number of completed requests (integer)
 .PD 1
 .PD 0
 .TP
 .B array_of_indices 
-- array of indices of operations that 
-completed (array of integers) 
+- array of indices of operations that
+completed (array of integers)
 .PD 1
 .PD 0
 .TP
 .B array_of_statuses 
-- array of status objects for 
+- array of status objects for
 operations that completed (array of Status).  May be 
 .I MPI_STATUSES_IGNORE
 \&.

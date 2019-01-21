@@ -1,4 +1,4 @@
-.TH MPI_Dist_graph_create_adjacent 3 "11/9/2015" " " "MPI"
+.TH MPI_Dist_graph_create_adjacent 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Dist_graph_create_adjacent \-  returns a handle to a new communicator to which the distributed graph topology information is attached. 
 .SH SYNOPSIS
@@ -8,7 +8,7 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
                                    const int sourceweights[],
                                    int outdegree, const int destinations[],
                                    const int destweights[],
-                                   MPI_Info info, int reorder, MPI_Comm *comm_dist_graph)
+                                   MPI_Info info, int reorder, MPI_Comm * comm_dist_graph)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -47,7 +47,7 @@ source (array of non-negative integers)
 .PD 0
 .TP
 .B destweights 
-- weights of the edges out of the calling process 
+- weights of the edges out of the calling process
 (array of non-negative integers or MPI_UNWEIGHTED)
 .PD 1
 .PD 0

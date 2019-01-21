@@ -1,0 +1,20 @@
+<dir>
+<file name="barrier_intra_dissemination.c" info="1542820949"/>
+<file name="barrier_intra_smp.c" info="1542820949"/>
+<file name="barrier_allcomm_nb.c" info="1542820949"/>
+<file name="barrier.c" info="1542820949"/>
+<file name="barrier_inter_bcast.c" info="1542820949"/>
+</dir>
+<data>
+<fileinfo name="barrier_intra_dissemination.c">
+</fileinfo>
+<fileinfo name="barrier_intra_smp.c">
+</fileinfo>
+<fileinfo name="barrier_allcomm_nb.c">
+</fileinfo>
+<fileinfo name="barrier.c">
+MPID_STATE_MPI_BARRIER MPI_Barrier
+</fileinfo>
+<fileinfo name="barrier_inter_bcast.c">
+</fileinfo>
+</data>

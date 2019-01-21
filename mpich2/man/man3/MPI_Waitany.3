@@ -1,21 +1,20 @@
-.TH MPI_Waitany 3 "11/9/2015" " " "MPI"
+.TH MPI_Waitany 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Waitany \-  Waits for any specified MPI Request to complete 
 .SH SYNOPSIS
 .nf
-int MPI_Waitany(int count, MPI_Request array_of_requests[], int *indx,
-               MPI_Status *status)
+int MPI_Waitany(int count, MPI_Request array_of_requests[], int *indx, MPI_Status * status)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B count 
-- list length (integer) 
+- list length (integer)
 .PD 1
 .PD 0
 .TP
 .B array_of_requests 
-- array of requests (array of handles) 
+- array of requests (array of handles)
 .PD 1
 
 .SH OUTPUT PARAMETERS

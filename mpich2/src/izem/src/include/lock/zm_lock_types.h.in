@@ -1,0 +1,107 @@
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
+/*
+ * See COPYRIGHT in top-level directory.
+ */
+
+#ifndef _ZM_LOCK_TYPES_H
+#define _ZM_LOCK_TYPES_H
+
+#if !defined(_GNU_SOURCE)
+#define _GNU_SOURCE
+#endif
+#include <stdlib.h>
+#include <assert.h>
+#include <errno.h>
+#include <pthread.h>
+#include "common/zm_common.h"
+
+#define ZM_LOCKED 1
+#define ZM_UNLOCKED 0
+
+typedef struct zm_ticket zm_ticket_t;
+
+struct zm_ticket {
+    zm_atomic_uint_t next_ticket;
+    zm_atomic_uint_t now_serving;
+};
+
+/* MCS */
+typedef zm_ptr_t zm_mcs_t;
+typedef struct zm_mcs_qnode zm_mcs_qnode_t;
+struct zm_mcs_qnode {
+    zm_atomic_uint_t status;
+    zm_atomic_ptr_t next;
+};
+
+
+/* Context Saving MCS */
+typedef struct zm_mmcs zm_mmcs_t;
+
+struct zm_mmcs {
+    zm_atomic_ptr_t lock;
+    zm_mcs_qnode_t* cur_ctx __attribute__((aligned(64)));
+};
+
+/* HMCS */
+
+typedef zm_ptr_t zm_hmcs_t;
+
+/* Two-Level Priority */
+#define ZM_TICKET   1
+#define ZM_MCS      2
+#define ZM_HMCS     3
+
+#define ZM_TLP_HIGH_P @ZM_TLP_HIGH_P@
+#define ZM_TLP_LOW_P @ZM_TLP_LOW_P@
+
+#define ZM_STATUS_FREE    0
+#define ZM_STATUS_REQUEST 1
+#define ZM_STATUS_GRANTED 2
+
+typedef struct zm_tlp zm_tlp_t;
+
+struct zm_tlp {
+#if (ZM_TLP_HIGH_P == ZM_TICKET)
+   zm_ticket_t high_p __attribute__((aligned(64)));
+#elif (ZM_TLP_HIGH_P == ZM_MCS)
+   zm_mcs_t high_p __attribute__((aligned(64)));
+#elif (ZM_TLP_HIGH_P == ZM_HMCS)
+   zm_hmcs_t high_p __attribute__((aligned(64)));
+#endif
+   int go_straight;
+   int low_p_acq __attribute__((aligned(64)));
+   zm_ticket_t filter __attribute__((aligned(64)));
+#if (ZM_TLP_LOW_P == ZM_TICKET)
+   zm_ticket_t low_p __attribute__((aligned(64)));
+#elif (ZM_TLP_LOW_P == ZM_MCS)
+   zm_mcs_t low_p __attribute__((aligned(64)));
+#elif (ZM_TLP_LOW_P == ZM_HMCS)
+   zm_hmcs_t low_p __attribute__((aligned(64)));
+#endif
+};
+
+typedef struct zm_mcsp zm_mcsp_t;
+
+struct zm_mcsp {
+    zm_mcs_t high_p __attribute__((aligned(64)));
+    int go_straight;
+    int low_p_acq __attribute__((aligned(64)));
+    zm_ticket_t filter __attribute__((aligned(64)));
+    zm_mcs_t low_p __attribute__((aligned(64)));
+};
+
+#include "cond/zm_cond_types.h"
+struct zm_hmpr_pnode {
+    unsigned p; /* priority */
+    zm_mcs_qnode_t *qnode;
+};
+
+struct zm_hmpr {
+    zm_hmcs_t lock;
+    int go_straight;
+    zm_mcs_qnode_t znode;
+    int low_p_acq __attribute__((aligned(64)));
+    zm_mcs_t waitq __attribute__((aligned(64)));
+};
+
+#endif /* _IZEM_LOCK_TYPES_H */

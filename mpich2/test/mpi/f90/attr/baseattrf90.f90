@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/attr/baseattrf.f with f77tof90
+! This file created from f77/attr/baseattrf.f with f77tof90
 ! -*- Mode: Fortran; -*- 
 !
 !  (C) 2003 by Argonne National Laboratory.
@@ -60,4 +60,3 @@
       call MPI_Finalize( ierr )
 
       end
-

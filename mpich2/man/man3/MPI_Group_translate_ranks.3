@@ -1,16 +1,16 @@
-.TH MPI_Group_translate_ranks 3 "11/9/2015" " " "MPI"
+.TH MPI_Group_translate_ranks 3 "11/21/2018" " " "MPI"
 .SH NAME
-MPI_Group_translate_ranks \-  Translates the ranks of processes in one group to  those in another group 
+MPI_Group_translate_ranks \-  Translates the ranks of processes in one group to those in another group 
 .SH SYNOPSIS
 .nf
 int MPI_Group_translate_ranks(MPI_Group group1, int n, const int ranks1[],
-                            MPI_Group group2, int ranks2[])
+                              MPI_Group group2, int ranks2[])
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B group1 
-- group1 (handle) 
+- group1 (handle)
 .PD 1
 .PD 0
 .TP
@@ -19,7 +19,7 @@ int MPI_Group_translate_ranks(MPI_Group group1, int n, const int ranks1[],
 .I ranks1
 and 
 .I ranks2
-arrays (integer) 
+arrays (integer)
 .PD 1
 .PD 0
 .TP
@@ -31,7 +31,7 @@ arrays (integer)
 .PD 0
 .TP
 .B group2 
-- group2 (handle) 
+- group2 (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
@@ -40,8 +40,8 @@ arrays (integer)
 .B ranks2 
 - array of corresponding ranks in group2,  
 .I MPI_UNDEFINED
-when no 
-correspondence exists. 
+when no
+correspondence exists.
 .PD 1
 
 As a special case (see the MPI-2 errata), if the input rank is

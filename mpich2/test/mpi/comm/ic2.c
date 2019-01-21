@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
+#include "mpitest.h"
 
 int main(int argc, char **argv)
 {
@@ -26,7 +27,7 @@ int main(int argc, char **argv)
     c0 = c1 = ic = MPI_COMM_NULL;
     g0 = g1 = gworld = MPI_GROUP_NULL;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -61,8 +62,7 @@ int main(int argc, char **argv)
     if (rank == a || rank == b) {
         remote_leader = c;
         MPI_Intercomm_create(c0, 0, MPI_COMM_WORLD, remote_leader, tag, &ic);
-    }
-    else if (rank == c || rank == d) {
+    } else if (rank == c || rank == d) {
         remote_leader = a;
         MPI_Intercomm_create(c1, 0, MPI_COMM_WORLD, remote_leader, tag, &ic);
     }
@@ -78,17 +78,7 @@ int main(int argc, char **argv)
     if (ic != MPI_COMM_NULL)
         MPI_Comm_free(&ic);
 
+    MTest_Finalize(errs);
 
-    MPI_Reduce((rank == 0 ? MPI_IN_PLACE : &errs), &errs, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-    if (rank == 0) {
-        if (errs) {
-            printf("found %d errors\n", errs);
-        }
-        else {
-            printf(" No errors\n");
-        }
-    }
-    MPI_Finalize();
-
-    return 0;
+    return MTestReturnValue(errs);
 }

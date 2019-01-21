@@ -15,7 +15,7 @@ HYD_status HYDU_list_append_strlist(char **src_strlist, char **dest_strlist)
 
     i = HYDU_strlist_lastidx(dest_strlist);
     for (j = 0; src_strlist[j]; j++)
-        dest_strlist[i++] = HYDU_strdup(src_strlist[j]);
+        dest_strlist[i++] = MPL_strdup(src_strlist[j]);
     dest_strlist[i++] = NULL;
 
     HYDU_FUNC_EXIT();
@@ -46,7 +46,7 @@ void HYDU_free_strlist(char **strlist)
     HYDU_FUNC_ENTER();
 
     for (arg = 0; strlist[arg]; arg++)
-        HYDU_FREE(strlist[arg]);
+        MPL_free(strlist[arg]);
 
     HYDU_FUNC_EXIT();
 }
@@ -63,12 +63,12 @@ HYD_status HYDU_str_alloc_and_join(char **strlist, char **strjoin)
         len += strlen(strlist[i]);
     }
 
-    HYDU_MALLOC(*strjoin, char *, len + 1, status);
+    HYDU_MALLOC_OR_JUMP(*strjoin, char *, len + 1, status);
     count = 0;
     (*strjoin)[0] = 0;
 
     for (i = 0; strlist[i] != NULL; i++) {
-        HYDU_snprintf(*strjoin + count, len - count + 1, "%s", strlist[i]);
+        MPL_snprintf(*strjoin + count, len - count + 1, "%s", strlist[i]);
         count += strlen(strlist[i]);
     }
 
@@ -91,13 +91,14 @@ HYD_status HYDU_strsplit(char *str, char **str1, char **str2, char sep)
     if (str == NULL)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "%s", "");
 
-    *str1 = HYDU_strdup(str);
+    *str1 = MPL_strdup(str);
+    HYDU_ERR_CHKANDJUMP(status, NULL == *str1, HYD_INTERNAL_ERROR, "%s", "");
     for (i = 0; (*str1)[i] && ((*str1)[i] != sep); i++);
 
     if ((*str1)[i] == 0)        /* End of the string */
         *str2 = NULL;
     else {
-        *str2 = HYDU_strdup(&((*str1)[i + 1]));
+        *str2 = MPL_strdup(&((*str1)[i + 1]));
         (*str1)[i] = 0;
     }
 
@@ -118,10 +119,10 @@ HYD_status HYDU_strdup_list(char *src[], char **dest[])
     HYDU_FUNC_ENTER();
 
     count = HYDU_strlist_lastidx(src);
-    HYDU_MALLOC(*dest, char **, (count + 1) * sizeof(char *), status);
+    HYDU_MALLOC_OR_JUMP(*dest, char **, (count + 1) * sizeof(char *), status);
 
     for (i = 0; i < count; i++)
-        (*dest)[i] = HYDU_strdup(src[i]);
+        (*dest)[i] = MPL_strdup(src[i]);
     (*dest)[i] = NULL;
 
   fn_exit:
@@ -148,13 +149,13 @@ char *HYDU_size_t_to_str(size_t x)
     }
     len++;
 
-    HYDU_MALLOC(str, char *, len, status);
+    HYDU_MALLOC_OR_JUMP(str, char *, len, status);
     HYDU_ERR_POP(status, "unable to allocate memory\n");
 
     for (i = 0; i < len; i++)
         str[i] = '0';
 
-    HYDU_snprintf(str, len, "%llu", (unsigned long long) x);
+    MPL_snprintf(str, len, "%llu", (unsigned long long) x);
 
   fn_exit:
     HYDU_FUNC_EXIT();
@@ -183,8 +184,7 @@ char *HYDU_int_to_str_pad(int x, int maxlen)
     if (x < 0) {
         len++;
         y = -x;
-    }
-    else
+    } else
         y = x;
 
     while (y >= max) {
@@ -197,13 +197,13 @@ char *HYDU_int_to_str_pad(int x, int maxlen)
     else
         actual_len = maxlen + 1;
 
-    HYDU_MALLOC(str, char *, actual_len, status);
+    HYDU_MALLOC_OR_JUMP(str, char *, actual_len, status);
     HYDU_ERR_POP(status, "unable to allocate memory\n");
 
     for (i = 0; i < actual_len; i++)
         str[i] = '0';
 
-    HYDU_snprintf(str + actual_len - len - 1, len + 1, "%d", x);
+    MPL_snprintf(str + actual_len - len - 1, len + 1, "%d", x);
 
   fn_exit:
     HYDU_FUNC_EXIT();
@@ -231,7 +231,7 @@ char **HYDU_str_to_strlist(char *str)
 
     HYDU_FUNC_ENTER();
 
-    HYDU_MALLOC(strlist, char **, HYD_NUM_TMP_STRINGS * sizeof(char *), status);
+    HYDU_MALLOC_OR_JUMP(strlist, char **, HYD_NUM_TMP_STRINGS * sizeof(char *), status);
     if (!strlist)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "Unable to allocate mem for strlist\n");
 
@@ -246,7 +246,7 @@ char **HYDU_str_to_strlist(char *str)
         if (argc >= HYD_NUM_TMP_STRINGS)
             HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "too many arguments in line\n");
 
-        HYDU_MALLOC(strlist[argc], char *, HYD_TMP_STRLEN, status);
+        HYDU_MALLOC_OR_JUMP(strlist[argc], char *, HYD_TMP_STRLEN, status);
 
         /* Copy till you hit a space */
         i = 0;
@@ -261,7 +261,7 @@ char **HYDU_str_to_strlist(char *str)
         }
     }
     if (strlist[argc])
-        HYDU_FREE(strlist[argc]);
+        MPL_free(strlist[argc]);
     strlist[argc] = NULL;
 
   fn_exit:

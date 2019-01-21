@@ -274,5 +274,5 @@ FORT_DLL_SPEC void FORT_CALL mpi_testall_ ( MPI_Fint *v1, MPI_Fint v2[], MPI_Fin
 
     if (v4 == MPI_F_STATUSES_IGNORE) { v4 = (MPI_Fint *)MPI_STATUSES_IGNORE; }
     *ierr = MPI_Testall( (int)*v1, (MPI_Request *)(v2), &l3, (MPI_Status *)v4 );
-    if (*ierr == MPI_SUCCESS) *v3 = MPIR_TO_FLOG(l3);
+    if (*ierr == MPI_SUCCESS) *v3 = MPII_TO_FLOG(l3);
 }

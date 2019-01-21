@@ -6,8 +6,6 @@
 
 #include "mpidimpl.h"
 
-/* FIXME: HOMOGENEOUS SYSTEMS ONLY -- no data conversion is performed */
-
 /* FIXME: The routines MPID_Isend, MPID_Issend, MPID_Irsend are nearly 
    identical. It would be better if these did roughly:
 
@@ -28,37 +26,37 @@
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
-	       int tag, MPID_Comm * comm, int context_offset,
-               MPID_Request ** request)
+	       int tag, MPIR_Comm * comm, int context_offset,
+               MPIR_Request ** request)
 {
-    MPIDI_msg_sz_t data_sz;
+    intptr_t data_sz;
     int dt_contig;
     MPI_Aint dt_true_lb;
-    MPID_Datatype * dt_ptr;
-    MPID_Request * sreq;
+    MPIR_Datatype* dt_ptr;
+    MPIR_Request * sreq;
     MPIDI_VC_t * vc=0;
 #if defined(MPID_USE_SEQUENCE_NUMBERS)
     MPID_Seqnum_t seqnum;
 #endif    
     int eager_threshold = -1;
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_ISEND);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_ISEND);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_ISEND);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_ISEND);
 
-    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
+    MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
                   "rank=%d, tag=%d, context=%d", 
                   rank, tag, comm->context_id + context_offset));
 
     /* Check to make sure the communicator hasn't already been revoked */
     if (comm->revoked &&
-            MPIR_AGREE_TAG != MPIR_TAG_MASK_ERROR_BITS(tag & ~MPIR_Process.tagged_coll_mask) &&
-            MPIR_SHRINK_TAG != MPIR_TAG_MASK_ERROR_BITS(tag & ~MPIR_Process.tagged_coll_mask)) {
-        MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"Communicator revoked. MPID_ISEND returning");
+            MPIR_AGREE_TAG != MPIR_TAG_MASK_ERROR_BITS(tag & ~MPIR_TAG_COLL_BIT) &&
+            MPIR_SHRINK_TAG != MPIR_TAG_MASK_ERROR_BITS(tag & ~MPIR_TAG_COLL_BIT)) {
+        MPL_DBG_MSG(MPIDI_CH3_DBG_OTHER,VERBOSE,"Communicator revoked. MPID_ISEND returning");
         MPIR_ERR_SETANDJUMP(mpi_errno,MPIX_ERR_REVOKED,"**revoked");
     }
     
-    if (rank == comm->rank && comm->comm_kind != MPID_INTERCOMM)
+    if (rank == comm->rank && comm->comm_kind != MPIR_COMM_KIND__INTERCOMM)
     {
 	mpi_errno = MPIDI_Isend_self(buf, count, datatype, rank, tag, comm, 
 			    context_offset, MPIDI_REQUEST_TYPE_SEND, &sreq);
@@ -83,8 +81,8 @@ int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank
 
     if (rank == MPI_PROC_NULL)
     {
-	MPIU_Object_set_ref(sreq, 1);
-        MPID_cc_set(&sreq->cc, 0);
+	MPIR_Object_set_ref(sreq, 1);
+        MPIR_cc_set(&sreq->cc, 0);
 	goto fn_exit;
     }
 
@@ -99,7 +97,7 @@ int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank
 	MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_EAGER_MSG);
 	sreq->dev.OnDataAvail = 0;
 	    
-	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending zero length message");
+	MPL_DBG_MSG(MPIDI_CH3_DBG_OTHER,VERBOSE,"sending zero length message");
 	MPIDI_Pkt_init(eager_pkt, MPIDI_CH3_PKT_EAGER_SEND);
 	eager_pkt->match.parts.rank = comm->rank;
 	eager_pkt->match.parts.tag = tag;
@@ -117,7 +115,7 @@ int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{
-            MPID_Request_release(sreq);
+            MPIR_Request_free(sreq);
 	    sreq = NULL;
             MPIR_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**ch3|eagermsg");
 	    goto fn_exit;
@@ -149,9 +147,9 @@ int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank
                                                       data_sz, rank, tag, 
                                                       comm, context_offset );
 	    /* If we're not complete, then add a reference to the datatype */
-	    if (sreq && sreq->dev.OnDataAvail) {
+	    if (sreq) {
 		sreq->dev.datatype_ptr = dt_ptr;
-		MPID_Datatype_add_ref(dt_ptr);
+        MPIR_Datatype_ptr_add_ref(dt_ptr);
 	    }
 	}
     }
@@ -171,23 +169,23 @@ int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank
 	if (sreq && dt_ptr != NULL)
 	{
 	    sreq->dev.datatype_ptr = dt_ptr;
-	    MPID_Datatype_add_ref(dt_ptr);
+        MPIR_Datatype_ptr_add_ref(dt_ptr);
 	}
     }
 
   fn_exit:
     *request = sreq;
 
-    MPIU_DBG_STMT(CH3_OTHER,VERBOSE,
+    MPL_DBG_STMT(MPIDI_CH3_DBG_OTHER,VERBOSE,
     {
 	if (sreq != NULL)
 	{
-	    MPIU_DBG_MSG_P(CH3_OTHER,VERBOSE,"request allocated, handle=0x%08x", sreq->handle);
+	    MPL_DBG_MSG_P(MPIDI_CH3_DBG_OTHER,VERBOSE,"request allocated, handle=0x%08x", sreq->handle);
 	}
     }
 		  );
     
   fn_fail:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_ISEND);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_ISEND);
     return mpi_errno;
 }

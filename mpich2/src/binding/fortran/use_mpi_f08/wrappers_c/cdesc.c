@@ -9,6 +9,12 @@
 
 #include "cdesc.h"
 
+MPI_Status *MPIR_C_MPI_STATUS_IGNORE = MPI_STATUS_IGNORE;
+MPI_Status *MPIR_C_MPI_STATUSES_IGNORE = MPI_STATUSES_IGNORE;
+char **MPIR_C_MPI_ARGV_NULL = MPI_ARGV_NULL;
+char ***MPIR_C_MPI_ARGVS_NULL = MPI_ARGVS_NULL;
+int *MPIR_C_MPI_ERRCODES_IGNORE = MPI_ERRCODES_IGNORE;
+
 int cdesc_create_datatype(CFI_cdesc_t *cdesc, int oldcount, MPI_Datatype oldtype, MPI_Datatype *newtype)
 {
     const int MAX_RANK = 15; /* Fortran 2008 specifies a maximum rank of 15 */
@@ -24,12 +30,12 @@ int cdesc_create_datatype(CFI_cdesc_t *cdesc, int oldcount, MPI_Datatype oldtype
 #ifdef HAVE_ERROR_CHECKING
     {
         int size;
-        MPIU_Assert(cdesc->rank <= MAX_RANK);
+        MPIR_Assert(cdesc->rank <= MAX_RANK);
         MPI_Type_size(oldtype, &size);
         /* When cdesc->elem_len != size, things suddenly become complicated. Generally, it is hard to create
          * a composite datatype based on two datatypes. Currently we don't support it and doubt it is usefull.
          */
-        MPIU_Assert(cdesc->elem_len == size);
+        MPIR_Assert(cdesc->elem_len == size);
     }
 #endif
 

@@ -40,7 +40,8 @@ static MPIDI_Comm_ops_t comm_ops = {
 
     .probe = MPID_nem_llc_probe,
     .iprobe = MPID_nem_llc_iprobe,
-    .improbe = MPID_nem_llc_improbe
+    .improbe = MPID_nem_llc_improbe,
+    .imrecv = NULL
 };
 
 #undef FUNCNAME
@@ -50,16 +51,16 @@ static MPIDI_Comm_ops_t comm_ops = {
 int MPID_nem_llc_vc_init(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LLC_VC_INIT);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_LLC_VC_INIT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LLC_VC_INIT);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_LLC_VC_INIT);
 
     mpi_errno = llc_vc_init(vc);
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LLC_VC_INIT);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_LLC_VC_INIT);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -72,9 +73,9 @@ int MPID_nem_llc_vc_init(MPIDI_VC_t * vc)
 int MPID_nem_llc_vc_destroy(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LLC_VC_DESTROY);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_LLC_VC_DESTROY);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LLC_VC_DESTROY);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_LLC_VC_DESTROY);
     /* free any resources associated with this VC here */
 
     {
@@ -89,7 +90,7 @@ int MPID_nem_llc_vc_destroy(MPIDI_VC_t * vc)
     }
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LLC_VC_DESTROY);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_LLC_VC_DESTROY);
     return mpi_errno;
     //fn_fail:
     goto fn_exit;
@@ -102,16 +103,16 @@ int MPID_nem_llc_vc_destroy(MPIDI_VC_t * vc)
 int MPID_nem_llc_vc_terminate(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LLC_VC_TERMINATE);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_LLC_VC_TERMINATE);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LLC_VC_TERMINATE);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_LLC_VC_TERMINATE);
 
     dprintf("llc_vc_terminate,enter,%d->%d\n", MPIDI_Process.my_pg_rank, vc->pg_rank);
 
     mpi_errno = MPIDI_CH3U_Handle_connection(vc, MPIDI_VC_EVENT_TERMINATED);
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LLC_VC_TERMINATE);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_LLC_VC_TERMINATE);
     return mpi_errno;
     //fn_fail:
     goto fn_exit;
@@ -130,11 +131,11 @@ static int llc_vc_init(MPIDI_VC_t * vc)
 
 
     {
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE,
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE,
                        "MPIDI_NEM_VC_NETMOD_AREA_LEN = %d\n", MPIDI_NEM_VC_NETMOD_AREA_LEN);
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE,
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE,
                        "MPIDI_NEM_REQ_NETMOD_AREA_LEN = %d", MPIDI_NEM_REQ_NETMOD_AREA_LEN);
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE,
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE,
                        "MPID_nem_llc_vc_area = %d\n", (int) sizeof(MPID_nem_llc_vc_area));
     }
 
@@ -192,15 +193,14 @@ static int MPID_nem_llc_vc_prnt(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    /* MPIU_OBJECT_HEADER; */
-    /* src/include/mpihandlemem.h */
+    /* MPIR_OBJECT_HEADER; */
+    /* src/include/mpir_objects.h */
     /* int handle; */
-    /* MPIU_Handle_ref_count ref_count; */
     /* MPIDI_VC_State_t state; */
     /* struct MPIDI_PG *pg; */
     /* int pg_rank; */
     /* int lpid; */
-    /* MPID_Node_id_t node_id; */
+    /* int node_id; */
     /* int port_name_tag; */
     /* MPID_Seqnum_t seqnum_send; *//* MPID_USE_SEQUENCE_NUMBERS */
     /* MPID_Seqnum_t seqnum_recv; *//* MPID_CH3_MSGS_UNORDERED */

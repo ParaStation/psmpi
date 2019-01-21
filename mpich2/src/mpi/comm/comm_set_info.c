@@ -6,8 +6,8 @@
  */
 
 #include "mpiimpl.h"
-#include "mpl_utlist.h"
-#include "mpiinfo.h"
+#include "utlist.h"
+#include "mpir_info.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Comm_set_info */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -17,7 +17,8 @@
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Comm_set_info as PMPI_Comm_set_info
 #elif defined(HAVE_WEAK_ATTRIBUTE)
-int MPI_Comm_set_info(MPI_Comm comm, MPI_Info info) __attribute__((weak,alias("PMPI_Comm_set_info")));
+int MPI_Comm_set_info(MPI_Comm comm, MPI_Info info)
+    __attribute__ ((weak, alias("PMPI_Comm_set_info")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -31,21 +32,21 @@ int MPI_Comm_set_info(MPI_Comm comm, MPI_Info info) __attribute__((weak,alias("P
 #define FUNCNAME MPIR_Comm_set_info_impl
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIR_Comm_set_info_impl(MPID_Comm * comm_ptr, MPID_Info * info_ptr)
+int MPIR_Comm_set_info_impl(MPIR_Comm * comm_ptr, MPIR_Info * info_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_Info *curr_info = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIR_COMM_SET_INFO_IMPL);
+    MPIR_Info *curr_info = NULL;
+    MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPIR_COMM_SET_INFO_IMPL);
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPIR_COMM_SET_INFO_IMPL);
+    MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPIR_COMM_SET_INFO_IMPL);
 
-    mpi_errno = MPIR_Comm_apply_hints(comm_ptr, info_ptr);
+    mpi_errno = MPII_Comm_apply_hints(comm_ptr, info_ptr);
     if (mpi_errno != MPI_SUCCESS)
         goto fn_fail;
 
     if (comm_ptr->info == NULL) {
         /* Always have at least a blank info hint. */
-        mpi_errno = MPIU_Info_alloc(&(comm_ptr->info));
+        mpi_errno = MPIR_Info_alloc(&(comm_ptr->info));
         if (mpi_errno != MPI_SUCCESS)
             goto fn_fail;
     }
@@ -53,16 +54,18 @@ int MPIR_Comm_set_info_impl(MPID_Comm * comm_ptr, MPID_Info * info_ptr)
     /* MPIR_Info_set_impl will do an O(n) search to prevent duplicate keys, so
      * this _FOREACH loop will cost O(m*n) time, where "m" is the number of keys
      * in info_ptr and "n" is the number of keys in comm_ptr->info. */
-    MPL_LL_FOREACH(info_ptr, curr_info) {
+    LL_FOREACH(info_ptr, curr_info) {
         /* Have we hit the default, empty info hint? */
-        if (curr_info->key == NULL) continue;
+        if (curr_info->key == NULL)
+            continue;
 
         mpi_errno = MPIR_Info_set_impl(comm_ptr->info, curr_info->key, curr_info->value);
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        if (mpi_errno)
+            MPIR_ERR_POP(mpi_errno);
     }
 
   fn_exit:
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPIR_COMM_SET_INFO_IMPL);
+    MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPIR_COMM_SET_INFO_IMPL);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -98,14 +101,14 @@ Input Parameters:
 int MPI_Comm_set_info(MPI_Comm comm, MPI_Info info)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_Comm *comm_ptr = NULL;
-    MPID_Info *info_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SET_INFO);
+    MPIR_Comm *comm_ptr = NULL;
+    MPIR_Info *info_ptr = NULL;
+    MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_COMM_SET_INFO);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
     MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_SET_INFO);
+    MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPI_COMM_SET_INFO);
 
     /* Validate parameters, especially handles needing to be converted */
 #ifdef HAVE_ERROR_CHECKING
@@ -119,8 +122,8 @@ int MPI_Comm_set_info(MPI_Comm comm, MPI_Info info)
 #endif /* HAVE_ERROR_CHECKING */
 
     /* Convert MPI object handles to object pointers */
-    MPID_Comm_get_ptr(comm, comm_ptr);
-    MPID_Info_get_ptr(info, info_ptr);
+    MPIR_Comm_get_ptr(comm, comm_ptr);
+    MPIR_Info_get_ptr(info, info_ptr);
 
     /* Validate parameters and objects (post conversion) */
 #ifdef HAVE_ERROR_CHECKING
@@ -128,8 +131,9 @@ int MPI_Comm_set_info(MPI_Comm comm, MPI_Info info)
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate pointers */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, TRUE );
-            if (mpi_errno) goto fn_fail;
+            MPIR_Comm_valid_ptr(comm_ptr, mpi_errno, TRUE);
+            if (mpi_errno)
+                goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -142,7 +146,7 @@ int MPI_Comm_set_info(MPI_Comm comm, MPI_Info info)
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_INFO);
+    MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPI_COMM_SET_INFO);
     MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 

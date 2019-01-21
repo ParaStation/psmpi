@@ -6,20 +6,23 @@
 
 #include "hydra.h"
 
-char *HYD_dbg_prefix = (char *) "unknown";
+char *HYD_dbg_prefix = NULL;
 
 HYD_status HYDU_dbg_init(const char *str)
 {
     char hostname[MAX_HOSTNAME_LEN];
     HYD_status status = HYD_SUCCESS;
 
-    HYDU_mem_init();
+#ifdef USE_MEMORY_TRACING
+    MPL_trinit();
+    MPL_trconfig(0, 0);
+#endif
 
     if (gethostname(hostname, MAX_HOSTNAME_LEN) < 0)
         HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "unable to get local host name\n");
 
-    HYDU_MALLOC(HYD_dbg_prefix, char *, strlen(hostname) + 1 + strlen(str) + 1, status);
-    HYDU_snprintf(HYD_dbg_prefix, strlen(hostname) + 1 + strlen(str) + 1, "%s@%s", str, hostname);
+    HYDU_MALLOC_OR_JUMP(HYD_dbg_prefix, char *, strlen(hostname) + 1 + strlen(str) + 1, status);
+    MPL_snprintf(HYD_dbg_prefix, strlen(hostname) + 1 + strlen(str) + 1, "%s@%s", str, hostname);
 
   fn_exit:
     HYDU_FUNC_EXIT();
@@ -31,5 +34,5 @@ HYD_status HYDU_dbg_init(const char *str)
 
 void HYDU_dbg_finalize(void)
 {
-    HYDU_FREE(HYD_dbg_prefix);
+    MPL_free(HYD_dbg_prefix);
 }

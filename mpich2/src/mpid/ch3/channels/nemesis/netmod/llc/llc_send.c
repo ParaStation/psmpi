@@ -21,18 +21,18 @@
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_llc_isend(struct MPIDI_VC *vc, const void *buf, int count, MPI_Datatype datatype,
-                       int dest, int tag, MPID_Comm * comm, int context_offset,
-                       struct MPID_Request **req_out)
+                       int dest, int tag, MPIR_Comm * comm, int context_offset,
+                       struct MPIR_Request **req_out)
 {
     int mpi_errno = MPI_SUCCESS, llc_errno;
     int dt_contig;
-    MPIDI_msg_sz_t data_sz;
-    MPID_Datatype *dt_ptr;
+    intptr_t data_sz;
+    MPIR_Datatype*dt_ptr;
     MPI_Aint dt_true_lb;
     int i;
 
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LLC_ISEND);
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LLC_ISEND);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_LLC_ISEND);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_LLC_ISEND);
 
     dprintf
         ("llc_isend,%d->%d,buf=%p,count=%d,datatype=%08x,dest=%d,tag=%08x,comm=%p,context_offset=%d\n",
@@ -43,10 +43,9 @@ int MPID_nem_llc_isend(struct MPIDI_VC *vc, const void *buf, int count, MPI_Data
     LLC_comm_rank(LLC_COMM_MPICH, &LLC_my_rank);
     dprintf("llc_isend,LLC_my_rank=%d\n", LLC_my_rank);
 
-    struct MPID_Request *sreq = MPID_Request_create();
-    MPIU_Assert(sreq != NULL);
-    MPIU_Object_set_ref(sreq, 2);
-    sreq->kind = MPID_REQUEST_SEND;
+    struct MPIR_Request *sreq = MPIR_Request_create(MPIR_REQUEST_KIND__SEND);
+    MPIR_Assert(sreq != NULL);
+    MPIR_Object_set_ref(sreq, 2);
 
     /* Used in llc_poll --> MPID_nem_llc_send_handler */
     sreq->ch.vc = vc;
@@ -90,11 +89,11 @@ int MPID_nem_llc_isend(struct MPIDI_VC *vc, const void *buf, int count, MPI_Data
     /* Prepare bit-vector to perform tag-match. We use the same bit-vector as in CH3 layer. */
     /* See src/mpid/ch3/src/mpid_isend.c */
     *(int32_t *) ((uint8_t *) & cmd[0].tag) = tag;
-    *(MPIU_Context_id_t *) ((uint8_t *) & cmd[0].tag + sizeof(int32_t)) =
+    *(MPIR_Context_id_t *) ((uint8_t *) & cmd[0].tag + sizeof(int32_t)) =
         comm->context_id + context_offset;
-    MPIU_Assert(sizeof(LLC_tag_t) >= sizeof(int32_t) + sizeof(MPIU_Context_id_t));
-    memset((uint8_t *) & cmd[0].tag + sizeof(int32_t) + sizeof(MPIU_Context_id_t),
-           0, sizeof(LLC_tag_t) - sizeof(int32_t) - sizeof(MPIU_Context_id_t));
+    MPIR_Assert(sizeof(LLC_tag_t) >= sizeof(int32_t) + sizeof(MPIR_Context_id_t));
+    memset((uint8_t *) & cmd[0].tag + sizeof(int32_t) + sizeof(MPIR_Context_id_t),
+           0, sizeof(LLC_tag_t) - sizeof(int32_t) - sizeof(MPIR_Context_id_t));
 
     dprintf("llc_isend,tag=");
     for (i = 0; i < sizeof(LLC_tag_t); i++) {
@@ -116,7 +115,7 @@ int MPID_nem_llc_isend(struct MPIDI_VC *vc, const void *buf, int count, MPI_Data
     }
     else {
         /* See MPIDI_CH3_EagerNoncontigSend (in ch3u_eager.c) */
-        struct MPID_Segment *segment_ptr = MPID_Segment_alloc();
+        struct MPIR_Segment *segment_ptr = MPIR_Segment_alloc();
         MPIR_ERR_CHKANDJUMP(!segment_ptr, mpi_errno, MPI_ERR_OTHER, "**outofmemory");
 #ifndef	notdef_leak_0001_hack
         /* See also MPIDI_CH3_Request_create and _destory() */
@@ -124,15 +123,15 @@ int MPID_nem_llc_isend(struct MPIDI_VC *vc, const void *buf, int count, MPI_Data
         sreq->dev.segment_ptr = segment_ptr;
 #endif /* notdef_leak_0001_hack */
 
-        MPID_Segment_init(buf, count, datatype, segment_ptr, 0);
-        MPIDI_msg_sz_t segment_first = 0;
-        MPIDI_msg_sz_t segment_size = data_sz;
-        MPIDI_msg_sz_t last = segment_size;
-        MPIU_Assert(last > 0);
-        REQ_FIELD(sreq, pack_buf) = MPIU_Malloc((size_t) data_sz);
+        MPIR_Segment_init(buf, count, datatype, segment_ptr);
+        intptr_t segment_first = 0;
+        intptr_t segment_size = data_sz;
+        intptr_t last = segment_size;
+        MPIR_Assert(last > 0);
+        REQ_FIELD(sreq, pack_buf) = MPL_malloc((size_t) data_sz, MPL_MEM_BUFFER);
         MPIR_ERR_CHKANDJUMP(!REQ_FIELD(sreq, pack_buf), mpi_errno, MPI_ERR_OTHER, "**outofmemory");
-        MPID_Segment_pack(segment_ptr, segment_first, &last, (char *) (REQ_FIELD(sreq, pack_buf)));
-        MPIU_Assert(last == data_sz);
+        MPIR_Segment_pack(segment_ptr, segment_first, &last, (char *) (REQ_FIELD(sreq, pack_buf)));
+        MPIR_Assert(last == data_sz);
         write_from_buf = REQ_FIELD(sreq, pack_buf);
     }
 
@@ -152,7 +151,7 @@ int MPID_nem_llc_isend(struct MPIDI_VC *vc, const void *buf, int count, MPI_Data
 
   fn_exit:
     *req_out = sreq;
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LLC_ISEND);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_LLC_ISEND);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -162,34 +161,33 @@ int MPID_nem_llc_isend(struct MPIDI_VC *vc, const void *buf, int count, MPI_Data
 #define FUNCNAME MPID_nem_llc_iStartContigMsg
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_nem_llc_iStartContigMsg(MPIDI_VC_t * vc, void *hdr, MPIDI_msg_sz_t hdr_sz, void *data,
-                                 MPIDI_msg_sz_t data_sz, MPID_Request ** sreq_ptr)
+int MPID_nem_llc_iStartContigMsg(MPIDI_VC_t * vc, void *hdr, intptr_t hdr_sz, void *data,
+                                 intptr_t data_sz, MPIR_Request ** sreq_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_Request *sreq = NULL;
+    MPIR_Request *sreq = NULL;
     MPID_nem_llc_vc_area *vc_llc = 0;
     int need_to_queue = 0;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LLC_ISTARTCONTIGMSG);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_LLC_ISTARTCONTIGMSG);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LLC_ISTARTCONTIGMSG);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_LLC_ISTARTCONTIGMSG);
 
     dprintf("llc_iStartContigMsg,%d->%d,hdr=%p,hdr_sz=%ld,data=%p,data_sz=%ld\n",
             MPIDI_Process.my_pg_rank, vc->pg_rank, hdr, hdr_sz, data, data_sz);
 
-    MPIU_Assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
-    MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "llc_iStartContigMsg");
+    MPIR_Assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
+    MPL_DBG_MSG(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "llc_iStartContigMsg");
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *) hdr);
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "vc.pg_rank = %d", vc->pg_rank);
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "my_pg_rank = %d", MPIDI_Process.my_pg_rank);
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "hdr_sz     = %d", (int) hdr_sz);
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "data_sz    = %d", (int) data_sz);
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "hdr type   = %d", ((MPIDI_CH3_Pkt_t *) hdr)->type);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "vc.pg_rank = %d", vc->pg_rank);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "my_pg_rank = %d", MPIDI_Process.my_pg_rank);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "hdr_sz     = %d", (int) hdr_sz);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "data_sz    = %d", (int) data_sz);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "hdr type   = %d", ((MPIDI_CH3_Pkt_t *) hdr)->type);
 
     /* create a request */
-    sreq = MPID_Request_create();
-    MPIU_Assert(sreq != NULL);
-    MPIU_Object_set_ref(sreq, 2);
-    sreq->kind = MPID_REQUEST_SEND;
+    sreq = MPIR_Request_create(MPIR_REQUEST_KIND__SEND);
+    MPIR_Assert(sreq != NULL);
+    MPIR_Object_set_ref(sreq, 2);
 
     sreq->ch.vc = vc;
     sreq->dev.OnDataAvail = 0;
@@ -202,12 +200,12 @@ int MPID_nem_llc_iStartContigMsg(MPIDI_VC_t * vc, void *hdr, MPIDI_msg_sz_t hdr_
     sreq->dev.iov[0].MPL_IOV_BUF = (MPL_IOV_BUF_CAST) & sreq->dev.pending_pkt;
     sreq->dev.iov[0].MPL_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     sreq->dev.iov_count = 1;
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "IOV_LEN    = %d", (int) sreq->dev.iov[0].MPL_IOV_LEN);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "IOV_LEN    = %d", (int) sreq->dev.iov[0].MPL_IOV_LEN);
     if (data_sz > 0) {
         sreq->dev.iov[1].MPL_IOV_BUF = data;
         sreq->dev.iov[1].MPL_IOV_LEN = data_sz;
         sreq->dev.iov_count = 2;
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE,
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE,
                        "IOV_LEN    = %d", (int) sreq->dev.iov[0].MPL_IOV_LEN);
     }
 
@@ -227,24 +225,24 @@ int MPID_nem_llc_iStartContigMsg(MPIDI_VC_t * vc, void *hdr, MPIDI_msg_sz_t hdr_
             mpi_errno = MPI_ERR_OTHER;
             MPIR_ERR_POP(mpi_errno);
         }
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE,
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE,
                        "IOV_LEN    = %d", (int) sreq->dev.iov[0].MPL_IOV_LEN);
         if (!MPIDI_nem_llc_Rqst_iov_update(sreq, ret)) {
             need_to_queue = 2;  /* YYY */
         }
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE,
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE,
                        "IOV_LEN    = %d", (int) sreq->dev.iov[0].MPL_IOV_LEN);
     }
 
   queue_it:
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "need_to_que  %d", need_to_queue);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "need_to_que  %d", need_to_queue);
     if (need_to_queue > 0) {
         MPIDI_CH3I_Sendq_enqueue(&vc_llc->send_queue, sreq);
     }
 
   fn_exit:
     *sreq_ptr = sreq;
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LLC_ISTARTCONTIGMSG);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_LLC_ISTARTCONTIGMSG);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -254,34 +252,34 @@ int MPID_nem_llc_iStartContigMsg(MPIDI_VC_t * vc, void *hdr, MPIDI_msg_sz_t hdr_
 #define FUNCNAME MPID_nem_llc_iSendContig
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_nem_llc_iSendContig(MPIDI_VC_t * vc, MPID_Request * sreq, void *hdr, MPIDI_msg_sz_t hdr_sz,
-                             void *data, MPIDI_msg_sz_t data_sz)
+int MPID_nem_llc_iSendContig(MPIDI_VC_t * vc, MPIR_Request * sreq, void *hdr, intptr_t hdr_sz,
+                             void *data, intptr_t data_sz)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_nem_llc_vc_area *vc_llc = 0;
     int need_to_queue = 0;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LLC_ISENDCONTIGMSG);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_LLC_ISENDCONTIGMSG);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LLC_ISENDCONTIGMSG);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_LLC_ISENDCONTIGMSG);
 
-    if (sreq->kind == MPID_REQUEST_UNDEFINED) {
-        sreq->kind = MPID_REQUEST_SEND;
+    if (sreq->kind == MPIR_REQUEST_KIND__UNDEFINED) {
+        sreq->kind = MPIR_REQUEST_KIND__SEND;
     }
     dprintf("llc_iSendConitig,sreq=%p,hdr=%p,hdr_sz=%ld,data=%p,data_sz=%ld\n",
             sreq, hdr, hdr_sz, data, data_sz);
 
-    MPIU_Assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
-    MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "llc_iSendContig");
+    MPIR_Assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
+    MPL_DBG_MSG(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "llc_iSendContig");
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *) hdr);
-    MPIU_DBG_PKT(vc, hdr, "isendcontig");
+    MPL_DBG_PKT(vc, hdr, "isendcontig");
     {
         MPIDI_CH3_Pkt_t *pkt = (MPIDI_CH3_Pkt_t *) hdr;
 
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "pkt->type  = %d", pkt->type);
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "pkt->type  = %d", pkt->type);
     }
 
-    MPIU_Assert(sreq != NULL);
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "OnDataAvail= %p", sreq->dev.OnDataAvail);
+    MPIR_Assert(sreq != NULL);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "OnDataAvail= %p", sreq->dev.OnDataAvail);
     sreq->ch.vc = vc;
     sreq->dev.iov_offset = 0;
 
@@ -290,12 +288,12 @@ int MPID_nem_llc_iSendContig(MPIDI_VC_t * vc, MPID_Request * sreq, void *hdr, MP
     sreq->dev.iov[0].MPL_IOV_BUF = (MPL_IOV_BUF_CAST) & sreq->dev.pending_pkt;
     sreq->dev.iov[0].MPL_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     sreq->dev.iov_count = 1;
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "IOV_LEN    = %d", (int) sreq->dev.iov[0].MPL_IOV_LEN);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "IOV_LEN    = %d", (int) sreq->dev.iov[0].MPL_IOV_LEN);
     if (data_sz > 0) {
         sreq->dev.iov[1].MPL_IOV_BUF = data;
         sreq->dev.iov[1].MPL_IOV_LEN = data_sz;
         sreq->dev.iov_count = 2;
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE,
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE,
                        "IOV_LEN    = %d", (int) sreq->dev.iov[1].MPL_IOV_LEN);
     }
 
@@ -315,20 +313,20 @@ int MPID_nem_llc_iSendContig(MPIDI_VC_t * vc, MPID_Request * sreq, void *hdr, MP
             mpi_errno = MPI_ERR_OTHER;
             MPIR_ERR_POP(mpi_errno);
         }
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "WRITEV()   = %d", ret);
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "WRITEV()   = %d", ret);
         if (!MPIDI_nem_llc_Rqst_iov_update(sreq, ret)) {
             need_to_queue = 2;  /* YYY */
         }
     }
 
   queue_it:
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "need_to_que  %d", need_to_queue);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "need_to_que  %d", need_to_queue);
     if (need_to_queue > 0) {
         MPIDI_CH3I_Sendq_enqueue(&vc_llc->send_queue, sreq);
     }
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LLC_ISENDCONTIGMSG);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_LLC_ISENDCONTIGMSG);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -338,40 +336,40 @@ int MPID_nem_llc_iSendContig(MPIDI_VC_t * vc, MPID_Request * sreq, void *hdr, MP
 #define FUNCNAME MPID_nem_llc_SendNoncontig
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_nem_llc_SendNoncontig(MPIDI_VC_t * vc, MPID_Request * sreq, void *hdr,
-                               MPIDI_msg_sz_t hdr_sz)
+int MPID_nem_llc_SendNoncontig(MPIDI_VC_t * vc, MPIR_Request * sreq, void *hdr,
+                               intptr_t hdr_sz)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LLC_SENDNONCONTIG);
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LLC_SENDNONCONTIG);
-    MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "llc_SendNoncontig");
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_LLC_SENDNONCONTIG);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_LLC_SENDNONCONTIG);
+    MPL_DBG_MSG(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "llc_SendNoncontig");
 
-    MPIU_Assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
+    MPIR_Assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
 
-    MPIDI_msg_sz_t data_sz;
+    intptr_t data_sz;
     MPID_nem_llc_vc_area *vc_llc = 0;
     int need_to_queue = 0;
 
-    MPIU_Assert(sreq->dev.segment_first == 0);
+    MPIR_Assert(sreq->dev.segment_first == 0);
     REQ_FIELD(sreq, rma_buf) = NULL;
 
     sreq->dev.pending_pkt = *(MPIDI_CH3_Pkt_t *) hdr;
     sreq->dev.iov[0].MPL_IOV_BUF = (MPL_IOV_BUF_CAST) & sreq->dev.pending_pkt;
     sreq->dev.iov[0].MPL_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     sreq->dev.iov_count = 1;
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "IOV_LEN = %d", (int) sreq->dev.iov[0].MPL_IOV_LEN);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "IOV_LEN = %d", (int) sreq->dev.iov[0].MPL_IOV_LEN);
 
     data_sz = sreq->dev.segment_size;
     if (data_sz > 0) {
-        REQ_FIELD(sreq, rma_buf) = MPIU_Malloc((size_t) sreq->dev.segment_size);
+        REQ_FIELD(sreq, rma_buf) = MPL_malloc((size_t) sreq->dev.segment_size, MPL_MEM_BUFFER);
         MPIR_ERR_CHKANDJUMP(!REQ_FIELD(sreq, rma_buf), mpi_errno, MPI_ERR_OTHER, "**outofmemory");
-        MPID_Segment_pack(sreq->dev.segment_ptr, sreq->dev.segment_first, &data_sz,
+        MPIR_Segment_pack(sreq->dev.segment_ptr, sreq->dev.segment_first, &data_sz,
                           (char *) REQ_FIELD(sreq, rma_buf));
 
         sreq->dev.iov[1].MPL_IOV_BUF = REQ_FIELD(sreq, rma_buf);
         sreq->dev.iov[1].MPL_IOV_LEN = data_sz;
         sreq->dev.iov_count = 2;
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "IOV_LEN = %d", (int) sreq->dev.iov[1].MPL_IOV_LEN);
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "IOV_LEN = %d", (int) sreq->dev.iov[1].MPL_IOV_LEN);
     }
 
     sreq->ch.vc = vc;
@@ -398,13 +396,13 @@ int MPID_nem_llc_SendNoncontig(MPIDI_VC_t * vc, MPID_Request * sreq, void *hdr,
     }
 
   queue_it:
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "need_to_que %d", need_to_queue);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "need_to_que %d", need_to_queue);
     if (need_to_queue > 0) {
         MPIDI_CH3I_Sendq_enqueue(&vc_llc->send_queue, sreq);
     }
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LLC_SENDNONCONTIG);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_LLC_SENDNONCONTIG);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -418,23 +416,23 @@ int MPID_nem_llc_send_queued(MPIDI_VC_t * vc, rque_t * send_queue)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_nem_llc_vc_area *vc_llc;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LLC_SEND_QUEUED);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_LLC_SEND_QUEUED);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LLC_SEND_QUEUED);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_LLC_SEND_QUEUED);
 
-    MPIU_Assert(vc != NULL);
+    MPIR_Assert(vc != NULL);
     vc_llc = VC_LLC(vc);
-    MPIU_Assert(vc_llc != NULL);
+    MPIR_Assert(vc_llc != NULL);
 
     while (!MPIDI_CH3I_Sendq_empty(*send_queue)) {
         ssize_t ret = 0;
-        MPID_Request *sreq;
+        MPIR_Request *sreq;
         void *endpt = vc_llc->endpoint;
         MPL_IOV *iovs;
         int niov;
 
         sreq = MPIDI_CH3I_Sendq_head(*send_queue);
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "sreq %p", sreq);
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "sreq %p", sreq);
 
         if (mpi_errno == MPI_SUCCESS) {
             iovs = &sreq->dev.iov[sreq->dev.iov_offset];
@@ -450,19 +448,19 @@ int MPID_nem_llc_send_queued(MPIDI_VC_t * vc, rque_t * send_queue)
             MPIDI_CH3I_Sendq_dequeue(send_queue, &sreq);
             sreq->status.MPI_ERROR = mpi_errno;
 
-            MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "OnDataAvail = %p", sreq->dev.OnDataAvail);
+            MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "OnDataAvail = %p", sreq->dev.OnDataAvail);
             MPID_Request_complete(sreq);
             continue;
         }
         if (!MPIDI_nem_llc_Rqst_iov_update(sreq, ret)) {
-            MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "skip %p", sreq);
+            MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "skip %p", sreq);
             break;
         }
         MPIDI_CH3I_Sendq_dequeue(send_queue, &sreq);
     }
 
   fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LLC_SEND_QUEUED);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_LLC_SEND_QUEUED);
     return mpi_errno;
     //fn_fail:
     goto fn_exit;
@@ -472,27 +470,27 @@ int MPID_nem_llc_send_queued(MPIDI_VC_t * vc, rque_t * send_queue)
 #define FUNCNAME MPIDI_nem_llc_Rqst_iov_update
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIDI_nem_llc_Rqst_iov_update(MPID_Request * mreq, MPIDI_msg_sz_t consume)
+int MPIDI_nem_llc_Rqst_iov_update(MPIR_Request * mreq, intptr_t consume)
 {
     int ret = TRUE;
-    /* MPIDI_msg_sz_t oconsume = consume; */
+    /* intptr_t oconsume = consume; */
     int iv, nv;
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_NEM_LLC_RQST_IOV_UPDATE);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_NEM_LLC_RQST_IOV_UPDATE);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_NEM_LLC_RQST_IOV_UPDATE);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_NEM_LLC_RQST_IOV_UPDATE);
 
-    MPIU_Assert(consume >= 0);
+    MPIR_Assert(consume >= 0);
 
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "iov_update() : consume    %d", (int) consume);
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "iov_update() : iov_count  %d", mreq->dev.iov_count);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "iov_update() : consume    %d", (int) consume);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "iov_update() : iov_count  %d", mreq->dev.iov_count);
 
     nv = mreq->dev.iov_count;
     for (iv = mreq->dev.iov_offset; iv < nv; iv++) {
         MPL_IOV *iov = &mreq->dev.iov[iv];
 
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "iov_update() : iov[iv]    %d", iv);
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "iov_update() : consume b  %d", (int) consume);
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE,
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "iov_update() : iov[iv]    %d", iv);
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "iov_update() : consume b  %d", (int) consume);
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE,
                        "iov_update() : iov_len b  %d", (int) iov->MPL_IOV_LEN);
         if (iov->MPL_IOV_LEN > consume) {
             iov->MPL_IOV_BUF = ((char *) iov->MPL_IOV_BUF) + consume;
@@ -504,15 +502,15 @@ int MPIDI_nem_llc_Rqst_iov_update(MPID_Request * mreq, MPIDI_msg_sz_t consume)
         consume -= iov->MPL_IOV_LEN;
         iov->MPL_IOV_LEN = 0;
     }
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "iov_update() : consume %d", (int) consume);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "iov_update() : consume %d", (int) consume);
 
     mreq->dev.iov_count = nv - iv;
     mreq->dev.iov_offset = iv;
 
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "iov_update() : iov_offset %ld", mreq->dev.iov_offset);
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "iov_update() = %d", ret);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "iov_update() : iov_offset %ld", mreq->dev.iov_offset);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "iov_update() = %d", ret);
 
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_NEM_LLC_RQST_IOV_UPDATE);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_NEM_LLC_RQST_IOV_UPDATE);
     return ret;
 }
 
@@ -527,7 +525,7 @@ ssize_t llc_writev(void *endpt, uint64_t raddr,
 
     dprintf("writev,raddr=%ld,niov=%d,sreq=%p", raddr, niov, cbarg);
 
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "llc_writev(%d)", (int) raddr);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "llc_writev(%d)", (int) raddr);
     {
         uint8_t *buff = 0;
 #ifdef	notdef_hsiz_hack
@@ -547,14 +545,14 @@ ssize_t llc_writev(void *endpt, uint64_t raddr,
             }
 #ifdef	notdef_hsiz_hack
             if (bsiz > 0) {
-                buff = MPIU_Malloc(bsiz + sizeof(MPID_nem_llc_netmod_hdr_t));
+                buff = MPL_malloc(bsiz + sizeof(MPID_nem_llc_netmod_hdr_t), MPL_MEM_BUFFER);
                 if (buff == 0) {
                     nw = -1;    /* ENOMEM */
                     goto bad;
                 }
             }
 #else /* notdef_hsiz_hack */
-            buff = MPIU_Malloc(bsiz + sizeof(MPID_nem_llc_netmod_hdr_t));
+            buff = MPL_malloc(bsiz + sizeof(MPID_nem_llc_netmod_hdr_t), MPL_MEM_BUFFER);
             if (buff == 0) {
                 nw = -1;        /* ENOMEM */
                 goto bad;
@@ -565,7 +563,7 @@ ssize_t llc_writev(void *endpt, uint64_t raddr,
         lcmd = LLC_cmd_alloc2(1, 1, 1);
         if (lcmd == 0) {
             if (buff != 0) {
-                MPIU_Free(buff);
+                MPL_free(buff);
                 buff = 0;
             }
             nw = -1;    /* ENOMEM */
@@ -599,7 +597,7 @@ ssize_t llc_writev(void *endpt, uint64_t raddr,
         char *bp;
         size_t bz;
 
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "llc_writev() : nv %d", nv);
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "llc_writev() : nv %d", nv);
         bp = (void *) lcmd->iov_local[0].addr;
         bz = lcmd->iov_local[0].length;
 
@@ -627,13 +625,13 @@ ssize_t llc_writev(void *endpt, uint64_t raddr,
             }
             bp += len;
         }
-        MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "llc_writev() : iv %d", iv);
+        MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "llc_writev() : iv %d", iv);
         {
             void *bb = (void *) lcmd->iov_local[0].addr;
-            MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "wptr       = %d", (int) (bp - (char *) bb));
-            MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE,
+            MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "wptr       = %d", (int) (bp - (char *) bb));
+            MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE,
                            "blocklengt = %d", (int) lcmd->iov_local[0].length);
-            MPIU_DBG_PKT(endpt, bb, "writev");
+            MPL_DBG_PKT(endpt, bb, "writev");
         }
     }
     {
@@ -645,7 +643,7 @@ ssize_t llc_writev(void *endpt, uint64_t raddr,
             }
             else {
                 if (lcmd->iov_local[0].addr != 0) {
-                    MPIU_Free((void *) lcmd->iov_local[0].addr);
+                    MPL_free((void *) lcmd->iov_local[0].addr);
                     lcmd->iov_local[0].addr = 0;
                 }
                 (void) LLC_cmd_free(lcmd, 1);
@@ -666,11 +664,11 @@ ssize_t llc_writev(void *endpt, uint64_t raddr,
     }
 
   bad:
-    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "llc_writev() : nw %d", (int) nw);
+    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "llc_writev() : nw %d", (int) nw);
     return nw;
 }
 
-int convert_rank_llc2mpi(MPID_Comm * comm, int llc_rank, int *mpi_rank)
+int convert_rank_llc2mpi(MPIR_Comm * comm, int llc_rank, int *mpi_rank)
 {
     int size, rank;
     int found = 0;
@@ -724,21 +722,21 @@ int llc_poll(int in_blocking_poll, llc_send_f sfnc, llc_recv_f rfnc)
         if (nevents == 0) {
             break;
         }
-        MPIU_Assert(nevents == 1);
+        MPIR_Assert(nevents == 1);
 
         switch (events[0].type) {
         case LLC_EVENT_SEND_LEFT:{
                 dprintf("llc_poll,EVENT_SEND_LEFT\n");
                 lcmd = (LLC_cmd_t *) events[0].side.initiator.req_id;
-                MPIU_Assert(lcmd != 0);
-                MPIU_Assert(lcmd->opcode == LLC_OPCODE_SEND || lcmd->opcode == LLC_OPCODE_SSEND);
+                MPIR_Assert(lcmd != 0);
+                MPIR_Assert(lcmd->opcode == LLC_OPCODE_SEND || lcmd->opcode == LLC_OPCODE_SSEND);
 
                 if (events[0].side.initiator.error_code != LLC_ERROR_SUCCESS) {
                     printf("llc_poll,error_code=%d\n", events[0].side.initiator.error_code);
                     MPID_nem_llc_segv;
                 }
 
-                /* Call send_handler. First arg is a pointer to MPID_Request */
+                /* Call send_handler. First arg is a pointer to MPIR_Request */
                 (*sfnc) (((struct llc_cmd_area *) lcmd->usr_area)->cbarg, &reqid);
 
                 /* Don't free iov_local[0].addr */
@@ -751,8 +749,8 @@ int llc_poll(int in_blocking_poll, llc_send_f sfnc, llc_recv_f rfnc)
         case LLC_EVENT_UNSOLICITED_LEFT:{
                 dprintf("llc_poll,EVENT_UNSOLICITED_LEFT\n");
                 lcmd = (LLC_cmd_t *) events[0].side.initiator.req_id;
-                MPIU_Assert(lcmd != 0);
-                MPIU_Assert(lcmd->opcode == LLC_OPCODE_UNSOLICITED);
+                MPIR_Assert(lcmd != 0);
+                MPIR_Assert(lcmd->opcode == LLC_OPCODE_UNSOLICITED);
 
                 struct llc_cmd_area *usr;
                 usr = (void *) lcmd->usr_area;
@@ -767,7 +765,7 @@ int llc_poll(int in_blocking_poll, llc_send_f sfnc, llc_recv_f rfnc)
                 (*sfnc) (vp_sreq, &reqid);
 
                 if (lcmd->iov_local[0].addr != 0) {
-                    MPIU_Free((void *) lcmd->iov_local[0].addr);
+                    MPL_free((void *) lcmd->iov_local[0].addr);
                     lcmd->iov_local[0].addr = 0;
                 }
                 llc_errno = LLC_cmd_free(lcmd, 1);
@@ -784,12 +782,12 @@ int llc_poll(int in_blocking_poll, llc_send_f sfnc, llc_recv_f rfnc)
                 bsiz = events[0].side.responder.length;
 #ifndef	notdef_hsiz_hack
 #if defined(__sparc__)
-                MPIU_Assert(((uintptr_t) buff % 8) == 0);
+                MPIR_Assert(((uintptr_t) buff % 8) == 0);
 #endif
 #endif /* notdef_hsiz_hack */
                 {
-                    MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "LLC_leng   = %d", (int) bsiz);
-                    MPIU_DBG_PKT(vp_vc, buff, "poll");
+                    MPL_DBG_MSG_D(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "LLC_leng   = %d", (int) bsiz);
+                    MPL_DBG_PKT(vp_vc, buff, "poll");
                 }
                 dprintf("llc_poll,EVENT_UNSOLICITED_ARRIVED,%d<-%d\n",
                         MPIDI_Process.my_pg_rank,
@@ -812,12 +810,12 @@ int llc_poll(int in_blocking_poll, llc_send_f sfnc, llc_recv_f rfnc)
         case LLC_EVENT_RECV_MATCHED:{
                 dprintf("llc_poll,EVENT_RECV_MATCHED\n");
                 lcmd = (LLC_cmd_t *) events[0].side.initiator.req_id;
-                MPID_Request *req = ((struct llc_cmd_area *) lcmd->usr_area)->cbarg;
+                MPIR_Request *req = ((struct llc_cmd_area *) lcmd->usr_area)->cbarg;
 
-                if (req->kind != MPID_REQUEST_MPROBE) {
+                if (req->kind != MPIR_REQUEST_KIND__MPROBE) {
                     /* Unpack non-contiguous dt */
                     int is_contig;
-                    MPID_Datatype_is_contig(req->dev.datatype, &is_contig);
+                    MPIR_Datatype_is_contig(req->dev.datatype, &is_contig);
                     if (!is_contig) {
                         dprintf("llc_poll,unpack noncontiguous data to user buffer\n");
 
@@ -827,15 +825,15 @@ int llc_poll(int in_blocking_poll, llc_send_f sfnc, llc_recv_f rfnc)
                         /* set_request_info() sets req->dev.recv_data_sz to pkt->data_sz.
                          * pkt->data_sz is sender's request size.
                          */
-                        MPIDI_msg_sz_t unpack_sz = events[0].side.initiator.length;
-                        MPID_Segment seg;
+                        intptr_t unpack_sz = events[0].side.initiator.length;
+                        MPIR_Segment seg;
                         MPI_Aint last;
 
                         /* user_buf etc. are set in MPID_irecv --> MPIDI_CH3U_Recvq_FDU_or_AEP */
-                        MPID_Segment_init(req->dev.user_buf, req->dev.user_count, req->dev.datatype,
-                                          &seg, 0);
+                        MPIR_Segment_init(req->dev.user_buf, req->dev.user_count, req->dev.datatype,
+                                          &seg);
                         last = unpack_sz;
-                        MPID_Segment_unpack(&seg, 0, &last, REQ_FIELD(req, pack_buf));
+                        MPIR_Segment_unpack(&seg, 0, &last, REQ_FIELD(req, pack_buf));
                         if (last != unpack_sz) {
                             /* --BEGIN ERROR HANDLING-- */
                             /* received data was not entirely consumed by unpack()
@@ -849,7 +847,7 @@ int llc_poll(int in_blocking_poll, llc_send_f sfnc, llc_recv_f rfnc)
                         }
                         dprintf("llc_poll,ref_count=%d,pack_buf=%p\n", req->ref_count,
                                 REQ_FIELD(req, pack_buf));
-                        MPIU_Free(REQ_FIELD(req, pack_buf));
+                        MPL_free(REQ_FIELD(req, pack_buf));
                     }
 
                     req->status.MPI_TAG = events[0].side.initiator.tag & 0xffffffff;;
@@ -863,7 +861,7 @@ int llc_poll(int in_blocking_poll, llc_send_f sfnc, llc_recv_f rfnc)
                         found =
                             convert_rank_llc2mpi(req->comm, events[0].side.initiator.rank,
                                                  &req->status.MPI_SOURCE);
-                        MPIU_Assert(found);
+                        MPIR_Assert(found);
                     }
 
                     if (unlikely(events[0].side.initiator.error_code == LLC_ERROR_TRUNCATE)) {
@@ -877,7 +875,7 @@ int llc_poll(int in_blocking_poll, llc_send_f sfnc, llc_recv_f rfnc)
                     /* Dequeue request from posted queue.
                      * It's posted in MPID_Irecv --> MPIDI_CH3U_Recvq_FDU_or_AEP */
                     int found = MPIDI_CH3U_Recvq_DP(req);
-                    MPIU_Assert(found);
+                    MPIR_Assert(found);
                 }
 
                 /* Mark completion on rreq */
@@ -888,10 +886,10 @@ int llc_poll(int in_blocking_poll, llc_send_f sfnc, llc_recv_f rfnc)
                 break;
             }
         case LLC_EVENT_TARGET_PROC_FAIL:{
-                MPID_Request *req;
+                MPIR_Request *req;
 
                 lcmd = (LLC_cmd_t *) events[0].side.initiator.req_id;
-                MPIU_Assert(lcmd != 0);
+                MPIR_Assert(lcmd != 0);
 
                 req = ((struct llc_cmd_area *) lcmd->usr_area)->cbarg;
 
@@ -908,7 +906,7 @@ int llc_poll(int in_blocking_poll, llc_send_f sfnc, llc_recv_f rfnc)
                     MPID_Request_complete(req);
 
                     if (lcmd->iov_local[0].addr != 0) {
-                        MPIU_Free((void *) lcmd->iov_local[0].addr);
+                        MPL_free((void *) lcmd->iov_local[0].addr);
                         lcmd->iov_local[0].addr = 0;
                     }
                 }
@@ -954,18 +952,18 @@ int llc_poll(int in_blocking_poll, llc_send_f sfnc, llc_recv_f rfnc)
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_nem_llc_issend(struct MPIDI_VC *vc, const void *buf, int count, MPI_Datatype datatype,
-                        int dest, int tag, MPID_Comm * comm, int context_offset,
-                        struct MPID_Request **request)
+                        int dest, int tag, MPIR_Comm * comm, int context_offset,
+                        struct MPIR_Request **request)
 {
     int mpi_errno = MPI_SUCCESS, llc_errno;
     int dt_contig;
-    MPIDI_msg_sz_t data_sz;
-    MPID_Datatype *dt_ptr;
+    intptr_t data_sz;
+    MPIR_Datatype*dt_ptr;
     MPI_Aint dt_true_lb;
     int i;
 
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_LLC_ISSEND);
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_LLC_ISSEND);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_LLC_ISSEND);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_LLC_ISSEND);
 
     dprintf
         ("llc_isend,%d->%d,buf=%p,count=%d,datatype=%08x,dest=%d,tag=%08x,comm=%p,context_offset=%d\n",
@@ -976,10 +974,9 @@ int MPID_nem_llc_issend(struct MPIDI_VC *vc, const void *buf, int count, MPI_Dat
     LLC_comm_rank(LLC_COMM_MPICH, &LLC_my_rank);
     dprintf("llc_isend,LLC_my_rank=%d\n", LLC_my_rank);
 
-    struct MPID_Request *sreq = MPID_Request_create();
-    MPIU_Assert(sreq != NULL);
-    MPIU_Object_set_ref(sreq, 2);
-    sreq->kind = MPID_REQUEST_SEND;
+    struct MPIR_Request *sreq = MPIR_Request_create(MPIR_REQUEST_KIND__SEND);
+    MPIR_Assert(sreq != NULL);
+    MPIR_Object_set_ref(sreq, 2);
 
     /* Used in llc_poll --> MPID_nem_llc_send_handler */
     sreq->ch.vc = vc;
@@ -1015,11 +1012,11 @@ int MPID_nem_llc_issend(struct MPIDI_VC *vc, const void *buf, int count, MPI_Dat
     /* Prepare bit-vector to perform tag-match. We use the same bit-vector as in CH3 layer. */
     /* See src/mpid/ch3/src/mpid_isend.c */
     *(int32_t *) ((uint8_t *) & cmd[0].tag) = tag;
-    *(MPIU_Context_id_t *) ((uint8_t *) & cmd[0].tag + sizeof(int32_t)) =
+    *(MPIR_Context_id_t *) ((uint8_t *) & cmd[0].tag + sizeof(int32_t)) =
         comm->context_id + context_offset;
-    MPIU_Assert(sizeof(LLC_tag_t) >= sizeof(int32_t) + sizeof(MPIU_Context_id_t));
-    memset((uint8_t *) & cmd[0].tag + sizeof(int32_t) + sizeof(MPIU_Context_id_t),
-           0, sizeof(LLC_tag_t) - sizeof(int32_t) - sizeof(MPIU_Context_id_t));
+    MPIR_Assert(sizeof(LLC_tag_t) >= sizeof(int32_t) + sizeof(MPIR_Context_id_t));
+    memset((uint8_t *) & cmd[0].tag + sizeof(int32_t) + sizeof(MPIR_Context_id_t),
+           0, sizeof(LLC_tag_t) - sizeof(int32_t) - sizeof(MPIR_Context_id_t));
 
     dprintf("llc_isend,tag=");
     for (i = 0; i < sizeof(LLC_tag_t); i++) {
@@ -1039,21 +1036,21 @@ int MPID_nem_llc_issend(struct MPIDI_VC *vc, const void *buf, int count, MPI_Dat
     }
     else {
         /* See MPIDI_CH3_EagerNoncontigSend (in ch3u_eager.c) */
-        struct MPID_Segment *segment_ptr = MPID_Segment_alloc();
+        struct MPIR_Segment *segment_ptr = MPIR_Segment_alloc();
         MPIR_ERR_CHKANDJUMP(!segment_ptr, mpi_errno, MPI_ERR_OTHER, "**outofmemory");
         /* See also MPIDI_CH3_Request_create and _destory() */
         /*     in src/mpid/ch3/src/ch3u_request.c */
         sreq->dev.segment_ptr = segment_ptr;
 
-        MPID_Segment_init(buf, count, datatype, segment_ptr, 0);
-        MPIDI_msg_sz_t segment_first = 0;
-        MPIDI_msg_sz_t segment_size = data_sz;
-        MPIDI_msg_sz_t last = segment_size;
-        MPIU_Assert(last > 0);
-        REQ_FIELD(sreq, pack_buf) = MPIU_Malloc((size_t) data_sz);
+        MPIR_Segment_init(buf, count, datatype, segment_ptr);
+        intptr_t segment_first = 0;
+        intptr_t segment_size = data_sz;
+        intptr_t last = segment_size;
+        MPIR_Assert(last > 0);
+        REQ_FIELD(sreq, pack_buf) = MPL_malloc((size_t) data_sz, MPL_MEM_BUFFER);
         MPIR_ERR_CHKANDJUMP(!REQ_FIELD(sreq, pack_buf), mpi_errno, MPI_ERR_OTHER, "**outofmemory");
-        MPID_Segment_pack(segment_ptr, segment_first, &last, (char *) (REQ_FIELD(sreq, pack_buf)));
-        MPIU_Assert(last == data_sz);
+        MPIR_Segment_pack(segment_ptr, segment_first, &last, (char *) (REQ_FIELD(sreq, pack_buf)));
+        MPIR_Assert(last == data_sz);
         write_from_buf = REQ_FIELD(sreq, pack_buf);
     }
 
@@ -1073,7 +1070,7 @@ int MPID_nem_llc_issend(struct MPIDI_VC *vc, const void *buf, int count, MPI_Dat
 
   fn_exit:
     *request = sreq;
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_LLC_ISSEND);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_LLC_ISSEND);
     return mpi_errno;
   fn_fail:
     goto fn_exit;

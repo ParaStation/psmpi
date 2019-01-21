@@ -15,7 +15,7 @@
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Close_port as PMPI_Close_port
 #elif defined(HAVE_WEAK_ATTRIBUTE)
-int MPI_Close_port(const char *port_name) __attribute__((weak,alias("PMPI_Close_port")));
+int MPI_Close_port(const char *port_name) __attribute__ ((weak, alias("PMPI_Close_port")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -53,35 +53,36 @@ Input Parameters:
 int MPI_Close_port(const char *port_name)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_CLOSE_PORT);
+    MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_CLOSE_PORT);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
-    
+
     MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_CLOSE_PORT);
+    MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPI_CLOSE_PORT);
 
     /* ... body of routine ...  */
-    
+
     mpi_errno = MPIR_Close_port_impl(port_name);
-    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-    
+    if (mpi_errno != MPI_SUCCESS)
+        goto fn_fail;
+
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_CLOSE_PORT);
+    MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPI_CLOSE_PORT);
     MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
-	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_close_port",
-	    "**mpi_close_port %s", port_name);
+        mpi_errno =
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+                                 "**mpi_close_port", "**mpi_close_port %s", port_name);
     }
-#   endif
-    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+#endif
+    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

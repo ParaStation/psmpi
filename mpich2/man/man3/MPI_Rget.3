@@ -1,12 +1,11 @@
-.TH MPI_Rget 3 "11/9/2015" " " "MPI"
+.TH MPI_Rget 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Rget \-  Get data from a memory window on a remote process 
 .SH SYNOPSIS
 .nf
 int MPI_Rget(void *origin_addr, int origin_count, MPI_Datatype
-            origin_datatype, int target_rank, MPI_Aint target_disp,
-            int target_count, MPI_Datatype target_datatype, MPI_Win
-            win, MPI_Request *request)
+             origin_datatype, int target_rank, MPI_Aint target_disp,
+             int target_count, MPI_Datatype target_datatype, MPI_Win win, MPI_Request * request)
 .fi
 
 .I MPI_Rget

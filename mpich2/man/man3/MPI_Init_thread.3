@@ -1,15 +1,15 @@
-.TH MPI_Init_thread 3 "11/9/2015" " " "MPI"
+.TH MPI_Init_thread 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Init_thread \-  Initialize the MPI execution environment 
 .SH SYNOPSIS
 .nf
-int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
+int MPI_Init_thread(int *argc, char ***argv, int required, int *provided)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B argc 
-- Pointer to the number of arguments 
+- Pointer to the number of arguments
 .PD 1
 .PD 0
 .TP
@@ -46,26 +46,26 @@ The valid values for the level of thread support are:
 .PD 0
 .TP
 .B MPI_THREAD_SINGLE 
-- Only one thread will execute. 
+- Only one thread will execute.
 .PD 1
 .PD 0
 .TP
 .B MPI_THREAD_FUNNELED 
-- The process may be multi-threaded, but only the main 
-thread will make MPI calls (all MPI calls are funneled to the 
-main thread). 
+- The process may be multi-threaded, but only the main
+thread will make MPI calls (all MPI calls are funneled to the
+main thread).
 .PD 1
 .PD 0
 .TP
 .B MPI_THREAD_SERIALIZED 
-- The process may be multi-threaded, and multiple 
-threads may make MPI calls, but only one at a time: MPI calls are not 
-made concurrently from two distinct threads (all MPI calls are serialized). 
+- The process may be multi-threaded, and multiple
+threads may make MPI calls, but only one at a time: MPI calls are not
+made concurrently from two distinct threads (all MPI calls are serialized).
 .PD 1
 .PD 0
 .TP
 .B MPI_THREAD_MULTIPLE 
-- Multiple threads may call MPI, with no restrictions. 
+- Multiple threads may call MPI, with no restrictions.
 .PD 1
 
 .SH NOTES FOR FORTRAN

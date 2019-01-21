@@ -1,28 +1,28 @@
-.TH MPI_Grequest_start 3 "11/9/2015" " " "MPI"
+.TH MPI_Grequest_start 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Grequest_start \-  Create and return a user-defined request 
 .SH SYNOPSIS
 .nf
-int MPI_Grequest_start( MPI_Grequest_query_function *query_fn, 
-                      MPI_Grequest_free_function *free_fn, 
-                      MPI_Grequest_cancel_function *cancel_fn, 
-                      void *extra_state, MPI_Request *request )
+int MPI_Grequest_start(MPI_Grequest_query_function * query_fn,
+                       MPI_Grequest_free_function * free_fn,
+                       MPI_Grequest_cancel_function * cancel_fn,
+                       void *extra_state, MPI_Request * request)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B query_fn 
-- callback function invoked when request status is queried (function)  
+- callback function invoked when request status is queried (function)
 .PD 1
 .PD 0
 .TP
 .B free_fn 
-- callback function invoked when request is freed (function) 
+- callback function invoked when request is freed (function)
 .PD 1
 .PD 0
 .TP
 .B cancel_fn 
-- callback function invoked when request is cancelled (function) 
+- callback function invoked when request is cancelled (function)
 .PD 1
 .PD 0
 .TP

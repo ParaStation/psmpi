@@ -1,10 +1,10 @@
-.TH MPI_Win_create_errhandler 3 "11/9/2015" " " "MPI"
+.TH MPI_Win_create_errhandler 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Win_create_errhandler \-  Create an error handler for use with MPI window objects 
 .SH SYNOPSIS
 .nf
-int MPI_Win_create_errhandler(MPI_Win_errhandler_function *win_errhandler_fn,
-                            MPI_Errhandler *errhandler)
+int MPI_Win_create_errhandler(MPI_Win_errhandler_function * win_errhandler_fn,
+                              MPI_Errhandler * errhandler)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -17,7 +17,7 @@ int MPI_Win_create_errhandler(MPI_Win_errhandler_function *win_errhandler_fn,
 .PD 0
 .TP
 .B errhandler 
-- MPI error handler (handle) 
+- MPI error handler (handle)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

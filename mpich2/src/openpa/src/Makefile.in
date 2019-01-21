@@ -104,8 +104,8 @@ am__aclocal_m4_deps = $(top_srcdir)/confdb/ax_prefix_config_h.m4 \
 	$(top_srcdir)/confdb/lt~obsolete.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
-DIST_COMMON = $(srcdir)/Makefile.am $(include_HEADERS) \
-	$(nobase_include_HEADERS) $(am__DIST_COMMON)
+DIST_COMMON = $(srcdir)/Makefile.am $(am__include_HEADERS_DIST) \
+	$(am__nobase_include_HEADERS_DIST) $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES =
@@ -163,6 +163,7 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+am__include_HEADERS_DIST = opa_primitives.h opa_queue.h opa_util.h
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -192,6 +193,16 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(includedir)" "$(DESTDIR)$(includedir)" \
 	"$(DESTDIR)$(includedir)"
+am__nobase_include_HEADERS_DIST = primitives/opa_by_lock.h \
+	primitives/opa_emulated.h primitives/opa_gcc_ia64.h \
+	primitives/opa_gcc_intel_32_64.h \
+	primitives/opa_gcc_intel_32_64_barrier.h \
+	primitives/opa_gcc_intel_32_64_ops.h \
+	primitives/opa_gcc_intel_32_64_p3.h \
+	primitives/opa_gcc_intel_32_64_p3barrier.h \
+	primitives/opa_gcc_intrinsics.h primitives/opa_gcc_ppc.h \
+	primitives/opa_gcc_sicortex.h primitives/opa_nt_intrinsics.h \
+	primitives/opa_sun_atomic_ops.h primitives/opa_unsafe.h
 HEADERS = $(include_HEADERS) $(nobase_include_HEADERS) \
 	$(nodist_include_HEADERS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) \
@@ -342,26 +353,26 @@ top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = lib@OPALIBNAME@.la
 lib@OPALIBNAME@_la_SOURCES = opa_primitives.c opa_queue.c
 lib@OPALIBNAME@_la_LDFLAGS = ${lib@OPALIBNAME@_so_versionflags}
-include_HEADERS = opa_primitives.h opa_queue.h opa_util.h
-nodist_include_HEADERS = opa_config.h
-DISTCLEANFILES = opa_config.h
+@EMBEDDED_FALSE@include_HEADERS = opa_primitives.h opa_queue.h opa_util.h
+@EMBEDDED_FALSE@nodist_include_HEADERS = opa_config.h
 
 # "nobase_" causes the primitives directory to be preserved when installed
-nobase_include_HEADERS = primitives/opa_by_lock.h                   \
-                         primitives/opa_emulated.h                  \
-                         primitives/opa_gcc_ia64.h                  \
-                         primitives/opa_gcc_intel_32_64.h           \
-                         primitives/opa_gcc_intel_32_64_barrier.h   \
-                         primitives/opa_gcc_intel_32_64_ops.h       \
-                         primitives/opa_gcc_intel_32_64_p3.h        \
-                         primitives/opa_gcc_intel_32_64_p3barrier.h \
-                         primitives/opa_gcc_intrinsics.h            \
-                         primitives/opa_gcc_ppc.h                   \
-                         primitives/opa_gcc_sicortex.h              \
-                         primitives/opa_nt_intrinsics.h             \
-                         primitives/opa_sun_atomic_ops.h            \
-                         primitives/opa_unsafe.h
+@EMBEDDED_FALSE@nobase_include_HEADERS = primitives/opa_by_lock.h                   \
+@EMBEDDED_FALSE@                         primitives/opa_emulated.h                  \
+@EMBEDDED_FALSE@                         primitives/opa_gcc_ia64.h                  \
+@EMBEDDED_FALSE@                         primitives/opa_gcc_intel_32_64.h           \
+@EMBEDDED_FALSE@                         primitives/opa_gcc_intel_32_64_barrier.h   \
+@EMBEDDED_FALSE@                         primitives/opa_gcc_intel_32_64_ops.h       \
+@EMBEDDED_FALSE@                         primitives/opa_gcc_intel_32_64_p3.h        \
+@EMBEDDED_FALSE@                         primitives/opa_gcc_intel_32_64_p3barrier.h \
+@EMBEDDED_FALSE@                         primitives/opa_gcc_intrinsics.h            \
+@EMBEDDED_FALSE@                         primitives/opa_gcc_ppc.h                   \
+@EMBEDDED_FALSE@                         primitives/opa_gcc_sicortex.h              \
+@EMBEDDED_FALSE@                         primitives/opa_nt_intrinsics.h             \
+@EMBEDDED_FALSE@                         primitives/opa_sun_atomic_ops.h            \
+@EMBEDDED_FALSE@                         primitives/opa_unsafe.h
 
+DISTCLEANFILES = opa_config.h
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 

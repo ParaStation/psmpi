@@ -1,0 +1,40 @@
+<dir>
+<file name="ireduce_intra_reduce_scatter_gather.c" info="1542820949"/>
+<file name="ireduce_inter_local_reduce_remote_send.c" info="1542820949"/>
+<file name="ireduce_intra_smp.c" info="1542820949"/>
+<file name="ireduce_tsp_tree_algos_undef.h" info="1542820949"/>
+<file name="ireduce.c" info="1542820949"/>
+<file name="ireduce_intra_tree.c" info="1542820949"/>
+<file name="ireduce_tsp_tree_algos.h" info="1542820949"/>
+<file name="ireduce_intra_ring.c" info="1542820949"/>
+<file name="ireduce_gentran_algos.c" info="1542820949"/>
+<file name="ireduce_tsp_tree_algos_prototypes.h" info="1542820949"/>
+<file name="ireduce_intra_binomial.c" info="1542820949"/>
+</dir>
+<data>
+<fileinfo name="ireduce_intra_reduce_scatter_gather.c">
+</fileinfo>
+<fileinfo name="ireduce_inter_local_reduce_remote_send.c">
+</fileinfo>
+<fileinfo name="ireduce_intra_smp.c">
+</fileinfo>
+<fileinfo name="ireduce_tsp_tree_algos_undef.h">
+</fileinfo>
+<fileinfo name="ireduce.c">
+MPID_STATE_MPI_IREDUCE MPI_Ireduce
+</fileinfo>
+<fileinfo name="ireduce_intra_tree.c">
+</fileinfo>
+<fileinfo name="ireduce_tsp_tree_algos.h">
+MPID_STATE_MPIR_TSP_IREDUCE_SCHED_INTRA_TREE MPIR_TSP_Ireduce_sched_intra_tree
+MPID_STATE_MPIR_TSP_IREDUCE_INTRA_TREE MPIR_TSP_Ireduce_intra_tree
+</fileinfo>
+<fileinfo name="ireduce_intra_ring.c">
+</fileinfo>
+<fileinfo name="ireduce_gentran_algos.c">
+</fileinfo>
+<fileinfo name="ireduce_tsp_tree_algos_prototypes.h">
+</fileinfo>
+<fileinfo name="ireduce_intra_binomial.c">
+</fileinfo>
+</data>

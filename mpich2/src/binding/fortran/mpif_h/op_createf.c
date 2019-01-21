@@ -267,6 +267,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_op_create_( MPI_User_function*, MPI_Fin
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_op_create_ ( MPI_User_function*v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *ierr ){
     int l2;
-    l2 = MPIR_FROM_FLOG(*v2);
+    l2 = MPII_FROM_FLOG(*v2);
     *ierr = MPI_Op_create( v1, l2, v3 );
 }

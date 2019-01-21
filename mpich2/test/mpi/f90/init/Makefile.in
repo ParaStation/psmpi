@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 # This Makefile.am generated automatically by f77tof90
-# from test/mpi/f77/init/Makefile.am.  DO NOT EDIT
+# from f77/init/Makefile.am.  DO NOT EDIT
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
@@ -224,6 +224,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -379,6 +380,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -703,8 +705,8 @@ testing:
 # change its contents
 @MAINTAINER_MODE_TRUE@$(srcdir)/Makefile.am: $(srcdir)/Makefile.am-stamp
 
-@MAINTAINER_MODE_TRUE@$(srcdir)/Makefile.am-stamp: $(master_top_srcdir)/test/mpi/f77/init/Makefile.am $(master_top_srcdir)/maint/f77tof90
-@MAINTAINER_MODE_TRUE@	( cd $(master_top_srcdir) && ./maint/f77tof90 test/mpi/f77/init test/mpi/f90/init Makefile.am Makefile.ap )
+@MAINTAINER_MODE_TRUE@$(srcdir)/Makefile.am-stamp: $(top_srcdir)/f77/init/Makefile.am $(top_srcdir)/maint/f77tof90
+@MAINTAINER_MODE_TRUE@	( cd $(top_srcdir) && ./maint/f77tof90 f77/init f90/init Makefile.am Makefile.ap )
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "mpi.h"
+#include "mpitest.h"
 
 /*
  * Run this test with 8 processes.  This test was submitted by xxx
@@ -31,7 +32,7 @@ int main(int argc, char *argv[])
     int i, j, status;
     FILE *pf = 0;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &nProc);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
@@ -52,8 +53,7 @@ int main(int argc, char *argv[])
         char buf[128];
         sprintf(buf, "fast_mpi_%d.dmp", rank);
         pf = fopen(buf, "w");
-    }
-    else if (loopProgress) {
+    } else if (loopProgress) {
         pf = stdout;
     }
 
@@ -70,8 +70,7 @@ int main(int argc, char *argv[])
             if (verbose) {
                 fprintf(pf, "Master : loop %d\n", i);
                 fflush(pf);
-            }
-            else if (loopProgress && (i & PROGRESS_COUNT) == 0) {
+            } else if (loopProgress && (i & PROGRESS_COUNT) == 0) {
                 fprintf(pf, "Master: loop %d\n", i);
                 fflush(pf);
             }
@@ -105,8 +104,7 @@ int main(int argc, char *argv[])
         }
         free(psend);
         free(precv);
-    }
-    else {
+    } else {
         int *psend;
         int *precv;
         psend = (int *) calloc(DATA_SIZE, sizeof(int));
@@ -141,12 +139,7 @@ int main(int argc, char *argv[])
     if (verbose) {
         fclose(pf);
     }
-    MPI_Finalize();
-
-    /* This test fails if it hangs */
-    if (rank == 0) {
-        printf(" No Errors\n");
-    }
+    MTest_Finalize(0);
 
     return 0;
 }

@@ -20,6 +20,48 @@
 #     See COPYRIGHT in top-level directory.
 #
 
+# -*- Mode: Makefile; -*-
+#
+# (C) 2016 by Argonne National Laboratory.
+#     See COPYRIGHT in top-level directory.
+#
+
+# -*- Mode: Makefile; -*-
+#
+# (C) 2016 by Argonne National Laboratory.
+#     See COPYRIGHT in top-level directory.
+#
+
+# -*- Mode: Makefile; -*-
+#
+# (C) 2016 by Argonne National Laboratory.
+#     See COPYRIGHT in top-level directory.
+#
+
+# -*- Mode: Makefile; -*-
+#
+# (C) 2016 by Argonne National Laboratory.
+#     See COPYRIGHT in top-level directory.
+#
+
+# -*- Mode: Makefile; -*-
+#
+# (C) 2016 by Argonne National Laboratory.
+#     See COPYRIGHT in top-level directory.
+#
+
+# -*- Mode: Makefile; -*-
+#
+# (C) 2016 by Argonne National Laboratory.
+#     See COPYRIGHT in top-level directory.
+#
+
+# -*- Mode: Makefile; -*-
+#
+# (C) 2016 by Argonne National Laboratory.
+#     See COPYRIGHT in top-level directory.
+#
+
 
 VPATH = @srcdir@
 am__is_gnu_make = { \
@@ -101,9 +143,14 @@ subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cc.m4 \
 	$(top_srcdir)/confdb/aclocal_coverage.m4 \
+	$(top_srcdir)/confdb/aclocal_libs.m4 \
+	$(top_srcdir)/confdb/aclocal_shm.m4 \
 	$(top_srcdir)/confdb/aclocal_util.m4 \
+	$(top_srcdir)/confdb/ax_gcc_func_attribute.m4 \
+	$(top_srcdir)/confdb/ax_gcc_var_attribute.m4 \
+	$(top_srcdir)/confdb/ax_lib_socket_nsl.m4 \
 	$(top_srcdir)/confdb/ax_prefix_config_h.m4 \
-	$(top_srcdir)/confdb/libtool.m4 \
+	$(top_srcdir)/confdb/ax_tls.m4 $(top_srcdir)/confdb/libtool.m4 \
 	$(top_srcdir)/confdb/ltoptions.m4 \
 	$(top_srcdir)/confdb/ltsugar.m4 \
 	$(top_srcdir)/confdb/ltversion.m4 \
@@ -117,13 +164,59 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/config.h
-CONFIG_CLEAN_FILES = localdefs
+CONFIG_CLEAN_FILES = localdefs include/mpl_timer.h
 CONFIG_CLEAN_VPATH_FILES =
-LTLIBRARIES = $(noinst_LTLIBRARIES)
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
+am__install_max = 40
+am__nobase_strip_setup = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
+am__nobase_strip = \
+  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
+am__nobase_list = $(am__nobase_strip_setup); \
+  for p in $$list; do echo "$$p $$p"; done | \
+  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
+  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
+    if (++n[$$2] == $(am__install_max)) \
+      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
+    END { for (dir in files) print dir, files[dir] }'
+am__base_list = \
+  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
+  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
+am__uninstall_files_from_dir = { \
+  test -z "$$files" \
+    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
+    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
+         $(am__cd) "$$dir" && rm -f $$files; }; \
+  }
+am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
+LTLIBRARIES = $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES)
 lib@MPLLIBNAME@_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
-am_lib@MPLLIBNAME@_la_OBJECTS = src/mplstr.lo src/mpltrmem.lo \
-	src/mplenv.lo src/mplmsg.lo src/mplsock.lo
+am_lib@MPLLIBNAME@_la_OBJECTS = src/bt/mpl_bt.lo src/dbg/mpl_dbg.lo \
+	src/env/mpl_env.lo src/mem/mpl_trmem.lo src/msg/mpl_msg.lo \
+	src/sock/mpl_sock.lo src/sock/mpl_host.lo src/str/mpl_str.lo \
+	src/str/mpl_argstr.lo src/str/mpl_arg_serial.lo \
+	src/thread/mpl_thread.lo src/thread/mpl_thread_win.lo \
+	src/thread/mpl_thread_solaris.lo \
+	src/thread/mpl_thread_argobots.lo \
+	src/thread/mpl_thread_posix.lo \
+	src/timer/mpl_timer_clock_gettime.lo \
+	src/timer/mpl_timer_gcc_ia64_cycle.lo \
+	src/timer/mpl_timer_gethrtime.lo \
+	src/timer/mpl_timer_gettimeofday.lo \
+	src/timer/mpl_timer_linux86_cycle.lo \
+	src/timer/mpl_timer_ppc64_cycle.lo \
+	src/timer/mpl_timer_mach_absolute_time.lo \
+	src/timer/mpl_timer_query_performance_counter.lo \
+	src/timer/mpl_timer_win86_cycle.lo \
+	src/timer/mpl_timer_device.lo src/shm/mpl_shm.lo \
+	src/shm/mpl_shm_sysv.lo src/shm/mpl_shm_mmap.lo \
+	src/shm/mpl_shm_win.lo
 lib@MPLLIBNAME@_la_OBJECTS = $(am_lib@MPLLIBNAME@_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -133,6 +226,9 @@ lib@MPLLIBNAME@_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(AM_CFLAGS) $(CFLAGS) $(lib@MPLLIBNAME@_la_LDFLAGS) \
 	$(LDFLAGS) -o $@
+@MPL_EMBEDDED_MODE_FALSE@am_lib@MPLLIBNAME@_la_rpath = -rpath \
+@MPL_EMBEDDED_MODE_FALSE@	$(libdir)
+@MPL_EMBEDDED_MODE_TRUE@am_lib@MPLLIBNAME@_la_rpath =
 am__EXEEXT_1 = strsep$(EXEEXT)
 am_strsep_OBJECTS = test/strsep.$(OBJEXT)
 strsep_OBJECTS = $(am_strsep_OBJECTS)
@@ -178,42 +274,16 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-am__include_HEADERS_DIST = include/mpl.h include/mpl_utlist.h \
-	include/mpl_valgrind.h include/mplconfig.h include/mplenv.h \
-	include/mplstr.h include/mpltrmem.h include/mplmsg.h \
-	include/mpliov.h include/mplsock.h
-am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
-am__vpath_adj = case $$p in \
-    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
-    *) f=$$p;; \
-  esac;
-am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
-am__install_max = 40
-am__nobase_strip_setup = \
-  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
-am__nobase_strip = \
-  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
-am__nobase_list = $(am__nobase_strip_setup); \
-  for p in $$list; do echo "$$p $$p"; done | \
-  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
-  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
-    if (++n[$$2] == $(am__install_max)) \
-      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
-    END { for (dir in files) print dir, files[dir] }'
-am__base_list = \
-  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
-  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
-am__uninstall_files_from_dir = { \
-  test -z "$$files" \
-    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
-    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
-         $(am__cd) "$$dir" && rm -f $$files; }; \
-  }
-am__installdirs = "$(DESTDIR)$(includedir)"
-am__noinst_HEADERS_DIST = include/mpl.h include/mpl_utlist.h \
-	include/mpl_valgrind.h include/mplconfig.h include/mplenv.h \
-	include/mplstr.h include/mpltrmem.h include/mplmsg.h \
-	include/mpliov.h include/mplsock.h
+am__include_HEADERS_DIST = include/mpl.h include/mpl_base.h \
+	include/mpl_math.h include/mplconfig.h include/utlist.h \
+	include/mpl_valgrind.h include/mpl_env.h include/mpl_str.h \
+	include/mpl_trmem.h include/mpl_msg.h include/mpl_sock.h \
+	include/mpl_iov.h include/mpl_bt.h include/mpl_shm.h
+am__noinst_HEADERS_DIST = include/mpl.h include/mpl_base.h \
+	include/mpl_math.h include/mplconfig.h include/utlist.h \
+	include/mpl_valgrind.h include/mpl_env.h include/mpl_str.h \
+	include/mpl_trmem.h include/mpl_msg.h include/mpl_sock.h \
+	include/mpl_iov.h include/mpl_bt.h include/mpl_shm.h
 HEADERS = $(include_HEADERS) $(noinst_HEADERS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
@@ -413,15 +483,21 @@ TEST_LOG_DRIVER = $(SHELL) $(top_srcdir)/confdb/test-driver
 TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
 	$(TEST_LOG_FLAGS)
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/localdefs.in \
-	$(top_srcdir)/confdb/ar-lib $(top_srcdir)/confdb/compile \
-	$(top_srcdir)/confdb/config.guess \
+	$(srcdir)/src/Makefile.mk $(srcdir)/src/bt/Makefile.mk \
+	$(srcdir)/src/dbg/Makefile.mk $(srcdir)/src/env/Makefile.mk \
+	$(srcdir)/src/mem/Makefile.mk $(srcdir)/src/msg/Makefile.mk \
+	$(srcdir)/src/shm/Makefile.mk $(srcdir)/src/sock/Makefile.mk \
+	$(srcdir)/src/str/Makefile.mk $(srcdir)/src/thread/Makefile.mk \
+	$(srcdir)/src/timer/Makefile.mk $(top_srcdir)/confdb/ar-lib \
+	$(top_srcdir)/confdb/compile $(top_srcdir)/confdb/config.guess \
 	$(top_srcdir)/confdb/config.sub $(top_srcdir)/confdb/depcomp \
 	$(top_srcdir)/confdb/install-sh $(top_srcdir)/confdb/ltmain.sh \
 	$(top_srcdir)/confdb/missing $(top_srcdir)/confdb/test-driver \
-	$(top_srcdir)/include/config.h.in confdb/ar-lib confdb/compile \
-	confdb/config.guess confdb/config.rpath confdb/config.sub \
-	confdb/depcomp confdb/install-sh confdb/ltmain.sh \
-	confdb/missing
+	$(top_srcdir)/include/config.h.in \
+	$(top_srcdir)/include/mpl_timer.h.in confdb/ar-lib \
+	confdb/compile confdb/config.guess confdb/config.rpath \
+	confdb/config.sub confdb/depcomp confdb/install-sh \
+	confdb/ltmain.sh confdb/missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -464,7 +540,6 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
-FROM_MPICH = @FROM_MPICH@
 GCOV = @GCOV@
 GREP = @GREP@
 INSTALL = @INSTALL@
@@ -485,6 +560,8 @@ MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 MPLLIBNAME = @MPLLIBNAME@
+MPL_TIMER_KIND = @MPL_TIMER_KIND@
+MPL_TIMER_TYPE = @MPL_TIMER_TYPE@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
@@ -561,32 +638,48 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I confdb
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
-noinst_LTLIBRARIES = lib@MPLLIBNAME@.la
-lib@MPLLIBNAME@_la_SOURCES = \
-	src/mplstr.c \
-	src/mpltrmem.c \
-	src/mplenv.c \
-	src/mplmsg.c \
-	src/mplsock.c
-
+lib@MPLLIBNAME@_la_SOURCES = src/bt/mpl_bt.c src/dbg/mpl_dbg.c \
+	src/env/mpl_env.c src/mem/mpl_trmem.c src/msg/mpl_msg.c \
+	src/sock/mpl_sock.c src/sock/mpl_host.c src/str/mpl_str.c \
+	src/str/mpl_argstr.c src/str/mpl_arg_serial.c \
+	src/thread/mpl_thread.c src/thread/mpl_thread_win.c \
+	src/thread/mpl_thread_solaris.c \
+	src/thread/mpl_thread_argobots.c src/thread/mpl_thread_posix.c \
+	src/timer/mpl_timer_clock_gettime.c \
+	src/timer/mpl_timer_gcc_ia64_cycle.c \
+	src/timer/mpl_timer_gethrtime.c \
+	src/timer/mpl_timer_gettimeofday.c \
+	src/timer/mpl_timer_linux86_cycle.c \
+	src/timer/mpl_timer_ppc64_cycle.c \
+	src/timer/mpl_timer_mach_absolute_time.c \
+	src/timer/mpl_timer_query_performance_counter.c \
+	src/timer/mpl_timer_win86_cycle.c src/timer/mpl_timer_device.c \
+	src/shm/mpl_shm.c src/shm/mpl_shm_sysv.c \
+	src/shm/mpl_shm_mmap.c src/shm/mpl_shm_win.c
 lib@MPLLIBNAME@_la_LDFLAGS = ${lib@MPLLIBNAME@_so_versionflags}
 MPL_TESTS = strsep
 strsep_SOURCES = test/strsep.c
 strsep_LDADD = lib@MPLLIBNAME@.la
 mpl_headers = \
-    include/mpl.h          \
-    include/mpl_utlist.h   \
-    include/mpl_valgrind.h \
-    include/mplconfig.h    \
-    include/mplenv.h       \
-    include/mplstr.h       \
-    include/mpltrmem.h     \
-    include/mplmsg.h       \
-    include/mpliov.h       \
-    include/mplsock.h
+    include/mpl.h           \
+    include/mpl_base.h      \
+    include/mpl_math.h      \
+    include/mplconfig.h     \
+    include/utlist.h    \
+    include/mpl_valgrind.h  \
+    include/mpl_env.h       \
+    include/mpl_str.h       \
+    include/mpl_trmem.h     \
+    include/mpl_msg.h       \
+    include/mpl_sock.h      \
+    include/mpl_iov.h       \
+    include/mpl_bt.h        \
+    include/mpl_shm.h
 
 @MPL_EMBEDDED_MODE_TRUE@noinst_HEADERS = $(mpl_headers)
+@MPL_EMBEDDED_MODE_TRUE@noinst_LTLIBRARIES = lib@MPLLIBNAME@.la
 @MPL_EMBEDDED_MODE_FALSE@include_HEADERS = $(mpl_headers)
+@MPL_EMBEDDED_MODE_FALSE@lib_LTLIBRARIES = lib@MPLLIBNAME@.la
 gcov_sources = $(libmpl_la_SOURCES)
 # --------------------------------------------------------------------------
 
@@ -600,7 +693,7 @@ all: all-am
 .SUFFIXES: .c .lo .log .o .obj .test .test$(EXEEXT) .trs
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/src/Makefile.mk $(srcdir)/src/bt/Makefile.mk $(srcdir)/src/dbg/Makefile.mk $(srcdir)/src/env/Makefile.mk $(srcdir)/src/mem/Makefile.mk $(srcdir)/src/msg/Makefile.mk $(srcdir)/src/sock/Makefile.mk $(srcdir)/src/str/Makefile.mk $(srcdir)/src/thread/Makefile.mk $(srcdir)/src/timer/Makefile.mk $(srcdir)/src/shm/Makefile.mk $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -622,6 +715,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe);; \
 	esac;
+$(srcdir)/src/Makefile.mk $(srcdir)/src/bt/Makefile.mk $(srcdir)/src/dbg/Makefile.mk $(srcdir)/src/env/Makefile.mk $(srcdir)/src/mem/Makefile.mk $(srcdir)/src/msg/Makefile.mk $(srcdir)/src/sock/Makefile.mk $(srcdir)/src/str/Makefile.mk $(srcdir)/src/thread/Makefile.mk $(srcdir)/src/timer/Makefile.mk $(srcdir)/src/shm/Makefile.mk $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -648,6 +742,43 @@ distclean-hdr:
 	-rm -f include/config.h include/stamp-h1
 localdefs: $(top_builddir)/config.status $(srcdir)/localdefs.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
+include/mpl_timer.h: $(top_builddir)/config.status $(top_srcdir)/include/mpl_timer.h.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+
+install-libLTLIBRARIES: $(lib_LTLIBRARIES)
+	@$(NORMAL_INSTALL)
+	@list='$(lib_LTLIBRARIES)'; test -n "$(libdir)" || list=; \
+	list2=; for p in $$list; do \
+	  if test -f $$p; then \
+	    list2="$$list2 $$p"; \
+	  else :; fi; \
+	done; \
+	test -z "$$list2" || { \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(libdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(libdir)" || exit 1; \
+	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 '$(DESTDIR)$(libdir)'"; \
+	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL) $(INSTALL_STRIP_FLAG) $$list2 "$(DESTDIR)$(libdir)"; \
+	}
+
+uninstall-libLTLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(lib_LTLIBRARIES)'; test -n "$(libdir)" || list=; \
+	for p in $$list; do \
+	  $(am__strip_dir) \
+	  echo " $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f '$(DESTDIR)$(libdir)/$$f'"; \
+	  $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=uninstall rm -f "$(DESTDIR)$(libdir)/$$f"; \
+	done
+
+clean-libLTLIBRARIES:
+	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
+	@list='$(lib_LTLIBRARIES)'; \
+	locs=`for p in $$list; do echo $$p; done | \
+	      sed 's|^[^/]*$$|.|; s|/[^/]*$$||; s|$$|/so_locations|' | \
+	      sort -u`; \
+	test -z "$$locs" || { \
+	  echo rm -f $${locs}; \
+	  rm -f $${locs}; \
+	}
 
 clean-noinstLTLIBRARIES:
 	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
@@ -659,20 +790,127 @@ clean-noinstLTLIBRARIES:
 	  echo rm -f $${locs}; \
 	  rm -f $${locs}; \
 	}
-src/$(am__dirstamp):
-	@$(MKDIR_P) src
-	@: > src/$(am__dirstamp)
-src/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) src/$(DEPDIR)
-	@: > src/$(DEPDIR)/$(am__dirstamp)
-src/mplstr.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
-src/mpltrmem.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
-src/mplenv.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
-src/mplmsg.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
-src/mplsock.lo: src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/bt/$(am__dirstamp):
+	@$(MKDIR_P) src/bt
+	@: > src/bt/$(am__dirstamp)
+src/bt/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/bt/$(DEPDIR)
+	@: > src/bt/$(DEPDIR)/$(am__dirstamp)
+src/bt/mpl_bt.lo: src/bt/$(am__dirstamp) \
+	src/bt/$(DEPDIR)/$(am__dirstamp)
+src/dbg/$(am__dirstamp):
+	@$(MKDIR_P) src/dbg
+	@: > src/dbg/$(am__dirstamp)
+src/dbg/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/dbg/$(DEPDIR)
+	@: > src/dbg/$(DEPDIR)/$(am__dirstamp)
+src/dbg/mpl_dbg.lo: src/dbg/$(am__dirstamp) \
+	src/dbg/$(DEPDIR)/$(am__dirstamp)
+src/env/$(am__dirstamp):
+	@$(MKDIR_P) src/env
+	@: > src/env/$(am__dirstamp)
+src/env/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/env/$(DEPDIR)
+	@: > src/env/$(DEPDIR)/$(am__dirstamp)
+src/env/mpl_env.lo: src/env/$(am__dirstamp) \
+	src/env/$(DEPDIR)/$(am__dirstamp)
+src/mem/$(am__dirstamp):
+	@$(MKDIR_P) src/mem
+	@: > src/mem/$(am__dirstamp)
+src/mem/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/mem/$(DEPDIR)
+	@: > src/mem/$(DEPDIR)/$(am__dirstamp)
+src/mem/mpl_trmem.lo: src/mem/$(am__dirstamp) \
+	src/mem/$(DEPDIR)/$(am__dirstamp)
+src/msg/$(am__dirstamp):
+	@$(MKDIR_P) src/msg
+	@: > src/msg/$(am__dirstamp)
+src/msg/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/msg/$(DEPDIR)
+	@: > src/msg/$(DEPDIR)/$(am__dirstamp)
+src/msg/mpl_msg.lo: src/msg/$(am__dirstamp) \
+	src/msg/$(DEPDIR)/$(am__dirstamp)
+src/sock/$(am__dirstamp):
+	@$(MKDIR_P) src/sock
+	@: > src/sock/$(am__dirstamp)
+src/sock/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/sock/$(DEPDIR)
+	@: > src/sock/$(DEPDIR)/$(am__dirstamp)
+src/sock/mpl_sock.lo: src/sock/$(am__dirstamp) \
+	src/sock/$(DEPDIR)/$(am__dirstamp)
+src/sock/mpl_host.lo: src/sock/$(am__dirstamp) \
+	src/sock/$(DEPDIR)/$(am__dirstamp)
+src/str/$(am__dirstamp):
+	@$(MKDIR_P) src/str
+	@: > src/str/$(am__dirstamp)
+src/str/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/str/$(DEPDIR)
+	@: > src/str/$(DEPDIR)/$(am__dirstamp)
+src/str/mpl_str.lo: src/str/$(am__dirstamp) \
+	src/str/$(DEPDIR)/$(am__dirstamp)
+src/str/mpl_argstr.lo: src/str/$(am__dirstamp) \
+	src/str/$(DEPDIR)/$(am__dirstamp)
+src/str/mpl_arg_serial.lo: src/str/$(am__dirstamp) \
+	src/str/$(DEPDIR)/$(am__dirstamp)
+src/thread/$(am__dirstamp):
+	@$(MKDIR_P) src/thread
+	@: > src/thread/$(am__dirstamp)
+src/thread/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/thread/$(DEPDIR)
+	@: > src/thread/$(DEPDIR)/$(am__dirstamp)
+src/thread/mpl_thread.lo: src/thread/$(am__dirstamp) \
+	src/thread/$(DEPDIR)/$(am__dirstamp)
+src/thread/mpl_thread_win.lo: src/thread/$(am__dirstamp) \
+	src/thread/$(DEPDIR)/$(am__dirstamp)
+src/thread/mpl_thread_solaris.lo: src/thread/$(am__dirstamp) \
+	src/thread/$(DEPDIR)/$(am__dirstamp)
+src/thread/mpl_thread_argobots.lo: src/thread/$(am__dirstamp) \
+	src/thread/$(DEPDIR)/$(am__dirstamp)
+src/thread/mpl_thread_posix.lo: src/thread/$(am__dirstamp) \
+	src/thread/$(DEPDIR)/$(am__dirstamp)
+src/timer/$(am__dirstamp):
+	@$(MKDIR_P) src/timer
+	@: > src/timer/$(am__dirstamp)
+src/timer/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/timer/$(DEPDIR)
+	@: > src/timer/$(DEPDIR)/$(am__dirstamp)
+src/timer/mpl_timer_clock_gettime.lo: src/timer/$(am__dirstamp) \
+	src/timer/$(DEPDIR)/$(am__dirstamp)
+src/timer/mpl_timer_gcc_ia64_cycle.lo: src/timer/$(am__dirstamp) \
+	src/timer/$(DEPDIR)/$(am__dirstamp)
+src/timer/mpl_timer_gethrtime.lo: src/timer/$(am__dirstamp) \
+	src/timer/$(DEPDIR)/$(am__dirstamp)
+src/timer/mpl_timer_gettimeofday.lo: src/timer/$(am__dirstamp) \
+	src/timer/$(DEPDIR)/$(am__dirstamp)
+src/timer/mpl_timer_linux86_cycle.lo: src/timer/$(am__dirstamp) \
+	src/timer/$(DEPDIR)/$(am__dirstamp)
+src/timer/mpl_timer_ppc64_cycle.lo: src/timer/$(am__dirstamp) \
+	src/timer/$(DEPDIR)/$(am__dirstamp)
+src/timer/mpl_timer_mach_absolute_time.lo: src/timer/$(am__dirstamp) \
+	src/timer/$(DEPDIR)/$(am__dirstamp)
+src/timer/mpl_timer_query_performance_counter.lo:  \
+	src/timer/$(am__dirstamp) src/timer/$(DEPDIR)/$(am__dirstamp)
+src/timer/mpl_timer_win86_cycle.lo: src/timer/$(am__dirstamp) \
+	src/timer/$(DEPDIR)/$(am__dirstamp)
+src/timer/mpl_timer_device.lo: src/timer/$(am__dirstamp) \
+	src/timer/$(DEPDIR)/$(am__dirstamp)
+src/shm/$(am__dirstamp):
+	@$(MKDIR_P) src/shm
+	@: > src/shm/$(am__dirstamp)
+src/shm/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/shm/$(DEPDIR)
+	@: > src/shm/$(DEPDIR)/$(am__dirstamp)
+src/shm/mpl_shm.lo: src/shm/$(am__dirstamp) \
+	src/shm/$(DEPDIR)/$(am__dirstamp)
+src/shm/mpl_shm_sysv.lo: src/shm/$(am__dirstamp) \
+	src/shm/$(DEPDIR)/$(am__dirstamp)
+src/shm/mpl_shm_mmap.lo: src/shm/$(am__dirstamp) \
+	src/shm/$(DEPDIR)/$(am__dirstamp)
+src/shm/mpl_shm_win.lo: src/shm/$(am__dirstamp) \
+	src/shm/$(DEPDIR)/$(am__dirstamp)
 
 lib@MPLLIBNAME@.la: $(lib@MPLLIBNAME@_la_OBJECTS) $(lib@MPLLIBNAME@_la_DEPENDENCIES) $(EXTRA_lib@MPLLIBNAME@_la_DEPENDENCIES) 
-	$(AM_V_CCLD)$(lib@MPLLIBNAME@_la_LINK)  $(lib@MPLLIBNAME@_la_OBJECTS) $(lib@MPLLIBNAME@_la_LIBADD) $(LIBS)
+	$(AM_V_CCLD)$(lib@MPLLIBNAME@_la_LINK) $(am_lib@MPLLIBNAME@_la_rpath) $(lib@MPLLIBNAME@_la_OBJECTS) $(lib@MPLLIBNAME@_la_LIBADD) $(LIBS)
 
 clean-checkPROGRAMS:
 	@list='$(check_PROGRAMS)'; test -n "$$list" || exit 0; \
@@ -697,18 +935,60 @@ strsep$(EXEEXT): $(strsep_OBJECTS) $(strsep_DEPENDENCIES) $(EXTRA_strsep_DEPENDE
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
-	-rm -f src/*.$(OBJEXT)
-	-rm -f src/*.lo
+	-rm -f src/bt/*.$(OBJEXT)
+	-rm -f src/bt/*.lo
+	-rm -f src/dbg/*.$(OBJEXT)
+	-rm -f src/dbg/*.lo
+	-rm -f src/env/*.$(OBJEXT)
+	-rm -f src/env/*.lo
+	-rm -f src/mem/*.$(OBJEXT)
+	-rm -f src/mem/*.lo
+	-rm -f src/msg/*.$(OBJEXT)
+	-rm -f src/msg/*.lo
+	-rm -f src/shm/*.$(OBJEXT)
+	-rm -f src/shm/*.lo
+	-rm -f src/sock/*.$(OBJEXT)
+	-rm -f src/sock/*.lo
+	-rm -f src/str/*.$(OBJEXT)
+	-rm -f src/str/*.lo
+	-rm -f src/thread/*.$(OBJEXT)
+	-rm -f src/thread/*.lo
+	-rm -f src/timer/*.$(OBJEXT)
+	-rm -f src/timer/*.lo
 	-rm -f test/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mplenv.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mplmsg.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mplsock.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mplstr.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/mpltrmem.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/bt/$(DEPDIR)/mpl_bt.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/dbg/$(DEPDIR)/mpl_dbg.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/env/$(DEPDIR)/mpl_env.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/mem/$(DEPDIR)/mpl_trmem.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/msg/$(DEPDIR)/mpl_msg.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/shm/$(DEPDIR)/mpl_shm.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/shm/$(DEPDIR)/mpl_shm_mmap.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/shm/$(DEPDIR)/mpl_shm_sysv.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/shm/$(DEPDIR)/mpl_shm_win.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/sock/$(DEPDIR)/mpl_host.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/sock/$(DEPDIR)/mpl_sock.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/str/$(DEPDIR)/mpl_arg_serial.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/str/$(DEPDIR)/mpl_argstr.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/str/$(DEPDIR)/mpl_str.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/thread/$(DEPDIR)/mpl_thread.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/thread/$(DEPDIR)/mpl_thread_argobots.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/thread/$(DEPDIR)/mpl_thread_posix.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/thread/$(DEPDIR)/mpl_thread_solaris.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/thread/$(DEPDIR)/mpl_thread_win.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_clock_gettime.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_device.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_gcc_ia64_cycle.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_gethrtime.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_gettimeofday.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_linux86_cycle.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_mach_absolute_time.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_ppc64_cycle.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_query_performance_counter.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_win86_cycle.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@test/$(DEPDIR)/strsep.Po@am__quote@
 
 .c.o:
@@ -740,7 +1020,16 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
-	-rm -rf src/.libs src/_libs
+	-rm -rf src/bt/.libs src/bt/_libs
+	-rm -rf src/dbg/.libs src/dbg/_libs
+	-rm -rf src/env/.libs src/env/_libs
+	-rm -rf src/mem/.libs src/mem/_libs
+	-rm -rf src/msg/.libs src/msg/_libs
+	-rm -rf src/shm/.libs src/shm/_libs
+	-rm -rf src/sock/.libs src/sock/_libs
+	-rm -rf src/str/.libs src/str/_libs
+	-rm -rf src/thread/.libs src/thread/_libs
+	-rm -rf src/timer/.libs src/timer/_libs
 
 distclean-libtool:
 	-rm -f libtool config.lt
@@ -1157,7 +1446,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(LTLIBRARIES) $(HEADERS)
 installdirs:
-	for dir in "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -1189,8 +1478,26 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
-	-rm -f src/$(DEPDIR)/$(am__dirstamp)
-	-rm -f src/$(am__dirstamp)
+	-rm -f src/bt/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/bt/$(am__dirstamp)
+	-rm -f src/dbg/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/dbg/$(am__dirstamp)
+	-rm -f src/env/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/env/$(am__dirstamp)
+	-rm -f src/mem/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/mem/$(am__dirstamp)
+	-rm -f src/msg/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/msg/$(am__dirstamp)
+	-rm -f src/shm/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/shm/$(am__dirstamp)
+	-rm -f src/sock/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/sock/$(am__dirstamp)
+	-rm -f src/str/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/str/$(am__dirstamp)
+	-rm -f src/thread/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/thread/$(am__dirstamp)
+	-rm -f src/timer/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/timer/$(am__dirstamp)
 	-rm -f test/$(DEPDIR)/$(am__dirstamp)
 	-rm -f test/$(am__dirstamp)
 	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
@@ -1200,12 +1507,12 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-checkPROGRAMS clean-generic clean-libtool \
-	clean-noinstLTLIBRARIES mostlyclean-am
+clean-am: clean-checkPROGRAMS clean-generic clean-libLTLIBRARIES \
+	clean-libtool clean-noinstLTLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf src/$(DEPDIR) test/$(DEPDIR)
+	-rm -rf src/bt/$(DEPDIR) src/dbg/$(DEPDIR) src/env/$(DEPDIR) src/mem/$(DEPDIR) src/msg/$(DEPDIR) src/shm/$(DEPDIR) src/sock/$(DEPDIR) src/str/$(DEPDIR) src/thread/$(DEPDIR) src/timer/$(DEPDIR) test/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -1228,7 +1535,7 @@ install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am:
+install-exec-am: install-libLTLIBRARIES
 
 install-html: install-html-am
 
@@ -1253,7 +1560,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf src/$(DEPDIR) test/$(DEPDIR)
+	-rm -rf src/bt/$(DEPDIR) src/dbg/$(DEPDIR) src/env/$(DEPDIR) src/mem/$(DEPDIR) src/msg/$(DEPDIR) src/shm/$(DEPDIR) src/sock/$(DEPDIR) src/str/$(DEPDIR) src/thread/$(DEPDIR) src/timer/$(DEPDIR) test/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -1270,28 +1577,29 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-includeHEADERS
+uninstall-am: uninstall-includeHEADERS uninstall-libLTLIBRARIES
 
 .MAKE: check-am install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am am--refresh check check-TESTS \
 	check-am clean clean-checkPROGRAMS clean-cscope clean-generic \
-	clean-libtool clean-noinstLTLIBRARIES cscope cscopelist-am \
-	ctags ctags-am dist dist-all dist-bzip2 dist-gzip dist-lzip \
-	dist-shar dist-tarZ dist-xz dist-zip distcheck distclean \
-	distclean-compile distclean-generic distclean-hdr \
-	distclean-libtool distclean-tags distcleancheck distdir \
-	distuninstallcheck dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-includeHEADERS install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	recheck tags tags-am uninstall uninstall-am \
-	uninstall-includeHEADERS
+	clean-libLTLIBRARIES clean-libtool clean-noinstLTLIBRARIES \
+	cscope cscopelist-am ctags ctags-am dist dist-all dist-bzip2 \
+	dist-gzip dist-lzip dist-shar dist-tarZ dist-xz dist-zip \
+	distcheck distclean distclean-compile distclean-generic \
+	distclean-hdr distclean-libtool distclean-tags distcleancheck \
+	distdir distuninstallcheck dvi dvi-am html html-am info \
+	info-am install install-am install-data install-data-am \
+	install-dvi install-dvi-am install-exec install-exec-am \
+	install-html install-html-am install-includeHEADERS \
+	install-info install-info-am install-libLTLIBRARIES \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am recheck tags tags-am \
+	uninstall uninstall-am uninstall-includeHEADERS \
+	uninstall-libLTLIBRARIES
 
 .PRECIOUS: Makefile
 
