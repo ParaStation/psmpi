@@ -15,7 +15,8 @@
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Aint_diff as PMPI_Aint_diff
 #elif defined(HAVE_WEAK_ATTRIBUTE)
-MPI_Aint MPI_Aint_diff(MPI_Aint addr1, MPI_Aint addr2) __attribute__((weak,alias("PMPI_Aint_diff")));
+MPI_Aint MPI_Aint_diff(MPI_Aint addr1, MPI_Aint addr2)
+    __attribute__ ((weak, alias("PMPI_Aint_diff")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -48,7 +49,9 @@ process that generated addr1 and addr2, and addr1 and addr2 must correspond to
 locations in the same object in the same process. The difference is calculated
 in a manner that results the signed difference from addr1 to addr2, as if the
 process that originally produced the addresses had called
+.vb
     (char *) addr1 - (char *) addr2
+.ve
 on the addresses initially passed to MPI_GET_ADDRESS.
 
 .seealso: MPI_Aint_add
@@ -57,13 +60,13 @@ on the addresses initially passed to MPI_GET_ADDRESS.
 MPI_Aint MPI_Aint_diff(MPI_Aint addr1, MPI_Aint addr2)
 {
     MPI_Aint result;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_AINT_DIFF);
+    MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_AINT_DIFF);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_AINT_DIFF);
+    MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPI_AINT_DIFF);
     result = MPID_Aint_diff(addr1, addr2);
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_AINT_DIFF);
+    MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPI_AINT_DIFF);
 
     return result;
 }

@@ -22,6 +22,9 @@ int main(int argc, char *argv[])
     int errval, errclass;
     int b1[20], b2[20], rank, size, src, dest, i;
 
+    MTEST_VG_MEM_INIT(b1, 20 * sizeof(int));
+    MTEST_VG_MEM_INIT(b2, 20 * sizeof(int));
+
     MTest_Init(&argc, &argv);
 
     /* Create some receive requests.  tags 0-9 will succeed, tags 10-19
@@ -71,8 +74,7 @@ int main(int argc, char *argv[])
         if (errclass != MPI_ERR_IN_STATUS) {
             errs++;
             printf("Did not get ERR_IN_STATUS in Waitall\n");
-        }
-        else {
+        } else {
             /* Check for success */
             /* We allow ERR_PENDING (neither completed nor in error) in case
              * the MPI implementation exits the Waitall when an error
@@ -87,16 +89,14 @@ int main(int argc, char *argv[])
                     printf("correct msg had error code %d\n", s[i].MPI_ERROR);
                     MPI_Error_string(s[i].MPI_ERROR, msg, &msglen);
                     printf("Error message was %s\n", msg);
-                }
-                else if (s[i].MPI_TAG >= 10 && s[i].MPI_ERROR == MPI_SUCCESS) {
+                } else if (s[i].MPI_TAG >= 10 && s[i].MPI_ERROR == MPI_SUCCESS) {
                     errs++;
                     printf("truncated msg had MPI_SUCCESS\n");
                 }
             }
         }
 
-    }
-    else if (rank == src) {
+    } else if (rank == src) {
         /* Wait for Irecvs to be posted before the sender calls send */
         MPI_Ssend(NULL, 0, MPI_INT, dest, 100, comm);
 
@@ -105,7 +105,5 @@ int main(int argc, char *argv[])
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
-
+    return MTestReturnValue(errs);
 }

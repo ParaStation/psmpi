@@ -48,7 +48,8 @@ static HYD_status get_current_exec(struct HYD_exec **exec)
 static void help_help_fn(void)
 {
     printf("\n");
-    printf("Usage: ./mpiexec [global opts] [local opts for exec1] [exec1] [exec1 args] : [local opts for exec2] [exec2] [exec2 args] : ...\n\n");
+    printf
+        ("Usage: ./mpiexec [global opts] [local opts for exec1] [exec1] [exec1 args] : [local opts for exec2] [exec2] [exec2 args] : ...\n\n");
 
     printf("Global options (passed to all executables):\n");
 
@@ -194,29 +195,28 @@ static HYD_status genv_fn(char *arg, char ***argv)
     HYDU_ERR_POP(status, "string break returned error\n");
     (*argv)++;
 
-    env_name = HYDU_strdup(str[0]);
+    env_name = MPL_strdup(str[0]);
     if (str[1] == NULL) {       /* The environment is not of the form x=foo */
         if (**argv == NULL) {
             status = HYD_INTERNAL_ERROR;
             goto fn_fail;
         }
-        env_value = HYDU_strdup(**argv);
+        env_value = MPL_strdup(**argv);
         (*argv)++;
-    }
-    else {
-        env_value = HYDU_strdup(str[1]);
+    } else {
+        env_value = MPL_strdup(str[1]);
     }
 
     HYDU_append_env_to_list(env_name, env_value, &HYD_server_info.user_global.global_env.user);
 
     if (str[0])
-        HYDU_FREE(str[0]);
+        MPL_free(str[0]);
     if (str[1])
-        HYDU_FREE(str[1]);
+        MPL_free(str[1]);
     if (env_name)
-        HYDU_FREE(env_name);
+        MPL_free(env_name);
     if (env_value)
-        HYDU_FREE(env_value);
+        MPL_free(env_value);
 
   fn_exit:
     return status;
@@ -249,8 +249,8 @@ static HYD_status genvlist_fn(char *arg, char ***argv)
                         HYD_INTERNAL_ERROR, "duplicate environment setting\n");
 
     len = strlen("list:") + strlen(**argv) + 1;
-    HYDU_MALLOC(HYD_server_info.user_global.global_env.prop, char *, len, status);
-    HYDU_snprintf(HYD_server_info.user_global.global_env.prop, len, "list:%s", **argv);
+    HYDU_MALLOC_OR_JUMP(HYD_server_info.user_global.global_env.prop, char *, len, status);
+    MPL_snprintf(HYD_server_info.user_global.global_env.prop, len, "list:%s", **argv);
 
   fn_exit:
     (*argv)++;
@@ -334,8 +334,7 @@ static HYD_status mfile_fn(char *arg, char ***argv)
     if (strcmp(**argv, "HYDRA_USE_LOCALHOST")) {
         status = HYDU_parse_hostfile(**argv, &HYD_server_info.node_list, HYDU_process_mfile_token);
         HYDU_ERR_POP(status, "error parsing hostfile\n");
-    }
-    else {
+    } else {
         if (gethostname(localhost, MAX_HOSTNAME_LEN) < 0)
             HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "unable to get local hostname\n");
 
@@ -359,7 +358,7 @@ static void hostlist_help_fn(void)
 
 static HYD_status hostlist_fn(char *arg, char ***argv)
 {
-    char *hostlist[HYD_NUM_TMP_STRINGS];
+    char *hostlist[HYD_NUM_TMP_STRINGS + 1];    /* +1 for null termination of list */
     int count = 0;
     HYD_status status = HYD_SUCCESS;
 
@@ -438,7 +437,6 @@ static HYD_status profile_fn(char *arg, char ***argv)
         /* global variable already set; ignore */
         goto fn_exit;
     }
-
 #if !defined ENABLE_PROFILING
     HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "profiling support not compiled in\n");
 #endif /* ENABLE_PROFILING */
@@ -608,7 +606,7 @@ static HYD_status config_fn(char *arg, char ***argv)
     HYD_status status = HYD_SUCCESS;
 
     HYDU_ASSERT(!config_file, status);
-    config_file = HYDU_strdup(**argv);
+    config_file = MPL_strdup(**argv);
     (*argv)++;
 
   fn_exit:
@@ -638,17 +636,16 @@ static HYD_status env_fn(char *arg, char ***argv)
     HYDU_ERR_POP(status, "string break returned error\n");
     (*argv)++;
 
-    env_name = HYDU_strdup(str[0]);
+    env_name = MPL_strdup(str[0]);
     if (str[1] == NULL) {       /* The environment is not of the form x=foo */
         if (**argv == NULL) {
             status = HYD_INTERNAL_ERROR;
             goto fn_fail;
         }
-        env_value = HYDU_strdup(**argv);
+        env_value = MPL_strdup(**argv);
         (*argv)++;
-    }
-    else {
-        env_value = HYDU_strdup(str[1]);
+    } else {
+        env_value = MPL_strdup(str[1]);
     }
 
     status = get_current_exec(&exec);
@@ -657,13 +654,13 @@ static HYD_status env_fn(char *arg, char ***argv)
     HYDU_append_env_to_list(env_name, env_value, &exec->user_env);
 
     if (str[0])
-        HYDU_FREE(str[0]);
+        MPL_free(str[0]);
     if (str[1])
-        HYDU_FREE(str[1]);
+        MPL_free(str[1]);
     if (env_name)
-        HYDU_FREE(env_name);
+        MPL_free(env_name);
     if (env_value)
-        HYDU_FREE(env_value);
+        MPL_free(env_value);
 
   fn_exit:
     return status;
@@ -695,8 +692,8 @@ static HYD_status envlist_fn(char *arg, char ***argv)
                         "duplicate environment setting\n");
 
     len = strlen("list:") + strlen(**argv) + 1;
-    HYDU_MALLOC(exec->env_prop, char *, len, status);
-    HYDU_snprintf(exec->env_prop, len, "list:%s", **argv);
+    HYDU_MALLOC_OR_JUMP(exec->env_prop, char *, len, status);
+    MPL_snprintf(exec->env_prop, len, "list:%s", **argv);
     (*argv)++;
 
   fn_exit:
@@ -902,14 +899,35 @@ static void bind_to_help_fn(void)
     printf("            user:0+2,1+4,3,2 -- user specified binding\n");
     printf("\n");
     printf("        Architecture aware options (part within the {} braces are optional):\n");
-    printf("            board{:<n>}      -- bind to 'n' motherboards\n");
+    printf("            machine          -- bind to machine\n");
     printf("            numa{:<n>}       -- bind to 'n' numa domains\n");
     printf("            socket{:<n>}     -- bind to 'n' sockets\n");
     printf("            core{:<n>}       -- bind to 'n' cores\n");
     printf("            hwthread{:<n>}   -- bind to 'n' hardware threads\n");
-    printf("            l1cache{:<n>}    -- bind to processes on 'n' L1 cache domains\n");
-    printf("            l2cache{:<n>}    -- bind to processes on 'n' L2 cache domains\n");
-    printf("            l3cache{:<n>}    -- bind to processes on 'n' L3 cache domains\n");
+    printf("            l1cache{:<n>}    -- bind to 'n' L1 cache domains\n");
+    printf("            l1dcache{:<n>}   -- bind to 'n' L1 data cache domain\n");
+    printf("            l1icache{:<n>}   -- bind to 'n' L1 instruction cache domain\n");
+    printf("            l1ucache{:<n>}   -- bind to 'n' L1 unified cache domain\n");
+    printf("            l2cache{:<n>}    -- bind to 'n' L2 cache domains\n");
+    printf("            l2dcache{:<n>}   -- bind to 'n' L2 data cache domain\n");
+    printf("            l2icache{:<n>}   -- bind to 'n' L2 instruction cache domain\n");
+    printf("            l2ucache{:<n>}   -- bind to 'n' L2 unified cache domain\n");
+    printf("            l3cache{:<n>}    -- bind to 'n' L3 cache domain\n");
+    printf("            l3dcache{:<n>}   -- bind to 'n' L3 data cache domain\n");
+    printf("            l3icache{:<n>}   -- bind to 'n' L3 instruction cache domain\n");
+    printf("            l3ucache{:<n>}   -- bind to 'n' L3 unified cache domain\n");
+    printf("            l4cache{:<n>}    -- bind to 'n' L4 cache domain\n");
+    printf("            l4dcache{:<n>}   -- bind to 'n' L4 data cache domain\n");
+    printf("            l4ucache{:<n>}   -- bind to 'n' L4 unified cache domain\n");
+    printf("            l5cache{:<n>}    -- bind to 'n' L5 cache domain\n");
+    printf("            l5dcache{:<n>}   -- bind to 'n' L5 data cache domain\n");
+    printf("            l5ucache{:<n>}   -- bind to 'n' L5 unified cache domain\n");
+    printf("            pci:<id>         -- bind to non-io ancestor of PCI device\n");
+    printf("            gpu{<id>|:<n>}   -- bind to non-io ancestor of GPU device(s)\n");
+    printf("            ib{<id>|:<n>}    -- bind to non-io ancestor of IB device(s)\n");
+    printf("            en|eth{<id>|:<n>} -- bind to non-io ancestor of Ethernet device(s)\n");
+    printf("            hfi{<id>|:<n>}   -- bind to non-io ancestor of OPA device(s)\n");
+
 
     printf("\n\n");
 
@@ -918,14 +936,39 @@ static void bind_to_help_fn(void)
     printf("        Default: <same option as binding>\n");
     printf("\n");
     printf("        Architecture aware options:\n");
-    printf("            board            -- map to motherboard\n");
-    printf("            numa             -- map to numa domain\n");
-    printf("            socket           -- map to socket\n");
-    printf("            core             -- map to core\n");
-    printf("            hwthread         -- map to hardware thread\n");
-    printf("            l1cache          -- map to L1 cache domain\n");
-    printf("            l2cache          -- map to L2 cache domain\n");
-    printf("            l3cache          -- map to L3 cache domain\n");
+    printf("            machine          -- map by machine\n");
+    printf("            numa{:<n>}       -- map by 'n' numa domains\n");
+    printf("            socket{:<n>}     -- map by 'n' sockets\n");
+    printf("            core{:<n>}       -- map by 'n' cores\n");
+    printf("            hwthread{:<n>}   -- map by 'n' hardware threads\n");
+    printf("            l1cache{:<n>}    -- map by 'n' L1 cache domains\n");
+    printf("            l1dcache{:<n>}   -- map by 'n' L1 data cache domain\n");
+    printf("            l1icache{:<n>}   -- map by 'n' L1 instruction cache domain\n");
+    printf("            l1ucache{:<n>}   -- map by 'n' L1 unified cache domain\n");
+    printf("            l2cache{:<n>}    -- map by 'n' L2 cache domains\n");
+    printf("            l2dcache{:<n>}   -- map by 'n' L2 data cache domain\n");
+    printf("            l2icache{:<n>}   -- map by 'n' L2 instruction cache domain\n");
+    printf("            l2ucache{:<n>}   -- map by 'n' L2 unified cache domain\n");
+    printf("            l3cache{:<n>}    -- map by 'n' L3 cache domain\n");
+    printf("            l3dcache{:<n>}   -- map by 'n' L3 data cache domain\n");
+    printf("            l3icache{:<n>}   -- map by 'n' L3 instruction cache domain\n");
+    printf("            l3ucache{:<n>}   -- map by 'n' L3 unified cache domain\n");
+    printf("            l4cache{:<n>}    -- map by 'n' L4 cache domain\n");
+    printf("            l4dcache{:<n>}   -- map by 'n' L4 data cache domain\n");
+    printf("            l4ucache{:<n>}   -- map by 'n' L4 unified cache domain\n");
+    printf("            l5cache{:<n>}    -- map by 'n' L5 cache domain\n");
+    printf("            l5dcache{:<n>}   -- map by 'n' L5 data cache domain\n");
+    printf("            l5ucache{:<n>}   -- map by 'n' L5 unified cache domain\n");
+    printf("            pci:<id>         -- map by non-io ancestor of PCI device\n");
+    printf("                                (must match binding)\n");
+    printf("            gpu{<id>|:<n>}   -- map by non-io ancestor of GPU device(s)\n");
+    printf("                                (must match binding)\n");
+    printf("            ib{<id>|:<n>}    -- map by non-io ancestor of IB device(s)\n");
+    printf("                                (must match binding)\n");
+    printf("            en|eth{<id>|:<n>} -- map by non-io ancestor of Ethernet device(s)\n");
+    printf("                                (must match binding)\n");
+    printf("            hfi{<id>|:<n>}   -- map by non-io ancestor of OPA device(s)\n");
+    printf("                                (must match binding)\n");
 
     printf("\n\n");
 
@@ -939,7 +982,6 @@ static void bind_to_help_fn(void)
     printf("            nexttouch         -- closest to process that next touches memory\n");
     printf("            bind:<list>       -- bind to memory node list\n");
     printf("            interleave:<list> -- interleave among memory node list\n");
-    printf("            replicate:<list>  -- replicate among memory node list\n");
 }
 
 static HYD_status bind_to_fn(char *arg, char ***argv)
@@ -1472,7 +1514,7 @@ static HYD_status set_default_values(void)
 
     if (HYD_server_info.user_global.ckpoint_prefix == NULL) {
         if (MPL_env2str("HYDRA_CKPOINT_PREFIX", (const char **) &tmp) != 0)
-            HYD_server_info.user_global.ckpoint_prefix = HYDU_strdup(tmp);
+            HYD_server_info.user_global.ckpoint_prefix = MPL_strdup(tmp);
         tmp = NULL;
     }
 
@@ -1504,7 +1546,7 @@ static HYD_status set_default_values(void)
     /* don't clobber existing iface values from the command line */
     if (HYD_server_info.user_global.iface == NULL) {
         if (MPL_env2str("HYDRA_IFACE", (const char **) &tmp) != 0)
-            HYD_server_info.user_global.iface = HYDU_strdup(tmp);
+            HYD_server_info.user_global.iface = MPL_strdup(tmp);
         tmp = NULL;
     }
 
@@ -1517,7 +1559,7 @@ static HYD_status set_default_values(void)
     if (HYD_server_info.user_global.global_env.prop == NULL &&
         MPL_env2str("HYDRA_ENV", (const char **) &tmp))
         HYD_server_info.user_global.global_env.prop =
-            !strcmp(tmp, "all") ? HYDU_strdup("all") : HYDU_strdup("none");
+            !strcmp(tmp, "all") ? MPL_strdup("all") : MPL_strdup("none");
 
     if (HYD_server_info.user_global.auto_cleanup == -1)
         HYD_server_info.user_global.auto_cleanup = 1;
@@ -1529,8 +1571,12 @@ static HYD_status set_default_values(void)
 
     /* If hostname propagation is not set on the command-line, check
      * for the environment variable */
-    if (hostname_propagation == -1)
-        MPL_env2bool("HYDRA_HOSTNAME_PROPAGATION", &hostname_propagation);
+    if (hostname_propagation == -1) {
+        if (-1 == MPL_env2bool("HYDRA_HOSTNAME_PROPAGATION", &hostname_propagation)) {
+            HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
+                                "unable to parse hostname propagation\n");
+        }
+    }
 
     /* If an interface is provided, set that */
     if (HYD_server_info.user_global.iface) {
@@ -1550,7 +1596,7 @@ static HYD_status set_default_values(void)
     /* If hostname propagation is requested (or not set), set the
      * environment variable for doing that */
     if (hostname_propagation || hostname_propagation == -1)
-        HYD_server_info.iface_ip_env_name = HYDU_strdup("MPIR_CVAR_CH3_INTERFACE_HOSTNAME");
+        HYD_server_info.iface_ip_env_name = MPL_strdup("MPIR_CVAR_CH3_INTERFACE_HOSTNAME");
 
     /* Default universe size if the user did not specify anything is
      * INFINITE */
@@ -1572,10 +1618,10 @@ static HYD_status process_config_token(char *token, int newline, struct HYD_node
         /* If this is a newline, but not the first one, and the
          * previous token was not a ":", add an executable delimiter
          * ':' */
-        config_argv[idx++] = HYDU_strdup(":");
+        config_argv[idx++] = MPL_strdup(":");
     }
 
-    config_argv[idx++] = HYDU_strdup(token);
+    config_argv[idx++] = MPL_strdup(token);
     config_argv[idx] = NULL;
 
     return HYD_SUCCESS;
@@ -1615,7 +1661,7 @@ static HYD_status parse_args(char **t_argv)
             i = 0;
             while (exec->exec[i] != NULL)
                 i++;
-            exec->exec[i] = HYDU_strdup(*argv);
+            exec->exec[i] = MPL_strdup(*argv);
             exec->exec[i + 1] = NULL;
         } while (++argv && *argv);
     } while (1);
@@ -1654,7 +1700,7 @@ HYD_status HYD_uii_mpx_get_parameters(char **t_argv)
             ret = open(env_file, O_RDONLY);
             if (ret >= 0) {
                 close(ret);
-                config_file = HYDU_strdup(env_file);
+                config_file = MPL_strdup(env_file);
                 goto config_file_check_exit;
             }
         }
@@ -1664,14 +1710,13 @@ HYD_status HYD_uii_mpx_get_parameters(char **t_argv)
         if (ret) {
             len = strlen(home) + strlen("/.mpiexec.hydra.conf") + 1;
 
-            HYDU_MALLOC(conf_file, char *, len, status);
+            HYDU_MALLOC_OR_JUMP(conf_file, char *, len, status);
             MPL_snprintf(conf_file, len, "%s/.mpiexec.hydra.conf", home);
 
             ret = open(conf_file, O_RDONLY);
             if (ret < 0) {
-                HYDU_FREE(conf_file);
-            }
-            else {
+                MPL_free(conf_file);
+            } else {
                 close(ret);
                 config_file = conf_file;
                 goto config_file_check_exit;
@@ -1679,12 +1724,12 @@ HYD_status HYD_uii_mpx_get_parameters(char **t_argv)
         }
 
         /* Check if there's a config file in the hard-coded location */
-        conf_file = HYDU_strdup(HYDRA_CONF_FILE);
+        conf_file = MPL_strdup(HYDRA_CONF_FILE);
+        HYDU_ERR_CHKANDJUMP(status, NULL == conf_file, HYD_INTERNAL_ERROR, "strdup failed\n");
         ret = open(conf_file, O_RDONLY);
         if (ret < 0) {
-            HYDU_FREE(conf_file);
-        }
-        else {
+            MPL_free(conf_file);
+        } else {
             close(ret);
             config_file = conf_file;
             goto config_file_check_exit;
@@ -1694,7 +1739,7 @@ HYD_status HYD_uii_mpx_get_parameters(char **t_argv)
   config_file_check_exit:
     if (config_file) {
         HYDU_ASSERT(config_argv == NULL, status);
-        HYDU_MALLOC(config_argv, char **, HYD_NUM_TMP_STRINGS * sizeof(char *), status);
+        HYDU_MALLOC_OR_JUMP(config_argv, char **, HYD_NUM_TMP_STRINGS * sizeof(char *), status);
 
         status = HYDU_parse_hostfile(config_file, NULL, process_config_token);
         HYDU_ERR_POP(status, "error parsing config file\n");
@@ -1704,36 +1749,35 @@ HYD_status HYD_uii_mpx_get_parameters(char **t_argv)
         HYDU_ERR_POP(status, "error parsing config args\n");
         reading_config_file = 0;
 
-        HYDU_FREE(config_file);
+        MPL_free(config_file);
     }
 
     /* Get the base path */
     /* Find the last '/' in the executable name */
-    post = HYDU_strdup(progname);
+    post = MPL_strdup(progname);
+    HYDU_ERR_CHKANDJUMP(status, NULL == post, HYD_INTERNAL_ERROR, "strdup failed\n");
     loc = strrchr(post, '/');
     if (!loc) { /* If there is no path */
         HYD_server_info.base_path = NULL;
         status = HYDU_find_in_path(progname, &HYD_server_info.base_path);
         HYDU_ERR_POP(status, "error while searching for executable in the user path\n");
-    }
-    else {      /* There is a path */
+    } else {    /* There is a path */
         *(++loc) = 0;
 
         /* Check if its absolute or relative */
         if (post[0] != '/') {   /* relative */
             tmp[0] = HYDU_getcwd();
-            tmp[1] = HYDU_strdup("/");
-            tmp[2] = HYDU_strdup(post);
+            tmp[1] = MPL_strdup("/");
+            tmp[2] = MPL_strdup(post);
             tmp[3] = NULL;
             status = HYDU_str_alloc_and_join(tmp, &HYD_server_info.base_path);
             HYDU_ERR_POP(status, "unable to join strings\n");
             HYDU_free_strlist(tmp);
-        }
-        else {  /* absolute */
-            HYD_server_info.base_path = HYDU_strdup(post);
+        } else {        /* absolute */
+            HYD_server_info.base_path = MPL_strdup(post);
         }
     }
-    HYDU_FREE(post);
+    MPL_free(post);
 
     status = set_default_values();
     HYDU_ERR_POP(status, "setting default values failed\n");

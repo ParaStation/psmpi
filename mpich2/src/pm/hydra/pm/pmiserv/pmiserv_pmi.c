@@ -14,15 +14,11 @@ struct HYD_pmcd_pmi_publish *HYD_pmcd_pmi_publish_list = NULL;
 
 struct HYD_proxy *HYD_pmcd_pmi_find_proxy(int fd)
 {
-    struct HYD_pg *pg;
     struct HYD_proxy *proxy;
 
-    for (pg = &HYD_server_info.pg_list; pg; pg = pg->next)
-        for (proxy = pg->proxy_list; proxy; proxy = proxy->next)
-            if (proxy->control_fd == fd)
-                return proxy;
+    HASH_FIND_INT(HYD_server_info.proxy_hash, &fd, proxy);
 
-    return NULL;
+    return proxy;
 }
 
 HYD_status HYD_pmcd_pmi_finalize(void)
@@ -42,22 +38,18 @@ HYD_status HYD_pmcd_pmi_free_publish(struct HYD_pmcd_pmi_publish * publish)
 
     HYDU_FUNC_ENTER();
 
-    HYDU_FREE(publish->name);
-    HYDU_FREE(publish->port);
+    MPL_free(publish->name);
+    MPL_free(publish->port);
 
     for (i = 0; i < publish->infokeycount; i++) {
-        HYDU_FREE(publish->info_keys[i].key);
-        HYDU_FREE(publish->info_keys[i].val);
+        MPL_free(publish->info_keys[i].key);
+        MPL_free(publish->info_keys[i].val);
     }
     if (publish->info_keys)
-        HYDU_FREE(publish->info_keys);
+        MPL_free(publish->info_keys);
 
-  fn_exit:
     HYDU_FUNC_EXIT();
     return status;
-
-  fn_fail:
-    goto fn_exit;
 }
 
 HYD_status HYD_pmcd_pmi_publish(char *name, char *port, int *success)
@@ -65,7 +57,7 @@ HYD_status HYD_pmcd_pmi_publish(char *name, char *port, int *success)
     struct HYD_pmcd_pmi_publish *r, *publish;
     struct HYD_string_stash stash;
     char *ns, *ns_host, *ns_port_str;
-    int ns_port, ns_fd;
+    int ns_port, ns_fd = -1;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -81,10 +73,10 @@ HYD_status HYD_pmcd_pmi_publish(char *name, char *port, int *success)
         }
         *success = 1;
 
-        HYDU_MALLOC(publish, struct HYD_pmcd_pmi_publish *,
-                    sizeof(struct HYD_pmcd_pmi_publish), status);
-        publish->name = HYDU_strdup(name);
-        publish->port = HYDU_strdup(port);
+        HYDU_MALLOC_OR_JUMP(publish, struct HYD_pmcd_pmi_publish *,
+                            sizeof(struct HYD_pmcd_pmi_publish), status);
+        publish->name = MPL_strdup(name);
+        publish->port = MPL_strdup(port);
         publish->infokeycount = 0;
         publish->info_keys = NULL;
         publish->next = NULL;
@@ -95,14 +87,13 @@ HYD_status HYD_pmcd_pmi_publish(char *name, char *port, int *success)
             for (r = HYD_pmcd_pmi_publish_list; r->next; r = r->next);
             r->next = publish;
         }
-    }
-    else {
+    } else {
         int len, recvd, closed;
         char *resp;
 
         /* connect to the external nameserver and store the
          * information there */
-        ns = HYDU_strdup(HYD_server_info.nameserver);
+        ns = MPL_strdup(HYD_server_info.nameserver);
 
         ns_host = strtok(ns, ":");
         HYDU_ASSERT(ns_host, status);
@@ -117,9 +108,9 @@ HYD_status HYD_pmcd_pmi_publish(char *name, char *port, int *success)
         HYDU_ERR_POP(status, "error connecting to the nameserver\n");
 
         HYD_STRING_STASH_INIT(stash);
-        HYD_STRING_STASH(stash, HYDU_strdup("PUBLISH"), status);
-        HYD_STRING_STASH(stash, HYDU_strdup(name), status);
-        HYD_STRING_STASH(stash, HYDU_strdup(port), status);
+        HYD_STRING_STASH(stash, MPL_strdup("PUBLISH"), status);
+        HYD_STRING_STASH(stash, MPL_strdup(name), status);
+        HYD_STRING_STASH(stash, MPL_strdup(port), status);
 
         status = HYDU_send_strlist(ns_fd, stash.strlist);
         HYDU_ERR_POP(status, "error sending string list\n");
@@ -129,7 +120,7 @@ HYD_status HYD_pmcd_pmi_publish(char *name, char *port, int *success)
         HYDU_ERR_POP(status, "error reading from nameserver\n");
         HYDU_ASSERT(!closed, status);
 
-        HYDU_MALLOC(resp, char *, len, status);
+        HYDU_MALLOC_OR_JUMP(resp, char *, len, status);
         status = HYDU_sock_read(ns_fd, resp, len, &recvd, &closed, HYDU_SOCK_COMM_MSGWAIT);
         HYDU_ERR_POP(status, "error reading from nameserver\n");
         HYDU_ASSERT(len == recvd, status);
@@ -141,7 +132,7 @@ HYD_status HYD_pmcd_pmi_publish(char *name, char *port, int *success)
         else
             *success = 0;
 
-        HYDU_FREE(resp);
+        MPL_free(resp);
     }
 
   fn_exit:
@@ -149,6 +140,8 @@ HYD_status HYD_pmcd_pmi_publish(char *name, char *port, int *success)
     return status;
 
   fn_fail:
+    if (-1 != ns_fd)
+        close(ns_fd);
     goto fn_exit;
 }
 
@@ -157,7 +150,7 @@ HYD_status HYD_pmcd_pmi_unpublish(char *name, int *success)
     struct HYD_pmcd_pmi_publish *r, *publish;
     struct HYD_string_stash stash;
     char *ns, *ns_host, *ns_port_str;
-    int ns_port, ns_fd;
+    int ns_port, ns_fd = -1;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -177,10 +170,9 @@ HYD_status HYD_pmcd_pmi_unpublish(char *name, int *success)
             publish->next = NULL;
 
             HYD_pmcd_pmi_free_publish(publish);
-            HYDU_FREE(publish);
+            MPL_free(publish);
             *success = 1;
-        }
-        else {
+        } else {
             publish = HYD_pmcd_pmi_publish_list;
             do {
                 if (publish->next == NULL)
@@ -191,21 +183,19 @@ HYD_status HYD_pmcd_pmi_unpublish(char *name, int *success)
                     r->next = NULL;
 
                     HYD_pmcd_pmi_free_publish(r);
-                    HYDU_FREE(r);
+                    MPL_free(r);
                     *success = 1;
-                }
-                else
+                } else
                     publish = publish->next;
             } while (1);
         }
-    }
-    else {
+    } else {
         int len, recvd, closed;
         char *resp;
 
         /* connect to the external nameserver and get the information
          * from there */
-        ns = HYDU_strdup(HYD_server_info.nameserver);
+        ns = MPL_strdup(HYD_server_info.nameserver);
 
         ns_host = strtok(ns, ":");
         HYDU_ASSERT(ns_host, status);
@@ -220,8 +210,8 @@ HYD_status HYD_pmcd_pmi_unpublish(char *name, int *success)
         HYDU_ERR_POP(status, "error connecting to the nameserver\n");
 
         HYD_STRING_STASH_INIT(stash);
-        HYD_STRING_STASH(stash, HYDU_strdup("UNPUBLISH"), status);
-        HYD_STRING_STASH(stash, HYDU_strdup(name), status);
+        HYD_STRING_STASH(stash, MPL_strdup("UNPUBLISH"), status);
+        HYD_STRING_STASH(stash, MPL_strdup(name), status);
 
         status = HYDU_send_strlist(ns_fd, stash.strlist);
         HYDU_ERR_POP(status, "error sending string list\n");
@@ -231,7 +221,7 @@ HYD_status HYD_pmcd_pmi_unpublish(char *name, int *success)
         HYDU_ERR_POP(status, "error reading from nameserver\n");
         HYDU_ASSERT(!closed, status);
 
-        HYDU_MALLOC(resp, char *, len, status);
+        HYDU_MALLOC_OR_JUMP(resp, char *, len, status);
         status = HYDU_sock_read(ns_fd, resp, len, &recvd, &closed, HYDU_SOCK_COMM_MSGWAIT);
         HYDU_ERR_POP(status, "error reading from nameserver\n");
         HYDU_ASSERT(len == recvd, status);
@@ -240,7 +230,7 @@ HYD_status HYD_pmcd_pmi_unpublish(char *name, int *success)
 
         if (!strcmp(resp, "SUCCESS"))
             *success = 1;
-        HYDU_FREE(resp);
+        MPL_free(resp);
     }
 
   fn_exit:
@@ -248,6 +238,8 @@ HYD_status HYD_pmcd_pmi_unpublish(char *name, int *success)
     return status;
 
   fn_fail:
+    if (-1 != ns_fd)
+        close(ns_fd);
     goto fn_exit;
 }
 
@@ -256,7 +248,7 @@ HYD_status HYD_pmcd_pmi_lookup(char *name, char **value)
     struct HYD_pmcd_pmi_publish *publish;
     struct HYD_string_stash stash;
     char *ns, *ns_host, *ns_port_str;
-    int ns_port, ns_fd;
+    int ns_port, ns_fd = -1;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -270,15 +262,14 @@ HYD_status HYD_pmcd_pmi_lookup(char *name, char **value)
                 break;
 
         if (publish)
-            *value = HYDU_strdup(publish->port);
-    }
-    else {
+            *value = MPL_strdup(publish->port);
+    } else {
         int len, recvd, closed;
         char *resp = NULL;
 
         /* connect to the external nameserver and get the information
          * from there */
-        ns = HYDU_strdup(HYD_server_info.nameserver);
+        ns = MPL_strdup(HYD_server_info.nameserver);
 
         ns_host = strtok(ns, ":");
         HYDU_ASSERT(ns_host, status);
@@ -293,8 +284,8 @@ HYD_status HYD_pmcd_pmi_lookup(char *name, char **value)
         HYDU_ERR_POP(status, "error connecting to the nameserver\n");
 
         HYD_STRING_STASH_INIT(stash);
-        HYD_STRING_STASH(stash, HYDU_strdup("LOOKUP"), status);
-        HYD_STRING_STASH(stash, HYDU_strdup(name), status);
+        HYD_STRING_STASH(stash, MPL_strdup("LOOKUP"), status);
+        HYD_STRING_STASH(stash, MPL_strdup(name), status);
 
         status = HYDU_send_strlist(ns_fd, stash.strlist);
         HYDU_ERR_POP(status, "error sending string list\n");
@@ -305,7 +296,7 @@ HYD_status HYD_pmcd_pmi_lookup(char *name, char **value)
         HYDU_ASSERT(!closed, status);
 
         if (len) {
-            HYDU_MALLOC(resp, char *, len, status);
+            HYDU_MALLOC_OR_JUMP(resp, char *, len, status);
             status = HYDU_sock_read(ns_fd, resp, len, &recvd, &closed, HYDU_SOCK_COMM_MSGWAIT);
             HYDU_ERR_POP(status, "error reading from nameserver\n");
             HYDU_ASSERT(len == recvd, status);
@@ -321,5 +312,7 @@ HYD_status HYD_pmcd_pmi_lookup(char *name, char **value)
     return status;
 
   fn_fail:
+    if (-1 != ns_fd)
+        close(ns_fd);
     goto fn_exit;
 }

@@ -14,6 +14,7 @@
 #include "mpi.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "mpitest.h"
 
 #define COUNT (10)
 #define PRIME (17)
@@ -52,7 +53,7 @@ int main(int argc, char **argv)
     signed char *buf_alias = NULL;
     MPI_Request req;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
@@ -69,8 +70,7 @@ int main(int argc, char **argv)
     for (i = 0; i < COUNT; ++i) {
         if (rank == 0) {
             buf[i] = i;
-        }
-        else {
+        } else {
             buf[i] = 0xdeadbeef;
         }
     }
@@ -193,8 +193,7 @@ int main(int argc, char **argv)
                 my_assert(recvbuf[i * COUNT + j] == i + j);
             }
         }
-    }
-    else {
+    } else {
         for (i = 0; i < size * COUNT; ++i) {
             my_assert(recvbuf[i] == 0xdeadbeef);
         }
@@ -219,8 +218,7 @@ int main(int argc, char **argv)
                     my_assert(recvbuf[i * COUNT + j] == i + j);
                 }
             }
-        }
-        else {
+        } else {
             for (i = 0; i < size * COUNT; ++i) {
                 my_assert(recvbuf[i] == 0xdeadbeef);
             }
@@ -341,8 +339,7 @@ int main(int argc, char **argv)
                 my_assert(recvbuf[i * COUNT + j] == i + j);
             }
         }
-    }
-    else {
+    } else {
         for (i = 0; i < size * COUNT; ++i) {
             my_assert(recvbuf[i] == 0xdeadbeef);
         }
@@ -444,11 +441,7 @@ int main(int argc, char **argv)
         }
     }
 
-    if (rank == 0)
-        printf(" No Errors\n");
-
-
-    MPI_Finalize();
+    MTest_Finalize(0);
     free(buf);
     free(recvbuf);
     free(sendcounts);

@@ -1,0 +1,27 @@
+.TH MPIR_Type_dup 3 "11/21/2018" " " "MPI"
+.SH NAME
+MPIR_Type_dup \-  create a copy of a datatype 
+.SH SYNOPSIS
+.nf
+#undef FUNCNAME
+#define FUNCNAME MPIR_Type_dup
+#undef FCNAME
+#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPIR_Type_dup(MPI_Datatype oldtype, MPI_Datatype * newtype)
+.fi
+.SH INPUT PARAMETERS
+.PD 0
+.TP
+.B oldtype 
+- handle of original datatype
+.PD 1
+
+.SH OUTPUT PARAMETERS
+.PD 0
+.TP
+.B newtype 
+- handle of newly created copy of datatype
+.PD 1
+
+.SH RETURN VALUE
+0 on success, MPI error code on failure.

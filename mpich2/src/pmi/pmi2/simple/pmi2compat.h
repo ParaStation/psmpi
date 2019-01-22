@@ -4,16 +4,18 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#ifndef PMI2COMPAT_H_INCLUDED
+#define PMI2COMPAT_H_INCLUDED
+
 #include "mpiimpl.h"
 
-#define PMI2U_Malloc MPIU_Malloc
-#define PMI2U_Free MPIU_Free
-#define PMI2U_Strdup MPIU_Strdup
-#define PMI2U_Snprintf MPL_snprintf
-#define PMI2U_Strncpy MPIU_Strncpy
-#define PMI2U_Strnapp MPIU_Strnapp
-#define PMI2U_Assert MPIU_Assert
+#define PMI2U_Malloc(size_) MPL_malloc(size_, MPL_MEM_PM)
+#define PMI2U_Free MPL_free
+#define PMI2U_Strdup MPL_strdup
+#define PMI2U_Strnapp MPL_strnapp
+#define PMI2U_Assert MPIR_Assert
 #define PMI2U_Exit MPL_exit
-#define PMI2U_Info MPID_Info
-#define PMI2U_Memcpy MPIU_Memcpy
+#define PMI2U_Info MPIR_Info
+#define PMI2U_Memcpy MPIR_Memcpy
 
+#endif /* PMI2COMPAT_H_INCLUDED */

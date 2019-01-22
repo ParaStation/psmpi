@@ -28,10 +28,13 @@ to MPI_GET_ADDRESS and disp represents a signed integer displacement. The result
 address is valid only at the process that generated base, and it must correspond
 to a location in the same object referenced by base. The addition is performed in
 a manner that results in the correct MPI_Aint representation of the output address,
-<H2>as if the process that originally produced base had called</H2>
-MPI_Get_address((char *) base + disp, &amp;result)
+as if the process that originally produced base had called:
+<PRE>
+    MPI_Get_address((char *) base + disp, &amp;result)
+</PRE>
+
 <P>
-<H0>See Also</H0>
+<H2>See Also</H2>
  MPI_Aint_diff
-<br>
+<BR>
 </BODY></HTML>

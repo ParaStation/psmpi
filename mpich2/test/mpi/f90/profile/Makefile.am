@@ -1,5 +1,5 @@
 # This Makefile.am generated automatically by f77tof90
-# from test/mpi/f77/profile/Makefile.am.  DO NOT EDIT
+# from f77/profile/Makefile.am.  DO NOT EDIT
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
@@ -20,7 +20,6 @@ noinst_PROGRAMS = profile1f90
 
 # ensure that dependent tests will be rebuilt when typeaints.h is updated
 
-
 if MAINTAINER_MODE
 
 # f77tof90 only replaces output files if the contents differ, so we must use a
@@ -29,8 +28,8 @@ if MAINTAINER_MODE
 # change its contents
 $(srcdir)/Makefile.am: $(srcdir)/Makefile.am-stamp
 
-$(srcdir)/Makefile.am-stamp: $(master_top_srcdir)/test/mpi/f77/profile/Makefile.am $(master_top_srcdir)/maint/f77tof90
-	( cd $(master_top_srcdir) && ./maint/f77tof90 test/mpi/f77/profile test/mpi/f90/profile Makefile.am Makefile.ap )
+$(srcdir)/Makefile.am-stamp: $(top_srcdir)/f77/profile/Makefile.am $(top_srcdir)/maint/f77tof90
+	( cd $(top_srcdir) && ./maint/f77tof90 f77/profile f90/profile Makefile.am Makefile.ap )
 
 MAINTAINERCLEANFILES = Makefile.am-stamp
 EXTRA_DIST += Makefile.am-stamp  

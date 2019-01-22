@@ -267,12 +267,12 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_info_get_nthkey_( MPI_Fint *, MPI_Fint 
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_info_get_nthkey_ ( MPI_Fint *v1, MPI_Fint *v2, char *v3 FORT_MIXED_LEN(d3), MPI_Fint *ierr FORT_END_LEN(d3) ){
     char *p3;
-    p3 = (char *)MPIU_Malloc( d3 + 1 );
+    p3 = (char *)MPL_malloc( d3 + 1, MPL_MEM_OTHER );
     *ierr = MPI_Info_get_nthkey( (MPI_Info)(*v1), (int)*v2, p3 );
 
     if (!*ierr) {char *p = v3, *pc=p3;
         while (*pc) {*p++ = *pc++;}
         while ((p-v3) < d3) { *p++ = ' '; }
     }
-    MPIU_Free( p3 );
+    MPL_free( p3 );
 }

@@ -1,38 +1,37 @@
-.TH MPI_Bcast 3 "11/9/2015" " " "MPI"
+.TH MPI_Bcast 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Bcast \-  Broadcasts a message from the process with rank "root" to all other processes of the communicator 
 .SH SYNOPSIS
 .nf
-int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, 
-               MPI_Comm comm )
+int MPI_Bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm)
 .fi
 .SH INPUT/OUTPUT PARAMETERS
 .PD 0
 .TP
 .B buffer 
-- starting address of buffer (choice) 
+- starting address of buffer (choice)
 .PD 1
 
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B count 
-- number of entries in buffer (integer) 
+- number of entries in buffer (integer)
 .PD 1
 .PD 0
 .TP
 .B datatype 
-- data type of buffer (handle) 
+- data type of buffer (handle)
 .PD 1
 .PD 0
 .TP
 .B root 
-- rank of broadcast root (integer) 
+- rank of broadcast root (integer)
 .PD 1
 .PD 0
 .TP
 .B comm 
-- communicator (handle) 
+- communicator (handle)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

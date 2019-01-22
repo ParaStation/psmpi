@@ -1,10 +1,9 @@
-.TH MPI_Iprobe 3 "11/9/2015" " " "MPI"
+.TH MPI_Iprobe 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Iprobe \-  Nonblocking test for a message 
 .SH SYNOPSIS
 .nf
-int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, 
-               MPI_Status *status)
+int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status * status)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -12,32 +11,32 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
 .B source 
 - source rank, or  
 .I MPI_ANY_SOURCE
-(integer) 
+(integer)
 .PD 1
 .PD 0
 .TP
 .B tag 
 - tag value or  
 .I MPI_ANY_TAG
-(integer) 
+(integer)
 .PD 1
 .PD 0
 .TP
 .B comm 
-- communicator (handle) 
+- communicator (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B flag 
-- True if a message with the specified source, tag, and communicator 
-is available (logical) 
+- True if a message with the specified source, tag, and communicator
+is available (logical)
 .PD 1
 .PD 0
 .TP
 .B status 
-- status object (Status) 
+- status object (Status)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

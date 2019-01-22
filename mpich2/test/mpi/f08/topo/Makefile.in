@@ -17,14 +17,14 @@
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
-# (C) 2014 by Argonne National Laboratory.
+# (C) 2011 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
 #
 
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
-# (C) 2014 by Argonne National Laboratory.
+# (C) 2011 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
 #
 
@@ -102,7 +102,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = cartcrf90$(EXEEXT) dgraph_wgtf90$(EXEEXT) \
-	dgraph_unwgtf90$(EXEEXT)
+	dgraph_unwgtf90$(EXEEXT) cart_subf90$(EXEEXT)
 subdir = f08/topo
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -122,6 +122,10 @@ CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+cart_subf90_SOURCES = cart_subf90.f90
+cart_subf90_OBJECTS = cart_subf90.$(OBJEXT)
+cart_subf90_LDADD = $(LDADD)
+cart_subf90_DEPENDENCIES = $(top_builddir)/f08/util/mtestf08.o
 cartcrf90_SOURCES = cartcrf90.f90
 cartcrf90_OBJECTS = cartcrf90.$(OBJEXT)
 cartcrf90_LDADD = $(LDADD)
@@ -159,8 +163,10 @@ AM_V_FCLD = $(am__v_FCLD_@AM_V@)
 am__v_FCLD_ = $(am__v_FCLD_@AM_DEFAULT_V@)
 am__v_FCLD_0 = @echo "  FCLD    " $@;
 am__v_FCLD_1 = 
-SOURCES = cartcrf90.f90 dgraph_unwgtf90.f90 dgraph_wgtf90.f90
-DIST_SOURCES = cartcrf90.f90 dgraph_unwgtf90.f90 dgraph_wgtf90.f90
+SOURCES = cart_subf90.f90 cartcrf90.f90 dgraph_unwgtf90.f90 \
+	dgraph_wgtf90.f90
+DIST_SOURCES = cart_subf90.f90 cartcrf90.f90 dgraph_unwgtf90.f90 \
+	dgraph_wgtf90.f90
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -211,6 +217,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -366,6 +373,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -422,6 +430,10 @@ $(am__aclocal_m4_deps):
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+
+cart_subf90$(EXEEXT): $(cart_subf90_OBJECTS) $(cart_subf90_DEPENDENCIES) $(EXTRA_cart_subf90_DEPENDENCIES) 
+	@rm -f cart_subf90$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(cart_subf90_OBJECTS) $(cart_subf90_LDADD) $(LIBS)
 
 cartcrf90$(EXEEXT): $(cartcrf90_OBJECTS) $(cartcrf90_DEPENDENCIES) $(EXTRA_cartcrf90_DEPENDENCIES) 
 	@rm -f cartcrf90$(EXEEXT)

@@ -1,15 +1,15 @@
-.TH MPI_Comm_dup 3 "11/9/2015" " " "MPI"
+.TH MPI_Comm_dup 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Comm_dup \-  Duplicates an existing communicator with all its cached information 
 .SH SYNOPSIS
 .nf
-int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
+int MPI_Comm_dup(MPI_Comm comm, MPI_Comm * newcomm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B comm 
-- Communicator to be duplicated (handle) 
+- Communicator to be duplicated (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
@@ -19,7 +19,7 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
 - A new communicator over the same group as 
 .I comm
 but with a new
-context. See notes.  (handle) 
+context. See notes.  (handle)
 .PD 1
 
 .SH NOTES

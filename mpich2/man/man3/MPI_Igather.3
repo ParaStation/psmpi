@@ -1,11 +1,11 @@
-.TH MPI_Igather 3 "11/9/2015" " " "MPI"
+.TH MPI_Igather 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Igather \-  Gathers together values from a group of processes in a nonblocking way 
 .SH SYNOPSIS
 .nf
 int MPI_Igather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                 void *recvbuf, int recvcount, MPI_Datatype recvtype,
-                int root, MPI_Comm comm, MPI_Request *request)
+                int root, MPI_Comm comm, MPI_Request * request)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -26,7 +26,7 @@ int MPI_Igather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 .PD 0
 .TP
 .B recvcount 
-- number of elements in receive buffer (significant only at root) (non-negative integer)
+- number of elements for any single receive (non-negative integer, significant only at root)
 .PD 1
 .PD 0
 .TP

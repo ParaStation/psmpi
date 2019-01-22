@@ -1,9 +1,9 @@
-.TH MPI_Win_create_dynamic 3 "11/9/2015" " " "MPI"
+.TH MPI_Win_create_dynamic 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Win_create_dynamic \-  Create an MPI Window object for one-sided communication.  This window allows memory to be dynamically exposed and un-exposed for RMA operations. 
 .SH SYNOPSIS
 .nf
-int MPI_Win_create_dynamic(MPI_Info info, MPI_Comm comm, MPI_Win *win)
+int MPI_Win_create_dynamic(MPI_Info info, MPI_Comm comm, MPI_Win * win)
 .fi
 
 This is a collective call executed by all processes in the group of comm. It

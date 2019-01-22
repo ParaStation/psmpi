@@ -17,14 +17,14 @@
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
-# (C) 2014 by Argonne National Laboratory.
+# (C) 2011 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
 #
 
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
-# (C) 2014 by Argonne National Laboratory.
+# (C) 2011 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
 #
 
@@ -146,7 +146,7 @@ c2f2ciof90_LDADD = $(LDADD)
 c2f2ciof90_DEPENDENCIES = $(top_builddir)/f08/util/mtestf08.o
 am_c2f90multio_OBJECTS = c2f90multio.$(OBJEXT)
 c2f90multio_OBJECTS = $(am_c2f90multio_OBJECTS)
-c2f90multio_DEPENDENCIES =
+c2f90multio_DEPENDENCIES = $(top_builddir)/util/mtest.o
 fileerrf90_SOURCES = fileerrf90.f90
 fileerrf90_OBJECTS = fileerrf90.$(OBJEXT)
 fileerrf90_LDADD = $(LDADD)
@@ -328,6 +328,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -483,6 +484,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -527,7 +529,7 @@ c2f90multio_SOURCES = c2f90multio.c
 # A) prevent the makefile-wide "LDADD=mtestf90.o" from affecting this program, or
 # B) link with the fortran compiler, otherwise we'll get link failures from
 # compilers with runtime support libs, such as PGI
-c2f90multio_LDADD = 
+c2f90multio_LDADD = $(top_builddir)/util/mtest.o
 c2f2ciof90_SOURCES = c2f2ciof90.f90 c2f902cio.c
 
 # ensure that dependent tests will be rebuilt when headers are updated

@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/datatype/allctypesf.f with f77tof90
+! This file created from f77/datatype/allctypesf.f with f77tof90
 ! -*- Mode: Fortran; -*- 
 !
 !  (C) 2004 by Argonne National Laboratory.
@@ -87,7 +87,6 @@
        endif
 !
        call mtest_finalize( ierr )
-       call MPI_Finalize( ierr )
        end
 !
 ! Check name of datatype

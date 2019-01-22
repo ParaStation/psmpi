@@ -1,0 +1,154 @@
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
+/*
+ * See COPYRIGHT in top-level directory.
+ */
+
+/*@configure_input@*/
+
+#ifndef _ZM_COMMON_H
+#define _ZM_COMMON_H
+
+#if defined(__x86_64__)
+#define ZM_CACHELINE_SIZE 64
+#elif defined(__bgq__)
+/* BGQ line sizes: L1=64B, L2=128B. Use 128 to be safe */
+#define ZM_CACHELINE_SIZE 128
+#elif defined(__PPC__)
+/* Same argument as bgq */
+#define ZM_CACHELINE_SIZE 128
+#else
+#error "Check your CPU architecture and set the appropriate macros in util.h"
+#endif
+
+#define ZM_ALLIGN_TO_CACHELINE __attribute__((aligned(ZM_CACHELINE_SIZE)))
+#include <stdint.h>
+#define zm_ptr_t intptr_t
+#define zm_ulong_t unsigned long
+
+#define ZM_NULL (zm_ptr_t)NULL
+
+#define ZM_MEMORY_MODEL_C11 1
+#define ZM_MEMORY_MODEL_GCC_ATOM 2
+#define ZM_MEMORY_MODEL_GCC_SYNC 3
+#define ZM_MEMORY_MODEL @ZM_MEMORY_MODEL@
+
+#if ZM_MEMORY_MODEL == ZM_MEMORY_MODEL_C11
+#if defined(_OPENMP) || defined(__cplusplus)
+#define zm_atomic_uint_t  volatile unsigned int
+#define zm_atomic_ptr_t   volatile zm_ptr_t
+#define zm_atomic_ulong_t volatile unsigned long
+#define zm_atomic_llong_t volatile long long
+#define zm_atomic_flag_t  volatile unsigned int
+#define zm_atomic_char_t  volatile char
+#else
+#include <stdatomic.h>
+/* Atomic Types */
+#define zm_atomic_uint_t  atomic_uint
+#define zm_atomic_ptr_t   atomic_intptr_t
+#define zm_atomic_ulong_t atomic_ulong
+#define zm_atomic_llong_t atomic_llong
+#define zm_atomic_flag_t atomic_flag
+#define zm_atomic_char_t  atomic_char
+/* Memory ordering */
+#define zm_memord_relaxed memory_order_relaxed
+#define zm_memord_consume memory_order_consume
+#define zm_memord_acquire memory_order_acquire
+#define zm_memord_release memory_order_release
+#define zm_memord_acq_rel memory_order_acq_rel
+#define zm_memord_seq_cst memory_order_seq_cst
+/* Atomic Operations */
+#define zm_atomic_load              atomic_load_explicit
+#define zm_atomic_store             atomic_store_explicit
+#define zm_atomic_exchange          atomic_exchange_explicit
+#define zm_atomic_exchange_int      atomic_exchange_explicit
+#define zm_atomic_exchange_ptr      atomic_exchange_explicit
+#define zm_atomic_compare_exchange_strong atomic_compare_exchange_strong_explicit
+#define zm_atomic_compare_exchange_weak atomic_compare_exchange_weak_explicit
+#define zm_atomic_fetch_add         atomic_fetch_add_explicit
+#define zm_atomic_flag_test_and_set atomic_flag_test_and_set_explicit
+#define zm_atomic_flag_clear        atomic_flag_clear_explicit
+#endif
+#elif ZM_MEMORY_MODEL == ZM_MEMORY_MODEL_GCC_ATOM
+/* Atomic Types */
+#define zm_atomic_uint_t  unsigned int
+#define zm_atomic_ptr_t   intptr_t
+#define zm_atomic_ulong_t unsigned long
+#define zm_atomic_llong_t long long
+#define zm_atomic_flag_t  unsigned int
+#define zm_atomic_char_t  char
+/* Memory ordering */
+#define zm_memord_relaxed __ATOMIC_RELAXED
+#define zm_memord_consume __ATOMIC_CONSUME
+#define zm_memord_acquire __ATOMIC_ACQUIRE
+#define zm_memord_release __ATOMIC_RELEASE
+#define zm_memord_acq_rel __ATOMIC_ACQ_REL
+#define zm_memord_seq_cst __ATOMIC_SEQ_CST
+/* Atomic Operations */
+#define zm_atomic_load              __atomic_load_n
+#define zm_atomic_store             __atomic_store_n
+#define zm_atomic_exchange          __atomic_exchange_n
+#define zm_atomic_exchange_int      __atomic_exchange_n
+#define zm_atomic_exchange_ptr      __atomic_exchange_n
+#define zm_atomic_compare_exchange_strong(ptr, expect, desired,    success_memord, fail_memord) \
+            __atomic_compare_exchange_n(ptr, expect, desired, 0, success_memord, fail_memord)
+#define zm_atomic_compare_exchange_weak(ptr, expect, desired,    success_memord, fail_memord) \
+            __atomic_compare_exchange_n(ptr, expect, desired, 1, success_memord, fail_memord)
+#define zm_atomic_fetch_add         __atomic_fetch_add
+#define zm_atomic_flag_test_and_set __atomic_test_and_set
+#define zm_atomic_flag_clear        __atomic_clear
+#elif ZM_MEMORY_MODEL == ZM_MEMORY_MODEL_GCC_SYNC
+/* Atomic Types */
+#define zm_atomic_uint_t  volatile unsigned int
+#define zm_atomic_ptr_t   volatile intptr_t
+#define zm_atomic_ulong_t volatile unsigned long
+#define zm_atomic_llong_t volatile long long
+#define zm_atomic_flag_t  volatile unsigned int
+#define zm_atomic_char_t  volatile char
+/* Memory ordering */
+#define zm_memord_relaxed 1
+#define zm_memord_consume 2
+#define zm_memord_acquire 3
+#define zm_memord_release 4
+#define zm_memord_acq_rel 5
+#define zm_memord_seq_cst 6
+/* Atomic Operations */
+#define zm_atomic_load(ptr, m)              (*(ptr))
+#define zm_atomic_store(ptr,v,m)            (*(ptr)) = v
+static inline int zm_atomic_exchange_int(volatile int *ptr, int val, int m) {
+    int v;
+    do {
+        v = *(ptr);
+    } while (!__sync_bool_compare_and_swap(ptr, v, val));
+    return v;
+}
+static inline intptr_t zm_atomic_exchange_ptr(volatile intptr_t *ptr, intptr_t val, int m) {
+    intptr_t v;
+    do {
+        v = *(ptr);
+    } while (!__sync_bool_compare_and_swap(ptr, v, val));
+    return v;
+}
+#define zm_atomic_exchange zm_atomic_exchange_ptr
+#define zm_atomic_compare_exchange_strong(ptr, expect, desired,    success_memord, fail_memord) \
+                                            __sync_bool_compare_and_swap(ptr, *(expect), desired)
+#define zm_atomic_compare_exchange_weak(ptr, expect, desired,    success_memord, fail_memord) \
+                                            __sync_bool_compare_and_swap(ptr, *(expect), desired)
+#define zm_atomic_fetch_add(ptr,v,m)        __sync_fetch_and_add(ptr,v)
+#define zm_atomic_flag_test_and_set(ptr, m) __sync_lock_test_and_set(ptr,1)
+#define zm_atomic_flag_clear(ptr,m)         __sync_lock_release(ptr)
+#else
+#error "no atomic operation model supported with this compiler"
+#endif
+
+/* FIXME It would be better to test for the presence of a TLS keyword in configure. */
+#if (__STDC_VERSION__ >= 201112L)
+#define zm_thread_local _Thread_local
+#elif defined(__GNUC__) && (__GNUC__ > 3)
+/* __thread was introduced in GCC 3.3.1 (https://gcc.gnu.org/onlinedocs/gcc-3.3.1/gcc/C99-Thread-Local-Edits.html) */
+#define zm_thread_local __thread
+#endif
+
+#define zm_likely(x)      __builtin_expect(!!(x), 1)
+#define zm_unlikely(x)    __builtin_expect(!!(x), 0)
+
+#endif /* _ZM_COMMON_H */

@@ -1,30 +1,29 @@
-.TH MPI_Graph_get 3 "11/9/2015" " " "MPI"
+.TH MPI_Graph_get 3 "11/21/2018" " " "MPI"
 .SH NAME
-MPI_Graph_get \-  Retrieves graph topology information associated with a  communicator 
+MPI_Graph_get \-  Retrieves graph topology information associated with a communicator 
 .SH SYNOPSIS
 .nf
-int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, 
-                  int indx[], int edges[])
+int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, int indx[], int edges[])
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B comm 
-- communicator with graph structure (handle) 
+- communicator with graph structure (handle)
 .PD 1
 .PD 0
 .TP
 .B maxindex 
 - length of vector 
 .I indx
-in the calling program  (integer) 
+in the calling program  (integer)
 .PD 1
 .PD 0
 .TP
 .B maxedges 
 - length of vector 
 .I edges
-in the calling program  (integer) 
+in the calling program  (integer)
 .PD 1
 
 .SH OUTPUT PARAMETERS
@@ -33,12 +32,12 @@ in the calling program  (integer)
 .B indx 
 - array of integers containing the graph structure (for details see the definition of 
 .I MPI_GRAPH_CREATE
-) 
+)
 .PD 1
 .PD 0
 .TP
 .B edges 
-- array of integers containing the graph structure 
+- array of integers containing the graph structure
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

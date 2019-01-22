@@ -72,7 +72,7 @@ static inline void issue_rma_op(int i)
 #elif defined(TEST_CAS)
 static inline void issue_rma_op(int i)
 {
-    compare_buf[i] = i;        /* always equal to window value, thus swap happens */
+    compare_buf[i] = i; /* always equal to window value, thus swap happens */
     MPI_Compare_and_swap(&local_buf[i], &compare_buf[i], &result_addr[i], MPI_INT, target, i, win);
 }
 #endif
@@ -164,7 +164,7 @@ static int run_test()
 int main(int argc, char *argv[])
 {
     int i;
-    int errors = 0, all_errors = 0;
+    int errors = 0;
     MPI_Comm shm_comm = MPI_COMM_NULL;
     int shm_rank;
     int *shm_ranks = NULL, *shm_root_ranks = NULL;
@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
     int win_unit = sizeof(int);
     int shm_root_rank = -1, shm_target = -1, target_shm_root = -1;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
@@ -182,7 +182,6 @@ int main(int argc, char *argv[])
         MPI_Barrier(MPI_COMM_WORLD);
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
-
 #if !defined(TEST_PUT) && !defined(TEST_ACC) && !defined(TEST_GACC) && !defined(TEST_FOP) && !defined(TEST_CAS)
     if (rank == 0)
         printf("Error: must specify operation type at compile time\n");
@@ -228,16 +227,13 @@ int main(int argc, char *argv[])
         if (shm_root_ranks[i] == target_shm_root) {
             if (shm_ranks[i] == 0) {
                 target = i;
-            }
-            else if (shm_ranks[i] == 1) {
+            } else if (shm_ranks[i] == 1) {
                 checker = i;
-            }
-            else {
+            } else {
                 /* all three processes are in shared memory, origin is the third one. */
                 origin = i;
             }
-        }
-        else {
+        } else {
             /* origin is in separate memory. */
             origin = i;
         }
@@ -272,12 +268,7 @@ int main(int argc, char *argv[])
     MPI_Win_unlock_all(shm_win);
     MPI_Win_unlock_all(win);
 
-    MPI_Reduce(&errors, &all_errors, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-
   exit:
-
-    if (rank == 0 && all_errors == 0)
-        printf(" No Errors\n");
 
     if (shm_ranks)
         free(shm_ranks);
@@ -293,7 +284,7 @@ int main(int argc, char *argv[])
     if (shm_comm != MPI_COMM_NULL)
         MPI_Comm_free(&shm_comm);
 
-    MPI_Finalize();
+    MTest_Finalize(errors);
 
-    return 0;
+    return MTestReturnValue(errors);
 }

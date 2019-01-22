@@ -1,71 +1,70 @@
-.TH MPI_Sendrecv 3 "11/9/2015" " " "MPI"
+.TH MPI_Sendrecv 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Sendrecv \-  Sends and receives a message 
 .SH SYNOPSIS
 .nf
 int MPI_Sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
-                int dest, int sendtag,
-                void *recvbuf, int recvcount, MPI_Datatype recvtype,
-                int source, int recvtag,
-                MPI_Comm comm, MPI_Status *status)
+                 int dest, int sendtag,
+                 void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                 int source, int recvtag, MPI_Comm comm, MPI_Status * status)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B sendbuf 
-- initial address of send buffer (choice) 
+- initial address of send buffer (choice)
 .PD 1
 .PD 0
 .TP
 .B sendcount 
-- number of elements in send buffer (integer) 
+- number of elements in send buffer (integer)
 .PD 1
 .PD 0
 .TP
 .B sendtype 
-- type of elements in send buffer (handle) 
+- type of elements in send buffer (handle)
 .PD 1
 .PD 0
 .TP
 .B dest 
-- rank of destination (integer) 
+- rank of destination (integer)
 .PD 1
 .PD 0
 .TP
 .B sendtag 
-- send tag (integer) 
+- send tag (integer)
 .PD 1
 .PD 0
 .TP
 .B recvcount 
-- number of elements in receive buffer (integer) 
+- number of elements in receive buffer (integer)
 .PD 1
 .PD 0
 .TP
 .B recvtype 
-- type of elements in receive buffer (handle) 
+- type of elements in receive buffer (handle)
 .PD 1
 .PD 0
 .TP
 .B source 
-- rank of source (integer) 
+- rank of source (integer)
 .PD 1
 .PD 0
 .TP
 .B recvtag 
-- receive tag (integer) 
+- receive tag (integer)
 .PD 1
 .PD 0
 .TP
 .B comm 
-- communicator (handle) 
+- communicator (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B recvbuf 
-- initial address of receive buffer (choice) 
+- initial address of receive buffer (choice)
 .PD 1
 .PD 0
 .TP

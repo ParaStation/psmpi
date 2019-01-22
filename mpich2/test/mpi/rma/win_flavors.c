@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
     void *buf;
     MPI_Win window;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     /** Create using MPI_Win_create() **/
@@ -34,8 +34,7 @@ int main(int argc, char *argv[])
     if (!flag) {
         printf("%d: MPI_Win_create - Error, no flavor\n", rank);
         errors++;
-    }
-    else if (*flavor != MPI_WIN_FLAVOR_CREATE) {
+    } else if (*flavor != MPI_WIN_FLAVOR_CREATE) {
         printf("%d: MPI_Win_create - Error, bad flavor (%d)\n", rank, *flavor);
         errors++;
     }
@@ -45,8 +44,7 @@ int main(int argc, char *argv[])
     if (!flag) {
         printf("%d: MPI_Win_create - Error, no model\n", rank);
         errors++;
-    }
-    else if (!(*model == MPI_WIN_SEPARATE || *model == MPI_WIN_UNIFIED)) {
+    } else if (!(*model == MPI_WIN_SEPARATE || *model == MPI_WIN_UNIFIED)) {
         printf("%d: MPI_Win_create - Error, bad model (%d)\n", rank, *model);
         errors++;
     }
@@ -70,8 +68,7 @@ int main(int argc, char *argv[])
     if (!flag) {
         printf("%d: MPI_Win_allocate - Error, no flavor\n", rank);
         errors++;
-    }
-    else if (*flavor != MPI_WIN_FLAVOR_ALLOCATE) {
+    } else if (*flavor != MPI_WIN_FLAVOR_ALLOCATE) {
         printf("%d: MPI_Win_allocate - Error, bad flavor (%d)\n", rank, *flavor);
         errors++;
     }
@@ -81,8 +78,7 @@ int main(int argc, char *argv[])
     if (!flag) {
         printf("%d: MPI_Win_allocate - Error, no model\n", rank);
         errors++;
-    }
-    else if (*model != MPI_WIN_SEPARATE && *model != MPI_WIN_UNIFIED) {
+    } else if (*model != MPI_WIN_SEPARATE && *model != MPI_WIN_UNIFIED) {
         printf("%d: MPI_Win_allocate - Error, bad model (%d)\n", rank, *model);
         errors++;
     }
@@ -98,8 +94,7 @@ int main(int argc, char *argv[])
     if (!flag) {
         printf("%d: MPI_Win_create_dynamic - Error, no flavor\n", rank);
         errors++;
-    }
-    else if (*flavor != MPI_WIN_FLAVOR_DYNAMIC) {
+    } else if (*flavor != MPI_WIN_FLAVOR_DYNAMIC) {
         printf("%d: MPI_Win_create_dynamic - Error, bad flavor (%d)\n", rank, *flavor);
         errors++;
     }
@@ -109,20 +104,14 @@ int main(int argc, char *argv[])
     if (!flag) {
         printf("%d: MPI_Win_create_dynamic - Error, no model\n", rank);
         errors++;
-    }
-    else if (*model != MPI_WIN_SEPARATE && *model != MPI_WIN_UNIFIED) {
+    } else if (*model != MPI_WIN_SEPARATE && *model != MPI_WIN_UNIFIED) {
         printf("%d: MPI_Win_create_dynamic - Error, bad model (%d)\n", rank, *model);
         errors++;
     }
 
     MPI_Win_free(&window);
 
-    MPI_Reduce(&errors, &all_errors, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MTest_Finalize(errors);
 
-    if (rank == 0 && all_errors == 0)
-        printf(" No Errors\n");
-
-    MPI_Finalize();
-
-    return 0;
+    return MTestReturnValue(all_errors);
 }

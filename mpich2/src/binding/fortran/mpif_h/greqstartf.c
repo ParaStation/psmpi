@@ -270,6 +270,6 @@ FORT_DLL_SPEC void FORT_CALL mpi_grequest_start_ ( MPI_Grequest_query_function*v
     *ierr = MPI_Grequest_start( v1, v2, v3, v4, (MPI_Request *)(v5) );
 
     if (*ierr == MPI_SUCCESS) {
-         MPIR_Grequest_set_lang_f77( *v5 );
+         MPII_Grequest_set_lang_f77( *v5 );
     }
 }

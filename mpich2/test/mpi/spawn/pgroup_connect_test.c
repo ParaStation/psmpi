@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <mpi.h>
+#include "mpitest.h"
 
 const int verbose = 0;
 
@@ -36,8 +37,7 @@ void PGroup_create(int count, int members[], MPI_Comm * group)
     if (count == 0) {
         *group = MPI_COMM_NULL;
         return;
-    }
-    else if (count == 1 && members[0] == me) {
+    } else if (count == 1 && members[0] == me) {
         *group = MPI_COMM_SELF;
         return;
     }
@@ -94,8 +94,7 @@ void PGroup_create(int count, int members[], MPI_Comm * group)
                 MPI_Intercomm_merge(pgroup_new, 1 /* HIGH */ , &pgroup);
                 MPI_Comm_free(&pgroup_new);
                 merged = 1;
-            }
-            else if (merged) {
+            } else if (merged) {
                 MPI_Comm pgroup_old = pgroup;
 
                 MPI_Comm_connect(port, MPI_INFO_NULL, 0, pgroup, &pgroup_new);
@@ -119,7 +118,7 @@ int main(int argc, char **argv)
     int gsize, *glist;
     MPI_Comm group;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
@@ -147,10 +146,7 @@ int main(int argc, char **argv)
 
     free(glist);
 
-    MPI_Finalize();
+    MTest_Finalize(0);
 
-    if (me == 0)
-        printf(" No Errors\n");
-
-    return 0;
+    return MTestReturnValue(0);
 }

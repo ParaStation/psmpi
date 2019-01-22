@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/spawn/spawnmultf.f with f77tof90
+! This file created from f77/spawn/spawnmultf.f with f77tof90
 ! -*- Mode: Fortran; -*- 
 !
 !  (C) 2003 by Argonne National Laboratory.
@@ -147,8 +147,9 @@
 !       Note that the MTest_Finalize get errs only over COMM_WORLD 
         if (parentcomm .eq. MPI_COMM_NULL) then
             call MTest_Finalize( errs )
+        else
+            call MPI_Finalize( ierr )
         endif
 
  300    continue
-        call MPI_Finalize( ierr )
         end

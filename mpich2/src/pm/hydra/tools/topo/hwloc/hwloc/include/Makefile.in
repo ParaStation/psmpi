@@ -14,9 +14,9 @@
 
 @SET_MAKE@
 
-# Copyright © 2009-2014 Inria.  All rights reserved.
+# Copyright © 2009-2017 Inria.  All rights reserved.
 # Copyright © 2009-2010 Université Bordeaux
-# Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
+# Copyright © 2009-2014 Cisco Systems, Inc.  All rights reserved.
 # Copyright © 2011      Oracle and/or its affiliates.  All rights reserved.
 # See COPYING in top-level directory.
 
@@ -98,34 +98,38 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-@HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_LINUX_TRUE@am__append_1 = \
+@BUILD_NETLOCSCOTCH_TRUE@@HWLOC_BUILD_STANDALONE_TRUE@am__append_1 = netloc.h netlocscotch.h
+@HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_LINUX_TRUE@am__append_2 = \
 @HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_LINUX_TRUE@        hwloc/linux.h \
 @HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_LINUX_TRUE@        hwloc/linux-libnuma.h
 
-@HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_SOLARIS_TRUE@am__append_2 = \
+@HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_SOLARIS_TRUE@am__append_3 = \
 @HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_SOLARIS_TRUE@       private/solaris-chiptype.h
 
-@HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_SCHED_SETAFFINITY_TRUE@am__append_3 = hwloc/glibc-sched.h
+@HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_SCHED_SETAFFINITY_TRUE@am__append_4 = hwloc/glibc-sched.h
 subdir = tools/topo/hwloc/hwloc/include
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
+am__aclocal_m4_deps =  \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_attributes.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_vendor.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_visibility.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_components.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_pkg.m4 \
+	$(top_srcdir)/tools/topo/hwloc/hwloc/config/netloc.m4 \
+	$(top_srcdir)/confdb/aclocal_cache.m4 \
 	$(top_srcdir)/confdb/aclocal_cc.m4 \
 	$(top_srcdir)/confdb/aclocal_coverage.m4 \
 	$(top_srcdir)/confdb/aclocal_libs.m4 \
 	$(top_srcdir)/confdb/aclocal_runlog.m4 \
 	$(top_srcdir)/confdb/aclocal_subcfg.m4 \
 	$(top_srcdir)/confdb/aclocal_util.m4 \
+	$(top_srcdir)/confdb/ax_check_posix_regcomp.m4 \
 	$(top_srcdir)/confdb/libtool.m4 \
 	$(top_srcdir)/confdb/ltoptions.m4 \
 	$(top_srcdir)/confdb/ltsugar.m4 \
 	$(top_srcdir)/confdb/ltversion.m4 \
 	$(top_srcdir)/confdb/lt~obsolete.m4 $(top_srcdir)/version.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_attributes.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_visibility.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_check_vendor.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_components.m4 \
-	$(top_srcdir)/tools/topo/hwloc/hwloc/config/hwloc_pkg.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -157,7 +161,7 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-am__include_HEADERS_DIST = hwloc.h
+am__include_HEADERS_DIST = hwloc.h netloc.h netlocscotch.h
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -189,15 +193,16 @@ am__installdirs = "$(DESTDIR)$(includedir)" \
 	"$(DESTDIR)$(include_hwlocdir)" \
 	"$(DESTDIR)$(include_hwloc_autogendir)"
 am__include_hwloc_HEADERS_DIST = hwloc/bitmap.h hwloc/helper.h \
-	hwloc/inlines.h hwloc/diff.h hwloc/myriexpress.h \
-	hwloc/openfabrics-verbs.h hwloc/opencl.h hwloc/cuda.h \
-	hwloc/cudart.h hwloc/nvml.h hwloc/plugins.h hwloc/gl.h \
-	hwloc/intel-mic.h hwloc/rename.h hwloc/deprecated.h \
+	hwloc/inlines.h hwloc/diff.h hwloc/shmem.h hwloc/distances.h \
+	hwloc/export.h hwloc/openfabrics-verbs.h hwloc/opencl.h \
+	hwloc/cuda.h hwloc/cudart.h hwloc/nvml.h hwloc/plugins.h \
+	hwloc/gl.h hwloc/intel-mic.h hwloc/rename.h hwloc/deprecated.h \
 	hwloc/linux.h hwloc/linux-libnuma.h private/solaris-chiptype.h \
 	hwloc/glibc-sched.h
 am__noinst_HEADERS_DIST = private/private.h private/debug.h \
 	private/misc.h private/xml.h private/components.h \
-	private/cpuid-x86.h
+	private/cpuid-x86.h private/netloc.h netloc/utarray.h \
+	netloc/uthash.h
 HEADERS = $(include_HEADERS) $(include_hwloc_HEADERS) \
 	$(nodist_include_hwloc_autogen_HEADERS) $(noinst_HEADERS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
@@ -262,17 +267,16 @@ HWLOC_GL_LIBS = @HWLOC_GL_LIBS@
 HWLOC_HAVE_LIBXML2 = @HWLOC_HAVE_LIBXML2@
 HWLOC_HAVE_NVML = @HWLOC_HAVE_NVML@
 HWLOC_HAVE_OPENCL = @HWLOC_HAVE_OPENCL@
-HWLOC_KERRIGHED_CFLAGS = @HWLOC_KERRIGHED_CFLAGS@
-HWLOC_KERRIGHED_LIBS = @HWLOC_KERRIGHED_LIBS@
 HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
 HWLOC_LIBS = @HWLOC_LIBS@
 HWLOC_LIBS_PRIVATE = @HWLOC_LIBS_PRIVATE@
 HWLOC_LIBXML2_CFLAGS = @HWLOC_LIBXML2_CFLAGS@
 HWLOC_LIBXML2_LIBS = @HWLOC_LIBXML2_LIBS@
-HWLOC_LINUX_LIBNUMA_LIBS = @HWLOC_LINUX_LIBNUMA_LIBS@
 HWLOC_MS_LIB = @HWLOC_MS_LIB@
 HWLOC_MS_LIB_ARCH = @HWLOC_MS_LIB_ARCH@
 HWLOC_NVML_LIBS = @HWLOC_NVML_LIBS@
+HWLOC_OPENCL_CFLAGS = @HWLOC_OPENCL_CFLAGS@
+HWLOC_OPENCL_LDFLAGS = @HWLOC_OPENCL_LDFLAGS@
 HWLOC_OPENCL_LIBS = @HWLOC_OPENCL_LIBS@
 HWLOC_PCIACCESS_CFLAGS = @HWLOC_PCIACCESS_CFLAGS@
 HWLOC_PCIACCESS_LIBS = @HWLOC_PCIACCESS_LIBS@
@@ -281,6 +285,7 @@ HWLOC_PLUGINS_PATH = @HWLOC_PLUGINS_PATH@
 HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
 HWLOC_REQUIRES = @HWLOC_REQUIRES@
 HWLOC_VERSION = @HWLOC_VERSION@
+HWLOC_X11_CPPFLAGS = @HWLOC_X11_CPPFLAGS@
 HWLOC_X11_LIBS = @HWLOC_X11_LIBS@
 HWLOC_top_builddir = @HWLOC_top_builddir@
 HWLOC_top_srcdir = @HWLOC_top_srcdir@
@@ -306,6 +311,7 @@ MKDIR_P = @MKDIR_P@
 MPIEXEC_HYDRA_NAME = @MPIEXEC_HYDRA_NAME@
 MPIEXEC_NAME = @MPIEXEC_NAME@
 MPIRUN_NAME = @MPIRUN_NAME@
+MPLLIBNAME = @MPLLIBNAME@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
@@ -380,6 +386,9 @@ localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 mpl_dist_srcdir = @mpl_dist_srcdir@
+mpl_includedir = @mpl_includedir@
+mpl_lib = @mpl_lib@
+mpl_libdir = @mpl_libdir@
 mpl_srcdir = @mpl_srcdir@
 oldincludedir = @oldincludedir@
 pdfdir = @pdfdir@
@@ -398,19 +407,20 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@HWLOC_BUILD_STANDALONE_TRUE@include_HEADERS = hwloc.h
+@HWLOC_BUILD_STANDALONE_TRUE@include_HEADERS = hwloc.h $(am__append_1)
 @HWLOC_BUILD_STANDALONE_TRUE@include_hwlocdir = $(includedir)/hwloc
 @HWLOC_BUILD_STANDALONE_TRUE@include_hwloc_HEADERS = hwloc/bitmap.h \
 @HWLOC_BUILD_STANDALONE_TRUE@	hwloc/helper.h hwloc/inlines.h \
-@HWLOC_BUILD_STANDALONE_TRUE@	hwloc/diff.h hwloc/myriexpress.h \
+@HWLOC_BUILD_STANDALONE_TRUE@	hwloc/diff.h hwloc/shmem.h \
+@HWLOC_BUILD_STANDALONE_TRUE@	hwloc/distances.h hwloc/export.h \
 @HWLOC_BUILD_STANDALONE_TRUE@	hwloc/openfabrics-verbs.h \
 @HWLOC_BUILD_STANDALONE_TRUE@	hwloc/opencl.h hwloc/cuda.h \
 @HWLOC_BUILD_STANDALONE_TRUE@	hwloc/cudart.h hwloc/nvml.h \
 @HWLOC_BUILD_STANDALONE_TRUE@	hwloc/plugins.h hwloc/gl.h \
 @HWLOC_BUILD_STANDALONE_TRUE@	hwloc/intel-mic.h hwloc/rename.h \
 @HWLOC_BUILD_STANDALONE_TRUE@	hwloc/deprecated.h \
-@HWLOC_BUILD_STANDALONE_TRUE@	$(am__append_1) $(am__append_2) \
-@HWLOC_BUILD_STANDALONE_TRUE@	$(am__append_3)
+@HWLOC_BUILD_STANDALONE_TRUE@	$(am__append_2) $(am__append_3) \
+@HWLOC_BUILD_STANDALONE_TRUE@	$(am__append_4)
 @HWLOC_BUILD_STANDALONE_TRUE@include_hwloc_autogendir = $(includedir)/hwloc/autogen
 @HWLOC_BUILD_STANDALONE_TRUE@nodist_include_hwloc_autogen_HEADERS = hwloc/autogen/config.h
 @HWLOC_BUILD_STANDALONE_TRUE@noinst_HEADERS = \
@@ -419,7 +429,10 @@ top_srcdir = @top_srcdir@
 @HWLOC_BUILD_STANDALONE_TRUE@        private/misc.h \
 @HWLOC_BUILD_STANDALONE_TRUE@        private/xml.h \
 @HWLOC_BUILD_STANDALONE_TRUE@        private/components.h \
-@HWLOC_BUILD_STANDALONE_TRUE@        private/cpuid-x86.h
+@HWLOC_BUILD_STANDALONE_TRUE@        private/cpuid-x86.h \
+@HWLOC_BUILD_STANDALONE_TRUE@        private/netloc.h \
+@HWLOC_BUILD_STANDALONE_TRUE@        netloc/utarray.h \
+@HWLOC_BUILD_STANDALONE_TRUE@        netloc/uthash.h
 
 all: all-am
 

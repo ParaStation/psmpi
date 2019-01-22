@@ -94,33 +94,34 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = blockindexed-misc$(EXEEXT) \
-	blockindexed-zero-count$(EXEEXT) contents$(EXEEXT) \
-	contig-zero-count$(EXEEXT) contigstruct$(EXEEXT) \
-	cxx-types$(EXEEXT) dataalign$(EXEEXT) darray-pack$(EXEEXT) \
-	darray-cyclic$(EXEEXT) gaddress$(EXEEXT) get-elements$(EXEEXT) \
-	get-elements-pairtype$(EXEEXT) getpartelm$(EXEEXT) \
-	hindexed-zeros$(EXEEXT) hindexed_block$(EXEEXT) \
-	hindexed_block_contents$(EXEEXT) hvecblklen$(EXEEXT) \
-	indexed-misc$(EXEEXT) large-count$(EXEEXT) large_type$(EXEEXT) \
-	large_type_sendrec$(EXEEXT) large_vec$(EXEEXT) lbub$(EXEEXT) \
-	localpack$(EXEEXT) longdouble$(EXEEXT) lots-of-types$(EXEEXT) \
-	pairtype-pack$(EXEEXT) pairtype-size-extent$(EXEEXT) \
-	sendrecvt2$(EXEEXT) sendrecvt4$(EXEEXT) simple-commit$(EXEEXT) \
-	simple-pack$(EXEEXT) simple-pack-external$(EXEEXT) \
-	simple-resized$(EXEEXT) simple-size-extent$(EXEEXT) \
-	sizedtypes$(EXEEXT) slice-pack$(EXEEXT) \
-	slice-pack-external$(EXEEXT) struct-derived-zeros$(EXEEXT) \
-	struct-empty-el$(EXEEXT) struct-ezhov$(EXEEXT) \
-	struct-no-real-types$(EXEEXT) struct-pack$(EXEEXT) \
-	structpack2$(EXEEXT) struct-verydeep$(EXEEXT) \
-	struct-zero-count$(EXEEXT) subarray$(EXEEXT) \
-	subarray-pack$(EXEEXT) tfree$(EXEEXT) tmatchsize$(EXEEXT) \
-	transpose-pack$(EXEEXT) tresized$(EXEEXT) tresized2$(EXEEXT) \
-	triangular-pack$(EXEEXT) typecommit$(EXEEXT) typefree$(EXEEXT) \
-	typelb$(EXEEXT) typename$(EXEEXT) unpack$(EXEEXT) \
-	unusual-noncontigs$(EXEEXT) vecblklen$(EXEEXT) \
-	zeroblks$(EXEEXT) zeroparms$(EXEEXT)
+noinst_PROGRAMS = blockindexed_misc$(EXEEXT) \
+	blockindexed_zero_count$(EXEEXT) concurrent_irecv$(EXEEXT) \
+	contents$(EXEEXT) contig_zero_count$(EXEEXT) \
+	contigstruct$(EXEEXT) cxx_types$(EXEEXT) dataalign$(EXEEXT) \
+	darray_pack$(EXEEXT) darray_cyclic$(EXEEXT) gaddress$(EXEEXT) \
+	get_elements$(EXEEXT) get_elements_pairtype$(EXEEXT) \
+	getpartelm$(EXEEXT) hindexed_zeros$(EXEEXT) \
+	hindexed_block$(EXEEXT) hindexed_block_contents$(EXEEXT) \
+	hvecblklen$(EXEEXT) indexed_misc$(EXEEXT) large_count$(EXEEXT) \
+	large_type$(EXEEXT) large_type_sendrec$(EXEEXT) \
+	large_vec$(EXEEXT) lbub$(EXEEXT) localpack$(EXEEXT) \
+	longdouble$(EXEEXT) lots_of_types$(EXEEXT) \
+	pairtype_pack$(EXEEXT) pairtype_size_extent$(EXEEXT) \
+	sendrecvt2$(EXEEXT) sendrecvt4$(EXEEXT) simple_commit$(EXEEXT) \
+	simple_pack$(EXEEXT) simple_pack_external$(EXEEXT) \
+	simple_pack_external2$(EXEEXT) simple_resized$(EXEEXT) \
+	simple_size_extent$(EXEEXT) sizedtypes$(EXEEXT) \
+	slice_pack$(EXEEXT) slice_pack_external$(EXEEXT) \
+	struct_derived_zeros$(EXEEXT) struct_empty_el$(EXEEXT) \
+	struct_ezhov$(EXEEXT) struct_no_real_types$(EXEEXT) \
+	struct_pack$(EXEEXT) structpack2$(EXEEXT) \
+	struct_verydeep$(EXEEXT) struct_zero_count$(EXEEXT) \
+	subarray$(EXEEXT) subarray_pack$(EXEEXT) tfree$(EXEEXT) \
+	tmatchsize$(EXEEXT) transpose_pack$(EXEEXT) tresized$(EXEEXT) \
+	tresized2$(EXEEXT) triangular_pack$(EXEEXT) \
+	typecommit$(EXEEXT) typefree$(EXEEXT) typelb$(EXEEXT) \
+	typename$(EXEEXT) unpack$(EXEEXT) unusual_noncontigs$(EXEEXT) \
+	vecblklen$(EXEEXT) zeroblks$(EXEEXT) zeroparms$(EXEEXT)
 subdir = datatype
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -140,378 +141,327 @@ CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
 CONFIG_CLEAN_FILES = testlist
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-blockindexed_misc_SOURCES = blockindexed-misc.c
-blockindexed_misc_OBJECTS = blockindexed-misc.$(OBJEXT)
+blockindexed_misc_SOURCES = blockindexed_misc.c
+blockindexed_misc_OBJECTS = blockindexed_misc.$(OBJEXT)
 blockindexed_misc_LDADD = $(LDADD)
 blockindexed_misc_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-blockindexed_zero_count_SOURCES = blockindexed-zero-count.c
-blockindexed_zero_count_OBJECTS = blockindexed-zero-count.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+blockindexed_zero_count_SOURCES = blockindexed_zero_count.c
+blockindexed_zero_count_OBJECTS = blockindexed_zero_count.$(OBJEXT)
 blockindexed_zero_count_LDADD = $(LDADD)
 blockindexed_zero_count_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+concurrent_irecv_SOURCES = concurrent_irecv.c
+concurrent_irecv_OBJECTS = concurrent_irecv.$(OBJEXT)
+concurrent_irecv_LDADD = $(LDADD)
+concurrent_irecv_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 contents_SOURCES = contents.c
 contents_OBJECTS = contents.$(OBJEXT)
 contents_LDADD = $(LDADD)
 contents_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-contig_zero_count_SOURCES = contig-zero-count.c
-contig_zero_count_OBJECTS = contig-zero-count.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+contig_zero_count_SOURCES = contig_zero_count.c
+contig_zero_count_OBJECTS = contig_zero_count.$(OBJEXT)
 contig_zero_count_LDADD = $(LDADD)
 contig_zero_count_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 contigstruct_SOURCES = contigstruct.c
 contigstruct_OBJECTS = contigstruct.$(OBJEXT)
 contigstruct_LDADD = $(LDADD)
 contigstruct_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-cxx_types_SOURCES = cxx-types.c
-cxx_types_OBJECTS = cxx-types.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+cxx_types_SOURCES = cxx_types.c
+cxx_types_OBJECTS = cxx_types.$(OBJEXT)
 cxx_types_LDADD = $(LDADD)
 cxx_types_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-darray_cyclic_SOURCES = darray-cyclic.c
-darray_cyclic_OBJECTS = darray-cyclic.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+darray_cyclic_SOURCES = darray_cyclic.c
+darray_cyclic_OBJECTS = darray_cyclic.$(OBJEXT)
 darray_cyclic_LDADD = $(LDADD)
 darray_cyclic_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-darray_pack_SOURCES = darray-pack.c
-darray_pack_OBJECTS = darray-pack.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+darray_pack_SOURCES = darray_pack.c
+darray_pack_OBJECTS = darray_pack.$(OBJEXT)
 darray_pack_LDADD = $(LDADD)
 darray_pack_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 dataalign_SOURCES = dataalign.c
 dataalign_OBJECTS = dataalign.$(OBJEXT)
 dataalign_LDADD = $(LDADD)
 dataalign_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 gaddress_SOURCES = gaddress.c
 gaddress_OBJECTS = gaddress.$(OBJEXT)
 gaddress_LDADD = $(LDADD)
 gaddress_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-get_elements_SOURCES = get-elements.c
-get_elements_OBJECTS = get-elements.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+get_elements_SOURCES = get_elements.c
+get_elements_OBJECTS = get_elements.$(OBJEXT)
 get_elements_LDADD = $(LDADD)
 get_elements_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-get_elements_pairtype_SOURCES = get-elements-pairtype.c
-get_elements_pairtype_OBJECTS = get-elements-pairtype.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+get_elements_pairtype_SOURCES = get_elements_pairtype.c
+get_elements_pairtype_OBJECTS = get_elements_pairtype.$(OBJEXT)
 get_elements_pairtype_LDADD = $(LDADD)
 get_elements_pairtype_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 getpartelm_SOURCES = getpartelm.c
 getpartelm_OBJECTS = getpartelm.$(OBJEXT)
 getpartelm_LDADD = $(LDADD)
 getpartelm_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-hindexed_zeros_SOURCES = hindexed-zeros.c
-hindexed_zeros_OBJECTS = hindexed-zeros.$(OBJEXT)
-hindexed_zeros_LDADD = $(LDADD)
-hindexed_zeros_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 hindexed_block_SOURCES = hindexed_block.c
 hindexed_block_OBJECTS = hindexed_block.$(OBJEXT)
 hindexed_block_LDADD = $(LDADD)
 hindexed_block_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 hindexed_block_contents_SOURCES = hindexed_block_contents.c
 hindexed_block_contents_OBJECTS = hindexed_block_contents.$(OBJEXT)
 hindexed_block_contents_LDADD = $(LDADD)
 hindexed_block_contents_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+hindexed_zeros_SOURCES = hindexed_zeros.c
+hindexed_zeros_OBJECTS = hindexed_zeros.$(OBJEXT)
+hindexed_zeros_LDADD = $(LDADD)
+hindexed_zeros_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 hvecblklen_SOURCES = hvecblklen.c
 hvecblklen_OBJECTS = hvecblklen.$(OBJEXT)
 hvecblklen_LDADD = $(LDADD)
 hvecblklen_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-indexed_misc_SOURCES = indexed-misc.c
-indexed_misc_OBJECTS = indexed-misc.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+indexed_misc_SOURCES = indexed_misc.c
+indexed_misc_OBJECTS = indexed_misc.$(OBJEXT)
 indexed_misc_LDADD = $(LDADD)
 indexed_misc_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-large_count_SOURCES = large-count.c
-large_count_OBJECTS = large-count.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+large_count_SOURCES = large_count.c
+large_count_OBJECTS = large_count.$(OBJEXT)
 large_count_LDADD = $(LDADD)
 large_count_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 large_type_SOURCES = large_type.c
 large_type_OBJECTS = large_type.$(OBJEXT)
 large_type_LDADD = $(LDADD)
 large_type_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 large_type_sendrec_SOURCES = large_type_sendrec.c
 large_type_sendrec_OBJECTS = large_type_sendrec.$(OBJEXT)
 large_type_sendrec_LDADD = $(LDADD)
 large_type_sendrec_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 large_vec_SOURCES = large_vec.c
 large_vec_OBJECTS = large_vec.$(OBJEXT)
 large_vec_LDADD = $(LDADD)
 large_vec_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 lbub_SOURCES = lbub.c
 lbub_OBJECTS = lbub.$(OBJEXT)
 lbub_LDADD = $(LDADD)
 lbub_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 localpack_SOURCES = localpack.c
 localpack_OBJECTS = localpack.$(OBJEXT)
 localpack_LDADD = $(LDADD)
 localpack_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 longdouble_SOURCES = longdouble.c
 longdouble_OBJECTS = longdouble.$(OBJEXT)
 longdouble_LDADD = $(LDADD)
 longdouble_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-lots_of_types_SOURCES = lots-of-types.c
-lots_of_types_OBJECTS = lots-of-types.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+lots_of_types_SOURCES = lots_of_types.c
+lots_of_types_OBJECTS = lots_of_types.$(OBJEXT)
 lots_of_types_LDADD = $(LDADD)
 lots_of_types_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-pairtype_pack_SOURCES = pairtype-pack.c
-pairtype_pack_OBJECTS = pairtype-pack.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+pairtype_pack_SOURCES = pairtype_pack.c
+pairtype_pack_OBJECTS = pairtype_pack.$(OBJEXT)
 pairtype_pack_LDADD = $(LDADD)
 pairtype_pack_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-pairtype_size_extent_SOURCES = pairtype-size-extent.c
-pairtype_size_extent_OBJECTS = pairtype-size-extent.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+pairtype_size_extent_SOURCES = pairtype_size_extent.c
+pairtype_size_extent_OBJECTS = pairtype_size_extent.$(OBJEXT)
 pairtype_size_extent_LDADD = $(LDADD)
 pairtype_size_extent_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 sendrecvt2_SOURCES = sendrecvt2.c
 sendrecvt2_OBJECTS = sendrecvt2.$(OBJEXT)
 sendrecvt2_DEPENDENCIES = $(LDADD) $(LDADDDATA)
 sendrecvt4_SOURCES = sendrecvt4.c
 sendrecvt4_OBJECTS = sendrecvt4.$(OBJEXT)
 sendrecvt4_DEPENDENCIES = $(LDADD) $(LDADDDATA)
-simple_commit_SOURCES = simple-commit.c
-simple_commit_OBJECTS = simple-commit.$(OBJEXT)
+simple_commit_SOURCES = simple_commit.c
+simple_commit_OBJECTS = simple_commit.$(OBJEXT)
 simple_commit_LDADD = $(LDADD)
 simple_commit_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-simple_pack_SOURCES = simple-pack.c
-simple_pack_OBJECTS = simple-pack.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+simple_pack_SOURCES = simple_pack.c
+simple_pack_OBJECTS = simple_pack.$(OBJEXT)
 simple_pack_LDADD = $(LDADD)
 simple_pack_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-simple_pack_external_SOURCES = simple-pack-external.c
-simple_pack_external_OBJECTS = simple-pack-external.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+simple_pack_external_SOURCES = simple_pack_external.c
+simple_pack_external_OBJECTS = simple_pack_external.$(OBJEXT)
 simple_pack_external_LDADD = $(LDADD)
 simple_pack_external_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-simple_resized_SOURCES = simple-resized.c
-simple_resized_OBJECTS = simple-resized.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+simple_pack_external2_SOURCES = simple_pack_external2.c
+simple_pack_external2_OBJECTS = simple_pack_external2.$(OBJEXT)
+simple_pack_external2_LDADD = $(LDADD)
+simple_pack_external2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+simple_resized_SOURCES = simple_resized.c
+simple_resized_OBJECTS = simple_resized.$(OBJEXT)
 simple_resized_LDADD = $(LDADD)
 simple_resized_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-simple_size_extent_SOURCES = simple-size-extent.c
-simple_size_extent_OBJECTS = simple-size-extent.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+simple_size_extent_SOURCES = simple_size_extent.c
+simple_size_extent_OBJECTS = simple_size_extent.$(OBJEXT)
 simple_size_extent_LDADD = $(LDADD)
 simple_size_extent_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 sizedtypes_SOURCES = sizedtypes.c
 sizedtypes_OBJECTS = sizedtypes.$(OBJEXT)
 sizedtypes_LDADD = $(LDADD)
 sizedtypes_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-slice_pack_SOURCES = slice-pack.c
-slice_pack_OBJECTS = slice-pack.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+slice_pack_SOURCES = slice_pack.c
+slice_pack_OBJECTS = slice_pack.$(OBJEXT)
 slice_pack_LDADD = $(LDADD)
 slice_pack_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-slice_pack_external_SOURCES = slice-pack-external.c
-slice_pack_external_OBJECTS = slice-pack-external.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+slice_pack_external_SOURCES = slice_pack_external.c
+slice_pack_external_OBJECTS = slice_pack_external.$(OBJEXT)
 slice_pack_external_LDADD = $(LDADD)
 slice_pack_external_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-struct_derived_zeros_SOURCES = struct-derived-zeros.c
-struct_derived_zeros_OBJECTS = struct-derived-zeros.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+struct_derived_zeros_SOURCES = struct_derived_zeros.c
+struct_derived_zeros_OBJECTS = struct_derived_zeros.$(OBJEXT)
 struct_derived_zeros_LDADD = $(LDADD)
 struct_derived_zeros_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-struct_empty_el_SOURCES = struct-empty-el.c
-struct_empty_el_OBJECTS = struct-empty-el.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+struct_empty_el_SOURCES = struct_empty_el.c
+struct_empty_el_OBJECTS = struct_empty_el.$(OBJEXT)
 struct_empty_el_LDADD = $(LDADD)
 struct_empty_el_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-struct_ezhov_SOURCES = struct-ezhov.c
-struct_ezhov_OBJECTS = struct-ezhov.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+struct_ezhov_SOURCES = struct_ezhov.c
+struct_ezhov_OBJECTS = struct_ezhov.$(OBJEXT)
 struct_ezhov_LDADD = $(LDADD)
 struct_ezhov_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-struct_no_real_types_SOURCES = struct-no-real-types.c
-struct_no_real_types_OBJECTS = struct-no-real-types.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+struct_no_real_types_SOURCES = struct_no_real_types.c
+struct_no_real_types_OBJECTS = struct_no_real_types.$(OBJEXT)
 struct_no_real_types_LDADD = $(LDADD)
 struct_no_real_types_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-struct_pack_SOURCES = struct-pack.c
-struct_pack_OBJECTS = struct-pack.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+struct_pack_SOURCES = struct_pack.c
+struct_pack_OBJECTS = struct_pack.$(OBJEXT)
 struct_pack_LDADD = $(LDADD)
 struct_pack_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-struct_verydeep_SOURCES = struct-verydeep.c
-struct_verydeep_OBJECTS = struct-verydeep.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+struct_verydeep_SOURCES = struct_verydeep.c
+struct_verydeep_OBJECTS = struct_verydeep.$(OBJEXT)
 struct_verydeep_LDADD = $(LDADD)
 struct_verydeep_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-struct_zero_count_SOURCES = struct-zero-count.c
-struct_zero_count_OBJECTS = struct-zero-count.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+struct_zero_count_SOURCES = struct_zero_count.c
+struct_zero_count_OBJECTS = struct_zero_count.$(OBJEXT)
 struct_zero_count_LDADD = $(LDADD)
 struct_zero_count_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 structpack2_SOURCES = structpack2.c
 structpack2_OBJECTS = structpack2.$(OBJEXT)
 structpack2_LDADD = $(LDADD)
 structpack2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 subarray_SOURCES = subarray.c
 subarray_OBJECTS = subarray.$(OBJEXT)
 subarray_LDADD = $(LDADD)
 subarray_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-subarray_pack_SOURCES = subarray-pack.c
-subarray_pack_OBJECTS = subarray-pack.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+subarray_pack_SOURCES = subarray_pack.c
+subarray_pack_OBJECTS = subarray_pack.$(OBJEXT)
 subarray_pack_LDADD = $(LDADD)
 subarray_pack_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 tfree_SOURCES = tfree.c
 tfree_OBJECTS = tfree.$(OBJEXT)
 tfree_LDADD = $(LDADD)
 tfree_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 tmatchsize_SOURCES = tmatchsize.c
 tmatchsize_OBJECTS = tmatchsize.$(OBJEXT)
 tmatchsize_LDADD = $(LDADD)
 tmatchsize_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-transpose_pack_SOURCES = transpose-pack.c
-transpose_pack_OBJECTS = transpose-pack.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+transpose_pack_SOURCES = transpose_pack.c
+transpose_pack_OBJECTS = transpose_pack.$(OBJEXT)
 transpose_pack_LDADD = $(LDADD)
 transpose_pack_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 tresized_SOURCES = tresized.c
 tresized_OBJECTS = tresized.$(OBJEXT)
 tresized_LDADD = $(LDADD)
 tresized_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 tresized2_SOURCES = tresized2.c
 tresized2_OBJECTS = tresized2.$(OBJEXT)
 tresized2_LDADD = $(LDADD)
 tresized2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-triangular_pack_SOURCES = triangular-pack.c
-triangular_pack_OBJECTS = triangular-pack.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+triangular_pack_SOURCES = triangular_pack.c
+triangular_pack_OBJECTS = triangular_pack.$(OBJEXT)
 triangular_pack_LDADD = $(LDADD)
 triangular_pack_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 typecommit_SOURCES = typecommit.c
 typecommit_OBJECTS = typecommit.$(OBJEXT)
 typecommit_LDADD = $(LDADD)
 typecommit_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 typefree_SOURCES = typefree.c
 typefree_OBJECTS = typefree.$(OBJEXT)
 typefree_LDADD = $(LDADD)
 typefree_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 typelb_SOURCES = typelb.c
 typelb_OBJECTS = typelb.$(OBJEXT)
 typelb_LDADD = $(LDADD)
 typelb_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 typename_SOURCES = typename.c
 typename_OBJECTS = typename.$(OBJEXT)
 typename_LDADD = $(LDADD)
 typename_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 unpack_SOURCES = unpack.c
 unpack_OBJECTS = unpack.$(OBJEXT)
 unpack_LDADD = $(LDADD)
 unpack_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-unusual_noncontigs_SOURCES = unusual-noncontigs.c
-unusual_noncontigs_OBJECTS = unusual-noncontigs.$(OBJEXT)
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+unusual_noncontigs_SOURCES = unusual_noncontigs.c
+unusual_noncontigs_OBJECTS = unusual_noncontigs.$(OBJEXT)
 unusual_noncontigs_LDADD = $(LDADD)
 unusual_noncontigs_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 vecblklen_SOURCES = vecblklen.c
 vecblklen_OBJECTS = vecblklen.$(OBJEXT)
 vecblklen_LDADD = $(LDADD)
 vecblklen_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 zeroblks_SOURCES = zeroblks.c
 zeroblks_OBJECTS = zeroblks.$(OBJEXT)
 zeroblks_LDADD = $(LDADD)
 zeroblks_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 zeroparms_SOURCES = zeroparms.c
 zeroparms_OBJECTS = zeroparms.$(OBJEXT)
 zeroparms_LDADD = $(LDADD)
 zeroparms_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -540,42 +490,44 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = blockindexed-misc.c blockindexed-zero-count.c contents.c \
-	contig-zero-count.c contigstruct.c cxx-types.c darray-cyclic.c \
-	darray-pack.c dataalign.c gaddress.c get-elements.c \
-	get-elements-pairtype.c getpartelm.c hindexed-zeros.c \
-	hindexed_block.c hindexed_block_contents.c hvecblklen.c \
-	indexed-misc.c large-count.c large_type.c large_type_sendrec.c \
-	large_vec.c lbub.c localpack.c longdouble.c lots-of-types.c \
-	pairtype-pack.c pairtype-size-extent.c sendrecvt2.c \
-	sendrecvt4.c simple-commit.c simple-pack.c \
-	simple-pack-external.c simple-resized.c simple-size-extent.c \
-	sizedtypes.c slice-pack.c slice-pack-external.c \
-	struct-derived-zeros.c struct-empty-el.c struct-ezhov.c \
-	struct-no-real-types.c struct-pack.c struct-verydeep.c \
-	struct-zero-count.c structpack2.c subarray.c subarray-pack.c \
-	tfree.c tmatchsize.c transpose-pack.c tresized.c tresized2.c \
-	triangular-pack.c typecommit.c typefree.c typelb.c typename.c \
-	unpack.c unusual-noncontigs.c vecblklen.c zeroblks.c \
+SOURCES = blockindexed_misc.c blockindexed_zero_count.c \
+	concurrent_irecv.c contents.c contig_zero_count.c \
+	contigstruct.c cxx_types.c darray_cyclic.c darray_pack.c \
+	dataalign.c gaddress.c get_elements.c get_elements_pairtype.c \
+	getpartelm.c hindexed_block.c hindexed_block_contents.c \
+	hindexed_zeros.c hvecblklen.c indexed_misc.c large_count.c \
+	large_type.c large_type_sendrec.c large_vec.c lbub.c \
+	localpack.c longdouble.c lots_of_types.c pairtype_pack.c \
+	pairtype_size_extent.c sendrecvt2.c sendrecvt4.c \
+	simple_commit.c simple_pack.c simple_pack_external.c \
+	simple_pack_external2.c simple_resized.c simple_size_extent.c \
+	sizedtypes.c slice_pack.c slice_pack_external.c \
+	struct_derived_zeros.c struct_empty_el.c struct_ezhov.c \
+	struct_no_real_types.c struct_pack.c struct_verydeep.c \
+	struct_zero_count.c structpack2.c subarray.c subarray_pack.c \
+	tfree.c tmatchsize.c transpose_pack.c tresized.c tresized2.c \
+	triangular_pack.c typecommit.c typefree.c typelb.c typename.c \
+	unpack.c unusual_noncontigs.c vecblklen.c zeroblks.c \
 	zeroparms.c
-DIST_SOURCES = blockindexed-misc.c blockindexed-zero-count.c \
-	contents.c contig-zero-count.c contigstruct.c cxx-types.c \
-	darray-cyclic.c darray-pack.c dataalign.c gaddress.c \
-	get-elements.c get-elements-pairtype.c getpartelm.c \
-	hindexed-zeros.c hindexed_block.c hindexed_block_contents.c \
-	hvecblklen.c indexed-misc.c large-count.c large_type.c \
-	large_type_sendrec.c large_vec.c lbub.c localpack.c \
-	longdouble.c lots-of-types.c pairtype-pack.c \
-	pairtype-size-extent.c sendrecvt2.c sendrecvt4.c \
-	simple-commit.c simple-pack.c simple-pack-external.c \
-	simple-resized.c simple-size-extent.c sizedtypes.c \
-	slice-pack.c slice-pack-external.c struct-derived-zeros.c \
-	struct-empty-el.c struct-ezhov.c struct-no-real-types.c \
-	struct-pack.c struct-verydeep.c struct-zero-count.c \
-	structpack2.c subarray.c subarray-pack.c tfree.c tmatchsize.c \
-	transpose-pack.c tresized.c tresized2.c triangular-pack.c \
-	typecommit.c typefree.c typelb.c typename.c unpack.c \
-	unusual-noncontigs.c vecblklen.c zeroblks.c zeroparms.c
+DIST_SOURCES = blockindexed_misc.c blockindexed_zero_count.c \
+	concurrent_irecv.c contents.c contig_zero_count.c \
+	contigstruct.c cxx_types.c darray_cyclic.c darray_pack.c \
+	dataalign.c gaddress.c get_elements.c get_elements_pairtype.c \
+	getpartelm.c hindexed_block.c hindexed_block_contents.c \
+	hindexed_zeros.c hvecblklen.c indexed_misc.c large_count.c \
+	large_type.c large_type_sendrec.c large_vec.c lbub.c \
+	localpack.c longdouble.c lots_of_types.c pairtype_pack.c \
+	pairtype_size_extent.c sendrecvt2.c sendrecvt4.c \
+	simple_commit.c simple_pack.c simple_pack_external.c \
+	simple_pack_external2.c simple_resized.c simple_size_extent.c \
+	sizedtypes.c slice_pack.c slice_pack_external.c \
+	struct_derived_zeros.c struct_empty_el.c struct_ezhov.c \
+	struct_no_real_types.c struct_pack.c struct_verydeep.c \
+	struct_zero_count.c structpack2.c subarray.c subarray_pack.c \
+	tfree.c tmatchsize.c transpose_pack.c tresized.c tresized2.c \
+	triangular_pack.c typecommit.c typefree.c typelb.c typename.c \
+	unpack.c unusual_noncontigs.c vecblklen.c zeroblks.c \
+	zeroparms.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -626,6 +578,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -781,6 +734,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -790,11 +744,14 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # AM_CPPFLAGS are used for C++ code as well
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+
+# Add libdtpools support
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_builddir)/dtpoos/include \
+	-I$(top_srcdir)/dtpools/include
 LDADD = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-CLEANFILES = summary.xml summary.tap summary.junit.xml
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
 EXTRA_DIST = testlist.in
 
 # Some of the tests use a more comprehensive set of datatype tests.
@@ -843,36 +800,40 @@ testlist: $(top_builddir)/config.status $(srcdir)/testlist.in
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 
-blockindexed-misc$(EXEEXT): $(blockindexed_misc_OBJECTS) $(blockindexed_misc_DEPENDENCIES) $(EXTRA_blockindexed_misc_DEPENDENCIES) 
-	@rm -f blockindexed-misc$(EXEEXT)
+blockindexed_misc$(EXEEXT): $(blockindexed_misc_OBJECTS) $(blockindexed_misc_DEPENDENCIES) $(EXTRA_blockindexed_misc_DEPENDENCIES) 
+	@rm -f blockindexed_misc$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(blockindexed_misc_OBJECTS) $(blockindexed_misc_LDADD) $(LIBS)
 
-blockindexed-zero-count$(EXEEXT): $(blockindexed_zero_count_OBJECTS) $(blockindexed_zero_count_DEPENDENCIES) $(EXTRA_blockindexed_zero_count_DEPENDENCIES) 
-	@rm -f blockindexed-zero-count$(EXEEXT)
+blockindexed_zero_count$(EXEEXT): $(blockindexed_zero_count_OBJECTS) $(blockindexed_zero_count_DEPENDENCIES) $(EXTRA_blockindexed_zero_count_DEPENDENCIES) 
+	@rm -f blockindexed_zero_count$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(blockindexed_zero_count_OBJECTS) $(blockindexed_zero_count_LDADD) $(LIBS)
+
+concurrent_irecv$(EXEEXT): $(concurrent_irecv_OBJECTS) $(concurrent_irecv_DEPENDENCIES) $(EXTRA_concurrent_irecv_DEPENDENCIES) 
+	@rm -f concurrent_irecv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(concurrent_irecv_OBJECTS) $(concurrent_irecv_LDADD) $(LIBS)
 
 contents$(EXEEXT): $(contents_OBJECTS) $(contents_DEPENDENCIES) $(EXTRA_contents_DEPENDENCIES) 
 	@rm -f contents$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(contents_OBJECTS) $(contents_LDADD) $(LIBS)
 
-contig-zero-count$(EXEEXT): $(contig_zero_count_OBJECTS) $(contig_zero_count_DEPENDENCIES) $(EXTRA_contig_zero_count_DEPENDENCIES) 
-	@rm -f contig-zero-count$(EXEEXT)
+contig_zero_count$(EXEEXT): $(contig_zero_count_OBJECTS) $(contig_zero_count_DEPENDENCIES) $(EXTRA_contig_zero_count_DEPENDENCIES) 
+	@rm -f contig_zero_count$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(contig_zero_count_OBJECTS) $(contig_zero_count_LDADD) $(LIBS)
 
 contigstruct$(EXEEXT): $(contigstruct_OBJECTS) $(contigstruct_DEPENDENCIES) $(EXTRA_contigstruct_DEPENDENCIES) 
 	@rm -f contigstruct$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(contigstruct_OBJECTS) $(contigstruct_LDADD) $(LIBS)
 
-cxx-types$(EXEEXT): $(cxx_types_OBJECTS) $(cxx_types_DEPENDENCIES) $(EXTRA_cxx_types_DEPENDENCIES) 
-	@rm -f cxx-types$(EXEEXT)
+cxx_types$(EXEEXT): $(cxx_types_OBJECTS) $(cxx_types_DEPENDENCIES) $(EXTRA_cxx_types_DEPENDENCIES) 
+	@rm -f cxx_types$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(cxx_types_OBJECTS) $(cxx_types_LDADD) $(LIBS)
 
-darray-cyclic$(EXEEXT): $(darray_cyclic_OBJECTS) $(darray_cyclic_DEPENDENCIES) $(EXTRA_darray_cyclic_DEPENDENCIES) 
-	@rm -f darray-cyclic$(EXEEXT)
+darray_cyclic$(EXEEXT): $(darray_cyclic_OBJECTS) $(darray_cyclic_DEPENDENCIES) $(EXTRA_darray_cyclic_DEPENDENCIES) 
+	@rm -f darray_cyclic$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(darray_cyclic_OBJECTS) $(darray_cyclic_LDADD) $(LIBS)
 
-darray-pack$(EXEEXT): $(darray_pack_OBJECTS) $(darray_pack_DEPENDENCIES) $(EXTRA_darray_pack_DEPENDENCIES) 
-	@rm -f darray-pack$(EXEEXT)
+darray_pack$(EXEEXT): $(darray_pack_OBJECTS) $(darray_pack_DEPENDENCIES) $(EXTRA_darray_pack_DEPENDENCIES) 
+	@rm -f darray_pack$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(darray_pack_OBJECTS) $(darray_pack_LDADD) $(LIBS)
 
 dataalign$(EXEEXT): $(dataalign_OBJECTS) $(dataalign_DEPENDENCIES) $(EXTRA_dataalign_DEPENDENCIES) 
@@ -883,21 +844,17 @@ gaddress$(EXEEXT): $(gaddress_OBJECTS) $(gaddress_DEPENDENCIES) $(EXTRA_gaddress
 	@rm -f gaddress$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(gaddress_OBJECTS) $(gaddress_LDADD) $(LIBS)
 
-get-elements$(EXEEXT): $(get_elements_OBJECTS) $(get_elements_DEPENDENCIES) $(EXTRA_get_elements_DEPENDENCIES) 
-	@rm -f get-elements$(EXEEXT)
+get_elements$(EXEEXT): $(get_elements_OBJECTS) $(get_elements_DEPENDENCIES) $(EXTRA_get_elements_DEPENDENCIES) 
+	@rm -f get_elements$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(get_elements_OBJECTS) $(get_elements_LDADD) $(LIBS)
 
-get-elements-pairtype$(EXEEXT): $(get_elements_pairtype_OBJECTS) $(get_elements_pairtype_DEPENDENCIES) $(EXTRA_get_elements_pairtype_DEPENDENCIES) 
-	@rm -f get-elements-pairtype$(EXEEXT)
+get_elements_pairtype$(EXEEXT): $(get_elements_pairtype_OBJECTS) $(get_elements_pairtype_DEPENDENCIES) $(EXTRA_get_elements_pairtype_DEPENDENCIES) 
+	@rm -f get_elements_pairtype$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(get_elements_pairtype_OBJECTS) $(get_elements_pairtype_LDADD) $(LIBS)
 
 getpartelm$(EXEEXT): $(getpartelm_OBJECTS) $(getpartelm_DEPENDENCIES) $(EXTRA_getpartelm_DEPENDENCIES) 
 	@rm -f getpartelm$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(getpartelm_OBJECTS) $(getpartelm_LDADD) $(LIBS)
-
-hindexed-zeros$(EXEEXT): $(hindexed_zeros_OBJECTS) $(hindexed_zeros_DEPENDENCIES) $(EXTRA_hindexed_zeros_DEPENDENCIES) 
-	@rm -f hindexed-zeros$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(hindexed_zeros_OBJECTS) $(hindexed_zeros_LDADD) $(LIBS)
 
 hindexed_block$(EXEEXT): $(hindexed_block_OBJECTS) $(hindexed_block_DEPENDENCIES) $(EXTRA_hindexed_block_DEPENDENCIES) 
 	@rm -f hindexed_block$(EXEEXT)
@@ -907,16 +864,20 @@ hindexed_block_contents$(EXEEXT): $(hindexed_block_contents_OBJECTS) $(hindexed_
 	@rm -f hindexed_block_contents$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(hindexed_block_contents_OBJECTS) $(hindexed_block_contents_LDADD) $(LIBS)
 
+hindexed_zeros$(EXEEXT): $(hindexed_zeros_OBJECTS) $(hindexed_zeros_DEPENDENCIES) $(EXTRA_hindexed_zeros_DEPENDENCIES) 
+	@rm -f hindexed_zeros$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(hindexed_zeros_OBJECTS) $(hindexed_zeros_LDADD) $(LIBS)
+
 hvecblklen$(EXEEXT): $(hvecblklen_OBJECTS) $(hvecblklen_DEPENDENCIES) $(EXTRA_hvecblklen_DEPENDENCIES) 
 	@rm -f hvecblklen$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(hvecblklen_OBJECTS) $(hvecblklen_LDADD) $(LIBS)
 
-indexed-misc$(EXEEXT): $(indexed_misc_OBJECTS) $(indexed_misc_DEPENDENCIES) $(EXTRA_indexed_misc_DEPENDENCIES) 
-	@rm -f indexed-misc$(EXEEXT)
+indexed_misc$(EXEEXT): $(indexed_misc_OBJECTS) $(indexed_misc_DEPENDENCIES) $(EXTRA_indexed_misc_DEPENDENCIES) 
+	@rm -f indexed_misc$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(indexed_misc_OBJECTS) $(indexed_misc_LDADD) $(LIBS)
 
-large-count$(EXEEXT): $(large_count_OBJECTS) $(large_count_DEPENDENCIES) $(EXTRA_large_count_DEPENDENCIES) 
-	@rm -f large-count$(EXEEXT)
+large_count$(EXEEXT): $(large_count_OBJECTS) $(large_count_DEPENDENCIES) $(EXTRA_large_count_DEPENDENCIES) 
+	@rm -f large_count$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(large_count_OBJECTS) $(large_count_LDADD) $(LIBS)
 
 large_type$(EXEEXT): $(large_type_OBJECTS) $(large_type_DEPENDENCIES) $(EXTRA_large_type_DEPENDENCIES) 
@@ -943,16 +904,16 @@ longdouble$(EXEEXT): $(longdouble_OBJECTS) $(longdouble_DEPENDENCIES) $(EXTRA_lo
 	@rm -f longdouble$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(longdouble_OBJECTS) $(longdouble_LDADD) $(LIBS)
 
-lots-of-types$(EXEEXT): $(lots_of_types_OBJECTS) $(lots_of_types_DEPENDENCIES) $(EXTRA_lots_of_types_DEPENDENCIES) 
-	@rm -f lots-of-types$(EXEEXT)
+lots_of_types$(EXEEXT): $(lots_of_types_OBJECTS) $(lots_of_types_DEPENDENCIES) $(EXTRA_lots_of_types_DEPENDENCIES) 
+	@rm -f lots_of_types$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(lots_of_types_OBJECTS) $(lots_of_types_LDADD) $(LIBS)
 
-pairtype-pack$(EXEEXT): $(pairtype_pack_OBJECTS) $(pairtype_pack_DEPENDENCIES) $(EXTRA_pairtype_pack_DEPENDENCIES) 
-	@rm -f pairtype-pack$(EXEEXT)
+pairtype_pack$(EXEEXT): $(pairtype_pack_OBJECTS) $(pairtype_pack_DEPENDENCIES) $(EXTRA_pairtype_pack_DEPENDENCIES) 
+	@rm -f pairtype_pack$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(pairtype_pack_OBJECTS) $(pairtype_pack_LDADD) $(LIBS)
 
-pairtype-size-extent$(EXEEXT): $(pairtype_size_extent_OBJECTS) $(pairtype_size_extent_DEPENDENCIES) $(EXTRA_pairtype_size_extent_DEPENDENCIES) 
-	@rm -f pairtype-size-extent$(EXEEXT)
+pairtype_size_extent$(EXEEXT): $(pairtype_size_extent_OBJECTS) $(pairtype_size_extent_DEPENDENCIES) $(EXTRA_pairtype_size_extent_DEPENDENCIES) 
+	@rm -f pairtype_size_extent$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(pairtype_size_extent_OBJECTS) $(pairtype_size_extent_LDADD) $(LIBS)
 
 sendrecvt2$(EXEEXT): $(sendrecvt2_OBJECTS) $(sendrecvt2_DEPENDENCIES) $(EXTRA_sendrecvt2_DEPENDENCIES) 
@@ -963,64 +924,68 @@ sendrecvt4$(EXEEXT): $(sendrecvt4_OBJECTS) $(sendrecvt4_DEPENDENCIES) $(EXTRA_se
 	@rm -f sendrecvt4$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(sendrecvt4_OBJECTS) $(sendrecvt4_LDADD) $(LIBS)
 
-simple-commit$(EXEEXT): $(simple_commit_OBJECTS) $(simple_commit_DEPENDENCIES) $(EXTRA_simple_commit_DEPENDENCIES) 
-	@rm -f simple-commit$(EXEEXT)
+simple_commit$(EXEEXT): $(simple_commit_OBJECTS) $(simple_commit_DEPENDENCIES) $(EXTRA_simple_commit_DEPENDENCIES) 
+	@rm -f simple_commit$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(simple_commit_OBJECTS) $(simple_commit_LDADD) $(LIBS)
 
-simple-pack$(EXEEXT): $(simple_pack_OBJECTS) $(simple_pack_DEPENDENCIES) $(EXTRA_simple_pack_DEPENDENCIES) 
-	@rm -f simple-pack$(EXEEXT)
+simple_pack$(EXEEXT): $(simple_pack_OBJECTS) $(simple_pack_DEPENDENCIES) $(EXTRA_simple_pack_DEPENDENCIES) 
+	@rm -f simple_pack$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(simple_pack_OBJECTS) $(simple_pack_LDADD) $(LIBS)
 
-simple-pack-external$(EXEEXT): $(simple_pack_external_OBJECTS) $(simple_pack_external_DEPENDENCIES) $(EXTRA_simple_pack_external_DEPENDENCIES) 
-	@rm -f simple-pack-external$(EXEEXT)
+simple_pack_external$(EXEEXT): $(simple_pack_external_OBJECTS) $(simple_pack_external_DEPENDENCIES) $(EXTRA_simple_pack_external_DEPENDENCIES) 
+	@rm -f simple_pack_external$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(simple_pack_external_OBJECTS) $(simple_pack_external_LDADD) $(LIBS)
 
-simple-resized$(EXEEXT): $(simple_resized_OBJECTS) $(simple_resized_DEPENDENCIES) $(EXTRA_simple_resized_DEPENDENCIES) 
-	@rm -f simple-resized$(EXEEXT)
+simple_pack_external2$(EXEEXT): $(simple_pack_external2_OBJECTS) $(simple_pack_external2_DEPENDENCIES) $(EXTRA_simple_pack_external2_DEPENDENCIES) 
+	@rm -f simple_pack_external2$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(simple_pack_external2_OBJECTS) $(simple_pack_external2_LDADD) $(LIBS)
+
+simple_resized$(EXEEXT): $(simple_resized_OBJECTS) $(simple_resized_DEPENDENCIES) $(EXTRA_simple_resized_DEPENDENCIES) 
+	@rm -f simple_resized$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(simple_resized_OBJECTS) $(simple_resized_LDADD) $(LIBS)
 
-simple-size-extent$(EXEEXT): $(simple_size_extent_OBJECTS) $(simple_size_extent_DEPENDENCIES) $(EXTRA_simple_size_extent_DEPENDENCIES) 
-	@rm -f simple-size-extent$(EXEEXT)
+simple_size_extent$(EXEEXT): $(simple_size_extent_OBJECTS) $(simple_size_extent_DEPENDENCIES) $(EXTRA_simple_size_extent_DEPENDENCIES) 
+	@rm -f simple_size_extent$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(simple_size_extent_OBJECTS) $(simple_size_extent_LDADD) $(LIBS)
 
 sizedtypes$(EXEEXT): $(sizedtypes_OBJECTS) $(sizedtypes_DEPENDENCIES) $(EXTRA_sizedtypes_DEPENDENCIES) 
 	@rm -f sizedtypes$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(sizedtypes_OBJECTS) $(sizedtypes_LDADD) $(LIBS)
 
-slice-pack$(EXEEXT): $(slice_pack_OBJECTS) $(slice_pack_DEPENDENCIES) $(EXTRA_slice_pack_DEPENDENCIES) 
-	@rm -f slice-pack$(EXEEXT)
+slice_pack$(EXEEXT): $(slice_pack_OBJECTS) $(slice_pack_DEPENDENCIES) $(EXTRA_slice_pack_DEPENDENCIES) 
+	@rm -f slice_pack$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(slice_pack_OBJECTS) $(slice_pack_LDADD) $(LIBS)
 
-slice-pack-external$(EXEEXT): $(slice_pack_external_OBJECTS) $(slice_pack_external_DEPENDENCIES) $(EXTRA_slice_pack_external_DEPENDENCIES) 
-	@rm -f slice-pack-external$(EXEEXT)
+slice_pack_external$(EXEEXT): $(slice_pack_external_OBJECTS) $(slice_pack_external_DEPENDENCIES) $(EXTRA_slice_pack_external_DEPENDENCIES) 
+	@rm -f slice_pack_external$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(slice_pack_external_OBJECTS) $(slice_pack_external_LDADD) $(LIBS)
 
-struct-derived-zeros$(EXEEXT): $(struct_derived_zeros_OBJECTS) $(struct_derived_zeros_DEPENDENCIES) $(EXTRA_struct_derived_zeros_DEPENDENCIES) 
-	@rm -f struct-derived-zeros$(EXEEXT)
+struct_derived_zeros$(EXEEXT): $(struct_derived_zeros_OBJECTS) $(struct_derived_zeros_DEPENDENCIES) $(EXTRA_struct_derived_zeros_DEPENDENCIES) 
+	@rm -f struct_derived_zeros$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(struct_derived_zeros_OBJECTS) $(struct_derived_zeros_LDADD) $(LIBS)
 
-struct-empty-el$(EXEEXT): $(struct_empty_el_OBJECTS) $(struct_empty_el_DEPENDENCIES) $(EXTRA_struct_empty_el_DEPENDENCIES) 
-	@rm -f struct-empty-el$(EXEEXT)
+struct_empty_el$(EXEEXT): $(struct_empty_el_OBJECTS) $(struct_empty_el_DEPENDENCIES) $(EXTRA_struct_empty_el_DEPENDENCIES) 
+	@rm -f struct_empty_el$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(struct_empty_el_OBJECTS) $(struct_empty_el_LDADD) $(LIBS)
 
-struct-ezhov$(EXEEXT): $(struct_ezhov_OBJECTS) $(struct_ezhov_DEPENDENCIES) $(EXTRA_struct_ezhov_DEPENDENCIES) 
-	@rm -f struct-ezhov$(EXEEXT)
+struct_ezhov$(EXEEXT): $(struct_ezhov_OBJECTS) $(struct_ezhov_DEPENDENCIES) $(EXTRA_struct_ezhov_DEPENDENCIES) 
+	@rm -f struct_ezhov$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(struct_ezhov_OBJECTS) $(struct_ezhov_LDADD) $(LIBS)
 
-struct-no-real-types$(EXEEXT): $(struct_no_real_types_OBJECTS) $(struct_no_real_types_DEPENDENCIES) $(EXTRA_struct_no_real_types_DEPENDENCIES) 
-	@rm -f struct-no-real-types$(EXEEXT)
+struct_no_real_types$(EXEEXT): $(struct_no_real_types_OBJECTS) $(struct_no_real_types_DEPENDENCIES) $(EXTRA_struct_no_real_types_DEPENDENCIES) 
+	@rm -f struct_no_real_types$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(struct_no_real_types_OBJECTS) $(struct_no_real_types_LDADD) $(LIBS)
 
-struct-pack$(EXEEXT): $(struct_pack_OBJECTS) $(struct_pack_DEPENDENCIES) $(EXTRA_struct_pack_DEPENDENCIES) 
-	@rm -f struct-pack$(EXEEXT)
+struct_pack$(EXEEXT): $(struct_pack_OBJECTS) $(struct_pack_DEPENDENCIES) $(EXTRA_struct_pack_DEPENDENCIES) 
+	@rm -f struct_pack$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(struct_pack_OBJECTS) $(struct_pack_LDADD) $(LIBS)
 
-struct-verydeep$(EXEEXT): $(struct_verydeep_OBJECTS) $(struct_verydeep_DEPENDENCIES) $(EXTRA_struct_verydeep_DEPENDENCIES) 
-	@rm -f struct-verydeep$(EXEEXT)
+struct_verydeep$(EXEEXT): $(struct_verydeep_OBJECTS) $(struct_verydeep_DEPENDENCIES) $(EXTRA_struct_verydeep_DEPENDENCIES) 
+	@rm -f struct_verydeep$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(struct_verydeep_OBJECTS) $(struct_verydeep_LDADD) $(LIBS)
 
-struct-zero-count$(EXEEXT): $(struct_zero_count_OBJECTS) $(struct_zero_count_DEPENDENCIES) $(EXTRA_struct_zero_count_DEPENDENCIES) 
-	@rm -f struct-zero-count$(EXEEXT)
+struct_zero_count$(EXEEXT): $(struct_zero_count_OBJECTS) $(struct_zero_count_DEPENDENCIES) $(EXTRA_struct_zero_count_DEPENDENCIES) 
+	@rm -f struct_zero_count$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(struct_zero_count_OBJECTS) $(struct_zero_count_LDADD) $(LIBS)
 
 structpack2$(EXEEXT): $(structpack2_OBJECTS) $(structpack2_DEPENDENCIES) $(EXTRA_structpack2_DEPENDENCIES) 
@@ -1031,8 +996,8 @@ subarray$(EXEEXT): $(subarray_OBJECTS) $(subarray_DEPENDENCIES) $(EXTRA_subarray
 	@rm -f subarray$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(subarray_OBJECTS) $(subarray_LDADD) $(LIBS)
 
-subarray-pack$(EXEEXT): $(subarray_pack_OBJECTS) $(subarray_pack_DEPENDENCIES) $(EXTRA_subarray_pack_DEPENDENCIES) 
-	@rm -f subarray-pack$(EXEEXT)
+subarray_pack$(EXEEXT): $(subarray_pack_OBJECTS) $(subarray_pack_DEPENDENCIES) $(EXTRA_subarray_pack_DEPENDENCIES) 
+	@rm -f subarray_pack$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(subarray_pack_OBJECTS) $(subarray_pack_LDADD) $(LIBS)
 
 tfree$(EXEEXT): $(tfree_OBJECTS) $(tfree_DEPENDENCIES) $(EXTRA_tfree_DEPENDENCIES) 
@@ -1043,8 +1008,8 @@ tmatchsize$(EXEEXT): $(tmatchsize_OBJECTS) $(tmatchsize_DEPENDENCIES) $(EXTRA_tm
 	@rm -f tmatchsize$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(tmatchsize_OBJECTS) $(tmatchsize_LDADD) $(LIBS)
 
-transpose-pack$(EXEEXT): $(transpose_pack_OBJECTS) $(transpose_pack_DEPENDENCIES) $(EXTRA_transpose_pack_DEPENDENCIES) 
-	@rm -f transpose-pack$(EXEEXT)
+transpose_pack$(EXEEXT): $(transpose_pack_OBJECTS) $(transpose_pack_DEPENDENCIES) $(EXTRA_transpose_pack_DEPENDENCIES) 
+	@rm -f transpose_pack$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(transpose_pack_OBJECTS) $(transpose_pack_LDADD) $(LIBS)
 
 tresized$(EXEEXT): $(tresized_OBJECTS) $(tresized_DEPENDENCIES) $(EXTRA_tresized_DEPENDENCIES) 
@@ -1055,8 +1020,8 @@ tresized2$(EXEEXT): $(tresized2_OBJECTS) $(tresized2_DEPENDENCIES) $(EXTRA_tresi
 	@rm -f tresized2$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(tresized2_OBJECTS) $(tresized2_LDADD) $(LIBS)
 
-triangular-pack$(EXEEXT): $(triangular_pack_OBJECTS) $(triangular_pack_DEPENDENCIES) $(EXTRA_triangular_pack_DEPENDENCIES) 
-	@rm -f triangular-pack$(EXEEXT)
+triangular_pack$(EXEEXT): $(triangular_pack_OBJECTS) $(triangular_pack_DEPENDENCIES) $(EXTRA_triangular_pack_DEPENDENCIES) 
+	@rm -f triangular_pack$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(triangular_pack_OBJECTS) $(triangular_pack_LDADD) $(LIBS)
 
 typecommit$(EXEEXT): $(typecommit_OBJECTS) $(typecommit_DEPENDENCIES) $(EXTRA_typecommit_DEPENDENCIES) 
@@ -1079,8 +1044,8 @@ unpack$(EXEEXT): $(unpack_OBJECTS) $(unpack_DEPENDENCIES) $(EXTRA_unpack_DEPENDE
 	@rm -f unpack$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(unpack_OBJECTS) $(unpack_LDADD) $(LIBS)
 
-unusual-noncontigs$(EXEEXT): $(unusual_noncontigs_OBJECTS) $(unusual_noncontigs_DEPENDENCIES) $(EXTRA_unusual_noncontigs_DEPENDENCIES) 
-	@rm -f unusual-noncontigs$(EXEEXT)
+unusual_noncontigs$(EXEEXT): $(unusual_noncontigs_OBJECTS) $(unusual_noncontigs_DEPENDENCIES) $(EXTRA_unusual_noncontigs_DEPENDENCIES) 
+	@rm -f unusual_noncontigs$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(unusual_noncontigs_OBJECTS) $(unusual_noncontigs_LDADD) $(LIBS)
 
 vecblklen$(EXEEXT): $(vecblklen_OBJECTS) $(vecblklen_DEPENDENCIES) $(EXTRA_vecblklen_DEPENDENCIES) 
@@ -1101,66 +1066,68 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blockindexed-misc.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blockindexed-zero-count.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blockindexed_misc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blockindexed_zero_count.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/concurrent_irecv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/contents.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/contig-zero-count.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/contig_zero_count.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/contigstruct.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cxx-types.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/darray-cyclic.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/darray-pack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cxx_types.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/darray_cyclic.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/darray_pack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dataalign.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaddress.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-elements-pairtype.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-elements.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get_elements.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get_elements_pairtype.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getpartelm.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hindexed-zeros.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hindexed_block.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hindexed_block_contents.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hindexed_zeros.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hvecblklen.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/indexed-misc.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large-count.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/indexed_misc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large_count.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large_type.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large_type_sendrec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large_vec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lbub.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/localpack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/longdouble.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lots-of-types.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pairtype-pack.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pairtype-size-extent.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lots_of_types.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pairtype_pack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pairtype_size_extent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sendrecvt2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sendrecvt4.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple-commit.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple-pack-external.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple-pack.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple-resized.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple-size-extent.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_commit.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_pack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_pack_external.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_pack_external2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_resized.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_size_extent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sizedtypes.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slice-pack-external.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slice-pack.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/struct-derived-zeros.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/struct-empty-el.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/struct-ezhov.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/struct-no-real-types.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/struct-pack.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/struct-verydeep.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/struct-zero-count.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slice_pack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slice_pack_external.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/struct_derived_zeros.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/struct_empty_el.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/struct_ezhov.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/struct_no_real_types.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/struct_pack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/struct_verydeep.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/struct_zero_count.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/structpack2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/subarray-pack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/subarray.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/subarray_pack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tfree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tmatchsize.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transpose-pack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transpose_pack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tresized.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tresized2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/triangular-pack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/triangular_pack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/typecommit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/typefree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/typelb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/typename.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unpack.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unusual-noncontigs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unusual_noncontigs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vecblklen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zeroblks.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zeroparms.Po@am__quote@
@@ -1388,16 +1355,15 @@ uninstall-am:
 $(top_builddir)/util/mtest.$(OBJEXT): $(top_srcdir)/util/mtest.c
 	(cd $(top_builddir)/util && $(MAKE) mtest.$(OBJEXT))
 
-$(top_builddir)/util/mtest_datatype.$(OBJEXT): $(top_srcdir)/util/mtest_datatype.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype.$(OBJEXT))
+$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+	(cd $(top_builddir)/dtpools && $(MAKE))
 
-$(top_builddir)/util/mtest_datatype_gen.$(OBJEXT): $(top_srcdir)/util/mtest_datatype_gen.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype_gen.$(OBJEXT))
+SUMMARY_BASENAME ?= summary
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
-		-mpiexec=${MPIEXEC} -xmlfile=summary.xml \
-		-tapfile=summary.tap -junitfile=summary.junit.xml
+		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
+		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

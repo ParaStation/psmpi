@@ -115,6 +115,7 @@ int main(int argc, char **argv)
 
         free(recvbuf);
         free(sendbuf);
+        free(recvcounts);
     }
 
     MPI_Op_free(&left_op);
@@ -122,7 +123,6 @@ int main(int argc, char **argv)
     MPI_Op_free(&nc_sum_op);
 
     MTest_Finalize(err);
-    MPI_Finalize();
 
     return err;
 }

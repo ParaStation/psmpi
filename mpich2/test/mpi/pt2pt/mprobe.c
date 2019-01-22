@@ -10,13 +10,6 @@
 #include "mpi.h"
 #include "mpitest.h"
 
-/* This is a temporary #ifdef to control whether we test this functionality.  A
- * configure-test or similar would be better.  Eventually the MPI-3 standard
- * will be released and this can be gated on a MPI_VERSION check */
-#if !defined(USE_STRICT_MPI) && defined(MPICH)
-#define TEST_MPROBE_ROUTINES 1
-#endif
-
 /* assert-like macro that bumps the err count and emits a message */
 #define check(x_)                                                                 \
     do {                                                                          \
@@ -38,14 +31,12 @@ int main(int argc, char **argv)
     int rank, size;
     int *sendbuf = NULL, *recvbuf = NULL;
     int count, i;
-#ifdef TEST_MPROBE_ROUTINES
     MPI_Message msg;
-#endif
     MPI_Request rreq;
     MPI_Status s1, s2;
     MPI_Datatype vectype;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -60,7 +51,6 @@ int main(int argc, char **argv)
         goto epilogue;
     }
 
-#ifdef TEST_MPROBE_ROUTINES
     sendbuf = (int *) malloc(LARGE_SZ * sizeof(int));
     recvbuf = (int *) malloc(LARGE_SZ * sizeof(int));
     if (sendbuf == NULL || recvbuf == NULL) {
@@ -73,8 +63,7 @@ int main(int argc, char **argv)
         sendbuf[0] = 0xdeadbeef;
         sendbuf[1] = 0xfeedface;
         MPI_Send(sendbuf, 2, MPI_INT, 1, 5, MPI_COMM_WORLD);
-    }
-    else {
+    } else {
         memset(&s1, 0xab, sizeof(MPI_Status));
         memset(&s2, 0xab, sizeof(MPI_Status));
         /* the error field should remain unmodified */
@@ -108,8 +97,7 @@ int main(int argc, char **argv)
         sendbuf[0] = 0xdeadbeef;
         sendbuf[1] = 0xfeedface;
         MPI_Send(sendbuf, 2, MPI_INT, 1, 5, MPI_COMM_WORLD);
-    }
-    else {
+    } else {
         memset(&s1, 0xab, sizeof(MPI_Status));
         memset(&s2, 0xab, sizeof(MPI_Status));
         /* the error field should remain unmodified */
@@ -146,8 +134,7 @@ int main(int argc, char **argv)
         sendbuf[0] = 0xdeadbeef;
         sendbuf[1] = 0xfeedface;
         MPI_Send(sendbuf, 2, MPI_INT, 1, 5, MPI_COMM_WORLD);
-    }
-    else {
+    } else {
         memset(&s1, 0xab, sizeof(MPI_Status));
         memset(&s2, 0xab, sizeof(MPI_Status));
         /* the error field should remain unmodified */
@@ -184,8 +171,7 @@ int main(int argc, char **argv)
         sendbuf[0] = 0xdeadbeef;
         sendbuf[1] = 0xfeedface;
         MPI_Send(sendbuf, 2, MPI_INT, 1, 5, MPI_COMM_WORLD);
-    }
-    else {
+    } else {
         memset(&s1, 0xab, sizeof(MPI_Status));
         memset(&s2, 0xab, sizeof(MPI_Status));
         /* the error field should remain unmodified */
@@ -371,8 +357,7 @@ int main(int argc, char **argv)
         sendbuf[0] = 0xdeadbeef;
         sendbuf[1] = 0xfeedface;
         MPI_Ssend(sendbuf, 2, MPI_INT, 1, 5, MPI_COMM_WORLD);
-    }
-    else {
+    } else {
         memset(&s1, 0xab, sizeof(MPI_Status));
         memset(&s2, 0xab, sizeof(MPI_Status));
         /* the error field should remain unmodified */
@@ -406,8 +391,7 @@ int main(int argc, char **argv)
         for (i = 0; i < LARGE_SZ; i++)
             sendbuf[i] = i;
         MPI_Send(sendbuf, LARGE_SZ, MPI_INT, 1, 5, MPI_COMM_WORLD);
-    }
-    else {
+    } else {
         memset(&s1, 0xab, sizeof(MPI_Status));
         memset(&s2, 0xab, sizeof(MPI_Status));
         /* the error field should remain unmodified */
@@ -443,8 +427,7 @@ int main(int argc, char **argv)
         sendbuf[0] = 0xdeadbeef;
         sendbuf[4] = 0xfeedface;
         MPI_Send(sendbuf, 1, vectype, 1, 5, MPI_COMM_WORLD);
-    }
-    else {
+    } else {
         memset(&s1, 0xab, sizeof(MPI_Status));
         memset(&s2, 0xab, sizeof(MPI_Status));
         /* the error field should remain unmodified */
@@ -484,8 +467,7 @@ int main(int argc, char **argv)
         for (i = 0; i < LARGE_SZ; i++)
             sendbuf[i] = i;
         MPI_Send(sendbuf, 1, vectype, 1, 5, MPI_COMM_WORLD);
-    }
-    else {
+    } else {
         int idx = 0;
 
         memset(&s1, 0xab, sizeof(MPI_Status));
@@ -534,8 +516,7 @@ int main(int argc, char **argv)
         MPI_Isend(&sendbuf[0], 4, MPI_INT, 1, 6, MPI_COMM_WORLD, &lrequest[0]);
         MPI_Isend(&sendbuf[4], 2, MPI_INT, 1, 6, MPI_COMM_WORLD, &lrequest[1]);
         MPI_Waitall(2, &lrequest[0], MPI_STATUSES_IGNORE);
-    }
-    else {
+    } else {
         memset(&s1, 0xab, sizeof(MPI_Status));
         memset(&s2, 0xab, sizeof(MPI_Status));
         /* the error field should remain unmodified */
@@ -603,20 +584,8 @@ int main(int argc, char **argv)
         check(msg == MPI_MESSAGE_NULL);
     }
 
-#endif /* TEST_MPROBE_ROUTINES */
-
   epilogue:
-    MPI_Reduce((rank == 0 ? MPI_IN_PLACE : &errs), &errs, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-    if (rank == 0) {
-        if (errs) {
-            printf("found %d errors\n", errs);
-        }
-        else {
-            printf(" No errors\n");
-        }
-    }
+    MTest_Finalize(errs);
 
-    MPI_Finalize();
-
-    return 0;
+    return MTestReturnValue(errs);
 }

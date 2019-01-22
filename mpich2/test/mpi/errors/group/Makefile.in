@@ -94,7 +94,13 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = gerr$(EXEEXT)
+noinst_PROGRAMS = gerr$(EXEEXT) group_difference_nullarg$(EXEEXT) \
+	group_intersection_nullarg$(EXEEXT) \
+	group_range_excl_nullarg$(EXEEXT) \
+	group_range_incl_nullarg$(EXEEXT) group_rank_nullarg$(EXEEXT) \
+	group_size_nullarg$(EXEEXT) \
+	group_translate_ranks_nullarg$(EXEEXT) \
+	group_union_nullarg$(EXEEXT)
 subdir = errors/group
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -118,8 +124,52 @@ gerr_SOURCES = gerr.c
 gerr_OBJECTS = gerr.$(OBJEXT)
 gerr_LDADD = $(LDADD)
 gerr_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+group_difference_nullarg_SOURCES = group_difference_nullarg.c
+group_difference_nullarg_OBJECTS = group_difference_nullarg.$(OBJEXT)
+group_difference_nullarg_LDADD = $(LDADD)
+group_difference_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+group_intersection_nullarg_SOURCES = group_intersection_nullarg.c
+group_intersection_nullarg_OBJECTS =  \
+	group_intersection_nullarg.$(OBJEXT)
+group_intersection_nullarg_LDADD = $(LDADD)
+group_intersection_nullarg_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+group_range_excl_nullarg_SOURCES = group_range_excl_nullarg.c
+group_range_excl_nullarg_OBJECTS = group_range_excl_nullarg.$(OBJEXT)
+group_range_excl_nullarg_LDADD = $(LDADD)
+group_range_excl_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+group_range_incl_nullarg_SOURCES = group_range_incl_nullarg.c
+group_range_incl_nullarg_OBJECTS = group_range_incl_nullarg.$(OBJEXT)
+group_range_incl_nullarg_LDADD = $(LDADD)
+group_range_incl_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+group_rank_nullarg_SOURCES = group_rank_nullarg.c
+group_rank_nullarg_OBJECTS = group_rank_nullarg.$(OBJEXT)
+group_rank_nullarg_LDADD = $(LDADD)
+group_rank_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+group_size_nullarg_SOURCES = group_size_nullarg.c
+group_size_nullarg_OBJECTS = group_size_nullarg.$(OBJEXT)
+group_size_nullarg_LDADD = $(LDADD)
+group_size_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+group_translate_ranks_nullarg_SOURCES =  \
+	group_translate_ranks_nullarg.c
+group_translate_ranks_nullarg_OBJECTS =  \
+	group_translate_ranks_nullarg.$(OBJEXT)
+group_translate_ranks_nullarg_LDADD = $(LDADD)
+group_translate_ranks_nullarg_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+group_union_nullarg_SOURCES = group_union_nullarg.c
+group_union_nullarg_OBJECTS = group_union_nullarg.$(OBJEXT)
+group_union_nullarg_LDADD = $(LDADD)
+group_union_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -148,8 +198,16 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = gerr.c
-DIST_SOURCES = gerr.c
+SOURCES = gerr.c group_difference_nullarg.c \
+	group_intersection_nullarg.c group_range_excl_nullarg.c \
+	group_range_incl_nullarg.c group_rank_nullarg.c \
+	group_size_nullarg.c group_translate_ranks_nullarg.c \
+	group_union_nullarg.c
+DIST_SOURCES = gerr.c group_difference_nullarg.c \
+	group_intersection_nullarg.c group_range_excl_nullarg.c \
+	group_range_incl_nullarg.c group_rank_nullarg.c \
+	group_size_nullarg.c group_translate_ranks_nullarg.c \
+	group_union_nullarg.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -200,6 +258,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -355,6 +414,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -364,11 +424,14 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # AM_CPPFLAGS are used for C++ code as well
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+
+# Add libdtpools support
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_builddir)/dtpoos/include \
+	-I$(top_srcdir)/dtpools/include
 LDADD = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-CLEANFILES = summary.xml summary.tap summary.junit.xml
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
 EXTRA_DIST = testlist
 all: all-am
 
@@ -412,6 +475,38 @@ gerr$(EXEEXT): $(gerr_OBJECTS) $(gerr_DEPENDENCIES) $(EXTRA_gerr_DEPENDENCIES)
 	@rm -f gerr$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(gerr_OBJECTS) $(gerr_LDADD) $(LIBS)
 
+group_difference_nullarg$(EXEEXT): $(group_difference_nullarg_OBJECTS) $(group_difference_nullarg_DEPENDENCIES) $(EXTRA_group_difference_nullarg_DEPENDENCIES) 
+	@rm -f group_difference_nullarg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(group_difference_nullarg_OBJECTS) $(group_difference_nullarg_LDADD) $(LIBS)
+
+group_intersection_nullarg$(EXEEXT): $(group_intersection_nullarg_OBJECTS) $(group_intersection_nullarg_DEPENDENCIES) $(EXTRA_group_intersection_nullarg_DEPENDENCIES) 
+	@rm -f group_intersection_nullarg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(group_intersection_nullarg_OBJECTS) $(group_intersection_nullarg_LDADD) $(LIBS)
+
+group_range_excl_nullarg$(EXEEXT): $(group_range_excl_nullarg_OBJECTS) $(group_range_excl_nullarg_DEPENDENCIES) $(EXTRA_group_range_excl_nullarg_DEPENDENCIES) 
+	@rm -f group_range_excl_nullarg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(group_range_excl_nullarg_OBJECTS) $(group_range_excl_nullarg_LDADD) $(LIBS)
+
+group_range_incl_nullarg$(EXEEXT): $(group_range_incl_nullarg_OBJECTS) $(group_range_incl_nullarg_DEPENDENCIES) $(EXTRA_group_range_incl_nullarg_DEPENDENCIES) 
+	@rm -f group_range_incl_nullarg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(group_range_incl_nullarg_OBJECTS) $(group_range_incl_nullarg_LDADD) $(LIBS)
+
+group_rank_nullarg$(EXEEXT): $(group_rank_nullarg_OBJECTS) $(group_rank_nullarg_DEPENDENCIES) $(EXTRA_group_rank_nullarg_DEPENDENCIES) 
+	@rm -f group_rank_nullarg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(group_rank_nullarg_OBJECTS) $(group_rank_nullarg_LDADD) $(LIBS)
+
+group_size_nullarg$(EXEEXT): $(group_size_nullarg_OBJECTS) $(group_size_nullarg_DEPENDENCIES) $(EXTRA_group_size_nullarg_DEPENDENCIES) 
+	@rm -f group_size_nullarg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(group_size_nullarg_OBJECTS) $(group_size_nullarg_LDADD) $(LIBS)
+
+group_translate_ranks_nullarg$(EXEEXT): $(group_translate_ranks_nullarg_OBJECTS) $(group_translate_ranks_nullarg_DEPENDENCIES) $(EXTRA_group_translate_ranks_nullarg_DEPENDENCIES) 
+	@rm -f group_translate_ranks_nullarg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(group_translate_ranks_nullarg_OBJECTS) $(group_translate_ranks_nullarg_LDADD) $(LIBS)
+
+group_union_nullarg$(EXEEXT): $(group_union_nullarg_OBJECTS) $(group_union_nullarg_DEPENDENCIES) $(EXTRA_group_union_nullarg_DEPENDENCIES) 
+	@rm -f group_union_nullarg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(group_union_nullarg_OBJECTS) $(group_union_nullarg_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -419,6 +514,14 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gerr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/group_difference_nullarg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/group_intersection_nullarg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/group_range_excl_nullarg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/group_range_incl_nullarg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/group_rank_nullarg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/group_size_nullarg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/group_translate_ranks_nullarg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/group_union_nullarg.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -643,16 +746,15 @@ uninstall-am:
 $(top_builddir)/util/mtest.$(OBJEXT): $(top_srcdir)/util/mtest.c
 	(cd $(top_builddir)/util && $(MAKE) mtest.$(OBJEXT))
 
-$(top_builddir)/util/mtest_datatype.$(OBJEXT): $(top_srcdir)/util/mtest_datatype.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype.$(OBJEXT))
+$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+	(cd $(top_builddir)/dtpools && $(MAKE))
 
-$(top_builddir)/util/mtest_datatype_gen.$(OBJEXT): $(top_srcdir)/util/mtest_datatype_gen.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype_gen.$(OBJEXT))
+SUMMARY_BASENAME ?= summary
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
-		-mpiexec=${MPIEXEC} -xmlfile=summary.xml \
-		-tapfile=summary.tap -junitfile=summary.junit.xml
+		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
+		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

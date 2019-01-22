@@ -23,25 +23,25 @@ int MPID_nem_ptl_poll_init(void)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
-    MPIU_CHKPMEM_DECL(NUM_OVERFLOW_ME);
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_PTL_POLL_INIT);
+    MPIR_CHKPMEM_DECL(NUM_OVERFLOW_ME);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_PTL_POLL_INIT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_PTL_POLL_INIT);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_PTL_POLL_INIT);
 
     /* create overflow buffers */
     for (i = 0; i < NUM_OVERFLOW_ME; ++i) {
-        MPIU_CHKPMEM_MALLOC(overflow_buf[i], void *, OVERFLOW_LENGTH, mpi_errno, "overflow buffer");
+        MPIR_CHKPMEM_MALLOC(overflow_buf[i], void *, OVERFLOW_LENGTH, mpi_errno, "overflow buffer", MPL_MEM_BUFFER);
         mpi_errno = append_overflow(i);
         if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     }
     
  fn_exit:
-    MPIU_CHKPMEM_COMMIT();
+    MPIR_CHKPMEM_COMMIT();
  fn_exit2:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_PTL_POLL_INIT);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_PTL_POLL_INIT);
     return mpi_errno;
  fn_fail:
-    MPIU_CHKPMEM_REAP();
+    MPIR_CHKPMEM_REAP();
     goto fn_exit2;
 }
 
@@ -56,20 +56,20 @@ int MPID_nem_ptl_poll_finalize(void)
     int mpi_errno = MPI_SUCCESS;
     int i;
     int ret;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_PTL_POLL_FINALIZE);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_PTL_POLL_FINALIZE);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_PTL_POLL_FINALIZE);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_PTL_POLL_FINALIZE);
     
     for (i = 0; i < NUM_OVERFLOW_ME; ++i) {
         if (overflow_me_handle[i] != PTL_INVALID_HANDLE) {
             ret = PtlMEUnlink(overflow_me_handle[i]);
             MPIR_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlmeunlink", "**ptlmeunlink %s", MPID_nem_ptl_strerror(ret));
         }
-        MPIU_Free(overflow_buf[i]);
+        MPL_free(overflow_buf[i]);
     }
     
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_PTL_POLL_FINALIZE);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_PTL_POLL_FINALIZE);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -85,11 +85,11 @@ static int append_overflow(int i)
     int ret;
     ptl_me_t me;
     ptl_process_t id_any;
-    MPIDI_STATE_DECL(MPID_STATE_APPEND_OVERFLOW);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_APPEND_OVERFLOW);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_APPEND_OVERFLOW);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_APPEND_OVERFLOW);
 
-    MPIU_Assert(i >= 0 && i < NUM_OVERFLOW_ME);
+    MPIR_Assert(i >= 0 && i < NUM_OVERFLOW_ME);
     
     id_any.phys.pid = PTL_PID_ANY;
     id_any.phys.nid = PTL_NID_ANY;
@@ -111,7 +111,7 @@ static int append_overflow(int i)
     MPIR_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlmeappend", "**ptlmeappend %s", MPID_nem_ptl_strerror(ret));
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_APPEND_OVERFLOW);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_APPEND_OVERFLOW);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -127,16 +127,16 @@ int MPID_nem_ptl_poll(int is_blocking_poll)
     int mpi_errno = MPI_SUCCESS;
     ptl_event_t event;
     int ret;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_PTL_POLL);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_PTL_POLL);
 
-    /* MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_PTL_POLL); */
+    /* MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_PTL_POLL); */
 
     while (1) {
         int ctl_event = FALSE;
 
         /* Check the rptls EQ first. It should never return an event. */
         ret = MPID_nem_ptl_rptl_eqget(MPIDI_nem_ptl_rpt_eq, &event);
-        MPIU_Assert(ret == PTL_EQ_EMPTY);
+        MPIR_Assert(ret == PTL_EQ_EMPTY);
 
         /* check EQs for events */
         ret = MPID_nem_ptl_rptl_eqget(MPIDI_nem_ptl_eq, &event);
@@ -162,7 +162,7 @@ int MPID_nem_ptl_poll(int is_blocking_poll)
             }
         }
         MPIR_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptleqget", "**ptleqget %s", MPID_nem_ptl_strerror(ret));
-        MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "Received event %s pt_idx=%d ni_fail=%s list=%s user_ptr=%p hdr_data=%#lx mlength=%lu rlength=%lu",
+        MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_CHANNEL, VERBOSE, (MPL_DBG_FDEST, "Received event %s pt_idx=%d ni_fail=%s list=%s user_ptr=%p hdr_data=%#lx mlength=%lu rlength=%lu",
                                                 MPID_nem_ptl_strevent(&event), event.pt_index, MPID_nem_ptl_strnifail(event.ni_fail_type),
                                                 MPID_nem_ptl_strlist(event.ptl_list), event.user_ptr, event.hdr_data, event.mlength, event.rlength));
         MPIR_ERR_CHKANDJUMP2(event.ni_fail_type != PTL_NI_OK && event.ni_fail_type != PTL_NI_NO_MATCH, mpi_errno, MPI_ERR_OTHER, "**ptlni_fail", "**ptlni_fail %s %s", MPID_nem_ptl_strevent(&event), MPID_nem_ptl_strnifail(event.ni_fail_type));
@@ -183,9 +183,9 @@ int MPID_nem_ptl_poll(int is_blocking_poll)
         case PTL_EVENT_SEND:
         case PTL_EVENT_REPLY:
         case PTL_EVENT_SEARCH: {
-            MPID_Request * const req = event.user_ptr;
-            MPIU_DBG_MSG_P(CH3_CHANNEL, VERBOSE, "req = %p", req);
-            MPIU_DBG_MSG_P(CH3_CHANNEL, VERBOSE, "REQ_PTL(req)->event_handler = %p", REQ_PTL(req)->event_handler);
+            MPIR_Request * const req = event.user_ptr;
+            MPL_DBG_MSG_P(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "req = %p", req);
+            MPL_DBG_MSG_P(MPIDI_CH3_DBG_CHANNEL, VERBOSE, "REQ_PTL(req)->event_handler = %p", REQ_PTL(req)->event_handler);
             if (REQ_PTL(req)->event_handler) {
                 mpi_errno = REQ_PTL(req)->event_handler(&event);
                 if (mpi_errno) MPIR_ERR_POP(mpi_errno);
@@ -210,7 +210,7 @@ int MPID_nem_ptl_poll(int is_blocking_poll)
     }
 
  fn_exit:
-    /* MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_PTL_POLL); */
+    /* MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_PTL_POLL); */
     return mpi_errno;
  fn_fail:
     goto fn_exit;

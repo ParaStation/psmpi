@@ -7,6 +7,7 @@ dims1 4
 dims2 1
 dims3 1
 dims4 1
+dims5 1
 graphmap1 4
 topotest 4
 topodup 4
@@ -14,4 +15,3 @@ graphcr 4
 graphcr2 4
 distgraph1 4 mpiversion=2.2
 dgraph_unwgt 4 mpiversion=2.2
-neighb_coll 4 mpiversion=3.0

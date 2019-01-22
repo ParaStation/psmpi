@@ -55,8 +55,7 @@ int main(int argc, char *argv[])
             MTestPrintError(err);
             printf("MPI_Send did not return MPI_SUCCESS\n");
         }
-    }
-    else if (rank == dest) {
+    } else if (rank == dest) {
         ii = -1;
         err = MPI_Recv(MPI_BOTTOM, 1, newtype, source, 0, comm, &status);
         if (err) {
@@ -75,6 +74,5 @@ int main(int argc, char *argv[])
     MPI_Type_free(&newtype);
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

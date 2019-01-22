@@ -640,6 +640,8 @@ pkgconfigdir
 libopa_so_versionflags
 external_pkg_config_libs
 internal_pkg_config_libs
+EMBEDDED_FALSE
+EMBEDDED_TRUE
 CONFIG_STATUS_DEPENDENCIES
 libopa_so_version
 OPALIBNAME
@@ -771,6 +773,7 @@ with_sysroot
 enable_libtool_lock
 enable_assert
 with_atomic_primitives
+enable_embedded
 enable_strict_fairness_checks
 enable_versioning
 '
@@ -1415,6 +1418,7 @@ Optional Features:
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --disable-assert        turn off assertions
+  --enable-embedded       Enable embedded mode
   --enable-strict-fairness-checks
                           Enable stricter checks of the "fairness" of atomic
                           operations in the test suite (default is no). A
@@ -13697,6 +13701,19 @@ else
 fi
 
 
+# Check whether --enable-embedded was given.
+if test "${enable_embedded+set}" = set; then :
+  enableval=$enable_embedded;
+fi
+
+ if test "x${enable_embedded}" = "xyes"; then
+  EMBEDDED_TRUE=
+  EMBEDDED_FALSE='#'
+else
+  EMBEDDED_TRUE='#'
+  EMBEDDED_FALSE=
+fi
+
 
 # is set to yes by the macro below if any test ever succeeds
 non_emulated_primitives_available=no
@@ -14847,6 +14864,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${am__fastdepCC_TRUE}" && test -z "${am__fastdepCC_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${EMBEDDED_TRUE}" && test -z "${EMBEDDED_FALSE}"; then
+  as_fn_error $? "conditional \"EMBEDDED\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

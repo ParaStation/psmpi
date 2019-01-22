@@ -4,12 +4,12 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#ifndef MPID_NEM_DEBUG_H
-#define MPID_NEM_DEBUG_H
+#ifndef MPID_NEM_DEBUG_H_INCLUDED
+#define MPID_NEM_DEBUG_H_INCLUDED
 
 /*#define YIELD_IN_SKIP*/
 #ifdef YIELD_IN_SKIP
-#define SKIP MPIU_PW_Sched_yield()
+#define SKIP MPL_sched_yield()
 #warning "SKIP is yield"
 #else /* YIELD_IN_SKIP */
 #define SKIP do{}while(0)
@@ -20,4 +20,4 @@
 struct MPID_nem_cell;
 void MPID_nem_dbg_dump_cell (volatile struct MPID_nem_cell *cell);
 
-#endif /* MPID_NEM_DEBUG_H */
+#endif /* MPID_NEM_DEBUG_H_INCLUDED */

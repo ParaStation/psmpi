@@ -1,0 +1,26 @@
+<dir>
+<file name="reduce_scatter_block.c" info="1542820949"/>
+<file name="reduce_scatter_block_intra_noncommutative.c" info="1542820949"/>
+<file name="reduce_scatter_block_inter_remote_reduce_local_scatter.c" info="1542820949"/>
+<file name="reduce_scatter_block_intra_recursive_halving.c" info="1542820949"/>
+<file name="reduce_scatter_block_intra_recursive_doubling.c" info="1542820949"/>
+<file name="reduce_scatter_block_intra_pairwise.c" info="1542820949"/>
+<file name="reduce_scatter_block_allcomm_nb.c" info="1542820949"/>
+</dir>
+<data>
+<fileinfo name="reduce_scatter_block.c">
+MPID_STATE_MPI_REDUCE_SCATTER_BLOCK MPI_Reduce_scatter_block
+</fileinfo>
+<fileinfo name="reduce_scatter_block_intra_noncommutative.c">
+</fileinfo>
+<fileinfo name="reduce_scatter_block_inter_remote_reduce_local_scatter.c">
+</fileinfo>
+<fileinfo name="reduce_scatter_block_intra_recursive_halving.c">
+</fileinfo>
+<fileinfo name="reduce_scatter_block_intra_recursive_doubling.c">
+</fileinfo>
+<fileinfo name="reduce_scatter_block_intra_pairwise.c">
+</fileinfo>
+<fileinfo name="reduce_scatter_block_allcomm_nb.c">
+</fileinfo>
+</data>

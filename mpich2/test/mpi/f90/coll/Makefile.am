@@ -1,5 +1,5 @@
 # This Makefile.am generated automatically by f77tof90
-# from test/mpi/f77/coll/Makefile.am.  DO NOT EDIT
+# from f77/coll/Makefile.am.  DO NOT EDIT
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
@@ -24,8 +24,8 @@ if MAINTAINER_MODE
 # change its contents
 $(srcdir)/Makefile.am: $(srcdir)/Makefile.am-stamp
 
-$(srcdir)/Makefile.am-stamp: $(master_top_srcdir)/test/mpi/f77/coll/Makefile.am $(master_top_srcdir)/maint/f77tof90
-	( cd $(master_top_srcdir) && ./maint/f77tof90 test/mpi/f77/coll test/mpi/f90/coll Makefile.am Makefile.ap )
+$(srcdir)/Makefile.am-stamp: $(top_srcdir)/f77/coll/Makefile.am $(top_srcdir)/maint/f77tof90
+	( cd $(top_srcdir) && ./maint/f77tof90 f77/coll f90/coll Makefile.am Makefile.ap )
 
 MAINTAINERCLEANFILES = Makefile.am-stamp
 EXTRA_DIST += Makefile.am-stamp  

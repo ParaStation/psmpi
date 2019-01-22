@@ -1,5 +1,5 @@
 # This Makefile.am generated automatically by f77tof90
-# from test/mpi/f77/ext/Makefile.am.  DO NOT EDIT
+# from f77/ext/Makefile.am.  DO NOT EDIT
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
@@ -32,7 +32,6 @@ c2f90mult_SOURCES = c2f90mult.c
 $(top_builddir)/util/mtest.o:
 	(cd $(top_builddir)/util && $(MAKE) mtest.o)
 
-
 if MAINTAINER_MODE
 
 # f77tof90 only replaces output files if the contents differ, so we must use a
@@ -41,8 +40,8 @@ if MAINTAINER_MODE
 # change its contents
 $(srcdir)/Makefile.am: $(srcdir)/Makefile.am-stamp
 
-$(srcdir)/Makefile.am-stamp: $(master_top_srcdir)/test/mpi/f77/ext/Makefile.am $(master_top_srcdir)/maint/f77tof90
-	( cd $(master_top_srcdir) && ./maint/f77tof90 test/mpi/f77/ext test/mpi/f90/ext Makefile.am Makefile.ap )
+$(srcdir)/Makefile.am-stamp: $(top_srcdir)/f77/ext/Makefile.am $(top_srcdir)/maint/f77tof90
+	( cd $(top_srcdir) && ./maint/f77tof90 f77/ext f90/ext Makefile.am Makefile.ap )
 
 MAINTAINERCLEANFILES = Makefile.am-stamp
 EXTRA_DIST += Makefile.am-stamp  Makefile.ap
@@ -59,5 +58,3 @@ c2f902c.c: $(srcdir)/../../f90/ext/c2f902c.c
 	cp $(srcdir)/../../f90/ext/c2f902c.c c2f902c.c
 ctypesfromc.c: $(srcdir)/../../f77/ext/ctypesfromc.c
 	cp $(srcdir)/../../f77/ext/ctypesfromc.c ctypesfromc.c
-
-

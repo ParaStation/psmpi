@@ -43,8 +43,7 @@ int main(int argc, char *argv[])
             if (leftGroup) {
                 for (i = 0; i < count; i++)
                     sendbuf[i] = i;
-            }
-            else {
+            } else {
                 for (i = 0; i < count; i++)
                     sendbuf[i] = -i;
             }
@@ -66,8 +65,7 @@ int main(int argc, char *argv[])
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 for (i = 0; i < count; i++) {
                     if (recvbuf[i] != i * rsize) {
                         errs++;
@@ -84,6 +82,5 @@ int main(int argc, char *argv[])
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

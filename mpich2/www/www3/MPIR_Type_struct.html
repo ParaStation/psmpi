@@ -1,0 +1,38 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML3.2 EN">
+<HTML>
+<HEAD>
+<META NAME="GENERATOR" CONTENT="DOCTEXT">
+<TITLE>MPIR_Type_struct</TITLE>
+</HEAD>
+<BODY BGCOLOR="FFFFFF">
+<A NAME="MPIR_Type_struct"><H1>MPIR_Type_struct</H1></A>
+create a struct datatype 
+<H2>Synopsis</H2>
+<PRE>
+#undef FUNCNAME
+#define FUNCNAME MPIR_Type_struct
+#undef FCNAME
+#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPIR_Type_struct(int count,
+                     const int *blocklength_array,
+                     const MPI_Aint * displacement_array,
+                     const MPI_Datatype * oldtype_array, MPI_Datatype * newtype)
+</PRE>
+<H2>Input Parameters</H2>
+<DL>
+<DT><B>count </B><DD>number of blocks in vector
+
+<DT><B>blocklength_array </B><DD>number of elements in each block
+
+<DT><B>displacement_array </B><DD>offsets of blocks from start of type in bytes
+
+<DT><B>oldtype_array </B><DD>types (using handle) of datatypes on which vector is based
+</DL>
+<P>
+<H2>Output Parameters</H2>
+<DL><DT><B>newtype </B> <DD> handle of new struct datatype
+</DL>
+<P>
+<H2>Return Value</H2>
+MPI_SUCCESS on success, MPI errno on failure.
+</BODY></HTML>

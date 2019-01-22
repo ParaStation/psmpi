@@ -1,0 +1,51 @@
+.TH MPIR_Type_get_contents 3 "11/21/2018" " " "MPI"
+.SH NAME
+MPIR_Type_get_contents \-  get content information from datatype 
+.SH SYNOPSIS
+.nf
+int MPIR_Type_get_contents(MPI_Datatype datatype,
+                           int max_integers,
+                           int max_addresses,
+                           int max_datatypes,
+                           int array_of_integers[],
+                           MPI_Aint array_of_addresses[], MPI_Datatype array_of_datatypes[])
+.fi
+.SH INPUT PARAMETERS
+.PD 0
+.TP
+.B datatype 
+- MPI datatype
+.PD 1
+.PD 0
+.TP
+.B max_integers 
+- size of array_of_integers
+.PD 1
+.PD 0
+.TP
+.B max_addresses 
+- size of array_of_addresses
+.PD 1
+.PD 0
+.TP
+.B max_datatypes 
+- size of array_of_datatypes
+.PD 1
+
+.SH OUTPUT PARAMETERS
+.PD 0
+.TP
+.B array_of_integers 
+- integers used in creating type
+.PD 1
+.PD 0
+.TP
+.B array_of_addresses 
+- MPI_Aints used in creating type
+.PD 1
+.PD 0
+.TP
+.B array_of_datatypes 
+- MPI_Datatypes used in creating type
+.PD 1
+

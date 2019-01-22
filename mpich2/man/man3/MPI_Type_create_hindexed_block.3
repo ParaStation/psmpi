@@ -1,12 +1,12 @@
-.TH MPI_Type_create_hindexed_block 3 "11/9/2015" " " "MPI"
+.TH MPI_Type_create_hindexed_block 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Type_create_hindexed_block \-  Create an hindexed datatype with constant-sized blocks 
 .SH SYNOPSIS
 .nf
 int MPI_Type_create_hindexed_block(int count,
-                                    int blocklength,
-                                    const MPI_Aint array_of_displacements[],
-                                    MPI_Datatype oldtype, MPI_Datatype * newtype)
+                                   int blocklength,
+                                   const MPI_Aint array_of_displacements[],
+                                   MPI_Datatype oldtype, MPI_Datatype * newtype)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

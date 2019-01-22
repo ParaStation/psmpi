@@ -120,13 +120,13 @@ int main(int argc, char *argv[])
             fprintf(stderr, "unsigned char SUM(>) test failed\n");
         }
     }
-
 #ifndef USE_STRICT_MPI
     /* For some reason, complex is not allowed for sum and prod */
     if (MPI_DOUBLE_COMPLEX != MPI_DATATYPE_NULL) {
         int dc;
 #ifdef HAVE_LONG_DOUBLE
         ld_complex ldinbuf[3], ldoutbuf[3];
+        MTEST_VG_MEM_INIT(ldinbuf, 3 * sizeof(ldinbuf[0]));
 #endif
         /* Must determine which C type matches this Fortran type */
         MPI_Type_size(MPI_DOUBLE_COMPLEX, &dc);
@@ -203,6 +203,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_LONG_DOUBLE
     {
         long double ldinbuf[3], ldoutbuf[3];
+        MTEST_VG_MEM_INIT(ldinbuf, 3 * sizeof(ldinbuf[0]));
         /* long double */
         ldinbuf[0] = 1;
         ldinbuf[1] = 0;
@@ -265,6 +266,5 @@ int main(int argc, char *argv[])
 #endif
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

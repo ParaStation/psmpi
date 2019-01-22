@@ -22,6 +22,9 @@ int main(int argc, char *argv[])
     int b1[20], b2[20], rank, size, src, dest, i, flag;
     int errval, errclass;
 
+    MTEST_VG_MEM_INIT(b1, 20 * sizeof(int));
+    MTEST_VG_MEM_INIT(b2, 20 * sizeof(int));
+
     MTest_Init(&argc, &argv);
 
     /* Create some receive requests.  tags 0-9 will succeed, tags 10-19
@@ -77,27 +80,23 @@ int main(int argc, char *argv[])
         if (errclass != MPI_ERR_IN_STATUS) {
             errs++;
             printf("Did not get ERR_IN_STATUS in Testall\n");
-        }
-        else if (!flag) {
+        } else if (!flag) {
             errs++;
             printf("Test returned false for test\n");
-        }
-        else {
+        } else {
             /* Check for success */
             for (i = 0; i < 2; i++) {
                 if (s[i].MPI_TAG < 10 && s[i].MPI_ERROR != MPI_SUCCESS) {
                     errs++;
                     printf("correct msg had error class %d\n", s[i].MPI_ERROR);
-                }
-                else if (s[i].MPI_TAG >= 10 && s[i].MPI_ERROR == MPI_SUCCESS) {
+                } else if (s[i].MPI_TAG >= 10 && s[i].MPI_ERROR == MPI_SUCCESS) {
                     errs++;
                     printf("truncated msg had MPI_SUCCESS\n");
                 }
             }
         }
 
-    }
-    else if (rank == src) {
+    } else if (rank == src) {
         /* Wait for Irecvs to be posted before the sender calls send */
         MPI_Ssend(NULL, 0, MPI_INT, dest, 100, comm);
 
@@ -111,7 +110,5 @@ int main(int argc, char *argv[])
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
-
+    return MTestReturnValue(errs);
 }

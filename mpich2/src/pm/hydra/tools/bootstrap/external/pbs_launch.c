@@ -58,11 +58,12 @@ HYD_status HYDT_bscd_pbs_launch_procs(char **args, struct HYD_proxy *proxy_list,
 
     /* Duplicate the args in local copy, targs */
     for (args_count = 0; args[args_count]; args_count++)
-        targs[args_count] = HYDU_strdup(args[args_count]);
+        targs[args_count] = MPL_strdup(args[args_count]);
 
-    HYDU_MALLOC(HYDT_bscd_pbs_sys->task_id, tm_task_id *, proxy_count * sizeof(tm_task_id), status);
-    HYDU_MALLOC(HYDT_bscd_pbs_sys->spawn_events, tm_event_t *,
-                proxy_count * sizeof(tm_event_t), status);
+    HYDU_MALLOC_OR_JUMP(HYDT_bscd_pbs_sys->task_id, tm_task_id *, proxy_count * sizeof(tm_task_id),
+                        status);
+    HYDU_MALLOC_OR_JUMP(HYDT_bscd_pbs_sys->spawn_events, tm_event_t *,
+                        proxy_count * sizeof(tm_event_t), status);
 
     /* Spawn a process on each allocated node through tm_spawn() which
      * returns a taskID for the process + a eventID for the

@@ -1,29 +1,28 @@
-.TH MPI_Alltoallv 3 "11/9/2015" " " "MPI"
+.TH MPI_Alltoallv 3 "11/21/2018" " " "MPI"
 .SH NAME
-MPI_Alltoallv \-  Sends data from all to all processes; each process may  send a different amount of data and provide displacements for the input and output data. 
+MPI_Alltoallv \-  Sends data from all to all processes; each process may send a different amount of data and provide displacements for the input and output data. 
 .SH SYNOPSIS
 .nf
 int MPI_Alltoallv(const void *sendbuf, const int *sendcounts,
                   const int *sdispls, MPI_Datatype sendtype, void *recvbuf,
-                  const int *recvcounts, const int *rdispls, MPI_Datatype recvtype,
-                  MPI_Comm comm)
+                  const int *recvcounts, const int *rdispls, MPI_Datatype recvtype, MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B sendbuf 
-- starting address of send buffer (choice) 
+- starting address of send buffer (choice)
 .PD 1
 .PD 0
 .TP
 .B sendcounts 
-- integer array equal to the group size 
-specifying the number of elements to send to each processor 
+- integer array equal to the group size
+specifying the number of elements to send to each processor
 .PD 1
 .PD 0
 .TP
 .B sdispls 
-- integer array (of length group size). Entry 
+- integer array (of length group size). Entry
 .I j
 specifies the displacement (relative to sendbuf  from
 which to take the outgoing data destined for process  
@@ -33,19 +32,19 @@ which to take the outgoing data destined for process
 .PD 0
 .TP
 .B sendtype 
-- data type of send buffer elements (handle) 
+- data type of send buffer elements (handle)
 .PD 1
 .PD 0
 .TP
 .B recvcounts 
-- integer array equal to the group size 
+- integer array equal to the group size
 specifying the maximum number of elements that can be received from
-each processor 
+each processor
 .PD 1
 .PD 0
 .TP
 .B rdispls 
-- integer array (of length group size). Entry 
+- integer array (of length group size). Entry
 .I i
 specifies the displacement (relative to recvbuf  at
 which to place the incoming data from process  
@@ -55,19 +54,19 @@ which to place the incoming data from process
 .PD 0
 .TP
 .B recvtype 
-- data type of receive buffer elements (handle) 
+- data type of receive buffer elements (handle)
 .PD 1
 .PD 0
 .TP
 .B comm 
-- communicator (handle) 
+- communicator (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B recvbuf 
-- address of receive buffer (choice) 
+- address of receive buffer (choice)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

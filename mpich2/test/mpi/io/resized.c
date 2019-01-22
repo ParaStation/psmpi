@@ -44,8 +44,7 @@ int main(int argc, char **argv)
          * fprintf(stderr, "\n*#  Usage: resized -fname filename\n\n");
          * MPI_Abort(MPI_COMM_WORLD, 1);
          */
-    }
-    else {
+    } else {
         argv++;
         len = (int) strlen(*argv);
         filename = (char *) malloc(len + 1);
@@ -129,6 +128,5 @@ int main(int argc, char **argv)
     MPI_Type_free(&newtype);
     free(filename);
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

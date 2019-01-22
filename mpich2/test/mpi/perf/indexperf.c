@@ -17,6 +17,7 @@
 #endif
 
 #include "mpi.h"
+#include "mpitest.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,7 +36,7 @@ int main(int argc, char **argv)
     double tpack, tspack, tmanual;
     int ntry;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
 
     icount = 2014;
 
@@ -54,11 +55,11 @@ int main(int argc, char **argv)
     MPI_Type_commit(&itype1);
 
 #if defined(MPICH) && defined(PRINT_DATATYPE_INTERNALS)
-    /* To use MPIDU_Datatype_debug to print the datatype internals,
+    /* To use MPIR_Datatype_debug to print the datatype internals,
      * you must configure MPICH with --enable-g=log */
     if (verbose) {
         printf("Block index datatype:\n");
-        MPIDU_Datatype_debug(itype1, 10);
+        MPIR_Datatype_debug(itype1, 10);
     }
 #endif
     MPI_Type_get_extent(itype1, &lb, &extent);
@@ -167,12 +168,6 @@ int main(int argc, char **argv)
         printf("MPI_Pack time should be less than 2 times the manual time\n");
         printf("For most informative results, be sure to compile this test with optimization\n");
     }
-    if (errs) {
-        printf(" Found %d errors\n", errs);
-    }
-    else {
-        printf(" No Errors\n");
-    }
 
     MPI_Type_free(&itype1);
     MPI_Type_free(&stype1);
@@ -182,6 +177,6 @@ int main(int argc, char **argv)
     free(outbuf2);
     free(index_displacement);
 
-    MPI_Finalize();
-    return 0;
+    MTest_Finalize(errs);
+    return MTestReturnValue(errs);
 }

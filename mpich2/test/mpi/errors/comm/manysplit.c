@@ -33,8 +33,7 @@ int main(int argc, char *argv[])
             if (i % 20 == 0) {
                 fprintf(stderr, "\n %d: ", i);
                 fflush(stdout);
-            }
-            else {
+            } else {
                 fprintf(stderr, ".");
                 fflush(stdout);
             }
@@ -51,6 +50,5 @@ int main(int argc, char *argv[])
     }
     /* If we complete, there are no errors */
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

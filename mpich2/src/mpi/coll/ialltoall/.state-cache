@@ -1,0 +1,23 @@
+<dir>
+<file name="ialltoall_intra_permuted_sendrecv.c" info="1542820949"/>
+<file name="ialltoall_intra_pairwise.c" info="1542820949"/>
+<file name="ialltoall_intra_brucks.c" info="1542820949"/>
+<file name="ialltoall_inter_pairwise_exchange.c" info="1542820949"/>
+<file name="ialltoall_intra_inplace.c" info="1542820949"/>
+<file name="ialltoall.c" info="1542820949"/>
+</dir>
+<data>
+<fileinfo name="ialltoall_intra_permuted_sendrecv.c">
+</fileinfo>
+<fileinfo name="ialltoall_intra_pairwise.c">
+</fileinfo>
+<fileinfo name="ialltoall_intra_brucks.c">
+</fileinfo>
+<fileinfo name="ialltoall_inter_pairwise_exchange.c">
+</fileinfo>
+<fileinfo name="ialltoall_intra_inplace.c">
+</fileinfo>
+<fileinfo name="ialltoall.c">
+MPID_STATE_MPI_IALLTOALL MPI_Ialltoall
+</fileinfo>
+</data>

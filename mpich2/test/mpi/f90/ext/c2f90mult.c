@@ -1,4 +1,4 @@
-/* This file created from test/mpi/f77/ext/c2fmult.c with f77tof90 */
+/* This file created from f77/ext/c2fmult.c with f77tof90 */
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -34,8 +34,7 @@ int main(int argc, char *argv[])
     if (rc) {
         errs++;
         printf("Unable to create request\n");
-    }
-    else {
+    } else {
         handleA = MPI_Request_c2f(cRequest);
         handleB = MPI_Request_c2f(cRequest);
         if (handleA != handleB) {
@@ -55,7 +54,6 @@ int main(int argc, char *argv[])
      * this test */
 
     MTest_Finalize(errs);
-    MPI_Finalize();
 
-    return 0;
+    return MTestReturnValue(errs);
 }

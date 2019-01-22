@@ -73,7 +73,7 @@ static inline void issue_rma_op(int i)
 #elif defined(TEST_CAS)
 static inline void issue_rma_op(int i)
 {
-    compare_buf[i] = i;        /* always equal to window value, thus swap happens */
+    compare_buf[i] = i; /* always equal to window value, thus swap happens */
     MPI_Compare_and_swap(&local_buf[i], &compare_buf[i], &result_addr[i], MPI_INT, target, i, win);
 }
 #endif
@@ -166,11 +166,11 @@ static int run_test()
 
 int main(int argc, char *argv[])
 {
-    int errors = 0, all_errors = 0;
+    int errors = 0;
     int win_size = sizeof(int) * BUF_CNT;
     int win_unit = sizeof(int);
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
@@ -180,7 +180,6 @@ int main(int argc, char *argv[])
         MPI_Barrier(MPI_COMM_WORLD);
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
-
 #if !defined(TEST_PUT) && !defined(TEST_ACC) && !defined(TEST_GACC) && !defined(TEST_FOP) && !defined(TEST_CAS)
     if (rank == 0)
         printf("Error: must specify operation type at compile time\n");
@@ -202,14 +201,10 @@ int main(int argc, char *argv[])
 
     MPI_Win_unlock_all(win);
 
-    MPI_Reduce(&errors, &all_errors, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-    if (rank == 0 && all_errors == 0)
-        printf(" No Errors\n");
-
     if (win != MPI_WIN_NULL)
         MPI_Win_free(&win);
 
-    MPI_Finalize();
+    MTest_Finalize(errors);
 
-    return 0;
+    return MTestReturnValue(errors);
 }

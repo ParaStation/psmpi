@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/coll/reducelocalf.f with f77tof90
+! This file created from f77/coll/reducelocalf.f with f77tof90
 ! -*- Mode: Fortran; -*- 
 !
 !  (C) 2009 by Argonne National Laboratory.
@@ -91,6 +91,5 @@
       call mpi_op_free( myop, ierr )
 
       call mtest_finalize(errs)
-      call mpi_finalize(ierr)
 
       end

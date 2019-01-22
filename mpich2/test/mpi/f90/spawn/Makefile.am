@@ -1,5 +1,5 @@
 # This Makefile.am generated automatically by f77tof90
-# from test/mpi/f77/spawn/Makefile.am.  DO NOT EDIT
+# from f77/spawn/Makefile.am.  DO NOT EDIT
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
@@ -24,7 +24,6 @@ noinst_PROGRAMS = namepubf90 spawnf90 spawnargvf90 spawnmultf90 spawnmult2f90 co
 spawnargvf90_LDADD = $(LDADD) $(FC_GETARG_LIBS)
 spawnmultf90_LDADD = $(LDADD) $(FC_GETARG_LIBS)
 
-
 if MAINTAINER_MODE
 
 # f77tof90 only replaces output files if the contents differ, so we must use a
@@ -33,8 +32,8 @@ if MAINTAINER_MODE
 # change its contents
 $(srcdir)/Makefile.am: $(srcdir)/Makefile.am-stamp
 
-$(srcdir)/Makefile.am-stamp: $(master_top_srcdir)/test/mpi/f77/spawn/Makefile.am $(master_top_srcdir)/maint/f77tof90
-	( cd $(master_top_srcdir) && ./maint/f77tof90 test/mpi/f77/spawn test/mpi/f90/spawn Makefile.am Makefile.ap )
+$(srcdir)/Makefile.am-stamp: $(top_srcdir)/f77/spawn/Makefile.am $(top_srcdir)/maint/f77tof90
+	( cd $(top_srcdir) && ./maint/f77tof90 f77/spawn f90/spawn Makefile.am Makefile.ap )
 
 MAINTAINERCLEANFILES = Makefile.am-stamp
 EXTRA_DIST += Makefile.am-stamp testlist.ap Makefile.ap

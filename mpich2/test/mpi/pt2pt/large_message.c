@@ -26,8 +26,7 @@ int main(int argc, char *argv[])
 /* need large memory */
     if (sizeof(void *) < 8) {
         MTest_Finalize(errs);
-        MPI_Finalize();
-        return 0;
+        return MTestReturnValue(errs);
     }
 
     ierr = MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -42,8 +41,7 @@ int main(int argc, char *argv[])
         printf("malloc of >2GB array failed\n");
         errs++;
         MTest_Finalize(errs);
-        MPI_Finalize();
-        return 0;
+        return MTestReturnValue(errs);
     }
 
     if (rank == 0) {
@@ -52,15 +50,15 @@ int main(int argc, char *argv[])
         /* printf("[%d] sending...\n",rank); */
         ierr = MPI_Send(cols, cnt, MPI_LONG_LONG_INT, 1, 0, MPI_COMM_WORLD);
         ierr = MPI_Send(cols, cnt, MPI_LONG_LONG_INT, 2, 0, MPI_COMM_WORLD);
-    }
-    else {
+    } else {
         /* printf("[%d] receiving...\n",rank); */
         for (i = 0; i < cnt; i++)
             cols[i] = -1;
         ierr = MPI_Recv(cols, cnt, MPI_LONG_LONG_INT, 0, 0, MPI_COMM_WORLD, &status);
-        ierr = MPI_Get_count(&status,MPI_LONG_LONG_INT,&stat_cnt);
+        ierr = MPI_Get_count(&status, MPI_LONG_LONG_INT, &stat_cnt);
         if (cnt != stat_cnt) {
-            fprintf(stderr, "Output of MPI_Get_count (%d) does not match expected count (%d).\n", stat_cnt, cnt);
+            fprintf(stderr, "Output of MPI_Get_count (%d) does not match expected count (%d).\n",
+                    stat_cnt, cnt);
             errs++;
         }
         for (i = 0; i < cnt; i++) {
@@ -71,6 +69,5 @@ int main(int argc, char *argv[])
         }
     }
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

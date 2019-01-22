@@ -1,20 +1,52 @@
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
+/*
+ *  (C) 2014 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
+#include "mpiimpl.h"
 #include "hcoll.h"
 
-static int hcoll_initialized = 0;
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+cvars:
+    - name        : MPIR_CVAR_ENABLE_HCOLL
+      category    : COLLECTIVE
+      type        : boolean
+      default     : false
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        Enable hcoll collective support.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
+
 static int hcoll_comm_world_initialized = 0;
 static int hcoll_progress_hook_id = 0;
 
-int hcoll_enable = 1;
+int hcoll_initialized = 0;
+int hcoll_enable = -1;
 int hcoll_enable_barrier = 1;
 int hcoll_enable_bcast = 1;
+int hcoll_enable_reduce = 1;
 int hcoll_enable_allgather = 1;
 int hcoll_enable_allreduce = 1;
+int hcoll_enable_alltoall = 1;
+int hcoll_enable_alltoallv = 1;
 int hcoll_enable_ibarrier = 1;
 int hcoll_enable_ibcast = 1;
 int hcoll_enable_iallgather = 1;
 int hcoll_enable_iallreduce = 1;
-int hcoll_comm_attr_keyval = MPI_KEYVAL_INVALID;
 int world_comm_destroying = 0;
+
+#if defined(MPL_USE_DBG_LOGGING)
+MPL_dbg_class MPIR_DBG_HCOLL;
+#endif /* MPL_USE_DBG_LOGGING */
+
+void hcoll_rte_fns_setup(void);
 
 #undef FUNCNAME
 #define FUNCNAME hcoll_destroy
@@ -32,22 +64,12 @@ int hcoll_destroy(void *param ATTRIBUTE((unused)))
     return 0;
 }
 
-static int hcoll_comm_attr_del_fn(MPI_Comm comm, int keyval, void *attr_val, void *extra_data)
-{
-    int mpi_errno;
-    if (MPI_COMM_WORLD == comm) {
-        world_comm_destroying = 1;
-    }
-    mpi_errno = hcoll_group_destroy_notify(attr_val);
-    return mpi_errno;
-}
-
 #define CHECK_ENABLE_ENV_VARS(nameEnv, name) \
     do { \
         envar = getenv("HCOLL_ENABLE_" #nameEnv); \
         if (NULL != envar) { \
             hcoll_enable_##name = atoi(envar); \
-            MPIU_DBG_MSG_D(CH3_OTHER, VERBOSE, "HCOLL_ENABLE_" #nameEnv " = %d\n", hcoll_enable_##name); \
+            MPL_DBG_MSG_D(MPIR_DBG_HCOLL, VERBOSE, "HCOLL_ENABLE_" #nameEnv " = %d\n", hcoll_enable_##name); \
         } \
     } while (0)
 
@@ -59,50 +81,51 @@ int hcoll_initialize(void)
 {
     int mpi_errno;
     char *envar;
+    hcoll_init_opts_t *init_opts;
     mpi_errno = MPI_SUCCESS;
-    envar = getenv("HCOLL_ENABLE");
-    if (NULL != envar) {
-        hcoll_enable = atoi(envar);
-    }
-    if (0 == hcoll_enable) {
+
+    hcoll_enable = (MPIR_CVAR_ENABLE_HCOLL | MPIR_CVAR_CH3_ENABLE_HCOLL) &&
+        !MPIR_ThreadInfo.isThreaded;
+    if (0 >= hcoll_enable) {
         goto fn_exit;
     }
+#if defined(MPL_USE_DBG_LOGGING)
+    MPIR_DBG_HCOLL = MPL_dbg_class_alloc("HCOLL", "hcoll");
+#endif /* MPL_USE_DBG_LOGGING */
+
     hcoll_rte_fns_setup();
-    /*set INT_MAX/2 as tag_base here by the moment.
-     * Need to think more about it.
-     * The tag space should be positive, from > ~30 to MPI_TAG_UB value.
-     * It looks reasonable to set MPI_TAG_UB as base but it doesn't work for ofacm tags
-     * (probably due to wrong conversions from uint to int). That's why I set INT_MAX/2 instead of MPI_TAG_UB.
-     * BUT: it won't work for collectives whose sequence number reaches INT_MAX/2 number. In that case tags become negative.
-     * Moreover, it even won't work than 0 < (INT_MAX/2 - sequence number) < 30 because it can interleave with internal mpich coll tags.
-     */
-    hcoll_set_runtime_tag_offset(INT_MAX / 2, MPI_TAG_UB);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
-    mpi_errno = hcoll_init();
+
+    hcoll_read_init_opts(&init_opts);
+    init_opts->base_tag = MPIR_FIRST_HCOLL_TAG;
+    init_opts->max_tag = MPIR_LAST_HCOLL_TAG;
+
+#if defined MPICH_IS_THREADED
+    init_opts->enable_thread_support = MPIR_ThreadInfo.isThreaded;
+#else
+    init_opts->enable_thread_support = 0;
+#endif
+
+    mpi_errno = hcoll_init_with_opts(&init_opts);
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
 
     if (!hcoll_initialized) {
         hcoll_initialized = 1;
-        mpi_errno = MPID_Progress_register_hook(hcoll_do_progress,
-                                                &hcoll_progress_hook_id);
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        mpi_errno = MPID_Progress_register_hook(hcoll_do_progress, &hcoll_progress_hook_id);
+        if (mpi_errno)
+            MPIR_ERR_POP(mpi_errno);
 
         MPID_Progress_activate_hook(hcoll_progress_hook_id);
     }
     MPIR_Add_finalize(hcoll_destroy, 0, 0);
 
-    mpi_errno =
-        MPIR_Comm_create_keyval_impl(MPI_NULL_COPY_FN, hcoll_comm_attr_del_fn,
-                                     &hcoll_comm_attr_keyval, NULL);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
-
     CHECK_ENABLE_ENV_VARS(BARRIER, barrier);
     CHECK_ENABLE_ENV_VARS(BCAST, bcast);
+    CHECK_ENABLE_ENV_VARS(REDUCE, reduce);
     CHECK_ENABLE_ENV_VARS(ALLGATHER, allgather);
     CHECK_ENABLE_ENV_VARS(ALLREDUCE, allreduce);
+    CHECK_ENABLE_ENV_VARS(ALLTOALL, alltoall);
+    CHECK_ENABLE_ENV_VARS(ALLTOALLV, alltoallv);
     CHECK_ENABLE_ENV_VARS(IBARRIER, ibarrier);
     CHECK_ENABLE_ENV_VARS(IBCAST, ibcast);
     CHECK_ENABLE_ENV_VARS(IALLGATHER, iallgather);
@@ -114,30 +137,28 @@ int hcoll_initialize(void)
 }
 
 
-#define INSTALL_COLL_WRAPPER(check_name, name) \
-    if (hcoll_enable_##check_name && (NULL != hcoll_collectives.coll_##check_name)) { \
-        comm_ptr->coll_fns->name      = hcoll_##name; \
-        MPIU_DBG_MSG(CH3_OTHER,VERBOSE, #name " wrapper installed"); \
-    }
-
 #undef FUNCNAME
 #define FUNCNAME hcoll_comm_create
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int hcoll_comm_create(MPID_Comm * comm_ptr, void *param)
+int hcoll_comm_create(MPIR_Comm * comm_ptr, void *param)
 {
     int mpi_errno;
     int num_ranks;
     int context_destroyed;
     mpi_errno = MPI_SUCCESS;
+
     if (0 == hcoll_initialized) {
         mpi_errno = hcoll_initialize();
         if (mpi_errno)
             MPIR_ERR_POP(mpi_errno);
     }
+
     if (0 == hcoll_enable) {
+        comm_ptr->hcoll_priv.is_hcoll_init = 0;
         goto fn_exit;
     }
+
     if (MPIR_Process.comm_world == comm_ptr) {
         hcoll_comm_world_initialized = 1;
     }
@@ -146,40 +167,17 @@ int hcoll_comm_create(MPID_Comm * comm_ptr, void *param)
         goto fn_exit;
     }
     num_ranks = comm_ptr->local_size;
-    if ((MPID_INTRACOMM != comm_ptr->comm_kind) || (2 > num_ranks)) {
+    if ((MPIR_COMM_KIND__INTRACOMM != comm_ptr->comm_kind) || (2 > num_ranks)
+        || comm_ptr->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE_ROOTS
+        || comm_ptr->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) {
         comm_ptr->hcoll_priv.is_hcoll_init = 0;
         goto fn_exit;
     }
     comm_ptr->hcoll_priv.hcoll_context = hcoll_create_context((rte_grp_handle_t) comm_ptr);
     if (NULL == comm_ptr->hcoll_priv.hcoll_context) {
-        MPIU_DBG_MSG(CH3_OTHER, VERBOSE, "Couldn't create hcoll context.");
+        MPL_DBG_MSG(MPIR_DBG_HCOLL, VERBOSE, "Couldn't create hcoll context.");
         goto fn_fail;
     }
-    mpi_errno =
-        MPIR_Comm_set_attr_impl(comm_ptr, hcoll_comm_attr_keyval,
-                                (void *) (comm_ptr->hcoll_priv.hcoll_context), MPIR_ATTR_PTR);
-    if (mpi_errno) {
-        hcoll_destroy_context(comm_ptr->hcoll_priv.hcoll_context,
-                              (rte_grp_handle_t) comm_ptr, &context_destroyed);
-        MPIU_Assert(context_destroyed);
-        comm_ptr->hcoll_priv.is_hcoll_init = 0;
-        MPIR_ERR_POP(mpi_errno);
-    }
-    comm_ptr->hcoll_priv.hcoll_origin_coll_fns = comm_ptr->coll_fns;
-    comm_ptr->coll_fns = (MPID_Collops *) MPIU_Malloc(sizeof(MPID_Collops));
-    memset(comm_ptr->coll_fns, 0, sizeof(MPID_Collops));
-    if (comm_ptr->hcoll_priv.hcoll_origin_coll_fns != 0) {
-        memcpy(comm_ptr->coll_fns, comm_ptr->hcoll_priv.hcoll_origin_coll_fns,
-               sizeof(MPID_Collops));
-    }
-    INSTALL_COLL_WRAPPER(barrier, Barrier);
-    INSTALL_COLL_WRAPPER(bcast, Bcast);
-    INSTALL_COLL_WRAPPER(allreduce, Allreduce);
-    INSTALL_COLL_WRAPPER(allgather, Allgather);
-    INSTALL_COLL_WRAPPER(ibarrier, Ibarrier_req);
-    INSTALL_COLL_WRAPPER(ibcast, Ibcast_req);
-    INSTALL_COLL_WRAPPER(iallreduce, Iallreduce_req);
-    INSTALL_COLL_WRAPPER(iallgather, Iallgather_req);
 
     comm_ptr->hcoll_priv.is_hcoll_init = 1;
   fn_exit:
@@ -192,28 +190,20 @@ int hcoll_comm_create(MPID_Comm * comm_ptr, void *param)
 #define FUNCNAME hcoll_comm_destroy
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int hcoll_comm_destroy(MPID_Comm * comm_ptr, void *param)
+int hcoll_comm_destroy(MPIR_Comm * comm_ptr, void *param)
 {
     int mpi_errno;
     int context_destroyed;
-    if (0 == hcoll_enable) {
+    if (0 >= hcoll_enable) {
         goto fn_exit;
     }
     mpi_errno = MPI_SUCCESS;
 
-    if (comm_ptr == MPIR_Process.comm_world) {
-        if (MPI_KEYVAL_INVALID != hcoll_comm_attr_keyval) {
-            MPIR_Comm_free_keyval_impl(hcoll_comm_attr_keyval);
-            hcoll_comm_attr_keyval = MPI_KEYVAL_INVALID;
-        }
-    }
+    if (comm_ptr->handle == MPI_COMM_WORLD)
+        world_comm_destroying = 1;
 
     context_destroyed = 0;
     if ((NULL != comm_ptr) && (0 != comm_ptr->hcoll_priv.is_hcoll_init)) {
-        if (NULL != comm_ptr->coll_fns) {
-            MPIU_Free(comm_ptr->coll_fns);
-        }
-        comm_ptr->coll_fns = comm_ptr->hcoll_priv.hcoll_origin_coll_fns;
         hcoll_destroy_context(comm_ptr->hcoll_priv.hcoll_context,
                               (rte_grp_handle_t) comm_ptr, &context_destroyed);
         comm_ptr->hcoll_priv.is_hcoll_init = 0;
@@ -226,8 +216,7 @@ int hcoll_comm_destroy(MPID_Comm * comm_ptr, void *param)
 
 int hcoll_do_progress(int *made_progress)
 {
-    if (made_progress)
-        *made_progress = 0;
+    *made_progress = 1;
     hcoll_progress_fn();
 
     return MPI_SUCCESS;

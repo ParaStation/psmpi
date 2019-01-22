@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/util/mtestf.f with f77tof90
+! This file created from f77/util/mtestf.f with f77tof90
 ! -*- Mode: Fortran; -*- 
 !
 !  (C) 2003 by Argonne National Laboratory.
@@ -42,6 +42,8 @@
                 print *, " No Errors"
            endif
         endif
+
+        call MPI_Finalize( ierr )
         end
 !
 ! A simple get intracomm for now

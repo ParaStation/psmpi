@@ -1,9 +1,10 @@
-.TH MPI_Imrecv 3 "11/9/2015" " " "MPI"
+.TH MPI_Imrecv 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Imrecv \-  Nonblocking receive of message matched by MPI_Mprobe or MPI_Improbe. 
 .SH SYNOPSIS
 .nf
-int MPI_Imrecv(void *buf, int count, MPI_Datatype datatype, MPI_Message *message, MPI_Request *request)
+int MPI_Imrecv(void *buf, int count, MPI_Datatype datatype, MPI_Message * message,
+               MPI_Request * request)
 .fi
 .SH INPUT/OUTPUT PARAMETERS
 .PD 0

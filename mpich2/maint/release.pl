@@ -164,7 +164,7 @@ my $local_git_clone = "${tdir}/mpich-clone";
 
 # clone git repo
 print("===> Cloning git repo... ");
-run_cmd("git clone ${git_repo} ${local_git_clone}");
+run_cmd("git clone --recursive -b ${branch} ${git_repo} ${local_git_clone}");
 print("done\n");
 
 # chdirs to $local_git_clone if valid
@@ -174,7 +174,13 @@ print("\n");
 my $current_ver = `git show ${branch}:maint/version.m4 | grep MPICH_VERSION_m4 | \
                    sed -e 's/^.*\\[MPICH_VERSION_m4\\],\\[\\(.*\\)\\].*/\\1/g'`;
 if ("$current_ver" ne "$version\n") {
-    print("\tWARNING: Version mismatch\n\n");
+    print("\tWARNING: maint/version does not match user version\n\n");
+}
+
+my $changes_ver = `git show ${branch}:CHANGES | grep "http://git.mpich.org/mpich.git/shortlog" | \
+                   sed -e '2,\$d' -e 's/.*\.\.//g'`;
+if ("$changes_ver" ne "$version\n") {
+    print("\tWARNING: CHANGES/version does not match user version\n\n");
 }
 
 if ($append_commit_id) {
@@ -193,6 +199,7 @@ print("===> Exporting code from git... ");
 run_cmd("rm -rf ${expdir}");
 run_cmd("mkdir -p ${expdir}");
 run_cmd("git archive ${branch} --prefix='mpich-${version}/' | tar -x -C $tdir");
+run_cmd("git submodule foreach --recursive \'git archive HEAD --prefix='' | tar -x -C `echo \${toplevel}/\${path} | sed -e s/clone/${version}/`'");
 print("done\n");
 
 print("===> Create release date and version information... ");
@@ -232,10 +239,10 @@ print("done\n");
 # Disable unnecessary tests in the release tarball
 print("===> Disabling unnecessary tests in the main codebase... ");
 chdir($expdir);
-run_cmd(q{perl -p -i -e 's/^\@perfdir\@/#\@perfdir@/' test/mpi/testlist.in});
-run_cmd(q{perl -p -i -e 's/^\@ftdir\@/#\@ftdir@/' test/mpi/testlist.in});
+run_cmd(q{perl -p -i -e 's/^\@perfdir\@/#\@perfdir\@/' test/mpi/testlist.in});
+run_cmd(q{perl -p -i -e 's/^\@ftdir\@/#\@ftdir\@/' test/mpi/testlist.in});
 run_cmd("perl -p -i -e 's/^large_message /#large_message /' test/mpi/pt2pt/testlist");
-run_cmd("perl -p -i -e 's/^large-count /#large-count /' test/mpi/datatype/testlist");
+run_cmd("perl -p -i -e 's/^large_count /#large_count /' test/mpi/datatype/testlist");
 print("done\n");
 
 # Remove unnecessary files

@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/coll/allredint8f.f with f77tof90
+! This file created from f77/coll/allredint8f.f with f77tof90
 ! -*- Mode: Fortran; -*- 
 !
 !  (C) 2006 by Argonne National Laboratory.
@@ -19,5 +19,4 @@
       &                   MPI_COMM_WORLD, ierr)
       
       call mtest_finalize( errs )
-      call mpi_finalize( ierr )
       end

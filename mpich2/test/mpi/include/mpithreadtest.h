@@ -23,7 +23,6 @@
 #define MTEST_THREAD_HANDLE HANDLE
 #define MTEST_THREAD_LOCK_TYPE HANDLE
 #elif defined(HAVE_PTHREAD_H)
-#define USE_PTHREADS 1
 #include <pthread.h>
 #define MTEST_THREAD_RETURN_TYPE void *
 #define MTEST_THREAD_HANDLE pthread_t
@@ -44,4 +43,4 @@ int MTest_thread_lock_free(MTEST_THREAD_LOCK_TYPE *);
 int MTest_thread_barrier_init(void);
 int MTest_thread_barrier(int);
 int MTest_thread_barrier_free(void);
-#endif
+#endif /* MPITHREADTEST_H_INCLUDED */

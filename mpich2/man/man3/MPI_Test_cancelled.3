@@ -1,22 +1,22 @@
-.TH MPI_Test_cancelled 3 "11/9/2015" " " "MPI"
+.TH MPI_Test_cancelled 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Test_cancelled \-  Tests to see if a request was cancelled 
 .SH SYNOPSIS
 .nf
-int MPI_Test_cancelled(const MPI_Status *status, int *flag)
+int MPI_Test_cancelled(const MPI_Status * status, int *flag)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B status 
-- status object (Status) 
+- status object (Status)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B flag 
-- true if the request was cancelled, false otherwise (logical) 
+- true if the request was cancelled, false otherwise (logical)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

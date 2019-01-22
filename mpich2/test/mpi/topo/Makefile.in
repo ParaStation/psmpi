@@ -97,9 +97,9 @@ host_triplet = @host@
 noinst_PROGRAMS = cartmap1$(EXEEXT) cartzero$(EXEEXT) \
 	cartshift1$(EXEEXT) cartsuball$(EXEEXT) cartcreates$(EXEEXT) \
 	dims1$(EXEEXT) dims2$(EXEEXT) dims3$(EXEEXT) dims4$(EXEEXT) \
-	graphmap1$(EXEEXT) topotest$(EXEEXT) topodup$(EXEEXT) \
-	graphcr$(EXEEXT) graphcr2$(EXEEXT) distgraph1$(EXEEXT) \
-	dgraph_unwgt$(EXEEXT) neighb_coll$(EXEEXT)
+	dims5$(EXEEXT) graphmap1$(EXEEXT) topotest$(EXEEXT) \
+	topodup$(EXEEXT) graphcr$(EXEEXT) graphcr2$(EXEEXT) \
+	distgraph1$(EXEEXT) dgraph_unwgt$(EXEEXT)
 subdir = topo
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -123,104 +123,87 @@ cartcreates_SOURCES = cartcreates.c
 cartcreates_OBJECTS = cartcreates.$(OBJEXT)
 cartcreates_LDADD = $(LDADD)
 cartcreates_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 cartmap1_SOURCES = cartmap1.c
 cartmap1_OBJECTS = cartmap1.$(OBJEXT)
 cartmap1_LDADD = $(LDADD)
 cartmap1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 cartshift1_SOURCES = cartshift1.c
 cartshift1_OBJECTS = cartshift1.$(OBJEXT)
 cartshift1_LDADD = $(LDADD)
 cartshift1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 cartsuball_SOURCES = cartsuball.c
 cartsuball_OBJECTS = cartsuball.$(OBJEXT)
 cartsuball_LDADD = $(LDADD)
 cartsuball_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 cartzero_SOURCES = cartzero.c
 cartzero_OBJECTS = cartzero.$(OBJEXT)
 cartzero_LDADD = $(LDADD)
 cartzero_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 dgraph_unwgt_SOURCES = dgraph_unwgt.c
 dgraph_unwgt_OBJECTS = dgraph_unwgt.$(OBJEXT)
 dgraph_unwgt_LDADD = $(LDADD)
 dgraph_unwgt_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 dims1_SOURCES = dims1.c
 dims1_OBJECTS = dims1.$(OBJEXT)
 dims1_LDADD = $(LDADD)
 dims1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 dims2_SOURCES = dims2.c
 dims2_OBJECTS = dims2.$(OBJEXT)
 dims2_LDADD = $(LDADD)
 dims2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 dims3_SOURCES = dims3.c
 dims3_OBJECTS = dims3.$(OBJEXT)
 dims3_LDADD = $(LDADD)
 dims3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 dims4_SOURCES = dims4.c
 dims4_OBJECTS = dims4.$(OBJEXT)
 dims4_LDADD = $(LDADD)
 dims4_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+dims5_SOURCES = dims5.c
+dims5_OBJECTS = dims5.$(OBJEXT)
+dims5_LDADD = $(LDADD)
+dims5_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 distgraph1_SOURCES = distgraph1.c
 distgraph1_OBJECTS = distgraph1.$(OBJEXT)
 distgraph1_LDADD = $(LDADD)
 distgraph1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 graphcr_SOURCES = graphcr.c
 graphcr_OBJECTS = graphcr.$(OBJEXT)
 graphcr_LDADD = $(LDADD)
 graphcr_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 graphcr2_SOURCES = graphcr2.c
 graphcr2_OBJECTS = graphcr2.$(OBJEXT)
 graphcr2_LDADD = $(LDADD)
 graphcr2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 graphmap1_SOURCES = graphmap1.c
 graphmap1_OBJECTS = graphmap1.$(OBJEXT)
 graphmap1_LDADD = $(LDADD)
 graphmap1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-neighb_coll_SOURCES = neighb_coll.c
-neighb_coll_OBJECTS = neighb_coll.$(OBJEXT)
-neighb_coll_LDADD = $(LDADD)
-neighb_coll_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 topodup_SOURCES = topodup.c
 topodup_OBJECTS = topodup.$(OBJEXT)
 topodup_LDADD = $(LDADD)
 topodup_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 topotest_SOURCES = topotest.c
 topotest_OBJECTS = topotest.$(OBJEXT)
 topotest_LDADD = $(LDADD)
 topotest_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -251,11 +234,11 @@ am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = cartcreates.c cartmap1.c cartshift1.c cartsuball.c \
 	cartzero.c dgraph_unwgt.c dims1.c dims2.c dims3.c dims4.c \
-	distgraph1.c graphcr.c graphcr2.c graphmap1.c neighb_coll.c \
+	dims5.c distgraph1.c graphcr.c graphcr2.c graphmap1.c \
 	topodup.c topotest.c
 DIST_SOURCES = cartcreates.c cartmap1.c cartshift1.c cartsuball.c \
 	cartzero.c dgraph_unwgt.c dims1.c dims2.c dims3.c dims4.c \
-	distgraph1.c graphcr.c graphcr2.c graphmap1.c neighb_coll.c \
+	dims5.c distgraph1.c graphcr.c graphcr2.c graphmap1.c \
 	topodup.c topotest.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -307,6 +290,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -462,6 +446,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -471,11 +456,14 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # AM_CPPFLAGS are used for C++ code as well
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+
+# Add libdtpools support
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_builddir)/dtpoos/include \
+	-I$(top_srcdir)/dtpools/include
 LDADD = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-CLEANFILES = summary.xml summary.tap summary.junit.xml
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
 EXTRA_DIST = testlist
 all: all-am
 
@@ -555,6 +543,10 @@ dims4$(EXEEXT): $(dims4_OBJECTS) $(dims4_DEPENDENCIES) $(EXTRA_dims4_DEPENDENCIE
 	@rm -f dims4$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(dims4_OBJECTS) $(dims4_LDADD) $(LIBS)
 
+dims5$(EXEEXT): $(dims5_OBJECTS) $(dims5_DEPENDENCIES) $(EXTRA_dims5_DEPENDENCIES) 
+	@rm -f dims5$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(dims5_OBJECTS) $(dims5_LDADD) $(LIBS)
+
 distgraph1$(EXEEXT): $(distgraph1_OBJECTS) $(distgraph1_DEPENDENCIES) $(EXTRA_distgraph1_DEPENDENCIES) 
 	@rm -f distgraph1$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(distgraph1_OBJECTS) $(distgraph1_LDADD) $(LIBS)
@@ -570,10 +562,6 @@ graphcr2$(EXEEXT): $(graphcr2_OBJECTS) $(graphcr2_DEPENDENCIES) $(EXTRA_graphcr2
 graphmap1$(EXEEXT): $(graphmap1_OBJECTS) $(graphmap1_DEPENDENCIES) $(EXTRA_graphmap1_DEPENDENCIES) 
 	@rm -f graphmap1$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(graphmap1_OBJECTS) $(graphmap1_LDADD) $(LIBS)
-
-neighb_coll$(EXEEXT): $(neighb_coll_OBJECTS) $(neighb_coll_DEPENDENCIES) $(EXTRA_neighb_coll_DEPENDENCIES) 
-	@rm -f neighb_coll$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(neighb_coll_OBJECTS) $(neighb_coll_LDADD) $(LIBS)
 
 topodup$(EXEEXT): $(topodup_OBJECTS) $(topodup_DEPENDENCIES) $(EXTRA_topodup_DEPENDENCIES) 
 	@rm -f topodup$(EXEEXT)
@@ -599,11 +587,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dims2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dims3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dims4.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dims5.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/distgraph1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/graphcr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/graphcr2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/graphmap1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/neighb_coll.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topodup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topotest.Po@am__quote@
 
@@ -830,16 +818,15 @@ uninstall-am:
 $(top_builddir)/util/mtest.$(OBJEXT): $(top_srcdir)/util/mtest.c
 	(cd $(top_builddir)/util && $(MAKE) mtest.$(OBJEXT))
 
-$(top_builddir)/util/mtest_datatype.$(OBJEXT): $(top_srcdir)/util/mtest_datatype.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype.$(OBJEXT))
+$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+	(cd $(top_builddir)/dtpools && $(MAKE))
 
-$(top_builddir)/util/mtest_datatype_gen.$(OBJEXT): $(top_srcdir)/util/mtest_datatype_gen.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype_gen.$(OBJEXT))
+SUMMARY_BASENAME ?= summary
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
-		-mpiexec=${MPIEXEC} -xmlfile=summary.xml \
-		-tapfile=summary.tap -junitfile=summary.junit.xml
+		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
+		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

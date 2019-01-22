@@ -10,13 +10,17 @@
 #include "ofi_impl.h"
 
 #define MPID_NORMAL_SEND 0
+
+#define MPID_CREATE_REQ      0
+#define MPID_DONT_CREATE_REQ 1
+
 static inline int
 MPID_nem_ofi_sync_recv_callback(cq_tagged_entry_t * wc ATTRIBUTE((unused)),
-                                MPID_Request * rreq);
+                                MPIR_Request * rreq);
 
 static inline int
 MPID_nem_ofi_send_callback(cq_tagged_entry_t * wc ATTRIBUTE((unused)),
-                           MPID_Request * sreq);
+                           MPIR_Request * sreq);
 
 #define ADD_SUFFIX(name) name
 #undef API_SET
@@ -32,9 +36,9 @@ MPID_nem_ofi_send_callback(cq_tagged_entry_t * wc ATTRIBUTE((unused)),
 /* Receive callback called after sending a syncronous send acknowledgement. */
 /* ------------------------------------------------------------------------ */
 #undef FCNAME
-#define FCNAME DECL_FUNC(MPID_nem_ofi_sync_recv_callback)
+#define FCNAME MPL_QUOTE(MPID_nem_ofi_sync_recv_callback)
 static inline int MPID_nem_ofi_sync_recv_callback(cq_tagged_entry_t * wc ATTRIBUTE((unused)),
-                                                  MPID_Request * rreq)
+                                                  MPIR_Request * rreq)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -52,14 +56,14 @@ static inline int MPID_nem_ofi_sync_recv_callback(cq_tagged_entry_t * wc ATTRIBU
 /* Free any temporary/pack buffers and complete the send request            */
 /* ------------------------------------------------------------------------ */
 #undef FCNAME
-#define FCNAME DECL_FUNC(MPID_nem_ofi_send_callback)
+#define FCNAME MPL_QUOTE(MPID_nem_ofi_send_callback)
 static inline int MPID_nem_ofi_send_callback(cq_tagged_entry_t * wc ATTRIBUTE((unused)),
-                                             MPID_Request * sreq)
+                                             MPIR_Request * sreq)
 {
     int mpi_errno = MPI_SUCCESS;
     BEGIN_FUNC(FCNAME);
     if (REQ_OFI(sreq)->pack_buffer)
-        MPIU_Free(REQ_OFI(sreq)->pack_buffer);
+        MPL_free(REQ_OFI(sreq)->pack_buffer);
     MPIDI_CH3I_NM_OFI_RC(MPID_Request_complete(sreq));
     END_FUNC_RC(FCNAME);
 }
@@ -89,23 +93,23 @@ static inline int MPID_nem_ofi_send_callback(cq_tagged_entry_t * wc ATTRIBUTE((u
 })
 
 #undef FCNAME
-#define FCNAME DECL_FUNC(MPID_nem_ofi_cancel_send)
-int MPID_nem_ofi_cancel_send(struct MPIDI_VC *vc ATTRIBUTE((unused)), struct MPID_Request *sreq)
+#define FCNAME MPL_QUOTE(MPID_nem_ofi_cancel_send)
+int MPID_nem_ofi_cancel_send(struct MPIDI_VC *vc ATTRIBUTE((unused)), struct MPIR_Request *sreq)
 {
     DO_CANCEL(sreq);
 }
 
 #undef FCNAME
-#define FCNAME DECL_FUNC(MPID_nem_ofi_cancel_recv)
-int MPID_nem_ofi_cancel_recv(struct MPIDI_VC *vc ATTRIBUTE((unused)), struct MPID_Request *rreq)
+#define FCNAME MPL_QUOTE(MPID_nem_ofi_cancel_recv)
+int MPID_nem_ofi_cancel_recv(struct MPIDI_VC *vc ATTRIBUTE((unused)), struct MPIR_Request *rreq)
 {
     DO_CANCEL(rreq);
 }
 
 
 #undef FCNAME
-#define FCNAME DECL_FUNC(MPID_nem_ofi_anysource_matched)
-int MPID_nem_ofi_anysource_matched(MPID_Request * rreq)
+#define FCNAME MPL_QUOTE(MPID_nem_ofi_anysource_matched)
+int MPID_nem_ofi_anysource_matched(MPIR_Request * rreq)
 {
     int matched = FALSE;
     int ret;
@@ -125,7 +129,7 @@ int MPID_nem_ofi_anysource_matched(MPID_Request * rreq)
          * to clean up tmp space.
          */
         if (REQ_OFI(rreq)->pack_buffer) {
-            MPIU_Free(REQ_OFI(rreq)->pack_buffer);
+            MPL_free(REQ_OFI(rreq)->pack_buffer);
         }
         matched = FALSE;
     }else{

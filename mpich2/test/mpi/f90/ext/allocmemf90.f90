@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/ext/allocmemf.f with f77tof90
+! This file created from f77/ext/allocmemf.f with f77tof90
 ! -*- Mode: Fortran; -*- 
 !
 !  (C) 2004 by Argonne National Laboratory.
@@ -37,6 +37,5 @@
 
         call mpi_free_mem( a, ierr )
         call mtest_finalize(errs)
-        call mpi_finalize(ierr)
 
         end

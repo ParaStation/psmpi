@@ -42,8 +42,7 @@ int main(int argc, char *argv[])
                 errs++;
                 MTestPrintError(err);
             }
-        }
-        else {
+        } else {
             /* In the right group */
             err = MTest_Barrier(comm);
             if (err) {
@@ -55,6 +54,5 @@ int main(int argc, char *argv[])
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

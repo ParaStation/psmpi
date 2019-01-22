@@ -29,10 +29,13 @@ process that generated addr1 and addr2, and addr1 and addr2 must correspond to
 locations in the same object in the same process. The difference is calculated
 in a manner that results the signed difference from addr1 to addr2, as if the
 process that originally produced the addresses had called
-(char *) addr1 - (char *) addr2
+<PRE>
+    (char *) addr1 - (char *) addr2
+</PRE>
+
 on the addresses initially passed to MPI_GET_ADDRESS.
 <P>
-<H0>See Also</H0>
+<H2>See Also</H2>
  MPI_Aint_add
-<br>
+<BR>
 </BODY></HTML>

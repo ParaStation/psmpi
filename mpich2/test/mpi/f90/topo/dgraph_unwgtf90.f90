@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/topo/dgraph_unwgtf.f with f77tof90
+! This file created from f77/topo/dgraph_unwgtf.f with f77tof90
 ! -*- Mode: Fortran; -*- 
 !
 !  (C) 2011 by Argonne National Laboratory.
@@ -210,5 +210,4 @@
       call MPI_Comm_free(dgraph_comm, ierr)
 
       call MTEST_Finalize(errs)
-      call MPI_Finalize(ierr)
       end

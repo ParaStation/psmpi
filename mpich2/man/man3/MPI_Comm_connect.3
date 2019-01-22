@@ -1,38 +1,38 @@
-.TH MPI_Comm_connect 3 "11/9/2015" " " "MPI"
+.TH MPI_Comm_connect 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Comm_connect \-  Make a request to form a new intercommunicator 
 .SH SYNOPSIS
 .nf
 int MPI_Comm_connect(const char *port_name, MPI_Info info, int root, MPI_Comm comm,
-                     MPI_Comm *newcomm)
+                     MPI_Comm * newcomm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B port_name 
-- network address (string, used only on root) 
+- network address (string, used only on root)
 .PD 1
 .PD 0
 .TP
 .B info 
-- implementation-dependent information (handle, used only on root) 
+- implementation-dependent information (handle, used only on root)
 .PD 1
 .PD 0
 .TP
 .B root 
-- rank in comm of root node (integer) 
+- rank in comm of root node (integer)
 .PD 1
 .PD 0
 .TP
 .B comm 
-- intracommunicator over which call is collective (handle) 
+- intracommunicator over which call is collective (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B newcomm 
-- intercommunicator with server as remote group (handle) 
+- intercommunicator with server as remote group (handle)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

@@ -278,11 +278,11 @@ FORT_DLL_SPEC void FORT_CALL mpi_cart_sub_ ( MPI_Fint *v1, MPI_Fint v2[], MPI_Fi
     }
 
     if (_ctsize) {int li;
-     l2 = (int *)MPIU_Malloc(_ctsize * sizeof(int));
+     l2 = (int *)MPL_malloc(_ctsize * sizeof(int), MPL_MEM_OTHER);
      for (li=0; li<_ctsize; li++) {
-        l2[li] = MPIR_FROM_FLOG(v2[li]);
+        l2[li] = MPII_FROM_FLOG(v2[li]);
      }
     }
     *ierr = MPI_Cart_sub( (MPI_Comm)(*v1), l2, (MPI_Comm *)(v3) );
-    if (l2) { MPIU_Free( l2 ); }
+    if (l2) { MPL_free( l2 ); }
 }

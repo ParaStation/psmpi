@@ -117,11 +117,13 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_bsend1cxx_OBJECTS = bsend1cxx.$(OBJEXT)
 bsend1cxx_OBJECTS = $(am_bsend1cxx_OBJECTS)
 bsend1cxx_LDADD = $(LDADD)
-bsend1cxx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+bsend1cxx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_sendrecvx_OBJECTS = sendrecvx.$(OBJEXT)
 sendrecvx_OBJECTS = $(am_sendrecvx_OBJECTS)
 sendrecvx_LDADD = $(LDADD)
-sendrecvx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+sendrecvx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -203,6 +205,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -358,6 +361,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -365,8 +369,13 @@ threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
-LDADD = $(top_builddir)/cxx/util/mtest.o
+
+# Add libdtpools support
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_builddir)/dtpoos/include \
+	-I$(top_srcdir)/dtpools/include
+LDADD = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 CLEANFILES = summary.xml summary.tap
 EXTRA_DIST = testlist
 bsend1cxx_SOURCES = bsend1cxx.cxx
@@ -648,6 +657,9 @@ uninstall-am:
 
 $(top_builddir)/cxx/util/mtest.o: $(top_srcdir)/cxx/util/mtest.cxx
 	(cd $(top_builddir)/cxx/util && $(MAKE) mtest.o)
+
+$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+	(cd $(top_builddir)/dtpools && $(MAKE))
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \

@@ -1,7 +1,7 @@
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
-# (C) 2014 by Argonne National Laboratory.
+# (C) 2011 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
 #
 
@@ -11,4 +11,4 @@ EXTRA_DIST = testlist
 
 AM_DEFAULT_SOURCE_EXT = .f90
 
-noinst_PROGRAMS = cartcrf90 dgraph_wgtf90 dgraph_unwgtf90
+noinst_PROGRAMS = cartcrf90 dgraph_wgtf90 dgraph_unwgtf90 cart_subf90

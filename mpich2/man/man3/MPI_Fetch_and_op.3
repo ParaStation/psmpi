@@ -1,11 +1,11 @@
-.TH MPI_Fetch_and_op 3 "11/9/2015" " " "MPI"
+.TH MPI_Fetch_and_op 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Fetch_and_op \-  Perform one-sided read-modify-write. 
 .SH SYNOPSIS
 .nf
 int MPI_Fetch_and_op(const void *origin_addr, void *result_addr,
-        MPI_Datatype datatype, int target_rank, MPI_Aint target_disp,
-        MPI_Op op, MPI_Win win)
+                     MPI_Datatype datatype, int target_rank, MPI_Aint target_disp,
+                     MPI_Op op, MPI_Win win)
 .fi
 
 Accumulate one element of type datatype from the origin buffer (origin_addr) to

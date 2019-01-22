@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/ext/c2f2cf.f with f77tof90
+! This file created from f77/ext/c2f2cf.f with f77tof90
 ! -*- Mode: Fortran; -*- 
 !
 !  (C) 2003 by Argonne National Laboratory.
@@ -116,6 +116,5 @@
          endif
       endif
 
-      call mpi_finalize( ierr )
       end
       

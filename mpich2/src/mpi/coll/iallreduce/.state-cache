@@ -1,0 +1,60 @@
+<dir>
+<file name="iallreduce_tsp_recexch_algos.h" info="1542820949"/>
+<file name="iallreduce_tsp_tree_algos.h" info="1542820949"/>
+<file name="iallreduce_intra_tree_knomial.c" info="1542820949"/>
+<file name="iallreduce_intra_tree_kary.c" info="1542820949"/>
+<file name="iallreduce_intra_recexch_multiple_buffer.c" info="1542820949"/>
+<file name="iallreduce_tsp_tree_algos_undef.h" info="1542820949"/>
+<file name="iallreduce_tsp_recexch_algos_undef.h" info="1542820949"/>
+<file name="iallreduce_intra_naive.c" info="1542820949"/>
+<file name="iallreduce.c" info="1542820949"/>
+<file name="iallreduce_intra_smp.c" info="1542820949"/>
+<file name="iallreduce_intra_reduce_scatter_allgather.c" info="1542820949"/>
+<file name="iallreduce_tsp_tree_algos_prototypes.h" info="1542820949"/>
+<file name="iallreduce_inter_remote_reduce_local_bcast.c" info="1542820949"/>
+<file name="iallreduce_gentran_algos.c" info="1542820949"/>
+<file name="iallreduce_tsp_recexch_algos_prototypes.h" info="1542820949"/>
+<file name="iallreduce_intra_recursive_doubling.c" info="1542820949"/>
+<file name="iallreduce_intra_recexch_single_buffer.c" info="1542820949"/>
+</dir>
+<data>
+<fileinfo name="iallreduce_tsp_recexch_algos.h">
+MPID_STATE_MPIR_TSP_IALLREDUCE_SCHED_INTRA_RECEXCH MPIR_TSP_Iallreduce_sched_intra_recexch
+MPID_STATE_MPIR_TSP_IALLREDUCE_INTRA_RECEXCH MPIR_TSP_Iallreduce_intra_recexch
+</fileinfo>
+<fileinfo name="iallreduce_tsp_tree_algos.h">
+MPID_STATE_MPIR_TSP_IALLREDUCE_SCHED_INTRA_TREE MPIR_TSP_Iallreduce_sched_intra_tree
+MPID_STATE_MPIR_TSP_IALLREDUCE_INTRA_TREE MPIR_TSP_Iallreduce_intra_tree
+</fileinfo>
+<fileinfo name="iallreduce_intra_tree_knomial.c">
+</fileinfo>
+<fileinfo name="iallreduce_intra_tree_kary.c">
+</fileinfo>
+<fileinfo name="iallreduce_intra_recexch_multiple_buffer.c">
+</fileinfo>
+<fileinfo name="iallreduce_tsp_tree_algos_undef.h">
+</fileinfo>
+<fileinfo name="iallreduce_tsp_recexch_algos_undef.h">
+</fileinfo>
+<fileinfo name="iallreduce_intra_naive.c">
+</fileinfo>
+<fileinfo name="iallreduce.c">
+MPID_STATE_MPI_IALLREDUCE MPI_Iallreduce
+</fileinfo>
+<fileinfo name="iallreduce_intra_smp.c">
+</fileinfo>
+<fileinfo name="iallreduce_intra_reduce_scatter_allgather.c">
+</fileinfo>
+<fileinfo name="iallreduce_tsp_tree_algos_prototypes.h">
+</fileinfo>
+<fileinfo name="iallreduce_inter_remote_reduce_local_bcast.c">
+</fileinfo>
+<fileinfo name="iallreduce_gentran_algos.c">
+</fileinfo>
+<fileinfo name="iallreduce_tsp_recexch_algos_prototypes.h">
+</fileinfo>
+<fileinfo name="iallreduce_intra_recursive_doubling.c">
+</fileinfo>
+<fileinfo name="iallreduce_intra_recexch_single_buffer.c">
+</fileinfo>
+</data>

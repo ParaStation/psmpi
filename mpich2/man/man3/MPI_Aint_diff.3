@@ -1,4 +1,4 @@
-.TH MPI_Aint_diff 3 "11/9/2015" " " "MPI"
+.TH MPI_Aint_diff 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Aint_diff \-  Returns the difference between addr1 and addr2 
 .SH SYNOPSIS
@@ -28,7 +28,10 @@ process that generated addr1 and addr2, and addr1 and addr2 must correspond to
 locations in the same object in the same process. The difference is calculated
 in a manner that results the signed difference from addr1 to addr2, as if the
 process that originally produced the addresses had called
+.nf
 (char *) addr1 - (char *) addr2
+.fi
+
 on the addresses initially passed to MPI_GET_ADDRESS.
 
 .SH SEE ALSO

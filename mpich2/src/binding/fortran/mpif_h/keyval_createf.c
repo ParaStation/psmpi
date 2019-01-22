@@ -277,12 +277,12 @@ typedef void (FORT_CALL F77_CopyFunction) (MPI_Fint *, MPI_Fint *, MPI_Aint *, M
 /* Helper proxy function to thunk the attr copy function call into F77 calling convention */
 static
 int
-MPIR_Comm_copy_attr_f77_proxy(
+MPII_Comm_copy_attr_f77_proxy(
     MPI_Comm_copy_attr_function* user_function,
     MPI_Comm comm,
     int keyval,
     void* extra_state,
-    MPIR_AttrType value_type,
+    MPIR_Attr_type value_type,
     void* value,
     void** new_value,
     int* flag
@@ -291,15 +291,15 @@ MPIR_Comm_copy_attr_f77_proxy(
     MPI_Fint ierr = 0;
     MPI_Fint fhandle = (MPI_Fint)comm;
     MPI_Fint fkeyval = (MPI_Fint)keyval;
-    MPI_Aint fvalue = MPIU_VOID_PTR_CAST_TO_MPI_AINT (value);
+    MPI_Aint fvalue = MPIR_VOID_PTR_CAST_TO_MPI_AINT (value);
     MPI_Aint *fextra = (MPI_Aint *)extra_state;
     MPI_Aint fnew = 0;
     MPI_Fint fflag = 0;
 
     ((F77_CopyFunction*)user_function)( &fhandle, &fkeyval, fextra, &fvalue, &fnew, &fflag, &ierr );
 
-    *flag = MPIR_FROM_FLOG(fflag);
-    *new_value = MPIU_AINT_CAST_TO_VOID_PTR ((MPI_Aint) fnew);
+    *flag = MPII_FROM_FLOG(fflag);
+    *new_value = MPIR_AINT_CAST_TO_VOID_PTR ((MPI_Aint) fnew);
     return (int)ierr;
 }
 
@@ -314,7 +314,7 @@ MPIR_Comm_delete_attr_f77_proxy(
     MPI_Comm_delete_attr_function* user_function,
     MPI_Comm comm,
     int keyval,
-    MPIR_AttrType value_type,
+    MPIR_Attr_type value_type,
     void* value,
     void* extra_state
     )
@@ -322,7 +322,7 @@ MPIR_Comm_delete_attr_f77_proxy(
     MPI_Fint ierr = 0;
     MPI_Fint fhandle = (MPI_Fint)comm;
     MPI_Fint fkeyval = (MPI_Fint)keyval;
-    MPI_Aint fvalue = MPIU_VOID_PTR_CAST_TO_MPI_AINT (value);
+    MPI_Aint fvalue = MPIR_VOID_PTR_CAST_TO_MPI_AINT (value);
     MPI_Aint *fextra = (MPI_Aint *)extra_state;
 
     ((F77_DeleteFunction*)user_function)( &fhandle, &fkeyval, &fvalue, fextra, &ierr );
@@ -335,6 +335,6 @@ FORT_DLL_SPEC void FORT_CALL mpi_keyval_create_ ( MPI_Copy_function v1, MPI_Dele
         *ierr = MPI_Comm_create_keyval( v1, v2, &l3, v4 );
         if (!*ierr) {
 	    *v3 = l3;
-            MPIR_Keyval_set_proxy((int)*v3, MPIR_Comm_copy_attr_f77_proxy, MPIR_Comm_delete_attr_f77_proxy);
+            MPII_Keyval_set_proxy((int)*v3, MPII_Comm_copy_attr_f77_proxy, MPIR_Comm_delete_attr_f77_proxy);
         }
 }

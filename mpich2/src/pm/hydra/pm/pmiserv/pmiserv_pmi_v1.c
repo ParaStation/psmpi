@@ -69,25 +69,25 @@ static HYD_status bcast_keyvals(int fd, int pid)
     /* Each keyval has the following four items: 'key' '=' 'val'
      * '<space>'.  Two additional items for the command at the start
      * and the NULL at the end. */
-    HYDU_MALLOC(tmp, char **, (4 * keyval_count + 3) * sizeof(char *), status);
+    HYDU_MALLOC_OR_JUMP(tmp, char **, (4 * keyval_count + 3) * sizeof(char *), status);
 
     /* send all available keyvals downstream */
     if (keyval_count) {
         arg_count = 1;
         i = 0;
-        tmp[i++] = HYDU_strdup("cmd=keyval_cache ");
+        tmp[i++] = MPL_strdup("cmd=keyval_cache ");
         for (run = pg_scratch->kvs->key_pair, j = 0; run; run = run->next, j++) {
             if (j < pg_scratch->keyval_dist_count)
                 continue;
 
-            tmp[i++] = HYDU_strdup(run->key);
-            tmp[i++] = HYDU_strdup("=");
-            tmp[i++] = HYDU_strdup(run->val);
-            tmp[i++] = HYDU_strdup(" ");
+            tmp[i++] = MPL_strdup(run->key);
+            tmp[i++] = MPL_strdup("=");
+            tmp[i++] = MPL_strdup(run->val);
+            tmp[i++] = MPL_strdup(" ");
 
             arg_count++;
             if (arg_count >= MAX_PMI_INTERNAL_ARGS) {
-                tmp[i++] = HYDU_strdup("\n");
+                tmp[i++] = MPL_strdup("\n");
                 tmp[i++] = NULL;
 
                 status = HYDU_str_alloc_and_join(tmp, &cmd);
@@ -99,14 +99,14 @@ static HYD_status bcast_keyvals(int fd, int pid)
                     status = cmd_response(tproxy->control_fd, pid, cmd);
                     HYDU_ERR_POP(status, "error writing PMI line\n");
                 }
-                HYDU_FREE(cmd);
+                MPL_free(cmd);
 
                 i = 0;
-                tmp[i++] = HYDU_strdup("cmd=keyval_cache ");
+                tmp[i++] = MPL_strdup("cmd=keyval_cache ");
                 arg_count = 1;
             }
         }
-        tmp[i++] = HYDU_strdup("\n");
+        tmp[i++] = MPL_strdup("\n");
         tmp[i++] = NULL;
 
         if (arg_count > 1) {
@@ -118,14 +118,14 @@ static HYD_status bcast_keyvals(int fd, int pid)
                 status = cmd_response(tproxy->control_fd, pid, cmd);
                 HYDU_ERR_POP(status, "error writing PMI line\n");
             }
-            HYDU_FREE(cmd);
+            MPL_free(cmd);
         }
         HYDU_free_strlist(tmp);
     }
 
   fn_exit:
     if (tmp)
-        HYDU_FREE(tmp);
+        MPL_free(tmp);
     HYDU_FUNC_EXIT();
     return status;
 
@@ -136,7 +136,6 @@ static HYD_status bcast_keyvals(int fd, int pid)
 static HYD_status fn_barrier_in(int fd, int pid, int pgid, char *args[])
 {
     struct HYD_proxy *proxy, *tproxy;
-    int proxy_count;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -144,12 +143,8 @@ static HYD_status fn_barrier_in(int fd, int pid, int pgid, char *args[])
     proxy = HYD_pmcd_pmi_find_proxy(fd);
     HYDU_ASSERT(proxy, status);
 
-    proxy_count = 0;
-    for (tproxy = proxy->pg->proxy_list; tproxy; tproxy = tproxy->next)
-        proxy_count++;
-
     proxy->pg->barrier_count++;
-    if (proxy->pg->barrier_count == proxy_count) {
+    if (proxy->pg->barrier_count == proxy->pg->proxy_count) {
         proxy->pg->barrier_count = 0;
 
         bcast_keyvals(fd, pid);
@@ -249,17 +244,16 @@ static HYD_status fn_get(int fd, int pid, int pgid, char *args[])
 
   found_val:
     i = 0;
-    tmp[i++] = HYDU_strdup("cmd=get_result rc=");
+    tmp[i++] = MPL_strdup("cmd=get_result rc=");
     if (val) {
-        tmp[i++] = HYDU_strdup("0 msg=success value=");
-        tmp[i++] = HYDU_strdup(val);
+        tmp[i++] = MPL_strdup("0 msg=success value=");
+        tmp[i++] = MPL_strdup(val);
+    } else {
+        tmp[i++] = MPL_strdup("-1 msg=key_");
+        tmp[i++] = MPL_strdup(key);
+        tmp[i++] = MPL_strdup("_not_found value=unknown");
     }
-    else {
-        tmp[i++] = HYDU_strdup("-1 msg=key_");
-        tmp[i++] = HYDU_strdup(key);
-        tmp[i++] = HYDU_strdup("_not_found value=unknown");
-    }
-    tmp[i++] = HYDU_strdup("\n");
+    tmp[i++] = MPL_strdup("\n");
     tmp[i++] = NULL;
 
     status = HYDU_str_alloc_and_join(tmp, &cmd);
@@ -268,7 +262,7 @@ static HYD_status fn_get(int fd, int pid, int pgid, char *args[])
 
     status = cmd_response(fd, pid, cmd);
     HYDU_ERR_POP(status, "error writing PMI line\n");
-    HYDU_FREE(cmd);
+    MPL_free(cmd);
 
   fn_exit:
     HYD_pmcd_pmi_free_tokens(tokens, token_count);
@@ -296,8 +290,7 @@ static void segment_tokens(struct HYD_pmcd_token *tokens, int token_count,
             j++;
             segment_list[j].start_idx = i + 1;
             segment_list[j].token_count = 0;
-        }
-        else {
+        } else {
             segment_list[j].token_count++;
         }
     }
@@ -330,7 +323,7 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
     HYDU_FUNC_ENTER();
 
     for (i = 0; args[i]; i++)
-        mcmd_args[mcmd_num_args++] = HYDU_strdup(args[i]);
+        mcmd_args[mcmd_num_args++] = MPL_strdup(args[i]);
     mcmd_args[mcmd_num_args] = NULL;
 
     /* Initialize the proxy stash, so it can be freed if we jump to
@@ -365,8 +358,8 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
                         "unable to find token: totspawns\n");
     total_spawns = atoi(val);
 
-    HYDU_MALLOC(segment_list, struct HYD_pmcd_token_segment *,
-                total_spawns * sizeof(struct HYD_pmcd_token_segment), status);
+    HYDU_MALLOC_OR_JUMP(segment_list, struct HYD_pmcd_token_segment *,
+                        total_spawns * sizeof(struct HYD_pmcd_token_segment), status);
 
     segment_tokens(tokens, token_count, segment_list, &num_segments);
 
@@ -374,8 +367,7 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
         /* We didn't read the entire PMI string; wait for the rest to
          * arrive */
         goto fn_exit;
-    }
-    else {
+    } else {
         /* Got the entire PMI string; free the arguments and reset */
         HYDU_free_strlist(mcmd_args);
         mcmd_num_args = 0;
@@ -422,8 +414,7 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
             HYDU_ERR_POP(status, "unable to allocate exec\n");
             exec_list->appnum = 0;
             exec = exec_list;
-        }
-        else {
+        } else {
             for (exec = exec_list; exec->next; exec = exec->next);
             status = HYDU_alloc_exec(&exec->next);
             HYDU_ERR_POP(status, "unable to allocate exec\n");
@@ -435,14 +426,14 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
         for (i = 0; i < info_num; i++) {
             char *info_key, *info_val;
 
-            HYDU_snprintf(key, PMI_MAXKEYLEN, "info_key_%d", i);
+            MPL_snprintf(key, PMI_MAXKEYLEN, "info_key_%d", i);
             val = HYD_pmcd_pmi_find_token_keyval(&tokens[segment_list[j].start_idx],
                                                  segment_list[j].token_count, key);
             HYDU_ERR_CHKANDJUMP(status, val == NULL, HYD_INTERNAL_ERROR,
                                 "unable to find token: %s\n", key);
             info_key = val;
 
-            HYDU_snprintf(key, PMI_MAXKEYLEN, "info_val_%d", i);
+            MPL_snprintf(key, PMI_MAXKEYLEN, "info_val_%d", i);
             val = HYD_pmcd_pmi_find_token_keyval(&tokens[segment_list[j].start_idx],
                                                  segment_list[j].token_count, key);
             HYDU_ERR_CHKANDJUMP(status, val == NULL, HYD_INTERNAL_ERROR,
@@ -450,12 +441,10 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
             info_val = val;
 
             if (!strcmp(info_key, "path")) {
-                path = HYDU_strdup(info_val);
-            }
-            else if (!strcmp(info_key, "wdir")) {
-                exec->wdir = HYDU_strdup(info_val);
-            }
-            else if (!strcmp(info_key, "host") || !strcmp(info_key, "hosts")) {
+                path = MPL_strdup(info_val);
+            } else if (!strcmp(info_key, "wdir")) {
+                exec->wdir = MPL_strdup(info_val);
+            } else if (!strcmp(info_key, "host") || !strcmp(info_key, "hosts")) {
                 char *saveptr;
                 char *host = strtok_r(info_val, ",", &saveptr);
                 while (host) {
@@ -463,13 +452,11 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
                     HYDU_ERR_POP(status, "error creating node list\n");
                     host = strtok_r(NULL, ",", &saveptr);
                 }
-            }
-            else if (!strcmp(info_key, "hostfile")) {
+            } else if (!strcmp(info_key, "hostfile")) {
                 status = HYDU_parse_hostfile(info_val, &pg->user_node_list,
                                              HYDU_process_mfile_token);
                 HYDU_ERR_POP(status, "error parsing hostfile\n");
-            }
-            else {
+            } else {
                 /* Unrecognized info key; ignore */
             }
         }
@@ -482,12 +469,12 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
         HYDU_ERR_CHKANDJUMP(status, val == NULL, HYD_INTERNAL_ERROR,
                             "unable to find token: execname\n");
         if (path == NULL)
-            execname = HYDU_strdup(val);
+            execname = MPL_strdup(val);
         else {
             HYD_STRING_STASH_INIT(stash);
-            HYD_STRING_STASH(stash, HYDU_strdup(path), status);
-            HYD_STRING_STASH(stash, HYDU_strdup("/"), status);
-            HYD_STRING_STASH(stash, HYDU_strdup(val), status);
+            HYD_STRING_STASH(stash, MPL_strdup(path), status);
+            HYD_STRING_STASH(stash, MPL_strdup("/"), status);
+            HYD_STRING_STASH(stash, MPL_strdup(val), status);
 
             HYD_STRING_SPIT(stash, execname, status);
         }
@@ -495,12 +482,12 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
         i = 0;
         exec->exec[i++] = execname;
         for (k = 0; k < argcnt; k++) {
-            HYDU_snprintf(key, PMI_MAXKEYLEN, "arg%d", k + 1);
+            MPL_snprintf(key, PMI_MAXKEYLEN, "arg%d", k + 1);
             val = HYD_pmcd_pmi_find_token_keyval(&tokens[segment_list[j].start_idx],
                                                  segment_list[j].token_count, key);
             HYDU_ERR_CHKANDJUMP(status, val == NULL, HYD_INTERNAL_ERROR,
                                 "unable to find token: %s\n", key);
-            exec->exec[i++] = HYDU_strdup(val);
+            exec->exec[i++] = MPL_strdup(val);
         }
         exec->exec[i++] = NULL;
 
@@ -535,13 +522,13 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
     for (i = 0; i < preput_num; i++) {
         char *preput_key, *preput_val;
 
-        HYDU_snprintf(key, PMI_MAXKEYLEN, "preput_key_%d", i);
+        MPL_snprintf(key, PMI_MAXKEYLEN, "preput_key_%d", i);
         val = HYD_pmcd_pmi_find_token_keyval(tokens, token_count, key);
         HYDU_ERR_CHKANDJUMP(status, val == NULL, HYD_INTERNAL_ERROR,
                             "unable to find token: %s\n", key);
         preput_key = val;
 
-        HYDU_snprintf(key, PMI_MAXKEYLEN, "preput_val_%d", i);
+        MPL_snprintf(key, PMI_MAXKEYLEN, "preput_val_%d", i);
         val = HYD_pmcd_pmi_find_token_keyval(tokens, token_count, key);
         HYDU_ERR_CHKANDJUMP(status, val == NULL, HYD_INTERNAL_ERROR,
                             "unable to find token: %s\n", key);
@@ -555,8 +542,7 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
     if (pg->user_node_list) {
         status = HYDU_create_proxy_list(exec_list, pg->user_node_list, pg);
         HYDU_ERR_POP(status, "error creating proxy list\n");
-    }
-    else {
+    } else {
         status = HYDU_create_proxy_list(exec_list, HYD_server_info.node_list, pg);
         HYDU_ERR_POP(status, "error creating proxy list\n");
     }
@@ -566,8 +552,7 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
         pg->pg_core_count = 0;
         for (i = 0, node = pg->user_node_list; node; node = node->next, i++)
             pg->pg_core_count += node->core_count;
-    }
-    else {
+    } else {
         pg->pg_core_count = 0;
         for (proxy = pg->proxy_list; proxy; proxy = proxy->next)
             pg->pg_core_count += proxy->node->core_count;
@@ -587,7 +572,7 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
 
     status = HYD_pmcd_pmi_fill_in_proxy_args(&proxy_stash, control_port, new_pgid);
     HYDU_ERR_POP(status, "unable to fill in proxy arguments\n");
-    HYDU_FREE(control_port);
+    MPL_free(control_port);
 
     status = HYD_pmcd_pmi_fill_in_exec_launch_info(pg);
     HYDU_ERR_POP(status, "unable to fill in executable arguments\n");
@@ -599,14 +584,14 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
         char *cmd;
 
         HYD_STRING_STASH_INIT(stash);
-        HYD_STRING_STASH(stash, HYDU_strdup("cmd=spawn_result rc=0"), status);
-        HYD_STRING_STASH(stash, HYDU_strdup("\n"), status);
+        HYD_STRING_STASH(stash, MPL_strdup("cmd=spawn_result rc=0"), status);
+        HYD_STRING_STASH(stash, MPL_strdup("\n"), status);
 
         HYD_STRING_SPIT(stash, cmd, status);
 
         status = cmd_response(fd, pid, cmd);
         HYDU_ERR_POP(status, "error writing PMI line\n");
-        HYDU_FREE(cmd);
+        MPL_free(cmd);
     }
 
     /* Cache the pre-initialized keyvals on the new proxies */
@@ -617,7 +602,7 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
     HYD_pmcd_pmi_free_tokens(tokens, token_count);
     HYD_STRING_STASH_FREE(proxy_stash);
     if (segment_list)
-        HYDU_FREE(segment_list);
+        MPL_free(segment_list);
     HYDU_FUNC_EXIT();
     return status;
 
@@ -642,37 +627,37 @@ static HYD_status fn_publish_name(int fd, int pid, int pgid, char *args[])
 
     if ((val = HYD_pmcd_pmi_find_token_keyval(tokens, token_count, "service")) == NULL)
         HYDU_ERR_POP(status, "cannot find token: service\n");
-    name = HYDU_strdup(val);
+    name = MPL_strdup(val);
 
     if ((val = HYD_pmcd_pmi_find_token_keyval(tokens, token_count, "port")) == NULL)
         HYDU_ERR_POP(status, "cannot find token: port\n");
-    port = HYDU_strdup(val);
+    port = MPL_strdup(val);
 
     status = HYD_pmcd_pmi_publish(name, port, &success);
     HYDU_ERR_POP(status, "error publishing service\n");
 
     HYD_STRING_STASH_INIT(stash);
     if (success)
-        HYD_STRING_STASH(stash, HYDU_strdup("cmd=publish_result info=ok rc=0 msg=success\n"),
+        HYD_STRING_STASH(stash, MPL_strdup("cmd=publish_result info=ok rc=0 msg=success\n"),
                          status);
     else
         HYD_STRING_STASH(stash,
-                         HYDU_strdup("cmd=publish_result info=ok rc=1 msg=key_already_present\n"),
+                         MPL_strdup("cmd=publish_result info=ok rc=1 msg=key_already_present\n"),
                          status);
 
     HYD_STRING_SPIT(stash, cmd, status);
 
     status = cmd_response(fd, pid, cmd);
     HYDU_ERR_POP(status, "send command failed\n");
-    HYDU_FREE(cmd);
+    MPL_free(cmd);
 
   fn_exit:
     if (tokens)
         HYD_pmcd_pmi_free_tokens(tokens, token_count);
     if (name)
-        HYDU_FREE(name);
+        MPL_free(name);
     if (port)
-        HYDU_FREE(port);
+        MPL_free(port);
 
     HYDU_FUNC_EXIT();
     return status;
@@ -703,18 +688,18 @@ static HYD_status fn_unpublish_name(int fd, int pid, int pgid, char *args[])
 
     HYD_STRING_STASH_INIT(stash);
     if (success)
-        HYD_STRING_STASH(stash, HYDU_strdup("cmd=unpublish_result info=ok rc=0 msg=success\n"),
+        HYD_STRING_STASH(stash, MPL_strdup("cmd=unpublish_result info=ok rc=0 msg=success\n"),
                          status);
     else
         HYD_STRING_STASH(stash,
-                         HYDU_strdup("cmd=unpublish_result info=ok rc=1 msg=service_not_found\n"),
+                         MPL_strdup("cmd=unpublish_result info=ok rc=1 msg=service_not_found\n"),
                          status);
 
     HYD_STRING_SPIT(stash, cmd, status);
 
     status = cmd_response(fd, pid, cmd);
     HYDU_ERR_POP(status, "send command failed\n");
-    HYDU_FREE(cmd);
+    MPL_free(cmd);
 
   fn_exit:
     if (tokens)
@@ -746,27 +731,26 @@ static HYD_status fn_lookup_name(int fd, int pid, int pgid, char *args[])
     HYDU_ERR_POP(status, "error while looking up service\n");
 
     HYD_STRING_STASH_INIT(stash);
-    HYD_STRING_STASH(stash, HYDU_strdup("cmd=lookup_result"), status);
+    HYD_STRING_STASH(stash, MPL_strdup("cmd=lookup_result"), status);
     if (value) {
-        HYD_STRING_STASH(stash, HYDU_strdup(" port="), status);
-        HYD_STRING_STASH(stash, HYDU_strdup(value), status);
-        HYD_STRING_STASH(stash, HYDU_strdup(" info=ok rc=0 msg=success\n"), status);
-    }
-    else {
-        HYD_STRING_STASH(stash, HYDU_strdup(" rc=1 msg=service_not_found\n"), status);
+        HYD_STRING_STASH(stash, MPL_strdup(" port="), status);
+        HYD_STRING_STASH(stash, MPL_strdup(value), status);
+        HYD_STRING_STASH(stash, MPL_strdup(" info=ok rc=0 msg=success\n"), status);
+    } else {
+        HYD_STRING_STASH(stash, MPL_strdup(" rc=1 msg=service_not_found\n"), status);
     }
 
     HYD_STRING_SPIT(stash, cmd, status);
 
     status = cmd_response(fd, pid, cmd);
     HYDU_ERR_POP(status, "send command failed\n");
-    HYDU_FREE(cmd);
+    MPL_free(cmd);
 
   fn_exit:
     if (tokens)
         HYD_pmcd_pmi_free_tokens(tokens, token_count);
     if (value)
-        HYDU_FREE(value);
+        MPL_free(value);
     HYDU_FUNC_EXIT();
     return status;
 
@@ -790,7 +774,7 @@ static HYD_status fn_abort(int fd, int pid, int pgid, char *args[])
     if (HYD_pmcd_pmi_find_token_keyval(tokens, token_count, "exitcode") == NULL)
         HYDU_ERR_POP(status, "cannot find token: exitcode\n");
 
-    exitcode = atoi(HYD_pmcd_pmi_find_token_keyval(tokens, token_count, "exitcode"));
+    exitcode = strtol(HYD_pmcd_pmi_find_token_keyval(tokens, token_count, "exitcode"), NULL, 10);
 
   fn_exit:
     /* clean everything up and exit */

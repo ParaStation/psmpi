@@ -268,5 +268,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_is_thread_main_( MPI_Fint *, MPI_Fint *
 FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main_ ( MPI_Fint *v1, MPI_Fint *ierr ){
     int l1;
     *ierr = MPI_Is_thread_main( &l1 );
-    if (*ierr == MPI_SUCCESS) *v1 = MPIR_TO_FLOG(l1);
+    if (*ierr == MPI_SUCCESS) *v1 = MPII_TO_FLOG(l1);
 }

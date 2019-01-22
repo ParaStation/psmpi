@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/datatype/hindex1f.f with f77tof90
+! This file created from f77/datatype/hindex1f.f with f77tof90
 ! -*- Mode: Fortran; -*- 
 !
 !
@@ -57,5 +57,4 @@
       call mpi_type_free( dtype, ierr )
 !
       call mtest_finalize( errs )
-      call mpi_finalize( ierr )
       end

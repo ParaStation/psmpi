@@ -1,4 +1,4 @@
-.TH MPI_Cart_rank 3 "11/9/2015" " " "MPI"
+.TH MPI_Cart_rank 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Cart_rank \-  Determines process rank in communicator given Cartesian location 
 .SH SYNOPSIS
@@ -9,7 +9,7 @@ int MPI_Cart_rank(MPI_Comm comm, const int coords[], int *rank)
 .PD 0
 .TP
 .B comm 
-- communicator with cartesian structure (handle) 
+- communicator with cartesian structure (handle)
 .PD 1
 .PD 0
 .TP
@@ -19,15 +19,15 @@ int MPI_Cart_rank(MPI_Comm comm, const int coords[], int *rank)
 , the number of dimensions of
 the Cartesian topology associated with 
 .I comm
-) specifying the cartesian 
-coordinates of a process 
+) specifying the cartesian
+coordinates of a process
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B rank 
-- rank of specified process (integer) 
+- rank of specified process (integer)
 .PD 1
 
 .SH NOTES

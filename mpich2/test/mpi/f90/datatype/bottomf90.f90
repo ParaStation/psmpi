@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/datatype/bottomf.f with f77tof90
+! This file created from f77/datatype/bottomf.f with f77tof90
 ! -*- Mode: Fortran; -*-
 !
 !  (C) 2015 by Argonne National Laboratory.
@@ -31,5 +31,4 @@
 
       call MPI_Type_free(type, ierr);
       call mtest_finalize(errs)
-      call MPI_Finalize(ierr)
       end

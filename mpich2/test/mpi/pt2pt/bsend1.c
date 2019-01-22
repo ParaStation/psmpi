@@ -78,8 +78,9 @@ int main(int argc, char *argv[])
     /* We can't guarantee that messages arrive until the detach */
     MPI_Buffer_detach(&bbuf, &bsize);
 
+    free(buf);
+
     MTest_Finalize(errs);
 
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

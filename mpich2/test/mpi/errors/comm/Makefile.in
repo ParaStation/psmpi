@@ -97,7 +97,14 @@ host_triplet = @host@
 noinst_PROGRAMS = cfree$(EXEEXT) ccreate1$(EXEEXT) manysplit$(EXEEXT) \
 	userdup$(EXEEXT) too_many_comms$(EXEEXT) \
 	too_many_comms2$(EXEEXT) too_many_comms3$(EXEEXT) \
-	too_many_icomms$(EXEEXT) too_many_icomms2$(EXEEXT)
+	too_many_icomms$(EXEEXT) too_many_icomms2$(EXEEXT) \
+	comm_create_nullarg$(EXEEXT) \
+	comm_create_group_nullarg$(EXEEXT) \
+	comm_get_info_nullarg$(EXEEXT) comm_group_nullarg$(EXEEXT) \
+	comm_size_nullarg$(EXEEXT) comm_split_nullarg$(EXEEXT) \
+	comm_split_type_nullarg$(EXEEXT) \
+	intercomm_create_nullarg$(EXEEXT) subcomm_abort$(EXEEXT) \
+	subcomm_abort2$(EXEEXT) intercomm_abort$(EXEEXT)
 subdir = errors/comm
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -121,56 +128,103 @@ ccreate1_SOURCES = ccreate1.c
 ccreate1_OBJECTS = ccreate1.$(OBJEXT)
 ccreate1_LDADD = $(LDADD)
 ccreate1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 cfree_SOURCES = cfree.c
 cfree_OBJECTS = cfree.$(OBJEXT)
 cfree_LDADD = $(LDADD)
 cfree_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+comm_create_group_nullarg_SOURCES = comm_create_group_nullarg.c
+comm_create_group_nullarg_OBJECTS =  \
+	comm_create_group_nullarg.$(OBJEXT)
+comm_create_group_nullarg_LDADD = $(LDADD)
+comm_create_group_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+comm_create_nullarg_SOURCES = comm_create_nullarg.c
+comm_create_nullarg_OBJECTS = comm_create_nullarg.$(OBJEXT)
+comm_create_nullarg_LDADD = $(LDADD)
+comm_create_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+comm_get_info_nullarg_SOURCES = comm_get_info_nullarg.c
+comm_get_info_nullarg_OBJECTS = comm_get_info_nullarg.$(OBJEXT)
+comm_get_info_nullarg_LDADD = $(LDADD)
+comm_get_info_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+comm_group_nullarg_SOURCES = comm_group_nullarg.c
+comm_group_nullarg_OBJECTS = comm_group_nullarg.$(OBJEXT)
+comm_group_nullarg_LDADD = $(LDADD)
+comm_group_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+comm_size_nullarg_SOURCES = comm_size_nullarg.c
+comm_size_nullarg_OBJECTS = comm_size_nullarg.$(OBJEXT)
+comm_size_nullarg_LDADD = $(LDADD)
+comm_size_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+comm_split_nullarg_SOURCES = comm_split_nullarg.c
+comm_split_nullarg_OBJECTS = comm_split_nullarg.$(OBJEXT)
+comm_split_nullarg_LDADD = $(LDADD)
+comm_split_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+comm_split_type_nullarg_SOURCES = comm_split_type_nullarg.c
+comm_split_type_nullarg_OBJECTS = comm_split_type_nullarg.$(OBJEXT)
+comm_split_type_nullarg_LDADD = $(LDADD)
+comm_split_type_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+intercomm_abort_SOURCES = intercomm_abort.c
+intercomm_abort_OBJECTS = intercomm_abort.$(OBJEXT)
+intercomm_abort_LDADD = $(LDADD)
+intercomm_abort_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+intercomm_create_nullarg_SOURCES = intercomm_create_nullarg.c
+intercomm_create_nullarg_OBJECTS = intercomm_create_nullarg.$(OBJEXT)
+intercomm_create_nullarg_LDADD = $(LDADD)
+intercomm_create_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 manysplit_SOURCES = manysplit.c
 manysplit_OBJECTS = manysplit.$(OBJEXT)
 manysplit_LDADD = $(LDADD)
 manysplit_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+subcomm_abort_SOURCES = subcomm_abort.c
+subcomm_abort_OBJECTS = subcomm_abort.$(OBJEXT)
+subcomm_abort_LDADD = $(LDADD)
+subcomm_abort_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+subcomm_abort2_SOURCES = subcomm_abort2.c
+subcomm_abort2_OBJECTS = subcomm_abort2.$(OBJEXT)
+subcomm_abort2_LDADD = $(LDADD)
+subcomm_abort2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 too_many_comms_SOURCES = too_many_comms.c
 too_many_comms_OBJECTS = too_many_comms.$(OBJEXT)
 too_many_comms_LDADD = $(LDADD)
 too_many_comms_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 too_many_comms2_SOURCES = too_many_comms2.c
 too_many_comms2_OBJECTS = too_many_comms2.$(OBJEXT)
 too_many_comms2_LDADD = $(LDADD)
 too_many_comms2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 too_many_comms3_SOURCES = too_many_comms3.c
 too_many_comms3_OBJECTS = too_many_comms3.$(OBJEXT)
 too_many_comms3_LDADD = $(LDADD)
 too_many_comms3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 too_many_icomms_SOURCES = too_many_icomms.c
 too_many_icomms_OBJECTS = too_many_icomms.$(OBJEXT)
 too_many_icomms_LDADD = $(LDADD)
 too_many_icomms_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 too_many_icomms2_SOURCES = too_many_icomms2.c
 too_many_icomms2_OBJECTS = too_many_icomms2.$(OBJEXT)
 too_many_icomms2_LDADD = $(LDADD)
 too_many_icomms2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 userdup_SOURCES = userdup.c
 userdup_OBJECTS = userdup.$(OBJEXT)
 userdup_LDADD = $(LDADD)
 userdup_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -199,12 +253,22 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = ccreate1.c cfree.c manysplit.c too_many_comms.c \
-	too_many_comms2.c too_many_comms3.c too_many_icomms.c \
-	too_many_icomms2.c userdup.c
-DIST_SOURCES = ccreate1.c cfree.c manysplit.c too_many_comms.c \
-	too_many_comms2.c too_many_comms3.c too_many_icomms.c \
-	too_many_icomms2.c userdup.c
+SOURCES = ccreate1.c cfree.c comm_create_group_nullarg.c \
+	comm_create_nullarg.c comm_get_info_nullarg.c \
+	comm_group_nullarg.c comm_size_nullarg.c comm_split_nullarg.c \
+	comm_split_type_nullarg.c intercomm_abort.c \
+	intercomm_create_nullarg.c manysplit.c subcomm_abort.c \
+	subcomm_abort2.c too_many_comms.c too_many_comms2.c \
+	too_many_comms3.c too_many_icomms.c too_many_icomms2.c \
+	userdup.c
+DIST_SOURCES = ccreate1.c cfree.c comm_create_group_nullarg.c \
+	comm_create_nullarg.c comm_get_info_nullarg.c \
+	comm_group_nullarg.c comm_size_nullarg.c comm_split_nullarg.c \
+	comm_split_type_nullarg.c intercomm_abort.c \
+	intercomm_create_nullarg.c manysplit.c subcomm_abort.c \
+	subcomm_abort2.c too_many_comms.c too_many_comms2.c \
+	too_many_comms3.c too_many_icomms.c too_many_icomms2.c \
+	userdup.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -255,6 +319,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -410,6 +475,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -419,11 +485,14 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # AM_CPPFLAGS are used for C++ code as well
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+
+# Add libdtpools support
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_builddir)/dtpoos/include \
+	-I$(top_srcdir)/dtpools/include
 LDADD = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-CLEANFILES = summary.xml summary.tap summary.junit.xml
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
 EXTRA_DIST = testlist
 all: all-am
 
@@ -471,9 +540,53 @@ cfree$(EXEEXT): $(cfree_OBJECTS) $(cfree_DEPENDENCIES) $(EXTRA_cfree_DEPENDENCIE
 	@rm -f cfree$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(cfree_OBJECTS) $(cfree_LDADD) $(LIBS)
 
+comm_create_group_nullarg$(EXEEXT): $(comm_create_group_nullarg_OBJECTS) $(comm_create_group_nullarg_DEPENDENCIES) $(EXTRA_comm_create_group_nullarg_DEPENDENCIES) 
+	@rm -f comm_create_group_nullarg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(comm_create_group_nullarg_OBJECTS) $(comm_create_group_nullarg_LDADD) $(LIBS)
+
+comm_create_nullarg$(EXEEXT): $(comm_create_nullarg_OBJECTS) $(comm_create_nullarg_DEPENDENCIES) $(EXTRA_comm_create_nullarg_DEPENDENCIES) 
+	@rm -f comm_create_nullarg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(comm_create_nullarg_OBJECTS) $(comm_create_nullarg_LDADD) $(LIBS)
+
+comm_get_info_nullarg$(EXEEXT): $(comm_get_info_nullarg_OBJECTS) $(comm_get_info_nullarg_DEPENDENCIES) $(EXTRA_comm_get_info_nullarg_DEPENDENCIES) 
+	@rm -f comm_get_info_nullarg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(comm_get_info_nullarg_OBJECTS) $(comm_get_info_nullarg_LDADD) $(LIBS)
+
+comm_group_nullarg$(EXEEXT): $(comm_group_nullarg_OBJECTS) $(comm_group_nullarg_DEPENDENCIES) $(EXTRA_comm_group_nullarg_DEPENDENCIES) 
+	@rm -f comm_group_nullarg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(comm_group_nullarg_OBJECTS) $(comm_group_nullarg_LDADD) $(LIBS)
+
+comm_size_nullarg$(EXEEXT): $(comm_size_nullarg_OBJECTS) $(comm_size_nullarg_DEPENDENCIES) $(EXTRA_comm_size_nullarg_DEPENDENCIES) 
+	@rm -f comm_size_nullarg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(comm_size_nullarg_OBJECTS) $(comm_size_nullarg_LDADD) $(LIBS)
+
+comm_split_nullarg$(EXEEXT): $(comm_split_nullarg_OBJECTS) $(comm_split_nullarg_DEPENDENCIES) $(EXTRA_comm_split_nullarg_DEPENDENCIES) 
+	@rm -f comm_split_nullarg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(comm_split_nullarg_OBJECTS) $(comm_split_nullarg_LDADD) $(LIBS)
+
+comm_split_type_nullarg$(EXEEXT): $(comm_split_type_nullarg_OBJECTS) $(comm_split_type_nullarg_DEPENDENCIES) $(EXTRA_comm_split_type_nullarg_DEPENDENCIES) 
+	@rm -f comm_split_type_nullarg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(comm_split_type_nullarg_OBJECTS) $(comm_split_type_nullarg_LDADD) $(LIBS)
+
+intercomm_abort$(EXEEXT): $(intercomm_abort_OBJECTS) $(intercomm_abort_DEPENDENCIES) $(EXTRA_intercomm_abort_DEPENDENCIES) 
+	@rm -f intercomm_abort$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(intercomm_abort_OBJECTS) $(intercomm_abort_LDADD) $(LIBS)
+
+intercomm_create_nullarg$(EXEEXT): $(intercomm_create_nullarg_OBJECTS) $(intercomm_create_nullarg_DEPENDENCIES) $(EXTRA_intercomm_create_nullarg_DEPENDENCIES) 
+	@rm -f intercomm_create_nullarg$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(intercomm_create_nullarg_OBJECTS) $(intercomm_create_nullarg_LDADD) $(LIBS)
+
 manysplit$(EXEEXT): $(manysplit_OBJECTS) $(manysplit_DEPENDENCIES) $(EXTRA_manysplit_DEPENDENCIES) 
 	@rm -f manysplit$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(manysplit_OBJECTS) $(manysplit_LDADD) $(LIBS)
+
+subcomm_abort$(EXEEXT): $(subcomm_abort_OBJECTS) $(subcomm_abort_DEPENDENCIES) $(EXTRA_subcomm_abort_DEPENDENCIES) 
+	@rm -f subcomm_abort$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(subcomm_abort_OBJECTS) $(subcomm_abort_LDADD) $(LIBS)
+
+subcomm_abort2$(EXEEXT): $(subcomm_abort2_OBJECTS) $(subcomm_abort2_DEPENDENCIES) $(EXTRA_subcomm_abort2_DEPENDENCIES) 
+	@rm -f subcomm_abort2$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(subcomm_abort2_OBJECTS) $(subcomm_abort2_LDADD) $(LIBS)
 
 too_many_comms$(EXEEXT): $(too_many_comms_OBJECTS) $(too_many_comms_DEPENDENCIES) $(EXTRA_too_many_comms_DEPENDENCIES) 
 	@rm -f too_many_comms$(EXEEXT)
@@ -507,7 +620,18 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ccreate1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_create_group_nullarg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_create_nullarg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_get_info_nullarg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_group_nullarg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_size_nullarg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_split_nullarg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_split_type_nullarg.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intercomm_abort.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intercomm_create_nullarg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manysplit.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/subcomm_abort.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/subcomm_abort2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/too_many_comms.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/too_many_comms2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/too_many_comms3.Po@am__quote@
@@ -738,16 +862,15 @@ uninstall-am:
 $(top_builddir)/util/mtest.$(OBJEXT): $(top_srcdir)/util/mtest.c
 	(cd $(top_builddir)/util && $(MAKE) mtest.$(OBJEXT))
 
-$(top_builddir)/util/mtest_datatype.$(OBJEXT): $(top_srcdir)/util/mtest_datatype.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype.$(OBJEXT))
+$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+	(cd $(top_builddir)/dtpools && $(MAKE))
 
-$(top_builddir)/util/mtest_datatype_gen.$(OBJEXT): $(top_srcdir)/util/mtest_datatype_gen.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype_gen.$(OBJEXT))
+SUMMARY_BASENAME ?= summary
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
-		-mpiexec=${MPIEXEC} -xmlfile=summary.xml \
-		-tapfile=summary.tap -junitfile=summary.junit.xml
+		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
+		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

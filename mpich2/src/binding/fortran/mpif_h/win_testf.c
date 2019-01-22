@@ -268,5 +268,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_test_( MPI_Fint *, MPI_Fint *, MPI_
 FORT_DLL_SPEC void FORT_CALL mpi_win_test_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
     int l2;
     *ierr = MPI_Win_test( (MPI_Win)*v1, &l2 );
-    if (*ierr == MPI_SUCCESS) *v2 = MPIR_TO_FLOG(l2);
+    if (*ierr == MPI_SUCCESS) *v2 = MPII_TO_FLOG(l2);
 }

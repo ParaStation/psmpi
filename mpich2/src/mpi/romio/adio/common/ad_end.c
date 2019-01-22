@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
-/* 
- *   Copyright (C) 1997 University of Chicago. 
+/*
+ *   Copyright (C) 1997 University of Chicago.
  *   See COPYRIGHT notice in top-level directory.
  */
 
@@ -9,30 +9,20 @@
 
 void ADIO_End(int *error_code)
 {
-    ADIOI_Flatlist_node *curr, *next;
     ADIOI_Datarep *datarep, *datarep_next;
-    
+
 /*    FPRINTF(stderr, "reached end\n"); */
 
     /* if a default errhandler was set on MPI_FILE_NULL then we need to ensure
      * that our reference to that errhandler is released */
     PMPI_File_set_errhandler(MPI_FILE_NULL, MPI_ERRORS_RETURN);
 
-/* delete the flattened datatype list */
-    curr = ADIOI_Flatlist;
-    while (curr) {
-	if (curr->blocklens) ADIOI_Free(curr->blocklens);
-	if (curr->indices) ADIOI_Free(curr->indices);
-	next = curr->next;
-	ADIOI_Free(curr);
-	curr = next;
-    }
-    ADIOI_Flatlist = NULL;
-
 /* free file and info tables used for Fortran interface */
-    if (ADIOI_Ftable) ADIOI_Free(ADIOI_Ftable);
+    if (ADIOI_Ftable)
+        ADIOI_Free(ADIOI_Ftable);
 #ifndef HAVE_MPI_INFO
-    if (MPIR_Infotable) ADIOI_Free(MPIR_Infotable);
+    if (MPIR_Infotable)
+        ADIOI_Free(MPIR_Infotable);
 #endif
 
 
@@ -45,8 +35,8 @@ void ADIO_End(int *error_code)
         datarep = datarep_next;
     }
 
-    if( ADIOI_syshints != MPI_INFO_NULL)
-	    MPI_Info_free(&ADIOI_syshints);
+    if (ADIOI_syshints != MPI_INFO_NULL)
+        MPI_Info_free(&ADIOI_syshints);
 
     MPI_Op_free(&ADIO_same_amode);
 
@@ -54,18 +44,17 @@ void ADIO_End(int *error_code)
 }
 
 
-
 /* This is the delete callback function associated with
    ADIO_Init_keyval when MPI_COMM_SELF is freed */
 
 int ADIOI_End_call(MPI_Comm comm, int keyval, void *attribute_val, void
-		  *extra_state)
+                   *extra_state)
 {
     int error_code;
 
-    ADIOI_UNREFERENCED_ARG(comm);
-    ADIOI_UNREFERENCED_ARG(attribute_val);
-    ADIOI_UNREFERENCED_ARG(extra_state);
+    MPL_UNREFERENCED_ARG(comm);
+    MPL_UNREFERENCED_ARG(attribute_val);
+    MPL_UNREFERENCED_ARG(extra_state);
 
     MPI_Keyval_free(&keyval);
 
@@ -74,6 +63,9 @@ int ADIOI_End_call(MPI_Comm comm, int keyval, void *attribute_val, void
      * MPI_COMM_SELF attribute destruction behavior mandated by MPI-2.2. */
     if (ADIOI_cb_config_list_keyval != MPI_KEYVAL_INVALID)
         MPI_Keyval_free(&ADIOI_cb_config_list_keyval);
+
+    if (ADIOI_Flattened_type_keyval != MPI_KEYVAL_INVALID)
+        MPI_Type_free_keyval(&ADIOI_Flattened_type_keyval);
 
     ADIO_End(&error_code);
     return error_code;

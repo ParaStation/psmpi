@@ -15,6 +15,14 @@
 **nomem %d:Out of memory (unable to allocate %d bytes)
 **nomem2:Unable to allocate memory (probably out of memory)
 **nomem2 %d %s:Unable to allocate %d bytes of memory for %s (probably out of memory)
+**alloc_shar_mem:unable to allocate shared memory
+**alloc_shar_mem %s %s:unable to allocate shared memory - %s %s
+**attach_shar_mem:unable to attach to shared memory
+**attach_shar_mem %s %s:unable to attach to shared memory - %s %s
+**remove_shar_mem:unable to remove shared memory
+**remove_shar_mem %s %s:unable to remove shared memory - %s %s
+**detach_shar_mem:unable to detach shared memory
+**detach_shar_mem %s %s:unable to detach shared memory - %s %s
 **notimpl:Function not implemented
 **notimpl %s:Function %s not implemented
 **nullptr:Null pointer
@@ -35,6 +43,9 @@
 **rankdup:Duplicate ranks in rank array 
 **rankdup %d %d %d:Duplicate ranks in rank array at index %d, has value %d which is \
 also the value at index %d
+**netloc_topo_load:Error loading netloc topology
+**netloc_topo_identification:Unsupported netloc topology type
+**netloc_endpoint_mismatch:Netloc topology does not contain the node
 **topotoolarge:Topology size is greater than communicator size
 **topotoolarge %d %d:Topology size %d is larger than communicator size (%d)
 **notcarttopo:No Cartesian topology associated with this communicator
@@ -199,6 +210,9 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 
 **typenotpredefined: Datatype must be predefined
 
+**treetype: Invalid tree type used for initializing Tree algorithms
+**treetype %d: Invalid tree type (%d) used for initializing Tree algorithms
+
 # -- FIXME: Some (but not all) of the messages below this line have been used
 #---- The messages below this line haven't been used yet.
 #
@@ -335,6 +349,8 @@ be in the range 0 to %d
 **infonkey %d %d:Requested key %d but this MPI_Info only has %d keys
 **io:Other I/O error 
 **io %s:Other I/O error %s
+**iobadoverlap: write voilates monotonically non-decreasing
+**iobadoverlap %s: write voilates monotonically non-decreasing %s
 **ioetype:Only an integral number of etypes can be accessed
 **iofstypeunsupported:Specified filesystem is not available
 **iosplitcoll:Only one active split collective I/O operation is allowed per file handle
@@ -429,6 +445,7 @@ unexpected messages queued.
 **proc_failed:Process failed
 **failure_pending:Request pending due to failure
 **revoked:Communication object revoked
+**eagain:Operation could not be issued (EAGAIN)
 # Duplicates?
 #**argnull:Invalid null parameter
 #**argnull %s:Invalid null parameter %s
@@ -560,7 +577,7 @@ is too big (> MPIU_SHMW_GHND_SZ)
 #
 **MPIDI_CH3I_SHM_Attach_to_mem:MPIDI_CH3I_SHM_Attach_to_mem failed
 **MPIDI_CH3I_SHM_Attach_to_mem %d:MPIDI_CH3I_SHM_Attach_to_mem failed, error %d
-**MPIU_Strdup:MPIU_Strdup failed
+**MPL_strdup:MPL_strdup failed
 **business_card:Invalid business card
 **business_card %s:Invalid business card (%s)
 **OpenProcess:OpenProcess failed
@@ -708,14 +725,6 @@ is too big (> MPIU_SHMW_GHND_SZ)
 #
 **ioctl:ioctl failed
 **ioctl %d %s:ioctl failed errno=%d - %s
-**alloc_shar_mem:unable to allocate shared memory
-**alloc_shar_mem %s %s:unable to allocate shared memory - %s %s
-**attach_shar_mem:unable to attach to shared memory
-**attach_shar_mem %s %s:unable to attach to shared memory - %s %s
-**remove_shar_mem:unable to remove shared memory
-**remove_shar_mem %s %s:unable to remove shared memory - %s %s
-**detach_shar_mem:unable to detach shared memory
-**detach_shar_mem %s %s:unable to detach shared memory - %s %s
 **read %d %s:read from socket failed - nread=%d %s
 **winput_oob:target pointer for win_put is out of bounds
 **winget_oob:source pointer for win_get is out of bounds
@@ -839,8 +848,6 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mktemp_s %s:mktemp_s failed, %s
 **lseek:lseek failed
 **lseek %s:lseek failed - %s
-**fdopen:fdopen failed
-**fdopen %s:fdopen failed %s
 **tmpnam:tmpnam failed
 **tmpnam %s:tmpnam failed %s
 **fopen:fopen failed
@@ -1017,27 +1024,27 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpi_pack_size:MPI_Pack_size failed
 **mpi_pack_size %d %D %C %p:MPI_Pack_size(count=%d, %D, %C, size=%p) failed
 **mpi_barrier:MPI_Barrier failed
-**mpi_barrier %C:MPI_Barrier(%C) failed
+**mpi_barrier %C:MPI_Barrier(comm=%C) failed
 **mpi_bcast:MPI_Bcast failed
-**mpi_bcast %p %d %D %d %C:MPI_Bcast(buf=%p, count=%d, %D, root=%d, %C) failed
+**mpi_bcast %p %d %D %d %C:MPI_Bcast(buf=%p, count=%d, %D, root=%d, comm=%C) failed
 **mpi_gather:MPI_Gather failed
-**mpi_gather %p %d %D %p %d %D %d %C:MPI_Gather(sbuf=%p, scount=%d, %D, rbuf=%p, rcount=%d, %D, root=%d, %C) failed
+**mpi_gather %p %d %D %p %d %D %d %C:MPI_Gather(sbuf=%p, scount=%d, %D, rbuf=%p, rcount=%d, %D, root=%d, comm=%C) failed
 **mpi_gatherv:MPI_Gatherv failed
-**mpi_gatherv %p %d %D %p %p %p %D %d %C:MPI_Gatherv failed(sbuf=%p, scount=%d, %D, rbuf=%p, rcnts=%p, displs=%p, %D, root=%d, %C) failed
+**mpi_gatherv %p %d %D %p %p %p %D %d %C:MPI_Gatherv failed(sbuf=%p, scount=%d, %D, rbuf=%p, rcnts=%p, displs=%p, datatype=%D, root=%d, comm=%C) failed
 **mpi_scatter:MPI_Scatter failed
-**mpi_scatter %p %d %D %p %d %D %d %C:MPI_Scatter(sbuf=%p, scount=%d, %D, rbuf=%p, rcount=%d, %D, root=%d, %C) failed
+**mpi_scatter %p %d %D %p %d %D %d %C:MPI_Scatter(sbuf=%p, scount=%d, %D, rbuf=%p, rcount=%d, %D, root=%d, comm=%C) failed
 **mpi_scatterv:MPI_Scatterv failed
-**mpi_scatterv %p %p %p %D %p %d %D %d %C:MPI_Scatterv(sbuf=%p, scnts=%p, displs=%p, %D, rbuf=%p, rcount=%d, %D, root=%d, %C) failed
+**mpi_scatterv %p %p %p %D %p %d %D %d %C:MPI_Scatterv(sbuf=%p, scnts=%p, displs=%p, %D, rbuf=%p, rcount=%d, %D, root=%d, comm=%C) failed
 **mpi_allgather:MPI_Allgather failed
-**mpi_allgather %p %d %D %p %d %D %C:MPI_Allgather(sbuf=%p, scount=%d, %D, rbuf=%p, rcount=%d, %D, %C) failed
+**mpi_allgather %p %d %D %p %d %D %C:MPI_Allgather(sbuf=%p, scount=%d, %D, rbuf=%p, rcount=%d, datatype=%D, comm=%C) failed
 **mpi_allgatherv:MPI_Allgatherv failed
-**mpi_allgatherv %p %d %D %p %p %p %D %C:MPI_Allgatherv(sbuf=%p, scount=%d, %D, rbuf=%p, rcounts=%p, displs=%p, %D, %C) failed
+**mpi_allgatherv %p %d %D %p %p %p %D %C:MPI_Allgatherv(sbuf=%p, scount=%d, %D, rbuf=%p, rcounts=%p, displs=%p, datatype=%D, comm=%C) failed
 **mpi_alltoall:MPI_Alltoall failed
-**mpi_alltoall %p %d %D %p %d %D %C:MPI_Alltoall(sbuf=%p, scount=%d, %D, rbuf=%p, rcount=%d, %D, %C) failed
+**mpi_alltoall %p %d %D %p %d %D %C:MPI_Alltoall(sbuf=%p, scount=%d, %D, rbuf=%p, rcount=%d, datatype=%D, comm=%C) failed
 **mpi_alltoallv:MPI_Alltoallv failed
-**mpi_alltoallv %p %p %p %D %p %p %p %D %C:MPI_Alltoallv(sbuf=%p, scnts=%p, sdispls=%p, %D, rbuf=%p, rcnts=%p, rdispls=%p, %D, %C) failed
+**mpi_alltoallv %p %p %p %D %p %p %p %D %C:MPI_Alltoallv(sbuf=%p, scnts=%p, sdispls=%p, %D, rbuf=%p, rcnts=%p, rdispls=%p, datatype=%D, comm=%C) failed
 **mpi_reduce:MPI_Reduce failed
-**mpi_reduce %p %p %d %D %O %d %C:MPI_Reduce(sbuf=%p, rbuf=%p, count=%d, %D, %O, root=%d, %C) failed
+**mpi_reduce %p %p %d %D %O %d %C:MPI_Reduce(sbuf=%p, rbuf=%p, count=%d, datatype=%D, op=%O, root=%d, comm=%C) failed
 **mpi_op_create:MPI_Op_create failed
 **mpi_op_create %p %d %p:MPI_Op_create(fn=%p, commute=%d, op=%p) failed
 **mpi_op_free:MPI_Op_free failed
@@ -1045,15 +1052,15 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpi_op_commutative:MPI_Op_commutative failed
 **mpi_op_commutative %O %p:MPI_Op_commutative(op=%O, commute=%p) failed
 **mpi_allreduce:MPI_Allreduce failed
-**mpi_allreduce %p %p %d %D %O %C:MPI_Allreduce(sbuf=%p, rbuf=%p, count=%d, %D, %O, %C) failed
+**mpi_allreduce %p %p %d %D %O %C:MPI_Allreduce(sbuf=%p, rbuf=%p, count=%d, datatype=%D, op=%O, comm=%C) failed
 **mpi_reduce_scatter:MPI_Reduce_scatter failed
-**mpi_reduce_scatter %p %p %p %D %O %C:MPI_Reduce_scatter(sbuf=%p, rbuf=%p, rcnts=%p, %D, %O, %C) failed
+**mpi_reduce_scatter %p %p %p %D %O %C:MPI_Reduce_scatter(sbuf=%p, rbuf=%p, rcnts=%p, datatype=%D, op=%O, comm=%C) failed
 **mpi_reduce_scatter_block:MPI_Reduce_scatter_block failed
-**mpi_reduce_scatter_block %p %p %d %D %O %C:MPI_Reduce_scatter_block(sbuf=%p, rbuf=%p, recvcount=%d, %D, %O, %C) failed
+**mpi_reduce_scatter_block %p %p %d %D %O %C:MPI_Reduce_scatter_block(sbuf=%p, rbuf=%p, recvcount=%d, datatype=%D, op=%O, comm=%C) failed
 **mpi_reduce_local:MPI_Reduce_local failed
-**mpi_reduce_local %p %p %d %D %O:MPI_Reduce_local(inbuf=%p, inoutbuf=%p, count=%d, %D, %O) failed
+**mpi_reduce_local %p %p %d %D %O:MPI_Reduce_local(inbuf=%p, inoutbuf=%p, count=%d, datatype=%D, op=%O) failed
 **mpi_scan:MPI_Scan failed
-**mpi_scan %p %p %d %D %O %C:MPI_Scan(sbuf=%p, rbuf=%p, count=%d, %D, %O, %C) failed
+**mpi_scan %p %p %d %D %O %C:MPI_Scan(sbuf=%p, rbuf=%p, count=%d, datatype=%D, op=%O, comm=%C) failed
 **mpi_group_size:MPI_Group_size failed
 **mpi_group_size %G %p:MPI_Group_size(%G, size=%p) failed
 **mpi_group_rank:MPI_Group_rank failed
@@ -1202,7 +1209,7 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpi_comm_spawn_multiple:MPI_Comm_spawn_multiple failed
 **mpi_comm_spawn_multiple %d %p %p %p %p %d %C %p %p:MPI_Comm_spawn_multiple(count=%d, cmds=%p, argvs=%p, maxprocs=%p, infos=%p, root=%d, %C, intercomm=%p, errors=%p) failed
 **mpi_lookup_name:MPI_Lookup_name failed
-**mpi_lookup_name %s %I %p:MPI_Lookup_name(service=\"%s\", %I, port=%p) failed
+**mpi_lookup_name %s %I %s:MPI_Lookup_name(service=\"%s\", %I, port=%s) failed
 **mpi_open_port:MPI_Open_port failed
 **mpi_open_port %I %p:MPI_Open_port(%I, port=%p) failed
 **mpi_publish_name:MPI_Publish_name failed
@@ -1501,8 +1508,8 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpir_comm_get_attr %C %d %p %p:MPIR_Comm_get_attr(%C, comm_keyval=%d, attribute_val=%p, flag=%p) failed
 **mpir_type_get_attr:MPIR_Type_get_attr failed
 **mpir_type_get_attr %D %d %p %p:MPIR_Type_get_attr(%D, type_keyval=%d, attribute_val=%p, flag=%p) failed
-**mpir_wingetattr:MPIR_WinGetAttr failed
-**mpir_wingetattr %W %d %p %p:MPIR_WinGetAttr(%W, win_keyval=%d, attribute_val=%p, flag=%p) failed
+**mpir_wingetattr:MPII_Win_get_attr failed
+**mpir_wingetattr %W %d %p %p:MPII_Win_get_attr(%W, win_keyval=%d, attribute_val=%p, flag=%p) failed
 
 ## MPI-3 Mprobe routines
 **mpi_improbe: MPI_Improbe failed
@@ -1590,6 +1597,9 @@ is too big (> MPIU_SHMW_GHND_SZ)
 
 # Datarep conversion function not supported by ROMIO (Temproary until implemented)
 **drconvnotsupported:Read and Write datarep conversions are currently not supported by MPI-IO
+
+# Argobots related error messages
+**argobots_uninitialized:Argobots is not initialized
 
 # -----------------------------------------------------------------------------
 # The following names are defined but not used (see the -careful option 

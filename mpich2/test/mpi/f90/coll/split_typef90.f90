@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/coll/split_typef.f with f77tof90
+! This file created from f77/coll/split_typef.f with f77tof90
 ! -*- Mode: Fortran; -*-
 !
 !  (C) 2012 by Argonne National Laboratory.
@@ -19,6 +19,7 @@
       call mtest_init( ierr )
 
       call mpi_comm_dup( MPI_COMM_WORLD, comm, ierr )
+      call mpi_comm_rank( comm, rank , ierr )
 
       call mpi_comm_split_type( comm, MPI_COMM_TYPE_SHARED, rank, &
       &     MPI_INFO_NULL, newcomm, ierr )
@@ -42,5 +43,4 @@
       call mpi_comm_free( comm, ierr )
 
       call mtest_finalize( errs )
-      call mpi_finalize( ierr )
       end

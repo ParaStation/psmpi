@@ -9,7 +9,6 @@
 #include "mpiexec.h"
 #include "pmci.h"
 #include "bsci.h"
-#include "hydt_ftb.h"
 #include "demux.h"
 #include "ui.h"
 #include "uiu.h"
@@ -35,7 +34,6 @@ static void signal_cb(int signum)
             HYDU_dump(stderr, "No checkpoint prefix provided\n");
             return;
         }
-
 #if HAVE_ALARM
         if (HYD_ui_mpich_info.ckpoint_int != -1)
             alarm(HYD_ui_mpich_info.ckpoint_int);
@@ -104,7 +102,7 @@ static HYD_status qsort_node_list(void)
     for (count = 0, node = HYD_server_info.node_list; node; node = node->next, count++)
         /* skip */ ;
 
-    HYDU_MALLOC(node_list, struct HYD_node **, count * sizeof(struct HYD_node *), status);
+    HYDU_MALLOC_OR_JUMP(node_list, struct HYD_node **, count * sizeof(struct HYD_node *), status);
     for (i = 0, node = HYD_server_info.node_list; node; node = node->next, i++)
         node_list[i] = node;
 
@@ -118,7 +116,7 @@ static HYD_status qsort_node_list(void)
     }
     HYD_server_info.node_list = new_list;
 
-    HYDU_FREE(node_list);
+    MPL_free(node_list);
 
   fn_exit:
     return status;
@@ -144,9 +142,6 @@ int main(int argc, char **argv)
 
     status = HYDU_set_common_signals(signal_cb);
     HYDU_ERR_POP(status, "unable to set signal\n");
-
-    status = HYDT_ftb_init();
-    HYDU_ERR_POP(status, "unable to initialize FTB\n");
 
     /* Get user preferences */
     status = HYD_uii_mpx_get_parameters(argv);
@@ -178,8 +173,7 @@ int main(int argc, char **argv)
         /* If we already have a host list at this point, it must have
          * come from the user */
         user_provided_host_list = 1;
-    }
-    else {
+    } else {
         /* Node list is not created yet. The user might not have
          * provided the host file. Query the RMK. */
         status = HYDT_bsci_query_node_list(&HYD_server_info.node_list);
@@ -257,9 +251,13 @@ int main(int argc, char **argv)
 
     /* If the number of processes is not given, we allocate all the
      * available nodes to each executable */
+    /* NOTE:
+     *   user may accidently give on command line -np 0, or even -np -1,
+     *   these cases will all be treated as if it is being ignored.
+     */
     HYD_server_info.pg_list.pg_process_count = 0;
     for (exec = HYD_uii_mpx_exec_list; exec; exec = exec->next) {
-        if (exec->proc_count == -1) {
+        if (exec->proc_count <= 0) {
             global_core_count = 0;
             for (node = HYD_server_info.node_list, i = 0; node; node = node->next, i++)
                 global_core_count += node->core_count;
@@ -284,20 +282,14 @@ int main(int argc, char **argv)
      * the list of nodes passed to us */
     if (HYD_server_info.localhost == NULL) {
         /* See if the node list contains a localhost */
-        for (node = HYD_server_info.node_list; node; node = node->next) {
-            int is_local;
-
-            status = HYDU_sock_is_local(node->hostname, &is_local);
-            HYDU_ERR_POP(status, "unable to check if %s is local\n", node->hostname);
-
-            if (is_local)
+        for (node = HYD_server_info.node_list; node; node = node->next)
+            if (MPL_host_is_local(node->hostname))
                 break;
-        }
 
         if (node)
-            HYD_server_info.localhost = HYDU_strdup(node->hostname);
+            HYD_server_info.localhost = MPL_strdup(node->hostname);
         else {
-            HYDU_MALLOC(HYD_server_info.localhost, char *, MAX_HOSTNAME_LEN, status);
+            HYDU_MALLOC_OR_JUMP(HYD_server_info.localhost, char *, MAX_HOSTNAME_LEN, status);
             if (gethostname(HYD_server_info.localhost, MAX_HOSTNAME_LEN) < 0)
                 HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "unable to get local hostname\n");
         }
@@ -325,7 +317,7 @@ int main(int argc, char **argv)
         MPL_env2str("MPICH_PORT_RANGE", (const char **) &HYD_server_info.port_range) ||
         MPL_env2str("MPIEXEC_PORTRANGE", (const char **) &HYD_server_info.port_range) ||
         MPL_env2str("MPIEXEC_PORT_RANGE", (const char **) &HYD_server_info.port_range))
-        HYD_server_info.port_range = HYDU_strdup(HYD_server_info.port_range);
+        HYD_server_info.port_range = MPL_strdup(HYD_server_info.port_range);
 
     /* Add the stdout/stderr callback handlers */
     HYD_server_info.stdout_cb = HYD_uiu_stdout_cb;
@@ -374,9 +366,6 @@ int main(int argc, char **argv)
     status = HYD_pmci_finalize();
     HYDU_ERR_POP(status, "process manager error on finalize\n");
 
-    status = HYDT_ftb_finalize();
-    HYDU_ERR_POP(status, "error finalizing FTB\n");
-
 #if defined ENABLE_PROFILING
     if (HYD_server_info.enable_profiling) {
         HYDU_dump_noprefix(stdout, "\n");
@@ -391,6 +380,7 @@ int main(int argc, char **argv)
     /* Free the mpiexec params */
     HYD_uiu_free_params();
     HYDU_free_exec_list(HYD_uii_mpx_exec_list);
+    HYDU_sock_finalize();
 
   fn_exit:
     HYDU_dbg_finalize();
@@ -405,14 +395,11 @@ int main(int argc, char **argv)
         printf("This typically refers to a problem with your application.\n");
         printf("Please see the FAQ page for debugging suggestions\n");
         return exit_status;
-    }
-    else if (WIFEXITED(exit_status)) {
+    } else if (WIFEXITED(exit_status)) {
         return WEXITSTATUS(exit_status);
-    }
-    else if (WIFSTOPPED(exit_status)) {
+    } else if (WIFSTOPPED(exit_status)) {
         return WSTOPSIG(exit_status);
-    }
-    else {
+    } else {
         return exit_status;
     }
 

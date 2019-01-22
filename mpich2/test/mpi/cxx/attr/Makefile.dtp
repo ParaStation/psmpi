@@ -1,0 +1,3 @@
+noinst_PROGRAMS += fkeyvaltypex__BASIC__L26
+fkeyvaltypex__BASIC__L26_CPPFLAGS =  $(AM_CPPFLAGS)
+fkeyvaltypex__BASIC__L26_SOURCES = fkeyvaltypex.cxx

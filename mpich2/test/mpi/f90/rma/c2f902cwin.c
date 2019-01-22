@@ -1,4 +1,4 @@
-/* This file created from test/mpi/f77/rma/c2f2cwin.c with f77tof90 */
+/* This file created from f77/rma/c2f2cwin.c with f77tof90 */
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *

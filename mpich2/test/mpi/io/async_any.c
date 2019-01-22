@@ -44,24 +44,25 @@ int main(int argc, char **argv)
             /* Use a default filename of testfile */
             len = 8;
             filename = (char *) malloc(len + 10);
+            memset(filename, 0, (len + 10) * sizeof(char));
             strcpy(filename, "testfile");
             /*
              * fprintf(stderr, "\n*#  Usage: async_any -fname filename\n\n");
              * MPI_Abort(MPI_COMM_WORLD, 1);
              */
-        }
-        else {
+        } else {
             argv++;
             len = (int) strlen(*argv);
             filename = (char *) malloc(len + 10);
+            MTEST_VG_MEM_INIT(filename, (len + 10) * sizeof(char));
             strcpy(filename, *argv);
         }
         MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
         MPI_Bcast(filename, len + 10, MPI_CHAR, 0, MPI_COMM_WORLD);
-    }
-    else {
+    } else {
         MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
         filename = (char *) malloc(len + 10);
+        MTEST_VG_MEM_INIT(filename, (len + 10) * sizeof(char));
         MPI_Bcast(filename, len + 10, MPI_CHAR, 0, MPI_COMM_WORLD);
     }
 
@@ -110,6 +111,5 @@ int main(int argc, char **argv)
     free(tmp);
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

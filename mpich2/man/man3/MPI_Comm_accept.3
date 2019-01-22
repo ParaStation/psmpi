@@ -1,26 +1,26 @@
-.TH MPI_Comm_accept 3 "11/9/2015" " " "MPI"
+.TH MPI_Comm_accept 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Comm_accept \-  Accept a request to form a new intercommunicator 
 .SH SYNOPSIS
 .nf
 int MPI_Comm_accept(const char *port_name, MPI_Info info, int root, MPI_Comm comm,
-                    MPI_Comm *newcomm)
+                    MPI_Comm * newcomm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B port_name 
-- port name (string, used only on root) 
+- port name (string, used only on root)
 .PD 1
 .PD 0
 .TP
 .B info 
-- implementation-dependent information (handle, used only on root) 
+- implementation-dependent information (handle, used only on root)
 .PD 1
 .PD 0
 .TP
 .B root 
-- rank in comm of root node (integer) 
+- rank in comm of root node (integer)
 .PD 1
 .PD 0
 .TP
@@ -32,7 +32,7 @@ int MPI_Comm_accept(const char *port_name, MPI_Info info, int root, MPI_Comm com
 .PD 0
 .TP
 .B newcomm 
-- intercommunicator with client as remote group (handle) 
+- intercommunicator with client as remote group (handle)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

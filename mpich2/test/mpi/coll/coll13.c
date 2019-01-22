@@ -38,12 +38,12 @@ int main(int argc, char *argv[])
         if (argv[i][0] != '-')
             continue;
         switch (argv[i][1]) {
-        case 'm':
-            chunk = atoi(argv[++i]);
-            break;
-        default:
-            fprintf(stderr, "Unrecognized argument %s\n", argv[i]);
-            MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+            case 'm':
+                chunk = atoi(argv[++i]);
+                break;
+            default:
+                fprintf(stderr, "Unrecognized argument %s\n", argv[i]);
+                MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
         }
     }
 
@@ -76,7 +76,6 @@ int main(int argc, char *argv[])
     free(sb);
     free(rb);
 
-    MPI_Finalize();
 
     return MTestReturnValue(status);
 }

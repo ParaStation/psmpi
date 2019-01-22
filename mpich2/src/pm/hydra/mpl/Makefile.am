@@ -7,14 +7,10 @@
 ACLOCAL_AMFLAGS = -I confdb
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
 
-noinst_LTLIBRARIES = lib@MPLLIBNAME@.la
-lib@MPLLIBNAME@_la_SOURCES = \
-	src/mplstr.c \
-	src/mpltrmem.c \
-	src/mplenv.c \
-	src/mplmsg.c \
-	src/mplsock.c
+lib@MPLLIBNAME@_la_SOURCES =
 lib@MPLLIBNAME@_la_LDFLAGS = ${lib@MPLLIBNAME@_so_versionflags}
+
+include src/Makefile.mk
 
 MPL_TESTS = strsep
 TESTS = $(MPL_TESTS)
@@ -22,22 +18,28 @@ check_PROGRAMS = $(MPL_TESTS)
 strsep_SOURCES = test/strsep.c
 strsep_LDADD = lib@MPLLIBNAME@.la
 
-mpl_headers =              \
-    include/mpl.h          \
-    include/mpl_utlist.h   \
-    include/mpl_valgrind.h \
-    include/mplconfig.h    \
-    include/mplenv.h       \
-    include/mplstr.h       \
-    include/mpltrmem.h     \
-    include/mplmsg.h       \
-    include/mpliov.h       \
-    include/mplsock.h
+mpl_headers =               \
+    include/mpl.h           \
+    include/mpl_base.h      \
+    include/mpl_math.h      \
+    include/mplconfig.h     \
+    include/utlist.h    \
+    include/mpl_valgrind.h  \
+    include/mpl_env.h       \
+    include/mpl_str.h       \
+    include/mpl_trmem.h     \
+    include/mpl_msg.h       \
+    include/mpl_sock.h      \
+    include/mpl_iov.h       \
+    include/mpl_bt.h        \
+    include/mpl_shm.h
 
 if MPL_EMBEDDED_MODE
 noinst_HEADERS = $(mpl_headers)
+noinst_LTLIBRARIES = lib@MPLLIBNAME@.la
 else !MPL_EMBEDDED_MODE
 include_HEADERS = $(mpl_headers)
+lib_LTLIBRARIES = lib@MPLLIBNAME@.la
 endif !MPL_EMBEDDED_MODE
 
 # --------------------------------------------------------------------------

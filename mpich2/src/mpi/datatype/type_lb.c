@@ -15,7 +15,8 @@
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Type_lb as PMPI_Type_lb
 #elif defined(HAVE_WEAK_ATTRIBUTE)
-int MPI_Type_lb(MPI_Datatype datatype, MPI_Aint *displacement) __attribute__((weak,alias("PMPI_Type_lb")));
+int MPI_Type_lb(MPI_Datatype datatype, MPI_Aint * displacement)
+    __attribute__ ((weak, alias("PMPI_Type_lb")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -29,14 +30,14 @@ int MPI_Type_lb(MPI_Datatype datatype, MPI_Aint *displacement) __attribute__((we
 #define FUNCNAME MPIR_Type_lb_impl
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-void MPIR_Type_lb_impl(MPI_Datatype datatype, MPI_Aint *displacement)
+void MPIR_Type_lb_impl(MPI_Datatype datatype, MPI_Aint * displacement)
 {
     if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
-	*displacement = 0;
+        *displacement = 0;
     } else {
-        MPID_Datatype *datatype_ptr = NULL;
-        MPID_Datatype_get_ptr(datatype, datatype_ptr);
-	*displacement = datatype_ptr->lb;
+        MPIR_Datatype *datatype_ptr = NULL;
+        MPIR_Datatype_get_ptr(datatype, datatype_ptr);
+        *displacement = datatype_ptr->lb;
     }
 }
 
@@ -68,67 +69,68 @@ The replacement for this routine is 'MPI_Type_Get_extent'.
 .N MPI_ERR_TYPE
 .N MPI_ERR_ARG
 @*/
-int MPI_Type_lb(MPI_Datatype datatype, MPI_Aint *displacement)
+int MPI_Type_lb(MPI_Datatype datatype, MPI_Aint * displacement)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_LB);
+    MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_TYPE_LB);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_LB);
+    MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPI_TYPE_LB);
 
     /* Validate parameters, especially handles needing to be converted */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
+            MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
     }
-#   endif
+#endif
 
     /* Validate parameters and objects (post conversion) */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPID_Datatype *datatype_ptr = NULL;
+            MPIR_Datatype *datatype_ptr = NULL;
 
             /* Convert MPI object handles to object pointers */
-            MPID_Datatype_get_ptr(datatype, datatype_ptr);
+            MPIR_Datatype_get_ptr(datatype, datatype_ptr);
 
             /* Validate datatype_ptr */
-            MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
-            if (mpi_errno) goto fn_fail;
+            MPIR_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+            if (mpi_errno)
+                goto fn_fail;
+            MPIR_ERRTEST_ARGNULL(displacement, "displacement", mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
     }
-#   endif /* HAVE_ERROR_CHECKING */
+#endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
 
     MPIR_Type_lb_impl(datatype, displacement);
-    
+
     /* ... end of body of routine ... */
 
 #ifdef HAVE_ERROR_CHECKING
   fn_exit:
 #endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_LB);
+    MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPI_TYPE_LB);
     return mpi_errno;
 
     /* --BEGIN ERROR HANDLING-- */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
   fn_fail:
     {
-	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-	    "**mpi_type_lb",
-	    "**mpi_type_lb %D %p", datatype, displacement);
+        mpi_errno =
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+                                 "**mpi_type_lb", "**mpi_type_lb %D %p", datatype, displacement);
     }
     mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     goto fn_exit;
-#   endif
+#endif
     /* --END ERROR HANDLING-- */
 }

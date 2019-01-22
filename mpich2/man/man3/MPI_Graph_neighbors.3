@@ -1,26 +1,25 @@
-.TH MPI_Graph_neighbors 3 "11/9/2015" " " "MPI"
+.TH MPI_Graph_neighbors 3 "11/21/2018" " " "MPI"
 .SH NAME
-MPI_Graph_neighbors \-  Returns the neighbors of a node associated  with a graph topology 
+MPI_Graph_neighbors \-  Returns the neighbors of a node associated with a graph topology 
 .SH SYNOPSIS
 .nf
-int MPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors, 
-                      int neighbors[])
+int MPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors, int neighbors[])
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B comm 
-- communicator with graph topology (handle) 
+- communicator with graph topology (handle)
 .PD 1
 .PD 0
 .TP
 .B rank 
-- rank of process in group of comm (integer) 
+- rank of process in group of comm (integer)
 .PD 1
 .PD 0
 .TP
 .B maxneighbors 
-- size of array neighbors (integer) 
+- size of array neighbors (integer)
 .PD 1
 
 .SH OUTPUT PARAMETERS
@@ -28,7 +27,7 @@ int MPI_Graph_neighbors(MPI_Comm comm, int rank, int maxneighbors,
 .TP
 .B neighbors 
 - ranks of processes that are neighbors to specified process
-(array of integer) 
+(array of integer)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

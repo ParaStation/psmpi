@@ -1,5 +1,5 @@
 # This Makefile.am generated automatically by f77tof90
-# from test/mpi/f77/io/Makefile.am.  DO NOT EDIT
+# from f77/io/Makefile.am.  DO NOT EDIT
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
@@ -64,7 +64,7 @@ c2f90multio_SOURCES     = c2f90multio.c
 # A) prevent the makefile-wide "LDADD=mtestf90.o" from affecting this program, or
 # B) link with the fortran compiler, otherwise we'll get link failures from
 # compilers with runtime support libs, such as PGI
-c2f90multio_LDADD =
+c2f90multio_LDADD = $(top_builddir)/util/mtest.o
 
 c2f2ciof90_SOURCES = c2f2ciof90.f90 c2f902cio.c
 
@@ -136,7 +136,6 @@ clean-local:
 
 DISTCLEANFILES = $(generated_io_sources)
 
-
 if MAINTAINER_MODE
 
 # f77tof90 only replaces output files if the contents differ, so we must use a
@@ -145,8 +144,8 @@ if MAINTAINER_MODE
 # change its contents
 $(srcdir)/Makefile.am: $(srcdir)/Makefile.am-stamp
 
-$(srcdir)/Makefile.am-stamp: $(master_top_srcdir)/test/mpi/f77/io/Makefile.am $(master_top_srcdir)/maint/f77tof90
-	( cd $(master_top_srcdir) && ./maint/f77tof90 test/mpi/f77/io test/mpi/f90/io Makefile.am Makefile.ap )
+$(srcdir)/Makefile.am-stamp: $(top_srcdir)/f77/io/Makefile.am $(top_srcdir)/maint/f77tof90
+	( cd $(top_srcdir) && ./maint/f77tof90 f77/io f90/io Makefile.am Makefile.ap )
 
 MAINTAINERCLEANFILES = Makefile.am-stamp
 EXTRA_DIST += Makefile.am-stamp  Makefile.ap

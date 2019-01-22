@@ -1,0 +1,20 @@
+Source: @PACKAGE@
+Section: libs
+Priority: extra
+Maintainer: ucx-group@elist.ornl.gov
+Build-Depends:
+Standards-Version: @MAJOR_VERSION@.@MINOR_VERSION@
+Homepage: http://www.openucx.org
+
+#Package: ucx-dev
+#Section: libdevel
+#Architecture: any
+#Depends: ucx (= ${binary:Version})
+#Description: Header files for UCX library
+
+Package: @PACKAGE@
+Section: libs
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Architecture: any
+Description: Unified Communication X
+ UCX is a communication library implementing high-performance messaging.

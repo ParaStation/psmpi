@@ -31,19 +31,21 @@ static HYD_status persist_cb(int fd, HYD_event_t events, void *userp)
         HYDU_ASSERT(!closed, status);
 
         if (hdr.io_type == HYDT_PERSIST_STDOUT) {
-            HYDU_sock_write(STDOUT_FILENO, buf, hdr.buflen, &sent, &closed, HYDU_SOCK_COMM_MSGWAIT);
+            status =
+                HYDU_sock_write(STDOUT_FILENO, buf, hdr.buflen, &sent, &closed,
+                                HYDU_SOCK_COMM_MSGWAIT);
             HYDU_ERR_POP(status, "stdout forwarding error\n");
             HYDU_ASSERT(!closed, status);
             HYDU_ASSERT(sent == hdr.buflen, status);
-        }
-        else {
-            HYDU_sock_write(STDERR_FILENO, buf, hdr.buflen, &sent, &closed, HYDU_SOCK_COMM_MSGWAIT);
+        } else {
+            status =
+                HYDU_sock_write(STDERR_FILENO, buf, hdr.buflen, &sent, &closed,
+                                HYDU_SOCK_COMM_MSGWAIT);
             HYDU_ERR_POP(status, "stderr forwarding error\n");
             HYDU_ASSERT(!closed, status);
             HYDU_ASSERT(sent == hdr.buflen, status);
         }
-    }
-    else {
+    } else {
         status = HYDT_dmx_deregister_fd(fd);
         HYDU_ERR_POP(status, "error deregistering fd\n");
 
@@ -74,8 +76,8 @@ HYD_status HYDT_bscd_persist_launch_procs(char **args, struct HYD_proxy *proxy_l
     for (idx = 0; args[idx]; idx++);
     args[idx + 1] = NULL;
 
-    HYDU_MALLOC(HYDT_bscd_persist_control_fd, int *,
-                HYDT_bscd_persist_node_count * sizeof(int), status);
+    HYDU_MALLOC_OR_JUMP(HYDT_bscd_persist_control_fd, int *,
+                        HYDT_bscd_persist_node_count * sizeof(int), status);
 
     for (proxy = proxy_list, i = 0; proxy; proxy = proxy->next, i++) {
         args[idx] = HYDU_int_to_str(i);

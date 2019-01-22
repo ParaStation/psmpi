@@ -1,9 +1,9 @@
-.TH MPI_Intercomm_merge 3 "11/9/2015" " " "MPI"
+.TH MPI_Intercomm_merge 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Intercomm_merge \-  Creates an intracommuncator from an intercommunicator 
 .SH SYNOPSIS
 .nf
-int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
+int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm * newintracomm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -18,7 +18,7 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 when creating the new communicator.  This is a boolean value; the group
 that sets high true has its processes ordered 
 .B after
-the group that sets 
+the group that sets
 this value to false.  If all processes in the intercommunicator provide
 the same value, the choice of which group is ordered first is arbitrary.
 .PD 1

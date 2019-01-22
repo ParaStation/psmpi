@@ -5,8 +5,10 @@
  */
 /* */
 #include <stdio.h>
+#include <string.h>
 #include "mpi.h"
 #include "mpitestconf.h"
+#include "mpitest.h"
 
 int main(int argc, char *argv[])
 {
@@ -23,7 +25,11 @@ int main(int argc, char *argv[])
     int newval;
     int errs = 0;
 
-    MPI_Init(&argc, &argv);
+    MTEST_VG_MEM_INIT(buf1, 400 * sizeof(char));
+    MTEST_VG_MEM_INIT(buf2, 400 * sizeof(char));
+    MTEST_VG_MEM_INIT(buf3, 400 * sizeof(char));
+
+    MTest_Init(&argc, &argv);
     MPI_T_init_thread(MPI_THREAD_SINGLE, &provided);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &wrank);
@@ -38,24 +44,21 @@ int main(int argc, char *argv[])
         if (strcmp(cname, "MPIR_CVAR_GATHER_VSMALL_MSG_SIZE") == 0) {
             gatherCvar = i;
             gatherScope = scope;
-        }
-        else if (strcmp(cname, "MPIR_CVAR_BCAST_SHORT_MSG_SIZE") == 0) {
+        } else if (strcmp(cname, "MPIR_CVAR_BCAST_SHORT_MSG_SIZE") == 0) {
             bcastCvar = i;
             bcastScope = scope;
             if (binding != MPI_T_BIND_NO_OBJECT && binding != MPI_T_BIND_MPI_COMM) {
                 fprintf(stderr, "Unexpected binding for MPIR_CVAR_BCAST_SHORT_MSG\n");
                 errs++;
             }
-        }
-        else if (strcmp(cname, "MPIR_CVAR_BCAST_LONG_MSG_SIZE") == 0) {
+        } else if (strcmp(cname, "MPIR_CVAR_BCAST_LONG_MSG_SIZE") == 0) {
             bcastLongCvar = i;
             bcastLongScope = scope;
             if (binding != MPI_T_BIND_NO_OBJECT && binding != MPI_T_BIND_MPI_COMM) {
                 fprintf(stderr, "Unexpected binding for MPIR_CVAR_BCAST_LONG_MSG\n");
                 errs++;
             }
-        }
-        else if (strcmp(cname, "MPIR_CVAR_BCAST_MIN_PROCS") == 0) {
+        } else if (strcmp(cname, "MPIR_CVAR_BCAST_MIN_PROCS") == 0) {
         }
     }
 
@@ -63,8 +66,7 @@ int main(int argc, char *argv[])
      * change it only on some processes */
     if (bcastCvar < 0 || bcastLongCvar < 0) {
         /* Skip because we did not find a corresponding control variable */
-    }
-    else {
+    } else {
         MPI_T_cvar_handle_alloc(bcastCvar, NULL, &bcastHandle, &bcastCount);
         if (bcastScope == MPI_T_SCOPE_LOCAL) {
             if ((wrank & 0x1)) {
@@ -76,8 +78,7 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "cvar write failed for bcast\n");
                 }
             }
-        }
-        else {
+        } else {
             newval = 100;
             MPI_T_cvar_write(bcastHandle, &newval);
             MPI_T_cvar_read(bcastHandle, &newval);
@@ -98,8 +99,7 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "cvar write failed for bcast long\n");
                 }
             }
-        }
-        else {
+        } else {
             newval = 100;
             MPI_T_cvar_write(bcastLongHandle, &newval);
             MPI_T_cvar_read(bcastLongHandle, &newval);
@@ -134,17 +134,8 @@ int main(int argc, char *argv[])
     /* For full coverage, should address all parameters for collective
      * algorithm selection */
 
-    if (wrank == 0) {
-        if (errs) {
-            printf("found %d errors\n", errs);
-        }
-        else {
-            printf(" No errors\n");
-        }
-    }
-
     MPI_T_finalize();
-    MPI_Finalize();
+    MTest_Finalize(errs);
 
-    return 0;
+    return MTestReturnValue(errs);
 }

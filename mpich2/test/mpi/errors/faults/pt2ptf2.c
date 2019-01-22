@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
     int err, toterrs, errs = 0;
     MPI_Comm newcomm;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
 
     MPI_Comm_size(MPI_COMM_WORLD, &wsize);
     MPI_Comm_rank(MPI_COMM_WORLD, &wrank);
@@ -36,8 +36,8 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(newcomm, &rank);
 
     /* Set errors return on COMM_WORLD and the new comm */
-    MPI_Comm_set_errhandler(MPI_ERRORS_RETURN, MPI_COMM_WORLD);
-    MPI_Comm_set_errhandler(MPI_ERRORS_RETURN, newcomm);
+    MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    MPI_Comm_set_errhandler(newcomm, MPI_ERRORS_RETURN);
 
     err = MPI_Barrier(MPI_COMM_WORLD);
     if (err)
@@ -45,8 +45,7 @@ int main(int argc, char *argv[])
     if (color) {
         /* Simulate a fault on some processes */
         exit(1);
-    }
-    else {
+    } else {
         /* To improve the chance that the "faulted" processes will have
          * exited, wait for 1 second */
         MTestSleep(1);
@@ -83,18 +82,9 @@ int main(int argc, char *argv[])
         errs += ReportErr(err, "Allreduce");
     MPI_Comm_free(&newcomm);
 
-    MPI_Finalize();
+    MTest_Finalize(toterrs);
 
-    if (wrank == 0) {
-        if (toterrs > 0) {
-            printf(" Found %d errors\n", toterrs);
-        }
-        else {
-            printf(" No Errors\n");
-        }
-    }
-
-    return 0;
+    return MTestReturnValue(errs);
 }
 
 int ReportErr(int errcode, const char name[])

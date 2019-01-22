@@ -81,8 +81,9 @@ int main(int argc, char **argv)
     int procid, nproc, i;
     MPI_Win llist_win;
     llist_ptr_t head_ptr, tail_ptr;
+    int errs = 0;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &procid);
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
@@ -139,8 +140,7 @@ int main(int argc, char **argv)
                     MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag,
                                MPI_STATUS_IGNORE);
 
-            }
-            else {
+            } else {
                 /* Tail pointer is stale, fetch the displacement.  May take multiple tries
                  * if it is being updated. */
                 do {
@@ -162,7 +162,6 @@ int main(int argc, char **argv)
      * number of elements. */
     if (procid == 0) {
         int have_root = 0;
-        int errors = 0;
         int *counts, count = 0;
 
         counts = (int *) malloc(sizeof(int) * nproc);
@@ -219,11 +218,10 @@ int main(int argc, char **argv)
             if (counts[i] != expected) {
                 printf("Error: Rank %d inserted %d elements, expected %d\n", i, counts[i],
                        expected);
-                errors++;
+                errs++;
             }
         }
 
-        printf("%s\n", errors == 0 ? " No Errors" : "FAIL");
         free(counts);
     }
 
@@ -233,6 +231,6 @@ int main(int argc, char **argv)
     for (; my_elems_count > 0; my_elems_count--)
         MPI_Free_mem(my_elems[my_elems_count - 1]);
 
-    MPI_Finalize();
-    return 0;
+    MTest_Finalize(errs);
+    return MTestReturnValue(errs);
 }

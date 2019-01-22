@@ -77,8 +77,7 @@ int main(int argc, char **argv)
                 partner = np - 1;
                 MPI_Send(MPI_BOTTOM, counts[j], offsettype, partner, tag, comm);
                 MPI_Type_free(&offsettype);
-            }
-            else if (rank == np - 1) {
+            } else if (rank == np - 1) {
                 partner = 0;
                 obuf = outbufs[j];
                 for (k = 0; k < bytesize[j]; k++)
@@ -143,6 +142,5 @@ int main(int argc, char **argv)
 
     MTestDatatype2Free(types, inbufs, outbufs, counts, bytesize, ntype);
     MTest_Finalize(err);
-    MPI_Finalize();
     return MTestReturnValue(err);
 }

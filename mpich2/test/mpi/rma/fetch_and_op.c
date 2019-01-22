@@ -15,29 +15,29 @@
 #define ITER 100
 
 #if defined (FOP_TYPE_CHAR)
-#  define TYPE_C   char
-#  define TYPE_MPI MPI_CHAR
-#  define TYPE_FMT "%d"
+#define TYPE_C   char
+#define TYPE_MPI MPI_CHAR
+#define TYPE_FMT "%d"
 #elif defined (FOP_TYPE_SHORT)
-#  define TYPE_C   short
-#  define TYPE_MPI MPI_SHORT
-#  define TYPE_FMT "%d"
+#define TYPE_C   short
+#define TYPE_MPI MPI_SHORT
+#define TYPE_FMT "%d"
 #elif defined (FOP_TYPE_LONG)
-#  define TYPE_C   long
-#  define TYPE_MPI MPI_LONG
-#  define TYPE_FMT "%ld"
+#define TYPE_C   long
+#define TYPE_MPI MPI_LONG
+#define TYPE_FMT "%ld"
 #elif defined (FOP_TYPE_DOUBLE)
-#  define TYPE_C   double
-#  define TYPE_MPI MPI_DOUBLE
-#  define TYPE_FMT "%f"
+#define TYPE_C   double
+#define TYPE_MPI MPI_DOUBLE
+#define TYPE_FMT "%f"
 #elif defined (FOP_TYPE_LONG_DOUBLE)
-#  define TYPE_C   long double
-#  define TYPE_MPI MPI_LONG_DOUBLE
-#  define TYPE_FMT "%Lf"
+#define TYPE_C   long double
+#define TYPE_MPI MPI_LONG_DOUBLE
+#define TYPE_FMT "%Lf"
 #else
-#  define TYPE_C   int
-#  define TYPE_MPI MPI_INT
-#  define TYPE_FMT "%d"
+#define TYPE_C   int
+#define TYPE_MPI MPI_INT
+#define TYPE_FMT "%d"
 #endif
 
 #define CMP(x, y) ((x - ((TYPE_C) (y))) > 1.0e-9)
@@ -65,8 +65,9 @@ int main(int argc, char **argv)
     int errors = 0, all_errors = 0;
     TYPE_C *val_ptr, *res_ptr;
     MPI_Win win;
+    MPI_Info info = MPI_INFO_NULL;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
@@ -76,9 +77,25 @@ int main(int argc, char **argv)
 
     val_ptr = malloc(sizeof(TYPE_C) * nproc);
     res_ptr = malloc(sizeof(TYPE_C) * nproc);
+    MTEST_VG_MEM_INIT(val_ptr, sizeof(TYPE_C) * nproc);
+    MTEST_VG_MEM_INIT(res_ptr, sizeof(TYPE_C) * nproc);
 
-    MPI_Win_create(val_ptr, sizeof(TYPE_C) * nproc, sizeof(TYPE_C), MPI_INFO_NULL, MPI_COMM_WORLD,
-                   &win);
+#ifdef TEST_HWACC_INFO
+    MPI_Info_create(&info);
+    MPI_Info_set(info, "disable_shm_accumulate", "true");
+#endif
+
+#ifdef TEST_ACCOPS_INFO
+    if (info == MPI_INFO_NULL)
+        MPI_Info_create(&info);
+    MPI_Info_set(info, "which_accumulate_ops", "sum,no_op");
+#endif
+
+    MPI_Win_create(val_ptr, sizeof(TYPE_C) * nproc, sizeof(TYPE_C), info, MPI_COMM_WORLD, &win);
+
+#if defined(TEST_HWACC_INFO) || defined(TEST_ACCOPS_INFO)
+    MPI_Info_free(&info);
+#endif
 
     /* Test self communication */
 
@@ -318,14 +335,9 @@ int main(int argc, char **argv)
 
     MPI_Win_free(&win);
 
-    MPI_Reduce(&errors, &all_errors, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-
-    if (rank == 0 && all_errors == 0)
-        printf(" No Errors\n");
-
     free(val_ptr);
     free(res_ptr);
-    MPI_Finalize();
+    MTest_Finalize(errors);
 
-    return 0;
+    return MTestReturnValue(all_errors);
 }

@@ -270,7 +270,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_cart_get_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fin
 
     if (*ierr == MPI_SUCCESS) {int li;
      for (li=0; li<*v2; li++) {
-        v4[li] = MPIR_TO_FLOG(v4[li]);
+        v4[li] = MPII_TO_FLOG(v4[li]);
      }
     }
 }

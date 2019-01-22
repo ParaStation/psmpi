@@ -579,7 +579,7 @@ if test -z "$FC" ; then
    FC=f90
 fi
 KINDVAL=""
-if $FC -o conftest$EXEEXT conftest.$ac_f90ext >/dev/null 2>&1 ; then
+if $FC -o conftest$EXEEXT conftest.$ac_f90ext $FCFLAGS >/dev/null 2>&1 ; then
     ./conftest$EXEEXT >/dev/null 2>&1
     if test -s conftest.out ; then 
         KINDVAL=`cat conftest.out`
@@ -702,7 +702,7 @@ if test -z "$FC" ; then
    FC=f90
 fi
 KINDVAL=""
-if $FC -o kind$EXEEXT kind.f >/dev/null 2>&1 ; then
+if $FC -o kind$EXEEXT kind.f $FCFLAGS >/dev/null 2>&1 ; then
     ./kind >/dev/null 2>&1
     if test -s k.out ; then 
         KINDVAL=`cat k.out`
@@ -786,28 +786,6 @@ EOF
   fi
   rm -f conftest$EXEEXT mpitest.c
 ])dnl
-define(PAC_TEST_MPIU_FUNCS,[
-  AC_MSG_CHECKING(support for MPICH memory macros)
-  rm -f mpitest.c
-  cat > mpitest.c <<EOF
-#include "mpi.h"
-#include "stdio.h"
-  main(Int argc, char **argv)
-  {
-      MPIU_Free(NULL);
-  }
-EOF
-  rm -f conftest$EXEEXT
-  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest$EXEEXT mpitest.c $MPI_LIB > /dev/null 2>&1
-  if test -x conftest$EXEEXT ; then
-     AC_MSG_RESULT(yes)
-     AC_DEFINE(HAVE_MPIU_FUNCS,1,[Define if MPICH memory tracing macros defined])
-  else
-     AC_MSG_RESULT(no)
-  fi
-  rm -f conftest$EXEEXT mpitest.c
-])dnl
-dnl
 define(PAC_TEST_MPI_GREQUEST,[
   AC_MSG_CHECKING(support for generalized requests)
   rm -f mpitest.c

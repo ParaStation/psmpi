@@ -8,23 +8,22 @@
 #include "mpiimpl.h"
 
 /*D
-  
-MPI_DUP_FN - A function to simple-mindedly copy attributes  
+
+MPI_DUP_FN - A function to simple-mindedly copy attributes
 
 D*/
-int MPIR_Dup_fn ( MPI_Comm comm ATTRIBUTE((unused)), 
-		  int keyval ATTRIBUTE((unused)), 
-		  void *extra_state ATTRIBUTE((unused)), void *attr_in, 
-		  void *attr_out, int *flag )
+int MPIR_Dup_fn(MPI_Comm comm ATTRIBUTE((unused)),
+                int keyval ATTRIBUTE((unused)),
+                void *extra_state ATTRIBUTE((unused)), void *attr_in, void *attr_out, int *flag)
 {
     /* No error checking at present */
 
-    MPIU_UNREFERENCED_ARG(comm);
-    MPIU_UNREFERENCED_ARG(keyval);
-    MPIU_UNREFERENCED_ARG(extra_state);
+    MPL_UNREFERENCED_ARG(comm);
+    MPL_UNREFERENCED_ARG(keyval);
+    MPL_UNREFERENCED_ARG(extra_state);
 
     /* Set attr_out, the flag and return success */
-    (*(void **)attr_out) = attr_in;
+    (*(void **) attr_out) = attr_in;
     (*flag) = 1;
     return (MPI_SUCCESS);
 }

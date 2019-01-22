@@ -1,5 +1,5 @@
 # This Makefile.am generated automatically by f77tof90
-# from test/mpi/f77/pt2pt/Makefile.am.  DO NOT EDIT
+# from f77/pt2pt/Makefile.am.  DO NOT EDIT
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
@@ -14,14 +14,36 @@ EXTRA_DIST = testlist
 # avoid having to write many "foo_SOURCES = foo.f90" lines
 AM_DEFAULT_SOURCE_EXT = .f90
 
-noinst_PROGRAMS = allpairf90 statusesf90 greqf90 mprobef90
+noinst_PROGRAMS = sendf90 \
+                  ssendf90 \
+                  rsendf90 \
+                  isendf90 \
+                  irsendf90 \
+                  issendf90 \
+                  psendf90 \
+                  prsendf90 \
+                  pssendf90 \
+                  sendrecvf90 \
+                  sendrecvreplf90 \
+                  statusesf90 greqf90 \
+                  mprobef90
 
+sendf90_SOURCES = sendf90.f90 utilsf90.f90
+ssendf90_SOURCES = ssendf90.f90 utilsf90.f90
+rsendf90_SOURCES = rsendf90.f90 utilsf90.f90
+isendf90_SOURCES = isendf90.f90 utilsf90.f90
+irsendf90_SOURCES = irsendf90.f90 utilsf90.f90
+issendf90_SOURCES = issendf90.f90 utilsf90.f90
+psendf90_SOURCES = psendf90.f90 utilsf90.f90
+prsendf90_SOURCES = prsendf90.f90 utilsf90.f90
+pssendf90_SOURCES = pssendf90.f90 utilsf90.f90
+sendrecvf90_SOURCES = sendrecvf90.f90 utilsf90.f90
+sendrecvreplf90_SOURCES = sendrecvreplf90.f90 utilsf90.f90
 greqf90_SOURCES = greqf90.f90 dummyf90.f90
 
 ## attr1aints.h will be distributed because it's listed in AC_CONFIG_FILES/AC_OUTPUT
 
 # ensure that dependent tests will be rebuilt when typeaints.h is updated
-
 
 if MAINTAINER_MODE
 
@@ -31,8 +53,8 @@ if MAINTAINER_MODE
 # change its contents
 $(srcdir)/Makefile.am: $(srcdir)/Makefile.am-stamp
 
-$(srcdir)/Makefile.am-stamp: $(master_top_srcdir)/test/mpi/f77/pt2pt/Makefile.am $(master_top_srcdir)/maint/f77tof90
-	( cd $(master_top_srcdir) && ./maint/f77tof90 test/mpi/f77/pt2pt test/mpi/f90/pt2pt Makefile.am Makefile.ap )
+$(srcdir)/Makefile.am-stamp: $(top_srcdir)/f77/pt2pt/Makefile.am $(top_srcdir)/maint/f77tof90
+	( cd $(top_srcdir) && ./maint/f77tof90 f77/pt2pt f90/pt2pt Makefile.am Makefile.ap )
 
 MAINTAINERCLEANFILES = Makefile.am-stamp
 EXTRA_DIST += Makefile.am-stamp  

@@ -1,0 +1,28 @@
+.TH MPIR_Type_contiguous 3 "11/21/2018" " " "MPI"
+.SH NAME
+MPIR_Type_contiguous \-  create a contiguous datatype 
+.SH SYNOPSIS
+.nf
+int MPIR_Type_contiguous(int count, MPI_Datatype oldtype, MPI_Datatype * newtype)
+.fi
+.SH INPUT PARAMETERS
+.PD 0
+.TP
+.B count 
+- number of elements in the contiguous block
+.PD 1
+.PD 0
+.TP
+.B oldtype 
+- type (using handle) of datatype on which vector is based
+.PD 1
+
+.SH OUTPUT PARAMETERS
+.PD 0
+.TP
+.B newtype 
+- handle of new contiguous datatype
+.PD 1
+
+.SH RETURN VALUE
+MPI_SUCCESS on success, MPI error code on failure.

@@ -6,8 +6,9 @@
 
 external_subdirs = @mpl_srcdir@
 external_dist_subdirs = @mpl_dist_srcdir@
-external_ldflags = -L$(top_builddir)/@mpl_srcdir@
-external_libs = -lmpl @WRAPPER_LIBS@
+external_includes = @mpl_includedir@
+external_ldflags = @mpl_libdir@
+external_libs = @mpl_lib@ @WRAPPER_LIBS@
 
 bin_PROGRAMS =
 noinst_HEADERS =
@@ -16,9 +17,9 @@ EXTRA_DIST =
 SUFFIXES =
 doc1_src_txt =
 
-ACLOCAL_AMFLAGS = -I confdb
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/@mpl_srcdir@/include \
-	-I$(top_builddir)/@mpl_srcdir@/include
+ACLOCAL_AMFLAGS = -I confdb -I tools/topo/hwloc/hwloc/config
+AM_CPPFLAGS = -I$(top_srcdir)/include $(external_includes)
+AM_CFLAGS =
 
 noinst_HEADERS += include/hydra.h include/hydra_server.h
 

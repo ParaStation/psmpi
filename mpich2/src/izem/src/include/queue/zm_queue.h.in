@@ -1,0 +1,119 @@
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
+/*
+ * See COPYRIGHT in top-level directory.
+ */
+
+#ifndef _ZM_QUEUE_H
+#define _ZM_QUEUE_H
+
+#define ZM_RUNTIMEQUEUE_IF 0
+#define ZM_GLQUEUE_IF      1
+#define ZM_MSQUEUE_IF      2
+#define ZM_SWPQUEUE_IF     3
+#define ZM_FAQUEUE_IF      4
+#define ZM_MPBQUEUE_IF     5
+
+extern int zm_queue_if;
+
+int zm_queue_parse_name(const char *name);
+
+/* default queue interface, given by configure */
+#if !defined(ZM_QUEUE_CONF)
+#define ZM_QUEUE_CONF @ZM_QUEUE_CONF@
+#endif
+
+/* ZM_QUEUE_IF: used in the library code to determine which queue implementation to use.
+ * It is mapped to a constant if a user chooses a particular queue, or mapped to zm_queue_if
+ * (variable) if a user chooses `runtime` at configure time.
+ * If it is mapped to a constant (configure-time selection), a reasonable compiler can
+ * easily eliminate branches, so there won't be performance penalty due to queue selection. */
+#if ZM_QUEUE_CONF == ZM_RUNTIMEQUEUE_IF
+#  define ZM_QUEUE_IF      zm_queue_if
+#else
+#  define ZM_QUEUE_IF      ZM_QUEUE_CONF
+#endif /* ZM_QUEUE_CONF == ZM_RUNTIMEQUEUE_IF */
+
+/* Generic implementation of the queue interface */
+
+#include <assert.h>
+
+#include <queue/zm_glqueue.h>
+#include <queue/zm_msqueue.h>
+#include <queue/zm_swpqueue.h>
+#include <queue/zm_faqueue.h>
+
+static inline int zm_queue_init(zm_queue_t *q)
+{
+    if (ZM_QUEUE_CONF == ZM_RUNTIMEQUEUE_IF) {
+        const char *env_str = getenv("ZM_QUEUE_IF");
+        if (env_str == NULL) {
+            /* Fall back to default */
+            zm_queue_if = ZM_GLQUEUE_IF;
+        } else {
+            zm_queue_if = zm_queue_parse_name(env_str);
+        }
+    }
+
+    switch (ZM_QUEUE_IF) {
+        case ZM_GLQUEUE_IF:
+            return zm_glqueue_init(&q->glqueue);
+
+        case ZM_MSQUEUE_IF:
+            return zm_msqueue_init(&q->msqueue);
+
+        case ZM_SWPQUEUE_IF:
+            return zm_swpqueue_init(&q->swpqueue);
+
+        case ZM_FAQUEUE_IF:
+            return zm_faqueue_init(&q->faqueue);
+
+        default:
+            fprintf(stderr, "izem: Unknown queue interface specified. Falling back to glqueue.\n");
+            zm_queue_if = ZM_GLQUEUE_IF;
+            return zm_glqueue_init(&q->glqueue);
+    }
+}
+
+static inline int zm_queue_enqueue(zm_queue_t* q, void *data)
+{
+    switch (ZM_QUEUE_IF) {
+        case ZM_GLQUEUE_IF:
+            return zm_glqueue_enqueue(&q->glqueue, data);
+
+        case ZM_MSQUEUE_IF:
+            return zm_msqueue_enqueue(&q->msqueue, data);
+
+        case ZM_SWPQUEUE_IF:
+            return zm_swpqueue_enqueue(&q->swpqueue, data);
+
+        case ZM_FAQUEUE_IF:
+            return zm_faqueue_enqueue(&q->faqueue, data);
+
+        default:
+            assert(0);
+            return 0;
+    }
+}
+
+static inline int zm_queue_dequeue(zm_queue_t* q, void **data)
+{
+    switch (ZM_QUEUE_IF) {
+        case ZM_GLQUEUE_IF:
+            return zm_glqueue_dequeue(&q->glqueue, data);
+
+        case ZM_MSQUEUE_IF:
+            return zm_msqueue_dequeue(&q->msqueue, data);
+
+        case ZM_SWPQUEUE_IF:
+            return zm_swpqueue_dequeue(&q->swpqueue, data);
+
+        case ZM_FAQUEUE_IF:
+            return zm_faqueue_dequeue(&q->faqueue, data);
+
+        default:
+            assert(0);
+            return 0;
+    }
+}
+
+#endif /* #ifndef_ZM_QUEUE_H */

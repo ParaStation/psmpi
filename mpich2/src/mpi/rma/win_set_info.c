@@ -15,7 +15,7 @@
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Win_set_info as PMPI_Win_set_info
 #elif defined(HAVE_WEAK_ATTRIBUTE)
-int MPI_Win_set_info(MPI_Win win, MPI_Info info) __attribute__((weak,alias("PMPI_Win_set_info")));
+int MPI_Win_set_info(MPI_Win win, MPI_Info info) __attribute__ ((weak, alias("PMPI_Win_set_info")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -29,7 +29,8 @@ int MPI_Win_set_info(MPI_Win win, MPI_Info info) __attribute__((weak,alias("PMPI
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Win_set_info
-
+#undef FCNAME
+#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Win_set_info - Set new values for the hints of the window associated with
 win.
@@ -65,19 +66,18 @@ call.
 @*/
 int MPI_Win_set_info(MPI_Win win, MPI_Info info)
 {
-    static const char FCNAME[] = "MPI_Win_set_info";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Win *win_ptr = NULL;
-    MPID_Info *info_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_SET_INFO);
+    MPIR_Win *win_ptr = NULL;
+    MPIR_Info *info_ptr = NULL;
+    MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_WIN_SET_INFO);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
     MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
-    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_SET_INFO);
+    MPIR_FUNC_TERSE_RMA_ENTER(MPID_STATE_MPI_WIN_SET_INFO);
 
     /* Validate parameters, especially handles needing to be converted */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
@@ -85,51 +85,54 @@ int MPI_Win_set_info(MPI_Win win, MPI_Info info)
         }
         MPID_END_ERROR_CHECKS;
     }
-#   endif /* HAVE_ERROR_CHECKING */
+#endif /* HAVE_ERROR_CHECKING */
 
     /* Convert MPI object handles to object pointers */
-    MPID_Win_get_ptr( win, win_ptr );
-    MPID_Info_get_ptr( info, info_ptr );
+    MPIR_Win_get_ptr(win, win_ptr);
+    MPIR_Info_get_ptr(info, info_ptr);
 
     /* Validate parameters and objects (post conversion) */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate pointers */
-            MPID_Win_valid_ptr( win_ptr, mpi_errno );
-            if (mpi_errno) goto fn_fail;
+            MPIR_Win_valid_ptr(win_ptr, mpi_errno);
+            if (mpi_errno)
+                goto fn_fail;
 
-            MPID_Info_valid_ptr( info_ptr, mpi_errno );
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+            MPIR_Info_valid_ptr(info_ptr, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS)
+                goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
-#   endif /* HAVE_ERROR_CHECKING */
+#endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
 
     mpi_errno = MPID_Win_set_info(win_ptr, info_ptr);
 
-    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    if (mpi_errno != MPI_SUCCESS)
+        goto fn_fail;
 
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_INFO);
+    MPIR_FUNC_TERSE_RMA_EXIT(MPID_STATE_MPI_WIN_SET_INFO);
     MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
-        mpi_errno = MPIR_Err_create_code(
-            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-            "**mpi_win_set_info", "**mpi_win_set_info %W %I", win, info);
+        mpi_errno =
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+                                 "**mpi_win_set_info", "**mpi_win_set_info %W %I", win, info);
     }
-#   endif
-    mpi_errno = MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
+#endif
+    mpi_errno = MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

@@ -1,6 +1,6 @@
-.TH MPI_Open_port 3 "11/9/2015" " " "MPI"
+.TH MPI_Open_port 3 "11/21/2018" " " "MPI"
 .SH NAME
-MPI_Open_port \-  Establish an address that can be used to establish  connections between groups of MPI processes 
+MPI_Open_port \-  Establish an address that can be used to establish connections between groups of MPI processes 
 .SH SYNOPSIS
 .nf
 int MPI_Open_port(MPI_Info info, char *port_name)
@@ -9,17 +9,17 @@ int MPI_Open_port(MPI_Info info, char *port_name)
 .PD 0
 .TP
 .B info 
-- implementation-specific information on how to establish a 
+- implementation-specific information on how to establish a
 port for 
 .I MPI_Comm_accept
-(handle) 
+(handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B port_name 
-- newly established port (string) 
+- newly established port (string)
 .PD 1
 
 .SH NOTES
@@ -38,7 +38,7 @@ The maximum size string that may be supplied by the system is
 .PD 0
 .TP
 .B ip_port 
-- Value contains IP port number at which to establish a port. 
+- Value contains IP port number at which to establish a port.
 .PD 1
 .PD 0
 .TP
@@ -46,7 +46,7 @@ The maximum size string that may be supplied by the system is
 - Value contains IP address at which to establish a port.
 If the address is not a valid IP address of the host on which the
 .I MPI_OPEN_PORT
-call is made, the results are undefined. 
+call is made, the results are undefined.
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

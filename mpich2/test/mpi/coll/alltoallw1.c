@@ -210,8 +210,7 @@ int main(int argc, char *argv[])
             }
         }
 
-    }
-    else {
+    } else {
         localA = (float *) malloc(gN * lm * sizeof(float));
         localB = (float *) malloc(gM * ln * sizeof(float));
         for (i = 0; i < lm; i++) {
@@ -241,8 +240,7 @@ int main(int argc, char *argv[])
             }
         }
 
-    }
-    else {
+    } else {
         for (i = 0; i < ln; i++) {
             for (j = 0; j < gM; j++) {
                 int expected = i + gN * j + rank * ln;
@@ -261,7 +259,6 @@ int main(int argc, char *argv[])
 
     MTest_Finalize(errs);
 
-    MPI_Finalize();
 
-    return 0;
+    return MTestReturnValue(errs);
 }

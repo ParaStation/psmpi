@@ -33,8 +33,7 @@ int main(int argc, char *argv[])
                 MTestPrintError(err);
             }
 
-        }
-        else {
+        } else {
             /* Access all of this memory */
             for (j = 0; j < count; j++) {
                 ap[j] = (char) (j & 0x7f);
@@ -44,6 +43,5 @@ int main(int argc, char *argv[])
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

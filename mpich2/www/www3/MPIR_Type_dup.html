@@ -1,0 +1,29 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML3.2 EN">
+<HTML>
+<HEAD>
+<META NAME="GENERATOR" CONTENT="DOCTEXT">
+<TITLE>MPIR_Type_dup</TITLE>
+</HEAD>
+<BODY BGCOLOR="FFFFFF">
+<A NAME="MPIR_Type_dup"><H1>MPIR_Type_dup</H1></A>
+create a copy of a datatype 
+<H2>Synopsis</H2>
+<PRE>
+#undef FUNCNAME
+#define FUNCNAME MPIR_Type_dup
+#undef FCNAME
+#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPIR_Type_dup(MPI_Datatype oldtype, MPI_Datatype * newtype)
+</PRE>
+<H2>Input Parameters</H2>
+<DL><DT><B>oldtype </B> <DD> handle of original datatype
+</DL>
+</DL>
+<P>
+<H2>Output Parameters</H2>
+<DL><DT><B>newtype </B> <DD> handle of newly created copy of datatype
+</DL>
+<P>
+<H2>Return Value</H2>
+0 on success, MPI error code on failure.
+</BODY></HTML>

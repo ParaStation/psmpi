@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "topo.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Topo_test */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -16,7 +15,7 @@
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Topo_test as PMPI_Topo_test
 #elif defined(HAVE_WEAK_ATTRIBUTE)
-int MPI_Topo_test(MPI_Comm comm, int *status) __attribute__((weak,alias("PMPI_Topo_test")));
+int MPI_Topo_test(MPI_Comm comm, int *status) __attribute__ ((weak, alias("PMPI_Topo_test")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -30,14 +29,15 @@ int MPI_Topo_test(MPI_Comm comm, int *status) __attribute__((weak,alias("PMPI_To
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Topo_test
-
+#undef FCNAME
+#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 
-MPI_Topo_test - Determines the type of topology (if any) associated with a 
+MPI_Topo_test - Determines the type of topology (if any) associated with a
                 communicator
 
 Input Parameters:
-. comm - communicator (handle) 
+. comm - communicator (handle)
 
 Output Parameters:
 . status - topology type of communicator 'comm' (integer).  If the
@@ -56,78 +56,72 @@ Output Parameters:
 @*/
 int MPI_Topo_test(MPI_Comm comm, int *status)
 {
-#ifdef HAVE_ERROR_CHECKING
-    static const char FCNAME[] = "MPI_Topo_test";
-#endif
     int mpi_errno = MPI_SUCCESS;
-    MPID_Comm *comm_ptr = NULL;
+    MPIR_Comm *comm_ptr = NULL;
     MPIR_Topology *topo_ptr;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_TOPO_TEST);
+    MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_TOPO_TEST);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
-    
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TOPO_TEST);
+
+    MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPI_TOPO_TEST);
 
     /* Validate parameters, especially handles needing to be converted */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_COMM(comm, mpi_errno);
+            MPIR_ERRTEST_COMM(comm, mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
     }
-#   endif
-    
+#endif
+
     /* Convert MPI object handles to object pointers */
-    MPID_Comm_get_ptr( comm, comm_ptr );
+    MPIR_Comm_get_ptr(comm, comm_ptr);
 
     /* Validate parameters and objects (post conversion) */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, TRUE );
-            if (mpi_errno) goto fn_fail;
-	    /* If comm_ptr is not valid, it will be reset to null */
-	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
+            MPIR_Comm_valid_ptr(comm_ptr, mpi_errno, TRUE);
+            if (mpi_errno)
+                goto fn_fail;
+            /* If comm_ptr is not valid, it will be reset to null */
+            MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
     }
-#   endif /* HAVE_ERROR_CHECKING */
+#endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    
-    topo_ptr = MPIR_Topology_get( comm_ptr );
-    if (topo_ptr)
-    { 
-	*status = (int)(topo_ptr->kind);
+
+    topo_ptr = MPIR_Topology_get(comm_ptr);
+    if (topo_ptr) {
+        *status = (int) (topo_ptr->kind);
+    } else {
+        *status = MPI_UNDEFINED;
     }
-    else
-    { 
-	*status = MPI_UNDEFINED;
-    }
-    
+
     /* ... end of body of routine ... */
 
 #ifdef HAVE_ERROR_CHECKING
   fn_exit:
 #endif
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TOPO_TEST);
+    MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPI_TOPO_TEST);
     return mpi_errno;
 
     /* --BEGIN ERROR HANDLING-- */
-#   ifdef HAVE_ERROR_CHECKING
+#ifdef HAVE_ERROR_CHECKING
   fn_fail:
     {
-	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
-	    "**mpi_topo_test",
-	    "**mpi_topo_test %C %p", comm, status);
+        mpi_errno =
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+                                 "**mpi_topo_test", "**mpi_topo_test %C %p", comm, status);
     }
-    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
     goto fn_exit;
-#   endif
+#endif
     /* --END ERROR HANDLING-- */
 }

@@ -1,15 +1,15 @@
-.TH MPI_Comm_free 3 "11/9/2015" " " "MPI"
+.TH MPI_Comm_free 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Comm_free \-  Marks the communicator object for deallocation 
 .SH SYNOPSIS
 .nf
-int MPI_Comm_free(MPI_Comm *comm)
+int MPI_Comm_free(MPI_Comm * comm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B comm 
-- Communicator to be destroyed (handle) 
+- Communicator to be destroyed (handle)
 .PD 1
 
 .SH NOTES
@@ -28,7 +28,7 @@ The MPI 1.1 specification, in the section on opaque objects, explicitly
 A null handle argument is an erroneous IN argument in MPI calls, unless an
 exception is explicitly stated in the text that defines the function. Such
 exception is allowed for handles to request objects in Wait and Test calls
-(sections Communication Completion and Multiple Completions ). Otherwise, a
+(sections Communication Completion and Multiple Completions). Otherwise, a
 null handle can only be passed to a function that allocates a new object and
 returns a reference to it in the handle.
 .fi

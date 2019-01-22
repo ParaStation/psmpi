@@ -30,11 +30,11 @@ int main(int argc, char **argv)
 {
     int rank, nproc, mpi_errno;
     int i, ncomm, *ranks;
-    int errors = 1;
+    int errs = 1;
     MPI_Comm *comm_hdls;
     MPI_Group world_group;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
@@ -59,12 +59,11 @@ int main(int argc, char **argv)
             if (verbose)
                 printf("%d: Created comm %d\n", rank, i);
             ncomm++;
-        }
-        else {
+        } else {
             if (verbose)
                 printf("%d: Error creating comm %d\n", rank, i);
             MPI_Group_free(&comm_group);
-            errors = 0;
+            errs = 0;
             break;
         }
 
@@ -75,10 +74,10 @@ int main(int argc, char **argv)
         MPI_Comm_free(&comm_hdls[i]);
 
     free(comm_hdls);
+    free(ranks);
     MPI_Group_free(&world_group);
 
-    MTest_Finalize(errors);
-    MPI_Finalize();
+    MTest_Finalize(errs);
 
-    return 0;
+    return MTestReturnValue(errs);
 }

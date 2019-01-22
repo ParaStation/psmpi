@@ -15,7 +15,8 @@ HYD_status HYDT_dmxu_poll_wait_for_event(int wtime)
 
     HYDU_FUNC_ENTER();
 
-    HYDU_MALLOC(pollfds, struct pollfd *, HYDT_dmxu_num_cb_fds * sizeof(struct pollfd), status);
+    HYDU_MALLOC_OR_JUMP(pollfds, struct pollfd *, HYDT_dmxu_num_cb_fds * sizeof(struct pollfd),
+                        status);
 
     for (i = 0, run = HYDT_dmxu_cb_list; run; run = run->next) {
         for (j = 0; j < run->num_fds; j++) {
@@ -45,7 +46,7 @@ HYD_status HYDT_dmxu_poll_wait_for_event(int wtime)
             status = HYD_SUCCESS;
             goto fn_exit;
         }
-        HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "poll error (%s)\n", HYDU_strerror(errno));
+        HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "poll error (%s)\n", MPL_strerror(errno));
     }
 
     work_done = 0;
@@ -91,7 +92,7 @@ HYD_status HYDT_dmxu_poll_wait_for_event(int wtime)
 
   fn_exit:
     if (pollfds)
-        HYDU_FREE(pollfds);
+        MPL_free(pollfds);
     HYDU_FUNC_EXIT();
     return status;
 

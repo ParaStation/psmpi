@@ -11,6 +11,7 @@
 #ifdef HAVE_STRING_H
 #include <string.h>
 #endif
+#include "mpitest.h"
 
 static int verbose = 0;
 
@@ -23,7 +24,7 @@ int main(int argc, char *argv[])
     MPI_Datatype newtype;
     char *buf = NULL;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
     parse_args(argc, argv);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -61,8 +62,7 @@ int main(int argc, char *argv[])
 
             /* send */
             MPI_Send(buf, 1, newtype, 1, i, MPI_COMM_WORLD);
-        }
-        else if (rank == 1) {
+        } else if (rank == 1) {
             /* recv */
             MPI_Recv(buf, 1, newtype, 0, i, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
@@ -76,8 +76,7 @@ int main(int argc, char *argv[])
                                     "(i=%d, pos=%d) should be %d but is %d\n",
                                     i, 129 * j + k, j, (int) buf[129 * j + k]);
                         errs++;
-                    }
-                    else if (k == 128 && buf[129 * j + k] != (char) 0) {
+                    } else if (k == 128 && buf[129 * j + k] != (char) 0) {
                         if (verbose)
                             fprintf(stderr,
                                     "(i=%d, pos=%d) should be %d but is %d\n",
@@ -100,25 +99,15 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "%d errors reported from receiver\n", recv_errs);
             errs += recv_errs;
         }
-    }
-    else if (rank == 1) {
+    } else if (rank == 1) {
         MPI_Send(&errs, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
     }
 
   fn_exit:
 
     free(buf);
-    /* print message and exit */
-    if (errs) {
-        if (rank == 0)
-            fprintf(stderr, "Found %d errors\n", errs);
-    }
-    else {
-        if (rank == 0)
-            printf(" No Errors\n");
-    }
-    MPI_Finalize();
-    return 0;
+    MTest_Finalize(errs);
+    return MTestReturnValue(errs);
 }
 
 static int parse_args(int argc, char **argv)

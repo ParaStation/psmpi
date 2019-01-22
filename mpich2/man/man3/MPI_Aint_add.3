@@ -1,4 +1,4 @@
-.TH MPI_Aint_add 3 "11/9/2015" " " "MPI"
+.TH MPI_Aint_add 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Aint_add \-  Returns the sum of base and disp 
 .SH SYNOPSIS
@@ -27,8 +27,11 @@ to MPI_GET_ADDRESS and disp represents a signed integer displacement. The result
 address is valid only at the process that generated base, and it must correspond
 to a location in the same object referenced by base. The addition is performed in
 a manner that results in the correct MPI_Aint representation of the output address,
-.SH AS IF THE PROCESS THAT ORIGINALLY PRODUCED BASE HAD CALLED
+as if the process that originally produced base had called:
+.nf
 MPI_Get_address((char *) base + disp, &result)
+.fi
+
 
 .SH SEE ALSO
 MPI_Aint_diff

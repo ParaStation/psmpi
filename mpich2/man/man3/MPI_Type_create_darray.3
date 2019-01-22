@@ -1,18 +1,16 @@
-.TH MPI_Type_create_darray 3 "11/9/2015" " " "MPI"
+.TH MPI_Type_create_darray 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Type_create_darray \-  Create a datatype representing a distributed array 
 .SH SYNOPSIS
 .nf
 int MPI_Type_create_darray(int size,
-                         int rank,
-                         int ndims,
-                         const int array_of_gsizes[],
-                         const int array_of_distribs[],
-                         const int array_of_dargs[],
-                         const int array_of_psizes[],
-                         int order,
-                         MPI_Datatype oldtype,
-                         MPI_Datatype *newtype)
+                           int rank,
+                           int ndims,
+                           const int array_of_gsizes[],
+                           const int array_of_distribs[],
+                           const int array_of_dargs[],
+                           const int array_of_psizes[],
+                           int order, MPI_Datatype oldtype, MPI_Datatype * newtype)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

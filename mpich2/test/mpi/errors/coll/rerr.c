@@ -26,8 +26,7 @@ int main(int argc, char *argv[])
     if (ierr == MPI_SUCCESS) {
         errs++;
         printf("Did not detect invalid type/op pair (byte,max) in Allreduce\n");
-    }
-    else {
+    } else {
         if (verbose) {
             MPI_Error_string(ierr, str, &slen);
             printf("Found expected error; message is: %s\n", str);
@@ -37,6 +36,5 @@ int main(int argc, char *argv[])
     MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

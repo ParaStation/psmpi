@@ -1,6 +1,6 @@
 ! -*- Mode: Fortran; -*-
 !
-!  (C) 2014 by Argonne National Laboratory.
+!  (C) 2013 by Argonne National Laboratory.
 !      See COPYRIGHT in top-level directory.
 !
        program main
@@ -60,7 +60,6 @@
           endif
        endif
 !
-       call mpi_finalize( ierr )
        end
 !
        subroutine mpi_send_f08ts( smsg, count, dtype, dest, tag, comm, ierr )

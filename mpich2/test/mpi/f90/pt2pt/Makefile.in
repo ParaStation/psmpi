@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 # This Makefile.am generated automatically by f77tof90
-# from test/mpi/f77/pt2pt/Makefile.am.  DO NOT EDIT
+# from f77/pt2pt/Makefile.am.  DO NOT EDIT
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
@@ -103,8 +103,11 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = allpairf90$(EXEEXT) statusesf90$(EXEEXT) \
-	greqf90$(EXEEXT) mprobef90$(EXEEXT)
+noinst_PROGRAMS = sendf90$(EXEEXT) ssendf90$(EXEEXT) rsendf90$(EXEEXT) \
+	isendf90$(EXEEXT) irsendf90$(EXEEXT) issendf90$(EXEEXT) \
+	psendf90$(EXEEXT) prsendf90$(EXEEXT) pssendf90$(EXEEXT) \
+	sendrecvf90$(EXEEXT) sendrecvreplf90$(EXEEXT) \
+	statusesf90$(EXEEXT) greqf90$(EXEEXT) mprobef90$(EXEEXT)
 @MAINTAINER_MODE_TRUE@am__append_1 = Makefile.am-stamp  
 subdir = f90/pt2pt
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -125,18 +128,59 @@ CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-allpairf90_SOURCES = allpairf90.f90
-allpairf90_OBJECTS = allpairf90.$(OBJEXT)
-allpairf90_LDADD = $(LDADD)
-allpairf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
 am_greqf90_OBJECTS = greqf90.$(OBJEXT) dummyf90.$(OBJEXT)
 greqf90_OBJECTS = $(am_greqf90_OBJECTS)
 greqf90_LDADD = $(LDADD)
 greqf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+am_irsendf90_OBJECTS = irsendf90.$(OBJEXT) utilsf90.$(OBJEXT)
+irsendf90_OBJECTS = $(am_irsendf90_OBJECTS)
+irsendf90_LDADD = $(LDADD)
+irsendf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+am_isendf90_OBJECTS = isendf90.$(OBJEXT) utilsf90.$(OBJEXT)
+isendf90_OBJECTS = $(am_isendf90_OBJECTS)
+isendf90_LDADD = $(LDADD)
+isendf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+am_issendf90_OBJECTS = issendf90.$(OBJEXT) utilsf90.$(OBJEXT)
+issendf90_OBJECTS = $(am_issendf90_OBJECTS)
+issendf90_LDADD = $(LDADD)
+issendf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
 mprobef90_SOURCES = mprobef90.f90
 mprobef90_OBJECTS = mprobef90.$(OBJEXT)
 mprobef90_LDADD = $(LDADD)
 mprobef90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+am_prsendf90_OBJECTS = prsendf90.$(OBJEXT) utilsf90.$(OBJEXT)
+prsendf90_OBJECTS = $(am_prsendf90_OBJECTS)
+prsendf90_LDADD = $(LDADD)
+prsendf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+am_psendf90_OBJECTS = psendf90.$(OBJEXT) utilsf90.$(OBJEXT)
+psendf90_OBJECTS = $(am_psendf90_OBJECTS)
+psendf90_LDADD = $(LDADD)
+psendf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+am_pssendf90_OBJECTS = pssendf90.$(OBJEXT) utilsf90.$(OBJEXT)
+pssendf90_OBJECTS = $(am_pssendf90_OBJECTS)
+pssendf90_LDADD = $(LDADD)
+pssendf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+am_rsendf90_OBJECTS = rsendf90.$(OBJEXT) utilsf90.$(OBJEXT)
+rsendf90_OBJECTS = $(am_rsendf90_OBJECTS)
+rsendf90_LDADD = $(LDADD)
+rsendf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+am_sendf90_OBJECTS = sendf90.$(OBJEXT) utilsf90.$(OBJEXT)
+sendf90_OBJECTS = $(am_sendf90_OBJECTS)
+sendf90_LDADD = $(LDADD)
+sendf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+am_sendrecvf90_OBJECTS = sendrecvf90.$(OBJEXT) utilsf90.$(OBJEXT)
+sendrecvf90_OBJECTS = $(am_sendrecvf90_OBJECTS)
+sendrecvf90_LDADD = $(LDADD)
+sendrecvf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+am_sendrecvreplf90_OBJECTS = sendrecvreplf90.$(OBJEXT) \
+	utilsf90.$(OBJEXT)
+sendrecvreplf90_OBJECTS = $(am_sendrecvreplf90_OBJECTS)
+sendrecvreplf90_LDADD = $(LDADD)
+sendrecvreplf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+am_ssendf90_OBJECTS = ssendf90.$(OBJEXT) utilsf90.$(OBJEXT)
+ssendf90_OBJECTS = $(am_ssendf90_OBJECTS)
+ssendf90_LDADD = $(LDADD)
+ssendf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
 statusesf90_SOURCES = statusesf90.f90
 statusesf90_OBJECTS = statusesf90.$(OBJEXT)
 statusesf90_LDADD = $(LDADD)
@@ -166,10 +210,16 @@ AM_V_FCLD = $(am__v_FCLD_@AM_V@)
 am__v_FCLD_ = $(am__v_FCLD_@AM_DEFAULT_V@)
 am__v_FCLD_0 = @echo "  FCLD    " $@;
 am__v_FCLD_1 = 
-SOURCES = allpairf90.f90 $(greqf90_SOURCES) mprobef90.f90 \
-	statusesf90.f90
-DIST_SOURCES = allpairf90.f90 $(greqf90_SOURCES) mprobef90.f90 \
-	statusesf90.f90
+SOURCES = $(greqf90_SOURCES) $(irsendf90_SOURCES) $(isendf90_SOURCES) \
+	$(issendf90_SOURCES) mprobef90.f90 $(prsendf90_SOURCES) \
+	$(psendf90_SOURCES) $(pssendf90_SOURCES) $(rsendf90_SOURCES) \
+	$(sendf90_SOURCES) $(sendrecvf90_SOURCES) \
+	$(sendrecvreplf90_SOURCES) $(ssendf90_SOURCES) statusesf90.f90
+DIST_SOURCES = $(greqf90_SOURCES) $(irsendf90_SOURCES) \
+	$(isendf90_SOURCES) $(issendf90_SOURCES) mprobef90.f90 \
+	$(prsendf90_SOURCES) $(psendf90_SOURCES) $(pssendf90_SOURCES) \
+	$(rsendf90_SOURCES) $(sendf90_SOURCES) $(sendrecvf90_SOURCES) \
+	$(sendrecvreplf90_SOURCES) $(ssendf90_SOURCES) statusesf90.f90
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -220,6 +270,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -375,6 +426,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -396,6 +448,17 @@ EXTRA_DIST = testlist $(am__append_1)
 
 # avoid having to write many "foo_SOURCES = foo.f90" lines
 AM_DEFAULT_SOURCE_EXT = .f90
+sendf90_SOURCES = sendf90.f90 utilsf90.f90
+ssendf90_SOURCES = ssendf90.f90 utilsf90.f90
+rsendf90_SOURCES = rsendf90.f90 utilsf90.f90
+isendf90_SOURCES = isendf90.f90 utilsf90.f90
+irsendf90_SOURCES = irsendf90.f90 utilsf90.f90
+issendf90_SOURCES = issendf90.f90 utilsf90.f90
+psendf90_SOURCES = psendf90.f90 utilsf90.f90
+prsendf90_SOURCES = prsendf90.f90 utilsf90.f90
+pssendf90_SOURCES = pssendf90.f90 utilsf90.f90
+sendrecvf90_SOURCES = sendrecvf90.f90 utilsf90.f90
+sendrecvreplf90_SOURCES = sendrecvreplf90.f90 utilsf90.f90
 greqf90_SOURCES = greqf90.f90 dummyf90.f90
 @MAINTAINER_MODE_TRUE@MAINTAINERCLEANFILES = Makefile.am-stamp
 all: all-am
@@ -436,17 +499,57 @@ $(am__aclocal_m4_deps):
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 
-allpairf90$(EXEEXT): $(allpairf90_OBJECTS) $(allpairf90_DEPENDENCIES) $(EXTRA_allpairf90_DEPENDENCIES) 
-	@rm -f allpairf90$(EXEEXT)
-	$(AM_V_FCLD)$(FCLINK) $(allpairf90_OBJECTS) $(allpairf90_LDADD) $(LIBS)
-
 greqf90$(EXEEXT): $(greqf90_OBJECTS) $(greqf90_DEPENDENCIES) $(EXTRA_greqf90_DEPENDENCIES) 
 	@rm -f greqf90$(EXEEXT)
 	$(AM_V_FCLD)$(FCLINK) $(greqf90_OBJECTS) $(greqf90_LDADD) $(LIBS)
 
+irsendf90$(EXEEXT): $(irsendf90_OBJECTS) $(irsendf90_DEPENDENCIES) $(EXTRA_irsendf90_DEPENDENCIES) 
+	@rm -f irsendf90$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(irsendf90_OBJECTS) $(irsendf90_LDADD) $(LIBS)
+
+isendf90$(EXEEXT): $(isendf90_OBJECTS) $(isendf90_DEPENDENCIES) $(EXTRA_isendf90_DEPENDENCIES) 
+	@rm -f isendf90$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(isendf90_OBJECTS) $(isendf90_LDADD) $(LIBS)
+
+issendf90$(EXEEXT): $(issendf90_OBJECTS) $(issendf90_DEPENDENCIES) $(EXTRA_issendf90_DEPENDENCIES) 
+	@rm -f issendf90$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(issendf90_OBJECTS) $(issendf90_LDADD) $(LIBS)
+
 mprobef90$(EXEEXT): $(mprobef90_OBJECTS) $(mprobef90_DEPENDENCIES) $(EXTRA_mprobef90_DEPENDENCIES) 
 	@rm -f mprobef90$(EXEEXT)
 	$(AM_V_FCLD)$(FCLINK) $(mprobef90_OBJECTS) $(mprobef90_LDADD) $(LIBS)
+
+prsendf90$(EXEEXT): $(prsendf90_OBJECTS) $(prsendf90_DEPENDENCIES) $(EXTRA_prsendf90_DEPENDENCIES) 
+	@rm -f prsendf90$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(prsendf90_OBJECTS) $(prsendf90_LDADD) $(LIBS)
+
+psendf90$(EXEEXT): $(psendf90_OBJECTS) $(psendf90_DEPENDENCIES) $(EXTRA_psendf90_DEPENDENCIES) 
+	@rm -f psendf90$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(psendf90_OBJECTS) $(psendf90_LDADD) $(LIBS)
+
+pssendf90$(EXEEXT): $(pssendf90_OBJECTS) $(pssendf90_DEPENDENCIES) $(EXTRA_pssendf90_DEPENDENCIES) 
+	@rm -f pssendf90$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(pssendf90_OBJECTS) $(pssendf90_LDADD) $(LIBS)
+
+rsendf90$(EXEEXT): $(rsendf90_OBJECTS) $(rsendf90_DEPENDENCIES) $(EXTRA_rsendf90_DEPENDENCIES) 
+	@rm -f rsendf90$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(rsendf90_OBJECTS) $(rsendf90_LDADD) $(LIBS)
+
+sendf90$(EXEEXT): $(sendf90_OBJECTS) $(sendf90_DEPENDENCIES) $(EXTRA_sendf90_DEPENDENCIES) 
+	@rm -f sendf90$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(sendf90_OBJECTS) $(sendf90_LDADD) $(LIBS)
+
+sendrecvf90$(EXEEXT): $(sendrecvf90_OBJECTS) $(sendrecvf90_DEPENDENCIES) $(EXTRA_sendrecvf90_DEPENDENCIES) 
+	@rm -f sendrecvf90$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(sendrecvf90_OBJECTS) $(sendrecvf90_LDADD) $(LIBS)
+
+sendrecvreplf90$(EXEEXT): $(sendrecvreplf90_OBJECTS) $(sendrecvreplf90_DEPENDENCIES) $(EXTRA_sendrecvreplf90_DEPENDENCIES) 
+	@rm -f sendrecvreplf90$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(sendrecvreplf90_OBJECTS) $(sendrecvreplf90_LDADD) $(LIBS)
+
+ssendf90$(EXEEXT): $(ssendf90_OBJECTS) $(ssendf90_DEPENDENCIES) $(EXTRA_ssendf90_DEPENDENCIES) 
+	@rm -f ssendf90$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(ssendf90_OBJECTS) $(ssendf90_LDADD) $(LIBS)
 
 statusesf90$(EXEEXT): $(statusesf90_OBJECTS) $(statusesf90_DEPENDENCIES) $(EXTRA_statusesf90_DEPENDENCIES) 
 	@rm -f statusesf90$(EXEEXT)
@@ -682,8 +785,8 @@ testing:
 # change its contents
 @MAINTAINER_MODE_TRUE@$(srcdir)/Makefile.am: $(srcdir)/Makefile.am-stamp
 
-@MAINTAINER_MODE_TRUE@$(srcdir)/Makefile.am-stamp: $(master_top_srcdir)/test/mpi/f77/pt2pt/Makefile.am $(master_top_srcdir)/maint/f77tof90
-@MAINTAINER_MODE_TRUE@	( cd $(master_top_srcdir) && ./maint/f77tof90 test/mpi/f77/pt2pt test/mpi/f90/pt2pt Makefile.am Makefile.ap )
+@MAINTAINER_MODE_TRUE@$(srcdir)/Makefile.am-stamp: $(top_srcdir)/f77/pt2pt/Makefile.am $(top_srcdir)/maint/f77tof90
+@MAINTAINER_MODE_TRUE@	( cd $(top_srcdir) && ./maint/f77tof90 f77/pt2pt f90/pt2pt Makefile.am Makefile.ap )
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

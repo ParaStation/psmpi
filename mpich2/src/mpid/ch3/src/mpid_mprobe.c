@@ -10,8 +10,8 @@
 #define FUNCNAME MPID_Mprobe
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_Mprobe(int source, int tag, MPID_Comm *comm, int context_offset,
-                MPID_Request **message, MPI_Status *status)
+int MPID_Mprobe(int source, int tag, MPIR_Comm *comm, int context_offset,
+                MPIR_Request **message, MPI_Status *status)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Progress_state progress_state;
@@ -106,7 +106,7 @@ int MPID_Mprobe(int source, int tag, MPID_Comm *comm, int context_offset,
     if (mpi_errno) MPIR_ERR_POP(mpi_errno);
 
     if (*message) {
-        (*message)->kind = MPID_REQUEST_MPROBE;
+        (*message)->kind = MPIR_REQUEST_KIND__MPROBE;
         MPIR_Request_extract_status((*message), status);
     }
 

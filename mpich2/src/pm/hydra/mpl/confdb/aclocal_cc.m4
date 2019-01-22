@@ -521,7 +521,7 @@ if test "$enable_strict_done" != "yes" ; then
     # compiler.
     #   -Wno-type-limits -- There are places where we compare an unsigned to 
     #	    a constant that happens to be zero e.g., if x is unsigned and 
-    #	    MIN_VAL is zero, we'd like to do "MPIU_Assert(x >= MIN_VAL);".
+    #	    MIN_VAL is zero, we'd like to do "MPIR_Assert(x >= MIN_VAL);".
     #       Note this option is not supported by gcc 4.2.  This needs to be added 
     #	    after most other warning flags, so that we catch a gcc bug on 32-bit 
     #	    that doesn't give a warning that this is unsupported, unless another
@@ -626,13 +626,6 @@ if test "$enable_strict_done" != "yes" ; then
        	  pac_cc_strict_flags="-O2"
        fi
        pac_cc_strict_flags="$pac_cc_strict_flags $pac_common_strict_flags"
-       case "$enable_posix" in
-            no)   : ;;
-            1995) PAC_APPEND_FLAG([-D_POSIX_C_SOURCE=199506L],[pac_cc_strict_flags]) ;;
-            2001) PAC_APPEND_FLAG([-D_POSIX_C_SOURCE=200112L],[pac_cc_strict_flags]) ;;
-            2008) PAC_APPEND_FLAG([-D_POSIX_C_SOURCE=200809L],[pac_cc_strict_flags]) ;;
-            *)    AC_MSG_ERROR([internal error, unexpected POSIX version: '$enable_posix']) ;;
-       esac
        # We only allow one of strict-C99 or strict-C89 to be
        # enabled. If C99 is enabled, we automatically disable C89.
        if test "${enable_c99}" = "yes" ; then
@@ -644,6 +637,19 @@ if test "$enable_strict_done" != "yes" ; then
        elif test "${enable_c89}" = "yes" ; then
        	  PAC_APPEND_FLAG([-std=c89],[pac_cc_strict_flags])
        	  PAC_APPEND_FLAG([-Wdeclaration-after-statement],[pac_cc_strict_flags])
+       fi
+       # POSIX 2001 should be used with C99. But the default standard for some
+       # compilers are not C99. We must test the support of POSIX 2001 after
+       # testing C99.
+       case "$enable_posix" in
+            no)   : ;;
+            1995) PAC_APPEND_FLAG([-D_POSIX_C_SOURCE=199506L],[pac_cc_strict_flags]) ;;
+            2001) PAC_APPEND_FLAG([-D_POSIX_C_SOURCE=200112L],[pac_cc_strict_flags]) ;;
+            2008) PAC_APPEND_FLAG([-D_POSIX_C_SOURCE=200809L],[pac_cc_strict_flags]) ;;
+            *)    AC_MSG_ERROR([internal error, unexpected POSIX version: '$enable_posix']) ;;
+       esac
+       if test "$enable_posix" != "no" ; then
+           AS_CASE([$host],[*-*-darwin*], [PAC_APPEND_FLAG([-D_DARWIN_C_SOURCE],[pac_cc_strict_flags])])
        fi
     fi
 

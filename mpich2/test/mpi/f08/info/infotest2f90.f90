@@ -1,6 +1,6 @@
 ! -*- Mode: Fortran; -*-
 !
-!  (C) 2014 by Argonne National Laboratory.
+!  (C) 2008 by Argonne National Laboratory.
 !      See COPYRIGHT in top-level directory.
 !
       program main
@@ -135,6 +135,5 @@
       call mpi_info_free( i2, ierr )
 
       call mtest_finalize( errs )
-      call mpi_finalize( ierr )
 
       end

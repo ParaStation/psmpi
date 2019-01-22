@@ -19,10 +19,19 @@ static char MTEST_Descrip[] = "Test nonblocking I/O";
 
 #define VERBOSE 0
 
+#define HANDLE_ERROR(err) \
+    if (err != MPI_SUCCESS) { \
+        char msg[MPI_MAX_ERROR_STRING]; \
+        int resultlen; \
+        MPI_Error_string(err, msg, &resultlen); \
+        fprintf(stderr, "%s line %d: %s\n", __FILE__, __LINE__, msg); \
+        MPI_Abort(MPI_COMM_WORLD, 1); \
+    }
+
 int main(int argc, char **argv)
 {
     int *buf, i, mynod, nprocs, len, b[3];
-    int errs = 0;
+    int err, errs = 0;
     MPI_Aint d[3];
     MPI_File fh;
     MPI_Status status;
@@ -55,8 +64,7 @@ int main(int argc, char **argv)
              * fprintf(stderr, "\n*#  Usage: i_noncontig -fname filename\n\n");
              * MPI_Abort(MPI_COMM_WORLD, 1);
              */
-        }
-        else {
+        } else {
             argv++;
             len = (int) strlen(*argv);
             filename = (char *) malloc(len + 1);
@@ -64,8 +72,7 @@ int main(int argc, char **argv)
         }
         MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
         MPI_Bcast(filename, len + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
-    }
-    else {
+    } else {
         MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
         filename = (char *) malloc(len + 1);
         MPI_Bcast(filename, len + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
@@ -96,22 +103,30 @@ int main(int argc, char **argv)
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
-    MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &fh);
+    err =
+        MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL,
+                      &fh);
+    HANDLE_ERROR(err);
 
-    MPI_File_set_view(fh, 0, MPI_INT, newtype, (char *) "native", MPI_INFO_NULL);
+    err = MPI_File_set_view(fh, 0, MPI_INT, newtype, (char *) "native", MPI_INFO_NULL);
+    HANDLE_ERROR(err);
 
     for (i = 0; i < SIZE; i++)
         buf[i] = i + mynod * SIZE;
-    MPI_File_iwrite(fh, buf, 1, newtype, &req);
-    MPI_Wait(&req, &status);
+    err = MPI_File_iwrite(fh, buf, 1, newtype, &req);
+    HANDLE_ERROR(err);
+    err = MPI_Wait(&req, &status);
+    HANDLE_ERROR(err);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     for (i = 0; i < SIZE; i++)
         buf[i] = -1;
 
-    MPI_File_iread_at(fh, 0, buf, 1, newtype, &req);
-    MPI_Wait(&req, &status);
+    err = MPI_File_iread_at(fh, 0, buf, 1, newtype, &req);
+    HANDLE_ERROR(err);
+    err = MPI_Wait(&req, &status);
+    HANDLE_ERROR(err);
 
     for (i = 0; i < SIZE; i++) {
         if (!mynod) {
@@ -123,8 +138,7 @@ int main(int argc, char **argv)
                 errs++;
                 fprintf(stderr, "Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i);
             }
-        }
-        else {
+        } else {
             if ((i % 2) && (buf[i] != i + mynod * SIZE)) {
                 errs++;
                 fprintf(stderr, "Process %d: buf %d is %d, should be %d\n",
@@ -137,7 +151,8 @@ int main(int argc, char **argv)
         }
     }
 
-    MPI_File_close(&fh);
+    err = MPI_File_close(&fh);
+    HANDLE_ERROR(err);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -150,20 +165,27 @@ int main(int argc, char **argv)
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
-    MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &fh);
+    err =
+        MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL,
+                      &fh);
+    HANDLE_ERROR(err);
 
     for (i = 0; i < SIZE; i++)
         buf[i] = i + mynod * SIZE;
-    MPI_File_iwrite_at(fh, mynod * (SIZE / 2) * sizeof(int), buf, 1, newtype, &req);
-    MPI_Wait(&req, &status);
+    err = MPI_File_iwrite_at(fh, mynod * (SIZE / 2) * sizeof(int), buf, 1, newtype, &req);
+    HANDLE_ERROR(err);
+    err = MPI_Wait(&req, &status);
+    HANDLE_ERROR(err);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     for (i = 0; i < SIZE; i++)
         buf[i] = -1;
 
-    MPI_File_iread_at(fh, mynod * (SIZE / 2) * sizeof(int), buf, 1, newtype, &req);
-    MPI_Wait(&req, &status);
+    err = MPI_File_iread_at(fh, mynod * (SIZE / 2) * sizeof(int), buf, 1, newtype, &req);
+    HANDLE_ERROR(err);
+    err = MPI_Wait(&req, &status);
+    HANDLE_ERROR(err);
 
     for (i = 0; i < SIZE; i++) {
         if (!mynod) {
@@ -175,8 +197,7 @@ int main(int argc, char **argv)
                 errs++;
                 fprintf(stderr, "Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i);
             }
-        }
-        else {
+        } else {
             if ((i % 2) && (buf[i] != i + mynod * SIZE)) {
                 errs++;
                 fprintf(stderr, "Process %d: buf %d is %d, should be %d\n",
@@ -189,7 +210,8 @@ int main(int argc, char **argv)
         }
     }
 
-    MPI_File_close(&fh);
+    err = MPI_File_close(&fh);
+    HANDLE_ERROR(err);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -202,22 +224,30 @@ int main(int argc, char **argv)
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
-    MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &fh);
+    err =
+        MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL,
+                      &fh);
+    HANDLE_ERROR(err);
 
-    MPI_File_set_view(fh, 0, MPI_INT, newtype, (char *) "native", MPI_INFO_NULL);
+    err = MPI_File_set_view(fh, 0, MPI_INT, newtype, (char *) "native", MPI_INFO_NULL);
+    HANDLE_ERROR(err);
 
     for (i = 0; i < SIZE; i++)
         buf[i] = i + mynod * SIZE;
-    MPI_File_iwrite(fh, buf, SIZE, MPI_INT, &req);
-    MPI_Wait(&req, &status);
+    err = MPI_File_iwrite(fh, buf, SIZE, MPI_INT, &req);
+    HANDLE_ERROR(err);
+    err = MPI_Wait(&req, &status);
+    HANDLE_ERROR(err);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     for (i = 0; i < SIZE; i++)
         buf[i] = -1;
 
-    MPI_File_iread_at(fh, 0, buf, SIZE, MPI_INT, &req);
-    MPI_Wait(&req, &status);
+    err = MPI_File_iread_at(fh, 0, buf, SIZE, MPI_INT, &req);
+    HANDLE_ERROR(err);
+    err = MPI_Wait(&req, &status);
+    HANDLE_ERROR(err);
 
     for (i = 0; i < SIZE; i++) {
         if (!mynod) {
@@ -225,8 +255,7 @@ int main(int argc, char **argv)
                 errs++;
                 fprintf(stderr, "Process %d: buf %d is %d, should be %d\n", mynod, i, buf[i], i);
             }
-        }
-        else {
+        } else {
             if (buf[i] != i + mynod * SIZE) {
                 errs++;
                 fprintf(stderr, "Process %d: buf %d is %d, should be %d\n",
@@ -235,12 +264,12 @@ int main(int argc, char **argv)
         }
     }
 
-    MPI_File_close(&fh);
+    err = MPI_File_close(&fh);
+    HANDLE_ERROR(err);
 
     MPI_Type_free(&newtype);
     free(buf);
     free(filename);
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

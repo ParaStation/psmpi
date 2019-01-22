@@ -1,5 +1,5 @@
 # This Makefile.am generated automatically by f77tof90
-# from test/mpi/f77/attr/Makefile.am.  DO NOT EDIT
+# from f77/attr/Makefile.am.  DO NOT EDIT
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
@@ -25,7 +25,6 @@ noinst_PROGRAMS =                   \
 
 # ensure that "{comm,type}attr*f.o" will be rebuilt when attraints.h is updated
 
-
 if MAINTAINER_MODE
 
 # f77tof90 only replaces output files if the contents differ, so we must use a
@@ -34,8 +33,8 @@ if MAINTAINER_MODE
 # change its contents
 $(srcdir)/Makefile.am: $(srcdir)/Makefile.am-stamp
 
-$(srcdir)/Makefile.am-stamp: $(master_top_srcdir)/test/mpi/f77/attr/Makefile.am $(master_top_srcdir)/maint/f77tof90
-	( cd $(master_top_srcdir) && ./maint/f77tof90 test/mpi/f77/attr test/mpi/f90/attr Makefile.am Makefile.ap )
+$(srcdir)/Makefile.am-stamp: $(top_srcdir)/f77/attr/Makefile.am $(top_srcdir)/maint/f77tof90
+	( cd $(top_srcdir) && ./maint/f77tof90 f77/attr f90/attr Makefile.am Makefile.ap )
 
 MAINTAINERCLEANFILES = Makefile.am-stamp
 EXTRA_DIST += Makefile.am-stamp testlist.ap Makefile.ap
@@ -52,5 +51,3 @@ attrlangf90_SOURCES = attrlangf90.f90 attrlangc.c
 # Remove any created module files, if we know the extension of those files
 clean-local:
 	if [ "@FCMODEXT@" != "" ] ; then rm -f *.@FCMODEXT@ ; fi
-
-

@@ -17,14 +17,14 @@
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
-# (C) 2014 by Argonne National Laboratory.
+# (C) 2011 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
 #
 
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
-# (C) 2014 by Argonne National Laboratory.
+# (C) 2011 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
 #
 
@@ -101,8 +101,12 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = allpairf08$(EXEEXT) greqf08$(EXEEXT) \
-	statusesf08$(EXEEXT) mprobef08$(EXEEXT)
+noinst_PROGRAMS = greqf08$(EXEEXT) statusesf08$(EXEEXT) \
+	mprobef08$(EXEEXT) sendf08$(EXEEXT) ssendf08$(EXEEXT) \
+	rsendf08$(EXEEXT) isendf08$(EXEEXT) irsendf08$(EXEEXT) \
+	issendf08$(EXEEXT) psendf08$(EXEEXT) prsendf08$(EXEEXT) \
+	pssendf08$(EXEEXT) sendrecvf08$(EXEEXT) \
+	sendrecvreplf08$(EXEEXT)
 subdir = f08/pt2pt
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -122,18 +126,59 @@ CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-allpairf08_SOURCES = allpairf08.f90
-allpairf08_OBJECTS = allpairf08.$(OBJEXT)
-allpairf08_LDADD = $(LDADD)
-allpairf08_DEPENDENCIES = $(top_builddir)/f08/util/mtestf08.o
 am_greqf08_OBJECTS = greqf08.$(OBJEXT) dummyf08.$(OBJEXT)
 greqf08_OBJECTS = $(am_greqf08_OBJECTS)
 greqf08_LDADD = $(LDADD)
 greqf08_DEPENDENCIES = $(top_builddir)/f08/util/mtestf08.o
+am_irsendf08_OBJECTS = irsendf08.$(OBJEXT) utilsf08.$(OBJEXT)
+irsendf08_OBJECTS = $(am_irsendf08_OBJECTS)
+irsendf08_LDADD = $(LDADD)
+irsendf08_DEPENDENCIES = $(top_builddir)/f08/util/mtestf08.o
+am_isendf08_OBJECTS = isendf08.$(OBJEXT) utilsf08.$(OBJEXT)
+isendf08_OBJECTS = $(am_isendf08_OBJECTS)
+isendf08_LDADD = $(LDADD)
+isendf08_DEPENDENCIES = $(top_builddir)/f08/util/mtestf08.o
+am_issendf08_OBJECTS = issendf08.$(OBJEXT) utilsf08.$(OBJEXT)
+issendf08_OBJECTS = $(am_issendf08_OBJECTS)
+issendf08_LDADD = $(LDADD)
+issendf08_DEPENDENCIES = $(top_builddir)/f08/util/mtestf08.o
 mprobef08_SOURCES = mprobef08.f90
 mprobef08_OBJECTS = mprobef08.$(OBJEXT)
 mprobef08_LDADD = $(LDADD)
 mprobef08_DEPENDENCIES = $(top_builddir)/f08/util/mtestf08.o
+am_prsendf08_OBJECTS = prsendf08.$(OBJEXT) utilsf08.$(OBJEXT)
+prsendf08_OBJECTS = $(am_prsendf08_OBJECTS)
+prsendf08_LDADD = $(LDADD)
+prsendf08_DEPENDENCIES = $(top_builddir)/f08/util/mtestf08.o
+am_psendf08_OBJECTS = psendf08.$(OBJEXT) utilsf08.$(OBJEXT)
+psendf08_OBJECTS = $(am_psendf08_OBJECTS)
+psendf08_LDADD = $(LDADD)
+psendf08_DEPENDENCIES = $(top_builddir)/f08/util/mtestf08.o
+am_pssendf08_OBJECTS = pssendf08.$(OBJEXT) utilsf08.$(OBJEXT)
+pssendf08_OBJECTS = $(am_pssendf08_OBJECTS)
+pssendf08_LDADD = $(LDADD)
+pssendf08_DEPENDENCIES = $(top_builddir)/f08/util/mtestf08.o
+am_rsendf08_OBJECTS = rsendf08.$(OBJEXT) utilsf08.$(OBJEXT)
+rsendf08_OBJECTS = $(am_rsendf08_OBJECTS)
+rsendf08_LDADD = $(LDADD)
+rsendf08_DEPENDENCIES = $(top_builddir)/f08/util/mtestf08.o
+am_sendf08_OBJECTS = sendf08.$(OBJEXT) utilsf08.$(OBJEXT)
+sendf08_OBJECTS = $(am_sendf08_OBJECTS)
+sendf08_LDADD = $(LDADD)
+sendf08_DEPENDENCIES = $(top_builddir)/f08/util/mtestf08.o
+am_sendrecvf08_OBJECTS = sendrecvf08.$(OBJEXT) utilsf08.$(OBJEXT)
+sendrecvf08_OBJECTS = $(am_sendrecvf08_OBJECTS)
+sendrecvf08_LDADD = $(LDADD)
+sendrecvf08_DEPENDENCIES = $(top_builddir)/f08/util/mtestf08.o
+am_sendrecvreplf08_OBJECTS = sendrecvreplf08.$(OBJEXT) \
+	utilsf08.$(OBJEXT)
+sendrecvreplf08_OBJECTS = $(am_sendrecvreplf08_OBJECTS)
+sendrecvreplf08_LDADD = $(LDADD)
+sendrecvreplf08_DEPENDENCIES = $(top_builddir)/f08/util/mtestf08.o
+am_ssendf08_OBJECTS = ssendf08.$(OBJEXT) utilsf08.$(OBJEXT)
+ssendf08_OBJECTS = $(am_ssendf08_OBJECTS)
+ssendf08_LDADD = $(LDADD)
+ssendf08_DEPENDENCIES = $(top_builddir)/f08/util/mtestf08.o
 statusesf08_SOURCES = statusesf08.f90
 statusesf08_OBJECTS = statusesf08.$(OBJEXT)
 statusesf08_LDADD = $(LDADD)
@@ -163,10 +208,16 @@ AM_V_FCLD = $(am__v_FCLD_@AM_V@)
 am__v_FCLD_ = $(am__v_FCLD_@AM_DEFAULT_V@)
 am__v_FCLD_0 = @echo "  FCLD    " $@;
 am__v_FCLD_1 = 
-SOURCES = allpairf08.f90 $(greqf08_SOURCES) mprobef08.f90 \
-	statusesf08.f90
-DIST_SOURCES = allpairf08.f90 $(greqf08_SOURCES) mprobef08.f90 \
-	statusesf08.f90
+SOURCES = $(greqf08_SOURCES) $(irsendf08_SOURCES) $(isendf08_SOURCES) \
+	$(issendf08_SOURCES) mprobef08.f90 $(prsendf08_SOURCES) \
+	$(psendf08_SOURCES) $(pssendf08_SOURCES) $(rsendf08_SOURCES) \
+	$(sendf08_SOURCES) $(sendrecvf08_SOURCES) \
+	$(sendrecvreplf08_SOURCES) $(ssendf08_SOURCES) statusesf08.f90
+DIST_SOURCES = $(greqf08_SOURCES) $(irsendf08_SOURCES) \
+	$(isendf08_SOURCES) $(issendf08_SOURCES) mprobef08.f90 \
+	$(prsendf08_SOURCES) $(psendf08_SOURCES) $(pssendf08_SOURCES) \
+	$(rsendf08_SOURCES) $(sendf08_SOURCES) $(sendrecvf08_SOURCES) \
+	$(sendrecvreplf08_SOURCES) $(ssendf08_SOURCES) statusesf08.f90
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -217,6 +268,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -372,6 +424,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -393,6 +446,17 @@ EXTRA_DIST = testlist
 
 # avoid having to write many "foo_SOURCES = foo.f90" lines
 AM_DEFAULT_SOURCE_EXT = .f90
+sendf08_SOURCES = sendf08.f90 utilsf08.f90
+ssendf08_SOURCES = ssendf08.f90 utilsf08.f90
+rsendf08_SOURCES = rsendf08.f90 utilsf08.f90
+isendf08_SOURCES = isendf08.f90 utilsf08.f90
+irsendf08_SOURCES = irsendf08.f90 utilsf08.f90
+issendf08_SOURCES = issendf08.f90 utilsf08.f90
+psendf08_SOURCES = psendf08.f90 utilsf08.f90
+prsendf08_SOURCES = prsendf08.f90 utilsf08.f90
+pssendf08_SOURCES = pssendf08.f90 utilsf08.f90
+sendrecvf08_SOURCES = sendrecvf08.f90 utilsf08.f90
+sendrecvreplf08_SOURCES = sendrecvreplf08.f90 utilsf08.f90
 greqf08_SOURCES = greqf08.f90 dummyf08.f90
 all: all-am
 
@@ -432,17 +496,57 @@ $(am__aclocal_m4_deps):
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 
-allpairf08$(EXEEXT): $(allpairf08_OBJECTS) $(allpairf08_DEPENDENCIES) $(EXTRA_allpairf08_DEPENDENCIES) 
-	@rm -f allpairf08$(EXEEXT)
-	$(AM_V_FCLD)$(FCLINK) $(allpairf08_OBJECTS) $(allpairf08_LDADD) $(LIBS)
-
 greqf08$(EXEEXT): $(greqf08_OBJECTS) $(greqf08_DEPENDENCIES) $(EXTRA_greqf08_DEPENDENCIES) 
 	@rm -f greqf08$(EXEEXT)
 	$(AM_V_FCLD)$(FCLINK) $(greqf08_OBJECTS) $(greqf08_LDADD) $(LIBS)
 
+irsendf08$(EXEEXT): $(irsendf08_OBJECTS) $(irsendf08_DEPENDENCIES) $(EXTRA_irsendf08_DEPENDENCIES) 
+	@rm -f irsendf08$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(irsendf08_OBJECTS) $(irsendf08_LDADD) $(LIBS)
+
+isendf08$(EXEEXT): $(isendf08_OBJECTS) $(isendf08_DEPENDENCIES) $(EXTRA_isendf08_DEPENDENCIES) 
+	@rm -f isendf08$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(isendf08_OBJECTS) $(isendf08_LDADD) $(LIBS)
+
+issendf08$(EXEEXT): $(issendf08_OBJECTS) $(issendf08_DEPENDENCIES) $(EXTRA_issendf08_DEPENDENCIES) 
+	@rm -f issendf08$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(issendf08_OBJECTS) $(issendf08_LDADD) $(LIBS)
+
 mprobef08$(EXEEXT): $(mprobef08_OBJECTS) $(mprobef08_DEPENDENCIES) $(EXTRA_mprobef08_DEPENDENCIES) 
 	@rm -f mprobef08$(EXEEXT)
 	$(AM_V_FCLD)$(FCLINK) $(mprobef08_OBJECTS) $(mprobef08_LDADD) $(LIBS)
+
+prsendf08$(EXEEXT): $(prsendf08_OBJECTS) $(prsendf08_DEPENDENCIES) $(EXTRA_prsendf08_DEPENDENCIES) 
+	@rm -f prsendf08$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(prsendf08_OBJECTS) $(prsendf08_LDADD) $(LIBS)
+
+psendf08$(EXEEXT): $(psendf08_OBJECTS) $(psendf08_DEPENDENCIES) $(EXTRA_psendf08_DEPENDENCIES) 
+	@rm -f psendf08$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(psendf08_OBJECTS) $(psendf08_LDADD) $(LIBS)
+
+pssendf08$(EXEEXT): $(pssendf08_OBJECTS) $(pssendf08_DEPENDENCIES) $(EXTRA_pssendf08_DEPENDENCIES) 
+	@rm -f pssendf08$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(pssendf08_OBJECTS) $(pssendf08_LDADD) $(LIBS)
+
+rsendf08$(EXEEXT): $(rsendf08_OBJECTS) $(rsendf08_DEPENDENCIES) $(EXTRA_rsendf08_DEPENDENCIES) 
+	@rm -f rsendf08$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(rsendf08_OBJECTS) $(rsendf08_LDADD) $(LIBS)
+
+sendf08$(EXEEXT): $(sendf08_OBJECTS) $(sendf08_DEPENDENCIES) $(EXTRA_sendf08_DEPENDENCIES) 
+	@rm -f sendf08$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(sendf08_OBJECTS) $(sendf08_LDADD) $(LIBS)
+
+sendrecvf08$(EXEEXT): $(sendrecvf08_OBJECTS) $(sendrecvf08_DEPENDENCIES) $(EXTRA_sendrecvf08_DEPENDENCIES) 
+	@rm -f sendrecvf08$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(sendrecvf08_OBJECTS) $(sendrecvf08_LDADD) $(LIBS)
+
+sendrecvreplf08$(EXEEXT): $(sendrecvreplf08_OBJECTS) $(sendrecvreplf08_DEPENDENCIES) $(EXTRA_sendrecvreplf08_DEPENDENCIES) 
+	@rm -f sendrecvreplf08$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(sendrecvreplf08_OBJECTS) $(sendrecvreplf08_LDADD) $(LIBS)
+
+ssendf08$(EXEEXT): $(ssendf08_OBJECTS) $(ssendf08_DEPENDENCIES) $(EXTRA_ssendf08_DEPENDENCIES) 
+	@rm -f ssendf08$(EXEEXT)
+	$(AM_V_FCLD)$(FCLINK) $(ssendf08_OBJECTS) $(ssendf08_LDADD) $(LIBS)
 
 statusesf08$(EXEEXT): $(statusesf08_OBJECTS) $(statusesf08_DEPENDENCIES) $(EXTRA_statusesf08_DEPENDENCIES) 
 	@rm -f statusesf08$(EXEEXT)

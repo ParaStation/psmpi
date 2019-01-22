@@ -83,8 +83,8 @@ int main(int argc, char *argv[])
         MPI_Barrier(comm);
         /* Detach waits until all messages received */
         MPI_Buffer_detach(&buf, &bsize);
-    }
-    else if (rank == dest) {
+        free(buf);
+    } else if (rank == dest) {
 
         MPI_Barrier(comm);
         MPI_Recv(b2, MSG_SIZE, MPI_INT, src, 1, comm, &status);
@@ -115,14 +115,11 @@ int main(int argc, char *argv[])
                     printf("b4[%d] is %d\n", i, b4[i]);
             }
         }
-    }
-    else {
+    } else {
         MPI_Barrier(comm);
     }
 
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
-
+    return MTestReturnValue(errs);
 }

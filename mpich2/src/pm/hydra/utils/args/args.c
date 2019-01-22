@@ -34,11 +34,17 @@ static HYD_status get_abs_wd(const char *wd, char **abs_wd)
     }
 
     cwd = HYDU_getcwd();
+    if (NULL == cwd)
+        HYDU_ERR_POP(status, "error calling getcwd\n");
+
     ret = chdir(wd);
     if (ret < 0)
         HYDU_ERR_POP(status, "error calling chdir\n");
 
     *abs_wd = HYDU_getcwd();
+    if (NULL == *abs_wd)
+        HYDU_ERR_POP(status, "error calling getcwd\n");
+
     ret = chdir(cwd);
     if (ret < 0)
         HYDU_ERR_POP(status, "error calling chdir\n");
@@ -59,15 +65,15 @@ HYD_status HYDU_find_in_path(const char *execname, char **path)
 
     /* The executable is somewhere in the user's path. Find it. */
     if (MPL_env2str("PATH", (const char **) &user_path))
-        user_path = HYDU_strdup(user_path);
+        user_path = MPL_strdup(user_path);
 
     if (user_path) {    /* If the PATH environment exists */
         status = get_abs_wd(strtok(user_path, ";:"), &test_loc);
         HYDU_ERR_POP(status, "error getting absolute working dir\n");
-        do {
-            tmp[0] = HYDU_strdup(test_loc);
-            tmp[1] = HYDU_strdup("/");
-            tmp[2] = HYDU_strdup(execname);
+        while (test_loc) {
+            tmp[0] = MPL_strdup(test_loc);
+            tmp[1] = MPL_strdup("/");
+            tmp[2] = MPL_strdup(execname);
             tmp[3] = NULL;
 
             status = HYDU_str_alloc_and_join(tmp, &path_loc);
@@ -75,8 +81,8 @@ HYD_status HYDU_find_in_path(const char *execname, char **path)
             HYDU_free_strlist(tmp);
 
             if (exists(path_loc)) {
-                tmp[0] = HYDU_strdup(test_loc);
-                tmp[1] = HYDU_strdup("/");
+                tmp[0] = MPL_strdup(test_loc);
+                tmp[1] = MPL_strdup("/");
                 tmp[2] = NULL;
 
                 status = HYDU_str_alloc_and_join(tmp, path);
@@ -86,23 +92,23 @@ HYD_status HYDU_find_in_path(const char *execname, char **path)
                 goto fn_exit;   /* We are done */
             }
 
-            HYDU_FREE(path_loc);
+            MPL_free(path_loc);
             path_loc = NULL;
 
             status = get_abs_wd(strtok(NULL, ";:"), &test_loc);
             HYDU_ERR_POP(status, "error getting absolute working dir\n");
-        } while (test_loc);
+        }
     }
 
     /* There is either no PATH environment or we could not find the
      * file in the PATH. Just return an empty path */
-    *path = HYDU_strdup("");
+    *path = MPL_strdup("");
 
   fn_exit:
     if (user_path)
-        HYDU_FREE(user_path);
+        MPL_free(user_path);
     if (path_loc)
-        HYDU_FREE(path_loc);
+        MPL_free(path_loc);
     HYDU_FUNC_EXIT();
     return status;
 
@@ -127,8 +133,7 @@ static HYD_status match_arg(char ***argv_p, struct HYD_arg_match_table *match_ta
         /* Found an '='; use the rest of the argument as a separate
          * argument */
         **argv_p = val + 1;
-    }
-    else {
+    } else {
         /* Move to the next argument */
         (*argv_p)++;
     }
@@ -141,8 +146,7 @@ static HYD_status match_arg(char ***argv_p, struct HYD_arg_match_table *match_ta
                              !strcmp(**argv_p, "--help"))) {
                 if (m->help_fn == NULL) {
                     HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "No help message available\n");
-                }
-                else {
+                } else {
                     m->help_fn();
                     HYDU_ERR_SETANDJUMP(status, HYD_GRACEFUL_ABORT, "%s", "");
                 }
@@ -193,7 +197,7 @@ HYD_status HYDU_set_str(char *arg, char **var, const char *val)
     if (val == NULL)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "cannot assign NULL object\n");
 
-    *var = HYDU_strdup(val);
+    *var = MPL_strdup(val);
 
   fn_exit:
     return status;
@@ -228,7 +232,7 @@ char *HYDU_getcwd(void)
 
     if (MPL_env2str("PWD", &pwdval) == 0)
         pwdval = NULL;
-    HYDU_MALLOC(cwdval, char *, HYDRA_MAX_PATH, status);
+    HYDU_MALLOC_OR_JUMP(cwdval, char *, HYDRA_MAX_PATH, status);
     if (getcwd(cwdval, HYDRA_MAX_PATH) == NULL)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
                             "allocated space is too small for absolute path\n");
@@ -237,10 +241,9 @@ char *HYDU_getcwd(void)
     if (pwdval && stat(pwdval, &spwd) != -1 && stat(cwdval, &scwd) != -1 &&
         spwd.st_dev == scwd.st_dev && spwd.st_ino == scwd.st_ino) {
         /* PWD and getcwd() match; use the PWD value */
-        retval = HYDU_strdup(pwdval);
-        HYDU_free(cwdval);
-    }
-    else
+        retval = MPL_strdup(pwdval);
+        MPL_free(cwdval);
+    } else
 #endif /* HAVE_STAT */
     {
         /* PWD and getcwd() don't match; use the getcwd value and hope
@@ -258,7 +261,7 @@ char *HYDU_getcwd(void)
 HYD_status HYDU_process_mfile_token(char *token, int newline, struct HYD_node **node_list)
 {
     int num_procs;
-    char *hostname, *procs, *binding, *tmp, *user, *saveptr;
+    char *hostname, *procs, *binding, *tmp, *user, *saveptr = NULL;
     struct HYD_node *node;
     HYD_status status = HYD_SUCCESS;
 
@@ -269,8 +272,7 @@ HYD_status HYDU_process_mfile_token(char *token, int newline, struct HYD_node **
 
         status = HYDU_add_to_node_list(hostname, num_procs, node_list);
         HYDU_ERR_POP(status, "unable to add to node list\n");
-    }
-    else {      /* Not a new line */
+    } else {    /* Not a new line */
         tmp = strtok_r(token, "=", &saveptr);
         if (!strcmp(tmp, "binding")) {
             binding = strtok_r(NULL, "=", &saveptr);
@@ -280,18 +282,16 @@ HYD_status HYDU_process_mfile_token(char *token, int newline, struct HYD_node **
                 HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
                                     "duplicate local binding setting\n");
 
-            node->local_binding = HYDU_strdup(binding);
-        }
-        else if (!strcmp(tmp, "user")) {
+            node->local_binding = MPL_strdup(binding);
+        } else if (!strcmp(tmp, "user")) {
             user = strtok_r(NULL, "=", &saveptr);
 
             for (node = *node_list; node->next; node = node->next);
             if (node->user)
                 HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "duplicate username setting\n");
 
-            node->user = HYDU_strdup(user);
-        }
-        else {
+            node->user = MPL_strdup(user);
+        } else {
             HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
                                 "token %s not supported at this time\n", token);
         }
@@ -309,7 +309,7 @@ HYD_status HYDU_parse_hostfile(const char *hostfile, struct HYD_node **node_list
                                                            struct HYD_node ** node_list))
 {
     char line[HYD_TMP_STRLEN], **tokens;
-    FILE *fp;
+    FILE *fp = NULL;
     int i;
     HYD_status status = HYD_SUCCESS;
 
@@ -344,7 +344,7 @@ HYD_status HYDU_parse_hostfile(const char *hostfile, struct HYD_node **node_list
         }
 
         HYDU_free_strlist(tokens);
-        HYDU_FREE(tokens);
+        MPL_free(tokens);
     }
 
     fclose(fp);
@@ -355,12 +355,14 @@ HYD_status HYDU_parse_hostfile(const char *hostfile, struct HYD_node **node_list
     return status;
 
   fn_fail:
+    if (NULL != fp)
+        fclose(fp);
     goto fn_exit;
 }
 
 char *HYDU_find_full_path(const char *execname)
 {
-    char *tmp[HYD_NUM_TMP_STRINGS], *path = NULL, *test_path = NULL;
+    char *tmp[HYD_NUM_TMP_STRINGS] = { NULL }, *path = NULL, *test_path = NULL;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -369,8 +371,8 @@ char *HYDU_find_full_path(const char *execname)
     HYDU_ERR_POP(status, "error while searching for executable in user path\n");
 
     if (test_path) {
-        tmp[0] = HYDU_strdup(test_path);
-        tmp[1] = HYDU_strdup(execname);
+        tmp[0] = MPL_strdup(test_path);
+        tmp[1] = MPL_strdup(execname);
         tmp[2] = NULL;
 
         status = HYDU_str_alloc_and_join(tmp, &path);
@@ -380,7 +382,7 @@ char *HYDU_find_full_path(const char *execname)
   fn_exit:
     HYDU_free_strlist(tmp);
     if (test_path)
-        HYDU_FREE(test_path);
+        MPL_free(test_path);
     HYDU_FUNC_EXIT();
     return path;
 

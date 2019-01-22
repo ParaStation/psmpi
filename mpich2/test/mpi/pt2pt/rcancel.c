@@ -34,8 +34,7 @@ int main(int argc, char *argv[])
 
     if (rank == source) {
         MPI_Send(MPI_BOTTOM, 0, MPI_CHAR, dest, 1, MPI_COMM_WORLD);
-    }
-    else if (rank == dest) {
+    } else if (rank == dest) {
         /* Create 3 requests to cancel, plus one to use.
          * Then receive one message and exit */
         for (i = 0; i < 4; i++) {
@@ -78,9 +77,11 @@ int main(int argc, char *argv[])
             printf("Incorrectly cancelled Irecv[1]\n");
             fflush(stdout);
         }
+        for (i = 0; i < 4; i++) {
+            free(bufs[i]);
+        }
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

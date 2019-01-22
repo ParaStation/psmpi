@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
     int provided;
     pthread_t *threads = NULL;
 #else
-    MPI_Comm *child;
+    MPI_Comm *child = NULL;
 #endif /* USE_THREADS */
     int can_spawn, errs = 0;
 
@@ -94,11 +94,9 @@ int main(int argc, char *argv[])
     if (parent == MPI_COMM_NULL) {      /* Parent communicator */
         if (argc == 2) {
             tasks = atoi(argv[1]);
-        }
-        else if (argc == 1) {
+        } else if (argc == 1) {
             tasks = DEFAULT_TASKS;
-        }
-        else {
+        } else {
             fprintf(stderr, "Usage: %s {number_of_tasks}\n", argv[0]);
             MPI_Abort(MPI_COMM_WORLD, -1);
         }
@@ -145,8 +143,7 @@ int main(int argc, char *argv[])
 
         if (comm_world_rank == 0)
             printf(" No Errors\n");
-    }
-    else {      /* Child communicator */
+    } else {    /* Child communicator */
         /* Do some work here and send a message to the root process in
          * the parent communicator. */
         CHECK_SUCCESS(MPI_Send(NULL, 0, MPI_CHAR, 0, 1, parent));
@@ -158,8 +155,11 @@ int main(int argc, char *argv[])
 #ifdef USE_THREADS
     if (threads)
         free(threads);
+#else
+    if (child)
+        free(child);
 #endif
     MPI_Finalize();
 
-    return 0;
+    return MTestReturnValue(errs);
 }

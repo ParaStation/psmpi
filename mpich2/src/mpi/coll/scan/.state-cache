@@ -1,0 +1,17 @@
+<dir>
+<file name="scan_intra_recursive_doubling.c" info="1542820949"/>
+<file name="scan.c" info="1542820949"/>
+<file name="scan_allcomm_nb.c" info="1542820949"/>
+<file name="scan_intra_smp.c" info="1542820949"/>
+</dir>
+<data>
+<fileinfo name="scan_intra_recursive_doubling.c">
+</fileinfo>
+<fileinfo name="scan.c">
+MPID_STATE_MPI_SCAN MPI_Scan
+</fileinfo>
+<fileinfo name="scan_allcomm_nb.c">
+</fileinfo>
+<fileinfo name="scan_intra_smp.c">
+</fileinfo>
+</data>

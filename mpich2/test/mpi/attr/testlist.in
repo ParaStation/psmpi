@@ -1,0 +1,56 @@
+attrt 2
+attric 4
+attrerr 1
+attrend 1
+attrend 4
+attrend2 1
+attrend2 5
+attrerrcomm 1
+attrerrtype 1
+attrdeleteget 1
+attr2type 1
+attrorder 1
+attrordercomm 1
+attrordertype 1
+baseattr2 1
+baseattrcomm 1
+fkeyval 1
+fkeyvalcomm 1
+keyval_double_free 1
+keyval_double_free_comm 1
+keyval_double_free_type 1
+keyval_double_free_win 1
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_CHAR arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_BYTE arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_WCHAR arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_SHORT arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_INT arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_LONG arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_LONG_LONG_INT arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_UNSIGNED_CHAR arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_UNSIGNED_SHORT arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_UNSIGNED arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_UNSIGNED_LONG arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_UNSIGNED_LONG_LONG arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_FLOAT arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_DOUBLE arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_LONG_DOUBLE arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_INT8_T arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_INT16_T arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_INT32_T arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_INT64_T arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_UINT8_T arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_UINT16_T arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_UINT32_T arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_UINT64_T arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_C_COMPLEX arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_C_FLOAT_COMPLEX arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_C_DOUBLE_COMPLEX arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_C_LONG_DOUBLE_COMPLEX arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_FLOAT_INT arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_DOUBLE_INT arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_LONG_INT arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_2INT arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_SHORT_INT arg=-count=1 
+fkeyvaltype__BASIC__L23 1 arg=-type=MPI_LONG_DOUBLE_INT arg=-count=1 
+fkeyvaltype__STRUCT__L34 1 arg=-numtypes=4 arg=-types=MPI_CHAR,MPI_INT,MPI_INT,MPI_FLOAT arg=-counts=64,32,16,8 

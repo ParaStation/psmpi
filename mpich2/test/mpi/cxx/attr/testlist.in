@@ -1,0 +1,37 @@
+attrtx 2
+attricx 4
+baseattrcommx 1
+fkeyvalcommx 1
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_CHAR arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_BYTE arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_WCHAR arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_SHORT arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_INT arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_LONG arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_LONG_LONG_INT arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_UNSIGNED_CHAR arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_UNSIGNED_SHORT arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_UNSIGNED arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_UNSIGNED_LONG arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_UNSIGNED_LONG_LONG arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_FLOAT arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_DOUBLE arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_LONG_DOUBLE arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_INT8_T arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_INT16_T arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_INT32_T arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_INT64_T arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_UINT8_T arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_UINT16_T arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_UINT32_T arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_UINT64_T arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_C_COMPLEX arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_C_FLOAT_COMPLEX arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_C_DOUBLE_COMPLEX arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_C_LONG_DOUBLE_COMPLEX arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_FLOAT_INT arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_DOUBLE_INT arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_LONG_INT arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_2INT arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_SHORT_INT arg=-count=1 
+fkeyvaltypex__BASIC__L26 1 arg=-type=MPI_LONG_DOUBLE_INT arg=-count=1 

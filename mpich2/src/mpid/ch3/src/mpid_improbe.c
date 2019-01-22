@@ -6,16 +6,16 @@
 
 #include "mpidimpl.h"
 
-int (*MPIDI_Anysource_improbe_fn)(int tag, MPID_Comm * comm, int context_offset,
-                                  int *flag, MPID_Request **message,
+int (*MPIDI_Anysource_improbe_fn)(int tag, MPIR_Comm * comm, int context_offset,
+                                  int *flag, MPIR_Request **message,
                                   MPI_Status * status) = NULL;
 
 #undef FUNCNAME
 #define FUNCNAME MPID_Improbe
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPID_Improbe(int source, int tag, MPID_Comm *comm, int context_offset,
-                 int *flag, MPID_Request **message, MPI_Status *status)
+int MPID_Improbe(int source, int tag, MPIR_Comm *comm, int context_offset,
+                 int *flag, MPIR_Request **message, MPI_Status *status)
 {
     int mpi_errno = MPI_SUCCESS;
     int context_id = comm->recvcontext_id + context_offset;
@@ -99,7 +99,7 @@ int MPID_Improbe(int source, int tag, MPID_Comm *comm, int context_offset,
     }
 
     if (*flag && *message) {
-        (*message)->kind = MPID_REQUEST_MPROBE;
+        (*message)->kind = MPIR_REQUEST_KIND__MPROBE;
         MPIR_Request_extract_status((*message), status);
     }
 

@@ -1,4 +1,4 @@
-.TH MPI_Dist_graph_create 3 "11/9/2015" " " "MPI"
+.TH MPI_Dist_graph_create 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Dist_graph_create \-  MPI_DIST_GRAPH_CREATE returns a handle to a new communicator to which the distributed graph topology information is attached. 
 .SH SYNOPSIS
@@ -6,7 +6,7 @@ MPI_Dist_graph_create \-  MPI_DIST_GRAPH_CREATE returns a handle to a new commun
 int MPI_Dist_graph_create(MPI_Comm comm_old, int n, const int sources[],
                           const int degrees[], const int destinations[],
                           const int weights[],
-                          MPI_Info info, int reorder, MPI_Comm *comm_dist_graph)
+                          MPI_Info info, int reorder, MPI_Comm * comm_dist_graph)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -17,31 +17,31 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, const int sources[],
 .PD 0
 .TP
 .B n 
-- number of source nodes for which this process specifies edges 
+- number of source nodes for which this process specifies edges
 (non-negative integer)
 .PD 1
 .PD 0
 .TP
 .B sources 
-- array containing the n source nodes for which this process 
+- array containing the n source nodes for which this process
 specifies edges (array of non-negative integers)
 .PD 1
 .PD 0
 .TP
 .B degrees 
-- array specifying the number of destinations for each source node 
+- array specifying the number of destinations for each source node
 in the source node array (array of non-negative integers)
 .PD 1
 .PD 0
 .TP
 .B destinations 
-- destination nodes for the source nodes in the source node 
+- destination nodes for the source nodes in the source node
 array (array of non-negative integers)
 .PD 1
 .PD 0
 .TP
 .B weights 
-- weights for source to destination edges (array of non-negative 
+- weights for source to destination edges (array of non-negative
 integers or MPI_UNWEIGHTED)
 .PD 1
 .PD 0

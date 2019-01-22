@@ -4,12 +4,15 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
+
+#ifndef MPITESTCXX_H_INCLUDED
+#define MPITESTCXX_H_INCLUDED
+
 #ifndef MPITESTCONF_H_INCLUDED
 #error Required mpitestconf.h file not included first!
 #endif
 
-#ifndef MTEST_INCLUDED
-#define MTEST_INCLUDED
+#include <string.h>
 /*
  * Init and finalize test
  */
@@ -64,4 +67,10 @@ const char *MTestGetWinName(void);
 void MTestFreeWin(MPI::Win &);
 #endif
 
-#endif
+/* useful for avoid valgrind warnings about padding bytes */
+#define MTEST_VG_MEM_INIT(addr_, size_) \
+do {                                    \
+    memset(addr_, 0, size_);            \
+} while (0)
+
+#endif /* MPITESTCXX_H_INCLUDED */

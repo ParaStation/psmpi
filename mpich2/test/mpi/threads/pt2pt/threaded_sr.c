@@ -35,6 +35,7 @@ MTEST_THREAD_RETURN_TYPE send_thread(void *p)
     int rank;
 
     buffer = malloc(sizeof(char) * MSG_SIZE);
+    MTEST_VG_MEM_INIT(buffer, MSG_SIZE * sizeof(char));
     if (buffer == NULL) {
         printf("malloc failed to allocate %d bytes for the send buffer.\n", MSG_SIZE);
         fflush(stdout);
@@ -54,10 +55,10 @@ MTEST_THREAD_RETURN_TYPE send_thread(void *p)
                MSG_SIZE, rank, rank == 0 ? 1 : 0, buffer);
         fflush(stdout);
         sendok = 0;
-    }
-    else {
+    } else {
         sendok = 1;
     }
+    free(buffer);
     return (MTEST_THREAD_RETURN_TYPE) (long) err;
 }
 
@@ -70,10 +71,7 @@ int main(int argc, char *argv[])
     int length;
     MPI_Status status;
 
-    err = MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-    if (err != MPI_SUCCESS) {
-        MPI_Abort(MPI_COMM_WORLD, 1);
-    }
+    MTest_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -100,6 +98,7 @@ int main(int argc, char *argv[])
     MTestSleep(3);
 
     buffer = malloc(sizeof(char) * MSG_SIZE);
+    MTEST_VG_MEM_INIT(buffer, MSG_SIZE * sizeof(char));
     if (buffer == NULL) {
         printf("malloc failed to allocate %d bytes for the recv buffer.\n", MSG_SIZE);
         fflush(stdout);
@@ -125,7 +124,8 @@ int main(int argc, char *argv[])
         errs++;
     }
 
+    MTest_Join_threads();
+    free(buffer);
     MTest_Finalize(errs);
-    MPI_Finalize();
     return 0;
 }

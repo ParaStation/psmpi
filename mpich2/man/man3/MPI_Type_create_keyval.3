@@ -1,34 +1,34 @@
-.TH MPI_Type_create_keyval 3 "11/9/2015" " " "MPI"
+.TH MPI_Type_create_keyval 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Type_create_keyval \-  Create an attribute keyval for MPI datatypes 
 .SH SYNOPSIS
 .nf
-int MPI_Type_create_keyval(MPI_Type_copy_attr_function *type_copy_attr_fn, 
-                         MPI_Type_delete_attr_function *type_delete_attr_fn,
-                         int *type_keyval, void *extra_state)
+int MPI_Type_create_keyval(MPI_Type_copy_attr_function * type_copy_attr_fn,
+                           MPI_Type_delete_attr_function * type_delete_attr_fn,
+                           int *type_keyval, void *extra_state)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B type_copy_attr_fn 
-- copy callback function for type_keyval (function) 
+- copy callback function for type_keyval (function)
 .PD 1
 .PD 0
 .TP
 .B type_delete_attr_fn 
-- delete callback function for type_keyval (function) 
+- delete callback function for type_keyval (function)
 .PD 1
 .PD 0
 .TP
 .B extra_state 
-- extra state for callback functions 
+- extra state for callback functions
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B type_keyval 
-- key value for future access (integer) 
+- key value for future access (integer)
 .PD 1
 
 .SH NOTES

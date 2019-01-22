@@ -270,5 +270,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_null_copy_fn_( MPI_Fint*, MPI_Fint
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn_ ( MPI_Fint*v1, MPI_Fint*v2, MPI_Aint *v3, MPI_Aint *v4, MPI_Aint *v5, MPI_Fint *v6, MPI_Fint *ierr ){
         *ierr = MPI_SUCCESS;
-        *v6 = MPIR_TO_FLOG(0);
+        *v6 = MPII_TO_FLOG(0);
 }

@@ -17,9 +17,7 @@ mpi_core_sources +=				\
     src/mpid/ch3/channels/nemesis/src/ch3_win_fns.c             \
     src/mpid/ch3/channels/nemesis/src/ch3i_comm.c		\
     src/mpid/ch3/channels/nemesis/src/ch3i_eagernoncontig.c	\
-    src/mpid/ch3/channels/nemesis/src/mpid_nem_alloc.c		\
     src/mpid/ch3/channels/nemesis/src/mpid_nem_init.c		\
-    src/mpid/ch3/channels/nemesis/src/mpid_nem_barrier.c	\
     src/mpid/ch3/channels/nemesis/src/mpid_nem_mpich.c		\
     src/mpid/ch3/channels/nemesis/src/mpid_nem_ckpt.c		\
     src/mpid/ch3/channels/nemesis/src/mpid_nem_finalize.c	\
@@ -31,4 +29,3 @@ mpi_core_sources +=				\
     src/mpid/ch3/channels/nemesis/src/mpid_nem_net_array.c	\
     src/mpid/ch3/channels/nemesis/src/mpid_nem_lmt_dma.c	\
     src/mpid/ch3/channels/nemesis/src/mpid_nem_lmt_vmsplice.c
-

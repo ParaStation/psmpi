@@ -12,6 +12,7 @@
 #include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "mpitest.h"
 
 #define MAXTESTS 32
 #define ERROR_MARGIN 1.0        /* FIXME: This number is pretty much randomly chosen */
@@ -26,7 +27,7 @@ int main(int argc, char *argv[])
     char *rbuf, *sbuf;
     double times[3][MAXTESTS];
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
     if (getenv("MPITEST_VERBOSE"))
         verbose = 1;
 
@@ -40,11 +41,9 @@ int main(int argc, char *argv[])
     /* Set partner based on whether rank is odd or even */
     if (wrank & 0x1) {
         partner = wrank - 1;
-    }
-    else if (wrank < wsize - 1) {
+    } else if (wrank < wsize - 1) {
         partner = wrank + 1;
-    }
-    else
+    } else
         /* Handle wsize odd */
         partner = MPI_PROC_NULL;
 
@@ -95,8 +94,7 @@ int main(int argc, char *argv[])
                 t1 = t1 * 1.e6;
                 if (verbose)
                     printf("%d\t%g\t%g\n", len, t1, len / t1);
-            }
-            else {
+            } else {
                 t1 = t1 * 1.e6;
                 if (verbose)
                     printf("%d\t%g\tINF\n", len, t1);
@@ -141,8 +139,7 @@ int main(int argc, char *argv[])
                 t1 = t1 * 1.e6;
                 if (verbose)
                     printf("%d\t%g\t%g\n", len, t1, len / t1);
-            }
-            else {
+            } else {
                 t1 = t1 * 1.e6;
                 if (verbose)
                     printf("%d\t%g\tINF\n", len, t1);
@@ -177,8 +174,7 @@ int main(int argc, char *argv[])
             if (wrank & 0x1) {
                 MPI_Send(sbuf, len, MPI_BYTE, partner, k, MPI_COMM_WORLD);
                 MPI_Recv(rbuf, len, MPI_BYTE, partner, k, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            }
-            else {
+            } else {
                 MPI_Recv(rbuf, len, MPI_BYTE, partner, k, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                 MPI_Send(sbuf, len, MPI_BYTE, partner, k, MPI_COMM_WORLD);
             }
@@ -193,8 +189,7 @@ int main(int argc, char *argv[])
                 t1 = t1 * 1.e6;
                 if (verbose)
                     printf("%d\t%g\t%g\n", len, t1, len / t1);
-            }
-            else {
+            } else {
                 t1 = t1 * 1.e6;
                 if (verbose)
                     printf("%d\t%g\tINF\n", len, t1);
@@ -212,8 +207,8 @@ int main(int argc, char *argv[])
      * increases in bandwidth.  This test was created because of a
      * fall-off in performance noted in the ch3:sock device:channel */
 
+    int nPerfErrors = 0;
     if (wrank == 0) {
-        int nPerfErrors = 0;
         len = 1;
         for (k = 0; k < 20; k++) {
             double T0, T1, T2;
@@ -246,22 +241,13 @@ int main(int argc, char *argv[])
             }
             len *= 2;
         }
-        if (nPerfErrors > 8) {
-            /* Allow for 1-2 errors for eager-rendezvous shifting
-             * point and cache effects. There should be a better way
-             * of doing this. */
-            printf(" Found %d performance errors\n", nPerfErrors);
-        }
-        else {
-            printf(" No Errors\n");
-        }
         fflush(stdout);
     }
 
     free(sbuf);
     free(rbuf);
 
-    MPI_Finalize();
+    MTest_Finalize(nPerfErrors);
 
-    return 0;
+    return MTestReturnValue(nPerfErrors);
 }

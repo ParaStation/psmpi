@@ -1,0 +1,10 @@
+**ucx_nm_status: ucx function returned with failed status
+**ucx_nm_status %s %d %s %s: ucx function returned with failed status(%s %d %s %s)
+**ucx_nm_pmi_error: pmi error in UCX netmod
+**ucx_nm_pmi_error %s %d %s %s: string error in UCX netmod(%s %d %s %s)
+**ucx_nm_str_error: string error in UCX netmod
+**ucx_nm_str_error %s %d %s %s: string error in UCX netmod(%s %d %s %s)
+**ucx_nm_rq_error: return failed request in UCX netmod
+**ucx_nm_rq_error %s %d %s %s: returned failed request in UCX netmod(%s %d %s %s)
+**ucx_nm_other:Other UCX error
+**ucx_nm_other %s %d %s %s: Other UCX error (%s %d %s %s)

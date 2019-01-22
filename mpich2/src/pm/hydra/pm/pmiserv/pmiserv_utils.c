@@ -28,74 +28,74 @@ HYD_status HYD_pmcd_pmi_fill_in_proxy_args(struct HYD_string_stash *proxy_stash,
 
     HYD_STRING_STASH_INIT(*proxy_stash);
     if (use_ddd) {
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup("ddd"), status);
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup("--args"), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("ddd"), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("--args"), status);
     }
 
     if (use_valgrind) {
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup("valgrind"), status);
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup("--leak-check=full"), status);
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup("--show-reachable=yes"), status);
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup("--track-origins=yes"), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("valgrind"), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("--leak-check=full"), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("--show-reachable=yes"), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("--track-origins=yes"), status);
     }
 
     if (use_strace) {
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup("strace"), status);
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup("-o"), status);
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup("hydra_strace"), status);
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup("-ff"), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("strace"), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("-o"), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("hydra_strace"), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("-ff"), status);
     }
 
     HYD_STRING_STASH_INIT(stash);
-    HYD_STRING_STASH(stash, HYDU_strdup(HYD_server_info.base_path), status);
-    HYD_STRING_STASH(stash, HYDU_strdup(HYDRA_PMI_PROXY), status);
+    HYD_STRING_STASH(stash, MPL_strdup(HYD_server_info.base_path), status);
+    HYD_STRING_STASH(stash, MPL_strdup(HYDRA_PMI_PROXY), status);
     HYD_STRING_SPIT(stash, str, status);
 
     HYD_STRING_STASH(*proxy_stash, str, status);
 
-    HYD_STRING_STASH(*proxy_stash, HYDU_strdup("--control-port"), status);
-    HYD_STRING_STASH(*proxy_stash, HYDU_strdup(control_port), status);
+    HYD_STRING_STASH(*proxy_stash, MPL_strdup("--control-port"), status);
+    HYD_STRING_STASH(*proxy_stash, MPL_strdup(control_port), status);
 
     if (HYD_server_info.user_global.debug)
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup("--debug"), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("--debug"), status);
 
     if (HYDT_bsci_info.rmk) {
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup("--rmk"), status);
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup(HYDT_bsci_info.rmk), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("--rmk"), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup(HYDT_bsci_info.rmk), status);
     }
 
     if (HYDT_bsci_info.launcher) {
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup("--launcher"), status);
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup(HYDT_bsci_info.launcher), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("--launcher"), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup(HYDT_bsci_info.launcher), status);
     }
 
     if (HYDT_bsci_info.launcher_exec) {
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup("--launcher-exec"), status);
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup(HYDT_bsci_info.launcher_exec), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("--launcher-exec"), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup(HYDT_bsci_info.launcher_exec), status);
     }
 
-    HYD_STRING_STASH(*proxy_stash, HYDU_strdup("--demux"), status);
-    HYD_STRING_STASH(*proxy_stash, HYDU_strdup(HYD_server_info.user_global.demux), status);
+    HYD_STRING_STASH(*proxy_stash, MPL_strdup("--demux"), status);
+    HYD_STRING_STASH(*proxy_stash, MPL_strdup(HYD_server_info.user_global.demux), status);
 
     if (HYD_server_info.user_global.iface) {
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup("--iface"), status);
-        HYD_STRING_STASH(*proxy_stash, HYDU_strdup(HYD_server_info.user_global.iface), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("--iface"), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup(HYD_server_info.user_global.iface), status);
     }
 
-    HYD_STRING_STASH(*proxy_stash, HYDU_strdup("--pgid"), status);
+    HYD_STRING_STASH(*proxy_stash, MPL_strdup("--pgid"), status);
     HYD_STRING_STASH(*proxy_stash, HYDU_int_to_str(pgid), status);
 
     ret = MPL_env2int("HYDRA_PROXY_RETRY_COUNT", &retries);
     if (ret == 0)
         retries = HYD_DEFAULT_RETRY_COUNT;
 
-    HYD_STRING_STASH(*proxy_stash, HYDU_strdup("--retries"), status);
+    HYD_STRING_STASH(*proxy_stash, MPL_strdup("--retries"), status);
     HYD_STRING_STASH(*proxy_stash, HYDU_int_to_str(retries), status);
 
-    HYD_STRING_STASH(*proxy_stash, HYDU_strdup("--usize"), status);
+    HYD_STRING_STASH(*proxy_stash, MPL_strdup("--usize"), status);
     HYD_STRING_STASH(*proxy_stash, HYDU_int_to_str(HYD_server_info.user_global.usize), status);
 
-    HYD_STRING_STASH(*proxy_stash, HYDU_strdup("--proxy-id"), status);
+    HYD_STRING_STASH(*proxy_stash, MPL_strdup("--proxy-id"), status);
 
     if (HYD_server_info.user_global.debug) {
         HYDU_dump_noprefix(stdout, "\nProxy launch args: ");
@@ -147,8 +147,7 @@ static HYD_status pmi_process_mapping(struct HYD_pg *pg, char **process_mapping_
         if (filler_round && proxy == NULL) {
             proxy = pg->proxy_list;
             filler_round = 0;
-        }
-        else if (proxy == NULL)
+        } else if (proxy == NULL)
             break;
 
         if (filler_round && proxy->filler_processes == 0)
@@ -158,23 +157,20 @@ static HYD_status pmi_process_mapping(struct HYD_pg *pg, char **process_mapping_
         core_count = filler_round ? proxy->filler_processes : proxy->node->core_count;
 
         if (blocklist_head == NULL) {
-            HYDU_MALLOC(block, struct block *, sizeof(struct block), status);
+            HYDU_MALLOC_OR_JUMP(block, struct block *, sizeof(struct block), status);
             block->start_idx = node->node_id;
             block->num_nodes = 1;
             block->core_count = core_count;
             block->next = NULL;
 
             blocklist_tail = blocklist_head = block;
-        }
-        else if (blocklist_tail->start_idx + blocklist_tail->num_nodes == node->node_id &&
-                 blocklist_tail->core_count == core_count) {
+        } else if (blocklist_tail->start_idx + blocklist_tail->num_nodes == node->node_id &&
+                   blocklist_tail->core_count == core_count) {
             blocklist_tail->num_nodes++;
-        }
-        else if (blocklist_tail->start_idx == node->node_id && blocklist_tail->num_nodes == 1) {
+        } else if (blocklist_tail->start_idx == node->node_id && blocklist_tail->num_nodes == 1) {
             blocklist_tail->core_count += core_count;
-        }
-        else {
-            HYDU_MALLOC(blocklist_tail->next, struct block *, sizeof(struct block), status);
+        } else {
+            HYDU_MALLOC_OR_JUMP(blocklist_tail->next, struct block *, sizeof(struct block), status);
             blocklist_tail = blocklist_tail->next;
             blocklist_tail->start_idx = node->node_id;
             blocklist_tail->num_nodes = 1;
@@ -196,33 +192,33 @@ static HYD_status pmi_process_mapping(struct HYD_pg *pg, char **process_mapping_
         for (block = blocklist_head; block->next;) {
             nblock = block->next;
             block->next = nblock->next;
-            HYDU_FREE(nblock);
+            MPL_free(nblock);
         }
         blocklist_tail = blocklist_head;
     }
 
     /* Create the mapping out of the blocks */
     HYD_STRING_STASH_INIT(stash);
-    HYD_STRING_STASH(stash, HYDU_strdup("("), status);
-    HYD_STRING_STASH(stash, HYDU_strdup("vector,"), status);
+    HYD_STRING_STASH(stash, MPL_strdup("("), status);
+    HYD_STRING_STASH(stash, MPL_strdup("vector,"), status);
     for (block = blocklist_head; block; block = block->next) {
-        HYD_STRING_STASH(stash, HYDU_strdup("("), status);
+        HYD_STRING_STASH(stash, MPL_strdup("("), status);
         HYD_STRING_STASH(stash, HYDU_int_to_str(block->start_idx), status);
-        HYD_STRING_STASH(stash, HYDU_strdup(","), status);
+        HYD_STRING_STASH(stash, MPL_strdup(","), status);
         HYD_STRING_STASH(stash, HYDU_int_to_str(block->num_nodes), status);
-        HYD_STRING_STASH(stash, HYDU_strdup(","), status);
+        HYD_STRING_STASH(stash, MPL_strdup(","), status);
         HYD_STRING_STASH(stash, HYDU_int_to_str(block->core_count), status);
-        HYD_STRING_STASH(stash, HYDU_strdup(")"), status);
+        HYD_STRING_STASH(stash, MPL_strdup(")"), status);
         if (block->next)
-            HYD_STRING_STASH(stash, HYDU_strdup(","), status);
+            HYD_STRING_STASH(stash, MPL_strdup(","), status);
     }
-    HYD_STRING_STASH(stash, HYDU_strdup(")"), status);
+    HYD_STRING_STASH(stash, MPL_strdup(")"), status);
 
     HYD_STRING_SPIT(stash, *process_mapping_str, status);
 
     for (block = blocklist_head; block; block = nblock) {
         nblock = block->next;
-        HYDU_FREE(block);
+        MPL_free(block);
     }
 
   fn_exit:
@@ -253,7 +249,7 @@ HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
 
     /* Make sure the mapping is within the size allowed by PMI */
     if (strlen(mapping) > PMI_MAXVALLEN) {
-        HYDU_FREE(mapping);
+        MPL_free(mapping);
         mapping = NULL;
     }
 
@@ -269,8 +265,8 @@ HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
     for (node = HYD_server_info.node_list; node; node = node->next)
         total_core_count += node->core_count;
 
-    HYDU_MALLOC(filler_pmi_ids, int *, proxy_count * sizeof(int), status);
-    HYDU_MALLOC(nonfiller_pmi_ids, int *, proxy_count * sizeof(int), status);
+    HYDU_MALLOC_OR_JUMP(filler_pmi_ids, int *, proxy_count * sizeof(int), status);
+    HYDU_MALLOC_OR_JUMP(nonfiller_pmi_ids, int *, proxy_count * sizeof(int), status);
 
     pmi_id = 0;
     for (proxy = pg->proxy_list, i = 0; proxy; proxy = proxy->next, i++) {
@@ -296,26 +292,26 @@ HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
 
         HYD_STRING_STASH_INIT(exec_stash);
 
-        HYD_STRING_STASH(exec_stash, HYDU_strdup("--version"), status);
-        HYD_STRING_STASH(exec_stash, HYDU_strdup(HYDRA_VERSION), status);
+        HYD_STRING_STASH(exec_stash, MPL_strdup("--version"), status);
+        HYD_STRING_STASH(exec_stash, MPL_strdup(HYDRA_VERSION), status);
 
         if (HYD_server_info.iface_ip_env_name) {
-            HYD_STRING_STASH(exec_stash, HYDU_strdup("--iface-ip-env-name"), status);
-            HYD_STRING_STASH(exec_stash, HYDU_strdup(HYD_server_info.iface_ip_env_name), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup("--iface-ip-env-name"), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup(HYD_server_info.iface_ip_env_name), status);
         }
 
-        HYD_STRING_STASH(exec_stash, HYDU_strdup("--hostname"), status);
-        HYD_STRING_STASH(exec_stash, HYDU_strdup(proxy->node->hostname), status);
+        HYD_STRING_STASH(exec_stash, MPL_strdup("--hostname"), status);
+        HYD_STRING_STASH(exec_stash, MPL_strdup(proxy->node->hostname), status);
 
         /* This map has three fields: filler cores on this node,
          * remaining cores on this node, total cores in the system */
-        HYD_STRING_STASH(exec_stash, HYDU_strdup("--global-core-map"), status);
+        HYD_STRING_STASH(exec_stash, MPL_strdup("--global-core-map"), status);
 
         HYD_STRING_STASH_INIT(stash);
         HYD_STRING_STASH(stash, HYDU_int_to_str(proxy->filler_processes), status);
-        HYD_STRING_STASH(stash, HYDU_strdup(","), status);
+        HYD_STRING_STASH(stash, MPL_strdup(","), status);
         HYD_STRING_STASH(stash, HYDU_int_to_str(proxy->node->core_count), status);
-        HYD_STRING_STASH(stash, HYDU_strdup(","), status);
+        HYD_STRING_STASH(stash, MPL_strdup(","), status);
         HYD_STRING_STASH(stash, HYDU_int_to_str(total_core_count), status);
         HYD_STRING_SPIT(stash, map, status);
 
@@ -323,79 +319,78 @@ HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
 
         /* This map has two fields: start PMI ID during the filler
          * phase, start PMI ID for the remaining phase */
-        HYD_STRING_STASH(exec_stash, HYDU_strdup("--pmi-id-map"), status);
+        HYD_STRING_STASH(exec_stash, MPL_strdup("--pmi-id-map"), status);
 
         HYD_STRING_STASH_INIT(stash);
         HYD_STRING_STASH(stash, HYDU_int_to_str(filler_pmi_ids[proxy_count]), status);
-        HYD_STRING_STASH(stash, HYDU_strdup(","), status);
+        HYD_STRING_STASH(stash, MPL_strdup(","), status);
         HYD_STRING_STASH(stash, HYDU_int_to_str(nonfiller_pmi_ids[proxy_count]), status);
         HYD_STRING_SPIT(stash, map, status);
 
         HYD_STRING_STASH(exec_stash, map, status);
 
-        HYD_STRING_STASH(exec_stash, HYDU_strdup("--global-process-count"), status);
+        HYD_STRING_STASH(exec_stash, MPL_strdup("--global-process-count"), status);
         HYD_STRING_STASH(exec_stash, HYDU_int_to_str(pg->pg_process_count), status);
 
-        HYD_STRING_STASH(exec_stash, HYDU_strdup("--auto-cleanup"), status);
+        HYD_STRING_STASH(exec_stash, MPL_strdup("--auto-cleanup"), status);
         HYD_STRING_STASH(exec_stash, HYDU_int_to_str(HYD_server_info.user_global.auto_cleanup),
                          status);
 
         pg_scratch = (struct HYD_pmcd_pmi_pg_scratch *) pg->pg_scratch;
-        HYD_STRING_STASH(exec_stash, HYDU_strdup("--pmi-kvsname"), status);
-        HYD_STRING_STASH(exec_stash, HYDU_strdup(pg_scratch->kvs->kvsname), status);
+        HYD_STRING_STASH(exec_stash, MPL_strdup("--pmi-kvsname"), status);
+        HYD_STRING_STASH(exec_stash, MPL_strdup(pg_scratch->kvs->kvsname), status);
 
         if (pg->spawner_pg) {
             pg_scratch = (struct HYD_pmcd_pmi_pg_scratch *) pg->spawner_pg->pg_scratch;
-            HYD_STRING_STASH(exec_stash, HYDU_strdup("--pmi-spawner-kvsname"), status);
-            HYD_STRING_STASH(exec_stash, HYDU_strdup(pg_scratch->kvs->kvsname), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup("--pmi-spawner-kvsname"), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup(pg_scratch->kvs->kvsname), status);
         }
 
-        HYD_STRING_STASH(exec_stash, HYDU_strdup("--pmi-process-mapping"), status);
-        HYD_STRING_STASH(exec_stash, HYDU_strdup(mapping), status);
+        HYD_STRING_STASH(exec_stash, MPL_strdup("--pmi-process-mapping"), status);
+        HYD_STRING_STASH(exec_stash, MPL_strdup(mapping), status);
 
         if (proxy->node->local_binding) {
-            HYD_STRING_STASH(exec_stash, HYDU_strdup("--binding"), status);
-            HYD_STRING_STASH(exec_stash, HYDU_strdup(proxy->node->local_binding), status);
-        }
-        else if (HYD_server_info.user_global.binding) {
-            HYD_STRING_STASH(exec_stash, HYDU_strdup("--binding"), status);
-            HYD_STRING_STASH(exec_stash, HYDU_strdup(HYD_server_info.user_global.binding), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup("--binding"), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup(proxy->node->local_binding), status);
+        } else if (HYD_server_info.user_global.binding) {
+            HYD_STRING_STASH(exec_stash, MPL_strdup("--binding"), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup(HYD_server_info.user_global.binding), status);
         }
 
         if (HYD_server_info.user_global.mapping) {
-            HYD_STRING_STASH(exec_stash, HYDU_strdup("--mapping"), status);
-            HYD_STRING_STASH(exec_stash, HYDU_strdup(HYD_server_info.user_global.mapping), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup("--mapping"), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup(HYD_server_info.user_global.mapping), status);
         }
 
         if (HYD_server_info.user_global.membind) {
-            HYD_STRING_STASH(exec_stash, HYDU_strdup("--membind"), status);
-            HYD_STRING_STASH(exec_stash, HYDU_strdup(HYD_server_info.user_global.membind), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup("--membind"), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup(HYD_server_info.user_global.membind), status);
         }
 
         if (HYD_server_info.user_global.topolib) {
-            HYD_STRING_STASH(exec_stash, HYDU_strdup("--topolib"), status);
-            HYD_STRING_STASH(exec_stash, HYDU_strdup(HYD_server_info.user_global.topolib), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup("--topolib"), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup(HYD_server_info.user_global.topolib), status);
         }
 
         if (HYD_server_info.user_global.ckpointlib) {
-            HYD_STRING_STASH(exec_stash, HYDU_strdup("--ckpointlib"), status);
-            HYD_STRING_STASH(exec_stash, HYDU_strdup(HYD_server_info.user_global.ckpointlib),
+            HYD_STRING_STASH(exec_stash, MPL_strdup("--ckpointlib"), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup(HYD_server_info.user_global.ckpointlib),
                              status);
         }
 
         if (HYD_server_info.user_global.ckpoint_prefix) {
-            HYD_STRING_STASH(exec_stash, HYDU_strdup("--ckpoint-prefix"), status);
-            HYD_STRING_STASH(exec_stash, HYDU_strdup(HYD_server_info.user_global.ckpoint_prefix),
+            HYD_STRING_STASH(exec_stash, MPL_strdup("--ckpoint-prefix"), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup(HYD_server_info.user_global.ckpoint_prefix),
                              status);
         }
 
         if (HYD_server_info.user_global.ckpoint_num) {
-            HYD_STRING_STASH(exec_stash, HYDU_strdup("--ckpoint-num"), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup("--ckpoint-num"), status);
             HYD_STRING_STASH(exec_stash, HYDU_int_to_str(HYD_server_info.user_global.ckpoint_num),
                              status);
         }
 
-        HYD_STRING_STASH(exec_stash, HYDU_strdup("--global-inherited-env"), status);
+        HYD_STRING_STASH(exec_stash, MPL_strdup("--global-inherited-env"), status);
         for (i = 0, env = HYD_server_info.user_global.global_env.inherited; env;
              env = env->next, i++);
         HYD_STRING_STASH(exec_stash, HYDU_int_to_str(i), status);
@@ -409,7 +404,7 @@ HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
             HYD_STRING_STASH(exec_stash, envstr, status);
         }
 
-        HYD_STRING_STASH(exec_stash, HYDU_strdup("--global-user-env"), status);
+        HYD_STRING_STASH(exec_stash, MPL_strdup("--global-user-env"), status);
         for (i = 0, env = HYD_server_info.user_global.global_env.user; env; env = env->next, i++);
         HYD_STRING_STASH(exec_stash, HYDU_int_to_str(i), status);
 
@@ -422,7 +417,7 @@ HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
             HYD_STRING_STASH(exec_stash, envstr, status);
         }
 
-        HYD_STRING_STASH(exec_stash, HYDU_strdup("--global-system-env"), status);
+        HYD_STRING_STASH(exec_stash, MPL_strdup("--global-system-env"), status);
         for (i = 0, env = HYD_server_info.user_global.global_env.system; env; env = env->next, i++);
         HYD_STRING_STASH(exec_stash, HYDU_int_to_str(i), status);
 
@@ -436,25 +431,25 @@ HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
         }
 
         if (HYD_server_info.user_global.global_env.prop) {
-            HYD_STRING_STASH(exec_stash, HYDU_strdup("--genv-prop"), status);
-            HYD_STRING_STASH(exec_stash, HYDU_strdup(HYD_server_info.user_global.global_env.prop),
+            HYD_STRING_STASH(exec_stash, MPL_strdup("--genv-prop"), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup(HYD_server_info.user_global.global_env.prop),
                              status);
         }
 
-        HYD_STRING_STASH(exec_stash, HYDU_strdup("--proxy-core-count"), status);
+        HYD_STRING_STASH(exec_stash, MPL_strdup("--proxy-core-count"), status);
         HYD_STRING_STASH(exec_stash, HYDU_int_to_str(proxy->node->core_count), status);
 
         /* Now pass the local executable information */
         for (exec = proxy->exec_list; exec; exec = exec->next) {
-            HYD_STRING_STASH(exec_stash, HYDU_strdup("--exec"), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup("--exec"), status);
 
-            HYD_STRING_STASH(exec_stash, HYDU_strdup("--exec-appnum"), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup("--exec-appnum"), status);
             HYD_STRING_STASH(exec_stash, HYDU_int_to_str(exec->appnum), status);
 
-            HYD_STRING_STASH(exec_stash, HYDU_strdup("--exec-proc-count"), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup("--exec-proc-count"), status);
             HYD_STRING_STASH(exec_stash, HYDU_int_to_str(exec->proc_count), status);
 
-            HYD_STRING_STASH(exec_stash, HYDU_strdup("--exec-local-env"), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup("--exec-local-env"), status);
             for (i = 0, env = exec->user_env; env; env = env->next, i++);
             HYD_STRING_STASH(exec_stash, HYDU_int_to_str(i), status);
 
@@ -468,21 +463,21 @@ HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
             }
 
             if (exec->env_prop) {
-                HYD_STRING_STASH(exec_stash, HYDU_strdup("--exec-env-prop"), status);
-                HYD_STRING_STASH(exec_stash, HYDU_strdup(exec->env_prop), status);
+                HYD_STRING_STASH(exec_stash, MPL_strdup("--exec-env-prop"), status);
+                HYD_STRING_STASH(exec_stash, MPL_strdup(exec->env_prop), status);
             }
 
             if (exec->wdir) {
-                HYD_STRING_STASH(exec_stash, HYDU_strdup("--exec-wdir"), status);
-                HYD_STRING_STASH(exec_stash, HYDU_strdup(exec->wdir), status);
+                HYD_STRING_STASH(exec_stash, MPL_strdup("--exec-wdir"), status);
+                HYD_STRING_STASH(exec_stash, MPL_strdup(exec->wdir), status);
             }
 
-            HYD_STRING_STASH(exec_stash, HYDU_strdup("--exec-args"), status);
+            HYD_STRING_STASH(exec_stash, MPL_strdup("--exec-args"), status);
             for (i = 0; exec->exec[i]; i++);
             HYD_STRING_STASH(exec_stash, HYDU_int_to_str(i), status);
 
             for (i = 0; exec->exec[i]; i++)
-                HYD_STRING_STASH(exec_stash, HYDU_strdup(exec->exec[i]), status);
+                HYD_STRING_STASH(exec_stash, MPL_strdup(exec->exec[i]), status);
         }
 
         if (HYD_server_info.user_global.debug) {
@@ -501,9 +496,9 @@ HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
 
   fn_exit:
     if (mapping)
-        HYDU_FREE(mapping);
-    HYDU_FREE(filler_pmi_ids);
-    HYDU_FREE(nonfiller_pmi_ids);
+        MPL_free(mapping);
+    MPL_free(filler_pmi_ids);
+    MPL_free(nonfiller_pmi_ids);
     return status;
 
   fn_fail:
@@ -518,13 +513,13 @@ HYD_status HYD_pmcd_pmi_alloc_pg_scratch(struct HYD_pg *pg)
 
     HYDU_FUNC_ENTER();
 
-    HYDU_MALLOC(pg->pg_scratch, void *, sizeof(struct HYD_pmcd_pmi_pg_scratch), status);
+    HYDU_MALLOC_OR_JUMP(pg->pg_scratch, void *, sizeof(struct HYD_pmcd_pmi_pg_scratch), status);
     pg_scratch = (struct HYD_pmcd_pmi_pg_scratch *) pg->pg_scratch;
 
     pg_scratch->barrier_count = 0;
 
-    HYDU_MALLOC(pg_scratch->ecount, struct HYD_pmcd_pmi_ecount *,
-                pg->pg_process_count * sizeof(struct HYD_pmcd_pmi_ecount), status);
+    HYDU_MALLOC_OR_JUMP(pg_scratch->ecount, struct HYD_pmcd_pmi_ecount *,
+                        pg->pg_process_count * sizeof(struct HYD_pmcd_pmi_ecount), status);
     for (i = 0; i < pg->pg_process_count; i++) {
         pg_scratch->ecount[i].fd = HYD_FD_UNSET;
         pg_scratch->ecount[i].pid = -1;
@@ -534,7 +529,7 @@ HYD_status HYD_pmcd_pmi_alloc_pg_scratch(struct HYD_pg *pg)
     pg_scratch->control_listen_fd = HYD_FD_UNSET;
     pg_scratch->pmi_listen_fd = HYD_FD_UNSET;
 
-    pg_scratch->dead_processes = HYDU_strdup("");
+    pg_scratch->dead_processes = MPL_strdup("");
     pg_scratch->dead_process_count = 0;
 
     status = HYD_pmcd_pmi_allocate_kvs(&pg_scratch->kvs, pg->pgid);
@@ -561,21 +556,17 @@ HYD_status HYD_pmcd_pmi_free_pg_scratch(struct HYD_pg *pg)
         pg_scratch = pg->pg_scratch;
 
         if (pg_scratch->ecount)
-            HYDU_FREE(pg_scratch->ecount);
+            MPL_free(pg_scratch->ecount);
 
         if (pg_scratch->dead_processes)
-            HYDU_FREE(pg_scratch->dead_processes);
+            MPL_free(pg_scratch->dead_processes);
 
         HYD_pmcd_free_pmi_kvs_list(pg_scratch->kvs);
 
-        HYDU_FREE(pg_scratch);
+        MPL_free(pg_scratch);
         pg->pg_scratch = NULL;
     }
 
-  fn_exit:
     HYDU_FUNC_EXIT();
     return status;
-
-  fn_fail:
-    goto fn_exit;
 }

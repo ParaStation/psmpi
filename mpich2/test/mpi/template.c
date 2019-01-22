@@ -50,8 +50,7 @@ int main(int argc, char *argv[])
                         MTestPrintError(err);
                     }
                     MTestFreeDatatype(&sendtype);
-                }
-                else if (rank == dest) {
+                } else if (rank == dest) {
                     recvtype.InitBuf(&recvtype);
                     err = MPI_Recv(recvtype.buf, recvtype.count,
                                    recvtype.datatype, source, 0, comm, &status);
@@ -73,6 +72,5 @@ int main(int argc, char *argv[])
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

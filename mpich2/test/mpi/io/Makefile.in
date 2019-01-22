@@ -99,7 +99,8 @@ noinst_PROGRAMS = rdwrord$(EXEEXT) rdwrzero$(EXEEXT) \
 	i_noncontig$(EXEEXT) async$(EXEEXT) async_any$(EXEEXT) \
 	userioerr$(EXEEXT) resized$(EXEEXT) resized2$(EXEEXT) \
 	bigtype$(EXEEXT) hindexed_io$(EXEEXT) \
-	simple_collective$(EXEEXT) $(am__EXEEXT_1)
+	simple_collective$(EXEEXT) external32_derived_dtype$(EXEEXT) \
+	tst_fileview$(EXEEXT) $(am__EXEEXT_1)
 @BUILD_MPIX_TESTS_TRUE@am__append_1 = \
 @BUILD_MPIX_TESTS_TRUE@    i_bigtype           \
 @BUILD_MPIX_TESTS_TRUE@    i_hindexed_io       \
@@ -149,158 +150,142 @@ async_SOURCES = async.c
 async_OBJECTS = async.$(OBJEXT)
 async_LDADD = $(LDADD)
 async_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 async_any_SOURCES = async_any.c
 async_any_OBJECTS = async_any.$(OBJEXT)
 async_any_LDADD = $(LDADD)
 async_any_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 bigtype_SOURCES = bigtype.c
 bigtype_OBJECTS = bigtype.$(OBJEXT)
 bigtype_LDADD = $(LDADD)
 bigtype_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+external32_derived_dtype_SOURCES = external32_derived_dtype.c
+external32_derived_dtype_OBJECTS = external32_derived_dtype.$(OBJEXT)
+external32_derived_dtype_LDADD = $(LDADD)
+external32_derived_dtype_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 getextent_SOURCES = getextent.c
 getextent_OBJECTS = getextent.$(OBJEXT)
 getextent_LDADD = $(LDADD)
 getextent_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 hindexed_io_SOURCES = hindexed_io.c
 hindexed_io_OBJECTS = hindexed_io.$(OBJEXT)
 hindexed_io_LDADD = $(LDADD)
 hindexed_io_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 i_aggregation1_SOURCES = i_aggregation1.c
 i_aggregation1_OBJECTS = i_aggregation1.$(OBJEXT)
 i_aggregation1_LDADD = $(LDADD)
 i_aggregation1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 i_aggregation2_SOURCES = i_aggregation2.c
 i_aggregation2_OBJECTS = i_aggregation2.$(OBJEXT)
 i_aggregation2_LDADD = $(LDADD)
 i_aggregation2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 i_bigtype_SOURCES = i_bigtype.c
 i_bigtype_OBJECTS = i_bigtype.$(OBJEXT)
 i_bigtype_LDADD = $(LDADD)
 i_bigtype_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 i_coll_test_SOURCES = i_coll_test.c
 i_coll_test_OBJECTS = i_coll_test.$(OBJEXT)
 i_coll_test_LDADD = $(LDADD)
 i_coll_test_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 i_darray_read_SOURCES = i_darray_read.c
 i_darray_read_OBJECTS = i_darray_read.$(OBJEXT)
 i_darray_read_LDADD = $(LDADD)
 i_darray_read_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 i_hindexed_SOURCES = i_hindexed.c
 i_hindexed_OBJECTS = i_hindexed.$(OBJEXT)
 i_hindexed_LDADD = $(LDADD)
 i_hindexed_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 i_hindexed_io_SOURCES = i_hindexed_io.c
 i_hindexed_io_OBJECTS = i_hindexed_io.$(OBJEXT)
 i_hindexed_io_LDADD = $(LDADD)
 i_hindexed_io_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 i_noncontig_SOURCES = i_noncontig.c
 i_noncontig_OBJECTS = i_noncontig.$(OBJEXT)
 i_noncontig_LDADD = $(LDADD)
 i_noncontig_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 i_noncontig_coll_SOURCES = i_noncontig_coll.c
 i_noncontig_coll_OBJECTS = i_noncontig_coll.$(OBJEXT)
 i_noncontig_coll_LDADD = $(LDADD)
 i_noncontig_coll_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 i_noncontig_coll2_SOURCES = i_noncontig_coll2.c
 i_noncontig_coll2_OBJECTS = i_noncontig_coll2.$(OBJEXT)
 i_noncontig_coll2_LDADD = $(LDADD)
 i_noncontig_coll2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 i_rdwrord_SOURCES = i_rdwrord.c
 i_rdwrord_OBJECTS = i_rdwrord.$(OBJEXT)
 i_rdwrord_LDADD = $(LDADD)
 i_rdwrord_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 i_setviewcur_SOURCES = i_setviewcur.c
 i_setviewcur_OBJECTS = i_setviewcur.$(OBJEXT)
 i_setviewcur_LDADD = $(LDADD)
 i_setviewcur_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 i_types_with_zeros_SOURCES = i_types_with_zeros.c
 i_types_with_zeros_OBJECTS = i_types_with_zeros.$(OBJEXT)
 i_types_with_zeros_LDADD = $(LDADD)
 i_types_with_zeros_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 rdwrord_SOURCES = rdwrord.c
 rdwrord_OBJECTS = rdwrord.$(OBJEXT)
 rdwrord_LDADD = $(LDADD)
 rdwrord_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 rdwrzero_SOURCES = rdwrzero.c
 rdwrzero_OBJECTS = rdwrzero.$(OBJEXT)
 rdwrzero_LDADD = $(LDADD)
 rdwrzero_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 resized_SOURCES = resized.c
 resized_OBJECTS = resized.$(OBJEXT)
 resized_LDADD = $(LDADD)
 resized_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 resized2_SOURCES = resized2.c
 resized2_OBJECTS = resized2.$(OBJEXT)
 resized2_LDADD = $(LDADD)
 resized2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 setinfo_SOURCES = setinfo.c
 setinfo_OBJECTS = setinfo.$(OBJEXT)
 setinfo_LDADD = $(LDADD)
 setinfo_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 setviewcur_SOURCES = setviewcur.c
 setviewcur_OBJECTS = setviewcur.$(OBJEXT)
 setviewcur_LDADD = $(LDADD)
 setviewcur_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 simple_collective_SOURCES = simple_collective.c
 simple_collective_OBJECTS = simple_collective.$(OBJEXT)
 simple_collective_LDADD = $(LDADD)
 simple_collective_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+tst_fileview_SOURCES = tst_fileview.c
+tst_fileview_OBJECTS = tst_fileview.$(OBJEXT)
+tst_fileview_LDADD = $(LDADD)
+tst_fileview_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 userioerr_SOURCES = userioerr.c
 userioerr_OBJECTS = userioerr.$(OBJEXT)
 userioerr_LDADD = $(LDADD)
 userioerr_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -329,20 +314,22 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = async.c async_any.c bigtype.c getextent.c hindexed_io.c \
+SOURCES = async.c async_any.c bigtype.c external32_derived_dtype.c \
+	getextent.c hindexed_io.c i_aggregation1.c i_aggregation2.c \
+	i_bigtype.c i_coll_test.c i_darray_read.c i_hindexed.c \
+	i_hindexed_io.c i_noncontig.c i_noncontig_coll.c \
+	i_noncontig_coll2.c i_rdwrord.c i_setviewcur.c \
+	i_types_with_zeros.c rdwrord.c rdwrzero.c resized.c resized2.c \
+	setinfo.c setviewcur.c simple_collective.c tst_fileview.c \
+	userioerr.c
+DIST_SOURCES = async.c async_any.c bigtype.c \
+	external32_derived_dtype.c getextent.c hindexed_io.c \
 	i_aggregation1.c i_aggregation2.c i_bigtype.c i_coll_test.c \
 	i_darray_read.c i_hindexed.c i_hindexed_io.c i_noncontig.c \
 	i_noncontig_coll.c i_noncontig_coll2.c i_rdwrord.c \
 	i_setviewcur.c i_types_with_zeros.c rdwrord.c rdwrzero.c \
 	resized.c resized2.c setinfo.c setviewcur.c \
-	simple_collective.c userioerr.c
-DIST_SOURCES = async.c async_any.c bigtype.c getextent.c hindexed_io.c \
-	i_aggregation1.c i_aggregation2.c i_bigtype.c i_coll_test.c \
-	i_darray_read.c i_hindexed.c i_hindexed_io.c i_noncontig.c \
-	i_noncontig_coll.c i_noncontig_coll2.c i_rdwrord.c \
-	i_setviewcur.c i_types_with_zeros.c rdwrord.c rdwrzero.c \
-	resized.c resized2.c setinfo.c setviewcur.c \
-	simple_collective.c userioerr.c
+	simple_collective.c tst_fileview.c userioerr.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -393,6 +380,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -548,6 +536,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -557,11 +546,14 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # AM_CPPFLAGS are used for C++ code as well
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
+
+# Add libdtpools support
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_builddir)/dtpoos/include \
+	-I$(top_srcdir)/dtpools/include
 LDADD = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-CLEANFILES = summary.xml summary.tap summary.junit.xml
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
 EXTRA_DIST = testlist.in
 all: all-am
 
@@ -614,6 +606,10 @@ async_any$(EXEEXT): $(async_any_OBJECTS) $(async_any_DEPENDENCIES) $(EXTRA_async
 bigtype$(EXEEXT): $(bigtype_OBJECTS) $(bigtype_DEPENDENCIES) $(EXTRA_bigtype_DEPENDENCIES) 
 	@rm -f bigtype$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(bigtype_OBJECTS) $(bigtype_LDADD) $(LIBS)
+
+external32_derived_dtype$(EXEEXT): $(external32_derived_dtype_OBJECTS) $(external32_derived_dtype_DEPENDENCIES) $(EXTRA_external32_derived_dtype_DEPENDENCIES) 
+	@rm -f external32_derived_dtype$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(external32_derived_dtype_OBJECTS) $(external32_derived_dtype_LDADD) $(LIBS)
 
 getextent$(EXEEXT): $(getextent_OBJECTS) $(getextent_DEPENDENCIES) $(EXTRA_getextent_DEPENDENCIES) 
 	@rm -f getextent$(EXEEXT)
@@ -703,6 +699,10 @@ simple_collective$(EXEEXT): $(simple_collective_OBJECTS) $(simple_collective_DEP
 	@rm -f simple_collective$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(simple_collective_OBJECTS) $(simple_collective_LDADD) $(LIBS)
 
+tst_fileview$(EXEEXT): $(tst_fileview_OBJECTS) $(tst_fileview_DEPENDENCIES) $(EXTRA_tst_fileview_DEPENDENCIES) 
+	@rm -f tst_fileview$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(tst_fileview_OBJECTS) $(tst_fileview_LDADD) $(LIBS)
+
 userioerr$(EXEEXT): $(userioerr_OBJECTS) $(userioerr_DEPENDENCIES) $(EXTRA_userioerr_DEPENDENCIES) 
 	@rm -f userioerr$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(userioerr_OBJECTS) $(userioerr_LDADD) $(LIBS)
@@ -716,6 +716,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/async.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/async_any.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bigtype.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/external32_derived_dtype.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getextent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hindexed_io.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i_aggregation1.Po@am__quote@
@@ -738,6 +739,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/setinfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/setviewcur.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_collective.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tst_fileview.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/userioerr.Po@am__quote@
 
 .c.o:
@@ -964,16 +966,15 @@ uninstall-am:
 $(top_builddir)/util/mtest.$(OBJEXT): $(top_srcdir)/util/mtest.c
 	(cd $(top_builddir)/util && $(MAKE) mtest.$(OBJEXT))
 
-$(top_builddir)/util/mtest_datatype.$(OBJEXT): $(top_srcdir)/util/mtest_datatype.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype.$(OBJEXT))
+$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+	(cd $(top_builddir)/dtpools && $(MAKE))
 
-$(top_builddir)/util/mtest_datatype_gen.$(OBJEXT): $(top_srcdir)/util/mtest_datatype_gen.c
-	(cd $(top_builddir)/util && $(MAKE) mtest_datatype_gen.$(OBJEXT))
+SUMMARY_BASENAME ?= summary
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
-		-mpiexec=${MPIEXEC} -xmlfile=summary.xml \
-		-tapfile=summary.tap -junitfile=summary.junit.xml
+		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
+		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
 clean-local:
 	-rm -f testfile testfile.*

@@ -88,7 +88,8 @@ static MPIDI_Comm_ops_t comm_ops = {
 
     MPID_nem_ptl_probe,         /* probe */
     MPID_nem_ptl_iprobe,        /* iprobe */
-    MPID_nem_ptl_improbe        /* improbe */
+    MPID_nem_ptl_improbe,       /* improbe */
+    NULL                        /* imrecv */
 };
 
 static MPIDI_CH3_PktHandler_Fcn *MPID_nem_ptl_pkt_handlers[2]; /* for CANCEL_SEND_REQ and CANCEL_SEND_RESP */
@@ -103,9 +104,9 @@ static int get_target_info(int rank, ptl_process_t *id, ptl_pt_index_t local_dat
     int mpi_errno = MPI_SUCCESS;
     struct MPIDI_VC *vc;
     MPID_nem_ptl_vc_area *vc_ptl;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_GET_TARGET_INFO);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_GET_TARGET_INFO);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_GET_TARGET_INFO);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_GET_TARGET_INFO);
 
     MPIDI_PG_Get_vc(MPIDI_Process.my_pg, rank, &vc);
     vc_ptl = VC_PTL(vc);
@@ -116,7 +117,7 @@ static int get_target_info(int rank, ptl_process_t *id, ptl_pt_index_t local_dat
 
     *id = vc_ptl->id;
 
-    MPIU_Assert(local_data_pt == MPIDI_nem_ptl_pt || local_data_pt == MPIDI_nem_ptl_get_pt ||
+    MPIR_Assert(local_data_pt == MPIDI_nem_ptl_pt || local_data_pt == MPIDI_nem_ptl_get_pt ||
                 local_data_pt == MPIDI_nem_ptl_control_pt);
 
     if (local_data_pt == MPIDI_nem_ptl_pt) {
@@ -133,7 +134,7 @@ static int get_target_info(int rank, ptl_process_t *id, ptl_pt_index_t local_dat
     }
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_GET_TARGET_INFO);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_GET_TARGET_INFO);
     return mpi_errno;
 
  fn_fail:
@@ -151,19 +152,19 @@ static int ptl_init(MPIDI_PG_t *pg_p, int pg_rank, char **bc_val_p, int *val_max
     int ret;
     ptl_md_t md;
     ptl_ni_limits_t desired;
-    MPIDI_STATE_DECL(MPID_STATE_PTL_INIT);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_PTL_INIT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_PTL_INIT);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_PTL_INIT);
 
     /* first make sure that our private fields in the vc and req fit into the area provided  */
-    MPIU_Assert(sizeof(MPID_nem_ptl_vc_area) <= MPIDI_NEM_VC_NETMOD_AREA_LEN);
-    MPIU_Assert(sizeof(MPID_nem_ptl_req_area) <= MPIDI_NEM_REQ_NETMOD_AREA_LEN);
+    MPIR_Assert(sizeof(MPID_nem_ptl_vc_area) <= MPIDI_NEM_VC_NETMOD_AREA_LEN);
+    MPIR_Assert(sizeof(MPID_nem_ptl_req_area) <= MPIDI_NEM_REQ_NETMOD_AREA_LEN);
 
     /* Make sure our IOV is the same as portals4's IOV */
-    MPIU_Assert(sizeof(ptl_iovec_t) == sizeof(MPL_IOV));
-    MPIU_Assert(((void*)&(((ptl_iovec_t*)0)->iov_base)) == ((void*)&(((MPL_IOV*)0)->MPL_IOV_BUF)));
-    MPIU_Assert(((void*)&(((ptl_iovec_t*)0)->iov_len))  == ((void*)&(((MPL_IOV*)0)->MPL_IOV_LEN)));
-    MPIU_Assert(sizeof(((ptl_iovec_t*)0)->iov_len) == sizeof(((MPL_IOV*)0)->MPL_IOV_LEN));
+    MPIR_Assert(sizeof(ptl_iovec_t) == sizeof(MPL_IOV));
+    MPIR_Assert(((void*)&(((ptl_iovec_t*)0)->iov_base)) == ((void*)&(((MPL_IOV*)0)->MPL_IOV_BUF)));
+    MPIR_Assert(((void*)&(((ptl_iovec_t*)0)->iov_len))  == ((void*)&(((MPL_IOV*)0)->MPL_IOV_LEN)));
+    MPIR_Assert(sizeof(((ptl_iovec_t*)0)->iov_len) == sizeof(((MPL_IOV*)0)->MPL_IOV_LEN));
             
 
     mpi_errno = MPIDI_CH3I_Register_anysource_notification(MPID_nem_ptl_anysource_posted, MPID_nem_ptl_anysource_matched);
@@ -285,7 +286,7 @@ static int ptl_init(MPIDI_PG_t *pg_p, int pg_rank, char **bc_val_p, int *val_max
     if (mpi_errno) MPIR_ERR_POP(mpi_errno);
     
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_PTL_INIT);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_PTL_INIT);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -300,8 +301,8 @@ static int ptl_finalize(void)
     int mpi_errno = MPI_SUCCESS;
     int ret;
     ptl_handle_eq_t eqs[5];
-    MPIDI_STATE_DECL(MPID_STATE_PTL_FINALIZE);
-    MPIDI_FUNC_ENTER(MPID_STATE_PTL_FINALIZE);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_PTL_FINALIZE);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_PTL_FINALIZE);
 
     /* shut down other modules */
     mpi_errno = MPID_nem_ptl_nm_finalize();
@@ -352,7 +353,7 @@ static int ptl_finalize(void)
     PtlFini();
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_PTL_FINALIZE);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_PTL_FINALIZE);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -368,66 +369,66 @@ static int ptl_finalize(void)
 static int get_business_card(int my_rank, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
-    int str_errno = MPIU_STR_SUCCESS;
+    int str_errno = MPL_STR_SUCCESS;
     int ret;
     ptl_process_t my_ptl_id;
-    MPIDI_STATE_DECL(MPID_STATE_GET_BUSINESS_CARD);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_GET_BUSINESS_CARD);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_GET_BUSINESS_CARD);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_GET_BUSINESS_CARD);
 
     ret = PtlGetId(MPIDI_nem_ptl_ni, &my_ptl_id);
     MPIR_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlgetid", "**ptlgetid %s", MPID_nem_ptl_strerror(ret));
-    MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "Allocated NI and PT id=(%#x,%#x) pt=%#x",
+    MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_CHANNEL, VERBOSE, (MPL_DBG_FDEST, "Allocated NI and PT id=(%#x,%#x) pt=%#x",
                                             my_ptl_id.phys.nid, my_ptl_id.phys.pid, MPIDI_nem_ptl_pt));
 
-    str_errno = MPIU_Str_add_binary_arg(bc_val_p, val_max_sz_p, NID_KEY, (char *)&my_ptl_id.phys.nid, sizeof(my_ptl_id.phys.nid));
+    str_errno = MPL_str_add_binary_arg(bc_val_p, val_max_sz_p, NID_KEY, (char *)&my_ptl_id.phys.nid, sizeof(my_ptl_id.phys.nid));
     if (str_errno) {
-        MPIR_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        MPIR_ERR_CHKANDJUMP(str_errno == MPL_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
         MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
-    str_errno = MPIU_Str_add_binary_arg(bc_val_p, val_max_sz_p, PID_KEY, (char *)&my_ptl_id.phys.pid, sizeof(my_ptl_id.phys.pid));
+    str_errno = MPL_str_add_binary_arg(bc_val_p, val_max_sz_p, PID_KEY, (char *)&my_ptl_id.phys.pid, sizeof(my_ptl_id.phys.pid));
     if (str_errno) {
-        MPIR_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        MPIR_ERR_CHKANDJUMP(str_errno == MPL_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
         MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
-    str_errno = MPIU_Str_add_binary_arg(bc_val_p, val_max_sz_p, PTI_KEY, (char *)&MPIDI_nem_ptl_pt, sizeof(MPIDI_nem_ptl_pt));
+    str_errno = MPL_str_add_binary_arg(bc_val_p, val_max_sz_p, PTI_KEY, (char *)&MPIDI_nem_ptl_pt, sizeof(MPIDI_nem_ptl_pt));
     if (str_errno) {
-        MPIR_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        MPIR_ERR_CHKANDJUMP(str_errno == MPL_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
         MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
-    str_errno = MPIU_Str_add_binary_arg(bc_val_p, val_max_sz_p, PTIG_KEY, (char *)&MPIDI_nem_ptl_get_pt,
+    str_errno = MPL_str_add_binary_arg(bc_val_p, val_max_sz_p, PTIG_KEY, (char *)&MPIDI_nem_ptl_get_pt,
                                         sizeof(MPIDI_nem_ptl_get_pt));
     if (str_errno) {
-        MPIR_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        MPIR_ERR_CHKANDJUMP(str_errno == MPL_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
         MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
-    str_errno = MPIU_Str_add_binary_arg(bc_val_p, val_max_sz_p, PTIC_KEY, (char *)&MPIDI_nem_ptl_control_pt,
+    str_errno = MPL_str_add_binary_arg(bc_val_p, val_max_sz_p, PTIC_KEY, (char *)&MPIDI_nem_ptl_control_pt,
                                         sizeof(MPIDI_nem_ptl_control_pt));
     if (str_errno) {
-        MPIR_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        MPIR_ERR_CHKANDJUMP(str_errno == MPL_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
         MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
-    str_errno = MPIU_Str_add_binary_arg(bc_val_p, val_max_sz_p, PTIR_KEY, (char *)&MPIDI_nem_ptl_rpt_pt,
+    str_errno = MPL_str_add_binary_arg(bc_val_p, val_max_sz_p, PTIR_KEY, (char *)&MPIDI_nem_ptl_rpt_pt,
                                         sizeof(MPIDI_nem_ptl_rpt_pt));
     if (str_errno) {
-        MPIR_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        MPIR_ERR_CHKANDJUMP(str_errno == MPL_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
         MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
-    str_errno = MPIU_Str_add_binary_arg(bc_val_p, val_max_sz_p, PTIRG_KEY, (char *)&MPIDI_nem_ptl_get_rpt_pt,
+    str_errno = MPL_str_add_binary_arg(bc_val_p, val_max_sz_p, PTIRG_KEY, (char *)&MPIDI_nem_ptl_get_rpt_pt,
                                         sizeof(MPIDI_nem_ptl_get_rpt_pt));
     if (str_errno) {
-        MPIR_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        MPIR_ERR_CHKANDJUMP(str_errno == MPL_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
         MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
-    str_errno = MPIU_Str_add_binary_arg(bc_val_p, val_max_sz_p, PTIRC_KEY, (char *)&MPIDI_nem_ptl_control_rpt_pt,
+    str_errno = MPL_str_add_binary_arg(bc_val_p, val_max_sz_p, PTIRC_KEY, (char *)&MPIDI_nem_ptl_control_rpt_pt,
                                         sizeof(MPIDI_nem_ptl_control_rpt_pt));
     if (str_errno) {
-        MPIR_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        MPIR_ERR_CHKANDJUMP(str_errno == MPL_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
         MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_GET_BUSINESS_CARD);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_GET_BUSINESS_CARD);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -440,14 +441,14 @@ static int get_business_card(int my_rank, char **bc_val_p, int *val_max_sz_p)
 static int connect_to_root(const char *business_card, MPIDI_VC_t *new_vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_CONNECT_TO_ROOT);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_CONNECT_TO_ROOT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_CONNECT_TO_ROOT);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_CONNECT_TO_ROOT);
 
     MPIR_ERR_SETFATAL(mpi_errno, MPI_ERR_OTHER, "**notimpl");
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_CONNECT_TO_ROOT);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_CONNECT_TO_ROOT);
     return mpi_errno;
 
  fn_fail:
@@ -463,9 +464,9 @@ static int vc_init(MPIDI_VC_t *vc)
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_VC *const vc_ch = &vc->ch;
     MPID_nem_ptl_vc_area *const vc_ptl = VC_PTL(vc);
-    MPIDI_STATE_DECL(MPID_STATE_VC_INIT);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_VC_INIT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_VC_INIT);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_VC_INIT);
 
     vc->sendNoncontig_fn   = MPID_nem_ptl_SendNoncontig;
     vc_ch->iStartContigMsg = MPID_nem_ptl_iStartContigMsg;
@@ -495,7 +496,7 @@ static int vc_init(MPIDI_VC_t *vc)
 
     mpi_errno = MPID_nem_ptl_init_id(vc);
 
-    MPIDI_FUNC_EXIT(MPID_STATE_VC_INIT);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_VC_INIT);
     return mpi_errno;
 }
 
@@ -522,36 +523,36 @@ int MPID_nem_ptl_get_id_from_bc(const char *business_card, ptl_process_t *id, pt
     int mpi_errno = MPI_SUCCESS;
     int ret;
     int len;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_PTL_GET_ID_FROM_BC);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_PTL_GET_ID_FROM_BC);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_PTL_GET_ID_FROM_BC);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_PTL_GET_ID_FROM_BC);
 
-    ret = MPIU_Str_get_binary_arg(business_card, NID_KEY, (char *)&id->phys.nid, sizeof(id->phys.nid), &len);
-    MPIR_ERR_CHKANDJUMP(ret != MPIU_STR_SUCCESS || len != sizeof(id->phys.nid), mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
+    ret = MPL_str_get_binary_arg(business_card, NID_KEY, (char *)&id->phys.nid, sizeof(id->phys.nid), &len);
+    MPIR_ERR_CHKANDJUMP(ret != MPL_STR_SUCCESS || len != sizeof(id->phys.nid), mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
 
-    ret = MPIU_Str_get_binary_arg(business_card, PID_KEY, (char *)&id->phys.pid, sizeof(id->phys.pid), &len);
-    MPIR_ERR_CHKANDJUMP(ret != MPIU_STR_SUCCESS || len != sizeof(id->phys.pid), mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
+    ret = MPL_str_get_binary_arg(business_card, PID_KEY, (char *)&id->phys.pid, sizeof(id->phys.pid), &len);
+    MPIR_ERR_CHKANDJUMP(ret != MPL_STR_SUCCESS || len != sizeof(id->phys.pid), mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
 
-    ret = MPIU_Str_get_binary_arg(business_card, PTI_KEY, (char *)pt, sizeof(*pt), &len);
-    MPIR_ERR_CHKANDJUMP(ret != MPIU_STR_SUCCESS || len != sizeof(*pt), mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
+    ret = MPL_str_get_binary_arg(business_card, PTI_KEY, (char *)pt, sizeof(*pt), &len);
+    MPIR_ERR_CHKANDJUMP(ret != MPL_STR_SUCCESS || len != sizeof(*pt), mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
 
-    ret = MPIU_Str_get_binary_arg(business_card, PTIG_KEY, (char *)ptg, sizeof(*ptg), &len);
-    MPIR_ERR_CHKANDJUMP(ret != MPIU_STR_SUCCESS || len != sizeof(*ptg), mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
+    ret = MPL_str_get_binary_arg(business_card, PTIG_KEY, (char *)ptg, sizeof(*ptg), &len);
+    MPIR_ERR_CHKANDJUMP(ret != MPL_STR_SUCCESS || len != sizeof(*ptg), mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
 
-    ret = MPIU_Str_get_binary_arg(business_card, PTIC_KEY, (char *)ptc, sizeof(*ptc), &len);
-    MPIR_ERR_CHKANDJUMP(ret != MPIU_STR_SUCCESS || len != sizeof(*ptc), mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
+    ret = MPL_str_get_binary_arg(business_card, PTIC_KEY, (char *)ptc, sizeof(*ptc), &len);
+    MPIR_ERR_CHKANDJUMP(ret != MPL_STR_SUCCESS || len != sizeof(*ptc), mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
 
-    ret = MPIU_Str_get_binary_arg(business_card, PTIR_KEY, (char *)ptr, sizeof(*ptr), &len);
-    MPIR_ERR_CHKANDJUMP(ret != MPIU_STR_SUCCESS || len != sizeof(*ptr), mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
+    ret = MPL_str_get_binary_arg(business_card, PTIR_KEY, (char *)ptr, sizeof(*ptr), &len);
+    MPIR_ERR_CHKANDJUMP(ret != MPL_STR_SUCCESS || len != sizeof(*ptr), mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
 
-    ret = MPIU_Str_get_binary_arg(business_card, PTIRG_KEY, (char *)ptrg, sizeof(*ptrg), &len);
-    MPIR_ERR_CHKANDJUMP(ret != MPIU_STR_SUCCESS || len != sizeof(*ptrg), mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
+    ret = MPL_str_get_binary_arg(business_card, PTIRG_KEY, (char *)ptrg, sizeof(*ptrg), &len);
+    MPIR_ERR_CHKANDJUMP(ret != MPL_STR_SUCCESS || len != sizeof(*ptrg), mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
 
-    ret = MPIU_Str_get_binary_arg(business_card, PTIRC_KEY, (char *)ptrc, sizeof(*ptrc), &len);
-    MPIR_ERR_CHKANDJUMP(ret != MPIU_STR_SUCCESS || len != sizeof(*ptrc), mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
+    ret = MPL_str_get_binary_arg(business_card, PTIRC_KEY, (char *)ptrc, sizeof(*ptrc), &len);
+    MPIR_ERR_CHKANDJUMP(ret != MPL_STR_SUCCESS || len != sizeof(*ptrc), mpi_errno, MPI_ERR_OTHER, "**badbusinesscard");
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_PTL_GET_ID_FROM_BC);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_PTL_GET_ID_FROM_BC);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -566,9 +567,9 @@ int vc_terminate(MPIDI_VC_t *vc)
     int mpi_errno = MPI_SUCCESS;
     int req_errno = MPI_SUCCESS;
     MPID_nem_ptl_vc_area *const vc_ptl = VC_PTL(vc);
-    MPIDI_STATE_DECL(MPID_STATE_VC_TERMINATE);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_VC_TERMINATE);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_VC_TERMINATE);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_VC_TERMINATE);
 
      if (vc->state != MPIDI_VC_STATE_CLOSED) {
         /* VC is terminated as a result of a fault.  Complete
@@ -586,7 +587,7 @@ int vc_terminate(MPIDI_VC_t *vc)
      }
     
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_VC_TERMINATE);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_VC_TERMINATE);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -602,18 +603,18 @@ int MPID_nem_ptl_vc_terminated(MPIDI_VC_t *vc)
     /* This is called when the VC is to be terminated once all queued
        sends have been sent. */
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_NEM_PTL_VC_TERMINATED);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_NEM_PTL_VC_TERMINATED);
 
-    MPIDI_FUNC_ENTER(MPID_NEM_PTL_VC_TERMINATED);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_NEM_PTL_VC_TERMINATED);
 
     mpi_errno = MPIDI_CH3U_Handle_connection(vc, MPIDI_VC_EVENT_TERMINATED);
     if(mpi_errno) MPIR_ERR_POP(mpi_errno);
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_NEM_PTL_VC_TERMINATED);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_NEM_PTL_VC_TERMINATED);
     return mpi_errno;
  fn_fail:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_CHANNEL, VERBOSE, (MPL_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -628,14 +629,14 @@ int MPID_nem_ptl_init_id(MPIDI_VC_t *vc)
     char *bc;
     int pmi_errno;
     int val_max_sz;
-    MPIU_CHKLMEM_DECL(1);
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_PTL_INIT_ID);
+    MPIR_CHKLMEM_DECL(1);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_PTL_INIT_ID);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_PTL_INIT_ID);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_PTL_INIT_ID);
 
     pmi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
     MPIR_ERR_CHKANDJUMP1(pmi_errno, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %d", pmi_errno);
-    MPIU_CHKLMEM_MALLOC(bc, char *, val_max_sz, mpi_errno, "bc");
+    MPIR_CHKLMEM_MALLOC(bc, char *, val_max_sz, mpi_errno, "bc", MPL_MEM_ADDRESS);
 
     mpi_errno = vc->pg->getConnInfo(vc->pg_rank, bc, val_max_sz, vc->pg);
     if (mpi_errno) MPIR_ERR_POP(mpi_errno);
@@ -648,8 +649,8 @@ int MPID_nem_ptl_init_id(MPIDI_VC_t *vc)
     MPIDI_CHANGE_VC_STATE(vc, ACTIVE);
     
  fn_exit:
-    MPIU_CHKLMEM_FREEALL();
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_PTL_INIT_ID);
+    MPIR_CHKLMEM_FREEALL();
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_PTL_INIT_ID);
     return mpi_errno;
  fn_fail:
     goto fn_exit;

@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Unable to allocate buffer %d of size %ld\n", i, (long) extent);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
+        MTEST_VG_MEM_INIT(bufs[i], extent);
     }
     buf = (int *) malloc(10 * 30 * sizeof(int));
 
@@ -60,8 +61,7 @@ int main(int argc, char *argv[])
         for (i = 0; i < MAX_MSGS; i++) {
             MPI_Recv(buf, 10 * 30, MPI_INT, source, i, comm, MPI_STATUS_IGNORE);
         }
-    }
-    else if (rank == source) {
+    } else if (rank == source) {
         for (i = 0; i < MAX_MSGS; i++) {
             MPI_Isend(bufs[i], 1, dtype, dest, i, comm, &req[i]);
         }
@@ -69,7 +69,10 @@ int main(int argc, char *argv[])
     }
 
     MPI_Type_free(&dtype);
+    for (i = 0; i < MAX_MSGS; i++) {
+        free(bufs[i]);
+    }
+    free(buf);
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

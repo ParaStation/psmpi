@@ -32,6 +32,9 @@ int main(int argc, char *argv[])
     int verbose = 0;
     int data = 0;
 
+    MTEST_VG_MEM_INIT(port1, MPI_MAX_PORT_NAME * sizeof(char));
+    MTEST_VG_MEM_INIT(port2, MPI_MAX_PORT_NAME * sizeof(char));
+
     if (getenv("MPITEST_VERBOSE")) {
         verbose = 1;
     }
@@ -43,7 +46,7 @@ int main(int argc, char *argv[])
     if (size < 3) {
         printf("Three processes needed to run this test.\n");
         MPI_Finalize();
-        return 0;
+        return 1;
     }
 
     if (rank == 0) {
@@ -77,8 +80,7 @@ int main(int argc, char *argv[])
         IF_VERBOSE(("0: disconnecting.\n"));
         MPI_Comm_disconnect(&comm1);
         MPI_Comm_disconnect(&comm2);
-    }
-    else if (rank == 1) {
+    } else if (rank == 1) {
         IF_VERBOSE(("1: receiving port.\n"));
         MPI_Recv(port1, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
 
@@ -95,8 +97,7 @@ int main(int argc, char *argv[])
 
         IF_VERBOSE(("1: disconnecting.\n"));
         MPI_Comm_disconnect(&comm1);
-    }
-    else if (rank == 2) {
+    } else if (rank == 2) {
         IF_VERBOSE(("2: receiving port.\n"));
         MPI_Recv(port2, MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &status);
 
@@ -124,12 +125,11 @@ int main(int argc, char *argv[])
     if (rank == 0) {
         if (total_num_errors) {
             printf(" Found %d errors\n", total_num_errors);
-        }
-        else {
+        } else {
             printf(" No Errors\n");
         }
         fflush(stdout);
     }
     MPI_Finalize();
-    return total_num_errors;
+    return MTestReturnValue(total_num_errors);
 }

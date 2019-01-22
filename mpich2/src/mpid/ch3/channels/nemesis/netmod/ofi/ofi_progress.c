@@ -15,9 +15,9 @@
 /* ------------------------------------------------------------------------ */
 /* This routine looks up the request that contains a context object         */
 /* ------------------------------------------------------------------------ */
-static inline MPID_Request *context_to_req(void *ofi_context)
+static inline MPIR_Request *context_to_req(void *ofi_context)
 {
-    return (MPID_Request *) container_of(ofi_context, MPID_Request, ch.netmod_area.padding);
+    return (MPIR_Request *) MPL_container_of(ofi_context, MPIR_Request, ch.netmod_area.padding);
 }
 
 #define ADD_SUFFIX(name) name
@@ -32,7 +32,7 @@ static inline MPID_Request *context_to_req(void *ofi_context)
 
 
 #undef FCNAME
-#define FCNAME DECL_FUNC(MPID_nem_ofi_poll)
+#define FCNAME MPL_QUOTE(MPID_nem_ofi_poll)
 int MPID_nem_ofi_poll(int in_blocking_poll)
 {
     int complete = 0, mpi_errno = MPI_SUCCESS;
@@ -40,7 +40,7 @@ int MPID_nem_ofi_poll(int in_blocking_poll)
     cq_tagged_entry_t wc;
     cq_err_entry_t error;
     MPIDI_VC_t *vc;
-    MPID_Request *req;
+    MPIR_Request *req;
     req_fn reqFn;
     BEGIN_FUNC(FCNAME);
     do {
@@ -65,7 +65,7 @@ int MPID_nem_ofi_poll(int in_blocking_poll)
                 reqFn = req->dev.OnDataAvail;
                 if (reqFn) {
                     if (REQ_OFI(req)->pack_buffer) {
-                        MPIU_Free(REQ_OFI(req)->pack_buffer);
+                        MPL_free(REQ_OFI(req)->pack_buffer);
                     }
                     vc = REQ_OFI(req)->vc;
 
@@ -74,11 +74,11 @@ int MPID_nem_ofi_poll(int in_blocking_poll)
                     continue;
                 }
                 else {
-                    MPIU_Assert(0);
+                    MPIR_Assert(0);
                 }
             }
             else {
-                MPIU_Assert(0);
+                MPIR_Assert(0);
             }
         }
         else if (ret == -FI_EAGAIN)
@@ -94,10 +94,10 @@ int MPID_nem_ofi_poll(int in_blocking_poll)
                     /* Other kinds of requests, this is fatal.               */
                     /* ----------------------------------------------------- */
                     req = context_to_req(error.op_context);
-                    if (req->kind == MPID_REQUEST_SEND) {
+                    if (req->kind == MPIR_REQUEST_KIND__SEND) {
                         mpi_errno = REQ_OFI(req)->event_callback(NULL, req);
                     }
-                    else if (req->kind == MPID_REQUEST_RECV) {
+                    else if (req->kind == MPIR_REQUEST_KIND__RECV) {
                         mpi_errno = REQ_OFI(req)->event_callback(&wc, req);
                         req->status.MPI_ERROR = MPI_ERR_TRUNCATE;
                         req->status.MPI_TAG = error.tag;
@@ -110,6 +110,10 @@ int MPID_nem_ofi_poll(int in_blocking_poll)
 			req = context_to_req(error.op_context);
 			MPIR_STATUS_SET_CANCEL_BIT(req->status, TRUE);
 		}
+                else if (error.err == FI_ENOMSG) {
+                        req = context_to_req(error.op_context);
+                        REQ_OFI(req)->match_state = PEEK_NOT_FOUND;
+                }
 		else {
                         mpi_errno = MPI_ERR_OTHER;
 		}

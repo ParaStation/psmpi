@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/coll/allredopttf.f with f77tof90
+! This file created from f77/coll/allredopttf.f with f77tof90
 ! -*- Mode: Fortran; -*- 
 !
 !  (C) 2007 by Argonne National Laboratory.
@@ -42,5 +42,4 @@
       & outbuf, " but should have ", wsize
       endif
       call mtest_finalize( errs )
-      call mpi_finalize( ierr )
       end

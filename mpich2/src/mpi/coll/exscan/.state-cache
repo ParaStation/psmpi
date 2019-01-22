@@ -1,0 +1,14 @@
+<dir>
+<file name="exscan.c" info="1542820949"/>
+<file name="exscan_intra_recursive_doubling.c" info="1542820949"/>
+<file name="exscan_allcomm_nb.c" info="1542820949"/>
+</dir>
+<data>
+<fileinfo name="exscan.c">
+MPID_STATE_MPI_EXSCAN MPI_Exscan
+</fileinfo>
+<fileinfo name="exscan_intra_recursive_doubling.c">
+</fileinfo>
+<fileinfo name="exscan_allcomm_nb.c">
+</fileinfo>
+</data>

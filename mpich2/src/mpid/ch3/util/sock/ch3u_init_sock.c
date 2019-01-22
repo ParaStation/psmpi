@@ -41,8 +41,8 @@ int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
     int p;
 
     /* FIXME: Why are these unused? */
-    MPIU_UNREFERENCED_ARG(has_parent);
-    MPIU_UNREFERENCED_ARG(pg_rank);
+    MPL_UNREFERENCED_ARG(has_parent);
+    MPL_UNREFERENCED_ARG(pg_rank);
 
     /*
      * Initialize the VCs associated with this process group (and thus 
@@ -65,7 +65,7 @@ int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 	vcch->sendq_head = NULL;
 	vcch->sendq_tail = NULL;
 	vcch->state      = MPIDI_CH3I_VC_STATE_UNCONNECTED;
-	vcch->sock       = MPIDU_SOCK_INVALID_SOCK;
+	vcch->sock       = MPIDI_CH3I_SOCK_INVALID_SOCK;
 	vcch->conn       = NULL;
     }    
 
@@ -96,12 +96,12 @@ int MPIDI_CH3U_Init_sock(int has_parent, MPIDI_PG_t *pg_p, int pg_rank,
 int MPIDI_VC_InitSock( MPIDI_VC_t *vc ) 
 {
     MPIDI_CH3I_VC *vcch = &vc->ch;
-    vcch->sock               = MPIDU_SOCK_INVALID_SOCK;
+    vcch->sock               = MPIDI_CH3I_SOCK_INVALID_SOCK;
     vcch->conn               = NULL;
     return 0;
 }
 
-#ifdef USE_DBG_LOGGING
+#ifdef MPL_USE_DBG_LOGGING
 const char * MPIDI_Conn_GetStateString(int state) 
 {
     const char *name = "unknown";

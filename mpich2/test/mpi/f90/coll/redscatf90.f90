@@ -1,4 +1,4 @@
-! This file created from test/mpi/f77/coll/redscatf.f with f77tof90
+! This file created from f77/coll/redscatf.f with f77tof90
 ! -*- Mode: Fortran; -*- 
 !
 !  (C) 2011 by Argonne National Laboratory.
@@ -79,6 +79,5 @@
       call mpi_op_free( sumop, ierr )
 
       call mtest_finalize( errs )
-      call mpi_finalize( ierr )
 
       end

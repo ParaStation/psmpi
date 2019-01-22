@@ -1,4 +1,4 @@
-.TH MPI_Ireduce_scatter_block 3 "11/9/2015" " " "MPI"
+.TH MPI_Ireduce_scatter_block 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Ireduce_scatter_block \-  Combines values and scatters the results in a nonblocking way 
 .SH SYNOPSIS
@@ -6,7 +6,7 @@ MPI_Ireduce_scatter_block \-  Combines values and scatters the results in a nonb
 int MPI_Ireduce_scatter_block(const void *sendbuf, void *recvbuf,
                               int recvcount,
                               MPI_Datatype datatype, MPI_Op op, MPI_Comm comm,
-                              MPI_Request *request)
+                              MPI_Request * request)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

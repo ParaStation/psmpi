@@ -124,87 +124,108 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_alltoallw2x_OBJECTS = alltoallw2x.$(OBJEXT)
 alltoallw2x_OBJECTS = $(am_alltoallw2x_OBJECTS)
 alltoallw2x_LDADD = $(LDADD)
-alltoallw2x_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+alltoallw2x_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_arcomplex_OBJECTS = arcomplex.$(OBJEXT)
 arcomplex_OBJECTS = $(am_arcomplex_OBJECTS)
 arcomplex_LDADD = $(LDADD)
-arcomplex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+arcomplex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_icallgathervx_OBJECTS = icallgathervx.$(OBJEXT)
 icallgathervx_OBJECTS = $(am_icallgathervx_OBJECTS)
 icallgathervx_LDADD = $(LDADD)
-icallgathervx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+icallgathervx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_icallgatherx_OBJECTS = icallgatherx.$(OBJEXT)
 icallgatherx_OBJECTS = $(am_icallgatherx_OBJECTS)
 icallgatherx_LDADD = $(LDADD)
-icallgatherx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+icallgatherx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_icallreducex_OBJECTS = icallreducex.$(OBJEXT)
 icallreducex_OBJECTS = $(am_icallreducex_OBJECTS)
 icallreducex_LDADD = $(LDADD)
-icallreducex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+icallreducex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_icalltoallx_OBJECTS = icalltoallx.$(OBJEXT)
 icalltoallx_OBJECTS = $(am_icalltoallx_OBJECTS)
 icalltoallx_LDADD = $(LDADD)
-icalltoallx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+icalltoallx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_icbarrierx_OBJECTS = icbarrierx.$(OBJEXT)
 icbarrierx_OBJECTS = $(am_icbarrierx_OBJECTS)
 icbarrierx_LDADD = $(LDADD)
-icbarrierx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+icbarrierx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_icbcastx_OBJECTS = icbcastx.$(OBJEXT)
 icbcastx_OBJECTS = $(am_icbcastx_OBJECTS)
 icbcastx_LDADD = $(LDADD)
-icbcastx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+icbcastx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_icgathervx_OBJECTS = icgathervx.$(OBJEXT)
 icgathervx_OBJECTS = $(am_icgathervx_OBJECTS)
 icgathervx_LDADD = $(LDADD)
-icgathervx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+icgathervx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_icgatherx_OBJECTS = icgatherx.$(OBJEXT)
 icgatherx_OBJECTS = $(am_icgatherx_OBJECTS)
 icgatherx_LDADD = $(LDADD)
-icgatherx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+icgatherx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_icreducex_OBJECTS = icreducex.$(OBJEXT)
 icreducex_OBJECTS = $(am_icreducex_OBJECTS)
 icreducex_LDADD = $(LDADD)
-icreducex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+icreducex_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_icscattervx_OBJECTS = icscattervx.$(OBJEXT)
 icscattervx_OBJECTS = $(am_icscattervx_OBJECTS)
 icscattervx_LDADD = $(LDADD)
-icscattervx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+icscattervx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_icscatterx_OBJECTS = icscatterx.$(OBJEXT)
 icscatterx_OBJECTS = $(am_icscatterx_OBJECTS)
 icscatterx_LDADD = $(LDADD)
-icscatterx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+icscatterx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_redscatblk_OBJECTS = redscatblk.$(OBJEXT)
 redscatblk_OBJECTS = $(am_redscatblk_OBJECTS)
 redscatblk_LDADD = $(LDADD)
-redscatblk_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+redscatblk_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_reduceboolx_OBJECTS = reduceboolx.$(OBJEXT)
 reduceboolx_OBJECTS = $(am_reduceboolx_OBJECTS)
 reduceboolx_LDADD = $(LDADD)
-reduceboolx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+reduceboolx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_uallreduce_OBJECTS = uallreduce.$(OBJEXT)
 uallreduce_OBJECTS = $(am_uallreduce_OBJECTS)
 uallreduce_LDADD = $(LDADD)
-uallreduce_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+uallreduce_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_uallredx_OBJECTS = uallredx.$(OBJEXT)
 uallredx_OBJECTS = $(am_uallredx_OBJECTS)
 uallredx_LDADD = $(LDADD)
-uallredx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+uallredx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_uexscan_OBJECTS = uexscan.$(OBJEXT)
 uexscan_OBJECTS = $(am_uexscan_OBJECTS)
 uexscan_LDADD = $(LDADD)
-uexscan_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+uexscan_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_ureduce_OBJECTS = ureduce.$(OBJEXT)
 ureduce_OBJECTS = $(am_ureduce_OBJECTS)
 ureduce_LDADD = $(LDADD)
-ureduce_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+ureduce_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_ureducelocal_OBJECTS = ureducelocal.$(OBJEXT)
 ureducelocal_OBJECTS = $(am_ureducelocal_OBJECTS)
 ureducelocal_LDADD = $(LDADD)
-ureducelocal_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+ureducelocal_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 am_uscan_OBJECTS = uscan.$(OBJEXT)
 uscan_OBJECTS = $(am_uscan_OBJECTS)
 uscan_LDADD = $(LDADD)
-uscan_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+uscan_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -304,6 +325,7 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DTP_SWITCH = @DTP_SWITCH@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -459,6 +481,7 @@ sharedstatedir = @sharedstatedir@
 socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 threadlib = @threadlib@
@@ -466,8 +489,13 @@ threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
-LDADD = $(top_builddir)/cxx/util/mtest.o
+
+# Add libdtpools support
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(top_builddir)/dtpoos/include \
+	-I$(top_srcdir)/dtpools/include
+LDADD = $(top_builddir)/cxx/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 CLEANFILES = summary.xml summary.tap
 EXTRA_DIST = testlist
 arcomplex_SOURCES = arcomplex.cxx
@@ -863,6 +891,9 @@ uninstall-am:
 
 $(top_builddir)/cxx/util/mtest.o: $(top_srcdir)/cxx/util/mtest.cxx
 	(cd $(top_builddir)/cxx/util && $(MAKE) mtest.o)
+
+$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+	(cd $(top_builddir)/dtpools && $(MAKE))
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \

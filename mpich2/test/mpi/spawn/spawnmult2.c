@@ -41,8 +41,7 @@ int main(int argc, char *argv[])
             MPI_Comm_spawn_multiple(2, cmds, MPI_ARGVS_NULL, np, infos, 0,
                                     MPI_COMM_WORLD, &intercomm, errcodes);
 
-        }
-        else {
+        } else {
             intercomm = parentcomm;
         }
 
@@ -70,8 +69,7 @@ int main(int argc, char *argv[])
                     errs += err;
                 }
             }
-        }
-        else {
+        } else {
             /* Child process */
             /* FIXME: This assumes that stdout is handled for the children
              * (the error count will still be reported to the parent) */
@@ -100,8 +98,7 @@ int main(int argc, char *argv[])
                     errs++;
                     printf("appnum is %d but should be %d\n", *appnum_ptr, rank);
                 }
-            }
-            else {
+            } else {
                 errs++;
                 printf("appnum was not set\n");
             }
@@ -116,12 +113,12 @@ int main(int argc, char *argv[])
         /* Note that the MTest_Finalize get errs only over COMM_WORLD  */
         if (parentcomm == MPI_COMM_NULL) {
             MTest_Finalize(errs);
+        } else {
+            MPI_Finalize();
         }
-    }
-    else {
+    } else {
         MTest_Finalize(errs);
     }
 
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

@@ -59,21 +59,19 @@ int main(int argc, char **argv)
                 i++;
                 len = (int) strlen(*argv);
                 filename = (char *) malloc(len + 10);
+                MTEST_VG_MEM_INIT(filename, (len + 10) * sizeof(char));
                 strcpy(filename, *argv);
-            }
-            else if (strcmp(*argv, "-size") == 0) {
+            } else if (strcmp(*argv, "-size") == 0) {
                 argv++;
                 i++;
                 SIZE = strtol(*argv, 0, 10);
                 if (errno) {
                     fprintf(stderr, "-size requires a numeric argument\n");
                     MPI_Abort(MPI_COMM_WORLD, 1);
-                }
-                else if (SIZE <= 0) {
+                } else if (SIZE <= 0) {
                     fprintf(stderr, "-size requires a positive value\n");
                 }
-            }
-            else {
+            } else {
                 i++;
                 argv++;
             }
@@ -83,13 +81,13 @@ int main(int argc, char **argv)
             /* Use a default filename of testfile */
             len = 8;
             filename = (char *) malloc(len + 10);
+            MTEST_VG_MEM_INIT(filename, (len + 10) * sizeof(char));
             strcpy(filename, "testfile");
         }
         MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
         MPI_Bcast(filename, len + 10, MPI_CHAR, 0, MPI_COMM_WORLD);
         MPI_Bcast(&SIZE, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    }
-    else {
+    } else {
         MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
         filename = (char *) malloc(len + 10);
         MPI_Bcast(filename, len + 10, MPI_CHAR, 0, MPI_COMM_WORLD);
@@ -156,8 +154,7 @@ int main(int argc, char **argv)
             if (errs < 25) {
                 fprintf(stderr, "Process %d: error, read %d, should be %d\n", rank, buf[i],
                         rank * 100000 + i);
-            }
-            else if (errs == 25) {
+            } else if (errs == 25) {
                 fprintf(stderr, "Reached maximum number of errors to report\n");
             }
         }
@@ -167,6 +164,5 @@ int main(int argc, char **argv)
     free(filename);
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

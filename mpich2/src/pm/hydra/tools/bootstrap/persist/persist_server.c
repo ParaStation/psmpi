@@ -96,14 +96,12 @@ static HYD_status stdio_cb(int fd, HYD_event_t events, void *userp)
                                      HYDU_SOCK_COMM_MSGWAIT);
             HYDU_ERR_POP(status, "error sending stdout to client\n");
             HYDU_ASSERT(!closed, status);
-        }
-        else {
+        } else {
             status = HYDT_dmx_deregister_fd(private.stdout_fd);
             HYDU_ERR_SETANDJUMP(status, status, "error deregistering fd %d\n", private.stdout_fd);
             close(private.stdout_fd);
         }
-    }
-    else if (fd == private.stderr_fd) {
+    } else if (fd == private.stderr_fd) {
         /* stderr event */
         hdr.io_type = HYDT_PERSIST_STDERR;
         hdr.buflen = 0;
@@ -126,8 +124,7 @@ static HYD_status stdio_cb(int fd, HYD_event_t events, void *userp)
                                      HYDU_SOCK_COMM_MSGWAIT);
             HYDU_ERR_POP(status, "error sending stdout to client\n");
             HYDU_ASSERT(!closed, status);
-        }
-        else {
+        } else {
             status = HYDT_dmx_deregister_fd(private.stderr_fd);
             HYDU_ERR_SETANDJUMP(status, status, "error deregistering fd %d\n", private.stderr_fd);
             close(private.stderr_fd);
@@ -180,7 +177,7 @@ static HYD_status listen_cb(int fd, HYD_event_t events, void *userp)
     HYDU_ERR_POP(status, "error reading data from upstream\n");
     HYDU_ASSERT(!closed, status);
 
-    HYDU_MALLOC(args, char **, (num_strings + 1) * sizeof(char *), status);
+    HYDU_MALLOC_OR_JUMP(args, char **, (num_strings + 1) * sizeof(char *), status);
 
     for (i = 0; i < num_strings; i++) {
         status = HYDU_sock_read(private.client_fd, &str_len, sizeof(int), &recvd, &closed,
@@ -188,7 +185,7 @@ static HYD_status listen_cb(int fd, HYD_event_t events, void *userp)
         HYDU_ERR_POP(status, "error reading data from upstream\n");
         HYDU_ASSERT(!closed, status);
 
-        HYDU_MALLOC(args[i], char *, str_len, status);
+        HYDU_MALLOC_OR_JUMP(args[i], char *, str_len, status);
 
         status = HYDU_sock_read(private.client_fd, args[i], str_len, &recvd, &closed,
                                 HYDU_SOCK_COMM_MSGWAIT);

@@ -267,5 +267,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_attr_put_( MPI_Fint *, MPI_Fint *, void
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_attr_put_ ( MPI_Fint *v1, MPI_Fint *v2, void*v3, MPI_Fint *ierr ){
     if (v3 == MPIR_F_MPI_BOTTOM) v3 = MPI_BOTTOM;
-   *ierr = MPIR_CommSetAttr( (MPI_Comm)(*v1), (int)*v2, (void *)((MPIU_Pint)*(MPI_Fint *)v3), MPIR_ATTR_INT );
+   *ierr = MPII_Comm_set_attr( (MPI_Comm)(*v1), (int)*v2, (void *)((intptr_t)*(MPI_Fint *)v3), MPIR_ATTR_INT );
 }

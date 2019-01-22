@@ -62,8 +62,7 @@ int main(int argc, char **argv)
             if (was_called[i] < 1) {
                 errs++;
                 printf("Attribute delete function on MPI_COMM_SELF was not called for idx=%d\n", i);
-            }
-            else if (was_called[i] > 1) {
+            } else if (was_called[i] > 1) {
                 errs++;
                 printf
                     ("Attribute delete function on MPI_COMM_SELF was called multiple times for idx=%d\n",
@@ -77,8 +76,7 @@ int main(int argc, char **argv)
         }
         if (errs == 0) {
             printf(" No Errors\n");
-        }
-        else {
+        } else {
             printf(" Found %d errors\n", errs);
         }
         fflush(stdout);
@@ -89,7 +87,7 @@ int main(int argc, char **argv)
         printf(" No Errors\n");
 #endif
 
-    return 0;
+    return MTestReturnValue(errs);
 }
 
 int delete_fn(MPI_Comm comm, int keyval, void *attribute_val, void *extra_state)

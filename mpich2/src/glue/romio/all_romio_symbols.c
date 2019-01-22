@@ -32,8 +32,9 @@
  * have shown up when Fortran support is disabled.
  */
 
+#include "mpiimpl.h"
+
 #include <stdio.h>
-#include "mpi.h"
 
 void MPIR_All_romio_symbols(void);
 void MPIR_All_romio_symbols(void)
@@ -565,5 +566,7 @@ void MPIR_All_romio_symbols(void)
 
         MPI_File_c2f(fh);
     }
+
+    MPIR_Comm_split_filesystem(MPI_COMM_NULL, 0, NULL, NULL);
 #endif /* MPI_MODE_RDONLY */
 }

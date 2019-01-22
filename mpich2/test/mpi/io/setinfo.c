@@ -93,8 +93,7 @@ int main(int argc, char *argv[])
          * errs++;
          * printf("Access style hint not saved\n");
          */
-    }
-    else {
+    } else {
         if (strcmp(value, "read_once") != 0 && strcmp(value, "write_once,random") != 0) {
             errs++;
             printf("value for access_style unexpected; is %s\n", value);
@@ -117,6 +116,5 @@ int main(int argc, char *argv[])
     }
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

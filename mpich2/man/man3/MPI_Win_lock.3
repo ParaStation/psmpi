@@ -1,4 +1,4 @@
-.TH MPI_Win_lock 3 "11/9/2015" " " "MPI"
+.TH MPI_Win_lock 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Win_lock \-  Begin an RMA access epoch at the target process. 
 .SH SYNOPSIS
@@ -9,7 +9,7 @@ int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
 .PD 0
 .TP
 .B lock_type 
-- Indicates whether other processes may access the target 
+- Indicates whether other processes may access the target
 window at the same time (if 
 .I MPI_LOCK_SHARED
 ) or not (
@@ -19,18 +19,18 @@ window at the same time (if
 .PD 0
 .TP
 .B rank 
-- rank of locked window (nonnegative integer) 
+- rank of locked window (nonnegative integer)
 .PD 1
 .PD 0
 .TP
 .B assert 
 - Used to optimize this call; zero may be used as a default.
-See notes. (integer) 
+See notes. (integer)
 .PD 1
 .PD 0
 .TP
 .B win 
-- window object (handle) 
+- window object (handle)
 .PD 1
 
 .SH NOTES
@@ -60,11 +60,11 @@ are:
 .PD 0
 .TP
 .B MPI_MODE_NOCHECK 
-- no other process holds, or will attempt to acquire a 
-conflicting lock, while the caller holds the window lock. This is useful 
-when mutual exclusion is achieved by other means, but the coherence 
-operations that may be attached to the lock and unlock calls are still 
-required. 
+- no other process holds, or will attempt to acquire a
+conflicting lock, while the caller holds the window lock. This is useful
+when mutual exclusion is achieved by other means, but the coherence
+operations that may be attached to the lock and unlock calls are still
+required.
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

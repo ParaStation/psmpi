@@ -1,4 +1,4 @@
-.TH MPI_Win_start 3 "11/9/2015" " " "MPI"
+.TH MPI_Win_start 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Win_start \-  Start an RMA access epoch for MPI 
 .SH SYNOPSIS
@@ -9,18 +9,18 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
 .PD 0
 .TP
 .B group 
-- group of target processes (handle) 
+- group of target processes (handle)
 .PD 1
 .PD 0
 .TP
 .B assert 
 - Used to optimize this call; zero may be used as a default.
-See notes. (integer) 
+See notes. (integer)
 .PD 1
 .PD 0
 .TP
 .B win 
-- window object (handle) 
+- window object (handle)
 .PD 1
 
 .SH NOTES
@@ -39,15 +39,15 @@ are:
 .B MPI_MODE_NOCHECK 
 - the matching calls to 
 .I MPI_WIN_POST
-have already 
+have already
 completed on all target processes when the call to 
 .I MPI_WIN_START
-is made. 
-The nocheck option can be specified in a start call if and only if it is 
-specified in each matching post call. This is similar to the optimization 
-of ready-send that may save a handshake when the handshake is implicit in 
-the code. (However, ready-send is matched by a regular receive, whereas 
-both start and post must specify the nocheck option.) 
+is made.
+The nocheck option can be specified in a start call if and only if it is
+specified in each matching post call. This is similar to the optimization
+of ready-send that may save a handshake when the handshake is implicit in
+the code. (However, ready-send is matched by a regular receive, whereas
+both start and post must specify the nocheck option.)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

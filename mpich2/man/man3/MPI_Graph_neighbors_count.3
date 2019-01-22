@@ -1,4 +1,4 @@
-.TH MPI_Graph_neighbors_count 3 "11/9/2015" " " "MPI"
+.TH MPI_Graph_neighbors_count 3 "11/21/2018" " " "MPI"
 .SH NAME
 MPI_Graph_neighbors_count \-  Returns the number of neighbors of a node associated with a graph topology 
 .SH SYNOPSIS
@@ -9,21 +9,21 @@ int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
 .PD 0
 .TP
 .B comm 
-- communicator with graph topology (handle) 
+- communicator with graph topology (handle)
 .PD 1
 .PD 0
 .TP
 .B rank 
 - rank of process in group of 
 .I comm
-(integer) 
+(integer)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B nneighbors 
-- number of neighbors of specified process (integer) 
+- number of neighbors of specified process (integer)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

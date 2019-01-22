@@ -4,8 +4,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#ifndef MPID_NEM_FBOX_H
-#define MPID_NEM_FBOX_H
+#ifndef MPID_NEM_FBOX_H_INCLUDED
+#define MPID_NEM_FBOX_H_INCLUDED
 
 typedef struct MPID_nem_fboxq_elem
 {
@@ -39,9 +39,9 @@ static inline int poll_active_fboxes(MPID_nem_cell_ptr_t *cell)
             MPID_nem_fbox_mpich_t *fbox;
 
             fbox = MPID_nem_curr_fboxq_elem->fbox;
-            MPIU_Assert(fbox != NULL);
+            MPIR_Assert(fbox != NULL);
             if (OPA_load_acquire_int(&fbox->flag.value) &&
-                fbox->cell.pkt.mpich.seqno == MPID_nem_recv_seqno[MPID_nem_curr_fboxq_elem->grank])
+                fbox->cell.pkt.header.seqno == MPID_nem_recv_seqno[MPID_nem_curr_fboxq_elem->grank])
             {
                 ++MPID_nem_recv_seqno[MPID_nem_curr_fboxq_elem->grank];
                 *cell = &fbox->cell;
@@ -69,7 +69,7 @@ static inline int poll_every_fbox(MPID_nem_cell_ptr_t *cell)
     do {
         fbox = MPID_nem_curr_fbox_all_poll->fbox;
         if (fbox && OPA_load_acquire_int(&fbox->flag.value) &&
-            fbox->cell.pkt.mpich.seqno == MPID_nem_recv_seqno[MPID_nem_curr_fbox_all_poll->grank]) {
+            fbox->cell.pkt.header.seqno == MPID_nem_recv_seqno[MPID_nem_curr_fbox_all_poll->grank]) {
             ++MPID_nem_recv_seqno[MPID_nem_curr_fbox_all_poll->grank];
             *cell = &fbox->cell;
             found = TRUE;
@@ -90,7 +90,7 @@ static inline int poll_every_fbox(MPID_nem_cell_ptr_t *cell)
                                                                                                     \
         fbox = MPID_nem_curr_fbox_all_poll->fbox;                                                   \
         if (fbox && OPA_load_acquire_int(&fbox->flag.value) &&                                      \
-            fbox->cell.pkt.mpich.seqno == MPID_nem_recv_seqno[MPID_nem_curr_fbox_all_poll->grank]) \
+            fbox->cell.pkt.header.seqno == MPID_nem_recv_seqno[MPID_nem_curr_fbox_all_poll->grank]) \
         {                                                                                           \
             ++MPID_nem_recv_seqno[MPID_nem_curr_fbox_all_poll->grank];                              \
             *(_cell) = &fbox->cell;                                                                 \
@@ -101,6 +101,6 @@ static inline int poll_every_fbox(MPID_nem_cell_ptr_t *cell)
         MPID_nem_curr_fbox_all_poll = MPID_nem_fboxq_elem_list;                                     \
     } while(0)
 
-#endif /* MPID_NEM_FBOX_H */
+#endif /* MPID_NEM_FBOX_H_INCLUDED */
 
 

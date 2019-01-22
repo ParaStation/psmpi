@@ -1,4 +1,8 @@
-! This file created from test/mpi/f77/attr/commattr4f.f with f77tof90
+! This file created from f77/attr/commattr4f.f with f77tof90
+! -*- Mode: Fortran; -*- 
+!
+!  (C) 2015 by Argonne National Laboratory.
+!      See COPYRIGHT in top-level directory.
 !
       program main
 !
@@ -83,7 +87,6 @@
       &     key, ierr)
       call mpi_comm_free_keyval(key, &
       &     ierr)
-      call mpi_finalize(ierr)
 
       if (errs .eq. 0) then
          print *, " No Errors"

@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
             errs++;
             fprintf(stderr, "Got s[%d].i = %d; expected %d\n", j, s1[j].i, j + status.MPI_SOURCE);
         }
-        if (s1[j].c != 'a' + j + status.MPI_SOURCE) {
+        if (s1[j].c != (char) ('a' + j + status.MPI_SOURCE)) {
             errs++;
             /* If the character is not a printing character,
              * this can generate a file that diff, for example,
@@ -87,8 +87,7 @@ int main(int argc, char *argv[])
             if (isprint((int) (s1[j].c))) {
                 fprintf(stderr, "Got s[%d].c = %c; expected %c\n",
                         j, s1[j].c, j + status.MPI_SOURCE + 'a');
-            }
-            else {
+            } else {
                 fprintf(stderr, "Got s[%d].c = %x; expected %c\n",
                         j, (int) s1[j].c, j + status.MPI_SOURCE + 'a');
             }
@@ -99,6 +98,5 @@ int main(int argc, char *argv[])
     MPI_Type_free(&con);
 
     MTest_Finalize(errs);
-    MPI_Finalize();
-    return 0;
+    return MTestReturnValue(errs);
 }

@@ -89,8 +89,7 @@ int main(int argc, char *argv[])
 
     if (rank != 0) {
         MTestSleep(10);
-    }
-    else {      /* rank==0 */
+    } else {    /* rank==0 */
 
         MTestSleep(1);  /* try to avoid timing while everyone else is making syscalls */
 
@@ -132,7 +131,6 @@ int main(int argc, char *argv[])
     MPI_Comm_free(&commrev);
 
     MTest_Finalize(errs);
-    MPI_Finalize();
 
-    return 0;
+    return MTestReturnValue(errs);
 }
