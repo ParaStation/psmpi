@@ -4,12 +4,13 @@
 #define _MPID_IRECV_H_
 
 static inline
-void prepare_comreq(MPID_Request *req, int tag, MPID_Comm * comm, int context_offset)
+void prepare_comreq(MPIR_Request *req, int tag, MPIR_Comm * comm, int context_offset)
 {
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 	pscom_request_t *preq = rreq->common.pscom_req;
-       
+
 	req->comm = comm;
+	MPIR_Comm_add_ref(comm);
 	rreq->tag = tag;
 	rreq->context_id = comm->recvcontext_id + context_offset;
 	rreq->mprobe_req = NULL;
@@ -20,7 +21,7 @@ void prepare_comreq(MPID_Request *req, int tag, MPID_Comm * comm, int context_of
 
 
 static inline
-void prepare_data(MPID_Request *req, void * buf, int count, MPI_Datatype datatype)
+void prepare_data(MPIR_Request *req, void * buf, int count, MPI_Datatype datatype)
 {
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 	pscom_request_t *preq = rreq->common.pscom_req;
@@ -35,13 +36,13 @@ void prepare_data(MPID_Request *req, void * buf, int count, MPI_Datatype datatyp
 	return;
 	/* --- */
 err_alloc_tmpbuf: /* ToDo: */
-	fprintf(stderr, "MPIU_Malloc() failed\n");
+	fprintf(stderr, "MPL_malloc() failed\n");
 	exit(1);
 }
 
 
 static inline
-void prepare_cleanup(MPID_Request *req, void * buf, int count, MPI_Datatype datatype)
+void prepare_cleanup(MPIR_Request *req, void * buf, int count, MPI_Datatype datatype)
 {
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 	pscom_request_t *preq = rreq->common.pscom_req;
@@ -60,7 +61,7 @@ void prepare_cleanup(MPID_Request *req, void * buf, int count, MPI_Datatype data
 
 
 static inline
-void prepare_source(MPID_Request *req, pscom_connection_t *con, pscom_socket_t *sock)
+void prepare_source(MPIR_Request *req, pscom_connection_t *con, pscom_socket_t *sock)
 {
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 	pscom_request_t *preq = rreq->common.pscom_req;

@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -47,9 +47,9 @@ void MPID_PSP_Datatype_get_info(MPI_Datatype datatype, MPID_PSP_Datatype_info *i
 		info->is_predefined = 1;
 		return;
 	} else {
-		MPID_Datatype *dtp;
+		MPIR_Datatype  *dtp;
 
-		MPID_Datatype_get_ptr(datatype, dtp);
+		MPIR_Datatype_get_ptr(datatype, dtp);
 		if (dtp->is_contig) {
 			/* ToDo: optimize the case where dtp->is_contig is true: (encode only dtp->size and dtp->true_lb) */
 			info->dtp = dtp;
@@ -75,10 +75,10 @@ void MPID_PSP_Datatype_get_info(MPI_Datatype datatype, MPID_PSP_Datatype_info *i
  */
 void MPID_PSP_Datatype_encode(MPID_PSP_Datatype_info *info, void *encode)
 {
-	MPID_Datatype *dtp = info->dtp;
+	MPIR_Datatype  *dtp = info->dtp;
 	MPID_PSP_Datatype *enc_dtp = (MPID_PSP_Datatype *) encode;
 
-	struct MPID_Dataloop *enc_dataloop;
+	struct MPIR_Dataloop *enc_dataloop;
 
 	enc_dtp->datatype = info->datatype;
 
@@ -104,7 +104,7 @@ void MPID_PSP_Datatype_encode(MPID_PSP_Datatype_info *info, void *encode)
 	enc_dtp->has_sticky_lb	= dtp->has_sticky_lb;
 
 	/* Copy dataloop */
-	enc_dataloop =	(struct MPID_Dataloop *)(void *)(enc_dtp + 1); /* dataloop behind enc_dtp */
+	enc_dataloop =	(struct MPIR_Dataloop *)(void *)(enc_dtp + 1); /* dataloop behind enc_dtp */
 	memcpy(enc_dataloop, dtp->dataloop, dtp->dataloop_size);
 
 	return;
@@ -113,15 +113,15 @@ void MPID_PSP_Datatype_encode(MPID_PSP_Datatype_info *info, void *encode)
 
 /*
  * Create a new (MPI_Datatype)new_datatype with refcnt 1. Caller has to call
- * MPID_Datatype_release(new_datatype) after usage, if
+ * MPIR_Datatype_ptr_release(new_datatype) after usage, if
  * HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN.
  */
 MPI_Datatype MPID_PSP_Datatype_decode(void *encode)
 {
-	MPID_Datatype *dtp;
+	MPIR_Datatype  *dtp;
 
 	MPID_PSP_Datatype *enc_dtp = (MPID_PSP_Datatype *) encode;
-	struct MPID_Dataloop *enc_dataloop;
+	struct MPIR_Dataloop *enc_dataloop;
 
 	if (MPID_is_predefined_datatype(enc_dtp->datatype))
 		/* HANDLE_GET_KIND(enc_dtp->datatype) == HANDLE_KIND_BUILTIN)*/ {
@@ -134,11 +134,11 @@ MPI_Datatype MPID_PSP_Datatype_decode(void *encode)
 		enc_dtp->datatype, MPIDU_Datatype_builtin_to_string(enc_dtp->datatype) ? : "<NULL>"); */
 	/* ToDo: optimize the case where dtp->is_contig is true: (encode only dtp->size and dtp->true_lb) */
 
-	dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
+	dtp = (MPIR_Datatype *) MPIR_Handle_obj_alloc(&MPIR_Datatype_mem);
 	if (!dtp) goto err_alloc_dtp;
 
-	/* Note: handle is filled in by MPIU_Handle_obj_alloc() */
-	MPIU_Object_set_ref(dtp, 1);
+	/* Note: handle is filled in by MPIR_Handle_obj_alloc() */
+	MPIR_Object_set_ref(dtp, 1);
 
 	dtp->size		= enc_dtp->size;
 	dtp->extent		= enc_dtp->extent;
@@ -170,12 +170,6 @@ MPI_Datatype MPID_PSP_Datatype_decode(void *encode)
 	dtp->dataloop_size	= enc_dtp->dataloop_size;
 	dtp->dataloop_depth	= enc_dtp->dataloop_depth;
 
-
-	dtp->hetero_dloop	= NULL;
-	dtp->hetero_dloop_size	= 0;
-	dtp->hetero_dloop_depth	= 0;
-
-
 	dtp->attributes		= 0;
 	dtp->name[0]		= 0;
 	dtp->cache_id		= 0;
@@ -185,23 +179,23 @@ MPI_Datatype MPID_PSP_Datatype_decode(void *encode)
 	 * Copy and update dataloop:
 	 */
 
-	enc_dataloop =	(struct MPID_Dataloop *)(void *)(enc_dtp + 1); /* dataloop behind enc_dtp */
-	/* dtp->dataloop will be freed in MPID_Datatype_free() with MPID_Dataloop_free(&(ptr->dataloop));
-	 * DLOOP_Malloc() == MPIU_Malloc().
+	enc_dataloop =	(struct MPIR_Dataloop *)(void *)(enc_dtp + 1); /* dataloop behind enc_dtp */
+	/* dtp->dataloop will be freed in MPIR_Datatype_free() with MPIR_Dataloop_free(&(ptr->dataloop));
+	 * DLOOP_Malloc() == MPL_malloc().
 	 */
-	dtp->dataloop = (struct MPID_Dataloop *) MPIU_Malloc(dtp->dataloop_size);
+	dtp->dataloop = (struct MPIR_Dataloop *) MPL_malloc(dtp->dataloop_size, MPL_MEM_DATATYPE);
 	if (!dtp->dataloop) goto err_alloc_dataloop;
 
 	memcpy(dtp->dataloop, enc_dataloop, dtp->dataloop_size);
 
-	MPID_Dataloop_update(dtp->dataloop, ((char *) dtp->dataloop) - ((char *)enc_dtp->dataloop));
+	MPIR_Dataloop_update(dtp->dataloop, ((char *) dtp->dataloop) - ((char *)enc_dtp->dataloop));
 
 
 	return dtp->handle;
 
 	/* --- */
 err_alloc_dataloop:
-	MPID_Datatype_release(dtp); dtp = NULL;
+	MPIR_Datatype_ptr_release(dtp); dtp = NULL;
 
 err_alloc_dtp:
 	{
@@ -218,9 +212,9 @@ err_alloc_dtp:
 void MPID_PSP_Datatype_release(MPI_Datatype datatype)
 {
 	if(!MPID_is_predefined_datatype(datatype)) {
-		MPID_Datatype *dtp;
-		MPID_Datatype_get_ptr(datatype, dtp);
-		MPID_Datatype_release(dtp);
+		MPIR_Datatype  *dtp;
+		MPIR_Datatype_get_ptr(datatype, dtp);
+		MPIR_Datatype_ptr_release(dtp);
 	}
 }
 
@@ -228,8 +222,9 @@ void MPID_PSP_Datatype_release(MPI_Datatype datatype)
 void MPID_PSP_Datatype_add_ref(MPI_Datatype datatype)
 {
 	if(!MPID_is_predefined_datatype(datatype)) {
-		MPID_Datatype *dtp;
-		MPID_Datatype_get_ptr(datatype, dtp);
-		MPID_Datatype_add_ref(dtp);
+		MPIR_Datatype  *dtp;
+		MPIR_Datatype_get_ptr(datatype, dtp);
+		// TODO: check if MPID_PSP_Datatype_add_ref() is required at all.
+		MPIR_Datatype_ptr_add_ref(dtp);
 	}
 }

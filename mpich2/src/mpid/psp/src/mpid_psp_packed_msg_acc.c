@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006,2007 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -66,7 +66,7 @@ struct acc_params {
 
 
 static
-int MPID_Segment_contig_acc(DLOOP_Offset *blocks_p,
+int MPIR_Segment_contig_acc(DLOOP_Offset *blocks_p,
 			    DLOOP_Type el_type,
 			    DLOOP_Offset rel_off,
 			    void *bufp,
@@ -87,7 +87,7 @@ int MPID_Segment_contig_acc(DLOOP_Offset *blocks_p,
 		count = 1;
 	} else {
 		/* Usual case of common built-in datatypes... */
-		el_size = MPID_Datatype_get_basic_size(el_type);
+		el_size = MPIR_Datatype_get_basic_size(el_type);
 		size = *blocks_p * (DLOOP_Offset) el_size;
 	}
 
@@ -104,7 +104,7 @@ int MPID_Segment_contig_acc(DLOOP_Offset *blocks_p,
 }
 
 static
-int MPID_Segment_vector_acc(DLOOP_Offset *blocks_p,
+int MPIR_Segment_vector_acc(DLOOP_Offset *blocks_p,
 			    DLOOP_Count count,
 			    DLOOP_Count blklen,
 			    DLOOP_Offset stride,
@@ -120,13 +120,13 @@ int MPID_Segment_vector_acc(DLOOP_Offset *blocks_p,
 
 	if( (acc_params->op == MPI_MINLOC || acc_params->op == MPI_MAXLOC) && el_type == MPI_BYTE ) {
 		/* Corner case of composed but built-in datatypes that degraded to MPI_BYTE when treated as derived:
-		   (see also MPID_Segment_contig_acc) */
+		   (see also MPIR_Segment_contig_acc) */
 		el_type = acc_params->dtype;
 		size   = blklen;
 		blklen = 1;
 	} else {
 
-		el_size = MPID_Datatype_get_basic_size(el_type);
+		el_size = MPIR_Datatype_get_basic_size(el_type);
 		size = blklen * (DLOOP_Offset) el_size;
 	}
 
@@ -152,29 +152,14 @@ void MPIR_REPLACE(void *invec, void *inoutvec, int *Len, MPI_Datatype *type)
 }
 */
 
-static inline
-MPI_User_function *get_op(MPI_Op op)
-{
-	unsigned int idx = (op - MPI_MAX);
-
-	if (idx <= MPI_MAXLOC - MPI_MAX) {
-		return MPIR_Op_table[idx];
-	} else if (op == MPI_REPLACE) {
-		return MPIR_REPLACE;
-	} else {
-		return NULL;
-	}
-}
-
-
 void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Datatype datatype,
 			     void *msg, size_t msg_sz, MPI_Op op)
 {
-	MPID_Segment segment;
+	MPIR_Segment segment;
 	DLOOP_Offset last = msg_sz;
 	struct acc_params acc_params;
 
-	MPID_Segment_init(target_addr, target_count, datatype, &segment, 0);
+	MPIR_Segment_init(target_addr, target_count, datatype, &segment);
 
 	acc_params.op = op;
 	MPID_PSP_Datatype_get_basic_type(datatype, acc_params.dtype);
@@ -182,16 +167,16 @@ void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Data
 	acc_params.msg = msg;
 	acc_params.msg_sz = msg_sz;
 	/* get the function by indexing into the op table */
-	acc_params.uop = get_op(op);
+	acc_params.uop = MPIR_OP_HDL_TO_FN(op);
 
 	if (!acc_params.uop) return; /* Todo: report error */
 
-	MPID_Segment_manipulate(&segment, /* first */0, &last,
-				MPID_Segment_contig_acc,
-				MPID_Segment_vector_acc,
-				/* ToDo: implement MPID_Segment_{blkidx,index}_acc! */
-				NULL /* MPID_Segment_blkidx_acc */,
-				NULL /* MPID_Segment_index_acc */,
+	MPIR_Segment_manipulate(&segment, /* first */0, &last,
+				MPIR_Segment_contig_acc,
+				MPIR_Segment_vector_acc,
+				/* ToDo: implement MPIR_Segment_{blkidx,index}_acc! */
+				NULL /* MPIR_Segment_blkidx_acc */,
+				NULL /* MPIR_Segment_index_acc */,
 				NULL /* sizefn */,
 				&acc_params);
 }

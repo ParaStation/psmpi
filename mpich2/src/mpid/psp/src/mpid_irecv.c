@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -27,7 +27,7 @@ int cb_accept_data(pscom_request_t *request,
 		   pscom_connection_t *connection,
 		   pscom_header_net_t *header_net)
 {
-	MPID_Request *req = request->user->type.sr.mpid_req;
+	MPIR_Request *req = request->user->type.sr.mpid_req;
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 	MPID_PSCOM_XHeader_t *xhead = &header_net->xheader->user.common;
 
@@ -60,14 +60,14 @@ void cb_io_done_ack(pscom_request_t *request)
 	MPID_PSCOM_XHeader_t *xhead = &request->xheader.user.common;
 
 	/* Todo: Test for pscom_req_successful(request) ? */
-	MPID_Request *send_req = request->user->type.sr.mpid_req;
+	MPIR_Request *send_req = request->user->type.sr.mpid_req;
 
 	if (xhead->type == MPID_PSP_MSGTYPE_CANCEL_DATA_ACK) {
 		MPIR_STATUS_SET_CANCEL_BIT(send_req->status, TRUE);
 	}
 
 	MPID_PSP_Subrequest_completed(send_req);
-	MPID_DEV_Request_release_ref(send_req, MPID_REQUEST_SEND);
+	MPIR_Request_free(send_req);
 	request->user->type.sr.mpid_req = NULL;
 	pscom_request_free(request);
 }
@@ -77,7 +77,7 @@ static inline
 void receive_done(pscom_request_t *request)
 {
 	/* This is an pscom.io_done call. Global lock state undefined! */
-	MPID_Request *req = request->user->type.sr.mpid_req;
+	MPIR_Request *req = request->user->type.sr.mpid_req;
 	MPID_PSCOM_XHeader_t *xhead = &request->xheader.user.common;
 
 	MPIR_STATUS_SET_COUNT(req->status, request->header.data_len); /* status.count == datalen, or == datalen/sizeof(mpitype) ?? */
@@ -110,7 +110,7 @@ void receive_done(pscom_request_t *request)
 	}
 
 	MPID_PSP_Subrequest_completed(req);
-	MPID_PSP_Request_dequeue(req, MPID_REQUEST_RECV);
+	MPIR_Request_free(req);
 }
 
 
@@ -118,7 +118,7 @@ static
 void receive_done_noncontig(pscom_request_t *request)
 {
 	/* This is an pscom.io_done call. Global lock state undefined! */
-	MPID_Request *req = request->user->type.sr.mpid_req;
+	MPIR_Request *req = request->user->type.sr.mpid_req;
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 
 	if (pscom_req_successful(request) || (request->state & PSCOM_REQ_STATE_TRUNCATED)) {
@@ -269,7 +269,7 @@ void MPID_enable_receive_dispach(pscom_socket_t *socket)
 
 
 static
-void prepare_recvreq(MPID_Request *req, int tag, MPID_Comm * comm, int context_offset)
+void prepare_recvreq(MPIR_Request *req, int tag, MPIR_Comm * comm, int context_offset)
 {
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 	pscom_request_t *preq = rreq->common.pscom_req;
@@ -283,7 +283,7 @@ void prepare_recvreq(MPID_Request *req, int tag, MPID_Comm * comm, int context_o
 
 
 static
-void prepare_probereq(MPID_Request *req, int tag, MPID_Comm * comm, int context_offset)
+void prepare_probereq(MPIR_Request *req, int tag, MPIR_Comm * comm, int context_offset)
 {
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 	pscom_request_t *preq = rreq->common.pscom_req;
@@ -294,7 +294,7 @@ void prepare_probereq(MPID_Request *req, int tag, MPID_Comm * comm, int context_
 
 
 static
-void prepare_data(MPID_Request *req, void * buf, int count, MPI_Datatype datatype)
+void prepare_data(MPIR_Request *req, void * buf, int count, MPI_Datatype datatype)
 {
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 	pscom_request_t *preq = rreq->common.pscom_req;
@@ -309,13 +309,13 @@ void prepare_data(MPID_Request *req, void * buf, int count, MPI_Datatype datatyp
 	return;
 	/* --- */
 err_alloc_tmpbuf: /* ToDo: */
-	fprintf(stderr, "MPIU_Malloc() failed\n");
+	fprintf(stderr, "MPL_malloc() failed\n");
 	exit(1);
 }
 
 
 static
-void prepare_cleanup(MPID_Request *req, void * buf, int count, MPI_Datatype datatype)
+void prepare_cleanup(MPIR_Request *req, void * buf, int count, MPI_Datatype datatype)
 {
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 	pscom_request_t *preq = rreq->common.pscom_req;
@@ -334,7 +334,7 @@ void prepare_cleanup(MPID_Request *req, void * buf, int count, MPI_Datatype data
 
 
 static
-void prepare_source(MPID_Request *req, pscom_connection_t *con, pscom_socket_t *sock)
+void prepare_source(MPIR_Request *req, pscom_connection_t *con, pscom_socket_t *sock)
 {
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 	pscom_request_t *preq = rreq->common.pscom_req;
@@ -345,9 +345,9 @@ void prepare_source(MPID_Request *req, pscom_connection_t *con, pscom_socket_t *
 
 
 int MPID_Irecv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-	       MPID_Comm * comm, int context_offset, MPID_Request ** request)
+	       MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
 {
-	MPID_Request *req;
+	MPIR_Request *req;
 	pscom_connection_t *con;
 	pscom_socket_t *sock;
 /*
@@ -357,8 +357,10 @@ int MPID_Irecv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int 
 	printf("#%d ctx.id %d ctx.rank %d, ctx.name %s\n",
 	       MPIDI_Process.my_pg_rank, comm->context_id, comm->rank, comm->name);
 */
-	req = MPID_DEV_Request_recv_create(comm);
+	req = MPIR_Request_create(MPIR_REQUEST_KIND__RECV);
 	if (unlikely(!req)) goto err_request_recv_create;
+	req->comm = comm;
+	MPIR_Comm_add_ref(comm);
 
 	prepare_recvreq(req, tag, comm, context_offset);
 
@@ -371,14 +373,14 @@ int MPID_Irecv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int 
 		prepare_source(req, con, sock);
 		prepare_cleanup(req, buf, count, datatype);
 
-		MPID_PSP_Request_enqueue(req);
+		MPIR_Request_add_ref(req);
 
 		pscom_post_recv(req->dev.kind.recv.common.pscom_req);
 
 	} else switch (rank) {
 	case MPI_PROC_NULL:
 		MPIR_Status_set_procnull(&req->status);
-		MPID_PSP_Request_set_completed(req);
+		MPIDI_PSP_Request_set_completed(req);
 		break;
 	case MPI_ROOT:
 	default:
@@ -395,12 +397,12 @@ int MPID_Irecv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int 
 	return  MPI_ERR_NO_MEM;
 	/* --- */
  err_rank:
-	MPID_DEV_Request_release_ref(req, MPID_REQUEST_RECV);
+	MPIR_Request_free(req);
 	return  MPI_ERR_RANK;
 }
 
 
-void MPID_PSP_RecvAck(MPID_Request *send_req)
+void MPID_PSP_RecvAck(MPIR_Request *send_req)
 {
 	pscom_request_t *preq;
 	pscom_request_t *preq_send;
@@ -424,7 +426,7 @@ void MPID_PSP_RecvAck(MPID_Request *send_req)
 	preq->user->type.sr.mpid_req = send_req;
 
 	MPID_PSP_Subrequest_add(send_req);   /* Subrequest_completed(sendreq) and */
-	MPID_DEV_Request_add_ref(send_req);  /* Request_release_ref(sendreq) in cb_receive_ack() */
+	MPIR_Request_add_ref(send_req);  /* Request_release_ref(sendreq) in cb_receive_ack() */
 
 	pscom_post_recv(preq);
 }
@@ -443,7 +445,7 @@ void set_probe_status(pscom_request_t *req, MPI_Status *status)
 }
 
 
-int MPID_Probe(int rank, int tag, MPID_Comm * comm, int context_offset, MPI_Status * status)
+int MPID_Probe(int rank, int tag, MPIR_Comm * comm, int context_offset, MPI_Status * status)
 {
 	pscom_connection_t *con;
 	pscom_socket_t *sock;
@@ -459,9 +461,11 @@ int MPID_Probe(int rank, int tag, MPID_Comm * comm, int context_offset, MPI_Stat
 	sock = comm->pscom_socket;
 
 	if (con || (rank == MPI_ANY_SOURCE)) {
-		MPID_Request *req;
-		req = MPID_DEV_Request_recv_create(comm);
+		MPIR_Request *req;
+		req = MPIR_Request_create(MPIR_REQUEST_KIND__RECV);
 		if (unlikely(!req)) goto err_request_recv_create;
+		req->comm = comm;
+		MPIR_Comm_add_ref(comm);
 
 		prepare_probereq(req, tag, comm, context_offset);
 
@@ -472,7 +476,7 @@ int MPID_Probe(int rank, int tag, MPID_Comm * comm, int context_offset, MPI_Stat
 		set_probe_status(req->dev.kind.recv.common.pscom_req, status);
 
 		MPID_PSP_Subrequest_completed(req);
-		MPID_DEV_Request_release_ref(req, MPID_REQUEST_RECV);
+		MPIR_Request_free(req);
 	} else switch (rank) {
 	case MPI_PROC_NULL:
 		MPIR_Status_set_procnull(status);
@@ -494,7 +498,7 @@ int MPID_Probe(int rank, int tag, MPID_Comm * comm, int context_offset, MPI_Stat
 }
 
 
-int MPID_Iprobe(int rank, int tag, MPID_Comm * comm, int context_offset, int * flag, MPI_Status * status)
+int MPID_Iprobe(int rank, int tag, MPIR_Comm * comm, int context_offset, int * flag, MPI_Status * status)
 {
 	pscom_connection_t *con;
 	pscom_socket_t *sock;
@@ -510,9 +514,11 @@ int MPID_Iprobe(int rank, int tag, MPID_Comm * comm, int context_offset, int * f
 	sock = comm->pscom_socket;
 
 	if (con || (rank == MPI_ANY_SOURCE)) {
-		MPID_Request *req;
-		req = MPID_DEV_Request_recv_create(comm);
+		MPIR_Request *req;
+		req = MPIR_Request_create(MPIR_REQUEST_KIND__RECV);
 		if (unlikely(!req)) goto err_request_recv_create;
+		req->comm = comm;
+		MPIR_Comm_add_ref(comm);
 
 		prepare_probereq(req, tag, comm, context_offset);
 
@@ -524,7 +530,7 @@ int MPID_Iprobe(int rank, int tag, MPID_Comm * comm, int context_offset, int * f
 		}
 
 		MPID_PSP_Subrequest_completed(req);
-		MPID_DEV_Request_release_ref(req, MPID_REQUEST_RECV);
+		MPIR_Request_free(req);
 	} else switch (rank) {
 	case MPI_PROC_NULL:
 		MPIR_Status_set_procnull(status);
@@ -544,27 +550,6 @@ int MPID_Iprobe(int rank, int tag, MPID_Comm * comm, int context_offset, int * f
 	/* --- */
  err_rank:
 	return  MPI_ERR_RANK;
-}
-
-
-int MPID_Comm_AS_enabled(MPID_Comm *comm_ptr)
-{
-	/* This function must return 1 in the default case and should not be ignored
-	 * by the implementation. */
-	return 1;
-}
-
-
-int MPID_Request_is_anysource(MPID_Request *request_ptr)
-{
-	int ret = 0;
-
-	if (request_ptr->kind == MPID_REQUEST_RECV &&
-	    request_ptr->dev.kind.recv.common.pscom_req) {
-		ret = request_ptr->dev.kind.recv.common.pscom_req->connection == NULL;
-	}
-
-	return ret;
 }
 
 #include "mpid_mprobe.c"

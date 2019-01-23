@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2007-2010 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2007-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -16,7 +16,7 @@
 #include "mpid_visibility.h"
 
 
-int MPID_Cancel_recv(MPID_Request * rreq)
+int MPID_Cancel_recv(MPIR_Request * rreq)
 {
 	pscom_request_t *req = rreq->dev.kind.recv.common.pscom_req;
 
@@ -28,7 +28,7 @@ int MPID_Cancel_recv(MPID_Request * rreq)
 }
 
 
-int MPID_Cancel_send(MPID_Request * sreq)
+int MPID_Cancel_send(MPIR_Request * sreq)
 {
 	pscom_request_t *req = sreq->dev.kind.send.common.pscom_req;
 

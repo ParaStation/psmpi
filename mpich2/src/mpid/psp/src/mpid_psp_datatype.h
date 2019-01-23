@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -18,7 +18,7 @@
 typedef struct MPID_PSP_Datatype_info_s
 {
 	MPI_Datatype	datatype;
-	MPID_Datatype	*dtp;
+	MPIR_Datatype 	*dtp;
 	unsigned	encode_size;
 	int		is_predefined; /* == is_builtin || (MPI_FLOAT_INT and co.) */
 } MPID_PSP_Datatype_info;
@@ -47,13 +47,13 @@ int MPID_is_predefined_datatype(MPI_Datatype datatype)
     void *ptr;                                                          \
     switch (HANDLE_GET_KIND(a)) {                                       \
         case HANDLE_KIND_DIRECT:                                        \
-            ptr = MPID_Datatype_direct+HANDLE_INDEX(a);                 \
-            basic_type_ = ((MPID_Datatype *) ptr)->basic_type;          \
+            ptr = MPIR_Datatype_direct+HANDLE_INDEX(a);                 \
+            basic_type_ = ((MPIR_Datatype  *) ptr)->basic_type;          \
             break;                                                      \
         case HANDLE_KIND_INDIRECT:                                      \
-            ptr = ((MPID_Datatype *)                                    \
-                   MPIU_Handle_get_ptr_indirect(a,&MPID_Datatype_mem)); \
-            basic_type_ = ((MPID_Datatype *) ptr)->basic_type;          \
+            ptr = ((MPIR_Datatype  *)                                    \
+                   MPIR_Handle_get_ptr_indirect(a,&MPIR_Datatype_mem)); \
+            basic_type_ = ((MPIR_Datatype  *) ptr)->basic_type;          \
             break;                                                      \
         case HANDLE_KIND_BUILTIN:                                       \
             basic_type_ = a;                                            \

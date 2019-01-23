@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -33,14 +33,14 @@ int _accept_never(pscom_request_t *request,
 }
 
 static
-int is_comm_self_clone(MPID_Comm * comm_ptr)
+int is_comm_self_clone(MPIR_Comm * comm_ptr)
 {
 #if 0   /* Why so complicated??? */
-	MPID_Comm *comm_self_ptr = NULL;
-	MPID_Group *group_comm, *group_self;
+	MPIR_Comm *comm_self_ptr = NULL;
+	MPIR_Group *group_comm, *group_self;
 	int result;
 
-	MPID_Comm_get_ptr( MPI_COMM_SELF, comm_self_ptr );
+	MPIR_Comm_get_ptr ( MPI_COMM_SELF, comm_self_ptr );
 
 	MPIR_Comm_group_impl(comm_ptr, &group_comm);
 
@@ -65,7 +65,7 @@ int is_comm_self_clone(MPID_Comm * comm_ptr)
 }
 
 static
-int is_host_local_comm(MPID_Comm * comm_ptr)
+int is_host_local_comm(MPIR_Comm * comm_ptr)
 {
 	int i;
 	int host_hash;
@@ -76,7 +76,7 @@ int is_host_local_comm(MPID_Comm * comm_ptr)
 	/* Caution: In case of a hash collision, we may end up in an undefined situation! (error, deadlock, ...) */
 	host_hash = MPID_PSP_get_host_hash();
 
-	hash_buf = MPIU_Malloc(comm_ptr->local_size * sizeof(int));
+	hash_buf = MPL_malloc(comm_ptr->local_size * sizeof(int), MPL_MEM_BUFFER);
 	mpi_errno = MPIR_Allgather_impl(&host_hash, 1, MPI_INT, hash_buf, 1, MPI_INT, comm_ptr, &errflag);
 	assert(mpi_errno == MPI_SUCCESS);
 
@@ -156,7 +156,7 @@ struct rma_pscom_socket *rma_pscom_sockets_find(pscom_socket_t *socket) {
 
 static
 struct rma_pscom_socket *rma_pscom_sockets_create(unsigned ref_cnt, pscom_socket_t *socket) {
-	struct rma_pscom_socket *rma_sock = (struct rma_pscom_socket *) MPIU_Malloc(sizeof(*rma_sock));
+	struct rma_pscom_socket *rma_sock = (struct rma_pscom_socket *) MPL_malloc(sizeof(*rma_sock), MPL_MEM_OBJECT);
 
 	rma_sock->ref_cnt = ref_cnt;
 	rma_sock->pscom_socket = socket;
@@ -178,7 +178,7 @@ void rma_pscom_sockets_destroy(struct rma_pscom_socket *rma_sock) {
 
 	list_del(&rma_sock->next);
 
-	MPIU_Free(rma_sock);
+	MPL_free(rma_sock);
 }
 
 
@@ -216,7 +216,7 @@ void MPID_PSP_rma_pscom_sockets_cleanup(void) {
 
 
 static
-void MPID_PSP_rma_check_init(MPID_Comm *comm)
+void MPID_PSP_rma_check_init(MPIR_Comm *comm)
 {
 	int i;
 	for (i = 0; i < comm->local_size; i++) {
@@ -226,7 +226,7 @@ void MPID_PSP_rma_check_init(MPID_Comm *comm)
 
 
 static
-void MPID_PSP_rma_check_fini(MPID_Comm *comm)
+void MPID_PSP_rma_check_fini(MPIR_Comm *comm)
 {
 	int i;
 	for (i = 0; i < comm->local_size; i++) {
@@ -239,30 +239,30 @@ typedef struct MPID_Wincreate_msg
 {
 	void *base;
 	int disp_unit;
-	MPID_Win *win_ptr;
+	MPIR_Win *win_ptr;
 } MPID_Wincreate_msg;
 
 
 #define FUNCNAME MPID_Win_create
 #define FCNAME "MPID_Win_create"
-int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
-		    MPID_Comm *comm_ptr, MPID_Win **_win_ptr)
+int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info *info,
+		    MPIR_Comm *comm_ptr, MPIR_Win **_win_ptr)
 {
 	/* from MPIDI_Win_create() */
 	int mpi_errno = MPI_SUCCESS, i, comm_size, rank;
 	MPIR_Errflag_t errflag = 0;
 	MPID_Wincreate_msg *tmp_buf;
-	MPID_Win *win_ptr;
+	MPIR_Win *win_ptr;
 
-	MPIU_CHKPMEM_DECL(7);
-	MPIU_CHKLMEM_DECL(1);
+	MPIR_CHKPMEM_DECL(7);
+	MPIR_CHKLMEM_DECL(1);
 
 	MPID_PSP_rma_check_init(comm_ptr);
 
 	comm_size = comm_ptr->local_size;
 	rank = comm_ptr->rank;
 
-	win_ptr = (MPID_Win *)MPIU_Handle_obj_alloc( &MPID_Win_mem );
+	win_ptr = (MPIR_Win *)MPIR_Handle_obj_alloc( &MPIR_Win_mem );
 	MPIR_ERR_CHKANDJUMP(!win_ptr, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
 	(*_win_ptr) = win_ptr;
@@ -289,17 +289,17 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
 
 	/* allocate memory for the base addresses, disp_units, and
 	   completion counters of all processes */
-	MPIU_CHKPMEM_MALLOC(win_ptr->rank_info, MPID_Win_rank_info *, comm_size * sizeof(MPID_Win_rank_info),
-			    mpi_errno, "win_ptr->rank_info");
+	MPIR_CHKPMEM_MALLOC(win_ptr->rank_info, MPID_Win_rank_info *, comm_size * sizeof(MPID_Win_rank_info),
+			    mpi_errno, "win_ptr->rank_info", MPL_MEM_OBJECT);
 
-	MPIU_CHKPMEM_MALLOC(win_ptr->rma_puts_accs, unsigned int *, comm_size * sizeof(unsigned int),
-			    mpi_errno, "win_ptr->rma_puts_accs");
+	MPIR_CHKPMEM_MALLOC(win_ptr->rma_puts_accs, unsigned int *, comm_size * sizeof(unsigned int),
+			    mpi_errno, "win_ptr->rma_puts_accs", MPL_MEM_OBJECT);
 
-	MPIU_CHKPMEM_MALLOC(win_ptr->rma_local_pending_rank, int *, comm_size * sizeof(int),
-			    mpi_errno, "win_ptr->rma_local_pending_rank");
+	MPIR_CHKPMEM_MALLOC(win_ptr->rma_local_pending_rank, int *, comm_size * sizeof(int),
+			    mpi_errno, "win_ptr->rma_local_pending_rank", MPL_MEM_OBJECT);
 
-	MPIU_CHKPMEM_MALLOC(win_ptr->remote_lock_state, enum MPID_PSP_Win_lock_state *, comm_size * sizeof(int),
-			    mpi_errno, "win_ptr->remote_lock_state");
+	MPIR_CHKPMEM_MALLOC(win_ptr->remote_lock_state, enum MPID_PSP_Win_lock_state *, comm_size * sizeof(int),
+			    mpi_errno, "win_ptr->remote_lock_state", MPL_MEM_OBJECT);
 
 	win_ptr->rank = rank;
 	win_ptr->rma_puts_accs_received	= 0;
@@ -319,9 +319,9 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
 
 	/* get the addresses of the windows, window objects, and completion counters
 	   of all processes.  allocate temp. buffer for communication */
-	MPIU_CHKLMEM_MALLOC(tmp_buf, MPID_Wincreate_msg *,
+	MPIR_CHKLMEM_MALLOC(tmp_buf, MPID_Wincreate_msg *,
 			    comm_size * sizeof(MPID_Wincreate_msg),
-			    mpi_errno, "tmp_buf");
+			    mpi_errno, "tmp_buf", MPL_MEM_OTHER);
 
 	/* ToDo: get (comm_size - 1) refs to *win_ptr!!! */
 	/* FIXME: This needs to be fixed for heterogeneous systems */
@@ -355,12 +355,12 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
 
 	/* ToDo: post psport_recv request. */
 fn_exit:
-	MPIU_CHKLMEM_FREEALL();
+	MPIR_CHKLMEM_FREEALL();
 
 	return mpi_errno;
 	/* --BEGIN ERROR HANDLING-- */
 fn_fail:
-	MPIU_CHKPMEM_REAP();
+	MPIR_CHKPMEM_REAP();
 	goto fn_exit;
 	/* --END ERROR HANDLING-- */
 }
@@ -371,13 +371,13 @@ fn_fail:
 
 #define FUNCNAME MPID_Win_free
 #define FCNAME "MPID_Win_free"
-int MPID_Win_free(MPID_Win **_win_ptr)
+int MPID_Win_free(MPIR_Win **_win_ptr)
 {
 	int mpi_errno = MPI_SUCCESS /*, total_pt_rma_puts_accs, i, *recvcnts, comm_size */;
-	/* MPID_Comm *comm_ptr; */
-	MPID_Win *win_ptr = *_win_ptr;
+	/* MPIR_Comm *comm_ptr; */
+	MPIR_Win *win_ptr = *_win_ptr;
 #if 0
-	MPIU_CHKLMEM_DECL(1);
+	MPIR_CHKLMEM_DECL(1);
 #endif
 
 	/* Check that we are _not_ within an access/exposure epoch: */
@@ -394,16 +394,16 @@ int MPID_Win_free(MPID_Win **_win_ptr)
 #if 0
 	/* set up the recvcnts array for the reduce scatter to check if all
 	   passive target rma operations are done */
-	MPID_Comm_get_ptr(win_ptr->comm, comm_ptr);
+	MPIR_Comm_get_ptr (win_ptr->comm, comm_ptr);
 	comm_size = comm_ptr->local_size;
 
-	MPIU_CHKLMEM_MALLOC(recvcnts, int *, comm_size*sizeof(int), mpi_errno, "recvcnts");
+	MPIR_CHKLMEM_MALLOC(recvcnts, int *, comm_size*sizeof(int), mpi_errno, "recvcnts", MPL_MEM_OBJECT);
 	for (i=0; i<comm_size; i++)  recvcnts[i] = 1;
 
 	mpi_errno = MPIR_Reduce_scatter_impl(win_ptr->pt_rma_puts_accs,
 					     &total_pt_rma_puts_accs, recvcnts,
 					     MPI_INT, MPI_SUM, win_ptr->comm);
-	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+	if (mpi_errno) { MPIR_ERR_POP(mpi_errno); }
 #endif
 #if 0
 	if (total_pt_rma_puts_accs != win_ptr->my_pt_rma_puts_accs) {
@@ -429,34 +429,34 @@ int MPID_Win_free(MPID_Win **_win_ptr)
 	/* check whether this was the last active window */
 	MPID_PSP_rma_check_fini(win_ptr->comm_ptr);
 
-	MPIU_Free(win_ptr->rank_info);
+	MPL_free(win_ptr->rank_info);
 
-	MPIU_Free(win_ptr->rma_puts_accs);
+	MPL_free(win_ptr->rma_puts_accs);
 
-	MPIU_Free(win_ptr->rma_local_pending_rank);
+	MPL_free(win_ptr->rma_local_pending_rank);
 
-	MPIU_Free(win_ptr->remote_lock_state);
+	MPL_free(win_ptr->remote_lock_state);
 
 	/* Free the attached buffer for windows created with MPI_Win_allocate() */
 	if (win_ptr->create_flavor == MPI_WIN_FLAVOR_ALLOCATE) {
 		if(win_ptr->size > 0) {
-			MPIU_Free(win_ptr->base);
+			MPL_free(win_ptr->base);
 		}
 
 	} else if(win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED) {
 		if( is_comm_self_clone(win_ptr->comm_ptr) && (win_ptr->size > 0) ) {
-			MPIU_Free(win_ptr->base);
+			MPL_free(win_ptr->base);
 		}
 	}
 
 	MPIR_Comm_free_impl(win_ptr->comm_ptr);
 
 	/* check whether refcount needs to be decremented here as in group_free */
-	MPIU_Handle_obj_free(&MPID_Win_mem, win_ptr);
+	MPIR_Handle_obj_free(&MPIR_Win_mem, win_ptr);
 	(*_win_ptr) = win_ptr;
 fn_exit:
 #if 0
-	MPIU_CHKLMEM_FREEALL();
+	MPIR_CHKLMEM_FREEALL();
 #endif
 
 	return mpi_errno;
@@ -472,9 +472,9 @@ fn_fail:
 /*
  * MPID_Alloc_mem - Allocate memory suitable for passive target RMA operations
  */
-void *MPID_Alloc_mem(size_t size, MPID_Info *info)
+void *MPID_Alloc_mem(size_t size, MPIR_Info *info)
 {
-	return MPIU_Malloc(size);
+	return MPL_malloc(size, MPL_MEM_RMA);
 }
 
 
@@ -483,7 +483,7 @@ void *MPID_Alloc_mem(size_t size, MPID_Info *info)
  */
 int MPID_Free_mem(void *ptr)
 {
-	MPIU_Free(ptr);
+	MPL_free(ptr);
 	return MPI_SUCCESS;
 }
 
@@ -492,7 +492,7 @@ int MPID_Free_mem(void *ptr)
  *   RMA-3.0 Win_create()/allocate() Functions:
  */
 
-int MPID_Win_attach(MPID_Win *win_ptr, void *base, MPI_Aint size)
+int MPID_Win_attach(MPIR_Win *win_ptr, void *base, MPI_Aint size)
 {
 	if(win_ptr->create_flavor != MPI_WIN_FLAVOR_DYNAMIC) {
 		return MPI_ERR_RMA_FLAVOR;
@@ -503,7 +503,7 @@ int MPID_Win_attach(MPID_Win *win_ptr, void *base, MPI_Aint size)
 	return MPI_SUCCESS;;
 }
 
-int MPID_Win_detach(MPID_Win *win_ptr, const void *base)
+int MPID_Win_detach(MPIR_Win *win_ptr, const void *base)
 {
 	if(win_ptr->create_flavor != MPI_WIN_FLAVOR_DYNAMIC) {
 		return MPI_ERR_RMA_FLAVOR;
@@ -515,7 +515,7 @@ int MPID_Win_detach(MPID_Win *win_ptr, const void *base)
 }
 
 
-int MPID_Win_create_dynamic(MPID_Info *info, MPID_Comm *comm_ptr, MPID_Win **win_ptr)
+int MPID_Win_create_dynamic(MPIR_Info *info, MPIR_Comm *comm_ptr, MPIR_Win **win_ptr)
 {
 	int mpi_errno = MPI_SUCCESS;
 
@@ -528,15 +528,15 @@ int MPID_Win_create_dynamic(MPID_Info *info, MPID_Comm *comm_ptr, MPID_Win **win
 
 #define FUNCNAME MPID_Win_allocate
 #define FCNAME "MPID_Win_allocate"
-int MPID_Win_allocate(MPI_Aint size, int disp_unit, MPID_Info *info,
-		      MPID_Comm *comm_ptr, void *base_ptr, MPID_Win **win_ptr)
+int MPID_Win_allocate(MPI_Aint size, int disp_unit, MPIR_Info *info,
+		      MPIR_Comm *comm_ptr, void *base_ptr, MPIR_Win **win_ptr)
 {
 	void **base_pp = (void **) base_ptr;
 	int mpi_errno = MPI_SUCCESS;
-	MPIU_CHKPMEM_DECL(1);
+	MPIR_CHKPMEM_DECL(1);
 
 	if (size > 0) {
-		MPIU_CHKPMEM_MALLOC(*base_pp, void *, size, mpi_errno, "(*win_ptr)->base");
+		MPIR_CHKPMEM_MALLOC(*base_pp, void *, size, mpi_errno, "(*win_ptr)->base", MPL_MEM_RMA);
 	} else if (size == 0) {
 		*base_pp = NULL;
 	} else {
@@ -552,7 +552,7 @@ fn_exit:
 	return mpi_errno;
 	/* --BEGIN ERROR HANDLING-- */
 fn_fail:
-	MPIU_CHKPMEM_REAP();
+	MPIR_CHKPMEM_REAP();
 	goto fn_exit;
 	/* --END ERROR HANDLING-- */
 }
@@ -564,8 +564,8 @@ fn_fail:
  *   RMA-3.0 SHMEM Functions:
  */
 
-extern struct MPID_CommOps  *MPID_Comm_fns;
-struct MPID_CommOps MPID_PSP_Comm_fns;
+extern struct MPIR_Commops  *MPIR_Comm_fns;
+struct MPIR_Commops MPIR_PSP_Comm_fns;
 
 typedef struct _MPID_PSP_shm_attr_t
 {
@@ -578,61 +578,61 @@ typedef struct _MPID_PSP_shm_attr_t
 } MPID_PSP_shm_attr_t;
 
 static int MPID_PSP_shm_attr_delete_fn(MPI_Win, int, void*, void*);
-static int MPID_PSP_split_type(MPID_Comm*, int, int, MPID_Info*, MPID_Comm**);
-static void MPID_PSP_shm_rma_set_attr(MPID_Win*, MPID_PSP_shm_attr_t*);
-static void MPID_PSP_shm_rma_get_attr(MPID_Win*, MPID_PSP_shm_attr_t**);
+static int MPID_PSP_split_type(MPIR_Comm*, int, int, MPIR_Info*, MPIR_Comm**);
+static void MPID_PSP_shm_rma_set_attr(MPIR_Win*, MPID_PSP_shm_attr_t*);
+static void MPID_PSP_shm_rma_get_attr(MPIR_Win*, MPID_PSP_shm_attr_t**);
 
 void MPID_PSP_shm_rma_init(void)
 {
-	MPID_Comm_fns = &MPID_PSP_Comm_fns;
-	MPID_Comm_fns->split_type = MPID_PSP_split_type;
+	MPIR_Comm_fns = &MPIR_PSP_Comm_fns;
+	MPIR_Comm_fns->split_type = MPID_PSP_split_type;
 	MPIR_Comm_create_keyval_impl(MPI_COMM_DUP_FN, MPID_PSP_shm_attr_delete_fn, &MPIDI_Process.shm_attr_key, NULL);
 }
 
-void MPID_PSP_shm_rma_mutex_lock(MPID_Win *win_ptr)
+void MPID_PSP_shm_rma_mutex_lock(MPIR_Win *win_ptr)
 {
 	MPID_PSP_shm_attr_t* attr = NULL;
 	MPID_PSP_shm_rma_get_attr(win_ptr, &attr);
 	if(attr) pthread_mutex_lock(attr->lock);
 }
 
-void MPID_PSP_shm_rma_mutex_unlock(MPID_Win *win_ptr)
+void MPID_PSP_shm_rma_mutex_unlock(MPIR_Win *win_ptr)
 {
 	MPID_PSP_shm_attr_t* attr = NULL;
 	MPID_PSP_shm_rma_get_attr(win_ptr, &attr);
 	if(attr) pthread_mutex_unlock(attr->lock);
 }
 
-extern MPIU_Object_alloc_t MPID_Keyval_mem;
-extern MPIU_Object_alloc_t MPID_Attr_mem;
-extern MPID_Keyval MPID_Keyval_direct[];
+extern MPIR_Object_alloc_t MPII_Keyval_mem;
+extern MPIR_Object_alloc_t MPID_Attr_mem;
+extern MPII_Keyval MPII_Keyval_direct[];
 
 static
-void MPID_PSP_shm_rma_set_attr(MPID_Win *win_ptr, MPID_PSP_shm_attr_t *attr)
+void MPID_PSP_shm_rma_set_attr(MPIR_Win *win_ptr, MPID_PSP_shm_attr_t *attr)
 {
-	MPID_Keyval *keyval_ptr = NULL;
-	MPID_Attribute *new_p;
+	MPII_Keyval *keyval_ptr = NULL;
+	MPIR_Attribute *new_p;
 
 	/* store shmem region related information as an attribute of win: */
-	MPID_Keyval_get_ptr(MPIDI_Process.shm_attr_key, keyval_ptr);
-	MPIR_Keyval_add_ref(keyval_ptr);
+	MPII_Keyval_get_ptr(MPIDI_Process.shm_attr_key, keyval_ptr);
+	MPII_Keyval_add_ref(keyval_ptr);
 
-	new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc(&MPID_Attr_mem);
-	MPIU_Object_set_ref(new_p, 0);
+	new_p = (MPIR_Attribute *)MPIR_Handle_obj_alloc(&MPID_Attr_mem);
+	MPIR_Object_set_ref(new_p, 0);
 
 	new_p->attrType      = MPIR_ATTR_PTR;
 	new_p->keyval	     = keyval_ptr;
 	new_p->pre_sentinal  = 0;
-	new_p->value	     = (MPID_AttrVal_t)(void*)attr;
+	new_p->value	     = (MPII_Attr_val_t)(void*)attr;
 	new_p->post_sentinal = 0;
 	new_p->next	     = win_ptr->attributes;
 	win_ptr->attributes = new_p;
 }
 
 static
-void MPID_PSP_shm_rma_get_attr(MPID_Win *win_ptr, MPID_PSP_shm_attr_t **attr)
+void MPID_PSP_shm_rma_get_attr(MPIR_Win *win_ptr, MPID_PSP_shm_attr_t **attr)
 {
-	MPID_Attribute *p = win_ptr->attributes;
+	MPIR_Attribute *p = win_ptr->attributes;
 
 	assert(win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED);
 
@@ -650,7 +650,7 @@ void MPID_PSP_shm_rma_get_attr(MPID_Win *win_ptr, MPID_PSP_shm_attr_t **attr)
 	}
 }
 
-void MPID_PSP_shm_rma_get_base(MPID_Win *win_ptr, int rank, int *disp, void **base)
+void MPID_PSP_shm_rma_get_base(MPIR_Win *win_ptr, int rank, int *disp, void **base)
 {
 	MPID_PSP_shm_attr_t *attr = NULL;
 
@@ -673,7 +673,7 @@ void MPID_PSP_shm_rma_get_base(MPID_Win *win_ptr, int rank, int *disp, void **ba
 }
 
 static
-int get_my_shmem_split_color(MPID_Comm * comm_ptr)
+int get_my_shmem_split_color(MPIR_Comm * comm_ptr)
 {
 	int i, color = MPI_UNDEFINED;
 
@@ -699,8 +699,8 @@ int get_my_shmem_split_color(MPID_Comm * comm_ptr)
 }
 
 static
-int MPID_PSP_split_type(MPID_Comm * comm_ptr, int split_type, int key,
-			MPID_Info * info_ptr, MPID_Comm ** newcomm_ptr)
+int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
+			MPIR_Info * info_ptr, MPIR_Comm ** newcomm_ptr)
 {
 	int mpi_errno = MPI_SUCCESS;
 
@@ -727,7 +727,7 @@ int MPID_PSP_shm_attr_delete_fn(MPI_Win win, int keyval, void *attribute_val, vo
 {
 	int i;
 	MPID_PSP_shm_attr_t *attr = (MPID_PSP_shm_attr_t*)attribute_val;
-	MPID_Win *win_ptr = NULL;
+	MPIR_Win *win_ptr = NULL;
 
 	if(attr) {
 
@@ -737,12 +737,12 @@ int MPID_PSP_shm_attr_delete_fn(MPI_Win win, int keyval, void *attribute_val, vo
 			}
 		}
 
-		MPIU_Free(attr->ptr_buf);
-		MPIU_Free(attr->size_buf);
-		MPIU_Free(attr->disp_buf);
-		MPIU_Free(attr->shmid_buf);
+		MPL_free(attr->ptr_buf);
+		MPL_free(attr->size_buf);
+		MPL_free(attr->disp_buf);
+		MPL_free(attr->shmid_buf);
 
-		MPID_Win_get_ptr(win, win_ptr);
+		MPIR_Win_get_ptr(win, win_ptr);
 		assert(win_ptr);
 		assert(win_ptr->comm_ptr);
 		if(win_ptr->comm_ptr->rank == 0) {
@@ -750,15 +750,15 @@ int MPID_PSP_shm_attr_delete_fn(MPI_Win win, int keyval, void *attribute_val, vo
 		}
 		shmdt(attr->lock);
 
-		MPIU_Free(attr);
+		MPL_free(attr);
 	}
 
 	return MPI_SUCCESS;
 }
 
 static
-int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPID_Info *info,
-				 MPID_Comm *comm_ptr, void *base_ptr, MPID_Win **win_ptr,
+int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info *info,
+				 MPIR_Comm *comm_ptr, void *base_ptr, MPIR_Win **win_ptr,
 				 MPID_PSP_shm_attr_t *attr)
 {
 	int i;
@@ -780,10 +780,10 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPID_Info *info,
 		goto fn_fail;
 	}
 
-	disp_buf  = MPIU_Malloc(comm_ptr->local_size * sizeof(int));
-	shmid_buf = MPIU_Malloc(comm_ptr->local_size * sizeof(int));
-	ptr_buf   = MPIU_Malloc(comm_ptr->local_size * sizeof(void*));
-	size_buf  = MPIU_Malloc(comm_ptr->local_size * sizeof(MPI_Aint));
+	disp_buf  = MPL_malloc(comm_ptr->local_size * sizeof(int), MPL_MEM_BUFFER);
+	shmid_buf = MPL_malloc(comm_ptr->local_size * sizeof(int), MPL_MEM_BUFFER);
+	ptr_buf   = MPL_malloc(comm_ptr->local_size * sizeof(void*), MPL_MEM_BUFFER);
+	size_buf  = MPL_malloc(comm_ptr->local_size * sizeof(MPI_Aint), MPL_MEM_BUFFER);
 
 	/* Initialize shmid_buf[] */
 	for (i = 0; i < comm_ptr->local_size; i++) shmid_buf[i] = -1;
@@ -970,8 +970,8 @@ fn_fail:
 }
 
 static
-int MPID_PSP_Win_allocate_shared(MPI_Aint size, int disp_unit, MPID_Info *info_ptr, MPID_Comm *comm_ptr,
-				 void *base_ptr, MPID_Win **win_ptr, int retry)
+int MPID_PSP_Win_allocate_shared(MPI_Aint size, int disp_unit, MPIR_Info *info_ptr, MPIR_Comm *comm_ptr,
+				 void *base_ptr, MPIR_Win **win_ptr, int retry)
 {
 	void **base_pp = (void **) base_ptr;
 	int mpi_errno = MPI_SUCCESS;
@@ -981,9 +981,9 @@ int MPID_PSP_Win_allocate_shared(MPI_Aint size, int disp_unit, MPID_Info *info_p
 		/* The related communicator is NOT a MPI_COMM_SELF clone... */
 
 		int flag = 0;
-		MPID_Attribute *p = comm_ptr->attributes;
+		MPIR_Attribute *p = comm_ptr->attributes;
 
-		/* Check for the MPI_COMM_TYPE_SHARED attribute key in comm: */
+		/* Check for the MPI_COMM_TYPE_SHARED attribute in comm: */
 		while (p) {
 			if (p->keyval->handle == MPIDI_Process.shm_attr_key) {
 				assert(p->value == NULL);
@@ -997,7 +997,7 @@ int MPID_PSP_Win_allocate_shared(MPI_Aint size, int disp_unit, MPID_Info *info_p
 		if(flag) { /* SHMEM attribute found: */
 			MPID_PSP_shm_attr_t *shm_attr;
 
-			shm_attr = MPIU_Malloc(sizeof(MPID_PSP_shm_attr_t));
+			shm_attr = MPL_malloc(sizeof(MPID_PSP_shm_attr_t), MPL_MEM_OBJECT);
 
 			mpi_errno = MPID_PSP_Win_allocate_shmget(size, disp_unit, info_ptr, comm_ptr, base_ptr, win_ptr, shm_attr);
 
@@ -1047,14 +1047,14 @@ fn_fail:
 	/* --END ERROR HANDLING-- */
 }
 
-int MPID_Win_allocate_shared(MPI_Aint size, int disp_unit, MPID_Info *info_ptr, MPID_Comm *comm_ptr,
-				 void *base_ptr, MPID_Win **win_ptr)
+int MPID_Win_allocate_shared(MPI_Aint size, int disp_unit, MPIR_Info *info_ptr, MPIR_Comm *comm_ptr,
+				 void *base_ptr, MPIR_Win **win_ptr)
 {
 	return MPID_PSP_Win_allocate_shared(size, disp_unit, info_ptr, comm_ptr, base_ptr, win_ptr, 0);
 }
 
 
-int MPID_Win_shared_query(MPID_Win *win_ptr, int rank, MPI_Aint *size, int *disp_unit, void *base_ptr)
+int MPID_Win_shared_query(MPIR_Win *win_ptr, int rank, MPI_Aint *size, int *disp_unit, void *base_ptr)
 {
 	void **base_pp = (void **) base_ptr;
 

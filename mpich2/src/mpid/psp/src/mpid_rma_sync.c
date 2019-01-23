@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -33,7 +33,7 @@ static int *array_1 = NULL;
 static void cleanup_array_1(void)
 {
 	if (array_1) {
-		MPIU_Free(array_1);
+		MPL_free(array_1);
 		array_1 = NULL;
 		array_1_size = 0;
 	}
@@ -45,7 +45,7 @@ int *get_array_1(unsigned int size)
 	if (size > array_1_size) {
 		unsigned int i;
 		cleanup_array_1();
-		array_1 = MPIU_Malloc(sizeof(*array_1) * size);
+		array_1 = MPL_malloc(sizeof(*array_1) * size, MPL_MEM_OTHER);
 		assert(array_1 != NULL);
 		array_1_size = size;
 
@@ -65,7 +65,7 @@ static int *array_123 = NULL;
 static void cleanup_array_123(void)
 {
 	if (array_123) {
-		MPIU_Free(array_123);
+		MPL_free(array_123);
 		array_123 = NULL;
 		array_123_size = 0;
 	}
@@ -77,7 +77,7 @@ int *get_array_123(unsigned int size)
 	if (size > array_123_size) {
 		unsigned int i;
 		cleanup_array_123();
-		array_123 = MPIU_Malloc(sizeof(*array_123) * size);
+		array_123 = MPL_malloc(sizeof(*array_123) * size, MPL_MEM_OTHER);
 		assert(array_123 != NULL);
 		array_123_size = size;
 
@@ -92,14 +92,14 @@ int *get_array_123(unsigned int size)
 
 /* translate group to comm ranks.
  * return int array with ranks of comm of size group_ptr->size.
- * Caller must call MPIU_Free on result after usage. */
+ * Caller must call MPL_free on result after usage. */
 static
-int *get_group_ranks(MPID_Comm *comm_ptr, MPID_Group *group_ptr)
+int *get_group_ranks(MPIR_Comm *comm_ptr, MPIR_Group *group_ptr)
 {
 	int grp_sz = group_ptr->size;
 	int *arr123 = get_array_123(grp_sz);
-	int *res = MPIU_Malloc(sizeof(*res) * grp_sz);
-	MPID_Group *win_grp_ptr = NULL;
+	int *res = MPL_malloc(sizeof(*res) * grp_sz, MPL_MEM_OTHER);
+	MPIR_Group *win_grp_ptr = NULL;
 	int mpi_errno;
 
 	mpi_errno = MPIR_Comm_group_impl(comm_ptr, &win_grp_ptr);
@@ -138,10 +138,10 @@ void MPID_PSP_rma_cleanup(void)
 
 
 
-int MPID_Win_fence(int assert, MPID_Win *win_ptr)
+int MPID_Win_fence(int assert, MPIR_Win *win_ptr)
 {
 	int mpi_errno, comm_size;
-	MPID_Comm *comm_ptr;
+	MPIR_Comm *comm_ptr;
 	int * recvcnts;
 	unsigned int total_rma_puts_accs;
 	MPIR_Errflag_t errflag = 0;
@@ -185,7 +185,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 #define DEBUG_START_POST 0
 
 
-int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
+int MPID_Win_post(MPIR_Group *group_ptr, int assert, MPIR_Win *win_ptr)
 {
 	int *ranks;
 	int ranks_sz = group_ptr->size;
@@ -218,16 +218,16 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 	for (i = 0; i < ranks_sz; i++) {
 		int rank = ranks[i];
 		int rc;
-		MPID_Request * sreq = NULL;
+		MPIR_Request * sreq = NULL;
 
 		/* Send TAG_POST to MPID_Win_start of rank; */
 		rc = MPID_Send(&dummy, 0 , MPI_INT, rank, TAG_POST, win_ptr->comm_ptr,
-			       MPID_CONTEXT_INTRA_PT2PT, &sreq);
+			       MPIR_CONTEXT_INTRA_PT2PT, &sreq);
 		if (rc != MPI_SUCCESS) {
 			mpi_errno = rc;
 		}
 		if(sreq) {
-			MPID_Request_release(sreq);
+			MPIR_Request_free(sreq);
 		}
 	}
 
@@ -246,7 +246,7 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 }
 
 
-int MPID_Win_start(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
+int MPID_Win_start(MPIR_Group *group_ptr, int assert, MPIR_Win *win_ptr)
 {
 	int *ranks;
 	int ranks_sz = group_ptr->size;
@@ -280,16 +280,16 @@ int MPID_Win_start(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 		int rank = ranks[i];
 		MPI_Status status;
 		int rc;
-		MPID_Request * rreq = NULL;
+		MPIR_Request * rreq = NULL;
 
 		/* Recv TAG_POST from MPID_Win_post of rank; */
 		rc = MPID_Recv(&dummy, 0, MPI_INT, rank, TAG_POST, win_ptr->comm_ptr,
-			       MPID_CONTEXT_INTRA_PT2PT, &status, &rreq);
+			       MPIR_CONTEXT_INTRA_PT2PT, &status, &rreq);
 		if (rc != MPI_SUCCESS) {
 			mpi_errno = rc;
 		}
 		if(rreq) {
-			MPID_Request_release(rreq);
+			MPIR_Request_free(rreq);
 		}
 	}
 
@@ -308,7 +308,7 @@ int MPID_Win_start(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 }
 
 
-int MPID_Win_complete(MPID_Win *win_ptr)
+int MPID_Win_complete(MPIR_Win *win_ptr)
 {
 	int *ranks = win_ptr->ranks_start;
 	int ranks_sz = win_ptr->ranks_start_sz;
@@ -342,16 +342,16 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 	for (i = 0; i < ranks_sz; i++) {
 		int rank = ranks[i];
 		int rc;
-		MPID_Request *sreq = NULL;
+		MPIR_Request *sreq = NULL;
 
 		/* Send TAG_COMPLETE to MPID_Win_wait of rank */
 		rc = MPID_Send(&dummy, 0 , MPI_INT, rank, TAG_COMPLETE, win_ptr->comm_ptr,
-			       MPID_CONTEXT_INTRA_PT2PT, &sreq);
+			       MPIR_CONTEXT_INTRA_PT2PT, &sreq);
 		if (rc != MPI_SUCCESS) {
 			mpi_errno = rc;
 		}
 		if(sreq) {
-			MPID_Request_release(sreq);
+			MPIR_Request_free(sreq);
 		}
 	}
 
@@ -365,13 +365,13 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 
 	win_ptr->ranks_start = NULL;
 	win_ptr->ranks_start_sz = 0;
-	MPIU_Free(ranks);
+	MPL_free(ranks);
 
 	return mpi_errno;
 }
 
 
-int MPID_Win_wait(MPID_Win *win_ptr)
+int MPID_Win_wait(MPIR_Win *win_ptr)
 {
 	int *ranks = win_ptr->ranks_post;
 	int ranks_sz = win_ptr->ranks_post_sz;
@@ -401,17 +401,17 @@ int MPID_Win_wait(MPID_Win *win_ptr)
 		int rank = ranks[i];
 		MPI_Status status;
 		int rc;
-		MPID_Request *rreq = NULL;
+		MPIR_Request *rreq = NULL;
 
 		/* Recv TAG_COMPLETE from MPID_Win_complete of rank */
 		rc = MPID_Recv(&dummy, 0, MPI_INT, rank, TAG_COMPLETE, win_ptr->comm_ptr,
-			       MPID_CONTEXT_INTRA_PT2PT, &status, &rreq);
+			       MPIR_CONTEXT_INTRA_PT2PT, &status, &rreq);
 		if (rc != MPI_SUCCESS) {
 			/* Set mpi_errno, but stay in the loop and receive all other TAG_COMPLETE's */
 			mpi_errno = rc;
 		}
 		if(rreq) {
-			MPID_Request_release(rreq);
+			MPIR_Request_free(rreq);
 		}
 	}
 
@@ -425,13 +425,13 @@ int MPID_Win_wait(MPID_Win *win_ptr)
 
 	win_ptr->ranks_post = NULL;
 	win_ptr->ranks_post_sz = 0;
-	MPIU_Free(ranks);
+	MPL_free(ranks);
 
 	return mpi_errno;
 }
 
 
-int MPID_Win_test(MPID_Win *win_ptr, int *flag)
+int MPID_Win_test(MPIR_Win *win_ptr, int *flag)
 {
 	int *ranks = win_ptr->ranks_post;
 	int ranks_sz = win_ptr->ranks_post_sz;
@@ -456,7 +456,7 @@ int MPID_Win_test(MPID_Win *win_ptr, int *flag)
 		int aflag;
 
 		/* Recv TAG_COMPLETE from MPID_Win_complete of rank */
-		rc = MPID_Iprobe(rank, TAG_COMPLETE, win_ptr->comm_ptr, MPID_CONTEXT_INTRA_PT2PT, &aflag, &status);
+		rc = MPID_Iprobe(rank, TAG_COMPLETE, win_ptr->comm_ptr, MPIR_CONTEXT_INTRA_PT2PT, &aflag, &status);
 
 		if (rc != MPI_SUCCESS) {
 			mpi_errno = rc;
@@ -480,7 +480,7 @@ int MPID_Win_test(MPID_Win *win_ptr, int *flag)
 
 
 static
-void MPID_PSP_SendRmaCtrl(MPID_Win *win_ptr, MPID_Comm *comm, pscom_connection_t *con,
+void MPID_PSP_SendRmaCtrl(MPIR_Win *win_ptr, MPIR_Comm *comm, pscom_connection_t *con,
 			  int dest_rank, enum MPID_PSP_MSGTYPE msgtype)
 {
 	MPID_PSCOM_XHeader_Rma_lock_t xhead;
@@ -499,7 +499,7 @@ void MPID_PSP_SendRmaCtrl(MPID_Win *win_ptr, MPID_Comm *comm, pscom_connection_t
 
 
 static inline
-int do_trylock(MPID_Win *win_ptr, int exclusive)
+int do_trylock(MPIR_Win *win_ptr, int exclusive)
 {
 	if (!win_ptr->lock_cnt ||
 	    (!win_ptr->lock_exclusive && !exclusive)) {
@@ -517,7 +517,7 @@ int do_trylock(MPID_Win *win_ptr, int exclusive)
 
 
 static
-void do_lock(MPID_Win *win_ptr, pscom_request_t *req)
+void do_lock(MPIR_Win *win_ptr, pscom_request_t *req)
 {
 	if (do_trylock(win_ptr, req->user->type.rma_lock.exclusive)) {
 		/* window locked, send ack */
@@ -530,7 +530,7 @@ void do_lock(MPID_Win *win_ptr, pscom_request_t *req)
 
 
 static
-void do_unlock(MPID_Win *win_ptr)
+void do_unlock(MPIR_Win *win_ptr)
 {
 	win_ptr->lock_cnt--; /* unlock */
 
@@ -559,7 +559,7 @@ void MPID_do_recv_rma_lock_req(pscom_request_t *req, int exclusive)
 	/* This is an pscom callback. Global lock state undefined! */
 	MPID_PSCOM_XHeader_Rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
 
-	MPID_Win *win_ptr = xhead_lock->win_ptr;
+	MPIR_Win *win_ptr = xhead_lock->win_ptr;
 
 	/* reuse orignal header, but overwrite type,src_rank and xheader_len: */
 	xhead_lock->common.type = MPID_PSP_MSGTYPE_RMA_LOCK_ANSWER;
@@ -595,7 +595,7 @@ void MPID_do_recv_rma_unlock_req(pscom_request_t *req)
 	/* This is an pscom callback. Global lock state undefined! */
 	MPID_PSCOM_XHeader_Rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
 
-	MPID_Win *win_ptr = xhead_lock->win_ptr;
+	MPIR_Win *win_ptr = xhead_lock->win_ptr;
 
 	/* reuse orignal header, but overwrite type,src_rank and xheader_len: */
 	xhead_lock->common.type = MPID_PSP_MSGTYPE_RMA_UNLOCK_ANSWER;
@@ -612,10 +612,10 @@ void MPID_do_recv_rma_unlock_req(pscom_request_t *req)
 }
 
 
-int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr)
+int MPID_Win_lock(int lock_type, int dest, int assert, MPIR_Win *win_ptr)
 {
 	int exclusive;
-	MPID_Comm *comm;
+	MPIR_Comm *comm;
 	pscom_connection_t *con;
 	enum MPID_PSP_MSGTYPE msgt;
 
@@ -670,9 +670,9 @@ fn_exit:
 }
 
 
-int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
+int MPID_Win_unlock(int dest, MPIR_Win *win_ptr)
 {
-	MPID_Comm *comm;
+	MPIR_Comm *comm;
 	pscom_connection_t *con;
 
 	if (unlikely(dest == MPI_PROC_NULL)) {
@@ -717,7 +717,7 @@ fn_exit:
  */
 
 
-int MPID_Win_sync(MPID_Win *win_ptr)
+int MPID_Win_sync(MPIR_Win *win_ptr)
 {
 	/* Flush and Sync can be called only within passive target epochs! */
 	if(win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK && win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK_ALL) {
@@ -732,7 +732,7 @@ int MPID_Win_sync(MPID_Win *win_ptr)
 }
 
 
-int MPID_Win_lock_all(int assert, MPID_Win *win_ptr)
+int MPID_Win_lock_all(int assert, MPIR_Win *win_ptr)
 {
 	int mpi_error;
 
@@ -759,7 +759,7 @@ int MPID_Win_lock_all(int assert, MPID_Win *win_ptr)
 	return MPI_SUCCESS;
 }
 
-int MPID_Win_unlock_all(MPID_Win *win_ptr)
+int MPID_Win_unlock_all(MPIR_Win *win_ptr)
 {
 	int mpi_error;
 
@@ -796,7 +796,7 @@ void MPID_do_recv_rma_flush_req(pscom_request_t *req)
 	/* This is an pscom callback. Global lock state undefined! */
 	MPID_PSCOM_XHeader_Rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
 	/*
-	MPID_Win *win_ptr = xhead_lock->win_ptr;
+	MPIR_Win *win_ptr = xhead_lock->win_ptr;
 	*/
 
 	/* reuse orignal header, but overwrite type,src_rank and xheader_len: */
@@ -812,9 +812,9 @@ void MPID_do_recv_rma_flush_req(pscom_request_t *req)
 	pscom_post_send(req);
 }
 
-int MPID_Win_flush(int dest, MPID_Win *win_ptr)
+int MPID_Win_flush(int dest, MPIR_Win *win_ptr)
 {
-	MPID_Comm *comm;
+	MPIR_Comm *comm;
 	pscom_connection_t *con;
 
 	/* Flush and Sync can be called only within passive target epochs! */
@@ -840,10 +840,10 @@ int MPID_Win_flush(int dest, MPID_Win *win_ptr)
 	return MPI_SUCCESS;
 }
 
-int MPID_Win_flush_all(MPID_Win *win_ptr)
+int MPID_Win_flush_all(MPIR_Win *win_ptr)
 {
 	int i;
-	MPID_Comm *comm;
+	MPIR_Comm *comm;
 	pscom_connection_t *con;
 
 	/* Flush and Sync can be called only within passive target epochs! */
@@ -873,7 +873,7 @@ int MPID_Win_flush_all(MPID_Win *win_ptr)
 	return MPI_SUCCESS;
 }
 
-int MPID_Win_wait_local_completion(int rank, MPID_Win *win_ptr)
+int MPID_Win_wait_local_completion(int rank, MPIR_Win *win_ptr)
 {
 	if (win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED) {
 		OPA_read_write_barrier();
@@ -887,7 +887,7 @@ int MPID_Win_wait_local_completion(int rank, MPID_Win *win_ptr)
 	return MPI_SUCCESS;
 }
 
-int MPID_Win_flush_local(int rank, MPID_Win *win_ptr)
+int MPID_Win_flush_local(int rank, MPIR_Win *win_ptr)
 {
 	/* Flush and Sync can be called only within passive target epochs! */
 	if(win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK && win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK_ALL) {
@@ -899,7 +899,7 @@ int MPID_Win_flush_local(int rank, MPID_Win *win_ptr)
 	return MPI_SUCCESS;
 }
 
-int MPID_Win_flush_local_all(MPID_Win *win_ptr)
+int MPID_Win_flush_local_all(MPIR_Win *win_ptr)
 {
 	/* Flush and Sync can be called only within passive target epochs! */
 	if(win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK && win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK_ALL) {
@@ -924,7 +924,7 @@ int MPID_Win_flush_local_all(MPID_Win *win_ptr)
  */
 
 static
-int do_trylock_internal(MPID_Win *win_ptr)
+int do_trylock_internal(MPIR_Win *win_ptr)
 {
 	if (!win_ptr->lock_internal) {
 		/* lock */
@@ -937,7 +937,7 @@ int do_trylock_internal(MPID_Win *win_ptr)
 }
 
 static
-void do_lock_internal(MPID_Win *win_ptr, pscom_request_t *req)
+void do_lock_internal(MPIR_Win *win_ptr, pscom_request_t *req)
 {
 	if (do_trylock_internal(win_ptr)) {
 		/* window locked, send ack */
@@ -949,7 +949,7 @@ void do_lock_internal(MPID_Win *win_ptr, pscom_request_t *req)
 }
 
 static
-void do_unlock_internal(MPID_Win *win_ptr)
+void do_unlock_internal(MPIR_Win *win_ptr)
 {
 	win_ptr->lock_internal = 0; /* unlock */
 
@@ -976,7 +976,7 @@ void MPID_do_recv_rma_lock_internal_req(pscom_request_t *req)
 	/* This is an pscom callback. Global lock state undefined! */
 	MPID_PSCOM_XHeader_Rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
 
-	MPID_Win *win_ptr = xhead_lock->win_ptr;
+	MPIR_Win *win_ptr = xhead_lock->win_ptr;
 
 	/* reuse orignal header, but overwrite type,src_rank and xheader_len: */
 	xhead_lock->common.type = MPID_PSP_MSGTYPE_RMA_INTERNAL_LOCK_ANSWER;
@@ -996,7 +996,7 @@ void MPID_do_recv_rma_unlock_internal_req(pscom_request_t *req)
 	/* This is an pscom callback. Global lock state undefined! */
 	MPID_PSCOM_XHeader_Rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
 
-	MPID_Win *win_ptr = xhead_lock->win_ptr;
+	MPIR_Win *win_ptr = xhead_lock->win_ptr;
 
 	/* reuse orignal header, but overwrite type,src_rank and xheader_len: */
 	xhead_lock->common.type = MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_ANSWER;
@@ -1012,9 +1012,9 @@ void MPID_do_recv_rma_unlock_internal_req(pscom_request_t *req)
 	do_unlock_internal(win_ptr);
 }
 
-int MPID_Win_lock_internal(int dest, MPID_Win *win_ptr)
+int MPID_Win_lock_internal(int dest, MPIR_Win *win_ptr)
 {
-        MPID_Comm *comm;
+        MPIR_Comm *comm;
         pscom_connection_t *con;
 
         if (unlikely(dest == MPI_PROC_NULL)) {
@@ -1040,9 +1040,9 @@ int MPID_Win_lock_internal(int dest, MPID_Win *win_ptr)
         return MPI_SUCCESS;
 }
 
-int MPID_Win_unlock_internal(int dest, MPID_Win *win_ptr)
+int MPID_Win_unlock_internal(int dest, MPIR_Win *win_ptr)
 {
-        MPID_Comm *comm;
+        MPIR_Comm *comm;
         pscom_connection_t *con;
 
         if (unlikely(dest == MPI_PROC_NULL)) {

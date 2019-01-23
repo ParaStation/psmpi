@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -18,18 +18,18 @@
 #include "mpid_sched.h"
 
 void MPID_PSP_shm_rma_init(void);
-void MPID_PSP_shm_rma_get_base(MPID_Win *win_ptr, int rank, int *disp, void **base);
-void MPID_PSP_shm_rma_mutex_init(MPID_Win *win_ptr);
-void MPID_PSP_shm_rma_mutex_lock(MPID_Win *win_ptr);
-void MPID_PSP_shm_rma_mutex_unlock(MPID_Win *win_ptr);
-void MPID_PSP_shm_rma_mutex_destroy(MPID_Win *win_ptr);
+void MPID_PSP_shm_rma_get_base(MPIR_Win *win_ptr, int rank, int *disp, void **base);
+void MPID_PSP_shm_rma_mutex_init(MPIR_Win *win_ptr);
+void MPID_PSP_shm_rma_mutex_lock(MPIR_Win *win_ptr);
+void MPID_PSP_shm_rma_mutex_unlock(MPIR_Win *win_ptr);
+void MPID_PSP_shm_rma_mutex_destroy(MPIR_Win *win_ptr);
 
 #define PRINTERROR(fmt, args...) fprintf(stderr, "Error:" fmt "\n" ,##args)
 
 #define PSCOM_PORT_MAXLEN 64 /* "xxx.xxx.xxx.xxx:xxxxx@01234567____" */
 typedef char pscom_port_str_t[PSCOM_PORT_MAXLEN];
 
-pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPID_Comm *comm, MPID_Comm *intercomm);
+pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm *comm, MPIR_Comm *intercomm);
 
 
 typedef struct MPIDI_PG MPIDI_PG_t;
@@ -70,10 +70,9 @@ MPIDI_VC_t *MPIDI_VC_Create(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *co
 
 int MPID_PSP_get_host_hash();
 
-void MPID_PSP_comm_set_vcrt(MPID_Comm *comm, MPIDI_VCRT_t *vcrt);
-void MPID_PSP_comm_set_local_vcrt(MPID_Comm *comm, MPIDI_VCRT_t *vcrt);
-void MPID_PSP_comm_create_mapper(MPID_Comm * comm);
-
+void MPID_PSP_comm_set_vcrt(MPIR_Comm *comm, MPIDI_VCRT_t *vcrt);
+void MPID_PSP_comm_set_local_vcrt(MPIR_Comm *comm, MPIDI_VCRT_t *vcrt);
+void MPID_PSP_comm_create_mapper(MPIR_Comm * comm);
 int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr);
 MPIDI_PG_t* MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr);
 void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num);
@@ -95,9 +94,7 @@ typedef struct MPIDI_Process
 
 	int msa_module_id;
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	int* node_id_table;
-#endif
 	struct {
 		unsigned enable_collectives;
 		unsigned enable_ondemand;
@@ -127,12 +124,12 @@ typedef struct MPIDI_Process
 extern MPIDI_Process_t MPIDI_Process;
 
 
-void MPID_PSP_RecvAck(MPID_Request *send_req);
+void MPID_PSP_RecvAck(MPIR_Request *send_req);
 /* persistent receives */
-int MPID_PSP_Recv_start(MPID_Request *request);
+int MPID_PSP_Recv_start(MPIR_Request *request);
 /*
 int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
-		   MPID_Comm * comm, int context_offset, MPID_Request ** request);
+		   MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
 */
 
 /* Control messages */
@@ -159,26 +156,23 @@ void MPID_enable_receive_dispach(pscom_socket_t *socket);
 void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Datatype datatype,
 			     void *msg, size_t msg_sz, MPI_Op op);
 
-void MPID_req_queue_cleanup(void);
-
 /* return connection_t for rank, NULL on error */
-pscom_connection_t *MPID_PSCOM_rank2connection(MPID_Comm *comm, int rank);
+pscom_connection_t *MPID_PSCOM_rank2connection(MPIR_Comm *comm, int rank);
 
-int MPID_PSP_Wait(MPID_Request *request);
+int MPIDI_PSP_Wait(MPIR_Request *request);
 
 int MPID_Put_generic(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 		     int target_rank, MPI_Aint target_disp, int target_count,
-		     MPI_Datatype target_datatype, MPID_Win *win_ptr, MPID_Request **request);
+		     MPI_Datatype target_datatype, MPIR_Win *win_ptr, MPIR_Request **request);
 int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 		     int target_rank, MPI_Aint target_disp, int target_count,
-		     MPI_Datatype target_datatype, MPID_Win *win_ptr, MPID_Request **request);
+		     MPI_Datatype target_datatype, MPIR_Win *win_ptr, MPIR_Request **request);
 
-int MPID_Win_lock_internal(int dest, MPID_Win *win_ptr);
-int MPID_Win_unlock_internal(int dest, MPID_Win *win_ptr);
-int MPID_Win_wait_local_completion(int rank, MPID_Win *win_ptr);
-
-void MPID_PSP_group_init(MPID_Comm *comm_ptr);
-void MPID_PSP_group_cleanup(MPID_Comm *comm_ptr);
+int MPID_Win_lock_internal(int dest, MPIR_Win *win_ptr);
+int MPID_Win_unlock_internal(int dest, MPIR_Win *win_ptr);
+int MPID_Win_wait_local_completion(int rank, MPIR_Win *win_ptr);
+void MPID_PSP_group_init(MPIR_Comm *comm_ptr);
+void MPID_PSP_group_cleanup(MPIR_Comm *comm_ptr);
 
 void mpid_debug_init(void);
 const char *mpid_msgtype_str(enum MPID_PSP_MSGTYPE msg_type);
@@ -218,12 +212,12 @@ int MPID_PSP_GetParentPort(char **parent_port);
 	(dt_ptr_) = NULL;						\
 	(dt_contig_out_) = TRUE;					\
 	(dt_true_lb_)    = 0;                                           \
-	(data_sz_out_) = (count_) * MPID_Datatype_get_basic_size(datatype_); \
+	(data_sz_out_) = (count_) * MPIR_Datatype_get_basic_size(datatype_); \
 	/* printf("%s() : basic datatype: dt_contig=%d, dt_sz=%d, data_sz=%d\n", \
 	       __func__, (dt_contig_out_),				\
-	       MPID_Datatype_get_basic_size(datatype_), (data_sz_out_));*/ \
+	       MPIR_Datatype_get_basic_size(datatype_), (data_sz_out_));*/ \
     } else {								\
-	MPID_Datatype_get_ptr((datatype_), (dt_ptr_));			\
+	MPIR_Datatype_get_ptr((datatype_), (dt_ptr_));			\
 	(dt_contig_out_) = (dt_ptr_)->is_contig;			\
 	(data_sz_out_) = (count_) * (dt_ptr_)->size;			\
 	(dt_true_lb_)    = (dt_ptr_)->true_lb;				\

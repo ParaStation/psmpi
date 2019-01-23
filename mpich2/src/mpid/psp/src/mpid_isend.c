@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -28,7 +28,7 @@ static inline
 void sendrequest_common_done(pscom_request_t *preq)
 {
 	/* This is an pscom.io_done call. Global lock state undefined! */
-	MPID_Request *req = preq->user->type.sr.mpid_req;
+	MPIR_Request *req = preq->user->type.sr.mpid_req;
 	if (pscom_req_successful(preq)) {
 		req->status.MPI_ERROR = MPI_SUCCESS;
 	} else if (preq->state & PSCOM_REQ_STATE_CANCELED) {
@@ -53,7 +53,7 @@ void sendrequest_common_done(pscom_request_t *preq)
 
 /*	assert(*(req->cc_ptr) == 1);  */
 	MPID_PSP_Subrequest_completed(req);
-	MPID_PSP_Request_dequeue(req, MPID_REQUEST_SEND);
+	MPIR_Request_free(req);
 }
 
 
@@ -61,7 +61,7 @@ static
 void sendrequest_done(pscom_request_t *preq)
 {
 	/* This is an pscom.io_done call. Global lock state undefined! */
-	MPID_Request *req = preq->user->type.sr.mpid_req;
+	MPIR_Request *req = preq->user->type.sr.mpid_req;
 
 	MPID_PSP_packed_msg_cleanup(&req->dev.kind.send.msg);
 
@@ -70,7 +70,7 @@ void sendrequest_done(pscom_request_t *preq)
 
 
 static
-void sendrequest_prepare_xheader(MPID_Request *req, int tag, MPID_Comm * comm, int context_offset, enum MPID_PSP_MSGTYPE type)
+void sendrequest_prepare_xheader(MPIR_Request *req, int tag, MPIR_Comm * comm, int context_offset, enum MPID_PSP_MSGTYPE type)
 {
 	pscom_request_t	*preq = req->dev.kind.common.pscom_req;
 	MPID_PSCOM_XHeader_Send_t *xheader = &preq->xheader.user.send;
@@ -88,7 +88,7 @@ void sendrequest_prepare_xheader(MPID_Request *req, int tag, MPID_Comm * comm, i
 
 
 static
-void sendrequest_prepare_destination(MPID_Request *req, MPID_Comm * comm, int rank)
+void sendrequest_prepare_destination(MPIR_Request *req, MPIR_Comm * comm, int rank)
 {
 	pscom_request_t *preq = req->dev.kind.common.pscom_req;
 
@@ -97,7 +97,7 @@ void sendrequest_prepare_destination(MPID_Request *req, MPID_Comm * comm, int ra
 
 
 static
-void sendrequest_prepare_cleanup(MPID_Request *req)
+void sendrequest_prepare_cleanup(MPIR_Request *req)
 {
 	pscom_request_t *preq = req->dev.kind.common.pscom_req;
 
@@ -106,7 +106,7 @@ void sendrequest_prepare_cleanup(MPID_Request *req)
 
 
 static
-int sendrequest_prepare_data(MPID_Request *req, const void *buf, int count, MPI_Datatype datatype, size_t *len)
+int sendrequest_prepare_data(MPIR_Request *req, const void *buf, int count, MPI_Datatype datatype, size_t *len)
 {
 	struct MPID_DEV_Request_send *sreq = &req->dev.kind.send;
 	pscom_request_t *preq = sreq->common.pscom_req;
@@ -133,7 +133,7 @@ err_create_packed_msg:
 
 
 static
-void copy_data(MPID_Request *req, const void *buf, int count, MPI_Datatype datatype)
+void copy_data(MPIR_Request *req, const void *buf, int count, MPI_Datatype datatype)
 {
 	struct MPID_DEV_Request_send *sreq = &req->dev.kind.send;
 	MPID_PSP_packed_msg_pack(buf, count, datatype, &sreq->msg);
@@ -142,11 +142,11 @@ void copy_data(MPID_Request *req, const void *buf, int count, MPI_Datatype datat
 
 static inline
 int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int rank,
-		      int tag, MPID_Comm * comm, int context_offset,
-		      MPID_Request ** request, enum MPID_PSP_MSGTYPE type)
+		      int tag, MPIR_Comm * comm, int context_offset,
+		      MPIR_Request ** request, enum MPID_PSP_MSGTYPE type)
 {
 	int mpi_errno = MPI_SUCCESS;
-	MPID_Request *req;
+	MPIR_Request *req;
 	size_t len;
 
 #ifdef MPID_PSP_CREATE_HISTOGRAM
@@ -161,8 +161,8 @@ int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int ra
 			MPIDI_Process.histo.points++;
 		}
 
-		MPIDI_Process.histo.limit = MPIU_Malloc(MPIDI_Process.histo.points*sizeof(int));
-		MPIDI_Process.histo.count = MPIU_Malloc(MPIDI_Process.histo.points*sizeof(long long int));
+		MPIDI_Process.histo.limit = MPL_malloc(MPIDI_Process.histo.points*sizeof(int), MPL_MEM_OBJECT);
+		MPIDI_Process.histo.count = MPL_malloc(MPIDI_Process.histo.points*sizeof(long long int), MPL_MEM_OBJECT);
 
 		for (idx = 0, limit = MPIDI_Process.histo.min_size; idx < MPIDI_Process.histo.points; ++idx, limit <<= MPIDI_Process.histo.step_width)
 		{
@@ -181,8 +181,10 @@ int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int ra
   MPIDI_Process.my_pg_rank, comm->context_id, comm->rank, comm->name);
 */
 
-	req = MPID_DEV_Request_send_create(comm);
+	req = MPIR_Request_create(MPIR_REQUEST_KIND__SEND);
 	if (unlikely(!req)) goto err_request_send_create;
+	req->comm = comm;
+	MPIR_Comm_add_ref(comm);
 
 	if (rank >= 0) {
 		mpi_errno = sendrequest_prepare_data(req, buf, count, datatype, &len);
@@ -194,7 +196,7 @@ int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int ra
 		sendrequest_prepare_destination(req, comm, rank);
 		sendrequest_prepare_cleanup(req);
 
-		MPID_PSP_Request_enqueue(req);
+		MPIR_Request_add_ref(req);
 
 #ifdef MPID_PSP_CREATE_HISTOGRAM
 		if (unlikely(MPIDI_Process.env.enable_histogram)) {
@@ -213,7 +215,7 @@ int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int ra
 	} else switch (rank) {
 	case MPI_PROC_NULL:
 		MPIR_Status_set_procnull(&req->status);
-		MPID_PSP_Request_set_completed(req);
+		MPIDI_PSP_Request_set_completed(req);
 		break;
 	case MPI_ANY_SOURCE:
 	case MPI_ROOT:
@@ -231,7 +233,7 @@ int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int ra
 err_request_send_create:
 	mpi_errno = MPI_ERR_NO_MEM;
 err_prepare_data_failed:
-	MPID_DEV_Request_release_ref(req, MPID_REQUEST_SEND);
+	MPIR_Request_free(req);
 	return mpi_errno;
 }
 
@@ -308,7 +310,7 @@ void MPID_PSP_RecvCtrl(int tag, int recvcontext_id, int src_rank, pscom_connecti
 
 
 int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
-	       int tag, MPID_Comm * comm, int context_offset, MPID_Request ** request)
+	       int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
 {
 	int mpi_errno;
 	mpi_errno = MPID_PSP_Sendtype(buf, count, datatype, rank, tag,
@@ -318,7 +320,7 @@ int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank
 
 
 int MPID_Issend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-		MPID_Comm * comm, int context_offset, MPID_Request ** request)
+		MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
 {
 	int mpi_errno;
 	mpi_errno = MPID_PSP_Sendtype(buf, count, datatype, rank, tag,

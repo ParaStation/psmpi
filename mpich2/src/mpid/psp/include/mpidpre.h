@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -15,9 +15,10 @@
 
 #include "list.h"
 #include <stdint.h>
-#include "mpid_sched_pre.h"
 
 #include "mpid_thread.h"
+
+#include "mpid_sched.h"
 
 #define MPID_PSP_HIDE_VISIBILITY
 
@@ -41,17 +42,14 @@
 /* If this macro is set, the usage of the SMP-aware collective is enabled by default but can
  * also be disabled again when calling mpiexec by setting PSP_SMP_AWARENESS=0 */
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
-#define MPID_USE_NODE_IDS
-typedef int MPID_Node_id_t;
-#endif
+typedef struct {
+    int gpid[2];
+} MPIDI_Gpid;
 
-/* increase the number of available contexts: */
-#define MPID_CONTEXT_DYNAMIC_PROC_WIDTH (0)
-#ifndef MPID_USE_NODE_IDS
-#define MPID_CONTEXT_SUBCOMM_WIDTH (0)
-#endif
-
+/* TODO: dummy typedef taken from ch4 device */
+typedef struct {
+    int progress_count;
+} MPID_Progress_state;
 
 /*********************************************
  * PSCOM Network header
@@ -81,7 +79,7 @@ typedef struct MPID_PSCOM_XHeader_Rma_put {
 	int		target_count;
 	char		*target_buf;
 /*	unsigned int	epoch; */
-	struct MPID_Win *win_ptr; /* win_ptr of target (receiver, passive site) */
+	struct MPIR_Win *win_ptr; /* win_ptr of target (receiver, passive site) */
 
 	long		encoded_type[0];
 } MPID_PSCOM_XHeader_Rma_put_t;
@@ -94,7 +92,7 @@ typedef struct MPID_PSCOM_XHeader_Rma_get_req {
 	int		target_count;
 	char		*target_buf;
 /*	unsigned int	epoch; */
-	struct MPID_Win *win_ptr; /* win_ptr of target (receiver, passive site) */
+	struct MPIR_Win *win_ptr; /* win_ptr of target (receiver, passive site) */
 
 	long		encoded_type[0];
 } MPID_PSCOM_XHeader_Rma_get_req_t;
@@ -107,7 +105,7 @@ typedef struct MPID_PSCOM_XHeader_Rma_accumulate {
 	int		target_count;
 	char		*target_buf;
 /*	unsigned int	epoch; */
-	struct MPID_Win *win_ptr; /* win_ptr of target (receiver, passive site) */
+	struct MPIR_Win *win_ptr; /* win_ptr of target (receiver, passive site) */
 	MPI_Op		op;
 	long		encoded_type[0];
 } MPID_PSCOM_XHeader_Rma_accumulate_t;
@@ -121,7 +119,7 @@ typedef struct MPID_PSCOM_XHeader_Rma_get_answer {
 /* pscom network header RMA lock/unlock */
 typedef struct MPID_PSCOM_XHeader_Rma_lock {
 	MPID_PSCOM_XHeader_t common;
-	struct MPID_Win	*win_ptr;
+	struct MPIR_Win	*win_ptr;
 } MPID_PSCOM_XHeader_Rma_lock_t;
 
 
@@ -139,7 +137,7 @@ union pscom_xheader_user
 
 
 typedef struct pscom_request_sr {
-	struct MPID_Request *mpid_req;
+	struct MPIR_Request *mpid_req;
 } pscom_request_sr_t;
 
 
@@ -151,9 +149,9 @@ typedef struct MPID_PSP_packed_msg {
 
 
 typedef struct pscom_request_put_send {
-	struct MPID_Request     *mpid_req;
+	struct MPIR_Request     *mpid_req;
 	MPID_PSP_packed_msg_t	msg;
-	struct MPID_Win		*win_ptr;
+	struct MPIR_Win		*win_ptr;
 	int                     target_rank;
 } pscom_request_put_send_t;
 
@@ -161,14 +159,14 @@ typedef struct pscom_request_put_send {
 typedef struct pscom_request_put_recv {
 	MPI_Datatype		datatype;
 	MPID_PSP_packed_msg_t	msg;
-/*	MPID_Win *win_ptr; */
+/*	MPIR_Win *win_ptr; */
 } pscom_request_put_recv_t;
 
 
 typedef struct pscom_request_accumulate_send {
-	struct MPID_Request     *mpid_req;
+	struct MPIR_Request     *mpid_req;
 	MPID_PSP_packed_msg_t	msg;
-	struct MPID_Win		*win_ptr;
+	struct MPIR_Win		*win_ptr;
 	int                     target_rank;
 } pscom_request_accumulate_send_t;
 
@@ -180,12 +178,12 @@ typedef struct pscom_request_accumulate_recv {
 
 
 typedef struct pscom_request_get_answer_recv {
-	struct MPID_Request     *mpid_req;
+	struct MPIR_Request     *mpid_req;
 	void			*origin_addr;
 	int			origin_count;
 	MPI_Datatype		origin_datatype;
 	MPID_PSP_packed_msg_t	msg;
-	struct MPID_Win		*win_ptr;
+	struct MPIR_Win		*win_ptr;
 	int                     target_rank;
 } pscom_request_get_answer_recv_t;
 
@@ -229,7 +227,7 @@ typedef size_t MPIDI_msg_sz_t;
 	MPID_PSP_REQUEST_MULTI
 */
 
-struct MPID_Datatype;
+struct MPIR_Datatype ;
 /* mpidpost.h will include "mpid_datatype.h" */
 
 #define MPIDI_TAG_UB (0x7fffffff)
@@ -349,20 +347,18 @@ struct MPID_DEV_Request_persistent
 	MPI_Datatype	datatype;
 	int		rank;
 	int		tag;
-	struct MPID_Comm	*comm;
+	struct MPIR_Comm	*comm;
 	int		context_offset;
 
 	int (*call)(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
-		    int tag, struct MPID_Comm * comm, int context_offset, struct MPID_Request ** request);
+		    int tag, struct MPIR_Comm * comm, int context_offset, struct MPIR_Request ** request);
 };
 
 
-struct MPID_Comm;
-struct MPID_Request;
 struct MPI_Status;
 
 
-/* Extend struct MPID_Request (mpidimpl.h) */
+/* Extend struct MPIR_Request (mpidimpl.h) */
 #define MPID_DEV_REQUEST_DECL struct MPID_DEV_Request dev;
 
 struct MPID_DEV_Request
@@ -415,7 +411,7 @@ typedef struct MPID_Win_rank_info
 	void *base_addr;     /* base address of the window */
 	int disp_unit;      /* displacement unit of window */
 
-	struct MPID_Win *win_ptr;    /* window object */
+	struct MPIR_Win *win_ptr;    /* window object */
 
 /*	unsigned int epoch_origin; * access epoch */
 /*	unsigned int epoch_target; * exposure epoch */
@@ -431,7 +427,7 @@ typedef struct MPID_Win_rank_info
 	unsigned int rma_puts_accs_received;				\
 	unsigned int rma_local_pending_cnt;	/* pending io counter */ \
 	unsigned int *rma_local_pending_rank;   /* pending io counter per rank */ \
-	MPID_Group *start_group_ptr; /* group passed in MPI_Win_start */ \
+	MPIR_Group *start_group_ptr; /* group passed in MPI_Win_start */ \
 	int *ranks_start;		/* ranks of last MPID_Win_start call */	\
 	unsigned int ranks_start_sz;					\
 	int *ranks_post;		/* ranks of last MPID_Win_post call */ \
@@ -477,12 +473,12 @@ typedef struct MPIDI_VCON MPIDI_VCON;
 void MPID_PSP_rma_cleanup(void);
 void MPID_PSP_rma_pscom_sockets_cleanup(void);
 
-int MPID_PSP_comm_create_hook(struct MPID_Comm * comm);
-int MPID_PSP_comm_destroy_hook(struct MPID_Comm * comm);
+int MPID_PSP_comm_create_hook(struct MPIR_Comm * comm);
+int MPID_PSP_comm_destroy_hook(struct MPIR_Comm * comm);
 
 #define HAVE_DEV_COMM_HOOK
-#define MPID_Dev_comm_create_hook(comm) MPID_PSP_comm_create_hook(comm)
-#define MPID_Dev_comm_destroy_hook(comm) MPID_PSP_comm_destroy_hook(comm)
+#define MPID_Comm_create_hook(comm_) MPID_PSP_comm_create_hook(comm_)
+#define MPID_Comm_free_hook(comm_) MPID_PSP_comm_destroy_hook(comm_)
 
 /* Progress hooks. */
 #define MPID_Progress_register_hook(fn_, id_) MPI_SUCCESS
@@ -496,5 +492,203 @@ int MPID_PSP_comm_destroy_hook(struct MPID_Comm * comm);
 #define HAVE_GPID_ROUTINES
 
 #define MPID_DEV_GPID_DECL int gpid[2];
+
+int MPID_Init( int *argc_p, char ***argv_p, int requested,
+	       int *provided, int *has_args, int *has_env );
+
+int MPID_InitCompleted( void );
+
+int MPID_Finalize(void);
+#define MPID_CS_finalize() do {} while (0)
+int MPID_Abort( MPIR_Comm *comm, int mpi_errno, int exit_code, const char *error_msg );
+
+int MPID_Open_port(MPIR_Info *, char *);
+int MPID_Close_port(const char *);
+
+int MPID_Comm_accept(const char *, MPIR_Info *, int, MPIR_Comm *, MPIR_Comm **);
+
+int MPID_Comm_connect(const char *, MPIR_Info *, int, MPIR_Comm *, MPIR_Comm **);
+
+int MPID_Comm_disconnect(MPIR_Comm *);
+
+int MPID_Comm_spawn_multiple(int, char *[], char **[], const int [], MPIR_Info* [],
+                             int, MPIR_Comm *, MPIR_Comm **, int []);
+
+int MPID_Comm_failure_ack(MPIR_Comm *comm);
+
+int MPID_Comm_failure_get_acked(MPIR_Comm *comm, MPIR_Group **failed_group_ptr);
+
+int MPID_Comm_get_all_failed_procs(MPIR_Comm *comm_ptr, MPIR_Group **failed_group, int tag);
+
+int MPID_Comm_revoke(MPIR_Comm *comm, int is_remote);
+
+int MPID_Send( const void *buf, MPI_Aint count, MPI_Datatype datatype,
+	       int dest, int tag, MPIR_Comm *comm, int context_offset,
+	       MPIR_Request **request );
+
+int MPID_Rsend( const void *buf, int count, MPI_Datatype datatype,
+		int dest, int tag, MPIR_Comm *comm, int context_offset,
+		MPIR_Request **request );
+
+int MPID_Ssend( const void *buf, MPI_Aint count, MPI_Datatype datatype,
+		int dest, int tag, MPIR_Comm *comm, int context_offset,
+		MPIR_Request **request );
+
+int MPID_tBsend( const void *buf, int count, MPI_Datatype datatype,
+		 int dest, int tag, MPIR_Comm *comm, int context_offset );
+
+int MPID_Isend( const void *buf, MPI_Aint count, MPI_Datatype datatype,
+		int dest, int tag, MPIR_Comm *comm, int context_offset,
+		MPIR_Request **request );
+
+int MPID_Irsend( const void *buf, MPI_Aint count, MPI_Datatype datatype,
+		 int dest, int tag, MPIR_Comm *comm, int context_offset,
+		 MPIR_Request **request );
+
+int MPID_Issend( const void *buf, MPI_Aint count, MPI_Datatype datatype,
+		 int dest, int tag, MPIR_Comm *comm, int context_offset,
+		 MPIR_Request **request );
+
+int MPID_Recv( void *buf, MPI_Aint count, MPI_Datatype datatype,
+	       int source, int tag, MPIR_Comm *comm, int context_offset,
+	       MPI_Status *status, MPIR_Request **request );
+
+int MPID_Irecv( void *buf, MPI_Aint count, MPI_Datatype datatype,
+		int source, int tag, MPIR_Comm *comm, int context_offset,
+		MPIR_Request **request );
+
+int MPID_Send_init( const void *buf, int count, MPI_Datatype datatype,
+		    int dest, int tag, MPIR_Comm *comm, int context_offset,
+		    MPIR_Request **request );
+
+int MPID_Bsend_init(const void *, int, MPI_Datatype, int, int, MPIR_Comm *,
+		   int, MPIR_Request **);
+int MPID_Rsend_init( const void *buf, int count, MPI_Datatype datatype,
+		     int dest, int tag, MPIR_Comm *comm, int context_offset,
+		     MPIR_Request **request );
+int MPID_Ssend_init( const void *buf, int count, MPI_Datatype datatype,
+		     int dest, int tag, MPIR_Comm *comm, int context_offset,
+		     MPIR_Request **request );
+
+int MPID_Recv_init( void *buf, int count, MPI_Datatype datatype,
+		    int source, int tag, MPIR_Comm *comm, int context_offset,
+		    MPIR_Request **request );
+
+int MPID_Startall(int count, MPIR_Request *requests[]);
+
+int MPID_Probe(int, int, MPIR_Comm *, int, MPI_Status *);
+int MPID_Iprobe(int, int, MPIR_Comm *, int, int *, MPI_Status *);
+
+int MPID_Mprobe(int source, int tag, MPIR_Comm *comm, int context_offset,
+                MPIR_Request **message, MPI_Status *status);
+
+int MPID_Improbe(int source, int tag, MPIR_Comm *comm, int context_offset,
+                 int *flag, MPIR_Request **message, MPI_Status *status);
+
+int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype,
+                MPIR_Request *message, MPIR_Request **rreqp);
+
+int MPID_Mrecv(void *buf, int count, MPI_Datatype datatype,
+               MPIR_Request *message, MPI_Status *status, MPIR_Request **rreq);
+
+int MPID_Cancel_send(MPIR_Request *);
+int MPID_Cancel_recv(MPIR_Request *);
+
+MPI_Aint MPID_Aint_add(MPI_Aint base, MPI_Aint disp);
+
+MPI_Aint MPID_Aint_diff(MPI_Aint addr1, MPI_Aint addr2);
+
+int MPID_Win_create(void *, MPI_Aint, int, MPIR_Info *, MPIR_Comm *,
+                    MPIR_Win **);
+int MPID_Win_free(MPIR_Win **);
+
+int MPID_Put(const void *, int, MPI_Datatype, int, MPI_Aint, int,
+             MPI_Datatype, MPIR_Win *);
+int MPID_Get(void *, int, MPI_Datatype, int, MPI_Aint, int,
+             MPI_Datatype, MPIR_Win *);
+int MPID_Accumulate(const void *, int, MPI_Datatype, int, MPI_Aint, int,
+                    MPI_Datatype, MPI_Op, MPIR_Win *);
+
+int MPID_Win_fence(int, MPIR_Win *);
+int MPID_Win_post(MPIR_Group *group_ptr, int assert, MPIR_Win *win_ptr);
+int MPID_Win_start(MPIR_Group *group_ptr, int assert, MPIR_Win *win_ptr);
+int MPID_Win_test(MPIR_Win *win_ptr, int *flag);
+int MPID_Win_wait(MPIR_Win *win_ptr);
+int MPID_Win_complete(MPIR_Win *win_ptr);
+
+int MPID_Win_lock(int lock_type, int dest, int assert, MPIR_Win *win_ptr);
+int MPID_Win_unlock(int dest, MPIR_Win *win_ptr);
+
+int MPID_Win_allocate(MPI_Aint size, int disp_unit, MPIR_Info *info,
+                      MPIR_Comm *comm, void *baseptr, MPIR_Win **win);
+int MPID_Win_allocate_shared(MPI_Aint size, int disp_unit, MPIR_Info *info_ptr, MPIR_Comm *comm_ptr,
+                             void *base_ptr, MPIR_Win **win_ptr);
+int MPID_Win_shared_query(MPIR_Win *win, int rank, MPI_Aint *size, int *disp_unit,
+                          void *baseptr);
+int MPID_Win_create_dynamic(MPIR_Info *info, MPIR_Comm *comm, MPIR_Win **win);
+int MPID_Win_attach(MPIR_Win *win, void *base, MPI_Aint size);
+int MPID_Win_detach(MPIR_Win *win, const void *base);
+int MPID_Win_get_info(MPIR_Win *win, MPIR_Info **info_used);
+int MPID_Win_set_info(MPIR_Win *win, MPIR_Info *info);
+
+int MPID_Get_accumulate(const void *origin_addr, int origin_count,
+                        MPI_Datatype origin_datatype, void *result_addr, int result_count,
+                        MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
+                        int target_count, MPI_Datatype target_datatype, MPI_Op op, MPIR_Win *win);
+int MPID_Fetch_and_op(const void *origin_addr, void *result_addr,
+                      MPI_Datatype datatype, int target_rank, MPI_Aint target_disp,
+                      MPI_Op op, MPIR_Win *win);
+int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
+                          void *result_addr, MPI_Datatype datatype, int target_rank,
+                          MPI_Aint target_disp, MPIR_Win *win);
+int MPID_Rput(const void *origin_addr, int origin_count,
+              MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp,
+              int target_count, MPI_Datatype target_datatype, MPIR_Win *win,
+              MPIR_Request **request);
+int MPID_Rget(void *origin_addr, int origin_count,
+              MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp,
+              int target_count, MPI_Datatype target_datatype, MPIR_Win *win,
+              MPIR_Request **request);
+int MPID_Raccumulate(const void *origin_addr, int origin_count,
+                     MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp,
+                     int target_count, MPI_Datatype target_datatype, MPI_Op op, MPIR_Win *win,
+                     MPIR_Request **request);
+int MPID_Rget_accumulate(const void *origin_addr, int origin_count,
+                         MPI_Datatype origin_datatype, void *result_addr, int result_count,
+                         MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
+                         int target_count, MPI_Datatype target_datatype, MPI_Op op, MPIR_Win *win,
+                         MPIR_Request **request);
+
+int MPID_Win_lock_all(int assert, MPIR_Win *win);
+int MPID_Win_unlock_all(MPIR_Win *win);
+int MPID_Win_flush(int rank, MPIR_Win *win);
+int MPID_Win_flush_all(MPIR_Win *win);
+int MPID_Win_flush_local(int rank, MPIR_Win *win);
+int MPID_Win_flush_local_all(MPIR_Win *win);
+int MPID_Win_sync(MPIR_Win *win);
+
+void MPID_Progress_start(MPID_Progress_state * state);
+int MPID_Progress_wait(MPID_Progress_state * state);
+void MPID_Progress_end(MPID_Progress_state * stae);
+int MPID_Progress_poke(void);
+
+int MPID_Get_processor_name( char *name, int namelen, int *resultlen);
+int MPID_Get_universe_size(int  * universe_size);
+int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, int * lpid_ptr, bool is_remote);
+
+void MPID_Request_create_hook(MPIR_Request *);
+void MPID_Request_free_hook(MPIR_Request *);
+void MPID_Request_destroy_hook(MPIR_Request *);
+int MPID_Request_complete(MPIR_Request *);
+
+void *MPID_Alloc_mem( size_t size, MPIR_Info *info );
+int MPID_Free_mem( void *ptr );
+
+/* Prototypes and definitions for the node ID code.  This is used to support
+   hierarchical collectives in a (mostly) device-independent way. */
+int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p);
+int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p);
+
+
 
 #endif /* _MPIDPRE_H_ */

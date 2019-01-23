@@ -3,9 +3,9 @@
 [#] dependencies
 [#] ======================================================================
 # todo: check whether we need all of them
-dnl MPICH2_SUBCFG_BEFORE=src/mpid/common/sched
-dnl MPICH2_SUBCFG_BEFORE=src/mpid/common/datatype
-dnl MPICH2_SUBCFG_BEFORE=src/mpid/common/thread
+dnl MPICH_SUBCFG_BEFORE=src/mpid/common/sched
+dnl MPICH_SUBCFG_BEFORE=src/mpid/common/datatype
+dnl MPICH_SUBCFG_BEFORE=src/mpid/common/thread
 
 [#] prereq (formerly mpich2prereq, setup_device, etc.)
 [#] ======================================================================

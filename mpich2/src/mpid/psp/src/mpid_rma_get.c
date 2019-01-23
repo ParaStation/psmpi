@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -38,7 +38,7 @@ int accept_rma_get_answer(pscom_request_t *request,
 static
 void io_done_rma_get_answer(pscom_request_t *request)
 {
-	MPID_Request *mpid_req = request->user->type.get_answer_recv.mpid_req;
+	MPIR_Request *mpid_req = request->user->type.get_answer_recv.mpid_req;
 	/* This is an pscom.io_done call. Global lock state undefined! */
 	pscom_request_get_answer_recv_t *ga = &request->user->type.get_answer_recv;
 
@@ -54,7 +54,7 @@ void io_done_rma_get_answer(pscom_request_t *request)
 
 	if(mpid_req) {
 		MPID_PSP_Subrequest_completed(mpid_req);
-		MPID_PSP_Request_dequeue(mpid_req, MPID_REQUEST_RECV);
+		MPIR_Request_free(mpid_req);
 	} else {
 		pscom_request_free(request);
 	}
@@ -63,7 +63,7 @@ void io_done_rma_get_answer(pscom_request_t *request)
 
 int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 		     int target_rank, MPI_Aint target_disp, int target_count,
-		     MPI_Datatype target_datatype, MPID_Win *win_ptr, MPID_Request **request)
+		     MPI_Datatype target_datatype, MPIR_Win *win_ptr, MPIR_Request **request)
 {
 	int mpi_error = MPI_SUCCESS;
 	MPID_PSP_Datatype_info dt_info;
@@ -81,7 +81,9 @@ int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_da
 	MPID_PSP_Datatype_get_info(target_datatype, &dt_info);
 
 	if(request) {
-		*request = MPID_DEV_Request_recv_create(win_ptr->comm_ptr);
+		*request = MPIR_Request_create(MPIR_REQUEST_KIND__RECV);
+		(*request)->comm = win_ptr->comm_ptr;
+		MPIR_Comm_add_ref(win_ptr->comm_ptr);
 	}
 
 	if (unlikely(target_rank == MPI_PROC_NULL)) {
@@ -184,12 +186,12 @@ int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_da
 			rreq->connection = ri->con;
 
 			if(request) {
-				MPID_Request *mpid_req = *request;
+				MPIR_Request *mpid_req = *request;
 				/* TODO: Use a new and 'get_answer'-dedicated MPID_DEV_Request_create() */
 				/*       instead of allocating and overloading a common receive request */
 				pscom_request_free(mpid_req->dev.kind.common.pscom_req);
 				mpid_req->dev.kind.common.pscom_req = rreq;
-				MPID_PSP_Request_enqueue(mpid_req);
+				MPIR_Request_add_ref(mpid_req);
 				rreq->user->type.get_answer_recv.mpid_req = mpid_req;
 			} else {
 				rreq->user->type.get_answer_recv.mpid_req = NULL;
@@ -224,14 +226,14 @@ fn_exit:
 	return MPI_SUCCESS;
 fn_completed:
 	if(request) {
-		MPID_PSP_Request_set_completed(*request);
+		MPIDI_PSP_Request_set_completed(*request);
 	}
 	return MPI_SUCCESS;
 	/* --- */
 error_exit:
 	if(request) {
-		MPID_PSP_Request_set_completed(*request);
-		MPID_DEV_Request_release_ref(*request, MPID_REQUEST_RECV);
+		MPIDI_PSP_Request_set_completed(*request);
+		MPIR_Request_free(*request);
 	}
 	return mpi_error;
 	/* --- */
@@ -312,7 +314,7 @@ pscom_request_t *MPID_do_recv_rma_get_req(pscom_connection_t *connection, MPID_P
 
 int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 	     int target_rank, MPI_Aint target_disp, int target_count,
-	     MPI_Datatype target_datatype, MPID_Win *win_ptr)
+	     MPI_Datatype target_datatype, MPIR_Win *win_ptr)
 {
 	return MPID_Get_generic(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
 				target_count, target_datatype, win_ptr, NULL);
@@ -320,8 +322,8 @@ int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 
 int MPID_Rget(void *origin_addr, int origin_count,
 	      MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp,
-	      int target_count, MPI_Datatype target_datatype, MPID_Win *win_ptr,
-	      MPID_Request **request)
+	      int target_count, MPI_Datatype target_datatype, MPIR_Win *win_ptr,
+	      MPIR_Request **request)
 {
 	return MPID_Get_generic(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
 				target_count, target_datatype, win_ptr, request);

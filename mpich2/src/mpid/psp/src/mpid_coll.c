@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2008-2010 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2008-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -10,7 +10,7 @@
  * Author:	Jens Hauke <hauke@par-tec.com>
  */
 
-#include "mpid_collective.h"
+#include "mpid_coll.h"
 #include "mpid_psp_packed_msg.h"
 #include <assert.h>
 
@@ -37,7 +37,7 @@
 
 /* not declared static because it is called in ch3_comm_connect/accept */
 static
-int MPID_PSP_Barrier(MPID_Comm *comm_ptr, MPIR_Errflag_t *errflag)
+int MPID_PSP_Barrier(MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag)
 {
 	if (comm_ptr->group) {
 		pscom_barrier(comm_ptr->group);
@@ -51,7 +51,7 @@ int MPID_PSP_Barrier(MPID_Comm *comm_ptr, MPIR_Errflag_t *errflag)
 
 static
 int MPID_PSP_Bcast_send(void *buffer, int count, MPI_Datatype datatype, int root,
-			MPID_Comm *comm_ptr)
+			MPIR_Comm *comm_ptr)
 {
 	MPID_PSP_packed_msg_t msg;
 	int ret;
@@ -93,7 +93,7 @@ err_create_packed_msg:
 
 static
 int MPID_PSP_Bcast_recv(void *buffer, int count, MPI_Datatype datatype, int root,
-			MPID_Comm *comm_ptr)
+			MPIR_Comm *comm_ptr)
 {
 	MPID_PSP_packed_msg_t msg;
 	int ret;
@@ -140,7 +140,7 @@ MPI_Bcast - Broadcasts a message from the process with rank "root" to
 */
 static
 int MPID_PSP_Bcast(void *buffer, int count, MPI_Datatype datatype, int root,
-		   MPID_Comm *comm_ptr, MPIR_Errflag_t *errflag)
+		   MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag)
 {
 	int mpi_errno;
 
@@ -164,31 +164,7 @@ int MPID_PSP_Bcast(void *buffer, int count, MPI_Datatype datatype, int root,
 	}
 }
 
-
-static
-MPID_Collops mpid_psp_collective_functions = {
-	~0,    /* ref_count */
-	&MPID_PSP_Barrier, /* Barrier */
-	&MPID_PSP_Bcast, /* Bcast */
-	NULL, /* Gather */
-	NULL, /* Gatherv */
-	NULL, /* Scatter */
-	NULL, /* Scatterv */
-	NULL, /* Allgather */
-	NULL, /* Allgatherv */
-	NULL, /* Alltoall */
-	NULL, /* Alltoallv */
-	NULL, /* Alltoallw */
-	NULL, /* Reduce */
-	NULL, /* Allreduce */
-	NULL, /* Reduce_scatter */
-	NULL, /* Scan */
-	NULL, /* Exscan */
-	NULL  /* Reduce_scatter_block */
-};
-
-
-void MPID_PSP_group_init(MPID_Comm *comm_ptr)
+void MPID_PSP_group_init(MPIR_Comm *comm_ptr)
 {
 	unsigned comm_size = comm_ptr->local_size;
 	unsigned rank;
@@ -199,9 +175,10 @@ void MPID_PSP_group_init(MPID_Comm *comm_ptr)
 	unsigned group_id = comm_ptr->context_id;
 	pscom_request_t *req;
 
-	comm_ptr->coll_fns = &mpid_psp_collective_functions;
+// TODO: use new collective interface
+//	comm_ptr->coll_fns = &mpid_psp_collective_functions;
 
-	connections = MPIU_Malloc(comm_size * sizeof(*connections));
+	connections = MPL_malloc(comm_size * sizeof(*connections), MPL_MEM_BUFFER);
 	assert(connections);
 
 	for (rank = 0; rank < comm_size; rank++) {
@@ -236,11 +213,11 @@ void MPID_PSP_group_init(MPID_Comm *comm_ptr)
 
 	comm_ptr->bcast_request = req;
 
-	MPIU_Free(connections); connections = NULL;
+	MPL_free(connections); connections = NULL;
 }
 
 
-void MPID_PSP_group_cleanup(MPID_Comm *comm_ptr)
+void MPID_PSP_group_cleanup(MPIR_Comm *comm_ptr)
 {
 	if (comm_ptr->group) {
 		pscom_group_close(comm_ptr->group);

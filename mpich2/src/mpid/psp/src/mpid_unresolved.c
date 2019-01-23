@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -11,7 +11,6 @@
  */
 
 #include "mpidimpl.h"
-#include "mpiinfo.h"
 
 // This must be the last include before sysmbols are defined:
 #include "mpid_visibility.h"
@@ -35,43 +34,43 @@ do {									\
 } while (0)
 
 
-int MPID_Comm_failure_get_acked(MPID_Comm *comm, MPID_Group **failed_group_ptr)
+int MPID_Comm_failure_get_acked(MPIR_Comm *comm, MPIR_Group **failed_group_ptr)
 {
 	WARN_NOT_IMPLEMENTED;
 	return MPI_ERR_UNSUPPORTED_OPERATION;
 }
 
-int MPID_Comm_get_all_failed_procs(MPID_Comm *comm_ptr, MPID_Group **failed_group, int tag)
+int MPID_Comm_get_all_failed_procs(MPIR_Comm *comm_ptr, MPIR_Group **failed_group, int tag)
 {
 	WARN_NOT_IMPLEMENTED;
 	return MPI_ERR_UNSUPPORTED_OPERATION;
 }
 
-int MPID_Comm_revoke(MPID_Comm *comm, int is_remote)
+int MPID_Comm_revoke(MPIR_Comm *comm, int is_remote)
 {
 	WARN_NOT_IMPLEMENTED;
 	return MPI_ERR_UNSUPPORTED_OPERATION;
 }
 
-int MPID_Comm_failure_ack(MPID_Comm *comm)
+int MPID_Comm_failure_ack(MPIR_Comm *comm)
 {
 	WARN_NOT_IMPLEMENTED;
 	return MPI_ERR_UNSUPPORTED_OPERATION;
 }
 
-int MPID_Win_set_info(MPID_Win *win, MPID_Info *info)
+int MPID_Win_set_info(MPIR_Win *win, MPIR_Info *info)
 {
 	int mpi_errno = MPI_SUCCESS;
 	/* No op, info arguments are ignored by default */
 	return mpi_errno;
 }
 
-int MPID_Win_get_info(MPID_Win *win, MPID_Info **info_used)
+int MPID_Win_get_info(MPIR_Win *win, MPIR_Info **info_used)
 {
 	int mpi_errno = MPI_SUCCESS;
 
 	/* Allocate an empty info object */
-	mpi_errno = MPIU_Info_alloc(info_used);
+	mpi_errno = MPIR_Info_alloc(info_used);
 	assert(mpi_errno == MPI_SUCCESS);
 
 	return mpi_errno;
@@ -81,7 +80,7 @@ int MPID_Win_get_info(MPID_Win *win, MPID_Info **info_used)
 MPI_Aint MPID_Aint_add(MPI_Aint base, MPI_Aint disp)
 {
 	// WTF?
-	// result =  MPIU_VOID_PTR_CAST_TO_MPI_AINT ((char*)MPIU_AINT_CAST_TO_VOID_PTR(base) + disp);
+	// result =  MPIR_VOID_PTR_CAST_TO_MPI_AINT ((char*)MPIR_AINT_CAST_TO_VOID_PTR(base) + disp);
 	return base + disp;
 }
 
@@ -89,6 +88,6 @@ MPI_Aint MPID_Aint_add(MPI_Aint base, MPI_Aint disp)
 MPI_Aint MPID_Aint_diff(MPI_Aint addr1, MPI_Aint addr2)
 {
 	// WTF?
-	// result =  MPIU_PTR_DISP_CAST_TO_MPI_AINT ((char*)MPIU_AINT_CAST_TO_VOID_PTR(addr1) - (char*)MPIU_AINT_CAST_TO_VOID_PTR(addr2));
+	// result =  MPIR_PTR_DISP_CAST_TO_MPI_AINT ((char*)MPIR_AINT_CAST_TO_VOID_PTR(addr1) - (char*)MPIR_AINT_CAST_TO_VOID_PTR(addr2));
 	return addr1 - addr2;
 }

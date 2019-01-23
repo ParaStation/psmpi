@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2014 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -11,13 +11,12 @@
  */
 
 #include "mpidimpl.h"
-#include "mpiinfo.h"
 
 // This must be the last include before sysmbols are defined:
 #include "mpid_visibility.h"
 
 
-int MPID_GPID_Get( MPID_Comm *comm_ptr, int rank, MPID_Gpid *gpid )
+int MPIDI_GPID_Get( MPIR_Comm *comm_ptr, int rank, MPIDI_Gpid *gpid )
 {
 	MPIDI_VC_t *vc;
 
@@ -31,16 +30,16 @@ int MPID_GPID_Get( MPID_Comm *comm_ptr, int rank, MPID_Gpid *gpid )
 }
 
 /* see intercomm_create.c: */
-int MPID_GPID_GetAllInComm(MPID_Comm *comm_ptr, int local_size,
-			   MPID_Gpid *local_gpids, int *singlePG)
+int MPIDI_GPID_GetAllInComm(MPIR_Comm *comm_ptr, int local_size,
+			   MPIDI_Gpid local_gpids[], int *singlePG)
 {
 	int i;
-	MPID_Gpid *gpid = local_gpids;
+	MPIDI_Gpid *gpid = local_gpids;
 	int lastPGID = -1;
 
 	if(singlePG) *singlePG = 1;
 	for (i=0; i<comm_ptr->local_size; i++) {
-		MPID_GPID_Get(comm_ptr, i, gpid);
+		MPIDI_GPID_Get(comm_ptr, i, gpid);
 
 		if (lastPGID != gpid->gpid[0]) {
 			if (i == 0) {
@@ -54,7 +53,7 @@ int MPID_GPID_GetAllInComm(MPID_Comm *comm_ptr, int local_size,
 	return 0;
 }
 
-int MPID_GPID_ToLpidArray(int size, MPID_Gpid gpid[], int lpid[])
+int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], int lpid[])
 {
 	int i, mpi_errno = MPI_SUCCESS;
 	int pgid;
@@ -97,9 +96,9 @@ int MPID_GPID_ToLpidArray(int size, MPID_Gpid gpid[], int lpid[])
 						int k = pg->size;
 
 						pg->size = gpid->gpid[1]+1;
-						pg->vcr = MPIU_Realloc(pg->vcr, sizeof(MPIDI_VC_t*)*pg->size);
-						pg->lpids = MPIU_Realloc(pg->lpids, sizeof(int)*pg->size);
-						pg->cons = MPIU_Realloc(pg->cons, sizeof(pscom_connection_t*)*pg->size);
+						pg->vcr = MPL_realloc(pg->vcr, sizeof(MPIDI_VC_t*)*pg->size, MPL_MEM_OBJECT);
+						pg->lpids = MPL_realloc(pg->lpids, sizeof(int)*pg->size, MPL_MEM_OBJECT);
+						pg->cons = MPL_realloc(pg->cons, sizeof(pscom_connection_t*)*pg->size, MPL_MEM_OBJECT);
 
 						for(; k<pg->size; k++) {
 							pg->vcr[k] = NULL;
@@ -134,10 +133,10 @@ int MPID_GPID_ToLpidArray(int size, MPID_Gpid gpid[], int lpid[])
 	return mpi_errno;
 }
 
-int MPID_Create_intercomm_from_lpids(MPID_Comm *newcomm_ptr, int size, const int lpids[] )
+int MPID_Create_intercomm_from_lpids(MPIR_Comm *newcomm_ptr, int size, const int lpids[])
 {
 	int mpi_errno = MPI_SUCCESS;
-	MPID_Comm *commworld_ptr;
+	MPIR_Comm *commworld_ptr;
 	MPIDI_VCRT_t *vcrt;
 	int i;
 
@@ -211,8 +210,8 @@ fn_fail:
    each process then uses this information to update to local process group
    information and then connects to the still missing remote partners.
 */
-int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
-			   int nPGids, const MPID_Gpid gpids[], int root, int remote_leader, int cts_tag,
+int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
+			   int nPGids, const MPIDI_Gpid gpids[], int root, int remote_leader, int cts_tag,
 			   pscom_connection_t *peer_con, char *all_ports, pscom_socket_t *pscom_socket )
 {
 	MPIR_Errflag_t errflag = FALSE;
@@ -223,7 +222,7 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 	MPIDI_PG_t *pg;
 	int id_num;
 
-	const MPID_Gpid *gpid_ptr;
+	const MPIDI_Gpid *gpid_ptr;
 	int all_found_local = 1;
 	int all_found_remote;
 	int pg_count_root = 0;
@@ -324,11 +323,11 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 			assert(rc == PSCOM_SUCCESS);
 		}
 
-		local_pg_ids   = MPIU_Malloc(pg_count_local * sizeof(int));
-		local_pg_sizes = MPIU_Malloc(pg_count_local * sizeof(int));
+		local_pg_ids   = MPL_malloc(pg_count_local * sizeof(int), MPL_MEM_OBJECT);
+		local_pg_sizes = MPL_malloc(pg_count_local * sizeof(int), MPL_MEM_OBJECT);
 
-		remote_pg_ids   = MPIU_Malloc(pg_count_remote * sizeof(int));
-		remote_pg_sizes = MPIU_Malloc(pg_count_remote * sizeof(int));
+		remote_pg_ids   = MPL_malloc(pg_count_remote * sizeof(int), MPL_MEM_OBJECT);
+		remote_pg_sizes = MPL_malloc(pg_count_remote * sizeof(int), MPL_MEM_OBJECT);
 
 		pg = MPIDI_Process.my_pg;
 		for(i=0; i<pg_count_local; i++) {
@@ -396,10 +395,10 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 			}
 		}
 
-		MPIU_Free(local_pg_ids);
-		MPIU_Free(local_pg_sizes);
-		MPIU_Free(remote_pg_ids);
-		MPIU_Free(remote_pg_sizes);
+		MPL_free(local_pg_ids);
+		MPL_free(local_pg_sizes);
+		MPL_free(remote_pg_ids);
+		MPL_free(remote_pg_sizes);
 
 		pg_count_root = pg_count_local + new_pg_count;
 		pg = MPIDI_Process.my_pg;
@@ -475,9 +474,9 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 		pscom_port_str_t *all_ports_remote = NULL;
 		pscom_socket_t *comm_socket;
 
-		MPID_Gpid my_gpid;
-		MPID_Gpid *local_gpids_by_comm;
-		MPID_Gpid *remote_gpids_by_comm;
+		MPIDI_Gpid my_gpid;
+		MPIDI_Gpid *local_gpids_by_comm;
+		MPIDI_Gpid *remote_gpids_by_comm;
 
 		/* If we get here via MPIR_Intercomm_create_impl(), we have to open a new socket.
 		   If not, a socket should already be opened in MPID_Comm_connect()/accept()... */
@@ -485,7 +484,7 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 			comm_socket = pscom_socket;
 			all_ports_local = (pscom_port_str_t*)all_ports;
 		} else {
-			MPID_Comm intercomm_dummy;
+			MPIR_Comm intercomm_dummy;
 			assert(!all_ports);
 			/* We just want to get the socket, but open_all_ports() expects an (inter)comm.
 			   So we fetch it via an intercomm_dummy: */
@@ -504,7 +503,7 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 							  peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
 				assert(mpi_errno == MPI_SUCCESS);
 
-				all_ports_remote = MPIU_Malloc(remote_size * sizeof(pscom_port_str_t));
+				all_ports_remote = MPL_malloc(remote_size * sizeof(pscom_port_str_t), MPL_MEM_STRINGS);
 				memset(all_ports_remote, 0, remote_size * sizeof(pscom_port_str_t));
 
 				mpi_errno = MPIC_Sendrecv(all_ports_local, local_size * sizeof(pscom_port_str_t), MPI_CHAR,
@@ -520,7 +519,7 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 				rc = pscom_recv_from(peer_con, NULL, 0, &remote_size, sizeof(int));
 				assert(rc == PSCOM_SUCCESS);
 
-				all_ports_remote = MPIU_Malloc(remote_size * sizeof(pscom_port_str_t));
+				all_ports_remote = MPL_malloc(remote_size * sizeof(pscom_port_str_t), MPL_MEM_STRINGS);
 				memset(all_ports_remote, 0, remote_size * sizeof(pscom_port_str_t));
 
 				pscom_send(peer_con, NULL, 0, all_ports_local, local_size * sizeof(pscom_port_str_t));
@@ -533,40 +532,40 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 		assert(mpi_errno == MPI_SUCCESS);
 
 		if(comm_ptr->rank != root) {
-			all_ports_remote = MPIU_Malloc(remote_size * sizeof(pscom_port_str_t));
+			all_ports_remote = MPL_malloc(remote_size * sizeof(pscom_port_str_t), MPL_MEM_STRINGS);
 			memset(all_ports_remote, 0, remote_size * sizeof(pscom_port_str_t));
 		}
 
 		mpi_errno = MPIR_Bcast_impl(all_ports_remote, remote_size * sizeof(pscom_port_str_t), MPI_CHAR, root, comm_ptr, &errflag);
 		assert(mpi_errno == MPI_SUCCESS);
 
-		MPID_GPID_Get(comm_ptr, comm_ptr->rank, &my_gpid);
+		MPIDI_GPID_Get(comm_ptr, comm_ptr->rank, &my_gpid);
 
-		local_gpids_by_comm = (MPID_Gpid*)MPIU_Malloc(local_size * sizeof(MPID_Gpid));
-		remote_gpids_by_comm = (MPID_Gpid*)MPIU_Malloc(remote_size * sizeof(MPID_Gpid));
+		local_gpids_by_comm = (MPIDI_Gpid*)MPL_malloc(local_size * sizeof(MPIDI_Gpid), MPL_MEM_OBJECT);
+		remote_gpids_by_comm = (MPIDI_Gpid*)MPL_malloc(remote_size * sizeof(MPIDI_Gpid), MPL_MEM_OBJECT);
 
-		mpi_errno = MPIR_Gather_intra(&my_gpid, sizeof(MPID_Gpid), MPI_CHAR,
-					      local_gpids_by_comm, sizeof(MPID_Gpid), MPI_CHAR,
+		mpi_errno = MPIR_Gather_intra_auto(&my_gpid, sizeof(MPIDI_Gpid), MPI_CHAR,
+					      local_gpids_by_comm, sizeof(MPIDI_Gpid), MPI_CHAR,
 					      root, comm_ptr, &errflag);
 		assert(mpi_errno == MPI_SUCCESS);
 
 		if(comm_ptr->rank == root) {
 			if(peer_comm_ptr) {
-				mpi_errno = MPIC_Sendrecv(local_gpids_by_comm, sizeof(MPID_Gpid) * local_size, MPI_CHAR,
+				mpi_errno = MPIC_Sendrecv(local_gpids_by_comm, sizeof(MPIDI_Gpid) * local_size, MPI_CHAR,
 							  remote_leader, cts_tag,
-							  remote_gpids_by_comm, sizeof(MPID_Gpid) * remote_size, MPI_CHAR,
+							  remote_gpids_by_comm, sizeof(MPIDI_Gpid) * remote_size, MPI_CHAR,
 							  remote_leader, cts_tag,
 							  peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
 				assert(mpi_errno == MPI_SUCCESS);
 			} else {
 				assert(peer_con);
-				pscom_send(peer_con, NULL, 0, local_gpids_by_comm, sizeof(MPID_Gpid) * local_size);
-				rc = pscom_recv_from(peer_con, NULL, 0, remote_gpids_by_comm, sizeof(MPID_Gpid) * remote_size);
+				pscom_send(peer_con, NULL, 0, local_gpids_by_comm, sizeof(MPIDI_Gpid) * local_size);
+				rc = pscom_recv_from(peer_con, NULL, 0, remote_gpids_by_comm, sizeof(MPIDI_Gpid) * remote_size);
 				assert(rc == PSCOM_SUCCESS);
 			}
 		}
 
-		mpi_errno = MPIR_Bcast_impl(remote_gpids_by_comm, sizeof(MPID_Gpid) * remote_size, MPI_CHAR, root, comm_ptr, &errflag);
+		mpi_errno = MPIR_Bcast_impl(remote_gpids_by_comm, sizeof(MPIDI_Gpid) * remote_size, MPI_CHAR, root, comm_ptr, &errflag);
 		assert(mpi_errno == MPI_SUCCESS);
 
 		/* FIRST RUN: call pscom_connect_socket_str() to establish all needed connections */
@@ -585,7 +584,7 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 						} else {
 							if(!pg->cons[j]) {
 								int pos;
-								MPID_Gpid *remote_gpid_ptr;
+								MPIDI_Gpid *remote_gpid_ptr;
 								pscom_connection_t *con = pscom_open_connection(comm_socket);
 
 								remote_gpid_ptr = remote_gpids_by_comm;
@@ -652,7 +651,7 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 							assert(j==pg->vcr[j]->pg_rank);
 						} else {
 							int pos;
-							MPID_Gpid *remote_gpid_ptr;
+							MPIDI_Gpid *remote_gpid_ptr;
 							pscom_connection_t *con = pg->cons[j];
 
 							remote_gpid_ptr = remote_gpids_by_comm;
@@ -722,11 +721,11 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 			gpid_ptr++;
 		}
 
-		MPIU_Free(local_gpids_by_comm);
-		MPIU_Free(remote_gpids_by_comm);
-		MPIU_Free(all_ports_remote);
+		MPL_free(local_gpids_by_comm);
+		MPL_free(remote_gpids_by_comm);
+		MPL_free(all_ports_remote);
 		if(!pscom_socket) {
-			MPIU_Free(all_ports_local);
+			MPL_free(all_ports_local);
 		}
 
 		pscom_stop_listen(comm_socket);
@@ -745,15 +744,15 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr)
 	MPIDI_PG_t * pg = NULL, *pgnext;
 	int i;
 	int mpi_errno = MPI_SUCCESS;
-	MPIU_CHKPMEM_DECL(4);
-	MPIDI_STATE_DECL(MPID_STATE_MPIDI_PG_CREATE);
+	MPIR_CHKPMEM_DECL(4);
+	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_PG_CREATE);
 
-	MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_PG_CREATE);
+	MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_PG_CREATE);
 
-	MPIU_CHKPMEM_MALLOC(pg, MPIDI_PG_t* ,sizeof(MPIDI_PG_t), mpi_errno, "pg");
-	MPIU_CHKPMEM_MALLOC(pg->vcr, MPIDI_VC_t**, sizeof(MPIDI_VC_t)*pg_size, mpi_errno,"pg->vcr");
-	MPIU_CHKPMEM_MALLOC(pg->lpids, int*, sizeof(int)*pg_size, mpi_errno,"pg->lpids");
-	MPIU_CHKPMEM_MALLOC(pg->cons, pscom_connection_t **, sizeof(pscom_connection_t*)*pg_size, mpi_errno,"pg->cons");
+	MPIR_CHKPMEM_MALLOC(pg, MPIDI_PG_t* ,sizeof(MPIDI_PG_t), mpi_errno, "pg", MPL_MEM_OBJECT);
+	MPIR_CHKPMEM_MALLOC(pg->vcr, MPIDI_VC_t**, sizeof(MPIDI_VC_t)*pg_size, mpi_errno,"pg->vcr", MPL_MEM_OBJECT);
+	MPIR_CHKPMEM_MALLOC(pg->lpids, int*, sizeof(int)*pg_size, mpi_errno,"pg->lpids", MPL_MEM_OBJECT);
+	MPIR_CHKPMEM_MALLOC(pg->cons, pscom_connection_t **, sizeof(pscom_connection_t*)*pg_size, mpi_errno,"pg->cons", MPL_MEM_OBJECT);
 
 	pg->size = pg_size;
 	pg->id_num = pg_id_num;
@@ -785,11 +784,11 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr)
 	*pg_ptr = pg;
 
 fn_exit:
-	MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_PG_CREATE);
+	MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_PG_CREATE);
 	return mpi_errno;
 
 fn_fail:
-	MPIU_CHKPMEM_REAP();
+	MPIR_CHKPMEM_REAP();
 	goto fn_exit;
 }
 
@@ -827,7 +826,7 @@ MPIDI_PG_t* MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr)
 			   and free the related VCR without any decreasing of reference counters:
 			*/
 			pscom_close_connection(pg_ptr->vcr[j]->con);
-			MPIU_Free(pg_ptr->vcr[j]);
+			MPL_free(pg_ptr->vcr[j]);
 
 		} else  {
 
@@ -841,10 +840,10 @@ MPIDI_PG_t* MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr)
 		}
 	}
 
-	MPIU_Free(pg_ptr->cons);
-	MPIU_Free(pg_ptr->lpids);
-	MPIU_Free(pg_ptr->vcr);
-	MPIU_Free(pg_ptr);
+	MPL_free(pg_ptr->cons);
+	MPL_free(pg_ptr->lpids);
+	MPL_free(pg_ptr->vcr);
+	MPL_free(pg_ptr);
 
 	return pg_next;
 }

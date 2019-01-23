@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -13,14 +13,16 @@
 #include <assert.h>
 #include <unistd.h>
 #include "mpidimpl.h"
+#include "mpl.h"
 #include "pmi.h"
 #include "errno.h"
 #include "mpid_debug.h"
-#include "mpid_collective.h"
+#include "mpid_coll.h"
 
 // This must be the last include before sysmbols are defined:
 #include "mpid_visibility.h"
 
+#include "datatype.h"
 
 #if defined(__GNUC__)
 #define dinit(name) .name =
@@ -113,7 +115,7 @@ void init_grank_port_mapping(void)
 		exit(1);
 	}
 
-	MPIDI_Process.grank2con = MPIU_Malloc(sizeof(MPIDI_Process.grank2con[0]) * pg_size);
+	MPIDI_Process.grank2con = MPL_malloc(sizeof(MPIDI_Process.grank2con[0]) * pg_size, MPL_MEM_OBJECT);
 	assert(MPIDI_Process.grank2con);
 
 	for (i = 0; i < pg_size; i++) {
@@ -261,7 +263,7 @@ int InitPortConnections(pscom_socket_t *socket) {
 	/* Distribute my contact information */
 	snprintf(key, sizeof(key), "psp%d", pg_rank);
 
-	listen_socket = MPIU_Strdup(pscom_listen_socket_str(socket));
+	listen_socket = MPL_strdup(pscom_listen_socket_str(socket));
 	PMICALL(PMI_KVS_Put(pg_id, key, listen_socket));
 
 #define INIT_VERSION "ps_v5.0"
@@ -275,7 +277,7 @@ int InitPortConnections(pscom_socket_t *socket) {
 	init_grank_port_mapping();
 
 	/* Get portlist */
-	psp_port = MPIU_Malloc(pg_size * sizeof(*psp_port));
+	psp_port = MPL_malloc(pg_size * sizeof(*psp_port), MPL_MEM_OBJECT);
 	assert(psp_port);
 
 	for (i = 0; i < pg_size; i++) {
@@ -295,7 +297,7 @@ int InitPortConnections(pscom_socket_t *socket) {
 			strcpy(val, listen_socket);
 		}
 
-		psp_port[i] = MPIU_Strdup(val);
+		psp_port[i] = MPL_strdup(val);
 	}
 
 	/* connect ranks pg_rank..(pg_rank + pg_size/2) */
@@ -332,13 +334,13 @@ int InitPortConnections(pscom_socket_t *socket) {
  fn_exit:
 	if (psp_port) {
 		for (i = 0; i < pg_size; i++) {
-			MPIU_Free(psp_port[i]);
+			MPL_free(psp_port[i]);
 			psp_port[i] = NULL;
 		}
-		MPIU_Free(psp_port);
+		MPL_free(psp_port);
 	}
 
-	MPIU_Free(listen_socket);
+	MPL_free(listen_socket);
 	return mpi_errno;
 	/* --- */
  fn_fail:
@@ -368,7 +370,7 @@ int InitPscomConnections(pscom_socket_t *socket) {
 	/* Distribute my contact information */
 	snprintf(key, sizeof(key), "pscom%d", pg_rank);
 
-	listen_socket = MPIU_Strdup(pscom_listen_socket_ondemand_str(socket));
+	listen_socket = MPL_strdup(pscom_listen_socket_ondemand_str(socket));
 	PMICALL(PMI_KVS_Put(pg_id, key, listen_socket));
 
 #define IPSCOM_VERSION "pscom_v5.0"
@@ -383,7 +385,7 @@ int InitPscomConnections(pscom_socket_t *socket) {
 	init_grank_port_mapping();
 
 	/* Get portlist */
-	psp_port = MPIU_Malloc(pg_size * sizeof(*psp_port));
+	psp_port = MPL_malloc(pg_size * sizeof(*psp_port), MPL_MEM_OBJECT);
 	assert(psp_port);
 
 	for (i = 0; i < pg_size; i++) {
@@ -403,7 +405,7 @@ int InitPscomConnections(pscom_socket_t *socket) {
 			strcpy(val, listen_socket);
 		}
 
-		psp_port[i] = MPIU_Strdup(val);
+		psp_port[i] = MPL_strdup(val);
 	}
 
 	/* Create all connections */
@@ -430,13 +432,13 @@ int InitPscomConnections(pscom_socket_t *socket) {
  fn_exit:
 	if (psp_port) {
 		for (i = 0; i < pg_size; i++) {
-			MPIU_Free(psp_port[i]);
+			MPL_free(psp_port[i]);
 			psp_port[i] = NULL;
 		}
-		MPIU_Free(psp_port);
+		MPL_free(psp_port);
 	}
 
-	MPIU_Free(listen_socket);
+	MPL_free(listen_socket);
 	return mpi_errno;
 	/* --- */
  fn_fail:
@@ -471,12 +473,17 @@ int MPID_Init(int *argc, char ***argv,
 	char *pg_id_name;
 	char *parent_port;
 
+    /* Call any and all MPID_Init type functions */
+    MPIR_Err_init();
+    MPIR_Datatype_init();
+    MPIR_Group_init();
+
 	mpid_debug_init();
 
 	assert(PSCOM_ANYPORT == -1); /* all codeplaces which depends on it are marked with: "assert(PSP_ANYPORT == -1);"  */
 
-	MPIDI_STATE_DECL(MPID_STATE_MPID_INIT);
-	MPIDI_FUNC_ENTER(MPID_STATE_MPID_INIT);
+	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_INIT);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_INIT);
 
 	PMICALL(PMI_Init(&has_parent));
 	PMICALL(PMI_Get_rank(&pg_rank));
@@ -529,7 +536,7 @@ int MPID_Init(int *argc, char ***argv,
 	MPIDI_Process.env.enable_ondemand_spawn = MPIDI_Process.env.enable_ondemand;
 	pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand_spawn, "PSP_ONDEMAND_SPAWN");
 
-	/* take SMP-related locality information into account (e.g. for MPI_Win_allocate_shared) */
+	/* take SMP-related locality information into account (e.g., for MPI_Win_allocate_shared) */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
 
 	/* take MSA-related topology information into account */
@@ -608,8 +615,8 @@ int MPID_Init(int *argc, char ***argv,
 
 	PMICALL(PMI_KVS_Get_name_length_max(&pg_id_sz));
 
-	pg_id_name = MPIU_Malloc(pg_id_sz + 1);
-	if (!pg_id_name) { PRINTERROR("MPIU_Malloc()"); goto fn_fail; }
+	pg_id_name = MPL_malloc(pg_id_sz + 1, MPL_MEM_STRINGS);
+	if (!pg_id_name) { PRINTERROR("MPL_malloc()"); goto fn_fail; }
 
 	PMICALL(PMI_KVS_Get_my_name(pg_id_name, pg_id_sz));
 
@@ -664,7 +671,7 @@ int MPID_Init(int *argc, char ***argv,
 
 		if(my_node_id > -1) {
 
-			node_id_table = MPIU_Malloc(pg_size * sizeof(int));
+			node_id_table = MPL_malloc(pg_size * sizeof(int), MPL_MEM_OBJECT);
 
 			if(pg_rank != 0) {
 
@@ -709,7 +716,7 @@ int MPID_Init(int *argc, char ***argv,
 	 * Initialize the MPI_COMM_WORLD object
 	 */
 	{
-		MPID_Comm * comm;
+		MPIR_Comm * comm;
 		int grank;
 		MPIDI_PG_t * pg_ptr;
 		int pg_id_num;
@@ -750,7 +757,7 @@ int MPID_Init(int *argc, char ***argv,
 	 * Initialize the MPI_COMM_SELF object
 	 */
 	{
-		MPID_Comm * comm;
+		MPIR_Comm * comm;
 		MPIDI_VCRT_t * vcrt;
 
 		comm = MPIR_Process.comm_self;
@@ -780,7 +787,7 @@ int MPID_Init(int *argc, char ***argv,
 
 
 	if (has_parent) {
-		MPID_Comm * comm;
+		MPIR_Comm * comm;
 
 		mpi_errno = MPID_PSP_GetParentPort(&parent_port);
 		assert(mpi_errno == MPI_SUCCESS);
@@ -797,14 +804,14 @@ int MPID_Init(int *argc, char ***argv,
 		}
 
 		assert(comm != NULL);
-		MPIU_Strncpy(comm->name, "MPI_COMM_PARENT", MPI_MAX_OBJECT_NAME);
+		MPL_strncpy(comm->name, "MPI_COMM_PARENT", MPI_MAX_OBJECT_NAME);
 		MPIR_Process.comm_parent = comm;
 	}
 
 	MPID_PSP_shm_rma_init();
 
  fn_exit:
-	MPIDI_FUNC_EXIT(MPID_STATE_MPID_INIT);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_INIT);
 	return mpi_errno;
 	/* --- */
  fn_fail:
@@ -820,7 +827,7 @@ int MPID_Init(int *argc, char ***argv,
 
 
 /* return connection_t for rank, NULL on error */
-pscom_connection_t *MPID_PSCOM_rank2connection(MPID_Comm *comm, int rank)
+pscom_connection_t *MPID_PSCOM_rank2connection(MPIR_Comm *comm, int rank)
 {
 	if ((rank >= 0) && (rank < comm->remote_size)) {
 		return comm->vcr[rank]->con;

@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -24,7 +24,7 @@ int MPID_PSP_packed_msg_prepare(const void *addr, int count, MPI_Datatype dataty
 {
 	int		contig;
 	size_t		data_sz;
-	MPID_Datatype	*dtp;
+	MPIR_Datatype 	*dtp;
 	MPI_Aint	true_lb;
 
 	MPIDI_Datatype_get_info(count, datatype,
@@ -37,7 +37,7 @@ int MPID_PSP_packed_msg_prepare(const void *addr, int count, MPI_Datatype dataty
 		msg->tmp_buf = NULL;
 	} else {
 		/* non-contiguous */
-		char *tmp_buf = MPIU_Malloc(data_sz);
+		char *tmp_buf = MPL_malloc(data_sz, MPL_MEM_OTHER);
 
 		msg->msg = tmp_buf;
 		msg->msg_sz = data_sz;
@@ -72,11 +72,11 @@ void MPID_PSP_packed_msg_pack(const void *src_addr, int src_count, MPI_Datatype 
 			      const MPID_PSP_packed_msg_t *msg)
 {
 	if (msg->tmp_buf) {
-		MPID_Segment segment;
+		MPIR_Segment segment;
 		DLOOP_Offset last = msg->msg_sz;
 
-		MPID_Segment_init(src_addr, src_count, src_datatype, &segment, 0);
-		MPID_Segment_pack(&segment, /* first */0, &last, msg->tmp_buf);
+		MPIR_Segment_init(src_addr, src_count, src_datatype, &segment);
+		MPIR_Segment_pack(&segment, /* first */0, &last, msg->tmp_buf);
 	}
 }
 
@@ -96,11 +96,11 @@ int MPID_PSP_packed_msg_unpack(const void *addr, int count, MPI_Datatype datatyp
                                const MPID_PSP_packed_msg_t *msg, size_t data_len)
 {
 	if (msg->tmp_buf) {
-		MPID_Segment segment;
+		MPIR_Segment segment;
 		DLOOP_Offset last  = pscom_min(msg->msg_sz, data_len);
 
-		MPID_Segment_init(addr, count, datatype, &segment, 0);
-		MPID_Segment_unpack(&segment, /* first */0, &last, msg->tmp_buf);
+		MPIR_Segment_init(addr, count, datatype, &segment);
+		MPIR_Segment_unpack(&segment, /* first */0, &last, msg->tmp_buf);
 		/* From ch3u_handle_recv_pkt.c:
 		   "If the data can't be unpacked, then we have a mismatch between
 		   the datatype and the amount of data received."
@@ -120,7 +120,7 @@ static inline
 void MPID_PSP_packed_msg_cleanup(MPID_PSP_packed_msg_t *msg)
 {
 	if (msg->tmp_buf) {
-		MPIU_Free(msg->tmp_buf);
+		MPL_free(msg->tmp_buf);
 		msg->tmp_buf = NULL;
 	}
 }
@@ -132,7 +132,7 @@ void MPID_PSP_packed_msg_cleanup_datatype(MPID_PSP_packed_msg_t *msg, MPI_Dataty
 	MPID_PSP_Datatype_release(datatype);
 
 	if (msg->tmp_buf) {
-		MPIU_Free(msg->tmp_buf);
+		MPL_free(msg->tmp_buf);
 		msg->tmp_buf = NULL;
 	}
 }

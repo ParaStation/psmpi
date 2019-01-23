@@ -74,7 +74,7 @@ Sonstige:
  * void MPID_PSP_SendCtrl(int tag, int context_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype)
    non blocking, braucht keine locks. Betritt pscom.
 
- * void MPID_PSP_SendRmaCtrl(MPID_Win *win_ptr, MPID_Comm *comm, pscom_connection_t *con,
+ * void MPID_PSP_SendRmaCtrl(MPIR_Win *win_ptr, MPIR_Comm *comm, pscom_connection_t *con,
  			  int dest_rank, enum MPID_PSP_MSGTYPE msgtype)
    non blocking, braucht keine locks. Betritt pscom.
 
@@ -86,16 +86,6 @@ Sicher gegen gleichzeitigen Aufruf?
     Requests die einen *req->cc_ptr von 1 haben rufen maximal einmal
     MPID_PSP_Subrequest_completed auf. Höhere *cc_ptr könnten einen
     Lock erfordern damit "(*(req->cc_ptr))--;" atomisch wird (?)
-
- * void MPID_PSP_Request_dequeue(MPID_Request *req, MPID_Request_kind_t kind)
-   -> MPID_DEV_Request_release_ref(req, kind);
-   -> void MPID_DEV_Request_???_destroy(MPID_Request *req)
-   -> MPID_DEV_Request_common_destroy(req);
-   -> MPID_PSP_Request_destroy(req);
-   -> prep_req_enqueue(req);
-  
-   Die Funktion prep_req_enqueue Benutzt die Queue
-   prep_req_queue. Diese ist gesichert durch prep_req_mutex.
 
 
 ---------------------------

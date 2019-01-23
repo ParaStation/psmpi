@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2014 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -28,7 +28,7 @@
 static
 int cb_accept_data_mprobe(pscom_request_t *request, pscom_connection_t *connection, pscom_header_net_t *header_net)
 {
-	MPID_Request *req = request->user->type.sr.mpid_req;
+	MPIR_Request *req = request->user->type.sr.mpid_req;
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 	MPID_PSCOM_XHeader_t *xhead = &header_net->xheader->user.common;
 
@@ -56,7 +56,7 @@ int cb_accept_data_mprobe(pscom_request_t *request, pscom_connection_t *connecti
 static
 int cb_accept_data_mrecv(pscom_request_t *request, pscom_connection_t *connection, pscom_header_net_t *header_net)
 {
-	MPID_Request *req = request->user->type.sr.mpid_req;
+	MPIR_Request *req = request->user->type.sr.mpid_req;
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 	MPID_PSCOM_XHeader_t *xhead = &header_net->xheader->user.common;
 
@@ -66,7 +66,7 @@ int cb_accept_data_mrecv(pscom_request_t *request, pscom_connection_t *connectio
 }
 
 static
-void prepare_mprobereq(MPID_Request *req, int tag, MPID_Comm * comm, int context_offset)
+void prepare_mprobereq(MPIR_Request *req, int tag, MPIR_Comm * comm, int context_offset)
 {
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 	pscom_request_t *preq = rreq->common.pscom_req;
@@ -106,19 +106,19 @@ void mreceive_done_noncontig(pscom_request_t *request)
 }
 
 static
-void prepare_mrecvreq(MPID_Request *req)
+void prepare_mrecvreq(MPIR_Request *req)
 {
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 	pscom_request_t *preq = rreq->common.pscom_req;
 
 	/* convert the mprobe request (aka MPI_Message) back into a recv request: */
-	req->kind = MPID_REQUEST_RECV;
+	req->kind = MPIR_REQUEST_KIND__RECV;
 
 	preq->ops.recv_accept = cb_accept_data_mrecv;
 }
 
 static
-void prepare_mrecv_cleanup(MPID_Request *req, void * buf, int count, MPI_Datatype datatype)
+void prepare_mrecv_cleanup(MPIR_Request *req, void * buf, int count, MPI_Datatype datatype)
 {
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 	pscom_request_t *preq = rreq->common.pscom_req;
@@ -128,15 +128,16 @@ void prepare_mrecv_cleanup(MPID_Request *req, void * buf, int count, MPI_Datatyp
 }
 
 
-int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype, MPID_Request *message, MPID_Request **request)
+int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype, MPIR_Request *message, MPIR_Request **request)
 {
-	MPID_Request *req;
+	MPIR_Request *req;
 	int rank;
 
 	if (message == NULL) {
-		req = MPID_DEV_Request_recv_create(NULL);
+		req = MPIR_Request_create(MPIR_REQUEST_KIND__RECV);
+		req->comm = NULL;
 		MPIR_Status_set_procnull(&req->status);
-		MPID_PSP_Request_set_completed(req);
+		MPIDI_PSP_Request_set_completed(req);
 		*request = req;
 		return MPI_SUCCESS;
 	}
@@ -154,14 +155,14 @@ int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype, MPID_Request *messa
 
 		prepare_mrecv_cleanup(req, buf, count, datatype);
 
-		MPID_PSP_Request_enqueue(req);
+		MPIR_Request_add_ref(req);
 
 		pscom_post_recv(req->dev.kind.recv.common.pscom_req);
 
 	} else {
 		assert(rank == MPI_PROC_NULL);
 		/* MPIR_Status_set_procnull(&req->status); already called in MPID_Mprobe or MPID_Improbe */
-		MPID_PSP_Request_set_completed(req);
+		MPIDI_PSP_Request_set_completed(req);
 	}
 
 	*request = req;
@@ -169,10 +170,11 @@ int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype, MPID_Request *messa
 	return MPI_SUCCESS;
 }
 
-int MPID_Mrecv(void *buf, int count, MPI_Datatype datatype,  MPID_Request *message, MPI_Status *status)
+/* TODO: What about the last parameter? */
+int MPID_Mrecv(void *buf, int count, MPI_Datatype datatype,  MPIR_Request *message, MPI_Status *status, MPIR_Request **rreq)
 {
 	int mpi_errno;
-	MPID_Request *request;
+	MPIR_Request *request;
 
 	if (message == NULL) {
 		MPIR_Status_set_procnull(status);
@@ -183,20 +185,20 @@ int MPID_Mrecv(void *buf, int count, MPI_Datatype datatype,  MPID_Request *messa
 	mpi_errno = MPID_Imrecv(buf, count, datatype, message, &request);
 
 	if (mpi_errno == MPI_SUCCESS) {
-		mpi_errno = MPID_PSP_Wait(request);
+		mpi_errno = MPIDI_PSP_Wait(request);
 	}
 
 	MPIR_Request_extract_status(request, status);
-	MPID_DEV_Request_release_ref(request, MPID_REQUEST_RECV);
+	MPIR_Request_free(request);
 
 	return mpi_errno;
 }
 
-int MPID_Mprobe(int rank, int tag, MPID_Comm *comm, int context_offset, MPID_Request **message, MPI_Status *status)
+int MPID_Mprobe(int rank, int tag, MPIR_Comm *comm, int context_offset, MPIR_Request **message, MPI_Status *status)
 {
 	pscom_connection_t *con;
 	pscom_socket_t *sock;
-	MPID_Request *req;
+	MPIR_Request *req;
 
 	*message = NULL;
 
@@ -205,8 +207,10 @@ int MPID_Mprobe(int rank, int tag, MPID_Comm *comm, int context_offset, MPID_Req
 
 	if (con || (rank == MPI_ANY_SOURCE)) {
 
-		req = MPID_DEV_Request_recv_create(comm);
+		req = MPIR_Request_create(MPIR_REQUEST_KIND__RECV);
 		if (unlikely(!req)) goto err_request_recv_create;
+		req->comm = comm;
+		MPIR_Comm_add_ref(comm);
 
 		prepare_mprobereq(req, tag, comm, context_offset);
 		prepare_source(req, con, sock);
@@ -218,7 +222,7 @@ int MPID_Mprobe(int rank, int tag, MPID_Comm *comm, int context_offset, MPID_Req
 		set_probe_status(req->dev.kind.recv.common.pscom_req, &req->status);
 
 		/* convert the recv request into an mprobe request (aka MPI_Message) and return it: */
-		req->kind = MPID_REQUEST_MPROBE;
+		req->kind = MPIR_REQUEST_KIND__MPROBE;
 		*message = req;
 
 	} else switch (rank) {
@@ -239,11 +243,11 @@ err_rank:
 	return  MPI_ERR_RANK;
 }
 
-int MPID_Improbe(int rank, int tag, MPID_Comm *comm, int context_offset, int *flag, MPID_Request **message, MPI_Status *status)
+int MPID_Improbe(int rank, int tag, MPIR_Comm *comm, int context_offset, int *flag, MPIR_Request **message, MPI_Status *status)
 {
 	pscom_connection_t *con;
 	pscom_socket_t *sock;
-	MPID_Request *req;
+	MPIR_Request *req;
 
 	*message = NULL;
 
@@ -252,8 +256,10 @@ int MPID_Improbe(int rank, int tag, MPID_Comm *comm, int context_offset, int *fl
 
 	if (con || (rank == MPI_ANY_SOURCE)) {
 
-		req = MPID_DEV_Request_recv_create(comm);
+		req = MPIR_Request_create(MPIR_REQUEST_KIND__RECV);
 		if (unlikely(!req)) goto err_request_recv_create;
+		req->comm = comm;
+		MPIR_Comm_add_ref(comm);
 
 		prepare_mprobereq(req, tag, comm, context_offset);
 
@@ -265,11 +271,11 @@ int MPID_Improbe(int rank, int tag, MPID_Comm *comm, int context_offset, int *fl
 			/* Save the status */
 			set_probe_status(req->dev.kind.recv.common.pscom_req, &req->status);
 			/* convert the recv request into an mprobe request (aka MPI_Message): */
-			req->kind = MPID_REQUEST_MPROBE;
+			req->kind = MPIR_REQUEST_KIND__MPROBE;
 		} else {
 			/* No matching message found. Release the request. */
 			MPID_PSP_Subrequest_completed(req);
-			MPID_DEV_Request_release_ref(req, MPID_REQUEST_RECV);
+			MPIR_Request_free(req);
 			req = NULL;
 		}
 

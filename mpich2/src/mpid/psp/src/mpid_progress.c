@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -22,7 +22,7 @@
 
 
 static inline
-void MPID_DEV_Request_common_wait(MPID_Request *req)
+void MPID_DEV_Request_common_wait(MPIR_Request *req)
 {
 	static unsigned int counter_to_nbc_progress = 0;
 	int made_progress;
@@ -42,28 +42,28 @@ void MPID_DEV_Request_common_wait(MPID_Request *req)
 
 
 static inline
-void MPID_DEV_Request_send_wait(MPID_Request *req)
+void MPID_DEV_Request_send_wait(MPIR_Request *req)
 {
 	MPID_DEV_Request_common_wait(req);
 }
 
 
 static inline
-void MPID_DEV_Request_recv_wait(MPID_Request *req)
+void MPID_DEV_Request_recv_wait(MPIR_Request *req)
 {
 	MPID_DEV_Request_common_wait(req);
 }
 
 
 static inline
-void MPID_DEV_Request_psend_wait(MPID_Request *req)
+void MPID_DEV_Request_psend_wait(MPIR_Request *req)
 {
 	MPID_DEV_Request_send_wait(req);
 }
 
 
 static inline
-void MPID_DEV_Request_precv_wait(MPID_Request *req)
+void MPID_DEV_Request_precv_wait(MPIR_Request *req)
 {
 	MPID_DEV_Request_recv_wait(req);
 }
@@ -71,51 +71,51 @@ void MPID_DEV_Request_precv_wait(MPID_Request *req)
 
 /* Dont use request after MPID_DEV_Request_wait(), until you hold one additional ref! */
 static inline
-void MPID_DEV_Request_wait(MPID_Request *req)
+void MPID_DEV_Request_wait(MPIR_Request *req)
 {
 	switch (req->kind) {
-	case MPID_REQUEST_RECV:
+	case MPIR_REQUEST_KIND__RECV:
 		MPID_DEV_Request_recv_wait(req);
 		break;
-	case MPID_REQUEST_SEND:
+	case MPIR_REQUEST_KIND__SEND:
 		MPID_DEV_Request_send_wait(req);
 		break;
-	case MPID_PREQUEST_RECV:
+	case MPIR_REQUEST_KIND__PREQUEST_RECV:
 		MPID_DEV_Request_precv_wait(req);
 		break;
-	case MPID_PREQUEST_SEND:
+	case MPIR_REQUEST_KIND__PREQUEST_SEND:
 		MPID_DEV_Request_psend_wait(req);
 		break;
 /*
-	case MPID_REQUEST_MULTI:
+	case MPIR_REQUEST_KIND__MULTI:
 			MPID_DEV_Request_multi_wait(req);
 			break;
 */
-	case MPID_COLL_REQUEST:
+	case MPIR_REQUEST_KIND__COLL:
 		/* ToDo: Unhandled request type!!! */
 #		define MPID_COLL_REQUEST_NOT_IMPLEMENTED 0
 		assert(MPID_COLL_REQUEST_NOT_IMPLEMENTED);
 		break;
-	case MPID_REQUEST_MPROBE:
+	case MPIR_REQUEST_KIND__MPROBE:
 		/* ToDo: Unhandled request type!!! */
-#		define MPID_REQUEST_MPROBE_NOT_IMPLEMENTED 0
-		assert(MPID_REQUEST_MPROBE_NOT_IMPLEMENTED);
+#		define MPIR_REQUEST_KIND__MPROBE_NOT_IMPLEMENTED 0
+		assert(MPIR_REQUEST_KIND__MPROBE_NOT_IMPLEMENTED);
 		break;
-	case MPID_WIN_REQUEST:
+	case MPIR_REQUEST_KIND__RMA:
 		/* ToDo: Unhandled request type!!! */
-#		define MPID_WIN_REQUEST_NOT_IMPLEMENTED 0
-		assert(MPID_WIN_REQUEST_NOT_IMPLEMENTED);
+#		define MPIR_REQUEST_KIND__RMA_NOT_IMPLEMENTED 0
+		assert(MPIR_REQUEST_KIND__RMA_NOT_IMPLEMENTED);
 		break;
-	case MPID_UREQUEST:
-	case MPID_REQUEST_UNDEFINED:
-	case MPID_LAST_REQUEST_KIND:
+	case MPIR_REQUEST_KIND__GREQUEST:
+	case MPIR_REQUEST_KIND__UNDEFINED:
+	case MPIR_REQUEST_KIND__LAST:
 		assert(0);
 		break;
 	}
 }
 
 
-void MPID_Progress_start(MPID_Progress_state * state)
+void MPIDI_PSP_Progress_start(MPID_Progress_state * state)
 {
 }
 
@@ -132,7 +132,7 @@ void MPID_Progress_start(MPID_Progress_state * state)
 #endif
 
 /*  Wait for some communication since 'MPID_Progress_start'  */
-int MPID_Progress_wait(MPID_Progress_state * state)
+int MPIDI_PSP_Progress_wait(MPID_Progress_state * state)
 {
 	int made_progress;
 	int mpi_errno;
@@ -149,7 +149,7 @@ int MPID_Progress_wait(MPID_Progress_state * state)
 }
 
 
-void MPID_Progress_end(MPID_Progress_state * state)
+void MPIDI_PSP_Progress_end(MPID_Progress_state * state)
 {
 }
 
@@ -164,7 +164,7 @@ void MPID_Progress_end(MPID_Progress_state * state)
   Unlike 'MPID_Progress_wait', this routine is nonblocking.  Therefore, it
   does not require the use of 'MPID_Progress_start' and 'MPID_Progress_end'.
 */
-int MPID_Progress_test(void)
+int MPIDI_PSP_Progress_test(void)
 {
 	int made_progress;
 	int mpi_errno;
@@ -192,14 +192,16 @@ int MPID_Progress_test(void)
 
   ch3 use this: #define MPIDI_CH3_Progress_poke() (MPIDI_CH3_Progress_test())
 */
-int MPID_Progress_poke(void)
+int MPIDI_PSP_Progress_poke(void)
 {
 	MPID_Progress_test();
 	return MPI_SUCCESS;
 }
 
 
-int MPID_PSP_Wait(MPID_Request *request)
+
+
+int MPIDI_PSP_Wait(MPIR_Request *request)
 {
 	MPID_DEV_Request_wait(request);
 

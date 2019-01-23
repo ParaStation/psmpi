@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -12,7 +12,6 @@
 
 #include <assert.h>
 #include "mpidimpl.h"
-#include "mpl_utlist.h"
 
 // This must be the last include before sysmbols are defined:
 #include "mpid_visibility.h"
@@ -21,11 +20,7 @@
 static int ENABLE_REAL_DISCONNECT = 1;
 static int ENABLE_LAZY_DISCONNECT = 1;
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
-#ifndef MPID_USE_NODE_IDS
-#error "PSP: The SMP-aware collops features requires that USE_NODE_IDS is enabled for MPICH!"
-#endif
-int MPID_Get_node_id(MPID_Comm *comm, int rank, MPID_Node_id_t *id_p)
+int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 {
 	int i;
 	int pg_check_id;
@@ -56,7 +51,7 @@ int MPID_Get_node_id(MPID_Comm *comm, int rank, MPID_Node_id_t *id_p)
 	return 0;
 }
 
-int MPID_Get_max_node_id(MPID_Comm *comm, MPID_Node_id_t *max_id_p)
+int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 {
 	if(!MPIDI_Process.node_id_table) {
 		/* Most likely that SMP-awareness has been disabled due to process spawning... */
@@ -66,7 +61,6 @@ int MPID_Get_max_node_id(MPID_Comm *comm, MPID_Node_id_t *max_id_p)
 	*max_id_p = MPIDI_Process.my_pg_size;
 	return 0;
 }
-#endif
 
 int MPID_PSP_get_host_hash()
 {
@@ -88,7 +82,7 @@ int MPIDI_VCR_DeleteFromPG(MPIDI_VC_t *vcr);
 static
 MPIDI_VC_t *new_VCR(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid)
 {
-	MPIDI_VC_t *vcr = MPIU_Malloc(sizeof(*vcr));
+	MPIDI_VC_t *vcr = MPL_malloc(sizeof(*vcr), MPL_MEM_OTHER);
 	assert(vcr);
 
 	vcr->con = con;
@@ -124,7 +118,7 @@ void VCR_put(MPIDI_VC_t *vcr, int isDisconnect)
 			pscom_close_connection(vcr->con);
 		}
 
-		MPIU_Free(vcr);
+		MPL_free(vcr);
 	}
 }
 
@@ -143,7 +137,7 @@ MPIDI_VCRT_t *MPIDI_VCRT_Create(int size)
 
 	assert(size >= 0);
 
-	vcrt = MPIU_Malloc(sizeof(MPIDI_VCRT_t) + size * sizeof(MPIDI_VC_t));
+	vcrt = MPL_malloc(sizeof(MPIDI_VCRT_t) + size * sizeof(MPIDI_VC_t), MPL_MEM_OTHER);
 
 	Dprintf("(size=%d), vcrt=%p", size, vcrt);
 
@@ -187,7 +181,7 @@ void MPIDI_VCRT_Destroy(MPIDI_VCRT_t *vcrt, int isDisconnect)
 		if (vcr) VCR_put(vcr, isDisconnect);
 	}
 
-	MPIU_Free(vcrt);
+	MPL_free(vcrt);
 }
 
 int MPIDI_VCRT_Release(MPIDI_VCRT_t *vcrt, int isDisconnect)
@@ -249,9 +243,9 @@ int MPIDI_VCR_DeleteFromPG(MPIDI_VC_t *vcr)
 }
 
 
-int MPID_Comm_get_lpid(MPID_Comm *comm_ptr, int idx, int * lpid_ptr, MPIU_BOOL is_remote)
+int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, int * lpid_ptr, bool is_remote)
 {
-	if (comm_ptr->comm_kind == MPID_INTRACOMM || is_remote) {
+	if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM || is_remote) {
 		*lpid_ptr = comm_ptr->vcr[idx]->lpid;
 	} else {
 		*lpid_ptr = comm_ptr->local_vcr[idx]->lpid;
@@ -261,7 +255,7 @@ int MPID_Comm_get_lpid(MPID_Comm *comm_ptr, int idx, int * lpid_ptr, MPIU_BOOL i
 }
 
 
-int MPID_PSP_comm_create_hook(MPID_Comm * comm)
+int MPID_PSP_comm_create_hook(MPIR_Comm * comm)
 {
 	pscom_connection_t *con1st;
 	int i;
@@ -272,7 +266,7 @@ int MPID_PSP_comm_create_hook(MPID_Comm * comm)
 
 	comm->group = NULL;
 
-	if (comm->comm_kind == MPID_INTERCOMM) {
+	if (comm->comm_kind == MPIR_COMM_KIND__INTERCOMM) {
 		/* do nothing on Intercomms */
 		comm->pscom_socket = NULL;
 		return MPI_SUCCESS;
@@ -305,12 +299,12 @@ int MPID_PSP_comm_create_hook(MPID_Comm * comm)
 	return MPI_SUCCESS;
 }
 
-int MPID_PSP_comm_destroy_hook(MPID_Comm * comm)
+int MPID_PSP_comm_destroy_hook(MPIR_Comm * comm)
 {
 	MPIDI_VCRT_Release(comm->vcrt, comm->is_disconnected);
 	comm->vcr = NULL;
 
-	if (comm->comm_kind == MPID_INTERCOMM) {
+	if (comm->comm_kind == MPIR_COMM_KIND__INTERCOMM) {
 		MPIDI_VCRT_Release(comm->local_vcrt, comm->is_disconnected);
 	}
 
@@ -323,6 +317,167 @@ int MPID_PSP_comm_destroy_hook(MPID_Comm * comm)
 	return MPI_SUCCESS;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_LPID_GetAllInComm
+#undef FCNAME
+#define FCNAME MPL_QUOTE(FUNCNAME)
+static inline int MPIDI_LPID_GetAllInComm(MPIR_Comm *comm_ptr, int local_size,
+                                          int local_lpids[])
+{
+    int i;
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_Assert( comm_ptr->local_size == local_size );
+    for (i=0; i<comm_ptr->local_size; i++) {
+		mpi_errno |= MPID_Comm_get_lpid( comm_ptr, i, &local_lpids[i], FALSE );
+    }
+    return mpi_errno;
+}
+
+/*@
+  MPID_Intercomm_exchange_map - Exchange address mapping for intercomm creation.
+ @*/
+#undef FUNCNAME
+#define FUNCNAME MPID_Intercomm_exchange_map
+#undef FCNAME
+#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
+                                MPIR_Comm *peer_comm_ptr, int remote_leader,
+                                int *remote_size, int **remote_lpids,
+                                int *is_low_group)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int singlePG;
+    int local_size,*local_lpids=0;
+    MPIDI_Gpid *local_gpids=NULL, *remote_gpids=NULL;
+    int comm_info[2];
+    int cts_tag;
+    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
+    MPIR_CHKLMEM_DECL(3);
+
+    cts_tag = 0 | MPIR_TAG_COLL_BIT;
+
+    if (local_comm_ptr->rank == local_leader) {
+
+        /* First, exchange the group information.  If we were certain
+           that the groups were disjoint, we could exchange possible
+           context ids at the same time, saving one communication.
+           But experience has shown that that is a risky assumption.
+        */
+        /* Exchange information with my peer.  Use sendrecv */
+
+        local_size = local_comm_ptr->local_size;
+
+        mpi_errno = MPIC_Sendrecv( &local_size,  1, MPI_INT,
+                                      remote_leader, cts_tag,
+                                      remote_size, 1, MPI_INT,
+                                      remote_leader, cts_tag,
+                                      peer_comm_ptr, MPI_STATUS_IGNORE, &errflag );
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+
+        /* With this information, we can now send and receive the
+           global process ids from the peer. */
+        MPIR_CHKLMEM_MALLOC(remote_gpids,MPIDI_Gpid*,(*remote_size)*sizeof(MPIDI_Gpid), mpi_errno,"remote_gpids", MPL_MEM_DYNAMIC);
+        *remote_lpids = (int*) MPL_malloc((*remote_size)*sizeof(int), MPL_MEM_ADDRESS);
+        MPIR_CHKLMEM_MALLOC(local_gpids,MPIDI_Gpid*,local_size*sizeof(MPIDI_Gpid), mpi_errno,"local_gpids", MPL_MEM_DYNAMIC);
+        MPIR_CHKLMEM_MALLOC(local_lpids,int*,local_size*sizeof(int), mpi_errno,"local_lpids", MPL_MEM_DYNAMIC);
+
+        mpi_errno = MPIDI_GPID_GetAllInComm( local_comm_ptr, local_size, local_gpids, &singlePG );
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+
+        /* Exchange the lpid arrays */
+        mpi_errno = MPIC_Sendrecv( local_gpids, local_size*sizeof(MPIDI_Gpid), MPI_BYTE,
+                                      remote_leader, cts_tag,
+                                      remote_gpids, (*remote_size)*sizeof(MPIDI_Gpid), MPI_BYTE,
+                                      remote_leader, cts_tag, peer_comm_ptr,
+                                      MPI_STATUS_IGNORE, &errflag );
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+
+        /* Convert the remote gpids to the lpids */
+        mpi_errno = MPIDI_GPID_ToLpidArray( *remote_size, remote_gpids, *remote_lpids );
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+
+        /* Get our own lpids */
+        mpi_errno = MPIDI_LPID_GetAllInComm( local_comm_ptr, local_size, local_lpids );
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+
+        /* Make an arbitrary decision about which group of processs is
+		   the low group.  The LEADERS do this by comparing the
+		   local gpids of the 0th member of the two groups. If these match,
+		   they fall back to the rank ID within that gpid */
+		if (local_gpids[0].gpid[0] == remote_gpids[0].gpid[0]) {
+			(*is_low_group) = local_gpids[0].gpid[1] < remote_gpids[0].gpid[1];
+		} else {
+			(*is_low_group) = local_gpids[0].gpid[0] < remote_gpids[0].gpid[0];
+		}
+
+        /* At this point, we're done with the local lpids; they'll
+           be freed with the other local memory on exit */
+
+    } /* End of the first phase of the leader communication */
+    /* Leaders can now swap context ids and then broadcast the value
+       to the local group of processes */
+    if (local_comm_ptr->rank == local_leader) {
+        /* Now, send all of our local processes the remote_lpids,
+           along with the final context id */
+        comm_info[0] = *remote_size;
+        comm_info[1] = *is_low_group;
+        mpi_errno = MPIR_Bcast( comm_info, 2, MPI_INT, local_leader, local_comm_ptr, &errflag );
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+        mpi_errno = MPIR_Bcast( remote_gpids, (*remote_size)*sizeof(MPIDI_Gpid), MPI_BYTE, local_leader,
+                                     local_comm_ptr, &errflag );
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+    }
+    else
+    {
+        /* we're the other processes */
+        mpi_errno = MPIR_Bcast( comm_info, 2, MPI_INT, local_leader, local_comm_ptr, &errflag );
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+        *remote_size = comm_info[0];
+        MPIR_CHKLMEM_MALLOC(remote_gpids,MPIDI_Gpid*,(*remote_size)*sizeof(MPIDI_Gpid), mpi_errno,"remote_gpids", MPL_MEM_DYNAMIC);
+        *remote_lpids = (int*) MPL_malloc((*remote_size)*sizeof(int), MPL_MEM_ADDRESS);
+        mpi_errno = MPIR_Bcast( remote_gpids, (*remote_size)*sizeof(MPIDI_Gpid), MPI_BYTE, local_leader,
+                                     local_comm_ptr, &errflag );
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+
+        /* Extract the context and group sign informatin */
+        *is_low_group     = comm_info[1];
+    }
+
+    /* Finish up by giving the device the opportunity to update
+       any other infomration among these processes.  Note that the
+       new intercomm has not been set up; in fact, we haven't yet
+       attempted to set up the connection tables.
+
+       In the case of the ch3 device, this calls MPID_PG_ForwardPGInfo
+       to ensure that all processes have the information about all
+       process groups.  This must be done before the call
+       to MPID_GPID_ToLpidArray, as that call needs to know about
+       all of the process groups.
+    */
+    MPID_ICCREATE_REMOTECOMM_HOOK( peer_comm_ptr, local_comm_ptr,
+                            *remote_size, (const MPIDI_Gpid*)remote_gpids, local_leader );
+
+
+    /* Finally, if we are not the local leader, we need to
+       convert the remote gpids to local pids.  This must be done
+       after we allow the device to handle any steps that it needs to
+       take to ensure that all processes contain the necessary process
+       group information */
+    if (local_comm_ptr->rank != local_leader) {
+        mpi_errno = MPIDI_GPID_ToLpidArray( *remote_size, remote_gpids, *remote_lpids );
+        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+    }
+
+fn_exit:
+    MPIR_CHKLMEM_FREEALL();
+    return mpi_errno;
+fn_fail:
+    goto fn_exit;
+}
 
 /*
  * Mapper Tools
@@ -343,11 +498,11 @@ void MPID_PSP_mapper_dup_vcrt(MPIDI_VCRT_t* src_vcrt, MPIDI_VCRT_t **dest_vcrt,
 	/* try to find the simple case where the new comm is a simple
 	 * duplicate of the previous comm.  in that case, we simply add a
 	 * reference to the previous VCRT instead of recreating it. */
-	if (mapper->type == MPIR_COMM_MAP_DUP && src_comm_size == vcrt_size) {
+	if (mapper->type == MPIR_COMM_MAP_TYPE__DUP && src_comm_size == vcrt_size) {
 		*dest_vcrt = MPIDI_VCRT_Dup(src_vcrt);
 		return;
 	}
-	else if (mapper->type == MPIR_COMM_MAP_IRREGULAR &&
+	else if (mapper->type == MPIR_COMM_MAP_TYPE__IRREGULAR &&
 		 mapper->src_mapping_size == vcrt_size) {
 		/* if the mapping array is exactly the same as the original
 		 * comm's VC list, there is no need to create a new VCRT.
@@ -371,7 +526,7 @@ void MPID_PSP_mapper_dup_vcrt(MPIDI_VCRT_t* src_vcrt, MPIDI_VCRT_t **dest_vcrt,
 		*dest_vcrt = MPIDI_VCRT_Create(vcrt_size);
 	}
 
-	if (mapper->type == MPIR_COMM_MAP_DUP) {
+	if (mapper->type == MPIR_COMM_MAP_TYPE__DUP) {
 		for (i = 0; i < src_comm_size; i++)
 			(*dest_vcrt)->vcr[i + vcrt_offset] = MPIDI_VC_Dup(src_vcrt->vcr[i]);
 	}
@@ -384,12 +539,12 @@ void MPID_PSP_mapper_dup_vcrt(MPIDI_VCRT_t* src_vcrt, MPIDI_VCRT_t **dest_vcrt,
 static
 unsigned MPID_PSP_mapper_size(MPIR_Comm_map_t *mapper)
 {
-	if (mapper->type == MPIR_COMM_MAP_IRREGULAR) {
+	if (mapper->type == MPIR_COMM_MAP_TYPE__IRREGULAR) {
 		return mapper->src_mapping_size;
-	} else if (mapper->dir == MPIR_COMM_MAP_DIR_L2L || mapper->dir == MPIR_COMM_MAP_DIR_L2R) {
+	} else if (mapper->dir == MPIR_COMM_MAP_DIR__L2L || mapper->dir == MPIR_COMM_MAP_DIR__L2R) {
 		return mapper->src_comm->local_size;
 	} else {
-		assert(mapper->dir == MPIR_COMM_MAP_DIR_R2L || mapper->dir == MPIR_COMM_MAP_DIR_R2R);
+		assert(mapper->dir == MPIR_COMM_MAP_DIR__R2L || mapper->dir == MPIR_COMM_MAP_DIR__R2R);
 		return mapper->src_comm->remote_size;
 	}
 }
@@ -404,9 +559,9 @@ unsigned MPID_PSP_mapper_list_dest_local_size(MPIR_Comm_map_t *mapper_head)
 {
 	MPIR_Comm_map_t *mapper;
 	unsigned size = 0;
-	MPL_LL_FOREACH(mapper_head, mapper) {
-		if (mapper->dir == MPIR_COMM_MAP_DIR_L2L ||
-		    mapper->dir == MPIR_COMM_MAP_DIR_R2L) {
+	LL_FOREACH(mapper_head, mapper) {
+		if (mapper->dir == MPIR_COMM_MAP_DIR__L2L ||
+		    mapper->dir == MPIR_COMM_MAP_DIR__R2L) {
 			size += MPID_PSP_mapper_size(mapper);
 		}
 	}
@@ -419,9 +574,9 @@ unsigned MPID_PSP_mapper_list_dest_remote_size(MPIR_Comm_map_t *mapper_head)
 {
 	MPIR_Comm_map_t *mapper;
 	unsigned size = 0;
-	MPL_LL_FOREACH(mapper_head, mapper) {
-		if (mapper->dir == MPIR_COMM_MAP_DIR_L2R ||
-		    mapper->dir == MPIR_COMM_MAP_DIR_R2R) {
+	LL_FOREACH(mapper_head, mapper) {
+		if (mapper->dir == MPIR_COMM_MAP_DIR__L2R ||
+		    mapper->dir == MPIR_COMM_MAP_DIR__R2R) {
 			size += MPID_PSP_mapper_size(mapper);
 		}
 	}
@@ -430,31 +585,31 @@ unsigned MPID_PSP_mapper_list_dest_remote_size(MPIR_Comm_map_t *mapper_head)
 
 
 static
-void MPID_PSP_mapper_list_map_local_vcr(MPID_Comm *comm, int vcrt_size)
+void MPID_PSP_mapper_list_map_local_vcr(MPIR_Comm *comm, int vcrt_size)
 {
-	MPID_Comm *src_comm;
+	MPIR_Comm *src_comm;
 	MPIR_Comm_map_t *mapper;
 	int vcrt_offset = 0;
 
-	MPL_LL_FOREACH(comm->mapper_head, mapper) {
+	LL_FOREACH(comm->mapper_head, mapper) {
 		src_comm = mapper->src_comm;
 
 		switch(mapper->dir) {
 
-		case MPIR_COMM_MAP_DIR_L2R:
-		case MPIR_COMM_MAP_DIR_R2R:
+		case MPIR_COMM_MAP_DIR__L2R:
+		case MPIR_COMM_MAP_DIR__R2R:
 			break;
 
-		case MPIR_COMM_MAP_DIR_L2L:
-			if (src_comm->comm_kind == MPID_INTRACOMM && comm->comm_kind == MPID_INTRACOMM) {
+		case MPIR_COMM_MAP_DIR__L2L:
+			if (src_comm->comm_kind == MPIR_COMM_KIND__INTRACOMM && comm->comm_kind == MPIR_COMM_KIND__INTRACOMM) {
 				MPID_PSP_mapper_dup_vcrt(src_comm->vcrt, &comm->vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
 				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
 			}
-			else if (src_comm->comm_kind == MPID_INTRACOMM && comm->comm_kind == MPID_INTERCOMM) {
+			else if (src_comm->comm_kind == MPIR_COMM_KIND__INTRACOMM && comm->comm_kind == MPIR_COMM_KIND__INTERCOMM) {
 				MPID_PSP_mapper_dup_vcrt(src_comm->vcrt, &comm->local_vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
 				MPID_PSP_comm_set_local_vcrt(comm, comm->local_vcrt);
 			}
-			else if (src_comm->comm_kind == MPID_INTERCOMM && comm->comm_kind == MPID_INTRACOMM) {
+			else if (src_comm->comm_kind == MPIR_COMM_KIND__INTERCOMM && comm->comm_kind == MPIR_COMM_KIND__INTRACOMM) {
 				MPID_PSP_mapper_dup_vcrt(src_comm->local_vcrt, &comm->vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
 				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
 			}
@@ -465,9 +620,9 @@ void MPID_PSP_mapper_list_map_local_vcr(MPID_Comm *comm, int vcrt_size)
 			vcrt_offset += MPID_PSP_mapper_size(mapper);
 			break;
 
-		case MPIR_COMM_MAP_DIR_R2L:
-			MPIU_Assert(src_comm->comm_kind == MPID_INTERCOMM);
-			if (comm->comm_kind == MPID_INTRACOMM) {
+		case MPIR_COMM_MAP_DIR__R2L:
+			MPIR_Assert(src_comm->comm_kind == MPIR_COMM_KIND__INTERCOMM);
+			if (comm->comm_kind == MPIR_COMM_KIND__INTRACOMM) {
 				MPID_PSP_mapper_dup_vcrt(src_comm->vcrt, &comm->vcrt, mapper, mapper->src_comm->remote_size, vcrt_size, vcrt_offset);
 				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
 			}
@@ -484,24 +639,24 @@ void MPID_PSP_mapper_list_map_local_vcr(MPID_Comm *comm, int vcrt_size)
 }
 
 static
-void MPID_PSP_mapper_list_map_remote_vcr(MPID_Comm *comm, int vcrt_size)
+void MPID_PSP_mapper_list_map_remote_vcr(MPIR_Comm *comm, int vcrt_size)
 {
-	MPID_Comm *src_comm;
+	MPIR_Comm *src_comm;
 	MPIR_Comm_map_t *mapper;
 	int vcrt_offset = 0;
 
-	MPL_LL_FOREACH(comm->mapper_head, mapper) {
+	LL_FOREACH(comm->mapper_head, mapper) {
 		src_comm = mapper->src_comm;
 
 		switch(mapper->dir) {
 
-		case MPIR_COMM_MAP_DIR_L2L:
-		case MPIR_COMM_MAP_DIR_R2L:
+		case MPIR_COMM_MAP_DIR__L2L:
+		case MPIR_COMM_MAP_DIR__R2L:
 			break;
 
-		case MPIR_COMM_MAP_DIR_L2R:
-			MPIU_Assert(comm->comm_kind == MPID_INTERCOMM);
-			if (src_comm->comm_kind == MPID_INTRACOMM) {
+		case MPIR_COMM_MAP_DIR__L2R:
+			MPIR_Assert(comm->comm_kind == MPIR_COMM_KIND__INTERCOMM);
+			if (src_comm->comm_kind == MPIR_COMM_KIND__INTRACOMM) {
 				MPID_PSP_mapper_dup_vcrt(src_comm->vcrt, &comm->vcrt, mapper, mapper->src_comm->local_size, vcrt_size, vcrt_offset);
 				MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
 			}
@@ -512,9 +667,9 @@ void MPID_PSP_mapper_list_map_remote_vcr(MPID_Comm *comm, int vcrt_size)
 			vcrt_offset += MPID_PSP_mapper_size(mapper);
 			break;
 
-		case MPIR_COMM_MAP_DIR_R2R:
-			MPIU_Assert(comm->comm_kind == MPID_INTERCOMM);
-			MPIU_Assert(src_comm->comm_kind == MPID_INTERCOMM);
+		case MPIR_COMM_MAP_DIR__R2R:
+			MPIR_Assert(comm->comm_kind == MPIR_COMM_KIND__INTERCOMM);
+			MPIR_Assert(src_comm->comm_kind == MPIR_COMM_KIND__INTERCOMM);
 			MPID_PSP_mapper_dup_vcrt(src_comm->vcrt, &comm->vcrt, mapper, mapper->src_comm->remote_size, vcrt_size, vcrt_offset);
 			MPID_PSP_comm_set_vcrt(comm, comm->vcrt);
 			vcrt_offset +=MPID_PSP_mapper_size(mapper);
@@ -526,7 +681,7 @@ void MPID_PSP_mapper_list_map_remote_vcr(MPID_Comm *comm, int vcrt_size)
 }
 
 
-void MPID_PSP_comm_create_mapper(MPID_Comm * comm)
+void MPID_PSP_comm_create_mapper(MPIR_Comm * comm)
 {
 	int vcrt_size;
 
@@ -540,7 +695,7 @@ void MPID_PSP_comm_create_mapper(MPID_Comm * comm)
 	vcrt_size = MPID_PSP_mapper_list_dest_remote_size(comm->mapper_head);
 	MPID_PSP_mapper_list_map_remote_vcr(comm, vcrt_size);
 
-	if (comm->comm_kind == MPID_INTERCOMM) {
+	if (comm->comm_kind == MPIR_COMM_KIND__INTERCOMM) {
 		/* setup the vcrt for the local_comm in the intercomm */
 		if (comm->local_comm) {
 			MPIDI_VCRT_t *vcrt;
@@ -552,7 +707,7 @@ void MPID_PSP_comm_create_mapper(MPID_Comm * comm)
 }
 
 
-void MPID_PSP_comm_set_vcrt(MPID_Comm *comm, MPIDI_VCRT_t *vcrt)
+void MPID_PSP_comm_set_vcrt(MPIR_Comm *comm, MPIDI_VCRT_t *vcrt)
 {
        assert(vcrt);
 
@@ -560,7 +715,7 @@ void MPID_PSP_comm_set_vcrt(MPID_Comm *comm, MPIDI_VCRT_t *vcrt)
        comm->vcr  = vcrt->vcr;
 }
 
-void MPID_PSP_comm_set_local_vcrt(MPID_Comm *comm, MPIDI_VCRT_t *vcrt)
+void MPID_PSP_comm_set_local_vcrt(MPIR_Comm *comm, MPIDI_VCRT_t *vcrt)
 {
        assert(vcrt);
 

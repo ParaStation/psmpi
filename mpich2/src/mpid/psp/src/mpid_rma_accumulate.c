@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -26,7 +26,7 @@
 static
 void rma_accumulate_done(pscom_request_t *req)
 {
-	MPID_Request *mpid_req = req->user->type.accumulate_send.mpid_req;
+	MPIR_Request *mpid_req = req->user->type.accumulate_send.mpid_req;
 	/* This is an pscom.io_done call. Global lock state undefined! */
 	MPID_PSP_packed_msg_cleanup(&req->user->type.accumulate_send.msg);
 	/* ToDo: this is not threadsave */
@@ -35,7 +35,7 @@ void rma_accumulate_done(pscom_request_t *req)
 
 	if(mpid_req) {
 		MPID_PSP_Subrequest_completed(mpid_req);
-		MPID_PSP_Request_dequeue(mpid_req, MPID_REQUEST_SEND);
+		MPIR_Request_free(mpid_req);
 	} else {
 		pscom_request_free(req);
 	}
@@ -45,8 +45,8 @@ void rma_accumulate_done(pscom_request_t *req)
 static
 int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 			    int target_rank, MPI_Aint target_disp, int target_count,
-			    MPI_Datatype target_datatype, MPI_Op op, MPID_Win *win_ptr,
-			    MPID_Request **request)
+			    MPI_Datatype target_datatype, MPI_Op op, MPIR_Win *win_ptr,
+			    MPIR_Request **request)
 {
 	int mpi_error = MPI_SUCCESS;
 	MPID_PSP_Datatype_info dt_info;
@@ -85,7 +85,9 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 	MPID_PSP_Datatype_get_info(target_datatype, &dt_info);
 
 	if(request) {
-		*request = MPID_DEV_Request_send_create(win_ptr->comm_ptr);
+		*request = MPIR_Request_create(MPIR_REQUEST_KIND__SEND);
+		(*request)->comm = win_ptr->comm_ptr;
+		MPIR_Comm_add_ref(win_ptr->comm_ptr);
 	}
 
 	if (unlikely(target_rank == MPI_PROC_NULL)) {
@@ -215,12 +217,12 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 		win_ptr->rma_puts_accs[target_rank]++;
 
 		if(request) {
-			MPID_Request *mpid_req = *request;
+			MPIR_Request *mpid_req = *request;
 			/* TODO: Use a new and 'acc_send'-dedicated MPID_DEV_Request_create() */
 			/*       instead of allocating and overloading a common send request. */
 			pscom_request_free(mpid_req->dev.kind.common.pscom_req);
 			mpid_req->dev.kind.common.pscom_req = req;
-			MPID_PSP_Request_enqueue(mpid_req);
+			MPIR_Request_add_ref(mpid_req);
 			req->user->type.accumulate_send.mpid_req = mpid_req;
 		} else {
 			req->user->type.accumulate_send.mpid_req = NULL;
@@ -233,14 +235,14 @@ fn_exit:
 	return MPI_SUCCESS;
 fn_completed:
 	if(request) {
-		MPID_PSP_Request_set_completed(*request);
+		MPIDI_PSP_Request_set_completed(*request);
 	}
 	return MPI_SUCCESS;
 	/* --- */
 err_exit:
 	if(request) {
-		MPID_PSP_Request_set_completed(*request);
-		MPID_DEV_Request_release_ref(*request, MPID_REQUEST_SEND);
+		MPIDI_PSP_Request_set_completed(*request);
+		MPIR_Request_free(*request);
 	}
 	return mpi_error;
 	/* --- */
@@ -268,7 +270,7 @@ void rma_accumulate_receive_done(pscom_request_t *req)
 	MPI_Datatype target_datatype	= rpr->datatype;
 	MPI_Op op			= xhead_rma->op;
 
-	MPID_Win *win_ptr = xhead_rma->win_ptr;
+	MPIR_Win *win_ptr = xhead_rma->win_ptr;
 
 	MPID_PSP_packed_msg_acc(target_buf, target_count, target_datatype,
 				req->data, req->data_len, op);
@@ -307,7 +309,7 @@ pscom_request_t *MPID_do_recv_rma_accumulate(pscom_connection_t *con, pscom_head
 
 int MPID_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 		    int target_rank, MPI_Aint target_disp, int target_count,
-		    MPI_Datatype target_datatype, MPI_Op op, MPID_Win *win_ptr)
+		    MPI_Datatype target_datatype, MPI_Op op, MPIR_Win *win_ptr)
 {
 	return MPID_Accumulate_generic(origin_addr, origin_count, origin_datatype,
 				       target_rank, target_disp, target_count, target_datatype,
@@ -316,7 +318,7 @@ int MPID_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype orig
 
 int MPID_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 		     int target_rank, MPI_Aint target_disp, int target_count, MPI_Datatype target_datatype,
-		     MPI_Op op, MPID_Win *win_ptr, MPID_Request **request)
+		     MPI_Op op, MPIR_Win *win_ptr, MPIR_Request **request)
 {
 	return MPID_Accumulate_generic((void*)origin_addr, origin_count, origin_datatype,
 				       target_rank, target_disp, target_count, target_datatype,
@@ -332,14 +334,16 @@ static
 int MPID_Get_accumulate_generic(const void *origin_addr, int origin_count,
 				MPI_Datatype origin_datatype, void *result_addr, int result_count,
 				MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
-				int target_count, MPI_Datatype target_datatype, MPI_Op op, MPID_Win *win_ptr,
-				MPID_Request **request)
+				int target_count, MPI_Datatype target_datatype, MPI_Op op, MPIR_Win *win_ptr,
+				MPIR_Request **request)
 {
 	if (unlikely(target_rank == MPI_PROC_NULL)) {
 
 		if(request) {
-			*request = MPID_DEV_Request_send_create(win_ptr->comm_ptr);
-			MPID_PSP_Request_set_completed(*request);
+			*request = MPIR_Request_create(MPIR_REQUEST_KIND__SEND);
+			(*request)->comm = win_ptr->comm_ptr;
+			MPIR_Comm_add_ref(win_ptr->comm_ptr);
+			MPIDI_PSP_Request_set_completed(*request);
 		}
 
 		return MPI_SUCCESS;
@@ -374,7 +378,7 @@ int MPID_Get_accumulate_generic(const void *origin_addr, int origin_count,
 int MPID_Get_accumulate(const void *origin_addr, int origin_count,
 			MPI_Datatype origin_datatype, void *result_addr, int result_count,
 			MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
-			int target_count, MPI_Datatype target_datatype, MPI_Op op, MPID_Win *win_ptr)
+			int target_count, MPI_Datatype target_datatype, MPI_Op op, MPIR_Win *win_ptr)
 {
 	return MPID_Get_accumulate_generic(origin_addr, origin_count, origin_datatype, result_addr, result_count, result_datatype,
 					   target_rank, target_disp, target_count, target_datatype, op, win_ptr, NULL);
@@ -383,8 +387,8 @@ int MPID_Get_accumulate(const void *origin_addr, int origin_count,
 int MPID_Rget_accumulate(const void *origin_addr, int origin_count,
 			 MPI_Datatype origin_datatype, void *result_addr, int result_count,
 			 MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
-			 int target_count, MPI_Datatype target_datatype, MPI_Op op, MPID_Win *win_ptr,
-			 MPID_Request **request)
+			 int target_count, MPI_Datatype target_datatype, MPI_Op op, MPIR_Win *win_ptr,
+			 MPIR_Request **request)
 {
 	return MPID_Get_accumulate_generic(origin_addr, origin_count, origin_datatype, result_addr, result_count, result_datatype,
 					   target_rank, target_disp, target_count, target_datatype, op, win_ptr, request);
@@ -393,7 +397,7 @@ int MPID_Rget_accumulate(const void *origin_addr, int origin_count,
 
 int MPID_Fetch_and_op(const void *origin_addr, void *result_addr,
 		      MPI_Datatype datatype, int target_rank, MPI_Aint target_disp,
-		      MPI_Op op, MPID_Win *win)
+		      MPI_Op op, MPIR_Win *win)
 {
 	if (unlikely(target_rank == MPI_PROC_NULL)) {
 		goto fn_exit;
@@ -413,7 +417,7 @@ fn_exit:
 
 int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 			  void *result_addr, MPI_Datatype datatype, int target_rank,
-			  MPI_Aint target_disp, MPID_Win *win_ptr)
+			  MPI_Aint target_disp, MPIR_Win *win_ptr)
 {
 	if(1) { /* TODO: This implementation is just based on Get (plus some additional internal locking): */
 

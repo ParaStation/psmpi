@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2009 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -39,8 +39,8 @@ int MPID_Finalize(void)
 {
 	MPIDI_PG_t *pg_ptr;
 
-	MPIDI_STATE_DECL(MPID_STATE_MPID_FINALIZE);
-	MPIDI_FUNC_ENTER(MPID_STATE_MPID_FINALIZE);
+	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_FINALIZE);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_FINALIZE);
 
 	if(!_getenv_i("PSP_FINALIZE_BARRIER", 1)) {
 
@@ -58,7 +58,7 @@ int MPID_Finalize(void)
 			    (( (pg_ptr->cons[j]->type != PSCOM_CON_TYPE_ONDEMAND) && (pg_ptr->cons[j]->state == PSCOM_CON_STATE_RW) ) ||
 			     ( (pg_ptr->cons[j]->type == PSCOM_CON_TYPE_ONDEMAND) && (pg_ptr->cons[j]->state != PSCOM_CON_STATE_RW) ) ))
 			{
-				MPID_PSP_SendCtrl(0, MPID_CONTEXT_INTRA_COLL, MPIDI_Process.my_pg_rank, pg_ptr->cons[j], MPID_PSP_MSGTYPE_FINALIZE_TOKEN);
+				MPID_PSP_SendCtrl(0, MPIR_CONTEXT_INTRA_COLL, MPIDI_Process.my_pg_rank, pg_ptr->cons[j], MPID_PSP_MSGTYPE_FINALIZE_TOKEN);
 			}
 		}
 		for(j=0; j<pg_ptr->size; j++) {
@@ -67,7 +67,7 @@ int MPID_Finalize(void)
 			    (( (pg_ptr->cons[j]->type != PSCOM_CON_TYPE_ONDEMAND) && (pg_ptr->cons[j]->state == PSCOM_CON_STATE_RW) ) ||
 			     ( (pg_ptr->cons[j]->type == PSCOM_CON_TYPE_ONDEMAND) && (pg_ptr->cons[j]->state != PSCOM_CON_STATE_RW) ) ))
 			{
-				MPID_PSP_RecvCtrl(0, MPID_CONTEXT_INTRA_COLL, j, pg_ptr->cons[j],  MPID_PSP_MSGTYPE_FINALIZE_TOKEN);
+				MPID_PSP_RecvCtrl(0, MPIR_CONTEXT_INTRA_COLL, j, pg_ptr->cons[j],  MPID_PSP_MSGTYPE_FINALIZE_TOKEN);
 			}
 		}
 
@@ -77,8 +77,7 @@ int MPID_Finalize(void)
 
 		MPIR_Errflag_t errflag = MPIR_ERR_NONE;
 		int timeout;
-		MPIU_THREADPRIV_DECL;
-		MPIU_THREADPRIV_GET;
+		// TODO: check THREADPRIV API!
 
 		MPIR_Barrier_impl(MPIR_Process.comm_world, &errflag);
 
@@ -119,14 +118,14 @@ int MPID_Finalize(void)
 			}
 		}
 
-		MPIU_Free(MPIDI_Process.histo.limit);
-		MPIU_Free(MPIDI_Process.histo.count);
+		MPL_free(MPIDI_Process.histo.limit);
+		MPL_free(MPIDI_Process.histo.count);
 	}
 #endif
 
 
 /*	fprintf(stderr, "%d cleanup queue\n", MPIDI_Process.my_pg_rank); */
-	MPID_req_queue_cleanup();
+//	MPID_req_queue_cleanup();
 
 	MPID_PSP_rma_cleanup();
 
@@ -150,17 +149,17 @@ int MPID_Finalize(void)
 	}
 	MPIDI_PG_Destroy(MPIDI_Process.my_pg);
 
-	MPIU_Free(MPIDI_Process.grank2con);
+	MPL_free(MPIDI_Process.grank2con);
 	MPIDI_Process.grank2con = NULL;
 
-	MPIU_Free(MPIDI_Process.pg_id_name);
+	MPL_free(MPIDI_Process.pg_id_name);
 	MPIDI_Process.pg_id_name = NULL;
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
-	MPIU_Free(MPIDI_Process.node_id_table);
+#ifdef MPID_PSP_USE_SMP_AWARE_COLLOPS
+	MPL_free(MPIDI_Process.node_id_table);
 	MPIDI_Process.node_id_table = NULL;
 #endif
 
-	MPIDI_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_FINALIZE);
 	return MPI_SUCCESS;
 }

@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -180,7 +180,7 @@ void pscom_inter_sockets_del_by_pscom_socket(pscom_socket_t *pscom_socket)
  * Communicator helpers
  */
 static
-void init_intercomm(MPID_Comm *comm, MPIU_Context_id_t remote_context_id, unsigned remote_comm_size, MPID_Comm *intercomm, int create_vcrt_flag)
+void init_intercomm(MPIR_Comm *comm, MPIR_Context_id_t remote_context_id, unsigned remote_comm_size, MPIR_Comm *intercomm, int create_vcrt_flag)
 {
 	/* compare with SetupNewIntercomm() in /src/mpid/ch3/src/ch3u_port.c:1143*/
 	int mpi_errno;
@@ -198,9 +198,8 @@ void init_intercomm(MPID_Comm *comm, MPIU_Context_id_t remote_context_id, unsign
 	intercomm->rank = comm->rank;
 	intercomm->local_group  = NULL;
 	intercomm->remote_group = NULL;
-	intercomm->comm_kind = MPID_INTERCOMM;
+	intercomm->comm_kind = MPIR_COMM_KIND__INTERCOMM;
 	intercomm->local_comm   = NULL;
-	intercomm->coll_fns     = NULL;
 
 	/* Point local vcr at those of incoming intracommunicator */
 	vcrt = MPIDI_VCRT_Dup(comm->vcrt);
@@ -225,7 +224,7 @@ void init_intercomm(MPID_Comm *comm, MPIU_Context_id_t remote_context_id, unsign
  */
 
 static
-int iam_root(int root, MPID_Comm *comm)
+int iam_root(int root, MPIR_Comm *comm)
 {
 	return comm->rank == root;
 }
@@ -234,14 +233,14 @@ int iam_root(int root, MPID_Comm *comm)
 static
 pscom_port_str_t *alloc_all_ports(unsigned comm_size)
 {
-	return (pscom_port_str_t *)MPIU_Malloc(comm_size * sizeof(pscom_port_str_t));
+	return (pscom_port_str_t *)MPL_malloc(comm_size * sizeof(pscom_port_str_t), MPL_MEM_STRINGS);
 }
 
 
 static
 void free_all_ports(pscom_port_str_t *all_ports)
 {
-	MPIU_Free(all_ports);
+	MPL_free(all_ports);
 }
 
 /*
@@ -253,7 +252,7 @@ void free_all_ports(pscom_port_str_t *all_ports)
  *  (forward_pg_info() plus parts of MPID_PG_ForwardPGInfo() thus replace the former send_/recv_/connect_all_ports() functions...)
  */
 static
-int forward_pg_info(pscom_connection_t *con,  MPID_Comm *comm, int root, pscom_port_str_t *all_ports, MPID_Comm *intercomm)
+int forward_pg_info(pscom_connection_t *con,  MPIR_Comm *comm, int root, pscom_port_str_t *all_ports, MPIR_Comm *intercomm)
 {
 	pscom_err_t rc;
 	MPIR_Errflag_t errflag = FALSE;
@@ -261,8 +260,8 @@ int forward_pg_info(pscom_connection_t *con,  MPID_Comm *comm, int root, pscom_p
 
 	int local_size = comm->local_size;
 	int remote_size = 0;
-	MPID_Gpid *local_gpids;
-	MPID_Gpid *remote_gpids;
+	MPIDI_Gpid *local_gpids;
+	MPIDI_Gpid *remote_gpids;
 	int *remote_lpids;
 	int local_context_id;
 	int remote_context_id;
@@ -272,7 +271,7 @@ int forward_pg_info(pscom_connection_t *con,  MPID_Comm *comm, int root, pscom_p
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	/* Disable SMP-awareness as soon as dynamic process spawning comes into play. */
 	if(MPIDI_Process.node_id_table) {
-		MPIU_Free(MPIDI_Process.node_id_table);
+		MPL_free(MPIDI_Process.node_id_table);
 		MPIDI_Process.node_id_table = NULL;
 	}
 #endif
@@ -288,23 +287,23 @@ int forward_pg_info(pscom_connection_t *con,  MPID_Comm *comm, int root, pscom_p
 
 	if (remote_size == 0) goto err_failed; /* this happens if root has no valid 'con' (see above!) */
 
-	local_gpids = (MPID_Gpid*)MPIU_Malloc(local_size * sizeof(MPID_Gpid));
-	remote_gpids = (MPID_Gpid*)MPIU_Malloc(remote_size * sizeof(MPID_Gpid));
+	local_gpids = (MPIDI_Gpid*)MPL_malloc(local_size * sizeof(MPIDI_Gpid), MPL_MEM_OBJECT);
+	remote_gpids = (MPIDI_Gpid*)MPL_malloc(remote_size * sizeof(MPIDI_Gpid), MPL_MEM_OBJECT);
 
-	MPID_GPID_GetAllInComm(comm, local_size, local_gpids, NULL);
+	MPIDI_GPID_GetAllInComm(comm, local_size, local_gpids, NULL);
 
 	if(iam_root(root, comm)) {
-		pscom_send(con, NULL, 0, local_gpids, local_size * sizeof(MPID_Gpid));
-		rc = pscom_recv_from(con, NULL, 0, remote_gpids, remote_size * sizeof(MPID_Gpid));
+		pscom_send(con, NULL, 0, local_gpids, local_size * sizeof(MPIDI_Gpid));
+		rc = pscom_recv_from(con, NULL, 0, remote_gpids, remote_size * sizeof(MPIDI_Gpid));
 		assert(rc == PSCOM_SUCCESS);
 	}
 
-	mpi_errno = MPIR_Bcast(remote_gpids, remote_size * sizeof(MPID_Gpid), MPI_CHAR, root, comm, &errflag);
+	mpi_errno = MPIR_Bcast(remote_gpids, remote_size * sizeof(MPIDI_Gpid), MPI_CHAR, root, comm, &errflag);
 	assert(mpi_errno == MPI_SUCCESS);
 
 
 	/* Call the central routine for establishing all missing connections: */
-	MPID_PG_ForwardPGInfo(NULL, comm, remote_size, remote_gpids, root, -1, -1, con, (char*)all_ports, pscom_socket);
+	MPIDI_PG_ForwardPGInfo(NULL, comm, remote_size, remote_gpids, root, -1, -1, con, (char*)all_ports, pscom_socket);
 
 
 	/* distribute remote values */
@@ -322,24 +321,24 @@ int forward_pg_info(pscom_connection_t *con,  MPID_Comm *comm, int root, pscom_p
 
 	if (!iam_root(root, comm)) {
 		/* assure equal local context_id on all ranks */
-		MPIU_Context_id_t context_id = local_context_id;
+		MPIR_Context_id_t context_id = local_context_id;
 		assert(context_id == intercomm->context_id);
 	}
 
 	/* Update intercom (without creating a VCRT because it will be created in the MPID_Create_intercomm_from_lpids() call below) */
 	init_intercomm(comm, remote_context_id, remote_size, intercomm, 0 /*create_vcrt_flag*/);
 
-	remote_lpids = (int*)MPIU_Malloc(remote_size*sizeof(int));
-	MPID_GPID_ToLpidArray(remote_size, remote_gpids, remote_lpids);
+	remote_lpids = (int*)MPL_malloc(remote_size*sizeof(int), MPL_MEM_OTHER);
+	MPIDI_GPID_ToLpidArray(remote_size, remote_gpids, remote_lpids);
 	MPID_Create_intercomm_from_lpids(intercomm, remote_size, remote_lpids);
 
-	MPIU_Free(local_gpids);
-	MPIU_Free(remote_gpids);
-	MPIU_Free(remote_lpids);
+	MPL_free(local_gpids);
+	MPL_free(remote_gpids);
+	MPL_free(remote_lpids);
 
 	return MPI_SUCCESS;
 err_failed:
-	init_intercomm(comm, MPIU_INVALID_CONTEXT_ID, 0 /* remote_size*/, intercomm, 1 /* create_vcrt_flag */);
+	init_intercomm(comm, MPIR_INVALID_CONTEXT_ID, 0 /* remote_size*/, intercomm, 1 /* create_vcrt_flag */);
 	return MPI_ERR_COMM;
 }
 
@@ -360,7 +359,7 @@ void inter_barrier(pscom_connection_t *con)
 }
 
 
-pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPID_Comm *comm, MPID_Comm *intercomm)
+pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm *comm, MPIR_Comm *intercomm)
 {
 	pscom_socket_t *socket_new;
 	int local_size = comm->local_size;
@@ -411,7 +410,7 @@ pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPID_Comm *comm, MPID_Comm *
 	}
 
 	err = FALSE;
-	mpi_error = MPIR_Gather_intra(my_port, sizeof(pscom_port_str_t), MPI_CHAR,
+	mpi_error = MPIR_Gather_intra_auto(my_port, sizeof(pscom_port_str_t), MPI_CHAR,
 				      all_ports, sizeof(pscom_port_str_t), MPI_CHAR,
 				      root, comm, &err);
 
@@ -447,7 +446,7 @@ pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPID_Comm *comm, MPID_Comm *
 .N MPI_SUCCESS
 .N MPI_ERR_OTHER
 @*/
-int MPID_Open_port(MPID_Info *info_ptr, char *port_name)
+int MPID_Open_port(MPIR_Info *info_ptr, char *port_name)
 {
 	static unsigned portnum = 0;
 	int rc;
@@ -511,10 +510,10 @@ int MPID_Close_port(const char *port_name)
 
 
 static
-MPID_Comm *create_intercomm(MPID_Comm * comm)
+MPIR_Comm *create_intercomm(MPIR_Comm * comm)
 {
-	MPID_Comm *intercomm;
-	MPIU_Context_id_t recvcontext_id = MPIU_INVALID_CONTEXT_ID;
+	MPIR_Comm *intercomm;
+	MPIR_Context_id_t recvcontext_id = MPIR_INVALID_CONTEXT_ID;
 
 	int mpi_errno = MPIR_Comm_create(&intercomm);
 	assert(mpi_errno == MPI_SUCCESS);
@@ -522,7 +521,7 @@ MPID_Comm *create_intercomm(MPID_Comm * comm)
 	mpi_errno = MPIR_Get_contextid_sparse(comm, &recvcontext_id, FALSE);
 	assert(mpi_errno == MPI_SUCCESS);
 
-	intercomm->context_id     = MPIU_INVALID_CONTEXT_ID; /* finally set in init_intercomm() to recvcontext_id of the remote */
+	intercomm->context_id     = MPIR_INVALID_CONTEXT_ID; /* finally set in init_intercomm() to recvcontext_id of the remote */
 	intercomm->recvcontext_id = recvcontext_id;
 
 	return intercomm;
@@ -530,7 +529,7 @@ MPID_Comm *create_intercomm(MPID_Comm * comm)
 
 
 static
-void warmup_intercomm_send(MPID_Comm *comm)
+void warmup_intercomm_send(MPIR_Comm *comm)
 {
 	int i;
 	if (MPIDI_Process.env.enable_ondemand_spawn) return;
@@ -549,7 +548,7 @@ void warmup_intercomm_send(MPID_Comm *comm)
 
 
 static
-void warmup_intercomm_recv(MPID_Comm *comm)
+void warmup_intercomm_recv(MPIR_Comm *comm)
 {
 	int i;
 	if (MPIDI_Process.env.enable_ondemand_spawn) return;
@@ -582,10 +581,10 @@ void warmup_intercomm_recv(MPID_Comm *comm)
   Return Value:
   'MPI_SUCCESS' or a valid MPI error code.
 @*/
-int MPID_Comm_accept(const char * port_name, MPID_Info * info, int root,
-		     MPID_Comm * comm, MPID_Comm **_intercomm)
+int MPID_Comm_accept(const char * port_name, MPIR_Info * info, int root,
+		     MPIR_Comm * comm, MPIR_Comm **_intercomm)
 {
-	MPID_Comm *intercomm = create_intercomm(comm);
+	MPIR_Comm *intercomm = create_intercomm(comm);
 	pscom_port_str_t *all_ports = MPID_PSP_open_all_ports(root, comm, intercomm);
 	MPIR_Errflag_t errflag = FALSE;
 
@@ -620,6 +619,8 @@ int MPID_Comm_accept(const char * port_name, MPID_Info * info, int root,
 	*_intercomm = intercomm;
 	warmup_intercomm_recv(intercomm);
 
+	/* the accepting rank is in the high group */
+	intercomm->is_low_group = 0;
 	return MPI_SUCCESS;
 }
 
@@ -639,10 +640,10 @@ int MPID_Comm_accept(const char * port_name, MPID_Info * info, int root,
   Return Value:
   'MPI_SUCCESS' or a valid MPI error code.
 @*/
-int MPID_Comm_connect(const char * port_name, MPID_Info * info, int root,
-		      MPID_Comm * comm, MPID_Comm **_intercomm)
+int MPID_Comm_connect(const char * port_name, MPIR_Info * info, int root,
+		      MPIR_Comm * comm, MPIR_Comm **_intercomm)
 {
-	MPID_Comm *intercomm = create_intercomm(comm);
+	MPIR_Comm *intercomm = create_intercomm(comm);
 	pscom_port_str_t *all_ports = MPID_PSP_open_all_ports(root, comm, intercomm);
 	MPIR_Errflag_t errflag = FALSE;
 	int mpi_error;
@@ -680,6 +681,9 @@ int MPID_Comm_connect(const char * port_name, MPID_Info * info, int root,
 		MPIR_Barrier_impl(comm, &errflag);
 		*_intercomm = intercomm;
 		warmup_intercomm_send(intercomm);
+
+		/* the connecting ranks are in the low group */
+		intercomm->is_low_group = 1;
 	} else {
 		/* error. Release intercomm */
 		MPID_Comm_disconnect(intercomm);
@@ -689,7 +693,7 @@ int MPID_Comm_connect(const char * port_name, MPID_Info * info, int root,
 }
 
 
-int MPID_Comm_disconnect(MPID_Comm *comm_ptr)
+int MPID_Comm_disconnect(MPIR_Comm *comm_ptr)
 {
     int mpi_errno;
     /* From src/mpid/ch3/src/mpid_comm_disconnect.c
@@ -764,7 +768,7 @@ int MPID_PSP_GetParentPort(char **parent_port)
 
 
 static
-int  mpi_to_pmi_keyvals(MPID_Info *info_ptr, const PMI_keyval_t **kv_ptr,
+int  mpi_to_pmi_keyvals(MPIR_Info *info_ptr, const PMI_keyval_t **kv_ptr,
 			       int *nkeys_ptr )
 {
 	char key[MPI_MAX_INFO_KEY];
@@ -779,7 +783,7 @@ int  mpi_to_pmi_keyvals(MPID_Info *info_ptr, const PMI_keyval_t **kv_ptr,
 	if (nkeys == 0) {
 		goto fn_exit;
 	}
-	kv = (PMI_keyval_t *)MPIU_Malloc( nkeys * sizeof(PMI_keyval_t) );
+	kv = (PMI_keyval_t *)MPL_malloc( nkeys * sizeof(PMI_keyval_t) , MPL_MEM_PM);
 	assert(kv);
 
 	for (i=0; i<nkeys; i++) {
@@ -787,8 +791,8 @@ int  mpi_to_pmi_keyvals(MPID_Info *info_ptr, const PMI_keyval_t **kv_ptr,
 		assert(mpi_errno == MPI_SUCCESS);
 		MPIR_Info_get_valuelen_impl( info_ptr, key, &vallen, &flag );
 
-		kv[i].key = MPIU_Strdup(key);
-		kv[i].val = MPIU_Malloc( vallen + 1 );
+		kv[i].key = MPL_strdup(key);
+		kv[i].val = MPL_malloc( vallen + 1 , MPL_MEM_PM);
 		assert(kv[i].key);
 		assert(kv[i].val);
 
@@ -810,10 +814,10 @@ void pmi_keyvals_free(const PMI_keyval_t *kv, int nkeys)
 	if (!kv) return;
 
 	for (i = 0; i < nkeys; i++) {
-		MPIU_Free((char *)kv[i].key);
-		MPIU_Free(kv[i].val);
+		MPL_free((char *)kv[i].key);
+		MPL_free(kv[i].val);
 	}
-	MPIU_Free((void*)kv);
+	MPL_free((void*)kv);
 }
 
 
@@ -858,8 +862,8 @@ int count_total_processes(int count, const int maxprocs[])
 #define FUNCNAME MPID_Comm_spawn_multiple
 int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 			     char ** array_of_argv[], const int array_of_maxprocs[],
-			     MPID_Info * array_of_info_ptrs[], int root,
-			     MPID_Comm * comm_ptr, MPID_Comm ** intercomm,
+			     MPIR_Info * array_of_info_ptrs[], int root,
+			     MPIR_Comm * comm_ptr, MPIR_Comm ** intercomm,
 			     int array_of_errcodes[])
 {
 	int rc;
@@ -881,11 +885,11 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 		int *pmi_errcodes;
 		int total_num_processes = count_total_processes(count, array_of_maxprocs);
 
-		info_keyval_sizes   = (int *)MPIU_Malloc(count * sizeof(int));
+		info_keyval_sizes   = (int *)MPL_malloc(count * sizeof(int), MPL_MEM_OTHER);
 		assert(info_keyval_sizes);
 
 		info_keyval_vectors =
-			(const PMI_keyval_t**) MPIU_Malloc(count * sizeof(PMI_keyval_t*));
+			(const PMI_keyval_t**) MPL_malloc(count * sizeof(PMI_keyval_t*), MPL_MEM_OTHER);
 		assert(info_keyval_vectors);
 
 		if (!array_of_info_ptrs) {
@@ -906,7 +910,7 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 		preput_keyval_vector.val = port_name;
 
 		/* create an array for the pmi error codes */
-		pmi_errcodes = (int*)MPIU_Malloc(sizeof(int) * total_num_processes);
+		pmi_errcodes = (int*)MPL_malloc(sizeof(int) * total_num_processes, MPL_MEM_OTHER);
 		assert(pmi_errcodes);
 
 		/* initialize them to 0 */
@@ -938,13 +942,13 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 			/* should_accept = !should_accept; *//* the `N' in NAND */
 		}
 
-		MPIU_Free(pmi_errcodes);
+		MPL_free(pmi_errcodes);
 		for (i = 0; i < count; i++) {
 			pmi_keyvals_free(info_keyval_vectors[i],
 					 info_keyval_sizes[i]);
 		}
-		MPIU_Free(info_keyval_vectors);
-		MPIU_Free(info_keyval_sizes);
+		MPL_free(info_keyval_vectors);
+		MPL_free(info_keyval_sizes);
 
 		/*
 		printf("%s:%u:%s Spawn done\n", __FILE__, __LINE__, __func__);
