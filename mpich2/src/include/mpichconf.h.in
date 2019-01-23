@@ -590,7 +590,7 @@
 /* Define to 1 if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H
 
-/* Define if netinet/in.h exists */
+/* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
 
 /* Define to 1 if you have the <netinet/tcp.h> header file. */

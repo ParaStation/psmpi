@@ -728,7 +728,6 @@ _LT_CONFIG_SAVE_COMMANDS([
     cat <<_LT_EOF >> "$cfgfile"
 #! $SHELL
 # Generated automatically by $as_me ($PACKAGE) $VERSION
-# Libtool was configured on host `(hostname || uname -n) 2>/dev/null | sed 1q`:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 
 # Provide generalized library-building support services.
@@ -4735,10 +4734,6 @@ m4_if([$1], [CXX], [
 	_LT_TAGVAR(lt_prog_compiler_pic, $1)='-qpic'
 	_LT_TAGVAR(lt_prog_compiler_static, $1)='-qstaticlink'
 	;;
-      armclang* | armclang++* | armflang*)
-        # ARM LLVM C/C++/Fortran
-        _LT_TAGVAR(lt_prog_compiler_wl, $1)='-Wl,'
-        ;;
       *)
 	case `$CC -V 2>&1 | sed 5q` in
 	*Sun\ Ceres\ Fortran* | *Sun*Fortran*\ [[1-7]].* | *Sun*Fortran*\ 8.[[0-3]]*)
@@ -4747,7 +4742,7 @@ m4_if([$1], [CXX], [
 	  _LT_TAGVAR(lt_prog_compiler_static, $1)='-Bstatic'
 	  _LT_TAGVAR(lt_prog_compiler_wl, $1)=''
 	  ;;
-	*Sun\ F* | *Sun*Fortran* | *Studio*Fortran*)
+	*Sun\ F* | *Sun*Fortran*)
 	  _LT_TAGVAR(lt_prog_compiler_pic, $1)='-KPIC'
 	  _LT_TAGVAR(lt_prog_compiler_static, $1)='-Bstatic'
 	  _LT_TAGVAR(lt_prog_compiler_wl, $1)='-Qoption ld '
