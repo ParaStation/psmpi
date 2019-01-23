@@ -600,7 +600,7 @@
    path */
 #undef HAVE_NETLOC
 
-/* Define to 1 if you have the <net/if.h> header file. */
+/* Define if you have the <net/if.h> header file. */
 #undef HAVE_NET_IF_H
 
 /* Define if the Fortran types are not available in C */

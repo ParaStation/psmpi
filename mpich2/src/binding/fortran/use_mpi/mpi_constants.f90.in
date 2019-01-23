@@ -14,10 +14,6 @@
           SEQUENCE
           INTEGER :: MPI_VAL
        END TYPE MPI_Info
-       TYPE :: MPI_Request
-          SEQUENCE
-          INTEGER :: MPI_VAL
-       END TYPE MPI_Request
        TYPE :: MPI_Comm
           SEQUENCE
           INTEGER :: MPI_VAL
@@ -38,6 +34,10 @@
           SEQUENCE
           INTEGER :: MPI_VAL
        END TYPE MPI_Errhandler
+       TYPE :: MPI_Op
+          SEQUENCE
+          INTEGER :: MPI_VAL
+       END TYPE MPI_Op
        TYPE :: MPI_Group
           SEQUENCE
           INTEGER :: MPI_VAL
@@ -46,33 +46,33 @@
           SEQUENCE
           INTEGER :: MPI_VAL
        END TYPE MPI_Datatype
-       TYPE :: MPI_Op
+       TYPE :: MPI_Request
           SEQUENCE
           INTEGER :: MPI_VAL
-       END TYPE MPI_Op
+       END TYPE MPI_Request
         INTERFACE OPERATOR(.EQ.)
             MODULE PROCEDURE infoeq
-            MODULE PROCEDURE requesteq
             MODULE PROCEDURE commeq
             MODULE PROCEDURE wineq
             MODULE PROCEDURE fileeq
             MODULE PROCEDURE messageeq
             MODULE PROCEDURE errhandlereq
+            MODULE PROCEDURE opeq
             MODULE PROCEDURE groupeq
             MODULE PROCEDURE datatypeeq
-            MODULE PROCEDURE opeq
+            MODULE PROCEDURE requesteq
         END INTERFACE
         INTERFACE OPERATOR(.NE.)
             MODULE PROCEDURE infoneq
-            MODULE PROCEDURE requestneq
             MODULE PROCEDURE commneq
             MODULE PROCEDURE winneq
             MODULE PROCEDURE fileneq
             MODULE PROCEDURE messageneq
             MODULE PROCEDURE errhandlerneq
+            MODULE PROCEDURE opneq
             MODULE PROCEDURE groupneq
             MODULE PROCEDURE datatypeneq
-            MODULE PROCEDURE opneq
+            MODULE PROCEDURE requestneq
         END INTERFACE
         CONTAINS
             LOGICAL FUNCTION infoeq(lhs,rhs)
@@ -83,14 +83,6 @@
             TYPE(MPI_Info), INTENT(IN) :: lhs, rhs
             infoneq = lhs%MPI_VAL .NE. rhs%MPI_VAL
             END FUNCTION infoneq
-            LOGICAL FUNCTION requesteq(lhs,rhs)
-            TYPE(MPI_Request), INTENT(IN) :: lhs, rhs
-            requesteq = lhs%MPI_VAL .EQ. rhs%MPI_VAL
-            END FUNCTION requesteq
-            LOGICAL FUNCTION requestneq(lhs,rhs)
-            TYPE(MPI_Request), INTENT(IN) :: lhs, rhs
-            requestneq = lhs%MPI_VAL .NE. rhs%MPI_VAL
-            END FUNCTION requestneq
             LOGICAL FUNCTION commeq(lhs,rhs)
             TYPE(MPI_Comm), INTENT(IN) :: lhs, rhs
             commeq = lhs%MPI_VAL .EQ. rhs%MPI_VAL
@@ -131,6 +123,14 @@
             TYPE(MPI_Errhandler), INTENT(IN) :: lhs, rhs
             errhandlerneq = lhs%MPI_VAL .NE. rhs%MPI_VAL
             END FUNCTION errhandlerneq
+            LOGICAL FUNCTION opeq(lhs,rhs)
+            TYPE(MPI_Op), INTENT(IN) :: lhs, rhs
+            opeq = lhs%MPI_VAL .EQ. rhs%MPI_VAL
+            END FUNCTION opeq
+            LOGICAL FUNCTION opneq(lhs,rhs)
+            TYPE(MPI_Op), INTENT(IN) :: lhs, rhs
+            opneq = lhs%MPI_VAL .NE. rhs%MPI_VAL
+            END FUNCTION opneq
             LOGICAL FUNCTION groupeq(lhs,rhs)
             TYPE(MPI_Group), INTENT(IN) :: lhs, rhs
             groupeq = lhs%MPI_VAL .EQ. rhs%MPI_VAL
@@ -147,12 +147,12 @@
             TYPE(MPI_Datatype), INTENT(IN) :: lhs, rhs
             datatypeneq = lhs%MPI_VAL .NE. rhs%MPI_VAL
             END FUNCTION datatypeneq
-            LOGICAL FUNCTION opeq(lhs,rhs)
-            TYPE(MPI_Op), INTENT(IN) :: lhs, rhs
-            opeq = lhs%MPI_VAL .EQ. rhs%MPI_VAL
-            END FUNCTION opeq
-            LOGICAL FUNCTION opneq(lhs,rhs)
-            TYPE(MPI_Op), INTENT(IN) :: lhs, rhs
-            opneq = lhs%MPI_VAL .NE. rhs%MPI_VAL
-            END FUNCTION opneq
+            LOGICAL FUNCTION requesteq(lhs,rhs)
+            TYPE(MPI_Request), INTENT(IN) :: lhs, rhs
+            requesteq = lhs%MPI_VAL .EQ. rhs%MPI_VAL
+            END FUNCTION requesteq
+            LOGICAL FUNCTION requestneq(lhs,rhs)
+            TYPE(MPI_Request), INTENT(IN) :: lhs, rhs
+            requestneq = lhs%MPI_VAL .NE. rhs%MPI_VAL
+            END FUNCTION requestneq
         END MODULE MPI_CONSTANTS
