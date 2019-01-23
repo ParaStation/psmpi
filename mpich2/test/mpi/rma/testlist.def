@@ -102,7 +102,7 @@ req_example 4 mpiversion=3.0
 req_example_shm 4 mpiversion=3.0
 rput_local_comp 2 mpiversion=3.0
 racc_local_comp 2 mpiversion=3.0
-win_info 4 mpiversion=3.0
+#win_info 4 mpiversion=3.0
 linked_list_lockall 4 mpiversion=3.0
 pscw_ordering 4 mpiversion=3.0
 pscw_ordering_shm 4 mpiversion=3.0
@@ -136,7 +136,7 @@ aint 2 mpiversion=3.1
 acc_pairtype 2
 manyget 2 timeLimit=300
 derived_acc_flush_local 3 mpiversion=3.0
-large_acc_flush_local 3 mpiversion=3.0
+#large_acc_flush_local 3 mpiversion=3.0
 large_small_acc 2
 win_shared_put_flush_load 3 mpiversion=3.0
 win_shared_acc_flush_load 3 mpiversion=3.0

@@ -10,7 +10,8 @@
  * Author:	Carsten Clauss <clauss@par-tec.com>
  */
 
-#include <mpi.h>
+#include "mpi.h"
+#include "mpitest.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -24,6 +25,7 @@ int main( int argc, char *argv[] )
 	int leader;
 	int buffer[3];
 	int errcodes[2];
+	int errs = 0;
 	int world_rank;
 	int world_size;
 	int merge_rank;
@@ -35,7 +37,7 @@ int main( int argc, char *argv[] )
 	int univ_size;
 	int split_rank;
 	int split_size;
-	MPI_Comm parent_comm = MPI_COMM_NULL; 
+	MPI_Comm parent_comm = MPI_COMM_NULL;
 	MPI_Comm spawn_comm  = MPI_COMM_NULL;
 	MPI_Comm merge_comm  = MPI_COMM_NULL;
 	MPI_Comm peer_comm   = MPI_COMM_NULL;
@@ -43,7 +45,7 @@ int main( int argc, char *argv[] )
 	MPI_Comm univ_comm   = MPI_COMM_NULL;
 	MPI_Comm split_comm  = MPI_COMM_NULL;
 
-	MPI_Init(&argc, &argv);
+	MTest_Init( &argc, &argv );
 
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
@@ -54,18 +56,17 @@ int main( int argc, char *argv[] )
 	}
 
 	MPI_Comm_get_parent( &parent_comm );
-   
+
 	if(parent_comm == MPI_COMM_NULL) {
 		MPI_Comm_spawn((char*)"./spawn_universe", MPI_ARGV_NULL, 2, MPI_INFO_NULL, 0, MPI_COMM_SELF, &spawn_comm, errcodes);
-	  
+
 	} else {
 		spawn_comm = parent_comm;
 	}
 
 	if(parent_comm == MPI_COMM_NULL) {
 		high = 1;
-	}
-	else {
+	} else {
 		high = 0;
 	}
 
@@ -76,10 +77,12 @@ int main( int argc, char *argv[] )
 	MPI_Comm_size(merge_comm, &merge_size);
 
 	/* Determine the leader (rank 0 & 1 of the origin world): */
-	       
-	if(parent_comm == MPI_COMM_NULL) leader = merge_rank;
-	else leader = -1;
-	       
+	if(parent_comm == MPI_COMM_NULL) {
+		leader = merge_rank;
+	} else {
+		leader = -1;
+	}
+
 	MPI_Allgather(&leader, 1, MPI_INT, buffer, 1, MPI_INT, merge_comm);
 	for(i=0; i<merge_size; i++) {
 		if(buffer[i] != -1) {
@@ -87,15 +90,15 @@ int main( int argc, char *argv[] )
 			break;
 		}
 	}
-	       
+
 	/* Create an intercomm between the two merged intracomms (and use the origin world as bridge/peer communicator): */
 	peer_comm = MPI_COMM_WORLD;
 	MPI_Intercomm_create(merge_comm, leader, peer_comm, (world_rank+1)%2, 123, &inter_comm);
-	     
+
 	MPI_Comm_rank(inter_comm, &inter_rank);
 	MPI_Comm_size(inter_comm, &inter_loc_size);
 	MPI_Comm_remote_size(inter_comm, &inter_rem_size);
-     
+
 	/* Merge the new intercomm into one single univeser: */
 	MPI_Intercomm_merge(inter_comm, 0, &univ_comm);
 
@@ -123,14 +126,14 @@ int main( int argc, char *argv[] )
 	/* (depending on the setting of ENABLE_LAZY_DISCONNECT in mpid_vc.c ...*/
 	MPI_Comm_disconnect(&univ_comm);
 
-	/* Finally, this disconnect will tear down all still open connections between the PGs: */     
+	/* Finally, this disconnect will tear down all still open connections between the PGs: */
 	MPI_Comm_disconnect(&split_comm);
 
-	if(univ_rank == 0) {
-		printf(" No errors\n");
+	if (parent_comm == MPI_COMM_NULL) {
+	    MTest_Finalize(errs);
+	} else {
+	    MPI_Finalize();
 	}
 
-	MPI_Finalize();
-
-	return 0;
+    return MTestReturnValue(errs);
 }

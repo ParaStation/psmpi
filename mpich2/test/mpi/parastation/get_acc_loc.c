@@ -159,11 +159,7 @@ int main(int argc, char **argv) {
 
     MPI_Win_free(&win);
 
-    if (me == 0) {
-        MPI_Free_mem(data);
-    }
-
     MTest_Finalize(errors);
-    MPI_Finalize();
-    return 0;
+
+    return MTestReturnValue(errors);
 }

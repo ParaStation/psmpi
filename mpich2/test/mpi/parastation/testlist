@@ -1,6 +1,6 @@
 mprobe 2 mpiversion=3.0
 locknull 2 mpiversion=3.0
-get-acc-loc 4 mpiversion=3.0
+get_acc_loc 4 mpiversion=3.0
 win_sync_err_flush 2 mpiversion=3.0
 win_sync_err_flushall 2 mpiversion=3.0
 win_sync_err_lockall_pt 2 mpiversion=3.0
@@ -26,12 +26,12 @@ num_contexts_2k 1
 num_contexts_4k 1
 num_contexts_8k 1
 num_contexts_16k 1
-acc-pairtype 2
-acc-vecsum 2
-get-acc-pairtype 2 mpiversion=3.0
-get-acc-shm-pairtype 2 mpiversion=3.0
+acc_pairtype 2
+acc_vecsum 2
+get_acc_pairtype 2 mpiversion=3.0
+get_acc_shm_pairtype 2 mpiversion=3.0
 #
 # Fixed tests from MPICH:
-putfence1 2
-getfence1 2
-large-acc-flush_local 3 mpiversion=3.0
+#putfence1 2
+#getfence1 2
+large_acc_flush_local 3 mpiversion=3.0

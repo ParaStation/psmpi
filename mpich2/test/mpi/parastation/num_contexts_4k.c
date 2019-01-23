@@ -15,7 +15,7 @@
 /* Check for 4k custom/dynamic communicators: (minus COMM_SELF, COMM_WORLD, and ICOMM_WORLD if needed) */
 #define NUM_COMMS (4 * 1024 - 3)
 
-/* If this test fails, then try to set MPID_CONTEXT_DYNAMIC_PROC_WIDTH to (0) in mpich2/src/include/mpiimpl.h */
+/* If this test fails, then try to set MPIR_CONTEXT_DYNAMIC_PROC_WIDTH to (0) in mpich2/src/include/mpiimpl.h */
 
 int main(int argc, char* argv[])
 {
@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
 
 		if(rc != MPI_SUCCESS) {
 			printf("\nThe maximum number of custom/dynamic communicators/contexts is %d but this test checks for %d.\n", i, NUM_COMMS);
-			printf("Try to set MPID_CONTEXT_DYNAMIC_PROC to (0) in mpich2/src/include/mpiimpl.h to get more contexts.\n");
+			printf("Try to set MPIR_CONTEXT_DYNAMIC_PROC to (0) in mpich2/src/include/mpiimpl.h to get more contexts.\n");
 			printf("This test is known to fail with CH3 device.\n\n");
 			MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
 			MPI_Comm_split(MPI_COMM_WORLD, color, world_rank, &comm_array[i]);

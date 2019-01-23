@@ -137,6 +137,7 @@ int main(int argc, char *argv[])
     MPI_Info_free(&info);
 
 
+#undef MPIX_COMM_TYPE_NEIGHBORHOOD
 #if defined(MPIX_COMM_TYPE_NEIGHBORHOOD) && defined(HAVE_MPI_IO)
     /* the MPICH-specific MPIX_COMM_TYPE_NEIGHBORHOOD */
     /* test #1: expected behavior -- user provided a directory, and we

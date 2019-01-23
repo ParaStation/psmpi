@@ -10,15 +10,15 @@
  */
 
 #include "mpi.h"
-//#include "mpitest.h"
+#include "mpitest.h"
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
-//#ifdef HAVE_STRING_H
+#ifdef HAVE_STRING_H
 #include <string.h>
-//#endif
+#endif
 #include <assert.h>
 
 /*
@@ -34,7 +34,6 @@ int main( int argc, char *argv[] )
 	MPI_Comm      parentcomm, intercomm;
 	MPI_Status    status;
 
-//	MPI_Init( &argc, &argv );
 	MTest_Init( &argc, &argv );
 
 	MPI_Comm_get_parent( &parentcomm );
@@ -135,11 +134,12 @@ int main( int argc, char *argv[] )
 	/* Note also that both the parent and child will generate "No Errors"
 	   if both call MTest_Finalize */
 	if (parentcomm == MPI_COMM_NULL) {
-		MTest_Finalize( errs );
+	    MTest_Finalize(errs);
+	} else {
+	    MPI_Finalize();
 	}
 
-	MPI_Finalize();
-	return 0;
+    return MTestReturnValue(errs);
 }
 
 /*
