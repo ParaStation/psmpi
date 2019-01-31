@@ -696,6 +696,11 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
 	comm = win_ptr->comm_ptr;
 	con = MPID_PSCOM_rank2connection(comm, dest);
 
+	/* wait until all pending RMA requests are processed*/
+	while (win_ptr->rma_local_pending_cnt) {
+		pscom_test_any();
+	}
+
 	MPID_PSP_SendRmaCtrl(win_ptr, comm, con, dest, MPID_PSP_MSGTYPE_RMA_UNLOCK_REQUEST);
 	MPID_PSP_RecvCtrl(0/*tag*/, comm->recvcontext_id, MPI_ANY_SOURCE, con, MPID_PSP_MSGTYPE_RMA_UNLOCK_ANSWER);
 
@@ -1057,6 +1062,11 @@ int MPID_Win_unlock_internal(int dest, MPID_Win *win_ptr)
 
         comm = win_ptr->comm_ptr;
 	con = MPID_PSCOM_rank2connection(comm, dest);
+
+		/* wait until all pending RMA requests are processed*/
+		while (win_ptr->rma_local_pending_cnt) {
+			pscom_test_any();
+		}
 
         MPID_PSP_SendRmaCtrl(win_ptr, comm, con, dest, MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_REQUEST);
         MPID_PSP_RecvCtrl(0/*tag*/, comm->recvcontext_id, MPI_ANY_SOURCE, con, MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_ANSWER);
