@@ -29,9 +29,14 @@ int accept_rma_get_answer(pscom_request_t *request,
 			  pscom_connection_t *connection,
 			  pscom_header_net_t *header_net)
 {
-	MPID_PSCOM_XHeader_t *xhead_net = &header_net->xheader->user.common;
+	MPID_PSCOM_XHeader_Rma_get_answer_t *xhead_net = &header_net->xheader->user.get_answer;
+	pscom_request_get_answer_recv_t *ga = &request->user->type.get_answer_recv;
 
-	return (xhead_net->type == MPID_PSP_MSGTYPE_RMA_GET_ANSWER);
+	int match = ((xhead_net->common.type == MPID_PSP_MSGTYPE_RMA_GET_ANSWER) &&
+		(xhead_net->mem_locations.origin_addr == ga->origin_addr) &&
+		(xhead_net->mem_locations.target_buf == ga->target_buf));
+
+	return match;
 }
 
 
@@ -172,6 +177,7 @@ int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_da
 			ga->origin_count = origin_count;
 			ga->origin_datatype = origin_datatype;
 			ga->win_ptr = win_ptr;
+			ga->target_buf = target_buf;
 			MPID_PSP_Datatype_add_ref(origin_datatype);
 
 			rreq->data_len = ga->msg.msg_sz;
@@ -206,9 +212,11 @@ int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_da
 
 		/* xheader->target_disp = target_disp; */
 		xheader->target_count = target_count;
-		xheader->target_buf = target_buf;
 		/* xheader->epoch = ri->epoch_origin; */
 		xheader->win_ptr = ri->win_ptr; /* remote win_ptr */
+		/* memory locations for origin and target */
+		xheader->mem_locations.origin_addr = origin_addr;
+		xheader->mem_locations.target_buf = target_buf;
 
 		req->xheader_len = xheader_len;
 		req->ops.io_done = pscom_request_free;
@@ -267,11 +275,13 @@ void io_done_get_answer_recv(pscom_request_t *req)
 	MPID_PSCOM_XHeader_Rma_get_answer_t *xhead_answ = &req->xheader.user.get_answer;
 	int ret;
 
-	ret = MPID_PSP_packed_msg_prepare(xhead_get->target_buf, xhead_get->target_count,
-					  datatype, &gas->msg);
+	ret = MPID_PSP_packed_msg_prepare(xhead_get->mem_locations.target_buf,
+					xhead_get->target_count,
+					datatype, &gas->msg);
 	assert(ret == MPI_SUCCESS);
-	MPID_PSP_packed_msg_pack(xhead_get->target_buf, xhead_get->target_count,
-				 datatype, &gas->msg);
+	MPID_PSP_packed_msg_pack(xhead_get->mem_locations.target_buf,
+				xhead_get->target_count,
+				datatype, &gas->msg);
 
 	MPID_PSP_Datatype_release(datatype);
 
@@ -280,6 +290,7 @@ void io_done_get_answer_recv(pscom_request_t *req)
 	xhead_answ->common.type = MPID_PSP_MSGTYPE_RMA_GET_ANSWER;
 	xhead_answ->common._reserved_ = 0;
 	xhead_answ->common.src_rank = -1;
+	xhead_answ->mem_locations = xhead_get->mem_locations;
 
 	req->xheader_len = sizeof(*xhead_answ);
 	req->data = gas->msg.msg;
