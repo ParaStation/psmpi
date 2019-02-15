@@ -58,7 +58,7 @@ int MPID_PSP_Bcast_send(void *buffer, int count, MPI_Datatype datatype, int root
 #ifdef USE_POST_BCAST
 	pscom_request_t *req;
 #endif
-	buffered = MPID_PSP_buffer_needs_staging(buffer, NULL);
+	buffered = pscom_check_for_gpu_mem(buffer);
 
 	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg, buffered);
 	if (unlikely(ret != MPI_SUCCESS)) goto err_create_packed_msg;
@@ -101,7 +101,7 @@ int MPID_PSP_Bcast_recv(void *buffer, int count, MPI_Datatype datatype, int root
 #ifdef USE_POST_BCAST
 	pscom_request_t *req;
 #endif
-	buffered = MPID_PSP_buffer_needs_staging(buffer, NULL);
+	buffered = pscom_check_for_gpu_mem(buffer);
 
 	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg, buffered);
 	if (unlikely(ret != MPI_SUCCESS)) goto err_create_packed_msg;
@@ -232,10 +232,9 @@ void MPID_PSP_group_cleanup(MPIR_Comm *comm_ptr)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-#ifdef MPID_PSP_WITH_GPU_AWARENESS
+#ifdef MPID_PSP_WITH_CUDA_AWARENESS
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
 int MPID_PSP_Reduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
 			     MPI_Op op, int root, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag)
 {
@@ -249,23 +248,23 @@ int MPID_PSP_Reduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_
 	char *sendptr = (char*)sendbuf;
 	char *recvptr = (char*)recvbuf;
 
-	if(MPID_PSP_check_for_gpu_ptr(sendbuf)) {
+	if(pscom_check_for_gpu_mem(sendbuf)) {
 
 		MPIDI_Datatype_get_info(count, datatype, contig, data_sz, dtp, true_lb);
 
 		tmp_sendbuf = MPL_malloc(data_sz, MPL_MEM_BUFFER);
-		MPID_PSP_memcpy_gpu_safe(tmp_sendbuf, sendbuf, data_sz);
+		MPID_Memcpy(tmp_sendbuf, sendbuf, data_sz);
 		sendptr = tmp_sendbuf;
 	}
 
-	if( (comm_ptr->rank == root) && (MPID_PSP_check_for_gpu_ptr(recvbuf)) ) {
+	if( (comm_ptr->rank == root) && (pscom_check_for_gpu_mem(recvbuf)) ) {
 
 		if(!tmp_sendbuf) {
 			MPIDI_Datatype_get_info(count, datatype, contig, data_sz, dtp, true_lb);
 		}
 
 		tmp_recvbuf = MPL_malloc(data_sz, MPL_MEM_BUFFER);
-		MPID_PSP_memcpy_gpu_safe(tmp_recvbuf, recvbuf, data_sz);
+		MPID_Memcpy(tmp_recvbuf, recvbuf, data_sz);
 		recvptr = tmp_recvbuf;
 	}
 
@@ -276,7 +275,7 @@ int MPID_PSP_Reduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_
 	}
 
 	if(tmp_recvbuf) {
-		MPID_PSP_memcpy_gpu_safe(recvbuf, tmp_recvbuf, data_sz);
+		MPID_Memcpy(recvbuf, tmp_recvbuf, data_sz);
 		MPL_free(tmp_recvbuf);
 	}
 
@@ -296,23 +295,23 @@ int MPID_PSP_Allreduce_for_cuda(const void *sendbuf, void *recvbuf, int count, M
 	char *sendptr = (char*)sendbuf;
 	char *recvptr = (char*)recvbuf;
 
-	if(MPID_PSP_check_for_gpu_ptr(sendbuf)) {
+	if(pscom_check_for_gpu_mem(sendbuf)) {
 
 		MPIDI_Datatype_get_info(count, datatype, contig, data_sz, dtp, true_lb);
 
 		tmp_sendbuf = MPL_malloc(data_sz, MPL_MEM_BUFFER);
-		MPID_PSP_memcpy_gpu_safe(tmp_sendbuf, sendbuf, data_sz);
+		MPID_Memcpy(tmp_sendbuf, sendbuf, data_sz);
 		sendptr = tmp_sendbuf;
 	}
 
-	if(MPID_PSP_check_for_gpu_ptr(recvbuf)) {
+	if(pscom_check_for_gpu_mem(recvbuf)) {
 
 		if(!tmp_sendbuf) {
 			MPIDI_Datatype_get_info(count, datatype, contig, data_sz, dtp, true_lb);
 		}
 
 		tmp_recvbuf = MPL_malloc(data_sz, MPL_MEM_BUFFER);
-		MPID_PSP_memcpy_gpu_safe(tmp_recvbuf, recvbuf, data_sz);
+		MPID_Memcpy(tmp_recvbuf, recvbuf, data_sz);
 		recvptr = tmp_recvbuf;
 	}
 
@@ -323,7 +322,7 @@ int MPID_PSP_Allreduce_for_cuda(const void *sendbuf, void *recvbuf, int count, M
 	}
 
 	if(tmp_recvbuf) {
-		MPID_PSP_memcpy_gpu_safe(recvbuf, tmp_recvbuf, data_sz);
+		MPID_Memcpy(recvbuf, tmp_recvbuf, data_sz);
 		MPL_free(tmp_recvbuf);
 	}
 
@@ -344,17 +343,17 @@ int MPID_PSP_Reduce_scatter_for_cuda(const void *sendbuf, void *recvbuf, const i
 	char *sendptr = (char*)sendbuf;
 	char *recvptr = (char*)recvbuf;
 
-	if(MPID_PSP_check_for_gpu_ptr(sendbuf)) {
+	if(pscom_check_for_gpu_mem(sendbuf)) {
 
 		for(i=0,j=0; i< comm_ptr->local_size; i++) j += recvcounts[i];
 		MPIDI_Datatype_get_info(j, datatype, contig, sdata_sz, dtp, true_lb);
 
 		tmp_sendbuf = MPL_malloc(sdata_sz, MPL_MEM_BUFFER);
-		MPID_PSP_memcpy_gpu_safe(tmp_sendbuf, sendbuf, sdata_sz);
+		MPID_Memcpy(tmp_sendbuf, sendbuf, sdata_sz);
 		sendptr = tmp_sendbuf;
 	}
 
-	if(MPID_PSP_check_for_gpu_ptr(recvbuf)) {
+	if(pscom_check_for_gpu_mem(recvbuf)) {
 
 		MPIDI_Datatype_get_info(recvcounts[comm_ptr->rank], datatype, contig, rdata_sz, dtp, true_lb);
 
@@ -364,12 +363,12 @@ int MPID_PSP_Reduce_scatter_for_cuda(const void *sendbuf, void *recvbuf, const i
 			MPIDI_Datatype_get_info(j, datatype, contig, sdata_sz, dtp, true_lb);
 
 			tmp_recvbuf = MPL_malloc(sdata_sz, MPL_MEM_BUFFER);
-			MPID_PSP_memcpy_gpu_safe(tmp_recvbuf, recvbuf, sdata_sz);
+			MPID_Memcpy(tmp_recvbuf, recvbuf, sdata_sz);
 
 		} else {
 
 			tmp_recvbuf = MPL_malloc(rdata_sz, MPL_MEM_BUFFER);
-			MPID_PSP_memcpy_gpu_safe(tmp_recvbuf, recvbuf, rdata_sz);
+			MPID_Memcpy(tmp_recvbuf, recvbuf, rdata_sz);
 		}
 
 		recvptr = tmp_recvbuf;
@@ -382,7 +381,7 @@ int MPID_PSP_Reduce_scatter_for_cuda(const void *sendbuf, void *recvbuf, const i
 	}
 
 	if(tmp_recvbuf) {
-		MPID_PSP_memcpy_gpu_safe(recvbuf, tmp_recvbuf, rdata_sz);
+		MPID_Memcpy(recvbuf, tmp_recvbuf, rdata_sz);
 		MPL_free(tmp_recvbuf);
 	}
 
@@ -403,16 +402,16 @@ int MPID_PSP_Reduce_scatter_block_for_cuda(const void *sendbuf, void *recvbuf,  
 	char *sendptr = (char*)sendbuf;
 	char *recvptr = (char*)recvbuf;
 
-	if(MPID_PSP_check_for_gpu_ptr(sendbuf)) {
+	if(pscom_check_for_gpu_mem(sendbuf)) {
 
 		MPIDI_Datatype_get_info(recvcount, datatype, contig, data_sz, dtp, true_lb);
 
 		tmp_sendbuf = MPL_malloc(data_sz * comm_ptr->local_size, MPL_MEM_BUFFER);
-		MPID_PSP_memcpy_gpu_safe(tmp_sendbuf, sendbuf, data_sz * comm_ptr->local_size);
+		MPID_Memcpy(tmp_sendbuf, sendbuf, data_sz * comm_ptr->local_size);
 		sendptr = tmp_sendbuf;
 	}
 
-	if(MPID_PSP_check_for_gpu_ptr(recvbuf)) {
+	if(pscom_check_for_gpu_mem(recvbuf)) {
 
 		if(!tmp_sendbuf) {
 			MPIDI_Datatype_get_info(recvcount, datatype, contig, data_sz, dtp, true_lb);
@@ -423,7 +422,7 @@ int MPID_PSP_Reduce_scatter_block_for_cuda(const void *sendbuf, void *recvbuf,  
 		}
 
 		tmp_recvbuf = MPL_malloc(data_sz, MPL_MEM_BUFFER);
-		MPID_PSP_memcpy_gpu_safe(tmp_recvbuf, recvbuf, data_sz);
+		MPID_Memcpy(tmp_recvbuf, recvbuf, data_sz);
 		recvptr = tmp_recvbuf;
 	}
 
@@ -434,7 +433,7 @@ int MPID_PSP_Reduce_scatter_block_for_cuda(const void *sendbuf, void *recvbuf,  
 	}
 
 	if(tmp_recvbuf) {
-		MPID_PSP_memcpy_gpu_safe(recvbuf, tmp_recvbuf, data_sz);
+		MPID_Memcpy(recvbuf, tmp_recvbuf, data_sz);
 		MPL_free(tmp_recvbuf);
 	}
 
@@ -455,23 +454,23 @@ int MPID_PSP_Scan_generic_for_cuda(const void *sendbuf, void *recvbuf, int count
 	char *sendptr = (char*)sendbuf;
 	char *recvptr = (char*)recvbuf;
 
-	if(MPID_PSP_check_for_gpu_ptr(sendbuf)) {
+	if(pscom_check_for_gpu_mem(sendbuf)) {
 
 		MPIDI_Datatype_get_info(count, datatype, contig, data_sz, dtp, true_lb);
 
 		tmp_sendbuf = MPL_malloc(data_sz, MPL_MEM_BUFFER);
-		MPID_PSP_memcpy_gpu_safe(tmp_sendbuf, sendbuf, data_sz);
+		MPID_Memcpy(tmp_sendbuf, sendbuf, data_sz);
 		sendptr = tmp_sendbuf;
 	}
 
-	if(MPID_PSP_check_for_gpu_ptr(recvbuf)) {
+	if(pscom_check_for_gpu_mem(recvbuf)) {
 
 		if(!tmp_sendbuf) {
 			MPIDI_Datatype_get_info(count, datatype, contig, data_sz, dtp, true_lb);
 		}
 
 		tmp_recvbuf = MPL_malloc(data_sz, MPL_MEM_BUFFER);
-		MPID_PSP_memcpy_gpu_safe(tmp_recvbuf, recvbuf, data_sz);
+		MPID_Memcpy(tmp_recvbuf, recvbuf, data_sz);
 		recvptr = tmp_recvbuf;
 	}
 
@@ -486,7 +485,7 @@ int MPID_PSP_Scan_generic_for_cuda(const void *sendbuf, void *recvbuf, int count
 	}
 
 	if(tmp_recvbuf) {
-		MPID_PSP_memcpy_gpu_safe(recvbuf, tmp_recvbuf, data_sz);
+		MPID_Memcpy(recvbuf, tmp_recvbuf, data_sz);
 		MPL_free(tmp_recvbuf);
 	}
 
@@ -517,43 +516,39 @@ int MPID_PSP_Reduce_local_for_cuda(const void *inbuf, void *inoutbuf, int count,
 	char *inptr = (char*)inbuf;
 	char *inoutptr = (char*)inoutbuf;
 
-	if(MPID_PSP_check_for_gpu_ptr(inbuf)) {
+	if(pscom_check_for_gpu_mem(inbuf)) {
 
 		MPIDI_Datatype_get_info(count, datatype, contig, data_sz, dtp, true_lb);
 
 		tmp_inbuf = MPL_malloc(data_sz, MPL_MEM_BUFFER);
-		MPID_PSP_memcpy_gpu_safe(tmp_inbuf, inbuf, data_sz);
+		MPID_Memcpy(tmp_inbuf, inbuf, data_sz);
 		inptr = tmp_inbuf;
 	}
 
-	if(MPID_PSP_check_for_gpu_ptr(inoutbuf)) {
+	if(pscom_check_for_gpu_mem(inoutbuf)) {
 
 		if(!tmp_inbuf) {
 			MPIDI_Datatype_get_info(count, datatype, contig, data_sz, dtp, true_lb);
 		}
 
 		tmp_inoutbuf = MPL_malloc(data_sz, MPL_MEM_BUFFER);
-		MPID_PSP_memcpy_gpu_safe(tmp_inoutbuf, inoutbuf, data_sz);
+		MPID_Memcpy(tmp_inoutbuf, inoutbuf, data_sz);
 		inoutptr = tmp_inoutbuf;
 	}
 
-	rc = MPIR_Reduce_local(inptr, inoutptr, count, datatype, op);
+	rc = MPIR_Reduce_local_impl(inptr, inoutptr, count, datatype, op);
 
 	if(tmp_inbuf) {
 		MPL_free(tmp_inbuf);
 	}
 
 	if(tmp_inoutbuf) {
-		MPID_PSP_memcpy_gpu_safe(inoutbuf, tmp_inoutbuf, data_sz);
+		MPID_Memcpy(inoutbuf, tmp_inoutbuf, data_sz);
 		MPL_free(tmp_inoutbuf);
 	}
 
 	return rc;
 }
-
-#else
-#error GPU-awareness means CUDA-awareness!
-#endif
 ////////////////////////////////////////////////////////////////////////////////////////////
 #endif
 ////////////////////////////////////////////////////////////////////////////////////////////

@@ -13,6 +13,7 @@ AC_DEFUN([PAC_SUBCFG_PREREQ_]PAC_SUBCFG_AUTO_SUFFIX,[
 
 AM_CONDITIONAL([BUILD_PSP],[test "$device_name" = "psp"])
 AM_COND_IF([BUILD_PSP],[
+AC_MSG_NOTICE([RUNNING PREREQ FOR PSP DEVICE])
 
 # maximum length of a processor name, as used by
 # MPI_GET_PROCESSOR_NAME
@@ -67,6 +68,35 @@ AC_SUBST([PSCOM_ALLIN_LIBS])
 AC_ARG_VAR([PSP_CPPFLAGS], [C preprocessor flags for PSP macros])
 
 AC_SUBST([PSP_CPPFLAGS])
+
+AC_ARG_ENABLE(psp-cuda-awareness,
+    AC_HELP_STRING(
+        [--enable-psp-cuda-awareness],
+        [Enable CUDA-awareness for the PSP device
+    ]),,enable_psp_cuda_awareness=no)
+
+# CUDA support
+pscom_is_cuda_aware=no
+if test "$enable_psp_cuda_awareness" = "yes" ; then
+	# check if we try to build against non-CUDA-aware pscom
+	AC_MSG_CHECKING(if pscom is CUDA-aware)
+	AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#define PSCOM_CUDA_AWARENESS
+#include <pscom.h>
+#ifndef PSCOM_CUDA_AWARENESS_SUPPORT
+# error macro not defined
+#endif]])],
+		[AC_MSG_RESULT(yes)
+		pscom_is_cuda_aware=yes
+	])
+
+    AS_IF([test "$pscom_is_cuda_aware" = "no" ],[
+		AC_MSG_WARN([!!!!!!! BUILDING AGAINST NON-CUDA-AWARE PSCOM !!!!!!!])
+	],[
+		PAC_APPEND_FLAG([-DMPIR_USE_DEVICE_MEMCPY], [CPPFLAGS])
+	])
+fi
+
 
 # todo: check whether we need all of them
 build_mpid_common_sched=yes

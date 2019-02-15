@@ -425,16 +425,13 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-fc"
 	CONF_OPS="$CONF_OPS --enable-cxx"
 	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS --enable-psp-cuda-awareness"
 
 	CUDA_HOME="${CUDA_HOME-"/usr/local/cuda/"}"
-	if test -d "$CUDA_HOME" ; then
-		test -d "$CUDA_HOME/lib/" && CONF_OPS="$CONF_OPS MPICHLIB_LDFLAGS='$MPICHLIB_LDFLAGS -L$CUDA_HOME/lib/' MPICHLIB_LIBS='$MPICHLIB_LIBS -lcuda -lcudart'"
-		test -d "$CUDA_HOME/lib64/" && CONF_OPS="$CONF_OPS MPICHLIB_LDFLAGS='$MPICHLIB_LDFLAGS -L$CUDA_HOME/lib64/' MPICHLIB_LIBS='$MPICHLIB_LIBS -lcuda -lcudart'"
-		test -d "$CUDA_HOME/include/" && CONF_OPS="$CONF_OPS MPICHLIB_CPPFLAGS='$MPICHLIB_CPPFLAGS -I$CUDA_HOME/include/'"
-	else
-		CUDA_HOME=""
+	if ! test -d "$CUDA_HOME" ; then
+		unset CUDA_HOME
 	fi
-	CONF_OPS="$CONF_OPS PSP_CPPFLAGS='-DMPID_PSP_WITH_GPU_AWARENESS -DMPID_PSP_WITH_CUDA_AWARENESS'"
+	CONF_OPS="$CONF_OPS PSP_CPPFLAGS='-DMPID_PSP_WITH_CUDA_AWARENESS'"
 	CONF_OPS="$CONF_OPS"
 	;;
 "cuda-devel")
@@ -448,16 +445,13 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --disable-static"
 	CONF_OPS="$CONF_OPS --enable-error-checking=all"
 	CONF_OPS="$CONF_OPS --enable-strict" # Compile with -Wall and other checks.
+	CONF_OPS="$CONF_OPS --enable-psp-cuda-awareness"
 
 	CUDA_HOME="${CUDA_HOME-"/usr/local/cuda/"}"
-	if test -d "$CUDA_HOME" ; then
-		test -d "$CUDA_HOME/lib/" && CONF_OPS="$CONF_OPS MPICHLIB_LDFLAGS='$MPICHLIB_LDFLAGS -L$CUDA_HOME/lib/' MPICHLIB_LIBS='$MPICHLIB_LIBS -lcuda -lcudart'"
-		test -d "$CUDA_HOME/lib64/" && CONF_OPS="$CONF_OPS MPICHLIB_LDFLAGS='$MPICHLIB_LDFLAGS -L$CUDA_HOME/lib64/' MPICHLIB_LIBS='$MPICHLIB_LIBS -lcuda -lcudart'"
-		test -d "$CUDA_HOME/include/" && CONF_OPS="$CONF_OPS MPICHLIB_CPPFLAGS='$MPICHLIB_CPPFLAGS -I$CUDA_HOME/include/'"
-	else
-		CUDA_HOME=""
+	if ! test -d "$CUDA_HOME" ; then
+		unset CUDA_HOME
 	fi
-	CONF_OPS="$CONF_OPS PSP_CPPFLAGS='-DMPID_PSP_WITH_GPU_AWARENESS -DMPID_PSP_WITH_CUDA_AWARENESS'"
+	CONF_OPS="$CONF_OPS PSP_CPPFLAGS='-DMPID_PSP_WITH_CUDA_AWARENESS'"
 	CONF_OPS="$CONF_OPS"
 	;;
 "none")

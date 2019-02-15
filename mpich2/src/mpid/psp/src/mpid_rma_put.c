@@ -120,10 +120,8 @@ int MPID_Put_generic(const void *origin_addr, int origin_count, MPI_Datatype ori
 		goto fn_completed;
 	}
 
-	buffered = MPID_PSP_buffer_needs_staging(origin_addr, ri->con);
-
 	/* Data */
-	mpi_error = MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &msg, buffered);
+	mpi_error = MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &msg, 0);
 	if (unlikely(mpi_error != MPI_SUCCESS)) goto err_create_packed_msg;
 
 	MPID_PSP_packed_msg_pack(origin_addr, origin_count, origin_datatype, &msg);
@@ -253,10 +251,8 @@ pscom_request_t *MPID_do_recv_rma_put(pscom_connection_t *con, MPID_PSCOM_XHeade
 	pscom_request_t *req = PSCOM_REQUEST_CREATE();
 	pscom_request_put_recv_t *rpr = &req->user->type.put_recv;
 
-	int buffered = MPID_PSP_buffer_needs_staging(xhead_rma->target_buf, con);
-
 	MPID_PSP_packed_msg_prepare(xhead_rma->target_buf,
-				    xhead_rma->target_count, datatype, &rpr->msg, buffered);
+				    xhead_rma->target_count, datatype, &rpr->msg, 0);
 
 	req->xheader_len = sizeof(req->xheader.user.put);
 	req->data_len = rpr->msg.msg_sz;

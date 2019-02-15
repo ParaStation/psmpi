@@ -114,7 +114,7 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 		win_ptr->epoch_state = MPID_PSP_EPOCH_FENCE;
 	}
 
-	buffered = MPID_PSP_buffer_needs_staging(origin_addr, ri->con);
+	buffered = pscom_check_for_gpu_mem(origin_addr);
 
 	/* Data */
 	mpi_error = MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &msg, buffered);
@@ -423,22 +423,58 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 {
 	if(1) { /* TODO: This implementation is just based on Get (plus some additional internal locking): */
 
+		int result_addr_is_gpu_mem, compare_addr_is_gpu_mem;
+		size_t target_sz;
+		void *result_addr_tmp = result_addr;
+		void* compare_addr_tmp = (void*)compare_addr;
+
 		if (unlikely(target_rank == MPI_PROC_NULL)) {
 			goto fn_exit;
 		}
 
 		MPID_Win_lock_internal(target_rank, win_ptr);
 
-		MPID_Get(result_addr, 1, datatype, target_rank, target_disp, 1, datatype, win_ptr);
+		/* check whether we need to stage the buffers */
+		result_addr_is_gpu_mem = pscom_check_for_gpu_mem(result_addr);
+		compare_addr_is_gpu_mem = pscom_check_for_gpu_mem(compare_addr);
+		if (result_addr_is_gpu_mem || compare_addr_is_gpu_mem) {
+			int contig;
+			MPIR_Datatype *dtp;
+			MPI_Aint true_lb;
+
+			MPIDI_Datatype_get_info(1, datatype,
+				contig, target_sz,
+				dtp, true_lb);
+
+			if (result_addr_is_gpu_mem) {
+				result_addr_tmp = MPL_malloc(target_sz, MPL_MEM_OTHER);
+				pscom_memcpy(result_addr_tmp, result_addr, target_sz);
+			}
+			if (compare_addr_is_gpu_mem) {
+				compare_addr_tmp = MPL_malloc(target_sz, MPL_MEM_OTHER);
+				pscom_memcpy(compare_addr_tmp, compare_addr, target_sz);
+			}
+		}
+
+		MPID_Get(result_addr_tmp, 1, datatype, target_rank, target_disp, 1, datatype, win_ptr);
 
 		MPID_Win_wait_local_completion(target_rank, win_ptr);
 
-		if(MPIR_Compare_equal(compare_addr, result_addr, datatype)) {
+		if(MPIR_Compare_equal(compare_addr_tmp, result_addr_tmp, datatype)) {
 
 			MPID_Put((void*)origin_addr, 1, datatype, target_rank, target_disp, 1, datatype, win_ptr);
 		}
 
 		MPID_Win_unlock_internal(target_rank, win_ptr);
+
+		/* did we stage any buffers? */
+		if (result_addr_is_gpu_mem) {
+			pscom_memcpy(result_addr, result_addr_tmp, target_sz);
+			MPL_free(result_addr_tmp);
+		}
+		if (compare_addr_is_gpu_mem) {
+			MPL_free(compare_addr_tmp);
+		}
 	}
 	else {
 		/* TODO: A dedicated Compare_and_swap() implementation goes here... */

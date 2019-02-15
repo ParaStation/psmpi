@@ -20,18 +20,6 @@
 #include "mpid_coll.h"
 #include "datatype.h"
 
-#ifdef MPID_PSP_WITH_GPU_AWARENESS
-const void* MPID_PSP_gpu_host_ptr_cache[4] = {NULL, NULL, NULL, NULL};
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
-int MPID_PSP_con_is_cuda_aware(struct PSCOM_connection* con)
-{
-	return con->type & PSCOM_CON_TYPE_CUDA;
-}
-#else
-#error GPU-awareness means CUDA-awareness!
-#endif
-#endif
-
 // This must be the last include before sysmbols are defined:
 #include "mpid_visibility.h"
 
@@ -491,18 +479,6 @@ int MPID_Init(int *argc, char ***argv,
     MPIR_Err_init();
     MPIR_Datatype_init();
     MPIR_Group_init();
-
-#ifdef MPID_PSP_WITH_GPU_AWARENESS
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
-	/* check if the device shares a unifed address space with the host */
-	struct cudaDeviceProp dev_props;
-
-	cudaGetDeviceProperties(&dev_props, 0);
-	assert(dev_props.unifiedAddressing);
-#else
-#error GPU-awareness means CUDA-awareness!
-#endif
-#endif
 
 	mpid_debug_init();
 

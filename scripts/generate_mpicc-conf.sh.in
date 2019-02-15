@@ -21,10 +21,12 @@ EOF
 		cp "$sysconfdir/mpicc-cuda.conf" "$sysconfdir/mpif90-cuda.conf"
 		cp "$sysconfdir/mpicc-cuda.conf" "$sysconfdir/mpif77-cuda.conf"
 	else
-		echo -n > "$sysconfdir/mpicc-cuda.conf"
-		echo -n > "$sysconfdir/mpicxx-cuda.conf"
-		echo -n > "$sysconfdir/mpifort-cuda.conf"
-		echo -n > "$sysconfdir/mpif90-cuda.conf"
-		echo -n > "$sysconfdir/mpif77-cuda.conf"
+		cat > "$sysconfdir/mpicc-cuda.conf" << EOF
+PROFILE_POSTLIB="$PROFILE_POSTLIB -lcuda -lcudart -lstdc++"
+EOF
+		cp "$sysconfdir/mpicc-cuda.conf" "$sysconfdir/mpicxx-cuda.conf"
+		cp "$sysconfdir/mpicc-cuda.conf" "$sysconfdir/mpifort-cuda.conf"
+		cp "$sysconfdir/mpicc-cuda.conf" "$sysconfdir/mpif90-cuda.conf"
+		cp "$sysconfdir/mpicc-cuda.conf" "$sysconfdir/mpif77-cuda.conf"
 	fi
 fi

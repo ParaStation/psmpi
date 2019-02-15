@@ -159,7 +159,26 @@ void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Data
 	DLOOP_Offset last = msg_sz;
 	struct acc_params acc_params;
 
-	MPIR_Segment_init(target_addr, target_count, datatype, &segment);
+	void *acc_addr;
+	size_t target_sz;
+
+	/* is target_addr within device memory? */
+	if (pscom_check_for_gpu_mem(target_addr)) {
+		int contig;
+		MPIR_Datatype *dtp;
+		MPI_Aint true_lb;
+
+		MPIDI_Datatype_get_info(target_count, datatype,
+			contig, target_sz,
+			dtp, true_lb);
+
+		acc_addr = MPL_malloc(target_sz, MPL_MEM_OTHER);
+		pscom_memcpy(acc_addr, target_addr, target_sz);
+	} else {
+		acc_addr = (void*)target_addr;
+	}
+
+	MPIR_Segment_init(acc_addr, target_count, datatype, &segment);
 
 	acc_params.op = op;
 	MPID_PSP_Datatype_get_basic_type(datatype, acc_params.dtype);
@@ -179,4 +198,10 @@ void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Data
 				NULL /* MPIR_Segment_index_acc */,
 				NULL /* sizefn */,
 				&acc_params);
+
+	/* do we need to unstage the buffer? */
+	if (acc_addr != target_addr) {
+		pscom_memcpy((void*)target_addr, acc_addr, target_sz);
+		MPL_free(acc_addr);
+	}
 }

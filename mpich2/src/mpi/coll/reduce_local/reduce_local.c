@@ -29,10 +29,10 @@ int MPI_Reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype 
  * correctly handle weak symbols and the profiling interface */
 
 #undef FUNCNAME
-#define FUNCNAME MPIR_Reduce_local
+#define FUNCNAME MPIR_Reduce_local_impl
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIR_Reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype,
+int MPIR_Reduce_local_impl(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype,
                       MPI_Op op)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -122,6 +122,20 @@ int MPIR_Reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype
 }
 
 #endif
+
+
+#undef FUNCNAME
+#define FUNCNAME MPIR_Reduce_local
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+int MPIR_Reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype, MPI_Op op)
+{
+#ifdef MPID_REDUCE_LOCAL_HOOK
+       return MPID_REDUCE_LOCAL_HOOK(inbuf, inoutbuf, count, datatype, op);
+#else
+       return MPIR_Reduce_local_impl(inbuf, inoutbuf, count, datatype, op);
+#endif
+}
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Reduce_local

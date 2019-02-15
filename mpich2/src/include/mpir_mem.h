@@ -78,11 +78,19 @@ extern "C" {
 /* Define the string copy and duplication functions */
 /* ------------------------------------------------------------------------- */
 
+#ifdef MPIR_USE_DEVICE_MEMCPY
+#define MPIR_Memcpy(dst, src, len)              \
+    do {                                        \
+        CHECK_MEMCPY((dst),(src),(len));        \
+        MPID_Memcpy((dst), (src), (len));       \
+    } while (0)
+#else
 #define MPIR_Memcpy(dst, src, len)              \
     do {                                        \
         CHECK_MEMCPY((dst),(src),(len));        \
         memcpy((dst), (src), (len));            \
     } while (0)
+#endif
 
 #ifdef USE_MEMORY_TRACING
 
