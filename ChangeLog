@@ -1,3 +1,25 @@
+2019-02-07  Simon Pickartz <pickartz@par-tec.com> -	5.2.2-1
+
+	* Fix: multiple simultaneous MPI_Get() from the same remote
+	could be received out of order when transmitted with rendezvous
+	protocol.
+
+	* Improve MPID_PSP_mapper_dup_vcrt().
+
+	* Fix: Synchronization bug within MPI_Win_unlock().
+
+2019-01-04  Carsten Clauss <clauss@par-tec.com>
+
+	* Enhancement: Optional topology/hierarchy awareness
+	configure --with-topology-awareness for building SMP-aware collops
+	and set PSP_SMP_AWARE_COLLOPS=1 (default =0) for using them or
+	enable/switch to MSA-awarenss with PSP_MSA_AWARENESS=1 where
+	PSP_MSA_MODULE_ID=xyz can be used to set the affiliation.
+
+	* Enhancement: Improved handling of MPI_Allocate_shared().
+
+	* Fix: Make MPI_Comm_spawn work with TCP disabled (PSP_TCP=0).
+
 2018-03-26  Carsten Clauss <clauss@par-tec.com>	-	5.2.1-1
 
 	* Optimization/Packaging: Add --with-pscom-allin=/path/to/pscom/
