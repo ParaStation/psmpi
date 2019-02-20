@@ -3903,11 +3903,13 @@ if test "${with_topology_awareness+set}" = set; then :
 
 else
 
+	export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_SUBCOMM_WIDTH=0"
 	ENABLE_TOPOLOGY_AWARENESS="false"
 
 fi
 
 
+export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_DYNAMIC_PROC_WIDTH=0"
 
 if test "$PSP_THREADING" = "multiple" ; then
    echo "Preparing psmpi/mpich with MPI_THREAD_MULTIPLE support."

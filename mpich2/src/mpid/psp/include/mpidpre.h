@@ -39,8 +39,6 @@
 #ifdef MPID_PSP_TOPOLOGY_AWARENESS
 #define MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 #endif
-/* If this macro is set, the usage of the SMP-aware collective is enabled by default but can
- * also be disabled again when calling mpiexec by setting PSP_SMP_AWARENESS=0 */
 
 typedef struct {
     int gpid[2];

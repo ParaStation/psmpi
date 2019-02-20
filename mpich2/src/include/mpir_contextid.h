@@ -45,8 +45,9 @@ typedef uint16_t MPIR_Context_id_t;
 /* Used to derive context IDs for sub-communicators from a parent communicator's
    context ID value.  This field comes after the one bit suffix.
    values are shifted left by 1. */
-#define MPIR_CONTEXT_SUBCOMM_WIDTH (0)
-//#define MPIR_CONTEXT_SUBCOMM_WIDTH (2)
+#ifndef MPIR_CONTEXT_SUBCOMM_WIDTH
+#define MPIR_CONTEXT_SUBCOMM_WIDTH (2)
+#endif
 #define MPIR_CONTEXT_SUBCOMM_SHIFT (MPIR_CONTEXT_SUFFIX_WIDTH + MPIR_CONTEXT_SUFFIX_SHIFT)
 #define MPIR_CONTEXT_SUBCOMM_MASK      (((1 << MPIR_CONTEXT_SUBCOMM_WIDTH) - 1) << MPIR_CONTEXT_SUBCOMM_SHIFT)
 
@@ -81,8 +82,9 @@ typedef uint16_t MPIR_Context_id_t;
 #define MPIR_CONTEXT_PREFIX_WIDTH (MPIR_CONTEXT_ID_BITS - (MPIR_CONTEXT_PREFIX_SHIFT + MPIR_CONTEXT_DYNAMIC_PROC_WIDTH))
 #define MPIR_CONTEXT_PREFIX_MASK (((1 << MPIR_CONTEXT_PREFIX_WIDTH) - 1) << MPIR_CONTEXT_PREFIX_SHIFT)
 
-#define MPIR_CONTEXT_DYNAMIC_PROC_WIDTH (0)     /* the upper half is reserved for dynamic procs */
-//#define MPIR_CONTEXT_DYNAMIC_PROC_WIDTH (1)     /* the upper half is reserved for dynamic procs */
+#ifndef MPIR_CONTEXT_DYNAMIC_PROC_WIDTH
+#define MPIR_CONTEXT_DYNAMIC_PROC_WIDTH (1)     /* the upper half is reserved for dynamic procs */
+#endif
 #define MPIR_CONTEXT_DYNAMIC_PROC_SHIFT (MPIR_CONTEXT_ID_BITS - MPIR_CONTEXT_DYNAMIC_PROC_WIDTH)        /* the upper half is reserved for dynamic procs */
 #define MPIR_CONTEXT_DYNAMIC_PROC_MASK (((1 << MPIR_CONTEXT_DYNAMIC_PROC_WIDTH) - 1) << MPIR_CONTEXT_DYNAMIC_PROC_SHIFT)
 
