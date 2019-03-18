@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define _VERBOSE_ 0
+
 int main(int argc, char **argv)
 {
 	int i, j;
@@ -41,6 +43,15 @@ int main(int argc, char **argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
+	// If SMP-awarenes is disabled, it is quite likely that comm_shmem equals COMM_SELF! Just skip this test then...
+	if(getenv("PSP_SMP_AWARENESS") && (strcmp(getenv("PSP_SMP_AWARENESS"), "0") == 0)) goto finalize;
+
+	if(_VERBOSE_) {
+		if(world_rank == 0) {
+			printf("(%d) There are %d ranks with me in COMM_WORLD...\n", world_rank, world_size);
+		}
+	}
+
 	MPI_Barrier(MPI_COMM_WORLD);
 
 	MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, world_rank, MPI_INFO_NULL, &shm_comm);
@@ -48,13 +59,16 @@ int main(int argc, char **argv)
 	MPI_Comm_rank(shm_comm, &shm_rank);
 	MPI_Comm_size(shm_comm, &shm_size);
 
-	// In the ONDEMAND case, it is quite likely that comm_shmem equals COMM_SELF! Just skip this test then...
-	if(getenv("PSP_ONDEMAND") && (strcmp(getenv("PSP_ONDEMAND"), "1") == 0)) goto finalize;
+	if(_VERBOSE_) {
+		if(shm_rank == 0) {
+			printf("(%d) There are %d ranks with me in comm_shmem...\n", world_rank, shm_size);
+		}
+	}
 
 	MPI_Allreduce(&checksum, &checkres, 1, MPI_INT, MPI_SUM, shm_comm);
 
 	if(checkres != shm_size * checksum) {
-		printf("(%d) Detected communicator internal anomaly: %d for %s\n", world_rank, checksum, hostname);
+		fprintf(stderr, "(%d) Detected communicator internal anomaly: %d for %s\n", world_rank, checksum, hostname);
 		errs++;
 	}
 
@@ -82,7 +96,7 @@ int main(int argc, char **argv)
 		for(i=0; i<num_comms; i++) {
 			for(j=i+1; j<num_comms; j++) {
 				if(check_array[i] == check_array[j]) {
-					printf("(%d) Detected inter-communicator anomaly: %d vs. %d\n", world_rank, check_array[i], check_array[j]);
+					fprintf(stderr, "(%d) Detected inter-communicator anomaly: %d vs. %d\n", world_rank, check_array[i], check_array[j]);
 					errs++;
 				}
 			}
