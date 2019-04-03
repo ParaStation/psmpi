@@ -113,15 +113,12 @@ AC_ARG_WITH([pscom-allin], [
   --with-pscom-allin[=path]
                           Enable pscom source code fusion and set path to pscom
 ],[
-	PSCOM_ALLIN="true"
+	export PSCOM_ALLIN="true"
 	PSCOM_ALLIN_DIR="$withval"
 	AC_CHECK_FILE(["${PSCOM_ALLIN_DIR}/lib/all/pscom_all.c"], [
 		PSCOM_ALLIN_DIR="${PSCOM_ALLIN_DIR}/lib/all/"
 	])
 	export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN -I${PSCOM_ALLIN_DIR}/ -I${PSCOM_ALLIN_DIR}/../../include/ -I${PSCOM_ALLIN_DIR}/../../lib/pscom/"
-	export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -lpthread -ldl"
-	export PSCOM_CPPFLAGS=""
-	export PSCOM_LIBRARY=""
 
 	if test -x "${PSCOM_ALLIN_DIR}/../../scripts/vcversion" ; then
 		if ! test -d "${TOP_BUILDDIR}/pscom" ; then
@@ -153,7 +150,7 @@ AC_ARG_WITH([pscom-allin], [
 	if test "$openib_enabled" = "yes" ; then
 		if test "$have_openib" = "yes" ; then
 			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_OPENIB"
-			export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -libverbs"
+			export PSCOM_ALLIN_LIBS="${PSCOM_ALLIN_LIBS} -libverbs"
 			echo "Including openib as a built-in plugin for pscom"
 		else
 			AC_MSG_ERROR([openib support requested but not found])
@@ -162,7 +159,7 @@ AC_ARG_WITH([pscom-allin], [
 	if test "$psm2_enabled" = "yes" ; then
 		if test "$have_psm2" = "yes" ; then
 			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_PSM2"
-			export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -lpsm2"
+			export PSCOM_ALLIN_LIBS="${PSCOM_ALLIN_LIBS} -lpsm2"
 			echo "Including psm2 as a built-in plugin for pscom"
 		else
 			AC_MSG_ERROR([psm2 support requested but not found])

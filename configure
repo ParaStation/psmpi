@@ -3498,7 +3498,7 @@ done
 # Check whether --with-pscom-allin was given.
 if test "${with_pscom_allin+set}" = set; then :
   withval=$with_pscom_allin;
-	PSCOM_ALLIN="true"
+	export PSCOM_ALLIN="true"
 	PSCOM_ALLIN_DIR="$withval"
 	as_ac_File=`$as_echo "ac_cv_file_"${PSCOM_ALLIN_DIR}/lib/all/pscom_all.c"" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for \"${PSCOM_ALLIN_DIR}/lib/all/pscom_all.c\"" >&5
@@ -3524,9 +3524,6 @@ if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 fi
 
 	export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN -I${PSCOM_ALLIN_DIR}/ -I${PSCOM_ALLIN_DIR}/../../include/ -I${PSCOM_ALLIN_DIR}/../../lib/pscom/"
-	export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -lpthread -ldl"
-	export PSCOM_CPPFLAGS=""
-	export PSCOM_LIBRARY=""
 
 	if test -x "${PSCOM_ALLIN_DIR}/../../scripts/vcversion" ; then
 		if ! test -d "${TOP_BUILDDIR}/pscom" ; then
@@ -3572,7 +3569,7 @@ fi
 	if test "$openib_enabled" = "yes" ; then
 		if test "$have_openib" = "yes" ; then
 			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_OPENIB"
-			export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -libverbs"
+			export PSCOM_ALLIN_LIBS="${PSCOM_ALLIN_LIBS} -libverbs"
 			echo "Including openib as a built-in plugin for pscom"
 		else
 			as_fn_error $? "openib support requested but not found" "$LINENO" 5
@@ -3581,7 +3578,7 @@ fi
 	if test "$psm2_enabled" = "yes" ; then
 		if test "$have_psm2" = "yes" ; then
 			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_PSM2"
-			export PSCOM_LDFLAGS="${PSCOM_LDFLAGS} -lpsm2"
+			export PSCOM_ALLIN_LIBS="${PSCOM_ALLIN_LIBS} -lpsm2"
 			echo "Including psm2 as a built-in plugin for pscom"
 		else
 			as_fn_error $? "psm2 support requested but not found" "$LINENO" 5
