@@ -28,7 +28,7 @@
 
 /* When MPID_PSP_CREATE_HISTOGRAM is defined and PSP_HISTOGRAM=1 is set, some statistics
  * about the distribution of message sizes will be gathered during the run by all processes
- * and eventually accumulated and printed by world rank 0 within the MPI_Finalize call. */ 
+ * and eventually accumulated and printed by world rank 0 within the MPI_Finalize call. */
 #undef MPID_PSP_CREATE_HISTOGRAM
 
 /* When MPID_PSP_TOPOLOGY_AWARE_COLLOPS is defined, the MPICH macro MPID_USE_NODE_IDS is set.
@@ -84,13 +84,18 @@ typedef struct MPID_PSCOM_XHeader_Rma_put {
 	long		encoded_type[0];
 } MPID_PSCOM_XHeader_Rma_put_t;
 
+/* pscom network header RMA get memory locations */
+typedef struct MPID_PSCOM_XHeader_Rma_get_mem_locations {
+	void 		*origin_addr;
+	char		*target_buf;
+} MPID_PSCOM_XHeader_Rma_get_mem_locations_t;
 
 /* pscom network header RMA get request */
 typedef struct MPID_PSCOM_XHeader_Rma_get_req {
 	MPID_PSCOM_XHeader_t common;
 /*	MPI_Aint	target_disp; */
+	MPID_PSCOM_XHeader_Rma_get_mem_locations_t mem_locations;
 	int		target_count;
-	char		*target_buf;
 /*	unsigned int	epoch; */
 	struct MPIR_Win *win_ptr; /* win_ptr of target (receiver, passive site) */
 
@@ -111,9 +116,10 @@ typedef struct MPID_PSCOM_XHeader_Rma_accumulate {
 } MPID_PSCOM_XHeader_Rma_accumulate_t;
 
 
-/* pscom network header RMA get request */
+/* pscom network header RMA get answer */
 typedef struct MPID_PSCOM_XHeader_Rma_get_answer {
 	MPID_PSCOM_XHeader_t common;
+	MPID_PSCOM_XHeader_Rma_get_mem_locations_t mem_locations;
 } MPID_PSCOM_XHeader_Rma_get_answer_t;
 
 /* pscom network header RMA lock/unlock */
@@ -180,6 +186,7 @@ typedef struct pscom_request_accumulate_recv {
 typedef struct pscom_request_get_answer_recv {
 	struct MPIR_Request     *mpid_req;
 	void			*origin_addr;
+	char 			*target_buf;
 	int			origin_count;
 	MPI_Datatype		origin_datatype;
 	MPID_PSP_packed_msg_t	msg;

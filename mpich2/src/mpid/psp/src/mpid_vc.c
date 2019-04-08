@@ -509,9 +509,12 @@ void MPID_PSP_mapper_dup_vcrt(MPIDI_VCRT_t* src_vcrt, MPIDI_VCRT_t **dest_vcrt,
 		 * instead simply point to the original comm's VCRT and bump
 		 * up it's reference count */
 		flag = 1;
-		for (i = 0; i < mapper->src_mapping_size; i++)
-			if (mapper->src_mapping[i] != i)
+		for (i = 0; i < mapper->src_mapping_size; i++) {
+			if (mapper->src_mapping[i] != i) {
 				flag = 0;
+				break;
+			}
+		}
 
 		if (flag) {
 			*dest_vcrt = MPIDI_VCRT_Dup(src_vcrt);;
