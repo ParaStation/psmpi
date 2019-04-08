@@ -10,3 +10,4 @@ mpich2/src/pm/hydra/autom4te.cache/*
 mpich2/test/mpi/autom4te.cache/*
 mpich2/**/Makefile.am-stamp
 dist/psmpi-*
+mpich2/test/mpi/dtpools/autom4te.cache/*
