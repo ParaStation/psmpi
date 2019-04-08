@@ -71,8 +71,8 @@ int main(int argc, char *argv[])
         MPI_Comm_size(comm_shmem, &comm_shmem_size);
         MPI_Comm_rank(comm_shmem, &comm_shmem_rank);
 
-	// In the ONDEMAND case, it is quite likely that comm_shmem equals COMM_SELF! Just skip this test then...
-	if(getenv("PSP_ONDEMAND") && (strcmp(getenv("PSP_ONDEMAND"), "1") == 0)) goto finalize;
+	// If SMP-awareness is disabled, it is quite likely that comm_shmem equals COMM_SELF! Just skip this test then...
+	if(getenv("PSP_SMP_AWARENESS") && (strcmp(getenv("PSP_SMP_AWARENESS"), "0") == 0)) goto finalize;
 
 	assert(sizeof(MPI_Aint) == sizeof(long));
 	assert(sizeof(size_t) == sizeof(unsigned long));

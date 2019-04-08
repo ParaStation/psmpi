@@ -35,6 +35,7 @@ PSCOM_CPPFLAGS="${PSCOM_CPPFLAGS-"-I/opt/parastation/include"}"
 PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
 PSCOM_LIBRARY="${PSCOM_LIBRARY-"-lpscom"}"
 PSCOM_RPATHLINK="${PSCOM_RPATHLINK-"${PSCOM_LDFLAGS//-L/-Wl,-rpath-link=}"}"
+case "$PSCOM_RPATHLINK" in '/'*) PSCOM_RPATHLINK="-Wl,-rpath-link=${PSCOM_RPATHLINK}" ;; esac
 # AX_CHECK_LIBRARY([PSCOM], [pscom.h], [pscom])
 AC_ARG_VAR([PSCOM_CPPFLAGS], [C preprocessor flags for PSCOM headers
 			    (default: "-I/opt/parastation/include")])
@@ -47,10 +48,21 @@ AC_ARG_VAR([PSCOM_RPATHLINK], [mpicc wrapper option for -Wl,-rpath-link
 
 PAC_APPEND_FLAG([${PSCOM_RPATHLINK}],[WRAPPER_LDFLAGS])
 
+if test "$PSCOM_ALLIN" = "true" ; then
+    PSCOM_LDFLAGS=""
+    PSCOM_CPPFLAGS=""
+    PSCOM_LIBRARY=""
+    PSCOM_ALLIN_LIBS="${PSCOM_ALLIN_LIBS} -lpthread -ldl"
+    echo "        mpid/psp : set PSCOM_ALLIN_LIBS to ${PSCOM_ALLIN_LIBS}"
+else
+    PSCOM_ALLIN_LIBS=""
+fi
+
 AC_SUBST([PSCOM_CPPFLAGS])
 AC_SUBST([PSCOM_LDFLAGS])
 AC_SUBST([PSCOM_LIBRARY])
 AC_SUBST([PSCOM_RPATHLINK])
+AC_SUBST([PSCOM_ALLIN_LIBS])
 
 # todo: check whether we need all of them
 build_mpid_common_sched=yes
