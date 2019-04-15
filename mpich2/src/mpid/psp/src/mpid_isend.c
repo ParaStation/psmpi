@@ -363,6 +363,7 @@ int MPID_Issend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int ran
 #include <syslog.h>
 #include <sys/ioctl.h>
 #include <sys/ipc.h>
+#include <sys/mman.h>
 #include <sys/poll.h>
 #include <sys/resource.h>
 #include <sys/shm.h>
