@@ -114,6 +114,8 @@ int main(int argc, char **argv)
 
 	MPI_Reduce((world_rank == 0 ? MPI_IN_PLACE : &errs), &errs, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
+	MPI_Comm_free(&shm_comm);
+
 finalize:
         MPI_Finalize();
 

@@ -132,6 +132,7 @@ int main(int argc, char* argv[])
 
 	MPI_Comm_free(&split_comm);
 	MPI_Comm_free(&inter_comm);
+	MPI_Comm_disconnect(&spawn_comm);
 
 	MPI_Finalize();
 	return 0;
