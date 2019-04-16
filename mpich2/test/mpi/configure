@@ -697,6 +697,7 @@ am__nodep
 AMDEPBACKSLASH
 AMDEP_FALSE
 AMDEP_TRUE
+am__quote
 am__include
 DEPDIR
 OBJEXT
@@ -737,6 +738,7 @@ MPILIBLOC
 SET_CFLAGS
 VPATH
 MAKE
+cudadir
 RUN_XFAIL
 ckpointdir
 comm_overlap
@@ -816,8 +818,7 @@ PACKAGE_VERSION
 PACKAGE_TARNAME
 PACKAGE_NAME
 PATH_SEPARATOR
-SHELL
-am__quote'
+SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
@@ -826,6 +827,7 @@ enable_maintainer_mode
 enable_echo
 enable_fortran
 enable_dtpools
+enable_cuda
 enable_cxx
 enable_romio
 enable_spawn
@@ -1517,6 +1519,7 @@ Optional Features:
         no|none   - No Fortran support
 
   --disable-dtpools       Disable dtpools tests
+  --enable-cuda           Add some tests for CUDA-awareness
   --enable-cxx            Turn on C++ tests (default)
   --enable-romio          Enable ROMIO MPI I/O implementation
   --enable-spawn          Enable tests of the dynamic process parts of MPI-2
@@ -3358,7 +3361,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 echo "RUNNING CONFIGURE FOR MPI TESTS"
 
-am__api_version='1.16'
+am__api_version='1.15'
 
 # Find a good install program.  We prefer a C program (faster),
 # so one script is as good as another.  But avoid the broken or
@@ -3874,8 +3877,8 @@ MAKEINFO=${MAKEINFO-"${am_missing_run}makeinfo"}
 
 # For better backward compatibility.  To be removed once Automake 1.9.x
 # dies out for good.  For more background, see:
-# <https://lists.gnu.org/archive/html/automake/2012-07/msg00001.html>
-# <https://lists.gnu.org/archive/html/automake/2012-07/msg00014.html>
+# <http://lists.gnu.org/archive/html/automake/2012-07/msg00001.html>
+# <http://lists.gnu.org/archive/html/automake/2012-07/msg00014.html>
 mkdir_p='$(MKDIR_P)'
 
 # We need awk for the "check" target (and possibly the TAP driver).  The
@@ -3926,7 +3929,7 @@ END
 Aborting the configuration process, to ensure you take notice of the issue.
 
 You can download and install GNU coreutils to get an 'rm' implementation
-that behaves properly: <https://www.gnu.org/software/coreutils/>.
+that behaves properly: <http://www.gnu.org/software/coreutils/>.
 
 If you want to complete the configuration process using your problematic
 'rm' anyway, export the environment variable ACCEPT_INFERIOR_RM_PROGRAM
@@ -4113,6 +4116,13 @@ else
     DTP_SWITCH="OFF"
 fi
 
+
+# Check whether --enable-cuda was given.
+if test "${enable_cuda+set}" = set; then :
+  enableval=$enable_cuda;
+else
+  enable_cuda=no
+fi
 
 
 # Check whether --enable-cxx was given.
@@ -4430,6 +4440,14 @@ fi
 RUN_XFAIL=false
 if test "$enable_xfail" = "yes" ; then
     RUN_XFAIL=true
+fi
+
+
+#
+# Only run CUDA tests if enabled
+cudadir="#cuda"
+if test "$enable_cuda" = "yes" ; then
+    cudadir="cuda"
 fi
 
 
@@ -5209,45 +5227,45 @@ DEPDIR="${am__leading_dot}deps"
 
 ac_config_commands="$ac_config_commands depfiles"
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${MAKE-make} supports the include directive" >&5
-$as_echo_n "checking whether ${MAKE-make} supports the include directive... " >&6; }
-cat > confinc.mk << 'END'
+
+am_make=${MAKE-make}
+cat > confinc << 'END'
 am__doit:
-	@echo this is the am__doit target >confinc.out
+	@echo this is the am__doit target
 .PHONY: am__doit
 END
+# If we don't find an include directive, just comment out the code.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for style of include used by $am_make" >&5
+$as_echo_n "checking for style of include used by $am_make... " >&6; }
 am__include="#"
 am__quote=
-# BSD make does it like this.
-echo '.include "confinc.mk" # ignored' > confmf.BSD
-# Other make implementations (GNU, Solaris 10, AIX) do it like this.
-echo 'include confinc.mk # ignored' > confmf.GNU
-_am_result=no
-for s in GNU BSD; do
-  { echo "$as_me:$LINENO: ${MAKE-make} -f confmf.$s && cat confinc.out" >&5
-   (${MAKE-make} -f confmf.$s && cat confinc.out) >&5 2>&5
-   ac_status=$?
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); }
-  case $?:`cat confinc.out 2>/dev/null` in #(
-  '0:this is the am__doit target') :
-    case $s in #(
-  BSD) :
-    am__include='.include' am__quote='"' ;; #(
-  *) :
-    am__include='include' am__quote='' ;;
-esac ;; #(
-  *) :
-     ;;
+_am_result=none
+# First try GNU make style include.
+echo "include confinc" > confmf
+# Ignore all kinds of additional output from 'make'.
+case `$am_make -s -f confmf 2> /dev/null` in #(
+*the\ am__doit\ target*)
+  am__include=include
+  am__quote=
+  _am_result=GNU
+  ;;
 esac
-  if test "$am__include" != "#"; then
-    _am_result="yes ($s style)"
-    break
-  fi
-done
-rm -f confinc.* confmf.*
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${_am_result}" >&5
-$as_echo "${_am_result}" >&6; }
+# Now try BSD make style include.
+if test "$am__include" = "#"; then
+   echo '.include "confinc"' > confmf
+   case `$am_make -s -f confmf 2> /dev/null` in #(
+   *the\ am__doit\ target*)
+     am__include=.include
+     am__quote="\""
+     _am_result=BSD
+     ;;
+   esac
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $_am_result" >&5
+$as_echo "$_am_result" >&6; }
+rm -f confinc confmf
 
 # Check whether --enable-dependency-tracking was given.
 if test "${enable_dependency_tracking+set}" = set; then :
@@ -12748,7 +12766,7 @@ ac_config_commands="$ac_config_commands default-3"
 
 ac_config_commands="$ac_config_commands default-4"
 
-ac_config_files="$ac_config_files maint/testmerge runtests checktests Makefile basic/Makefile attr/Makefile attr/testlist util/Makefile coll/Makefile coll/testlist comm/Makefile datatype/Makefile datatype/testlist errhan/Makefile group/Makefile info/Makefile init/Makefile pt2pt/Makefile pt2pt/testlist mpi_t/Makefile parastation/Makefile rma/Makefile rma/testlist spawn/Makefile spawn/testlist topo/Makefile io/Makefile io/testlist f77/Makefile f77/attr/Makefile f77/attr/attraints.h f77/pt2pt/attr1aints.h f77/ext/add1size.h f77/datatype/Makefile f77/datatype/typeaints.h f77/util/Makefile f77/coll/Makefile f77/comm/Makefile f77/topo/Makefile f77/init/Makefile f77/rma/addsize.h f77/pt2pt/Makefile f77/info/Makefile f77/spawn/Makefile f77/spawn/testlist f77/spawn/type1aint.h f77/rma/Makefile f77/ext/Makefile f77/ext/testlist f77/io/Makefile f77/io/iooffset.h f77/io/iodisp.h f77/io/ioaint.h f77/io/testlist f77/profile/Makefile f90/Makefile f90/attr/Makefile f90/datatype/Makefile f90/f90types/Makefile f90/util/Makefile f90/coll/Makefile f90/comm/Makefile f90/topo/Makefile f90/init/Makefile f90/pt2pt/Makefile f90/rma/Makefile f90/info/Makefile f90/spawn/Makefile f90/spawn/testlist f90/timer/Makefile f90/ext/Makefile f90/ext/testlist f90/io/Makefile f90/io/testlist f90/misc/Makefile f90/profile/Makefile f08/Makefile f08/attr/Makefile f08/datatype/Makefile f08/util/Makefile f08/coll/Makefile f08/comm/Makefile f08/pt2pt/Makefile f08/rma/Makefile f08/subarray/Makefile f08/topo/Makefile f08/io/Makefile f08/io/testlist f08/init/Makefile f08/info/Makefile f08/spawn/Makefile f08/spawn/testlist f08/timer/Makefile f08/ext/Makefile f08/misc/Makefile f08/profile/Makefile cxx/Makefile cxx/util/Makefile cxx/attr/Makefile cxx/attr/testlist cxx/pt2pt/Makefile cxx/comm/Makefile cxx/coll/Makefile cxx/errhan/Makefile cxx/info/Makefile cxx/datatype/Makefile cxx/datatype/testlist cxx/io/Makefile cxx/init/Makefile cxx/rma/Makefile cxx/spawn/Makefile cxx/spawn/testlist cxx/topo/Makefile threads/Makefile threads/pt2pt/Makefile threads/util/Makefile threads/comm/Makefile threads/comm/testlist threads/init/Makefile threads/mpi_t/Makefile threads/spawn/Makefile threads/rma/Makefile threads/coll/Makefile threads/coll/testlist errors/Makefile errors/attr/Makefile errors/basic/Makefile errors/coll/Makefile errors/comm/Makefile errors/datatype/Makefile errors/faults/Makefile errors/group/Makefile errors/pt2pt/Makefile errors/rma/Makefile errors/spawn/Makefile errors/spawn/testlist errors/topo/Makefile errors/io/Makefile errors/cxx/Makefile errors/cxx/errhan/Makefile errors/cxx/io/Makefile errors/f77/Makefile errors/f77/io/Makefile errors/f77/io/addsize.h errors/f77/io/iooffset.h errors/f90/Makefile errors/f90/io/Makefile errors/f08/Makefile errors/f08/io/Makefile ckpoint/Makefile ft/Makefile manual/Makefile manual/manyconnect manual/mpi_t/Makefile perf/Makefile testlist cxx/testlist cxx/topo/testlist f77/testlist f90/testlist f08/testlist threads/testlist errors/testlist errors/cxx/testlist errors/f77/testlist errors/f90/testlist impls/testlist f77/rma/testlist f90/rma/testlist f08/rma/testlist impls/Makefile impls/hydra/Makefile impls/hydra/proc_binding.sh impls/mpich/Makefile impls/mpich/testlist impls/mpich/mpi_t/Makefile"
+ac_config_files="$ac_config_files maint/testmerge runtests checktests Makefile basic/Makefile attr/Makefile attr/testlist util/Makefile coll/Makefile coll/testlist comm/Makefile datatype/Makefile datatype/testlist errhan/Makefile group/Makefile info/Makefile init/Makefile pt2pt/Makefile pt2pt/testlist mpi_t/Makefile parastation/Makefile cuda/Makefile rma/Makefile rma/testlist spawn/Makefile spawn/testlist topo/Makefile io/Makefile io/testlist f77/Makefile f77/attr/Makefile f77/attr/attraints.h f77/pt2pt/attr1aints.h f77/ext/add1size.h f77/datatype/Makefile f77/datatype/typeaints.h f77/util/Makefile f77/coll/Makefile f77/comm/Makefile f77/topo/Makefile f77/init/Makefile f77/rma/addsize.h f77/pt2pt/Makefile f77/info/Makefile f77/spawn/Makefile f77/spawn/testlist f77/spawn/type1aint.h f77/rma/Makefile f77/ext/Makefile f77/ext/testlist f77/io/Makefile f77/io/iooffset.h f77/io/iodisp.h f77/io/ioaint.h f77/io/testlist f77/profile/Makefile f90/Makefile f90/attr/Makefile f90/datatype/Makefile f90/f90types/Makefile f90/util/Makefile f90/coll/Makefile f90/comm/Makefile f90/topo/Makefile f90/init/Makefile f90/pt2pt/Makefile f90/rma/Makefile f90/info/Makefile f90/spawn/Makefile f90/spawn/testlist f90/timer/Makefile f90/ext/Makefile f90/ext/testlist f90/io/Makefile f90/io/testlist f90/misc/Makefile f90/profile/Makefile f08/Makefile f08/attr/Makefile f08/datatype/Makefile f08/util/Makefile f08/coll/Makefile f08/comm/Makefile f08/pt2pt/Makefile f08/rma/Makefile f08/subarray/Makefile f08/topo/Makefile f08/io/Makefile f08/io/testlist f08/init/Makefile f08/info/Makefile f08/spawn/Makefile f08/spawn/testlist f08/timer/Makefile f08/ext/Makefile f08/misc/Makefile f08/profile/Makefile cxx/Makefile cxx/util/Makefile cxx/attr/Makefile cxx/attr/testlist cxx/pt2pt/Makefile cxx/comm/Makefile cxx/coll/Makefile cxx/errhan/Makefile cxx/info/Makefile cxx/datatype/Makefile cxx/datatype/testlist cxx/io/Makefile cxx/init/Makefile cxx/rma/Makefile cxx/spawn/Makefile cxx/spawn/testlist cxx/topo/Makefile threads/Makefile threads/pt2pt/Makefile threads/util/Makefile threads/comm/Makefile threads/comm/testlist threads/init/Makefile threads/mpi_t/Makefile threads/spawn/Makefile threads/rma/Makefile threads/coll/Makefile threads/coll/testlist errors/Makefile errors/attr/Makefile errors/basic/Makefile errors/coll/Makefile errors/comm/Makefile errors/datatype/Makefile errors/faults/Makefile errors/group/Makefile errors/pt2pt/Makefile errors/rma/Makefile errors/spawn/Makefile errors/spawn/testlist errors/topo/Makefile errors/io/Makefile errors/cxx/Makefile errors/cxx/errhan/Makefile errors/cxx/io/Makefile errors/f77/Makefile errors/f77/io/Makefile errors/f77/io/addsize.h errors/f77/io/iooffset.h errors/f90/Makefile errors/f90/io/Makefile errors/f08/Makefile errors/f08/io/Makefile ckpoint/Makefile ft/Makefile manual/Makefile manual/manyconnect manual/mpi_t/Makefile perf/Makefile testlist cxx/testlist cxx/topo/testlist f77/testlist f90/testlist f08/testlist threads/testlist errors/testlist errors/cxx/testlist errors/f77/testlist errors/f90/testlist impls/testlist f77/rma/testlist f90/rma/testlist f08/rma/testlist impls/Makefile impls/hydra/Makefile impls/hydra/proc_binding.sh impls/mpich/Makefile impls/mpich/testlist impls/mpich/mpi_t/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -13478,7 +13496,7 @@ cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 #
 # INIT-COMMANDS
 #
-AMDEP_TRUE="$AMDEP_TRUE" MAKE="${MAKE-make}"
+AMDEP_TRUE="$AMDEP_TRUE" ac_aux_dir="$ac_aux_dir"
 
 
 
@@ -13519,6 +13537,7 @@ do
     "pt2pt/testlist") CONFIG_FILES="$CONFIG_FILES pt2pt/testlist" ;;
     "mpi_t/Makefile") CONFIG_FILES="$CONFIG_FILES mpi_t/Makefile" ;;
     "parastation/Makefile") CONFIG_FILES="$CONFIG_FILES parastation/Makefile" ;;
+    "cuda/Makefile") CONFIG_FILES="$CONFIG_FILES cuda/Makefile" ;;
     "rma/Makefile") CONFIG_FILES="$CONFIG_FILES rma/Makefile" ;;
     "rma/testlist") CONFIG_FILES="$CONFIG_FILES rma/testlist" ;;
     "spawn/Makefile") CONFIG_FILES="$CONFIG_FILES spawn/Makefile" ;;
@@ -14273,35 +14292,29 @@ $as_echo "$as_me: executing $ac_file commands" >&6;}
   # Older Autoconf quotes --file arguments for eval, but not when files
   # are listed without --file.  Let's play safe and only enable the eval
   # if we detect the quoting.
-  # TODO: see whether this extra hack can be removed once we start
-  # requiring Autoconf 2.70 or later.
-  case $CONFIG_FILES in #(
-  *\'*) :
-    eval set x "$CONFIG_FILES" ;; #(
-  *) :
-    set x $CONFIG_FILES ;; #(
-  *) :
-     ;;
-esac
+  case $CONFIG_FILES in
+  *\'*) eval set x "$CONFIG_FILES" ;;
+  *)   set x $CONFIG_FILES ;;
+  esac
   shift
-  # Used to flag and report bootstrapping failures.
-  am_rc=0
-  for am_mf
+  for mf
   do
     # Strip MF so we end up with the name of the file.
-    am_mf=`$as_echo "$am_mf" | sed -e 's/:.*$//'`
-    # Check whether this is an Automake generated Makefile which includes
-    # dependency-tracking related rules and includes.
-    # Grep'ing the whole file directly is not great: AIX grep has a line
+    mf=`echo "$mf" | sed -e 's/:.*$//'`
+    # Check whether this is an Automake generated Makefile or not.
+    # We used to match only the files named 'Makefile.in', but
+    # some people rename them; so instead we look at the file content.
+    # Grep'ing the first line is not enough: some people post-process
+    # each Makefile.in and add a new line on top of each file to say so.
+    # Grep'ing the whole file is not good either: AIX grep has a line
     # limit of 2048, but all sed's we know have understand at least 4000.
-    sed -n 's,^am--depfiles:.*,X,p' "$am_mf" | grep X >/dev/null 2>&1 \
-      || continue
-    am_dirpart=`$as_dirname -- "$am_mf" ||
-$as_expr X"$am_mf" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
-	 X"$am_mf" : 'X\(//\)[^/]' \| \
-	 X"$am_mf" : 'X\(//\)$' \| \
-	 X"$am_mf" : 'X\(/\)' \| . 2>/dev/null ||
-$as_echo X"$am_mf" |
+    if sed -n 's,^#.*generated by automake.*,X,p' "$mf" | grep X >/dev/null 2>&1; then
+      dirpart=`$as_dirname -- "$mf" ||
+$as_expr X"$mf" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
+	 X"$mf" : 'X\(//\)[^/]' \| \
+	 X"$mf" : 'X\(//\)$' \| \
+	 X"$mf" : 'X\(/\)' \| . 2>/dev/null ||
+$as_echo X"$mf" |
     sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{
 	    s//\1/
 	    q
@@ -14319,48 +14332,53 @@ $as_echo X"$am_mf" |
 	    q
 	  }
 	  s/.*/./; q'`
-    am_filepart=`$as_basename -- "$am_mf" ||
-$as_expr X/"$am_mf" : '.*/\([^/][^/]*\)/*$' \| \
-	 X"$am_mf" : 'X\(//\)$' \| \
-	 X"$am_mf" : 'X\(/\)' \| . 2>/dev/null ||
-$as_echo X/"$am_mf" |
-    sed '/^.*\/\([^/][^/]*\)\/*$/{
+    else
+      continue
+    fi
+    # Extract the definition of DEPDIR, am__include, and am__quote
+    # from the Makefile without running 'make'.
+    DEPDIR=`sed -n 's/^DEPDIR = //p' < "$mf"`
+    test -z "$DEPDIR" && continue
+    am__include=`sed -n 's/^am__include = //p' < "$mf"`
+    test -z "$am__include" && continue
+    am__quote=`sed -n 's/^am__quote = //p' < "$mf"`
+    # Find all dependency output files, they are included files with
+    # $(DEPDIR) in their names.  We invoke sed twice because it is the
+    # simplest approach to changing $(DEPDIR) to its actual value in the
+    # expansion.
+    for file in `sed -n "
+      s/^$am__include $am__quote\(.*(DEPDIR).*\)$am__quote"'$/\1/p' <"$mf" | \
+	 sed -e 's/\$(DEPDIR)/'"$DEPDIR"'/g'`; do
+      # Make sure the directory exists.
+      test -f "$dirpart/$file" && continue
+      fdir=`$as_dirname -- "$file" ||
+$as_expr X"$file" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
+	 X"$file" : 'X\(//\)[^/]' \| \
+	 X"$file" : 'X\(//\)$' \| \
+	 X"$file" : 'X\(/\)' \| . 2>/dev/null ||
+$as_echo X"$file" |
+    sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{
 	    s//\1/
 	    q
 	  }
-	  /^X\/\(\/\/\)$/{
+	  /^X\(\/\/\)[^/].*/{
 	    s//\1/
 	    q
 	  }
-	  /^X\/\(\/\).*/{
+	  /^X\(\/\/\)$/{
+	    s//\1/
+	    q
+	  }
+	  /^X\(\/\).*/{
 	    s//\1/
 	    q
 	  }
 	  s/.*/./; q'`
-    { echo "$as_me:$LINENO: cd "$am_dirpart" \
-      && sed -e '/# am--include-marker/d' "$am_filepart" \
-        | $MAKE -f - am--depfiles" >&5
-   (cd "$am_dirpart" \
-      && sed -e '/# am--include-marker/d' "$am_filepart" \
-        | $MAKE -f - am--depfiles) >&5 2>&5
-   ac_status=$?
-   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-   (exit $ac_status); } || am_rc=$?
+      as_dir=$dirpart/$fdir; as_fn_mkdir_p
+      # echo "creating $dirpart/$file"
+      echo '# dummy' > "$dirpart/$file"
+    done
   done
-  if test $am_rc -ne 0; then
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "Something went wrong bootstrapping makefile fragments
-    for automatic dependency tracking.  Try re-running configure with the
-    '--disable-dependency-tracking' option to at least be able to build
-    the package (albeit without support for automatic dependency tracking).
-See \`config.log' for more details" "$LINENO" 5; }
-  fi
-  { am_dirpart=; unset am_dirpart;}
-  { am_filepart=; unset am_filepart;}
-  { am_mf=; unset am_mf;}
-  { am_rc=; unset am_rc;}
-  rm -f conftest-deps.mk
 }
  ;;
     "default-1":C) chmod a+x maint/testmerge ;;

@@ -31,6 +31,10 @@ ifneq ($(CONFSET),none)
 SUBDIRS += mpich2
 all: mpich2_all
 
+ifeq ($(findstring cuda,$(CONFSET)),cuda)
+CUDA_TESTS = --enable-cuda
+endif
+
 ifeq ($(ENABLE_HYDRA),false)
 MPIEXEC=/opt/parastation/bin/mpiexec
 else
@@ -44,7 +48,7 @@ test testing:
 	export PSP_SCHED_YIELD=1; \
 	export MPIEXEC_UNIVERSE_SIZE=100; \
 	export _LOGNAME=$(SRCDIR)/doc/test-$$($(SRCDIR)/scripts/vcversion -r $(SRCDIR))_$$(date +%F_%T); \
-	( cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) ); \
+	( cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) $(CUDA_TESTS)); \
 	( hostname; rpm -qi pscom; rpm -qi psmgmt; $(SRCDIR)/scripts/vcversion -r $(SRCDIR); \
 	  echo $(MPIEXEC); \
 	  $(MAKE) -C mpich2 testing; \
@@ -65,7 +69,7 @@ no_all:
 endif
 
 ########################################################
-install: install_mpich2 modulefile install_version $(DESTDIR)$(prefix)/ChangeLog
+install: install_mpich2 modulefile install_version $(DESTDIR)$(prefix)/ChangeLog mpicc-conf
 
 HYDRA_BIN += mpiexec mpirun
 HYDRA_BIN += mpiexec.hydra hydra_pmi_proxy hydra_persist hydra_nameserver
@@ -94,6 +98,9 @@ ifneq ($(fixpath),)
 	    fi \
 	done
 endif
+
+mpicc-conf:
+	. scripts/generate_mpicc-conf.sh
 
 # Get Version
 VER:=$(shell cd $(TOP_SRCDIR) && scripts/vcversion)

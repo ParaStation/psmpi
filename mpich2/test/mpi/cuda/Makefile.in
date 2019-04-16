@@ -94,18 +94,18 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = cfree$(EXEEXT) ccreate1$(EXEEXT) manysplit$(EXEEXT) \
-	userdup$(EXEEXT) too_many_comms$(EXEEXT) \
-	too_many_comms2$(EXEEXT) too_many_comms3$(EXEEXT) \
-	too_many_icomms$(EXEEXT) too_many_icomms2$(EXEEXT) \
-	comm_create_nullarg$(EXEEXT) \
-	comm_create_group_nullarg$(EXEEXT) \
-	comm_get_info_nullarg$(EXEEXT) comm_group_nullarg$(EXEEXT) \
-	comm_size_nullarg$(EXEEXT) comm_split_nullarg$(EXEEXT) \
-	comm_split_type_nullarg$(EXEEXT) \
-	intercomm_create_nullarg$(EXEEXT) subcomm_abort$(EXEEXT) \
-	subcomm_abort2$(EXEEXT) intercomm_abort$(EXEEXT)
-subdir = errors/comm
+noinst_PROGRAMS = cuda_pingpong_mixed$(EXEEXT) \
+	cuda_pingpong_dtype$(EXEEXT) cuda_coll_suite$(EXEEXT) \
+	cuda_reduce_family$(EXEEXT) cuda_reduce_prefix$(EXEEXT) \
+	cuda_reduce_local$(EXEEXT) cuda_reduce_vec$(EXEEXT) \
+	cuda_scan_vec$(EXEEXT) cuda_allreduce_vec$(EXEEXT) \
+	cuda_simple_kernel$(EXEEXT) cuda_laplace_mpi$(EXEEXT) \
+	cuda_allgather$(EXEEXT) cuda_accfence$(EXEEXT) \
+	cuda_cas$(EXEEXT) cuda_fop$(EXEEXT) \
+	cuda_sync_memops_ptr_attr$(EXEEXT) \
+	cuda_sync_memops_explicitly$(EXEEXT) \
+	cuda_sync_memops_memcpy$(EXEEXT)
+subdir = cuda
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
 	$(top_srcdir)/confdb/aclocal_cc.m4 \
@@ -124,106 +124,102 @@ CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-ccreate1_SOURCES = ccreate1.c
-ccreate1_OBJECTS = ccreate1.$(OBJEXT)
-ccreate1_LDADD = $(LDADD)
-ccreate1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+cuda_accfence_SOURCES = cuda_accfence.c
+cuda_accfence_OBJECTS = cuda_accfence.$(OBJEXT)
+cuda_accfence_LDADD = $(LDADD)
+cuda_accfence_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-cfree_SOURCES = cfree.c
-cfree_OBJECTS = cfree.$(OBJEXT)
-cfree_LDADD = $(LDADD)
-cfree_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+cuda_allgather_SOURCES = cuda_allgather.c
+cuda_allgather_OBJECTS = cuda_allgather.$(OBJEXT)
+cuda_allgather_LDADD = $(LDADD)
+cuda_allgather_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-comm_create_group_nullarg_SOURCES = comm_create_group_nullarg.c
-comm_create_group_nullarg_OBJECTS =  \
-	comm_create_group_nullarg.$(OBJEXT)
-comm_create_group_nullarg_LDADD = $(LDADD)
-comm_create_group_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+cuda_allreduce_vec_SOURCES = cuda_allreduce_vec.c
+cuda_allreduce_vec_OBJECTS = cuda_allreduce_vec.$(OBJEXT)
+cuda_allreduce_vec_LDADD = $(LDADD)
+cuda_allreduce_vec_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-comm_create_nullarg_SOURCES = comm_create_nullarg.c
-comm_create_nullarg_OBJECTS = comm_create_nullarg.$(OBJEXT)
-comm_create_nullarg_LDADD = $(LDADD)
-comm_create_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+cuda_cas_SOURCES = cuda_cas.c
+cuda_cas_OBJECTS = cuda_cas.$(OBJEXT)
+cuda_cas_LDADD = $(LDADD)
+cuda_cas_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-comm_get_info_nullarg_SOURCES = comm_get_info_nullarg.c
-comm_get_info_nullarg_OBJECTS = comm_get_info_nullarg.$(OBJEXT)
-comm_get_info_nullarg_LDADD = $(LDADD)
-comm_get_info_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+cuda_coll_suite_SOURCES = cuda_coll_suite.c
+cuda_coll_suite_OBJECTS = cuda_coll_suite.$(OBJEXT)
+cuda_coll_suite_LDADD = $(LDADD)
+cuda_coll_suite_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-comm_group_nullarg_SOURCES = comm_group_nullarg.c
-comm_group_nullarg_OBJECTS = comm_group_nullarg.$(OBJEXT)
-comm_group_nullarg_LDADD = $(LDADD)
-comm_group_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+cuda_fop_SOURCES = cuda_fop.c
+cuda_fop_OBJECTS = cuda_fop.$(OBJEXT)
+cuda_fop_LDADD = $(LDADD)
+cuda_fop_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-comm_size_nullarg_SOURCES = comm_size_nullarg.c
-comm_size_nullarg_OBJECTS = comm_size_nullarg.$(OBJEXT)
-comm_size_nullarg_LDADD = $(LDADD)
-comm_size_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+am_cuda_laplace_mpi_OBJECTS = cuda_laplace_mpi.$(OBJEXT)
+cuda_laplace_mpi_OBJECTS = $(am_cuda_laplace_mpi_OBJECTS)
+cuda_laplace_mpi_LDADD = $(LDADD)
+cuda_laplace_mpi_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-comm_split_nullarg_SOURCES = comm_split_nullarg.c
-comm_split_nullarg_OBJECTS = comm_split_nullarg.$(OBJEXT)
-comm_split_nullarg_LDADD = $(LDADD)
-comm_split_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+cuda_pingpong_dtype_SOURCES = cuda_pingpong_dtype.c
+cuda_pingpong_dtype_OBJECTS = cuda_pingpong_dtype.$(OBJEXT)
+cuda_pingpong_dtype_LDADD = $(LDADD)
+cuda_pingpong_dtype_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-comm_split_type_nullarg_SOURCES = comm_split_type_nullarg.c
-comm_split_type_nullarg_OBJECTS = comm_split_type_nullarg.$(OBJEXT)
-comm_split_type_nullarg_LDADD = $(LDADD)
-comm_split_type_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+cuda_pingpong_mixed_SOURCES = cuda_pingpong_mixed.c
+cuda_pingpong_mixed_OBJECTS = cuda_pingpong_mixed.$(OBJEXT)
+cuda_pingpong_mixed_LDADD = $(LDADD)
+cuda_pingpong_mixed_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-intercomm_abort_SOURCES = intercomm_abort.c
-intercomm_abort_OBJECTS = intercomm_abort.$(OBJEXT)
-intercomm_abort_LDADD = $(LDADD)
-intercomm_abort_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+cuda_reduce_family_SOURCES = cuda_reduce_family.c
+cuda_reduce_family_OBJECTS = cuda_reduce_family.$(OBJEXT)
+cuda_reduce_family_LDADD = $(LDADD)
+cuda_reduce_family_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-intercomm_create_nullarg_SOURCES = intercomm_create_nullarg.c
-intercomm_create_nullarg_OBJECTS = intercomm_create_nullarg.$(OBJEXT)
-intercomm_create_nullarg_LDADD = $(LDADD)
-intercomm_create_nullarg_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+cuda_reduce_local_SOURCES = cuda_reduce_local.c
+cuda_reduce_local_OBJECTS = cuda_reduce_local.$(OBJEXT)
+cuda_reduce_local_LDADD = $(LDADD)
+cuda_reduce_local_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-manysplit_SOURCES = manysplit.c
-manysplit_OBJECTS = manysplit.$(OBJEXT)
-manysplit_LDADD = $(LDADD)
-manysplit_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+cuda_reduce_prefix_SOURCES = cuda_reduce_prefix.c
+cuda_reduce_prefix_OBJECTS = cuda_reduce_prefix.$(OBJEXT)
+cuda_reduce_prefix_LDADD = $(LDADD)
+cuda_reduce_prefix_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-subcomm_abort_SOURCES = subcomm_abort.c
-subcomm_abort_OBJECTS = subcomm_abort.$(OBJEXT)
-subcomm_abort_LDADD = $(LDADD)
-subcomm_abort_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+cuda_reduce_vec_SOURCES = cuda_reduce_vec.c
+cuda_reduce_vec_OBJECTS = cuda_reduce_vec.$(OBJEXT)
+cuda_reduce_vec_LDADD = $(LDADD)
+cuda_reduce_vec_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-subcomm_abort2_SOURCES = subcomm_abort2.c
-subcomm_abort2_OBJECTS = subcomm_abort2.$(OBJEXT)
-subcomm_abort2_LDADD = $(LDADD)
-subcomm_abort2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+cuda_scan_vec_SOURCES = cuda_scan_vec.c
+cuda_scan_vec_OBJECTS = cuda_scan_vec.$(OBJEXT)
+cuda_scan_vec_LDADD = $(LDADD)
+cuda_scan_vec_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-too_many_comms_SOURCES = too_many_comms.c
-too_many_comms_OBJECTS = too_many_comms.$(OBJEXT)
-too_many_comms_LDADD = $(LDADD)
-too_many_comms_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+am_cuda_simple_kernel_OBJECTS = cuda_simple_kernel.$(OBJEXT)
+cuda_simple_kernel_OBJECTS = $(am_cuda_simple_kernel_OBJECTS)
+cuda_simple_kernel_LDADD = $(LDADD)
+cuda_simple_kernel_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-too_many_comms2_SOURCES = too_many_comms2.c
-too_many_comms2_OBJECTS = too_many_comms2.$(OBJEXT)
-too_many_comms2_LDADD = $(LDADD)
-too_many_comms2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+am_cuda_sync_memops_explicitly_OBJECTS =  \
+	cuda_sync_memops_explicitly-cuda_sync_memops.$(OBJEXT)
+cuda_sync_memops_explicitly_OBJECTS =  \
+	$(am_cuda_sync_memops_explicitly_OBJECTS)
+cuda_sync_memops_explicitly_LDADD = $(LDADD)
+cuda_sync_memops_explicitly_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-too_many_comms3_SOURCES = too_many_comms3.c
-too_many_comms3_OBJECTS = too_many_comms3.$(OBJEXT)
-too_many_comms3_LDADD = $(LDADD)
-too_many_comms3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+am_cuda_sync_memops_memcpy_OBJECTS =  \
+	cuda_sync_memops_memcpy-cuda_sync_memops.$(OBJEXT)
+cuda_sync_memops_memcpy_OBJECTS =  \
+	$(am_cuda_sync_memops_memcpy_OBJECTS)
+cuda_sync_memops_memcpy_LDADD = $(LDADD)
+cuda_sync_memops_memcpy_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-too_many_icomms_SOURCES = too_many_icomms.c
-too_many_icomms_OBJECTS = too_many_icomms.$(OBJEXT)
-too_many_icomms_LDADD = $(LDADD)
-too_many_icomms_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-too_many_icomms2_SOURCES = too_many_icomms2.c
-too_many_icomms2_OBJECTS = too_many_icomms2.$(OBJEXT)
-too_many_icomms2_LDADD = $(LDADD)
-too_many_icomms2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-userdup_SOURCES = userdup.c
-userdup_OBJECTS = userdup.$(OBJEXT)
-userdup_LDADD = $(LDADD)
-userdup_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+am_cuda_sync_memops_ptr_attr_OBJECTS =  \
+	cuda_sync_memops_ptr_attr-cuda_sync_memops.$(OBJEXT)
+cuda_sync_memops_ptr_attr_OBJECTS =  \
+	$(am_cuda_sync_memops_ptr_attr_OBJECTS)
+cuda_sync_memops_ptr_attr_LDADD = $(LDADD)
+cuda_sync_memops_ptr_attr_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -241,6 +237,10 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include
 depcomp = $(SHELL) $(top_srcdir)/confdb/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 AM_V_CC = $(am__v_CC_@AM_V@)
@@ -253,22 +253,24 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = ccreate1.c cfree.c comm_create_group_nullarg.c \
-	comm_create_nullarg.c comm_get_info_nullarg.c \
-	comm_group_nullarg.c comm_size_nullarg.c comm_split_nullarg.c \
-	comm_split_type_nullarg.c intercomm_abort.c \
-	intercomm_create_nullarg.c manysplit.c subcomm_abort.c \
-	subcomm_abort2.c too_many_comms.c too_many_comms2.c \
-	too_many_comms3.c too_many_icomms.c too_many_icomms2.c \
-	userdup.c
-DIST_SOURCES = ccreate1.c cfree.c comm_create_group_nullarg.c \
-	comm_create_nullarg.c comm_get_info_nullarg.c \
-	comm_group_nullarg.c comm_size_nullarg.c comm_split_nullarg.c \
-	comm_split_type_nullarg.c intercomm_abort.c \
-	intercomm_create_nullarg.c manysplit.c subcomm_abort.c \
-	subcomm_abort2.c too_many_comms.c too_many_comms2.c \
-	too_many_comms3.c too_many_icomms.c too_many_icomms2.c \
-	userdup.c
+SOURCES = cuda_accfence.c cuda_allgather.c cuda_allreduce_vec.c \
+	cuda_cas.c cuda_coll_suite.c cuda_fop.c \
+	$(cuda_laplace_mpi_SOURCES) cuda_pingpong_dtype.c \
+	cuda_pingpong_mixed.c cuda_reduce_family.c cuda_reduce_local.c \
+	cuda_reduce_prefix.c cuda_reduce_vec.c cuda_scan_vec.c \
+	$(cuda_simple_kernel_SOURCES) \
+	$(cuda_sync_memops_explicitly_SOURCES) \
+	$(cuda_sync_memops_memcpy_SOURCES) \
+	$(cuda_sync_memops_ptr_attr_SOURCES)
+DIST_SOURCES = cuda_accfence.c cuda_allgather.c cuda_allreduce_vec.c \
+	cuda_cas.c cuda_coll_suite.c cuda_fop.c \
+	$(cuda_laplace_mpi_SOURCES) cuda_pingpong_dtype.c \
+	cuda_pingpong_mixed.c cuda_reduce_family.c cuda_reduce_local.c \
+	cuda_reduce_prefix.c cuda_reduce_vec.c cuda_scan_vec.c \
+	$(cuda_simple_kernel_SOURCES) \
+	$(cuda_sync_memops_explicitly_SOURCES) \
+	$(cuda_sync_memops_memcpy_SOURCES) \
+	$(cuda_sync_memops_ptr_attr_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -484,6 +486,10 @@ threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+NVCC = nvcc
+NVCFLAGS = -m64
+MPICC_CUDA_CONF = -config=cuda
+AM_CFLAGS = $(MPICC_CUDA_CONF)
 
 # AM_CPPFLAGS are used for C++ code as well
 
@@ -495,10 +501,18 @@ LDADD = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
 EXTRA_DIST = testlist
+cuda_simple_kernel_SOURCES = cuda_simple_kernel.cu
+cuda_laplace_mpi_SOURCES = cuda_laplace_mpi.cu
+cuda_sync_memops_ptr_attr_SOURCES = cuda_sync_memops.c
+cuda_sync_memops_explicitly_SOURCES = cuda_sync_memops.c
+cuda_sync_memops_memcpy_SOURCES = cuda_sync_memops.c
+cuda_sync_memops_ptr_attr_CPPFLAGS = -DSYNC_VIA_PTR_ATTR $(AM_CPPFLAGS)
+cuda_sync_memops_explicitly_CPPFLAGS = -DSYNC_VIA_MEMCPY $(AM_CPPFLAGS)
+cuda_sync_memops_memcpy_CPPFLAGS = -DSYNC_EXPLICITLY $(AM_CPPFLAGS)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .o .obj
+.SUFFIXES: .c .cu .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/Makefile.mtest $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -508,9 +522,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign errors/comm/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign cuda/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign errors/comm/Makefile
+	  $(AUTOMAKE) --foreign cuda/Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \
@@ -533,85 +547,77 @@ $(am__aclocal_m4_deps):
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 
-ccreate1$(EXEEXT): $(ccreate1_OBJECTS) $(ccreate1_DEPENDENCIES) $(EXTRA_ccreate1_DEPENDENCIES) 
-	@rm -f ccreate1$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(ccreate1_OBJECTS) $(ccreate1_LDADD) $(LIBS)
+cuda_accfence$(EXEEXT): $(cuda_accfence_OBJECTS) $(cuda_accfence_DEPENDENCIES) $(EXTRA_cuda_accfence_DEPENDENCIES) 
+	@rm -f cuda_accfence$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_accfence_OBJECTS) $(cuda_accfence_LDADD) $(LIBS)
 
-cfree$(EXEEXT): $(cfree_OBJECTS) $(cfree_DEPENDENCIES) $(EXTRA_cfree_DEPENDENCIES) 
-	@rm -f cfree$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(cfree_OBJECTS) $(cfree_LDADD) $(LIBS)
+cuda_allgather$(EXEEXT): $(cuda_allgather_OBJECTS) $(cuda_allgather_DEPENDENCIES) $(EXTRA_cuda_allgather_DEPENDENCIES) 
+	@rm -f cuda_allgather$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_allgather_OBJECTS) $(cuda_allgather_LDADD) $(LIBS)
 
-comm_create_group_nullarg$(EXEEXT): $(comm_create_group_nullarg_OBJECTS) $(comm_create_group_nullarg_DEPENDENCIES) $(EXTRA_comm_create_group_nullarg_DEPENDENCIES) 
-	@rm -f comm_create_group_nullarg$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(comm_create_group_nullarg_OBJECTS) $(comm_create_group_nullarg_LDADD) $(LIBS)
+cuda_allreduce_vec$(EXEEXT): $(cuda_allreduce_vec_OBJECTS) $(cuda_allreduce_vec_DEPENDENCIES) $(EXTRA_cuda_allreduce_vec_DEPENDENCIES) 
+	@rm -f cuda_allreduce_vec$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_allreduce_vec_OBJECTS) $(cuda_allreduce_vec_LDADD) $(LIBS)
 
-comm_create_nullarg$(EXEEXT): $(comm_create_nullarg_OBJECTS) $(comm_create_nullarg_DEPENDENCIES) $(EXTRA_comm_create_nullarg_DEPENDENCIES) 
-	@rm -f comm_create_nullarg$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(comm_create_nullarg_OBJECTS) $(comm_create_nullarg_LDADD) $(LIBS)
+cuda_cas$(EXEEXT): $(cuda_cas_OBJECTS) $(cuda_cas_DEPENDENCIES) $(EXTRA_cuda_cas_DEPENDENCIES) 
+	@rm -f cuda_cas$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_cas_OBJECTS) $(cuda_cas_LDADD) $(LIBS)
 
-comm_get_info_nullarg$(EXEEXT): $(comm_get_info_nullarg_OBJECTS) $(comm_get_info_nullarg_DEPENDENCIES) $(EXTRA_comm_get_info_nullarg_DEPENDENCIES) 
-	@rm -f comm_get_info_nullarg$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(comm_get_info_nullarg_OBJECTS) $(comm_get_info_nullarg_LDADD) $(LIBS)
+cuda_coll_suite$(EXEEXT): $(cuda_coll_suite_OBJECTS) $(cuda_coll_suite_DEPENDENCIES) $(EXTRA_cuda_coll_suite_DEPENDENCIES) 
+	@rm -f cuda_coll_suite$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_coll_suite_OBJECTS) $(cuda_coll_suite_LDADD) $(LIBS)
 
-comm_group_nullarg$(EXEEXT): $(comm_group_nullarg_OBJECTS) $(comm_group_nullarg_DEPENDENCIES) $(EXTRA_comm_group_nullarg_DEPENDENCIES) 
-	@rm -f comm_group_nullarg$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(comm_group_nullarg_OBJECTS) $(comm_group_nullarg_LDADD) $(LIBS)
+cuda_fop$(EXEEXT): $(cuda_fop_OBJECTS) $(cuda_fop_DEPENDENCIES) $(EXTRA_cuda_fop_DEPENDENCIES) 
+	@rm -f cuda_fop$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_fop_OBJECTS) $(cuda_fop_LDADD) $(LIBS)
 
-comm_size_nullarg$(EXEEXT): $(comm_size_nullarg_OBJECTS) $(comm_size_nullarg_DEPENDENCIES) $(EXTRA_comm_size_nullarg_DEPENDENCIES) 
-	@rm -f comm_size_nullarg$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(comm_size_nullarg_OBJECTS) $(comm_size_nullarg_LDADD) $(LIBS)
+cuda_laplace_mpi$(EXEEXT): $(cuda_laplace_mpi_OBJECTS) $(cuda_laplace_mpi_DEPENDENCIES) $(EXTRA_cuda_laplace_mpi_DEPENDENCIES) 
+	@rm -f cuda_laplace_mpi$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_laplace_mpi_OBJECTS) $(cuda_laplace_mpi_LDADD) $(LIBS)
 
-comm_split_nullarg$(EXEEXT): $(comm_split_nullarg_OBJECTS) $(comm_split_nullarg_DEPENDENCIES) $(EXTRA_comm_split_nullarg_DEPENDENCIES) 
-	@rm -f comm_split_nullarg$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(comm_split_nullarg_OBJECTS) $(comm_split_nullarg_LDADD) $(LIBS)
+cuda_pingpong_dtype$(EXEEXT): $(cuda_pingpong_dtype_OBJECTS) $(cuda_pingpong_dtype_DEPENDENCIES) $(EXTRA_cuda_pingpong_dtype_DEPENDENCIES) 
+	@rm -f cuda_pingpong_dtype$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_pingpong_dtype_OBJECTS) $(cuda_pingpong_dtype_LDADD) $(LIBS)
 
-comm_split_type_nullarg$(EXEEXT): $(comm_split_type_nullarg_OBJECTS) $(comm_split_type_nullarg_DEPENDENCIES) $(EXTRA_comm_split_type_nullarg_DEPENDENCIES) 
-	@rm -f comm_split_type_nullarg$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(comm_split_type_nullarg_OBJECTS) $(comm_split_type_nullarg_LDADD) $(LIBS)
+cuda_pingpong_mixed$(EXEEXT): $(cuda_pingpong_mixed_OBJECTS) $(cuda_pingpong_mixed_DEPENDENCIES) $(EXTRA_cuda_pingpong_mixed_DEPENDENCIES) 
+	@rm -f cuda_pingpong_mixed$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_pingpong_mixed_OBJECTS) $(cuda_pingpong_mixed_LDADD) $(LIBS)
 
-intercomm_abort$(EXEEXT): $(intercomm_abort_OBJECTS) $(intercomm_abort_DEPENDENCIES) $(EXTRA_intercomm_abort_DEPENDENCIES) 
-	@rm -f intercomm_abort$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(intercomm_abort_OBJECTS) $(intercomm_abort_LDADD) $(LIBS)
+cuda_reduce_family$(EXEEXT): $(cuda_reduce_family_OBJECTS) $(cuda_reduce_family_DEPENDENCIES) $(EXTRA_cuda_reduce_family_DEPENDENCIES) 
+	@rm -f cuda_reduce_family$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_reduce_family_OBJECTS) $(cuda_reduce_family_LDADD) $(LIBS)
 
-intercomm_create_nullarg$(EXEEXT): $(intercomm_create_nullarg_OBJECTS) $(intercomm_create_nullarg_DEPENDENCIES) $(EXTRA_intercomm_create_nullarg_DEPENDENCIES) 
-	@rm -f intercomm_create_nullarg$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(intercomm_create_nullarg_OBJECTS) $(intercomm_create_nullarg_LDADD) $(LIBS)
+cuda_reduce_local$(EXEEXT): $(cuda_reduce_local_OBJECTS) $(cuda_reduce_local_DEPENDENCIES) $(EXTRA_cuda_reduce_local_DEPENDENCIES) 
+	@rm -f cuda_reduce_local$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_reduce_local_OBJECTS) $(cuda_reduce_local_LDADD) $(LIBS)
 
-manysplit$(EXEEXT): $(manysplit_OBJECTS) $(manysplit_DEPENDENCIES) $(EXTRA_manysplit_DEPENDENCIES) 
-	@rm -f manysplit$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(manysplit_OBJECTS) $(manysplit_LDADD) $(LIBS)
+cuda_reduce_prefix$(EXEEXT): $(cuda_reduce_prefix_OBJECTS) $(cuda_reduce_prefix_DEPENDENCIES) $(EXTRA_cuda_reduce_prefix_DEPENDENCIES) 
+	@rm -f cuda_reduce_prefix$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_reduce_prefix_OBJECTS) $(cuda_reduce_prefix_LDADD) $(LIBS)
 
-subcomm_abort$(EXEEXT): $(subcomm_abort_OBJECTS) $(subcomm_abort_DEPENDENCIES) $(EXTRA_subcomm_abort_DEPENDENCIES) 
-	@rm -f subcomm_abort$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(subcomm_abort_OBJECTS) $(subcomm_abort_LDADD) $(LIBS)
+cuda_reduce_vec$(EXEEXT): $(cuda_reduce_vec_OBJECTS) $(cuda_reduce_vec_DEPENDENCIES) $(EXTRA_cuda_reduce_vec_DEPENDENCIES) 
+	@rm -f cuda_reduce_vec$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_reduce_vec_OBJECTS) $(cuda_reduce_vec_LDADD) $(LIBS)
 
-subcomm_abort2$(EXEEXT): $(subcomm_abort2_OBJECTS) $(subcomm_abort2_DEPENDENCIES) $(EXTRA_subcomm_abort2_DEPENDENCIES) 
-	@rm -f subcomm_abort2$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(subcomm_abort2_OBJECTS) $(subcomm_abort2_LDADD) $(LIBS)
+cuda_scan_vec$(EXEEXT): $(cuda_scan_vec_OBJECTS) $(cuda_scan_vec_DEPENDENCIES) $(EXTRA_cuda_scan_vec_DEPENDENCIES) 
+	@rm -f cuda_scan_vec$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_scan_vec_OBJECTS) $(cuda_scan_vec_LDADD) $(LIBS)
 
-too_many_comms$(EXEEXT): $(too_many_comms_OBJECTS) $(too_many_comms_DEPENDENCIES) $(EXTRA_too_many_comms_DEPENDENCIES) 
-	@rm -f too_many_comms$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(too_many_comms_OBJECTS) $(too_many_comms_LDADD) $(LIBS)
+cuda_simple_kernel$(EXEEXT): $(cuda_simple_kernel_OBJECTS) $(cuda_simple_kernel_DEPENDENCIES) $(EXTRA_cuda_simple_kernel_DEPENDENCIES) 
+	@rm -f cuda_simple_kernel$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_simple_kernel_OBJECTS) $(cuda_simple_kernel_LDADD) $(LIBS)
 
-too_many_comms2$(EXEEXT): $(too_many_comms2_OBJECTS) $(too_many_comms2_DEPENDENCIES) $(EXTRA_too_many_comms2_DEPENDENCIES) 
-	@rm -f too_many_comms2$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(too_many_comms2_OBJECTS) $(too_many_comms2_LDADD) $(LIBS)
+cuda_sync_memops_explicitly$(EXEEXT): $(cuda_sync_memops_explicitly_OBJECTS) $(cuda_sync_memops_explicitly_DEPENDENCIES) $(EXTRA_cuda_sync_memops_explicitly_DEPENDENCIES) 
+	@rm -f cuda_sync_memops_explicitly$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_sync_memops_explicitly_OBJECTS) $(cuda_sync_memops_explicitly_LDADD) $(LIBS)
 
-too_many_comms3$(EXEEXT): $(too_many_comms3_OBJECTS) $(too_many_comms3_DEPENDENCIES) $(EXTRA_too_many_comms3_DEPENDENCIES) 
-	@rm -f too_many_comms3$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(too_many_comms3_OBJECTS) $(too_many_comms3_LDADD) $(LIBS)
+cuda_sync_memops_memcpy$(EXEEXT): $(cuda_sync_memops_memcpy_OBJECTS) $(cuda_sync_memops_memcpy_DEPENDENCIES) $(EXTRA_cuda_sync_memops_memcpy_DEPENDENCIES) 
+	@rm -f cuda_sync_memops_memcpy$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_sync_memops_memcpy_OBJECTS) $(cuda_sync_memops_memcpy_LDADD) $(LIBS)
 
-too_many_icomms$(EXEEXT): $(too_many_icomms_OBJECTS) $(too_many_icomms_DEPENDENCIES) $(EXTRA_too_many_icomms_DEPENDENCIES) 
-	@rm -f too_many_icomms$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(too_many_icomms_OBJECTS) $(too_many_icomms_LDADD) $(LIBS)
-
-too_many_icomms2$(EXEEXT): $(too_many_icomms2_OBJECTS) $(too_many_icomms2_DEPENDENCIES) $(EXTRA_too_many_icomms2_DEPENDENCIES) 
-	@rm -f too_many_icomms2$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(too_many_icomms2_OBJECTS) $(too_many_icomms2_LDADD) $(LIBS)
-
-userdup$(EXEEXT): $(userdup_OBJECTS) $(userdup_DEPENDENCIES) $(EXTRA_userdup_DEPENDENCIES) 
-	@rm -f userdup$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(userdup_OBJECTS) $(userdup_LDADD) $(LIBS)
+cuda_sync_memops_ptr_attr$(EXEEXT): $(cuda_sync_memops_ptr_attr_OBJECTS) $(cuda_sync_memops_ptr_attr_DEPENDENCIES) $(EXTRA_cuda_sync_memops_ptr_attr_DEPENDENCIES) 
+	@rm -f cuda_sync_memops_ptr_attr$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cuda_sync_memops_ptr_attr_OBJECTS) $(cuda_sync_memops_ptr_attr_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -619,26 +625,22 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ccreate1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfree.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_create_group_nullarg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_create_nullarg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_get_info_nullarg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_group_nullarg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_size_nullarg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_split_nullarg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_split_type_nullarg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intercomm_abort.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intercomm_create_nullarg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manysplit.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/subcomm_abort.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/subcomm_abort2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/too_many_comms.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/too_many_comms2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/too_many_comms3.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/too_many_icomms.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/too_many_icomms2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/userdup.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda_accfence.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda_allgather.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda_allreduce_vec.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda_cas.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda_coll_suite.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda_fop.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda_pingpong_dtype.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda_pingpong_mixed.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda_reduce_family.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda_reduce_local.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda_reduce_prefix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda_reduce_vec.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda_scan_vec.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda_sync_memops_explicitly-cuda_sync_memops.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda_sync_memops_memcpy-cuda_sync_memops.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda_sync_memops_ptr_attr-cuda_sync_memops.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -655,6 +657,48 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+cuda_sync_memops_explicitly-cuda_sync_memops.o: cuda_sync_memops.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cuda_sync_memops_explicitly_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cuda_sync_memops_explicitly-cuda_sync_memops.o -MD -MP -MF $(DEPDIR)/cuda_sync_memops_explicitly-cuda_sync_memops.Tpo -c -o cuda_sync_memops_explicitly-cuda_sync_memops.o `test -f 'cuda_sync_memops.c' || echo '$(srcdir)/'`cuda_sync_memops.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cuda_sync_memops_explicitly-cuda_sync_memops.Tpo $(DEPDIR)/cuda_sync_memops_explicitly-cuda_sync_memops.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cuda_sync_memops.c' object='cuda_sync_memops_explicitly-cuda_sync_memops.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cuda_sync_memops_explicitly_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cuda_sync_memops_explicitly-cuda_sync_memops.o `test -f 'cuda_sync_memops.c' || echo '$(srcdir)/'`cuda_sync_memops.c
+
+cuda_sync_memops_explicitly-cuda_sync_memops.obj: cuda_sync_memops.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cuda_sync_memops_explicitly_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cuda_sync_memops_explicitly-cuda_sync_memops.obj -MD -MP -MF $(DEPDIR)/cuda_sync_memops_explicitly-cuda_sync_memops.Tpo -c -o cuda_sync_memops_explicitly-cuda_sync_memops.obj `if test -f 'cuda_sync_memops.c'; then $(CYGPATH_W) 'cuda_sync_memops.c'; else $(CYGPATH_W) '$(srcdir)/cuda_sync_memops.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cuda_sync_memops_explicitly-cuda_sync_memops.Tpo $(DEPDIR)/cuda_sync_memops_explicitly-cuda_sync_memops.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cuda_sync_memops.c' object='cuda_sync_memops_explicitly-cuda_sync_memops.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cuda_sync_memops_explicitly_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cuda_sync_memops_explicitly-cuda_sync_memops.obj `if test -f 'cuda_sync_memops.c'; then $(CYGPATH_W) 'cuda_sync_memops.c'; else $(CYGPATH_W) '$(srcdir)/cuda_sync_memops.c'; fi`
+
+cuda_sync_memops_memcpy-cuda_sync_memops.o: cuda_sync_memops.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cuda_sync_memops_memcpy_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cuda_sync_memops_memcpy-cuda_sync_memops.o -MD -MP -MF $(DEPDIR)/cuda_sync_memops_memcpy-cuda_sync_memops.Tpo -c -o cuda_sync_memops_memcpy-cuda_sync_memops.o `test -f 'cuda_sync_memops.c' || echo '$(srcdir)/'`cuda_sync_memops.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cuda_sync_memops_memcpy-cuda_sync_memops.Tpo $(DEPDIR)/cuda_sync_memops_memcpy-cuda_sync_memops.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cuda_sync_memops.c' object='cuda_sync_memops_memcpy-cuda_sync_memops.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cuda_sync_memops_memcpy_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cuda_sync_memops_memcpy-cuda_sync_memops.o `test -f 'cuda_sync_memops.c' || echo '$(srcdir)/'`cuda_sync_memops.c
+
+cuda_sync_memops_memcpy-cuda_sync_memops.obj: cuda_sync_memops.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cuda_sync_memops_memcpy_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cuda_sync_memops_memcpy-cuda_sync_memops.obj -MD -MP -MF $(DEPDIR)/cuda_sync_memops_memcpy-cuda_sync_memops.Tpo -c -o cuda_sync_memops_memcpy-cuda_sync_memops.obj `if test -f 'cuda_sync_memops.c'; then $(CYGPATH_W) 'cuda_sync_memops.c'; else $(CYGPATH_W) '$(srcdir)/cuda_sync_memops.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cuda_sync_memops_memcpy-cuda_sync_memops.Tpo $(DEPDIR)/cuda_sync_memops_memcpy-cuda_sync_memops.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cuda_sync_memops.c' object='cuda_sync_memops_memcpy-cuda_sync_memops.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cuda_sync_memops_memcpy_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cuda_sync_memops_memcpy-cuda_sync_memops.obj `if test -f 'cuda_sync_memops.c'; then $(CYGPATH_W) 'cuda_sync_memops.c'; else $(CYGPATH_W) '$(srcdir)/cuda_sync_memops.c'; fi`
+
+cuda_sync_memops_ptr_attr-cuda_sync_memops.o: cuda_sync_memops.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cuda_sync_memops_ptr_attr_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cuda_sync_memops_ptr_attr-cuda_sync_memops.o -MD -MP -MF $(DEPDIR)/cuda_sync_memops_ptr_attr-cuda_sync_memops.Tpo -c -o cuda_sync_memops_ptr_attr-cuda_sync_memops.o `test -f 'cuda_sync_memops.c' || echo '$(srcdir)/'`cuda_sync_memops.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cuda_sync_memops_ptr_attr-cuda_sync_memops.Tpo $(DEPDIR)/cuda_sync_memops_ptr_attr-cuda_sync_memops.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cuda_sync_memops.c' object='cuda_sync_memops_ptr_attr-cuda_sync_memops.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cuda_sync_memops_ptr_attr_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cuda_sync_memops_ptr_attr-cuda_sync_memops.o `test -f 'cuda_sync_memops.c' || echo '$(srcdir)/'`cuda_sync_memops.c
+
+cuda_sync_memops_ptr_attr-cuda_sync_memops.obj: cuda_sync_memops.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cuda_sync_memops_ptr_attr_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT cuda_sync_memops_ptr_attr-cuda_sync_memops.obj -MD -MP -MF $(DEPDIR)/cuda_sync_memops_ptr_attr-cuda_sync_memops.Tpo -c -o cuda_sync_memops_ptr_attr-cuda_sync_memops.obj `if test -f 'cuda_sync_memops.c'; then $(CYGPATH_W) 'cuda_sync_memops.c'; else $(CYGPATH_W) '$(srcdir)/cuda_sync_memops.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cuda_sync_memops_ptr_attr-cuda_sync_memops.Tpo $(DEPDIR)/cuda_sync_memops_ptr_attr-cuda_sync_memops.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='cuda_sync_memops.c' object='cuda_sync_memops_ptr_attr-cuda_sync_memops.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cuda_sync_memops_ptr_attr_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o cuda_sync_memops_ptr_attr-cuda_sync_memops.obj `if test -f 'cuda_sync_memops.c'; then $(CYGPATH_W) 'cuda_sync_memops.c'; else $(CYGPATH_W) '$(srcdir)/cuda_sync_memops.c'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -872,6 +916,9 @@ testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
 		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
 		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
+
+.cu.o:
+	$(CC) -cc=$(NVCC) $(MPICC_CUDA_CONF) $(NVCFLAGS) -o $@ -c $<
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
