@@ -3,6 +3,16 @@ cuda_pingpong_mixed 2 env=PSP_CUDA=1
 cuda_coll_suite 4 env=PSP_CUDA=1
 cuda_reduce_family 4 env=PSP_CUDA=1
 cuda_reduce_prefix 4 env=PSP_CUDA=1
-#cuda_reduce_local 1 env=PSP_CUDA=1
+cuda_reduce_local 1 env=PSP_CUDA=1
 cuda_simple_kernel 4 env=PSP_CUDA=1
 cuda_laplace_mpi 4 env=PSP_CUDA=1
+cuda_allgather 10 env=PSP_CUDA=1 env=MPIR_CVAR_ALLGATHER_INTRA_ALGORITHM=brucks
+cuda_allgather 10 env=PSP_CUDA=1 env=MPIR_CVAR_ALLGATHER_INTRA_ALGORITHM=recursive_doubling env=PSP_CUDA_AWARE_SHM=0
+cuda_allgather 10 env=PSP_CUDA=1 env=MPIR_CVAR_ALLGATHER_INTRA_ALGORITHM=ring
+cuda_allgather 10 env=PSP_CUDA=1 env=MPIR_CVAR_ALLGATHER_INTRA_ALGORITHM=nb env=MPIR_CVAR_IALLGATHER_INTRA_ALGORITHM=brucks
+cuda_allgather 10 env=PSP_CUDA=1 env=MPIR_CVAR_ALLGATHER_INTRA_ALGORITHM=nb env=MPIR_CVAR_IALLGATHER_INTRA_ALGORITHM=ring
+cuda_allgather 10 env=PSP_CUDA=1 env=MPIR_CVAR_ALLGATHER_INTRA_ALGORITHM=nb env=MPIR_CVAR_IALLGATHER_INTRA_ALGORITHM=recursive_doubling  env=PSP_CUDA_AWARE_SHM=0
+cuda_accfence 4 env=PSP_CUDA=1
+cuda_cas 4 mpiversion=3.0 env=PSP_CUDA=1
+cuda_cas 4 mpiversion=3.0 env=PSP_CUDA=1
+cuda_fop 4 mpiversion=3.0 env=PSP_CUDA=1

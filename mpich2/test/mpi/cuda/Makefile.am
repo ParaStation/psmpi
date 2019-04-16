@@ -27,4 +27,5 @@ cuda_laplace_mpi_SOURCES = cuda_laplace_mpi.cu
 noinst_PROGRAMS =  \
 	cuda_pingpong_mixed cuda_pingpong_dtype cuda_coll_suite \
 	cuda_reduce_family cuda_reduce_prefix cuda_reduce_local \
-	cuda_simple_kernel cuda_laplace_mpi
+	cuda_simple_kernel cuda_laplace_mpi cuda_allgather cuda_accfence \
+	cuda_cas cuda_fop
