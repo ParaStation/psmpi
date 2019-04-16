@@ -58,9 +58,14 @@ int MPID_PSP_Bcast_send(void *buffer, int count, MPI_Datatype datatype, int root
 #ifdef USE_POST_BCAST
 	pscom_request_t *req;
 #endif
-	buffered = pscom_check_for_gpu_mem(buffer);
 
+#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+	buffered = pscom_check_for_gpu_mem(buffer);
 	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg, buffered);
+#else
+	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg, 0);
+#endif
+
 	if (unlikely(ret != MPI_SUCCESS)) goto err_create_packed_msg;
 
 	MPID_PSP_packed_msg_pack(buffer, count, datatype, &msg);
@@ -101,9 +106,14 @@ int MPID_PSP_Bcast_recv(void *buffer, int count, MPI_Datatype datatype, int root
 #ifdef USE_POST_BCAST
 	pscom_request_t *req;
 #endif
-	buffered = pscom_check_for_gpu_mem(buffer);
 
+#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+	buffered = pscom_check_for_gpu_mem(buffer);
 	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg, buffered);
+#else
+	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg, 0);
+#endif
+
 	if (unlikely(ret != MPI_SUCCESS)) goto err_create_packed_msg;
 
 #ifdef USE_POST_BCAST

@@ -159,9 +159,10 @@ void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Data
 	DLOOP_Offset last = msg_sz;
 	struct acc_params acc_params;
 
-	void *acc_addr;
+	void *acc_addr = (void*)target_addr;
 	size_t target_sz;
 
+#ifdef MPID_PSP_WITH_CUDA_AWARENESS
 	/* is target_addr within device memory? */
 	if (pscom_check_for_gpu_mem(target_addr)) {
 		int contig;
@@ -173,10 +174,9 @@ void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Data
 			dtp, true_lb);
 
 		acc_addr = MPL_malloc(target_sz, MPL_MEM_OTHER);
-		pscom_memcpy(acc_addr, target_addr, target_sz);
-	} else {
-		acc_addr = (void*)target_addr;
+		MPID_Memcpy(acc_addr, target_addr, target_sz);
 	}
+#endif
 
 	MPIR_Segment_init(acc_addr, target_count, datatype, &segment);
 
@@ -199,9 +199,11 @@ void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Data
 				NULL /* sizefn */,
 				&acc_params);
 
+#ifdef MPID_PSP_WITH_CUDA_AWARENESS
 	/* do we need to unstage the buffer? */
 	if (acc_addr != target_addr) {
-		pscom_memcpy((void*)target_addr, acc_addr, target_sz);
+		MPID_Memcpy((void*)target_addr, acc_addr, target_sz);
 		MPL_free(acc_addr);
 	}
+#endif
 }

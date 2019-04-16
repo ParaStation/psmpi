@@ -114,10 +114,15 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 		win_ptr->epoch_state = MPID_PSP_EPOCH_FENCE;
 	}
 
+#ifdef MPID_PSP_WITH_CUDA_AWARENESS
 	buffered = pscom_check_for_gpu_mem(origin_addr);
 
 	/* Data */
 	mpi_error = MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &msg, buffered);
+#else
+	mpi_error = MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &msg, 0);
+#endif
+
 	if (unlikely(mpi_error != MPI_SUCCESS)) goto err_create_packed_msg;
 
 	MPID_PSP_packed_msg_pack(origin_addr, origin_count, origin_datatype, &msg);
@@ -434,6 +439,7 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 
 		MPID_Win_lock_internal(target_rank, win_ptr);
 
+#ifdef MPID_PSP_WITH_CUDA_AWARENESS
 		/* check whether we need to stage the buffers */
 		result_addr_is_gpu_mem = pscom_check_for_gpu_mem(result_addr);
 		compare_addr_is_gpu_mem = pscom_check_for_gpu_mem(compare_addr);
@@ -448,13 +454,14 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 
 			if (result_addr_is_gpu_mem) {
 				result_addr_tmp = MPL_malloc(target_sz, MPL_MEM_OTHER);
-				pscom_memcpy(result_addr_tmp, result_addr, target_sz);
+				MPID_Memcpy(result_addr_tmp, result_addr, target_sz);
 			}
 			if (compare_addr_is_gpu_mem) {
 				compare_addr_tmp = MPL_malloc(target_sz, MPL_MEM_OTHER);
-				pscom_memcpy(compare_addr_tmp, compare_addr, target_sz);
+				MPID_Memcpy(compare_addr_tmp, compare_addr, target_sz);
 			}
 		}
+#endif
 
 		MPID_Get(result_addr_tmp, 1, datatype, target_rank, target_disp, 1, datatype, win_ptr);
 
@@ -467,14 +474,16 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 
 		MPID_Win_unlock_internal(target_rank, win_ptr);
 
+#ifdef MPID_PSP_WITH_CUDA_AWARENESS
 		/* did we stage any buffers? */
 		if (result_addr_is_gpu_mem) {
-			pscom_memcpy(result_addr, result_addr_tmp, target_sz);
+			MPID_Memcpy(result_addr, result_addr_tmp, target_sz);
 			MPL_free(result_addr_tmp);
 		}
 		if (compare_addr_is_gpu_mem) {
 			MPL_free(compare_addr_tmp);
 		}
+#endif
 	}
 	else {
 		/* TODO: A dedicated Compare_and_swap() implementation goes here... */
