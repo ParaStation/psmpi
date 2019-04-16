@@ -64,6 +64,10 @@ AC_SUBST([PSCOM_LIBRARY])
 AC_SUBST([PSCOM_RPATHLINK])
 AC_SUBST([PSCOM_ALLIN_LIBS])
 
+AC_ARG_VAR([PSP_CPPFLAGS], [C preprocessor flags for PSP macros])
+
+AC_SUBST([PSP_CPPFLAGS])
+
 # todo: check whether we need all of them
 build_mpid_common_sched=yes
 build_mpid_common_datatype=yes

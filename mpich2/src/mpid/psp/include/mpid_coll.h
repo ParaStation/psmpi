@@ -70,10 +70,15 @@ static inline int MPID_Allreduce(const void *sendbuf, void *recvbuf, int count,
     if (mpi_errno == MPI_SUCCESS)
         goto fn_exit;
 #endif
+#if defined(MPID_PSP_WITH_GPU_AWARENESS) && defined(MPID_PSP_WITH_CUDA_AWARENESS)
+    mpi_errno = MPID_PSP_Allreduce_for_cuda(sendbuf, recvbuf, count, datatype, op,
+                                    comm, errflag);
+#else
     mpi_errno = MPIR_Allreduce_impl(sendbuf, recvbuf, count, datatype, op,
                                     comm, errflag);
+#endif
 
-  fn_exit:
+fn_exit:
     return mpi_errno;
 }
 
@@ -248,8 +253,13 @@ static inline int MPID_Reduce(const void *sendbuf, void *recvbuf, int count,
 {
     int mpi_errno = MPI_SUCCESS;
 
+#if defined(MPID_PSP_WITH_GPU_AWARENESS) && defined(MPID_PSP_WITH_CUDA_AWARENESS)
+    mpi_errno = MPID_PSP_Reduce_for_cuda(sendbuf, recvbuf, count, datatype, op, root,
+                                 comm, errflag);
+#else
     mpi_errno = MPIR_Reduce_impl(sendbuf, recvbuf, count, datatype, op, root,
                                  comm, errflag);
+#endif
 
     return mpi_errno;
 }
@@ -264,8 +274,13 @@ static inline int MPID_Reduce_scatter(const void *sendbuf, void *recvbuf, const 
 {
     int mpi_errno = MPI_SUCCESS;
 
+#if defined(MPID_PSP_WITH_GPU_AWARENESS) && defined(MPID_PSP_WITH_CUDA_AWARENESS)
+    mpi_errno = MPID_PSP_Reduce_scatter_for_cuda(sendbuf, recvbuf, recvcounts,
+                                         datatype, op, comm_ptr, errflag);
+#else
     mpi_errno = MPIR_Reduce_scatter_impl(sendbuf, recvbuf, recvcounts,
                                          datatype, op, comm_ptr, errflag);
+#endif
 
     return mpi_errno;
 }
@@ -281,10 +296,15 @@ static inline int MPID_Reduce_scatter_block(const void *sendbuf, void *recvbuf,
 {
     int mpi_errno = MPI_SUCCESS;
 
+#if defined(MPID_PSP_WITH_GPU_AWARENESS) && defined(MPID_PSP_WITH_CUDA_AWARENESS)
+    mpi_errno = MPID_PSP_Reduce_scatter_block_for_cuda(sendbuf, recvbuf, recvcount,
+                                               datatype, op, comm_ptr,
+                                               errflag);
+#else
     mpi_errno = MPIR_Reduce_scatter_block_impl(sendbuf, recvbuf, recvcount,
                                                datatype, op, comm_ptr,
                                                errflag);
-
+#endif
     return mpi_errno;
 }
 
@@ -298,8 +318,13 @@ static inline int MPID_Scan(const void *sendbuf, void *recvbuf, int count,
 {
     int mpi_errno = MPI_SUCCESS;
 
+#if defined(MPID_PSP_WITH_GPU_AWARENESS) && defined(MPID_PSP_WITH_CUDA_AWARENESS)
+    mpi_errno = MPID_PSP_Scan_for_cuda(sendbuf, recvbuf, count, datatype, op, comm,
+                               errflag);
+#else
     mpi_errno = MPIR_Scan_impl(sendbuf, recvbuf, count, datatype, op, comm,
                                errflag);
+#endif
 
     return mpi_errno;
 }
@@ -314,8 +339,13 @@ static inline int MPID_Exscan(const void *sendbuf, void *recvbuf, int count,
 {
     int mpi_errno = MPI_SUCCESS;
 
+#if defined(MPID_PSP_WITH_GPU_AWARENESS) && defined(MPID_PSP_WITH_CUDA_AWARENESS)
+    mpi_errno = MPID_PSP_Exscan_for_cuda(sendbuf, recvbuf, count, datatype, op, comm,
+                                 errflag);
+#else
     mpi_errno = MPIR_Exscan_impl(sendbuf, recvbuf, count, datatype, op, comm,
                                  errflag);
+#endif
 
     return mpi_errno;
 }

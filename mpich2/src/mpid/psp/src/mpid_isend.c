@@ -110,11 +110,12 @@ int sendrequest_prepare_data(MPIR_Request *req, const void *buf, int count, MPI_
 {
 	struct MPID_DEV_Request_send *sreq = &req->dev.kind.send;
 	pscom_request_t *preq = sreq->common.pscom_req;
+	int ret, buffered;
 
-	int ret;
+	buffered = MPID_PSP_buffer_needs_staging(buf, con);
 
 	/* Data */
-	ret = MPID_PSP_packed_msg_prepare(buf, count, datatype, &sreq->msg);
+	ret = MPID_PSP_packed_msg_prepare(buf, count, datatype, &sreq->msg, buffered);
 	if (unlikely(ret != MPI_SUCCESS)) goto err_create_packed_msg;
 
 	preq->data_len = sreq->msg.msg_sz;

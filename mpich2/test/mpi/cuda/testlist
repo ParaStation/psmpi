@@ -1,0 +1,8 @@
+cuda_pingpong_dtype 2
+cuda_pingpong_mixed 2
+cuda_coll_suite 4
+cuda_reduce_family 4
+cuda_reduce_prefix 4
+#cuda_reduce_local 1
+cuda_simple_kernel 4
+cuda_laplace_mpi 4

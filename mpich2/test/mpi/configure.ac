@@ -148,6 +148,8 @@ else
 fi
 
 AC_SUBST(DTP_SWITCH)
+AC_ARG_ENABLE(cuda,
+        [AC_HELP_STRING([--enable-cuda],[Add some tests for CUDA-awareness])],,[enable_cuda=no])
 
 AC_ARG_ENABLE(cxx,
 	[AC_HELP_STRING([--enable-cxx],[Turn on C++ tests (default)])],,[enable_cxx=yes])
@@ -429,6 +431,14 @@ if test "$enable_xfail" = "yes" ; then
     RUN_XFAIL=true
 fi
 AC_SUBST(RUN_XFAIL)
+
+#
+# Only run CUDA tests if enabled
+cudadir="#cuda"
+if test "$enable_cuda" = "yes" ; then
+    cudadir="cuda"
+fi
+AC_SUBST(cudadir)
 
 PAC_LOAD_BASE_CACHE
 PAC_VPATH_CHECK()
@@ -1587,6 +1597,7 @@ AC_OUTPUT(maint/testmerge \
           pt2pt/testlist \
           mpi_t/Makefile \
           parastation/Makefile \
+          cuda/Makefile \
           rma/Makefile \
           rma/testlist \
           spawn/Makefile \

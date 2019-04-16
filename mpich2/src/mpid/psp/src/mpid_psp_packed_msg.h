@@ -20,7 +20,7 @@
    cleanup with packed_msg_cleanup */
 static inline
 int MPID_PSP_packed_msg_prepare(const void *addr, int count, MPI_Datatype datatype,
-				MPID_PSP_packed_msg_t *msg)
+				MPID_PSP_packed_msg_t *msg, int buffered)
 {
 	int		contig;
 	size_t		data_sz;
@@ -31,19 +31,19 @@ int MPID_PSP_packed_msg_prepare(const void *addr, int count, MPI_Datatype dataty
 				contig, data_sz,
 				dtp, true_lb);
 
-	if (contig || !data_sz) {
+	if (!buffered && (contig || !data_sz) ) {
 		msg->msg = (char *)addr + true_lb;
 		msg->msg_sz = data_sz;
 		msg->tmp_buf = NULL;
 	} else {
-		/* non-contiguous */
+		/* non-contiguous data (or GPU memory) */
 		char *tmp_buf = MPL_malloc(data_sz, MPL_MEM_OTHER);
 
 		msg->msg = tmp_buf;
 		msg->msg_sz = data_sz;
 		msg->tmp_buf = tmp_buf;
 
-		if (unlikely(!tmp_buf)) { /* Error: No mem */
+		if (unlikely(!tmp_buf && data_sz)) { /* Error: No mem */
 			msg->msg_sz = 0;
 			return MPI_ERR_NO_MEM;
 		}

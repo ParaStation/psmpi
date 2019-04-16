@@ -17,7 +17,6 @@
 #include <stdint.h>
 
 #include "mpid_thread.h"
-
 #include "mpid_sched.h"
 
 #define MPID_PSP_HIDE_VISIBILITY
@@ -48,6 +47,171 @@ typedef struct {
 typedef struct {
     int progress_count;
 } MPID_Progress_state;
+
+#ifdef MPID_PSP_WITH_GPU_AWARENESS
+#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+#include <cuda.h>
+#include <cuda_runtime.h>
+#include <cuda_runtime_api.h>
+#include <driver_types.h>
+#else
+#error GPU-awareness means CUDA-awareness!
+#endif
+#endif
+
+////////////////////////////////////////////////////////////////////////////////////////////
+#ifdef MPID_PSP_WITH_GPU_AWARENESS
+////////////////////////////////////////////////////////////////////////////////////////////
+
+extern const void* MPID_PSP_gpu_host_ptr_cache[];
+
+static inline
+int MPID_PSP_check_for_gpu_ptr(const void* ptr)
+{
+#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+
+	int ret, type;
+	struct cudaPointerAttributes attr;
+
+	if(!ptr) return 0;
+
+	if(ptr == MPID_PSP_gpu_host_ptr_cache[0] || ptr == MPID_PSP_gpu_host_ptr_cache[1] ||
+	   ptr == MPID_PSP_gpu_host_ptr_cache[2] || ptr == MPID_PSP_gpu_host_ptr_cache[3]) {
+		return 0;
+	}
+
+	/* Try to check via CUDA driver API: */
+	ret = cuPointerGetAttribute(&type, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)ptr);
+
+	if(ret == CUDA_SUCCESS) {
+		if(type == CU_MEMORYTYPE_DEVICE) {
+			return 1;
+		} else {
+			assert(type == CU_MEMORYTYPE_HOST);
+			return 0;
+		}
+	}
+
+	if(ret != CUDA_ERROR_INVALID_VALUE) {
+
+		/* Try to check via CUDA runtime API: */
+		ret = cudaPointerGetAttributes(&attr, ptr);
+
+		if(ret == cudaSuccess) {
+#ifndef CUDART_VERSION
+#error CUDART_VERSION Undefined!
+#elif (CUDART_VERSION <= 9020)
+			if(attr.memoryType == cudaMemoryTypeDevice) {
+				return 1;
+			} else {
+				assert(attr.memoryType == cudaMemoryTypeDevice);
+				return 0;
+			}
+#else
+			if(attr.type == cudaMemoryTypeDevice) {
+				return 1;
+			} else {
+				assert(attr.type == cudaMemoryTypeDevice);
+				return 0;
+			}
+#endif
+		}
+
+		assert(ret == cudaErrorInvalidValue);
+	}
+
+	/* If we come here, the pointer type could not be determined because
+	   it's unknown to the CUDA driver/runtime -> Assume that it is NOT
+	   pointing to GPU memory and that it is most likely just malloc'ed.
+	*/
+
+	/* Only cache genuine host memory pointers as returned by malloc */
+	MPID_PSP_gpu_host_ptr_cache[3] = MPID_PSP_gpu_host_ptr_cache[2];
+	MPID_PSP_gpu_host_ptr_cache[2] = MPID_PSP_gpu_host_ptr_cache[1];
+	MPID_PSP_gpu_host_ptr_cache[1] = MPID_PSP_gpu_host_ptr_cache[0];
+	MPID_PSP_gpu_host_ptr_cache[0] = ptr;
+
+	return 0;
+#else
+#error GPU-awareness means CUDA-awareness!
+#endif
+}
+
+static inline
+void MPID_PSP_memcpy_gpu_safe(void* dst, const void* src, size_t len)
+{
+#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+	cudaMemcpy(dst, src, len, cudaMemcpyDefault);
+#else
+#error GPU-awareness means CUDA-awareness!
+#endif
+}
+
+struct PSCOM_connection;
+#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+int MPID_PSP_con_is_cuda_aware(struct PSCOM_connection* con);
+static inline
+int MPID_PSP_con_is_gpu_aware(struct PSCOM_connection* con)
+{
+	return MPID_PSP_con_is_cuda_aware(con);
+}
+#else
+#error GPU-awareness means CUDA-awareness!
+#endif
+
+static inline
+int MPID_PSP_buffer_needs_staging(const void* buf, struct PSCOM_connection* con)
+{
+	if(con && MPID_PSP_con_is_gpu_aware(con)) {
+		return 0;
+	} else {
+		if(MPID_PSP_check_for_gpu_ptr(buf)) {
+			return 1;
+		} else {
+			return 0;
+		}
+	}
+}
+
+/*
+  Devices can override the default implementation of
+  MPIR_Memcpy by defining the MPIR_Memcpy macro:
+  TODO: fixme
+*/
+#undef MPIR_Memcpy
+#define MPIR_Memcpy(dst, src, len)					\
+do {							                \
+	CHECK_MEMCPY((dst),(src),(len));			\
+	MPID_PSP_memcpy_gpu_safe((void*)(dst),(void*)(src),(len));	\
+} while (0)
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
+#else
+////////////////////////////////////////////////////////////////////////////////////////////
+
+static inline
+void MPID_PSP_memcpy_gpu_safe(void* dst, const void* src, size_t len)
+{
+	MPIR_Memcpy(dst, src, len);
+}
+
+struct PSCOM_connection;
+static inline
+int MPID_PSP_con_is_gpu_aware(struct PSCOM_connection* con)
+{
+	return 1; // At least, it might be...
+}
+
+static inline
+int MPID_PSP_buffer_needs_staging(const void* buf, struct PSCOM_connection* con)
+{
+	return 0; // At least, we don't want it...
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+#endif
+////////////////////////////////////////////////////////////////////////////////////////////
 
 /*********************************************
  * PSCOM Network header
@@ -694,6 +858,25 @@ int MPID_Free_mem( void *ptr );
 int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p);
 int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p);
 
+
+#ifdef MPID_PSP_WITH_GPU_AWARENESS
+#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+int MPID_PSP_Reduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+			     MPI_Op op, int root, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
+int MPID_PSP_Allreduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+				MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
+int MPID_PSP_Reduce_scatter_for_cuda(const void *sendbuf, void *recvbuf, const int recvcounts[],
+				     MPI_Datatype datatype, MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
+int MPID_PSP_Reduce_scatter_block_for_cuda(const void *sendbuf, void *recvbuf,  int recvcount,
+					   MPI_Datatype datatype, MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
+int MPID_PSP_Scan_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+			   MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
+int MPID_PSP_Exscan_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+			   MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
+#else
+#error GPU-awareness means CUDA-awareness!
+#endif
+#endif
 
 
 #endif /* _MPIDPRE_H_ */

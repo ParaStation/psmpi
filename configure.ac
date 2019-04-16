@@ -60,6 +60,7 @@ AC_ARG_WITH([confset], [
 	   psc	      : Pathscale compiler (pathcc)
 	   cellgcc    : ppu-gcc
 	   cellxlc    :	ppuxlc
+	   cuda       : With CUDA support
 
 	   devel      : With error checking and debug info (gcc)
 	   user       : No predefined options
@@ -416,6 +417,49 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS CC='ppuxlc -q64' CXX='ppuxlC -q64' FC='ppuxlf -q64'"
 	CONF_OPS="$CONF_OPS"
 	;;
+"cuda")
+	echo "Using confset=cuda"
+	CONF_OPS="--with-device=psp"
+	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
+	CONF_OPS="$CONF_OPS --enable-f77"
+	CONF_OPS="$CONF_OPS --enable-fc"
+	CONF_OPS="$CONF_OPS --enable-cxx"
+	CONF_OPS="$CONF_OPS --enable-romio"
+
+	CUDA_HOME="${CUDA_HOME-"/usr/local/cuda/"}"
+	if test -d "$CUDA_HOME" ; then
+		test -d "$CUDA_HOME/lib/" && CONF_OPS="$CONF_OPS MPICHLIB_LDFLAGS='$MPICHLIB_LDFLAGS -L$CUDA_HOME/lib/' MPICHLIB_LIBS='$MPICHLIB_LIBS -lcuda -lcudart'"
+		test -d "$CUDA_HOME/lib64/" && CONF_OPS="$CONF_OPS MPICHLIB_LDFLAGS='$MPICHLIB_LDFLAGS -L$CUDA_HOME/lib64/' MPICHLIB_LIBS='$MPICHLIB_LIBS -lcuda -lcudart'"
+		test -d "$CUDA_HOME/include/" && CONF_OPS="$CONF_OPS MPICHLIB_CPPFLAGS='$MPICHLIB_CPPFLAGS -I$CUDA_HOME/include/'"
+	else
+		CUDA_HOME=""
+	fi
+	CONF_OPS="$CONF_OPS PSP_CPPFLAGS='-DMPID_PSP_WITH_GPU_AWARENESS -DMPID_PSP_WITH_CUDA_AWARENESS'"
+	CONF_OPS="$CONF_OPS"
+	;;
+"cuda-devel")
+	echo "Using confset=cuda-devel"
+	CONF_OPS="--with-device=psp"
+
+	CONF_OPS="$CONF_OPS --enable-cache"
+	CONF_OPS="$CONF_OPS --enable-g=all"
+	CONF_OPS="$CONF_OPS --enable-dependencies"
+	CONF_OPS="$CONF_OPS --enable-shared"
+	CONF_OPS="$CONF_OPS --disable-static"
+	CONF_OPS="$CONF_OPS --enable-error-checking=all"
+	CONF_OPS="$CONF_OPS --enable-strict" # Compile with -Wall and other checks.
+
+	CUDA_HOME="${CUDA_HOME-"/usr/local/cuda/"}"
+	if test -d "$CUDA_HOME" ; then
+		test -d "$CUDA_HOME/lib/" && CONF_OPS="$CONF_OPS MPICHLIB_LDFLAGS='$MPICHLIB_LDFLAGS -L$CUDA_HOME/lib/' MPICHLIB_LIBS='$MPICHLIB_LIBS -lcuda -lcudart'"
+		test -d "$CUDA_HOME/lib64/" && CONF_OPS="$CONF_OPS MPICHLIB_LDFLAGS='$MPICHLIB_LDFLAGS -L$CUDA_HOME/lib64/' MPICHLIB_LIBS='$MPICHLIB_LIBS -lcuda -lcudart'"
+		test -d "$CUDA_HOME/include/" && CONF_OPS="$CONF_OPS MPICHLIB_CPPFLAGS='$MPICHLIB_CPPFLAGS -I$CUDA_HOME/include/'"
+	else
+		CUDA_HOME=""
+	fi
+	CONF_OPS="$CONF_OPS PSP_CPPFLAGS='-DMPID_PSP_WITH_GPU_AWARENESS -DMPID_PSP_WITH_CUDA_AWARENESS'"
+	CONF_OPS="$CONF_OPS"
+	;;
 "none")
 	# No build
 	;;
@@ -491,6 +535,7 @@ sleep 1
 AC_SUBST([CONFSET])
 AC_SUBST([MODULEFILE])
 AC_SUBST([EXTRA_VERSION_INFO])
+AC_SUBST([CUDA_HOME])
 
 # ToDo: directly  use PSCOM_LDFLAGS from mpich2/src/mpid/psp/subconfigure.m4
 PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
@@ -501,6 +546,7 @@ AC_SUBST([PSCOM_LIBRARY])
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([scripts/generate_modulefile.sh], [chmod +x scripts/generate_modulefile.sh])
+AC_CONFIG_FILES([scripts/generate_mpicc-conf.sh], [chmod +x scripts/generate_mpicc-conf.sh])
 
 AC_OUTPUT
 

@@ -53,6 +53,7 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 	MPID_PSP_packed_msg_t msg;
 	MPID_Win_rank_info *ri = win_ptr->rank_info + target_rank;
 	char *target_buf;
+	int buffered;
 #if 0
 	fprintf(stderr, "int MPID_Accumulate(origin_addr: %p, origin_count: %d, origin_datatype: %08x,"
 		" target_rank: %d, target_disp: %d, target_count: %d, target_datatype: %08x,"
@@ -113,9 +114,10 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 		win_ptr->epoch_state = MPID_PSP_EPOCH_FENCE;
 	}
 
+	buffered = MPID_PSP_buffer_needs_staging(origin_addr, ri->con);
 
 	/* Data */
-	mpi_error = MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &msg);
+	mpi_error = MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &msg, buffered);
 	if (unlikely(mpi_error != MPI_SUCCESS)) goto err_create_packed_msg;
 
 	MPID_PSP_packed_msg_pack(origin_addr, origin_count, origin_datatype, &msg);

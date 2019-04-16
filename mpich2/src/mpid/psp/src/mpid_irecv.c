@@ -300,7 +300,9 @@ void prepare_data(MPIR_Request *req, void * buf, int count, MPI_Datatype datatyp
 	pscom_request_t *preq = rreq->common.pscom_req;
 	int ret;
 
-	ret = MPID_PSP_packed_msg_prepare(buf, count, datatype, &rreq->msg);
+	int buffered = MPID_PSP_buffer_needs_staging(buf, preq->connection);
+
+	ret = MPID_PSP_packed_msg_prepare(buf, count, datatype, &rreq->msg, buffered);
 	if (unlikely(ret != MPI_SUCCESS)) goto err_alloc_tmpbuf;
 
 	preq->data = rreq->msg.msg;

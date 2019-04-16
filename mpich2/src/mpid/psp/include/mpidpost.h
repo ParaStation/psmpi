@@ -247,5 +247,14 @@ MPL_STATIC_INLINE_PREFIX int MPID_Waitsome(int incount, MPIR_Request * request_p
 
 
 
+#ifdef MPID_PSP_WITH_GPU_AWARENESS
+#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+int MPID_PSP_Reduce_local_for_cuda(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype, MPI_Op op);
+#define MPID_REDUCE_LOCAL_HOOK(inbuf, inoutbuf, count, datatype, op) \
+	MPID_PSP_Reduce_local_for_cuda(inbuf, inoutbuf, count, datatype, op)
+#else
+#error GPU-awareness means CUDA-awareness!
+#endif
+#endif
 
 #endif /* _MPIDPOST_H_ */
