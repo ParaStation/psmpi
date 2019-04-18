@@ -1,3 +1,21 @@
+2019-04-18  Jens Hauke  <hauke@par-tec.com>	-	5.3.0-1
+
+	* MPICH 3.3
+
+2019-04-16  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: library dependencies in the pscom-allin-case
+
+	* Added/fixed tests for
+	- Adjust win_shm/split_type-related tests
+	- MPI_Allocate_shared()
+
+2019-02-20  Simon Pickartz <pickartz@par-tec.com>
+
+	* Update to mpich version 3.3
+
+	* Fix: topology/hierarchy awareness
+
 2019-02-07  Simon Pickartz <pickartz@par-tec.com> -	5.2.2-1
 
 	* Fix: multiple simultaneous MPI_Get() from the same remote
