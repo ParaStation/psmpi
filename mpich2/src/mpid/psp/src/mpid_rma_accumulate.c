@@ -115,7 +115,7 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 	}
 
 #ifdef MPID_PSP_WITH_CUDA_AWARENESS
-	buffered = pscom_check_for_gpu_mem(origin_addr);
+	buffered = pscom_is_gpu_mem(origin_addr);
 
 	/* Data */
 	mpi_error = MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &msg, buffered);
@@ -441,8 +441,8 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 
 #ifdef MPID_PSP_WITH_CUDA_AWARENESS
 		/* check whether we need to stage the buffers */
-		result_addr_is_gpu_mem = pscom_check_for_gpu_mem(result_addr);
-		compare_addr_is_gpu_mem = pscom_check_for_gpu_mem(compare_addr);
+		result_addr_is_gpu_mem = pscom_is_gpu_mem(result_addr);
+		compare_addr_is_gpu_mem = pscom_is_gpu_mem(compare_addr);
 		if (result_addr_is_gpu_mem || compare_addr_is_gpu_mem) {
 			int contig;
 			MPIR_Datatype *dtp;

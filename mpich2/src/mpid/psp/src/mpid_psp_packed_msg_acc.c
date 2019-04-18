@@ -164,7 +164,7 @@ void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Data
 
 #ifdef MPID_PSP_WITH_CUDA_AWARENESS
 	/* is target_addr within device memory? */
-	if (pscom_check_for_gpu_mem(target_addr)) {
+	if (pscom_is_gpu_mem(target_addr)) {
 		int contig;
 		MPIR_Datatype *dtp;
 		MPI_Aint true_lb;
