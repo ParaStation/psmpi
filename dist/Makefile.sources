@@ -21,7 +21,6 @@ dist/rpm_depgen \
 doc/Makefile.in \
 doc/imb-perf-booster.txt \
 doc/imb-perf-jureca.txt \
-mpich2/.gitattributes \
 mpich2/.gitmodules \
 mpich2/.mailmap \
 mpich2/.travis.yml \
@@ -1977,7 +1976,6 @@ mpich2/src/glue/romio/Makefile.mk \
 mpich2/src/glue/romio/all_romio_symbols \
 mpich2/src/glue/romio/all_romio_symbols.c \
 mpich2/src/glue/romio/glue_romio.c \
-mpich2/src/hwloc/.gitignore \
 mpich2/src/hwloc/AUTHORS \
 mpich2/src/hwloc/COPYING \
 mpich2/src/hwloc/HACKING \
@@ -2702,7 +2700,6 @@ mpich2/src/include/netloc_util.h \
 mpich2/src/include/nopackage.h \
 mpich2/src/include/rlog.h \
 mpich2/src/include/rlog_macros.h \
-mpich2/src/izem/.gitignore \
 mpich2/src/izem/.travis.yml \
 mpich2/src/izem/COPYRIGHT \
 mpich2/src/izem/Doxyfile.in \
@@ -2730,7 +2727,6 @@ mpich2/src/izem/m4/ltversion.m4 \
 mpich2/src/izem/m4/lt~obsolete.m4 \
 mpich2/src/izem/m4/missing \
 mpich2/src/izem/m4/test-driver \
-mpich2/src/izem/maint/.gitignore \
 mpich2/src/izem/maint/izem.pc.in \
 mpich2/src/izem/maint/version \
 mpich2/src/izem/maint/version.base.m4 \
@@ -3571,7 +3567,6 @@ mpich2/src/mpi/romio/Makefile.in \
 mpich2/src/mpi/romio/README \
 mpich2/src/mpi/romio/aclocal.m4 \
 mpich2/src/mpi/romio/adio/Makefile.mk \
-mpich2/src/mpi/romio/adio/ad_gpfs/.gitignore \
 mpich2/src/mpi/romio/adio/ad_gpfs/.state-cache \
 mpich2/src/mpi/romio/adio/ad_gpfs/Makefile.mk \
 mpich2/src/mpi/romio/adio/ad_gpfs/ad_gpfs.c \
@@ -4561,7 +4556,6 @@ mpich2/src/mpid/ch3/util/sock/subconfigure.m4 \
 mpich2/src/mpid/ch3/util/unordered/.state-cache \
 mpich2/src/mpid/ch3/util/unordered/README \
 mpich2/src/mpid/ch3/util/unordered/unordered.c \
-mpich2/src/mpid/ch4/.gitignore \
 mpich2/src/mpid/ch4/Makefile.mk \
 mpich2/src/mpid/ch4/cross/gcc-linux-x86-8 \
 mpich2/src/mpid/ch4/cross/icc-linux-x86-8 \
@@ -4595,7 +4589,6 @@ mpich2/src/mpid/ch4/netmod/ofi/func_table.c \
 mpich2/src/mpid/ch4/netmod/ofi/globals.c \
 mpich2/src/mpid/ch4/netmod/ofi/libfabric/.appveyor.ps1 \
 mpich2/src/mpid/ch4/netmod/ofi/libfabric/.appveyor.yml \
-mpich2/src/mpid/ch4/netmod/ofi/libfabric/.gitignore \
 mpich2/src/mpid/ch4/netmod/ofi/libfabric/.mailmap \
 mpich2/src/mpid/ch4/netmod/ofi/libfabric/.travis.yml \
 mpich2/src/mpid/ch4/netmod/ofi/libfabric/AUTHORS \
@@ -4904,7 +4897,6 @@ mpich2/src/mpid/ch4/netmod/ofi/libfabric/man/man7/fi_usnic.7 \
 mpich2/src/mpid/ch4/netmod/ofi/libfabric/man/man7/fi_verbs.7 \
 mpich2/src/mpid/ch4/netmod/ofi/libfabric/pingpong.vcxproj \
 mpich2/src/mpid/ch4/netmod/ofi/libfabric/pingpong.vcxproj.filters \
-mpich2/src/mpid/ch4/netmod/ofi/libfabric/prov/bgq/.gitignore \
 mpich2/src/mpid/ch4/netmod/ofi/libfabric/prov/bgq/Makefile.include \
 mpich2/src/mpid/ch4/netmod/ofi/libfabric/prov/bgq/configure.m4 \
 mpich2/src/mpid/ch4/netmod/ofi/libfabric/prov/bgq/include/rdma/bgq/fi_bgq.h \
@@ -5567,7 +5559,6 @@ mpich2/src/mpid/ch4/netmod/ucx/globals.c \
 mpich2/src/mpid/ch4/netmod/ucx/netmod_inline.h \
 mpich2/src/mpid/ch4/netmod/ucx/subconfigure.m4 \
 mpich2/src/mpid/ch4/netmod/ucx/ucx/.ctags \
-mpich2/src/mpid/ch4/netmod/ucx/ucx/.gitignore \
 mpich2/src/mpid/ch4/netmod/ucx/ucx/AUTHORS \
 mpich2/src/mpid/ch4/netmod/ucx/ucx/CONTRIBUTING.md \
 mpich2/src/mpid/ch4/netmod/ucx/ucx/INSTALL \
@@ -6548,7 +6539,6 @@ mpich2/src/nameserv/pmi/pmi_nameserv.c \
 mpich2/src/nameserv/test/.codingcheck \
 mpich2/src/nameserv/test/.state-cache \
 mpich2/src/nameserv/test/testnd.c \
-mpich2/src/openpa/.gitignore \
 mpich2/src/openpa/CHANGELOG \
 mpich2/src/openpa/COPYRIGHT \
 mpich2/src/openpa/Makefile.am \
@@ -6615,7 +6605,6 @@ mpich2/src/pm/gforker/Makefile.mk \
 mpich2/src/pm/gforker/mpiexec.c \
 mpich2/src/pm/gforker/mpiexec.txt \
 mpich2/src/pm/gforker/subconfigure.m4 \
-mpich2/src/pm/hydra/.gitignore \
 mpich2/src/pm/hydra/Makefile.am \
 mpich2/src/pm/hydra/Makefile.in \
 mpich2/src/pm/hydra/README \
@@ -6929,7 +6918,6 @@ mpich2/src/pm/hydra/tools/nameserver/hydra_nameserver.c \
 mpich2/src/pm/hydra/tools/nameserver/hydra_nameserver.txt \
 mpich2/src/pm/hydra/tools/topo/Makefile.mk \
 mpich2/src/pm/hydra/tools/topo/hwloc/Makefile.mk \
-mpich2/src/pm/hydra/tools/topo/hwloc/hwloc/.gitignore \
 mpich2/src/pm/hydra/tools/topo/hwloc/hwloc/AUTHORS \
 mpich2/src/pm/hydra/tools/topo/hwloc/hwloc/COPYING \
 mpich2/src/pm/hydra/tools/topo/hwloc/hwloc/HACKING \
@@ -7628,7 +7616,6 @@ mpich2/src/pm/hydra/utils/sock/sock.c \
 mpich2/src/pm/hydra/utils/string/Makefile.mk \
 mpich2/src/pm/hydra/utils/string/string.c \
 mpich2/src/pm/hydra/version.m4 \
-mpich2/src/pm/hydra2/.gitignore \
 mpich2/src/pm/hydra2/Makefile.am \
 mpich2/src/pm/hydra2/Makefile.in \
 mpich2/src/pm/hydra2/README \
@@ -7798,7 +7785,6 @@ mpich2/src/pm/hydra2/libhydra/str/hydra_str.c \
 mpich2/src/pm/hydra2/libhydra/str/hydra_str.h \
 mpich2/src/pm/hydra2/libhydra/topo/Makefile.mk \
 mpich2/src/pm/hydra2/libhydra/topo/hwloc/Makefile.mk \
-mpich2/src/pm/hydra2/libhydra/topo/hwloc/hwloc/.gitignore \
 mpich2/src/pm/hydra2/libhydra/topo/hwloc/hwloc/AUTHORS \
 mpich2/src/pm/hydra2/libhydra/topo/hwloc/hwloc/COPYING \
 mpich2/src/pm/hydra2/libhydra/topo/hwloc/hwloc/HACKING \
@@ -8775,7 +8761,6 @@ mpich2/test/commands/testout.c \
 mpich2/test/hydra/README \
 mpich2/test/hydra/exit_status.rb \
 mpich2/test/hydra/universe_size.c \
-mpich2/test/mpi/.gitignore \
 mpich2/test/mpi/Makefile.am \
 mpich2/test/mpi/Makefile.in \
 mpich2/test/mpi/Makefile.mtest \
