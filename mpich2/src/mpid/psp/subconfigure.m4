@@ -91,7 +91,7 @@ if test "$enable_psp_cuda_awareness" = "yes" ; then
 	])
 
     AS_IF([test "$pscom_is_cuda_aware" = "no" ],[
-		AC_MSG_WARN([!!!!!!! BUILDING AGAINST NON-CUDA-AWARE PSCOM !!!!!!!])
+		AC_MSG_ERROR([The pscom library is missing CUDA-awareness. Abort!])
 	],[
 		PAC_APPEND_FLAG([-DMPIR_USE_DEVICE_MEMCPY], [CPPFLAGS])
 	])
