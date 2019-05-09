@@ -53,7 +53,6 @@ int MPID_Put_generic(const void *origin_addr, int origin_count, MPI_Datatype ori
 	MPID_PSP_packed_msg_t msg;
 	MPID_Win_rank_info *ri = win_ptr->rank_info + target_rank;
 	char *target_buf;
-	int buffered;
 #if 0
 	fprintf(stderr, "int MPID_Put(origin_addr: %p, origin_count: %d, origin_datatype: %08x,"
 		" target_rank: %d, target_disp: %d, target_count: %d, target_datatype: %08x,"

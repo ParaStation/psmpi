@@ -53,7 +53,6 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 	MPID_PSP_packed_msg_t msg;
 	MPID_Win_rank_info *ri = win_ptr->rank_info + target_rank;
 	char *target_buf;
-	int buffered;
 #if 0
 	fprintf(stderr, "int MPID_Accumulate(origin_addr: %p, origin_count: %d, origin_datatype: %08x,"
 		" target_rank: %d, target_disp: %d, target_count: %d, target_datatype: %08x,"
@@ -115,10 +114,10 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 	}
 
 #ifdef MPID_PSP_WITH_CUDA_AWARENESS
-	buffered = pscom_is_gpu_mem(origin_addr);
+	int stage_buffer = pscom_is_gpu_mem(origin_addr);
 
 	/* Data */
-	mpi_error = MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &msg, buffered);
+	mpi_error = MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &msg, stage_buffer);
 #else
 	mpi_error = MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &msg, 0);
 #endif

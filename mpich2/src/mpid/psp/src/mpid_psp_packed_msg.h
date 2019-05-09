@@ -20,7 +20,7 @@
    cleanup with packed_msg_cleanup */
 static inline
 int MPID_PSP_packed_msg_prepare(const void *addr, int count, MPI_Datatype datatype,
-				MPID_PSP_packed_msg_t *msg, int buffered)
+				MPID_PSP_packed_msg_t *msg, int stage_buffer)
 {
 	int		contig;
 	size_t		data_sz;
@@ -31,7 +31,7 @@ int MPID_PSP_packed_msg_prepare(const void *addr, int count, MPI_Datatype dataty
 				contig, data_sz,
 				dtp, true_lb);
 
-	if (!buffered && (contig || !data_sz) ) {
+	if (!stage_buffer && (contig || !data_sz) ) {
 		msg->msg = (char *)addr + true_lb;
 		msg->msg_sz = data_sz;
 		msg->tmp_buf = NULL;

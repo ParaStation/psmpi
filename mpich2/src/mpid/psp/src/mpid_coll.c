@@ -54,14 +54,14 @@ int MPID_PSP_Bcast_send(void *buffer, int count, MPI_Datatype datatype, int root
 			MPIR_Comm *comm_ptr)
 {
 	MPID_PSP_packed_msg_t msg;
-	int ret, buffered;
+	int ret;
 #ifdef USE_POST_BCAST
 	pscom_request_t *req;
 #endif
 
 #ifdef MPID_PSP_WITH_CUDA_AWARENESS
-	buffered = pscom_is_gpu_mem(buffer);
-	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg, buffered);
+	int stage_buffer = pscom_is_gpu_mem(buffer);
+	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg, stage_buffer);
 #else
 	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg, 0);
 #endif
@@ -102,14 +102,14 @@ int MPID_PSP_Bcast_recv(void *buffer, int count, MPI_Datatype datatype, int root
 			MPIR_Comm *comm_ptr)
 {
 	MPID_PSP_packed_msg_t msg;
-	int ret, buffered;
+	int ret;
 #ifdef USE_POST_BCAST
 	pscom_request_t *req;
 #endif
 
 #ifdef MPID_PSP_WITH_CUDA_AWARENESS
-	buffered = pscom_is_gpu_mem(buffer);
-	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg, buffered);
+	int stage_buffer = pscom_is_gpu_mem(buffer);
+	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg, stage_buffer);
 #else
 	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg, 0);
 #endif
