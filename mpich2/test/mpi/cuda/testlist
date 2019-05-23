@@ -4,6 +4,8 @@ cuda_coll_suite 4 env=PSP_CUDA=1
 cuda_reduce_family 4 env=PSP_CUDA=1
 cuda_reduce_prefix 4 env=PSP_CUDA=1
 cuda_reduce_local 1 env=PSP_CUDA=1
+cuda_reduce_vec 8 env=PSP_CUDA=1
+cuda_allreduce_vec 8 env=PSP_CUDA=1
 cuda_simple_kernel 4 env=PSP_CUDA=1
 cuda_laplace_mpi 4 env=PSP_CUDA=1
 cuda_allgather 10 env=PSP_CUDA=1 env=MPIR_CVAR_ALLGATHER_INTRA_ALGORITHM=brucks
