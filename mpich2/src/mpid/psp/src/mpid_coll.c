@@ -327,57 +327,21 @@ int MPID_PSP_Reduce_scatter_for_cuda(const void *sendbuf, void *recvbuf, const i
 				     MPI_Datatype datatype, MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag)
 {
 	int             rc, i, j;
-	int	        contig;
-	unsigned int    sdata_sz = 0;
-	unsigned int    rdata_sz = 0;
-	MPIR_Datatype  *dtp;
-	MPI_Aint        true_lb;
-	char *tmp_sendbuf = NULL;
-	char *tmp_recvbuf = NULL;
-	char *sendptr = (char*)sendbuf;
-	char *recvptr = (char*)recvbuf;
+	MPID_PSP_packed_msg_t coll_sendbuf, coll_recvbuf;
 
-	if(pscom_is_gpu_mem(sendbuf)) {
-
-		for(i=0,j=0; i< comm_ptr->local_size; i++) j += recvcounts[i];
-		MPIDI_Datatype_get_info(j, datatype, contig, sdata_sz, dtp, true_lb);
-
-		tmp_sendbuf = MPL_malloc(sdata_sz, MPL_MEM_BUFFER);
-		MPID_Memcpy(tmp_sendbuf, sendbuf, sdata_sz);
-		sendptr = tmp_sendbuf;
+	for(i=0,j=0; i< comm_ptr->local_size; i++) j += recvcounts[i];
+	MPIDI_Pack_coll_buf(sendbuf, datatype, j, &coll_sendbuf);
+	if (sendbuf == MPI_IN_PLACE) {
+		MPIDI_Pack_coll_buf(recvbuf, datatype, j, &coll_recvbuf);
+	} else {
+		MPIDI_Pack_coll_buf(recvbuf, datatype, recvcounts[comm_ptr->rank], &coll_recvbuf);
 	}
 
-	if(pscom_is_gpu_mem(recvbuf)) {
 
-		MPIDI_Datatype_get_info(recvcounts[comm_ptr->rank], datatype, contig, rdata_sz, dtp, true_lb);
+	rc = MPIR_Reduce_scatter_impl(coll_sendbuf.msg, coll_recvbuf.msg, recvcounts, datatype, op, comm_ptr, errflag);
 
-		if(sendbuf == MPI_IN_PLACE) {
-
-			for(i=0,j=0; i< comm_ptr->local_size; i++) j += recvcounts[i];
-			MPIDI_Datatype_get_info(j, datatype, contig, sdata_sz, dtp, true_lb);
-
-			tmp_recvbuf = MPL_malloc(sdata_sz, MPL_MEM_BUFFER);
-			MPID_Memcpy(tmp_recvbuf, recvbuf, sdata_sz);
-
-		} else {
-
-			tmp_recvbuf = MPL_malloc(rdata_sz, MPL_MEM_BUFFER);
-			MPID_Memcpy(tmp_recvbuf, recvbuf, rdata_sz);
-		}
-
-		recvptr = tmp_recvbuf;
-	}
-
-	rc = MPIR_Reduce_scatter_impl(sendptr, recvptr, recvcounts, datatype, op, comm_ptr, errflag);
-
-	if(tmp_sendbuf) {
-		MPL_free(tmp_sendbuf);
-	}
-
-	if(tmp_recvbuf) {
-		MPID_Memcpy(recvbuf, tmp_recvbuf, rdata_sz);
-		MPL_free(tmp_recvbuf);
-	}
+	MPIDI_Unpack_coll_buf(&coll_sendbuf, 0);
+	MPIDI_Unpack_coll_buf(&coll_recvbuf, 1);
 
 	return rc;
 }
@@ -386,50 +350,20 @@ int MPID_PSP_Reduce_scatter_for_cuda(const void *sendbuf, void *recvbuf, const i
 int MPID_PSP_Reduce_scatter_block_for_cuda(const void *sendbuf, void *recvbuf,  int recvcount,
 					   MPI_Datatype datatype, MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag)
 {
-	int             rc;
-	int	        contig;
-	unsigned int    data_sz = 0;
-	MPIR_Datatype  *dtp;
-	MPI_Aint        true_lb;
-	char *tmp_sendbuf = NULL;
-	char *tmp_recvbuf = NULL;
-	char *sendptr = (char*)sendbuf;
-	char *recvptr = (char*)recvbuf;
+	int rc;
+	MPID_PSP_packed_msg_t coll_sendbuf, coll_recvbuf;
 
-	if(pscom_is_gpu_mem(sendbuf)) {
-
-		MPIDI_Datatype_get_info(recvcount, datatype, contig, data_sz, dtp, true_lb);
-
-		tmp_sendbuf = MPL_malloc(data_sz * comm_ptr->local_size, MPL_MEM_BUFFER);
-		MPID_Memcpy(tmp_sendbuf, sendbuf, data_sz * comm_ptr->local_size);
-		sendptr = tmp_sendbuf;
+	MPIDI_Pack_coll_buf(sendbuf, datatype, recvcount*comm_ptr->local_size, &coll_sendbuf);
+	if (sendbuf == MPI_IN_PLACE) {
+		MPIDI_Pack_coll_buf(recvbuf, datatype, recvcount*comm_ptr->local_size, &coll_recvbuf);
+	} else {
+		MPIDI_Pack_coll_buf(recvbuf, datatype, recvcount, &coll_recvbuf);
 	}
 
-	if(pscom_is_gpu_mem(recvbuf)) {
+	rc = MPIR_Reduce_scatter_block_impl(coll_sendbuf.msg, coll_recvbuf.msg, recvcount, datatype, op, comm_ptr, errflag);
 
-		if(!tmp_sendbuf) {
-			MPIDI_Datatype_get_info(recvcount, datatype, contig, data_sz, dtp, true_lb);
-		}
-
-		if(sendbuf == MPI_IN_PLACE) {
-			data_sz *= comm_ptr->local_size;
-		}
-
-		tmp_recvbuf = MPL_malloc(data_sz, MPL_MEM_BUFFER);
-		MPID_Memcpy(tmp_recvbuf, recvbuf, data_sz);
-		recvptr = tmp_recvbuf;
-	}
-
-	rc = MPIR_Reduce_scatter_block_impl(sendptr, recvptr, recvcount, datatype, op, comm_ptr, errflag);
-
-	if(tmp_sendbuf) {
-		MPL_free(tmp_sendbuf);
-	}
-
-	if(tmp_recvbuf) {
-		MPID_Memcpy(recvbuf, tmp_recvbuf, data_sz);
-		MPL_free(tmp_recvbuf);
-	}
+	MPIDI_Unpack_coll_buf(&coll_sendbuf, 0);
+	MPIDI_Unpack_coll_buf(&coll_recvbuf, 1);
 
 	return rc;
 }
