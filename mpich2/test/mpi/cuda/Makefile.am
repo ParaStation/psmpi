@@ -32,6 +32,7 @@ noinst_PROGRAMS =  \
 	cuda_reduce_prefix \
 	cuda_reduce_local \
 	cuda_reduce_vec \
+	cuda_scan_vec \
 	cuda_allreduce_vec \
 	cuda_simple_kernel \
 	cuda_laplace_mpi \
