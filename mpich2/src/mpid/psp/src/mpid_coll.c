@@ -59,12 +59,8 @@ int MPID_PSP_Bcast_send(void *buffer, int count, MPI_Datatype datatype, int root
 	pscom_request_t *req;
 #endif
 
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
-	int stage_buffer = pscom_is_gpu_mem(buffer);
-	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg, stage_buffer);
-#else
-	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg, 0);
-#endif
+	// TODO: handle CUDA buffer
+	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg);
 
 	if (unlikely(ret != MPI_SUCCESS)) goto err_create_packed_msg;
 
@@ -107,12 +103,8 @@ int MPID_PSP_Bcast_recv(void *buffer, int count, MPI_Datatype datatype, int root
 	pscom_request_t *req;
 #endif
 
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
-	int stage_buffer = pscom_is_gpu_mem(buffer);
-	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg, stage_buffer);
-#else
-	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg, 0);
-#endif
+	// TODO: handle CUDA buffer
+	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg);
 
 	if (unlikely(ret != MPI_SUCCESS)) goto err_create_packed_msg;
 

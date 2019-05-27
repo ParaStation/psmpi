@@ -114,13 +114,19 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 	}
 
 #ifdef MPID_PSP_WITH_CUDA_AWARENESS
-	int stage_buffer = pscom_is_gpu_mem(origin_addr);
+	if (pscom_is_gpu_mem(origin_addr)) {
+		int	contig;
+		size_t data_sz;
+		MPIR_Datatype *dtp;
+		MPI_Aint true_lb;
 
-	/* Data */
-	mpi_error = MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &msg, stage_buffer);
-#else
-	mpi_error = MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &msg, 0);
+		MPIDI_Datatype_get_info(origin_count, origin_datatype, contig, data_sz, dtp, true_lb);
+		mpi_error = MPID_PSP_packed_msg_allocate(data_sz, &msg);
+	} else
 #endif
+	{
+		mpi_error = MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &msg);
+	}
 
 	if (unlikely(mpi_error != MPI_SUCCESS)) goto err_create_packed_msg;
 

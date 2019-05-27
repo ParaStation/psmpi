@@ -16,44 +16,52 @@
 #include "mpid_psp_datatype.h"
 
 
+static inline
+int MPID_PSP_packed_msg_allocate(size_t data_sz, MPID_PSP_packed_msg_t *msg)
+{
+	/* non-contiguous data (or GPU memory) */
+	char *tmp_buf = MPL_malloc(data_sz, MPL_MEM_OTHER);
+
+	msg->msg = tmp_buf;
+	msg->msg_sz = data_sz;
+	msg->tmp_buf = tmp_buf;
+
+	if (unlikely(!tmp_buf && data_sz)) { /* Error: No mem */
+		msg->msg_sz = 0;
+		return MPI_ERR_NO_MEM;
+	}
+
+	return MPI_SUCCESS;
+}
+
 /* May return MPI_ERR_NO_MEM.
    cleanup with packed_msg_cleanup */
 static inline
 int MPID_PSP_packed_msg_prepare(const void *addr, int count, MPI_Datatype datatype,
-				MPID_PSP_packed_msg_t *msg, int stage_buffer)
+				MPID_PSP_packed_msg_t *msg)
 {
-	int		contig;
-	size_t		data_sz;
-	MPIR_Datatype 	*dtp;
-	MPI_Aint	true_lb;
+	int	contig;
+	size_t data_sz;
+	MPIR_Datatype *dtp;
+	MPI_Aint true_lb;
+	int ret = MPI_SUCCESS;
 
 	MPIDI_Datatype_get_info(count, datatype,
 				contig, data_sz,
 				dtp, true_lb);
 
-	if (!stage_buffer && (contig || !data_sz) ) {
+	if (contig || !data_sz) {
 		msg->msg = (char *)addr + true_lb;
 		msg->msg_sz = data_sz;
 		msg->tmp_buf = NULL;
 	} else {
-		/* non-contiguous data (or GPU memory) */
-		char *tmp_buf = MPL_malloc(data_sz, MPL_MEM_OTHER);
-
-		msg->msg = tmp_buf;
-		msg->msg_sz = data_sz;
-		msg->tmp_buf = tmp_buf;
-
-		if (unlikely(!tmp_buf && data_sz)) { /* Error: No mem */
-			msg->msg_sz = 0;
-			return MPI_ERR_NO_MEM;
-		}
-
+		ret = MPID_PSP_packed_msg_allocate(data_sz, msg);
 	}
 
 /*	printf("Packed src:(%d) %s\n", origin_data_sz, pscom_dumpstr(msg->msg, pscom_min(origin_data_sz, 64)));
 	fflush(stdout); */
 
-	return MPI_SUCCESS;
+	return ret;
 }
 
 

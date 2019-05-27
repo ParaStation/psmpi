@@ -174,7 +174,7 @@ int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_da
 			pscom_request_get_answer_recv_t *ga = &rreq->user->type.get_answer_recv;
 
 			MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype,
-						    &ga->msg, 0);
+						    &ga->msg);
 			ga->origin_addr = origin_addr;
 			ga->origin_count = origin_count;
 			ga->origin_datatype = origin_datatype;
@@ -279,7 +279,7 @@ void io_done_get_answer_recv(pscom_request_t *req)
 
 	ret = MPID_PSP_packed_msg_prepare(xhead_get->mem_locations.target_buf,
 					xhead_get->target_count, datatype,
-					&gas->msg, 0);
+					&gas->msg);
 	assert(ret == MPI_SUCCESS);
 	MPID_PSP_packed_msg_pack(xhead_get->mem_locations.target_buf,
 				xhead_get->target_count,
