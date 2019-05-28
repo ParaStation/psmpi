@@ -264,6 +264,16 @@ void MPIDI_Pack_coll_buf(const void *buf, const MPI_Datatype datatype,
 }
 
 static inline
+void MPIDI_Pack_coll_bufs(const void *sendbuf, const void *recvbuf,
+		const MPI_Datatype datatype, const int count,
+		MPID_PSP_packed_msg_t *coll_sendbuf,
+		MPID_PSP_packed_msg_t *coll_recvbuf)
+{
+	MPIDI_Pack_coll_buf(sendbuf, datatype, count, coll_sendbuf);
+	MPIDI_Pack_coll_buf(recvbuf, datatype, count, coll_recvbuf);
+}
+
+static inline
 void MPIDI_Unpack_coll_buf(MPID_PSP_packed_msg_t *coll_buf, const int copy)
 {
 	if (coll_buf->tmp_buf) {
@@ -274,6 +284,14 @@ void MPIDI_Unpack_coll_buf(MPID_PSP_packed_msg_t *coll_buf, const int copy)
 
 		MPL_free(coll_buf->msg);
 	}
+}
+
+static inline
+void MPIDI_Unpack_coll_bufs(MPID_PSP_packed_msg_t *coll_sendbuf,
+		MPID_PSP_packed_msg_t *coll_recvbuf)
+{
+	MPIDI_Unpack_coll_buf(coll_sendbuf, 0);
+	MPIDI_Unpack_coll_buf(coll_recvbuf, 1);
 }
 
 int MPID_PSP_Reduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
@@ -304,13 +322,9 @@ int MPID_PSP_Allreduce_for_cuda(const void *sendbuf, void *recvbuf, int count, M
 	int rc;
 	MPID_PSP_packed_msg_t coll_sendbuf, coll_recvbuf;
 
-	MPIDI_Pack_coll_buf(sendbuf, datatype, count, &coll_sendbuf);
-	MPIDI_Pack_coll_buf(recvbuf, datatype, count, &coll_recvbuf);
-
+	MPIDI_Pack_coll_bufs(sendbuf, recvbuf,  datatype, count, &coll_sendbuf, &coll_recvbuf);
 	rc = MPIR_Allreduce_impl(coll_sendbuf.msg, coll_recvbuf.msg, count, datatype, op, comm_ptr, errflag);
-
-	MPIDI_Unpack_coll_buf(&coll_sendbuf, 0);
-	MPIDI_Unpack_coll_buf(&coll_recvbuf, 1);
+	MPIDI_Unpack_coll_bufs(&coll_sendbuf, &coll_recvbuf);
 
 	return rc;
 }
@@ -329,11 +343,8 @@ int MPID_PSP_Reduce_scatter_for_cuda(const void *sendbuf, void *recvbuf, const i
 		MPIDI_Pack_coll_buf(recvbuf, datatype, recvcounts[comm_ptr->rank], &coll_recvbuf);
 	}
 
-
 	rc = MPIR_Reduce_scatter_impl(coll_sendbuf.msg, coll_recvbuf.msg, recvcounts, datatype, op, comm_ptr, errflag);
-
-	MPIDI_Unpack_coll_buf(&coll_sendbuf, 0);
-	MPIDI_Unpack_coll_buf(&coll_recvbuf, 1);
+	MPIDI_Unpack_coll_bufs(&coll_sendbuf, &coll_recvbuf);
 
 	return rc;
 }
@@ -353,9 +364,7 @@ int MPID_PSP_Reduce_scatter_block_for_cuda(const void *sendbuf, void *recvbuf,  
 	}
 
 	rc = MPIR_Reduce_scatter_block_impl(coll_sendbuf.msg, coll_recvbuf.msg, recvcount, datatype, op, comm_ptr, errflag);
-
-	MPIDI_Unpack_coll_buf(&coll_sendbuf, 0);
-	MPIDI_Unpack_coll_buf(&coll_recvbuf, 1);
+	MPIDI_Unpack_coll_bufs(&coll_sendbuf, &coll_recvbuf);
 
 	return rc;
 }
@@ -366,13 +375,9 @@ int MPID_PSP_Scan_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Da
 	int rc;
 	MPID_PSP_packed_msg_t coll_sendbuf, coll_recvbuf;
 
-	MPIDI_Pack_coll_buf(sendbuf, datatype, count, &coll_sendbuf);
-	MPIDI_Pack_coll_buf(recvbuf, datatype, count, &coll_recvbuf);
-
+	MPIDI_Pack_coll_bufs(sendbuf, recvbuf,  datatype, count, &coll_sendbuf, &coll_recvbuf);
 	rc = MPIR_Scan_impl(coll_sendbuf.msg, coll_recvbuf.msg, count, datatype, op, comm_ptr, errflag);
-
-	MPIDI_Unpack_coll_buf(&coll_sendbuf, 0);
-	MPIDI_Unpack_coll_buf(&coll_recvbuf, 1);
+	MPIDI_Unpack_coll_bufs(&coll_sendbuf, &coll_recvbuf);
 
 	return rc;
 }
@@ -383,13 +388,9 @@ int MPID_PSP_Exscan_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_
 	int rc;
 	MPID_PSP_packed_msg_t coll_sendbuf, coll_recvbuf;
 
-	MPIDI_Pack_coll_buf(sendbuf, datatype, count, &coll_sendbuf);
-	MPIDI_Pack_coll_buf(recvbuf, datatype, count, &coll_recvbuf);
-
+	MPIDI_Pack_coll_bufs(sendbuf, recvbuf,  datatype, count, &coll_sendbuf, &coll_recvbuf);
 	rc = MPIR_Exscan_impl(coll_sendbuf.msg, coll_recvbuf.msg, count, datatype, op, comm_ptr, errflag);
-
-	MPIDI_Unpack_coll_buf(&coll_sendbuf, 0);
-	MPIDI_Unpack_coll_buf(&coll_recvbuf, 1);
+	MPIDI_Unpack_coll_bufs(&coll_sendbuf, &coll_recvbuf);
 
 	return rc;
 }
@@ -399,13 +400,9 @@ int MPID_PSP_Reduce_local_for_cuda(const void *inbuf, void *inoutbuf, int count,
 	int rc;
 	MPID_PSP_packed_msg_t coll_inbuf, coll_inoutbuf;
 
-	MPIDI_Pack_coll_buf(inbuf, datatype, count, &coll_inbuf);
-	MPIDI_Pack_coll_buf(inoutbuf, datatype, count, &coll_inoutbuf);
-
+	MPIDI_Pack_coll_bufs(inbuf, inoutbuf,  datatype, count, &coll_inbuf, &coll_inoutbuf);
 	rc = MPIR_Reduce_local_impl(coll_inbuf.msg, coll_inoutbuf.msg, count, datatype, op);
-
-	MPIDI_Unpack_coll_buf(&coll_inbuf, 0);
-	MPIDI_Unpack_coll_buf(&coll_inoutbuf, 1);
+	MPIDI_Unpack_coll_bufs(&coll_inbuf, &coll_inoutbuf);
 
 	return rc;
 }
