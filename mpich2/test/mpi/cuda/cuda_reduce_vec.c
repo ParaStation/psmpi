@@ -110,8 +110,6 @@ int main(int argc, char *argv[])
 		outmat[i] = outmat[i-i] + NUM_ELEMENTS;
 	}
 
-	init_comm_bufs(inmat, outmat, inmat_blob, outmat_blob, cinmat_blob, coutmat_blob);
-
 	/* create a column datatype */
 	MPI_Datatype column_t;
 	MPI_Type_vector(NUM_ELEMENTS, 1, NUM_ELEMENTS, MPI_DOUBLE, &column_t);
@@ -122,6 +120,8 @@ int main(int argc, char *argv[])
 	MPI_Op_create(column_add_op, 1, &column_add);
 
 	// Reduce //////////////////////////////////////////////////////////////////
+
+	init_comm_bufs(inmat, outmat, inmat_blob, outmat_blob, cinmat_blob, coutmat_blob);
 
 	/* perform the reduction */
 	MPI_Reduce(cinmat_blob, coutmat_blob, 1, column_t, column_add, 0, MPI_COMM_WORLD);
@@ -178,6 +178,34 @@ int main(int argc, char *argv[])
 					fprintf(stderr, "outmat[%d][%d] = %f (!= 1)\n", i, j, inmat[i][j]);
 					errs++;
 				}
+			}
+		}
+	}
+
+	// Reduce_local ////////////////////////////////////////////////////////////
+
+	init_comm_bufs(inmat, outmat, inmat_blob, outmat_blob, cinmat_blob, coutmat_blob);
+
+	/* perform the reduction */
+	MPI_Reduce_local(cinmat_blob, coutmat_blob, 1, column_t, column_add);
+
+	/* copy from the device memory */
+	CUDA_CHECK(cudaMemcpy(inmat_blob, cinmat_blob, mat_bytes, cudaMemcpyDeviceToHost));
+	CUDA_CHECK(cudaMemcpy(outmat_blob, coutmat_blob, mat_bytes, cudaMemcpyDeviceToHost));
+
+	/* check the results */
+	for (i=0; i < NUM_ELEMENTS ; ++i) {
+		/* check first column */
+		if (fabs(outmat[i][0] - 1 ) > MAX_ERR) {
+			fprintf(stderr, "outmat[%d][0] = %f (!= 1)\n", i, outmat[i][0]);
+			errs++;
+		}
+
+		/* check second column */
+		for (j=1; j<NUM_ELEMENTS; ++j) {
+			if (fabs(outmat[i][j]) > MAX_ERR) {
+				fprintf(stderr, "outmat[%d][%d] = %f (!= %d)\n", i, j, outmat[i][j], size);
+				errs++;
 			}
 		}
 	}
