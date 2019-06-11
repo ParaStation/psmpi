@@ -24,7 +24,7 @@
 
 #include "datatype.h"
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined (__PGI)
 #define dinit(name) .name =
 #else
 #define dinit(name)
@@ -34,10 +34,11 @@ MPIDI_Process_t MPIDI_Process = {
 	dinit(my_pg_rank)	-1,
 	dinit(my_pg_size)	0,
 	dinit(pg_id_name)	NULL,
+	dinit(next_lpid)	0,
+	dinit(my_pg)		NULL,
+	dinit(shm_attr_key)		0,
 	dinit(msa_module_id)    0,
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	dinit(node_id_table)    NULL,
-#endif
 	dinit(env)		{
 		dinit(enable_collectives)	0,
 		dinit(enable_ondemand)		0,
@@ -58,6 +59,8 @@ MPIDI_Process_t MPIDI_Process = {
 		dinit(min_size)                64,
 		dinit(step_width)               1,
 		dinit(points)                   0,
+		dinit(limit)                 NULL,
+		dinit(count)                 NULL,
 	},
 #endif
 };
