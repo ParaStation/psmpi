@@ -1345,9 +1345,9 @@ Optional Packages:
 	   cellgcc    : ppu-gcc
 	   cellxlc    :	ppuxlc
 
-	   devel      : With errorchecking and debug info (gcc)
+	   devel      : With error checking and debug info (gcc)
 	   user       : No predefined options
-	   ch3        : orginal MPIch2 ch3 device (no parastation)
+	   ch3        : original mpich ch3 device (no parastation)
 	   "--xyz --abc" : Use this to configure mpich without a set
 
 
