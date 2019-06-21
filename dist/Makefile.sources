@@ -12,6 +12,7 @@ SOURCE_FILES= \
 ChangeLog \
 LICENSE.QPL \
 Makefile.in \
+README.md \
 configure \
 configure.ac \
 dist/Makefile \
@@ -6365,7 +6366,6 @@ mpich2/src/mpid/psp/src/mpid_finalize.c \
 mpich2/src/mpid/psp/src/mpid_get_processor_name.c \
 mpich2/src/mpid/psp/src/mpid_init.c \
 mpich2/src/mpid/psp/src/mpid_irecv.c \
-mpich2/src/mpid/psp/src/mpid_irecv.h \
 mpich2/src/mpid/psp/src/mpid_isend.c \
 mpich2/src/mpid/psp/src/mpid_mprobe.c \
 mpich2/src/mpid/psp/src/mpid_persistent.c \
