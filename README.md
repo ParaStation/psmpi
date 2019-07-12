@@ -67,13 +67,15 @@ default    : like gcc
 
 gcc        : Use Gnu compiler (gcc)
 intel      : Use intel compiler (icc)
-icc        : like intel
+icc        : Like 'intel'
 pgi        : Portland group compiler (pgcc)
 psc        : Pathscale compiler (pathcc)
 cellgcc    : ppu-gcc
 cellxlc    : ppuxlc
+cuda       : With CUDA support
 
 devel      : With error checking and debug info (gcc)
+cuda-devel : Same as 'devel' but with CUDA support
 user       : No predefined options
 ch3        : original mpich ch3 device (no parastation)
 ```
