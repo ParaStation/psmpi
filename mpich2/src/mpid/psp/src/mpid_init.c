@@ -13,12 +13,26 @@
 #include <assert.h>
 #include <unistd.h>
 #include "mpidimpl.h"
+#include "mpi-ext.h"
 #include "mpl.h"
 #include "pmi.h"
 #include "errno.h"
 #include "mpid_debug.h"
 #include "mpid_coll.h"
 #include "datatype.h"
+
+/*
+ * MPIX_Query_cuda_support - Query CUDA support of the MPI library
+ */
+#define FCNAME "MPIX_Query_cuda_support"
+#define FUNCNAME MPIX_Query_cuda_support
+int __attribute__((visibility("default")))
+MPIX_Query_cuda_support(void)
+{
+	return MPID_Query_cuda_support();
+}
+#undef FUNCNAME
+#undef FCNAME
 
 // This must be the last include before sysmbols are defined:
 #include "mpid_visibility.h"
@@ -855,6 +869,19 @@ int MPID_Get_universe_size(int *universe_size)
 	/* --- */
  fn_fail:
 	goto fn_exit;
+}
+#undef FUNCNAME
+#undef FCNAME
+
+/*
+ * MPID_Query_cuda_support - Query CUDA support of the device
+ */
+#define FCNAME "MPID_Query_cuda_support"
+#define FUNCNAME MPID_Query_cuda_support
+int
+MPID_Query_cuda_support(void)
+{
+	return MPIX_CUDA_AWARE_SUPPORT && pscom_is_cuda_enabled();
 }
 #undef FUNCNAME
 #undef FCNAME

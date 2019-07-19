@@ -18,6 +18,7 @@
 
 #include "mpid_thread.h"
 #include "mpid_sched.h"
+#include "mpid_cuda_aware.h"
 
 #define MPID_PSP_HIDE_VISIBILITY
 
@@ -715,7 +716,6 @@ int MPID_Free_mem( void *ptr );
    hierarchical collectives in a (mostly) device-independent way. */
 int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p);
 int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p);
-
 
 #ifdef MPID_PSP_WITH_CUDA_AWARENESS
 int MPID_PSP_Reduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,

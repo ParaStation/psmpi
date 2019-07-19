@@ -2,6 +2,8 @@
 
 if BUILD_PSP
 
+nodist_include_HEADERS += src/mpid/psp/include/mpi-ext.h
+
 AM_CPPFLAGS += -I$(top_srcdir)/src/mpid/psp/include	\
                -I$(top_builddir)/src/mpid/psp/include
 

@@ -77,6 +77,7 @@ AC_ARG_ENABLE(psp-cuda-awareness,
 
 # CUDA support
 pscom_is_cuda_aware=no
+PSP_CUDA_AWARE_SUPPORT=0
 if test "$enable_psp_cuda_awareness" = "yes" ; then
 	# check if we try to build against non-CUDA-aware pscom
 	AC_MSG_CHECKING(if pscom is CUDA-aware)
@@ -93,10 +94,16 @@ if test "$enable_psp_cuda_awareness" = "yes" ; then
     AS_IF([test "$pscom_is_cuda_aware" = "no" ],[
 		AC_MSG_ERROR([The pscom library is missing CUDA-awareness. Abort!])
 	],[
+		PSP_CUDA_AWARE_SUPPORT=1
 		PAC_APPEND_FLAG([-DMPIR_USE_DEVICE_MEMCPY], [CPPFLAGS])
 	])
 fi
+AC_SUBST([PSP_CUDA_AWARE_SUPPORT])
 
+AC_CONFIG_FILES([
+src/mpid/psp/include/mpi-ext.h
+src/mpid/psp/include/mpid_cuda_aware.h
+])
 
 # todo: check whether we need all of them
 build_mpid_common_sched=yes
