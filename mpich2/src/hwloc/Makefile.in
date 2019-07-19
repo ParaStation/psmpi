@@ -775,6 +775,7 @@ PSCOM_LDFLAGS = @PSCOM_LDFLAGS@
 PSCOM_LIBRARY = @PSCOM_LIBRARY@
 PSCOM_RPATHLINK = @PSCOM_RPATHLINK@
 PSP_CPPFLAGS = @PSP_CPPFLAGS@
+PSP_CUDA_AWARE_SUPPORT = @PSP_CUDA_AWARE_SUPPORT@
 RANLIB = @RANLIB@
 REPLACE_CALLOC = @REPLACE_CALLOC@
 REPLACE_CANONICALIZE_FILE_NAME = @REPLACE_CANONICALIZE_FILE_NAME@
@@ -1245,10 +1246,10 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@HWLOC_BUILD_STANDALONE_FALSE@install-data-local:
-@HWLOC_HAVE_WINDOWS_FALSE@install-data-local:
 @HWLOC_BUILD_STANDALONE_FALSE@uninstall-local:
 @HWLOC_HAVE_WINDOWS_FALSE@uninstall-local:
+@HWLOC_BUILD_STANDALONE_FALSE@install-data-local:
+@HWLOC_HAVE_WINDOWS_FALSE@install-data-local:
 clean: clean-recursive
 
 clean-am: clean-generic clean-libtool mostlyclean-am
