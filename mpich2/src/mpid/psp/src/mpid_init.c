@@ -540,6 +540,20 @@ int MPID_Init(int *argc, char ***argv,
 		}
 	}
 
+	/* set CUDA-aware info object */
+	MPIR_Info *info_ptr = NULL;
+	MPIR_Info_get_ptr(MPI_INFO_ENV, info_ptr);
+	if (MPID_Query_cuda_support()) {
+		mpi_errno = MPIR_Info_set_impl(info_ptr, "cuda_aware", "true");
+	} else {
+		mpi_errno = MPIR_Info_set_impl(info_ptr, "cuda_aware", "false");
+	}
+
+	if (MPI_SUCCESS != mpi_errno) {
+		MPIR_ERR_POP(mpi_errno);
+	}
+
+
 	/* Initialize the switches */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_collectives, "PSP_COLLECTIVES");
 #ifdef PSCOM_HAS_ON_DEMAND_CONNECTIONS
