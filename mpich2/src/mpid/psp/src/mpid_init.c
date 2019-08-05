@@ -65,7 +65,7 @@ MPIDI_Process_t MPIDI_Process = {
 };
 
 #define PMICALL(func) do {										\
-	int pmi_errno = (func);										\
+	int pmi_errno = MPIDI_Process.my_pg_size != 1 ? (func) : PMI_SUCCESS;				\
 	if (pmi_errno != PMI_SUCCESS) {									\
 		PRINTERROR("PMI: " #func " = %d", pmi_errno);						\
 		exit(1);										\
