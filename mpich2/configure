@@ -26886,6 +26886,46 @@ $as_echo "yes" >&6; }
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pscom_memcpy in -lpscom" >&5
+$as_echo_n "checking for pscom_memcpy in -lpscom... " >&6; }
+if ${ac_cv_lib_pscom_pscom_memcpy+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpscom  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char pscom_memcpy ();
+int
+main ()
+{
+return pscom_memcpy ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_pscom_pscom_memcpy=yes
+else
+  ac_cv_lib_pscom_pscom_memcpy=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pscom_pscom_memcpy" >&5
+$as_echo "$ac_cv_lib_pscom_pscom_memcpy" >&6; }
+if test "x$ac_cv_lib_pscom_pscom_memcpy" = xyes; then :
+  have_pscom_memcpy=yes
+fi
+
 
     if test "$pscom_is_cuda_aware" = "no" ; then :
 
@@ -26893,7 +26933,13 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
 else
 
-		PSP_CUDA_AWARE_SUPPORT=1
+		if test "$have_pscom_memcpy" != "yes" ; then :
+
+			as_fn_error $? "The pscom library is the pscom_memcpy() symbol. Please re-compile the pscom with \"--enable-cuda\". Abort!" "$LINENO" 5
+
+else
+
+			PSP_CUDA_AWARE_SUPPORT=1
 
 
 	if echo "$CPPFLAGS" | $FGREP -e "\<-DMPIR_USE_DEVICE_MEMCPY\>" >/dev/null 2>&1; then :
@@ -26904,6 +26950,8 @@ else
 
 fi
 
+
+fi
 
 fi
 fi
