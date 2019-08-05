@@ -100,7 +100,7 @@ ifneq ($(fixpath),)
 endif
 
 mpicc-conf:
-	. scripts/generate_mpicc-conf.sh
+	scripts/generate_mpicc-conf.sh
 
 # Get Version
 VER:=$(shell cd $(TOP_SRCDIR) && scripts/vcversion)
