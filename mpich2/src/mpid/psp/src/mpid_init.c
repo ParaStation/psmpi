@@ -895,7 +895,11 @@ int MPID_Get_universe_size(int *universe_size)
 int
 MPID_Query_cuda_support(void)
 {
-	return MPIX_CUDA_AWARE_SUPPORT && pscom_is_cuda_enabled();
+#if MPIX_CUDA_AWARE_SUPPORT
+	return pscom_is_cuda_enabled();
+#else
+	return 0;
+#endif
 }
 #undef FUNCNAME
 #undef FCNAME
