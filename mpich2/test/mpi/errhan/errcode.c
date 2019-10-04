@@ -3482,6 +3482,9 @@ int main(int argc, char **argv)
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**argobots_uninitialized", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**argobots_uninitialized" );
     /* src/mpi/init/initthread.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**nomemreq", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**nomemreq" );
+    /* src/mpi/init/initthread.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**inittwice", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**inittwice" );
     /* src/mpi/init/initthread.c */
@@ -6359,9 +6362,6 @@ int main(int argc, char **argv)
     /* src/mpid/ch4/netmod/ofi/ofi_init.h */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**ch4|too_many_ranks", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**ch4|too_many_ranks" );
-    /* src/mpid/ch4/netmod/ofi/ofi_probe.h */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**nomemreq", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**nomemreq" );
     /* src/mpid/ch4/netmod/ofi/ofi_impl.h */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**eagain", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**eagain" );

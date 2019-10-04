@@ -3,15 +3,6 @@
 /* Define to 1 if MPL enables MPL_aligned_alloc. */
 #undef DEFINE_ALIGNED_ALLOC
 
-/* Define to 1 if you have the `abt_cleanup_push' function. */
-#undef HAVE_ABT_CLEANUP_PUSH
-
-/* Define to 1 if you have the <abt.h> header file. */
-#undef HAVE_ABT_H
-
-/* Define to 1 if you have the `ABT_thread_yield' function. */
-#undef HAVE_ABT_THREAD_YIELD
-
 /* Define to 1 if you have the `aligned_alloc' function. */
 #undef HAVE_ALIGNED_ALLOC
 
@@ -90,6 +81,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the `abt' library (-labt). */
+#undef HAVE_LIBABT
+
 /* Define to 1 if you have the backtrace header (backtrace.h) and library
    (-lbacktrace) */
 #undef HAVE_LIBBACKTRACE
@@ -134,7 +128,7 @@
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
 
-/* Define if pthread_mutexattr_setpshared is available. */
+/* Define to 1 if you have the `pthread_mutexattr_setpshared' function. */
 #undef HAVE_PTHREAD_MUTEXATTR_SETPSHARED
 
 /* Define to 1 if you have the `pthread_yield' function. */
@@ -352,7 +346,7 @@
 #undef THREAD_PACKAGE_NAME
 
 /* If the compiler supports a TLS storage class define it to that here */
-#undef TLS_SPECIFIER
+#undef TLS
 
 /* Define if performing coverage tests */
 #undef USE_COVERAGE

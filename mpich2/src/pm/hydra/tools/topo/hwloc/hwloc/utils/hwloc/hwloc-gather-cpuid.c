@@ -15,7 +15,7 @@
 
 #include <private/cpuid-x86.h>
 
-#ifdef HWLOC_WIN_SYS
+#if defined(HWLOC_WIN_SYS) && !defined(__CYGWIN__)
 #include <direct.h>
 #define mkdir(name, mode) _mkdir(name)
 #include <io.h>
@@ -47,6 +47,10 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
   unsigned regs[4];
   unsigned highest_cpuid, highest_ext_cpuid;
   unsigned i;
+  int has_intel_x2apic = 0;
+  int has_intel_pconfig = 0;
+  int has_intel_sgx = 0;
+  int has_amd_topoext = 0;
   FILE *output;
   int err;
 
@@ -88,6 +92,8 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
   if (highest_cpuid >= 0x1) {
     regs[0] = 0x1;
     dump_one_cpuid(output, regs, 0x1);
+    if (regs[2] & (1 << 21))
+      has_intel_x2apic = 1;
   }
 
   /* 0x2 = Cache + TLB on Intel ; Reserved on AMD */
@@ -129,6 +135,10 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
     unsigned max;
     regs[0] = 0x7; regs[2] = 0;
     dump_one_cpuid(output, regs, 0x5);
+    if (regs[3] & (1<<18))
+      has_intel_pconfig = 1;
+    if (regs[1] & (1<<2))
+      has_intel_sgx = 1;
     max = regs[0];
     for(i=1; i<=max; i++) {
       regs[0] = 0x7; regs[2] = i;
@@ -149,7 +159,7 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
   }
 
   /* 0xb = Extended topology on Intel ; Reserved on AMD */
-  if (highest_cpuid >= 0xb) {
+  if (has_intel_x2apic && highest_cpuid >= 0xb) {
     for(i=0; ; i++) {
       regs[0] = 0xb; regs[2] = i;
       dump_one_cpuid(output, regs, 0x5);
@@ -194,15 +204,39 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
 
   /* 0x10 = Platform/L3 QoS enforcement enumeration on Intel ; Reserved on AMD */
   if (highest_cpuid >= 0x10) {
+    /* Intel Resource Director Technology (Intel RDT) Allocation */
     regs[0] = 0x10; regs[2] = 0;
     dump_one_cpuid(output, regs, 0x5);
+    /* L3 Cache Allocation Technology */
     regs[0] = 0x10; regs[2] = 1;
     dump_one_cpuid(output, regs, 0x5);
+    /* L2 Cache Allocation Technology */
+    regs[0] = 0x10; regs[2] = 2;
+    dump_one_cpuid(output, regs, 0x5);
+    /* Memory Bandwidth Allocation */
+    regs[0] = 0x10; regs[2] = 3;
+    dump_one_cpuid(output, regs, 0x5);
+  }
+
+  /* 0x12 = SGX Attributes Enumeration on Intel ; Reserved on AMD */
+  if (has_intel_sgx && highest_cpuid >= 0x12) {
+    regs[0] = 0x12; regs[2] = 0;
+    dump_one_cpuid(output, regs, 0x5);
+    regs[0] = 0x12; regs[2] = 1;
+    dump_one_cpuid(output, regs, 0x5);
+    for(i=2; ; i++) {
+      regs[0] = 0x12; regs[2] = i;
+      dump_one_cpuid(output, regs, 0x5);
+      if (!(regs[0] & 0xf))
+	break;
+    }
   }
 
   /* 0x14 = Processor trace enumeration on Intel ; Reserved on AMD */
   if (highest_cpuid >= 0x14) {
     regs[0] = 0x14; regs[2] = 0;
+    dump_one_cpuid(output, regs, 0x5);
+    regs[0] = 0x14; regs[2] = 1;
     dump_one_cpuid(output, regs, 0x5);
   }
 
@@ -218,7 +252,51 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
     dump_one_cpuid(output, regs, 0x1);
   }
 
-  if (highest_cpuid > 0x16) {
+  /* 0x17 = System-On-Chip Vendor Attribute on Intel ; Reserved on AMD */
+  if (highest_cpuid >= 0x17) {
+    unsigned maxsocid;
+    regs[0] = 0x17; regs[2] = 0;
+    dump_one_cpuid(output, regs, 0x5);
+    maxsocid = regs[0];
+    for(i=1; i<=maxsocid; i++) {
+      regs[0] = 0x17; regs[2] = i;
+      dump_one_cpuid(output, regs, 0x5);
+    }
+  }
+
+  /* 0x18 = Deterministic Address Translation Parameters on Intel ; Reserved on AMD */
+  if (highest_cpuid >= 0x18) {
+    unsigned max;
+    regs[0] = 0x18; regs[2] = 0;
+    dump_one_cpuid(output, regs, 0x5);
+    max = regs[0];
+    for(i=1; i<=max; i++) {
+      regs[0] = 0x18; regs[2] = i;
+      dump_one_cpuid(output, regs, 0x5);
+    }
+  }
+
+  /* 0x1b = PCONFIG Information on Intel ; Reserved on AMD */
+  if (has_intel_pconfig && highest_cpuid >= 0x1b) {
+    for(i=0; ; i++) {
+      regs[0] = 0x1b; regs[2] = i;
+      dump_one_cpuid(output, regs, 0x5);
+      if (!(regs[0] & 0xfff))
+	break;
+    }
+  }
+
+  /* 0x1f = V2 Extended Topology Enumeration on Intel ; Reserved on AMD */
+  if (highest_cpuid >= 0x1f) {
+    for(i=0; ; i++) {
+      regs[0] = 0x1f; regs[2] = i;
+      dump_one_cpuid(output, regs, 0x5);
+      if (!regs[0] && !regs[1])
+	break;
+    }
+  }
+
+  if (highest_cpuid > 0x1f) {
     static int reported = 0;
     if (!reported)
       fprintf(stderr, "WARNING: Processor supports new CPUID leaves upto 0x%x\n", highest_cpuid);
@@ -233,6 +311,8 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
   if (highest_ext_cpuid >= 0x80000001) {
     regs[0] = 0x80000001;
     dump_one_cpuid(output, regs, 0x1);
+    if (regs[2] & (1 << 22))
+      has_amd_topoext = 1;
   }
 
   /* 0x80000002-4 = Processor name string */
@@ -308,12 +388,18 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
   }
 
   /* 0x8000001e = Topoext on AMD ; Reserved on Intel */
-  if (highest_ext_cpuid >= 0x8000001e) {
+  if (has_amd_topoext && highest_ext_cpuid >= 0x8000001e) {
     regs[0] = 0x8000001e;
     dump_one_cpuid(output, regs, 0x1);
   }
 
-  if (highest_ext_cpuid > 0x8000001e) {
+  /* 0x8000001f = Encrypted Memory Capabilities ; Reserved on Intel */
+  if (highest_ext_cpuid >= 0x8000001f) {
+    regs[0] = 0x8000001f;
+    dump_one_cpuid(output, regs, 0x1);
+  }
+
+  if (highest_ext_cpuid > 0x8000001f) {
     static int reported = 0;
     if (!reported)
       fprintf(stderr, "WARNING: Processor supports new extended CPUID leaves upto 0x%x\n", highest_ext_cpuid);

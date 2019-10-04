@@ -2876,9 +2876,50 @@ linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
   # 'ldconfig -N -X -v | grep ^/' on 64bit Fedora does not report /usr/lib64,
   # even though it is searched at run-time.  Try to do the best guess by
   # appending ld.so.conf contents (and includes) to the search path.
-  if test -f /etc/ld.so.conf; then
-    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \[$]2)); skip = 1; } { if (!skip) print \[$]0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
+
+  # There is no easy way to reliably detect the sys dlsearch path. We will first
+  # assume ldconfig reports the path correctly, but check it with the current
+  # ld cache. If any cached path is not present in the generated path_spec, then
+  # we know ldconfig is bad and should manually parse the ld.so.conf files.
+  # Note the reported paths can be a superset of the cached paths.
+  # The catch is that the default path may not be in the ld.so.conf. We have to
+  # add any missing one back to the path_spec (from the cached paths).
+
+  if test -x /sbin/ldconfig; then
+    sys_lib_dlsearch_path_spec=`/sbin/ldconfig -N -X -v 2>/dev/null | grep ^/ | sed -e 's/:.*//g' | tr '\n' ' '`
+    cached_lib_dlsearch_path=`/sbin/ldconfig -p | sed -e 's/.*=> //g' | grep '^/' | while read p; do dirname $p; done | sort | uniq | tr '\n' ' '`
+    for p in `echo $cached_lib_dlsearch_path`; do
+      case "$sys_lib_dlsearch_path_spec" in
+        *$p*)
+            bad_ldconfig=no
+            ;;
+           *)
+            # ldconfig is bad if cached path is not reported
+            bad_ldconfig=yes
+            break
+            ;;
+      esac
+    done
+  else
+    bad_ldconfig=yes
+  fi
+
+  if test "$bad_ldconfig" = "yes"; then
+    if test -f /etc/ld.so.conf; then
+      lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \[$]2)); skip = 1; } { if (!skip) print \[$]0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
+      sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
+    fi
+
+    # catch anything that in the cached path but not in the conf files
+    for p in `echo $cached_lib_dlsearch_path`; do
+      case "$sys_lib_dlsearch_path_spec" in
+        *$p*)
+            ;;
+           *)
+            sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $p"
+            ;;
+      esac
+    done
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -5242,16 +5283,27 @@ _LT_EOF
 	  _LT_TAGVAR(export_dynamic_flag_spec, $1)='-rdynamic'
 	  ;;
 	xlf* | bgf* | bgxlf* | mpixlf*)
-	  # IBM XL Fortran 10.1 on PPC cannot create shared libs itself
-	  _LT_TAGVAR(whole_archive_flag_spec, $1)='--whole-archive$convenience --no-whole-archive'
-	  _LT_TAGVAR(hardcode_libdir_flag_spec, $1)='$wl-rpath $wl$libdir'
-	  _LT_TAGVAR(archive_cmds, $1)='$LD -shared $libobjs $deplibs $linker_flags -soname $soname -o $lib'
-	  if test yes = "$supports_anon_versioning"; then
-	    _LT_TAGVAR(archive_expsym_cmds, $1)='echo "{ global:" > $output_objdir/$libname.ver~
-              cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
-              echo "local: *; };" >> $output_objdir/$libname.ver~
-              $LD -shared $libobjs $deplibs $linker_flags -soname $soname -version-script $output_objdir/$libname.ver -o $lib'
-	  fi
+          XLF_VERSION=$($CC -qversion 2>/dev/null | sed 1q | sed -e "s+^.*V++" | sed -e "s+\..*++")
+          if test $XLF_VERSION -ge 13; then
+              _LT_TAGVAR(archive_cmds, $1)='$CC -qmkshrobj $libobjs $deplibs $compiler_flags $wl-soname $wl$soname -o $lib'
+              if test yes = "$supports_anon_versioning"; then
+                _LT_TAGVAR(archive_expsym_cmds, $1)='echo "{ global:" > $output_objdir/$libname.ver~
+                  cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
+                  echo "local: *; };" >> $output_objdir/$libname.ver~
+                  $CC -qmkshrobj $libobjs $deplibs $compiler_flags $wl-soname $wl$soname $wl-version-script $wl$output_objdir/$libname.ver -o $lib'
+              fi
+          else
+              # IBM XL Fortran 10.1 on PPC cannot create shared libs itself
+              _LT_TAGVAR(whole_archive_flag_spec, $1)='--whole-archive$convenience --no-whole-archive'
+              _LT_TAGVAR(hardcode_libdir_flag_spec, $1)='$wl-rpath $wl$libdir'
+              _LT_TAGVAR(archive_cmds, $1)='$LD -shared $libobjs $deplibs $linker_flags -soname $soname -o $lib'
+              if test yes = "$supports_anon_versioning"; then
+                _LT_TAGVAR(archive_expsym_cmds, $1)='echo "{ global:" > $output_objdir/$libname.ver~
+                  cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
+                  echo "local: *; };" >> $output_objdir/$libname.ver~
+                  $LD -shared $libobjs $deplibs $linker_flags -soname $soname -version-script $output_objdir/$libname.ver -o $lib'
+              fi
+          fi
 	  ;;
 	esac
       else

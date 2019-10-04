@@ -44,6 +44,12 @@
 # endif
 #endif
 
+#ifdef HAVE_CLOCK_GETTIME
+# ifndef CLOCK_MONOTONIC /* HP-UX doesn't have CLOCK_MONOTONIC */
+#  define CLOCK_MONOTONIC CLOCK_REALTIME
+# endif
+#endif
+
 static unsigned int top = 0;
 
 FILE *open_output(const char *filename, int overwrite)
@@ -138,7 +144,8 @@ static void add_process_objects(hwloc_topology_t topology)
 
     snprintf(name, sizeof(name), "%ld", local_pid_number);
 
-    local_pid = hwloc_pid_from_number(local_pid_number, 0);
+    if (hwloc_pid_from_number(&local_pid, local_pid_number, 0, 0 /* ignore failures */) < 0)
+      continue;
 
     proc_cpubind = hwloc_get_proc_cpubind(topology, local_pid, cpuset, 0) != -1;
 
@@ -468,7 +475,7 @@ void usage(const char *name, FILE *where)
   fprintf (where, "  --taskset             Show taskset-specific cpuset strings\n");
   fprintf (where, "Object filtering options:\n");
   fprintf (where, "  --filter <type>:<knd> Filter objects of the given type, or all.\n");
-  fprintf (where, "     <knd> may be `all' (keep all), `none' (remove all), `structure' or `basic'\n");
+  fprintf (where, "     <knd> may be `all' (keep all), `none' (remove all), `structure' or `important'\n");
   fprintf (where, "  --ignore <type>       Ignore objects of the given type\n");
   fprintf (where, "  --no-caches           Do not show caches\n");
   fprintf (where, "  --no-useless-caches   Do not show caches which do not have a hierarchical\n"
@@ -490,7 +497,7 @@ void usage(const char *name, FILE *where)
   fprintf (where, "  --pid <pid>           Detect topology as seen by process <pid>\n");
   fprintf (where, "  --whole-system        Do not consider administration limitations\n");
   fprintf (where, "Graphical output options:\n");
-  fprintf (where, "  --children-order=plain\n"
+  fprintf (where, "  --children-order plain\n"
 		  "                        Display memory children below the parent like any other child\n");
   fprintf (where, "  --fontsize 10         Set size of text font\n");
   fprintf (where, "  --gridsize 10         Set size of margin between elements\n");
@@ -897,13 +904,14 @@ main (int argc, char *argv[])
 	}
       }
 
-      else if (!strncmp (argv[0], "--children-order=", 18)) {
-	char *tmp = argv[0]+18;
-	argv[0][17] = '\0';
-	if (!strcmp(tmp, "plain"))
+      else if (!strcmp (argv[0], "--children-order")) {
+	if (argc < 2)
+	  goto out_usagefailure;
+	if (!strcmp(argv[1], "plain"))
 	  loutput.plain_children_order = 1;
-	else if (strcmp(tmp, "memoryabove"))
-	  fprintf(stderr, "Unsupported order `%s' passed to %s, ignoring.\n", tmp, argv[0]);
+	else if (strcmp(argv[1], "memoryabove"))
+	  fprintf(stderr, "Unsupported order `%s' passed to %s, ignoring.\n", argv[1], argv[0]);
+	opt = 1;
       }
       else if (!strcmp (argv[0], "--fontsize")) {
 	if (argc < 2)
@@ -987,8 +995,8 @@ main (int argc, char *argv[])
   }
 
   if (loutput.pid_number > 0) {
-    loutput.pid = hwloc_pid_from_number(loutput.pid_number, 0);
-    if (hwloc_topology_set_pid(topology, loutput.pid)) {
+    if (hwloc_pid_from_number(&loutput.pid, loutput.pid_number, 0, 1 /* verbose */) < 0
+	|| hwloc_topology_set_pid(topology, loutput.pid)) {
       perror("Setting target pid");
       goto out_with_topology;
     }
@@ -1143,6 +1151,7 @@ main (int argc, char *argv[])
   }
 
   loutput.topology = topology;
+  loutput.depth = hwloc_topology_get_depth(topology);
   loutput.file = NULL;
 
   lstopo_populate_userdata(hwloc_get_root_obj(topology));

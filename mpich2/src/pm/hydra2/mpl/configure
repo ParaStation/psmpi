@@ -14411,21 +14411,17 @@ fi
         ;;
     abt|argobots)
         with_thread_package=argobots
-        for ac_header in abt.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "abt.h" "ac_cv_header_abt_h" "$ac_includes_default"
+        ac_fn_c_check_header_mongrel "$LINENO" "abt.h" "ac_cv_header_abt_h" "$ac_includes_default"
 if test "x$ac_cv_header_abt_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_ABT_H 1
-_ACEOF
 
+else
+  as_fn_error $? "unable to find Argobots header file" "$LINENO" 5
 fi
 
-done
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for abt_key_create in -labt" >&5
-$as_echo_n "checking for abt_key_create in -labt... " >&6; }
-if ${ac_cv_lib_abt_abt_key_create+:} false; then :
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ABT_key_create in -labt" >&5
+$as_echo_n "checking for ABT_key_create in -labt... " >&6; }
+if ${ac_cv_lib_abt_ABT_key_create+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -14439,31 +14435,37 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char abt_key_create ();
+char ABT_key_create ();
 int
 main ()
 {
-return abt_key_create ();
+return ABT_key_create ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_abt_abt_key_create=yes
+  ac_cv_lib_abt_ABT_key_create=yes
 else
-  ac_cv_lib_abt_abt_key_create=no
+  ac_cv_lib_abt_ABT_key_create=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_abt_abt_key_create" >&5
-$as_echo "$ac_cv_lib_abt_abt_key_create" >&6; }
-if test "x$ac_cv_lib_abt_abt_key_create" = xyes; then :
-  have_abt=yes
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_abt_ABT_key_create" >&5
+$as_echo "$ac_cv_lib_abt_ABT_key_create" >&6; }
+if test "x$ac_cv_lib_abt_ABT_key_create" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBABT 1
+_ACEOF
+
+  LIBS="-labt $LIBS"
+
+else
+  as_fn_error $? "unable to find Argobots library" "$LINENO" 5
 fi
 
-        if test "$have_abt" = "yes"; then
 
 
         if echo "$LIBS" | $FGREP -e "\<-labt\>" >/dev/null 2>&1; then :
@@ -14473,36 +14475,6 @@ else
                 LIBS="-labt $LIBS"
 
 fi
-
-        fi
-        for ac_func in ABT_thread_yield
-do :
-  ac_fn_c_check_func "$LINENO" "ABT_thread_yield" "ac_cv_func_ABT_thread_yield"
-if test "x$ac_cv_func_ABT_thread_yield" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_ABT_THREAD_YIELD 1
-_ACEOF
-
-fi
-done
-
-        ac_fn_c_check_func "$LINENO" "abt_key_create" "ac_cv_func_abt_key_create"
-if test "x$ac_cv_func_abt_key_create" = xyes; then :
-
-else
-  as_fn_error $? "unable to find Argobots library" "$LINENO" 5
-fi
-
-        for ac_func in abt_cleanup_push
-do :
-  ac_fn_c_check_func "$LINENO" "abt_cleanup_push" "ac_cv_func_abt_cleanup_push"
-if test "x$ac_cv_func_abt_cleanup_push" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_ABT_CLEANUP_PUSH 1
-_ACEOF
-
-fi
-done
 
         THREAD_PACKAGE_NAME=MPL_THREAD_PACKAGE_ARGOBOTS
         ;;
@@ -14523,110 +14495,61 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-# check for compiler-support for thread-local storage (MPL_TLS_SPECIFIER)
+# check for compiler-support for thread-local storage (MPL_TLS)
 if test "${with_thread_package}" != "argobots" ; then
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for thread local storage specifier" >&5
-$as_echo_n "checking for thread local storage specifier... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for thread local storage (TLS) class" >&5
+$as_echo_n "checking for thread local storage (TLS) class... " >&6; }
   if ${ac_cv_tls+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-
-    ax_tls_keywords="_Thread_local __thread __declspec(thread) none"
-    for ax_tls_keyword in $ax_tls_keywords; do
-       case $ax_tls_keyword in
-          none) ac_cv_tls=none ; break ;;
-	  *)
-             # MPICH modification: This was an AC_TRY_COMPILE before, but
-             # Darwin with non-standard compilers will accept __thread at
-             # compile time but fail to link due to an undefined
-             # "__emutls_get_address" symbol unless -lgcc_eh is added to the
-             # link line.
-             cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  for ax_tls_keyword in thread_local _Thread_local __thread '__declspec(thread)' none; do
+       case $ax_tls_keyword in #(
+  none) :
+    ac_cv_tls=none ; break ;; #(
+  *) :
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-$ax_tls_keyword int bar = 5;
+#include <stdlib.h>
+               static void
+               foo(void) {
+               static  $ax_tls_keyword  int bar;
+               exit(1);
+               }
 int
 main ()
 {
-++bar;
+
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_tls=$ax_tls_keyword
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_tls=$ax_tls_keyword ; break
 else
   ac_cv_tls=none
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-
-	     # MPICH modification: Also test with the extern keyword.
-	     # The intel compiler on Darwin (at least as of 15.0.1)
-	     # seems to break with the above error when the extern
-	     # keyword is specified in shared library builds.
-
-	if test -z "${pac_save_LIBS_nesting}" ; then
-	   pac_save_LIBS_nesting=0
-	fi
-	eval pac_save_LIBS_${pac_save_LIBS_nesting}='"$LIBS"'
-	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} + 1`
-
-
-
-	if echo "$LIBS" | $FGREP -e "\<-shared\>" >/dev/null 2>&1; then :
-  echo "LIBS(='$LIBS') contains '-shared', not appending" >&5
-else
-  echo "LIBS(='$LIBS') does not contain '-shared', appending" >&5
-		LIBS="$LIBS -shared"
 
 fi
-
-	     if test "$ac_cv_tls" != "none" ; then
-                cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-					extern $ax_tls_keyword int bar;
-					$ax_tls_keyword int bar = 0;
-
-int
-main ()
-{
-++bar;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_tls=$ax_tls_keyword
-else
-  ac_cv_tls=none
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-	     fi
-
-	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} - 1`
-	eval LIBS="\$pac_save_LIBS_${pac_save_LIBS_nesting}"
-	eval pac_save_LIBS_${pac_save_LIBS_nesting}=""
-
-
-	     if test "$ac_cv_tls" != "none" ; then break ; fi
-          esac
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext ;;
+esac
     done
 
 fi
 
-
-  if test "$ac_cv_tls" != "none"; then
-
-cat >>confdefs.h <<_ACEOF
-#define TLS_SPECIFIER $ac_cv_tls
-_ACEOF
-
-  fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tls" >&5
 $as_echo "$ac_cv_tls" >&6; }
+
+  if test "$ac_cv_tls" != "none"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define TLS $ac_cv_tls
+_ACEOF
+
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: thread-local storage not supported by the compiler." >&5
+$as_echo "$as_me: WARNING: thread-local storage not supported by the compiler." >&2;}
+fi
 
 fi
 
@@ -14754,11 +14677,6 @@ _ACEOF
 fi
 done
 
-    if test "$ac_cv_func_pthread_mutexattr_setpshared" = "no" ; then
-
-$as_echo "#define HAVE_PTHREAD_MUTEXATTR_SETPSHARED 1" >>confdefs.h
-
-    fi
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: POSIX will be used for interprocess mutex package." >&5
 $as_echo "$as_me: POSIX will be used for interprocess mutex package." >&6;}
@@ -14844,7 +14762,7 @@ $as_echo "$pac_cv_has_pthread_mutex_errorcheck" >&6; }
 
   if test "$pac_cv_has_pthread_mutex_errorcheck" = yes ; then
 
-$as_echo "#define PTHREAD_MUTEX_ERRORCHECK_VALUE PTHREAD_MUTEX_ERRORCHECK_NPRRORCHECK" >>confdefs.h
+$as_echo "#define PTHREAD_MUTEX_ERRORCHECK_VALUE PTHREAD_MUTEX_ERRORCHECK" >>confdefs.h
 
   elif test "$pac_cv_has_pthread_mutex_errorcheck_np" = yes ; then
 

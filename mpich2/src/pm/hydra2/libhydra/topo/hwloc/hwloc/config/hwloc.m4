@@ -85,12 +85,22 @@ EOF])
     if test "$?" != "0"; then
         AC_MSG_ERROR([Cannot continue])
     fi
-    HWLOC_RELEASE_DATE="`$HWLOC_top_srcdir/config/hwloc_get_version.sh $HWLOC_top_srcdir/VERSION --release-date`"
+    AC_MSG_RESULT([$HWLOC_VERSION])
     AC_SUBST(HWLOC_VERSION)
     AC_DEFINE_UNQUOTED([HWLOC_VERSION], ["$HWLOC_VERSION"],
                        [The library version, always available, even in embedded mode, contrary to VERSION])
+
+    HWLOC_VERSION_MAJOR="`$HWLOC_top_srcdir/config/hwloc_get_version.sh $HWLOC_top_srcdir/VERSION --major`"
+    AC_DEFINE_UNQUOTED([HWLOC_VERSION_MAJOR], [$HWLOC_VERSION_MAJOR], [The library version major number])
+    HWLOC_VERSION_MINOR="`$HWLOC_top_srcdir/config/hwloc_get_version.sh $HWLOC_top_srcdir/VERSION --minor`"
+    AC_DEFINE_UNQUOTED([HWLOC_VERSION_MINOR], [$HWLOC_VERSION_MINOR], [The library version minor number])
+    HWLOC_VERSION_RELEASE="`$HWLOC_top_srcdir/config/hwloc_get_version.sh $HWLOC_top_srcdir/VERSION --release`"
+    AC_DEFINE_UNQUOTED([HWLOC_VERSION_RELEASE], [$HWLOC_VERSION_RELEASE], [The library version release number])
+    HWLOC_VERSION_GREEK="`$HWLOC_top_srcdir/config/hwloc_get_version.sh $HWLOC_top_srcdir/VERSION --greek`"
+    AC_DEFINE_UNQUOTED([HWLOC_VERSION_GREEK], ["$HWLOC_VERSION_GREEK"], [The library version optional greek suffix string])
+
+    HWLOC_RELEASE_DATE="`$HWLOC_top_srcdir/config/hwloc_get_version.sh $HWLOC_top_srcdir/VERSION --release-date`"
     AC_SUBST(HWLOC_RELEASE_DATE)
-    AC_MSG_RESULT([$HWLOC_VERSION])
 
     # Debug mode?
     AC_MSG_CHECKING([if want hwloc maintainer support])
@@ -376,6 +386,11 @@ EOF])
     AC_CHECK_HEADERS([strings.h])
     AC_CHECK_HEADERS([ctype.h])
 
+    AC_CHECK_FUNCS([strcasecmp], [
+      _HWLOC_CHECK_DECL([strcasecmp], [
+	AC_DEFINE([HWLOC_HAVE_DECL_STRCASECMP], [1], [Define to 1 if function `strcasecmp' is declared by system headers])
+      ])
+    ])
     AC_CHECK_FUNCS([strncasecmp], [
       _HWLOC_CHECK_DECL([strncasecmp], [
 	AC_DEFINE([HWLOC_HAVE_DECL_STRNCASECMP], [1], [Define to 1 if function `strncasecmp' is declared by system headers])
@@ -434,8 +449,15 @@ EOF])
 
     AC_CHECK_DECLS([fabsf], [
       AC_CHECK_LIB([m], [fabsf],
-                   [HWLOC_LIBS="-lm $HWLOC_LIBS"])
+                   [need_libm=yes])
     ], [], [[#include <math.h>]])
+    AC_CHECK_DECLS([modff], [
+      AC_CHECK_LIB([m], [modff],
+                   [need_libm=yes])
+    ], [], [[#include <math.h>]])
+    if test x$need_libm = xyes; then
+      HWLOC_LIBS="-lm $HWLOC_LIBS"
+    fi
 
     AC_CHECK_HEADERS([picl.h], [
       AC_CHECK_LIB([picl], [picl_initialize],
@@ -474,7 +496,6 @@ EOF])
     # Needed for Windows in private/misc.h
     AC_CHECK_TYPES([ssize_t])
     AC_CHECK_DECLS([snprintf], [], [], [AC_INCLUDES_DEFAULT])
-    AC_CHECK_DECLS([strcasecmp], [], [], [AC_INCLUDES_DEFAULT])
     # strdup and putenv are declared in windows headers but marked deprecated
     AC_CHECK_DECLS([_strdup], [], [], [AC_INCLUDES_DEFAULT])
     AC_CHECK_DECLS([_putenv], [], [], [AC_INCLUDES_DEFAULT])
@@ -1272,32 +1293,6 @@ AC_DEFUN([HWLOC_DO_AM_CONDITIONALS],[
     # do the netloc AM conditionals here
     NETLOC_DO_AM_CONDITIONALS
 ])dnl
-
-#-----------------------------------------------------------------------
-
-AC_DEFUN([_HWLOC_CHECK_DIFF_U], [
-  AC_MSG_CHECKING([whether diff accepts -u])
-  if diff -u /dev/null /dev/null 2> /dev/null
-  then
-    HWLOC_DIFF_U="-u"
-  else
-    HWLOC_DIFF_U=""
-  fi
-  AC_SUBST([HWLOC_DIFF_U])
-  AC_MSG_RESULT([$HWLOC_DIFF_U])
-])
-
-AC_DEFUN([_HWLOC_CHECK_DIFF_W], [
-  AC_MSG_CHECKING([whether diff accepts -w])
-  if diff -w /dev/null /dev/null 2> /dev/null
-  then
-    HWLOC_DIFF_W="-w"
-  else
-    HWLOC_DIFF_W=""
-  fi
-  AC_SUBST([HWLOC_DIFF_W])
-  AC_MSG_RESULT([$HWLOC_DIFF_W])
-])
 
 #-----------------------------------------------------------------------
 

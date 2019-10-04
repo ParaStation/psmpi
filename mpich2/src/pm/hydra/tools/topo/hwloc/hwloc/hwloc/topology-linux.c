@@ -2,7 +2,7 @@
  * Copyright © 2009 CNRS
  * Copyright © 2009-2018 Inria.  All rights reserved.
  * Copyright © 2009-2013, 2015 Université Bordeaux
- * Copyright © 2009-2014 Cisco Systems, Inc.  All rights reserved.
+ * Copyright © 2009-2018 Cisco Systems, Inc.  All rights reserved.
  * Copyright © 2015 Intel, Inc.  All rights reserved.
  * Copyright © 2010 IBM
  * See COPYING in top-level directory.
@@ -3134,8 +3134,10 @@ list_sysfsnode(struct hwloc_linux_backend_data_s *data,
     return NULL;
 
   nodeset = hwloc_bitmap_alloc();
-  if (!nodeset)
+  if (!nodeset) {
+    closedir(dir);
     return NULL;
+  }
 
   while ((dirent = readdir(dir)) != NULL) {
     if (strncmp(dirent->d_name, "node", 4))
@@ -3569,7 +3571,7 @@ look_sysfscpu(struct hwloc_topology *topology,
       sprintf(str, "%s/cpu%d/topology/thread_siblings", path, i);
       coreset = hwloc__alloc_read_path_as_cpumask(str, data->root_fd);
       if (coreset) {
-        unsigned mycoreid;
+        unsigned mycoreid = (unsigned) -1;
 	int gotcoreid = 0; /* to avoid reading the coreid twice */
 	hwloc_bitmap_and(coreset, coreset, cpuset);
 	if (hwloc_bitmap_weight(coreset) > 1 && threadwithcoreid == -1) {
@@ -4927,7 +4929,7 @@ hwloc_linuxfs_block_class_fillinfos(struct hwloc_backend *backend __hwloc_attrib
   struct hwloc_linux_backend_data_s *data = backend->private_data;
 #endif
   FILE *file;
-  char path[256];
+  char path[296]; /* osdevpath <= 256 */
   char line[128];
   char vendor[64] = "";
   char model[64] = "";
@@ -5140,7 +5142,7 @@ hwloc_linuxfs_net_class_fillinfos(int root_fd,
 				  struct hwloc_obj *obj, const char *osdevpath)
 {
   struct stat st;
-  char path[256];
+  char path[296]; /* osdevpath <= 256 */
   char address[128];
   snprintf(path, sizeof(path), "%s/address", osdevpath);
   if (!hwloc_read_path_by_length(path, address, sizeof(address), root_fd)) {
@@ -5207,7 +5209,7 @@ static void
 hwloc_linuxfs_infiniband_class_fillinfos(int root_fd,
 					 struct hwloc_obj *obj, const char *osdevpath)
 {
-  char path[256];
+  char path[296]; /* osdevpath <= 256 */
   char guidvalue[20];
   unsigned i,j;
 
@@ -5328,7 +5330,7 @@ static void
 hwloc_linuxfs_mic_class_fillinfos(int root_fd,
 				  struct hwloc_obj *obj, const char *osdevpath)
 {
-  char path[256];
+  char path[296]; /* osdevpath <= 256 */
   char family[64];
   char sku[64];
   char sn[64];
@@ -5815,8 +5817,22 @@ hwloc_linuxfs_pci_look_pcidevices(struct hwloc_backend *backend)
 
     /* try to get the link speed */
     offset = hwloc_pcidisc_find_cap(config_space_cache, HWLOC_PCI_CAP_ID_EXP);
-    if (offset > 0 && offset + 20 /* size of PCI express block up to link status */ <= CONFIG_SPACE_CACHESIZE)
+    if (offset > 0 && offset + 20 /* size of PCI express block up to link status */ <= CONFIG_SPACE_CACHESIZE) {
       hwloc_pcidisc_find_linkspeed(config_space_cache, offset, &attr->linkspeed);
+    } else {
+      /* if not available from config-space (extended part is root-only), look in sysfs files added in 4.13 */
+      float speed = 0.f;
+      unsigned width = 0;
+      err = snprintf(path, sizeof(path), "/sys/bus/pci/devices/%s/current_link_speed", dirent->d_name);
+      if ((size_t) err < sizeof(path)
+	  && !hwloc_read_path_by_length(path, value, sizeof(value), root_fd))
+	speed = hwloc_linux_pci_link_speed_from_string(value);
+      err = snprintf(path, sizeof(path), "/sys/bus/pci/devices/%s/current_link_width", dirent->d_name);
+      if ((size_t) err < sizeof(path)
+	  && !hwloc_read_path_by_length(path, value, sizeof(value), root_fd))
+	width = atoi(value);
+      attr->linkspeed = speed*width/8;
+    }
 
     hwloc_pcidisc_tree_insert_by_busid(&tree, obj);
   }
@@ -5891,12 +5907,23 @@ hwloc_linuxfs_pci_look_pcislots(struct hwloc_backend *backend)
       if ((size_t) err < sizeof(path)
 	  && !hwloc_read_path_by_length(path, buf, sizeof(buf), root_fd)
 	  && sscanf(buf, "%x:%x:%x", &domain, &bus, &dev) == 3) {
+	/* may also be %x:%x without a device number but that's only for hotplug when nothing is plugged, ignore those */
 	hwloc_obj_t obj = hwloc_linuxfs_pci_find_pcislot_obj(hwloc_get_root_obj(topology)->io_first_child, domain, bus, dev);
-	if (obj) {
-	  while (obj && obj->attr->pcidev.dev == dev /* sibling have same domain+bus */) {
-	    hwloc_obj_add_info(obj, "PCISlot", dirent->d_name);
-	    obj = obj->next_sibling;
-	  }
+	while (obj) {
+	  /* Apply the slot to that device and its siblings with same domain/bus/dev ID.
+	   * Make sure that siblings are still PCI and on the same bus
+	   * (optional bridge filtering can put different things together).
+	   */
+	  if (obj->type != HWLOC_OBJ_PCI_DEVICE &&
+	      (obj->type != HWLOC_OBJ_BRIDGE || obj->attr->bridge.upstream_type != HWLOC_OBJ_BRIDGE_PCI))
+	    break;
+	  if (obj->attr->pcidev.domain != domain
+	      || obj->attr->pcidev.bus != bus
+	      || obj->attr->pcidev.dev != dev)
+	    break;
+
+	  hwloc_obj_add_info(obj, "PCISlot", dirent->d_name);
+	  obj = obj->next_sibling;
 	}
       }
     }

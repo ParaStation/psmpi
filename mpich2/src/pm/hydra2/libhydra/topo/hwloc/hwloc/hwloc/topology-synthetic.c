@@ -576,7 +576,6 @@ hwloc_backend_synthetic_init(struct hwloc_synthetic_backend_data_s *data,
       errno = EINVAL;
       goto error;
     }
-    data->level[count-1].arity = (unsigned)item;
 
     totalarity *= item;
     data->level[count].totalwidth = totalarity;
@@ -602,6 +601,7 @@ hwloc_backend_synthetic_init(struct hwloc_synthetic_backend_data_s *data,
       goto error;
     }
 
+    data->level[count-1].arity = (unsigned)item;
     count++;
   }
 
@@ -783,7 +783,7 @@ hwloc_backend_synthetic_init(struct hwloc_synthetic_backend_data_s *data,
 	  curlevel->attr.memorysize = 32*1024;
 	else
 	  /* *4 at each level, starting from 1MB for L2, unified */
-	  curlevel->attr.memorysize = 256*1024 << (2*curlevel->attr.depth);
+	  curlevel->attr.memorysize = 256ULL*1024 << (2*curlevel->attr.depth);
       }
 
     } else if (type == HWLOC_OBJ_NUMANODE && !curlevel->attr.memorysize) {
@@ -1162,8 +1162,8 @@ hwloc__export_synthetic_indexes(hwloc_obj_t *level, unsigned total,
   /* dump all indexes */
   cur = level[0];
   while (cur) {
-    res = snprintf(tmp, tmplen, "%u%s", cur->os_index,
-		   cur->next_cousin ? "," : ")");
+    res = hwloc_snprintf(tmp, tmplen, "%u%s", cur->os_index,
+			 cur->next_cousin ? "," : ")");
     if (hwloc__export_synthetic_update_status(&ret, &tmp, &tmplen, res) < 0)
       return -1;
     cur = cur->next_cousin;
@@ -1225,7 +1225,7 @@ hwloc__export_synthetic_obj_attr(struct hwloc_topology * topology,
 	level = topology->levels[obj->depth];
       }
 
-      res = snprintf(tmp, tmplen, "%sindexes=", prefix);
+      res = hwloc_snprintf(tmp, tmplen, "%sindexes=", prefix);
       if (hwloc__export_synthetic_update_status(&ret, &tmp, &tmplen, res) < 0)
 	return -1;
 

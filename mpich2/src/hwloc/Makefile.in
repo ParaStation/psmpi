@@ -98,16 +98,17 @@ target_triplet = @target@
 # There's no INSTALL_SUBDIRS, so always enter doc/ and check HWLOC_BUILD/INSTALL_DOXYGEN there
 @HWLOC_BUILD_STANDALONE_TRUE@am__append_2 = utils tests \
 @HWLOC_BUILD_STANDALONE_TRUE@	contrib/systemd contrib/misc doc
-@BUILD_NETLOC_FALSE@@HWLOC_BUILD_STANDALONE_TRUE@am__append_3 = netloc
+@HWLOC_BUILD_STANDALONE_TRUE@am__append_3 = contrib/windows
+@BUILD_NETLOC_FALSE@@HWLOC_BUILD_STANDALONE_TRUE@am__append_4 = netloc
 # JMS Need to compare hwloc.pc and netloc.pc -- I think netloc.pc is
 # missing some things.
 # pkgconfig_DATA += netloc.pc Disabled until the netloc API is public
-@BUILD_NETLOC_TRUE@@HWLOC_BUILD_STANDALONE_TRUE@am__append_4 = netloc.pc
-@BUILD_NETLOCSCOTCH_TRUE@@BUILD_NETLOC_TRUE@@HWLOC_BUILD_STANDALONE_TRUE@am__append_5 = netlocscotch.pc
+@BUILD_NETLOC_TRUE@@HWLOC_BUILD_STANDALONE_TRUE@am__append_5 = netloc.pc
+@BUILD_NETLOCSCOTCH_TRUE@@BUILD_NETLOC_TRUE@@HWLOC_BUILD_STANDALONE_TRUE@am__append_6 = netlocscotch.pc
 
 # Only install entire visual studio subdirectory if we're building in
 # standalone mode
-@HWLOC_BUILD_STANDALONE_TRUE@am__append_6 = contrib/windows
+@HWLOC_BUILD_STANDALONE_TRUE@am__append_7 = contrib/windows
 subdir = src/hwloc
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/src/hwloc/config/hwloc.m4 \
@@ -161,7 +162,6 @@ am__aclocal_m4_deps = $(top_srcdir)/src/hwloc/config/hwloc.m4 \
 	$(top_srcdir)/src/pmi/bgq/subconfigure.m4 \
 	$(top_srcdir)/src/pmi/cray/subconfigure.m4 \
 	$(top_srcdir)/src/pmi/simple/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch4/netmod/ofi/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch3/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch3/channels/nemesis/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/common/shm/subconfigure.m4 \
@@ -174,6 +174,7 @@ am__aclocal_m4_deps = $(top_srcdir)/src/hwloc/config/hwloc.m4 \
 	$(top_srcdir)/src/mpid/common/sched/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch3/channels/sock/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch3/util/sock/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch4/netmod/ofi/subconfigure.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -946,17 +947,17 @@ ACLOCAL_AMFLAGS = -I ./config
 #
 EXTRA_DIST = README VERSION COPYING AUTHORS \
 	config/hwloc_get_version.sh config/distscript.sh \
-	$(am__append_4) $(am__append_6)
+	$(am__append_5) $(am__append_7)
 SUBDIRS = include hwloc $(am__append_1) $(am__append_2)
 
 # Do not let automake automatically add the non-standalone dirs to the
 # distribution tarball if we're building in embedded mode.
-DIST_SUBDIRS = $(SUBDIRS) $(am__append_3)
+DIST_SUBDIRS = $(SUBDIRS) $(am__append_3) $(am__append_4)
 
 # Only install the pkg file if we're building in standalone mode (and not on Windows)
 @HWLOC_BUILD_STANDALONE_TRUE@hwlocpkgconfigdir = $(libdir)/pkgconfig
 @HWLOC_BUILD_STANDALONE_TRUE@hwlocpkgconfig_DATA = hwloc.pc \
-@HWLOC_BUILD_STANDALONE_TRUE@	$(am__append_5)
+@HWLOC_BUILD_STANDALONE_TRUE@	$(am__append_6)
 
 # Only install the valgrind suppressions file if we're building in
 # standalone mode
