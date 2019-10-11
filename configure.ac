@@ -60,10 +60,8 @@ AC_ARG_WITH([confset], [
 	   psc	      : Pathscale compiler (pathcc)
 	   cellgcc    : ppu-gcc
 	   cellxlc    :	ppuxlc
-	   cuda       : With CUDA support
 
 	   devel      : With error checking and debug info (gcc)
-	   cuda-devel : Same as 'devel' but with CUDA support
 	   user       : No predefined options
 	   ch3        : original mpich ch3 device (no parastation)
 	   "--xyz --abc" : Use this to configure mpich without a set
@@ -418,43 +416,6 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS CC='ppuxlc -q64' CXX='ppuxlC -q64' FC='ppuxlf -q64'"
 	CONF_OPS="$CONF_OPS"
 	;;
-"cuda")
-	echo "Using confset=cuda"
-	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-f77"
-	CONF_OPS="$CONF_OPS --enable-fc"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-psp-cuda-awareness"
-
-	CUDA_HOME="${CUDA_HOME-"/usr/local/cuda/"}"
-	if ! test -d "$CUDA_HOME" ; then
-		unset CUDA_HOME
-	fi
-	CONF_OPS="$CONF_OPS PSP_CPPFLAGS='-DMPID_PSP_WITH_CUDA_AWARENESS'"
-	CONF_OPS="$CONF_OPS"
-	;;
-"cuda-devel")
-	echo "Using confset=cuda-devel"
-	CONF_OPS="--with-device=psp"
-
-	CONF_OPS="$CONF_OPS --enable-cache"
-	CONF_OPS="$CONF_OPS --enable-g=all"
-	CONF_OPS="$CONF_OPS --enable-dependencies"
-	CONF_OPS="$CONF_OPS --enable-shared"
-	CONF_OPS="$CONF_OPS --disable-static"
-	CONF_OPS="$CONF_OPS --enable-error-checking=all"
-	CONF_OPS="$CONF_OPS --enable-strict" # Compile with -Wall and other checks.
-	CONF_OPS="$CONF_OPS --enable-psp-cuda-awareness"
-
-	CUDA_HOME="${CUDA_HOME-"/usr/local/cuda/"}"
-	if ! test -d "$CUDA_HOME" ; then
-		unset CUDA_HOME
-	fi
-	CONF_OPS="$CONF_OPS PSP_CPPFLAGS='-DMPID_PSP_WITH_CUDA_AWARENESS'"
-	CONF_OPS="$CONF_OPS"
-	;;
 "none")
 	# No build
 	;;
@@ -512,6 +473,21 @@ AC_ARG_WITH([topology-awareness], [
 ])
 AC_SUBST([ENABLE_TOPOLOGY_AWARENESS])
 export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_DYNAMIC_PROC_WIDTH=0"
+
+AC_ARG_WITH([cuda], [
+  --with-cuda
+			  Enable CUDA awareness within ParaStationMPI
+],[
+	CONF_OPS="$CONF_OPS --enable-psp-cuda-awareness"
+
+	CUDA_HOME="${CUDA_HOME-"/usr/local/cuda/"}"
+	if ! test -d "$CUDA_HOME" ; then
+		unset CUDA_HOME
+	fi
+	CONF_OPS="$CONF_OPS PSP_CPPFLAGS='-DMPID_PSP_WITH_CUDA_AWARENESS'"
+	CONF_OPS="$CONF_OPS"
+])
+
 
 if test "$PSP_THREADING" = "multiple" ; then
    echo "Preparing psmpi/mpich with MPI_THREAD_MULTIPLE support."
