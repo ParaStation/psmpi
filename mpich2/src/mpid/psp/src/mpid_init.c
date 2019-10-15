@@ -86,17 +86,6 @@ MPIDI_Process_t MPIDI_Process = {
 	}												\
 } while (0)
 
-static void checked_PMI_KVS_Get(const char kvsname[], const char key[], char value[], int length)
-{
-	int pmi_errno = PMI_KVS_Get(kvsname, key, value, length);
-	if (pmi_errno != PMI_SUCCESS) {
-		PRINTERROR("PMI: PMI_KVS_Get(kvsname=\"%s\", key=\"%s\", val, sizeof(val)) : failed",
-			   kvsname, key);
-		exit(1);
-	}
-}
-
-
 static
 void grank2con_set(int dest_grank, pscom_connection_t *con)
 {
@@ -302,7 +291,7 @@ int InitPortConnections(pscom_socket_t *socket) {
 
 		if (i != pg_rank) {
 			snprintf(key, sizeof(key), "psp%d", i);
-			checked_PMI_KVS_Get(pg_id, key, val, sizeof(val));
+			PMICALL(PMI_KVS_Get(pg_id, key, val, sizeof(val)), is_singleton_but_no_pm);
 			/* simple_pmi.c has a bug.(fixed in mpich2-1.0.5)
 			   Test for the bugfix: */
 			assert(guard_pmi_value == MAGIC_PMI_VALUE);
@@ -410,7 +399,7 @@ int InitPscomConnections(pscom_socket_t *socket) {
 
 		if (i != pg_rank) {
 			snprintf(key, sizeof(key), "pscom%d", i);
-			checked_PMI_KVS_Get(pg_id, key, val, sizeof(val));
+			PMICALL(PMI_KVS_Get(pg_id, key, val, sizeof(val)), is_singleton_but_no_pm);
 			/* simple_pmi.c has a bug.(fixed in mpich2-1.0.5)
 			   Test for the bugfix: */
 			assert(guard_pmi_value == MAGIC_PMI_VALUE);
