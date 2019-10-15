@@ -46,6 +46,7 @@ MPIDI_Process_t MPIDI_Process = {
 	dinit(grank2con)	NULL,
 	dinit(my_pg_rank)	-1,
 	dinit(my_pg_size)	0,
+	dinit(singleton_but_no_pm)	0,
 	dinit(pg_id_name)	NULL,
 	dinit(next_lpid)	0,
 	dinit(my_pg)		NULL,
@@ -78,12 +79,16 @@ MPIDI_Process_t MPIDI_Process = {
 #endif
 };
 
-#define PMICALL(func) do {										\
-	int pmi_errno = MPIDI_Process.my_pg_size != 1 ? (func) : PMI_SUCCESS;				\
-	if (pmi_errno != PMI_SUCCESS) {									\
-		PRINTERROR("PMI: " #func " = %d", pmi_errno);						\
-		exit(1);										\
-	}												\
+/*
+ * Check the success/failure of PMI calls if and only if we are not a singleton
+ * without a process manager
+ */
+#define PMICALL(func) do {								\
+	int pmi_errno = MPIDI_Process.singleton_but_no_pm? PMI_SUCCESS : (func);	\
+	if (pmi_errno != PMI_SUCCESS) {							\
+		PRINTERROR("PMI: " #func " = %d", pmi_errno);				\
+		exit(1);								\
+	}										\
 } while (0)
 
 static
@@ -291,7 +296,7 @@ int InitPortConnections(pscom_socket_t *socket) {
 
 		if (i != pg_rank) {
 			snprintf(key, sizeof(key), "psp%d", i);
-			PMICALL(PMI_KVS_Get(pg_id, key, val, sizeof(val)), is_singleton_but_no_pm);
+			PMICALL(PMI_KVS_Get(pg_id, key, val, sizeof(val)));
 			/* simple_pmi.c has a bug.(fixed in mpich2-1.0.5)
 			   Test for the bugfix: */
 			assert(guard_pmi_value == MAGIC_PMI_VALUE);
@@ -399,7 +404,7 @@ int InitPscomConnections(pscom_socket_t *socket) {
 
 		if (i != pg_rank) {
 			snprintf(key, sizeof(key), "pscom%d", i);
-			PMICALL(PMI_KVS_Get(pg_id, key, val, sizeof(val)), is_singleton_but_no_pm);
+			PMICALL(PMI_KVS_Get(pg_id, key, val, sizeof(val)));
 			/* simple_pmi.c has a bug.(fixed in mpich2-1.0.5)
 			   Test for the bugfix: */
 			assert(guard_pmi_value == MAGIC_PMI_VALUE);
@@ -469,7 +474,9 @@ int MPID_Init(int *argc, char ***argv,
 	      int *has_args, int *has_env)
 {
 	int mpi_errno = MPI_SUCCESS;
-	int pg_rank, pg_size, pg_id_sz;
+	int pg_id_sz;
+	int pg_rank = 0;
+	int pg_size = -1;
 	int appnum = -1;
 	/* int universe_size; */
 	int has_parent;
@@ -490,10 +497,18 @@ int MPID_Init(int *argc, char ***argv,
 	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_INIT);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_INIT);
 
+	/*
+	 * PMI_Init() and PMI_Get_appnum() have to be called in any case to
+	 * determine if we are a singleton without a process manager
+	 */
 	PMICALL(PMI_Init(&has_parent));
+	PMICALL(PMI_Get_appnum(&appnum));
+
+	/* keep track if we are a singleton without process manager */
+	MPIDI_Process.singleton_but_no_pm = (appnum == -1)? 1 : 0;
+
 	PMICALL(PMI_Get_rank(&pg_rank));
 	PMICALL(PMI_Get_size(&pg_size));
-	PMICALL(PMI_Get_appnum(&appnum));
 
 	*has_args = 1;
 	*has_env  = 1;
