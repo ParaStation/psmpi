@@ -291,7 +291,7 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
-	CONF_OPS="$CONF_OPS CC=pgcc CXX=pgCC FC=pgf90"
+	CONF_OPS="$CONF_OPS CC=pgcc CXX=pgc++ FC=pgf90"
 	CONF_OPS="$CONF_OPS"
 	;;
 "psc")
