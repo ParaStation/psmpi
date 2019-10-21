@@ -72,10 +72,8 @@ pgi        : Portland group compiler (pgcc)
 psc        : Pathscale compiler (pathcc)
 cellgcc    : ppu-gcc
 cellxlc    : ppuxlc
-cuda       : With CUDA support
 
 devel      : With error checking and debug info (gcc)
-cuda-devel : Same as 'devel' but with CUDA support
 user       : No predefined options
 ch3        : original mpich ch3 device (no parastation)
 ```
@@ -87,6 +85,7 @@ $ ../configure --prefix=/path/to/installation/dir --with-confset=default
 #### Optional configure arguments
 | Argument                    | Description                                 |
 ------------------------------|---------------------------------------------|
+| `--with-cuda`               | Enable CUDA awareness                       |
 | `--with-hydra`              | Use MPICH's process manager hydra           |
 | `--with-threading`          | Enable multi-thread support                 |
 | `--with-topology-awareness` | Enable topology/hierarchy-aware collectives |
