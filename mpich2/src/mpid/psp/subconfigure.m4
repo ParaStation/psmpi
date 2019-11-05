@@ -96,7 +96,7 @@ if test "$enable_psp_cuda_awareness" = "yes" ; then
 		AC_MSG_ERROR([The pscom library is missing CUDA-awareness. Abort!])
 	],[
 		AS_IF([test "$have_pscom_memcpy" != "yes" ],[
-			AC_MSG_ERROR([The pscom library is the pscom_memcpy() symbol. Please re-compile the pscom with "--enable-cuda". Abort!])
+			AC_MSG_ERROR([The pscom library is lacking the pscom_memcpy() symbol. Please re-compile the pscom with "--enable-cuda". Abort!])
 		],[
 			PSP_CUDA_AWARE_SUPPORT=1
 			PAC_APPEND_FLAG([-DMPIR_USE_DEVICE_MEMCPY], [CPPFLAGS])

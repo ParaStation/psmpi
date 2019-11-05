@@ -3874,8 +3874,10 @@ esac
 # Check whether --with-threading was given.
 if test "${with_threading+set}" = set; then :
   withval=$with_threading;
-	export PSP_THREADING=multiple
-	MODULEFILE_CONFSET="$MODULEFILE_CONFSET${MODULEFILE_CONFSET:+-}mt"
+	if test "x${withval}" = "xyes"; then
+		export PSP_THREADING=multiple
+		MODULEFILE_CONFSET="$MODULEFILE_CONFSET${MODULEFILE_CONFSET:+-}mt"
+	fi
 
 fi
 
@@ -3918,14 +3920,16 @@ export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_DYNAMIC_PROC_WIDTH=0"
 # Check whether --with-cuda was given.
 if test "${with_cuda+set}" = set; then :
   withval=$with_cuda;
-	CONF_OPS="$CONF_OPS --enable-psp-cuda-awareness"
+	if test "x${withval}" = "xyes"; then
+		CONF_OPS="$CONF_OPS --enable-psp-cuda-awareness"
 
-	CUDA_HOME="${CUDA_HOME-"/usr/local/cuda/"}"
-	if ! test -d "$CUDA_HOME" ; then
-		unset CUDA_HOME
+		CUDA_HOME="${CUDA_HOME-"/usr/local/cuda/"}"
+		if ! test -d "$CUDA_HOME" ; then
+			unset CUDA_HOME
+		fi
+		CONF_OPS="$CONF_OPS PSP_CPPFLAGS='-DMPID_PSP_WITH_CUDA_AWARENESS'"
+		CONF_OPS="$CONF_OPS"
 	fi
-	CONF_OPS="$CONF_OPS PSP_CPPFLAGS='-DMPID_PSP_WITH_CUDA_AWARENESS'"
-	CONF_OPS="$CONF_OPS"
 
 fi
 

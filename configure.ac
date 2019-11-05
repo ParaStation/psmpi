@@ -444,8 +444,10 @@ esac
 AC_ARG_WITH([threading], [
   --with-threading        Enable threading 'multiple' in device psp
 ],[
-	export PSP_THREADING=multiple
-	MODULEFILE_CONFSET="$MODULEFILE_CONFSET${MODULEFILE_CONFSET:+-}mt"
+	if test "x${withval}" = "xyes"; then
+		export PSP_THREADING=multiple
+		MODULEFILE_CONFSET="$MODULEFILE_CONFSET${MODULEFILE_CONFSET:+-}mt"
+	fi
 ])
 
 AC_ARG_WITH([modulefile], [
@@ -478,14 +480,16 @@ AC_ARG_WITH([cuda], [
   --with-cuda
 			  Enable CUDA awareness within ParaStationMPI
 ],[
-	CONF_OPS="$CONF_OPS --enable-psp-cuda-awareness"
+	if test "x${withval}" = "xyes"; then
+		CONF_OPS="$CONF_OPS --enable-psp-cuda-awareness"
 
-	CUDA_HOME="${CUDA_HOME-"/usr/local/cuda/"}"
-	if ! test -d "$CUDA_HOME" ; then
-		unset CUDA_HOME
+		CUDA_HOME="${CUDA_HOME-"/usr/local/cuda/"}"
+		if ! test -d "$CUDA_HOME" ; then
+			unset CUDA_HOME
+		fi
+		CONF_OPS="$CONF_OPS PSP_CPPFLAGS='-DMPID_PSP_WITH_CUDA_AWARENESS'"
+		CONF_OPS="$CONF_OPS"
 	fi
-	CONF_OPS="$CONF_OPS PSP_CPPFLAGS='-DMPID_PSP_WITH_CUDA_AWARENESS'"
-	CONF_OPS="$CONF_OPS"
 ])
 
 

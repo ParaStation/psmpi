@@ -26935,7 +26935,7 @@ else
 
 		if test "$have_pscom_memcpy" != "yes" ; then :
 
-			as_fn_error $? "The pscom library is the pscom_memcpy() symbol. Please re-compile the pscom with \"--enable-cuda\". Abort!" "$LINENO" 5
+			as_fn_error $? "The pscom library is lacking the pscom_memcpy() symbol. Please re-compile the pscom with \"--enable-cuda\". Abort!" "$LINENO" 5
 
 else
 
