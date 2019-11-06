@@ -62,6 +62,7 @@ AC_ARG_WITH([hcoll], [
 	   DISABLE_HCOLL="true"
 	else
 	   WITH_HCOLL_DIR="${with_hcoll}"
+# Path to be passed to src/mpid/common/hcoll/subconfigure.m4
 	fi
 ])
 AC_SUBST([DISABLE_HCOLL])
@@ -500,6 +501,7 @@ AC_ARG_WITH([cuda], [
 			  Enable CUDA awareness within ParaStationMPI
 ],[
 	if test "x${withval}" = "xyes"; then
+		CUDA_SUPPORT="true"
 		CONF_OPS="$CONF_OPS --enable-psp-cuda-awareness"
 
 		CUDA_HOME="${CUDA_HOME-"/usr/local/cuda/"}"
@@ -523,6 +525,14 @@ if test "$ENABLE_TOPOLOGY_AWARENESS" = "true" ; then
 fi
 if test "$PSCOM_ALLIN" = "true" ; then
    echo "Preparing psmpi/mpich with pscom included."
+fi
+if test "$CUDA_SUPPORT" = "true" ; then
+   echo "Preparing psmpi/mpich with CUDA support."
+fi
+if test -n "$WITH_HCOLL_DIR" ; then
+   if test "$CONFSET" != "ch3" ; then
+      echo "WARNING: Currently, HCOLL is only supported by CH3 device!"
+   fi
 fi
 sleep 1
 
@@ -549,7 +559,7 @@ if test "x$DISABLE_HWLOC" = "xtrue" ; then
 fi
 
 if test "x$DISABLE_HCOLL" = "xtrue" ; then
-   CONF_OPS="$CONF_OPS --without-hcoll=''"
+   CONF_OPS="$CONF_OPS --without-hcoll"
 elif test -n "$WITH_HCOLL_DIR" ; then
    CONF_OPS="$CONF_OPS --with-hcoll=${WITH_HCOLL_DIR}"
 fi
