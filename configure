@@ -1359,7 +1359,7 @@ Optional Packages:
 
 	   devel      : With error checking and debug info (gcc)
 	   user       : No predefined options
-	   ch3        : original mpich ch3 device (no parastation)
+	   ch3|ch4    : original mpich ch3|ch4 device (no parastation)
 	   "--xyz --abc" : Use this to configure mpich without a set
 
 
@@ -3887,8 +3887,12 @@ case $CONFSET in
 "user")
 	CONF_OPS=
 	;;
-"ch3")
-	echo "Using confset=ch3"
+"ch"[34]*)
+	echo "Using confset=${CONFSET}"
+	if test "$CONFSET" != "ch3" ; then
+		CONF_OPS="--with-device=${CONFSET}"
+		MODULEFILE_CONFSET="mpich"
+	fi
 	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
 	CONF_OPS="$CONF_OPS --enable-f77"
 	CONF_OPS="$CONF_OPS --enable-fc"
@@ -3988,9 +3992,10 @@ if test "$CUDA_SUPPORT" = "true" ; then
    echo "Preparing psmpi/mpich with CUDA support."
 fi
 if test -n "$WITH_HCOLL_DIR" ; then
-   if test "$CONFSET" != "ch3" ; then
-      echo "WARNING: Currently, HCOLL is only supported by CH3 device!"
-   fi
+   case $CONFSET in
+	ch[34]*) ;;
+	*) echo "WARNING: Currently, HCOLL is only supported by CH3 device!" ;;
+   esac
 fi
 sleep 1
 
