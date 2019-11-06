@@ -55,6 +55,17 @@ AC_ARG_WITH([hwloc], [
 ])
 AC_SUBST([DISABLE_HWLOC])
 
+AC_ARG_WITH([hcoll], [
+  --with-hcoll[[=PATH]]     Enable HCOLL support (and specify path to HCOLL directory).
+],[
+	if test "x$with_hcoll" = "xno" ; then
+	   DISABLE_HCOLL="true"
+	else
+	   WITH_HCOLL_DIR="${with_hcoll}"
+	fi
+])
+AC_SUBST([DISABLE_HCOLL])
+
 AC_ARG_WITH([confset], [
   --with-confset[=set]  Use predefined configuration set ["none"]
 	   none       : Do not configure mpich.
@@ -535,6 +546,12 @@ AC_OUTPUT
 
 if test "x$DISABLE_HWLOC" = "xtrue" ; then
    CONF_OPS="$CONF_OPS --with-hwloc-prefix=''"
+fi
+
+if test "x$DISABLE_HCOLL" = "xtrue" ; then
+   CONF_OPS="$CONF_OPS --without-hcoll=''"
+elif test -n "$WITH_HCOLL_DIR" ; then
+   CONF_OPS="$CONF_OPS --with-hcoll=${WITH_HCOLL_DIR}"
 fi
 
 if test "${CONFSET}" != "none" ; then

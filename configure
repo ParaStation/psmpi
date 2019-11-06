@@ -639,6 +639,7 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+DISABLE_HCOLL
 DISABLE_HWLOC
 ENABLE_HYDRA
 MPICH_RELEASE_DATE
@@ -701,6 +702,7 @@ ac_user_opts='
 enable_option_checking
 with_hydra
 with_hwloc
+with_hcoll
 with_confset
 with_mpichconf
 with_profdir
@@ -1337,6 +1339,9 @@ Optional Packages:
 
 
   --without-hwloc         Disable the HWLOC support in MPICH.
+
+
+  --with-hcoll[=PATH]     Enable HCOLL support (and specify path to HCOLL directory).
 
 
   --with-confset=set  Use predefined configuration set "none"
@@ -2260,6 +2265,20 @@ if test "${with_hwloc+set}" = set; then :
   withval=$with_hwloc;
 	if test "x$with_hwloc" = "xno" ; then
 	   DISABLE_HWLOC="true"
+	fi
+
+fi
+
+
+
+
+# Check whether --with-hcoll was given.
+if test "${with_hcoll+set}" = set; then :
+  withval=$with_hcoll;
+	if test "x$with_hcoll" = "xno" ; then
+	   DISABLE_HCOLL="true"
+	else
+	   WITH_HCOLL_DIR="${with_hcoll}"
 	fi
 
 fi
@@ -5150,6 +5169,12 @@ fi
 
 if test "x$DISABLE_HWLOC" = "xtrue" ; then
    CONF_OPS="$CONF_OPS --with-hwloc-prefix=''"
+fi
+
+if test "x$DISABLE_HCOLL" = "xtrue" ; then
+   CONF_OPS="$CONF_OPS --without-hcoll=''"
+elif test -n "$WITH_HCOLL_DIR" ; then
+   CONF_OPS="$CONF_OPS --with-hcoll=${WITH_HCOLL_DIR}"
 fi
 
 if test "${CONFSET}" != "none" ; then

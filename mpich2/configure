@@ -26971,6 +26971,12 @@ fi
 
 ## begin expansion of PAC_SUBCFG_PREREQ_src_mpid_common_hcoll
 
+	if test "${with_hcoll}" = "no" ; then
+		have_hcoll=no;
+	else
+		if test "${with_hcoll}" = "yes" ; then
+			with_hcoll="/opt/mellanox"
+		fi
 
 
 # Check whether --with-hcoll was given.
@@ -27084,6 +27090,8 @@ fi
 	eval pac_save_LIBS_${pac_save_LIBS_nesting}='"$LIBS"'
 	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} + 1`
 
+		export LIBRARY_PATH=$LIBRARY_PATH:${with_hcoll}/lib:${with_hcoll}/../sharp/lib
+		export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${with_hcoll}/lib:${with_hcoll}/../sharp/lib
 
     failure=no
     ac_fn_c_check_header_mongrel "$LINENO" "hcoll/api/hcoll_api.h" "ac_cv_header_hcoll_api_hcoll_api_h" "$ac_includes_default"
@@ -27147,9 +27155,7 @@ fi
        have_hcoll=no
     fi
 
-	if test "${with_hcoll}" = "no" ; then
-	   have_hcoll=no;
-	elif test "${have_hcoll}" = "yes" ; then
+		if test "${have_hcoll}" = "yes" ; then
 
 
 	if echo "$WRAPPER_LIBS" | $FGREP -e "\<-lhcoll\>" >/dev/null 2>&1; then :
@@ -27160,14 +27166,15 @@ else
 
 fi
 
-	elif test -n "${with_hcoll}" -o -n "${with_hcoll_lib}" -o -n "${with_hcoll_include}" ; then
-	   as_fn_error $? "'hcoll/api/hcoll_api.h or libhcoll library not found.'" "$LINENO" 5
-	fi
+		elif test -n "${with_hcoll}" -o -n "${with_hcoll_lib}" -o -n "${with_hcoll_include}" ; then
+		   as_fn_error $? "'hcoll/api/hcoll_api.h or libhcoll library not found.'" "$LINENO" 5
+		fi
 
 	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} - 1`
 	eval LIBS="\$pac_save_LIBS_${pac_save_LIBS_nesting}"
 	eval pac_save_LIBS_${pac_save_LIBS_nesting}=""
 
+	fi
 	 if test "$have_hcoll" = "yes"; then
   BUILD_HCOLL_TRUE=
   BUILD_HCOLL_FALSE='#'
