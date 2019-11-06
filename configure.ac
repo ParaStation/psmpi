@@ -46,6 +46,14 @@ AC_ARG_WITH([hydra], [
 ])
 AC_SUBST([ENABLE_HYDRA])
 
+AC_ARG_WITH([hwloc], [
+  --without-hwloc         Disable the HWLOC support in MPICH.
+],[
+	if test "x$with_hwloc" = "xno" ; then
+	   DISABLE_HWLOC="true"
+	fi
+])
+AC_SUBST([DISABLE_HWLOC])
 
 AC_ARG_WITH([confset], [
   --with-confset[=set]  Use predefined configuration set ["none"]
@@ -525,6 +533,9 @@ AC_CONFIG_FILES([scripts/generate_mpicc-conf.sh], [chmod +x scripts/generate_mpi
 
 AC_OUTPUT
 
+if test "x$DISABLE_HWLOC" = "xtrue" ; then
+   CONF_OPS="$CONF_OPS --with-hwloc-prefix=''"
+fi
 
 if test "${CONFSET}" != "none" ; then
    # Call mpich2 configure:

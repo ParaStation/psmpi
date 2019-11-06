@@ -639,6 +639,7 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+DISABLE_HWLOC
 ENABLE_HYDRA
 MPICH_RELEASE_DATE
 MPICH_VERSION
@@ -699,6 +700,7 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 with_hydra
+with_hwloc
 with_confset
 with_mpichconf
 with_profdir
@@ -1332,6 +1334,9 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
 
   --with-hydra            Install also Hydra (mpiexec).
+
+
+  --without-hwloc         Disable the HWLOC support in MPICH.
 
 
   --with-confset=set  Use predefined configuration set "none"
@@ -2247,6 +2252,17 @@ else
 
 fi
 
+
+
+
+# Check whether --with-hwloc was given.
+if test "${with_hwloc+set}" = set; then :
+  withval=$with_hwloc;
+	if test "x$with_hwloc" = "xno" ; then
+	   DISABLE_HWLOC="true"
+	fi
+
+fi
 
 
 
@@ -5132,6 +5148,9 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
+if test "x$DISABLE_HWLOC" = "xtrue" ; then
+   CONF_OPS="$CONF_OPS --with-hwloc-prefix=''"
+fi
 
 if test "${CONFSET}" != "none" ; then
    # Call mpich2 configure:
