@@ -1234,6 +1234,15 @@ PMPILIBNAME
 MPILIBNAME
 BUILD_CH4_NETMOD_OFI_FALSE
 BUILD_CH4_NETMOD_OFI_TRUE
+PSP_CUDA_AWARE_SUPPORT
+PSP_CPPFLAGS
+PSCOM_ALLIN_LIBS
+PSCOM_RPATHLINK
+PSCOM_LIBRARY
+PSCOM_LDFLAGS
+PSCOM_CPPFLAGS
+BUILD_PSP_FALSE
+BUILD_PSP_TRUE
 BUILD_CH3_UTIL_SOCK_FALSE
 BUILD_CH3_UTIL_SOCK_TRUE
 BUILD_CH3_SOCK_FALSE
@@ -1570,6 +1579,7 @@ with_hcoll_include
 with_hcoll_lib
 with_ch4_shmmod_posix_args
 enable_sock_debug
+enable_psp_cuda_awareness
 with_ch4_ofi_direct_provider
 with_mpl_prefix
 with_openpa_prefix
@@ -1663,6 +1673,11 @@ FC
 FCFLAGS
 F77
 FFLAGS
+PSCOM_CPPFLAGS
+PSCOM_LDFLAGS
+PSCOM_LIBRARY
+PSCOM_RPATHLINK
+PSP_CPPFLAGS
 MPILIBNAME
 PMPILIBNAME
 MPICXXLIBNAME
@@ -2496,6 +2511,8 @@ Optional Features:
          no        - Disabled (may improve build times and code size)
 
 --enable-sock-debug - Turn on tests of the socket data structures
+  --enable-psp-cuda-awareness
+                          Enable CUDA-awareness for the PSP device
   --enable-izem[=ARGS]   Enable features from the Izem library.
                           "ARGS" is a list of comma separated features.
                           Accepted arguments are:
@@ -2753,6 +2770,19 @@ Some influential environment variables:
   FCFLAGS     Fortran compiler flags
   F77         Fortran 77 compiler command
   FFLAGS      Fortran 77 compiler flags
+  PSCOM_CPPFLAGS
+              C preprocessor flags for PSCOM headers (default:
+              "-I/opt/parastation/include")
+  PSCOM_LDFLAGS
+              linker flags for PSCOM libraries (default:
+              "-L/opt/parastation/lib64")
+  PSCOM_LIBRARY
+              file name for PSCOM library (default: "-lpscom")
+  PSCOM_RPATHLINK
+              mpicc wrapper option for -Wl,-rpath-link (default:
+              "-Wl,-rpath-link=/opt/parastation/lib64")
+  PSP_CPPFLAGS
+              C preprocessor flags for PSP macros
   MPILIBNAME  can be used to override the name of the MPI library (default:
               "mpi")
   PMPILIBNAME can be used to override the name of the MPI profiling library
@@ -5265,6 +5295,20 @@ FCFLAGS="$FCFLAGS $MPICHLIB_FCFLAGS"
 
 
 # end of src/mpid/ch3/util/sock/subconfigure.m4
+
+# start of src/mpid/psp/subconfigure.m4
+
+# dependencies
+# ======================================================================
+# todo: check whether we need all of them
+
+# prereq (formerly mpich2prereq, setup_device, etc.)
+# ======================================================================
+
+# main part
+# ======================================================================
+
+# end of src/mpid/psp/subconfigure.m4
 
 # start of src/mpid/ch4/netmod/ofi/subconfigure.m4
 
@@ -11934,10 +11978,6 @@ lt_prog_compiler_static=
 	lt_prog_compiler_pic='-qpic'
 	lt_prog_compiler_static='-qstaticlink'
 	;;
-      armclang* | armclang++* | armflang*)
-        # ARM LLVM C/C++/Fortran
-        lt_prog_compiler_wl='-Wl,'
-        ;;
       *)
 	case `$CC -V 2>&1 | sed 5q` in
 	*Sun\ Ceres\ Fortran* | *Sun*Fortran*\ [1-7].* | *Sun*Fortran*\ 8.[0-3]*)
@@ -11946,7 +11986,7 @@ lt_prog_compiler_static=
 	  lt_prog_compiler_static='-Bstatic'
 	  lt_prog_compiler_wl=''
 	  ;;
-	*Sun\ F* | *Sun*Fortran* | *Studio*Fortran*)
+	*Sun\ F* | *Sun*Fortran*)
 	  lt_prog_compiler_pic='-KPIC'
 	  lt_prog_compiler_static='-Bstatic'
 	  lt_prog_compiler_wl='-Qoption ld '
@@ -12608,27 +12648,16 @@ _LT_EOF
 	  export_dynamic_flag_spec='-rdynamic'
 	  ;;
 	xlf* | bgf* | bgxlf* | mpixlf*)
-          XLF_VERSION=$($CC -qversion 2>/dev/null | sed 1q | sed -e "s+^.*V++" | sed -e "s+\..*++")
-          if test $XLF_VERSION -ge 13; then
-              archive_cmds='$CC -qmkshrobj $libobjs $deplibs $compiler_flags $wl-soname $wl$soname -o $lib'
-              if test yes = "$supports_anon_versioning"; then
-                archive_expsym_cmds='echo "{ global:" > $output_objdir/$libname.ver~
-                  cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
-                  echo "local: *; };" >> $output_objdir/$libname.ver~
-                  $CC -qmkshrobj $libobjs $deplibs $compiler_flags $wl-soname $wl$soname $wl-version-script $wl$output_objdir/$libname.ver -o $lib'
-              fi
-          else
-              # IBM XL Fortran 10.1 on PPC cannot create shared libs itself
-              whole_archive_flag_spec='--whole-archive$convenience --no-whole-archive'
-              hardcode_libdir_flag_spec='$wl-rpath $wl$libdir'
-              archive_cmds='$LD -shared $libobjs $deplibs $linker_flags -soname $soname -o $lib'
-              if test yes = "$supports_anon_versioning"; then
-                archive_expsym_cmds='echo "{ global:" > $output_objdir/$libname.ver~
-                  cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
-                  echo "local: *; };" >> $output_objdir/$libname.ver~
-                  $LD -shared $libobjs $deplibs $linker_flags -soname $soname -version-script $output_objdir/$libname.ver -o $lib'
-              fi
-          fi
+	  # IBM XL Fortran 10.1 on PPC cannot create shared libs itself
+	  whole_archive_flag_spec='--whole-archive$convenience --no-whole-archive'
+	  hardcode_libdir_flag_spec='$wl-rpath $wl$libdir'
+	  archive_cmds='$LD -shared $libobjs $deplibs $linker_flags -soname $soname -o $lib'
+	  if test yes = "$supports_anon_versioning"; then
+	    archive_expsym_cmds='echo "{ global:" > $output_objdir/$libname.ver~
+              cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
+              echo "local: *; };" >> $output_objdir/$libname.ver~
+              $LD -shared $libobjs $deplibs $linker_flags -soname $soname -version-script $output_objdir/$libname.ver -o $lib'
+	  fi
 	  ;;
 	esac
       else
@@ -13104,10 +13133,7 @@ fi
   link_all_deplibs=yes
   allow_undefined_flag=$_lt_dar_allow_undefined
   case $cc_basename in
-     ifort*|nagfor*)
-        lt_prog_compiler_wl='-Wl,'
-        _lt_dar_can_shared=yes
-      ;;
+     ifort*|nagfor*) _lt_dar_can_shared=yes ;;
      *) _lt_dar_can_shared=$GCC ;;
   esac
   if test yes = "$_lt_dar_can_shared"; then
@@ -14431,50 +14457,9 @@ fi
   # 'ldconfig -N -X -v | grep ^/' on 64bit Fedora does not report /usr/lib64,
   # even though it is searched at run-time.  Try to do the best guess by
   # appending ld.so.conf contents (and includes) to the search path.
-
-  # There is no easy way to reliably detect the sys dlsearch path. We will first
-  # assume ldconfig reports the path correctly, but check it with the current
-  # ld cache. If any cached path is not present in the generated path_spec, then
-  # we know ldconfig is bad and should manually parse the ld.so.conf files.
-  # Note the reported paths can be a superset of the cached paths.
-  # The catch is that the default path may not be in the ld.so.conf. We have to
-  # add any missing one back to the path_spec (from the cached paths).
-
-  if test -x /sbin/ldconfig; then
-    sys_lib_dlsearch_path_spec=`/sbin/ldconfig -N -X -v 2>/dev/null | grep ^/ | sed -e 's/:.*//g' | tr '\n' ' '`
-    cached_lib_dlsearch_path=`/sbin/ldconfig -p | sed -e 's/.*=> //g' | grep '^/' | while read p; do dirname $p; done | sort | uniq | tr '\n' ' '`
-    for p in `echo $cached_lib_dlsearch_path`; do
-      case "$sys_lib_dlsearch_path_spec" in
-        *$p*)
-            bad_ldconfig=no
-            ;;
-           *)
-            # ldconfig is bad if cached path is not reported
-            bad_ldconfig=yes
-            break
-            ;;
-      esac
-    done
-  else
-    bad_ldconfig=yes
-  fi
-
-  if test "$bad_ldconfig" = "yes"; then
-    if test -f /etc/ld.so.conf; then
-      lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-      sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
-    fi
-
-    # catch anything that in the cached path but not in the conf files
-    for p in `echo $cached_lib_dlsearch_path`; do
-      case "$sys_lib_dlsearch_path_spec" in
-        *$p*)
-            ;;
-           *)
-            sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $p"
-            ;;
-      esac
-    done
+  if test -f /etc/ld.so.conf; then
+    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
+    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -16748,10 +16733,7 @@ fi
   link_all_deplibs_CXX=yes
   allow_undefined_flag_CXX=$_lt_dar_allow_undefined
   case $cc_basename in
-     ifort*|nagfor*)
-        lt_prog_compiler_wl_CXX='-Wl,'
-        _lt_dar_can_shared=yes
-      ;;
+     ifort*|nagfor*) _lt_dar_can_shared=yes ;;
      *) _lt_dar_can_shared=$GCC ;;
   esac
   if test yes = "$_lt_dar_can_shared"; then
@@ -18928,50 +18910,9 @@ fi
   # 'ldconfig -N -X -v | grep ^/' on 64bit Fedora does not report /usr/lib64,
   # even though it is searched at run-time.  Try to do the best guess by
   # appending ld.so.conf contents (and includes) to the search path.
-
-  # There is no easy way to reliably detect the sys dlsearch path. We will first
-  # assume ldconfig reports the path correctly, but check it with the current
-  # ld cache. If any cached path is not present in the generated path_spec, then
-  # we know ldconfig is bad and should manually parse the ld.so.conf files.
-  # Note the reported paths can be a superset of the cached paths.
-  # The catch is that the default path may not be in the ld.so.conf. We have to
-  # add any missing one back to the path_spec (from the cached paths).
-
-  if test -x /sbin/ldconfig; then
-    sys_lib_dlsearch_path_spec=`/sbin/ldconfig -N -X -v 2>/dev/null | grep ^/ | sed -e 's/:.*//g' | tr '\n' ' '`
-    cached_lib_dlsearch_path=`/sbin/ldconfig -p | sed -e 's/.*=> //g' | grep '^/' | while read p; do dirname $p; done | sort | uniq | tr '\n' ' '`
-    for p in `echo $cached_lib_dlsearch_path`; do
-      case "$sys_lib_dlsearch_path_spec" in
-        *$p*)
-            bad_ldconfig=no
-            ;;
-           *)
-            # ldconfig is bad if cached path is not reported
-            bad_ldconfig=yes
-            break
-            ;;
-      esac
-    done
-  else
-    bad_ldconfig=yes
-  fi
-
-  if test "$bad_ldconfig" = "yes"; then
-    if test -f /etc/ld.so.conf; then
-      lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-      sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
-    fi
-
-    # catch anything that in the cached path but not in the conf files
-    for p in `echo $cached_lib_dlsearch_path`; do
-      case "$sys_lib_dlsearch_path_spec" in
-        *$p*)
-            ;;
-           *)
-            sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $p"
-            ;;
-      esac
-    done
+  if test -f /etc/ld.so.conf; then
+    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
+    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -20044,10 +19985,6 @@ lt_prog_compiler_static_FC=
 	lt_prog_compiler_pic_FC='-qpic'
 	lt_prog_compiler_static_FC='-qstaticlink'
 	;;
-      armclang* | armclang++* | armflang*)
-        # ARM LLVM C/C++/Fortran
-        lt_prog_compiler_wl_FC='-Wl,'
-        ;;
       *)
 	case `$CC -V 2>&1 | sed 5q` in
 	*Sun\ Ceres\ Fortran* | *Sun*Fortran*\ [1-7].* | *Sun*Fortran*\ 8.[0-3]*)
@@ -20056,7 +19993,7 @@ lt_prog_compiler_static_FC=
 	  lt_prog_compiler_static_FC='-Bstatic'
 	  lt_prog_compiler_wl_FC=''
 	  ;;
-	*Sun\ F* | *Sun*Fortran* | *Studio*Fortran*)
+	*Sun\ F* | *Sun*Fortran*)
 	  lt_prog_compiler_pic_FC='-KPIC'
 	  lt_prog_compiler_static_FC='-Bstatic'
 	  lt_prog_compiler_wl_FC='-Qoption ld '
@@ -20703,27 +20640,16 @@ _LT_EOF
 	  export_dynamic_flag_spec_FC='-rdynamic'
 	  ;;
 	xlf* | bgf* | bgxlf* | mpixlf*)
-          XLF_VERSION=$($CC -qversion 2>/dev/null | sed 1q | sed -e "s+^.*V++" | sed -e "s+\..*++")
-          if test $XLF_VERSION -ge 13; then
-              archive_cmds_FC='$CC -qmkshrobj $libobjs $deplibs $compiler_flags $wl-soname $wl$soname -o $lib'
-              if test yes = "$supports_anon_versioning"; then
-                archive_expsym_cmds_FC='echo "{ global:" > $output_objdir/$libname.ver~
-                  cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
-                  echo "local: *; };" >> $output_objdir/$libname.ver~
-                  $CC -qmkshrobj $libobjs $deplibs $compiler_flags $wl-soname $wl$soname $wl-version-script $wl$output_objdir/$libname.ver -o $lib'
-              fi
-          else
-              # IBM XL Fortran 10.1 on PPC cannot create shared libs itself
-              whole_archive_flag_spec_FC='--whole-archive$convenience --no-whole-archive'
-              hardcode_libdir_flag_spec_FC='$wl-rpath $wl$libdir'
-              archive_cmds_FC='$LD -shared $libobjs $deplibs $linker_flags -soname $soname -o $lib'
-              if test yes = "$supports_anon_versioning"; then
-                archive_expsym_cmds_FC='echo "{ global:" > $output_objdir/$libname.ver~
-                  cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
-                  echo "local: *; };" >> $output_objdir/$libname.ver~
-                  $LD -shared $libobjs $deplibs $linker_flags -soname $soname -version-script $output_objdir/$libname.ver -o $lib'
-              fi
-          fi
+	  # IBM XL Fortran 10.1 on PPC cannot create shared libs itself
+	  whole_archive_flag_spec_FC='--whole-archive$convenience --no-whole-archive'
+	  hardcode_libdir_flag_spec_FC='$wl-rpath $wl$libdir'
+	  archive_cmds_FC='$LD -shared $libobjs $deplibs $linker_flags -soname $soname -o $lib'
+	  if test yes = "$supports_anon_versioning"; then
+	    archive_expsym_cmds_FC='echo "{ global:" > $output_objdir/$libname.ver~
+              cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
+              echo "local: *; };" >> $output_objdir/$libname.ver~
+              $LD -shared $libobjs $deplibs $linker_flags -soname $soname -version-script $output_objdir/$libname.ver -o $lib'
+	  fi
 	  ;;
 	esac
       else
@@ -21187,10 +21113,7 @@ fi
   link_all_deplibs_FC=yes
   allow_undefined_flag_FC=$_lt_dar_allow_undefined
   case $cc_basename in
-     ifort*|nagfor*)
-        lt_prog_compiler_wl_FC='-Wl,'
-        _lt_dar_can_shared=yes
-      ;;
+     ifort*|nagfor*) _lt_dar_can_shared=yes ;;
      *) _lt_dar_can_shared=$GCC ;;
   esac
   if test yes = "$_lt_dar_can_shared"; then
@@ -22298,50 +22221,9 @@ fi
   # 'ldconfig -N -X -v | grep ^/' on 64bit Fedora does not report /usr/lib64,
   # even though it is searched at run-time.  Try to do the best guess by
   # appending ld.so.conf contents (and includes) to the search path.
-
-  # There is no easy way to reliably detect the sys dlsearch path. We will first
-  # assume ldconfig reports the path correctly, but check it with the current
-  # ld cache. If any cached path is not present in the generated path_spec, then
-  # we know ldconfig is bad and should manually parse the ld.so.conf files.
-  # Note the reported paths can be a superset of the cached paths.
-  # The catch is that the default path may not be in the ld.so.conf. We have to
-  # add any missing one back to the path_spec (from the cached paths).
-
-  if test -x /sbin/ldconfig; then
-    sys_lib_dlsearch_path_spec=`/sbin/ldconfig -N -X -v 2>/dev/null | grep ^/ | sed -e 's/:.*//g' | tr '\n' ' '`
-    cached_lib_dlsearch_path=`/sbin/ldconfig -p | sed -e 's/.*=> //g' | grep '^/' | while read p; do dirname $p; done | sort | uniq | tr '\n' ' '`
-    for p in `echo $cached_lib_dlsearch_path`; do
-      case "$sys_lib_dlsearch_path_spec" in
-        *$p*)
-            bad_ldconfig=no
-            ;;
-           *)
-            # ldconfig is bad if cached path is not reported
-            bad_ldconfig=yes
-            break
-            ;;
-      esac
-    done
-  else
-    bad_ldconfig=yes
-  fi
-
-  if test "$bad_ldconfig" = "yes"; then
-    if test -f /etc/ld.so.conf; then
-      lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-      sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
-    fi
-
-    # catch anything that in the cached path but not in the conf files
-    for p in `echo $cached_lib_dlsearch_path`; do
-      case "$sys_lib_dlsearch_path_spec" in
-        *$p*)
-            ;;
-           *)
-            sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $p"
-            ;;
-      esac
-    done
+  if test -f /etc/ld.so.conf; then
+    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
+    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -23312,10 +23194,6 @@ lt_prog_compiler_static_F77=
 	lt_prog_compiler_pic_F77='-qpic'
 	lt_prog_compiler_static_F77='-qstaticlink'
 	;;
-      armclang* | armclang++* | armflang*)
-        # ARM LLVM C/C++/Fortran
-        lt_prog_compiler_wl_F77='-Wl,'
-        ;;
       *)
 	case `$CC -V 2>&1 | sed 5q` in
 	*Sun\ Ceres\ Fortran* | *Sun*Fortran*\ [1-7].* | *Sun*Fortran*\ 8.[0-3]*)
@@ -23324,7 +23202,7 @@ lt_prog_compiler_static_F77=
 	  lt_prog_compiler_static_F77='-Bstatic'
 	  lt_prog_compiler_wl_F77=''
 	  ;;
-	*Sun\ F* | *Sun*Fortran* | *Studio*Fortran*)
+	*Sun\ F* | *Sun*Fortran*)
 	  lt_prog_compiler_pic_F77='-KPIC'
 	  lt_prog_compiler_static_F77='-Bstatic'
 	  lt_prog_compiler_wl_F77='-Qoption ld '
@@ -23971,27 +23849,16 @@ _LT_EOF
 	  export_dynamic_flag_spec_F77='-rdynamic'
 	  ;;
 	xlf* | bgf* | bgxlf* | mpixlf*)
-          XLF_VERSION=$($CC -qversion 2>/dev/null | sed 1q | sed -e "s+^.*V++" | sed -e "s+\..*++")
-          if test $XLF_VERSION -ge 13; then
-              archive_cmds_F77='$CC -qmkshrobj $libobjs $deplibs $compiler_flags $wl-soname $wl$soname -o $lib'
-              if test yes = "$supports_anon_versioning"; then
-                archive_expsym_cmds_F77='echo "{ global:" > $output_objdir/$libname.ver~
-                  cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
-                  echo "local: *; };" >> $output_objdir/$libname.ver~
-                  $CC -qmkshrobj $libobjs $deplibs $compiler_flags $wl-soname $wl$soname $wl-version-script $wl$output_objdir/$libname.ver -o $lib'
-              fi
-          else
-              # IBM XL Fortran 10.1 on PPC cannot create shared libs itself
-              whole_archive_flag_spec_F77='--whole-archive$convenience --no-whole-archive'
-              hardcode_libdir_flag_spec_F77='$wl-rpath $wl$libdir'
-              archive_cmds_F77='$LD -shared $libobjs $deplibs $linker_flags -soname $soname -o $lib'
-              if test yes = "$supports_anon_versioning"; then
-                archive_expsym_cmds_F77='echo "{ global:" > $output_objdir/$libname.ver~
-                  cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
-                  echo "local: *; };" >> $output_objdir/$libname.ver~
-                  $LD -shared $libobjs $deplibs $linker_flags -soname $soname -version-script $output_objdir/$libname.ver -o $lib'
-              fi
-          fi
+	  # IBM XL Fortran 10.1 on PPC cannot create shared libs itself
+	  whole_archive_flag_spec_F77='--whole-archive$convenience --no-whole-archive'
+	  hardcode_libdir_flag_spec_F77='$wl-rpath $wl$libdir'
+	  archive_cmds_F77='$LD -shared $libobjs $deplibs $linker_flags -soname $soname -o $lib'
+	  if test yes = "$supports_anon_versioning"; then
+	    archive_expsym_cmds_F77='echo "{ global:" > $output_objdir/$libname.ver~
+              cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
+              echo "local: *; };" >> $output_objdir/$libname.ver~
+              $LD -shared $libobjs $deplibs $linker_flags -soname $soname -version-script $output_objdir/$libname.ver -o $lib'
+	  fi
 	  ;;
 	esac
       else
@@ -24455,10 +24322,7 @@ fi
   link_all_deplibs_F77=yes
   allow_undefined_flag_F77=$_lt_dar_allow_undefined
   case $cc_basename in
-     ifort*|nagfor*)
-        lt_prog_compiler_wl_F77='-Wl,'
-        _lt_dar_can_shared=yes
-      ;;
+     ifort*|nagfor*) _lt_dar_can_shared=yes ;;
      *) _lt_dar_can_shared=$GCC ;;
   esac
   if test yes = "$_lt_dar_can_shared"; then
@@ -25566,50 +25430,9 @@ fi
   # 'ldconfig -N -X -v | grep ^/' on 64bit Fedora does not report /usr/lib64,
   # even though it is searched at run-time.  Try to do the best guess by
   # appending ld.so.conf contents (and includes) to the search path.
-
-  # There is no easy way to reliably detect the sys dlsearch path. We will first
-  # assume ldconfig reports the path correctly, but check it with the current
-  # ld cache. If any cached path is not present in the generated path_spec, then
-  # we know ldconfig is bad and should manually parse the ld.so.conf files.
-  # Note the reported paths can be a superset of the cached paths.
-  # The catch is that the default path may not be in the ld.so.conf. We have to
-  # add any missing one back to the path_spec (from the cached paths).
-
-  if test -x /sbin/ldconfig; then
-    sys_lib_dlsearch_path_spec=`/sbin/ldconfig -N -X -v 2>/dev/null | grep ^/ | sed -e 's/:.*//g' | tr '\n' ' '`
-    cached_lib_dlsearch_path=`/sbin/ldconfig -p | sed -e 's/.*=> //g' | grep '^/' | while read p; do dirname $p; done | sort | uniq | tr '\n' ' '`
-    for p in `echo $cached_lib_dlsearch_path`; do
-      case "$sys_lib_dlsearch_path_spec" in
-        *$p*)
-            bad_ldconfig=no
-            ;;
-           *)
-            # ldconfig is bad if cached path is not reported
-            bad_ldconfig=yes
-            break
-            ;;
-      esac
-    done
-  else
-    bad_ldconfig=yes
-  fi
-
-  if test "$bad_ldconfig" = "yes"; then
-    if test -f /etc/ld.so.conf; then
-      lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-      sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
-    fi
-
-    # catch anything that in the cached path but not in the conf files
-    for p in `echo $cached_lib_dlsearch_path`; do
-      case "$sys_lib_dlsearch_path_spec" in
-        *$p*)
-            ;;
-           *)
-            sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $p"
-            ;;
-      esac
-    done
+  if test -f /etc/ld.so.conf; then
+    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
+    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -27571,6 +27394,12 @@ fi
 
 ## begin expansion of PAC_SUBCFG_PREREQ_src_mpid_common_hcoll
 
+	if test "${with_hcoll}" = "no" ; then
+		have_hcoll=no;
+	else
+		if test "${with_hcoll}" = "yes" ; then
+			with_hcoll="/opt/mellanox"
+		fi
 
 
 # Check whether --with-hcoll was given.
@@ -27684,6 +27513,8 @@ fi
 	eval pac_save_LIBS_${pac_save_LIBS_nesting}='"$LIBS"'
 	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} + 1`
 
+		export LIBRARY_PATH=$LIBRARY_PATH:${with_hcoll}/lib:${with_hcoll}/../sharp/lib
+		export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${with_hcoll}/lib:${with_hcoll}/../sharp/lib
 
     failure=no
     ac_fn_c_check_header_mongrel "$LINENO" "hcoll/api/hcoll_api.h" "ac_cv_header_hcoll_api_hcoll_api_h" "$ac_includes_default"
@@ -27747,9 +27578,7 @@ fi
        have_hcoll=no
     fi
 
-	if test "${with_hcoll}" = "no" ; then
-	   have_hcoll=no;
-	elif test "${have_hcoll}" = "yes" ; then
+		if test "${have_hcoll}" = "yes" ; then
 
 
 	if echo "$WRAPPER_LIBS" | $FGREP -e "\<-lhcoll\>" >/dev/null 2>&1; then :
@@ -27760,14 +27589,15 @@ else
 
 fi
 
-	elif test -n "${with_hcoll}" -o -n "${with_hcoll_lib}" -o -n "${with_hcoll_include}" ; then
-	   as_fn_error $? "'hcoll/api/hcoll_api.h or libhcoll library not found.'" "$LINENO" 5
-	fi
+		elif test -n "${with_hcoll}" -o -n "${with_hcoll_lib}" -o -n "${with_hcoll_include}" ; then
+		   as_fn_error $? "'hcoll/api/hcoll_api.h or libhcoll library not found.'" "$LINENO" 5
+		fi
 
 	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} - 1`
 	eval LIBS="\$pac_save_LIBS_${pac_save_LIBS_nesting}"
 	eval pac_save_LIBS_${pac_save_LIBS_nesting}=""
 
+	fi
 	 if test "$have_hcoll" = "yes"; then
   BUILD_HCOLL_TRUE=
   BUILD_HCOLL_FALSE='#'
@@ -28681,6 +28511,195 @@ fi
 
 
 ## end expansion of PAC_SUBCFG_PREREQ_src_mpid_ch3_util_sock
+
+## begin expansion of PAC_SUBCFG_PREREQ_src_mpid_psp
+
+
+ if test "$device_name" = "psp"; then
+  BUILD_PSP_TRUE=
+  BUILD_PSP_FALSE='#'
+else
+  BUILD_PSP_TRUE='#'
+  BUILD_PSP_FALSE=
+fi
+
+if test -z "$BUILD_PSP_TRUE"; then :
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: RUNNING PREREQ FOR PSP DEVICE" >&5
+$as_echo "$as_me: RUNNING PREREQ FOR PSP DEVICE" >&6;}
+
+# maximum length of a processor name, as used by
+# MPI_GET_PROCESSOR_NAME
+MPID_MAX_PROCESSOR_NAME=1024
+
+# maximum length of an error string
+MPID_MAX_ERROR_STRING=1024
+
+#
+# MPID_NO_SPAWN=yes
+if test "$PSP_THREADING" != "multiple" ; then
+    MPID_MAX_THREAD_LEVEL=MPI_THREAD_SERIALIZED
+    echo "        mpid/psp : set MPID_MAX_THREAD_LEVEL=MPI_THREAD_SERIALIZED"
+else
+    MPID_MAX_THREAD_LEVEL=MPI_THREAD_MULTIPLE
+    echo "        mpid/psp : set MPID_MAX_THREAD_LEVEL=MPI_THREAD_MULTIPLE"
+fi
+
+PSCOM_CPPFLAGS="${PSCOM_CPPFLAGS-"-I/opt/parastation/include"}"
+PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
+PSCOM_LIBRARY="${PSCOM_LIBRARY-"-lpscom"}"
+PSCOM_RPATHLINK="${PSCOM_RPATHLINK-"${PSCOM_LDFLAGS//-L/-Wl,-rpath-link=}"}"
+case "$PSCOM_RPATHLINK" in '/'*) PSCOM_RPATHLINK="-Wl,-rpath-link=${PSCOM_RPATHLINK}" ;; esac
+# AX_CHECK_LIBRARY([PSCOM], [pscom.h], [pscom])
+
+
+
+
+
+
+
+	if echo "$WRAPPER_LDFLAGS" | $FGREP -e "\<${PSCOM_RPATHLINK}\>" >/dev/null 2>&1; then :
+  echo "WRAPPER_LDFLAGS(='$WRAPPER_LDFLAGS') contains '${PSCOM_RPATHLINK}', not appending" >&5
+else
+  echo "WRAPPER_LDFLAGS(='$WRAPPER_LDFLAGS') does not contain '${PSCOM_RPATHLINK}', appending" >&5
+		WRAPPER_LDFLAGS="$WRAPPER_LDFLAGS ${PSCOM_RPATHLINK}"
+
+fi
+
+
+if test "$PSCOM_ALLIN" = "true" ; then
+    PSCOM_LDFLAGS=""
+    PSCOM_CPPFLAGS=""
+    PSCOM_LIBRARY=""
+    PSCOM_ALLIN_LIBS="${PSCOM_ALLIN_LIBS} -lpthread -ldl"
+    echo "        mpid/psp : set PSCOM_ALLIN_LIBS to ${PSCOM_ALLIN_LIBS}"
+else
+    PSCOM_ALLIN_LIBS=""
+fi
+
+
+
+
+
+
+
+
+
+
+
+# Check whether --enable-psp-cuda-awareness was given.
+if test "${enable_psp_cuda_awareness+set}" = set; then :
+  enableval=$enable_psp_cuda_awareness;
+else
+  enable_psp_cuda_awareness=no
+fi
+
+
+# CUDA support
+pscom_is_cuda_aware=no
+PSP_CUDA_AWARE_SUPPORT=0
+if test "$enable_psp_cuda_awareness" = "yes" ; then
+	# check if we try to build against non-CUDA-aware pscom
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if pscom is CUDA-aware" >&5
+$as_echo_n "checking if pscom is CUDA-aware... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define PSCOM_CUDA_AWARENESS
+#include <pscom.h>
+#ifndef PSCOM_CUDA_AWARENESS_SUPPORT
+# error macro not defined
+#endif
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+		pscom_is_cuda_aware=yes
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pscom_memcpy in -lpscom" >&5
+$as_echo_n "checking for pscom_memcpy in -lpscom... " >&6; }
+if ${ac_cv_lib_pscom_pscom_memcpy+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpscom  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char pscom_memcpy ();
+int
+main ()
+{
+return pscom_memcpy ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_pscom_pscom_memcpy=yes
+else
+  ac_cv_lib_pscom_pscom_memcpy=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pscom_pscom_memcpy" >&5
+$as_echo "$ac_cv_lib_pscom_pscom_memcpy" >&6; }
+if test "x$ac_cv_lib_pscom_pscom_memcpy" = xyes; then :
+  have_pscom_memcpy=yes
+fi
+
+
+    if test "$pscom_is_cuda_aware" = "no" ; then :
+
+		as_fn_error $? "The pscom library is missing CUDA-awareness. Abort!" "$LINENO" 5
+
+else
+
+		if test "$have_pscom_memcpy" != "yes" ; then :
+
+			as_fn_error $? "The pscom library is lacking the pscom_memcpy() symbol. Please re-compile the pscom with \"--enable-cuda\". Abort!" "$LINENO" 5
+
+else
+
+			PSP_CUDA_AWARE_SUPPORT=1
+
+
+	if echo "$CPPFLAGS" | $FGREP -e "\<-DMPIR_USE_DEVICE_MEMCPY\>" >/dev/null 2>&1; then :
+  echo "CPPFLAGS(='$CPPFLAGS') contains '-DMPIR_USE_DEVICE_MEMCPY', not appending" >&5
+else
+  echo "CPPFLAGS(='$CPPFLAGS') does not contain '-DMPIR_USE_DEVICE_MEMCPY', appending" >&5
+		CPPFLAGS="$CPPFLAGS -DMPIR_USE_DEVICE_MEMCPY"
+
+fi
+
+
+fi
+
+fi
+fi
+
+
+ac_config_files="$ac_config_files src/mpid/psp/include/mpi-ext.h src/mpid/psp/include/mpid_cuda_aware.h"
+
+
+# todo: check whether we need all of them
+build_mpid_common_sched=yes
+build_mpid_common_datatype=yes
+build_mpid_common_thread=yes
+
+
+fi
+## end expansion of PAC_SUBCFG_PREREQ_src_mpid_psp
 
 ## begin expansion of PAC_SUBCFG_PREREQ_src_mpid_ch4_netmod_ofi
 
@@ -63581,6 +63600,17 @@ $as_echo "#define HAVE_STRUCT_IFCONF 1" >>confdefs.h
 fi
 ## end expansion of PAC_SUBCFG_BODY_src_mpid_ch3_util_sock
 
+## begin expansion of PAC_SUBCFG_BODY_src_mpid_psp
+
+if test -z "$BUILD_PSP_TRUE"; then :
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: RUNNING CONFIGURE FOR PSP DEVICE" >&5
+$as_echo "$as_me: RUNNING CONFIGURE FOR PSP DEVICE" >&6;}
+
+
+fi
+## end expansion of PAC_SUBCFG_BODY_src_mpid_psp
+
 ## begin expansion of PAC_SUBCFG_BODY_src_mpid_ch4_netmod_ofi
 
 if test -z "$BUILD_CH4_NETMOD_OFI_TRUE"; then :
@@ -67283,7 +67313,6 @@ $as_echo "$as_me: creating $ofile" >&6;}
     cat <<_LT_EOF >> "$cfgfile"
 #! $SHELL
 # Generated automatically by $as_me ($PACKAGE) $VERSION
-# Libtool was configured on host `(hostname || uname -n) 2>/dev/null | sed 1q`:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 
 # Provide generalized library-building support services.
@@ -68889,6 +68918,10 @@ if test -z "${BUILD_CH3_UTIL_SOCK_TRUE}" && test -z "${BUILD_CH3_UTIL_SOCK_FALSE
   as_fn_error $? "conditional \"BUILD_CH3_UTIL_SOCK\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${BUILD_PSP_TRUE}" && test -z "${BUILD_PSP_FALSE}"; then
+  as_fn_error $? "conditional \"BUILD_PSP\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${BUILD_CH4_NETMOD_OFI_TRUE}" && test -z "${BUILD_CH4_NETMOD_OFI_FALSE}"; then
   as_fn_error $? "conditional \"BUILD_CH4_NETMOD_OFI\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -70372,6 +70405,8 @@ do
     "src/include/mpichconf.h") CONFIG_HEADERS="$CONFIG_HEADERS src/include/mpichconf.h" ;;
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
+    "src/mpid/psp/include/mpi-ext.h") CONFIG_FILES="$CONFIG_FILES src/mpid/psp/include/mpi-ext.h" ;;
+    "src/mpid/psp/include/mpid_cuda_aware.h") CONFIG_FILES="$CONFIG_FILES src/mpid/psp/include/mpid_cuda_aware.h" ;;
     "src/hwloc/include/private/autogen/config.h") CONFIG_HEADERS="$CONFIG_HEADERS src/hwloc/include/private/autogen/config.h" ;;
     "src/hwloc/include/hwloc/autogen/config.h") CONFIG_HEADERS="$CONFIG_HEADERS src/hwloc/include/hwloc/autogen/config.h" ;;
     "src/hwloc/Makefile") CONFIG_FILES="$CONFIG_FILES src/hwloc/Makefile" ;;
@@ -71165,7 +71200,6 @@ $as_echo X"$file" |
     cat <<_LT_EOF >> "$cfgfile"
 #! $SHELL
 # Generated automatically by $as_me ($PACKAGE) $VERSION
-# Libtool was configured on host `(hostname || uname -n) 2>/dev/null | sed 1q`:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 
 # Provide generalized library-building support services.

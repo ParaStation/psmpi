@@ -573,7 +573,6 @@ top_srcdir = @top_srcdir@
 
 # Add libdtpools support
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
-	-I$(top_builddir)/dtpoos/include \
 	-I$(top_srcdir)/dtpools/include
 LDADD = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
