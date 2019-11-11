@@ -5,7 +5,7 @@
  */
 /* automatically generated
  *   by:   ./maint/extractcvars
- *   at:   Wed Jun  5 19:58:08 2019 UTC
+ *   at:   Mon Nov 11 05:59:25 2019 UTC
  *
  * DO NOT EDIT!!!
  */
@@ -1436,67 +1436,67 @@ int MPIR_T_cvar_init(void)
         return MPI_SUCCESS;
     initialized = TRUE;
 
-    /* declared in /tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/mpi/coll/alltoall/alltoall.c */
+    /* declared in /home/pickartz/work/psmpi/mpich2/maint/../src/mpi/coll/alltoall/alltoall.c */
     MPIR_T_cat_add_desc("COLLECTIVE",
         "A category for collective communication variables.");
 
-    /* declared in /tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/mpi/comm/comm_split.c */
+    /* declared in /home/pickartz/work/psmpi/mpich2/maint/../src/mpi/comm/comm_split.c */
     MPIR_T_cat_add_desc("COMMUNICATOR",
         "cvars that control communicator construction and operation");
 
-    /* declared in /tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/mpi/errhan/errutil.c */
+    /* declared in /home/pickartz/work/psmpi/mpich2/maint/../src/mpi/errhan/errutil.c */
     MPIR_T_cat_add_desc("ERROR_HANDLING",
         "cvars that control error handling behavior (stack traces, aborts, etc)");
 
-    /* declared in /tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/mpi/init/finalize.c */
+    /* declared in /home/pickartz/work/psmpi/mpich2/maint/../src/mpi/init/finalize.c */
     MPIR_T_cat_add_desc("DEVELOPER",
         "useful for developers working on MPICH itself");
 
-    /* declared in /tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/mpi/init/init.c */
+    /* declared in /home/pickartz/work/psmpi/mpich2/maint/../src/mpi/init/init.c */
     MPIR_T_cat_add_desc("THREADS",
         "multi-threading cvars");
 
-    /* declared in /tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/mpi/init/initthread.c */
+    /* declared in /home/pickartz/work/psmpi/mpich2/maint/../src/mpi/init/initthread.c */
     MPIR_T_cat_add_desc("DEBUGGER",
         "cvars relevant to the \"MPIR\" debugger interface");
 
-    /* declared in /tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/mpi/topo/dims_create.c */
+    /* declared in /home/pickartz/work/psmpi/mpich2/maint/../src/mpi/topo/dims_create.c */
     MPIR_T_cat_add_desc("DIMS",
         "Dims_create cvars");
 
-    /* declared in /tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/nameserv/file/file_nameserv.c */
+    /* declared in /home/pickartz/work/psmpi/mpich2/maint/../src/nameserv/file/file_nameserv.c */
     MPIR_T_cat_add_desc("PROCESS_MANAGER",
         "cvars that control the client-side process manager code");
 
-    /* declared in /tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/util/mem/handlemem.c */
+    /* declared in /home/pickartz/work/psmpi/mpich2/maint/../src/util/mem/handlemem.c */
     MPIR_T_cat_add_desc("MEMORY",
         "affects memory allocation and usage, including MPI object handles");
 
-    /* declared in /tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/util/nodemap/build_nodemap.h */
+    /* declared in /home/pickartz/work/psmpi/mpich2/maint/../src/util/nodemap/build_nodemap.h */
     MPIR_T_cat_add_desc("NODEMAP",
         "cvars that control behavior of nodemap");
 
-    /* declared in /tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/include/mpir_request.h */
+    /* declared in /home/pickartz/work/psmpi/mpich2/maint/../src/include/mpir_request.h */
     MPIR_T_cat_add_desc("REQUEST",
         "A category for requests mangement variables");
 
-    /* declared in /tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/mpid/ch3/channels/nemesis/src/mpid_nem_init.c */
+    /* declared in /home/pickartz/work/psmpi/mpich2/maint/../src/mpid/ch3/channels/nemesis/src/mpid_nem_init.c */
     MPIR_T_cat_add_desc("NEMESIS",
         "cvars that control behavior of the ch3:nemesis channel");
 
-    /* declared in /tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/mpid/ch3/channels/nemesis/src/mpid_nem_lmt.c */
+    /* declared in /home/pickartz/work/psmpi/mpich2/maint/../src/mpid/ch3/channels/nemesis/src/mpid_nem_lmt.c */
     MPIR_T_cat_add_desc("FT",
         "cvars that control behavior of fault tolerance");
 
-    /* declared in /tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/mpid/ch3/src/mpidi_rma.c */
+    /* declared in /home/pickartz/work/psmpi/mpich2/maint/../src/mpid/ch3/src/mpidi_rma.c */
     MPIR_T_cat_add_desc("CH3",
         "cvars that control behavior of ch3");
 
-    /* declared in /tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/mpid/ch4/netmod/ofi/ofi_init.h */
+    /* declared in /home/pickartz/work/psmpi/mpich2/maint/../src/mpid/ch4/netmod/ofi/ofi_init.h */
     MPIR_T_cat_add_desc("CH4_OFI",
         "A category for CH4 OFI netmod variables");
 
-    /* declared in /tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/mpid/ch4/src/ch4_init.h */
+    /* declared in /home/pickartz/work/psmpi/mpich2/maint/../src/mpid/ch4/src/ch4_init.h */
     MPIR_T_cat_add_desc("CH4",
         "cvars that control behavior of the CH4 device");
 

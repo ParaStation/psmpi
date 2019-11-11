@@ -14,7 +14,7 @@ use Data::Dumper;
 use Getopt::Long;
 
 # Help perl find the YAML parsing module
-use lib '/tmp/kS7n0Mi0xa/mpich-3.3.1/maint/local_perl/lib';
+use lib '/home/pickartz/work/psmpi/mpich2/maint/local_perl/lib';
 use YAML::Tiny qw();
 
 # To format README file
@@ -42,9 +42,9 @@ my $alt_ns = "MPIR_PARAM";
 my $dep_ns = "MPICH";
 
 # Default :output source files
-my $header_file = "/tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/include/mpir_cvars.h";
-my $c_file      = "/tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../src/util/cvar/mpir_cvars.c";
-my $readme_file = "/tmp/kS7n0Mi0xa/mpich-3.3.1/maint/../README.envvar";
+my $header_file = "/home/pickartz/work/psmpi/mpich2/maint/../src/include/mpir_cvars.h";
+my $c_file      = "/home/pickartz/work/psmpi/mpich2/maint/../src/util/cvar/mpir_cvars.c";
+my $readme_file = "/home/pickartz/work/psmpi/mpich2/maint/../README.envvar";
 
 sub Usage {
     print <<EOT;
