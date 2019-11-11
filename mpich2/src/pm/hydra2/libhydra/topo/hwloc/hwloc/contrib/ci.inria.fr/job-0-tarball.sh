@@ -1,21 +1,34 @@
 #!/bin/sh
 #
-# Copyright © 2012-2017 Inria.  All rights reserved.
+# Copyright © 2012-2018 Inria.  All rights reserved.
 # See COPYING in top-level directory.
 #
 
+echo "############################"
+echo "Running on:"
+uname -a
+echo "############################"
+
 set -e
 set -x
+
+branch="$1"
+if test -z "$branch"; then
+  echo "Need branch name as argument."
+  exit 1
+fi
+
+echo "Got GIT branch name $branch"
 
 # environment variables
 test -f $HOME/.ciprofile && . $HOME/.ciprofile
 
 # keep branch-name before the first - (e.g. v2.0-beta becomes v2.0)
 # and look for the corresponding autotools
-branch=$( echo $GIT_BRANCH | sed -r -e 's@^.*/([^/]+)$@\1@' -e 's/-.*//' )
-if test -d $HOME/local/hwloc-$branch ; then
-  export PATH=$HOME/local/hwloc-${branch}/bin:$PATH
-  echo using specific $HOME/local/hwloc-$branch
+basebranch=$( echo $branch | sed -r -e 's@^.*/([^/]+)$@\1@' -e 's/-.*//' )
+if test -d $HOME/local/hwloc-$basebranch ; then
+  export PATH=$HOME/local/hwloc-${basebranch}/bin:$PATH
+  echo using specific $HOME/local/hwloc-$basebranch
 else
   export PATH=$HOME/local/hwloc-master/bin:$PATH
   echo using generic $HOME/local/hwloc-master
@@ -40,3 +53,8 @@ sed	-e 's/^snapshot_version=.*/snapshot_version='$snapshot/ \
 ./configure
 make
 make distcheck
+
+# this test requires bash and grep -P, only run it in the main job
+make check -C contrib/windows
+
+exit 0

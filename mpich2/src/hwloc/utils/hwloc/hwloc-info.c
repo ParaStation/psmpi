@@ -47,7 +47,7 @@ void usage(const char *name, FILE *where)
   fprintf (where, "  --restrict <cpuset>   Restrict the topology to processors listed in <cpuset>\n");
   fprintf (where, "  --restrict binding    Restrict the topology to the current process binding\n");
   fprintf (where, "  --filter <type>:<knd> Filter objects of the given type, or all.\n");
-  fprintf (where, "     <knd> may be `all' (keep all), `none' (remove all), `structure' or `basic'\n");
+  fprintf (where, "     <knd> may be `all' (keep all), `none' (remove all), `structure' or `important'\n");
   fprintf (where, "  --no-icaches          Do not show instruction caches\n");
   fprintf (where, "  --no-io               Do not show any I/O device or bridge\n");
   fprintf (where, "  --no-bridges          Do not any I/O bridge except hostbridges\n");
@@ -526,8 +526,8 @@ main (int argc, char *argv[])
   }
 
   if (pid_number > 0) {
-    pid = hwloc_pid_from_number(pid_number, 0);
-    if (hwloc_topology_set_pid(topology, pid)) {
+    if (hwloc_pid_from_number(&pid, pid_number, 0, 1 /* verbose */) < 0
+	|| hwloc_topology_set_pid(topology, pid)) {
       perror("Setting target pid");
       return EXIT_FAILURE;
     }

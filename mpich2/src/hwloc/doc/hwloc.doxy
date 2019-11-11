@@ -845,7 +845,7 @@ threads) are not displayed.
 \endhtmlonly
 \section cli_hwloc_annotate hwloc-annotate
 
-hwloc-annotate may add object attributes such as string information
+hwloc-annotate may modify object (and topology) attributes such as string information
 (see \ref attributes_info for details) or Misc children objects.
 It reads an input topology from a XML file and outputs
 the annotated topology as another XML file.
@@ -1502,9 +1502,6 @@ Indeed this OpenFabrics HCA PCI device object contains one
 one OpenFabrics software device (<em>mlx4_0</em>) and two virtual
 network interface software devices (<em>ib0</em> and <em>ib1</em>).
 
-PCI link speed is also reported for some bridges and devices
-because lstopo was privileged when it discovered the topology.
-
 
 Here is the corresponding textual output:
 
@@ -1655,51 +1652,19 @@ The user may additionally add new key-value pairs to any object using
 hwloc_obj_add_info() or the \ref cli_hwloc_annotate program.
 
 Here is a non-exhaustive list of attributes that may be automatically
-added by hwloc (with the usual corresponding object in parentheses).
+added by hwloc.
 Note that these attributes heavily depend on the ability of the
 operating system to report them.
 Many of them will therefore be missing on some OS.
+
+\htmlonly
+</div><div class="subsection" id="attributes_info_platform">
+\endhtmlonly
+\subsection attributes_info_platform Hardware Platform Information
+
+These info attributes are attached to the root object (Machine).
+
 <dl>
-<dt>OSName, OSRelease, OSVersion, HostName, Architecture
-(Machine object)</dt>
-<dd>The operating system name, release, version, the hostname and the
-architecture name, as reported by the Unix <tt>uname</tt> command.
-</dd>
-<dt>Backend (topology root, Machine object)</dt>
-<dd>The name of the hwloc backend/component that filled the topology.
-If several components were combined, multiple Backend keys may exist,
-with different values, for instance <tt>x86</tt>, <tt>Linux</tt>
-and <tt>pci</tt>.
-</dd>
-<dt>LinuxCgroup (Machine object)</dt>
-<dd>The name the Linux control group where the calling process is
-placed.
-</dd>
-<dt>SyntheticDescription (topology root, Machine object)</dt>
-<dd>The description string that was given to hwloc to build this
-synthetic topology.
-</dd>
-<dt>CPUModel (Package or Machine)</dt>
-<dd>The processor model name.
-Usually added to Package objects, but can be in Machine instead if
-hwloc failed to discover any package.
-</dd>
-<dt>CPUType (Package)</dt>
-<dd>
-A Solaris-specific general processor type name, such as "i86pc".
-</dd>
-<dt>CPUVendor, CPUModelNumber, CPUFamilyNumber, CPUStepping (Package or Machine)</dt>
-<dd>The processor vendor name, model number, family number, and stepping number.
-Currently available for x86 and Xeon Phi processors on most systems,
-and for ia64 processors on Linux (except CPUStepping).
-Usually added to Package objects, but can be in Machine instead if
-hwloc failed to discover any package.
-</dd>
-<dt>CPURevision (Package)</dt>
-<dd>
-A POWER/PowerPC-specific general processor revision number,
-currently only available on Linux.
-</dd>
 <dt>PlatformName, PlatformModel, PlatformVendor, PlatformBoardID, PlatformRevision,</dt>
 <dt> SystemVersionRegister, ProcessorVersionRegister (Machine)</dt>
 <dd>Some POWER/PowerPC-specific attributes describing the platform
@@ -1708,7 +1673,12 @@ Currently only available on Linux.
 Usually added to Package objects, but can be in Machine instead if
 hwloc failed to discover any package.
 </dd>
-<dt>MemoryMode, ClusterMode (topology root, Machine object)</dt>
+<dt>DMIBoardVendor, DMIBoardName, etc.</dt>
+<dd>DMI hardware information such as the motherboard and chassis
+models and vendors, the BIOS revision, etc.,
+as reported by Linux under <tt>/sys/class/dmi/id/</tt>.
+</dd>
+<dt>MemoryMode, ClusterMode</dt>
 <dd>
 Intel Xeon Phi processor configuration modes.
 Available if hwloc-dump-hwdata was used (see \ref faq_knl_dump)
@@ -1721,38 +1691,115 @@ The cluster mode may be <em>Quadrant</em>, <em>Hemisphere</em>, <em>All2All</em>
 <em>SNC2</em> or <em>SNC4</em>.
 See doc/examples/get-knl-modes.c in the source directory for an example of retrieving these attributes.
 </dd>
-<dt>Inclusive (Caches)</dt>
-<dd>The inclusiveness of a cache (1 if inclusive, 0 otherwise).
-Currently only available on x86 processors.
+</dl>
+
+
+\htmlonly
+</div><div class="subsection" id="attributes_info_os">
+\endhtmlonly
+\subsection attributes_info_os Operating System Information
+
+These info attributes are attached to the root object (Machine).
+
+<dl>
+<dt>OSName, OSRelease, OSVersion, HostName, Architecture</dt>
+<dd>The operating system name, release, version, the hostname and the
+architecture name, as reported by the Unix <tt>uname</tt> command.
 </dd>
-<dt>SolarisProcessorGroup (Group)</dt>
+<dt>LinuxCgroup</dt>
+<dd>The name the Linux control group where the calling process is
+placed.
+</dd>
+</dl>
+
+
+\htmlonly
+</div><div class="subsection" id="attributes_info_hwloc">
+\endhtmlonly
+\subsection attributes_info_hwloc hwloc Information
+
+Unless specified, these info attributes are attached to the root object (Machine).
+
+<dl>
+<dt>Backend (topology root, or specific object added by that backend)</dt>
+<dd>The name of the hwloc backend/component that filled the topology.
+If several components were combined, multiple Backend keys may exist,
+with different values, for instance <tt>x86</tt> and <tt>Linux</tt> in the root
+object and <tt>CUDA</tt> in CUDA OS device objects.
+</dd>
+<dt>SyntheticDescription</dt>
+<dd>The description string that was given to hwloc to build this
+synthetic topology.
+</dd>
+<dt>hwlocVersion</dt>
+<dd>The version number of the hwloc library that was used to generate
+the topology. If the topology was loaded from XML, this is not the hwloc
+version that loaded it, but rather the first hwloc instance that exported
+the topology to XML earlier.
+</dd>
+<dt>ProcessName</dt>
+<dd>The name of the process that contains the hwloc library that was used
+to generate the topology. If the topology was from XML, this is not the
+hwloc process that loaded it, but rather the first process that exported
+the topology to XML earlier.
+</dd>
+</dl>
+
+
+\htmlonly
+</div><div class="subsection" id="attributes_info_cpu">
+\endhtmlonly
+\subsection attributes_info_cpu CPU Information
+
+These info attributes are attached to Package objects,
+or to the root object (Machine) if package locality information is missing.
+
+<dl>
+<dt>CPUModel</dt>
+<dd>The processor model name.</dd>
+<dt>CPUVendor, CPUModelNumber, CPUFamilyNumber, CPUStepping</dt>
+<dd>The processor vendor name, model number, family number, and stepping number.
+Currently available for x86 and Xeon Phi processors on most systems,
+and for ia64 processors on Linux (except CPUStepping).
+</dd>
+<dt>CPURevision</dt>
 <dd>
-The Solaris kstat processor group name that was used to build this Group object.
+A POWER/PowerPC-specific general processor revision number,
+currently only available on Linux.
 </dd>
-<dt>PCIVendor, PCIDevice (PCI devices and bridges)</dt>
-<dd>The vendor and device names of the PCI device.
+<dt>CPUType</dt>
+<dd>
+A Solaris-specific general processor type name, such as "i86pc".
 </dd>
-<dt>PCISlot</dt>
-<dd>The name/number of the physical slot where the PCI device is plugged.
-</dd>
-<dt>Vendor, Model, Revision, SerialNumber, Size, SectorSize</dt>
+</dl>
+
+
+\htmlonly
+</div><div class="subsection" id="attributes_info_osdev">
+\endhtmlonly
+\subsection attributes_info_osdev OS Device Information
+
+These info attributes are attached to OS device objects specified in parentheses.
+
+<dl>
+<dt>Vendor, Model, Revision, SerialNumber, Size, SectorSize (Block OS devices)</dt>
 <dd>The vendor and model names, revision, serial number, size (in kB)
-and SectorSize (in bytes) of a Block OS device.
+and SectorSize (in bytes).
 </dd>
-<dt>LinuxDeviceID</dt>
-<dd>The major/minor device number such as 8:0 on Linux for a Block OS device.
+<dt>LinuxDeviceID (Block OS devices)</dt>
+<dd>The major/minor device number such as 8:0 of Linux device.
 </dd>
 <dt>GPUVendor, GPUModel (GPU or Co-Processor OS devices)</dt>
 <dd>The vendor and model names of the GPU device.
 </dd>
 <dt>OpenCLDeviceType, OpenCLPlatformIndex,</dt>
-<dt>OpenCLPlatformName, OpenCLPlatformDeviceIndex (OpenCL GPU OS devices)</dt>
+<dt>OpenCLPlatformName, OpenCLPlatformDeviceIndex (OpenCL OS devices)</dt>
 <dd>The type of OpenCL device,
  the OpenCL platform index and name,
  and the index of the device within the platform.
 </dd>
-<dt>OpenCLComputeUnits, OpenCLGlobalMemorySize</dt>
-<dd>The number of compute units and global memory size (in kB) of a OpenCL device.
+<dt>OpenCLComputeUnits, OpenCLGlobalMemorySize (OpenCL OS devices)</dt>
+<dd>The number of compute units and global memory size (in kB) of an OpenCL device.
 </dd>
 <dt>NVIDIAUUID, NVIDIASerial (NVML GPU OS devices)</dt>
 <dd>The UUID and Serial of NVIDIA GPUs.
@@ -1765,7 +1812,7 @@ and SectorSize (in bytes) of a Block OS device.
  and size of the shared memory in each multiprocessor of a CUDA device.
  Sizes are in kB.
 </dd>
-<dt>MICSerialNumber</dt>
+<dt>MICSerialNumber (MIC coprocessor OS device)</dt>
 <dd>
  The serial number of an Intel Xeon Phi (MIC) coprocessor.
  hwloc may run either inside the coprocessor itself, or on the host processor.
@@ -1777,15 +1824,10 @@ and SectorSize (in bytes) of a Block OS device.
  When running hwloc inside a Xeon Phi coprocessor, the root of the topology
  (Machine object) gets this attribute.
 </dd>
-<dt>MICFamily, MICSKU, MICActiveCores, MICMemorySize</dt>
+<dt>MICFamily, MICSKU, MICActiveCores, MICMemorySize (MIC coprocessor OS device)</dt>
 <dd>The family, SKU (model),
  number of active cores, and memory size (in kB)
  of an Intel Xeon Phi (MIC) coprocessor.
-</dd>
-<dt>DMIBoardVendor, DMIBoardName, etc. (Machine object)</dt>
-<dd>DMI hardware information such as the motherboard and chassis
-models and vendors, the BIOS revision, etc.,
-as reported by Linux under <tt>/sys/class/dmi/id/</tt>.
 </dd>
 <dt>Address, Port (Network interface OS devices)</dt>
 <dd>The MAC address and the port number of a software network
@@ -1798,23 +1840,45 @@ the state of a port #1 (value is 4 when active),
 the LID and LID mask count of port #2,
 and GID #1 of port #3.
 </dd>
+</dl>
+
+
+\htmlonly
+</div><div class="subsection" id="attributes_info_otherobjs">
+\endhtmlonly
+\subsection attributes_info_otherobjs Other Object-specific Information
+
+These info attributes are attached to objects specified in parentheses.
+
+<dl>
+<dt>Inclusive (Caches)</dt>
+<dd>The inclusiveness of a cache (1 if inclusive, 0 otherwise).
+Currently only available on x86 processors.
+</dd>
+<dt>SolarisProcessorGroup (Group)</dt>
+<dd>
+The Solaris kstat processor group name that was used to build this Group object.
+</dd>
+<dt>PCIVendor, PCIDevice (PCI devices and bridges)</dt>
+<dd>The vendor and device names of the PCI device.
+</dd>
+<dt>PCISlot (PCI devices or Bridges)</dt>
+<dd>The name/number of the physical slot where the device is plugged.
+ If the physical device contains PCI bridges above the actual PCI device,
+ the attribute may be attached to the highest bridge
+ (i.e. the first object that actually appears below the physical slot).
+</dd>
 <dt>Vendor, AssetTag, PartNumber, DeviceLocation, BankLocation (MemoryModule Misc objects)</dt>
 <dd>
 Information about memory modules (DIMMs) extracted from SMBIOS.
 </dd>
-<dt>hwlocVersion</dt>
-<dd>The version number of the hwloc library that was used to generate
-the topology. If the topology was loaded from XML, this is not the hwloc
-version that loaded it, but rather the first hwloc instance that exported
-the topology to XML earlier.
-</dd>
-<dt>ProcessName</dt>
-<dd>The name of the process that contains the hwloc library that was used
-to generate the topology. If the topology was from XML, this is not the
-hwloc version that loaded it, but rather the first process that exported
-the topology to XML earlier.
-</dd>
 </dl>
+
+
+\htmlonly
+</div><div class="subsection" id="attributes_info_user">
+\endhtmlonly
+\subsection attributes_info_user User-Given Information
 
 Here is a non-exhaustive list of user-provided info attributes
 that have a special meaning:
@@ -2828,13 +2892,17 @@ be loaded before gathering information and binding tasks or memory.
 Fortunately this overhead may be significantly reduced by filtering
 non-interesting information out of the topology.
 For instance the following code builds a topology that only contains
-Cores, hardware threads (PUs, cannot be filtered-out),
-and NUMA nodes (cannot be filtered-out).
+Cores (explicitly filtered-in below),
+hardware threads (PUs, cannot be filtered-out),
+NUMA nodes (cannot be filtered-out),
+and the root object (usually a Machine; the root cannot be removed without breaking the tree).
 
 \verbatim
 hwloc_topology_t topology;
 hwloc_topology_init(&topology);
+/* filter everything out */
 hwloc_topology_set_all_types_filter(topology, HWLOC_TYPE_FILTER_KEEP_NONE);
+/* filter Cores back in */
 hwloc_topology_set_type_filter(topology, HWLOC_OBJ_CORE, HWLOC_TYPE_FILTER_KEEP_ALL);
 hwloc_topology_load(topology);
 \endverbatim
@@ -3263,7 +3331,7 @@ variable may avoid this.
 Also remember that these components may be disabled at build-time with
 configure flags such as <tt>\--disable-opencl</tt>, <tt>\--disable-cuda</tt> or <tt>\--disable-nvml</tt>,
 and at runtime with the environment variable
-<tt>HWLOC_COMPONENTS=-opencl,cuda,nvml</tt>.
+<tt>HWLOC_COMPONENTS=-opencl,-cuda,-nvml</tt>.
 
 
 \subsection faq_privileged Does hwloc require privileged access?
@@ -3271,8 +3339,7 @@ and at runtime with the environment variable
 hwloc discovers the topology by querying the operating system.
 Some minor features may require privileged access to the operation
 system.
-For instance memory module and PCI link speed discovery on Linux
-is reserved to root,
+For instance memory module discovery on Linux is reserved to root,
 and the entire PCI discovery on Solaris and BSDs requires access to
 some special files that are usually restricted to root
 (/dev/pci* or /devices/pci*).
@@ -3311,13 +3378,15 @@ resulting topology will miss some objects and may be asymmetric
 
 \verbatim
 ****************************************************************************
-* hwloc has encountered what looks like an error from the operating system.
+* hwloc received invalid information from the operating system.
 *
 * L3 (cpuset 0x000003f0) intersects with NUMANode (P#0 cpuset 0x0000003f) without inclusion!
 * Error occurred in topology.c line 940
 *
 * Please report this error message to the hwloc user's mailing list,
 * along with the files generated by the hwloc-gather-topology script.
+*
+* hwloc will now ignore this invalid topology information and continue.
 ****************************************************************************
 \endverbatim
 
@@ -3440,6 +3509,11 @@ and <tt>hwloc_get_api_version()</tt> came only in 1.1.1.
 Also do not use the old cpuset API since it was deprecated and superseded
 by the bitmap API in 1.1, and later removed in 1.5.
 
+If you ever need to look at the library version instead of the API version,
+you may want to use HWLOC_VERSION instead.
+Two stable releases of the same series usually have the same ::HWLOC_API_VERSION
+even if their HWLOC_VERSION are different.
+
 
 
 \htmlonly
@@ -3457,7 +3531,7 @@ Processors can be configured in various clustering modes to have up to 4 <em>Clu
 Moreover, each <em>Cluster</em> (quarter, half or whole processor) of the processor may have its own local
 parts of the DDR and of the MCDRAM.
 This memory and clustering configuration may be probed by looking at MemoryMode
-and ClusterMode attributes, see \ref attributes_info and doc/examples/get-knl-modes.c
+and ClusterMode attributes, see \ref attributes_info_platform and doc/examples/get-knl-modes.c
 in the source directory.
 
 Starting with version 2.0, hwloc properly exposes this memory
@@ -3590,6 +3664,20 @@ sysctl variable must be set to 1 to do so.
 Otherwise, only the number of logical processors will be detected.
 
 
+\subsection faq_aix_bind Why does binding fail on AIX?
+
+The AIX operating system requires specific user capabilities for
+attaching processes to resource sets (CAP_NUMA_ATTACH).
+Otherwise functions such as hwloc_set_cpubind() fail (return -1 with errno set to EPERM).
+
+This capability must also be inherited (through the additional CAP_PROPAGATE capability)
+if you plan to bind a process before forking another process,
+for instance with <tt>hwloc-bind</tt>.
+
+These capabilities may be given by the administrator with:
+\verbatim
+chuser "capabilities=CAP_PROPAGATE,CAP_NUMA_ATTACH" <username>
+\endverbatim
 
 
 \page upgrade_to_api_2x Upgrading to the hwloc 2.0 API

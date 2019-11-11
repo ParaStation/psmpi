@@ -263,6 +263,10 @@
    if you don't. */
 #undef HAVE_DECL_LGRP_LATENCY_COOKIE
 
+/* Define to 1 if you have the declaration of `modff', and to 0 if you don't.
+   */
+#undef HAVE_DECL_MODFF
+
 /* Define to 1 if you have the declaration of
    `nvmlDeviceGetMaxPcieLinkGeneration', and to 0 if you don't. */
 #undef HAVE_DECL_NVMLDEVICEGETMAXPCIELINKGENERATION
@@ -285,10 +289,6 @@
 /* Define to 1 if you have the declaration of `snprintf', and to 0 if you
    don't. */
 #undef HAVE_DECL_SNPRINTF
-
-/* Define to 1 if you have the declaration of `strcasecmp', and to 0 if you
-   don't. */
-#undef HAVE_DECL_STRCASECMP
 
 /* Define to 1 if you have the declaration of `strerror_r', and to 0 if you
    don't. */
@@ -760,6 +760,9 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
+/* Define to 1 if you have the `strcasecmp' function. */
+#undef HAVE_STRCASECMP
+
 /* Define to 1 if you have the `strdup' function. */
 #undef HAVE_STRDUP
 
@@ -1071,6 +1074,9 @@
 /* Define to 1 if function `flsl' is declared by system headers */
 #undef HWLOC_HAVE_DECL_FLSL
 
+/* Define to 1 if function `strcasecmp' is declared by system headers */
+#undef HWLOC_HAVE_DECL_STRCASECMP
+
 /* Define to 1 if function `strncasecmp' is declared by system headers */
 #undef HWLOC_HAVE_DECL_STRNCASECMP
 
@@ -1176,6 +1182,18 @@
 /* The library version, always available, even in embedded mode, contrary to
    VERSION */
 #undef HWLOC_VERSION
+
+/* The library version optional greek suffix string */
+#undef HWLOC_VERSION_GREEK
+
+/* The library version major number */
+#undef HWLOC_VERSION_MAJOR
+
+/* The library version minor number */
+#undef HWLOC_VERSION_MINOR
+
+/* The library version release number */
+#undef HWLOC_VERSION_RELEASE
 
 /* Define to 1 on WINDOWS */
 #undef HWLOC_WIN_SYS

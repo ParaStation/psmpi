@@ -197,7 +197,7 @@ EOF
     AC_MSG_CHECKING([whether to enable "picky" compiler mode])
     hwloc_want_picky=0
     AS_IF([test "$hwloc_c_vendor" = "gnu"],
-          [AS_IF([test -d "$srcdir/.hg" -o -d "$srcdir/.git"],
+          [AS_IF([test -e "$srcdir/.git"],
                  [hwloc_want_picky=1])])
     if test "$enable_picky" = "yes"; then
         if test "$GCC" = "yes"; then
@@ -420,6 +420,8 @@ int foo(void) {
         hwloc_config_prefix[utils/netloc/infiniband/netloc_ib_gather_raw]
         hwloc_config_prefix[contrib/systemd/Makefile]
         hwloc_config_prefix[contrib/misc/Makefile]
+        hwloc_config_prefix[contrib/windows/Makefile]
+        hwloc_config_prefix[contrib/windows/test-windows-version.sh]
         hwloc_config_prefix[tests/netloc/Makefile]
         hwloc_config_prefix[tests/netloc/tests.sh]
     )
@@ -443,6 +445,7 @@ chmod +x ]hwloc_config_prefix[tests/hwloc/linux/test-topology.sh \
       ]hwloc_config_prefix[utils/hwloc/test-hwloc-dump-hwdata/test-hwloc-dump-hwdata.sh \
       ]hwloc_config_prefix[utils/lstopo/test-lstopo.sh \
       ]hwloc_config_prefix[utils/netloc/infiniband/netloc_ib_gather_raw \
+      ]hwloc_config_prefix[contrib/windows/test-windows-version.sh \
       ]hwloc_config_prefix[tests/netloc/tests.sh])
 
     # These links are only needed in standalone mode.  It would
@@ -468,3 +471,38 @@ chmod +x ]hwloc_config_prefix[tests/hwloc/linux/test-topology.sh \
 	hwloc_config_prefix[tests/hwloc/ports/lstopo-windows.c]:hwloc_config_prefix[utils/lstopo/lstopo-windows.c])
     ])
 ])dnl
+
+#-----------------------------------------------------------------------
+
+AC_DEFUN([_HWLOC_PROG_DIFF], [
+  AC_ARG_VAR(DIFF, [diff tool])
+  AC_PATH_PROG([DIFF], [diff])
+])
+
+AC_DEFUN([_HWLOC_CHECK_DIFF_U], [
+  AC_REQUIRE([_HWLOC_PROG_DIFF])
+  AC_MSG_CHECKING([whether diff accepts -u])
+  if $DIFF -u /dev/null /dev/null 2> /dev/null
+  then
+    AC_MSG_RESULT([yes])
+    HWLOC_DIFF_U="-u"
+  else
+    AC_MSG_RESULT([no])
+    HWLOC_DIFF_U=""
+  fi
+  AC_SUBST([HWLOC_DIFF_U])
+])
+
+AC_DEFUN([_HWLOC_CHECK_DIFF_W], [
+  AC_REQUIRE([_HWLOC_PROG_DIFF])
+  AC_MSG_CHECKING([whether diff accepts -w])
+  if $DIFF -w /dev/null /dev/null 2> /dev/null
+  then
+    AC_MSG_RESULT([yes])
+    HWLOC_DIFF_W="-w"
+  else
+    AC_MSG_RESULT([no])
+    HWLOC_DIFF_W=""
+  fi
+  AC_SUBST([HWLOC_DIFF_W])
+])

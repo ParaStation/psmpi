@@ -585,6 +585,7 @@ extern "C" {
 #define hwloc_bitmap_compare_inclusion HWLOC_NAME(bitmap_compare_inclusion)
 
 #define hwloc_pci_class_string HWLOC_NAME(pci_class_string)
+#define hwloc_linux_pci_link_speed_from_string HWLOC_NAME(linux_pci_link_speed_from_string)
 
 #define hwloc_cache_type_by_depth_type HWLOC_NAME(cache_type_by_depth_type)
 #define hwloc__obj_type_is_normal HWLOC_NAME(_obj_type_is_normal)
@@ -635,6 +636,33 @@ extern "C" {
 
 #define hwloc_components_init HWLOC_NAME(components_init)
 #define hwloc_components_fini HWLOC_NAME(components_fini)
+
+/* private/internal-private.h */
+
+#define hwloc_xml_component HWLOC_NAME(xml_component)
+#define hwloc_synthetic_component HWLOC_NAME(synthetic_component)
+
+#define hwloc_aix_component HWLOC_NAME(aix_component)
+#define hwloc_bgq_component HWLOC_NAME(bgq_component)
+#define hwloc_darwin_component HWLOC_NAME(darwin_component)
+#define hwloc_freebsd_component HWLOC_NAME(freebsd_component)
+#define hwloc_hpux_component HWLOC_NAME(hpux_component)
+#define hwloc_linux_component HWLOC_NAME(linux_component)
+#define hwloc_netbsd_component HWLOC_NAME(netbsd_component)
+#define hwloc_noos_component HWLOC_NAME(noos_component)
+#define hwloc_solaris_component HWLOC_NAME(solaris_component)
+#define hwloc_windows_component HWLOC_NAME(windows_component)
+#define hwloc_x86_component HWLOC_NAME(x86_component)
+
+#define hwloc_cuda_component HWLOC_NAME(cuda_component)
+#define hwloc_gl_component HWLOC_NAME(gl_component)
+#define hwloc_linuxio_component HWLOC_NAME(linuxio_component)
+#define hwloc_nvml_component HWLOC_NAME(nvml_component)
+#define hwloc_opencl_component HWLOC_NAME(opencl_component)
+#define hwloc_pci_component HWLOC_NAME(pci_component)
+
+#define hwloc_xml_libxml_component HWLOC_NAME(xml_libxml_component)
+#define hwloc_xml_nolibxml_component HWLOC_NAME(xml_nolibxml_component)
 
 /* private/private.h */
 

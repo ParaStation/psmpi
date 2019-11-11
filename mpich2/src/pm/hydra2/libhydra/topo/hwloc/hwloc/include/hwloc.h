@@ -87,6 +87,10 @@ extern "C" {
  *
  * Users may check for available features at build time using this number
  * (see \ref faq_upgrade).
+ *
+ * \note This should not be confused with HWLOC_VERSION, the library version.
+ * Two stable releases of the same series usually have the same ::HWLOC_API_VERSION
+ * even if their HWLOC_VERSION are different.
  */
 #define HWLOC_API_VERSION 0x00020000
 
@@ -1025,10 +1029,13 @@ HWLOC_DECLSPEC int hwloc_obj_add_info(hwloc_obj_t obj, const char *name, const c
 
 /** \defgroup hwlocality_cpubinding CPU binding
  *
- * It is often useful to call hwloc_bitmap_singlify() first so that a single CPU
- * remains in the set. This way, the process will not even migrate between
- * different CPUs inside the given set.
- * Some operating systems also only support that kind of binding.
+ * Some operating systems only support binding threads or processes to a single PU.
+ * Others allow binding to larger sets such as entire Cores or Packages or
+ * even random sets of invididual PUs. In such operating system, the scheduler
+ * is free to run the task on one of these PU, then migrate it to another PU, etc.
+ * It is often useful to call hwloc_bitmap_singlify() on the target CPU set before
+ * passing it to the binding function to avoid these expensive migrations.
+ * See the documentation of hwloc_bitmap_singlify() for details.
  *
  * Some operating systems do not provide all hwloc-supported
  * mechanisms to bind processes, threads, etc.

@@ -4,26 +4,47 @@
 # See COPYING in top-level directory.
 #
 
+echo "############################"
+echo "Running on:"
+uname -a
+echo "Tarball: $1"
+echo "############################"
+
 set -e
 set -x
 
-# Define the version
-if test x$1 = x; then
-  echo "Missing branch name as first argument"
+git_repo_url="$1"
+hwloc_branch="$2"
+tarball="$3"
+
+if test -z "$git_repo_url" || test -z "$hwloc_branch"; then
+  echo "Need repo URL and branch name as arguments."
   exit 1
 fi
-export hwloc_branch=$1
 
 # environment variables
 test -f $HOME/.ciprofile && . $HOME/.ciprofile
 
-# remove everything but the last 10 builds
-ls | grep -v ^hwloc- | grep -v ^job- | xargs rm -rf || true
-ls -td hwloc-* | tail -n +11 | xargs chmod u+w -R || true
-ls -td hwloc-* | tail -n +11 | xargs rm -rf || true
+# check that this is either master or vX.Y
+if test x$hwloc_branch != xmaster; then
+  if test x$(echo "x${hwloc_branch}x" | sed -r -e 's/xv[0-9]+\.[0-9]+x//') != x; then
+    echo "Sending non-master and non-stable branch output to `tmp` branch on sonarqube server."
+    hwloc_branch=tmp
+  fi
+fi
 
-# find the tarball, extract it
-tarball=$(ls -tr hwloc-*.tar.gz | grep -v build.tar.gz | tail -1)
+# check that the repo is the official one
+if test x$git_repo_url != xhttps://github.com/open-mpi/hwloc.git; then
+  if test x$FORCE_SONAR_SCANNER = xtrue; then
+    echo "Sending non-official repository output to 'tmp' branch on sonarqube server."
+    hwloc_branch=tmp
+  else
+    echo "Ignoring non-official repository."
+    exit 0
+  fi
+fi
+
+# extract the tarball
 basename=$(basename $tarball .tar.gz)
 test -d $basename && chmod -R u+rwX $basename && rm -rf $basename
 tar xfz $tarball
@@ -37,8 +58,7 @@ touch configure
 export CFLAGS="-O0 -g -fPIC --coverage -Wall -Wunused-parameter -Wundef -Wno-long-long -Wsign-compare -Wmissing-prototypes -Wstrict-prototypes -Wcomment -pedantic -fdiagnostics-show-option -fno-inline"
 export LDFLAGS="--coverage"
 ./configure
-make V=1 |tee hwloc-build.log
-
+make V=1 | tee hwloc-build.log
 # Execute unitary tests (autotest)
 make check
 
@@ -47,6 +67,14 @@ find . -path '*/.libs/*.gcno' -exec rename 's@/.libs/@/@' {} \;
 find . -path '*/.libs/*.gcda' -exec rename 's@/.libs/@/@' {} \;
 lcov --directory . --capture --output-file hwloc.lcov
 lcov_cobertura.py hwloc.lcov --output hwloc-coverage.xml
+
+# Clang/Scan-build
+make distclean
+export CFLAGS="-Wall -std=gnu99"
+unset LDFLAGS
+scan-build -plist --intercept-first --analyze-headers -o analyzer_reports ./configure | tee scan-build.log
+scan-build -plist --intercept-first --analyze-headers -o analyzer_reports make | tee -a scan-build.log
+scan-build -plist --intercept-first --analyze-headers -o analyzer_reports make check | tee -a scan-build.log
 
 # Run cppcheck analysis
 SOURCES_TO_ANALYZE="hwloc tests utils"
@@ -109,45 +137,51 @@ sonar.host.url=https://sonarqube.bordeaux.inria.fr/sonarqube
 sonar.login=$(cat ~/.sonarqube-hwloc-token)
 sonar.links.homepage=https://www.open-mpi.org/projects/hwloc/
 sonar.links.ci=https://ci.inria.fr/hwloc/
-sonar.links.scm=https://github.com/open-mpi/hwloc.git
+sonar.links.scm=https://github.com/open-mpi/hwloc
 sonar.links.issue=https://github.com/open-mpi/hwloc/issues
 sonar.projectKey=tadaam:hwloc:github:$hwloc_branch
 sonar.projectDescription=Hardware locality (hwloc)
+# SED doesn't want us to define projectName
 sonar.projectVersion=$hwloc_branch
 sonar.scm.disabled=false
+# sonar.scm.provider=git requires sonar-scanner to run inside a git clone
 sonar.sourceEncoding=UTF-8
 sonar.language=c
 sonar.sources=hwloc, tests, utils
 sonar.exclusions=tests/hwloc/ports
+sonar.c.clangsa.reportPath=analyzer_reports/*/*.plist
 sonar.c.errorRecoveryEnabled=true
 sonar.c.compiler.parser=GCC
 sonar.c.compiler.charset=UTF-8
-sonar.c.compiler.regex=^(.*):([0-9]+):[0-9]+: warning: (.*)\\[(.*)\\]$
+sonar.c.compiler.regex=^(.*):(\\\d+):\\\d+: warning: (.*)\\\[(.*)\\\]$
 sonar.c.compiler.reportPath=hwloc-build.log
 sonar.c.coverage.reportPath=hwloc-coverage.xml
 sonar.c.cppcheck.reportPath=${CPPCHECK_XMLS}
 sonar.c.includeDirectories=$(echo | gcc -E -Wp,-v - 2>&1 | grep "^ " | tr '\n' ',')include,hwloc,utils/lstopo,utils/hwloc
 sonar.c.rats.reportPath=${RATS_XMLS}
 sonar.c.valgrind.reportPath=${VALGRIND_XMLS}
-sonar.issue.ignore.multicriteria=e1,e2,e3,e4,e5,e6,e7,e8,e9,e10,e11,e12,e13,e14
+sonar.issue.ignore.multicriteria=e1,e2,e3,e4,e5,e6,e7,e8,e9,e10,e11,e12,e13,e14,e15
 # Complete the task associated to this TODO comment.
-sonar.issue.ignore.multicriteria.e1.ruleKey=cxx:TodoTagPresence
+sonar.issue.ignore.multicriteria.e1.ruleKey=c:TodoTagPresence
 sonar.issue.ignore.multicriteria.e1.resourceKey=**
 # Missing curly brace.
-sonar.issue.ignore.multicriteria.e2.ruleKey=cxx:MissingCurlyBraces
+sonar.issue.ignore.multicriteria.e2.ruleKey=c:MissingCurlyBraces
 sonar.issue.ignore.multicriteria.e2.resourceKey=**
 # Extract this magic number '3' into a constant, variable declaration or an enum.
-sonar.issue.ignore.multicriteria.e3.ruleKey=cxx:MagicNumber
+sonar.issue.ignore.multicriteria.e3.ruleKey=c:MagicNumber
 sonar.issue.ignore.multicriteria.e3.resourceKey=**
 # Undocumented API: hwloc_noos_component
-sonar.issue.ignore.multicriteria.e4.ruleKey=cxx:UndocumentedApi
+sonar.issue.ignore.multicriteria.e4.ruleKey=c:UndocumentedApi
 sonar.issue.ignore.multicriteria.e4.resourceKey=**
 # At most one statement is allowed per line, but 2 statements were found on this line.
-sonar.issue.ignore.multicriteria.e5.ruleKey=cxx:TooManyStatementsPerLine
+sonar.issue.ignore.multicriteria.e5.ruleKey=c:TooManyStatementsPerLine
 sonar.issue.ignore.multicriteria.e5.resourceKey=**
 # Split this 166 characters long line (which is greater than 160 authorized).
-sonar.issue.ignore.multicriteria.e6.ruleKey=cxx:TooLongLine
+sonar.issue.ignore.multicriteria.e6.ruleKey=c:TooLongLine
 sonar.issue.ignore.multicriteria.e6.resourceKey=**
+# Sharing some naming conventions is a key point to make it possible for a team to efficiently collaborate. This rule allows to check that all class names match a provided regular expression.
+sonar.issue.ignore.multicriteria.e15.ruleKey=c:ClassName
+sonar.issue.ignore.multicriteria.e15.resourceKey=**
 # 196 more comment lines need to be written to reach the minimum threshold of 25.0% comment density.
 # BUG: doesn't seem to match properly, even with * or so on instead of ++
 sonar.issue.ignore.multicriteria.e7.ruleKey=common-c++:InsufficientCommentDensity
@@ -178,8 +212,4 @@ EOF
 # Run the sonar-scanner analysis and submit to SonarQube server
 sonar-scanner -X > sonar.log
 
-# cleanup
-rm -rf doc
-cd ..
-tar cfz ${basename}.build.tar.gz $basename
-rm -rf $basename
+exit 0

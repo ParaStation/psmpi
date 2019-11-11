@@ -1,8 +1,14 @@
 #!/bin/sh
 #
-# Copyright © 2012-2017 Inria.  All rights reserved.
+# Copyright © 2012-2018 Inria.  All rights reserved.
 # See COPYING in top-level directory.
 #
+
+echo "############################"
+echo "Running on:"
+uname -a
+echo "Options: $0"
+echo "############################"
 
 set -e
 set -x
@@ -44,6 +50,8 @@ while test $# -gt 0; do
     echo "  --no-install  Don't install"
     echo "  --help        Show this help"
     exit 0
+  else
+    break
   fi fi fi fi fi fi fi fi fi
   shift
 done
@@ -51,14 +59,16 @@ done
 oldPWD=$PWD
 oldPATH=$PATH
 
-if test x$dotar = x1; then
-  # remove everything but the last 10 builds
-  rm -rf $(ls | grep -v ^hwloc- | grep -v ^job-) || true
-  chmod u+w -R $(ls -td hwloc-* | tail -n +11) || true
-  rm -rf $(ls -td hwloc-* | tail -n +11) || true
+# remove previous artifacts so that they don't exported again by this build
+rm -f hwloc-win*-build-*.zip || true
 
-  # find the tarball and extract it
-  tarball=$(ls -tr hwloc-*.tar.gz | tail -1)
+if test x$dotar = x1; then
+  # extract the tarball
+  tarball="$1"
+  if ! test -f "$tarball"; then
+    echo "Invalid tarball parameter."
+    exit 0
+  fi
   basename=$(basename $tarball .tar.gz)
   version=$(echo $basename | cut -d- -f2-)
   test -d $basename && chmod -R u+rwX $basename && rm -rf $basename
@@ -80,7 +90,7 @@ if test x$dobuild32 = x1; then
   cd $oldPWD
 
   # for MS 'lib' program in dolib.c
-  export PATH=$PATH:"/c/Program Files (x86)/Microsoft Visual Studio 11.0/VC/bin":"/c/Program Files (x86)/Microsoft Visual Studio 11.0/Common7/IDE"
+  export PATH=$PATH:$MSLIB_PATH
 
   mkdir ${basename}/build32 || true
   cd ${basename}/build32
@@ -128,7 +138,7 @@ if test x$dobuild64 = x1; then
   cd $oldPWD
 
   # for MS 'lib' program in dolib.c
-  export PATH=$PATH:"/c/Program Files (x86)/Microsoft Visual Studio 11.0/VC/bin":"/c/Program Files (x86)/Microsoft Visual Studio 11.0/Common7/IDE"
+  export PATH=$PATH:$MSLIB_PATH
 
   mkdir ${basename}/build64 || true
   cd ${basename}/build64
@@ -167,3 +177,5 @@ if test x$dobuild64 = x1; then
 fi
 
 PATH=$oldPATH
+
+exit 0

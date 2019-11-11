@@ -363,9 +363,8 @@ place_children(struct lstopo_output *loutput, hwloc_obj_t parent,
     return;
 
 
-  /* no separator between core or L1 children */
-  if (parent->type == HWLOC_OBJ_CORE
-      || (hwloc_obj_type_is_cache(parent->type) && parent->attr->cache.depth == 1))
+  /* no separator between PUs */
+  if ((unsigned)parent->depth == loutput->depth-2)
     separator = 0;
 
   /* place non-memory children */
@@ -559,7 +558,11 @@ lstopo__prepare_custom_styles(struct lstopo_output *loutput, hwloc_obj_t obj)
 	s->bg.b = forceb & 255;
 	lud->style_set |= LSTOPO_STYLE_BG;
 	loutput->methods->declare_color(loutput, &s->bg);
-	s->t.r = s->t.g = s->t.b = (s->bg.r + s->bg.g + s->bg.b < 0xff) ? 0xff : 0;
+	/* if there's no style for text, make sure it's not dark over dark bg */
+	if (!(lud->style_set & LSTOPO_STYLE_T)) {
+	  s->t.r = s->t.g = s->t.b = (s->bg.r + s->bg.g + s->bg.b < 0xff) ? 0xff : 0;
+	  lud->style_set |= LSTOPO_STYLE_T;
+	}
       } else if (sscanf(stylestr, "Text=#%02x%02x%02x", &forcer, &forceg, &forceb) == 3) {
 	s->t.r = forcer & 255;
 	s->t.g = forceg & 255;
@@ -1097,7 +1100,7 @@ output_draw(struct lstopo_output *loutput)
   time_t t;
   char text[3][128];
   unsigned ntext = 0;
-  char hostname[128] = "";
+  char hostname[122] = "";
   const char *forcedhostname = NULL;
   unsigned long hostname_size = sizeof(hostname);
   unsigned maxtextwidth = 0, textwidth;

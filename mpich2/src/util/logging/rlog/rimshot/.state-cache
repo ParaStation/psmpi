@@ -1,55 +1,55 @@
 <dir>
-<file name="rimshot_draw.cpp" info="1548173887"/>
-<file name="OffsetDlg.h" info="1548173887"/>
-<file name="rimshotDoc.cpp" info="1548173887"/>
-<file name="rimshotView.cpp" info="1548173887"/>
-<file name="ZoomDlg.h" info="1548173887"/>
-<file name="rimshot.h" info="1548173887"/>
-<file name="rimshotDoc.h" info="1548173887"/>
-<file name="OffsetDlg.cpp" info="1548173887"/>
-<file name="StdAfx.cpp" info="1548173887"/>
-<file name="rimshotView.h" info="1548173887"/>
-<file name="ZoomDlg.cpp" info="1548173887"/>
-<file name="MainFrm.cpp" info="1548173887"/>
-<file name="resource.h" info="1548173887"/>
-<file name="StdAfx.h" info="1548173887"/>
-<file name="rimshot_draw.h" info="1548173887"/>
-<file name="MainFrm.h" info="1548173887"/>
-<file name="rimshot.cpp" info="1548173887"/>
+<file name="OffsetDlg.cpp" info="1559764267"/>
+<file name="StdAfx.cpp" info="1559764267"/>
+<file name="rimshot.h" info="1559764267"/>
+<file name="rimshotDoc.h" info="1559764267"/>
+<file name="ZoomDlg.h" info="1559764267"/>
+<file name="StdAfx.h" info="1559764267"/>
+<file name="resource.h" info="1559764267"/>
+<file name="MainFrm.cpp" info="1559764267"/>
+<file name="ZoomDlg.cpp" info="1559764267"/>
+<file name="rimshotDoc.cpp" info="1559764267"/>
+<file name="rimshot_draw.h" info="1559764267"/>
+<file name="MainFrm.h" info="1559764267"/>
+<file name="rimshotView.cpp" info="1559764267"/>
+<file name="rimshot_draw.cpp" info="1559764267"/>
+<file name="rimshot.cpp" info="1559764267"/>
+<file name="rimshotView.h" info="1559764267"/>
+<file name="OffsetDlg.h" info="1559764267"/>
 </dir>
 <data>
-<fileinfo name="rimshot_draw.cpp">
+<fileinfo name="OffsetDlg.cpp">
 </fileinfo>
-<fileinfo name="OffsetDlg.h">
-</fileinfo>
-<fileinfo name="rimshotDoc.cpp">
-</fileinfo>
-<fileinfo name="rimshotView.cpp">
-</fileinfo>
-<fileinfo name="ZoomDlg.h">
+<fileinfo name="StdAfx.cpp">
 </fileinfo>
 <fileinfo name="rimshot.h">
 </fileinfo>
 <fileinfo name="rimshotDoc.h">
 </fileinfo>
-<fileinfo name="OffsetDlg.cpp">
+<fileinfo name="ZoomDlg.h">
 </fileinfo>
-<fileinfo name="StdAfx.cpp">
-</fileinfo>
-<fileinfo name="rimshotView.h">
-</fileinfo>
-<fileinfo name="ZoomDlg.cpp">
-</fileinfo>
-<fileinfo name="MainFrm.cpp">
+<fileinfo name="StdAfx.h">
 </fileinfo>
 <fileinfo name="resource.h">
 </fileinfo>
-<fileinfo name="StdAfx.h">
+<fileinfo name="MainFrm.cpp">
+</fileinfo>
+<fileinfo name="ZoomDlg.cpp">
+</fileinfo>
+<fileinfo name="rimshotDoc.cpp">
 </fileinfo>
 <fileinfo name="rimshot_draw.h">
 </fileinfo>
 <fileinfo name="MainFrm.h">
 </fileinfo>
+<fileinfo name="rimshotView.cpp">
+</fileinfo>
+<fileinfo name="rimshot_draw.cpp">
+</fileinfo>
 <fileinfo name="rimshot.cpp">
+</fileinfo>
+<fileinfo name="rimshotView.h">
+</fileinfo>
+<fileinfo name="OffsetDlg.h">
 </fileinfo>
 </data>

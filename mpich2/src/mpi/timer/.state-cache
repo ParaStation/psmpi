@@ -1,12 +1,12 @@
 <dir>
-<file name="wtick.c" info="1548173886"/>
-<file name="wtime.c" info="1548173886"/>
+<file name="wtime.c" info="1559764267"/>
+<file name="wtick.c" info="1559764267"/>
 </dir>
 <data>
-<fileinfo name="wtick.c">
-MPID_STATE_MPI_WTICK MPI_Wtick
-</fileinfo>
 <fileinfo name="wtime.c">
 MPID_STATE_MPI_WTIME MPI_Wtime
+</fileinfo>
+<fileinfo name="wtick.c">
+MPID_STATE_MPI_WTICK MPI_Wtick
 </fileinfo>
 </data>
