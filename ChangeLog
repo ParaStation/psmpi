@@ -1,3 +1,12 @@
+2019-09-06  Simon Pickartz <pickartz@par-tec.com> -	5.4.0-1
+
+	* Enhancement: Add optional CUDA awareness as an additional confset.
+	  This relies on the CUDA awareness by the pscom (available since
+	  pscom version 5.3.1-1). Furthermore, collective and one-sided
+	  operations support the usage of device buffers for communication.
+
+	* Documentation: Add a README.md file to the top-level directory
+
 2019-04-18  Jens Hauke  <hauke@par-tec.com>	-	5.3.0-1
 
 	* MPICH 3.3
