@@ -1,3 +1,24 @@
+2019-11-12  Simon Pickartz <pickartz@par-tec.com> -	5.4.1-1
+
+	* MPICH 3.3.1
+
+2019-11-06  Carsten Clauss <clauss@par-tec.com>
+
+	* Enhancement: Provide HCOLL support via --with-hcoll configure
+	  option (Currently, only supported for the ch3 device).
+
+2019-10-15  Simon Pickartz <pickartz@par-tec.com>
+
+	* Enhancement: Provide CUDA awareness via --with-cuda configure
+	  option. Now, CUDA awareness can be compiled with different
+	  confsets, i.e, different compilers.
+
+	* Fix: MPI_Comm_spawn() could fail due to the handling of singleton
+	  processes. Now, singletons (with and without process manager) are
+	  supported without interfering with MPI_Comm_spawn().
+
+	* Fix: The pgi confset now uses the correct C++ compiler (pgc++)
+
 2019-09-06  Simon Pickartz <pickartz@par-tec.com> -	5.4.0-1
 
 	* Enhancement: Add optional CUDA awareness as an additional confset.
@@ -53,7 +74,7 @@
 	as configure option for including all pscom source code files
 	into psmpi during the build process
 
-	* Enhancement: Add --with-profile=[gen|use] as configure option 
+	* Enhancement: Add --with-profile=[gen|use] as configure option
 	for applying "profile-guided" (aka "feed-back directed") optimizations
 
 2017-08-04  Carsten Clauss <clauss@par-tec.com>	-	5.2.0-1
