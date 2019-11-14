@@ -6,10 +6,10 @@ exec_prefix="@exec_prefix@"
 libdir="@libdir@"
 bindir="@bindir@"
 
-CONFSET="@CONFSET@"
+CUDA_SUPPORT="@CUDA_SUPPORT@"
 CUDA_HOME="@CUDA_HOME@"
 
-if [ "$CONFSET" == "cuda" -o "$CONFSET" == "cuda-devel" ] ; then
+if [ "x$CUDA_SUPPORT" == "xtrue" ] ; then
 	if [ -n "$CUDA_HOME" ] ; then
 		cat > "$sysconfdir/mpicc-cuda.conf" << EOF
 PROFILE_INCPATHS="$PROFILE_INCPATHS -I$CUDA_HOME/include"

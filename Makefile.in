@@ -13,6 +13,7 @@
 SRCDIR := $(shell cd @srcdir@;pwd)
 TOP_BUILDDIR:=@TOP_BUILDDIR@
 CONFSET:=@CONFSET@
+CUDA_SUPPORT:=@CUDA_SUPPORT@
 export TOP_SRCDIR = $(SRCDIR)
 export CONFIGARGS:=@CONFIGARGS@
 exec_prefix=@exec_prefix@
@@ -31,7 +32,7 @@ ifneq ($(CONFSET),none)
 SUBDIRS += mpich2
 all: mpich2_all
 
-ifeq ($(findstring cuda,$(CONFSET)),cuda)
+ifeq ($(CUDA_SUPPORT),true)
 CUDA_TESTS = --enable-cuda
 endif
 
