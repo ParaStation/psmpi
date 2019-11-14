@@ -1,14 +1,14 @@
-.TH MPI_Type_get_contents 3 "6/5/2019" " " "MPI"
+.TH MPI_Type_get_contents 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Type_get_contents \-  get type contents 
 .SH SYNOPSIS
 .nf
 int MPI_Type_get_contents(MPI_Datatype datatype,
-                          int max_integers,
-                          int max_addresses,
-                          int max_datatypes,
-                          int array_of_integers[],
-                          MPI_Aint array_of_addresses[], MPI_Datatype array_of_datatypes[])
+int max_integers,
+int max_addresses,
+int max_datatypes,
+int array_of_integers[],
+MPI_Aint array_of_addresses[], MPI_Datatype array_of_datatypes[])
 .fi
 .SH INPUT PARAMETERS
 .PD 0

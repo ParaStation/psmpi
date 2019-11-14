@@ -1,11 +1,11 @@
-.TH MPI_Igather 3 "6/5/2019" " " "MPI"
+.TH MPI_Igather 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Igather \-  Gathers together values from a group of processes in a nonblocking way 
 .SH SYNOPSIS
 .nf
 int MPI_Igather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
-                void *recvbuf, int recvcount, MPI_Datatype recvtype,
-                int root, MPI_Comm comm, MPI_Request * request)
+void *recvbuf, int recvcount, MPI_Datatype recvtype,
+int root, MPI_Comm comm, MPI_Request * request)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

@@ -1820,7 +1820,7 @@ if test "$with_cross" != "no" ; then
 	rm -f confcross
 	(set) 2>&1 | grep CROSS_ | \
 	      sed -e 's/^/export /g' -e 's/=.*//g' > confcross
-	. confcross
+	. ./confcross
 	rm -f confcross      
     fi
 fi
@@ -4724,7 +4724,7 @@ AC_SUBST([MPI_F77_CXX_LONG_DOUBLE_COMPLEX])
 # does not help, since only the latest type_tag definition is used. Type tags are defined in mpi.h,
 # therefore, they must be also be activated/deavtivated there
 PAC_PUSH_FLAG([CFLAGS])
-PAC_APPEND_FLAG([-Werror],[CFLAGS])
+PAC_C_CHECK_COMPILER_OPTION([-Werror],[CFLAGS="$CFLAGS -Werror"])
 AC_TRY_COMPILE([
 typedef int TEST_Datatype;
 #define TEST_INT ((TEST_Datatype)0x44)

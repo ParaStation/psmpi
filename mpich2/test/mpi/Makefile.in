@@ -435,7 +435,7 @@ DIST_SUBDIRS = $(static_subdirs) io $(all_lang_subdirs) threads spawn .
 SUBDIRS = $(static_subdirs) $(iodir) $(otherlangs) $(threadsdir) $(spawndir) $(ckpointdir) $(ftdir) .
 EXTRA_DIST = maint/common.defn maint/f77tof90 maint/testmerge.in maint/updatefiles testlist.in
 DISTCLEANFILES = config.system
-noinst_HEADERS = include/mpitest.h include/mpitestcxx.h include/mpithreadtest.h include/dtypes.h rma/squelch.h errors/rma/win_sync.h
+noinst_HEADERS = include/mpitest.h include/mpicolltest.h include/mpitestcxx.h include/mpithreadtest.h include/dtypes.h rma/squelch.h errors/rma/win_sync.h
 nodist_noinst_HEADERS = include/mpitestconf.h
 all: all-recursive
 

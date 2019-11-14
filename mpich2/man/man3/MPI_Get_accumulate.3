@@ -1,12 +1,12 @@
-.TH MPI_Get_accumulate 3 "6/5/2019" " " "MPI"
+.TH MPI_Get_accumulate 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Get_accumulate \-  Perform an atomic, one-sided read-and-accumulate operation. 
 .SH SYNOPSIS
 .nf
 int MPI_Get_accumulate(const void *origin_addr, int origin_count,
-                       MPI_Datatype origin_datatype, void *result_addr, int result_count,
-                       MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
-                       int target_count, MPI_Datatype target_datatype, MPI_Op op, MPI_Win win)
+MPI_Datatype origin_datatype, void *result_addr, int result_count,
+MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
+int target_count, MPI_Datatype target_datatype, MPI_Op op, MPI_Win win)
 .fi
 
 Accumulate origin_count elements of type origin_datatype from the origin buffer

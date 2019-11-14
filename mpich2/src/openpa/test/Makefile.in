@@ -97,8 +97,7 @@ TESTS = sanity$(EXEEXT) test_primitives$(EXEEXT) \
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/confdb/ax_prefix_config_h.m4 \
-	$(top_srcdir)/confdb/libtool.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/confdb/libtool.m4 \
 	$(top_srcdir)/confdb/ltoptions.m4 \
 	$(top_srcdir)/confdb/ltsugar.m4 \
 	$(top_srcdir)/confdb/ltversion.m4 \

@@ -296,7 +296,7 @@ MPII_Comm_copy_attr_f77_proxy(
     MPI_Aint fnew = 0;
     MPI_Fint fflag = 0;
 
-    ((F77_CopyFunction*)user_function)( &fhandle, &fkeyval, fextra, &fvalue, &fnew, &fflag, &ierr );
+    ((F77_CopyFunction*)(void*)user_function)( &fhandle, &fkeyval, fextra, &fvalue, &fnew, &fflag, &ierr );
 
     *flag = MPII_FROM_FLOG(fflag);
     *new_value = MPIR_AINT_CAST_TO_VOID_PTR ((MPI_Aint) fnew);
@@ -325,7 +325,7 @@ MPIR_Comm_delete_attr_f77_proxy(
     MPI_Aint fvalue = MPIR_VOID_PTR_CAST_TO_MPI_AINT (value);
     MPI_Aint *fextra = (MPI_Aint *)extra_state;
 
-    ((F77_DeleteFunction*)user_function)( &fhandle, &fkeyval, &fvalue, fextra, &ierr );
+    ((F77_DeleteFunction*)(void*)user_function)( &fhandle, &fkeyval, &fvalue, fextra, &ierr );
     return (int)ierr;
 }
 

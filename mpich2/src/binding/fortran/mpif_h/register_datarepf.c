@@ -274,7 +274,11 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_register_datarep_( char * FORT_MIXED_LE
 #if defined(USE_WEAK_SYMBOLS)
 
 /* Add the prototype so the routine knows what this is */
-extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null_ ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr );
+extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null_ ( void *v1, MPI_Datatype v2, int v3, void *v4, MPI_Offset v5, void *v6 );
+
+extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null__ ( void *v1, MPI_Datatype v2, int v3, void *v4, MPI_Offset v5, void *v6 );
+extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null ( void *v1, MPI_Datatype v2, int v3, void *v4, MPI_Offset v5, void *v6 );
+extern FORT_DLL_SPEC int FORT_CALL MPI_CONVERSION_FN_NULL ( void *v1, MPI_Datatype v2, int v3, void *v4, MPI_Offset v5, void *v6 );
 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && !defined(MPICH_MPI_FROM_PMPI) /* If support multiple #pragma weak */
 #pragma weak mpi_conversion_fn_null__ = mpi_conversion_fn_null_
@@ -309,17 +313,17 @@ extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null_ ( void*v1, MPI_Fint*v
 #endif
 
 #elif defined(HAVE_WEAK_ATTRIBUTE) /* If support weak attribute */
-extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null__ ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr )
+extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null__ ( void *v1, MPI_Datatype v2, int v3, void *v4, MPI_Offset v5, void *v6 )
 #ifndef MPICH_MPI_FROM_PMPI
 __attribute__((weak,alias("mpi_conversion_fn_null_")))
 #endif
 ;
-extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr )
+extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null ( void *v1, MPI_Datatype v2, int v3, void *v4, MPI_Offset v5, void *v6 )
 #ifndef MPICH_MPI_FROM_PMPI
 __attribute__((weak,alias("mpi_conversion_fn_null_")))
 #endif
 ;
-extern FORT_DLL_SPEC int FORT_CALL MPI_CONVERSION_FN_NULL ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr )
+extern FORT_DLL_SPEC int FORT_CALL MPI_CONVERSION_FN_NULL ( void *v1, MPI_Datatype v2, int v3, void *v4, MPI_Offset v5, void *v6 )
 #ifndef MPICH_MPI_FROM_PMPI
 __attribute__((weak,alias("mpi_conversion_fn_null_")))
 #endif
@@ -338,12 +342,12 @@ __attribute__((weak,alias("mpi_conversion_fn_null_")))
 #endif /* End of test on name mapping without weak symbol support */
 
 /* Add the prototype so the routine knows what this is */
-extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null_ ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr );
+extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null_ ( void *v1, MPI_Datatype v2, int v3, void *v4, MPI_Offset v5, void *v6 );
 
 #endif
 
 /* This isn't a callable function */
-FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null_ ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr ) {
+FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null_ ( void *v1, MPI_Datatype v2, int v3, void *v4, MPI_Offset v5, void *v6 ) {
     return 0;
 }
 

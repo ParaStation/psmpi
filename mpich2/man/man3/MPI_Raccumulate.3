@@ -1,12 +1,12 @@
-.TH MPI_Raccumulate 3 "6/5/2019" " " "MPI"
+.TH MPI_Raccumulate 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Raccumulate \-  Accumulate data into the target process using remote memory access and return a request handle for the operation. 
 .SH SYNOPSIS
 .nf
 int MPI_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype
-                    origin_datatype, int target_rank, MPI_Aint
-                    target_disp, int target_count, MPI_Datatype
-                    target_datatype, MPI_Op op, MPI_Win win, MPI_Request * request)
+origin_datatype, int target_rank, MPI_Aint
+target_disp, int target_count, MPI_Datatype
+target_datatype, MPI_Op op, MPI_Win win, MPI_Request * request)
 .fi
 
 .I MPI_Raccumulate

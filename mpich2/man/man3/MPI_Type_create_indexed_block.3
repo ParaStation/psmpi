@@ -1,12 +1,12 @@
-.TH MPI_Type_create_indexed_block 3 "6/5/2019" " " "MPI"
+.TH MPI_Type_create_indexed_block 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Type_create_indexed_block \-  Create an indexed datatype with constant-sized blocks 
 .SH SYNOPSIS
 .nf
 int MPI_Type_create_indexed_block(int count,
-                                  int blocklength,
-                                  const int array_of_displacements[],
-                                  MPI_Datatype oldtype, MPI_Datatype * newtype)
+int blocklength,
+const int array_of_displacements[],
+MPI_Datatype oldtype, MPI_Datatype * newtype)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

@@ -1,4 +1,4 @@
-.TH MPI_File_iwrite_shared 3 "6/5/2019" " " "MPI"
+.TH MPI_File_iwrite_shared 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_File_iwrite_shared \-  Nonblocking write using shared file pointer 
 .SH SYNOPSIS
@@ -6,9 +6,8 @@ MPI_File_iwrite_shared \-  Nonblocking write using shared file pointer
 #ifdef HAVE_MPI_GREQUEST
 #include "mpiu_greq.h"
 #endif
-
 int MPI_File_iwrite_shared(MPI_File fh, ROMIO_CONST void *buf, int count,
-                           MPI_Datatype datatype, MPIO_Request * request)
+MPI_Datatype datatype, MPIO_Request * request)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

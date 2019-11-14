@@ -1,12 +1,12 @@
-.TH MPI_Ialltoallw 3 "6/5/2019" " " "MPI"
+.TH MPI_Ialltoallw 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Ialltoallw \-  Nonblocking generalized all-to-all communication allowing different datatypes, counts, and displacements for each partner 
 .SH SYNOPSIS
 .nf
 int MPI_Ialltoallw(const void *sendbuf, const int sendcounts[], const int sdispls[],
-                   const MPI_Datatype sendtypes[], void *recvbuf, const int recvcounts[],
-                   const int rdispls[], const MPI_Datatype recvtypes[], MPI_Comm comm,
-                   MPI_Request * request)
+const MPI_Datatype sendtypes[], void *recvbuf, const int recvcounts[],
+const int rdispls[], const MPI_Datatype recvtypes[], MPI_Comm comm,
+MPI_Request * request)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

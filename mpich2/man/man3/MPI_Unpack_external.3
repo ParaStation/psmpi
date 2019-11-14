@@ -1,12 +1,12 @@
-.TH MPI_Unpack_external 3 "6/5/2019" " " "MPI"
+.TH MPI_Unpack_external 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Unpack_external \-  Unpack a buffer (packed with MPI_Pack_external) according to a datatype into contiguous memory 
 .SH SYNOPSIS
 .nf
 int MPI_Unpack_external(const char datarep[],
-                        const void *inbuf,
-                        MPI_Aint insize,
-                        MPI_Aint * position, void *outbuf, int outcount, MPI_Datatype datatype)
+const void *inbuf,
+MPI_Aint insize,
+MPI_Aint * position, void *outbuf, int outcount, MPI_Datatype datatype)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

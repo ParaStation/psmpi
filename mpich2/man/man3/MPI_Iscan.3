@@ -1,10 +1,10 @@
-.TH MPI_Iscan 3 "6/5/2019" " " "MPI"
+.TH MPI_Iscan 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Iscan \-  Computes the scan (partial reductions) of data on a collection of processes in a nonblocking way 
 .SH SYNOPSIS
 .nf
 int MPI_Iscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
-              MPI_Op op, MPI_Comm comm, MPI_Request * request)
+MPI_Op op, MPI_Comm comm, MPI_Request * request)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

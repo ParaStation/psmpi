@@ -5,7 +5,7 @@
 <TITLE>MPIR_Type_vector</TITLE>
 </HEAD>
 <BODY BGCOLOR="FFFFFF">
-<A NAME="MPIR_Type_vector"><H1>MPIR_Type_vector</H1></A>
+<H1 id="MPIR_Type_vector">MPIR_Type_vector</H1>
 create a vector datatype 
 <H2>Synopsis</H2>
 <PRE>
@@ -16,21 +16,22 @@ int MPIR_Type_vector(int count,
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>count </B><DD>number of blocks in vector
+<DT><B>count </B> <DD> number of blocks in vector
 
-<DT><B>blocklength </B><DD>number of elements in each block
+<DT><B>blocklength </B> <DD> number of elements in each block
 
-<DT><B>stride </B><DD>distance from beginning of one block to the next (see next
+<DT><B>stride </B> <DD> distance from beginning of one block to the next (see next
 parameter for units)
 
-<DT><B>strideinbytes </B><DD>if nonzero, then stride is in bytes, otherwise stride
+<DT><B>strideinbytes </B> <DD> if nonzero, then stride is in bytes, otherwise stride
 is in terms of extent of oldtype
 
-<DT><B>oldtype </B><DD>type (using handle) of datatype on which vector is based
+<DT><B>oldtype </B> <DD> type (using handle) of datatype on which vector is based
 </DL>
 <P>
 <H2>Output Parameters</H2>
-<DL><DT><B>newtype </B> <DD> handle of new vector datatype
+<DL>
+<DT><B>newtype </B> <DD> handle of new vector datatype
 </DL>
 <P>
 <H2>Return Value</H2>

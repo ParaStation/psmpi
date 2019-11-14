@@ -1,11 +1,11 @@
-.TH MPI_Neighbor_alltoallv 3 "6/5/2019" " " "MPI"
+.TH MPI_Neighbor_alltoallv 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Neighbor_alltoallv \-  The vector variant of MPI_Neighbor_alltoall allows sending/receiving different numbers of elements to and from each neighbor. 
 .SH SYNOPSIS
 .nf
 int MPI_Neighbor_alltoallv(const void *sendbuf, const int sendcounts[], const int sdispls[],
-                           MPI_Datatype sendtype, void *recvbuf, const int recvcounts[],
-                           const int rdispls[], MPI_Datatype recvtype, MPI_Comm comm)
+MPI_Datatype sendtype, void *recvbuf, const int recvcounts[],
+const int rdispls[], MPI_Datatype recvtype, MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

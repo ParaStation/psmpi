@@ -1,12 +1,12 @@
-.TH MPI_Comm_spawn_multiple 3 "6/5/2019" " " "MPI"
+.TH MPI_Comm_spawn_multiple 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Comm_spawn_multiple \-  short description 
 .SH SYNOPSIS
 .nf
 int MPI_Comm_spawn_multiple(int count, char *array_of_commands[],
-                            char **array_of_argv[], const int array_of_maxprocs[],
-                            const MPI_Info array_of_info[], int root, MPI_Comm comm,
-                            MPI_Comm * intercomm, int array_of_errcodes[])
+char **array_of_argv[], const int array_of_maxprocs[],
+const MPI_Info array_of_info[], int root, MPI_Comm comm,
+MPI_Comm * intercomm, int array_of_errcodes[])
 .fi
 .SH INPUT PARAMETERS
 .PD 0

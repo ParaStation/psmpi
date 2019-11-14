@@ -1,10 +1,10 @@
-.TH MPI_Irecv 3 "6/5/2019" " " "MPI"
+.TH MPI_Irecv 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Irecv \-  Begins a nonblocking receive 
 .SH SYNOPSIS
 .nf
 int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
-              int tag, MPI_Comm comm, MPI_Request * request)
+int tag, MPI_Comm comm, MPI_Request * request)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

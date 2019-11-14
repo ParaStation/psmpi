@@ -12355,7 +12355,7 @@ ac_config_headers="$ac_config_headers src/config.h"
 
 
 
-ac_config_commands="$ac_config_commands src/opa_config.h"
+ac_config_commands="$ac_config_commands prefix-config"
 
 
 # Non-verbose make
@@ -15736,7 +15736,6 @@ fi
 
 
 
-PACKAGE="$PACKAGE"
 
 _ACEOF
 
@@ -15749,7 +15748,7 @@ do
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
     "src/config.h") CONFIG_HEADERS="$CONFIG_HEADERS src/config.h" ;;
-    "src/opa_config.h") CONFIG_COMMANDS="$CONFIG_COMMANDS src/opa_config.h" ;;
+    "prefix-config") CONFIG_COMMANDS="$CONFIG_COMMANDS prefix-config" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
@@ -16985,100 +16984,7 @@ ltmain=$ac_aux_dir/ltmain.sh
   chmod +x "$ofile"
 
  ;;
-    "src/opa_config.h":C) ac_prefix_conf_OUT=`echo src/opa_config.h`
-ac_prefix_conf_DEF=`echo _$ac_prefix_conf_OUT | sed -e "y:abcdefghijklmnopqrstuvwxyz:ABCDEFGHIJKLMNOPQRSTUVWXYZ:" -e "s/[^abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g"`
-ac_prefix_conf_PKG=`echo OPA`
-ac_prefix_conf_LOW=`echo _$ac_prefix_conf_PKG | sed -e "y:ABCDEFGHIJKLMNOPQRSTUVWXYZ-:abcdefghijklmnopqrstuvwxyz_:"`
-ac_prefix_conf_UPP=`echo $ac_prefix_conf_PKG | sed -e "y:abcdefghijklmnopqrstuvwxyz-:ABCDEFGHIJKLMNOPQRSTUVWXYZ_:"  -e "/^[0123456789]/s/^/_/"`
-ac_prefix_conf_INP=`echo "" | sed -e 's/ *//'`
-if test ".$ac_prefix_conf_INP" = "."; then
-   for ac_file in : $CONFIG_HEADERS; do test "_$ac_file" = _: && continue
-     case "$ac_file" in
-        *.h) ac_prefix_conf_INP=$ac_file ;;
-        *)
-     esac
-     test ".$ac_prefix_conf_INP" != "." && break
-   done
-fi
-if test ".$ac_prefix_conf_INP" = "."; then
-   case "$ac_prefix_conf_OUT" in
-      */*) ac_prefix_conf_INP=`basename "$ac_prefix_conf_OUT"`
-      ;;
-      *-*) ac_prefix_conf_INP=`echo "$ac_prefix_conf_OUT" | sed -e "s/[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*-//"`
-      ;;
-      *) ac_prefix_conf_INP=config.h
-      ;;
-   esac
-fi
-if test -z "$ac_prefix_conf_PKG" ; then
-   as_fn_error $? "no prefix for _PREFIX_PKG_CONFIG_H" "$LINENO" 5
-else
-  if test ! -f "$ac_prefix_conf_INP" ; then if test -f "$srcdir/$ac_prefix_conf_INP" ; then
-     ac_prefix_conf_INP="$srcdir/$ac_prefix_conf_INP"
-  fi fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: creating $ac_prefix_conf_OUT - prefix $ac_prefix_conf_UPP for $ac_prefix_conf_INP defines" >&5
-$as_echo "$as_me: creating $ac_prefix_conf_OUT - prefix $ac_prefix_conf_UPP for $ac_prefix_conf_INP defines" >&6;}
-  # ANL modification: the original version of the following "echo" commands
-  # caused problems under dash because its echo interprets an arg of |\1| as an
-  # a request to print the character with a numeric value of 0x01, or ^A.
-  # Switching to AS_ECHO fixes the problem for both dash and other shells.
-  if test -f $ac_prefix_conf_INP ; then
-    $as_echo "s/^#undef  *\\([ABCDEFGHIJKLMNOPQRSTUVWXYZ_]\\)/#undef $ac_prefix_conf_UPP""_\\1/" > conftest.prefix
-    $as_echo "s/^#undef  *\\([abcdefghijklmnopqrstuvwxyz]\\)/#undef $ac_prefix_conf_LOW""_\\1/" >> conftest.prefix
-    $as_echo "s/^#define  *\\([ABCDEFGHIJKLMNOPQRSTUVWXYZ_][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*\\)\\(.*\\)/#ifndef $ac_prefix_conf_UPP""_\\1 \\" >> conftest.prefix
-    $as_echo "#define $ac_prefix_conf_UPP""_\\1 \\2 \\" >> conftest.prefix
-    $as_echo "#endif/" >>conftest.prefix
-    $as_echo "s/^#define  *\\([abcdefghijklmnopqrstuvwxyz][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*\\)\\(.*\\)/#ifndef $ac_prefix_conf_LOW""_\\1 \\" >> conftest.prefix
-    $as_echo "#define $ac_prefix_conf_LOW""_\\1 \\2 \\" >> conftest.prefix
-    $as_echo "#endif/" >> conftest.prefix
-    # now executing _script on _DEF input to create _OUT output file
-    $as_echo "#ifndef $ac_prefix_conf_DEF"      >$tmp/pconfig.h
-    $as_echo "#define $ac_prefix_conf_DEF 1" >>$tmp/pconfig.h
-    $as_echo ' ' >>$tmp/pconfig.h
-    $as_echo "/* $ac_prefix_conf_OUT. Generated automatically at end of configure. */" >>$tmp/pconfig.h
-
-    sed -f conftest.prefix $ac_prefix_conf_INP >>$tmp/pconfig.h
-    echo ' ' >>$tmp/pconfig.h
-    echo '/* once:' $ac_prefix_conf_DEF '*/' >>$tmp/pconfig.h
-    echo "#endif" >>$tmp/pconfig.h
-    if cmp -s $ac_prefix_conf_OUT $tmp/pconfig.h 2>/dev/null; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: $ac_prefix_conf_OUT is unchanged" >&5
-$as_echo "$as_me: $ac_prefix_conf_OUT is unchanged" >&6;}
-    else
-      ac_dir=`$as_dirname -- "$ac_prefix_conf_OUT" ||
-$as_expr X"$ac_prefix_conf_OUT" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
-	 X"$ac_prefix_conf_OUT" : 'X\(//\)[^/]' \| \
-	 X"$ac_prefix_conf_OUT" : 'X\(//\)$' \| \
-	 X"$ac_prefix_conf_OUT" : 'X\(/\)' \| . 2>/dev/null ||
-$as_echo X"$ac_prefix_conf_OUT" |
-    sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{
-	    s//\1/
-	    q
-	  }
-	  /^X\(\/\/\)[^/].*/{
-	    s//\1/
-	    q
-	  }
-	  /^X\(\/\/\)$/{
-	    s//\1/
-	    q
-	  }
-	  /^X\(\/\).*/{
-	    s//\1/
-	    q
-	  }
-	  s/.*/./; q'`
-      as_dir="$ac_dir"; as_fn_mkdir_p
-      rm -f "$ac_prefix_conf_OUT"
-      mv $tmp/pconfig.h "$ac_prefix_conf_OUT"
-    fi
-    cp conftest.prefix _configs.sed
-  else
-    as_fn_error $? "input file $ac_prefix_conf_INP does not exist - skip generating $ac_prefix_conf_OUT" "$LINENO" 5
-  fi
-  rm -f conftest.*
-fi
- ;;
+    "prefix-config":C) perl $srcdir/confdb/cmd_prefix_config_h.pl OPA src/config.h src/opa_config.h ;;
 
   esac
 done # for ac_tag

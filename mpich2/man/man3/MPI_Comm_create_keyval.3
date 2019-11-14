@@ -1,11 +1,11 @@
-.TH MPI_Comm_create_keyval 3 "6/5/2019" " " "MPI"
+.TH MPI_Comm_create_keyval 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Comm_create_keyval \-  Create a new attribute key 
 .SH SYNOPSIS
 .nf
 int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function * comm_copy_attr_fn,
-                           MPI_Comm_delete_attr_function * comm_delete_attr_fn,
-                           int *comm_keyval, void *extra_state)
+MPI_Comm_delete_attr_function * comm_delete_attr_fn,
+int *comm_keyval, void *extra_state)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

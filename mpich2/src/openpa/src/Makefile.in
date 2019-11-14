@@ -96,8 +96,7 @@ build_triplet = @build@
 host_triplet = @host@
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/confdb/ax_prefix_config_h.m4 \
-	$(top_srcdir)/confdb/libtool.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/confdb/libtool.m4 \
 	$(top_srcdir)/confdb/ltoptions.m4 \
 	$(top_srcdir)/confdb/ltsugar.m4 \
 	$(top_srcdir)/confdb/ltversion.m4 \

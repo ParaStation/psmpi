@@ -1,11 +1,11 @@
-.TH MPI_Scatterv 3 "6/5/2019" " " "MPI"
+.TH MPI_Scatterv 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Scatterv \-  Scatters a buffer in parts to all processes in a communicator 
 .SH SYNOPSIS
 .nf
 int MPI_Scatterv(const void *sendbuf, const int *sendcounts, const int *displs,
-                 MPI_Datatype sendtype, void *recvbuf, int recvcount,
-                 MPI_Datatype recvtype, int root, MPI_Comm comm)
+MPI_Datatype sendtype, void *recvbuf, int recvcount,
+MPI_Datatype recvtype, int root, MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

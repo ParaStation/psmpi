@@ -32,7 +32,7 @@
       subroutine test_pair_irsend( comm, errs )
       use mpi
       integer comm, errs
-      integer rank, size, ierr, next, prev, tag, count, index, i
+      integer rank, size, ierr, next, prev, tag, count, index, completed, i
       integer TEST_SIZE
       integer dupcom
       parameter (TEST_SIZE=2000)
@@ -77,9 +77,10 @@
          call MPI_Irsend(send_buf, count, MPI_REAL, next, tag, &
       &                   comm, requests(2), ierr)
 !
-         index = -1
-         do while (index .ne. 1)
+         completed = 0
+         do while (completed .lt. 2)
             call MPI_Waitany(2, requests, index, statuses, ierr)
+            completed = completed + 1
          end do
 !
          call rq_check( requests(1), 1, 'irsend and irecv' )
