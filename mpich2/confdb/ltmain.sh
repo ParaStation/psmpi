@@ -7183,6 +7183,11 @@ func_mode_link ()
 	continue
 	;;
 
+      -static-intel)
+        func_append compiler_flags " $arg"
+        continue
+        ;;
+
       -thread-safe)
 	thread_safe=yes
 	continue

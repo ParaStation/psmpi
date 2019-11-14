@@ -4274,7 +4274,7 @@ fi
 
 
 if test x"${GITBIN}" == x"yes"; then :
-  SCM_VERSION=dca2317
+  SCM_VERSION=245d288
 
 
 else
