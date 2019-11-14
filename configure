@@ -627,6 +627,7 @@ PSCOM_LDFLAGS
 CUDA_HOME
 EXTRA_VERSION_INFO
 MODULEFILE
+CUDA_SUPPORT
 CONFSET
 ENABLE_TOPOLOGY_AWARENESS
 EGREP
@@ -3970,6 +3971,8 @@ if test "${with_cuda+set}" = set; then :
 		fi
 		CONF_OPS="$CONF_OPS PSP_CPPFLAGS='-DMPID_PSP_WITH_CUDA_AWARENESS'"
 		CONF_OPS="$CONF_OPS"
+	else
+		CUDA_SUPPORT="no"
 	fi
 
 fi
@@ -3998,6 +4001,7 @@ if test -n "$WITH_HCOLL_DIR" ; then
    esac
 fi
 sleep 1
+
 
 
 
