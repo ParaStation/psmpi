@@ -1,12 +1,12 @@
-.TH MPI_Accumulate 3 "6/5/2019" " " "MPI"
+.TH MPI_Accumulate 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Accumulate \-  Accumulate data into the target process using remote memory access 
 .SH SYNOPSIS
 .nf
 int MPI_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype
-                   origin_datatype, int target_rank, MPI_Aint
-                   target_disp, int target_count, MPI_Datatype
-                   target_datatype, MPI_Op op, MPI_Win win)
+origin_datatype, int target_rank, MPI_Aint
+target_disp, int target_count, MPI_Datatype
+target_datatype, MPI_Op op, MPI_Win win)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

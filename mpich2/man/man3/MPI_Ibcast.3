@@ -1,10 +1,10 @@
-.TH MPI_Ibcast 3 "6/5/2019" " " "MPI"
+.TH MPI_Ibcast 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Ibcast \-  Broadcasts a message from the process with rank "root" to all other processes of the communicator in a nonblocking way 
 .SH SYNOPSIS
 .nf
 int MPI_Ibcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm,
-               MPI_Request * request)
+MPI_Request * request)
 .fi
 .SH INPUT/OUTPUT PARAMETERS
 .PD 0

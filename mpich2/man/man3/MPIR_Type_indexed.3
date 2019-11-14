@@ -1,12 +1,12 @@
-.TH MPIR_Type_indexed 3 "6/5/2019" " " "MPI"
+.TH MPIR_Type_indexed 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPIR_Type_indexed \-  create an indexed datatype 
 .SH SYNOPSIS
 .nf
 int MPIR_Type_indexed(int count,
-                      const int *blocklength_array,
-                      const void *displacement_array,
-                      int dispinbytes, MPI_Datatype oldtype, MPI_Datatype * newtype)
+const int *blocklength_array,
+const void *displacement_array,
+int dispinbytes, MPI_Datatype oldtype, MPI_Datatype * newtype)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

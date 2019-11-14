@@ -1,12 +1,12 @@
-.TH MPIR_Type_vector 3 "6/5/2019" " " "MPI"
+.TH MPIR_Type_vector 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPIR_Type_vector \-  create a vector datatype 
 .SH SYNOPSIS
 .nf
 int MPIR_Type_vector(int count,
-                     int blocklength,
-                     MPI_Aint stride,
-                     int strideinbytes, MPI_Datatype oldtype, MPI_Datatype * newtype)
+int blocklength,
+MPI_Aint stride,
+int strideinbytes, MPI_Datatype oldtype, MPI_Datatype * newtype)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

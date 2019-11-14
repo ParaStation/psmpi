@@ -8631,6 +8631,12 @@ lt_prog_compiler_static=
 	lt_prog_compiler_pic='-KPIC'
 	lt_prog_compiler_static='-static'
         ;;
+      # flang / f18
+      flang* | f18*)
+       lt_prog_compiler_wl='-Wl,'
+       lt_prog_compiler_pic='-fPIC'
+       lt_prog_compiler_static='-static'
+        ;;
       # icc used to be incompatible with GCC.
       # ICC 10 doesn't accept -KPIC any more.
       icc* | ifort*)
@@ -9331,7 +9337,7 @@ _LT_EOF
 	  whole_archive_flag_spec='$wl--whole-archive`new_convenience=; for conv in $convenience\"\"; do test -z \"$conv\" || new_convenience=\"$new_convenience,$conv\"; done; func_echo_all \"$new_convenience\"` $wl--no-whole-archive'
 	  compiler_needs_object=yes
 	  tmp_sharedflag='-G' ;;
-	*Sun\ F*)			# Sun Fortran 8.3
+	*Sun\ F* | *Sun*Fortran* | *Studio*Fortran*)
 	  tmp_sharedflag='-G' ;;
 	esac
 	archive_cmds='$CC '"$tmp_sharedflag""$tmp_addflag"' $libobjs $deplibs $compiler_flags $wl-soname $wl$soname -o $lib'
@@ -12255,7 +12261,7 @@ fi
 
 ac_config_headers="$ac_config_headers include/config.h"
 
-ac_config_commands="$ac_config_commands include/mplconfig.h"
+ac_config_commands="$ac_config_commands prefix-config"
 
 
 # Non-verbose make
@@ -14557,58 +14563,79 @@ _ACEOF
 # check for compiler-support for thread-local storage (MPL_TLS)
 if test "${with_thread_package}" != "argobots" ; then
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for thread local storage (TLS) class" >&5
-$as_echo_n "checking for thread local storage (TLS) class... " >&6; }
-  if ${ac_cv_tls+:} false; then :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for thread local storage" >&5
+$as_echo_n "checking for thread local storage... " >&6; }
+if ${pac_cv_tls+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  for ax_tls_keyword in thread_local _Thread_local __thread '__declspec(thread)' none; do
-       case $ax_tls_keyword in #(
-  none) :
-    ac_cv_tls=none ; break ;; #(
-  *) :
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+
+    if test -z $pac_cv_tls ; then
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <stdlib.h>
-               static void
-               foo(void) {
-               static  $ax_tls_keyword  int bar;
-               exit(1);
-               }
+_Thread_local int foo=0;
 int
 main ()
 {
-
+foo=1
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_tls=$ax_tls_keyword ; break
-else
-  ac_cv_tls=none
-
+if ac_fn_c_try_link "$LINENO"; then :
+  pac_cv_tls=_Thread_local
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext ;;
-esac
-    done
-
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+    fi
+    if test -z $pac_cv_tls ; then
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+__thread int foo=0;
+int
+main ()
+{
+foo=1
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  pac_cv_tls=__thread
 fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_tls" >&5
-$as_echo "$ac_cv_tls" >&6; }
-
-  if test "$ac_cv_tls" != "none"; then :
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+    fi
+    if test -z $pac_cv_tls ; then
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+__declspec(thread) int foo=0;
+int
+main ()
+{
+foo=1
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  pac_cv_tls="__declspec(thread)"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+    fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $pac_cv_tls" >&5
+$as_echo "$pac_cv_tls" >&6; }
+    if test -z $pac_cv_tls ; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Compiler does not support thread local storage" >&5
+$as_echo "$as_me: WARNING: Compiler does not support thread local storage" >&2;}
+    else
 
 cat >>confdefs.h <<_ACEOF
-#define TLS $ac_cv_tls
+#define TLS $pac_cv_tls
 _ACEOF
 
-
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: thread-local storage not supported by the compiler." >&5
-$as_echo "$as_me: WARNING: thread-local storage not supported by the compiler." >&2;}
-fi
+    fi
 
 fi
 
@@ -14948,7 +14975,7 @@ else
 
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <stdlib.h>
+#include <stdio.h>
 void (*fptr)(void) = (void(*)(void))fdopen;
 int
 main ()
@@ -17152,7 +17179,6 @@ fi
 
 
 
-PACKAGE="$PACKAGE"
 
 _ACEOF
 
@@ -17165,7 +17191,7 @@ do
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "libtool") CONFIG_COMMANDS="$CONFIG_COMMANDS libtool" ;;
     "include/config.h") CONFIG_HEADERS="$CONFIG_HEADERS include/config.h" ;;
-    "include/mplconfig.h") CONFIG_COMMANDS="$CONFIG_COMMANDS include/mplconfig.h" ;;
+    "prefix-config") CONFIG_COMMANDS="$CONFIG_COMMANDS prefix-config" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "localdefs") CONFIG_FILES="$CONFIG_FILES localdefs" ;;
     "include/mpl_timer.h") CONFIG_FILES="$CONFIG_FILES include/mpl_timer.h" ;;
@@ -18399,96 +18425,7 @@ ltmain=$ac_aux_dir/ltmain.sh
   chmod +x "$ofile"
 
  ;;
-    "include/mplconfig.h":C) ac_prefix_conf_OUT=`echo include/mplconfig.h`
-ac_prefix_conf_DEF=`echo _$ac_prefix_conf_OUT | sed -e "y:abcdefghijklmnopqrstuvwxyz:ABCDEFGHIJKLMNOPQRSTUVWXYZ:" -e "s/[^abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g"`
-ac_prefix_conf_PKG=`echo MPL`
-ac_prefix_conf_LOW=`echo _$ac_prefix_conf_PKG | sed -e "y:ABCDEFGHIJKLMNOPQRSTUVWXYZ-:abcdefghijklmnopqrstuvwxyz_:"`
-ac_prefix_conf_UPP=`echo $ac_prefix_conf_PKG | sed -e "y:abcdefghijklmnopqrstuvwxyz-:ABCDEFGHIJKLMNOPQRSTUVWXYZ_:"  -e "/^[0123456789]/s/^/_/"`
-ac_prefix_conf_INP=`echo "" | sed -e 's/ *//'`
-if test ".$ac_prefix_conf_INP" = "."; then
-   for ac_file in : $CONFIG_HEADERS; do test "_$ac_file" = _: && continue
-     case "$ac_file" in
-        *.h) ac_prefix_conf_INP=$ac_file ;;
-        *)
-     esac
-     test ".$ac_prefix_conf_INP" != "." && break
-   done
-fi
-if test ".$ac_prefix_conf_INP" = "."; then
-   case "$ac_prefix_conf_OUT" in
-      */*) ac_prefix_conf_INP=`basename "$ac_prefix_conf_OUT"`
-      ;;
-      *-*) ac_prefix_conf_INP=`echo "$ac_prefix_conf_OUT" | sed -e "s/[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*-//"`
-      ;;
-      *) ac_prefix_conf_INP=config.h
-      ;;
-   esac
-fi
-if test -z "$ac_prefix_conf_PKG" ; then
-   as_fn_error $? "no prefix for _PREFIX_PKG_CONFIG_H" "$LINENO" 5
-else
-  if test ! -f "$ac_prefix_conf_INP" ; then if test -f "$srcdir/$ac_prefix_conf_INP" ; then
-     ac_prefix_conf_INP="$srcdir/$ac_prefix_conf_INP"
-  fi fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: creating $ac_prefix_conf_OUT - prefix $ac_prefix_conf_UPP for $ac_prefix_conf_INP defines" >&5
-$as_echo "$as_me: creating $ac_prefix_conf_OUT - prefix $ac_prefix_conf_UPP for $ac_prefix_conf_INP defines" >&6;}
-  if test -f $ac_prefix_conf_INP ; then
-    echo "s/^#undef  *\\([ABCDEFGHIJKLMNOPQRSTUVWXYZ_]\\)/#undef $ac_prefix_conf_UPP""_\\1/" > conftest.prefix
-    echo "s/^#undef  *\\([abcdefghijklmnopqrstuvwxyz]\\)/#undef $ac_prefix_conf_LOW""_\\1/" >> conftest.prefix
-    echo "s/^#define  *\\([ABCDEFGHIJKLMNOPQRSTUVWXYZ_][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*\\)\\(.*\\)/#ifndef $ac_prefix_conf_UPP""_\\1 \\" >> conftest.prefix
-    echo "#define $ac_prefix_conf_UPP""_\\1 \\2 \\" >> conftest.prefix
-    echo "#endif/" >>conftest.prefix
-    echo "s/^#define  *\\([abcdefghijklmnopqrstuvwxyz][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*\\)\\(.*\\)/#ifndef $ac_prefix_conf_LOW""_\\1 \\" >> conftest.prefix
-    echo "#define $ac_prefix_conf_LOW""_\\1 \\2 \\" >> conftest.prefix
-    echo "#endif/" >> conftest.prefix
-    # now executing _script on _DEF input to create _OUT output file
-    echo "#ifndef $ac_prefix_conf_DEF"      >$tmp/pconfig.h
-    echo "#define $ac_prefix_conf_DEF 1" >>$tmp/pconfig.h
-    echo ' ' >>$tmp/pconfig.h
-    echo /'*' $ac_prefix_conf_OUT. Generated automatically at end of configure. '*'/ >>$tmp/pconfig.h
-
-    sed -f conftest.prefix $ac_prefix_conf_INP >>$tmp/pconfig.h
-    echo ' ' >>$tmp/pconfig.h
-    echo '/* once:' $ac_prefix_conf_DEF '*/' >>$tmp/pconfig.h
-    echo "#endif" >>$tmp/pconfig.h
-    if cmp -s $ac_prefix_conf_OUT $tmp/pconfig.h 2>/dev/null; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: $ac_prefix_conf_OUT is unchanged" >&5
-$as_echo "$as_me: $ac_prefix_conf_OUT is unchanged" >&6;}
-    else
-      ac_dir=`$as_dirname -- "$ac_prefix_conf_OUT" ||
-$as_expr X"$ac_prefix_conf_OUT" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
-	 X"$ac_prefix_conf_OUT" : 'X\(//\)[^/]' \| \
-	 X"$ac_prefix_conf_OUT" : 'X\(//\)$' \| \
-	 X"$ac_prefix_conf_OUT" : 'X\(/\)' \| . 2>/dev/null ||
-$as_echo X"$ac_prefix_conf_OUT" |
-    sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{
-	    s//\1/
-	    q
-	  }
-	  /^X\(\/\/\)[^/].*/{
-	    s//\1/
-	    q
-	  }
-	  /^X\(\/\/\)$/{
-	    s//\1/
-	    q
-	  }
-	  /^X\(\/\).*/{
-	    s//\1/
-	    q
-	  }
-	  s/.*/./; q'`
-      as_dir="$ac_dir"; as_fn_mkdir_p
-      rm -f "$ac_prefix_conf_OUT"
-      mv $tmp/pconfig.h "$ac_prefix_conf_OUT"
-    fi
-    cp conftest.prefix _configs.sed
-  else
-    as_fn_error $? "input file $ac_prefix_conf_INP does not exist - skip generating $ac_prefix_conf_OUT" "$LINENO" 5
-  fi
-  rm -f conftest.*
-fi
- ;;
+    "prefix-config":C) perl $srcdir/confdb/cmd_prefix_config_h.pl MPL include/config.h include/mplconfig.h ;;
 
   esac
 done # for ac_tag

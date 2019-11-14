@@ -1,4 +1,4 @@
-.TH Constants 3 "6/5/2019" " " "MPI"
+.TH Constants 3 "11/12/2019" " " "MPI"
 .SH NAME
 Constants \-  Meaning of MPI's defined constants 
 .SH DATA TYPES
@@ -17,7 +17,11 @@ and
 in Fortran08
 
 .SH C DATATYPES
-MPI_CHAR - char
+.PD 0
+.TP
+.B MPI_CHAR 
+- char
+.PD 1
 .PD 0
 .TP
 .B MPI_SIGNED_CHAR 
@@ -173,9 +177,13 @@ and
 .I MPI_MINLOC
 \&.
 
-MPI_FLOAT_INT - 
+.PD 0
+.TP
+.B MPI_FLOAT_INT 
+- 
 .I struct { float, int }
 
+.PD 1
 .PD 0
 .TP
 .B MPI_LONG_INT  
@@ -219,11 +227,15 @@ type, and may be set to
 
 
 Special datatypes for C and Fortran
-MPI_PACKED - For 
+.PD 0
+.TP
+.B MPI_PACKED 
+- For 
 .I MPI_Pack
 and 
 .I MPI_Unpack
 
+.PD 1
 .PD 0
 .TP
 .B MPI_UB 
@@ -240,9 +252,13 @@ and
 .PD 1
 
 .SH FORTRAN DATATYPES
-MPI_REAL - 
+.PD 0
+.TP
+.B MPI_REAL 
+- 
 .I REAL
 
+.PD 1
 .PD 0
 .TP
 .B MPI_INTEGER 
@@ -282,9 +298,13 @@ MPI_REAL -
 .PD 1
 
 The following datatypes are optional
-MPI_INTEGER1  - 
+.PD 0
+.TP
+.B MPI_INTEGER1  
+- 
 .I integer*1
 if supported
+.PD 1
 .PD 0
 .TP
 .B MPI_INTEGER2  
@@ -363,9 +383,13 @@ and
 \&.
 In Fortran, these datatype always consist of
 two elements of the same Fortran type.
-MPI_2INTEGER - 
+.PD 0
+.TP
+.B MPI_2INTEGER 
+- 
 .I INTEGER,INTEGER
 
+.PD 1
 .PD 0
 .TP
 .B MPI_2REAL    
@@ -382,9 +406,13 @@ MPI_2INTEGER -
 .PD 1
 
 MPI Datatypes for MPI Types
-MPI_AINT - Datatype for an 
+.PD 0
+.TP
+.B MPI_AINT 
+- Datatype for an 
 .I MPI_Aint
 
+.PD 1
 .PD 0
 .TP
 .B MPI_OFFSET 
@@ -401,7 +429,11 @@ MPI_AINT - Datatype for an
 .PD 1
 
 .SH MPI DATATYPE COMBINER NAMES
-MPI_COMBINER_NAMED            - a named predefined datatype
+.PD 0
+.TP
+.B MPI_COMBINER_NAMED            
+- a named predefined datatype
+.PD 1
 .PD 0
 .TP
 .B MPI_COMBINER_DUP              
@@ -496,9 +528,13 @@ MPI_COMBINER_NAMED            - a named predefined datatype
 .SH MPI DATATYPE TYPE CLASSES
 MPI Type classes used with routines to return Fortran types with defined
 precision and range
-MPI_TYPECLASS_REAL    - 
+.PD 0
+.TP
+.B MPI_TYPECLASS_REAL    
+- 
 .I REAL
 
+.PD 1
 .PD 0
 .TP
 .B MPI_TYPECLASS_INTEGER 
@@ -520,7 +556,11 @@ These values are used to create a datatype with the
 and 
 .I SUBARRAY
 constructors.
-MPI_ORDER_C              - Row-major order (as used by C)
+.PD 0
+.TP
+.B MPI_ORDER_C              
+- Row-major order (as used by C)
+.PD 1
 .PD 0
 .TP
 .B MPI_ORDER_FORTRAN        
@@ -555,7 +595,11 @@ in C,
 in Fortran, and
 .I Type(MPI_Comm)
 in Fortran08
-MPI_COMM_WORLD - Contains all of the processes
+.PD 0
+.TP
+.B MPI_COMM_WORLD 
+- Contains all of the processes
+.PD 1
 .PD 0
 .TP
 .B MPI_COMM_SELF 
@@ -563,8 +607,12 @@ MPI_COMM_WORLD - Contains all of the processes
 .PD 1
 
 .SH KIND OF COMMUNICATOR FOR 'MPI_COMM_SPLIT_TYPE'
-MPI_COMM_TYPE_SHARED - All processes that can share memory are grouped into
+.PD 0
+.TP
+.B MPI_COMM_TYPE_SHARED 
+- All processes that can share memory are grouped into
 the same communicator.
+.PD 1
 
 .SH GROUPS
 Groups are of type 
@@ -576,10 +624,18 @@ and
 .I Type(MPI_Group)
 in Fortran08
 
-MPI_GROUP_EMPTY - A group containing no members.
+.PD 0
+.TP
+.B MPI_GROUP_EMPTY 
+- A group containing no members.
+.PD 1
 
 .SH RESULTS OF THE COMPARE OPERATIONS ON GROUPS AND COMMUNICATORS
-MPI_IDENT - Identical
+.PD 0
+.TP
+.B MPI_IDENT 
+- Identical
+.PD 1
 .PD 0
 .TP
 .B MPI_CONGRUENT  
@@ -616,7 +672,11 @@ in C and of type
 in Fortran.
 The predefined operations are
 
-MPI_MAX - return the maximum
+.PD 0
+.TP
+.B MPI_MAX 
+- return the maximum
+.PD 1
 .PD 0
 .TP
 .B MPI_MIN 
@@ -742,7 +802,11 @@ datatypes for
 .SH PERMANENT KEY VALUES
 These are the same in C and Fortran
 
-MPI_TAG_UB - Largest tag value
+.PD 0
+.TP
+.B MPI_TAG_UB 
+- Largest tag value
+.PD 1
 .PD 0
 .TP
 .B MPI_HOST 
@@ -782,7 +846,11 @@ for details
 .PD 1
 
 .SH NULL OBJECTS
-MPI_COMM_NULL          - Null communicator
+.PD 0
+.TP
+.B MPI_COMM_NULL          
+- Null communicator
+.PD 1
 .PD 0
 .TP
 .B MPI_OP_NULL            
@@ -860,9 +928,13 @@ MPI_COMM_NULL          - Null communicator
 .PD 1
 
 .SH PREDEFINED CONSTANTS
-MPI_MAX_PROCESSOR_NAME         - Maximum length of name returned by
+.PD 0
+.TP
+.B MPI_MAX_PROCESSOR_NAME         
+- Maximum length of name returned by
 .I MPI_GET_PROCESSOR_NAME
 
+.PD 1
 .PD 0
 .TP
 .B MPI_MAX_ERROR_STRING           
@@ -959,7 +1031,11 @@ collective communication routines
 .PD 1
 
 .SH TOPOLOGY TYPES
-MPI_CART       - Cartesian grid
+.PD 0
+.TP
+.B MPI_CART       
+- Cartesian grid
+.PD 1
 .PD 0
 .TP
 .B MPI_GRAPH      
@@ -972,7 +1048,11 @@ MPI_CART       - Cartesian grid
 .PD 1
 
 .SH SPECIAL VALUES FOR DISTRIBUTED GRAPH
-MPI_UNWEIGHTED    - Indicates that the edges are unweighted
+.PD 0
+.TP
+.B MPI_UNWEIGHTED    
+- Indicates that the edges are unweighted
+.PD 1
 .PD 0
 .TP
 .B MPI_WEIGHTS_EMPTY 
@@ -981,7 +1061,11 @@ information
 .PD 1
 
 .SH FILE MODES
-MPI_MODE_RDONLY          - Read only
+.PD 0
+.TP
+.B MPI_MODE_RDONLY          
+- Read only
+.PD 1
 .PD 0
 .TP
 .B MPI_MODE_RDWR            
@@ -1026,16 +1110,24 @@ the end of the file
 .PD 1
 
 .SH FILE DISPLACEMENT
-MPI_DISPLACEMENT_CURRENT - Use with files opened with mode
+.PD 0
+.TP
+.B MPI_DISPLACEMENT_CURRENT 
+- Use with files opened with mode
 .I MPI_MODE_SEQUENTIAL
 in calls to 
 .I MPI_FILE_SET_VIEW
 
+.PD 1
 
 .SH FILE POSITIONING
-MPI_SEEK_SET             - Set the pointer to 
+.PD 0
+.TP
+.B MPI_SEEK_SET             
+- Set the pointer to 
 .I offset
 
+.PD 1
 .PD 0
 .TP
 .B MPI_SEEK_CUR             
@@ -1052,7 +1144,11 @@ MPI_SEEK_SET             - Set the pointer to
 .PD 1
 
 .SH WINDOW ATTRIBUTES
-MPI_WIN_BASE - window base address.
+.PD 0
+.TP
+.B MPI_WIN_BASE 
+- window base address.
+.PD 1
 .PD 0
 .TP
 .B MPI_WIN_SIZE 
@@ -1075,7 +1171,11 @@ MPI_WIN_BASE - window base address.
 .PD 1
 
 .SH WINDOW FLAVORS
-MPI_WIN_FLAVOR_CREATE   - Window was created with MPI_WIN_CREATE.
+.PD 0
+.TP
+.B MPI_WIN_FLAVOR_CREATE   
+- Window was created with MPI_WIN_CREATE.
+.PD 1
 .PD 0
 .TP
 .B MPI_WIN_FLAVOR_ALLOCATE 
@@ -1093,7 +1193,11 @@ MPI_WIN_FLAVOR_CREATE   - Window was created with MPI_WIN_CREATE.
 .PD 1
 
 .SH WINDOW MEMORY MODEL
-MPI_WIN_SEPARATE - Separate public and private copies of window memory
+.PD 0
+.TP
+.B MPI_WIN_SEPARATE 
+- Separate public and private copies of window memory
+.PD 1
 .PD 0
 .TP
 .B MPI_WIN_UNIFIED 
@@ -1102,8 +1206,12 @@ we mean that updates are eventually observed without additional RMA operations)
 .PD 1
 
 .SH WINDOW LOCK TYPES
-MPI_LOCK_EXCLUSIVE - Only one process at a time will execute accesses
+.PD 0
+.TP
+.B MPI_LOCK_EXCLUSIVE 
+- Only one process at a time will execute accesses
 within the lock
+.PD 1
 .PD 0
 .TP
 .B MPI_LOCK_SHARED 
@@ -1114,9 +1222,13 @@ within the lock
 .SH WINDOW ASSERTIONS
 See section 11.5 in MPI 3.1 for a detailed description of each of these
 assertion values.
-MPI_MODE_NOCHECK      - The matching calls to MPI_WIN_POST or MPI_WIN_START
+.PD 0
+.TP
+.B MPI_MODE_NOCHECK      
+- The matching calls to MPI_WIN_POST or MPI_WIN_START
 have already completed, or no process holds or will attempt to acquire, a
 conflicting lock.
+.PD 1
 .PD 0
 .TP
 .B MPI_MODE_NOSTORE      
@@ -1142,14 +1254,22 @@ calls
 .PD 1
 
 .SH PREDEFINED INFO OBJECT
-MPI_INFO_ENV - Contains the execution environment
+.PD 0
+.TP
+.B MPI_INFO_ENV 
+- Contains the execution environment
+.PD 1
 
 .SH MPI STATUS
 The 
 .I MPI_Status
 datatype is a structure in C.  The three elements for use
 by programmers are
-MPI_SOURCE - Who sent the message
+.PD 0
+.TP
+.B MPI_SOURCE 
+- Who sent the message
+.PD 1
 .PD 0
 .TP
 .B MPI_TAG 
@@ -1164,9 +1284,13 @@ has error class
 )
 .PD 1
 
-MPI_STATUS_IGNORE   - Ignore a single 
+.PD 0
+.TP
+.B MPI_STATUS_IGNORE   
+- Ignore a single 
 .I MPI_Status
 argument
+.PD 1
 .PD 0
 .TP
 .B MPI_STATUSES_IGNORE 
@@ -1176,10 +1300,18 @@ argument
 .PD 1
 
 .SH SPECIAL VALUE FOR ERROR CODES ARRAY
-MPI_ERRCODES_IGNORE - Ignore an array of error codes
+.PD 0
+.TP
+.B MPI_ERRCODES_IGNORE 
+- Ignore an array of error codes
+.PD 1
 
 .SH MPI_T CONSTANTS
-MPI_T_VERBOSITY_USER_BASIC     - Basic information of interest to users
+.PD 0
+.TP
+.B MPI_T_VERBOSITY_USER_BASIC     
+- Basic information of interest to users
+.PD 1
 .PD 0
 .TP
 .B MPI_T_VERBOSITY_USER_DETAIL    
@@ -1372,7 +1504,11 @@ variable
 .PD 1
 
 .SH THREAD LEVELS
-MPI_THREAD_SINGLE     - Only one thread executes
+.PD 0
+.TP
+.B MPI_THREAD_SINGLE     
+- Only one thread executes
+.PD 1
 .PD 0
 .TP
 .B MPI_THREAD_FUNNELED   
@@ -1391,7 +1527,11 @@ MPI_THREAD_SINGLE     - Only one thread executes
 
 .SH SPECIAL MPI TYPES AND FUNCTIONS
 
-MPI_Aint   - C type that holds any valid address.
+.PD 0
+.TP
+.B MPI_Aint   
+- C type that holds any valid address.
+.PD 1
 .PD 0
 .TP
 .B MPI_Count  
@@ -1444,7 +1584,11 @@ MPI routine in C and through last argument in Fortran)
 .PD 1
 
 .SH MPI ATTRIBUTE DEFAULT FUNCTIONS
-MPI_COMM_NULL_COPY_FN - Predefined attribute copy function for communicators
+.PD 0
+.TP
+.B MPI_COMM_NULL_COPY_FN 
+- Predefined attribute copy function for communicators
+.PD 1
 .PD 0
 .TP
 .B MPI_COMM_NULL_DELETE_FN 
@@ -1487,7 +1631,11 @@ MPI_COMM_NULL_COPY_FN - Predefined attribute copy function for communicators
 .PD 1
 
 .SH MPI-1 ATTRIBUTE DEFAULT FUNCTIONS
-MPI_NULL_COPY_FN - Predefined copy function
+.PD 0
+.TP
+.B MPI_NULL_COPY_FN 
+- Predefined copy function
+.PD 1
 .PD 0
 .TP
 .B MPI_NULL_DELETE_FN 
@@ -1500,7 +1648,11 @@ MPI_NULL_COPY_FN - Predefined copy function
 .PD 1
 
 .SH MPI ERROR CLASSES
-MPI_SUCCESS               - Successful return code
+.PD 0
+.TP
+.B MPI_SUCCESS               
+- Successful return code
+.PD 1
 .PD 0
 .TP
 .B MPI_ERR_BUFFER            
@@ -1812,7 +1964,11 @@ called function
 
 .SH ERROR CODES FOR MPI_T
 
-MPI_T_ERR_MEMORY            - Out of memory
+.PD 0
+.TP
+.B MPI_T_ERR_MEMORY            
+- Out of memory
+.PD 1
 .PD 0
 .TP
 .B MPI_T_ERR_NOT_INITIALIZED   

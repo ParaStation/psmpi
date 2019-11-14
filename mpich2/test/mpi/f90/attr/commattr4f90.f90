@@ -88,8 +88,6 @@
       call mpi_comm_free_keyval(key, &
       &     ierr)
 
-      if (errs .eq. 0) then
-         print *, " No Errors"
-      end if
+      call mtest_finalize( errs )
 
       end

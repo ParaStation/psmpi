@@ -1,4 +1,4 @@
-.TH MPIR_Type_struct 3 "6/5/2019" " " "MPI"
+.TH MPIR_Type_struct 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPIR_Type_struct \-  create a struct datatype 
 .SH SYNOPSIS
@@ -8,9 +8,9 @@ MPIR_Type_struct \-  create a struct datatype
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Type_struct(int count,
-                     const int *blocklength_array,
-                     const MPI_Aint * displacement_array,
-                     const MPI_Datatype * oldtype_array, MPI_Datatype * newtype)
+const int *blocklength_array,
+const MPI_Aint * displacement_array,
+const MPI_Datatype * oldtype_array, MPI_Datatype * newtype)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

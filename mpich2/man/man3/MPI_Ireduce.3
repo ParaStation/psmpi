@@ -1,10 +1,10 @@
-.TH MPI_Ireduce 3 "6/5/2019" " " "MPI"
+.TH MPI_Ireduce 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Ireduce \-  Reduces values on all processes to a single value in a nonblocking way 
 .SH SYNOPSIS
 .nf
 int MPI_Ireduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
-                MPI_Op op, int root, MPI_Comm comm, MPI_Request * request)
+MPI_Op op, int root, MPI_Comm comm, MPI_Request * request)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

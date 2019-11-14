@@ -1,12 +1,12 @@
-.TH MPI_Register_datarep 3 "6/5/2019" " " "MPI"
+.TH MPI_Register_datarep 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Register_datarep \-  Register functions for user-defined data representations 
 .SH SYNOPSIS
 .nf
 int MPI_Register_datarep(ROMIO_CONST char *datarep,
-                         MPI_Datarep_conversion_function * read_conversion_fn,
-                         MPI_Datarep_conversion_function * write_conversion_fn,
-                         MPI_Datarep_extent_function * dtype_file_extent_fn, void *extra_state)
+MPI_Datarep_conversion_function * read_conversion_fn,
+MPI_Datarep_conversion_function * write_conversion_fn,
+MPI_Datarep_extent_function * dtype_file_extent_fn, void *extra_state)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

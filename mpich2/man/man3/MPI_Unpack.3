@@ -1,10 +1,10 @@
-.TH MPI_Unpack 3 "6/5/2019" " " "MPI"
+.TH MPI_Unpack 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Unpack \-  Unpack a buffer according to a datatype into contiguous memory 
 .SH SYNOPSIS
 .nf
 int MPI_Unpack(const void *inbuf, int insize, int *position,
-               void *outbuf, int outcount, MPI_Datatype datatype, MPI_Comm comm)
+void *outbuf, int outcount, MPI_Datatype datatype, MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

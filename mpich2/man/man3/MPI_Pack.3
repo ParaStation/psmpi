@@ -1,11 +1,11 @@
-.TH MPI_Pack 3 "6/5/2019" " " "MPI"
+.TH MPI_Pack 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Pack \-  Packs a datatype into contiguous memory 
 .SH SYNOPSIS
 .nf
 int MPI_Pack(const void *inbuf,
-             int incount,
-             MPI_Datatype datatype, void *outbuf, int outsize, int *position, MPI_Comm comm)
+int incount,
+MPI_Datatype datatype, void *outbuf, int outsize, int *position, MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

@@ -1,10 +1,10 @@
-.TH MPI_Cart_create 3 "6/5/2019" " " "MPI"
+.TH MPI_Cart_create 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Cart_create \-  Makes a new communicator to which topology information has been attached 
 .SH SYNOPSIS
 .nf
 int MPI_Cart_create(MPI_Comm comm_old, int ndims, const int dims[],
-                    const int periods[], int reorder, MPI_Comm * comm_cart)
+const int periods[], int reorder, MPI_Comm * comm_cart)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

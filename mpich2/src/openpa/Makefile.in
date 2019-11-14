@@ -95,8 +95,7 @@ build_triplet = @build@
 host_triplet = @host@
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/confdb/ax_prefix_config_h.m4 \
-	$(top_srcdir)/confdb/libtool.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/confdb/libtool.m4 \
 	$(top_srcdir)/confdb/ltoptions.m4 \
 	$(top_srcdir)/confdb/ltsugar.m4 \
 	$(top_srcdir)/confdb/ltversion.m4 \
@@ -202,8 +201,9 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/openpa.pc.in \
 	$(top_srcdir)/confdb/config.sub \
 	$(top_srcdir)/confdb/install-sh $(top_srcdir)/confdb/ltmain.sh \
 	$(top_srcdir)/confdb/missing README confdb/ar-lib \
-	confdb/compile confdb/config.guess confdb/config.sub \
-	confdb/install-sh confdb/ltmain.sh confdb/missing
+	confdb/compile confdb/config.guess confdb/config.rpath \
+	confdb/config.sub confdb/install-sh confdb/ltmain.sh \
+	confdb/missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)

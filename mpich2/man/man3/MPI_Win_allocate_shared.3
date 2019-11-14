@@ -1,10 +1,10 @@
-.TH MPI_Win_allocate_shared 3 "6/5/2019" " " "MPI"
+.TH MPI_Win_allocate_shared 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Win_allocate_shared \-  Create an MPI Window object for one-sided communication and shared memory access, and allocate memory at each process. 
 .SH SYNOPSIS
 .nf
 int MPI_Win_allocate_shared(MPI_Aint size, int disp_unit, MPI_Info info, MPI_Comm comm,
-                            void *baseptr, MPI_Win * win)
+void *baseptr, MPI_Win * win)
 .fi
 This is a collective call executed by all processes in the group of comm. On
 each process i, it allocates memory of at least size bytes that is shared among

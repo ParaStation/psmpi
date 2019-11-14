@@ -149,8 +149,7 @@ am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cc.m4 \
 	$(top_srcdir)/confdb/ax_gcc_func_attribute.m4 \
 	$(top_srcdir)/confdb/ax_gcc_var_attribute.m4 \
 	$(top_srcdir)/confdb/ax_lib_socket_nsl.m4 \
-	$(top_srcdir)/confdb/ax_prefix_config_h.m4 \
-	$(top_srcdir)/confdb/ax_tls.m4 $(top_srcdir)/confdb/libtool.m4 \
+	$(top_srcdir)/confdb/libtool.m4 \
 	$(top_srcdir)/confdb/ltoptions.m4 \
 	$(top_srcdir)/confdb/ltsugar.m4 \
 	$(top_srcdir)/confdb/ltversion.m4 \
@@ -199,10 +198,10 @@ lib@MPLLIBNAME@_la_LIBADD =
 am__dirstamp = $(am__leading_dot)dirstamp
 am_lib@MPLLIBNAME@_la_OBJECTS = src/bt/mpl_bt.lo src/dbg/mpl_dbg.lo \
 	src/env/mpl_env.lo src/mem/mpl_trmem.lo src/msg/mpl_msg.lo \
-	src/sock/mpl_sock.lo src/sock/mpl_host.lo src/str/mpl_str.lo \
-	src/str/mpl_argstr.lo src/str/mpl_arg_serial.lo \
-	src/thread/mpl_thread.lo src/thread/mpl_thread_win.lo \
-	src/thread/mpl_thread_solaris.lo \
+	src/sock/mpl_sock.lo src/sock/mpl_sockaddr.lo \
+	src/sock/mpl_host.lo src/str/mpl_str.lo src/str/mpl_argstr.lo \
+	src/str/mpl_arg_serial.lo src/thread/mpl_thread.lo \
+	src/thread/mpl_thread_win.lo src/thread/mpl_thread_solaris.lo \
 	src/thread/mpl_thread_argobots.lo \
 	src/thread/mpl_thread_posix.lo \
 	src/timer/mpl_timer_clock_gettime.lo \
@@ -278,12 +277,14 @@ am__include_HEADERS_DIST = include/mpl.h include/mpl_base.h \
 	include/mpl_math.h include/mplconfig.h include/utlist.h \
 	include/mpl_valgrind.h include/mpl_env.h include/mpl_str.h \
 	include/mpl_trmem.h include/mpl_msg.h include/mpl_sock.h \
-	include/mpl_iov.h include/mpl_bt.h include/mpl_shm.h
+	include/mpl_sockaddr.h include/mpl_iov.h include/mpl_bt.h \
+	include/mpl_shm.h
 am__noinst_HEADERS_DIST = include/mpl.h include/mpl_base.h \
 	include/mpl_math.h include/mplconfig.h include/utlist.h \
 	include/mpl_valgrind.h include/mpl_env.h include/mpl_str.h \
 	include/mpl_trmem.h include/mpl_msg.h include/mpl_sock.h \
-	include/mpl_iov.h include/mpl_bt.h include/mpl_shm.h
+	include/mpl_sockaddr.h include/mpl_iov.h include/mpl_bt.h \
+	include/mpl_shm.h
 HEADERS = $(include_HEADERS) $(noinst_HEADERS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
@@ -640,10 +641,10 @@ ACLOCAL_AMFLAGS = -I confdb
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
 lib@MPLLIBNAME@_la_SOURCES = src/bt/mpl_bt.c src/dbg/mpl_dbg.c \
 	src/env/mpl_env.c src/mem/mpl_trmem.c src/msg/mpl_msg.c \
-	src/sock/mpl_sock.c src/sock/mpl_host.c src/str/mpl_str.c \
-	src/str/mpl_argstr.c src/str/mpl_arg_serial.c \
-	src/thread/mpl_thread.c src/thread/mpl_thread_win.c \
-	src/thread/mpl_thread_solaris.c \
+	src/sock/mpl_sock.c src/sock/mpl_sockaddr.c \
+	src/sock/mpl_host.c src/str/mpl_str.c src/str/mpl_argstr.c \
+	src/str/mpl_arg_serial.c src/thread/mpl_thread.c \
+	src/thread/mpl_thread_win.c src/thread/mpl_thread_solaris.c \
 	src/thread/mpl_thread_argobots.c src/thread/mpl_thread_posix.c \
 	src/timer/mpl_timer_clock_gettime.c \
 	src/timer/mpl_timer_gcc_ia64_cycle.c \
@@ -672,6 +673,7 @@ mpl_headers = \
     include/mpl_trmem.h     \
     include/mpl_msg.h       \
     include/mpl_sock.h      \
+    include/mpl_sockaddr.h  \
     include/mpl_iov.h       \
     include/mpl_bt.h        \
     include/mpl_shm.h
@@ -838,6 +840,8 @@ src/sock/$(DEPDIR)/$(am__dirstamp):
 	@: > src/sock/$(DEPDIR)/$(am__dirstamp)
 src/sock/mpl_sock.lo: src/sock/$(am__dirstamp) \
 	src/sock/$(DEPDIR)/$(am__dirstamp)
+src/sock/mpl_sockaddr.lo: src/sock/$(am__dirstamp) \
+	src/sock/$(DEPDIR)/$(am__dirstamp)
 src/sock/mpl_host.lo: src/sock/$(am__dirstamp) \
 	src/sock/$(DEPDIR)/$(am__dirstamp)
 src/str/$(am__dirstamp):
@@ -971,6 +975,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/shm/$(DEPDIR)/mpl_shm_win.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/sock/$(DEPDIR)/mpl_host.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/sock/$(DEPDIR)/mpl_sock.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/sock/$(DEPDIR)/mpl_sockaddr.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/str/$(DEPDIR)/mpl_arg_serial.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/str/$(DEPDIR)/mpl_argstr.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/str/$(DEPDIR)/mpl_str.Plo@am__quote@

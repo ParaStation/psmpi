@@ -4735,6 +4735,12 @@ m4_if([$1], [CXX], [
 	_LT_TAGVAR(lt_prog_compiler_pic, $1)='-KPIC'
 	_LT_TAGVAR(lt_prog_compiler_static, $1)='-static'
         ;;
+      # flang / f18
+      flang* | f18*)
+       _LT_TAGVAR(lt_prog_compiler_wl, $1)='-Wl,'
+       _LT_TAGVAR(lt_prog_compiler_pic, $1)='-fPIC'
+       _LT_TAGVAR(lt_prog_compiler_static, $1)='-static'
+        ;;
       # icc used to be incompatible with GCC.
       # ICC 10 doesn't accept -KPIC any more.
       icc* | ifort*)
@@ -5265,7 +5271,7 @@ _LT_EOF
 	  _LT_TAGVAR(whole_archive_flag_spec, $1)='$wl--whole-archive`new_convenience=; for conv in $convenience\"\"; do test -z \"$conv\" || new_convenience=\"$new_convenience,$conv\"; done; func_echo_all \"$new_convenience\"` $wl--no-whole-archive'
 	  _LT_TAGVAR(compiler_needs_object, $1)=yes
 	  tmp_sharedflag='-G' ;;
-	*Sun\ F*)			# Sun Fortran 8.3
+	*Sun\ F* | *Sun*Fortran* | *Studio*Fortran*)
 	  tmp_sharedflag='-G' ;;
 	esac
 	_LT_TAGVAR(archive_cmds, $1)='$CC '"$tmp_sharedflag""$tmp_addflag"' $libobjs $deplibs $compiler_flags $wl-soname $wl$soname -o $lib'

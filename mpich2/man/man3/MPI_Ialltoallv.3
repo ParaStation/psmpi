@@ -1,11 +1,11 @@
-.TH MPI_Ialltoallv 3 "6/5/2019" " " "MPI"
+.TH MPI_Ialltoallv 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Ialltoallv \-  Sends data from all to all processes in a nonblocking way; each process may send a different amount of data and provide displacements for the input and output data. 
 .SH SYNOPSIS
 .nf
 int MPI_Ialltoallv(const void *sendbuf, const int sendcounts[], const int sdispls[],
-                   MPI_Datatype sendtype, void *recvbuf, const int recvcounts[],
-                   const int rdispls[], MPI_Datatype recvtype, MPI_Comm comm, MPI_Request * request)
+MPI_Datatype sendtype, void *recvbuf, const int recvcounts[],
+const int rdispls[], MPI_Datatype recvtype, MPI_Comm comm, MPI_Request * request)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

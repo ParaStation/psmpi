@@ -5,7 +5,7 @@
 <TITLE>MPIR_Type_struct</TITLE>
 </HEAD>
 <BODY BGCOLOR="FFFFFF">
-<A NAME="MPIR_Type_struct"><H1>MPIR_Type_struct</H1></A>
+<H1 id="MPIR_Type_struct">MPIR_Type_struct</H1>
 create a struct datatype 
 <H2>Synopsis</H2>
 <PRE>
@@ -20,17 +20,18 @@ int MPIR_Type_struct(int count,
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>count </B><DD>number of blocks in vector
+<DT><B>count </B> <DD> number of blocks in vector
 
-<DT><B>blocklength_array </B><DD>number of elements in each block
+<DT><B>blocklength_array </B> <DD> number of elements in each block
 
-<DT><B>displacement_array </B><DD>offsets of blocks from start of type in bytes
+<DT><B>displacement_array </B> <DD> offsets of blocks from start of type in bytes
 
-<DT><B>oldtype_array </B><DD>types (using handle) of datatypes on which vector is based
+<DT><B>oldtype_array </B> <DD> types (using handle) of datatypes on which vector is based
 </DL>
 <P>
 <H2>Output Parameters</H2>
-<DL><DT><B>newtype </B> <DD> handle of new struct datatype
+<DL>
+<DT><B>newtype </B> <DD> handle of new struct datatype
 </DL>
 <P>
 <H2>Return Value</H2>

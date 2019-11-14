@@ -292,7 +292,7 @@ MPII_Comm_copy_attr_f90_proxy(
     MPI_Aint fnew = 0;
     MPI_Fint fflag = 0;
 
-    ((F90_CopyFunction*)user_function)( &fhandle, &fkeyval, fextra, &fvalue, &fnew, &fflag, &ierr );
+    ((F90_CopyFunction*)(void*)user_function)( &fhandle, &fkeyval, fextra, &fvalue, &fnew, &fflag, &ierr );
 
     *flag = MPII_FROM_FLOG(fflag);
     *new_value = MPIR_AINT_CAST_TO_VOID_PTR (fnew);
@@ -321,7 +321,7 @@ MPIR_Comm_delete_attr_f90_proxy(
     MPI_Aint fvalue = MPIR_VOID_PTR_CAST_TO_MPI_AINT (value);
     MPI_Aint* fextra  = (MPI_Aint*)extra_state;
 
-    ((F90_DeleteFunction*)user_function)( &fhandle, &fkeyval, &fvalue, fextra, &ierr );
+    ((F90_DeleteFunction*)(void*)user_function)( &fhandle, &fkeyval, &fvalue, fextra, &ierr );
     return (int)ierr;
 }
 FORT_DLL_SPEC void FORT_CALL mpi_comm_create_keyval_ ( MPI_Comm_copy_attr_function*v1, MPI_Comm_delete_attr_function*v2, MPI_Fint *v3, void*v4, MPI_Fint *ierr ){

@@ -5,7 +5,7 @@
 <TITLE>MPI_Register_datarep</TITLE>
 </HEAD>
 <BODY BGCOLOR="FFFFFF">
-<A NAME="MPI_Register_datarep"><H1>MPI_Register_datarep</H1></A>
+<H1 id="MPI_Register_datarep">MPI_Register_datarep</H1>
 Register functions for user-defined data representations 
 <H2>Synopsis</H2>
 <PRE>
@@ -16,18 +16,18 @@ int MPI_Register_datarep(ROMIO_CONST char *datarep,
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>datarep </B><DD>data representation name (string)
+<DT><B>datarep </B> <DD> data representation name (string)
 
-<DT><B>read_conversion_fn </B><DD>function invoked to convert from file representation to
+<DT><B>read_conversion_fn </B> <DD> function invoked to convert from file representation to
 native representation (function)
 
-<DT><B>write_conversion_fn </B><DD>function invoked to convert from native representation to
+<DT><B>write_conversion_fn </B> <DD> function invoked to convert from native representation to
 file representation (function)
 
-<DT><B>dtype_file_extent_fn </B><DD>function invoked to get the exted of a datatype as represented
+<DT><B>dtype_file_extent_fn </B> <DD> function invoked to get the exted of a datatype as represented
 in the file (function)
 
-<DT><B>extra_state </B><DD>pointer to extra state that is passed to each of the
+<DT><B>extra_state </B> <DD> pointer to extra state that is passed to each of the
 three functions
 </DL>
 <P>
@@ -35,17 +35,17 @@ three functions
 This function allows the user to provide routines to convert data from
 an external representation, used within a file, and the native representation,
 used within the CPU.  There is one predefined data representation,
-<TT>external32</TT>.  Please consult the MPI-2 standard for details on this
+<tt>external32</tt>.  Please consult the MPI-2 standard for details on this
 function.
 <P>
 <H2>Notes for Fortran</H2>
-All MPI routines in Fortran (except for <TT>MPI_WTIME</TT> and <TT>MPI_WTICK</TT>) have
-an additional argument <TT>ierr</TT> at the end of the argument list.  <TT>ierr
-</TT>is an integer and has the same meaning as the return value of the routine
+All MPI routines in Fortran (except for <tt>MPI_WTIME</tt> and <tt>MPI_WTICK</tt>) have
+an additional argument <tt>ierr</tt> at the end of the argument list.  <tt>ierr
+</tt>is an integer and has the same meaning as the return value of the routine
 in C.  In Fortran, MPI routines are subroutines, and are invoked with the
-<TT>call</TT> statement.
+<tt>call</tt> statement.
 <P>
-All MPI objects (e.g., <TT>MPI_Datatype</TT>, <TT>MPI_Comm</TT>) are of type <TT>INTEGER
-</TT>in Fortran.
+All MPI objects (e.g., <tt>MPI_Datatype</tt>, <tt>MPI_Comm</tt>) are of type <tt>INTEGER
+</tt>in Fortran.
 <P>
 </BODY></HTML>

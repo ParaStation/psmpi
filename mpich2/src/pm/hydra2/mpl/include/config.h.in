@@ -345,7 +345,7 @@
 /* set to the name of the thread package */
 #undef THREAD_PACKAGE_NAME
 
-/* If the compiler supports a TLS storage class define it to that here */
+/* Defined the keyword for thread-local storage. */
 #undef TLS
 
 /* Define if performing coverage tests */

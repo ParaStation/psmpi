@@ -1,12 +1,12 @@
-.TH MPI_Sendrecv 3 "6/5/2019" " " "MPI"
+.TH MPI_Sendrecv 3 "11/12/2019" " " "MPI"
 .SH NAME
 MPI_Sendrecv \-  Sends and receives a message 
 .SH SYNOPSIS
 .nf
 int MPI_Sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
-                 int dest, int sendtag,
-                 void *recvbuf, int recvcount, MPI_Datatype recvtype,
-                 int source, int recvtag, MPI_Comm comm, MPI_Status * status)
+int dest, int sendtag,
+void *recvbuf, int recvcount, MPI_Datatype recvtype,
+int source, int recvtag, MPI_Comm comm, MPI_Status * status)
 .fi
 .SH INPUT PARAMETERS
 .PD 0

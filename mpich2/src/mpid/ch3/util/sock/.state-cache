@@ -1,9 +1,8 @@
 <dir>
-<file name="ch3u_init_sock.c" info="1559764267"/>
-<file name="ch3u_connect_sock.c" info="1559764267"/>
-<file name="findinterfaces.c" info="1559764267"/>
-<file name="ch3usock.h" info="1559764267"/>
-<file name="ch3u_getinterfaces.c" info="1559764267"/>
+<file name="ch3u_init_sock.c" info="1573595775"/>
+<file name="ch3u_connect_sock.c" info="1573595775"/>
+<file name="ch3usock.h" info="1573595775"/>
+<file name="ch3u_getinterfaces.c" info="1573595775"/>
 </dir>
 <data>
 <fileinfo name="ch3u_init_sock.c">
@@ -26,8 +25,6 @@ MPID_STATE_CONNECTION_POST_SEND_PKT connection_post_send_pkt
 MPID_STATE_CONNECTION_POST_SEND_PKT_AND_PGID connection_post_send_pkt_and_pgid
 MPID_STATE_CONNECTION_POST_SENDQ_REQ connection_post_sendq_req
 MPID_STATE_CONNECTION_DESTROY connection_destroy
-</fileinfo>
-<fileinfo name="findinterfaces.c">
 </fileinfo>
 <fileinfo name="ch3usock.h">
 </fileinfo>
