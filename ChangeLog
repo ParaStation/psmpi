@@ -1,3 +1,10 @@
+2019-11-15  Simon Pickartz <pickartz@par-tec.com> -    5.4.2-1
+
+	* MPICH 3.3.2
+
+	* Fix: Execution of the CUDA tests when running 'make test'
+	  using a CUDA-aware build of ParaStation MPI
+
 2019-11-12  Simon Pickartz <pickartz@par-tec.com> -	5.4.1-1
 
 	* MPICH 3.3.1
