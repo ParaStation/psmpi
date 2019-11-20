@@ -57,7 +57,10 @@ struct MPIDI_VC {
 struct MPIDI_VCRT {
 	int size;
 	int refcnt;
-	struct MPIDI_VC* vcr[0];
+	union {
+		struct MPIDI_VC* vcr[0];
+		struct MPIDI_VC* vcr_table[0];
+	};
 };
 
 
@@ -105,6 +108,9 @@ typedef struct MPIDI_Process
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 		unsigned enable_smp_aware_collops;
 		unsigned enable_msa_aware_collops;
+#endif
+#ifdef HAVE_LIBHCOLL
+		unsigned enable_hcoll;
 #endif
 #ifdef MPID_PSP_CREATE_HISTOGRAM
 		unsigned enable_histogram;

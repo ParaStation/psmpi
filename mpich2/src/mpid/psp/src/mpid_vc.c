@@ -25,13 +25,11 @@ int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 	int i;
 	int pg_check_id;
 
-	if(!MPIDI_Process.env.enable_smp_awareness) {
+	if(MPIDI_Process.node_id_table == NULL) {
 		/* Just pretend that each rank lives on its own node: */
 		*id_p = rank;
 		return 0;
 	}
-
-	assert(MPIDI_Process.node_id_table);
 
 	pg_check_id = comm->vcr[0]->pg->id_num;
 	for(i=1; i<comm->local_size; i++) {
@@ -288,6 +286,10 @@ int MPID_PSP_comm_create_hook(MPIR_Comm * comm)
 		}
 	}
 
+#ifdef HAVE_LIBHCOLL
+	hcoll_comm_create(comm, NULL);
+#endif
+
 	if (!MPIDI_Process.env.enable_collectives) return MPI_SUCCESS;
 
 	MPID_PSP_group_init(comm);
@@ -307,6 +309,10 @@ int MPID_PSP_comm_destroy_hook(MPIR_Comm * comm)
 	if (comm->comm_kind == MPIR_COMM_KIND__INTERCOMM) {
 		MPIDI_VCRT_Release(comm->local_vcrt, comm->is_disconnected);
 	}
+
+#ifdef HAVE_LIBHCOLL
+	hcoll_comm_destroy(comm, NULL);
+#endif
 
 	if (!MPIDI_Process.env.enable_collectives) return MPI_SUCCESS;
 

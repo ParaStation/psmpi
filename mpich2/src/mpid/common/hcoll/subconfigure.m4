@@ -5,7 +5,7 @@ AC_DEFUN([PAC_SUBCFG_PREREQ_]PAC_SUBCFG_AUTO_SUFFIX,[
 		have_hcoll=no;
 	else
 		if test "${with_hcoll}" = "yes" ; then
-			with_hcoll="/opt/mellanox"
+			with_hcoll="/opt/mellanox/hcoll"
 		fi
 		PAC_SET_HEADER_LIB_PATH(hcoll)
 		PAC_PUSH_FLAG(LIBS)

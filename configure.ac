@@ -491,12 +491,20 @@ AC_ARG_WITH([topology-awareness], [
   --with-topology-awareness
 			  Enable topology/hierarchy awareness for collectives
 ],[
-	export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPID_PSP_TOPOLOGY_AWARENESS"
-	ENABLE_TOPOLOGY_AWARENESS="true"
+	if test "x${withval}" != "xno"; then
+		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPID_PSP_TOPOLOGY_AWARENESS"
+		ENABLE_TOPOLOGY_AWARENESS="true"
+	else
+		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_SUBCOMM_WIDTH=0"
+		ENABLE_TOPOLOGY_AWARENESS="false"
+	fi
 ],[
-	export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_SUBCOMM_WIDTH=0"
-	ENABLE_TOPOLOGY_AWARENESS="false"
+	if test -n "$WITH_HCOLL_DIR" ; then
+		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPID_PSP_TOPOLOGY_AWARENESS"
+		ENABLE_TOPOLOGY_AWARENESS="hcoll"
+	fi
 ])
+
 AC_SUBST([ENABLE_TOPOLOGY_AWARENESS])
 export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_DYNAMIC_PROC_WIDTH=0"
 
@@ -527,7 +535,7 @@ if test "$ENABLE_HYDRA" = "true" ; then
    echo "Preparing psmpi/mpich with Hydra's mpiexec support."
 fi
 if test "$ENABLE_TOPOLOGY_AWARENESS" = "true" ; then
-   echo "Preparing psmpi/mpich with topology-awareness."
+   echo "Preparing psmpi/mpich with topology awareness."
 fi
 if test "$PSCOM_ALLIN" = "true" ; then
    echo "Preparing psmpi/mpich with pscom included."
@@ -536,10 +544,11 @@ if test "$CUDA_SUPPORT" = "true" ; then
    echo "Preparing psmpi/mpich with CUDA support."
 fi
 if test -n "$WITH_HCOLL_DIR" ; then
-   case $CONFSET in
-	ch[[34]]*) ;;
-	*) echo "WARNING: Currently, HCOLL is only supported by CH3 device!" ;;
-   esac
+   if test "$ENABLE_TOPOLOGY_AWARENESS" = "hcoll" ; then
+	echo "Preparing psmpi/mpich with topology awareness by HCOLL support."
+   else
+	echo "Preparing psmpi/mpich with HCOLL support."
+   fi
 fi
 sleep 1
 

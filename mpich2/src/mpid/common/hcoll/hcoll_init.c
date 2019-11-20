@@ -84,8 +84,12 @@ int hcoll_initialize(void)
     hcoll_init_opts_t *init_opts;
     mpi_errno = MPI_SUCCESS;
 
+#if defined MPICH_IS_THREADED
     hcoll_enable = (MPIR_CVAR_ENABLE_HCOLL | MPIR_CVAR_CH3_ENABLE_HCOLL) &&
         !MPIR_ThreadInfo.isThreaded;
+#else
+    hcoll_enable = (MPIR_CVAR_ENABLE_HCOLL | MPIR_CVAR_CH3_ENABLE_HCOLL);
+#endif
     if (0 >= hcoll_enable) {
         goto fn_exit;
     }

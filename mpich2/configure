@@ -27917,7 +27917,7 @@ fi
 		have_hcoll=no;
 	else
 		if test "${with_hcoll}" = "yes" ; then
-			with_hcoll="/opt/mellanox"
+			with_hcoll="/opt/mellanox/hcoll"
 		fi
 
 

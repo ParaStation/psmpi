@@ -31,13 +31,22 @@
  * and eventually accumulated and printed by world rank 0 within the MPI_Finalize call. */
 #undef MPID_PSP_CREATE_HISTOGRAM
 
-/* When MPID_PSP_TOPOLOGY_AWARE_COLLOPS is defined, the MPICH macro MPID_USE_NODE_IDS is set.
- * In this case, the two functions MPID_Get_node_id() and MPID_Get_max_node_id() have to be
- * implemented within the PSP/ADI3 layer for identifying SMP nodes for applying SMP-aware
- * communication topologies for collective MPI operations within the upper MPICH layer.
- * (MPID_PSP_TOPOLOGY_AWARENESS is set if psmpi is configured with --with-topology-awareness) */
+/* When MPID_PSP_TOPOLOGY_AWARE_COLLOPS is defined, the functions MPID_Get_node_id() and
+ * MPID_Get_max_node_id() have to provide topology information (in terms of node IDs for
+ * SMP islands) for identifying SMP nodes for applying SMP-aware communication topologies
+ * for collective MPI operations within the upper MPICH layer.
+ * MPID_PSP_TOPOLOGY_AWARENESS is set if psmpi is configured with --with-topology-awareness */
 #ifdef MPID_PSP_TOPOLOGY_AWARENESS
 #define MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#endif
+
+#ifdef HAVE_LIBHCOLL
+#include "hcoll/api/hcoll_dte.h"
+typedef struct {
+    hcoll_datatype_t hcoll_datatype;
+    int foo; /* Shut up the compiler */
+} MPIDI_Devdt_t;
+#define MPID_DEV_DATATYPE_DECL   MPIDI_Devdt_t   dev;
 #endif
 
 typedef struct {
@@ -475,12 +484,22 @@ typedef struct MPIDI_VC MPIDI_VC_t;
 
 typedef struct MPIDI_VCON MPIDI_VCON;
 
+/* Just for HCOLL integration: */
+typedef struct MPIDI_CH3I_comm
+{
+	struct MPIDI_VCRT *vcrt; /* virtual connecton reference table */
+}
+MPIDI_CH3I_comm_t;
+
 #define MPID_DEV_COMM_DECL						\
 	pscom_socket_t	*pscom_socket;					\
 	pscom_group_t	*group;						\
 	pscom_request_t *bcast_request;					\
 	int              is_disconnected;				\
-	MPIDI_VCRT_t	*vcrt; /* virtual connection reference table */ \
+	union {								\
+		MPIDI_VCRT_t	*vcrt; /* virtual connection reference table */ \
+		MPIDI_CH3I_comm_t dev;					\
+	};								\
 	MPIDI_VC_t	**vcr; /* alias to the array of virtual connections in vcrt  */	\
 	MPIDI_VCRT_t	*local_vcrt; /* local virtual connection reference table */ \
 	MPIDI_VC_t	**local_vcr; /* alias to the array of local virtual connections in local vcrt */

@@ -62,6 +62,9 @@ MPIDI_Process_t MPIDI_Process = {
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 		dinit(enable_smp_aware_collops)	0,
 		dinit(enable_msa_aware_collops)	1,
+#ifdef HAVE_LIBHCOLL
+		dinit(enable_hcoll)	        0,
+#endif
 #endif
 #ifdef MPID_PSP_CREATE_HISTOGRAM
 		dinit(enable_histogram)		0,
@@ -560,6 +563,7 @@ int MPID_Init(int *argc, char ***argv,
 
 	/* Initialize the switches */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_collectives, "PSP_COLLECTIVES");
+
 #ifdef PSCOM_HAS_ON_DEMAND_CONNECTIONS
 	/* if (pg_size > 32) MPIDI_Process.env.enable_ondemand = 1; */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand, "PSP_ONDEMAND");
@@ -583,9 +587,25 @@ int MPID_Init(int *argc, char ***argv,
 	/* use hierarchy-aware collectives on SMP level */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_aware_collops, "PSP_SMP_AWARE_COLLOPS");
 
+#ifdef HAVE_LIBHCOLL
+	pscom_env_get_uint(&MPIDI_Process.env.enable_hcoll, "PSP_HCOLL");
+	if(MPIDI_Process.env.enable_hcoll) {
+		if(1) { /* HCOLL with SHARP support? Just map the envars... */
+			int hcoll_enable_sharp = 0;
+			pscom_env_get_uint(&hcoll_enable_sharp, "PSP_HCOLL_ENABLE_SHARP");
+			if(hcoll_enable_sharp) {
+				setenv("HCOLL_ENABLE_SHARP", "1", 0);
+			}
+		}
+		MPIR_CVAR_ENABLE_HCOLL = 1;
+		MPIDI_Process.env.enable_smp_aware_collops = 1;
+	}
+	/* (For now, the usage of HCOLL and MSA aware collops are mutually exclusive / FIX ME!) */
+#else
 	/* use hierarchy-aware collectives on MSA level (disables SMP-aware collops / FIX ME!) */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_msa_aware_collops, "PSP_MSA_AWARE_COLLOPS");
-	if(MPIDI_Process.env.enable_msa_aware_collops) MPIDI_Process.env.enable_smp_aware_collops = 0;
+	if(MPIDI_Process.env.enable_msa_awareness && MPIDI_Process.env.enable_msa_aware_collops) MPIDI_Process.env.enable_smp_aware_collops = 0;
+#endif
 #endif
 
 #ifdef MPID_PSP_CREATE_HISTOGRAM
