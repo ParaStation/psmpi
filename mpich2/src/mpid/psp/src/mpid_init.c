@@ -53,6 +53,7 @@ MPIDI_Process_t MPIDI_Process = {
 	dinit(shm_attr_key)		0,
 	dinit(msa_module_id)    0,
 	dinit(node_id_table)    NULL,
+	dinit(node_id_max)      0,
 	dinit(env)		{
 		dinit(enable_collectives)	0,
 		dinit(enable_ondemand)		0,
@@ -598,6 +599,7 @@ int MPID_Init(int *argc, char ***argv,
 			}
 		}
 		MPIR_CVAR_ENABLE_HCOLL = 1;
+		if(!getenv("PSP_HCOLL_DISABLE_SMP_AWARENESS")) // <- just for developing/debugging purpose!
 		MPIDI_Process.env.enable_smp_aware_collops = 1;
 	}
 	/* (For now, the usage of HCOLL and MSA aware collops are mutually exclusive / FIX ME!) */
@@ -693,7 +695,10 @@ int MPID_Init(int *argc, char ***argv,
 		int grank;
 		int my_node_id = -1;
 		int remote_node_id = -1;
-		int* node_id_table;
+		int* node_id_table = NULL;
+		int second_round_for_node_ids = 0;
+
+	node_id_determination:
 
 		if(MPIDI_Process.env.enable_msa_awareness && MPIDI_Process.env.enable_msa_aware_collops) {
 
@@ -715,6 +720,17 @@ int MPID_Init(int *argc, char ***argv,
 				/* In the PSP_ONDEMAND=1 case, we have to use a hash of the host name: */
 				my_node_id = MPID_PSP_get_host_hash();
 				if(my_node_id < 0) my_node_id *= -1;
+
+				/* The second round is for normalizing the hashes to ids smaller than pg_size: */
+				if(second_round_for_node_ids) {
+					assert(node_id_table);
+					for (grank = 0; grank < pg_size; grank++) {
+						if(my_node_id == node_id_table[grank]) {
+							my_node_id = grank;
+							break;
+						}
+					}
+				}
 			}
 			assert(my_node_id > -1);
 
@@ -757,7 +773,16 @@ int MPID_Init(int *argc, char ***argv,
 				}
 			}
 
+			if(MPIDI_Process.env.enable_ondemand && !second_round_for_node_ids) {
+				second_round_for_node_ids = 1;
+				goto node_id_determination;
+			}
+
 			MPIDI_Process.node_id_table = node_id_table;
+
+			for(grank=1; grank < pg_size; grank++) {
+				if(node_id_table[grank] > MPIDI_Process.node_id_max) MPIDI_Process.node_id_max = node_id_table[grank];
+			}
 
 		} else {
 			/* No hierarchy-awareness requested */

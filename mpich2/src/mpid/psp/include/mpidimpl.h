@@ -99,6 +99,8 @@ typedef struct MPIDI_Process
 	int msa_module_id;
 
 	int* node_id_table;
+	int  node_id_max;
+
 	struct {
 		unsigned enable_collectives;
 		unsigned enable_ondemand;

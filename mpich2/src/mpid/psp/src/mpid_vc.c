@@ -56,7 +56,7 @@ int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 		return  MPI_ERR_OTHER;
 	}
 
-	*max_id_p = MPIDI_Process.my_pg_size;
+	*max_id_p = MPIDI_Process.node_id_max;
 	return 0;
 }
 
