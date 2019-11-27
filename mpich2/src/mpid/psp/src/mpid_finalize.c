@@ -131,6 +131,8 @@ int MPID_Finalize(void)
 
 	MPIR_Comm_free_keyval_impl(MPIDI_Process.shm_attr_key);
 
+	MPI_Info_delete(MPI_INFO_ENV, "cuda_aware");
+
 /*	fprintf(stderr, "%d PMI_Finalize\n", MPIDI_Process.my_pg_rank); */
 	PMI_Finalize();
 
