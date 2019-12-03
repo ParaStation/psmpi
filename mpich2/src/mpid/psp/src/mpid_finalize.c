@@ -40,7 +40,7 @@ int MPID_Finalize(void)
 	MPIDI_PG_t *pg_ptr;
 
 	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_FINALIZE);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_FINALIZE);
+	MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_FINALIZE);
 
 	if(!_getenv_i("PSP_FINALIZE_BARRIER", 1)) {
 
@@ -132,6 +132,9 @@ int MPID_Finalize(void)
 	MPIR_Comm_free_keyval_impl(MPIDI_Process.shm_attr_key);
 
 	MPI_Info_delete(MPI_INFO_ENV, "cuda_aware");
+#ifdef MPID_PSP_MSA_AWARENESS
+	MPI_Info_delete(MPI_INFO_ENV, "msa_module_id");
+#endif
 
 /*	fprintf(stderr, "%d PMI_Finalize\n", MPIDI_Process.my_pg_rank); */
 	PMI_Finalize();

@@ -31,13 +31,20 @@
  * and eventually accumulated and printed by world rank 0 within the MPI_Finalize call. */
 #undef MPID_PSP_CREATE_HISTOGRAM
 
+/* MPID_PSP_TOPOLOGY_AWARENESS is set if psmpi is configured with --with-topology-awareness */
+#ifdef MPID_PSP_TOPOLOGY_AWARENESS
+
+#define MPID_PSP_MSA_AWARENESS
+/* When MPID_PSP_MSA_AWARNESS is defined, the MPI_INFO_ENV object contains a key/value pair
+ * indicating the module affiliation of the querying rank. The info key is "msa_module_id".
+ */
+
+#define MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 /* When MPID_PSP_TOPOLOGY_AWARE_COLLOPS is defined, the functions MPID_Get_node_id() and
  * MPID_Get_max_node_id() have to provide topology information (in terms of node IDs for
  * SMP islands) for identifying SMP nodes for applying SMP-aware communication topologies
  * for collective MPI operations within the upper MPICH layer.
- * MPID_PSP_TOPOLOGY_AWARENESS is set if psmpi is configured with --with-topology-awareness */
-#ifdef MPID_PSP_TOPOLOGY_AWARENESS
-#define MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+ */
 #endif
 
 #ifdef HAVE_LIBHCOLL
