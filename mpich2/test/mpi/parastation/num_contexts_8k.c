@@ -10,6 +10,7 @@
  */
 
 #include <mpi.h>
+#include <mpi-ext.h>
 #include <stdio.h>
 
 /* Check for 8k custom/dynamic communicators: (minus COMM_SELF, COMM_WORLD, and ICOMM_WORLD if needed) */
@@ -30,6 +31,8 @@ int main(int argc, char* argv[])
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
 	MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+
+#if !defined(MPIX_TOPOLOGY_AWARENESS) || (MPIX_TOPOLOGY_AWARENESS == 0)
 
 	for(i=0; i<NUM_COMMS; i++) {
 
@@ -53,6 +56,7 @@ int main(int argc, char* argv[])
 	for(i=0; i<NUM_COMMS; i++) {
 		MPI_Comm_free(&comm_array[i]);
 	}
+#endif
 
 	printf(" No errors\n");
 

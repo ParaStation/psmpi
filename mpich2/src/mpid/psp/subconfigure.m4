@@ -69,13 +69,24 @@ AC_ARG_VAR([PSP_CPPFLAGS], [C preprocessor flags for PSP macros])
 
 AC_SUBST([PSP_CPPFLAGS])
 
+# Topology awareness
+AC_ARG_ENABLE(psp-topology-awareness,
+    AC_HELP_STRING(
+        [--enable-psp-topology-awareness],
+        [Enable topology awareness for the PSP device
+    ]),,enable_psp_topology_awareness=no)
+PSP_TOPOLOGY_AWARENESS=0
+if test "$enable_psp_topology_awareness" = "yes" ; then
+   PSP_TOPOLOGY_AWARENESS=1
+fi
+AC_SUBST([PSP_TOPOLOGY_AWARENESS])
+
+# CUDA support
 AC_ARG_ENABLE(psp-cuda-awareness,
     AC_HELP_STRING(
         [--enable-psp-cuda-awareness],
-        [Enable CUDA-awareness for the PSP device
+        [Enable CUDA awareness for the PSP device
     ]),,enable_psp_cuda_awareness=no)
-
-# CUDA support
 pscom_is_cuda_aware=no
 PSP_CUDA_AWARE_SUPPORT=0
 if test "$enable_psp_cuda_awareness" = "yes" ; then

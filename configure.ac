@@ -494,6 +494,7 @@ AC_ARG_WITH([topology-awareness], [
 	if test "x${withval}" != "xno"; then
 		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPID_PSP_TOPOLOGY_AWARENESS"
 		ENABLE_TOPOLOGY_AWARENESS="true"
+		CONF_OPS="$CONF_OPS --enable-psp-topology-awareness"
 	else
 		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_SUBCOMM_WIDTH=0"
 		ENABLE_TOPOLOGY_AWARENESS="false"
@@ -502,6 +503,7 @@ AC_ARG_WITH([topology-awareness], [
 	if test -n "$WITH_HCOLL_DIR" ; then
 		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPID_PSP_TOPOLOGY_AWARENESS"
 		ENABLE_TOPOLOGY_AWARENESS="hcoll"
+		CONF_OPS="$CONF_OPS --enable-psp-topology-awareness"
 	else
 		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_SUBCOMM_WIDTH=0"
 	fi

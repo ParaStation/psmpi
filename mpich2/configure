@@ -1304,6 +1304,7 @@ BUILD_FC_BINDING_TRUE
 BUILD_NEMESIS_NETMOD_MXM_FALSE
 BUILD_NEMESIS_NETMOD_MXM_TRUE
 PSP_CUDA_AWARE_SUPPORT
+PSP_TOPOLOGY_AWARENESS
 PSP_CPPFLAGS
 PSCOM_ALLIN_LIBS
 PSCOM_RPATHLINK
@@ -1568,6 +1569,7 @@ with_sysroot
 enable_libtool_lock
 enable_cache
 enable_strict
+enable_psp_topology_awareness
 enable_psp_cuda_awareness
 enable_sock_debug
 with_hcoll
@@ -2477,8 +2479,10 @@ Optional Features:
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --enable-cache          Turn on configure caching
   --enable-strict         Turn on strict compilation testing
+  --enable-psp-topology-awareness
+                          Enable topology awareness for the PSP device
   --enable-psp-cuda-awareness
-                          Enable CUDA-awareness for the PSP device
+                          Enable CUDA awareness for the PSP device
 --enable-sock-debug - Turn on tests of the socket data structures
 --enable-ch4-netmod-inline
        Enables inlined netmod build when a single netmod is used
@@ -27260,6 +27264,21 @@ fi
 
 
 
+# Topology awareness
+# Check whether --enable-psp-topology-awareness was given.
+if test "${enable_psp_topology_awareness+set}" = set; then :
+  enableval=$enable_psp_topology_awareness;
+else
+  enable_psp_topology_awareness=no
+fi
+
+PSP_TOPOLOGY_AWARENESS=0
+if test "$enable_psp_topology_awareness" = "yes" ; then
+   PSP_TOPOLOGY_AWARENESS=1
+fi
+
+
+# CUDA support
 # Check whether --enable-psp-cuda-awareness was given.
 if test "${enable_psp_cuda_awareness+set}" = set; then :
   enableval=$enable_psp_cuda_awareness;
@@ -27267,8 +27286,6 @@ else
   enable_psp_cuda_awareness=no
 fi
 
-
-# CUDA support
 pscom_is_cuda_aware=no
 PSP_CUDA_AWARE_SUPPORT=0
 if test "$enable_psp_cuda_awareness" = "yes" ; then
