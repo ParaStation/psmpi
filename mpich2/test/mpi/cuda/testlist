@@ -22,3 +22,4 @@ cuda_fop 4 mpiversion=3.0 env=PSP_CUDA=1
 cuda_sync_memops_ptr_attr 16 env=PSP_CUDA=1
 cuda_sync_memops_explicitly 16 env=PSP_CUDA=1
 cuda_sync_memops_memcpy 16 env=PSP_CUDA=1
+cuda_info_env 1 env=PSP_CUDA=1
