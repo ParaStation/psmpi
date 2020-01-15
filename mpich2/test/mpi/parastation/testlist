@@ -30,6 +30,8 @@ msa_info_env 1
 msa_info_env 1 env=PSP_MSA_AWARENESS=1
 msa_info_env 4 env=PSP_MSA_AWARENESS=1 env=PSP_MSA_MODULE_ID=3
 msa_info_env 4 env=PSP_MSA_AWARENESS=0 env=PSP_MSA_MODULE_ID=3
+msa_split_type 8 env=PSP_MSA_AWARENESS=0
+msa_split_type 8 env=PSP_MSA_AWARENESS=1
 acc_pairtype 2
 acc_vecsum 2
 get_acc_pairtype 2 mpiversion=3.0
