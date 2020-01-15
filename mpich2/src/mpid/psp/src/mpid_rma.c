@@ -714,6 +714,11 @@ int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
 		if(mpi_errno == MPI_SUCCESS) {
 			mpi_errno = MPIR_Comm_set_attr_impl(*newcomm_ptr, MPIDI_Process.shm_attr_key, NULL, MPIR_ATTR_PTR);
 		}
+	} else if(split_type == MPIX_COMM_TYPE_MODULE) {
+		int color;
+
+		color = MPIDI_Process.msa_module_id;
+		mpi_errno = MPIR_Comm_split_impl(comm_ptr, color, key, newcomm_ptr);
 
 	} else {
 		mpi_errno = MPIR_Comm_split_impl(comm_ptr,  MPI_UNDEFINED, key, newcomm_ptr);

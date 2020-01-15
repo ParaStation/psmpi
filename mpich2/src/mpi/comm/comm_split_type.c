@@ -1087,8 +1087,8 @@ int MPIR_Comm_split_type_impl(MPIR_Comm * comm_ptr, int split_type, int key,
     int mpi_errno = MPI_SUCCESS;
 
     /* Only MPI_COMM_TYPE_SHARED, MPI_UNDEFINED, and
-     * NEIGHBORHOOD are supported */
-    MPIR_Assert(split_type == MPI_COMM_TYPE_SHARED ||
+     * NEIGHBORHOOD are supported -> plus MPIX_COMM_TYPE_MODULE */
+    MPIR_Assert(split_type == MPI_COMM_TYPE_SHARED || split_type == MPIX_COMM_TYPE_MODULE ||
                 split_type == MPI_UNDEFINED || split_type == MPIX_COMM_TYPE_NEIGHBORHOOD);
 
     if (MPIR_Comm_fns != NULL && MPIR_Comm_fns->split_type != NULL) {

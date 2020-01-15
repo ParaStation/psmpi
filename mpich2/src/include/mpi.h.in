@@ -554,6 +554,9 @@ typedef int MPI_Info;
 /* MPICH-specific types */
 #define MPIX_COMM_TYPE_NEIGHBORHOOD 2
 
+/* psmpi/PSP-specific types */
+#define MPIX_COMM_TYPE_MODULE   3
+
 /* Definitions that are determined by configure. */
 typedef @MPI_AINT@ MPI_Aint;
 typedef @MPI_FINT@ MPI_Fint;
