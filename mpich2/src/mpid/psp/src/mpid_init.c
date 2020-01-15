@@ -564,11 +564,13 @@ int MPID_Init(int *argc, char ***argv,
 	/* take SMP-related locality information into account (e.g., for MPI_Win_allocate_shared) */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
 
+#ifdef MPID_PSP_MSA_AWARENESS
 	/* take MSA-related topology information into account */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_msa_awareness, "PSP_MSA_AWARENESS");
 	if(MPIDI_Process.env.enable_msa_awareness) {
 		pscom_env_get_uint(&MPIDI_Process.msa_module_id, "PSP_MSA_MODULE_ID");
 	}
+#endif
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	/* use hierarchy-aware collectives on SMP level */
@@ -771,7 +773,7 @@ int MPID_Init(int *argc, char ***argv,
 			}
 
 		} else {
-			/* No hierarchy-awareness requested */
+			/* No hierarchy awareness requested */
 			assert(MPIDI_Process.node_id_table == NULL);
 		}
 	}
