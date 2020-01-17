@@ -6372,6 +6372,7 @@ mpich2/src/mpid/psp/src/Makefile.mk \
 mpich2/src/mpid/psp/src/mpid_abort.c \
 mpich2/src/mpid/psp/src/mpid_cancel.c \
 mpich2/src/mpid/psp/src/mpid_coll.c \
+mpich2/src/mpid/psp/src/mpid_comm.c \
 mpich2/src/mpid/psp/src/mpid_debug.c \
 mpich2/src/mpid/psp/src/mpid_debug.h \
 mpich2/src/mpid/psp/src/mpid_finalize.c \
