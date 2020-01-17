@@ -9049,6 +9049,7 @@ mpich2/test/mpi/cuda/cuda_allreduce_vec.c \
 mpich2/test/mpi/cuda/cuda_cas.c \
 mpich2/test/mpi/cuda/cuda_coll_suite.c \
 mpich2/test/mpi/cuda/cuda_fop.c \
+mpich2/test/mpi/cuda/cuda_info_env.c \
 mpich2/test/mpi/cuda/cuda_laplace_mpi.cu \
 mpich2/test/mpi/cuda/cuda_pingpong_dtype.c \
 mpich2/test/mpi/cuda/cuda_pingpong_mixed.c \
@@ -10518,6 +10519,8 @@ mpich2/test/mpi/parastation/large_acc_flush_local.c \
 mpich2/test/mpi/parastation/large_msg_typed.c \
 mpich2/test/mpi/parastation/locknull.c \
 mpich2/test/mpi/parastation/mprobe.c \
+mpich2/test/mpi/parastation/msa_info_env.c \
+mpich2/test/mpi/parastation/msa_split_type.c \
 mpich2/test/mpi/parastation/num_contexts_16k.c \
 mpich2/test/mpi/parastation/num_contexts_2k.c \
 mpich2/test/mpi/parastation/num_contexts_4k.c \
