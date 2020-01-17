@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2020 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -71,11 +71,14 @@ int MPIDI_VCRT_Release(MPIDI_VCRT_t *vcrt, int isDisconnect);
 MPIDI_VC_t *MPIDI_VC_Dup(MPIDI_VC_t *orig_vcr);
 MPIDI_VC_t *MPIDI_VC_Create(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid);
 
-int MPID_PSP_get_host_hash();
+int MPID_PSP_get_host_hash(void);
+int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key, MPIR_Info * info_ptr, MPIR_Comm ** newcomm_ptr);
 
+void MPID_PSP_comm_init(void);
 void MPID_PSP_comm_set_vcrt(MPIR_Comm *comm, MPIDI_VCRT_t *vcrt);
 void MPID_PSP_comm_set_local_vcrt(MPIR_Comm *comm, MPIDI_VCRT_t *vcrt);
 void MPID_PSP_comm_create_mapper(MPIR_Comm * comm);
+
 int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr);
 MPIDI_PG_t* MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr);
 void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num);
@@ -100,6 +103,7 @@ typedef struct MPIDI_Process
 
 	int* node_id_table;
 	int  node_id_max;
+	int  my_node_id;
 
 	struct {
 		unsigned enable_collectives;

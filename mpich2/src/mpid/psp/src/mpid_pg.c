@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2020 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -131,68 +131,6 @@ int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], int lpid[])
 	}
 
 	return mpi_errno;
-}
-
-int MPID_Create_intercomm_from_lpids(MPIR_Comm *newcomm_ptr, int size, const int lpids[])
-{
-	int mpi_errno = MPI_SUCCESS;
-	MPIR_Comm *commworld_ptr;
-	MPIDI_VCRT_t *vcrt;
-	int i;
-
-	commworld_ptr = MPIR_Process.comm_world;
-	/* Setup the communicator's vc table: remote group */
-	vcrt = MPIDI_VCRT_Create(size);
-	assert(vcrt);
-	MPID_PSP_comm_set_vcrt(newcomm_ptr, vcrt);
-
-	for (i=0; i<size; i++) {
-		MPIDI_VC_t *vcr = NULL;
-
-		/* For rank i in the new communicator, find the corresponding
-		   virtual connection.  For lpids less than the size of comm_world,
-		   we can just take the corresponding entry from comm_world.
-		   Otherwise, we need to search through the process groups.
-		*/
-		/* printf( "[%d] Remote rank %d has lpid %d\n",
-		   MPIR_Process.comm_world->rank, i, lpids[i] ); */
-		if ((lpids[i] >=0) && (lpids[i] < commworld_ptr->remote_size)) {
-			vcr = commworld_ptr->vcr[lpids[i]];
-			assert(vcr);
-		}
-		else {
-			/* We must find the corresponding vcr for a given lpid */
-			/* For now, this means iterating through the process groups */
-			MPIDI_PG_t *pg;
-			int j;
-
-			pg = MPIDI_Process.my_pg->next; /* (skip comm_world) */
-
-			do {
-				assert(pg);
-
-				for (j=0; j<pg->size; j++) {
-
-					if(!pg->vcr[j]) continue;
-
-					if (pg->vcr[j]->lpid == lpids[i]) {
-						/* Found vc for current lpid in another pg! */
-						vcr = pg->vcr[j];
-						break;
-					}
-				}
-				pg = pg->next;
-			} while (!vcr);
-		}
-
-		/* Note that his will increment the ref count for the associate PG if necessary.  */
-		newcomm_ptr->vcr[i] = MPIDI_VC_Dup(vcr);
-	}
-
-fn_exit:
-	return mpi_errno;
-fn_fail:
-	goto fn_exit;
 }
 
 

@@ -3,6 +3,7 @@
 mpi_core_sources +=               src/mpid/psp/src/mpid_abort.c			\
                                   src/mpid/psp/src/mpid_cancel.c		\
                                   src/mpid/psp/src/mpid_coll.c    		\
+                                  src/mpid/psp/src/mpid_comm.c    		\
                                   src/mpid/psp/src/mpid_debug.c			\
                                   src/mpid/psp/src/mpid_finalize.c		\
                                   src/mpid/psp/src/mpid_get_processor_name.c	\

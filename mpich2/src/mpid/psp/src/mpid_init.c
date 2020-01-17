@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2020 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -54,6 +54,7 @@ MPIDI_Process_t MPIDI_Process = {
 	dinit(msa_module_id)    0,
 	dinit(node_id_table)    NULL,
 	dinit(node_id_max)      0,
+	dinit(my_node_id)       -1,
 	dinit(env)		{
 		dinit(enable_collectives)	0,
 		dinit(enable_ondemand)		0,
@@ -489,17 +490,17 @@ int MPID_Init(int *argc, char ***argv,
 	char *pg_id_name;
 	char *parent_port;
 
-    /* Call any and all MPID_Init type functions */
-    MPIR_Err_init();
-    MPIR_Datatype_init();
-    MPIR_Group_init();
+	/* Call any and all MPID_Init type functions */
+	MPIR_Err_init();
+	MPIR_Datatype_init();
+	MPIR_Group_init();
 
 	mpid_debug_init();
 
 	assert(PSCOM_ANYPORT == -1); /* all codeplaces which depends on it are marked with: "assert(PSP_ANYPORT == -1);"  */
 
 	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_INIT);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_INIT);
+	MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_INIT);
 
 	/*
 	 * PMI_Init() and PMI_Get_appnum() have to be called in any case to
@@ -523,6 +524,9 @@ int MPID_Init(int *argc, char ***argv,
 
 	if (pg_rank < 0) pg_rank = 0;
 	if (pg_size <= 0) pg_size = 1;
+
+	MPIDI_Process.my_node_id  = pg_rank;
+	MPIDI_Process.node_id_max = pg_size;
 
 	if (
 #ifndef MPICH_IS_THREADED
@@ -766,6 +770,7 @@ int MPID_Init(int *argc, char ***argv,
 				goto node_id_determination;
 			}
 
+			MPIDI_Process.my_node_id = my_node_id;
 			MPIDI_Process.node_id_table = node_id_table;
 
 			for(grank=1; grank < pg_size; grank++) {
@@ -779,69 +784,9 @@ int MPID_Init(int *argc, char ***argv,
 	}
 #endif
 
-	/*
-	 * Initialize the MPI_COMM_WORLD object
-	 */
-	{
-		MPIR_Comm * comm;
-		int grank;
-		MPIDI_PG_t * pg_ptr;
-		int pg_id_num;
-		MPIDI_VCRT_t * vcrt;
-
-		comm = MPIR_Process.comm_world;
-
-		comm->rank        = pg_rank;
-		comm->remote_size = pg_size;
-		comm->local_size  = pg_size;
-		comm->pscom_socket = socket;
-
-		vcrt = MPIDI_VCRT_Create(comm->remote_size);
-		assert(vcrt);
-		MPID_PSP_comm_set_vcrt(comm, vcrt);
-
-		MPIDI_PG_Convert_id(pg_id_name, &pg_id_num);
-		MPIDI_PG_Create(pg_size, pg_id_num, &pg_ptr);
-		assert(pg_ptr == MPIDI_Process.my_pg);
-
-		for (grank = 0; grank < pg_size; grank++) {
-			/* MPIR_CheckDisjointLpids() in mpi/comm/intercomm_create.c expect
-			   lpid to be smaller than 4096!!!
-			   Else you will see an "Fatal error in MPI_Intercomm_create"
-			*/
-
-			pscom_connection_t *con = grank2con_get(grank);
-
-			pg_ptr->vcr[grank] = MPIDI_VC_Create(pg_ptr, grank, con, grank);
-			comm->vcr[grank] = MPIDI_VC_Dup(pg_ptr->vcr[grank]);
-		}
-
-		mpi_errno = MPIR_Comm_commit(comm);
-		assert(mpi_errno == MPI_SUCCESS);
-	}
-
-	/*
-	 * Initialize the MPI_COMM_SELF object
-	 */
-	{
-		MPIR_Comm * comm;
-		MPIDI_VCRT_t * vcrt;
-
-		comm = MPIR_Process.comm_self;
-		comm->rank        = 0;
-		comm->remote_size = 1;
-		comm->local_size  = 1;
-		comm->pscom_socket = socket;
-
-		vcrt = MPIDI_VCRT_Create(comm->remote_size);
-		assert(vcrt);
-		MPID_PSP_comm_set_vcrt(comm, vcrt);
-
-		comm->vcr[0] = MPIDI_VC_Dup(MPIR_Process.comm_world->vcr[pg_rank]);
-
-		mpi_errno = MPIR_Comm_commit(comm);
-		assert(mpi_errno == MPI_SUCCESS);
-	}
+	/* Call the other init routines */
+	MPID_PSP_comm_init();
+	MPID_PSP_shm_rma_init();
 
 	/*
 	 * Setup the MPI_INFO_ENV object
@@ -869,12 +814,14 @@ int MPID_Init(int *argc, char ***argv,
 
 	/* ToDo: move MPID_enable_receive_dispach to bg thread */
 	MPID_enable_receive_dispach(socket);
+	MPIR_Process.comm_world->pscom_socket = socket;
+	MPIR_Process.comm_self->pscom_socket = socket;
+
 
 	if (threadlevel_provided) {
 		*threadlevel_provided = (MPICH_THREAD_LEVEL < threadlevel_requested) ?
 			MPICH_THREAD_LEVEL : threadlevel_requested;
 	}
-
 
 
 	if (has_parent) {
@@ -898,8 +845,6 @@ int MPID_Init(int *argc, char ***argv,
 		MPL_strncpy(comm->name, "MPI_COMM_PARENT", MPI_MAX_OBJECT_NAME);
 		MPIR_Process.comm_parent = comm;
 	}
-
-	MPID_PSP_shm_rma_init();
 
  fn_exit:
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_INIT);

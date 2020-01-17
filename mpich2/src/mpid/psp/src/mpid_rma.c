@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2019 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2020 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -565,7 +565,6 @@ fn_fail:
  */
 
 extern struct MPIR_Commops  *MPIR_Comm_fns;
-struct MPIR_Commops MPIR_PSP_Comm_fns;
 
 typedef struct _MPID_PSP_shm_attr_t
 {
@@ -578,14 +577,11 @@ typedef struct _MPID_PSP_shm_attr_t
 } MPID_PSP_shm_attr_t;
 
 static int MPID_PSP_shm_attr_delete_fn(MPI_Win, int, void*, void*);
-static int MPID_PSP_split_type(MPIR_Comm*, int, int, MPIR_Info*, MPIR_Comm**);
 static void MPID_PSP_shm_rma_set_attr(MPIR_Win*, MPID_PSP_shm_attr_t*);
 static void MPID_PSP_shm_rma_get_attr(MPIR_Win*, MPID_PSP_shm_attr_t**);
 
 void MPID_PSP_shm_rma_init(void)
 {
-	MPIR_Comm_fns = &MPIR_PSP_Comm_fns;
-	MPIR_Comm_fns->split_type = MPID_PSP_split_type;
 	MPIR_Comm_create_keyval_impl(MPI_COMM_DUP_FN, MPID_PSP_shm_attr_delete_fn, &MPIDI_Process.shm_attr_key, NULL);
 }
 
@@ -672,60 +668,6 @@ void MPID_PSP_shm_rma_get_base(MPIR_Win *win_ptr, int rank, int *disp, void **ba
 	}
 }
 
-static
-int get_my_shmem_split_color(MPIR_Comm * comm_ptr)
-{
-	int i, color = MPI_UNDEFINED;
-
-	if(!MPIDI_Process.env.enable_smp_awareness) {
-		return comm_ptr->rank;
-	}
-
-	if(MPIDI_Process.env.enable_ondemand) {
-		/* In the PSP_ONDEMAND=1 case, we cannot check reliably for CON_TYPE_SHM,
-		   so we switch to the host_hash approach, accepting the possibility of
-		   hash collisions that may lead to undefined situations... */
-		return MPID_PSP_get_host_hash();
-	}
-
-	for(i=0; i<comm_ptr->local_size; i++) {
-		if( (comm_ptr->vcr[i]->con->type == PSCOM_CON_TYPE_SHM) || (comm_ptr->rank == i) ) {
-			color = i;
-			break;
-		}
-	}
-
-	return color;
-}
-
-static
-int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
-			MPIR_Info * info_ptr, MPIR_Comm ** newcomm_ptr)
-{
-	int mpi_errno = MPI_SUCCESS;
-
-	if(split_type == MPI_COMM_TYPE_SHARED) {
-		int color;
-
-		color = get_my_shmem_split_color(comm_ptr);
-
-		mpi_errno = MPIR_Comm_split_impl(comm_ptr, color, key, newcomm_ptr);
-
-		if(mpi_errno == MPI_SUCCESS) {
-			mpi_errno = MPIR_Comm_set_attr_impl(*newcomm_ptr, MPIDI_Process.shm_attr_key, NULL, MPIR_ATTR_PTR);
-		}
-	} else if(split_type == MPIX_COMM_TYPE_MODULE) {
-		int color;
-
-		color = MPIDI_Process.msa_module_id;
-		mpi_errno = MPIR_Comm_split_impl(comm_ptr, color, key, newcomm_ptr);
-
-	} else {
-		mpi_errno = MPIR_Comm_split_impl(comm_ptr,  MPI_UNDEFINED, key, newcomm_ptr);
-	}
-
-	return mpi_errno;
-}
 
 static
 int MPID_PSP_shm_attr_delete_fn(MPI_Win win, int keyval, void *attribute_val, void *extra_state)
