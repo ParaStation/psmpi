@@ -696,35 +696,10 @@ int MPID_Comm_connect(const char * port_name, MPIR_Info * info, int root,
 int MPID_Comm_disconnect(MPIR_Comm *comm_ptr)
 {
     int mpi_errno;
-    /* From src/mpid/ch3/src/mpid_comm_disconnect.c
-       used in src/mpi/spawn/comm_disconnect.c */
-    /* Before releasing the communicator, we need to ensure that all VCs are
-       in a stable state.  In particular, if a VC is still in the process of
-       connecting, complete the connection before tearing it down */
-    /* FIXME: How can we get to a state where we are still connecting a VC but
-       the MPIR_Comm_release will find that the ref count decrements to zero
-       (it may be that some operation fails to increase/decrease the reference
-       count.  A patch could be to increment the reference count while
-       connecting, then decrement it.  But the increment in the reference
-       count should come
-       from the step that caused the connection steps to be initiated.
-       Possibility: if the send queue is not empty, the ref count should
-       be higher.  */
-    /* FIXME: This doesn't work yet */
-    /*
-    mpi_errno = MPIDI_CH3U_Comm_FinishPending( comm_ptr );
-    */
-
-    /* it's more than a comm_release, but ok for now */
-    /* FIXME: Describe what more might be required */
-    /* MPIU_PG_Printall( stdout ); */
 
     mpi_errno = MPIR_Comm_release(comm_ptr);
-
-    /* If any of the VCs were released by this Comm_release, wait
-     for those close operations to complete */
-/*jh    MPIDI_CH3U_VC_WaitForClose();*/
-    /* MPIU_PG_Printall( stdout ); */
+    assert(comm_ptr);
+    comm_ptr->is_disconnected = 1;
 
     return mpi_errno;
 }
