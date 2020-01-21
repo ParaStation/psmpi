@@ -293,6 +293,7 @@ int MPID_PSP_comm_create_hook(MPIR_Comm * comm)
 		MPID_PSP_comm_create_mapper(comm);
 	}
 
+	comm->is_disconnected = 0;
 	comm->group = NULL;
 
 	if (comm->comm_kind == MPIR_COMM_KIND__INTERCOMM) {

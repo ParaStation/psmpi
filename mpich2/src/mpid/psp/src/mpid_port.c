@@ -697,9 +697,9 @@ int MPID_Comm_disconnect(MPIR_Comm *comm_ptr)
 {
     int mpi_errno;
 
-    mpi_errno = MPIR_Comm_release(comm_ptr);
     assert(comm_ptr);
     comm_ptr->is_disconnected = 1;
+    mpi_errno = MPIR_Comm_release(comm_ptr);
 
     return mpi_errno;
 }
