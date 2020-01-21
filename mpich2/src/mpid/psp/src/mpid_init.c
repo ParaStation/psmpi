@@ -71,6 +71,7 @@ MPIDI_Process_t MPIDI_Process = {
 #ifdef MPID_PSP_CREATE_HISTOGRAM
 		dinit(enable_histogram)		0,
 #endif
+		dinit(enable_lazy_disconnect)	1,
 	},
 #ifdef MPID_PSP_CREATE_HISTOGRAM
 	dinit(histo)		{
@@ -609,6 +610,8 @@ int MPID_Init(int *argc, char ***argv,
 	pscom_env_get_uint(&MPIDI_Process.histo.min_size,   "PSP_HISTOGRAM_MIN");
 	pscom_env_get_uint(&MPIDI_Process.histo.step_width, "PSP_HISTOGRAM_SHIFT");
 #endif
+	pscom_env_get_uint(&MPIDI_Process.env.enable_lazy_disconnect, "PSP_LAZY_DISCONNECT");
+
 	/*
 	pscom_env_get_uint(&mpir_allgather_short_msg,	"PSP_ALLGATHER_SHORT_MSG");
 	pscom_env_get_uint(&mpir_allgather_long_msg,	"PSP_ALLGATHER_LONG_MSG");

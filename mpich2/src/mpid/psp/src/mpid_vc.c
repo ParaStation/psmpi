@@ -17,10 +17,6 @@
 #include "mpid_visibility.h"
 
 
-static int ENABLE_REAL_DISCONNECT = 1;
-static int ENABLE_LAZY_DISCONNECT = 1;
-
-
 static
 int MPIDI_VCR_DeleteFromPG(MPIDI_VC_t *vcr);
 
@@ -54,11 +50,11 @@ void VCR_put(MPIDI_VC_t *vcr, int isDisconnect)
 {
 	vcr->refcnt--;
 
-	if(ENABLE_REAL_DISCONNECT && isDisconnect && (vcr->refcnt == 1)) {
+	if(isDisconnect && (vcr->refcnt == 1)) {
 
 		MPIDI_VCR_DeleteFromPG(vcr);
 
-		if(!ENABLE_LAZY_DISCONNECT) {
+		if(!MPIDI_Process.env.enable_lazy_disconnect) {
 			/* Finally, tear down this connection: */
 			pscom_close_connection(vcr->con);
 		}
@@ -167,7 +163,7 @@ int MPIDI_VCR_DeleteFromPG(MPIDI_VC_t *vcr)
 
 	pg->vcr[vcr->pg_rank] = NULL;
 
-	if(!ENABLE_LAZY_DISCONNECT) {
+	if(!MPIDI_Process.env.enable_lazy_disconnect) {
 		/* For lazy disconnect, we keep this information! */
 		pg->lpids[vcr->pg_rank] = -1;
 		pg->cons[vcr->pg_rank] = NULL;

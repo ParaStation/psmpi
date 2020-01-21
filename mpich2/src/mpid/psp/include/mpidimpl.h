@@ -121,6 +121,7 @@ typedef struct MPIDI_Process
 #ifdef MPID_PSP_CREATE_HISTOGRAM
 		unsigned enable_histogram;
 #endif
+		unsigned enable_lazy_disconnect;
 	} env;
 #ifdef MPID_PSP_CREATE_HISTOGRAM
 	struct {
