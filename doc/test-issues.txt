@@ -1,13 +1,19 @@
-For 5.2.0-1 (MPICH 3.2-based, tested with pscom-5.2-1-1rc)
+Recent results of the MPICH test suite: (confset=default, mpiexec=hydra, PSP_ONDEMAND=0, pscom-5.4.2-1_ge797bbec)
 
-with hydra's mpiexec, confset=default, largetests disabled
+ 3 tests failed out of 1355
+ Summary written to /home/clauss/Work/psmpi/doc/test-5.4.2-1_19_g5fa5d66b1_2020-01-21_18:03:23*
 
-With PSP_ONDEMAND=0:
- All 943 tests passed!
- 0 tests failed out of 943
- Summary written to test-5.2.0-1_3_g3c52e28_pscom-5.2.1_2017-08-25_07:58:00.*
+./spawn/spawn_rootargs np=10:
+ No Errors
+[mpiexec@zam871] APPLICATION TIMED OUT, TIMEOUT = 180s
 
-With PSP_ONDEMAND=1:
- All 943 tests passed!
- 0 tests failed out of 943
- Summary written to test-5.2.0-1_3_g3c52e28_pscom-5.2.1-ondemand_2017-08-25_07:04:41
+-------------------------------------------------
+./errors/comm/subcomm_abort np=4:
+No Errors
+/home/clauss/Work/psmpi/build/install/bin/mpiexec.hydra returned a zero status but the program returned a nonzero status
+
+-------------------------------------------------
+./errors/comm/intercomm_abort np=6:
+application called MPI_Abort(comm=0x84000001, 8) - process 0Fatal error in PMPI_Recv: Other MPI error, error stack:
+/home/clauss/Work/psmpi/build/install/bin/mpiexec.hydra returned a zero status but the program returned a nonzero status
+

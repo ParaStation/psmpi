@@ -1,0 +1,531 @@
+zam871
+package pscom is not installed
+package psmgmt is not installed
+5.4.2-1_19_g5fa5d66b1
+/home/clauss/Work/psmpi/build/install/bin/mpiexec.hydra
+make[1]: Entering directory '/home/clauss/Work/psmpi/build/mpich2'
+( cd test && make  testing )
+make[2]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test'
+(NOXMLCLOSE=YES && export NOXMLCLOSE && cd mpi && make testing)
+make[3]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi'
+CDPATH="${ZSH_VERSION+.}:" && cd /home/clauss/Work/psmpi/mpich2/test/mpi && /bin/sh /home/clauss/Work/psmpi/mpich2/test/mpi/confdb/missing aclocal-1.15 -I confdb
+ cd /home/clauss/Work/psmpi/mpich2/test/mpi && /bin/sh /home/clauss/Work/psmpi/mpich2/test/mpi/confdb/missing automake-1.15 --foreign
+CDPATH="${ZSH_VERSION+.}:" && cd /home/clauss/Work/psmpi/mpich2/test/mpi && /bin/sh /home/clauss/Work/psmpi/mpich2/test/mpi/confdb/missing autoconf
+/bin/sh ./config.status --recheck
+running CONFIG_SHELL=/bin/sh /bin/sh /home/clauss/Work/psmpi/mpich2/test/mpi/configure --with-mpi=/home/clauss/Work/psmpi/build/install --no-create --no-recursion
+configure: loading site script /usr/share/site/x86_64-unknown-linux-gnu
+RUNNING CONFIGURE FOR MPI TESTS
+checking for a BSD-compatible install... /usr/bin/install -c
+checking whether build environment is sane... yes
+checking for a thread-safe mkdir -p... /usr/bin/mkdir -p
+checking for gawk... gawk
+checking whether make sets $(MAKE)... yes
+checking whether make supports nested variables... yes
+checking whether to enable maintainer-specific portions of Makefiles... yes
+checking whether make supports nested variables... (cached) yes
+checking for make... make
+checking whether clock skew breaks make... no
+checking whether make supports include... no
+checking whether make allows comments in actions... no
+configure: WARNING: Your make does not allow comments in target code.
+Using this make may cause problems when building programs.
+You should consider using gnumake instead.
+checking for virtual path format... VPATH
+checking whether make sets CFLAGS... yes
+checking for style of include used by make... GNU
+checking whether the C compiler works... yes
+checking for C compiler default output file name... a.out
+checking for suffix of executables... 
+checking whether we are cross compiling... no
+checking for suffix of object files... o
+checking whether we are using the GNU C compiler... yes
+checking whether /home/clauss/Work/psmpi/build/install/bin/mpicc accepts -g... yes
+checking for /home/clauss/Work/psmpi/build/install/bin/mpicc option to accept ISO C89... none needed
+checking whether /home/clauss/Work/psmpi/build/install/bin/mpicc understands -c and -o together... yes
+checking dependency style of /home/clauss/Work/psmpi/build/install/bin/mpicc... gcc3
+checking whether we can compile and link MPI programs in C... yes
+checking whether long double is supported... yes
+checking whether long long is supported... yes
+checking for an ANSI C-conforming const... yes
+checking for C/C++ restrict keyword... __restrict
+checking for ranlib... ranlib
+checking for ar... ar
+checking the archiver (ar) interface... ar
+checking for grep that handles long lines and -e... /usr/bin/grep
+checking for fgrep... /usr/bin/grep -F
+checking how to run the C preprocessor... /home/clauss/Work/psmpi/build/install/bin/mpicc -E
+checking for egrep... /usr/bin/grep -E
+checking for ANSI C header files... yes
+checking for sys/types.h... yes
+checking for sys/stat.h... yes
+checking for stdlib.h... yes
+checking for string.h... yes
+checking for memory.h... yes
+checking for strings.h... yes
+checking for inttypes.h... yes
+checking for stdint.h... yes
+checking for unistd.h... yes
+checking stdarg.h usability... yes
+checking stdarg.h presence... yes
+checking for stdarg.h... yes
+checking sys/time.h usability... yes
+checking sys/time.h presence... yes
+checking for sys/time.h... yes
+checking sys/resource.h usability... yes
+checking sys/resource.h presence... yes
+checking for sys/resource.h... yes
+checking for int8_t... yes
+checking for int16_t... yes
+checking for int32_t... yes
+checking for int64_t... yes
+checking for uint8_t... yes
+checking for uint16_t... yes
+checking for uint32_t... yes
+checking for uint64_t... yes
+checking for _Bool... yes
+checking for float _Complex... yes
+checking for double _Complex... yes
+checking for long double _Complex... yes
+checking size of void *... 8
+checking for library containing socket... none required
+checking for library containing gethostbyname... none required
+checking whether struct hostent contains h_addr_list... yes
+checking for getrusage... yes
+checking that MPI program can be compiled... yes
+checking for major version of MPI... 3
+checking for minor version of MPI... 1
+checking whether we are using the GNU Fortran 77 compiler... yes
+checking whether /home/clauss/Work/psmpi/build/install/bin/mpif77 accepts -g... yes
+checking that we can build MPI programs with Fortran 77... yes
+checking size of void *... (cached) 8
+checking size of MPI_Offset... 8
+checking whether integer*4 is supported... yes
+checking whether integer*8 is supported... yes
+checking whether integer*16 is supported... yes
+checking build system type... x86_64-pc-linux-gnu
+checking host system type... x86_64-pc-linux-gnu
+checking how to get verbose linking output from /home/clauss/Work/psmpi/build/install/bin/mpif77... -v
+checking for Fortran 77 libraries of /home/clauss/Work/psmpi/build/install/bin/mpif77...  -L/home/clauss/Work/psmpi/build/install/lib64 -L/home/clauss/Work/pscom/build/install/lib64/../lib64 -L/usr/lib64/gcc/x86_64-suse-linux/7 -L/usr/lib64/gcc/x86_64-suse-linux/7/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/home/clauss/Work/pscom/build/install/lib64 -L. -L/usr/local/cuda/lib64 -L/usr/lib64/gcc/x86_64-suse-linux/7/../../../../x86_64-suse-linux/lib -L/usr/lib64/gcc/x86_64-suse-linux/7/../../.. -lmpifort -lmpi -lgfortran -lm -lquadmath
+checking for Fortran 77 name mangling... lower uscore
+checking whether /home/clauss/Work/psmpi/build/install/bin/mpif77 allows mismatched arguments... yes
+checking for Fortran libraries needed for getarg... none needed
+checking whether Fortran 77 supports Cray-style pointer... yes
+checking for Fortran 77 compiler flag for Cray-style pointer... -fcray-pointer
+checking whether we are using the GNU Fortran compiler... yes
+checking whether /home/clauss/Work/psmpi/build/install/bin/mpifort accepts -g... yes
+checking for extension for Fortran 90 programs... f90
+checking whether the Fortran 90 compiler (/home/clauss/Work/psmpi/build/install/bin/mpifort  ) works... yes
+checking whether the Fortran 90 compiler (/home/clauss/Work/psmpi/build/install/bin/mpifort  ) is a cross-compiler... no
+checking whether Fortran 90 compiler works with Fortran 77 compiler... yes
+checking for Fortran flag needed to accept free-form source... none
+checking whether Fortran 90 supports Cray-style pointer... yes
+checking for Fortran 90 compiler flag for Cray-style pointer... -fcray-pointer
+checking whether /home/clauss/Work/psmpi/build/install/bin/mpifort supports the Fortran 2003 routines to access the commandline... yes
+checking for Fortran 90 module extension... mod
+checking for Fortran 90 module include flag... -I
+checking for Fortran 90 module output directory flag... -J
+checking that we can build MPI programs with Fortran 90... yes
+checking whether we are using the GNU C++ compiler... yes
+checking whether /home/clauss/Work/psmpi/build/install/bin/mpicxx accepts -g... yes
+checking dependency style of /home/clauss/Work/psmpi/build/install/bin/mpicxx... gcc3
+checking that we can build MPI programs with C++... yes
+checking whether MPI C++ includes Distgraphcomm... no
+checking whether <iostream> available... yes
+checking whether the compiler implements namespaces... yes
+checking whether the compiler implements the namespace std... yes
+checking whether MPIO_Request is defined for MPI IO... yes
+checking Is the MPI derived from MPICH... 
+checking whether MPI_INTEGER16 is available... yes
+checking whether MPI_2DOUBLE_COMPLEX is available... no
+checking whether MPI_2COMPLEX is available... no
+checking size of void *... (cached) 8
+checking size of int... 4
+checking size of long... 8
+checking size of long long... 8
+checking size of short... 2
+checking for C integer type of address size... long
+checking for perl... /usr/bin/perl
+checking for mpiexec... /home/clauss/Work/psmpi/build/install/bin/mpiexec.hydra
+checking that generated files are newer than configure... done
+configure: creating ./config.status
+ /bin/sh ./config.status
+config.status: creating maint/testmerge
+config.status: creating runtests
+config.status: creating checktests
+config.status: creating Makefile
+config.status: creating basic/Makefile
+config.status: creating attr/Makefile
+config.status: creating attr/testlist
+config.status: creating util/Makefile
+config.status: creating coll/Makefile
+config.status: creating coll/testlist
+config.status: creating comm/Makefile
+config.status: creating datatype/Makefile
+config.status: creating datatype/testlist
+config.status: creating errhan/Makefile
+config.status: creating group/Makefile
+config.status: creating info/Makefile
+config.status: creating init/Makefile
+config.status: creating pt2pt/Makefile
+config.status: creating pt2pt/testlist
+config.status: creating mpi_t/Makefile
+config.status: creating parastation/Makefile
+config.status: creating cuda/Makefile
+config.status: creating rma/Makefile
+config.status: creating rma/testlist
+config.status: creating spawn/Makefile
+config.status: creating spawn/testlist
+config.status: creating topo/Makefile
+config.status: creating io/Makefile
+config.status: creating io/testlist
+config.status: creating f77/Makefile
+config.status: creating f77/attr/Makefile
+config.status: creating f77/attr/attraints.h
+config.status: creating f77/pt2pt/attr1aints.h
+config.status: creating f77/ext/add1size.h
+config.status: creating f77/datatype/Makefile
+config.status: creating f77/datatype/typeaints.h
+config.status: creating f77/util/Makefile
+config.status: creating f77/coll/Makefile
+config.status: creating f77/comm/Makefile
+config.status: creating f77/topo/Makefile
+config.status: creating f77/init/Makefile
+config.status: creating f77/rma/addsize.h
+config.status: creating f77/pt2pt/Makefile
+config.status: creating f77/info/Makefile
+config.status: creating f77/spawn/Makefile
+config.status: creating f77/spawn/testlist
+config.status: creating f77/spawn/type1aint.h
+config.status: creating f77/rma/Makefile
+config.status: creating f77/ext/Makefile
+config.status: creating f77/ext/testlist
+config.status: creating f77/io/Makefile
+config.status: creating f77/io/iooffset.h
+config.status: creating f77/io/iodisp.h
+config.status: creating f77/io/ioaint.h
+config.status: creating f77/io/testlist
+config.status: creating f77/profile/Makefile
+config.status: creating f90/Makefile
+config.status: creating f90/attr/Makefile
+config.status: creating f90/datatype/Makefile
+config.status: creating f90/f90types/Makefile
+config.status: creating f90/util/Makefile
+config.status: creating f90/coll/Makefile
+config.status: creating f90/comm/Makefile
+config.status: creating f90/topo/Makefile
+config.status: creating f90/init/Makefile
+config.status: creating f90/pt2pt/Makefile
+config.status: creating f90/rma/Makefile
+config.status: creating f90/info/Makefile
+config.status: creating f90/spawn/Makefile
+config.status: creating f90/spawn/testlist
+config.status: creating f90/timer/Makefile
+config.status: creating f90/ext/Makefile
+config.status: creating f90/ext/testlist
+config.status: creating f90/io/Makefile
+config.status: creating f90/io/testlist
+config.status: creating f90/misc/Makefile
+config.status: creating f90/profile/Makefile
+config.status: creating f08/Makefile
+config.status: creating f08/attr/Makefile
+config.status: creating f08/datatype/Makefile
+config.status: creating f08/util/Makefile
+config.status: creating f08/coll/Makefile
+config.status: creating f08/comm/Makefile
+config.status: creating f08/pt2pt/Makefile
+config.status: creating f08/rma/Makefile
+config.status: creating f08/subarray/Makefile
+config.status: creating f08/topo/Makefile
+config.status: creating f08/io/Makefile
+config.status: creating f08/io/testlist
+config.status: creating f08/init/Makefile
+config.status: creating f08/info/Makefile
+config.status: creating f08/spawn/Makefile
+config.status: creating f08/spawn/testlist
+config.status: creating f08/timer/Makefile
+config.status: creating f08/ext/Makefile
+config.status: creating f08/misc/Makefile
+config.status: creating f08/profile/Makefile
+config.status: creating cxx/Makefile
+config.status: creating cxx/util/Makefile
+config.status: creating cxx/attr/Makefile
+config.status: creating cxx/attr/testlist
+config.status: creating cxx/pt2pt/Makefile
+config.status: creating cxx/comm/Makefile
+config.status: creating cxx/coll/Makefile
+config.status: creating cxx/errhan/Makefile
+config.status: creating cxx/info/Makefile
+config.status: creating cxx/datatype/Makefile
+config.status: creating cxx/datatype/testlist
+config.status: creating cxx/io/Makefile
+config.status: creating cxx/init/Makefile
+config.status: creating cxx/rma/Makefile
+config.status: creating cxx/spawn/Makefile
+config.status: creating cxx/spawn/testlist
+config.status: creating cxx/topo/Makefile
+config.status: creating threads/Makefile
+config.status: creating threads/pt2pt/Makefile
+config.status: creating threads/util/Makefile
+config.status: creating threads/comm/Makefile
+config.status: creating threads/comm/testlist
+config.status: creating threads/init/Makefile
+config.status: creating threads/mpi_t/Makefile
+config.status: creating threads/spawn/Makefile
+config.status: creating threads/rma/Makefile
+config.status: creating threads/coll/Makefile
+config.status: creating threads/coll/testlist
+config.status: creating errors/Makefile
+config.status: creating errors/attr/Makefile
+config.status: creating errors/basic/Makefile
+config.status: creating errors/coll/Makefile
+config.status: creating errors/comm/Makefile
+config.status: creating errors/datatype/Makefile
+config.status: creating errors/faults/Makefile
+config.status: creating errors/group/Makefile
+config.status: creating errors/pt2pt/Makefile
+config.status: creating errors/rma/Makefile
+config.status: creating errors/spawn/Makefile
+config.status: creating errors/spawn/testlist
+config.status: creating errors/topo/Makefile
+config.status: creating errors/io/Makefile
+config.status: creating errors/cxx/Makefile
+config.status: creating errors/cxx/errhan/Makefile
+config.status: creating errors/cxx/io/Makefile
+config.status: creating errors/f77/Makefile
+config.status: creating errors/f77/io/Makefile
+config.status: creating errors/f77/io/addsize.h
+config.status: creating errors/f77/io/iooffset.h
+config.status: creating errors/f90/Makefile
+config.status: creating errors/f90/io/Makefile
+config.status: creating errors/f08/Makefile
+config.status: creating errors/f08/io/Makefile
+config.status: creating ckpoint/Makefile
+config.status: creating ft/Makefile
+config.status: creating manual/Makefile
+config.status: creating manual/manyconnect
+config.status: creating manual/mpi_t/Makefile
+config.status: creating perf/Makefile
+config.status: creating testlist
+config.status: creating cxx/testlist
+config.status: creating cxx/topo/testlist
+config.status: creating f77/testlist
+config.status: creating f90/testlist
+config.status: creating f08/testlist
+config.status: creating threads/testlist
+config.status: creating errors/testlist
+config.status: creating errors/cxx/testlist
+config.status: creating errors/f77/testlist
+config.status: creating errors/f90/testlist
+config.status: creating impls/testlist
+config.status: creating f77/rma/testlist
+config.status: creating f90/rma/testlist
+config.status: creating f08/rma/testlist
+config.status: creating impls/Makefile
+config.status: creating impls/hydra/Makefile
+config.status: creating impls/hydra/proc_binding.sh
+config.status: creating impls/mpich/Makefile
+config.status: creating impls/mpich/testlist
+config.status: creating impls/mpich/mpi_t/Makefile
+config.status: creating include/mpitestconf.h
+config.status: include/mpitestconf.h is unchanged
+config.status: executing depfiles commands
+config.status: executing default-1 commands
+config.status: executing default-2 commands
+config.status: executing default-3 commands
+config.status: executing default-4 commands
+./runtests -srcdir=/home/clauss/Work/psmpi/mpich2/test/mpi -tests=testlist \
+	-mpiexec="/home/clauss/Work/psmpi/build/install/bin/mpiexec.hydra" -xmlfile=summary.xml \
+	-tapfile=summary.tap -junitfile=summary.junit.xml
+Looking in ./testlist
+Processing directory parastation
+Looking in ./parastation/testlist
+Processing directory attr
+Looking in ./attr/testlist
+Processing directory coll
+Looking in ./coll/testlist
+Processing directory comm
+Looking in ./comm/testlist
+Processing directory datatype
+Looking in ./datatype/testlist
+Processing directory errhan
+Looking in ./errhan/testlist
+Processing directory group
+Looking in ./group/testlist
+Processing directory info
+Looking in ./info/testlist
+Processing directory init
+Looking in ./init/testlist
+Some programs (version) may still be running:
+pids = 322 10417 
+The executable (version) will not be removed.
+Processing directory mpi_t
+Looking in ./mpi_t/testlist
+Processing directory pt2pt
+Looking in ./pt2pt/testlist
+Processing directory rma
+Looking in ./rma/testlist
+Processing directory spawn
+Looking in ./spawn/testlist
+Unexpected output in spawn_rootargs: [mpiexec@zam871] APPLICATION TIMED OUT, TIMEOUT = 180s
+Processing directory topo
+Looking in ./topo/testlist
+Processing directory io
+Looking in ./io/testlist
+Some programs (async) may still be running:
+pids = 1572 
+The executable (async) will not be removed.
+Processing directory f77
+Looking in ./f77/testlist
+Processing directory attr
+Looking in ./f77/attr/testlist
+Processing directory coll
+Looking in ./f77/coll/testlist
+Processing directory datatype
+Looking in ./f77/datatype/testlist
+Processing directory pt2pt
+Looking in ./f77/pt2pt/testlist
+Processing directory info
+Looking in ./f77/info/testlist
+Processing directory spawn
+Looking in ./f77/spawn/testlist
+Processing directory io
+Looking in ./f77/io/testlist
+Processing directory rma
+Looking in ./f77/rma/testlist
+Processing directory init
+Looking in ./f77/init/testlist
+Processing directory comm
+Looking in ./f77/comm/testlist
+Processing directory ext
+Looking in ./f77/ext/testlist
+Processing directory topo
+Looking in ./f77/topo/testlist
+Processing directory profile
+Looking in ./f77/profile/testlist
+Processing directory cxx
+Looking in ./cxx/testlist
+Processing directory attr
+Looking in ./cxx/attr/testlist
+Processing directory pt2pt
+Looking in ./cxx/pt2pt/testlist
+Processing directory comm
+Looking in ./cxx/comm/testlist
+Processing directory coll
+Looking in ./cxx/coll/testlist
+Processing directory errhan
+Looking in ./cxx/errhan/testlist
+Processing directory init
+Looking in ./cxx/init/testlist
+Processing directory info
+Looking in ./cxx/info/testlist
+Processing directory datatype
+Looking in ./cxx/datatype/testlist
+Processing directory topo
+Looking in ./cxx/topo/testlist
+Processing directory io
+Looking in ./cxx/io/testlist
+Processing directory spawn
+Looking in ./cxx/spawn/testlist
+Processing directory rma
+Looking in ./cxx/rma/testlist
+Processing directory f90
+Looking in ./f90/testlist
+Processing directory attr
+Looking in ./f90/attr/testlist
+Processing directory coll
+Looking in ./f90/coll/testlist
+Processing directory comm
+Looking in ./f90/comm/testlist
+Processing directory ext
+Looking in ./f90/ext/testlist
+Processing directory info
+Looking in ./f90/info/testlist
+Processing directory init
+Looking in ./f90/init/testlist
+Processing directory io
+Looking in ./f90/io/testlist
+Processing directory misc
+Looking in ./f90/misc/testlist
+Processing directory pt2pt
+Looking in ./f90/pt2pt/testlist
+Processing directory datatype
+Looking in ./f90/datatype/testlist
+Processing directory f90types
+Looking in ./f90/f90types/testlist
+Processing directory rma
+Looking in ./f90/rma/testlist
+Processing directory spawn
+Looking in ./f90/spawn/testlist
+Processing directory timer
+Looking in ./f90/timer/testlist
+Processing directory topo
+Looking in ./f90/topo/testlist
+Processing directory profile
+Looking in ./f90/profile/testlist
+Processing directory errors
+Looking in ./errors/testlist
+Processing directory attr
+Looking in ./errors/attr/testlist
+Processing directory coll
+Looking in ./errors/coll/testlist
+Processing directory comm
+Looking in ./errors/comm/testlist
+Processing directory datatype
+Looking in ./errors/datatype/testlist
+Processing directory group
+Looking in ./errors/group/testlist
+Processing directory pt2pt
+Looking in ./errors/pt2pt/testlist
+Processing directory topo
+Looking in ./errors/topo/testlist
+Processing directory rma
+Looking in ./errors/rma/testlist
+Processing directory spawn
+Looking in ./errors/spawn/testlist
+Processing directory io
+Looking in ./errors/io/testlist
+Processing directory f77
+Looking in ./errors/f77/testlist
+Processing directory io
+Looking in ./errors/f77/io/testlist
+Processing directory cxx
+Looking in ./errors/cxx/testlist
+Processing directory errhan
+Looking in ./errors/cxx/errhan/testlist
+Processing directory io
+Looking in ./errors/cxx/io/testlist
+Processing directory f90
+Looking in ./errors/f90/testlist
+Processing directory io
+Looking in ./errors/f90/io/testlist
+Processing directory impls
+Looking in ./impls/testlist
+3 tests failed out of 1355
+Details in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.xml
+TAP formatted results in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.tap
+JUNIT formatted results in /home/clauss/Work/psmpi/build/mpich2/test/mpi/summary.junit.xml
+make[3]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test/mpi'
+(XMLFILE=../mpi/summary.xml && XMLCONTINUE=YES && \
+export XMLFILE && export XMLCONTINUE && \
+cd commands && make testing)
+make[3]: Entering directory '/home/clauss/Work/psmpi/build/mpich2/test/commands'
+make[3]: Nothing to be done for 'testing'.
+make[3]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test/commands'
+make[2]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2/test'
+make[1]: Leaving directory '/home/clauss/Work/psmpi/build/mpich2'
+./spawn/spawn_rootargs np=10:
+ No Errors
+[mpiexec@zam871] APPLICATION TIMED OUT, TIMEOUT = 180s
+
+-------------------------------------------------
+./errors/comm/subcomm_abort np=4:
+No Errors
+/home/clauss/Work/psmpi/build/install/bin/mpiexec.hydra returned a zero status but the program returned a nonzero status
+
+-------------------------------------------------
+./errors/comm/intercomm_abort np=6:
+application called MPI_Abort(comm=0x84000001, 8) - process 0Fatal error in PMPI_Recv: Other MPI error, error stack:
+/home/clauss/Work/psmpi/build/install/bin/mpiexec.hydra returned a zero status but the program returned a nonzero status
+
+-------------------------------------------------
+3 tests failed out of 1355
