@@ -44,7 +44,12 @@ void *win_alloc(MPI_Win *win, MPI_Aint size)
 
         } else {
 		MPI_Win_allocate_shared(0, disp, MPI_INFO_NULL, comm_shmem, &ptr, win);
-		assert(ptr != NULL);
+		// For size=0, the behavior regarding the returned pointer is implementation specific.
+		if(ptr == NULL) {
+			// ...e.g, the CH3 devices returns NULL in such a case.
+			printf("This test is known to fail with CH3 device!\n");
+		}
+		assert(ptr != NULL); // ...and psmpi returns a valid pointer (!=NULL) to the shared region.
 		MPI_Win_shared_query(*win, 0, &qsize, &qdisp, &qptr);
 		assert(qptr != NULL);
 	}

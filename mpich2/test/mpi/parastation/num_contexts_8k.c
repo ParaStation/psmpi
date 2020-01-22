@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 		if(rc != MPI_SUCCESS) {
 			printf("\nThe maximum number of custom/dynamic communicators/contexts is %d but this test checks for %d.\n", i, NUM_COMMS);
 			printf("Try to set MPIR_CONTEXT_SUBCOMM_WIDTH to (0) in mpich2/src/include/mpiimpl.h to get more contexts.\n");
-			printf("This test is known to fail with CH3 device as well as if MPID_PSP_TOPOLOGY_AWARE_COLLOPS is enanled.\n\n");
+			printf("This test is known to fail with CH3 device as well as if MPID_PSP_TOPOLOGY_AWARENESS is enabled.\n\n");
 			MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
 			MPI_Comm_split(MPI_COMM_WORLD, color, world_rank, &comm_array[i]);
 		}

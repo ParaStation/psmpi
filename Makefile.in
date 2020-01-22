@@ -88,6 +88,8 @@ ifeq ($(ENABLE_HYDRA),false)
 # remove installed hydra files
 	$(RM) $(HYDRA_FILES:%=$(DESTDIR)$(prefix)/%)
 endif
+# create mpi-ext.h (if not already provided by the device)
+	touch $(DESTDIR)$(prefix)/include/mpi-ext.h
 ifneq ($(fixpath),)
 #  sed optinon -i is not available in sed version 3.x !!!
 	find $(DESTDIR)$(prefix) -type f -exec grep -q $(prefix) {} \; -print | while read i; do \

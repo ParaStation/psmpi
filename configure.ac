@@ -458,6 +458,7 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS CC=gcc CXX=g++ FC=gfortran"
 
 	ENABLE_HYDRA="true"
+	CHANNEL_DEVICE=`echo ${CONFSET} | cut -c 1-2`
 	;;
 *)
 	echo "Sorry. Unknown confset ${CONFSET}"
@@ -505,12 +506,16 @@ AC_ARG_WITH([topology-awareness], [
 		ENABLE_TOPOLOGY_AWARENESS="hcoll"
 		CONF_OPS="$CONF_OPS --enable-psp-topology-awareness"
 	else
-		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_SUBCOMM_WIDTH=0"
+		if test -z "${CHANNEL_DEVICE}" ; then
+			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_SUBCOMM_WIDTH=0"
+		fi
 	fi
 ])
 
 AC_SUBST([ENABLE_TOPOLOGY_AWARENESS])
-export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_DYNAMIC_PROC_WIDTH=0"
+if test -z "${CHANNEL_DEVICE}" ; then
+   export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_DYNAMIC_PROC_WIDTH=0"
+fi
 
 AC_ARG_WITH([cuda], [
   --with-cuda

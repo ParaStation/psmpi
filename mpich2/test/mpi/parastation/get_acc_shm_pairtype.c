@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
 {
     MPI_Win win;
     int errors = 0;
-    int rank, nproc, i;
+    int wrank, nproc, i;
     double_int_t *orig_buf;
     double_int_t *tar_buf;
     double_int_t *res_buf;
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     MPI_Init(&argc, &argv);
 
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &wrank);
 
     assert(nproc == 2);
 
@@ -65,18 +65,17 @@ int main(int argc, char *argv[])
 
     disp = sizeof(double_int_t);
 
-    if(comm_shmem_rank == 0) {
+    if(comm_shmem_rank == 1) {
         MPI_Win_allocate_shared(sizeof(double_int_t) * DATA_SIZE, disp, MPI_INFO_NULL, comm_shmem, &ptr, &win);
         assert(ptr != NULL);
-        MPI_Win_shared_query(win, 0, &qsize, &qdisp, &qptr);
+        MPI_Win_shared_query(win, 1, &qsize, &qdisp, &qptr);
         assert(qptr == ptr);
-        tar_buf = ptr;
+        tar_buf = qptr;
     } else {
         MPI_Win_allocate_shared(0, disp, MPI_INFO_NULL, comm_shmem, &ptr, &win);
-        assert(ptr != NULL);
-        MPI_Win_shared_query(win, 0, &qsize, &qdisp, &qptr);
+        MPI_Win_shared_query(win, 1, &qsize, &qdisp, &qptr);
         assert(qptr != NULL);
-        tar_buf = ptr;
+        tar_buf = qptr;
     }
 
     assert(qsize == sizeof(double_int_t) * DATA_SIZE);
@@ -94,7 +93,7 @@ int main(int argc, char *argv[])
     MPI_Type_vector(5 /* count */ , 3 /* blocklength */ , 5 /* stride */ , MPI_DOUBLE_INT, &vector_dtp);
     MPI_Type_commit(&vector_dtp);
 
-    if (rank == 0) {
+    if (comm_shmem_rank == 0) {
         MPI_Win_lock(MPI_LOCK_SHARED, 1, 0, win);
         MPI_Get_accumulate(orig_buf, 1, vector_dtp, res_buf, 1, vector_dtp, 1, 0, 1, vector_dtp, MPI_MAXLOC, win);
         MPI_Win_unlock(1, win);
@@ -102,7 +101,7 @@ int main(int argc, char *argv[])
 
     MPI_Win_fence(0, win);
 
-    if (rank == 1) {
+    if (comm_shmem_rank == 1) {
         for (i = 0; i < DATA_SIZE; i++) {
             if (i % 5 < 3) {
                 if (tar_buf[i].a != 1.0 || tar_buf[i].b != 1) {
@@ -119,7 +118,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (rank == 0) {
+    if (comm_shmem_rank == 0) {
         for (i = 0; i < DATA_SIZE; i++) {
             if (i % 5 < 3) {
                 if (res_buf[i].a != 0.5 || res_buf[i].b != 0) {
@@ -150,7 +149,7 @@ int main(int argc, char *argv[])
 
     MPI_Win_fence(0, win);
 
-    if (rank == 0) {
+    if (comm_shmem_rank == 0) {
         MPI_Win_lock(MPI_LOCK_SHARED, 1, 0, win);
         MPI_Get_accumulate(orig_buf, DATA_SIZE, MPI_DOUBLE_INT, res_buf, DATA_SIZE, MPI_DOUBLE_INT, 1, 0, DATA_SIZE, MPI_DOUBLE_INT, MPI_MINLOC, win);
         MPI_Win_unlock(1, win);
@@ -158,7 +157,7 @@ int main(int argc, char *argv[])
 
     MPI_Win_fence(0, win);
 
-    if (rank == 1) {
+    if (comm_shmem_rank == 1) {
         for (i = 0; i < DATA_SIZE; i++) {
             if (tar_buf[i].a != 0.0 || tar_buf[i].b != 2) {
                 printf("res_buf[i].a = %f (expected 0.0) | tar_buf[i].b = %d (expected 2)\n", tar_buf[i].a, tar_buf[i].b);
@@ -167,7 +166,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (rank == 0) {
+    if (comm_shmem_rank == 0) {
         for (i = 0; i < DATA_SIZE; i++) {
             if (i % 5 < 3) {
                 if (res_buf[i].a != 1.0 || res_buf[i].b != 1) {
@@ -192,7 +191,7 @@ int main(int argc, char *argv[])
     MPI_Free_mem(res_buf);
 
 exit:
-    if (rank == 1) {
+    if (wrank == 0) {
         if (errors == 0)
             printf(" No Errors\n");
     }
