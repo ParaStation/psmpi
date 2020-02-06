@@ -131,7 +131,7 @@ int MPID_PSP_get_host_hash(void)
        if(!host_hash) {
                MPID_Get_processor_name(host_name, MPI_MAX_PROCESSOR_NAME, &result_len);
                MPIDI_PG_Convert_id(host_name, &host_hash);
-               if(!MPIDI_Process.env.enable_smp_awareness) host_hash += MPIDI_Process.my_pg_rank;
+               assert(host_hash >= 0);
        }
        return host_hash;
 }

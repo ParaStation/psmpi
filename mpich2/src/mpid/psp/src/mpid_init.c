@@ -574,6 +574,9 @@ int MPID_Init(int *argc, char ***argv,
 	pscom_env_get_uint(&MPIDI_Process.env.enable_msa_awareness, "PSP_MSA_AWARENESS");
 	if(MPIDI_Process.env.enable_msa_awareness) {
 		pscom_env_get_uint(&MPIDI_Process.msa_module_id, "PSP_MSA_MODULE_ID");
+		if(MPIDI_Process.msa_module_id < 0 ) {
+			MPIDI_Process.msa_module_id = 0;
+		}
 	}
 #endif
 
@@ -698,7 +701,6 @@ int MPID_Init(int *argc, char ***argv,
 		if(MPIDI_Process.env.enable_msa_awareness && MPIDI_Process.env.enable_msa_aware_collops) {
 
 			my_node_id = MPIDI_Process.msa_module_id;
-			assert(my_node_id > -1);
 
 		} else if(MPIDI_Process.env.enable_smp_awareness && MPIDI_Process.env.enable_smp_aware_collops) {
 
@@ -714,7 +716,6 @@ int MPID_Init(int *argc, char ***argv,
 			} else {
 				/* In the PSP_ONDEMAND=1 case, we have to use a hash of the host name: */
 				my_node_id = MPID_PSP_get_host_hash();
-				if(my_node_id < 0) my_node_id *= -1;
 
 				/* The second round is for normalizing the hashes to ids smaller than pg_size: */
 				if(second_round_for_node_ids) {
@@ -776,6 +777,7 @@ int MPID_Init(int *argc, char ***argv,
 			MPIDI_Process.my_node_id = my_node_id;
 			MPIDI_Process.node_id_table = node_id_table;
 
+			MPIDI_Process.node_id_max = node_id_table[0];
 			for(grank=1; grank < pg_size; grank++) {
 				if(node_id_table[grank] > MPIDI_Process.node_id_max) MPIDI_Process.node_id_max = node_id_table[grank];
 			}
