@@ -1,19 +1,14 @@
-Recent results of the MPICH test suite: (confset=default, mpiexec=hydra, PSP_ONDEMAND=0, pscom-5.4.2-1_ge797bbec)
+Recent results of the MPICH test suite: (confset=default, mpiexec=hydra, with hwloc, PSP_ONDEMAND=0, pscom-5.4.2-1_g4cc0d890)
 
- 3 tests failed out of 1355
- Summary written to /home/clauss/Work/psmpi/doc/test-5.4.2-1_19_g5fa5d66b1_2020-01-21_18:03:23*
+ All 1355 tests passed!
+ Summary written to psmpi/doc/test-5.4.2-1_22_gf730910fa_2020-02-07_09:31:46*
 
-./spawn/spawn_rootargs np=10:
- No Errors
-[mpiexec@zam871] APPLICATION TIMED OUT, TIMEOUT = 180s
 
+Note: The following tests are known to fail with Hydra if HWLOC is disabled:
 -------------------------------------------------
 ./errors/comm/subcomm_abort np=4:
-No Errors
 /home/clauss/Work/psmpi/build/install/bin/mpiexec.hydra returned a zero status but the program returned a nonzero status
-
 -------------------------------------------------
 ./errors/comm/intercomm_abort np=6:
-application called MPI_Abort(comm=0x84000001, 8) - process 0Fatal error in PMPI_Recv: Other MPI error, error stack:
 /home/clauss/Work/psmpi/build/install/bin/mpiexec.hydra returned a zero status but the program returned a nonzero status
 
