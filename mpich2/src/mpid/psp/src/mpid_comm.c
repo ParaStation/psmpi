@@ -81,9 +81,78 @@ int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
 	return mpi_errno;
 }
 
+static int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level)
+{
+	MPIDI_PSP_topo_level_t *tl = pg->topo_level;
+
+	while(tl) {
+		if(tl->degree == degree) {
+			*level = tl;
+			return 1;
+		}
+		tl=tl->next;
+	}
+	return 0;
+}
+
+static int MPIDI_PSP_comm_is_flat_on_level(MPIR_Comm *comm, MPIDI_PSP_topo_level_t *level)
+{
+	int i;
+	int my_batch;
+
+	my_batch = level->badge_table[MPIDI_Process.my_pg_rank];
+
+	for(i=0; i<comm->local_size; i++) {
+
+		if(comm->vcr[i]->pg == MPIDI_Process.my_pg) { // local process group
+
+			assert(level->badge_table);
+			if(my_batch != level->badge_table[comm->vcr[i]->pg_rank]) {
+				return 0;
+			}
+
+		} else { // remote process group
+
+			MPIDI_PSP_topo_level_t *ext_level = NULL;
+			if(MPIDI_PSP_check_pg_for_level(level->degree, comm->vcr[i]->pg, &ext_level)) {
+
+				assert(ext_level); // found remote level with identical degree
+				assert(ext_level->badge_table);
+				if(my_batch != ext_level->badge_table[comm->vcr[i]->pg_rank]) {
+					return 0;
+				}
+			} else {
+				return 0;
+			}
+		}
+	}
+	return 1;
+}
+
+static int MPIDI_PSP_get_badge_by_level_and_comm_rank(MPIR_Comm *comm, MPIDI_PSP_topo_level_t *level, int rank)
+{
+	MPIDI_PSP_topo_level_t *ext_level = NULL;
+
+	if(comm->vcr[rank]->pg == MPIDI_Process.my_pg) { // rank is in local process group
+
+		assert(level->badge_table);
+		return level->badge_table[comm->vcr[rank]->pg_rank];
+	}
+
+	if(MPIDI_PSP_check_pg_for_level(level->degree, comm->vcr[rank]->pg, &ext_level)) {
+
+		assert(ext_level); // found remote level with identical degree
+		assert(ext_level->badge_table);
+		return ext_level->badge_table[comm->vcr[rank]->pg_rank];
+
+	} else {
+		return -1; // remote process group with unknown badge
+	}
+}
 
 int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 {
+#if 1
 	int i;
 	int pg_check_id;
 
@@ -107,7 +176,22 @@ int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 	}
 
 	*id_p = MPIDI_Process.node_id_table[comm->vcr[rank]->pg_rank];
+#else
+	MPIDI_PG_t * pg = MPIDI_Process.my_pg;
+	MPIDI_PSP_topo_level_t *tl = pg->topo_level;
 
+	if(tl == NULL) {
+		*id_p = rank;
+		return 0;
+	}
+
+	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
+		assert(tl->badge_table);
+		tl = tl->next;
+	}
+
+	*id_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, tl, rank);
+#endif
 	return 0;
 }
 

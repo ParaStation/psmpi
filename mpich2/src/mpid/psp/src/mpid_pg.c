@@ -682,7 +682,7 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr)
 	MPIDI_PG_t * pg = NULL, *pgnext;
 	int i;
 	int mpi_errno = MPI_SUCCESS;
-	MPIR_CHKPMEM_DECL(4);
+	MPIR_CHKPMEM_DECL(5);
 	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_PG_CREATE);
 
 	MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_PG_CREATE);
@@ -695,6 +695,7 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr)
 	pg->size = pg_size;
 	pg->id_num = pg_id_num;
 	pg->refcnt = 0;
+	pg->topo_level = NULL;
 
 	for(i=0; i<pg_size; i++) {
 		pg->vcr[i] = NULL;
@@ -709,6 +710,11 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr)
 	{
 		/* The first process group is always the world group */
 		MPIDI_Process.my_pg = pg;
+
+		MPIR_CHKPMEM_MALLOC(pg->topo_level, MPIDI_PSP_topo_level_t*, sizeof(MPIDI_PSP_topo_level_t), mpi_errno, "pg->topo_levels", MPL_MEM_OBJECT);
+		pg->topo_level->badge_table = MPIDI_Process.node_id_table;
+		pg->topo_level->degree = MPIDI_PSP_TOPO_LEVEL_NODES;
+		pg->topo_level->next = NULL;
 	}
 	else
 	{
@@ -778,6 +784,7 @@ MPIDI_PG_t* MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr)
 		}
 	}
 
+	MPL_free(pg_ptr->topo_level);
 	MPL_free(pg_ptr->cons);
 	MPL_free(pg_ptr->lpids);
 	MPL_free(pg_ptr->vcr);
