@@ -737,6 +737,7 @@ int MPID_Init(int *argc, char ***argv,
 
 		if(my_node_id > -1) {
 
+			if(second_round_for_node_ids) MPL_free(node_id_table);
 			node_id_table = MPL_malloc(pg_size * sizeof(int), MPL_MEM_OBJECT);
 
 			if(pg_rank != 0) {
