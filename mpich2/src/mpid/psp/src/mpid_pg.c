@@ -672,6 +672,25 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 	return MPI_SUCCESS;
 }
 
+int MPIDI_PSP_add_topo_level_to_pg(MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t *level)
+{
+	MPIDI_PSP_topo_level_t * tlnext = pg->topo_level;
+
+	if(!tlnext || tlnext->degree < level->degree) {
+		level->next = tlnext;
+		pg->topo_level = level;
+	} else {
+		assert(tlnext->degree != level->degree);
+		while (tlnext->next && tlnext->degree > level->degree)
+		{
+			tlnext = tlnext->next;
+		}
+		level->next = tlnext->next;
+		tlnext->next = level;
+	}
+	level->pg = pg;
+	return 0;
+}
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_PG_Create
@@ -711,10 +730,14 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr)
 		/* The first process group is always the world group */
 		MPIDI_Process.my_pg = pg;
 
-		MPIR_CHKPMEM_MALLOC(pg->topo_level, MPIDI_PSP_topo_level_t*, sizeof(MPIDI_PSP_topo_level_t), mpi_errno, "pg->topo_levels", MPL_MEM_OBJECT);
-		pg->topo_level->badge_table = MPIDI_Process.node_id_table;
-		pg->topo_level->degree = MPIDI_PSP_TOPO_LEVEL_NODES;
-		pg->topo_level->next = NULL;
+		if(1) {
+			MPIDI_PSP_topo_level_t* topo_level;
+			MPIR_CHKPMEM_MALLOC(topo_level, MPIDI_PSP_topo_level_t*, sizeof(MPIDI_PSP_topo_level_t), mpi_errno, "pg->topo_levels", MPL_MEM_OBJECT);
+			topo_level->badge_table = MPIDI_Process.node_id_table;
+			topo_level->degree = MPIDI_PSP_TOPO_LEVEL__NODES;
+			topo_level->next = NULL;
+			MPIDI_PSP_add_topo_level_to_pg(pg, topo_level);
+		}
 	}
 	else
 	{

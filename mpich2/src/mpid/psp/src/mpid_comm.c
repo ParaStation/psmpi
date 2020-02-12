@@ -100,11 +100,12 @@ static int MPIDI_PSP_comm_is_flat_on_level(MPIR_Comm *comm, MPIDI_PSP_topo_level
 	int i;
 	int my_batch;
 
+	assert(level->pg == MPIDI_Process.my_pg); // level must be local!
 	my_batch = level->badge_table[MPIDI_Process.my_pg_rank];
 
 	for(i=0; i<comm->local_size; i++) {
 
-		if(comm->vcr[i]->pg == MPIDI_Process.my_pg) { // local process group
+		if(likely(comm->vcr[i]->pg == MPIDI_Process.my_pg)) { // local process group
 
 			assert(level->badge_table);
 			if(my_batch != level->badge_table[comm->vcr[i]->pg_rank]) {
@@ -133,10 +134,20 @@ static int MPIDI_PSP_get_badge_by_level_and_comm_rank(MPIR_Comm *comm, MPIDI_PSP
 {
 	MPIDI_PSP_topo_level_t *ext_level = NULL;
 
-	if(comm->vcr[rank]->pg == MPIDI_Process.my_pg) { // rank is in local process group
+	if(likely(comm->vcr[rank]->pg == MPIDI_Process.my_pg)) { // rank is in local process group
 
-		assert(level->badge_table);
-		return level->badge_table[comm->vcr[rank]->pg_rank];
+		if(likely(level->pg == MPIDI_Process.my_pg)) { // level is also local
+			assert(level->badge_table);
+			return level->badge_table[comm->vcr[rank]->pg_rank];
+		} else {
+			// quite unlikely... (strange function usage)
+			assert(0);
+			if(MPIDI_PSP_check_pg_for_level(level->degree, MPIDI_Process.my_pg, &ext_level)) {
+				return ext_level->badge_table[comm->vcr[rank]->pg_rank];
+			} else {
+				return -1;
+			}
+		}
 	}
 
 	if(MPIDI_PSP_check_pg_for_level(level->degree, comm->vcr[rank]->pg, &ext_level)) {
@@ -152,7 +163,7 @@ static int MPIDI_PSP_get_badge_by_level_and_comm_rank(MPIR_Comm *comm, MPIDI_PSP
 
 int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 {
-#if 1
+#if 0
 	int i;
 	int pg_check_id;
 
@@ -185,12 +196,20 @@ int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 		return 0;
 	}
 
+	assert(MPIDI_Process.node_id_table);
+	if(MPIDI_Process.node_id_table == NULL) {
+		*id_p = rank;
+		return 0;
+	}
+
 	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
 		assert(tl->badge_table);
 		tl = tl->next;
 	}
 
 	*id_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, tl, rank);
+
+	assert(*id_p == MPIDI_Process.node_id_table[comm->vcr[rank]->pg_rank]);
 #endif
 	return 0;
 }
@@ -203,6 +222,7 @@ int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 	}
 
 	*max_id_p = MPIDI_Process.node_id_max;
+
 	return 0;
 }
 

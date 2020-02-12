@@ -33,13 +33,15 @@ pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm *comm, MPIR_Comm *
 
 typedef struct MPIDI_PSP_topo_level MPIDI_PSP_topo_level_t;
 struct MPIDI_PSP_topo_level {
+	struct MPIDI_PG *pg;
 	struct MPIDI_PSP_topo_level *next;
 	int degree;
-	int max_badge;
+//	int max_badge;
+	int badges_are_global;
 	int *badge_table;
 };
-#define MPIDI_PSP_TOPO_LEVEL_MODULES 4096
-#define MPIDI_PSP_TOPO_LEVEL_NODES   1024
+#define MPIDI_PSP_TOPO_LEVEL__MODULES 4096
+#define MPIDI_PSP_TOPO_LEVEL__NODES   1024
 
 typedef struct MPIDI_PG MPIDI_PG_t;
 struct MPIDI_PG {
