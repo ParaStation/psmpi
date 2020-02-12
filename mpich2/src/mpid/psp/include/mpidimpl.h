@@ -36,7 +36,7 @@ struct MPIDI_PSP_topo_level {
 	struct MPIDI_PG *pg;
 	struct MPIDI_PSP_topo_level *next;
 	int degree;
-//	int max_badge;
+	int max_badge;
 	int badges_are_global;
 	int *badge_table;
 };

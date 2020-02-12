@@ -188,8 +188,7 @@ int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 
 	*id_p = MPIDI_Process.node_id_table[comm->vcr[rank]->pg_rank];
 #else
-	MPIDI_PG_t * pg = MPIDI_Process.my_pg;
-	MPIDI_PSP_topo_level_t *tl = pg->topo_level;
+	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_level;
 
 	if(tl == NULL) {
 		*id_p = rank;
@@ -216,13 +215,42 @@ int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 
 int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 {
+#if 0
 	if(!MPIDI_Process.node_id_table) {
 		/* Most likely that SMP-awareness has been disabled due to process spawning... */
 		return  MPI_ERR_OTHER;
 	}
 
 	*max_id_p = MPIDI_Process.node_id_max;
+#else
+	MPIDI_PG_t *pg = MPIDI_Process.my_pg;
+	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_level;
 
+	if(tl == NULL) {
+		*max_id_p = MPIDI_Process.my_pg_size;
+		return 0;
+	}
+
+	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
+		assert(tl->badge_table);
+		tl = tl->next;
+	}
+
+	*max_id_p = tl->max_badge;
+
+	while(pg->next) {
+		MPIDI_PSP_topo_level_t *ext_level = NULL;
+		if(MPIDI_PSP_check_pg_for_level(tl->degree, pg->next, &ext_level)) {
+			assert(ext_level);
+			if(ext_level->max_badge > *max_id_p) {
+				*max_id_p = ext_level->max_badge;
+			}
+		}
+		pg = pg->next;
+	}
+
+	assert(*max_id_p == MPIDI_Process.node_id_max);
+#endif
 	return 0;
 }
 

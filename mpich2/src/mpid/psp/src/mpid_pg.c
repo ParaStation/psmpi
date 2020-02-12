@@ -701,7 +701,7 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr)
 	MPIDI_PG_t * pg = NULL, *pgnext;
 	int i;
 	int mpi_errno = MPI_SUCCESS;
-	MPIR_CHKPMEM_DECL(5);
+	MPIR_CHKPMEM_DECL(4);
 	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_PG_CREATE);
 
 	MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_PG_CREATE);
@@ -731,11 +731,12 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr)
 		MPIDI_Process.my_pg = pg;
 
 		if(1) {
+			int i;
 			MPIDI_PSP_topo_level_t* topo_level;
-			MPIR_CHKPMEM_MALLOC(topo_level, MPIDI_PSP_topo_level_t*, sizeof(MPIDI_PSP_topo_level_t), mpi_errno, "pg->topo_levels", MPL_MEM_OBJECT);
+			topo_level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
 			topo_level->badge_table = MPIDI_Process.node_id_table;
-			topo_level->degree = MPIDI_PSP_TOPO_LEVEL__NODES;
-			topo_level->next = NULL;
+			topo_level->max_badge = MPIDI_Process.node_id_max;
+			topo_level->degree = MPIDI_PSP_TOPO_LEVEL__MODULES;
 			MPIDI_PSP_add_topo_level_to_pg(pg, topo_level);
 		}
 	}
