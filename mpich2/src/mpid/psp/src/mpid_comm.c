@@ -81,7 +81,64 @@ int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
 	return mpi_errno;
 }
 
-static int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level)
+int MPIDI_PSP_pack_topology_badges(int** pack_msg, int* pack_size, MPIDI_PG_t *pg)
+{
+	int i;
+	int* msg;
+	int size = MPIDI_PSP_get_num_topology_levels(pg) * (pg->size + 1);
+	MPIDI_PSP_topo_level_t *tl = pg->topo_level;
+
+	*pack_size = size;
+	*pack_msg = MPL_malloc(size * sizeof(int), MPL_MEM_OBJECT);
+	msg = *pack_msg;
+
+	while(tl) {
+		for(i=0; i<size; i++, msg++) {
+			*msg = tl->badge_table[i];
+		}
+		*msg = tl->degree;
+		msg++;
+		tl=tl->next;
+	}
+}
+
+int MPIDI_PSP_unpack_topology_badges(int* pack_msg, int pg_size, int num_levels, MPIDI_PSP_topo_level_t **levels)
+{
+	int i, j;
+	MPIDI_PSP_topo_level_t *level;
+
+	*levels = NULL;
+
+	for(i=0; i<num_levels; i++) {
+
+		level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
+
+		for(j=0; j<pg_size; j++, pack_msg++) {
+			level->badge_table[j] = *pack_msg;
+		}
+		level->degree = *pack_msg;
+		pack_msg++;
+
+		level->next = *levels;
+		*levels = level;
+	}
+
+	MPL_free(pack_msg);
+}
+
+int MPIDI_PSP_get_num_topology_levels(MPIDI_PG_t *pg)
+{
+	int level_count = 0;
+	MPIDI_PSP_topo_level_t *tl = pg->topo_level;
+
+	while(tl) {
+		level_count++;
+		tl=tl->next;
+	}
+	return level_count;
+}
+
+int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level)
 {
 	MPIDI_PSP_topo_level_t *tl = pg->topo_level;
 
@@ -301,7 +358,7 @@ void MPID_PSP_comm_init(void)
 	MPID_PSP_comm_set_vcrt(comm, vcrt);
 
 	MPIDI_PG_Convert_id(pg_id_name, &pg_id_num);
-	MPIDI_PG_Create(pg_size, pg_id_num, &pg_ptr);
+	MPIDI_PG_Create(pg_size, pg_id_num, NULL, &pg_ptr);
 	assert(pg_ptr == MPIDI_Process.my_pg);
 
 	for (grank = 0; grank < pg_size; grank++) {

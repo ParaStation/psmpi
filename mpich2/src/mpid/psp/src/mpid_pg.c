@@ -72,7 +72,7 @@ int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], int lpid[])
 				*/
 				MPIDI_PG_t *new_pg;
 
-				MPIDI_PG_Create(gpid->gpid[1]+1, gpid->gpid[0], &new_pg);
+				MPIDI_PG_Create(gpid->gpid[1]+1, gpid->gpid[0], NULL, &new_pg);
 
 				assert(new_pg->lpids[gpid->gpid[1]] == -1);
 				if (!MPIDI_Process.next_lpid) MPIDI_Process.next_lpid = MPIR_Process.comm_world->local_size;
@@ -244,7 +244,15 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 		int* local_pg_sizes;
 		int* remote_pg_ids;
 		int* remote_pg_sizes;
-		int new_pg_count = 0;
+		int  new_pg_count = 0;
+		int  max_pg_count;
+
+		int*  local_pg_topo_levels;
+		int** local_pg_topo_badges;
+		int*  local_pg_topo_msglen;
+		int*  remote_pg_topo_levels;
+		int** remote_pg_topo_badges;
+		int*  remote_pg_topo_msglen;
 
 		if(peer_comm_ptr) {
 			mpi_errno = MPIC_Sendrecv(&pg_count_local, 1, MPI_INT,
@@ -263,14 +271,30 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 
 		local_pg_ids   = MPL_malloc(pg_count_local * sizeof(int), MPL_MEM_OBJECT);
 		local_pg_sizes = MPL_malloc(pg_count_local * sizeof(int), MPL_MEM_OBJECT);
-
 		remote_pg_ids   = MPL_malloc(pg_count_remote * sizeof(int), MPL_MEM_OBJECT);
 		remote_pg_sizes = MPL_malloc(pg_count_remote * sizeof(int), MPL_MEM_OBJECT);
+
+		max_pg_count = pg_count_local > pg_count_remote ? pg_count_local : pg_count_remote;
+
+		local_pg_topo_levels = MPL_malloc(max_pg_count * sizeof(int), MPL_MEM_OBJECT);
+		local_pg_topo_badges = MPL_malloc(max_pg_count * sizeof(int*), MPL_MEM_OBJECT);
+		local_pg_topo_msglen = MPL_malloc(max_pg_count * sizeof(int), MPL_MEM_OBJECT);
+		remote_pg_topo_levels = MPL_malloc(max_pg_count * sizeof(int), MPL_MEM_OBJECT);
+		remote_pg_topo_badges = MPL_malloc(max_pg_count * sizeof(int*), MPL_MEM_OBJECT);
+		remote_pg_topo_msglen = MPL_malloc(max_pg_count * sizeof(int), MPL_MEM_OBJECT);
+		for(i=0; i<max_pg_count; i++) {
+			local_pg_topo_badges[i] = NULL;
+			local_pg_topo_msglen[i] = 0;
+			remote_pg_topo_badges[i] = NULL;
+			remote_pg_topo_msglen[i] = 0;
+		}
 
 		pg = MPIDI_Process.my_pg;
 		for(i=0; i<pg_count_local; i++) {
 			local_pg_ids[i] = pg->id_num;
 			local_pg_sizes[i] = pg->size;
+			local_pg_topo_levels[i] = MPIDI_PSP_get_num_topology_levels(pg);
+			MPIDI_PSP_pack_topology_badges(&local_pg_topo_badges[i], &local_pg_topo_msglen[i], pg);
 			pg = pg->next;
 		}
 
@@ -288,6 +312,29 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 						  remote_leader, cts_tag,
 						  peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
 			assert(mpi_errno == MPI_SUCCESS);
+
+			mpi_errno = MPIC_Sendrecv(local_pg_topo_levels, pg_count_local, MPI_INT,
+						  remote_leader, cts_tag,
+						  remote_pg_topo_levels, pg_count_remote, MPI_INT,
+						  remote_leader, cts_tag,
+						  peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
+			assert(mpi_errno == MPI_SUCCESS);
+
+			mpi_errno = MPIC_Sendrecv(local_pg_topo_msglen, pg_count_local, MPI_INT,
+						  remote_leader, cts_tag,
+						  remote_pg_topo_msglen, pg_count_remote, MPI_INT,
+						  remote_leader, cts_tag,
+						  peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
+			assert(mpi_errno == MPI_SUCCESS);
+
+			for(i=0; i<max_pg_count; i++) {
+				mpi_errno = MPIC_Sendrecv(local_pg_topo_badges[i], local_pg_topo_msglen[i], MPI_BYTE,
+							  remote_leader, cts_tag,
+							  remote_pg_topo_badges[i], remote_pg_topo_msglen[i], MPI_BYTE,
+							  remote_leader, cts_tag,
+							  peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
+				assert(mpi_errno == MPI_SUCCESS);
+			}
 		} else {
 			assert(peer_con);
 			pscom_send(peer_con, NULL, 0, local_pg_ids, pg_count_local * sizeof(int));
@@ -297,6 +344,20 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 			pscom_send(peer_con, NULL, 0, local_pg_sizes, pg_count_local * sizeof(int));
 			rc = pscom_recv_from(peer_con, NULL, 0, remote_pg_sizes, pg_count_remote * sizeof(int));
 			assert(rc == PSCOM_SUCCESS);
+
+			pscom_send(peer_con, NULL, 0, local_pg_topo_levels, pg_count_local * sizeof(int));
+			rc = pscom_recv_from(peer_con, NULL, 0, remote_pg_topo_levels, pg_count_remote * sizeof(int));
+			assert(rc == PSCOM_SUCCESS);
+
+			pscom_send(peer_con, NULL, 0, local_pg_topo_msglen, pg_count_local * sizeof(int));
+			rc = pscom_recv_from(peer_con, NULL, 0, remote_pg_topo_msglen, pg_count_remote * sizeof(int));
+			assert(rc == PSCOM_SUCCESS);
+
+			for(i=0; i<max_pg_count; i++) {
+				pscom_send(peer_con, NULL, 0, local_pg_topo_badges[i], local_pg_topo_msglen[i]);
+				rc = pscom_recv_from(peer_con, NULL, 0, remote_pg_topo_badges[i], remote_pg_topo_msglen[i]);
+				assert(rc == PSCOM_SUCCESS);
+			}
 		}
 
 		for(i=0; i<pg_count_remote; i++) {
@@ -326,8 +387,9 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 				}
 
 				if(needed) {
-					MPIDI_PG_t * new_pg_ptr;
-					MPIDI_PG_Create(remote_pg_sizes[i], remote_pg_ids[i], &new_pg_ptr);
+					MPIDI_PSP_topo_level_t* level;
+					MPIDI_PSP_unpack_topology_badges(remote_pg_topo_badges[i], remote_pg_sizes[i], remote_pg_topo_levels[i], &level);
+					MPIDI_PG_Create(remote_pg_sizes[i], remote_pg_ids[i], level, NULL);
 					new_pg_count++;
 				}
 			}
@@ -335,8 +397,15 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 
 		MPL_free(local_pg_ids);
 		MPL_free(local_pg_sizes);
+		MPL_free(local_pg_topo_levels);
+		MPL_free(local_pg_topo_badges);
+		MPL_free(local_pg_topo_msglen);
+
 		MPL_free(remote_pg_ids);
 		MPL_free(remote_pg_sizes);
+		MPL_free(remote_pg_topo_levels);
+		MPL_free(remote_pg_topo_badges);
+		MPL_free(remote_pg_topo_msglen);
 
 		pg_count_root = pg_count_local + new_pg_count;
 		pg = MPIDI_Process.my_pg;
@@ -392,8 +461,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 
 				if(needed) {
 					/* New Process Group: */
-					MPIDI_PG_t * new_pg_ptr;
-					MPIDI_PG_Create(pg_size, pg_id_num, &new_pg_ptr);
+					MPIDI_PG_Create(pg_size, pg_id_num, NULL, NULL);
 				}
 			}
 		}
@@ -696,7 +764,7 @@ int MPIDI_PSP_add_topo_level_to_pg(MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t *level
 #define FUNCNAME MPIDI_PG_Create
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr)
+int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t *level, MPIDI_PG_t ** pg_ptr)
 {
 	MPIDI_PG_t * pg = NULL, *pgnext;
 	int i;
@@ -714,7 +782,7 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr)
 	pg->size = pg_size;
 	pg->id_num = pg_id_num;
 	pg->refcnt = 0;
-	pg->topo_level = NULL;
+	pg->topo_level = level;
 
 	for(i=0; i<pg_size; i++) {
 		pg->vcr[i] = NULL;
@@ -731,7 +799,6 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr)
 		MPIDI_Process.my_pg = pg;
 
 		if(1) {
-			int i;
 			MPIDI_PSP_topo_level_t* topo_level;
 			topo_level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
 			topo_level->badge_table = MPIDI_Process.node_id_table;
@@ -749,7 +816,8 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr)
 		}
 		pgnext->next = pg;
 	}
-	*pg_ptr = pg;
+
+	if(pg_ptr) *pg_ptr = pg;
 
 fn_exit:
 	MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_PG_CREATE);
