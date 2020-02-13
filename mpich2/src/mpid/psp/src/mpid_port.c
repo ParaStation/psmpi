@@ -270,7 +270,7 @@ int forward_pg_info(pscom_connection_t *con,  MPIR_Comm *comm, int root, pscom_p
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	/* Disable SMP-awareness as soon as dynamic process spawning comes into play. */
-	if(MPIDI_Process.node_id_table) {
+	if(0 && MPIDI_Process.node_id_table) {
 		MPL_free(MPIDI_Process.node_id_table);
 		MPIDI_Process.node_id_table = NULL;
 	}

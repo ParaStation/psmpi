@@ -328,6 +328,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 			assert(mpi_errno == MPI_SUCCESS);
 
 			for(i=0; i<max_pg_count; i++) {
+				remote_pg_topo_badges[i] = MPL_malloc(remote_pg_topo_msglen[i] * sizeof(int), MPL_MEM_OBJECT);
 				mpi_errno = MPIC_Sendrecv(local_pg_topo_badges[i], local_pg_topo_msglen[i], MPI_BYTE,
 							  remote_leader, cts_tag,
 							  remote_pg_topo_badges[i], remote_pg_topo_msglen[i], MPI_BYTE,
@@ -355,6 +356,8 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 
 			for(i=0; i<max_pg_count; i++) {
 				pscom_send(peer_con, NULL, 0, local_pg_topo_badges[i], local_pg_topo_msglen[i]);
+				MPL_free(local_pg_topo_badges[i]);
+				remote_pg_topo_badges[i] = MPL_malloc(remote_pg_topo_msglen[i] * sizeof(int), MPL_MEM_OBJECT);
 				rc = pscom_recv_from(peer_con, NULL, 0, remote_pg_topo_badges[i], remote_pg_topo_msglen[i]);
 				assert(rc == PSCOM_SUCCESS);
 			}
@@ -418,11 +421,16 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 
 		int pg_size;
 		int pg_id_num;
+		int *pg_topo_badges;
+		int pg_topo_msglen;
+		int pg_topo_num_levels;
 
 		if(comm_ptr->rank == root) {
 			assert(pg);
 			pg_id_num = pg->id_num;
 			pg_size   = pg->size;
+			MPIDI_PSP_pack_topology_badges(&pg_topo_badges, &pg_topo_msglen, pg);
+			pg_topo_num_levels = MPIDI_PSP_get_num_topology_levels(pg);
 		}
 
 		mpi_errno = MPIR_Bcast_impl(&pg_size, 1, MPI_INT, root, comm_ptr, &errflag);
@@ -431,6 +439,8 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 		mpi_errno = MPIR_Bcast_impl(&pg_id_num, 1, MPI_INT, root, comm_ptr, &errflag);
 		assert(mpi_errno == MPI_SUCCESS);
 
+		mpi_errno = MPIR_Bcast_impl(&pg_topo_num_levels, 1, MPI_INT, root, comm_ptr, &errflag);
+		assert(mpi_errno == MPI_SUCCESS);
 
 		if(comm_ptr->rank != root) {
 
@@ -461,7 +471,9 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 
 				if(needed) {
 					/* New Process Group: */
-					MPIDI_PG_Create(pg_size, pg_id_num, NULL, NULL);
+					MPIDI_PSP_topo_level_t* level;
+					MPIDI_PSP_unpack_topology_badges(pg_topo_badges, pg_size, pg_topo_num_levels, &level);
+					MPIDI_PG_Create(pg_size, pg_id_num, level, NULL);
 				}
 			}
 		}
@@ -782,7 +794,13 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t *level, M
 	pg->size = pg_size;
 	pg->id_num = pg_id_num;
 	pg->refcnt = 0;
-	pg->topo_level = level;
+	pg->topo_level = NULL;
+
+	while(level) {
+		MPIDI_PSP_topo_level_t *level_next = level->next;
+		MPIDI_PSP_add_topo_level_to_pg(pg, level);
+		level = level_next;
+	}
 
 	for(i=0; i<pg_size; i++) {
 		pg->vcr[i] = NULL;
