@@ -51,7 +51,7 @@ struct MPIDI_PG {
 	int id_num;
 	MPIDI_VC_t **vcr;
 	int * lpids;
-	struct MPIDI_PSP_topo_level *topo_level;
+	struct MPIDI_PSP_topo_level *topo_levels;
 	pscom_connection_t **cons;
 
 };
@@ -111,11 +111,11 @@ typedef struct MPIDI_Process
 	int shm_attr_key;
 
 	int msa_module_id;
-
+#if 0
 	int* node_id_table;
 	int  node_id_max;
 	int  my_node_id;
-
+#endif
 	struct {
 		unsigned enable_collectives;
 		unsigned enable_ondemand;
@@ -149,8 +149,8 @@ typedef struct MPIDI_Process
 extern MPIDI_Process_t MPIDI_Process;
 
 int MPIDI_PSP_get_num_topology_levels(MPIDI_PG_t *pg);
-int MPIDI_PSP_pack_topology_badges(int** pack_msg, int* msg_size, MPIDI_PG_t *pg);
-int MPIDI_PSP_unpack_topology_badges(int* pack_msg, int pg_size, int num_levels, MPIDI_PSP_topo_level_t **levels);
+void MPIDI_PSP_pack_topology_badges(int** pack_msg, int* msg_size, MPIDI_PG_t *pg);
+void MPIDI_PSP_unpack_topology_badges(int* pack_msg, int pg_size, int num_levels, MPIDI_PSP_topo_level_t **levels);
 int MPIDI_PSP_add_topo_level_to_pg(MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t *level);
 int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level);
 

@@ -160,6 +160,7 @@ int MPID_Finalize(void)
 	MPL_free(MPIDI_Process.pg_id_name);
 	MPIDI_Process.pg_id_name = NULL;
 
+#if 0
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	if (MPIDI_Process.node_id_table) {
 		/* Hierarchy awareness was enabled */
@@ -167,7 +168,8 @@ int MPID_Finalize(void)
 	}
 	MPIDI_Process.node_id_table = NULL;
 #endif
+#endif
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_FINALIZE);
+	MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_FINALIZE);
 	return MPI_SUCCESS;
 }

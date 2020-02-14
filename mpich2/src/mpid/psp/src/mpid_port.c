@@ -268,14 +268,15 @@ int forward_pg_info(pscom_connection_t *con,  MPIR_Comm *comm, int root, pscom_p
 
 	pscom_socket_t *pscom_socket = intercomm->pscom_socket;
 
+#if 0
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	/* Disable SMP-awareness as soon as dynamic process spawning comes into play. */
-	if(0 && MPIDI_Process.node_id_table) {
+	if(MPIDI_Process.node_id_table) {
 		MPL_free(MPIDI_Process.node_id_table);
 		MPIDI_Process.node_id_table = NULL;
 	}
 #endif
-
+#endif
 	if(iam_root(root, comm) && con) {
 		pscom_send(con, NULL, 0, &local_size, sizeof(int));
 		rc = pscom_recv_from(con, NULL, 0, &remote_size, sizeof(int));
