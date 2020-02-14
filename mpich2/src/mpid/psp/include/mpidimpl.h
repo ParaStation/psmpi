@@ -110,12 +110,9 @@ typedef struct MPIDI_Process
 
 	int shm_attr_key;
 
+	int msa_node_id;
 	int msa_module_id;
-#if 0
-	int* node_id_table;
-	int  node_id_max;
-	int  my_node_id;
-#endif
+
 	struct {
 		unsigned enable_collectives;
 		unsigned enable_ondemand;

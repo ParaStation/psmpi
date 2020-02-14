@@ -134,6 +134,7 @@ int MPID_Finalize(void)
 	MPI_Info_delete(MPI_INFO_ENV, "cuda_aware");
 #ifdef MPID_PSP_MSA_AWARENESS
 	MPI_Info_delete(MPI_INFO_ENV, "msa_module_id");
+	MPI_Info_delete(MPI_INFO_ENV, "msa_node_id");
 #endif
 
 /*	fprintf(stderr, "%d PMI_Finalize\n", MPIDI_Process.my_pg_rank); */

@@ -30,9 +30,9 @@ int get_my_shmem_split_color(MPIR_Comm * comm_ptr)
 	}
 
 #if 0
-	/* FIX ME: We could also use MPIDI_Process.my_node_id, but this is currently
+	/* FIX ME: We could also use MPIDI_Process.msa_node_id, but this is currently
 	   only available when MPID_PSP_TOPOLOGY_AWARE_COLLOPS is defined... */
-	color =  MPIDI_Process.my_node_id;
+	color =  MPIDI_Process.msa_node_id;
 #else
 
 	if(MPIDI_Process.env.enable_ondemand) {
@@ -221,64 +221,25 @@ static int MPIDI_PSP_get_badge_by_level_and_comm_rank(MPIR_Comm *comm, MPIDI_PSP
 
 int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 {
-#if 0
-	int i;
-	int pg_check_id;
-
-	if(MPIDI_Process.node_id_table == NULL) {
-		/* Just pretend that each rank lives on its own node: */
-		*id_p = rank;
-		return 0;
-	}
-
-	pg_check_id = comm->vcr[0]->pg->id_num;
-	for(i=1; i<comm->local_size; i++) {
-		if(comm->vcr[i]->pg->id_num != pg_check_id) {
-			/* This communicator spans more than one MPICH Process Group (PG)!
-			   As we create the node_id_table on an MPI_COMM_WORLD basis, we
-			   have to fallback here to the non smp-aware collops...
-			   (FIXME: Are we sure that this will be detected here by all ranks within comm?)
-			*/
-			*id_p = rank;
-			return 0;
-		}
-	}
-
-	*id_p = MPIDI_Process.node_id_table[comm->vcr[rank]->pg_rank];
-#else
 	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
 
 	if(tl == NULL) {
 		*id_p = rank;
 		return 0;
 	}
-#if 0
-	assert(MPIDI_Process.node_id_table);
-	if(MPIDI_Process.node_id_table == NULL) {
-		*id_p = rank;
-		return 0;
-	}
-#endif
+
 	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
 		assert(tl->badge_table);
 		tl = tl->next;
 	}
 
 	*id_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, tl, rank);
-#endif
+
 	return 0;
 }
 
 int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 {
-#if 0
-	if(!MPIDI_Process.node_id_table) {
-		/* Most likely that SMP-awareness has been disabled due to process spawning... */
-		return  MPI_ERR_OTHER;
-	}
-
-	*max_id_p = MPIDI_Process.node_id_max;
-#else
 	MPIDI_PG_t *pg = MPIDI_Process.my_pg;
 	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
 
@@ -304,7 +265,7 @@ int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 		}
 		pg = pg->next;
 	}
-#endif
+
 	return 0;
 }
 
@@ -426,51 +387,60 @@ void MPID_PSP_comm_init(void)
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 
-	if(MPIDI_Process.env.enable_msa_awareness && MPIDI_Process.env.enable_msa_aware_collops) {
-		int my_module_id = -1;
-		int* module_badge_table = NULL;
-		int module_max_badge = 0;
+	if(MPIDI_Process.env.enable_msa_awareness) {
 
-		my_module_id = MPIDI_Process.msa_module_id;
+		if(MPIDI_Process.msa_node_id < 0) {
+			MPIDI_Process.msa_node_id = 0;
+		}
 
-		if(my_module_id > -1) {
-			MPIDI_PSP_create_badge_table(my_module_id, pg_rank, pg_size, &module_max_badge, &module_badge_table, 0 /* normalize*/);
+		if(MPIDI_Process.env.enable_msa_aware_collops) {
+
+			int* module_badge_table = NULL;
+			int module_max_badge = 0;
+
+			MPIDI_PSP_create_badge_table(MPIDI_Process.msa_module_id, pg_rank, pg_size, &module_max_badge, &module_badge_table, 0 /* normalize*/);
 			assert(module_badge_table);
 
 			topo_level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
 			topo_level->badge_table = module_badge_table;
 			topo_level->max_badge = module_max_badge;
 			topo_level->degree = MPIDI_PSP_TOPO_LEVEL__MODULES;
+			topo_level->badges_are_global = 1;
 			MPIDI_PSP_add_topo_level_to_pg(pg_ptr, topo_level);
 		}
 	}
 
-	if(MPIDI_Process.env.enable_smp_awareness && MPIDI_Process.env.enable_smp_aware_collops) {
-		int my_node_id = -1;
-		int* node_badge_table = NULL;
-		int node_max_badge = 0;
+	if(MPIDI_Process.env.enable_smp_awareness) {
 
-		if (!MPIDI_Process.env.enable_ondemand) {
-			/* In the PSP_ONDEMAND=0 case, we can just check the pscom connection types: */
-			for (grank = 0; grank < pg_size; grank++) {
-				pscom_connection_t *con = MPIDI_Process.grank2con[grank];
-				if( (con->type == PSCOM_CON_TYPE_SHM) || (pg_rank == grank) ) {
-					my_node_id = grank;
-					break;
+		if(MPIDI_Process.msa_node_id < 0) {
+			if (!MPIDI_Process.env.enable_ondemand) {
+				/* In the PSP_ONDEMAND=0 case, we can just check the pscom connection types: */
+				for (grank = 0; grank < pg_size; grank++) {
+					pscom_connection_t *con = MPIDI_Process.grank2con[grank];
+					if( (con->type == PSCOM_CON_TYPE_SHM) || (pg_rank == grank) ) {
+						MPIDI_Process.msa_node_id = grank;
+						break;
+					}
 				}
+			} else {
+				/* In the PSP_ONDEMAND=1 case, we have to use a hash of the host name: */
+				MPIDI_Process.msa_node_id = MPID_PSP_get_host_hash();
 			}
-		} else {
-			/* In the PSP_ONDEMAND=1 case, we have to use a hash of the host name: */
-			my_node_id = MPID_PSP_get_host_hash();
 		}
 
-		if(my_node_id > -1) {
-			MPIDI_PSP_create_badge_table(my_node_id, pg_rank, pg_size, &node_max_badge, &node_badge_table, 1 /* normalize*/);
+		if(MPIDI_Process.env.enable_smp_aware_collops) {
+
+			int* node_badge_table = NULL;
+			int node_max_badge = 0;
+
+			MPIDI_PSP_create_badge_table(MPIDI_Process.msa_node_id, pg_rank, pg_size, &node_max_badge, &node_badge_table, 1 /* normalize*/);
 			assert(node_badge_table);
+
 			topo_level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
 			topo_level->badge_table = node_badge_table;
 			topo_level->max_badge = node_max_badge;
 			topo_level->degree = MPIDI_PSP_TOPO_LEVEL__NODES;
+			topo_level->badges_are_global = 0;
 			MPIDI_PSP_add_topo_level_to_pg(pg_ptr, topo_level);
 		}
 	}

@@ -50,13 +50,9 @@ MPIDI_Process_t MPIDI_Process = {
 	dinit(pg_id_name)	NULL,
 	dinit(next_lpid)	0,
 	dinit(my_pg)		NULL,
-	dinit(shm_attr_key)		0,
-	dinit(msa_module_id)    0,
-#if 0
-	dinit(node_id_table)    NULL,
-	dinit(node_id_max)      0,
-	dinit(my_node_id)       -1,
-#endif
+	dinit(shm_attr_key)	0,
+	dinit(msa_node_id)      -1,
+	dinit(msa_module_id)    -1,
 	dinit(env)		{
 		dinit(enable_collectives)	0,
 		dinit(enable_ondemand)		0,
@@ -527,11 +523,6 @@ int MPID_Init(int *argc, char ***argv,
 	if (pg_rank < 0) pg_rank = 0;
 	if (pg_size <= 0) pg_size = 1;
 
-#if 0
-	MPIDI_Process.my_node_id  = pg_rank;
-	MPIDI_Process.node_id_max = pg_size;
-#endif
-
 	if (
 #ifndef MPICH_IS_THREADED
 		1
@@ -571,15 +562,19 @@ int MPID_Init(int *argc, char ***argv,
 
 	/* take SMP-related locality information into account (e.g., for MPI_Win_allocate_shared) */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
+	if(MPIDI_Process.env.enable_smp_awareness) {
+		pscom_env_get_uint(&MPIDI_Process.msa_node_id, "PSP_MSA_NODE_ID");
+	} else {
+		MPIDI_Process.msa_node_id = pg_rank;
+	}
 
 #ifdef MPID_PSP_MSA_AWARENESS
 	/* take MSA-related topology information into account */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_msa_awareness, "PSP_MSA_AWARENESS");
 	if(MPIDI_Process.env.enable_msa_awareness) {
 		pscom_env_get_uint(&MPIDI_Process.msa_module_id, "PSP_MSA_MODULE_ID");
-		if(MPIDI_Process.msa_module_id < 0 ) {
-			MPIDI_Process.msa_module_id = 0;
-		}
+	} else {
+		MPIDI_Process.msa_module_id = 0;
 	}
 #endif
 
@@ -710,9 +705,14 @@ int MPID_Init(int *argc, char ***argv,
 			MPIR_ERR_POP(mpi_errno);
 		}
 #ifdef MPID_PSP_MSA_AWARENESS
-		char module_id_str[64];
-		snprintf(module_id_str, 63, "%d", MPIDI_Process.msa_module_id);
-		mpi_errno = MPIR_Info_set_impl(info_ptr, "msa_module_id", module_id_str);
+		char id_str[64];
+		snprintf(id_str, 63, "%d", MPIDI_Process.msa_module_id);
+		mpi_errno = MPIR_Info_set_impl(info_ptr, "msa_module_id", id_str);
+		if (MPI_SUCCESS != mpi_errno) {
+			MPIR_ERR_POP(mpi_errno);
+		}
+		snprintf(id_str, 63, "%d", MPIDI_Process.msa_node_id);
+		mpi_errno = MPIR_Info_set_impl(info_ptr, "msa_node_id", id_str);
 		if (MPI_SUCCESS != mpi_errno) {
 			MPIR_ERR_POP(mpi_errno);
 		}
