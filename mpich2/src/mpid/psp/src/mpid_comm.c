@@ -309,7 +309,7 @@ int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 }
 
 static
-int MPIDI_PSP_create_badge_table(int my_badge, int pg_rank, int pg_size, int *max_badge, int **badge_table)
+int MPIDI_PSP_create_badge_table(int my_badge, int pg_rank, int pg_size, int *max_badge, int **badge_table, int normalize)
 {
 	int rc;
 	int grank;
@@ -364,7 +364,9 @@ int MPIDI_PSP_create_badge_table(int my_badge, int pg_rank, int pg_size, int *ma
 		if((*badge_table)[grank] > *max_badge) *max_badge = (*badge_table)[grank];
 	}
 
-	if(0 && my_badge >= pg_size) MPIDI_PSP_create_badge_table(my_badge, pg_rank, pg_size, max_badge, badge_table);
+	if(*max_badge >= pg_size && normalize) {
+		MPIDI_PSP_create_badge_table(my_badge, pg_rank, pg_size, max_badge, badge_table, normalize);
+	}
 
 	return 0;
 }
@@ -432,7 +434,7 @@ void MPID_PSP_comm_init(void)
 		my_module_id = MPIDI_Process.msa_module_id;
 
 		if(my_module_id > -1) {
-			MPIDI_PSP_create_badge_table(my_module_id, pg_rank, pg_size, &module_max_badge, &module_badge_table);
+			MPIDI_PSP_create_badge_table(my_module_id, pg_rank, pg_size, &module_max_badge, &module_badge_table, 0 /* normalize*/);
 			assert(module_badge_table);
 
 			topo_level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
@@ -463,9 +465,8 @@ void MPID_PSP_comm_init(void)
 		}
 
 		if(my_node_id > -1) {
-			MPIDI_PSP_create_badge_table(my_node_id, pg_rank, pg_size, &node_max_badge, &node_badge_table);
+			MPIDI_PSP_create_badge_table(my_node_id, pg_rank, pg_size, &node_max_badge, &node_badge_table, 1 /* normalize*/);
 			assert(node_badge_table);
-
 			topo_level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
 			topo_level->badge_table = node_badge_table;
 			topo_level->max_badge = node_max_badge;
