@@ -596,6 +596,20 @@ int MPID_PSP_comm_create_hook(MPIR_Comm * comm)
 	hcoll_comm_create(comm, NULL);
 #endif
 
+	if(1) {
+		int id_num;
+		char id_str[64];
+		MPIR_Info *info = NULL;
+
+		MPIR_Comm_get_info_impl(comm, &info);
+
+		MPID_Get_node_id(comm, comm->rank, &id_num);
+		snprintf(id_str, 63, "%d", id_num);
+		MPIR_Info_set_impl(info, "msa_my_badge", id_str);
+
+		MPIR_Comm_set_info_impl(comm, info);
+	}
+
 	if (!MPIDI_Process.env.enable_collectives) return MPI_SUCCESS;
 
 	MPID_PSP_group_init(comm);
@@ -619,6 +633,14 @@ int MPID_PSP_comm_destroy_hook(MPIR_Comm * comm)
 #ifdef HAVE_LIBHCOLL
 	hcoll_comm_destroy(comm, NULL);
 #endif
+
+	if(1) {
+		MPIR_Info *info = NULL;
+		MPIR_Comm_get_info_impl(comm, &info);
+		if(info) {
+			MPIR_Info_free(info);
+		}
+	}
 
 	if (!MPIDI_Process.env.enable_collectives) return MPI_SUCCESS;
 
