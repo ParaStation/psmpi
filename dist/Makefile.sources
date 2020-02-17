@@ -6364,7 +6364,6 @@ mpich2/src/mpid/psp/include/mpid_coll.h \
 mpich2/src/mpid/psp/include/mpid_cuda_aware.h.in \
 mpich2/src/mpid/psp/include/mpid_sched.h \
 mpich2/src/mpid/psp/include/mpid_thread.h \
-mpich2/src/mpid/psp/include/mpid_visibility.h \
 mpich2/src/mpid/psp/include/mpidimpl.h \
 mpich2/src/mpid/psp/include/mpidpost.h \
 mpich2/src/mpid/psp/include/mpidpre.h \

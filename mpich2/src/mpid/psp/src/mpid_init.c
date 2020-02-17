@@ -34,9 +34,6 @@ MPIX_Query_cuda_support(void)
 #undef FUNCNAME
 #undef FCNAME
 
-// This must be the last include before sysmbols are defined:
-#include "mpid_visibility.h"
-
 #if defined(__GNUC__) || defined (__PGI)
 #define dinit(name) .name =
 #else

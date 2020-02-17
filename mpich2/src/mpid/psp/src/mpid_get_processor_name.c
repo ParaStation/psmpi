@@ -13,9 +13,6 @@
 #include "mpidimpl.h"
 #include <unistd.h>
 
-// This must be the last include before sysmbols are defined:
-#include "mpid_visibility.h"
-
 
 static char processorName[MPI_MAX_PROCESSOR_NAME];
 static int  setProcessorName = 0;

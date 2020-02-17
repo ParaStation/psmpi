@@ -14,9 +14,6 @@
 #include "mpid_psp_packed_msg.h"
 #include <assert.h>
 
-// This must be the last include before sysmbols are defined:
-#include "mpid_visibility.h"
-
 
 #if 1
 #define D(cmd)

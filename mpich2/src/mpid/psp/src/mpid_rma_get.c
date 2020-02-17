@@ -15,9 +15,6 @@
 #include "mpid_psp_packed_msg.h"
 #include "mpid_psp_request.h"
 
-// This must be the last include before sysmbols are defined:
-#include "mpid_visibility.h"
-
 
 typedef struct {
 	MPID_PSCOM_XHeader_Rma_get_req_t xheader;

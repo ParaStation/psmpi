@@ -13,9 +13,6 @@
 #include <assert.h>
 #include "mpidimpl.h"
 
-// This must be the last include before sysmbols are defined:
-#include "mpid_visibility.h"
-
 
 static
 int MPIDI_VCR_DeleteFromPG(MPIDI_VC_t *vcr);

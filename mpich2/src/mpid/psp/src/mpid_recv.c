@@ -12,10 +12,6 @@
 
 #include "mpidimpl.h"
 
-// This must be the last include before sysmbols are defined:
-#include "mpid_visibility.h"
-
-
 #define FCNAME "MPID_Recv"
 #define FUNCNAME MPID_Recv
 int MPID_Recv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,

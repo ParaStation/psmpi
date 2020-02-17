@@ -12,10 +12,6 @@
 
 #include "mpidimpl.h"
 
-// This must be the last include before sysmbols are defined:
-#include "mpid_visibility.h"
-
-
 int MPID_Send(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
 	      MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
 {

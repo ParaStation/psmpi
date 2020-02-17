@@ -12,9 +12,6 @@
 
 #include "mpid_psp_datatype.h"
 
-// This must be the last include before sysmbols are defined:
-#include "mpid_visibility.h"
-
 
 /* private struct for en-/de-coding of MPI_Datatype */
 typedef struct MPID_PSP_Datatype_s

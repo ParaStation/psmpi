@@ -20,10 +20,6 @@
 #include "mpid_psp_request.h"
 #include "mpid_psp_datatype.h"
 
-// This must be the last include before sysmbols are defined:
-#include "mpid_visibility.h"
-
-
 static inline
 void sendrequest_common_done(pscom_request_t *preq)
 {
@@ -330,9 +326,7 @@ int MPID_Issend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int ran
 
 #ifdef PSCOM_ALLIN
 #define PSCOM_ALLIN_INCLUDE_TOKEN
-#pragma GCC visibility pop
 #include "mpid_irecv.c"
-#pragma GCC visibility pop
 #ifndef LIBDIR
 #define LIBDIR ""
 #endif

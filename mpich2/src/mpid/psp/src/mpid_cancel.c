@@ -12,10 +12,6 @@
 
 #include "mpidimpl.h"
 
-// This must be the last include before sysmbols are defined:
-#include "mpid_visibility.h"
-
-
 int MPID_Cancel_recv(MPIR_Request * rreq)
 {
 	pscom_request_t *req = rreq->dev.kind.recv.common.pscom_req;

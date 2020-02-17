@@ -12,10 +12,6 @@
 
 #include "mpidimpl.h"
 
-// This must be the last include before sysmbols are defined:
-#include "mpid_visibility.h"
-
-
 int MPIDI_GPID_Get( MPIR_Comm *comm_ptr, int rank, MPIDI_Gpid *gpid )
 {
 	MPIDI_VC_t *vc;

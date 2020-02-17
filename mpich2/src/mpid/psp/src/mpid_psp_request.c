@@ -16,9 +16,6 @@
 #include "mpid_psp_request.h"
 #include "mpid_debug.h"
 
-// This must be the last include before sysmbols are defined:
-#include "mpid_visibility.h"
-
 
 /* ------------------------------------------------------------------------- */
 /* Soeme request-specific create/destroy hooks                               */

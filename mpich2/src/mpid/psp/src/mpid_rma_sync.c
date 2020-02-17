@@ -16,9 +16,6 @@
 #include "mpid_psp_request.h"
 #include "opa_primitives.h"
 
-// This must be the last include before sysmbols are defined:
-#include "mpid_visibility.h"
-
 
 #define TAG_POST	11
 #define TAG_COMPLETE	12

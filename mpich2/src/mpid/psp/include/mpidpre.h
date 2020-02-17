@@ -20,8 +20,6 @@
 #include "mpid_sched.h"
 #include "mpid_cuda_aware.h"
 
-#define MPID_PSP_HIDE_VISIBILITY
-
 /* We simply use the fallback timer functionality and do not define
  * our own */
 #include "mpid_timers_fallback.h"
