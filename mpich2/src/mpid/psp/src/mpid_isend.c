@@ -13,6 +13,9 @@
 #ifdef PSCOM_ALLIN
 #define _GNU_SOURCE
 #define __USE_GNU
+#ifndef LIBDIR
+#define LIBDIR ""
+#endif
 #endif
 
 #include "mpidimpl.h"
@@ -327,53 +330,5 @@ int MPID_Issend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int ran
 #ifdef PSCOM_ALLIN
 #define PSCOM_ALLIN_INCLUDE_TOKEN
 #include "mpid_irecv.c"
-#ifndef LIBDIR
-#define LIBDIR ""
-#endif
-// Include all standard headers for pscom
-// before setting visibility to "hidden":
-#include <arpa/inet.h>
-#include <assert.h>
-#include <assert.h>
-#include <ctype.h>
-#include <dlfcn.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <linux/sockios.h>
-#include <malloc.h>
-#include <math.h>
-#include <netdb.h>
-#include <net/if.h>
-#include <netinet/in.h>
-#include <pthread.h>
-#include <sched.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <syslog.h>
-#include <sys/ioctl.h>
-#include <sys/ipc.h>
-#include <sys/mman.h>
-#include <sys/poll.h>
-#include <sys/resource.h>
-#include <sys/shm.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <wordexp.h>
-#include <execinfo.h>
-#ifdef PSCOM_ALLIN_PSM2
-#include <psm2.h>
-#include <psm2_mq.h>
-#endif
-#ifdef PSCOM_ALLIN_OPENIB
-#include <infiniband/verbs.h>
-#endif
-#pragma GCC visibility push(hidden)
 #include "pscom_all.c"
 #endif
