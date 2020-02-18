@@ -224,12 +224,8 @@ int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
 
 	if(tl == NULL) {
-#ifdef MPID_PSP_MSA_AWARENESS
-		*id_p = rank;
-#else
 		*id_p = -1;
-#endif
-		return 0;
+		return MPI_ERR_OTHER;
 	}
 
 	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
@@ -248,12 +244,8 @@ int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
 
 	if(tl == NULL) {
-#ifdef MPID_PSP_MSA_AWARENESS
-		*max_id_p = MPIDI_Process.my_pg_size;
-#else
 		*max_id_p = 0;
-#endif
-		return 0;
+		return MPI_ERR_OTHER;
 	}
 
 	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
