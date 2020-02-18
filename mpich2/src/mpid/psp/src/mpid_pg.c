@@ -401,7 +401,12 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 				if(needed) {
 					MPIDI_PSP_topo_level_t* level = NULL;
 #ifdef MPID_PSP_MSA_AWARENESS
-					MPIDI_PSP_unpack_topology_badges(remote_pg_topo_badges[i], remote_pg_sizes[i], remote_pg_topo_levels[i], &level);
+					if(remote_pg_topo_msglen[i]) {
+						MPIDI_PSP_unpack_topology_badges(remote_pg_topo_badges[i], remote_pg_sizes[i], remote_pg_topo_levels[i], &level);
+					} else {
+						MPL_free(remote_pg_topo_badges[i]);
+					}
+					remote_pg_topo_badges[i] = NULL;
 #endif
 					MPIDI_PG_Create(remote_pg_sizes[i], remote_pg_ids[i], level, NULL);
 					new_pg_count++;
@@ -415,6 +420,11 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 		MPL_free(remote_pg_sizes);
 
 #ifdef MPID_PSP_MSA_AWARENESS
+		for(i=0; i<max_pg_count; i++) {
+			if(remote_pg_topo_badges[i]) {
+				MPL_free(remote_pg_topo_badges[i]);
+			}
+		}
 		MPL_free(local_pg_topo_levels);
 		MPL_free(local_pg_topo_badges);
 		MPL_free(local_pg_topo_msglen);
@@ -498,7 +508,12 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 					/* New Process Group: */
 					MPIDI_PSP_topo_level_t* level = NULL;
 #ifdef MPID_PSP_MSA_AWARENESS
-					MPIDI_PSP_unpack_topology_badges(pg_topo_badges, pg_size, pg_topo_num_levels, &level);
+					if(pg_topo_msglen) {
+						MPIDI_PSP_unpack_topology_badges(pg_topo_badges, pg_size, pg_topo_num_levels, &level);
+					} else {
+						MPL_free(pg_topo_badges);
+					}
+					pg_topo_badges = NULL;
 #endif
 					MPIDI_PG_Create(pg_size, pg_id_num, level, NULL);
 				}
@@ -510,7 +525,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 		}
 
 #ifdef MPID_PSP_MSA_AWARENESS
-		if(!needed) {
+		if(pg_topo_badges) {
 			MPL_free(pg_topo_badges);
 		}
 #endif
