@@ -224,7 +224,11 @@ int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
 
 	if(tl == NULL) {
+#ifdef MPID_PSP_MSA_AWARENESS
 		*id_p = rank;
+#else
+		*id_p = -1;
+#endif
 		return 0;
 	}
 
@@ -244,7 +248,11 @@ int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
 
 	if(tl == NULL) {
+#ifdef MPID_PSP_MSA_AWARENESS
 		*max_id_p = MPIDI_Process.my_pg_size;
+#else
+		*max_id_p = 0;
+#endif
 		return 0;
 	}
 
@@ -596,19 +604,22 @@ int MPID_PSP_comm_create_hook(MPIR_Comm * comm)
 	hcoll_comm_create(comm, NULL);
 #endif
 
-	if(1) {
+#ifdef MPID_PSP_MSA_AWARENESS
+	if(0) { // just for debug purpose:
 		int id_num;
 		char id_str[64];
-		MPIR_Info *info = NULL;
+		int mpi_errno;
 
-		MPIR_Comm_get_info_impl(comm, &info);
-
+		if(!comm->info) {
+			mpi_errno = MPIR_Info_alloc(&comm->info);
+			assert(mpi_errno == MPI_SUCCESS);
+		}
 		MPID_Get_node_id(comm, comm->rank, &id_num);
 		snprintf(id_str, 63, "%d", id_num);
-		MPIR_Info_set_impl(info, "msa_my_badge", id_str);
-
-		MPIR_Comm_set_info_impl(comm, info);
+		mpi_errno = MPIR_Info_set_impl(comm->info, "msa_my_badge", id_str);
+		assert(mpi_errno == MPI_SUCCESS);
 	}
+#endif
 
 	if (!MPIDI_Process.env.enable_collectives) return MPI_SUCCESS;
 
@@ -633,14 +644,6 @@ int MPID_PSP_comm_destroy_hook(MPIR_Comm * comm)
 #ifdef HAVE_LIBHCOLL
 	hcoll_comm_destroy(comm, NULL);
 #endif
-
-	if(1) {
-		MPIR_Info *info = NULL;
-		MPIR_Comm_get_info_impl(comm, &info);
-		if(info) {
-			MPIR_Info_free(info);
-		}
-	}
 
 	if (!MPIDI_Process.env.enable_collectives) return MPI_SUCCESS;
 

@@ -562,11 +562,13 @@ int MPID_Init(int *argc, char ***argv,
 
 	/* take SMP-related locality information into account (e.g., for MPI_Win_allocate_shared) */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
+#ifdef MPID_PSP_MSA_AWARENESS
 	if(MPIDI_Process.env.enable_smp_awareness) {
 		pscom_env_get_uint(&MPIDI_Process.msa_node_id, "PSP_MSA_NODE_ID");
 	} else {
 		MPIDI_Process.msa_node_id = pg_rank;
 	}
+#endif
 
 #ifdef MPID_PSP_MSA_AWARENESS
 	/* take MSA-related topology information into account */
