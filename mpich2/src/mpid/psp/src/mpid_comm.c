@@ -87,7 +87,7 @@ void MPIDI_PSP_pack_topology_badges(int** pack_msg, int* pack_size, MPIDI_PG_t *
 	int* msg;
 	MPIDI_PSP_topo_level_t *tl = pg->topo_levels;
 
-	*pack_size = MPIDI_PSP_get_num_topology_levels(pg) * (pg->size + 1) * sizeof(int);
+	*pack_size = MPIDI_PSP_get_num_topology_levels(pg) * (pg->size + 2) * sizeof(int);
 	*pack_msg = MPL_malloc(*pack_size * sizeof(int), MPL_MEM_OBJECT);
 
 	msg = *pack_msg;
@@ -95,8 +95,8 @@ void MPIDI_PSP_pack_topology_badges(int** pack_msg, int* pack_size, MPIDI_PG_t *
 		for(i=0; i<pg->size; i++, msg++) {
 			*msg = tl->badge_table[i];
 		}
-		*msg = tl->degree;
-		msg++;
+		*msg = tl->degree;  msg++;
+		*msg = tl->max_badge;  msg++;
 		tl=tl->next;
 	}
 }
@@ -116,7 +116,8 @@ void MPIDI_PSP_unpack_topology_badges(int* pack_msg, int pg_size, int num_levels
 
 		level->badge_table = msg;
 		level->degree = msg[pg_size];
-		msg += (pg_size+1);
+		level->max_badge = msg[pg_size + 1];
+		msg += (pg_size + 2);
 
 		level->next = *levels;
 		*levels = level;
