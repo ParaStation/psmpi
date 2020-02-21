@@ -372,6 +372,7 @@ int MPID_Issend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int ran
 #include <sys/types.h>
 #include <unistd.h>
 #include <wordexp.h>
+#include <execinfo.h>
 #ifdef PSCOM_ALLIN_PSM2
 #include <psm2.h>
 #include <psm2_mq.h>
