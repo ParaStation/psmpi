@@ -1,3 +1,25 @@
+2020-02-21  Simon Pickartz <pickartz@par-tec.com> -    5.4.3-1
+
+	* Fix: Allin builds against pscom >= 5.3.1-1.
+
+2020-02-18  Carsten Clauss <clauss@par-tec.com>
+
+	* Enhancement: Multi-level hierarchical awareness for subtopologies,
+	e.g., automatic detection of the hierarchy level in MSA systems.
+
+	* Enhancement: Make PSP_LAZY_DISCONNECT the default behavior for
+	MPI_Comm_disconnect().
+
+	* Fix: MPI_Allgather() for non- power-of-2 comm_size falls back to the
+	'ring' algorithm.
+
+	* Enhancement: Provide MSA module id as part of the MPI_INFO_ENV
+	object.
+
+	* Fix: Support for 16k context if topology awareness is disabled.
+
+	* Enhancement: HCOLL support for the PSP device.
+
 2019-11-15  Simon Pickartz <pickartz@par-tec.com> -    5.4.2-1
 
 	* MPICH 3.3.2
