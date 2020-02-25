@@ -195,18 +195,9 @@ static int MPIDI_PSP_get_badge_by_level_and_comm_rank(MPIR_Comm *comm, MPIDI_PSP
 
 	if(likely(comm->vcr[rank]->pg == MPIDI_Process.my_pg)) { // rank is in local process group
 
-		if(likely(level->pg == MPIDI_Process.my_pg)) { // level is also local
-			assert(level->badge_table);
-			return level->badge_table[comm->vcr[rank]->pg_rank];
-		} else {
-			// quite unlikely... (strange function usage)
-			assert(0);
-			if(MPIDI_PSP_check_pg_for_level(level->degree, MPIDI_Process.my_pg, &ext_level)) {
-				return ext_level->badge_table[comm->vcr[rank]->pg_rank];
-			} else {
-				return -1;
-			}
-		}
+		assert(level->pg == MPIDI_Process.my_pg); // level must be local, too
+		assert(level->badge_table);
+		return level->badge_table[comm->vcr[rank]->pg_rank];
 	}
 
 	if(level->badges_are_global && MPIDI_PSP_check_pg_for_level(level->degree, comm->vcr[rank]->pg, &ext_level)) {
@@ -235,6 +226,7 @@ int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 	}
 
 	*id_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, tl, rank);
+	assert(*id_p >= 0);
 
 	return 0;
 }
@@ -255,16 +247,20 @@ int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 	}
 
 	*max_id_p = tl->max_badge;
+	assert(*max_id_p >= 0);
 
-	while(pg->next) {
-		MPIDI_PSP_topo_level_t *ext_level = NULL;
-		if(MPIDI_PSP_check_pg_for_level(tl->degree, pg->next, &ext_level)) {
-			assert(ext_level);
-			if(ext_level->max_badge > *max_id_p) {
-				*max_id_p = ext_level->max_badge;
+	if(tl->badges_are_global) { // check also the remote process groups
+
+		while(pg->next) {
+			MPIDI_PSP_topo_level_t *ext_level = NULL;
+			if(MPIDI_PSP_check_pg_for_level(tl->degree, pg->next, &ext_level)) {
+				assert(ext_level);
+				if(ext_level->max_badge > *max_id_p) {
+					*max_id_p = ext_level->max_badge;
+				}
 			}
+			pg = pg->next;
 		}
-		pg = pg->next;
 	}
 
 	return 0;
@@ -390,8 +386,8 @@ void MPID_PSP_comm_init(void)
 
 	if(MPIDI_Process.env.enable_msa_awareness) {
 
-		if(MPIDI_Process.msa_node_id < 0) {
-			MPIDI_Process.msa_node_id = 0;
+		if(MPIDI_Process.msa_module_id < 0) {
+			MPIDI_Process.msa_module_id = 0;
 		}
 
 		if(MPIDI_Process.env.enable_msa_aware_collops) {

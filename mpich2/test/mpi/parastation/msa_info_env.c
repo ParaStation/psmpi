@@ -67,11 +67,6 @@ int main(int argc, char* argv[])
 				rc++;
 			}
 		}
-
-	} else { /* This MPI environment is NOT modularity-aware -- but it should! */
-
-		printf("\nThis MPI environment is NOT modularity-aware -- but it should!\n");
-		rc++;
 	}
 #else
 	if (flag) { /* This MPI environment is modularity-aware -- but it should NOT! */

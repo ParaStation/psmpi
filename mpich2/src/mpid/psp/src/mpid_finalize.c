@@ -132,9 +132,14 @@ int MPID_Finalize(void)
 	MPIR_Comm_free_keyval_impl(MPIDI_Process.shm_attr_key);
 
 	MPI_Info_delete(MPI_INFO_ENV, "cuda_aware");
+
 #ifdef MPID_PSP_MSA_AWARENESS
-	MPI_Info_delete(MPI_INFO_ENV, "msa_module_id");
-	MPI_Info_delete(MPI_INFO_ENV, "msa_node_id");
+	if(MPIDI_Process.msa_module_id >= 0) {
+		MPI_Info_delete(MPI_INFO_ENV, "msa_module_id");
+	}
+	if(MPIDI_Process.msa_node_id >= 0) {
+		MPI_Info_delete(MPI_INFO_ENV, "msa_node_id");
+	}
 #endif
 
 /*	fprintf(stderr, "%d PMI_Finalize\n", MPIDI_Process.my_pg_rank); */

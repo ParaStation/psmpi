@@ -575,8 +575,6 @@ int MPID_Init(int *argc, char ***argv,
 	pscom_env_get_uint(&MPIDI_Process.env.enable_msa_awareness, "PSP_MSA_AWARENESS");
 	if(MPIDI_Process.env.enable_msa_awareness) {
 		pscom_env_get_uint(&MPIDI_Process.msa_module_id, "PSP_MSA_MODULE_ID");
-	} else {
-		MPIDI_Process.msa_module_id = 0;
 	}
 #endif
 
@@ -600,9 +598,8 @@ int MPID_Init(int *argc, char ***argv,
 	}
 	/* (For now, the usage of HCOLL and MSA aware collops are mutually exclusive / FIX ME!) */
 #else
-	/* use hierarchy-aware collectives on MSA level (disables SMP-aware collops / FIX ME!) */
+	/* use hierarchy-aware collectives on MSA level */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_msa_aware_collops, "PSP_MSA_AWARE_COLLOPS");
-	if(MPIDI_Process.env.enable_msa_awareness && MPIDI_Process.env.enable_msa_aware_collops) MPIDI_Process.env.enable_smp_aware_collops = 0;
 #endif
 #endif
 
@@ -708,15 +705,19 @@ int MPID_Init(int *argc, char ***argv,
 		}
 #ifdef MPID_PSP_MSA_AWARENESS
 		char id_str[64];
-		snprintf(id_str, 63, "%d", MPIDI_Process.msa_module_id);
-		mpi_errno = MPIR_Info_set_impl(info_ptr, "msa_module_id", id_str);
-		if (MPI_SUCCESS != mpi_errno) {
-			MPIR_ERR_POP(mpi_errno);
+		if(MPIDI_Process.msa_module_id >= 0) {
+			snprintf(id_str, 63, "%d", MPIDI_Process.msa_module_id);
+			mpi_errno = MPIR_Info_set_impl(info_ptr, "msa_module_id", id_str);
+			if (MPI_SUCCESS != mpi_errno) {
+				MPIR_ERR_POP(mpi_errno);
+			}
 		}
-		snprintf(id_str, 63, "%d", MPIDI_Process.msa_node_id);
-		mpi_errno = MPIR_Info_set_impl(info_ptr, "msa_node_id", id_str);
-		if (MPI_SUCCESS != mpi_errno) {
-			MPIR_ERR_POP(mpi_errno);
+		if(MPIDI_Process.msa_node_id >= 0) {
+			snprintf(id_str, 63, "%d", MPIDI_Process.msa_node_id);
+			mpi_errno = MPIR_Info_set_impl(info_ptr, "msa_node_id", id_str);
+			if (MPI_SUCCESS != mpi_errno) {
+				MPIR_ERR_POP(mpi_errno);
+			}
 		}
 #endif
 	}
