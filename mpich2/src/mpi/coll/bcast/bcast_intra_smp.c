@@ -96,7 +96,14 @@ int MPIR_Bcast_intra_smp(void *buffer, int count, MPI_Datatype datatype, int roo
 
         /* perform the intranode broadcast on all except for the root's node */
         if (comm_ptr->node_comm != NULL) {
+#ifdef MPID_PSP_MSA_AWARENESS
+            if (comm_ptr->node_comm->local_comm != NULL)
+                mpi_errno = MPIR_Bcast(buffer, count, datatype, 0, comm_ptr->node_comm->local_comm, errflag);
+            else
+                mpi_errno = MPIR_Bcast(buffer, count, datatype, 0, comm_ptr->node_comm, errflag);
+#else
             mpi_errno = MPIR_Bcast(buffer, count, datatype, 0, comm_ptr->node_comm, errflag);
+#endif
             if (mpi_errno) {
                 /* for communication errors, just record the error but continue */
                 *errflag =

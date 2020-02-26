@@ -594,19 +594,21 @@ int MPID_PSP_comm_create_hook(MPIR_Comm * comm)
 #endif
 
 #ifdef MPID_PSP_MSA_AWARENESS
-	if(0) { // just for debug purpose:
-		int id_num;
-		char id_str[64];
-		int mpi_errno;
+	if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (MPIDI_Process.env.enable_msa_awareness > 1)) {
 
-		if(!comm->info) {
-			mpi_errno = MPIR_Info_alloc(&comm->info);
+		int mpi_errno;
+		MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
+
+		while(tl && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
+			assert(tl->badge_table);
+			tl = tl->next;
+		}
+
+		if(tl) { // This subcomm is not flat -> attach a further subcomm level: (to be handled in SMP-aware collectives)
+			assert(comm->comm_kind == MPIR_COMM_KIND__INTRACOMM);
+			mpi_errno = MPIR_Comm_dup_impl(comm, &comm->local_comm); // we "misuse" local_comm for this purpose
 			assert(mpi_errno == MPI_SUCCESS);
 		}
-		MPID_Get_node_id(comm, comm->rank, &id_num);
-		snprintf(id_str, 63, "%d", id_num);
-		mpi_errno = MPIR_Info_set_impl(comm->info, "msa_my_badge", id_str);
-		assert(mpi_errno == MPI_SUCCESS);
 	}
 #endif
 
@@ -632,6 +634,16 @@ int MPID_PSP_comm_destroy_hook(MPIR_Comm * comm)
 
 #ifdef HAVE_LIBHCOLL
 	hcoll_comm_destroy(comm, NULL);
+#endif
+
+#ifdef MPID_PSP_MSA_AWARENESS
+	if (comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) {
+		if(comm->local_comm) {
+			// Recursively release also further subcomm levels:
+			assert(comm->comm_kind == MPIR_COMM_KIND__INTRACOMM);
+			MPIR_Comm_release(comm->local_comm);
+		}
+	}
 #endif
 
 	if (!MPIDI_Process.env.enable_collectives) return MPI_SUCCESS;
