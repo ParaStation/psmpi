@@ -40,8 +40,8 @@
 #define MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 /* When MPID_PSP_TOPOLOGY_AWARE_COLLOPS is defined, the functions MPID_Get_node_id() and
  * MPID_Get_max_node_id() have to provide topology information (in terms of node IDs for
- * SMP islands) for identifying SMP nodes for applying SMP-aware communication topologies
- * for collective MPI operations within the upper MPICH layer.
+ * SMP islands) for identifying SMP nodes and/or MSA modules for applying hierarchy-aware
+ * communication topologies for collective MPI operations within the upper MPICH layer.
  */
 #endif
 

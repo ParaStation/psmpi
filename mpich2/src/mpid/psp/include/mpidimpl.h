@@ -110,7 +110,7 @@ typedef struct MPIDI_Process
 
 	int shm_attr_key;
 
-	int msa_node_id;
+	int smp_node_id;
 	int msa_module_id;
 
 	struct {

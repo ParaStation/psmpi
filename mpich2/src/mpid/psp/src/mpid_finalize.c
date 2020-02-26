@@ -133,7 +133,7 @@ int MPID_Finalize(void)
 	if(MPIDI_Process.msa_module_id >= 0) {
 		MPI_Info_delete(MPI_INFO_ENV, "msa_module_id");
 	}
-	if(MPIDI_Process.msa_node_id >= 0) {
+	if(MPIDI_Process.smp_node_id >= 0 && MPIDI_Process.env.enable_msa_awareness) {
 		MPI_Info_delete(MPI_INFO_ENV, "msa_node_id");
 	}
 #endif

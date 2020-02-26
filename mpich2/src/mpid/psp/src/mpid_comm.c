@@ -23,17 +23,17 @@ extern struct MPIR_Commops  *MPIR_Comm_fns;
 static
 int get_my_shmem_split_color(MPIR_Comm * comm_ptr)
 {
-	int i, color = MPI_UNDEFINED;
+	int color = MPI_UNDEFINED;
 
 	if(!MPIDI_Process.env.enable_smp_awareness) {
 		return comm_ptr->rank;
 	}
 
-#if 0
-	/* FIX ME: We could also use MPIDI_Process.msa_node_id, but this is currently
-	   only available when MPID_PSP_TOPOLOGY_AWARE_COLLOPS is defined... */
-	color =  MPIDI_Process.msa_node_id;
+#if 1
+	color =  MPIDI_Process.smp_node_id;
 #else
+	/* We now use MPIDI_Process.smp_node_id as the color (see above).
+	   The former code for the color determination looked like this: */
 
 	if(MPIDI_Process.env.enable_ondemand) {
 		/* In the PSP_ONDEMAND=1 case, we cannot check reliably for CON_TYPE_SHM,
@@ -42,6 +42,7 @@ int get_my_shmem_split_color(MPIR_Comm * comm_ptr)
 		return MPID_PSP_get_host_hash();
 	}
 
+	/* The following would not work if PSP_SHM=0 is set! */
 	for(i=0; i<comm_ptr->local_size; i++) {
 		if( (comm_ptr->vcr[i]->con->type == PSCOM_CON_TYPE_SHM) || (comm_ptr->rank == i) ) {
 			color = i;
@@ -409,19 +410,23 @@ void MPID_PSP_comm_init(void)
 
 	if(MPIDI_Process.env.enable_smp_awareness) {
 
-		if(MPIDI_Process.msa_node_id < 0) {
-			if (!MPIDI_Process.env.enable_ondemand) {
-				/* In the PSP_ONDEMAND=0 case, we can just check the pscom connection types: */
+		if(MPIDI_Process.smp_node_id < 0) {
+
+			int psp_shm = 1;
+			pscom_env_get_uint(&psp_shm, "PSP_SHM");
+			if (!MPIDI_Process.env.enable_ondemand && psp_shm) {
+				/* In the PSP_ONDEMAND=0 case, we can (if SHM is not disabled) check the pscom connection types: */
 				for (grank = 0; grank < pg_size; grank++) {
 					pscom_connection_t *con = MPIDI_Process.grank2con[grank];
 					if( (con->type == PSCOM_CON_TYPE_SHM) || (pg_rank == grank) ) {
-						MPIDI_Process.msa_node_id = grank;
+						MPIDI_Process.smp_node_id = grank;
 						break;
 					}
 				}
 			} else {
 				/* In the PSP_ONDEMAND=1 case, we have to use a hash of the host name: */
-				MPIDI_Process.msa_node_id = MPID_PSP_get_host_hash();
+				MPIDI_Process.smp_node_id = MPID_PSP_get_host_hash();
+				/* ...accepting the possibility of hash collisions that may lead to undefined situations! */
 			}
 		}
 
@@ -430,7 +435,7 @@ void MPID_PSP_comm_init(void)
 			int* node_badge_table = NULL;
 			int node_max_badge = 0;
 
-			MPIDI_PSP_create_badge_table(MPIDI_Process.msa_node_id, pg_rank, pg_size, &node_max_badge, &node_badge_table, 1 /* normalize*/);
+			MPIDI_PSP_create_badge_table(MPIDI_Process.smp_node_id, pg_rank, pg_size, &node_max_badge, &node_badge_table, 1 /* normalize*/);
 			assert(node_badge_table);
 
 			topo_level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);

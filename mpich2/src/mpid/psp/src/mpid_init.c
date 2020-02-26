@@ -48,7 +48,7 @@ MPIDI_Process_t MPIDI_Process = {
 	dinit(next_lpid)	0,
 	dinit(my_pg)		NULL,
 	dinit(shm_attr_key)	0,
-	dinit(msa_node_id)      -1,
+	dinit(smp_node_id)      -1,
 	dinit(msa_module_id)    -1,
 	dinit(env)		{
 		dinit(enable_collectives)	0,
@@ -559,13 +559,12 @@ int MPID_Init(int *argc, char ***argv,
 
 	/* take SMP-related locality information into account (e.g., for MPI_Win_allocate_shared) */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
-#ifdef MPID_PSP_MSA_AWARENESS
 	if(MPIDI_Process.env.enable_smp_awareness) {
-		pscom_env_get_uint(&MPIDI_Process.msa_node_id, "PSP_MSA_NODE_ID");
-	} else {
-		MPIDI_Process.msa_node_id = pg_rank;
-	}
+		pscom_env_get_uint(&MPIDI_Process.smp_node_id, "PSP_SMP_NODE_ID");
+#ifdef MPID_PSP_MSA_AWARENESS
+		pscom_env_get_uint(&MPIDI_Process.smp_node_id, "PSP_MSA_NODE_ID");
 #endif
+	}
 
 #ifdef MPID_PSP_MSA_AWARENESS
 	/* take MSA-related topology information into account */
@@ -709,8 +708,8 @@ int MPID_Init(int *argc, char ***argv,
 				MPIR_ERR_POP(mpi_errno);
 			}
 		}
-		if(MPIDI_Process.msa_node_id >= 0) {
-			snprintf(id_str, 63, "%d", MPIDI_Process.msa_node_id);
+		if(MPIDI_Process.smp_node_id >= 0 && MPIDI_Process.env.enable_msa_awareness) {
+			snprintf(id_str, 63, "%d", MPIDI_Process.smp_node_id);
 			mpi_errno = MPIR_Info_set_impl(info_ptr, "msa_node_id", id_str);
 			if (MPI_SUCCESS != mpi_errno) {
 				MPIR_ERR_POP(mpi_errno);
