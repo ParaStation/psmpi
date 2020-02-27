@@ -682,7 +682,7 @@ int MPID_Init(int *argc, char ***argv,
 	}
 
 	/* Call the other init routines */
-	MPID_PSP_comm_init();
+	MPID_PSP_comm_init(has_parent);
 	MPID_PSP_shm_rma_init();
 
 	/*

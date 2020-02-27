@@ -7,7 +7,8 @@
  * as defined in the file LICENSE.QPL included in the packaging of this
  * file.
  *
- * Author:	Jens Hauke <hauke@par-tec.com>
+ * Authors:	Jens Hauke <hauke@par-tec.com>
+ *         	Carsten Clauss <clauss@par-tec.com>
  */
 
 #include <assert.h>
@@ -88,16 +89,17 @@ void MPIDI_PSP_pack_topology_badges(int** pack_msg, int* pack_size, MPIDI_PG_t *
 	int* msg;
 	MPIDI_PSP_topo_level_t *tl = pg->topo_levels;
 
-	*pack_size = MPIDI_PSP_get_num_topology_levels(pg) * (pg->size + 2) * sizeof(int);
+	*pack_size = MPIDI_PSP_get_num_topology_levels(pg) * (pg->size + 3) * sizeof(int);
 	*pack_msg = MPL_malloc(*pack_size * sizeof(int), MPL_MEM_OBJECT);
 
 	msg = *pack_msg;
-	while(tl) {
+	while(tl) { // FIX ME: non-global badges need not to be exchanged!
 		for(i=0; i<pg->size; i++, msg++) {
 			*msg = tl->badge_table[i];
 		}
 		*msg = tl->degree;  msg++;
 		*msg = tl->max_badge;  msg++;
+		*msg = tl->badges_are_global;  msg++;
 		tl=tl->next;
 	}
 }
@@ -121,7 +123,8 @@ void MPIDI_PSP_unpack_topology_badges(int* pack_msg, int pg_size, int num_levels
 		}
 		level->degree = msg[pg_size];
 		level->max_badge = msg[pg_size + 1];
-		msg += (pg_size + 2);
+		level->badges_are_global = msg[pg_size + 2];
+		msg += (pg_size + 3);
 
 		level->next = *levels;
 		*levels = level;
@@ -147,7 +150,7 @@ int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_leve
 
 	while(tl) {
 		if(tl->degree == degree) {
-			*level = tl;
+			if(level) *level = tl;
 			return 1;
 		}
 		tl=tl->next;
@@ -194,23 +197,57 @@ static int MPIDI_PSP_comm_is_flat_on_level(MPIR_Comm *comm, MPIDI_PSP_topo_level
 	return 1;
 }
 
-static int MPIDI_PSP_get_badge_by_level_and_comm_rank(MPIR_Comm *comm, MPIDI_PSP_topo_level_t *level, int rank)
+static
+int MPIDI_PSP_get_max_badge_by_level(MPIDI_PSP_topo_level_t *level)
 {
+	MPIDI_PG_t *pg = MPIDI_Process.my_pg;
+	int max_badge = level->max_badge;
+
+	if(level->badges_are_global) { // check also the remote process groups
+
+		while(pg->next) {
+			MPIDI_PSP_topo_level_t *ext_level = NULL;
+			if(MPIDI_PSP_check_pg_for_level(level->degree, pg->next, &ext_level)) {
+				assert(ext_level);
+				if(ext_level->max_badge > max_badge) {
+					max_badge = ext_level->max_badge;
+				}
+			}
+			pg = pg->next;
+		}
+	}
+
+	return max_badge;
+}
+
+static
+int MPIDI_PSP_get_badge_by_level_and_comm_rank(MPIR_Comm *comm, MPIDI_PSP_topo_level_t *level, int rank)
+{
+	int badge;
 	MPIDI_PSP_topo_level_t *ext_level = NULL;
 
 	if(likely(comm->vcr[rank]->pg == MPIDI_Process.my_pg)) { // rank is in local process group
 
 		assert(level->pg == MPIDI_Process.my_pg); // level must be local, too
 		assert(level->badge_table);
-		return level->badge_table[comm->vcr[rank]->pg_rank];
+		badge = level->badge_table[comm->vcr[rank]->pg_rank];
+
+		if(badge == -1) {
+			badge = MPIDI_PSP_get_max_badge_by_level(level) + 1; // plus 1 as wildcard for an unknown badge
+		}
+		return badge;
 	}
 
 	if(level->badges_are_global && MPIDI_PSP_check_pg_for_level(level->degree, comm->vcr[rank]->pg, &ext_level)) {
 
 		assert(ext_level); // found remote level with identical degree
 		assert(ext_level->badge_table);
-		return ext_level->badge_table[comm->vcr[rank]->pg_rank];
+		badge = ext_level->badge_table[comm->vcr[rank]->pg_rank];
 
+		if(badge == -1) { // wildcard for an unknown badge
+			badge = MPIDI_PSP_get_max_badge_by_level(level) + 1; // plus 1 as wildcard for an unknown badge
+		}
+		return badge;
 	} else {
 		return -1; // remote process group with unknown badge
 	}
@@ -231,14 +268,12 @@ int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 	}
 
 	*id_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, tl, rank);
-	assert(*id_p >= 0);
 
 	return 0;
 }
 
 int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 {
-	MPIDI_PG_t *pg = MPIDI_Process.my_pg;
 	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
 
 	if(tl == NULL) {
@@ -251,22 +286,7 @@ int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 		tl = tl->next;
 	}
 
-	*max_id_p = tl->max_badge;
-	assert(*max_id_p >= 0);
-
-	if(tl->badges_are_global) { // check also the remote process groups
-
-		while(pg->next) {
-			MPIDI_PSP_topo_level_t *ext_level = NULL;
-			if(MPIDI_PSP_check_pg_for_level(tl->degree, pg->next, &ext_level)) {
-				assert(ext_level);
-				if(ext_level->max_badge > *max_id_p) {
-					*max_id_p = ext_level->max_badge;
-				}
-			}
-			pg = pg->next;
-		}
-	}
+	*max_id_p =  MPIDI_PSP_get_max_badge_by_level(tl) + 1; // plus 1 for the "unknown badge" wildcard
 
 	return 0;
 }
@@ -348,7 +368,7 @@ int MPID_PSP_get_host_hash(void)
        return host_hash;
 }
 
-void MPID_PSP_comm_init(void)
+void MPID_PSP_comm_init(int has_parent)
 {
 	MPIR_Comm * comm;
 	int grank;

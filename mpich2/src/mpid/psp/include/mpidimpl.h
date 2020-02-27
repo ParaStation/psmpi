@@ -85,7 +85,7 @@ MPIDI_VC_t *MPIDI_VC_Create(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *co
 int MPID_PSP_get_host_hash(void);
 int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key, MPIR_Info * info_ptr, MPIR_Comm ** newcomm_ptr);
 
-void MPID_PSP_comm_init(void);
+void MPID_PSP_comm_init(int has_parent);
 void MPID_PSP_comm_set_vcrt(MPIR_Comm *comm, MPIDI_VCRT_t *vcrt);
 void MPID_PSP_comm_set_local_vcrt(MPIR_Comm *comm, MPIDI_VCRT_t *vcrt);
 void MPID_PSP_comm_create_mapper(MPIR_Comm * comm);
