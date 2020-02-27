@@ -368,11 +368,12 @@ int MPID_PSP_get_host_hash(void)
        return host_hash;
 }
 
-void MPID_PSP_comm_init(int has_parent)
+int MPID_PSP_comm_init(int has_parent)
 {
 	MPIR_Comm * comm;
 	int grank;
 	int pg_id_num;
+	char *parent_port;
 	MPIDI_PG_t * pg_ptr;
 	MPIDI_VCRT_t * vcrt;
 	int mpi_errno = MPI_SUCCESS;
@@ -381,7 +382,7 @@ void MPID_PSP_comm_init(int has_parent)
 	int pg_size = MPIDI_Process.my_pg_size;
 	char* pg_id_name = MPIDI_Process.pg_id_name;
 
-	MPIDI_PSP_topo_level_t *topo_level = NULL;
+	MPIDI_PSP_topo_level_t *topo_levels = NULL;
 
 
 	/* Initialize and overload Comm_ops (currently merely used for comm_split_type) */
@@ -402,11 +403,6 @@ void MPID_PSP_comm_init(int has_parent)
 	assert(vcrt);
 	MPID_PSP_comm_set_vcrt(comm, vcrt);
 
-	/* Create my home PG for MPI_COMM_WORLD: */
-	MPIDI_PG_Convert_id(pg_id_name, &pg_id_num);
-	MPIDI_PG_Create(pg_size, pg_id_num, NULL, &pg_ptr);
-	assert(pg_ptr == MPIDI_Process.my_pg);
-
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 
 	if(MPIDI_Process.env.enable_msa_awareness) {
@@ -419,16 +415,19 @@ void MPID_PSP_comm_init(int has_parent)
 
 			int* module_badge_table = NULL;
 			int module_max_badge = 0;
+			MPIDI_PSP_topo_level_t *level = NULL;
 
 			MPIDI_PSP_create_badge_table(MPIDI_Process.msa_module_id, pg_rank, pg_size, &module_max_badge, &module_badge_table, 0 /* normalize*/);
 			assert(module_badge_table);
 
-			topo_level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
-			topo_level->badge_table = module_badge_table;
-			topo_level->max_badge = module_max_badge;
-			topo_level->degree = MPIDI_PSP_TOPO_LEVEL__MODULES;
-			topo_level->badges_are_global = 1;
-			MPIDI_PSP_add_topo_level_to_pg(pg_ptr, topo_level);
+			level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
+			level->badge_table = module_badge_table;
+			level->max_badge = module_max_badge;
+			level->degree = MPIDI_PSP_TOPO_LEVEL__MODULES;
+			level->badges_are_global = 1;
+
+			level->next = topo_levels;
+			topo_levels = level;
 		}
 	}
 
@@ -458,19 +457,27 @@ void MPID_PSP_comm_init(int has_parent)
 
 			int* node_badge_table = NULL;
 			int node_max_badge = 0;
+			MPIDI_PSP_topo_level_t *level = NULL;
 
 			MPIDI_PSP_create_badge_table(MPIDI_Process.smp_node_id, pg_rank, pg_size, &node_max_badge, &node_badge_table, 1 /* normalize*/);
 			assert(node_badge_table);
 
-			topo_level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
-			topo_level->badge_table = node_badge_table;
-			topo_level->max_badge = node_max_badge;
-			topo_level->degree = MPIDI_PSP_TOPO_LEVEL__NODES;
-			topo_level->badges_are_global = 0;
-			MPIDI_PSP_add_topo_level_to_pg(pg_ptr, topo_level);
+			level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
+			level->badge_table = node_badge_table;
+			level->max_badge = node_max_badge;
+			level->degree = MPIDI_PSP_TOPO_LEVEL__NODES;
+			level->badges_are_global = 0;
+
+			level->next = topo_levels;
+			topo_levels = level;
 		}
 	}
 #endif
+
+	/* Create my home PG for MPI_COMM_WORLD: */
+	MPIDI_PG_Convert_id(pg_id_name, &pg_id_num);
+	MPIDI_PG_Create(pg_size, pg_id_num, topo_levels, &pg_ptr);
+	assert(pg_ptr == MPIDI_Process.my_pg);
 
 	for (grank = 0; grank < pg_size; grank++) {
 		/* MPIR_CheckDisjointLpids() in mpi/comm/intercomm_create.c expect
@@ -505,8 +512,28 @@ void MPID_PSP_comm_init(int has_parent)
 	mpi_errno = MPIR_Comm_commit(comm);
 	assert(mpi_errno == MPI_SUCCESS);
 
+	if (has_parent) {
+		MPIR_Comm * comm_parent;
 
-	return;
+		mpi_errno = MPID_PSP_GetParentPort(&parent_port);
+		assert(mpi_errno == MPI_SUCCESS);
+
+		mpi_errno = MPID_Comm_connect(parent_port, NULL, 0,
+					      MPIR_Process.comm_world, &comm_parent);
+		if (mpi_errno != MPI_SUCCESS) {
+			fprintf(stderr, "MPI_Comm_connect(parent) failed!\n");
+			goto fn_fail;
+		}
+
+		assert(comm_parent != NULL);
+		MPL_strncpy(comm_parent->name, "MPI_COMM_PARENT", MPI_MAX_OBJECT_NAME);
+		MPIR_Process.comm_parent = comm_parent;
+	}
+
+fn_exit:
+	return mpi_errno;
+fn_fail:
+	goto fn_exit;
 }
 
 int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, int * lpid_ptr, bool is_remote)

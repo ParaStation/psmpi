@@ -395,16 +395,16 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 				}
 
 				if(needed) {
-					MPIDI_PSP_topo_level_t* level = NULL;
+					MPIDI_PSP_topo_level_t* levels = NULL;
 #ifdef MPID_PSP_MSA_AWARENESS
 					if(remote_pg_topo_msglen[i]) {
-						MPIDI_PSP_unpack_topology_badges(remote_pg_topo_badges[i], remote_pg_sizes[i], remote_pg_topo_levels[i], &level);
+						MPIDI_PSP_unpack_topology_badges(remote_pg_topo_badges[i], remote_pg_sizes[i], remote_pg_topo_levels[i], &levels);
 					} else {
 						MPL_free(remote_pg_topo_badges[i]);
 					}
 					remote_pg_topo_badges[i] = NULL;
 #endif
-					MPIDI_PG_Create(remote_pg_sizes[i], remote_pg_ids[i], level, NULL);
+					MPIDI_PG_Create(remote_pg_sizes[i], remote_pg_ids[i], levels, NULL);
 					new_pg_count++;
 				}
 			}
@@ -502,16 +502,16 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 
 				if(needed) {
 					/* New Process Group: */
-					MPIDI_PSP_topo_level_t* level = NULL;
+					MPIDI_PSP_topo_level_t* levels = NULL;
 #ifdef MPID_PSP_MSA_AWARENESS
 					if(pg_topo_msglen) {
-						MPIDI_PSP_unpack_topology_badges(pg_topo_badges, pg_size, pg_topo_num_levels, &level);
+						MPIDI_PSP_unpack_topology_badges(pg_topo_badges, pg_size, pg_topo_num_levels, &levels);
 					} else {
 						MPL_free(pg_topo_badges);
 					}
 					pg_topo_badges = NULL;
 #endif
-					MPIDI_PG_Create(pg_size, pg_id_num, level, NULL);
+					MPIDI_PG_Create(pg_size, pg_id_num, levels, NULL);
 				}
 			}
 		}

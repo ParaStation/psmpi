@@ -483,7 +483,6 @@ int MPID_Init(int *argc, char ***argv,
 	pscom_socket_t *socket;
 	pscom_err_t rc;
 	char *pg_id_name;
-	char *parent_port;
 
 	/* Call any and all MPID_Init type functions */
 	MPIR_Err_init();
@@ -681,8 +680,15 @@ int MPID_Init(int *argc, char ***argv,
 		if (InitPscomConnections(socket) != MPI_SUCCESS) goto fn_fail;
 	}
 
+	MPID_enable_receive_dispach(socket); /* ToDo: move MPID_enable_receive_dispach to bg thread */
+	MPIR_Process.comm_world->pscom_socket = socket;
+	MPIR_Process.comm_self->pscom_socket = socket;
+
 	/* Call the other init routines */
-	MPID_PSP_comm_init(has_parent);
+	mpi_errno = MPID_PSP_comm_init(has_parent);
+	if (MPI_SUCCESS != mpi_errno) {
+		MPIR_ERR_POP(mpi_errno);
+	}
 	MPID_PSP_shm_rma_init();
 
 	/*
@@ -718,11 +724,6 @@ int MPID_Init(int *argc, char ***argv,
 #endif
 	}
 
-	/* ToDo: move MPID_enable_receive_dispach to bg thread */
-	MPID_enable_receive_dispach(socket);
-	MPIR_Process.comm_world->pscom_socket = socket;
-	MPIR_Process.comm_self->pscom_socket = socket;
-
 
 	if (threadlevel_provided) {
 		*threadlevel_provided = (MPICH_THREAD_LEVEL < threadlevel_requested) ?
@@ -730,29 +731,7 @@ int MPID_Init(int *argc, char ***argv,
 	}
 
 
-	if (has_parent) {
-		MPIR_Comm * comm;
-
-		mpi_errno = MPID_PSP_GetParentPort(&parent_port);
-		assert(mpi_errno == MPI_SUCCESS);
-
-		/*
-		printf("%s:%u:%s Child with Parent: %s\n", __FILE__, __LINE__, __func__, parent_port);
-		*/
-
-		mpi_errno = MPID_Comm_connect(parent_port, NULL, 0,
-					      MPIR_Process.comm_world, &comm);
-		if (mpi_errno != MPI_SUCCESS) {
-			fprintf(stderr, "MPI_Comm_connect(parent) failed!\n");
-			goto fn_fail;
-		}
-
-		assert(comm != NULL);
-		MPL_strncpy(comm->name, "MPI_COMM_PARENT", MPI_MAX_OBJECT_NAME);
-		MPIR_Process.comm_parent = comm;
-	}
-
- fn_exit:
+fn_exit:
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_INIT);
 	return mpi_errno;
 	/* --- */
