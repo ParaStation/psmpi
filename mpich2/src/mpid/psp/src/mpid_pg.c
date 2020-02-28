@@ -813,8 +813,26 @@ int MPIDI_PSP_add_topo_level_to_pg(MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t *level
 		tlnext->next = level;
 	}
 	level->pg = pg;
-	return 0;
+
+	return MPI_SUCCESS;
 }
+
+static
+int MPIDI_PSP_add_flat_level_to_pg(MPIDI_PG_t *pg, int degree)
+{
+	int i;
+	MPIDI_PSP_topo_level_t * level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
+
+	level->degree = degree;
+	level->badges_are_global = 1;
+	level->max_badge = -1;
+	level->badge_table = MPL_malloc(pg->size * sizeof(int), MPL_MEM_OBJECT);
+
+	for(i=0; i<pg->size; i++) level->badge_table[i] = -1;
+
+	return MPIDI_PSP_add_topo_level_to_pg(pg, level);
+}
+
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_PG_Create
@@ -840,16 +858,6 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t *level, M
 	pg->refcnt = 0;
 	pg->topo_levels = NULL;
 
-#ifdef MPID_PSP_MSA_AWARENESS
-	while(level) {
-		MPIDI_PSP_topo_level_t *level_next = level->next;
-		MPIDI_PSP_add_topo_level_to_pg(pg, level);
-		level = level_next;
-	}
-#else
-	assert(level == NULL);
-#endif
-
 	for(i=0; i<pg_size; i++) {
 		pg->vcr[i] = NULL;
 		pg->lpids[i] = -1;
@@ -873,6 +881,37 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t *level, M
 		}
 		pgnext->next = pg;
 	}
+
+#ifdef MPID_PSP_MSA_AWARENESS
+	while(level) {
+		MPIDI_PSP_topo_level_t *level_next = level->next;
+		MPIDI_PSP_add_topo_level_to_pg(pg, level);
+		level = level_next;
+	}
+
+	if(pg != MPIDI_Process.my_pg) { // This is for the rare case that joined PGs do not feature the same set of level degrees!
+
+		level = pg->topo_levels;
+		while(level) { // If not known, add a flat badge table (as a "dummy") with same the degree to the _local_ PG:
+			MPIDI_PSP_topo_level_t *level_next = level->next;
+			if(level->badges_are_global && !MPIDI_PSP_check_pg_for_level(level->degree, MPIDI_Process.my_pg, NULL)) {
+				MPIDI_PSP_add_flat_level_to_pg(MPIDI_Process.my_pg, level->degree);
+			}
+			level = level_next;
+		}
+
+		level = MPIDI_Process.my_pg->topo_levels;
+		while(level) { // If not known, add a flat badge table (as a "dummy") with same the degree to the _new_ PG:
+			MPIDI_PSP_topo_level_t *level_next = level->next;
+			if(level->badges_are_global && !MPIDI_PSP_check_pg_for_level(level->degree, pg, NULL)) {
+				MPIDI_PSP_add_flat_level_to_pg(pg, level->degree);
+			}
+			level = level_next;
+		}
+	}
+#else
+	assert(level == NULL);
+#endif
 
 	if(pg_ptr) *pg_ptr = pg;
 
