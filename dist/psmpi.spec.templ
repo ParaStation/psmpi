@@ -7,10 +7,9 @@
 %{?_with_psc: %define confset psc}
 %{?_with_cellgcc: %define confset cellgcc}
 %{?_with_cellxlc: %define confset cellxlc}
-%{?_with_ch3: %define confset ch3}
 
 %{?_with_threading: %define threading yes}
-%{?_with_cuda: %define cuda yes}
+%{?_with_cuda: %define cuda 1}
 
 %{!?subname: %{?confset: %define subname %{confset}}}
 %{expand:%define buildForSuSE %(if [ -e /etc/SuSE-release ]; then echo 1; else echo 0; fi)}
@@ -26,6 +25,12 @@ Packager:  support@par-tec.de
 Source0:   psmpi-%{version}-%{release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
+%if 0%{?cuda}
+BuildRequires:	pscom-cuda
+%else
+BuildRequires:	pscom
+%endif
+
 # Dont use internal find_requires, because we dont want dependencies
 # to the intel libs.
 %define _use_internal_dependency_generator 0
@@ -34,10 +39,16 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 %define prefix /opt/parastation/mpi%{?subname:-%{subname}}%{?threading:-mt}%{?cuda:-cuda}
 Prefix: %{prefix}
 
+
+%global _prefix %{prefix}
+%global _bindir %{_prefix}/bin
+%global _includedir %{_prefix}/include
+%global _libdir %{_prefix}/%{_lib}
+
 %description
 ParaStation MPI. Based on MPICH using the ParaStation communication library pscom.
 %{?threading: Threading support: MPI_THREAD_MULTIPLE}
-%{?cuda: This psmpi package comes with CUDA awareness.}
+%{?cuda: CUDA awareness   : YES}%{!?cuda: CUDA awareness   : NO}
 MPICH is a freely available, portable implementation of MPI, the Standard for message-passing libraries.
 http://www-unix.mcs.anl.gov/mpi/mpich/
 
@@ -48,7 +59,6 @@ http://www-unix.mcs.anl.gov/mpi/mpich/
 %endif
 
 %prep
-
 cat <<DOK
 =========================================================
 Build options (confset):
@@ -59,7 +69,6 @@ Build options (confset):
 "rpmbuild --with psc"      use PathScale compiler
 "rpmbuild --with cellgcc"  use gcc compiler on Cell
 "rpmbuild --with cellxlc"  use XLC compiler on Cell
-"rpmbuild --with ch3"      MPIch ch3 device (no parastation)
 
 additive options:
 "rpmbuild --with threading" Support for MPI_THREAD_MULTIPLE
@@ -77,67 +86,57 @@ sleep 1
 %setup -q -n psmpi-%{version}-%{release}
 
 %build
-
-./configure --prefix=${RPM_BUILD_ROOT}%{prefix} --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--with-threading} %{?cuda:--with-cuda}
-make
+%configure --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--with-threading} %{?cuda:--with-cuda}
+%make_build
 
 %install
+%make_install
 
-make fixpath=%prefix install
-
-echo> filelist_nodoc
-(cd ${RPM_BUILD_ROOT}%{prefix}; ls -d * ) | grep -vE "share|man|www|doc|VERSION|ChangeLog" | while read f; do
-	echo "%attr(-,root,root) %{prefix}/$f" >> filelist_nodoc
-done
-
-# Skip build test: /usr/lib/rpm/check-buildroot
-# (do not search for ${RPM_BUILD_ROOT} as a string)
-QA_SKIP_BUILD_ROOT=1; export QA_SKIP_BUILD_ROOT
-
-%clean
-%{__rm} -rf %{buildroot}
-
-%files -f filelist_nodoc
-%attr(-,root,root) %dir %{prefix}
-%attr(-,root,root) %doc %{prefix}/VERSION.psmpi
-%attr(-,root,root) %doc %{prefix}/ChangeLog
-
+%files
+%defattr(-,root,root)
+%{_prefix}/VERSION.psmpi
+%{_prefix}/ChangeLog
+%{_bindir}/mpic++
+%{_bindir}/mpicc
+%{_bindir}/mpichversion
+%{_bindir}/mpicxx
+%{_bindir}/mpif77
+%{_bindir}/mpif90
+%{_bindir}/mpifort
+%{_bindir}/mpivars
+%{_includedir}/mpi_base.mod
+%{_includedir}/mpi_constants.mod
+%{_includedir}/mpicxx.h
+%{_includedir}/mpi-ext.h
+%{_includedir}/mpif.h
+%{_includedir}/mpi.h
+%{_includedir}/mpi.mod
+%{_includedir}/mpiof.h
+%{_includedir}/mpio.h
+%{_includedir}/mpi_sizeofs.mod
+%{_sysconfdir}/modulefiles/mpi
+%{_libdir}/libfmpich.so
+%{_libdir}/libmpichcxx.so
+%{_libdir}/libmpichf90.so
+%{_libdir}/libmpich.so
+%{_libdir}/libmpicxx.so*
+%{_libdir}/libmpifort.so*
+%{_libdir}/libmpi.so*
+%{_libdir}/libmpl.so
+%{_libdir}/libopa.so
+%{_libdir}/pkgconfig/mpich.pc
+%{_libdir}/pkgconfig/openpa.pc
 
 %package doc
 
 Summary:   ParaStation MPI Documentation
-Group: Development/Tools
+Group:     Development/Tools
 
 %description doc
-
-# %post doc
-# if [ "$1" = 1 ]; then
-#     # first install
-
-#     # Add %{prefix}/man after all other MANPATH in /etc/man.config.
-#     # Do nothing, if there is no MANPATH inside, or no file man.config exists.
-#     ed /etc/man.config 2> /dev/null <<EOF
-# ?^[	 ]*MANPATH[	 ]?a
-# MANPATH	%{prefix}/man
-# .
-# wq
-# EOF
-# fi
-# exit 0
-
-# %preun doc
-# if [ "$1" = 0 ]; then
-#     # final de-install
-
-#     # Del one %{prefix}/man from /etc/man.config
-#     ed /etc/man.config 2> /dev/null <<EOF
-# ?^[	 ]*MANPATH[	 ]\+%{prefix}/man\$?d
-# wq
-# EOF
-
-# fi
-# exit 0
-
+The psmpi-doc package comprises the man pages and further user documentation on the ParaStation MPI software.
 
 %files doc
-%attr(-,root,root) %doc %{prefix}/share
+%defattr(-,root,root)
+%doc %{_mandir}/man1/*
+%doc %{_mandir}/man3/*
+%doc %{_docdir}/mpich
