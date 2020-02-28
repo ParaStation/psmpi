@@ -10,13 +10,14 @@
 %{?_with_ch3: %define confset ch3}
 
 %{?_with_threading: %define threading yes}
+%{?_with_cuda: %define cuda yes}
 
 %{!?subname: %{?confset: %define subname %{confset}}}
 %{expand:%define buildForSuSE %(if [ -e /etc/SuSE-release ]; then echo 1; else echo 0; fi)}
 
 Summary:   ParaStation MPI
 Vendor:    ParTec Cluster Competence Center GmbH, Munich, Germany
-Name:      psmpi%{?subname:-%{subname}}%{?threading:-mt}
+Name:      psmpi%{?subname:-%{subname}}%{?threading:-mt}%{?cuda:-cuda}
 Version:   @VERSION_psmpi@
 Release:   @RELEASE_psmpi@
 License:   QPL and mpich2/COPYRIGHT
@@ -30,12 +31,13 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 %define _use_internal_dependency_generator 0
 %define __find_requires %_builddir/psmpi-%{version}-%{release}/dist/rpm_depgen
 
-%define prefix /opt/parastation/mpi%{?subname:-%{subname}}%{?threading:-mt}
+%define prefix /opt/parastation/mpi%{?subname:-%{subname}}%{?threading:-mt}%{?cuda:-cuda}
 Prefix: %{prefix}
 
 %description
 ParaStation MPI. Based on MPICH using the ParaStation communication library pscom.
 %{?threading: Threading support: MPI_THREAD_MULTIPLE}
+%{?cuda: This psmpi package comes with CUDA awareness.}
 MPICH is a freely available, portable implementation of MPI, the Standard for message-passing libraries.
 http://www-unix.mcs.anl.gov/mpi/mpich/
 
@@ -61,11 +63,12 @@ Build options (confset):
 
 additive options:
 "rpmbuild --with threading" Support for MPI_THREAD_MULTIPLE
+"rpmbuild --with cuda"      Enable CUDA awareness
 
 Optional overwrite subname (default to compiler confset):
 "rpmbuild --define='subname _any_subname_'"
 
-Now using --with %{?confset:%{confset}}%{!?confset:default} %{?threading:--with-threading}
+Now using --with %{?confset:%{confset}}%{!?confset:default} %{?threading:--with-threading} %{?cuda:--with-cuda}
 subname: %{?subname:%{subname}}%{!?subname:<none>}
 =========================================================
 DOK
@@ -75,7 +78,7 @@ sleep 1
 
 %build
 
-./configure --prefix=${RPM_BUILD_ROOT}%{prefix} --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--with-threading}
+./configure --prefix=${RPM_BUILD_ROOT}%{prefix} --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--with-threading} %{?cuda:--with-cuda}
 make
 
 %install
