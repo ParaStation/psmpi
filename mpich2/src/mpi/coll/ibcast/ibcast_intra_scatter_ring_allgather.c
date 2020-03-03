@@ -88,7 +88,7 @@ int MPIR_Ibcast_sched_intra_scatter_ring_allgather(void *buffer, int count, MPI_
 
     /* curr_size is the amount of data that this process now has stored in
      * buffer at byte offset (rank*scatter_size) */
-    curr_size = MPL_MIN(scatter_size, (nbytes - (rank * scatter_size)));
+    curr_size = MPL_MIN(scatter_size, (nbytes - (((rank - root + comm_size) % comm_size) * scatter_size)));
     if (curr_size < 0)
         curr_size = 0;
     /* curr_size bytes already inplace */
