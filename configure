@@ -624,6 +624,7 @@ ac_subst_vars='LTLIBOBJS
 LIBOBJS
 PSCOM_LIBRARY
 PSCOM_LDFLAGS
+MPICCCONFDIR
 CUDA_HOME
 EXTRA_VERSION_INFO
 MODULEFILE
@@ -3988,8 +3989,10 @@ if test "${with_cuda+set}" = set; then :
 		fi
 		CONF_OPS="$CONF_OPS PSP_CPPFLAGS='-DMPID_PSP_WITH_CUDA_AWARENESS'"
 		CONF_OPS="$CONF_OPS"
+		MPICCCONFDIR="${sysconfdir}"
 	else
 		CUDA_SUPPORT="no"
+		MPICCCONFDIR=""
 	fi
 
 fi
@@ -4019,6 +4022,7 @@ if test -n "$WITH_HCOLL_DIR" ; then
    fi
 fi
 sleep 1
+
 
 
 
