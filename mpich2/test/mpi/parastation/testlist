@@ -36,6 +36,12 @@ acc_pairtype 2
 acc_vecsum 2
 get_acc_pairtype 2 mpiversion=3.0
 get_acc_shm_pairtype 2 mpiversion=3.0
+bcast_root 7
+bcast_root 8
+bcast_root 9
+ibcast_root 7
+ibcast_root 8
+ibcast_root 9
 #
 # Fixed tests from MPICH:
 #putfence1 2
