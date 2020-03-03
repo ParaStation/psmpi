@@ -531,8 +531,10 @@ AC_ARG_WITH([cuda], [
 		fi
 		CONF_OPS="$CONF_OPS PSP_CPPFLAGS='-DMPID_PSP_WITH_CUDA_AWARENESS'"
 		CONF_OPS="$CONF_OPS"
+		MPICCCONFDIR="${sysconfdir}"
 	else
 		CUDA_SUPPORT="no"
+		MPICCCONFDIR=""
 	fi
 ])
 
@@ -566,6 +568,7 @@ AC_SUBST([CUDA_SUPPORT])
 AC_SUBST([MODULEFILE])
 AC_SUBST([EXTRA_VERSION_INFO])
 AC_SUBST([CUDA_HOME])
+AC_SUBST([MPICCCONFDIR])
 
 # ToDo: directly  use PSCOM_LDFLAGS from mpich2/src/mpid/psp/subconfigure.m4
 PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"

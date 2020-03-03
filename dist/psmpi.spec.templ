@@ -94,6 +94,8 @@ sleep 1
 %install
 %make_install
 
+%clean
+
 %files
 %defattr(-,root,root)
 %{_prefix}/VERSION.psmpi
@@ -128,6 +130,13 @@ sleep 1
 %{_libdir}/libopa.so
 %{_libdir}/pkgconfig/mpich.pc
 %{_libdir}/pkgconfig/openpa.pc
+%if 0%{?cuda}
+%{_sysconfdir}/mpicc-cuda.conf
+%{_sysconfdir}/mpicxx-cuda.conf
+%{_sysconfdir}/mpif77-cuda.conf
+%{_sysconfdir}/mpif90-cuda.conf
+%{_sysconfdir}/mpifort-cuda.conf
+%endif
 %if "%{confset}" == "ch4"
 %{_bindir}/fi_info
 %{_bindir}/fi_pingpong

@@ -20,6 +20,7 @@ exec_prefix=@exec_prefix@
 prefix=@prefix@
 libdir=@libdir@
 MODULEFILE=@MODULEFILE@
+MPICCCONFDIR=$(DESTDIR)@MPICCCONFDIR@
 ENABLE_HYDRA=@ENABLE_HYDRA@
 MPICH_VERSION=@MPICH_VERSION@
 MPICH_RELEASE_DATE=@MPICH_RELEASE_DATE@
@@ -70,7 +71,11 @@ no_all:
 endif
 
 ########################################################
+ifeq ($(CUDA_SUPPORT),true)
 install: install_mpich2 modulefile install_version $(DESTDIR)$(prefix)/ChangeLog mpicc-conf
+else
+install: install_mpich2 modulefile install_version $(DESTDIR)$(prefix)/ChangeLog
+endif
 
 HYDRA_BIN += mpiexec mpirun
 HYDRA_BIN += mpiexec.hydra hydra_pmi_proxy hydra_persist hydra_nameserver
@@ -102,8 +107,16 @@ ifneq ($(fixpath),)
 	done
 endif
 
-mpicc-conf:
-	scripts/generate_mpicc-conf.sh
+ifeq ($(CUDA_SUPPORT),true)
+mpicc-conf: $(MPICCCONFDIR)/mpicc-cuda.conf $(MPICCCONFDIR)/mpicxx-cuda.conf  $(MPICCCONFDIR)/mpifort-cuda.conf $(MPICCCONFDIR)/mpif90-cuda.conf $(MPICCCONFDIR)/mpif77-cuda.conf
+
+$(MPICCCONFDIR)/mpi%-cuda.conf:
+ifneq ($(fixpath),)
+	mkdir -p $(dir $@) && scripts/generate_mpicc-conf.sh | sed "s@$(prefix)@$(fixpath)@g" > $@ || :
+else
+	mkdir -p $(dir $@) && scripts/generate_mpicc-conf.sh > $@ || :
+endif
+endif
 
 # Get Version
 VER:=$(shell cd $(TOP_SRCDIR) && scripts/vcversion)
