@@ -581,7 +581,8 @@ AC_CONFIG_FILES([scripts/generate_mpicc-conf.sh], [chmod +x scripts/generate_mpi
 AC_OUTPUT
 
 if test "x$DISABLE_HWLOC" = "xtrue" ; then
-   CONF_OPS="$CONF_OPS --with-hwloc-prefix=''"
+   CONF_OPS="$CONF_OPS --with-hwloc-prefix='no'"
+   CONF_OPS="$CONF_OPS --with-hydra-topolib='no'"
 fi
 
 if test "x$DISABLE_HCOLL" = "xtrue" ; then
