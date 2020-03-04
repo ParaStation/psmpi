@@ -7,6 +7,7 @@
 %{?_with_psc: %define confset psc}
 %{?_with_cellgcc: %define confset cellgcc}
 %{?_with_cellxlc: %define confset cellxlc}
+%{?_with_ch4: %define confset ch4}
 
 %{?_with_threading: %define threading yes}
 %{?_with_cuda: %define cuda 1}
@@ -69,6 +70,7 @@ Build options (confset):
 "rpmbuild --with psc"      use PathScale compiler
 "rpmbuild --with cellgcc"  use gcc compiler on Cell
 "rpmbuild --with cellxlc"  use XLC compiler on Cell
+"rpmbuild --with ch4"      MPICH ch4 device (no parastation)
 
 additive options:
 "rpmbuild --with threading" Support for MPI_THREAD_MULTIPLE
@@ -126,6 +128,28 @@ sleep 1
 %{_libdir}/libopa.so
 %{_libdir}/pkgconfig/mpich.pc
 %{_libdir}/pkgconfig/openpa.pc
+%if "%{confset}" == "ch4"
+%{_bindir}/fi_info
+%{_bindir}/fi_pingpong
+%{_bindir}/fi_strerror
+%{_bindir}/hydra_nameserver
+%{_bindir}/hydra_persist
+%{_bindir}/hydra_pmi_proxy
+%{_bindir}/mpiexec
+%{_bindir}/mpiexec.hydra
+%{_bindir}/mpirun
+%{_includedir}/rdma/fabric.h
+%{_includedir}/rdma/fi_atomic.h
+%{_includedir}/rdma/fi_cm.h
+%{_includedir}/rdma/fi_domain.h
+%{_includedir}/rdma/fi_endpoint.h
+%{_includedir}/rdma/fi_eq.h
+%{_includedir}/rdma/fi_errno.h
+%{_includedir}/rdma/fi_rma.h
+%{_includedir}/rdma/fi_tagged.h
+%{_includedir}/rdma/fi_trigger.h
+%{_libdir}/pkgconfig/libfabric.pc
+%endif
 
 %package doc
 
@@ -140,3 +164,6 @@ The psmpi-doc package comprises the man pages and further user documentation on 
 %doc %{_mandir}/man1/*
 %doc %{_mandir}/man3/*
 %doc %{_docdir}/mpich
+%if "%{confset}" == "ch4"
+%doc %{_mandir}/man7/*
+%endif
