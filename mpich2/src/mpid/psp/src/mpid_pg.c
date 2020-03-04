@@ -69,7 +69,6 @@ int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], int lpid[])
 				MPIDI_PG_t *new_pg;
 
 				MPIDI_PG_Create(gpid->gpid[1]+1, gpid->gpid[0], NULL, &new_pg);
-
 				assert(new_pg->lpids[gpid->gpid[1]] == -1);
 				if (!MPIDI_Process.next_lpid) MPIDI_Process.next_lpid = MPIR_Process.comm_world->local_size;
 				lpid[i] = MPIDI_Process.next_lpid++;
@@ -408,6 +407,16 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 					new_pg_count++;
 				}
 			}
+#ifdef MPID_PSP_MSA_AWARENESS
+			else {
+				if(!pg->topo_levels && remote_pg_topo_levels[i] && remote_pg_topo_msglen[i]) { // PG already added (in MPIDI_GPID_ToLpidArray) but still without topo information
+					MPIDI_PSP_topo_level_t* levels = NULL;
+					MPIDI_PSP_unpack_topology_badges(remote_pg_topo_badges[i], remote_pg_sizes[i], remote_pg_topo_levels[i], &levels);
+					remote_pg_topo_badges[i] = NULL;
+					MPIDI_PSP_add_topo_levels_to_pg(pg, levels);
+				}
+			}
+#endif
 		}
 
 		MPL_free(local_pg_ids);
@@ -514,6 +523,16 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 					MPIDI_PG_Create(pg_size, pg_id_num, levels, NULL);
 				}
 			}
+#ifdef MPID_PSP_MSA_AWARENESS
+			else {
+				if(!pg->topo_levels && pg_topo_num_levels && pg_topo_msglen) { // PG already added (in MPIDI_GPID_ToLpidArray) but still without topo information
+					MPIDI_PSP_topo_level_t* levels = NULL;
+					MPIDI_PSP_unpack_topology_badges(pg_topo_badges, pg_size, pg_topo_num_levels, &levels);
+					pg_topo_badges = NULL;
+					MPIDI_PSP_add_topo_levels_to_pg(pg, levels);
+				}
+			}
+#endif
 		}
 
 		if(comm_ptr->rank == root) {
@@ -796,6 +815,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 	return MPI_SUCCESS;
 }
 
+static
 int MPIDI_PSP_add_topo_level_to_pg(MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t *level)
 {
 	MPIDI_PSP_topo_level_t * tlnext = pg->topo_levels;
@@ -813,6 +833,17 @@ int MPIDI_PSP_add_topo_level_to_pg(MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t *level
 		tlnext->next = level;
 	}
 	level->pg = pg;
+
+	return MPI_SUCCESS;
+}
+
+int MPIDI_PSP_add_topo_levels_to_pg(MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t *levels)
+{
+	while(levels) {
+		MPIDI_PSP_topo_level_t *level_next = levels->next;
+		MPIDI_PSP_add_topo_level_to_pg(pg, levels);
+		levels = level_next;
+	}
 
 	return MPI_SUCCESS;
 }
@@ -835,7 +866,7 @@ int MPIDI_PSP_add_flat_level_to_pg(MPIDI_PG_t *pg, int degree)
 #define FUNCNAME MPIDI_PG_Create
 #undef FCNAME
 #define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t *level, MPIDI_PG_t ** pg_ptr)
+int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t *levels, MPIDI_PG_t ** pg_ptr)
 {
 	MPIDI_PG_t * pg = NULL, *pgnext;
 	int i;
@@ -880,15 +911,11 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t *level, M
 	}
 
 #ifdef MPID_PSP_MSA_AWARENESS
-	while(level) {
-		MPIDI_PSP_topo_level_t *level_next = level->next;
-		MPIDI_PSP_add_topo_level_to_pg(pg, level);
-		level = level_next;
-	}
+	MPIDI_PSP_add_topo_levels_to_pg(pg, levels);
 
 	if(pg != MPIDI_Process.my_pg) { // This is for the rare case that joined PGs do not feature the same set of level degrees!
 
-		level = pg->topo_levels;
+		MPIDI_PSP_topo_level_t *level = pg->topo_levels;
 		while(level) { // If not known, add a flat badge table (as a "dummy") with same the degree to the home PG:
 			MPIDI_PSP_topo_level_t *level_next = level->next;
 			if(level->badges_are_global && !MPIDI_PSP_check_pg_for_level(level->degree, MPIDI_Process.my_pg, NULL)) {
@@ -898,7 +925,7 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t *level, M
 		}
 	}
 #else
-	assert(level == NULL);
+	assert(levels == NULL);
 #endif
 
 	if(pg_ptr) *pg_ptr = pg;

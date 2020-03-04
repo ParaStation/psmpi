@@ -148,7 +148,7 @@ extern MPIDI_Process_t MPIDI_Process;
 int MPIDI_PSP_get_num_topology_levels(MPIDI_PG_t *pg);
 void MPIDI_PSP_pack_topology_badges(int** pack_msg, int* msg_size, MPIDI_PG_t *pg);
 void MPIDI_PSP_unpack_topology_badges(int* pack_msg, int pg_size, int num_levels, MPIDI_PSP_topo_level_t **levels);
-int MPIDI_PSP_add_topo_level_to_pg(MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t *level);
+int MPIDI_PSP_add_topo_levels_to_pg(MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t *level);
 int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level);
 
 void MPID_PSP_RecvAck(MPIR_Request *send_req);
