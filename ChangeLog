@@ -1,3 +1,24 @@
+2020-03-04  Simon Pickartz <pickartz@par-tec.com> -    5.4.4-0rc1
+
+	* Packaging: Add support for CH4 and CUDA RPM builds.
+
+	* Packaging: Remove support for CH3 RPM builds.
+
+2020-03-03  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Usage of "--without-hwloc" configure option for pre-existing
+	HWLOC installation.
+
+	* Fix: MPICH scatter_ring algorithm in MPI_Ibcast for altering root
+	ranks.
+
+	* Fix: Support for multi-level hierarchical awareness in spawn cases.
+
+2020-03-03  Jens Hauke <hauke@par-tec.com>
+
+	* Enhancement: Simplify the pscom-allin build process (requires
+	pscom > 5.4.3-1).
+
 2020-02-21  Simon Pickartz <pickartz@par-tec.com> -    5.4.3-1
 
 	* Fix: Allin builds against pscom >= 5.3.1-1.
