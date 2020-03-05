@@ -1,3 +1,5 @@
+2020-03-05  Simon Pickartz <pickartz@par-tec.com> -    5.4.4-1
+
 2020-03-04  Simon Pickartz <pickartz@par-tec.com> -    5.4.4-0rc1
 
 	* Packaging: Add support for CH4 and CUDA RPM builds.
