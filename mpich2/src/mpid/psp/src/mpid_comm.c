@@ -83,75 +83,8 @@ int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
 	return mpi_errno;
 }
 
-void MPIDI_PSP_pack_topology_badges(int** pack_msg, int* pack_size, MPIDI_PG_t *pg)
-{
-	int i;
-	int* msg;
-	MPIDI_PSP_topo_level_t *tl = pg->topo_levels;
 
-	*pack_size = MPIDI_PSP_get_num_topology_levels(pg) * (pg->size + 3) * sizeof(int);
-	*pack_msg = MPL_malloc(*pack_size * sizeof(int), MPL_MEM_OBJECT);
-
-	msg = *pack_msg;
-	while(tl) { // FIX ME: non-global badges and "dummy" tables need not to be exchanged!
-		for(i=0; i<pg->size; i++, msg++) {
-			if(tl->badge_table) {
-				*msg = tl->badge_table[i];
-			} else {
-				*msg = -1;
-			}
-		}
-		*msg = tl->degree;  msg++;
-		*msg = tl->max_badge;  msg++;
-		*msg = tl->badges_are_global;  msg++;
-		tl=tl->next;
-	}
-}
-
-void MPIDI_PSP_unpack_topology_badges(int* pack_msg, int pg_size, int num_levels, MPIDI_PSP_topo_level_t **levels)
-{
-	int i, j;
-	int* msg;
-	MPIDI_PSP_topo_level_t *level;
-
-	*levels = NULL;
-
-	msg = pack_msg;
-	for(i=0; i<num_levels; i++) {
-
-		level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
-
-		if(*msg != -1) {
-			level->badge_table = MPL_malloc(pg_size * sizeof(int), MPL_MEM_OBJECT);
-			for(j=0; j<pg_size; j++) {
-				level->badge_table[j] = msg[j];
-			}
-		} else { // just a "dummy" table
-			assert(msg[pg_size + 1] == -1);
-			level->badge_table = NULL;
-		}
-		level->degree = msg[pg_size];
-		level->max_badge = msg[pg_size + 1];
-		level->badges_are_global = msg[pg_size + 2];
-		msg += (pg_size + 3);
-
-		level->next = *levels;
-		*levels = level;
-	}
-	MPL_free(pack_msg);
-}
-
-int MPIDI_PSP_get_num_topology_levels(MPIDI_PG_t *pg)
-{
-	int level_count = 0;
-	MPIDI_PSP_topo_level_t *tl = pg->topo_levels;
-
-	while(tl) {
-		level_count++;
-		tl=tl->next;
-	}
-	return level_count;
-}
+#ifdef MPID_PSP_MSA_AWARENESS
 
 int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level)
 {
@@ -164,6 +97,69 @@ int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_leve
 		}
 		tl=tl->next;
 	}
+	return 0;
+}
+
+static
+int MPIDI_PSP_create_badge_table(int my_badge, int pg_rank, int pg_size, int *max_badge, int **badge_table, int normalize)
+{
+	int rc;
+	int grank;
+	int remote_badge;
+
+	if(*badge_table != NULL) {
+
+		for (grank = 0; grank < pg_size; grank++) {
+			if(my_badge == (*badge_table)[grank]) {
+				my_badge = grank;
+				break;
+			}
+		}
+
+		MPL_free(*badge_table);
+	}
+
+	*badge_table = MPL_malloc(pg_size * sizeof(int), MPL_MEM_OBJECT);
+
+	if(pg_rank != 0) {
+
+		/* gather: */
+		pscom_connection_t *con = MPIDI_Process.grank2con[0];
+		assert(con);
+		pscom_send(con, NULL, 0, &my_badge, sizeof(int));
+
+		/* bcast: */
+		rc = pscom_recv_from(con, NULL, 0, *badge_table, pg_size*sizeof(int));
+		assert(rc == PSCOM_SUCCESS);
+
+	} else {
+
+		/* gather: */
+		(*badge_table)[0] = my_badge;
+		for(grank=1; grank < pg_size; grank++) {
+			pscom_connection_t *con = MPIDI_Process.grank2con[grank];
+			assert(con);
+			rc = pscom_recv_from(con, NULL, 0, &remote_badge, sizeof(int));
+			assert(rc == PSCOM_SUCCESS);
+			(*badge_table)[grank] = remote_badge;
+		}
+
+		/* bcast: */
+		for(grank=1; grank < pg_size; grank++) {
+			pscom_connection_t *con = MPIDI_Process.grank2con[grank];
+			pscom_send(con, NULL, 0, *badge_table, pg_size*sizeof(int));
+		}
+	}
+
+	*max_badge = (*badge_table)[0];
+	for(grank=1; grank < pg_size; grank++) {
+		if((*badge_table)[grank] > *max_badge) *max_badge = (*badge_table)[grank];
+	}
+
+	if(*max_badge >= pg_size && normalize) {
+		MPIDI_PSP_create_badge_table(my_badge, pg_rank, pg_size, max_badge, badge_table, normalize);
+	}
+
 	return 0;
 }
 
@@ -295,6 +291,9 @@ badge_unknown:
 	return MPIDI_PSP_get_max_badge_by_level(level) + 1; // plus 1 as wildcard for an unknown badge
 }
 
+#endif /* MPID_PSP_MSA_AWARENESS */
+
+
 int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 {
 	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
@@ -304,13 +303,16 @@ int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 		return MPI_ERR_OTHER;
 	}
 
+#ifdef MPID_PSP_MSA_AWARENESS
 	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
 		assert(tl->badge_table);
 		tl = tl->next;
 	}
 
 	*id_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, tl, rank);
-
+#else
+	assert(tl == NULL);
+#endif
 	return 0;
 }
 
@@ -323,78 +325,19 @@ int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 		return MPI_ERR_OTHER;
 	}
 
+#ifdef MPID_PSP_MSA_AWARENESS
 	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
 		assert(tl->badge_table);
 		tl = tl->next;
 	}
 
 	*max_id_p =  MPIDI_PSP_get_max_badge_by_level(tl) + 1; // plus 1 for the "unknown badge" wildcard
-
+#else
+	assert(tl == NULL);
+#endif
 	return 0;
 }
 
-static
-int MPIDI_PSP_create_badge_table(int my_badge, int pg_rank, int pg_size, int *max_badge, int **badge_table, int normalize)
-{
-	int rc;
-	int grank;
-	int remote_badge;
-
-	if(*badge_table != NULL) {
-
-		for (grank = 0; grank < pg_size; grank++) {
-			if(my_badge == (*badge_table)[grank]) {
-				my_badge = grank;
-				break;
-			}
-		}
-
-		MPL_free(*badge_table);
-	}
-
-	*badge_table = MPL_malloc(pg_size * sizeof(int), MPL_MEM_OBJECT);
-
-	if(pg_rank != 0) {
-
-		/* gather: */
-		pscom_connection_t *con = MPIDI_Process.grank2con[0];
-		assert(con);
-		pscom_send(con, NULL, 0, &my_badge, sizeof(int));
-
-		/* bcast: */
-		rc = pscom_recv_from(con, NULL, 0, *badge_table, pg_size*sizeof(int));
-		assert(rc == PSCOM_SUCCESS);
-
-	} else {
-
-		/* gather: */
-		(*badge_table)[0] = my_badge;
-		for(grank=1; grank < pg_size; grank++) {
-			pscom_connection_t *con = MPIDI_Process.grank2con[grank];
-			assert(con);
-			rc = pscom_recv_from(con, NULL, 0, &remote_badge, sizeof(int));
-			assert(rc == PSCOM_SUCCESS);
-			(*badge_table)[grank] = remote_badge;
-		}
-
-		/* bcast: */
-		for(grank=1; grank < pg_size; grank++) {
-			pscom_connection_t *con = MPIDI_Process.grank2con[grank];
-			pscom_send(con, NULL, 0, *badge_table, pg_size*sizeof(int));
-		}
-	}
-
-	*max_badge = (*badge_table)[0];
-	for(grank=1; grank < pg_size; grank++) {
-		if((*badge_table)[grank] > *max_badge) *max_badge = (*badge_table)[grank];
-	}
-
-	if(*max_badge >= pg_size && normalize) {
-		MPIDI_PSP_create_badge_table(my_badge, pg_rank, pg_size, max_badge, badge_table, normalize);
-	}
-
-	return 0;
-}
 
 int MPID_PSP_get_host_hash(void)
 {
@@ -692,7 +635,7 @@ int MPID_PSP_comm_create_hook(MPIR_Comm * comm)
 #endif
 
 #ifdef MPID_PSP_MSA_AWARENESS
-	if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (MPIDI_Process.env.enable_msa_awareness > 1)) {
+	if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (MPIDI_Process.env.enable_msa_aware_collops > 1)) {
 
 		int mpi_errno;
 		MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;

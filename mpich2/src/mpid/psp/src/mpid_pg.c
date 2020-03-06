@@ -129,6 +129,14 @@ int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], int lpid[])
 }
 
 
+#ifdef MPID_PSP_MSA_AWARENESS
+static int MPIDI_PSP_get_num_topology_levels(MPIDI_PG_t *pg);
+static void MPIDI_PSP_pack_topology_badges(int** pack_msg, int* msg_size, MPIDI_PG_t *pg);
+static void MPIDI_PSP_unpack_topology_badges(int* pack_msg, int pg_size, int num_levels, MPIDI_PSP_topo_level_t **levels);
+static int MPIDI_PSP_add_topo_levels_to_pg(MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t *level);
+#endif
+
+
 /* The following is a temporary hook to ensure that all processes in
    a communicator have a set of process groups.
 
@@ -815,6 +823,82 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 	return MPI_SUCCESS;
 }
 
+
+#ifdef MPID_PSP_MSA_AWARENESS
+
+static
+int MPIDI_PSP_get_num_topology_levels(MPIDI_PG_t *pg)
+{
+	int level_count = 0;
+	MPIDI_PSP_topo_level_t *tl = pg->topo_levels;
+
+	while(tl) {
+		level_count++;
+		tl=tl->next;
+	}
+	return level_count;
+}
+
+static
+void MPIDI_PSP_pack_topology_badges(int** pack_msg, int* pack_size, MPIDI_PG_t *pg)
+{
+	int i;
+	int* msg;
+	MPIDI_PSP_topo_level_t *tl = pg->topo_levels;
+
+	*pack_size = MPIDI_PSP_get_num_topology_levels(pg) * (pg->size + 3) * sizeof(int);
+	*pack_msg = MPL_malloc(*pack_size * sizeof(int), MPL_MEM_OBJECT);
+
+	msg = *pack_msg;
+	while(tl) { // FIX ME: non-global badges and "dummy" tables need not to be exchanged!
+		for(i=0; i<pg->size; i++, msg++) {
+			if(tl->badge_table) {
+				*msg = tl->badge_table[i];
+			} else {
+				*msg = -1;
+			}
+		}
+		*msg = tl->degree;  msg++;
+		*msg = tl->max_badge;  msg++;
+		*msg = tl->badges_are_global;  msg++;
+		tl=tl->next;
+	}
+}
+
+static
+void MPIDI_PSP_unpack_topology_badges(int* pack_msg, int pg_size, int num_levels, MPIDI_PSP_topo_level_t **levels)
+{
+	int i, j;
+	int* msg;
+	MPIDI_PSP_topo_level_t *level;
+
+	*levels = NULL;
+
+	msg = pack_msg;
+	for(i=0; i<num_levels; i++) {
+
+		level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
+
+		if(*msg != -1) {
+			level->badge_table = MPL_malloc(pg_size * sizeof(int), MPL_MEM_OBJECT);
+			for(j=0; j<pg_size; j++) {
+				level->badge_table[j] = msg[j];
+			}
+		} else { // just a "dummy" table
+			assert(msg[pg_size + 1] == -1);
+			level->badge_table = NULL;
+		}
+		level->degree = msg[pg_size];
+		level->max_badge = msg[pg_size + 1];
+		level->badges_are_global = msg[pg_size + 2];
+		msg += (pg_size + 3);
+
+		level->next = *levels;
+		*levels = level;
+	}
+	MPL_free(pack_msg);
+}
+
 static
 int MPIDI_PSP_add_topo_level_to_pg(MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t *level)
 {
@@ -837,6 +921,7 @@ int MPIDI_PSP_add_topo_level_to_pg(MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t *level
 	return MPI_SUCCESS;
 }
 
+static
 int MPIDI_PSP_add_topo_levels_to_pg(MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t *levels)
 {
 	while(levels) {
@@ -860,6 +945,8 @@ int MPIDI_PSP_add_flat_level_to_pg(MPIDI_PG_t *pg, int degree)
 
 	return MPIDI_PSP_add_topo_level_to_pg(pg, level);
 }
+
+#endif /* MPID_PSP_MSA_AWARENESS */
 
 
 #undef FUNCNAME

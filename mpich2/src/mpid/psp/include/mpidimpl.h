@@ -37,7 +37,7 @@ struct MPIDI_PSP_topo_level {
 	struct MPIDI_PSP_topo_level *next;
 	int degree;
 	int max_badge;
-	int badges_are_global;
+	int badges_are_global; // FIX ME: Do we want to have an array for this?
 	int *badge_table;
 };
 #define MPIDI_PSP_TOPO_LEVEL__MODULES 4096
@@ -145,11 +145,9 @@ typedef struct MPIDI_Process
 
 extern MPIDI_Process_t MPIDI_Process;
 
-int MPIDI_PSP_get_num_topology_levels(MPIDI_PG_t *pg);
-void MPIDI_PSP_pack_topology_badges(int** pack_msg, int* msg_size, MPIDI_PG_t *pg);
-void MPIDI_PSP_unpack_topology_badges(int* pack_msg, int pg_size, int num_levels, MPIDI_PSP_topo_level_t **levels);
-int MPIDI_PSP_add_topo_levels_to_pg(MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t *level);
+#ifdef MPID_PSP_MSA_AWARENESS
 int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level);
+#endif
 
 void MPID_PSP_RecvAck(MPIR_Request *send_req);
 /* persistent receives */
