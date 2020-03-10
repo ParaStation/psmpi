@@ -29,10 +29,16 @@ static inline int MPID_Barrier(MPIR_Comm * comm, MPIR_Errflag_t * errflag)
     if (mpi_errno == MPI_SUCCESS)
         goto fn_exit;
 #endif
+
     mpi_errno = MPIR_Barrier_impl(comm, errflag);
 
-  fn_exit:
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -49,10 +55,16 @@ static inline int MPID_Bcast(void *buffer, int count, MPI_Datatype datatype, int
     if (mpi_errno == MPI_SUCCESS)
         goto fn_exit;
 #endif
+
     mpi_errno = MPIR_Bcast_impl(buffer, count, datatype, root, comm, errflag);
 
-  fn_exit:
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -78,8 +90,13 @@ static inline int MPID_Allreduce(const void *sendbuf, void *recvbuf, int count,
                                     comm, errflag);
 #endif
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
 fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -101,8 +118,13 @@ static inline int MPID_Allgather(const void *sendbuf, int sendcount, MPI_Datatyp
     mpi_errno = MPIR_Allgather_impl(sendbuf, sendcount, sendtype, recvbuf,
                                     recvcount, recvtype, comm, errflag);
 
-  fn_exit:
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -119,7 +141,13 @@ static inline int MPID_Allgatherv(const void *sendbuf, int sendcount, MPI_Dataty
                                      recvcounts, displs, recvtype, comm,
                                      errflag);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -135,7 +163,13 @@ static inline int MPID_Scatter(const void *sendbuf, int sendcount, MPI_Datatype 
     mpi_errno = MPIR_Scatter_impl(sendbuf, sendcount, sendtype, recvbuf,
                                   recvcount, recvtype, root, comm, errflag);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -153,7 +187,13 @@ static inline int MPID_Scatterv(const void *sendbuf, const int *sendcounts, cons
                                    recvbuf, recvcount, recvtype, root, comm,
                                    errflag);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -169,7 +209,13 @@ static inline int MPID_Gather(const void *sendbuf, int sendcount, MPI_Datatype s
     mpi_errno = MPIR_Gather_impl(sendbuf, sendcount, sendtype, recvbuf,
                                  recvcount, recvtype, root, comm, errflag);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -187,7 +233,13 @@ static inline int MPID_Gatherv(const void *sendbuf, int sendcount, MPI_Datatype 
                                   recvcounts, displs, recvtype, root, comm,
                                   errflag);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -203,7 +255,13 @@ static inline int MPID_Alltoall(const void *sendbuf, int sendcount, MPI_Datatype
     mpi_errno = MPIR_Alltoall_impl(sendbuf, sendcount, sendtype, recvbuf,
                                    recvcount, recvtype, comm, errflag);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -221,7 +279,13 @@ static inline int MPID_Alltoallv(const void *sendbuf, const int *sendcounts, con
                                     recvbuf, recvcounts, rdispls, recvtype,
                                     comm, errflag);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -240,7 +304,13 @@ static inline int MPID_Alltoallw(const void *sendbuf, const int sendcounts[], co
                                     recvbuf, recvcounts, rdispls, recvtypes,
                                     comm_ptr, errflag);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -261,7 +331,13 @@ static inline int MPID_Reduce(const void *sendbuf, void *recvbuf, int count,
                                  comm, errflag);
 #endif
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -282,7 +358,13 @@ static inline int MPID_Reduce_scatter(const void *sendbuf, void *recvbuf, const 
                                          datatype, op, comm_ptr, errflag);
 #endif
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -305,7 +387,14 @@ static inline int MPID_Reduce_scatter_block(const void *sendbuf, void *recvbuf,
                                                datatype, op, comm_ptr,
                                                errflag);
 #endif
+
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -326,7 +415,13 @@ static inline int MPID_Scan(const void *sendbuf, void *recvbuf, int count,
                                errflag);
 #endif
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -347,7 +442,13 @@ static inline int MPID_Exscan(const void *sendbuf, void *recvbuf, int count,
                                  errflag);
 #endif
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -364,7 +465,13 @@ static inline int MPID_Neighbor_allgather(const void *sendbuf, int sendcount, MP
                                              recvbuf, recvcount, recvtype,
                                              comm);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -382,7 +489,13 @@ static inline int MPID_Neighbor_allgatherv(const void *sendbuf, int sendcount,
                                               recvbuf, recvcounts, displs,
                                               recvtype, comm);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -401,7 +514,13 @@ static inline int MPID_Neighbor_alltoallv(const void *sendbuf, const int sendcou
                                              sendtype, recvbuf, recvcounts,
                                              rdispls, recvtype, comm);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -420,7 +539,13 @@ static inline int MPID_Neighbor_alltoallw(const void *sendbuf, const int sendcou
                                              sendtypes, recvbuf, recvcounts,
                                              rdispls, recvtypes, comm);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -437,7 +562,13 @@ static inline int MPID_Neighbor_alltoall(const void *sendbuf, int sendcount, MPI
                                             recvbuf, recvcount, recvtype,
                                             comm);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -455,7 +586,13 @@ static inline int MPID_Ineighbor_allgather(const void *sendbuf, int sendcount,
                                               recvbuf, recvcount, recvtype,
                                               comm, request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -474,7 +611,13 @@ static inline int MPID_Ineighbor_allgatherv(const void *sendbuf, int sendcount,
                                                recvbuf, recvcounts, displs,
                                                recvtype, comm, request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -491,7 +634,13 @@ static inline int MPID_Ineighbor_alltoall(const void *sendbuf, int sendcount, MP
                                              recvbuf, recvcount, recvtype,
                                              comm, request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -511,7 +660,13 @@ static inline int MPID_Ineighbor_alltoallv(const void *sendbuf, const int sendco
                                               rdispls, recvtype, comm,
                                               request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -531,7 +686,13 @@ static inline int MPID_Ineighbor_alltoallw(const void *sendbuf, const int sendco
                                               rdispls, recvtypes, comm,
                                               request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -544,7 +705,13 @@ static inline int MPID_Ibarrier(MPIR_Comm * comm, MPIR_Request **request)
 
     mpi_errno = MPIR_Ibarrier_impl(comm, request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -558,7 +725,13 @@ static inline int MPID_Ibcast(void *buffer, int count, MPI_Datatype datatype, in
 
     mpi_errno = MPIR_Ibcast_impl(buffer, count, datatype, root, comm, request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -574,7 +747,13 @@ static inline int MPID_Iallgather(const void *sendbuf, int sendcount, MPI_Dataty
     mpi_errno = MPIR_Iallgather_impl(sendbuf, sendcount, sendtype, recvbuf,
                                      recvcount, recvtype, comm, request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -591,7 +770,13 @@ static inline int MPID_Iallgatherv(const void *sendbuf, int sendcount, MPI_Datat
                                       recvcounts, displs, recvtype, comm,
                                       request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -607,7 +792,13 @@ static inline int MPID_Iallreduce(const void *sendbuf, void *recvbuf, int count,
     mpi_errno = MPIR_Iallreduce_impl(sendbuf, recvbuf, count, datatype, op,
                                      comm, request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -623,7 +814,13 @@ static inline int MPID_Ialltoall(const void *sendbuf, int sendcount, MPI_Datatyp
     mpi_errno = MPIR_Ialltoall_impl(sendbuf, sendcount, sendtype, recvbuf,
                                     recvcount, recvtype, comm, request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -642,7 +839,13 @@ static inline int MPID_Ialltoallv(const void *sendbuf, const int sendcounts[],
                                      recvbuf, recvcounts, rdispls, recvtype,
                                      comm, request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -661,7 +864,13 @@ static inline int MPID_Ialltoallw(const void *sendbuf, const int sendcounts[],
                                      recvbuf, recvcounts, rdispls, recvtypes,
                                      comm, request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -677,7 +886,13 @@ static inline int MPID_Iexscan(const void *sendbuf, void *recvbuf, int count,
     mpi_errno = MPIR_Iexscan_impl(sendbuf, recvbuf, count, datatype, op, comm,
                                   request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -693,7 +908,13 @@ static inline int MPID_Igather(const void *sendbuf, int sendcount, MPI_Datatype 
     mpi_errno = MPIR_Igather_impl(sendbuf, sendcount, sendtype, recvbuf,
                                   recvcount, recvtype, root, comm, request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -711,7 +932,13 @@ static inline int MPID_Igatherv(const void *sendbuf, int sendcount, MPI_Datatype
                                    recvcounts, displs, recvtype, root, comm,
                                    request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -727,7 +954,13 @@ static inline int MPID_Ireduce_scatter_block(const void *sendbuf, void *recvbuf,
     mpi_errno = MPIR_Ireduce_scatter_block_impl(sendbuf, recvbuf, recvcount,
                                                 datatype, op, comm, request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -743,7 +976,13 @@ static inline int MPID_Ireduce_scatter(const void *sendbuf, void *recvbuf, const
     mpi_errno = MPIR_Ireduce_scatter_impl(sendbuf, recvbuf, recvcounts,
                                           datatype, op, comm, request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -758,7 +997,13 @@ static inline int MPID_Ireduce(const void *sendbuf, void *recvbuf, int count, MP
     mpi_errno = MPIR_Ireduce_impl(sendbuf, recvbuf, count, datatype, op, root,
                                   comm, request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -773,7 +1018,13 @@ static inline int MPID_Iscan(const void *sendbuf, void *recvbuf, int count, MPI_
     mpi_errno = MPIR_Iscan_impl(sendbuf, recvbuf, count, datatype, op, comm,
                                 request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -789,7 +1040,13 @@ static inline int MPID_Iscatter(const void *sendbuf, int sendcount, MPI_Datatype
     mpi_errno = MPIR_Iscatter_impl(sendbuf, sendcount, sendtype, recvbuf,
                                    recvcount, recvtype, root, comm, request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -807,7 +1064,13 @@ static inline int MPID_Iscatterv(const void *sendbuf, const int *sendcounts,
                                     recvbuf, recvcount, recvtype, root, comm,
                                     request);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -821,7 +1084,13 @@ static inline int MPID_Ibarrier_sched(MPIR_Comm * comm, MPIR_Sched_t s)
 
     mpi_errno = MPIR_Ibarrier_sched_impl(comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -836,7 +1105,13 @@ static inline int MPID_Ibcast_sched(void *buffer, int count, MPI_Datatype dataty
 
     mpi_errno = MPIR_Ibcast_sched_impl(buffer, count, datatype, root, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -853,7 +1128,13 @@ static inline int MPID_Iallgather_sched(const void *sendbuf, int sendcount, MPI_
     mpi_errno = MPIR_Iallgather_sched_impl(sendbuf, sendcount, sendtype, recvbuf, recvcount,
                                            recvtype, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -870,7 +1151,13 @@ static inline int MPID_Iallgatherv_sched(const void *sendbuf, int sendcount, MPI
     mpi_errno = MPIR_Iallgatherv_sched_impl(sendbuf, sendcount, sendtype, recvbuf, recvcounts,
                                             displs, recvtype, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -886,7 +1173,13 @@ static inline int MPID_Iallreduce_sched(const void *sendbuf, void *recvbuf, int 
 
     mpi_errno = MPIR_Iallreduce_sched_impl(sendbuf, recvbuf, count, datatype, op, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -903,7 +1196,13 @@ static inline int MPID_Ialltoall_sched(const void *sendbuf, int sendcount, MPI_D
     mpi_errno = MPIR_Ialltoall_sched_impl(sendbuf, sendcount, sendtype, recvbuf, recvcount,
                                           recvtype, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -922,7 +1221,13 @@ static inline int MPID_Ialltoallv_sched(const void *sendbuf, const int sendcount
     mpi_errno = MPIR_Ialltoallv_sched_impl(sendbuf, sendcounts, sdispls, sendtype, recvbuf,
                                            recvcounts, rdispls, recvtype, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -941,7 +1246,13 @@ static inline int MPID_Ialltoallw_sched(const void *sendbuf, const int sendcount
     mpi_errno = MPIR_Ialltoallw_sched_impl(sendbuf, sendcounts, sdispls, sendtypes, recvbuf,
                                            recvcounts, rdispls, recvtypes, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -957,7 +1268,13 @@ static inline int MPID_Iexscan_sched(const void *sendbuf, void *recvbuf, int cou
 
     mpi_errno = MPIR_Iexscan_sched_impl(sendbuf, recvbuf, count, datatype, op, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -974,7 +1291,13 @@ static inline int MPID_Igather_sched(const void *sendbuf, int sendcount, MPI_Dat
     mpi_errno = MPIR_Igather_sched_impl(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype,
                                         root, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -992,7 +1315,13 @@ static inline int MPID_Igatherv_sched(const void *sendbuf, int sendcount, MPI_Da
     mpi_errno = MPIR_Igatherv_sched_impl(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs,
                                          recvtype, root, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -1009,7 +1338,13 @@ static inline int MPID_Ireduce_scatter_block_sched(const void *sendbuf, void *re
     mpi_errno = MPIR_Ireduce_scatter_block_sched_impl(sendbuf, recvbuf, recvcount, datatype, op,
                                                       comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -1026,7 +1361,13 @@ static inline int MPID_Ireduce_scatter_sched(const void *sendbuf, void *recvbuf,
     mpi_errno = MPIR_Ireduce_scatter_sched_impl(sendbuf, recvbuf, recvcounts, datatype, op, comm,
                                                 s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -1041,7 +1382,13 @@ static inline int MPID_Ireduce_sched(const void *sendbuf, void *recvbuf, int cou
 
     mpi_errno = MPIR_Ireduce_sched_impl(sendbuf, recvbuf, count, datatype, op, root, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -1056,7 +1403,13 @@ static inline int MPID_Iscan_sched(const void *sendbuf, void *recvbuf, int count
 
     mpi_errno = MPIR_Iscan_sched_impl(sendbuf, recvbuf, count, datatype, op, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -1073,7 +1426,13 @@ static inline int MPID_Iscatter_sched(const void *sendbuf, int sendcount, MPI_Da
     mpi_errno = MPIR_Iscatter_sched_impl(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype,
                                          root, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -1091,7 +1450,13 @@ static inline int MPID_Iscatterv_sched(const void *sendbuf, const int *sendcount
     mpi_errno = MPIR_Iscatterv_sched_impl(sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount,
                                           recvtype, root, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -1109,7 +1474,13 @@ static inline int MPID_Ineighbor_allgather_sched(const void *sendbuf, int sendco
     mpi_errno = MPIR_Ineighbor_allgather_sched_impl(sendbuf, sendcount, sendtype, recvbuf,
                                                     recvcount, recvtype, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -1128,7 +1499,13 @@ static inline int MPID_Ineighbor_allgatherv_sched(const void *sendbuf, int sendc
     mpi_errno = MPIR_Ineighbor_allgatherv_sched_impl(sendbuf, sendcount, sendtype, recvbuf,
                                                      recvcounts, displs, recvtype, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -1145,7 +1522,13 @@ static inline int MPID_Ineighbor_alltoall_sched(const void *sendbuf, int sendcou
     mpi_errno = MPIR_Ineighbor_alltoall_sched_impl(sendbuf, sendcount, sendtype, recvbuf, recvcount,
                                                    recvtype, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -1164,7 +1547,13 @@ static inline int MPID_Ineighbor_alltoallv_sched(const void *sendbuf, const int 
     mpi_errno = MPIR_Ineighbor_alltoallv_sched_impl(sendbuf, sendcounts, sdispls, sendtype, recvbuf,
                                                     recvcounts, rdispls, recvtype, comm, s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 
@@ -1184,7 +1573,13 @@ static inline int MPID_Ineighbor_alltoallw_sched(const void *sendbuf, const int 
                                                     recvbuf, recvcounts, rdispls, recvtypes, comm,
                                                     s);
 
+    if (mpi_errno)
+        MPIR_ERR_POP(mpi_errno);
+
+fn_exit:
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #ifdef MPID_PSP_WITH_CUDA_AWARENESS
