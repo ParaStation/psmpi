@@ -343,7 +343,7 @@ err_failed:
 static
 void inter_barrier(pscom_connection_t *con)
 {
-	int dummy;
+	int dummy = 0;
 	int rc;
 
 	/* Workaround for timing of pscom ondemand connections. Be
@@ -397,6 +397,7 @@ pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm *comm, MPIR_Comm *
 			_exit(1); /* ToDo: Graceful shutdown */
 		}
 
+		memset(my_port, 0, sizeof(pscom_port_str_t));
 		strcpy(my_port, pscom_listen_socket_ondemand_str(socket_new));
 
 		intercomm->pscom_socket = socket_new;
