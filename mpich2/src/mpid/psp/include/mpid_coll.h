@@ -56,7 +56,14 @@ static inline int MPID_Bcast(void *buffer, int count, MPI_Datatype datatype, int
         goto fn_exit;
 #endif
 
+#ifdef MPID_PSP_MSA_AWARENESS
+    if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm->local_comm != NULL))
+        mpi_errno = MPIR_Bcast_impl(buffer, count, datatype, root, comm->local_comm, errflag);
+    else
+        mpi_errno = MPIR_Bcast_impl(buffer, count, datatype, root, comm, errflag);
+#else
     mpi_errno = MPIR_Bcast_impl(buffer, count, datatype, root, comm, errflag);
+#endif
 
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
