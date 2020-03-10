@@ -303,7 +303,14 @@ int MPID_PSP_Reduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_
 	}
 
 	/* perform the reduction on host memory */
+#ifdef MPID_PSP_MSA_AWARENESS
+	if ((comm_ptr->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm_ptr->local_comm != NULL))
+		rc = MPIR_Reduce_impl(coll_sendbuf.msg, coll_recvbuf.msg, count, datatype, op, root, comm_ptr->local_comm, errflag);
+	else
+		rc = MPIR_Reduce_impl(coll_sendbuf.msg, coll_recvbuf.msg, count, datatype, op, root, comm_ptr, errflag);
+#else
 	rc = MPIR_Reduce_impl(coll_sendbuf.msg, coll_recvbuf.msg, count, datatype, op, root, comm_ptr, errflag);
+#endif
 
 	MPIDI_Unpack_coll_buf(&coll_sendbuf, 0);
 	if(comm_ptr->rank == root) {
@@ -320,7 +327,16 @@ int MPID_PSP_Allreduce_for_cuda(const void *sendbuf, void *recvbuf, int count, M
 	MPID_PSP_packed_msg_t coll_sendbuf, coll_recvbuf;
 
 	MPIDI_Pack_coll_bufs(sendbuf, recvbuf,  datatype, count, &coll_sendbuf, &coll_recvbuf);
+
+#ifdef MPID_PSP_MSA_AWARENESS
+	if ((comm_ptr->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm_ptr->local_comm != NULL))
+		rc = MPIR_Allreduce_impl(coll_sendbuf.msg, coll_recvbuf.msg, count, datatype, op, comm_ptr->local_comm, errflag);
+	else
+		rc = MPIR_Allreduce_impl(coll_sendbuf.msg, coll_recvbuf.msg, count, datatype, op, comm_ptr, errflag);
+#else
 	rc = MPIR_Allreduce_impl(coll_sendbuf.msg, coll_recvbuf.msg, count, datatype, op, comm_ptr, errflag);
+#endif
+
 	MPIDI_Unpack_coll_bufs(&coll_sendbuf, &coll_recvbuf);
 
 	return rc;
@@ -373,7 +389,16 @@ int MPID_PSP_Scan_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Da
 	MPID_PSP_packed_msg_t coll_sendbuf, coll_recvbuf;
 
 	MPIDI_Pack_coll_bufs(sendbuf, recvbuf,  datatype, count, &coll_sendbuf, &coll_recvbuf);
+
+#ifdef MPID_PSP_MSA_AWARENESS
+	if ((comm_ptr->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm_ptr->local_comm != NULL))
+		rc = MPIR_Scan_impl(coll_sendbuf.msg, coll_recvbuf.msg, count, datatype, op, comm_ptr->local_comm, errflag);
+	else
+		rc = MPIR_Scan_impl(coll_sendbuf.msg, coll_recvbuf.msg, count, datatype, op, comm_ptr, errflag);
+#else
 	rc = MPIR_Scan_impl(coll_sendbuf.msg, coll_recvbuf.msg, count, datatype, op, comm_ptr, errflag);
+#endif
+
 	MPIDI_Unpack_coll_bufs(&coll_sendbuf, &coll_recvbuf);
 
 	return rc;

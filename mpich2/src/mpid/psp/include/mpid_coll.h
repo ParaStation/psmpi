@@ -30,7 +30,14 @@ static inline int MPID_Barrier(MPIR_Comm * comm, MPIR_Errflag_t * errflag)
         goto fn_exit;
 #endif
 
+#ifdef MPID_PSP_MSA_AWARENESS
+    if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm->local_comm != NULL))
+        mpi_errno = MPIR_Barrier_impl(comm->local_comm, errflag);
+    else
+        mpi_errno = MPIR_Barrier_impl(comm, errflag);
+#else
     mpi_errno = MPIR_Barrier_impl(comm, errflag);
+#endif
 
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
@@ -89,12 +96,19 @@ static inline int MPID_Allreduce(const void *sendbuf, void *recvbuf, int count,
     if (mpi_errno == MPI_SUCCESS)
         goto fn_exit;
 #endif
+
 #ifdef MPID_PSP_WITH_CUDA_AWARENESS
     mpi_errno = MPID_PSP_Allreduce_for_cuda(sendbuf, recvbuf, count, datatype, op,
                                     comm, errflag);
 #else
-    mpi_errno = MPIR_Allreduce_impl(sendbuf, recvbuf, count, datatype, op,
-                                    comm, errflag);
+#ifdef MPID_PSP_MSA_AWARENESS
+    if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm->local_comm != NULL))
+        mpi_errno = MPIR_Allreduce_impl(sendbuf, recvbuf, count, datatype, op, comm->local_comm, errflag);
+    else
+        mpi_errno = MPIR_Allreduce_impl(sendbuf, recvbuf, count, datatype, op, comm, errflag);
+#else
+    mpi_errno = MPIR_Allreduce_impl(sendbuf, recvbuf, count, datatype, op, comm, errflag);
+#endif
 #endif
 
     if (mpi_errno)
@@ -334,8 +348,14 @@ static inline int MPID_Reduce(const void *sendbuf, void *recvbuf, int count,
     mpi_errno = MPID_PSP_Reduce_for_cuda(sendbuf, recvbuf, count, datatype, op, root,
                                  comm, errflag);
 #else
-    mpi_errno = MPIR_Reduce_impl(sendbuf, recvbuf, count, datatype, op, root,
-                                 comm, errflag);
+#ifdef MPID_PSP_MSA_AWARENESS
+    if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm->local_comm != NULL))
+        mpi_errno = MPIR_Reduce_impl(sendbuf, recvbuf, count, datatype, op, root, comm->local_comm, errflag);
+    else
+        mpi_errno = MPIR_Reduce_impl(sendbuf, recvbuf, count, datatype, op, root, comm, errflag);
+#else
+    mpi_errno = MPIR_Reduce_impl(sendbuf, recvbuf, count, datatype, op, root, comm, errflag);
+#endif
 #endif
 
     if (mpi_errno)
@@ -418,8 +438,14 @@ static inline int MPID_Scan(const void *sendbuf, void *recvbuf, int count,
     mpi_errno = MPID_PSP_Scan_for_cuda(sendbuf, recvbuf, count, datatype, op, comm,
                                errflag);
 #else
-    mpi_errno = MPIR_Scan_impl(sendbuf, recvbuf, count, datatype, op, comm,
-                               errflag);
+#ifdef MPID_PSP_MSA_AWARENESS
+    if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm->local_comm != NULL))
+        mpi_errno = MPIR_Scan_impl(sendbuf, recvbuf, count, datatype, op, comm->local_comm, errflag);
+    else
+        mpi_errno = MPIR_Scan_impl(sendbuf, recvbuf, count, datatype, op, comm, errflag);
+#else
+    mpi_errno = MPIR_Scan_impl(sendbuf, recvbuf, count, datatype, op, comm, errflag);
+#endif
 #endif
 
     if (mpi_errno)
