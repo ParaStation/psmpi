@@ -13,8 +13,8 @@
 
 struct ADIOI_Fns_struct ADIO_IME_operations = {
     ADIOI_IME_Open,     /* Open */
-    ADIOI_SCALEABLE_OpenColl, /* OpenColl */ /*XXX*/
-        ADIOI_IME_ReadContig,   /* ReadContig */
+    ADIOI_GEN_OpenColl, /* OpenColl */
+    ADIOI_IME_ReadContig,   /* ReadContig */
     ADIOI_IME_WriteContig,      /* WriteContig */
     ADIOI_GEN_ReadStridedColl,  /* ReadStridedColl */
     ADIOI_GEN_WriteStridedColl, /* WriteStridedColl */

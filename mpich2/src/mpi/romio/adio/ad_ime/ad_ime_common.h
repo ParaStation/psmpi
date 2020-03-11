@@ -20,5 +20,5 @@ void ADIOI_IME_Init(int rank, int *error_code);
 void ADIOI_IME_End(int *error_code);
 int ADIOI_IME_End_call(MPI_Comm comm, int keyval, void *attribute_val, void *extra_state);
 
-char *ADIOI_IME_Add_prefix(const char *filename);
+char *ADIOI_IME_Convert_filename(const char *filename);
 #endif /* AD_IME_COMMON_H_INCLUDED */

@@ -226,6 +226,8 @@ AC_ARG_WITH(pvfs2,[
 --with-pvfs2=path - Path to installation of PVFS (version 2)],,)
 AC_ARG_WITH(mpi-impl,[
 --with-mpi-impl=name - Specify MPI implementation to build ROMIO for],,)
+AC_ARG_WITH(ime,[
+--with-ime=PATH - Path to installation of IME],,)
 dnl
 AC_ARG_WITH(mpi, [
 --with-mpi=path   - Path to instalation of MPI (headers, libs, etc)],,)
@@ -775,6 +777,30 @@ if test -n "$FILE_SYSTEM" ; then
       fi
    done
 fi
+
+#
+# IME specific build path.
+# Automatically adds IME to the file systems if not present
+#
+if test -n "${with_ime}" ; then
+   AC_SUBST(IME_INSTALL_PATH, ["${with_ime}"])
+fi
+
+ime_default_path="/opt/ddn/ime"
+if test -n "${with_ime}" -o -e "${ime_default_path}/include/ime_native.h"; then
+   # Use IME and the default path, if not specified or overriden
+   with_ime="${ime_default_path}"
+   file_system_ime=1
+fi
+
+if test -n "${file_system_ime}" ; then
+    CFLAGS="$CFLAGS -I${with_ime}/include"
+    CPPFLAGS="$CPPFLAGS -I${with_ime}/include"
+    LDFLAGS="$LDFLAGS -L${with_ime}/lib"
+    LIBS="-lim_client -lim_common"
+    export LD_LIBRARY_PATH="${with_ime}/lib:$LD_LIBRARY_PATH"
+fi
+
 
 #############################################
 # This PVFS2 logic is special because it's hard to get it right if it comes

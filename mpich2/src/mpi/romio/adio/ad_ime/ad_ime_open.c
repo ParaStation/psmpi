@@ -71,7 +71,7 @@ void ADIOI_IME_Open(ADIO_File fd, int *error_code)
         return;
     }
 
-    ime_fs->ime_filename = ADIOI_IME_Add_prefix(fd->filename);
+    ime_fs->ime_filename = ADIOI_IME_Convert_filename(fd->filename);
 
     /* all processes open the file */
     ret = ime_native_open(ime_fs->ime_filename, amode, perm);

@@ -244,7 +244,8 @@
 /* Define if int smaller than pointer */
 #undef INT_LT_POINTER
 
-/* Define to the sub-directory where libtool stores uninstalled libraries. */
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
 #undef LT_OBJDIR
 
 /* Define if using MPICH */
@@ -291,6 +292,9 @@
 
 /* Define if usleep needs a declaration */
 #undef NEEDS_USLEEP_DECL
+
+/* Define to 1 if your C compiler doesn't accept -c and -o together. */
+#undef NO_MINUS_C_MINUS_O
 
 /* Define if no MPI type is contig */
 #undef NO_MPI_SGI_type_is_contig

@@ -87,6 +87,20 @@
 #define GPFS_SUPER_MAGIC 0x47504653
 #endif
 
+# if defined(ROMIO_IME)
+/* fuse super magic is somehow missing in system includes */
+# if !defined(FUSE_SUPER_MAGIC)
+# define FUSE_SUPER_MAGIC 0x65735546
+# endif
+# include "ime_native.h"
+# if (IME_NATIVE_API_VERSION) >= 131
+# include "ime_ioctl.h"
+
+/* Disable auto-switching from posix to IME */
+#define IME_NO_AUTO_NATIVE "IME_NO_AUTO_NATIVE"
+# endif
+# endif /* ROMIO_IME */
+
 #ifdef ROMIO_HAVE_STRUCT_STATVFS_WITH_F_BASETYPE
 #ifdef HAVE_SYS_STATVFS_H
 #include <sys/statvfs.h>
@@ -417,6 +431,39 @@ static void ADIO_FileSysType_fncall(const char *filename, int *fstype, int *erro
         return;
     }
 #endif
+
+#ifdef FUSE_SUPER_MAGIC
+    if (fsbuf.f_type == FUSE_SUPER_MAGIC) {
+        /* fuse does not allow to override FUSE_SUPER_MAGIC
+         * Any file system that is fused based needs to hook in
+         * here and use its own ioctl.
+         */
+        #if defined ROMIO_IME && defined IM_FIOC_GET_F_TYPE
+        char *dir;
+        ADIO_FileSysType_parentdir(filename, &dir);
+        int fd = open(dir, O_RDONLY);
+        if (fd == -1)
+        {
+            /* dir should typically work, but try to fail back to
+             * filename if it somehow failed
+             */
+            fd = open(filename, O_RDONLY);
+        }
+
+        if (fd >= 0) {
+            uint32_t f_type;
+            int rc = ioctl(fd, IM_FIOC_GET_F_TYPE, &f_type);
+            close(fd);
+            if (rc == 0 && f_type == IME_SUPER_MAGIC &&
+                getenv(IME_NO_AUTO_NATIVE) == NULL) {
+                *fstype = ADIO_IME;
+                return;
+            }
+        }
+        #endif /* ROMIO_IME */
+    }
+#endif /* FUSE_SUPER_MAGIC */
+
 
 #endif /*ROMIO_HAVE_STRUCT_STATFS_WITH_F_TYPE */
 

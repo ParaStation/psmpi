@@ -10,9 +10,7 @@
 #define AD_IME_H_INCLUDED
 
 #include "adio.h"
-#ifdef HAVE_IME_NATIVE_H
 #include "ime_native.h"
-#endif
 
 #define ADIOI_IME_PREFIX        "ime:"
 #define ADIOI_IME_PREFIX_LEN    (sizeof(ADIOI_IME_PREFIX) - 1)

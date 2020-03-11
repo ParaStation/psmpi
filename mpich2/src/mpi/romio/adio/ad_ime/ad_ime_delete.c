@@ -16,7 +16,7 @@ void ADIOI_IME_Delete(const char *filename, int *error_code)
     int ret;
     static char myname[] = "ADIOI_IME_DELETE";
 
-    char *ime_filename = ADIOI_IME_Add_prefix(filename);
+    char *ime_filename = ADIOI_IME_Convert_filename(filename);
     ret = ime_native_unlink(ime_filename);
     ADIOI_Free(ime_filename);
     if (ret)
