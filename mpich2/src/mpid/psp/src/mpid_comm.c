@@ -175,60 +175,6 @@ int MPIDI_PSP_comm_is_global(MPIR_Comm *comm)
 	return 0;
 }
 
-static int MPIDI_PSP_comm_is_flat_on_level(MPIR_Comm *comm, MPIDI_PSP_topo_level_t *level)
-{
-	int i;
-	int my_badge;
-
-	assert(level->pg == MPIDI_Process.my_pg); // level must be local!
-	my_badge = level->badge_table[MPIDI_Process.my_pg_rank];
-
-	for(i=0; i<comm->local_size; i++) {
-
-		if(likely(comm->vcr[i]->pg == MPIDI_Process.my_pg)) { // local process group
-
-			if(!level->badge_table) { // "dummy" level
-				assert(level->max_badge == -1);
-				return 0;
-			}
-
-			if(!level->badges_are_global) {
-
-				if(MPIDI_PSP_comm_is_global(comm)) {
-					// if own badges are not global, these are treated as "unknown" by other PGs
-					return 0;
-				}
-			}
-
-			if(my_badge != level->badge_table[comm->vcr[i]->pg_rank]) {
-				return 0;
-			}
-
-		} else { // remote process group
-			MPIDI_PSP_topo_level_t *ext_level = NULL;
-
-			if(!level->badges_are_global) {
-				return 0;
-			}
-
-			// check for remote level with identical degree
-			if(MPIDI_PSP_check_pg_for_level(level->degree, comm->vcr[i]->pg, &ext_level)) {
-
-				if(!ext_level->badges_are_global || !ext_level->badge_table) {
-					return 0;
-				}
-
-				if(my_badge != ext_level->badge_table[comm->vcr[i]->pg_rank]) {
-					return 0;
-				}
-			} else {
-				return 0;
-			}
-		}
-	}
-	return 1;
-}
-
 static
 int MPIDI_PSP_get_max_badge_by_level(MPIDI_PSP_topo_level_t *level)
 {
@@ -289,6 +235,22 @@ int MPIDI_PSP_get_badge_by_level_and_comm_rank(MPIR_Comm *comm, MPIDI_PSP_topo_l
 
 badge_unknown:
 	return MPIDI_PSP_get_max_badge_by_level(level) + 1; // plus 1 as wildcard for an unknown badge
+}
+
+static int MPIDI_PSP_comm_is_flat_on_level(MPIR_Comm *comm, MPIDI_PSP_topo_level_t *level)
+{
+	int i;
+	int my_badge;
+
+	assert(level->pg == MPIDI_Process.my_pg); // level must be local!
+	my_badge = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, level, comm->rank);
+
+	for(i=0; i<comm->local_size; i++) {
+		if(MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, level, i) != my_badge) {
+			return 0;
+		}
+	}
+	return 1;
 }
 
 #endif /* MPID_PSP_MSA_AWARENESS */
