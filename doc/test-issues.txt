@@ -1,7 +1,7 @@
-Recent results of the MPICH test suite: (confset=default, mpiexec=hydra, with hwloc, PSP_ONDEMAND=0, pscom-5.4.2-1_g4cc0d890)
+Recent results of the MPICH test suite: (confset=default, mpiexec=hydra, with hwloc, PSP_ONDEMAND=0, pscom-5.4.4-1
 
- All 1355 tests passed!
- Summary written to psmpi/doc/test-5.4.2-1_22_gf730910fa_2020-02-07_09:31:46*
+ All 1361 tests passed!
+ Summary written to psmpi/doc/test-5.4.4-1_14_g330d6bc18_2020-03-18_10:34:31.*
 
 
 Note: The following tests are known to fail with Hydra if HWLOC is disabled:
