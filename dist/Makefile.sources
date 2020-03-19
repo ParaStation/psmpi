@@ -22,6 +22,11 @@ dist/rpm_depgen \
 doc/Makefile.in \
 doc/imb-perf-booster.txt \
 doc/imb-perf-jureca.txt \
+doc/mpich-patches/0001-Fix-According-to-MPICH-its-recursive_doubling-algori.patch \
+doc/mpich-patches/0002-coll-Fix-bug-in-MPICH-s-scatter_ring-algorithm-of-MP.patch \
+doc/mpich-patches/0003-coll-Tune-fix-internal-algorithm-selection-for.patch \
+doc/mpich-patches/list-of-patches.sh \
+doc/mpich-patches/list-of-patches.txt \
 mpich2/.gitmodules \
 mpich2/.mailmap \
 mpich2/.travis.yml \
@@ -57,6 +62,7 @@ mpich2/confdb/aclocal_shm.m4 \
 mpich2/confdb/aclocal_subcfg.m4 \
 mpich2/confdb/aclocal_util.m4 \
 mpich2/confdb/ar-lib \
+mpich2/confdb/ax_check_lib.m4 \
 mpich2/confdb/ax_check_posix_regcomp.m4 \
 mpich2/confdb/ax_gcc_func_attribute.m4 \
 mpich2/confdb/ax_gcc_var_attribute.m4 \
