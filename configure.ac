@@ -121,81 +121,6 @@ AC_ARG_WITH([profile], [
 	fi
 ])
 
-AC_ARG_WITH([pscom-builtin], [
-  --with-pscom-builtin[=list]
-                          Define list of pscom plugins that shall be built-in
-                          Default: openib,psm2 / Needs pscom source code fusion
-],[
-	PSCOM_BUILTIN_PLUGINS="$withval"
-])
-
-AC_ARG_WITH([pscom-allin], [
-  --with-pscom-allin[=path]
-                          Enable pscom source code fusion and set path to pscom
-],[
-	export PSCOM_ALLIN="true"
-	PSCOM_ALLIN_DIR="$withval"
-	AC_CHECK_FILE(["${PSCOM_ALLIN_DIR}/lib/all/pscom_all.c"], [
-		PSCOM_ALLIN_DIR="${PSCOM_ALLIN_DIR}/lib/all/"
-	])
-	export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN -I${PSCOM_ALLIN_DIR}/ -I${PSCOM_ALLIN_DIR}/../../include/ -I${PSCOM_ALLIN_DIR}/../../lib/pscom/"
-
-	if test -x "${PSCOM_ALLIN_DIR}/../../scripts/vcversion" ; then
-		if ! test -d "${TOP_BUILDDIR}/pscom" ; then
-                        mkdir -p "${TOP_BUILDDIR}/pscom" 2>/dev/null
-                fi
-		PSCOM_VC_VERSION=`${PSCOM_ALLIN_DIR}/../../scripts/vcversion -r ${PSCOM_ALLIN_DIR}/../.. -n`
-		echo "Including pscom version ${PSCOM_VC_VERSION}"
-		echo "#define VC_VERSION \"${PSCOM_VC_VERSION}\"" > "${TOP_BUILDDIR}/pscom/vc_version.h"
-		export MPICHLIB_CFLAGS="-I${TOP_BUILDDIR}/pscom/ ${MPICHLIB_CFLAGS}"
-	fi
-
-	AC_CHECK_HEADER([infiniband/verbs.h], [have_openib=yes], [have_openib=no])
-	AC_CHECK_HEADER([psm2.h], [have_psm2=yes], [have_psm2=no])
-
-	if test -n "$PSCOM_BUILTIN_PLUGINS" ; then
-		IFS=","
-		for plugin in $PSCOM_BUILTIN_PLUGINS ; do
-			case "$plugin" in
-				"openib") openib_enabled="yes" ;;
-				"psm2")   psm2_enabled="yes"   ;;
-			esac
-		done
-		unset IFS
-	else
-		openib_enabled="$have_openib"
-		psm2_enabled="$have_psm2"
-	fi
-
-	if test "$openib_enabled" = "yes" ; then
-		if test "$have_openib" = "yes" ; then
-			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_OPENIB"
-			export PSCOM_ALLIN_LIBS="${PSCOM_ALLIN_LIBS} -libverbs"
-			echo "Including openib as a built-in plugin for pscom"
-		else
-			AC_MSG_ERROR([openib support requested but not found])
-		fi
-	fi
-	if test "$psm2_enabled" = "yes" ; then
-		if test "$have_psm2" = "yes" ; then
-			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_PSM2"
-			export PSCOM_ALLIN_LIBS="${PSCOM_ALLIN_LIBS} -lpsm2"
-			echo "Including psm2 as a built-in plugin for pscom"
-		else
-			AC_MSG_ERROR([psm2 support requested but not found])
-		fi
-	fi
-
-	case $CONFSET in
-		"default"|"gcc"|"intel"|"icc") ;;
-		*) confset_and_allin_does_not_match="yes" ;;
-	esac
-	if test "$confset_and_allin_does_not_match" = "yes" ; then
-		AC_MSG_ERROR([confset=$CONFSET does not allow for --with-pscom-allin])
-	fi
-],[
-	PSCOM_ALLIN="false"
-])
 
 #Some influential environment variables:
 #  CC          C compiler command
@@ -252,12 +177,14 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
-	CONF_OPS="$CONF_OPS CC=gcc CXX=g++"
+	CC=gcc
+	CXX=g++
+
 	if which gfortran >/dev/null 2>&1 ;then
 	   # found gfortran
 	   CONF_OPS="$CONF_OPS --enable-f77"
 	   CONF_OPS="$CONF_OPS --enable-fc"
-	   CONF_OPS="$CONF_OPS FC=gfortran"
+	   FC=gfortran
 	fi
 	MODULEFILE_CONFSET=""
 	EXTRA_VERSION_INFO=" compiler: $(gcc --version|head -n 1)"
@@ -283,23 +210,25 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
-	CONF_OPS="$CONF_OPS CC=icc CXX=icpc"
+	CC=icc
+	CXX=icpc
+
 	# Append "-reentrancy threaded" to FC.
 	# FFLAGS, FCFLAGS, MPICHLIB_FCFLAGS, MPICHLIB_LDFLAGS and friends
 	# are not forwarded to the final linking with libtool which uses $(FC).
 	# "libtool -XCClinker" should be set somehow. Up to than we have
 	# '-reentrancy threaded' also inside mpif77, mpif90 and mpifort.
-	CONF_OPS="$CONF_OPS FC='ifort -reentrancy threaded'"
-	CONF_OPS="$CONF_OPS"
+	FC='ifort -reentrancy threaded'
+
 	EXTRA_VERSION_INFO=" compiler: $(icc -V 2>&1 |head -n 1)"
 
 	if test "$ENABLE_PROFILE" = "use" ; then
 		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -prof-use -prof-dir=$PROFILE_DIR"
-        else
-                if test "$ENABLE_PROFILE" = "gen" ; then
+	else
+		if test "$ENABLE_PROFILE" = "gen" ; then
 			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -prof-gen -prof-dir=$PROFILE_DIR"
-                fi
-        fi
+		fi
+	fi
 	;;
 "pgi")
 	echo "Using confset=pgi"
@@ -311,8 +240,9 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
-	CONF_OPS="$CONF_OPS CC=pgcc CXX=pgc++ FC=pgf90"
-	CONF_OPS="$CONF_OPS"
+	CC=pgcc
+	CXX=pgc++
+	FC=pgf90
 	;;
 "psc")
 	echo "Using confset=psc"
@@ -324,8 +254,9 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
-	CONF_OPS="$CONF_OPS CC=pathcc CXX=pathCC FC=pathf90"
-	CONF_OPS="$CONF_OPS"
+	CC=pathcc
+	CXX=pathCC
+	FC=pathf90
 	;;
 "micgcc")
 	echo "Using confset=micgcc"
@@ -337,12 +268,12 @@ case $CONFSET in
 
 	CONF_OPS="$CONF_OPS --host=x86_64-k1om-linux"
 
-	CONF_OPS="$CONF_OPS 'CC=x86_64-k1om-linux-gcc'"
-	CONF_OPS="$CONF_OPS 'CXX=x86_64-k1om-linux-g++'"
-	CONF_OPS="$CONF_OPS 'F77=x86_64-k1om-linux-gfortran'"
-	CONF_OPS="$CONF_OPS 'FC=x86_64-k1om-linux-gfortran'"
-	CONF_OPS="$CONF_OPS 'AR=x86_64-k1om-linux-ar'"
-	CONF_OPS="$CONF_OPS 'RANLIB=x86_64-k1om-linux-ranlib'"
+	CC=x86_64-k1om-linux-gcc
+	CXX=x86_64-k1om-linux-g++
+	F77=x86_64-k1om-linux-gfortran
+	FC=x86_64-k1om-linux-gfortran
+	AR=x86_64-k1om-linux-ar
+	RANLIB=x86_64-k1om-linux-ranlib
 
 	# FIXME: check whether all of these are valid in mpich 3.0.4,
 	# they were gathered with 1.5a2
@@ -364,7 +295,6 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_REAL=4'"
 	CONF_OPS="$CONF_OPS 'CROSS_MPI_STATUS_SIZE=5'"
 
-	CONF_OPS="$CONF_OPS"
 	EXTRA_VERSION_INFO=" compiler: $(x86_64-k1om-linux-gcc --version|head -n 1)"
 	MODULEFILE_CONFSET="mic"
 	;;
@@ -381,10 +311,10 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-error-checking=no"
 
 	CONF_OPS="$CONF_OPS --host=x86_64-k1om-linux"
-	CONF_OPS="$CONF_OPS 'CC=icc -mmic'"
-	CONF_OPS="$CONF_OPS 'CXX=icpc -mmic'"
-	CONF_OPS="$CONF_OPS 'F77=ifort -mmic'"
-	CONF_OPS="$CONF_OPS 'FC=ifort -mmic'"
+	CC='icc -mmic'
+	CXX='icpc -mmic'
+	F77='ifort -mmic'
+	FC='ifort -mmic'
 
 	# FIXME: check whether all of these are valid in mpich 3.0.4,
 	# they were gathered with 1.5a2
@@ -406,7 +336,6 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_REAL=4'"
 	CONF_OPS="$CONF_OPS 'CROSS_MPI_STATUS_SIZE=5'"
 
-	CONF_OPS="$CONF_OPS"
 	EXTRA_VERSION_INFO=" compiler: $(icc -V 2>&1 |head -n 1)"
 	MODULEFILE_CONFSET="intel-mic"
 	;;
@@ -420,8 +349,9 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
-	CONF_OPS="$CONF_OPS CC=ppu-gcc CXX=ppu-c++ FC=ppu-gfortran"
-	CONF_OPS="$CONF_OPS"
+	CC=ppu-gcc
+	CXX=ppu-c++
+	FC=ppu-gfortran
 	;;
 "cellxlc")
 	echo "Using confset=cellxlc"
@@ -433,8 +363,9 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
-	CONF_OPS="$CONF_OPS CC='ppuxlc -q64' CXX='ppuxlC -q64' FC='ppuxlf -q64'"
-	CONF_OPS="$CONF_OPS"
+	CC='ppuxlc -q64'
+	CXX='ppuxlC -q64'
+	FC='ppuxlf -q64'
 	;;
 "none")
 	# No build
@@ -455,7 +386,9 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
-	CONF_OPS="$CONF_OPS CC=gcc CXX=g++ FC=gfortran"
+	CC=gcc
+	CXX=g++
+	FC=gfortran
 
 	ENABLE_HYDRA="true"
 	CHANNEL_DEVICE=`echo ${CONFSET} | cut -c 1-2`
@@ -465,6 +398,118 @@ case $CONFSET in
 	exit 1
 	;;
 esac
+
+test -n "$CC"  && CONF_OPS="$CONF_OPS 'CC=$CC'"
+test -n "$CXX" && CONF_OPS="$CONF_OPS 'CXX=$CXX'"
+test -n "$FC"  && CONF_OPS="$CONF_OPS 'FC=$FC'"
+test -n "$F77" && CONF_OPS="$CONF_OPS 'F77=$F77'"
+test -n "$AR"  && CONF_OPS="$CONF_OPS 'AR=$AR'"
+test -n "$RANLIB" && CONF_OPS="$CONF_OPS 'RANLIB=$RANLIB'"
+
+AC_ARG_WITH([pscom-builtin], [
+  --with-pscom-builtin[=list]
+			  Define list of pscom plugins that shall be built-in
+			  Default: openib,psm2 / Needs pscom source code fusion
+],[
+	PSCOM_BUILTIN_PLUGINS="$withval"
+])
+
+AC_ARG_WITH([pscom-allin], [
+  --with-pscom-allin[=path]
+			  Enable pscom source code fusion and set path to pscom
+],[
+	export PSCOM_ALLIN="true"
+	PSCOM_ALLIN_DIR="$withval"
+	AC_CHECK_FILE(["${PSCOM_ALLIN_DIR}/lib/all/pscom_all.c"], [
+		PSCOM_ALLIN_DIR="${PSCOM_ALLIN_DIR}/lib/all/"
+	])
+	export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN -I${PSCOM_ALLIN_DIR}/ -I${PSCOM_ALLIN_DIR}/../../include/ -I${PSCOM_ALLIN_DIR}/../../lib/pscom/"
+
+	if test -x "${PSCOM_ALLIN_DIR}/../../scripts/vcversion" ; then
+		if ! test -d "${TOP_BUILDDIR}/pscom" ; then
+			mkdir -p "${TOP_BUILDDIR}/pscom" 2>/dev/null
+		fi
+		PSCOM_VC_VERSION=`${PSCOM_ALLIN_DIR}/../../scripts/vcversion -r ${PSCOM_ALLIN_DIR}/../.. -n`
+		echo "Including pscom version ${PSCOM_VC_VERSION}"
+		echo "#define VC_VERSION \"${PSCOM_VC_VERSION}\"" > "${TOP_BUILDDIR}/pscom/vc_version.h"
+		export MPICHLIB_CFLAGS="-I${TOP_BUILDDIR}/pscom/ ${MPICHLIB_CFLAGS}"
+	fi
+
+	AC_CHECK_HEADER([infiniband/verbs.h], [have_openib=yes], [have_openib=no])
+	AC_CHECK_HEADER([psm2.h], [have_psm2=yes], [have_psm2=no])
+
+	if test -n "$PSCOM_BUILTIN_PLUGINS" ; then
+		IFS=","
+		for plugin in $PSCOM_BUILTIN_PLUGINS ; do
+			case "$plugin" in
+				"openib") openib_enabled="yes" ;;
+				"psm2")   psm2_enabled="yes"   ;;
+			esac
+		done
+		unset IFS
+	else
+		openib_enabled="$have_openib"
+		psm2_enabled="$have_psm2"
+	fi
+
+	if test "$openib_enabled" = "yes" ; then
+		if test "$have_openib" = "yes" ; then
+			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_OPENIB"
+			export PSCOM_ALLIN_LIBS="${PSCOM_ALLIN_LIBS} -libverbs"
+			echo "Including openib as a built-in plugin for pscom"
+		else
+			AC_MSG_ERROR([openib support requested but not found])
+		fi
+	fi
+	if test "$psm2_enabled" = "yes" ; then
+		if test "$have_psm2" = "yes" ; then
+			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_PSM2"
+			export PSCOM_ALLIN_LIBS="${PSCOM_ALLIN_LIBS} -lpsm2"
+			echo "Including psm2 as a built-in plugin for pscom"
+		else
+			AC_MSG_ERROR([psm2 support requested but not found])
+		fi
+	fi
+
+	case $CONFSET in
+		"default"|"gcc"|"intel"|"icc") ;;
+		*) confset_and_allin_does_not_match="yes" ;;
+	esac
+	if test "$confset_and_allin_does_not_match" = "yes" ; then
+		AC_MSG_ERROR([confset=$CONFSET does not allow for --with-pscom-allin])
+	fi
+
+	# -- visibility ("protected") support --
+
+	# Does __attribute__ ((visibility ("protected"))) work with functions?
+	AC_CACHE_CHECK(linker support for protected functions,
+		pscom_cv_protected_func,
+		[cat > conftest.c <<EOF
+		__attribute__ ((visibility("protected")))
+		int bar(void) { return 1; }
+EOF
+		pscom_cv_protected_func=no
+		if AC_TRY_COMMAND(${CC-cc} -nostdlib -nostartfiles $no_ssp -fPIC -shared conftest.c -o conftest.so); then
+			cat > conftest.c <<EOF
+			extern int bar(void);
+			int main (void) { return bar(); }
+EOF
+			if AC_TRY_COMMAND(${CC-cc} -nostdlib -nostartfiles $no_ssp conftest.c -o conftest conftest.so); then
+				pscom_cv_protected_func=yes
+			fi
+		fi
+		rm -f conftest.*
+	])
+	AC_SUBST(pscom_cv_protected_func)
+	AS_IF([test "$pscom_cv_protected_func" = "no"],
+		# AC_DEFINE([NO_PROTECTED_FUNC], [1], [Define to 1 if visibility ("protected") does not work on functions])
+		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DNO_PROTECTED_FUNC=1 -DENABLE_PLUGIN_LOADING=0"
+	)
+
+],[
+	PSCOM_ALLIN="false"
+])
+
 
 AC_ARG_WITH([threading], [
   --with-threading        Enable threading 'multiple' in device psp
