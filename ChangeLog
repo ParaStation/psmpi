@@ -1,3 +1,10 @@
+2020-03-25  Jens Hauke <hauke@par-tec.com>	-	5.4.5-1
+
+2020-03-10  Carsten Clauss <clauss@par-tec.com>
+
+	* MSA: Add multi-level hierarchy-aware support to collectives
+	MPID_Bcast/Allreduce/Reduce/Barrier and Scan.
+
 2020-03-05  Simon Pickartz <pickartz@par-tec.com> -    5.4.4-1
 
 2020-03-04  Simon Pickartz <pickartz@par-tec.com> -    5.4.4-0rc1
