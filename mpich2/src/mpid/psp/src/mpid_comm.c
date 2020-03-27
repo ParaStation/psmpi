@@ -332,7 +332,24 @@ int MPID_PSP_comm_init(int has_parent)
 	if(MPIDI_Process.env.enable_msa_awareness) {
 
 		if(MPIDI_Process.msa_module_id < 0) {
-			MPIDI_Process.msa_module_id = 0;
+
+			if (!MPIDI_Process.env.enable_ondemand) {
+				/* In the PSP_ONDEMAND=0 case, we can check the pscom connection types: */
+				for (grank = 0; grank < pg_size; grank++) {
+					pscom_connection_t *con = MPIDI_Process.grank2con[grank];
+					if(con->type == PSCOM_CON_TYPE_GW) {
+						MPIDI_Process.msa_module_id = grank;
+						break;
+					}
+				}
+			}
+			if (MPIDI_Process.msa_module_id < 0) {
+				/* If we yet haven't found a module_id, use the appnum for this: */
+				MPIDI_Process.msa_module_id = MPIR_Process.attrs.appnum;
+			}
+			if(MPIDI_Process.msa_module_id < 0) {
+				MPIDI_Process.msa_module_id = 0;
+			}
 		}
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
@@ -373,7 +390,7 @@ int MPID_PSP_comm_init(int has_parent)
 					}
 				}
 			} else {
-				/* In the PSP_ONDEMAND=1 case, we have to use a hash of the host name: */
+				/* In the PSP_ONDEMAND=1 case (or if SHM is disabled), we have to use a hash of the host name: */
 				MPIDI_Process.smp_node_id = MPID_PSP_get_host_hash();
 				/* ...accepting the possibility of hash collisions that may lead to undefined situations! */
 			}

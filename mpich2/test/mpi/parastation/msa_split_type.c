@@ -107,7 +107,6 @@ int main(int argc, char* argv[])
 				errors++;
 				}
 			}
-		
 		}
 
 		MPI_Comm_free(&split_type_comm);

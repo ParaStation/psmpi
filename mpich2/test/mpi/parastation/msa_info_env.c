@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 	if(env_str) {
 		module_id = atoi(env_str);
 	} else {
-		module_id = 0;
+		module_id = -1;
 	}
 
 
@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
 
 		if (msa_enabled) {
 
-			if (atoi(value) != module_id) {
+			if ( (module_id > -1) && (atoi(value) != module_id) ) {
 
 				printf("\nModule ID was explicitly set to %d but MPI_INFO_ENV returned %d / %s\n", module_id, atoi(value), value);
 				rc++;
