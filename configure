@@ -631,6 +631,7 @@ MODULEFILE
 CUDA_SUPPORT
 CONFSET
 ENABLE_TOPOLOGY_AWARENESS
+pscom_cv_protected_func
 EGREP
 GREP
 CPP
@@ -680,6 +681,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -763,6 +765,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE}'
@@ -1015,6 +1018,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1152,7 +1164,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1305,6 +1317,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1375,12 +1388,12 @@ Optional Packages:
 
 
   --with-pscom-builtin=list
-                          Define list of pscom plugins that shall be built-in
-                          Default: openib,psm2 / Needs pscom source code fusion
+			  Define list of pscom plugins that shall be built-in
+			  Default: openib,psm2 / Needs pscom source code fusion
 
 
   --with-pscom-allin=path
-                          Enable pscom source code fusion and set path to pscom
+			  Enable pscom source code fusion and set path to pscom
 
 
   --with-threading        Enable threading 'multiple' in device psp
@@ -2341,6 +2354,291 @@ if test "${with_profile+set}" = set; then :
 
 fi
 
+
+
+#Some influential environment variables:
+#  CC          C compiler command
+#  CFLAGS      C compiler flags
+#  LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
+#              nonstandard directory <lib dir>
+#  CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
+#              headers in a nonstandard directory <include dir>
+#  F77         Fortran 77 compiler command
+#  FFLAGS      Fortran 77 compiler flags
+#  FC          Fortran 90 compiler command
+#  FCFLAGS     Fortran 90 compiler flags
+#  CXX         C++ compiler command
+#  CXXFLAGS    C++ compiler flags
+#  CPP         C preprocessor
+#
+
+EXTRA_VERSION_INFO=""
+# CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-error-messages=generic"
+CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-fast=O3,ndebug"
+CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-cache"
+CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-lib-depend"
+CONF_OPS_COMMON="$CONF_OPS_COMMON --disable-rpath"
+CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-shared"
+CONF_OPS_COMMON="$CONF_OPS_COMMON --disable-static"
+MODULEFILE_CONFSET="$CONFSET"
+
+case $CONFSET in
+"devel")
+	echo "Using confset=devel"
+	CONF_OPS="--with-device=psp"
+	CONF_OPS="$CONF_OPS --enable-cache"
+	CONF_OPS="$CONF_OPS --enable-g=all"
+	CONF_OPS="$CONF_OPS --enable-dependencies"
+	# CONF_OPS="$CONF_OPS --disable-f77"
+	# CONF_OPS="$CONF_OPS --disable-fc"
+	# CONF_OPS="$CONF_OPS --disable-cxx"
+	CONF_OPS="$CONF_OPS --enable-romio"
+	# CONF_OPS="$CONF_OPS --disable-mpe"
+	CONF_OPS="$CONF_OPS --enable-shared"
+	CONF_OPS="$CONF_OPS --disable-static"
+	CONF_OPS="$CONF_OPS --enable-error-checking=all"
+	CONF_OPS="$CONF_OPS --enable-strict" # Compile with -Wall and other checks.
+
+	CONF_OPS="$CONF_OPS"
+	;;
+"gcc"|\
+"default")
+	echo "Using confset=default"
+	CONF_OPS="--with-device=psp"
+	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
+	CONF_OPS="$CONF_OPS --enable-cache"
+	CONF_OPS="$CONF_OPS --enable-cxx"
+	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
+
+	CC=gcc
+	CXX=g++
+
+	if which gfortran >/dev/null 2>&1 ;then
+	   # found gfortran
+	   CONF_OPS="$CONF_OPS --enable-f77"
+	   CONF_OPS="$CONF_OPS --enable-fc"
+	   FC=gfortran
+	fi
+	MODULEFILE_CONFSET=""
+	EXTRA_VERSION_INFO=" compiler: $(gcc --version|head -n 1)"
+
+	if test "$ENABLE_PROFILE" = "use" ; then
+		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -fprofile-use -fprofile-dir=$PROFILE_DIR -Wno-error=coverage-mismatch"
+	else
+		if test "$ENABLE_PROFILE" = "gen" ; then
+			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -fprofile-generate -fprofile-dir=$PROFILE_DIR"
+			# Fix me! Disable Fortran for avoiding issues when compiling with FDO enabled:
+			CONF_OPS=`echo "$CONF_OPS" | sed -e s/enable-f77/disable-fortran/g`
+		fi
+	fi
+	;;
+"icc"|\
+"intel")
+	echo "Using confset=intel"
+	CONF_OPS="--with-device=psp"
+	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
+	CONF_OPS="$CONF_OPS --enable-f77"
+	CONF_OPS="$CONF_OPS --enable-fc"
+	CONF_OPS="$CONF_OPS --enable-cxx"
+	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
+
+	CC=icc
+	CXX=icpc
+
+	# Append "-reentrancy threaded" to FC.
+	# FFLAGS, FCFLAGS, MPICHLIB_FCFLAGS, MPICHLIB_LDFLAGS and friends
+	# are not forwarded to the final linking with libtool which uses $(FC).
+	# "libtool -XCClinker" should be set somehow. Up to than we have
+	# '-reentrancy threaded' also inside mpif77, mpif90 and mpifort.
+	FC='ifort -reentrancy threaded'
+
+	EXTRA_VERSION_INFO=" compiler: $(icc -V 2>&1 |head -n 1)"
+
+	if test "$ENABLE_PROFILE" = "use" ; then
+		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -prof-use -prof-dir=$PROFILE_DIR"
+	else
+		if test "$ENABLE_PROFILE" = "gen" ; then
+			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -prof-gen -prof-dir=$PROFILE_DIR"
+		fi
+	fi
+	;;
+"pgi")
+	echo "Using confset=pgi"
+	CONF_OPS="--with-device=psp"
+	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
+	CONF_OPS="$CONF_OPS --enable-f77"
+	CONF_OPS="$CONF_OPS --enable-fc"
+	CONF_OPS="$CONF_OPS --enable-cxx"
+	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
+
+	CC=pgcc
+	CXX=pgc++
+	FC=pgf90
+	;;
+"psc")
+	echo "Using confset=psc"
+	CONF_OPS="--with-device=psp"
+	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
+	CONF_OPS="$CONF_OPS --enable-f77"
+	CONF_OPS="$CONF_OPS --enable-fc"
+	CONF_OPS="$CONF_OPS --enable-cxx"
+	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
+
+	CC=pathcc
+	CXX=pathCC
+	FC=pathf90
+	;;
+"micgcc")
+	echo "Using confset=micgcc"
+	CONF_OPS="--with-device=psp"
+	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
+	CONF_OPS="$CONF_OPS --enable-cxx"
+	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
+
+	CONF_OPS="$CONF_OPS --host=x86_64-k1om-linux"
+
+	CC=x86_64-k1om-linux-gcc
+	CXX=x86_64-k1om-linux-g++
+	F77=x86_64-k1om-linux-gfortran
+	FC=x86_64-k1om-linux-gfortran
+	AR=x86_64-k1om-linux-ar
+	RANLIB=x86_64-k1om-linux-ranlib
+
+	# FIXME: check whether all of these are valid in mpich 3.0.4,
+	# they were gathered with 1.5a2
+	CONF_OPS="$CONF_OPS 'CROSS_F77_FALSE_VALUE=0'"
+	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_DOUBLE_PRECISION=8'"
+	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_INTEGER=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_REAL=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_F77_TRUE_VALUE=1'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_ADDRESS_KIND=8'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_ALL_INTEGER_MODELS=2,1,4,2,9,4,18,8,'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_DOUBLE_MODEL=15,307'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_KIND=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_MODEL=9'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_MODEL_MAP={2,1,1},{4,2,2},{9,4,4},{18,8,8},'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_OFFSET_KIND=8'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_REAL_MODEL=6,37'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_DOUBLE_PRECISION=8'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_INTEGER=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_REAL=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_MPI_STATUS_SIZE=5'"
+
+	EXTRA_VERSION_INFO=" compiler: $(x86_64-k1om-linux-gcc --version|head -n 1)"
+	MODULEFILE_CONFSET="mic"
+	;;
+"micintel")
+	echo "Using confset=micintel"
+	CONF_OPS="--with-device=psp"
+	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
+	CONF_OPS="$CONF_OPS --enable-cxx"
+	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
+
+	# Get Performance
+	CONF_OPS="$CONF_OPS --enable-g=none"
+	CONF_OPS="$CONF_OPS --enable-error-checking=no"
+
+	CONF_OPS="$CONF_OPS --host=x86_64-k1om-linux"
+	CC='icc -mmic'
+	CXX='icpc -mmic'
+	F77='ifort -mmic'
+	FC='ifort -mmic'
+
+	# FIXME: check whether all of these are valid in mpich 3.0.4,
+	# they were gathered with 1.5a2
+	CONF_OPS="$CONF_OPS 'CROSS_F77_FALSE_VALUE=0'"
+	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_DOUBLE_PRECISION=8'"
+	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_INTEGER=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_REAL=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_F77_TRUE_VALUE=1'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_ADDRESS_KIND=8'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_ALL_INTEGER_MODELS=2,1,4,2,9,4,18,8,'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_DOUBLE_MODEL=15,307'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_KIND=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_MODEL=9'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_MODEL_MAP={2,1,1},{4,2,2},{9,4,4},{18,8,8},'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_OFFSET_KIND=8'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_REAL_MODEL=6,37'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_DOUBLE_PRECISION=8'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_INTEGER=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_REAL=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_MPI_STATUS_SIZE=5'"
+
+	EXTRA_VERSION_INFO=" compiler: $(icc -V 2>&1 |head -n 1)"
+	MODULEFILE_CONFSET="intel-mic"
+	;;
+"cellgcc")
+	echo "Using confset=cellgcc"
+	CONF_OPS="--with-device=psp"
+	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
+	CONF_OPS="$CONF_OPS --enable-f77"
+	CONF_OPS="$CONF_OPS --enable-fc"
+	CONF_OPS="$CONF_OPS --enable-cxx"
+	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
+
+	CC=ppu-gcc
+	CXX=ppu-c++
+	FC=ppu-gfortran
+	;;
+"cellxlc")
+	echo "Using confset=cellxlc"
+	CONF_OPS="--with-device=psp"
+	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
+	CONF_OPS="$CONF_OPS --enable-f77"
+	CONF_OPS="$CONF_OPS --enable-fc"
+	CONF_OPS="$CONF_OPS --enable-cxx"
+	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
+
+	CC='ppuxlc -q64'
+	CXX='ppuxlC -q64'
+	FC='ppuxlf -q64'
+	;;
+"none")
+	# No build
+	;;
+"user")
+	CONF_OPS=
+	;;
+"ch"[34]*)
+	echo "Using confset=${CONFSET}"
+	if test "$CONFSET" != "ch3" ; then
+		CONF_OPS="--with-device=${CONFSET}"
+		MODULEFILE_CONFSET="mpich"
+	fi
+	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
+	CONF_OPS="$CONF_OPS --enable-f77"
+	CONF_OPS="$CONF_OPS --enable-fc"
+	CONF_OPS="$CONF_OPS --enable-cxx"
+	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
+
+	CC=gcc
+	CXX=g++
+	FC=gfortran
+
+	ENABLE_HYDRA="true"
+	CHANNEL_DEVICE=`echo ${CONFSET} | cut -c 1-2`
+	;;
+*)
+	echo "Sorry. Unknown confset ${CONFSET}"
+	exit 1
+	;;
+esac
+
+test -n "$CC"  && CONF_OPS="$CONF_OPS 'CC=$CC'"
+test -n "$CXX" && CONF_OPS="$CONF_OPS 'CXX=$CXX'"
+test -n "$FC"  && CONF_OPS="$CONF_OPS 'FC=$FC'"
+test -n "$F77" && CONF_OPS="$CONF_OPS 'F77=$F77'"
+test -n "$AR"  && CONF_OPS="$CONF_OPS 'AR=$AR'"
+test -n "$RANLIB" && CONF_OPS="$CONF_OPS 'RANLIB=$RANLIB'"
 
 
 # Check whether --with-pscom-builtin was given.
@@ -3571,8 +3869,8 @@ fi
 
 	if test -x "${PSCOM_ALLIN_DIR}/../../scripts/vcversion" ; then
 		if ! test -d "${TOP_BUILDDIR}/pscom" ; then
-                        mkdir -p "${TOP_BUILDDIR}/pscom" 2>/dev/null
-                fi
+			mkdir -p "${TOP_BUILDDIR}/pscom" 2>/dev/null
+		fi
 		PSCOM_VC_VERSION=`${PSCOM_ALLIN_DIR}/../../scripts/vcversion -r ${PSCOM_ALLIN_DIR}/../.. -n`
 		echo "Including pscom version ${PSCOM_VC_VERSION}"
 		echo "#define VC_VERSION \"${PSCOM_VC_VERSION}\"" > "${TOP_BUILDDIR}/pscom/vc_version.h"
@@ -3637,6 +3935,51 @@ fi
 		as_fn_error $? "confset=$CONFSET does not allow for --with-pscom-allin" "$LINENO" 5
 	fi
 
+	# -- visibility ("protected") support --
+
+	# Does __attribute__ ((visibility ("protected"))) work with functions?
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking linker support for protected functions" >&5
+$as_echo_n "checking linker support for protected functions... " >&6; }
+if ${pscom_cv_protected_func+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat > conftest.c <<EOF
+		__attribute__ ((visibility("protected")))
+		int bar(void) { return 1; }
+EOF
+		pscom_cv_protected_func=no
+		if { ac_try='${CC-cc} -nostdlib -nostartfiles $no_ssp -fPIC -shared conftest.c -o conftest.so'
+  { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; }; then
+			cat > conftest.c <<EOF
+			extern int bar(void);
+			int main (void) { return bar(); }
+EOF
+			if { ac_try='${CC-cc} -nostdlib -nostartfiles $no_ssp conftest.c -o conftest conftest.so'
+  { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; }; then
+				pscom_cv_protected_func=yes
+			fi
+		fi
+		rm -f conftest.*
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $pscom_cv_protected_func" >&5
+$as_echo "$pscom_cv_protected_func" >&6; }
+
+	if test "$pscom_cv_protected_func" = "no"; then :
+  # AC_DEFINE([NO_PROTECTED_FUNC], [1], [Define to 1 if visibility ("protected") does not work on functions])
+		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DNO_PROTECTED_FUNC=1 -DENABLE_PLUGIN_LOADING=0"
+
+fi
+
+
 else
 
 	PSCOM_ALLIN="false"
@@ -3644,274 +3987,6 @@ else
 fi
 
 
-#Some influential environment variables:
-#  CC          C compiler command
-#  CFLAGS      C compiler flags
-#  LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
-#              nonstandard directory <lib dir>
-#  CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
-#              headers in a nonstandard directory <include dir>
-#  F77         Fortran 77 compiler command
-#  FFLAGS      Fortran 77 compiler flags
-#  FC          Fortran 90 compiler command
-#  FCFLAGS     Fortran 90 compiler flags
-#  CXX         C++ compiler command
-#  CXXFLAGS    C++ compiler flags
-#  CPP         C preprocessor
-#
-
-EXTRA_VERSION_INFO=""
-# CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-error-messages=generic"
-CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-fast=O3,ndebug"
-CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-cache"
-CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-lib-depend"
-CONF_OPS_COMMON="$CONF_OPS_COMMON --disable-rpath"
-CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-shared"
-CONF_OPS_COMMON="$CONF_OPS_COMMON --disable-static"
-MODULEFILE_CONFSET="$CONFSET"
-
-case $CONFSET in
-"devel")
-	echo "Using confset=devel"
-	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS --enable-cache"
-	CONF_OPS="$CONF_OPS --enable-g=all"
-	CONF_OPS="$CONF_OPS --enable-dependencies"
-	# CONF_OPS="$CONF_OPS --disable-f77"
-	# CONF_OPS="$CONF_OPS --disable-fc"
-	# CONF_OPS="$CONF_OPS --disable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	# CONF_OPS="$CONF_OPS --disable-mpe"
-	CONF_OPS="$CONF_OPS --enable-shared"
-	CONF_OPS="$CONF_OPS --disable-static"
-	CONF_OPS="$CONF_OPS --enable-error-checking=all"
-	CONF_OPS="$CONF_OPS --enable-strict" # Compile with -Wall and other checks.
-
-	CONF_OPS="$CONF_OPS"
-	;;
-"gcc"|\
-"default")
-	echo "Using confset=default"
-	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-cache"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-
-	CONF_OPS="$CONF_OPS CC=gcc CXX=g++"
-	if which gfortran >/dev/null 2>&1 ;then
-	   # found gfortran
-	   CONF_OPS="$CONF_OPS --enable-f77"
-	   CONF_OPS="$CONF_OPS --enable-fc"
-	   CONF_OPS="$CONF_OPS FC=gfortran"
-	fi
-	MODULEFILE_CONFSET=""
-	EXTRA_VERSION_INFO=" compiler: $(gcc --version|head -n 1)"
-
-	if test "$ENABLE_PROFILE" = "use" ; then
-		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -fprofile-use -fprofile-dir=$PROFILE_DIR -Wno-error=coverage-mismatch"
-	else
-		if test "$ENABLE_PROFILE" = "gen" ; then
-			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -fprofile-generate -fprofile-dir=$PROFILE_DIR"
-			# Fix me! Disable Fortran for avoiding issues when compiling with FDO enabled:
-			CONF_OPS=`echo "$CONF_OPS" | sed -e s/enable-f77/disable-fortran/g`
-		fi
-	fi
-	;;
-"icc"|\
-"intel")
-	echo "Using confset=intel"
-	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-f77"
-	CONF_OPS="$CONF_OPS --enable-fc"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-
-	CONF_OPS="$CONF_OPS CC=icc CXX=icpc"
-	# Append "-reentrancy threaded" to FC.
-	# FFLAGS, FCFLAGS, MPICHLIB_FCFLAGS, MPICHLIB_LDFLAGS and friends
-	# are not forwarded to the final linking with libtool which uses $(FC).
-	# "libtool -XCClinker" should be set somehow. Up to than we have
-	# '-reentrancy threaded' also inside mpif77, mpif90 and mpifort.
-	CONF_OPS="$CONF_OPS FC='ifort -reentrancy threaded'"
-	CONF_OPS="$CONF_OPS"
-	EXTRA_VERSION_INFO=" compiler: $(icc -V 2>&1 |head -n 1)"
-
-	if test "$ENABLE_PROFILE" = "use" ; then
-		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -prof-use -prof-dir=$PROFILE_DIR"
-        else
-                if test "$ENABLE_PROFILE" = "gen" ; then
-			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -prof-gen -prof-dir=$PROFILE_DIR"
-                fi
-        fi
-	;;
-"pgi")
-	echo "Using confset=pgi"
-	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-f77"
-	CONF_OPS="$CONF_OPS --enable-fc"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-
-	CONF_OPS="$CONF_OPS CC=pgcc CXX=pgc++ FC=pgf90"
-	CONF_OPS="$CONF_OPS"
-	;;
-"psc")
-	echo "Using confset=psc"
-	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-f77"
-	CONF_OPS="$CONF_OPS --enable-fc"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-
-	CONF_OPS="$CONF_OPS CC=pathcc CXX=pathCC FC=pathf90"
-	CONF_OPS="$CONF_OPS"
-	;;
-"micgcc")
-	echo "Using confset=micgcc"
-	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-
-	CONF_OPS="$CONF_OPS --host=x86_64-k1om-linux"
-
-	CONF_OPS="$CONF_OPS 'CC=x86_64-k1om-linux-gcc'"
-	CONF_OPS="$CONF_OPS 'CXX=x86_64-k1om-linux-g++'"
-	CONF_OPS="$CONF_OPS 'F77=x86_64-k1om-linux-gfortran'"
-	CONF_OPS="$CONF_OPS 'FC=x86_64-k1om-linux-gfortran'"
-	CONF_OPS="$CONF_OPS 'AR=x86_64-k1om-linux-ar'"
-	CONF_OPS="$CONF_OPS 'RANLIB=x86_64-k1om-linux-ranlib'"
-
-	# FIXME: check whether all of these are valid in mpich 3.0.4,
-	# they were gathered with 1.5a2
-	CONF_OPS="$CONF_OPS 'CROSS_F77_FALSE_VALUE=0'"
-	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_DOUBLE_PRECISION=8'"
-	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_INTEGER=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_REAL=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_F77_TRUE_VALUE=1'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_ADDRESS_KIND=8'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_ALL_INTEGER_MODELS=2,1,4,2,9,4,18,8,'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_DOUBLE_MODEL=15,307'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_KIND=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_MODEL=9'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_MODEL_MAP={2,1,1},{4,2,2},{9,4,4},{18,8,8},'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_OFFSET_KIND=8'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_REAL_MODEL=6,37'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_DOUBLE_PRECISION=8'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_INTEGER=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_REAL=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_MPI_STATUS_SIZE=5'"
-
-	CONF_OPS="$CONF_OPS"
-	EXTRA_VERSION_INFO=" compiler: $(x86_64-k1om-linux-gcc --version|head -n 1)"
-	MODULEFILE_CONFSET="mic"
-	;;
-"micintel")
-	echo "Using confset=micintel"
-	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-
-	# Get Performance
-	CONF_OPS="$CONF_OPS --enable-g=none"
-	CONF_OPS="$CONF_OPS --enable-error-checking=no"
-
-	CONF_OPS="$CONF_OPS --host=x86_64-k1om-linux"
-	CONF_OPS="$CONF_OPS 'CC=icc -mmic'"
-	CONF_OPS="$CONF_OPS 'CXX=icpc -mmic'"
-	CONF_OPS="$CONF_OPS 'F77=ifort -mmic'"
-	CONF_OPS="$CONF_OPS 'FC=ifort -mmic'"
-
-	# FIXME: check whether all of these are valid in mpich 3.0.4,
-	# they were gathered with 1.5a2
-	CONF_OPS="$CONF_OPS 'CROSS_F77_FALSE_VALUE=0'"
-	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_DOUBLE_PRECISION=8'"
-	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_INTEGER=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_REAL=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_F77_TRUE_VALUE=1'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_ADDRESS_KIND=8'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_ALL_INTEGER_MODELS=2,1,4,2,9,4,18,8,'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_DOUBLE_MODEL=15,307'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_KIND=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_MODEL=9'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_MODEL_MAP={2,1,1},{4,2,2},{9,4,4},{18,8,8},'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_OFFSET_KIND=8'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_REAL_MODEL=6,37'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_DOUBLE_PRECISION=8'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_INTEGER=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_REAL=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_MPI_STATUS_SIZE=5'"
-
-	CONF_OPS="$CONF_OPS"
-	EXTRA_VERSION_INFO=" compiler: $(icc -V 2>&1 |head -n 1)"
-	MODULEFILE_CONFSET="intel-mic"
-	;;
-"cellgcc")
-	echo "Using confset=cellgcc"
-	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-f77"
-	CONF_OPS="$CONF_OPS --enable-fc"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-
-	CONF_OPS="$CONF_OPS CC=ppu-gcc CXX=ppu-c++ FC=ppu-gfortran"
-	CONF_OPS="$CONF_OPS"
-	;;
-"cellxlc")
-	echo "Using confset=cellxlc"
-	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-f77"
-	CONF_OPS="$CONF_OPS --enable-fc"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-
-	CONF_OPS="$CONF_OPS CC='ppuxlc -q64' CXX='ppuxlC -q64' FC='ppuxlf -q64'"
-	CONF_OPS="$CONF_OPS"
-	;;
-"none")
-	# No build
-	;;
-"user")
-	CONF_OPS=
-	;;
-"ch"[34]*)
-	echo "Using confset=${CONFSET}"
-	if test "$CONFSET" != "ch3" ; then
-		CONF_OPS="--with-device=${CONFSET}"
-		MODULEFILE_CONFSET="mpich"
-	fi
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-f77"
-	CONF_OPS="$CONF_OPS --enable-fc"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-
-	CONF_OPS="$CONF_OPS CC=gcc CXX=g++ FC=gfortran"
-
-	ENABLE_HYDRA="true"
-	CHANNEL_DEVICE=`echo ${CONFSET} | cut -c 1-2`
-	;;
-*)
-	echo "Sorry. Unknown confset ${CONFSET}"
-	exit 1
-	;;
-esac
 
 
 # Check whether --with-threading was given.

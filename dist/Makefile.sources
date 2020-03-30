@@ -10510,9 +10510,11 @@ mpich2/test/mpi/parastation/Makefile.am \
 mpich2/test/mpi/parastation/Makefile.in \
 mpich2/test/mpi/parastation/acc_pairtype.c \
 mpich2/test/mpi/parastation/acc_vecsum.c \
+mpich2/test/mpi/parastation/bcast_root.c \
 mpich2/test/mpi/parastation/get_acc_loc.c \
 mpich2/test/mpi/parastation/get_acc_pairtype.c \
 mpich2/test/mpi/parastation/get_acc_shm_pairtype.c \
+mpich2/test/mpi/parastation/ibcast_root.c \
 mpich2/test/mpi/parastation/intercomm_anysrc.c \
 mpich2/test/mpi/parastation/intercomm_stress.c \
 mpich2/test/mpi/parastation/large_acc_flush_local.c \

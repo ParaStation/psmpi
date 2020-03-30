@@ -1378,7 +1378,6 @@ am__nodep
 AMDEPBACKSLASH
 AMDEP_FALSE
 AMDEP_TRUE
-am__quote
 am__include
 DEPDIR
 am__untar
@@ -1492,6 +1491,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -1510,7 +1510,8 @@ PACKAGE_VERSION
 PACKAGE_TARNAME
 PACKAGE_NAME
 PATH_SEPARATOR
-SHELL'
+SHELL
+am__quote'
 ac_subst_files='cc_shlib_conf
 f77_shlib_conf
 fc_shlib_conf
@@ -1734,6 +1735,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1986,6 +1988,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -2123,7 +2134,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -2276,6 +2287,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -6919,7 +6931,7 @@ $as_echo "$ac_cv_safe_to_define___extensions__" >&6; }
 
 
 
-am__api_version='1.15'
+am__api_version='1.16'
 
 # Find a good install program.  We prefer a C program (faster),
 # so one script is as good as another.  But avoid the broken or
@@ -7345,45 +7357,45 @@ DEPDIR="${am__leading_dot}deps"
 
 ac_config_commands="$ac_config_commands depfiles"
 
-
-am_make=${MAKE-make}
-cat > confinc << 'END'
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${MAKE-make} supports the include directive" >&5
+$as_echo_n "checking whether ${MAKE-make} supports the include directive... " >&6; }
+cat > confinc.mk << 'END'
 am__doit:
-	@echo this is the am__doit target
+	@echo this is the am__doit target >confinc.out
 .PHONY: am__doit
 END
-# If we don't find an include directive, just comment out the code.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for style of include used by $am_make" >&5
-$as_echo_n "checking for style of include used by $am_make... " >&6; }
 am__include="#"
 am__quote=
-_am_result=none
-# First try GNU make style include.
-echo "include confinc" > confmf
-# Ignore all kinds of additional output from 'make'.
-case `$am_make -s -f confmf 2> /dev/null` in #(
-*the\ am__doit\ target*)
-  am__include=include
-  am__quote=
-  _am_result=GNU
-  ;;
-esac
-# Now try BSD make style include.
-if test "$am__include" = "#"; then
-   echo '.include "confinc"' > confmf
-   case `$am_make -s -f confmf 2> /dev/null` in #(
-   *the\ am__doit\ target*)
-     am__include=.include
-     am__quote="\""
-     _am_result=BSD
+# BSD make does it like this.
+echo '.include "confinc.mk" # ignored' > confmf.BSD
+# Other make implementations (GNU, Solaris 10, AIX) do it like this.
+echo 'include confinc.mk # ignored' > confmf.GNU
+_am_result=no
+for s in GNU BSD; do
+  { echo "$as_me:$LINENO: ${MAKE-make} -f confmf.$s && cat confinc.out" >&5
+   (${MAKE-make} -f confmf.$s && cat confinc.out) >&5 2>&5
+   ac_status=$?
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); }
+  case $?:`cat confinc.out 2>/dev/null` in #(
+  '0:this is the am__doit target') :
+    case $s in #(
+  BSD) :
+    am__include='.include' am__quote='"' ;; #(
+  *) :
+    am__include='include' am__quote='' ;;
+esac ;; #(
+  *) :
      ;;
-   esac
-fi
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $_am_result" >&5
-$as_echo "$_am_result" >&6; }
-rm -f confinc confmf
+esac
+  if test "$am__include" != "#"; then
+    _am_result="yes ($s style)"
+    break
+  fi
+done
+rm -f confinc.* confmf.*
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ${_am_result}" >&5
+$as_echo "${_am_result}" >&6; }
 
 # Check whether --enable-dependency-tracking was given.
 if test "${enable_dependency_tracking+set}" = set; then :
@@ -7495,8 +7507,8 @@ MAKEINFO=${MAKEINFO-"${am_missing_run}makeinfo"}
 
 # For better backward compatibility.  To be removed once Automake 1.9.x
 # dies out for good.  For more background, see:
-# <http://lists.gnu.org/archive/html/automake/2012-07/msg00001.html>
-# <http://lists.gnu.org/archive/html/automake/2012-07/msg00014.html>
+# <https://lists.gnu.org/archive/html/automake/2012-07/msg00001.html>
+# <https://lists.gnu.org/archive/html/automake/2012-07/msg00014.html>
 mkdir_p='$(MKDIR_P)'
 
 # We need awk for the "check" target (and possibly the TAP driver).  The
@@ -7675,7 +7687,7 @@ END
 Aborting the configuration process, to ensure you take notice of the issue.
 
 You can download and install GNU coreutils to get an 'rm' implementation
-that behaves properly: <http://www.gnu.org/software/coreutils/>.
+that behaves properly: <https://www.gnu.org/software/coreutils/>.
 
 If you want to complete the configuration process using your problematic
 'rm' anyway, export the environment variable ACCEPT_INFERIOR_RM_PROGRAM
@@ -8990,7 +9002,7 @@ linux* | k*bsd*-gnu | kopensolaris*-gnu | gnu*)
   lt_cv_deplibs_check_method=pass_all
   ;;
 
-netbsd*)
+netbsd* | netbsdelf*-gnu)
   if echo __ELF__ | $CC -E - | $GREP __ELF__ > /dev/null; then
     lt_cv_deplibs_check_method='match_pattern /lib[^/]+(\.so\.[0-9]+\.[0-9]+|_pic\.a)$'
   else
@@ -9853,11 +9865,8 @@ _LT_EOF
   test $ac_status = 0; }; then
     # Now try to grab the symbols.
     nlist=conftest.nm
-    if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$NM conftest.$ac_objext \| "$lt_cv_sys_global_symbol_pipe" \> $nlist\""; } >&5
-  (eval $NM conftest.$ac_objext \| "$lt_cv_sys_global_symbol_pipe" \> $nlist) 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; } && test -s "$nlist"; then
+    $ECHO "$as_me:$LINENO: $NM conftest.$ac_objext | $lt_cv_sys_global_symbol_pipe > $nlist" >&5
+    if eval "$NM" conftest.$ac_objext \| "$lt_cv_sys_global_symbol_pipe" \> $nlist 2>&5 && test -s "$nlist"; then
       # Try sorting and uniquifying the output.
       if sort "$nlist" | uniq > "$nlist"T; then
 	mv -f "$nlist"T "$nlist"
@@ -11939,12 +11948,6 @@ lt_prog_compiler_static=
 	lt_prog_compiler_pic='-KPIC'
 	lt_prog_compiler_static='-static'
         ;;
-      # flang / f18
-      flang* | f18*)
-       lt_prog_compiler_wl='-Wl,'
-       lt_prog_compiler_pic='-fPIC'
-       lt_prog_compiler_static='-static'
-        ;;
       # icc used to be incompatible with GCC.
       # ICC 10 doesn't accept -KPIC any more.
       icc* | ifort*)
@@ -11988,10 +11991,6 @@ lt_prog_compiler_static=
 	lt_prog_compiler_pic='-qpic'
 	lt_prog_compiler_static='-qstaticlink'
 	;;
-      armclang* | armclang++* | armflang*)
-        # ARM LLVM C/C++/Fortran
-        lt_prog_compiler_wl='-Wl,'
-        ;;
       *)
 	case `$CC -V 2>&1 | sed 5q` in
 	*Sun\ Ceres\ Fortran* | *Sun*Fortran*\ [1-7].* | *Sun*Fortran*\ 8.[0-3]*)
@@ -12000,7 +11999,7 @@ lt_prog_compiler_static=
 	  lt_prog_compiler_static='-Bstatic'
 	  lt_prog_compiler_wl=''
 	  ;;
-	*Sun\ F* | *Sun*Fortran* | *Studio*Fortran*)
+	*Sun\ F* | *Sun*Fortran*)
 	  lt_prog_compiler_pic='-KPIC'
 	  lt_prog_compiler_static='-Bstatic'
 	  lt_prog_compiler_wl='-Qoption ld '
@@ -12425,6 +12424,9 @@ $as_echo_n "checking whether the $compiler linker ($LD) supports shared librarie
   openbsd* | bitrig*)
     with_gnu_ld=no
     ;;
+  linux* | k*bsd*-gnu | gnu*)
+    link_all_deplibs=no
+    ;;
   esac
 
   ld_shlibs=yes
@@ -12645,7 +12647,7 @@ _LT_EOF
 	  whole_archive_flag_spec='$wl--whole-archive`new_convenience=; for conv in $convenience\"\"; do test -z \"$conv\" || new_convenience=\"$new_convenience,$conv\"; done; func_echo_all \"$new_convenience\"` $wl--no-whole-archive'
 	  compiler_needs_object=yes
 	  tmp_sharedflag='-G' ;;
-	*Sun\ F* | *Sun*Fortran* | *Studio*Fortran*)
+	*Sun\ F*)			# Sun Fortran 8.3
 	  tmp_sharedflag='-G' ;;
 	esac
 	archive_cmds='$CC '"$tmp_sharedflag""$tmp_addflag"' $libobjs $deplibs $compiler_flags $wl-soname $wl$soname -o $lib'
@@ -12662,27 +12664,16 @@ _LT_EOF
 	  export_dynamic_flag_spec='-rdynamic'
 	  ;;
 	xlf* | bgf* | bgxlf* | mpixlf*)
-          XLF_VERSION=$($CC -qversion 2>/dev/null | sed 1q | sed -e "s+^.*V++" | sed -e "s+\..*++")
-          if test $XLF_VERSION -ge 13; then
-              archive_cmds='$CC -qmkshrobj $libobjs $deplibs $compiler_flags $wl-soname $wl$soname -o $lib'
-              if test yes = "$supports_anon_versioning"; then
-                archive_expsym_cmds='echo "{ global:" > $output_objdir/$libname.ver~
-                  cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
-                  echo "local: *; };" >> $output_objdir/$libname.ver~
-                  $CC -qmkshrobj $libobjs $deplibs $compiler_flags $wl-soname $wl$soname $wl-version-script $wl$output_objdir/$libname.ver -o $lib'
-              fi
-          else
-              # IBM XL Fortran 10.1 on PPC cannot create shared libs itself
-              whole_archive_flag_spec='--whole-archive$convenience --no-whole-archive'
-              hardcode_libdir_flag_spec='$wl-rpath $wl$libdir'
-              archive_cmds='$LD -shared $libobjs $deplibs $linker_flags -soname $soname -o $lib'
-              if test yes = "$supports_anon_versioning"; then
-                archive_expsym_cmds='echo "{ global:" > $output_objdir/$libname.ver~
-                  cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
-                  echo "local: *; };" >> $output_objdir/$libname.ver~
-                  $LD -shared $libobjs $deplibs $linker_flags -soname $soname -version-script $output_objdir/$libname.ver -o $lib'
-              fi
-          fi
+	  # IBM XL Fortran 10.1 on PPC cannot create shared libs itself
+	  whole_archive_flag_spec='--whole-archive$convenience --no-whole-archive'
+	  hardcode_libdir_flag_spec='$wl-rpath $wl$libdir'
+	  archive_cmds='$LD -shared $libobjs $deplibs $linker_flags -soname $soname -o $lib'
+	  if test yes = "$supports_anon_versioning"; then
+	    archive_expsym_cmds='echo "{ global:" > $output_objdir/$libname.ver~
+              cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
+              echo "local: *; };" >> $output_objdir/$libname.ver~
+              $LD -shared $libobjs $deplibs $linker_flags -soname $soname -version-script $output_objdir/$libname.ver -o $lib'
+	  fi
 	  ;;
 	esac
       else
@@ -12690,7 +12681,7 @@ _LT_EOF
       fi
       ;;
 
-    netbsd*)
+    netbsd* | netbsdelf*-gnu)
       if echo __ELF__ | $CC -E - | $GREP __ELF__ >/dev/null; then
 	archive_cmds='$LD -Bshareable $libobjs $deplibs $linker_flags -o $lib'
 	wlarc=
@@ -13158,10 +13149,7 @@ fi
   link_all_deplibs=yes
   allow_undefined_flag=$_lt_dar_allow_undefined
   case $cc_basename in
-     ifort*|nagfor*)
-        lt_prog_compiler_wl='-Wl,'
-        _lt_dar_can_shared=yes
-      ;;
+     ifort*|nagfor*) _lt_dar_can_shared=yes ;;
      *) _lt_dar_can_shared=$GCC ;;
   esac
   if test yes = "$_lt_dar_can_shared"; then
@@ -13363,6 +13351,7 @@ $as_echo "$lt_cv_irix_exported_symbol" >&6; }
 	if test yes = "$lt_cv_irix_exported_symbol"; then
           archive_expsym_cmds='$CC -shared $pic_flag $libobjs $deplibs $compiler_flags $wl-soname $wl$soname `test -n "$verstring" && func_echo_all "$wl-set_version $wl$verstring"` $wl-update_registry $wl$output_objdir/so_locations $wl-exports_file $wl$export_symbols -o $lib'
 	fi
+	link_all_deplibs=no
       else
 	archive_cmds='$CC -shared $libobjs $deplibs $compiler_flags -soname $soname `test -n "$verstring" && func_echo_all "-set_version $verstring"` -update_registry $output_objdir/so_locations -o $lib'
 	archive_expsym_cmds='$CC -shared $libobjs $deplibs $compiler_flags -soname $soname `test -n "$verstring" && func_echo_all "-set_version $verstring"` -update_registry $output_objdir/so_locations -exports_file $export_symbols -o $lib'
@@ -13384,7 +13373,7 @@ $as_echo "$lt_cv_irix_exported_symbol" >&6; }
       esac
       ;;
 
-    netbsd*)
+    netbsd* | netbsdelf*-gnu)
       if echo __ELF__ | $CC -E - | $GREP __ELF__ >/dev/null; then
 	archive_cmds='$LD -Bshareable -o $lib $libobjs $deplibs $linker_flags'  # a.out
       else
@@ -14485,50 +14474,9 @@ fi
   # 'ldconfig -N -X -v | grep ^/' on 64bit Fedora does not report /usr/lib64,
   # even though it is searched at run-time.  Try to do the best guess by
   # appending ld.so.conf contents (and includes) to the search path.
-
-  # There is no easy way to reliably detect the sys dlsearch path. We will first
-  # assume ldconfig reports the path correctly, but check it with the current
-  # ld cache. If any cached path is not present in the generated path_spec, then
-  # we know ldconfig is bad and should manually parse the ld.so.conf files.
-  # Note the reported paths can be a superset of the cached paths.
-  # The catch is that the default path may not be in the ld.so.conf. We have to
-  # add any missing one back to the path_spec (from the cached paths).
-
-  if test -x /sbin/ldconfig; then
-    sys_lib_dlsearch_path_spec=`/sbin/ldconfig -N -X -v 2>/dev/null | grep ^/ | sed -e 's/:.*//g' | tr '\n' ' '`
-    cached_lib_dlsearch_path=`/sbin/ldconfig -p | sed -e 's/.*=> //g' | grep '^/' | while read p; do dirname $p; done | sort | uniq | tr '\n' ' '`
-    for p in `echo $cached_lib_dlsearch_path`; do
-      case "$sys_lib_dlsearch_path_spec" in
-        *$p*)
-            bad_ldconfig=no
-            ;;
-           *)
-            # ldconfig is bad if cached path is not reported
-            bad_ldconfig=yes
-            break
-            ;;
-      esac
-    done
-  else
-    bad_ldconfig=yes
-  fi
-
-  if test "$bad_ldconfig" = "yes"; then
-    if test -f /etc/ld.so.conf; then
-      lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-      sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
-    fi
-
-    # catch anything that in the cached path but not in the conf files
-    for p in `echo $cached_lib_dlsearch_path`; do
-      case "$sys_lib_dlsearch_path_spec" in
-        *$p*)
-            ;;
-           *)
-            sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $p"
-            ;;
-      esac
-    done
+  if test -f /etc/ld.so.conf; then
+    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
+    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -14538,6 +14486,18 @@ fi
   # people can always --disable-shared, the test was removed, and we
   # assume the GNU/Linux dynamic linker is in use.
   dynamic_linker='GNU/Linux ld.so'
+  ;;
+
+netbsdelf*-gnu)
+  version_type=linux
+  need_lib_prefix=no
+  need_version=no
+  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major ${libname}${shared_ext}'
+  soname_spec='${libname}${release}${shared_ext}$major'
+  shlibpath_var=LD_LIBRARY_PATH
+  shlibpath_overrides_runpath=no
+  hardcode_into_libs=yes
+  dynamic_linker='NetBSD ld.elf_so'
   ;;
 
 netbsd*)
@@ -16421,7 +16381,7 @@ with_gnu_ld=$lt_cv_prog_gnu_ld
       # Commands to make compiler produce verbose output that lists
       # what "hidden" libraries, object files and flags are used when
       # linking a shared library.
-      output_verbose_link_cmd='$CC -shared $CFLAGS -v conftest.$objext 2>&1 | $GREP -v "^Configured with:" | $GREP "\-L"'
+      output_verbose_link_cmd='$CC -shared $CFLAGS -v conftest.$objext 2>&1 | $GREP -v "^Configured with:" | $GREP " \-L"'
 
     else
       GXX=no
@@ -16802,10 +16762,7 @@ fi
   link_all_deplibs_CXX=yes
   allow_undefined_flag_CXX=$_lt_dar_allow_undefined
   case $cc_basename in
-     ifort*|nagfor*)
-        lt_prog_compiler_wl_CXX='-Wl,'
-        _lt_dar_can_shared=yes
-      ;;
+     ifort*|nagfor*) _lt_dar_can_shared=yes ;;
      *) _lt_dar_can_shared=$GCC ;;
   esac
   if test yes = "$_lt_dar_can_shared"; then
@@ -16916,7 +16873,7 @@ fi
             # explicitly linking system object files so we need to strip them
             # from the output so that they don't get included in the library
             # dependencies.
-            output_verbose_link_cmd='templist=`($CC -b $CFLAGS -v conftest.$objext 2>&1) | $EGREP "\-L"`; list= ; for z in $templist; do case $z in conftest.$objext) list="$list $z";; *.$objext);; *) list="$list $z";;esac; done; func_echo_all "$list"'
+            output_verbose_link_cmd='templist=`($CC -b $CFLAGS -v conftest.$objext 2>&1) | $EGREP " \-L"`; list= ; for z in $templist; do case $z in conftest.$objext) list="$list $z";; *.$objext);; *) list="$list $z";;esac; done; func_echo_all "$list"'
             ;;
           *)
             if test yes = "$GXX"; then
@@ -16981,7 +16938,7 @@ fi
 	    # explicitly linking system object files so we need to strip them
 	    # from the output so that they don't get included in the library
 	    # dependencies.
-	    output_verbose_link_cmd='templist=`($CC -b $CFLAGS -v conftest.$objext 2>&1) | $GREP "\-L"`; list= ; for z in $templist; do case $z in conftest.$objext) list="$list $z";; *.$objext);; *) list="$list $z";;esac; done; func_echo_all "$list"'
+	    output_verbose_link_cmd='templist=`($CC -b $CFLAGS -v conftest.$objext 2>&1) | $GREP " \-L"`; list= ; for z in $templist; do case $z in conftest.$objext) list="$list $z";; *.$objext);; *) list="$list $z";;esac; done; func_echo_all "$list"'
 	    ;;
           *)
 	    if test yes = "$GXX"; then
@@ -17320,7 +17277,7 @@ fi
 	      # Commands to make compiler produce verbose output that lists
 	      # what "hidden" libraries, object files and flags are used when
 	      # linking a shared library.
-	      output_verbose_link_cmd='$CC -shared $CFLAGS -v conftest.$objext 2>&1 | $GREP -v "^Configured with:" | $GREP "\-L"'
+	      output_verbose_link_cmd='$CC -shared $CFLAGS -v conftest.$objext 2>&1 | $GREP -v "^Configured with:" | $GREP " \-L"'
 
 	    else
 	      # FIXME: insert proper C++ library support
@@ -17404,7 +17361,7 @@ fi
 	        # Commands to make compiler produce verbose output that lists
 	        # what "hidden" libraries, object files and flags are used when
 	        # linking a shared library.
-	        output_verbose_link_cmd='$CC -shared $CFLAGS -v conftest.$objext 2>&1 | $GREP -v "^Configured with:" | $GREP "\-L"'
+	        output_verbose_link_cmd='$CC -shared $CFLAGS -v conftest.$objext 2>&1 | $GREP -v "^Configured with:" | $GREP " \-L"'
 	      else
 	        # g++ 2.7 appears to require '-G' NOT '-shared' on this
 	        # platform.
@@ -17415,7 +17372,7 @@ fi
 	        # Commands to make compiler produce verbose output that lists
 	        # what "hidden" libraries, object files and flags are used when
 	        # linking a shared library.
-	        output_verbose_link_cmd='$CC -G $CFLAGS -v conftest.$objext 2>&1 | $GREP -v "^Configured with:" | $GREP "\-L"'
+	        output_verbose_link_cmd='$CC -G $CFLAGS -v conftest.$objext 2>&1 | $GREP -v "^Configured with:" | $GREP " \-L"'
 	      fi
 
 	      hardcode_libdir_flag_spec_CXX='$wl-R $wl$libdir'
@@ -17928,7 +17885,7 @@ lt_prog_compiler_static_CXX=
 	    ;;
 	esac
 	;;
-      netbsd*)
+      netbsd* | netbsdelf*-gnu)
 	;;
       *qnx* | *nto*)
         # QNX uses GNU C++, but need to define -shared option too, otherwise
@@ -18302,6 +18259,9 @@ $as_echo_n "checking whether the $compiler linker ($LD) supports shared librarie
       exclude_expsyms_CXX='[_]+GLOBAL_OFFSET_TABLE_|[_]+GLOBAL__[FID]_.*|[_]+head_[A-Za-z0-9_]+_dll|[A-Za-z0-9_]+_dll_iname'
       ;;
     esac
+    ;;
+  linux* | k*bsd*-gnu | gnu*)
+    link_all_deplibs_CXX=no
     ;;
   *)
     export_symbols_cmds_CXX='$NM $libobjs $convenience | $global_symbol_pipe | $SED '\''s/.* //'\'' | sort | uniq > $export_symbols'
@@ -18982,50 +18942,9 @@ fi
   # 'ldconfig -N -X -v | grep ^/' on 64bit Fedora does not report /usr/lib64,
   # even though it is searched at run-time.  Try to do the best guess by
   # appending ld.so.conf contents (and includes) to the search path.
-
-  # There is no easy way to reliably detect the sys dlsearch path. We will first
-  # assume ldconfig reports the path correctly, but check it with the current
-  # ld cache. If any cached path is not present in the generated path_spec, then
-  # we know ldconfig is bad and should manually parse the ld.so.conf files.
-  # Note the reported paths can be a superset of the cached paths.
-  # The catch is that the default path may not be in the ld.so.conf. We have to
-  # add any missing one back to the path_spec (from the cached paths).
-
-  if test -x /sbin/ldconfig; then
-    sys_lib_dlsearch_path_spec=`/sbin/ldconfig -N -X -v 2>/dev/null | grep ^/ | sed -e 's/:.*//g' | tr '\n' ' '`
-    cached_lib_dlsearch_path=`/sbin/ldconfig -p | sed -e 's/.*=> //g' | grep '^/' | while read p; do dirname $p; done | sort | uniq | tr '\n' ' '`
-    for p in `echo $cached_lib_dlsearch_path`; do
-      case "$sys_lib_dlsearch_path_spec" in
-        *$p*)
-            bad_ldconfig=no
-            ;;
-           *)
-            # ldconfig is bad if cached path is not reported
-            bad_ldconfig=yes
-            break
-            ;;
-      esac
-    done
-  else
-    bad_ldconfig=yes
-  fi
-
-  if test "$bad_ldconfig" = "yes"; then
-    if test -f /etc/ld.so.conf; then
-      lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-      sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
-    fi
-
-    # catch anything that in the cached path but not in the conf files
-    for p in `echo $cached_lib_dlsearch_path`; do
-      case "$sys_lib_dlsearch_path_spec" in
-        *$p*)
-            ;;
-           *)
-            sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $p"
-            ;;
-      esac
-    done
+  if test -f /etc/ld.so.conf; then
+    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
+    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -19035,6 +18954,18 @@ fi
   # people can always --disable-shared, the test was removed, and we
   # assume the GNU/Linux dynamic linker is in use.
   dynamic_linker='GNU/Linux ld.so'
+  ;;
+
+netbsdelf*-gnu)
+  version_type=linux
+  need_lib_prefix=no
+  need_version=no
+  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major ${libname}${shared_ext}'
+  soname_spec='${libname}${release}${shared_ext}$major'
+  shlibpath_var=LD_LIBRARY_PATH
+  shlibpath_overrides_runpath=no
+  hardcode_into_libs=yes
+  dynamic_linker='NetBSD ld.elf_so'
   ;;
 
 netbsd*)
@@ -20055,12 +19986,6 @@ lt_prog_compiler_static_FC=
 	lt_prog_compiler_pic_FC='-KPIC'
 	lt_prog_compiler_static_FC='-static'
         ;;
-      # flang / f18
-      flang* | f18*)
-       lt_prog_compiler_wl_FC='-Wl,'
-       lt_prog_compiler_pic_FC='-fPIC'
-       lt_prog_compiler_static_FC='-static'
-        ;;
       # icc used to be incompatible with GCC.
       # ICC 10 doesn't accept -KPIC any more.
       icc* | ifort*)
@@ -20104,10 +20029,6 @@ lt_prog_compiler_static_FC=
 	lt_prog_compiler_pic_FC='-qpic'
 	lt_prog_compiler_static_FC='-qstaticlink'
 	;;
-      armclang* | armclang++* | armflang*)
-        # ARM LLVM C/C++/Fortran
-        lt_prog_compiler_wl_FC='-Wl,'
-        ;;
       *)
 	case `$CC -V 2>&1 | sed 5q` in
 	*Sun\ Ceres\ Fortran* | *Sun*Fortran*\ [1-7].* | *Sun*Fortran*\ 8.[0-3]*)
@@ -20116,7 +20037,7 @@ lt_prog_compiler_static_FC=
 	  lt_prog_compiler_static_FC='-Bstatic'
 	  lt_prog_compiler_wl_FC=''
 	  ;;
-	*Sun\ F* | *Sun*Fortran* | *Studio*Fortran*)
+	*Sun\ F* | *Sun*Fortran*)
 	  lt_prog_compiler_pic_FC='-KPIC'
 	  lt_prog_compiler_static_FC='-Bstatic'
 	  lt_prog_compiler_wl_FC='-Qoption ld '
@@ -20526,6 +20447,9 @@ $as_echo_n "checking whether the $compiler linker ($LD) supports shared librarie
   openbsd* | bitrig*)
     with_gnu_ld=no
     ;;
+  linux* | k*bsd*-gnu | gnu*)
+    link_all_deplibs_FC=no
+    ;;
   esac
 
   ld_shlibs_FC=yes
@@ -20746,7 +20670,7 @@ _LT_EOF
 	  whole_archive_flag_spec_FC='$wl--whole-archive`new_convenience=; for conv in $convenience\"\"; do test -z \"$conv\" || new_convenience=\"$new_convenience,$conv\"; done; func_echo_all \"$new_convenience\"` $wl--no-whole-archive'
 	  compiler_needs_object_FC=yes
 	  tmp_sharedflag='-G' ;;
-	*Sun\ F* | *Sun*Fortran* | *Studio*Fortran*)
+	*Sun\ F*)			# Sun Fortran 8.3
 	  tmp_sharedflag='-G' ;;
 	esac
 	archive_cmds_FC='$CC '"$tmp_sharedflag""$tmp_addflag"' $libobjs $deplibs $compiler_flags $wl-soname $wl$soname -o $lib'
@@ -20763,27 +20687,16 @@ _LT_EOF
 	  export_dynamic_flag_spec_FC='-rdynamic'
 	  ;;
 	xlf* | bgf* | bgxlf* | mpixlf*)
-          XLF_VERSION=$($CC -qversion 2>/dev/null | sed 1q | sed -e "s+^.*V++" | sed -e "s+\..*++")
-          if test $XLF_VERSION -ge 13; then
-              archive_cmds_FC='$CC -qmkshrobj $libobjs $deplibs $compiler_flags $wl-soname $wl$soname -o $lib'
-              if test yes = "$supports_anon_versioning"; then
-                archive_expsym_cmds_FC='echo "{ global:" > $output_objdir/$libname.ver~
-                  cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
-                  echo "local: *; };" >> $output_objdir/$libname.ver~
-                  $CC -qmkshrobj $libobjs $deplibs $compiler_flags $wl-soname $wl$soname $wl-version-script $wl$output_objdir/$libname.ver -o $lib'
-              fi
-          else
-              # IBM XL Fortran 10.1 on PPC cannot create shared libs itself
-              whole_archive_flag_spec_FC='--whole-archive$convenience --no-whole-archive'
-              hardcode_libdir_flag_spec_FC='$wl-rpath $wl$libdir'
-              archive_cmds_FC='$LD -shared $libobjs $deplibs $linker_flags -soname $soname -o $lib'
-              if test yes = "$supports_anon_versioning"; then
-                archive_expsym_cmds_FC='echo "{ global:" > $output_objdir/$libname.ver~
-                  cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
-                  echo "local: *; };" >> $output_objdir/$libname.ver~
-                  $LD -shared $libobjs $deplibs $linker_flags -soname $soname -version-script $output_objdir/$libname.ver -o $lib'
-              fi
-          fi
+	  # IBM XL Fortran 10.1 on PPC cannot create shared libs itself
+	  whole_archive_flag_spec_FC='--whole-archive$convenience --no-whole-archive'
+	  hardcode_libdir_flag_spec_FC='$wl-rpath $wl$libdir'
+	  archive_cmds_FC='$LD -shared $libobjs $deplibs $linker_flags -soname $soname -o $lib'
+	  if test yes = "$supports_anon_versioning"; then
+	    archive_expsym_cmds_FC='echo "{ global:" > $output_objdir/$libname.ver~
+              cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
+              echo "local: *; };" >> $output_objdir/$libname.ver~
+              $LD -shared $libobjs $deplibs $linker_flags -soname $soname -version-script $output_objdir/$libname.ver -o $lib'
+	  fi
 	  ;;
 	esac
       else
@@ -20791,7 +20704,7 @@ _LT_EOF
       fi
       ;;
 
-    netbsd*)
+    netbsd* | netbsdelf*-gnu)
       if echo __ELF__ | $CC -E - | $GREP __ELF__ >/dev/null; then
 	archive_cmds_FC='$LD -Bshareable $libobjs $deplibs $linker_flags -o $lib'
 	wlarc=
@@ -21247,10 +21160,7 @@ fi
   link_all_deplibs_FC=yes
   allow_undefined_flag_FC=$_lt_dar_allow_undefined
   case $cc_basename in
-     ifort*|nagfor*)
-        lt_prog_compiler_wl_FC='-Wl,'
-        _lt_dar_can_shared=yes
-      ;;
+     ifort*|nagfor*) _lt_dar_can_shared=yes ;;
      *) _lt_dar_can_shared=$GCC ;;
   esac
   if test yes = "$_lt_dar_can_shared"; then
@@ -21414,6 +21324,7 @@ $as_echo "$lt_cv_irix_exported_symbol" >&6; }
 	if test yes = "$lt_cv_irix_exported_symbol"; then
           archive_expsym_cmds_FC='$CC -shared $pic_flag $libobjs $deplibs $compiler_flags $wl-soname $wl$soname `test -n "$verstring" && func_echo_all "$wl-set_version $wl$verstring"` $wl-update_registry $wl$output_objdir/so_locations $wl-exports_file $wl$export_symbols -o $lib'
 	fi
+	link_all_deplibs_FC=no
       else
 	archive_cmds_FC='$CC -shared $libobjs $deplibs $compiler_flags -soname $soname `test -n "$verstring" && func_echo_all "-set_version $verstring"` -update_registry $output_objdir/so_locations -o $lib'
 	archive_expsym_cmds_FC='$CC -shared $libobjs $deplibs $compiler_flags -soname $soname `test -n "$verstring" && func_echo_all "-set_version $verstring"` -update_registry $output_objdir/so_locations -exports_file $export_symbols -o $lib'
@@ -21435,7 +21346,7 @@ $as_echo "$lt_cv_irix_exported_symbol" >&6; }
       esac
       ;;
 
-    netbsd*)
+    netbsd* | netbsdelf*-gnu)
       if echo __ELF__ | $CC -E - | $GREP __ELF__ >/dev/null; then
 	archive_cmds_FC='$LD -Bshareable -o $lib $libobjs $deplibs $linker_flags'  # a.out
       else
@@ -22358,50 +22269,9 @@ fi
   # 'ldconfig -N -X -v | grep ^/' on 64bit Fedora does not report /usr/lib64,
   # even though it is searched at run-time.  Try to do the best guess by
   # appending ld.so.conf contents (and includes) to the search path.
-
-  # There is no easy way to reliably detect the sys dlsearch path. We will first
-  # assume ldconfig reports the path correctly, but check it with the current
-  # ld cache. If any cached path is not present in the generated path_spec, then
-  # we know ldconfig is bad and should manually parse the ld.so.conf files.
-  # Note the reported paths can be a superset of the cached paths.
-  # The catch is that the default path may not be in the ld.so.conf. We have to
-  # add any missing one back to the path_spec (from the cached paths).
-
-  if test -x /sbin/ldconfig; then
-    sys_lib_dlsearch_path_spec=`/sbin/ldconfig -N -X -v 2>/dev/null | grep ^/ | sed -e 's/:.*//g' | tr '\n' ' '`
-    cached_lib_dlsearch_path=`/sbin/ldconfig -p | sed -e 's/.*=> //g' | grep '^/' | while read p; do dirname $p; done | sort | uniq | tr '\n' ' '`
-    for p in `echo $cached_lib_dlsearch_path`; do
-      case "$sys_lib_dlsearch_path_spec" in
-        *$p*)
-            bad_ldconfig=no
-            ;;
-           *)
-            # ldconfig is bad if cached path is not reported
-            bad_ldconfig=yes
-            break
-            ;;
-      esac
-    done
-  else
-    bad_ldconfig=yes
-  fi
-
-  if test "$bad_ldconfig" = "yes"; then
-    if test -f /etc/ld.so.conf; then
-      lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-      sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
-    fi
-
-    # catch anything that in the cached path but not in the conf files
-    for p in `echo $cached_lib_dlsearch_path`; do
-      case "$sys_lib_dlsearch_path_spec" in
-        *$p*)
-            ;;
-           *)
-            sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $p"
-            ;;
-      esac
-    done
+  if test -f /etc/ld.so.conf; then
+    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
+    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -22411,6 +22281,18 @@ fi
   # people can always --disable-shared, the test was removed, and we
   # assume the GNU/Linux dynamic linker is in use.
   dynamic_linker='GNU/Linux ld.so'
+  ;;
+
+netbsdelf*-gnu)
+  version_type=linux
+  need_lib_prefix=no
+  need_version=no
+  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major ${libname}${shared_ext}'
+  soname_spec='${libname}${release}${shared_ext}$major'
+  shlibpath_var=LD_LIBRARY_PATH
+  shlibpath_overrides_runpath=no
+  hardcode_into_libs=yes
+  dynamic_linker='NetBSD ld.elf_so'
   ;;
 
 netbsd*)
@@ -23329,12 +23211,6 @@ lt_prog_compiler_static_F77=
 	lt_prog_compiler_pic_F77='-KPIC'
 	lt_prog_compiler_static_F77='-static'
         ;;
-      # flang / f18
-      flang* | f18*)
-       lt_prog_compiler_wl_F77='-Wl,'
-       lt_prog_compiler_pic_F77='-fPIC'
-       lt_prog_compiler_static_F77='-static'
-        ;;
       # icc used to be incompatible with GCC.
       # ICC 10 doesn't accept -KPIC any more.
       icc* | ifort*)
@@ -23378,10 +23254,6 @@ lt_prog_compiler_static_F77=
 	lt_prog_compiler_pic_F77='-qpic'
 	lt_prog_compiler_static_F77='-qstaticlink'
 	;;
-      armclang* | armclang++* | armflang*)
-        # ARM LLVM C/C++/Fortran
-        lt_prog_compiler_wl_F77='-Wl,'
-        ;;
       *)
 	case `$CC -V 2>&1 | sed 5q` in
 	*Sun\ Ceres\ Fortran* | *Sun*Fortran*\ [1-7].* | *Sun*Fortran*\ 8.[0-3]*)
@@ -23390,7 +23262,7 @@ lt_prog_compiler_static_F77=
 	  lt_prog_compiler_static_F77='-Bstatic'
 	  lt_prog_compiler_wl_F77=''
 	  ;;
-	*Sun\ F* | *Sun*Fortran* | *Studio*Fortran*)
+	*Sun\ F* | *Sun*Fortran*)
 	  lt_prog_compiler_pic_F77='-KPIC'
 	  lt_prog_compiler_static_F77='-Bstatic'
 	  lt_prog_compiler_wl_F77='-Qoption ld '
@@ -23800,6 +23672,9 @@ $as_echo_n "checking whether the $compiler linker ($LD) supports shared librarie
   openbsd* | bitrig*)
     with_gnu_ld=no
     ;;
+  linux* | k*bsd*-gnu | gnu*)
+    link_all_deplibs_F77=no
+    ;;
   esac
 
   ld_shlibs_F77=yes
@@ -24020,7 +23895,7 @@ _LT_EOF
 	  whole_archive_flag_spec_F77='$wl--whole-archive`new_convenience=; for conv in $convenience\"\"; do test -z \"$conv\" || new_convenience=\"$new_convenience,$conv\"; done; func_echo_all \"$new_convenience\"` $wl--no-whole-archive'
 	  compiler_needs_object_F77=yes
 	  tmp_sharedflag='-G' ;;
-	*Sun\ F* | *Sun*Fortran* | *Studio*Fortran*)
+	*Sun\ F*)			# Sun Fortran 8.3
 	  tmp_sharedflag='-G' ;;
 	esac
 	archive_cmds_F77='$CC '"$tmp_sharedflag""$tmp_addflag"' $libobjs $deplibs $compiler_flags $wl-soname $wl$soname -o $lib'
@@ -24037,27 +23912,16 @@ _LT_EOF
 	  export_dynamic_flag_spec_F77='-rdynamic'
 	  ;;
 	xlf* | bgf* | bgxlf* | mpixlf*)
-          XLF_VERSION=$($CC -qversion 2>/dev/null | sed 1q | sed -e "s+^.*V++" | sed -e "s+\..*++")
-          if test $XLF_VERSION -ge 13; then
-              archive_cmds_F77='$CC -qmkshrobj $libobjs $deplibs $compiler_flags $wl-soname $wl$soname -o $lib'
-              if test yes = "$supports_anon_versioning"; then
-                archive_expsym_cmds_F77='echo "{ global:" > $output_objdir/$libname.ver~
-                  cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
-                  echo "local: *; };" >> $output_objdir/$libname.ver~
-                  $CC -qmkshrobj $libobjs $deplibs $compiler_flags $wl-soname $wl$soname $wl-version-script $wl$output_objdir/$libname.ver -o $lib'
-              fi
-          else
-              # IBM XL Fortran 10.1 on PPC cannot create shared libs itself
-              whole_archive_flag_spec_F77='--whole-archive$convenience --no-whole-archive'
-              hardcode_libdir_flag_spec_F77='$wl-rpath $wl$libdir'
-              archive_cmds_F77='$LD -shared $libobjs $deplibs $linker_flags -soname $soname -o $lib'
-              if test yes = "$supports_anon_versioning"; then
-                archive_expsym_cmds_F77='echo "{ global:" > $output_objdir/$libname.ver~
-                  cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
-                  echo "local: *; };" >> $output_objdir/$libname.ver~
-                  $LD -shared $libobjs $deplibs $linker_flags -soname $soname -version-script $output_objdir/$libname.ver -o $lib'
-              fi
-          fi
+	  # IBM XL Fortran 10.1 on PPC cannot create shared libs itself
+	  whole_archive_flag_spec_F77='--whole-archive$convenience --no-whole-archive'
+	  hardcode_libdir_flag_spec_F77='$wl-rpath $wl$libdir'
+	  archive_cmds_F77='$LD -shared $libobjs $deplibs $linker_flags -soname $soname -o $lib'
+	  if test yes = "$supports_anon_versioning"; then
+	    archive_expsym_cmds_F77='echo "{ global:" > $output_objdir/$libname.ver~
+              cat $export_symbols | sed -e "s/\(.*\)/\1;/" >> $output_objdir/$libname.ver~
+              echo "local: *; };" >> $output_objdir/$libname.ver~
+              $LD -shared $libobjs $deplibs $linker_flags -soname $soname -version-script $output_objdir/$libname.ver -o $lib'
+	  fi
 	  ;;
 	esac
       else
@@ -24065,7 +23929,7 @@ _LT_EOF
       fi
       ;;
 
-    netbsd*)
+    netbsd* | netbsdelf*-gnu)
       if echo __ELF__ | $CC -E - | $GREP __ELF__ >/dev/null; then
 	archive_cmds_F77='$LD -Bshareable $libobjs $deplibs $linker_flags -o $lib'
 	wlarc=
@@ -24521,10 +24385,7 @@ fi
   link_all_deplibs_F77=yes
   allow_undefined_flag_F77=$_lt_dar_allow_undefined
   case $cc_basename in
-     ifort*|nagfor*)
-        lt_prog_compiler_wl_F77='-Wl,'
-        _lt_dar_can_shared=yes
-      ;;
+     ifort*|nagfor*) _lt_dar_can_shared=yes ;;
      *) _lt_dar_can_shared=$GCC ;;
   esac
   if test yes = "$_lt_dar_can_shared"; then
@@ -24688,6 +24549,7 @@ $as_echo "$lt_cv_irix_exported_symbol" >&6; }
 	if test yes = "$lt_cv_irix_exported_symbol"; then
           archive_expsym_cmds_F77='$CC -shared $pic_flag $libobjs $deplibs $compiler_flags $wl-soname $wl$soname `test -n "$verstring" && func_echo_all "$wl-set_version $wl$verstring"` $wl-update_registry $wl$output_objdir/so_locations $wl-exports_file $wl$export_symbols -o $lib'
 	fi
+	link_all_deplibs_F77=no
       else
 	archive_cmds_F77='$CC -shared $libobjs $deplibs $compiler_flags -soname $soname `test -n "$verstring" && func_echo_all "-set_version $verstring"` -update_registry $output_objdir/so_locations -o $lib'
 	archive_expsym_cmds_F77='$CC -shared $libobjs $deplibs $compiler_flags -soname $soname `test -n "$verstring" && func_echo_all "-set_version $verstring"` -update_registry $output_objdir/so_locations -exports_file $export_symbols -o $lib'
@@ -24709,7 +24571,7 @@ $as_echo "$lt_cv_irix_exported_symbol" >&6; }
       esac
       ;;
 
-    netbsd*)
+    netbsd* | netbsdelf*-gnu)
       if echo __ELF__ | $CC -E - | $GREP __ELF__ >/dev/null; then
 	archive_cmds_F77='$LD -Bshareable -o $lib $libobjs $deplibs $linker_flags'  # a.out
       else
@@ -25632,50 +25494,9 @@ fi
   # 'ldconfig -N -X -v | grep ^/' on 64bit Fedora does not report /usr/lib64,
   # even though it is searched at run-time.  Try to do the best guess by
   # appending ld.so.conf contents (and includes) to the search path.
-
-  # There is no easy way to reliably detect the sys dlsearch path. We will first
-  # assume ldconfig reports the path correctly, but check it with the current
-  # ld cache. If any cached path is not present in the generated path_spec, then
-  # we know ldconfig is bad and should manually parse the ld.so.conf files.
-  # Note the reported paths can be a superset of the cached paths.
-  # The catch is that the default path may not be in the ld.so.conf. We have to
-  # add any missing one back to the path_spec (from the cached paths).
-
-  if test -x /sbin/ldconfig; then
-    sys_lib_dlsearch_path_spec=`/sbin/ldconfig -N -X -v 2>/dev/null | grep ^/ | sed -e 's/:.*//g' | tr '\n' ' '`
-    cached_lib_dlsearch_path=`/sbin/ldconfig -p | sed -e 's/.*=> //g' | grep '^/' | while read p; do dirname $p; done | sort | uniq | tr '\n' ' '`
-    for p in `echo $cached_lib_dlsearch_path`; do
-      case "$sys_lib_dlsearch_path_spec" in
-        *$p*)
-            bad_ldconfig=no
-            ;;
-           *)
-            # ldconfig is bad if cached path is not reported
-            bad_ldconfig=yes
-            break
-            ;;
-      esac
-    done
-  else
-    bad_ldconfig=yes
-  fi
-
-  if test "$bad_ldconfig" = "yes"; then
-    if test -f /etc/ld.so.conf; then
-      lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
-      sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
-    fi
-
-    # catch anything that in the cached path but not in the conf files
-    for p in `echo $cached_lib_dlsearch_path`; do
-      case "$sys_lib_dlsearch_path_spec" in
-        *$p*)
-            ;;
-           *)
-            sys_lib_dlsearch_path_spec="$sys_lib_dlsearch_path_spec $p"
-            ;;
-      esac
-    done
+  if test -f /etc/ld.so.conf; then
+    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;/^[	 ]*hwcap[	 ]/d;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;s/"//g;/^$/d' | tr '\n' ' '`
+    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -25685,6 +25506,18 @@ fi
   # people can always --disable-shared, the test was removed, and we
   # assume the GNU/Linux dynamic linker is in use.
   dynamic_linker='GNU/Linux ld.so'
+  ;;
+
+netbsdelf*-gnu)
+  version_type=linux
+  need_lib_prefix=no
+  need_version=no
+  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major ${libname}${shared_ext}'
+  soname_spec='${libname}${release}${shared_ext}$major'
+  shlibpath_var=LD_LIBRARY_PATH
+  shlibpath_overrides_runpath=no
+  hardcode_into_libs=yes
+  dynamic_linker='NetBSD ld.elf_so'
   ;;
 
 netbsd*)
@@ -70591,7 +70424,7 @@ cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 #
 # INIT-COMMANDS
 #
-AMDEP_TRUE="$AMDEP_TRUE" ac_aux_dir="$ac_aux_dir"
+AMDEP_TRUE="$AMDEP_TRUE" MAKE="${MAKE-make}"
 
 
 # The HP-UX ksh and POSIX shell print the target directory to stdout
@@ -71877,29 +71710,35 @@ $as_echo "$as_me: executing $ac_file commands" >&6;}
   # Older Autoconf quotes --file arguments for eval, but not when files
   # are listed without --file.  Let's play safe and only enable the eval
   # if we detect the quoting.
-  case $CONFIG_FILES in
-  *\'*) eval set x "$CONFIG_FILES" ;;
-  *)   set x $CONFIG_FILES ;;
-  esac
+  # TODO: see whether this extra hack can be removed once we start
+  # requiring Autoconf 2.70 or later.
+  case $CONFIG_FILES in #(
+  *\'*) :
+    eval set x "$CONFIG_FILES" ;; #(
+  *) :
+    set x $CONFIG_FILES ;; #(
+  *) :
+     ;;
+esac
   shift
-  for mf
+  # Used to flag and report bootstrapping failures.
+  am_rc=0
+  for am_mf
   do
     # Strip MF so we end up with the name of the file.
-    mf=`echo "$mf" | sed -e 's/:.*$//'`
-    # Check whether this is an Automake generated Makefile or not.
-    # We used to match only the files named 'Makefile.in', but
-    # some people rename them; so instead we look at the file content.
-    # Grep'ing the first line is not enough: some people post-process
-    # each Makefile.in and add a new line on top of each file to say so.
-    # Grep'ing the whole file is not good either: AIX grep has a line
+    am_mf=`$as_echo "$am_mf" | sed -e 's/:.*$//'`
+    # Check whether this is an Automake generated Makefile which includes
+    # dependency-tracking related rules and includes.
+    # Grep'ing the whole file directly is not great: AIX grep has a line
     # limit of 2048, but all sed's we know have understand at least 4000.
-    if sed -n 's,^#.*generated by automake.*,X,p' "$mf" | grep X >/dev/null 2>&1; then
-      dirpart=`$as_dirname -- "$mf" ||
-$as_expr X"$mf" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
-	 X"$mf" : 'X\(//\)[^/]' \| \
-	 X"$mf" : 'X\(//\)$' \| \
-	 X"$mf" : 'X\(/\)' \| . 2>/dev/null ||
-$as_echo X"$mf" |
+    sed -n 's,^am--depfiles:.*,X,p' "$am_mf" | grep X >/dev/null 2>&1 \
+      || continue
+    am_dirpart=`$as_dirname -- "$am_mf" ||
+$as_expr X"$am_mf" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
+	 X"$am_mf" : 'X\(//\)[^/]' \| \
+	 X"$am_mf" : 'X\(//\)$' \| \
+	 X"$am_mf" : 'X\(/\)' \| . 2>/dev/null ||
+$as_echo X"$am_mf" |
     sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{
 	    s//\1/
 	    q
@@ -71917,53 +71756,48 @@ $as_echo X"$mf" |
 	    q
 	  }
 	  s/.*/./; q'`
-    else
-      continue
-    fi
-    # Extract the definition of DEPDIR, am__include, and am__quote
-    # from the Makefile without running 'make'.
-    DEPDIR=`sed -n 's/^DEPDIR = //p' < "$mf"`
-    test -z "$DEPDIR" && continue
-    am__include=`sed -n 's/^am__include = //p' < "$mf"`
-    test -z "$am__include" && continue
-    am__quote=`sed -n 's/^am__quote = //p' < "$mf"`
-    # Find all dependency output files, they are included files with
-    # $(DEPDIR) in their names.  We invoke sed twice because it is the
-    # simplest approach to changing $(DEPDIR) to its actual value in the
-    # expansion.
-    for file in `sed -n "
-      s/^$am__include $am__quote\(.*(DEPDIR).*\)$am__quote"'$/\1/p' <"$mf" | \
-	 sed -e 's/\$(DEPDIR)/'"$DEPDIR"'/g'`; do
-      # Make sure the directory exists.
-      test -f "$dirpart/$file" && continue
-      fdir=`$as_dirname -- "$file" ||
-$as_expr X"$file" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
-	 X"$file" : 'X\(//\)[^/]' \| \
-	 X"$file" : 'X\(//\)$' \| \
-	 X"$file" : 'X\(/\)' \| . 2>/dev/null ||
-$as_echo X"$file" |
-    sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{
+    am_filepart=`$as_basename -- "$am_mf" ||
+$as_expr X/"$am_mf" : '.*/\([^/][^/]*\)/*$' \| \
+	 X"$am_mf" : 'X\(//\)$' \| \
+	 X"$am_mf" : 'X\(/\)' \| . 2>/dev/null ||
+$as_echo X/"$am_mf" |
+    sed '/^.*\/\([^/][^/]*\)\/*$/{
 	    s//\1/
 	    q
 	  }
-	  /^X\(\/\/\)[^/].*/{
+	  /^X\/\(\/\/\)$/{
 	    s//\1/
 	    q
 	  }
-	  /^X\(\/\/\)$/{
-	    s//\1/
-	    q
-	  }
-	  /^X\(\/\).*/{
+	  /^X\/\(\/\).*/{
 	    s//\1/
 	    q
 	  }
 	  s/.*/./; q'`
-      as_dir=$dirpart/$fdir; as_fn_mkdir_p
-      # echo "creating $dirpart/$file"
-      echo '# dummy' > "$dirpart/$file"
-    done
+    { echo "$as_me:$LINENO: cd "$am_dirpart" \
+      && sed -e '/# am--include-marker/d' "$am_filepart" \
+        | $MAKE -f - am--depfiles" >&5
+   (cd "$am_dirpart" \
+      && sed -e '/# am--include-marker/d' "$am_filepart" \
+        | $MAKE -f - am--depfiles) >&5 2>&5
+   ac_status=$?
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); } || am_rc=$?
   done
+  if test $am_rc -ne 0; then
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "Something went wrong bootstrapping makefile fragments
+    for automatic dependency tracking.  Try re-running configure with the
+    '--disable-dependency-tracking' option to at least be able to build
+    the package (albeit without support for automatic dependency tracking).
+See \`config.log' for more details" "$LINENO" 5; }
+  fi
+  { am_dirpart=; unset am_dirpart;}
+  { am_filepart=; unset am_filepart;}
+  { am_mf=; unset am_mf;}
+  { am_rc=; unset am_rc;}
+  rm -f conftest-deps.mk
 }
  ;;
     "libtool":C)
