@@ -51,7 +51,9 @@ struct MPIDI_PG {
 	int id_num;
 	MPIDI_VC_t **vcr;
 	int * lpids;
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	struct MPIDI_PSP_topo_level *topo_levels;
+#endif
 	pscom_connection_t **cons;
 
 };
@@ -145,7 +147,7 @@ typedef struct MPIDI_Process
 
 extern MPIDI_Process_t MPIDI_Process;
 
-#ifdef MPID_PSP_MSA_AWARENESS
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level);
 #endif
 

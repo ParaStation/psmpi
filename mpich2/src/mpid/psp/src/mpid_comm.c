@@ -70,13 +70,17 @@ int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
 		if(mpi_errno == MPI_SUCCESS) {
 			mpi_errno = MPIR_Comm_set_attr_impl(*newcomm_ptr, MPIDI_Process.shm_attr_key, NULL, MPIR_ATTR_PTR);
 		}
-	} else if(split_type == MPIX_COMM_TYPE_MODULE) {
+	}
+#ifdef MPID_PSP_MSA_AWARENESS
+	else if(split_type == MPIX_COMM_TYPE_MODULE) {
 		int color;
 
 		color = MPIDI_Process.msa_module_id;
 		mpi_errno = MPIR_Comm_split_impl(comm_ptr, color, key, newcomm_ptr);
 
-	} else {
+	}
+#endif
+	else {
 		mpi_errno = MPIR_Comm_split_impl(comm_ptr,  MPI_UNDEFINED, key, newcomm_ptr);
 	}
 
@@ -84,7 +88,7 @@ int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
 }
 
 
-#ifdef MPID_PSP_MSA_AWARENESS
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 
 int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level)
 {
@@ -253,11 +257,12 @@ static int MPIDI_PSP_comm_is_flat_on_level(MPIR_Comm *comm, MPIDI_PSP_topo_level
 	return 1;
 }
 
-#endif /* MPID_PSP_MSA_AWARENESS */
+#endif /* MPID_PSP_TOPOLOGY_AWARE_COLLOPS */
 
 
 int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 {
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
 
 	if(tl == NULL) {
@@ -265,21 +270,22 @@ int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 		return MPI_ERR_OTHER;
 	}
 
-#ifdef MPID_PSP_MSA_AWARENESS
 	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
 		assert(tl->badge_table);
 		tl = tl->next;
 	}
 
 	*id_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, tl, rank);
+	return MPI_SUCCESS;
 #else
-	assert(tl == NULL);
+	*id_p = -1;
+	return MPI_ERR_OTHER;
 #endif
-	return 0;
 }
 
 int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 {
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
 
 	if(tl == NULL) {
@@ -287,17 +293,17 @@ int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 		return MPI_ERR_OTHER;
 	}
 
-#ifdef MPID_PSP_MSA_AWARENESS
 	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
 		assert(tl->badge_table);
 		tl = tl->next;
 	}
 
 	*max_id_p =  MPIDI_PSP_get_max_badge_by_level(tl) + 1; // plus 1 for the "unknown badge" wildcard
+	return MPI_SUCCESS;
 #else
-	assert(tl == NULL);
+	*max_id_p = 0;
+	return MPI_ERR_OTHER;
 #endif
-	return 0;
 }
 
 
@@ -599,7 +605,7 @@ int MPID_PSP_comm_create_hook(MPIR_Comm * comm)
 	hcoll_comm_create(comm, NULL);
 #endif
 
-#ifdef MPID_PSP_MSA_AWARENESS
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (MPIDI_Process.env.enable_msa_aware_collops > 1)) {
 
 		int mpi_errno;
@@ -642,7 +648,7 @@ int MPID_PSP_comm_destroy_hook(MPIR_Comm * comm)
 	hcoll_comm_destroy(comm, NULL);
 #endif
 
-#ifdef MPID_PSP_MSA_AWARENESS
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	if (comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) {
 		if(comm->local_comm) {
 			// Recursively release also further subcomm levels:
