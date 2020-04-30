@@ -350,7 +350,6 @@ int MPID_PSP_comm_init(int has_parent)
 	assert(vcrt);
 	MPID_PSP_comm_set_vcrt(comm, vcrt);
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 
 	if(MPIDI_Process.env.enable_msa_awareness) {
 
@@ -358,6 +357,7 @@ int MPID_PSP_comm_init(int has_parent)
 			MPIDI_Process.msa_module_id = 0;
 		}
 
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 		if(MPIDI_Process.env.enable_msa_aware_collops) {
 
 			int* module_badge_table = NULL;
@@ -376,6 +376,7 @@ int MPID_PSP_comm_init(int has_parent)
 			level->next = topo_levels;
 			topo_levels = level;
 		}
+#endif
 	}
 
 	if(MPIDI_Process.env.enable_smp_awareness) {
@@ -400,6 +401,7 @@ int MPID_PSP_comm_init(int has_parent)
 			}
 		}
 
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 		if(MPIDI_Process.env.enable_smp_aware_collops) {
 
 			int* node_badge_table = NULL;
@@ -418,8 +420,9 @@ int MPID_PSP_comm_init(int has_parent)
 			level->next = topo_levels;
 			topo_levels = level;
 		}
-	}
 #endif
+	}
+
 
 	/* Create my home PG for MPI_COMM_WORLD: */
 	MPIDI_PG_Convert_id(pg_id_name, &pg_id_num);
