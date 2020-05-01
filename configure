@@ -2286,6 +2286,7 @@ fi
 
 
 
+DISABLE_HCOLL="true" # For the time being, disable HCOLL by default!
 
 # Check whether --with-hcoll was given.
 if test "${with_hcoll+set}" = set; then :

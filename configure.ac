@@ -55,6 +55,7 @@ AC_ARG_WITH([hwloc], [
 ])
 AC_SUBST([DISABLE_HWLOC])
 
+DISABLE_HCOLL="true" # For the time being, disable HCOLL by default!
 AC_ARG_WITH([hcoll], [
   --with-hcoll[[=PATH]]     Enable HCOLL support (and specify path to HCOLL directory).
 ],[
