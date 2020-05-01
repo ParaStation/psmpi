@@ -18,8 +18,8 @@
 
 #define NUM_PROCS 8
 
-#ifndef VERBOSE
-#define VERBOSE 0
+#ifndef _VERBOSE_
+#define _VERBOSE_ 0
 #endif
 
 int my_module_id = -1;
@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
 
 	if (flag) {
 		module_id = atoi(value);
-		if (VERBOSE) {
+		if (_VERBOSE_) {
 			printf("(%d) Found \"msa_module_id = %d\n", world_rank, module_id);
 		}
 
@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
 	} else {
 #if defined(MPIX_TOPOLOGY_AWARENESS) && MPIX_TOPOLOGY_AWARENESS
 		module_id = 0;
-		if (VERBOSE) {
+		if (_VERBOSE_) {
 			printf("(%d) Found no entry for \"msa_module_id\"\n", world_rank);
 		}
 #endif
@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
 
 #if defined(MPIX_TOPOLOGY_AWARENESS) && MPIX_TOPOLOGY_AWARENESS
 	/* Test MPIX_COMM_TYPE_MODULE: */
-	if (VERBOSE) {
+	if (_VERBOSE_) {
 		printf("(%d) Calling MPI_Comm_split_type with type = MPIX_COMM_TYPE_MODULE...\n", world_rank);
 	}
 	MPI_Comm_split_type(MPI_COMM_WORLD, MPIX_COMM_TYPE_MODULE, 0, MPI_INFO_NULL, &split_type_comm);
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
 		MPI_Comm_size(split_comm, &split_comm_size);
 		MPI_Comm_size(split_type_comm, &split_type_comm_size);
 
-		if (VERBOSE) {
+		if (_VERBOSE_) {
 			printf("(%d) Communicator sizes: %d / %d\n", world_rank, split_comm_size, split_type_comm_size);
 		}
 
@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
 		}
 	}
 #else
-	if (VERBOSE) {
+	if (_VERBOSE_) {
 		printf("(%d) No topology awareness detected... (MPIX_TOPOLOGY_AWARENESS not set)\n", world_rank);
 	}
 	if (flag && (module_id != 0)) {

@@ -14,6 +14,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifndef _VERBOSE_
+#define _VERBOSE_ 0
+#endif
 
 int main(int argc, char* argv[])
 {
@@ -27,7 +30,7 @@ int main(int argc, char* argv[])
 	int rc = 0;
 
 	env_str = getenv("PSP_MSA_AWARENESS");
-	if(env_str && (atoi(env_str) == 1)) {
+	if(env_str && (atoi(env_str) > 0)) {
 		msa_enabled = 1;
 	} else {
 		msa_enabled = 0;
@@ -55,22 +58,35 @@ int main(int argc, char* argv[])
 
 		if (msa_enabled) {
 
+			if (_VERBOSE_) {
+				printf("(%d) \"msa_module_id\" found. ID is %s\n", world_rank, value);
+			}
+
 			if ( (module_id > -1) && (atoi(value) != module_id) ) {
 
-				printf("\nModule ID was explicitly set to %d but MPI_INFO_ENV returned %d / %s\n", module_id, atoi(value), value);
+				printf("\nERROR: Module ID was explicitly set to %d but MPI_INFO_ENV returned %d / %s\n", module_id, atoi(value), value);
 				rc++;
 			}
 		} else {
+
+			if (_VERBOSE_) {
+				printf("(%d) \"msa_module_id\" NOT found.\n", world_rank);
+			}
+
 			if (atoi(value) > 0) {
 
-				printf("\nModularity awareness was disabled but MPI_INFO_ENV returned an ID > 0 (%d / %s)\n", atoi(value), value);
+				printf("\nERROR: Modularity awareness was disabled but MPI_INFO_ENV returned an ID > 0 (%d / %s)\n", atoi(value), value);
 				rc++;
 			}
 		}
+	} else {
+                if (_VERBOSE_) {
+                        printf("(%d) Found no entry for \"msa_module_id\"\n", world_rank);
+                }
 	}
 #else
 	if (flag) { /* This MPI environment is modularity-aware -- but it should NOT! */
-		printf("\nThis MPI environment is modularity-aware -- but it should NOT!\n");
+		printf("\nERROR: This MPI environment is modularity-aware -- but it should NOT!\n");
 		rc++;
 	}
 #endif
