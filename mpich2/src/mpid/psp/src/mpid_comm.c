@@ -21,40 +21,6 @@
 struct MPIR_Commops MPIR_PSP_Comm_fns;
 extern struct MPIR_Commops  *MPIR_Comm_fns;
 
-static
-int get_my_shmem_split_color(MPIR_Comm * comm_ptr)
-{
-	int color = MPI_UNDEFINED;
-
-	if(!MPIDI_Process.env.enable_smp_awareness) {
-		return comm_ptr->rank;
-	}
-
-#if 1
-	color =  MPIDI_Process.smp_node_id;
-#else
-	/* We now use MPIDI_Process.smp_node_id as the color (see above).
-	   The former code for the color determination looked like this: */
-
-	if(MPIDI_Process.env.enable_ondemand) {
-		/* In the PSP_ONDEMAND=1 case, we cannot check reliably for CON_TYPE_SHM,
-		   so we switch to the host_hash approach, accepting the possibility of
-		   hash collisions that may lead to undefined situations... */
-		return MPID_PSP_get_host_hash();
-	}
-
-	/* The following would not work if PSP_SHM=0 is set! */
-	for(i=0; i<comm_ptr->local_size; i++) {
-		if( (comm_ptr->vcr[i]->con->type == PSCOM_CON_TYPE_SHM) || (comm_ptr->rank == i) ) {
-			color = i;
-			break;
-		}
-	}
-#endif
-
-	return color;
-}
-
 int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
 			MPIR_Info * info_ptr, MPIR_Comm ** newcomm_ptr)
 {
@@ -63,24 +29,30 @@ int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
 	if(split_type == MPI_COMM_TYPE_SHARED) {
 		int color;
 
-		color = get_my_shmem_split_color(comm_ptr);
+		if(!MPIDI_Process.env.enable_smp_awareness) {
+			// pretend that all ranks live on their own nodes:
+			color = comm_ptr->rank;
+		} else {
+			color = MPIDI_Process.smp_node_id;
+		}
 
 		mpi_errno = MPIR_Comm_split_impl(comm_ptr, color, key, newcomm_ptr);
 
 		if(mpi_errno == MPI_SUCCESS) {
 			mpi_errno = MPIR_Comm_set_attr_impl(*newcomm_ptr, MPIDI_Process.shm_attr_key, NULL, MPIR_ATTR_PTR);
 		}
-	}
-#ifdef MPID_PSP_MSA_AWARENESS
-	else if(split_type == MPIX_COMM_TYPE_MODULE) {
+	} else if(split_type == MPIX_COMM_TYPE_MODULE) {
 		int color;
 
-		color = MPIDI_Process.msa_module_id;
-		mpi_errno = MPIR_Comm_split_impl(comm_ptr, color, key, newcomm_ptr);
+		if(!MPIDI_Process.env.enable_msa_awareness) {
+			// assume that all ranks live in the same module:
+			color = 0;
+		} else {
+			color = MPIDI_Process.msa_module_id;
+		}
 
-	}
-#endif
-	else {
+		mpi_errno = MPIR_Comm_split_impl(comm_ptr, color, key, newcomm_ptr);
+	} else {
 		mpi_errno = MPIR_Comm_split_impl(comm_ptr,  MPI_UNDEFINED, key, newcomm_ptr);
 	}
 
@@ -164,7 +136,7 @@ int MPIDI_PSP_create_badge_table(int my_badge, int pg_rank, int pg_size, int *ma
 		MPIDI_PSP_create_badge_table(my_badge, pg_rank, pg_size, max_badge, badge_table, normalize);
 	}
 
-	return 0;
+	return MPI_SUCCESS;
 }
 
 static
