@@ -590,8 +590,11 @@ int MPID_Init(int *argc, char ***argv,
 			}
 		}
 		MPIR_CVAR_ENABLE_HCOLL = 1;
-		if(!getenv("PSP_HCOLL_DISABLE_SMP_AWARENESS")) // <- just for developing/debugging purpose!
 		MPIDI_Process.env.enable_smp_aware_collops = 1;
+	} else {
+		/* Avoid possible conflicts with externally set variables: */
+		unsetenv("MPIR_CVAR_ENABLE_HCOLL");
+		unsetenv("MPIR_CVAR_CH3_ENABLE_HCOLL");
 	}
 	/* (For now, the usage of HCOLL and MSA aware collops are mutually exclusive / FIX ME!) */
 #else
