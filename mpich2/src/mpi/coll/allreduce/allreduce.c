@@ -183,6 +183,7 @@ int MPIR_Allreduce_intra_auto(const void *sendbuf,
     }
 
     pof2 = comm_ptr->pof2;
+    nbytes = type_size * count;
     if ((nbytes <= MPIR_CVAR_ALLREDUCE_SHORT_MSG_SIZE) ||
         (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) || (count < pof2)) {
         mpi_errno =

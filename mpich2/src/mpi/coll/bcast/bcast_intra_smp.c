@@ -40,6 +40,11 @@ int MPIR_Bcast_intra_smp(void *buffer, int count, MPI_Datatype datatype, int roo
 
     if ((nbytes < MPIR_CVAR_BCAST_SHORT_MSG_SIZE) ||
         (comm_ptr->local_size < MPIR_CVAR_BCAST_MIN_PROCS)) {
+        /* SHORT MESSAGES:
+	 *  1. Send to intra-node rank 0 on root's node
+	 *  2. Perform the inter-node bcast
+	 *  3. Perform the intra-node bcast on all nodes
+	 */
         /* send to intranode-rank 0 on the root's node */
         if (comm_ptr->node_comm != NULL && MPIR_Get_intranode_rank(comm_ptr, root) > 0) {       /* is not the node root (0) and is on our node (!-1) */
             if (root == comm_ptr->rank) {
@@ -107,13 +112,19 @@ int MPIR_Bcast_intra_smp(void *buffer, int count, MPI_Datatype datatype, int roo
             }
         }
     } else {    /* (nbytes > MPIR_CVAR_BCAST_SHORT_MSG_SIZE) && (comm_ptr->size >= MPIR_CVAR_BCAST_MIN_PROCS) */
-
+#if 0
         /* supposedly...
          * smp+doubling good for pof2
          * reg+ring better for non-pof2 */
         if (nbytes < MPIR_CVAR_BCAST_LONG_MSG_SIZE && MPL_is_pof2(comm_ptr->local_size, NULL)) {
             /* medium-sized msg and pof2 np */
-
+#else
+            /* LARGE MESSAGES:
+	     *  1. Perform the intra-node bcast on root's node
+	     *  2. Perform the inter-node bcast
+	     *  3. Perform the intra-node bcast except for root's node
+	     */
+#endif
             /* perform the intranode broadcast on the root's node */
             if (comm_ptr->node_comm != NULL && MPIR_Get_intranode_rank(comm_ptr, root) > 0) {   /* is not the node root (0) and is on our node (!-1) */
                 /* FIXME binomial may not be the best algorithm for on-node
@@ -162,6 +173,7 @@ int MPIR_Bcast_intra_smp(void *buffer, int count, MPI_Datatype datatype, int roo
                     MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
                 }
             }
+#if 0
         } else {        /* large msg or non-pof2 */
 
             /* FIXME It would be good to have an SMP-aware version of this
@@ -179,6 +191,7 @@ int MPIR_Bcast_intra_smp(void *buffer, int count, MPI_Datatype datatype, int roo
                 MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
             }
         }
+#endif
     }
 
   fn_exit:
