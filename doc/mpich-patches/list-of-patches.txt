@@ -1,0 +1,142 @@
+commit cfab4a8278c827cabfb07d8784e552f5306c128a
+Author: Carsten Clauss <clauss@par-tec.com>
+Date:   Tue Jan 14 18:03:09 2020 +0100
+
+    Fix: According to MPICH, its 'recursive_doubling' algorithm for
+    MPI_Allgather can currently only handle a comm_size with a power-of-2.
+    Therefore, fall back to 'ring' for the time being if this is not met.
+
+diff --git a/mpich2/src/mpi/coll/allgather/allgather_intra_recursive_doubling.c b/mpich2/src/mpi/coll/allgather/allgather_intra_recursive_doubling.c
+index 33487b4dd..b409a15a7 100644
+--- a/mpich2/src/mpi/coll/allgather/allgather_intra_recursive_doubling.c
++++ b/mpich2/src/mpi/coll/allgather/allgather_intra_recursive_doubling.c
+@@ -48,9 +48,13 @@ int MPIR_Allgather_intra_recursive_doubling(const void *sendbuf,
+     comm_size = comm_ptr->local_size;
+     rank = comm_ptr->rank;
+ 
++    if(comm_size & (comm_size - 1)) {
++        /* Currently this algorithm can only handle power-of-2 comm_size. */
++        return MPIR_Allgather_intra_ring(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype,
++                                         comm_ptr, errflag);
++    }
+ #ifdef HAVE_ERROR_CHECKING
+-    /* Currently this algorithm can only handle power-of-2 comm_size.
+-     * Non power-of-2 comm_size is still experimental */
++    /* Non power-of-2 comm_size is still experimental */
+     MPIR_Assert(!(comm_size & (comm_size - 1)));
+ #endif /* HAVE_ERROR_CHECKING */
+ 
+diff --git a/mpich2/src/mpi/coll/iallgather/iallgather_intra_recursive_doubling.c b/mpich2/src/mpi/coll/iallgather/iallgather_intra_recursive_doubling.c
+index b5d79a133..1c0c6eef4 100644
+--- a/mpich2/src/mpi/coll/iallgather/iallgather_intra_recursive_doubling.c
++++ b/mpich2/src/mpi/coll/iallgather/iallgather_intra_recursive_doubling.c
+@@ -65,9 +65,13 @@ int MPIR_Iallgather_sched_intra_recursive_doubling(const void *sendbuf, int send
+     comm_size = comm_ptr->local_size;
+     rank = comm_ptr->rank;
+ 
++    if(comm_size & (comm_size - 1)) {
++        /* Currently this algorithm can only handle power-of-2 comm_size. */
++        return MPIR_Iallgather_sched_intra_ring(sendbuf, sendcount, sendtype, recvbuf,
++                                                recvcount, recvtype, comm_ptr, s);
++    }
+ #ifdef HAVE_ERROR_CHECKING
+-    /* Currently this algorithm can only handle power-of-2 comm_size.
+-     * Non power-of-2 comm_size is still experimental */
++    /* Non power-of-2 comm_size is still experimental */
+     MPIR_Assert(!(comm_size & (comm_size - 1)));
+ #endif /* HAVE_ERROR_CHECKING */
+ 
+
+commit 3c8d6dc28e8fc65a77f56ec4128c3d9bc7b54019
+Author: Carsten Clauss <clauss@par-tec.com>
+Date:   Tue Mar 3 10:57:04 2020 +0100
+
+    coll: Fix bug in MPICH's scatter_ring algorithm of MPI_Ibcast
+
+diff --git a/mpich2/src/mpi/coll/ibcast/ibcast_intra_scatter_ring_allgather.c b/mpich2/src/mpi/coll/ibcast/ibcast_intra_scatter_ring_allgather.c
+index eb7818dc0..513d47ad2 100644
+--- a/mpich2/src/mpi/coll/ibcast/ibcast_intra_scatter_ring_allgather.c
++++ b/mpich2/src/mpi/coll/ibcast/ibcast_intra_scatter_ring_allgather.c
+@@ -88,7 +88,7 @@ int MPIR_Ibcast_sched_intra_scatter_ring_allgather(void *buffer, int count, MPI_
+ 
+     /* curr_size is the amount of data that this process now has stored in
+      * buffer at byte offset (rank*scatter_size) */
+-    curr_size = MPL_MIN(scatter_size, (nbytes - (rank * scatter_size)));
++    curr_size = MPL_MIN(scatter_size, (nbytes - (((rank - root + comm_size) % comm_size) * scatter_size)));
+     if (curr_size < 0)
+         curr_size = 0;
+     /* curr_size bytes already inplace */
+
+commit c0235a89b2d22f81daec2bbca29cf1b1c9f3778e
+Author: Carsten Clauss <clauss@par-tec.com>
+Date:   Wed May 6 20:08:53 2020 +0200
+
+    coll: Tune/fix internal algorithm selection for
+    MPIR_Allreduce_intra_auto() and MPIR_Bcast_intra_smp()
+
+diff --git a/mpich2/src/mpi/coll/allreduce/allreduce.c b/mpich2/src/mpi/coll/allreduce/allreduce.c
+index e9cf99edc..e2b0a24cc 100644
+--- a/mpich2/src/mpi/coll/allreduce/allreduce.c
++++ b/mpich2/src/mpi/coll/allreduce/allreduce.c
+@@ -183,6 +183,7 @@ int MPIR_Allreduce_intra_auto(const void *sendbuf,
+     }
+ 
+     pof2 = comm_ptr->pof2;
++    nbytes = type_size * count;
+     if ((nbytes <= MPIR_CVAR_ALLREDUCE_SHORT_MSG_SIZE) ||
+         (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) || (count < pof2)) {
+         mpi_errno =
+diff --git a/mpich2/src/mpi/coll/bcast/bcast_intra_smp.c b/mpich2/src/mpi/coll/bcast/bcast_intra_smp.c
+index 9c119470c..20864d942 100644
+--- a/mpich2/src/mpi/coll/bcast/bcast_intra_smp.c
++++ b/mpich2/src/mpi/coll/bcast/bcast_intra_smp.c
+@@ -40,6 +40,11 @@ int MPIR_Bcast_intra_smp(void *buffer, int count, MPI_Datatype datatype, int roo
+ 
+     if ((nbytes < MPIR_CVAR_BCAST_SHORT_MSG_SIZE) ||
+         (comm_ptr->local_size < MPIR_CVAR_BCAST_MIN_PROCS)) {
++        /* SHORT MESSAGES:
++	 *  1. Send to intra-node rank 0 on root's node
++	 *  2. Perform the inter-node bcast
++	 *  3. Perform the intra-node bcast on all nodes
++	 */
+         /* send to intranode-rank 0 on the root's node */
+         if (comm_ptr->node_comm != NULL && MPIR_Get_intranode_rank(comm_ptr, root) > 0) {       /* is not the node root (0) and is on our node (!-1) */
+             if (root == comm_ptr->rank) {
+@@ -107,13 +112,19 @@ int MPIR_Bcast_intra_smp(void *buffer, int count, MPI_Datatype datatype, int roo
+             }
+         }
+     } else {    /* (nbytes > MPIR_CVAR_BCAST_SHORT_MSG_SIZE) && (comm_ptr->size >= MPIR_CVAR_BCAST_MIN_PROCS) */
+-
++#if 0
+         /* supposedly...
+          * smp+doubling good for pof2
+          * reg+ring better for non-pof2 */
+         if (nbytes < MPIR_CVAR_BCAST_LONG_MSG_SIZE && MPL_is_pof2(comm_ptr->local_size, NULL)) {
+             /* medium-sized msg and pof2 np */
+-
++#else
++            /* LARGE MESSAGES:
++	     *  1. Perform the intra-node bcast on root's node
++	     *  2. Perform the inter-node bcast
++	     *  3. Perform the intra-node bcast except for root's node
++	     */
++#endif
+             /* perform the intranode broadcast on the root's node */
+             if (comm_ptr->node_comm != NULL && MPIR_Get_intranode_rank(comm_ptr, root) > 0) {   /* is not the node root (0) and is on our node (!-1) */
+                 /* FIXME binomial may not be the best algorithm for on-node
+@@ -162,6 +173,7 @@ int MPIR_Bcast_intra_smp(void *buffer, int count, MPI_Datatype datatype, int roo
+                     MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
+                 }
+             }
++#if 0
+         } else {        /* large msg or non-pof2 */
+ 
+             /* FIXME It would be good to have an SMP-aware version of this
+@@ -179,6 +191,7 @@ int MPIR_Bcast_intra_smp(void *buffer, int count, MPI_Datatype datatype, int roo
+                 MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
+             }
+         }
++#endif
+     }
+ 
+   fn_exit:
