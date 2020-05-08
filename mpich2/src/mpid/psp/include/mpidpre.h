@@ -465,6 +465,8 @@ typedef struct MPID_Win_rank_info
 #define MPID_DEV_WIN_DECL						\
 	struct MPID_Win_rank_info *rank_info;				\
 	int rank;							\
+	int rma_accumulate_ordering; /* flag whether accumulate needs strict ordering */ \
+	int *rma_pending_accumulates; /* flags for pending accumulates */ \
 	unsigned int *rma_puts_accs;					\
 	unsigned int rma_puts_accs_received;				\
 	unsigned int rma_local_pending_cnt;	/* pending io counter */ \

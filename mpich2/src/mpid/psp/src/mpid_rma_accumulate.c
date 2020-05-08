@@ -29,6 +29,9 @@ void rma_accumulate_done(pscom_request_t *req)
 	req->user->type.accumulate_send.win_ptr->rma_local_pending_cnt--;
 	req->user->type.accumulate_send.win_ptr->rma_local_pending_rank[req->user->type.accumulate_send.target_rank]--;
 
+	assert(req->user->type.accumulate_send.win_ptr->rma_pending_accumulates[req->user->type.accumulate_send.target_rank] == 1);
+	req->user->type.accumulate_send.win_ptr->rma_pending_accumulates[req->user->type.accumulate_send.target_rank] = 0;
+
 	if(mpid_req) {
 		MPID_PSP_Subrequest_completed(mpid_req);
 		MPIR_Request_free(mpid_req);
@@ -58,7 +61,7 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 		target_datatype, op, win_ptr);
 #endif
 
-	if (unlikely(op == MPI_REPLACE)) {
+	if (!win_ptr->rma_accumulate_ordering && unlikely(op == MPI_REPLACE)) {
 		/*  MPI_PUT is a special case of MPI_ACCUMULATE, with the operation MPI_REPLACE.
 		 |  However, PUT and ACCUMULATE have different constraints on concurrent updates!
 		 |  Therefore, in the SHMEM case, the PUT/REPLACE operation must here be locked:
@@ -219,6 +222,14 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 		req->ops.io_done = rma_accumulate_done;
 		req->user->type.accumulate_send.target_rank = target_rank;
 		req->connection = ri->con;
+
+		if (win_ptr->rma_accumulate_ordering) {
+			/* wait until a previous accumulated request is finished */
+			while (win_ptr->rma_pending_accumulates[target_rank]) {
+				pscom_test_any();
+			}
+		}
+		win_ptr->rma_pending_accumulates[target_rank] = 1;
 
 		win_ptr->rma_local_pending_cnt++;
 		win_ptr->rma_local_pending_rank[target_rank]++;
