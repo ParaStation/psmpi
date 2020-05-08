@@ -1,6 +1,18 @@
+2020-05-08  Carsten Clauss <clauss@par-tec.com> -       5.4.6-0rc1
+
+	* Fix: Enforce strict ordering for MPI_Accumulate() calls.
+
+	* Enhancement: Tune internal algorithm selection for
+	MPIR_Allreduce_intra_auto() and MPIR_Bcast_intra_smp().
+
+	* MSA: Check for GW connections or use MPI_APPNUM for module
+	affiliation detection when MSA_MODULE_ID is not set.
+
+	* Fix: MPI_Comm_split_type() with MPI_COMM_TYPE_SHARED.
+
 2020-03-30  Jens Hauke <hauke@par-tec.com>	-	5.4.5-2
 
- 	* Update generated files
+	* Update generated files
 
 2020-03-25  Jens Hauke <hauke@par-tec.com>	-	5.4.5-1
 
