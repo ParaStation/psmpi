@@ -181,7 +181,7 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/checktests.in \
 	$(top_srcdir)/maint/testmerge.in README confdb/ar-lib \
 	confdb/compile confdb/config.guess confdb/config.rpath \
 	confdb/config.sub confdb/depcomp confdb/install-sh \
-	confdb/missing
+	confdb/ltmain.sh confdb/missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -399,7 +399,6 @@ prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
 rmadir = @rmadir@
-runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 socklib = @socklib@

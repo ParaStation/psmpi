@@ -664,6 +664,9 @@
    */
 #undef HAVE_PSAPI_WORKING_SET_EX_INFORMATION
 
+/* Define to 1 if PSCOM is found */
+#undef HAVE_PSCOM
+
 /* Define to 1 if you have the <pthread_np.h> header file. */
 #undef HAVE_PTHREAD_NP_H
 

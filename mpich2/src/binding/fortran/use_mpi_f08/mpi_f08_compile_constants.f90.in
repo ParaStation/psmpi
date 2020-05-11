@@ -293,7 +293,6 @@ integer, parameter :: MPI_MODE_NOPRECEDE               = 8192
 integer, parameter :: MPI_MODE_NOSUCCEED               = 16384
 
 integer, parameter :: MPI_COMM_TYPE_SHARED             = 1
-integer, parameter :: MPIX_COMM_TYPE_MODULE            = 3
 
 integer, parameter :: MPI_THREAD_SINGLE                = 0
 integer, parameter :: MPI_THREAD_FUNNELED              = 1

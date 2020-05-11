@@ -2694,7 +2694,6 @@ extern const int MODE_NOPUT;
 extern const int MODE_NOSTORE;
 extern const int MODE_NOSUCCEED;
 extern const int COMM_TYPE_SHARED;
-extern const int COMM_TYPE_MODULE;
 extern const int COMBINER_CONTIGUOUS;
 extern const int COMBINER_DARRAY;
 extern const int COMBINER_DUP;
