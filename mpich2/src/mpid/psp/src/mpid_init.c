@@ -355,7 +355,7 @@ int InitPortConnections(pscom_socket_t *socket) {
 	/* --- */
  fn_fail:
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
-					 "InitPortConnections", __LINE__, MPI_ERR_OTHER, "**connfailed", 0);
+					 "InitPortConnections", __LINE__, MPI_ERR_OTHER, "**sock|connfailed", 0);
 	goto fn_exit;
 }
 #undef FUNCNAME
@@ -453,7 +453,7 @@ int InitPscomConnections(pscom_socket_t *socket) {
 	/* --- */
  fn_fail:
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
-					 "InitPscomConnections", __LINE__, MPI_ERR_OTHER, "**connfailed", 0);
+					 "InitPscomConnections", __LINE__, MPI_ERR_OTHER, "**sock|connfailed", 0);
 	goto fn_exit;
 }
 #undef FUNCNAME
