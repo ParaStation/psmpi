@@ -111,12 +111,20 @@ if test "$enable_psp_cuda_awareness" = "yes" ; then
 	# restore CPPFLAGS
 	CPPFLAGS="$save_CPPFLAGS"
 
-    # Check whether pscom is present and provides pscom_memcpy
+	# add '--allow-shlib-undefined' to the LDFLAGS since we only want to
+	# check whether 'pscom_memcpy()' is present
+	save_LDFLAGS="$LDFLAGS"
+	LDFLAGS="$LDFLAGS -Wl,--allow-shlib-undefined"
+
+	# Check whether pscom is present and provides pscom_memcpy
 	AX_CHECK_LIB([PSCOM],
                      [pscom.h],
                      [pscom],
                      [pscom_memcpy],
                      have_pscom_memcpy=yes)
+
+	# restore LDFLAGS
+	LDFLAGS="$save_LDFLAGS"
 
     AS_IF([test "$pscom_is_cuda_aware" = "no" ],[
 		AC_MSG_ERROR([The pscom library is missing CUDA-awareness. Abort!])
