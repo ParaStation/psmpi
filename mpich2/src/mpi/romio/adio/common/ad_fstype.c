@@ -307,6 +307,7 @@ static void ADIO_FileSysType_fncall(const char *filename, int *fstype, int *erro
     *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
                                        myname, __LINE__, MPI_ERR_NO_SUCH_FILE,
                                        "**filename", "**filename %s", filename);
+    return; /* If we get here, we directly leave with the newly set error code. */
     /* --END ERROR HANDLING-- */
 #endif /* STATVFS APPROACH */
 
@@ -429,6 +430,7 @@ static void ADIO_FileSysType_fncall(const char *filename, int *fstype, int *erro
     *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
                                        myname, __LINE__, MPI_ERR_NO_SUCH_FILE,
                                        "**filename", "**filename %s", filename);
+    return; /* If we get here, we directly leave with the newly set error code. */
     /* --END ERROR HANDLING-- */
 #endif /* STATFS APPROACH */
 

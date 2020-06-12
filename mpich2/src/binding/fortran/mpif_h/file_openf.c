@@ -268,7 +268,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_file_open_( MPI_Fint *, char * FORT_MIX
 FORT_DLL_SPEC void FORT_CALL mpi_file_open_ ( MPI_Fint *v1, char *v2 FORT_MIXED_LEN(d2), MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *ierr FORT_END_LEN(d2) ){
 #ifdef MPI_MODE_RDONLY
     char *p2;
-    MPI_File l5;
+    MPI_File l5 = MPI_FILE_NULL;
 
     {char *p = v2 + d2 - 1;
      int  li;
