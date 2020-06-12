@@ -3552,7 +3552,7 @@ sub FileToFint_inout_arg {
 
 sub FileToFint_out_decl {
     my $count = $_[0];
-    print $OUTFD "    MPI_File l$count;\n";
+    print $OUTFD "    MPI_File l$count = MPI_FILE_NULL;\n";
 }
 sub FileToFint_ctof {
     my $lvar = $_[0];
