@@ -140,3 +140,59 @@ index 9c119470c..20864d942 100644
      }
  
    fn_exit:
+
+commit 5aa712f8ed4df2e08d05260a383d7d1fbcdadca6
+Author: Carsten Clauss <clauss@par-tec.com>
+Date:   Fri Jun 12 13:10:26 2020 +0200
+
+    mpich/romio: Fix some error code handling in MPICH's ROMIO stack.
+
+diff --git a/mpich2/src/binding/fortran/mpif_h/file_openf.c b/mpich2/src/binding/fortran/mpif_h/file_openf.c
+index a6aaf4df3..1d8f99a15 100644
+--- a/mpich2/src/binding/fortran/mpif_h/file_openf.c
++++ b/mpich2/src/binding/fortran/mpif_h/file_openf.c
+@@ -268,7 +268,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_file_open_( MPI_Fint *, char * FORT_MIX
+ FORT_DLL_SPEC void FORT_CALL mpi_file_open_ ( MPI_Fint *v1, char *v2 FORT_MIXED_LEN(d2), MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *ierr FORT_END_LEN(d2) ){
+ #ifdef MPI_MODE_RDONLY
+     char *p2;
+-    MPI_File l5;
++    MPI_File l5 = MPI_FILE_NULL;
+
+     {char *p = v2 + d2 - 1;
+      int  li;
+diff --git a/mpich2/src/mpi/romio/adio/common/ad_fstype.c b/mpich2/src/mpi/romio/adio/common/ad_fstype.c
+index 430d1e577..aa9762fb7 100644
+--- a/mpich2/src/mpi/romio/adio/common/ad_fstype.c
++++ b/mpich2/src/mpi/romio/adio/common/ad_fstype.c
+@@ -307,6 +307,7 @@ static void ADIO_FileSysType_fncall(const char *filename, int *fstype, int *erro
+     *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+                                        myname, __LINE__, MPI_ERR_NO_SUCH_FILE,
+                                        "**filename", "**filename %s", filename);
++    return; /* If we get here, we directly leave with the newly set error code. */
+     /* --END ERROR HANDLING-- */
+ #endif /* STATVFS APPROACH */
+
+@@ -429,6 +430,7 @@ static void ADIO_FileSysType_fncall(const char *filename, int *fstype, int *erro
+     *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+                                        myname, __LINE__, MPI_ERR_NO_SUCH_FILE,
+                                        "**filename", "**filename %s", filename);
++    return; /* If we get here, we directly leave with the newly set error code. */
+     /* --END ERROR HANDLING-- */
+ #endif /* STATFS APPROACH */
+
+diff --git a/mpich2/src/mpi/romio/mpi-io/glue/mpich/mpio_err.c b/mpich2/src/mpi/romio/mpi-io/glue/mpich/mpio_err.c
+index 9834b4c44..d973b0910 100644
+--- a/mpich2/src/mpi/romio/mpi-io/glue/mpich/mpio_err.c
++++ b/mpich2/src/mpi/romio/mpi-io/glue/mpich/mpio_err.c
+@@ -76,7 +76,10 @@ int MPIO_Err_return_file(MPI_File mpi_fh, int error_code)
+         MPL_snprintf(error_msg, 4096, "I/O error: ");
+         len = (int) strlen(error_msg);
+         MPIR_Err_get_string(error_code, &error_msg[len], 4096 - len, NULL);
+-        MPIR_Abort(fh->comm, MPI_SUCCESS, error_code, error_msg);
++        if (fh)
++            MPIR_Abort(fh->comm, MPI_SUCCESS, error_code, error_msg);
++        else
++            MPIR_Abort(MPI_COMM_WORLD, MPI_SUCCESS, error_code, error_msg);
+     }
+     /* --END ERROR HANDLING-- */
+     else if (kind == 2) {
