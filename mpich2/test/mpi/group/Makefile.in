@@ -735,6 +735,11 @@ testing:
 		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
 		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
+testset:
+	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=$(TESTSET) \
+		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
+		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
+
 # glpid is a whitebox test that uses mpiimpl.h; it is unlikely to build with the
 # current build system setup
 #EXTRA_PROGRAMS = glpid

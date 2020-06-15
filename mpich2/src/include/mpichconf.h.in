@@ -590,7 +590,7 @@
 /* Define to 1 if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H
 
-/* Define to 1 if you have the <netinet/in.h> header file. */
+/* Define if netinet/in.h exists */
 #undef HAVE_NETINET_IN_H
 
 /* Define to 1 if you have the <netinet/tcp.h> header file. */
@@ -600,7 +600,7 @@
    path */
 #undef HAVE_NETLOC
 
-/* Define to 1 if you have the <net/if.h> header file. */
+/* Define if you have the <net/if.h> header file. */
 #undef HAVE_NET_IF_H
 
 /* Define if the Fortran types are not available in C */

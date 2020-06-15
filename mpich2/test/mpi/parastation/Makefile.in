@@ -112,7 +112,8 @@ noinst_PROGRAMS = locknull$(EXEEXT) get_acc_loc$(EXEEXT) \
 	large_acc_flush_local$(EXEEXT) acc_pairtype$(EXEEXT) \
 	acc_vecsum$(EXEEXT) get_acc_pairtype$(EXEEXT) \
 	get_acc_shm_pairtype$(EXEEXT) putfence1$(EXEEXT) \
-	getfence1$(EXEEXT)
+	getfence1$(EXEEXT) msa_split_type$(EXEEXT) \
+	msa_info_env$(EXEEXT)
 subdir = parastation
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -191,6 +192,16 @@ locknull_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 am_mprobe_OBJECTS = mprobe.$(OBJEXT)
 mprobe_OBJECTS = $(am_mprobe_OBJECTS)
 mprobe_DEPENDENCIES =
+msa_info_env_SOURCES = msa_info_env.c
+msa_info_env_OBJECTS = msa_info_env.$(OBJEXT)
+msa_info_env_LDADD = $(LDADD)
+msa_info_env_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+msa_split_type_SOURCES = msa_split_type.c
+msa_split_type_OBJECTS = msa_split_type.$(OBJEXT)
+msa_split_type_LDADD = $(LDADD)
+msa_split_type_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 num_contexts_16k_SOURCES = num_contexts_16k.c
 num_contexts_16k_OBJECTS = num_contexts_16k.$(OBJEXT)
 num_contexts_16k_LDADD = $(LDADD)
@@ -324,7 +335,8 @@ am__depfiles_remade = ./$(DEPDIR)/acc_pairtype.Po \
 	./$(DEPDIR)/intercomm_stress.Po \
 	./$(DEPDIR)/large_acc_flush_local.Po \
 	./$(DEPDIR)/large_msg_typed.Po ./$(DEPDIR)/locknull.Po \
-	./$(DEPDIR)/mprobe.Po ./$(DEPDIR)/num_contexts_16k.Po \
+	./$(DEPDIR)/mprobe.Po ./$(DEPDIR)/msa_info_env.Po \
+	./$(DEPDIR)/msa_split_type.Po ./$(DEPDIR)/num_contexts_16k.Po \
 	./$(DEPDIR)/num_contexts_2k.Po ./$(DEPDIR)/num_contexts_4k.Po \
 	./$(DEPDIR)/num_contexts_8k.Po ./$(DEPDIR)/putfence1.Po \
 	./$(DEPDIR)/spawn_anysrc.Po ./$(DEPDIR)/spawn_isend.Po \
@@ -356,22 +368,22 @@ am__v_CCLD_1 =
 SOURCES = acc_pairtype.c acc_vecsum.c get_acc_loc.c get_acc_pairtype.c \
 	get_acc_shm_pairtype.c getfence1.c intercomm_anysrc.c \
 	intercomm_stress.c large_acc_flush_local.c large_msg_typed.c \
-	locknull.c $(mprobe_SOURCES) num_contexts_16k.c \
-	num_contexts_2k.c num_contexts_4k.c num_contexts_8k.c \
-	putfence1.c spawn_anysrc.c spawn_isend.c spawn_rma.c \
-	spawn_ssend.c spawn_univ_anysrc.c spawn_univ_comm.c \
-	spawn_universe.c split_type_integrity.c win_flavor_err_dyn.c \
-	win_flavor_err_shm.c win_shm_large.c win_shm_multiple.c \
-	win_sync_err_flush.c win_sync_err_flushall.c \
-	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
-	win_sync_err_unlockall.c
-DIST_SOURCES = acc_pairtype.c acc_vecsum.c get_acc_loc.c \
-	get_acc_pairtype.c get_acc_shm_pairtype.c getfence1.c \
-	intercomm_anysrc.c intercomm_stress.c large_acc_flush_local.c \
-	large_msg_typed.c locknull.c $(mprobe_SOURCES) \
+	locknull.c $(mprobe_SOURCES) msa_info_env.c msa_split_type.c \
 	num_contexts_16k.c num_contexts_2k.c num_contexts_4k.c \
 	num_contexts_8k.c putfence1.c spawn_anysrc.c spawn_isend.c \
 	spawn_rma.c spawn_ssend.c spawn_univ_anysrc.c \
+	spawn_univ_comm.c spawn_universe.c split_type_integrity.c \
+	win_flavor_err_dyn.c win_flavor_err_shm.c win_shm_large.c \
+	win_shm_multiple.c win_sync_err_flush.c \
+	win_sync_err_flushall.c win_sync_err_lockall_at.c \
+	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
+DIST_SOURCES = acc_pairtype.c acc_vecsum.c get_acc_loc.c \
+	get_acc_pairtype.c get_acc_shm_pairtype.c getfence1.c \
+	intercomm_anysrc.c intercomm_stress.c large_acc_flush_local.c \
+	large_msg_typed.c locknull.c $(mprobe_SOURCES) msa_info_env.c \
+	msa_split_type.c num_contexts_16k.c num_contexts_2k.c \
+	num_contexts_4k.c num_contexts_8k.c putfence1.c spawn_anysrc.c \
+	spawn_isend.c spawn_rma.c spawn_ssend.c spawn_univ_anysrc.c \
 	spawn_univ_comm.c spawn_universe.c split_type_integrity.c \
 	win_flavor_err_dyn.c win_flavor_err_shm.c win_shm_large.c \
 	win_shm_multiple.c win_sync_err_flush.c \
@@ -732,6 +744,14 @@ mprobe$(EXEEXT): $(mprobe_OBJECTS) $(mprobe_DEPENDENCIES) $(EXTRA_mprobe_DEPENDE
 	@rm -f mprobe$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(mprobe_OBJECTS) $(mprobe_LDADD) $(LIBS)
 
+msa_info_env$(EXEEXT): $(msa_info_env_OBJECTS) $(msa_info_env_DEPENDENCIES) $(EXTRA_msa_info_env_DEPENDENCIES) 
+	@rm -f msa_info_env$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(msa_info_env_OBJECTS) $(msa_info_env_LDADD) $(LIBS)
+
+msa_split_type$(EXEEXT): $(msa_split_type_OBJECTS) $(msa_split_type_DEPENDENCIES) $(EXTRA_msa_split_type_DEPENDENCIES) 
+	@rm -f msa_split_type$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(msa_split_type_OBJECTS) $(msa_split_type_LDADD) $(LIBS)
+
 num_contexts_16k$(EXEEXT): $(num_contexts_16k_OBJECTS) $(num_contexts_16k_DEPENDENCIES) $(EXTRA_num_contexts_16k_DEPENDENCIES) 
 	@rm -f num_contexts_16k$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(num_contexts_16k_OBJECTS) $(num_contexts_16k_LDADD) $(LIBS)
@@ -838,6 +858,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large_msg_typed.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locknull.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mprobe.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/msa_info_env.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/msa_split_type.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/num_contexts_16k.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/num_contexts_2k.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/num_contexts_4k.Po@am__quote@ # am--include-marker
@@ -1024,6 +1046,8 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/large_msg_typed.Po
 	-rm -f ./$(DEPDIR)/locknull.Po
 	-rm -f ./$(DEPDIR)/mprobe.Po
+	-rm -f ./$(DEPDIR)/msa_info_env.Po
+	-rm -f ./$(DEPDIR)/msa_split_type.Po
 	-rm -f ./$(DEPDIR)/num_contexts_16k.Po
 	-rm -f ./$(DEPDIR)/num_contexts_2k.Po
 	-rm -f ./$(DEPDIR)/num_contexts_4k.Po
@@ -1103,6 +1127,8 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/large_msg_typed.Po
 	-rm -f ./$(DEPDIR)/locknull.Po
 	-rm -f ./$(DEPDIR)/mprobe.Po
+	-rm -f ./$(DEPDIR)/msa_info_env.Po
+	-rm -f ./$(DEPDIR)/msa_split_type.Po
 	-rm -f ./$(DEPDIR)/num_contexts_16k.Po
 	-rm -f ./$(DEPDIR)/num_contexts_2k.Po
 	-rm -f ./$(DEPDIR)/num_contexts_4k.Po
@@ -1171,6 +1197,11 @@ SUMMARY_BASENAME ?= summary
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
+		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
+		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
+
+testset:
+	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=$(TESTSET) \
 		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
 		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
