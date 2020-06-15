@@ -50,4 +50,6 @@ noinst_PROGRAMS =           \
 	get_acc_pairtype        \
 	get_acc_shm_pairtype    \
     putfence1               \
-	getfence1
+	getfence1               \
+	msa_split_type          \
+	msa_info_env
