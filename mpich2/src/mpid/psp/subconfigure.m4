@@ -111,25 +111,27 @@ if test "$enable_psp_cuda_awareness" = "yes" ; then
 	# restore CPPFLAGS
 	CPPFLAGS="$save_CPPFLAGS"
 
-	# add '--allow-shlib-undefined' to the LDFLAGS since we only want to
-	# check whether 'pscom_memcpy()' is present
-	save_LDFLAGS="$LDFLAGS"
-	LDFLAGS="$LDFLAGS -Wl,--allow-shlib-undefined"
-
 	# Check whether pscom is present and provides pscom_memcpy
-	AX_CHECK_LIB([PSCOM],
-                     [pscom.h],
-                     [pscom],
-                     [pscom_memcpy],
-                     have_pscom_memcpy=yes)
+	AS_IF([test "x$PSCOM_ALLIN"  != "xtrue"],[
+		# add '--allow-shlib-undefined' to the LDFLAGS since we only want to
+		# check whether 'pscom_memcpy()' is present
+		save_LDFLAGS="$LDFLAGS"
+		LDFLAGS="$LDFLAGS -Wl,--allow-shlib-undefined"
 
-	# restore LDFLAGS
-	LDFLAGS="$save_LDFLAGS"
+		AX_CHECK_LIB([PSCOM],
+			[pscom.h],
+			[pscom],
+			[pscom_memcpy],
+			have_pscom_memcpy=yes)
 
-    AS_IF([test "$pscom_is_cuda_aware" = "no" ],[
+		# restore LDFLAGS
+		LDFLAGS="$save_LDFLAGS"
+	])
+
+	AS_IF([test "$pscom_is_cuda_aware" = "no" ],[
 		AC_MSG_ERROR([The pscom library is missing CUDA-awareness. Abort!])
 	],[
-		AS_IF([test "$have_pscom_memcpy" != "yes" ],[
+		AS_IF([test "x$PSCOM_ALLIN"  != "xtrue" -a "$have_pscom_memcpy" != "yes" ],[
 			AC_MSG_ERROR([The pscom library is lacking the pscom_memcpy() symbol. Please re-compile the pscom with "--enable-cuda". Abort!])
 		],[
 			PSP_CUDA_AWARE_SUPPORT=1
@@ -137,17 +139,19 @@ if test "$enable_psp_cuda_awareness" = "yes" ; then
 		])
 	])
 else
-    # Check whether pscom is present
-	AX_CHECK_LIB([PSCOM],
-                     [pscom.h],
-                     [pscom],
-                     ,
-                     have_pscom=yes,
-                     have_pscom=no)
+	# Check whether pscom is present for non-ALLIN builds
+	AS_IF([test "x$PSCOM_ALLIN"  != "xtrue"],[
+		AX_CHECK_LIB([PSCOM],
+	                     [pscom.h],
+	                     [pscom],
+	                     ,
+	                     have_pscom=yes,
+	                     have_pscom=no)
 
-    AS_IF([test "$have_pscom" != "yes" ],[
-        AC_MSG_ERROR([Could not find the pscom library. Abort!])
-    ])
+		AS_IF([test "$have_pscom" != "yes" ],[
+			AC_MSG_ERROR([Could not find the pscom library. Abort!])
+		])
+	])
 fi
 AC_SUBST([PSP_CUDA_AWARE_SUPPORT])
 
