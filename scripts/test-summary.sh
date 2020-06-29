@@ -8,7 +8,7 @@
 # 'xmlstarlet' on fedora, 'xml' on SuSE
 XMLSTARLET="$(which xmlstarlet 2>/dev/null || echo xml)"
 
-(cat $1;echo "</MPITESTRESULTS>") |
+(cat $1) |
 	"$XMLSTARLET" sel -T  -t -m 'MPITESTRESULTS/MPITEST[STATUS="fail"]' \
 	    -v 'concat(WORKDIR,"/",NAME," np=", NP, ":")' \
 	    -v 'TESTDIFF' -n -o '-------------------------------------------------' -n \

@@ -805,6 +805,11 @@ testing:
 		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
 		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
+testset:
+	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=$(TESTSET) \
+		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
+		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
+
 $(top_builddir)/threads/util/mtestthread.$(OBJEXT): $(top_srcdir)/threads/util/mtestthread.c
 	(cd $(top_builddir)/threads/util && $(MAKE) mtestthread.$(OBJEXT))
 

@@ -43,22 +43,37 @@ else
 MPIEXEC=$(DESTDIR)$(prefix)/bin/mpiexec.hydra
 endif
 
+TESTSUMMARY := mpich2/test/mpi/summary
+TESTSETS    := testlist ps-test-minimal
+TESTSET     ?= testlist
+
+ifeq ($(filter $(TESTSET),$(TESTSETS)),)
 test testing:
+	@echo "Please provide a testset to be used, e.g., 'make TESTSET=ps-test-minimal testset'."
+	@echo "The following testsets are available:"
+	@echo "  * testlist"
+	@echo "  * ps-test-minimal"
+else
+test testing:
+	export TESTSET=$(TESTSET); \
 	export MPIEXEC=$(MPIEXEC); \
 	export PSI_OVERBOOK=1; \
 	export PSI_LOG_SILENT=1; \
 	export PSP_SCHED_YIELD=1; \
 	export MPIEXEC_UNIVERSE_SIZE=100; \
-	export _LOGNAME=$(SRCDIR)/doc/test-$$($(SRCDIR)/scripts/vcversion -r $(SRCDIR))_$$(date +%F_%T); \
+	export _LOGNAME=$(SRCDIR)/doc/test-$$($(SRCDIR)/scripts/vcversion -r $(SRCDIR))-$(TESTSET)_$$(date +%F_%T); \
 	( cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) $(CUDA_TESTS)); \
 	( hostname; rpm -qi pscom; rpm -qi psmgmt; $(SRCDIR)/scripts/vcversion -r $(SRCDIR); \
 	  echo $(MPIEXEC); \
-	  $(MAKE) -C mpich2 testing; \
-	  cp mpich2/test/mpi/summary.xml $${_LOGNAME}.xml; \
-	  cp mpich2/test/mpi/summary.tap $${_LOGNAME}.tap; \
+	  $(MAKE) -C mpich2/test/mpi testset; \
+	  cp $(TESTSUMMARY).xml $${_LOGNAME}.xml; \
+	  cp $(TESTSUMMARY).tap $${_LOGNAME}.tap; \
 	  $(SRCDIR)/scripts/test-summary.sh $${_LOGNAME}.xml; \
 	) 2>&1 | tee -a $${_LOGNAME}.log; \
 	echo -e "\nSummary written to $${_LOGNAME}*"
+	! fgrep 'not ok' $(TESTSUMMARY).tap
+endif
+
 else
 
 all: no_all

@@ -968,6 +968,11 @@ testing:
 		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
 		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
+testset:
+	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=$(TESTSET) \
+		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
+		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
+
 .cu.o:
 	$(CC) -cc=$(NVCC) $(MPICC_CUDA_CONF) $(NVCFLAGS) -o $@ -c $<
 

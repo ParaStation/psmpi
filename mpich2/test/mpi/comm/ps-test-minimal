@@ -1,0 +1,28 @@
+dup 2
+dupic 4
+commname 4
+ic1 4
+ctxalloc 2 timeLimit=300
+ctxsplit 4 timeLimit=300
+cmfree 4
+cmsplit 4
+probe_intercomm 2
+# one way to split a communicator, if implementation supports it, is by access
+# to a common file system. argument is a directory whose presence or
+# non-presence will determine the communicator split.   the other split_type
+# cases will ignore the argument
+cmsplit_type 4 mpiversion=3.0 arg=.
+comm_create_group 4 mpiversion=3.0
+comm_group_half 4 mpiversion=3.0
+comm_group_rand 4 mpiversion=3.0
+comm_idup 4 mpiversion=3.0
+comm_idup_mul 2 mpiversion=3.0
+comm_idup_overlap 2 mpiversion=3.0
+comm_idup_iallreduce 6 mpiversion=3.0
+comm_idup_nb 6 mpiversion=3.0
+comm_idup_isend 6 mpiversion=3.0
+comm_idup_comm 6 mpiversion=3.0
+comm_idup_comm2 6 mpiversion=3.0
+dup_with_info 4 mpiversion=3.0
+comm_info 6 mpiversion=3.0
+comm_create_group_idup 4 mpiversion=3.0
