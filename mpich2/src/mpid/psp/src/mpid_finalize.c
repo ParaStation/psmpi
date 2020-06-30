@@ -108,7 +108,10 @@ int MPID_Finalize(void)
 			}
 
 			/* print the histogram */
-			printf("%*s  freq\n", max_digits, "bin");
+			if (!MPIDI_Process.histo.con_type_str)
+				printf("%*s  freq\n", max_digits, "bin");
+			else
+				printf("%*s  freq (%s)\n", max_digits, "bin", MPIDI_Process.histo.con_type_str);
 			for (idx=0; idx < MPIDI_Process.histo.points; idx++) {
 				printf("%*d  %lld\n", max_digits, MPIDI_Process.histo.limit[idx], MPIDI_Process.histo.count[idx]);
 			}
