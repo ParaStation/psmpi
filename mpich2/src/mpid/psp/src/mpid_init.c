@@ -70,6 +70,8 @@ MPIDI_Process_t MPIDI_Process = {
 	},
 #ifdef MPID_PSP_CREATE_HISTOGRAM
 	dinit(histo)		{
+		dinit(con_type_str)          NULL,
+		dinit(con_type_int)            -1,
 		dinit(max_size)      64*1024*1024,
 		dinit(min_size)                64,
 		dinit(step_width)               1,
@@ -604,6 +606,12 @@ int MPID_Init(int *argc, char ***argv,
 	pscom_env_get_uint(&MPIDI_Process.histo.max_size,   "PSP_HISTOGRAM_MAX");
 	pscom_env_get_uint(&MPIDI_Process.histo.min_size,   "PSP_HISTOGRAM_MIN");
 	pscom_env_get_uint(&MPIDI_Process.histo.step_width, "PSP_HISTOGRAM_SHIFT");
+	MPIDI_Process.histo.con_type_str = getenv("PSP_HISTOGRAM_CONTYPE");
+	if (MPIDI_Process.histo.con_type_str) {
+		for (MPIDI_Process.histo.con_type_int = PSCOM_CON_TYPE_GW; MPIDI_Process.histo.con_type_int >  PSCOM_CON_TYPE_NONE; MPIDI_Process.histo.con_type_int--) {
+			if (strcmp(MPIDI_Process.histo.con_type_str, pscom_con_type_str(MPIDI_Process.histo.con_type_int)) == 0) break;
+		}
+	}
 #endif
 	pscom_env_get_uint(&MPIDI_Process.env.enable_lazy_disconnect, "PSP_LAZY_DISCONNECT");
 

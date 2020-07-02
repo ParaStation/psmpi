@@ -198,12 +198,15 @@ int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int ra
 
 #ifdef MPID_PSP_CREATE_HISTOGRAM
 		if (unlikely(MPIDI_Process.env.enable_histogram)) {
+			pscom_request_t *preq = req->dev.kind.common.pscom_req;
+			if ((MPIDI_Process.histo.con_type_int < 0) || (MPIDI_Process.histo.con_type_int == preq->connection->type)) {
 
-			int idx;
-			for (idx = 0; idx < MPIDI_Process.histo.points; ++idx) {
-				if ( len <= MPIDI_Process.histo.limit[idx] || (idx == MPIDI_Process.histo.points-1) ) {
-					++MPIDI_Process.histo.count[idx];
-					break;
+				int idx;
+				for (idx = 0; idx < MPIDI_Process.histo.points; ++idx) {
+					if ( len <= MPIDI_Process.histo.limit[idx] || (idx == MPIDI_Process.histo.points-1) ) {
+						++MPIDI_Process.histo.count[idx];
+						break;
+					}
 				}
 			}
 		}

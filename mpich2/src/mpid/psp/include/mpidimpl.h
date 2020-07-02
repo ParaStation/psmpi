@@ -135,6 +135,8 @@ typedef struct MPIDI_Process
 	} env;
 #ifdef MPID_PSP_CREATE_HISTOGRAM
 	struct {
+		char* con_type_str;
+		int   con_type_int;
 		int max_size;
 		int min_size;
 		int step_width;
