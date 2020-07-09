@@ -1620,6 +1620,16 @@ int MPIR_Reduce_local_impl(const void *inbuf, void *inoutbuf, int count, MPI_Dat
 int MPID_PSP_Reduce_local_for_cuda(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype, MPI_Op op);
 #define MPID_REDUCE_LOCAL_HOOK(inbuf, inoutbuf, count, datatype, op) \
 	MPID_PSP_Reduce_local_for_cuda(inbuf, inoutbuf, count, datatype, op)
-#endif
+
+#undef FCNAME
+#define FCNAME "MPIDI_PSP_needs_staging"
+#undef FUNCNAME
+#define FUNCNAME MPIDI_PSP_needs_staging
+static inline
+int MPIDI_PSP_needs_staging(const void *ptr)
+{
+	return (ptr == MPI_IN_PLACE)? 0 : pscom_is_gpu_mem(ptr);
+}
+#endif /* MPID_PSP_WITH_CUDA_AWARENESS */
 
 #endif /* MPID_COLL_H_INCLUDED */
