@@ -243,7 +243,7 @@ void MPIDI_Pack_coll_buf(const void *buf, const MPI_Datatype datatype,
 	unsigned int data_sz;
 	MPI_Aint true_lb;
 
-	if(pscom_is_gpu_mem(buf)) {
+	if(MPIDI_PSP_needs_staging(buf)) {
 		/* determine the extent of the given datatype */
 		MPIDI_Datatype_get_info(count, datatype, contig, data_sz, dtp, true_lb);
 		coll_buf->msg_sz = contig? data_sz : dtp->extent;
