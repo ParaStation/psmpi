@@ -46,32 +46,45 @@ endif
 TESTSUMMARY := mpich2/test/mpi/summary
 TESTSETS    := testlist ps-test-minimal
 TESTSET     ?= testlist
-
-ifeq ($(filter $(TESTSET),$(TESTSETS)),)
-test testing:
-	@echo "Please provide a testset to be used, e.g., 'make TESTSET=ps-test-minimal testset'."
-	@echo "The following testsets are available:"
-	@echo "  * testlist"
-	@echo "  * ps-test-minimal"
+ifdef TESTDIR
+TESTDIR_    := $(TESTDIR)_
+TESTDIRS    := $(shell cd $(SRCDIR)/mpich2/test/mpi && find . -maxdepth 2 -mindepth 2 -type f -name "testlist" -o -name "testlist.in" | cut -d"/" -f2)
+TESTTARGET  := testdir
 else
+TESTTARGET  := testset
+endif
+
 test testing:
+ifeq ($(filter $(TESTSET),$(TESTSETS)),)
+	@echo "ERROR: The test set '$(TESTSET)' does not exist!"
+	@echo "Please provide a valid test set to be used."
+	@echo "The following testsets are available:"
+	@$(foreach set,$(TESTSETS), echo "* " $(set) ;)
+else
+ifneq ($(filter $(TESTDIR),$(TESTDIRS)),$(TESTDIR))
+	@echo "ERROR: The test directory '$(TESTDIR)' does not exist!"
+	@echo "Please provide a valid test directory to be used."
+	@echo "The following test directories are available:"
+	@$(foreach dir,$(TESTDIRS), echo "* " $(dir) ;)
+else
 	export TESTSET=$(TESTSET); \
 	export MPIEXEC=$(MPIEXEC); \
 	export PSI_OVERBOOK=1; \
 	export PSI_LOG_SILENT=1; \
 	export PSP_SCHED_YIELD=1; \
 	export MPIEXEC_UNIVERSE_SIZE=100; \
-	export _LOGNAME=$(SRCDIR)/doc/test-$$($(SRCDIR)/scripts/vcversion -r $(SRCDIR))-$(TESTSET)_$$(date +%F_%T); \
+	export _LOGNAME=$(SRCDIR)/doc/test-$$($(SRCDIR)/scripts/vcversion -r $(SRCDIR))-$(TESTDIR_)$(TESTSET)_$$(date +%F_%T); \
 	( cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) $(CUDA_TESTS)); \
 	( hostname; rpm -qi pscom; rpm -qi psmgmt; $(SRCDIR)/scripts/vcversion -r $(SRCDIR); \
 	  echo $(MPIEXEC); \
-	  $(MAKE) -C mpich2/test/mpi testset; \
+	  $(MAKE) -C mpich2/test/mpi $(TESTTARGET); \
 	  cp $(TESTSUMMARY).xml $${_LOGNAME}.xml; \
 	  cp $(TESTSUMMARY).tap $${_LOGNAME}.tap; \
 	  $(SRCDIR)/scripts/test-summary.sh $${_LOGNAME}.xml; \
 	) 2>&1 | tee -a $${_LOGNAME}.log; \
 	echo -e "\nSummary written to $${_LOGNAME}*"
-	! fgrep 'not ok' $(TESTSUMMARY).tap
+	@! fgrep 'not ok' $(TESTSUMMARY).tap
+endif
 endif
 
 else
