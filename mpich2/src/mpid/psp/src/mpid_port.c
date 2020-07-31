@@ -593,7 +593,10 @@ int MPID_Comm_accept(const char * port_name, MPIR_Info * info, int root,
 		/* Wait for a connection on this socket */
 		while (1) {
 			con = pscom_get_next_connection(socket, NULL);
-			if (con) break;
+			if (con && ( (con->state != PSCOM_CON_STATE_CLOSED) &&
+				     (con->state != PSCOM_CON_STATE_CLOSE_WAIT) &&
+				     (con->state != PSCOM_CON_STATE_CLOSING) ) )
+				break;
 
 			pscom_wait_any();
 		}
