@@ -1,3 +1,21 @@
+2020-07-31  Simon Pickartz <pickartz@par-tec.com> -     5.4.7-0rc1
+
+2020-07-31  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Race condition in MPID_Comm_accept/connect for repetitive calls in
+	close succession.
+
+	* Enhancement: Support message histogram generation for specific
+	connection types (via PSP_HISTOGRAM_CONTYPE environment variable).
+
+	* Testing: Support testing of individual folders of the MPICH test suite.
+
+2020-07-09  Simon Pickartz <pickartz@par-tec.com>
+
+	* Fix: Do not try to stage buffers that are labeled with MPI_IN_PLACE.
+
+	* Testing: Support testing of subsets of the MPICH test suite.
+
 2020-06-17  Simon Pickartz <pickartz@par-tec.com> -     5.4.6-1
 
 	* Build: Fix check for pscom for CUDA and all-in builds.
