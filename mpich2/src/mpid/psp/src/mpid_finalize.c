@@ -100,7 +100,7 @@ int MPID_Finalize(void)
 			MPIR_Reduce_impl(MPI_IN_PLACE, MPIDI_Process.histo.count, MPIDI_Process.histo.points, MPI_LONG_LONG_INT, MPI_SUM, 0, MPIR_Process.comm_world, &errflag);
 
 			/* determine digits for formated printing */
-			int max_limit = MPIDI_Process.histo.limit[MPIDI_Process.histo.points-1];
+			int max_limit = MPIDI_Process.histo.limit[MPIDI_Process.histo.points-2];
 			int max_digits;
 
 			for (max_digits = 0; max_limit > 0; ++max_digits) {
@@ -109,11 +109,11 @@ int MPID_Finalize(void)
 
 			/* print the histogram */
 			if (!MPIDI_Process.histo.con_type_str)
-				printf("%*s  freq\n", max_digits, "bin");
+				printf(" %*s  freq\n", max_digits, "bin");
 			else
-				printf("%*s  freq (%s)\n", max_digits, "bin", MPIDI_Process.histo.con_type_str);
+				printf(" %*s  freq (%s)\n", max_digits, "bin", MPIDI_Process.histo.con_type_str);
 			for (idx=0; idx < MPIDI_Process.histo.points; idx++) {
-				printf("%*d  %lld\n", max_digits, MPIDI_Process.histo.limit[idx], MPIDI_Process.histo.count[idx]);
+				printf("%c%*d  %lld\n", (idx < MPIDI_Process.histo.points-1) ? ' ' : '>', max_digits, MPIDI_Process.histo.limit[idx-(idx == MPIDI_Process.histo.points-1)], MPIDI_Process.histo.count[idx]);
 			}
 		}
 

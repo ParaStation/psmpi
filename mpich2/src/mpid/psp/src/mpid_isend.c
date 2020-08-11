@@ -155,7 +155,7 @@ int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int ra
 
 		MPIDI_Process.histo.points = 1;
 
-		for (limit = MPIDI_Process.histo.min_size; limit < MPIDI_Process.histo.max_size; limit <<= MPIDI_Process.histo.step_width) {
+		for (limit = MPIDI_Process.histo.min_size; limit <= MPIDI_Process.histo.max_size; limit <<= MPIDI_Process.histo.step_width) {
 			MPIDI_Process.histo.points++;
 		}
 
