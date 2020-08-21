@@ -590,7 +590,18 @@ int MPID_Init(int *argc, char ***argv,
 			}
 		}
 		MPIR_CVAR_ENABLE_HCOLL = 1;
+		/* HCOLL demands for MPICH's SMP awareness: */
+		MPIDI_Process.env.enable_smp_awareness     = 1;
 		MPIDI_Process.env.enable_smp_aware_collops = 1;
+		/* ...but if SMP awareness for collectives is explicitly disabled... */
+		pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
+		pscom_env_get_uint(&MPIDI_Process.env.enable_smp_aware_collops, "PSP_SMP_AWARE_COLLOPS");
+		if (!MPIDI_Process.env.enable_smp_awareness || !MPIDI_Process.env.enable_smp_aware_collops) {
+			/* ... we can at least fake the node affiliation: */
+			MPIDI_Process.smp_node_id = pg_rank;
+			MPIDI_Process.env.enable_smp_awareness     = 1;
+			MPIDI_Process.env.enable_smp_aware_collops = 1;
+		}
 	} else {
 		/* Avoid possible conflicts with externally set variables: */
 		unsetenv("MPIR_CVAR_ENABLE_HCOLL");
