@@ -88,6 +88,7 @@ AC_ARG_WITH([confset], [
 	   intel      : Use intel compiler (icc)
 	   icc        : Like 'intel'
 	   pgi	      : Portland group compiler (pgcc)
+	   nvhpc      : Nvidia hpc compiler (nvc)
 	   psc	      : Pathscale compiler (pathcc)
 	   cellgcc    : ppu-gcc
 	   cellxlc    :	ppuxlc
@@ -254,6 +255,21 @@ case $CONFSET in
 	CC=pgcc
 	CXX=pgc++
 	FC=pgf90
+	;;
+
+"nvhpc")
+	echo "Using confset=nvhpc"
+	CONF_OPS="--with-device=psp"
+	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
+	CONF_OPS="$CONF_OPS --enable-f77"
+	CONF_OPS="$CONF_OPS --enable-fc"
+	CONF_OPS="$CONF_OPS --enable-cxx"
+	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
+
+	CC=nvc
+	CXX=nvc++
+	FC=nvfortran
 	;;
 "psc")
 	echo "Using confset=psc"

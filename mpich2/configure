@@ -11960,7 +11960,7 @@ lt_prog_compiler_static=
 	lt_prog_compiler_pic='-fPIC'
 	lt_prog_compiler_static='-static'
 	;;
-      pgcc* | pgf77* | pgf90* | pgf95* | pgfortran*)
+      pgcc* | nvc* | pgf77* | pgf90* | pgf95* | pgfortran* | nvfortran*)
         # Portland Group compilers (*not* the Pentium gcc compiler,
 	# which looks to be a dead project)
 	lt_prog_compiler_wl='-Wl,'
@@ -12599,11 +12599,11 @@ _LT_EOF
 	tmp_addflag=' $pic_flag'
 	tmp_sharedflag='-shared'
 	case $cc_basename,$host_cpu in
-        pgcc*)				# Portland Group C compiler
+        pgcc* | nvc*)				# Portland Group C compiler
 	  whole_archive_flag_spec='$wl--whole-archive`for conv in $convenience\"\"; do test  -n \"$conv\" && new_convenience=\"$new_convenience,$conv\"; done; func_echo_all \"$new_convenience\"` $wl--no-whole-archive'
 	  tmp_addflag=' $pic_flag'
 	  ;;
-	pgf77* | pgf90* | pgf95* | pgfortran*)
+	pgf77* | pgf90* | pgf95* | pgfortran* | nvfortran*)
 					# Portland Group f77 and f90 compilers
 	  whole_archive_flag_spec='$wl--whole-archive`for conv in $convenience\"\"; do test  -n \"$conv\" && new_convenience=\"$new_convenience,$conv\"; done; func_echo_all \"$new_convenience\"` $wl--no-whole-archive'
 	  tmp_addflag=' $pic_flag -Mnomain' ;;
@@ -19967,7 +19967,7 @@ lt_prog_compiler_static_FC=
 	lt_prog_compiler_pic_FC='-fPIC'
 	lt_prog_compiler_static_FC='-static'
 	;;
-      pgcc* | pgf77* | pgf90* | pgf95* | pgfortran*)
+      pgcc* | nvc* | pgf77* | pgf90* | pgf95* | pgfortran* | nvfortran*)
         # Portland Group compilers (*not* the Pentium gcc compiler,
 	# which looks to be a dead project)
 	lt_prog_compiler_wl_FC='-Wl,'
@@ -20591,11 +20591,11 @@ _LT_EOF
 	tmp_addflag=' $pic_flag'
 	tmp_sharedflag='-shared'
 	case $cc_basename,$host_cpu in
-        pgcc*)				# Portland Group C compiler
+        pgcc* | nvc*)				# Portland Group C compiler
 	  whole_archive_flag_spec_FC='$wl--whole-archive`for conv in $convenience\"\"; do test  -n \"$conv\" && new_convenience=\"$new_convenience,$conv\"; done; func_echo_all \"$new_convenience\"` $wl--no-whole-archive'
 	  tmp_addflag=' $pic_flag'
 	  ;;
-	pgf77* | pgf90* | pgf95* | pgfortran*)
+	pgf77* | pgf90* | pgf95* | pgfortran* | nvfortran*)
 					# Portland Group f77 and f90 compilers
 	  whole_archive_flag_spec_FC='$wl--whole-archive`for conv in $convenience\"\"; do test  -n \"$conv\" && new_convenience=\"$new_convenience,$conv\"; done; func_echo_all \"$new_convenience\"` $wl--no-whole-archive'
 	  tmp_addflag=' $pic_flag -Mnomain' ;;
@@ -23176,7 +23176,7 @@ lt_prog_compiler_static_F77=
 	lt_prog_compiler_pic_F77='-fPIC'
 	lt_prog_compiler_static_F77='-static'
 	;;
-      pgcc* | pgf77* | pgf90* | pgf95* | pgfortran*)
+      pgcc* | nvc* | pgf77* | pgf90* | pgf95* | pgfortran* | nvfortran*)
         # Portland Group compilers (*not* the Pentium gcc compiler,
 	# which looks to be a dead project)
 	lt_prog_compiler_wl_F77='-Wl,'
@@ -23800,11 +23800,11 @@ _LT_EOF
 	tmp_addflag=' $pic_flag'
 	tmp_sharedflag='-shared'
 	case $cc_basename,$host_cpu in
-        pgcc*)				# Portland Group C compiler
+        pgcc* | nvc*)				# Portland Group C compiler
 	  whole_archive_flag_spec_F77='$wl--whole-archive`for conv in $convenience\"\"; do test  -n \"$conv\" && new_convenience=\"$new_convenience,$conv\"; done; func_echo_all \"$new_convenience\"` $wl--no-whole-archive'
 	  tmp_addflag=' $pic_flag'
 	  ;;
-	pgf77* | pgf90* | pgf95* | pgfortran*)
+	pgf77* | pgf90* | pgf95* | pgfortran* | nvfortran*)
 					# Portland Group f77 and f90 compilers
 	  whole_archive_flag_spec_F77='$wl--whole-archive`for conv in $convenience\"\"; do test  -n \"$conv\" && new_convenience=\"$new_convenience,$conv\"; done; func_echo_all \"$new_convenience\"` $wl--no-whole-archive'
 	  tmp_addflag=' $pic_flag -Mnomain' ;;
