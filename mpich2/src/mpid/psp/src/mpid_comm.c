@@ -229,6 +229,31 @@ int MPIDI_PSP_comm_is_flat_on_level(MPIR_Comm *comm, MPIDI_PSP_topo_level_t *lev
 	return 1;
 }
 
+static
+int MPIDI_PSP_create_topo_level(int my_badge, int degree, int badges_are_global, int normalize, MPIDI_PSP_topo_level_t **topo_level)
+{
+	int* module_badge_table = NULL;
+	int module_max_badge = 0;
+	MPIDI_PSP_topo_level_t *level = NULL;
+
+	int pg_rank = MPIDI_Process.my_pg_rank;
+	int pg_size = MPIDI_Process.my_pg_size;
+
+	MPIDI_PSP_create_badge_table(my_badge, pg_rank, pg_size, &module_max_badge, &module_badge_table, normalize);
+	assert(module_badge_table);
+
+	level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
+	level->badge_table = module_badge_table;
+	level->max_badge = module_max_badge;
+	level->degree = degree;
+	level->badges_are_global = badges_are_global;
+
+	level->next = *topo_level;
+	*topo_level = level;
+
+	return MPI_SUCCESS;
+}
+
 int MPID_Get_badge(MPIR_Comm *comm, int rank, int *badge_p)
 {
 	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
@@ -354,22 +379,7 @@ int MPID_PSP_comm_init(int has_parent)
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 		if(MPIDI_Process.env.enable_msa_aware_collops) {
-
-			int* module_badge_table = NULL;
-			int module_max_badge = 0;
-			MPIDI_PSP_topo_level_t *level = NULL;
-
-			MPIDI_PSP_create_badge_table(MPIDI_Process.msa_module_id, pg_rank, pg_size, &module_max_badge, &module_badge_table, 0 /* normalize*/);
-			assert(module_badge_table);
-
-			level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
-			level->badge_table = module_badge_table;
-			level->max_badge = module_max_badge;
-			level->degree = MPIDI_PSP_TOPO_LEVEL__MODULES;
-			level->badges_are_global = 1;
-
-			level->next = topo_levels;
-			topo_levels = level;
+			MPIDI_PSP_create_topo_level(MPIDI_Process.msa_module_id, MPIDI_PSP_TOPO_LEVEL__MODULES, 1/*badges_are_global*/, 0/*normalize*/, &topo_levels);
 		}
 #endif
 	}
@@ -387,22 +397,7 @@ int MPID_PSP_comm_init(int has_parent)
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 		if(MPIDI_Process.env.enable_smp_aware_collops) {
-
-			int* node_badge_table = NULL;
-			int node_max_badge = 0;
-			MPIDI_PSP_topo_level_t *level = NULL;
-
-			MPIDI_PSP_create_badge_table(MPIDI_Process.smp_node_id, pg_rank, pg_size, &node_max_badge, &node_badge_table, 1 /* normalize*/);
-			assert(node_badge_table);
-
-			level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
-			level->badge_table = node_badge_table;
-			level->max_badge = node_max_badge;
-			level->degree = MPIDI_PSP_TOPO_LEVEL__NODES;
-			level->badges_are_global = 0;
-
-			level->next = topo_levels;
-			topo_levels = level;
+			MPIDI_PSP_create_topo_level(MPIDI_Process.smp_node_id, MPIDI_PSP_TOPO_LEVEL__NODES, 0/*badges_are_global*/, 1/*normalize*/, &topo_levels);
 		}
 #endif
 	}
