@@ -72,6 +72,7 @@ int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_leve
 		}
 		tl=tl->next;
 	}
+	if (level) *level = NULL;
 	return 0;
 }
 
@@ -180,7 +181,7 @@ int MPIDI_PSP_get_badge_by_level_and_comm_rank(MPIR_Comm *comm, MPIDI_PSP_topo_l
 	if(likely(comm->vcr[rank]->pg == MPIDI_Process.my_pg)) { // rank is in local process group
 
 		if(unlikely(!level->badge_table)) { // "dummy" level
-			assert(level->max_badge == -1);
+			assert(level->max_badge == MPIDI_PSP_TOPO_BADGE__NULL);
 			goto badge_unknown;
 		}
 
@@ -209,7 +210,7 @@ int MPIDI_PSP_get_badge_by_level_and_comm_rank(MPIR_Comm *comm, MPIDI_PSP_topo_l
 	}
 
 badge_unknown:
-	return MPIDI_PSP_get_max_badge_by_level(level) + 1; // plus 1 as wildcard for an unknown badge
+	return MPIDI_PSP_TOPO_BADGE__UNKNOWN(level);
 }
 
 static
@@ -259,7 +260,7 @@ int MPID_Get_badge(MPIR_Comm *comm, int rank, int *badge_p)
 	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
 
 	if(tl == NULL) {
-		*badge_p = -1;
+		*badge_p = MPIDI_PSP_TOPO_BADGE__NULL;
 		return MPI_ERR_OTHER;
 	}
 
@@ -269,6 +270,7 @@ int MPID_Get_badge(MPIR_Comm *comm, int rank, int *badge_p)
 	}
 
 	*badge_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, tl, rank);
+
 	return MPI_SUCCESS;
 }
 
@@ -287,6 +289,8 @@ int MPID_Get_max_badge(MPIR_Comm *comm, int *max_badge_p)
 	}
 
 	*max_badge_p =  MPIDI_PSP_get_max_badge_by_level(tl) + 1; // plus 1 for the "unknown badge" wildcard
+	assert(*max_badge_p == MPIDI_PSP_TOPO_BADGE__UNKNOWN(tl)); // and this wildcard is moreover the max value
+
 	return MPI_SUCCESS;
 }
 
