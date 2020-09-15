@@ -534,6 +534,17 @@ AC_ARG_WITH([modulefile], [
 	fi
 	MODULEFILE="$MODULEFILE-\$(VER)"
 ])
+
+AC_ARG_WITH([session-statistics], [
+  --with-session-statistics
+			  Enable the collection of statistical information
+],[
+	if test "x${withval}" != "xno"; then
+		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPID_PSP_SESSION_STATISTICS"
+		ENABLE_SESSION_STATISTICS="true"
+	fi
+])
+
 AC_ARG_WITH([topology-awareness], [
   --with-topology-awareness
 			  Enable topology/hierarchy awareness for collectives
@@ -590,6 +601,9 @@ if test "$PSP_THREADING" = "multiple" ; then
 fi
 if test "$ENABLE_HYDRA" = "true" ; then
    echo "Preparing psmpi/mpich with Hydra's mpiexec support."
+fi
+if test "$ENABLE_SESSION_STATISTICS" = "true" ; then
+   echo "Preparing psmpi/mpich with support for statistics."
 fi
 if test "$ENABLE_TOPOLOGY_AWARENESS" = "true" ; then
    echo "Preparing psmpi/mpich with topology awareness."

@@ -63,12 +63,12 @@ MPIDI_Process_t MPIDI_Process = {
 		dinit(enable_hcoll)	        0,
 #endif
 #endif
-#ifdef MPID_PSP_CREATE_HISTOGRAM
+#ifdef MPID_PSP_HISTOGRAM
 		dinit(enable_histogram)		0,
 #endif
 		dinit(enable_lazy_disconnect)	1,
 	},
-#ifdef MPID_PSP_CREATE_HISTOGRAM
+#ifdef MPID_PSP_HISTOGRAM
 	dinit(histo)		{
 		dinit(con_type_str)          NULL,
 		dinit(con_type_int)            -1,
@@ -600,7 +600,7 @@ int MPID_Init(int *argc, char ***argv,
 #endif
 #endif
 
-#ifdef MPID_PSP_CREATE_HISTOGRAM
+#ifdef MPID_PSP_HISTOGRAM
 	/* collect statistics information and print them at the end of a run */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_histogram, "PSP_HISTOGRAM");
 	pscom_env_get_uint(&MPIDI_Process.histo.max_size,   "PSP_HISTOGRAM_MAX");

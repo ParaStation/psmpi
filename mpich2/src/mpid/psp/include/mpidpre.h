@@ -24,10 +24,13 @@
  * our own */
 #include "mpid_timers_fallback.h"
 
-/* When MPID_PSP_CREATE_HISTOGRAM is defined and PSP_HISTOGRAM=1 is set, some statistics
+/* MPID_PSP_SESSION_STATISTICS is set if psmpi is configured with --with-session-statistics */
+#ifdef MPID_PSP_SESSION_STATISTICS
+#define MPID_PSP_HISTOGRAM
+/* When MPID_PSP_HISTOGRAM is defined and PSP_HISTOGRAM=1 is set, some statistics
  * about the distribution of message sizes will be gathered during the run by all processes
  * and eventually accumulated and printed by world rank 0 within the MPI_Finalize call. */
-#undef MPID_PSP_CREATE_HISTOGRAM
+#endif
 
 /* MPID_PSP_TOPOLOGY_AWARENESS is set if psmpi is configured with --with-topology-awareness */
 #ifdef MPID_PSP_TOPOLOGY_AWARENESS

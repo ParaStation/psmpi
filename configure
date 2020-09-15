@@ -714,6 +714,7 @@ with_pscom_builtin
 with_pscom_allin
 with_threading
 with_modulefile
+with_session_statistics
 with_topology_awareness
 with_cuda
 '
@@ -1389,6 +1390,10 @@ Optional Packages:
 
   --with-modulefile=filename
 			  Destinaton of the generated modulefile
+
+
+  --with-session-statistics
+			  Enable the collection of statistical information
 
 
   --with-topology-awareness
@@ -4007,6 +4012,19 @@ else
 fi
 
 
+
+# Check whether --with-session-statistics was given.
+if test "${with_session_statistics+set}" = set; then :
+  withval=$with_session_statistics;
+	if test "x${withval}" != "xno"; then
+		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPID_PSP_SESSION_STATISTICS"
+		ENABLE_SESSION_STATISTICS="true"
+	fi
+
+fi
+
+
+
 # Check whether --with-topology-awareness was given.
 if test "${with_topology_awareness+set}" = set; then :
   withval=$with_topology_awareness;
@@ -4068,6 +4086,9 @@ if test "$PSP_THREADING" = "multiple" ; then
 fi
 if test "$ENABLE_HYDRA" = "true" ; then
    echo "Preparing psmpi/mpich with Hydra's mpiexec support."
+fi
+if test "$ENABLE_SESSION_STATISTICS" = "true" ; then
+   echo "Preparing psmpi/mpich with support for statistics."
 fi
 if test "$ENABLE_TOPOLOGY_AWARENESS" = "true" ; then
    echo "Preparing psmpi/mpich with topology awareness."
