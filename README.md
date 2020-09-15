@@ -83,12 +83,13 @@ The following example configures ParaStation MPI for using the gcc compiler:
 $ ../configure --prefix=/path/to/installation/dir --with-confset=default
 ```
 #### Optional configure arguments
-| Argument                    | Description                                 |
-------------------------------|---------------------------------------------|
-| `--with-cuda`               | Enable CUDA awareness                       |
-| `--with-hydra`              | Use MPICH's process manager hydra           |
-| `--with-threading`          | Enable multi-thread support                 |
-| `--with-topology-awareness` | Enable topology/hierarchy-aware collectives |
+| Argument                    | Description                                       |
+------------------------------|---------------------------------------------------|
+| `--with-cuda`               | Enable CUDA awareness                             |
+| `--with-hydra`              | Use MPICH's process manager hydra                 |
+| `--with-threading`          | Enable multi-thread support                       |
+| `--with-topology-awareness` | Enable topology/hierarchy-aware collectives       |
+| `--with-session-statistics` | Enable the collection of statistical information  |
 
 
 ### Build ParaStation MPI

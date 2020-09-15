@@ -88,7 +88,7 @@ int MPID_Finalize(void)
 		}
 	}
 
-#ifdef MPID_PSP_CREATE_HISTOGRAM
+#ifdef MPID_PSP_HISTOGRAM
 	if (MPIDI_Process.env.enable_histogram && MPIDI_Process.histo.points > 0) {
 
 		int idx;

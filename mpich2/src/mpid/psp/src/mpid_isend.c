@@ -147,7 +147,7 @@ int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int ra
 	MPIR_Request *req;
 	size_t len;
 
-#ifdef MPID_PSP_CREATE_HISTOGRAM
+#ifdef MPID_PSP_HISTOGRAM
 	if ( unlikely(MPIDI_Process.env.enable_histogram) && unlikely( MPIDI_Process.histo.points == 0) ) {
 
 		int idx;
@@ -196,7 +196,7 @@ int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int ra
 
 		MPIR_Request_add_ref(req);
 
-#ifdef MPID_PSP_CREATE_HISTOGRAM
+#ifdef MPID_PSP_HISTOGRAM
 		if (unlikely(MPIDI_Process.env.enable_histogram)) {
 			pscom_request_t *preq = req->dev.kind.common.pscom_req;
 			if ((MPIDI_Process.histo.con_type_int < 0) || (MPIDI_Process.histo.con_type_int == preq->connection->type)) {

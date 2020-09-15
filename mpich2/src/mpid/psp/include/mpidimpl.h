@@ -128,12 +128,12 @@ typedef struct MPIDI_Process
 #ifdef HAVE_LIBHCOLL
 		unsigned enable_hcoll;
 #endif
-#ifdef MPID_PSP_CREATE_HISTOGRAM
+#ifdef MPID_PSP_HISTOGRAM
 		unsigned enable_histogram;
 #endif
 		unsigned enable_lazy_disconnect;
 	} env;
-#ifdef MPID_PSP_CREATE_HISTOGRAM
+#ifdef MPID_PSP_HISTOGRAM
 	struct {
 		char* con_type_str;
 		int   con_type_int;
