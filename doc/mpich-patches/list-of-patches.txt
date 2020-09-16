@@ -157,7 +157,7 @@ index a6aaf4df3..1d8f99a15 100644
      char *p2;
 -    MPI_File l5;
 +    MPI_File l5 = MPI_FILE_NULL;
-
+ 
      {char *p = v2 + d2 - 1;
       int  li;
 diff --git a/mpich2/src/mpi/romio/adio/common/ad_fstype.c b/mpich2/src/mpi/romio/adio/common/ad_fstype.c
@@ -171,7 +171,7 @@ index 430d1e577..aa9762fb7 100644
 +    return; /* If we get here, we directly leave with the newly set error code. */
      /* --END ERROR HANDLING-- */
  #endif /* STATVFS APPROACH */
-
+ 
 @@ -429,6 +430,7 @@ static void ADIO_FileSysType_fncall(const char *filename, int *fstype, int *erro
      *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
                                         myname, __LINE__, MPI_ERR_NO_SUCH_FILE,
@@ -179,7 +179,7 @@ index 430d1e577..aa9762fb7 100644
 +    return; /* If we get here, we directly leave with the newly set error code. */
      /* --END ERROR HANDLING-- */
  #endif /* STATFS APPROACH */
-
+ 
 diff --git a/mpich2/src/mpi/romio/mpi-io/glue/mpich/mpio_err.c b/mpich2/src/mpi/romio/mpi-io/glue/mpich/mpio_err.c
 index 9834b4c44..d973b0910 100644
 --- a/mpich2/src/mpi/romio/mpi-io/glue/mpich/mpio_err.c
@@ -196,3 +196,68 @@ index 9834b4c44..d973b0910 100644
      }
      /* --END ERROR HANDLING-- */
      else if (kind == 2) {
+
+commit 5b9c18657208e8c5a20183012f1a444df822000a
+Author: Carsten Clauss <clauss@par-tec.com>
+Date:   Wed Sep 16 11:31:15 2020 +0200
+
+    hcoll: Avoid some compiler warnings in MPICH's hcoll bindings
+    
+    These are some minor changes in MPICH's binding code for hcoll
+    in mpid/common/hcoll that fixes some compiler warnings for
+    confset=default. (However, with confset=devel there are still
+    even more warnings not being fixed yet...)
+
+diff --git a/mpich2/src/mpid/common/hcoll/hcoll_dtypes.h b/mpich2/src/mpid/common/hcoll/hcoll_dtypes.h
+index 4cd1da3f0..b70ed65ca 100644
+--- a/mpich2/src/mpid/common/hcoll/hcoll_dtypes.h
++++ b/mpich2/src/mpid/common/hcoll/hcoll_dtypes.h
+@@ -18,7 +18,7 @@ int hcoll_type_commit_hook(MPIR_Datatype * dtype_p);
+ int hcoll_type_free_hook(MPIR_Datatype * dtype_p);
+ dte_data_representation_t mpi_dtype_2_hcoll_dtype(MPI_Datatype datatype, int count, const int mode);
+ 
+-static dte_data_representation_t mpi_dtype_2_dte_dtype(MPI_Datatype datatype)
++static inline dte_data_representation_t mpi_dtype_2_dte_dtype(MPI_Datatype datatype)
+ {
+     switch (datatype) {
+         case MPI_CHAR:
+@@ -54,7 +54,7 @@ static dte_data_representation_t mpi_dtype_2_dte_dtype(MPI_Datatype datatype)
+     }
+ }
+ 
+-static hcoll_dte_op_t *mpi_op_2_dte_op(MPI_Op op)
++static inline hcoll_dte_op_t *mpi_op_2_dte_op(MPI_Op op)
+ {
+     switch (op) {
+         case MPI_MAX:
+diff --git a/mpich2/src/mpid/common/hcoll/hcoll_rte.c b/mpich2/src/mpid/common/hcoll/hcoll_rte.c
+index 01a4f3404..833ec1185 100644
+--- a/mpich2/src/mpid/common/hcoll/hcoll_rte.c
++++ b/mpich2/src/mpid/common/hcoll/hcoll_rte.c
+@@ -432,7 +432,7 @@ static int get_mpi_type_envelope(void *mpi_type, int *num_integers,
+                                  hcoll_mpi_type_combiner_t * combiner)
+ {
+     int mpi_combiner;
+-    MPI_Datatype dt_handle = (MPI_Datatype) mpi_type;
++    MPI_Datatype dt_handle = (intptr_t) mpi_type;
+ 
+     MPIR_Type_get_envelope(dt_handle, num_integers, num_addresses, num_datatypes, &mpi_combiner);
+ 
+@@ -446,7 +446,7 @@ static int get_mpi_type_contents(void *mpi_type, int max_integers, int max_addre
+                                  void *array_of_addresses, void *array_of_datatypes)
+ {
+     int ret;
+-    MPI_Datatype dt_handle = (MPI_Datatype) mpi_type;
++    MPI_Datatype dt_handle = (intptr_t) mpi_type;
+ 
+     ret = MPIR_Type_get_contents(dt_handle,
+                                  max_integers, max_addresses, max_datatypes,
+@@ -459,7 +459,7 @@ static int get_mpi_type_contents(void *mpi_type, int max_integers, int max_addre
+ 
+ static int get_hcoll_type(void *mpi_type, dte_data_representation_t * hcoll_type)
+ {
+-    MPI_Datatype dt_handle = (MPI_Datatype) mpi_type;
++    MPI_Datatype dt_handle = (intptr_t) mpi_type;
+     MPIR_Datatype *dt_ptr;
+ 
+     *hcoll_type = mpi_dtype_2_hcoll_dtype(dt_handle, -1, TRY_FIND_DERIVED);
