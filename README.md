@@ -15,6 +15,7 @@ Contents
     - Debugging
     - Feature Activation
     - Statistical Analysis
+* Test Suite
 
 Introduction
 ------------
@@ -153,6 +154,7 @@ firmly into ParaStation MPI if `--with-pscom-allin` is set and the related
 low-level drivers are found. For specifying the plugins to be built-in
 explicitly, the `--with-pscom-builtin[=list]` option can be used.
 
+
 Session Parameters
 ------------------
 
@@ -190,3 +192,54 @@ Session Parameters
 | `PSP_HISTOGRAM_MAX=y`       | Set the upper message size limit for the histogram   |
 | `PSP_HISTOGRAM_SHIFT=z`     | Bit shift for the number of bins of the histogram    |
 | `PSP_HISTOGRAM_CONTYPE=con` | Limit the histogram to a particular connection type  |
+
+
+Test Suite
+----------
+MPICH has a test suite that can also be used and is even extended by ParaStation MPI.
+````
+$ make test
+````
+...will run the complete test suite comprising tests in the following subfolders in `mpich2/test/mpi/`:
+
+````
+parastation
+cuda
+attr
+coll
+comm
+cxx
+datatype
+errhan
+errors
+f77
+f90
+group
+impls
+info
+io
+init
+mpi_t
+pt2pt
+rma
+spawn
+topo
+````
+
+However, you can also have only tests of a certain subdirectory to be executed by specifying a `TESTDIR`, for example:
+````
+$ make test TESTDIR=pt2pt
+````
+
+In addition, a `TESTSET` can be specified to further restrict the number of tests.
+The tests that belong to a certain test set are stated as a list in a file with the same name within the above listed subdirectories.
+Currently, only `ps-test-minimal` (minimal list of tests) and `testlist` (containing all tests) are valid test sets.
+So, for example, the following invocation runs all tests belonging to `ps-test-minimal` within all subdirectories:
+
+````
+$ make test TESTSET=ps-test-minimal
+````
+And if, for example, the test set `ps-test-minimal` should only be executed for tests within the subfolder `pt2pt`, then the following invocation is the means of choice:
+````
+$ make test TESTSET=ps-test-minimal TESTDIR=pt2pt
+````
