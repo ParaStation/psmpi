@@ -11,6 +11,10 @@ Contents
     - Build
     - Environment
 * Alternative Installation
+* Session Parameters
+    - Debugging
+    - Feature Activation
+    - Statistical Analysis
 
 Introduction
 ------------
@@ -90,6 +94,7 @@ $ ../configure --prefix=/path/to/installation/dir --with-confset=default
 | `--with-threading`          | Enable multi-thread support                       |
 | `--with-topology-awareness` | Enable topology/hierarchy-aware collectives       |
 | `--with-session-statistics` | Enable the collection of statistical information  |
+| `--with-hcoll[=PATH]`       | Enable hcoll support [PATH to hcoll installation] |
 
 
 ### Build ParaStation MPI
@@ -147,3 +152,41 @@ By default, the pscom4openib as well as the pscom4psm plugins are included
 firmly into ParaStation MPI if `--with-pscom-allin` is set and the related
 low-level drivers are found. For specifying the plugins to be built-in
 explicitly, the `--with-pscom-builtin[=list]` option can be used.
+
+Session Parameters
+------------------
+
+### Debugging
+
+| Environment Variable        | Description                                          |
+------------------------------|------------------------------------------------------|
+| `PSP_DEBUG=0`               | only fatal conditions (like detected bugs)           |
+| `PSP_DEBUG=1`               | fatal conditions + errors (default)                  |
+| `PSP_DEBUG=2`               |  + warnings                                          |
+| `PSP_DEBUG=3`               |  + information                                       |
+| `PSP_DEBUG=4`               |  + debug                                             |
+| `PSP_DEBUG=5`               |  + verbose debug                                     |
+| `PSP_DEBUG=6`               |  + tracing calls                                     |
+| `PSP_DEBUG_VERSION=1`       | Show always the pscom version (info)                 |
+| `PSP_DEBUG_CONTYPE=1`       | Show connection types (info)                         |
+
+### Feature Activation
+
+| Environment Variable        | Description                                          |
+------------------------------|------------------------------------------------------|
+| `PSP_CUDA=1`                | Enable/Disable CUDA awareness (default = 0)          |
+| `PSP_HCOLL=1`               | Enable/Disable HCOLL support (default = 0)           |
+| `PSP_SMP_AWARENESS=1`       | Take locality information into account (default = 1) |
+| `PSP_SMP_AWARE_COLLOPS=1`   | Enable/Disable SMP-aware collectives (default = 0)   |
+| `PSP_MSA_AWARENESS=1`       | Take topology information into account (default = 0) |
+| `PSP_MSA_AWARE_COLLOPS=1`   | Enable/Disable MSA-aware collectives (default = 0)   |
+
+### Statistical Analysis
+
+| Environment Variable        | Description                                          |
+------------------------------|------------------------------------------------------|
+| `PSP_HISTOGRAM=1`           | Enable the collection of statistical data            |
+| `PSP_HISTOGRAM_MIN=x`       | Set the lower message size limit for the histogram   |
+| `PSP_HISTOGRAM_MAX=y`       | Set the upper message size limit for the histogram   |
+| `PSP_HISTOGRAM_SHIFT=z`     | Bit shift for the number of bins of the histogram    |
+| `PSP_HISTOGRAM_CONTYPE=con` | Limit the histogram to a particular connection type  |
