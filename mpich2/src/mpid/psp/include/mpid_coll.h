@@ -58,6 +58,11 @@ static inline int MPID_Bcast(void *buffer, int count, MPI_Datatype datatype, int
     int mpi_errno = MPI_SUCCESS;
 
 #ifdef HAVE_LIBHCOLL
+    int typesize;
+    MPIR_Datatype_get_size_macro(datatype, typesize);
+    if (count * typesize == 0)
+        goto fn_exit; /* do shortcut here (as it seems that HCOLL has problems with zero-byte messages) */
+
     mpi_errno = hcoll_Bcast(buffer, count, datatype, root, comm, errflag);
     if (mpi_errno == MPI_SUCCESS)
         goto fn_exit;
@@ -92,6 +97,11 @@ static inline int MPID_Allreduce(const void *sendbuf, void *recvbuf, int count,
     int mpi_errno = MPI_SUCCESS;
 
 #ifdef HAVE_LIBHCOLL
+    int typesize;
+    MPIR_Datatype_get_size_macro(datatype, typesize);
+    if (count * typesize == 0)
+        goto fn_exit; /* do shortcut here (as it seems that HCOLL has problems with zero-byte messages) */
+
     mpi_errno = hcoll_Allreduce(sendbuf, recvbuf, count, datatype, op, comm, errflag);
     if (mpi_errno == MPI_SUCCESS)
         goto fn_exit;
@@ -131,6 +141,12 @@ static inline int MPID_Allgather(const void *sendbuf, int sendcount, MPI_Datatyp
     int mpi_errno = MPI_SUCCESS;
 
 #ifdef HAVE_LIBHCOLL
+    int stypesize, rtypesize;
+    MPIR_Datatype_get_size_macro(sendtype, stypesize);
+    MPIR_Datatype_get_size_macro(recvtype, rtypesize);
+    if (((sendcount * stypesize == 0) && (sendbuf != MPI_IN_PLACE)) || (recvcount * rtypesize == 0))
+        goto fn_exit; /* do shortcut here (as it seems that HCOLL has problems with zero-byte messages) */
+
     mpi_errno = hcoll_Allgather(sendbuf, sendcount, sendtype, recvbuf,
                                 recvcount, recvtype, comm, errflag);
     if (mpi_errno == MPI_SUCCESS)
@@ -273,6 +289,20 @@ static inline int MPID_Alltoall(const void *sendbuf, int sendcount, MPI_Datatype
 {
     int mpi_errno = MPI_SUCCESS;
 
+#ifdef HAVE_LIBHCOLL
+    int stypesize, rtypesize;
+    MPIR_Datatype_get_size_macro(sendtype, stypesize);
+    MPIR_Datatype_get_size_macro(recvtype, rtypesize);
+    if (((sendcount * stypesize == 0) && (sendbuf != MPI_IN_PLACE)) || (recvcount * rtypesize == 0))
+        goto fn_exit; /* do shortcut here (as it seems that HCOLL has problems with zero-byte messages) */
+
+    mpi_errno = hcoll_Alltoall(sendbuf, sendcount, sendtype, recvbuf,
+                               recvcount, recvtype, comm, errflag);
+
+    if (mpi_errno == MPI_SUCCESS)
+        goto fn_exit;
+#endif
+
     mpi_errno = MPIR_Alltoall_impl(sendbuf, sendcount, sendtype, recvbuf,
                                    recvcount, recvtype, comm, errflag);
 
@@ -295,6 +325,15 @@ static inline int MPID_Alltoallv(const void *sendbuf, const int *sendcounts, con
                                  MPIR_Errflag_t * errflag)
 {
     int mpi_errno = MPI_SUCCESS;
+
+#ifdef HAVE_LIBHCOLL
+    mpi_errno = hcoll_Alltoallv(sendbuf, sendcounts, sdispls, sendtype,
+                                recvbuf, recvcounts, rdispls, recvtype,
+                                comm, errflag);
+
+    if (mpi_errno == MPI_SUCCESS)
+        goto fn_exit;
+#endif
 
     mpi_errno = MPIR_Alltoallv_impl(sendbuf, sendcounts, sdispls, sendtype,
                                     recvbuf, recvcounts, rdispls, recvtype,
@@ -343,6 +382,17 @@ static inline int MPID_Reduce(const void *sendbuf, void *recvbuf, int count,
                               MPIR_Comm * comm, MPIR_Errflag_t * errflag)
 {
     int mpi_errno = MPI_SUCCESS;
+
+#ifdef HAVE_LIBHCOLL
+    int typesize;
+    MPIR_Datatype_get_size_macro(datatype, typesize);
+    if (count * typesize == 0)
+        goto fn_exit; /* do shortcut here (as it seems that HCOLL has problems with zero-byte messages) */
+
+    mpi_errno = hcoll_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm, errflag);
+    if (mpi_errno == MPI_SUCCESS)
+        goto fn_exit;
+#endif
 
 #ifdef MPID_PSP_WITH_CUDA_AWARENESS
     mpi_errno = MPID_PSP_Reduce_for_cuda(sendbuf, recvbuf, count, datatype, op, root,

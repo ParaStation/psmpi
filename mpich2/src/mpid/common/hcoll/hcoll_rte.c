@@ -432,7 +432,7 @@ static int get_mpi_type_envelope(void *mpi_type, int *num_integers,
                                  hcoll_mpi_type_combiner_t * combiner)
 {
     int mpi_combiner;
-    MPI_Datatype dt_handle = (MPI_Datatype) mpi_type;
+    MPI_Datatype dt_handle = (intptr_t) mpi_type;
 
     MPIR_Type_get_envelope(dt_handle, num_integers, num_addresses, num_datatypes, &mpi_combiner);
 
@@ -446,7 +446,7 @@ static int get_mpi_type_contents(void *mpi_type, int max_integers, int max_addre
                                  void *array_of_addresses, void *array_of_datatypes)
 {
     int ret;
-    MPI_Datatype dt_handle = (MPI_Datatype) mpi_type;
+    MPI_Datatype dt_handle = (intptr_t) mpi_type;
 
     ret = MPIR_Type_get_contents(dt_handle,
                                  max_integers, max_addresses, max_datatypes,
@@ -459,7 +459,7 @@ static int get_mpi_type_contents(void *mpi_type, int max_integers, int max_addre
 
 static int get_hcoll_type(void *mpi_type, dte_data_representation_t * hcoll_type)
 {
-    MPI_Datatype dt_handle = (MPI_Datatype) mpi_type;
+    MPI_Datatype dt_handle = (intptr_t) mpi_type;
     MPIR_Datatype *dt_ptr;
 
     *hcoll_type = mpi_dtype_2_hcoll_dtype(dt_handle, -1, TRY_FIND_DERIVED);
