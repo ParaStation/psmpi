@@ -131,20 +131,34 @@ typedef struct MPIDI_Process
 #ifdef MPID_PSP_HISTOGRAM
 		unsigned enable_histogram;
 #endif
+#ifdef MPID_PSP_HCOLL_STATS
+		unsigned enable_hcoll_stats;
+#endif
 		unsigned enable_lazy_disconnect;
 	} env;
+
+#ifdef MPID_PSP_SESSION_STATISTICS
+       struct {
 #ifdef MPID_PSP_HISTOGRAM
-	struct {
-		char* con_type_str;
-		int   con_type_int;
-		int max_size;
-		int min_size;
-		int step_width;
-		int points;
-		unsigned int* limit;
-		unsigned long long int* count;
-	} histo;
+               struct {
+                       char* con_type_str;
+                       int   con_type_int;
+                       int max_size;
+                       int min_size;
+                       int step_width;
+                       int points;
+                       unsigned int* limit;
+                       unsigned long long int* count;
+	       } histo;
 #endif
+#ifdef MPID_PSP_HCOLL_STATS
+               struct {
+                       unsigned long long int counter[mpidi_psp_stats_collops_enum__MAX];
+               } hcoll;
+#endif
+       } stats;
+#endif /* MPID_PSP_SESSION_STATISTICS */
+
 } MPIDI_Process_t;
 
 extern MPIDI_Process_t MPIDI_Process;

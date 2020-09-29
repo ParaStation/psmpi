@@ -66,20 +66,32 @@ MPIDI_Process_t MPIDI_Process = {
 #ifdef MPID_PSP_HISTOGRAM
 		dinit(enable_histogram)		0,
 #endif
+#ifdef MPID_PSP_HCOLL_STATS
+		dinit(enable_hcoll_stats)       0,
+#endif
 		dinit(enable_lazy_disconnect)	1,
 	},
+#ifdef MPID_PSP_SESSION_STATISTICS
+	dinit(stats)            {
 #ifdef MPID_PSP_HISTOGRAM
-	dinit(histo)		{
-		dinit(con_type_str)          NULL,
-		dinit(con_type_int)            -1,
-		dinit(max_size)      64*1024*1024,
-		dinit(min_size)                64,
-		dinit(step_width)               1,
-		dinit(points)                   0,
-		dinit(limit)                 NULL,
-		dinit(count)                 NULL,
-	},
+		dinit(histo)                    {
+			dinit(con_type_str)          NULL,
+			dinit(con_type_int)            -1,
+			dinit(max_size)      64*1024*1024,
+			dinit(min_size)                64,
+			dinit(step_width)               1,
+			dinit(points)                   0,
+			dinit(limit)                 NULL,
+			dinit(count)                 NULL,
+		},
 #endif
+#ifdef MPID_PSP_HCOLL_STATS
+		dinit(hcoll)           {
+			dinit(counter)                {0},
+		},
+#endif
+	},
+#endif /* MPID_PSP_SESSION_STATISTICS */
 };
 
 /*
@@ -617,16 +629,21 @@ int MPID_Init(int *argc, char ***argv,
 #ifdef MPID_PSP_HISTOGRAM
 	/* collect statistics information and print them at the end of a run */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_histogram, "PSP_HISTOGRAM");
-	pscom_env_get_uint(&MPIDI_Process.histo.max_size,   "PSP_HISTOGRAM_MAX");
-	pscom_env_get_uint(&MPIDI_Process.histo.min_size,   "PSP_HISTOGRAM_MIN");
-	pscom_env_get_uint(&MPIDI_Process.histo.step_width, "PSP_HISTOGRAM_SHIFT");
-	MPIDI_Process.histo.con_type_str = getenv("PSP_HISTOGRAM_CONTYPE");
-	if (MPIDI_Process.histo.con_type_str) {
-		for (MPIDI_Process.histo.con_type_int = PSCOM_CON_TYPE_GW; MPIDI_Process.histo.con_type_int >  PSCOM_CON_TYPE_NONE; MPIDI_Process.histo.con_type_int--) {
-			if (strcmp(MPIDI_Process.histo.con_type_str, pscom_con_type_str(MPIDI_Process.histo.con_type_int)) == 0) break;
+	pscom_env_get_uint(&MPIDI_Process.stats.histo.max_size,   "PSP_HISTOGRAM_MAX");
+	pscom_env_get_uint(&MPIDI_Process.stats.histo.min_size,   "PSP_HISTOGRAM_MIN");
+	pscom_env_get_uint(&MPIDI_Process.stats.histo.step_width, "PSP_HISTOGRAM_SHIFT");
+	MPIDI_Process.stats.histo.con_type_str = getenv("PSP_HISTOGRAM_CONTYPE");
+	if (MPIDI_Process.stats.histo.con_type_str) {
+		for (MPIDI_Process.stats.histo.con_type_int = PSCOM_CON_TYPE_GW; MPIDI_Process.stats.histo.con_type_int >  PSCOM_CON_TYPE_NONE; MPIDI_Process.stats.histo.con_type_int--) {
+			if (strcmp(MPIDI_Process.stats.histo.con_type_str, pscom_con_type_str(MPIDI_Process.stats.histo.con_type_int)) == 0) break;
 		}
 	}
 #endif
+#ifdef MPID_PSP_HCOLL_STATS
+	/* collect usage information of hcoll collectives and print them at the end of a run */
+	pscom_env_get_uint(&MPIDI_Process.env.enable_hcoll_stats, "PSP_HCOLL_STATS");
+#endif
+
 	pscom_env_get_uint(&MPIDI_Process.env.enable_lazy_disconnect, "PSP_LAZY_DISCONNECT");
 
 	/*
