@@ -148,24 +148,24 @@ int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int ra
 	size_t len;
 
 #ifdef MPID_PSP_HISTOGRAM
-	if ( unlikely(MPIDI_Process.env.enable_histogram) && unlikely( MPIDI_Process.histo.points == 0) ) {
+	if ( unlikely(MPIDI_Process.env.enable_histogram) && unlikely( MPIDI_Process.stats.histo.points == 0) ) {
 
 		int idx;
 		int limit;
 
-		MPIDI_Process.histo.points = 1;
+		MPIDI_Process.stats.histo.points = 1;
 
-		for (limit = MPIDI_Process.histo.min_size; limit <= MPIDI_Process.histo.max_size; limit <<= MPIDI_Process.histo.step_width) {
-			MPIDI_Process.histo.points++;
+		for (limit = MPIDI_Process.stats.histo.min_size; limit <= MPIDI_Process.stats.histo.max_size; limit <<= MPIDI_Process.stats.histo.step_width) {
+			MPIDI_Process.stats.histo.points++;
 		}
 
-		MPIDI_Process.histo.limit = MPL_malloc(MPIDI_Process.histo.points*sizeof(int), MPL_MEM_OBJECT);
-		MPIDI_Process.histo.count = MPL_malloc(MPIDI_Process.histo.points*sizeof(long long int), MPL_MEM_OBJECT);
+		MPIDI_Process.stats.histo.limit = MPL_malloc(MPIDI_Process.stats.histo.points*sizeof(int), MPL_MEM_OBJECT);
+		MPIDI_Process.stats.histo.count = MPL_malloc(MPIDI_Process.stats.histo.points*sizeof(long long int), MPL_MEM_OBJECT);
 
-		for (idx = 0, limit = MPIDI_Process.histo.min_size; idx < MPIDI_Process.histo.points; ++idx, limit <<= MPIDI_Process.histo.step_width)
+		for (idx = 0, limit = MPIDI_Process.stats.histo.min_size; idx < MPIDI_Process.stats.histo.points; ++idx, limit <<= MPIDI_Process.stats.histo.step_width)
 		{
-			MPIDI_Process.histo.limit[idx] = limit;
-			MPIDI_Process.histo.count[idx] = 0;
+			MPIDI_Process.stats.histo.limit[idx] = limit;
+			MPIDI_Process.stats.histo.count[idx] = 0;
 		}
 	}
 #endif
@@ -199,12 +199,12 @@ int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int ra
 #ifdef MPID_PSP_HISTOGRAM
 		if (unlikely(MPIDI_Process.env.enable_histogram)) {
 			pscom_request_t *preq = req->dev.kind.common.pscom_req;
-			if ((MPIDI_Process.histo.con_type_int < 0) || (MPIDI_Process.histo.con_type_int == preq->connection->type)) {
+			if ((MPIDI_Process.stats.histo.con_type_int < 0) || (MPIDI_Process.stats.histo.con_type_int == preq->connection->type)) {
 
 				int idx;
-				for (idx = 0; idx < MPIDI_Process.histo.points; ++idx) {
-					if ( len <= MPIDI_Process.histo.limit[idx] || (idx == MPIDI_Process.histo.points-1) ) {
-						++MPIDI_Process.histo.count[idx];
+				for (idx = 0; idx < MPIDI_Process.stats.histo.points; ++idx) {
+					if ( len <= MPIDI_Process.stats.histo.limit[idx] || (idx == MPIDI_Process.stats.histo.points-1) ) {
+						++MPIDI_Process.stats.histo.count[idx];
 						break;
 					}
 				}

@@ -26,11 +26,19 @@
 
 /* MPID_PSP_SESSION_STATISTICS is set if psmpi is configured with --with-session-statistics */
 #ifdef MPID_PSP_SESSION_STATISTICS
+
 #define MPID_PSP_HISTOGRAM
 /* When MPID_PSP_HISTOGRAM is defined and PSP_HISTOGRAM=1 is set, some statistics
  * about the distribution of message sizes will be gathered during the run by all processes
  * and eventually accumulated and printed by world rank 0 within the MPI_Finalize call. */
+
+#ifdef HAVE_LIBHCOLL
+#define MPID_PSP_HCOLL_STATS
+/* When MPID_PSP_HCOLL_STATS is defined and HCOLL is enabled and PSP_HCOLL_STATS=1 is set,
+ * MPI_Finalize also prints some information about the usage of HCOLL collectives. */
 #endif
+
+#endif /* MPID_PSP_SESSION_STATISTICS */
 
 /* MPID_PSP_TOPOLOGY_AWARENESS is set if psmpi is configured with --with-topology-awareness */
 #ifdef MPID_PSP_TOPOLOGY_AWARENESS
@@ -761,5 +769,18 @@ int MPID_PSP_Exscan_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_
 			   MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
 #endif
 
+
+#ifdef MPID_PSP_SESSION_STATISTICS
+typedef enum {
+	mpidi_psp_stats_collops_enum__bcast,
+	mpidi_psp_stats_collops_enum__barrier,
+	mpidi_psp_stats_collops_enum__reduce,
+	mpidi_psp_stats_collops_enum__allreduce,
+	mpidi_psp_stats_collops_enum__allgather,
+	mpidi_psp_stats_collops_enum__alltoall,
+	mpidi_psp_stats_collops_enum__alltoallv,
+	mpidi_psp_stats_collops_enum__MAX
+} MPIDI_PSP_stats_collops_enum_t;
+#endif
 
 #endif /* _MPIDPRE_H_ */

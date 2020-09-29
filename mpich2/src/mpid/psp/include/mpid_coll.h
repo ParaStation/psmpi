@@ -12,6 +12,9 @@
 #include "../../common/hcoll/hcoll.h"
 #endif
 
+#ifdef MPID_PSP_HCOLL_STATS
+void MPIDI_PSP_stats_hcoll_counter_inc(MPIDI_PSP_stats_collops_enum_t);
+#endif
 
 void MPID_PSP_group_init(MPIR_Comm *comm_ptr);
 void MPID_PSP_group_cleanup(MPIR_Comm *comm_ptr);
@@ -26,8 +29,12 @@ static inline int MPID_Barrier(MPIR_Comm * comm, MPIR_Errflag_t * errflag)
 
 #ifdef HAVE_LIBHCOLL
     mpi_errno = hcoll_Barrier(comm, errflag);
-    if (mpi_errno == MPI_SUCCESS)
+    if (mpi_errno == MPI_SUCCESS) {
+#ifdef MPID_PSP_HCOLL_STATS
+        MPIDI_PSP_stats_hcoll_counter_inc(mpidi_psp_stats_collops_enum__barrier);
+#endif
         goto fn_exit;
+    }
 #endif
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
@@ -60,12 +67,16 @@ static inline int MPID_Bcast(void *buffer, int count, MPI_Datatype datatype, int
 #ifdef HAVE_LIBHCOLL
     int typesize;
     MPIR_Datatype_get_size_macro(datatype, typesize);
-    if (count * typesize == 0)
+    if (count * typesize == 0) {
         goto fn_exit; /* do shortcut here (as it seems that HCOLL has problems with zero-byte messages) */
-
+    }
     mpi_errno = hcoll_Bcast(buffer, count, datatype, root, comm, errflag);
-    if (mpi_errno == MPI_SUCCESS)
+    if (mpi_errno == MPI_SUCCESS) {
+#ifdef MPID_PSP_HCOLL_STATS
+        MPIDI_PSP_stats_hcoll_counter_inc(mpidi_psp_stats_collops_enum__bcast);
+#endif
         goto fn_exit;
+    }
 #endif
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
@@ -99,12 +110,16 @@ static inline int MPID_Allreduce(const void *sendbuf, void *recvbuf, int count,
 #ifdef HAVE_LIBHCOLL
     int typesize;
     MPIR_Datatype_get_size_macro(datatype, typesize);
-    if (count * typesize == 0)
+    if (count * typesize == 0) {
         goto fn_exit; /* do shortcut here (as it seems that HCOLL has problems with zero-byte messages) */
-
+    }
     mpi_errno = hcoll_Allreduce(sendbuf, recvbuf, count, datatype, op, comm, errflag);
-    if (mpi_errno == MPI_SUCCESS)
+    if (mpi_errno == MPI_SUCCESS) {
+#ifdef MPID_PSP_HCOLL_STATS
+        MPIDI_PSP_stats_hcoll_counter_inc(mpidi_psp_stats_collops_enum__allreduce);
+#endif
         goto fn_exit;
+    }
 #endif
 
 #ifdef MPID_PSP_WITH_CUDA_AWARENESS
@@ -144,13 +159,17 @@ static inline int MPID_Allgather(const void *sendbuf, int sendcount, MPI_Datatyp
     int stypesize, rtypesize;
     MPIR_Datatype_get_size_macro(sendtype, stypesize);
     MPIR_Datatype_get_size_macro(recvtype, rtypesize);
-    if (((sendcount * stypesize == 0) && (sendbuf != MPI_IN_PLACE)) || (recvcount * rtypesize == 0))
+    if (((sendcount * stypesize == 0) && (sendbuf != MPI_IN_PLACE)) || (recvcount * rtypesize == 0)) {
         goto fn_exit; /* do shortcut here (as it seems that HCOLL has problems with zero-byte messages) */
-
+    }
     mpi_errno = hcoll_Allgather(sendbuf, sendcount, sendtype, recvbuf,
                                 recvcount, recvtype, comm, errflag);
-    if (mpi_errno == MPI_SUCCESS)
+    if (mpi_errno == MPI_SUCCESS) {
+#ifdef MPID_PSP_HCOLL_STATS
+        MPIDI_PSP_stats_hcoll_counter_inc(mpidi_psp_stats_collops_enum__allgather);
+#endif
         goto fn_exit;
+    }
 #endif
     mpi_errno = MPIR_Allgather_impl(sendbuf, sendcount, sendtype, recvbuf,
                                     recvcount, recvtype, comm, errflag);
@@ -293,14 +312,17 @@ static inline int MPID_Alltoall(const void *sendbuf, int sendcount, MPI_Datatype
     int stypesize, rtypesize;
     MPIR_Datatype_get_size_macro(sendtype, stypesize);
     MPIR_Datatype_get_size_macro(recvtype, rtypesize);
-    if (((sendcount * stypesize == 0) && (sendbuf != MPI_IN_PLACE)) || (recvcount * rtypesize == 0))
+    if (((sendcount * stypesize == 0) && (sendbuf != MPI_IN_PLACE)) || (recvcount * rtypesize == 0)) {
         goto fn_exit; /* do shortcut here (as it seems that HCOLL has problems with zero-byte messages) */
-
+    }
     mpi_errno = hcoll_Alltoall(sendbuf, sendcount, sendtype, recvbuf,
                                recvcount, recvtype, comm, errflag);
-
-    if (mpi_errno == MPI_SUCCESS)
+    if (mpi_errno == MPI_SUCCESS) {
+#ifdef MPID_PSP_HCOLL_STATS
+        MPIDI_PSP_stats_hcoll_counter_inc(mpidi_psp_stats_collops_enum__alltoall);
+#endif
         goto fn_exit;
+    }
 #endif
 
     mpi_errno = MPIR_Alltoall_impl(sendbuf, sendcount, sendtype, recvbuf,
@@ -330,9 +352,12 @@ static inline int MPID_Alltoallv(const void *sendbuf, const int *sendcounts, con
     mpi_errno = hcoll_Alltoallv(sendbuf, sendcounts, sdispls, sendtype,
                                 recvbuf, recvcounts, rdispls, recvtype,
                                 comm, errflag);
-
-    if (mpi_errno == MPI_SUCCESS)
+    if (mpi_errno == MPI_SUCCESS) {
+#ifdef MPID_PSP_HCOLL_STATS
+        MPIDI_PSP_stats_hcoll_counter_inc(mpidi_psp_stats_collops_enum__alltoallv);
+#endif
         goto fn_exit;
+    }
 #endif
 
     mpi_errno = MPIR_Alltoallv_impl(sendbuf, sendcounts, sdispls, sendtype,
@@ -386,12 +411,16 @@ static inline int MPID_Reduce(const void *sendbuf, void *recvbuf, int count,
 #ifdef HAVE_LIBHCOLL
     int typesize;
     MPIR_Datatype_get_size_macro(datatype, typesize);
-    if (count * typesize == 0)
+    if (count * typesize == 0) {
         goto fn_exit; /* do shortcut here (as it seems that HCOLL has problems with zero-byte messages) */
-
+    }
     mpi_errno = hcoll_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm, errflag);
-    if (mpi_errno == MPI_SUCCESS)
+    if (mpi_errno == MPI_SUCCESS) {
+#ifdef MPID_PSP_HCOLL_STATS
+        MPIDI_PSP_stats_hcoll_counter_inc(mpidi_psp_stats_collops_enum__reduce);
+#endif
         goto fn_exit;
+    }
 #endif
 
 #ifdef MPID_PSP_WITH_CUDA_AWARENESS

@@ -431,3 +431,11 @@ int MPID_PSP_Reduce_local_for_cuda(const void *inbuf, void *inoutbuf, int count,
 ////////////////////////////////////////////////////////////////////////////////////////////
 #endif
 ////////////////////////////////////////////////////////////////////////////////////////////
+
+
+#ifdef MPID_PSP_HCOLL_STATS
+void MPIDI_PSP_stats_hcoll_counter_inc(MPIDI_PSP_stats_collops_enum_t coll_op)
+{
+	MPIDI_Process.stats.hcoll.counter[coll_op]++;
+}
+#endif
