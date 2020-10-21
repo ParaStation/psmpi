@@ -91,12 +91,12 @@ $ ../configure --prefix=/path/to/installation/dir --with-confset=default
 | Argument                    | Description                                       |
 ------------------------------|---------------------------------------------------|
 | `--with-cuda`               | Enable CUDA awareness                             |
-| `--with-hydra`              | Use MPICH's process manager hydra                 |
+| `--with-hydra`              | Use MPICH's process manager Hydra                 |
 | `--with-threading`          | Enable multi-thread support                       |
 | `--with-topology-awareness` | Enable topology/hierarchy-aware collectives       |
 | `--with-session-statistics` | Enable the collection of statistical information  |
 | `--with-hcoll[=PATH]`       | Enable hcoll support [PATH to hcoll installation] |
-
+| `--with-hwloc[=PATH]`       | Enable hwloc in MPICH/Hydra [built-in or PATH]    |
 
 ### Build ParaStation MPI
 For a successful build, your environment has to include the path to your pscom
