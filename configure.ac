@@ -46,11 +46,20 @@ AC_ARG_WITH([hydra], [
 ])
 AC_SUBST([ENABLE_HYDRA])
 
+DISABLE_HWLOC="true" # For the time being, disable HWLOC by default!
 AC_ARG_WITH([hwloc], [
-  --without-hwloc         Disable the HWLOC support in MPICH.
+  --with-hwloc[[=PATH]]     Enable the HWLOC support in MPICH.
 ],[
 	if test "x$with_hwloc" = "xno" ; then
 	   DISABLE_HWLOC="true"
+	else
+	   if test "x$with_hwloc" = "xyes" ; then
+	      WITH_HWLOC_DIR=""
+	   else
+	      # Path to be passed to MPICH's configure for HWLOC:
+	      WITH_HWLOC_DIR="${with_hwloc}"
+	   fi
+	   DISABLE_HWLOC="false"
 	fi
 ])
 AC_SUBST([DISABLE_HWLOC])
@@ -62,8 +71,9 @@ AC_ARG_WITH([hcoll], [
 	if test "x$with_hcoll" = "xno" ; then
 	   DISABLE_HCOLL="true"
 	else
+	   DISABLE_HCOLL="false"
+	   # Path to be passed to src/mpid/common/hcoll/subconfigure.m4:
 	   WITH_HCOLL_DIR="${with_hcoll}"
-# Path to be passed to src/mpid/common/hcoll/subconfigure.m4
 	fi
 ])
 AC_SUBST([DISABLE_HCOLL])
@@ -78,6 +88,7 @@ AC_ARG_WITH([confset], [
 	   intel      : Use intel compiler (icc)
 	   icc        : Like 'intel'
 	   pgi	      : Portland group compiler (pgcc)
+	   nvhpc      : Nvidia hpc compiler (nvc)
 	   psc	      : Pathscale compiler (pathcc)
 	   cellgcc    : ppu-gcc
 	   cellxlc    :	ppuxlc
@@ -244,6 +255,21 @@ case $CONFSET in
 	CC=pgcc
 	CXX=pgc++
 	FC=pgf90
+	;;
+
+"nvhpc")
+	echo "Using confset=nvhpc"
+	CONF_OPS="--with-device=psp"
+	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
+	CONF_OPS="$CONF_OPS --enable-f77"
+	CONF_OPS="$CONF_OPS --enable-fc"
+	CONF_OPS="$CONF_OPS --enable-cxx"
+	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
+
+	CC=nvc
+	CXX=nvc++
+	FC=nvfortran
 	;;
 "psc")
 	echo "Using confset=psc"
@@ -646,6 +672,16 @@ AC_OUTPUT
 if test "x$DISABLE_HWLOC" = "xtrue" ; then
    CONF_OPS="$CONF_OPS --with-hwloc-prefix='no'"
    CONF_OPS="$CONF_OPS --with-hydra-topolib='no'"
+else
+   if test -n "${WITH_HWLOC_DIR}" ; then
+      CONF_OPS="$CONF_OPS --with-hwloc-prefix=${WITH_HWLOC_DIR}"
+      export CPATH=$CPATH:${WITH_HWLOC_DIR}/include
+      export LIBRARY_PATH=$LIBRARY_PATH:${WITH_HWLOC_DIR}/lib:${WITH_HWLOC_DIR}/lib64
+      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${WITH_HWLOC_DIR}/lib:${WITH_HWLOC_DIR}/lib64
+      export MPICHLIB_CFLAGS="$MPICHLIB_CFLAGS -I${WITH_HWLOC_DIR}/include"
+      export MPICHLIB_CFLAGS="$MPICHLIB_CFLAGS -L${WITH_HWLOC_DIR}/lib"
+      export MPICHLIB_CFLAGS="$MPICHLIB_CFLAGS -L${WITH_HWLOC_DIR}/lib64"
+   fi
 fi
 
 if test "x$DISABLE_HCOLL" = "xtrue" ; then

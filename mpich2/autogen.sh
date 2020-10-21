@@ -1035,3 +1035,7 @@ if [ "$do_build_configure" = "yes" ] ; then
 	fi
     done
 fi
+
+echo "Patching configure for compatibility with NVHPC compilers..."
+../scripts/patch_mpich_configure_for_nvhpc.sh 2>&1 >/dev/null
+

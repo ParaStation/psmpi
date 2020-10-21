@@ -52,6 +52,10 @@ int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
 		}
 
 		mpi_errno = MPIR_Comm_split_impl(comm_ptr, color, key, newcomm_ptr);
+
+	} else if (split_type == MPIX_COMM_TYPE_NEIGHBORHOOD) {
+		// we don't know how to handle this split types -> so hand it back to the upper MPICH layer:
+		mpi_errno = MPIR_Comm_split_type(comm_ptr, split_type, key, info_ptr, newcomm_ptr);
 	} else {
 		mpi_errno = MPIR_Comm_split_impl(comm_ptr,  MPI_UNDEFINED, key, newcomm_ptr);
 	}
