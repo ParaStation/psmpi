@@ -74,13 +74,14 @@ gcc        : Use Gnu compiler (gcc)
 intel      : Use intel compiler (icc)
 icc        : Like 'intel'
 pgi        : Portland group compiler (pgcc)
+nvhpc      : Nvidia hpc compiler (nvc)
 psc        : Pathscale compiler (pathcc)
 cellgcc    : ppu-gcc
 cellxlc    : ppuxlc
 
 devel      : With error checking and debug info (gcc)
 user       : No predefined options
-ch3        : original mpich ch3 device (no parastation)
+ch3|ch4    : original mpich ch3/ch4 device (no parastation)
 ```
 
 The following example configures ParaStation MPI for using the gcc compiler:
