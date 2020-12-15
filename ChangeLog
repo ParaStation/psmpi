@@ -1,3 +1,26 @@
+2020-12-15  Carsten Clauss <clauss@par-tec.com>   -     5.4.8-0rc1
+
+2020-10-27  Carsten Clauss <clauss@par-tec.com>
+
+	 * Documentation: Update and extend README.md
+
+2020-10-21  Carsten Clauss <clauss@par-tec.com>
+
+	 * Build: Add new confset 'nvhpc' for NVIDIA HPC compilers
+
+	 * Build: Unused hwloc support now disabled by default
+
+2020-09-18  Carsten Clauss <clauss@par-tec.com>
+
+	 * Enhancement: Extended hcoll support
+
+	 * Fix: Several patches for hcoll bindings 
+
+2020-09-15  Carsten Clauss <clauss@par-tec.com>
+
+	 * Build: New configure option --with-session-statistics
+	 for gathering of statistical data
+
 2020-08-05  Simon Pickartz <pickartz@par-tec.com> -     5.4.7-1
 
 2020-07-31  Simon Pickartz <pickartz@par-tec.com> -     5.4.7-0rc1
