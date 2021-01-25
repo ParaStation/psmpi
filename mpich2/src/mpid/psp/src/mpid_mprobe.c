@@ -128,7 +128,7 @@ void prepare_mrecv_cleanup(MPIR_Request *req, void * buf, int count, MPI_Datatyp
 }
 
 
-int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype, MPIR_Request *message, MPIR_Request **request)
+int MPIDI_PSP_Imrecv(void *buf, int count, MPI_Datatype datatype, MPIR_Request *message, MPIR_Request **request)
 {
 	MPIR_Request *req;
 	int rank;
@@ -182,7 +182,7 @@ int MPID_Mrecv(void *buf, int count, MPI_Datatype datatype,  MPIR_Request *messa
 		return MPI_SUCCESS;
 	}
 
-	mpi_errno = MPID_Imrecv(buf, count, datatype, message, &request);
+	mpi_errno = MPIDI_PSP_Imrecv(buf, count, datatype, message, &request);
 
 	if (mpi_errno == MPI_SUCCESS) {
 		mpi_errno = MPIDI_PSP_Wait(request);

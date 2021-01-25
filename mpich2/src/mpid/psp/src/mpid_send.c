@@ -18,7 +18,7 @@ int MPID_Send(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
 	int mpi_errno;
 /*	printf("#%d ps--- %s() called\n", MPIDI_Process.my_pg_rank, __func__); */
 
-	mpi_errno = MPID_Isend(buf, count, datatype, rank, tag, comm, context_offset, request);
+	mpi_errno = MPIDI_PSP_Isend(buf, count, datatype, rank, tag, comm, context_offset, request);
 
 	if (mpi_errno == MPI_SUCCESS) {
 		mpi_errno = MPIDI_PSP_Wait(*request);
@@ -34,7 +34,7 @@ int MPID_Ssend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank
 	int mpi_errno;
 /*	printf("#%d ps--- %s() called\n", MPIDI_Process.my_pg_rank, __func__); */
 
-	mpi_errno = MPID_Issend(buf, count, datatype, rank, tag, comm, context_offset, request);
+	mpi_errno = MPIDI_PSP_Issend(buf, count, datatype, rank, tag, comm, context_offset, request);
 
 	if (mpi_errno == MPI_SUCCESS) {
 		mpi_errno = MPIDI_PSP_Wait(*request);
@@ -52,9 +52,17 @@ int MPID_Irsend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int ran
 }
 
 
-/* ready send (mapped to send) */
+/* ready send (same as send) */
 int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	       MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
 {
-	return MPID_Send(buf, count, datatype, rank, tag, comm, context_offset, request);
+	int mpi_errno;
+
+	mpi_errno = MPIDI_PSP_Isend(buf, count, datatype, rank, tag, comm, context_offset, request);
+
+	if (mpi_errno == MPI_SUCCESS) {
+		mpi_errno = MPIDI_PSP_Wait(*request);
+	}
+
+	return mpi_errno;
 }
