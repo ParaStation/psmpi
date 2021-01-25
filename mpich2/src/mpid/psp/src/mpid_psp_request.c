@@ -101,6 +101,7 @@ void MPID_Request_create_hook(MPIR_Request *req)
 	/* request-specific initialization */
 	switch (req->kind) {
 		case MPIR_REQUEST_KIND__SEND:
+		case MPIR_REQUEST_KIND__RMA:
 			MPIDI_PSP_Request_send_create_hook(req);
 			break;
 		case MPIR_REQUEST_KIND__PREQUEST_RECV:
@@ -109,7 +110,6 @@ void MPID_Request_create_hook(MPIR_Request *req)
 			break;
 		case MPIR_REQUEST_KIND__RECV:
 		case MPIR_REQUEST_KIND__GREQUEST:
-		case MPIR_REQUEST_KIND__RMA:
 		case MPIR_REQUEST_KIND__COLL:
 		case MPIR_REQUEST_KIND__MPROBE:
 			break;
@@ -125,6 +125,7 @@ void MPID_Request_destroy_hook(MPIR_Request *req)
 {
 	switch (req->kind) {
 	case MPIR_REQUEST_KIND__SEND:
+	case MPIR_REQUEST_KIND__RMA:
 		MPIDI_PSP_Request_send_destroy_hook(req);
 		break;
 	case MPIR_REQUEST_KIND__PREQUEST_RECV:
@@ -132,7 +133,6 @@ void MPID_Request_destroy_hook(MPIR_Request *req)
 		MPIDI_PSP_Request_persistent_destroy_hook(req);
 		break;
 	case MPIR_REQUEST_KIND__RECV:
-	case MPIR_REQUEST_KIND__RMA:
 	case MPIR_REQUEST_KIND__COLL:
 	case MPIR_REQUEST_KIND__MPROBE:
 	case MPIR_REQUEST_KIND__GREQUEST:

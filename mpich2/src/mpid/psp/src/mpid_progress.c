@@ -97,9 +97,7 @@ void MPID_DEV_Request_wait(MPIR_Request *req)
 		assert(MPIR_REQUEST_KIND__MPROBE_NOT_IMPLEMENTED);
 		break;
 	case MPIR_REQUEST_KIND__RMA:
-		/* ToDo: Unhandled request type!!! */
-#		define MPIR_REQUEST_KIND__RMA_NOT_IMPLEMENTED 0
-		assert(MPIR_REQUEST_KIND__RMA_NOT_IMPLEMENTED);
+		MPID_DEV_Request_common_wait(req);
 		break;
 	case MPIR_REQUEST_KIND__GREQUEST:
 	case MPIR_REQUEST_KIND__UNDEFINED:
