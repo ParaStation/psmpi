@@ -161,17 +161,18 @@ Session Parameters
 
 ### Debugging
 
-| Environment Variable        | Description                                          |
-------------------------------|------------------------------------------------------|
-| `PSP_DEBUG=0`               | only fatal conditions (like detected bugs)           |
-| `PSP_DEBUG=1`               | fatal conditions + errors (default)                  |
-| `PSP_DEBUG=2`               |  + warnings                                          |
-| `PSP_DEBUG=3`               |  + information                                       |
-| `PSP_DEBUG=4`               |  + debug                                             |
-| `PSP_DEBUG=5`               |  + verbose debug                                     |
-| `PSP_DEBUG=6`               |  + tracing calls                                     |
-| `PSP_DEBUG_VERSION=1`       | Show always the pscom version (info)                 |
-| `PSP_DEBUG_CONTYPE=1`       | Show connection types (info)                         |
+| Environment Variable         | Description                                                                                |
+-------------------------------|--------------------------------------------------------------------------------------------|
+| `PSP_DEBUG=0`                | only fatal conditions (like detected bugs)                                                 |
+| `PSP_DEBUG=1`                | fatal conditions + errors (default)                                                        |
+| `PSP_DEBUG=2`                |  + warnings                                                                                |
+| `PSP_DEBUG=3`                |  + information                                                                             |
+| `PSP_DEBUG=4`                |  + debug                                                                                   |
+| `PSP_DEBUG=5`                |  + verbose debug                                                                           |
+| `PSP_DEBUG=6`                |  + tracing calls                                                                           |
+| `PSP_DEBUG_VERSION=1`        | Show always the pscom version (info)                                                       |
+| `PSP_DEBUG_CONTYPE=1`        | Show connection types (info)                                                               |
+| `PSP_CUDA_ENFORCE_STAGING=1` | Enforce staging of CUDA buffers via host memory (with a _significant_ performance penalty!) |
 
 ### Feature Activation
 
