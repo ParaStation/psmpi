@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@ int MPI_Comm_create_group(MPI_Comm comm, MPI_Group group, int tag, MPI_Comm * ne
 #undef MPI_Comm_create_group
 #define MPI_Comm_create_group PMPI_Comm_create_group
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Comm_create_group
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /* comm create group impl; assumes that the standard error checking
  * has already taken place in the calling function */
 int MPIR_Comm_create_group(MPIR_Comm * comm_ptr, MPIR_Group * group_ptr, int tag,
@@ -62,20 +56,17 @@ int MPIR_Comm_create_group(MPIR_Comm * comm_ptr, MPIR_Group * group_ptr, int tag
          *group*, so processes not in the group do not participate. */
 
         mpi_errno = MPIR_Get_contextid_sparse_group(comm_ptr, group_ptr, tag, &new_context_id, 0);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         MPIR_Assert(new_context_id != 0);
 
         mpi_errno = MPII_Comm_create_calculate_mapping(group_ptr, comm_ptr,
                                                        &mapping, &mapping_comm);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
         /* Get the new communicator structure and context id */
 
         mpi_errno = MPIR_Comm_create(newcomm_ptr);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
         (*newcomm_ptr)->recvcontext_id = new_context_id;
         (*newcomm_ptr)->rank = group_ptr->rank;
@@ -90,25 +81,22 @@ int MPIR_Comm_create_group(MPIR_Comm * comm_ptr, MPIR_Group * group_ptr, int tag
         MPIR_Group_add_ref(group_ptr);
         (*newcomm_ptr)->context_id = (*newcomm_ptr)->recvcontext_id;
         (*newcomm_ptr)->remote_size = (*newcomm_ptr)->local_size = n;
-        (*newcomm_ptr)->pof2 = MPL_pof2(n);
 
         /* Setup the communicator's vc table.  This is for the remote group,
          * which is the same as the local group for intracommunicators */
         mpi_errno = MPII_Comm_create_map(n, 0, mapping, NULL, mapping_comm, *newcomm_ptr);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
+        (*newcomm_ptr)->tainted = comm_ptr->tainted;
         mpi_errno = MPIR_Comm_commit(*newcomm_ptr);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     } else {
         /* This process is not in the group */
         new_context_id = 0;
     }
 
   fn_exit:
-    if (mapping)
-        MPL_free(mapping);
+    MPL_free(mapping);
 
     MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPIR_COMM_CREATE_GROUP);
     return mpi_errno;
@@ -127,10 +115,6 @@ int MPIR_Comm_create_group(MPIR_Comm * comm_ptr, MPIR_Group * group_ptr, int tag
 
 #endif /* !defined(MPICH_MPI_FROM_PMPI) */
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Comm_create_group
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 
 MPI_Comm_create_group - Creates a new communicator
@@ -214,8 +198,7 @@ int MPI_Comm_create_group(MPI_Comm comm, MPI_Group group, int tag, MPI_Comm * ne
 
     /* ... body of routine ...  */
     mpi_errno = MPIR_Comm_create_group(comm_ptr, group_ptr, tag, &newcomm_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     if (newcomm_ptr)
         MPIR_OBJ_PUBLISH_HANDLE(*newcomm, newcomm_ptr->handle);
@@ -233,12 +216,12 @@ int MPI_Comm_create_group(MPI_Comm comm, MPI_Group group, int tag, MPI_Comm * ne
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__,
                                  MPI_ERR_OTHER, "**mpi_comm_create_group",
                                  "**mpi_comm_create_group %C %G %d %p", comm, group, tag, newcomm);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

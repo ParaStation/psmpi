@@ -1,10 +1,9 @@
 ! This file created from f77/coll/uallreducef.f with f77tof90
-! -*- Mode: Fortran; -*- 
 !
-!  (C) 2003 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
-!
+
 ! Test user-defined operations.  This tests a simple commutative operation
 !
       subroutine uop( cin, cout, count, datatype )

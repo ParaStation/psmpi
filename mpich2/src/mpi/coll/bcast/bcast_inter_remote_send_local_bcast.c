@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -13,10 +11,6 @@
  * intracommunicator broadcast.
  */
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Bcast_inter_remote_send_local_bcast
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Bcast_inter_remote_send_local_bcast(void *buffer,
                                              int count,
                                              MPI_Datatype datatype,
@@ -81,7 +75,7 @@ int MPIR_Bcast_inter_remote_send_local_bcast(void *buffer,
 
         /* now do the usual broadcast on this intracommunicator
          * with rank 0 as root. */
-        mpi_errno = MPIR_Bcast_intra_auto(buffer, count, datatype, 0, newcomm_ptr, errflag);
+        mpi_errno = MPIR_Bcast_allcomm_auto(buffer, count, datatype, 0, newcomm_ptr, errflag);
         if (mpi_errno) {
             /* for communication errors, just record the error but continue */
             *errflag =

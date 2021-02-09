@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -26,10 +25,6 @@ int MPI_Comm_rank(MPI_Comm comm, int *rank) __attribute__ ((weak, alias("PMPI_Co
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Comm_rank
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /*@
 
@@ -108,10 +103,10 @@ int MPI_Comm_rank(MPI_Comm comm, int *rank)
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_comm_rank", "**mpi_comm_rank %C %p", comm, rank);
     }
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
 #endif
     /* --END ERROR HANDLING-- */

@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Irecv
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Irecv - Begins a nonblocking receive
 
@@ -69,7 +63,7 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
-    MPID_THREAD_CS_ENTER(VNI_GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPIR_FUNC_TERSE_PT2PT_ENTER_BACK(MPID_STATE_MPI_IRECV);
 
     /* Validate handle parameters needing to be converted */
@@ -104,7 +98,7 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
             MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 
             /* Validate datatype object */
-            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(datatype)) {
                 MPIR_Datatype *datatype_ptr = NULL;
 
                 MPIR_Datatype_get_ptr(datatype, datatype_ptr);
@@ -122,6 +116,16 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
         MPID_END_ERROR_CHECKS;
     }
 #endif /* HAVE_ERROR_CHECKING */
+
+    /* Create a completed request and return immediately for dummy process */
+    if (unlikely(source == MPI_PROC_NULL)) {
+        request_ptr = MPIR_Request_create_complete(MPIR_REQUEST_KIND__RECV);
+        MPIR_ERR_CHKANDSTMT((request_ptr) == NULL, mpi_errno, MPIX_ERR_NOREQ, goto fn_fail,
+                            "**nomemreq");
+        MPIR_Status_set_procnull(&request_ptr->status);
+        *request = request_ptr->handle;
+        goto fn_exit;
+    }
 
     /* ... body of routine ...  */
 
@@ -145,7 +149,7 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
 
   fn_exit:
     MPIR_FUNC_TERSE_PT2PT_EXIT_BACK(MPID_STATE_MPI_IRECV);
-    MPID_THREAD_CS_EXIT(VNI_GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:
@@ -153,12 +157,12 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_irecv", "**mpi_irecv %p %d %D %i %t %C %p", buf, count,
                                  datatype, source, tag, comm, request);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

@@ -1,8 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -66,11 +66,11 @@ int single_struct_test(void)
     ts1[1].c = -1;
     ts1[1].d = -1;
 
-    err = MPI_Type_struct(3, blks, disps, types, &mystruct);
+    err = MPI_Type_create_struct(3, blks, disps, types, &mystruct);
     if (err != MPI_SUCCESS) {
         errs++;
         if (verbose) {
-            fprintf(stderr, "MPI_Type_struct returned error\n");
+            fprintf(stderr, "MPI_Type_create_struct returned error\n");
         }
     }
 

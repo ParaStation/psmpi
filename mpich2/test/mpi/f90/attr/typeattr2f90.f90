@@ -1,8 +1,9 @@
 ! This file created from f77/attr/typeattr2f.f with f77tof90
-! -*- Mode: Fortran; -*- 
 !
-!  (C) 2003 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
+!
+
 !  This is a modified version of typeattrf.f that uses two of the
 !  default functions
 !

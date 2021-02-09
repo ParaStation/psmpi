@@ -1,10 +1,9 @@
 ! This file created from f77/datatype/typename3f.f with f77tof90
-! -*- Mode: Fortran; -*- 
 !
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
-!  (C) 2012 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
-!
+
       program main
       use mpi
       character*(MPI_MAX_OBJECT_NAME) name

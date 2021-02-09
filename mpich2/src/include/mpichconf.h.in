@@ -1,9 +1,8 @@
 /* src/include/mpichconf.h.in.  Generated from configure.ac by autoheader.  */
 
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 #ifndef MPICHCONF_H_INCLUDED
 #define MPICHCONF_H_INCLUDED
@@ -12,14 +11,56 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
+/* The normal alignment of `bool', in bytes. */
+#undef ALIGNOF_BOOL
+
+/* The normal alignment of `char', in bytes. */
+#undef ALIGNOF_CHAR
+
+/* The normal alignment of `double', in bytes. */
+#undef ALIGNOF_DOUBLE
+
+/* The normal alignment of `float', in bytes. */
+#undef ALIGNOF_FLOAT
+
+/* The normal alignment of `int', in bytes. */
+#undef ALIGNOF_INT
+
+/* The normal alignment of `int16_t', in bytes. */
+#undef ALIGNOF_INT16_T
+
+/* The normal alignment of `int32_t', in bytes. */
+#undef ALIGNOF_INT32_T
+
+/* The normal alignment of `int64_t', in bytes. */
+#undef ALIGNOF_INT64_T
+
+/* The normal alignment of `int8_t', in bytes. */
+#undef ALIGNOF_INT8_T
+
+/* The normal alignment of `long', in bytes. */
+#undef ALIGNOF_LONG
+
+/* The normal alignment of `long double', in bytes. */
+#undef ALIGNOF_LONG_DOUBLE
+
+/* The normal alignment of `long long', in bytes. */
+#undef ALIGNOF_LONG_LONG
+
+/* The normal alignment of `max_align_t', in bytes. */
+#undef ALIGNOF_MAX_ALIGN_T
+
+/* The normal alignment of `short', in bytes. */
+#undef ALIGNOF_SHORT
+
+/* The normal alignment of `wchar_t', in bytes. */
+#undef ALIGNOF_WCHAR_T
+
 /* Define the number of CH3_RANK_BITS */
 #undef CH3_RANK_BITS
 
 /* Define the number of CH4_RANK_BITS */
 #undef CH4_RANK_BITS
-
-/* define to enable collection of statistics */
-#undef COLLECT_STATS
 
 /* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
    systems. This function is required for `alloca.c' support on those systems.
@@ -35,13 +76,6 @@
 /* Define the default remote shell program to use */
 #undef DEFAULT_REMOTE_SHELL
 
-/* Define to disable shared-memory communication for debugging */
-#undef ENABLED_NO_LOCAL
-
-/* Define to enable debugging mode where shared-memory communication is done
-   only between even procs or odd procs */
-#undef ENABLED_ODD_EVEN_CLIQUES
-
 /* Define to enable shared-memory collectives */
 #undef ENABLED_SHM_COLLECTIVES
 
@@ -52,17 +86,11 @@
    */
 #undef ENABLE_COMM_OVERRIDES
 
-/* Define if FTB is enabled */
-#undef ENABLE_FTB
-
-/* Define to enable using Izem CPU atomics */
-#undef ENABLE_IZEM_ATOMIC
-
 /* Define to enable using Izem queues */
 #undef ENABLE_IZEM_QUEUE
 
-/* Define to enable using Izem locks and condition variables */
-#undef ENABLE_IZEM_SYNC
+/* Define to disable shared-memory communication */
+#undef ENABLE_NO_LOCAL
 
 /* Define to 1 to enable getdims-related MPI_T performance variables */
 #undef ENABLE_PVAR_DIMS
@@ -163,6 +191,9 @@
 /* Define to 1 if the compiler supports __builtin_expect. */
 #undef HAVE_BUILTIN_EXPECT
 
+/* Define if C11 _Static_assert is supported. */
+#undef HAVE_C11__STATIC_ASSERT
+
 /* Define to 1 if the system has the type `CACHE_DESCRIPTOR'. */
 #undef HAVE_CACHE_DESCRIPTOR
 
@@ -175,14 +206,20 @@
 /* Define to 1 if you have the `CFUUIDCreate' function. */
 #undef HAVE_CFUUIDCREATE
 
+/* Define if debugger support is included for CH4 */
+#undef HAVE_CH4_DEBUGGER_SUPPORT
+
 /* OFI netmod is built */
 #undef HAVE_CH4_NETMOD_OFI
 
-/* Portals4 netmod is built */
-#undef HAVE_CH4_NETMOD_PORTALS4
-
 /* UCX netmod is built */
 #undef HAVE_CH4_NETMOD_UCX
+
+/* IQUEUE submodule is built */
+#undef HAVE_CH4_SHM_EAGER_IQUEUE
+
+/* STUB submodule is built */
+#undef HAVE_CH4_SHM_EAGER_STUB
 
 /* Define to 1 if you have the `clz' function. */
 #undef HAVE_CLZ
@@ -340,14 +377,6 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
-/* Controls how alignment of doubles is performed, separate from other FP
-   values */
-#undef HAVE_DOUBLE_ALIGNMENT_EXCEPTION
-
-/* Controls how alignment is applied based on position of doubles in the
-   structure */
-#undef HAVE_DOUBLE_POS_ALIGNMENT
-
 /* Define to 1 if the system has the type `double _Complex'. */
 #undef HAVE_DOUBLE__COMPLEX
 
@@ -359,6 +388,9 @@
 
 /* Define to enable error checking */
 #undef HAVE_ERROR_CHECKING
+
+/* Define to enable extended context id bit space */
+#undef HAVE_EXTENDED_CONTEXT_BITS
 
 /* Define if environ extern is available */
 #undef HAVE_EXTERN_ENVIRON
@@ -380,6 +412,9 @@
 
 /* Define if Fortran integer are the same size as C ints */
 #undef HAVE_FINT_IS_INT
+
+/* Define if _Float16 is supported */
+#undef HAVE_FLOAT16
 
 /* Define to 1 if the system has the type `float _Complex'. */
 #undef HAVE_FLOAT__COMPLEX
@@ -450,9 +485,6 @@
 /* Define to 1 if the system has the type `KAFFINITY'. */
 #undef HAVE_KAFFINITY
 
-/* Define if you have the <knem_io.h> header file. */
-#undef HAVE_KNEM_IO_H
-
 /* Define to 1 if you have the <kstat.h> header file. */
 #undef HAVE_KSTAT_H
 
@@ -461,9 +493,6 @@
 
 /* Define to 1 if you have the `fabric' library (-lfabric). */
 #undef HAVE_LIBFABRIC
-
-/* Define to 1 if you have the `ftb' library (-lftb). */
-#undef HAVE_LIBFTB
 
 /* Define to 1 if we have -lgdi32 */
 #undef HAVE_LIBGDI32
@@ -474,23 +503,11 @@
 /* Define to 1 if you have the `hwloc' library (-lhwloc). */
 #undef HAVE_LIBHWLOC
 
-/* Define to 1 if you have the `ibverbs' library (-libverbs). */
-#undef HAVE_LIBIBVERBS
-
 /* Define to 1 if we have -lkstat */
 #undef HAVE_LIBKSTAT
 
 /* Define to 1 if we have -llgrp */
 #undef HAVE_LIBLGRP
-
-/* Define to 1 if you have the `llc' library (-lllc). */
-#undef HAVE_LIBLLC
-
-/* Define to 1 if you have the `memcached' library (-lmemcached). */
-#undef HAVE_LIBMEMCACHED
-
-/* Define to 1 if you have the `mxm' library (-lmxm). */
-#undef HAVE_LIBMXM
 
 /* Define to 1 if you have the `pmi' library (-lpmi). */
 #undef HAVE_LIBPMI
@@ -498,21 +515,17 @@
 /* Define to 1 if you have the `pmix' library (-lpmix). */
 #undef HAVE_LIBPMIX
 
-/* Define to 1 if you have the `portals' library (-lportals). */
-#undef HAVE_LIBPORTALS
-
 /* Define to 1 if you have the `ucp' library (-lucp). */
 #undef HAVE_LIBUCP
 
 /* Define to 1 if you have the <libudev.h> header file. */
 #undef HAVE_LIBUDEV_H
 
+/* Define to 1 if you have the `xpmem' library (-lxpmem). */
+#undef HAVE_LIBXPMEM
+
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
-
-/* Controls how alignment is applied based on position of long long ints in
-   the structure */
-#undef HAVE_LLINT_POS_ALIGNMENT
 
 /* Define to 1 if the system has the type `LOGICAL_PROCESSOR_RELATIONSHIP'. */
 #undef HAVE_LOGICAL_PROCESSOR_RELATIONSHIP
@@ -540,23 +553,6 @@
 
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
-
-/* Controls byte alignment of structs with doubles */
-#undef HAVE_MAX_DOUBLE_FP_ALIGNMENT
-
-/* Controls byte alignment of structures with floats, doubles, and long
-   doubles (for MPI structs) */
-#undef HAVE_MAX_FP_ALIGNMENT
-
-/* Controls byte alignment of integer structures (for MPI structs) */
-#undef HAVE_MAX_INTEGER_ALIGNMENT
-
-/* Controls byte alignment of structs with long doubles */
-#undef HAVE_MAX_LONG_DOUBLE_FP_ALIGNMENT
-
-/* Controls byte alignment of structures (for aligning allocated structures)
-   */
-#undef HAVE_MAX_STRUCT_ALIGNMENT
 
 /* Define to 1 if you have the `memalign' function. */
 #undef HAVE_MEMALIGN
@@ -885,8 +881,11 @@
 /* Define to 1 if you have the <time.h> header file. */
 #undef HAVE_TIME_H
 
-/* define to enable timing collection */
-#undef HAVE_TIMING
+/* Define if ucp_get_nb is defined in ucx */
+#undef HAVE_UCP_GET_NB
+
+/* Define if ucp_put_nb is defined in ucx */
+#undef HAVE_UCP_PUT_NB
 
 /* Define if uint16_t is supported by the C compiler */
 #undef HAVE_UINT16_T
@@ -1207,6 +1206,13 @@
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
+/* Controls byte alignment of structures (for aligning allocated structures)
+   */
+#undef MAX_ALIGNMENT
+
+/* Datatype engine */
+#undef MPICH_DATATYPE_ENGINE
+
 /* Define to enable checking of handles still allocated at MPI_Finalize */
 #undef MPICH_DEBUG_HANDLEALLOC
 
@@ -1245,9 +1251,6 @@
    */
 #undef MPICH_THREAD_SUPPRESS_PREDEFINED_REFCOUNTS
 
-/* Define to enable message-driven thread activation */
-#undef MPICH_THREAD_USE_MDTA
-
 /* CH4 should build locality info */
 #undef MPIDI_BUILD_CH4_LOCALITY_INFO
 
@@ -1257,14 +1260,11 @@
 /* CH4 Directly transfers data through the chosen netmode */
 #undef MPIDI_CH4_DIRECT_NETMOD
 
+/* Number of VCIs configured in CH4 */
+#undef MPIDI_CH4_MAX_VCIS
+
 /* Define to use bgq capability set */
 #undef MPIDI_CH4_OFI_USE_SET_BGQ
-
-/* Define to use gni capability set */
-#undef MPIDI_CH4_OFI_USE_SET_GNI
-
-/* Define to use PSM capability set */
-#undef MPIDI_CH4_OFI_USE_SET_PSM
 
 /* Define to use PSM2 capability set */
 #undef MPIDI_CH4_OFI_USE_SET_PSM2
@@ -1275,6 +1275,18 @@
 /* Define to use sockets capability set */
 #undef MPIDI_CH4_OFI_USE_SET_SOCKETS
 
+/* Define to use verbs;ofi_rxm capability set */
+#undef MPIDI_CH4_OFI_USE_SET_VERBS_RXM
+
+/* Define if GPU IPC submodule is enabled */
+#undef MPIDI_CH4_SHM_ENABLE_GPU
+
+/* Enable XPMEM shared memory submodule in CH4 */
+#undef MPIDI_CH4_SHM_ENABLE_XPMEM
+
+/* Silently disable XPMEM, if it fails at runtime */
+#undef MPIDI_CH4_SHM_XPMEM_ALLOW_SILENT_FALLBACK
+
 /* Define to enable direct multi-threading model */
 #undef MPIDI_CH4_USE_MT_DIRECT
 
@@ -1284,17 +1296,20 @@
 /* Define to enable runtime multi-threading model */
 #undef MPIDI_CH4_USE_MT_RUNTIME
 
-/* Define to enable trylock-enqueue multi-threading model */
-#undef MPIDI_CH4_USE_MT_TRYLOCK
+/* Method used to select vci */
+#undef MPIDI_CH4_VCI_METHOD
+
+/* Enables AM-only communication */
+#undef MPIDI_ENABLE_AM_ONLY
+
+/* CH4/OFI should use domain for vni contexts */
+#undef MPIDI_OFI_VNI_USE_DOMAIN
 
 /* Define to turn on the inlining optimizations in Nemesis code */
 #undef MPID_NEM_INLINE
 
 /* Method for local large message transfers. */
 #undef MPID_NEM_LOCAL_LMT_IMPL
-
-/* Define to enable lock-free communication queues */
-#undef MPID_NEM_USE_LOCK_FREE_QUEUES
 
 /* Define if a port may be used to communicate with the processes */
 #undef MPIEXEC_ALLOW_PORT
@@ -1376,9 +1391,6 @@
 
 /* Define if mkstemp needs a declaration */
 #undef NEEDS_MKSTEMP_DECL
-
-/* define if pointers must be aligned on pointer boundaries */
-#undef NEEDS_POINTER_ALIGNMENT_ADJUST
 
 /* Define if _POSIX_SOURCE needed to get sigaction */
 #undef NEEDS_POSIX_FOR_SIGACTION
@@ -1470,9 +1482,6 @@
 /* The size of `int', as computed by sizeof. */
 #undef SIZEOF_INT
 
-/* define if sizeof(int) = sizeof(MPI_Aint) */
-#undef SIZEOF_INT_IS_AINT
-
 /* The size of `long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
@@ -1496,12 +1505,6 @@
 
 /* The size of `MPII_Bsend_data_t', as computed by sizeof. */
 #undef SIZEOF_MPII_BSEND_DATA_T
-
-/* The size of `OPA_ptr_t', as computed by sizeof. */
-#undef SIZEOF_OPA_PTR_T
-
-/* define if sizeof(void *) = sizeof(MPI_Aint) */
-#undef SIZEOF_PTR_IS_AINT
 
 /* The size of `short', as computed by sizeof. */
 #undef SIZEOF_SHORT
@@ -1535,6 +1538,12 @@
 
 /* The size of `_Bool', as computed by sizeof. */
 #undef SIZEOF__BOOL
+
+/* The size of `_Float16', as computed by sizeof. */
+#undef SIZEOF__FLOAT16
+
+/* The size of `__float128', as computed by sizeof. */
+#undef SIZEOF___FLOAT128
 
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
@@ -1581,9 +1590,6 @@
 # undef _HPUX_SOURCE
 #endif
 
-
-/* define to choose logging library */
-#undef USE_LOGGING
 
 /* Define to enable memory tracing */
 #undef USE_MEMORY_TRACING

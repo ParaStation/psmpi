@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2017 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra.h"
@@ -82,7 +81,7 @@ HYD_status proxy_process_pmi_cb(int fd, HYD_dmx_event_t events, void *userp)
             pmi_stash[count - 1] = 0;
             delim = " ";
         } else if (!strncmp(pmi_stash, "mcmd=", strlen("mcmd="))) {
-            if (count < strlen("endcmd") ||
+            if (count < (int) strlen("endcmd") ||
                 strncmp(&pmi_stash[count - strlen("endcmd")], "endcmd", strlen("endcmd"))) {
                 /* if we reached the end of the buffer we read and did
                  * not yet get a full comamnd, wait till we get at

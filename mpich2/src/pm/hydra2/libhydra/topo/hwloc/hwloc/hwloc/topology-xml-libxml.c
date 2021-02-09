@@ -155,7 +155,7 @@ hwloc__libxml_import_get_content(hwloc__xml_import_state_t state,
   if (!child || child->type != XML_TEXT_NODE) {
     if (expected_length)
       return -1;
-    *beginp = (char *) "";
+    *beginp = (char *) (const char *) "";
     return 0;
   }
 

@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidi_ch3_impl.h"
@@ -30,10 +29,6 @@
    MPI info values */
 /* Turn a SINGLE MPI_Info into an array of PMI_keyvals (return the pointer
    to the array of PMI keyvals) */
-#undef FUNCNAME
-#define FUNCNAME mpi_to_pmi_keyvals
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 static int  mpi_to_pmi_keyvals( MPIR_Info *info_ptr, PMI_keyval_t **kv_ptr,
 				int *nkeys_ptr )
 {
@@ -83,25 +78,16 @@ static void free_pmi_keyvals(PMI_keyval_t **kv, int size, int *counts)
     {
 	for (j=0; j<counts[i]; j++)
 	{
-	    if (kv[i][j].key != NULL)
-		MPL_free((char *)kv[i][j].key);
-	    if (kv[i][j].val != NULL)
-		MPL_free(kv[i][j].val);
+            MPL_free((char *)kv[i][j].key);
+            MPL_free(kv[i][j].val);
 	}
-	if (kv[i] != NULL)
-	{
-	    MPL_free(kv[i]);
-	}
+        MPL_free(kv[i]);
     }
 }
 
 /*
  * MPIDI_CH3_Comm_spawn_multiple()
  */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_Comm_spawn_multiple
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_Comm_spawn_multiple(int count, char **commands,
                                   char ***argvs, const int *maxprocs,
                                   MPIR_Info **info_ptrs, int root,
@@ -137,7 +123,7 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 	/* FIXME: info may be needed for port name */
         mpi_errno = MPID_Open_port(NULL, port_name);
 	/* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 	/* --END ERROR HANDLING-- */
 
 	/* Spawn the processes */
@@ -258,20 +244,20 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
     if (errcodes != MPI_ERRCODES_IGNORE) {
         MPIR_Errflag_t errflag = MPIR_ERR_NONE;
         mpi_errno = MPIR_Bcast(&should_accept, 1, MPI_INT, root, comm_ptr, &errflag);
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
         mpi_errno = MPIR_Bcast(&total_num_processes, 1, MPI_INT, root, comm_ptr, &errflag);
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         
         mpi_errno = MPIR_Bcast(errcodes, total_num_processes, MPI_INT, root, comm_ptr, &errflag);
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
         MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
     }
 
     if (should_accept) {
         mpi_errno = MPID_Comm_accept(port_name, NULL, root, comm_ptr, intercomm); 
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
     else {
         MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**pmi_spawn_multiple");
@@ -294,9 +280,7 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 	MPL_free(info_keyval_sizes);
 	MPL_free(info_keyval_vectors);
     }
-    if (pmi_errcodes) {
-	MPL_free(pmi_errcodes);
-    }
+    MPL_free(pmi_errcodes);
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_COMM_SPAWN_MULTIPLE);
     return mpi_errno;
  fn_fail:
@@ -321,10 +305,6 @@ static char *parent_port_name = 0;    /* Name of parent port if this
 					 process was spawned (and is root
 					 of comm world) or null */
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_GetParentPort
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3_GetParentPort(char ** parent_port)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -350,7 +330,7 @@ int MPIDI_CH3_GetParentPort(char ** parent_port)
 	pmi_errno = PMI_KVS_Get( kvsname, PARENT_PORT_KVSKEY, val, sizeof(val));
 	MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_POBJ_PMI_MUTEX);
 	if (pmi_errno) {
-            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvsget", "**pmi_kvsget %d", pmi_errno);
+            mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, __func__, __LINE__, MPI_ERR_OTHER, "**pmi_kvsget", "**pmi_kvsget %d", pmi_errno);
             goto fn_exit;
 	}
 #endif
@@ -369,9 +349,7 @@ int MPIDI_CH3_GetParentPort(char ** parent_port)
 }
 void MPIDI_CH3_FreeParentPort(void)
 {
-    if (parent_port_name) {
-	MPL_free( parent_port_name );
-	parent_port_name = 0;
-    }
+    MPL_free( parent_port_name );
+    parent_port_name = 0;
 }
 #endif

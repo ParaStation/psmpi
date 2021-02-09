@@ -90,7 +90,12 @@ build_triplet = @build@
 host_triplet = @host@
 subdir = include
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cc.m4 \
+	$(top_srcdir)/confdb/libtool.m4 \
+	$(top_srcdir)/confdb/ltoptions.m4 \
+	$(top_srcdir)/confdb/ltsugar.m4 \
+	$(top_srcdir)/confdb/ltversion.m4 \
+	$(top_srcdir)/confdb/lt~obsolete.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(include_HEADERS) \
@@ -186,9 +191,6 @@ DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
 DSYMUTIL = @DSYMUTIL@
-DTP_DATATYPES = @DTP_DATATYPES@
-DTP_DATATYPE_FILE = @DTP_DATATYPE_FILE@
-DTP_NUM_OBJS = @DTP_NUM_OBJS@
 DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -288,12 +290,6 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-
-# -*- Mode: Makefile; -*-
-#
-# (C) 2018 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
 include_HEADERS = dtpools.h
 noinst_HEADERS = dtpools_internal.h
 all: all-am

@@ -14,12 +14,6 @@
 
 @SET_MAKE@
 
-# -*- Mode: Makefile; -*-
-#
-# (C) 2011 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
 
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -168,12 +162,26 @@ host_triplet = @host@
 
 # not used in MPICH
 @BUILD_MPIO_ERRHAN_TRUE@am__append_6 = $(mpio_request_sources)
-@BUILD_AD_GPFS_TRUE@am__append_7 = \
+@BUILD_AD_DAOS_TRUE@am__append_7 = adio/ad_daos/ad_daos.h
+@BUILD_AD_DAOS_TRUE@am__append_8 = \
+@BUILD_AD_DAOS_TRUE@    adio/ad_daos/ad_daos.c \
+@BUILD_AD_DAOS_TRUE@    adio/ad_daos/ad_daos_close.c \
+@BUILD_AD_DAOS_TRUE@    adio/ad_daos/ad_daos_common.c \
+@BUILD_AD_DAOS_TRUE@    adio/ad_daos/ad_daos_fcntl.c \
+@BUILD_AD_DAOS_TRUE@    adio/ad_daos/ad_daos_features.c \
+@BUILD_AD_DAOS_TRUE@    adio/ad_daos/ad_daos_hhash.c \
+@BUILD_AD_DAOS_TRUE@    adio/ad_daos/ad_daos_hints.c \
+@BUILD_AD_DAOS_TRUE@    adio/ad_daos/ad_daos_io.c \
+@BUILD_AD_DAOS_TRUE@    adio/ad_daos/ad_daos_io_str.c \
+@BUILD_AD_DAOS_TRUE@    adio/ad_daos/ad_daos_open.c \
+@BUILD_AD_DAOS_TRUE@    adio/ad_daos/ad_daos_resize.c
+
+@BUILD_AD_GPFS_TRUE@am__append_9 = \
 @BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs_aggrs.h                                         \
 @BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs.h                                               \
 @BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs_tuning.h
 
-@BUILD_AD_GPFS_TRUE@am__append_8 = \
+@BUILD_AD_GPFS_TRUE@am__append_10 = \
 @BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs_aggrs.c                                         \
 @BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs_close.c                                         \
 @BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs_flush.c                                         \
@@ -184,22 +192,22 @@ host_triplet = @host@
 @BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs_rdcoll.c                                        \
 @BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs_wrcoll.c
 
-@BUILD_AD_BG_TRUE@am__append_9 = \
+@BUILD_AD_BG_TRUE@am__append_11 = \
 @BUILD_AD_BG_TRUE@    adio/ad_gpfs/bg/ad_bg_aggrs.h                                         \
 @BUILD_AD_BG_TRUE@    adio/ad_gpfs/bg/ad_bg_pset.h
 
-@BUILD_AD_BG_TRUE@am__append_10 = \
+@BUILD_AD_BG_TRUE@am__append_12 = \
 @BUILD_AD_BG_TRUE@    adio/ad_gpfs/bg/ad_bg_aggrs.c                                         \
 @BUILD_AD_BG_TRUE@    adio/ad_gpfs/bg/ad_bg_pset.c 
 
-@BUILD_AD_PE_TRUE@am__append_11 = \
+@BUILD_AD_PE_TRUE@am__append_13 = \
 @BUILD_AD_PE_TRUE@    adio/ad_gpfs/pe/ad_pe_aggrs.h
 
-@BUILD_AD_PE_TRUE@am__append_12 = \
+@BUILD_AD_PE_TRUE@am__append_14 = \
 @BUILD_AD_PE_TRUE@    adio/ad_gpfs/pe/ad_pe_aggrs.c
 
-@BUILD_AD_LUSTRE_TRUE@am__append_13 = adio/ad_lustre/ad_lustre.h
-@BUILD_AD_LUSTRE_TRUE@am__append_14 = \
+@BUILD_AD_LUSTRE_TRUE@am__append_15 = adio/ad_lustre/ad_lustre.h
+@BUILD_AD_LUSTRE_TRUE@am__append_16 = \
 @BUILD_AD_LUSTRE_TRUE@    adio/ad_lustre/ad_lustre.c           \
 @BUILD_AD_LUSTRE_TRUE@    adio/ad_lustre/ad_lustre_open.c      \
 @BUILD_AD_LUSTRE_TRUE@    adio/ad_lustre/ad_lustre_rwcontig.c  \
@@ -208,11 +216,11 @@ host_triplet = @host@
 @BUILD_AD_LUSTRE_TRUE@    adio/ad_lustre/ad_lustre_hints.c     \
 @BUILD_AD_LUSTRE_TRUE@    adio/ad_lustre/ad_lustre_aggregate.c
 
-@BUILD_AD_LUSTRE_TRUE@@LUSTRE_LOCKAHEAD_TRUE@am__append_15 = \
+@BUILD_AD_LUSTRE_TRUE@@LUSTRE_LOCKAHEAD_TRUE@am__append_17 = \
 @BUILD_AD_LUSTRE_TRUE@@LUSTRE_LOCKAHEAD_TRUE@    adio/ad_lustre/ad_lustre_lock.c
 
-@BUILD_AD_NFS_TRUE@am__append_16 = adio/ad_nfs/ad_nfs.h
-@BUILD_AD_NFS_TRUE@am__append_17 = \
+@BUILD_AD_NFS_TRUE@am__append_18 = adio/ad_nfs/ad_nfs.h
+@BUILD_AD_NFS_TRUE@am__append_19 = \
 @BUILD_AD_NFS_TRUE@    adio/ad_nfs/ad_nfs_read.c     \
 @BUILD_AD_NFS_TRUE@    adio/ad_nfs/ad_nfs_open.c     \
 @BUILD_AD_NFS_TRUE@    adio/ad_nfs/ad_nfs_write.c    \
@@ -227,8 +235,8 @@ host_triplet = @host@
 @BUILD_AD_NFS_TRUE@    adio/ad_nfs/ad_nfs_resize.c   \
 @BUILD_AD_NFS_TRUE@    adio/ad_nfs/ad_nfs_features.c
 
-@BUILD_AD_PANFS_TRUE@am__append_18 = adio/ad_panfs/ad_panfs.h
-@BUILD_AD_PANFS_TRUE@am__append_19 = \
+@BUILD_AD_PANFS_TRUE@am__append_20 = adio/ad_panfs/ad_panfs.h
+@BUILD_AD_PANFS_TRUE@am__append_21 = \
 @BUILD_AD_PANFS_TRUE@    adio/ad_panfs/ad_panfs.c        \
 @BUILD_AD_PANFS_TRUE@    $(panfs_open)                   \
 @BUILD_AD_PANFS_TRUE@    adio/ad_panfs/ad_panfs_hints.c  \
@@ -236,12 +244,12 @@ host_triplet = @host@
 @BUILD_AD_PANFS_TRUE@    adio/ad_panfs/ad_panfs_resize.c \
 @BUILD_AD_PANFS_TRUE@    adio/ad_panfs/ad_panfs_write.c
 
-@BUILD_AD_PVFS2_TRUE@am__append_20 = \
+@BUILD_AD_PVFS2_TRUE@am__append_22 = \
 @BUILD_AD_PVFS2_TRUE@    adio/ad_pvfs2/ad_pvfs2.h            \
 @BUILD_AD_PVFS2_TRUE@    adio/ad_pvfs2/ad_pvfs2_io.h         \
 @BUILD_AD_PVFS2_TRUE@    adio/ad_pvfs2/ad_pvfs2_common.h
 
-@BUILD_AD_PVFS2_TRUE@am__append_21 = \
+@BUILD_AD_PVFS2_TRUE@am__append_23 = \
 @BUILD_AD_PVFS2_TRUE@    adio/ad_pvfs2/ad_pvfs2_close.c              \
 @BUILD_AD_PVFS2_TRUE@    adio/ad_pvfs2/ad_pvfs2_read.c               \
 @BUILD_AD_PVFS2_TRUE@    adio/ad_pvfs2/ad_pvfs2_open.c               \
@@ -260,8 +268,8 @@ host_triplet = @host@
 @BUILD_AD_PVFS2_TRUE@    adio/ad_pvfs2/ad_pvfs2_write_list_classic.c \
 @BUILD_AD_PVFS2_TRUE@    adio/ad_pvfs2/ad_pvfs2_features.c
 
-@BUILD_AD_TESTFS_TRUE@am__append_22 = adio/ad_testfs/ad_testfs.h
-@BUILD_AD_TESTFS_TRUE@am__append_23 = \
+@BUILD_AD_TESTFS_TRUE@am__append_24 = adio/ad_testfs/ad_testfs.h
+@BUILD_AD_TESTFS_TRUE@am__append_25 = \
 @BUILD_AD_TESTFS_TRUE@    adio/ad_testfs/ad_testfs_close.c  \
 @BUILD_AD_TESTFS_TRUE@    adio/ad_testfs/ad_testfs_read.c   \
 @BUILD_AD_TESTFS_TRUE@    adio/ad_testfs/ad_testfs_rdcoll.c \
@@ -280,13 +288,13 @@ host_triplet = @host@
 @BUILD_AD_TESTFS_TRUE@    adio/ad_testfs/ad_testfs_delete.c \
 @BUILD_AD_TESTFS_TRUE@    adio/ad_testfs/ad_testfs.c
 
-@BUILD_AD_UFS_TRUE@am__append_24 = adio/ad_ufs/ad_ufs.h
-@BUILD_AD_UFS_TRUE@am__append_25 = \
+@BUILD_AD_UFS_TRUE@am__append_26 = adio/ad_ufs/ad_ufs.h
+@BUILD_AD_UFS_TRUE@am__append_27 = \
 @BUILD_AD_UFS_TRUE@    adio/ad_ufs/ad_ufs.c      \
 @BUILD_AD_UFS_TRUE@    adio/ad_ufs/ad_ufs_open.c
 
-@BUILD_AD_XFS_TRUE@am__append_26 = adio/ad_xfs/ad_xfs.h
-@BUILD_AD_XFS_TRUE@am__append_27 = \
+@BUILD_AD_XFS_TRUE@am__append_28 = adio/ad_xfs/ad_xfs.h
+@BUILD_AD_XFS_TRUE@am__append_29 = \
 @BUILD_AD_XFS_TRUE@    adio/ad_xfs/ad_xfs.c        \
 @BUILD_AD_XFS_TRUE@    adio/ad_xfs/ad_xfs_fcntl.c  \
 @BUILD_AD_XFS_TRUE@    adio/ad_xfs/ad_xfs_hints.c  \
@@ -295,8 +303,8 @@ host_triplet = @host@
 @BUILD_AD_XFS_TRUE@    adio/ad_xfs/ad_xfs_resize.c \
 @BUILD_AD_XFS_TRUE@    adio/ad_xfs/ad_xfs_write.c
 
-@BUILD_AD_IME_TRUE@am__append_28 = adio/ad_ime/ad_ime.h adio/ad_ime/ad_ime_common.h
-@BUILD_AD_IME_TRUE@am__append_29 = \
+@BUILD_AD_IME_TRUE@am__append_30 = adio/ad_ime/ad_ime.h adio/ad_ime/ad_ime_common.h
+@BUILD_AD_IME_TRUE@am__append_31 = \
 @BUILD_AD_IME_TRUE@    adio/ad_ime/ad_ime.c            \
 @BUILD_AD_IME_TRUE@    adio/ad_ime/ad_ime_close.c      \
 @BUILD_AD_IME_TRUE@    adio/ad_ime/ad_ime_common.c     \
@@ -308,19 +316,35 @@ host_triplet = @host@
 @BUILD_AD_IME_TRUE@    adio/ad_ime/ad_ime_resize.c     \
 @BUILD_AD_IME_TRUE@    adio/ad_ime/ad_ime_features.c
 
+@BUILD_AD_QUOBYTEFS_TRUE@am__append_32 = adio/ad_quobytefs/ad_quobytefs.h \
+@BUILD_AD_QUOBYTEFS_TRUE@				  adio/ad_quobytefs/ad_quobytefs_internal.h
+
+@BUILD_AD_QUOBYTEFS_TRUE@am__append_33 = \
+@BUILD_AD_QUOBYTEFS_TRUE@    adio/ad_quobytefs/ad_quobytefs.c      \
+@BUILD_AD_QUOBYTEFS_TRUE@    adio/ad_quobytefs/ad_quobytefs_open.c  \
+@BUILD_AD_QUOBYTEFS_TRUE@    adio/ad_quobytefs/ad_quobytefs_close.c  \
+@BUILD_AD_QUOBYTEFS_TRUE@    adio/ad_quobytefs/ad_quobytefs_write.c  \
+@BUILD_AD_QUOBYTEFS_TRUE@    adio/ad_quobytefs/ad_quobytefs_flush.c  \
+@BUILD_AD_QUOBYTEFS_TRUE@    adio/ad_quobytefs/ad_quobytefs_fcntl.c  \
+@BUILD_AD_QUOBYTEFS_TRUE@    adio/ad_quobytefs/ad_quobytefs_read.c  \
+@BUILD_AD_QUOBYTEFS_TRUE@    adio/ad_quobytefs/ad_quobytefs_resize.c  \
+@BUILD_AD_QUOBYTEFS_TRUE@    adio/ad_quobytefs/ad_quobytefs_delete.c  \
+@BUILD_AD_QUOBYTEFS_TRUE@    adio/ad_quobytefs/ad_quobytefs_aio.c  \
+@BUILD_AD_QUOBYTEFS_TRUE@    adio/ad_quobytefs/ad_quobytefs_setlock.c \
+@BUILD_AD_QUOBYTEFS_TRUE@    adio/ad_quobytefs/ad_quobytefs_internal.c
+
 
 # The current best strategy for now is to build the PMPI symbols as a separate
 # convenience lib to permit adding the special "-D..." argument for all objects.
 # MPICH will then link in both convenience library into libmpi, since it
 # won't work very well the other way around.
-@BUILD_PROFILING_LIB_TRUE@@BUILD_ROMIO_EMBEDDED_TRUE@am__append_30 = libpromio.la
+@BUILD_PROFILING_LIB_TRUE@@BUILD_ROMIO_EMBEDDED_TRUE@am__append_34 = libpromio.la
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cc.m4 \
 	$(top_srcdir)/confdb/aclocal_check_visibility.m4 \
 	$(top_srcdir)/confdb/aclocal_coverage.m4 \
-	$(top_srcdir)/confdb/aclocal_f77.m4 \
-	$(top_srcdir)/confdb/aclocal_fc.m4 \
+	$(top_srcdir)/confdb/aclocal_libs.m4 \
 	$(top_srcdir)/confdb/aclocal_make.m4 \
 	$(top_srcdir)/confdb/aclocal_romio.m4 \
 	$(top_srcdir)/confdb/aclocal_runlog.m4 \
@@ -600,13 +624,19 @@ am__libromio_la_SOURCES_DIST = mpi-io/fortran/closef.c \
 	mpi-io/ioreq_f2c.c mpi-io/iotest.c mpi-io/iotestall.c \
 	mpi-io/iotestany.c mpi-io/iotestsome.c mpi-io/iowait.c \
 	mpi-io/iowaitall.c mpi-io/iowaitany.c mpi-io/iowaitsome.c \
-	adio/ad_gpfs/ad_gpfs_aggrs.c adio/ad_gpfs/ad_gpfs_close.c \
-	adio/ad_gpfs/ad_gpfs_flush.c adio/ad_gpfs/ad_gpfs_tuning.c \
-	adio/ad_gpfs/ad_gpfs.c adio/ad_gpfs/ad_gpfs_open.c \
-	adio/ad_gpfs/ad_gpfs_hints.c adio/ad_gpfs/ad_gpfs_rdcoll.c \
-	adio/ad_gpfs/ad_gpfs_wrcoll.c adio/ad_gpfs/bg/ad_bg_aggrs.c \
-	adio/ad_gpfs/bg/ad_bg_pset.c adio/ad_gpfs/pe/ad_pe_aggrs.c \
-	adio/ad_lustre/ad_lustre.c adio/ad_lustre/ad_lustre_open.c \
+	adio/ad_daos/ad_daos.c adio/ad_daos/ad_daos_close.c \
+	adio/ad_daos/ad_daos_common.c adio/ad_daos/ad_daos_fcntl.c \
+	adio/ad_daos/ad_daos_features.c adio/ad_daos/ad_daos_hhash.c \
+	adio/ad_daos/ad_daos_hints.c adio/ad_daos/ad_daos_io.c \
+	adio/ad_daos/ad_daos_io_str.c adio/ad_daos/ad_daos_open.c \
+	adio/ad_daos/ad_daos_resize.c adio/ad_gpfs/ad_gpfs_aggrs.c \
+	adio/ad_gpfs/ad_gpfs_close.c adio/ad_gpfs/ad_gpfs_flush.c \
+	adio/ad_gpfs/ad_gpfs_tuning.c adio/ad_gpfs/ad_gpfs.c \
+	adio/ad_gpfs/ad_gpfs_open.c adio/ad_gpfs/ad_gpfs_hints.c \
+	adio/ad_gpfs/ad_gpfs_rdcoll.c adio/ad_gpfs/ad_gpfs_wrcoll.c \
+	adio/ad_gpfs/bg/ad_bg_aggrs.c adio/ad_gpfs/bg/ad_bg_pset.c \
+	adio/ad_gpfs/pe/ad_pe_aggrs.c adio/ad_lustre/ad_lustre.c \
+	adio/ad_lustre/ad_lustre_open.c \
 	adio/ad_lustre/ad_lustre_rwcontig.c \
 	adio/ad_lustre/ad_lustre_wrcoll.c \
 	adio/ad_lustre/ad_lustre_wrstr.c \
@@ -659,9 +689,20 @@ am__libromio_la_SOURCES_DIST = mpi-io/fortran/closef.c \
 	adio/ad_ime/ad_ime_delete.c adio/ad_ime/ad_ime_fcntl.c \
 	adio/ad_ime/ad_ime_flush.c adio/ad_ime/ad_ime_io.c \
 	adio/ad_ime/ad_ime_open.c adio/ad_ime/ad_ime_resize.c \
-	adio/ad_ime/ad_ime_features.c adio/common/ad_aggregate.c \
-	adio/common/ad_aggregate_new.c adio/common/ad_close.c \
-	adio/common/ad_coll_build_req_new.c \
+	adio/ad_ime/ad_ime_features.c adio/ad_quobytefs/ad_quobytefs.c \
+	adio/ad_quobytefs/ad_quobytefs_open.c \
+	adio/ad_quobytefs/ad_quobytefs_close.c \
+	adio/ad_quobytefs/ad_quobytefs_write.c \
+	adio/ad_quobytefs/ad_quobytefs_flush.c \
+	adio/ad_quobytefs/ad_quobytefs_fcntl.c \
+	adio/ad_quobytefs/ad_quobytefs_read.c \
+	adio/ad_quobytefs/ad_quobytefs_resize.c \
+	adio/ad_quobytefs/ad_quobytefs_delete.c \
+	adio/ad_quobytefs/ad_quobytefs_aio.c \
+	adio/ad_quobytefs/ad_quobytefs_setlock.c \
+	adio/ad_quobytefs/ad_quobytefs_internal.c \
+	adio/common/ad_aggregate.c adio/common/ad_aggregate_new.c \
+	adio/common/ad_close.c adio/common/ad_coll_build_req_new.c \
 	adio/common/ad_coll_exch_new.c adio/common/ad_darray.c \
 	adio/common/ad_delete.c adio/common/ad_done.c \
 	adio/common/ad_done_fake.c adio/common/ad_end.c \
@@ -688,11 +729,11 @@ am__libromio_la_SOURCES_DIST = mpi-io/fortran/closef.c \
 	adio/common/error.c adio/common/flatten.c \
 	adio/common/get_fp_posn.c adio/common/greq_fns.c \
 	adio/common/heap_sort.c adio/common/iscontig.c \
-	adio/common/lock.c adio/common/malloc.c \
-	adio/common/shfp_fname.c adio/common/status_setb.c \
-	adio/common/strfns.c adio/common/system_hints.c \
-	adio/common/hint_fns.c adio/common/ad_threaded_io.c \
-	adio/common/p2p_aggregation.c \
+	adio/common/lock.c adio/common/lock_internal.c \
+	adio/common/malloc.c adio/common/shfp_fname.c \
+	adio/common/status_setb.c adio/common/strfns.c \
+	adio/common/system_hints.c adio/common/hint_fns.c \
+	adio/common/ad_threaded_io.c adio/common/p2p_aggregation.c \
 	adio/common/onesided_aggregation.c adio/common/ad_tuning.c \
 	adio/common/utils.c
 @BUILD_F77_BINDINGS_TRUE@am__objects_3 = mpi-io/fortran/closef.lo \
@@ -783,7 +824,18 @@ am__objects_8 = mpi-io/ioreq_c2f.lo mpi-io/ioreq_f2c.lo \
 	mpi-io/iowaitany.lo mpi-io/iowaitsome.lo
 @BUILD_MPIO_REQUEST_TRUE@am__objects_9 = $(am__objects_8)
 @BUILD_MPIO_ERRHAN_TRUE@am__objects_10 = $(am__objects_8)
-@BUILD_AD_GPFS_TRUE@am__objects_11 = adio/ad_gpfs/ad_gpfs_aggrs.lo \
+@BUILD_AD_DAOS_TRUE@am__objects_11 = adio/ad_daos/ad_daos.lo \
+@BUILD_AD_DAOS_TRUE@	adio/ad_daos/ad_daos_close.lo \
+@BUILD_AD_DAOS_TRUE@	adio/ad_daos/ad_daos_common.lo \
+@BUILD_AD_DAOS_TRUE@	adio/ad_daos/ad_daos_fcntl.lo \
+@BUILD_AD_DAOS_TRUE@	adio/ad_daos/ad_daos_features.lo \
+@BUILD_AD_DAOS_TRUE@	adio/ad_daos/ad_daos_hhash.lo \
+@BUILD_AD_DAOS_TRUE@	adio/ad_daos/ad_daos_hints.lo \
+@BUILD_AD_DAOS_TRUE@	adio/ad_daos/ad_daos_io.lo \
+@BUILD_AD_DAOS_TRUE@	adio/ad_daos/ad_daos_io_str.lo \
+@BUILD_AD_DAOS_TRUE@	adio/ad_daos/ad_daos_open.lo \
+@BUILD_AD_DAOS_TRUE@	adio/ad_daos/ad_daos_resize.lo
+@BUILD_AD_GPFS_TRUE@am__objects_12 = adio/ad_gpfs/ad_gpfs_aggrs.lo \
 @BUILD_AD_GPFS_TRUE@	adio/ad_gpfs/ad_gpfs_close.lo \
 @BUILD_AD_GPFS_TRUE@	adio/ad_gpfs/ad_gpfs_flush.lo \
 @BUILD_AD_GPFS_TRUE@	adio/ad_gpfs/ad_gpfs_tuning.lo \
@@ -792,18 +844,18 @@ am__objects_8 = mpi-io/ioreq_c2f.lo mpi-io/ioreq_f2c.lo \
 @BUILD_AD_GPFS_TRUE@	adio/ad_gpfs/ad_gpfs_hints.lo \
 @BUILD_AD_GPFS_TRUE@	adio/ad_gpfs/ad_gpfs_rdcoll.lo \
 @BUILD_AD_GPFS_TRUE@	adio/ad_gpfs/ad_gpfs_wrcoll.lo
-@BUILD_AD_BG_TRUE@am__objects_12 = adio/ad_gpfs/bg/ad_bg_aggrs.lo \
+@BUILD_AD_BG_TRUE@am__objects_13 = adio/ad_gpfs/bg/ad_bg_aggrs.lo \
 @BUILD_AD_BG_TRUE@	adio/ad_gpfs/bg/ad_bg_pset.lo
-@BUILD_AD_PE_TRUE@am__objects_13 = adio/ad_gpfs/pe/ad_pe_aggrs.lo
-@BUILD_AD_LUSTRE_TRUE@am__objects_14 = adio/ad_lustre/ad_lustre.lo \
+@BUILD_AD_PE_TRUE@am__objects_14 = adio/ad_gpfs/pe/ad_pe_aggrs.lo
+@BUILD_AD_LUSTRE_TRUE@am__objects_15 = adio/ad_lustre/ad_lustre.lo \
 @BUILD_AD_LUSTRE_TRUE@	adio/ad_lustre/ad_lustre_open.lo \
 @BUILD_AD_LUSTRE_TRUE@	adio/ad_lustre/ad_lustre_rwcontig.lo \
 @BUILD_AD_LUSTRE_TRUE@	adio/ad_lustre/ad_lustre_wrcoll.lo \
 @BUILD_AD_LUSTRE_TRUE@	adio/ad_lustre/ad_lustre_wrstr.lo \
 @BUILD_AD_LUSTRE_TRUE@	adio/ad_lustre/ad_lustre_hints.lo \
 @BUILD_AD_LUSTRE_TRUE@	adio/ad_lustre/ad_lustre_aggregate.lo
-@BUILD_AD_LUSTRE_TRUE@@LUSTRE_LOCKAHEAD_TRUE@am__objects_15 = adio/ad_lustre/ad_lustre_lock.lo
-@BUILD_AD_NFS_TRUE@am__objects_16 = adio/ad_nfs/ad_nfs_read.lo \
+@BUILD_AD_LUSTRE_TRUE@@LUSTRE_LOCKAHEAD_TRUE@am__objects_16 = adio/ad_lustre/ad_lustre_lock.lo
+@BUILD_AD_NFS_TRUE@am__objects_17 = adio/ad_nfs/ad_nfs_read.lo \
 @BUILD_AD_NFS_TRUE@	adio/ad_nfs/ad_nfs_open.lo \
 @BUILD_AD_NFS_TRUE@	adio/ad_nfs/ad_nfs_write.lo \
 @BUILD_AD_NFS_TRUE@	adio/ad_nfs/ad_nfs_done.lo \
@@ -816,17 +868,17 @@ am__objects_8 = mpi-io/ioreq_c2f.lo mpi-io/ioreq_f2c.lo \
 @BUILD_AD_NFS_TRUE@	adio/ad_nfs/ad_nfs.lo \
 @BUILD_AD_NFS_TRUE@	adio/ad_nfs/ad_nfs_resize.lo \
 @BUILD_AD_NFS_TRUE@	adio/ad_nfs/ad_nfs_features.lo
-@BUILD_PANFS_OPEN6_FALSE@am__objects_17 =  \
+@BUILD_PANFS_OPEN6_FALSE@am__objects_18 =  \
 @BUILD_PANFS_OPEN6_FALSE@	adio/ad_panfs/ad_panfs_open.lo
-@BUILD_PANFS_OPEN6_TRUE@am__objects_17 =  \
+@BUILD_PANFS_OPEN6_TRUE@am__objects_18 =  \
 @BUILD_PANFS_OPEN6_TRUE@	adio/ad_panfs/ad_panfs_open6.lo
-@BUILD_AD_PANFS_TRUE@am__objects_18 = adio/ad_panfs/ad_panfs.lo \
-@BUILD_AD_PANFS_TRUE@	$(am__objects_17) \
+@BUILD_AD_PANFS_TRUE@am__objects_19 = adio/ad_panfs/ad_panfs.lo \
+@BUILD_AD_PANFS_TRUE@	$(am__objects_18) \
 @BUILD_AD_PANFS_TRUE@	adio/ad_panfs/ad_panfs_hints.lo \
 @BUILD_AD_PANFS_TRUE@	adio/ad_panfs/ad_panfs_read.lo \
 @BUILD_AD_PANFS_TRUE@	adio/ad_panfs/ad_panfs_resize.lo \
 @BUILD_AD_PANFS_TRUE@	adio/ad_panfs/ad_panfs_write.lo
-@BUILD_AD_PVFS2_TRUE@am__objects_19 = adio/ad_pvfs2/ad_pvfs2_close.lo \
+@BUILD_AD_PVFS2_TRUE@am__objects_20 = adio/ad_pvfs2/ad_pvfs2_close.lo \
 @BUILD_AD_PVFS2_TRUE@	adio/ad_pvfs2/ad_pvfs2_read.lo \
 @BUILD_AD_PVFS2_TRUE@	adio/ad_pvfs2/ad_pvfs2_open.lo \
 @BUILD_AD_PVFS2_TRUE@	adio/ad_pvfs2/ad_pvfs2_write.lo \
@@ -843,7 +895,7 @@ am__objects_8 = mpi-io/ioreq_c2f.lo mpi-io/ioreq_f2c.lo \
 @BUILD_AD_PVFS2_TRUE@	adio/ad_pvfs2/ad_pvfs2_io_dtype.lo \
 @BUILD_AD_PVFS2_TRUE@	adio/ad_pvfs2/ad_pvfs2_write_list_classic.lo \
 @BUILD_AD_PVFS2_TRUE@	adio/ad_pvfs2/ad_pvfs2_features.lo
-@BUILD_AD_TESTFS_TRUE@am__objects_20 =  \
+@BUILD_AD_TESTFS_TRUE@am__objects_21 =  \
 @BUILD_AD_TESTFS_TRUE@	adio/ad_testfs/ad_testfs_close.lo \
 @BUILD_AD_TESTFS_TRUE@	adio/ad_testfs/ad_testfs_read.lo \
 @BUILD_AD_TESTFS_TRUE@	adio/ad_testfs/ad_testfs_rdcoll.lo \
@@ -861,16 +913,16 @@ am__objects_8 = mpi-io/ioreq_c2f.lo mpi-io/ioreq_f2c.lo \
 @BUILD_AD_TESTFS_TRUE@	adio/ad_testfs/ad_testfs_hints.lo \
 @BUILD_AD_TESTFS_TRUE@	adio/ad_testfs/ad_testfs_delete.lo \
 @BUILD_AD_TESTFS_TRUE@	adio/ad_testfs/ad_testfs.lo
-@BUILD_AD_UFS_TRUE@am__objects_21 = adio/ad_ufs/ad_ufs.lo \
+@BUILD_AD_UFS_TRUE@am__objects_22 = adio/ad_ufs/ad_ufs.lo \
 @BUILD_AD_UFS_TRUE@	adio/ad_ufs/ad_ufs_open.lo
-@BUILD_AD_XFS_TRUE@am__objects_22 = adio/ad_xfs/ad_xfs.lo \
+@BUILD_AD_XFS_TRUE@am__objects_23 = adio/ad_xfs/ad_xfs.lo \
 @BUILD_AD_XFS_TRUE@	adio/ad_xfs/ad_xfs_fcntl.lo \
 @BUILD_AD_XFS_TRUE@	adio/ad_xfs/ad_xfs_hints.lo \
 @BUILD_AD_XFS_TRUE@	adio/ad_xfs/ad_xfs_open.lo \
 @BUILD_AD_XFS_TRUE@	adio/ad_xfs/ad_xfs_read.lo \
 @BUILD_AD_XFS_TRUE@	adio/ad_xfs/ad_xfs_resize.lo \
 @BUILD_AD_XFS_TRUE@	adio/ad_xfs/ad_xfs_write.lo
-@BUILD_AD_IME_TRUE@am__objects_23 = adio/ad_ime/ad_ime.lo \
+@BUILD_AD_IME_TRUE@am__objects_24 = adio/ad_ime/ad_ime.lo \
 @BUILD_AD_IME_TRUE@	adio/ad_ime/ad_ime_close.lo \
 @BUILD_AD_IME_TRUE@	adio/ad_ime/ad_ime_common.lo \
 @BUILD_AD_IME_TRUE@	adio/ad_ime/ad_ime_delete.lo \
@@ -880,14 +932,28 @@ am__objects_8 = mpi-io/ioreq_c2f.lo mpi-io/ioreq_f2c.lo \
 @BUILD_AD_IME_TRUE@	adio/ad_ime/ad_ime_open.lo \
 @BUILD_AD_IME_TRUE@	adio/ad_ime/ad_ime_resize.lo \
 @BUILD_AD_IME_TRUE@	adio/ad_ime/ad_ime_features.lo
-am__objects_24 = $(am__objects_5) $(am__objects_6) $(am__objects_7) \
+@BUILD_AD_QUOBYTEFS_TRUE@am__objects_25 =  \
+@BUILD_AD_QUOBYTEFS_TRUE@	adio/ad_quobytefs/ad_quobytefs.lo \
+@BUILD_AD_QUOBYTEFS_TRUE@	adio/ad_quobytefs/ad_quobytefs_open.lo \
+@BUILD_AD_QUOBYTEFS_TRUE@	adio/ad_quobytefs/ad_quobytefs_close.lo \
+@BUILD_AD_QUOBYTEFS_TRUE@	adio/ad_quobytefs/ad_quobytefs_write.lo \
+@BUILD_AD_QUOBYTEFS_TRUE@	adio/ad_quobytefs/ad_quobytefs_flush.lo \
+@BUILD_AD_QUOBYTEFS_TRUE@	adio/ad_quobytefs/ad_quobytefs_fcntl.lo \
+@BUILD_AD_QUOBYTEFS_TRUE@	adio/ad_quobytefs/ad_quobytefs_read.lo \
+@BUILD_AD_QUOBYTEFS_TRUE@	adio/ad_quobytefs/ad_quobytefs_resize.lo \
+@BUILD_AD_QUOBYTEFS_TRUE@	adio/ad_quobytefs/ad_quobytefs_delete.lo \
+@BUILD_AD_QUOBYTEFS_TRUE@	adio/ad_quobytefs/ad_quobytefs_aio.lo \
+@BUILD_AD_QUOBYTEFS_TRUE@	adio/ad_quobytefs/ad_quobytefs_setlock.lo \
+@BUILD_AD_QUOBYTEFS_TRUE@	adio/ad_quobytefs/ad_quobytefs_internal.lo
+am__objects_26 = $(am__objects_5) $(am__objects_6) $(am__objects_7) \
 	mpi-io/mpich_fileutil.lo mpi-io/mpir-mpioinit.lo \
 	mpi-io/mpiu_greq.lo mpi-io/mpiu_external32.lo \
 	mpi-io/mpir_cst_filesys.lo $(am__objects_9) $(am__objects_10) \
 	$(am__objects_11) $(am__objects_12) $(am__objects_13) \
 	$(am__objects_14) $(am__objects_15) $(am__objects_16) \
-	$(am__objects_18) $(am__objects_19) $(am__objects_20) \
+	$(am__objects_17) $(am__objects_19) $(am__objects_20) \
 	$(am__objects_21) $(am__objects_22) $(am__objects_23) \
+	$(am__objects_24) $(am__objects_25) \
 	adio/common/ad_aggregate.lo adio/common/ad_aggregate_new.lo \
 	adio/common/ad_close.lo adio/common/ad_coll_build_req_new.lo \
 	adio/common/ad_coll_exch_new.lo adio/common/ad_darray.lo \
@@ -916,19 +982,19 @@ am__objects_24 = $(am__objects_5) $(am__objects_6) $(am__objects_7) \
 	adio/common/error.lo adio/common/flatten.lo \
 	adio/common/get_fp_posn.lo adio/common/greq_fns.lo \
 	adio/common/heap_sort.lo adio/common/iscontig.lo \
-	adio/common/lock.lo adio/common/malloc.lo \
-	adio/common/shfp_fname.lo adio/common/status_setb.lo \
-	adio/common/strfns.lo adio/common/system_hints.lo \
-	adio/common/hint_fns.lo adio/common/ad_threaded_io.lo \
-	adio/common/p2p_aggregation.lo \
+	adio/common/lock.lo adio/common/lock_internal.lo \
+	adio/common/malloc.lo adio/common/shfp_fname.lo \
+	adio/common/status_setb.lo adio/common/strfns.lo \
+	adio/common/system_hints.lo adio/common/hint_fns.lo \
+	adio/common/ad_threaded_io.lo adio/common/p2p_aggregation.lo \
 	adio/common/onesided_aggregation.lo adio/common/ad_tuning.lo \
 	adio/common/utils.lo
-am__objects_25 =
+am__objects_27 =
 @BUILD_ROMIO_EMBEDDED_FALSE@am_libromio_la_OBJECTS = $(am__objects_4) \
-@BUILD_ROMIO_EMBEDDED_FALSE@	$(am__objects_24) \
-@BUILD_ROMIO_EMBEDDED_FALSE@	$(am__objects_25)
+@BUILD_ROMIO_EMBEDDED_FALSE@	$(am__objects_26) \
+@BUILD_ROMIO_EMBEDDED_FALSE@	$(am__objects_27)
 @BUILD_ROMIO_EMBEDDED_TRUE@am_libromio_la_OBJECTS = $(am__objects_4) \
-@BUILD_ROMIO_EMBEDDED_TRUE@	$(am__objects_24) $(am__objects_25)
+@BUILD_ROMIO_EMBEDDED_TRUE@	$(am__objects_26) $(am__objects_27)
 libromio_la_OBJECTS = $(am_libromio_la_OBJECTS)
 libromio_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
@@ -990,9 +1056,10 @@ am__noinst_HEADERS_DIST = mpi-io/mpioimpl.h mpi-io/mpioprof.h \
 	adio/include/adio_extern.h adio/include/adioi.h \
 	adio/include/adioi_errmsg.h adio/include/adioi_error.h \
 	adio/include/adioi_fs_proto.h adio/include/heap_sort.h \
-	adio/include/mpio_error.h adio/include/mpipr.h \
-	adio/include/mpiu_greq.h adio/include/nopackage.h \
-	adio/include/mpiu_external32.h adio/include/hint_fns.h \
+	adio/include/lock_internal.h adio/include/mpio_error.h \
+	adio/include/mpipr.h adio/include/mpiu_greq.h \
+	adio/include/nopackage.h adio/include/mpiu_external32.h \
+	adio/include/hint_fns.h adio/ad_daos/ad_daos.h \
 	adio/ad_gpfs/ad_gpfs_aggrs.h adio/ad_gpfs/ad_gpfs.h \
 	adio/ad_gpfs/ad_gpfs_tuning.h adio/ad_gpfs/bg/ad_bg_aggrs.h \
 	adio/ad_gpfs/bg/ad_bg_pset.h adio/ad_gpfs/pe/ad_pe_aggrs.h \
@@ -1001,7 +1068,8 @@ am__noinst_HEADERS_DIST = mpi-io/mpioimpl.h mpi-io/mpioprof.h \
 	adio/ad_pvfs2/ad_pvfs2_io.h adio/ad_pvfs2/ad_pvfs2_common.h \
 	adio/ad_testfs/ad_testfs.h adio/ad_ufs/ad_ufs.h \
 	adio/ad_xfs/ad_xfs.h adio/ad_ime/ad_ime.h \
-	adio/ad_ime/ad_ime_common.h
+	adio/ad_ime/ad_ime_common.h adio/ad_quobytefs/ad_quobytefs.h \
+	adio/ad_quobytefs/ad_quobytefs_internal.h
 HEADERS = $(include_HEADERS) $(nodist_include_HEADERS) \
 	$(noinst_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
@@ -1034,6 +1102,7 @@ CTAGS = ctags
 CSCOPE = cscope
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/adio/Makefile.mk \
 	$(srcdir)/localdefs.in $(srcdir)/mpi-io/Makefile.mk \
+	$(top_srcdir)/adio/ad_daos/Makefile.mk \
 	$(top_srcdir)/adio/ad_gpfs/Makefile.mk \
 	$(top_srcdir)/adio/ad_gpfs/bg/Makefile.mk \
 	$(top_srcdir)/adio/ad_gpfs/pe/Makefile.mk \
@@ -1042,6 +1111,7 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/adio/Makefile.mk \
 	$(top_srcdir)/adio/ad_nfs/Makefile.mk \
 	$(top_srcdir)/adio/ad_panfs/Makefile.mk \
 	$(top_srcdir)/adio/ad_pvfs2/Makefile.mk \
+	$(top_srcdir)/adio/ad_quobytefs/Makefile.mk \
 	$(top_srcdir)/adio/ad_testfs/Makefile.mk \
 	$(top_srcdir)/adio/ad_ufs/Makefile.mk \
 	$(top_srcdir)/adio/ad_xfs/Makefile.mk \
@@ -1158,7 +1228,6 @@ FORTRAN_TEST = @FORTRAN_TEST@
 FROM_LAM = @FROM_LAM@
 FROM_MPICH = @FROM_MPICH@
 FROM_OMPI = @FROM_OMPI@
-FTESTDEFINE = @FTESTDEFINE@
 GCOV = @GCOV@
 GREP = @GREP@
 HAVE_MPI_DARRAY_SUBARRAY = @HAVE_MPI_DARRAY_SUBARRAY@
@@ -1288,10 +1357,10 @@ libdir = @libdir@
 libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
+main_top_builddir = @main_top_builddir@
+main_top_srcdir = @main_top_srcdir@
+main_topbuild_dir = @main_topbuild_dir@
 mandir = @mandir@
-master_top_builddir = @master_top_builddir@
-master_top_srcdir = @master_top_srcdir@
-master_topbuild_dir = @master_topbuild_dir@
 mkdir_p = @mkdir_p@
 mpl_dist_srcdir = @mpl_dist_srcdir@
 mpl_includedir = @mpl_includedir@
@@ -1325,13 +1394,14 @@ noinst_HEADERS = mpi-io/mpioimpl.h mpi-io/mpioprof.h \
 	adio/include/adio_extern.h adio/include/adioi.h \
 	adio/include/adioi_errmsg.h adio/include/adioi_error.h \
 	adio/include/adioi_fs_proto.h adio/include/heap_sort.h \
-	adio/include/mpio_error.h adio/include/mpipr.h \
-	adio/include/mpiu_greq.h adio/include/nopackage.h \
-	adio/include/mpiu_external32.h adio/include/hint_fns.h \
-	$(am__append_7) $(am__append_9) $(am__append_11) \
-	$(am__append_13) $(am__append_16) $(am__append_18) \
-	$(am__append_20) $(am__append_22) $(am__append_24) \
-	$(am__append_26) $(am__append_28)
+	adio/include/lock_internal.h adio/include/mpio_error.h \
+	adio/include/mpipr.h adio/include/mpiu_greq.h \
+	adio/include/nopackage.h adio/include/mpiu_external32.h \
+	adio/include/hint_fns.h $(am__append_7) $(am__append_9) \
+	$(am__append_11) $(am__append_13) $(am__append_15) \
+	$(am__append_18) $(am__append_20) $(am__append_22) \
+	$(am__append_24) $(am__append_26) $(am__append_28) \
+	$(am__append_30) $(am__append_32)
 AM_CFLAGS = @VISIBILITY_CFLAGS@
 
 # ------------------------------------------------------------------------
@@ -1396,11 +1466,12 @@ romio_other_sources = $(am__append_1) $(am__append_2) $(am__append_3) \
 	mpi-io/mpiu_greq.c mpi-io/mpiu_external32.c \
 	mpi-io/mpir_cst_filesys.c $(am__append_5) $(am__append_6) \
 	$(am__append_8) $(am__append_10) $(am__append_12) \
-	$(am__append_14) $(am__append_15) $(am__append_17) \
+	$(am__append_14) $(am__append_16) $(am__append_17) \
 	$(am__append_19) $(am__append_21) $(am__append_23) \
 	$(am__append_25) $(am__append_27) $(am__append_29) \
-	adio/common/ad_aggregate.c adio/common/ad_aggregate_new.c \
-	adio/common/ad_close.c adio/common/ad_coll_build_req_new.c \
+	$(am__append_31) $(am__append_33) adio/common/ad_aggregate.c \
+	adio/common/ad_aggregate_new.c adio/common/ad_close.c \
+	adio/common/ad_coll_build_req_new.c \
 	adio/common/ad_coll_exch_new.c adio/common/ad_darray.c \
 	adio/common/ad_delete.c adio/common/ad_done.c \
 	adio/common/ad_done_fake.c adio/common/ad_end.c \
@@ -1427,11 +1498,11 @@ romio_other_sources = $(am__append_1) $(am__append_2) $(am__append_3) \
 	adio/common/error.c adio/common/flatten.c \
 	adio/common/get_fp_posn.c adio/common/greq_fns.c \
 	adio/common/heap_sort.c adio/common/iscontig.c \
-	adio/common/lock.c adio/common/malloc.c \
-	adio/common/shfp_fname.c adio/common/status_setb.c \
-	adio/common/strfns.c adio/common/system_hints.c \
-	adio/common/hint_fns.c adio/common/ad_threaded_io.c \
-	adio/common/p2p_aggregation.c \
+	adio/common/lock.c adio/common/lock_internal.c \
+	adio/common/malloc.c adio/common/shfp_fname.c \
+	adio/common/status_setb.c adio/common/strfns.c \
+	adio/common/system_hints.c adio/common/hint_fns.c \
+	adio/common/ad_threaded_io.c adio/common/p2p_aggregation.c \
 	adio/common/onesided_aggregation.c adio/common/ad_tuning.c \
 	adio/common/utils.c
 
@@ -1468,7 +1539,7 @@ mpio_extra_sources = \
 # Build a libtool convenience library that the enclosing MPI implementation can
 # use by adding it to the right _LIBADD variable.
 @BUILD_ROMIO_EMBEDDED_TRUE@noinst_LTLIBRARIES = libromio.la \
-@BUILD_ROMIO_EMBEDDED_TRUE@	$(am__append_30)
+@BUILD_ROMIO_EMBEDDED_TRUE@	$(am__append_34)
 @BUILD_ROMIO_EMBEDDED_FALSE@libromio_la_SOURCES = $(romio_mpi_sources) $(romio_other_sources) $(glue_sources)
 @BUILD_ROMIO_EMBEDDED_TRUE@libromio_la_SOURCES = $(romio_mpi_sources) $(romio_other_sources) $(glue_sources)
 @BUILD_PROFILING_LIB_TRUE@@BUILD_ROMIO_EMBEDDED_FALSE@libpromio_la_SOURCES = $(romio_mpi_sources)
@@ -1508,7 +1579,7 @@ all: all-recursive
 .SUFFIXES: .man-phony .html-phony .man1-phony .html1-phony .txt .i .c .lo .o .obj
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(srcdir)/mpi-io/Makefile.mk $(top_srcdir)/mpi-io/glue/Makefile.mk $(top_srcdir)/mpi-io/glue/default/Makefile.mk $(top_srcdir)/mpi-io/glue/mpich/Makefile.mk $(top_srcdir)/mpi-io/fortran/Makefile.mk $(srcdir)/adio/Makefile.mk $(top_srcdir)/adio/ad_gpfs/Makefile.mk $(top_srcdir)/adio/ad_gpfs/bg/Makefile.mk $(top_srcdir)/adio/ad_gpfs/pe/Makefile.mk $(top_srcdir)/adio/ad_lustre/Makefile.mk $(top_srcdir)/adio/ad_nfs/Makefile.mk $(top_srcdir)/adio/ad_panfs/Makefile.mk $(top_srcdir)/adio/ad_pvfs2/Makefile.mk $(top_srcdir)/adio/ad_testfs/Makefile.mk $(top_srcdir)/adio/ad_ufs/Makefile.mk $(top_srcdir)/adio/ad_xfs/Makefile.mk $(top_srcdir)/adio/ad_ime/Makefile.mk $(top_srcdir)/adio/common/Makefile.mk $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(srcdir)/mpi-io/Makefile.mk $(top_srcdir)/mpi-io/glue/Makefile.mk $(top_srcdir)/mpi-io/glue/default/Makefile.mk $(top_srcdir)/mpi-io/glue/mpich/Makefile.mk $(top_srcdir)/mpi-io/fortran/Makefile.mk $(srcdir)/adio/Makefile.mk $(top_srcdir)/adio/ad_daos/Makefile.mk $(top_srcdir)/adio/ad_gpfs/Makefile.mk $(top_srcdir)/adio/ad_gpfs/bg/Makefile.mk $(top_srcdir)/adio/ad_gpfs/pe/Makefile.mk $(top_srcdir)/adio/ad_lustre/Makefile.mk $(top_srcdir)/adio/ad_nfs/Makefile.mk $(top_srcdir)/adio/ad_panfs/Makefile.mk $(top_srcdir)/adio/ad_pvfs2/Makefile.mk $(top_srcdir)/adio/ad_testfs/Makefile.mk $(top_srcdir)/adio/ad_ufs/Makefile.mk $(top_srcdir)/adio/ad_xfs/Makefile.mk $(top_srcdir)/adio/ad_ime/Makefile.mk $(top_srcdir)/adio/ad_quobytefs/Makefile.mk $(top_srcdir)/adio/common/Makefile.mk $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -1530,7 +1601,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe);; \
 	esac;
-$(srcdir)/mpi-io/Makefile.mk $(top_srcdir)/mpi-io/glue/Makefile.mk $(top_srcdir)/mpi-io/glue/default/Makefile.mk $(top_srcdir)/mpi-io/glue/mpich/Makefile.mk $(top_srcdir)/mpi-io/fortran/Makefile.mk $(srcdir)/adio/Makefile.mk $(top_srcdir)/adio/ad_gpfs/Makefile.mk $(top_srcdir)/adio/ad_gpfs/bg/Makefile.mk $(top_srcdir)/adio/ad_gpfs/pe/Makefile.mk $(top_srcdir)/adio/ad_lustre/Makefile.mk $(top_srcdir)/adio/ad_nfs/Makefile.mk $(top_srcdir)/adio/ad_panfs/Makefile.mk $(top_srcdir)/adio/ad_pvfs2/Makefile.mk $(top_srcdir)/adio/ad_testfs/Makefile.mk $(top_srcdir)/adio/ad_ufs/Makefile.mk $(top_srcdir)/adio/ad_xfs/Makefile.mk $(top_srcdir)/adio/ad_ime/Makefile.mk $(top_srcdir)/adio/common/Makefile.mk $(am__empty):
+$(srcdir)/mpi-io/Makefile.mk $(top_srcdir)/mpi-io/glue/Makefile.mk $(top_srcdir)/mpi-io/glue/default/Makefile.mk $(top_srcdir)/mpi-io/glue/mpich/Makefile.mk $(top_srcdir)/mpi-io/fortran/Makefile.mk $(srcdir)/adio/Makefile.mk $(top_srcdir)/adio/ad_daos/Makefile.mk $(top_srcdir)/adio/ad_gpfs/Makefile.mk $(top_srcdir)/adio/ad_gpfs/bg/Makefile.mk $(top_srcdir)/adio/ad_gpfs/pe/Makefile.mk $(top_srcdir)/adio/ad_lustre/Makefile.mk $(top_srcdir)/adio/ad_nfs/Makefile.mk $(top_srcdir)/adio/ad_panfs/Makefile.mk $(top_srcdir)/adio/ad_pvfs2/Makefile.mk $(top_srcdir)/adio/ad_testfs/Makefile.mk $(top_srcdir)/adio/ad_ufs/Makefile.mk $(top_srcdir)/adio/ad_xfs/Makefile.mk $(top_srcdir)/adio/ad_ime/Makefile.mk $(top_srcdir)/adio/ad_quobytefs/Makefile.mk $(top_srcdir)/adio/common/Makefile.mk $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -2190,6 +2261,34 @@ mpi-io/iowaitany.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
 mpi-io/iowaitsome.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
+adio/ad_daos/$(am__dirstamp):
+	@$(MKDIR_P) adio/ad_daos
+	@: > adio/ad_daos/$(am__dirstamp)
+adio/ad_daos/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) adio/ad_daos/$(DEPDIR)
+	@: > adio/ad_daos/$(DEPDIR)/$(am__dirstamp)
+adio/ad_daos/ad_daos.lo: adio/ad_daos/$(am__dirstamp) \
+	adio/ad_daos/$(DEPDIR)/$(am__dirstamp)
+adio/ad_daos/ad_daos_close.lo: adio/ad_daos/$(am__dirstamp) \
+	adio/ad_daos/$(DEPDIR)/$(am__dirstamp)
+adio/ad_daos/ad_daos_common.lo: adio/ad_daos/$(am__dirstamp) \
+	adio/ad_daos/$(DEPDIR)/$(am__dirstamp)
+adio/ad_daos/ad_daos_fcntl.lo: adio/ad_daos/$(am__dirstamp) \
+	adio/ad_daos/$(DEPDIR)/$(am__dirstamp)
+adio/ad_daos/ad_daos_features.lo: adio/ad_daos/$(am__dirstamp) \
+	adio/ad_daos/$(DEPDIR)/$(am__dirstamp)
+adio/ad_daos/ad_daos_hhash.lo: adio/ad_daos/$(am__dirstamp) \
+	adio/ad_daos/$(DEPDIR)/$(am__dirstamp)
+adio/ad_daos/ad_daos_hints.lo: adio/ad_daos/$(am__dirstamp) \
+	adio/ad_daos/$(DEPDIR)/$(am__dirstamp)
+adio/ad_daos/ad_daos_io.lo: adio/ad_daos/$(am__dirstamp) \
+	adio/ad_daos/$(DEPDIR)/$(am__dirstamp)
+adio/ad_daos/ad_daos_io_str.lo: adio/ad_daos/$(am__dirstamp) \
+	adio/ad_daos/$(DEPDIR)/$(am__dirstamp)
+adio/ad_daos/ad_daos_open.lo: adio/ad_daos/$(am__dirstamp) \
+	adio/ad_daos/$(DEPDIR)/$(am__dirstamp)
+adio/ad_daos/ad_daos_resize.lo: adio/ad_daos/$(am__dirstamp) \
+	adio/ad_daos/$(DEPDIR)/$(am__dirstamp)
 adio/ad_gpfs/$(am__dirstamp):
 	@$(MKDIR_P) adio/ad_gpfs
 	@: > adio/ad_gpfs/$(am__dirstamp)
@@ -2444,6 +2543,47 @@ adio/ad_ime/ad_ime_resize.lo: adio/ad_ime/$(am__dirstamp) \
 	adio/ad_ime/$(DEPDIR)/$(am__dirstamp)
 adio/ad_ime/ad_ime_features.lo: adio/ad_ime/$(am__dirstamp) \
 	adio/ad_ime/$(DEPDIR)/$(am__dirstamp)
+adio/ad_quobytefs/$(am__dirstamp):
+	@$(MKDIR_P) adio/ad_quobytefs
+	@: > adio/ad_quobytefs/$(am__dirstamp)
+adio/ad_quobytefs/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) adio/ad_quobytefs/$(DEPDIR)
+	@: > adio/ad_quobytefs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_quobytefs/ad_quobytefs.lo: adio/ad_quobytefs/$(am__dirstamp) \
+	adio/ad_quobytefs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_quobytefs/ad_quobytefs_open.lo:  \
+	adio/ad_quobytefs/$(am__dirstamp) \
+	adio/ad_quobytefs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_quobytefs/ad_quobytefs_close.lo:  \
+	adio/ad_quobytefs/$(am__dirstamp) \
+	adio/ad_quobytefs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_quobytefs/ad_quobytefs_write.lo:  \
+	adio/ad_quobytefs/$(am__dirstamp) \
+	adio/ad_quobytefs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_quobytefs/ad_quobytefs_flush.lo:  \
+	adio/ad_quobytefs/$(am__dirstamp) \
+	adio/ad_quobytefs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_quobytefs/ad_quobytefs_fcntl.lo:  \
+	adio/ad_quobytefs/$(am__dirstamp) \
+	adio/ad_quobytefs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_quobytefs/ad_quobytefs_read.lo:  \
+	adio/ad_quobytefs/$(am__dirstamp) \
+	adio/ad_quobytefs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_quobytefs/ad_quobytefs_resize.lo:  \
+	adio/ad_quobytefs/$(am__dirstamp) \
+	adio/ad_quobytefs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_quobytefs/ad_quobytefs_delete.lo:  \
+	adio/ad_quobytefs/$(am__dirstamp) \
+	adio/ad_quobytefs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_quobytefs/ad_quobytefs_aio.lo:  \
+	adio/ad_quobytefs/$(am__dirstamp) \
+	adio/ad_quobytefs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_quobytefs/ad_quobytefs_setlock.lo:  \
+	adio/ad_quobytefs/$(am__dirstamp) \
+	adio/ad_quobytefs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_quobytefs/ad_quobytefs_internal.lo:  \
+	adio/ad_quobytefs/$(am__dirstamp) \
+	adio/ad_quobytefs/$(DEPDIR)/$(am__dirstamp)
 adio/common/$(am__dirstamp):
 	@$(MKDIR_P) adio/common
 	@: > adio/common/$(am__dirstamp)
@@ -2564,6 +2704,8 @@ adio/common/iscontig.lo: adio/common/$(am__dirstamp) \
 	adio/common/$(DEPDIR)/$(am__dirstamp)
 adio/common/lock.lo: adio/common/$(am__dirstamp) \
 	adio/common/$(DEPDIR)/$(am__dirstamp)
+adio/common/lock_internal.lo: adio/common/$(am__dirstamp) \
+	adio/common/$(DEPDIR)/$(am__dirstamp)
 adio/common/malloc.lo: adio/common/$(am__dirstamp) \
 	adio/common/$(DEPDIR)/$(am__dirstamp)
 adio/common/shfp_fname.lo: adio/common/$(am__dirstamp) \
@@ -2592,6 +2734,8 @@ libromio.la: $(libromio_la_OBJECTS) $(libromio_la_DEPENDENCIES) $(EXTRA_libromio
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f adio/ad_daos/*.$(OBJEXT)
+	-rm -f adio/ad_daos/*.lo
 	-rm -f adio/ad_gpfs/*.$(OBJEXT)
 	-rm -f adio/ad_gpfs/*.lo
 	-rm -f adio/ad_gpfs/bg/*.$(OBJEXT)
@@ -2608,6 +2752,8 @@ mostlyclean-compile:
 	-rm -f adio/ad_panfs/*.lo
 	-rm -f adio/ad_pvfs2/*.$(OBJEXT)
 	-rm -f adio/ad_pvfs2/*.lo
+	-rm -f adio/ad_quobytefs/*.$(OBJEXT)
+	-rm -f adio/ad_quobytefs/*.lo
 	-rm -f adio/ad_testfs/*.$(OBJEXT)
 	-rm -f adio/ad_testfs/*.lo
 	-rm -f adio/ad_ufs/*.$(OBJEXT)
@@ -2630,6 +2776,17 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_daos/$(DEPDIR)/ad_daos.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_daos/$(DEPDIR)/ad_daos_close.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_daos/$(DEPDIR)/ad_daos_common.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_daos/$(DEPDIR)/ad_daos_fcntl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_daos/$(DEPDIR)/ad_daos_features.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_daos/$(DEPDIR)/ad_daos_hhash.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_daos/$(DEPDIR)/ad_daos_hints.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_daos/$(DEPDIR)/ad_daos_io.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_daos/$(DEPDIR)/ad_daos_io_str.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_daos/$(DEPDIR)/ad_daos_open.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_daos/$(DEPDIR)/ad_daos_resize.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gpfs/$(DEPDIR)/ad_gpfs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gpfs/$(DEPDIR)/ad_gpfs_aggrs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gpfs/$(DEPDIR)/ad_gpfs_close.Plo@am__quote@
@@ -2697,6 +2854,18 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_pvfs2/$(DEPDIR)/ad_pvfs2_resize.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_pvfs2/$(DEPDIR)/ad_pvfs2_write.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_pvfs2/$(DEPDIR)/ad_pvfs2_write_list_classic.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_quobytefs/$(DEPDIR)/ad_quobytefs.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_quobytefs/$(DEPDIR)/ad_quobytefs_aio.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_quobytefs/$(DEPDIR)/ad_quobytefs_close.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_quobytefs/$(DEPDIR)/ad_quobytefs_delete.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_quobytefs/$(DEPDIR)/ad_quobytefs_fcntl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_quobytefs/$(DEPDIR)/ad_quobytefs_flush.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_quobytefs/$(DEPDIR)/ad_quobytefs_internal.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_quobytefs/$(DEPDIR)/ad_quobytefs_open.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_quobytefs/$(DEPDIR)/ad_quobytefs_read.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_quobytefs/$(DEPDIR)/ad_quobytefs_resize.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_quobytefs/$(DEPDIR)/ad_quobytefs_setlock.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_quobytefs/$(DEPDIR)/ad_quobytefs_write.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_testfs/$(DEPDIR)/ad_testfs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_testfs/$(DEPDIR)/ad_testfs_close.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_testfs/$(DEPDIR)/ad_testfs_delete.Plo@am__quote@
@@ -2783,6 +2952,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/hint_fns.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/iscontig.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/lock.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/lock_internal.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/malloc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/onesided_aggregation.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/p2p_aggregation.Plo@am__quote@
@@ -3858,6 +4028,7 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
+	-rm -rf adio/ad_daos/.libs adio/ad_daos/_libs
 	-rm -rf adio/ad_gpfs/.libs adio/ad_gpfs/_libs
 	-rm -rf adio/ad_gpfs/bg/.libs adio/ad_gpfs/bg/_libs
 	-rm -rf adio/ad_gpfs/pe/.libs adio/ad_gpfs/pe/_libs
@@ -3866,6 +4037,7 @@ clean-libtool:
 	-rm -rf adio/ad_nfs/.libs adio/ad_nfs/_libs
 	-rm -rf adio/ad_panfs/.libs adio/ad_panfs/_libs
 	-rm -rf adio/ad_pvfs2/.libs adio/ad_pvfs2/_libs
+	-rm -rf adio/ad_quobytefs/.libs adio/ad_quobytefs/_libs
 	-rm -rf adio/ad_testfs/.libs adio/ad_testfs/_libs
 	-rm -rf adio/ad_ufs/.libs adio/ad_ufs/_libs
 	-rm -rf adio/ad_xfs/.libs adio/ad_xfs/_libs
@@ -4249,6 +4421,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f adio/ad_daos/$(DEPDIR)/$(am__dirstamp)
+	-rm -f adio/ad_daos/$(am__dirstamp)
 	-rm -f adio/ad_gpfs/$(DEPDIR)/$(am__dirstamp)
 	-rm -f adio/ad_gpfs/$(am__dirstamp)
 	-rm -f adio/ad_gpfs/bg/$(DEPDIR)/$(am__dirstamp)
@@ -4265,6 +4439,8 @@ distclean-generic:
 	-rm -f adio/ad_panfs/$(am__dirstamp)
 	-rm -f adio/ad_pvfs2/$(DEPDIR)/$(am__dirstamp)
 	-rm -f adio/ad_pvfs2/$(am__dirstamp)
+	-rm -f adio/ad_quobytefs/$(DEPDIR)/$(am__dirstamp)
+	-rm -f adio/ad_quobytefs/$(am__dirstamp)
 	-rm -f adio/ad_testfs/$(DEPDIR)/$(am__dirstamp)
 	-rm -f adio/ad_testfs/$(am__dirstamp)
 	-rm -f adio/ad_ufs/$(DEPDIR)/$(am__dirstamp)
@@ -4294,7 +4470,7 @@ clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf adio/ad_gpfs/$(DEPDIR) adio/ad_gpfs/bg/$(DEPDIR) adio/ad_gpfs/pe/$(DEPDIR) adio/ad_ime/$(DEPDIR) adio/ad_lustre/$(DEPDIR) adio/ad_nfs/$(DEPDIR) adio/ad_panfs/$(DEPDIR) adio/ad_pvfs2/$(DEPDIR) adio/ad_testfs/$(DEPDIR) adio/ad_ufs/$(DEPDIR) adio/ad_xfs/$(DEPDIR) adio/common/$(DEPDIR) mpi-io/$(DEPDIR) mpi-io/fortran/$(DEPDIR) mpi-io/glue/$(DEPDIR) mpi-io/glue/default/$(DEPDIR) mpi-io/glue/mpich/$(DEPDIR)
+	-rm -rf adio/ad_daos/$(DEPDIR) adio/ad_gpfs/$(DEPDIR) adio/ad_gpfs/bg/$(DEPDIR) adio/ad_gpfs/pe/$(DEPDIR) adio/ad_ime/$(DEPDIR) adio/ad_lustre/$(DEPDIR) adio/ad_nfs/$(DEPDIR) adio/ad_panfs/$(DEPDIR) adio/ad_pvfs2/$(DEPDIR) adio/ad_quobytefs/$(DEPDIR) adio/ad_testfs/$(DEPDIR) adio/ad_ufs/$(DEPDIR) adio/ad_xfs/$(DEPDIR) adio/common/$(DEPDIR) mpi-io/$(DEPDIR) mpi-io/fortran/$(DEPDIR) mpi-io/glue/$(DEPDIR) mpi-io/glue/default/$(DEPDIR) mpi-io/glue/mpich/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -4342,7 +4518,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf adio/ad_gpfs/$(DEPDIR) adio/ad_gpfs/bg/$(DEPDIR) adio/ad_gpfs/pe/$(DEPDIR) adio/ad_ime/$(DEPDIR) adio/ad_lustre/$(DEPDIR) adio/ad_nfs/$(DEPDIR) adio/ad_panfs/$(DEPDIR) adio/ad_pvfs2/$(DEPDIR) adio/ad_testfs/$(DEPDIR) adio/ad_ufs/$(DEPDIR) adio/ad_xfs/$(DEPDIR) adio/common/$(DEPDIR) mpi-io/$(DEPDIR) mpi-io/fortran/$(DEPDIR) mpi-io/glue/$(DEPDIR) mpi-io/glue/default/$(DEPDIR) mpi-io/glue/mpich/$(DEPDIR)
+	-rm -rf adio/ad_daos/$(DEPDIR) adio/ad_gpfs/$(DEPDIR) adio/ad_gpfs/bg/$(DEPDIR) adio/ad_gpfs/pe/$(DEPDIR) adio/ad_ime/$(DEPDIR) adio/ad_lustre/$(DEPDIR) adio/ad_nfs/$(DEPDIR) adio/ad_panfs/$(DEPDIR) adio/ad_pvfs2/$(DEPDIR) adio/ad_quobytefs/$(DEPDIR) adio/ad_testfs/$(DEPDIR) adio/ad_ufs/$(DEPDIR) adio/ad_xfs/$(DEPDIR) adio/common/$(DEPDIR) mpi-io/$(DEPDIR) mpi-io/fortran/$(DEPDIR) mpi-io/glue/$(DEPDIR) mpi-io/glue/default/$(DEPDIR) mpi-io/glue/mpich/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

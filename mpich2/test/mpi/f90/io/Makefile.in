@@ -16,19 +16,6 @@
 
 # This Makefile.am generated automatically by f77tof90
 # from f77/io/Makefile.am.  DO NOT EDIT
-# -*- Mode: Makefile; -*-
-# vim: set ft=automake :
-#
-# (C) 2011 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
-# -*- Mode: Makefile; -*-
-# vim: set ft=automake :
-#
-# (C) 2011 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
 
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -125,9 +112,16 @@ am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
 	$(top_srcdir)/confdb/aclocal_cxx.m4 \
 	$(top_srcdir)/confdb/aclocal_f77.m4 \
 	$(top_srcdir)/confdb/aclocal_fc.m4 \
+	$(top_srcdir)/confdb/aclocal_libs.m4 \
 	$(top_srcdir)/confdb/aclocal_make.m4 \
 	$(top_srcdir)/confdb/aclocal_runlog.m4 \
-	$(top_srcdir)/confdb/aclocal_util.m4 $(top_srcdir)/version.m4 \
+	$(top_srcdir)/confdb/aclocal_threads.m4 \
+	$(top_srcdir)/confdb/aclocal_util.m4 \
+	$(top_srcdir)/confdb/libtool.m4 \
+	$(top_srcdir)/confdb/ltoptions.m4 \
+	$(top_srcdir)/confdb/ltsugar.m4 \
+	$(top_srcdir)/confdb/ltversion.m4 \
+	$(top_srcdir)/confdb/lt~obsolete.m4 $(top_srcdir)/version.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -142,90 +136,97 @@ PROGRAMS = $(noinst_PROGRAMS)
 atomicityf90_SOURCES = atomicityf90.f90
 atomicityf90_OBJECTS = atomicityf90.$(OBJEXT)
 atomicityf90_LDADD = $(LDADD)
-atomicityf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+atomicityf90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
 am_c2f2ciof90_OBJECTS = c2f2ciof90.$(OBJEXT) c2f902cio.$(OBJEXT)
 c2f2ciof90_OBJECTS = $(am_c2f2ciof90_OBJECTS)
 c2f2ciof90_LDADD = $(LDADD)
-c2f2ciof90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+c2f2ciof90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
 am_c2f90multio_OBJECTS = c2f90multio.$(OBJEXT)
 c2f90multio_OBJECTS = $(am_c2f90multio_OBJECTS)
-c2f90multio_DEPENDENCIES = $(top_builddir)/util/mtest.o
+c2f90multio_DEPENDENCIES = $(mtest_c_objects)
 fileerrf90_SOURCES = fileerrf90.f90
 fileerrf90_OBJECTS = fileerrf90.$(OBJEXT)
 fileerrf90_LDADD = $(LDADD)
-fileerrf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+fileerrf90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
 fileinfof90_SOURCES = fileinfof90.f90
 fileinfof90_OBJECTS = fileinfof90.$(OBJEXT)
 fileinfof90_LDADD = $(LDADD)
-fileinfof90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+fileinfof90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
 i_setviewcurf90_SOURCES = i_setviewcurf90.f90
 i_setviewcurf90_OBJECTS = i_setviewcurf90.$(OBJEXT)
 i_setviewcurf90_LDADD = $(LDADD)
-i_setviewcurf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+i_setviewcurf90_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest_f90.$(OBJEXT)
 nodist_iwriteatallf90_OBJECTS = iwriteatallf90.$(OBJEXT)
 iwriteatallf90_OBJECTS = $(nodist_iwriteatallf90_OBJECTS)
 iwriteatallf90_LDADD = $(LDADD)
-iwriteatallf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+iwriteatallf90_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest_f90.$(OBJEXT)
 nodist_iwriteatf90_OBJECTS = iwriteatf90.$(OBJEXT)
 iwriteatf90_OBJECTS = $(nodist_iwriteatf90_OBJECTS)
 iwriteatf90_LDADD = $(LDADD)
-iwriteatf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+iwriteatf90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
 nodist_iwritef90_OBJECTS = iwritef90.$(OBJEXT)
 iwritef90_OBJECTS = $(nodist_iwritef90_OBJECTS)
 iwritef90_LDADD = $(LDADD)
-iwritef90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+iwritef90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
 nodist_iwriteshf90_OBJECTS = iwriteshf90.$(OBJEXT)
 iwriteshf90_OBJECTS = $(nodist_iwriteshf90_OBJECTS)
 iwriteshf90_LDADD = $(LDADD)
-iwriteshf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+iwriteshf90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
 miscfilef90_SOURCES = miscfilef90.f90
 miscfilef90_OBJECTS = miscfilef90.$(OBJEXT)
 miscfilef90_LDADD = $(LDADD)
-miscfilef90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+miscfilef90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
 setviewcurf90_SOURCES = setviewcurf90.f90
 setviewcurf90_OBJECTS = setviewcurf90.$(OBJEXT)
 setviewcurf90_LDADD = $(LDADD)
-setviewcurf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+setviewcurf90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
 shpositionf90_SOURCES = shpositionf90.f90
 shpositionf90_OBJECTS = shpositionf90.$(OBJEXT)
 shpositionf90_LDADD = $(LDADD)
-shpositionf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+shpositionf90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
 nodist_writeallbef90_OBJECTS = writeallbef90.$(OBJEXT)
 writeallbef90_OBJECTS = $(nodist_writeallbef90_OBJECTS)
 writeallbef90_LDADD = $(LDADD)
-writeallbef90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+writeallbef90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
 nodist_writeallf90_OBJECTS = writeallf90.$(OBJEXT)
 writeallf90_OBJECTS = $(nodist_writeallf90_OBJECTS)
 writeallf90_LDADD = $(LDADD)
-writeallf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+writeallf90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
 nodist_writeatallbef90_OBJECTS = writeatallbef90.$(OBJEXT)
 writeatallbef90_OBJECTS = $(nodist_writeatallbef90_OBJECTS)
 writeatallbef90_LDADD = $(LDADD)
-writeatallbef90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+writeatallbef90_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest_f90.$(OBJEXT)
 nodist_writeatallf90_OBJECTS = writeatallf90.$(OBJEXT)
 writeatallf90_OBJECTS = $(nodist_writeatallf90_OBJECTS)
 writeatallf90_LDADD = $(LDADD)
-writeatallf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+writeatallf90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
 nodist_writeatf90_OBJECTS = writeatf90.$(OBJEXT)
 writeatf90_OBJECTS = $(nodist_writeatf90_OBJECTS)
 writeatf90_LDADD = $(LDADD)
-writeatf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+writeatf90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
 nodist_writef90_OBJECTS = writef90.$(OBJEXT)
 writef90_OBJECTS = $(nodist_writef90_OBJECTS)
 writef90_LDADD = $(LDADD)
-writef90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+writef90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
 nodist_writeordbef90_OBJECTS = writeordbef90.$(OBJEXT)
 writeordbef90_OBJECTS = $(nodist_writeordbef90_OBJECTS)
 writeordbef90_LDADD = $(LDADD)
-writeordbef90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+writeordbef90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
 nodist_writeordf90_OBJECTS = writeordf90.$(OBJEXT)
 writeordf90_OBJECTS = $(nodist_writeordf90_OBJECTS)
 writeordf90_LDADD = $(LDADD)
-writeordf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+writeordf90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
 nodist_writeshf90_OBJECTS = writeshf90.$(OBJEXT)
 writeshf90_OBJECTS = $(nodist_writeshf90_OBJECTS)
 writeshf90_LDADD = $(LDADD)
-writeshf90_DEPENDENCIES = $(top_builddir)/f90/util/mtestf90.o
+writeshf90_DEPENDENCIES = $(top_builddir)/util/mtest_f90.$(OBJEXT)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -244,24 +245,33 @@ am__depfiles_maybe = depfiles
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
 AM_V_CC = $(am__v_CC_@AM_V@)
 am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
 am__v_CC_1 = 
 CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 FCCOMPILE = $(FC) $(AM_FCFLAGS) $(FCFLAGS)
+LTFCCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=FC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(FC) $(AM_FCFLAGS) $(FCFLAGS)
 AM_V_FC = $(am__v_FC_@AM_V@)
 am__v_FC_ = $(am__v_FC_@AM_DEFAULT_V@)
 am__v_FC_0 = @echo "  FC      " $@;
 am__v_FC_1 = 
 FCLD = $(FC)
-FCLINK = $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
-	$@
+FCLINK = $(LIBTOOL) $(AM_V_lt) --tag=FC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_FCLD = $(am__v_FCLD_@AM_V@)
 am__v_FCLD_ = $(am__v_FCLD_@AM_DEFAULT_V@)
 am__v_FCLD_0 = @echo "  FCLD    " $@;
@@ -331,7 +341,10 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DLLTOOL = @DLLTOOL@
+DSYMUTIL = @DSYMUTIL@
 DTP_SWITCH = @DTP_SWITCH@
+DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -362,13 +375,19 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LIBTOOL = @LIBTOOL@
+LIPO = @LIPO@
+LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAINT = @MAINT@
 MAKE = @MAKE@
 MAKEINFO = @MAKEINFO@
+MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 MPICC = @MPICC@
 MPICH_ENABLE_CXX = @MPICH_ENABLE_CXX@
@@ -390,7 +409,12 @@ MPI_SIZEOF_OFFSET = @MPI_SIZEOF_OFFSET@
 MPI_SOURCE = @MPI_SOURCE@
 MPI_SUBVERSION = @MPI_SUBVERSION@
 MPI_VERSION = @MPI_VERSION@
+NM = @NM@
+NMEDIT = @NMEDIT@
+OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
+OTOOL = @OTOOL@
+OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -402,6 +426,7 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 RANLIB = @RANLIB@
 RUN_XFAIL = @RUN_XFAIL@
+SED = @SED@
 SET_CFLAGS = @SET_CFLAGS@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -421,6 +446,7 @@ abs_top_srcdir = @abs_top_srcdir@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
+ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
 ac_ct_F77 = @ac_ct_F77@
 ac_ct_FC = @ac_ct_FC@
 am__include = @am__include@
@@ -435,8 +461,15 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
+ch3_tests = @ch3_tests@
+ch4_ofi_tests = @ch4_ofi_tests@
+ch4_tests = @ch4_tests@
+ch4_ucx_tests = @ch4_ucx_tests@
 ckpointdir = @ckpointdir@
 comm_overlap = @comm_overlap@
+cuda_CPPFLAGS = @cuda_CPPFLAGS@
+cuda_LDFLAGS = @cuda_LDFLAGS@
+cuda_LIBS = @cuda_LIBS@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -465,9 +498,9 @@ libdir = @libdir@
 libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
+main_top_builddir = @main_top_builddir@
+main_top_srcdir = @main_top_srcdir@
 mandir = @mandir@
-master_top_builddir = @master_top_builddir@
-master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
@@ -495,18 +528,23 @@ threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+ze_CPPFLAGS = @ze_CPPFLAGS@
+ze_LDFLAGS = @ze_LDFLAGS@
+ze_LIBS = @ze_LIBS@
 
 # these CPPFLAGS are only used when building C/C++ source files, not for actual
 # F90 code itself
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
-LDADD = $(top_builddir)/f90/util/mtestf90.o
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include @cuda_CPPFLAGS@ @ze_CPPFLAGS@
+LDADD = $(top_builddir)/util/mtest_f90.$(OBJEXT)
+mtest_c_objects = $(top_builddir)/util/mtest.$(OBJEXT) $(top_builddir)/util/mtest_single.$(OBJEXT) $(top_builddir)/util/mtest_common.$(OBJEXT)
 
 # This is right for many platforms, but not all.  The right fix involves a
 # configure test, but this version is no worse than the simplemake version was.
 AM_FFLAGS = -I.
 
 # just in case
-CLEANFILES = summary.xml summary.tap gen-src-tmp gen-src-stamp
+CLEANFILES = summary.xml summary.tap summary.junit.xml gen-src-tmp \
+	gen-src-stamp
 EXTRA_DIST = testlist.in ioharness.defn ioharness.tlt $(am__append_2)
 
 # avoid having to write many "foo_SOURCES = foo.f90" lines
@@ -528,11 +566,8 @@ nodist_writeordbef90_SOURCES = writeordbef90.f90
 nodist_writeordf90_SOURCES = writeordf90.f90
 nodist_writeshf90_SOURCES = writeshf90.f90
 c2f90multio_SOURCES = c2f90multio.c
-# this is a C only program, so we must either:
-# A) prevent the makefile-wide "LDADD=mtestf90.o" from affecting this program, or
-# B) link with the fortran compiler, otherwise we'll get link failures from
-# compilers with runtime support libs, such as PGI
-c2f90multio_LDADD = $(top_builddir)/util/mtest.o
+# this is a C only program, so we must include mtest_c_objects
+c2f90multio_LDADD = $(mtest_c_objects) @cuda_LIBS@ @ze_LIBS@ @cuda_LDFLAGS@ @ze_LDFLAGS@
 c2f2ciof90_SOURCES = c2f2ciof90.f90 c2f902cio.c
 
 # ensure that dependent tests will be rebuilt when headers are updated
@@ -558,7 +593,7 @@ DISTCLEANFILES = $(generated_io_sources)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .f90 .o .obj
+.SUFFIXES: .c .f90 .lo .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/Makefile_f90.mtest $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -593,7 +628,13 @@ testlist: $(top_builddir)/config.status $(srcdir)/testlist.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
+	echo " rm -f" $$list; \
+	rm -f $$list || exit $$?; \
+	test -n "$(EXEEXT)" || exit 0; \
+	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
+	echo " rm -f" $$list; \
+	rm -f $$list
 
 atomicityf90$(EXEEXT): $(atomicityf90_OBJECTS) $(atomicityf90_DEPENDENCIES) $(EXTRA_atomicityf90_DEPENDENCIES) 
 	@rm -f atomicityf90$(EXEEXT)
@@ -708,11 +749,28 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
+.c.lo:
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
 .f90.o:
 	$(AM_V_FC)$(FCCOMPILE) -c -o $@ $(FCFLAGS_f90) $<
 
 .f90.obj:
 	$(AM_V_FC)$(FCCOMPILE) -c -o $@ $(FCFLAGS_f90) `$(CYGPATH_W) '$<'`
+
+.f90.lo:
+	$(AM_V_FC)$(LTFCCOMPILE) -c -o $@ $(FCFLAGS_f90) $<
+
+mostlyclean-libtool:
+	-rm -f *.lo
+
+clean-libtool:
+	-rm -rf .libs _libs
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -835,7 +893,7 @@ maintainer-clean-generic:
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-local clean-noinstPROGRAMS \
+clean-am: clean-generic clean-libtool clean-local clean-noinstPROGRAMS \
 	mostlyclean-am
 
 distclean: distclean-am
@@ -891,7 +949,8 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool
 
 pdf: pdf-am
 
@@ -906,27 +965,32 @@ uninstall-am:
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am check check-am clean clean-generic \
-	clean-local clean-noinstPROGRAMS cscopelist-am ctags ctags-am \
-	distclean distclean-compile distclean-generic distclean-tags \
-	distdir dvi dvi-am html html-am info info-am install \
-	install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
+	clean-libtool clean-local clean-noinstPROGRAMS cscopelist-am \
+	ctags ctags-am distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags tags-am uninstall uninstall-am
 
 .PRECIOUS: Makefile
 
 
-$(top_builddir)/f90/util/mtestf90.o: $(top_srcdir)/f90/util/mtestf90.f90
-	(cd $(top_builddir)/f90/util && $(MAKE) mtestf90.o)
+$(top_builddir)/util/mtest_f90.$(OBJEXT): $(top_srcdir)/util/mtest_f90.f90
+	(cd $(top_builddir)/util && $(MAKE) mtest_f90.$(OBJEXT))
+$(top_builddir)/util/mtest.$(OBJEXT): $(top_srcdir)/util/mtest.c
+	(cd $(top_builddir)/util && $(MAKE) mtest.$(OBJEXT))
+$(top_builddir)/util/mtest_single.$(OBJEXT): $(top_srcdir)/util/mtest_single.c
+	(cd $(top_builddir)/util && $(MAKE) mtest_single.$(OBJEXT))
 
 testing:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
-		-mpiexec=${MPIEXEC} -xmlfile=summary.xml
+		-mpiexec=${MPIEXEC} -xmlfile=summary.xml -tapfile=summary.tap -junitfile=summary.junit.xml
 
 # a parallel-safe scheme to generate the tests, see the automake-1.11.1 manual,
 # section 27.9 "Handling Tools That Produce Multiple Outputs" for an explanation

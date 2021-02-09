@@ -1,13 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- *  Portions of this code were written by Intel Corporation.
- *  Copyright (C) 2011-2017 Intel Corporation.  Intel provides this material
- *  to Argonne National Laboratory subject to Software Grant and Corporate
- *  Contributor License Agreement dated February 8, 2012.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #ifndef COLL_TYPES_H_INCLUDED
 #define COLL_TYPES_H_INCLUDED
 
@@ -47,9 +42,26 @@ enum {
     MPIR_IALLGATHERV_RECEXCH_TYPE_DISTANCE_HALVING
 };
 
+/* enumerator for different reduce scatter types */
+enum {
+    IREDUCE_SCATTER_RECEXCH_TYPE_DISTANCE_DOUBLING = 0,
+    IREDUCE_SCATTER_RECEXCH_TYPE_DISTANCE_HALVING
+};
+
 /* Collectives request data structure */
 typedef struct MPII_Coll_req_t {
     void *sched;                /* pointer to the schedule */
+
+    /*
+     * Fields used by GPU-aware fallback path for op collectives. GPU buffers
+     * are swapped for host buffers for collective execution. If the user
+     * recv buffer is on the GPU, data is copied to it at completion.
+     */
+    void *host_sendbuf;         /* temporary host buffer */
+    void *host_recvbuf;         /* temporary recv buffer */
+    void *user_recvbuf;         /* pointer to user recv buffer */
+    MPI_Aint count;             /* recv count */
+    MPI_Datatype datatype;      /* recv datatype */
 
     struct MPII_Coll_req_t *next;       /* linked-list next pointer */
     struct MPII_Coll_req_t *prev;       /* linked-list prev pointer */

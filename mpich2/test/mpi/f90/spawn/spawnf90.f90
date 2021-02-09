@@ -1,9 +1,9 @@
 ! This file created from f77/spawn/spawnf.f with f77tof90
-! -*- Mode: Fortran; -*- 
 !
-!  (C) 2003 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
+
         program main
         use mpi
         integer errs, err
@@ -44,7 +44,7 @@
         call MPI_Comm_rank( intercomm, rank, ierr )
 
         if (parentcomm .eq. MPI_COMM_NULL) then
-!           Master
+!           Parent
            if (rsize .ne. np) then
               errs = errs + 1
               print *, "Did not create ", np, " processes (got ", rsize, &
@@ -80,7 +80,7 @@
             print *, "Unexpected rank on child ", rank, "(",i,")"
          endif
 
-!       Send the errs back to the master process 
+!       Send the errs back to the parent process 
          call MPI_Ssend( errs, 1, MPI_INTEGER, 0, 1, intercomm, ierr )
         endif
 

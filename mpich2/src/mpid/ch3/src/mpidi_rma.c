@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidimpl.h"
@@ -82,10 +81,6 @@ cvars:
 MPIDI_RMA_Op_t *global_rma_op_pool_head = NULL, *global_rma_op_pool_start = NULL;
 MPIDI_RMA_Target_t *global_rma_target_pool_head = NULL, *global_rma_target_pool_start = NULL;
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_RMA_init
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_RMA_init(void)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -122,10 +117,6 @@ int MPIDI_RMA_init(void)
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_RMA_finalize
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPIDI_RMA_finalize(void)
 {
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_RMA_FINALIZE);
@@ -139,10 +130,6 @@ void MPIDI_RMA_finalize(void)
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Win_free
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_Win_free(MPIR_Win ** win_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -174,19 +161,16 @@ int MPID_Win_free(MPIR_Win ** win_ptr)
            (*win_ptr)->target_lock_queue_head != NULL ||
            (*win_ptr)->current_target_lock_data_bytes != 0 || (*win_ptr)->sync_request_cnt != 0) {
         mpi_errno = wait_progress_engine();
-        if (mpi_errno != MPI_SUCCESS)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     mpi_errno = MPIR_Barrier((*win_ptr)->comm_ptr, &errflag);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* Free window resources in lower layer. */
     if (MPIDI_CH3U_Win_hooks.win_free != NULL) {
         mpi_errno = MPIDI_CH3U_Win_hooks.win_free(win_ptr);
-        if (mpi_errno != MPI_SUCCESS)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     /* dequeue window from the global list */
@@ -195,19 +179,15 @@ int MPID_Win_free(MPIR_Win ** win_ptr)
 
     if (MPIDI_RMA_Win_inactive_list_head == NULL && MPIDI_RMA_Win_active_list_head == NULL) {
         /* this is the last window, de-register RMA progress hook */
-        mpi_errno = MPID_Progress_deregister_hook(MPIDI_CH3I_RMA_Progress_hook_id);
-        if (mpi_errno != MPI_SUCCESS) {
-            MPIR_ERR_POP(mpi_errno);
-        }
+        mpi_errno = MPIR_Progress_hook_deregister(MPIDI_CH3I_RMA_Progress_hook_id);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     comm_ptr = (*win_ptr)->comm_ptr;
     mpi_errno = MPIR_Comm_free_impl(comm_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
-    if ((*win_ptr)->basic_info_table != NULL)
-        MPL_free((*win_ptr)->basic_info_table);
+    MPL_free((*win_ptr)->basic_info_table);
     MPL_free((*win_ptr)->op_pool_start);
     MPL_free((*win_ptr)->target_pool_start);
     MPL_free((*win_ptr)->slots);

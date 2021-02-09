@@ -14,12 +14,6 @@
 
 @SET_MAKE@
 
-# -*- Mode: Makefile; -*-
-#
-# (C) 2009 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
 
 
 VPATH = @srcdir@
@@ -101,15 +95,15 @@ bin_PROGRAMS = mpiexec.hydra$(EXEEXT) hydra_pmi_proxy$(EXEEXT) \
 	hydra_nameserver$(EXEEXT) hydra_bstrap_proxy$(EXEEXT)
 @hydra_have_poll_TRUE@am__append_1 = libhydra/demux/hydra_demux_poll.c
 @hydra_have_select_TRUE@am__append_2 = libhydra/demux/hydra_demux_select.c
-@hydra_have_hwloc_TRUE@am__append_3 = libhydra/topo/hwloc/hydra_topo_hwloc.c
-@hydra_have_hwloc_TRUE@am__append_4 = libhydra/topo/hwloc/hydra_topo_hwloc.h
-@hydra_have_hwloc_TRUE@@hydra_use_embedded_hwloc_TRUE@am__append_5 = @HWLOC_EMBEDDED_CPPFLAGS@
-@hydra_have_hwloc_TRUE@@hydra_use_embedded_hwloc_TRUE@am__append_6 = @HWLOC_EMBEDDED_CFLAGS@
+@HYDRA_HAVE_HWLOC_TRUE@am__append_3 = libhydra/topo/hwloc/hydra_topo_hwloc.c
+@HYDRA_HAVE_HWLOC_TRUE@am__append_4 = libhydra/topo/hwloc/hydra_topo_hwloc.h
+@HYDRA_HAVE_HWLOC_TRUE@@HYDRA_USE_EMBEDDED_HWLOC_TRUE@am__append_5 = @HWLOC_EMBEDDED_CPPFLAGS@
+@HYDRA_HAVE_HWLOC_TRUE@@HYDRA_USE_EMBEDDED_HWLOC_TRUE@am__append_6 = @HWLOC_EMBEDDED_CFLAGS@
 
 # Append hwloc to the external subdirs, so it gets built first
-@hydra_have_hwloc_TRUE@@hydra_use_embedded_hwloc_TRUE@am__append_7 = libhydra/topo/hwloc/hwloc
-@hydra_have_hwloc_TRUE@@hydra_use_embedded_hwloc_TRUE@am__append_8 = libhydra/topo/hwloc/hwloc
-@hydra_have_hwloc_TRUE@@hydra_use_embedded_hwloc_TRUE@am__append_9 = @HWLOC_EMBEDDED_LDADD@ @HWLOC_EMBEDDED_LIBS@
+@HYDRA_HAVE_HWLOC_TRUE@@HYDRA_USE_EMBEDDED_HWLOC_TRUE@am__append_7 = libhydra/topo/hwloc/hwloc
+@HYDRA_HAVE_HWLOC_TRUE@@HYDRA_USE_EMBEDDED_HWLOC_TRUE@am__append_8 = libhydra/topo/hwloc/hwloc
+@HYDRA_HAVE_HWLOC_TRUE@@HYDRA_USE_EMBEDDED_HWLOC_TRUE@am__append_9 = @HWLOC_EMBEDDED_LDADD@ @HWLOC_EMBEDDED_LIBS@
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
@@ -186,13 +180,14 @@ am__libhydra_la_SOURCES_DIST = libhydra/arg/hydra_arg.c \
 	libhydra/rmk/pbs/pbs_query_node_list.c \
 	libhydra/rmk/cobalt/cobalt_detect.c \
 	libhydra/rmk/cobalt/cobalt_query_node_list.c \
-	libhydra/debugger/hydra_debugger.c
+	libhydra/debugger/hydra_debugger.c \
+	libhydra/timeout/hydra_timeout.c
 am__dirstamp = $(am__leading_dot)dirstamp
 @hydra_have_poll_TRUE@am__objects_1 =  \
 @hydra_have_poll_TRUE@	libhydra/demux/hydra_demux_poll.lo
 @hydra_have_select_TRUE@am__objects_2 =  \
 @hydra_have_select_TRUE@	libhydra/demux/hydra_demux_select.lo
-@hydra_have_hwloc_TRUE@am__objects_3 = libhydra/topo/hwloc/hydra_topo_hwloc.lo
+@HYDRA_HAVE_HWLOC_TRUE@am__objects_3 = libhydra/topo/hwloc/hydra_topo_hwloc.lo
 am_libhydra_la_OBJECTS = libhydra/arg/hydra_arg.lo \
 	libhydra/demux/hydra_demux.lo \
 	libhydra/demux/hydra_demux_internal.lo \
@@ -230,7 +225,8 @@ am_libhydra_la_OBJECTS = libhydra/arg/hydra_arg.lo \
 	libhydra/rmk/pbs/pbs_query_node_list.lo \
 	libhydra/rmk/cobalt/cobalt_detect.lo \
 	libhydra/rmk/cobalt/cobalt_query_node_list.lo \
-	libhydra/debugger/hydra_debugger.lo
+	libhydra/debugger/hydra_debugger.lo \
+	libhydra/timeout/hydra_timeout.lo
 libhydra_la_OBJECTS = $(am_libhydra_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -353,7 +349,8 @@ am__noinst_HEADERS_DIST = mpiexec/mpiexec.h proxy/proxy.h common/mpx.h \
 	libhydra/rmk/sge/hydra_rmk_sge.h \
 	libhydra/rmk/pbs/hydra_rmk_pbs.h \
 	libhydra/rmk/cobalt/hydra_rmk_cobalt.h \
-	libhydra/hash/hydra_hash.h libhydra/debugger/hydra_debugger.h
+	libhydra/hash/hydra_hash.h libhydra/debugger/hydra_debugger.h \
+	libhydra/timeout/hydra_timeout.h
 HEADERS = $(noinst_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
@@ -416,6 +413,7 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/common/Makefile.mk \
 	$(srcdir)/libhydra/sock/Makefile.mk \
 	$(srcdir)/libhydra/spawn/Makefile.mk \
 	$(srcdir)/libhydra/str/Makefile.mk \
+	$(srcdir)/libhydra/timeout/Makefile.mk \
 	$(srcdir)/libhydra/topo/Makefile.mk \
 	$(srcdir)/libhydra/topo/hwloc/Makefile.mk \
 	$(srcdir)/libhydra/tree/Makefile.mk \
@@ -511,6 +509,7 @@ HWLOC_CUDA_LIBS = @HWLOC_CUDA_LIBS@
 HWLOC_EMBEDDED_CFLAGS = @HWLOC_EMBEDDED_CFLAGS@
 HWLOC_EMBEDDED_CPPFLAGS = @HWLOC_EMBEDDED_CPPFLAGS@
 HWLOC_EMBEDDED_LDADD = @HWLOC_EMBEDDED_LDADD@
+HWLOC_EMBEDDED_LDFLAGS = @HWLOC_EMBEDDED_LDFLAGS@
 HWLOC_EMBEDDED_LIBS = @HWLOC_EMBEDDED_LIBS@
 HWLOC_GL_LIBS = @HWLOC_GL_LIBS@
 HWLOC_HAVE_LIBXML2 = @HWLOC_HAVE_LIBXML2@
@@ -691,7 +690,8 @@ noinst_HEADERS = mpiexec/mpiexec.h proxy/proxy.h common/mpx.h \
 	libhydra/rmk/sge/hydra_rmk_sge.h \
 	libhydra/rmk/pbs/hydra_rmk_pbs.h \
 	libhydra/rmk/cobalt/hydra_rmk_cobalt.h \
-	libhydra/hash/hydra_hash.h libhydra/debugger/hydra_debugger.h
+	libhydra/hash/hydra_hash.h libhydra/debugger/hydra_debugger.h \
+	libhydra/timeout/hydra_timeout.h
 noinst_LTLIBRARIES = libmpx.la libhydra.la
 
 # created by confdb/aclocal_cache.m4
@@ -729,7 +729,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/include $(external_includes) \
 	-I$(top_srcdir)/libhydra/rmk/pbs \
 	-I$(top_srcdir)/libhydra/rmk/cobalt \
 	-I$(top_srcdir)/libhydra/hash \
-	-I$(top_srcdir)/libhydra/debugger
+	-I$(top_srcdir)/libhydra/debugger \
+	-I$(top_srcdir)/libhydra/timeout
 AM_CFLAGS = $(am__append_6)
 mpiexec_hydra_SOURCES = \
 	mpiexec/mpiexec.c \
@@ -794,7 +795,8 @@ libhydra_la_SOURCES = libhydra/arg/hydra_arg.c \
 	libhydra/rmk/pbs/pbs_query_node_list.c \
 	libhydra/rmk/cobalt/cobalt_detect.c \
 	libhydra/rmk/cobalt/cobalt_query_node_list.c \
-	libhydra/debugger/hydra_debugger.c
+	libhydra/debugger/hydra_debugger.c \
+	libhydra/timeout/hydra_timeout.c
 hydra_bstrap_proxy_SOURCES = \
 	libhydra/bstrap/src/hydra_bstrap_proxy.c
 
@@ -830,7 +832,7 @@ all: all-recursive
 .SUFFIXES: .man-phony .html-phony .man1-phony .html1-phony .txt .c .lo .o .obj
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/mpiexec/Makefile.mk $(srcdir)/proxy/Makefile.mk $(srcdir)/common/Makefile.mk $(srcdir)/nameserver/Makefile.mk $(srcdir)/libhydra/Makefile.mk $(srcdir)/libhydra/arg/Makefile.mk $(srcdir)/libhydra/demux/Makefile.mk $(srcdir)/libhydra/env/Makefile.mk $(srcdir)/libhydra/exec/Makefile.mk $(srcdir)/libhydra/fs/Makefile.mk $(srcdir)/libhydra/include/Makefile.mk $(srcdir)/libhydra/mem/Makefile.mk $(srcdir)/libhydra/node/Makefile.mk $(srcdir)/libhydra/err/Makefile.mk $(srcdir)/libhydra/signal/Makefile.mk $(srcdir)/libhydra/sock/Makefile.mk $(srcdir)/libhydra/spawn/Makefile.mk $(srcdir)/libhydra/str/Makefile.mk $(srcdir)/libhydra/topo/Makefile.mk $(srcdir)/libhydra/topo/hwloc/Makefile.mk $(srcdir)/libhydra/tree/Makefile.mk $(srcdir)/libhydra/bstrap/Makefile.mk $(srcdir)/libhydra/bstrap/src/Makefile.mk $(srcdir)/libhydra/bstrap/ssh/Makefile.mk $(srcdir)/libhydra/bstrap/slurm/Makefile.mk $(srcdir)/libhydra/bstrap/rsh/Makefile.mk $(srcdir)/libhydra/bstrap/ll/Makefile.mk $(srcdir)/libhydra/bstrap/sge/Makefile.mk $(srcdir)/libhydra/hostfile/Makefile.mk $(srcdir)/libhydra/rmk/Makefile.mk $(srcdir)/libhydra/rmk/src/Makefile.mk $(srcdir)/libhydra/rmk/slurm/Makefile.mk $(srcdir)/libhydra/rmk/ll/Makefile.mk $(srcdir)/libhydra/rmk/lsf/Makefile.mk $(srcdir)/libhydra/rmk/sge/Makefile.mk $(srcdir)/libhydra/rmk/pbs/Makefile.mk $(srcdir)/libhydra/rmk/cobalt/Makefile.mk $(srcdir)/libhydra/hash/Makefile.mk $(srcdir)/libhydra/debugger/Makefile.mk $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/mpiexec/Makefile.mk $(srcdir)/proxy/Makefile.mk $(srcdir)/common/Makefile.mk $(srcdir)/nameserver/Makefile.mk $(srcdir)/libhydra/Makefile.mk $(srcdir)/libhydra/arg/Makefile.mk $(srcdir)/libhydra/demux/Makefile.mk $(srcdir)/libhydra/env/Makefile.mk $(srcdir)/libhydra/exec/Makefile.mk $(srcdir)/libhydra/fs/Makefile.mk $(srcdir)/libhydra/include/Makefile.mk $(srcdir)/libhydra/mem/Makefile.mk $(srcdir)/libhydra/node/Makefile.mk $(srcdir)/libhydra/err/Makefile.mk $(srcdir)/libhydra/signal/Makefile.mk $(srcdir)/libhydra/sock/Makefile.mk $(srcdir)/libhydra/spawn/Makefile.mk $(srcdir)/libhydra/str/Makefile.mk $(srcdir)/libhydra/topo/Makefile.mk $(srcdir)/libhydra/topo/hwloc/Makefile.mk $(srcdir)/libhydra/tree/Makefile.mk $(srcdir)/libhydra/bstrap/Makefile.mk $(srcdir)/libhydra/bstrap/src/Makefile.mk $(srcdir)/libhydra/bstrap/ssh/Makefile.mk $(srcdir)/libhydra/bstrap/slurm/Makefile.mk $(srcdir)/libhydra/bstrap/rsh/Makefile.mk $(srcdir)/libhydra/bstrap/ll/Makefile.mk $(srcdir)/libhydra/bstrap/sge/Makefile.mk $(srcdir)/libhydra/hostfile/Makefile.mk $(srcdir)/libhydra/rmk/Makefile.mk $(srcdir)/libhydra/rmk/src/Makefile.mk $(srcdir)/libhydra/rmk/slurm/Makefile.mk $(srcdir)/libhydra/rmk/ll/Makefile.mk $(srcdir)/libhydra/rmk/lsf/Makefile.mk $(srcdir)/libhydra/rmk/sge/Makefile.mk $(srcdir)/libhydra/rmk/pbs/Makefile.mk $(srcdir)/libhydra/rmk/cobalt/Makefile.mk $(srcdir)/libhydra/hash/Makefile.mk $(srcdir)/libhydra/debugger/Makefile.mk $(srcdir)/libhydra/timeout/Makefile.mk $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -852,7 +854,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe);; \
 	esac;
-$(srcdir)/mpiexec/Makefile.mk $(srcdir)/proxy/Makefile.mk $(srcdir)/common/Makefile.mk $(srcdir)/nameserver/Makefile.mk $(srcdir)/libhydra/Makefile.mk $(srcdir)/libhydra/arg/Makefile.mk $(srcdir)/libhydra/demux/Makefile.mk $(srcdir)/libhydra/env/Makefile.mk $(srcdir)/libhydra/exec/Makefile.mk $(srcdir)/libhydra/fs/Makefile.mk $(srcdir)/libhydra/include/Makefile.mk $(srcdir)/libhydra/mem/Makefile.mk $(srcdir)/libhydra/node/Makefile.mk $(srcdir)/libhydra/err/Makefile.mk $(srcdir)/libhydra/signal/Makefile.mk $(srcdir)/libhydra/sock/Makefile.mk $(srcdir)/libhydra/spawn/Makefile.mk $(srcdir)/libhydra/str/Makefile.mk $(srcdir)/libhydra/topo/Makefile.mk $(srcdir)/libhydra/topo/hwloc/Makefile.mk $(srcdir)/libhydra/tree/Makefile.mk $(srcdir)/libhydra/bstrap/Makefile.mk $(srcdir)/libhydra/bstrap/src/Makefile.mk $(srcdir)/libhydra/bstrap/ssh/Makefile.mk $(srcdir)/libhydra/bstrap/slurm/Makefile.mk $(srcdir)/libhydra/bstrap/rsh/Makefile.mk $(srcdir)/libhydra/bstrap/ll/Makefile.mk $(srcdir)/libhydra/bstrap/sge/Makefile.mk $(srcdir)/libhydra/hostfile/Makefile.mk $(srcdir)/libhydra/rmk/Makefile.mk $(srcdir)/libhydra/rmk/src/Makefile.mk $(srcdir)/libhydra/rmk/slurm/Makefile.mk $(srcdir)/libhydra/rmk/ll/Makefile.mk $(srcdir)/libhydra/rmk/lsf/Makefile.mk $(srcdir)/libhydra/rmk/sge/Makefile.mk $(srcdir)/libhydra/rmk/pbs/Makefile.mk $(srcdir)/libhydra/rmk/cobalt/Makefile.mk $(srcdir)/libhydra/hash/Makefile.mk $(srcdir)/libhydra/debugger/Makefile.mk $(am__empty):
+$(srcdir)/mpiexec/Makefile.mk $(srcdir)/proxy/Makefile.mk $(srcdir)/common/Makefile.mk $(srcdir)/nameserver/Makefile.mk $(srcdir)/libhydra/Makefile.mk $(srcdir)/libhydra/arg/Makefile.mk $(srcdir)/libhydra/demux/Makefile.mk $(srcdir)/libhydra/env/Makefile.mk $(srcdir)/libhydra/exec/Makefile.mk $(srcdir)/libhydra/fs/Makefile.mk $(srcdir)/libhydra/include/Makefile.mk $(srcdir)/libhydra/mem/Makefile.mk $(srcdir)/libhydra/node/Makefile.mk $(srcdir)/libhydra/err/Makefile.mk $(srcdir)/libhydra/signal/Makefile.mk $(srcdir)/libhydra/sock/Makefile.mk $(srcdir)/libhydra/spawn/Makefile.mk $(srcdir)/libhydra/str/Makefile.mk $(srcdir)/libhydra/topo/Makefile.mk $(srcdir)/libhydra/topo/hwloc/Makefile.mk $(srcdir)/libhydra/tree/Makefile.mk $(srcdir)/libhydra/bstrap/Makefile.mk $(srcdir)/libhydra/bstrap/src/Makefile.mk $(srcdir)/libhydra/bstrap/ssh/Makefile.mk $(srcdir)/libhydra/bstrap/slurm/Makefile.mk $(srcdir)/libhydra/bstrap/rsh/Makefile.mk $(srcdir)/libhydra/bstrap/ll/Makefile.mk $(srcdir)/libhydra/bstrap/sge/Makefile.mk $(srcdir)/libhydra/hostfile/Makefile.mk $(srcdir)/libhydra/rmk/Makefile.mk $(srcdir)/libhydra/rmk/src/Makefile.mk $(srcdir)/libhydra/rmk/slurm/Makefile.mk $(srcdir)/libhydra/rmk/ll/Makefile.mk $(srcdir)/libhydra/rmk/lsf/Makefile.mk $(srcdir)/libhydra/rmk/sge/Makefile.mk $(srcdir)/libhydra/rmk/pbs/Makefile.mk $(srcdir)/libhydra/rmk/cobalt/Makefile.mk $(srcdir)/libhydra/hash/Makefile.mk $(srcdir)/libhydra/debugger/Makefile.mk $(srcdir)/libhydra/timeout/Makefile.mk $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -1196,6 +1198,14 @@ libhydra/debugger/$(DEPDIR)/$(am__dirstamp):
 libhydra/debugger/hydra_debugger.lo:  \
 	libhydra/debugger/$(am__dirstamp) \
 	libhydra/debugger/$(DEPDIR)/$(am__dirstamp)
+libhydra/timeout/$(am__dirstamp):
+	@$(MKDIR_P) libhydra/timeout
+	@: > libhydra/timeout/$(am__dirstamp)
+libhydra/timeout/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) libhydra/timeout/$(DEPDIR)
+	@: > libhydra/timeout/$(DEPDIR)/$(am__dirstamp)
+libhydra/timeout/hydra_timeout.lo: libhydra/timeout/$(am__dirstamp) \
+	libhydra/timeout/$(DEPDIR)/$(am__dirstamp)
 
 libhydra.la: $(libhydra_la_OBJECTS) $(libhydra_la_DEPENDENCIES) $(EXTRA_libhydra_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libhydra_la_OBJECTS) $(libhydra_la_LIBADD) $(LIBS)
@@ -1374,6 +1384,8 @@ mostlyclean-compile:
 	-rm -f libhydra/spawn/*.lo
 	-rm -f libhydra/str/*.$(OBJEXT)
 	-rm -f libhydra/str/*.lo
+	-rm -f libhydra/timeout/*.$(OBJEXT)
+	-rm -f libhydra/timeout/*.lo
 	-rm -f libhydra/topo/*.$(OBJEXT)
 	-rm -f libhydra/topo/*.lo
 	-rm -f libhydra/topo/hwloc/*.$(OBJEXT)
@@ -1432,6 +1444,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@libhydra/sock/$(DEPDIR)/hydra_sock.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libhydra/spawn/$(DEPDIR)/hydra_spawn.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libhydra/str/$(DEPDIR)/hydra_str.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@libhydra/timeout/$(DEPDIR)/hydra_timeout.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libhydra/topo/$(DEPDIR)/hydra_topo.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libhydra/topo/hwloc/$(DEPDIR)/hydra_topo_hwloc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libhydra/tree/$(DEPDIR)/hydra_tree.Plo@am__quote@
@@ -1585,6 +1598,7 @@ clean-libtool:
 	-rm -rf libhydra/sock/.libs libhydra/sock/_libs
 	-rm -rf libhydra/spawn/.libs libhydra/spawn/_libs
 	-rm -rf libhydra/str/.libs libhydra/str/_libs
+	-rm -rf libhydra/timeout/.libs libhydra/timeout/_libs
 	-rm -rf libhydra/topo/.libs libhydra/topo/_libs
 	-rm -rf libhydra/topo/hwloc/.libs libhydra/topo/hwloc/_libs
 	-rm -rf libhydra/tree/.libs libhydra/tree/_libs
@@ -1974,6 +1988,8 @@ distclean-generic:
 	-rm -f libhydra/spawn/$(am__dirstamp)
 	-rm -f libhydra/str/$(DEPDIR)/$(am__dirstamp)
 	-rm -f libhydra/str/$(am__dirstamp)
+	-rm -f libhydra/timeout/$(DEPDIR)/$(am__dirstamp)
+	-rm -f libhydra/timeout/$(am__dirstamp)
 	-rm -f libhydra/topo/$(DEPDIR)/$(am__dirstamp)
 	-rm -f libhydra/topo/$(am__dirstamp)
 	-rm -f libhydra/topo/hwloc/$(DEPDIR)/$(am__dirstamp)
@@ -1998,7 +2014,7 @@ clean-am: clean-binPROGRAMS clean-generic clean-libtool \
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf common/$(DEPDIR) libhydra/arg/$(DEPDIR) libhydra/bstrap/ll/$(DEPDIR) libhydra/bstrap/rsh/$(DEPDIR) libhydra/bstrap/sge/$(DEPDIR) libhydra/bstrap/slurm/$(DEPDIR) libhydra/bstrap/src/$(DEPDIR) libhydra/bstrap/ssh/$(DEPDIR) libhydra/debugger/$(DEPDIR) libhydra/demux/$(DEPDIR) libhydra/env/$(DEPDIR) libhydra/err/$(DEPDIR) libhydra/exec/$(DEPDIR) libhydra/fs/$(DEPDIR) libhydra/hostfile/$(DEPDIR) libhydra/node/$(DEPDIR) libhydra/rmk/cobalt/$(DEPDIR) libhydra/rmk/ll/$(DEPDIR) libhydra/rmk/lsf/$(DEPDIR) libhydra/rmk/pbs/$(DEPDIR) libhydra/rmk/sge/$(DEPDIR) libhydra/rmk/slurm/$(DEPDIR) libhydra/rmk/src/$(DEPDIR) libhydra/signal/$(DEPDIR) libhydra/sock/$(DEPDIR) libhydra/spawn/$(DEPDIR) libhydra/str/$(DEPDIR) libhydra/topo/$(DEPDIR) libhydra/topo/hwloc/$(DEPDIR) libhydra/tree/$(DEPDIR) mpiexec/$(DEPDIR) nameserver/$(DEPDIR) proxy/$(DEPDIR)
+	-rm -rf common/$(DEPDIR) libhydra/arg/$(DEPDIR) libhydra/bstrap/ll/$(DEPDIR) libhydra/bstrap/rsh/$(DEPDIR) libhydra/bstrap/sge/$(DEPDIR) libhydra/bstrap/slurm/$(DEPDIR) libhydra/bstrap/src/$(DEPDIR) libhydra/bstrap/ssh/$(DEPDIR) libhydra/debugger/$(DEPDIR) libhydra/demux/$(DEPDIR) libhydra/env/$(DEPDIR) libhydra/err/$(DEPDIR) libhydra/exec/$(DEPDIR) libhydra/fs/$(DEPDIR) libhydra/hostfile/$(DEPDIR) libhydra/node/$(DEPDIR) libhydra/rmk/cobalt/$(DEPDIR) libhydra/rmk/ll/$(DEPDIR) libhydra/rmk/lsf/$(DEPDIR) libhydra/rmk/pbs/$(DEPDIR) libhydra/rmk/sge/$(DEPDIR) libhydra/rmk/slurm/$(DEPDIR) libhydra/rmk/src/$(DEPDIR) libhydra/signal/$(DEPDIR) libhydra/sock/$(DEPDIR) libhydra/spawn/$(DEPDIR) libhydra/str/$(DEPDIR) libhydra/timeout/$(DEPDIR) libhydra/topo/$(DEPDIR) libhydra/topo/hwloc/$(DEPDIR) libhydra/tree/$(DEPDIR) mpiexec/$(DEPDIR) nameserver/$(DEPDIR) proxy/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -2047,7 +2063,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf common/$(DEPDIR) libhydra/arg/$(DEPDIR) libhydra/bstrap/ll/$(DEPDIR) libhydra/bstrap/rsh/$(DEPDIR) libhydra/bstrap/sge/$(DEPDIR) libhydra/bstrap/slurm/$(DEPDIR) libhydra/bstrap/src/$(DEPDIR) libhydra/bstrap/ssh/$(DEPDIR) libhydra/debugger/$(DEPDIR) libhydra/demux/$(DEPDIR) libhydra/env/$(DEPDIR) libhydra/err/$(DEPDIR) libhydra/exec/$(DEPDIR) libhydra/fs/$(DEPDIR) libhydra/hostfile/$(DEPDIR) libhydra/node/$(DEPDIR) libhydra/rmk/cobalt/$(DEPDIR) libhydra/rmk/ll/$(DEPDIR) libhydra/rmk/lsf/$(DEPDIR) libhydra/rmk/pbs/$(DEPDIR) libhydra/rmk/sge/$(DEPDIR) libhydra/rmk/slurm/$(DEPDIR) libhydra/rmk/src/$(DEPDIR) libhydra/signal/$(DEPDIR) libhydra/sock/$(DEPDIR) libhydra/spawn/$(DEPDIR) libhydra/str/$(DEPDIR) libhydra/topo/$(DEPDIR) libhydra/topo/hwloc/$(DEPDIR) libhydra/tree/$(DEPDIR) mpiexec/$(DEPDIR) nameserver/$(DEPDIR) proxy/$(DEPDIR)
+	-rm -rf common/$(DEPDIR) libhydra/arg/$(DEPDIR) libhydra/bstrap/ll/$(DEPDIR) libhydra/bstrap/rsh/$(DEPDIR) libhydra/bstrap/sge/$(DEPDIR) libhydra/bstrap/slurm/$(DEPDIR) libhydra/bstrap/src/$(DEPDIR) libhydra/bstrap/ssh/$(DEPDIR) libhydra/debugger/$(DEPDIR) libhydra/demux/$(DEPDIR) libhydra/env/$(DEPDIR) libhydra/err/$(DEPDIR) libhydra/exec/$(DEPDIR) libhydra/fs/$(DEPDIR) libhydra/hostfile/$(DEPDIR) libhydra/node/$(DEPDIR) libhydra/rmk/cobalt/$(DEPDIR) libhydra/rmk/ll/$(DEPDIR) libhydra/rmk/lsf/$(DEPDIR) libhydra/rmk/pbs/$(DEPDIR) libhydra/rmk/sge/$(DEPDIR) libhydra/rmk/slurm/$(DEPDIR) libhydra/rmk/src/$(DEPDIR) libhydra/signal/$(DEPDIR) libhydra/sock/$(DEPDIR) libhydra/spawn/$(DEPDIR) libhydra/str/$(DEPDIR) libhydra/timeout/$(DEPDIR) libhydra/topo/$(DEPDIR) libhydra/topo/hwloc/$(DEPDIR) libhydra/tree/$(DEPDIR) mpiexec/$(DEPDIR) nameserver/$(DEPDIR) proxy/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

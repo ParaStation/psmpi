@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2012 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidimpl.h"
@@ -50,10 +49,6 @@ static hook_elt *destroy_hooks_head = NULL;
 static hook_elt *create_hooks_tail = NULL;
 static hook_elt *destroy_hooks_tail = NULL;
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3U_Comm_init
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Comm_init(void)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -68,7 +63,7 @@ int MPIDI_CH3I_Comm_init(void)
 
     /* register hooks for keeping track of communicators */
     mpi_errno = MPIDI_CH3U_Comm_register_create_hook(comm_created, NULL);
-    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
 #if defined HAVE_LIBHCOLL
     {
@@ -98,14 +93,14 @@ int MPIDI_CH3I_Comm_init(void)
 #endif
 
         mpi_errno = MPIDI_CH3U_Comm_register_create_hook(hcoll_comm_create, NULL);
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         mpi_errno = MPIDI_CH3U_Comm_register_destroy_hook(hcoll_comm_destroy, NULL);
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 #endif
 
     mpi_errno = MPIDI_CH3U_Comm_register_destroy_hook(comm_destroyed, NULL);
-    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
     
  fn_exit:
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_CH3U_COMM_INIT);
@@ -178,11 +173,7 @@ static inline int map_size(MPIR_Comm_map_t map)
         return map.src_comm->remote_size;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3U_Comm_create_hook
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIDI_CH3I_Comm_create_hook(MPIR_Comm *comm)
+int MPIDI_CH3I_Comm_commit_pre_hook(MPIR_Comm *comm)
 {
     int mpi_errno = MPI_SUCCESS;
     hook_elt *elt;
@@ -190,9 +181,8 @@ int MPIDI_CH3I_Comm_create_hook(MPIR_Comm *comm)
     MPIR_Comm *src_comm;
     int vcrt_size, vcrt_offset;
     
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_CH3U_COMM_CREATE_HOOK);
-
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_CH3U_COMM_CREATE_HOOK);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_CH3I_COMM_COMMIT_PRE_HOOK);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_CH3I_COMM_COMMIT_PRE_HOOK);
 
     /* initialize the is_disconnected variable to FALSE.  this will be
      * set to TRUE if the communicator is freed by an
@@ -306,16 +296,25 @@ int MPIDI_CH3I_Comm_create_hook(MPIR_Comm *comm)
     }
 
  fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_CH3U_COMM_CREATE_HOOK);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_CH3I_COMM_COMMIT_PRE_HOOK);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3U_Comm_destroy_hook
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Comm_commit_post_hook(MPIR_Comm *comm)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_CH3U_COLL_COMM_INIT_HOOK);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_CH3U_COLL_COMM_INIT_HOOK);
+
+  fn_exit:
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_CH3U_COLL_COMM_INIT_HOOK);
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
 int MPIDI_CH3I_Comm_destroy_hook(MPIR_Comm *comm)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -326,15 +325,15 @@ int MPIDI_CH3I_Comm_destroy_hook(MPIR_Comm *comm)
 
     LL_FOREACH(destroy_hooks_head, elt) {
         mpi_errno = elt->hook_fn(comm, elt->param);
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     mpi_errno = MPIDI_VCRT_Release(comm->dev.vcrt, comm->dev.is_disconnected);
-    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     if (comm->comm_kind == MPIR_COMM_KIND__INTERCOMM) {
         mpi_errno = MPIDI_VCRT_Release(comm->dev.local_vcrt, comm->dev.is_disconnected);
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
  fn_exit:
@@ -345,10 +344,6 @@ int MPIDI_CH3I_Comm_destroy_hook(MPIR_Comm *comm)
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3U_Comm_register_create_hook
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Comm_register_create_hook(int (*hook_fn)(struct MPIR_Comm *, void *), void *param)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -374,10 +369,6 @@ int MPIDI_CH3U_Comm_register_create_hook(int (*hook_fn)(struct MPIR_Comm *, void
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3U_Comm_register_destroy_hook
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Comm_register_destroy_hook(int (*hook_fn)(struct MPIR_Comm *, void *), void *param)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -402,10 +393,6 @@ int MPIDI_CH3U_Comm_register_destroy_hook(int (*hook_fn)(struct MPIR_Comm *, voi
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME register_hook_finalize
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 static int register_hook_finalize(void *param)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -432,10 +419,6 @@ static int register_hook_finalize(void *param)
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME comm_created
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int comm_created(MPIR_Comm *comm, void *param)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -445,8 +428,10 @@ int comm_created(MPIR_Comm *comm, void *param)
 
     comm->dev.anysource_enabled = TRUE;
 
-    /* Use the VC's eager threshold by default. */
-    comm->dev.eager_max_msg_sz = -1;
+    /* Use the VC's eager threshold by default if it is not set. */
+    if (comm->hints[MPIR_COMM_HINT_EAGER_THRESH] == 0) {
+        comm->hints[MPIR_COMM_HINT_EAGER_THRESH] = -1;
+    }
 
     /* Initialize the last acked failure to -1 */
     comm->dev.last_ack_rank = -1;
@@ -460,10 +445,6 @@ int comm_created(MPIR_Comm *comm, void *param)
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME comm_destroyed
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int comm_destroyed(MPIR_Comm *comm, void *param)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -484,10 +465,6 @@ int comm_destroyed(MPIR_Comm *comm, void *param)
 
 
 /* flag==TRUE iff a member of group is also a member of comm */
-#undef FUNCNAME
-#define FUNCNAME nonempty_intersection
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 static int nonempty_intersection(MPIR_Comm *comm, MPIR_Group *group, int *flag)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -529,10 +506,6 @@ static int nonempty_intersection(MPIR_Comm *comm, MPIR_Group *group, int *flag)
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3I_Comm_handle_failed_procs
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3I_Comm_handle_failed_procs(MPIR_Group *new_failed_procs)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -551,7 +524,7 @@ int MPIDI_CH3I_Comm_handle_failed_procs(MPIR_Group *new_failed_procs)
             continue;
 
         mpi_errno = nonempty_intersection(comm, new_failed_procs, &flag);
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
         if (flag) {
             MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER, VERBOSE,

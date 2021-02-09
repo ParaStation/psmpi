@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef DATATYPE_H_INCLUDED
@@ -10,9 +9,9 @@
 #include "mpiimpl.h"
 
 /* Definitions private to the datatype code */
-extern int MPIR_Datatype_init(void);
-extern int MPIR_Datatype_builtin_fillin(void);
-extern int MPIR_Datatype_init_names(void);
+int MPIR_Datatype_builtintype_alignment(MPI_Datatype type);
+extern int MPIR_Datatype_init_predefined(void);
+extern int MPIR_Datatype_commit_pairtypes(void);
 extern void MPIR_Datatype_iscontig(MPI_Datatype, int *);
 
 /* LB/UB calculation helper macros */
@@ -120,8 +119,6 @@ extern void MPIR_Datatype_iscontig(MPI_Datatype, int *);
 /* internal debugging functions */
 void MPII_Datatype_printf(MPI_Datatype type, int depth, MPI_Aint displacement, int blocklength,
                           int header);
-void MPII_Dataloop_dot_printf(MPIR_Dataloop * loop_p, int depth, int header);
-
 void MPII_Datatype_get_contents_ints(MPIR_Datatype_contents * cp, int *user_ints);
 void MPII_Datatype_get_contents_aints(MPIR_Datatype_contents * cp, MPI_Aint * user_aints);
 void MPII_Datatype_get_contents_types(MPIR_Datatype_contents * cp, MPI_Datatype * user_types);

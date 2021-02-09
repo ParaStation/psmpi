@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2012 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -12,14 +11,10 @@
     do {                                                                                                      \
         int gr_tmp_ = (gr_);                                                                                  \
         mpi_errno = MPIR_Group_translate_ranks_impl(group_ptr, 1, &(gr_tmp_), comm_ptr->local_group, &(cr_)); \
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);                                                               \
+        MPIR_ERR_CHECK(mpi_errno);                                                                            \
         MPIR_Assert((cr_) != MPI_UNDEFINED);                                                                  \
     } while (0)
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Allreduce_group_intra
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPII_Allreduce_group_intra(void *sendbuf, void *recvbuf, int count,
                                MPI_Datatype datatype, MPI_Op op, MPIR_Comm * comm_ptr,
                                MPIR_Group * group_ptr, int tag, MPIR_Errflag_t * errflag)
@@ -46,7 +41,6 @@ int MPII_Allreduce_group_intra(void *sendbuf, void *recvbuf, int count,
     MPIR_Type_get_true_extent_impl(datatype, &true_lb, &true_extent);
     MPIR_Datatype_get_extent_macro(datatype, extent);
 
-    MPIR_Ensure_Aint_fits_in_pointer(count * MPL_MAX(extent, true_extent));
     MPIR_CHKLMEM_MALLOC(tmp_buf, void *, count * (MPL_MAX(extent, true_extent)), mpi_errno,
                         "temporary buffer", MPL_MEM_BUFFER);
 
@@ -56,8 +50,7 @@ int MPII_Allreduce_group_intra(void *sendbuf, void *recvbuf, int count,
     /* copy local data into recvbuf */
     if (sendbuf != MPI_IN_PLACE) {
         mpi_errno = MPIR_Localcopy(sendbuf, count, datatype, recvbuf, count, datatype);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     MPIR_Datatype_get_size_macro(datatype, type_size);
@@ -107,8 +100,7 @@ int MPII_Allreduce_group_intra(void *sendbuf, void *recvbuf, int count,
              * ordering is right, it doesn't matter whether
              * the operation is commutative or not. */
             mpi_errno = MPIR_Reduce_local(tmp_buf, recvbuf, count, datatype, op);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
 
             /* change the rank */
             newrank = group_rank / 2;
@@ -127,7 +119,7 @@ int MPII_Allreduce_group_intra(void *sendbuf, void *recvbuf, int count,
 
     if (newrank != -1) {
         if ((count * type_size <= MPIR_CVAR_ALLREDUCE_SHORT_MSG_SIZE) ||
-            (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) || (count < pof2)) {
+            (!HANDLE_IS_BUILTIN(op)) || (count < pof2)) {
             /* use recursive doubling */
             mask = 0x1;
             while (mask < pof2) {
@@ -157,19 +149,16 @@ int MPII_Allreduce_group_intra(void *sendbuf, void *recvbuf, int count,
                     if (is_commutative || (dst < group_rank)) {
                         /* op is commutative OR the order is already right */
                         mpi_errno = MPIR_Reduce_local(tmp_buf, recvbuf, count, datatype, op);
-                        if (mpi_errno)
-                            MPIR_ERR_POP(mpi_errno);
+                        MPIR_ERR_CHECK(mpi_errno);
                     } else {
                         /* op is noncommutative and the order is not right */
                         mpi_errno = MPIR_Reduce_local(recvbuf, tmp_buf, count, datatype, op);
-                        if (mpi_errno)
-                            MPIR_ERR_POP(mpi_errno);
+                        MPIR_ERR_CHECK(mpi_errno);
 
                         /* copy result back into recvbuf */
                         mpi_errno = MPIR_Localcopy(tmp_buf, count, datatype,
                                                    recvbuf, count, datatype);
-                        if (mpi_errno)
-                            MPIR_ERR_POP(mpi_errno);
+                        MPIR_ERR_CHECK(mpi_errno);
                     }
                 }
                 mask <<= 1;
@@ -248,8 +237,7 @@ int MPII_Allreduce_group_intra(void *sendbuf, void *recvbuf, int count,
                 mpi_errno = MPIR_Reduce_local(((char *) tmp_buf + disps[recv_idx] * extent),
                                               ((char *) recvbuf + disps[recv_idx] * extent),
                                               recv_cnt, datatype, op);
-                if (mpi_errno)
-                    MPIR_ERR_POP(mpi_errno);
+                MPIR_ERR_CHECK(mpi_errno);
 
                 /* update send_idx for next iteration */
                 send_idx = recv_idx;
@@ -349,10 +337,6 @@ int MPII_Allreduce_group_intra(void *sendbuf, void *recvbuf, int count,
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Allreduce_group
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPII_Allreduce_group(void *sendbuf, void *recvbuf, int count,
                          MPI_Datatype datatype, MPI_Op op, MPIR_Comm * comm_ptr,
                          MPIR_Group * group_ptr, int tag, MPIR_Errflag_t * errflag)
@@ -364,8 +348,7 @@ int MPII_Allreduce_group(void *sendbuf, void *recvbuf, int count,
 
     mpi_errno = MPII_Allreduce_group_intra(sendbuf, recvbuf, count, datatype,
                                            op, comm_ptr, group_ptr, tag, errflag);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     return mpi_errno;

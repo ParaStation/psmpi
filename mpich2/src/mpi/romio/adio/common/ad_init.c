@@ -1,11 +1,10 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *   Copyright (C) 1997 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "adio.h"
+#include "adio_extern.h"
 
 ADIOI_Datarep *ADIOI_Datarep_head = NULL;
     /* list of datareps registered by the user */
@@ -71,7 +70,6 @@ void ADIO_Init(int *argc, char ***argv, int *error_code)
     else
         ADIOI_Direct_write = 0;
 #endif
-
 
 #ifdef ADIOI_MPE_LOGGING
     {

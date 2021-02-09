@@ -1,9 +1,9 @@
 ! This file created from f77/pt2pt/mprobef.f with f77tof90
-! -*- Mode: Fortran; -*- 
 !
-!  (C) 2012 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
+
       program main
       use mpi
       integer idx, ierr, rank, size, count

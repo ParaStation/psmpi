@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2015 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -26,10 +25,6 @@ int MPI_T_cvar_get_index(const char *name, int *cvar_index)
 #define MPI_T_cvar_get_index PMPI_T_cvar_get_index
 #endif /* MPICH_MPI_FROM_PMPI */
 
-#undef FUNCNAME
-#define FUNCNAME MPI_T_cvar_get_index
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_T_cvar_get_index - Get the index of a control variable
 

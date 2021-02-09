@@ -1,12 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- *  Portions of this code were written by Intel Corporation.
- *  Copyright (C) 2011-2017 Intel Corporation.  Intel provides this material
- *  to Argonne National Laboratory subject to Software Grant and Corporate
- *  Contributor License Agreement dated February 8, 2012.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* Header protection (i.e., IALLGATHER_TSP_BRUCKS_ALGOS_H_INCLUDED) is
@@ -16,10 +10,6 @@
 #include "algo_common.h"
 #include "tsp_namespace_def.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Iallgather_sched_intra_brucks
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int
 MPIR_TSP_Iallgather_sched_intra_brucks(const void *sendbuf, int sendcount,
                                        MPI_Datatype sendtype, void *recvbuf,
@@ -39,20 +29,20 @@ MPIR_TSP_Iallgather_sched_intra_brucks(const void *sendbuf, int sendcount,
     int is_inplace = (sendbuf == MPI_IN_PLACE);
     int max = size - 1;
 
-    size_t sendtype_extent, sendtype_lb;
-    size_t recvtype_extent, recvtype_lb;
-    size_t sendtype_true_extent, recvtype_true_extent;
+    MPI_Aint sendtype_extent, sendtype_lb;
+    MPI_Aint recvtype_extent, recvtype_lb;
+    MPI_Aint sendtype_true_extent, recvtype_true_extent;
 
     int delta = 1;
-    int index = 0;
+    int i_recv = 0;
     int *recv_id = NULL;
     void *tmp_recvbuf = NULL;
+    MPIR_CHKLMEM_DECL(1);
 
     /* For correctness, transport based collectives need to get the
      * tag from the same pool as schedule based collectives */
     mpi_errno = MPIR_Sched_next_tag(comm, &tag);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIR_TSP_IALLGATHER_SCHED_INTRA_BRUCKS);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIR_TSP_IALLGATHER_SCHED_INTRA_BRUCKS);
@@ -89,7 +79,8 @@ MPIR_TSP_Iallgather_sched_intra_brucks(const void *sendbuf, int sendcount,
     if (MPL_ipow(k, nphases) == size)
         p_of_k = 1;
 
-    recv_id = (int *) MPL_malloc(sizeof(int) * nphases * (k - 1), MPL_MEM_COLL);
+    MPIR_CHKLMEM_MALLOC(recv_id, int *, sizeof(int) * nphases * (k - 1),
+                        mpi_errno, "recv_id buffer", MPL_MEM_COLL);
 
     if (rank == 0)
         tmp_recvbuf = recvbuf;
@@ -99,8 +90,8 @@ MPIR_TSP_Iallgather_sched_intra_brucks(const void *sendbuf, int sendcount,
     /* Step1: copy own data from sendbuf to top of recvbuf. */
     if (is_inplace && rank != 0)
         MPIR_TSP_sched_localcopy((char *) recvbuf + rank * recvcount * recvtype_extent,
-                                 recvcount, recvtype, tmp_recvbuf, recvcount,
-                                 recvtype, sched, 0, NULL);
+                                 recvcount, recvtype, tmp_recvbuf, recvcount, recvtype, sched, 0,
+                                 NULL);
     else if (!is_inplace)
         MPIR_TSP_sched_localcopy(sendbuf, sendcount, sendtype, tmp_recvbuf,
                                  recvcount, recvtype, sched, 0, NULL);
@@ -135,7 +126,7 @@ MPIR_TSP_Iallgather_sched_intra_brucks(const void *sendbuf, int sendcount,
             }
 
             /* Receive at the exact location. */
-            recv_id[index++] =
+            recv_id[i_recv++] =
                 MPIR_TSP_sched_irecv((char *) tmp_recvbuf + j * recvcount * delta * recvtype_extent,
                                      count, recvtype, src, tag, comm, sched, 0, NULL);
 
@@ -172,9 +163,8 @@ MPIR_TSP_Iallgather_sched_intra_brucks(const void *sendbuf, int sendcount,
                                  (size - rank) * recvcount, recvtype, sched, 0, NULL);
     }
 
-    MPL_free(recv_id);
-
   fn_exit:
+    MPIR_CHKLMEM_FREEALL();
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIR_TSP_IALLGATHER_SCHED_INTRA_BRUCKS);
     return mpi_errno;
   fn_fail:
@@ -183,10 +173,6 @@ MPIR_TSP_Iallgather_sched_intra_brucks(const void *sendbuf, int sendcount,
 
 
 /* Non-blocking brucks based Allgather */
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Iallgather_intra_brucks
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_TSP_Iallgather_intra_brucks(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                                      void *recvbuf, int recvcount, MPI_Datatype recvtype,
                                      MPIR_Comm * comm_ptr, MPIR_Request ** req, int k)
@@ -206,13 +192,11 @@ int MPIR_TSP_Iallgather_intra_brucks(const void *sendbuf, int sendcount, MPI_Dat
 
     mpi_errno = MPIR_TSP_Iallgather_sched_intra_brucks(sendbuf, sendcount, sendtype, recvbuf,
                                                        recvcount, recvtype, comm_ptr, sched, k);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* start and register the schedule */
     mpi_errno = MPIR_TSP_sched_start(sched, comm_ptr, req);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIR_TSP_IALLGATHER_INTRA_BRUCKS);

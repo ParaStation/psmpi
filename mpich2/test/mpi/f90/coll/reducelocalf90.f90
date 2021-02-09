@@ -1,10 +1,9 @@
 ! This file created from f77/coll/reducelocalf.f with f77tof90
-! -*- Mode: Fortran; -*- 
 !
-!  (C) 2009 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
-!
+
 ! Test Fortran MPI_Reduce_local with MPI_OP_SUM and with user-defined operation.
 !
       subroutine user_op( invec, outvec, count, datatype )

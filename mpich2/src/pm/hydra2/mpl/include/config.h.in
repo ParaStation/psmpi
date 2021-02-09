@@ -1,7 +1,17 @@
 /* include/config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define cache-line size. */
+#undef CACHELINE_SIZE
+
+/* Defined the keyword for thread-local storage. */
+#undef COMPILER_TLS
+
 /* Define to 1 if MPL enables MPL_aligned_alloc. */
 #undef DEFINE_ALIGNED_ALLOC
+
+/* Define if force compiler to always inline functions with
+   MPL_STATIC_INLINE_PREFIX|SUFFIX */
+#undef ENABLE_ALWAYS_INLINE
 
 /* Define to 1 if you have the `aligned_alloc' function. */
 #undef HAVE_ALIGNED_ALLOC
@@ -9,8 +19,8 @@
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
-/* Define to 1 if you have the `backtrace_symbols' function. */
-#undef HAVE_BACKTRACE_SYMBOLS
+/* Defined if backtrace() could be fully identified. */
+#undef HAVE_BACKTRACE
 
 /* define if valgrind is old and/or broken compared to what we are expecting
    */
@@ -18,6 +28,12 @@
 
 /* Define to 1 if the compiler supports __builtin_expect. */
 #undef HAVE_BUILTIN_EXPECT
+
+/* Define to 1 if we have support for C11 atomic intrinsics */
+#undef HAVE_C11_ATOMICS
+
+/* Define if C11 _Static_assert is supported. */
+#undef HAVE_C11__STATIC_ASSERT
 
 /* Define to 1 if you have the `clock_getres' function. */
 #undef HAVE_CLOCK_GETRES
@@ -28,13 +44,8 @@
 /* Define to 1 if you have the <ctype.h> header file. */
 #undef HAVE_CTYPE_H
 
-/* Define to 1 if you have the declaration of `backtrace_create_state', and to
-   0 if you don't. */
-#undef HAVE_DECL_BACKTRACE_CREATE_STATE
-
-/* Define to 1 if you have the declaration of `backtrace_print', and to 0 if
-   you don't. */
-#undef HAVE_DECL_BACKTRACE_PRINT
+/* Define if CUDA is available */
+#undef HAVE_CUDA
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
@@ -56,6 +67,12 @@
 
 /* Define if GNU __attribute__ is supported */
 #undef HAVE_GCC_ATTRIBUTE
+
+/* Define to 1 if we have support for gcc __atomic intrinsics */
+#undef HAVE_GCC_INTRINSIC_ATOMIC
+
+/* Define to 1 if we have support for gcc __sync intrinsics */
+#undef HAVE_GCC_INTRINSIC_SYNC
 
 /* Define to 1 if you have the `gethrtime' function. */
 #undef HAVE_GETHRTIME
@@ -84,16 +101,17 @@
 /* Define to 1 if you have the `abt' library (-labt). */
 #undef HAVE_LIBABT
 
-/* Define to 1 if you have the backtrace header (backtrace.h) and library
-   (-lbacktrace) */
-#undef HAVE_LIBBACKTRACE
+/* Define to 1 if you have the `cuda' library (-lcuda). */
+#undef HAVE_LIBCUDA
 
-/* Define to 1 if you have the libunwind header (libunwind.h) and library
-   (-lunwind) */
-#undef HAVE_LIBUNWIND
+/* Define to 1 if you have the `cudart' library (-lcudart). */
+#undef HAVE_LIBCUDART
 
 /* Define to 1 if you have the `uti' library (-luti). */
 #undef HAVE_LIBUTI
+
+/* Define to 1 if you have the `ze_loader' library (-lze_loader). */
+#undef HAVE_LIBZE_LOADER
 
 /* Define to 1 if you have the `mach_absolute_time' function. */
 #undef HAVE_MACH_ABSOLUTE_TIME
@@ -116,14 +134,11 @@
 /* Define to 1 if you have the `munmap' function. */
 #undef HAVE_MUNMAP
 
+/* Define to 1 if we have support for Windows NT atomic intrinsics */
+#undef HAVE_NT_INTRINSICS
+
 /* Define to 1 if you have the `posix_memalign' function. */
 #undef HAVE_POSIX_MEMALIGN
-
-/* Define to 1 if you have the `pthread_cleanup_push' function. */
-#undef HAVE_PTHREAD_CLEANUP_PUSH
-
-/* Define if pthread_cleanup_push is available, even as a macro */
-#undef HAVE_PTHREAD_CLEANUP_PUSH_MACRO
 
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
@@ -191,9 +206,6 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
-/* Define to 1 if you have the `strncmp' function. */
-#undef HAVE_STRNCMP
-
 /* Define to 1 if you have the <sys/mman.h> header file. */
 #undef HAVE_SYS_MMAN_H
 
@@ -248,6 +260,9 @@
 /* Define to 1 if you have the `yield' function. */
 #undef HAVE_YIELD
 
+/* Define if ZE is available */
+#undef HAVE_ZE
+
 /* Define to 1 if the system has the type `_Bool'. */
 #undef HAVE__BOOL
 
@@ -268,15 +283,6 @@
 
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
-
-/* Define if use MMAP shared memory */
-#undef MPL_USE_MMAP_SHM
-
-/* Define if use Windows shared memory */
-#undef MPL_USE_NT_SHM
-
-/* Define if use SYSV shared memory */
-#undef MPL_USE_SYSV_SHM
 
 /* Define if aligned_alloc needs a declaration */
 #undef NEEDS_ALIGNED_ALLOC_DECL
@@ -301,9 +307,6 @@
 
 /* Define if strerror needs a declaration */
 #undef NEEDS_STRERROR_DECL
-
-/* Define if strncmp needs a declaration */
-#undef NEEDS_STRNCMP_DECL
 
 /* Define if sys/time.h is required to get timer definitions */
 #undef NEEDS_SYS_TIME_H
@@ -332,6 +335,9 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* set to the choice of the posix mutex */
+#undef POSIX_MUTEX_NAME
+
 /* set to the name of the interprocess mutex package */
 #undef PROC_MUTEX_PACKAGE_NAME
 
@@ -339,20 +345,23 @@
    */
 #undef PTHREAD_MUTEX_ERRORCHECK_VALUE
 
+/* The size of `void *', as computed by sizeof. */
+#undef SIZEOF_VOID_P
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
 /* set to the name of the thread package */
 #undef THREAD_PACKAGE_NAME
 
-/* Defined the keyword for thread-local storage. */
-#undef TLS
-
 /* Define if performing coverage tests */
 #undef USE_COVERAGE
 
 /* Define to enable logging macros */
 #undef USE_DBG_LOGGING
+
+/* Define to 1 if mutex-based synchronization is used */
+#undef USE_LOCK_BASED_PRIMITIVES
 
 /* Define to enable memory tracing */
 #undef USE_MEMORY_TRACING
@@ -362,6 +371,12 @@
 
 /* Define to use nothing to yield processor */
 #undef USE_NOTHING_FOR_YIELD
+
+/* Define to 1 if no atomic primitives are used */
+#undef USE_NO_ATOMIC_PRIMITIVES
+
+/* Define if use Windows shared memory */
+#undef USE_NT_SHM
 
 /* Define to use sched_yield to yield processor */
 #undef USE_SCHED_YIELD_FOR_YIELD
@@ -415,6 +430,9 @@
 
 /* Define to 1 if you need to in order for `stat' and other things to work. */
 #undef _POSIX_SOURCE
+
+/* Defined to return type of backtrace(). */
+#undef backtrace_size_t
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const

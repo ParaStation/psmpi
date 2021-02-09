@@ -1,7 +1,5 @@
 ## DO NOT EDIT
 ## This file created by buildiface 
-##
-## vim: set ft=automake :
 
 MOD              = @FCMODEXT@
 MPIMOD           = @MPIMODNAME@

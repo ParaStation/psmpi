@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -22,10 +20,6 @@
  *
  * Cost = lgp.alpha + n.(lgp-(p-1)/p).beta + n.(lgp-(p-1)/p).gamma
  */
-#undef FUNCNAME
-#define FUNCNAME MPIR_Reduce_scatter_intra_noncommutative
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Reduce_scatter_intra_noncommutative(const void *sendbuf, void *recvbuf,
                                              const int recvcounts[], MPI_Datatype datatype,
                                              MPI_Op op, MPIR_Comm * comm_ptr,
@@ -88,8 +82,7 @@ int MPIR_Reduce_scatter_intra_noncommutative(const void *sendbuf, void *recvbuf,
                            (char *) tmp_buf0 +
                            (MPL_mirror_permutation(i, log2_comm_size) * true_extent * block_size),
                            block_size, datatype);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
     buf0_was_inout = 1;
 
@@ -131,14 +124,12 @@ int MPIR_Reduce_scatter_intra_noncommutative(const void *sendbuf, void *recvbuf,
             mpi_errno = MPIR_Reduce_local(incoming_data + recv_offset * true_extent,
                                           outgoing_data + recv_offset * true_extent,
                                           size, datatype, op);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
         } else {
             /* lower ranked value so need to call op(my_data, received_data) */
             MPIR_Reduce_local(outgoing_data + recv_offset * true_extent,
                               incoming_data + recv_offset * true_extent, size, datatype, op);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
             buf0_was_inout = !buf0_was_inout;
         }
 
@@ -152,8 +143,7 @@ int MPIR_Reduce_scatter_intra_noncommutative(const void *sendbuf, void *recvbuf,
     /* copy the reduced data to the recvbuf */
     result_ptr = (char *) (buf0_was_inout ? tmp_buf0 : tmp_buf1) + recv_offset * true_extent;
     mpi_errno = MPIR_Localcopy(result_ptr, size, datatype, recvbuf, size, datatype);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     MPIR_CHKLMEM_FREEALL();

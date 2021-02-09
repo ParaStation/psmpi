@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -17,10 +15,6 @@
  * intracommunicator broadcast.
  */
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Allgatherv_inter_remote_gather_local_bcast
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Allgatherv_inter_remote_gather_local_bcast(const void *sendbuf, int sendcount,
                                                     MPI_Datatype sendtype, void *recvbuf,
                                                     const int *recvcounts, const int
@@ -95,21 +89,18 @@ int MPIR_Allgatherv_inter_remote_gather_local_bcast(const void *sendbuf, int sen
     /* Get the local intracommunicator */
     if (!comm_ptr->local_comm) {
         mpi_errno = MPII_Setup_intercomm_localcomm(comm_ptr);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     newcomm_ptr = comm_ptr->local_comm;
 
     mpi_errno = MPIR_Type_indexed_impl(remote_size, recvcounts, displs, recvtype, &newtype);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     mpi_errno = MPIR_Type_commit_impl(&newtype);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
-    mpi_errno = MPIR_Bcast_intra_auto(recvbuf, 1, newtype, 0, newcomm_ptr, errflag);
+    mpi_errno = MPIR_Bcast_allcomm_auto(recvbuf, 1, newtype, 0, newcomm_ptr, errflag);
     if (mpi_errno) {
         /* for communication errors, just record the error but continue */
         *errflag =

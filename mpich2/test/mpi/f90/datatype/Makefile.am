@@ -1,11 +1,9 @@
 # This Makefile.am generated automatically by f77tof90
 # from f77/datatype/Makefile.am.  DO NOT EDIT
-# -*- Mode: Makefile; -*-
-# vim: set ft=automake :
-#
-# (C) 2011 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
 
 include $(top_srcdir)/Makefile_f90.mtest
 
@@ -39,9 +37,12 @@ EXTRA_DIST += Makefile.am-stamp testlist.ap Makefile.ap
 
 endif MAINTAINER_MODE
 
-## vim: set ft=automake :
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
 
-noinst_PROGRAMS += structf indtype createf90 sizeof kinds trf90 get_elem_d get_elem_u
+noinst_PROGRAMS += structf indtype createf90 sizeof kinds trf90 get_elem_u
 
 structf_SOURCES    = structf.f90
 indtype_SOURCES    = indtype.f90
@@ -49,5 +50,4 @@ createf90_SOURCES  = createf90.f90
 sizeof_SOURCES     = sizeof.f90
 kinds_SOURCES      = kinds.f90
 trf90_SOURCES      = trf90.f90
-get_elem_d_SOURCES = get_elem_d.f90
 get_elem_u_SOURCES = get_elem_u.f90

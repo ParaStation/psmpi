@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -18,10 +16,6 @@
  * where n is total size of data gathered on each process.
  */
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Allgatherv_intra_brucks
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Allgatherv_intra_brucks(const void *sendbuf,
                                  int sendcount,
                                  MPI_Datatype sendtype,
@@ -35,7 +29,7 @@ int MPIR_Allgatherv_intra_brucks(const void *sendbuf,
     int mpi_errno = MPI_SUCCESS;
     int mpi_errno_ret = MPI_SUCCESS;
     MPI_Status status;
-    MPI_Aint recvbuf_extent, recvtype_extent, recvtype_true_extent, recvtype_true_lb;
+    MPI_Aint recvtype_extent, recvtype_sz;
     int pof2, src, rem, send_cnt;
     MPI_Aint curr_cnt, recv_cnt;
     int dst, total_count;
@@ -54,31 +48,23 @@ int MPIR_Allgatherv_intra_brucks(const void *sendbuf,
 
     MPIR_Datatype_get_extent_macro(recvtype, recvtype_extent);
 
-    /* allocate a temporary buffer of the same size as recvbuf. */
+    /* allocate a temporary buffer that can hold all the data */
+    MPIR_Datatype_get_size_macro(recvtype, recvtype_sz);
 
-    /* get true extent of recvtype */
-    MPIR_Type_get_true_extent_impl(recvtype, &recvtype_true_lb, &recvtype_true_extent);
-
-    MPIR_Ensure_Aint_fits_in_pointer(total_count * MPL_MAX(recvtype_true_extent, recvtype_extent));
-    recvbuf_extent = total_count * (MPL_MAX(recvtype_true_extent, recvtype_extent));
-
-    MPIR_CHKLMEM_MALLOC(tmp_buf, void *, recvbuf_extent, mpi_errno, "tmp_buf", MPL_MEM_BUFFER);
-
-    /* adjust for potential negative lower bound in datatype */
-    tmp_buf = (void *) ((char *) tmp_buf - recvtype_true_lb);
+    MPIR_CHKLMEM_MALLOC(tmp_buf, void *, total_count * recvtype_sz, mpi_errno, "tmp_buf",
+                        MPL_MEM_BUFFER);
 
     /* copy local data to the top of tmp_buf */
     if (sendbuf != MPI_IN_PLACE) {
         mpi_errno = MPIR_Localcopy(sendbuf, sendcount, sendtype,
-                                   tmp_buf, recvcounts[rank], recvtype);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+                                   tmp_buf, recvcounts[rank] * recvtype_sz, MPI_BYTE);
+        MPIR_ERR_CHECK(mpi_errno);
     } else {
         mpi_errno = MPIR_Localcopy(((char *) recvbuf +
                                     displs[rank] * recvtype_extent),
-                                   recvcounts[rank], recvtype, tmp_buf, recvcounts[rank], recvtype);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+                                   recvcounts[rank], recvtype, tmp_buf,
+                                   recvcounts[rank] * recvtype_sz, MPI_BYTE);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     /* do the first \floor(\lg p) steps */
@@ -89,10 +75,10 @@ int MPIR_Allgatherv_intra_brucks(const void *sendbuf,
         src = (rank + pof2) % comm_size;
         dst = (rank - pof2 + comm_size) % comm_size;
 
-        mpi_errno = MPIC_Sendrecv(tmp_buf, curr_cnt, recvtype, dst,
+        mpi_errno = MPIC_Sendrecv(tmp_buf, curr_cnt * recvtype_sz, MPI_BYTE, dst,
                                   MPIR_ALLGATHERV_TAG,
-                                  ((char *) tmp_buf + curr_cnt * recvtype_extent),
-                                  total_count - curr_cnt, recvtype,
+                                  ((char *) tmp_buf + curr_cnt * recvtype_sz),
+                                  (total_count - curr_cnt) * recvtype_sz, MPI_BYTE,
                                   src, MPIR_ALLGATHERV_TAG, comm_ptr, &status, errflag);
         if (mpi_errno) {
             /* for communication errors, just record the error but continue */
@@ -120,10 +106,10 @@ int MPIR_Allgatherv_intra_brucks(const void *sendbuf,
         for (i = 0; i < rem; i++)
             send_cnt += recvcounts[(rank + i) % comm_size];
 
-        mpi_errno = MPIC_Sendrecv(tmp_buf, send_cnt, recvtype,
+        mpi_errno = MPIC_Sendrecv(tmp_buf, send_cnt * recvtype_sz, MPI_BYTE,
                                   dst, MPIR_ALLGATHERV_TAG,
-                                  ((char *) tmp_buf + curr_cnt * recvtype_extent),
-                                  total_count - curr_cnt, recvtype,
+                                  ((char *) tmp_buf + curr_cnt * recvtype_sz),
+                                  (total_count - curr_cnt) * recvtype_sz, MPI_BYTE,
                                   src, MPIR_ALLGATHERV_TAG, comm_ptr, MPI_STATUS_IGNORE, errflag);
         if (mpi_errno) {
             /* for communication errors, just record the error but continue */
@@ -141,22 +127,20 @@ int MPIR_Allgatherv_intra_brucks(const void *sendbuf,
     send_cnt = 0;
     for (i = 0; i < (comm_size - rank); i++) {
         j = (rank + i) % comm_size;
-        mpi_errno = MPIR_Localcopy((char *) tmp_buf + send_cnt * recvtype_extent,
-                                   recvcounts[j], recvtype,
+        mpi_errno = MPIR_Localcopy((char *) tmp_buf + send_cnt * recvtype_sz,
+                                   recvcounts[j] * recvtype_sz, MPI_BYTE,
                                    (char *) recvbuf + displs[j] * recvtype_extent,
                                    recvcounts[j], recvtype);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         send_cnt += recvcounts[j];
     }
 
     for (i = 0; i < rank; i++) {
-        mpi_errno = MPIR_Localcopy((char *) tmp_buf + send_cnt * recvtype_extent,
-                                   recvcounts[i], recvtype,
+        mpi_errno = MPIR_Localcopy((char *) tmp_buf + send_cnt * recvtype_sz,
+                                   recvcounts[i] * recvtype_sz, MPI_BYTE,
                                    (char *) recvbuf + displs[i] * recvtype_extent,
                                    recvcounts[i], recvtype);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         send_cnt += recvcounts[i];
     }
 

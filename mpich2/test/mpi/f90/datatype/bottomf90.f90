@@ -1,10 +1,9 @@
 ! This file created from f77/datatype/bottomf.f with f77tof90
-! -*- Mode: Fortran; -*-
 !
-!  (C) 2015 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
-!
+
 !  This test tests absolute datatypes and MPI_BOTTOM in mixed
 !  Fortran and C code.  MPI requires MPI_Get_address return
 !  the same value in all languages.

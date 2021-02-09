@@ -22,6 +22,7 @@ AC_DEFUN([PAC_SUBCFG_PREREQ_]PAC_SUBCFG_AUTO_SUFFIX,[
     if [test "x$ofi_direct_provider" != "x"]; then
        AC_MSG_NOTICE([Enabling OFI netmod direct provider])
     fi
+
     ])
     AM_CONDITIONAL([BUILD_CH4_NETMOD_OFI],[test "X$build_ch4_netmod_ofi" = "Xyes"])
 ])dnl
@@ -36,22 +37,9 @@ AM_COND_IF([BUILD_CH4_NETMOD_OFI],[
     AC_SUBST([ofilib])
 
     ofi_embedded=""
-    dnl Use embedded libfabric if we specify to do so or we didn't specify and the source is present
-    if test "${with_libfabric}" = "embedded" ; then
+    if test $have_libfabric = no ; then
         ofi_embedded="yes"
-    elif test -z "${with_libfabric}" && test -z "${with_libfabric_lib}" && test -z "${with_libfabric_include}" ; then
-        if test -f ${use_top_srcdir}/src/mpid/ch4/netmod/ofi/libfabric/configure ; then
-            ofi_embedded="yes"
-        else
-            ofi_embedded="no"
-            PAC_SET_HEADER_LIB_PATH(libfabric)
-        fi
-    else
-        ofi_embedded="no"
-        PAC_SET_HEADER_LIB_PATH(libfabric)
-        AC_SUBST([with_libfabric])
     fi
-    AC_SUBST([ofi_embedded])
 
     runtime_capabilities="no"
     no_providers="no"
@@ -79,6 +67,11 @@ AM_COND_IF([BUILD_CH4_NETMOD_OFI],[
         enable_tcp="no"
         enable_shm="no"
         enable_mlx="no"
+        enable_perf="no"
+        enable_rstream="no"
+        enable_mrail="no"
+        enable_efa="no"
+        enable_netdir="no"
     else
         enable_psm="yes"
         enable_psm2="yes"
@@ -93,6 +86,11 @@ AM_COND_IF([BUILD_CH4_NETMOD_OFI],[
         enable_tcp="yes"
         enable_shm="yes"
         enable_mlx="yes"
+        enable_perf="yes"
+        enable_rstream="yes"
+        enable_mrail="yes"
+        enable_efa="yes"
+        enable_netdir="yes"
     fi
 
     for provider in $netmod_args ; do
@@ -114,12 +112,20 @@ AM_COND_IF([BUILD_CH4_NETMOD_OFI],[
             "bgq")
                 enable_bgq="yes"
                 ;;
+            "verbs;ofi_rxm")
+                enable_verbs="yes"
+                enable_rxm="yes"
+                ;;
 
             dnl For these providers, we don't know exactly which capabilities we
             dnl want to select by default so we turn on runtime checks. At some point
             dnl in the future, we may create a specific capability set for them.
             "verbs")
                 enable_verbs="yes"
+                runtime_capabilities="yes"
+                ;;
+            "efa")
+                enable_efa="yes"
                 runtime_capabilities="yes"
                 ;;
             "usnic")
@@ -150,6 +156,22 @@ AM_COND_IF([BUILD_CH4_NETMOD_OFI],[
                 enable_mlx="yes"
                 runtime_capabilities="yes"
                 ;;
+            "perf")
+                enable_perf="yes"
+                runtime_capabilities="yes"
+                ;;
+            "rstream")
+                enable_rstream="yes"
+                runtime_capabilities="yes"
+                ;;
+            "mrail")
+                enable_mrail="yes"
+                runtime_capabilities="yes"
+                ;;
+            "netdir")
+                enable_netdir="yes"
+                runtime_capabilities="yes"
+                ;;
             *)
                 AC_MSG_WARN("Invalid provider $provider")
         esac
@@ -160,7 +182,7 @@ AM_COND_IF([BUILD_CH4_NETMOD_OFI],[
     else
         case "$netmod_args" in
             "psm")
-                AC_DEFINE([MPIDI_CH4_OFI_USE_SET_PSM], [1], [Define to use PSM capability set])
+                AC_DEFINE([MPIDI_CH4_OFI_USE_SET_RUNTIME], [1], [Define to use runtime capability set])
                 enable_psm="yes"
                 ;;
             "psm2" | "opa")
@@ -172,7 +194,7 @@ AM_COND_IF([BUILD_CH4_NETMOD_OFI],[
                 enable_sockets="yes"
                 ;;
             "gni")
-                AC_DEFINE([MPIDI_CH4_OFI_USE_SET_GNI], [1], [Define to use gni capability set])
+                AC_DEFINE([MPIDI_CH4_OFI_USE_SET_RUNTIME], [1], [Define to use runtime capability set])
                 enable_gni="yes"
                 ;;
             "bgq")
@@ -211,6 +233,31 @@ AM_COND_IF([BUILD_CH4_NETMOD_OFI],[
                 AC_DEFINE([MPIDI_CH4_OFI_USE_SET_RUNTIME], [1], [Define to use runtime capability set])
                 enable_mlx="yes"
                 ;;
+            "perf")
+                AC_DEFINE([MPIDI_CH4_OFI_USE_SET_RUNTIME], [1], [Define to use runtime capability set])
+                enable_perf="yes"
+                ;;
+            "rstream")
+                AC_DEFINE([MPIDI_CH4_OFI_USE_SET_RUNTIME], [1], [Define to use runtime capability set])
+                enable_rstream="yes"
+                ;;
+            "mrail")
+                AC_DEFINE([MPIDI_CH4_OFI_USE_SET_RUNTIME], [1], [Define to use runtime capability set])
+                enable_mrail="yes"
+                ;;
+            "efa")
+                AC_DEFINE([MPIDI_CH4_OFI_USE_SET_RUNTIME], [1], [Define to use runtime capability set])
+                enable_efa="yes"
+                ;;
+            "netdir")
+                AC_DEFINE([MPIDI_CH4_OFI_USE_SET_RUNTIME], [1], [Define to use runtime capability set])
+                enable_netdir="yes"
+                ;;
+            "verbs;ofi_rxm")
+                AC_DEFINE([MPIDI_CH4_OFI_USE_SET_VERBS_RXM], [1], [Define to use verbs;ofi_rxm capability set])
+                enable_verbs="yes"
+                enable_rxm="yes"
+                ;;
             *)
                 AC_MSG_WARN("Invalid provider $netmod_args")
         esac
@@ -222,67 +269,77 @@ AM_COND_IF([BUILD_CH4_NETMOD_OFI],[
 
         prov_config=""
         if test "x${netmod_args}" != "x" ; then
-            prov_config+=" --enable-psm=${enable_psm}"
-            prov_config+=" --enable-psm2=${enable_psm2}"
-            prov_config+=" --enable-sockets=${enable_sockets}"
-            prov_config+=" --enable-verbs=${enable_verbs}"
-            prov_config+=" --enable-usnic=${enable_usnic}"
-            prov_config+=" --enable-gni=${enable_gni}"
-            prov_config+=" --enable-bgq=${enable_bgq}"
-            prov_config+=" --enable-udp=${enable_udp}"
-            prov_config+=" --enable-rxm=${enable_rxm}"
-            prov_config+=" --enable-rxd=${enable_rxd}"
-            prov_config+=" --enable-tcp=${enable_tcp}"
-            prov_config+=" --enable-shm=${enable_shm}"
-            prov_config+=" --enable-mlx=${enable_mlx}"
+            prov_config="$prov_config --enable-psm=${enable_psm}"
+            prov_config="$prov_config --enable-psm2=${enable_psm2}"
+            prov_config="$prov_config --enable-sockets=${enable_sockets}"
+            prov_config="$prov_config --enable-verbs=${enable_verbs}"
+            prov_config="$prov_config --enable-usnic=${enable_usnic}"
+            prov_config="$prov_config --enable-gni=${enable_gni}"
+            prov_config="$prov_config --enable-bgq=${enable_bgq}"
+            prov_config="$prov_config --enable-udp=${enable_udp}"
+            prov_config="$prov_config --enable-rxm=${enable_rxm}"
+            prov_config="$prov_config --enable-rxd=${enable_rxd}"
+            prov_config="$prov_config --enable-tcp=${enable_tcp}"
+            prov_config="$prov_config --enable-shm=${enable_shm}"
+            prov_config="$prov_config --enable-mlx=${enable_mlx}"
+            prov_config="$prov_config --enable-perf=${enable_perf}"
+            prov_config="$prov_config --enable-rstream=${enable_rstream}"
+            prov_config="$prov_config --enable-mrail=${enable_mrail}"
+            prov_config="$prov_config --enable-efa=${enable_efa}"
+            prov_config="$prov_config --enable-netdir=${enable_netdir}"
         fi
 
         if test "x${ofi_direct_provider}" != "x" ; then
-            prov_config+=" --enable-direct=${ofi_direct_provider}"
+            prov_config="$prov_config --enable-direct=${ofi_direct_provider}"
             AC_MSG_NOTICE([Enabling direct embedded provider: ${ofi_direct_provider}])
         fi
 
-        ofi_subdir_args+=" $prov_config"
+        ofi_subdir_args="$ofi_subdir_args $prov_config"
 
         dnl Unset all of these env vars so they don't pollute the libfabric configuration
         PAC_PUSH_ALL_FLAGS()
         PAC_RESET_ALL_FLAGS()
-        PAC_CONFIG_SUBDIR_ARGS([src/mpid/ch4/netmod/ofi/libfabric],[$ofi_subdir_args],[],[AC_MSG_ERROR(libfabric configure failed)])
+        PAC_CONFIG_SUBDIR_ARGS([modules/libfabric],[$ofi_subdir_args],[],[AC_MSG_ERROR(libfabric configure failed)])
         PAC_POP_ALL_FLAGS()
-        PAC_APPEND_FLAG([-I${master_top_builddir}/src/mpid/ch4/netmod/ofi/libfabric/include], [CPPFLAGS])
-        PAC_APPEND_FLAG([-I${use_top_srcdir}/src/mpid/ch4/netmod/ofi/libfabric/include], [CPPFLAGS])
+        PAC_APPEND_FLAG([-I${main_top_builddir}/modules/libfabric/include], [CPPFLAGS])
+        PAC_APPEND_FLAG([-I${use_top_srcdir}/modules/libfabric/include], [CPPFLAGS])
 
         if test "x$ofi_direct_provider" != "x" ; then
-            PAC_APPEND_FLAG([-I${master_top_builddir}/src/mpid/ch4/netmod/ofi/libfabric/prov/${ofi_direct_provider}/include], [CPPFLAGS])
-            PAC_APPEND_FLAG([-I${use_top_srcdir}/src/mpid/ch4/netmod/ofi/libfabric/prov/${ofi_direct_provider}/include], [CPPFLAGS])
+            PAC_APPEND_FLAG([-I${main_top_builddir}/modules/libfabric/prov/${ofi_direct_provider}/include], [CPPFLAGS])
+            PAC_APPEND_FLAG([-I${use_top_srcdir}/modules/libfabric/prov/${ofi_direct_provider}/include], [CPPFLAGS])
             PAC_APPEND_FLAG([-DFABRIC_DIRECT],[CPPFLAGS])
         fi
 
-        ofisrcdir="${master_top_builddir}/src/mpid/ch4/netmod/ofi/libfabric"
-        ofilib="src/mpid/ch4/netmod/ofi/libfabric/src/libfabric.la"
+        ofisrcdir="${main_top_builddir}/modules/libfabric"
+        ofilib="modules/libfabric/src/libfabric.la"
     else
-        PAC_PUSH_FLAG(LIBS)
-        PAC_CHECK_HEADER_LIB([rdma/fabric.h], [fabric], [fi_getinfo], [have_libfabric=yes], [have_libfabric=no])
-        PAC_POP_FLAG(LIBS)
-        if test "${have_libfabric}" = "yes" ; then
-            AC_MSG_NOTICE([CH4 OFI Netmod:  Using an external libfabric])
-            PAC_APPEND_FLAG([-lfabric],[WRAPPER_LIBS])
-        else
-            AC_MSG_ERROR([Provided libfabric installation (--with-libfabric=${with_libfabric}) could not be configured.])
-        fi
+        AC_MSG_NOTICE([CH4 OFI Netmod:  Using an external libfabric])
+        PAC_APPEND_FLAG([-lfabric],[WRAPPER_LIBS])
     fi
 
-    # Check for required functions
+    # check for libfabric depedence libs
+    pcdir=""
+    if test "${ofi_embedded}" = "yes" ; then
+        pcdir="${main_top_builddir}/modules/libfabric"
+    elif test -f ${with_libfabric}/lib/pkgconfig/libfabric.pc ; then
+        pcdir="${with_libfabric}/lib/pkgconfig"
+    fi
+    PAC_LIB_DEPS(fabric, $pcdir)
+    if test "x$ac_libfabric_deps" != "x"; then
+        PAC_APPEND_FLAG([${ac_libfabric_deps}],[WRAPPER_LIBS])
+    fi
 
-    # Does MPL provide MPL_aligned_malloc?
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <mplconfig.h>]],
-                                       [[
-                                       #ifndef MPL_DEFINE_ALIGNED_ALLOC
-                                       # error
-                                       #endif
-                                       ]])],
-                                       [],
-                                       [AC_MSG_ERROR(MPL_aligned_alloc is required to build OFI netmod)])
+    AC_ARG_ENABLE(ofi-domain,
+    [--enable-ofi-domain
+       Use fi_domain for vni contexts. This is the default. Use --disable-ofi-domain to use fi_contexts
+       within a scalable endpoint instead.
+         yes        - Enabled (default)
+         no         - Disabled
+    ],,enable_ofi_domain=yes)
+
+    if test "$enable_ofi_domain" = "yes"; then
+        AC_DEFINE(MPIDI_OFI_VNI_USE_DOMAIN, 1, [CH4/OFI should use domain for vni contexts])
+    fi
 
 ])dnl end AM_COND_IF(BUILD_CH4_NETMOD_OFI,...)
 ])dnl end _BODY

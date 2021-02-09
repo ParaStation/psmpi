@@ -1,13 +1,13 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2005 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPL_DBG_H_INCLUDED
 #define MPL_DBG_H_INCLUDED
 
 #include "mplconfig.h"
+#include <assert.h>
 
 /*
  * Multilevel debugging and tracing macros.
@@ -70,7 +70,9 @@
     {                                                                   \
         if ((_class & MPL_dbg_active_classes) && MPL_DBG_##_level <= MPL_dbg_max_level) { \
             char _s[MPL_DBG_MAXLINE];                                   \
-            MPL_snprintf _fmatargs ;                                    \
+            int _ret = MPL_snprintf _fmatargs ;                          \
+            /* by checking _ret, we supress -Wformat-trunction in gcc-8 */ \
+            assert(_ret >= 0);                                          \
             MPL_dbg_outevent(__FILE__, __LINE__, _class, 0, "%s", _s);  \
         }                                                               \
     }
@@ -103,10 +105,6 @@
 #define MPL_DBG_OUT(_class,_msg)
 #define MPL_DBG_OUT_FMT(_class,_fmtargs)
 #endif
-
-#define MPL_DBG_SUCCESS       0
-#define MPL_DBG_ERR_INTERN    1
-#define MPL_DBG_ERR_OTHER     2
 
 typedef unsigned int MPL_dbg_class;
 
@@ -142,7 +140,7 @@ void MPL_dbg_class_register(MPL_dbg_class cls, const char *ucname, const char *l
 int MPL_dbg_outevent(const char *, int, int, int, const char *, ...) ATTRIBUTE((format(printf, 5, 6)));
 /* *INDENT-ON* */
 
-int MPL_dbg_init(int *, char ***, int, int, int, int, int);
-int MPL_dbg_pre_init(int *, char ***, int);
+int MPL_dbg_pre_init(int *, char ***);
+int MPL_dbg_init(int, int);
 
 #endif /* MPL_DBG_H_INCLUDED */

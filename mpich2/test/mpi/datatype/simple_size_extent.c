@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* Tests that Type_get_extent of a couple of basic types succeeds. */
@@ -75,20 +74,6 @@ int main(int argc, char **argv)
         }
         errs++;
     }
-    mpi_err = MPI_Type_ub(type, &ub);
-    if (mpi_err != MPI_SUCCESS) {
-        if (verbose) {
-            fprintf(stderr, "MPI_Type_ub of MPI_INT failed.\n");
-        }
-        errs++;
-    }
-    if (ub != extent - lb) {
-        if (verbose) {
-            fprintf(stderr, "MPI_Type_ub of MPI_INT returned incorrect ub (%d); should be %d.\n",
-                    (int) ub, (int) (extent - lb));
-        }
-        errs++;
-    }
 
     type = MPI_FLOAT_INT;
     mpi_err = MPI_Type_size(type, &size);
@@ -127,21 +112,6 @@ int main(int argc, char **argv)
             fprintf(stderr,
                     "MPI_Type_get_extent of MPI_FLOAT_INT returned incorrect lb (%d); should be 0.\n",
                     (int) lb);
-        }
-        errs++;
-    }
-    mpi_err = MPI_Type_ub(type, &ub);
-    if (mpi_err != MPI_SUCCESS) {
-        if (verbose) {
-            fprintf(stderr, "MPI_Type_ub of MPI_FLOAT_INT failed.\n");
-        }
-        errs++;
-    }
-    if (ub != extent - lb) {
-        if (verbose) {
-            fprintf(stderr,
-                    "MPI_Type_ub of MPI_FLOAT_INT returned incorrect ub (%d); should be %d.\n",
-                    (int) ub, (int) (extent - lb));
         }
         errs++;
     }

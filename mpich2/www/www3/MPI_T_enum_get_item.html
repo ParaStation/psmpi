@@ -9,7 +9,7 @@
 Get the information about an item in an enumeration 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_T_enum_get_item(MPI_T_enum enumtype, int index, int *value, char *name, int *name_len)
+int MPI_T_enum_get_item(MPI_T_enum enumtype, int indx, int *value, char *name, int *name_len)
 </PRE>
 <H2>Input/Output Parameters</H2>
 <DL>
@@ -23,7 +23,7 @@ int MPI_T_enum_get_item(MPI_T_enum enumtype, int index, int *value, char *name, 
 <P>
 <H2>Output Parameters</H2>
 <DL>
-<DT><B>index </B> <DD> number of the value to be queried in this enumeration (integer)
+<DT><B>indx </B> <DD> number of the value to be queried in this enumeration (integer)
 
 <DT><B>value </B> <DD> variable value (integer)
 
@@ -49,7 +49,7 @@ may be changed with <tt>MPI_Comm_set_errhandler</tt> (for communicators),
 RMA windows).  The MPI-1 routine <tt>MPI_Errhandler_set</tt> may be used but
 its use is deprecated.  The predefined error handler
 <tt>MPI_ERRORS_RETURN</tt> may be used to cause error values to be returned.
-Note that MPI does <em>not</em> guarentee that an MPI program can continue past
+Note that MPI does <em>not</em> guarantee that an MPI program can continue past
 an error; however, MPI implementations will attempt to continue whenever
 possible.
 <P>

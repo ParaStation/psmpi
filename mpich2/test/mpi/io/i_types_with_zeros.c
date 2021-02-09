@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2014 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include <stdio.h>
@@ -85,7 +84,7 @@ static int test_indexed_with_zeros(char *filename, int testcase)
             MPI_Type_indexed(num, blocklen, indices, MPI_INT, &filetype);
             break;
         case HINDEXED:
-            MPI_Type_hindexed(num, blocklen, addrs, MPI_INT, &filetype);
+            MPI_Type_create_hindexed(num, blocklen, addrs, MPI_INT, &filetype);
             break;
         case STRUCT:
             MPI_Type_create_struct(num, blocklen, addrs, types, &filetype);

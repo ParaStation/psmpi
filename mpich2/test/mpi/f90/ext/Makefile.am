@@ -1,11 +1,9 @@
 # This Makefile.am generated automatically by f77tof90
 # from f77/ext/Makefile.am.  DO NOT EDIT
-# -*- Mode: Makefile; -*-
-# vim: set ft=automake :
-#
-# (C) 2011 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
 
 include $(top_srcdir)/Makefile_f90.mtest
 
@@ -21,16 +19,12 @@ c2f2cf90_SOURCES = c2f2cf90.f90 c2f902c.c
 ctypesinf90_SOURCES = ctypesinf90.f90 ctypesfromc.c
 
 # C programs get a different mtest utility object
-c2f90mult_LDADD = $(top_builddir)/util/mtest.o
+c2f90mult_LDADD = $(mtest_c_objects) @cuda_LIBS@ @ze_LIBS@ @cuda_LDFLAGS@ @ze_LDFLAGS@
 c2f90mult_SOURCES = c2f90mult.c
 
 ## add1size.h will be distributed because it's listed in AC_CONFIG_FILES/AC_OUTPUT
 
 # ensure that dependent tests will be rebuilt when add1size.h is updated
-
-# we don't get this from Makefile_f90.mtest and we don't include Makefile.mtest
-$(top_builddir)/util/mtest.o:
-	(cd $(top_builddir)/util && $(MAKE) mtest.o)
 
 if MAINTAINER_MODE
 
@@ -48,7 +42,10 @@ EXTRA_DIST += Makefile.am-stamp  Makefile.ap
 
 endif MAINTAINER_MODE
 
-## vim: set ft=automake :
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
 
 BUILT_SOURCES = c2f902c.c ctypesfromc.c
 

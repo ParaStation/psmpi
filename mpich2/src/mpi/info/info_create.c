@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -26,10 +25,6 @@ int MPI_Info_create(MPI_Info * info) __attribute__ ((weak, alias("PMPI_Info_crea
 #define MPI_Info_create PMPI_Info_create
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Info_create
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Info_create - Creates a new info object
 
@@ -69,8 +64,7 @@ int MPI_Info_create(MPI_Info * info)
     /* ... body of routine ...  */
 
     mpi_errno = MPIR_Info_alloc(&info_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     *info = info_ptr->handle;
     /* (info_ptr)->cookie = MPIR_INFO_COOKIE; */
@@ -89,11 +83,11 @@ int MPI_Info_create(MPI_Info * info)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_info_create", "**mpi_info_create %p", info);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

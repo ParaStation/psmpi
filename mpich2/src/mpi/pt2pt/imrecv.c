@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2011 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -29,10 +28,6 @@ int MPI_Imrecv(void *buf, int count, MPI_Datatype datatype, MPI_Message * messag
 
 #endif /* MPICH_MPI_FROM_PMPI */
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Imrecv
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Imrecv - Nonblocking receive of message matched by MPI_Mprobe or MPI_Improbe.
 
@@ -85,7 +80,7 @@ int MPI_Imrecv(void *buf, int count, MPI_Datatype datatype, MPI_Message * messag
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(datatype)) {
                 MPIR_Datatype *datatype_ptr = NULL;
                 MPIR_Datatype_get_ptr(datatype, datatype_ptr);
                 MPIR_Datatype_valid_ptr(datatype_ptr, mpi_errno);
@@ -99,8 +94,7 @@ int MPI_Imrecv(void *buf, int count, MPI_Datatype datatype, MPI_Message * messag
             /* MPI_MESSAGE_NO_PROC should yield a "proc null" status */
             if (*message != MPI_MESSAGE_NO_PROC) {
                 MPIR_Request_valid_ptr(msgp, mpi_errno);
-                if (mpi_errno)
-                    MPIR_ERR_POP(mpi_errno);
+                MPIR_ERR_CHECK(mpi_errno);
                 MPIR_ERR_CHKANDJUMP((msgp->kind != MPIR_REQUEST_KIND__MPROBE),
                                     mpi_errno, MPI_ERR_ARG, "**reqnotmsg");
             }
@@ -115,8 +109,7 @@ int MPI_Imrecv(void *buf, int count, MPI_Datatype datatype, MPI_Message * messag
     /* ... body of routine ...  */
 
     mpi_errno = MPID_Imrecv(buf, count, datatype, msgp, &rreq);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     MPIR_Assert(rreq != NULL);
     *request = rreq->handle;
@@ -134,12 +127,12 @@ int MPI_Imrecv(void *buf, int count, MPI_Datatype datatype, MPI_Message * messag
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_imrecv", "**mpi_imrecv %p %d %D %p %p", buf, count,
                                  datatype, message, request);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

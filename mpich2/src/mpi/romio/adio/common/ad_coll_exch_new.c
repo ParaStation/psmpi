@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *   Copyright (C) 1997 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "adio.h"
@@ -214,13 +212,19 @@ void ADIOI_Exch_file_views(int myrank, int nprocs, int file_ptr_type,
             return;
         }
     } else {
+#ifdef MPI_STATUSES_IGNORE
+        statuses = MPI_STATUSES_IGNORE;
+#else
         statuses = (MPI_Status *) ADIOI_Malloc(1 + nprocs * sizeof(MPI_Status));
+#endif
         if (fd->is_agg) {
             MPI_Waitall(nprocs, recv_req_arr, statuses);
             ADIOI_Free(recv_req_arr);
         }
         MPI_Waitall(fd->hints->cb_nodes, send_req_arr, statuses);
+#ifndef MPI_STATUSES_IGNORE
         ADIOI_Free(statuses);
+#endif
         ADIOI_Free(send_req_arr);
     }
 #ifdef DEBUG2
@@ -338,9 +342,13 @@ void ADIOI_Exch_file_views(int myrank, int nprocs, int file_ptr_type,
 
     /* Since ADIOI_Malloc may do other things we add the +1
      * to avoid a 0-size malloc */
+#ifdef MPI_STATUSES_IGNORE
+    statuses = MPI_STATUSES_IGNORE;
+#else
     statuses = (MPI_Status *)
         ADIOI_Malloc(1 + 2 * MPL_MAX(send_req_arr_sz, recv_req_arr_sz)
                      * sizeof(MPI_Status));
+#endif
 
     if (send_req_arr_sz > 0) {
         MPI_Waitall(2 * send_req_arr_sz, send_req_arr, statuses);
@@ -352,7 +360,9 @@ void ADIOI_Exch_file_views(int myrank, int nprocs, int file_ptr_type,
         ADIOI_Free(recv_count_arr);
         ADIOI_Free(recv_req_arr);
     }
+#ifndef MPI_STATUSES_IGNORE
     ADIOI_Free(statuses);
+#endif
 
     if (fd->is_agg == 1) {
         ADIOI_init_view_state(file_ptr_type, nprocs, client_file_view_state_arr, TEMP_OFF);

@@ -1,10 +1,9 @@
 ! This file created from f77/pt2pt/dummyf.f with f77tof90
-! -*- Mode: Fortran; -*- 
 !
-!  (C) 2011 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
-!
+
 ! This file is used to disable certain compiler optimizations that
 ! can cause incorrect results with the test in greqf.f.  It provides a 
 ! point where extrastate may be modified, limiting the compilers ability

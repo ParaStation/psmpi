@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2008 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra_server.h"
@@ -472,7 +471,7 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
             execname = MPL_strdup(val);
         else {
             HYD_STRING_STASH_INIT(stash);
-            HYD_STRING_STASH(stash, MPL_strdup(path), status);
+            HYD_STRING_STASH(stash, path, status);
             HYD_STRING_STASH(stash, MPL_strdup("/"), status);
             HYD_STRING_STASH(stash, MPL_strdup(val), status);
 

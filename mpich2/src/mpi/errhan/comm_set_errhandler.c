@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -26,10 +24,6 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
 #undef MPI_Comm_set_errhandler
 #define MPI_Comm_set_errhandler PMPI_Comm_set_errhandler
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Comm_set_errhandler_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPIR_Comm_set_errhandler_impl(MPIR_Comm * comm_ptr, MPIR_Errhandler * errhandler_ptr)
 {
     int in_use;
@@ -55,10 +49,6 @@ void MPIR_Comm_set_errhandler_impl(MPIR_Comm * comm_ptr, MPIR_Errhandler * errha
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Comm_set_errhandler
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /*@
    MPI_Comm_set_errhandler - Set the error handler for a communicator
@@ -113,7 +103,7 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
             /* Validate comm_ptr; if comm_ptr is not valid, it will be reset to null */
             MPIR_Comm_valid_ptr(comm_ptr, mpi_errno, TRUE);
 
-            if (HANDLE_GET_KIND(errhandler) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(errhandler)) {
                 MPIR_Errhandler_valid_ptr(errhan_ptr, mpi_errno);
             }
             MPIR_ERRTEST_ERRHANDLER(errhandler, mpi_errno);
@@ -140,11 +130,11 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_comm_set_errhandler", "**mpi_comm_set_errhandler %C %E",
                                  comm, errhandler);
     }
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
 #endif
     /* --END ERROR HANDLING-- */

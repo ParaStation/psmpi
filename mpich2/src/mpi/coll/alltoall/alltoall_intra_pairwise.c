@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -24,10 +22,6 @@
  * where n is the total amount of data a process needs to send to all
  * other processes.
  */
-#undef FUNCNAME
-#define FUNCNAME MPIR_Alltoall_intra_pairwise
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Alltoall_intra_pairwise(const void *sendbuf,
                                  int sendcount,
                                  MPI_Datatype sendtype,
@@ -62,9 +56,7 @@ int MPIR_Alltoall_intra_pairwise(const void *sendbuf,
                                sendcount, sendtype,
                                ((char *) recvbuf +
                                 rank * recvcount * recvtype_extent), recvcount, recvtype);
-    if (mpi_errno) {
-        MPIR_ERR_POP(mpi_errno);
-    }
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* Is comm_size a power-of-two? */
     i = 1;

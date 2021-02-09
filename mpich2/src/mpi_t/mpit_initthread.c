@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2011 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -42,13 +41,13 @@ static inline void MPIR_T_cat_env_init(void)
     cat_stamp = 0;
 }
 
-static inline void MPIR_T_cvar_env_init(void)
+static inline int MPIR_T_cvar_env_init(void)
 {
     static const UT_icd cvar_table_entry_icd = { sizeof(cvar_table_entry_t), NULL, NULL, NULL };
 
     utarray_new(cvar_table, &cvar_table_entry_icd, MPL_MEM_MPIT);
     cvar_hash = NULL;
-    MPIR_T_cvar_init();
+    return MPIR_T_cvar_init();
 }
 
 static inline void MPIR_T_pvar_env_init(void)
@@ -62,25 +61,23 @@ static inline void MPIR_T_pvar_env_init(void)
     }
 }
 
-void MPIR_T_env_init(void)
+int MPIR_T_env_init(void)
 {
+    int mpi_errno = MPI_SUCCESS;
     static int initialized = FALSE;
 
     if (!initialized) {
         initialized = TRUE;
         MPIR_T_enum_env_init();
         MPIR_T_cat_env_init();
-        MPIR_T_cvar_env_init();
+        mpi_errno = MPIR_T_cvar_env_init();
         MPIR_T_pvar_env_init();
     }
+    return mpi_errno;
 }
 
 #endif /* MPICH_MPI_FROM_PMPI */
 
-#undef FUNCNAME
-#define FUNCNAME MPI_T_init_thread
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_T_init_thread - Initialize the MPI_T execution environment
 
@@ -130,7 +127,7 @@ int MPI_T_init_thread(int required, int *provided)
     ++MPIR_T_init_balance;
     if (MPIR_T_init_balance == 1) {
         MPIR_T_THREAD_CS_INIT();
-        MPIR_T_env_init();
+        mpi_errno = MPIR_T_env_init();
     }
 
     /* ... end of body of routine ... */

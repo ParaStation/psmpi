@@ -1,16 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2014 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
 #include "cdesc.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Comm_spawn_multiple_c
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Comm_spawn_multiple_c(int count, char *array_of_commands_f,
                                char *array_of_argv_f, const int *array_of_maxprocs,
                                const MPI_Info * array_of_info, int root, MPI_Comm comm,

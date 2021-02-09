@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@ int MPI_Test_cancelled(const MPI_Status * status, int *flag)
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Test_cancelled
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
   MPI_Test_cancelled - Tests to see if a request was cancelled
 
@@ -86,11 +80,11 @@ int MPI_Test_cancelled(const MPI_Status * status, int *flag)
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_test_cancelled", "**mpi_test_cancelled %p %p", status,
                                  flag);
     }
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
 #endif
     /* --END ERROR HANDLING-- */

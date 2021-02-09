@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -27,10 +25,6 @@
  * it's still a logarithmic algorithm.) Therefore, for long messages
  * Total Cost = 2.lgp.alpha + 2.n.((p-1)/p).beta
 */
-#undef FUNCNAME
-#define FUNCNAME MPIR_Bcast_intra_scatter_recursive_doubling_allgather
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Bcast_intra_scatter_recursive_doubling_allgather(void *buffer,
                                                           int count,
                                                           MPI_Datatype datatype,
@@ -49,7 +43,6 @@ int MPIR_Bcast_intra_scatter_recursive_doubling_allgather(void *buffer,
     MPI_Aint type_size, nbytes = 0;
     int relative_dst, dst_tree_root, my_tree_root, send_offset;
     int recv_offset, tree_root, nprocs_completed, offset;
-    MPI_Aint position;
     MPIR_CHKLMEM_DECL(1);
     MPI_Aint true_extent, true_lb;
     void *tmp_buf;
@@ -68,7 +61,7 @@ int MPIR_Bcast_intra_scatter_recursive_doubling_allgather(void *buffer,
     MPIR_Assert(MPL_is_pof2(comm_size, NULL));
 #endif /* HAVE_ERROR_CHECKING */
 
-    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
+    if (HANDLE_IS_BUILTIN(datatype))
         is_contig = 1;
     else {
         MPIR_Datatype_is_contig(datatype, &is_contig);
@@ -88,11 +81,9 @@ int MPIR_Bcast_intra_scatter_recursive_doubling_allgather(void *buffer,
     } else {
         MPIR_CHKLMEM_MALLOC(tmp_buf, void *, nbytes, mpi_errno, "tmp_buf", MPL_MEM_BUFFER);
 
-        position = 0;
         if (rank == root) {
-            mpi_errno = MPIR_Pack_impl(buffer, count, datatype, tmp_buf, nbytes, &position);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            mpi_errno = MPIR_Localcopy(buffer, count, datatype, tmp_buf, nbytes, MPI_BYTE);
+            MPIR_ERR_CHECK(mpi_errno);
         }
     }
 
@@ -268,6 +259,7 @@ int MPIR_Bcast_intra_scatter_recursive_doubling_allgather(void *buffer,
         i++;
     }
 
+#ifdef HAVE_ERROR_CHECKING
     /* check that we received as much as we expected */
     if (curr_size != nbytes) {
         if (*errflag == MPIR_ERR_NONE)
@@ -277,13 +269,12 @@ int MPIR_Bcast_intra_scatter_recursive_doubling_allgather(void *buffer,
                       "**collective_size_mismatch %d %d", curr_size, nbytes);
         MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
     }
+#endif
 
     if (!is_contig) {
         if (rank != root) {
-            position = 0;
-            mpi_errno = MPIR_Unpack_impl(tmp_buf, nbytes, &position, buffer, count, datatype);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            mpi_errno = MPIR_Localcopy(tmp_buf, nbytes, MPI_BYTE, buffer, count, datatype);
+            MPIR_ERR_CHECK(mpi_errno);
         }
     }
 

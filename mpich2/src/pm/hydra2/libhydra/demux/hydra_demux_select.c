@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2017 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra_demux.h"
@@ -14,7 +13,8 @@
 HYD_status HYDI_dmx_select_wait_for_event(int wtime)
 {
     fd_set readfds, writefds;
-    int nfds, ret, work_done, events;
+    int nfds, ret, work_done;
+    HYD_dmx_event_t events;
     struct timeval timeout;
     struct HYDI_dmx_callback *run, *tmp;
     HYD_status status = HYD_SUCCESS;

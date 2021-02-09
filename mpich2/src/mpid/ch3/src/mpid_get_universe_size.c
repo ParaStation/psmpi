@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidimpl.h"
@@ -19,10 +18,6 @@
  * bypass the standard PMI implementations, it is the responsibility of the
  * channel to provide an implementation of the PMI routines.
  */
-#undef FUNCNAME
-#define FUNCNAME MPID_Get_universe_size
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_Get_universe_size(int  * universe_size)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -32,7 +27,7 @@ int MPID_Get_universe_size(int  * universe_size)
     char *endptr;
     
     mpi_errno = PMI2_Info_GetJobAttr("universeSize", val, sizeof(val), &found);
-    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     if (!found)
 	*universe_size = MPIR_UNIVERSE_SIZE_NOT_AVAILABLE;

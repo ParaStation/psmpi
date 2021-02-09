@@ -14,13 +14,6 @@
 
 @SET_MAKE@
 
-# -*- Mode: Makefile; -*-
-# vim: set ft=automake :
-#
-# (C) 2011 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
     false; \
@@ -96,7 +89,13 @@ build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = noalias$(EXEEXT) noalias2$(EXEEXT) noalias3$(EXEEXT) \
 	rerr$(EXEEXT) bcastlength$(EXEEXT) reduce_local$(EXEEXT) \
-	nb_noalias$(EXEEXT) nb_rerr$(EXEEXT) ibcastlength$(EXEEXT)
+	nb_noalias$(EXEEXT) nb_rerr$(EXEEXT) ibcastlength$(EXEEXT) \
+	reducelength$(EXEEXT) ireducelength$(EXEEXT) \
+	allreducelength$(EXEEXT) iallreducelength$(EXEEXT) \
+	reduceop$(EXEEXT) ireduceop$(EXEEXT) gatherlength$(EXEEXT) \
+	igatherlength$(EXEEXT) scatterlength$(EXEEXT) \
+	iscatterlength$(EXEEXT) allgatherlength$(EXEEXT) \
+	iallgatherlength$(EXEEXT) alltoalllength$(EXEEXT)
 subdir = errors/coll
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -104,9 +103,16 @@ am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
 	$(top_srcdir)/confdb/aclocal_cxx.m4 \
 	$(top_srcdir)/confdb/aclocal_f77.m4 \
 	$(top_srcdir)/confdb/aclocal_fc.m4 \
+	$(top_srcdir)/confdb/aclocal_libs.m4 \
 	$(top_srcdir)/confdb/aclocal_make.m4 \
 	$(top_srcdir)/confdb/aclocal_runlog.m4 \
-	$(top_srcdir)/confdb/aclocal_util.m4 $(top_srcdir)/version.m4 \
+	$(top_srcdir)/confdb/aclocal_threads.m4 \
+	$(top_srcdir)/confdb/aclocal_util.m4 \
+	$(top_srcdir)/confdb/libtool.m4 \
+	$(top_srcdir)/confdb/ltoptions.m4 \
+	$(top_srcdir)/confdb/ltsugar.m4 \
+	$(top_srcdir)/confdb/ltversion.m4 \
+	$(top_srcdir)/confdb/lt~obsolete.m4 $(top_srcdir)/version.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -116,51 +122,166 @@ CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+allgatherlength_SOURCES = allgatherlength.c
+allgatherlength_OBJECTS = allgatherlength.$(OBJEXT)
+allgatherlength_LDADD = $(LDADD)
+allgatherlength_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
+allreducelength_SOURCES = allreducelength.c
+allreducelength_OBJECTS = allreducelength.$(OBJEXT)
+allreducelength_LDADD = $(LDADD)
+allreducelength_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
+am_alltoalllength_OBJECTS = alltoalllength-alltoalllength.$(OBJEXT)
+alltoalllength_OBJECTS = $(am_alltoalllength_OBJECTS)
+alltoalllength_LDADD = $(LDADD)
+alltoalllength_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 bcastlength_SOURCES = bcastlength.c
 bcastlength_OBJECTS = bcastlength.$(OBJEXT)
 bcastlength_LDADD = $(LDADD)
-bcastlength_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+bcastlength_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
+gatherlength_SOURCES = gatherlength.c
+gatherlength_OBJECTS = gatherlength.$(OBJEXT)
+gatherlength_LDADD = $(LDADD)
+gatherlength_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
+am_iallgatherlength_OBJECTS =  \
+	iallgatherlength-allgatherlength.$(OBJEXT)
+iallgatherlength_OBJECTS = $(am_iallgatherlength_OBJECTS)
+iallgatherlength_LDADD = $(LDADD)
+iallgatherlength_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
+am_iallreducelength_OBJECTS =  \
+	iallreducelength-allreducelength.$(OBJEXT)
+iallreducelength_OBJECTS = $(am_iallreducelength_OBJECTS)
+iallreducelength_LDADD = $(LDADD)
+iallreducelength_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 am_ibcastlength_OBJECTS = ibcastlength-bcastlength.$(OBJEXT)
 ibcastlength_OBJECTS = $(am_ibcastlength_OBJECTS)
 ibcastlength_LDADD = $(LDADD)
-ibcastlength_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+ibcastlength_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
+am_igatherlength_OBJECTS = igatherlength-gatherlength.$(OBJEXT)
+igatherlength_OBJECTS = $(am_igatherlength_OBJECTS)
+igatherlength_LDADD = $(LDADD)
+igatherlength_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
+am_ireducelength_OBJECTS = ireducelength-reducelength.$(OBJEXT)
+ireducelength_OBJECTS = $(am_ireducelength_OBJECTS)
+ireducelength_LDADD = $(LDADD)
+ireducelength_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
+am_ireduceop_OBJECTS = ireduceop-reduceop.$(OBJEXT)
+ireduceop_OBJECTS = $(am_ireduceop_OBJECTS)
+ireduceop_LDADD = $(LDADD)
+ireduceop_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
+am_iscatterlength_OBJECTS = iscatterlength-scatterlength.$(OBJEXT)
+iscatterlength_OBJECTS = $(am_iscatterlength_OBJECTS)
+iscatterlength_LDADD = $(LDADD)
+iscatterlength_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 am_nb_noalias_OBJECTS = nb_noalias-noalias.$(OBJEXT)
 nb_noalias_OBJECTS = $(am_nb_noalias_OBJECTS)
 nb_noalias_LDADD = $(LDADD)
-nb_noalias_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+nb_noalias_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 am_nb_rerr_OBJECTS = nb_rerr-rerr.$(OBJEXT)
 nb_rerr_OBJECTS = $(am_nb_rerr_OBJECTS)
 nb_rerr_LDADD = $(LDADD)
-nb_rerr_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+nb_rerr_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 noalias_SOURCES = noalias.c
 noalias_OBJECTS = noalias.$(OBJEXT)
 noalias_LDADD = $(LDADD)
-noalias_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+noalias_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 noalias2_SOURCES = noalias2.c
 noalias2_OBJECTS = noalias2.$(OBJEXT)
 noalias2_LDADD = $(LDADD)
-noalias2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+noalias2_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 noalias3_SOURCES = noalias3.c
 noalias3_OBJECTS = noalias3.$(OBJEXT)
 noalias3_LDADD = $(LDADD)
-noalias3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+noalias3_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 reduce_local_SOURCES = reduce_local.c
 reduce_local_OBJECTS = reduce_local.$(OBJEXT)
 reduce_local_LDADD = $(LDADD)
-reduce_local_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+reduce_local_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
+reducelength_SOURCES = reducelength.c
+reducelength_OBJECTS = reducelength.$(OBJEXT)
+reducelength_LDADD = $(LDADD)
+reducelength_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
+reduceop_SOURCES = reduceop.c
+reduceop_OBJECTS = reduceop.$(OBJEXT)
+reduceop_LDADD = $(LDADD)
+reduceop_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 rerr_SOURCES = rerr.c
 rerr_OBJECTS = rerr.$(OBJEXT)
 rerr_LDADD = $(LDADD)
-rerr_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+rerr_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
+scatterlength_SOURCES = scatterlength.c
+scatterlength_OBJECTS = scatterlength.$(OBJEXT)
+scatterlength_LDADD = $(LDADD)
+scatterlength_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -177,28 +298,42 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include
 depcomp = $(SHELL) $(top_srcdir)/confdb/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
-AM_V_lt = $(am__v_lt_@AM_V@)
-am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
-am__v_lt_0 = --silent
-am__v_lt_1 = 
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
 AM_V_CC = $(am__v_CC_@AM_V@)
 am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
 am__v_CC_1 = 
 CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = bcastlength.c $(ibcastlength_SOURCES) $(nb_noalias_SOURCES) \
+SOURCES = allgatherlength.c allreducelength.c \
+	$(alltoalllength_SOURCES) bcastlength.c gatherlength.c \
+	$(iallgatherlength_SOURCES) $(iallreducelength_SOURCES) \
+	$(ibcastlength_SOURCES) $(igatherlength_SOURCES) \
+	$(ireducelength_SOURCES) $(ireduceop_SOURCES) \
+	$(iscatterlength_SOURCES) $(nb_noalias_SOURCES) \
 	$(nb_rerr_SOURCES) noalias.c noalias2.c noalias3.c \
-	reduce_local.c rerr.c
-DIST_SOURCES = bcastlength.c $(ibcastlength_SOURCES) \
-	$(nb_noalias_SOURCES) $(nb_rerr_SOURCES) noalias.c noalias2.c \
-	noalias3.c reduce_local.c rerr.c
+	reduce_local.c reducelength.c reduceop.c rerr.c \
+	scatterlength.c
+DIST_SOURCES = allgatherlength.c allreducelength.c \
+	$(alltoalllength_SOURCES) bcastlength.c gatherlength.c \
+	$(iallgatherlength_SOURCES) $(iallreducelength_SOURCES) \
+	$(ibcastlength_SOURCES) $(igatherlength_SOURCES) \
+	$(ireducelength_SOURCES) $(ireduceop_SOURCES) \
+	$(iscatterlength_SOURCES) $(nb_noalias_SOURCES) \
+	$(nb_rerr_SOURCES) noalias.c noalias2.c noalias3.c \
+	reduce_local.c reducelength.c reduceop.c rerr.c \
+	scatterlength.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -223,7 +358,9 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/Makefile.mtest \
+am__DIST_COMMON = $(srcdir)/Makefile.in \
+	$(top_srcdir)/Makefile_common.mtest \
+	$(top_srcdir)/Makefile_single.mtest \
 	$(top_srcdir)/confdb/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 VPATH = @VPATH@
@@ -249,7 +386,10 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DLLTOOL = @DLLTOOL@
+DSYMUTIL = @DSYMUTIL@
 DTP_SWITCH = @DTP_SWITCH@
+DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -280,13 +420,19 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LIBTOOL = @LIBTOOL@
+LIPO = @LIPO@
+LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAINT = @MAINT@
 MAKE = @MAKE@
 MAKEINFO = @MAKEINFO@
+MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 MPICC = @MPICC@
 MPICH_ENABLE_CXX = @MPICH_ENABLE_CXX@
@@ -308,7 +454,12 @@ MPI_SIZEOF_OFFSET = @MPI_SIZEOF_OFFSET@
 MPI_SOURCE = @MPI_SOURCE@
 MPI_SUBVERSION = @MPI_SUBVERSION@
 MPI_VERSION = @MPI_VERSION@
+NM = @NM@
+NMEDIT = @NMEDIT@
+OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
+OTOOL = @OTOOL@
+OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -320,6 +471,7 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 RANLIB = @RANLIB@
 RUN_XFAIL = @RUN_XFAIL@
+SED = @SED@
 SET_CFLAGS = @SET_CFLAGS@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -339,6 +491,7 @@ abs_top_srcdir = @abs_top_srcdir@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
+ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
 ac_ct_F77 = @ac_ct_F77@
 ac_ct_FC = @ac_ct_FC@
 am__include = @am__include@
@@ -353,8 +506,15 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
+ch3_tests = @ch3_tests@
+ch4_ofi_tests = @ch4_ofi_tests@
+ch4_tests = @ch4_tests@
+ch4_ucx_tests = @ch4_ucx_tests@
 ckpointdir = @ckpointdir@
 comm_overlap = @comm_overlap@
+cuda_CPPFLAGS = @cuda_CPPFLAGS@
+cuda_LDFLAGS = @cuda_LDFLAGS@
+cuda_LIBS = @cuda_LIBS@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -383,9 +543,9 @@ libdir = @libdir@
 libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
+main_top_builddir = @main_top_builddir@
+main_top_srcdir = @main_top_srcdir@
 mandir = @mandir@
-master_top_builddir = @master_top_builddir@
-master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
@@ -413,18 +573,38 @@ threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+ze_CPPFLAGS = @ze_CPPFLAGS@
+ze_LDFLAGS = @ze_LDFLAGS@
+ze_LIBS = @ze_LIBS@
 
 # AM_CPPFLAGS are used for C++ code as well
 
 # Add libdtpools support
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
-	-I$(top_srcdir)/dtpools/include
-LDADD = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+	@cuda_CPPFLAGS@ @ze_CPPFLAGS@ -I$(top_srcdir)/dtpools/include
+AM_LDFLAGS = @cuda_LDFLAGS@ @ze_LDFLAGS@
+LDADD = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) @cuda_LIBS@ \
+	@ze_LIBS@ $(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
 EXTRA_DIST = testlist
 ibcastlength_SOURCES = bcastlength.c
 ibcastlength_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+ireduceop_SOURCES = reduceop.c
+ireduceop_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+ireducelength_SOURCES = reducelength.c
+ireducelength_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+iallreducelength_SOURCES = allreducelength.c
+iallreducelength_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+igatherlength_SOURCES = gatherlength.c
+igatherlength_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+iscatterlength_SOURCES = scatterlength.c
+iscatterlength_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+iallgatherlength_SOURCES = allgatherlength.c
+iallgatherlength_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
+alltoalllength_SOURCES = alltoalllength.c
+alltoalllength_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
 nb_noalias_SOURCES = noalias.c
 nb_noalias_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
 nb_rerr_SOURCES = rerr.c
@@ -432,8 +612,8 @@ nb_rerr_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/Makefile.mtest $(am__configure_deps)
+.SUFFIXES: .c .lo .o .obj
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/Makefile_single.mtest $(top_srcdir)/Makefile_common.mtest $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -453,7 +633,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe);; \
 	esac;
-$(top_srcdir)/Makefile.mtest $(am__empty):
+$(top_srcdir)/Makefile_single.mtest $(top_srcdir)/Makefile_common.mtest $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
@@ -465,15 +645,61 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 $(am__aclocal_m4_deps):
 
 clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
+	echo " rm -f" $$list; \
+	rm -f $$list || exit $$?; \
+	test -n "$(EXEEXT)" || exit 0; \
+	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
+	echo " rm -f" $$list; \
+	rm -f $$list
+
+allgatherlength$(EXEEXT): $(allgatherlength_OBJECTS) $(allgatherlength_DEPENDENCIES) $(EXTRA_allgatherlength_DEPENDENCIES) 
+	@rm -f allgatherlength$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(allgatherlength_OBJECTS) $(allgatherlength_LDADD) $(LIBS)
+
+allreducelength$(EXEEXT): $(allreducelength_OBJECTS) $(allreducelength_DEPENDENCIES) $(EXTRA_allreducelength_DEPENDENCIES) 
+	@rm -f allreducelength$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(allreducelength_OBJECTS) $(allreducelength_LDADD) $(LIBS)
+
+alltoalllength$(EXEEXT): $(alltoalllength_OBJECTS) $(alltoalllength_DEPENDENCIES) $(EXTRA_alltoalllength_DEPENDENCIES) 
+	@rm -f alltoalllength$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(alltoalllength_OBJECTS) $(alltoalllength_LDADD) $(LIBS)
 
 bcastlength$(EXEEXT): $(bcastlength_OBJECTS) $(bcastlength_DEPENDENCIES) $(EXTRA_bcastlength_DEPENDENCIES) 
 	@rm -f bcastlength$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(bcastlength_OBJECTS) $(bcastlength_LDADD) $(LIBS)
 
+gatherlength$(EXEEXT): $(gatherlength_OBJECTS) $(gatherlength_DEPENDENCIES) $(EXTRA_gatherlength_DEPENDENCIES) 
+	@rm -f gatherlength$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(gatherlength_OBJECTS) $(gatherlength_LDADD) $(LIBS)
+
+iallgatherlength$(EXEEXT): $(iallgatherlength_OBJECTS) $(iallgatherlength_DEPENDENCIES) $(EXTRA_iallgatherlength_DEPENDENCIES) 
+	@rm -f iallgatherlength$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(iallgatherlength_OBJECTS) $(iallgatherlength_LDADD) $(LIBS)
+
+iallreducelength$(EXEEXT): $(iallreducelength_OBJECTS) $(iallreducelength_DEPENDENCIES) $(EXTRA_iallreducelength_DEPENDENCIES) 
+	@rm -f iallreducelength$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(iallreducelength_OBJECTS) $(iallreducelength_LDADD) $(LIBS)
+
 ibcastlength$(EXEEXT): $(ibcastlength_OBJECTS) $(ibcastlength_DEPENDENCIES) $(EXTRA_ibcastlength_DEPENDENCIES) 
 	@rm -f ibcastlength$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(ibcastlength_OBJECTS) $(ibcastlength_LDADD) $(LIBS)
+
+igatherlength$(EXEEXT): $(igatherlength_OBJECTS) $(igatherlength_DEPENDENCIES) $(EXTRA_igatherlength_DEPENDENCIES) 
+	@rm -f igatherlength$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(igatherlength_OBJECTS) $(igatherlength_LDADD) $(LIBS)
+
+ireducelength$(EXEEXT): $(ireducelength_OBJECTS) $(ireducelength_DEPENDENCIES) $(EXTRA_ireducelength_DEPENDENCIES) 
+	@rm -f ireducelength$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ireducelength_OBJECTS) $(ireducelength_LDADD) $(LIBS)
+
+ireduceop$(EXEEXT): $(ireduceop_OBJECTS) $(ireduceop_DEPENDENCIES) $(EXTRA_ireduceop_DEPENDENCIES) 
+	@rm -f ireduceop$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ireduceop_OBJECTS) $(ireduceop_LDADD) $(LIBS)
+
+iscatterlength$(EXEEXT): $(iscatterlength_OBJECTS) $(iscatterlength_DEPENDENCIES) $(EXTRA_iscatterlength_DEPENDENCIES) 
+	@rm -f iscatterlength$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(iscatterlength_OBJECTS) $(iscatterlength_LDADD) $(LIBS)
 
 nb_noalias$(EXEEXT): $(nb_noalias_OBJECTS) $(nb_noalias_DEPENDENCIES) $(EXTRA_nb_noalias_DEPENDENCIES) 
 	@rm -f nb_noalias$(EXEEXT)
@@ -499,9 +725,21 @@ reduce_local$(EXEEXT): $(reduce_local_OBJECTS) $(reduce_local_DEPENDENCIES) $(EX
 	@rm -f reduce_local$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(reduce_local_OBJECTS) $(reduce_local_LDADD) $(LIBS)
 
+reducelength$(EXEEXT): $(reducelength_OBJECTS) $(reducelength_DEPENDENCIES) $(EXTRA_reducelength_DEPENDENCIES) 
+	@rm -f reducelength$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(reducelength_OBJECTS) $(reducelength_LDADD) $(LIBS)
+
+reduceop$(EXEEXT): $(reduceop_OBJECTS) $(reduceop_DEPENDENCIES) $(EXTRA_reduceop_DEPENDENCIES) 
+	@rm -f reduceop$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(reduceop_OBJECTS) $(reduceop_LDADD) $(LIBS)
+
 rerr$(EXEEXT): $(rerr_OBJECTS) $(rerr_DEPENDENCIES) $(EXTRA_rerr_DEPENDENCIES) 
 	@rm -f rerr$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(rerr_OBJECTS) $(rerr_LDADD) $(LIBS)
+
+scatterlength$(EXEEXT): $(scatterlength_OBJECTS) $(scatterlength_DEPENDENCIES) $(EXTRA_scatterlength_DEPENDENCIES) 
+	@rm -f scatterlength$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(scatterlength_OBJECTS) $(scatterlength_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -509,15 +747,28 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allgatherlength.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allreducelength.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alltoalllength-alltoalllength.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcastlength.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gatherlength.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iallgatherlength-allgatherlength.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iallreducelength-allreducelength.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ibcastlength-bcastlength.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/igatherlength-gatherlength.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ireducelength-reducelength.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ireduceop-reduceop.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iscatterlength-scatterlength.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nb_noalias-noalias.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nb_rerr-rerr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/noalias.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/noalias2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/noalias3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reduce_local.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reducelength.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reduceop.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rerr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scatterlength.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -535,6 +786,56 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
+.c.lo:
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+alltoalllength-alltoalllength.o: alltoalllength.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alltoalllength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT alltoalllength-alltoalllength.o -MD -MP -MF $(DEPDIR)/alltoalllength-alltoalllength.Tpo -c -o alltoalllength-alltoalllength.o `test -f 'alltoalllength.c' || echo '$(srcdir)/'`alltoalllength.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/alltoalllength-alltoalllength.Tpo $(DEPDIR)/alltoalllength-alltoalllength.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='alltoalllength.c' object='alltoalllength-alltoalllength.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alltoalllength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o alltoalllength-alltoalllength.o `test -f 'alltoalllength.c' || echo '$(srcdir)/'`alltoalllength.c
+
+alltoalllength-alltoalllength.obj: alltoalllength.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alltoalllength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT alltoalllength-alltoalllength.obj -MD -MP -MF $(DEPDIR)/alltoalllength-alltoalllength.Tpo -c -o alltoalllength-alltoalllength.obj `if test -f 'alltoalllength.c'; then $(CYGPATH_W) 'alltoalllength.c'; else $(CYGPATH_W) '$(srcdir)/alltoalllength.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/alltoalllength-alltoalllength.Tpo $(DEPDIR)/alltoalllength-alltoalllength.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='alltoalllength.c' object='alltoalllength-alltoalllength.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alltoalllength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o alltoalllength-alltoalllength.obj `if test -f 'alltoalllength.c'; then $(CYGPATH_W) 'alltoalllength.c'; else $(CYGPATH_W) '$(srcdir)/alltoalllength.c'; fi`
+
+iallgatherlength-allgatherlength.o: allgatherlength.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(iallgatherlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT iallgatherlength-allgatherlength.o -MD -MP -MF $(DEPDIR)/iallgatherlength-allgatherlength.Tpo -c -o iallgatherlength-allgatherlength.o `test -f 'allgatherlength.c' || echo '$(srcdir)/'`allgatherlength.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iallgatherlength-allgatherlength.Tpo $(DEPDIR)/iallgatherlength-allgatherlength.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='allgatherlength.c' object='iallgatherlength-allgatherlength.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(iallgatherlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o iallgatherlength-allgatherlength.o `test -f 'allgatherlength.c' || echo '$(srcdir)/'`allgatherlength.c
+
+iallgatherlength-allgatherlength.obj: allgatherlength.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(iallgatherlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT iallgatherlength-allgatherlength.obj -MD -MP -MF $(DEPDIR)/iallgatherlength-allgatherlength.Tpo -c -o iallgatherlength-allgatherlength.obj `if test -f 'allgatherlength.c'; then $(CYGPATH_W) 'allgatherlength.c'; else $(CYGPATH_W) '$(srcdir)/allgatherlength.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iallgatherlength-allgatherlength.Tpo $(DEPDIR)/iallgatherlength-allgatherlength.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='allgatherlength.c' object='iallgatherlength-allgatherlength.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(iallgatherlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o iallgatherlength-allgatherlength.obj `if test -f 'allgatherlength.c'; then $(CYGPATH_W) 'allgatherlength.c'; else $(CYGPATH_W) '$(srcdir)/allgatherlength.c'; fi`
+
+iallreducelength-allreducelength.o: allreducelength.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(iallreducelength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT iallreducelength-allreducelength.o -MD -MP -MF $(DEPDIR)/iallreducelength-allreducelength.Tpo -c -o iallreducelength-allreducelength.o `test -f 'allreducelength.c' || echo '$(srcdir)/'`allreducelength.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iallreducelength-allreducelength.Tpo $(DEPDIR)/iallreducelength-allreducelength.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='allreducelength.c' object='iallreducelength-allreducelength.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(iallreducelength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o iallreducelength-allreducelength.o `test -f 'allreducelength.c' || echo '$(srcdir)/'`allreducelength.c
+
+iallreducelength-allreducelength.obj: allreducelength.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(iallreducelength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT iallreducelength-allreducelength.obj -MD -MP -MF $(DEPDIR)/iallreducelength-allreducelength.Tpo -c -o iallreducelength-allreducelength.obj `if test -f 'allreducelength.c'; then $(CYGPATH_W) 'allreducelength.c'; else $(CYGPATH_W) '$(srcdir)/allreducelength.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iallreducelength-allreducelength.Tpo $(DEPDIR)/iallreducelength-allreducelength.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='allreducelength.c' object='iallreducelength-allreducelength.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(iallreducelength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o iallreducelength-allreducelength.obj `if test -f 'allreducelength.c'; then $(CYGPATH_W) 'allreducelength.c'; else $(CYGPATH_W) '$(srcdir)/allreducelength.c'; fi`
+
 ibcastlength-bcastlength.o: bcastlength.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ibcastlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ibcastlength-bcastlength.o -MD -MP -MF $(DEPDIR)/ibcastlength-bcastlength.Tpo -c -o ibcastlength-bcastlength.o `test -f 'bcastlength.c' || echo '$(srcdir)/'`bcastlength.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ibcastlength-bcastlength.Tpo $(DEPDIR)/ibcastlength-bcastlength.Po
@@ -548,6 +849,62 @@ ibcastlength-bcastlength.obj: bcastlength.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='bcastlength.c' object='ibcastlength-bcastlength.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ibcastlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ibcastlength-bcastlength.obj `if test -f 'bcastlength.c'; then $(CYGPATH_W) 'bcastlength.c'; else $(CYGPATH_W) '$(srcdir)/bcastlength.c'; fi`
+
+igatherlength-gatherlength.o: gatherlength.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(igatherlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT igatherlength-gatherlength.o -MD -MP -MF $(DEPDIR)/igatherlength-gatherlength.Tpo -c -o igatherlength-gatherlength.o `test -f 'gatherlength.c' || echo '$(srcdir)/'`gatherlength.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/igatherlength-gatherlength.Tpo $(DEPDIR)/igatherlength-gatherlength.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gatherlength.c' object='igatherlength-gatherlength.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(igatherlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o igatherlength-gatherlength.o `test -f 'gatherlength.c' || echo '$(srcdir)/'`gatherlength.c
+
+igatherlength-gatherlength.obj: gatherlength.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(igatherlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT igatherlength-gatherlength.obj -MD -MP -MF $(DEPDIR)/igatherlength-gatherlength.Tpo -c -o igatherlength-gatherlength.obj `if test -f 'gatherlength.c'; then $(CYGPATH_W) 'gatherlength.c'; else $(CYGPATH_W) '$(srcdir)/gatherlength.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/igatherlength-gatherlength.Tpo $(DEPDIR)/igatherlength-gatherlength.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='gatherlength.c' object='igatherlength-gatherlength.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(igatherlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o igatherlength-gatherlength.obj `if test -f 'gatherlength.c'; then $(CYGPATH_W) 'gatherlength.c'; else $(CYGPATH_W) '$(srcdir)/gatherlength.c'; fi`
+
+ireducelength-reducelength.o: reducelength.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ireducelength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ireducelength-reducelength.o -MD -MP -MF $(DEPDIR)/ireducelength-reducelength.Tpo -c -o ireducelength-reducelength.o `test -f 'reducelength.c' || echo '$(srcdir)/'`reducelength.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ireducelength-reducelength.Tpo $(DEPDIR)/ireducelength-reducelength.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='reducelength.c' object='ireducelength-reducelength.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ireducelength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ireducelength-reducelength.o `test -f 'reducelength.c' || echo '$(srcdir)/'`reducelength.c
+
+ireducelength-reducelength.obj: reducelength.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ireducelength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ireducelength-reducelength.obj -MD -MP -MF $(DEPDIR)/ireducelength-reducelength.Tpo -c -o ireducelength-reducelength.obj `if test -f 'reducelength.c'; then $(CYGPATH_W) 'reducelength.c'; else $(CYGPATH_W) '$(srcdir)/reducelength.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ireducelength-reducelength.Tpo $(DEPDIR)/ireducelength-reducelength.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='reducelength.c' object='ireducelength-reducelength.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ireducelength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ireducelength-reducelength.obj `if test -f 'reducelength.c'; then $(CYGPATH_W) 'reducelength.c'; else $(CYGPATH_W) '$(srcdir)/reducelength.c'; fi`
+
+ireduceop-reduceop.o: reduceop.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ireduceop_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ireduceop-reduceop.o -MD -MP -MF $(DEPDIR)/ireduceop-reduceop.Tpo -c -o ireduceop-reduceop.o `test -f 'reduceop.c' || echo '$(srcdir)/'`reduceop.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ireduceop-reduceop.Tpo $(DEPDIR)/ireduceop-reduceop.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='reduceop.c' object='ireduceop-reduceop.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ireduceop_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ireduceop-reduceop.o `test -f 'reduceop.c' || echo '$(srcdir)/'`reduceop.c
+
+ireduceop-reduceop.obj: reduceop.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ireduceop_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ireduceop-reduceop.obj -MD -MP -MF $(DEPDIR)/ireduceop-reduceop.Tpo -c -o ireduceop-reduceop.obj `if test -f 'reduceop.c'; then $(CYGPATH_W) 'reduceop.c'; else $(CYGPATH_W) '$(srcdir)/reduceop.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ireduceop-reduceop.Tpo $(DEPDIR)/ireduceop-reduceop.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='reduceop.c' object='ireduceop-reduceop.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ireduceop_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ireduceop-reduceop.obj `if test -f 'reduceop.c'; then $(CYGPATH_W) 'reduceop.c'; else $(CYGPATH_W) '$(srcdir)/reduceop.c'; fi`
+
+iscatterlength-scatterlength.o: scatterlength.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(iscatterlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT iscatterlength-scatterlength.o -MD -MP -MF $(DEPDIR)/iscatterlength-scatterlength.Tpo -c -o iscatterlength-scatterlength.o `test -f 'scatterlength.c' || echo '$(srcdir)/'`scatterlength.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iscatterlength-scatterlength.Tpo $(DEPDIR)/iscatterlength-scatterlength.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='scatterlength.c' object='iscatterlength-scatterlength.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(iscatterlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o iscatterlength-scatterlength.o `test -f 'scatterlength.c' || echo '$(srcdir)/'`scatterlength.c
+
+iscatterlength-scatterlength.obj: scatterlength.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(iscatterlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT iscatterlength-scatterlength.obj -MD -MP -MF $(DEPDIR)/iscatterlength-scatterlength.Tpo -c -o iscatterlength-scatterlength.obj `if test -f 'scatterlength.c'; then $(CYGPATH_W) 'scatterlength.c'; else $(CYGPATH_W) '$(srcdir)/scatterlength.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/iscatterlength-scatterlength.Tpo $(DEPDIR)/iscatterlength-scatterlength.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='scatterlength.c' object='iscatterlength-scatterlength.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(iscatterlength_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o iscatterlength-scatterlength.obj `if test -f 'scatterlength.c'; then $(CYGPATH_W) 'scatterlength.c'; else $(CYGPATH_W) '$(srcdir)/scatterlength.c'; fi`
 
 nb_noalias-noalias.o: noalias.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nb_noalias_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nb_noalias-noalias.o -MD -MP -MF $(DEPDIR)/nb_noalias-noalias.Tpo -c -o nb_noalias-noalias.o `test -f 'noalias.c' || echo '$(srcdir)/'`noalias.c
@@ -576,6 +933,12 @@ nb_rerr-rerr.obj: rerr.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='rerr.c' object='nb_rerr-rerr.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nb_rerr_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nb_rerr-rerr.obj `if test -f 'rerr.c'; then $(CYGPATH_W) 'rerr.c'; else $(CYGPATH_W) '$(srcdir)/rerr.c'; fi`
+
+mostlyclean-libtool:
+	-rm -f *.lo
+
+clean-libtool:
+	-rm -rf .libs _libs
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -696,7 +1059,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
+	mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -751,7 +1115,8 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool
 
 pdf: pdf-am
 
@@ -766,17 +1131,18 @@ uninstall-am:
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS cscopelist-am ctags ctags-am distclean \
-	distclean-compile distclean-generic distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-man install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
+	clean-libtool clean-noinstPROGRAMS cscopelist-am ctags \
+	ctags-am distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am
 
 .PRECIOUS: Makefile
 
@@ -784,15 +1150,25 @@ uninstall-am:
 $(top_builddir)/util/mtest.$(OBJEXT): $(top_srcdir)/util/mtest.c
 	(cd $(top_builddir)/util && $(MAKE) mtest.$(OBJEXT))
 
-$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+$(top_builddir)/util/mtest_common.$(OBJEXT): $(top_srcdir)/util/mtest_common.c
+	(cd $(top_builddir)/util && $(MAKE) mtest_common.$(OBJEXT))
+
+$(top_builddir)/dtpools/src/libdtpools.la:
 	(cd $(top_builddir)/dtpools && $(MAKE))
 
+@GPU_ONLY_TRUE@@HAVE_GPU_TRUE@TESTDIRS ?= coll,pt2pt,rma
+@GPU_ONLY_TRUE@@HAVE_GPU_TRUE@TESTLIST ?= testlist.gpu
+@GPU_ONLY_FALSE@@HAVE_GPU_TRUE@TESTLIST ?= testlist,testlist.dtp,testlist.cvar,testlist.gpu
+@HAVE_GPU_FALSE@TESTLIST ?= testlist,testlist.dtp,testlist.cvar
 SUMMARY_BASENAME ?= summary
 
 testing:
-	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
+	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=$(TESTLIST) -testdirs=$(TESTDIRS) \
 		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
 		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
+
+$(top_builddir)/util/mtest_single.$(OBJEXT): $(top_srcdir)/util/mtest_single.c
+	(cd $(top_builddir)/util && $(MAKE) mtest_single.$(OBJEXT))
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidimpl.h"
@@ -28,10 +27,6 @@ Used indirectly by mpid_irecv, mpid_recv (through MPIDI_CH3_RecvFromSelf) and
  and receive from self.  We may want to put all of the "from self" routines
  into a single file, and make MPIDI_CH3U_Buffer_copy static to this file. */
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3U_Buffer_copy
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPIDI_CH3U_Buffer_copy(
     const void * const sbuf, MPI_Aint scount, MPI_Datatype sdt, int * smpi_errno,
     void * const rbuf, MPI_Aint rcount, MPI_Datatype rdt, intptr_t * rsz,
@@ -61,7 +56,7 @@ void MPIDI_CH3U_Buffer_copy(
 	    "message truncated, sdata_sz=%" PRIdPTR " rdata_sz=%" PRIdPTR,
 			  sdata_sz, rdata_sz));
 	sdata_sz = rdata_sz;
-	*rmpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE, "**truncate", "**truncate %d %d", sdata_sz, rdata_sz );
+	*rmpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_TRUNCATE, "**truncate", "**truncate %d %d", sdata_sz, rdata_sz );
     }
     /* --END ERROR HANDLING-- */
     
@@ -80,53 +75,32 @@ void MPIDI_CH3U_Buffer_copy(
     }
     else if (sdt_contig)
     {
-	MPIR_Segment seg;
-	MPI_Aint last;
-
-	MPIR_Segment_init(rbuf, rcount, rdt, &seg);
-	last = sdata_sz;
-	MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
-                          "pre-unpack last=%" PRIdPTR, last ));
-	MPIR_Segment_unpack(&seg, 0, &last, (char*)sbuf + sdt_true_lb);
-	MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
-			 "pre-unpack last=%" PRIdPTR, last ));
-	/* --BEGIN ERROR HANDLING-- */
-	if (last != sdata_sz)
-	{
-	    *rmpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE, "**dtypemismatch", 0);
-	}
-	/* --END ERROR HANDLING-- */
-
-	*rsz = last;
+        MPI_Aint actual_unpack_bytes;
+        MPIR_Typerep_unpack((char*) sbuf + sdt_true_lb, sdata_sz, rbuf, rcount, rdt, 0, &actual_unpack_bytes);
+        /* --BEGIN ERROR HANDLING-- */
+        if (actual_unpack_bytes != sdata_sz)
+        {
+            *rmpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_TYPE, "**dtypemismatch", 0);
+        }
+        /* --END ERROR HANDLING-- */
+        *rsz = actual_unpack_bytes;
     }
     else if (rdt_contig)
     {
-	MPIR_Segment seg;
-	MPI_Aint last;
-
-	MPIR_Segment_init(sbuf, scount, sdt, &seg);
-	last = sdata_sz;
-	MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
-			       "pre-pack last=%" PRIdPTR, last ));
-	MPIR_Segment_pack(&seg, 0, &last, (char*)rbuf + rdt_true_lb);
-	MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
-			    "post-pack last=%" PRIdPTR, last ));
+	MPI_Aint actual_pack_bytes;
+	MPIR_Typerep_pack(sbuf, scount, sdt, 0, (char*)rbuf + rdt_true_lb, sdata_sz, &actual_pack_bytes);
 	/* --BEGIN ERROR HANDLING-- */
-	if (last != sdata_sz)
+	if (actual_pack_bytes != sdata_sz)
 	{
-	    *rmpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE, "**dtypemismatch", 0);
+	    *rmpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_TYPE, "**dtypemismatch", 0);
 	}
 	/* --END ERROR HANDLING-- */
-
-	*rsz = last;
+	*rsz = actual_pack_bytes;
     }
     else
     {
 	char * buf;
-	intptr_t buf_off;
-	MPIR_Segment sseg;
 	intptr_t sfirst;
-	MPIR_Segment rseg;
 	intptr_t rfirst;
 
 	buf = MPL_malloc(MPIDI_COPY_BUFFER_SZ, MPL_MEM_BUFFER);
@@ -134,83 +108,50 @@ void MPIDI_CH3U_Buffer_copy(
 	if (buf == NULL)
 	{
 	    MPL_DBG_MSG(MPIDI_CH3_DBG_OTHER,TYPICAL,"SRBuf allocation failure");
-	    *smpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+	    *smpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, __func__, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
 	    *rmpi_errno = *smpi_errno;
 	    *rsz = 0;
 	    goto fn_exit;
 	}
 	/* --END ERROR HANDLING-- */
 
-	MPIR_Segment_init(sbuf, scount, sdt, &sseg);
-	MPIR_Segment_init(rbuf, rcount, rdt, &rseg);
-
 	sfirst = 0;
 	rfirst = 0;
-	buf_off = 0;
 	
 	for(;;)
 	{
-	    MPI_Aint last;
-	    char * buf_end;
+	    MPI_Aint max_pack_bytes;
+	    MPI_Aint actual_pack_bytes;
+	    MPI_Aint actual_unpack_bytes;
 
-	    if (sdata_sz - sfirst > MPIDI_COPY_BUFFER_SZ - buf_off)
-	    {
-		last = sfirst + (MPIDI_COPY_BUFFER_SZ - buf_off);
+	    /* rdata_sz is allowed to be larger than sdata_sz, so if
+	     * we copied everything from the source buffer to the
+	     * receive buffer, we are done */
+
+	    if (sdata_sz - sfirst > MPIDI_COPY_BUFFER_SZ) {
+		max_pack_bytes = MPIDI_COPY_BUFFER_SZ;
+	    } else {
+		max_pack_bytes = sdata_sz - sfirst;
 	    }
-	    else
-	    {
-		last = sdata_sz;
-	    }
-	    
-	    MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
-               "pre-pack first=%" PRIdPTR ", last=%" PRIdPTR,
-						sfirst, last ));
-	    MPIR_Segment_pack(&sseg, sfirst, &last, buf + buf_off);
-	    MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
-               "post-pack first=%" PRIdPTR ", last=%" PRIdPTR,
-               sfirst, last ));
-	    /* --BEGIN ERROR HANDLING-- */
-	    MPIR_Assert(last > sfirst);
-	    /* --END ERROR HANDLING-- */
-	    
-	    buf_end = buf + buf_off + (last - sfirst);
-	    sfirst = last;
-	    
-	    MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
-             "pre-unpack first=%" PRIdPTR ", last=%" PRIdPTR,
-						rfirst, last ));
-	    MPIR_Segment_unpack(&rseg, rfirst, &last, buf);
-	    MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
-             "post-unpack first=%" PRIdPTR ", last=%" PRIdPTR,
-						rfirst, last ));
-	    /* --BEGIN ERROR HANDLING-- */
-	    MPIR_Assert(last > rfirst);
-	    /* --END ERROR HANDLING-- */
 
-	    rfirst = last;
-
-	    if (rfirst == sdata_sz)
-	    {
-		/* successful completion */
+	    /* nothing left to copy, break out */
+	    if (max_pack_bytes == 0)
 		break;
-	    }
+
+	    MPIR_Typerep_pack(sbuf, scount, sdt, sfirst, buf, max_pack_bytes, &actual_pack_bytes);
+	    MPIR_Typerep_unpack(buf, actual_pack_bytes, rbuf, rcount, rdt, rfirst, &actual_unpack_bytes);
+	    MPIR_Assert(actual_pack_bytes == actual_unpack_bytes);
+
+	    sfirst += actual_pack_bytes;
+	    rfirst += actual_unpack_bytes;
 
 	    /* --BEGIN ERROR HANDLING-- */
-	    if (sfirst == sdata_sz)
-	    {
+	    if (rfirst == sdata_sz && sfirst != sdata_sz) {
 		/* datatype mismatch -- remaining bytes could not be unpacked */
-		*rmpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE, "**dtypemismatch", 0);
+		*rmpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_TYPE, "**dtypemismatch", 0);
 		break;
 	    }
 	    /* --END ERROR HANDLING-- */
-
-	    buf_off = sfirst - rfirst;
-	    if (buf_off > 0)
-	    {
-		MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER, VERBOSE, (MPL_DBG_FDEST,
-                  "moved %" PRIdPTR " bytes to the beginning of the tmp buffer", buf_off));
-		memmove(buf, buf_end - buf_off, buf_off);
-	    }
 	}
 
 	*rsz = rfirst;
@@ -242,9 +183,7 @@ int MPIDI_CH3_RecvFromSelf( MPIR_Request *rreq, void *buf, MPI_Aint count,
 			       &rreq->status.MPI_ERROR);
 	MPIR_STATUS_SET_COUNT(rreq->status, data_sz);
 	mpi_errno = MPID_Request_complete(sreq);
-        if (mpi_errno != MPI_SUCCESS) {
-            MPIR_ERR_POP(mpi_errno);
-        }
+        MPIR_ERR_CHECK(mpi_errno);
     }
     else
     {
@@ -256,9 +195,7 @@ int MPIDI_CH3_RecvFromSelf( MPIR_Request *rreq, void *buf, MPI_Aint count,
     /* no other thread can possibly be waiting on rreq, so it is safe to 
        reset ref_count and cc */
     mpi_errno = MPID_Request_complete(rreq);
-    if (mpi_errno != MPI_SUCCESS) {
-        MPIR_ERR_POP(mpi_errno);
-    }
+    MPIR_ERR_CHECK(mpi_errno);
 
  fn_exit:
     return mpi_errno;

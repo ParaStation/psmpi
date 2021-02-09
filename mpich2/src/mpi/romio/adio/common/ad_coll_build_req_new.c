@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *   Copyright (C) 1997 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "adio.h"
@@ -462,7 +460,8 @@ int ADIOI_Build_agg_reqs(ADIO_File fd, int rw_type, int nprocs,
                 ADIOI_Heap_insert(&offset_heap, cur_off, j, cur_reg_max_len);
 #ifdef DEBUG_HEAP
                 printf("initial: inserting offset %lld with "
-                       "cur_reg_max_len = %lld for p%d\n", cur_off, cur_reg_max_len, j);
+                       "cur_reg_max_len = %lld for p%d\n", (long long) cur_off,
+                       (long long) cur_reg_max_len, j);
 #endif
             }
 
@@ -476,7 +475,7 @@ int ADIOI_Build_agg_reqs(ADIO_File fd, int rw_type, int nprocs,
              * this particular file realm as a contiguous region. */
             ADIOI_Heap_extract_min(&offset_heap, &cur_off, &cur_off_proc, &cur_reg_max_len);
 #ifdef DEBUG_HEAP
-            printf("extracted cur_off %lld from proc %d\n", cur_off, cur_off_proc);
+            printf("extracted cur_off %lld from proc %d\n", (long long) cur_off, cur_off_proc);
 #endif
 
             if (cur_off == -1)
@@ -591,7 +590,7 @@ int ADIOI_Build_agg_reqs(ADIO_File fd, int rw_type, int nprocs,
             if ((next_off != -1) || (!offset_heap.size)) {
                 ADIOI_Heap_insert(&offset_heap, next_off, cur_off_proc, next_reg_max_len);
 #ifdef DEBUG_HEAP
-                printf("inserting offset %lld for p%d\n", next_off, cur_off_proc);
+                printf("inserting offset %lld for p%d\n", (long long) next_off, cur_off_proc);
 #endif
             }
         }

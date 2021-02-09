@@ -1,8 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2014 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include <mpi.h>
 #include <stdio.h>
 #include <string.h>
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
     disp[1] = BIGDT;
 
     /* combine both types */
-    MPI_Type_struct(2, block_len, disp, type, &mem_type);
+    MPI_Type_create_struct(2, block_len, disp, type, &mem_type);
 
     MPI_Type_commit(&mem_type);
     MPI_Type_free(&rem_type);

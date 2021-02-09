@@ -1,0 +1,20 @@
+# See https://aka.ms/yaml
+# This pipeline to be run on direct pushes and merges
+
+pr: none
+trigger:
+  - master
+  - v*.*.x
+
+resources:
+  containers:
+    - container: centos7
+      image: ucfconsort.azurecr.io/ucx/centos7:1
+      endpoint: ucfconsort_registry
+
+stages:
+  - stage: Build
+    jobs:
+      - template: jucx-publish.yml
+        parameters:
+          target: publish-snapshot

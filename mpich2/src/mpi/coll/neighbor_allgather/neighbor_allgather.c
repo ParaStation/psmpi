@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2012 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -12,41 +11,42 @@
 cvars:
     - name        : MPIR_CVAR_NEIGHBOR_ALLGATHER_INTRA_ALGORITHM
       category    : COLLECTIVE
-      type        : string
+      type        : enum
       default     : auto
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : |-
         Variable to select ineighbor_allgather algorithm
-        auto - Internal algorithm selection
+        auto - Internal algorithm selection (can be overridden with MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE)
         nb   - Force nonblocking algorithm
 
     - name        : MPIR_CVAR_NEIGHBOR_ALLGATHER_INTER_ALGORITHM
       category    : COLLECTIVE
-      type        : string
+      type        : enum
       default     : auto
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : |-
         Variable to select ineighbor_allgather algorithm
-        auto - Internal algorithm selection
+        auto - Internal algorithm selection (can be overridden with MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE)
         nb   - Force nonblocking algorithm
 
     - name        : MPIR_CVAR_NEIGHBOR_ALLGATHER_DEVICE_COLLECTIVE
       category    : COLLECTIVE
       type        : boolean
       default     : true
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : >-
-        If set to true, MPI_neighbor_allgather will allow the device to override the
-        MPIR-level collective algorithms. The device still has the
-        option to call the MPIR-level algorithms manually.
-        If set to false, the device-level neighbor_allgather function will not be
-        called.
+        This CVAR is only used when MPIR_CVAR_DEVICE_COLLECTIVES
+        is set to "percoll".  If set to true, MPI_Neighbor_allgather will
+        allow the device to override the MPIR-level collective
+        algorithms.  The device might still call the MPIR-level
+        algorithms manually.  If set to false, the device-override
+        will be disabled.
 
 === END_MPI_T_CVAR_INFO_BLOCK ===
 */
@@ -73,54 +73,42 @@ int MPI_Neighbor_allgather(const void *sendbuf, int sendcount, MPI_Datatype send
 
 /* any non-MPI functions go here, especially non-static ones */
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Neighbor_allgather_intra_auto
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIR_Neighbor_allgather_intra_auto(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
-                                       void *recvbuf, int recvcount, MPI_Datatype recvtype,
-                                       MPIR_Comm * comm_ptr)
+
+int MPIR_Neighbor_allgather_allcomm_auto(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                                         void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                                         MPIR_Comm * comm_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    mpi_errno =
-        MPIR_Neighbor_allgather_allcomm_nb(sendbuf, sendcount, sendtype, recvbuf, recvcount,
-                                           recvtype, comm_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_Csel_coll_sig_s coll_sig = {
+        .coll_type = MPIR_CSEL_COLL_TYPE__NEIGHBOR_ALLGATHER,
+        .comm_ptr = comm_ptr,
 
-  fn_exit:
+        .u.neighbor_allgather.sendbuf = sendbuf,
+        .u.neighbor_allgather.sendcount = sendcount,
+        .u.neighbor_allgather.sendtype = sendtype,
+        .u.neighbor_allgather.recvbuf = recvbuf,
+        .u.neighbor_allgather.recvcount = recvcount,
+        .u.neighbor_allgather.recvtype = recvtype,
+    };
+
+    MPII_Csel_container_s *cnt = MPIR_Csel_search(comm_ptr->csel_comm, coll_sig);
+    MPIR_Assert(cnt);
+
+    switch (cnt->id) {
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Neighbor_allgather_allcomm_nb:
+            mpi_errno =
+                MPIR_Neighbor_allgather_allcomm_nb(sendbuf, sendcount, sendtype, recvbuf, recvcount,
+                                                   recvtype, comm_ptr);
+            break;
+
+        default:
+            MPIR_Assert(0);
+    }
+
     return mpi_errno;
-  fn_fail:
-    goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Neighbor_allgather_inter_auto
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIR_Neighbor_allgather_inter_auto(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
-                                       void *recvbuf, int recvcount, MPI_Datatype recvtype,
-                                       MPIR_Comm * comm_ptr)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    mpi_errno =
-        MPIR_Neighbor_allgather_allcomm_nb(sendbuf, sendcount, sendtype, recvbuf, recvcount,
-                                           recvtype, comm_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-#undef FUNCNAME
-#define FUNCNAME MPIR_Neighbor_allgather_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Neighbor_allgather_impl(const void *sendbuf, int sendcount,
                                  MPI_Datatype sendtype, void *recvbuf,
                                  int recvcount, MPI_Datatype recvtype, MPIR_Comm * comm_ptr)
@@ -128,38 +116,37 @@ int MPIR_Neighbor_allgather_impl(const void *sendbuf, int sendcount,
     int mpi_errno = MPI_SUCCESS;
 
     if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM) {
-        switch (MPIR_Neighbor_allgather_intra_algo_choice) {
-            case MPIR_NEIGHBOR_ALLGATHER_INTRA_ALGO_NB:
+        switch (MPIR_CVAR_NEIGHBOR_ALLGATHER_INTRA_ALGORITHM) {
+            case MPIR_CVAR_NEIGHBOR_ALLGATHER_INTRA_ALGORITHM_nb:
                 mpi_errno =
                     MPIR_Neighbor_allgather_allcomm_nb(sendbuf, sendcount, sendtype, recvbuf,
                                                        recvcount, recvtype, comm_ptr);
                 break;
-            case MPIR_NEIGHBOR_ALLGATHER_INTRA_ALGO_AUTO:
-                MPL_FALLTHROUGH;
-            default:
+            case MPIR_CVAR_NEIGHBOR_ALLGATHER_INTRA_ALGORITHM_auto:
                 mpi_errno =
-                    MPIR_Neighbor_allgather_intra_auto(sendbuf, sendcount, sendtype, recvbuf,
-                                                       recvcount, recvtype, comm_ptr);
+                    MPIR_Neighbor_allgather_allcomm_auto(sendbuf, sendcount, sendtype, recvbuf,
+                                                         recvcount, recvtype, comm_ptr);
                 break;
+            default:
+                MPIR_Assert(0);
         }
     } else {
-        switch (MPIR_Neighbor_allgather_inter_algo_choice) {
-            case MPIR_NEIGHBOR_ALLGATHER_INTER_ALGO_NB:
+        switch (MPIR_CVAR_NEIGHBOR_ALLGATHER_INTER_ALGORITHM) {
+            case MPIR_CVAR_NEIGHBOR_ALLGATHER_INTER_ALGORITHM_nb:
                 mpi_errno =
                     MPIR_Neighbor_allgather_allcomm_nb(sendbuf, sendcount, sendtype, recvbuf,
                                                        recvcount, recvtype, comm_ptr);
                 break;
-            case MPIR_NEIGHBOR_ALLGATHER_INTER_ALGO_AUTO:
-                MPL_FALLTHROUGH;
-            default:
+            case MPIR_CVAR_NEIGHBOR_ALLGATHER_INTER_ALGORITHM_auto:
                 mpi_errno =
-                    MPIR_Neighbor_allgather_inter_auto(sendbuf, sendcount, sendtype, recvbuf,
-                                                       recvcount, recvtype, comm_ptr);
+                    MPIR_Neighbor_allgather_allcomm_auto(sendbuf, sendcount, sendtype, recvbuf,
+                                                         recvcount, recvtype, comm_ptr);
                 break;
+            default:
+                MPIR_Assert(0);
         }
     }
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     return mpi_errno;
@@ -167,19 +154,18 @@ int MPIR_Neighbor_allgather_impl(const void *sendbuf, int sendcount,
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Neighbor_allgather
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Neighbor_allgather(const void *sendbuf, int sendcount,
                             MPI_Datatype sendtype, void *recvbuf,
                             int recvcount, MPI_Datatype recvtype, MPIR_Comm * comm_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    if (MPIR_CVAR_BARRIER_DEVICE_COLLECTIVE && MPIR_CVAR_DEVICE_COLLECTIVES) {
-        mpi_errno = MPID_Neighbor_allgather(sendbuf, sendcount, sendtype,
-                                            recvbuf, recvcount, recvtype, comm_ptr);
+    if ((MPIR_CVAR_DEVICE_COLLECTIVES == MPIR_CVAR_DEVICE_COLLECTIVES_all) ||
+        ((MPIR_CVAR_DEVICE_COLLECTIVES == MPIR_CVAR_DEVICE_COLLECTIVES_percoll) &&
+         MPIR_CVAR_BARRIER_DEVICE_COLLECTIVE)) {
+        mpi_errno =
+            MPID_Neighbor_allgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype,
+                                    comm_ptr);
     } else {
         mpi_errno = MPIR_Neighbor_allgather_impl(sendbuf, sendcount, sendtype,
                                                  recvbuf, recvcount, recvtype, comm_ptr);
@@ -190,10 +176,6 @@ int MPIR_Neighbor_allgather(const void *sendbuf, int sendcount,
 
 #endif /* MPICH_MPI_FROM_PMPI */
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Neighbor_allgather
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Neighbor_allgather - In this function, each process i gathers data items
 from each process j if an edge (j,i) exists in the topology graph, and each
@@ -251,14 +233,14 @@ int MPI_Neighbor_allgather(const void *sendbuf, int sendcount, MPI_Datatype send
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (HANDLE_GET_KIND(sendtype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(sendtype)) {
                 MPIR_Datatype *sendtype_ptr = NULL;
                 MPIR_Datatype_get_ptr(sendtype, sendtype_ptr);
                 MPIR_Datatype_valid_ptr(sendtype_ptr, mpi_errno);
                 MPIR_Datatype_committed_ptr(sendtype_ptr, mpi_errno);
             }
 
-            if (HANDLE_GET_KIND(recvtype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(recvtype)) {
                 MPIR_Datatype *recvtype_ptr = NULL;
                 MPIR_Datatype_get_ptr(recvtype, recvtype_ptr);
                 MPIR_Datatype_valid_ptr(recvtype_ptr, mpi_errno);
@@ -278,8 +260,7 @@ int MPI_Neighbor_allgather(const void *sendbuf, int sendcount, MPI_Datatype send
 
     mpi_errno = MPIR_Neighbor_allgather(sendbuf, sendcount, sendtype, recvbuf,
                                         recvcount, recvtype, comm_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* ... end of body of routine ... */
 
@@ -293,13 +274,13 @@ int MPI_Neighbor_allgather(const void *sendbuf, int sendcount, MPI_Datatype send
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_neighbor_allgather",
                                  "**mpi_neighbor_allgather %p %d %D %p %d %D %C", sendbuf,
                                  sendcount, sendtype, recvbuf, recvcount, recvtype, comm);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

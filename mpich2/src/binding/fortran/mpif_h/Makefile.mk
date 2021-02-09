@@ -1,7 +1,5 @@
 ## DO NOT EDIT
 ## This file created by buildiface 
-##
-## vim: set ft=automake :
 
 # ensure that the buildiface script ends up in the release tarball
 EXTRA_DIST += src/binding/fortran/mpif_h/buildiface
@@ -311,6 +309,7 @@ mpi_f77_sources += src/binding/fortran/mpif_h/sendf.c \
 	src/binding/fortran/mpif_h/comm_revokef.c \
 	src/binding/fortran/mpif_h/comm_shrinkf.c \
 	src/binding/fortran/mpif_h/comm_agreef.c \
+	src/binding/fortran/mpif_h/query_cuda_supportf.c \
 	src/binding/fortran/mpif_h/file_openf.c \
 	src/binding/fortran/mpif_h/file_closef.c \
 	src/binding/fortran/mpif_h/file_deletef.c \
@@ -388,14 +387,14 @@ mpi_f77_sources += src/binding/fortran/mpif_h/sendf.c \
 	src/binding/fortran/mpif_h/dup_type_fnf.c \
 	src/binding/fortran/mpif_h/null_type_del_fnf.c \
 	src/binding/fortran/mpif_h/null_type_copy_fnf.c 
-mpi_core_sources += src/binding/fortran/mpif_h/fdebug.c \
+mpi_f77_sources += src/binding/fortran/mpif_h/fdebug.c \
 		src/binding/fortran/mpif_h/setbot.c \
 		src/binding/fortran/mpif_h/setbotf.f
 mpi_sources += src/binding/fortran/mpif_h/statusf2c.c src/binding/fortran/mpif_h/statusc2f.c
 
 # FIXME does AM_CPPFLAGS need to be included elsewhere somehow in the
 # target-specific variable?
-AM_CPPFLAGS += -I${master_top_srcdir}/src/binding/fortran/mpif_h
+AM_CPPFLAGS += -I${main_top_srcdir}/src/binding/fortran/mpif_h
 
 
 noinst_HEADERS += src/binding/fortran/mpif_h/fproto.h src/binding/fortran/mpif_h/mpi_fortimpl.h

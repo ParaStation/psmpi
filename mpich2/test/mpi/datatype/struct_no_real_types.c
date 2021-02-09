@@ -1,8 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,7 +59,7 @@ int no_real_types_test(void)
 
     int count = 1;
     int len = 1;
-    MPI_Aint disp = 10;
+    MPI_Aint disp = 10, tmp_lb;
     MPI_Datatype type = MPI_LB;
     MPI_Datatype newtype;
 
@@ -91,7 +91,7 @@ int no_real_types_test(void)
         errs++;
     }
 
-    err = MPI_Type_extent(newtype, &extent);
+    err = MPI_Type_get_extent(newtype, &tmp_lb, &extent);
     if (err != MPI_SUCCESS) {
         if (verbose) {
             fprintf(stderr, "error obtaining type extent in no_real_types_test()\n");

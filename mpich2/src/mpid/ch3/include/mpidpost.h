@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPIDPOST_H_INCLUDED
@@ -162,6 +161,7 @@ int MPIDI_CH3_Comm_connect(char * port_name, int root, MPIR_Comm * comm_ptr,
  * Device level request management macros
  */
 
+#define MPID_Prequest_free_hook(req_) do {} while(0)
 
 /*
  * Device level progress engine macros
@@ -171,7 +171,7 @@ int MPIDI_CH3_Comm_connect(char * port_name, int root, MPIR_Comm * comm_ptr,
 #define MPID_Progress_end(progress_state_)   MPIDI_CH3_Progress_end(progress_state_)
 /* This is static inline instead of macro because otherwise MPID_Progress_test will
  * be a chain of macros and therefore can not be used as a callback function */
-static inline int MPID_Progress_test(void)
+static inline int MPID_Progress_test(MPID_Progress_state * state) /* state is unused */
 {
     return MPIDI_CH3_Progress_test();
 }
@@ -211,18 +211,9 @@ MPL_STATIC_INLINE_PREFIX int MPID_Request_is_anysource(MPIR_Request * request_pt
 }
 
 /* communicator hooks */
-int MPIDI_CH3I_Comm_create_hook(struct MPIR_Comm *);
+int MPIDI_CH3I_Comm_commit_pre_hook(struct MPIR_Comm *);
 int MPIDI_CH3I_Comm_destroy_hook(struct MPIR_Comm *);
-
-int MPIDI_CH3I_Progress_register_hook(int (*progress_fn)(int*), int *id);
-int MPIDI_CH3I_Progress_deregister_hook(int id);
-int MPIDI_CH3I_Progress_activate_hook(int id);
-int MPIDI_CH3I_Progress_deactivate_hook(int id);
-
-#define MPID_Progress_register_hook(fn_, id_) MPIDI_CH3I_Progress_register_hook(fn_, id_)
-#define MPID_Progress_deregister_hook(id_) MPIDI_CH3I_Progress_deregister_hook(id_)
-#define MPID_Progress_activate_hook(id_) MPIDI_CH3I_Progress_activate_hook(id_)
-#define MPID_Progress_deactivate_hook(id_) MPIDI_CH3I_Progress_deactivate_hook(id_)
+int MPIDI_CH3I_Comm_commit_post_hook(struct MPIR_Comm *);
 
 /*
   Device override hooks for asynchronous progress threads

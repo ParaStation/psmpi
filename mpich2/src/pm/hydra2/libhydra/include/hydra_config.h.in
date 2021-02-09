@@ -723,17 +723,8 @@
 /* Configure arguments */
 #undef HYDRA_CONFIGURE_ARGS_CLEAN
 
-/* C++ compiler */
-#undef HYDRA_CXX
-
 /* Default bstrap */
 #undef HYDRA_DEFAULT_BSTRAP
-
-/* Fortran 77 compiler */
-#undef HYDRA_F77
-
-/* Fortran 90 compiler */
-#undef HYDRA_F90
 
 /* Hydra pmi proxy executable */
 #undef HYDRA_PMI_PROXY

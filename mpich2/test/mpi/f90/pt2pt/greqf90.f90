@@ -1,9 +1,9 @@
 ! This file created from f77/pt2pt/greqf.f with f77tof90
-! -*- Mode: Fortran; -*- 
 !
-!  (C) 2003 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
+
       subroutine query_fn( extrastate, status, ierr )
       use mpi
       integer status(MPI_STATUS_SIZE), ierr

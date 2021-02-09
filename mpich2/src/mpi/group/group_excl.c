@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -27,10 +25,6 @@ int MPI_Group_excl(MPI_Group group, int n, const int ranks[], MPI_Group * newgro
 #undef MPI_Group_excl
 #define MPI_Group_excl PMPI_Group_excl
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Group_excl_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Group_excl_impl(MPIR_Group * group_ptr, int n, const int ranks[],
                          MPIR_Group ** new_group_ptr)
 {
@@ -44,28 +38,28 @@ int MPIR_Group_excl_impl(MPIR_Group * group_ptr, int n, const int ranks[],
 
     /* Allocate a new group and lrank_to_lpid array */
     mpi_errno = MPIR_Group_create(size - n, new_group_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     (*new_group_ptr)->rank = MPI_UNDEFINED;
     /* Use flag fields to mark the members to *exclude* . */
 
-    for (i = 0; i < size; i++) {
-        group_ptr->lrank_to_lpid[i].flag = 0;
-    }
+    int *flags = MPL_calloc(size, sizeof(int), MPL_MEM_OTHER);
+
     for (i = 0; i < n; i++) {
-        group_ptr->lrank_to_lpid[ranks[i]].flag = 1;
+        flags[ranks[i]] = 1;
     }
 
     newi = 0;
     for (i = 0; i < size; i++) {
-        if (group_ptr->lrank_to_lpid[i].flag == 0) {
+        if (flags[i] == 0) {
             (*new_group_ptr)->lrank_to_lpid[newi].lpid = group_ptr->lrank_to_lpid[i].lpid;
             if (group_ptr->rank == i)
                 (*new_group_ptr)->rank = newi;
             newi++;
         }
     }
+
+    MPL_free(flags);
 
     (*new_group_ptr)->size = size - n;
     (*new_group_ptr)->idx_of_first_lpid = -1;
@@ -81,10 +75,6 @@ int MPIR_Group_excl_impl(MPIR_Group * group_ptr, int n, const int ranks[],
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Group_excl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /*@
 
@@ -184,12 +174,12 @@ int MPI_Group_excl(MPI_Group group, int n, const int ranks[], MPI_Group * newgro
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_group_excl", "**mpi_group_excl %G %d %p %p", group, n,
                                  ranks, newgroup);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

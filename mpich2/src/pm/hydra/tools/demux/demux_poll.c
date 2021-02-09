@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2009 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "demux_internal.h"
@@ -91,8 +90,7 @@ HYD_status HYDT_dmxu_poll_wait_for_event(int wtime)
         status = HYD_TIMED_OUT;
 
   fn_exit:
-    if (pollfds)
-        MPL_free(pollfds);
+    MPL_free(pollfds);
     HYDU_FUNC_EXIT();
     return status;
 

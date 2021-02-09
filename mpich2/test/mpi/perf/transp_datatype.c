@@ -1,8 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 /*    modified 01/23/2011 by Jim Hoekstra - ISU
  *      changed test to follow mtest_init/mtest_finalize convention
  *      The following changes are based on suggestions from Chris Sadlo:
@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     double temp;
     int myrank, mysize, errs = 0;
     MPI_Status status;
-    MPI_Aint sizeofreal;
+    MPI_Aint sizeofreal, tmp_lb;
 
     MPI_Datatype col, xpose;
 
@@ -41,10 +41,10 @@ int main(int argc, char *argv[])
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
-    MPI_Type_extent(MPI_DOUBLE, &sizeofreal);
+    MPI_Type_get_extent(MPI_DOUBLE, &tmp_lb, &sizeofreal);
 
     MPI_Type_vector(SIZE, 1, SIZE, MPI_DOUBLE, &col);
-    MPI_Type_hvector(SIZE, 1, sizeofreal, col, &xpose);
+    MPI_Type_create_hvector(SIZE, 1, sizeofreal, col, &xpose);
     MPI_Type_commit(&xpose);
 
     /* Preset the arrays so that they're in memory */

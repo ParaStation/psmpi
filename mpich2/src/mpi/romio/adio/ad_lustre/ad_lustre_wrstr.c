@@ -1,11 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *   Copyright (C) 1997 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
- *
- *   Copyright (C) 2007 Oak Ridge National Laboratory
- *
- *   Copyright (C) 2008 Sun Microsystems, Lustre group
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "ad_lustre.h"
@@ -227,7 +222,8 @@ void ADIOI_LUSTRE_WriteStrided(ADIO_File fd, const void *buf, int count,
                 userbuf_off = (ADIO_Offset) j *(ADIO_Offset) buftype_extent + flat_buf->indices[i];
                 req_off = off;
                 req_len = flat_buf->blocklens[i];
-                ADIOI_BUFFERED_WRITE_WITHOUT_READ off += flat_buf->blocklens[i];
+                ADIOI_BUFFERED_WRITE_WITHOUT_READ;
+                off += flat_buf->blocklens[i];
             }
         }
 
@@ -313,10 +309,10 @@ void ADIOI_LUSTRE_WriteStrided(ADIO_File fd, const void *buf, int count,
             writebuf_off = 0;
             writebuf_len = 0;
             userbuf_off = 0;
-            ADIOI_BUFFERED_WRITE_WITHOUT_READ
-                /* write the buffer out finally */
-                ADIO_WriteContig(fd, writebuf, writebuf_len, MPI_BYTE,
-                                 ADIO_EXPLICIT_OFFSET, writebuf_off, &status1, error_code);
+            ADIOI_BUFFERED_WRITE_WITHOUT_READ;
+            /* write the buffer out finally */
+            ADIO_WriteContig(fd, writebuf, writebuf_len, MPI_BYTE,
+                             ADIO_EXPLICIT_OFFSET, writebuf_off, &status1, error_code);
 
             if (file_ptr_type == ADIO_INDIVIDUAL) {
                 /* update MPI-IO file pointer to point to the first byte
@@ -395,7 +391,8 @@ void ADIOI_LUSTRE_WriteStrided(ADIO_File fd, const void *buf, int count,
                     req_off = off;
                     req_len = fwr_size;
                     userbuf_off = i_offset;
-                ADIOI_BUFFERED_WRITE}
+                    ADIOI_BUFFERED_WRITE;
+                }
                 i_offset += fwr_size;
 
                 if (off + fwr_size < disp + flat_file->indices[j] +
@@ -436,7 +433,8 @@ void ADIOI_LUSTRE_WriteStrided(ADIO_File fd, const void *buf, int count,
                     req_off = off;
                     req_len = size;
                     userbuf_off = i_offset;
-                ADIOI_BUFFERED_WRITE}
+                    ADIOI_BUFFERED_WRITE;
+                }
 
                 new_fwr_size = fwr_size;
                 new_bwr_size = bwr_size;

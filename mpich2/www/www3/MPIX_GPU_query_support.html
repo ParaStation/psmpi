@@ -1,0 +1,24 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML3.2 EN">
+<HTML>
+<HEAD>
+<META NAME="GENERATOR" CONTENT="DOCTEXT">
+<TITLE>MPIX_GPU_query_support</TITLE>
+</HEAD>
+<BODY BGCOLOR="FFFFFF">
+<H1 id="MPIX_GPU_query_support">MPIX_GPU_query_support</H1>
+Returns the type of GPU supported 
+<H2>Synopsis</H2>
+<PRE>
+int MPIX_GPU_query_support(int gpu_type, int *is_supported)
+</PRE>
+<H2>Input Parameters</H2>
+<DL>
+<DT><B>gpu_type </B> <DD> the GPU type being queried for (integer)
+
+<DT><B>is_supported </B> <DD> whether supported or not (integer)
+</DL>
+<P>
+<H2>Notes</H2>
+Query for the various GPU types whether they are supported by MPICH or
+not.
+</BODY></HTML>

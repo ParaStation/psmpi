@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -25,10 +24,6 @@ int MPI_Get_count(const MPI_Status * status, MPI_Datatype datatype, int *count)
 #undef MPI_Get_count
 #define MPI_Get_count PMPI_Get_count
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Get_count_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPIR_Get_count_impl(const MPI_Status * status, MPI_Datatype datatype, MPI_Aint * count)
 {
     MPI_Aint size;
@@ -64,10 +59,6 @@ void MPIR_Get_count_impl(const MPI_Status * status, MPI_Datatype datatype, MPI_A
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Get_count
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
   MPI_Get_count - Gets the number of "top level" elements
 
@@ -110,7 +101,7 @@ int MPI_Get_count(const MPI_Status * status, MPI_Datatype datatype, int *count)
             MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 
             /* Validate datatype_ptr */
-            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(datatype)) {
                 MPIR_Datatype_get_ptr(datatype, datatype_ptr);
                 MPIR_Datatype_valid_ptr(datatype_ptr, mpi_errno);
                 if (mpi_errno)
@@ -142,11 +133,11 @@ int MPI_Get_count(const MPI_Status * status, MPI_Datatype datatype, int *count)
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_get_count", "**mpi_get_count %p %D %p", status, datatype,
                                  count);
     }
-    mpi_errno = MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(0, __func__, mpi_errno);
     goto fn_exit;
 #endif
     /* --END ERROR HANDLING-- */

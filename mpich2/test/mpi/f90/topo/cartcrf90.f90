@@ -1,9 +1,9 @@
 ! This file created from f77/topo/cartcrf.f with f77tof90
-! -*- Mode: Fortran; -*- 
 !
-!  (C) 2004 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
+
 ! Test various combinations of periodic and non-periodic Cartesian 
 ! communicators
 !

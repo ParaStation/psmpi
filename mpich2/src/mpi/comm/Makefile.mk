@@ -1,8 +1,6 @@
-## -*- Mode: Makefile; -*-
-## vim: set ft=automake :
 ##
-## (C) 2011 by Argonne National Laboratory.
-##     See COPYRIGHT in top-level directory.
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
 ##
 
 mpi_sources +=                       \
@@ -27,6 +25,7 @@ mpi_sources +=                       \
     src/mpi/comm/intercomm_create.c  \
     src/mpi/comm/intercomm_merge.c   \
     src/mpi/comm/comm_split_type.c   \
+    src/mpi/comm/comm_split_type_nbhd.c        \
     src/mpi/comm/comm_failure_ack.c            \
     src/mpi/comm/comm_failure_get_acked.c      \
     src/mpi/comm/comm_revoke.c                 \

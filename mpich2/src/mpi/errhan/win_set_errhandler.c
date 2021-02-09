@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@ int MPI_Win_set_errhandler(MPI_Win win, MPI_Errhandler errhandler)
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Win_set_errhandler
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Win_set_errhandler - Set window error handler
 
@@ -84,14 +78,14 @@ int MPI_Win_set_errhandler(MPI_Win win, MPI_Errhandler errhandler)
             MPIR_Win_valid_ptr(win_ptr, mpi_errno);
             /* If win_ptr is not value, it will be reset to null */
 
-            if (HANDLE_GET_KIND(errhandler) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(errhandler)) {
                 MPIR_Errhandler_valid_ptr(errhan_ptr, mpi_errno);
                 /* Also check for a valid errhandler kind */
                 if (!mpi_errno) {
                     if (errhan_ptr->kind != MPIR_WIN) {
-                        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME,
-                                                         __LINE__, MPI_ERR_ARG, "**errhandnotwin",
-                                                         NULL);
+                        mpi_errno =
+                            MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__,
+                                                 __LINE__, MPI_ERR_ARG, "**errhandnotwin", NULL);
                     }
                 }
             }
@@ -131,11 +125,11 @@ int MPI_Win_set_errhandler(MPI_Win win, MPI_Errhandler errhandler)
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_win_set_errhandler", "**mpi_win_set_errhandler %W %E", win,
                                  errhandler);
     }
-    mpi_errno = MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_win(win_ptr, __func__, mpi_errno);
     goto fn_exit;
 #endif
     /* --END ERROR HANDLING-- */

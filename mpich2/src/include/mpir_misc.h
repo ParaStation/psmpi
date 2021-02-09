@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPIR_MISC_H_INCLUDED
@@ -78,10 +76,10 @@ Notes:
 void MPIR_Add_finalize(int (*routine) (void *), void *extra, int priority);
 
 /* Routines for determining local and remote processes */
-int MPIR_Find_local_and_external(struct MPIR_Comm *comm, int *local_size_p, int *local_rank_p,
-                                 int **local_ranks_p, int *external_size_p, int *external_rank_p,
-                                 int **external_ranks_p, int **intranode_table,
-                                 int **internode_table_p);
+int MPIR_Find_local(struct MPIR_Comm *comm, int *local_size_p, int *local_rank_p,
+                    int **local_ranks_p, int **intranode_table);
+int MPIR_Find_external(struct MPIR_Comm *comm, int *external_size_p, int *external_rank_p,
+                       int **external_ranks_p, int **internode_table_p);
 int MPIR_Get_internode_rank(MPIR_Comm * comm_ptr, int r);
 int MPIR_Get_intranode_rank(MPIR_Comm * comm_ptr, int r);
 

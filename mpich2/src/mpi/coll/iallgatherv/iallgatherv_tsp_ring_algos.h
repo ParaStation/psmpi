@@ -1,12 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- *  Portions of this code were written by Intel Corporation.
- *  Copyright (C) 2011-2017 Intel Corporation.  Intel provides this material
- *  to Argonne National Laboratory subject to Software Grant and Corporate
- *  Contributor License Agreement dated February 8, 2012.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* Header protection (i.e., IALLGATHERV_TSP_RING_ALGOS_H_INCLUDED) is
@@ -17,14 +11,10 @@
 #include "tsp_namespace_def.h"
 
 /* Routine to schedule a recursive exchange based allgatherv */
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Iallgatherv_sched_intra_ring
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_TSP_Iallgatherv_sched_intra_ring(const void *sendbuf, int sendcount,
                                           MPI_Datatype sendtype, void *recvbuf,
                                           const int *recvcounts, const int *displs,
-                                          MPI_Datatype recvtype, int tag, MPIR_Comm * comm,
+                                          MPI_Datatype recvtype, MPIR_Comm * comm,
                                           MPIR_TSP_sched_t * sched)
 {
     size_t extent;
@@ -32,10 +22,10 @@ int MPIR_TSP_Iallgatherv_sched_intra_ring(const void *sendbuf, int sendcount,
     int mpi_errno = MPI_SUCCESS;
     int i, src, dst;
     int nranks, is_inplace, rank;
-    int nvtcs, vtcs[3], send_id[3], recv_id[3], dtcopy_id[3];
     int send_rank, recv_rank;
     void *data_buf, *buf1, *buf2, *sbuf, *rbuf;
     int max_count;
+    int tag;
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIR_TSP_IALLGATHERV_SCHED_INTRA_RING);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIR_TSP_IALLGATHERV_SCHED_INTRA_RING);
@@ -67,6 +57,7 @@ int MPIR_TSP_Iallgatherv_sched_intra_ring(const void *sendbuf, int sendcount,
     buf2 = MPIR_TSP_sched_malloc(max_count * extent, sched);
 
     /* Phase 1: copy data to buf1 from sendbuf or recvbuf(in case of inplace) */
+    int dtcopy_id[3];
     if (is_inplace) {
         dtcopy_id[0] =
             MPIR_TSP_sched_localcopy((char *) data_buf + displs[rank] * extent, sendcount, sendtype,
@@ -88,35 +79,45 @@ int MPIR_TSP_Iallgatherv_sched_intra_ring(const void *sendbuf, int sendcount,
     sbuf = buf1;
     rbuf = buf2;
 
+    int send_id[3];
+    int recv_id[3] = { 0 };     /* warning fix: icc: maybe used before set */
     for (i = 0; i < nranks - 1; i++) {
         recv_rank = (rank - i - 1 + nranks) % nranks;   /* Rank whose data you're receiving */
         send_rank = (rank - i + nranks) % nranks;       /* Rank whose data you're sending */
 
+        /* New tag for each send-recv pair. */
+        mpi_errno = MPIR_Sched_next_tag(comm, &tag);
+        MPIR_ERR_CHECK(mpi_errno);
+
+        int nvtcs, vtcs[3];
         if (i == 0) {
             nvtcs = 1;
             vtcs[0] = dtcopy_id[0];
+
+            send_id[i % 3] =
+                MPIR_TSP_sched_isend(sbuf, recvcounts[send_rank], recvtype, dst, tag, comm, sched,
+                                     nvtcs, vtcs);
+
+            nvtcs = 0;
         } else {
             nvtcs = 2;
             vtcs[0] = recv_id[(i - 1) % 3];
             vtcs[1] = send_id[(i - 1) % 3];
-        }
 
-        send_id[i % 3] =
-            MPIR_TSP_sched_isend(sbuf, recvcounts[send_rank], recvtype, dst, tag, comm, sched,
-                                 nvtcs, vtcs);
+            send_id[i % 3] =
+                MPIR_TSP_sched_isend(sbuf, recvcounts[send_rank], recvtype, dst, tag, comm, sched,
+                                     nvtcs, vtcs);
 
-
-        if (i == 0) {
-            nvtcs = 0;
-        } else if (i == 1) {
-            nvtcs = 2;
-            vtcs[0] = send_id[(i - 1) % 3];
-            vtcs[1] = recv_id[(i - 1) % 3];
-        } else {
-            nvtcs = 3;
-            vtcs[0] = send_id[(i - 1) % 3];
-            vtcs[1] = dtcopy_id[(i - 2) % 3];
-            vtcs[2] = recv_id[(i - 1) % 3];
+            if (i == 1) {
+                nvtcs = 2;
+                vtcs[0] = send_id[0];
+                vtcs[1] = recv_id[0];
+            } else {
+                nvtcs = 3;
+                vtcs[0] = send_id[(i - 1) % 3];
+                vtcs[1] = dtcopy_id[(i - 2) % 3];
+                vtcs[2] = recv_id[(i - 1) % 3];
+            }
         }
 
         recv_id[i % 3] =
@@ -140,20 +141,17 @@ int MPIR_TSP_Iallgatherv_sched_intra_ring(const void *sendbuf, int sendcount,
   fn_exit:
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIR_TSP_IALLGATHERV_SCHED_INTRA_RING);
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 
 /* Non-blocking ring based Allgatherv */
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Iallgatherv_intra_ring
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_TSP_Iallgatherv_intra_ring(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                                     void *recvbuf, const int *recvcounts, const int *displs,
                                     MPI_Datatype recvtype, MPIR_Comm * comm, MPIR_Request ** req)
 {
     int mpi_errno = MPI_SUCCESS;
-    int tag;
     MPIR_TSP_sched_t *sched;
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIR_TSP_IALLGATHERV_INTRA_RING);
@@ -163,25 +161,17 @@ int MPIR_TSP_Iallgatherv_intra_ring(const void *sendbuf, int sendcount, MPI_Data
 
     /* generate the schedule */
     sched = MPL_malloc(sizeof(MPIR_TSP_sched_t), MPL_MEM_COLL);
-    MPIR_Assert(sched != NULL);
+    MPIR_ERR_CHKANDJUMP(!sched, mpi_errno, MPI_ERR_OTHER, "**nomem");
     MPIR_TSP_sched_create(sched);
-
-    /* For correctness, transport based collectives need to get the
-     * tag from the same pool as schedule based collectives */
-    mpi_errno = MPIDU_Sched_next_tag(comm, &tag);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
 
     mpi_errno =
         MPIR_TSP_Iallgatherv_sched_intra_ring(sendbuf, sendcount, sendtype, recvbuf, recvcounts,
-                                              displs, recvtype, tag, comm, sched);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+                                              displs, recvtype, comm, sched);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* start and register the schedule */
     mpi_errno = MPIR_TSP_sched_start(sched, comm, req);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIR_TSP_IALLGATHERV_INTRA_RING);

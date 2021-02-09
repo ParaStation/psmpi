@@ -1,10 +1,9 @@
 ! This file created from f77/attr/baseattr2f.f with f77tof90
-! -*- Mode: Fortran; -*-
 !
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
-! (C) 2001 by Argonne National Laboratory.
-!     See COPYRIGHT in top-level directory.
-!
+
         program main
         use mpi
         integer ierr, errs

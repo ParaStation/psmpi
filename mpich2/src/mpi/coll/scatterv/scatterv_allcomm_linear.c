@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -19,10 +17,6 @@
 
    Cost = (p-1).alpha + n.((p-1)/p).beta
 */
-#undef FUNCNAME
-#define FUNCNAME MPIR_Scatterv_allcomm_linear
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Scatterv_allcomm_linear(const void *sendbuf, const int *sendcounts, const int *displs,
                                  MPI_Datatype sendtype, void *recvbuf, int recvcount,
                                  MPI_Datatype recvtype, int root, MPIR_Comm * comm_ptr,
@@ -47,13 +41,6 @@ int MPIR_Scatterv_allcomm_linear(const void *sendbuf, const int *sendcounts, con
             comm_size = comm_ptr->remote_size;
 
         MPIR_Datatype_get_extent_macro(sendtype, extent);
-        /* We need a check to ensure extent will fit in a
-         * pointer. That needs extent * (max count) but we can't get
-         * that without looping over the input data. This is at least
-         * a minimal sanity check. Maybe add a global var since we do
-         * loop over sendcount[] in MPI_Scatterv before calling
-         * this? */
-        MPIR_Ensure_Aint_fits_in_pointer(MPIR_VOID_PTR_CAST_TO_MPI_AINT sendbuf + extent);
 
         MPIR_CHKLMEM_MALLOC(reqarray, MPIR_Request **, comm_size * sizeof(MPIR_Request *),
                             mpi_errno, "reqarray", MPL_MEM_BUFFER);
@@ -68,15 +55,13 @@ int MPIR_Scatterv_allcomm_linear(const void *sendbuf, const int *sendcounts, con
                         mpi_errno = MPIR_Localcopy(((char *) sendbuf + displs[rank] * extent),
                                                    sendcounts[rank], sendtype,
                                                    recvbuf, recvcount, recvtype);
-                        if (mpi_errno)
-                            MPIR_ERR_POP(mpi_errno);
+                        MPIR_ERR_CHECK(mpi_errno);
                     }
                 } else {
                     mpi_errno = MPIC_Isend(((char *) sendbuf + displs[i] * extent),
                                            sendcounts[i], sendtype, i,
                                            MPIR_SCATTERV_TAG, comm_ptr, &reqarray[reqs++], errflag);
-                    if (mpi_errno)
-                        MPIR_ERR_POP(mpi_errno);
+                    MPIR_ERR_CHECK(mpi_errno);
                 }
             }
         }

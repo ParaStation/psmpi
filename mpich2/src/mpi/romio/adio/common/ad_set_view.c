@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *   Copyright (C) 1997 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "adio.h"
@@ -45,7 +43,8 @@ int check_type(ADIOI_Flatlist_node * flat_type,
   err_check:
     *error_code = MPIO_Err_create_code(*error_code,
                                        MPIR_ERR_RECOVERABLE, caller,
-                                       __LINE__, MPI_ERR_IO, "**iobadoverlap", " **iobadoverlap %s", err_msg);
+                                       __LINE__, MPI_ERR_IO, "**iobadoverlap", " **iobadoverlap %s",
+                                       err_msg);
     return 0;
 }
 

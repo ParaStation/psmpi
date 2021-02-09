@@ -1,12 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- *  Portions of this code were written by Intel Corporation.
- *  Copyright (C) 2011-2017 Intel Corporation.  Intel provides this material
- *  to Argonne National Laboratory subject to Software Grant and Corporate
- *  Contributor License Agreement dated February 8, 2012.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* Header protection (i.e., IGATHER_TSP_TREE_ALGOS_H_INCLUDED) is
@@ -18,10 +12,6 @@
 #include "tsp_namespace_def.h"
 
 /* Routine to schedule a tree based gather */
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Igathert_sched_intra_tree
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_TSP_Igather_sched_intra_tree(const void *sendbuf, int sendcount,
                                       MPI_Datatype sendtype, void *recvbuf, int recvcount,
                                       MPI_Datatype recvtype, int root, MPIR_Comm * comm,
@@ -30,15 +20,16 @@ int MPIR_TSP_Igather_sched_intra_tree(const void *sendbuf, int sendcount,
     int mpi_errno = MPI_SUCCESS;
     int size, rank, lrank;
     int i, j, tag, is_inplace = false;
-    size_t sendtype_lb, sendtype_extent, sendtype_true_extent;
-    size_t recvtype_lb, recvtype_extent, recvtype_true_extent;
+    MPI_Aint sendtype_lb, sendtype_extent, sendtype_true_extent;
+    MPI_Aint recvtype_lb, recvtype_extent, recvtype_true_extent;
     int dtcopy_id, *recv_id = NULL;
     void *tmp_buf = NULL;
     const void *data_buf = NULL;
     int tree_type;
-    MPII_Treealgo_tree_t my_tree, parents_tree;
+    MPIR_Treealgo_tree_t my_tree, parents_tree;
     int next_child, num_children, *child_subtree_size = NULL, *child_data_offset = NULL;
     int offset, recv_size, num_dependencies;
+    MPIR_CHKLMEM_DECL(3);
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIR_TSP_IGATHER_SCHED_INTRA_TREE);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIR_TSP_IGATHER_SCHED_INTRA_TREE);
@@ -52,16 +43,14 @@ int MPIR_TSP_Igather_sched_intra_tree(const void *sendbuf, int sendcount,
         is_inplace = (sendbuf == MPI_IN_PLACE); /* For gather, MPI_IN_PLACE is significant only at root */
 
     tree_type = MPIR_TREE_TYPE_KNOMIAL_1;       /* currently only tree_type=MPIR_TREE_TYPE_KNOMIAL_1 is supported for gather */
-    mpi_errno = MPII_Treealgo_tree_create(rank, size, tree_type, k, root, &my_tree);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    mpi_errno = MPIR_Treealgo_tree_create(rank, size, tree_type, k, root, &my_tree);
+    MPIR_ERR_CHECK(mpi_errno);
     num_children = my_tree.num_children;
 
     /* For correctness, transport based collectives need to get the
      * tag from the same pool as schedule based collectives */
     mpi_errno = MPIR_Sched_next_tag(comm, &tag);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     if (rank == root && is_inplace) {
         sendtype = recvtype;
@@ -80,14 +69,14 @@ int MPIR_TSP_Igather_sched_intra_tree(const void *sendbuf, int sendcount,
     recvtype_extent = MPL_MAX(recvtype_extent, recvtype_true_extent);
 
     num_children = my_tree.num_children;
-    child_subtree_size = MPL_malloc(sizeof(int) * num_children, MPL_MEM_COLL);  /* to store size of subtree of each child */
-    child_data_offset = MPL_malloc(sizeof(int) * num_children, MPL_MEM_COLL);   /* to store the offset of the data to be sent to each child  */
+    MPIR_CHKLMEM_MALLOC(child_subtree_size, int *, sizeof(int) * num_children, mpi_errno, "child_subtree_size buffer", MPL_MEM_COLL);   /* to store size of subtree of each child */
+    MPIR_CHKLMEM_MALLOC(child_data_offset, int *, sizeof(int) * num_children, mpi_errno, "child_data_offset buffer", MPL_MEM_COLL);     /* to store the offset of the data to be sent to each child  */
 
     /* calculate size of subtree of each child */
 
     /* get tree information of the parent */
     if (my_tree.parent != -1) {
-        MPII_Treealgo_tree_create(my_tree.parent, size, tree_type, k, root, &parents_tree);
+        MPIR_Treealgo_tree_create(my_tree.parent, size, tree_type, k, root, &parents_tree);
     } else {    /* initialize an empty children array */
         utarray_new(parents_tree.children, &ut_int_icd, MPL_MEM_COLL);
         parents_tree.num_children = 0;
@@ -120,7 +109,7 @@ int MPIR_TSP_Igather_sched_intra_tree(const void *sendbuf, int sendcount,
         recv_size += child_subtree_size[i];
     }
 
-    MPII_Treealgo_tree_free(&parents_tree);
+    MPIR_Treealgo_tree_free(&parents_tree);
 
     recv_size *= (lrank == 0) ? recvcount : sendcount;
     offset = (lrank == 0) ? recvcount : sendcount;
@@ -141,11 +130,12 @@ int MPIR_TSP_Igather_sched_intra_tree(const void *sendbuf, int sendcount,
         tmp_buf = (void *) sendbuf;
     }
 
-    recv_id = MPL_malloc(sizeof(int) * num_children, MPL_MEM_COLL);
+    MPIR_CHKLMEM_MALLOC(recv_id, int *, sizeof(int) * num_children,
+                        mpi_errno, "recv_id buffer", MPL_MEM_COLL);
     /* Leaf nodes send to parent */
     if (num_children == 0) {
-        MPIR_TSP_sched_isend(tmp_buf, sendcount, sendtype, my_tree.parent,
-                             tag, comm, sched, 0, NULL);
+        MPIR_TSP_sched_isend(tmp_buf, sendcount, sendtype, my_tree.parent, tag, comm, sched, 0,
+                             NULL);
         MPL_DBG_MSG_FMT(MPIR_DBG_COLL, VERBOSE, (MPL_DBG_FDEST, "rank:%d posts recv\n", rank));
     } else {
         num_dependencies = 0;
@@ -188,12 +178,10 @@ int MPIR_TSP_Igather_sched_intra_tree(const void *sendbuf, int sendcount,
 
     }
 
-    MPII_Treealgo_tree_free(&my_tree);
+    MPIR_Treealgo_tree_free(&my_tree);
 
   fn_exit:
-    MPL_free(child_subtree_size);
-    MPL_free(child_data_offset);
-    MPL_free(recv_id);
+    MPIR_CHKLMEM_FREEALL();
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIR_TSP_IGATHER_SCHED_INTRA_TREE);
     return mpi_errno;
   fn_fail:
@@ -202,10 +190,6 @@ int MPIR_TSP_Igather_sched_intra_tree(const void *sendbuf, int sendcount,
 
 
 /* Non-blocking tree based gather */
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Igather_intra_tree
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_TSP_Igather_intra_tree(const void *sendbuf, int sendcount,
                                 MPI_Datatype sendtype, void *recvbuf, int recvcount,
                                 MPI_Datatype recvtype, int root, MPIR_Comm * comm,
@@ -226,15 +210,13 @@ int MPIR_TSP_Igather_intra_tree(const void *sendbuf, int sendcount,
 
     /* schedule tree algo */
     mpi_errno = MPIR_TSP_Igather_sched_intra_tree(sendbuf, sendcount, sendtype,
-                                                  recvbuf, recvcount, recvtype,
-                                                  root, comm, k, sched);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+                                                  recvbuf, recvcount, recvtype, root, comm, k,
+                                                  sched);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* start and register the schedule */
     mpi_errno = MPIR_TSP_sched_start(sched, comm, req);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIR_TSP_IGATHER_INTRA_TREE);

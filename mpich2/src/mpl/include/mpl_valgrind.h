@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2010 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* IMPORTANT!!!: you must define MPL_VG_ENABLED before including mpl.h if you
@@ -167,7 +166,7 @@
 #define MPL_VG_PRINTF_BACKTRACE(...)              do {} while (0)
 #else
 #define MPL_VG_PRINTF_BACKTRACE MPL_VG_printf_do_nothing_func
-static mpl_inline void MPL_VG_printf_do_nothing_func(char *fmt, ...)
+static inline void MPL_VG_printf_do_nothing_func(char *fmt, ...)
 {
     /* do nothing */
 }

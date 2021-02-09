@@ -1,0 +1,66 @@
+# pack (segments 1, pack order normal, overlap none)
+test/pack/pack -datatype int -count 17 -seed 1081 -iters 32768 -segments 1 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 17 -seed 1082 -iters 32768 -segments 1 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 17 -seed 1083 -iters 32768 -segments 1 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int -count 1075 -seed 1084 -iters 128 -segments 1 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 1075 -seed 1085 -iters 128 -segments 1 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 1075 -seed 1086 -iters 128 -segments 1 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int -count 65536 -seed 1087 -iters 32 -segments 1 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 65536 -seed 1088 -iters 32 -segments 1 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 65536 -seed 1089 -iters 32 -segments 1 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+
+# pack (segments 64, pack order normal, overlap none)
+test/pack/pack -datatype int -count 17 -seed 1090 -iters 32768 -segments 64 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 17 -seed 1091 -iters 32768 -segments 64 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 17 -seed 1092 -iters 32768 -segments 64 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int -count 1075 -seed 1093 -iters 128 -segments 64 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 1075 -seed 1094 -iters 128 -segments 64 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 1075 -seed 1095 -iters 128 -segments 64 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int -count 65536 -seed 1096 -iters 32 -segments 64 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 65536 -seed 1097 -iters 32 -segments 64 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 65536 -seed 1098 -iters 32 -segments 64 -ordering normal -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+
+# pack (segments 64, pack order reverse, overlap none)
+test/pack/pack -datatype int -count 17 -seed 1099 -iters 32768 -segments 64 -ordering reverse -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 17 -seed 1100 -iters 32768 -segments 64 -ordering reverse -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 17 -seed 1101 -iters 32768 -segments 64 -ordering reverse -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int -count 1075 -seed 1102 -iters 128 -segments 64 -ordering reverse -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 1075 -seed 1103 -iters 128 -segments 64 -ordering reverse -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 1075 -seed 1104 -iters 128 -segments 64 -ordering reverse -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int -count 65536 -seed 1105 -iters 32 -segments 64 -ordering reverse -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 65536 -seed 1106 -iters 32 -segments 64 -ordering reverse -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 65536 -seed 1107 -iters 32 -segments 64 -ordering reverse -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+
+# pack (segments 64, pack order random, overlap none)
+test/pack/pack -datatype int -count 17 -seed 1108 -iters 32768 -segments 64 -ordering random -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 17 -seed 1109 -iters 32768 -segments 64 -ordering random -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 17 -seed 1110 -iters 32768 -segments 64 -ordering random -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int -count 1075 -seed 1111 -iters 128 -segments 64 -ordering random -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 1075 -seed 1112 -iters 128 -segments 64 -ordering random -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 1075 -seed 1113 -iters 128 -segments 64 -ordering random -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int -count 65536 -seed 1114 -iters 32 -segments 64 -ordering random -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 65536 -seed 1115 -iters 32 -segments 64 -ordering random -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 65536 -seed 1116 -iters 32 -segments 64 -ordering random -overlap none -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+
+# pack (segments 64, pack order normal, overlap regular)
+test/pack/pack -datatype int -count 17 -seed 1117 -iters 32768 -segments 64 -ordering normal -overlap regular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 17 -seed 1118 -iters 32768 -segments 64 -ordering normal -overlap regular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 17 -seed 1119 -iters 32768 -segments 64 -ordering normal -overlap regular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int -count 1075 -seed 1120 -iters 128 -segments 64 -ordering normal -overlap regular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 1075 -seed 1121 -iters 128 -segments 64 -ordering normal -overlap regular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 1075 -seed 1122 -iters 128 -segments 64 -ordering normal -overlap regular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int -count 65536 -seed 1123 -iters 32 -segments 64 -ordering normal -overlap regular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 65536 -seed 1124 -iters 32 -segments 64 -ordering normal -overlap regular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 65536 -seed 1125 -iters 32 -segments 64 -ordering normal -overlap regular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+
+# pack (segments 64, pack order normal, overlap irregular)
+test/pack/pack -datatype int -count 17 -seed 1126 -iters 32768 -segments 64 -ordering normal -overlap irregular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 17 -seed 1127 -iters 32768 -segments 64 -ordering normal -overlap irregular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 17 -seed 1128 -iters 32768 -segments 64 -ordering normal -overlap irregular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int -count 1075 -seed 1129 -iters 128 -segments 64 -ordering normal -overlap irregular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 1075 -seed 1130 -iters 128 -segments 64 -ordering normal -overlap irregular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 1075 -seed 1131 -iters 128 -segments 64 -ordering normal -overlap irregular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int -count 65536 -seed 1132 -iters 32 -segments 64 -ordering normal -overlap irregular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype short_int -count 65536 -seed 1133 -iters 32 -segments 64 -ordering normal -overlap irregular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+test/pack/pack -datatype int:3+double:2 -count 65536 -seed 1134 -iters 32 -segments 64 -ordering normal -overlap irregular -sbuf-memtype unreg-host -tbuf-memtype device -dbuf-memtype unreg-host -num-threads 4 -device-start-id 1 -device-stride 0
+

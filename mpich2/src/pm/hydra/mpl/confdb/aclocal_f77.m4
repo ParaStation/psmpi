@@ -1,15 +1,3 @@
-dnl PAC_F77_SEARCH_LIST - expands to a whitespace separated list of fortran 77
-dnl compilers for use with AC_PROG_F77 that is more suitable for HPC software
-dnl packages
-AC_DEFUN([PAC_F77_SEARCH_LIST],[ifort pgf77 af77 xlf frt cf77 fort77 fl32 fort ifc efc ftn gfortran f77 g77])
-dnl PAC_PROG_F77 - reprioritize the F77 compiler search order
-dnl NOTE: this macro suffers from a basically intractable "expanded before it
-dnl was required" problem when libtool is also used
-AC_DEFUN([PAC_PROG_F77],[
-PAC_PUSH_FLAG([FFLAGS])
-AC_PROG_F77([PAC_F77_SEARCH_LIST])
-PAC_POP_FLAG([FFLAGS])
-])
 dnl
 dnl/*D
 dnl PAC_PROG_F77_NAME_MANGLE - Determine how the Fortran compiler mangles
@@ -1453,7 +1441,7 @@ if test "X$pac_cv_prog_f77_mismatched_args" = X ; then
 	# The best solution is to turn off errors on particular routines
 	# if that isn't possible (e.g., too many of them), then
 	# just try arguments that turn off all checking
-	for flags in ifelse($2,yes,,"-wmismatch=foo1") "-mismatch" ; do
+	for flags in ifelse($2,yes,,"-wmismatch=foo1") "-mismatch" "-fallow-argument-mismatch" ; do
             testok=no
             FFLAGS="$FFLAGS $flags"
             AC_COMPILE_IFELSE([

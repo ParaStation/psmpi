@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2017 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra.h"
@@ -172,14 +171,10 @@ static HYD_status genv_fn(char *arg, char ***argv)
     HYD_ERR_POP(status, "error converting env to string\n");
     mpiexec_params.primary.envcount++;
 
-    if (str[0])
-        MPL_free(str[0]);
-    if (str[1])
-        MPL_free(str[1]);
-    if (env_name)
-        MPL_free(env_name);
-    if (env_value)
-        MPL_free(env_value);
+    MPL_free(str[0]);
+    MPL_free(str[1]);
+    MPL_free(env_name);
+    MPL_free(env_value);
 
   fn_exit:
     return status;
@@ -687,9 +682,6 @@ static HYD_status info_fn(char *arg, char ***argv)
     HYD_PRINT_NOPREFIX(stdout, "    Release Date:                            %s\n",
                        HYDRA_RELEASE_DATE);
     HYD_PRINT_NOPREFIX(stdout, "    CC:                              %s\n", HYDRA_CC);
-    HYD_PRINT_NOPREFIX(stdout, "    CXX:                             %s\n", HYDRA_CXX);
-    HYD_PRINT_NOPREFIX(stdout, "    F77:                             %s\n", HYDRA_F77);
-    HYD_PRINT_NOPREFIX(stdout, "    F90:                             %s\n", HYDRA_F90);
     HYD_PRINT_NOPREFIX(stdout, "    Configure options:                       %s\n",
                        HYDRA_CONFIGURE_ARGS_CLEAN);
     HYD_PRINT_NOPREFIX(stdout, "    Process Manager:                         pmi\n");
@@ -847,13 +839,57 @@ static HYD_status tree_width_fn(char *arg, char ***argv)
     goto fn_exit;
 }
 
+static HYD_status read_default_env()
+{
+    char *tstr;
+    HYD_status status = HYD_SUCCESS;
+
+    /* check if there is an environment set for the hostfile */
+    if (mpiexec_params.global_node_count == 0) {
+        tstr = NULL;
+        MPL_env2str("HYDRA_HOST_FILE", (const char **) &tstr);
+        if (tstr) {
+            status =
+                HYD_hostfile_parse(tstr, &mpiexec_params.global_node_count,
+                                   &mpiexec_params.global_node_list, HYD_hostfile_process_tokens);
+            HYD_ERR_POP(status, "error parsing hostfile\n");
+        }
+    }
+
+    /* check if there is an environment set for the RMK */
+    if (mpiexec_params.rmk == NULL) {
+        if (MPL_env2str("HYDRA_RMK", (const char **) &mpiexec_params.rmk))
+            mpiexec_params.rmk = MPL_strdup(mpiexec_params.rmk);
+    }
+
+    /* check if there's an environment set for PPN */
+    if (mpiexec_params.ppn == -1) {
+        tstr = NULL;
+        if (MPL_env2str("HYDRA_PPN", (const char **) &tstr))
+            mpiexec_params.ppn = atoi(tstr);
+    }
+
+    if (mpiexec_params.timeout.sec == -1) {
+        MPL_env2int("MPIEXEC_TIMEOUT", &mpiexec_params.timeout.sec);
+    }
+
+    if (mpiexec_params.timeout.signal == -1) {
+        MPL_env2int("MPIEXEC_TIMEOUT_SIGNAL", &mpiexec_params.timeout.signal);
+    }
+
+  fn_exit:
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
+
 HYD_status mpiexec_get_parameters(char **t_argv)
 {
     char **argv = t_argv;
     char *progname = *argv;
     char *post, *loc, *tmp[HYD_NUM_TMP_STRINGS];
     struct HYD_exec *exec;
-    char *tstr;
     int i;
     HYD_status status = HYD_SUCCESS;
 
@@ -894,35 +930,10 @@ HYD_status mpiexec_get_parameters(char **t_argv)
         } while (++argv && *argv);
     } while (1);
 
-
-
     /***** ENVIRONMENT-SET PARAMETERS ****/
 
-    /* check if there is an environment set for the hostfile */
-    if (mpiexec_params.global_node_count == 0) {
-        tstr = NULL;
-        MPL_env2str("HYDRA_HOST_FILE", (const char **) &tstr);
-        if (tstr) {
-            status =
-                HYD_hostfile_parse(tstr, &mpiexec_params.global_node_count,
-                                   &mpiexec_params.global_node_list, HYD_hostfile_process_tokens);
-            HYD_ERR_POP(status, "error parsing hostfile\n");
-        }
-    }
-
-    /* check if there is an environment set for the RMK */
-    if (mpiexec_params.rmk == NULL) {
-        if (MPL_env2str("HYDRA_RMK", (const char **) &mpiexec_params.rmk))
-            mpiexec_params.rmk = MPL_strdup(mpiexec_params.rmk);
-    }
-
-    /* check if there's an environment set for PPN */
-    if (mpiexec_params.ppn == -1) {
-        tstr = NULL;
-        if (MPL_env2str("HYDRA_PPN", (const char **) &tstr))
-            mpiexec_params.ppn = atoi(tstr);
-    }
-
+    status = read_default_env();
+    HYD_ERR_POP(status, "read default env error\n");
 
     /***** AUTO-DETECT/COMPUTE PARAMETERS ****/
 

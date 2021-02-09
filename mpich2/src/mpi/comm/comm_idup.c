@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2012 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -27,10 +26,6 @@ int MPI_Comm_idup(MPI_Comm comm, MPI_Comm * newcomm, MPI_Request * request)
 
 /* any non-MPI functions go here, especially non-static ones */
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Comm_idup_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Comm_idup_impl(MPIR_Comm * comm_ptr, MPIR_Comm ** newcommp, MPIR_Request ** reqp)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -44,13 +39,11 @@ int MPIR_Comm_idup_impl(MPIR_Comm * comm_ptr, MPIR_Comm ** newcommp, MPIR_Reques
      */
     if (MPIR_Process.attr_dup) {
         mpi_errno = MPIR_Process.attr_dup(comm_ptr->handle, comm_ptr->attributes, &new_attributes);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     mpi_errno = MPII_Comm_copy_data(comm_ptr, newcommp);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     (*newcommp)->attributes = new_attributes;
 
@@ -58,12 +51,10 @@ int MPIR_Comm_idup_impl(MPIR_Comm * comm_ptr, MPIR_Comm ** newcommp, MPIR_Reques
      * allocating a context ID to use for actual communication */
     if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTERCOMM) {
         mpi_errno = MPIR_Get_intercomm_contextid_nonblock(comm_ptr, *newcommp, reqp);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     } else {
         mpi_errno = MPIR_Get_contextid_nonblock(comm_ptr, *newcommp, reqp);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
   fn_exit:
@@ -74,10 +65,6 @@ int MPIR_Comm_idup_impl(MPIR_Comm * comm_ptr, MPIR_Comm ** newcommp, MPIR_Reques
 
 #endif /* MPICH_MPI_FROM_PMPI */
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Comm_idup
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Comm_idup - nonblocking communicator duplication
 
@@ -141,8 +128,7 @@ int MPI_Comm_idup(MPI_Comm comm, MPI_Comm * newcomm, MPI_Request * request)
     *newcomm = MPI_COMM_NULL;
 
     mpi_errno = MPIR_Comm_idup_impl(comm_ptr, &newcomm_ptr, &dreq);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* NOTE: this is a publication for most of the comm, but the context ID
      * won't be valid yet, so we must "republish" relative to the request
@@ -162,12 +148,12 @@ int MPI_Comm_idup(MPI_Comm comm, MPI_Comm * newcomm, MPI_Request * request)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_comm_idup", "**mpi_comm_idup %C %p %p", comm, newcomm,
                                  request);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

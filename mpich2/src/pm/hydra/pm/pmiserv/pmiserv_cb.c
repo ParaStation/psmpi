@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2008 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra_server.h"
@@ -58,8 +57,7 @@ static HYD_status handle_pmi_cmd(int fd, int pgid, int pid, char *buf, int pmi_v
     }
 
   fn_exit:
-    if (cmd)
-        MPL_free(cmd);
+    MPL_free(cmd);
     if (args) {
         HYDU_free_strlist(args);
         MPL_free(args);
@@ -321,12 +319,12 @@ static HYD_status control_cb(int fd, HYD_event_t events, void *userp)
                                      HYDU_SOCK_COMM_MSGWAIT);
             HYDU_ERR_POP(status, "error writing to control socket\n");
             HYDU_ASSERT(!closed, status);
-
-            MPL_free(buf);
         } else {
             status = HYDT_dmx_deregister_fd(STDIN_FILENO);
             HYDU_ERR_POP(status, "unable to deregister STDIN\n");
         }
+
+        MPL_free(buf);
     } else if (hdr.cmd == PROCESS_TERMINATED) {
         if (HYD_server_info.user_global.auto_cleanup == 0) {
             /* Update the map of the alive processes */

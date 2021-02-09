@@ -1,9 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include "mpi.h"
 #include <stdio.h>
 #include "mpitest.h"
@@ -17,7 +16,7 @@ int main(int argc, char *argv[])
     int errs = 0;
     MPI_File fh;
     MPI_Comm comm;
-    MPI_Aint extent, nextent;
+    MPI_Aint extent, nextent, tmp_lb;
 
     MTest_Init(&argc, &argv);
 
@@ -26,7 +25,7 @@ int main(int argc, char *argv[])
                   MPI_MODE_RDWR | MPI_MODE_CREATE | MPI_MODE_DELETE_ON_CLOSE, MPI_INFO_NULL, &fh);
 
     MPI_File_get_type_extent(fh, MPI_INT, &extent);
-    MPI_Type_extent(MPI_INT, &nextent);
+    MPI_Type_get_extent(MPI_INT, &tmp_lb, &nextent);
 
     if (nextent != extent) {
         errs++;

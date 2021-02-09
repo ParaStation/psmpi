@@ -1,16 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- * Portions of this code were written by Microsoft. Those portions are
- * Copyright (c) 2007 Microsoft Corporation. Microsoft grants
- * permission to use, reproduce, prepare derivative works, and to
- * redistribute to others. The code is licensed "as is." The User
- * bears the risk of using it. Microsoft gives no express warranties,
- * guarantees or conditions. To the extent permitted by law, Microsoft
- * excludes the implied warranties of merchantability, fitness for a
- * particular purpose and non-infringement.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPIIMPL_H_INCLUDED
@@ -97,6 +87,16 @@ int usleep(useconds_t usec);
 int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 #endif
 
+/* Just in case __func__ is not supported won't break code */
+#ifndef HAVE__FUNC__
+#define __func__ "__func__"
+#endif
+
+/* pmix.h contains inline functions that calls malloc, calloc, and free,
+   and it will break with MPL's memory tracing when enabled.
+   Make sure it is included *before* mpl.h.
+*/
+#include "mpir_pmi.h"
 
 /*****************************************************************************
  * We use the following ordering of information in this file:
@@ -134,7 +134,6 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 #endif
 
 #include "mpl.h"
-#include "opa_primitives.h"
 #include "mpi.h"
 
 
@@ -188,6 +187,7 @@ typedef struct MPIR_Topology MPIR_Topology;
 #include "mpir_tags.h"
 #include "mpir_pt2pt.h"
 #include "mpir_ext.h"
+#include "mpir_gpu.h"
 
 #ifdef HAVE_CXX_BINDING
 #include "mpii_cxxinterface.h"
@@ -211,23 +211,28 @@ typedef struct MPIR_Topology MPIR_Topology;
 /********************* PART 5: DEVICE DEPENDENT HEADERS **********************/
 /*****************************************************************************/
 
-#include "mpir_thread.h"
+#include "mpir_thread.h"        /* come first as mutexes are often depended on, e.g. request */
 #include "mpir_attr.h"
 #include "mpir_group.h"
 #include "mpir_comm.h"
 #include "mpir_request.h"
+#include "mpir_progress_hook.h"
 #include "mpir_win.h"
 #include "mpir_coll.h"
+#include "mpir_csel.h"
 #include "mpir_func.h"
 #include "mpir_err.h"
 #include "mpir_nbc.h"
+#include "mpir_bsend.h"
 #include "mpir_process.h"
-#include "mpir_dataloop.h"
+#include "mpir_typerep.h"
 #include "mpir_datatype.h"
 #include "mpir_cvars.h"
 #include "mpir_misc_post.h"
 #include "mpit.h"
 #include "mpir_handlemem.h"
+#include "mpir_hwtopo.h"
+#include "mpir_nettopo.h"
 
 /*****************************************************************************/
 /******************** PART 6: DEVICE "POST" FUNCTIONALITY ********************/
@@ -235,8 +240,6 @@ typedef struct MPIR_Topology MPIR_Topology;
 
 #include "mpidpost.h"
 
-/* avoid conflicts in source files with old-style "char FCNAME[]" vars */
-#undef FUNCNAME
-#undef FCNAME
+/* avoid conflicts in source files with old-style "char __func__[]" vars */
 
 #endif /* MPIIMPL_H_INCLUDED */

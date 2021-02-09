@@ -1,8 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2008 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include "mpi.h"
 #include <stdio.h>
 #include <string.h>
@@ -112,7 +112,8 @@ int main(int argc, char **argv)
     MPI_File_get_size(fh, &size);
     if (size != 4 * sizeof(int)) {
         errs++;
-        fprintf(stderr, "file size is %lld, should be %d\n", size, (int) (4 * sizeof(int)));
+        fprintf(stderr, "file size is %lld, should be %d\n", (long long) size,
+                (int) (4 * sizeof(int)));
     }
 
     for (i = 0; i < 4; i++)

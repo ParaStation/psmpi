@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2008 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra.h"
@@ -26,7 +25,6 @@ HYD_status HYDU_sock_listen(int *listen_fd, char *port_range, uint16_t * port)
     int one = 1;
     uint16_t low_port, high_port;
     char *port_str;
-    uint16_t i;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -516,8 +514,7 @@ HYDU_sock_create_and_listen_portstr(char *iface, char *hostname, char *port_rang
     MPL_free(sport);
 
   fn_exit:
-    if (ip)
-        MPL_free(ip);
+    MPL_free(ip);
     return status;
 
   fn_fail:

@@ -1,7 +1,5 @@
 ## DO NOT EDIT
 ## This file created by buildiface
-##
-## vim: set ft=automake :
 
 # ensure that the buildiface script ends up in the release tarball
 EXTRA_DIST += src/binding/fortran/use_mpi_f08/wrappers_c/buildiface
@@ -130,7 +128,7 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_c/f_sync_reg_c.c \
 	src/binding/fortran/use_mpi_f08/wrappers_c/utils.c
 
-AM_CPPFLAGS += -I${master_top_srcdir}/src/binding/fortran/use_mpi_f08/wrappers_c
+AM_CPPFLAGS += -I${main_top_srcdir}/src/binding/fortran/use_mpi_f08/wrappers_c
 
 noinst_HEADERS += src/binding/fortran/use_mpi_f08/wrappers_c/cdesc.h
 

@@ -1,9 +1,8 @@
 /* include/mpitestconf.h.in.  Generated from configure.ac by autoheader.  */
 
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+/*
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 #ifndef MPITESTCONF_H_INCLUDED
 #define MPITESTCONF_H_INCLUDED
@@ -46,6 +45,12 @@
 /* Fortran names are uppercase in stdcall */
 #undef F77_NAME_UPPER_STDCALL
 
+/* Define if CUDA is available */
+#undef HAVE_CUDA
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
 /* Define to 1 if the system has the type `double _Complex'. */
 #undef HAVE_DOUBLE__COMPLEX
 
@@ -70,6 +75,15 @@
 /* Define to 1 if you have the <iostream.h> header file. */
 #undef HAVE_IOSTREAM_H
 
+/* Define to 1 if you have the `abt' library (-labt). */
+#undef HAVE_LIBABT
+
+/* Define to 1 if you have the `cudart' library (-lcudart). */
+#undef HAVE_LIBCUDART
+
+/* Define to 1 if you have the `ze_loader' library (-lze_loader). */
+#undef HAVE_LIBZE_LOADER
+
 /* Define if long double is supported */
 #undef HAVE_LONG_DOUBLE
 
@@ -81,15 +95,6 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
-
-/* Define if MPI_2COMPLEX is available */
-#undef HAVE_MPI_2COMPLEX
-
-/* Define if MPI_2DOUBLE_COMPLEX is available */
-#undef HAVE_MPI_2DOUBLE_COMPLEX
-
-/* Define to 1 if you have the `MPI_Init_thread' function. */
-#undef HAVE_MPI_INIT_THREAD
 
 /* Define if MPI_INTEGER16 is available */
 #undef HAVE_MPI_INTEGER16
@@ -109,20 +114,8 @@
 /* define if the compiler implements namespace std */
 #undef HAVE_NAMESPACE_STD
 
-/* Define to 1 if you have the `pthread_barrier_init' function. */
-#undef HAVE_PTHREAD_BARRIER_INIT
-
-/* Define to 1 if you have the `pthread_barrier_wait' function. */
-#undef HAVE_PTHREAD_BARRIER_WAIT
-
-/* Define to 1 if you have the `pthread_create' function. */
-#undef HAVE_PTHREAD_CREATE
-
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
-
-/* Define to 1 if you have the `pthread_yield' function. */
-#undef HAVE_PTHREAD_YIELD
 
 /* Define to 1 if you have the <stdarg.h> header file. */
 #undef HAVE_STDARG_H
@@ -154,8 +147,14 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define if ZE is available */
+#undef HAVE_ZE
+
 /* Define to 1 if the system has the type `_Bool'. */
 #undef HAVE__BOOL
+
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
+#undef LT_OBJDIR
 
 /* Define if MPI IO uses MPI_Request */
 #undef MPIO_USES_MPI_REQUEST
@@ -207,6 +206,9 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
+
+/* set to the name of the thread package */
+#undef THREAD_PACKAGE_NAME
 
 /* Define if tests with long double complex should be included */
 #undef USE_LONG_DOUBLE_COMPLEX

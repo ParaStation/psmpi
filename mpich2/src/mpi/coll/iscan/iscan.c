@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2010 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -12,29 +11,33 @@
 cvars:
     - name        : MPIR_CVAR_ISCAN_INTRA_ALGORITHM
       category    : COLLECTIVE
-      type        : string
+      type        : enum
       default     : auto
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : |-
         Variable to select allgather algorithm
-        auto               - Internal algorithm selection
-        recursive_doubling - Force recursive doubling algorithm
+        auto - Internal algorithm selection (can be overridden with MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE)
+        sched_auto - Internal algorithm selection for sched-based algorithms
+        sched_smp                  - Force smp algorithm
+        sched_recursive_doubling   - Force recursive doubling algorithm
+        gentran_recursive_doubling - Force generic transport recursive doubling algorithm
 
     - name        : MPIR_CVAR_ISCAN_DEVICE_COLLECTIVE
       category    : COLLECTIVE
       type        : boolean
       default     : true
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : >-
-        If set to true, MPI_Iscan will allow the device to override the
-        MPIR-level collective algorithms. The device still has the
-        option to call the MPIR-level algorithms manually.
-        If set to false, the device-level iscan function will not be
-        called.
+        This CVAR is only used when MPIR_CVAR_DEVICE_COLLECTIVES
+        is set to "percoll".  If set to true, MPI_Iscan will
+        allow the device to override the MPIR-level collective
+        algorithms.  The device might still call the MPIR-level
+        algorithms manually.  If set to false, the device-override
+        will be disabled.
 
 === END_MPI_T_CVAR_INFO_BLOCK ===
 */
@@ -59,104 +62,119 @@ int MPI_Iscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype dataty
 #undef MPI_Iscan
 #define MPI_Iscan PMPI_Iscan
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Iscan_sched_intra_auto
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIR_Iscan_sched_intra_auto(const void *sendbuf, void *recvbuf, int count,
+
+int MPIR_Iscan_allcomm_auto(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+                            MPI_Op op, MPIR_Comm * comm_ptr, MPIR_Request ** request)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    MPIR_Csel_coll_sig_s coll_sig = {
+        .coll_type = MPIR_CSEL_COLL_TYPE__ISCAN,
+        .comm_ptr = comm_ptr,
+
+        .u.iscan.sendbuf = sendbuf,
+        .u.iscan.recvbuf = recvbuf,
+        .u.iscan.count = count,
+        .u.iscan.datatype = datatype,
+        .u.iscan.op = op,
+    };
+
+    MPII_Csel_container_s *cnt = MPIR_Csel_search(comm_ptr->csel_comm, coll_sig);
+    MPIR_Assert(cnt);
+
+    switch (cnt->id) {
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Iscan_intra_sched_auto:
+            MPII_SCHED_WRAPPER(MPIR_Iscan_intra_sched_auto, comm_ptr, request, sendbuf, recvbuf,
+                               count, datatype, op);
+            break;
+
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Iscan_intra_sched_recursive_doubling:
+            MPII_SCHED_WRAPPER(MPIR_Iscan_intra_sched_recursive_doubling, comm_ptr, request,
+                               sendbuf, recvbuf, count, datatype, op);
+            break;
+
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Iscan_intra_sched_smp:
+            MPII_SCHED_WRAPPER(MPIR_Iscan_intra_sched_smp, comm_ptr, request, sendbuf, recvbuf,
+                               count, datatype, op);
+            break;
+
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Iscan_intra_gentran_recursive_doubling:
+            mpi_errno =
+                MPIR_Iscan_intra_gentran_recursive_doubling(sendbuf, recvbuf, count, datatype, op,
+                                                            comm_ptr, request);
+            break;
+
+        default:
+            MPIR_Assert(0);
+    }
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+int MPIR_Iscan_intra_sched_auto(const void *sendbuf, void *recvbuf, int count,
                                 MPI_Datatype datatype, MPI_Op op, MPIR_Comm * comm_ptr,
                                 MPIR_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
 
     if (comm_ptr->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__PARENT) {
-        mpi_errno = MPIR_Iscan_sched_intra_smp(sendbuf, recvbuf, count, datatype, op, comm_ptr, s);
+        mpi_errno = MPIR_Iscan_intra_sched_smp(sendbuf, recvbuf, count, datatype, op, comm_ptr, s);
     } else {
         mpi_errno =
-            MPIR_Iscan_sched_intra_recursive_doubling(sendbuf, recvbuf, count, datatype, op,
+            MPIR_Iscan_intra_sched_recursive_doubling(sendbuf, recvbuf, count, datatype, op,
                                                       comm_ptr, s);
     }
 
     return mpi_errno;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Iscan_sched_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIR_Iscan_sched_impl(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
-                          MPI_Op op, MPIR_Comm * comm_ptr, MPIR_Sched_t s)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    switch (MPIR_Iscan_intra_algo_choice) {
-        case MPIR_ISCAN_INTRA_ALGO_RECURSIVE_DOUBLING:
-            mpi_errno =
-                MPIR_Iscan_sched_intra_recursive_doubling(sendbuf, recvbuf, count, datatype, op,
-                                                          comm_ptr, s);
-            break;
-        case MPIR_ISCAN_INTRA_ALGO_AUTO:
-            MPL_FALLTHROUGH;
-        default:
-            mpi_errno =
-                MPIR_Iscan_sched_intra_auto(sendbuf, recvbuf, count, datatype, op, comm_ptr, s);
-            break;
-    }
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
-
-  fn_exit:
-    return mpi_errno;
-
-  fn_fail:
-    goto fn_exit;
-}
-
-#undef FUNCNAME
-#define FUNCNAME MPIR_Iscan_sched
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIR_Iscan_sched(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
-                     MPI_Op op, MPIR_Comm * comm_ptr, MPIR_Sched_t s)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    if (MPIR_CVAR_ISCAN_DEVICE_COLLECTIVE && MPIR_CVAR_DEVICE_COLLECTIVES) {
-        mpi_errno = MPID_Iscan_sched(sendbuf, recvbuf, count, datatype, op, comm_ptr, s);
-    } else {
-        mpi_errno = MPIR_Iscan_sched_impl(sendbuf, recvbuf, count, datatype, op, comm_ptr, s);
-    }
-
-    return mpi_errno;
-}
-
-#undef FUNCNAME
-#define FUNCNAME MPIR_Iscan_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Iscan_impl(const void *sendbuf, void *recvbuf, int count,
                     MPI_Datatype datatype, MPI_Op op, MPIR_Comm * comm_ptr, MPIR_Request ** request)
 {
     int mpi_errno = MPI_SUCCESS;
-    int tag = -1;
-    MPIR_Sched_t s = MPIR_SCHED_NULL;
 
     *request = NULL;
 
-    mpi_errno = MPIR_Sched_next_tag(comm_ptr, &tag);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
-    mpi_errno = MPIR_Sched_create(&s);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    /* If the user picks one of the transport-enabled algorithms, branch there
+     * before going down to the MPIR_Sched-based algorithms. */
+    /* TODO - Eventually the intention is to replace all of the
+     * MPIR_Sched-based algorithms with transport-enabled algorithms, but that
+     * will require sufficient performance testing and replacement algorithms. */
+    switch (MPIR_CVAR_ISCAN_INTRA_ALGORITHM) {
+        case MPIR_CVAR_ISCAN_INTRA_ALGORITHM_gentran_recursive_doubling:
+            mpi_errno =
+                MPIR_Iscan_intra_gentran_recursive_doubling(sendbuf, recvbuf, count,
+                                                            datatype, op, comm_ptr, request);
+            break;
 
-    mpi_errno = MPIR_Iscan_sched(sendbuf, recvbuf, count, datatype, op, comm_ptr, s);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+        case MPIR_CVAR_ISCAN_INTRA_ALGORITHM_sched_recursive_doubling:
+            MPII_SCHED_WRAPPER(MPIR_Iscan_intra_sched_recursive_doubling, comm_ptr, request,
+                               sendbuf, recvbuf, count, datatype, op);
+            break;
 
-    mpi_errno = MPIR_Sched_start(&s, comm_ptr, tag, request);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+        case MPIR_CVAR_ISCAN_INTRA_ALGORITHM_sched_smp:
+            MPII_SCHED_WRAPPER(MPIR_Iscan_intra_sched_smp, comm_ptr, request,
+                               sendbuf, recvbuf, count, datatype, op);
+            break;
+
+        case MPIR_CVAR_ISCAN_INTRA_ALGORITHM_sched_auto:
+            MPII_SCHED_WRAPPER(MPIR_Iscan_intra_sched_auto, comm_ptr, request, sendbuf, recvbuf,
+                               count, datatype, op);
+            break;
+
+        case MPIR_CVAR_ISCAN_INTRA_ALGORITHM_auto:
+            mpi_errno =
+                MPIR_Iscan_allcomm_auto(sendbuf, recvbuf, count, datatype, op, comm_ptr, request);
+            break;
+
+        default:
+            MPIR_Assert(0);
+    }
+
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     return mpi_errno;
@@ -164,30 +182,36 @@ int MPIR_Iscan_impl(const void *sendbuf, void *recvbuf, int count,
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Iscan
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Iscan(const void *sendbuf, void *recvbuf, int count,
                MPI_Datatype datatype, MPI_Op op, MPIR_Comm * comm_ptr, MPIR_Request ** request)
 {
     int mpi_errno = MPI_SUCCESS;
+    void *in_recvbuf = recvbuf;
+    void *host_sendbuf;
+    void *host_recvbuf;
 
-    if (MPIR_CVAR_ISCAN_DEVICE_COLLECTIVE && MPIR_CVAR_DEVICE_COLLECTIVES) {
+    MPIR_Coll_host_buffer_alloc(sendbuf, recvbuf, count, datatype, &host_sendbuf, &host_recvbuf);
+    if (host_sendbuf)
+        sendbuf = host_sendbuf;
+    if (host_recvbuf)
+        recvbuf = host_recvbuf;
+
+    if ((MPIR_CVAR_DEVICE_COLLECTIVES == MPIR_CVAR_DEVICE_COLLECTIVES_all) ||
+        ((MPIR_CVAR_DEVICE_COLLECTIVES == MPIR_CVAR_DEVICE_COLLECTIVES_percoll) &&
+         MPIR_CVAR_ISCAN_DEVICE_COLLECTIVE)) {
         mpi_errno = MPID_Iscan(sendbuf, recvbuf, count, datatype, op, comm_ptr, request);
     } else {
         mpi_errno = MPIR_Iscan_impl(sendbuf, recvbuf, count, datatype, op, comm_ptr, request);
     }
+
+    MPII_COLL_HOST_BUFFER_SWAP_BACK(host_sendbuf, host_recvbuf, in_recvbuf, count, datatype,
+                                    request);
 
     return mpi_errno;
 }
 
 #endif /* MPICH_MPI_FROM_PMPI */
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Iscan
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Iscan - Computes the scan (partial reductions) of data on a collection of
             processes in a nonblocking way
@@ -249,7 +273,7 @@ int MPI_Iscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype dataty
                 goto fn_fail;
 
             MPIR_ERRTEST_COMM_INTRA(comm_ptr, mpi_errno);
-            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(datatype)) {
                 MPIR_Datatype *datatype_ptr = NULL;
                 MPIR_Datatype_get_ptr(datatype, datatype_ptr);
                 MPIR_Datatype_valid_ptr(datatype_ptr, mpi_errno);
@@ -260,11 +284,11 @@ int MPI_Iscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype dataty
                     goto fn_fail;
             }
 
-            if (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(op)) {
                 MPIR_Op *op_ptr = NULL;
                 MPIR_Op_get_ptr(op, op_ptr);
                 MPIR_Op_valid_ptr(op_ptr, mpi_errno);
-            } else if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
+            } else {
                 mpi_errno = (*MPIR_OP_HDL_TO_DTYPE_FN(op)) (datatype);
             }
             if (mpi_errno != MPI_SUCCESS)
@@ -283,8 +307,7 @@ int MPI_Iscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype dataty
     /* ... body of routine ...  */
 
     mpi_errno = MPIR_Iscan(sendbuf, recvbuf, count, datatype, op, comm_ptr, &request_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* create a complete request, if needed */
     if (!request_ptr)
@@ -304,12 +327,12 @@ int MPI_Iscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype dataty
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_iscan", "**mpi_iscan %p %p %d %D %O %C %p", sendbuf,
                                  recvbuf, count, datatype, op, comm, request);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

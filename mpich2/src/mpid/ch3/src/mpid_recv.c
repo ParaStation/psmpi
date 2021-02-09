@@ -1,15 +1,10 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidimpl.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Recv
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_Recv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
 	      MPIR_Comm * comm, int context_offset,
 	      MPI_Status * status, MPIR_Request ** request)
@@ -31,13 +26,6 @@ int MPID_Recv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int t
     MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
                       "rank=%d, tag=%d, context=%d", rank, tag,
 		      comm->recvcontext_id + context_offset));
-    
-    if (rank == MPI_PROC_NULL)
-    {
-	MPIR_Status_set_procnull(status);
-	rreq = NULL;
-	goto fn_exit;
-    }
 
     /* Check to make sure the communicator hasn't already been revoked */
     if (comm->revoked &&
@@ -77,7 +65,7 @@ int MPID_Recv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int t
 		MPIDI_Comm_get_vc_set_active(comm, rreq->dev.match.parts.rank, &vc);
         MPIR_ERR_CHKANDJUMP1(vc->state == MPIDI_VC_STATE_MORIBUND, mpi_errno, MPIX_ERR_PROC_FAILED, "**comm_fail", "**comm_fail %d", rreq->dev.match.parts.rank);
 		mpi_errno = MPIDI_CH3_EagerSyncAck( vc, rreq );
-		if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+		MPIR_ERR_CHECK(mpi_errno);
 	    }
 	    
             /* the request was found in the unexpected queue, so it has a
@@ -117,7 +105,7 @@ int MPID_Recv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int t
 		/* The data is still being transfered across the net.  
 		   We'll leave it to the progress engine to handle once the
 		   entire message has arrived. */
-		if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+		if (!HANDLE_IS_BUILTIN(datatype))
 		{
 		    MPIR_Datatype_get_ptr(datatype, rreq->dev.datatype_ptr);
             MPIR_Datatype_ptr_add_ref(rreq->dev.datatype_ptr);
@@ -129,8 +117,8 @@ int MPID_Recv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int t
 	    MPIDI_Comm_get_vc_set_active(comm, rreq->dev.match.parts.rank, &vc);
         MPIR_ERR_CHKANDJUMP1(vc->state == MPIDI_VC_STATE_MORIBUND, mpi_errno, MPIX_ERR_PROC_FAILED, "**comm_fail", "**comm_fail %d", rreq->dev.match.parts.rank);
 	    mpi_errno = vc->rndvRecv_fn( vc, rreq );
-	    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
-	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+	    MPIR_ERR_CHECK(mpi_errno);
+	    if (!HANDLE_IS_BUILTIN(datatype))
 	    {
 		MPIR_Datatype_get_ptr(datatype, rreq->dev.datatype_ptr);
         MPIR_Datatype_ptr_add_ref(rreq->dev.datatype_ptr);
@@ -139,7 +127,7 @@ int MPID_Recv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int t
 	else if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_SELF_MSG)
 	{
 	    mpi_errno = MPIDI_CH3_RecvFromSelf( rreq, buf, count, datatype );
-	    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+	    MPIR_ERR_CHECK(mpi_errno);
 	    if (status != MPI_STATUS_IGNORE)
 	    {
 		*status = rreq->status;
@@ -170,7 +158,7 @@ int MPID_Recv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int t
 	   of the actions that are taken when a request is freed. 
 	   (specifically, the datatype and comm both have their refs
 	   decremented, and are freed if the refs are zero) */
-	if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+	if (!HANDLE_IS_BUILTIN(datatype))
 	{
 	    MPIR_Datatype_get_ptr(datatype, rreq->dev.datatype_ptr);
         MPIR_Datatype_ptr_add_ref(rreq->dev.datatype_ptr);

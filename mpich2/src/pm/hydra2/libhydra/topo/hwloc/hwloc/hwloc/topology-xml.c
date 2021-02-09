@@ -704,7 +704,7 @@ hwloc__xml_import_userdata(hwloc_topology_t topology __hwloc_attribute_unused, h
       }
 
   } else { /* always handle length==0 in the non-encoded case */
-      char *buffer = (char *) "";
+      char *buffer = (char *) (const char *) "";
       if (length) {
 	ret = state->global->get_content(state, &buffer, length);
 	if (ret < 0)
@@ -2119,14 +2119,20 @@ hwloc__xml_export_object_contents (hwloc__xml_export_state_t state, hwloc_topolo
     for(dist = topology->first_dist; dist; dist = dist->next) {
       struct hwloc__xml_export_state_s childstate;
       unsigned nbobjs = dist->nbobjs;
+      unsigned *logical_to_v2array;
       int depth;
 
       if (nbobjs != (unsigned) hwloc_get_nbobjs_by_type(topology, dist->type))
 	continue;
       if (!(dist->kind & HWLOC_DISTANCES_KIND_MEANS_LATENCY))
 	continue;
-     {
-      HWLOC_VLA(unsigned, logical_to_v2array, nbobjs);
+
+      logical_to_v2array = malloc(nbobjs * sizeof(*logical_to_v2array));
+      if (!logical_to_v2array) {
+	fprintf(stderr, "xml/export/v1: failed to allocated logical_to_v2array\n");
+	continue;
+      }
+
       for(i=0; i<nbobjs; i++)
 	logical_to_v2array[dist->objs[i]->logical_index] = i;
 
@@ -2177,7 +2183,7 @@ hwloc__xml_export_object_contents (hwloc__xml_export_state_t state, hwloc_topolo
 	}
       }
       childstate.end_object(&childstate, "distances");
-     }
+      free(logical_to_v2array);
     }
   }
 

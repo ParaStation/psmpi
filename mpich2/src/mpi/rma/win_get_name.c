@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@ int MPI_Win_get_name(MPI_Win win, char *win_name, int *resultlen)
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Win_get_name
-#undef FCNAME
-#define FCNAME "MPI_Win_get_name"
 
 /*@
    MPI_Win_get_name - Get the print name associated with the MPI RMA window
@@ -114,11 +108,11 @@ int MPI_Win_get_name(MPI_Win win, char *win_name, int *resultlen)
     /* --BEGIN ERROR HANDLING-- */
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_win_get_name", "**mpi_win_get_name %W %p %p", win, win_name,
                                  resultlen);
     }
-    mpi_errno = MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_win(win_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 #endif

@@ -1,0 +1,66 @@
+# pack (segments 1, pack order normal, overlap none)
+test/pack/pack -datatype int -count 17 -seed 811 -iters 32768 -segments 1 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 17 -seed 812 -iters 32768 -segments 1 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 17 -seed 813 -iters 32768 -segments 1 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int -count 1075 -seed 814 -iters 128 -segments 1 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 1075 -seed 815 -iters 128 -segments 1 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 1075 -seed 816 -iters 128 -segments 1 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int -count 65536 -seed 817 -iters 32 -segments 1 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 65536 -seed 818 -iters 32 -segments 1 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 65536 -seed 819 -iters 32 -segments 1 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+
+# pack (segments 64, pack order normal, overlap none)
+test/pack/pack -datatype int -count 17 -seed 820 -iters 32768 -segments 64 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 17 -seed 821 -iters 32768 -segments 64 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 17 -seed 822 -iters 32768 -segments 64 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int -count 1075 -seed 823 -iters 128 -segments 64 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 1075 -seed 824 -iters 128 -segments 64 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 1075 -seed 825 -iters 128 -segments 64 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int -count 65536 -seed 826 -iters 32 -segments 64 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 65536 -seed 827 -iters 32 -segments 64 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 65536 -seed 828 -iters 32 -segments 64 -ordering normal -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+
+# pack (segments 64, pack order reverse, overlap none)
+test/pack/pack -datatype int -count 17 -seed 829 -iters 32768 -segments 64 -ordering reverse -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 17 -seed 830 -iters 32768 -segments 64 -ordering reverse -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 17 -seed 831 -iters 32768 -segments 64 -ordering reverse -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int -count 1075 -seed 832 -iters 128 -segments 64 -ordering reverse -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 1075 -seed 833 -iters 128 -segments 64 -ordering reverse -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 1075 -seed 834 -iters 128 -segments 64 -ordering reverse -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int -count 65536 -seed 835 -iters 32 -segments 64 -ordering reverse -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 65536 -seed 836 -iters 32 -segments 64 -ordering reverse -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 65536 -seed 837 -iters 32 -segments 64 -ordering reverse -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+
+# pack (segments 64, pack order random, overlap none)
+test/pack/pack -datatype int -count 17 -seed 838 -iters 32768 -segments 64 -ordering random -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 17 -seed 839 -iters 32768 -segments 64 -ordering random -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 17 -seed 840 -iters 32768 -segments 64 -ordering random -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int -count 1075 -seed 841 -iters 128 -segments 64 -ordering random -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 1075 -seed 842 -iters 128 -segments 64 -ordering random -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 1075 -seed 843 -iters 128 -segments 64 -ordering random -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int -count 65536 -seed 844 -iters 32 -segments 64 -ordering random -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 65536 -seed 845 -iters 32 -segments 64 -ordering random -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 65536 -seed 846 -iters 32 -segments 64 -ordering random -overlap none -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+
+# pack (segments 64, pack order normal, overlap regular)
+test/pack/pack -datatype int -count 17 -seed 847 -iters 32768 -segments 64 -ordering normal -overlap regular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 17 -seed 848 -iters 32768 -segments 64 -ordering normal -overlap regular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 17 -seed 849 -iters 32768 -segments 64 -ordering normal -overlap regular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int -count 1075 -seed 850 -iters 128 -segments 64 -ordering normal -overlap regular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 1075 -seed 851 -iters 128 -segments 64 -ordering normal -overlap regular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 1075 -seed 852 -iters 128 -segments 64 -ordering normal -overlap regular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int -count 65536 -seed 853 -iters 32 -segments 64 -ordering normal -overlap regular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 65536 -seed 854 -iters 32 -segments 64 -ordering normal -overlap regular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 65536 -seed 855 -iters 32 -segments 64 -ordering normal -overlap regular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+
+# pack (segments 64, pack order normal, overlap irregular)
+test/pack/pack -datatype int -count 17 -seed 856 -iters 32768 -segments 64 -ordering normal -overlap irregular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 17 -seed 857 -iters 32768 -segments 64 -ordering normal -overlap irregular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 17 -seed 858 -iters 32768 -segments 64 -ordering normal -overlap irregular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int -count 1075 -seed 859 -iters 128 -segments 64 -ordering normal -overlap irregular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 1075 -seed 860 -iters 128 -segments 64 -ordering normal -overlap irregular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 1075 -seed 861 -iters 128 -segments 64 -ordering normal -overlap irregular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int -count 65536 -seed 862 -iters 32 -segments 64 -ordering normal -overlap irregular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype short_int -count 65536 -seed 863 -iters 32 -segments 64 -ordering normal -overlap irregular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+test/pack/pack -datatype int:3+double:2 -count 65536 -seed 864 -iters 32 -segments 64 -ordering normal -overlap irregular -sbuf-memtype device -tbuf-memtype managed -dbuf-memtype device
+

@@ -1,4 +1,9 @@
 #! /bin/sh
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
+
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 bindir=@bindir@
@@ -159,6 +164,7 @@ if [ ! -x simple -a $makeeach = 0 ] ; then
     $MAKE default
 fi
 #
+
 testfiles=""
 if [ $runtests = 1 ] ; then
 echo '**** Testing I/O functions ****'
@@ -438,6 +444,7 @@ else
 	exit 1
     fi
 fi
+
 #
 # echo '*** Checking for differences from expected output ***'
 # rm -f iotests.diff

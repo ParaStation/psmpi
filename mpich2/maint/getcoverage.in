@@ -1,6 +1,9 @@
 #! /usr/bin/env perl
-# -*- Mode: perl; -*-
-#
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
+
 # This script extracts information from files produced by gcov showing what
 # parts of each file have *not* been executed by the test programs.
 # 
@@ -293,7 +296,7 @@ L:  while (<FD>) {
 	# and nothing else.
 	if ($skipErrExits && 
 	    (/FUNC_EXIT.*STATE/ || /MPIR_Err_return_/ || 
-	     /MPIR_ERR_SET/ || /MPIR_ERR_POP/ || /goto\s+fn_fail/ ||
+	     /MPIR_ERR_SET/ || /MPIR_ERR_POP/ || /MPIR_ERR_CHECK/ || /goto\s+fn_fail/ ||
 	     /MPIR_ERR_ADD/ || /\*errflag\s*=\s*[^;]*;\s*$/ || 
 	     /fn_fail:/ || /MPIR_Err_create_code/)) {
 	    next;
@@ -312,12 +315,6 @@ L:  while (<FD>) {
 	    $missed_lines++;
 	    $executableLines++;  # This missed line is executable 
 		
-	    # The char\s+.* allows char or const char (or other 
-	    # things, but nothing else should use FCNAME).
-	    if (/static\s+char\s+.*FCNAME\[\]\s*=\s*\"(.*)\"/) {
-		# Add this to a list of functions never called.
-		$UnCalled[$#UnCalled + 1] = $1;
-	    }
 	    if ($outputUncovered) {
 		if (!$headerOutput) {
 		    print "\nUncovered lines in $filename\n";
@@ -407,7 +404,7 @@ L2: while (<FD>) {
 	# The format of the line also changed
 	if ($skipErrExits && 
 	    (/FUNC_EXIT.*STATE/ || /MPIR_Err_return_/ || 
-	     /MPIR_ERR_SET/ || /MPIR_ERR_POP/ || /goto\s+fn_fail/ ||
+	     /MPIR_ERR_SET/ || /MPIR_ERR_POP/ || /MPIR_ERR_CHECK/ || /goto\s+fn_fail/ ||
 	     /MPIR_ERR_ADD/ || /\*errflag\s*=\s*[^;]*;\s*$/ || 
             /fn_fail:/ || /MPIR_Err_create_code/)) {
 	    # If requested, skip obvious error checking lines

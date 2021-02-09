@@ -1,9 +1,9 @@
 ! This file created from f77/pt2pt/statusesf.f with f77tof90
-! -*- Mode: Fortran; -*- 
 !
-!  (C) 2003 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
+
       program main
 !     Test support for MPI_STATUS_IGNORE and MPI_STATUSES_IGNORE
       use mpi

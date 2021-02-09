@@ -1,11 +1,9 @@
 # This Makefile.am generated automatically by f77tof90
 # from f77/spawn/Makefile.am.  DO NOT EDIT
-# -*- Mode: Makefile; -*-
-# vim: set ft=automake :
-#
-# (C) 2011 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
 
 include $(top_srcdir)/Makefile_f90.mtest
 
@@ -40,7 +38,10 @@ EXTRA_DIST += Makefile.am-stamp testlist.ap Makefile.ap
 
 endif MAINTAINER_MODE
 
-## vim: set ft=automake :
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
 
 noinst_PROGRAMS += spawnargvf03 spawnmultf03
 spawnargvf03_SOURCES = spawnargvf03.f90

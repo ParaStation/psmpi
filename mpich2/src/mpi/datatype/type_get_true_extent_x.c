@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2011 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -27,10 +26,6 @@ int MPI_Type_get_true_extent_x(MPI_Datatype datatype, MPI_Count * lb, MPI_Count 
 
 /* any non-MPI functions go here, especially non-static ones */
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Type_get_true_extent_x_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPIR_Type_get_true_extent_x_impl(MPI_Datatype datatype, MPI_Count * true_lb,
                                       MPI_Count * true_extent)
 {
@@ -38,7 +33,7 @@ void MPIR_Type_get_true_extent_x_impl(MPI_Datatype datatype, MPI_Count * true_lb
 
     MPIR_Datatype_get_ptr(datatype, datatype_ptr);
 
-    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
+    if (HANDLE_IS_BUILTIN(datatype)) {
         *true_lb = 0;
         *true_extent = MPIR_Datatype_get_basic_size(datatype);
     } else {
@@ -49,10 +44,6 @@ void MPIR_Type_get_true_extent_x_impl(MPI_Datatype datatype, MPI_Count * true_lb
 
 #endif /* MPICH_MPI_FROM_PMPI */
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Type_get_true_extent_x
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Type_get_true_extent_x - Get the true lower bound and extent as MPI_Count
  values for a datatype
@@ -98,7 +89,7 @@ int MPI_Type_get_true_extent_x(MPI_Datatype datatype, MPI_Count * true_lb, MPI_C
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(datatype)) {
                 MPIR_Datatype *datatype_ptr = NULL;
                 MPIR_Datatype_get_ptr(datatype, datatype_ptr);
                 MPIR_Datatype_valid_ptr(datatype_ptr, mpi_errno);
@@ -132,12 +123,12 @@ int MPI_Type_get_true_extent_x(MPI_Datatype datatype, MPI_Count * true_lb, MPI_C
     /* --BEGIN ERROR HANDLING-- */
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_type_get_true_extent_x",
                                  "**mpi_type_get_true_extent_x %D %p %p", datatype, true_lb,
                                  true_extent);
     }
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 #endif

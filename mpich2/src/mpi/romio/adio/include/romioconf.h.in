@@ -1,8 +1,8 @@
 /* adio/include/romioconf.h.in.  Generated from configure.ac by autoheader.  */
 
 /*
- *  (C) 2008 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 #ifndef ROMIOCONF_H_INCLUDED
 #define ROMIOCONF_H_INCLUDED
@@ -16,6 +16,9 @@
 
 /* Define to 1 if you have the <aio-lite.h> header file. */
 #undef HAVE_AIO_LITE_H
+
+/* Define to 1 if you have the <daos_types.h> header file. */
+#undef HAVE_DAOS_TYPES_H
 
 /* Define to 1 if you have the declaration of `MPI_COMBINER_HINDEXED_BLOCK',
    and to 0 if you don't. */
@@ -49,6 +52,9 @@
 /* Define to 1 if you have the <gpfs.h> header file. */
 #undef HAVE_GPFS_H
 
+/* Define to 1 if you have the <gurt/hash.h> header file. */
+#undef HAVE_GURT_HASH_H
+
 /* Define to 1 if you have the <ime_native.h> header file. */
 #undef HAVE_IME_NATIVE_H
 
@@ -60,6 +66,24 @@
 
 /* Define to 1 if you have the `aio-lite' library (-laio-lite). */
 #undef HAVE_LIBAIO_LITE
+
+/* Define to 1 if you have the `daos' library (-ldaos). */
+#undef HAVE_LIBDAOS
+
+/* Define to 1 if you have the `daos_common' library (-ldaos_common). */
+#undef HAVE_LIBDAOS_COMMON
+
+/* Define to 1 if you have the `dfs' library (-ldfs). */
+#undef HAVE_LIBDFS
+
+/* Define to 1 if you have the `duns' library (-lduns). */
+#undef HAVE_LIBDUNS
+
+/* Define to 1 if you have the `gurt' library (-lgurt). */
+#undef HAVE_LIBGURT
+
+/* Define to 1 if you have the `uuid' library (-luuid). */
+#undef HAVE_LIBUUID
 
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
@@ -91,7 +115,7 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
-/* Define if MPI-IO routines need a const qualifier */
+/* Set if MPI-IO prototypes use const qualifier */
 #undef HAVE_MPIIO_CONST
 
 /* Define to 1 if you have the <mpix.h> header file. */
@@ -322,6 +346,9 @@
 /* Define for printing error messages */
 #undef PRINT_ERR_MSG
 
+/* Define for ROMIO with DAOS */
+#undef ROMIO_DAOS
+
 /* Define for ROMIO with GPFS */
 #undef ROMIO_GPFS
 
@@ -363,6 +390,9 @@
 
 /* Define for ROMIO with PVFS2 */
 #undef ROMIO_PVFS2
+
+/* Define for ROMIO with QUOBYTEFS */
+#undef ROMIO_QUOBYTEFS
 
 /* Define if run on Linux */
 #undef ROMIO_RUN_ON_LINUX

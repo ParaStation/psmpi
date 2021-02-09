@@ -14,12 +14,6 @@
 
 @SET_MAKE@
 
-# -*- Mode: Makefile; -*-
-#
-# (C) 2011 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
 # This directory is only listed in DIST_SUBDIRS, not SUBDIRS, so its contents
 # will not be built by default, but it will participate in "make distclean" and
 # friends.
@@ -104,8 +98,7 @@ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cc.m4 \
 	$(top_srcdir)/confdb/aclocal_check_visibility.m4 \
 	$(top_srcdir)/confdb/aclocal_coverage.m4 \
-	$(top_srcdir)/confdb/aclocal_f77.m4 \
-	$(top_srcdir)/confdb/aclocal_fc.m4 \
+	$(top_srcdir)/confdb/aclocal_libs.m4 \
 	$(top_srcdir)/confdb/aclocal_make.m4 \
 	$(top_srcdir)/confdb/aclocal_romio.m4 \
 	$(top_srcdir)/confdb/aclocal_runlog.m4 \
@@ -430,7 +423,6 @@ FORTRAN_TEST = @FORTRAN_TEST@
 FROM_LAM = @FROM_LAM@
 FROM_MPICH = @FROM_MPICH@
 FROM_OMPI = @FROM_OMPI@
-FTESTDEFINE = @FTESTDEFINE@
 GCOV = @GCOV@
 GREP = @GREP@
 HAVE_MPI_DARRAY_SUBARRAY = @HAVE_MPI_DARRAY_SUBARRAY@
@@ -560,10 +552,10 @@ libdir = @libdir@
 libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
+main_top_builddir = @main_top_builddir@
+main_top_srcdir = @main_top_srcdir@
+main_topbuild_dir = @main_topbuild_dir@
 mandir = @mandir@
-master_top_builddir = @master_top_builddir@
-master_top_srcdir = @master_top_srcdir@
-master_topbuild_dir = @master_topbuild_dir@
 mkdir_p = @mkdir_p@
 mpl_dist_srcdir = @mpl_dist_srcdir@
 mpl_includedir = @mpl_includedir@

@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPL_BASE_H_INCLUDED
@@ -17,24 +16,6 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdint.h>
-
-#if defined _mpl_restrict
-#define mpl_restrict _mpl_restrict
-#else
-#define mpl_restrict restrict
-#endif /* _mpl_restrict */
-
-#if defined _mpl_const
-#define mpl_const _mpl_const
-#else
-#define mpl_const const
-#endif /* _mpl_const */
-
-#if defined _mpl_inline
-#define mpl_inline _mpl_inline
-#else
-#define mpl_inline inline
-#endif /* _mpl_inline */
 
 #if defined MPL_HAVE_CTYPE_H
 #include <ctype.h>
@@ -61,23 +42,28 @@
 #endif /* ATTRIBUTE */
 
 #define MPL_UNUSED ATTRIBUTE((unused))
+#ifdef MPL_ENABLE_ALWAYS_INLINE
 #define MPL_STATIC_INLINE_PREFIX ATTRIBUTE((always_inline)) static inline
 #define MPL_STATIC_INLINE_SUFFIX ATTRIBUTE((always_inline))
+#else
+#define MPL_STATIC_INLINE_PREFIX static inline
+#define MPL_STATIC_INLINE_SUFFIX
+#endif
 
 #ifdef MPL_HAVE_FUNC_ATTRIBUTE_FALLTHROUGH
-#define MPL_FALLTHROUGH ATTRIBUTE((fallthrough))
+#define MPL_FALLTHROUGH __attribute__((fallthrough))
 #else
 #define MPL_FALLTHROUGH
 #endif
 
 #ifdef MPL_HAVE_VAR_ATTRIBUTE_ALIGNED
-#define MPL_ATTR_ALIGNED(x) ATTRIBUTE((aligned(x)))
+#define MPL_ATTR_ALIGNED(x) __attribute__((aligned(x)))
 #else
 #define MPL_ATTR_ALIGNED(x)
 #endif
 
 #ifdef MPL_HAVE_VAR_ATTRIBUTE_USED
-#define MPL_USED ATTRIBUTE((used))
+#define MPL_USED __attribute__((used))
 #else
 #define MPL_USED
 #endif
@@ -103,6 +89,20 @@
 #define unlikely(x_) (x_)
 #define likely(x_)   (x_)
 #endif
+
+#ifdef MPL_HAVE_C11__STATIC_ASSERT
+#define MPL_static_assert(cond_,msg_) _Static_assert(cond_,msg_)
+#else
+/* A hack:
+    When cond_ is false, result in compile-time duplicated case error.
+    When cond_ is true, compiler should optimize it away.
+    Since it is compile time error, we don't care (much) about how the error message look.
+ */
+#define MPL_static_assert(cond_,msg_) \
+    do { switch(0) { case 0: case (cond_): default: break; } } while (0)
+#endif
+
+#define MPL_COMPILE_TIME_ASSERT(cond_) MPL_static_assert(cond_, "MPL_COMPILE_TIME_ASSERT failure")
 
 #define MPL_QUOTE(A) MPL_QUOTE2(A)
 #define MPL_QUOTE2(A) #A
@@ -156,5 +156,8 @@ typedef bool _Bool;
 #define true 1
 #define __bool_true_false_are_defined 1
 #endif
+
+#define MPL_ROUND_UP_ALIGN(a, alignment) (((a) + ((alignment) - 1)) & (~((alignment) - 1)))
+#define MPL_ROUND_DOWN_ALIGN(a, alignment) ((a) & (~((alignment) - 1)))
 
 #endif /* MPL_BASE_H_INCLUDED */

@@ -1,8 +1,7 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
-*  (C) 2018 by Argonne National Laboratory.
-*      See COPYRIGHT in top-level directory.
-*/
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
+ */
 
 /** Rationale:
  *    MPL wrap for handling IPv4 and IPv6.
@@ -16,7 +15,7 @@
  *    simplify logic.
  *    TCP only, no UDP or unix domain sockets.
  *
- *    Application use MPL_sockaddr_t exclusively.
+ *    Application use struct sockaddr_storage (typedefed to MPL_sockaddr_t) exclusively.
  *            MPL_get_sockaddr for hostname
  *            MPL_get_sockaddr_iface for network interface
  *            MPL_get_sockaddr_direct for listening socket on ANY or LOOPBACK
@@ -27,13 +26,14 @@
  */
 
 /** Portability:
- *    MPL_sockaddr_t:
+ *    struct sockaddr_storage:
  *            In case this struct is not available (in sys/socket.h), it can be
  *        circumvented by declare following (in mpl_sockaddr.h):
- *                    MPL_sockaddr_t {
+ *                    struct sockaddr_storage {
  *                            unsigend short ss_family;
  *                            char padding[126];
  *                    };
+ *            Since we use typedef MPL_sockaddr_t, there is no need for code change.
  *            Only the ss_family field is directly accessed. All the other fields are
  *        always accessed by casting to either struct sockaddr_in or struct
  *        sockaddr_in6.
@@ -75,6 +75,7 @@ int MPL_get_sockaddr(const char *s_hostname, MPL_sockaddr_t * p_addr)
     struct addrinfo *ai_list;
     int ret;
 
+#ifdef __APPLE__
     /* Macos adds .local to hostname when network is unavailable or limited.
      * This will result in long timeout in getaddrinfo below.
      * Bypass it by resetting the hostname to "localhost"
@@ -83,6 +84,7 @@ int MPL_get_sockaddr(const char *s_hostname, MPL_sockaddr_t * p_addr)
     if (n > 6 && strcmp(s_hostname + n - 6, ".local") == 0) {
         s_hostname = "localhost";
     }
+#endif
 
     /* NOTE: there is report that getaddrinfo implementations will call kernel
      * even when s_hostname is entirely numerical string and it may cause
@@ -96,7 +98,7 @@ int MPL_get_sockaddr(const char *s_hostname, MPL_sockaddr_t * p_addr)
     ai_hint.ai_family = af_type;
     ai_hint.ai_socktype = SOCK_STREAM;
     ai_hint.ai_protocol = IPPROTO_TCP;
-    ai_hint.ai_flags = AI_ADDRCONFIG | AI_V4MAPPED;
+    ai_hint.ai_flags = AI_V4MAPPED;
     ret = getaddrinfo(s_hostname, NULL, &ai_hint, &ai_list);
     if (ret) {
         return ret;
@@ -185,14 +187,14 @@ int MPL_socket()
     return socket(af_type, SOCK_STREAM, IPPROTO_TCP);
 }
 
-int MPL_connect(int socket, MPL_sockaddr_t * p_addr, unsigned short port)
+int MPL_connect(int sock_fd, MPL_sockaddr_t * p_addr, unsigned short port)
 {
     if (af_type == AF_INET) {
         ((struct sockaddr_in *) p_addr)->sin_port = htons(port);
-        return connect(socket, (const struct sockaddr *) p_addr, sizeof(struct sockaddr_in));
+        return connect(sock_fd, (const struct sockaddr *) p_addr, sizeof(struct sockaddr_in));
     } else if (af_type == AF_INET6) {
         ((struct sockaddr_in6 *) p_addr)->sin6_port = htons(port);
-        return connect(socket, (const struct sockaddr *) p_addr, sizeof(struct sockaddr_in6));
+        return connect(sock_fd, (const struct sockaddr *) p_addr, sizeof(struct sockaddr_in6));
     } else {
         return -1;
     }
@@ -204,7 +206,7 @@ void MPL_set_listen_attr(int use_loopback, int max_conn)
     _max_conn = max_conn;
 }
 
-int MPL_listen(int socket, unsigned short port)
+int MPL_listen(int sock_fd, unsigned short port)
 {
     MPL_sockaddr_t addr;
     int ret;
@@ -216,24 +218,23 @@ int MPL_listen(int socket, unsigned short port)
     }
     if (af_type == AF_INET) {
         ((struct sockaddr_in *) &addr)->sin_port = htons(port);
-        ret = bind(socket, (const struct sockaddr *) &addr, sizeof(struct sockaddr_in));
+        ret = bind(sock_fd, (const struct sockaddr *) &addr, sizeof(struct sockaddr_in));
     } else if (af_type == AF_INET6) {
         ((struct sockaddr_in6 *) &addr)->sin6_port = htons(port);
-        ret = bind(socket, (const struct sockaddr *) &addr, sizeof(struct sockaddr_in6));
+        ret = bind(sock_fd, (const struct sockaddr *) &addr, sizeof(struct sockaddr_in6));
     } else {
         assert(0);
     }
     if (ret) {
         return ret;
     }
-    return listen(socket, _max_conn);
+    return listen(sock_fd, _max_conn);
 }
 
-int MPL_listen_anyport(int socket, unsigned short *p_port)
+int MPL_listen_anyport(int sock_fd, unsigned short *p_port)
 {
     MPL_sockaddr_t addr;
     int ret;
-    socklen_t n;
 
     if (_use_loopback) {
         MPL_get_sockaddr_direct(MPL_SOCKADDR_LOOPBACK, &addr);
@@ -242,18 +243,18 @@ int MPL_listen_anyport(int socket, unsigned short *p_port)
     }
     if (af_type == AF_INET) {
         ((struct sockaddr_in *) &addr)->sin_port = 0;
-        ret = bind(socket, (const struct sockaddr *) &addr, sizeof(struct sockaddr_in));
+        ret = bind(sock_fd, (const struct sockaddr *) &addr, sizeof(struct sockaddr_in));
     } else if (af_type == AF_INET6) {
         ((struct sockaddr_in6 *) &addr)->sin6_port = 0;
-        ret = bind(socket, (const struct sockaddr *) &addr, sizeof(struct sockaddr_in6));
+        ret = bind(sock_fd, (const struct sockaddr *) &addr, sizeof(struct sockaddr_in6));
     } else {
         assert(0);
     }
     if (ret) {
         return ret;
     }
-    n = sizeof(addr);
-    ret = getsockname(socket, (struct sockaddr *) &addr, &n);
+    unsigned int n = sizeof(addr);
+    ret = getsockname(sock_fd, (struct sockaddr *) &addr, &n);
     if (ret) {
         return ret;
     }
@@ -262,10 +263,10 @@ int MPL_listen_anyport(int socket, unsigned short *p_port)
     } else if (af_type == AF_INET6) {
         *p_port = ntohs(((struct sockaddr_in6 *) &addr)->sin6_port);
     }
-    return listen(socket, _max_conn);
+    return listen(sock_fd, _max_conn);
 }
 
-int MPL_listen_portrange(int socket, unsigned short *p_port, int low_port, int high_port)
+int MPL_listen_portrange(int sock_fd, unsigned short *p_port, int low_port, int high_port)
 {
     MPL_sockaddr_t addr;
     int i;
@@ -277,7 +278,7 @@ int MPL_listen_portrange(int socket, unsigned short *p_port, int low_port, int h
         MPL_get_sockaddr_direct(MPL_SOCKADDR_ANY, &addr);
     }
     for (i = low_port; i <= high_port; i++) {
-        ret = MPL_listen(socket, i);
+        ret = MPL_listen(sock_fd, i);
         if (ret == 0) {
             *p_port = i;
             break;
@@ -290,7 +291,7 @@ int MPL_listen_portrange(int socket, unsigned short *p_port, int low_port, int h
     if (i > high_port) {
         return -2;
     }
-    return listen(socket, _max_conn);
+    return listen(sock_fd, _max_conn);
 }
 
 int MPL_sockaddr_to_str(MPL_sockaddr_t * p_addr, char *str, int maxlen)

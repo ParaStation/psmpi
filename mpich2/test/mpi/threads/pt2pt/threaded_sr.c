@@ -1,9 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -119,7 +118,8 @@ int main(int argc, char *argv[])
     }
 
     /* Loop until the send flag is set */
-    while (sendok == -1);
+    while (sendok == -1)
+        MTest_thread_yield();
     if (!sendok) {
         errs++;
     }

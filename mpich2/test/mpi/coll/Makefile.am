@@ -1,11 +1,9 @@
-# -*- Mode: Makefile; -*-
-# vim: set ft=automake :
-#
-# (C) 2011 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
 
-include $(top_srcdir)/Makefile.mtest
+include $(top_srcdir)/Makefile_single.mtest
 
 EXTRA_DIST = testlist.in
 
@@ -35,7 +33,7 @@ noinst_PROGRAMS =      \
     bcasttest          \
     bcastzerotype      \
     coll2              \
-    coll3              \
+    gatherv            \
     coll4              \
     coll5              \
     coll6              \
@@ -43,7 +41,6 @@ noinst_PROGRAMS =      \
     coll8              \
     coll9              \
     coll10             \
-    coll11             \
     coll12             \
     coll13             \
     exscan             \
@@ -70,6 +67,7 @@ noinst_PROGRAMS =      \
     nonblocking        \
     nonblocking2       \
     nonblocking3       \
+    op_coll            \
     op_commutative     \
     opband             \
     opbor              \
@@ -119,7 +117,14 @@ noinst_PROGRAMS =      \
     nbicreduce         \
     nbicscatter        \
     nbicscatterv       \
-    neighb_coll
+    neighb_allgather   \
+    neighb_allgatherv  \
+    neighb_alltoall    \
+    neighb_alltoallv   \
+    neighb_alltoallw   \
+    bcast              \
+    bcast_comm_world_only
+
 allgatherv4_LDADD = $(LDADD) -lm
 
 # Generate tests of the nonblocking collectives by reusing the blocking tests.
@@ -168,4 +173,8 @@ nbicscatter_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
 nbicscatterv_SOURCES = icscatterv.c
 nbicscatterv_CPPFLAGS = -DUSE_MTEST_NBC $(AM_CPPFLAGS)
 
-include Makefile.dtp
+bcast_CPPFLAGS = $(AM_CPPFLAGS)
+bcast_SOURCES = bcast.c
+
+bcast_comm_world_only_CPPFLAGS = -DBCAST_COMM_WORLD_ONLY $(AM_CPPFLAGS)
+bcast_comm_world_only_SOURCES = bcast.c

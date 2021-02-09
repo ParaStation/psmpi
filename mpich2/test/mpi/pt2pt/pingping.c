@@ -1,194 +1,75 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpitest.h"
 #include "dtpools.h"
+#include <assert.h>
 
 /*
 static char MTEST_Descrip[] = "Send flood test";
 */
 
-#define MAX_MSG_SIZE 40000000
-#define MAX_COUNT    4000
-
-typedef struct {
-    const char *typename;
-    MPI_Datatype type;
-} Type_t;
-
-Type_t typelist[] = {
-    {"MPI_CHAR", MPI_CHAR},
-    {"MPI_BYTE", MPI_BYTE},
-    {"MPI_WCHAR", MPI_WCHAR},
-    {"MPI_SHORT", MPI_SHORT},
-    {"MPI_INT", MPI_INT},
-    {"MPI_LONG", MPI_LONG},
-    {"MPI_LONG_LONG_INT", MPI_LONG_LONG_INT},
-    {"MPI_UNSIGNED_CHAR", MPI_UNSIGNED_CHAR},
-    {"MPI_UNSIGNED_SHORT", MPI_UNSIGNED_SHORT},
-    {"MPI_UNSIGNED", MPI_UNSIGNED},
-    {"MPI_UNSIGNED_LONG", MPI_UNSIGNED_LONG},
-    {"MPI_UNSIGNED_LONG_LONG", MPI_UNSIGNED_LONG_LONG},
-    {"MPI_FLOAT", MPI_FLOAT},
-    {"MPI_DOUBLE", MPI_DOUBLE},
-    {"MPI_LONG_DOUBLE", MPI_LONG_DOUBLE},
-    {"MPI_INT8_T", MPI_INT8_T},
-    {"MPI_INT16_T", MPI_INT16_T},
-    {"MPI_INT32_T", MPI_INT32_T},
-    {"MPI_INT64_T", MPI_INT64_T},
-    {"MPI_UINT8_T", MPI_UINT8_T},
-    {"MPI_UINT16_T", MPI_UINT16_T},
-    {"MPI_UINT32_T", MPI_UINT32_T},
-    {"MPI_UINT64_T", MPI_UINT64_T},
-    {"MPI_C_COMPLEX", MPI_C_COMPLEX},
-    {"MPI_C_FLOAT_COMPLEX", MPI_C_FLOAT_COMPLEX},
-    {"MPI_C_DOUBLE_COMPLEX", MPI_C_DOUBLE_COMPLEX},
-    {"MPI_C_LONG_DOUBLE_COMPLEX", MPI_C_LONG_DOUBLE_COMPLEX},
-    {"MPI_FLOAT_INT", MPI_FLOAT_INT},
-    {"MPI_DOUBLE_INT", MPI_DOUBLE_INT},
-    {"MPI_LONG_INT", MPI_LONG_INT},
-    {"MPI_2INT", MPI_2INT},
-    {"MPI_SHORT_INT", MPI_SHORT_INT},
-    {"MPI_LONG_DOUBLE_INT", MPI_LONG_DOUBLE_INT},
-    {"MPI_DATATYPE_NULL", MPI_DATATYPE_NULL}
-};
+#define MAX_TOTAL_MSG_SIZE (32 * 1024 * 1024)
+#define MAXMSG (4096)
 
 int main(int argc, char *argv[])
 {
     int errs = 0, err;
     int rank, size, source, dest;
-    int minsize = 2, count[2], nmsg, maxmsg;
-    int i, j, len;
-    MPI_Aint sendcount, recvcount;
+    int minsize = 2, nmsg, maxmsg;
+    int i, j, len, seed, testsize;
+    MPI_Aint sendcount, recvcount, count[2];
+    MPI_Aint maxbufsize;
     MPI_Comm comm;
     MPI_Datatype sendtype, recvtype;
-    DTP_t send_dtp, recv_dtp;
-    char send_name[MPI_MAX_OBJECT_NAME] = { 0 };
-    char recv_name[MPI_MAX_OBJECT_NAME] = { 0 };
+    DTP_pool_s dtp;
+    DTP_obj_s send_obj, recv_obj;
     void *sendbuf, *recvbuf;
+    void *sendbuf_h, *recvbuf_h;
+    char *basic_type;
+    mtest_mem_type_e sendmem;
+    mtest_mem_type_e recvmem;
 
     MTest_Init(&argc, &argv);
 
-#ifndef USE_DTP_POOL_TYPE__STRUCT       /* set in 'test/mpi/structtypetest.txt' to split tests */
-    MPI_Datatype basic_type;
-    char type_name[MPI_MAX_OBJECT_NAME] = { 0 };
+    MTestArgList *head = MTestArgListCreate(argc, argv);
+    seed = MTestArgListGetInt(head, "seed");
+    testsize = MTestArgListGetInt(head, "testsize");
+    count[0] = MTestArgListGetLong(head, "sendcnt");
+    count[1] = MTestArgListGetLong(head, "recvcnt");
+    basic_type = MTestArgListGetString(head, "type");
+    sendmem = MTestArgListGetMemType(head, "sendmem");
+    recvmem = MTestArgListGetMemType(head, "recvmem");
 
-    /* TODO: parse input parameters using optarg */
-    if (argc < 4) {
-        fprintf(stdout, "Usage: %s -type=[TYPE] -sendcnt=[COUNT] -recvcnt=[COUNT]\n", argv[0]);
-        return MTestReturnValue(1);
-    } else {
-        for (i = 1; i < argc; i++) {
-            if (!strncmp(argv[i], "-type=", strlen("-type="))) {
-                j = 0;
-                while (strcmp(typelist[j].typename, "MPI_DATATYPE_NULL") &&
-                       strcmp(argv[i] + strlen("-type="), typelist[j].typename)) {
-                    j++;
-                }
+    maxbufsize = MTestDefaultMaxBufferSize();
 
-                if (strcmp(typelist[j].typename, "MPI_DATATYPE_NULL")) {
-                    basic_type = typelist[j].type;
-                } else {
-                    fprintf(stdout, "Error: datatype not recognized\n");
-                    return MTestReturnValue(1);
-                }
-            } else if (!strncmp(argv[i], "-sendcnt=", strlen("-sendcnt="))) {
-                count[0] = atoi(argv[i] + strlen("-sendcnt="));
-            } else if (!strncmp(argv[i], "-recvcnt=", strlen("-recvcnt="))) {
-                count[1] = atoi(argv[i] + strlen("-recvcnt="));
-            }
-        }
-    }
-
-    err = DTP_pool_create(basic_type, count[0], &send_dtp);
+    err = DTP_pool_create(basic_type, count[0], seed, &dtp);
     if (err != DTP_SUCCESS) {
-        MPI_Type_get_name(basic_type, type_name, &len);
-        fprintf(stdout, "Error while creating send pool (%s,%d)\n", type_name, count[0]);
-        fflush(stdout);
+        fprintf(stderr, "Error while creating send pool (%s,%ld)\n", basic_type, count[0]);
+        fflush(stderr);
     }
 
-    err = DTP_pool_create(basic_type, count[1], &recv_dtp);
-    if (err != DTP_SUCCESS) {
-        MPI_Type_get_name(basic_type, type_name, &len);
-        fprintf(stdout, "Error while creating recv pool (%s,%d)\n", type_name, count[1]);
-        fflush(stdout);
-    }
-#else
-    MPI_Datatype *basic_types = NULL;
-    int *basic_type_counts = NULL;
-    int basic_type_num;
-    int k;
-    char *input_string, *token;
-
-    /* TODO: parse input parameters using optarg */
-    if (argc < 4) {
-        fprintf(stdout, "Usage: %s -numtypes=[NUM] -types=[TYPES] -counts=[COUNTS]\n", argv[0]);
-        return MTestReturnValue(1);
-    } else {
-        for (i = 1; i < argc; i++) {
-            if (!strncmp(argv[i], "-numtypes=", strlen("-numtypes="))) {
-                basic_type_num = atoi(argv[i] + strlen("-numtypes="));
-
-                /* allocate arrays */
-                basic_type_counts = (int *) malloc(basic_type_num * sizeof(int));
-                basic_types = (MPI_Datatype *) malloc(basic_type_num * sizeof(MPI_Datatype));
-            } else if (!strncmp(argv[i], "-types=", strlen("-type="))) {
-                input_string = strdup(argv[i] + strlen("-types="));
-                for (k = 0, token = strtok(input_string, ","); token; token = strtok(NULL, ",")) {
-                    j = 0;
-                    while (strcmp(typelist[j].typename, "MPI_DATATYPE_NULL") &&
-                           strcmp(token, typelist[j].typename)) {
-                        j++;
-                    }
-
-                    if (strcmp(typelist[j].typename, "MPI_DATATYPE_NULL")) {
-                        basic_types[k++] = typelist[j].type;
-                    } else {
-                        fprintf(stdout, "Error: datatype not recognized\n");
-                        return MTestReturnValue(1);
-                    }
-                }
-                free(input_string);
-            } else if (!strncmp(argv[i], "-counts=", strlen("-counts="))) {
-                input_string = strdup(argv[i] + strlen("-counts="));
-                for (k = 0, token = strtok(input_string, ","); token; token = strtok(NULL, ",")) {
-                    basic_type_counts[k++] = atoi(token);
-                }
-                free(input_string);
-            }
-        }
-    }
-
-    err = DTP_pool_create_struct(basic_type_num, basic_types, basic_type_counts, &send_dtp);
-    if (err != DTP_SUCCESS) {
-        fprintf(stdout, "Error while creating struct pool\n");
-        fflush(stdout);
-    }
-
-    err = DTP_pool_create_struct(basic_type_num, basic_types, basic_type_counts, &recv_dtp);
-    if (err != DTP_SUCCESS) {
-        fprintf(stdout, "Error while creating struct pool\n");
-        fflush(stdout);
-    }
-
-    /* these are ignored */
-    count[0] = 0;
-    count[1] = 0;
-#endif
+    MTestArgListDestroy(head);
 
     /* The following illustrates the use of the routines to
      * run through a selection of communicators and datatypes.
      * Use subsets of these for tests that do not involve combinations
      * of communicators, datatypes, and counts of datatypes */
     while (MTestGetIntracommGeneral(&comm, minsize, 1)) {
-        if (comm == MPI_COMM_NULL)
+        if (comm == MPI_COMM_NULL) {
+            /* for NULL comms, make sure these processes create the
+             * same number of objects, so the target knows what
+             * datatype layout to check for */
+            errs += MTEST_CREATE_AND_FREE_DTP_OBJS(dtp, maxbufsize, testsize);
+            errs += MTEST_CREATE_AND_FREE_DTP_OBJS(dtp, maxbufsize, testsize);
             continue;
+        }
+
         /* Determine the sender and receiver */
         MPI_Comm_rank(comm, &rank);
         MPI_Comm_size(comm, &size);
@@ -199,96 +80,121 @@ int main(int argc, char *argv[])
          * change the error handler to errors return */
         MPI_Comm_set_errhandler(comm, MPI_ERRORS_RETURN);
 
-        for (i = 0; i < send_dtp->DTP_num_objs; i++) {
-            err = DTP_obj_create(send_dtp, i, 0, 1, count[0]);
+        for (i = 0; i < testsize; i++) {
+            err = DTP_obj_create(dtp, &send_obj, maxbufsize);
             if (err != DTP_SUCCESS) {
                 errs++;
                 break;
             }
 
-            sendcount = send_dtp->DTP_obj_array[i].DTP_obj_count;
-            sendtype = send_dtp->DTP_obj_array[i].DTP_obj_type;
-            sendbuf = send_dtp->DTP_obj_array[i].DTP_obj_buf;
+            err += DTP_obj_create(dtp, &recv_obj, maxbufsize);
+            if (err != DTP_SUCCESS) {
+                errs++;
+                break;
+            }
 
-            for (j = 0; j < recv_dtp->DTP_num_objs; j++) {
-                int nbytes;
-                MPI_Type_size(sendtype, &nbytes);
-                maxmsg = MAX_COUNT - count[0];
+            int nbytes;
+            MPI_Type_size(send_obj.DTP_datatype, &nbytes);
+            nbytes *= send_obj.DTP_type_count;
 
-                err = DTP_obj_create(recv_dtp, j, 0, 0, 0);
+            maxmsg = MAX_TOTAL_MSG_SIZE / nbytes;
+            if (maxmsg > MAXMSG)
+                maxmsg = MAXMSG;
+
+            if (rank == source) {
+                MTestAlloc(send_obj.DTP_bufsize, sendmem, &sendbuf_h, &sendbuf, 0);
+                assert(sendbuf && sendbuf_h);
+
+                err = DTP_obj_buf_init(send_obj, sendbuf_h, 0, 1, count[0]);
                 if (err != DTP_SUCCESS) {
                     errs++;
                     break;
                 }
+                MTestCopyContent(sendbuf_h, sendbuf, send_obj.DTP_bufsize, sendmem);
 
-                recvcount = recv_dtp->DTP_obj_array[j].DTP_obj_count;
-                recvtype = recv_dtp->DTP_obj_array[j].DTP_obj_type;
-                recvbuf = recv_dtp->DTP_obj_array[j].DTP_obj_buf;
+                sendcount = send_obj.DTP_type_count;
+                sendtype = send_obj.DTP_datatype;
 
-                /* We may want to limit the total message size sent */
-                if (nbytes > MAX_MSG_SIZE) {
-                    continue;
-                }
+                char *desc;
+                DTP_obj_get_description(send_obj, &desc);
+                MTestPrintfMsg(1, "Sending count = %d of sendtype %s of total size %d bytes\n",
+                               count[0], desc, nbytes * count[0]);
+                free(desc);
 
-                if (rank == source) {
-                    MPI_Type_get_name(sendtype, send_name, &len);
-                    MTestPrintfMsg(1, "Sending count = %d of sendtype %s of total size %d bytes\n",
-                                   count[0], send_name, nbytes * count[0]);
-
-                    for (nmsg = 1; nmsg < maxmsg; nmsg++) {
-                        err = MPI_Send(sendbuf, sendcount, sendtype, dest, 0, comm);
-                        if (err) {
-                            errs++;
-                            if (errs < 10) {
-                                MTestPrintError(err);
-                            }
-                        }
-                    }
-                } else if (rank == dest) {
-                    for (nmsg = 1; nmsg < maxmsg; nmsg++) {
-                        err =
-                            MPI_Recv(recvbuf, recvcount, recvtype, source, 0, comm,
-                                     MPI_STATUS_IGNORE);
-                        if (err) {
-                            errs++;
-                            if (errs < 10) {
-                                MTestPrintError(err);
-                            }
-                        }
-
-                        err = DTP_obj_buf_check(recv_dtp, j, 0, 1, count[0]);
-                        if (err != DTP_SUCCESS) {
-                            if (errs < 10) {
-                                MPI_Type_get_name(sendtype, send_name, &len);
-                                MPI_Type_get_name(recvtype, recv_name, &len);
-                                fprintf(stdout,
-                                        "Data in target buffer did not match for destination datatype %s and source datatype %s, count = %d, message iteration %d of %d\n",
-                                        recv_name, send_name, count[0], nmsg, maxmsg);
-                                fflush(stdout);
-                            }
-                            errs++;
+                for (nmsg = 1; nmsg < maxmsg; nmsg++) {
+                    err =
+                        MPI_Send(sendbuf + send_obj.DTP_buf_offset, sendcount, sendtype, dest, 0,
+                                 comm);
+                    if (err) {
+                        errs++;
+                        if (errs < 10) {
+                            MTestPrintError(err);
                         }
                     }
                 }
-                DTP_obj_free(recv_dtp, j);
+
+                MTestFree(sendmem, sendbuf_h, sendbuf);
+            } else if (rank == dest) {
+                MTestAlloc(recv_obj.DTP_bufsize, recvmem, &recvbuf_h, &recvbuf, 0);
+                assert(recvbuf && recvbuf_h);
+
+                recvcount = recv_obj.DTP_type_count;
+                recvtype = recv_obj.DTP_datatype;
+
+                for (nmsg = 1; nmsg < maxmsg; nmsg++) {
+                    err = DTP_obj_buf_init(recv_obj, recvbuf_h, -1, -1, count[0]);
+                    if (err != DTP_SUCCESS) {
+                        errs++;
+                        break;
+                    }
+                    MTestCopyContent(recvbuf_h, recvbuf, recv_obj.DTP_bufsize, recvmem);
+
+                    err =
+                        MPI_Recv(recvbuf + recv_obj.DTP_buf_offset, recvcount, recvtype, source, 0,
+                                 comm, MPI_STATUS_IGNORE);
+                    if (err) {
+                        errs++;
+                        if (errs < 10) {
+                            MTestPrintError(err);
+                        }
+                    }
+
+                    MTestCopyContent(recvbuf, recvbuf_h, recv_obj.DTP_bufsize, recvmem);
+                    err = DTP_obj_buf_check(recv_obj, recvbuf_h, 0, 1, count[0]);
+                    if (err != DTP_SUCCESS) {
+                        if (errs < 10) {
+                            char *recv_desc, *send_desc;
+                            DTP_obj_get_description(recv_obj, &recv_desc);
+                            DTP_obj_get_description(send_obj, &send_desc);
+                            fprintf(stderr,
+                                    "Data in target buffer did not match for destination datatype %s and source datatype %s, count = %ld, message iteration %d of %d\n",
+                                    recv_desc, send_desc, count[0], nmsg, maxmsg);
+                            fflush(stderr);
+                            free(recv_desc);
+                            free(send_desc);
+                        }
+                        errs++;
+                    }
+                }
+
+                MTestFree(recvmem, recvbuf_h, recvbuf);
             }
-            DTP_obj_free(send_dtp, i);
+            DTP_obj_free(recv_obj);
+            DTP_obj_free(send_obj);
+#ifdef USE_BARRIER
+            /* NOTE: Without MPI_Barrier, recv side can easily accumulate large unexpected queue
+             * across multiple batches, especially in an async test. Currently, both libfabric and ucx
+             * netmod does not handle large message queue well, resulting in exponential slow-downs.
+             * Adding barrier let the current tests pass.
+             */
+            /* FIXME: fix netmod issues then remove the barrier (and corresponding tests). */
+            MPI_Barrier(comm);
+#endif
         }
         MTestFreeComm(&comm);
     }
 
-    DTP_pool_free(send_dtp);
-    DTP_pool_free(recv_dtp);
-
-#ifdef USE_DTP_POOL_TYPE__STRUCT
-    /* cleanup array if any */
-    if (basic_types) {
-        free(basic_types);
-    }
-    if (basic_type_counts) {
-        free(basic_type_counts);
-    }
-#endif
+    DTP_pool_free(dtp);
 
     MTest_Finalize(errs);
     return MTestReturnValue(errs);

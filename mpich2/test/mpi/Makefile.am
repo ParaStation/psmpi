@@ -1,12 +1,10 @@
-# -*- Mode: Makefile; -*-
-# vim: set ft=automake :
-#
-# (C) 2011 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
 
 # mix in the "make testing" rule and other boilerplate
-include $(top_srcdir)/Makefile.mtest
+include $(top_srcdir)/Makefile_single.mtest
 
 ACLOCAL_AMFLAGS = -I confdb
 
@@ -21,7 +19,7 @@ all_lang_subdirs = f77 cxx f90 f08
 DIST_SUBDIRS = $(static_subdirs) io $(all_lang_subdirs) threads spawn .
 SUBDIRS      = $(static_subdirs) $(iodir) $(otherlangs) $(threadsdir) $(spawndir) $(ckpointdir) $(ftdir) .
 
-EXTRA_DIST = maint/common.defn maint/f77tof90 maint/testmerge.in maint/updatefiles testlist.in
+EXTRA_DIST = maint/common.defn maint/f77tof90 maint/testmerge.in maint/updatefiles maint/gentests_dtp.sh maint/test_coll_algos.sh maint/dtp-test-config.txt testlist.in
 
 DISTCLEANFILES = config.system
 

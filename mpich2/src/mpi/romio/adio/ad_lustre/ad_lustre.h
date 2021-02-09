@@ -1,11 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *   Copyright (C) 1997 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
- *
- *   Copyright (C) 2007 Oak Ridge National Laboratory
- *
- *   Copyright (C) 2008 Sun Microsystems, Lustre group
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef AD_LUSTRE_H_INCLUDED
@@ -82,7 +77,7 @@ void ADIOI_LUSTRE_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
 int ADIOI_LUSTRE_Docollect(ADIO_File fd, int contig_access_count,
                            ADIO_Offset * len_list, int nprocs);
 
-void ADIOI_LUSTRE_Get_striping_info(ADIO_File fd, int **striping_info_ptr, int mode);
+void ADIOI_LUSTRE_Get_striping_info(ADIO_File fd, int *striping_info, int mode);
 void ADIOI_LUSTRE_Calc_my_req(ADIO_File fd, ADIO_Offset * offset_list,
                               ADIO_Offset * len_list, int contig_access_count,
                               int *striping_info, int nprocs,

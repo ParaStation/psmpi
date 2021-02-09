@@ -1,7 +1,6 @@
-C      /* -*- Mode: Fortran; -*- */
 C      
-C      (C) 2001 by Argonne National Laboratory.
-C      See COPYRIGHT in top-level directory.
+C      Copyright (C) by Argonne National Laboratory
+C          See COPYRIGHT in top-level directory
 C      
 C      DO NOT EDIT
 C      This file created by buildiface 

@@ -1,19 +1,6 @@
 dnl AC_PROG_CC_GNU
 ifdef([AC_PROG_CC_GNU],,[AC_DEFUN([AC_PROG_CC_GNU],)])
 
-dnl PAC_PROG_CC - reprioritize the C compiler search order
-AC_DEFUN([PAC_PROG_CC],[
-        dnl Many standard autoconf/automake/libtool macros, such as LT_INIT,
-        dnl perform an AC_REQUIRE([AC_PROG_CC]).  If this macro (PAC_PROG_CC)
-        dnl comes after LT_INIT (or similar) then the default compiler search
-        dnl path will be used instead.  This AC_BEFORE macro ensures that a
-        dnl warning will be emitted at autoconf-time (autogen.sh-time) to help
-        dnl developers notice this case.
-        AC_BEFORE([$0],[AC_PROG_CC])
-	PAC_PUSH_FLAG([CFLAGS])
-	AC_PROG_CC([icc pgcc xlc xlC pathcc gcc clang cc])
-	PAC_POP_FLAG([CFLAGS])
-])
 dnl
 dnl/*D
 dnl PAC_C_CHECK_COMPILER_OPTION - Check that a compiler option is accepted
@@ -68,36 +55,6 @@ AC_MSG_RESULT([$pac_result])
 dnl Delete the conftest created by AC_LANG_CONFTEST.
 rm -f conftest.$ac_ext
 
-# gcc 4.2.4 on 32-bit does not complain about the -Wno-type-limits option 
-# even though it doesn't support it.  However, when another warning is 
-# triggered, it gives an error that the option is not recognized.  So we 
-# need to test with a conftest file that will generate warnings.
-# 
-# add an extra switch, pac_c_check_compiler_option_prototest, to
-# disable this test just in case some new compiler does not like it.
-#
-# Linking with a program with an invalid prototype to ensure a compiler warning.
-
-if test "$pac_result" = "yes" \
-     -a "$pac_c_check_compiler_option_prototest" != "no" ; then
-    AC_MSG_CHECKING([whether C compiler option $1 works with an invalid prototype program])
-    AC_LINK_IFELSE([
-        dnl We want a warning, but we don't want to inadvertently disable
-        dnl special warnings like -Werror-implicit-function-declaration (e.g.,
-        dnl in PAC_CC_STRICT) by compiling something that might actually be
-        dnl treated as an error by the compiler.  So we try to elicit an
-        dnl "unused variable" warning and/or an "uninitialized" warning with the
-        dnl test program below.
-        dnl
-        dnl The old sanity program was:
-        dnl   void main() {return 0;}
-        dnl which clang (but not GCC) would treat as an *error*, invalidating
-        dnl the test for any given parameter.
-        AC_LANG_SOURCE([int main(int argc, char **argv){ int foo, bar = 0; foo += 1; return foo; }])
-    ],[pac_result=yes],[pac_result=no])
-    AC_MSG_RESULT([$pac_result])
-fi
-#
 if test "$pac_result" = "yes" ; then
     AC_MSG_CHECKING([whether routines compiled with $pac_opt can be linked with ones compiled without $pac_opt])
     pac_result=unknown
@@ -459,6 +416,8 @@ dnl (-D __STRICT_ANSI__-trigraphs)
 AC_DEFUN([PAC_CC_STRICT],[
 export enable_strict_done
 if test "$enable_strict_done" != "yes" ; then
+    # make sure we don't add the below flags multiple times
+    enable_strict_done=yes
 
     # Some comments on strict warning options.
     # These were added to improve portability
@@ -481,8 +440,6 @@ if test "$enable_strict_done" != "yes" ; then
     #   -Wno-sign-compare -- read() and write() return bytes read/written
     #       as a signed value, but we often compare this to size_t (or
     #	    msg_sz_t) variables.
-    #   -Wno-format-zero-length -- this warning is irritating and useless, since
-    #                              a zero-length format string is very well defined
     # These were removed to reduce warnings:
     #   -Wcast-qual -- Sometimes we need to cast "volatile char*" to 
     #	    "char*", e.g., for memcpy.
@@ -554,62 +511,64 @@ if test "$enable_strict_done" != "yes" ; then
         -Winvalid-pch
         -Wno-pointer-sign
         -Wvariadic-macros
-        -Wno-format-zero-length
         -Wtype-limits
         -Werror-implicit-function-declaration
         -Wstack-usage=262144
+        -diag-disable=all
     "
 
-    enable_c89=no
-    enable_c99=yes
-    enable_posix=2001
+    if test -z "$1"; then
+        flags=no
+    else
+        flags="`echo $1 | sed -e 's/:/ /g' -e 's/,/ /g'`"
+    fi
+    add_cflags=yes
+    c_std=c99
+    posix_std=2001
     enable_opt=yes
-    flags="`echo $1 | sed -e 's/:/ /g' -e 's/,/ /g'`"
+    pac_cc_strict_werror=no
     for flag in ${flags}; do
         case "$flag" in
-	     c89)
-		enable_strict_done="yes"
-		enable_c89=yes
-                enable_c99=no
+             error)
+                # note: we can't enable -Werror early as it will break many config tests
+                #       Need apply to CFLAGS at the end of configure.
+                pac_cc_strict_werror=yes
+                ;;
+	     stdc89)
+	        c_std=c89
 		;;
-	     c99)
-		enable_strict_done="yes"
-                enable_c89=no
-		enable_c99=yes
+	     stdc99)
+	        c_std=c99
+		;;
+	     stdgnu99)
+	        c_std=gnu99
+		;;
+	     nostdc)
+		c_std=none
 		;;
 	     posix1995)
-		enable_strict_done="yes"
-		enable_posix=1995
+		posix_std=1995
 		;;
-	     posix|posix2001)
-		enable_strict_done="yes"
-		enable_posix=2001
+	     posix2001)
+		posix_std=2001
 		;;
 	     posix2008)
-		enable_strict_done="yes"
-		enable_posix=2008
+		posix_std=2008
 		;;
 	     noposix)
-		enable_strict_done="yes"
-		enable_posix=no
+		posix_std=none
 		;;
 	     opt)
-		enable_strict_done="yes"
 		enable_opt=yes
 		;;
 	     noopt)
-		enable_strict_done="yes"
 		enable_opt=no
 		;;
 	     all|yes)
-		enable_strict_done="yes"
-		enable_c99=yes
-		enable_posix=2001
-		enable_opt=yes
+		# leave the defaults
 	        ;;
-	     no)
-		# Accept and ignore this value
-		:
+	     no|none)
+		add_cflags=no
 		;;
 	     *)
 		if test -n "$flag" ; then
@@ -620,34 +579,48 @@ if test "$enable_strict_done" != "yes" ; then
     done
 
     pac_cc_strict_flags=""
-    if test "${enable_strict_done}" = "yes" ; then
-       if test "${enable_opt}" = "yes" ; then
-       	  pac_cc_strict_flags="-O2"
-       fi
+    if test "${add_cflags}" = "yes" ; then
+       # common flags
        pac_cc_strict_flags="$pac_cc_strict_flags $pac_common_strict_flags"
-       # We only allow one of strict-C99 or strict-C89 to be
-       # enabled. If C99 is enabled, we automatically disable C89.
-       if test "${enable_c99}" = "yes" ; then
-       	  PAC_APPEND_FLAG([-std=c99],[pac_cc_strict_flags])
-          # Use -D_STDC_C99= for Solaris compilers. See
-          # http://lists.gnu.org/archive/html/autoconf/2010-12/msg00059.html
-          # for discussion on why not to use -xc99
-          PAC_APPEND_FLAG([-D_STDC_C99=],[pac_cc_strict_flags])
-       elif test "${enable_c89}" = "yes" ; then
-       	  PAC_APPEND_FLAG([-std=c89],[pac_cc_strict_flags])
-       	  PAC_APPEND_FLAG([-Wdeclaration-after-statement],[pac_cc_strict_flags])
+
+       # optimization flags
+       if test "${enable_opt}" = "yes" ; then
+	  PAC_APPEND_FLAG([-O2],[pac_cc_strict_flags])
        fi
-       # POSIX 2001 should be used with C99. But the default standard for some
-       # compilers are not C99. We must test the support of POSIX 2001 after
-       # testing C99.
-       case "$enable_posix" in
-            no)   : ;;
+
+       # stdc flags
+       case "${c_std}" in
+	    none)
+		:
+		;;
+	    c89)
+		PAC_APPEND_FLAG([-std=c89],[pac_cc_strict_flags])
+		PAC_APPEND_FLAG([-Wdeclaration-after-statement],[pac_cc_strict_flags])
+		;;
+	    c99)
+		PAC_APPEND_FLAG([-std=c99],[pac_cc_strict_flags])
+		# Use -D_STDC_C99= for Solaris compilers. See
+		# http://lists.gnu.org/archive/html/autoconf/2010-12/msg00059.html
+		# for discussion on why not to use -xc99
+		PAC_APPEND_FLAG([-D_STDC_C99=],[pac_cc_strict_flags])
+		;;
+	    gnu99)
+		PAC_APPEND_FLAG([-std=gnu99],[pac_cc_strict_flags])
+		;;
+	    *)
+		AC_MSG_ERROR([internal error, unexpected C std version: '$c_std'])
+		;;
+       esac
+
+       # posix flags
+       case "${posix_std}" in
+            none) : ;;
             1995) PAC_APPEND_FLAG([-D_POSIX_C_SOURCE=199506L],[pac_cc_strict_flags]) ;;
             2001) PAC_APPEND_FLAG([-D_POSIX_C_SOURCE=200112L],[pac_cc_strict_flags]) ;;
             2008) PAC_APPEND_FLAG([-D_POSIX_C_SOURCE=200809L],[pac_cc_strict_flags]) ;;
-            *)    AC_MSG_ERROR([internal error, unexpected POSIX version: '$enable_posix']) ;;
+            *)    AC_MSG_ERROR([internal error, unexpected POSIX version: '$posix_std']) ;;
        esac
-       if test "$enable_posix" != "no" ; then
+       if test "${posix_std}" != "none" ; then
            AS_CASE([$host],[*-*-darwin*], [PAC_APPEND_FLAG([-D_DARWIN_C_SOURCE],[pac_cc_strict_flags])])
        fi
     fi
@@ -676,7 +649,7 @@ dnl
 dnl D*/
 AC_DEFUN([PAC_ARG_STRICT],[
 AC_ARG_ENABLE(strict,
-	AC_HELP_STRING([--enable-strict], [Turn on strict compilation testing]))
+	AC_HELP_STRING([--enable-strict], [Turn on strict compilation testing]),,enable_strict=no)
 PAC_CC_STRICT($enable_strict)
 CFLAGS="$CFLAGS $pac_cc_strict_flags"
 export CFLAGS
@@ -1116,11 +1089,7 @@ int main( int argc, char *argv[] )
     if (extent1 < extent2) extent1 = extent2;
     if ((sizeof(double) == 8) && (extent1 % 8) != 0) {
        if (extent1 % 4 == 0) {
-#ifdef HAVE_MAX_FP_ALIGNMENT
-          if (HAVE_MAX_FP_ALIGNMENT >= 8) align_4 = 1;
-#else
           align_4 = 1;
-#endif
        }
     }
 
@@ -1294,75 +1263,6 @@ pac_cv_gnu_attr_format=yes,pac_cv_gnu_attr_format=no)])
         AC_DEFINE(HAVE_GCC_ATTRIBUTE,1,[Define if GNU __attribute__ is supported])
     fi
 fi
-])
-dnl
-dnl Check for a broken install (fails to preserve file modification times,
-dnl thus breaking libraries.
-dnl
-dnl Create a library, install it, and then try to link against it.
-AC_DEFUN([PAC_PROG_INSTALL_BREAKS_LIBS],[
-AC_CACHE_CHECK([whether install breaks libraries],
-ac_cv_prog_install_breaks_libs,[
-AC_REQUIRE([AC_PROG_RANLIB])
-AC_REQUIRE([AC_PROG_INSTALL])
-AC_REQUIRE([AC_PROG_CC])
-ac_cv_prog_install_breaks_libs=yes
-
-AC_COMPILE_IFELSE([
-    AC_LANG_SOURCE([ int foo(int); int foo(int a){return a;} ])
-],[
-    if ${AR-ar} ${AR_FLAGS-cr} libconftest.a conftest.$OBJEXT >/dev/null 2>&1 ; then
-        if ${RANLIB-:} libconftest.a >/dev/null 2>&1 ; then
-            # Anything less than sleep 10, and Mac OS/X (Darwin) 
-            # will claim that install works because ranlib won't complain
-            sleep 10
-            libinstall="$INSTALL_DATA"
-            eval "libinstall=\"$libinstall\""
-            if ${libinstall} libconftest.a libconftest1.a >/dev/null 2>&1 ; then
-                saved_LIBS="$LIBS"
-                LIBS="libconftest1.a"
-                AC_LINK_IFELSE([
-                    AC_LANG_SOURCE([
-extern int foo(int);
-int main(int argc, char **argv){ return foo(0); }
-                    ])
-                ],[
-                    # Success!  Install works
-                    ac_cv_prog_install_breaks_libs=no
-                ],[
-                    # Failure!  Does install -p work?        
-                    rm -f libconftest1.a
-                    if ${libinstall} -p libconftest.a libconftest1.a >/dev/null 2>&1 ; then
-                        AC_LINK_IFELSE([],[
-                            # Success!  Install works
-                            ac_cv_prog_install_breaks_libs="no, with -p"
-                        ])
-                    fi
-                ])
-                LIBS="$saved_LIBS"
-            fi
-        fi
-    fi
-])
-rm -f libconftest*.a
-]) dnl Endof ac_cache_check
-
-if test -z "$RANLIB_AFTER_INSTALL" ; then
-    RANLIB_AFTER_INSTALL=no
-fi
-case "$ac_cv_prog_install_breaks_libs" in
-    yes)
-        RANLIB_AFTER_INSTALL=yes
-    ;;
-    "no, with -p")
-        INSTALL_DATA="$INSTALL_DATA -p"
-    ;;
-    *)
-    # Do nothing
-    :
-    ;;
-esac
-AC_SUBST(RANLIB_AFTER_INSTALL)
 ])
 
 #
@@ -1697,6 +1597,26 @@ fi
 ])
 
 dnl
+dnl PAC_C_STATIC_ASSERT - Test whether C11 _Static_assert is supported
+dnl
+dnl will AC_DEFINE([HAVE_C11__STATIC_ASSERT]) if C11 _Static_assert is supported.
+dnl
+AC_DEFUN([PAC_C_STATIC_ASSERT], [
+    AC_MSG_CHECKING([for C11 _Static_assert functionality])
+    AC_LINK_IFELSE([AC_LANG_SOURCE([
+    int main(){
+        _Static_assert(1, "The impossible happened!");
+        return 0;
+    }
+    ])],[
+    AC_DEFINE([HAVE_C11__STATIC_ASSERT],[1],[Define if C11 _Static_assert is supported.])
+    AC_MSG_RESULT([yes])
+    ],[
+    AC_MSG_RESULT([no])
+    ])
+])
+
+dnl
 dnl PAC_CC_CHECK_TLS - Test for thread local storage support
 dnl
 dnl will AC_DEFINE([TLS]) to a compiler supported TLS keyword
@@ -1718,6 +1638,46 @@ AC_DEFUN([PAC_CC_CHECK_TLS], [
     if test -z $pac_cv_tls ; then
         AC_MSG_WARN([Compiler does not support thread local storage])
     else
-        AC_DEFINE_UNQUOTED([TLS], [$pac_cv_tls], [Defined the keyword for thread-local storage.])
+        AC_DEFINE_UNQUOTED([COMPILER_TLS], [$pac_cv_tls], [Defined the keyword for thread-local storage.])
     fi
 ])
+
+dnl Test whether pointers can be aligned on a int boundary or require
+dnl a pointer boundary.
+AC_DEFUN([PAC_CHECK_PTR_ALIGN]), [
+    AC_MSG_CHECKING([for alignment restrictions on pointers])
+    AC_TRY_RUN(
+    changequote(<<,>>)
+    struct foo { int a; void *b; };
+    int main() {
+        int buf[10];
+        struct foo *p1;
+        p1=(struct foo*)&buf[0];
+        p1->b = (void *)0;
+        p1=(struct foo*)&buf[1];
+        p1->b = (void *)0;
+        return 0;
+    changequote([,])
+    },pac_cv_pointers_have_int_alignment=yes,pac_cv_pointers_have_int_alignment=no,pac_cv_pointers_have_int_alignment=unknown)
+
+    if test "$pac_cv_pointers_have_int_alignment" != "yes" ; then
+        AC_DEFINE(NEEDS_POINTER_ALIGNMENT_ADJUST,1,[define if pointers must be aligned on pointer boundaries])
+        AC_MSG_RESULT([pointer])
+    else
+        AC_MSG_RESULT([int or better])
+    fi
+])
+
+dnl PAC_ARG_ATOMIC_PRIMITIVES
+dnl  - Provide configure option to select atomic primitives. Defaults to auto.
+AC_DEFUN([PAC_ARG_ATOMIC_PRIMITIVES], [
+     AC_ARG_WITH([mpl-atomic-primitives],
+     [  --with-mpl-atomic-primitives=package  Atomic primitives to use. The following is include:
+        auto - Automatically choose the best one (default)
+        c11 - C11 atomics
+        gcc_atomic - GCC atomic builtins
+        gcc_sync - GCC sync builtins
+        win - Windows builtins
+        lock - Mutex-based synchronization
+        no|none - atomic operations are performed without synchronization
+     ],,with_mpl_atomic_primitives=auto)])

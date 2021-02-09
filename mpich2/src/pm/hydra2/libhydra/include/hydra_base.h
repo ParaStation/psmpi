@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2017 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef HYDRA_BASE_H_INCLUDED
@@ -148,7 +147,7 @@ typedef enum {
     HYD_ERR_SOCK,
     HYD_ERR_INVALID_PARAM,
     HYD_ERR_INTERNAL,
-    HYD_ERR_PORT_IN_USE,
+    HYD_ERR_PORT_IN_USE
 } HYD_status;
 
 #endif /* HYDRA_BASE_H_INCLUDED */

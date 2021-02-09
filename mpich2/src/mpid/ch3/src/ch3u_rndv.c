@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidimpl.h"
@@ -11,10 +10,6 @@
  * for MPI point-to-point messaging.
  */
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_RndvSend
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /* MPIDI_CH3_RndvSend - Send a request to perform a rendezvous send */
 int MPIDI_CH3_RndvSend( MPIR_Request **sreq_p, const void * buf, MPI_Aint count,
 			MPI_Datatype datatype, int dt_contig, intptr_t data_sz,
@@ -103,10 +98,6 @@ int MPIDI_CH3_RndvSend( MPIR_Request **sreq_p, const void * buf, MPI_Aint count,
     MPIDI_Request_set_msg_type((rreq_), (msg_type_));		\
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_PktHandler_RndvReqToSend
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3_PktHandler_RndvReqToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, void *data ATTRIBUTE((unused)),
 					intptr_t *buflen, MPIR_Request **rreqp )
 {
@@ -191,10 +182,6 @@ int MPIDI_CH3_PktHandler_RndvReqToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, vo
     return mpi_errno;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_PktHandler_RndvClrToSend
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3_PktHandler_RndvClrToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, void *data ATTRIBUTE((unused)),
 					intptr_t *buflen, MPIR_Request **rreqp )
 {
@@ -239,17 +226,17 @@ int MPIDI_CH3_PktHandler_RndvClrToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, vo
     
     if (dt_contig) 
     {
-	MPL_IOV iov[MPL_IOV_LIMIT];
+	struct iovec iov[MPL_IOV_LIMIT];
 
 	MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
 		    "sending contiguous rndv data, data_sz=%" PRIdPTR,
 					    data_sz));
 	
-	iov[0].MPL_IOV_BUF = (MPL_IOV_BUF_CAST)rs_pkt;
-	iov[0].MPL_IOV_LEN = sizeof(*rs_pkt);
+	iov[0].iov_base = (void *)rs_pkt;
+	iov[0].iov_len = sizeof(*rs_pkt);
 	
-	iov[1].MPL_IOV_BUF = (MPL_IOV_BUF_CAST)((char *)sreq->dev.user_buf + dt_true_lb);
-	iov[1].MPL_IOV_LEN = data_sz;
+	iov[1].iov_base = (void *)((char *)sreq->dev.user_buf + dt_true_lb);
+	iov[1].iov_len = data_sz;
 
         MPID_THREAD_CS_ENTER(POBJ, vc->pobj_mutex);
 	mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, 2);
@@ -258,15 +245,11 @@ int MPIDI_CH3_PktHandler_RndvClrToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, vo
     }
     else
     {
-	sreq->dev.segment_ptr = MPIR_Segment_alloc( );
-        MPIR_ERR_CHKANDJUMP1((sreq->dev.segment_ptr == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPIR_Segment_alloc");
-	MPIR_Segment_init(sreq->dev.user_buf, sreq->dev.user_count, 
-			  sreq->dev.datatype, sreq->dev.segment_ptr);
-	sreq->dev.segment_first = 0;
-	sreq->dev.segment_size = data_sz;
+	sreq->dev.msg_offset = 0;
+	sreq->dev.msgsize = data_sz;
 
 	MPID_THREAD_CS_ENTER(POBJ, vc->pobj_mutex);
-	mpi_errno = vc->sendNoncontig_fn(vc, sreq, rs_pkt, sizeof(*rs_pkt));
+	mpi_errno = vc->sendNoncontig_fn(vc, sreq, rs_pkt, sizeof(*rs_pkt), NULL, 0);
 	MPID_THREAD_CS_EXIT(POBJ, vc->pobj_mutex);
 	MPIR_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**ch3|senddata");
     }    
@@ -276,10 +259,6 @@ int MPIDI_CH3_PktHandler_RndvClrToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, vo
     return mpi_errno;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_PktHandler_RndvSend
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3_PktHandler_RndvSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, void *data,
 				   intptr_t *buflen, MPIR_Request **rreqp )
 {
@@ -299,9 +278,7 @@ int MPIDI_CH3_PktHandler_RndvSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, void *d
     if (req->dev.recv_data_sz == 0) {
         *buflen = 0;
         mpi_errno = MPID_Request_complete(req);
-        if (mpi_errno != MPI_SUCCESS) {
-            MPIR_ERR_POP(mpi_errno);
-        }
+        MPIR_ERR_CHECK(mpi_errno);
 	*rreqp = NULL;
     }
     else {
@@ -317,9 +294,7 @@ int MPIDI_CH3_PktHandler_RndvSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, void *d
         if (complete) 
         {
             mpi_errno = MPID_Request_complete(req);
-            if (mpi_errno != MPI_SUCCESS) {
-                MPIR_ERR_POP(mpi_errno);
-            }
+            MPIR_ERR_CHECK(mpi_errno);
             *rreqp = NULL;
         }
         else
@@ -336,10 +311,6 @@ int MPIDI_CH3_PktHandler_RndvSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, void *d
  * This routine processes a rendezvous message once the message is matched.
  * It is used in mpid_recv and mpid_irecv.
  */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_RecvRndv
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3_RecvRndv( MPIDI_VC_t * vc, MPIR_Request *rreq )
 {
     int mpi_errno = MPI_SUCCESS;

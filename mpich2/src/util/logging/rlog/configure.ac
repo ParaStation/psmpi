@@ -1,3 +1,8 @@
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
+
 dnl Process this file with autoconf to produce a configure script.
 dnl
 dnl The file name here refers to a file in the source being configured
@@ -5,10 +10,9 @@ AC_INIT(rlog.c)
 
 dnl Definitions will be placed in this file rather than in the DEFS variable
 AC_CONFIG_HEADER(rlogconf.h)
-AH_TOP([/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+AH_TOP([/*
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 #ifndef FORKERCONF_H_INCLUDED
 #define FORKERCONF_H_INCLUDED
@@ -42,32 +46,28 @@ if test -z "$top_srcdir" ; then
 else
    use_top_srcdir=$top_srcdir
 fi
-if test -z "$master_top_srcdir" ; then 
-    master_top_srcdir=$use_top_srcdir
+if test -z "$main_top_srcdir" ; then
+    main_top_srcdir=$use_top_srcdir
 fi
-AC_SUBST(master_top_srcdir)
-export master_top_srcdir
+AC_SUBST(main_top_srcdir)
+export main_top_srcdir
 #
-# Get the master builddir (which may be imported from above)
-if test -z "$master_top_builddir" ; then
-    master_top_builddir=`pwd`
+# Get the main builddir (which may be imported from above)
+if test -z "$main_top_builddir" ; then
+    main_top_builddir=`pwd`
 fi
-export master_top_builddir
-AC_SUBST(master_top_builddir)
+export main_top_builddir
+AC_SUBST(main_top_builddir)
 
 dnl Find a C compiler
-PAC_PROG_CC
+AC_PROG_CC
+AC_PROG_CC_C99
 AC_PATH_PROG(AR,ar)
 AC_SUBST(AR_FLAGS)
-# Note that we set RANLIB to true if we don't find it (some systems neither
-# need it nor provide it)
-AC_CHECK_PROGS(RANLIB,ranlib,true)
 dnl
 dnl AC_PROG_MAKE_SET
 AC_PROG_INSTALL
 PAC_PROG_CHECK_INSTALL_WORKS
-dnl On Mac OS/X, install breaks libraries unless used with the -p switch
-PAC_PROG_INSTALL_BREAKS_LIBS
 dnl We also need mkdir -p.
 PAC_PROG_MKDIR_P
 PAC_PROG_MAKE

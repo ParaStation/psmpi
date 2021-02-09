@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -38,10 +36,6 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, const int indx[], const int 
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Graph_create
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Graph_create(MPIR_Comm * comm_ptr, int nnodes,
                       const int indx[], const int edges[], int reorder, MPI_Comm * comm_graph)
 {
@@ -61,21 +55,18 @@ int MPIR_Graph_create(MPIR_Comm * comm_ptr, int nnodes,
         /* Allow the cart map routine to remap the assignment of ranks to
          * processes */
         mpi_errno = MPIR_Graph_map_impl(comm_ptr, nnodes, indx, edges, &nrank);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         /* Create the new communicator with split, since we need to reorder
          * the ranks (including the related internals, such as the connection
          * tables */
         mpi_errno = MPIR_Comm_split_impl(comm_ptr,
                                          nrank == MPI_UNDEFINED ? MPI_UNDEFINED : 1,
                                          nrank, &newcomm_ptr);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     } else {
         /* Just use the first nnodes processes in the communicator */
-        mpi_errno = MPII_Comm_copy((MPIR_Comm *) comm_ptr, nnodes, &newcomm_ptr);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        mpi_errno = MPII_Comm_copy((MPIR_Comm *) comm_ptr, nnodes, NULL, &newcomm_ptr);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
 
@@ -121,21 +112,17 @@ int MPIR_Graph_create(MPIR_Comm * comm_ptr, int nnodes,
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_graph_create", "**mpi_graph_create %C %d %p %p %d %p",
                                  comm_ptr->handle, nnodes, indx, edges, reorder, comm_graph);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm((MPIR_Comm *) comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm((MPIR_Comm *) comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Graph_create
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Graph_create - Makes a new communicator to which topology information
                  has been attached
@@ -229,7 +216,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, const int indx[],
             if (nnodes > comm_size) {
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
                                                  MPIR_ERR_RECOVERABLE,
-                                                 FCNAME, __LINE__,
+                                                 __func__, __LINE__,
                                                  MPI_ERR_ARG,
                                                  "**topotoolarge", "**topotoolarge %d %d",
                                                  nnodes, comm_size);
@@ -248,14 +235,14 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, const int indx[],
                 if (indx[i] < 0) {
                     mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
                                                      MPIR_ERR_RECOVERABLE,
-                                                     FCNAME, __LINE__,
+                                                     __func__, __LINE__,
                                                      MPI_ERR_ARG,
                                                      "**indexneg", "**indexneg %d %d", i, indx[i]);
                 }
                 if (i + 1 < nnodes && indx[i] > indx[i + 1]) {
                     mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
                                                      MPIR_ERR_RECOVERABLE,
-                                                     FCNAME, __LINE__,
+                                                     __func__, __LINE__,
                                                      MPI_ERR_ARG,
                                                      "**indexnonmonotone",
                                                      "**indexnonmonotone %d %d %d", i, indx[i],
@@ -271,7 +258,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, const int indx[],
                     if (edges[i] > comm_size || edges[i] < 0) {
                         mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
                                                          MPIR_ERR_RECOVERABLE,
-                                                         FCNAME, __LINE__,
+                                                         __func__, __LINE__,
                                                          MPI_ERR_ARG,
                                                          "**edgeoutrange",
                                                          "**edgeoutrange %d %d %d", i, edges[i],
@@ -319,12 +306,12 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, const int indx[],
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_graph_create", "**mpi_graph_create %C %d %p %p %d %p",
                                  comm_old, nnodes, indx, edges, reorder, comm_graph);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

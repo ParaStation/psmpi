@@ -1,8 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+/*
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 /* @configure_input@ */
 #ifndef MPI_INCLUDED
 #define MPI_INCLUDED
@@ -202,17 +202,6 @@ static const MPI_Datatype mpich_mpi_long_double_int MPICH_ATTR_TYPE_TAG_LAYOUT_C
 #define MPI_DOUBLE_PRECISION  ((MPI_Datatype)@MPI_DOUBLE_PRECISION@)
 #define MPI_INTEGER           ((MPI_Datatype)@MPI_INTEGER@)
 #define MPI_2INTEGER          ((MPI_Datatype)@MPI_2INTEGER@)
-/* 
- * MPI_2COMPLEX and MPI_2DOUBLE_COMPLEX were defined by accident in 
- * MPI 1.0 and removed in MPI 1.1.  
- *
- * This definition provides backward compatibility.  These definitions
- * will be removed in a subsequent MPICH release
- */
-#ifdef MPICH_DEFINE_2COMPLEX
-#define MPI_2COMPLEX          ((MPI_Datatype)@MPI_2COMPLEX@)
-#define MPI_2DOUBLE_COMPLEX   ((MPI_Datatype)@MPI_2DOUBLE_COMPLEX@)
-#endif 
 #define MPI_2REAL             ((MPI_Datatype)@MPI_2REAL@)
 #define MPI_2DOUBLE_PRECISION ((MPI_Datatype)@MPI_2DOUBLE_PRECISION@)
 #define MPI_CHARACTER         ((MPI_Datatype)@MPI_CHARACTER@)
@@ -257,6 +246,8 @@ static const MPI_Datatype mpich_mpi_uint64_t MPICH_ATTR_TYPE_TAG_STDINT(uint64_t
 #define MPI_C_COMPLEX              MPI_C_FLOAT_COMPLEX
 #define MPI_C_DOUBLE_COMPLEX       ((MPI_Datatype)@MPI_C_DOUBLE_COMPLEX@)
 #define MPI_C_LONG_DOUBLE_COMPLEX  ((MPI_Datatype)@MPI_C_LONG_DOUBLE_COMPLEX@)
+/* other extension types */
+#define MPIX_C_FLOAT16             ((MPI_Datatype)@MPIX_C_FLOAT16@)
 
 #ifdef MPICH_DEFINE_ATTR_TYPE_TYPES
 static const MPI_Datatype mpich_mpi_c_bool                MPICH_ATTR_TYPE_TAG_C99(_Bool)           = MPI_C_BOOL;
@@ -447,7 +438,7 @@ typedef int MPI_Errhandler;
 #define MPI_TYPE_NULL_DELETE_FN ((MPI_Type_delete_attr_function*)0)
 #define MPI_TYPE_DUP_FN ((MPI_Type_copy_attr_function*)MPI_DUP_FN)
 
-/* MPI request opjects */
+/* MPI request objects */
 typedef int MPI_Request;
 
 /* MPI message objects for Mprobe and related functions */
@@ -1561,6 +1552,12 @@ int MPIX_Comm_revoke(MPI_Comm comm) MPICH_API_PUBLIC;
 int MPIX_Comm_shrink(MPI_Comm comm, MPI_Comm *newcomm) MPICH_API_PUBLIC;
 int MPIX_Comm_agree(MPI_Comm comm, int *flag) MPICH_API_PUBLIC;
 
+/* GPU extensions */
+#define MPIX_GPU_SUPPORT_CUDA  (0)
+#define MPIX_GPU_SUPPORT_ZE    (1)
+int MPIX_GPU_query_support(int gpu_type, int *is_supported) MPICH_API_PUBLIC;
+int MPIX_Query_cuda_support(void) MPICH_API_PUBLIC;
+
 
 /* End Prototypes */
 #endif /* MPICH_SUPPRESS_PROTOTYPES */
@@ -2207,6 +2204,9 @@ int PMPIX_Comm_revoke(MPI_Comm comm) MPICH_API_PUBLIC;
 int PMPIX_Comm_shrink(MPI_Comm comm, MPI_Comm *newcomm) MPICH_API_PUBLIC;
 int PMPIX_Comm_agree(MPI_Comm comm, int *flag) MPICH_API_PUBLIC;
 
+int PMPIX_GPU_query_support(int gpu_type, int *is_supported) MPICH_API_PUBLIC;
+int PMPIX_Query_cuda_support(void) MPICH_API_PUBLIC;
+
 #endif  /* MPI_BUILD_PROFILING */
 /* End of MPI bindings */
 
@@ -2260,15 +2260,6 @@ int MPIX_Grequest_start(MPI_Grequest_query_function *query_fn,
                         MPIX_Grequest_wait_function *wait_fn, void *extra_state,
                         MPI_Request *request) MPICH_API_PUBLIC;
 
-/* RMA Mutexes Extensions */
-struct mpixi_mutex_s;
-typedef struct mpixi_mutex_s * MPIX_Mutex;
-int MPIX_Mutex_create(int count, MPI_Comm comm, MPIX_Mutex *hdl) MPICH_API_PUBLIC;
-int MPIX_Mutex_free(MPIX_Mutex *hdl) MPICH_API_PUBLIC;
-int MPIX_Mutex_lock(MPIX_Mutex hdl, int mutex, int proc) MPICH_API_PUBLIC;
-int MPIX_Mutex_unlock(MPIX_Mutex hdl, int mutex, int proc) MPICH_API_PUBLIC;
-
-
 #if !defined(MPI_BUILD_PROFILING)
 /* Generalized requests extensions */
 int PMPIX_Grequest_class_create(MPI_Grequest_query_function *query_fn,
@@ -2285,12 +2276,6 @@ int PMPIX_Grequest_start(MPI_Grequest_query_function *query_fn,
                          MPIX_Grequest_poll_function *poll_fn,
                          MPIX_Grequest_wait_function *wait_fn, void *extra_state,
                          MPI_Request *request) MPICH_API_PUBLIC;
-
-/* RMA Mutexes Extensions */
-int PMPIX_Mutex_create(int count, MPI_Comm comm, MPIX_Mutex *hdl) MPICH_API_PUBLIC;
-int PMPIX_Mutex_free(MPIX_Mutex *hdl) MPICH_API_PUBLIC;
-int PMPIX_Mutex_lock(MPIX_Mutex hdl, int mutex, int proc) MPICH_API_PUBLIC;
-int PMPIX_Mutex_unlock(MPIX_Mutex hdl, int mutex, int proc) MPICH_API_PUBLIC;
 #endif /* MPI_BUILD_PROFILING */
 
 #endif

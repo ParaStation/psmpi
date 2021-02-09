@@ -14,13 +14,6 @@
 
 @SET_MAKE@
 
-# -*- Mode: Makefile; -*-
-# vim: set ft=automake :
-#
-# (C) 2011 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
     false; \
@@ -104,13 +97,13 @@ EXTRA_PROGRAMS = pmandel$(EXEEXT) pmandel_spawn$(EXEEXT) \
 	spawn_merge_child2$(EXEEXT)
 subdir = examples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/src/hwloc/config/hwloc.m4 \
-	$(top_srcdir)/src/hwloc/config/hwloc_check_attributes.m4 \
-	$(top_srcdir)/src/hwloc/config/hwloc_check_vendor.m4 \
-	$(top_srcdir)/src/hwloc/config/hwloc_check_visibility.m4 \
-	$(top_srcdir)/src/hwloc/config/hwloc_components.m4 \
-	$(top_srcdir)/src/hwloc/config/hwloc_pkg.m4 \
-	$(top_srcdir)/src/hwloc/config/netloc.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/modules/hwloc/config/hwloc.m4 \
+	$(top_srcdir)/modules/hwloc/config/hwloc_check_attributes.m4 \
+	$(top_srcdir)/modules/hwloc/config/hwloc_check_vendor.m4 \
+	$(top_srcdir)/modules/hwloc/config/hwloc_check_visibility.m4 \
+	$(top_srcdir)/modules/hwloc/config/hwloc_components.m4 \
+	$(top_srcdir)/modules/hwloc/config/hwloc_pkg.m4 \
+	$(top_srcdir)/modules/hwloc/config/netloc.m4 \
 	$(top_srcdir)/confdb/aclocal_attr_alias.m4 \
 	$(top_srcdir)/confdb/aclocal_bugfix.m4 \
 	$(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -135,18 +128,24 @@ am__aclocal_m4_deps = $(top_srcdir)/src/hwloc/config/hwloc.m4 \
 	$(top_srcdir)/confdb/random_r.m4 \
 	$(top_srcdir)/confdb/stdlib_h.m4 \
 	$(top_srcdir)/maint/version.m4 $(top_srcdir)/subsys_include.m4 \
+	$(top_srcdir)/src/mpi/datatype/typerep/src/subconfigure.m4 \
+	$(top_srcdir)/src/util/logging/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch4/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch4/netmod/ucx/subconfigure.m4 \
 	$(top_srcdir)/src/pm/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch4/shm/stubshm/subconfigure.m4 \
 	$(top_srcdir)/src/binding/fortran/use_mpi/subconfigure.m4 \
 	$(top_srcdir)/src/pm/gforker/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch4/netmod/portals4/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch4/shm/ipc/gpu/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch4/shm/ipc/xpmem/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch4/netmod/stubnm/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/common/genq/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/common/hcoll/subconfigure.m4 \
 	$(top_srcdir)/src/pm/remshell/subconfigure.m4 \
 	$(top_srcdir)/src/pm/util/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch4/shm/posix/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch4/shm/posix/eager/iqueue/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch4/shm/posix/eager/stub/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/common/bc/subconfigure.m4 \
 	$(top_srcdir)/src/pmi/subconfigure.m4 \
 	$(top_srcdir)/src/pmi/slurm/subconfigure.m4 \
@@ -159,10 +158,7 @@ am__aclocal_m4_deps = $(top_srcdir)/src/hwloc/config/hwloc.m4 \
 	$(top_srcdir)/src/mpid/ch3/channels/nemesis/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/common/shm/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/ofi/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/portals4/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/llc/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/tcp/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/mxm/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/common/thread/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/common/sched/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch3/channels/sock/subconfigure.m4 \
@@ -174,8 +170,8 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/src/include/mpichconf.h \
-	$(top_builddir)/src/hwloc/include/private/autogen/config.h \
-	$(top_builddir)/src/hwloc/include/hwloc/autogen/config.h
+	$(top_builddir)/modules/hwloc/include/private/autogen/config.h \
+	$(top_builddir)/modules/hwloc/include/hwloc/autogen/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
@@ -255,7 +251,7 @@ AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
-DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src/include -I$(top_builddir)/src/hwloc/include/private/autogen -I$(top_builddir)/src/hwloc/include/hwloc/autogen
+DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/src/include -I$(top_builddir)/modules/hwloc/include/private/autogen -I$(top_builddir)/modules/hwloc/include/hwloc/autogen
 depcomp = $(SHELL) $(top_srcdir)/confdb/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
@@ -321,7 +317,6 @@ ALLOCA = @ALLOCA@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
-AR_FLAGS = @AR_FLAGS@
 AS = @AS@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
@@ -536,6 +531,7 @@ HWLOC_CUDA_LIBS = @HWLOC_CUDA_LIBS@
 HWLOC_EMBEDDED_CFLAGS = @HWLOC_EMBEDDED_CFLAGS@
 HWLOC_EMBEDDED_CPPFLAGS = @HWLOC_EMBEDDED_CPPFLAGS@
 HWLOC_EMBEDDED_LDADD = @HWLOC_EMBEDDED_LDADD@
+HWLOC_EMBEDDED_LDFLAGS = @HWLOC_EMBEDDED_LDFLAGS@
 HWLOC_EMBEDDED_LIBS = @HWLOC_EMBEDDED_LIBS@
 HWLOC_GL_LIBS = @HWLOC_GL_LIBS@
 HWLOC_HAVE_LIBXML2 = @HWLOC_HAVE_LIBXML2@
@@ -631,8 +627,7 @@ MPIR_CXX_DOUBLE_COMPLEX = @MPIR_CXX_DOUBLE_COMPLEX@
 MPIR_CXX_LONG_DOUBLE_COMPLEX = @MPIR_CXX_LONG_DOUBLE_COMPLEX@
 MPISIZEOFMODNAME = @MPISIZEOFMODNAME@
 MPIU_DLL_SPEC_DEF = @MPIU_DLL_SPEC_DEF@
-MPI_2COMPLEX = @MPI_2COMPLEX@
-MPI_2DOUBLE_COMPLEX = @MPI_2DOUBLE_COMPLEX@
+MPIX_C_FLOAT16 = @MPIX_C_FLOAT16@
 MPI_2DOUBLE_PRECISION = @MPI_2DOUBLE_PRECISION@
 MPI_2INT = @MPI_2INT@
 MPI_2INTEGER = @MPI_2INTEGER@
@@ -767,7 +762,6 @@ NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
 OFFSET_KIND = @OFFSET_KIND@
-OPALIBNAME = @OPALIBNAME@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -830,12 +824,12 @@ VISIBILITY_CFLAGS = @VISIBILITY_CFLAGS@
 WRAPPER_CFLAGS = @WRAPPER_CFLAGS@
 WRAPPER_CPPFLAGS = @WRAPPER_CPPFLAGS@
 WRAPPER_CXXFLAGS = @WRAPPER_CXXFLAGS@
+WRAPPER_C_DYNAMIC_LOADING_FLAGS = @WRAPPER_C_DYNAMIC_LOADING_FLAGS@
 WRAPPER_EXTRA_LIBS = @WRAPPER_EXTRA_LIBS@
 WRAPPER_FCFLAGS = @WRAPPER_FCFLAGS@
 WRAPPER_FFLAGS = @WRAPPER_FFLAGS@
 WRAPPER_LDFLAGS = @WRAPPER_LDFLAGS@
 WRAPPER_LIBS = @WRAPPER_LIBS@
-WRAPPER_RPATH_LDFLAGS = @WRAPPER_RPATH_LDFLAGS@
 WTIME_DOUBLE_TYPE = @WTIME_DOUBLE_TYPE@
 XARGS_NODATA_OPT = @XARGS_NODATA_OPT@
 XMKMF = @XMKMF@
@@ -843,6 +837,7 @@ X_CFLAGS = @X_CFLAGS@
 X_EXTRA_LIBS = @X_EXTRA_LIBS@
 X_LIBS = @X_LIBS@
 X_PRE_LIBS = @X_PRE_LIBS@
+YAKSALIBNAME = @YAKSALIBNAME@
 ZMLIBNAME = @ZMLIBNAME@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
@@ -875,13 +870,20 @@ ch4_nets_func_decl = @ch4_nets_func_decl@
 ch4_nets_native_func_array = @ch4_nets_native_func_array@
 ch4_nets_native_func_decl = @ch4_nets_native_func_decl@
 ch4_nets_strings = @ch4_nets_strings@
+ch4_posix_eager_array = @ch4_posix_eager_array@
+ch4_posix_eager_array_sz = @ch4_posix_eager_array_sz@
+ch4_posix_eager_func_array = @ch4_posix_eager_func_array@
+ch4_posix_eager_func_decl = @ch4_posix_eager_func_decl@
+ch4_posix_eager_modules = @ch4_posix_eager_modules@
+ch4_posix_eager_pre_include = @ch4_posix_eager_pre_include@
+ch4_posix_eager_recv_transaction_decl = @ch4_posix_eager_recv_transaction_decl@
+ch4_posix_eager_strings = @ch4_posix_eager_strings@
 channel_name = @channel_name@
 datadir = @datadir@
 datarootdir = @datarootdir@
 device_name = @device_name@
 docdir = @docdir@
 dvidir = @dvidir@
-enable_wrapper_rpath = @enable_wrapper_rpath@
 exec_prefix = @exec_prefix@
 host = @host@
 host_alias = @host_alias@
@@ -895,14 +897,16 @@ hwlocsrcdir = @hwlocsrcdir@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
+jsonlib = @jsonlib@
+jsonsrcdir = @jsonsrcdir@
 libdir = @libdir@
 libexecdir = @libexecdir@
 libmpi_so_version = @libmpi_so_version@
 localedir = @localedir@
 localstatedir = @localstatedir@
+main_top_builddir = @main_top_builddir@
+main_top_srcdir = @main_top_srcdir@
 mandir = @mandir@
-master_top_builddir = @master_top_builddir@
-master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mmx_copy_s = @mmx_copy_s@
 modincdir = @modincdir@
@@ -918,13 +922,9 @@ nemesis_nets_macro_defs = @nemesis_nets_macro_defs@
 nemesis_nets_strings = @nemesis_nets_strings@
 nemesis_networks = @nemesis_networks@
 netloclibdir = @netloclibdir@
-ofi_embedded = @ofi_embedded@
 ofilib = @ofilib@
 ofisrcdir = @ofisrcdir@
 oldincludedir = @oldincludedir@
-opalib = @opalib@
-opalibdir = @opalibdir@
-opasrcdir = @opasrcdir@
 pdfdir = @pdfdir@
 pkgconfigdir = @pkgconfigdir@
 pm_name = @pm_name@
@@ -946,7 +946,10 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ucxdir = @ucxdir@
 ucxlib = @ucxlib@
-with_libfabric = @with_libfabric@
+with_wrapper_dl_type = @with_wrapper_dl_type@
+yaksalib = @yaksalib@
+yaksalibdir = @yaksalibdir@
+yaksasrcdir = @yaksasrcdir@
 zmlib = @zmlib@
 zmlibdir = @zmlibdir@
 zmsrcdir = @zmsrcdir@

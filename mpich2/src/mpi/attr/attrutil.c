@@ -1,16 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- * Portions of this code were written by Microsoft. Those portions are
- * Copyright (c) 2007 Microsoft Corporation. Microsoft grants
- * permission to use, reproduce, prepare derivative works, and to
- * redistribute to others. The code is licensed "as is." The User
- * bears the risk of using it. Microsoft gives no express warranties,
- * guarantees or conditions. To the extent permitted by law, Microsoft
- * excludes the implied warranties of merchantability, fitness for a
- * particular purpose and non-infringement.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -27,13 +17,13 @@
 #endif
 
 /* Preallocated keyval objects */
-MPII_Keyval MPII_Keyval_direct[MPID_KEYVAL_PREALLOC] = { {0}
-};
+MPII_Keyval MPII_Keyval_direct[MPID_KEYVAL_PREALLOC];
 
 MPIR_Object_alloc_t MPII_Keyval_mem = { 0, 0, 0, 0, MPIR_KEYVAL,
     sizeof(MPII_Keyval),
     MPII_Keyval_direct,
     MPID_KEYVAL_PREALLOC,
+    NULL
 };
 
 #ifndef MPIR_ATTR_PREALLOC
@@ -41,13 +31,13 @@ MPIR_Object_alloc_t MPII_Keyval_mem = { 0, 0, 0, 0, MPIR_KEYVAL,
 #endif
 
 /* Preallocated keyval objects */
-MPIR_Attribute MPID_Attr_direct[MPIR_ATTR_PREALLOC] = { {0}
-};
+MPIR_Attribute MPID_Attr_direct[MPIR_ATTR_PREALLOC];
 
 MPIR_Object_alloc_t MPID_Attr_mem = { 0, 0, 0, 0, MPIR_ATTR,
     sizeof(MPIR_Attribute),
     MPID_Attr_direct,
     MPIR_ATTR_PREALLOC,
+    NULL
 };
 
 /* Provides a way to trap all attribute allocations when debugging leaks. */
@@ -66,10 +56,6 @@ void MPID_Attr_free(MPIR_Attribute * attr_ptr)
     MPIR_Handle_obj_free(&MPID_Attr_mem, attr_ptr);
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Call_attr_delete
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*
   This function deletes a single attribute.
   It is called by both the function to delete a list and attribute set/put
@@ -92,11 +78,16 @@ int MPIR_Call_attr_delete(int handle, MPIR_Attribute * attr_p)
     if (kv->delfn.user_function == NULL)
         goto fn_exit;
 
+    /* user functions, as well as binding proxies, might call other MPI
+     * functions, so we need to release the lock here. This is safe to do
+     * as GLOBAL is not at all recursive in our implementation. */
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     rc = kv->delfn.proxy(kv->delfn.user_function,
                          handle,
                          attr_p->keyval->handle,
                          attr_p->attrType,
                          (void *) (intptr_t) attr_p->value, attr_p->keyval->extra_state);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     /* --BEGIN ERROR HANDLING-- */
     if (rc != 0) {
 #if MPICH_ERROR_MSG_LEVEL < MPICH_ERROR_MSG__ALL
@@ -110,8 +101,8 @@ int MPIR_Call_attr_delete(int handle, MPIR_Attribute * attr_p)
         mpi_errno = rc;
 #else
         mpi_errno =
-            MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                                 "**user", "**userdel %d", rc);
+            MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__,
+                                 MPI_ERR_OTHER, "**user", "**userdel %d", rc);
 #endif
         goto fn_fail;
     }
@@ -135,10 +126,6 @@ int MPIR_Call_attr_delete(int handle, MPIR_Attribute * attr_p)
 
   Note that this simply invokes the attribute copy function.
 */
-#undef FUNCNAME
-#define FUNCNAME MPIR_Call_attr_copy
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Call_attr_copy(int handle, MPIR_Attribute * attr_p, void **value_copy, int *flag)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -148,11 +135,16 @@ int MPIR_Call_attr_copy(int handle, MPIR_Attribute * attr_p, void **value_copy, 
     if (kv->copyfn.user_function == NULL)
         goto fn_exit;
 
+    /* user functions might call other MPI functions, so we need to
+     * release the lock here. This is safe to do as GLOBAL is not at
+     * all recursive in our implementation. */
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     rc = kv->copyfn.proxy(kv->copyfn.user_function,
                           handle,
                           attr_p->keyval->handle,
                           attr_p->keyval->extra_state,
                           attr_p->attrType, (void *) (intptr_t) attr_p->value, value_copy, flag);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
 
     /* --BEGIN ERROR HANDLING-- */
     if (rc != 0) {
@@ -160,8 +152,8 @@ int MPIR_Call_attr_copy(int handle, MPIR_Attribute * attr_p, void **value_copy, 
         mpi_errno = rc;
 #else
         mpi_errno =
-            MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-                                 "**user", "**usercopy %d", rc);
+            MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__,
+                                 MPI_ERR_OTHER, "**user", "**usercopy %d", rc);
 #endif
         goto fn_fail;
     }
@@ -172,10 +164,6 @@ int MPIR_Call_attr_copy(int handle, MPIR_Attribute * attr_p, void **value_copy, 
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Attr_dup_list
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /* Routine to duplicate an attribute list */
 int MPIR_Attr_dup_list(int handle, MPIR_Attribute * old_attrs, MPIR_Attribute ** new_attr)
 {
@@ -202,7 +190,7 @@ int MPIR_Attr_dup_list(int handle, MPIR_Attribute * old_attrs, MPIR_Attribute **
         /* --BEGIN ERROR HANDLING-- */
         if (!new_p) {
             mpi_errno =
-                MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+                MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__,
                                      MPI_ERR_OTHER, "**nomem", 0);
             goto fn_fail;
         }
@@ -233,10 +221,6 @@ int MPIR_Attr_dup_list(int handle, MPIR_Attribute * old_attrs, MPIR_Attribute **
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Attr_delete_list
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /* Routine to delete an attribute list */
 int MPIR_Attr_delete_list(int handle, MPIR_Attribute ** attr)
 {
@@ -298,6 +282,10 @@ int MPIR_Attr_delete_list(int handle, MPIR_Attribute ** attr)
     return mpi_errno;
 }
 
+/* Note: proxy functions assumed to be outside critical section. This allows them
+ * to call MPI functions directly. E.g. CXX bindings.
+ */
+
 int
 MPII_Attr_copy_c_proxy(MPI_Comm_copy_attr_function * user_function,
                        int handle,
@@ -315,12 +303,7 @@ MPII_Attr_copy_c_proxy(MPI_Comm_copy_attr_function * user_function,
         attrib_val = attrib;
     }
 
-    /* user functions might call other MPI functions, so we need to
-     * release the lock here. This is safe to do as GLOBAL is not at
-     * all recursive in our implementation. */
-    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     ret = user_function(handle, keyval, extra_state, attrib_val, attrib_copy, flag);
-    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
 
     return ret;
 }
@@ -340,12 +323,7 @@ MPII_Attr_delete_c_proxy(MPI_Comm_delete_attr_function * user_function,
     else
         attrib_val = attrib;
 
-    /* user functions might call other MPI functions, so we need to
-     * release the lock here. This is safe to do as GLOBAL is not at
-     * all recursive in our implementation. */
-    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     ret = user_function(handle, keyval, attrib_val, extra_state);
-    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
 
     return ret;
 }

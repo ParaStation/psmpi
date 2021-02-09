@@ -1,8 +1,8 @@
-! -*- Mode: Fortran; -*-
 !
-!  (C) 2012 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
+
 !  This test makes use of routines to access the command line added in
 !  Fortran 2003
 !
@@ -54,7 +54,7 @@
         call MPI_Comm_rank( intercomm, rank, ierr )
 
         if (parentcomm .eq. MPI_COMM_NULL) then
-!           Master
+!           Parent
         if (rsize .ne. np) then
             errs = errs + 1
             print *, "Did not create ", np, " processes (got &
@@ -110,7 +110,7 @@
             errs = errs + 1
             print *, "Too few arguments to spawned command"
          endif
-!       Send the errs back to the master process
+!       Send the errs back to the parent process
          call MPI_Ssend( errs, 1, MPI_INTEGER, 0, 1, intercomm, ierr )
         endif
 

@@ -1,9 +1,9 @@
 ! This file created from f77/io/atomicityf.f with f77tof90
-! -*- Mode: Fortran; -*-
 !
-!  (C) 2004 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
+
       program main
       use mpi
       integer (kind=MPI_OFFSET_KIND) disp

@@ -1,9 +1,9 @@
 ! This file created from f77/coll/allredopttf.f with f77tof90
-! -*- Mode: Fortran; -*- 
 !
-!  (C) 2007 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
+
       program main
       use mpi
       integer*8 inbuf, outbuf

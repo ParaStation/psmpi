@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2010 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* This test is a simplification of the one in perf/manyrma.c that tests
@@ -232,6 +231,10 @@ void RunAccFence(MPI_Win win, int destRank, int cnt, int sz)
     int k, i, j;
     int *buf = malloc(sz * sizeof(int));
 
+    for (i = 0; i < sz; i++) {
+        buf[i] = i;
+    }
+
     for (k = 0; k < MAX_RUNS; k++) {
         MPI_Barrier(MPI_COMM_WORLD);
         MPI_Win_fence(0, win);
@@ -250,6 +253,10 @@ void RunAccLock(MPI_Win win, int destRank, int cnt, int sz)
 {
     int k, i, j;
     int *buf = malloc(sz * sizeof(int));
+
+    for (i = 0; i < sz; i++) {
+        buf[i] = i;
+    }
 
     for (k = 0; k < MAX_RUNS; k++) {
         MPI_Barrier(MPI_COMM_WORLD);

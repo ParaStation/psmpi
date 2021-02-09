@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -25,10 +24,6 @@ int MPI_Finalized(int *flag) __attribute__ ((weak, alias("PMPI_Finalized")));
 #define MPI_Finalized PMPI_Finalized
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Finalized
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Finalized - Indicates whether 'MPI_Finalize' has been called.
 
@@ -66,7 +61,7 @@ int MPI_Finalized(int *flag)
 
     /* ... body of routine ...  */
 
-    *flag = (OPA_load_int(&MPIR_Process.mpich_state) >= MPICH_MPI_STATE__POST_FINALIZED);
+    *flag = (MPL_atomic_load_int(&MPIR_Process.mpich_state) == MPICH_MPI_STATE__POST_FINALIZED);
 
     /* ... end of body of routine ... */
 
@@ -79,15 +74,15 @@ int MPI_Finalized(int *flag)
     /* --BEGIN ERROR HANDLING-- */
 #ifdef HAVE_ERROR_CHECKING
   fn_fail:
-    if (OPA_load_int(&MPIR_Process.mpich_state) == MPICH_MPI_STATE__IN_INIT ||
-        OPA_load_int(&MPIR_Process.mpich_state) == MPICH_MPI_STATE__POST_INIT) {
+    if (MPL_atomic_load_int(&MPIR_Process.mpich_state) != MPICH_MPI_STATE__PRE_INIT &&
+        MPL_atomic_load_int(&MPIR_Process.mpich_state) != MPICH_MPI_STATE__POST_FINALIZED) {
         {
-            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+            mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__,
                                              MPI_ERR_OTHER, "**mpi_finalized",
                                              "**mpi_finalized %p", flag);
         }
 
-        mpi_errno = MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+        mpi_errno = MPIR_Err_return_comm(0, __func__, mpi_errno);
     }
     goto fn_exit;
 #endif

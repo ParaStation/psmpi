@@ -1,6 +1,9 @@
 #! /usr/bin/env perl
-# -*- Mode:perl ; -*-
-#
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
+
 # This file converts a coverate data file, produced by the simple coverage
 # package, into an html file showing the covered and uncovered parts of the 
 # code.
@@ -138,7 +141,7 @@ sub ReadAndAnnoteSrcfile {
 }
 
 # Summary report
-# TODO : compare the routines found to a master list of all routines.
+# TODO : compare the routines found to a main list of all routines.
 # generate a third list of unseen routines
 $maxcol = 4;
 sub CoverageSummary {

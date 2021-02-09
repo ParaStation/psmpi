@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -19,10 +17,6 @@
  * property of recursive doubling (see Benson et al paper in Euro
  * PVM/MPI 2003).
  */
-#undef FUNCNAME
-#define FUNCNAME MPIR_Allgather_intra_recursive_doubling
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Allgather_intra_recursive_doubling(const void *sendbuf,
                                             int sendcount,
                                             MPI_Datatype sendtype,
@@ -56,18 +50,11 @@ int MPIR_Allgather_intra_recursive_doubling(const void *sendbuf,
 
     MPIR_Datatype_get_extent_macro(recvtype, recvtype_extent);
 
-    /* This is the largest offset we add to recvbuf */
-    MPIR_Ensure_Aint_fits_in_pointer(MPIR_VOID_PTR_CAST_TO_MPI_AINT recvbuf +
-                                     (comm_size * recvcount * recvtype_extent));
-
-
     if (sendbuf != MPI_IN_PLACE) {
         mpi_errno = MPIR_Localcopy(sendbuf, sendcount, sendtype,
                                    ((char *) recvbuf +
                                     rank * recvcount * recvtype_extent), recvcount, recvtype);
-        if (mpi_errno) {
-            MPIR_ERR_POP(mpi_errno);
-        }
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     curr_cnt = recvcount;

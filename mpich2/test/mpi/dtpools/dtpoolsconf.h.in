@@ -1,9 +1,8 @@
 /* dtpoolsconf.h.in.  Generated from configure.ac by autoheader.  */
 
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
- *  (C) 2018 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 #ifndef DTPOOLSCONF_H_INCLUDED
 #define DTPOOLSCONF_H_INCLUDED
@@ -18,10 +17,6 @@
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
-/* Define to 1 if your system has a GNU libc compatible `malloc' function, and
-   to 0 otherwise. */
-#undef HAVE_MALLOC
-
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -33,6 +28,9 @@
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the `strdup' function. */
+#undef HAVE_STRDUP
 
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
@@ -51,6 +49,9 @@
 
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
+
+/* Define if strdup needs a declaration */
+#undef NEEDS_STRDUP_DECL
 
 /* Name of package */
 #undef PACKAGE
@@ -78,9 +79,6 @@
 
 /* Version number of package */
 #undef VERSION
-
-/* Define to rpl_malloc if the replacement function should be used. */
-#undef malloc
 
 
 #endif /* !defined(DTPOOLSCONF_H_INCLUDED) */

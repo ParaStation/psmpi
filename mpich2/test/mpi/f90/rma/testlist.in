@@ -11,4 +11,4 @@ c2f2cwinf90 1
 baseattrwinf90 1
 winattrf90 1
 winattr2f90 1
-aintf90 2 mpiversion=3.1
+aintf90 2

@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *   Copyright (C) 1997 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 
@@ -52,6 +50,17 @@ extern struct ADIOI_Fns_struct ADIO_GPFS_operations;
 #ifdef ROMIO_IME
 /* prototypes are in adio/ad_im/ad_im.h */
 extern struct ADIOI_Fns_struct ADIO_IME_operations;
+#endif
+
+#ifdef ROMIO_DAOS
+/* prototypes are in adio/ad_daos/ad_daos.h */
+extern struct ADIOI_Fns_struct ADIO_DAOS_operations;
+#endif
+
+#ifdef ROMIO_QUOBYTEFS
+/* prototypes are in adio/ad_quobytefs/ad_quobytefs.h */
+extern struct ADIOI_Fns_struct ADIO_QUOBYTEFS_operations;
+extern void ADIOI_QUOBYTEFS_CreateAdapter(const char *, int *);
 #endif
 
 #endif /* ADIOI_FS_PROTO_H_INCLUDED */

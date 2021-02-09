@@ -1,10 +1,9 @@
 ! This file created from f77/datatype/gaddressf.f with f77tof90
-! -*- Mode: Fortran; -*- 
 !
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
-!  (C) 2003 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
-!
+
       program main
       use mpi
       integer max_asizev

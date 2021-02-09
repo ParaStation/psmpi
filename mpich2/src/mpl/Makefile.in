@@ -14,54 +14,6 @@
 
 @SET_MAKE@
 
-# -*- Mode: Makefile; -*-
-#
-# (C) 2008 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
-# -*- Mode: Makefile; -*-
-#
-# (C) 2016 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
-# -*- Mode: Makefile; -*-
-#
-# (C) 2016 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
-# -*- Mode: Makefile; -*-
-#
-# (C) 2016 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
-# -*- Mode: Makefile; -*-
-#
-# (C) 2016 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
-# -*- Mode: Makefile; -*-
-#
-# (C) 2016 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
-# -*- Mode: Makefile; -*-
-#
-# (C) 2016 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
-# -*- Mode: Makefile; -*-
-#
-# (C) 2016 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
 
 VPATH = @srcdir@
 am__is_gnu_make = { \
@@ -137,15 +89,22 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+@MPL_HAVE_CUDA_TRUE@am__append_1 = src/gpu/mpl_gpu_cuda.c
+@MPL_HAVE_CUDA_FALSE@@MPL_HAVE_ZE_TRUE@am__append_2 = src/gpu/mpl_gpu_ze.c
+@MPL_HAVE_CUDA_FALSE@@MPL_HAVE_ZE_FALSE@am__append_3 = src/gpu/mpl_gpu_fallback.c
 TESTS = $(am__EXEEXT_1)
 check_PROGRAMS = $(am__EXEEXT_1)
+@MPL_EMBEDDED_MODE_TRUE@am__append_4 = $(mpl_headers)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cc.m4 \
 	$(top_srcdir)/confdb/aclocal_coverage.m4 \
 	$(top_srcdir)/confdb/aclocal_libs.m4 \
+	$(top_srcdir)/confdb/aclocal_runlog.m4 \
 	$(top_srcdir)/confdb/aclocal_shm.m4 \
+	$(top_srcdir)/confdb/aclocal_threads.m4 \
 	$(top_srcdir)/confdb/aclocal_util.m4 \
+	$(top_srcdir)/confdb/ax_execinfo.m4 \
 	$(top_srcdir)/confdb/ax_gcc_func_attribute.m4 \
 	$(top_srcdir)/confdb/ax_gcc_var_attribute.m4 \
 	$(top_srcdir)/confdb/ax_lib_socket_nsl.m4 \
@@ -195,27 +154,51 @@ am__uninstall_files_from_dir = { \
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES)
 lib@MPLLIBNAME@_la_LIBADD =
+am__lib@MPLLIBNAME@_la_SOURCES_DIST = src/atomic/mpl_atomic.c \
+	src/bt/mpl_bt.c src/dbg/mpl_dbg.c src/env/mpl_env.c \
+	src/mem/mpl_trmem.c src/msg/mpl_msg.c src/sock/mpl_sock.c \
+	src/sock/mpl_sockaddr.c src/sock/mpl_host.c src/str/mpl_str.c \
+	src/str/mpl_argstr.c src/str/mpl_arg_serial.c \
+	src/thread/mpl_thread.c src/thread/mpl_thread_win.c \
+	src/thread/mpl_thread_solaris.c \
+	src/thread/mpl_thread_argobots.c src/thread/mpl_thread_posix.c \
+	src/thread/mpl_thread_uti.c \
+	src/timer/mpl_timer_clock_gettime.c \
+	src/timer/mpl_timer_gcc_ia64_cycle.c \
+	src/timer/mpl_timer_gethrtime.c \
+	src/timer/mpl_timer_gettimeofday.c \
+	src/timer/mpl_timer_linux86_cycle.c \
+	src/timer/mpl_timer_ppc64_cycle.c \
+	src/timer/mpl_timer_mach_absolute_time.c src/shm/mpl_shm.c \
+	src/shm/mpl_shm_sysv.c src/shm/mpl_shm_mmap.c \
+	src/shm/mpl_shm_win.c src/gpu/mpl_gpu_common.c \
+	src/gpu/mpl_gpu_cuda.c src/gpu/mpl_gpu_ze.c \
+	src/gpu/mpl_gpu_fallback.c src/gavl/mpl_gavl.c
 am__dirstamp = $(am__leading_dot)dirstamp
-am_lib@MPLLIBNAME@_la_OBJECTS = src/bt/mpl_bt.lo src/dbg/mpl_dbg.lo \
-	src/env/mpl_env.lo src/mem/mpl_trmem.lo src/msg/mpl_msg.lo \
-	src/sock/mpl_sock.lo src/sock/mpl_sockaddr.lo \
-	src/sock/mpl_host.lo src/str/mpl_str.lo src/str/mpl_argstr.lo \
+@MPL_HAVE_CUDA_TRUE@am__objects_1 = src/gpu/mpl_gpu_cuda.lo
+@MPL_HAVE_CUDA_FALSE@@MPL_HAVE_ZE_TRUE@am__objects_2 =  \
+@MPL_HAVE_CUDA_FALSE@@MPL_HAVE_ZE_TRUE@	src/gpu/mpl_gpu_ze.lo
+@MPL_HAVE_CUDA_FALSE@@MPL_HAVE_ZE_FALSE@am__objects_3 = src/gpu/mpl_gpu_fallback.lo
+am_lib@MPLLIBNAME@_la_OBJECTS = src/atomic/mpl_atomic.lo \
+	src/bt/mpl_bt.lo src/dbg/mpl_dbg.lo src/env/mpl_env.lo \
+	src/mem/mpl_trmem.lo src/msg/mpl_msg.lo src/sock/mpl_sock.lo \
+	src/sock/mpl_sockaddr.lo src/sock/mpl_host.lo \
+	src/str/mpl_str.lo src/str/mpl_argstr.lo \
 	src/str/mpl_arg_serial.lo src/thread/mpl_thread.lo \
 	src/thread/mpl_thread_win.lo src/thread/mpl_thread_solaris.lo \
 	src/thread/mpl_thread_argobots.lo \
-	src/thread/mpl_thread_posix.lo \
+	src/thread/mpl_thread_posix.lo src/thread/mpl_thread_uti.lo \
 	src/timer/mpl_timer_clock_gettime.lo \
 	src/timer/mpl_timer_gcc_ia64_cycle.lo \
 	src/timer/mpl_timer_gethrtime.lo \
 	src/timer/mpl_timer_gettimeofday.lo \
 	src/timer/mpl_timer_linux86_cycle.lo \
 	src/timer/mpl_timer_ppc64_cycle.lo \
-	src/timer/mpl_timer_mach_absolute_time.lo \
-	src/timer/mpl_timer_query_performance_counter.lo \
-	src/timer/mpl_timer_win86_cycle.lo \
-	src/timer/mpl_timer_device.lo src/shm/mpl_shm.lo \
+	src/timer/mpl_timer_mach_absolute_time.lo src/shm/mpl_shm.lo \
 	src/shm/mpl_shm_sysv.lo src/shm/mpl_shm_mmap.lo \
-	src/shm/mpl_shm_win.lo
+	src/shm/mpl_shm_win.lo src/gpu/mpl_gpu_common.lo \
+	$(am__objects_1) $(am__objects_2) $(am__objects_3) \
+	src/gavl/mpl_gavl.lo
 lib@MPLLIBNAME@_la_OBJECTS = $(am_lib@MPLLIBNAME@_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -267,24 +250,25 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(lib@MPLLIBNAME@_la_SOURCES) $(strsep_SOURCES)
-DIST_SOURCES = $(lib@MPLLIBNAME@_la_SOURCES) $(strsep_SOURCES)
+DIST_SOURCES = $(am__lib@MPLLIBNAME@_la_SOURCES_DIST) \
+	$(strsep_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-am__include_HEADERS_DIST = include/mpl.h include/mpl_base.h \
-	include/mpl_math.h include/mplconfig.h include/utlist.h \
-	include/mpl_valgrind.h include/mpl_env.h include/mpl_str.h \
-	include/mpl_trmem.h include/mpl_msg.h include/mpl_sock.h \
-	include/mpl_sockaddr.h include/mpl_iov.h include/mpl_bt.h \
-	include/mpl_shm.h
-am__noinst_HEADERS_DIST = include/mpl.h include/mpl_base.h \
-	include/mpl_math.h include/mplconfig.h include/utlist.h \
-	include/mpl_valgrind.h include/mpl_env.h include/mpl_str.h \
-	include/mpl_trmem.h include/mpl_msg.h include/mpl_sock.h \
-	include/mpl_sockaddr.h include/mpl_iov.h include/mpl_bt.h \
-	include/mpl_shm.h
+am__include_HEADERS_DIST = include/mpl.h include/mpl_atomic.h \
+	include/mpl_base.h include/mpl_math.h include/mplconfig.h \
+	include/utlist.h include/mpl_valgrind.h include/mpl_env.h \
+	include/mpl_str.h include/mpl_trmem.h include/mpl_msg.h \
+	include/mpl_sock.h include/mpl_sockaddr.h include/mpl_iov.h \
+	include/mpl_bt.h include/mpl_shm.h
+am__noinst_HEADERS_DIST = src/timer/mpl_timer_common.h include/mpl.h \
+	include/mpl_atomic.h include/mpl_base.h include/mpl_math.h \
+	include/mplconfig.h include/utlist.h include/mpl_valgrind.h \
+	include/mpl_env.h include/mpl_str.h include/mpl_trmem.h \
+	include/mpl_msg.h include/mpl_sock.h include/mpl_sockaddr.h \
+	include/mpl_iov.h include/mpl_bt.h include/mpl_shm.h
 HEADERS = $(include_HEADERS) $(noinst_HEADERS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
@@ -484,11 +468,13 @@ TEST_LOG_DRIVER = $(SHELL) $(top_srcdir)/confdb/test-driver
 TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
 	$(TEST_LOG_FLAGS)
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/localdefs.in \
-	$(srcdir)/src/Makefile.mk $(srcdir)/src/bt/Makefile.mk \
-	$(srcdir)/src/dbg/Makefile.mk $(srcdir)/src/env/Makefile.mk \
-	$(srcdir)/src/mem/Makefile.mk $(srcdir)/src/msg/Makefile.mk \
-	$(srcdir)/src/shm/Makefile.mk $(srcdir)/src/sock/Makefile.mk \
-	$(srcdir)/src/str/Makefile.mk $(srcdir)/src/thread/Makefile.mk \
+	$(srcdir)/src/Makefile.mk $(srcdir)/src/atomic/Makefile.mk \
+	$(srcdir)/src/bt/Makefile.mk $(srcdir)/src/dbg/Makefile.mk \
+	$(srcdir)/src/env/Makefile.mk $(srcdir)/src/gavl/Makefile.mk \
+	$(srcdir)/src/gpu/Makefile.mk $(srcdir)/src/mem/Makefile.mk \
+	$(srcdir)/src/msg/Makefile.mk $(srcdir)/src/shm/Makefile.mk \
+	$(srcdir)/src/sock/Makefile.mk $(srcdir)/src/str/Makefile.mk \
+	$(srcdir)/src/thread/Makefile.mk \
 	$(srcdir)/src/timer/Makefile.mk $(top_srcdir)/confdb/ar-lib \
 	$(top_srcdir)/confdb/compile $(top_srcdir)/confdb/config.guess \
 	$(top_srcdir)/confdb/config.sub $(top_srcdir)/confdb/depcomp \
@@ -639,30 +625,32 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I confdb
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
-lib@MPLLIBNAME@_la_SOURCES = src/bt/mpl_bt.c src/dbg/mpl_dbg.c \
-	src/env/mpl_env.c src/mem/mpl_trmem.c src/msg/mpl_msg.c \
-	src/sock/mpl_sock.c src/sock/mpl_sockaddr.c \
+lib@MPLLIBNAME@_la_SOURCES = src/atomic/mpl_atomic.c src/bt/mpl_bt.c \
+	src/dbg/mpl_dbg.c src/env/mpl_env.c src/mem/mpl_trmem.c \
+	src/msg/mpl_msg.c src/sock/mpl_sock.c src/sock/mpl_sockaddr.c \
 	src/sock/mpl_host.c src/str/mpl_str.c src/str/mpl_argstr.c \
 	src/str/mpl_arg_serial.c src/thread/mpl_thread.c \
 	src/thread/mpl_thread_win.c src/thread/mpl_thread_solaris.c \
 	src/thread/mpl_thread_argobots.c src/thread/mpl_thread_posix.c \
+	src/thread/mpl_thread_uti.c \
 	src/timer/mpl_timer_clock_gettime.c \
 	src/timer/mpl_timer_gcc_ia64_cycle.c \
 	src/timer/mpl_timer_gethrtime.c \
 	src/timer/mpl_timer_gettimeofday.c \
 	src/timer/mpl_timer_linux86_cycle.c \
 	src/timer/mpl_timer_ppc64_cycle.c \
-	src/timer/mpl_timer_mach_absolute_time.c \
-	src/timer/mpl_timer_query_performance_counter.c \
-	src/timer/mpl_timer_win86_cycle.c src/timer/mpl_timer_device.c \
-	src/shm/mpl_shm.c src/shm/mpl_shm_sysv.c \
-	src/shm/mpl_shm_mmap.c src/shm/mpl_shm_win.c
+	src/timer/mpl_timer_mach_absolute_time.c src/shm/mpl_shm.c \
+	src/shm/mpl_shm_sysv.c src/shm/mpl_shm_mmap.c \
+	src/shm/mpl_shm_win.c src/gpu/mpl_gpu_common.c $(am__append_1) \
+	$(am__append_2) $(am__append_3) src/gavl/mpl_gavl.c
 lib@MPLLIBNAME@_la_LDFLAGS = ${lib@MPLLIBNAME@_so_versionflags}
+noinst_HEADERS = src/timer/mpl_timer_common.h $(am__append_4)
 MPL_TESTS = strsep
 strsep_SOURCES = test/strsep.c
 strsep_LDADD = lib@MPLLIBNAME@.la
 mpl_headers = \
     include/mpl.h           \
+    include/mpl_atomic.h    \
     include/mpl_base.h      \
     include/mpl_math.h      \
     include/mplconfig.h     \
@@ -678,7 +666,6 @@ mpl_headers = \
     include/mpl_bt.h        \
     include/mpl_shm.h
 
-@MPL_EMBEDDED_MODE_TRUE@noinst_HEADERS = $(mpl_headers)
 @MPL_EMBEDDED_MODE_TRUE@noinst_LTLIBRARIES = lib@MPLLIBNAME@.la
 @MPL_EMBEDDED_MODE_FALSE@include_HEADERS = $(mpl_headers)
 @MPL_EMBEDDED_MODE_FALSE@lib_LTLIBRARIES = lib@MPLLIBNAME@.la
@@ -695,7 +682,7 @@ all: all-am
 .SUFFIXES: .c .lo .log .o .obj .test .test$(EXEEXT) .trs
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/src/Makefile.mk $(srcdir)/src/bt/Makefile.mk $(srcdir)/src/dbg/Makefile.mk $(srcdir)/src/env/Makefile.mk $(srcdir)/src/mem/Makefile.mk $(srcdir)/src/msg/Makefile.mk $(srcdir)/src/sock/Makefile.mk $(srcdir)/src/str/Makefile.mk $(srcdir)/src/thread/Makefile.mk $(srcdir)/src/timer/Makefile.mk $(srcdir)/src/shm/Makefile.mk $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/src/Makefile.mk $(srcdir)/src/atomic/Makefile.mk $(srcdir)/src/bt/Makefile.mk $(srcdir)/src/dbg/Makefile.mk $(srcdir)/src/env/Makefile.mk $(srcdir)/src/mem/Makefile.mk $(srcdir)/src/msg/Makefile.mk $(srcdir)/src/sock/Makefile.mk $(srcdir)/src/str/Makefile.mk $(srcdir)/src/thread/Makefile.mk $(srcdir)/src/timer/Makefile.mk $(srcdir)/src/shm/Makefile.mk $(srcdir)/src/gpu/Makefile.mk $(srcdir)/src/gavl/Makefile.mk $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -717,7 +704,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe);; \
 	esac;
-$(srcdir)/src/Makefile.mk $(srcdir)/src/bt/Makefile.mk $(srcdir)/src/dbg/Makefile.mk $(srcdir)/src/env/Makefile.mk $(srcdir)/src/mem/Makefile.mk $(srcdir)/src/msg/Makefile.mk $(srcdir)/src/sock/Makefile.mk $(srcdir)/src/str/Makefile.mk $(srcdir)/src/thread/Makefile.mk $(srcdir)/src/timer/Makefile.mk $(srcdir)/src/shm/Makefile.mk $(am__empty):
+$(srcdir)/src/Makefile.mk $(srcdir)/src/atomic/Makefile.mk $(srcdir)/src/bt/Makefile.mk $(srcdir)/src/dbg/Makefile.mk $(srcdir)/src/env/Makefile.mk $(srcdir)/src/mem/Makefile.mk $(srcdir)/src/msg/Makefile.mk $(srcdir)/src/sock/Makefile.mk $(srcdir)/src/str/Makefile.mk $(srcdir)/src/thread/Makefile.mk $(srcdir)/src/timer/Makefile.mk $(srcdir)/src/shm/Makefile.mk $(srcdir)/src/gpu/Makefile.mk $(srcdir)/src/gavl/Makefile.mk $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -792,6 +779,14 @@ clean-noinstLTLIBRARIES:
 	  echo rm -f $${locs}; \
 	  rm -f $${locs}; \
 	}
+src/atomic/$(am__dirstamp):
+	@$(MKDIR_P) src/atomic
+	@: > src/atomic/$(am__dirstamp)
+src/atomic/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/atomic/$(DEPDIR)
+	@: > src/atomic/$(DEPDIR)/$(am__dirstamp)
+src/atomic/mpl_atomic.lo: src/atomic/$(am__dirstamp) \
+	src/atomic/$(DEPDIR)/$(am__dirstamp)
 src/bt/$(am__dirstamp):
 	@$(MKDIR_P) src/bt
 	@: > src/bt/$(am__dirstamp)
@@ -872,6 +867,8 @@ src/thread/mpl_thread_argobots.lo: src/thread/$(am__dirstamp) \
 	src/thread/$(DEPDIR)/$(am__dirstamp)
 src/thread/mpl_thread_posix.lo: src/thread/$(am__dirstamp) \
 	src/thread/$(DEPDIR)/$(am__dirstamp)
+src/thread/mpl_thread_uti.lo: src/thread/$(am__dirstamp) \
+	src/thread/$(DEPDIR)/$(am__dirstamp)
 src/timer/$(am__dirstamp):
 	@$(MKDIR_P) src/timer
 	@: > src/timer/$(am__dirstamp)
@@ -892,12 +889,6 @@ src/timer/mpl_timer_ppc64_cycle.lo: src/timer/$(am__dirstamp) \
 	src/timer/$(DEPDIR)/$(am__dirstamp)
 src/timer/mpl_timer_mach_absolute_time.lo: src/timer/$(am__dirstamp) \
 	src/timer/$(DEPDIR)/$(am__dirstamp)
-src/timer/mpl_timer_query_performance_counter.lo:  \
-	src/timer/$(am__dirstamp) src/timer/$(DEPDIR)/$(am__dirstamp)
-src/timer/mpl_timer_win86_cycle.lo: src/timer/$(am__dirstamp) \
-	src/timer/$(DEPDIR)/$(am__dirstamp)
-src/timer/mpl_timer_device.lo: src/timer/$(am__dirstamp) \
-	src/timer/$(DEPDIR)/$(am__dirstamp)
 src/shm/$(am__dirstamp):
 	@$(MKDIR_P) src/shm
 	@: > src/shm/$(am__dirstamp)
@@ -912,6 +903,28 @@ src/shm/mpl_shm_mmap.lo: src/shm/$(am__dirstamp) \
 	src/shm/$(DEPDIR)/$(am__dirstamp)
 src/shm/mpl_shm_win.lo: src/shm/$(am__dirstamp) \
 	src/shm/$(DEPDIR)/$(am__dirstamp)
+src/gpu/$(am__dirstamp):
+	@$(MKDIR_P) src/gpu
+	@: > src/gpu/$(am__dirstamp)
+src/gpu/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/gpu/$(DEPDIR)
+	@: > src/gpu/$(DEPDIR)/$(am__dirstamp)
+src/gpu/mpl_gpu_common.lo: src/gpu/$(am__dirstamp) \
+	src/gpu/$(DEPDIR)/$(am__dirstamp)
+src/gpu/mpl_gpu_cuda.lo: src/gpu/$(am__dirstamp) \
+	src/gpu/$(DEPDIR)/$(am__dirstamp)
+src/gpu/mpl_gpu_ze.lo: src/gpu/$(am__dirstamp) \
+	src/gpu/$(DEPDIR)/$(am__dirstamp)
+src/gpu/mpl_gpu_fallback.lo: src/gpu/$(am__dirstamp) \
+	src/gpu/$(DEPDIR)/$(am__dirstamp)
+src/gavl/$(am__dirstamp):
+	@$(MKDIR_P) src/gavl
+	@: > src/gavl/$(am__dirstamp)
+src/gavl/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/gavl/$(DEPDIR)
+	@: > src/gavl/$(DEPDIR)/$(am__dirstamp)
+src/gavl/mpl_gavl.lo: src/gavl/$(am__dirstamp) \
+	src/gavl/$(DEPDIR)/$(am__dirstamp)
 
 lib@MPLLIBNAME@.la: $(lib@MPLLIBNAME@_la_OBJECTS) $(lib@MPLLIBNAME@_la_DEPENDENCIES) $(EXTRA_lib@MPLLIBNAME@_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(lib@MPLLIBNAME@_la_LINK) $(am_lib@MPLLIBNAME@_la_rpath) $(lib@MPLLIBNAME@_la_OBJECTS) $(lib@MPLLIBNAME@_la_LIBADD) $(LIBS)
@@ -939,12 +952,18 @@ strsep$(EXEEXT): $(strsep_OBJECTS) $(strsep_DEPENDENCIES) $(EXTRA_strsep_DEPENDE
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f src/atomic/*.$(OBJEXT)
+	-rm -f src/atomic/*.lo
 	-rm -f src/bt/*.$(OBJEXT)
 	-rm -f src/bt/*.lo
 	-rm -f src/dbg/*.$(OBJEXT)
 	-rm -f src/dbg/*.lo
 	-rm -f src/env/*.$(OBJEXT)
 	-rm -f src/env/*.lo
+	-rm -f src/gavl/*.$(OBJEXT)
+	-rm -f src/gavl/*.lo
+	-rm -f src/gpu/*.$(OBJEXT)
+	-rm -f src/gpu/*.lo
 	-rm -f src/mem/*.$(OBJEXT)
 	-rm -f src/mem/*.lo
 	-rm -f src/msg/*.$(OBJEXT)
@@ -964,9 +983,15 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@src/atomic/$(DEPDIR)/mpl_atomic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/bt/$(DEPDIR)/mpl_bt.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/dbg/$(DEPDIR)/mpl_dbg.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/env/$(DEPDIR)/mpl_env.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/gavl/$(DEPDIR)/mpl_gavl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/gpu/$(DEPDIR)/mpl_gpu_common.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/gpu/$(DEPDIR)/mpl_gpu_cuda.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/gpu/$(DEPDIR)/mpl_gpu_fallback.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/gpu/$(DEPDIR)/mpl_gpu_ze.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mem/$(DEPDIR)/mpl_trmem.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/msg/$(DEPDIR)/mpl_msg.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/shm/$(DEPDIR)/mpl_shm.Plo@am__quote@
@@ -983,17 +1008,15 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/thread/$(DEPDIR)/mpl_thread_argobots.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/thread/$(DEPDIR)/mpl_thread_posix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/thread/$(DEPDIR)/mpl_thread_solaris.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/thread/$(DEPDIR)/mpl_thread_uti.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/thread/$(DEPDIR)/mpl_thread_win.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_clock_gettime.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_device.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_gcc_ia64_cycle.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_gethrtime.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_gettimeofday.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_linux86_cycle.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_mach_absolute_time.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_ppc64_cycle.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_query_performance_counter.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/timer/$(DEPDIR)/mpl_timer_win86_cycle.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@test/$(DEPDIR)/strsep.Po@am__quote@
 
 .c.o:
@@ -1025,9 +1048,12 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
+	-rm -rf src/atomic/.libs src/atomic/_libs
 	-rm -rf src/bt/.libs src/bt/_libs
 	-rm -rf src/dbg/.libs src/dbg/_libs
 	-rm -rf src/env/.libs src/env/_libs
+	-rm -rf src/gavl/.libs src/gavl/_libs
+	-rm -rf src/gpu/.libs src/gpu/_libs
 	-rm -rf src/mem/.libs src/mem/_libs
 	-rm -rf src/msg/.libs src/msg/_libs
 	-rm -rf src/shm/.libs src/shm/_libs
@@ -1483,12 +1509,18 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f src/atomic/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/atomic/$(am__dirstamp)
 	-rm -f src/bt/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/bt/$(am__dirstamp)
 	-rm -f src/dbg/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/dbg/$(am__dirstamp)
 	-rm -f src/env/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/env/$(am__dirstamp)
+	-rm -f src/gavl/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/gavl/$(am__dirstamp)
+	-rm -f src/gpu/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/gpu/$(am__dirstamp)
 	-rm -f src/mem/$(DEPDIR)/$(am__dirstamp)
 	-rm -f src/mem/$(am__dirstamp)
 	-rm -f src/msg/$(DEPDIR)/$(am__dirstamp)
@@ -1517,7 +1549,7 @@ clean-am: clean-checkPROGRAMS clean-generic clean-libLTLIBRARIES \
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf src/bt/$(DEPDIR) src/dbg/$(DEPDIR) src/env/$(DEPDIR) src/mem/$(DEPDIR) src/msg/$(DEPDIR) src/shm/$(DEPDIR) src/sock/$(DEPDIR) src/str/$(DEPDIR) src/thread/$(DEPDIR) src/timer/$(DEPDIR) test/$(DEPDIR)
+	-rm -rf src/atomic/$(DEPDIR) src/bt/$(DEPDIR) src/dbg/$(DEPDIR) src/env/$(DEPDIR) src/gavl/$(DEPDIR) src/gpu/$(DEPDIR) src/mem/$(DEPDIR) src/msg/$(DEPDIR) src/shm/$(DEPDIR) src/sock/$(DEPDIR) src/str/$(DEPDIR) src/thread/$(DEPDIR) src/timer/$(DEPDIR) test/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -1565,7 +1597,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf src/bt/$(DEPDIR) src/dbg/$(DEPDIR) src/env/$(DEPDIR) src/mem/$(DEPDIR) src/msg/$(DEPDIR) src/shm/$(DEPDIR) src/sock/$(DEPDIR) src/str/$(DEPDIR) src/thread/$(DEPDIR) src/timer/$(DEPDIR) test/$(DEPDIR)
+	-rm -rf src/atomic/$(DEPDIR) src/bt/$(DEPDIR) src/dbg/$(DEPDIR) src/env/$(DEPDIR) src/gavl/$(DEPDIR) src/gpu/$(DEPDIR) src/mem/$(DEPDIR) src/msg/$(DEPDIR) src/shm/$(DEPDIR) src/sock/$(DEPDIR) src/str/$(DEPDIR) src/thread/$(DEPDIR) src/timer/$(DEPDIR) test/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

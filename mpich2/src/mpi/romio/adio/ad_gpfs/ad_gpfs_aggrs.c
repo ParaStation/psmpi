@@ -1,17 +1,12 @@
-/* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2008                               */
-/* ---------------------------------------------------------------- */
+/*
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
+ */
+
 /**
  * \file ad_gpfs_aggrs.c
  * \brief The externally used function from this file is is declared in ad_gpfs_aggrs.h
  */
-
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *   Copyright (C) 1997-2001 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
- */
-
 
 #include "adio.h"
 #include "adio_cb_config_list.h"
@@ -141,7 +136,7 @@ int ADIOI_GPFS_Calc_aggregator(ADIO_File fd,
     if (rank_index >= fd->hints->cb_nodes || rank_index < 0) {
         FPRINTF(stderr,
                 "Error in ADIOI_Calc_aggregator(): rank_index(%d) >= fd->hints->cb_nodes (%d) fd_size=%lld off=%lld\n",
-                rank_index, fd->hints->cb_nodes, fd_size, off);
+                rank_index, fd->hints->cb_nodes, (long long) fd_size, (long long) off);
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
     /* DBG_FPRINTF ("ADIOI_GPFS_Calc_aggregator: rank_index = %d\n",
@@ -250,8 +245,8 @@ void ADIOI_GPFS_Calc_file_domains(ADIO_File fd,
      fd_size = min_fd_size;
      */
     fd_size = (ADIO_Offset *) ADIOI_Malloc(nprocs_for_coll * sizeof(ADIO_Offset));
-    *fd_start_ptr = (ADIO_Offset *) ADIOI_Malloc(nprocs_for_coll * sizeof(ADIO_Offset));
-    *fd_end_ptr = (ADIO_Offset *) ADIOI_Malloc(nprocs_for_coll * sizeof(ADIO_Offset));
+    *fd_start_ptr = (ADIO_Offset *) ADIOI_Malloc(nprocs_for_coll * 2 * sizeof(ADIO_Offset));
+    *fd_end_ptr = *fd_start_ptr + nprocs_for_coll;
     fd_start = *fd_start_ptr;
     fd_end = *fd_end_ptr;
 
@@ -595,7 +590,7 @@ void ADIOI_GPFS_Calc_my_req(ADIO_File fd, ADIO_Offset * offset_list, ADIO_Offset
             DBG_FPRINTF(stderr, "data needed from %d (count = %d):\n", i, my_req[i].count);
             for (l = 0; l < my_req[i].count; l++) {
                 DBG_FPRINTF(stderr, "   off[%d] = %lld, len[%d] = %lld\n", l,
-                            my_req[i].offsets[l], l, my_req[i].lens[l]);
+                            (long long) my_req[i].offsets[l], l, (long long) my_req[i].lens[l]);
             }
         }
         DBG_FPRINTF(stderr, "buf_idx[%d] = 0x%x\n", i, buf_idx[i]);

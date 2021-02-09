@@ -1,0 +1,22 @@
+.TH MPIX_GPU_query_support 3 "1/20/2021" " " "MPI"
+.SH NAME
+MPIX_GPU_query_support \-  Returns the type of GPU supported 
+.SH SYNOPSIS
+.nf
+int MPIX_GPU_query_support(int gpu_type, int *is_supported)
+.fi
+.SH INPUT PARAMETERS
+.PD 0
+.TP
+.B gpu_type 
+- the GPU type being queried for (integer)
+.PD 1
+.PD 0
+.TP
+.B is_supported 
+- whether supported or not (integer)
+.PD 1
+
+.SH NOTES
+Query for the various GPU types whether they are supported by MPICH or
+not.

@@ -90,7 +90,23 @@ host_triplet = @host@
 noinst_PROGRAMS = threads$(EXEEXT) threaded_sr$(EXEEXT) \
 	alltoall$(EXEEXT) sendselfth$(EXEEXT) greq_wait$(EXEEXT) \
 	greq_test$(EXEEXT) multisend$(EXEEXT) multisend2$(EXEEXT) \
-	multisend3$(EXEEXT) multisend4$(EXEEXT) ibsend$(EXEEXT)
+	multisend3$(EXEEXT) multisend4$(EXEEXT) ibsend$(EXEEXT) \
+	mt_sendrecv$(EXEEXT) mt_bsendrecv$(EXEEXT) \
+	mt_ssendrecv$(EXEEXT) mt_isendirecv$(EXEEXT) \
+	mt_ibsendirecv$(EXEEXT) mt_issendirecv$(EXEEXT) \
+	mt_sendrecv_huge$(EXEEXT) mt_bsendrecv_huge$(EXEEXT) \
+	mt_ssendrecv_huge$(EXEEXT) mt_isendirecv_huge$(EXEEXT) \
+	mt_ibsendirecv_huge$(EXEEXT) mt_issendirecv_huge$(EXEEXT) \
+	mt_probe_isendrecv$(EXEEXT) mt_probe_sendrecv$(EXEEXT) \
+	mt_iprobe_isendrecv$(EXEEXT) mt_iprobe_sendrecv$(EXEEXT) \
+	mt_mprobe_isendrecv$(EXEEXT) mt_mprobe_sendrecv$(EXEEXT) \
+	mt_mprobe_sendirecv$(EXEEXT) mt_improbe_isendrecv$(EXEEXT) \
+	mt_improbe_sendrecv$(EXEEXT) mt_probe_sendrecv_huge$(EXEEXT) \
+	mt_iprobe_sendrecv_huge$(EXEEXT) \
+	mt_mprobe_sendrecv_huge$(EXEEXT) \
+	mt_improbe_sendrecv_huge$(EXEEXT) \
+	mt_sendrecv_pers_huge$(EXEEXT) mt_bsendrecv_pers_huge$(EXEEXT) \
+	mt_ssendrecv_pers_huge$(EXEEXT) mt_mpicancel$(EXEEXT)
 subdir = threads/pt2pt
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -98,9 +114,16 @@ am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
 	$(top_srcdir)/confdb/aclocal_cxx.m4 \
 	$(top_srcdir)/confdb/aclocal_f77.m4 \
 	$(top_srcdir)/confdb/aclocal_fc.m4 \
+	$(top_srcdir)/confdb/aclocal_libs.m4 \
 	$(top_srcdir)/confdb/aclocal_make.m4 \
 	$(top_srcdir)/confdb/aclocal_runlog.m4 \
-	$(top_srcdir)/confdb/aclocal_util.m4 $(top_srcdir)/version.m4 \
+	$(top_srcdir)/confdb/aclocal_threads.m4 \
+	$(top_srcdir)/confdb/aclocal_util.m4 \
+	$(top_srcdir)/confdb/libtool.m4 \
+	$(top_srcdir)/confdb/ltoptions.m4 \
+	$(top_srcdir)/confdb/ltsugar.m4 \
+	$(top_srcdir)/confdb/ltversion.m4 \
+	$(top_srcdir)/confdb/lt~obsolete.m4 $(top_srcdir)/version.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -113,69 +136,358 @@ PROGRAMS = $(noinst_PROGRAMS)
 alltoall_SOURCES = alltoall.c
 alltoall_OBJECTS = alltoall.$(OBJEXT)
 alltoall_LDADD = $(LDADD)
-alltoall_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
-	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+alltoall_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
 greq_test_SOURCES = greq_test.c
 greq_test_OBJECTS = greq_test.$(OBJEXT)
 greq_test_LDADD = $(LDADD)
-greq_test_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
-	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+greq_test_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
 greq_wait_SOURCES = greq_wait.c
 greq_wait_OBJECTS = greq_wait.$(OBJEXT)
 greq_wait_LDADD = $(LDADD)
-greq_wait_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
-	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+greq_wait_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
 ibsend_SOURCES = ibsend.c
 ibsend_OBJECTS = ibsend.$(OBJEXT)
 ibsend_LDADD = $(LDADD)
-ibsend_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
-	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+ibsend_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_bsendrecv_OBJECTS = mt_bsendrecv-mt_pt2pt_common.$(OBJEXT) \
+	mt_bsendrecv-mt_sendrecv_impl.$(OBJEXT)
+mt_bsendrecv_OBJECTS = $(am_mt_bsendrecv_OBJECTS)
+mt_bsendrecv_LDADD = $(LDADD)
+mt_bsendrecv_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_bsendrecv_huge_OBJECTS =  \
+	mt_bsendrecv_huge-mt_pt2pt_common.$(OBJEXT) \
+	mt_bsendrecv_huge-mt_sendrecv_impl.$(OBJEXT)
+mt_bsendrecv_huge_OBJECTS = $(am_mt_bsendrecv_huge_OBJECTS)
+mt_bsendrecv_huge_LDADD = $(LDADD)
+mt_bsendrecv_huge_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_bsendrecv_pers_huge_OBJECTS =  \
+	mt_bsendrecv_pers_huge-mt_pt2pt_common.$(OBJEXT) \
+	mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.$(OBJEXT)
+mt_bsendrecv_pers_huge_OBJECTS = $(am_mt_bsendrecv_pers_huge_OBJECTS)
+mt_bsendrecv_pers_huge_LDADD = $(LDADD)
+mt_bsendrecv_pers_huge_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_ibsendirecv_OBJECTS = mt_ibsendirecv-mt_pt2pt_common.$(OBJEXT) \
+	mt_ibsendirecv-mt_sendrecv_impl.$(OBJEXT)
+mt_ibsendirecv_OBJECTS = $(am_mt_ibsendirecv_OBJECTS)
+mt_ibsendirecv_LDADD = $(LDADD)
+mt_ibsendirecv_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_ibsendirecv_huge_OBJECTS =  \
+	mt_ibsendirecv_huge-mt_pt2pt_common.$(OBJEXT) \
+	mt_ibsendirecv_huge-mt_sendrecv_impl.$(OBJEXT)
+mt_ibsendirecv_huge_OBJECTS = $(am_mt_ibsendirecv_huge_OBJECTS)
+mt_ibsendirecv_huge_LDADD = $(LDADD)
+mt_ibsendirecv_huge_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_improbe_isendrecv_OBJECTS =  \
+	mt_improbe_isendrecv-mt_pt2pt_common.$(OBJEXT) \
+	mt_improbe_isendrecv-mt_probe_impl.$(OBJEXT)
+mt_improbe_isendrecv_OBJECTS = $(am_mt_improbe_isendrecv_OBJECTS)
+mt_improbe_isendrecv_LDADD = $(LDADD)
+mt_improbe_isendrecv_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_improbe_sendrecv_OBJECTS =  \
+	mt_improbe_sendrecv-mt_pt2pt_common.$(OBJEXT) \
+	mt_improbe_sendrecv-mt_probe_impl.$(OBJEXT)
+mt_improbe_sendrecv_OBJECTS = $(am_mt_improbe_sendrecv_OBJECTS)
+mt_improbe_sendrecv_LDADD = $(LDADD)
+mt_improbe_sendrecv_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_improbe_sendrecv_huge_OBJECTS =  \
+	mt_improbe_sendrecv_huge-mt_pt2pt_common.$(OBJEXT) \
+	mt_improbe_sendrecv_huge-mt_probe_impl.$(OBJEXT)
+mt_improbe_sendrecv_huge_OBJECTS =  \
+	$(am_mt_improbe_sendrecv_huge_OBJECTS)
+mt_improbe_sendrecv_huge_LDADD = $(LDADD)
+mt_improbe_sendrecv_huge_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_iprobe_isendrecv_OBJECTS =  \
+	mt_iprobe_isendrecv-mt_pt2pt_common.$(OBJEXT) \
+	mt_iprobe_isendrecv-mt_probe_impl.$(OBJEXT)
+mt_iprobe_isendrecv_OBJECTS = $(am_mt_iprobe_isendrecv_OBJECTS)
+mt_iprobe_isendrecv_LDADD = $(LDADD)
+mt_iprobe_isendrecv_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_iprobe_sendrecv_OBJECTS =  \
+	mt_iprobe_sendrecv-mt_pt2pt_common.$(OBJEXT) \
+	mt_iprobe_sendrecv-mt_probe_impl.$(OBJEXT)
+mt_iprobe_sendrecv_OBJECTS = $(am_mt_iprobe_sendrecv_OBJECTS)
+mt_iprobe_sendrecv_LDADD = $(LDADD)
+mt_iprobe_sendrecv_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_iprobe_sendrecv_huge_OBJECTS =  \
+	mt_iprobe_sendrecv_huge-mt_pt2pt_common.$(OBJEXT) \
+	mt_iprobe_sendrecv_huge-mt_probe_impl.$(OBJEXT)
+mt_iprobe_sendrecv_huge_OBJECTS =  \
+	$(am_mt_iprobe_sendrecv_huge_OBJECTS)
+mt_iprobe_sendrecv_huge_LDADD = $(LDADD)
+mt_iprobe_sendrecv_huge_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_isendirecv_OBJECTS = mt_isendirecv-mt_pt2pt_common.$(OBJEXT) \
+	mt_isendirecv-mt_sendrecv_impl.$(OBJEXT)
+mt_isendirecv_OBJECTS = $(am_mt_isendirecv_OBJECTS)
+mt_isendirecv_LDADD = $(LDADD)
+mt_isendirecv_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_isendirecv_huge_OBJECTS =  \
+	mt_isendirecv_huge-mt_pt2pt_common.$(OBJEXT) \
+	mt_isendirecv_huge-mt_sendrecv_impl.$(OBJEXT)
+mt_isendirecv_huge_OBJECTS = $(am_mt_isendirecv_huge_OBJECTS)
+mt_isendirecv_huge_LDADD = $(LDADD)
+mt_isendirecv_huge_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_issendirecv_OBJECTS = mt_issendirecv-mt_pt2pt_common.$(OBJEXT) \
+	mt_issendirecv-mt_sendrecv_impl.$(OBJEXT)
+mt_issendirecv_OBJECTS = $(am_mt_issendirecv_OBJECTS)
+mt_issendirecv_LDADD = $(LDADD)
+mt_issendirecv_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_issendirecv_huge_OBJECTS =  \
+	mt_issendirecv_huge-mt_pt2pt_common.$(OBJEXT) \
+	mt_issendirecv_huge-mt_sendrecv_impl.$(OBJEXT)
+mt_issendirecv_huge_OBJECTS = $(am_mt_issendirecv_huge_OBJECTS)
+mt_issendirecv_huge_LDADD = $(LDADD)
+mt_issendirecv_huge_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_mpicancel_OBJECTS = mt_mpicancel.$(OBJEXT)
+mt_mpicancel_OBJECTS = $(am_mt_mpicancel_OBJECTS)
+mt_mpicancel_LDADD = $(LDADD)
+mt_mpicancel_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_mprobe_isendrecv_OBJECTS =  \
+	mt_mprobe_isendrecv-mt_pt2pt_common.$(OBJEXT) \
+	mt_mprobe_isendrecv-mt_probe_impl.$(OBJEXT)
+mt_mprobe_isendrecv_OBJECTS = $(am_mt_mprobe_isendrecv_OBJECTS)
+mt_mprobe_isendrecv_LDADD = $(LDADD)
+mt_mprobe_isendrecv_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_mprobe_sendirecv_OBJECTS =  \
+	mt_mprobe_sendirecv-mt_pt2pt_common.$(OBJEXT) \
+	mt_mprobe_sendirecv-mt_probe_impl.$(OBJEXT)
+mt_mprobe_sendirecv_OBJECTS = $(am_mt_mprobe_sendirecv_OBJECTS)
+mt_mprobe_sendirecv_LDADD = $(LDADD)
+mt_mprobe_sendirecv_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_mprobe_sendrecv_OBJECTS =  \
+	mt_mprobe_sendrecv-mt_pt2pt_common.$(OBJEXT) \
+	mt_mprobe_sendrecv-mt_probe_impl.$(OBJEXT)
+mt_mprobe_sendrecv_OBJECTS = $(am_mt_mprobe_sendrecv_OBJECTS)
+mt_mprobe_sendrecv_LDADD = $(LDADD)
+mt_mprobe_sendrecv_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_mprobe_sendrecv_huge_OBJECTS =  \
+	mt_mprobe_sendrecv_huge-mt_pt2pt_common.$(OBJEXT) \
+	mt_mprobe_sendrecv_huge-mt_probe_impl.$(OBJEXT)
+mt_mprobe_sendrecv_huge_OBJECTS =  \
+	$(am_mt_mprobe_sendrecv_huge_OBJECTS)
+mt_mprobe_sendrecv_huge_LDADD = $(LDADD)
+mt_mprobe_sendrecv_huge_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_probe_isendrecv_OBJECTS =  \
+	mt_probe_isendrecv-mt_pt2pt_common.$(OBJEXT) \
+	mt_probe_isendrecv-mt_probe_impl.$(OBJEXT)
+mt_probe_isendrecv_OBJECTS = $(am_mt_probe_isendrecv_OBJECTS)
+mt_probe_isendrecv_LDADD = $(LDADD)
+mt_probe_isendrecv_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_probe_sendrecv_OBJECTS =  \
+	mt_probe_sendrecv-mt_pt2pt_common.$(OBJEXT) \
+	mt_probe_sendrecv-mt_probe_impl.$(OBJEXT)
+mt_probe_sendrecv_OBJECTS = $(am_mt_probe_sendrecv_OBJECTS)
+mt_probe_sendrecv_LDADD = $(LDADD)
+mt_probe_sendrecv_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_probe_sendrecv_huge_OBJECTS =  \
+	mt_probe_sendrecv_huge-mt_pt2pt_common.$(OBJEXT) \
+	mt_probe_sendrecv_huge-mt_probe_impl.$(OBJEXT)
+mt_probe_sendrecv_huge_OBJECTS = $(am_mt_probe_sendrecv_huge_OBJECTS)
+mt_probe_sendrecv_huge_LDADD = $(LDADD)
+mt_probe_sendrecv_huge_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_sendrecv_OBJECTS = mt_sendrecv-mt_pt2pt_common.$(OBJEXT) \
+	mt_sendrecv-mt_sendrecv_impl.$(OBJEXT)
+mt_sendrecv_OBJECTS = $(am_mt_sendrecv_OBJECTS)
+mt_sendrecv_LDADD = $(LDADD)
+mt_sendrecv_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_sendrecv_huge_OBJECTS =  \
+	mt_sendrecv_huge-mt_pt2pt_common.$(OBJEXT) \
+	mt_sendrecv_huge-mt_sendrecv_impl.$(OBJEXT)
+mt_sendrecv_huge_OBJECTS = $(am_mt_sendrecv_huge_OBJECTS)
+mt_sendrecv_huge_LDADD = $(LDADD)
+mt_sendrecv_huge_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_sendrecv_pers_huge_OBJECTS =  \
+	mt_sendrecv_pers_huge-mt_pt2pt_common.$(OBJEXT) \
+	mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.$(OBJEXT)
+mt_sendrecv_pers_huge_OBJECTS = $(am_mt_sendrecv_pers_huge_OBJECTS)
+mt_sendrecv_pers_huge_LDADD = $(LDADD)
+mt_sendrecv_pers_huge_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_ssendrecv_OBJECTS = mt_ssendrecv-mt_pt2pt_common.$(OBJEXT) \
+	mt_ssendrecv-mt_sendrecv_impl.$(OBJEXT)
+mt_ssendrecv_OBJECTS = $(am_mt_ssendrecv_OBJECTS)
+mt_ssendrecv_LDADD = $(LDADD)
+mt_ssendrecv_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_ssendrecv_huge_OBJECTS =  \
+	mt_ssendrecv_huge-mt_pt2pt_common.$(OBJEXT) \
+	mt_ssendrecv_huge-mt_sendrecv_impl.$(OBJEXT)
+mt_ssendrecv_huge_OBJECTS = $(am_mt_ssendrecv_huge_OBJECTS)
+mt_ssendrecv_huge_LDADD = $(LDADD)
+mt_ssendrecv_huge_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
+am_mt_ssendrecv_pers_huge_OBJECTS =  \
+	mt_ssendrecv_pers_huge-mt_pt2pt_common.$(OBJEXT) \
+	mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.$(OBJEXT)
+mt_ssendrecv_pers_huge_OBJECTS = $(am_mt_ssendrecv_pers_huge_OBJECTS)
+mt_ssendrecv_pers_huge_LDADD = $(LDADD)
+mt_ssendrecv_pers_huge_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
 multisend_SOURCES = multisend.c
 multisend_OBJECTS = multisend.$(OBJEXT)
 multisend_LDADD = $(LDADD)
-multisend_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
-	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+multisend_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
 multisend2_SOURCES = multisend2.c
 multisend2_OBJECTS = multisend2.$(OBJEXT)
 multisend2_LDADD = $(LDADD)
-multisend2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
-	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+multisend2_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
 multisend3_SOURCES = multisend3.c
 multisend3_OBJECTS = multisend3.$(OBJEXT)
 multisend3_LDADD = $(LDADD)
-multisend3_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
-	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+multisend3_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
 multisend4_SOURCES = multisend4.c
 multisend4_OBJECTS = multisend4.$(OBJEXT)
 multisend4_LDADD = $(LDADD)
-multisend4_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
-	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+multisend4_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
 sendselfth_SOURCES = sendselfth.c
 sendselfth_OBJECTS = sendselfth.$(OBJEXT)
 sendselfth_LDADD = $(LDADD)
-sendselfth_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
-	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+sendselfth_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
 threaded_sr_SOURCES = threaded_sr.c
 threaded_sr_OBJECTS = threaded_sr.$(OBJEXT)
 threaded_sr_LDADD = $(LDADD)
-threaded_sr_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
-	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+threaded_sr_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
 threads_SOURCES = threads.c
 threads_OBJECTS = threads.$(OBJEXT)
 threads_LDADD = $(LDADD)
-threads_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
-	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+threads_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -194,22 +506,60 @@ am__depfiles_maybe = depfiles
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
 AM_V_CC = $(am__v_CC_@AM_V@)
 am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
 am__v_CC_1 = 
 CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = alltoall.c greq_test.c greq_wait.c ibsend.c multisend.c \
-	multisend2.c multisend3.c multisend4.c sendselfth.c \
-	threaded_sr.c threads.c
-DIST_SOURCES = alltoall.c greq_test.c greq_wait.c ibsend.c multisend.c \
-	multisend2.c multisend3.c multisend4.c sendselfth.c \
-	threaded_sr.c threads.c
+SOURCES = alltoall.c greq_test.c greq_wait.c ibsend.c \
+	$(mt_bsendrecv_SOURCES) $(mt_bsendrecv_huge_SOURCES) \
+	$(mt_bsendrecv_pers_huge_SOURCES) $(mt_ibsendirecv_SOURCES) \
+	$(mt_ibsendirecv_huge_SOURCES) $(mt_improbe_isendrecv_SOURCES) \
+	$(mt_improbe_sendrecv_SOURCES) \
+	$(mt_improbe_sendrecv_huge_SOURCES) \
+	$(mt_iprobe_isendrecv_SOURCES) $(mt_iprobe_sendrecv_SOURCES) \
+	$(mt_iprobe_sendrecv_huge_SOURCES) $(mt_isendirecv_SOURCES) \
+	$(mt_isendirecv_huge_SOURCES) $(mt_issendirecv_SOURCES) \
+	$(mt_issendirecv_huge_SOURCES) $(mt_mpicancel_SOURCES) \
+	$(mt_mprobe_isendrecv_SOURCES) $(mt_mprobe_sendirecv_SOURCES) \
+	$(mt_mprobe_sendrecv_SOURCES) \
+	$(mt_mprobe_sendrecv_huge_SOURCES) \
+	$(mt_probe_isendrecv_SOURCES) $(mt_probe_sendrecv_SOURCES) \
+	$(mt_probe_sendrecv_huge_SOURCES) $(mt_sendrecv_SOURCES) \
+	$(mt_sendrecv_huge_SOURCES) $(mt_sendrecv_pers_huge_SOURCES) \
+	$(mt_ssendrecv_SOURCES) $(mt_ssendrecv_huge_SOURCES) \
+	$(mt_ssendrecv_pers_huge_SOURCES) multisend.c multisend2.c \
+	multisend3.c multisend4.c sendselfth.c threaded_sr.c threads.c
+DIST_SOURCES = alltoall.c greq_test.c greq_wait.c ibsend.c \
+	$(mt_bsendrecv_SOURCES) $(mt_bsendrecv_huge_SOURCES) \
+	$(mt_bsendrecv_pers_huge_SOURCES) $(mt_ibsendirecv_SOURCES) \
+	$(mt_ibsendirecv_huge_SOURCES) $(mt_improbe_isendrecv_SOURCES) \
+	$(mt_improbe_sendrecv_SOURCES) \
+	$(mt_improbe_sendrecv_huge_SOURCES) \
+	$(mt_iprobe_isendrecv_SOURCES) $(mt_iprobe_sendrecv_SOURCES) \
+	$(mt_iprobe_sendrecv_huge_SOURCES) $(mt_isendirecv_SOURCES) \
+	$(mt_isendirecv_huge_SOURCES) $(mt_issendirecv_SOURCES) \
+	$(mt_issendirecv_huge_SOURCES) $(mt_mpicancel_SOURCES) \
+	$(mt_mprobe_isendrecv_SOURCES) $(mt_mprobe_sendirecv_SOURCES) \
+	$(mt_mprobe_sendrecv_SOURCES) \
+	$(mt_mprobe_sendrecv_huge_SOURCES) \
+	$(mt_probe_isendrecv_SOURCES) $(mt_probe_sendrecv_SOURCES) \
+	$(mt_probe_sendrecv_huge_SOURCES) $(mt_sendrecv_SOURCES) \
+	$(mt_sendrecv_huge_SOURCES) $(mt_sendrecv_pers_huge_SOURCES) \
+	$(mt_ssendrecv_SOURCES) $(mt_ssendrecv_huge_SOURCES) \
+	$(mt_ssendrecv_pers_huge_SOURCES) multisend.c multisend2.c \
+	multisend3.c multisend4.c sendselfth.c threaded_sr.c threads.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -234,9 +584,10 @@ am__define_uniq_tagged_files = \
   done | $(am__uniquify_input)`
 ETAGS = etags
 CTAGS = ctags
-am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/Makefile.mtest \
-	$(top_srcdir)/confdb/depcomp \
-	$(top_srcdir)/threads/Makefile_threads.mtest
+am__DIST_COMMON = $(srcdir)/Makefile.in \
+	$(top_srcdir)/Makefile_common.mtest \
+	$(top_srcdir)/Makefile_threads.mtest \
+	$(top_srcdir)/confdb/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 VPATH = @VPATH@
 ACLOCAL = @ACLOCAL@
@@ -261,7 +612,10 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DLLTOOL = @DLLTOOL@
+DSYMUTIL = @DSYMUTIL@
 DTP_SWITCH = @DTP_SWITCH@
+DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -292,13 +646,19 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LIBTOOL = @LIBTOOL@
+LIPO = @LIPO@
+LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAINT = @MAINT@
 MAKE = @MAKE@
 MAKEINFO = @MAKEINFO@
+MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 MPICC = @MPICC@
 MPICH_ENABLE_CXX = @MPICH_ENABLE_CXX@
@@ -320,7 +680,12 @@ MPI_SIZEOF_OFFSET = @MPI_SIZEOF_OFFSET@
 MPI_SOURCE = @MPI_SOURCE@
 MPI_SUBVERSION = @MPI_SUBVERSION@
 MPI_VERSION = @MPI_VERSION@
+NM = @NM@
+NMEDIT = @NMEDIT@
+OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
+OTOOL = @OTOOL@
+OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -332,6 +697,7 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 RANLIB = @RANLIB@
 RUN_XFAIL = @RUN_XFAIL@
+SED = @SED@
 SET_CFLAGS = @SET_CFLAGS@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -351,6 +717,7 @@ abs_top_srcdir = @abs_top_srcdir@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
+ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
 ac_ct_F77 = @ac_ct_F77@
 ac_ct_FC = @ac_ct_FC@
 am__include = @am__include@
@@ -365,8 +732,15 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
+ch3_tests = @ch3_tests@
+ch4_ofi_tests = @ch4_ofi_tests@
+ch4_tests = @ch4_tests@
+ch4_ucx_tests = @ch4_ucx_tests@
 ckpointdir = @ckpointdir@
 comm_overlap = @comm_overlap@
+cuda_CPPFLAGS = @cuda_CPPFLAGS@
+cuda_LDFLAGS = @cuda_LDFLAGS@
+cuda_LIBS = @cuda_LIBS@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -395,9 +769,9 @@ libdir = @libdir@
 libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
+main_top_builddir = @main_top_builddir@
+main_top_srcdir = @main_top_srcdir@
 mandir = @mandir@
-master_top_builddir = @master_top_builddir@
-master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
@@ -425,22 +799,96 @@ threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+ze_CPPFLAGS = @ze_CPPFLAGS@
+ze_LDFLAGS = @ze_LDFLAGS@
+ze_LIBS = @ze_LIBS@
 
 # AM_CPPFLAGS are used for C++ code as well
 
 # Add libdtpools support
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
-	-I$(top_srcdir)/dtpools/include
-LDADD = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a \
-	$(top_builddir)/threads/util/mtestthread.$(OBJEXT) @threadlib@
+	@cuda_CPPFLAGS@ @ze_CPPFLAGS@ -I$(top_srcdir)/dtpools/include \
+	-DMTEST_USE_THREAD
+AM_LDFLAGS = @cuda_LDFLAGS@ @ze_LDFLAGS@
+LDADD = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) @cuda_LIBS@ \
+	@ze_LIBS@ $(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_thread.$(OBJEXT) @threadlib@
 CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
 EXTRA_DIST = testlist
+
+# MT Send/Recv tests with small messages
+mt_sendrecv_SOURCES = mt_pt2pt_common.c mt_sendrecv_impl.c
+mt_sendrecv_CPPFLAGS = -DSEND $(AM_CPPFLAGS)
+mt_bsendrecv_SOURCES = mt_pt2pt_common.c mt_sendrecv_impl.c
+mt_bsendrecv_CPPFLAGS = -DBSEND $(AM_CPPFLAGS)
+mt_ssendrecv_SOURCES = mt_pt2pt_common.c mt_sendrecv_impl.c
+mt_ssendrecv_CPPFLAGS = -DSSEND $(AM_CPPFLAGS)
+mt_isendirecv_SOURCES = mt_pt2pt_common.c mt_sendrecv_impl.c
+mt_isendirecv_CPPFLAGS = -DNONBLOCKING -DISEND $(AM_CPPFLAGS)
+mt_ibsendirecv_SOURCES = mt_pt2pt_common.c mt_sendrecv_impl.c
+mt_ibsendirecv_CPPFLAGS = -DNONBLOCKING -DIBSEND $(AM_CPPFLAGS)
+mt_issendirecv_SOURCES = mt_pt2pt_common.c mt_sendrecv_impl.c
+mt_issendirecv_CPPFLAGS = -DNONBLOCKING -DISSEND $(AM_CPPFLAGS)
+
+# MT Send/Recv tests with large messages
+mt_sendrecv_huge_SOURCES = mt_pt2pt_common.c mt_sendrecv_impl.c
+mt_sendrecv_huge_CPPFLAGS = -DHUGE_COUNT -DSEND $(AM_CPPFLAGS)
+mt_bsendrecv_huge_SOURCES = mt_pt2pt_common.c mt_sendrecv_impl.c
+mt_bsendrecv_huge_CPPFLAGS = -DHUGE_COUNT -DBSEND $(AM_CPPFLAGS)
+mt_ssendrecv_huge_SOURCES = mt_pt2pt_common.c mt_sendrecv_impl.c
+mt_ssendrecv_huge_CPPFLAGS = -DHUGE_COUNT -DSSEND $(AM_CPPFLAGS)
+mt_isendirecv_huge_SOURCES = mt_pt2pt_common.c mt_sendrecv_impl.c
+mt_isendirecv_huge_CPPFLAGS = -DHUGE_COUNT -DNONBLOCKING -DISEND $(AM_CPPFLAGS)
+mt_ibsendirecv_huge_SOURCES = mt_pt2pt_common.c mt_sendrecv_impl.c
+mt_ibsendirecv_huge_CPPFLAGS = -DHUGE_COUNT -DNONBLOCKING -DIBSEND $(AM_CPPFLAGS)
+mt_issendirecv_huge_SOURCES = mt_pt2pt_common.c mt_sendrecv_impl.c
+mt_issendirecv_huge_CPPFLAGS = -DHUGE_COUNT -DNONBLOCKING -DISSEND $(AM_CPPFLAGS)
+
+# MT Probe family tests with small data send/recv
+mt_probe_isendrecv_SOURCES = mt_pt2pt_common.c mt_probe_impl.c
+mt_probe_isendrecv_CPPFLAGS = -DPROBE -DNBLOCKINGSEND -DISEND -DBLOCKINGRECV $(AM_CPPFLAGS)
+mt_probe_sendrecv_SOURCES = mt_pt2pt_common.c mt_probe_impl.c
+mt_probe_sendrecv_CPPFLAGS = -DPROBE -DBLOCKINGSEND -DSEND -DBLOCKINGRECV $(AM_CPPFLAGS)
+mt_iprobe_isendrecv_SOURCES = mt_pt2pt_common.c mt_probe_impl.c
+mt_iprobe_isendrecv_CPPFLAGS = -DIPROBE -DNBLOCKINGSEND -DISEND -DBLOCKINGRECV $(AM_CPPFLAGS)
+mt_iprobe_sendrecv_SOURCES = mt_pt2pt_common.c mt_probe_impl.c
+mt_iprobe_sendrecv_CPPFLAGS = -DIPROBE -DBLOCKINGSEND -DSEND -DBLOCKINGRECV $(AM_CPPFLAGS)
+mt_mprobe_isendrecv_SOURCES = mt_pt2pt_common.c mt_probe_impl.c
+mt_mprobe_isendrecv_CPPFLAGS = -DMPROBE -DNBLOCKINGSEND -DISEND -DBLOCKINGRECV $(AM_CPPFLAGS)
+mt_mprobe_sendrecv_SOURCES = mt_pt2pt_common.c mt_probe_impl.c
+mt_mprobe_sendrecv_CPPFLAGS = -DMPROBE -DBLOCKINGSEND -DSEND -DBLOCKINGRECV $(AM_CPPFLAGS)
+mt_mprobe_sendirecv_SOURCES = mt_pt2pt_common.c mt_probe_impl.c
+mt_mprobe_sendirecv_CPPFLAGS = -DMPROBE -DBLOCKINGSEND -DSEND -DNBLOCKINGRECV $(AM_CPPFLAGS)
+mt_improbe_isendrecv_SOURCES = mt_pt2pt_common.c mt_probe_impl.c
+mt_improbe_isendrecv_CPPFLAGS = -DIMPROBE -DNBLOCKINGSEND -DISEND -DBLOCKINGRECV $(AM_CPPFLAGS)
+mt_improbe_sendrecv_SOURCES = mt_pt2pt_common.c mt_probe_impl.c
+mt_improbe_sendrecv_CPPFLAGS = -DIMPROBE -DBLOCKINGSEND -DSEND -DBLOCKINGRECV $(AM_CPPFLAGS)
+
+# MT Probe family tests with large data send/recv
+mt_probe_sendrecv_huge_SOURCES = mt_pt2pt_common.c mt_probe_impl.c
+mt_probe_sendrecv_huge_CPPFLAGS = -DHUGE_COUNT -DPROBE -DBLOCKINGSEND -DSEND -DBLOCKINGRECV $(AM_CPPFLAGS)
+mt_iprobe_sendrecv_huge_SOURCES = mt_pt2pt_common.c mt_probe_impl.c
+mt_iprobe_sendrecv_huge_CPPFLAGS = -DHUGE_COUNT -DIPROBE -DBLOCKINGSEND -DSEND -DBLOCKINGRECV $(AM_CPPFLAGS)
+mt_mprobe_sendrecv_huge_SOURCES = mt_pt2pt_common.c mt_probe_impl.c
+mt_mprobe_sendrecv_huge_CPPFLAGS = -DHUGE_COUNT -DMPROBE -DBLOCKINGSEND -DSEND -DBLOCKINGRECV $(AM_CPPFLAGS)
+mt_improbe_sendrecv_huge_SOURCES = mt_pt2pt_common.c mt_probe_impl.c
+mt_improbe_sendrecv_huge_CPPFLAGS = -DHUGE_COUNT -DIMPROBE -DBLOCKINGSEND -DSEND -DBLOCKINGRECV $(AM_CPPFLAGS)
+
+# MT Persistent Send/Recv tests with large messages
+# Persistent test cases don't have the "small" versions
+mt_sendrecv_pers_huge_SOURCES = mt_pt2pt_common.c mt_pers_sendrecv_impl.c
+mt_sendrecv_pers_huge_CPPFLAGS = -DHUGE_COUNT -DSEND $(AM_CPPFLAGS)
+mt_bsendrecv_pers_huge_SOURCES = mt_pt2pt_common.c mt_pers_sendrecv_impl.c
+mt_bsendrecv_pers_huge_CPPFLAGS = -DHUGE_COUNT -DBSEND $(AM_CPPFLAGS)
+mt_ssendrecv_pers_huge_SOURCES = mt_pt2pt_common.c mt_pers_sendrecv_impl.c
+mt_ssendrecv_pers_huge_CPPFLAGS = -DHUGE_COUNT -DSSEND $(AM_CPPFLAGS)
+mt_mpicancel_SOURCES = mt_mpicancel.c
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/threads/Makefile_threads.mtest $(top_srcdir)/Makefile.mtest $(am__configure_deps)
+.SUFFIXES: .c .lo .o .obj
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/Makefile_threads.mtest $(top_srcdir)/Makefile_common.mtest $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -460,7 +908,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe);; \
 	esac;
-$(top_srcdir)/threads/Makefile_threads.mtest $(top_srcdir)/Makefile.mtest $(am__empty):
+$(top_srcdir)/Makefile_threads.mtest $(top_srcdir)/Makefile_common.mtest $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
@@ -472,7 +920,13 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 $(am__aclocal_m4_deps):
 
 clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
+	echo " rm -f" $$list; \
+	rm -f $$list || exit $$?; \
+	test -n "$(EXEEXT)" || exit 0; \
+	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
+	echo " rm -f" $$list; \
+	rm -f $$list
 
 alltoall$(EXEEXT): $(alltoall_OBJECTS) $(alltoall_DEPENDENCIES) $(EXTRA_alltoall_DEPENDENCIES) 
 	@rm -f alltoall$(EXEEXT)
@@ -489,6 +943,122 @@ greq_wait$(EXEEXT): $(greq_wait_OBJECTS) $(greq_wait_DEPENDENCIES) $(EXTRA_greq_
 ibsend$(EXEEXT): $(ibsend_OBJECTS) $(ibsend_DEPENDENCIES) $(EXTRA_ibsend_DEPENDENCIES) 
 	@rm -f ibsend$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(ibsend_OBJECTS) $(ibsend_LDADD) $(LIBS)
+
+mt_bsendrecv$(EXEEXT): $(mt_bsendrecv_OBJECTS) $(mt_bsendrecv_DEPENDENCIES) $(EXTRA_mt_bsendrecv_DEPENDENCIES) 
+	@rm -f mt_bsendrecv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_bsendrecv_OBJECTS) $(mt_bsendrecv_LDADD) $(LIBS)
+
+mt_bsendrecv_huge$(EXEEXT): $(mt_bsendrecv_huge_OBJECTS) $(mt_bsendrecv_huge_DEPENDENCIES) $(EXTRA_mt_bsendrecv_huge_DEPENDENCIES) 
+	@rm -f mt_bsendrecv_huge$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_bsendrecv_huge_OBJECTS) $(mt_bsendrecv_huge_LDADD) $(LIBS)
+
+mt_bsendrecv_pers_huge$(EXEEXT): $(mt_bsendrecv_pers_huge_OBJECTS) $(mt_bsendrecv_pers_huge_DEPENDENCIES) $(EXTRA_mt_bsendrecv_pers_huge_DEPENDENCIES) 
+	@rm -f mt_bsendrecv_pers_huge$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_bsendrecv_pers_huge_OBJECTS) $(mt_bsendrecv_pers_huge_LDADD) $(LIBS)
+
+mt_ibsendirecv$(EXEEXT): $(mt_ibsendirecv_OBJECTS) $(mt_ibsendirecv_DEPENDENCIES) $(EXTRA_mt_ibsendirecv_DEPENDENCIES) 
+	@rm -f mt_ibsendirecv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_ibsendirecv_OBJECTS) $(mt_ibsendirecv_LDADD) $(LIBS)
+
+mt_ibsendirecv_huge$(EXEEXT): $(mt_ibsendirecv_huge_OBJECTS) $(mt_ibsendirecv_huge_DEPENDENCIES) $(EXTRA_mt_ibsendirecv_huge_DEPENDENCIES) 
+	@rm -f mt_ibsendirecv_huge$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_ibsendirecv_huge_OBJECTS) $(mt_ibsendirecv_huge_LDADD) $(LIBS)
+
+mt_improbe_isendrecv$(EXEEXT): $(mt_improbe_isendrecv_OBJECTS) $(mt_improbe_isendrecv_DEPENDENCIES) $(EXTRA_mt_improbe_isendrecv_DEPENDENCIES) 
+	@rm -f mt_improbe_isendrecv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_improbe_isendrecv_OBJECTS) $(mt_improbe_isendrecv_LDADD) $(LIBS)
+
+mt_improbe_sendrecv$(EXEEXT): $(mt_improbe_sendrecv_OBJECTS) $(mt_improbe_sendrecv_DEPENDENCIES) $(EXTRA_mt_improbe_sendrecv_DEPENDENCIES) 
+	@rm -f mt_improbe_sendrecv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_improbe_sendrecv_OBJECTS) $(mt_improbe_sendrecv_LDADD) $(LIBS)
+
+mt_improbe_sendrecv_huge$(EXEEXT): $(mt_improbe_sendrecv_huge_OBJECTS) $(mt_improbe_sendrecv_huge_DEPENDENCIES) $(EXTRA_mt_improbe_sendrecv_huge_DEPENDENCIES) 
+	@rm -f mt_improbe_sendrecv_huge$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_improbe_sendrecv_huge_OBJECTS) $(mt_improbe_sendrecv_huge_LDADD) $(LIBS)
+
+mt_iprobe_isendrecv$(EXEEXT): $(mt_iprobe_isendrecv_OBJECTS) $(mt_iprobe_isendrecv_DEPENDENCIES) $(EXTRA_mt_iprobe_isendrecv_DEPENDENCIES) 
+	@rm -f mt_iprobe_isendrecv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_iprobe_isendrecv_OBJECTS) $(mt_iprobe_isendrecv_LDADD) $(LIBS)
+
+mt_iprobe_sendrecv$(EXEEXT): $(mt_iprobe_sendrecv_OBJECTS) $(mt_iprobe_sendrecv_DEPENDENCIES) $(EXTRA_mt_iprobe_sendrecv_DEPENDENCIES) 
+	@rm -f mt_iprobe_sendrecv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_iprobe_sendrecv_OBJECTS) $(mt_iprobe_sendrecv_LDADD) $(LIBS)
+
+mt_iprobe_sendrecv_huge$(EXEEXT): $(mt_iprobe_sendrecv_huge_OBJECTS) $(mt_iprobe_sendrecv_huge_DEPENDENCIES) $(EXTRA_mt_iprobe_sendrecv_huge_DEPENDENCIES) 
+	@rm -f mt_iprobe_sendrecv_huge$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_iprobe_sendrecv_huge_OBJECTS) $(mt_iprobe_sendrecv_huge_LDADD) $(LIBS)
+
+mt_isendirecv$(EXEEXT): $(mt_isendirecv_OBJECTS) $(mt_isendirecv_DEPENDENCIES) $(EXTRA_mt_isendirecv_DEPENDENCIES) 
+	@rm -f mt_isendirecv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_isendirecv_OBJECTS) $(mt_isendirecv_LDADD) $(LIBS)
+
+mt_isendirecv_huge$(EXEEXT): $(mt_isendirecv_huge_OBJECTS) $(mt_isendirecv_huge_DEPENDENCIES) $(EXTRA_mt_isendirecv_huge_DEPENDENCIES) 
+	@rm -f mt_isendirecv_huge$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_isendirecv_huge_OBJECTS) $(mt_isendirecv_huge_LDADD) $(LIBS)
+
+mt_issendirecv$(EXEEXT): $(mt_issendirecv_OBJECTS) $(mt_issendirecv_DEPENDENCIES) $(EXTRA_mt_issendirecv_DEPENDENCIES) 
+	@rm -f mt_issendirecv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_issendirecv_OBJECTS) $(mt_issendirecv_LDADD) $(LIBS)
+
+mt_issendirecv_huge$(EXEEXT): $(mt_issendirecv_huge_OBJECTS) $(mt_issendirecv_huge_DEPENDENCIES) $(EXTRA_mt_issendirecv_huge_DEPENDENCIES) 
+	@rm -f mt_issendirecv_huge$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_issendirecv_huge_OBJECTS) $(mt_issendirecv_huge_LDADD) $(LIBS)
+
+mt_mpicancel$(EXEEXT): $(mt_mpicancel_OBJECTS) $(mt_mpicancel_DEPENDENCIES) $(EXTRA_mt_mpicancel_DEPENDENCIES) 
+	@rm -f mt_mpicancel$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_mpicancel_OBJECTS) $(mt_mpicancel_LDADD) $(LIBS)
+
+mt_mprobe_isendrecv$(EXEEXT): $(mt_mprobe_isendrecv_OBJECTS) $(mt_mprobe_isendrecv_DEPENDENCIES) $(EXTRA_mt_mprobe_isendrecv_DEPENDENCIES) 
+	@rm -f mt_mprobe_isendrecv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_mprobe_isendrecv_OBJECTS) $(mt_mprobe_isendrecv_LDADD) $(LIBS)
+
+mt_mprobe_sendirecv$(EXEEXT): $(mt_mprobe_sendirecv_OBJECTS) $(mt_mprobe_sendirecv_DEPENDENCIES) $(EXTRA_mt_mprobe_sendirecv_DEPENDENCIES) 
+	@rm -f mt_mprobe_sendirecv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_mprobe_sendirecv_OBJECTS) $(mt_mprobe_sendirecv_LDADD) $(LIBS)
+
+mt_mprobe_sendrecv$(EXEEXT): $(mt_mprobe_sendrecv_OBJECTS) $(mt_mprobe_sendrecv_DEPENDENCIES) $(EXTRA_mt_mprobe_sendrecv_DEPENDENCIES) 
+	@rm -f mt_mprobe_sendrecv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_mprobe_sendrecv_OBJECTS) $(mt_mprobe_sendrecv_LDADD) $(LIBS)
+
+mt_mprobe_sendrecv_huge$(EXEEXT): $(mt_mprobe_sendrecv_huge_OBJECTS) $(mt_mprobe_sendrecv_huge_DEPENDENCIES) $(EXTRA_mt_mprobe_sendrecv_huge_DEPENDENCIES) 
+	@rm -f mt_mprobe_sendrecv_huge$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_mprobe_sendrecv_huge_OBJECTS) $(mt_mprobe_sendrecv_huge_LDADD) $(LIBS)
+
+mt_probe_isendrecv$(EXEEXT): $(mt_probe_isendrecv_OBJECTS) $(mt_probe_isendrecv_DEPENDENCIES) $(EXTRA_mt_probe_isendrecv_DEPENDENCIES) 
+	@rm -f mt_probe_isendrecv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_probe_isendrecv_OBJECTS) $(mt_probe_isendrecv_LDADD) $(LIBS)
+
+mt_probe_sendrecv$(EXEEXT): $(mt_probe_sendrecv_OBJECTS) $(mt_probe_sendrecv_DEPENDENCIES) $(EXTRA_mt_probe_sendrecv_DEPENDENCIES) 
+	@rm -f mt_probe_sendrecv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_probe_sendrecv_OBJECTS) $(mt_probe_sendrecv_LDADD) $(LIBS)
+
+mt_probe_sendrecv_huge$(EXEEXT): $(mt_probe_sendrecv_huge_OBJECTS) $(mt_probe_sendrecv_huge_DEPENDENCIES) $(EXTRA_mt_probe_sendrecv_huge_DEPENDENCIES) 
+	@rm -f mt_probe_sendrecv_huge$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_probe_sendrecv_huge_OBJECTS) $(mt_probe_sendrecv_huge_LDADD) $(LIBS)
+
+mt_sendrecv$(EXEEXT): $(mt_sendrecv_OBJECTS) $(mt_sendrecv_DEPENDENCIES) $(EXTRA_mt_sendrecv_DEPENDENCIES) 
+	@rm -f mt_sendrecv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_sendrecv_OBJECTS) $(mt_sendrecv_LDADD) $(LIBS)
+
+mt_sendrecv_huge$(EXEEXT): $(mt_sendrecv_huge_OBJECTS) $(mt_sendrecv_huge_DEPENDENCIES) $(EXTRA_mt_sendrecv_huge_DEPENDENCIES) 
+	@rm -f mt_sendrecv_huge$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_sendrecv_huge_OBJECTS) $(mt_sendrecv_huge_LDADD) $(LIBS)
+
+mt_sendrecv_pers_huge$(EXEEXT): $(mt_sendrecv_pers_huge_OBJECTS) $(mt_sendrecv_pers_huge_DEPENDENCIES) $(EXTRA_mt_sendrecv_pers_huge_DEPENDENCIES) 
+	@rm -f mt_sendrecv_pers_huge$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_sendrecv_pers_huge_OBJECTS) $(mt_sendrecv_pers_huge_LDADD) $(LIBS)
+
+mt_ssendrecv$(EXEEXT): $(mt_ssendrecv_OBJECTS) $(mt_ssendrecv_DEPENDENCIES) $(EXTRA_mt_ssendrecv_DEPENDENCIES) 
+	@rm -f mt_ssendrecv$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_ssendrecv_OBJECTS) $(mt_ssendrecv_LDADD) $(LIBS)
+
+mt_ssendrecv_huge$(EXEEXT): $(mt_ssendrecv_huge_OBJECTS) $(mt_ssendrecv_huge_DEPENDENCIES) $(EXTRA_mt_ssendrecv_huge_DEPENDENCIES) 
+	@rm -f mt_ssendrecv_huge$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_ssendrecv_huge_OBJECTS) $(mt_ssendrecv_huge_LDADD) $(LIBS)
+
+mt_ssendrecv_pers_huge$(EXEEXT): $(mt_ssendrecv_pers_huge_OBJECTS) $(mt_ssendrecv_pers_huge_DEPENDENCIES) $(EXTRA_mt_ssendrecv_pers_huge_DEPENDENCIES) 
+	@rm -f mt_ssendrecv_pers_huge$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mt_ssendrecv_pers_huge_OBJECTS) $(mt_ssendrecv_pers_huge_LDADD) $(LIBS)
 
 multisend$(EXEEXT): $(multisend_OBJECTS) $(multisend_DEPENDENCIES) $(EXTRA_multisend_DEPENDENCIES) 
 	@rm -f multisend$(EXEEXT)
@@ -528,6 +1098,63 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/greq_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/greq_wait.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ibsend.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_bsendrecv-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_bsendrecv-mt_sendrecv_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_bsendrecv_huge-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_bsendrecv_huge-mt_sendrecv_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_bsendrecv_pers_huge-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_ibsendirecv-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_ibsendirecv-mt_sendrecv_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_ibsendirecv_huge-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_ibsendirecv_huge-mt_sendrecv_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_improbe_isendrecv-mt_probe_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_improbe_isendrecv-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_improbe_sendrecv-mt_probe_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_improbe_sendrecv-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_improbe_sendrecv_huge-mt_probe_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_improbe_sendrecv_huge-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_iprobe_isendrecv-mt_probe_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_iprobe_isendrecv-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_iprobe_sendrecv-mt_probe_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_iprobe_sendrecv-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_iprobe_sendrecv_huge-mt_probe_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_iprobe_sendrecv_huge-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_isendirecv-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_isendirecv-mt_sendrecv_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_isendirecv_huge-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_isendirecv_huge-mt_sendrecv_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_issendirecv-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_issendirecv-mt_sendrecv_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_issendirecv_huge-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_issendirecv_huge-mt_sendrecv_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_mpicancel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_mprobe_isendrecv-mt_probe_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_mprobe_isendrecv-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_mprobe_sendirecv-mt_probe_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_mprobe_sendirecv-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_mprobe_sendrecv-mt_probe_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_mprobe_sendrecv-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_mprobe_sendrecv_huge-mt_probe_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_mprobe_sendrecv_huge-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_probe_isendrecv-mt_probe_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_probe_isendrecv-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_probe_sendrecv-mt_probe_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_probe_sendrecv-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_probe_sendrecv_huge-mt_probe_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_probe_sendrecv_huge-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_sendrecv-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_sendrecv-mt_sendrecv_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_sendrecv_huge-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_sendrecv_huge-mt_sendrecv_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_sendrecv_pers_huge-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_ssendrecv-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_ssendrecv-mt_sendrecv_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_ssendrecv_huge-mt_pt2pt_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_ssendrecv_huge-mt_sendrecv_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mt_ssendrecv_pers_huge-mt_pt2pt_common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/multisend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/multisend2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/multisend3.Po@am__quote@
@@ -551,6 +1178,804 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.c.lo:
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+mt_bsendrecv-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_bsendrecv-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_bsendrecv-mt_pt2pt_common.Tpo -c -o mt_bsendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_bsendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_bsendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_bsendrecv-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_bsendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_bsendrecv-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_bsendrecv-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_bsendrecv-mt_pt2pt_common.Tpo -c -o mt_bsendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_bsendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_bsendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_bsendrecv-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_bsendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_bsendrecv-mt_sendrecv_impl.o: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_bsendrecv-mt_sendrecv_impl.o -MD -MP -MF $(DEPDIR)/mt_bsendrecv-mt_sendrecv_impl.Tpo -c -o mt_bsendrecv-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_bsendrecv-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_bsendrecv-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_bsendrecv-mt_sendrecv_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_bsendrecv-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+
+mt_bsendrecv-mt_sendrecv_impl.obj: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_bsendrecv-mt_sendrecv_impl.obj -MD -MP -MF $(DEPDIR)/mt_bsendrecv-mt_sendrecv_impl.Tpo -c -o mt_bsendrecv-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_bsendrecv-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_bsendrecv-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_bsendrecv-mt_sendrecv_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_bsendrecv-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+
+mt_bsendrecv_huge-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_bsendrecv_huge-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_bsendrecv_huge-mt_pt2pt_common.Tpo -c -o mt_bsendrecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_bsendrecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_bsendrecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_bsendrecv_huge-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_bsendrecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_bsendrecv_huge-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_bsendrecv_huge-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_bsendrecv_huge-mt_pt2pt_common.Tpo -c -o mt_bsendrecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_bsendrecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_bsendrecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_bsendrecv_huge-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_bsendrecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_bsendrecv_huge-mt_sendrecv_impl.o: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_bsendrecv_huge-mt_sendrecv_impl.o -MD -MP -MF $(DEPDIR)/mt_bsendrecv_huge-mt_sendrecv_impl.Tpo -c -o mt_bsendrecv_huge-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_bsendrecv_huge-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_bsendrecv_huge-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_bsendrecv_huge-mt_sendrecv_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_bsendrecv_huge-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+
+mt_bsendrecv_huge-mt_sendrecv_impl.obj: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_bsendrecv_huge-mt_sendrecv_impl.obj -MD -MP -MF $(DEPDIR)/mt_bsendrecv_huge-mt_sendrecv_impl.Tpo -c -o mt_bsendrecv_huge-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_bsendrecv_huge-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_bsendrecv_huge-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_bsendrecv_huge-mt_sendrecv_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_bsendrecv_huge-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+
+mt_bsendrecv_pers_huge-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_bsendrecv_pers_huge-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_bsendrecv_pers_huge-mt_pt2pt_common.Tpo -c -o mt_bsendrecv_pers_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_bsendrecv_pers_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_bsendrecv_pers_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_bsendrecv_pers_huge-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_bsendrecv_pers_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_bsendrecv_pers_huge-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_bsendrecv_pers_huge-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_bsendrecv_pers_huge-mt_pt2pt_common.Tpo -c -o mt_bsendrecv_pers_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_bsendrecv_pers_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_bsendrecv_pers_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_bsendrecv_pers_huge-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_bsendrecv_pers_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.o: mt_pers_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.o -MD -MP -MF $(DEPDIR)/mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.Tpo -c -o mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.o `test -f 'mt_pers_sendrecv_impl.c' || echo '$(srcdir)/'`mt_pers_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.Tpo $(DEPDIR)/mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pers_sendrecv_impl.c' object='mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.o `test -f 'mt_pers_sendrecv_impl.c' || echo '$(srcdir)/'`mt_pers_sendrecv_impl.c
+
+mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.obj: mt_pers_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.obj -MD -MP -MF $(DEPDIR)/mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.Tpo -c -o mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.obj `if test -f 'mt_pers_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_pers_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_pers_sendrecv_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.Tpo $(DEPDIR)/mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pers_sendrecv_impl.c' object='mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_bsendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_bsendrecv_pers_huge-mt_pers_sendrecv_impl.obj `if test -f 'mt_pers_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_pers_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_pers_sendrecv_impl.c'; fi`
+
+mt_ibsendirecv-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ibsendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ibsendirecv-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_ibsendirecv-mt_pt2pt_common.Tpo -c -o mt_ibsendirecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ibsendirecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_ibsendirecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_ibsendirecv-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ibsendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ibsendirecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_ibsendirecv-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ibsendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ibsendirecv-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_ibsendirecv-mt_pt2pt_common.Tpo -c -o mt_ibsendirecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ibsendirecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_ibsendirecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_ibsendirecv-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ibsendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ibsendirecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_ibsendirecv-mt_sendrecv_impl.o: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ibsendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ibsendirecv-mt_sendrecv_impl.o -MD -MP -MF $(DEPDIR)/mt_ibsendirecv-mt_sendrecv_impl.Tpo -c -o mt_ibsendirecv-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ibsendirecv-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_ibsendirecv-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_ibsendirecv-mt_sendrecv_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ibsendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ibsendirecv-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+
+mt_ibsendirecv-mt_sendrecv_impl.obj: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ibsendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ibsendirecv-mt_sendrecv_impl.obj -MD -MP -MF $(DEPDIR)/mt_ibsendirecv-mt_sendrecv_impl.Tpo -c -o mt_ibsendirecv-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ibsendirecv-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_ibsendirecv-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_ibsendirecv-mt_sendrecv_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ibsendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ibsendirecv-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+
+mt_ibsendirecv_huge-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ibsendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ibsendirecv_huge-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_ibsendirecv_huge-mt_pt2pt_common.Tpo -c -o mt_ibsendirecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ibsendirecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_ibsendirecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_ibsendirecv_huge-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ibsendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ibsendirecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_ibsendirecv_huge-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ibsendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ibsendirecv_huge-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_ibsendirecv_huge-mt_pt2pt_common.Tpo -c -o mt_ibsendirecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ibsendirecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_ibsendirecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_ibsendirecv_huge-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ibsendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ibsendirecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_ibsendirecv_huge-mt_sendrecv_impl.o: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ibsendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ibsendirecv_huge-mt_sendrecv_impl.o -MD -MP -MF $(DEPDIR)/mt_ibsendirecv_huge-mt_sendrecv_impl.Tpo -c -o mt_ibsendirecv_huge-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ibsendirecv_huge-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_ibsendirecv_huge-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_ibsendirecv_huge-mt_sendrecv_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ibsendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ibsendirecv_huge-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+
+mt_ibsendirecv_huge-mt_sendrecv_impl.obj: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ibsendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ibsendirecv_huge-mt_sendrecv_impl.obj -MD -MP -MF $(DEPDIR)/mt_ibsendirecv_huge-mt_sendrecv_impl.Tpo -c -o mt_ibsendirecv_huge-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ibsendirecv_huge-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_ibsendirecv_huge-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_ibsendirecv_huge-mt_sendrecv_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ibsendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ibsendirecv_huge-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+
+mt_improbe_isendrecv-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_improbe_isendrecv-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_improbe_isendrecv-mt_pt2pt_common.Tpo -c -o mt_improbe_isendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_improbe_isendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_improbe_isendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_improbe_isendrecv-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_improbe_isendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_improbe_isendrecv-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_improbe_isendrecv-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_improbe_isendrecv-mt_pt2pt_common.Tpo -c -o mt_improbe_isendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_improbe_isendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_improbe_isendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_improbe_isendrecv-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_improbe_isendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_improbe_isendrecv-mt_probe_impl.o: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_improbe_isendrecv-mt_probe_impl.o -MD -MP -MF $(DEPDIR)/mt_improbe_isendrecv-mt_probe_impl.Tpo -c -o mt_improbe_isendrecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_improbe_isendrecv-mt_probe_impl.Tpo $(DEPDIR)/mt_improbe_isendrecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_improbe_isendrecv-mt_probe_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_improbe_isendrecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+
+mt_improbe_isendrecv-mt_probe_impl.obj: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_improbe_isendrecv-mt_probe_impl.obj -MD -MP -MF $(DEPDIR)/mt_improbe_isendrecv-mt_probe_impl.Tpo -c -o mt_improbe_isendrecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_improbe_isendrecv-mt_probe_impl.Tpo $(DEPDIR)/mt_improbe_isendrecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_improbe_isendrecv-mt_probe_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_improbe_isendrecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+
+mt_improbe_sendrecv-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_improbe_sendrecv-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_improbe_sendrecv-mt_pt2pt_common.Tpo -c -o mt_improbe_sendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_improbe_sendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_improbe_sendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_improbe_sendrecv-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_improbe_sendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_improbe_sendrecv-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_improbe_sendrecv-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_improbe_sendrecv-mt_pt2pt_common.Tpo -c -o mt_improbe_sendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_improbe_sendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_improbe_sendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_improbe_sendrecv-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_improbe_sendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_improbe_sendrecv-mt_probe_impl.o: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_improbe_sendrecv-mt_probe_impl.o -MD -MP -MF $(DEPDIR)/mt_improbe_sendrecv-mt_probe_impl.Tpo -c -o mt_improbe_sendrecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_improbe_sendrecv-mt_probe_impl.Tpo $(DEPDIR)/mt_improbe_sendrecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_improbe_sendrecv-mt_probe_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_improbe_sendrecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+
+mt_improbe_sendrecv-mt_probe_impl.obj: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_improbe_sendrecv-mt_probe_impl.obj -MD -MP -MF $(DEPDIR)/mt_improbe_sendrecv-mt_probe_impl.Tpo -c -o mt_improbe_sendrecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_improbe_sendrecv-mt_probe_impl.Tpo $(DEPDIR)/mt_improbe_sendrecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_improbe_sendrecv-mt_probe_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_improbe_sendrecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+
+mt_improbe_sendrecv_huge-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_improbe_sendrecv_huge-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_improbe_sendrecv_huge-mt_pt2pt_common.Tpo -c -o mt_improbe_sendrecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_improbe_sendrecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_improbe_sendrecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_improbe_sendrecv_huge-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_improbe_sendrecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_improbe_sendrecv_huge-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_improbe_sendrecv_huge-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_improbe_sendrecv_huge-mt_pt2pt_common.Tpo -c -o mt_improbe_sendrecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_improbe_sendrecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_improbe_sendrecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_improbe_sendrecv_huge-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_improbe_sendrecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_improbe_sendrecv_huge-mt_probe_impl.o: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_improbe_sendrecv_huge-mt_probe_impl.o -MD -MP -MF $(DEPDIR)/mt_improbe_sendrecv_huge-mt_probe_impl.Tpo -c -o mt_improbe_sendrecv_huge-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_improbe_sendrecv_huge-mt_probe_impl.Tpo $(DEPDIR)/mt_improbe_sendrecv_huge-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_improbe_sendrecv_huge-mt_probe_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_improbe_sendrecv_huge-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+
+mt_improbe_sendrecv_huge-mt_probe_impl.obj: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_improbe_sendrecv_huge-mt_probe_impl.obj -MD -MP -MF $(DEPDIR)/mt_improbe_sendrecv_huge-mt_probe_impl.Tpo -c -o mt_improbe_sendrecv_huge-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_improbe_sendrecv_huge-mt_probe_impl.Tpo $(DEPDIR)/mt_improbe_sendrecv_huge-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_improbe_sendrecv_huge-mt_probe_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_improbe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_improbe_sendrecv_huge-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+
+mt_iprobe_isendrecv-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_iprobe_isendrecv-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_iprobe_isendrecv-mt_pt2pt_common.Tpo -c -o mt_iprobe_isendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_iprobe_isendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_iprobe_isendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_iprobe_isendrecv-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_iprobe_isendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_iprobe_isendrecv-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_iprobe_isendrecv-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_iprobe_isendrecv-mt_pt2pt_common.Tpo -c -o mt_iprobe_isendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_iprobe_isendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_iprobe_isendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_iprobe_isendrecv-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_iprobe_isendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_iprobe_isendrecv-mt_probe_impl.o: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_iprobe_isendrecv-mt_probe_impl.o -MD -MP -MF $(DEPDIR)/mt_iprobe_isendrecv-mt_probe_impl.Tpo -c -o mt_iprobe_isendrecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_iprobe_isendrecv-mt_probe_impl.Tpo $(DEPDIR)/mt_iprobe_isendrecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_iprobe_isendrecv-mt_probe_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_iprobe_isendrecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+
+mt_iprobe_isendrecv-mt_probe_impl.obj: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_iprobe_isendrecv-mt_probe_impl.obj -MD -MP -MF $(DEPDIR)/mt_iprobe_isendrecv-mt_probe_impl.Tpo -c -o mt_iprobe_isendrecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_iprobe_isendrecv-mt_probe_impl.Tpo $(DEPDIR)/mt_iprobe_isendrecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_iprobe_isendrecv-mt_probe_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_iprobe_isendrecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+
+mt_iprobe_sendrecv-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_iprobe_sendrecv-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_iprobe_sendrecv-mt_pt2pt_common.Tpo -c -o mt_iprobe_sendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_iprobe_sendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_iprobe_sendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_iprobe_sendrecv-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_iprobe_sendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_iprobe_sendrecv-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_iprobe_sendrecv-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_iprobe_sendrecv-mt_pt2pt_common.Tpo -c -o mt_iprobe_sendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_iprobe_sendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_iprobe_sendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_iprobe_sendrecv-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_iprobe_sendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_iprobe_sendrecv-mt_probe_impl.o: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_iprobe_sendrecv-mt_probe_impl.o -MD -MP -MF $(DEPDIR)/mt_iprobe_sendrecv-mt_probe_impl.Tpo -c -o mt_iprobe_sendrecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_iprobe_sendrecv-mt_probe_impl.Tpo $(DEPDIR)/mt_iprobe_sendrecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_iprobe_sendrecv-mt_probe_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_iprobe_sendrecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+
+mt_iprobe_sendrecv-mt_probe_impl.obj: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_iprobe_sendrecv-mt_probe_impl.obj -MD -MP -MF $(DEPDIR)/mt_iprobe_sendrecv-mt_probe_impl.Tpo -c -o mt_iprobe_sendrecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_iprobe_sendrecv-mt_probe_impl.Tpo $(DEPDIR)/mt_iprobe_sendrecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_iprobe_sendrecv-mt_probe_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_iprobe_sendrecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+
+mt_iprobe_sendrecv_huge-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_iprobe_sendrecv_huge-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_iprobe_sendrecv_huge-mt_pt2pt_common.Tpo -c -o mt_iprobe_sendrecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_iprobe_sendrecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_iprobe_sendrecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_iprobe_sendrecv_huge-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_iprobe_sendrecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_iprobe_sendrecv_huge-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_iprobe_sendrecv_huge-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_iprobe_sendrecv_huge-mt_pt2pt_common.Tpo -c -o mt_iprobe_sendrecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_iprobe_sendrecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_iprobe_sendrecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_iprobe_sendrecv_huge-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_iprobe_sendrecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_iprobe_sendrecv_huge-mt_probe_impl.o: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_iprobe_sendrecv_huge-mt_probe_impl.o -MD -MP -MF $(DEPDIR)/mt_iprobe_sendrecv_huge-mt_probe_impl.Tpo -c -o mt_iprobe_sendrecv_huge-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_iprobe_sendrecv_huge-mt_probe_impl.Tpo $(DEPDIR)/mt_iprobe_sendrecv_huge-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_iprobe_sendrecv_huge-mt_probe_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_iprobe_sendrecv_huge-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+
+mt_iprobe_sendrecv_huge-mt_probe_impl.obj: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_iprobe_sendrecv_huge-mt_probe_impl.obj -MD -MP -MF $(DEPDIR)/mt_iprobe_sendrecv_huge-mt_probe_impl.Tpo -c -o mt_iprobe_sendrecv_huge-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_iprobe_sendrecv_huge-mt_probe_impl.Tpo $(DEPDIR)/mt_iprobe_sendrecv_huge-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_iprobe_sendrecv_huge-mt_probe_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_iprobe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_iprobe_sendrecv_huge-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+
+mt_isendirecv-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_isendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_isendirecv-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_isendirecv-mt_pt2pt_common.Tpo -c -o mt_isendirecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_isendirecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_isendirecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_isendirecv-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_isendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_isendirecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_isendirecv-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_isendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_isendirecv-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_isendirecv-mt_pt2pt_common.Tpo -c -o mt_isendirecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_isendirecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_isendirecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_isendirecv-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_isendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_isendirecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_isendirecv-mt_sendrecv_impl.o: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_isendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_isendirecv-mt_sendrecv_impl.o -MD -MP -MF $(DEPDIR)/mt_isendirecv-mt_sendrecv_impl.Tpo -c -o mt_isendirecv-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_isendirecv-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_isendirecv-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_isendirecv-mt_sendrecv_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_isendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_isendirecv-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+
+mt_isendirecv-mt_sendrecv_impl.obj: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_isendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_isendirecv-mt_sendrecv_impl.obj -MD -MP -MF $(DEPDIR)/mt_isendirecv-mt_sendrecv_impl.Tpo -c -o mt_isendirecv-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_isendirecv-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_isendirecv-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_isendirecv-mt_sendrecv_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_isendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_isendirecv-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+
+mt_isendirecv_huge-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_isendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_isendirecv_huge-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_isendirecv_huge-mt_pt2pt_common.Tpo -c -o mt_isendirecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_isendirecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_isendirecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_isendirecv_huge-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_isendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_isendirecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_isendirecv_huge-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_isendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_isendirecv_huge-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_isendirecv_huge-mt_pt2pt_common.Tpo -c -o mt_isendirecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_isendirecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_isendirecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_isendirecv_huge-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_isendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_isendirecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_isendirecv_huge-mt_sendrecv_impl.o: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_isendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_isendirecv_huge-mt_sendrecv_impl.o -MD -MP -MF $(DEPDIR)/mt_isendirecv_huge-mt_sendrecv_impl.Tpo -c -o mt_isendirecv_huge-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_isendirecv_huge-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_isendirecv_huge-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_isendirecv_huge-mt_sendrecv_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_isendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_isendirecv_huge-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+
+mt_isendirecv_huge-mt_sendrecv_impl.obj: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_isendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_isendirecv_huge-mt_sendrecv_impl.obj -MD -MP -MF $(DEPDIR)/mt_isendirecv_huge-mt_sendrecv_impl.Tpo -c -o mt_isendirecv_huge-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_isendirecv_huge-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_isendirecv_huge-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_isendirecv_huge-mt_sendrecv_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_isendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_isendirecv_huge-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+
+mt_issendirecv-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_issendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_issendirecv-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_issendirecv-mt_pt2pt_common.Tpo -c -o mt_issendirecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_issendirecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_issendirecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_issendirecv-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_issendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_issendirecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_issendirecv-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_issendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_issendirecv-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_issendirecv-mt_pt2pt_common.Tpo -c -o mt_issendirecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_issendirecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_issendirecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_issendirecv-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_issendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_issendirecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_issendirecv-mt_sendrecv_impl.o: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_issendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_issendirecv-mt_sendrecv_impl.o -MD -MP -MF $(DEPDIR)/mt_issendirecv-mt_sendrecv_impl.Tpo -c -o mt_issendirecv-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_issendirecv-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_issendirecv-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_issendirecv-mt_sendrecv_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_issendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_issendirecv-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+
+mt_issendirecv-mt_sendrecv_impl.obj: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_issendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_issendirecv-mt_sendrecv_impl.obj -MD -MP -MF $(DEPDIR)/mt_issendirecv-mt_sendrecv_impl.Tpo -c -o mt_issendirecv-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_issendirecv-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_issendirecv-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_issendirecv-mt_sendrecv_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_issendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_issendirecv-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+
+mt_issendirecv_huge-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_issendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_issendirecv_huge-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_issendirecv_huge-mt_pt2pt_common.Tpo -c -o mt_issendirecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_issendirecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_issendirecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_issendirecv_huge-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_issendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_issendirecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_issendirecv_huge-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_issendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_issendirecv_huge-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_issendirecv_huge-mt_pt2pt_common.Tpo -c -o mt_issendirecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_issendirecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_issendirecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_issendirecv_huge-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_issendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_issendirecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_issendirecv_huge-mt_sendrecv_impl.o: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_issendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_issendirecv_huge-mt_sendrecv_impl.o -MD -MP -MF $(DEPDIR)/mt_issendirecv_huge-mt_sendrecv_impl.Tpo -c -o mt_issendirecv_huge-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_issendirecv_huge-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_issendirecv_huge-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_issendirecv_huge-mt_sendrecv_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_issendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_issendirecv_huge-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+
+mt_issendirecv_huge-mt_sendrecv_impl.obj: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_issendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_issendirecv_huge-mt_sendrecv_impl.obj -MD -MP -MF $(DEPDIR)/mt_issendirecv_huge-mt_sendrecv_impl.Tpo -c -o mt_issendirecv_huge-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_issendirecv_huge-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_issendirecv_huge-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_issendirecv_huge-mt_sendrecv_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_issendirecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_issendirecv_huge-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+
+mt_mprobe_isendrecv-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_mprobe_isendrecv-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_mprobe_isendrecv-mt_pt2pt_common.Tpo -c -o mt_mprobe_isendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_mprobe_isendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_mprobe_isendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_mprobe_isendrecv-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_mprobe_isendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_mprobe_isendrecv-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_mprobe_isendrecv-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_mprobe_isendrecv-mt_pt2pt_common.Tpo -c -o mt_mprobe_isendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_mprobe_isendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_mprobe_isendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_mprobe_isendrecv-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_mprobe_isendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_mprobe_isendrecv-mt_probe_impl.o: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_mprobe_isendrecv-mt_probe_impl.o -MD -MP -MF $(DEPDIR)/mt_mprobe_isendrecv-mt_probe_impl.Tpo -c -o mt_mprobe_isendrecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_mprobe_isendrecv-mt_probe_impl.Tpo $(DEPDIR)/mt_mprobe_isendrecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_mprobe_isendrecv-mt_probe_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_mprobe_isendrecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+
+mt_mprobe_isendrecv-mt_probe_impl.obj: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_mprobe_isendrecv-mt_probe_impl.obj -MD -MP -MF $(DEPDIR)/mt_mprobe_isendrecv-mt_probe_impl.Tpo -c -o mt_mprobe_isendrecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_mprobe_isendrecv-mt_probe_impl.Tpo $(DEPDIR)/mt_mprobe_isendrecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_mprobe_isendrecv-mt_probe_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_mprobe_isendrecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+
+mt_mprobe_sendirecv-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_mprobe_sendirecv-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_mprobe_sendirecv-mt_pt2pt_common.Tpo -c -o mt_mprobe_sendirecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_mprobe_sendirecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_mprobe_sendirecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_mprobe_sendirecv-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_mprobe_sendirecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_mprobe_sendirecv-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_mprobe_sendirecv-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_mprobe_sendirecv-mt_pt2pt_common.Tpo -c -o mt_mprobe_sendirecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_mprobe_sendirecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_mprobe_sendirecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_mprobe_sendirecv-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_mprobe_sendirecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_mprobe_sendirecv-mt_probe_impl.o: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_mprobe_sendirecv-mt_probe_impl.o -MD -MP -MF $(DEPDIR)/mt_mprobe_sendirecv-mt_probe_impl.Tpo -c -o mt_mprobe_sendirecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_mprobe_sendirecv-mt_probe_impl.Tpo $(DEPDIR)/mt_mprobe_sendirecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_mprobe_sendirecv-mt_probe_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_mprobe_sendirecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+
+mt_mprobe_sendirecv-mt_probe_impl.obj: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_mprobe_sendirecv-mt_probe_impl.obj -MD -MP -MF $(DEPDIR)/mt_mprobe_sendirecv-mt_probe_impl.Tpo -c -o mt_mprobe_sendirecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_mprobe_sendirecv-mt_probe_impl.Tpo $(DEPDIR)/mt_mprobe_sendirecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_mprobe_sendirecv-mt_probe_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendirecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_mprobe_sendirecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+
+mt_mprobe_sendrecv-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_mprobe_sendrecv-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_mprobe_sendrecv-mt_pt2pt_common.Tpo -c -o mt_mprobe_sendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_mprobe_sendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_mprobe_sendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_mprobe_sendrecv-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_mprobe_sendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_mprobe_sendrecv-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_mprobe_sendrecv-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_mprobe_sendrecv-mt_pt2pt_common.Tpo -c -o mt_mprobe_sendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_mprobe_sendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_mprobe_sendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_mprobe_sendrecv-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_mprobe_sendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_mprobe_sendrecv-mt_probe_impl.o: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_mprobe_sendrecv-mt_probe_impl.o -MD -MP -MF $(DEPDIR)/mt_mprobe_sendrecv-mt_probe_impl.Tpo -c -o mt_mprobe_sendrecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_mprobe_sendrecv-mt_probe_impl.Tpo $(DEPDIR)/mt_mprobe_sendrecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_mprobe_sendrecv-mt_probe_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_mprobe_sendrecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+
+mt_mprobe_sendrecv-mt_probe_impl.obj: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_mprobe_sendrecv-mt_probe_impl.obj -MD -MP -MF $(DEPDIR)/mt_mprobe_sendrecv-mt_probe_impl.Tpo -c -o mt_mprobe_sendrecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_mprobe_sendrecv-mt_probe_impl.Tpo $(DEPDIR)/mt_mprobe_sendrecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_mprobe_sendrecv-mt_probe_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_mprobe_sendrecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+
+mt_mprobe_sendrecv_huge-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_mprobe_sendrecv_huge-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_mprobe_sendrecv_huge-mt_pt2pt_common.Tpo -c -o mt_mprobe_sendrecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_mprobe_sendrecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_mprobe_sendrecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_mprobe_sendrecv_huge-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_mprobe_sendrecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_mprobe_sendrecv_huge-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_mprobe_sendrecv_huge-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_mprobe_sendrecv_huge-mt_pt2pt_common.Tpo -c -o mt_mprobe_sendrecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_mprobe_sendrecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_mprobe_sendrecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_mprobe_sendrecv_huge-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_mprobe_sendrecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_mprobe_sendrecv_huge-mt_probe_impl.o: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_mprobe_sendrecv_huge-mt_probe_impl.o -MD -MP -MF $(DEPDIR)/mt_mprobe_sendrecv_huge-mt_probe_impl.Tpo -c -o mt_mprobe_sendrecv_huge-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_mprobe_sendrecv_huge-mt_probe_impl.Tpo $(DEPDIR)/mt_mprobe_sendrecv_huge-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_mprobe_sendrecv_huge-mt_probe_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_mprobe_sendrecv_huge-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+
+mt_mprobe_sendrecv_huge-mt_probe_impl.obj: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_mprobe_sendrecv_huge-mt_probe_impl.obj -MD -MP -MF $(DEPDIR)/mt_mprobe_sendrecv_huge-mt_probe_impl.Tpo -c -o mt_mprobe_sendrecv_huge-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_mprobe_sendrecv_huge-mt_probe_impl.Tpo $(DEPDIR)/mt_mprobe_sendrecv_huge-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_mprobe_sendrecv_huge-mt_probe_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_mprobe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_mprobe_sendrecv_huge-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+
+mt_probe_isendrecv-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_probe_isendrecv-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_probe_isendrecv-mt_pt2pt_common.Tpo -c -o mt_probe_isendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_probe_isendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_probe_isendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_probe_isendrecv-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_probe_isendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_probe_isendrecv-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_probe_isendrecv-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_probe_isendrecv-mt_pt2pt_common.Tpo -c -o mt_probe_isendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_probe_isendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_probe_isendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_probe_isendrecv-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_probe_isendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_probe_isendrecv-mt_probe_impl.o: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_probe_isendrecv-mt_probe_impl.o -MD -MP -MF $(DEPDIR)/mt_probe_isendrecv-mt_probe_impl.Tpo -c -o mt_probe_isendrecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_probe_isendrecv-mt_probe_impl.Tpo $(DEPDIR)/mt_probe_isendrecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_probe_isendrecv-mt_probe_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_probe_isendrecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+
+mt_probe_isendrecv-mt_probe_impl.obj: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_probe_isendrecv-mt_probe_impl.obj -MD -MP -MF $(DEPDIR)/mt_probe_isendrecv-mt_probe_impl.Tpo -c -o mt_probe_isendrecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_probe_isendrecv-mt_probe_impl.Tpo $(DEPDIR)/mt_probe_isendrecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_probe_isendrecv-mt_probe_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_isendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_probe_isendrecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+
+mt_probe_sendrecv-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_probe_sendrecv-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_probe_sendrecv-mt_pt2pt_common.Tpo -c -o mt_probe_sendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_probe_sendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_probe_sendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_probe_sendrecv-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_probe_sendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_probe_sendrecv-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_probe_sendrecv-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_probe_sendrecv-mt_pt2pt_common.Tpo -c -o mt_probe_sendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_probe_sendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_probe_sendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_probe_sendrecv-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_probe_sendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_probe_sendrecv-mt_probe_impl.o: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_probe_sendrecv-mt_probe_impl.o -MD -MP -MF $(DEPDIR)/mt_probe_sendrecv-mt_probe_impl.Tpo -c -o mt_probe_sendrecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_probe_sendrecv-mt_probe_impl.Tpo $(DEPDIR)/mt_probe_sendrecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_probe_sendrecv-mt_probe_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_probe_sendrecv-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+
+mt_probe_sendrecv-mt_probe_impl.obj: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_probe_sendrecv-mt_probe_impl.obj -MD -MP -MF $(DEPDIR)/mt_probe_sendrecv-mt_probe_impl.Tpo -c -o mt_probe_sendrecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_probe_sendrecv-mt_probe_impl.Tpo $(DEPDIR)/mt_probe_sendrecv-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_probe_sendrecv-mt_probe_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_probe_sendrecv-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+
+mt_probe_sendrecv_huge-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_probe_sendrecv_huge-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_probe_sendrecv_huge-mt_pt2pt_common.Tpo -c -o mt_probe_sendrecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_probe_sendrecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_probe_sendrecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_probe_sendrecv_huge-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_probe_sendrecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_probe_sendrecv_huge-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_probe_sendrecv_huge-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_probe_sendrecv_huge-mt_pt2pt_common.Tpo -c -o mt_probe_sendrecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_probe_sendrecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_probe_sendrecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_probe_sendrecv_huge-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_probe_sendrecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_probe_sendrecv_huge-mt_probe_impl.o: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_probe_sendrecv_huge-mt_probe_impl.o -MD -MP -MF $(DEPDIR)/mt_probe_sendrecv_huge-mt_probe_impl.Tpo -c -o mt_probe_sendrecv_huge-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_probe_sendrecv_huge-mt_probe_impl.Tpo $(DEPDIR)/mt_probe_sendrecv_huge-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_probe_sendrecv_huge-mt_probe_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_probe_sendrecv_huge-mt_probe_impl.o `test -f 'mt_probe_impl.c' || echo '$(srcdir)/'`mt_probe_impl.c
+
+mt_probe_sendrecv_huge-mt_probe_impl.obj: mt_probe_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_probe_sendrecv_huge-mt_probe_impl.obj -MD -MP -MF $(DEPDIR)/mt_probe_sendrecv_huge-mt_probe_impl.Tpo -c -o mt_probe_sendrecv_huge-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_probe_sendrecv_huge-mt_probe_impl.Tpo $(DEPDIR)/mt_probe_sendrecv_huge-mt_probe_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_probe_impl.c' object='mt_probe_sendrecv_huge-mt_probe_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_probe_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_probe_sendrecv_huge-mt_probe_impl.obj `if test -f 'mt_probe_impl.c'; then $(CYGPATH_W) 'mt_probe_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_probe_impl.c'; fi`
+
+mt_sendrecv-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_sendrecv-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_sendrecv-mt_pt2pt_common.Tpo -c -o mt_sendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_sendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_sendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_sendrecv-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_sendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_sendrecv-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_sendrecv-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_sendrecv-mt_pt2pt_common.Tpo -c -o mt_sendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_sendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_sendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_sendrecv-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_sendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_sendrecv-mt_sendrecv_impl.o: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_sendrecv-mt_sendrecv_impl.o -MD -MP -MF $(DEPDIR)/mt_sendrecv-mt_sendrecv_impl.Tpo -c -o mt_sendrecv-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_sendrecv-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_sendrecv-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_sendrecv-mt_sendrecv_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_sendrecv-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+
+mt_sendrecv-mt_sendrecv_impl.obj: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_sendrecv-mt_sendrecv_impl.obj -MD -MP -MF $(DEPDIR)/mt_sendrecv-mt_sendrecv_impl.Tpo -c -o mt_sendrecv-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_sendrecv-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_sendrecv-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_sendrecv-mt_sendrecv_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_sendrecv-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+
+mt_sendrecv_huge-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_sendrecv_huge-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_sendrecv_huge-mt_pt2pt_common.Tpo -c -o mt_sendrecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_sendrecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_sendrecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_sendrecv_huge-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_sendrecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_sendrecv_huge-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_sendrecv_huge-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_sendrecv_huge-mt_pt2pt_common.Tpo -c -o mt_sendrecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_sendrecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_sendrecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_sendrecv_huge-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_sendrecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_sendrecv_huge-mt_sendrecv_impl.o: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_sendrecv_huge-mt_sendrecv_impl.o -MD -MP -MF $(DEPDIR)/mt_sendrecv_huge-mt_sendrecv_impl.Tpo -c -o mt_sendrecv_huge-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_sendrecv_huge-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_sendrecv_huge-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_sendrecv_huge-mt_sendrecv_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_sendrecv_huge-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+
+mt_sendrecv_huge-mt_sendrecv_impl.obj: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_sendrecv_huge-mt_sendrecv_impl.obj -MD -MP -MF $(DEPDIR)/mt_sendrecv_huge-mt_sendrecv_impl.Tpo -c -o mt_sendrecv_huge-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_sendrecv_huge-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_sendrecv_huge-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_sendrecv_huge-mt_sendrecv_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_sendrecv_huge-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+
+mt_sendrecv_pers_huge-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_sendrecv_pers_huge-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_sendrecv_pers_huge-mt_pt2pt_common.Tpo -c -o mt_sendrecv_pers_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_sendrecv_pers_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_sendrecv_pers_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_sendrecv_pers_huge-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_sendrecv_pers_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_sendrecv_pers_huge-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_sendrecv_pers_huge-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_sendrecv_pers_huge-mt_pt2pt_common.Tpo -c -o mt_sendrecv_pers_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_sendrecv_pers_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_sendrecv_pers_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_sendrecv_pers_huge-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_sendrecv_pers_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.o: mt_pers_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.o -MD -MP -MF $(DEPDIR)/mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.Tpo -c -o mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.o `test -f 'mt_pers_sendrecv_impl.c' || echo '$(srcdir)/'`mt_pers_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.Tpo $(DEPDIR)/mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pers_sendrecv_impl.c' object='mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.o `test -f 'mt_pers_sendrecv_impl.c' || echo '$(srcdir)/'`mt_pers_sendrecv_impl.c
+
+mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.obj: mt_pers_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.obj -MD -MP -MF $(DEPDIR)/mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.Tpo -c -o mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.obj `if test -f 'mt_pers_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_pers_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_pers_sendrecv_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.Tpo $(DEPDIR)/mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pers_sendrecv_impl.c' object='mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_sendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_sendrecv_pers_huge-mt_pers_sendrecv_impl.obj `if test -f 'mt_pers_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_pers_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_pers_sendrecv_impl.c'; fi`
+
+mt_ssendrecv-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ssendrecv-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_ssendrecv-mt_pt2pt_common.Tpo -c -o mt_ssendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ssendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_ssendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_ssendrecv-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ssendrecv-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_ssendrecv-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ssendrecv-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_ssendrecv-mt_pt2pt_common.Tpo -c -o mt_ssendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ssendrecv-mt_pt2pt_common.Tpo $(DEPDIR)/mt_ssendrecv-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_ssendrecv-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ssendrecv-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_ssendrecv-mt_sendrecv_impl.o: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ssendrecv-mt_sendrecv_impl.o -MD -MP -MF $(DEPDIR)/mt_ssendrecv-mt_sendrecv_impl.Tpo -c -o mt_ssendrecv-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ssendrecv-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_ssendrecv-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_ssendrecv-mt_sendrecv_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ssendrecv-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+
+mt_ssendrecv-mt_sendrecv_impl.obj: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ssendrecv-mt_sendrecv_impl.obj -MD -MP -MF $(DEPDIR)/mt_ssendrecv-mt_sendrecv_impl.Tpo -c -o mt_ssendrecv-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ssendrecv-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_ssendrecv-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_ssendrecv-mt_sendrecv_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ssendrecv-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+
+mt_ssendrecv_huge-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ssendrecv_huge-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_ssendrecv_huge-mt_pt2pt_common.Tpo -c -o mt_ssendrecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ssendrecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_ssendrecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_ssendrecv_huge-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ssendrecv_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_ssendrecv_huge-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ssendrecv_huge-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_ssendrecv_huge-mt_pt2pt_common.Tpo -c -o mt_ssendrecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ssendrecv_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_ssendrecv_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_ssendrecv_huge-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ssendrecv_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_ssendrecv_huge-mt_sendrecv_impl.o: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ssendrecv_huge-mt_sendrecv_impl.o -MD -MP -MF $(DEPDIR)/mt_ssendrecv_huge-mt_sendrecv_impl.Tpo -c -o mt_ssendrecv_huge-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ssendrecv_huge-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_ssendrecv_huge-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_ssendrecv_huge-mt_sendrecv_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ssendrecv_huge-mt_sendrecv_impl.o `test -f 'mt_sendrecv_impl.c' || echo '$(srcdir)/'`mt_sendrecv_impl.c
+
+mt_ssendrecv_huge-mt_sendrecv_impl.obj: mt_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ssendrecv_huge-mt_sendrecv_impl.obj -MD -MP -MF $(DEPDIR)/mt_ssendrecv_huge-mt_sendrecv_impl.Tpo -c -o mt_ssendrecv_huge-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ssendrecv_huge-mt_sendrecv_impl.Tpo $(DEPDIR)/mt_ssendrecv_huge-mt_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_sendrecv_impl.c' object='mt_ssendrecv_huge-mt_sendrecv_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ssendrecv_huge-mt_sendrecv_impl.obj `if test -f 'mt_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_sendrecv_impl.c'; fi`
+
+mt_ssendrecv_pers_huge-mt_pt2pt_common.o: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ssendrecv_pers_huge-mt_pt2pt_common.o -MD -MP -MF $(DEPDIR)/mt_ssendrecv_pers_huge-mt_pt2pt_common.Tpo -c -o mt_ssendrecv_pers_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ssendrecv_pers_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_ssendrecv_pers_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_ssendrecv_pers_huge-mt_pt2pt_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ssendrecv_pers_huge-mt_pt2pt_common.o `test -f 'mt_pt2pt_common.c' || echo '$(srcdir)/'`mt_pt2pt_common.c
+
+mt_ssendrecv_pers_huge-mt_pt2pt_common.obj: mt_pt2pt_common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ssendrecv_pers_huge-mt_pt2pt_common.obj -MD -MP -MF $(DEPDIR)/mt_ssendrecv_pers_huge-mt_pt2pt_common.Tpo -c -o mt_ssendrecv_pers_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ssendrecv_pers_huge-mt_pt2pt_common.Tpo $(DEPDIR)/mt_ssendrecv_pers_huge-mt_pt2pt_common.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pt2pt_common.c' object='mt_ssendrecv_pers_huge-mt_pt2pt_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ssendrecv_pers_huge-mt_pt2pt_common.obj `if test -f 'mt_pt2pt_common.c'; then $(CYGPATH_W) 'mt_pt2pt_common.c'; else $(CYGPATH_W) '$(srcdir)/mt_pt2pt_common.c'; fi`
+
+mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.o: mt_pers_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.o -MD -MP -MF $(DEPDIR)/mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.Tpo -c -o mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.o `test -f 'mt_pers_sendrecv_impl.c' || echo '$(srcdir)/'`mt_pers_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.Tpo $(DEPDIR)/mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pers_sendrecv_impl.c' object='mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.o `test -f 'mt_pers_sendrecv_impl.c' || echo '$(srcdir)/'`mt_pers_sendrecv_impl.c
+
+mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.obj: mt_pers_sendrecv_impl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.obj -MD -MP -MF $(DEPDIR)/mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.Tpo -c -o mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.obj `if test -f 'mt_pers_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_pers_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_pers_sendrecv_impl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.Tpo $(DEPDIR)/mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mt_pers_sendrecv_impl.c' object='mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mt_ssendrecv_pers_huge_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mt_ssendrecv_pers_huge-mt_pers_sendrecv_impl.obj `if test -f 'mt_pers_sendrecv_impl.c'; then $(CYGPATH_W) 'mt_pers_sendrecv_impl.c'; else $(CYGPATH_W) '$(srcdir)/mt_pers_sendrecv_impl.c'; fi`
+
+mostlyclean-libtool:
+	-rm -f *.lo
+
+clean-libtool:
+	-rm -rf .libs _libs
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -671,7 +2096,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
+	mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -726,7 +2152,8 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool
 
 pdf: pdf-am
 
@@ -741,17 +2168,18 @@ uninstall-am:
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS cscopelist-am ctags ctags-am distclean \
-	distclean-compile distclean-generic distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-man install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
+	clean-libtool clean-noinstPROGRAMS cscopelist-am ctags \
+	ctags-am distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am
 
 .PRECIOUS: Makefile
 
@@ -759,18 +2187,25 @@ uninstall-am:
 $(top_builddir)/util/mtest.$(OBJEXT): $(top_srcdir)/util/mtest.c
 	(cd $(top_builddir)/util && $(MAKE) mtest.$(OBJEXT))
 
-$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+$(top_builddir)/util/mtest_common.$(OBJEXT): $(top_srcdir)/util/mtest_common.c
+	(cd $(top_builddir)/util && $(MAKE) mtest_common.$(OBJEXT))
+
+$(top_builddir)/dtpools/src/libdtpools.la:
 	(cd $(top_builddir)/dtpools && $(MAKE))
 
+@GPU_ONLY_TRUE@@HAVE_GPU_TRUE@TESTDIRS ?= coll,pt2pt,rma
+@GPU_ONLY_TRUE@@HAVE_GPU_TRUE@TESTLIST ?= testlist.gpu
+@GPU_ONLY_FALSE@@HAVE_GPU_TRUE@TESTLIST ?= testlist,testlist.dtp,testlist.cvar,testlist.gpu
+@HAVE_GPU_FALSE@TESTLIST ?= testlist,testlist.dtp,testlist.cvar
 SUMMARY_BASENAME ?= summary
 
 testing:
-	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
+	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=$(TESTLIST) -testdirs=$(TESTDIRS) \
 		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
 		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
-$(top_builddir)/threads/util/mtestthread.$(OBJEXT): $(top_srcdir)/threads/util/mtestthread.c
-	(cd $(top_builddir)/threads/util && $(MAKE) mtestthread.$(OBJEXT))
+$(top_builddir)/util/mtest_thread.$(OBJEXT): $(top_srcdir)/util/mtest_thread.c
+	(cd $(top_builddir)/util && $(MAKE) mtest_thread.$(OBJEXT))
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

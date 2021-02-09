@@ -766,6 +766,7 @@ MPI_CPPFLAGS
 libnetloc_so_version
 HWLOC_EMBEDDED_LIBS
 HWLOC_EMBEDDED_LDADD
+HWLOC_EMBEDDED_LDFLAGS
 HWLOC_EMBEDDED_CPPFLAGS
 HWLOC_EMBEDDED_CFLAGS
 HWLOC_LIBS_PRIVATE
@@ -23355,71 +23356,6 @@ fi
 done
 
 
-    for ac_header in sys/param.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "sys/param.h" "ac_cv_header_sys_param_h" "$ac_includes_default"
-if test "x$ac_cv_header_sys_param_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SYS_PARAM_H 1
-_ACEOF
-
-fi
-
-done
-
-    for ac_header in sys/sysctl.h
-do :
-  ac_fn_c_check_header_compile "$LINENO" "sys/sysctl.h" "ac_cv_header_sys_sysctl_h" "
-      $ac_includes_default
-      #if HAVE_SYS_PARAM_H
-      #include <sys/param.h>
-      #endif
-
-"
-if test "x$ac_cv_header_sys_sysctl_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SYS_SYSCTL_H 1
-_ACEOF
-
-      ac_fn_c_check_decl "$LINENO" "CTL_HW" "ac_cv_have_decl_CTL_HW" "
-      #if HAVE_SYS_PARAM_H
-      #include <sys/param.h>
-      #endif
-      #include <sys/sysctl.h>
-
-"
-if test "x$ac_cv_have_decl_CTL_HW" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_CTL_HW $ac_have_decl
-_ACEOF
-ac_fn_c_check_decl "$LINENO" "HW_NCPU" "ac_cv_have_decl_HW_NCPU" "
-      #if HAVE_SYS_PARAM_H
-      #include <sys/param.h>
-      #endif
-      #include <sys/sysctl.h>
-
-"
-if test "x$ac_cv_have_decl_HW_NCPU" = xyes; then :
-  ac_have_decl=1
-else
-  ac_have_decl=0
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_DECL_HW_NCPU $ac_have_decl
-_ACEOF
-
-
-fi
-
-done
-
-
     ac_fn_c_check_decl "$LINENO" "strtoull" "ac_cv_have_decl_strtoull" "$ac_includes_default
 "
 if test "x$ac_cv_have_decl_strtoull" = xyes; then :
@@ -23499,6 +23435,73 @@ _ACEOF
     # Could add mkdir and access for hwloc-gather-cpuid.c on Windows
 
     if test "x$hwloc_linux" != "xyes" ; then
+      # Don't look for sys/sysctl.h on Linux because it's deprecated and
+      # generates a warning in GCC10. Also it's unneeded.
+      for ac_header in sys/param.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "sys/param.h" "ac_cv_header_sys_param_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_param_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_SYS_PARAM_H 1
+_ACEOF
+
+fi
+
+done
+
+      for ac_header in sys/sysctl.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "sys/sysctl.h" "ac_cv_header_sys_sysctl_h" "
+        $ac_includes_default
+        #if HAVE_SYS_PARAM_H
+        #include <sys/param.h>
+        #endif
+
+"
+if test "x$ac_cv_header_sys_sysctl_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_SYS_SYSCTL_H 1
+_ACEOF
+
+        ac_fn_c_check_decl "$LINENO" "CTL_HW" "ac_cv_have_decl_CTL_HW" "
+        #if HAVE_SYS_PARAM_H
+        #include <sys/param.h>
+        #endif
+        #include <sys/sysctl.h>
+
+"
+if test "x$ac_cv_have_decl_CTL_HW" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_CTL_HW $ac_have_decl
+_ACEOF
+ac_fn_c_check_decl "$LINENO" "HW_NCPU" "ac_cv_have_decl_HW_NCPU" "
+        #if HAVE_SYS_PARAM_H
+        #include <sys/param.h>
+        #endif
+        #include <sys/sysctl.h>
+
+"
+if test "x$ac_cv_have_decl_HW_NCPU" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_HW_NCPU $ac_have_decl
+_ACEOF
+
+
+fi
+
+done
+
+
       # Don't detect sysctl* on Linux because its sysctl() syscall is
       # long deprecated and unneeded. Some libc still expose the symbol
       # and raise a big warning at link time.
@@ -26735,10 +26738,12 @@ fi
     if test "$hwloc_mode" = "embedded"; then :
   HWLOC_EMBEDDED_CFLAGS=$HWLOC_CFLAGS
            HWLOC_EMBEDDED_CPPFLAGS=$HWLOC_CPPFLAGS
+           HWLOC_EMBEDDED_LDFLAGS=$HWLOC_LDFLAGS
            HWLOC_EMBEDDED_LDADD='$(HWLOC_top_builddir)/hwloc/libhwloc_embedded.la'
            HWLOC_EMBEDDED_LIBS=$HWLOC_LIBS
            HWLOC_LIBS=
 fi
+
 
 
 

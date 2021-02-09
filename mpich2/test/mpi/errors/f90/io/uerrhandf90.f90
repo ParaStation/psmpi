@@ -1,9 +1,9 @@
 ! This file created from errors/f77/io/uerrhandf.f with f77tof90
-! -*- Mode: Fortran; -*- 
 !
-!  (C) 2013 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
+
       program main
       use mpi
       integer (kind=MPI_ADDRESS_KIND) asize

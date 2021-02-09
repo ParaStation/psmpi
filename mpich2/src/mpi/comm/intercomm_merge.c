@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -32,10 +30,6 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm * newintracomm)
  * basing on network addresses of existing communicator.
  */
 
-#undef FUNCNAME
-#define FUNCNAME create_and_map
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 static int create_and_map(MPIR_Comm * comm_ptr, int local_high, MPIR_Comm * new_intracomm_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -64,10 +58,6 @@ static int create_and_map(MPIR_Comm * comm_ptr, int local_high, MPIR_Comm * new_
     return mpi_errno;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Intercomm_merge_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Intercomm_merge_impl(MPIR_Comm * comm_ptr, int high, MPIR_Comm ** new_intracomm_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -81,8 +71,7 @@ int MPIR_Intercomm_merge_impl(MPIR_Comm * comm_ptr, int high, MPIR_Comm ** new_i
     if (!comm_ptr->local_comm) {
         /* Manufacture the local communicator */
         mpi_errno = MPII_Setup_intercomm_localcomm(comm_ptr);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     /* Find the "high" value of the other group of processes.  This
@@ -95,8 +84,7 @@ int MPIR_Intercomm_merge_impl(MPIR_Comm * comm_ptr, int high, MPIR_Comm ** new_i
         mpi_errno = MPIC_Sendrecv(&local_high, 1, MPI_INT, 0, 0,
                                   &remote_high, 1, MPI_INT, 0, 0, comm_ptr,
                                   MPI_STATUS_IGNORE, &errflag);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
         /* If local_high and remote_high are the same, then order is arbitrary.
          * we use the is_low_group in the intercomm in this case. */
@@ -114,8 +102,7 @@ int MPIR_Intercomm_merge_impl(MPIR_Comm * comm_ptr, int high, MPIR_Comm ** new_i
      * of processes had the same value for high
      */
     mpi_errno = MPIR_Bcast(&local_high, 1, MPI_INT, 0, comm_ptr->local_comm, &errflag);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
     MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
 
     /*
@@ -133,8 +120,7 @@ int MPIR_Intercomm_merge_impl(MPIR_Comm * comm_ptr, int high, MPIR_Comm ** new_i
     new_size = comm_ptr->local_size + comm_ptr->remote_size;
 
     mpi_errno = MPIR_Comm_create(new_intracomm_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     if (local_high) {
         (*new_intracomm_ptr)->context_id =
@@ -144,59 +130,52 @@ int MPIR_Intercomm_merge_impl(MPIR_Comm * comm_ptr, int high, MPIR_Comm ** new_i
     }
     (*new_intracomm_ptr)->recvcontext_id = (*new_intracomm_ptr)->context_id;
     (*new_intracomm_ptr)->remote_size = (*new_intracomm_ptr)->local_size = new_size;
-    (*new_intracomm_ptr)->pof2 = MPL_pof2(new_size);
     (*new_intracomm_ptr)->rank = -1;
     (*new_intracomm_ptr)->comm_kind = MPIR_COMM_KIND__INTRACOMM;
 
     /* Now we know which group comes first.  Build the new mapping
      * from the existing comm */
     mpi_errno = create_and_map(comm_ptr, local_high, (*new_intracomm_ptr));
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* We've setup a temporary context id, based on the context id
      * used by the intercomm.  This allows us to perform the allreduce
      * operations within the context id algorithm, since we already
      * have a valid (almost - see comm_create_hook) communicator.
      */
+    (*new_intracomm_ptr)->tainted = 1;
     mpi_errno = MPIR_Comm_commit((*new_intracomm_ptr));
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* printf("About to get context id \n"); fflush(stdout); */
     /* In the multi-threaded case, MPIR_Get_contextid_sparse assumes that the
      * calling routine already holds the single criticial section */
     new_context_id = 0;
     mpi_errno = MPIR_Get_contextid_sparse((*new_intracomm_ptr), &new_context_id, FALSE);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
     MPIR_Assert(new_context_id != 0);
 
     /* We release this communicator that was involved just to
      * get valid context id and create true one
      */
     mpi_errno = MPIR_Comm_release(*new_intracomm_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     mpi_errno = MPIR_Comm_create(new_intracomm_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     (*new_intracomm_ptr)->remote_size = (*new_intracomm_ptr)->local_size = new_size;
-    (*new_intracomm_ptr)->pof2 = MPL_pof2(new_size);
     (*new_intracomm_ptr)->rank = -1;
     (*new_intracomm_ptr)->comm_kind = MPIR_COMM_KIND__INTRACOMM;
     (*new_intracomm_ptr)->context_id = new_context_id;
     (*new_intracomm_ptr)->recvcontext_id = new_context_id;
 
     mpi_errno = create_and_map(comm_ptr, local_high, (*new_intracomm_ptr));
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
+    (*new_intracomm_ptr)->tainted = 1;
     mpi_errno = MPIR_Comm_commit((*new_intracomm_ptr));
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPIR_COMM_KIND__INTERCOMM_MERGE_IMPL);
@@ -208,10 +187,6 @@ int MPIR_Intercomm_merge_impl(MPIR_Comm * comm_ptr, int high, MPIR_Comm ** new_i
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Intercomm_merge
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /*@
 MPI_Intercomm_merge - Creates an intracommuncator from an intercommunicator
@@ -287,7 +262,7 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm * newintracomm)
             /* If comm_ptr is not valid, it will be reset to null */
             if (comm_ptr && comm_ptr->comm_kind != MPIR_COMM_KIND__INTERCOMM) {
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
-                                                 MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+                                                 MPIR_ERR_RECOVERABLE, __func__, __LINE__,
                                                  MPI_ERR_COMM, "**commnotinter", 0);
             }
             if (mpi_errno)
@@ -314,13 +289,12 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm * newintracomm)
             acthigh = high ? 1 : 0;     /* Clamp high into 1 or 0 */
             mpi_errno = MPIR_Allreduce(MPI_IN_PLACE, &acthigh, 1, MPI_INT,
                                        MPI_SUM, comm_ptr->local_comm, &errflag);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
             MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
             /* acthigh must either == 0 or the size of the local comm */
             if (acthigh != 0 && acthigh != comm_ptr->local_size) {
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
-                                                 MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+                                                 MPIR_ERR_RECOVERABLE, __func__, __LINE__,
                                                  MPI_ERR_ARG, "**notsame", "**notsame %s %s",
                                                  "high", "MPI_Intercomm_merge");
                 goto fn_fail;
@@ -350,12 +324,12 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm * newintracomm)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_intercomm_merge", "**mpi_intercomm_merge %C %d %p",
                                  intercomm, high, newintracomm);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

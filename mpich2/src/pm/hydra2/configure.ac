@@ -1,8 +1,9 @@
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
+
 AC_PREREQ(2.62)
-#
-# (C) 2008 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
 
 m4_include([version.m4])
 AC_INIT([Hydra], MPICH_VERSION_m4)
@@ -17,7 +18,8 @@ AC_ARG_PROGRAM
 
 dnl must come before LT_INIT, which AC_REQUIREs AC_PROG_CC
 dnl must also come before AC_USE_SYSTEM_EXTENSIONS
-PAC_PROG_CC
+AC_PROG_CC
+AC_PROG_CC_C99
 AM_PROG_CC_C_O
 
 # also needed by hwloc in embedded mode, must also come early for expansion
@@ -114,21 +116,6 @@ if test "$CC" != "" ; then
    AC_DEFINE_UNQUOTED(HYDRA_CC,"$CC $CPPFLAGS $CFLAGS $LDFLAGS $LIBS",[C compiler])
 else
    AC_DEFINE_UNQUOTED(HYDRA_CC,"",[C compiler])
-fi
-if test "$CXX" != "" ; then
-   AC_DEFINE_UNQUOTED(HYDRA_CXX,"$CXX $CPPFLAGS $CXXFLAGS $LDFLAGS $LIBS",[C++ compiler])
-else
-   AC_DEFINE_UNQUOTED(HYDRA_CXX,"",[C++ compiler])
-fi
-if test "$F77" != "" ; then
-   AC_DEFINE_UNQUOTED(HYDRA_F77,"$F77 $FFLAGS $LDFLAGS $LIBS",[Fortran 77 compiler])
-else
-   AC_DEFINE_UNQUOTED(HYDRA_F77,"",[Fortran 77 compiler])
-fi
-if test "$FC" != "" ; then
-   AC_DEFINE_UNQUOTED(HYDRA_F90,"$FC $FCFLAGS $LDFLAGS $LIBS",[Fortran 90 compiler])
-else
-   AC_DEFINE_UNQUOTED(HYDRA_F90,"",[Fortran 90 compiler])
 fi
 PAC_POP_ALL_FLAGS
 
@@ -359,8 +346,8 @@ if test "$have_hwloc" = "yes" ; then
 fi
 
 HWLOC_DO_AM_CONDITIONALS
-AM_CONDITIONAL([hydra_have_hwloc], [test "${have_hwloc}" = "yes"])
-AM_CONDITIONAL([hydra_use_embedded_hwloc], [test "${hydra_use_embedded_hwloc}" = "yes"])
+AM_CONDITIONAL([HYDRA_HAVE_HWLOC], [test "${have_hwloc}" = "yes"])
+AM_CONDITIONAL([HYDRA_USE_EMBEDDED_HWLOC], [test "${hydra_use_embedded_hwloc}" = "yes"])
 
 
 

@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2017 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra_rmk_lsf.h"
@@ -55,8 +54,7 @@ HYD_status HYDI_rmk_lsf_query_node_list(int *node_count, struct HYD_node **nodes
             hostname = strtok(NULL, " ");
         }
 
-        if (thosts)
-            MPL_free(thosts);
+        MPL_free(thosts);
     }
 
   fn_exit:

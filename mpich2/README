@@ -1,4 +1,4 @@
-			MPICH Release 3.3.2
+			MPICH Release 3.4.1
 
 MPICH is a high-performance and widely portable implementation of the
 MPI-3.1 standard from the Argonne National Laboratory.  This release
@@ -42,7 +42,7 @@ shared memory), Hydra process management) of MPICH up and running.
 
 (a) You will need the following prerequisites.
 
-    - REQUIRED: This tar file mpich-3.3.2.tar.gz
+    - REQUIRED: This tar file mpich-3.4.1.tar.gz
 
     - REQUIRED: A C compiler (C99 support is required. See
       https://wiki.mpich.org/mpich/index.php/Shifting_toward_C99)
@@ -65,14 +65,14 @@ shared memory), Hydra process management) of MPICH up and running.
 
 (b) Unpack the tar file and go to the top level directory:
 
-      tar xzf mpich-3.3.2.tar.gz
-      cd mpich-3.3.2
+      tar xzf mpich-3.4.1.tar.gz
+      cd mpich-3.4.1
 
     If your tar doesn't accept the z option, use
 
-      gunzip mpich-3.3.2.tar.gz
-      tar xf mpich-3.3.2.tar
-      cd mpich-3.3.2
+      gunzip mpich-3.4.1.tar.gz
+      tar xf mpich-3.4.1.tar
+      cd mpich-3.4.1
 
 (c) Choose an installation directory, say
     /home/<USERNAME>/mpich-install, which is assumed to non-existent
@@ -181,7 +181,7 @@ shared memory), Hydra process management) of MPICH up and running.
     Now we will run an MPI job, using the mpiexec command as specified
     in the MPI standard. There are some examples in the install
     directory, which you have already put in your path, as well as in
-    the directory mpich-3.3.2/examples. One of them is the classic
+    the directory mpich-3.4.1/examples. One of them is the classic
     CPI example, which computes the value of pi by numerical
     integration in parallel.
 
@@ -245,14 +245,13 @@ COMPRESS BEFORE SENDING, AS THE FILES CAN BE LARGE.  Note that,
 depending on which step the build failed, some of the files might not
 exist.
 
-    mpich-3.3.2/c.txt (generated in step 1(d) above)
-    mpich-3.3.2/m.txt (generated in step 1(e) above)
-    mpich-3.3.2/mi.txt (generated in step 1(f) above)
-    mpich-3.3.2/config.log (generated in step 1(d) above)
-    mpich-3.3.2/src/openpa/config.log (generated in step 1(d) above)
-    mpich-3.3.2/src/mpl/config.log (generated in step 1(d) above)
-    mpich-3.3.2/src/pm/hydra/config.log (generated in step 1(d) above)
-    mpich-3.3.2/src/pm/hydra/tools/topo/hwloc/hwloc/config.log (generated in step 1(d) above)
+    mpich-3.4.1/c.txt (generated in step 1(d) above)
+    mpich-3.4.1/m.txt (generated in step 1(e) above)
+    mpich-3.4.1/mi.txt (generated in step 1(f) above)
+    mpich-3.4.1/config.log (generated in step 1(d) above)
+    mpich-3.4.1/src/mpl/config.log (generated in step 1(d) above)
+    mpich-3.4.1/src/pm/hydra/config.log (generated in step 1(d) above)
+    mpich-3.4.1/src/pm/hydra/tools/topo/hwloc/hwloc/config.log (generated in step 1(d) above)
 
     DID WE MENTION? DO NOT FORGET TO COMPRESS THESE FILES!
 
@@ -373,7 +372,7 @@ will be included in the mpicc and other MPI wrapper script.
 =================================
 
 The communication mechanisms in MPICH are called "devices". MPICH
-supports ch3 (default) and ch4 (experimental), as well as many
+supports ch3 and ch4 (default), as well as many
 third-party devices that are released and maintained by other
 institutes.
 
@@ -410,70 +409,6 @@ then mmap() the file.  The default is "auto". Note that System V
 shared memory has limits on the size of shared memory segments so
 using this for Nemesis may limit the number of processes that can be
 started on a single node.
-
-mxm network module
-``````````````````
-The mxm netmod provides support for Mellanox InfiniBand adapters.  It
-can be built with the following configure option:
-
-  --with-device=ch3:nemesis:mxm
-
-If your MXM library is installed in a non-standard location, you might
-need to help configure find it using the following configure option
-(assuming the libraries are present in /path/to/mxm/lib and the
-include headers are present in /path/to/mxm/include):
-
-  --with-mxm=/path/to/mxm
-
-(or)
-
-  --with-mxm-lib=/path/to/mxm/lib
-  --with-mxm-include=/path/to/mxm/include
-
-By default, the mxm library throws warnings when the system does not
-enable certain features that might hurt performance.  These are
-important warnings that might cause performance degradation on your
-system.  But you might need root privileges to fix some of them.  If
-you would like to disable such warnings, you can set the MXM log level
-to "error" instead of the default "warn" by using:
-
-  MXM_LOG_LEVEL=error
-  export MXM_LOG_LEVEL
-
-
-portals4 network module
-```````````````````````
-The portals4 netmod provides support for the Portals 4 network
-programming interface. To enable, configure with the following option:
-
-  --with-device=ch3:nemesis:portals4
-
-If the Portals 4 include files and libraries are not in the normal
-search paths, you can specify them with the following options:
-
-  --with-portals4-include= and --with-portals4-lib=
-
-... or the if lib/ and include/ are in the same directory, you can use
-the following option:
-
-  --with-portals4=
-
-If the Portals libraries are shared libraries, they need to be in the
-shared library search path. This can be done by adding the path to
-/etc/ld.so.conf, or by setting the LD_LIBRARY_PATH variable in your
-environment. It's also possible to set the shared library search path
-in the binary. If you're using gcc, you can do this by adding
-
-  LD_LIBRARY_PATH=/path/to/lib
-
-  (and)
-
-  LDFLAGS="-Wl,-rpath -Wl,/path/to/lib"
-
-... as arguments to configure.
-
-Currently, use of MPI_ANY_SOURCE and MPI dynamic processes are unsupported
-with the portals4 netmod.
 
 ofi network module
 ```````````````````
@@ -529,7 +464,7 @@ ofi network module
 The ofi netmod provides support for the OFI network programming interface.
 To enable, configure with the following option:
 
-  --with-device=ch4:ofi
+  --with-device=ch4:ofi[:provider]
 
 If the OFI include files and libraries are not in the normal search paths,
 you can specify them with the following options:
@@ -540,6 +475,16 @@ you can specify them with the following options:
 the following option:
 
   --with-libfabric=
+
+If specifying the provider, the MPICH library will be optimized specifically
+for the requested provider by removing runtime branches to determine
+provider capabilities. Note that using this feature with a version of the
+libfabric library older than that recommended with this version of MPICH is
+unsupported and may result in unexpected behavior. This is also true when
+using the environment variable MPIR_CVAR_OFI_USE_PROVIDER, which will also
+do some optimization for the requested provider.
+
+The currently expected version of libfabric is: .
 
 ucx network module
 ``````````````````
@@ -589,15 +534,15 @@ is only meant for single-node systems.
 
 slurm
 -----
-SLURM is an external process manager not distributed with
+Slurm is an external process manager not distributed with
 MPICH. MPICH's default process manager, hydra, has native support
-for slurm and you can directly use it in slurm environments (it will
-automatically detect slurm and use slurm capabilities). However, if
-you want to use the slurm provided "srun" process manager, you can use
+for Slurm and you can directly use it in Slurm environments (it will
+automatically detect Slurm and use Slurm capabilities). However, if
+you want to use the Slurm-provided "srun" process manager, you can use
 the "--with-pmi=slurm --with-pm=no" option with configure. Note that
-the "srun" process manager that comes with slurm uses an older PMI
+the "srun" process manager that comes with Slurm uses an older PMI
 standard which does not have some of the performance enhancements that
-hydra provides in slurm environments.
+hydra provides in Slurm environments.
 
 -------------------------------------------------------------------------
 
@@ -859,7 +804,13 @@ change the preset configuration, there exists an extended set of environment
 variables. As an example, the immediate data fields can be disabled by using
 the environment variable:
 
-    % export MPIR_CVAR_OFI_ENABLE_DATA=0
+    % export MPIR_CVAR_OFI_ENABLE_TAGGED=0
+
+For some configuration options (in particular, MPIR_CVAR_OFI_ENABLE_TAGGED and
+MPIR_CVAR_OFI_ENABLE_RMA), a default build of MPICH using the CH4 OFI netmod
+will fail if these options are not enabled. This is so that, for performance,
+MPICH can assume that some commonly available features are enabled by the OFI
+provider.
 
 A full list of capability set configuration variables can be found in the
 environment variables README.envvar.

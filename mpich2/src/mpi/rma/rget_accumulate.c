@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -32,10 +30,6 @@ int MPI_Rget_accumulate(const void *origin_addr, int origin_count,
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Rget_accumulate
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Rget_accumulate - Perform an atomic, one-sided read-and-accumulate
 operation and return a request handle for the operation.
@@ -143,7 +137,7 @@ int MPI_Rget_accumulate(const void *origin_addr, int origin_count,
             if (win_ptr->create_flavor != MPI_WIN_FLAVOR_DYNAMIC)
                 MPIR_ERRTEST_DISP(target_disp, mpi_errno);
 
-            if (op != MPI_NO_OP && HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN) {
+            if (op != MPI_NO_OP && !HANDLE_IS_BUILTIN(origin_datatype)) {
                 MPIR_Datatype *datatype_ptr = NULL;
 
                 MPIR_Datatype_get_ptr(origin_datatype, datatype_ptr);
@@ -155,7 +149,7 @@ int MPI_Rget_accumulate(const void *origin_addr, int origin_count,
                     goto fn_fail;
             }
 
-            if (HANDLE_GET_KIND(result_datatype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(result_datatype)) {
                 MPIR_Datatype *datatype_ptr = NULL;
 
                 MPIR_Datatype_get_ptr(origin_datatype, datatype_ptr);
@@ -167,7 +161,7 @@ int MPI_Rget_accumulate(const void *origin_addr, int origin_count,
                     goto fn_fail;
             }
 
-            if (HANDLE_GET_KIND(target_datatype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(target_datatype)) {
                 MPIR_Datatype *datatype_ptr = NULL;
 
                 MPIR_Datatype_get_ptr(target_datatype, datatype_ptr);
@@ -186,6 +180,15 @@ int MPI_Rget_accumulate(const void *origin_addr, int origin_count,
         MPID_END_ERROR_CHECKS;
     }
 #endif /* HAVE_ERROR_CHECKING */
+
+    /* Create a completed request and return immediately for dummy process */
+    if (unlikely(target_rank == MPI_PROC_NULL)) {
+        request_ptr = MPIR_Request_create_complete(MPIR_REQUEST_KIND__RMA);
+        MPIR_ERR_CHKANDSTMT(request_ptr == NULL, mpi_errno, MPIX_ERR_NOREQ, goto fn_fail,
+                            "**nomemreq");
+        *request = request_ptr->handle;
+        goto fn_exit;
+    }
 
     /* ... body of routine ...  */
 
@@ -212,7 +215,7 @@ int MPI_Rget_accumulate(const void *origin_addr, int origin_count,
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_rget_accumulate",
                                  "**mpi_rget_accumulate %p %d %D %p %d %D %d %d %d %D %O %W %p",
                                  origin_addr, origin_count, origin_datatype, result_addr,
@@ -220,7 +223,7 @@ int MPI_Rget_accumulate(const void *origin_addr, int origin_count,
                                  target_count, target_datatype, op, win, request);
     }
 #endif
-    mpi_errno = MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_win(win_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

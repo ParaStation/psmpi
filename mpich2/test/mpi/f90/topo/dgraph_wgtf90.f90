@@ -1,9 +1,9 @@
 ! This file created from f77/topo/dgraph_wgtf.f with f77tof90
-! -*- Mode: Fortran; -*- 
 !
-!  (C) 2011 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
+
 !     This program is Fortran version of dgraph_unwgt.c
 !     Specify a distributed graph of a bidirectional ring of the MPI_COMM_WORLD,
 !     i.e. everyone only talks to left and right neighbors.

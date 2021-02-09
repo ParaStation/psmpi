@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *   Copyright (C) 1997 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "ad_panfs.h"
@@ -17,6 +15,11 @@ void ADIOI_PANFS_ReadContig(ADIO_File fd, void *buf, int count,
 {
     MPI_Count err = -1, datatype_size, len;
     static char myname[] = "ADIOI_PANFS_READCONTIG";
+
+    if (count == 0) {
+        err = 0;
+        goto fn_exit;
+    }
 
     MPI_Type_size_x(datatype, &datatype_size);
     len = datatype_size * count;
@@ -56,8 +59,10 @@ void ADIOI_PANFS_ReadContig(ADIO_File fd, void *buf, int count,
     if (file_ptr_type == ADIO_INDIVIDUAL) {
         fd->fp_ind += err;
     }
+
+  fn_exit:
 #ifdef HAVE_STATUS_SET_BYTES
-    if (err != -1)
+    if (status && err != -1)
         MPIR_Status_set_bytes(status, datatype, err);
 #endif
 

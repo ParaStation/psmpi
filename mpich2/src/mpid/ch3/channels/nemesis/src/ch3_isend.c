@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* #include "mpidpre.h" */
@@ -11,10 +10,6 @@
 #include "mpid_nem_inline.h"
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_iSend
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3_iSend (MPIDI_VC_t *vc, MPIR_Request *sreq, void * hdr, intptr_t hdr_sz)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -68,9 +63,7 @@ int MPIDI_CH3_iSend (MPIDI_VC_t *vc, MPIR_Request *sreq, void * hdr, intptr_t hd
             {
                 MPIR_Assert (MPIDI_Request_get_type (sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
                 mpi_errno = MPID_Request_complete(sreq);
-                if (mpi_errno != MPI_SUCCESS) {
-                    MPIR_ERR_POP(mpi_errno);
-                }
+                MPIR_ERR_CHECK(mpi_errno);
             }
             else
             {
@@ -100,8 +93,8 @@ int MPIDI_CH3_iSend (MPIDI_VC_t *vc, MPIR_Request *sreq, void * hdr, intptr_t hd
     MPL_DBG_MSG(MPIDI_CH3_DBG_OTHER, TERSE, "enqueuing");
 
     sreq->dev.pending_pkt = *(MPIDI_CH3_Pkt_t *) hdr;
-    sreq->dev.iov[0].MPL_IOV_BUF = (char *) &sreq->dev.pending_pkt;
-    sreq->dev.iov[0].MPL_IOV_LEN = hdr_sz;
+    sreq->dev.iov[0].iov_base = (char *) &sreq->dev.pending_pkt;
+    sreq->dev.iov[0].iov_len = hdr_sz;
     sreq->dev.iov_count = 1;
     sreq->dev.iov_offset = 0;
     sreq->ch.noncontig = FALSE;
@@ -114,7 +107,7 @@ int MPIDI_CH3_iSend (MPIDI_VC_t *vc, MPIR_Request *sreq, void * hdr, intptr_t hd
            check to see if we can send any now */
         MPIDI_CH3I_Sendq_enqueue(&MPIDI_CH3I_shm_sendq, sreq);
         mpi_errno = MPIDI_CH3I_Shm_send_progress();
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
     
     goto fn_exit;

@@ -15,9 +15,6 @@
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
-/* Define if blcr is available */
-#undef HAVE_BLCR
-
 /* Define if external bss is enabled */
 #undef HAVE_BSS_EXTERNAL
 
@@ -242,9 +239,6 @@
 /* Define to 1 if you have the <kstat.h> header file. */
 #undef HAVE_KSTAT_H
 
-/* Define to 1 if you have the `cr' library (-lcr). */
-#undef HAVE_LIBCR
-
 /* Define to 1 if we have -lgdi32 */
 #undef HAVE_LIBGDI32
 
@@ -347,12 +341,6 @@
 /* Define to 1 if the system has the type `PSAPI_WORKING_SET_EX_INFORMATION'.
    */
 #undef HAVE_PSAPI_WORKING_SET_EX_INFORMATION
-
-/* Define if pthreads is available */
-#undef HAVE_PTHREADS
-
-/* Define to 1 if you have the <pthread.h> header file. */
-#undef HAVE_PTHREAD_H
 
 /* Define to 1 if you have the <pthread_np.h> header file. */
 #undef HAVE_PTHREAD_NP_H
@@ -756,9 +744,6 @@
 /* Define to 1 on x86_64 */
 #undef HWLOC_X86_64_ARCH
 
-/* Definition of enabled checkpointing libraries */
-#undef HYDRA_AVAILABLE_CKPOINTLIBS
-
 /* Definition of enabled demux engines */
 #undef HYDRA_AVAILABLE_DEMUXES
 
@@ -777,12 +762,6 @@
 /* Configure arguments */
 #undef HYDRA_CONFIGURE_ARGS_CLEAN
 
-/* C++ compiler */
-#undef HYDRA_CXX
-
-/* Default checkpointing library */
-#undef HYDRA_DEFAULT_CKPOINTLIB
-
 /* Default demux engine */
 #undef HYDRA_DEFAULT_DEMUX
 
@@ -794,12 +773,6 @@
 
 /* Default processor topology library */
 #undef HYDRA_DEFAULT_TOPOLIB
-
-/* Fortran 77 compiler */
-#undef HYDRA_F77
-
-/* Fortran 90 compiler */
-#undef HYDRA_F90
 
 /* Hydra PMI proxy executable */
 #undef HYDRA_PMI_PROXY

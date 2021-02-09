@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2008 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef HYDRA_H_INCLUDED
@@ -258,6 +257,9 @@ typedef enum {
 #define HYD_USIZE_SYSTEM    (-1)
 #define HYD_USIZE_INFINITE  (-2)
 
+#define HYD_GPUS_PER_PROC_UNSET   (-1)
+#define HYD_GPUS_PER_PROC_AUTO    (-2)
+
 #if defined(NEEDS_GETHOSTNAME_DECL)
 int gethostname(char *name, size_t len);
 #endif
@@ -389,11 +391,7 @@ struct HYD_user_global {
     char *binding;
     char *mapping;
     char *membind;
-
-    /* Checkpoint restart */
-    char *ckpointlib;
-    char *ckpoint_prefix;
-    int ckpoint_num;
+    int topo_debug;
 
     /* Demux engine */
     char *demux;
@@ -407,6 +405,9 @@ struct HYD_user_global {
     int usize;
 
     int auto_cleanup;
+    int pmi_port;
+    int skip_launch_node;
+    int gpus_per_proc;
 
     struct HYD_env_global global_env;
 };

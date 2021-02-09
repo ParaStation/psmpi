@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -29,10 +27,6 @@ int MPI_Type_delete_attr(MPI_Datatype datatype, int type_keyval)
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Type_delete_attr
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Type_delete_attr - Deletes an attribute value associated with a key on
    a datatype
@@ -151,12 +145,12 @@ int MPI_Type_delete_attr(MPI_Datatype datatype, int type_keyval)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_type_delete_attr", "**mpi_type_delete_attr %D %d", datatype,
                                  type_keyval);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

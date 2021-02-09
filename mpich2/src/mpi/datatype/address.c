@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -27,10 +25,6 @@ int MPI_Address(void *location, MPI_Aint * address) __attribute__ ((weak, alias(
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Address
-#undef FCNAME
-#define FCNAME "MPI_Address"
 
 /*@
     MPI_Address - Gets the address of a location in memory
@@ -89,7 +83,7 @@ int MPI_Address(void *location, MPI_Aint * address)
      * standard, I can't tell if this is a compiler bug or a language bug.
      */
 #ifdef CHAR_PTR_IS_ADDRESS
-    *address = MPIR_VOID_PTR_CAST_TO_MPI_AINT((char *) location);
+    *address = (MPI_Aint) location;
 #else
     /* Note that this is the "portable" way to generate an address.
      * The difference of two pointers is the number of elements
@@ -98,7 +92,7 @@ int MPI_Address(void *location, MPI_Aint * address)
      * of bytes from 0 to location */
     /* To cover the case where a pointer is 32 bits and MPI_Aint is 64 bits,
      * add cast to unsigned so the high order address bit is not sign-extended. */
-    *address = MPIR_VOID_PTR_CAST_TO_MPI_AINT((char *) location - (char *) MPI_BOTTOM);
+    *address = (MPI_Aint) ((char *) location - (char *) MPI_BOTTOM);
 #endif
     /* The same code is used in MPI_Get_address */
 
@@ -115,10 +109,10 @@ int MPI_Address(void *location, MPI_Aint * address)
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_address", "**mpi_address %p %p", location, address);
     }
-    mpi_errno = MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(0, __func__, mpi_errno);
     goto fn_exit;
 #endif
     /* --END ERROR HANDLING-- */

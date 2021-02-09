@@ -1,15 +1,10 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Allreduce_intra_auto
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Allreduce_intra_smp(const void *sendbuf, void *recvbuf, int count,
                              MPI_Datatype datatype, MPI_Op op, MPIR_Comm * comm_ptr,
                              MPIR_Errflag_t * errflag)
@@ -53,8 +48,7 @@ int MPIR_Allreduce_intra_smp(const void *sendbuf, void *recvbuf, int count,
         /* only one process on the node. copy sendbuf to recvbuf */
         if (sendbuf != MPI_IN_PLACE) {
             mpi_errno = MPIR_Localcopy(sendbuf, count, datatype, recvbuf, count, datatype);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
         }
     }
 

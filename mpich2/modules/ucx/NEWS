@@ -1,0 +1,417 @@
+#
+## Copyright (C) Mellanox Technologies Ltd. 2001-2020.  ALL RIGHTS RESERVED.
+## Copyright (C) UT-Battelle, LLC. 2014-2019. ALL RIGHTS RESERVED.
+## Copyright (C) ARM Ltd. 2017-2020.  ALL RIGHTS RESERVED.
+##
+## See file LICENSE for terms.
+##
+#
+
+## 1.9.0 (September 19, 2020)
+### Features:
+#### UCX Core
+- Added a new class of communication APIs '*_nbx' that enable API extendability while
+  preserving ABI backward compatibility
+- Added asynchronous event support to UCT/IB/DEVX
+- Added support for latest CUDA library version
+- Added NAK-based reliability protocol for UCT/IB/UD to optimize resends
+- Added new tests for ROCm
+- Added new configuration parameters for protocol selection
+- Added performance optimization for Fujitsu A64FX with InfiniBand
+- Added performance optimization for clear cache code aarch64
+- Added support for relaxed-order PCIe access in IB RDMA transports
+- Added new TCP connection manager
+- Added support for UCT/IB PKey with partial membership in IB transports
+- Added support for RoCE LAG
+- Added support for ROCm 3.7 and above
+- Added flow control for RDMA read operations
+- Improved endpoint flush implementation for UCT/IB
+- Improved UD timer to avoid interrupting the main thread when not in use
+- Improved latency estimation for network path with CUDA
+- Improved error reporting messages
+- Improved performance in active message flow (removed malloc call)
+- Improved performance in ptr_array flow
+- Improved performance in UCT/SM progress engine flow
+- Improved I/O demo code
+- Improved rendezvous protocol for CUDA
+- Updated examples code
+
+#### UCX Java (API Preview)
+- Added support for UCX shared library loading from both classpath and LD_LIBRARY_PATH
+- Added configuration map to ucp_params to be able to set UCX properties programmatically
+
+### Bugfixes:
+- Fixes for most resent versions of GCC, CLANG, ARMCLANG, PGI
+- Fixes in UCT/IB for strict order keys
+- Fixes in memory barrier code for aarch64
+- Fixes in UCT/IB/DEVX for fork system call
+- Fixes in UCT/IB for rand() call in rdma-core
+- Fixed in group rescheduling for UCT/IB/DC
+- Fixes in UCT/CUDA bandwidth reporting
+- Fixes in rkey_ptr protocol
+- Fixes in lane selection for rendezvous protocol based on get-zero-copy flow
+- Fixes for ROCm build
+- Fixes for XPMEM transport
+- Fixes in closing endpoint code
+- Fixes in RDMACM code
+- Fixes in memcpy selection for AMD
+- Fixed in UCT/UD endpoint flush functionality
+- Fixes in XPMEM detection
+- Fixes in rendezvous staging protocol
+- Fixes in ROCEv1 mlx5 UDP source port configuration
+- Multiple fixes in RPM spec file
+- Multiple fixes in UCP documentation
+- Multiple fixes in socket connection manager
+- Multiple fixes in gtest
+- Multiple fixes in JAVA API implementation
+
+## 1.8.1 (July 10, 2020)
+### Features:
+- Added binary release pipeline in Azure CI
+
+### Bugfixes:
+- Multiple fixes in testing environment
+- Fixes in InfiniBand DEVX transport
+- Fixes in memory management for CUDA IPC transport
+- Fixes for binutils 2.34+
+- Fixes in RPM SPEC file and package generation
+- Fixes for AMD ROCM build environment
+
+## 1.8.0 (April 3, 2020)
+### Features:
+#### UCX Core
+- Improved detection for DEVX support
+- Improved TCP scalability
+- Added support for ROCM to perftest
+- Added support for different source and target memory types to perftest
+- Added optimized memcpy for ROCM devices
+- Added hardware tag-matching for CUDA buffers
+- Added support for CUDA and ROCM managed memories
+- Added support for client/server disconnect protocol over rdma connection manager
+- Added support for striding receive queue for hardware tag-matching
+- Added XPMEM-based rendezvous protocol for shared memory
+- Added support shared memory communication between containers on same machine
+- Added support for multi-threaded RDMA memory registration for large regions
+- Added new test cases to Azure CI
+
+#### UCX Java (API Preview)
+- Added APIs for stream send/recv, tag probe, and connect request handle
+- Added Java package (automatically published) to Maven central
+
+### Bugfixes:
+- Multiple fixes in JUCX
+- Fixes in UCP thread safety
+- Fixes for most recent versions GCC, PGI, and ICC
+- Fixes for CPU affinity on Azure instances
+- Fixes in XPMEM support on PPC64
+- Performance fixes in CUDA IPC
+- Fixes in RDMA CM flows
+- Multiple fixes in TCP transport
+- Multiple fixes in documentation
+- Fixes in transport lane selection logic
+- Fixes in Java jar build
+- Fixes in socket connection manager for Nvidia DGX-2 platform
+
+## 1.7.0 (January 19, 2020)
+### Features:
+- Added support for multiple listening transports
+- Added UCT socket-based connection manager transport
+- Updated API for UCT component management
+- Added API to retrieve the listening port
+- Added UCP active message API
+- Removed deprecated API for querying UCT memory domains
+- Refactored server/client examples
+- Added support for dlopen interception in UCM
+- Added support for PCIe atomics
+- Updated Java API: added support for most of UCP layer operations
+- Updated support for Mellanox DevX API
+- Added multiple UCT/TCP transport performance optimizations
+- Optimized memcpy() for Intel platforms
+- Added protection from non-UCX socket based app connections
+- Improved search time for PKEY object
+- Enable gtest over IPv6 interfaces
+- Updated Mellanox and Bull device IDs
+- Added support for CUDA_VISIBLE_DEVICES
+- Increased limits for CUDA IPC registration
+
+### Bugfixes:
+- Multiple fixes in UCP, UCT, UCM libraries
+- Multiple fixes for BSD and Mac OS systems
+- Fixes for Clang compiler
+- Fixes for CUDA IPC
+- Fix CPU optimization configuration options
+- Fix JUCX build on GPU nodes
+- Fix in Azure release pipeline flow
+- Fix in CUDA memory hooks management
+- Fix in GPU memory peer direct gtest
+- Fix in TCP connection establishment flow
+- Fix in GPU IPC check
+- Fix in CUDA Jenkins test flow
+- Multiple fixes in CUDA IPC flow
+- Fix adding missing header files
+- Fix to prevent failures in presence of VPN enabled Ethernet interfaces
+
+## 1.6.1 (September 23, 2019)
+### Features:
+- Added Bull Atos HCA device IDs
+- Added Azure Pipelines testing
+
+### Bugfixes:
+- Multiple static checker fixes
+- Remove pkg.m4 dependency
+- Multiple clang static checker fixes
+- Fix mem type support with generic datatype
+
+## 1.6.0 (July 17, 2019)
+### Features:
+- Modular architecture for UCT transports
+- ROCm transport re-design: support for managed memory, direct copy, ROCm GDR
+- Random scheduling policy for DC transport
+- Optimized out-of-box settings for multi-rail
+- Added support for OmniPath (using Verbs)
+- Support for PCI atomics with IB transports
+- Reduced UCP address size for homogeneous environments
+
+### Bugfixes:
+- Multiple stability and performance improvements in TCP transport
+- Multiple stability fixes in Verbs and MLX5 transports
+- Multiple stability fixes in UCM memory hooks
+- Multiple stability fixes in UGNI transport
+- RPM Spec file cleanup
+- Fixing compilation issues with most recent clang and gcc compilers
+- Fixing the wrong name of aliases
+- Fix data race in UCP wireup
+- Fix segfault when libuct.so is reloaded - issue #3558
+- Include Java sources in distribution
+- Handle EADDRNOTAVAIL in rdma_cm connection manager
+- Disable ibcm on RHEL7+ by default
+- Fix data race in UCP proxy endpoint
+- Static checker fixes
+- Fallback to ibv_create_cq() if ibv_create_cq_ex() returns ENOSYS
+- Fix malloc hooks test
+- Fix checking return status in ucp_client_server example
+- Fix gdrcopy libdir config value
+- Fix printing atomic capabilities in ucx_info
+- Fix perftest warmup iterations to be non-zero
+- Fixing default values for configure logic
+- Fix race condition updating fired_events from multiple threads
+- Fix madvise() hook
+
+### Tested configurations:
+- RDMA: MLNX_OFED 4.5, distribution inbox drivers, rdma-core 22.1
+- CUDA: gdrcopy 1.3.2, cuda 9.2, ROCm 2.2
+- XPMEM: 2.6.2
+- KNEM: 1.1.3
+
+## 1.5.1 (April 1, 2019)
+### Bugfixes:
+- Fix dc_mlx5 transport support check for inbox libmlx5 drivers - issue #3301
+- Fix compilation warnings with gcc9 and clang
+- ROCm - reduce log level of device-not-found message
+
+## 1.5.0 (February 14, 2019)
+### Features:
+- New emulation mode enabling full UCX functionality (Atomic, Put, Get)
+  over TCP and RDMA-CORE interconnects that don't implement full RDMA semantics
+- Non-blocking API for all one-sided operations. All blocking communication APIs marked
+  as deprecated
+- New client/server connection establishment API, which allows connected handover between workers
+- Support for rdma-core direct-verbs (DEVX) and DC with mlx5 transports
+- GPU - Support for stream API and receive side pipelining
+- Malloc hooks using binary instrumentation instead of symbol override
+- Statistics for UCT tag API
+- GPU-to-Infiniband HCA affinity support based on locality/distance (PCIe)
+
+### Bugfixes:
+- Fix overflow in RC/DC flush operations
+- Update description in SPEC file and README
+- Fix RoCE source port for dc_mlx5 flow control
+- Improve ucx_info help message
+- Fix segfault in UCP, due to int truncation in count_one_bits()
+- Multiple other bugfixes (full list on github)
+
+### Tested configurations:
+- InfiniBand: MLNX_OFED 4.4-4.5, distribution inbox drivers, rdma-core
+- CUDA: gdrcopy 1.2, cuda 9.1.85
+- XPMEM: 2.6.2
+- KNEM: 1.1.2
+
+## 1.4.0-rc2 (October 23, 2018)
+### Features:
+- Improved support for installation with latest ROCm
+- Improved support for latest rdma-core
+- Added support for CUDA IPC for intra-node GPU
+- Added support for CUDA memory allocation cache for mem-type detection
+- Added support for latest Mellanox devices
+- Added support for Nvidia GPU managed memory
+- Added support for multiple connections between the same pair of workers
+- Added support large worker address for client/server connection establishment
+  and INADDR_ANY
+- Added support for bitwise atomics operations
+
+### Bugfixes:
+- Performance fixes for rendezvous protocol
+- Memory hook fixes
+- Clang support fixes
+- Self tl multi-rail fix
+- Thread safety fixes in IB/RDMA transport
+- Compilation fixes with upstream rdma-core
+- Multiple minor bugfixes (full list on github)
+- Segfault fix for a code generated by armclang compiler
+- UCP memory-domain index fix for zero-copy active messages
+
+### Tested configurations:
+- InfiniBand: MLNX_OFED 4.2-4.4, distribution inbox drivers, rdma-core
+- CUDA: gdrcopy 1.2, cuda 9.1.85
+- XPMEM: 2.6.2
+- KNEM: 1.1.2
+- Multiple bugfixes (full list on github)
+
+### Known issues:
+#2919 - Segfault in CUDA support when KNEM not present and CMA is active
+intra-node RMA transport. As a workaround user can disable CMA support at
+compile time: --disable-cma. Alternatively user can remove CMA from UCX_TLS
+list, for example: UCX_TLS=mm,rc,cuda_copy,cuda_ipc,gdr_copy.
+
+## 1.3.1 (August 20, 2018)
+### Bugfixes:
+- Prevent potential out-of-order sending in shared memory active messages
+- CUDA: Include cudamem.h in source tarball, pass cudaFree memory size
+- Registration cache: fix large range lookup, handle shmat(REMAP)/mmap(FIXED)
+- Limit IB CQE size for specific ARM boards
+- RPM: explicitly set gcc-c++ as requirement
+- Multiple bugfixes (full list on github)
+
+### Tested configurations:
+- InfiniBand: MLNX_OFED 4.2, inbox OFED drivers.
+- CUDA: gdrcopy 1.2, cuda 9.1.85
+- XPMEM: 2.6.2
+- KNEM: 1.1.2
+
+## 1.3.0 (February 15, 2018)
+### Features:
+- Added stream-based communication API to UCP
+- Added support for GPU platforms: Nvidia CUDA and AMD ROCm software stacks
+- Added API for client/server based connection establishment
+- Added support for TCP transport
+- Support for InfiniBand tag-matching offload for DC and accelerated transports
+- Multi-rail support for eager and rendezvous protocols
+- Added support for tag-matching communications with CUDA buffers
+- Added ucp_rkey_ptr() to obtain pointer for shared memory region
+- Avoid progress overhead on unused transports
+- Improved scalability of software tag-matching by using a hash table
+- Added transparent huge-pages allocator
+- Added non-blocking flush and disconnect for UCP
+- Support fixed-address memory allocation via ucp_mem_map()
+- Added ucp_tag_send_nbr() API to avoid send request allocation
+- Support global addressing in all IB transports
+- Add support for external epoll fd and edge-triggered events
+- Added registration cache for knem
+- Initial support for Java bindings
+
+### Bugfixes:
+- Multiple bugfixes (full list on github)
+
+### Tested configurations:
+- InfiniBand: MLNX_OFED 4.2, inbox OFED drivers.
+- CUDA: gdrcopy 1.2, cuda 9.1.85
+- XPMEM: 2.6.2
+- KNEM: 1.1.2
+
+### Known issues:
+#2047 - UCP: ucp_do_am_bcopy_multi drops data on UCS_ERROR_NO_RESOURCE
+#2047 - failure in ud/uct_flush_test.am_zcopy_flush_ep_nb/1
+#1977 - failure in shm/test_ucp_rma.blocking_small/0
+#1926 - Timeout in mpi_test_suite with HW TM
+#1920 - transport retry count exceeded in many-to-one tests
+#1689 - Segmentation fault on memory hooks test in jenkins
+
+## 1.2.2 (January 4, 2018)
+### Main:
+- Support including UCX API headers from C++ code
+- UD transport to handle unicast flood on RoCE fabric
+- Compilation fixes for gcc 7.1.1, clang 3.6, clang 5
+
+### Details:
+- When UD transport is used with RoCE, packets intended for other peers may
+  arrive on different adapters (as a result of unicast flooding).
+- This change adds packet filtering based on destination GIDs. Now the packet
+  is silently dropped, if its destination GID does not match the local GID.
+- Added a new device ID for InfiniBand HCA
+- [packaging] Move `examples/` and `perftest/` into doc
+- [packaging] Update spec to work on old distros while complaint with Fedora
+  guidelines
+- [cleanup] Removed unused ptmalloc version (2.83)
+- [cleanup] Fixup license headers
+
+## 1.2.1 (August 28, 2017)
+### Bugfixes:
+- Compilation fixes for gcc 7.1
+- Spec file cleanups
+- Versioning cleanups
+
+## 1.2.0 (June 15, 2017)
+### Supported platforms
+- Shared memory: KNEM, CMA, XPMEM, SYSV, Posix
+- VERBs over InfiniBand and RoCE.
+  VERBS over other RDMA interconnects (iWarp, OmniPath, etc.) is available
+  for community evaluation and has not been tested in context of this release
+- Cray Gemini and Aries
+- Architectures: x86_64, ARMv8 (64bit), Power64
+
+### Features:
+- Added support for InfiniBand DC and UD transports, including accelerated verbs for Mellanox devices
+- Full support for PGAS/SHMEM interfaces, blocking and non-blocking APIs
+- Support for MPI tag matching, both in software and offload mode
+- Zero copy protocols and rendezvous, registration cache
+- Handling transport errors
+- Flow control for DC/RC
+- Dataypes support: contiguous, IOV, generic
+- Multi-threading support
+- Support for ARMv8 64bit architecture
+- A new API for efficient memory polling
+- Support for malloc-hooks and memory registration caching
+
+### Bugfixes:
+ - Multiple bugfixes improving overall stability of the library
+
+### Known issues:
+#1604 - Failure in ud/test_ud_slow_timer.retransmit1/1 with valgrind bug
+#1588 - Fix reading cpuinfo timebase for ppc bug portability training
+#1579 - Ud/test_ud.ca_md test takes too long too complete bug
+#1576 - Failure in ud/test_ud_slow_timer.retransmit1/0 with valgrind bug
+#1569 - Send completion with error with dc_verbs bug
+#1566 - Segfault in malloc_hook.fork on arm bug
+#1565 - Hang in udrc/test_ucp_rma.nonblocking_stream_get_nbi_flush_worker bug
+#1534 - Wireup.c:473 Fatal: endpoint reconfiguration not supported yet bug
+#1533 - Stack overflow under Valgrind 'rc_mlx5/uct_p2p_err_test.local_access_error/0' bug
+#1513 - Hang in MPI_Finalize with UCX_TLS=rc[_x],sm on the bsend2 test bug
+#1504 - Failure in cm/uct_p2p_am_test.am_bcopy/1 bug
+#1492 - Hang when using polling fd bug
+#1489 - Hang on the osu_fop_latency test with RoCE bug
+#1005 - ROcE problem with OMPI direct modex - UD assertion
+
+## 1.1.0 (September 1, 2015)
+### Workarounds:
+### Features:
+- Added support for AM based on FIFO in `mm` shared memory transport
+- Added support for UCT `knem` shared memory transport (http://knem.gforge.inria.fr)
+- Added support for UCT `mm/xpmem` shared memory transport (https://github.com/hjelmn/xpmem)
+
+## 1.0.0 (July 22, 2015)
+### Features:
+- Added support for UCT `cma` shared memory transport (Cross-Memory Attatch)
+- Added support for UCT `mm` shared memory transport with mmap/sysv APIs
+- Added support for UCT `rc` transport based on Infiniband/RC with verbs
+- Added support for UCT `mlx5_rc` transport based on Infiniband/RC with accelerated verbs
+- Added support for UCT `cm` transport based on Infiniband/SIDR (Service ID Resolution)
+- Added support for UCT `ugni` transport based on Cray/UGNI
+- Added support for Doxygen based documentation generation
+- Added support for UCP basic protocol layer to fit PGAS paradigm (RMA, AMO)
+- Added ucx_perftest utility to exercise major UCX flows and provide performance metrics
+- Added test script for jenkins (contrib/test_jenkins.sh)
+- Added packaging for RPM/DEB based linux distributions (see contrib/buildrpm.sh)
+- Added Unit-tests infractucture for UCX functionality based on Google Test framework (see test/gtest/)
+- Added initial integration for OpenMPI with UCX for PGAS/SHMEM API
+  (see: https://github.com/openucx/ompi-mirror/pull/1)
+- Added end-to-end testing infrastructure based on MTT (see contrib/mtt/README_MTT)

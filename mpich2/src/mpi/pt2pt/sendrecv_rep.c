@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -29,10 +27,6 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype, int dest,
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Sendrecv_replace
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Sendrecv_replace - Sends and receives using a single buffer
 
@@ -110,7 +104,7 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
             MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 
             /* Validate datatype object */
-            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(datatype)) {
                 MPIR_Datatype *datatype_ptr = NULL;
 
                 MPIR_Datatype_get_ptr(datatype, datatype_ptr);
@@ -142,7 +136,7 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
         MPIR_Request *rreq = NULL;
         void *tmpbuf = NULL;
         MPI_Aint tmpbuf_size = 0;
-        MPI_Aint tmpbuf_count = 0;
+        MPI_Aint actual_pack_bytes = 0;
 
         if (count > 0 && dest != MPI_PROC_NULL) {
             MPIR_Pack_size_impl(count, datatype, &tmpbuf_size);
@@ -150,35 +144,50 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
             MPIR_CHKLMEM_MALLOC_ORJUMP(tmpbuf, void *, tmpbuf_size, mpi_errno,
                                        "temporary send buffer", MPL_MEM_BUFFER);
 
-            mpi_errno = MPIR_Pack_impl(buf, count, datatype, tmpbuf, tmpbuf_size, &tmpbuf_count);
+            mpi_errno =
+                MPIR_Typerep_pack(buf, count, datatype, 0, tmpbuf, tmpbuf_size, &actual_pack_bytes);
             if (mpi_errno != MPI_SUCCESS)
                 goto fn_fail;
         }
 
-        mpi_errno = MPID_Irecv(buf, count, datatype, source, recvtag,
-                               comm_ptr, MPIR_CONTEXT_INTRA_PT2PT, &rreq);
-        if (mpi_errno != MPI_SUCCESS)
-            goto fn_fail;
+        /* If source is MPI_PROC_NULL, create a completed request and return. */
+        if (unlikely(source == MPI_PROC_NULL)) {
+            rreq = MPIR_Request_create_complete(MPIR_REQUEST_KIND__RECV);
+            MPIR_ERR_CHKANDSTMT(rreq == NULL, mpi_errno, MPIX_ERR_NOREQ, goto fn_fail,
+                                "**nomemreq");
+            MPIR_Status_set_procnull(&rreq->status);
+        } else {
+            mpi_errno = MPID_Irecv(buf, count, datatype, source, recvtag,
+                                   comm_ptr, MPIR_CONTEXT_INTRA_PT2PT, &rreq);
+            if (mpi_errno != MPI_SUCCESS)
+                goto fn_fail;
+        }
 
-        mpi_errno = MPID_Isend(tmpbuf, tmpbuf_count, MPI_PACKED, dest,
-                               sendtag, comm_ptr, MPIR_CONTEXT_INTRA_PT2PT, &sreq);
-        if (mpi_errno != MPI_SUCCESS) {
-            /* --BEGIN ERROR HANDLING-- */
-            if (mpi_errno == MPIX_ERR_NOREQ)
-                MPIR_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**nomem");
-            /* FIXME: should we cancel the pending (possibly completed) receive request or wait for it to complete? */
-            MPIR_Request_free(rreq);
-            goto fn_fail;
-            /* --END ERROR HANDLING-- */
+
+        /* If dest is MPI_PROC_NULL, create a completed request and return. */
+        if (unlikely(dest == MPI_PROC_NULL)) {
+            sreq = MPIR_Request_create_complete(MPIR_REQUEST_KIND__SEND);
+            MPIR_ERR_CHKANDSTMT(sreq == NULL, mpi_errno, MPIX_ERR_NOREQ, goto fn_fail,
+                                "**nomemreq");
+        } else {
+            mpi_errno = MPID_Isend(tmpbuf, actual_pack_bytes, MPI_PACKED, dest,
+                                   sendtag, comm_ptr, MPIR_CONTEXT_INTRA_PT2PT, &sreq);
+            if (mpi_errno != MPI_SUCCESS) {
+                /* --BEGIN ERROR HANDLING-- */
+                if (mpi_errno == MPIX_ERR_NOREQ)
+                    MPIR_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**nomem");
+                /* FIXME: should we cancel the pending (possibly completed) receive request or wait for it to complete? */
+                MPIR_Request_free(rreq);
+                goto fn_fail;
+                /* --END ERROR HANDLING-- */
+            }
         }
 
         mpi_errno = MPID_Wait(rreq, MPI_STATUS_IGNORE);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
         mpi_errno = MPID_Wait(sreq, MPI_STATUS_IGNORE);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
         if (status != MPI_STATUS_IGNORE) {
             *status = rreq->status;
@@ -213,13 +222,13 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_sendrecv_replace",
                                  "**mpi_sendrecv_replace %p %d %D %i %t %i %t %C %p", buf, count,
                                  datatype, dest, sendtag, source, recvtag, comm, status);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

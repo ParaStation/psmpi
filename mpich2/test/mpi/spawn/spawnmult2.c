@@ -1,9 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include "mpi.h"
 #include "mpitest.h"
 #include <stdio.h>
@@ -51,7 +50,7 @@ int main(int argc, char *argv[])
         MPI_Comm_rank(intercomm, &rank);
 
         if (parentcomm == MPI_COMM_NULL) {
-            /* This is the master process */
+            /* This is the parent process */
             if (rsize != np[0] + np[1]) {
                 errs++;
                 printf("Did not create %d processes (got %d)\n", np[0] + np[1], rsize);
@@ -103,7 +102,7 @@ int main(int argc, char *argv[])
                 printf("appnum was not set\n");
             }
 
-            /* Send the errs back to the master process */
+            /* Send the errs back to the parent process */
             MPI_Ssend(&errs, 1, MPI_INT, 0, 1, intercomm);
         }
 

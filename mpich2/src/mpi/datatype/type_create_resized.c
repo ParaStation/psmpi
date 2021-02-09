@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -56,25 +54,19 @@ int MPIR_Type_create_resized(MPI_Datatype oldtype,
 
     /* handle is filled in by MPIR_Handle_obj_alloc() */
     MPIR_Object_set_ref(new_dtp, 1);
-    new_dtp->is_permanent = 0;
     new_dtp->is_committed = 0;
     new_dtp->attributes = 0;
-    new_dtp->cache_id = 0;
     new_dtp->name[0] = 0;
     new_dtp->contents = 0;
+    new_dtp->flattened = NULL;
 
-    new_dtp->dataloop = NULL;
-    new_dtp->dataloop_size = -1;
-    new_dtp->dataloop_depth = -1;
+    new_dtp->typerep.handle = NULL;
 
-    /* if oldtype is a basic, we build a contiguous dataloop of count = 1 */
-    if (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN) {
+    /* if oldtype is a basic, we build a contiguous typerep of count = 1 */
+    if (HANDLE_IS_BUILTIN(oldtype)) {
         int oldsize = MPIR_Datatype_get_basic_size(oldtype);
 
         new_dtp->size = oldsize;
-        new_dtp->has_sticky_ub = 0;
-        new_dtp->has_sticky_lb = 0;
-        new_dtp->dataloop_depth = 1;
         new_dtp->true_lb = 0;
         new_dtp->lb = lb;
         new_dtp->true_ub = oldsize;
@@ -85,7 +77,6 @@ int MPIR_Type_create_resized(MPI_Datatype oldtype,
         new_dtp->builtin_element_size = oldsize;
         new_dtp->is_contig = (extent == oldsize) ? 1 : 0;
         new_dtp->basic_type = oldtype;
-        new_dtp->max_contig_blocks = 3; /* lb, data, ub */
     } else {
         /* user-defined base type */
         MPIR_Datatype *old_dtp;
@@ -93,9 +84,6 @@ int MPIR_Type_create_resized(MPI_Datatype oldtype,
         MPIR_Datatype_get_ptr(oldtype, old_dtp);
 
         new_dtp->size = old_dtp->size;
-        new_dtp->has_sticky_ub = 0;
-        new_dtp->has_sticky_lb = 0;
-        new_dtp->dataloop_depth = old_dtp->dataloop_depth;
         new_dtp->true_lb = old_dtp->true_lb;
         new_dtp->lb = lb;
         new_dtp->true_ub = old_dtp->true_ub;
@@ -110,20 +98,21 @@ int MPIR_Type_create_resized(MPI_Datatype oldtype,
             MPIR_Datatype_is_contig(oldtype, &new_dtp->is_contig);
         else
             new_dtp->is_contig = 0;
-        new_dtp->max_contig_blocks = old_dtp->max_contig_blocks;
     }
+
+    int mpi_errno = MPIR_Typerep_create_resized(oldtype, lb, extent, new_dtp);
+    MPIR_ERR_CHECK(mpi_errno);
 
     *newtype_p = new_dtp->handle;
 
     MPL_DBG_MSG_P(MPIR_DBG_DATATYPE, VERBOSE, "resized type %x created.", new_dtp->handle);
 
-    return MPI_SUCCESS;
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Type_create_resized
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Type_create_resized - Create a datatype with a new lower bound and
      extent from an existing datatype
@@ -210,13 +199,13 @@ int MPI_Type_create_resized(MPI_Datatype oldtype,
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_type_create_resized",
                                  "**mpi_type_create_resized %D %L %L %p", oldtype, lb, extent,
                                  newtype);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

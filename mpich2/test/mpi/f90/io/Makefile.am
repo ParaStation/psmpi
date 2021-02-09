@@ -1,11 +1,9 @@
 # This Makefile.am generated automatically by f77tof90
 # from f77/io/Makefile.am.  DO NOT EDIT
-# -*- Mode: Makefile; -*-
-# vim: set ft=automake :
-#
-# (C) 2011 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
 
 include $(top_srcdir)/Makefile_f90.mtest
 
@@ -60,11 +58,8 @@ nodist_writeordf90_SOURCES     = writeordf90.f90
 nodist_writeshf90_SOURCES      = writeshf90.f90
 
 c2f90multio_SOURCES     = c2f90multio.c
-# this is a C only program, so we must either:
-# A) prevent the makefile-wide "LDADD=mtestf90.o" from affecting this program, or
-# B) link with the fortran compiler, otherwise we'll get link failures from
-# compilers with runtime support libs, such as PGI
-c2f90multio_LDADD = $(top_builddir)/util/mtest.o
+# this is a C only program, so we must include mtest_c_objects
+c2f90multio_LDADD       = $(mtest_c_objects) @cuda_LIBS@ @ze_LIBS@ @cuda_LDFLAGS@ @ze_LDFLAGS@
 
 c2f2ciof90_SOURCES = c2f2ciof90.f90 c2f902cio.c
 
@@ -151,6 +146,11 @@ MAINTAINERCLEANFILES = Makefile.am-stamp
 EXTRA_DIST += Makefile.am-stamp  Makefile.ap
 
 endif MAINTAINER_MODE
+
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
 
 $(srcdir)/ioharness.defn: $(srcdir)/../../f77/io/ioharness.defn
 	sed -e 's/filename="\(.*\)f.f\"/filename="\1f90.f90"/g' \

@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidimpl.h"
@@ -9,10 +8,6 @@
 /*
  * MPID_Irsend()
  */
-#undef FUNCNAME
-#define FUNCNAME MPID_Irsend
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, int tag, MPIR_Comm * comm, int context_offset,
 		MPIR_Request ** request)
 {
@@ -49,29 +44,19 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	goto fn_exit;
     }
 
-    if (rank != MPI_PROC_NULL) {
-        MPIDI_Comm_get_vc_set_active(comm, rank, &vc);
+    MPIDI_Comm_get_vc_set_active(comm, rank, &vc);
 #ifdef ENABLE_COMM_OVERRIDES
-        /* this needs to come before the sreq is created, since the override
-         * function is responsible for creating its own request */
-        if (vc->comm_ops && vc->comm_ops->irsend)
-        {
-            mpi_errno = vc->comm_ops->irsend( vc, buf, count, datatype, rank, tag, comm, context_offset, &sreq);
-            goto fn_exit;
-        }
-#endif
+    /* this needs to come before the sreq is created, since the override
+     * function is responsible for creating its own request */
+    if (vc->comm_ops && vc->comm_ops->irsend)
+    {
+        mpi_errno = vc->comm_ops->irsend( vc, buf, count, datatype, rank, tag, comm, context_offset, &sreq);
+        goto fn_exit;
     }
-    
+#endif
     MPIDI_Request_create_sreq(sreq, mpi_errno, goto fn_exit);
     MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_RSEND);
     MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_EAGER_MSG);
-    
-    if (rank == MPI_PROC_NULL)
-    {
-	MPIR_Object_set_ref(sreq, 1);
-        MPIR_cc_set(&sreq->cc, 0);
-	goto fn_exit;
-    }
     
     MPIDI_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
 
@@ -120,7 +105,7 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
             mpi_errno = MPIDI_CH3_EagerNoncontigSend( &sreq,
                                                       MPIDI_CH3_PKT_READY_SEND,
                                                       buf, count, datatype,
-                                                      data_sz, rank, tag,
+                                                      rank, tag,
                                                       comm, context_offset );
             /* If we're not complete, then add a reference to the datatype */
             if (sreq) {

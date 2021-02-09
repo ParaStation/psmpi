@@ -1,8 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2014 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,7 +10,7 @@
 #include "mpitest.h"
 
 /* Inspired by the Intel MPI_Type_hvector_blklen test.
-   Added to include a test of a dataloop optimization that failed.
+   Added to include a test of a typerep optimization that failed.
 */
 int main(int argc, char *argv[])
 {
@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
      * tiling the target memory with copies of old type.  This is not
      * a contiguous copy since oldtype has a gap at the end.
      */
-    MPI_Type_hvector(veccount, stride, stride * 64, ot2, &newtype);
+    MPI_Type_create_hvector(veccount, stride, stride * 64, ot2, &newtype);
     MPI_Type_commit(&newtype);
 
     insize = veccount * stride * 64;

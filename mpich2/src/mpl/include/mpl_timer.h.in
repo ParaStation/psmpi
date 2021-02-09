@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #if !defined(MPL_TIMER_H_INCLUDED)
@@ -29,27 +28,15 @@ int usleep(useconds_t usec);
 #define MPL_TIMER_KIND__CLOCK_GETTIME           2
 #define MPL_TIMER_KIND__GETTIMEOFDAY            3
 #define MPL_TIMER_KIND__LINUX86_CYCLE           4
-#define MPL_TIMER_KIND__QUERYPERFORMANCECOUNTER 6
-#define MPL_TIMER_KIND__WIN86_CYCLE             7
-#define MPL_TIMER_KIND__GCC_IA64_CYCLE          8
-/* The value "MPL_TIMER_KIND__DEVICE" means that the ADI device provides the timer */
-#define MPL_TIMER_KIND__DEVICE                  9
-#define MPL_TIMER_KIND__WIN64_CYCLE             10
-#define MPL_TIMER_KIND__MACH_ABSOLUTE_TIME      11
-#define MPL_TIMER_KIND__PPC64_CYCLE             12
+#define MPL_TIMER_KIND__GCC_IA64_CYCLE          5
+#define MPL_TIMER_KIND__MACH_ABSOLUTE_TIME      6
+#define MPL_TIMER_KIND__PPC64_CYCLE             7
 #define MPL_TIMER_KIND @MPL_TIMER_KIND@
 
 /* Define a time stamp */
 /* *INDENT-OFF* */
 typedef @MPL_TIMER_TYPE@ MPL_time_t;
 /* *INDENT-ON* */
-
-/* The timer code is allowed to return "NOT_INITIALIZED" before the
- * device is initialized.  Once the device is initialized, it must
- * always return SUCCESS, so the upper layers do not need to check for
- * the return code.  */
-#define MPL_TIMER_SUCCESS                0
-#define MPL_TIMER_ERR_NOT_INITIALIZED    1
 
 #if MPL_TIMER_KIND == MPL_TIMER_KIND__GETHRTIME
 #include "mpl_timer_gethrtime.h"
@@ -59,14 +46,8 @@ typedef @MPL_TIMER_TYPE@ MPL_time_t;
 #include "mpl_timer_gettimeofday.h"
 #elif MPL_TIMER_KIND == MPL_TIMER_KIND__LINUX86_CYCLE
 #include "mpl_timer_linux86_cycle.h"
-#elif MPL_TIMER_KIND == MPL_TIMER_KIND__QUERYPERFORMANCECOUNTER
-#include "mpl_timer_query_performance_counter.h"
-#elif MPL_TIMER_KIND == MPL_TIMER_KIND__WIN86_CYCLE || MPL_TIMER_KIND == MPL_TIMER_KIND__WIN64_CYCLE
-#include "mpl_timer_win86_cycle.h"
 #elif MPL_TIMER_KIND == MPL_TIMER_KIND__GCC_IA64_CYCLE
 #include "mpl_timer_gcc_ia64_cycle.h"
-#elif MPL_TIMER_KIND == MPL_TIMER_KIND__DEVICE
-#include "mpl_timer_device.h"
 #elif MPL_TIMER_KIND == MPL_TIMER_KIND__MACH_ABSOLUTE_TIME
 #include "mpl_timer_mach_absolute_time.h"
 #elif MPL_TIMER_KIND == MPL_TIMER_KIND__PPC64_CYCLE
@@ -166,6 +147,22 @@ int MPL_wtime_diff(MPL_time_t * t1, MPL_time_t * t2, double *diff);
 int MPL_wtime_acc(MPL_time_t * t1, MPL_time_t * t2, MPL_time_t * t3);
 
 /*@
+  MPL_wtime_touint - Converts a timestamp to an unsigned int.
+  Input Parameter:
+. timeval - 'MPL_time_t' time stamp
+
+  Output Parameter:
+. val - unsigned int generated from the timestamp.
+
+  Notes:
+  This routine may be used for initializing random seeds. The value is not
+  necessary a timestamp if 64-bit to 32-bit conversion happened.
+
+
+  @*/
+int MPL_wtime_touint(MPL_time_t * timeval, unsigned int *val);
+
+/*@
   MPL_wtime_todouble - Converts a timestamp to a double
 
   Input Parameter:
@@ -213,37 +210,5 @@ int MPL_wtick(double *);
 
   @*/
 int MPL_wtime_init(void);
-
-/*
- * For timers that do not have defined resolutions, compute the resolution
- * by sampling the clock itself.
- *
- */
-static double tickval = -1.0;
-
-static void init_wtick(void) ATTRIBUTE((unused));
-static void init_wtick(void)
-{
-    double timediff;
-    MPL_time_t t1, t2;
-    int cnt;
-    int icnt;
-
-    tickval = 1.0e6;
-    for (icnt = 0; icnt < 10; icnt++) {
-        cnt = 1000;
-        MPL_wtime(&t1);
-        do {
-            MPL_wtime(&t2);
-            MPL_wtime_diff(&t1, &t2, &timediff);
-            if (timediff > 0)
-                break;
-        }
-        while (cnt--);
-        if (cnt && timediff > 0.0 && timediff < tickval) {
-            MPL_wtime_diff(&t1, &t2, &tickval);
-        }
-    }
-}
 
 #endif /* !defined(MPL_TIMER_H_INCLUDED) */

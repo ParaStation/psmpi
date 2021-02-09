@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@ int MPI_Type_ub(MPI_Datatype datatype, MPI_Aint * displacement)
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Type_ub
-#undef FCNAME
-#define FCNAME "MPI_Type_ub"
 
 /*@
     MPI_Type_ub - Returns the upper bound of a datatype
@@ -96,7 +90,7 @@ int MPI_Type_ub(MPI_Datatype datatype, MPI_Aint * displacement)
 
     /* ... body of routine ...  */
 
-    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
+    if (HANDLE_IS_BUILTIN(datatype))
         *displacement = MPIR_Datatype_get_basic_size(datatype);
     else
         *displacement = datatype_ptr->ub;
@@ -114,10 +108,10 @@ int MPI_Type_ub(MPI_Datatype datatype, MPI_Aint * displacement)
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_type_ub", "**mpi_type_ub %D %p", datatype, displacement);
     }
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
 #endif
     /* --END ERROR HANDLING-- */

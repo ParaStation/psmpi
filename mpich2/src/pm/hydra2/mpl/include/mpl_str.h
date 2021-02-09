@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPL_STR_H_INCLUDED
@@ -19,6 +18,9 @@ extern "C" {
 extern int snprintf(char *, size_t, const char *, ...) ATTRIBUTE((format(printf,3,4)));
 #endif
 
+#define MPL_snprintf_nowarn(...)                \
+    (MPL_snprintf(__VA_ARGS__) < 0 ? assert(0) : (void) 0)
+
 #if defined MPL_HAVE_SNPRINTF
 #define MPL_snprintf snprintf
 #else
@@ -27,16 +29,6 @@ int MPL_snprintf(char *, size_t, const char *, ...) ATTRIBUTE((format(printf,3,4
 
 int MPL_strncpy(char *dest, const char *src, size_t n);
 char *MPL_strsep(char **stringp, const char *delim);
-
-#if defined MPL_NEEDS_STRNCMP_DECL
-extern int strncmp(const char *s1, const char *s2, size_t n);
-#endif
-
-#if defined MPL_HAVE_STRNCMP
-#define MPL_strncmp strncmp
-#else
-#error "strncmp is required"
-#endif /* MPL_HAVE_STRNCMP */
 
 #if defined MPL_NEEDS_STRERROR_DECL
 extern char *strerror(int errnum);

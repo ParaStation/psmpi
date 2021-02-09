@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2008 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "demux.h"
@@ -203,8 +202,7 @@ HYD_status HYDT_dmx_finalize(void)
     run1 = HYDT_dmxu_cb_list;
     while (run1) {
         run2 = run1->next;
-        if (run1->fd)
-            MPL_free(run1->fd);
+        MPL_free(run1->fd);
         MPL_free(run1);
         run1 = run2;
     }

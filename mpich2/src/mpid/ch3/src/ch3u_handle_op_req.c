@@ -1,17 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2014 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidimpl.h"
 #include "mpidrma.h"
 
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_Req_handler_rma_op_complete
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3_Req_handler_rma_op_complete(MPIR_Request * sreq)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -35,9 +30,7 @@ int MPIDI_CH3_Req_handler_rma_op_complete(MPIR_Request * sreq)
         /* get user request */
         MPIR_Request_get_ptr(sreq->dev.request_handle, ureq);
         mpi_errno = MPID_Request_complete(ureq);
-        if (mpi_errno != MPI_SUCCESS) {
-            MPIR_ERR_POP(mpi_errno);
-        }
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
   fn_exit:

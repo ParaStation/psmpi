@@ -1,9 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*-
- *
- *
- *   Copyright (C) 1997 University of Chicago.
- *   Copyright (C) 2017 DataDirect Networks.
- *   See COPYRIGHT notice in top-level directory.
+/*
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "adio.h"
@@ -29,6 +26,11 @@ static void IME_IOContig(ADIO_File fd,
     size_t mem_len;
     uint64_t file_offset = offset;
     static char myname[] = "ADIOI_IME_IOCONTIG";
+
+    if (count == 0) {
+        ret = 0;
+        goto fn_exit;
+    }
 
     MPI_Type_size_x(datatype, &datatype_size);
     mem_len = datatype_size * count;
@@ -62,8 +64,10 @@ static void IME_IOContig(ADIO_File fd,
         fd->fp_ind += ret;
     fd->fp_sys_posn = file_offset + ret;
 
+  fn_exit:
 #ifdef HAVE_STATUS_SET_BYTES
-    MPIR_Status_set_bytes(status, datatype, ret);
+    if (status)
+        MPIR_Status_set_bytes(status, datatype, ret);
 #endif
 
     *error_code = MPI_SUCCESS;

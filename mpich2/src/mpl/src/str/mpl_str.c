@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpl.h"
@@ -20,10 +19,10 @@
 #endif
 
 #if !defined MPL_HAVE_SNPRINTF
-int MPL_snprintf(char *str, size_t size, mpl_const char *format, ...)
+int MPL_snprintf(char *str, size_t size, const char *format, ...)
 {
     int n;
-    mpl_const char *p;
+    const char *p;
     char *out_str = str;
     va_list list;
 
@@ -169,7 +168,7 @@ int MPL_snprintf(char *str, size_t size, mpl_const char *format, ...)
 
   Synopsis:
 .vb
-    char *MPL_strdup(mpl_const char *str)
+    char *MPL_strdup(const char *str)
 .ve
 
 Input Parameters:
@@ -183,10 +182,10 @@ Input Parameters:
   Utility
   @*/
 #if !defined MPL_HAVE_STRDUP
-char *MPL_strdup(mpl_const char *str)
+char *MPL_strdup(const char *str)
 {
-    char *mpl_restrict p = (char *) malloc(strlen(str) + 1);
-    mpl_const char *mpl_restrict in_p = str;
+    char *restrict p = (char *) malloc(strlen(str) + 1);
+    const char *restrict in_p = str;
     char *save_p;
 
     save_p = p;
@@ -241,8 +240,8 @@ Output Parameters:
   @*/
 int MPL_strncpy(char *dest, const char *src, size_t n)
 {
-    char *mpl_restrict d_ptr = dest;
-    const char *mpl_restrict s_ptr = src;
+    char *restrict d_ptr = dest;
+    const char *restrict s_ptr = src;
     register int i;
 
     if (n == 0)
@@ -343,8 +342,8 @@ Output Parameters:
   @*/
 int MPL_strnapp(char *dest, const char *src, size_t n)
 {
-    char *mpl_restrict d_ptr = dest;
-    const char *mpl_restrict s_ptr = src;
+    char *restrict d_ptr = dest;
+    const char *restrict s_ptr = src;
     register int i;
 
     /* Get to the end of dest */
@@ -407,14 +406,13 @@ void MPL_create_pathname(char *dest_filename, const char *dirname,
                          const char *prefix, const int is_dir)
 {
     /* Generate a random number which doesn't interfere with user application */
-    const unsigned int random = xorshift_rand();
+    const unsigned int rdm = xorshift_rand();
     const unsigned int pid = (unsigned int) getpid();
 
     if (dirname) {
         MPL_snprintf(dest_filename, PATH_MAX, "%s/%s.%u.%u%c", dirname, prefix,
-                     random, pid, is_dir ? '/' : '\0');
+                     rdm, pid, is_dir ? '/' : '\0');
     } else {
-        MPL_snprintf(dest_filename, PATH_MAX, "%s.%u.%u%c", prefix,
-                     random, pid, is_dir ? '/' : '\0');
+        MPL_snprintf(dest_filename, PATH_MAX, "%s.%u.%u%c", prefix, rdm, pid, is_dir ? '/' : '\0');
     }
 }

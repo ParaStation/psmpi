@@ -1,9 +1,9 @@
 ! This file created from f77/coll/redscatf.f with f77tof90
-! -*- Mode: Fortran; -*- 
 !
-!  (C) 2011 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
+
       subroutine uop( cin, cout, count, datatype )
       use mpi
       integer cin(*), cout(*)

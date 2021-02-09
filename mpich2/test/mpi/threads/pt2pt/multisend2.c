@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2009 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /*
@@ -16,7 +15,7 @@
 #include "mpitest.h"
 #include "mpithreadtest.h"
 
-/* This is the master test routine */
+/* This is the main test routine */
 #define MAX_CNT 660000
 #define MAX_LOOP 200
 

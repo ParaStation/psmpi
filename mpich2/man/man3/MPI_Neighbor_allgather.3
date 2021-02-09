@@ -1,4 +1,4 @@
-.TH MPI_Neighbor_allgather 3 "11/12/2019" " " "MPI"
+.TH MPI_Neighbor_allgather 3 "1/20/2021" " " "MPI"
 .SH NAME
 MPI_Neighbor_allgather \-  In this function, each process i gathers data items from each process j if an edge (j,i) exists in the topology graph, and each process i sends the same data items to all processes j where an edge (i,j) exists. The send buffer is sent to each neighboring process and the l-th block in the receive buffer is received from the l-th neighbor. 
 .SH SYNOPSIS
@@ -102,7 +102,7 @@ its use is deprecated.  The predefined error handler
 may be used to cause error values to be returned.
 Note that MPI does 
 .B not
-guarentee that an MPI program can continue past
+guarantee that an MPI program can continue past
 an error; however, MPI implementations will attempt to continue whenever
 possible.
 

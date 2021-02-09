@@ -14,13 +14,6 @@
 
 @SET_MAKE@
 
-# -*- Mode: Makefile; -*-
-# vim: set ft=automake :
-#
-# (C) 2011 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
     false; \
@@ -100,7 +93,7 @@ noinst_PROGRAMS = rdwrord$(EXEEXT) rdwrzero$(EXEEXT) \
 	userioerr$(EXEEXT) resized$(EXEEXT) resized2$(EXEEXT) \
 	bigtype$(EXEEXT) hindexed_io$(EXEEXT) \
 	simple_collective$(EXEEXT) external32_derived_dtype$(EXEEXT) \
-	tst_fileview$(EXEEXT) $(am__EXEEXT_1)
+	tst_fileview$(EXEEXT) zero_count$(EXEEXT) $(am__EXEEXT_1)
 @BUILD_MPIX_TESTS_TRUE@am__append_1 = \
 @BUILD_MPIX_TESTS_TRUE@    i_bigtype           \
 @BUILD_MPIX_TESTS_TRUE@    i_hindexed_io       \
@@ -122,9 +115,16 @@ am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
 	$(top_srcdir)/confdb/aclocal_cxx.m4 \
 	$(top_srcdir)/confdb/aclocal_f77.m4 \
 	$(top_srcdir)/confdb/aclocal_fc.m4 \
+	$(top_srcdir)/confdb/aclocal_libs.m4 \
 	$(top_srcdir)/confdb/aclocal_make.m4 \
 	$(top_srcdir)/confdb/aclocal_runlog.m4 \
-	$(top_srcdir)/confdb/aclocal_util.m4 $(top_srcdir)/version.m4 \
+	$(top_srcdir)/confdb/aclocal_threads.m4 \
+	$(top_srcdir)/confdb/aclocal_util.m4 \
+	$(top_srcdir)/confdb/libtool.m4 \
+	$(top_srcdir)/confdb/ltoptions.m4 \
+	$(top_srcdir)/confdb/ltsugar.m4 \
+	$(top_srcdir)/confdb/ltversion.m4 \
+	$(top_srcdir)/confdb/lt~obsolete.m4 $(top_srcdir)/version.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -149,143 +149,212 @@ PROGRAMS = $(noinst_PROGRAMS)
 async_SOURCES = async.c
 async_OBJECTS = async.$(OBJEXT)
 async_LDADD = $(LDADD)
-async_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+async_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
 async_any_SOURCES = async_any.c
 async_any_OBJECTS = async_any.$(OBJEXT)
 async_any_LDADD = $(LDADD)
-async_any_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+async_any_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 bigtype_SOURCES = bigtype.c
 bigtype_OBJECTS = bigtype.$(OBJEXT)
 bigtype_LDADD = $(LDADD)
-bigtype_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+bigtype_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 external32_derived_dtype_SOURCES = external32_derived_dtype.c
 external32_derived_dtype_OBJECTS = external32_derived_dtype.$(OBJEXT)
 external32_derived_dtype_LDADD = $(LDADD)
-external32_derived_dtype_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+external32_derived_dtype_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 getextent_SOURCES = getextent.c
 getextent_OBJECTS = getextent.$(OBJEXT)
 getextent_LDADD = $(LDADD)
-getextent_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+getextent_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 hindexed_io_SOURCES = hindexed_io.c
 hindexed_io_OBJECTS = hindexed_io.$(OBJEXT)
 hindexed_io_LDADD = $(LDADD)
-hindexed_io_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+hindexed_io_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 i_aggregation1_SOURCES = i_aggregation1.c
 i_aggregation1_OBJECTS = i_aggregation1.$(OBJEXT)
 i_aggregation1_LDADD = $(LDADD)
-i_aggregation1_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+i_aggregation1_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 i_aggregation2_SOURCES = i_aggregation2.c
 i_aggregation2_OBJECTS = i_aggregation2.$(OBJEXT)
 i_aggregation2_LDADD = $(LDADD)
-i_aggregation2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+i_aggregation2_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 i_bigtype_SOURCES = i_bigtype.c
 i_bigtype_OBJECTS = i_bigtype.$(OBJEXT)
 i_bigtype_LDADD = $(LDADD)
-i_bigtype_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+i_bigtype_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 i_coll_test_SOURCES = i_coll_test.c
 i_coll_test_OBJECTS = i_coll_test.$(OBJEXT)
 i_coll_test_LDADD = $(LDADD)
-i_coll_test_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+i_coll_test_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 i_darray_read_SOURCES = i_darray_read.c
 i_darray_read_OBJECTS = i_darray_read.$(OBJEXT)
 i_darray_read_LDADD = $(LDADD)
-i_darray_read_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+i_darray_read_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 i_hindexed_SOURCES = i_hindexed.c
 i_hindexed_OBJECTS = i_hindexed.$(OBJEXT)
 i_hindexed_LDADD = $(LDADD)
-i_hindexed_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+i_hindexed_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 i_hindexed_io_SOURCES = i_hindexed_io.c
 i_hindexed_io_OBJECTS = i_hindexed_io.$(OBJEXT)
 i_hindexed_io_LDADD = $(LDADD)
-i_hindexed_io_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+i_hindexed_io_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 i_noncontig_SOURCES = i_noncontig.c
 i_noncontig_OBJECTS = i_noncontig.$(OBJEXT)
 i_noncontig_LDADD = $(LDADD)
-i_noncontig_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+i_noncontig_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 i_noncontig_coll_SOURCES = i_noncontig_coll.c
 i_noncontig_coll_OBJECTS = i_noncontig_coll.$(OBJEXT)
 i_noncontig_coll_LDADD = $(LDADD)
-i_noncontig_coll_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+i_noncontig_coll_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 i_noncontig_coll2_SOURCES = i_noncontig_coll2.c
 i_noncontig_coll2_OBJECTS = i_noncontig_coll2.$(OBJEXT)
 i_noncontig_coll2_LDADD = $(LDADD)
-i_noncontig_coll2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+i_noncontig_coll2_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 i_rdwrord_SOURCES = i_rdwrord.c
 i_rdwrord_OBJECTS = i_rdwrord.$(OBJEXT)
 i_rdwrord_LDADD = $(LDADD)
-i_rdwrord_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+i_rdwrord_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 i_setviewcur_SOURCES = i_setviewcur.c
 i_setviewcur_OBJECTS = i_setviewcur.$(OBJEXT)
 i_setviewcur_LDADD = $(LDADD)
-i_setviewcur_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+i_setviewcur_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 i_types_with_zeros_SOURCES = i_types_with_zeros.c
 i_types_with_zeros_OBJECTS = i_types_with_zeros.$(OBJEXT)
 i_types_with_zeros_LDADD = $(LDADD)
-i_types_with_zeros_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+i_types_with_zeros_DEPENDENCIES =  \
+	$(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 rdwrord_SOURCES = rdwrord.c
 rdwrord_OBJECTS = rdwrord.$(OBJEXT)
 rdwrord_LDADD = $(LDADD)
-rdwrord_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+rdwrord_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 rdwrzero_SOURCES = rdwrzero.c
 rdwrzero_OBJECTS = rdwrzero.$(OBJEXT)
 rdwrzero_LDADD = $(LDADD)
-rdwrzero_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+rdwrzero_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 resized_SOURCES = resized.c
 resized_OBJECTS = resized.$(OBJEXT)
 resized_LDADD = $(LDADD)
-resized_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+resized_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 resized2_SOURCES = resized2.c
 resized2_OBJECTS = resized2.$(OBJEXT)
 resized2_LDADD = $(LDADD)
-resized2_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+resized2_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 setinfo_SOURCES = setinfo.c
 setinfo_OBJECTS = setinfo.$(OBJEXT)
 setinfo_LDADD = $(LDADD)
-setinfo_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+setinfo_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 setviewcur_SOURCES = setviewcur.c
 setviewcur_OBJECTS = setviewcur.$(OBJEXT)
 setviewcur_LDADD = $(LDADD)
-setviewcur_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+setviewcur_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 simple_collective_SOURCES = simple_collective.c
 simple_collective_OBJECTS = simple_collective.$(OBJEXT)
 simple_collective_LDADD = $(LDADD)
-simple_collective_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+simple_collective_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 tst_fileview_SOURCES = tst_fileview.c
 tst_fileview_OBJECTS = tst_fileview.$(OBJEXT)
 tst_fileview_LDADD = $(LDADD)
-tst_fileview_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+tst_fileview_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 userioerr_SOURCES = userioerr.c
 userioerr_OBJECTS = userioerr.$(OBJEXT)
 userioerr_LDADD = $(LDADD)
-userioerr_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+userioerr_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
+zero_count_SOURCES = zero_count.c
+zero_count_OBJECTS = zero_count.$(OBJEXT)
+zero_count_LDADD = $(LDADD)
+zero_count_DEPENDENCIES = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) \
+	$(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -304,12 +373,18 @@ am__depfiles_maybe = depfiles
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
 AM_V_CC = $(am__v_CC_@AM_V@)
 am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
 am__v_CC_1 = 
 CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
@@ -321,7 +396,7 @@ SOURCES = async.c async_any.c bigtype.c external32_derived_dtype.c \
 	i_noncontig_coll2.c i_rdwrord.c i_setviewcur.c \
 	i_types_with_zeros.c rdwrord.c rdwrzero.c resized.c resized2.c \
 	setinfo.c setviewcur.c simple_collective.c tst_fileview.c \
-	userioerr.c
+	userioerr.c zero_count.c
 DIST_SOURCES = async.c async_any.c bigtype.c \
 	external32_derived_dtype.c getextent.c hindexed_io.c \
 	i_aggregation1.c i_aggregation2.c i_bigtype.c i_coll_test.c \
@@ -329,7 +404,7 @@ DIST_SOURCES = async.c async_any.c bigtype.c \
 	i_noncontig_coll.c i_noncontig_coll2.c i_rdwrord.c \
 	i_setviewcur.c i_types_with_zeros.c rdwrord.c rdwrzero.c \
 	resized.c resized2.c setinfo.c setviewcur.c \
-	simple_collective.c tst_fileview.c userioerr.c
+	simple_collective.c tst_fileview.c userioerr.c zero_count.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -355,7 +430,9 @@ am__define_uniq_tagged_files = \
 ETAGS = etags
 CTAGS = ctags
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/testlist.in \
-	$(top_srcdir)/Makefile.mtest $(top_srcdir)/confdb/depcomp
+	$(top_srcdir)/Makefile_common.mtest \
+	$(top_srcdir)/Makefile_single.mtest \
+	$(top_srcdir)/confdb/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 VPATH = @VPATH@
 ACLOCAL = @ACLOCAL@
@@ -380,7 +457,10 @@ CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DLLTOOL = @DLLTOOL@
+DSYMUTIL = @DSYMUTIL@
 DTP_SWITCH = @DTP_SWITCH@
+DUMPBIN = @DUMPBIN@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
@@ -411,13 +491,19 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LIBTOOL = @LIBTOOL@
+LIPO = @LIPO@
+LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAINT = @MAINT@
 MAKE = @MAKE@
 MAKEINFO = @MAKEINFO@
+MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 MPICC = @MPICC@
 MPICH_ENABLE_CXX = @MPICH_ENABLE_CXX@
@@ -439,7 +525,12 @@ MPI_SIZEOF_OFFSET = @MPI_SIZEOF_OFFSET@
 MPI_SOURCE = @MPI_SOURCE@
 MPI_SUBVERSION = @MPI_SUBVERSION@
 MPI_VERSION = @MPI_VERSION@
+NM = @NM@
+NMEDIT = @NMEDIT@
+OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
+OTOOL = @OTOOL@
+OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -451,6 +542,7 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 RANLIB = @RANLIB@
 RUN_XFAIL = @RUN_XFAIL@
+SED = @SED@
 SET_CFLAGS = @SET_CFLAGS@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -470,6 +562,7 @@ abs_top_srcdir = @abs_top_srcdir@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
+ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
 ac_ct_F77 = @ac_ct_F77@
 ac_ct_FC = @ac_ct_FC@
 am__include = @am__include@
@@ -484,8 +577,15 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
+ch3_tests = @ch3_tests@
+ch4_ofi_tests = @ch4_ofi_tests@
+ch4_tests = @ch4_tests@
+ch4_ucx_tests = @ch4_ucx_tests@
 ckpointdir = @ckpointdir@
 comm_overlap = @comm_overlap@
+cuda_CPPFLAGS = @cuda_CPPFLAGS@
+cuda_LDFLAGS = @cuda_LDFLAGS@
+cuda_LIBS = @cuda_LIBS@
 cxxdir = @cxxdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
@@ -514,9 +614,9 @@ libdir = @libdir@
 libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
+main_top_builddir = @main_top_builddir@
+main_top_srcdir = @main_top_srcdir@
 mandir = @mandir@
-master_top_builddir = @master_top_builddir@
-master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 mpix = @mpix@
@@ -544,21 +644,27 @@ threadsdir = @threadsdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+ze_CPPFLAGS = @ze_CPPFLAGS@
+ze_LDFLAGS = @ze_LDFLAGS@
+ze_LIBS = @ze_LIBS@
 
 # AM_CPPFLAGS are used for C++ code as well
 
 # Add libdtpools support
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
-	-I$(top_srcdir)/dtpools/include
-LDADD = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+	@cuda_CPPFLAGS@ @ze_CPPFLAGS@ -I$(top_srcdir)/dtpools/include
+AM_LDFLAGS = @cuda_LDFLAGS@ @ze_LDFLAGS@
+LDADD = $(top_builddir)/util/mtest.$(OBJEXT) \
+	$(top_builddir)/util/mtest_common.$(OBJEXT) @cuda_LIBS@ \
+	@ze_LIBS@ $(top_builddir)/dtpools/src/libdtpools.la \
+	$(top_builddir)/util/mtest_single.$(OBJEXT)
 CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
 EXTRA_DIST = testlist.in
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/Makefile.mtest $(am__configure_deps)
+.SUFFIXES: .c .lo .o .obj
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/Makefile_single.mtest $(top_srcdir)/Makefile_common.mtest $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -578,7 +684,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe);; \
 	esac;
-$(top_srcdir)/Makefile.mtest $(am__empty):
+$(top_srcdir)/Makefile_single.mtest $(top_srcdir)/Makefile_common.mtest $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
@@ -592,7 +698,13 @@ testlist: $(top_builddir)/config.status $(srcdir)/testlist.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
+	echo " rm -f" $$list; \
+	rm -f $$list || exit $$?; \
+	test -n "$(EXEEXT)" || exit 0; \
+	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
+	echo " rm -f" $$list; \
+	rm -f $$list
 
 async$(EXEEXT): $(async_OBJECTS) $(async_DEPENDENCIES) $(EXTRA_async_DEPENDENCIES) 
 	@rm -f async$(EXEEXT)
@@ -706,6 +818,10 @@ userioerr$(EXEEXT): $(userioerr_OBJECTS) $(userioerr_DEPENDENCIES) $(EXTRA_useri
 	@rm -f userioerr$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(userioerr_OBJECTS) $(userioerr_LDADD) $(LIBS)
 
+zero_count$(EXEEXT): $(zero_count_OBJECTS) $(zero_count_DEPENDENCIES) $(EXTRA_zero_count_DEPENDENCIES) 
+	@rm -f zero_count$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(zero_count_OBJECTS) $(zero_count_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -740,6 +856,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_collective.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tst_fileview.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/userioerr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zero_count.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -756,6 +873,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.c.lo:
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+mostlyclean-libtool:
+	-rm -f *.lo
+
+clean-libtool:
+	-rm -rf .libs _libs
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -876,7 +1007,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-local clean-noinstPROGRAMS \
+clean-am: clean-generic clean-libtool clean-local clean-noinstPROGRAMS \
 	mostlyclean-am
 
 distclean: distclean-am
@@ -932,7 +1063,8 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool
 
 pdf: pdf-am
 
@@ -947,16 +1079,17 @@ uninstall-am:
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am check check-am clean clean-generic \
-	clean-local clean-noinstPROGRAMS cscopelist-am ctags ctags-am \
-	distclean distclean-compile distclean-generic distclean-tags \
-	distdir dvi dvi-am html html-am info info-am install \
-	install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
+	clean-libtool clean-local clean-noinstPROGRAMS cscopelist-am \
+	ctags ctags-am distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags tags-am uninstall uninstall-am
 
 .PRECIOUS: Makefile
@@ -965,15 +1098,25 @@ uninstall-am:
 $(top_builddir)/util/mtest.$(OBJEXT): $(top_srcdir)/util/mtest.c
 	(cd $(top_builddir)/util && $(MAKE) mtest.$(OBJEXT))
 
-$(top_builddir)/dtpools/src/.libs/libdtpools.a: $(top_srcdir)/dtpools/src/*.c
+$(top_builddir)/util/mtest_common.$(OBJEXT): $(top_srcdir)/util/mtest_common.c
+	(cd $(top_builddir)/util && $(MAKE) mtest_common.$(OBJEXT))
+
+$(top_builddir)/dtpools/src/libdtpools.la:
 	(cd $(top_builddir)/dtpools && $(MAKE))
 
+@GPU_ONLY_TRUE@@HAVE_GPU_TRUE@TESTDIRS ?= coll,pt2pt,rma
+@GPU_ONLY_TRUE@@HAVE_GPU_TRUE@TESTLIST ?= testlist.gpu
+@GPU_ONLY_FALSE@@HAVE_GPU_TRUE@TESTLIST ?= testlist,testlist.dtp,testlist.cvar,testlist.gpu
+@HAVE_GPU_FALSE@TESTLIST ?= testlist,testlist.dtp,testlist.cvar
 SUMMARY_BASENAME ?= summary
 
 testing:
-	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
+	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=$(TESTLIST) -testdirs=$(TESTDIRS) \
 		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
 		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
+
+$(top_builddir)/util/mtest_single.$(OBJEXT): $(top_srcdir)/util/mtest_single.c
+	(cd $(top_builddir)/util && $(MAKE) mtest_single.$(OBJEXT))
 
 clean-local:
 	-rm -f testfile testfile.*

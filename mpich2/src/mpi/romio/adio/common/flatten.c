@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *   Copyright (C) 1997 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "adio.h"
@@ -33,9 +32,6 @@ void ADIOI_Optimize_flattened(ADIOI_Flatlist_node * flat_type);
 /* flatten datatype and add it to Flatlist */
 ADIOI_Flatlist_node *ADIOI_Flatten_datatype(MPI_Datatype datatype)
 {
-#ifdef HAVE_MPIR_TYPE_FLATTEN
-    MPI_Aint flatten_idx;
-#endif
     MPI_Count flat_count, curr_index = 0;
     int is_contig, flag;
     ADIOI_Flatlist_node *flat;
@@ -82,20 +78,12 @@ ADIOI_Flatlist_node *ADIOI_Flatten_datatype(MPI_Datatype datatype)
     } else {
 
         curr_index = 0;
-#ifdef HAVE_MPIR_TYPE_FLATTEN
-        flatten_idx = (MPI_Aint) flat->count;
-        MPIR_Type_flatten(datatype, flat->indices, flat->blocklens, &flatten_idx);
-#ifdef FLATTEN_DEBUG
-        DBG_FPRINTF(stderr, "ADIOI_Flatten_datatype:: MPIR_Type_flatten\n");
-#endif
-#else
         ADIOI_Flatten(datatype, flat, 0, &curr_index);
 #ifdef FLATTEN_DEBUG
         DBG_FPRINTF(stderr, "ADIOI_Flatten_datatype:: ADIOI_Flatten\n");
 #endif
 
         ADIOI_Optimize_flattened(flat);
-#endif
 /* debug */
 #ifdef FLATTEN_DEBUG
         {
@@ -143,13 +131,14 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
                 *curr_index);
     DBG_FPRINTF(stderr, "ADIOI_Flatten:: nints %#X, nadds %#X, ntypes %#X\n", nints, nadds, ntypes);
     for (i = 0; i < nints; ++i) {
-        DBG_FPRINTF(stderr, "ADIOI_Flatten:: ints[%lld]=%#X\n", i, ints[i]);
+        DBG_FPRINTF(stderr, "ADIOI_Flatten:: ints[%lld]=%#X\n", (long long) i, ints[i]);
     }
     for (i = 0; i < nadds; ++i) {
-        DBG_FPRINTF(stderr, "ADIOI_Flatten:: adds[%lld]=" MPI_AINT_FMT_HEX_SPEC "\n", i, adds[i]);
+        DBG_FPRINTF(stderr, "ADIOI_Flatten:: adds[%lld]=" MPI_AINT_FMT_HEX_SPEC "\n",
+                    (long long) i, adds[i]);
     }
     for (i = 0; i < ntypes; ++i) {
-        DBG_FPRINTF(stderr, "ADIOI_Flatten:: types[%lld]=%#llX\n", i,
+        DBG_FPRINTF(stderr, "ADIOI_Flatten:: types[%lld]=%#llX\n", (long long) i,
                     (unsigned long long) (unsigned long) types[i]);
     }
 #endif

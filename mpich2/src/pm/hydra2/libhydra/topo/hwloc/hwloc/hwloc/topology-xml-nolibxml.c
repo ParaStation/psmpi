@@ -225,7 +225,7 @@ hwloc__nolibxml_import_get_content(hwloc__xml_import_state_t state,
   if (nstate->closed) {
     if (expected_length)
       return -1;
-    *beginp = (char *) "";
+    *beginp = (char *) (const char *) "";
     return 0;
   }
 
@@ -301,7 +301,7 @@ hwloc_nolibxml_look_init(struct hwloc_xml_backend_data_s *bdata,
   state->parent = NULL;
   nstate->closed = 0;
   nstate->tagbuffer = end;
-  nstate->tagname = (char *) "topology";
+  nstate->tagname = (char *) (const char *) "topology";
   nstate->attrbuffer = NULL;
   return 0; /* success */
 

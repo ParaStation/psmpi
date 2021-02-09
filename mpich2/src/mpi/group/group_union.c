@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -27,10 +25,6 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group * newgroup)
 #undef MPI_Group_union
 #define MPI_Group_union PMPI_Group_union
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Group_union_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Group_union_impl(MPIR_Group * group_ptr1, MPIR_Group * group_ptr2,
                           MPIR_Group ** new_group_ptr)
 {
@@ -60,9 +54,8 @@ int MPIR_Group_union_impl(MPIR_Group * group_ptr1, MPIR_Group * group_ptr2,
     /* Clear the flag bits on the second group.  The flag is set if
      * a member of the second group belongs to the union */
     size2 = group_ptr2->size;
-    for (i = 0; i < size2; i++) {
-        group_ptr2->lrank_to_lpid[i].flag = 0;
-    }
+    int *flags = MPL_calloc(size2, sizeof(int), MPL_MEM_OTHER);
+
     /* Loop through the lists that are ordered by lpid (local process
      * id) to detect which processes in group 2 are not in group 1
      */
@@ -72,7 +65,7 @@ int MPIR_Group_union_impl(MPIR_Group * group_ptr1, MPIR_Group * group_ptr2,
         l2_pid = group_ptr2->lrank_to_lpid[g2_idx].lpid;
         if (l1_pid > l2_pid) {
             nnew++;
-            group_ptr2->lrank_to_lpid[g2_idx].flag = 1;
+            flags[g2_idx] = 1;
             g2_idx = group_ptr2->lrank_to_lpid[g2_idx].next_lpid;
         } else if (l1_pid == l2_pid) {
             g1_idx = group_ptr1->lrank_to_lpid[g1_idx].next_lpid;
@@ -85,7 +78,7 @@ int MPIR_Group_union_impl(MPIR_Group * group_ptr1, MPIR_Group * group_ptr2,
     /* If we hit the end of group1, add the remaining members of group 2 */
     while (g2_idx >= 0) {
         nnew++;
-        group_ptr2->lrank_to_lpid[g2_idx].flag = 1;
+        flags[g2_idx] = 1;
         g2_idx = group_ptr2->lrank_to_lpid[g2_idx].next_lpid;
     }
 
@@ -96,8 +89,7 @@ int MPIR_Group_union_impl(MPIR_Group * group_ptr1, MPIR_Group * group_ptr2,
 
     /* Allocate a new group and lrank_to_lpid array */
     mpi_errno = MPIR_Group_create(nnew, new_group_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* If this process is in group1, then we can set the rank now.
      * If we are not in this group, this assignment will set the
@@ -119,7 +111,7 @@ int MPIR_Group_union_impl(MPIR_Group * group_ptr1, MPIR_Group * group_ptr2,
     }
     k = size1;
     for (i = 0; i < size2; i++) {
-        if (group_ptr2->lrank_to_lpid[i].flag) {
+        if (flags[i]) {
             (*new_group_ptr)->lrank_to_lpid[k].lpid = group_ptr2->lrank_to_lpid[i].lpid;
             if ((*new_group_ptr)->rank == MPI_UNDEFINED &&
                 group_ptr2->lrank_to_lpid[i].lpid == mylpid)
@@ -127,6 +119,8 @@ int MPIR_Group_union_impl(MPIR_Group * group_ptr1, MPIR_Group * group_ptr2,
             k++;
         }
     }
+
+    MPL_free(flags);
 
     /* TODO calculate is_local_dense_monotonic */
 
@@ -140,10 +134,6 @@ int MPIR_Group_union_impl(MPIR_Group * group_ptr1, MPIR_Group * group_ptr2,
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Group_union
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /*@
 
@@ -233,12 +223,12 @@ int MPI_Group_union(MPI_Group group1, MPI_Group group2, MPI_Group * newgroup)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_group_union", "**mpi_group_union %G %G %p", group1, group2,
                                  newgroup);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

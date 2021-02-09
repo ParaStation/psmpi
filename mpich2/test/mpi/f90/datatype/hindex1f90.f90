@@ -1,10 +1,9 @@
 ! This file created from f77/datatype/hindex1f.f with f77tof90
-! -*- Mode: Fortran; -*- 
 !
+! Copyright (C) by Argonne National Laboratory
+!     See COPYRIGHT in top-level directory
 !
-!  (C) 2011 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
-!
+
       program main
       use mpi
       integer errs, ierr, intsize

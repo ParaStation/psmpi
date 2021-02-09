@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* FIXME: This header should contain only the definitions exported to the
@@ -29,16 +28,9 @@ typedef struct {
 } MPIDI_Devdt_t;
 #define MPID_DEV_DATATYPE_DECL   MPIDI_Devdt_t   dev;
 
-/* FIXME: Include here? */
-#include "opa_primitives.h"
-
 #include "mpid_thread.h"
 
 #include "mpid_sched.h"
-
-/* We simply use the fallback timer functionality and do not define
- * our own */
-#include "mpid_timers_fallback.h"
 
 union MPIDI_CH3_Pkt;
 struct MPIDI_VC;
@@ -168,7 +160,8 @@ typedef union {
  * by the channel instance.
  */
 
-#define MPID_Comm_create_hook(comm_) MPIDI_CH3I_Comm_create_hook(comm_)
+#define MPID_Comm_commit_pre_hook(comm_) MPIDI_CH3I_Comm_commit_pre_hook(comm_)
+#define MPID_Comm_commit_post_hook(comm_) MPIDI_CH3I_Comm_commit_post_hook(comm_)
 #define MPID_Comm_free_hook(comm_) MPIDI_CH3I_Comm_destroy_hook(comm_)
 
 #ifndef HAVE_MPIDI_VCRT
@@ -178,7 +171,6 @@ typedef struct MPIDI_VC * MPIDI_VCR;
 
 typedef struct MPIDI_CH3I_comm
 {
-    int eager_max_msg_sz;   /* comm-wide eager/rendezvous message threshold */
     int anysource_enabled;  /* TRUE iff this anysource recvs can be posted on this communicator */
     int last_ack_rank;      /* The rank of the last acknowledged failure */
     int waiting_for_revoke; /* The number of other processes from which we are
@@ -383,20 +375,18 @@ typedef struct MPIDI_Request {
     MPI_Datatype datatype;
     int drop_data;
 
-    /* segment, segment_first, and segment_size are used when processing 
+    /* msg_offset, and msgsize are used when processing
        non-contiguous datatypes */
-    /*    MPIR_Segment   segment; */
-    struct MPIR_Segment *segment_ptr;
-    intptr_t segment_first;
-    intptr_t segment_size;
-    intptr_t orig_segment_first;
+    intptr_t msg_offset;
+    intptr_t msgsize;
+    intptr_t orig_msg_offset;
 
     /* Pointer to datatype for reference counting purposes */
     struct MPIR_Datatype* datatype_ptr;
 
     /* iov and iov_count define the data to be transferred/received.  
        iov_offset points to the current head element in the IOV */
-    MPL_IOV iov[MPL_IOV_LIMIT];
+    struct iovec iov[MPL_IOV_LIMIT];
     int iov_count;
     size_t iov_offset;
 
@@ -444,13 +434,13 @@ typedef struct MPIDI_Request {
     /* For accumulate, since data is first read into a tmp_buf */
     void *real_user_buf;
     /* For derived datatypes at target. */
-    void *dataloop;
+    void *flattened_type;
     /* req. handle needed to implement derived datatype gets.
      * It also used for remembering user request of request-based RMA operations. */
     MPI_Request request_handle;
     MPI_Win     target_win_handle;
     MPI_Win     source_win_handle;
-    MPIDI_CH3_Pkt_flags_t flags; /* flags that were included in the original RMA packet header */
+    int pkt_flags; /* pkt_flags that were included in the original RMA packet header */
     struct MPIDI_RMA_Target_lock_entry *target_lock_queue_entry;
     MPI_Request resp_request_handle; /* Handle for get_accumulate response */
 
@@ -539,13 +529,12 @@ typedef struct {
 /* Tell initthread to prepare a private comm_world */
 #define MPID_NEEDS_ICOMM_WORLD
 
-int MPID_Init( int *argc_p, char ***argv_p, int requested,
-	       int *provided, int *has_args, int *has_env );
+int MPID_Init(int required, int *provided);
 
 int MPID_InitCompleted( void );
 
 int MPID_Finalize(void);
-#define MPID_CS_finalize() do {} while (0)
+
 int MPID_Abort( MPIR_Comm *comm, int mpi_errno, int exit_code, const char *error_msg );
 
 int MPID_Open_port(MPIR_Info *, char *);
@@ -572,6 +561,10 @@ int MPID_Send( const void *buf, MPI_Aint count, MPI_Datatype datatype,
 	       int dest, int tag, MPIR_Comm *comm, int context_offset,
 	       MPIR_Request **request );
 
+int MPID_Send_coll( const void *buf, MPI_Aint count, MPI_Datatype datatype,
+                    int dest, int tag, MPIR_Comm *comm, int context_offset,
+                    MPIR_Request **request, MPIR_Errflag_t * errflag );
+
 int MPID_Rsend( const void *buf, int count, MPI_Datatype datatype,
 		int dest, int tag, MPIR_Comm *comm, int context_offset,
 		MPIR_Request **request );
@@ -580,12 +573,13 @@ int MPID_Ssend( const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		int dest, int tag, MPIR_Comm *comm, int context_offset,
 		MPIR_Request **request );
 
-int MPID_tBsend( const void *buf, int count, MPI_Datatype datatype,
-		 int dest, int tag, MPIR_Comm *comm, int context_offset );
-
 int MPID_Isend( const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		int dest, int tag, MPIR_Comm *comm, int context_offset,
 		MPIR_Request **request );
+
+int MPID_Isend_coll( const void *buf, MPI_Aint count, MPI_Datatype datatype,
+                     int dest, int tag, MPIR_Comm *comm, int context_offset,
+                     MPIR_Request **request, MPIR_Errflag_t * errflag );
 
 int MPID_Irsend( const void *buf, int count, MPI_Datatype datatype,
 		 int dest, int tag, MPIR_Comm *comm, int context_offset,
@@ -734,5 +728,10 @@ int MPID_Free_mem( void *ptr );
    hierarchical collectives in a (mostly) device-independent way. */
 int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p);
 int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p);
+
+int MPID_Type_commit_hook(MPIR_Datatype * type);
+int MPID_Type_free_hook(MPIR_Datatype * type);
+int MPID_Op_commit_hook(MPIR_Op * op);
+int MPID_Op_free_hook(MPIR_Op * op);
 
 #endif /* MPIDPRE_H_INCLUDED */
