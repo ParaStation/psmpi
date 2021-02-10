@@ -28292,6 +28292,20 @@ fi
 
 
 
+# Session statistics
+# Check whether --enable-psp-session-statistics was given.
+if test "${enable_psp_session_statistics+set}" = set; then :
+  enableval=$enable_psp_session_statistics;
+else
+  enable_psp_session_statistics=no
+fi
+
+if test "$enable_psp_session_statistics" = "yes" ; then
+
+$as_echo "#define MPIDI_PSP_WITH_SESSION_STATISTICS /**/" >>confdefs.h
+
+fi
+
 # Topology awareness
 # Check whether --enable-psp-topology-awareness was given.
 if test "${enable_psp_topology_awareness+set}" = set; then :
@@ -28303,6 +28317,9 @@ fi
 PSP_TOPOLOGY_AWARENESS=0
 if test "$enable_psp_topology_awareness" = "yes" ; then
    PSP_TOPOLOGY_AWARENESS=1
+
+$as_echo "#define MPIDI_PSP_WITH_TOPOLOGY_AWARENESS /**/" >>confdefs.h
+
 fi
 
 
@@ -28462,6 +28479,7 @@ else
 
 			PSP_CUDA_AWARE_SUPPORT=1
 
+$as_echo "#define MPIDI_PSP_WITH_CUDA_AWARENESS /**/" >>confdefs.h
 
 	if echo "$CPPFLAGS" | $FGREP -e "\<-DMPIR_USE_DEVICE_MEMCPY\>" >/dev/null 2>&1; then :
   echo "CPPFLAGS(='$CPPFLAGS') contains '-DMPIR_USE_DEVICE_MEMCPY', not appending" >&5

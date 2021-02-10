@@ -158,7 +158,7 @@ void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Data
 	void *acc_addr = (void*)target_addr;
 	size_t target_sz;
 
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
 	/* is target_addr within device memory? */
 	if (pscom_is_gpu_mem(target_addr)) {
 		int contig;
@@ -195,7 +195,7 @@ void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Data
 				NULL /* sizefn */,
 				&acc_params);
 
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
 	/* do we need to unstage the buffer? */
 	if (acc_addr != target_addr) {
 		MPID_Memcpy((void*)target_addr, acc_addr, target_sz);

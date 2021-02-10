@@ -71,7 +71,7 @@ MPIDI_Process_t MPIDI_Process = {
 #endif
 		dinit(enable_lazy_disconnect)	1,
 	},
-#ifdef MPID_PSP_SESSION_STATISTICS
+#ifdef MPIDI_PSP_WITH_SESSION_STATISTICS
 	dinit(stats)            {
 #ifdef MPID_PSP_HISTOGRAM
 		dinit(histo)                    {
@@ -91,7 +91,7 @@ MPIDI_Process_t MPIDI_Process = {
 		},
 #endif
 	},
-#endif /* MPID_PSP_SESSION_STATISTICS */
+#endif /* MPIDI_PSP_WITH_SESSION_STATISTICS */
 };
 
 /*

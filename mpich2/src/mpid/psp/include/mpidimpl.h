@@ -137,7 +137,7 @@ typedef struct MPIDI_Process
 		unsigned enable_lazy_disconnect;
 	} env;
 
-#ifdef MPID_PSP_SESSION_STATISTICS
+#ifdef MPIDI_PSP_WITH_SESSION_STATISTICS
        struct {
 #ifdef MPID_PSP_HISTOGRAM
                struct {
@@ -157,7 +157,7 @@ typedef struct MPIDI_Process
                } hcoll;
 #endif
        } stats;
-#endif /* MPID_PSP_SESSION_STATISTICS */
+#endif /* MPIDI_PSP_WITH_SESSION_STATISTICS */
 
 } MPIDI_Process_t;
 
