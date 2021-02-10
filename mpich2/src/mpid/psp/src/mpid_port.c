@@ -369,7 +369,7 @@ pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm *comm, MPIR_Comm *
 			 * Local PG id plus local PG rank would be applicable here, however, we are limited in the number of chars.
 			 * So, for the debug case, we want some kind of readable format whereas for the non-debug case, we adjust the digits used:
 			 */
-			if (mpid_psp_debug_level) {
+			if (MPIDI_Process.env.debug_level) {
 				snprintf(name, sizeof(name), "i%03ur%03u", MPIDI_Process.my_pg->id_num % 1000, MPIDI_Process.my_pg_rank % 1000);
 			} else {
 				int rank_range = 1;
