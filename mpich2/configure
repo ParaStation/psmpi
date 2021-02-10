@@ -1577,6 +1577,7 @@ enable_ch4_shm_direct
 with_ch4_ofi_direct_provider
 with_ch4_netmod_ucx_args
 enable_sock_debug
+with_psp_confset
 with_ch4_shmmod_posix_args
 enable_psp_topology_awareness
 enable_psp_cuda_awareness
@@ -2631,6 +2632,9 @@ Optional Packages:
                           specify path where hcoll include directory can be
                           found
   --with-hcoll-lib=PATH   specify path where hcoll lib directory can be found
+  --with-psp-confset=confset
+                          Define the configuration set to be used for the PSP
+                          device
   --with-mpl-prefix[=DIR] use the MPL library installed in DIR, rather than
                           the one included in src/mpl. Pass "embedded" to
                           force usage of the MPL source distributed with
@@ -28234,6 +28238,20 @@ if test -z "$BUILD_PSP_TRUE"; then :
 { $as_echo "$as_me:${as_lineno-$LINENO}: RUNNING PREREQ FOR PSP DEVICE" >&5
 $as_echo "$as_me: RUNNING PREREQ FOR PSP DEVICE" >&6;}
 
+
+# Check whether --with-psp-confset was given.
+if test "${with_psp_confset+set}" = set; then :
+  withval=$with_psp_confset; with_psp_confset=$withval
+else
+  with_psp_confset="default"
+fi
+
+
+cat >>confdefs.h <<_ACEOF
+#define MPIDI_PSP_CONFSET "$with_psp_confset"
+_ACEOF
+
+
 # maximum length of a processor name, as used by
 # MPI_GET_PROCESSOR_NAME
 MPID_MAX_PROCESSOR_NAME=1024
@@ -28587,6 +28605,13 @@ fi
 
 fi
 fi
+
+# Determine PS-MPI version string
+PSP_VC_VERSION=$(${master_top_srcdir}/../scripts/vcversion -r ${master_top_srcdir}/.. -n)
+
+cat >>confdefs.h <<_ACEOF
+#define MPIDI_PSP_VC_VERSION "$PSP_VC_VERSION"
+_ACEOF
 
 
 ac_config_files="$ac_config_files src/mpid/psp/include/mpi-ext.h src/mpid/psp/include/mpid_cuda_aware.h"
