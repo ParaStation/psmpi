@@ -128,6 +128,12 @@ int MPIDI_PSP_Progress_test(void);
 int MPIDI_PSP_Progress_poke(void);
 
 /*
+ * Device level request management macros
+ */
+
+#define MPID_Prequest_free_hook(req_) do {} while(0)
+
+/*
  * Device level progress engine macros
  */
 #define MPID_Progress_start(progress_state_) MPIDI_PSP_Progress_start(progress_state_)
@@ -135,7 +141,7 @@ int MPIDI_PSP_Progress_poke(void);
 #define MPID_Progress_end(progress_state_)   MPIDI_PSP_Progress_end(progress_state_)
 /* This is static inline instead of macro because otherwise MPID_Progress_test will
  * be a chain of macros and therefore can not be used as a callback function */
-static inline int MPID_Progress_test(void)
+static inline int MPID_Progress_test(MPID_Progress_state * state) /* state is unused */
 {
     return MPIDI_PSP_Progress_test();
 }

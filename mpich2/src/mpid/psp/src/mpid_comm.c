@@ -548,10 +548,12 @@ fn_fail:
 
 
 
-int MPID_PSP_comm_create_hook(MPIR_Comm * comm)
+int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 {
 	pscom_connection_t *con1st;
 	int i;
+	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_COMM_COMMIT_PRE_HOOK);
+	MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_COMM_COMMIT_PRE_HOOK);
 
 	if (comm->mapper_head) {
 		MPID_PSP_comm_create_mapper(comm);
@@ -564,7 +566,7 @@ int MPID_PSP_comm_create_hook(MPIR_Comm * comm)
 	if (comm->comm_kind == MPIR_COMM_KIND__INTERCOMM) {
 		/* do nothing on Intercomms */
 		comm->pscom_socket = NULL;
-		return MPI_SUCCESS;
+		goto fn_exit;
 	}
 
 	/* Use pscom_socket from the rank 0 connection ... */
@@ -616,10 +618,26 @@ int MPID_PSP_comm_create_hook(MPIR_Comm * comm)
 	printf("%s (comm:%p(%s, id:%08x, size:%u))\n",
 	       __func__, comm, comm->name, comm->context_id, comm->local_size););
 	*/
+fn_exit:
+	MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_COMM_COMMIT_PRE_HOOK);
 	return MPI_SUCCESS;
 }
 
-int MPID_PSP_comm_destroy_hook(MPIR_Comm * comm)
+int MPIDI_PSP_Comm_commit_post_hook(MPIR_Comm *comm)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_COMM_COMMIT_POST_HOOK);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_COMM_COMMIT_POST_HOOK);
+
+  fn_exit:
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_COMM_COMMIT_POST_HOOK);
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+
+int MPIDI_PSP_Comm_destroy_hook(MPIR_Comm * comm)
 {
 	MPIDI_VCRT_Release(comm->vcrt, comm->is_disconnected);
 	comm->vcr = NULL;

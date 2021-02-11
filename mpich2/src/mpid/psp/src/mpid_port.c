@@ -399,7 +399,7 @@ pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm *comm, MPIR_Comm *
 	}
 
 	err = FALSE;
-	mpi_error = MPIR_Gather_intra_auto(my_port, sizeof(pscom_port_str_t), MPI_CHAR,
+	mpi_error = MPIR_Gather_allcomm_auto(my_port, sizeof(pscom_port_str_t), MPI_CHAR,
 				      all_ports, sizeof(pscom_port_str_t), MPI_CHAR,
 				      root, comm, &err);
 

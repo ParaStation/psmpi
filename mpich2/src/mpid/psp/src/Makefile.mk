@@ -4,12 +4,14 @@ mpi_core_sources +=               src/mpid/psp/src/mpid_abort.c			\
                                   src/mpid/psp/src/mpid_cancel.c		\
                                   src/mpid/psp/src/mpid_coll.c    		\
                                   src/mpid/psp/src/mpid_comm.c    		\
+                                  src/mpid/psp/src/mpid_datatype.c		\
                                   src/mpid/psp/src/mpid_debug.c			\
                                   src/mpid/psp/src/mpid_finalize.c		\
                                   src/mpid/psp/src/mpid_get_processor_name.c	\
                                   src/mpid/psp/src/mpid_init.c			\
                                   src/mpid/psp/src/mpid_irecv.c			\
                                   src/mpid/psp/src/mpid_isend.c			\
+                                  src/mpid/psp/src/mpid_op.c			\
                                   src/mpid/psp/src/mpid_persistent.c		\
                                   src/mpid/psp/src/mpid_progress.c		\
                                   src/mpid/psp/src/mpid_port.c			\

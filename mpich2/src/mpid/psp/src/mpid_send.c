@@ -28,6 +28,28 @@ int MPID_Send(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
 }
 
 
+int MPID_Send_coll(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
+                   MPIR_Comm * comm, int context_offset, MPIR_Request ** request,
+                   MPIR_Errflag_t * errflag)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    switch (*errflag) {
+    case MPIR_ERR_NONE:
+        break;
+    case MPIR_ERR_PROC_FAILED:
+        MPIR_TAG_SET_PROC_FAILURE_BIT(tag);
+        break;
+    default:
+        MPIR_TAG_SET_ERROR_BIT(tag);
+    }
+
+    mpi_errno = MPID_Send(buf, count, datatype, rank, tag, comm, context_offset, request);
+
+    return mpi_errno;
+}
+
+
 int MPID_Ssend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
 	       MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
 {

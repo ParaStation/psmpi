@@ -273,7 +273,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info *info_pt
 	win_ptr->my_counter = 0;
 	win_ptr->my_pt_rma_puts_accs = 0;
 */
-	mpi_errno = MPIR_Comm_dup_impl(comm_ptr, &win_ptr->comm_ptr);
+	mpi_errno = MPIR_Comm_dup_impl(comm_ptr, NULL, &win_ptr->comm_ptr);
 
 	if (mpi_errno) { MPIR_ERR_POP(mpi_errno); }
 

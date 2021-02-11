@@ -122,6 +122,6 @@ int MPIDI_PSP_Progress_test(void)
 */
 int MPIDI_PSP_Progress_poke(void)
 {
-	MPID_Progress_test();
+	MPID_Progress_test(NULL);
 	return MPI_SUCCESS;
 }

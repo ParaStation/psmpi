@@ -485,9 +485,7 @@ int InitPscomConnections(void) {
 
 #define FCNAME "MPID_Init"
 #define FUNCNAME MPID_Init
-int MPID_Init(int *argc, char ***argv,
-	      int threadlevel_requested, int *threadlevel_provided,
-	      int *has_args, int *has_env)
+int MPID_Init(int requested, int *provided)
 {
 	int mpi_errno = MPI_SUCCESS;
 	int pg_id_sz = 0;
@@ -499,11 +497,6 @@ int MPID_Init(int *argc, char ***argv,
 	pscom_socket_t *socket;
 	pscom_err_t rc;
 	char *pg_id_name;
-
-	/* Call any and all MPID_Init type functions */
-	MPIR_Err_init();
-	MPIR_Datatype_init();
-	MPIR_Group_init();
 
 	mpid_debug_init();
 
@@ -525,9 +518,6 @@ int MPID_Init(int *argc, char ***argv,
 	PMICALL(PMI_Get_rank(&pg_rank));
 	PMICALL(PMI_Get_size(&pg_size));
 
-	*has_args = 1;
-	*has_env  = 1;
-
 	/* without PMI_Get_universe_size() we see pmi error:
 	   '[unset]: write_line error; fd=-1' in PMI_KVS_Get()! */
 	/* PMICALL(PMI_Get_universe_size(&universe_size)); */
@@ -539,7 +529,7 @@ int MPID_Init(int *argc, char ***argv,
 #ifndef MPICH_IS_THREADED
 		1
 #else
-		threadlevel_requested < MPI_THREAD_MULTIPLE
+		requested < MPI_THREAD_MULTIPLE
 #endif
 	) {
 		rc = pscom_init(PSCOM_VERSION);
@@ -766,9 +756,9 @@ int MPID_Init(int *argc, char ***argv,
 	}
 
 
-	if (threadlevel_provided) {
-		*threadlevel_provided = (MPICH_THREAD_LEVEL < threadlevel_requested) ?
-			MPICH_THREAD_LEVEL : threadlevel_requested;
+	if (provided) {
+		*provided = (MPICH_THREAD_LEVEL < requested) ?
+			MPICH_THREAD_LEVEL : requested;
 	}
 
 

@@ -633,7 +633,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 		local_gpids_by_comm = (MPIDI_Gpid*)MPL_malloc(local_size * sizeof(MPIDI_Gpid), MPL_MEM_OBJECT);
 		remote_gpids_by_comm = (MPIDI_Gpid*)MPL_malloc(remote_size * sizeof(MPIDI_Gpid), MPL_MEM_OBJECT);
 
-		mpi_errno = MPIR_Gather_intra_auto(&my_gpid, sizeof(MPIDI_Gpid), MPI_CHAR,
+		mpi_errno = MPIR_Gather_allcomm_auto(&my_gpid, sizeof(MPIDI_Gpid), MPI_CHAR,
 					      local_gpids_by_comm, sizeof(MPIDI_Gpid), MPI_CHAR,
 					      root, comm_ptr, &errflag);
 		assert(mpi_errno == MPI_SUCCESS);
