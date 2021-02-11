@@ -112,7 +112,7 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 		win_ptr->epoch_state = MPID_PSP_EPOCH_FENCE;
 	}
 
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
 	if (pscom_is_gpu_mem(origin_addr)) {
 		int	contig;
 		size_t data_sz;
@@ -451,7 +451,7 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 
 		MPID_Win_lock_internal(target_rank, win_ptr);
 
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
 		/* check whether we need to stage the buffers */
 		result_addr_is_gpu_mem = pscom_is_gpu_mem(result_addr);
 		compare_addr_is_gpu_mem = pscom_is_gpu_mem(compare_addr);
@@ -486,7 +486,7 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 
 		MPID_Win_unlock_internal(target_rank, win_ptr);
 
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
 		/* did we stage any buffers? */
 		if (result_addr_is_gpu_mem) {
 			MPID_Memcpy(result_addr, result_addr_tmp, target_sz);

@@ -1299,6 +1299,15 @@
 /* Define to enable lock-free communication queues */
 #undef MPID_NEM_USE_LOCK_FREE_QUEUES
 
+/* Define to enable session statistics by PSP device */
+#undef MPIDI_PSP_WITH_SESSION_STATISTICS
+
+/* Define to enable topology awareness in PSP device */
+#undef MPIDI_PSP_WITH_TOPOLOGY_AWARENESS
+
+/* Define to enable GPU memory awareness in PSP device if CUDA is found */
+#undef MPIDI_PSP_WITH_CUDA_AWARENESS
+
 /* Define if a port may be used to communicate with the processes */
 #undef MPIEXEC_ALLOW_PORT
 

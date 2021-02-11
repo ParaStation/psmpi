@@ -566,8 +566,8 @@ AC_ARG_WITH([session-statistics], [
 			  Enable the collection of statistical information
 ],[
 	if test "x${withval}" != "xno"; then
-		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPID_PSP_SESSION_STATISTICS"
 		ENABLE_SESSION_STATISTICS="true"
+		CONF_OPS="$CONF_OPS --enable-psp-session-statistics"
 	fi
 ])
 
@@ -576,7 +576,6 @@ AC_ARG_WITH([topology-awareness], [
 			  Enable topology/hierarchy awareness for collectives
 ],[
 	if test "x${withval}" != "xno"; then
-		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPID_PSP_TOPOLOGY_AWARENESS"
 		ENABLE_TOPOLOGY_AWARENESS="true"
 		CONF_OPS="$CONF_OPS --enable-psp-topology-awareness"
 	else
@@ -585,7 +584,6 @@ AC_ARG_WITH([topology-awareness], [
 	fi
 ],[
 	if test -n "$WITH_HCOLL_DIR" ; then
-		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPID_PSP_TOPOLOGY_AWARENESS"
 		ENABLE_TOPOLOGY_AWARENESS="hcoll"
 		CONF_OPS="$CONF_OPS --enable-psp-topology-awareness"
 	else
@@ -612,7 +610,6 @@ AC_ARG_WITH([cuda], [
 		if ! test -d "$CUDA_HOME" ; then
 			unset CUDA_HOME
 		fi
-		CONF_OPS="$CONF_OPS PSP_CPPFLAGS='-DMPID_PSP_WITH_CUDA_AWARENESS'"
 		CONF_OPS="$CONF_OPS"
 		MPICCCONFDIR="${sysconfdir}"
 	else

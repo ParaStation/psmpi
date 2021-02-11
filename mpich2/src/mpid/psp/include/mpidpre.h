@@ -24,8 +24,8 @@
  * our own */
 #include "mpid_timers_fallback.h"
 
-/* MPID_PSP_SESSION_STATISTICS is set if psmpi is configured with --with-session-statistics */
-#ifdef MPID_PSP_SESSION_STATISTICS
+/* MPIDI_PSP_WITH_SESSION_STATISTICS is set if psmpi is configured with --with-session-statistics */
+#ifdef MPIDI_PSP_WITH_SESSION_STATISTICS
 
 #define MPID_PSP_HISTOGRAM
 /* When MPID_PSP_HISTOGRAM is defined and PSP_HISTOGRAM=1 is set, some statistics
@@ -38,10 +38,10 @@
  * MPI_Finalize also prints some information about the usage of HCOLL collectives. */
 #endif
 
-#endif /* MPID_PSP_SESSION_STATISTICS */
+#endif /* MPIDI_PSP_WITH_SESSION_STATISTICS */
 
-/* MPID_PSP_TOPOLOGY_AWARENESS is set if psmpi is configured with --with-topology-awareness */
-#ifdef MPID_PSP_TOPOLOGY_AWARENESS
+/* MPIDI_PSP_WITH_TOPOLOGY_AWARENESS is set if psmpi is configured with --with-topology-awareness */
+#ifdef MPIDI_PSP_WITH_TOPOLOGY_AWARENESS
 
 #define MPID_PSP_MSA_AWARENESS
 /* When MPID_PSP_MSA_AWARNESS is defined, the MPI_INFO_ENV object contains a key/value pair
@@ -245,7 +245,7 @@ struct PSCOM_req_user
 	} type;
 };
 
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
 #define PSCOM_CUDA_AWARENESS
 #endif
 
@@ -256,7 +256,7 @@ struct PSCOM_req_user
  * pscom's CUDA-awareness. Otherwise, just fall back to normal memcpy().
  * TODO: can we safely use CHECK_MEMCPY here?
  */
-#if defined(MPIR_USE_DEVICE_MEMCPY) && defined(MPID_PSP_WITH_CUDA_AWARENESS)
+#if defined(MPIR_USE_DEVICE_MEMCPY) && defined(MPIDI_PSP_WITH_CUDA_AWARENESS)
 #define MPID_Memcpy(dst, src, len)         \
 	do {                                   \
 		pscom_memcpy((dst), (src), (len)); \
@@ -754,7 +754,7 @@ int MPID_Free_mem( void *ptr );
 int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p);
 int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p);
 
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
 int MPID_PSP_Reduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
 			     MPI_Op op, int root, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
 int MPID_PSP_Allreduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
@@ -770,7 +770,7 @@ int MPID_PSP_Exscan_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_
 #endif
 
 
-#ifdef MPID_PSP_SESSION_STATISTICS
+#ifdef MPIDI_PSP_WITH_SESSION_STATISTICS
 typedef enum {
 	mpidi_psp_stats_collops_enum__bcast,
 	mpidi_psp_stats_collops_enum__barrier,

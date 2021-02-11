@@ -68,6 +68,16 @@ AC_ARG_VAR([PSP_CPPFLAGS], [C preprocessor flags for PSP macros])
 
 AC_SUBST([PSP_CPPFLAGS])
 
+# Session statistics
+AC_ARG_ENABLE(psp-session-statistics,
+    AC_HELP_STRING(
+        [--enable-psp-session-statistics],
+        [Enable session-statistics for the PSP device
+    ]),,enable_psp_session_statistics=no)
+if test "$enable_psp_session_statistics" = "yes" ; then
+   AC_DEFINE([MPIDI_PSP_WITH_SESSION_STATISTICS], [], [Define to enable session statistics by PSP device])
+fi
+
 # Topology awareness
 AC_ARG_ENABLE(psp-topology-awareness,
     AC_HELP_STRING(
@@ -77,6 +87,7 @@ AC_ARG_ENABLE(psp-topology-awareness,
 PSP_TOPOLOGY_AWARENESS=0
 if test "$enable_psp_topology_awareness" = "yes" ; then
    PSP_TOPOLOGY_AWARENESS=1
+   AC_DEFINE([MPIDI_PSP_WITH_TOPOLOGY_AWARENESS], [], [Define to enable topology awareness in PSP device])
 fi
 AC_SUBST([PSP_TOPOLOGY_AWARENESS])
 
@@ -129,12 +140,13 @@ if test "$enable_psp_cuda_awareness" = "yes" ; then
 	])
 
 	AS_IF([test "$pscom_is_cuda_aware" = "no" ],[
-		AC_MSG_ERROR([The pscom library is missing CUDA-awareness. Abort!])
+		AC_MSG_ERROR([The pscom library is missing CUDA awareness. Abort!])
 	],[
 		AS_IF([test "x$PSCOM_ALLIN"  != "xtrue" -a "$have_pscom_memcpy" != "yes" ],[
 			AC_MSG_ERROR([The pscom library is lacking the pscom_memcpy() symbol. Please re-compile the pscom with "--enable-cuda". Abort!])
 		],[
 			PSP_CUDA_AWARE_SUPPORT=1
+			AC_DEFINE([MPIDI_PSP_WITH_CUDA_AWARENESS], [], [Define to enable GPU memory awareness in PSP device if CUDA is found])
 			PAC_APPEND_FLAG([-DMPIR_USE_DEVICE_MEMCPY], [CPPFLAGS])
 		])
 	])
@@ -159,6 +171,7 @@ AC_CONFIG_FILES([
 src/mpid/psp/include/mpi-ext.h
 src/mpid/psp/include/mpid_cuda_aware.h
 ])
+
 
 # todo: check whether we need all of them
 build_mpid_common_sched=yes

@@ -122,7 +122,7 @@ static inline int MPID_Allreduce(const void *sendbuf, void *recvbuf, int count,
     }
 #endif
 
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
     mpi_errno = MPID_PSP_Allreduce_for_cuda(sendbuf, recvbuf, count, datatype, op,
                                     comm, errflag);
 #else
@@ -423,7 +423,7 @@ static inline int MPID_Reduce(const void *sendbuf, void *recvbuf, int count,
     }
 #endif
 
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
     mpi_errno = MPID_PSP_Reduce_for_cuda(sendbuf, recvbuf, count, datatype, op, root,
                                  comm, errflag);
 #else
@@ -456,7 +456,7 @@ static inline int MPID_Reduce_scatter(const void *sendbuf, void *recvbuf, const 
 {
     int mpi_errno = MPI_SUCCESS;
 
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
     mpi_errno = MPID_PSP_Reduce_scatter_for_cuda(sendbuf, recvbuf, recvcounts,
                                          datatype, op, comm_ptr, errflag);
 #else
@@ -484,7 +484,7 @@ static inline int MPID_Reduce_scatter_block(const void *sendbuf, void *recvbuf,
 {
     int mpi_errno = MPI_SUCCESS;
 
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
     mpi_errno = MPID_PSP_Reduce_scatter_block_for_cuda(sendbuf, recvbuf, recvcount,
                                                datatype, op, comm_ptr,
                                                errflag);
@@ -513,7 +513,7 @@ static inline int MPID_Scan(const void *sendbuf, void *recvbuf, int count,
 {
     int mpi_errno = MPI_SUCCESS;
 
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
     mpi_errno = MPID_PSP_Scan_for_cuda(sendbuf, recvbuf, count, datatype, op, comm,
                                errflag);
 #else
@@ -546,7 +546,7 @@ static inline int MPID_Exscan(const void *sendbuf, void *recvbuf, int count,
 {
     int mpi_errno = MPI_SUCCESS;
 
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
     mpi_errno = MPID_PSP_Exscan_for_cuda(sendbuf, recvbuf, count, datatype, op, comm,
                                  errflag);
 #else
@@ -1694,7 +1694,7 @@ fn_fail:
     goto fn_exit;
 }
 
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
 int MPIR_Reduce_local_impl(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype, MPI_Op op);
 int MPID_PSP_Reduce_local_for_cuda(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype, MPI_Op op);
 #define MPID_REDUCE_LOCAL_HOOK(inbuf, inoutbuf, count, datatype, op) \
@@ -1709,6 +1709,6 @@ int MPIDI_PSP_needs_staging(const void *ptr)
 {
 	return (ptr == MPI_IN_PLACE)? 0 : pscom_is_gpu_mem(ptr);
 }
-#endif /* MPID_PSP_WITH_CUDA_AWARENESS */
+#endif /* MPIDI_PSP_WITH_CUDA_AWARENESS */
 
 #endif /* MPID_COLL_H_INCLUDED */
