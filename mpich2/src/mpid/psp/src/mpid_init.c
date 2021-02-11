@@ -52,6 +52,7 @@ MPIDI_Process_t MPIDI_Process = {
 	dinit(msa_module_id)    -1,
 	dinit(env)		{
 		dinit(debug_level)		0,
+		dinit(debug_version)		0,
 		dinit(enable_collectives)	0,
 		dinit(enable_ondemand)		0,
 		dinit(enable_ondemand_spawn)	0,

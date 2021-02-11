@@ -75,8 +75,27 @@ void mpid_debug_init_gnuc(unsigned debug_level)
 
 void mpid_debug_init(void)
 {
+	/* evaluate environment variables */
 	pscom_env_get_uint(&MPIDI_Process.env.debug_level, "PSP_DEBUG");
+	pscom_env_get_uint(&MPIDI_Process.env.debug_version, "PSP_DEBUG_VERSION");
+
+	/* initialize the signal handler for backtracing */
 	mpid_debug_init_gnuc(MPIDI_Process.env.debug_level);
+
+	/* print the version string if requested */
+	if ((MPIDI_Process.env.debug_level > 2) ||
+	    (MPIDI_Process.env.debug_version)) {
+		fprintf(stderr, "# Version(PSMPI): %s (%s)"
+#ifdef MPID_PSP_WITH_CUDA_AWARENESS
+	       "+cuda"
+#endif
+#ifdef PSCOM_ALLIN
+	       "+allin"
+#endif
+	       "\n"
+	       ,__DATE__, MPIDI_PSP_VC_VERSION);
+
+	}
 }
 
 const char *mpid_msgtype_str(enum MPID_PSP_MSGTYPE msg_type)
