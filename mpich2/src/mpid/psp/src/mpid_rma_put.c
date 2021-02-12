@@ -46,7 +46,6 @@ int MPID_Put_generic(const void *origin_addr, int origin_count, MPI_Datatype ori
 		     MPI_Datatype target_datatype, MPIR_Win *win_ptr, MPIR_Request **request)
 {
 	int mpi_error = MPI_SUCCESS;
-	MPID_PSP_Datatype_info dt_info;
 	MPID_PSP_packed_msg_t msg;
 	MPID_Win_rank_info *ri = win_ptr->rank_info + target_rank;
 	char *target_buf;
@@ -59,7 +58,6 @@ int MPID_Put_generic(const void *origin_addr, int origin_count, MPI_Datatype ori
 		target_datatype, win_ptr);
 #endif
 	/* Datatype */
-	MPID_PSP_Datatype_get_info(target_datatype, &dt_info);
 
 	if(request) {
 		*request = MPIR_Request_create(MPIR_REQUEST_KIND__RMA);
@@ -125,7 +123,7 @@ int MPID_Put_generic(const void *origin_addr, int origin_count, MPI_Datatype ori
 	target_buf = (char *) ri->base_addr + ri->disp_unit * target_disp;
 
 
-	if (0 && MPID_PSP_Datatype_is_contig(&dt_info)) { /* ToDo: reenable pscom buildin rma_write */
+	if (0) { /* ToDo: reenable pscom buildin rma_write */
 		/* Contig message. Use pscom buildin rma */
 		pscom_request_t *req = pscom_request_create(0, 0);
 
@@ -141,7 +139,7 @@ int MPID_Put_generic(const void *origin_addr, int origin_count, MPI_Datatype ori
 
 		/* win_ptr->rma_puts_accs[target_rank]++; / ToDo: Howto receive this? */
 	} else {
-		unsigned int	encode_dt_size	= MPID_PSP_Datatype_get_size(&dt_info);
+		unsigned int	encode_dt_size	= MPID_PSP_Datatype_get_size(target_datatype);
 		unsigned int	xheader_len	= sizeof(MPID_PSCOM_XHeader_Rma_put_t) + encode_dt_size;
 		pscom_request_t *req = pscom_request_create(xheader_len, sizeof(pscom_request_put_send_t));
 		MPID_PSCOM_XHeader_Rma_put_t *xheader = &req->xheader.user.put;
@@ -155,7 +153,7 @@ int MPID_Put_generic(const void *origin_addr, int origin_count, MPI_Datatype ori
 		req->user->type.put_send.msg = msg;
 		req->user->type.put_send.win_ptr = win_ptr;
 
-		MPID_PSP_Datatype_encode(&dt_info, &xheader->encoded_type);
+		MPID_PSP_Datatype_encode(target_datatype, &xheader->encoded_type);
 
 		xheader->common.tag = 0;
 		xheader->common.context_id = 0;

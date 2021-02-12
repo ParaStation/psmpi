@@ -356,7 +356,7 @@ struct MPID_DEV_Request_recv
 	MPID_PSP_packed_msg_t msg;
 
 	/* for non-contiguous receive requests only: */
-	const char	*addr;
+	char		*addr;
 	int		count;
 	MPI_Datatype	datatype;
 

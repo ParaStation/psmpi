@@ -15,63 +15,62 @@
 
 #include "mpidimpl.h"
 
-typedef struct MPID_PSP_Datatype_info_s
+typedef struct MPIDI_PSP_Datatype_packed
 {
-	MPI_Datatype	datatype;
-	MPIR_Datatype 	*dtp;
-	unsigned	encode_size;
-	int		is_predefined; /* == is_builtin || (MPI_FLOAT_INT and co.) */
-} MPID_PSP_Datatype_info;
+	MPI_Aint    datatype;
+	int         datatype_sz;
+	void        *datatype_encoded;
+} MPIDI_PSP_Datatype_packed_t;
 
+#define MPIDI_PSP_Datatype_get_size_dt_ptr(count_, datatype_,   \
+                                       data_sz_out_, dt_ptr_)   \
+    do {                                                        \
+        if (HANDLE_IS_BUILTIN(datatype_)) {                     \
+            (dt_ptr_)        = NULL;                            \
+            (data_sz_out_)   = (size_t)(count_) *               \
+                MPIR_Datatype_get_basic_size(datatype_);        \
+        } else {                                                \
+            MPIR_Datatype_get_ptr((datatype_), (dt_ptr_));      \
+            (data_sz_out_)   = (dt_ptr_) ? (size_t)(count_) *   \
+                (dt_ptr_)->size : 0;                            \
+        }                                                       \
+    } while (0)
 
-/*
- * Get info about datatype. (initialize *info).
- */
-void MPID_PSP_Datatype_get_info(MPI_Datatype datatype, MPID_PSP_Datatype_info *info);
+#define MPIDI_PSP_Datatype_check_size(datatype_,count_,data_sz_out_)    \
+    do {                                                                \
+        if (HANDLE_IS_BUILTIN(datatype_)) {                             \
+            (data_sz_out_)   = (size_t)(count_) *                       \
+                MPIR_Datatype_get_basic_size(datatype_);                \
+        } else {                                                        \
+            MPIR_Datatype *dt_ptr_;                                     \
+            MPIR_Datatype_get_ptr((datatype_), (dt_ptr_));              \
+            (data_sz_out_)   = (dt_ptr_) ? (size_t)(count_) *           \
+                (dt_ptr_)->size : 0;                                    \
+        }                                                               \
+    } while (0)
 
 
 static inline
-int MPID_is_predefined_datatype(MPI_Datatype datatype)
+void MPIDI_PSP_Datatype_map_to_basic_type(MPI_Datatype in_datatype,
+                                          int in_count,
+                                          MPI_Datatype *out_datatype,
+                                          int *out_count)
 {
-	return (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) ||
-		(datatype == MPI_FLOAT_INT) ||
-		(datatype == MPI_DOUBLE_INT) ||
-		(datatype == MPI_LONG_INT) ||
-		(datatype == MPI_SHORT_INT) ||
-		(datatype == MPI_LONG_DOUBLE_INT);
+    MPIR_Datatype *dt_ptr;
+	uint64_t data_sz;
+	size_t basic_type_size;
+
+	MPIDI_PSP_Datatype_get_size_dt_ptr(in_count, in_datatype, data_sz, dt_ptr);
+
+    if (HANDLE_IS_BUILTIN(in_datatype)) {
+        *out_datatype = in_datatype;
+        *out_count = in_count;
+    } else {
+        *out_datatype = (dt_ptr) ? dt_ptr->basic_type : MPI_DATATYPE_NULL;
+        MPIR_Datatype_get_size_macro(*out_datatype, basic_type_size);
+        *out_count = (basic_type_size > 0) ? data_sz / basic_type_size : 0;
+    }
 }
-
-/* This is only slightly different to the macro in  mpid/common/datatype/mpid_datatype.h
-   in that it does not return MPI_DATATYPE_NULL for composed types like MPI_DOUBLE_INT */
-#define MPID_PSP_Datatype_get_basic_type(a,basic_type_) do {            \
-    void *ptr;                                                          \
-    switch (HANDLE_GET_KIND(a)) {                                       \
-        case HANDLE_KIND_DIRECT:                                        \
-            ptr = MPIR_Datatype_direct+HANDLE_INDEX(a);                 \
-            basic_type_ = ((MPIR_Datatype  *) ptr)->basic_type;          \
-            break;                                                      \
-        case HANDLE_KIND_INDIRECT:                                      \
-            ptr = ((MPIR_Datatype  *)                                    \
-                   MPIR_Handle_get_ptr_indirect(a,&MPIR_Datatype_mem)); \
-            basic_type_ = ((MPIR_Datatype  *) ptr)->basic_type;          \
-            break;                                                      \
-        case HANDLE_KIND_BUILTIN:                                       \
-            basic_type_ = a;                                            \
-            break;                                                      \
-        case HANDLE_KIND_INVALID:                                       \
-        default:                                                        \
-            basic_type_ = 0;                                            \
-            break;                                                      \
-    }                                                                   \
-} while(0)
-
-
-static inline
-int MPID_PSP_Datatype_is_contig(MPID_PSP_Datatype_info *info)
-{
-	return !info->dtp || info->dtp->is_contig;
-}
-
 
 /*
  * get the size required to encode the datatype described by info.
@@ -80,17 +79,24 @@ int MPID_PSP_Datatype_is_contig(MPID_PSP_Datatype_info *info)
  * MPID_PSP_Datatype_encode(info, encode);
  */
 static inline
-unsigned int MPID_PSP_Datatype_get_size(MPID_PSP_Datatype_info *info)
+unsigned int MPID_PSP_Datatype_get_size(MPI_Datatype datatype)
 {
-	return info->encode_size;
-}
+    MPIR_Datatype *dtp;
+    int flattened_size = 0;
 
+    if (!MPIR_DATATYPE_IS_PREDEFINED(datatype)) {
+        MPIR_Datatype_get_ptr(datatype, dtp);
+        MPIR_Typerep_flatten_size(dtp, &flattened_size);
+    }
+
+    return flattened_size + sizeof(MPIDI_PSP_Datatype_packed_t);
+}
 
 /*
  * Encode the (MPI_Datatype)datatype to *encode. Caller has to allocate at least
  * info->encode_size bytes at encode.
  */
-void MPID_PSP_Datatype_encode(MPID_PSP_Datatype_info *info, void *encode);
+void MPID_PSP_Datatype_encode(MPI_Datatype datatype, void *encode);
 
 
 /*

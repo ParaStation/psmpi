@@ -48,10 +48,14 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 			    MPIR_Request **request)
 {
 	int mpi_error = MPI_SUCCESS;
-	MPID_PSP_Datatype_info dt_info;
 	MPID_PSP_packed_msg_t msg;
 	MPID_Win_rank_info *ri = win_ptr->rank_info + target_rank;
+	uint64_t data_sz, target_data_sz;
+	MPIR_Datatype *dt_ptr;
 	char *target_buf;
+	MPI_Datatype origin_datatype_mapped;
+	MPI_Datatype origin_count_mapped;
+
 #if 0
 	fprintf(stderr, "int MPID_Accumulate(origin_addr: %p, origin_count: %d, origin_datatype: %08x,"
 		" target_rank: %d, target_disp: %d, target_count: %d, target_datatype: %08x,"
@@ -60,6 +64,12 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 		target_rank, target_disp, target_count,
 		target_datatype, op, win_ptr);
 #endif
+
+	MPIDI_PSP_Datatype_get_size_dt_ptr(origin_count, origin_datatype, data_sz, dt_ptr);
+	MPIDI_PSP_Datatype_check_size(target_datatype, target_count, target_data_sz);
+	if (data_sz == 0 || target_data_sz == 0) {
+		goto fn_completed;
+	}
 
 	if (!win_ptr->rma_accumulate_ordering && unlikely(op == MPI_REPLACE)) {
 		/*  MPI_PUT is a special case of MPI_ACCUMULATE, with the operation MPI_REPLACE.
@@ -79,9 +89,6 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 						target_datatype, win_ptr, request);
 		}
 	}
-
-	/* Datatype */
-	MPID_PSP_Datatype_get_info(target_datatype, &dt_info);
 
 	if(request) {
 		*request = MPIR_Request_create(MPIR_REQUEST_KIND__RMA);
@@ -176,7 +183,7 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 		goto fn_completed;
 	}
 
-	if (0 && MPID_PSP_Datatype_is_contig(&dt_info)) { /* ToDo: reenable pscom buildin rma_write */
+	if (0 /* &&  is continuous */) { /* ToDo: reenable pscom buildin rma_write */
 		/* Contig message. Use pscom buildin rma */
 		pscom_request_t *req = pscom_request_create(0, 0);
 
@@ -192,7 +199,7 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 
 		/* win_ptr->rma_puts_accs[target_rank]++; / ToDo: Howto receive this? */
 	} else {
-		unsigned int	encode_dt_size	= MPID_PSP_Datatype_get_size(&dt_info);
+		unsigned int	encode_dt_size	= MPID_PSP_Datatype_get_size(target_datatype);
 		unsigned int	xheader_len	= sizeof(MPID_PSCOM_XHeader_Rma_accumulate_t) + encode_dt_size;
 		pscom_request_t *req = pscom_request_create(xheader_len, sizeof(pscom_request_accumulate_send_t));
 		MPID_PSCOM_XHeader_Rma_accumulate_t *xheader = &req->xheader.user.accumulate;
@@ -206,7 +213,8 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 		req->user->type.accumulate_send.msg = msg;
 		req->user->type.accumulate_send.win_ptr = win_ptr;
 
-		MPID_PSP_Datatype_encode(&dt_info, &xheader->encoded_type);
+		/* encode the target datatype */
+		MPID_PSP_Datatype_encode(target_datatype, &xheader->encoded_type);
 
 		xheader->common.tag = 0;
 		xheader->common.context_id = 0;
@@ -448,7 +456,7 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 	if(1) { /* TODO: This implementation is just based on Get (plus some additional internal locking): */
 #ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
 		int result_addr_is_gpu_mem, compare_addr_is_gpu_mem;
-		size_t target_sz = 0;
+		size_t data_sz = 0;
 #endif
 		void *result_addr_tmp = result_addr;
 		void* compare_addr_tmp = (void*)compare_addr;
@@ -464,25 +472,21 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 		result_addr_is_gpu_mem = pscom_is_gpu_mem(result_addr);
 		compare_addr_is_gpu_mem = pscom_is_gpu_mem(compare_addr);
 		if (result_addr_is_gpu_mem || compare_addr_is_gpu_mem) {
-			int contig;
-			MPIR_Datatype *dtp;
-			MPI_Aint true_lb;
 
-			MPIDI_Datatype_get_info(1, datatype,
-				contig, target_sz,
-				dtp, true_lb);
+			MPIDI_PSP_Datatype_check_size(datatype, 1, data_sz);
 
 			if (result_addr_is_gpu_mem) {
-				result_addr_tmp = MPL_malloc(target_sz, MPL_MEM_OTHER);
-				MPID_Memcpy(result_addr_tmp, result_addr, target_sz);
+				result_addr_tmp = MPL_malloc(data_sz, MPL_MEM_RMA);
+				MPIR_Assert(result_addr_tmp);
+				MPIR_Localcopy(result_addr, 1, datatype,
+					       result_addr_tmp, 1, datatype);
 			}
 			if (compare_addr_is_gpu_mem) {
-				compare_addr_tmp = MPL_malloc(target_sz, MPL_MEM_OTHER);
-				MPID_Memcpy(compare_addr_tmp, compare_addr, target_sz);
+				compare_addr_tmp = MPL_malloc(data_sz, MPL_MEM_RMA);
+				MPIR_Assert(compare_addr_tmp);
+				MPIR_Localcopy(compare_addr, 1, datatype,
+					       compare_addr_tmp, 1, datatype);
 			}
-			// Avoid compiler warnings about unused variables:
-			(void)contig;
-			(void)true_lb;
 		}
 #endif
 
@@ -500,7 +504,7 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 #ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
 		/* did we stage any buffers? */
 		if (result_addr_is_gpu_mem) {
-			MPID_Memcpy(result_addr, result_addr_tmp, target_sz);
+			MPID_Memcpy(result_addr, result_addr_tmp, data_sz);
 			MPL_free(result_addr_tmp);
 		}
 		if (compare_addr_is_gpu_mem) {

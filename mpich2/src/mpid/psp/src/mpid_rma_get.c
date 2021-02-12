@@ -68,7 +68,6 @@ int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_da
 		     MPI_Datatype target_datatype, MPIR_Win *win_ptr, MPIR_Request **request)
 {
 	int mpi_error = MPI_SUCCESS;
-	MPID_PSP_Datatype_info dt_info;
 	MPID_Win_rank_info *ri = win_ptr->rank_info + target_rank;
 	char *target_buf;
 #if 0
@@ -79,8 +78,6 @@ int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_da
 		target_rank, target_disp, target_count,
 		target_datatype, win_ptr);
 #endif
-	/* Datatype */
-	MPID_PSP_Datatype_get_info(target_datatype, &dt_info);
 
 	if(request) {
 		*request = MPIR_Request_create(MPIR_REQUEST_KIND__RMA);
@@ -139,7 +136,7 @@ int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_da
 
 	target_buf = (char *) ri->base_addr + ri->disp_unit * target_disp;
 
-	if (0 && MPID_PSP_Datatype_is_contig(&dt_info)) { /* ToDo: reenable pscom buildin rma_write */
+	if (0 /* &&  is continuous */) { /* ToDo: reenable pscom buildin rma_write */
 /*
 		// Contig message. Use pscom buildin rma
 		pscom_request_t *req = pscom_request_create(0);
@@ -155,7 +152,7 @@ int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_da
 		// win_ptr->rma_puts_accs[target_rank]++; // ToDo: Howto receive this?
 */
 	} else {
-		unsigned int	encode_dt_size	= MPID_PSP_Datatype_get_size(&dt_info);
+		unsigned int	encode_dt_size	= MPID_PSP_Datatype_get_size(target_datatype);
 		unsigned int	xheader_len	= sizeof(MPID_PSCOM_XHeader_Rma_get_req_t) + encode_dt_size;
 
 		pscom_request_t *req = pscom_request_create(xheader_len, 0);
@@ -167,7 +164,7 @@ int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_da
 		 */
 		MPIR_Assert(xheader_len < (1<<(8*sizeof(((struct PSCOM_header_net*)0)->xheader_len))));
 
-		MPID_PSP_Datatype_encode(&dt_info, &xheader->encoded_type);
+		MPID_PSP_Datatype_encode(target_datatype, &xheader->encoded_type);
 
 		{ /* Post a receive */
 			pscom_request_t *rreq = PSCOM_REQUEST_CREATE();
