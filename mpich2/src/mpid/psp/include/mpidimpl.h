@@ -215,8 +215,10 @@ void MPID_do_recv_rma_flush_req(pscom_request_t *req);
 
 void MPID_enable_receive_dispach(pscom_socket_t *socket);
 
-void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Datatype datatype,
-			     void *msg, size_t msg_sz, MPI_Op op);
+int MPIDI_PSP_compute_acc_op(void *origin_addr, int origin_cnt,
+			      MPI_Datatype origin_datatype, void *target_addr,
+			      int target_count, MPI_Datatype target_datatype,
+			      MPI_Op op, int packed_source_buf);
 
 /* return connection_t for rank, NULL on error */
 pscom_connection_t *MPID_PSCOM_rank2connection(MPIR_Comm *comm, int rank);

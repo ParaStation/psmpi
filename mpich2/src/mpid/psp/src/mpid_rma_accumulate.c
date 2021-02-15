@@ -140,13 +140,18 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 
 	if (unlikely(mpi_error != MPI_SUCCESS)) goto err_create_packed_msg;
 
+	/* map origin datatype to its basic_type */
+	MPIDI_PSP_Datatype_map_to_basic_type(origin_datatype,
+					     origin_count,
+					     &origin_datatype_mapped,
+					     &origin_count_mapped);
+
 	MPID_PSP_packed_msg_pack(origin_addr, origin_count, origin_datatype, &msg);
 
 	target_buf = (char *) ri->base_addr + ri->disp_unit * target_disp;
 
 	/* If the acc is a local operation, do it here */
 	if (target_rank == win_ptr->rank || win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED) {
-
 		if (target_rank != win_ptr->rank) {
 			int disp_unit;
 			void* base;
@@ -158,8 +163,10 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 
 			/* accumulate may be executed concurrently --> locking required! */
 			MPID_PSP_shm_rma_mutex_lock(win_ptr);
-			MPID_PSP_packed_msg_acc(target_buf, target_count, target_datatype,
-						msg.msg, msg.msg_sz, op);
+			MPIDI_PSP_compute_acc_op(msg.msg, origin_count_mapped,
+						 origin_datatype_mapped, target_buf,
+						 target_count, target_datatype,
+						 op, TRUE);
 			MPID_PSP_shm_rma_mutex_unlock(win_ptr);
 
 		} else {
@@ -168,13 +175,17 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 
 				/* in case of a COMM_SELF clone, mutex_lock()/unlock() will just act as no-ops: */
 				MPID_PSP_shm_rma_mutex_lock(win_ptr);
-				MPID_PSP_packed_msg_acc(target_buf, target_count, target_datatype,
-							msg.msg, msg.msg_sz, op);
+				MPIDI_PSP_compute_acc_op(msg.msg, origin_count_mapped,
+							 origin_datatype_mapped, target_buf,
+							 target_count, target_datatype,
+							 op, TRUE);
 				MPID_PSP_shm_rma_mutex_unlock(win_ptr);
 			} else {
 				/* this is a local operation on non-shared memory: */
-				MPID_PSP_packed_msg_acc(target_buf, target_count, target_datatype,
-							msg.msg, msg.msg_sz, op);
+				MPIDI_PSP_compute_acc_op(msg.msg, origin_count_mapped,
+							origin_datatype_mapped, target_buf,
+							target_count, target_datatype,
+							op, TRUE);
 			}
 		}
 
@@ -223,6 +234,9 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 		xheader->common.src_rank = win_ptr->rank;
 
 		/* xheader->target_disp = target_disp; */
+		xheader->origin_datatype = origin_datatype_mapped;
+		xheader->origin_count = origin_count_mapped;
+		xheader->target_count = target_count;
 		xheader->target_count = target_count;
 		xheader->target_buf = target_buf;
 /*		xheader->epoch = ri->epoch_origin; */
@@ -299,6 +313,8 @@ void rma_accumulate_receive_done(pscom_request_t *req)
   MPI_Datatype origin_datatype	= basic buildin type;
 */
 
+	MPI_Datatype origin_datatype	= xhead_rma->origin_datatype;
+	int origin_count		= xhead_rma->origin_count;
 	void *target_buf		= xhead_rma->target_buf;
 	int target_count		= xhead_rma->target_count;
 	MPI_Datatype target_datatype	= rpr->datatype;
@@ -306,8 +322,9 @@ void rma_accumulate_receive_done(pscom_request_t *req)
 
 	MPIR_Win *win_ptr = xhead_rma->win_ptr;
 
-	MPID_PSP_packed_msg_acc(target_buf, target_count, target_datatype,
-				req->data, req->data_len, op);
+	MPIDI_PSP_compute_acc_op(req->data, origin_count, origin_datatype,
+				 target_buf, target_count, target_datatype,
+				 op, TRUE);
 
 	MPID_PSP_Datatype_release(target_datatype);
 	/* ToDo: this is not threadsave */

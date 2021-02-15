@@ -126,6 +126,8 @@ typedef struct MPID_PSCOM_XHeader_Rma_get_req {
 typedef struct MPID_PSCOM_XHeader_Rma_accumulate {
 	MPID_PSCOM_XHeader_t common;
 /*	MPI_Aint	target_disp; */
+	MPI_Datatype	origin_datatype;
+	int		origin_count;
 	int		target_count;
 	char		*target_buf;
 /*	unsigned int	epoch; */
