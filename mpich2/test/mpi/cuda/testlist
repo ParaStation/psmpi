@@ -16,9 +16,9 @@ cuda_allgather 10 env=PSP_CUDA=1 env=MPIR_CVAR_ALLGATHER_INTRA_ALGORITHM=nb env=
 cuda_allgather 10 env=PSP_CUDA=1 env=MPIR_CVAR_ALLGATHER_INTRA_ALGORITHM=nb env=MPIR_CVAR_IALLGATHER_INTRA_ALGORITHM=sched_ring
 cuda_allgather 10 env=PSP_CUDA=1 env=MPIR_CVAR_ALLGATHER_INTRA_ALGORITHM=nb env=MPIR_CVAR_IALLGATHER_INTRA_ALGORITHM=sched_recursive_doubling  env=PSP_CUDA_AWARE_SHM=0
 cuda_accfence 4 env=PSP_CUDA=1
-cuda_cas 4 mpiversion=3.0 env=PSP_CUDA=1
-cuda_cas 4 mpiversion=3.0 env=PSP_CUDA=1
-cuda_fop 4 mpiversion=3.0 env=PSP_CUDA=1
+cuda_cas 4 env=PSP_CUDA=1
+cuda_cas 4 env=PSP_CUDA=1
+cuda_fop 4 env=PSP_CUDA=1
 cuda_sync_memops_ptr_attr 16 env=PSP_CUDA=1
 cuda_sync_memops_explicitly 16 env=PSP_CUDA=1
 cuda_sync_memops_memcpy 16 env=PSP_CUDA=1

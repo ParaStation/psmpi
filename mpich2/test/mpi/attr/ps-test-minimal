@@ -20,4 +20,5 @@ keyval_double_free 1
 keyval_double_free_comm 1
 keyval_double_free_type 1
 keyval_double_free_win 1
-fkeyvaltype__STRUCT__L34 1 arg=-numtypes=4 arg=-types=MPI_CHAR,MPI_INT,MPI_INT,MPI_FLOAT arg=-counts=64,32,16,8
+fkeyvaltype 1 arg=-type=MPI_INT arg=-count=1 arg=-seed=1 arg=-testsize=1024
+fkeyvaltype 1 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=1 arg=-seed=2 arg=-testsize=1024

@@ -35,8 +35,8 @@ waitany_null 1
 # this should be run only on machines with large amount of memory (>=8GB)
 # perhaps disable in the release tarball
 #large_message 3
-mprobe 2 mpiversion=3.0
-big_count_status 1 mpiversion=3.0
+mprobe 2
+big_count_status 1
 many_isend 3
 manylmt 2
 huge_underflow 2
@@ -46,18 +46,15 @@ dtype_send 2
 recv_any 2
 irecv_any 2
 large_tag 2
-pingping__BASIC__L28 2 arg=-type=MPI_CHAR arg=-sendcnt=32 arg=-recvcnt=32 timeLimit=1200
-pingping__BASIC__L28 2 arg=-type=MPI_CHAR arg=-sendcnt=32 arg=-recvcnt=64 timeLimit=1200
-pingping__BASIC__L28 2 arg=-type=MPI_CHAR arg=-sendcnt=131072 arg=-recvcnt=131072 timeLimit=1200
-pingping__BASIC__L28 2 arg=-type=MPI_CHAR arg=-sendcnt=131072 arg=-recvcnt=262144 timeLimit=1200
-sendrecv1__BASIC__L29 4 arg=-type=MPI_CHAR arg=-sendcnt=64 arg=-recvcnt=64
-sendrecv1__BASIC__L29 4 arg=-type=MPI_CHAR arg=-sendcnt=64 arg=-recvcnt=512
-sendrecv1__BASIC__L29 4 arg=-type=MPI_CHAR arg=-sendcnt=32768 arg=-recvcnt=32768
-sendrecv1__BASIC__L29 4 arg=-type=MPI_CHAR arg=-sendcnt=32768 arg=-recvcnt=262144
-sendself__BASIC__L30 1 arg=-type=MPI_CHAR arg=-sendcnt=64 arg=-recvcnt=64
-sendself__BASIC__L30 1 arg=-type=MPI_CHAR arg=-sendcnt=64 arg=-recvcnt=512
-sendself__BASIC__L30 1 arg=-type=MPI_CHAR arg=-sendcnt=32768 arg=-recvcnt=32768
-sendself__BASIC__L30 1 arg=-type=MPI_CHAR arg=-sendcnt=32768 arg=-recvcnt=262144
-sendrecv1__STRUCT__L38 4 arg=-numtypes=4 arg=-types=MPI_CHAR,MPI_INT,MPI_INT,MPI_FLOAT arg=-counts=64,32,16,8
-sendself__STRUCT__L39 1 arg=-numtypes=4 arg=-types=MPI_CHAR,MPI_INT,MPI_INT,MPI_FLOAT arg=-counts=64,32,16,8
-pingping__STRUCT__L40 2 arg=-numtypes=4 arg=-types=MPI_CHAR,MPI_INT,MPI_INT,MPI_FLOAT arg=-counts=64,32,16,8
+pingping 2 arg=-type=MPI_INT arg=-sendcnt=512 arg=-recvcnt=512 arg=-seed=67 arg=-testsize=8
+pingping 2 arg=-type=MPI_INT arg=-sendcnt=512 arg=-recvcnt=1024 arg=-seed=73 arg=-testsize=8
+pingping 2 arg=-type=MPI_INT arg=-sendcnt=262144 arg=-recvcnt=262144 arg=-seed=79 arg=-testsize=8
+pingping 2 arg=-type=MPI_INT arg=-sendcnt=262144 arg=-recvcnt=524288 arg=-seed=85 arg=-testsize=8
+sendrecv1 2 arg=-type=MPI_INT arg=-sendcnt=512 arg=-recvcnt=512 arg=-seed=235 arg=-testsize=32
+sendrecv1 2 arg=-type=MPI_INT arg=-sendcnt=512 arg=-recvcnt=1024 arg=-seed=241 arg=-testsize=32
+sendrecv1 2 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-sendcnt=262144 arg=-recvcnt=262144 arg=-seed=319 arg=-testsize=32
+sendrecv1 2 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-sendcnt=262144 arg=-recvcnt=524288 arg=-seed=325 arg=-testsize=32
+sendself 1 arg=-type=MPI_INT arg=-sendcnt=1 arg=-recvcnt=1 arg=-seed=367 arg=-testsize=1024
+sendself 1 arg=-type=MPI_INT arg=-sendcnt=1 arg=-recvcnt=2 arg=-seed=373 arg=-testsize=1024
+sendself 1 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-sendcnt=65530 arg=-recvcnt=65530 arg=-seed=499 arg=-testsize=32
+sendself 1 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-sendcnt=65530 arg=-recvcnt=131060 arg=-seed=505 arg=-testsize=32
