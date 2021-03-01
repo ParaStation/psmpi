@@ -178,6 +178,7 @@ int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int t
 /* Control messages */
 void MPID_PSP_SendCtrl(int tag, int context_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype);
 void MPID_PSP_RecvCtrl(int tag, int context_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype);
+void MPID_PSP_IprobeCtrl(int tag, int context_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype, int *flag);
 
 /* from mpid_rma_put.c: */
 pscom_request_t *MPID_do_recv_rma_put(pscom_connection_t *con, MPID_PSCOM_XHeader_Rma_put_t *xhead_rma);

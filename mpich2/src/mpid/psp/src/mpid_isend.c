@@ -280,10 +280,9 @@ int accept_ctrl(pscom_request_t *req,
 		(xhead->context_id == xhead_net->context_id);
 }
 
-
-void MPID_PSP_RecvCtrl(int tag, int recvcontext_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype)
+static
+void prepare_ctrl_recvreq(pscom_request_t *req, int tag, int recvcontext_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype)
 {
-	pscom_request_t *req = PSCOM_REQUEST_CREATE();
 	MPID_PSCOM_XHeader_t *xhead = &req->xheader.user.common;
 
 	xhead->tag = tag;
@@ -303,12 +302,29 @@ void MPID_PSP_RecvCtrl(int tag, int recvcontext_id, int src_rank, pscom_connecti
 	req->data = NULL;
 	req->data_len = 0;
 	req->xheader_len = sizeof(*xhead);
+}
+
+void MPID_PSP_RecvCtrl(int tag, int recvcontext_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype)
+{
+	pscom_request_t *req = PSCOM_REQUEST_CREATE();
+	MPID_PSCOM_XHeader_t *xhead = &req->xheader.user.common;
+
+	prepare_ctrl_recvreq(req, tag, recvcontext_id, src_rank, con, msgtype);
 
 	pscom_post_recv(req);
 	MPID_PSP_LOCKFREE_CALL(pscom_wait(req));
 	pscom_request_free(req);
 }
 
+void MPID_PSP_IprobeCtrl(int tag, int recvcontext_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype, int *flag)
+{
+	pscom_request_t *req = PSCOM_REQUEST_CREATE();
+
+	prepare_ctrl_recvreq(req, tag, recvcontext_id, src_rank, con, msgtype);
+
+	*flag = pscom_iprobe(req);
+	pscom_request_free(req);
+}
 
 int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
 	       int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request)

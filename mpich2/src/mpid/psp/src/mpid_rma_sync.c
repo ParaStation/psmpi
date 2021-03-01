@@ -214,18 +214,10 @@ int MPID_Win_post(MPIR_Group *group_ptr, int assert, MPIR_Win *win_ptr)
 	ranks = get_group_ranks(win_ptr->comm_ptr, group_ptr);
 	for (i = 0; i < ranks_sz; i++) {
 		int rank = ranks[i];
-		int rc;
-		MPIR_Request * sreq = NULL;
+		pscom_connection_t *con = MPID_PSCOM_rank2connection(win_ptr->comm_ptr, rank);
 
-		/* Send TAG_POST to MPID_Win_start of rank; */
-		rc = MPID_Send(&dummy, 0 , MPI_INT, rank, TAG_POST, win_ptr->comm_ptr,
-			       MPIR_CONTEXT_INTRA_PT2PT, &sreq);
-		if (rc != MPI_SUCCESS) {
-			mpi_errno = rc;
-		}
-		if(sreq) {
-			MPIR_Request_free(sreq);
-		}
+		/* Send TAG_POST to MPID_Win_start of rank: */
+		MPID_PSP_SendCtrl(TAG_POST, win_ptr->comm_ptr->context_id + MPIR_CONTEXT_INTRA_PT2PT, win_ptr->comm_ptr->rank, con, MPID_PSP_MSGTYPE_RMA_SYNC);
 	}
 
 	win_ptr->ranks_post = ranks;
@@ -275,19 +267,10 @@ int MPID_Win_start(MPIR_Group *group_ptr, int assert, MPIR_Win *win_ptr)
 	ranks = get_group_ranks(win_ptr->comm_ptr, group_ptr);
 	for (i = 0; i < ranks_sz; i++) {
 		int rank = ranks[i];
-		MPI_Status status;
-		int rc;
-		MPIR_Request * rreq = NULL;
+		pscom_connection_t *con = MPID_PSCOM_rank2connection(win_ptr->comm_ptr, rank);
 
-		/* Recv TAG_POST from MPID_Win_post of rank; */
-		rc = MPID_Recv(&dummy, 0, MPI_INT, rank, TAG_POST, win_ptr->comm_ptr,
-			       MPIR_CONTEXT_INTRA_PT2PT, &status, &rreq);
-		if (rc != MPI_SUCCESS) {
-			mpi_errno = rc;
-		}
-		if(rreq) {
-			MPIR_Request_free(rreq);
-		}
+		/* Recv TAG_POST from MPID_Win_post of rank: */
+		MPID_PSP_RecvCtrl(TAG_POST, win_ptr->comm_ptr->recvcontext_id + MPIR_CONTEXT_INTRA_PT2PT, rank, con, MPID_PSP_MSGTYPE_RMA_SYNC);
 	}
 
 	win_ptr->ranks_start = ranks;
@@ -338,18 +321,10 @@ int MPID_Win_complete(MPIR_Win *win_ptr)
 
 	for (i = 0; i < ranks_sz; i++) {
 		int rank = ranks[i];
-		int rc;
-		MPIR_Request *sreq = NULL;
+		pscom_connection_t *con = MPID_PSCOM_rank2connection(win_ptr->comm_ptr, rank);
 
-		/* Send TAG_COMPLETE to MPID_Win_wait of rank */
-		rc = MPID_Send(&dummy, 0 , MPI_INT, rank, TAG_COMPLETE, win_ptr->comm_ptr,
-			       MPIR_CONTEXT_INTRA_PT2PT, &sreq);
-		if (rc != MPI_SUCCESS) {
-			mpi_errno = rc;
-		}
-		if(sreq) {
-			MPIR_Request_free(sreq);
-		}
+		/* Send TAG_COMPLETE to MPID_Win_wait of rank: */
+		MPID_PSP_SendCtrl(TAG_COMPLETE, win_ptr->comm_ptr->context_id + MPIR_CONTEXT_INTRA_PT2PT, win_ptr->comm_ptr->rank, con, MPID_PSP_MSGTYPE_RMA_SYNC);
 	}
 
 	if (DEBUG_START_POST) { /* Debug: */
@@ -396,20 +371,10 @@ int MPID_Win_wait(MPIR_Win *win_ptr)
 
 	for (i = 0; i < ranks_sz; i++) {
 		int rank = ranks[i];
-		MPI_Status status;
-		int rc;
-		MPIR_Request *rreq = NULL;
+		pscom_connection_t *con = MPID_PSCOM_rank2connection(win_ptr->comm_ptr, rank);
 
-		/* Recv TAG_COMPLETE from MPID_Win_complete of rank */
-		rc = MPID_Recv(&dummy, 0, MPI_INT, rank, TAG_COMPLETE, win_ptr->comm_ptr,
-			       MPIR_CONTEXT_INTRA_PT2PT, &status, &rreq);
-		if (rc != MPI_SUCCESS) {
-			/* Set mpi_errno, but stay in the loop and receive all other TAG_COMPLETE's */
-			mpi_errno = rc;
-		}
-		if(rreq) {
-			MPIR_Request_free(rreq);
-		}
+		/* Recv TAG_COMPLETE from MPID_Win_complete of rank: */
+		MPID_PSP_RecvCtrl(TAG_COMPLETE, win_ptr->comm_ptr->recvcontext_id + MPIR_CONTEXT_INTRA_PT2PT, rank, con, MPID_PSP_MSGTYPE_RMA_SYNC);
 	}
 
 	if (DEBUG_START_POST) { /* Debug: */
@@ -451,15 +416,11 @@ int MPID_Win_test(MPIR_Win *win_ptr, int *flag)
 		MPI_Status status;
 		int rc;
 		int aflag;
+		pscom_connection_t *con = MPID_PSCOM_rank2connection(win_ptr->comm_ptr, rank);
 
-		/* Recv TAG_COMPLETE from MPID_Win_complete of rank */
-		rc = MPID_Iprobe(rank, TAG_COMPLETE, win_ptr->comm_ptr, MPIR_CONTEXT_INTRA_PT2PT, &aflag, &status);
+		/* Recv TAG_COMPLETE from MPID_Win_complete of rank: */
+		MPID_PSP_IprobeCtrl(TAG_COMPLETE, win_ptr->comm_ptr->recvcontext_id + MPIR_CONTEXT_INTRA_PT2PT, rank, con, MPID_PSP_MSGTYPE_RMA_SYNC, &aflag);
 
-		if (rc != MPI_SUCCESS) {
-			mpi_errno = rc;
-			ret_flag = 0;
-			break;
-		}
 		if (!aflag) {
 			ret_flag = 0;
 			break;
