@@ -36,7 +36,7 @@ int MPID_Cancel_send(MPIR_Request * sreq)
 
 			if (xhead->type == MPID_PSP_MSGTYPE_DATA_REQUEST_ACK) {
 				/* request is a synchronous send. */
-				MPID_PSP_SendCtrl(xhead->tag, xhead->context_id, sreq->comm->rank,
+				MPIDI_PSP_SendCtrl(xhead->tag, xhead->context_id, sreq->comm->rank,
 						  req->connection, MPID_PSP_MSGTYPE_CANCEL_DATA_REQUEST_ACK);
 			}
 #if 0
@@ -55,7 +55,7 @@ int MPID_Cancel_send(MPIR_Request * sreq)
 				MPID_PSP_RecvAck(sreq);
 
 				/* send the anti-send message: */
-				MPID_PSP_SendCtrl(xhead->tag, xhead->context_id, sreq->comm->rank,
+				MPIDI_PSP_SendCtrl(xhead->tag, xhead->context_id, sreq->comm->rank,
 						  req->connection, MPID_PSP_MSGTYPE_CANCEL_DATA_REQUEST_ACK);
 			}
 #endif
