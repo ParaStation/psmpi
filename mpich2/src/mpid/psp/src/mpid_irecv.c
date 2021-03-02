@@ -86,7 +86,7 @@ void receive_done(pscom_request_t *request)
 
 		if (unlikely(xhead->type == MPID_PSP_MSGTYPE_DATA_REQUEST_ACK)) {
 			/* synchronous send : send ack */
-			MPID_PSP_SendCtrl(xhead->tag, xhead->context_id, req->comm->rank,
+			MPIDI_PSP_SendCtrl(xhead->tag, xhead->context_id, req->comm->rank,
 					  request->connection, MPID_PSP_MSGTYPE_DATA_ACK);
 		}
 	} else if (request->state & PSCOM_REQ_STATE_TRUNCATED) {
@@ -172,13 +172,13 @@ void MPID_do_recv_cancel_data_request_ack(pscom_request_t *cancel_req)
 		if (xhead->type != MPID_PSP_MSGTYPE_DATA_REQUEST_ACK) { /* XXX */
 			/* this was NOT a synchronous send. */
 			/* send common ack to signal the failed cancel request: */
-			MPID_PSP_SendCtrl(xhead->tag, xhead->context_id, MPI_PROC_NULL,
+			MPIDI_PSP_SendCtrl(xhead->tag, xhead->context_id, MPI_PROC_NULL,
 					  cancel_req->connection, MPID_PSP_MSGTYPE_DATA_ACK);
 		}
 #endif
 	} else {
 		/* send cancel ack */
-		MPID_PSP_SendCtrl(xhead->tag, xhead->context_id, MPI_PROC_NULL,
+		MPIDI_PSP_SendCtrl(xhead->tag, xhead->context_id, MPI_PROC_NULL,
 				  cancel_req->connection, MPID_PSP_MSGTYPE_CANCEL_DATA_ACK);
 		if (pscom_req_is_done(cancel_req)) {
 			pscom_request_free(cancel_req);

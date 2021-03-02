@@ -528,9 +528,9 @@ void warmup_intercomm_send(MPIR_Comm *comm)
 		/* printf("#S%d: Send #%d to #%d ctx:%u rctx:%u\n",
 		   comm->rank, comm->rank, rank, comm->context_id, comm->recvcontext_id); */
 		pscom_connection_t *con = MPID_PSCOM_rank2connection(comm, rank);
-		MPID_PSP_SendCtrl(17 /* tag */, comm->context_id, comm->rank /* src_rank */,
+		MPIDI_PSP_SendCtrl(MPIDI_PSP_CTRL_TAG__WARMUP__PING /* tag */, comm->context_id, comm->rank /* src_rank */,
 				  con, MPID_PSP_MSGTYPE_DATA_ACK);
-		MPID_PSP_RecvCtrl(15 /* tag */, comm->recvcontext_id, rank /* src_rank */,
+		MPIDI_PSP_RecvCtrl(MPIDI_PSP_CTRL_TAG__WARMUP__PONG /* tag */, comm->recvcontext_id, rank /* src_rank */,
 				  con, MPID_PSP_MSGTYPE_DATA_ACK);
 	}
 }
@@ -547,10 +547,10 @@ void warmup_intercomm_recv(MPIR_Comm *comm)
 		/* printf("#R%d: Recv #%d to #%d ctx:%u rctx:%u\n",
 		   comm->rank, rank, comm->rank, comm->context_id, comm->recvcontext_id); */
 		pscom_connection_t *con = MPID_PSCOM_rank2connection(comm, rank);
-		MPID_PSP_RecvCtrl(17 /* tag */, comm->recvcontext_id, rank /* src_rank */,
-				  con, MPID_PSP_MSGTYPE_DATA_ACK);
-		MPID_PSP_SendCtrl(15 /* tag */, comm->context_id, comm->rank /* src_rank */,
-				  con, MPID_PSP_MSGTYPE_DATA_ACK);
+		MPIDI_PSP_RecvCtrl(MPIDI_PSP_CTRL_TAG__WARMUP__PING /* tag */, comm->recvcontext_id, rank /* src_rank */,
+				   con, MPID_PSP_MSGTYPE_DATA_ACK);
+		MPIDI_PSP_SendCtrl(MPIDI_PSP_CTRL_TAG__WARMUP__PONG /* tag */, comm->context_id, comm->rank /* src_rank */,
+				   con, MPID_PSP_MSGTYPE_DATA_ACK);
 	}
 }
 

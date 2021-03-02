@@ -176,8 +176,14 @@ int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int t
 */
 
 /* Control messages */
-void MPID_PSP_SendCtrl(int tag, int context_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype);
-void MPID_PSP_RecvCtrl(int tag, int context_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype);
+#define MPIDI_PSP_CTRL_TAG__WIN__POST	  11
+#define MPIDI_PSP_CTRL_TAG__WIN__COMPLETE 12
+#define MPIDI_PSP_CTRL_TAG__WARMUP__PING  15
+#define MPIDI_PSP_CTRL_TAG__WARMUP__PONG  17
+void MPIDI_PSP_SendCtrl(int tag, int context_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype);
+void MPIDI_PSP_RecvCtrl(int tag, int context_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype);
+void MPIDI_PSP_IprobeCtrl(int tag, int context_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype, int *flag);
+void MPIDI_PSP_SendRmaCtrl(MPIR_Win *win_ptr, MPIR_Comm *comm, pscom_connection_t *con, int dest_rank, enum MPID_PSP_MSGTYPE msgtype);
 
 /* from mpid_rma_put.c: */
 pscom_request_t *MPID_do_recv_rma_put(pscom_connection_t *con, MPID_PSCOM_XHeader_Rma_put_t *xhead_rma);
