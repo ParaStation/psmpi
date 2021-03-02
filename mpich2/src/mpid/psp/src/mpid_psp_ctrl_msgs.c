@@ -60,23 +60,23 @@ void prepare_ctrl_recvreq(pscom_request_t *req, int tag, int recvcontext_id, int
 {
 	MPID_PSCOM_XHeader_t *xhead = &req->xheader.user.common;
 
+	/* prepare the xheader */
 	xhead->tag = tag;
 	xhead->context_id = recvcontext_id;
 	xhead->type = msgtype;
 	xhead->_reserved_ = 0;
 	xhead->src_rank = src_rank;
 
-	if(src_rank != MPI_ANY_SOURCE) {
-		req->connection = con;
-	} else {
-		req->connection = NULL;
-		req->socket = MPIR_Process.comm_world->pscom_socket;
-	}
-
+	/* prepare the pscom request */
 	req->ops.recv_accept = accept_ctrl;
 	req->data = NULL;
 	req->data_len = 0;
 	req->xheader_len = sizeof(*xhead);
+	req->connection = con;
+
+	if(src_rank == MPI_ANY_SOURCE) {
+		req->socket = MPIR_Process.comm_world->pscom_socket;
+	}
 }
 
 void MPIDI_PSP_RecvCtrl(int tag, int recvcontext_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype)
@@ -117,5 +117,3 @@ void MPIDI_PSP_SendRmaCtrl(MPIR_Win *win_ptr, MPIR_Comm *comm, pscom_connection_
 
 	pscom_send(con, &xhead, sizeof(xhead), NULL, 0);
 }
-
-
