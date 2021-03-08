@@ -68,7 +68,7 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 	MPIDI_PSP_Datatype_get_size_dt_ptr(origin_count, origin_datatype, data_sz, dt_ptr);
 	MPIDI_PSP_Datatype_check_size(target_datatype, target_count, target_data_sz);
 	if (data_sz == 0 || target_data_sz == 0) {
-		goto fn_completed;
+		goto fn_immed_completed;
 	}
 
 	if (!win_ptr->rma_accumulate_ordering && unlikely(op == MPI_REPLACE)) {
@@ -281,10 +281,22 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 
 fn_exit:
 	return MPI_SUCCESS;
+	/* --- */
+fn_immed_completed:
+	if (request && !(*request)) {
+		*request = MPIR_Request_create_complete(MPIR_REQUEST_KIND__RMA);
+		MPIR_ERR_CHKANDSTMT((*request) == NULL, mpi_error,
+				    MPIX_ERR_NOREQ,
+				    goto err_exit, "**nomemreq");
+	}
+
+	return MPI_SUCCESS;
+	/* --- */
 fn_completed:
-	if(request) {
+	if (request) {
 		MPIDI_PSP_Request_set_completed(*request);
 	}
+
 	return MPI_SUCCESS;
 	/* --- */
 err_exit:
