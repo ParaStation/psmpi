@@ -183,7 +183,6 @@ int MPID_Win_post(MPIR_Group *group_ptr, int assert, MPIR_Win *win_ptr)
 	int *ranks;
 	int ranks_sz = group_ptr->size;
 	int i;
-	int dummy;
 	int mpi_errno = MPI_SUCCESS;
 
 #if 0
@@ -236,7 +235,6 @@ int MPID_Win_start(MPIR_Group *group_ptr, int assert, MPIR_Win *win_ptr)
 	int *ranks;
 	int ranks_sz = group_ptr->size;
 	int i;
-	int dummy;
 	int mpi_errno = MPI_SUCCESS;
 
 #if 0
@@ -289,7 +287,6 @@ int MPID_Win_complete(MPIR_Win *win_ptr)
 	int *ranks = win_ptr->ranks_start;
 	int ranks_sz = win_ptr->ranks_start_sz;
 	int i;
-	int dummy;
 	int mpi_errno = MPI_SUCCESS;
 
 #if 0
@@ -344,7 +341,6 @@ int MPID_Win_wait(MPIR_Win *win_ptr)
 	int *ranks = win_ptr->ranks_post;
 	int ranks_sz = win_ptr->ranks_post_sz;
 	int i;
-	int dummy;
 	int mpi_errno = MPI_SUCCESS;
 
 #if 0
@@ -409,8 +405,6 @@ int MPID_Win_test(MPIR_Win *win_ptr, int *flag)
 
 	for (i = 0; i < ranks_sz; i++) {
 		int rank = ranks[i];
-		MPI_Status status;
-		int rc;
 		int aflag;
 		pscom_connection_t *con = MPID_PSCOM_rank2connection(win_ptr->comm_ptr, rank);
 
