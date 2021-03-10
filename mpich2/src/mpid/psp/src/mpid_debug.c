@@ -84,17 +84,24 @@ void mpid_debug_init(void)
 
 	/* print the version string if requested */
 	if ((MPIDI_Process.env.debug_level > 2) ||
-	    (MPIDI_Process.env.debug_version)) {
-		fprintf(stderr, "# Version(PSMPI): %s (%s)"
-#ifdef MPID_PSP_WITH_CUDA_AWARENESS
-	       "+cuda"
+	    (MPIDI_Process.env.debug_version))
+	{
+		fprintf(stderr, "# Version(PSMPI): %s (%s)+confset(%s)"
+#ifdef MPICH_IS_THREADED
+				"+threaded(%d)"
+#endif
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
+				"+cuda"
 #endif
 #ifdef PSCOM_ALLIN
-	       "+allin"
+				"+allin"
 #endif
-	       "\n"
-	       ,__DATE__, MPIDI_PSP_VC_VERSION);
-
+				"\n",
+			__DATE__, MPIDI_PSP_VC_VERSION, MPIDI_PSP_CONFSET
+#ifdef MPICH_IS_THREADED
+			, MPIR_ThreadInfo.isThreaded
+#endif
+		);
 	}
 }
 

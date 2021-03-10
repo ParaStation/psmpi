@@ -15,6 +15,13 @@ AM_CONDITIONAL([BUILD_PSP],[test "$device_name" = "psp"])
 AM_COND_IF([BUILD_PSP],[
 AC_MSG_NOTICE([RUNNING PREREQ FOR PSP DEVICE])
 
+AC_ARG_WITH(psp-confset,
+	AC_HELP_STRING(
+		[--with-psp-confset=confset],
+		[Define the configuration set to be used for the PSP device]
+		),,with_psp_confset="default")
+AC_DEFINE_UNQUOTED([MPIDI_PSP_CONFSET], ["$with_psp_confset"], [The configuration set of the PSP layer])
+
 # maximum length of a processor name, as used by
 # MPI_GET_PROCESSOR_NAME
 MPID_MAX_PROCESSOR_NAME=1024
