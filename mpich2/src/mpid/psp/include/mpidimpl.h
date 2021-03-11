@@ -167,6 +167,17 @@ extern MPIDI_Process_t MPIDI_Process;
 int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level);
 #endif
 
+int MPIDI_PSP_Isend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
+		    int dest, int tag, MPIR_Comm *comm, int context_offset,
+		    MPIR_Request **request);
+int MPIDI_PSP_Issend(const void * buf, MPI_Aint count, MPI_Datatype datatype,
+		     int rank, int tag, MPIR_Comm * comm, int context_offset,
+		     MPIR_Request ** request);
+int MPIDI_PSP_Irecv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
+		    MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
+int MPIDI_PSP_Imrecv(void *buf, int count, MPI_Datatype datatype, MPIR_Request *message,
+		     MPIR_Request **request);
+
 void MPID_PSP_RecvAck(MPIR_Request *send_req);
 /* persistent receives */
 int MPID_PSP_Recv_start(MPIR_Request *request);

@@ -84,7 +84,7 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 	MPID_PSP_Datatype_get_info(target_datatype, &dt_info);
 
 	if(request) {
-		*request = MPIR_Request_create(MPIR_REQUEST_KIND__SEND);
+		*request = MPIR_Request_create(MPIR_REQUEST_KIND__RMA);
 		(*request)->comm = win_ptr->comm_ptr;
 		MPIR_Comm_add_ref(win_ptr->comm_ptr);
 	}
@@ -359,7 +359,7 @@ int MPID_Get_accumulate_generic(const void *origin_addr, int origin_count,
 	if (unlikely(target_rank == MPI_PROC_NULL)) {
 
 		if(request) {
-			*request = MPIR_Request_create(MPIR_REQUEST_KIND__SEND);
+			*request = MPIR_Request_create(MPIR_REQUEST_KIND__RMA);
 			(*request)->comm = win_ptr->comm_ptr;
 			MPIR_Comm_add_ref(win_ptr->comm_ptr);
 			MPIDI_PSP_Request_set_completed(*request);

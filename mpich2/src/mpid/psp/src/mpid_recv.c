@@ -20,7 +20,8 @@ int MPID_Recv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int t
 	int mpi_errno;
 /*	printf("#%d ps--- %s() called\n", MPIDI_Process.my_pg_rank, __func__); */
 
-	mpi_errno = MPID_Irecv(buf, count, datatype, rank, tag, comm, context_offset, request);
+	mpi_errno = MPIDI_PSP_Irecv(buf, count, datatype, rank, tag, comm, context_offset, request);
+
 	if (mpi_errno == MPI_SUCCESS) {
 		mpi_errno = MPIDI_PSP_Wait(*request);
 	}

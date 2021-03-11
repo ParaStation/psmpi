@@ -340,8 +340,8 @@ void prepare_source(MPIR_Request *req, pscom_connection_t *con, pscom_socket_t *
 }
 
 
-int MPID_Irecv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-	       MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
+int MPIDI_PSP_Irecv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
+		    MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
 {
 	MPIR_Request *req;
 	pscom_connection_t *con;

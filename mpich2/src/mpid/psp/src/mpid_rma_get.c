@@ -83,7 +83,7 @@ int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_da
 	MPID_PSP_Datatype_get_info(target_datatype, &dt_info);
 
 	if(request) {
-		*request = MPIR_Request_create(MPIR_REQUEST_KIND__RECV);
+		*request = MPIR_Request_create(MPIR_REQUEST_KIND__RMA);
 		(*request)->comm = win_ptr->comm_ptr;
 		MPIR_Comm_add_ref(win_ptr->comm_ptr);
 	}

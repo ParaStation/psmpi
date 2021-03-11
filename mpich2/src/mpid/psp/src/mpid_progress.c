@@ -16,12 +16,17 @@
 
 #define PSP_NBC_PROGRESS_DELAY 100
 
-static inline
-void MPID_DEV_Request_common_wait(MPIR_Request *req)
+int MPIDI_PSP_Wait(MPIR_Request *request)
 {
 	static unsigned int counter_to_nbc_progress = 0;
 	int made_progress;
-	pscom_request_t *preq = req->dev.kind.common.pscom_req;
+	pscom_request_t *preq = request->dev.kind.common.pscom_req;
+
+	assert(request->kind != MPIR_REQUEST_KIND__UNDEFINED);
+	assert(request->kind != MPIR_REQUEST_KIND__GREQUEST);
+	assert(request->kind != MPIR_REQUEST_KIND__COLL);
+	assert(request->kind != MPIR_REQUEST_KIND__MPROBE);
+	assert(request->kind != MPIR_REQUEST_KIND__LAST);
 
 	MPID_PSP_LOCKFREE_CALL(pscom_wait(preq));
 
@@ -33,80 +38,8 @@ void MPID_DEV_Request_common_wait(MPIR_Request *req)
 		if(made_progress) counter_to_nbc_progress--;
 		else counter_to_nbc_progress = 0;
 	}
-}
 
-
-static inline
-void MPID_DEV_Request_send_wait(MPIR_Request *req)
-{
-	MPID_DEV_Request_common_wait(req);
-}
-
-
-static inline
-void MPID_DEV_Request_recv_wait(MPIR_Request *req)
-{
-	MPID_DEV_Request_common_wait(req);
-}
-
-
-static inline
-void MPID_DEV_Request_psend_wait(MPIR_Request *req)
-{
-	MPID_DEV_Request_send_wait(req);
-}
-
-
-static inline
-void MPID_DEV_Request_precv_wait(MPIR_Request *req)
-{
-	MPID_DEV_Request_recv_wait(req);
-}
-
-
-/* Dont use request after MPID_DEV_Request_wait(), until you hold one additional ref! */
-static inline
-void MPID_DEV_Request_wait(MPIR_Request *req)
-{
-	switch (req->kind) {
-	case MPIR_REQUEST_KIND__RECV:
-		MPID_DEV_Request_recv_wait(req);
-		break;
-	case MPIR_REQUEST_KIND__SEND:
-		MPID_DEV_Request_send_wait(req);
-		break;
-	case MPIR_REQUEST_KIND__PREQUEST_RECV:
-		MPID_DEV_Request_precv_wait(req);
-		break;
-	case MPIR_REQUEST_KIND__PREQUEST_SEND:
-		MPID_DEV_Request_psend_wait(req);
-		break;
-/*
-	case MPIR_REQUEST_KIND__MULTI:
-			MPID_DEV_Request_multi_wait(req);
-			break;
-*/
-	case MPIR_REQUEST_KIND__COLL:
-		/* ToDo: Unhandled request type!!! */
-#		define MPID_COLL_REQUEST_NOT_IMPLEMENTED 0
-		assert(MPID_COLL_REQUEST_NOT_IMPLEMENTED);
-		break;
-	case MPIR_REQUEST_KIND__MPROBE:
-		/* ToDo: Unhandled request type!!! */
-#		define MPIR_REQUEST_KIND__MPROBE_NOT_IMPLEMENTED 0
-		assert(MPIR_REQUEST_KIND__MPROBE_NOT_IMPLEMENTED);
-		break;
-	case MPIR_REQUEST_KIND__RMA:
-		/* ToDo: Unhandled request type!!! */
-#		define MPIR_REQUEST_KIND__RMA_NOT_IMPLEMENTED 0
-		assert(MPIR_REQUEST_KIND__RMA_NOT_IMPLEMENTED);
-		break;
-	case MPIR_REQUEST_KIND__GREQUEST:
-	case MPIR_REQUEST_KIND__UNDEFINED:
-	case MPIR_REQUEST_KIND__LAST:
-		assert(0);
-		break;
-	}
+	return MPI_SUCCESS;
 }
 
 
@@ -190,18 +123,5 @@ int MPIDI_PSP_Progress_test(void)
 int MPIDI_PSP_Progress_poke(void)
 {
 	MPID_Progress_test();
-	return MPI_SUCCESS;
-}
-
-
-
-
-int MPIDI_PSP_Wait(MPIR_Request *request)
-{
-	MPID_DEV_Request_wait(request);
-
-	/* Dont use request after MPID_DEV_Request_wait(), until you hold one additional ref! */
-	/* assert(MPID_Request_is_complete(request)); */
-
 	return MPI_SUCCESS;
 }

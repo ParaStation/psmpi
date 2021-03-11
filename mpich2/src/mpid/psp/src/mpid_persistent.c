@@ -121,7 +121,7 @@ int MPID_Send_init(const void * buf, int count, MPI_Datatype datatype,
 		   MPIR_Request ** request)
 {
 	return MPID_PSP_persistent_init(buf, count, datatype, rank, tag, comm,
-					context_offset, request, MPID_Isend, MPIR_REQUEST_KIND__PREQUEST_SEND);
+					context_offset, request, MPIDI_PSP_Isend, MPIR_REQUEST_KIND__PREQUEST_SEND);
 }
 
 
@@ -130,7 +130,7 @@ int MPID_Ssend_init(const void * buf, int count, MPI_Datatype datatype,
 		    MPIR_Request ** request)
 {
 	return MPID_PSP_persistent_init(buf, count, datatype, rank, tag, comm,
-					context_offset, request, MPID_Issend, MPIR_REQUEST_KIND__PREQUEST_SEND);
+					context_offset, request, MPIDI_PSP_Issend, MPIR_REQUEST_KIND__PREQUEST_SEND);
 }
 
 

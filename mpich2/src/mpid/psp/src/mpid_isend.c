@@ -240,7 +240,7 @@ err_prepare_data_failed:
 
 
 
-int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
+int MPIDI_PSP_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
 	       int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
 {
 	int mpi_errno;
@@ -250,7 +250,7 @@ int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank
 }
 
 
-int MPID_Issend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
+int MPIDI_PSP_Issend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
 		MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
 {
 	int mpi_errno;

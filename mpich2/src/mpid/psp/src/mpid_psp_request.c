@@ -72,42 +72,19 @@ void MPID_DEV_Request_coll_destroy(MPIR_Request *req)
 /* ------------------------------------------------------------------------- */
 void MPID_Request_create_hook(MPIR_Request *req)
 {
-	struct MPID_DEV_Request_common *creq = NULL;
-	pscom_request_t *preq = NULL;
-
 	if (!req) return;
 
-	/* allocate the pscom request */
-	creq = &req->dev.kind.common;
-	creq->pscom_req = PSCOM_REQUEST_CREATE();
-	creq->pscom_req->user->type.sr.mpid_req = req;
+	MPIDI_PSP_Request_pscom_req_create(req);
 
+	// MPIDI_PSP_Request_init(req, NULL); // <- assignments all already done in MPIR_Request_create()
+	assert(MPIR_Object_get_ref(req) == 1);
+	assert(req->cc == 1);
+	assert(req->cc_ptr == &req->cc);
+	assert(req->comm == NULL);
 
-	/* MPID_Request_construct(req); no need?*/
-	MPIR_Object_set_ref(req, 1);
+	MPIDI_PSP_Request_status_init(req);
 
-	/* initialize the MPIR_Request */
-	req->cc = 1;
-	req->cc_ptr = &req->cc;
-	req->status.MPI_SOURCE = MPI_UNDEFINED;
-	req->status.MPI_TAG = MPI_UNDEFINED;
-	req->status.MPI_ERROR = MPI_SUCCESS;
-	/* combined MPIR_STATUS_SET_COUNT and MPIR_STATUS_SET_CANCEL_BIT: */
-	req->status.count_lo = 0;
-	req->status.count_hi_and_cancelled = 0;
-	req->comm = NULL;
-	req->u.nbc.errflag = MPIR_ERR_NONE;
-
-	/* initialize the pscom_request_t */
-	preq = creq->pscom_req;
-	preq->connection = NULL;
-	preq->socket = NULL;
-	preq->ops.recv_accept = NULL;
-	preq->ops.io_done = NULL;
-	preq->xheader_len = 0;
-	preq->data_len = 0;
-	preq->data = 0;
-
+	MPIDI_PSP_Request_pscom_req_init(req);
 
 /*	req->dev.datatype_ptr = NULL;
 	req->dev.cancel_pending = FALSE;
@@ -124,6 +101,7 @@ void MPID_Request_create_hook(MPIR_Request *req)
 	/* request-specific initialization */
 	switch (req->kind) {
 		case MPIR_REQUEST_KIND__SEND:
+		case MPIR_REQUEST_KIND__RMA:
 			MPIDI_PSP_Request_send_create_hook(req);
 			break;
 		case MPIR_REQUEST_KIND__PREQUEST_RECV:
@@ -132,7 +110,6 @@ void MPID_Request_create_hook(MPIR_Request *req)
 			break;
 		case MPIR_REQUEST_KIND__RECV:
 		case MPIR_REQUEST_KIND__GREQUEST:
-		case MPIR_REQUEST_KIND__RMA:
 		case MPIR_REQUEST_KIND__COLL:
 		case MPIR_REQUEST_KIND__MPROBE:
 			break;
@@ -148,6 +125,7 @@ void MPID_Request_destroy_hook(MPIR_Request *req)
 {
 	switch (req->kind) {
 	case MPIR_REQUEST_KIND__SEND:
+	case MPIR_REQUEST_KIND__RMA:
 		MPIDI_PSP_Request_send_destroy_hook(req);
 		break;
 	case MPIR_REQUEST_KIND__PREQUEST_RECV:
@@ -155,7 +133,6 @@ void MPID_Request_destroy_hook(MPIR_Request *req)
 		MPIDI_PSP_Request_persistent_destroy_hook(req);
 		break;
 	case MPIR_REQUEST_KIND__RECV:
-	case MPIR_REQUEST_KIND__RMA:
 	case MPIR_REQUEST_KIND__COLL:
 	case MPIR_REQUEST_KIND__MPROBE:
 	case MPIR_REQUEST_KIND__GREQUEST:

@@ -35,4 +35,52 @@ int MPID_PSP_Subrequest_completed(MPIR_Request *req)
 	(*(req->cc_ptr))--;
 	return ((*(req->cc_ptr)) == 0);
 }
+
+static inline
+void MPIDI_PSP_Request_init(MPIR_Request *req, MPIR_Comm *comm)
+{
+	MPIR_Object_set_ref(req, 1);
+	req->cc = 1;
+	req->cc_ptr = &req->cc;
+	req->comm = comm;
+}
+
+static inline
+void MPIDI_PSP_Request_status_init(MPIR_Request *req)
+{
+	req->status.MPI_SOURCE = MPI_UNDEFINED;
+	req->status.MPI_TAG = MPI_UNDEFINED;
+	req->status.MPI_ERROR = MPI_SUCCESS;
+
+	/* combined MPIR_STATUS_SET_COUNT and MPIR_STATUS_SET_CANCEL_BIT: */
+	req->status.count_lo = 0;
+	req->status.count_hi_and_cancelled = 0;
+}
+
+static inline
+void MPIDI_PSP_Request_pscom_req_create(MPIR_Request *req)
+{
+	struct MPID_DEV_Request_common *creq = NULL;
+
+	/* allocate the pscom request */
+	creq = &req->dev.kind.common;
+	creq->pscom_req = PSCOM_REQUEST_CREATE();
+	creq->pscom_req->user->type.sr.mpid_req = req;
+}
+
+static inline
+void MPIDI_PSP_Request_pscom_req_init(MPIR_Request *req)
+{
+	pscom_request_t *preq = NULL;
+
+	/* initialize the pscom_request_t */
+	preq = req->dev.kind.common.pscom_req;
+	preq->connection = NULL;
+	preq->socket = NULL;
+	preq->ops.recv_accept = NULL;
+	preq->ops.io_done = NULL;
+	preq->xheader_len = 0;
+	preq->data_len = 0;
+	preq->data = 0;
+}
 #endif /* _MPID_PSP_REQUEST_H_ */
