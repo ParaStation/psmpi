@@ -17,39 +17,40 @@ mprobe_LDADD = -lpthread
 ## for all programs that are just built from the single corresponding source
 ## file, we don't need per-target _SOURCES rules, automake will infer them
 ## correctly
-noinst_PROGRAMS =           \
-    locknull                \
+noinst_PROGRAMS =               \
+	locknull                \
 	get_acc_loc             \
-    win_sync_err_flush      \
+	win_sync_err_flush      \
 	win_sync_err_flushall   \
 	win_sync_err_lockall_pt \
 	win_sync_err_lockall_at \
 	win_sync_err_unlockall  \
-    win_flavor_err_shm      \
+	win_flavor_err_shm      \
 	win_flavor_err_dyn      \
-    win_shm_multiple        \
+	win_shm_multiple        \
 	win_shm_large           \
+	win_test_ordering       \
 	split_type_integrity    \
-    spawn_isend             \
+	spawn_isend             \
 	spawn_anysrc            \
 	spawn_ssend             \
 	spawn_rma               \
 	spawn_universe          \
 	spawn_univ_comm         \
 	spawn_univ_anysrc       \
-    num_contexts_2k         \
+	num_contexts_2k         \
 	num_contexts_4k         \
 	num_contexts_8k         \
 	num_contexts_16k        \
-    large_msg_typed         \
+	large_msg_typed         \
 	intercomm_anysrc        \
 	intercomm_stress        \
-    large_acc_flush_local   \
+	large_acc_flush_local   \
 	acc_pairtype            \
 	acc_vecsum              \
 	get_acc_pairtype        \
 	get_acc_shm_pairtype    \
-    putfence1               \
+	putfence1               \
 	getfence1               \
 	msa_split_type          \
 	msa_info_env

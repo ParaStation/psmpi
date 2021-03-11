@@ -101,9 +101,9 @@ noinst_PROGRAMS = locknull$(EXEEXT) get_acc_loc$(EXEEXT) \
 	win_sync_err_lockall_at$(EXEEXT) \
 	win_sync_err_unlockall$(EXEEXT) win_flavor_err_shm$(EXEEXT) \
 	win_flavor_err_dyn$(EXEEXT) win_shm_multiple$(EXEEXT) \
-	win_shm_large$(EXEEXT) split_type_integrity$(EXEEXT) \
-	spawn_isend$(EXEEXT) spawn_anysrc$(EXEEXT) \
-	spawn_ssend$(EXEEXT) spawn_rma$(EXEEXT) \
+	win_shm_large$(EXEEXT) win_test_ordering$(EXEEXT) \
+	split_type_integrity$(EXEEXT) spawn_isend$(EXEEXT) \
+	spawn_anysrc$(EXEEXT) spawn_ssend$(EXEEXT) spawn_rma$(EXEEXT) \
 	spawn_universe$(EXEEXT) spawn_univ_comm$(EXEEXT) \
 	spawn_univ_anysrc$(EXEEXT) num_contexts_2k$(EXEEXT) \
 	num_contexts_4k$(EXEEXT) num_contexts_8k$(EXEEXT) \
@@ -312,6 +312,11 @@ win_sync_err_unlockall_OBJECTS = win_sync_err_unlockall.$(OBJEXT)
 win_sync_err_unlockall_LDADD = $(LDADD)
 win_sync_err_unlockall_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+win_test_ordering_SOURCES = win_test_ordering.c
+win_test_ordering_OBJECTS = win_test_ordering.$(OBJEXT)
+win_test_ordering_LDADD = $(LDADD)
+win_test_ordering_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -351,7 +356,8 @@ am__depfiles_remade = ./$(DEPDIR)/acc_pairtype.Po \
 	./$(DEPDIR)/win_sync_err_flushall.Po \
 	./$(DEPDIR)/win_sync_err_lockall_at.Po \
 	./$(DEPDIR)/win_sync_err_lockall_pt.Po \
-	./$(DEPDIR)/win_sync_err_unlockall.Po
+	./$(DEPDIR)/win_sync_err_unlockall.Po \
+	./$(DEPDIR)/win_test_ordering.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -376,7 +382,8 @@ SOURCES = acc_pairtype.c acc_vecsum.c get_acc_loc.c get_acc_pairtype.c \
 	win_flavor_err_dyn.c win_flavor_err_shm.c win_shm_large.c \
 	win_shm_multiple.c win_sync_err_flush.c \
 	win_sync_err_flushall.c win_sync_err_lockall_at.c \
-	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
+	win_sync_err_lockall_pt.c win_sync_err_unlockall.c \
+	win_test_ordering.c
 DIST_SOURCES = acc_pairtype.c acc_vecsum.c get_acc_loc.c \
 	get_acc_pairtype.c get_acc_shm_pairtype.c getfence1.c \
 	intercomm_anysrc.c intercomm_stress.c large_acc_flush_local.c \
@@ -388,7 +395,8 @@ DIST_SOURCES = acc_pairtype.c acc_vecsum.c get_acc_loc.c \
 	win_flavor_err_dyn.c win_flavor_err_shm.c win_shm_large.c \
 	win_shm_multiple.c win_sync_err_flush.c \
 	win_sync_err_flushall.c win_sync_err_lockall_at.c \
-	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
+	win_sync_err_lockall_pt.c win_sync_err_unlockall.c \
+	win_test_ordering.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -612,7 +620,7 @@ AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(top_srcdir)/dtpools/include
 LDADD = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
-CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
+CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml dirset.*
 EXTRA_DIST = testlist
 mprobe_SOURCES = mprobe.c
 mprobe_LDADD = -lpthread
@@ -840,6 +848,10 @@ win_sync_err_unlockall$(EXEEXT): $(win_sync_err_unlockall_OBJECTS) $(win_sync_er
 	@rm -f win_sync_err_unlockall$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(win_sync_err_unlockall_OBJECTS) $(win_sync_err_unlockall_LDADD) $(LIBS)
 
+win_test_ordering$(EXEEXT): $(win_test_ordering_OBJECTS) $(win_test_ordering_DEPENDENCIES) $(EXTRA_win_test_ordering_DEPENDENCIES) 
+	@rm -f win_test_ordering$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(win_test_ordering_OBJECTS) $(win_test_ordering_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -882,6 +894,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_sync_err_lockall_at.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_sync_err_lockall_pt.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_sync_err_unlockall.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_test_ordering.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -1070,6 +1083,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/win_sync_err_lockall_at.Po
 	-rm -f ./$(DEPDIR)/win_sync_err_lockall_pt.Po
 	-rm -f ./$(DEPDIR)/win_sync_err_unlockall.Po
+	-rm -f ./$(DEPDIR)/win_test_ordering.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -1151,6 +1165,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/win_sync_err_lockall_at.Po
 	-rm -f ./$(DEPDIR)/win_sync_err_lockall_pt.Po
 	-rm -f ./$(DEPDIR)/win_sync_err_unlockall.Po
+	-rm -f ./$(DEPDIR)/win_test_ordering.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -1202,6 +1217,15 @@ testing:
 
 testset:
 	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=$(TESTSET) \
+		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
+		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
+
+testdir:
+	echo "${TESTDIR}" > "dirset.${TESTDIR}"
+	( test -f "${top_srcdir}/${TESTDIR}/${TESTSET}" && \
+         ln -sf "${top_srcdir}/${TESTDIR}/${TESTSET}" "$(top_builddir)/${TESTDIR}/dirset.${TESTDIR}" || \
+         ln -sf "./${TESTSET}" "$(top_builddir)/${TESTDIR}/dirset.${TESTDIR}" )
+	$(top_builddir)/runtests -srcdir=$(srcdir) -tests="dirset.${TESTDIR}"\
 		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
 		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
