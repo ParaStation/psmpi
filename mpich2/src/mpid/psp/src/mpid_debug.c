@@ -52,9 +52,9 @@ void sig_segv(int sig)
 }
 
 static
-void mpid_debug_init_gnuc(void)
+void mpid_debug_init_gnuc(unsigned debug_level)
 {
-	if (mpid_psp_debug_level > 0) {
+	if (debug_level > 0) {
 		signal(SIGSEGV, sig_segv);
 	}
 }
@@ -63,7 +63,7 @@ void mpid_debug_init_gnuc(void)
 #include "mpid_debug.h"
 
 static
-void mpid_debug_init_gnuc(void)
+void mpid_debug_init_gnuc(unsigned debug_level)
 {
 }
 
@@ -71,16 +71,39 @@ void mpid_debug_init_gnuc(void)
 
 #include <stdlib.h>
 
-int mpid_psp_debug_level = 0;
+#include "mpidimpl.h"
 
 void mpid_debug_init(void)
 {
-	char *env = getenv("PSP_DEBUG");
-	mpid_psp_debug_level = atoi(env ? env : "0");
-	mpid_debug_init_gnuc();
-}
+	/* evaluate environment variables */
+	pscom_env_get_uint(&MPIDI_Process.env.debug_level, "PSP_DEBUG");
+	pscom_env_get_uint(&MPIDI_Process.env.debug_version, "PSP_DEBUG_VERSION");
 
-#include "mpidimpl.h"
+	/* initialize the signal handler for backtracing */
+	mpid_debug_init_gnuc(MPIDI_Process.env.debug_level);
+
+	/* print the version string if requested */
+	if ((MPIDI_Process.env.debug_level > 2) ||
+	    (MPIDI_Process.env.debug_version))
+	{
+		fprintf(stderr, "# Version(PSMPI): %s (%s)+confset(%s)"
+#ifdef MPICH_IS_THREADED
+				"+threaded(%d)"
+#endif
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
+				"+cuda"
+#endif
+#ifdef PSCOM_ALLIN
+				"+allin"
+#endif
+				"\n",
+			__DATE__, MPIDI_PSP_VC_VERSION, MPIDI_PSP_CONFSET
+#ifdef MPICH_IS_THREADED
+			, MPIR_ThreadInfo.isThreaded
+#endif
+		);
+	}
+}
 
 const char *mpid_msgtype_str(enum MPID_PSP_MSGTYPE msg_type)
 {

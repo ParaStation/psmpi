@@ -2653,6 +2653,9 @@ case $CONFSET in
 	;;
 esac
 
+# Pass the confset to subconfigure.m4
+CONF_OPS="$CONF_OPS --with-psp-confset=$CONFSET"
+
 test -n "$CC"  && CONF_OPS="$CONF_OPS 'CC=$CC'"
 test -n "$CXX" && CONF_OPS="$CONF_OPS 'CXX=$CXX'"
 test -n "$FC"  && CONF_OPS="$CONF_OPS 'FC=$FC'"

@@ -116,6 +116,8 @@ typedef struct MPIDI_Process
 	int msa_module_id;
 
 	struct {
+		unsigned debug_level;
+		unsigned debug_version;
 		unsigned enable_collectives;
 		unsigned enable_ondemand;
 		unsigned enable_ondemand_spawn;
