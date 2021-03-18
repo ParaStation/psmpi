@@ -26,7 +26,7 @@ int MPI_Reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype 
 /* any utility functions should go here, usually prefixed with PMPI_LOCAL to
  * correctly handle weak symbols and the profiling interface */
 
-int MPIR_Reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype,
+int MPIR_Reduce_local_impl(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype,
                       MPI_Op op)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -98,6 +98,18 @@ int MPIR_Reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype
 }
 
 #endif
+
+
+int MPIR_Reduce_local(const void *inbuf, void *inoutbuf, int count,
+                      MPI_Datatype datatype, MPI_Op op)
+{
+#ifdef MPID_REDUCE_LOCAL_HOOK
+    return MPID_REDUCE_LOCAL_HOOK(inbuf, inoutbuf, count, datatype, op);
+#else
+    return MPIR_Reduce_local_impl(inbuf, inoutbuf, count, datatype, op);
+#endif
+}
+
 
 /*@
 MPI_Reduce_local - Applies a reduction operator to local arguments.

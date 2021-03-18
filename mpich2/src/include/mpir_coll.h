@@ -1552,6 +1552,8 @@ int MPIR_Reduce_allcomm_nb(const void *sendbuf, void *recvbuf, int count, MPI_Da
 /******************************** Reduce_local ********************************/
 int MPIR_Reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype,
                       MPI_Op op);
+int MPIR_Reduce_local_impl(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype,
+                           MPI_Op op);
 
 
 /******************************** Reduce_scatter ********************************/
