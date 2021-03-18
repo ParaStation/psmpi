@@ -312,6 +312,7 @@ if ($write_mpif) {
     foreach $type (SHARED) {
         &print_mpif_int( "MPI_COMM_TYPE_$type" );
     }
+    &print_mpif_int( "MPIX_COMM_TYPE_MODULE" );
     &print_mpif_int( "MPI_MESSAGE_NULL" );
     &print_mpif_int( "MPI_MESSAGE_NO_PROC" );
 
