@@ -659,6 +659,7 @@ foreach $key (qw(NOCHECK NOSTORE NOPUT NOPRECEDE NOSUCCEED)) {
 # comm_split_types
 print $constants_fh "\n";
 &print_param("integer", "MPI_COMM_TYPE_SHARED");
+&print_param("integer", "MPIX_COMM_TYPE_MODULE");
 
 # Thread levels
 print $constants_fh "\n";

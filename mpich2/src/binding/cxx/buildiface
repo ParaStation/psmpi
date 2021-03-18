@@ -2036,6 +2036,9 @@ extern Datatype TWOINTEGER;
 	if ($giveValue) { print $OUTFD " = MPI_COMM_TYPE_$int;\n"; }
 	else            { print $OUTFD ";\n"; }
     }
+    print $OUTFD "${extern}const int COMM_TYPE_MODULE";
+    if ($giveValue) { print $OUTFD " = MPIX_COMM_TYPE_MODULE;\n"; }
+    else            { print $OUTFD ";\n"; }
 
     # MPI Combiners
     foreach $int (CONTIGUOUS, DARRAY, DUP, F90_COMPLEX, F90_INTEGER, 
