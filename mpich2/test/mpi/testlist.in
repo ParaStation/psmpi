@@ -1,4 +1,6 @@
-attr 
+parastation
+@cudadir@
+attr
 #basic
 coll
 comm

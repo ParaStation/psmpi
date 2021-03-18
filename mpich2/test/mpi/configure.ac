@@ -155,6 +155,9 @@ AC_SUBST(DTP_SWITCH)
 AC_ARG_ENABLE(cuda,
         [AC_HELP_STRING([--enable-cuda],[Add some tests for CUDA-awareness])],,[enable_cuda=no])
 
+AC_ARG_ENABLE(cuda,
+    [AC_HELP_STRING([--enable-cuda],[Add some tests for CUDA awareness])],,[enable_cuda=no])
+
 AC_ARG_ENABLE(cxx,
 	[AC_HELP_STRING([--enable-cxx],[Turn on C++ tests (default)])],,[enable_cxx=yes])
 
