@@ -336,24 +336,8 @@ int MPID_PSP_comm_init(int has_parent)
 	if(MPIDI_Process.env.enable_msa_awareness) {
 
 		if(MPIDI_Process.msa_module_id < 0) {
-
-			if (!MPIDI_Process.env.enable_ondemand) {
-				/* In the PSP_ONDEMAND=0 case, we can check the pscom connection types: */
-				for (grank = 0; grank < pg_size; grank++) {
-					pscom_connection_t *con = MPIDI_Process.grank2con[grank];
-					if(con->type == PSCOM_CON_TYPE_GW) {
-						MPIDI_Process.msa_module_id = grank;
-						break;
-					}
-				}
-			}
-			if (MPIDI_Process.msa_module_id < 0) {
-				/* If we yet haven't found a module_id, use the appnum for this: */
-				MPIDI_Process.msa_module_id = MPIR_Process.attrs.appnum;
-			}
-			if(MPIDI_Process.msa_module_id < 0) {
-				MPIDI_Process.msa_module_id = 0;
-			}
+			/* If no msa_module_id is set explicitly, use the appnum for this: */
+			MPIDI_Process.msa_module_id = MPIR_Process.attrs.appnum;
 		}
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
@@ -381,23 +365,12 @@ int MPID_PSP_comm_init(int has_parent)
 	if(MPIDI_Process.env.enable_smp_awareness) {
 
 		if(MPIDI_Process.smp_node_id < 0) {
-
-			int psp_shm = 1;
-			pscom_env_get_uint(&psp_shm, "PSP_SHM");
-			if (!MPIDI_Process.env.enable_ondemand && psp_shm) {
-				/* In the PSP_ONDEMAND=0 case, we can (if SHM is not disabled) check the pscom connection types: */
-				for (grank = 0; grank < pg_size; grank++) {
-					pscom_connection_t *con = MPIDI_Process.grank2con[grank];
-					if( (con->type == PSCOM_CON_TYPE_SHM) || (pg_rank == grank) ) {
-						MPIDI_Process.smp_node_id = grank;
-						break;
-					}
-				}
-			} else {
-				/* In the PSP_ONDEMAND=1 case (or if SHM is disabled), we have to use a hash of the host name: */
-				MPIDI_Process.smp_node_id = MPID_PSP_get_host_hash();
-				/* ...accepting the possibility of hash collisions that may lead to undefined situations! */
-			}
+			/* If no smp_node_id is set explicitly, use the pscom's node_id for this:
+			   (...which is an int and might be negative. However, since we know that it actually
+			   corresponds to the IPv4 address of the node, it is safe to force the most significant
+			   bit to be unset so that it is positive and can thus also be used as a split color.)
+			*/
+			MPIDI_Process.smp_node_id = ((MPIR_Process.comm_world->pscom_socket->local_con_info.node_id)<<1)>>1;
 		}
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
