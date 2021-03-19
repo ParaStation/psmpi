@@ -135,7 +135,7 @@ nonblocking2 10
 nonblocking3 1
 nonblocking3 4
 nonblocking3 5
-nonblocking3 10
+nonblocking3 10 env=PSP_SCHED_YIELD=1
 iallred 2
 # ibarrier will hang forever if it fails, but will complete quickly if it
 # succeeds
