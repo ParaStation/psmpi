@@ -38,9 +38,6 @@ int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
 
 		mpi_errno = MPIR_Comm_split_impl(comm_ptr, color, key, newcomm_ptr);
 
-		if(mpi_errno == MPI_SUCCESS) {
-			mpi_errno = MPIR_Comm_set_attr_impl(*newcomm_ptr, MPIDI_Process.shm_attr_key, NULL, MPIR_ATTR_PTR);
-		}
 	} else if(split_type == MPIX_COMM_TYPE_MODULE) {
 		int color;
 
@@ -282,20 +279,6 @@ int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 #endif
 }
 
-
-int MPID_PSP_get_host_hash(void)
-{
-       char host_name[MPI_MAX_PROCESSOR_NAME];
-       int result_len;
-       static int host_hash = 0;
-
-       if(!host_hash) {
-               MPID_Get_processor_name(host_name, MPI_MAX_PROCESSOR_NAME, &result_len);
-               MPIDI_PG_Convert_id(host_name, &host_hash);
-               assert(host_hash >= 0);
-       }
-       return host_hash;
-}
 
 int MPID_PSP_comm_init(int has_parent)
 {

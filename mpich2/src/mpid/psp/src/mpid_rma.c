@@ -31,61 +31,51 @@ int _accept_never(pscom_request_t *request,
 static
 int is_comm_self_clone(MPIR_Comm * comm_ptr)
 {
-#if 0   /* Why so complicated??? */
-	MPIR_Comm *comm_self_ptr = NULL;
-	MPIR_Group *group_comm, *group_self;
-	int result;
-
-	MPIR_Comm_get_ptr ( MPI_COMM_SELF, comm_self_ptr );
-
-	MPIR_Comm_group_impl(comm_ptr, &group_comm);
-
-	MPIR_Comm_group_impl(comm_self_ptr, &group_self);
-
-	MPIR_Group_compare_impl(group_comm, group_self, &result);
-
-	MPIR_Group_free_impl(group_comm);
-
-	MPIR_Group_free_impl(group_self);
-
-	if (result == MPI_IDENT) {
-		return 1;
-	}
-#else   /* I mean, a communicator with only one single rank should be a comm_self clone, right? */
 	if(comm_ptr->local_size == 1) {
 		return 1;
 	}
-#endif
-
 	return 0;
 }
 
+#undef FUNCNAME
+#define FUNCNAME MPIDI_PSP_check_for_host_local_comm
+#undef FCNAME
+#define FCNAME MPL_QUOTE(FUNCNAME)
 static
-int is_host_local_comm(MPIR_Comm * comm_ptr)
+int MPIDI_PSP_check_for_host_local_comm(MPIR_Comm *comm_ptr, int *flag)
 {
 	int i;
-	int retval = 1;
-	int host_hash;
-	int *hash_buf;
-	int mpi_errno;
+	int *node_ids;
+	int mpi_errno = MPI_SUCCESS;
 	MPIR_Errflag_t errflag = 0;
 
-	/* Caution: In case of a hash collision, we may end up in an undefined situation! (error, deadlock, ...) */
-	host_hash = MPID_PSP_get_host_hash();
+	MPIR_CHKLMEM_DECL(1);
 
-	hash_buf = MPL_malloc(comm_ptr->local_size * sizeof(int), MPL_MEM_BUFFER);
-	mpi_errno = MPIR_Allgather_impl(&host_hash, 1, MPI_INT, hash_buf, 1, MPI_INT, comm_ptr, &errflag);
-	assert(mpi_errno == MPI_SUCCESS);
+	MPIR_CHKLMEM_MALLOC(node_ids, int*, comm_ptr->local_size * sizeof(int), mpi_errno, "node_ids", MPL_MEM_BUFFER);
 
-	for (i=0; i<comm_ptr->local_size; i++) {
-		if(hash_buf[i] != host_hash) {
-			retval = 0;
+	mpi_errno = MPIR_Allgather_impl(&MPIDI_Process.smp_node_id, 1, MPI_INT, node_ids, 1, MPI_INT, comm_ptr, &errflag);
+	if (mpi_errno != MPI_SUCCESS) {
+		goto fn_fail;
+	}
+
+	*flag = 1;
+
+	for (i=0; i < comm_ptr->local_size; i++) {
+		if(node_ids[i] != MPIDI_Process.smp_node_id) {
+			*flag = 0;
 			break;
 		}
 	}
-	MPL_free(hash_buf);
-	return retval;
+
+fn_exit:
+	MPIR_CHKLMEM_FREEALL();
+	return mpi_errno;
+fn_fail:
+	goto fn_exit;
 }
+#undef FCNAME
+#undef FUNCNAME
+
 
 static
 void MPID_PSP_rma_init(pscom_socket_t *socket, pscom_request_t **req)
@@ -941,67 +931,44 @@ fn_fail:
 
 static
 int MPID_PSP_Win_allocate_shared(MPI_Aint size, int disp_unit, MPIR_Info *info_ptr, MPIR_Comm *comm_ptr,
-				 void *base_ptr, MPIR_Win **win_ptr, int retry)
+				 void *base_ptr, MPIR_Win **win_ptr)
 {
 	void **base_pp = (void **) base_ptr;
 	int mpi_errno = MPI_SUCCESS;
 
 	if(!is_comm_self_clone(comm_ptr)) {
 
-		/* The related communicator is NOT a MPI_COMM_SELF clone... */
-
 		int flag = 0;
-		MPIR_Attribute *p = comm_ptr->attributes;
+		MPID_PSP_shm_attr_t *shm_attr;
 
-		/* Check for the MPI_COMM_TYPE_SHARED attribute in comm: */
-		while (p) {
-			if (p->keyval->handle == MPIDI_Process.shm_attr_key) {
-				assert(p->value == NULL);
-				/* found attribute! */
-				flag = 1;
-				break;
-			}
-			p = p->next;
+		mpi_errno = MPIDI_PSP_check_for_host_local_comm(comm_ptr, &flag);
+		if (mpi_errno) {
+			goto fn_fail;
 		}
 
-		if(flag) { /* SHMEM attribute found: */
-			MPID_PSP_shm_attr_t *shm_attr;
-
-			shm_attr = MPL_malloc(sizeof(MPID_PSP_shm_attr_t), MPL_MEM_OBJECT);
-
-			mpi_errno = MPID_PSP_Win_allocate_shmget(size, disp_unit, info_ptr, comm_ptr, base_ptr, win_ptr, shm_attr);
-
-			if(mpi_errno) {
-				goto fn_fail;
-			}
-
-			/* store shmem region related information as an attribute of win: */
-			MPID_PSP_shm_rma_set_attr(*win_ptr, shm_attr);
-
-			(*win_ptr)->base = *base_pp;
-			(*win_ptr)->size = size;
-			(*win_ptr)->disp_unit = disp_unit;
-
-		} else { /* No SHMEM attribute found: */
-
-			if(is_host_local_comm(comm_ptr) && !retry) {
-				/* This communicator has NOT been created with MPI_Comm_split_type(type=SHARED), but
-				   it covers a shared-memory domain (or at least processes running on the same host).
-				   Therefore, attach a new SHMEM attribute key, redo its retrieval and pray for success: */
-				mpi_errno = MPIR_Comm_set_attr_impl(comm_ptr, MPIDI_Process.shm_attr_key, NULL, MPIR_ATTR_PTR);
-				if(mpi_errno) {
-					goto fn_fail;
-				}
-				return MPID_PSP_Win_allocate_shared(size, disp_unit, info_ptr, comm_ptr, base_ptr, win_ptr, 1);
-			} else {
-				/* This communicator cannot be used with MPID_Win_allocate_shared()! */
-				return MPI_ERR_RMA_SHARED;
-			}
+		if (!flag) {
+			/* This communicator cannot be used with MPID_Win_allocate_shared()! */
+			return MPI_ERR_RMA_SHARED;
 		}
+
+		shm_attr = MPL_malloc(sizeof(MPID_PSP_shm_attr_t), MPL_MEM_OBJECT);
+
+		mpi_errno = MPID_PSP_Win_allocate_shmget(size, disp_unit, info_ptr, comm_ptr, base_ptr, win_ptr, shm_attr);
+		if (mpi_errno) {
+			goto fn_fail;
+		}
+
+		/* store shmem region related information as an attribute of win: */
+		MPID_PSP_shm_rma_set_attr(*win_ptr, shm_attr);
+
+		(*win_ptr)->base = *base_pp;
+		(*win_ptr)->size = size;
+		(*win_ptr)->disp_unit = disp_unit;
+
 	} else {
+		/* The related communicator is a MPI_COMM_SELF clone -> use plain Win_allocate(): */
 		mpi_errno = MPID_Win_allocate(size, disp_unit, info_ptr, comm_ptr, base_ptr, win_ptr);
-
-		if(mpi_errno) {
+		if (mpi_errno) {
 			goto fn_fail;
 		}
 	}
@@ -1020,7 +987,7 @@ fn_fail:
 int MPID_Win_allocate_shared(MPI_Aint size, int disp_unit, MPIR_Info *info_ptr, MPIR_Comm *comm_ptr,
 				 void *base_ptr, MPIR_Win **win_ptr)
 {
-	return MPID_PSP_Win_allocate_shared(size, disp_unit, info_ptr, comm_ptr, base_ptr, win_ptr, 0);
+	return MPID_PSP_Win_allocate_shared(size, disp_unit, info_ptr, comm_ptr, base_ptr, win_ptr);
 }
 
 
