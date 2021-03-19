@@ -37,10 +37,6 @@ int is_comm_self_clone(MPIR_Comm * comm_ptr)
 	return 0;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_PSP_check_for_host_local_comm
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 static
 int MPIDI_PSP_check_for_host_local_comm(MPIR_Comm *comm_ptr, int *flag)
 {
@@ -73,8 +69,6 @@ fn_exit:
 fn_fail:
 	goto fn_exit;
 }
-#undef FCNAME
-#undef FUNCNAME
 
 
 static
@@ -233,8 +227,6 @@ typedef struct MPID_Wincreate_msg
 } MPID_Wincreate_msg;
 
 
-#define FUNCNAME MPID_Win_create
-#define FCNAME "MPID_Win_create"
 int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info *info_ptr,
 		    MPIR_Comm *comm_ptr, MPIR_Win **_win_ptr)
 {
@@ -375,13 +367,9 @@ fn_fail:
 	goto fn_exit;
 	/* --END ERROR HANDLING-- */
 }
-#undef FCNAME
-#undef FUNCNAME
 
 
 
-#define FUNCNAME MPID_Win_free
-#define FCNAME "MPID_Win_free"
 int MPID_Win_free(MPIR_Win **_win_ptr)
 {
 	int mpi_errno = MPI_SUCCESS /*, total_pt_rma_puts_accs, i, *recvcnts, comm_size */;
@@ -428,7 +416,7 @@ int MPID_Win_free(MPIR_Win **_win_ptr)
 			/* --BEGIN ERROR HANDLING-- */
 			if (mpi_errno != MPI_SUCCESS) {
 				MPID_Progress_end(&progress_state);
-				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
+				mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, __func__, __LINE__, MPI_ERR_OTHER,
 								 "**fail", "**fail %s", "making progress on the rma messages failed");
 				goto fn_exit;
 			}
@@ -478,8 +466,6 @@ fn_fail:
 	goto fn_exit;
 	/* --END ERROR HANDLING-- */
 }
-#undef FCNAME
-#undef FUNCNAME
 
 
 /*
@@ -539,8 +525,6 @@ int MPID_Win_create_dynamic(MPIR_Info *info, MPIR_Comm *comm_ptr, MPIR_Win **win
 	return mpi_errno;
 }
 
-#define FUNCNAME MPID_Win_allocate
-#define FCNAME "MPID_Win_allocate"
 int MPID_Win_allocate(MPI_Aint size, int disp_unit, MPIR_Info *info,
 		      MPIR_Comm *comm_ptr, void *base_ptr, MPIR_Win **win_ptr)
 {
@@ -569,8 +553,6 @@ fn_fail:
 	goto fn_exit;
 	/* --END ERROR HANDLING-- */
 }
-#undef FCNAME
-#undef FUNCNAME
 
 
 /***********************************************************************************************************

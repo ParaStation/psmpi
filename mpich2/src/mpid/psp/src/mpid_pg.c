@@ -949,10 +949,6 @@ int MPIDI_PSP_add_flat_level_to_pg(MPIDI_PG_t *pg, int degree)
 #endif /* MPID_PSP_TOPOLOGY_AWARE_COLLOPS */
 
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_PG_Create
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t *levels, MPIDI_PG_t ** pg_ptr)
 {
 	MPIDI_PG_t * pg = NULL, *pgnext;
@@ -1025,10 +1021,6 @@ fn_fail:
 	goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_PG_Destroy
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
 MPIDI_PG_t* MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr)
 {
 	int j;
@@ -1088,8 +1080,6 @@ MPIDI_PG_t* MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr)
 
 	return pg_next;
 }
-#undef FUNCNAME
-#undef FCNAME
 
 /* Taken from MPIDI_PG_IdToNum() of CH3: */
 void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num)

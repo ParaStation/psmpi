@@ -820,10 +820,6 @@ int count_total_processes(int count, const int maxprocs[])
 .N Errors
 .N MPI_SUCCESS
 @*/
-#undef FCNAME
-#define FCNAME "MPID_Comm_spawn_multiple"
-#undef FUNCNAME
-#define FUNCNAME MPID_Comm_spawn_multiple
 int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 			     char ** array_of_argv[], const int array_of_maxprocs[],
 			     MPIR_Info * array_of_info_ptrs[], int root,
@@ -927,5 +923,3 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 
 	return 0;
 }
-#undef FUNCNAME
-#undef FCNAME

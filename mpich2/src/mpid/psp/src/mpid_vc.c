@@ -181,10 +181,6 @@ int MPIDI_VCR_DeleteFromPG(MPIDI_VC_t *vcr)
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_LPID_GetAllInComm
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIDI_LPID_GetAllInComm(MPIR_Comm *comm_ptr, int local_size,
                                           int local_lpids[])
 {
@@ -200,10 +196,6 @@ static inline int MPIDI_LPID_GetAllInComm(MPIR_Comm *comm_ptr, int local_size,
 /*@
   MPID_Intercomm_exchange_map - Exchange address mapping for intercomm creation.
  @*/
-#undef FUNCNAME
-#define FUNCNAME MPID_Intercomm_exchange_map
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
                                 MPIR_Comm *peer_comm_ptr, int remote_leader,
                                 int *remote_size, int **remote_lpids,
