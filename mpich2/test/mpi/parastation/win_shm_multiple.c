@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2016 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2016-2021 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -12,74 +12,75 @@
 #include <mpi.h>
 #include <stdio.h>
 #include <assert.h>
+#include "mpitest.h"
 
 #define NUM_WINS 10
 
-int comm_world_rank;
-int comm_world_size;
+static int errors = 0;
 
-MPI_Comm comm_shmem;
-int comm_shmem_rank;
-int comm_shmem_size;
-
-void *win_alloc(MPI_Win *win, int byte, int dims)
+void *win_alloc_shared(MPI_Win *win, MPI_Aint size, int disp, MPI_Comm comm)
 {
-        int disp;
-        int qdisp;
-        int size;
-        MPI_Aint qsize;
-        void *ptr;
-        void *qptr;
+	int qdisp = 0;
+	MPI_Aint qsize = 0;
+	void *ptr = NULL;
+	void *qptr = NULL;
 
-        if(comm_shmem_rank == 0) {
-                size = dims + byte;
-        } else {
-                size = 0;
-        }
-        
-        disp = 1;
-        
-        MPI_Win_allocate_shared(size, disp, MPI_INFO_NULL, comm_shmem, &ptr, win);
+	int comm_rank;
+	int comm_size;
 
-        if(comm_shmem_rank == 0) {
-                MPI_Win_shared_query(*win, 0, &qsize, &qdisp, &qptr);
-                assert(qsize == size);
-                assert(qdisp == disp);
-                assert(qptr == ptr);
-        }
+	MPI_Comm_size(comm, &comm_size);
+	MPI_Comm_rank(comm, &comm_rank);
 
-        return ptr;
+	MPI_Win_allocate_shared(size, disp, MPI_INFO_NULL, comm, &ptr, win);
+
+	MPI_Win_shared_query(*win, comm_rank, &qsize, &qdisp, &qptr);
+
+	if (qsize != size) {
+		printf("(%d) Window sizes do not match: %ld vs. %ld\n", comm_rank, qsize, size);
+		errors++;
+	}
+	if (qdisp != disp) {
+		printf("(%d) Window displacement units do not match: %d vs. %d\n", comm_rank, qdisp, disp);
+		errors++;
+	}
+	if (qptr != ptr) {
+		printf("(%d) Window pointers do not match: %p vs. %p\n", comm_rank, qptr, ptr);
+		errors++;
+	}
+
+	return ptr;
 }
 
 int main(int argc, char *argv[])
 {
-        int i;
-        MPI_Win win_array[NUM_WINS];
+	int i;
+	int comm_world_rank;
+	int comm_world_size;
+	int comm_shmem_rank;
+	int comm_shmem_size;
+	MPI_Comm comm_shmem;
+	MPI_Win win_array[NUM_WINS];
 
-        MPI_Init(&argc, &argv);
+	MTest_Init(&argc, &argv);
 
-        MPI_Comm_size(MPI_COMM_WORLD, &comm_world_size);
-        MPI_Comm_rank(MPI_COMM_WORLD, &comm_world_rank);
-        MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &comm_shmem);
-        
-        MPI_Comm_size(comm_shmem, &comm_shmem_size);
-        MPI_Comm_rank(comm_shmem, &comm_shmem_rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &comm_world_size);
+	MPI_Comm_rank(MPI_COMM_WORLD, &comm_world_rank);
+	MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &comm_shmem);
 
-        for(i=0; i<NUM_WINS; i++) {
-                win_alloc(&win_array[i], sizeof(double), 100*100);
-        }
+	MPI_Comm_size(comm_shmem, &comm_shmem_size);
+	MPI_Comm_rank(comm_shmem, &comm_shmem_rank);
 
-        for(i=0; i<NUM_WINS; i++) {
-                MPI_Win_free(&win_array[i]);
-        }
-
-        MPI_Comm_free(&comm_shmem);
-
-        MPI_Finalize();
-
-	if(comm_world_rank == 0) {
-		printf(" No Errors\n");
+	for (i=0; i < NUM_WINS; i++) {
+		win_alloc_shared(&win_array[i], 1024, sizeof(double), comm_shmem);
 	}
 
-        return 0;
+	for (i=0; i < NUM_WINS; i++) {
+		MPI_Win_free(&win_array[i]);
+	}
+
+	MPI_Comm_free(&comm_shmem);
+
+	MTest_Finalize(errors);
+
+	return MTestReturnValue(errors);
 }

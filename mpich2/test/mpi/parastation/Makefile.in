@@ -100,7 +100,8 @@ noinst_PROGRAMS = locknull$(EXEEXT) get_acc_loc$(EXEEXT) \
 	win_sync_err_lockall_pt$(EXEEXT) \
 	win_sync_err_lockall_at$(EXEEXT) \
 	win_sync_err_unlockall$(EXEEXT) win_flavor_err_shm$(EXEEXT) \
-	win_flavor_err_dyn$(EXEEXT) win_shm_multiple$(EXEEXT) \
+	win_flavor_err_dyn$(EXEEXT) win_shm_dup_comm$(EXEEXT) \
+	win_shm_recursive$(EXEEXT) win_shm_multiple$(EXEEXT) \
 	win_shm_large$(EXEEXT) win_test_ordering$(EXEEXT) \
 	split_type_integrity$(EXEEXT) spawn_isend$(EXEEXT) \
 	spawn_anysrc$(EXEEXT) spawn_ssend$(EXEEXT) spawn_rma$(EXEEXT) \
@@ -277,6 +278,11 @@ win_flavor_err_shm_OBJECTS = win_flavor_err_shm.$(OBJEXT)
 win_flavor_err_shm_LDADD = $(LDADD)
 win_flavor_err_shm_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+win_shm_dup_comm_SOURCES = win_shm_dup_comm.c
+win_shm_dup_comm_OBJECTS = win_shm_dup_comm.$(OBJEXT)
+win_shm_dup_comm_LDADD = $(LDADD)
+win_shm_dup_comm_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 win_shm_large_SOURCES = win_shm_large.c
 win_shm_large_OBJECTS = win_shm_large.$(OBJEXT)
 win_shm_large_LDADD = $(LDADD)
@@ -286,6 +292,11 @@ win_shm_multiple_SOURCES = win_shm_multiple.c
 win_shm_multiple_OBJECTS = win_shm_multiple.$(OBJEXT)
 win_shm_multiple_LDADD = $(LDADD)
 win_shm_multiple_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+win_shm_recursive_SOURCES = win_shm_recursive.c
+win_shm_recursive_OBJECTS = win_shm_recursive.$(OBJEXT)
+win_shm_recursive_LDADD = $(LDADD)
+win_shm_recursive_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 win_sync_err_flush_SOURCES = win_sync_err_flush.c
 win_sync_err_flush_OBJECTS = win_sync_err_flush.$(OBJEXT)
@@ -350,8 +361,10 @@ am__depfiles_remade = ./$(DEPDIR)/acc_pairtype.Po \
 	./$(DEPDIR)/spawn_univ_comm.Po ./$(DEPDIR)/spawn_universe.Po \
 	./$(DEPDIR)/split_type_integrity.Po \
 	./$(DEPDIR)/win_flavor_err_dyn.Po \
-	./$(DEPDIR)/win_flavor_err_shm.Po ./$(DEPDIR)/win_shm_large.Po \
+	./$(DEPDIR)/win_flavor_err_shm.Po \
+	./$(DEPDIR)/win_shm_dup_comm.Po ./$(DEPDIR)/win_shm_large.Po \
 	./$(DEPDIR)/win_shm_multiple.Po \
+	./$(DEPDIR)/win_shm_recursive.Po \
 	./$(DEPDIR)/win_sync_err_flush.Po \
 	./$(DEPDIR)/win_sync_err_flushall.Po \
 	./$(DEPDIR)/win_sync_err_lockall_at.Po \
@@ -379,11 +392,11 @@ SOURCES = acc_pairtype.c acc_vecsum.c get_acc_loc.c get_acc_pairtype.c \
 	num_contexts_8k.c putfence1.c spawn_anysrc.c spawn_isend.c \
 	spawn_rma.c spawn_ssend.c spawn_univ_anysrc.c \
 	spawn_univ_comm.c spawn_universe.c split_type_integrity.c \
-	win_flavor_err_dyn.c win_flavor_err_shm.c win_shm_large.c \
-	win_shm_multiple.c win_sync_err_flush.c \
-	win_sync_err_flushall.c win_sync_err_lockall_at.c \
-	win_sync_err_lockall_pt.c win_sync_err_unlockall.c \
-	win_test_ordering.c
+	win_flavor_err_dyn.c win_flavor_err_shm.c win_shm_dup_comm.c \
+	win_shm_large.c win_shm_multiple.c win_shm_recursive.c \
+	win_sync_err_flush.c win_sync_err_flushall.c \
+	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
+	win_sync_err_unlockall.c win_test_ordering.c
 DIST_SOURCES = acc_pairtype.c acc_vecsum.c get_acc_loc.c \
 	get_acc_pairtype.c get_acc_shm_pairtype.c getfence1.c \
 	intercomm_anysrc.c intercomm_stress.c large_acc_flush_local.c \
@@ -392,11 +405,11 @@ DIST_SOURCES = acc_pairtype.c acc_vecsum.c get_acc_loc.c \
 	num_contexts_4k.c num_contexts_8k.c putfence1.c spawn_anysrc.c \
 	spawn_isend.c spawn_rma.c spawn_ssend.c spawn_univ_anysrc.c \
 	spawn_univ_comm.c spawn_universe.c split_type_integrity.c \
-	win_flavor_err_dyn.c win_flavor_err_shm.c win_shm_large.c \
-	win_shm_multiple.c win_sync_err_flush.c \
-	win_sync_err_flushall.c win_sync_err_lockall_at.c \
-	win_sync_err_lockall_pt.c win_sync_err_unlockall.c \
-	win_test_ordering.c
+	win_flavor_err_dyn.c win_flavor_err_shm.c win_shm_dup_comm.c \
+	win_shm_large.c win_shm_multiple.c win_shm_recursive.c \
+	win_sync_err_flush.c win_sync_err_flushall.c \
+	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
+	win_sync_err_unlockall.c win_test_ordering.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -820,6 +833,10 @@ win_flavor_err_shm$(EXEEXT): $(win_flavor_err_shm_OBJECTS) $(win_flavor_err_shm_
 	@rm -f win_flavor_err_shm$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(win_flavor_err_shm_OBJECTS) $(win_flavor_err_shm_LDADD) $(LIBS)
 
+win_shm_dup_comm$(EXEEXT): $(win_shm_dup_comm_OBJECTS) $(win_shm_dup_comm_DEPENDENCIES) $(EXTRA_win_shm_dup_comm_DEPENDENCIES) 
+	@rm -f win_shm_dup_comm$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(win_shm_dup_comm_OBJECTS) $(win_shm_dup_comm_LDADD) $(LIBS)
+
 win_shm_large$(EXEEXT): $(win_shm_large_OBJECTS) $(win_shm_large_DEPENDENCIES) $(EXTRA_win_shm_large_DEPENDENCIES) 
 	@rm -f win_shm_large$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(win_shm_large_OBJECTS) $(win_shm_large_LDADD) $(LIBS)
@@ -827,6 +844,10 @@ win_shm_large$(EXEEXT): $(win_shm_large_OBJECTS) $(win_shm_large_DEPENDENCIES) $
 win_shm_multiple$(EXEEXT): $(win_shm_multiple_OBJECTS) $(win_shm_multiple_DEPENDENCIES) $(EXTRA_win_shm_multiple_DEPENDENCIES) 
 	@rm -f win_shm_multiple$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(win_shm_multiple_OBJECTS) $(win_shm_multiple_LDADD) $(LIBS)
+
+win_shm_recursive$(EXEEXT): $(win_shm_recursive_OBJECTS) $(win_shm_recursive_DEPENDENCIES) $(EXTRA_win_shm_recursive_DEPENDENCIES) 
+	@rm -f win_shm_recursive$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(win_shm_recursive_OBJECTS) $(win_shm_recursive_LDADD) $(LIBS)
 
 win_sync_err_flush$(EXEEXT): $(win_sync_err_flush_OBJECTS) $(win_sync_err_flush_DEPENDENCIES) $(EXTRA_win_sync_err_flush_DEPENDENCIES) 
 	@rm -f win_sync_err_flush$(EXEEXT)
@@ -887,8 +908,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/split_type_integrity.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_flavor_err_dyn.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_flavor_err_shm.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shm_dup_comm.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shm_large.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shm_multiple.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shm_recursive.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_sync_err_flush.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_sync_err_flushall.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_sync_err_lockall_at.Po@am__quote@ # am--include-marker
@@ -1076,8 +1099,10 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/split_type_integrity.Po
 	-rm -f ./$(DEPDIR)/win_flavor_err_dyn.Po
 	-rm -f ./$(DEPDIR)/win_flavor_err_shm.Po
+	-rm -f ./$(DEPDIR)/win_shm_dup_comm.Po
 	-rm -f ./$(DEPDIR)/win_shm_large.Po
 	-rm -f ./$(DEPDIR)/win_shm_multiple.Po
+	-rm -f ./$(DEPDIR)/win_shm_recursive.Po
 	-rm -f ./$(DEPDIR)/win_sync_err_flush.Po
 	-rm -f ./$(DEPDIR)/win_sync_err_flushall.Po
 	-rm -f ./$(DEPDIR)/win_sync_err_lockall_at.Po
@@ -1158,8 +1183,10 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/split_type_integrity.Po
 	-rm -f ./$(DEPDIR)/win_flavor_err_dyn.Po
 	-rm -f ./$(DEPDIR)/win_flavor_err_shm.Po
+	-rm -f ./$(DEPDIR)/win_shm_dup_comm.Po
 	-rm -f ./$(DEPDIR)/win_shm_large.Po
 	-rm -f ./$(DEPDIR)/win_shm_multiple.Po
+	-rm -f ./$(DEPDIR)/win_shm_recursive.Po
 	-rm -f ./$(DEPDIR)/win_sync_err_flush.Po
 	-rm -f ./$(DEPDIR)/win_sync_err_flushall.Po
 	-rm -f ./$(DEPDIR)/win_sync_err_lockall_at.Po
