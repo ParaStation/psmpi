@@ -64,6 +64,7 @@ static
 int is_host_local_comm(MPIR_Comm * comm_ptr)
 {
 	int i;
+	int retval = 1;
 	int host_hash;
 	int *hash_buf;
 	int mpi_errno;
@@ -77,10 +78,13 @@ int is_host_local_comm(MPIR_Comm * comm_ptr)
 	assert(mpi_errno == MPI_SUCCESS);
 
 	for (i=0; i<comm_ptr->local_size; i++) {
-		if(hash_buf[i] != host_hash) return 0;
+		if(hash_buf[i] != host_hash) {
+			retval = 0;
+			break;
+		}
 	}
-
-	return 1;
+	MPL_free(hash_buf);
+	return retval;
 }
 
 static
