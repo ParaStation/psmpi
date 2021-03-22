@@ -94,8 +94,11 @@ int MPIR_Find_local_and_external(MPIR_Comm * comm, int *local_size_p, int *local
                         "internode_table", MPL_MEM_COMM);
     MPIR_CHKPMEM_MALLOC(intranode_table, int *, sizeof(int) * comm->remote_size, mpi_errno,
                         "intranode_table", MPL_MEM_COMM);
-
+#ifndef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
     mpi_errno = MPID_Get_max_node_id(comm, &max_node_id);
+#else
+    mpi_errno = MPID_Get_max_badge(comm, &max_node_id);
+#endif
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
     MPIR_Assert(max_node_id >= 0);
@@ -111,7 +114,11 @@ int MPIR_Find_local_and_external(MPIR_Comm * comm, int *local_size_p, int *local
 
     external_size = 0;
 
+#ifndef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
     mpi_errno = MPID_Get_node_id(comm, comm->rank, &my_node_id);
+#else
+    mpi_errno = MPID_Get_badge(comm, comm->rank, &my_node_id);
+#endif
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
     MPIR_Assert(my_node_id >= 0);
@@ -122,7 +129,11 @@ int MPIR_Find_local_and_external(MPIR_Comm * comm, int *local_size_p, int *local
     external_rank = -1;
 
     for (i = 0; i < comm->remote_size; ++i) {
+#ifndef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
         mpi_errno = MPID_Get_node_id(comm, i, &node_id);
+#else
+        mpi_errno = MPID_Get_badge(comm, i, &node_id);
+#endif
         if (mpi_errno)
             MPIR_ERR_POP(mpi_errno);
 

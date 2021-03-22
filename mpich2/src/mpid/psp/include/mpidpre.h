@@ -49,8 +49,8 @@
  */
 
 #define MPID_PSP_TOPOLOGY_AWARE_COLLOPS
-/* When MPID_PSP_TOPOLOGY_AWARE_COLLOPS is defined, the functions MPID_Get_node_id() and
- * MPID_Get_max_node_id() have to provide topology information (in terms of node IDs for
+/* When MPID_PSP_TOPOLOGY_AWARE_COLLOPS is defined, the additional functions MPID_Get_badge()
+ * and MPID_Get_max_badge() have to provide topology information (in terms of node IDs for
  * SMP islands) for identifying SMP nodes and/or MSA modules for applying hierarchy-aware
  * communication topologies for collective MPI operations within the upper MPICH layer.
  */
@@ -756,6 +756,10 @@ int MPID_Free_mem( void *ptr );
    hierarchical collectives in a (mostly) device-independent way. */
 int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p);
 int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p);
+/* The PSP layer extends this by multi-level hierarchies and provides the
+   following additional functions for this: */
+int MPID_Get_badge(MPIR_Comm *comm, int rank, int *badge_p);
+int MPID_Get_max_badge(MPIR_Comm *comm, int *max_badge_p);
 
 #ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
 int MPID_PSP_Reduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,

@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2020 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2021 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -214,7 +214,8 @@ badge_unknown:
 	return MPIDI_PSP_get_max_badge_by_level(level) + 1; // plus 1 as wildcard for an unknown badge
 }
 
-static int MPIDI_PSP_comm_is_flat_on_level(MPIR_Comm *comm, MPIDI_PSP_topo_level_t *level)
+static
+int MPIDI_PSP_comm_is_flat_on_level(MPIR_Comm *comm, MPIDI_PSP_topo_level_t *level)
 {
 	int i;
 	int my_badge;
@@ -230,53 +231,64 @@ static int MPIDI_PSP_comm_is_flat_on_level(MPIR_Comm *comm, MPIDI_PSP_topo_level
 	return 1;
 }
 
+int MPID_Get_badge(MPIR_Comm *comm, int rank, int *badge_p)
+{
+	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
+
+	if(tl == NULL) {
+		*badge_p = -1;
+		return MPI_ERR_OTHER;
+	}
+
+	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
+		assert(tl->badge_table);
+		tl = tl->next;
+	}
+
+	*badge_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, tl, rank);
+	return MPI_SUCCESS;
+}
+
+int MPID_Get_max_badge(MPIR_Comm *comm, int *max_badge_p)
+{
+	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
+
+	if(tl == NULL) {
+		*max_badge_p = 0;
+		return MPI_ERR_OTHER;
+	}
+
+	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
+		assert(tl->badge_table);
+		tl = tl->next;
+	}
+
+	*max_badge_p =  MPIDI_PSP_get_max_badge_by_level(tl) + 1; // plus 1 for the "unknown badge" wildcard
+	return MPI_SUCCESS;
+}
+
 #endif /* MPID_PSP_TOPOLOGY_AWARE_COLLOPS */
 
 
 int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 {
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
-	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
-
-	if(tl == NULL) {
-		*id_p = -1;
-		return MPI_ERR_OTHER;
-	}
-
-	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
-		assert(tl->badge_table);
-		tl = tl->next;
-	}
-
-	*id_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, tl, rank);
+	/* The node IDs are unique, but do not have to be ordered and contiguous,
+	   nor do they have to be limited in value by the number of nodes!
+	*/
+	*id_p = MPIDI_Process.smp_node_id;
 	return MPI_SUCCESS;
-#else
-	*id_p = -1;
-	return MPI_ERR_OTHER;
-#endif
 }
 
 int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 {
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
-	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
-
-	if(tl == NULL) {
-		*max_id_p = 0;
-		return MPI_ERR_OTHER;
-	}
-
-	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
-		assert(tl->badge_table);
-		tl = tl->next;
-	}
-
-	*max_id_p =  MPIDI_PSP_get_max_badge_by_level(tl) + 1; // plus 1 for the "unknown badge" wildcard
-	return MPI_SUCCESS;
-#else
+	/* Since the node IDs are not necessarily ordered and contiguous,
+	   we cannot determine a meaningful maximum here and therefore
+	   exit with a non-fatal error. This shall then only disable
+	   the creation of SMP-aware  communicators in the higher
+	   MPICH layer (see MPIR_Find_local_and_external()).
+	*/
 	*max_id_p = 0;
 	return MPI_ERR_OTHER;
-#endif
 }
 
 
