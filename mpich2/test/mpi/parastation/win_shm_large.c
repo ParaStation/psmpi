@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2017 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2017-2021 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -14,99 +14,112 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-
-int comm_world_rank;
-int comm_world_size;
-
-MPI_Comm comm_shmem;
-int comm_shmem_rank;
-int comm_shmem_size;
+#include "mpitest.h"
 
 #define STRIDE 4096
 #define SIZE (((long)1<<32)+STRIDE)
 
+static int errors = 0;
 
-void *win_alloc(MPI_Win *win, MPI_Aint size)
+void *win_alloc_shared(MPI_Win *win, MPI_Aint size, int disp, MPI_Comm comm)
 {
-        int disp;
-        int qdisp;
-        MPI_Aint qsize;
-        void *ptr = NULL;
-        void *qptr = NULL;
+	int qdisp = 0;
+	MPI_Aint qsize = 0;
+	void *ptr = NULL;
+	void *qptr = NULL;
 
-        disp = 1;
+	int comm_rank;
+	int comm_size;
 
-        if(comm_shmem_rank == 0) {
-		MPI_Win_allocate_shared(size, disp, MPI_INFO_NULL, comm_shmem, &ptr, win);
-		assert(ptr != NULL);
-		MPI_Win_shared_query(*win, 0, &qsize, &qdisp, &qptr);
-		assert(qptr == ptr);
+	MPI_Comm_size(comm, &comm_size);
+	MPI_Comm_rank(comm, &comm_rank);
 
-        } else {
-		MPI_Win_allocate_shared(0, disp, MPI_INFO_NULL, comm_shmem, &ptr, win);
-		// For size=0, the behavior regarding the returned pointer is implementation specific.
-		if(ptr == NULL) {
-			// ...e.g, the CH3 devices returns NULL in such a case.
-			printf("This test is known to fail with CH3 device!\n");
+	if (comm_rank == 0) {
+		MPI_Win_allocate_shared(size, disp, MPI_INFO_NULL, comm, &ptr, win);
+		if (ptr == NULL) {
+			printf("(%d) Window base pointer is NULL (but should not)\n", comm_rank);
+			errors++;
 		}
-		assert(ptr != NULL); // ...and psmpi returns a valid pointer (!=NULL) to the shared region.
 		MPI_Win_shared_query(*win, 0, &qsize, &qdisp, &qptr);
-		assert(qptr != NULL);
+		if (qptr != ptr) {
+			printf("(%d) Window pointers do not match: %p vs. %p\n", comm_rank, qptr, ptr);
+			errors++;
+		}
+	} else {
+		MPI_Win_allocate_shared(0, disp, MPI_INFO_NULL, comm, &ptr, win);
+		MPI_Win_shared_query(*win, comm_rank, &qsize, &qdisp, &qptr);
+		if (qsize != 0) {
+			printf("(%d) Window sizes do not match: %ld vs. 0\n", comm_rank, qsize);
+			errors++;
+		}
+		MPI_Win_shared_query(*win, 0, &qsize, &qdisp, &qptr);
+		if (qptr == NULL) {
+			printf("(%d) Window pointer to rank 0 is NULL (but should not)\n", comm_rank);
+			errors++;
+		}
 	}
 
-	assert(qsize == size);
-	assert(qdisp == disp);
+	if (qsize != size) {
+		printf("(%d) Window sizes do not match: %ld vs. %ld\n", comm_rank, qsize, size);
+		errors++;
+	}
+	if (qdisp != disp) {
+		printf("(%d) Window displacement units do not match: %d vs. %d\n", comm_rank, qdisp, disp);
+		errors++;
+	}
 
         return qptr;
 }
 
 int main(int argc, char *argv[])
 {
-        int i;
+	int i;
 	size_t j;
+	int comm_world_rank;
+	int comm_world_size;
+	int comm_shmem_rank;
+	int comm_shmem_size;
+	MPI_Comm comm_shmem;
+	MPI_Win win;
 	void *ptr;
-        MPI_Win win;
 
-        MPI_Init(&argc, &argv);
+	MTest_Init(&argc, &argv);
 
-        MPI_Comm_size(MPI_COMM_WORLD, &comm_world_size);
-        MPI_Comm_rank(MPI_COMM_WORLD, &comm_world_rank);
-        MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &comm_shmem);
+	MPI_Comm_size(MPI_COMM_WORLD, &comm_world_size);
+	MPI_Comm_rank(MPI_COMM_WORLD, &comm_world_rank);
 
-        MPI_Comm_size(comm_shmem, &comm_shmem_size);
-        MPI_Comm_rank(comm_shmem, &comm_shmem_rank);
+	MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &comm_shmem);
+	MPI_Comm_size(comm_shmem, &comm_shmem_size);
+	MPI_Comm_rank(comm_shmem, &comm_shmem_rank);
 
 	// If SMP-awareness is disabled, it is quite likely that comm_shmem equals COMM_SELF! Just skip this test then...
-	if(getenv("PSP_SMP_AWARENESS") && (strcmp(getenv("PSP_SMP_AWARENESS"), "0") == 0)) goto finalize;
+	if (comm_shmem_size == 1) goto finalize;
 
-	assert(sizeof(MPI_Aint) == sizeof(long));
-	assert(sizeof(size_t) == sizeof(unsigned long));
+	ptr = win_alloc_shared(&win, SIZE, sizeof(char), comm_shmem);
 
-	ptr = win_alloc(&win, SIZE);
-
-	for(i=0; i<comm_shmem_size; i++) {
-		if(comm_shmem_rank == i); {
-			for(j=0; j<SIZE; j+=STRIDE) {
-				*((char*)(ptr+j)) = i;
+	for (i=0; i < comm_shmem_size; i++) {
+		if (comm_shmem_rank == i) {
+			for (j=0; j < SIZE; j+=STRIDE) {
+				*((char*)(ptr+j)) = (char)i;
 			}
 		}
 		MPI_Barrier(comm_shmem);
-		for(j=0; j<SIZE; j+=STRIDE) {
-			assert(*((char*)(ptr+j)) == i);
+		for (j=0; j < SIZE; j+=STRIDE) {
+			if (*((char*)(ptr+j)) != (char)i) {
+				printf("(%d|%d) Error at %p + %ld = %p: %d vs. %d\n",
+				       comm_world_rank, comm_shmem_rank,
+				       ptr, j, ptr+j, *((char*)(ptr+j)), (char)i);
+				errors++;
+			}
 		}
 		MPI_Barrier(comm_shmem);
 	}
 
-	MPI_Win_free(&win);        
-
-        MPI_Comm_free(&comm_shmem);
+	MPI_Win_free(&win);
 
 finalize:
-        MPI_Finalize();
+	MPI_Comm_free(&comm_shmem);
+	MTest_Finalize(errors);
 
-	if(comm_world_rank == 0) {
-		printf(" No Errors\n");
-	}
-
-        return 0;
+	return MTestReturnValue(errors);
 }

@@ -27,6 +27,8 @@ noinst_PROGRAMS =               \
 	win_sync_err_unlockall  \
 	win_flavor_err_shm      \
 	win_flavor_err_dyn      \
+	win_shm_dup_comm        \
+	win_shm_recursive       \
 	win_shm_multiple        \
 	win_shm_large           \
 	win_test_ordering       \
