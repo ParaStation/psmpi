@@ -304,7 +304,7 @@ int MPID_PSP_Reduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_
 	MPID_PSP_packed_msg_t coll_sendbuf, coll_recvbuf = {0};
 
 	MPIDI_Pack_coll_buf(sendbuf, datatype, count, &coll_sendbuf);
-	if(comm_ptr->rank == root) {
+	if ((comm_ptr->rank == root) || (root == MPI_ROOT)) {
 		MPIDI_Pack_coll_buf(recvbuf, datatype, count, &coll_recvbuf);
 	}
 
@@ -319,7 +319,7 @@ int MPID_PSP_Reduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_
 #endif
 
 	MPIDI_Unpack_coll_buf(&coll_sendbuf, 0);
-	if(comm_ptr->rank == root) {
+	if ((comm_ptr->rank == root) || (root == MPI_ROOT)) {
 		MPIDI_Unpack_coll_buf(&coll_recvbuf, 1);
 	}
 
