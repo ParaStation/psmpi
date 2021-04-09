@@ -121,6 +121,10 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 
 		MPIDI_Datatype_get_info(origin_count, origin_datatype, contig, data_sz, dtp, true_lb);
 		mpi_error = MPID_PSP_packed_msg_allocate(data_sz, &msg);
+
+		// Avoid compiler warnings about unused variables:
+		(void)contig;
+		(void)true_lb;
 	} else
 #endif
 	{
@@ -439,9 +443,10 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 			  MPI_Aint target_disp, MPIR_Win *win_ptr)
 {
 	if(1) { /* TODO: This implementation is just based on Get (plus some additional internal locking): */
-
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
 		int result_addr_is_gpu_mem, compare_addr_is_gpu_mem;
-		size_t target_sz;
+		size_t target_sz = 0;
+#endif
 		void *result_addr_tmp = result_addr;
 		void* compare_addr_tmp = (void*)compare_addr;
 
@@ -472,6 +477,9 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 				compare_addr_tmp = MPL_malloc(target_sz, MPL_MEM_OTHER);
 				MPID_Memcpy(compare_addr_tmp, compare_addr, target_sz);
 			}
+			// Avoid compiler warnings about unused variables:
+			(void)contig;
+			(void)true_lb;
 		}
 #endif
 

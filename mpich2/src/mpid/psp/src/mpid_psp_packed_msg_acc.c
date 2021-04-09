@@ -156,9 +156,10 @@ void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Data
 	struct acc_params acc_params;
 
 	void *acc_addr = (void*)target_addr;
-	size_t target_sz;
 
 #ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
+	size_t target_sz = 0;
+
 	/* is target_addr within device memory? */
 	if (pscom_is_gpu_mem(target_addr)) {
 		int contig;
@@ -171,6 +172,10 @@ void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Data
 
 		acc_addr = MPL_malloc(target_sz, MPL_MEM_OTHER);
 		MPID_Memcpy(acc_addr, target_addr, target_sz);
+
+		// Avoid compiler warnings about unused variables:
+		(void)contig;
+		(void)true_lb;
 	}
 #endif
 

@@ -82,7 +82,6 @@ void prepare_ctrl_recvreq(pscom_request_t *req, int tag, int recvcontext_id, int
 void MPIDI_PSP_RecvCtrl(int tag, int recvcontext_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype)
 {
 	pscom_request_t *req = PSCOM_REQUEST_CREATE();
-	MPID_PSCOM_XHeader_t *xhead = &req->xheader.user.common;
 
 	prepare_ctrl_recvreq(req, tag, recvcontext_id, src_rank, con, msgtype);
 

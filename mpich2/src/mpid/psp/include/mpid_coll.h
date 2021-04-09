@@ -16,8 +16,11 @@
 void MPIDI_PSP_stats_hcoll_counter_inc(MPIDI_PSP_stats_collops_enum_t);
 #endif
 
+#undef MPIDI_PSP_WITH_PSCOM_COLLECTIVES
+#ifdef MPIDI_PSP_WITH_PSCOM_COLLECTIVES
 void MPID_PSP_group_init(MPIR_Comm *comm_ptr);
 void MPID_PSP_group_cleanup(MPIR_Comm *comm_ptr);
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPID_Barrier
