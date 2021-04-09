@@ -619,7 +619,9 @@ int MPID_PSP_comm_create_hook(MPIR_Comm * comm)
 
 	if (!MPIDI_Process.env.enable_collectives) return MPI_SUCCESS;
 
+#ifdef MPIDI_PSP_WITH_PSCOM_COLLECTIVES
 	MPID_PSP_group_init(comm);
+#endif
 
 	/*
 	printf("%s (comm:%p(%s, id:%08x, size:%u))\n",
@@ -653,9 +655,10 @@ int MPID_PSP_comm_destroy_hook(MPIR_Comm * comm)
 
 	if (!MPIDI_Process.env.enable_collectives) return MPI_SUCCESS;
 
+#ifdef MPIDI_PSP_WITH_PSCOM_COLLECTIVES
 	/* ToDo: Use comm Barrier before cleanup! */
-
 	MPID_PSP_group_cleanup(comm);
+#endif
 
 	return MPI_SUCCESS;
 }

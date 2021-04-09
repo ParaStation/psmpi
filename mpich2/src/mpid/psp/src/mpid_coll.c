@@ -15,6 +15,8 @@
 #include <assert.h>
 
 
+#ifdef MPIDI_PSP_WITH_PSCOM_COLLECTIVES
+
 #if 1
 #define D(cmd)
 #else
@@ -230,6 +232,8 @@ void MPID_PSP_group_cleanup(MPIR_Comm *comm_ptr)
 	}
 }
 
+#endif /* MPIDI_PSP_WITH_PSCOM_COLLECTIVES */
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -258,6 +262,8 @@ void MPIDI_Pack_coll_buf(const void *buf, const MPI_Datatype datatype,
 		coll_buf->msg = (void*)buf;
 		coll_buf->tmp_buf = NULL;
 	}
+	// Avoid compiler warnings about unused variables:
+	(void)true_lb;
 }
 
 static inline
@@ -295,10 +301,10 @@ int MPID_PSP_Reduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_
 			     MPI_Op op, int root, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag)
 {
 	int rc;
-	MPID_PSP_packed_msg_t coll_sendbuf, coll_recvbuf;
+	MPID_PSP_packed_msg_t coll_sendbuf, coll_recvbuf = {0};
 
 	MPIDI_Pack_coll_buf(sendbuf, datatype, count, &coll_sendbuf);
-	if(comm_ptr->rank == root) {
+	if ((comm_ptr->rank == root) || (root == MPI_ROOT)) {
 		MPIDI_Pack_coll_buf(recvbuf, datatype, count, &coll_recvbuf);
 	}
 
@@ -313,7 +319,7 @@ int MPID_PSP_Reduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_
 #endif
 
 	MPIDI_Unpack_coll_buf(&coll_sendbuf, 0);
-	if(comm_ptr->rank == root) {
+	if ((comm_ptr->rank == root) || (root == MPI_ROOT)) {
 		MPIDI_Unpack_coll_buf(&coll_recvbuf, 1);
 	}
 
