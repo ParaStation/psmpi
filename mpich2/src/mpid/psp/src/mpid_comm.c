@@ -538,6 +538,7 @@ int MPID_PSP_comm_create_hook(MPIR_Comm * comm)
 	}
 
 	comm->is_disconnected = 0;
+	comm->is_checked_as_host_local = 0;
 	comm->group = NULL;
 
 	if (comm->comm_kind == MPIR_COMM_KIND__INTERCOMM) {

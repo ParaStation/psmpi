@@ -941,14 +941,18 @@ int MPID_PSP_Win_allocate_shared(MPI_Aint size, int disp_unit, MPIR_Info *info_p
 		int flag = 0;
 		MPID_PSP_shm_attr_t *shm_attr;
 
-		mpi_errno = MPIDI_PSP_check_for_host_local_comm(comm_ptr, &flag);
-		if (mpi_errno) {
-			goto fn_fail;
-		}
+		if (!comm_ptr->is_checked_as_host_local) {
 
-		if (!flag) {
-			/* This communicator cannot be used with MPID_Win_allocate_shared()! */
-			return MPI_ERR_RMA_SHARED;
+			mpi_errno = MPIDI_PSP_check_for_host_local_comm(comm_ptr, &comm_ptr->is_checked_as_host_local);
+			if (mpi_errno) {
+				goto fn_fail;
+			}
+
+			if (!comm_ptr->is_checked_as_host_local) {
+				/* This communicator cannot be used with MPID_Win_allocate_shared()! */
+				mpi_errno = MPI_ERR_RMA_SHARED;
+				goto fn_fail;
+			}
 		}
 
 		shm_attr = MPL_malloc(sizeof(MPID_PSP_shm_attr_t), MPL_MEM_OBJECT);

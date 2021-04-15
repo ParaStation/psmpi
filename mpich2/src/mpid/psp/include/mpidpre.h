@@ -516,6 +516,7 @@ MPIDI_CH3I_comm_t;
 	pscom_group_t	*group;						\
 	pscom_request_t *bcast_request;					\
 	int              is_disconnected;				\
+	int              is_checked_as_host_local;			\
 	union {								\
 		MPIDI_VCRT_t	*vcrt; /* virtual connection reference table */ \
 		MPIDI_CH3I_comm_t dev;					\
