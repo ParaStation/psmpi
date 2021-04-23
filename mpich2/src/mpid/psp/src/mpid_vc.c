@@ -552,8 +552,6 @@ void MPID_PSP_comm_create_mapper(MPIR_Comm * comm)
 {
 	int vcrt_size;
 
-	comm->is_disconnected = 0;
-
 	if(!comm->mapper_head) return;
 
 	vcrt_size = MPID_PSP_mapper_list_dest_local_size(comm->mapper_head);

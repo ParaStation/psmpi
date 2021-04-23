@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2006-2020 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2006-2021 ParTec Cluster Competence Center GmbH, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -38,9 +38,6 @@ int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
 
 		mpi_errno = MPIR_Comm_split_impl(comm_ptr, color, key, newcomm_ptr);
 
-		if(mpi_errno == MPI_SUCCESS) {
-			mpi_errno = MPIR_Comm_set_attr_impl(*newcomm_ptr, MPIDI_Process.shm_attr_key, NULL, MPIR_ATTR_PTR);
-		}
 	} else if(split_type == MPIX_COMM_TYPE_MODULE) {
 		int color;
 
@@ -217,7 +214,8 @@ badge_unknown:
 	return MPIDI_PSP_get_max_badge_by_level(level) + 1; // plus 1 as wildcard for an unknown badge
 }
 
-static int MPIDI_PSP_comm_is_flat_on_level(MPIR_Comm *comm, MPIDI_PSP_topo_level_t *level)
+static
+int MPIDI_PSP_comm_is_flat_on_level(MPIR_Comm *comm, MPIDI_PSP_topo_level_t *level)
 {
 	int i;
 	int my_badge;
@@ -233,69 +231,66 @@ static int MPIDI_PSP_comm_is_flat_on_level(MPIR_Comm *comm, MPIDI_PSP_topo_level
 	return 1;
 }
 
+int MPID_Get_badge(MPIR_Comm *comm, int rank, int *badge_p)
+{
+	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
+
+	if(tl == NULL) {
+		*badge_p = -1;
+		return MPI_ERR_OTHER;
+	}
+
+	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
+		assert(tl->badge_table);
+		tl = tl->next;
+	}
+
+	*badge_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, tl, rank);
+	return MPI_SUCCESS;
+}
+
+int MPID_Get_max_badge(MPIR_Comm *comm, int *max_badge_p)
+{
+	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
+
+	if(tl == NULL) {
+		*max_badge_p = 0;
+		return MPI_ERR_OTHER;
+	}
+
+	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
+		assert(tl->badge_table);
+		tl = tl->next;
+	}
+
+	*max_badge_p =  MPIDI_PSP_get_max_badge_by_level(tl) + 1; // plus 1 for the "unknown badge" wildcard
+	return MPI_SUCCESS;
+}
+
 #endif /* MPID_PSP_TOPOLOGY_AWARE_COLLOPS */
 
 
 int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 {
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
-	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
-
-	if(tl == NULL) {
-		*id_p = -1;
-		return MPI_ERR_OTHER;
-	}
-
-	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
-		assert(tl->badge_table);
-		tl = tl->next;
-	}
-
-	*id_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, tl, rank);
+	/* The node IDs are unique, but do not have to be ordered and contiguous,
+	   nor do they have to be limited in value by the number of nodes!
+	*/
+	*id_p = MPIDI_Process.smp_node_id;
 	return MPI_SUCCESS;
-#else
-	*id_p = -1;
-	return MPI_ERR_OTHER;
-#endif
 }
 
 int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 {
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
-	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
-
-	if(tl == NULL) {
-		*max_id_p = 0;
-		return MPI_ERR_OTHER;
-	}
-
-	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
-		assert(tl->badge_table);
-		tl = tl->next;
-	}
-
-	*max_id_p =  MPIDI_PSP_get_max_badge_by_level(tl) + 1; // plus 1 for the "unknown badge" wildcard
-	return MPI_SUCCESS;
-#else
+	/* Since the node IDs are not necessarily ordered and contiguous,
+	   we cannot determine a meaningful maximum here and therefore
+	   exit with a non-fatal error. This shall then only disable
+	   the creation of SMP-aware  communicators in the higher
+	   MPICH layer (see MPIR_Find_local_and_external()).
+	*/
 	*max_id_p = 0;
 	return MPI_ERR_OTHER;
-#endif
 }
 
-
-int MPID_PSP_get_host_hash(void)
-{
-       char host_name[MPI_MAX_PROCESSOR_NAME];
-       int result_len;
-       static int host_hash = 0;
-
-       if(!host_hash) {
-               MPID_Get_processor_name(host_name, MPI_MAX_PROCESSOR_NAME, &result_len);
-               MPIDI_PG_Convert_id(host_name, &host_hash);
-               assert(host_hash >= 0);
-       }
-       return host_hash;
-}
 
 int MPID_PSP_comm_init(int has_parent)
 {
@@ -336,24 +331,8 @@ int MPID_PSP_comm_init(int has_parent)
 	if(MPIDI_Process.env.enable_msa_awareness) {
 
 		if(MPIDI_Process.msa_module_id < 0) {
-
-			if (!MPIDI_Process.env.enable_ondemand) {
-				/* In the PSP_ONDEMAND=0 case, we can check the pscom connection types: */
-				for (grank = 0; grank < pg_size; grank++) {
-					pscom_connection_t *con = MPIDI_Process.grank2con[grank];
-					if(con->type == PSCOM_CON_TYPE_GW) {
-						MPIDI_Process.msa_module_id = grank;
-						break;
-					}
-				}
-			}
-			if (MPIDI_Process.msa_module_id < 0) {
-				/* If we yet haven't found a module_id, use the appnum for this: */
-				MPIDI_Process.msa_module_id = MPIR_Process.attrs.appnum;
-			}
-			if(MPIDI_Process.msa_module_id < 0) {
-				MPIDI_Process.msa_module_id = 0;
-			}
+			/* If no msa_module_id is set explicitly, use the appnum for this: */
+			MPIDI_Process.msa_module_id = MPIR_Process.attrs.appnum;
 		}
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
@@ -381,23 +360,12 @@ int MPID_PSP_comm_init(int has_parent)
 	if(MPIDI_Process.env.enable_smp_awareness) {
 
 		if(MPIDI_Process.smp_node_id < 0) {
-
-			int psp_shm = 1;
-			pscom_env_get_uint(&psp_shm, "PSP_SHM");
-			if (!MPIDI_Process.env.enable_ondemand && psp_shm) {
-				/* In the PSP_ONDEMAND=0 case, we can (if SHM is not disabled) check the pscom connection types: */
-				for (grank = 0; grank < pg_size; grank++) {
-					pscom_connection_t *con = MPIDI_Process.grank2con[grank];
-					if( (con->type == PSCOM_CON_TYPE_SHM) || (pg_rank == grank) ) {
-						MPIDI_Process.smp_node_id = grank;
-						break;
-					}
-				}
-			} else {
-				/* In the PSP_ONDEMAND=1 case (or if SHM is disabled), we have to use a hash of the host name: */
-				MPIDI_Process.smp_node_id = MPID_PSP_get_host_hash();
-				/* ...accepting the possibility of hash collisions that may lead to undefined situations! */
-			}
+			/* If no smp_node_id is set explicitly, use the pscom's node_id for this:
+			   (...which is an int and might be negative. However, since we know that it actually
+			   corresponds to the IPv4 address of the node, it is safe to force the most significant
+			   bit to be unset so that it is positive and can thus also be used as a split color.)
+			*/
+			MPIDI_Process.smp_node_id = ((MPIR_Process.comm_world->pscom_socket->local_con_info.node_id)<<1)>>1;
 		}
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
@@ -570,6 +538,7 @@ int MPID_PSP_comm_create_hook(MPIR_Comm * comm)
 	}
 
 	comm->is_disconnected = 0;
+	comm->is_checked_as_host_local = 0;
 	comm->group = NULL;
 
 	if (comm->comm_kind == MPIR_COMM_KIND__INTERCOMM) {
