@@ -25,6 +25,7 @@ int _getenv_i(const char *env_name, int _default)
 int MPID_Abort(MPIR_Comm * comm_ptr, int mpi_errno, int exit_code,
 	       const char *error_msg)
 {
+	int termination_call;
 	MPIR_Comm *comm_self_ptr;
 
 	MPIR_Comm_get_ptr (MPI_COMM_SELF, comm_self_ptr);
@@ -38,9 +39,20 @@ int MPID_Abort(MPIR_Comm * comm_ptr, int mpi_errno, int exit_code,
 		PMI_Finalize();
 	}
 
-	MPL_error_printf("%s", error_msg);
+	MPL_error_printf("%s\n", error_msg);
 
-	exit(exit_code);
+	termination_call = _getenv_i("PSP_HARD_ABORT", 0);
+
+	switch (termination_call) {
+	case 0:
+		exit(exit_code);
+	case 1:
+		PMI_Abort(exit_code, error_msg);
+	case 2:
+		_exit(exit_code);
+	default:
+		abort();
+	}
 	return MPI_ERR_INTERN;
 }
 #undef FUNCNAME

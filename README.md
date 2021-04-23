@@ -172,6 +172,10 @@ Session Parameters
 | `PSP_DEBUG=6`                |  + tracing calls                                                                           |
 | `PSP_DEBUG_VERSION=1`        | Show always the pscom version (info)                                                       |
 | `PSP_DEBUG_CONTYPE=1`        | Show connection types (info)                                                               |
+| `PSP_HARD_ABORT=0`           | Process termination in MPI_Abort() via exit() (default)                                    |
+| `PSP_HARD_ABORT=1`           | Process termination in MPI_Abort() via PMI_Abort()                                         |
+| `PSP_HARD_ABORT=2`           | Process termination in MPI_Abort() via _exit()                                             |
+| `PSP_HARD_ABORT=3`           | Process termination in MPI_Abort() via abort()                                             |
 | `PSP_CUDA_ENFORCE_STAGING=1` | Enforce staging of CUDA buffers via host memory (with a _significant_ performance penalty!) |
 
 ### Feature Activation
