@@ -365,7 +365,7 @@ int MPID_PSP_comm_init(int has_parent)
 			   corresponds to the IPv4 address of the node, it is safe to force the most significant
 			   bit to be unset so that it is positive and can thus also be used as a split color.)
 			*/
-			MPIDI_Process.smp_node_id = ((MPIR_Process.comm_world->pscom_socket->local_con_info.node_id)<<1)>>1;
+			MPIDI_Process.smp_node_id = (int)((unsigned)MPIR_Process.comm_world->pscom_socket->local_con_info.node_id & (unsigned)0x7fffffff);
 		}
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
