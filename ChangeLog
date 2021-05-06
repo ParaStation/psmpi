@@ -1,3 +1,27 @@
+2021-05-06  Simon Pickartz <pickartz@par-tec.com>   -     5.4.9-0rc1
+
+2021-04-15  Carsten Clauss <clauss@par-tec.com>
+
+	* Enhancement: Improve the topological node affiliation by
+         distinguishing node IDs and badges for multi-level hierarchies.
+
+	* Enhancement: Add PSP_HARD_ABORT environment variable influencing
+	the MPI_Abort() behavior.
+
+	* Fix: MPI_Reduce() for CUDA buffers and intercommunicators.
+
+	* Fix: Rare memory leak when using MPI_Win_allocate_shared().
+
+2021-03-10  Simon Pickartz <pickartz@par-tec.com>
+
+	* Enhancement: PSP_DEBUG_VERSION=1 provides runtime information of
+	the PS-MPI built being used.
+
+2021-03-02  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Potential deadlock for MPI one-sided relying on
+	MPI_Win_start/post/complete/wait/test() synchronization.
+
 2021-01-27  Simon Pickartz <pickartz@par-tec.com>   -     5.4.8-1
 
 2020-12-15  Carsten Clauss <clauss@par-tec.com>   -     5.4.8-0rc1
