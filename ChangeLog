@@ -1,9 +1,11 @@
+2021-05-07  Simon Pickartz <pickartz@par-tec.com>   -     5.4.9-1
+
 2021-05-06  Simon Pickartz <pickartz@par-tec.com>   -     5.4.9-0rc1
 
 2021-04-15  Carsten Clauss <clauss@par-tec.com>
 
 	* Enhancement: Improve the topological node affiliation by
-         distinguishing node IDs and badges for multi-level hierarchies.
+	distinguishing node IDs and badges for multi-level hierarchies.
 
 	* Enhancement: Add PSP_HARD_ABORT environment variable influencing
 	the MPI_Abort() behavior.
