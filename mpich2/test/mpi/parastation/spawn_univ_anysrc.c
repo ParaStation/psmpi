@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2014-2016 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2021 ParTec AG, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -15,6 +15,15 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <unistd.h>
+#include <sys/time.h>
+
+static
+unsigned long get_wtime_sec(void)
+{
+	struct timeval tv;
+	gettimeofday(&tv,NULL);
+	return tv.tv_sec;
+}
 
 int main( int argc, char *argv[] )
 {
@@ -32,6 +41,7 @@ int main( int argc, char *argv[] )
 	int inter_loc_size;
 	int univ_rank;
 	int univ_size;
+	int root = 0;
 	MPI_Comm parent_comm = MPI_COMM_NULL;
 	MPI_Comm spawn_comm  = MPI_COMM_NULL;
 	MPI_Comm merge_comm  = MPI_COMM_NULL;
@@ -117,9 +127,7 @@ int main( int argc, char *argv[] )
 		/* j = 3 : Test, if ANY_SOURCE communication works with additional MPI_Probe() in this new and flat universe. */
 		/* j = 4-7 Same tests as 0-3 but with another root... */
 
-		int root = 0;
-
-		if(root > 3) root = univ_size -1;
+		if(j > 3) root = univ_size - 1;
 
 		if(univ_rank == root) {
 
@@ -133,7 +141,14 @@ int main( int argc, char *argv[] )
 				status_array[i].MPI_ERROR = MPI_SUCCESS;
 			}
 
-			if((j%4)==2) sleep(2);
+			if((j%4)==2) {
+				int flag;
+				unsigned long start_time = get_wtime_sec();
+				while (1) {
+					MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, univ_comm, &flag, MPI_STATUS_IGNORE);
+					if (get_wtime_sec() - start_time > 2) break;
+				}
+			}
 
 			MPI_Isend(&univ_rank, 1, MPI_INT, root, univ_rank, univ_comm, &send_req);
 
@@ -161,7 +176,14 @@ int main( int argc, char *argv[] )
 			MPI_Wait(&send_req, MPI_STATUS_IGNORE);
 
 		} else {
-			if((j%4)==1) sleep(2);
+			if((j%4)==1) {
+				int flag;
+				unsigned long start_time = get_wtime_sec();
+				while (1) {
+					MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, univ_comm, &flag, MPI_STATUS_IGNORE);
+					if (get_wtime_sec() - start_time > 2) break;
+				}
+			}
 
 			MPI_Send(&univ_rank, 1, MPI_INT, root, univ_rank, univ_comm);
 		}
