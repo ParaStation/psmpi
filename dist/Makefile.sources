@@ -10542,6 +10542,7 @@ mpich2/test/mpi/parastation/spawn_rma.c \
 mpich2/test/mpi/parastation/spawn_ssend.c \
 mpich2/test/mpi/parastation/spawn_univ_anysrc.c \
 mpich2/test/mpi/parastation/spawn_univ_comm.c \
+mpich2/test/mpi/parastation/spawn_univ_discon.c \
 mpich2/test/mpi/parastation/spawn_univ_split.c \
 mpich2/test/mpi/parastation/split_type_integrity.c \
 mpich2/test/mpi/parastation/testlist \
