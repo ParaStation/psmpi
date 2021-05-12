@@ -938,7 +938,6 @@ int MPID_PSP_Win_allocate_shared(MPI_Aint size, int disp_unit, MPIR_Info *info_p
 
 	if(!is_comm_self_clone(comm_ptr)) {
 
-		int flag = 0;
 		MPID_PSP_shm_attr_t *shm_attr;
 
 		if (!comm_ptr->is_checked_as_host_local) {

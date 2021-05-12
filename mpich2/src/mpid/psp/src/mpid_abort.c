@@ -48,6 +48,7 @@ int MPID_Abort(MPIR_Comm * comm_ptr, int mpi_errno, int exit_code,
 		exit(exit_code);
 	case 1:
 		PMI_Abort(exit_code, error_msg);
+		// fall through
 	case 2:
 		_exit(exit_code);
 	default:
