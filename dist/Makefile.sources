@@ -10526,6 +10526,7 @@ mpich2/test/mpi/parastation/intercomm_anysrc.c \
 mpich2/test/mpi/parastation/intercomm_stress.c \
 mpich2/test/mpi/parastation/large_acc_flush_local.c \
 mpich2/test/mpi/parastation/large_msg_typed.c \
+mpich2/test/mpi/parastation/large_msg_builtin.c \
 mpich2/test/mpi/parastation/locknull.c \
 mpich2/test/mpi/parastation/mprobe.c \
 mpich2/test/mpi/parastation/msa_info_env.c \

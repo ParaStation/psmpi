@@ -45,6 +45,7 @@ noinst_PROGRAMS =               \
 	num_contexts_8k         \
 	num_contexts_16k        \
 	large_msg_typed         \
+	large_msg_builtin       \
 	intercomm_anysrc        \
 	intercomm_stress        \
 	large_acc_flush_local   \
