@@ -37,7 +37,7 @@ noinst_PROGRAMS =               \
 	spawn_anysrc            \
 	spawn_ssend             \
 	spawn_rma               \
-	spawn_universe          \
+	spawn_univ_split        \
 	spawn_univ_comm         \
 	spawn_univ_anysrc       \
 	num_contexts_2k         \

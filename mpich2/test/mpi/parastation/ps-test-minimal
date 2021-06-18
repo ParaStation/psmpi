@@ -15,7 +15,7 @@ spawn_isend 2
 spawn_ssend 2
 spawn_anysrc 2 timeLimit=30
 spawn_rma 2
-spawn_universe 2
+spawn_univ_split 2
 spawn_univ_comm 2 timeLimit=30
 intercomm_anysrc 4
 num_contexts_2k 1
