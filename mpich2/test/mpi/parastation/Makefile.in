@@ -106,9 +106,9 @@ noinst_PROGRAMS = locknull$(EXEEXT) get_acc_loc$(EXEEXT) \
 	split_type_integrity$(EXEEXT) spawn_isend$(EXEEXT) \
 	spawn_anysrc$(EXEEXT) spawn_ssend$(EXEEXT) spawn_rma$(EXEEXT) \
 	spawn_univ_split$(EXEEXT) spawn_univ_comm$(EXEEXT) \
-	spawn_univ_anysrc$(EXEEXT) num_contexts_2k$(EXEEXT) \
-	num_contexts_4k$(EXEEXT) num_contexts_8k$(EXEEXT) \
-	num_contexts_16k$(EXEEXT) \
+	spawn_univ_anysrc$(EXEEXT) spawn_univ_discon$(EXEEXT) \
+	num_contexts_2k$(EXEEXT) num_contexts_4k$(EXEEXT) \
+	num_contexts_8k$(EXEEXT) num_contexts_16k$(EXEEXT) \
 	large_msg_typed$(EXEEXT) large_msg_builtin$(EXEEXT)\
 	intercomm_anysrc$(EXEEXT) intercomm_stress$(EXEEXT) \
 	large_acc_flush_local$(EXEEXT) acc_pairtype$(EXEEXT) \
@@ -264,6 +264,11 @@ spawn_univ_comm_OBJECTS = spawn_univ_comm.$(OBJEXT)
 spawn_univ_comm_LDADD = $(LDADD)
 spawn_univ_comm_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+spawn_univ_discon_SOURCES = spawn_univ_discon.c
+spawn_univ_discon_OBJECTS = spawn_univ_discon.$(OBJEXT)
+spawn_univ_discon_LDADD = $(LDADD)
+spawn_univ_discon_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 spawn_univ_split_SOURCES = spawn_univ_split.c
 spawn_univ_split_OBJECTS = spawn_univ_split.$(OBJEXT)
 spawn_univ_split_LDADD = $(LDADD)
@@ -366,7 +371,9 @@ am__depfiles_remade = ./$(DEPDIR)/acc_pairtype.Po \
 	./$(DEPDIR)/spawn_anysrc.Po ./$(DEPDIR)/spawn_isend.Po \
 	./$(DEPDIR)/spawn_rma.Po ./$(DEPDIR)/spawn_ssend.Po \
 	./$(DEPDIR)/spawn_univ_anysrc.Po \
-	./$(DEPDIR)/spawn_univ_comm.Po ./$(DEPDIR)/spawn_univ_split.Po \
+	./$(DEPDIR)/spawn_univ_comm.Po \
+	./$(DEPDIR)/spawn_univ_discon.Po \
+	./$(DEPDIR)/spawn_univ_split.Po \
 	./$(DEPDIR)/split_type_integrity.Po \
 	./$(DEPDIR)/win_flavor_err_dyn.Po \
 	./$(DEPDIR)/win_flavor_err_shm.Po \
@@ -400,12 +407,13 @@ SOURCES = acc_pairtype.c acc_vecsum.c get_acc_loc.c get_acc_pairtype.c \
 	num_contexts_16k.c num_contexts_2k.c num_contexts_4k.c \
 	num_contexts_8k.c putfence1.c spawn_anysrc.c spawn_isend.c \
 	spawn_rma.c spawn_ssend.c spawn_univ_anysrc.c \
-	spawn_univ_comm.c spawn_univ_split.c split_type_integrity.c \
-	win_flavor_err_dyn.c win_flavor_err_shm.c win_shm_dup_comm.c \
-	win_shm_large.c win_shm_multiple.c win_shm_recursive.c \
-	win_sync_err_flush.c win_sync_err_flushall.c \
-	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
-	win_sync_err_unlockall.c win_test_ordering.c
+	spawn_univ_comm.c spawn_univ_discon.c spawn_univ_split.c \
+	split_type_integrity.c win_flavor_err_dyn.c \
+	win_flavor_err_shm.c win_shm_dup_comm.c win_shm_large.c \
+	win_shm_multiple.c win_shm_recursive.c win_sync_err_flush.c \
+	win_sync_err_flushall.c win_sync_err_lockall_at.c \
+	win_sync_err_lockall_pt.c win_sync_err_unlockall.c \
+	win_test_ordering.c
 DIST_SOURCES = acc_pairtype.c acc_vecsum.c get_acc_loc.c \
 	get_acc_pairtype.c get_acc_shm_pairtype.c getfence1.c \
 	intercomm_anysrc.c intercomm_stress.c large_acc_flush_local.c \
@@ -414,12 +422,13 @@ DIST_SOURCES = acc_pairtype.c acc_vecsum.c get_acc_loc.c \
 	msa_split_type.c num_contexts_16k.c num_contexts_2k.c \
 	num_contexts_4k.c num_contexts_8k.c putfence1.c spawn_anysrc.c \
 	spawn_isend.c spawn_rma.c spawn_ssend.c spawn_univ_anysrc.c \
-	spawn_univ_comm.c spawn_univ_split.c split_type_integrity.c \
-	win_flavor_err_dyn.c win_flavor_err_shm.c win_shm_dup_comm.c \
-	win_shm_large.c win_shm_multiple.c win_shm_recursive.c \
-	win_sync_err_flush.c win_sync_err_flushall.c \
-	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
-	win_sync_err_unlockall.c win_test_ordering.c
+	spawn_univ_comm.c spawn_univ_discon.c spawn_univ_split.c \
+	split_type_integrity.c win_flavor_err_dyn.c \
+	win_flavor_err_shm.c win_shm_dup_comm.c win_shm_large.c \
+	win_shm_multiple.c win_shm_recursive.c win_sync_err_flush.c \
+	win_sync_err_flushall.c win_sync_err_lockall_at.c \
+	win_sync_err_lockall_pt.c win_sync_err_unlockall.c \
+	win_test_ordering.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -831,6 +840,10 @@ spawn_univ_comm$(EXEEXT): $(spawn_univ_comm_OBJECTS) $(spawn_univ_comm_DEPENDENC
 	@rm -f spawn_univ_comm$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(spawn_univ_comm_OBJECTS) $(spawn_univ_comm_LDADD) $(LIBS)
 
+spawn_univ_discon$(EXEEXT): $(spawn_univ_discon_OBJECTS) $(spawn_univ_discon_DEPENDENCIES) $(EXTRA_spawn_univ_discon_DEPENDENCIES) 
+	@rm -f spawn_univ_discon$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(spawn_univ_discon_OBJECTS) $(spawn_univ_discon_LDADD) $(LIBS)
+
 spawn_univ_split$(EXEEXT): $(spawn_univ_split_OBJECTS) $(spawn_univ_split_DEPENDENCIES) $(EXTRA_spawn_univ_split_DEPENDENCIES) 
 	@rm -f spawn_univ_split$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(spawn_univ_split_OBJECTS) $(spawn_univ_split_LDADD) $(LIBS)
@@ -919,6 +932,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_ssend.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_univ_anysrc.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_univ_comm.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_univ_discon.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_univ_split.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/split_type_integrity.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_flavor_err_dyn.Po@am__quote@ # am--include-marker
@@ -1111,6 +1125,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/spawn_ssend.Po
 	-rm -f ./$(DEPDIR)/spawn_univ_anysrc.Po
 	-rm -f ./$(DEPDIR)/spawn_univ_comm.Po
+	-rm -f ./$(DEPDIR)/spawn_univ_discon.Po
 	-rm -f ./$(DEPDIR)/spawn_univ_split.Po
 	-rm -f ./$(DEPDIR)/split_type_integrity.Po
 	-rm -f ./$(DEPDIR)/win_flavor_err_dyn.Po
@@ -1196,6 +1211,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/spawn_ssend.Po
 	-rm -f ./$(DEPDIR)/spawn_univ_anysrc.Po
 	-rm -f ./$(DEPDIR)/spawn_univ_comm.Po
+	-rm -f ./$(DEPDIR)/spawn_univ_discon.Po
 	-rm -f ./$(DEPDIR)/spawn_univ_split.Po
 	-rm -f ./$(DEPDIR)/split_type_integrity.Po
 	-rm -f ./$(DEPDIR)/win_flavor_err_dyn.Po
