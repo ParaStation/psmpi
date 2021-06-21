@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2014-2016 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2021 ParTec AG, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <unistd.h>
+#include "mpitest.h"
 
 int main( int argc, char *argv[] )
 {
@@ -23,6 +24,7 @@ int main( int argc, char *argv[] )
 	int leader;
 	int buffer[3];
 	int errcodes[2];
+	int errs = 0;
 	int world_rank;
 	int world_size;
 	int merge_rank;
@@ -39,7 +41,7 @@ int main( int argc, char *argv[] )
 	MPI_Comm inter_comm  = MPI_COMM_NULL;
 	MPI_Comm univ_comm   = MPI_COMM_NULL;
 
-	MPI_Init(&argc, &argv);
+	MTest_Init( &argc, &argv );
 
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
@@ -142,11 +144,11 @@ int main( int argc, char *argv[] )
 	/* (depending on the setting of ENABLE_LAZY_DISCONNECT in mpid_vc.c ...*/
 	MPI_Comm_disconnect(&univ_comm);
 
-	if(univ_rank == 0) {
-		printf(" No errors\n");
+	if (parent_comm == MPI_COMM_NULL) {
+		MTest_Finalize(errs);
+	} else {
+		MPI_Finalize();
 	}
 
-	MPI_Finalize();
-
-	return 0;
+	return MTestReturnValue(errs);
 }

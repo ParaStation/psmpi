@@ -1,7 +1,7 @@
 /*
  * ParaStation
  *
- * Copyright (C) 2014-2016 ParTec Cluster Competence Center GmbH, Munich
+ * Copyright (C) 2021 ParTec AG, Munich
  *
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
@@ -10,12 +10,12 @@
  * Author:	Carsten Clauss <clauss@par-tec.com>
  */
 
-#include "mpi.h"
-#include "mpitest.h"
+#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <unistd.h>
+#include "mpitest.h"
 
 int main( int argc, char *argv[] )
 {
@@ -58,7 +58,7 @@ int main( int argc, char *argv[] )
 	MPI_Comm_get_parent( &parent_comm );
 
 	if(parent_comm == MPI_COMM_NULL) {
-		MPI_Comm_spawn((char*)"./spawn_universe", MPI_ARGV_NULL, 2, MPI_INFO_NULL, 0, MPI_COMM_SELF, &spawn_comm, errcodes);
+		MPI_Comm_spawn((char*)"./spawn_univ_split", MPI_ARGV_NULL, 2, MPI_INFO_NULL, 0, MPI_COMM_SELF, &spawn_comm, errcodes);
 
 	} else {
 		spawn_comm = parent_comm;
@@ -130,10 +130,10 @@ int main( int argc, char *argv[] )
 	MPI_Comm_disconnect(&split_comm);
 
 	if (parent_comm == MPI_COMM_NULL) {
-	    MTest_Finalize(errs);
+		MTest_Finalize(errs);
 	} else {
-	    MPI_Finalize();
+		MPI_Finalize();
 	}
 
-    return MTestReturnValue(errs);
+	return MTestReturnValue(errs);
 }
