@@ -272,16 +272,16 @@ int MPID_PSP_GetParentPort(char **parent_port);
 	(dt_ptr_) = NULL;						\
 	(dt_contig_out_) = TRUE;					\
 	(dt_true_lb_)    = 0;                                           \
-	(data_sz_out_) = (count_) * MPIR_Datatype_get_basic_size(datatype_); \
-	/* printf("%s() : basic datatype: dt_contig=%d, dt_sz=%d, data_sz=%d\n", \
+	(data_sz_out_) = ((size_t)count_) * MPIR_Datatype_get_basic_size(datatype_); \
+	/* printf("%s() : basic datatype: dt_contig=%d, dt_sz=%d, data_sz=%zu\n", \
 	       __func__, (dt_contig_out_),				\
 	       MPIR_Datatype_get_basic_size(datatype_), (data_sz_out_));*/ \
     } else {								\
 	MPIR_Datatype_get_ptr((datatype_), (dt_ptr_));			\
 	(dt_contig_out_) = (dt_ptr_)->is_contig;			\
-	(data_sz_out_) = (count_) * (dt_ptr_)->size;			\
+	(data_sz_out_) = ((size_t)count_) * (dt_ptr_)->size;		\
 	(dt_true_lb_)    = (dt_ptr_)->true_lb;				\
-	/* printf("%s() : user defined datatype: dt_contig=%d, dt_sz=%d, data_sz=%d\n", \
+	/* printf("%s() : user defined datatype: dt_contig=%d, dt_sz=%zd, data_sz=%zu\n", \
 	       __func__, (dt_contig_out_),				\
 	       (dt_ptr_)->size, (data_sz_out_));*/			\
     }									\
