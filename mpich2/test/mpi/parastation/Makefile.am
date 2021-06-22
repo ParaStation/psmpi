@@ -40,6 +40,7 @@ noinst_PROGRAMS =               \
 	spawn_univ_split        \
 	spawn_univ_comm         \
 	spawn_univ_anysrc       \
+	spawn_univ_discon       \
 	num_contexts_2k         \
 	num_contexts_4k         \
 	num_contexts_8k         \
