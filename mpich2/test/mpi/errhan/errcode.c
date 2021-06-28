@@ -2343,6 +2343,9 @@ int main(int argc, char **argv)
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_get_library_version %p %p" );
     }
     /* src/mpi/init/finalize.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**gpu_finalize", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**gpu_finalize" );
+    /* src/mpi/init/finalize.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mpi_finalize", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_finalize" );
     /* src/mpi/init/abort.c */
@@ -2364,6 +2367,9 @@ int main(int argc, char **argv)
      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mpi_query_thread", "**mpi_query_thread %p", s1 );
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_query_thread %p" );
     }
+    /* src/mpi/init/initthread.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**gpu_init", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**gpu_init" );
     /* src/mpi/init/initthread.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**inittwice", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**inittwice" );
@@ -3892,6 +3898,9 @@ int main(int argc, char **argv)
     /* src/mpi/datatype/typerep/src/typerep_flatten.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**yaksa", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**yaksa" );
+    /* src/mpi/datatype/typerep/src/typerep_yaksa_pack_external.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**packextunsupport", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**packextunsupport" );
     /* src/mpi/pt2pt/recv_init.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mpi_recv_init", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_recv_init" );
@@ -7420,17 +7429,14 @@ int main(int argc, char **argv)
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**gpu_ipc_handle_unmap", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**gpu_ipc_handle_unmap" );
     /* src/mpid/ch4/shm/ipc/gpu/gpu_init.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**gpu_init", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**gpu_init" );
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**gpu_get_dev_count", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**gpu_get_dev_count" );
     /* src/mpid/ch4/shm/ipc/gpu/gpu_init.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**gpu_get_global_dev_ids", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**gpu_get_global_dev_ids" );
     /* src/mpid/ch4/shm/ipc/gpu/gpu_init.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mpl_gavl_create", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**mpl_gavl_create" );
-    /* src/mpid/ch4/shm/ipc/gpu/gpu_init.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**gpu_finalize", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**gpu_finalize" );
     /* src/mpid/ch4/shm/ipc/xpmem/xpmem_init.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**xpmem_make", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**xpmem_make" );
@@ -7476,6 +7482,9 @@ int main(int argc, char **argv)
      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**ucx_nm_rq_error", "**ucx_nm_rq_error %s %d %s %s", s1, i2, s3, s4 );
     ChkMsg( err, MPI_ERR_OTHER, "**ucx_nm_rq_error %s %d %s %s" );
     }
+    /* src/mpid/ch4/netmod/ucx/ucx_spawn.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**ucx_nm_notsupported", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**ucx_nm_notsupported" );
     /* src/mpid/ch4/netmod/ofi/ofi_recv.h */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**ofid_cancel", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**ofid_cancel" );

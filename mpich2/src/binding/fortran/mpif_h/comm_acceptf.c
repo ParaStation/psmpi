@@ -271,10 +271,10 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_accept_ ( char *v1 FORT_MIXED_LEN(d1), MPI
      int  li;
         while (*p == ' ' && p > v1) p--;
         p++;
-        p1 = (char *)MPL_malloc( p-v1 + 1, MPL_MEM_OTHER );
+        p1 = (char *)malloc(p-v1 + 1);
         for (li=0; li<(p-v1); li++) { p1[li] = v1[li]; }
         p1[li] = 0; 
     }
     *ierr = MPI_Comm_accept( p1, (MPI_Info)(*v2), (int)*v3, (MPI_Comm)(*v4), (MPI_Comm *)(v5) );
-    MPL_free( p1 );
+    free( p1 );
 }

@@ -1,10 +1,10 @@
 /*
- * Copyright © 2012-2017 Inria.  All rights reserved.
+ * Copyright © 2012-2020 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <private/autogen/config.h> /* for HWLOC_WIN_SYS */
-#include <hwloc.h>
+#include "private/autogen/config.h" /* for HWLOC_WIN_SYS */
+#include "hwloc.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,7 +19,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <private/misc.h> /* for S_IRWXU */
+#include "private/misc.h" /* for S_IRWXU */
 static inline int mkstemp(char *name)
 {
   mktemp(name);
@@ -67,8 +67,9 @@ int main(void)
   char env[64];
   int xmlbufok = 0, xmlfileok = 0, xmlfilefd;
   const char *orig_backend_name;
+  int err;
 
-  putenv("HWLOC_LIBXML_CLEANUP=1");
+  putenv((char *) "HWLOC_LIBXML_CLEANUP=1");
 
   printf("trying to export topology to XML buffer and file for later...\n");
   hwloc_topology_init(&topology1);
@@ -156,7 +157,7 @@ int main(void)
 
   /* syntheticenv+init+load+destroy, synthetic env overrides xml */
   printf("switching to synthetic by env and loading...\n");
-  putenv("HWLOC_SYNTHETIC=node:3 pu:3");
+  putenv((char *) "HWLOC_SYNTHETIC=node:3 pu:3");
   hwloc_topology_init(&topology2);
   hwloc_topology_load(topology2);
   assert_backend_name(topology2, "Synthetic");
@@ -168,7 +169,7 @@ int main(void)
 
   /* componentsenv+init+load+destroy for testing defaults, overrides synthetic/xml/fsroot envs */
   printf("switching to default components by env and loading...\n");
-  putenv("HWLOC_COMPONENTS=,"); /* don't set to empty since it means 'unset' on windows */
+  putenv((char *) "HWLOC_COMPONENTS=,"); /* don't set to empty since it means 'unset' on windows */
   hwloc_topology_init(&topology2);
   hwloc_topology_load(topology2);
   assert_backend_name(topology2, orig_backend_name);
@@ -183,6 +184,74 @@ int main(void)
     unlink(xmlfile);
     close(xmlfilefd);
   }
+  hwloc_topology_destroy(topology1);
+
+  /* blacklist everything but noos with hwloc_topology_set_components() */
+  printf("disabling everything but noos with hwloc_topology_set_components()\n");
+  putenv((char *) "HWLOC_COMPONENTS="); /* means 'unset' on windows, which means HWLOC_XMLFILE and HWLOC_SYNTHETIC
+				* would be processed if not empty, so clear them too. */
+  putenv((char *) "HWLOC_XMLFILE=");
+  putenv((char *) "HWLOC_SYNTHETIC=");
+  hwloc_topology_init(&topology1);
+  err = hwloc_topology_set_components(topology1, HWLOC_TOPOLOGY_COMPONENTS_FLAG_BLACKLIST, "foobar");
+  assert(err == -1);
+  assert(errno == EINVAL);
+  err = hwloc_topology_set_components(topology1, ~HWLOC_TOPOLOGY_COMPONENTS_FLAG_BLACKLIST, "synthetic");
+  assert(err == -1);
+  assert(errno == EINVAL);
+  err = hwloc_topology_set_components(topology1, HWLOC_TOPOLOGY_COMPONENTS_FLAG_BLACKLIST, "synthetic");
+  assert(!err);
+  err = hwloc_topology_set_components(topology1, HWLOC_TOPOLOGY_COMPONENTS_FLAG_BLACKLIST, "xml");
+  assert(!err);
+  err = hwloc_topology_set_components(topology1, HWLOC_TOPOLOGY_COMPONENTS_FLAG_BLACKLIST, "x86");
+#ifdef HWLOC_HAVE_X86_CPUID
+  assert(!err);
+#else
+  assert(err == -1);
+  assert(errno == EINVAL);
+#endif
+#ifdef HWLOC_LINUX_SYS
+  err = hwloc_topology_set_components(topology1, HWLOC_TOPOLOGY_COMPONENTS_FLAG_BLACKLIST, "linux:0xf");
+  assert(!err);
+  err = hwloc_topology_set_components(topology1, HWLOC_TOPOLOGY_COMPONENTS_FLAG_BLACKLIST, "linux:0xfffffff0");
+  assert(!err);
+#endif
+#ifdef HWLOC_BGQ_SYS
+  err = hwloc_topology_set_components(topology1, HWLOC_TOPOLOGY_COMPONENTS_FLAG_BLACKLIST, "bgq");
+  assert(!err);
+#endif
+#ifdef HWLOC_DARWIN_SYS
+  err = hwloc_topology_set_components(topology1, HWLOC_TOPOLOGY_COMPONENTS_FLAG_BLACKLIST, "darwin");
+  assert(!err);
+#endif
+#ifdef HWLOC_SOLARIS_SYS
+  err = hwloc_topology_set_components(topology1, HWLOC_TOPOLOGY_COMPONENTS_FLAG_BLACKLIST, "solaris");
+  assert(!err);
+#endif
+#ifdef HWLOC_AIX_SYS
+  err = hwloc_topology_set_components(topology1, HWLOC_TOPOLOGY_COMPONENTS_FLAG_BLACKLIST, "aix");
+  assert(!err);
+#endif
+#ifdef HWLOC_HPUX_SYS
+  err = hwloc_topology_set_components(topology1, HWLOC_TOPOLOGY_COMPONENTS_FLAG_BLACKLIST, "hpux");
+  assert(!err);
+#endif
+#ifdef HWLOC_WIN_SYS
+  err = hwloc_topology_set_components(topology1, HWLOC_TOPOLOGY_COMPONENTS_FLAG_BLACKLIST, "windows");
+  assert(!err);
+#endif
+#ifdef HWLOC_FREEBSD_SYS
+  err = hwloc_topology_set_components(topology1, HWLOC_TOPOLOGY_COMPONENTS_FLAG_BLACKLIST, "freebsd");
+  assert(!err);
+#endif
+#ifdef HWLOC_NETBSD_SYS
+  err = hwloc_topology_set_components(topology1, HWLOC_TOPOLOGY_COMPONENTS_FLAG_BLACKLIST, "netbsd");
+  assert(!err);
+#endif
+  hwloc_topology_load(topology1);
+  assert(!get_backend_name(topology1)); /* noos doesn't put any Backend info attr */
+  hwloc_topology_check(topology1);
+  assert(hwloc_topology_is_thissystem(topology1));
   hwloc_topology_destroy(topology1);
 
   return 0;

@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.\" Copyright © 2009-2018 Inria.  All rights reserved.
+.\" Copyright © 2009-2020 Inria.  All rights reserved.
 .\" Copyright © 2009-2010 Université of Bordeaux
 .\" Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 .\" See COPYING in top-level directory.
@@ -88,6 +88,28 @@ Display information about the object children.
 \fB\-\-descendants\fR <type>
 Display information about the object descendants that match the given type.
 .TP
+\fB\-\-local\-memory\fR
+Display information about the NUMA nodes that are local to the given object.
+.TP
+\fB\-\-local\-memory\-flags\fR
+Change the flags used to select local NUMA nodes.
+Flags may be given as numeric values or as a comma-separated list of flag names
+that are passed to \fIhwloc_get_local_numanode_objs()\fR.
+Those names may be substrings of actual flag names as long as a single one matches.
+The default is \fB3\fR (or \fBsmaller,larger\fR)
+which means NUMA nodes are displayed
+if their locality either contains or is contained
+in the locality of the given object.
+
+This option enables \fB\-\-local\-memory\fR.
+.TP
+\fB\-\-best\-memattr\fR <name>
+Enable the listing local memory nodes with \fB\-\-local\-memory\fR,
+but only display the local node that has the best value for the memory
+attribute given by \fI<name>\fR (or as an index).
+If the memory attribute values depend on the initiator, the object given
+to hwloc-info is used as the initiator.
+.TP
 \fB\-n\fR
 When outputting object information, prefix each line with the index
 of the considered object within the input.
@@ -98,17 +120,28 @@ where X is the index of the considered object within the input,
 and Y is the parent index (0 for the object itself, increasing
 towards the root of the topology).
 .TP
-\fB\-\-whole\-system\fR
-Do not consider administration limitations.
+\fB\-\-disallowed\fR
+Include objects disallowed by administrative limitations.
 .TP
 \fB\-\-restrict\fR <cpuset>
 Restrict the topology to the given cpuset.
+.TP
+\fB\-\-restrict\fR nodeset=<nodeset>
+Restrict the topology to the given nodeset, unless \fB\-\-restrict\-flags\fR specifies something different.
 .TP
 \fB\-\-restrict\fR binding
 Restrict the topology to the current process binding.
 This option requires the use of the actual current machine topology
 (or any other topology with \fB\-\-thissystem\fR or with
 HWLOC_THISSYSTEM set to 1 in the environment).
+.TP
+\fB\-\-restrict\-flags\fR <flags>
+Enforce flags when restricting the topology.
+Flags may be given as numeric values or as a comma-separated list of flag names
+that are passed to \fIhwloc_topology_restrict()\fR.
+Those names may be substrings of actual flag names as long as a single one matches,
+for instance \fBbynodeset,memless\fR.
+The default is \fB0\fR (or \fBnone\fR).
 .TP
 \fB\-\-filter\fR <type>:<kind>, \fB\-\-filter\fR <type>
 Filter objects of type <type>, or of any type if <type> is "all".
@@ -166,6 +199,9 @@ Use logical indexes instead of physical/OS indexes for input (default).
 .TP
 \fB\-\-version\fR
 Report version and exit.
+.TP
+\fB\-h\fR \fB\-\-help\fR
+Display help message and exit.
 .
 .\" **************************
 .\"    Description Section
@@ -205,11 +241,29 @@ To display information about each package:
 
 To display information about the core whose physical index is 2:
 
-    $ utils/hwloc-info -p core:2
+    $ hwloc-info -p core:2
     Core L#1
      logical index = 1
      os index = 2
-   ...
+    ...
+
+To list the NUMA nodes that are local a PU:
+
+    $ hwloc-info --local-memory pu:25
+    NUMANode L#6 = local memory #0 of PU L#25
+     type = NUMANode
+    ...
+    NUMANode L#7 = local memory #1 of PU L#25
+     type = NUMANode
+    ...
+
+To show the best-bandwidth node among NUMA nodes local to a PU:
+
+    $ hwloc-info --local-memory --best-memattr bandwidth pu:25
+    NUMANode L#7 = local memory #1 of PU L#25
+     type = NUMANode
+    ...
+
 .
 .\" **************************
 .\"    See also section

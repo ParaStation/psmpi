@@ -1,15 +1,14 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2018 Inria.  All rights reserved.
+ * Copyright © 2009-2020 Inria.  All rights reserved.
  * Copyright © 2009-2011 Université Bordeaux
  * Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <private/autogen/config.h>
-#include <hwloc-calc.h>
-#include <hwloc.h>
-
+#include "private/autogen/config.h"
+#include "hwloc-calc.h"
+#include "hwloc.h"
 #include "misc.h"
 
 #include <stdlib.h>
@@ -18,10 +17,19 @@
 
 void usage(const char *callname __hwloc_attribute_unused, FILE *where)
 {
-  fprintf(where, "Usage: hwloc-calc [options] <location> ...\n");
+  fprintf(where, "Usage: hwloc-calc [topology options] [options] <location> ...\n");
   fprintf(where, " <location> may be a space-separated list of cpusets or objects\n");
   fprintf(where, "            as supported by the hwloc-bind utility, e.g:\n");
   hwloc_calc_locations_usage(where);
+  fprintf(where, "Input topology options (must be at the beginning):\n");
+  fprintf(where, "  --no-smt                  Only keep a single PU per core\n");
+  fprintf(where, "  --cpukind <n>             Only keep PUs in the CPU kind <n>\n");
+  fprintf(where, "  --cpukind <name>=<value>  Only keep PUs whose CPU kind match info <name>=<value>\n");
+  fprintf(where, "  --restrict [nodeset=]<bitmap>\n");
+  fprintf(where, "                            Restrict the topology to some processors or NUMA nodes.\n");
+  fprintf(where, "  --restrict-flags <n>      Set the flags to be used during restrict\n");
+  fprintf(where, "  --disallowed              Include objects disallowed by administrative limitations\n");
+  hwloc_utils_input_format_usage(where, 10);
   fprintf(where, "Conversion options:\n");
   fprintf(where, "  [default]                 Report the combined input locations as a CPU set\n");
   fprintf(where, "  --number-of <type|depth>\n"
@@ -33,6 +41,9 @@ void usage(const char *callname __hwloc_attribute_unused, FILE *where)
 		 "                            display them as hierarchical combinations such as\n"
 		 "                            type1:index1.type2:index2...\n");
   fprintf(where, "  --largest                 Report the list of largest objects in the CPU set\n");
+  fprintf(where, "  --local-memory            Report the memory nodes that are local to the CPU set\n");
+  fprintf(where, "  --local-memory flags <x>  Change flags for selecting local memory nodes\n");
+  fprintf(where, "  --best-memattr <attr>     Only report the best memory node among the local ones\n");
   fprintf(where, "Formatting options:\n");
   fprintf(where, "  -l --logical              Use logical object indexes (default)\n");
   fprintf(where, "  -p --physical             Use physical object indexes\n");
@@ -40,13 +51,12 @@ void usage(const char *callname __hwloc_attribute_unused, FILE *where)
   fprintf(where, "  --lo --logical-output     Use logical indexes for output (default)\n");
   fprintf(where, "  --pi --physical-input     Use physical indexes for input\n");
   fprintf(where, "  --po --physical-output    Use physical indexes for output\n");
+  fprintf(where, "  -n --nodeset              Manipulate nodesets instead of cpusets\n");
+  fprintf(where, "  --ni --nodeset-input      Manipulate nodesets instead of cpusets for inputs\n");
+  fprintf(where, "  --no --nodeset-output     Manipulate nodesets instead of cpusets for outputs\n");
   fprintf(where, "  --sep <sep>               Use separator <sep> in the output\n");
   fprintf(where, "  --taskset                 Use taskset-specific format when displaying cpuset strings\n");
   fprintf(where, "  --single                  Singlify the output to a single CPU\n");
-  fprintf(where, "Input topology options:\n");
-  fprintf(where, "  --restrict <cpuset>       Restrict the topology to processors listed in <cpuset>\n");
-  fprintf(where, "  --whole-system            Do not consider administration limitations\n");
-  hwloc_utils_input_format_usage(where, 10);
   fprintf(where, "Miscellaneous options:\n");
   fprintf(where, "  -q --quiet                Hide non-fatal error messages\n");
   fprintf(where, "  -v --verbose              Show verbose messages\n");
@@ -56,13 +66,44 @@ void usage(const char *callname __hwloc_attribute_unused, FILE *where)
 static int verbose = 0;
 static int logicali = 1;
 static int logicalo = 1;
+static int nodeseti = 0;
+static int nodeseto = 0;
 static int numberofdepth = -1;
 static int intersectdepth = -1;
 static int hiernblevels = 0;
 static int *hierdepth = NULL;
+static int local_numanodes = 0;
+static unsigned long local_numanode_flags = HWLOC_LOCAL_NUMANODE_FLAG_SMALLER_LOCALITY | HWLOC_LOCAL_NUMANODE_FLAG_LARGER_LOCALITY;
+static hwloc_memattr_id_t best_memattr_id = (hwloc_memattr_id_t) -1;
 static int showobjs = 0;
+static int no_smt = -1;
 static int singlify = 0;
 static int taskset = 0;
+static hwloc_bitmap_t cpukind_cpuset = NULL;
+
+static int
+hwloc_calc_intersects_set(hwloc_bitmap_t set, int use_nodeset, hwloc_obj_t obj)
+{
+  if (use_nodeset)
+    return hwloc_bitmap_intersects(set, obj->nodeset);
+  else
+    return hwloc_bitmap_intersects(set, obj->cpuset);
+}
+
+/* generalization of hwloc_get_next_obj_covering_cpuset_by_depth() which may also use nodeset instead of cpuset */
+static hwloc_obj_t
+hwloc_calc_get_next_obj_covering_set_by_depth(hwloc_topology_t topology,
+					      hwloc_bitmap_t set, int use_nodeset,
+					      int depth,
+					      hwloc_obj_t prev)
+{
+  hwloc_obj_t next = hwloc_get_next_obj_by_depth(topology, depth, prev);
+  if (!next)
+    return NULL;
+  while (next && !hwloc_calc_intersects_set(set, use_nodeset, next))
+    next = next->next_cousin;
+  return next;
+}
 
 static void
 hwloc_calc_hierarch_output(hwloc_topology_t topology, const char *prefix, const char *sep, hwloc_obj_t root, hwloc_bitmap_t set, int level)
@@ -97,12 +138,24 @@ next:
 static int
 hwloc_calc_output(hwloc_topology_t topology, const char *sep, hwloc_bitmap_t set)
 {
+  if (cpukind_cpuset)
+    hwloc_bitmap_and(set, set, cpukind_cpuset);
+
+  if (no_smt != -1 && !nodeseto) {
+    if (hwloc_get_type_depth(topology, HWLOC_OBJ_CORE) == HWLOC_TYPE_DEPTH_UNKNOWN) {
+      fprintf(stderr, "Topology has no Core object, ignoring --no-smt\n");
+    } else {
+      hwloc_bitmap_singlify_per_core(topology, set, no_smt);
+    }
+  }
+
   if (singlify)
     hwloc_bitmap_singlify(set);
 
   if (showobjs) {
     hwloc_bitmap_t remaining = hwloc_bitmap_dup(set);
     int first = 1;
+    assert(!nodeseto); /* disabled for now, not very useful since the hierarchy of nodes isn't complex */
     if (!sep)
       sep = " ";
     while (!hwloc_bitmap_iszero(remaining)) {
@@ -128,14 +181,14 @@ hwloc_calc_output(hwloc_topology_t topology, const char *sep, hwloc_bitmap_t set
   } else if (numberofdepth != -1) {
     unsigned nb = 0;
     hwloc_obj_t obj = NULL;
-    while ((obj = hwloc_get_next_obj_covering_cpuset_by_depth(topology, set, numberofdepth, obj)) != NULL)
+    while ((obj = hwloc_calc_get_next_obj_covering_set_by_depth(topology, set, nodeseto, numberofdepth, obj)) != NULL)
       nb++;
     printf("%u\n", nb);
   } else if (intersectdepth != -1) {
     hwloc_obj_t proc, prev = NULL;
     if (!sep)
       sep = ",";
-    while ((proc = hwloc_get_next_obj_covering_cpuset_by_depth(topology, set, intersectdepth, prev)) != NULL) {
+    while ((proc = hwloc_calc_get_next_obj_covering_set_by_depth(topology, set, nodeseto, intersectdepth, prev)) != NULL) {
       if (prev)
 	printf("%s", sep);
       printf("%u", logicalo ? proc->logical_index : proc->os_index);
@@ -147,6 +200,45 @@ hwloc_calc_output(hwloc_topology_t topology, const char *sep, hwloc_bitmap_t set
       sep = " ";
     hwloc_calc_hierarch_output(topology, "", sep, hwloc_get_root_obj(topology), set, 0);
     printf("\n");
+
+  } else if (local_numanodes) {
+    unsigned nrnodes;
+    hwloc_obj_t *nodes;
+    nrnodes = hwloc_bitmap_weight(hwloc_topology_get_topology_nodeset(topology));
+    nodes = malloc(nrnodes * sizeof(*nodes));
+    if (nodes) {
+      int err;
+      struct hwloc_location loc;
+      loc.type = HWLOC_LOCATION_TYPE_CPUSET;
+      loc.location.cpuset = set;
+      err = hwloc_get_local_numanode_objs(topology, &loc, &nrnodes, nodes, local_numanode_flags);
+      if (!err) {
+        unsigned i;
+        if (best_memattr_id != (hwloc_memattr_id_t) -1) {
+          int best = hwloc_utils_get_best_node_in_array_by_memattr(topology, best_memattr_id, nrnodes, nodes, &loc);
+          if (best == -1) {
+            /* no perf info found, report nothing */
+            nrnodes = 0;
+          } else {
+            /* only report the best nodes */
+            nodes[0] = nodes[best];
+            nrnodes = 1;
+          }
+        }
+        if (!sep)
+          sep = ",";
+        for(i=0; i<nrnodes; i++) {
+          char type[64];
+          unsigned idx;
+          hwloc_obj_type_snprintf(type, sizeof(type), nodes[i], 1);
+          idx = logicalo ? nodes[i]->logical_index : nodes[i]->os_index;
+          printf("%s%u", i==0 ? (const char *) "" : sep, idx);
+        }
+      }
+      free(nodes);
+    }
+    printf("\n");
+
   } else {
     char *string = NULL;
     if (taskset)
@@ -190,8 +282,8 @@ static int hwloc_calc_type_depth(hwloc_topology_t topology, const char *string, 
 int main(int argc, char *argv[])
 {
   hwloc_topology_t topology;
-  int loaded = 0;
-  unsigned long flags = 0;
+  unsigned long flags = HWLOC_TOPOLOGY_FLAG_IMPORT_SUPPORT;
+  unsigned long restrict_flags = 0;
   char *input = NULL;
   enum hwloc_utils_input_format input_format = HWLOC_UTILS_INPUT_DEFAULT;
   int depth = 0;
@@ -199,9 +291,14 @@ int main(int argc, char *argv[])
   int cmdline_args = 0;
   const char * numberoftype = NULL;
   const char * intersecttype = NULL;
+  char *restrictstring = NULL;
   char * hiertype = NULL;
+  char * best_memattr_str = NULL;
   char *callname;
   char *outsep = NULL;
+  int cpukind_index = -1;
+  char *cpukind_infoname = NULL;
+  char *cpukind_infovalue = NULL;
   int opt;
   int i;
   int err;
@@ -217,29 +314,123 @@ int main(int argc, char *argv[])
   hwloc_utils_check_api_version(callname);
 
   /* enable verbose backends */
-  putenv((char *) "HWLOC_XML_VERBOSE=1");
-  putenv((char *) "HWLOC_SYNTHETIC_VERBOSE=1");
+  if (!getenv("HWLOC_XML_VERBOSE"))
+    putenv((char *) "HWLOC_XML_VERBOSE=1");
+  if (!getenv("HWLOC_SYNTHETIC_VERBOSE"))
+    putenv((char *) "HWLOC_SYNTHETIC_VERBOSE=1");
 
   set = hwloc_bitmap_alloc();
 
-  /* don't load now, in case some options change the config before the topology is actually used */
-#define ENSURE_LOADED() do { \
-  if (!loaded) { \
-    hwloc_topology_init(&topology); \
-    hwloc_topology_set_all_types_filter(topology, HWLOC_TYPE_FILTER_KEEP_ALL); \
-    hwloc_topology_set_flags(topology, flags); \
-    if (input) { \
-      err = hwloc_utils_enable_input_format(topology, input, &input_format, verbose, callname); \
-      if (err) \
-        return err; \
-    } \
-    hwloc_topology_load(topology); \
-    depth = hwloc_topology_get_depth(topology); \
-    loaded = 1; \
-  } \
-} while (0)
+  while (argc >= 1) {
+    opt = 0;
+
+    if (!strcmp (argv[0], "--disallowed") || !strcmp (argv[0], "--whole-system")) {
+      flags |= HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED;
+      goto next_config;
+    }
+    if (!strcmp (argv[0], "--restrict")) {
+      if (argc < 2) {
+	usage (callname, stderr);
+	exit(EXIT_FAILURE);
+      }
+      if(strncmp(argv[1], "nodeset=", 7))
+        restrictstring = strdup(argv[1]);
+      else {
+        restrictstring = strdup(argv[1]+8);
+        restrict_flags |= HWLOC_RESTRICT_FLAG_BYNODESET;
+      }
+      opt = 1;
+      goto next_config;
+    }
+    if (!strcmp (argv[0], "--restrict-flags")) {
+      if (argc < 2) {
+	usage (callname, stderr);
+	exit(EXIT_FAILURE);
+      }
+      restrict_flags = hwloc_utils_parse_restrict_flags(argv[1]);
+      opt = 1;
+      goto next_config;
+    }
+    if (!strcmp(argv[0], "--cpukind")) {
+      char *equal;
+      if (argc < 2) {
+        usage(callname, stderr);
+        return EXIT_FAILURE;
+      }
+      equal = strchr(argv[1], '=');
+      if (equal) {
+        cpukind_infoname = argv[1];
+        cpukind_infovalue = equal+1;
+        *equal = 0;
+      } else {
+        cpukind_index = atoi(argv[1]);
+      }
+      opt = 1;
+      goto next_config;
+    }
+    if (hwloc_utils_lookup_input_option(argv, argc, &opt,
+					  &input, &input_format,
+					  callname)) {
+      opt = 1;
+      goto next_config;
+    }
+
+    break;
+
+  next_config:
+    argc -= opt+1;
+    argv += opt+1;
+  }
+
+  hwloc_topology_init(&topology);
+  hwloc_topology_set_all_types_filter(topology, HWLOC_TYPE_FILTER_KEEP_ALL);
+  hwloc_topology_set_flags(topology, flags);
+  if (input) {
+    err = hwloc_utils_enable_input_format(topology, flags, input, &input_format, verbose, callname);
+    if (err) return EXIT_FAILURE;
+  }
+  err = hwloc_topology_load(topology);
+  if (restrictstring) {
+    hwloc_bitmap_t restrictset = hwloc_bitmap_alloc();
+    hwloc_bitmap_sscanf(restrictset, restrictstring);
+    if (hwloc_topology_restrict (topology, restrictset, restrict_flags)) {
+      perror("Restricting the topology");
+      /* FALLTHRU */
+    }
+    hwloc_bitmap_free(restrictset);
+    free(restrictstring);
+  }
+  if (cpukind_index >= 0) {
+    cpukind_cpuset = hwloc_bitmap_alloc();
+    err = hwloc_cpukinds_get_info(topology, cpukind_index, cpukind_cpuset, NULL, NULL, NULL, 0);
+    if (err < 0) {
+      fprintf(stderr, "Couldn't find CPU kind #%d, keeping no PU.\n", cpukind_index);
+      /* FALLTHRU */
+    }
+  } else if (cpukind_infoname && cpukind_infovalue) {
+    hwloc_bitmap_t cpuset = hwloc_bitmap_alloc();
+    int nr = hwloc_cpukinds_get_nr(topology, 0);
+    cpukind_cpuset = hwloc_bitmap_alloc();
+    for(i=0; i<nr; i++) {
+      struct hwloc_info_s *infos;
+      unsigned nr_infos, j;
+      hwloc_cpukinds_get_info(topology, i, cpuset, NULL, &nr_infos, &infos, 0);
+      for(j=0; j<nr_infos; j++)
+        if (!strcmp(infos[j].name, cpukind_infoname) && !strcmp(infos[j].value, cpukind_infovalue)) {
+          hwloc_bitmap_or(cpukind_cpuset, cpukind_cpuset, cpuset);
+          break;
+        }
+    }
+    hwloc_bitmap_free(cpuset);
+    if (hwloc_bitmap_iszero(cpukind_cpuset)) {
+      fprintf(stderr, "Couldn't find any CPU kind matching %s=%s, keeping no PU.\n", cpukind_infoname, cpukind_infovalue);
+      /* FALLTHRU */
+    }
+  }
 
   while (argc >= 1) {
+    opt = 0;
+
     if (*argv[0] == '-') {
       if (!strcmp(argv[0], "-v") || !strcmp(argv[0], "--verbose")) {
         verbose++;
@@ -249,35 +440,16 @@ int main(int argc, char *argv[])
         verbose--;
         goto next;
       }
-      if (!strcmp (argv[0], "--whole-system")) {
-	if (loaded) {
-	  fprintf(stderr, "Input option %s disallowed after options using the topology\n", argv[0]);
-	  exit(EXIT_FAILURE);
-	}
-	flags |= HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
+      if (!strcmp (argv[0], "--disallowed") || !strcmp (argv[0], "--whole-system")) {
+        fprintf(stderr, "Input option %s disallowed after options using the topology\n", argv[0]);
+	exit(EXIT_FAILURE);
+      }
+      if (!strcmp (argv[0], "--no-smt")) {
+	no_smt = 0;
 	goto next;
       }
-      if (!strcmp(argv[0], "--help")) {
-	usage(callname, stdout);
-	return EXIT_SUCCESS;
-      }
-      if (!strcmp (argv[0], "--restrict")) {
-	hwloc_bitmap_t restrictset;
-	if (argc < 2) {
-	  usage (callname, stderr);
-	  exit(EXIT_FAILURE);
-	}
-	restrictset = hwloc_bitmap_alloc();
-	hwloc_bitmap_sscanf(restrictset, argv[1]);
-	ENSURE_LOADED();
-	err = hwloc_topology_restrict (topology, restrictset, 0);
-	if (err) {
-	  perror("Restricting the topology");
-	  /* FALLTHRU */
-	}
-	hwloc_bitmap_free(restrictset);
-	argv++;
-	argc--;
+      if (!strncmp(argv[0], "--no-smt=", 9)) {
+	no_smt = atoi(argv[0] + 9);
 	goto next;
       }
       if (!strcmp(argv[0], "--number-of") || !strcmp(argv[0], "-N")) {
@@ -286,8 +458,7 @@ int main(int argc, char *argv[])
 	  return EXIT_FAILURE;
 	}
 	numberoftype = argv[1];
-	argv++;
-	argc--;
+	opt = 1;
 	goto next;
       }
       if (!strcmp(argv[0], "--intersect") || !strcmp(argv[0], "-I")) {
@@ -296,8 +467,7 @@ int main(int argc, char *argv[])
 	  return EXIT_FAILURE;
 	}
 	intersecttype = argv[1];
-	argv++;
-	argc--;
+	opt = 1;
 	goto next;
       }
       if (!strcmp(argv[0], "--hierarchical") || !strcmp(argv[0], "-H")) {
@@ -306,9 +476,32 @@ int main(int argc, char *argv[])
 	  return EXIT_FAILURE;
 	}
 	hiertype = argv[1];
-	argv++;
-	argc--;
+	opt = 1;
 	goto next;
+      }
+      if (!strcmp(argv[0], "--local-memory")) {
+        local_numanodes = 1;
+        goto next;
+      }
+      if (!strcmp(argv[0], "--local-memory-flags")) {
+        if (argc < 2) {
+          usage(callname, stderr);
+          return EXIT_FAILURE;
+        }
+        local_numanodes = 1;
+        local_numanode_flags = hwloc_utils_parse_local_numanode_flags(argv[1]);
+        opt = 1;
+        goto next;
+      }
+      if (!strcmp(argv[0], "--best-memattr")) {
+        if (argc < 2) {
+          usage(callname, stderr);
+          return EXIT_FAILURE;
+        }
+        local_numanodes = 1;
+        best_memattr_str = argv[1];
+        opt = 1;
+        goto next;
       }
       if (!strcasecmp(argv[0], "--pulist") || !strcmp(argv[0], "--proclist")) {
 	/* backward compat with 1.0 */
@@ -354,14 +547,26 @@ int main(int argc, char *argv[])
 	logicalo = 0;
 	goto next;
       }
+      if (!strcmp(argv[0], "-n") || !strcmp(argv[0], "--nodeset")) {
+	nodeseti = 1;
+	nodeseto = 1;
+	goto next;
+      }
+      if (!strcmp(argv[0], "--ni") || !strcmp(argv[0], "--nodeset-input")) {
+	nodeseti = 1;
+	goto next;
+      }
+      if (!strcmp(argv[0], "--no") || !strcmp(argv[0], "--nodeset-output")) {
+	nodeseto = 1;
+	goto next;
+      }
       if (!strcmp(argv[0], "--sep")) {
 	if (argc < 2) {
 	  usage (callname, stderr);
 	  exit(EXIT_FAILURE);
 	}
 	outsep = argv[1];
-	argv++;
-	argc--;
+	opt = 1;
 	goto next;
       }
       if (!strcmp(argv[0], "--single")) {
@@ -372,24 +577,11 @@ int main(int argc, char *argv[])
 	taskset = 1;
 	goto next;
       }
-      if (hwloc_utils_lookup_input_option(argv, argc, &opt,
-					  &input, &input_format,
-					  callname)) {
-	if (loaded) {
-	  fprintf(stderr, "Input option %s \"%s\" disallowed after options using the topology\n", argv[0], argv[1]);
-	  exit(EXIT_FAILURE);
-	}
-	argv += opt;
-	argc -= opt;
-	goto next;
-      }
 
       fprintf (stderr, "Unrecognized option: %s\n", argv[0]);
       usage(callname, stderr);
       return EXIT_FAILURE;
     }
-
-    ENSURE_LOADED();
 
     cmdline_args++;
     lcontext.topology = topology;
@@ -398,17 +590,21 @@ int main(int argc, char *argv[])
     lcontext.logical = logicali;
     lcontext.verbose = verbose;
     scontext.output_set = set;
-    scontext.nodeset_input = 0;
-    scontext.nodeset_output = 0;
+    scontext.nodeset_input = nodeseti;
+    scontext.nodeset_output = nodeseto;
     if (hwloc_calc_process_location_as_set(&lcontext, &scontext, argv[0]) < 0)
       fprintf(stderr, "ignored unrecognized argument %s\n", argv[0]);
 
- next:
-    argc--;
-    argv++;
-  }
 
-  ENSURE_LOADED();
+    if (showobjs && nodeseto) {
+      fprintf(stderr, "ignoring --nodeset-output when --largest output is enabled\n");
+      nodeseto = 0;
+    }
+
+  next:
+    argc -= opt+1;
+    argv += opt+1;
+  }
 
   if (numberoftype && hwloc_calc_type_depth(topology, numberoftype, &numberofdepth, "--number-of") < 0)
     goto out;
@@ -435,7 +631,19 @@ int main(int argc, char *argv[])
 	*next = '\0';
       if (hwloc_calc_type_depth(topology, tmp, &hierdepth[i], "--hierarchical") < 0)
 	goto out;
+      if (hierdepth[i] < 0) {
+	fprintf(stderr, "unsupported (non-normal) --hierarchical type %s\n", tmp);
+	goto out;
+      }
       tmp = next+1;
+    }
+  }
+
+  if (best_memattr_str) {
+    best_memattr_id = hwloc_utils_parse_memattr_name(topology, best_memattr_str);
+    if (best_memattr_id == (hwloc_memattr_id_t) -1) {
+      fprintf(stderr, "unrecognized memattr %s\n", best_memattr_str);
+      return EXIT_FAILURE;
     }
   }
 
@@ -448,14 +656,14 @@ int main(int argc, char *argv[])
 #define HWLOC_CALC_LINE_LEN 64
     size_t len = HWLOC_CALC_LINE_LEN;
     char * line = malloc(len);
-
+    printf("Waiting for locations to process on stdin...\n");
     while (1) {
       char *current, *tmpline;
 
       /* stop if line is empty */
-      if (!fgets(line, (int)len, stdin))
-	break;
-
+      if (!fgets(line, (int)len, stdin)){
+        break;
+      }
       /* keep reading until we get EOL */
       tmpline = line;
       while (!strchr(tmpline, '\n')) {
@@ -473,7 +681,6 @@ int main(int argc, char *argv[])
 	  break;
 	len *= 2;
       }
-
       /* parse now that we got everything */
       current = line;
       hwloc_bitmap_zero(set);
@@ -488,8 +695,8 @@ int main(int argc, char *argv[])
 	lcontext.logical = logicali;
 	lcontext.verbose = verbose;
 	scontext.output_set = set;
-	scontext.nodeset_input = 0;
-	scontext.nodeset_output = 0;
+	scontext.nodeset_input = nodeseti;
+	scontext.nodeset_output = nodeseto;
 	if (hwloc_calc_process_location_as_set(&lcontext, &scontext, token) < 0)
 	  fprintf(stderr, "ignored unrecognized argument %s\n", token);
       }
@@ -502,6 +709,7 @@ int main(int argc, char *argv[])
   hwloc_topology_destroy(topology);
 
   hwloc_bitmap_free(set);
+  hwloc_bitmap_free(cpukind_cpuset);
 
   free(hierdepth);
 

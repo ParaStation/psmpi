@@ -1,27 +1,51 @@
 /*
- * Copyright © 2012-2018 Inria.  All rights reserved.
+ * Copyright © 2012-2020 Inria.  All rights reserved.
  * Copyright © 2013, 2018 Université Bordeaux.  All right reserved.
  * See COPYING in top-level directory.
  */
 
-#include <private/autogen/config.h>
-#include <hwloc.h>
-#include <hwloc/plugins.h>
+#include "private/autogen/config.h"
+#include "hwloc.h"
+#include "hwloc/plugins.h"
 
 /* private headers allowed for convenience because this plugin is built within hwloc */
-#include <private/misc.h>
-#include <private/debug.h>
+#include "private/misc.h"
+#include "private/debug.h"
 
 #define CL_TARGET_OPENCL_VERSION 220
 #ifdef __APPLE__
-#include <OpenCL/cl_ext.h>
+#include <OpenCL/cl.h>
 #else
-#include <CL/cl_ext.h>
+#include <CL/cl.h>
 #endif
 
+#include "hwloc/opencl.h"
+
+
+/* OpenCL extensions aren't always shipped with default headers,
+ * and it doesn't always reflect what the implementation supports.
+ * Try everything and let the implementation return errors when non supported.
+ */
+/* Copyright (c) 2008-2018 The Khronos Group Inc. */
+#define HWLOC_CL_DEVICE_BOARD_NAME_AMD 0x4038
+
+/* Only supported since OpenCL 1.2 */
+/* Copyright (c) 2008-2018 The Khronos Group Inc. */
+#define HWLOC_CL_DEVICE_TYPE_CUSTOM (1<<4)
+
+/* Only supported since OpenCL 2.0 */
+/* Copyright (c) 2008-2013 The Khronos Group Inc. */
+#define HWLOC_CL_PLATFORM_NOT_FOUND_KHR -1001
+
 static int
-hwloc_opencl_discover(struct hwloc_backend *backend)
+hwloc_opencl_discover(struct hwloc_backend *backend, struct hwloc_disc_status *dstatus)
 {
+  /*
+   * This backend uses the underlying OS.
+   * However we don't enforce topology->is_thissystem so that
+   * we may still force use this backend when debugging with !thissystem.
+   */
+
   struct hwloc_topology *topology = backend->topology;
   enum hwloc_type_filter_e filter;
   cl_uint nr_platforms;
@@ -29,13 +53,19 @@ hwloc_opencl_discover(struct hwloc_backend *backend)
   cl_int clret;
   unsigned j;
 
+  assert(dstatus->phase == HWLOC_DISC_PHASE_IO);
+
   hwloc_topology_get_type_filter(topology, HWLOC_OBJ_OS_DEVICE, &filter);
   if (filter == HWLOC_TYPE_FILTER_KEEP_NONE)
     return 0;
 
   clret = clGetPlatformIDs(0, NULL, &nr_platforms);
-  if (CL_SUCCESS != clret || !nr_platforms)
+  if (CL_SUCCESS != clret || !nr_platforms) {
+    if (CL_SUCCESS != clret && HWLOC_CL_PLATFORM_NOT_FOUND_KHR != clret && !hwloc_hide_errors()) {
+      fprintf(stderr, "OpenCL: Failed to get number of platforms with clGetPlatformIDs(): %d\n", clret);
+    }
     return -1;
+  }
   hwloc_debug("%u OpenCL platforms\n", nr_platforms);
 
   platform_ids = malloc(nr_platforms * sizeof(*platform_ids));
@@ -70,9 +100,7 @@ hwloc_opencl_discover(struct hwloc_backend *backend)
     for(i=0; i<nr_devices; i++) {
       cl_platform_id platform_id = 0;
       cl_device_type type;
-#ifdef CL_DEVICE_TOPOLOGY_AMD
-      cl_device_topology_amd amdtopo;
-#endif
+      unsigned pcidomain, pcibus, pcidev, pcifunc;
       cl_ulong globalmemsize;
       cl_uint computeunits;
       hwloc_obj_t osdev, parent;
@@ -98,7 +126,7 @@ hwloc_opencl_discover(struct hwloc_backend *backend)
 	hwloc_obj_add_info(osdev, "OpenCLDeviceType", "GPU");
       else if (type == CL_DEVICE_TYPE_ACCELERATOR)
 	hwloc_obj_add_info(osdev, "OpenCLDeviceType", "Accelerator");
-      else if (type == CL_DEVICE_TYPE_CUSTOM)
+      else if (type == HWLOC_CL_DEVICE_TYPE_CUSTOM)
 	hwloc_obj_add_info(osdev, "OpenCLDeviceType", "Custom");
       else
 	hwloc_obj_add_info(osdev, "OpenCLDeviceType", "Unknown");
@@ -109,10 +137,8 @@ hwloc_opencl_discover(struct hwloc_backend *backend)
 	hwloc_obj_add_info(osdev, "GPUVendor", buffer);
 
       buffer[0] = '\0';
-#ifdef CL_DEVICE_BOARD_NAME_AMD
-      clret = clGetDeviceInfo(device_ids[i], CL_DEVICE_BOARD_NAME_AMD, sizeof(buffer), buffer, NULL);
+      clret = clGetDeviceInfo(device_ids[i], HWLOC_CL_DEVICE_BOARD_NAME_AMD, sizeof(buffer), buffer, NULL);
       if (CL_SUCCESS != clret || buffer[0] == '\0')
-#endif
         clGetDeviceInfo(device_ids[i], CL_DEVICE_NAME, sizeof(buffer), buffer, NULL);
       if (buffer[0] != '\0')
 	hwloc_obj_add_info(osdev, "GPUModel", buffer);
@@ -140,20 +166,11 @@ hwloc_opencl_discover(struct hwloc_backend *backend)
       hwloc_obj_add_info(osdev, "OpenCLGlobalMemorySize", buffer);
 
       parent = NULL;
-#ifdef CL_DEVICE_TOPOLOGY_AMD
-      clret = clGetDeviceInfo(device_ids[i], CL_DEVICE_TOPOLOGY_AMD, sizeof(amdtopo), &amdtopo, NULL);
-      if (CL_SUCCESS != clret) {
-	hwloc_debug("no AMD-specific device information: %d\n", clret);
-      } else if (CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD != amdtopo.raw.type) {
-	hwloc_debug("AMD-specific device topology reports non-PCIe device type: %u\n", amdtopo.raw.type);
+      if (hwloc_opencl_get_device_pci_busid(device_ids[i], &pcidomain, &pcibus, &pcidev, &pcifunc) == 0) {
+	parent = hwloc_pci_find_parent_by_busid(topology, pcidomain, pcibus, pcidev, pcifunc);
       } else {
-	parent = hwloc_pcidisc_find_by_busid(topology, 0, (unsigned)amdtopo.pcie.bus, (unsigned)amdtopo.pcie.device, (unsigned)amdtopo.pcie.function);
-	if (!parent)
-	  parent = hwloc_pcidisc_find_busid_parent(topology, 0, (unsigned)amdtopo.pcie.bus, (unsigned)amdtopo.pcie.device, (unsigned)amdtopo.pcie.function);
+	hwloc_debug("Failed to find the PCI id of the device\n");
       }
-#else
-      hwloc_debug("No locality information found.\n");
-#endif
       if (!parent)
 	parent = hwloc_get_root_obj(topology);
 
@@ -166,14 +183,16 @@ hwloc_opencl_discover(struct hwloc_backend *backend)
 }
 
 static struct hwloc_backend *
-hwloc_opencl_component_instantiate(struct hwloc_disc_component *component,
+hwloc_opencl_component_instantiate(struct hwloc_topology *topology,
+				   struct hwloc_disc_component *component,
+				   unsigned excluded_phases __hwloc_attribute_unused,
 				   const void *_data1 __hwloc_attribute_unused,
 				   const void *_data2 __hwloc_attribute_unused,
 				   const void *_data3 __hwloc_attribute_unused)
 {
   struct hwloc_backend *backend;
 
-  backend = hwloc_backend_alloc(component);
+  backend = hwloc_backend_alloc(topology, component);
   if (!backend)
     return NULL;
   backend->discover = hwloc_opencl_discover;
@@ -181,9 +200,9 @@ hwloc_opencl_component_instantiate(struct hwloc_disc_component *component,
 }
 
 static struct hwloc_disc_component hwloc_opencl_disc_component = {
-  HWLOC_DISC_COMPONENT_TYPE_MISC,
   "opencl",
-  HWLOC_DISC_COMPONENT_TYPE_GLOBAL,
+  HWLOC_DISC_PHASE_IO,
+  HWLOC_DISC_PHASE_GLOBAL,
   hwloc_opencl_component_instantiate,
   10, /* after pci */
   1,

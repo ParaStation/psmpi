@@ -1,13 +1,13 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2018 Inria.  All rights reserved.
+ * Copyright © 2009-2020 Inria.  All rights reserved.
  * Copyright © 2009-2013, 2015 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <private/autogen/config.h>
-#include <hwloc.h>
+#include "private/autogen/config.h"
+#include "hwloc.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -29,23 +29,117 @@
 #define DARKER_EPOXY_G_COLOR ((DARK_EPOXY_G_COLOR * 100) / 110)
 #define DARKER_EPOXY_B_COLOR ((DARK_EPOXY_B_COLOR * 100) / 110)
 
+#ifdef HWLOC_HAVE_GCC_W_MISSING_FIELD_INITIALIZERS
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#endif
 /* each of these colors must be declared in declare_colors() */
-const struct lstopo_color BLACK_COLOR = { 0, 0, 0 };
-const struct lstopo_color WHITE_COLOR = { 0xff, 0xff, 0xff };
-const struct lstopo_color PACKAGE_COLOR = { DARK_EPOXY_R_COLOR, DARK_EPOXY_G_COLOR, DARK_EPOXY_B_COLOR };
-const struct lstopo_color MEMORY_COLOR = { 0xef, 0xdf, 0xde };
-const struct lstopo_color MEMORIES_COLOR = { 0xf2, 0xe8, 0xe8}; /* slightly lighter than MEMORY_COLOR */
-const struct lstopo_color CORE_COLOR = { 0xbe, 0xbe, 0xbe };
-const struct lstopo_color THREAD_COLOR = { 0xff, 0xff, 0xff };
-const struct lstopo_color BINDING_COLOR = { 0, 0xff, 0 };
-const struct lstopo_color FORBIDDEN_COLOR = { 0xff, 0, 0 };
-const struct lstopo_color CACHE_COLOR = { 0xff, 0xff, 0xff };
-const struct lstopo_color MACHINE_COLOR = { 0xff, 0xff, 0xff };
-const struct lstopo_color GROUP_IN_PACKAGE_COLOR = { EPOXY_R_COLOR, EPOXY_G_COLOR, EPOXY_B_COLOR };
-const struct lstopo_color MISC_COLOR = { 0xff, 0xff, 0xff };
-const struct lstopo_color PCI_DEVICE_COLOR = { DARKER_EPOXY_R_COLOR, DARKER_EPOXY_G_COLOR, DARKER_EPOXY_B_COLOR };
-const struct lstopo_color OS_DEVICE_COLOR = { 0xde, 0xde, 0xde };
-const struct lstopo_color BRIDGE_COLOR = { 0xff, 0xff, 0xff };
+struct lstopo_color BLACK_COLOR = { 0, 0, 0, 0 };
+struct lstopo_color WHITE_COLOR = { 0xff, 0xff, 0xff, 0 };
+struct lstopo_color PACKAGE_COLOR = { DARK_EPOXY_R_COLOR, DARK_EPOXY_G_COLOR, DARK_EPOXY_B_COLOR, 0 };
+struct lstopo_color DIE_COLOR = { EPOXY_R_COLOR, EPOXY_G_COLOR, EPOXY_B_COLOR, 0 };
+struct lstopo_color MEMORY_COLOR = { 0xef, 0xdf, 0xde, 0 };
+struct lstopo_color MEMORIES_COLOR = { 0xf2, 0xe8, 0xe8, 0}; /* slightly lighter than MEMORY_COLOR */
+struct lstopo_color CORE_COLOR = { 0xbe, 0xbe, 0xbe, 0 };
+struct lstopo_color THREAD_COLOR = { 0xff, 0xff, 0xff, 0 };
+struct lstopo_color BINDING_COLOR = { 0, 0xff, 0, 0 };
+struct lstopo_color DISALLOWED_COLOR = { 0xff, 0, 0, 0 };
+struct lstopo_color CACHE_COLOR = { 0xff, 0xff, 0xff, 0 };
+struct lstopo_color MACHINE_COLOR = { 0xff, 0xff, 0xff, 0 };
+struct lstopo_color GROUP_IN_PACKAGE_COLOR = { EPOXY_R_COLOR, EPOXY_G_COLOR, EPOXY_B_COLOR, 0 };
+struct lstopo_color MISC_COLOR = { 0xff, 0xff, 0xff, 0 };
+struct lstopo_color PCI_DEVICE_COLOR = { DARKER_EPOXY_R_COLOR, DARKER_EPOXY_G_COLOR, DARKER_EPOXY_B_COLOR, 0 };
+struct lstopo_color OS_DEVICE_COLOR = { 0xde, 0xde, 0xde, 0 };
+struct lstopo_color BRIDGE_COLOR = { 0xff, 0xff, 0xff, 0 };
+#ifdef HWLOC_HAVE_GCC_W_MISSING_FIELD_INITIALIZERS
+#pragma GCC diagnostic warning "-Wmissing-field-initializers"
+#endif
+
+static struct lstopo_color *colors = NULL;
+
+static struct lstopo_color *
+declare_color(struct lstopo_output *loutput, struct lstopo_color *color)
+{
+  memset(&color->private, 0, sizeof(color->private));
+
+  /* call the backend callback if any */
+  if (loutput->methods->declare_color) {
+    int ret = loutput->methods->declare_color(loutput, color);
+    if (ret < 0)
+      return NULL;
+  }
+
+  /* insert */
+  color->next = colors;
+  colors = color;
+
+  return color;
+}
+
+void
+declare_colors(struct lstopo_output *output)
+{
+  /* don't bother looking for duplicate colors here,
+   * we want to be able to use those structs so always queue them
+   */
+  declare_color(output, &BLACK_COLOR);
+  declare_color(output, &WHITE_COLOR);
+  declare_color(output, &PACKAGE_COLOR);
+  declare_color(output, &DIE_COLOR);
+  declare_color(output, &MEMORY_COLOR);
+  declare_color(output, &MEMORIES_COLOR);
+  declare_color(output, &CORE_COLOR);
+  declare_color(output, &THREAD_COLOR);
+  declare_color(output, &BINDING_COLOR);
+  declare_color(output, &DISALLOWED_COLOR);
+  declare_color(output, &CACHE_COLOR);
+  declare_color(output, &MACHINE_COLOR);
+  declare_color(output, &GROUP_IN_PACKAGE_COLOR);
+  declare_color(output, &MISC_COLOR);
+  declare_color(output, &PCI_DEVICE_COLOR);
+  declare_color(output, &OS_DEVICE_COLOR);
+  declare_color(output, &BRIDGE_COLOR);
+}
+
+void
+destroy_colors(struct lstopo_output *loutput)
+{
+  struct lstopo_color *tmp = colors;
+
+  while (tmp) {
+    struct lstopo_color *next = tmp->next;
+
+    if (loutput->methods->destroy_color)
+      loutput->methods->destroy_color(loutput, tmp);
+    if (tmp->free)
+      free(tmp);
+    tmp = next;
+  }
+
+  colors = NULL; /* so that it works after refresh */
+}
+
+static struct lstopo_color *
+find_or_declare_rgb_color(struct lstopo_output *loutput, int r, int g, int b)
+{
+  struct lstopo_color *color, *tmp;
+
+  for(tmp = colors; tmp; tmp = tmp->next)
+    if (tmp->r == r && tmp->g == g && tmp->b == b)
+      return tmp;
+
+  color = malloc(sizeof(*color));
+  if (!color)
+    return NULL;
+
+  color->r = r & 255;
+  color->g = g & 255;
+  color->b = b & 255;
+  color->free = 1;
+  tmp = declare_color(loutput, color);
+  if (!tmp)
+    free(color);
+  return tmp;
+}
 
 static unsigned
 get_textwidth(void *output,
@@ -53,26 +147,14 @@ get_textwidth(void *output,
 	      unsigned fontsize)
 {
   struct lstopo_output *loutput = output;
-  if (loutput->methods->textsize) {
-    unsigned width;
-    loutput->methods->textsize(output, text, length, fontsize, &width);
-    return width;
-  }
-  return (length * fontsize * 3) / 4;
-}
+  unsigned width;
 
-/* preferred width/height compromise */
-#define RATIO (4.f/3.f)
-
-/* do we prefer ratio1 over ratio2? */
-static int prefer_ratio(float ratio1, float ratio2) {
-  float _ratio1 = (ratio1) / RATIO;
-  float _ratio2 = (ratio2) / RATIO;
-  if (_ratio1 < 1)
-    _ratio1 = 1/_ratio1;
-  if (_ratio2 < 1)
-    _ratio2 = 1/_ratio2;
-  return _ratio1 < _ratio2;
+#ifdef HWLOC_DEBUG
+  assert(loutput->methods->textsize);
+#endif
+  loutput->methods->textsize(output, text, length, fontsize, &width);
+  width = loutput->text_xscale * ((float)width);
+  return width;
 }
 
 /*
@@ -129,6 +211,13 @@ static hwloc_obj_t next_child(struct lstopo_output *loutput, hwloc_obj_t parent,
   if (!obj)
     return NULL;
 
+  if (loutput->factorize_enabled && parent->arity > loutput->factorize_min[obj->type]) {
+    if (((struct lstopo_obj_userdata *)obj->userdata)->factorized < 0) {
+      obj = obj->next_sibling;
+      goto again;
+    }
+  }
+
   if (obj->type == HWLOC_OBJ_PU && loutput->ignore_pus) {
     obj = obj->next_sibling;
     goto again;
@@ -137,7 +226,7 @@ static hwloc_obj_t next_child(struct lstopo_output *loutput, hwloc_obj_t parent,
     obj = obj->next_sibling;
     goto again;
   }
-  if (loutput->collapse && obj->type == HWLOC_OBJ_PCI_DEVICE) {
+  if (loutput->pci_collapse_enabled && obj->type == HWLOC_OBJ_PCI_DEVICE) {
     struct lstopo_obj_userdata *lud = obj->userdata;
     if (lud->pci_collapsed == -1) {
       obj = obj->next_sibling;
@@ -146,6 +235,123 @@ static hwloc_obj_t next_child(struct lstopo_output *loutput, hwloc_obj_t parent,
   }
   *statep = state;
   return obj;
+}
+
+static float pci_link_speed(hwloc_obj_t obj)
+{
+  if (obj->type == HWLOC_OBJ_PCI_DEVICE)
+    return obj->attr->pcidev.linkspeed;
+  if (obj->type == HWLOC_OBJ_BRIDGE && obj->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_PCI)
+    return obj->attr->bridge.upstream.pci.linkspeed;
+  return 0.;
+}
+
+/********************************
+ * Placing children in rectangle
+ */
+
+/* preferred width/height compromise */
+#define RATIO (4.f/3.f)
+
+/* returns a score <= 1. close to 1 is better */
+static __hwloc_inline
+float rectangle_score(unsigned width, unsigned height, float ratio)
+{
+  float score = ((float) width)/height/ratio;
+  if (score > 1)
+    score = 1/score;
+  return score;
+}
+
+static void find_children_rectangle(struct lstopo_output *loutput, hwloc_obj_t parent,
+				    unsigned kind, unsigned separator,
+				    unsigned *rowsp, unsigned *columnsp,
+				    float ratio)
+{
+  unsigned rows = 0, columns = 0, n;
+  unsigned numsubobjs = 0, obj_totwidth = 0, obj_totheight = 0;
+  unsigned obj_avgwidth, obj_avgheight;
+  unsigned area = 0;
+  float idealtotheight, under_score, over_score, best_score = 0.f;
+  hwloc_obj_t child;
+  int ncstate;
+
+  /* Total area for subobjects */
+  child = NULL;
+  while ((child=next_child(loutput, parent, kind, child, &ncstate)) != NULL) {
+    struct lstopo_obj_userdata *clud = child->userdata;
+    numsubobjs++;
+    obj_totwidth += clud->width + separator;
+    obj_totheight += clud->height + separator;
+    area += (clud->width + separator) * (clud->height + separator);
+  }
+
+  /* Average object size */
+  obj_avgwidth = obj_totwidth / numsubobjs;
+  obj_avgheight = obj_totheight / numsubobjs;
+
+  /* Try to find a rectangle fitting exactly */
+  for (n = (unsigned) (float) floor(sqrt(numsubobjs));
+       rows >= (unsigned) (float) ceil(pow(numsubobjs, 0.33)) && n > 1;
+       n--) {
+    float old_best_score = best_score;
+    unsigned p = numsubobjs / n;
+    float np_score; /* n rows x p columns */
+    float pn_score; /* p rows x n columns */
+    if (p <= 1 || p * n != numsubobjs)
+      continue;
+    /* Try both n*p and n*p rectangles */
+    np_score = rectangle_score(p * obj_avgwidth, obj_avgheight * n, ratio);
+    pn_score = rectangle_score(n * obj_avgwidth, obj_avgheight * p, ratio);
+    if (np_score > pn_score) {
+      if (np_score > best_score) {
+	rows = n;
+	columns = p;
+	best_score = np_score;
+      }
+    } else {
+      if (pn_score > best_score) {
+	rows = p;
+	columns = n;
+	best_score = pn_score;
+      }
+    }
+    if (old_best_score == best_score)
+      /* Score didn't improve, no need to try further.
+       * The graph score(n) is an inverted U, with np_score on the left and pn_score on the right.
+       * Se start somewhere in the middle and walk to both ends simultaneously,
+       * Only one side can improve towards the maximum, we stop once once it stops improving.
+       * The other side can just decrease for ever.
+       */
+      goto done;
+  }
+  if (best_score)
+    /* We got a rectangle fitting exactly, it may not be perfect but it's good looking */
+    goto done;
+
+  /* Try to find a rectangle with an incomplete last row */
+
+  /* Ideal total height for spreading that area with ratio */
+  idealtotheight = (float) sqrt(area/ratio);
+  /* approximation of number of rows */
+  rows = (unsigned) (idealtotheight / obj_avgheight);
+  columns = rows ? (numsubobjs + rows - 1) / rows : 1;
+  /* Score obtained by underestimation */
+  under_score = rectangle_score(columns * obj_avgwidth, rows * obj_avgheight, ratio);
+  /* try to overestimate too */
+  rows++;
+  columns = (numsubobjs + rows - 1) / rows;
+  /* Score obtained by overestimation */
+  over_score = rectangle_score(columns * obj_avgwidth, rows * obj_avgheight, ratio);
+  /* Revert back to under estimation if it was better */
+  if (rows > 1 && under_score > over_score) {
+    rows--;
+    columns = (numsubobjs + rows - 1) / rows;
+  }
+
+ done:
+  *rowsp = rows;
+  *columnsp = columns;
 }
 
 /**************************
@@ -175,6 +381,9 @@ place_children_horiz(struct lstopo_output *loutput, hwloc_obj_t parent,
   *height = maxh + 2*border;
 }
 
+/* bridge object height: small empty box */
+#define BRIDGE_HEIGHT (gridsize)
+
 static void
 place_children_vert(struct lstopo_output *loutput, hwloc_obj_t parent,
 		    unsigned kind, unsigned border, unsigned separator,
@@ -182,17 +391,28 @@ place_children_vert(struct lstopo_output *loutput, hwloc_obj_t parent,
 {
   unsigned cury = 0;
   unsigned maxw = 0;
+  unsigned gridsize = loutput->gridsize;
+  unsigned fontsize = loutput->fontsize;
+  int bridge_parent_with_pcilinkspeed = parent->type == HWLOC_OBJ_BRIDGE
+    && loutput->show_text_enabled && loutput->show_text[HWLOC_OBJ_BRIDGE];
   hwloc_obj_t child;
   int ncstate;
   for(child = next_child(loutput, parent, kind, NULL, &ncstate);
       child;
       child = next_child(loutput, parent, kind, child, &ncstate)) {
     struct lstopo_obj_userdata *clud = child->userdata;
+    unsigned child_height = clud->height;
     clud->xrel = border;
     clud->yrel = cury + border;
     if (clud->width > maxw)
       maxw = clud->width;
-    cury += separator + clud->height;
+
+    if (bridge_parent_with_pcilinkspeed && pci_link_speed(child) != 0.)
+      /* make sure padding between children is enough to display pci link speed */
+      if (child_height <= BRIDGE_HEIGHT + fontsize)
+	child_height = BRIDGE_HEIGHT + fontsize;
+
+    cury += separator + child_height;
   }
   *width = maxw + 2*border;
   *height = cury - separator + 2*border;
@@ -203,60 +423,20 @@ place_children_rect(struct lstopo_output *loutput, hwloc_obj_t parent,
 		    unsigned kind, unsigned border, unsigned separator,
 		    unsigned *width, unsigned *height)
 {
-  unsigned numsubobjs = 0, obj_totwidth = 0, obj_totheight = 0;
-  unsigned area = 0;
   unsigned rows, columns;
   unsigned totwidth, totheight; /* total children array size, without borders */
   unsigned rowwidth; /* current row width */
   unsigned maxheight; /* max height for current row */
-  int found, i;
-  hwloc_obj_t child = NULL;
+  hwloc_obj_t child;
   int ncstate;
+  float ratio;
+  int i;
 
-  /* Total area for subobjects */
-  while ((child=next_child(loutput, parent, kind, child, &ncstate)) != NULL) {
-    struct lstopo_obj_userdata *clud = child->userdata;
-    numsubobjs++;
-    obj_totwidth += clud->width + separator;
-    obj_totheight += clud->height + separator;
-    area += (clud->width + separator) * (clud->height + separator);
-  }
-
-  /* Try to find a fitting rectangle */
-  found = 0;
-  for (rows = (unsigned) (float) floor(sqrt(numsubobjs));
-       rows >= (unsigned) (float) ceil(pow(numsubobjs, 0.33)) && rows > 1;
-       rows--) {
-    columns = numsubobjs / rows;
-    if (columns > 1 && columns * rows == numsubobjs) {
-      found = 1;
-      break;
-    }
-  }
-
-  if (!found) {
-    /* Average object size */
-    unsigned obj_avgwidth = obj_totwidth / numsubobjs;
-    unsigned obj_avgheight = obj_totheight / numsubobjs;
-    /* Ideal total height for spreading that area with RATIO */
-    float idealtotheight = (float) sqrt(area/RATIO);
-    float under_ratio, over_ratio;
-    /* approximation of number of rows */
-    rows = (unsigned) (idealtotheight / obj_avgheight);
-    columns = rows ? (numsubobjs + rows - 1) / rows : 1;
-    /* Ratio obtained by underestimation */
-    under_ratio = (float) (columns * obj_avgwidth) / (rows * obj_avgheight);
-    /* try to overestimate too */
-    rows++;
-    columns = (numsubobjs + rows - 1) / rows;
-    /* Ratio obtained by overestimation */
-    over_ratio = (float) (columns * obj_avgwidth) / (rows * obj_avgheight);
-    /* Did we actually preferred underestimation? (good row/column fit or good ratio) */
-    if (rows > 1 && prefer_ratio(under_ratio, over_ratio)) {
-      rows--;
-      columns = (numsubobjs + rows - 1) / rows;
-    }
-  }
+  if (parent->type == HWLOC_OBJ_CORE)
+    ratio = 1/RATIO;
+  else
+    ratio = RATIO;
+  find_children_rectangle(loutput, parent, kind, separator, &rows, &columns, ratio);
 
   rowwidth = 0;
   maxheight = 0;
@@ -328,9 +508,13 @@ place_children(struct lstopo_output *loutput, hwloc_obj_t parent,
   enum lstopo_orient_e orient = loutput->force_orient[parent->type];
   unsigned border = loutput->gridsize;
   unsigned separator = loutput->gridsize;
+  unsigned separator_below_cache = loutput->gridsize;
+  unsigned normal_children_separator = loutput->gridsize;
   unsigned totwidth = plud->width, totheight = plud->height;
   unsigned children_width = 0, children_height = 0;
   unsigned above_children_width, above_children_height;
+  unsigned existing_kinds;
+  int normal_children_are_PUs;
   hwloc_obj_t child;
   int ncstate;
   unsigned i;
@@ -339,54 +523,93 @@ place_children(struct lstopo_output *loutput, hwloc_obj_t parent,
   plud->children.box = 0;
   plud->above_children.box = 0;
 
-  /* select which children kinds go where */
-  if (loutput->plain_children_order)
-    plud->children.kinds = LSTOPO_CHILD_KIND_ALL;
-  else
-    plud->children.kinds = LSTOPO_CHILD_KIND_ALL & ~LSTOPO_CHILD_KIND_MEMORY;
-  if (parent->memory_arity && !(plud->children.kinds & LSTOPO_CHILD_KIND_MEMORY))
-    plud->above_children.kinds = LSTOPO_CHILD_KIND_MEMORY;
-  else
+  /* list the kinds of children that exist in that parent */
+  existing_kinds = (parent->arity ? LSTOPO_CHILD_KIND_NORMAL : 0)
+    | (parent->memory_arity ? LSTOPO_CHILD_KIND_MEMORY : 0)
+    | (parent->io_arity ? LSTOPO_CHILD_KIND_IO : 0)
+    | (parent->misc_arity ? LSTOPO_CHILD_KIND_MISC : 0);
+  /* now assign them below or above the parent */
+  if (loutput->plain_children_order || hwloc_obj_type_is_memory(parent->type)) {
+    plud->children.kinds = existing_kinds;
     plud->above_children.kinds = 0;
+  } else {
+    plud->children.kinds = existing_kinds & ~LSTOPO_CHILD_KIND_MEMORY;
+    plud->above_children.kinds = existing_kinds & LSTOPO_CHILD_KIND_MEMORY;
+  }
 
   /* bridge children always vertical */
   if (parent->type == HWLOC_OBJ_BRIDGE)
     orient = LSTOPO_ORIENT_VERT;
 
-  /* recurse into children to prepare their sizes */
+  /* if factorizing children, use horizontal by default */
+  if (orient == LSTOPO_ORIENT_NONE
+      && parent->symmetric_subtree
+      && parent->first_child
+      && loutput->factorize_enabled
+      && parent->arity > loutput->factorize_min[parent->first_child->type]) {
+    orient = LSTOPO_ORIENT_HORIZ;
+  }
+
+  /* if there are memory children and using plain children layout, use horizontal by default */
+  if (orient == LSTOPO_ORIENT_NONE
+      && parent->memory_arity
+      && loutput->plain_children_order)
+    orient = LSTOPO_ORIENT_HORIZ;
+
+  /* recurse into children to prepare their sizes,
+   * and check whether all normal children are PUs. */
+  normal_children_are_PUs = (parent->arity > 0);
   for(i = 0, child = next_child(loutput, parent, LSTOPO_CHILD_KIND_ALL, NULL, &ncstate);
       child;
       i++, child = next_child(loutput, parent, LSTOPO_CHILD_KIND_ALL, child, &ncstate)) {
     get_type_fun(child->type)(loutput, child, 0, 0, 0);
+    if (hwloc_obj_type_is_normal(child->type) && child->type != HWLOC_OBJ_PU)
+      normal_children_are_PUs = 0;
   }
   if (!i)
     return;
 
 
   /* no separator between PUs */
-  if ((unsigned)parent->depth == loutput->depth-2)
-    separator = 0;
+  if (normal_children_are_PUs)
+    normal_children_separator = 0;
 
-  /* place non-memory children */
-  if (parent->arity + parent->io_arity + parent->misc_arity)
-    place__children(loutput, parent, plud->children.kinds, &orient, 0, separator, &children_width, &children_height);
+  /* add separator between a cache parent and its children */
+  if (hwloc_obj_type_is_cache(parent->type) || parent->type == HWLOC_OBJ_MEMCACHE) {
+    if (normal_children_are_PUs || parent->type == HWLOC_OBJ_MEMCACHE)
+      /* except between cache parent and PU children */
+      separator_below_cache = 0;
+    /* update children placement */
+    yrel += separator_below_cache;
+  }
 
-  /* place memory children */
+  /* place children below the parent */
+  if (plud->children.kinds)
+    place__children(loutput, parent, plud->children.kinds, &orient, 0, normal_children_separator, &children_width, &children_height);
+
+  /* place children above the parent, if any*/
   if (plud->above_children.kinds) {
     enum lstopo_orient_e morient = LSTOPO_ORIENT_HORIZ;
-    unsigned memory_border;
+    int need_box;
 
     assert(plud->above_children.kinds == LSTOPO_CHILD_KIND_MEMORY);
-    memory_border = parent->memory_arity > 1 ? border : 0;
 
-    place__children(loutput, parent, plud->above_children.kinds, &morient, memory_border, separator, &above_children_width, &above_children_height);
+    /* we need a memory children box if parent isn't a memory object
+     * and if there are multiple objects in the box
+     */
+    need_box = !hwloc_obj_type_is_memory(parent->type)
+      && (parent->memory_arity + parent->memory_first_child->memory_arity > 1);
 
-    if (parent->memory_arity > 1) {
+    place__children(loutput, parent, plud->above_children.kinds, &morient, need_box ? border : 0, separator, &above_children_width, &above_children_height);
+    if (parent->type == HWLOC_OBJ_MEMCACHE)
+      above_children_height -= separator;
+
+    if (need_box) {
       /* if there are multiple memory children, add a box, as large as the parent */
       if (above_children_width < children_width) {
 	above_children_width = children_width;
       }
-      plud->above_children.boxcolor = MEMORIES_COLOR;
+      plud->above_children.boxcolor = &MEMORIES_COLOR;
       plud->above_children.box = 1;
 
     } else {
@@ -400,12 +623,12 @@ place_children(struct lstopo_output *loutput, hwloc_obj_t parent,
   }
 
   /* adjust parent size */
-  if (hwloc_obj_type_is_cache(parent->type)) {
+  if (hwloc_obj_type_is_cache(parent->type) || parent->type == HWLOC_OBJ_MEMCACHE) {
     /* cache children are below */
     if (children_width > totwidth)
       totwidth = children_width;
     if (children_height)
-      totheight += children_height + border;
+      totheight += children_height + separator_below_cache;
     if (plud->above_children.kinds) {
       totheight += above_children_height + separator;
       if (above_children_width > totwidth)
@@ -451,9 +674,6 @@ place_children(struct lstopo_output *loutput, hwloc_obj_t parent,
  * Drawing children
  */
 
-/* additional gridsize when fontsize > 0 */
-#define FONTGRIDSIZE (fontsize ? gridsize : 0)
-
 static void
 draw__children(struct lstopo_output *loutput, hwloc_obj_t parent,
 	       struct lstopo_children_position *children,
@@ -464,7 +684,7 @@ draw__children(struct lstopo_output *loutput, hwloc_obj_t parent,
   int ncstate;
 
   if (children->box)
-    loutput->methods->box(loutput, &children->boxcolor, depth, x, children->width, y, children->height);
+    loutput->methods->box(loutput, children->boxcolor, depth, x, children->width, y, children->height, parent, 1);
 
   for(child = next_child(loutput, parent, children->kinds, NULL, &ncstate);
       child;
@@ -494,18 +714,29 @@ draw_children(struct lstopo_output *loutput, hwloc_obj_t parent, unsigned depth,
 static int
 lstopo_obj_snprintf(struct lstopo_output *loutput, char *text, size_t textlen, hwloc_obj_t obj)
 {
-  int logical = loutput->logical;
-  unsigned idx = logical ? obj->logical_index : obj->os_index;
-  const char *indexprefix = logical ? " L#" : " P#";
+  enum lstopo_index_type_e index_type = loutput->index_type;
+  unsigned idx;
+  const char *indexprefix;
   char typestr[32];
   char indexstr[32]= "";
+  char index2str[32] = "";
   char attrstr[256];
   char totmemstr[64] = "";
   int attrlen;
 
-  /* For OSDev, Misc and Group, name replaces type+index+attrs */
-  if (obj->name && (obj->type == HWLOC_OBJ_OS_DEVICE || obj->type == HWLOC_OBJ_MISC || obj->type == HWLOC_OBJ_GROUP)) {
+  /* For Misc and Group, name replaces type+index+attrs */
+  if (obj->name && (obj->type == HWLOC_OBJ_MISC || obj->type == HWLOC_OBJ_GROUP)) {
     return snprintf(text, textlen, "%s", obj->name);
+  }
+  /* For OSDev, OSDev-type+name replaces type+index+attrs */
+  if (obj->type == HWLOC_OBJ_OS_DEVICE) {
+    /* consider the name as an index and remove it if LSTOPO_INDEX_TYPE_NONE */
+    if (index_type != LSTOPO_INDEX_TYPE_NONE) {
+      hwloc_obj_type_snprintf(typestr, sizeof(typestr), obj, 0);
+      return snprintf(text, textlen, "%s %s", typestr, obj->name);
+    } else {
+      return hwloc_obj_type_snprintf(text, textlen, obj, 0);
+    }
   }
 
   /* subtype replaces the basic type name */
@@ -515,13 +746,44 @@ lstopo_obj_snprintf(struct lstopo_output *loutput, char *text, size_t textlen, h
     hwloc_obj_type_snprintf(typestr, sizeof(typestr), obj, 0);
   }
 
+  if (index_type == LSTOPO_INDEX_TYPE_DEFAULT) {
+    if (obj->type == HWLOC_OBJ_PU || obj->type == HWLOC_OBJ_NUMANODE) {
+      /* by default we show logical+physical for PU/NUMA */
+      idx = obj->logical_index;
+      indexprefix = " L#";
+    } else if (obj->type == HWLOC_OBJ_PACKAGE || obj->type == HWLOC_OBJ_DIE || obj->type == HWLOC_OBJ_CORE) {
+      /* logical only for package+core (so that we see easily how many packages/cores there are */
+      idx = obj->logical_index;
+      indexprefix = " L#";
+    } else {
+      /* nothing for others */
+      idx = HWLOC_UNKNOWN_INDEX;
+      indexprefix = "";
+    }
+  } else if (index_type == LSTOPO_INDEX_TYPE_LOGICAL) {
+    idx = obj->logical_index;
+    indexprefix = " L#";
+  } else if (index_type == LSTOPO_INDEX_TYPE_PHYSICAL) {
+    idx = obj->os_index;
+    indexprefix = " P#";
+  } else {
+    /* shutup the compiler */
+    idx = 0;
+    indexprefix = "";
+  }
+
   if (loutput->show_indexes[obj->type]
+      && index_type != LSTOPO_INDEX_TYPE_NONE
       && idx != (unsigned)-1 && obj->depth != 0
       && obj->type != HWLOC_OBJ_PCI_DEVICE
       && (obj->type != HWLOC_OBJ_BRIDGE || obj->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_HOST))
     snprintf(indexstr, sizeof(indexstr), "%s%u", indexprefix, idx);
 
-  if (loutput->show_attrs[obj->type]) {
+  if (index_type == LSTOPO_INDEX_TYPE_DEFAULT && obj->type == HWLOC_OBJ_NUMANODE && loutput->show_indexes[obj->type])
+    /* NUMA have both P# and L# on the same line (PU is split on 2 lines) */
+    snprintf(index2str, sizeof(index2str), " P#%u", obj->os_index);
+
+  if (loutput->show_attrs_enabled && loutput->show_attrs[obj->type]) {
     attrlen = hwloc_obj_attr_snprintf(attrstr, sizeof(attrstr), obj, " ", 0);
     /* display the root total_memory (cannot be local_memory since root cannot be a NUMA node) */
     if (!obj->parent && obj->total_memory)
@@ -532,9 +794,9 @@ lstopo_obj_snprintf(struct lstopo_output *loutput, char *text, size_t textlen, h
     attrlen = 0;
 
   if (attrlen > 0)
-    return snprintf(text, textlen, "%s%s (%s)%s", typestr, indexstr, attrstr, totmemstr);
+    return snprintf(text, textlen, "%s%s%s (%s)%s", typestr, indexstr, index2str, attrstr, totmemstr);
   else
-    return snprintf(text, textlen, "%s%s%s", typestr, indexstr, totmemstr);
+    return snprintf(text, textlen, "%s%s%s%s", typestr, indexstr, index2str, totmemstr);
 }
 
 static void
@@ -545,6 +807,7 @@ lstopo__prepare_custom_styles(struct lstopo_output *loutput, hwloc_obj_t obj)
   hwloc_obj_t child;
   unsigned forcer, forceg, forceb;
   const char *stylestr;
+  struct lstopo_color *lcolor;
 
   lud->style_set = 0;
 
@@ -553,28 +816,27 @@ lstopo__prepare_custom_styles(struct lstopo_output *loutput, hwloc_obj_t obj)
     while (*stylestr != '\0') {
       if (sscanf(stylestr, "%02x%02x%02x", &forcer, &forceg, &forceb) == 3
 	  || sscanf(stylestr, "Background=#%02x%02x%02x", &forcer, &forceg, &forceb) == 3) {
-	s->bg.r = forcer & 255;
-	s->bg.g = forceg & 255;
-	s->bg.b = forceb & 255;
-	lud->style_set |= LSTOPO_STYLE_BG;
-	loutput->methods->declare_color(loutput, &s->bg);
-	/* if there's no style for text, make sure it's not dark over dark bg */
-	if (!(lud->style_set & LSTOPO_STYLE_T)) {
-	  s->t.r = s->t.g = s->t.b = (s->bg.r + s->bg.g + s->bg.b < 0xff) ? 0xff : 0;
-	  lud->style_set |= LSTOPO_STYLE_T;
+	lcolor = find_or_declare_rgb_color(loutput, forcer, forceg, forceb);
+	if (lcolor) {
+	  s->bg = lcolor;
+	  lud->style_set |= LSTOPO_STYLE_BG;
+	  if (!(lud->style_set & LSTOPO_STYLE_T)) {
+	    s->t = (lcolor->r + lcolor->g + lcolor->b < 0xff) ? &WHITE_COLOR : &BLACK_COLOR;
+	    lud->style_set |= LSTOPO_STYLE_T;
+	  }
 	}
       } else if (sscanf(stylestr, "Text=#%02x%02x%02x", &forcer, &forceg, &forceb) == 3) {
-	s->t.r = forcer & 255;
-	s->t.g = forceg & 255;
-	s->t.b = forceb & 255;
-	lud->style_set |= LSTOPO_STYLE_T;
-	loutput->methods->declare_color(loutput, &s->t);
+	lcolor = find_or_declare_rgb_color(loutput, forcer, forceg, forceb);
+	if (lcolor) {
+	  s->t = lcolor;
+	  lud->style_set |= LSTOPO_STYLE_T;
+	}
       } else if (sscanf(stylestr, "Text2=#%02x%02x%02x", &forcer, &forceg, &forceb) == 3) {
-	s->t2.r = forcer & 255;
-	s->t2.g = forceg & 255;
-	s->t2.b = forceb & 255;
-	lud->style_set |= LSTOPO_STYLE_T2;
-	loutput->methods->declare_color(loutput, &s->t2);
+	lcolor = find_or_declare_rgb_color(loutput, forcer, forceg, forceb);
+	if (lcolor) {
+	  s->t2 = lcolor;
+	  lud->style_set |= LSTOPO_STYLE_T2;
+	}
       }
       stylestr = strchr(stylestr, ';');
       if (!stylestr)
@@ -606,21 +868,23 @@ lstopo_set_object_color(struct lstopo_output *loutput,
 {
   struct lstopo_obj_userdata *lud = obj->userdata;
 
-  memset(s, 0, sizeof(*s));
+  s->bg = &BLACK_COLOR;
+  s->t = &BLACK_COLOR;
+  s->t2 = &BLACK_COLOR;
 
   switch (obj->type) {
 
   case HWLOC_OBJ_MACHINE:
-    s->bg = MACHINE_COLOR;
+    s->bg = &MACHINE_COLOR;
     break;
 
   case HWLOC_OBJ_GROUP: {
     hwloc_obj_t parent;
-    s->bg = MISC_COLOR;
+    s->bg = &MISC_COLOR;
     parent = obj->parent;
     while (parent) {
       if (parent->type == HWLOC_OBJ_PACKAGE) {
-	s->bg = GROUP_IN_PACKAGE_COLOR;
+	s->bg = &GROUP_IN_PACKAGE_COLOR;
 	break;
       }
       parent = parent->parent;
@@ -629,25 +893,29 @@ lstopo_set_object_color(struct lstopo_output *loutput,
   }
 
   case HWLOC_OBJ_MISC:
-    s->bg = MISC_COLOR;
+    s->bg = &MISC_COLOR;
     break;
 
   case HWLOC_OBJ_NUMANODE:
-    if (lstopo_numa_forbidden(loutput, obj)) {
-      s->bg = FORBIDDEN_COLOR;
-    } else if (lstopo_numa_binding(loutput, obj)) {
-      s->bg = BINDING_COLOR;
+    if (loutput->show_disallowed && lstopo_numa_disallowed(loutput, obj)) {
+      s->bg = &DISALLOWED_COLOR;
+    } else if (loutput->show_binding && lstopo_numa_binding(loutput, obj)) {
+      s->bg = &BINDING_COLOR;
     } else {
-      s->bg = MEMORY_COLOR;
+      s->bg = &MEMORY_COLOR;
     }
     break;
 
   case HWLOC_OBJ_PACKAGE:
-    s->bg = PACKAGE_COLOR;
+    s->bg = &PACKAGE_COLOR;
+    break;
+
+  case HWLOC_OBJ_DIE:
+    s->bg = &DIE_COLOR;
     break;
 
   case HWLOC_OBJ_CORE:
-    s->bg = CORE_COLOR;
+    s->bg = &CORE_COLOR;
     break;
 
   case HWLOC_OBJ_L1CACHE:
@@ -658,29 +926,30 @@ lstopo_set_object_color(struct lstopo_output *loutput,
   case HWLOC_OBJ_L1ICACHE:
   case HWLOC_OBJ_L2ICACHE:
   case HWLOC_OBJ_L3ICACHE:
-    s->bg = CACHE_COLOR;
+  case HWLOC_OBJ_MEMCACHE:
+    s->bg = &CACHE_COLOR;
     break;
 
   case HWLOC_OBJ_PU:
-    if (lstopo_pu_forbidden(loutput, obj)) {
-      s->bg = FORBIDDEN_COLOR;
-    } else if (lstopo_pu_binding(loutput, obj)) {
-      s->bg = BINDING_COLOR;
+    if (loutput->show_disallowed && lstopo_pu_disallowed(loutput, obj)) {
+      s->bg = &DISALLOWED_COLOR;
+    } else if (loutput->show_binding && lstopo_pu_binding(loutput, obj)) {
+      s->bg = &BINDING_COLOR;
     } else {
-      s->bg = THREAD_COLOR;
+      s->bg = &THREAD_COLOR;
     }
     break;
 
   case HWLOC_OBJ_BRIDGE:
-    s->bg = BRIDGE_COLOR;
+    s->bg = &BRIDGE_COLOR;
     break;
 
   case HWLOC_OBJ_PCI_DEVICE:
-    s->bg = PCI_DEVICE_COLOR;
+    s->bg = &PCI_DEVICE_COLOR;
     break;
 
   case HWLOC_OBJ_OS_DEVICE:
-    s->bg = OS_DEVICE_COLOR;
+    s->bg = &OS_DEVICE_COLOR;
     break;
 
   default:
@@ -688,103 +957,11 @@ lstopo_set_object_color(struct lstopo_output *loutput,
   }
 
   if (lud->style_set & LSTOPO_STYLE_BG)
-    memcpy(&s->bg, &lud->style.bg, sizeof(struct lstopo_color));
+    s->bg = lud->style.bg;
   if (lud->style_set & LSTOPO_STYLE_T)
-    memcpy(&s->t, &lud->style.t, sizeof(struct lstopo_color));
+    s->t = lud->style.t;
   if (lud->style_set & LSTOPO_STYLE_T2)
-    memcpy(&s->t2, &lud->style.t2, sizeof(struct lstopo_color));
-}
-
-static void
-prepare_more_text(struct lstopo_output *loutput, hwloc_obj_t obj)
-{
-  struct lstopo_obj_userdata *lud = obj->userdata;
-  unsigned i;
-
-  if (!loutput->show_attrs[obj->type])
-    return;
-
-  if (HWLOC_OBJ_OS_DEVICE == obj->type) {
-    if (HWLOC_OBJ_OSDEV_COPROC == obj->attr->osdev.type && obj->subtype) {
-      /* Coprocessor */
-      if (!strcmp(obj->subtype, "CUDA")) {
-	/* CUDA */
-	const char *value, *value2, *value3;
-	value = hwloc_obj_get_info_by_name(obj, "CUDAGlobalMemorySize");
-	if (value) {
-	  unsigned long long mb = strtoull(value, NULL, 10) / 1024;
-	  snprintf(lud->text[lud->ntext++], sizeof(lud->text[0]),
-		   mb >= 10240 ? "%llu GB" : "%llu MB",
-		   mb >= 10240 ? mb/1024 : mb);
-	}
-	value = hwloc_obj_get_info_by_name(obj, "CUDAL2CacheSize");
-	if (value) {
-	  unsigned long long kb = strtoull(value, NULL, 10);
-	  snprintf(lud->text[lud->ntext++], sizeof(lud->text[0]),
-		   kb >= 10240 ? "L2 (%llu MB)" : "L2 (%llu kB)",
-		   kb >= 10240 ? kb/1024 : kb);
-	}
-	value = hwloc_obj_get_info_by_name(obj, "CUDAMultiProcessors");
-	value2 = hwloc_obj_get_info_by_name(obj, "CUDACoresPerMP");
-	value3 = hwloc_obj_get_info_by_name(obj, "CUDASharedMemorySizePerMP");
-	if (value && value2 && value3) {
-	  snprintf(lud->text[lud->ntext++], sizeof(lud->text[0]),
-		   "%s MP x (%s cores + %s kB)", value, value2, value3);
-	}
-
-      } else if (!strcmp(obj->subtype, "MIC")) {
-	/* MIC */
-	const char *value;
-	value = hwloc_obj_get_info_by_name(obj, "MICActiveCores");
-	if (value) {
-	  snprintf(lud->text[lud->ntext++], sizeof(lud->text[0]),
-		   "%s cores", value);
-	}
-	value = hwloc_obj_get_info_by_name(obj, "MICMemorySize");
-	if (value) {
-	  unsigned long long mb = strtoull(value, NULL, 10) / 1024;
-	  snprintf(lud->text[lud->ntext++], sizeof(lud->text[0]),
-		   mb >= 10240 ? "%llu GB" : "%llu MB",
-		   mb >= 10240 ? mb/1024 : mb);
-	}
-
-      } else if (!strcmp(obj->subtype, "OpenCL")) {
-	/* OpenCL */
-	const char *value;
-	value = hwloc_obj_get_info_by_name(obj, "OpenCLComputeUnits");
-	if (value) {
-	  unsigned long long cu = strtoull(value, NULL, 10);
-	  snprintf(lud->text[lud->ntext++], sizeof(lud->text[0]),
-		   "%llu compute units", cu);
-	}
-	value = hwloc_obj_get_info_by_name(obj, "OpenCLGlobalMemorySize");
-	if (value) {
-	  unsigned long long mb = strtoull(value, NULL, 10) / 1024;
-	  snprintf(lud->text[lud->ntext++], sizeof(lud->text[0]),
-		   mb >= 10240 ? "%llu GB" : "%llu MB",
-		   mb >= 10240 ? mb/1024 : mb);
-	}
-      }
-
-    } else if (HWLOC_OBJ_OSDEV_BLOCK == obj->attr->osdev.type) {
-      /* Block */
-      const char *value;
-      value = hwloc_obj_get_info_by_name(obj, "Size");
-      if (value) {
-	unsigned long long mb = strtoull(value, NULL, 10) / 1024;
-	snprintf(lud->text[lud->ntext++], sizeof(lud->text[0]),
-		 mb >= 10485760 ? "%llu TB" : mb >= 10240 ? "%llu GB" : "%llu MB",
-		 mb >= 10485760 ? mb/1048576 : mb >= 10240 ? mb/1024 : mb);
-      }
-    }
-  }
-
-  for(i=1; i<lud->ntext; i++) {
-    unsigned nn = (unsigned)strlen(lud->text[i]);
-    unsigned ntextwidth = get_textwidth(loutput, lud->text[i], nn, loutput->fontsize);
-    if (ntextwidth > lud->textwidth)
-      lud->textwidth = ntextwidth;
-  }
+    s->t2 = lud->style.t2;
 }
 
 static void
@@ -792,47 +969,113 @@ prepare_text(struct lstopo_output *loutput, hwloc_obj_t obj)
 {
   struct lstopo_obj_userdata *lud = obj->userdata;
   unsigned fontsize = loutput->fontsize;
+  unsigned i;
   int n;
 
   /* sane defaults */
   lud->ntext = 0;
   lud->textwidth = 0;
-  lud->textxoffset = 0;
 
-  if (!fontsize || !loutput->show_text[obj->type])
+  if (!loutput->show_text_enabled || !loutput->show_text[obj->type])
     return;
 
   /* main object identifier line */
-  if (obj->type == HWLOC_OBJ_PCI_DEVICE && loutput->show_attrs[HWLOC_OBJ_PCI_DEVICE]) {
+  if (obj->type == HWLOC_OBJ_PCI_DEVICE && loutput->show_attrs_enabled && loutput->show_attrs[HWLOC_OBJ_PCI_DEVICE]) {
     /* PCI text collapsing */
     char busid[32];
     char _text[64];
     lstopo_obj_snprintf(loutput, _text, sizeof(_text), obj);
-    lstopo_busid_snprintf(busid, sizeof(busid), obj, lud->pci_collapsed, loutput->need_pci_domain);
-    if (lud->pci_collapsed > 1) {
-      n = snprintf(lud->text[0], sizeof(lud->text[0]), "%d x { %s %s }", lud->pci_collapsed, _text, busid);
+    lstopo_busid_snprintf(loutput, busid, sizeof(busid), obj, lud->pci_collapsed, loutput->need_pci_domain);
+    if (loutput->pci_collapse_enabled && lud->pci_collapsed > 1) {
+      n = snprintf(lud->text[0].text, sizeof(lud->text[0].text), "%d x { %s %s }", lud->pci_collapsed, _text, busid);
     } else {
-      n = snprintf(lud->text[0], sizeof(lud->text[0]), "%s %s", _text, busid);
+      n = snprintf(lud->text[0].text, sizeof(lud->text[0].text), "%s %s", _text, busid);
     }
   } else {
     /* normal object text */
-    n = lstopo_obj_snprintf(loutput, lud->text[0], sizeof(lud->text[0]), obj);
+    n = lstopo_obj_snprintf(loutput, lud->text[0].text, sizeof(lud->text[0].text), obj);
   }
-  lud->textwidth = get_textwidth(loutput, lud->text[0], n, fontsize);
   lud->ntext = 1;
 
-  if (obj->type == HWLOC_OBJ_PU) {
-    /* if smaller than other PU, artificially extend/shift it
-     * to make PU boxes nicer when vertically stacked.
-     */
-    if (lud->textwidth < loutput->min_pu_textwidth) {
-      lud->textxoffset = (loutput->min_pu_textwidth - lud->textwidth) / 2;
-      lud->textwidth = loutput->min_pu_textwidth;
+  /* additional lines of text */
+
+  if (HWLOC_OBJ_PU == obj->type && loutput->index_type == LSTOPO_INDEX_TYPE_DEFAULT && loutput->show_indexes[obj->type]) {
+    /* PU P# is on second line */
+    snprintf(lud->text[lud->ntext++].text, sizeof(lud->text[0].text), "P#%u", obj->os_index);
+  }
+
+  if (loutput->show_attrs_enabled && loutput->show_attrs[obj->type]) {
+    if (HWLOC_OBJ_OS_DEVICE == obj->type) {
+      if (HWLOC_OBJ_OSDEV_COPROC == obj->attr->osdev.type && obj->subtype) {
+	/* Coprocessor */
+	if (!strcmp(obj->subtype, "CUDA")) {
+	  /* CUDA */
+	  const char *value, *value2, *value3;
+	  value = hwloc_obj_get_info_by_name(obj, "CUDAGlobalMemorySize");
+	  if (value) {
+	    unsigned long long mb = strtoull(value, NULL, 10) / 1024;
+	    snprintf(lud->text[lud->ntext++].text, sizeof(lud->text[0].text),
+		     mb >= 10240 ? "%llu GB" : "%llu MB",
+		     mb >= 10240 ? mb/1024 : mb);
+	  }
+	  value = hwloc_obj_get_info_by_name(obj, "CUDAL2CacheSize");
+	  if (value) {
+	    unsigned long long kb = strtoull(value, NULL, 10);
+	    snprintf(lud->text[lud->ntext++].text, sizeof(lud->text[0].text),
+		     kb >= 10240 ? "L2 (%llu MB)" : "L2 (%llu kB)",
+		     kb >= 10240 ? kb/1024 : kb);
+	  }
+	  value = hwloc_obj_get_info_by_name(obj, "CUDAMultiProcessors");
+	  value2 = hwloc_obj_get_info_by_name(obj, "CUDACoresPerMP");
+	  value3 = hwloc_obj_get_info_by_name(obj, "CUDASharedMemorySizePerMP");
+	  if (value && value2 && value3) {
+	    snprintf(lud->text[lud->ntext++].text, sizeof(lud->text[0].text),
+		     "%s MP x (%s cores + %s kB)", value, value2, value3);
+	  }
+
+	} else if (!strcmp(obj->subtype, "OpenCL")) {
+	  /* OpenCL */
+	  const char *value;
+	  value = hwloc_obj_get_info_by_name(obj, "OpenCLComputeUnits");
+	  if (value) {
+	    unsigned long long cu = strtoull(value, NULL, 10);
+	    snprintf(lud->text[lud->ntext++].text, sizeof(lud->text[0].text),
+		     "%llu compute units", cu);
+	  }
+	  value = hwloc_obj_get_info_by_name(obj, "OpenCLGlobalMemorySize");
+	  if (value) {
+	    unsigned long long mb = strtoull(value, NULL, 10) / 1024;
+	    snprintf(lud->text[lud->ntext++].text, sizeof(lud->text[0].text),
+		     mb >= 10240 ? "%llu GB" : "%llu MB",
+		     mb >= 10240 ? mb/1024 : mb);
+	  }
+	}
+
+      } else if (HWLOC_OBJ_OSDEV_BLOCK == obj->attr->osdev.type) {
+	/* Block */
+	const char *value;
+	value = hwloc_obj_get_info_by_name(obj, "Size");
+	if (value) {
+	  unsigned long long mb = strtoull(value, NULL, 10) / 1024;
+	  snprintf(lud->text[lud->ntext++].text, sizeof(lud->text[0].text),
+		   mb >= 10485760 ? "%llu TB" : mb >= 10240 ? "%llu GB" : "%llu MB",
+		   mb >= 10485760 ? mb/1048576 : mb >= 10240 ? mb/1024 : mb);
+	}
+      }
     }
   }
 
-  /* additional text */
-  prepare_more_text(loutput, obj);
+  lud->textwidth = 0;
+  for(i=0; i<lud->ntext; i++) {
+    unsigned textwidth;
+    if (i) /* already computed above for n=0 */
+      n = (unsigned)strlen(lud->text[i].text);
+    textwidth = get_textwidth(loutput, lud->text[i].text, n, fontsize);
+    lud->text[i].width = textwidth;
+    lud->text[i].xoffset = 0; /* only used for PU in output_compute_pu_min_textwidth() */
+    if (textwidth > lud->textwidth)
+      lud->textwidth = textwidth;
+  }
 }
 
 static void
@@ -841,15 +1084,14 @@ draw_text(struct lstopo_output *loutput, hwloc_obj_t obj, struct lstopo_color *l
   struct draw_methods *methods = loutput->methods;
   struct lstopo_obj_userdata *lud = obj->userdata;
   unsigned fontsize = loutput->fontsize;
-  unsigned gridsize = loutput->gridsize;
+  unsigned linespacing = loutput->linespacing;
   unsigned i;
 
-  if (!fontsize || !loutput->show_text[obj->type])
+  if (!loutput->show_text_enabled || !loutput->show_text[obj->type])
     return;
 
-  methods->text(loutput, lcolor, fontsize, depth, x + lud->textxoffset, y, lud->text[0]);
-  for(i=1; i<lud->ntext; i++)
-    methods->text(loutput, lcolor, fontsize, depth, x, y + i*gridsize + i*fontsize, lud->text[i]);
+  for(i=0; i<lud->ntext; i++)
+    methods->text(loutput, lcolor, fontsize, depth, x + lud->text[i].xoffset, y + i*(linespacing + fontsize), lud->text[i].text, obj, i);
 }
 
 static void
@@ -860,7 +1102,7 @@ pci_device_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth
   unsigned fontsize = loutput->fontsize;
   unsigned overlaidoffset = 0;
 
-  if (lud->pci_collapsed > 1) {
+  if (loutput->pci_collapse_enabled && lud->pci_collapsed > 1) {
     /* additional depths and height for overlaid boxes */
     depth -= 2;
     if (lud->pci_collapsed > 2) {
@@ -868,13 +1110,19 @@ pci_device_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth
     } else {
       overlaidoffset = gridsize/2;
     }
+    if (loutput->no_half_lines)
+      overlaidoffset *= 2;
   }
 
   if (loutput->drawing == LSTOPO_DRAWING_PREPARE) {
     /* compute children size and position, our size, and save it */
     prepare_text(loutput, level);
-    lud->width = lud->textwidth + gridsize + overlaidoffset + FONTGRIDSIZE;
-    lud->height = fontsize + gridsize + overlaidoffset + FONTGRIDSIZE;
+    lud->width = gridsize + overlaidoffset;
+    lud->height = gridsize + overlaidoffset;
+    if (lud->ntext > 0) {
+      lud->width += lud->textwidth + gridsize;
+      lud->height += fontsize + gridsize;
+    }
     place_children(loutput, level,
 		   gridsize, lud->height);
 
@@ -889,24 +1137,21 @@ pci_device_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth
 
     lstopo_set_object_color(loutput, level, &style);
 
-    if (lud->pci_collapsed > 1) {
-      methods->box(loutput, &style.bg, depth+2, x + overlaidoffset, totwidth - overlaidoffset, y + overlaidoffset, totheight - overlaidoffset);
+    if (loutput->pci_collapse_enabled && lud->pci_collapsed > 1) {
+      methods->box(loutput, style.bg, depth+2, x + overlaidoffset, totwidth - overlaidoffset, y + overlaidoffset, totheight - overlaidoffset, level, 2);
       if (lud->pci_collapsed > 2)
-	methods->box(loutput, &style.bg, depth+1, x + overlaidoffset/2, totwidth - overlaidoffset, y + overlaidoffset/2, totheight - overlaidoffset);
-      methods->box(loutput, &style.bg, depth, x, totwidth - overlaidoffset, y, totheight - overlaidoffset);
+	methods->box(loutput, style.bg, depth+1, x + overlaidoffset/2, totwidth - overlaidoffset, y + overlaidoffset/2, totheight - overlaidoffset, level, 1);
+      methods->box(loutput, style.bg, depth, x, totwidth - overlaidoffset, y, totheight - overlaidoffset, level, 0);
     } else {
-      methods->box(loutput, &style.bg, depth, x, totwidth, y, totheight);
+      methods->box(loutput, style.bg, depth, x, totwidth, y, totheight, level, 0);
     }
 
-    draw_text(loutput, level, &style.t, depth-1, x + gridsize, y + gridsize);
+    draw_text(loutput, level, style.t, depth-1, x + gridsize, y + gridsize);
 
     /* Draw sublevels for real */
     draw_children(loutput, level, depth-1, x, y);
   }
 }
-
-/* bridge object height: linkspeed + a small empty box */
-#define BRIDGE_HEIGHT (gridsize + fontsize + FONTGRIDSIZE)
 
 static void
 bridge_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth, unsigned x, unsigned y)
@@ -914,12 +1159,13 @@ bridge_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth, un
   struct lstopo_obj_userdata *lud = level->userdata;
   unsigned gridsize = loutput->gridsize;
   unsigned fontsize = loutput->fontsize;
-  unsigned speedwidth = fontsize ? fontsize + gridsize : 0;
+  /* align all children even if only some of them have a linkspeed */
+  unsigned speedwidth = (loutput->show_text_enabled && loutput->show_text[HWLOC_OBJ_BRIDGE]) ? fontsize + gridsize : 0;
 
   if (loutput->drawing == LSTOPO_DRAWING_PREPARE) {
     /* compute children size and position, our size, and save it */
     lud->width = 2*gridsize + gridsize + speedwidth;
-    lud->height = gridsize + FONTGRIDSIZE;
+    lud->height = BRIDGE_HEIGHT;
     place_children(loutput, level,
 		   3*gridsize + speedwidth, 0);
 
@@ -929,44 +1175,89 @@ bridge_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth, un
 
     /* Square and left link */
     lstopo_set_object_color(loutput, level, &style);
-    methods->box(loutput, &style.bg, depth, x, gridsize, y + BRIDGE_HEIGHT/2 - gridsize/2, gridsize);
-    methods->line(loutput, &BLACK_COLOR, depth, x + gridsize, y + BRIDGE_HEIGHT/2, x + 2*gridsize, y + BRIDGE_HEIGHT/2);
+    methods->box(loutput, style.bg, depth, x, gridsize, y + BRIDGE_HEIGHT/2 - gridsize/2, gridsize, level, 0);
+    methods->line(loutput, &BLACK_COLOR, depth, x + gridsize, y + BRIDGE_HEIGHT/2, x + 2*gridsize, y + BRIDGE_HEIGHT/2, level, 0);
 
     if (level->io_arity > 0) {
       hwloc_obj_t child = NULL;
       unsigned ymax = -1;
       unsigned ymin = (unsigned) -1;
       int ncstate;
+      int i = 0;
       while ((child=next_child(loutput, level, LSTOPO_CHILD_KIND_ALL, child, &ncstate)) != NULL) {
 	struct lstopo_obj_userdata *clud = child->userdata;
 	unsigned ymid = y + clud->yrel + BRIDGE_HEIGHT/2;
 	/* Line to PCI device */
-	methods->line(loutput, &BLACK_COLOR, depth-1, x+2*gridsize, ymid, x+3*gridsize+speedwidth, ymid);
+	methods->line(loutput, &BLACK_COLOR, depth-1, x+2*gridsize, ymid, x+3*gridsize+speedwidth, ymid, level, i+2);
 	if (ymin == (unsigned) -1)
 	  ymin = ymid;
 	ymax = ymid;
 	/* Negotiated link speed */
-	if (fontsize) {
-	  float speed = 0.;
-	  if (child->type == HWLOC_OBJ_PCI_DEVICE)
-	    speed = child->attr->pcidev.linkspeed;
-	  if (child->type == HWLOC_OBJ_BRIDGE && child->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_PCI)
-	    speed = child->attr->bridge.upstream.pci.linkspeed;
-	  if (loutput->show_attrs[HWLOC_OBJ_BRIDGE] && speed != 0.) {
+	if (loutput->show_text_enabled && loutput->show_text[HWLOC_OBJ_BRIDGE]) {
+	  float speed = pci_link_speed(child);
+	  if (loutput->show_attrs_enabled && loutput->show_attrs[HWLOC_OBJ_BRIDGE] && speed != 0.) {
 	    char text[4];
 	    if (speed >= 10.)
 	      snprintf(text, sizeof(text), "%.0f", child->attr->pcidev.linkspeed);
 	    else
 	      snprintf(text, sizeof(text), "%0.1f", child->attr->pcidev.linkspeed);
-	    methods->text(loutput, &style.t2, fontsize, depth-1, x + 3*gridsize, ymid - BRIDGE_HEIGHT/2, text);
+	    methods->text(loutput, style.t2, fontsize, depth-1, x + 2.5*gridsize, ymid + BRIDGE_HEIGHT/2, text, level, i+2);
 	  }
 	}
+	i++;
       }
-      methods->line(loutput, &BLACK_COLOR, depth-1, x+2*gridsize, ymin, x+2*gridsize, ymax);
+      methods->line(loutput, &BLACK_COLOR, depth-1, x+2*gridsize, ymin, x+2*gridsize, ymax, level, 1);
 
       /* Draw sublevels for real */
       draw_children(loutput, level, depth-1, x, y);
     }
+  }
+}
+
+static void
+factorized_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth, unsigned x, unsigned y)
+{
+  struct lstopo_obj_userdata *lud = level->userdata;
+  unsigned gridsize = loutput->gridsize;
+  unsigned fontsize = loutput->fontsize;
+  unsigned linespacing = loutput->linespacing;
+  unsigned missingseparator;
+
+  /* we need a separator even between PUs */
+  if ((unsigned)level->depth == loutput->depth-1)
+    missingseparator = gridsize;
+  else
+    missingseparator = 0;
+
+  if (loutput->drawing == LSTOPO_DRAWING_PREPARE) {
+    /* compute children size and position, our size, and save it */
+    unsigned n, textwidth;
+    lud->width = gridsize*5; /* space, box, space, box, space */
+    lud->height = gridsize*2 + linespacing + fontsize + gridsize; /* space, box, linespace, text, gridsize */
+    sprintf(lud->text[0].text, "%ux total", level->parent->arity);
+    n = (unsigned)strlen(lud->text[0].text);
+    textwidth = get_textwidth(loutput, lud->text[0].text, n, fontsize);
+    lud->text[0].width = textwidth;
+    if (textwidth > lud->width) {
+      lud->width = textwidth;
+      lud->text[0].xoffset = 0;
+    } else {
+      lud->text[0].xoffset = (lud->width - textwidth)/2;
+    }
+    lud->ntext = 1;
+    lud->width += 2*missingseparator;
+
+  } else { /* LSTOPO_DRAWING_DRAW */
+    struct draw_methods *methods = loutput->methods;
+    struct lstopo_style boxstyle, textstyle;
+    unsigned boxoffset = (lud->width - 5*gridsize - 2*missingseparator) / 2;
+    /* boxes use object style, but the text outside uses the parent style */
+    lstopo_set_object_color(loutput, level, &boxstyle);
+    lstopo_set_object_color(loutput, level->parent, &textstyle);
+    methods->box(loutput, boxstyle.bg, depth, x + missingseparator + boxoffset, gridsize, y + gridsize, gridsize, level, 0);
+    methods->box(loutput, boxstyle.bg, depth, x + missingseparator + boxoffset + 2*gridsize, gridsize, y + gridsize, gridsize, level, 0);
+    methods->box(loutput, boxstyle.bg, depth, x + missingseparator + boxoffset + 4*gridsize, gridsize, y + gridsize, gridsize, level, 0);
+    methods->text(loutput, textstyle.t, fontsize, depth, x + missingseparator + lud->text[0].xoffset, y + 2 * gridsize + linespacing, lud->text[0].text, level, 0);
   }
 }
 
@@ -977,17 +1268,24 @@ cache_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth, uns
   unsigned gridsize = loutput->gridsize;
   unsigned fontsize = loutput->fontsize;
 
+  if (loutput->factorize_enabled
+      && lud->factorized == 1
+      && level->parent->arity > loutput->factorize_min[level->type]) {
+    factorized_draw(loutput, level, depth, x, y);
+    return;
+  }
+
   if (loutput->drawing == LSTOPO_DRAWING_PREPARE) {
     /* compute children size and position, our size, and save it */
     prepare_text(loutput, level);
     lud->width = gridsize;
     lud->height = gridsize;
     if (lud->ntext > 0) {
-      lud->width += lud->textwidth + FONTGRIDSIZE;
-      lud->height += fontsize + FONTGRIDSIZE;
+      lud->width += lud->textwidth + gridsize;
+      lud->height += fontsize + gridsize;
     }
     place_children(loutput, level,
-		   0, lud->height + gridsize);
+		   0, lud->height /* the callee with add vertical space if needed */);
 
   } else { /* LSTOPO_DRAWING_DRAW */
     struct draw_methods *methods = loutput->methods;
@@ -1004,7 +1302,7 @@ cache_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth, uns
      */
     myheight = gridsize;
     if (lud->ntext > 0)
-      myheight += fontsize + FONTGRIDSIZE;
+      myheight += fontsize + gridsize;
 
     if (lud->above_children.kinds) {
       /* display above_children even above the cache itself */
@@ -1013,9 +1311,9 @@ cache_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth, uns
     }
 
     lstopo_set_object_color(loutput, level, &style);
-    methods->box(loutput, &style.bg, depth, x, totwidth, y + myoff, myheight);
+    methods->box(loutput, style.bg, depth, x, totwidth, y + myoff, myheight, level, 0);
 
-    draw_text(loutput, level, &style.t, depth-1, x + gridsize, y + gridsize + myoff);
+    draw_text(loutput, level, style.t, depth-1, x + gridsize, y + gridsize + myoff);
 
     /* Draw sublevels for real */
     draw_children(loutput, level, depth-1, x, y);
@@ -1028,15 +1326,24 @@ normal_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth, un
   struct lstopo_obj_userdata *lud = level->userdata;
   unsigned gridsize = loutput->gridsize;
   unsigned fontsize = loutput->fontsize;
+  unsigned linespacing = loutput->linespacing;
+
+  if (loutput->factorize_enabled
+      && lud->factorized == 1
+      && level->parent->arity > loutput->factorize_min[level->type]) {
+    factorized_draw(loutput, level, depth, x, y);
+    return;
+  }
 
   if (loutput->drawing == LSTOPO_DRAWING_PREPARE) {
     /* compute children size and position, our size, and save it */
-    prepare_text(loutput, level);
+    if (level->type != HWLOC_OBJ_PU) /* PU already computed in output_compute_pu_min_textwidth() earlier */
+      prepare_text(loutput, level);
     lud->width = gridsize;
     lud->height = gridsize;
     if (lud->ntext > 0) {
-      lud->width += lud->textwidth + FONTGRIDSIZE;
-      lud->height += (fontsize + FONTGRIDSIZE) * lud->ntext;
+      lud->width += lud->textwidth + gridsize;
+      lud->height += fontsize + (fontsize + linespacing) * (lud->ntext - 1) + gridsize;
     }
     place_children(loutput, level,
 		   gridsize, lud->height);
@@ -1051,8 +1358,8 @@ normal_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth, un
     totheight = lud->height;
 
     lstopo_set_object_color(loutput, level, &style);
-    methods->box(loutput, &style.bg, depth, x, totwidth, y, totheight);
-    draw_text(loutput, level, &style.t, depth-1, x + gridsize, y + gridsize);
+    methods->box(loutput, style.bg, depth, x, totwidth, y, totheight, level, 0);
+    draw_text(loutput, level, style.t, depth-1, x + gridsize, y + gridsize);
 
     /* Draw sublevels for real */
     draw_children(loutput, level, depth-1, x, y);
@@ -1060,29 +1367,33 @@ normal_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth, un
 }
 
 static void
-output_compute_pu_min_textwidth(struct lstopo_output *output)
+output_align_PU_textwidth(struct lstopo_output *loutput)
 {
-  unsigned fontsize = output->fontsize;
-  char text[64];
-  int n;
-  hwloc_topology_t topology = output->topology;
-  hwloc_obj_t lastpu;
+  hwloc_topology_t topology = loutput->topology;
+  unsigned textwidth_max = 0;
+  hwloc_obj_t pu;
+  unsigned i;
 
-  if (!output->methods->textsize) {
-    output->min_pu_textwidth = 0;
-    return;
+  /* compute the max PU textwidth */
+  pu = NULL;
+  while ((pu = hwloc_get_next_obj_by_type(topology, HWLOC_OBJ_PU, pu)) != NULL) {
+    struct lstopo_obj_userdata *lud = pu->userdata;
+    prepare_text(loutput, pu);
+    if (lud->textwidth > textwidth_max)
+      textwidth_max = lud->textwidth;
   }
 
-  if (output->logical) {
-    int depth = hwloc_get_type_depth(topology, HWLOC_OBJ_PU);
-    lastpu = hwloc_get_obj_by_depth(topology, depth, hwloc_get_nbobjs_by_depth(topology, depth)-1);
-  } else {
-    unsigned lastidx = hwloc_bitmap_last(hwloc_topology_get_topology_cpuset(topology));
-    lastpu = hwloc_get_pu_obj_by_os_index(topology, lastidx);
+  /* update text placement to match the max textwidth */
+  pu = NULL;
+  while ((pu = hwloc_get_next_obj_by_type(topology, HWLOC_OBJ_PU, pu)) != NULL) {
+    struct lstopo_obj_userdata *lud = pu->userdata;
+    for(i=0; i<lud->ntext; i++)
+      if (lud->text[i].width < textwidth_max) {
+	lud->text[i].xoffset = (textwidth_max-lud->text[i].width)/2;
+	lud->text[i].width = textwidth_max;
+      }
+    lud->textwidth = textwidth_max;
   }
-
-  n = lstopo_obj_snprintf(output, text, sizeof(text), lastpu);
-  output->min_pu_textwidth = get_textwidth(output, text, n, fontsize);
 }
 
 void
@@ -1090,91 +1401,140 @@ output_draw(struct lstopo_output *loutput)
 {
   hwloc_topology_t topology = loutput->topology;
   struct draw_methods *methods = loutput->methods;
-  int legend = loutput->legend;
   unsigned gridsize = loutput->gridsize;
   unsigned fontsize = loutput->fontsize;
+  unsigned linespacing = loutput->linespacing;
   hwloc_obj_t root = hwloc_get_root_obj(topology);
   struct lstopo_obj_userdata *rlud = root->userdata;
   unsigned depth = 100;
-  unsigned totwidth, totheight, offset, i;
-  time_t t;
-  char text[3][128];
-  unsigned ntext = 0;
-  char hostname[122] = "";
-  const char *forcedhostname = NULL;
-  unsigned long hostname_size = sizeof(hostname);
-  unsigned maxtextwidth = 0, textwidth;
-
-  if (legend && fontsize) {
-    forcedhostname = hwloc_obj_get_info_by_name(hwloc_get_root_obj(topology), "HostName");
-    if (!forcedhostname && hwloc_topology_is_thissystem(topology)) {
-#if defined(HWLOC_WIN_SYS) && !defined(__CYGWIN__)
-      GetComputerName(hostname, &hostname_size);
-#else
-      gethostname(hostname, hostname_size);
-#endif
-    }
-    if (forcedhostname || *hostname) {
-      if (forcedhostname)
-	snprintf(text[ntext], sizeof(text[ntext]), "Host: %s", forcedhostname);
-      else
-	snprintf(text[ntext], sizeof(text[ntext]), "Host: %s", hostname);
-      textwidth = get_textwidth(loutput, text[ntext], (unsigned) strlen(text[ntext]), fontsize);
-      if (textwidth > maxtextwidth)
-	maxtextwidth = textwidth;
-      ntext++;
-    }
-
-    /* Display whether we're showing physical or logical IDs */
-    snprintf(text[ntext], sizeof(text[ntext]), "Indexes: %s", loutput->logical ? "logical" : "physical");
-    textwidth = get_textwidth(loutput, text[ntext], (unsigned) strlen(text[ntext]), fontsize);
-    if (textwidth > maxtextwidth)
-      maxtextwidth = textwidth;
-    ntext++;
-
-    /* Display timestamp */
-    t = time(NULL);
-#ifdef HAVE_STRFTIME
-    {
-      struct tm *tmp;
-      tmp = localtime(&t);
-      strftime(text[ntext], sizeof(text[ntext]), "Date: %c", tmp);
-    }
-#else /* HAVE_STRFTIME */
-    {
-      char *date;
-      int n;
-      date = ctime(&t);
-      n = strlen(date);
-      if (n && date[n-1] == '\n') {
-        date[n-1] = 0;
-      }
-      snprintf(text[ntext], sizeof(text[ntext]), "Date: %s", date);
-    }
-#endif /* HAVE_STRFTIME */
-    textwidth = get_textwidth(loutput, text[ntext], (unsigned) strlen(text[ntext]), fontsize);
-    if (textwidth > maxtextwidth)
-      maxtextwidth = textwidth;
-    ntext++;
-  }
+  unsigned totwidth, totheight, offset, i, j;
 
   if (loutput->drawing == LSTOPO_DRAWING_PREPARE) {
+    unsigned maxtextwidth = 0, textwidth;
+    unsigned ndl = 0;
+    char hostname[122] = "";
+    unsigned long hostname_size = sizeof(hostname);
+    unsigned infocount = 0;
+
+    /* prepare legend lines and compute the width */
+    if (loutput->show_legend == LSTOPO_SHOW_LEGEND_ALL) {
+      time_t t;
+      const char *forcedhostname = NULL;
+
+      /* build the default legend lines */
+      forcedhostname = hwloc_obj_get_info_by_name(hwloc_get_root_obj(topology), "HostName");
+      if (!forcedhostname && hwloc_topology_is_thissystem(topology)) {
+#if defined(HWLOC_WIN_SYS) && !defined(__CYGWIN__)
+        GetComputerName(hostname, &hostname_size);
+#else
+        gethostname(hostname, hostname_size);
+#endif
+      }
+      if (forcedhostname || *hostname) {
+        snprintf(loutput->legend_default_lines[ndl],
+                 sizeof(loutput->legend_default_lines[ndl]),
+                 "Host: %s",
+                 forcedhostname ? forcedhostname : hostname);
+        textwidth = get_textwidth(loutput,
+                                  loutput->legend_default_lines[ndl],
+                                  (unsigned) strlen(loutput->legend_default_lines[ndl]),
+                                  fontsize);
+        if (textwidth > maxtextwidth)
+          maxtextwidth = textwidth;
+        ndl++;
+      }
+
+      /* Display whether we're showing physical or logical IDs */
+      if (loutput->index_type != LSTOPO_INDEX_TYPE_DEFAULT) {
+        snprintf(loutput->legend_default_lines[ndl],
+                 sizeof(loutput->legend_default_lines[ndl]),
+                 "Indexes: %s",
+                 (loutput->index_type == LSTOPO_INDEX_TYPE_LOGICAL ? "logical" : "physical"));
+        textwidth = get_textwidth(loutput,
+                                  loutput->legend_default_lines[ndl],
+                                  (unsigned) strlen(loutput->legend_default_lines[ndl]),
+                                  fontsize);
+        if (textwidth > maxtextwidth)
+          maxtextwidth = textwidth;
+        ndl++;
+      }
+
+      /* Display timestamp */
+      t = time(NULL);
+#ifdef HAVE_STRFTIME
+      {
+        struct tm *tmp;
+        tmp = localtime(&t);
+        strftime(loutput->legend_default_lines[ndl],
+                 sizeof(loutput->legend_default_lines[ndl]),
+                 "Date: %c",
+                 tmp);
+      }
+#else /* HAVE_STRFTIME */
+      {
+        char *date;
+        unsigned n;
+        date = ctime(&t);
+        n = (unsigned) strlen(date);
+        if (n && date[n-1] == '\n') {
+          date[n-1] = 0;
+        }
+        snprintf(loutput->legend_default_lines[ndl],
+                 sizeof(loutput->legend_default_lines[ndl]),
+                 "Date: %s",
+                 date);
+      }
+#endif /* HAVE_STRFTIME */
+      textwidth = get_textwidth(loutput,
+                                loutput->legend_default_lines[ndl],
+                                (unsigned) strlen(loutput->legend_default_lines[ndl]),
+                                fontsize);
+      if (textwidth > maxtextwidth)
+        maxtextwidth = textwidth;
+      ndl++;
+    }
+
+    if (loutput->show_legend != LSTOPO_SHOW_LEGEND_NONE) {
+      /* look at custom legend lines in root info attr and --append-legend */
+      for(i=0; i<root->infos_count; i++) {
+        if (!strcmp(root->infos[i].name, "lstopoLegend")) {
+          infocount++;
+          textwidth = get_textwidth(loutput, root->infos[i].value, (unsigned) strlen(root->infos[i].value), fontsize);
+          if (textwidth > maxtextwidth)
+            maxtextwidth = textwidth;
+        }
+      }
+      for(i=0; i<loutput->legend_append_nr; i++) {
+        textwidth = get_textwidth(loutput, loutput->legend_append[i], (unsigned) strlen(loutput->legend_append[i]), fontsize);
+        if (textwidth > maxtextwidth)
+          maxtextwidth = textwidth;
+      }
+    }
+
+    /* save legend info for later */
+    loutput->legend_maxtextwidth = maxtextwidth;
+    loutput->legend_default_lines_nr = ndl;
+    loutput->legend_info_lines_nr = infocount;
+
     /* compute root size, our size, and save it */
 
-    output_compute_pu_min_textwidth(loutput);
+    output_align_PU_textwidth(loutput);
 
     get_type_fun(root->type)(loutput, root, depth, 0, 0);
 
     /* loutput width is max(root, legend) */
     totwidth = rlud->width;
-    if (maxtextwidth + 2*gridsize > totwidth)
-      totwidth = maxtextwidth + 2*gridsize;
+    if (loutput->legend_maxtextwidth + 2*gridsize > totwidth)
+      totwidth = loutput->legend_maxtextwidth + 2*gridsize;
     loutput->width = totwidth;
 
     /* loutput height is sum(root, legend) */
     totheight = rlud->height;
-    if (legend && fontsize)
-      totheight += gridsize + (ntext+loutput->legend_append_nr) * (gridsize+fontsize);
+    if (loutput->show_legend != LSTOPO_SHOW_LEGEND_NONE
+        && (ndl + infocount + loutput->legend_append_nr))
+      totheight += gridsize
+        + (ndl + infocount + loutput->legend_append_nr - 1) * (linespacing + fontsize)
+        + fontsize + gridsize;
     loutput->height = totheight;
 
   } else { /* LSTOPO_DRAWING_DRAW */
@@ -1186,13 +1546,28 @@ output_draw(struct lstopo_output *loutput)
     get_type_fun(root->type)(loutput, root, depth, 0, 0);
 
     /* Draw legend */
-    if (legend && fontsize) {
+    if (loutput->show_legend != LSTOPO_SHOW_LEGEND_NONE
+        && (loutput->legend_default_lines_nr + loutput->legend_info_lines_nr + loutput->legend_append_nr)) {
       offset = rlud->height + gridsize;
-      methods->box(loutput, &WHITE_COLOR, depth, 0, loutput->width, totheight, gridsize + (ntext+loutput->legend_append_nr) * (gridsize+fontsize));
-      for(i=0; i<ntext; i++, offset += gridsize + fontsize)
-	methods->text(loutput, &BLACK_COLOR, fontsize, depth, gridsize, offset, text[i]);
-      for(i=0; i<loutput->legend_append_nr; i++, offset += gridsize + fontsize)
-	methods->text(loutput, &BLACK_COLOR, fontsize, depth, gridsize, offset, loutput->legend_append[i]);
+      methods->box(loutput, &WHITE_COLOR, depth,
+                   0,
+                   loutput->width,
+                   totheight,
+                   gridsize
+                   + (loutput->legend_default_lines_nr + loutput->legend_info_lines_nr + loutput->legend_append_nr - 1) * (linespacing + fontsize)
+                   + fontsize + gridsize,
+                   NULL, 0);
+      for(i=0; i<loutput->legend_default_lines_nr; i++, offset += linespacing + fontsize)
+	methods->text(loutput, &BLACK_COLOR, fontsize, depth, gridsize, offset, loutput->legend_default_lines[i], NULL, i);
+      for(i=0, j=0; i<root->infos_count; i++) {
+        if (!strcmp(root->infos[i].name, "lstopoLegend")) {
+          methods->text(loutput, &BLACK_COLOR, fontsize, depth, gridsize, offset, root->infos[i].value, NULL, j+loutput->legend_default_lines_nr);
+          j++;
+          offset += linespacing + fontsize;
+        }
+      }
+      for(i=0; i<loutput->legend_append_nr; i++, offset += linespacing + fontsize)
+	methods->text(loutput, &BLACK_COLOR, fontsize, depth, gridsize, offset, loutput->legend_append[i], NULL, i+loutput->legend_default_lines_nr+loutput->legend_info_lines_nr);
     }
   }
 }
@@ -1207,6 +1582,7 @@ get_type_fun(hwloc_obj_type_t type)
     case HWLOC_OBJ_MACHINE:
     case HWLOC_OBJ_NUMANODE:
     case HWLOC_OBJ_PACKAGE:
+    case HWLOC_OBJ_DIE:
     case HWLOC_OBJ_CORE:
     case HWLOC_OBJ_PU:
     case HWLOC_OBJ_GROUP:
@@ -1220,6 +1596,7 @@ get_type_fun(hwloc_obj_type_t type)
     case HWLOC_OBJ_L1ICACHE: return cache_draw;
     case HWLOC_OBJ_L2ICACHE: return cache_draw;
     case HWLOC_OBJ_L3ICACHE: return cache_draw;
+    case HWLOC_OBJ_MEMCACHE: return cache_draw;
     case HWLOC_OBJ_PCI_DEVICE: return pci_device_draw;
     case HWLOC_OBJ_BRIDGE: return bridge_draw;
     default:
@@ -1227,26 +1604,4 @@ get_type_fun(hwloc_obj_type_t type)
   }
   /* for dumb compilers */
   return normal_draw;
-}
-
-void
-declare_colors(struct lstopo_output *output)
-{
-  struct draw_methods *methods = output->methods;
-  methods->declare_color(output, &BLACK_COLOR);
-  methods->declare_color(output, &WHITE_COLOR);
-  methods->declare_color(output, &PACKAGE_COLOR);
-  methods->declare_color(output, &MEMORY_COLOR);
-  methods->declare_color(output, &MEMORIES_COLOR);
-  methods->declare_color(output, &CORE_COLOR);
-  methods->declare_color(output, &THREAD_COLOR);
-  methods->declare_color(output, &BINDING_COLOR);
-  methods->declare_color(output, &FORBIDDEN_COLOR);
-  methods->declare_color(output, &CACHE_COLOR);
-  methods->declare_color(output, &MACHINE_COLOR);
-  methods->declare_color(output, &GROUP_IN_PACKAGE_COLOR);
-  methods->declare_color(output, &MISC_COLOR);
-  methods->declare_color(output, &PCI_DEVICE_COLOR);
-  methods->declare_color(output, &OS_DEVICE_COLOR);
-  methods->declare_color(output, &BRIDGE_COLOR);
 }

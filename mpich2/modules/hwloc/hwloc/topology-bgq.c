@@ -1,13 +1,12 @@
 /*
- * Copyright © 2013-2018 Inria.  All rights reserved.
+ * Copyright © 2013-2020 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <private/autogen/config.h>
-
-#include <hwloc.h>
-#include <private/private.h>
-#include <private/debug.h>
+#include "private/autogen/config.h"
+#include "hwloc.h"
+#include "private/private.h"
+#include "private/debug.h"
 
 #include <stdlib.h>
 #include <pthread.h>
@@ -24,6 +23,9 @@ hwloc_bgq__get_allowed_resources(struct hwloc_topology *topology)
 {
   const char *env;
   unsigned i;
+
+  /* start from everything */
+  hwloc_bitmap_copy(topology->allowed_cpuset, topology->levels[0][0]->cpuset);
 
   /* mark the 17th core (OS-reserved) as disallowed */
   hwloc_bitmap_clr_range(topology->allowed_cpuset, (HWLOC_BGQ_CORES-1)*4, HWLOC_BGQ_CORES*4-1);
@@ -43,12 +45,19 @@ hwloc_bgq__get_allowed_resources(struct hwloc_topology *topology)
 }
 
 static int
-hwloc_look_bgq(struct hwloc_backend *backend)
+hwloc_look_bgq(struct hwloc_backend *backend, struct hwloc_disc_status *dstatus)
 {
+  /*
+   * This backend may be used with topology->is_thissystem set (default)
+   * or not (CNK-emulation on Linux).
+   */
+
   struct hwloc_topology *topology = backend->topology;
   hwloc_bitmap_t set;
   hwloc_obj_t obj;
   unsigned i;
+
+  assert(dstatus->phase == HWLOC_DISC_PHASE_GLOBAL);
 
   if (topology->levels[0][0]->cpuset)
     /* somebody discovered things */
@@ -56,7 +65,10 @@ hwloc_look_bgq(struct hwloc_backend *backend)
 
   hwloc_alloc_root_sets(topology->levels[0][0]);
 
-  hwloc_bgq__get_allowed_resources(topology);
+  if (!(dstatus->flags & HWLOC_DISC_STATUS_FLAG_GOT_ALLOWED_RESOURCES)) {
+    hwloc_bgq__get_allowed_resources(topology);
+    dstatus->flags |= HWLOC_DISC_STATUS_FLAG_GOT_ALLOWED_RESOURCES;
+  }
 
   /* a single memory bank */
   obj = hwloc_alloc_setup_object(topology, HWLOC_OBJ_NUMANODE, 0);
@@ -67,7 +79,7 @@ hwloc_look_bgq(struct hwloc_backend *backend)
   hwloc_bitmap_set(set, 0);
   obj->nodeset = set;
   obj->attr->numanode.local_memory = 16ULL*1024*1024*1024ULL;
-  hwloc_insert_object_by_cpuset(topology, obj);
+  hwloc__insert_object_by_cpuset(topology, NULL, obj, "bgq:numa");
   topology->support.discovery->numa = 1;
   topology->support.discovery->numa_memory = 1;
 
@@ -83,7 +95,7 @@ hwloc_look_bgq(struct hwloc_backend *backend)
     obj->attr->cache.size = 32*1024*1024;
     obj->attr->cache.linesize = 128;
     obj->attr->cache.associativity = 16;
-    hwloc_insert_object_by_cpuset(topology, obj);
+    hwloc__insert_object_by_cpuset(topology, NULL, obj, "bgq:l2cache");
   }
 
   /* package */
@@ -91,7 +103,7 @@ hwloc_look_bgq(struct hwloc_backend *backend)
     obj = hwloc_alloc_setup_object(topology, HWLOC_OBJ_PACKAGE, 0);
     obj->cpuset = set;
     hwloc_obj_add_info(obj, "CPUModel", "IBM PowerPC A2");
-    hwloc_insert_object_by_cpuset(topology, obj);
+    hwloc__insert_object_by_cpuset(topology, NULL, obj, "bgq:package");
   } else
     hwloc_bitmap_free(set);
 
@@ -109,7 +121,7 @@ hwloc_look_bgq(struct hwloc_backend *backend)
       obj->attr->cache.size = 16*1024;
       obj->attr->cache.linesize = 64;
       obj->attr->cache.associativity = 8;
-      hwloc_insert_object_by_cpuset(topology, obj);
+      hwloc__insert_object_by_cpuset(topology, NULL, obj, "bgq:l1dcache");
     }
     /* L1i */
     if (hwloc_filter_check_keep_object_type(topology, HWLOC_OBJ_L1ICACHE)) {
@@ -120,7 +132,7 @@ hwloc_look_bgq(struct hwloc_backend *backend)
       obj->attr->cache.size = 16*1024;
       obj->attr->cache.linesize = 64;
       obj->attr->cache.associativity = 4;
-      hwloc_insert_object_by_cpuset(topology, obj);
+      hwloc__insert_object_by_cpuset(topology, NULL, obj, "bgq:l1icache");
     }
     /* there's also a L1p "prefetch cache" of 4kB with 128B lines */
 
@@ -128,13 +140,14 @@ hwloc_look_bgq(struct hwloc_backend *backend)
     if (hwloc_filter_check_keep_object_type(topology, HWLOC_OBJ_CORE)) {
       obj = hwloc_alloc_setup_object(topology, HWLOC_OBJ_CORE, i);
       obj->cpuset = set;
-      hwloc_insert_object_by_cpuset(topology, obj);
+      hwloc__insert_object_by_cpuset(topology, NULL, obj, "bgq:core");
     } else
       hwloc_bitmap_free(set);
   }
 
   /* PUs */
   topology->support.discovery->pu = 1;
+  topology->support.discovery->disallowed_pu = 1;
   hwloc_setup_pu_level(topology, HWLOC_BGQ_CORES*4);
 
   /* Add BGQ specific information */
@@ -233,7 +246,7 @@ hwloc_bgq_get_allowed_resources(struct hwloc_topology *topology)
 }
 
 void
-hwloc_set_bgq_hooks(struct hwloc_binding_hooks *hooks __hwloc_attribute_unused,
+hwloc_set_bgq_hooks(struct hwloc_binding_hooks *hooks,
 		    struct hwloc_topology_support *support __hwloc_attribute_unused)
 {
   hooks->set_thisthread_cpubind = hwloc_bgq_set_thisthread_cpubind;
@@ -248,7 +261,9 @@ hwloc_set_bgq_hooks(struct hwloc_binding_hooks *hooks __hwloc_attribute_unused,
 }
 
 static struct hwloc_backend *
-hwloc_bgq_component_instantiate(struct hwloc_disc_component *component,
+hwloc_bgq_component_instantiate(struct hwloc_topology *topology,
+				struct hwloc_disc_component *component,
+				unsigned excluded_phases __hwloc_attribute_unused,
 				const void *_data1 __hwloc_attribute_unused,
 				const void *_data2 __hwloc_attribute_unused,
 				const void *_data3 __hwloc_attribute_unused)
@@ -275,7 +290,7 @@ hwloc_bgq_component_instantiate(struct hwloc_disc_component *component,
     }
   }
 
-  backend = hwloc_backend_alloc(component);
+  backend = hwloc_backend_alloc(topology, component);
   if (!backend)
     return NULL;
   backend->discover = hwloc_look_bgq;
@@ -285,8 +300,8 @@ hwloc_bgq_component_instantiate(struct hwloc_disc_component *component,
 }
 
 static struct hwloc_disc_component hwloc_bgq_disc_component = {
-  HWLOC_DISC_COMPONENT_TYPE_GLOBAL,
   "bgq",
+  HWLOC_DISC_PHASE_GLOBAL,
   ~0,
   hwloc_bgq_component_instantiate,
   50,

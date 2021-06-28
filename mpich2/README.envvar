@@ -3,7 +3,7 @@ Copyright (C) by Argonne National Laboratory
 
 Automatically generated
   by:   ./maint/extractcvars
-  at:   Fri Jan 22 20:18:10 2021 UTC
+  at:   Wed May 26 20:52:04 2021 UTC
 DO NOT EDIT!!!
 
 This file lists the various environment variables available to change the
@@ -1896,7 +1896,7 @@ MPIR_CVAR_COLLECTIVE_FALLBACK
         print   - print an error message and fallback to the internally
         selected algorithm
         silent  - silently fallback to the internally selected algorithm
-    Default: MPIR_CVAR_COLLECTIVE_FALLBACK_error
+    Default: MPIR_CVAR_COLLECTIVE_FALLBACK_silent
 
 MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE
     Aliases: MPIR_PARAM_COLL_SELECTION_TUNING_JSON_FILE
@@ -2421,7 +2421,7 @@ MPIR_CVAR_OFI_SKIP_IPV6
     Aliases: MPIR_PARAM_OFI_SKIP_IPV6
              MPICH_OFI_SKIP_IPV6
     Description: Skip IPv6 providers.
-    Default: 0
+    Default: 1
 
 MPIR_CVAR_CH4_OFI_ENABLE_AV_TABLE
     Aliases: MPIR_PARAM_CH4_OFI_ENABLE_AV_TABLE

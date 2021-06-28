@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# Copyright © 2009-2018 Inria.  All rights reserved.
+# Copyright © 2009-2020 Inria.  All rights reserved.
 # Copyright © 2009-2012 Université Bordeaux
 # Copyright © 2009-2014 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
@@ -95,7 +95,9 @@ host_triplet = @host@
 target_triplet = @target@
 @HWLOC_HAVE_LINUX_TRUE@am__append_1 = linux
 @HWLOC_HAVE_X86_CPUID_TRUE@am__append_2 = x86
-check_PROGRAMS = hwloc_list_components$(EXEEXT) hwloc_bitmap$(EXEEXT) \
+@HWLOC_HAVE_LINUX_TRUE@@HWLOC_HAVE_X86_CPUID_TRUE@am__append_3 = x86+linux
+check_PROGRAMS = hwloc_api_version$(EXEEXT) \
+	hwloc_list_components$(EXEEXT) hwloc_bitmap$(EXEEXT) \
 	hwloc_bitmap_string$(EXEEXT) \
 	hwloc_bitmap_compare_inclusion$(EXEEXT) \
 	hwloc_get_closest_objs$(EXEEXT) \
@@ -115,22 +117,24 @@ check_PROGRAMS = hwloc_list_components$(EXEEXT) hwloc_bitmap$(EXEEXT) \
 	hwloc_backends$(EXEEXT) hwloc_pci_backend$(EXEEXT) \
 	hwloc_is_thissystem$(EXEEXT) hwloc_distances$(EXEEXT) \
 	hwloc_groups$(EXEEXT) hwloc_insert_misc$(EXEEXT) \
-	hwloc_topology_restrict$(EXEEXT) hwloc_topology_dup$(EXEEXT) \
-	hwloc_topology_diff$(EXEEXT) hwloc_topology_abi$(EXEEXT) \
-	hwloc_obj_infos$(EXEEXT) hwloc_iodevs$(EXEEXT) \
-	xmlbuffer$(EXEEXT) gl$(EXEEXT) intel-mic$(EXEEXT) \
-	$(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+	hwloc_topology_allow$(EXEEXT) hwloc_topology_restrict$(EXEEXT) \
+	hwloc_topology_dup$(EXEEXT) hwloc_topology_diff$(EXEEXT) \
+	hwloc_topology_abi$(EXEEXT) hwloc_obj_infos$(EXEEXT) \
+	hwloc_iodevs$(EXEEXT) cpuset_nodeset$(EXEEXT) \
+	memattrs$(EXEEXT) cpukinds$(EXEEXT) xmlbuffer$(EXEEXT) \
+	gl$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
 	$(am__EXEEXT_4) $(am__EXEEXT_5) $(am__EXEEXT_6) \
-	$(am__EXEEXT_7) $(am__EXEEXT_8)
-@HWLOC_HAVE_DARWIN_FALSE@@HWLOC_HAVE_WINDOWS_FALSE@am__append_3 = shmem
-@HWLOC_HAVE_LINUX_LIBNUMA_TRUE@am__append_4 = linux-libnuma
-@HWLOC_HAVE_SCHED_SETAFFINITY_TRUE@am__append_5 = glibc-sched
-@HWLOC_HAVE_LIBIBVERBS_TRUE@am__append_6 = openfabrics-verbs
-@HWLOC_HAVE_OPENCL_TRUE@am__append_7 = opencl
-@HWLOC_HAVE_CUDA_TRUE@am__append_8 = cuda
-@HWLOC_HAVE_CUDART_TRUE@am__append_9 = cudart
-@HWLOC_HAVE_NVML_TRUE@am__append_10 = nvml
-@HWLOC_HAVE_PTHREAD_TRUE@am__append_11 = -lpthread
+	$(am__EXEEXT_7) $(am__EXEEXT_8) $(am__EXEEXT_9)
+@HWLOC_HAVE_DARWIN_FALSE@@HWLOC_HAVE_WINDOWS_FALSE@am__append_4 = shmem
+@HWLOC_HAVE_LINUX_LIBNUMA_TRUE@am__append_5 = linux-libnuma
+@HWLOC_HAVE_SCHED_SETAFFINITY_TRUE@am__append_6 = glibc-sched
+@HWLOC_HAVE_LIBIBVERBS_TRUE@am__append_7 = openfabrics-verbs
+@HWLOC_HAVE_OPENCL_TRUE@am__append_8 = opencl
+@HWLOC_HAVE_CUDA_TRUE@am__append_9 = cuda
+@HWLOC_HAVE_CUDART_TRUE@am__append_10 = cudart
+@HWLOC_HAVE_NVML_TRUE@am__append_11 = nvml
+@HWLOC_HAVE_RSMI_TRUE@am__append_12 = rsmi
+@HWLOC_HAVE_PTHREAD_TRUE@am__append_13 = -lpthread
 subdir = tests/hwloc
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/hwloc.m4 \
@@ -163,13 +167,23 @@ CONFIG_CLEAN_VPATH_FILES =
 @HWLOC_HAVE_CUDA_TRUE@am__EXEEXT_6 = cuda$(EXEEXT)
 @HWLOC_HAVE_CUDART_TRUE@am__EXEEXT_7 = cudart$(EXEEXT)
 @HWLOC_HAVE_NVML_TRUE@am__EXEEXT_8 = nvml$(EXEEXT)
-cuda_SOURCES = cuda.c
-cuda_OBJECTS = cuda.$(OBJEXT)
-cuda_DEPENDENCIES = $(LDADD)
+@HWLOC_HAVE_RSMI_TRUE@am__EXEEXT_9 = rsmi$(EXEEXT)
+cpukinds_SOURCES = cpukinds.c
+cpukinds_OBJECTS = cpukinds.$(OBJEXT)
+cpukinds_LDADD = $(LDADD)
+cpukinds_DEPENDENCIES = $(HWLOC_top_builddir)/hwloc/$(hwloc_lib)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+cpuset_nodeset_SOURCES = cpuset_nodeset.c
+cpuset_nodeset_OBJECTS = cpuset_nodeset.$(OBJEXT)
+cpuset_nodeset_LDADD = $(LDADD)
+cpuset_nodeset_DEPENDENCIES =  \
+	$(HWLOC_top_builddir)/hwloc/$(hwloc_lib)
+cuda_SOURCES = cuda.c
+cuda_OBJECTS = cuda.$(OBJEXT)
+cuda_DEPENDENCIES = $(LDADD)
 cudart_SOURCES = cudart.c
 cudart_OBJECTS = cudart.$(OBJEXT)
 cudart_DEPENDENCIES = $(LDADD)
@@ -181,6 +195,11 @@ glibc_sched_SOURCES = glibc-sched.c
 glibc_sched_OBJECTS = glibc-sched.$(OBJEXT)
 glibc_sched_LDADD = $(LDADD)
 glibc_sched_DEPENDENCIES = $(HWLOC_top_builddir)/hwloc/$(hwloc_lib)
+hwloc_api_version_SOURCES = hwloc_api_version.c
+hwloc_api_version_OBJECTS = hwloc_api_version.$(OBJEXT)
+hwloc_api_version_LDADD = $(LDADD)
+hwloc_api_version_DEPENDENCIES =  \
+	$(HWLOC_top_builddir)/hwloc/$(hwloc_lib)
 hwloc_backends_SOURCES = hwloc_backends.c
 hwloc_backends_OBJECTS = hwloc_backends.$(OBJEXT)
 hwloc_backends_LDADD = $(LDADD)
@@ -336,6 +355,11 @@ hwloc_topology_abi_OBJECTS = hwloc_topology_abi.$(OBJEXT)
 hwloc_topology_abi_LDADD = $(LDADD)
 hwloc_topology_abi_DEPENDENCIES =  \
 	$(HWLOC_top_builddir)/hwloc/$(hwloc_lib)
+hwloc_topology_allow_SOURCES = hwloc_topology_allow.c
+hwloc_topology_allow_OBJECTS = hwloc_topology_allow.$(OBJEXT)
+hwloc_topology_allow_LDADD = $(LDADD)
+hwloc_topology_allow_DEPENDENCIES =  \
+	$(HWLOC_top_builddir)/hwloc/$(hwloc_lib)
 hwloc_topology_diff_SOURCES = hwloc_topology_diff.c
 hwloc_topology_diff_OBJECTS = hwloc_topology_diff.$(OBJEXT)
 hwloc_topology_diff_LDADD = $(LDADD)
@@ -361,13 +385,16 @@ hwloc_type_sscanf_OBJECTS = hwloc_type_sscanf.$(OBJEXT)
 hwloc_type_sscanf_LDADD = $(LDADD)
 hwloc_type_sscanf_DEPENDENCIES =  \
 	$(HWLOC_top_builddir)/hwloc/$(hwloc_lib)
-intel_mic_SOURCES = intel-mic.c
-intel_mic_OBJECTS = intel-mic.$(OBJEXT)
-intel_mic_LDADD = $(LDADD)
-intel_mic_DEPENDENCIES = $(HWLOC_top_builddir)/hwloc/$(hwloc_lib)
 linux_libnuma_SOURCES = linux-libnuma.c
-linux_libnuma_OBJECTS = linux-libnuma.$(OBJEXT)
-linux_libnuma_DEPENDENCIES = $(LDADD)
+linux_libnuma_OBJECTS = linux_libnuma-linux-libnuma.$(OBJEXT)
+linux_libnuma_DEPENDENCIES = $(LDADD) $(am__DEPENDENCIES_1)
+linux_libnuma_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(linux_libnuma_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+memattrs_SOURCES = memattrs.c
+memattrs_OBJECTS = memattrs.$(OBJEXT)
+memattrs_LDADD = $(LDADD)
+memattrs_DEPENDENCIES = $(HWLOC_top_builddir)/hwloc/$(hwloc_lib)
 nvml_SOURCES = nvml.c
 nvml_OBJECTS = nvml.$(OBJEXT)
 nvml_DEPENDENCIES = $(LDADD)
@@ -378,6 +405,9 @@ opencl_DEPENDENCIES = $(LDADD) $(am__DEPENDENCIES_1) \
 openfabrics_verbs_SOURCES = openfabrics-verbs.c
 openfabrics_verbs_OBJECTS = openfabrics-verbs.$(OBJEXT)
 openfabrics_verbs_DEPENDENCIES = $(LDADD)
+rsmi_SOURCES = rsmi.c
+rsmi_OBJECTS = rsmi.$(OBJEXT)
+rsmi_DEPENDENCIES = $(LDADD)
 shmem_SOURCES = shmem.c
 shmem_OBJECTS = shmem.$(OBJEXT)
 shmem_LDADD = $(LDADD)
@@ -420,7 +450,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = cuda.c cudart.c gl.c glibc-sched.c hwloc_backends.c \
+SOURCES = cpukinds.c cpuset_nodeset.c cuda.c cudart.c gl.c \
+	glibc-sched.c hwloc_api_version.c hwloc_backends.c \
 	hwloc_bind.c hwloc_bitmap.c hwloc_bitmap_compare_inclusion.c \
 	hwloc_bitmap_first_last_weight.c hwloc_bitmap_singlify.c \
 	hwloc_bitmap_string.c hwloc_distances.c \
@@ -435,12 +466,13 @@ SOURCES = cuda.c cudart.c gl.c glibc-sched.c hwloc_backends.c \
 	hwloc_insert_misc.c hwloc_iodevs.c hwloc_is_thissystem.c \
 	hwloc_list_components.c hwloc_obj_infos.c \
 	hwloc_object_userdata.c hwloc_pci_backend.c hwloc_synthetic.c \
-	hwloc_topology_abi.c hwloc_topology_diff.c \
-	hwloc_topology_dup.c hwloc_topology_restrict.c \
-	hwloc_type_depth.c hwloc_type_sscanf.c intel-mic.c \
-	linux-libnuma.c nvml.c opencl.c openfabrics-verbs.c shmem.c \
-	xmlbuffer.c
-DIST_SOURCES = cuda.c cudart.c gl.c glibc-sched.c hwloc_backends.c \
+	hwloc_topology_abi.c hwloc_topology_allow.c \
+	hwloc_topology_diff.c hwloc_topology_dup.c \
+	hwloc_topology_restrict.c hwloc_type_depth.c \
+	hwloc_type_sscanf.c linux-libnuma.c memattrs.c nvml.c opencl.c \
+	openfabrics-verbs.c rsmi.c shmem.c xmlbuffer.c
+DIST_SOURCES = cpukinds.c cpuset_nodeset.c cuda.c cudart.c gl.c \
+	glibc-sched.c hwloc_api_version.c hwloc_backends.c \
 	hwloc_bind.c hwloc_bitmap.c hwloc_bitmap_compare_inclusion.c \
 	hwloc_bitmap_first_last_weight.c hwloc_bitmap_singlify.c \
 	hwloc_bitmap_string.c hwloc_distances.c \
@@ -455,11 +487,11 @@ DIST_SOURCES = cuda.c cudart.c gl.c glibc-sched.c hwloc_backends.c \
 	hwloc_insert_misc.c hwloc_iodevs.c hwloc_is_thissystem.c \
 	hwloc_list_components.c hwloc_obj_infos.c \
 	hwloc_object_userdata.c hwloc_pci_backend.c hwloc_synthetic.c \
-	hwloc_topology_abi.c hwloc_topology_diff.c \
-	hwloc_topology_dup.c hwloc_topology_restrict.c \
-	hwloc_type_depth.c hwloc_type_sscanf.c intel-mic.c \
-	linux-libnuma.c nvml.c opencl.c openfabrics-verbs.c shmem.c \
-	xmlbuffer.c
+	hwloc_topology_abi.c hwloc_topology_allow.c \
+	hwloc_topology_diff.c hwloc_topology_dup.c \
+	hwloc_topology_restrict.c hwloc_type_depth.c \
+	hwloc_type_sscanf.c linux-libnuma.c memattrs.c nvml.c opencl.c \
+	openfabrics-verbs.c rsmi.c shmem.c xmlbuffer.c
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -779,6 +811,7 @@ HWLOC_CPPFLAGS = @HWLOC_CPPFLAGS@
 HWLOC_CUDA_LIBS = @HWLOC_CUDA_LIBS@
 HWLOC_DIFF_U = @HWLOC_DIFF_U@
 HWLOC_DIFF_W = @HWLOC_DIFF_W@
+HWLOC_DL_LIBS = @HWLOC_DL_LIBS@
 HWLOC_EMBEDDED_CFLAGS = @HWLOC_EMBEDDED_CFLAGS@
 HWLOC_EMBEDDED_CPPFLAGS = @HWLOC_EMBEDDED_CPPFLAGS@
 HWLOC_EMBEDDED_LDADD = @HWLOC_EMBEDDED_LDADD@
@@ -788,13 +821,17 @@ HWLOC_GL_LIBS = @HWLOC_GL_LIBS@
 HWLOC_HAVE_LIBXML2 = @HWLOC_HAVE_LIBXML2@
 HWLOC_HAVE_NVML = @HWLOC_HAVE_NVML@
 HWLOC_HAVE_OPENCL = @HWLOC_HAVE_OPENCL@
+HWLOC_HAVE_RSMI = @HWLOC_HAVE_RSMI@
 HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
 HWLOC_LIBS = @HWLOC_LIBS@
 HWLOC_LIBS_PRIVATE = @HWLOC_LIBS_PRIVATE@
 HWLOC_LIBXML2_CFLAGS = @HWLOC_LIBXML2_CFLAGS@
 HWLOC_LIBXML2_LIBS = @HWLOC_LIBXML2_LIBS@
+HWLOC_LTDL_LIBS = @HWLOC_LTDL_LIBS@
 HWLOC_MS_LIB = @HWLOC_MS_LIB@
 HWLOC_MS_LIB_ARCH = @HWLOC_MS_LIB_ARCH@
+HWLOC_NUMA_CFLAGS = @HWLOC_NUMA_CFLAGS@
+HWLOC_NUMA_LIBS = @HWLOC_NUMA_LIBS@
 HWLOC_NVML_LIBS = @HWLOC_NVML_LIBS@
 HWLOC_OPENCL_CFLAGS = @HWLOC_OPENCL_CFLAGS@
 HWLOC_OPENCL_LDFLAGS = @HWLOC_OPENCL_LDFLAGS@
@@ -803,8 +840,10 @@ HWLOC_PCIACCESS_CFLAGS = @HWLOC_PCIACCESS_CFLAGS@
 HWLOC_PCIACCESS_LIBS = @HWLOC_PCIACCESS_LIBS@
 HWLOC_PLUGINS_DIR = @HWLOC_PLUGINS_DIR@
 HWLOC_PLUGINS_PATH = @HWLOC_PLUGINS_PATH@
+HWLOC_PS_LIBS = @HWLOC_PS_LIBS@
 HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
 HWLOC_REQUIRES = @HWLOC_REQUIRES@
+HWLOC_RSMI_LIBS = @HWLOC_RSMI_LIBS@
 HWLOC_TERMCAP_LIBS = @HWLOC_TERMCAP_LIBS@
 HWLOC_VERSION = @HWLOC_VERSION@
 HWLOC_W3_GENERATOR = @HWLOC_W3_GENERATOR@
@@ -934,10 +973,10 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 xz = @xz@
 AM_CFLAGS = $(HWLOC_CFLAGS)
-AM_CPPFLAGS = $(HWLOC_CPPFLAGS)
+AM_CPPFLAGS = $(HWLOC_CPPFLAGS) -DXMLTESTDIR=\"$(abs_top_srcdir)/tests/hwloc/xml/\"
 AM_LDFLAGS = $(HWLOC_LDFLAGS)
-SUBDIRS = . ports xml $(am__append_1) $(am__append_2)
-DIST_SUBDIRS = ports xml linux x86 rename
+SUBDIRS = . ports xml $(am__append_1) $(am__append_2) $(am__append_3)
+DIST_SUBDIRS = ports xml linux x86 x86+linux rename
 LDADD = $(HWLOC_top_builddir)/hwloc/$(hwloc_lib)
 LOG_COMPILER = $(builddir)/wrapper.sh
 TESTS = $(check_PROGRAMS)
@@ -946,13 +985,15 @@ TESTS = $(check_PROGRAMS)
 # The library has a different name depending on whether we are
 # building in standalone or embedded mode.
 @HWLOC_BUILD_STANDALONE_TRUE@hwloc_lib = libhwloc.la
-linux_libnuma_LDADD = $(LDADD) -lnuma
+linux_libnuma_CFLAGS = $(AM_CFLAGS) $(HWLOC_NUMA_CFLAGS)
+linux_libnuma_LDADD = $(LDADD) $(HWLOC_NUMA_LIBS)
 openfabrics_verbs_LDADD = $(LDADD) -libverbs
 opencl_LDADD = $(LDADD) $(HWLOC_OPENCL_LIBS) $(HWLOC_OPENCL_LDFLAGS)
 cuda_LDADD = $(LDADD) -lcuda
 cudart_LDADD = $(LDADD) -lcuda -lcudart
 nvml_LDADD = $(LDADD) -lnvidia-ml
-hwloc_bind_LDADD = $(LDADD) $(am__append_11)
+rsmi_LDADD = $(LDADD) -lrocm_smi64
+hwloc_bind_LDADD = $(LDADD) $(am__append_13)
 
 # ship the embedded test code but don't actually let automake ever
 # look at it because we have another configure stuff in there
@@ -1010,6 +1051,14 @@ clean-checkPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
+cpukinds$(EXEEXT): $(cpukinds_OBJECTS) $(cpukinds_DEPENDENCIES) $(EXTRA_cpukinds_DEPENDENCIES) 
+	@rm -f cpukinds$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cpukinds_OBJECTS) $(cpukinds_LDADD) $(LIBS)
+
+cpuset_nodeset$(EXEEXT): $(cpuset_nodeset_OBJECTS) $(cpuset_nodeset_DEPENDENCIES) $(EXTRA_cpuset_nodeset_DEPENDENCIES) 
+	@rm -f cpuset_nodeset$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cpuset_nodeset_OBJECTS) $(cpuset_nodeset_LDADD) $(LIBS)
+
 cuda$(EXEEXT): $(cuda_OBJECTS) $(cuda_DEPENDENCIES) $(EXTRA_cuda_DEPENDENCIES) 
 	@rm -f cuda$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(cuda_OBJECTS) $(cuda_LDADD) $(LIBS)
@@ -1025,6 +1074,10 @@ gl$(EXEEXT): $(gl_OBJECTS) $(gl_DEPENDENCIES) $(EXTRA_gl_DEPENDENCIES)
 glibc-sched$(EXEEXT): $(glibc_sched_OBJECTS) $(glibc_sched_DEPENDENCIES) $(EXTRA_glibc_sched_DEPENDENCIES) 
 	@rm -f glibc-sched$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(glibc_sched_OBJECTS) $(glibc_sched_LDADD) $(LIBS)
+
+hwloc_api_version$(EXEEXT): $(hwloc_api_version_OBJECTS) $(hwloc_api_version_DEPENDENCIES) $(EXTRA_hwloc_api_version_DEPENDENCIES) 
+	@rm -f hwloc_api_version$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(hwloc_api_version_OBJECTS) $(hwloc_api_version_LDADD) $(LIBS)
 
 hwloc_backends$(EXEEXT): $(hwloc_backends_OBJECTS) $(hwloc_backends_DEPENDENCIES) $(EXTRA_hwloc_backends_DEPENDENCIES) 
 	@rm -f hwloc_backends$(EXEEXT)
@@ -1138,6 +1191,10 @@ hwloc_topology_abi$(EXEEXT): $(hwloc_topology_abi_OBJECTS) $(hwloc_topology_abi_
 	@rm -f hwloc_topology_abi$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(hwloc_topology_abi_OBJECTS) $(hwloc_topology_abi_LDADD) $(LIBS)
 
+hwloc_topology_allow$(EXEEXT): $(hwloc_topology_allow_OBJECTS) $(hwloc_topology_allow_DEPENDENCIES) $(EXTRA_hwloc_topology_allow_DEPENDENCIES) 
+	@rm -f hwloc_topology_allow$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(hwloc_topology_allow_OBJECTS) $(hwloc_topology_allow_LDADD) $(LIBS)
+
 hwloc_topology_diff$(EXEEXT): $(hwloc_topology_diff_OBJECTS) $(hwloc_topology_diff_DEPENDENCIES) $(EXTRA_hwloc_topology_diff_DEPENDENCIES) 
 	@rm -f hwloc_topology_diff$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(hwloc_topology_diff_OBJECTS) $(hwloc_topology_diff_LDADD) $(LIBS)
@@ -1158,13 +1215,13 @@ hwloc_type_sscanf$(EXEEXT): $(hwloc_type_sscanf_OBJECTS) $(hwloc_type_sscanf_DEP
 	@rm -f hwloc_type_sscanf$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(hwloc_type_sscanf_OBJECTS) $(hwloc_type_sscanf_LDADD) $(LIBS)
 
-intel-mic$(EXEEXT): $(intel_mic_OBJECTS) $(intel_mic_DEPENDENCIES) $(EXTRA_intel_mic_DEPENDENCIES) 
-	@rm -f intel-mic$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(intel_mic_OBJECTS) $(intel_mic_LDADD) $(LIBS)
-
 linux-libnuma$(EXEEXT): $(linux_libnuma_OBJECTS) $(linux_libnuma_DEPENDENCIES) $(EXTRA_linux_libnuma_DEPENDENCIES) 
 	@rm -f linux-libnuma$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(linux_libnuma_OBJECTS) $(linux_libnuma_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(linux_libnuma_LINK) $(linux_libnuma_OBJECTS) $(linux_libnuma_LDADD) $(LIBS)
+
+memattrs$(EXEEXT): $(memattrs_OBJECTS) $(memattrs_DEPENDENCIES) $(EXTRA_memattrs_DEPENDENCIES) 
+	@rm -f memattrs$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(memattrs_OBJECTS) $(memattrs_LDADD) $(LIBS)
 
 nvml$(EXEEXT): $(nvml_OBJECTS) $(nvml_DEPENDENCIES) $(EXTRA_nvml_DEPENDENCIES) 
 	@rm -f nvml$(EXEEXT)
@@ -1177,6 +1234,10 @@ opencl$(EXEEXT): $(opencl_OBJECTS) $(opencl_DEPENDENCIES) $(EXTRA_opencl_DEPENDE
 openfabrics-verbs$(EXEEXT): $(openfabrics_verbs_OBJECTS) $(openfabrics_verbs_DEPENDENCIES) $(EXTRA_openfabrics_verbs_DEPENDENCIES) 
 	@rm -f openfabrics-verbs$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(openfabrics_verbs_OBJECTS) $(openfabrics_verbs_LDADD) $(LIBS)
+
+rsmi$(EXEEXT): $(rsmi_OBJECTS) $(rsmi_DEPENDENCIES) $(EXTRA_rsmi_DEPENDENCIES) 
+	@rm -f rsmi$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(rsmi_OBJECTS) $(rsmi_LDADD) $(LIBS)
 
 shmem$(EXEEXT): $(shmem_OBJECTS) $(shmem_DEPENDENCIES) $(EXTRA_shmem_DEPENDENCIES) 
 	@rm -f shmem$(EXEEXT)
@@ -1192,10 +1253,13 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpukinds.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpuset_nodeset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cudart.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glibc-sched.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_api_version.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_backends.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_bind.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_bitmap.Po@am__quote@
@@ -1224,16 +1288,18 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_pci_backend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_synthetic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_topology_abi.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_topology_allow.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_topology_diff.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_topology_dup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_topology_restrict.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_type_depth.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_type_sscanf.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intel-mic.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linux-libnuma.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linux_libnuma-linux-libnuma.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memattrs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nvml.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opencl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/openfabrics-verbs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rsmi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shmem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xmlbuffer.Po@am__quote@
 
@@ -1260,6 +1326,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+linux_libnuma-linux-libnuma.o: linux-libnuma.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(linux_libnuma_CFLAGS) $(CFLAGS) -MT linux_libnuma-linux-libnuma.o -MD -MP -MF $(DEPDIR)/linux_libnuma-linux-libnuma.Tpo -c -o linux_libnuma-linux-libnuma.o `test -f 'linux-libnuma.c' || echo '$(srcdir)/'`linux-libnuma.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/linux_libnuma-linux-libnuma.Tpo $(DEPDIR)/linux_libnuma-linux-libnuma.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='linux-libnuma.c' object='linux_libnuma-linux-libnuma.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(linux_libnuma_CFLAGS) $(CFLAGS) -c -o linux_libnuma-linux-libnuma.o `test -f 'linux-libnuma.c' || echo '$(srcdir)/'`linux-libnuma.c
+
+linux_libnuma-linux-libnuma.obj: linux-libnuma.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(linux_libnuma_CFLAGS) $(CFLAGS) -MT linux_libnuma-linux-libnuma.obj -MD -MP -MF $(DEPDIR)/linux_libnuma-linux-libnuma.Tpo -c -o linux_libnuma-linux-libnuma.obj `if test -f 'linux-libnuma.c'; then $(CYGPATH_W) 'linux-libnuma.c'; else $(CYGPATH_W) '$(srcdir)/linux-libnuma.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/linux_libnuma-linux-libnuma.Tpo $(DEPDIR)/linux_libnuma-linux-libnuma.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='linux-libnuma.c' object='linux_libnuma-linux-libnuma.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(linux_libnuma_CFLAGS) $(CFLAGS) -c -o linux_libnuma-linux-libnuma.obj `if test -f 'linux-libnuma.c'; then $(CYGPATH_W) 'linux-libnuma.c'; else $(CYGPATH_W) '$(srcdir)/linux-libnuma.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -1507,6 +1587,13 @@ recheck: all $(check_PROGRAMS)
 	        am__force_recheck=am--force-recheck \
 	        TEST_LOGS="$$log_list"; \
 	exit $$?
+hwloc_api_version.log: hwloc_api_version$(EXEEXT)
+	@p='hwloc_api_version$(EXEEXT)'; \
+	b='hwloc_api_version'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 hwloc_list_components.log: hwloc_list_components$(EXEEXT)
 	@p='hwloc_list_components$(EXEEXT)'; \
 	b='hwloc_list_components'; \
@@ -1696,6 +1783,13 @@ hwloc_insert_misc.log: hwloc_insert_misc$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+hwloc_topology_allow.log: hwloc_topology_allow$(EXEEXT)
+	@p='hwloc_topology_allow$(EXEEXT)'; \
+	b='hwloc_topology_allow'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 hwloc_topology_restrict.log: hwloc_topology_restrict$(EXEEXT)
 	@p='hwloc_topology_restrict$(EXEEXT)'; \
 	b='hwloc_topology_restrict'; \
@@ -1738,6 +1832,27 @@ hwloc_iodevs.log: hwloc_iodevs$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+cpuset_nodeset.log: cpuset_nodeset$(EXEEXT)
+	@p='cpuset_nodeset$(EXEEXT)'; \
+	b='cpuset_nodeset'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+memattrs.log: memattrs$(EXEEXT)
+	@p='memattrs$(EXEEXT)'; \
+	b='memattrs'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+cpukinds.log: cpukinds$(EXEEXT)
+	@p='cpukinds$(EXEEXT)'; \
+	b='cpukinds'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 xmlbuffer.log: xmlbuffer$(EXEEXT)
 	@p='xmlbuffer$(EXEEXT)'; \
 	b='xmlbuffer'; \
@@ -1748,13 +1863,6 @@ xmlbuffer.log: xmlbuffer$(EXEEXT)
 gl.log: gl$(EXEEXT)
 	@p='gl$(EXEEXT)'; \
 	b='gl'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-intel-mic.log: intel-mic$(EXEEXT)
-	@p='intel-mic$(EXEEXT)'; \
-	b='intel-mic'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1811,6 +1919,13 @@ cudart.log: cudart$(EXEEXT)
 nvml.log: nvml$(EXEEXT)
 	@p='nvml$(EXEEXT)'; \
 	b='nvml'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rsmi.log: rsmi$(EXEEXT)
+	@p='rsmi$(EXEEXT)'; \
+	b='rsmi'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

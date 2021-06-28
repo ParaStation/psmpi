@@ -1,4 +1,4 @@
-			MPICH Release 3.4.1
+			MPICH Release 3.4.2
 
 MPICH is a high-performance and widely portable implementation of the
 MPI-3.1 standard from the Argonne National Laboratory.  This release
@@ -42,7 +42,7 @@ shared memory), Hydra process management) of MPICH up and running.
 
 (a) You will need the following prerequisites.
 
-    - REQUIRED: This tar file mpich-3.4.1.tar.gz
+    - REQUIRED: This tar file mpich-3.4.2.tar.gz
 
     - REQUIRED: A C compiler (C99 support is required. See
       https://wiki.mpich.org/mpich/index.php/Shifting_toward_C99)
@@ -65,14 +65,14 @@ shared memory), Hydra process management) of MPICH up and running.
 
 (b) Unpack the tar file and go to the top level directory:
 
-      tar xzf mpich-3.4.1.tar.gz
-      cd mpich-3.4.1
+      tar xzf mpich-3.4.2.tar.gz
+      cd mpich-3.4.2
 
     If your tar doesn't accept the z option, use
 
-      gunzip mpich-3.4.1.tar.gz
-      tar xf mpich-3.4.1.tar
-      cd mpich-3.4.1
+      gunzip mpich-3.4.2.tar.gz
+      tar xf mpich-3.4.2.tar
+      cd mpich-3.4.2
 
 (c) Choose an installation directory, say
     /home/<USERNAME>/mpich-install, which is assumed to non-existent
@@ -81,7 +81,7 @@ shared memory), Hydra process management) of MPICH up and running.
     you will have to duplicate it on the other machines after
     installation.
 
-(d) Configure MPICH specifying the installation directory:
+(d) Configure MPICH specifying the installation directory and device:
 
     for csh and tcsh:
 
@@ -90,6 +90,20 @@ shared memory), Hydra process management) of MPICH up and running.
     for bash and sh:
 
       ./configure --prefix=/home/<USERNAME>/mpich-install 2>&1 | tee c.txt
+
+    The configure will try to determine the best device (the internal
+    network modules) based on system environment. It will abort when it
+    can't decide which is the best choice. Supply the device option to
+    proceed. E.g.
+
+      ./configure --prefix=... --with-device=ch4:ofi |...
+
+    or:
+
+      ./configure --prefix=... --with-device=ch4:ucx |...
+
+    Refer to section below -- Alternate Channels and Devices -- for
+    more details.
 
     Bourne-like shells, sh and bash, accept "2>&1 |".  Csh-like shell,
     csh and tcsh, accept "|&". If a failure occurs, the configure
@@ -181,7 +195,7 @@ shared memory), Hydra process management) of MPICH up and running.
     Now we will run an MPI job, using the mpiexec command as specified
     in the MPI standard. There are some examples in the install
     directory, which you have already put in your path, as well as in
-    the directory mpich-3.4.1/examples. One of them is the classic
+    the directory mpich-3.4.2/examples. One of them is the classic
     CPI example, which computes the value of pi by numerical
     integration in parallel.
 
@@ -245,13 +259,13 @@ COMPRESS BEFORE SENDING, AS THE FILES CAN BE LARGE.  Note that,
 depending on which step the build failed, some of the files might not
 exist.
 
-    mpich-3.4.1/c.txt (generated in step 1(d) above)
-    mpich-3.4.1/m.txt (generated in step 1(e) above)
-    mpich-3.4.1/mi.txt (generated in step 1(f) above)
-    mpich-3.4.1/config.log (generated in step 1(d) above)
-    mpich-3.4.1/src/mpl/config.log (generated in step 1(d) above)
-    mpich-3.4.1/src/pm/hydra/config.log (generated in step 1(d) above)
-    mpich-3.4.1/src/pm/hydra/tools/topo/hwloc/hwloc/config.log (generated in step 1(d) above)
+    mpich-3.4.2/c.txt (generated in step 1(d) above)
+    mpich-3.4.2/m.txt (generated in step 1(e) above)
+    mpich-3.4.2/mi.txt (generated in step 1(f) above)
+    mpich-3.4.2/config.log (generated in step 1(d) above)
+    mpich-3.4.2/src/mpl/config.log (generated in step 1(d) above)
+    mpich-3.4.2/src/pm/hydra/config.log (generated in step 1(d) above)
+    mpich-3.4.2/src/pm/hydra/tools/topo/hwloc/hwloc/config.log (generated in step 1(d) above)
 
     DID WE MENTION? DO NOT FORGET TO COMPRESS THESE FILES!
 

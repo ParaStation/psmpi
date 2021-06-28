@@ -5,9 +5,9 @@
         INCLUDE 'mpifnoext.h'
         TYPE :: MPI_Status
            SEQUENCE
-           INTEGER :: MPI_SOURCE, MPI_TAG, MPI_ERROR
            INTEGER :: count_lo
            INTEGER :: count_hi_and_cancelled
+           INTEGER :: MPI_SOURCE, MPI_TAG, MPI_ERROR
         END TYPE MPI_Status
        TYPE :: MPI_Info
           SEQUENCE

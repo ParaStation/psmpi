@@ -1,7 +1,7 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2018 Inria.  All rights reserved.
- * Copyright © 2009-2012 Université Bordeaux
+ * Copyright © 2009-2020 Inria.  All rights reserved.
+ * Copyright © 2009-2012, 2020 Université Bordeaux
  * Copyright © 2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
@@ -9,10 +9,10 @@
 /* To try to get all declarations duplicated below.  */
 #define _WIN32_WINNT 0x0601
 
-#include <private/autogen/config.h>
-#include <hwloc.h>
-#include <private/private.h>
-#include <private/debug.h>
+#include "private/autogen/config.h"
+#include "hwloc.h"
+#include "private/private.h"
+#include "private/debug.h"
 
 #include <windows.h>
 
@@ -93,9 +93,10 @@ typedef struct _GROUP_AFFINITY {
 #endif
 
 #ifndef HAVE_PROCESSOR_RELATIONSHIP
-typedef struct _PROCESSOR_RELATIONSHIP {
+typedef struct HWLOC_PROCESSOR_RELATIONSHIP {
   BYTE Flags;
-  BYTE Reserved[21];
+  BYTE EfficiencyClass; /* for RelationProcessorCore, higher means greater performance but less efficiency, only available in Win10+ */
+  BYTE Reserved[20];
   WORD GroupCount;
   GROUP_AFFINITY GroupMask[ANYSIZE_ARRAY];
 } PROCESSOR_RELATIONSHIP, *PPROCESSOR_RELATIONSHIP;
@@ -228,9 +229,16 @@ static PFN_VIRTUALFREEEX VirtualFreeExProc;
 typedef BOOL (WINAPI *PFN_QUERYWORKINGSETEX)(HANDLE hProcess, PVOID pv, DWORD cb);
 static PFN_QUERYWORKINGSETEX QueryWorkingSetExProc;
 
+typedef NTSTATUS (WINAPI *PFN_RTLGETVERSION)(OSVERSIONINFOEX*);
+PFN_RTLGETVERSION RtlGetVersionProc;
+
 static void hwloc_win_get_function_ptrs(void)
 {
-    HMODULE kernel32;
+  HMODULE kernel32, ntdll;
+
+#if HWLOC_HAVE_GCC_W_CAST_FUNCTION_TYPE
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
 
     kernel32 = LoadLibrary("kernel32.dll");
     if (kernel32) {
@@ -270,6 +278,13 @@ static void hwloc_win_get_function_ptrs(void)
       if (psapi)
         QueryWorkingSetExProc = (PFN_QUERYWORKINGSETEX) GetProcAddress(psapi, "QueryWorkingSetEx");
     }
+
+    ntdll = GetModuleHandle("ntdll");
+    RtlGetVersionProc = (PFN_RTLGETVERSION) GetProcAddress(ntdll, "RtlGetVersion");
+
+#if HWLOC_HAVE_GCC_W_CAST_FUNCTION_TYPE
+#pragma GCC diagnostic warning "-Wcast-function-type"
+#endif
 }
 
 /*
@@ -726,23 +741,138 @@ hwloc_win_get_area_memlocation(hwloc_topology_t topology __hwloc_attribute_unuse
 }
 
 
+
+/*************************
+ * Efficiency classes
+ */
+
+struct hwloc_win_efficiency_classes {
+  unsigned nr_classes;
+  unsigned nr_classes_allocated;
+  struct hwloc_win_efficiency_class {
+    unsigned value;
+    hwloc_bitmap_t cpuset;
+  } *classes;
+};
+
+static void
+hwloc_win_efficiency_classes_init(struct hwloc_win_efficiency_classes *classes)
+{
+  classes->classes = NULL;
+  classes->nr_classes_allocated = 0;
+  classes->nr_classes = 0;
+}
+
+static int
+hwloc_win_efficiency_classes_add(struct hwloc_win_efficiency_classes *classes,
+                                 hwloc_const_bitmap_t cpuset,
+                                 unsigned value)
+{
+  unsigned i;
+
+  /* look for existing class with that efficiency value */
+  for(i=0; i<classes->nr_classes; i++) {
+    if (classes->classes[i].value == value) {
+      hwloc_bitmap_or(classes->classes[i].cpuset, classes->classes[i].cpuset, cpuset);
+      return 0;
+    }
+  }
+
+  /* extend the array if needed */
+  if (classes->nr_classes == classes->nr_classes_allocated) {
+    struct hwloc_win_efficiency_class *tmp;
+    unsigned new_nr_allocated = 2*classes->nr_classes_allocated;
+    if (!new_nr_allocated) {
+#define HWLOC_WIN_EFFICIENCY_CLASSES_DEFAULT_MAX 4 /* 2 should be enough is most cases */
+      new_nr_allocated = HWLOC_WIN_EFFICIENCY_CLASSES_DEFAULT_MAX;
+    }
+    tmp = realloc(classes->classes, new_nr_allocated * sizeof(*classes->classes));
+    if (!tmp)
+      return -1;
+    classes->classes = tmp;
+    classes->nr_classes_allocated = new_nr_allocated;
+  }
+
+  /* add new class */
+  classes->classes[classes->nr_classes].cpuset = hwloc_bitmap_alloc();
+  if (!classes->classes[classes->nr_classes].cpuset)
+    return -1;
+  classes->classes[classes->nr_classes].value = value;
+  hwloc_bitmap_copy(classes->classes[classes->nr_classes].cpuset, cpuset);
+  classes->nr_classes++;
+  return 0;
+}
+
+static void
+hwloc_win_efficiency_classes_register(hwloc_topology_t topology,
+                                      struct hwloc_win_efficiency_classes *classes)
+{
+  unsigned i;
+  for(i=0; i<classes->nr_classes; i++) {
+    hwloc_internal_cpukinds_register(topology, classes->classes[i].cpuset, classes->classes[i].value, NULL, 0, 0);
+    classes->classes[i].cpuset = NULL; /* given to cpukinds */
+  }
+}
+
+static void
+hwloc_win_efficiency_classes_destroy(struct hwloc_win_efficiency_classes *classes)
+{
+  unsigned i;
+  for(i=0; i<classes->nr_classes; i++)
+    hwloc_bitmap_free(classes->classes[i].cpuset);
+  free(classes->classes);
+}
+
 /*************************
  * discovery
  */
 
 static int
-hwloc_look_windows(struct hwloc_backend *backend)
+hwloc_look_windows(struct hwloc_backend *backend, struct hwloc_disc_status *dstatus)
 {
+  /*
+   * This backend uses the underlying OS.
+   * However we don't enforce topology->is_thissystem so that
+   * we may still force use this backend when debugging with !thissystem.
+   */
+
   struct hwloc_topology *topology = backend->topology;
   hwloc_bitmap_t groups_pu_set = NULL;
   SYSTEM_INFO SystemInfo;
   DWORD length;
   int gotnuma = 0;
   int gotnumamemory = 0;
+  OSVERSIONINFOEX osvi;
+  char versionstr[20];
+  char hostname[122] = "";
+  unsigned hostname_size = sizeof(hostname);
+  int has_efficiencyclass = 0;
+  struct hwloc_win_efficiency_classes eclasses;
+
+  assert(dstatus->phase == HWLOC_DISC_PHASE_CPU);
 
   if (topology->levels[0][0]->cpuset)
     /* somebody discovered things */
     return -1;
+
+  ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
+  osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+
+  if (RtlGetVersionProc) {
+    /* RtlGetVersion() returns the currently-running Windows version */
+    RtlGetVersionProc(&osvi);
+  } else {
+    /* GetVersionEx() and isWindows10OrGreater() depend on what the manifest says
+     * (manifest of the program, not of libhwloc.dll), they may return old versions
+     * if the currently-running Windows is not listed in the manifest.
+     */
+    GetVersionEx((LPOSVERSIONINFO)&osvi);
+  }
+
+  if (osvi.dwMajorVersion >= 10) {
+    has_efficiencyclass = 1;
+    hwloc_win_efficiency_classes_init(&eclasses);
+  }
 
   hwloc_alloc_root_sets(topology->levels[0][0]);
 
@@ -871,7 +1001,7 @@ hwloc_look_windows(struct hwloc_backend *backend)
 	  default:
 	    break;
 	}
-	hwloc_insert_object_by_cpuset(topology, obj);
+	hwloc__insert_object_by_cpuset(topology, NULL, obj, "windows:GetLogicalProcessorInformation");
       }
 
       free(procInfo);
@@ -903,6 +1033,7 @@ hwloc_look_windows(struct hwloc_backend *backend)
 	   (void*) procInfo < (void*) ((uintptr_t) procInfoTotal + length);
 	   procInfo = (void*) ((uintptr_t) procInfo + procInfo->Size)) {
         unsigned num, i;
+        unsigned efficiency_class = 0;
         GROUP_AFFINITY *GroupMask;
 
         /* Ignore unknown caches */
@@ -937,6 +1068,11 @@ hwloc_look_windows(struct hwloc_backend *backend)
 	    type = HWLOC_OBJ_CORE;
             num = procInfo->Processor.GroupCount;
             GroupMask = procInfo->Processor.GroupMask;
+            if (has_efficiencyclass)
+              /* the EfficiencyClass field didn't exist before Windows10 and recent MSVC headers,
+               * so just access it manually instead of trying to detect it.
+               */
+              efficiency_class = * ((&procInfo->Processor.Flags) + 1);
 	    break;
 	  case RelationGroup:
 	    /* So strange an interface... */
@@ -965,7 +1101,7 @@ hwloc_look_windows(struct hwloc_backend *backend)
 		obj = hwloc_alloc_setup_object(topology, HWLOC_OBJ_GROUP, id);
 		obj->cpuset = set;
 		obj->attr->group.kind = HWLOC_GROUP_KIND_WINDOWS_PROCESSOR_GROUP;
-		hwloc_insert_object_by_cpuset(topology, obj);
+		hwloc__insert_object_by_cpuset(topology, NULL, obj, "windows:GetLogicalProcessorInformation:ProcessorGroup");
 	      } else
 		hwloc_bitmap_free(set);
 	    }
@@ -989,6 +1125,11 @@ hwloc_look_windows(struct hwloc_backend *backend)
         }
 	hwloc_debug_2args_bitmap("%s#%u bitmap %s\n", hwloc_obj_type_string(type), id, obj->cpuset);
 	switch (type) {
+        case HWLOC_OBJ_CORE: {
+          if (has_efficiencyclass)
+            hwloc_win_efficiency_classes_add(&eclasses, obj->cpuset, efficiency_class);
+          break;
+        }
 	  case HWLOC_OBJ_NUMANODE:
 	    {
 	      ULONGLONG avail;
@@ -1039,7 +1180,7 @@ hwloc_look_windows(struct hwloc_backend *backend)
 	  default:
 	    break;
 	}
-	hwloc_insert_object_by_cpuset(topology, obj);
+	hwloc__insert_object_by_cpuset(topology, NULL, obj, "windows:GetLogicalProcessorInformationEx");
       }
       free(procInfoTotal);
   }
@@ -1060,29 +1201,88 @@ hwloc_look_windows(struct hwloc_backend *backend)
       hwloc_bitmap_only(obj->cpuset, idx);
       hwloc_debug_1arg_bitmap("cpu %u has cpuset %s\n",
 			      idx, obj->cpuset);
-      hwloc_insert_object_by_cpuset(topology, obj);
+      hwloc__insert_object_by_cpuset(topology, NULL, obj, "windows:ProcessorGroup:pu");
     } hwloc_bitmap_foreach_end();
     hwloc_bitmap_free(groups_pu_set);
   } else {
     /* no processor groups */
-    SYSTEM_INFO sysinfo;
     hwloc_obj_t obj;
     unsigned idx;
-    GetSystemInfo(&sysinfo);
     for(idx=0; idx<32; idx++)
-      if (sysinfo.dwActiveProcessorMask & (((DWORD_PTR)1)<<idx)) {
+      if (SystemInfo.dwActiveProcessorMask & (((DWORD_PTR)1)<<idx)) {
 	obj = hwloc_alloc_setup_object(topology, HWLOC_OBJ_PU, idx);
 	obj->cpuset = hwloc_bitmap_alloc();
 	hwloc_bitmap_only(obj->cpuset, idx);
 	hwloc_debug_1arg_bitmap("cpu %u has cpuset %s\n",
 				idx, obj->cpuset);
-	hwloc_insert_object_by_cpuset(topology, obj);
+	hwloc__insert_object_by_cpuset(topology, NULL, obj, "windows:pu");
       }
   }
 
+  if (has_efficiencyclass) {
+    topology->support.discovery->cpukind_efficiency = 1;
+    hwloc_win_efficiency_classes_register(topology, &eclasses);
+  }
+
  out:
+  if (has_efficiencyclass)
+    hwloc_win_efficiency_classes_destroy(&eclasses);
+
+  /* emulate uname instead of calling hwloc_add_uname_info() */
   hwloc_obj_add_info(topology->levels[0][0], "Backend", "Windows");
-  hwloc_add_uname_info(topology, NULL);
+  hwloc_obj_add_info(topology->levels[0][0], "OSName", "Windows");
+
+#if defined(__CYGWIN__)
+  hwloc_obj_add_info(topology->levels[0][0], "WindowsBuildEnvironment", "Cygwin");
+#elif defined(__MINGW32__)
+  hwloc_obj_add_info(topology->levels[0][0], "WindowsBuildEnvironment", "MinGW");
+#endif
+
+  /* see https://docs.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-osversioninfoexa */
+  if (osvi.dwMajorVersion == 10) {
+    if (osvi.dwMinorVersion == 0)
+      hwloc_obj_add_info(topology->levels[0][0], "OSRelease", "10");
+  } else if (osvi.dwMajorVersion == 6) {
+    if (osvi.dwMinorVersion == 3)
+      hwloc_obj_add_info(topology->levels[0][0], "OSRelease", "8.1"); /* or "Server 2012 R2" */
+    else if (osvi.dwMinorVersion == 2)
+      hwloc_obj_add_info(topology->levels[0][0], "OSRelease", "8"); /* or "Server 2012" */
+    else if (osvi.dwMinorVersion == 1)
+      hwloc_obj_add_info(topology->levels[0][0], "OSRelease", "7"); /* or "Server 2008 R2" */
+    else if (osvi.dwMinorVersion == 0)
+      hwloc_obj_add_info(topology->levels[0][0], "OSRelease", "Vista"); /* or "Server 2008" */
+  } /* earlier versions are ignored */
+
+  snprintf(versionstr, sizeof(versionstr), "%u.%u.%u", osvi.dwMajorVersion, osvi.dwMinorVersion, osvi.dwBuildNumber);
+  hwloc_obj_add_info(topology->levels[0][0], "OSVersion", versionstr);
+
+#if !defined(__CYGWIN__)
+  GetComputerName(hostname, &hostname_size);
+#else
+  gethostname(hostname, hostname_size);
+#endif
+  if (*hostname)
+    hwloc_obj_add_info(topology->levels[0][0], "Hostname", hostname);
+
+  /* convert to unix-like architecture strings */
+  switch (SystemInfo.wProcessorArchitecture) {
+  case 0:
+    hwloc_obj_add_info(topology->levels[0][0], "Architecture", "i686");
+    break;
+  case 9:
+    hwloc_obj_add_info(topology->levels[0][0], "Architecture", "x86_64");
+    break;
+  case 5:
+    hwloc_obj_add_info(topology->levels[0][0], "Architecture", "arm");
+    break;
+  case 12:
+    hwloc_obj_add_info(topology->levels[0][0], "Architecture", "arm64");
+    break;
+  case 6:
+    hwloc_obj_add_info(topology->levels[0][0], "Architecture", "ia64");
+    break;
+  }
+
   return 0;
 }
 
@@ -1136,13 +1336,15 @@ static void hwloc_windows_component_finalize(unsigned long flags __hwloc_attribu
 }
 
 static struct hwloc_backend *
-hwloc_windows_component_instantiate(struct hwloc_disc_component *component,
+hwloc_windows_component_instantiate(struct hwloc_topology *topology,
+				    struct hwloc_disc_component *component,
+				    unsigned excluded_phases __hwloc_attribute_unused,
 				    const void *_data1 __hwloc_attribute_unused,
 				    const void *_data2 __hwloc_attribute_unused,
 				    const void *_data3 __hwloc_attribute_unused)
 {
   struct hwloc_backend *backend;
-  backend = hwloc_backend_alloc(component);
+  backend = hwloc_backend_alloc(topology, component);
   if (!backend)
     return NULL;
   backend->discover = hwloc_look_windows;
@@ -1150,9 +1352,9 @@ hwloc_windows_component_instantiate(struct hwloc_disc_component *component,
 }
 
 static struct hwloc_disc_component hwloc_windows_disc_component = {
-  HWLOC_DISC_COMPONENT_TYPE_CPU,
   "windows",
-  HWLOC_DISC_COMPONENT_TYPE_GLOBAL,
+  HWLOC_DISC_PHASE_CPU,
+  HWLOC_DISC_PHASE_GLOBAL,
   hwloc_windows_component_instantiate,
   50,
   1,
@@ -1168,9 +1370,11 @@ const struct hwloc_component hwloc_windows_component = {
 };
 
 int
-hwloc_fallback_nbprocessors(struct hwloc_topology *topology __hwloc_attribute_unused) {
+hwloc_fallback_nbprocessors(unsigned flags __hwloc_attribute_unused) {
   int n;
   SYSTEM_INFO sysinfo;
+
+  /* TODO handle flags & HWLOC_FALLBACK_NBPROCESSORS_INCLUDE_OFFLINE */
 
   /* by default, ignore groups (return only the number in the current group) */
   GetSystemInfo(&sysinfo);
@@ -1186,4 +1390,10 @@ hwloc_fallback_nbprocessors(struct hwloc_topology *topology __hwloc_attribute_un
   }
 
   return n;
+}
+
+int64_t
+hwloc_fallback_memsize(void) {
+  /* Unused */
+  return -1;
 }

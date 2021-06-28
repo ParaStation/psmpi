@@ -1,5 +1,5 @@
 /*
- * Copyright © 2010-2018 Inria.  All rights reserved.
+ * Copyright © 2010-2020 Inria.  All rights reserved.
  * Copyright © 2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
@@ -7,7 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <hwloc.h>
+
+#include "hwloc.h"
 
 static int one_test(void)
 {
@@ -92,21 +93,21 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  putenv("HWLOC_LIBXML_CLEANUP=1");
+  putenv((char *) "HWLOC_LIBXML_CLEANUP=1");
 
   if (atoi(argv[1])) {
-    putenv("HWLOC_LIBXML_IMPORT=1");
+    putenv((char *) "HWLOC_LIBXML_IMPORT=1");
     printf("import=libxml   ");
   } else {
-    putenv("HWLOC_LIBXML_IMPORT=0");
+    putenv((char *) "HWLOC_LIBXML_IMPORT=0");
     printf("import=nolibxml ");
   }
 
   if (atoi(argv[2])) {
-    putenv("HWLOC_LIBXML_EXPORT=1");
+    putenv((char *) "HWLOC_LIBXML_EXPORT=1");
     printf("export=libxml\n");
   } else {
-    putenv("HWLOC_LIBXML_EXPORT=0");
+    putenv((char *) "HWLOC_LIBXML_EXPORT=0");
     printf("export=nolibxml\n");
   }
 

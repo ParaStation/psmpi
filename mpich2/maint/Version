@@ -4,7 +4,7 @@
 # intentionally not managed by the makefile system and may not be up to date at
 # all times w.r.t. the version.m4 file.
 
-MPICH_VERSION=3.4.1
+MPICH_VERSION=3.4.2
 export MPICH_VERSION
 
 if [ -f modules/libfabric/autogen.sh ]; then

@@ -1,16 +1,16 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2018 Inria.  All rights reserved.
+ * Copyright © 2009-2020 Inria.  All rights reserved.
  * Copyright © 2009-2010 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <private/autogen/config.h>
-#include <hwloc.h>
-#include <private/private.h>
-#include <private/misc.h>
-#include <private/debug.h>
+#include "private/autogen/config.h"
+#include "hwloc.h"
+#include "private/private.h"
+#include "private/misc.h"
+#include "private/debug.h"
 
 #include <limits.h>
 #include <assert.h>
@@ -471,7 +471,7 @@ hwloc_backend_synthetic_init(struct hwloc_synthetic_backend_data_s *data,
     /* initialize parent arity to 0 so that the levels are not infinite */
     data->level[count-1].arity = 0;
 
-    while (*pos == ' ')
+    while (*pos == ' ' || *pos == '\n')
       pos++;
 
     if (!*pos)
@@ -539,11 +539,16 @@ hwloc_backend_synthetic_init(struct hwloc_synthetic_backend_data_s *data,
 
     if (*pos < '0' || *pos > '9') {
       if (hwloc_type_sscanf(pos, &type, &attrs, sizeof(attrs)) < 0) {
-	/* FIXME: allow generic "Cache" string? would require to deal with possibly duplicate cache levels */
-	if (verbose)
-	  fprintf(stderr, "Synthetic string with unknown object type at '%s'\n", pos);
-	errno = EINVAL;
-	goto error;
+	if (!strncmp(pos, "Tile", 4) || !strncmp(pos, "Module", 6)) {
+	  /* possible future types */
+	  type = HWLOC_OBJ_GROUP;
+	} else {
+	  /* FIXME: allow generic "Cache" string? would require to deal with possibly duplicate cache levels */
+	  if (verbose)
+	    fprintf(stderr, "Synthetic string with unknown object type at '%s'\n", pos);
+	  errno = EINVAL;
+	  goto error;
+	}
       }
       if (type == HWLOC_OBJ_MACHINE || type == HWLOC_OBJ_MISC || type == HWLOC_OBJ_BRIDGE || type == HWLOC_OBJ_PCI_DEVICE || type == HWLOC_OBJ_OS_DEVICE) {
 	if (verbose)
@@ -650,6 +655,12 @@ hwloc_backend_synthetic_init(struct hwloc_synthetic_backend_data_s *data,
   if (type_count[HWLOC_OBJ_PACKAGE] > 1) {
     if (verbose)
       fprintf(stderr, "Synthetic string cannot have several package levels\n");
+    errno = EINVAL;
+    return -1;
+  }
+  if (type_count[HWLOC_OBJ_DIE] > 1) {
+    if (verbose)
+      fprintf(stderr, "Synthetic string cannot have several die levels\n");
     errno = EINVAL;
     return -1;
   }
@@ -837,6 +848,7 @@ hwloc_synthetic_set_attr(struct hwloc_synthetic_attr_s *sattr,
     obj->attr->numanode.page_types[0].count = sattr->memorysize / 4096;
     break;
   case HWLOC_OBJ_PACKAGE:
+  case HWLOC_OBJ_DIE:
     break;
   case HWLOC_OBJ_L1CACHE:
   case HWLOC_OBJ_L2CACHE:
@@ -900,7 +912,7 @@ hwloc_synthetic_insert_attached(struct hwloc_topology *topology,
 
   hwloc_synthetic_set_attr(&attached->attr, child);
 
-  hwloc_insert_object_by_cpuset(topology, child);
+  hwloc__insert_object_by_cpuset(topology, NULL, child, "synthetic:attached");
 
   hwloc_synthetic_insert_attached(topology, data, attached->next, set);
 }
@@ -952,7 +964,7 @@ hwloc__look_synthetic(struct hwloc_topology *topology,
 
     hwloc_synthetic_set_attr(&curlevel->attr, obj);
 
-    hwloc_insert_object_by_cpuset(topology, obj);
+    hwloc__insert_object_by_cpuset(topology, NULL, obj, "synthetic");
   }
 
   hwloc_synthetic_insert_attached(topology, data, curlevel->attached, set);
@@ -961,12 +973,18 @@ hwloc__look_synthetic(struct hwloc_topology *topology,
 }
 
 static int
-hwloc_look_synthetic(struct hwloc_backend *backend)
+hwloc_look_synthetic(struct hwloc_backend *backend, struct hwloc_disc_status *dstatus)
 {
+  /*
+   * This backend enforces !topology->is_thissystem by default.
+   */
+
   struct hwloc_topology *topology = backend->topology;
   struct hwloc_synthetic_backend_data_s *data = backend->private_data;
   hwloc_bitmap_t cpuset = hwloc_bitmap_alloc();
   unsigned i;
+
+  assert(dstatus->phase == HWLOC_DISC_PHASE_GLOBAL);
 
   assert(!topology->levels[0][0]->cpuset);
 
@@ -1009,7 +1027,9 @@ hwloc_synthetic_backend_disable(struct hwloc_backend *backend)
 }
 
 static struct hwloc_backend *
-hwloc_synthetic_component_instantiate(struct hwloc_disc_component *component,
+hwloc_synthetic_component_instantiate(struct hwloc_topology *topology,
+				      struct hwloc_disc_component *component,
+				      unsigned excluded_phases __hwloc_attribute_unused,
 				      const void *_data1,
 				      const void *_data2 __hwloc_attribute_unused,
 				      const void *_data3 __hwloc_attribute_unused)
@@ -1029,7 +1049,7 @@ hwloc_synthetic_component_instantiate(struct hwloc_disc_component *component,
     }
   }
 
-  backend = hwloc_backend_alloc(component);
+  backend = hwloc_backend_alloc(topology, component);
   if (!backend)
     goto out;
 
@@ -1059,8 +1079,8 @@ hwloc_synthetic_component_instantiate(struct hwloc_disc_component *component,
 }
 
 static struct hwloc_disc_component hwloc_synthetic_disc_component = {
-  HWLOC_DISC_COMPONENT_TYPE_GLOBAL,
   "synthetic",
+  HWLOC_DISC_PHASE_GLOBAL,
   ~0,
   hwloc_synthetic_component_instantiate,
   30,
@@ -1275,6 +1295,12 @@ hwloc__export_synthetic_obj(struct hwloc_topology * topology, unsigned long flag
     /* if exporting to v1 or without extended-types, use all-v1-compatible Socket name */
     res = hwloc_snprintf(tmp, tmplen, "Socket%s", aritys);
 
+  } else if (obj->type == HWLOC_OBJ_DIE
+	     && (flags & (HWLOC_TOPOLOGY_EXPORT_SYNTHETIC_FLAG_NO_EXTENDED_TYPES
+			  |HWLOC_TOPOLOGY_EXPORT_SYNTHETIC_FLAG_V1))) {
+    /* if exporting to v1 or without extended-types, use all-v1-compatible Group name */
+    res = hwloc_snprintf(tmp, tmplen, "Group%s", aritys);
+
   } else if (obj->type == HWLOC_OBJ_GROUP /* don't export group depth */
       || flags & HWLOC_TOPOLOGY_EXPORT_SYNTHETIC_FLAG_NO_EXTENDED_TYPES) {
     res = hwloc_snprintf(tmp, tmplen, "%s%s", hwloc_obj_type_string(obj->type), aritys);
@@ -1331,16 +1357,26 @@ hwloc__export_synthetic_memory_children(struct hwloc_topology * topology, unsign
   }
 
   while (mchild) {
-    /* v2: export all NUMA children */
-
-    assert(mchild->type == HWLOC_OBJ_NUMANODE); /* only NUMA node memory children for now */
+    /* FIXME: really recurse to export memcaches and numanode,
+     * but it requires clever parsing of [ memcache [numa] [numa] ] during import,
+     * better attaching of things to describe the hierarchy.
+     */
+    hwloc_obj_t numanode = mchild;
+    /* only export the first NUMA node leaf of each memory child
+     * FIXME: This assumes mscache aren't shared between nodes, that's true in current platforms
+     */
+    while (numanode && numanode->type != HWLOC_OBJ_NUMANODE) {
+      assert(numanode->arity == 1);
+      numanode = numanode->memory_first_child;
+    }
+    assert(numanode); /* there's always a numanode at the bottom of the memory tree */
 
     if (needprefix)
       hwloc__export_synthetic_add_char(&ret, &tmp, &tmplen, ' ');
 
     hwloc__export_synthetic_add_char(&ret, &tmp, &tmplen, '[');
 
-    res = hwloc__export_synthetic_obj(topology, flags, mchild, (unsigned)-1, tmp, tmplen);
+    res = hwloc__export_synthetic_obj(topology, flags, numanode, (unsigned)-1, tmp, tmplen);
     if (hwloc__export_synthetic_update_status(&ret, &tmp, &tmplen, res) < 0)
       return -1;
 
@@ -1374,9 +1410,8 @@ hwloc_check_memory_symmetric(struct hwloc_topology * topology)
     assert(node);
 
     first_parent = node->parent;
-    assert(hwloc__obj_type_is_normal(first_parent->type)); /* only depth-1 memory children for now */
 
-    /* check whether all object on parent's level have same number of NUMA children */
+    /* check whether all object on parent's level have same number of NUMA bits */
     for(i=0; i<hwloc_get_nbobjs_by_depth(topology, first_parent->depth); i++) {
       hwloc_obj_t parent, mchild;
 
@@ -1387,10 +1422,9 @@ hwloc_check_memory_symmetric(struct hwloc_topology * topology)
       if (parent->memory_arity != first_parent->memory_arity)
 	goto out_with_bitmap;
 
-      /* clear these NUMA children from remaining_nodes */
+      /* clear children NUMA bits from remaining_nodes */
       mchild = parent->memory_first_child;
       while (mchild) {
-	assert(mchild->type == HWLOC_OBJ_NUMANODE); /* only NUMA node memory children for now */
 	hwloc_bitmap_clr(remaining_nodes, mchild->os_index); /* cannot use parent->nodeset, some normal children may have other NUMA nodes */
 	mchild = mchild->next_sibling;
       }
@@ -1469,6 +1503,7 @@ hwloc_topology_export_synthetic(struct hwloc_topology * topology,
     signed pdepth;
 
     node = hwloc_get_obj_by_type(topology, HWLOC_OBJ_NUMANODE, 0);
+    assert(node);
     assert(hwloc__obj_type_is_normal(node->parent->type)); /* only depth-1 memory children for now */
     pdepth = node->parent->depth;
 

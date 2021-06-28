@@ -7,7 +7,7 @@
  * See COPYING in top-level directory.
  */
 
-#include <hwloc.h>
+#include "hwloc.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -130,6 +130,7 @@ int main(void)
   memset(string, 'X', 1);
   string[1] = 0;
   len = hwloc_bitmap_snprintf(string, 0, obj->cpuset);
+printf("%d == %d (%c)\n", len, stringlen, string[0]);
   assert(len == stringlen);
   assert(string[0] == 'X');
 

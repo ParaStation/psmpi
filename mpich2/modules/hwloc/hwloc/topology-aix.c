@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2018 Inria.  All rights reserved.
+ * Copyright © 2009-2019 Inria.  All rights reserved.
  * Copyright © 2009-2011, 2013 Université Bordeaux
  * Copyright © 2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -8,7 +8,7 @@
 
 /* TODO: use SIGRECONFIG & dr_reconfig for state change */
 
-#include <private/autogen/config.h>
+#include "private/autogen/config.h"
 
 #include <sys/types.h>
 #ifdef HAVE_DIRENT_H
@@ -23,10 +23,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include <hwloc.h>
-#include <private/private.h>
-#include <private/misc.h>
-#include <private/debug.h>
+#include "hwloc.h"
+#include "private/private.h"
+#include "private/misc.h"
+#include "private/debug.h"
 
 #include <procinfo.h>
 #include <sys/types.h>
@@ -339,7 +339,7 @@ hwloc_aix_prepare_membind(hwloc_topology_t topology, rsethandle_t *rad, hwloc_co
   int node;
 
   MCMlevel = rs_getinfo(NULL, R_MCMSDL, 0);
-  if ((topology->flags & HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM))
+  if ((topology->flags & HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED))
     rset = rs_alloc(RS_ALL);
   else
     rset = rs_alloc(RS_PARTITION);
@@ -610,7 +610,7 @@ look_rset(int sdl, hwloc_obj_type_t type, struct hwloc_topology *topology, int l
   int nbnodes;
   struct hwloc_obj *obj;
 
-  if ((topology->flags & HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM))
+  if ((topology->flags & HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED))
     rset = rs_alloc(RS_ALL);
   else
     rset = rs_alloc(RS_PARTITION);
@@ -710,11 +710,11 @@ look_rset(int sdl, hwloc_obj_type_t type, struct hwloc_topology *topology, int l
 	    obj3->attr->cache.depth = 1;
 	    obj3->attr->cache.type = HWLOC_OBJ_CACHE_INSTRUCTION;
 	    hwloc_debug("Adding an L1i cache for core %d\n", i);
-	    hwloc_insert_object_by_cpuset(topology, obj3);
+	    hwloc__insert_object_by_cpuset(topology, NULL, obj3, "aix:l1icache");
 	  }
 	}
 	if (hwloc_filter_check_keep_object_type(topology, HWLOC_OBJ_L1CACHE))
-	  hwloc_insert_object_by_cpuset(topology, obj2);
+	  hwloc__insert_object_by_cpuset(topology, NULL, obj2, "aix:l1cache");
 	else
 	  hwloc_free_unlinked_object(obj2); /* FIXME: don't built at all, just build the cpuset in case l1/l1i needs it */
 	break;
@@ -726,7 +726,7 @@ look_rset(int sdl, hwloc_obj_type_t type, struct hwloc_topology *topology, int l
 	       hwloc_obj_type_string(type),
 	       i, obj->cpuset);
     if (hwloc_filter_check_keep_object_type(topology, obj->type))
-      hwloc_insert_object_by_cpuset(topology, obj);
+      hwloc__insert_object_by_cpuset(topology, NULL, obj, "aix:cache");
     else
       hwloc_free_unlinked_object(obj);
   }
@@ -736,10 +736,18 @@ look_rset(int sdl, hwloc_obj_type_t type, struct hwloc_topology *topology, int l
 }
 
 static int
-hwloc_look_aix(struct hwloc_backend *backend)
+hwloc_look_aix(struct hwloc_backend *backend, struct hwloc_disc_status *dstatus)
 {
+  /*
+   * This backend uses the underlying OS.
+   * However we don't enforce topology->is_thissystem so that
+   * we may still force use this backend when debugging with !thissystem.
+   */
+
   struct hwloc_topology *topology = backend->topology;
   int i;
+
+  assert(dstatus->phase == HWLOC_DISC_PHASE_CPU);
 
   if (topology->levels[0][0]->cpuset)
     /* somebody discovered things */
@@ -861,13 +869,15 @@ hwloc_set_aix_hooks(struct hwloc_binding_hooks *hooks,
 }
 
 static struct hwloc_backend *
-hwloc_aix_component_instantiate(struct hwloc_disc_component *component,
+hwloc_aix_component_instantiate(struct hwloc_topology *topology,
+				struct hwloc_disc_component *component,
+				unsigned excluded_phases __hwloc_attribute_unused,
 				const void *_data1 __hwloc_attribute_unused,
 				const void *_data2 __hwloc_attribute_unused,
 				const void *_data3 __hwloc_attribute_unused)
 {
   struct hwloc_backend *backend;
-  backend = hwloc_backend_alloc(component);
+  backend = hwloc_backend_alloc(topology, component);
   if (!backend)
     return NULL;
   backend->discover = hwloc_look_aix;
@@ -875,9 +885,9 @@ hwloc_aix_component_instantiate(struct hwloc_disc_component *component,
 }
 
 static struct hwloc_disc_component hwloc_aix_disc_component = {
-  HWLOC_DISC_COMPONENT_TYPE_CPU,
   "aix",
-  HWLOC_DISC_COMPONENT_TYPE_GLOBAL,
+  HWLOC_DISC_PHASE_CPU,
+  HWLOC_DISC_PHASE_GLOBAL,
   hwloc_aix_component_instantiate,
   50,
   1,

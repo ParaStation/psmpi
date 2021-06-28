@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# Copyright © 2009-2017 Inria.  All rights reserved.
+# Copyright © 2009-2020 Inria.  All rights reserved.
 # Copyright © 2009-2011 Université Bordeaux
 # Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
@@ -93,6 +93,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
+@HWLOC_HAVE_32BITS_PCI_DOMAIN_TRUE@am__append_1 = 2pa-pcidomain32bits.output
+@HWLOC_HAVE_32BITS_PCI_DOMAIN_FALSE@am__append_2 = 2pa-pcidomain32bits-disabled.output
 subdir = tests/hwloc/linux
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/hwloc.m4 \
@@ -449,6 +451,7 @@ HWLOC_CPPFLAGS = @HWLOC_CPPFLAGS@
 HWLOC_CUDA_LIBS = @HWLOC_CUDA_LIBS@
 HWLOC_DIFF_U = @HWLOC_DIFF_U@
 HWLOC_DIFF_W = @HWLOC_DIFF_W@
+HWLOC_DL_LIBS = @HWLOC_DL_LIBS@
 HWLOC_EMBEDDED_CFLAGS = @HWLOC_EMBEDDED_CFLAGS@
 HWLOC_EMBEDDED_CPPFLAGS = @HWLOC_EMBEDDED_CPPFLAGS@
 HWLOC_EMBEDDED_LDADD = @HWLOC_EMBEDDED_LDADD@
@@ -458,13 +461,17 @@ HWLOC_GL_LIBS = @HWLOC_GL_LIBS@
 HWLOC_HAVE_LIBXML2 = @HWLOC_HAVE_LIBXML2@
 HWLOC_HAVE_NVML = @HWLOC_HAVE_NVML@
 HWLOC_HAVE_OPENCL = @HWLOC_HAVE_OPENCL@
+HWLOC_HAVE_RSMI = @HWLOC_HAVE_RSMI@
 HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
 HWLOC_LIBS = @HWLOC_LIBS@
 HWLOC_LIBS_PRIVATE = @HWLOC_LIBS_PRIVATE@
 HWLOC_LIBXML2_CFLAGS = @HWLOC_LIBXML2_CFLAGS@
 HWLOC_LIBXML2_LIBS = @HWLOC_LIBXML2_LIBS@
+HWLOC_LTDL_LIBS = @HWLOC_LTDL_LIBS@
 HWLOC_MS_LIB = @HWLOC_MS_LIB@
 HWLOC_MS_LIB_ARCH = @HWLOC_MS_LIB_ARCH@
+HWLOC_NUMA_CFLAGS = @HWLOC_NUMA_CFLAGS@
+HWLOC_NUMA_LIBS = @HWLOC_NUMA_LIBS@
 HWLOC_NVML_LIBS = @HWLOC_NVML_LIBS@
 HWLOC_OPENCL_CFLAGS = @HWLOC_OPENCL_CFLAGS@
 HWLOC_OPENCL_LDFLAGS = @HWLOC_OPENCL_LDFLAGS@
@@ -473,8 +480,10 @@ HWLOC_PCIACCESS_CFLAGS = @HWLOC_PCIACCESS_CFLAGS@
 HWLOC_PCIACCESS_LIBS = @HWLOC_PCIACCESS_LIBS@
 HWLOC_PLUGINS_DIR = @HWLOC_PLUGINS_DIR@
 HWLOC_PLUGINS_PATH = @HWLOC_PLUGINS_PATH@
+HWLOC_PS_LIBS = @HWLOC_PS_LIBS@
 HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
 HWLOC_REQUIRES = @HWLOC_REQUIRES@
+HWLOC_RSMI_LIBS = @HWLOC_RSMI_LIBS@
 HWLOC_TERMCAP_LIBS = @HWLOC_TERMCAP_LIBS@
 HWLOC_VERSION = @HWLOC_VERSION@
 HWLOC_W3_GENERATOR = @HWLOC_W3_GENERATOR@
@@ -609,62 +618,50 @@ AM_LDFLAGS = $(HWLOC_LDFLAGS)
 
 # Add your expected output file here.
 # By default, it shows the output of `lstopo - -v'.
-sysfs_outputs = \
-		2amd64-2n.output \
-		2i386-2t-hugepagesizecount.xml.output \
-		2i386-2c-nohugepage.xml.output \
-		2ps3-2t.output \
-		4em64t-2c2t-ignore-reorder.output \
-		4ia64-4s.output \
-		4ppc-4c.output \
-		4fake-4gr1nu1pu.output \
-		256ppc-8n8s4t.output \
-		256ppc-8n8s4t-nocache.output \
-		256ppc-8n8s4t-nosys.output \
-		28em64t-2s2n7c-buggycoresiblings.output \
-		32amd64-4s2n4c-cgroup.output \
-		32amd64-4s2n4c-cgroup.xml.output \
-		32ppc-4n4c2c.output \
-		8amd64-4n2c.output  \
-		8em64t-4c2t.output \
-		8em64t-2s2ca2c.output \
-		8em64t-2s2ca2c-buggynuma.output \
-		8em64t-2s4c-heterogeneous.output \
-		8ia64-2n2s2c.output \
-		8ia64-2s2c2t.output \
-		8ia64-4s2c.output \
-		16amd64-4n4c-cgroup-distance-merge.output \
-		16amd64-8n2c.output \
-		16amd64-8n2c-cpusets.output \
-		16amd64-8n2c-cpusets.xml.output \
-		16amd64-8n2c-cpusets_noadmin.output \
-		16em64t-4s2ca2c-cpusetreorder.output \
-		16em64t-4s2ca2c-cpusetreorder-merge.output \
-		16em64t-4s2c2t.output \
-		16em64t-4s2c2t-offlines.output \
-		16em64t-4s2c2t-offlines.xml.output \
-		16em64t-4s2c2t_ncaches.output \
-		16em64t-4s2c2t_merge.output \
-		16em64t-4s2c2t.xml.output \
-		16ia64-8n2s.output \
-		32em64t-2n8c+1mic.output \
-		40intel64-2g2n4c+pci.output \
-		40intel64-4n10c+pci-conflicts.output \
-		48amd64-4d2n6c-sparse.output \
-		64amd64-4s2n4ca2co.output \
-		64fake-4n2s2ca2c2t.output \
-		64intel64-fakeKNL-A2A-cache.output \
-		64intel64-fakeKNL-SNC4-hybrid.output \
-		96em64t-4n4d3ca2co.output \
-		96em64t-4n4d3ca2co-forcecpuinfo.output \
-		128ia64-17n4s2c.output \
-		256ia64-64n2s2c.output \
-		4qs22-2s2t.output \
-		2s390-2c.output \
-		20s390-2g6s4c.output \
-		1alpha.output \
-		2arm-2c.output
-
+sysfs_outputs = 2amd64-2n.output 2i386-2t-hugepagesizecount.xml.output \
+	2i386-2c-nohugepage.xml.output 2ps3-2t.output \
+	4em64t-2c2t-ignore-reorder.output 4ia64-4s.output \
+	4fake-4gr1nu1pu.output 256ppc-8n8s4t.output \
+	32amd64-4s2n4c-cgroup2.output \
+	32amd64-4s2n4c-cgroup2.xml.output 8amd64-4n2c.output \
+	8em64t-4c2t.output 8em64t-2s2ca2c.output \
+	8em64t-2s2ca2c-buggynuma.output \
+	8em64t-2s4c-heterogeneous.output 8ia64-2n2s2c.output \
+	8ia64-2s2c2t.output 8ia64-4s2c.output \
+	16amd64-4n4c-cgroup-distance-merge.output 16amd64-8n2c.output \
+	16amd64-8n2c-cpusets.output 16amd64-8n2c-cpusets.xml.output \
+	16amd64-8n2c-cpusets_noadmin.output \
+	16em64t-4s2ca2c-cpusetreorder.output \
+	16em64t-4s2ca2c-cpusetreorder-merge.output \
+	16em64t-4s2c2t.output 16em64t-4s2c2t-offlines.output \
+	16em64t-4s2c2t-offlines.xml.output \
+	16em64t-4s2c2t_ncaches.output 16em64t-4s2c2t_merge.output \
+	16em64t-4s2c2t.xml.output 16ia64-8n2s.output \
+	32em64t-2n8c+1mic.output 40intel64-2g2n4c+pci.output \
+	40intel64-4n10c+pci-conflicts.output \
+	48amd64-4d2n6c-sparse.output 64amd64-4s2n4ca2co.output \
+	64fake-4n2s2ca2c2t.output 64intel64-fakeKNL-A2A-cache.output \
+	64intel64-fakeKNL-SNC4-hybrid.output \
+	64intel64-fakeKNL-SNC4-hybrid-msc.output \
+	96em64t-4n4d3ca2co.output 128ia64-17n4s2c.output \
+	256ia64-64n2s2c.output 2s390-2c.output 20s390-2g6s4c.output \
+	1alpha.output 2arm-2c.output nvidiagpunumanodes.output \
+	nvidiagpunumanodes.kept.output \
+	fakememinitiators-1np2c+1npp+gi.output \
+	fakecpuid1f-64intel64-2p4d2n2c2t.output \
+	fakeheterocpunuma.output $(am__append_1) $(am__append_2)
+@HWLOC_HAVE_32BITS_PCI_DOMAIN_FALSE@EXTRA_DIST = 2pa-pcidomain32bits.output \
+@HWLOC_HAVE_32BITS_PCI_DOMAIN_FALSE@	$(sysfs_outputs) \
+@HWLOC_HAVE_32BITS_PCI_DOMAIN_FALSE@	$(sysfs_tarballs) \
+@HWLOC_HAVE_32BITS_PCI_DOMAIN_FALSE@	$(sysfs_excludes) \
+@HWLOC_HAVE_32BITS_PCI_DOMAIN_FALSE@	$(sysfs_options) \
+@HWLOC_HAVE_32BITS_PCI_DOMAIN_FALSE@	$(sysfs_envs)
+@HWLOC_HAVE_32BITS_PCI_DOMAIN_TRUE@EXTRA_DIST = 2pa-pcidomain32bits-disabled.output \
+@HWLOC_HAVE_32BITS_PCI_DOMAIN_TRUE@	$(sysfs_outputs) \
+@HWLOC_HAVE_32BITS_PCI_DOMAIN_TRUE@	$(sysfs_tarballs) \
+@HWLOC_HAVE_32BITS_PCI_DOMAIN_TRUE@	$(sysfs_excludes) \
+@HWLOC_HAVE_32BITS_PCI_DOMAIN_TRUE@	$(sysfs_options) \
+@HWLOC_HAVE_32BITS_PCI_DOMAIN_TRUE@	$(sysfs_envs)
 
 # Each output `xyz.output' must have a corresponding tarball `xyz.tar.bz2'
 # or a corresponding `xyz.source' specifying which tarball to use
@@ -677,15 +674,10 @@ sysfs_tarballs = \
 		2ps3-2t.tar.bz2 \
 		4em64t-2c2t-ignore-reorder.tar.bz2 \
 		4ia64-4s.tar.bz2 \
-		4ppc-4c.tar.bz2 \
 		4fake-4gr1nu1pu.tar.bz2 \
 		256ppc-8n8s4t.tar.bz2 \
-		256ppc-8n8s4t-nocache.source \
-		256ppc-8n8s4t-nosys.source \
-		28em64t-2s2n7c-buggycoresiblings.tar.bz2 \
-		32amd64-4s2n4c-cgroup.tar.bz2 \
-		32amd64-4s2n4c-cgroup.xml.source \
-		32ppc-4n4c2c.tar.bz2 \
+		32amd64-4s2n4c-cgroup2.tar.bz2 \
+		32amd64-4s2n4c-cgroup2.xml.source \
 		8amd64-4n2c.tar.bz2  \
 		8em64t-4c2t.tar.bz2 \
 		8em64t-2s2ca2c.tar.bz2 \
@@ -716,22 +708,25 @@ sysfs_tarballs = \
 		64fake-4n2s2ca2c2t.tar.bz2 \
 		64intel64-fakeKNL-A2A-cache.tar.bz2 \
 		64intel64-fakeKNL-SNC4-hybrid.tar.bz2 \
+		64intel64-fakeKNL-SNC4-hybrid-msc.source \
 		96em64t-4n4d3ca2co.tar.bz2 \
-		96em64t-4n4d3ca2co-forcecpuinfo.source \
 		128ia64-17n4s2c.tar.bz2 \
 		256ia64-64n2s2c.tar.bz2 \
-		4qs22-2s2t.tar.bz2 \
 		2s390-2c.tar.bz2 \
 		20s390-2g6s4c.tar.bz2 \
 		1alpha.tar.bz2 \
-		2arm-2c.tar.bz2
+		2arm-2c.tar.bz2 \
+		2pa-pcidomain32bits.tar.bz2 \
+		2pa-pcidomain32bits-disabled.source \
+		nvidiagpunumanodes.tar.bz2 \
+		nvidiagpunumanodes.kept.source \
+		fakememinitiators-1np2c+1npp+gi.tar.bz2 \
+		fakecpuid1f-64intel64-2p4d2n2c2t.tar.bz2 \
+		fakeheterocpunuma.tar.bz2
 
 
 # Each output `xyz.output' may have a corresponding exclude `xyz.exclude'
-sysfs_excludes = \
-		256ppc-8n8s4t-nocache.exclude \
-		256ppc-8n8s4t-nosys.exclude
-
+sysfs_excludes = 
 
 # Each output `xyz.output' may have a corresponding `xyz.options'
 # file modifying the behavior of lstopo
@@ -747,21 +742,22 @@ sysfs_options = \
 		16em64t-4s2c2t_ncaches.options \
 		16em64t-4s2c2t_merge.options \
 		16em64t-4s2c2t.xml.options \
-		32amd64-4s2n4c-cgroup.xml.options \
+		32amd64-4s2n4c-cgroup2.xml.options \
 		32em64t-2n8c+1mic.options \
-		40intel64-2g2n4c+pci.options
+		40intel64-2g2n4c+pci.options \
+		fakeheterocpunuma.options
 
 
 # Each output `xyz.output' may have a corresponding `xyz.env'
 # modifying the environment of lstopo
 sysfs_envs = \
-		2i386-2t-hugepagesizecount.xml.env \
 		40intel64-2g2n4c+pci.env \
 		40intel64-4n10c+pci-conflicts.env \
-		96em64t-4n4d3ca2co-forcecpuinfo.env
+		64intel64-fakeKNL-SNC4-hybrid-msc.env \
+		nvidiagpunumanodes.kept.env \
+		fakeheterocpunuma.env
 
 @HWLOC_HAVE_BUNZIPP_TRUE@@HWLOC_HAVE_OPENAT_TRUE@TESTS = $(sysfs_outputs)
-EXTRA_DIST = $(sysfs_outputs) $(sysfs_tarballs) $(sysfs_excludes) $(sysfs_options) $(sysfs_envs)
 LOG_COMPILER = $(builddir)/test-topology.sh
 SUBDIRS = . allowed gather
 all: all-recursive
@@ -1088,13 +1084,6 @@ recheck: all
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-4ppc-4c.output.log: 4ppc-4c.output
-	@p='4ppc-4c.output'; \
-	b='4ppc-4c.output'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 4fake-4gr1nu1pu.output.log: 4fake-4gr1nu1pu.output
 	@p='4fake-4gr1nu1pu.output'; \
 	b='4fake-4gr1nu1pu.output'; \
@@ -1109,44 +1098,16 @@ recheck: all
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-256ppc-8n8s4t-nocache.output.log: 256ppc-8n8s4t-nocache.output
-	@p='256ppc-8n8s4t-nocache.output'; \
-	b='256ppc-8n8s4t-nocache.output'; \
+32amd64-4s2n4c-cgroup2.output.log: 32amd64-4s2n4c-cgroup2.output
+	@p='32amd64-4s2n4c-cgroup2.output'; \
+	b='32amd64-4s2n4c-cgroup2.output'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-256ppc-8n8s4t-nosys.output.log: 256ppc-8n8s4t-nosys.output
-	@p='256ppc-8n8s4t-nosys.output'; \
-	b='256ppc-8n8s4t-nosys.output'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-28em64t-2s2n7c-buggycoresiblings.output.log: 28em64t-2s2n7c-buggycoresiblings.output
-	@p='28em64t-2s2n7c-buggycoresiblings.output'; \
-	b='28em64t-2s2n7c-buggycoresiblings.output'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-32amd64-4s2n4c-cgroup.output.log: 32amd64-4s2n4c-cgroup.output
-	@p='32amd64-4s2n4c-cgroup.output'; \
-	b='32amd64-4s2n4c-cgroup.output'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-32amd64-4s2n4c-cgroup.xml.output.log: 32amd64-4s2n4c-cgroup.xml.output
-	@p='32amd64-4s2n4c-cgroup.xml.output'; \
-	b='32amd64-4s2n4c-cgroup.xml.output'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-32ppc-4n4c2c.output.log: 32ppc-4n4c2c.output
-	@p='32ppc-4n4c2c.output'; \
-	b='32ppc-4n4c2c.output'; \
+32amd64-4s2n4c-cgroup2.xml.output.log: 32amd64-4s2n4c-cgroup2.xml.output
+	@p='32amd64-4s2n4c-cgroup2.xml.output'; \
+	b='32amd64-4s2n4c-cgroup2.xml.output'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1361,16 +1322,16 @@ recheck: all
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-96em64t-4n4d3ca2co.output.log: 96em64t-4n4d3ca2co.output
-	@p='96em64t-4n4d3ca2co.output'; \
-	b='96em64t-4n4d3ca2co.output'; \
+64intel64-fakeKNL-SNC4-hybrid-msc.output.log: 64intel64-fakeKNL-SNC4-hybrid-msc.output
+	@p='64intel64-fakeKNL-SNC4-hybrid-msc.output'; \
+	b='64intel64-fakeKNL-SNC4-hybrid-msc.output'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-96em64t-4n4d3ca2co-forcecpuinfo.output.log: 96em64t-4n4d3ca2co-forcecpuinfo.output
-	@p='96em64t-4n4d3ca2co-forcecpuinfo.output'; \
-	b='96em64t-4n4d3ca2co-forcecpuinfo.output'; \
+96em64t-4n4d3ca2co.output.log: 96em64t-4n4d3ca2co.output
+	@p='96em64t-4n4d3ca2co.output'; \
+	b='96em64t-4n4d3ca2co.output'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1385,13 +1346,6 @@ recheck: all
 256ia64-64n2s2c.output.log: 256ia64-64n2s2c.output
 	@p='256ia64-64n2s2c.output'; \
 	b='256ia64-64n2s2c.output'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-4qs22-2s2t.output.log: 4qs22-2s2t.output
-	@p='4qs22-2s2t.output'; \
-	b='4qs22-2s2t.output'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1420,6 +1374,55 @@ recheck: all
 2arm-2c.output.log: 2arm-2c.output
 	@p='2arm-2c.output'; \
 	b='2arm-2c.output'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+nvidiagpunumanodes.output.log: nvidiagpunumanodes.output
+	@p='nvidiagpunumanodes.output'; \
+	b='nvidiagpunumanodes.output'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+nvidiagpunumanodes.kept.output.log: nvidiagpunumanodes.kept.output
+	@p='nvidiagpunumanodes.kept.output'; \
+	b='nvidiagpunumanodes.kept.output'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+fakememinitiators-1np2c+1npp+gi.output.log: fakememinitiators-1np2c+1npp+gi.output
+	@p='fakememinitiators-1np2c+1npp+gi.output'; \
+	b='fakememinitiators-1np2c+1npp+gi.output'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+fakecpuid1f-64intel64-2p4d2n2c2t.output.log: fakecpuid1f-64intel64-2p4d2n2c2t.output
+	@p='fakecpuid1f-64intel64-2p4d2n2c2t.output'; \
+	b='fakecpuid1f-64intel64-2p4d2n2c2t.output'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+fakeheterocpunuma.output.log: fakeheterocpunuma.output
+	@p='fakeheterocpunuma.output'; \
+	b='fakeheterocpunuma.output'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+2pa-pcidomain32bits.output.log: 2pa-pcidomain32bits.output
+	@p='2pa-pcidomain32bits.output'; \
+	b='2pa-pcidomain32bits.output'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+2pa-pcidomain32bits-disabled.output.log: 2pa-pcidomain32bits-disabled.output
+	@p='2pa-pcidomain32bits-disabled.output'; \
+	b='2pa-pcidomain32bits-disabled.output'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

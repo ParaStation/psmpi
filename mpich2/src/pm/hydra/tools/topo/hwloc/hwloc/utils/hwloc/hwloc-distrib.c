@@ -1,14 +1,13 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2018 Inria.  All rights reserved.
+ * Copyright © 2009-2020 Inria.  All rights reserved.
  * Copyright © 2009-2010 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <private/autogen/config.h>
-#include <hwloc.h>
-
+#include "private/autogen/config.h"
+#include "hwloc.h"
 #include "misc.h"
 
 #ifdef HAVE_UNISTD_H
@@ -25,8 +24,10 @@ void usage(const char *callname __hwloc_attribute_unused, FILE *where)
   fprintf(where, "  --at <type>      Distribute among objects of the given type\n");
   fprintf(where, "  --reverse        Distribute by starting from last objects\n");
   fprintf(where, "Input topology options:\n");
-  fprintf(where, "  --restrict <set> Restrict the topology to processors listed in <set>\n");
-  fprintf(where, "  --whole-system   Do not consider administration limitations\n");
+  fprintf(where, "  --restrict [nodeset=]<bitmap>\n");
+  fprintf(where, "                   Restrict the topology to some processors or NUMA nodes.\n");
+  fprintf(where, "  --restrict-flags <n>  Set the flags to be used during restrict\n");
+  fprintf(where, "  --disallowed     Include objects disallowed by administrative limitations\n");
   hwloc_utils_input_format_usage(where, 0);
   fprintf(where, "Formatting options:\n");
   fprintf(where, "  --single         Singlify each output to a single CPU\n");
@@ -48,7 +49,8 @@ int main(int argc, char *argv[])
   char *restrictstring = NULL;
   const char *from_type = NULL, *to_type = NULL;
   hwloc_topology_t topology;
-  unsigned long flags = 0;
+  unsigned long flags = HWLOC_TOPOLOGY_FLAG_IMPORT_SUPPORT;
+  unsigned long restrict_flags = 0;
   unsigned long dflags = 0;
   int opt;
   int err;
@@ -61,8 +63,10 @@ int main(int argc, char *argv[])
   hwloc_utils_check_api_version(callname);
 
   /* enable verbose backends */
-  putenv((char *) "HWLOC_XML_VERBOSE=1");
-  putenv((char *) "HWLOC_SYNTHETIC_VERBOSE=1");
+  if (!getenv("HWLOC_XML_VERBOSE"))
+    putenv((char *) "HWLOC_XML_VERBOSE=1");
+  if (!getenv("HWLOC_SYNTHETIC_VERBOSE"))
+    putenv((char *) "HWLOC_SYNTHETIC_VERBOSE=1");
 
   hwloc_topology_init(&topology);
 
@@ -72,6 +76,8 @@ int main(int argc, char *argv[])
       argv++;
       break;
     }
+
+    opt = 0;
 
     if (*argv[0] == '-') {
       if (!strcmp(argv[0], "--single")) {
@@ -86,63 +92,58 @@ int main(int argc, char *argv[])
 	verbose = 1;
 	goto next;
       }
-      if (!strcmp (argv[0], "--whole-system")) {
-	flags |= HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
+      if (!strcmp (argv[0], "--disallowed") || !strcmp (argv[0], "--whole-system")) {
+	flags |= HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED;
 	goto next;
       }
-      if (!strcmp(argv[0], "--help")) {
+      if (!strcmp(argv[0], "-h") || !strcmp(argv[0], "--help")) {
 	usage(callname, stdout);
 	return EXIT_SUCCESS;
       }
       if (hwloc_utils_lookup_input_option(argv, argc, &opt,
 					  &input, &input_format,
 					  callname)) {
-	argv += opt;
-	argc -= opt;
+	opt = 1;
 	goto next;
       }
       else if (!strcmp (argv[0], "--ignore")) {
 	hwloc_obj_type_t type;
 	if (argc < 2) {
-	  usage(callname, stdout);
+	  usage(callname, stderr);
 	  exit(EXIT_FAILURE);
 	}
 	if (hwloc_type_sscanf(argv[1], &type, NULL, 0) < 0)
 	  fprintf(stderr, "Unsupported type `%s' passed to --ignore, ignoring.\n", argv[1]);
 	else
 	  hwloc_topology_set_type_filter(topology, type, HWLOC_TYPE_FILTER_KEEP_NONE);
-	argc--;
-	argv++;
+	opt = 1;
 	goto next;
       }
       else if (!strcmp (argv[0], "--from")) {
 	if (argc < 2) {
-	  usage(callname, stdout);
+	  usage(callname, stderr);
 	  exit(EXIT_FAILURE);
 	}
 	from_type = argv[1];
-	argc--;
-	argv++;
+	opt = 1;
 	goto next;
       }
       else if (!strcmp (argv[0], "--to")) {
 	if (argc < 2) {
-	  usage(callname, stdout);
+	  usage(callname, stderr);
 	  exit(EXIT_FAILURE);
 	}
 	to_type = argv[1];
-	argc--;
-	argv++;
+	opt = 1;
 	goto next;
       }
       else if (!strcmp (argv[0], "--at")) {
 	if (argc < 2) {
-	  usage(callname, stdout);
+	  usage(callname, stderr);
 	  exit(EXIT_FAILURE);
 	}
 	from_type = to_type = argv[1];
-	argc--;
-	argv++;
+	opt = 1;
 	goto next;
       }
       else if (!strcmp (argv[0], "--reverse")) {
@@ -151,12 +152,25 @@ int main(int argc, char *argv[])
       }
       else if (!strcmp (argv[0], "--restrict")) {
 	if (argc < 2) {
-	  usage (callname, stdout);
+	  usage (callname, stderr);
 	  exit(EXIT_FAILURE);
 	}
-	restrictstring = strdup(argv[1]);
-	argc--;
-	argv++;
+        if(strncmp(argv[1], "nodeset=", 8)) {
+          restrictstring = strdup(argv[1]);
+        } else {
+          restrictstring = strdup(argv[1]+8);
+          restrict_flags |= HWLOC_RESTRICT_FLAG_BYNODESET;
+        }
+	opt = 1;
+	goto next;
+      }
+      else if (!strcmp (argv[0], "--restrict-flags")) {
+	if (argc < 2) {
+	  usage (callname, stderr);
+	  exit(EXIT_FAILURE);
+        }
+	restrict_flags = hwloc_utils_parse_restrict_flags(argv[1]);
+        opt = 1;
 	goto next;
       }
       else if (!strcmp (argv[0], "--version")) {
@@ -177,8 +191,8 @@ int main(int argc, char *argv[])
     n = atol(argv[0]);
 
   next:
-    argc--;
-    argv++;
+    argc -= opt+1;
+    argv += opt+1;
   }
 
   if (n == -1) {
@@ -199,19 +213,23 @@ int main(int argc, char *argv[])
     cpuset = malloc(n * sizeof(hwloc_bitmap_t));
 
     if (input) {
-      err = hwloc_utils_enable_input_format(topology, input, &input_format, verbose, callname);
+      err = hwloc_utils_enable_input_format(topology, flags, input, &input_format, verbose, callname);
       if (err) {
 	free(cpuset);
 	return EXIT_FAILURE;
       }
     }
     hwloc_topology_set_flags(topology, flags);
-    hwloc_topology_load(topology);
+    err = hwloc_topology_load(topology);
+    if (err < 0) {
+      free(cpuset);
+      return EXIT_FAILURE;
+    }
 
     if (restrictstring) {
       hwloc_bitmap_t restrictset = hwloc_bitmap_alloc();
       hwloc_bitmap_sscanf(restrictset, restrictstring);
-      err = hwloc_topology_restrict (topology, restrictset, 0);
+      err = hwloc_topology_restrict (topology, restrictset, restrict_flags);
       if (err) {
 	perror("Restricting the topology");
 	/* FALLTHRU */

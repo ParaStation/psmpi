@@ -271,6 +271,10 @@ PAC_PREFIX_ALL_FLAGS(USER)
 # added to the MPICH wrappers (mpicc and friends) as well.
 PAC_PREFIX_ALL_FLAGS(WRAPPER)
 
+# confdb routines are used in multiple components. Let the macros know
+# whether WRAPPER FLAGS are used.
+m4_define([use_wrapper_flags], [1])
+
 # MPICH_MPIx_FLAGS are used by mpicc and friends.  They are like
 # WRAPPER flags, but these are provided by the user.
 AC_SUBST(MPICH_MPICC_CPPFLAGS)
@@ -1230,8 +1234,6 @@ elif test "$with_hwloc_prefix" = "embedded" ; then
 else
    AC_CHECK_HEADERS([hwloc.h])
    PAC_PUSH_FLAG([LIBS])
-   # hwloc_topology_set_pid was added in hwloc-1.0.0, which is our
-   # minimum required version
    AC_CHECK_LIB([hwloc],[hwloc_topology_set_pid])
    PAC_POP_FLAG([LIBS])
    AC_MSG_CHECKING([if non-embedded hwloc works])
@@ -1242,6 +1244,21 @@ else
       have_hwloc=no
    fi
    AC_MSG_RESULT([$have_hwloc])
+
+   if test "$have_hwloc" = "yes" ; then
+       AC_MSG_CHECKING([if hwloc meets minimum version requirement])
+       AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <hwloc.h>], [
+                          #if HWLOC_API_VERSION < 0x00020000
+                          #error
+                          #endif
+                          return 0;])],[],[have_hwloc=no])
+       AC_MSG_RESULT([$have_hwloc])
+
+       # if an old hwloc was specified by the user, throw an error
+       if test "$have_hwloc" = "no" ; then
+           AC_MSG_ERROR([hwloc installation does not meet minimum version requirement])
+       fi
+   fi
 
    # FIXME: Disable hwloc on Cygwin for now. The hwloc package,
    # atleast as of 1.0.2, does not install correctly on Cygwin
@@ -1657,10 +1674,8 @@ if test -n "${with_pmix}" -a "${with_pmix}" != "no" ; then
     if test "${device_name}" != "ch4" ; then
         AC_MSG_ERROR([$device_name does not support PMIx])
     fi
-    PAC_PUSH_FLAG([LIBS])
     PAC_CHECK_HEADER_LIB_FATAL(pmix, pmix.h, pmix, PMIx_Init)
-    PAC_APPEND_FLAG([-lpmix],[WRAPPER_LIBS])
-    PAC_POP_FLAG([LIBS])
+    PAC_LIBS_ADD([-lpmix])
     AC_DEFINE(USE_PMIX_API, 1, [Define if PMIx API must be used])
 fi
 
@@ -2905,7 +2920,10 @@ fi
 if test "$MPID_NO_FLOAT16" != "yes" ; then
     AC_CACHE_CHECK([whether _Float16 is supported],
     pac_cv_have_float16,[
-    AC_TRY_COMPILE(,[_Float16 a;],
+    # The compiler might optimize out _Float16 usage and give a false
+    # positive for this test (observed with clang 6 on Linux with -O2).
+    # We use volatile as a way to disable optimizations.
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([],[volatile _Float16 a=1; return (int)a;])],
     pac_cv_have_float16=yes,pac_cv_have_float16=no)])
     if test "$pac_cv_have_float16" = "yes" ; then
         AC_DEFINE(HAVE_FLOAT16,1,[Define if _Float16 is supported])
@@ -2972,7 +2990,7 @@ AC_CHECK_ALIGNOF(int16_t)
 AC_CHECK_ALIGNOF(int32_t)
 AC_CHECK_ALIGNOF(int64_t)
 AC_CHECK_ALIGNOF(bool)
-AC_CHECK_ALIGNOF(wchar_t, 0, [#include <stddef.h>])
+AC_CHECK_ALIGNOF(wchar_t)
 
 # sys/bitypes.h defines the int16_t etc. on some systems (e.g., OSF1).
 # Include it when testing for these types
@@ -4816,10 +4834,8 @@ fi
 AC_ARG_ENABLE(checkpointing,
     [AC_HELP_STRING([--enable-checkpointing], [Enable application checkpointing])],
     [ if test "$enableval" != "no" ; then
-	PAC_PUSH_FLAG([LIBS])
 	PAC_CHECK_HEADER_LIB_FATAL(blcr, libcr.h, cr, cr_init)
-	PAC_APPEND_FLAG([-lcr],[WRAPPER_LIBS])
-	PAC_POP_FLAG([LIBS])
+	PAC_LIBS_ADD([-lcr])
         AC_DEFINE(ENABLE_CHECKPOINTING,1,[Application checkpointing enabled])
       fi ],
 )

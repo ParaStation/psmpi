@@ -1,23 +1,24 @@
 /*
  * Copyright © 2011 Université Bordeaux
- * Copyright © 2012-2017 Inria.  All rights reserved.
+ * Copyright © 2012-2020 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <private/autogen/config.h>
-#include <hwloc.h>
-#include <hwloc/plugins.h>
-#include <hwloc/cudart.h>
+#include "private/autogen/config.h"
+#include "hwloc.h"
+#include "hwloc/plugins.h"
+#include "hwloc/cudart.h"
 
 /* private headers allowed for convenience because this plugin is built within hwloc */
-#include <private/misc.h>
-#include <private/debug.h>
+#include "private/misc.h"
+#include "private/debug.h"
 
 #include <cuda_runtime_api.h>
 
 static unsigned hwloc_cuda_cores_per_MP(int major, int minor)
 {
-  /* FP32 cores per MP, based on CUDA C Programming Guide, Annex G */
+  /* FP32 cores per MP, based on CUDA C Programming Guide, Annex "Compute
+   * Capabilities" */
   switch (major) {
     case 1:
       switch (minor) {
@@ -45,6 +46,7 @@ static unsigned hwloc_cuda_cores_per_MP(int major, int minor)
       }
       break;
     case 7:
+    case 8:
       return 64;
   }
   hwloc_debug("unknown compute capability %d.%d, disabling core display.\n", major, minor);
@@ -52,20 +54,33 @@ static unsigned hwloc_cuda_cores_per_MP(int major, int minor)
 }
 
 static int
-hwloc_cuda_discover(struct hwloc_backend *backend)
+hwloc_cuda_discover(struct hwloc_backend *backend, struct hwloc_disc_status *dstatus)
 {
+  /*
+   * This backend uses the underlying OS.
+   * However we don't enforce topology->is_thissystem so that
+   * we may still force use this backend when debugging with !thissystem.
+   */
+
   struct hwloc_topology *topology = backend->topology;
   enum hwloc_type_filter_e filter;
   cudaError_t cures;
   int nb, i;
+
+  assert(dstatus->phase == HWLOC_DISC_PHASE_IO);
 
   hwloc_topology_get_type_filter(topology, HWLOC_OBJ_OS_DEVICE, &filter);
   if (filter == HWLOC_TYPE_FILTER_KEEP_NONE)
     return 0;
 
   cures = cudaGetDeviceCount(&nb);
-  if (cures)
+  if (cures) {
+    if (!hwloc_hide_errors()) {
+      const char *error = cudaGetErrorString(cures);
+      fprintf(stderr, "CUDA: Failed to get number of devices with cudaGetDeviceCount(): %s\n", error);
+    }
     return -1;
+  }
 
   for (i = 0; i < nb; i++) {
     int domain, bus, dev;
@@ -109,9 +124,7 @@ hwloc_cuda_discover(struct hwloc_backend *backend)
 
     parent = NULL;
     if (hwloc_cudart_get_device_pci_ids(NULL /* topology unused */, i, &domain, &bus, &dev) == 0) {
-      parent = hwloc_pcidisc_find_by_busid(topology, domain, bus, dev, 0);
-      if (!parent)
-	parent = hwloc_pcidisc_find_busid_parent(topology, domain, bus, dev, 0);
+      parent = hwloc_pci_find_parent_by_busid(topology, domain, bus, dev, 0);
     }
     if (!parent)
       parent = hwloc_get_root_obj(topology);
@@ -123,14 +136,16 @@ hwloc_cuda_discover(struct hwloc_backend *backend)
 }
 
 static struct hwloc_backend *
-hwloc_cuda_component_instantiate(struct hwloc_disc_component *component,
-                                 const void *_data1 __hwloc_attribute_unused,
-                                 const void *_data2 __hwloc_attribute_unused,
-                                 const void *_data3 __hwloc_attribute_unused)
+hwloc_cuda_component_instantiate(struct hwloc_topology *topology,
+				 struct hwloc_disc_component *component,
+				 unsigned excluded_phases __hwloc_attribute_unused,
+				 const void *_data1 __hwloc_attribute_unused,
+				 const void *_data2 __hwloc_attribute_unused,
+				 const void *_data3 __hwloc_attribute_unused)
 {
   struct hwloc_backend *backend;
 
-  backend = hwloc_backend_alloc(component);
+  backend = hwloc_backend_alloc(topology, component);
   if (!backend)
     return NULL;
   /* the first callback will initialize those */
@@ -139,9 +154,9 @@ hwloc_cuda_component_instantiate(struct hwloc_disc_component *component,
 }
 
 static struct hwloc_disc_component hwloc_cuda_disc_component = {
-  HWLOC_DISC_COMPONENT_TYPE_MISC,
   "cuda",
-  HWLOC_DISC_COMPONENT_TYPE_GLOBAL,
+  HWLOC_DISC_PHASE_IO,
+  HWLOC_DISC_PHASE_GLOBAL,
   hwloc_cuda_component_instantiate,
   10, /* after pci */
   1,

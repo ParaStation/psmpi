@@ -1,5 +1,5 @@
 /*
- * Copyright © 2011-2017 Inria.  All rights reserved.
+ * Copyright © 2011-2020 Inria.  All rights reserved.
  * Copyright © 2011 Université Bordeaux.  All rights reserved.
  * See COPYING in top-level directory.
  */
@@ -7,9 +7,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <errno.h>
 
-#include <hwloc.h>
+#include "hwloc.h"
 
 hwloc_topology_t topology;
 const struct hwloc_topology_support *support;
@@ -59,12 +64,29 @@ static int checkall(hwloc_const_cpuset_t set)
   return 0;
 }
 
+static int has_unexpected_threads(void)
+{
+#ifdef HWLOC_LINUX_SYS
+  struct stat stbuf;
+  int err = stat("/proc/self/task", &stbuf);
+  if (!err && stbuf.st_nlink > 3) {
+    printf("program has multiple threads, disabling process-wide binding/cpulocation checks.\n");
+    return 1;
+  }
+#endif
+  /* if the problem ever occurs on !Linux,
+   * we'll use HWLOC_TEST_DONTCHECK_PROC_CPULOCATION=1 until detecting it here
+   */
+  return 0;
+}
+
 int main(void)
 {
   unsigned depth;
   hwloc_obj_t obj;
 
-  checkprocincluded = (NULL == getenv("HWLOC_TEST_DONTCHECK_PROC_CPULOCATION"));
+  checkprocincluded = !has_unexpected_threads()
+    && getenv("HWLOC_TEST_DONTCHECK_PROC_CPULOCATION") == NULL;
 
   hwloc_topology_init(&topology);
   hwloc_topology_load(topology);
@@ -79,7 +101,7 @@ int main(void)
   depth = hwloc_topology_get_depth(topology);
   /* check at intermediate level if it exists */
   if (depth >= 3) {
-    printf("testing at depth %d\n", (depth-1)/2);
+    printf("testing at depth %u\n", (depth-1)/2);
     obj = NULL;
     while ((obj = hwloc_get_next_obj_by_depth(topology, (depth-1)/2, obj)) != NULL)
       checkall(obj->cpuset);

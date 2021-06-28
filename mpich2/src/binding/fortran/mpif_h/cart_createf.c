@@ -269,12 +269,12 @@ FORT_DLL_SPEC void FORT_CALL mpi_cart_create_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_
     int l5;
 
     if (*v2) {int li;
-     l4 = (int *)MPL_malloc(*v2 * sizeof(int), MPL_MEM_OTHER);
+     l4 = (int *)malloc(*v2 * sizeof(int));
      for (li=0; li<*v2; li++) {
         l4[li] = MPII_FROM_FLOG(v4[li]);
      }
     }
     l5 = MPII_FROM_FLOG(*v5);
     *ierr = MPI_Cart_create( (MPI_Comm)(*v1), (int)*v2, v3, l4, l5, (MPI_Comm *)(v6) );
-    MPL_free( l4 );
+    free( l4 );
 }

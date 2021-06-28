@@ -1,12 +1,11 @@
 /*
- * Copyright © 2017 Inria.  All rights reserved.
+ * Copyright © 2017-2020 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <hwloc.h>
-
-#include <private/debug.h> /* HWLOC_BUILD_ASSERT */
-#include <private/private.h> /* for struct topology fields */
+#include "hwloc.h"
+#include "private/debug.h" /* HWLOC_BUILD_ASSERT */
+#include "private/private.h" /* for struct topology fields */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -37,44 +36,58 @@ int main(void)
 #if (defined HWLOC_LINUX_SYS) && (defined HWLOC_X86_64_ARCH)
   if (!getenv("HWLOC_IGNORE_TOPOLOGY_ABI")) {
     size_t size, offset __hwloc_attribute_unused;
-    printf("checking offsets and sizes in struct hwloc_topology for topology ABI 0x%x...\n", HWLOC_TOPOLOGY_ABI);
+    printf("checking offsets and sizes in struct hwloc_topology for topology ABI 0x%x...\n", (unsigned) HWLOC_TOPOLOGY_ABI);
 
     /*******************************************************************
      * WARNING: if anything breaks below, the topology ABI has changed.
      * HWLOC_TOPOLOGY_ABI must be bumped when updating these checks.
      *******************************************************************/
 
-    HWLOC_BUILD_ASSERT(HWLOC_OBJ_TYPE_MAX == 18);
-    HWLOC_BUILD_ASSERT(HWLOC_NR_SLEVELS == 5);
+    HWLOC_BUILD_ASSERT(HWLOC_OBJ_TYPE_MAX == 20);
+    HWLOC_BUILD_ASSERT(HWLOC_NR_SLEVELS == 6);
 
     offset = offsetof(struct hwloc_topology, topology_abi);
     assert(offset == 0);
 
     offset = offsetof(struct hwloc_topology, adopted_shmem_addr);
-    assert(offset == 216);
+    assert(offset == 232);
 
     offset = offsetof(struct hwloc_topology, binding_hooks);
-    assert(offset == 408);
+    assert(offset == 456);
     size = sizeof(struct hwloc_binding_hooks);
     assert(size == 192);
 
     offset = offsetof(struct hwloc_topology, support);
-    assert(offset == 600);
-    size = sizeof(struct hwloc_topology_support);
-    assert(size == 24);
+    assert(offset == 648);
 
     offset = offsetof(struct hwloc_topology, first_dist);
-    assert(offset == 648);
+    assert(offset == 704);
     size = sizeof(struct hwloc_internal_distances_s);
-    assert(size == 64);
+    assert(size == 88);
+
+    offset = offsetof(struct hwloc_topology, memattrs);
+    assert(offset == 728);
+    size = sizeof(struct hwloc_internal_memattr_s);
+    assert(size == 32);
+    size = sizeof(struct hwloc_internal_memattr_target_s);
+    assert(size == 48);
+    size = sizeof(struct hwloc_internal_memattr_initiator_s);
+    assert(size == 40);
+    size = sizeof(struct hwloc_internal_location_s);
+    assert(size == 32);
+
+    offset = offsetof(struct hwloc_topology, cpukinds);
+    assert(offset == 744);
+    size = sizeof(struct hwloc_internal_cpukind_s);
+    assert(size == 40);
 
     offset = offsetof(struct hwloc_topology, grouping_next_subkind);
-    assert(offset == 700);
+    assert(offset == 784);
 
     /* fields after this one aren't needed after discovery */
 
     /* check bitmap ABI too, but those fields are private to bitmap.c */
-    printf("checking bitmaps for topology ABI 0x%x...\n", HWLOC_TOPOLOGY_ABI);
+    printf("checking bitmaps for topology ABI 0x%x...\n", (unsigned) HWLOC_TOPOLOGY_ABI);
     {
       hwloc_bitmap_t set = hwloc_bitmap_alloc();
       unsigned *ulongs_count =     (unsigned*)       (((char*)set)   );
@@ -111,6 +124,44 @@ int main(void)
      * WARNING: if anything breaks above, the topology ABI has changed.
      * HWLOC_TOPOLOGY_ABI must be bumped when updating these checks.
      *******************************************************************/
+
+    printf("checking sizes of public objects...\n");
+
+    /* if these first lines break, you may be breaking the main library ABI.
+     * adding fields may be OK. changing/removing likely isn't.
+     */
+    size = sizeof(struct hwloc_obj);
+    assert(size == 248);
+    size = sizeof(union hwloc_obj_attr_u);
+#ifdef HWLOC_HAVE_32BITS_PCI_DOMAIN
+    assert(size == 48);
+#else
+    assert(size == 40);
+#endif
+    size = sizeof(struct hwloc_info_s);
+    assert(size == 16);
+
+    size = sizeof(struct hwloc_topology_support);
+    assert(size == 32);
+    size = sizeof(struct hwloc_topology_discovery_support);
+    assert(size == 6);
+    size = sizeof(struct hwloc_topology_cpubind_support);
+    assert(size == 11);
+    size = sizeof(struct hwloc_topology_membind_support);
+    assert(size == 15);
+    size = sizeof(struct hwloc_topology_misc_support);
+    assert(size == 1);
+
+    size = sizeof(struct hwloc_distances_s);
+    assert(size == 32);
+
+    size = sizeof(struct hwloc_location);
+    assert(size == 16);
+
+    size = sizeof(union hwloc_topology_diff_u);
+    assert(size == 56);
+    size = sizeof(union hwloc_topology_diff_obj_attr_u);
+    assert(size == 32);
 
   } else {
     /* if building with non-binary-compatible compiler flags */

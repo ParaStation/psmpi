@@ -1,33 +1,46 @@
 /*
- * Copyright © 2012-2017 Inria.  All rights reserved.
+ * Copyright © 2012-2020 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <private/autogen/config.h>
-#include <hwloc.h>
-#include <hwloc/plugins.h>
+#include "private/autogen/config.h"
+#include "hwloc.h"
+#include "hwloc/plugins.h"
 
 /* private headers allowed for convenience because this plugin is built within hwloc */
-#include <private/misc.h>
-#include <private/debug.h>
+#include "private/misc.h"
+#include "private/debug.h"
 
 #include <nvml.h>
 
 static int
-hwloc_nvml_discover(struct hwloc_backend *backend)
+hwloc_nvml_discover(struct hwloc_backend *backend, struct hwloc_disc_status *dstatus)
 {
+  /*
+   * This backend uses the underlying OS.
+   * However we don't enforce topology->is_thissystem so that
+   * we may still force use this backend when debugging with !thissystem.
+   */
+
   struct hwloc_topology *topology = backend->topology;
   enum hwloc_type_filter_e filter;
   nvmlReturn_t ret;
   unsigned nb, i;
+
+  assert(dstatus->phase == HWLOC_DISC_PHASE_IO);
 
   hwloc_topology_get_type_filter(topology, HWLOC_OBJ_OS_DEVICE, &filter);
   if (filter == HWLOC_TYPE_FILTER_KEEP_NONE)
     return 0;
 
   ret = nvmlInit();
-  if (NVML_SUCCESS != ret)
+  if (NVML_SUCCESS != ret) {
+    if (!hwloc_hide_errors()) {
+      const char *error = nvmlErrorString(ret);
+      fprintf(stderr, "NVML: Failed to initialize with nvmlInit(): %s\n", error);
+    }
     return -1;
+  }
   ret = nvmlDeviceGetCount(&nb);
   if (NVML_SUCCESS != ret || !nb) {
     nvmlShutdown();
@@ -69,9 +82,7 @@ hwloc_nvml_discover(struct hwloc_backend *backend)
 
     parent = NULL;
     if (NVML_SUCCESS == nvmlDeviceGetPciInfo(device, &pci)) {
-      parent = hwloc_pcidisc_find_by_busid(topology, pci.domain, pci.bus, pci.device, 0);
-      if (!parent)
-	parent = hwloc_pcidisc_find_busid_parent(topology, pci.domain, pci.bus, pci.device, 0);
+      parent = hwloc_pci_find_parent_by_busid(topology, pci.domain, pci.bus, pci.device, 0);
 #if HAVE_DECL_NVMLDEVICEGETMAXPCIELINKGENERATION
       if (parent && parent->type == HWLOC_OBJ_PCI_DEVICE) {
 	unsigned maxwidth = 0, maxgen = 0;
@@ -100,14 +111,16 @@ hwloc_nvml_discover(struct hwloc_backend *backend)
 }
 
 static struct hwloc_backend *
-hwloc_nvml_component_instantiate(struct hwloc_disc_component *component,
+hwloc_nvml_component_instantiate(struct hwloc_topology *topology,
+				 struct hwloc_disc_component *component,
+				 unsigned excluded_phases __hwloc_attribute_unused,
 				 const void *_data1 __hwloc_attribute_unused,
 				 const void *_data2 __hwloc_attribute_unused,
 				 const void *_data3 __hwloc_attribute_unused)
 {
   struct hwloc_backend *backend;
 
-  backend = hwloc_backend_alloc(component);
+  backend = hwloc_backend_alloc(topology, component);
   if (!backend)
     return NULL;
   backend->discover = hwloc_nvml_discover;
@@ -115,9 +128,9 @@ hwloc_nvml_component_instantiate(struct hwloc_disc_component *component,
 }
 
 static struct hwloc_disc_component hwloc_nvml_disc_component = {
-  HWLOC_DISC_COMPONENT_TYPE_MISC,
   "nvml",
-  HWLOC_DISC_COMPONENT_TYPE_GLOBAL,
+  HWLOC_DISC_PHASE_IO,
+  HWLOC_DISC_PHASE_GLOBAL,
   hwloc_nvml_component_instantiate,
   5, /* after pci, and after cuda since likely less useful */
   1,

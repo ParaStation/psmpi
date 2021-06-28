@@ -14,13 +14,14 @@
 
 @SET_MAKE@
 
-# Copyright © 2009-2018 Inria.  All rights reserved.
+# Copyright © 2009-2020 Inria.  All rights reserved.
 # Copyright © 2009-2012, 2014, 2016 Université Bordeaux
 # Copyright © 2009-2014 Cisco Systems, Inc.  All rights reserved.
 #
 # See COPYING in top-level directory.
 
 # This makefile is only reached when building in standalone mode
+
 
 
 
@@ -108,7 +109,7 @@ bin_PROGRAMS = hwloc-annotate$(EXEEXT) hwloc-bind$(EXEEXT) \
 @HWLOC_HAVE_LINUX_TRUE@@HWLOC_HAVE_X86_TRUE@sbin_PROGRAMS = hwloc-dump-hwdata$(EXEEXT)
 @HWLOC_HAVE_LINUX_TRUE@@HWLOC_HAVE_X86_TRUE@am__append_3 = test-hwloc-dump-hwdata
 @HWLOC_HAVE_LINUX_TRUE@am__append_4 = hwloc-gather-topology
-@HWLOC_HAVE_MINGW32_FALSE@@HWLOC_HAVE_PLUGINS_TRUE@am__append_5 = test-fake-plugin.sh
+@HWLOC_HAVE_PLUGINS_TRUE@am__append_5 = test-fake-plugin.sh
 @HWLOC_HAVE_LINUX_TRUE@am__append_6 = $(hgt_page)
 @HWLOC_HAVE_WINDOWS_FALSE@am__append_7 = $(hps_page)
 @HWLOC_HAVE_X86_CPUID_TRUE@am__append_8 = $(hgc_page)
@@ -140,8 +141,17 @@ CONFIG_HEADER = $(top_builddir)/include/private/autogen/config.h \
 CONFIG_CLEAN_FILES = hwloc-compress-dir hwloc-gather-topology \
 	test-hwloc-annotate.sh test-hwloc-calc.sh \
 	test-hwloc-compress-dir.sh test-hwloc-diffpatch.sh \
-	test-hwloc-distrib.sh test-hwloc-info.sh test-fake-plugin.sh
+	test-hwloc-distrib.sh test-hwloc-info.sh test-fake-plugin.sh \
+	test-parsing-flags.sh
 CONFIG_CLEAN_VPATH_FILES =
+LTLIBRARIES = $(noinst_LTLIBRARIES)
+libutils_common_la_DEPENDENCIES = $(LDADD)
+am_libutils_common_la_OBJECTS = common-ps.lo
+libutils_common_la_OBJECTS = $(am_libutils_common_la_OBJECTS)
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
 @HWLOC_HAVE_WINDOWS_FALSE@am__EXEEXT_1 = hwloc-ps$(EXEEXT)
 @HWLOC_HAVE_X86_CPUID_TRUE@am__EXEEXT_2 = hwloc-gather-cpuid$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)" \
@@ -152,10 +162,6 @@ hwloc_annotate_SOURCES = hwloc-annotate.c
 hwloc_annotate_OBJECTS = hwloc-annotate.$(OBJEXT)
 hwloc_annotate_LDADD = $(LDADD)
 hwloc_annotate_DEPENDENCIES = $(HWLOC_top_builddir)/hwloc/libhwloc.la
-AM_V_lt = $(am__v_lt_@AM_V@)
-am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
-am__v_lt_0 = --silent
-am__v_lt_1 = 
 hwloc_bind_SOURCES = hwloc-bind.c
 hwloc_bind_OBJECTS = hwloc-bind.$(OBJEXT)
 hwloc_bind_LDADD = $(LDADD)
@@ -192,10 +198,11 @@ hwloc_patch_SOURCES = hwloc-patch.c
 hwloc_patch_OBJECTS = hwloc-patch.$(OBJEXT)
 hwloc_patch_LDADD = $(LDADD)
 hwloc_patch_DEPENDENCIES = $(HWLOC_top_builddir)/hwloc/libhwloc.la
-hwloc_ps_SOURCES = hwloc-ps.c
-hwloc_ps_OBJECTS = hwloc-ps.$(OBJEXT)
-hwloc_ps_LDADD = $(LDADD)
-hwloc_ps_DEPENDENCIES = $(HWLOC_top_builddir)/hwloc/libhwloc.la
+am_hwloc_ps_OBJECTS = hwloc-ps.$(OBJEXT)
+hwloc_ps_OBJECTS = $(am_hwloc_ps_OBJECTS)
+am__DEPENDENCIES_1 =
+hwloc_ps_DEPENDENCIES = $(am__DEPENDENCIES_1) $(LDADD) \
+	libutils_common.la
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -258,12 +265,15 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = hwloc-annotate.c hwloc-bind.c $(hwloc_calc_SOURCES) \
-	hwloc-diff.c hwloc-distrib.c $(hwloc_dump_hwdata_SOURCES) \
-	hwloc-gather-cpuid.c hwloc-info.c hwloc-patch.c hwloc-ps.c
-DIST_SOURCES = hwloc-annotate.c hwloc-bind.c $(hwloc_calc_SOURCES) \
-	hwloc-diff.c hwloc-distrib.c $(hwloc_dump_hwdata_SOURCES) \
-	hwloc-gather-cpuid.c hwloc-info.c hwloc-patch.c hwloc-ps.c
+SOURCES = $(libutils_common_la_SOURCES) hwloc-annotate.c hwloc-bind.c \
+	$(hwloc_calc_SOURCES) hwloc-diff.c hwloc-distrib.c \
+	$(hwloc_dump_hwdata_SOURCES) hwloc-gather-cpuid.c hwloc-info.c \
+	hwloc-patch.c $(hwloc_ps_SOURCES)
+DIST_SOURCES = $(libutils_common_la_SOURCES) hwloc-annotate.c \
+	hwloc-bind.c $(hwloc_calc_SOURCES) hwloc-diff.c \
+	hwloc-distrib.c $(hwloc_dump_hwdata_SOURCES) \
+	hwloc-gather-cpuid.c hwloc-info.c hwloc-patch.c \
+	$(hwloc_ps_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -495,7 +505,9 @@ am__DIST_COMMON = $(srcdir)/Makefile.in \
 	$(srcdir)/test-hwloc-compress-dir.sh.in \
 	$(srcdir)/test-hwloc-diffpatch.sh.in \
 	$(srcdir)/test-hwloc-distrib.sh.in \
-	$(srcdir)/test-hwloc-info.sh.in $(top_srcdir)/./config/depcomp \
+	$(srcdir)/test-hwloc-info.sh.in \
+	$(srcdir)/test-parsing-flags.sh.in \
+	$(top_srcdir)/./config/depcomp \
 	$(top_srcdir)/./config/test-driver
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
@@ -570,6 +582,7 @@ HWLOC_CPPFLAGS = @HWLOC_CPPFLAGS@
 HWLOC_CUDA_LIBS = @HWLOC_CUDA_LIBS@
 HWLOC_DIFF_U = @HWLOC_DIFF_U@
 HWLOC_DIFF_W = @HWLOC_DIFF_W@
+HWLOC_DL_LIBS = @HWLOC_DL_LIBS@
 HWLOC_EMBEDDED_CFLAGS = @HWLOC_EMBEDDED_CFLAGS@
 HWLOC_EMBEDDED_CPPFLAGS = @HWLOC_EMBEDDED_CPPFLAGS@
 HWLOC_EMBEDDED_LDADD = @HWLOC_EMBEDDED_LDADD@
@@ -579,13 +592,17 @@ HWLOC_GL_LIBS = @HWLOC_GL_LIBS@
 HWLOC_HAVE_LIBXML2 = @HWLOC_HAVE_LIBXML2@
 HWLOC_HAVE_NVML = @HWLOC_HAVE_NVML@
 HWLOC_HAVE_OPENCL = @HWLOC_HAVE_OPENCL@
+HWLOC_HAVE_RSMI = @HWLOC_HAVE_RSMI@
 HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
 HWLOC_LIBS = @HWLOC_LIBS@
 HWLOC_LIBS_PRIVATE = @HWLOC_LIBS_PRIVATE@
 HWLOC_LIBXML2_CFLAGS = @HWLOC_LIBXML2_CFLAGS@
 HWLOC_LIBXML2_LIBS = @HWLOC_LIBXML2_LIBS@
+HWLOC_LTDL_LIBS = @HWLOC_LTDL_LIBS@
 HWLOC_MS_LIB = @HWLOC_MS_LIB@
 HWLOC_MS_LIB_ARCH = @HWLOC_MS_LIB_ARCH@
+HWLOC_NUMA_CFLAGS = @HWLOC_NUMA_CFLAGS@
+HWLOC_NUMA_LIBS = @HWLOC_NUMA_LIBS@
 HWLOC_NVML_LIBS = @HWLOC_NVML_LIBS@
 HWLOC_OPENCL_CFLAGS = @HWLOC_OPENCL_CFLAGS@
 HWLOC_OPENCL_LDFLAGS = @HWLOC_OPENCL_LDFLAGS@
@@ -594,8 +611,10 @@ HWLOC_PCIACCESS_CFLAGS = @HWLOC_PCIACCESS_CFLAGS@
 HWLOC_PCIACCESS_LIBS = @HWLOC_PCIACCESS_LIBS@
 HWLOC_PLUGINS_DIR = @HWLOC_PLUGINS_DIR@
 HWLOC_PLUGINS_PATH = @HWLOC_PLUGINS_PATH@
+HWLOC_PS_LIBS = @HWLOC_PS_LIBS@
 HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
 HWLOC_REQUIRES = @HWLOC_REQUIRES@
+HWLOC_RSMI_LIBS = @HWLOC_RSMI_LIBS@
 HWLOC_TERMCAP_LIBS = @HWLOC_TERMCAP_LIBS@
 HWLOC_VERSION = @HWLOC_VERSION@
 HWLOC_W3_GENERATOR = @HWLOC_W3_GENERATOR@
@@ -736,7 +755,12 @@ EXTRA_DIST = test-hwloc-annotate.input test-hwloc-annotate.output \
 	$(man7_pages:.7=.7in) $(man1_pages:.1=.1in) \
 	$(hgt_page:.1=.1in) $(hps_page:.1=.1in) $(hgc_page:.1=.1in) \
 	$(hdh_page:.1=.1in)
-noinst_HEADERS = misc.h
+noinst_HEADERS = misc.h common-ps.h
+
+# convenience library used by both hwloc-ps and lstopo
+noinst_LTLIBRARIES = libutils_common.la
+libutils_common_la_SOURCES = common-ps.c
+libutils_common_la_LIBADD = $(LDADD)
 
 # start tests here before recursing into subdirs
 SUBDIRS = . $(am__append_3)
@@ -744,18 +768,19 @@ hwloc_dump_hwdata_SOURCES = \
 	hwloc-dump-hwdata.c \
 	hwloc-dump-hwdata-knl.c
 
-hwloc_dump_hwdata_CPPFLAGS = $(AM_CPPFLAGS) -DRUNSTATEDIR=\"$(HWLOC_runstatedir)\"
+hwloc_dump_hwdata_CPPFLAGS = $(AM_CPPFLAGS) -DRUNSTATEDIR="\"$(HWLOC_runstatedir)\""
 hwloc_calc_SOURCES = \
         hwloc-calc.h \
         hwloc-calc.c
 
+hwloc_ps_SOURCES = hwloc-ps.c
+# keep HWLOC_PS_LIBS first in case there's also -lnsl which cannot be before -lsocket
+hwloc_ps_LDADD = $(HWLOC_PS_LIBS) $(LDADD) libutils_common.la
 bin_SCRIPTS = hwloc-compress-dir $(am__append_4)
-@HWLOC_HAVE_MINGW32_FALSE@TESTS = test-hwloc-annotate.sh \
-@HWLOC_HAVE_MINGW32_FALSE@	test-hwloc-calc.sh \
-@HWLOC_HAVE_MINGW32_FALSE@	test-hwloc-compress-dir.sh \
-@HWLOC_HAVE_MINGW32_FALSE@	test-hwloc-diffpatch.sh \
-@HWLOC_HAVE_MINGW32_FALSE@	test-hwloc-distrib.sh \
-@HWLOC_HAVE_MINGW32_FALSE@	test-hwloc-info.sh $(am__append_5)
+TESTS = test-hwloc-annotate.sh test-hwloc-calc.sh \
+	test-hwloc-compress-dir.sh test-hwloc-diffpatch.sh \
+	test-hwloc-distrib.sh test-hwloc-info.sh test-parsing-flags.sh \
+	$(am__append_5)
 SEDMAN = $(SED) -e 's/%PACKAGE_NAME%/@PACKAGE_NAME@/g' \
 	  -e 's/%PACKAGE_VERSION%/@PACKAGE_VERSION@/g' \
 	  -e 's/%HWLOC_DATE%/@HWLOC_RELEASE_DATE@/g'
@@ -840,6 +865,22 @@ test-hwloc-info.sh: $(top_builddir)/config.status $(srcdir)/test-hwloc-info.sh.i
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 test-fake-plugin.sh: $(top_builddir)/config.status $(srcdir)/test-fake-plugin.sh.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+test-parsing-flags.sh: $(top_builddir)/config.status $(srcdir)/test-parsing-flags.sh.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+
+clean-noinstLTLIBRARIES:
+	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
+	@list='$(noinst_LTLIBRARIES)'; \
+	locs=`for p in $$list; do echo $$p; done | \
+	      sed 's|^[^/]*$$|.|; s|/[^/]*$$||; s|$$|/so_locations|' | \
+	      sort -u`; \
+	test -z "$$locs" || { \
+	  echo rm -f $${locs}; \
+	  rm -f $${locs}; \
+	}
+
+libutils_common.la: $(libutils_common_la_OBJECTS) $(libutils_common_la_DEPENDENCIES) $(EXTRA_libutils_common_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(LINK)  $(libutils_common_la_OBJECTS) $(libutils_common_la_LIBADD) $(LIBS)
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \
@@ -1020,6 +1061,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common-ps.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc-annotate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc-bind.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc-calc.Po@am__quote@
@@ -1458,6 +1500,13 @@ test-hwloc-info.sh.log: test-hwloc-info.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test-parsing-flags.sh.log: test-parsing-flags.sh
+	@p='test-parsing-flags.sh'; \
+	b='test-parsing-flags.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 test-fake-plugin.sh.log: test-fake-plugin.sh
 	@p='test-fake-plugin.sh'; \
 	b='test-fake-plugin.sh'; \
@@ -1538,7 +1587,8 @@ distdir: $(DISTFILES)
 check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: check-recursive
-all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(MANS) $(HEADERS)
+all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) $(SCRIPTS) $(MANS) \
+		$(HEADERS)
 installdirs: installdirs-recursive
 installdirs-am:
 	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man7dir)"; do \
@@ -1580,7 +1630,7 @@ maintainer-clean-generic:
 clean: clean-recursive
 
 clean-am: clean-binPROGRAMS clean-generic clean-libtool \
-	clean-sbinPROGRAMS mostlyclean-am
+	clean-noinstLTLIBRARIES clean-sbinPROGRAMS mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -rf ./$(DEPDIR)
@@ -1658,22 +1708,23 @@ uninstall-man: uninstall-man1 uninstall-man7
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am check \
 	check-TESTS check-am clean clean-binPROGRAMS clean-generic \
-	clean-libtool clean-sbinPROGRAMS cscopelist-am ctags ctags-am \
-	distclean distclean-compile distclean-generic \
-	distclean-libtool distclean-local distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-binPROGRAMS install-binSCRIPTS install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-exec-hook install-html install-html-am \
-	install-info install-info-am install-man install-man1 \
-	install-man7 install-pdf install-pdf-am install-ps \
-	install-ps-am install-sbinPROGRAMS install-strip installcheck \
-	installcheck-am installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	recheck tags tags-am uninstall uninstall-am \
-	uninstall-binPROGRAMS uninstall-binSCRIPTS uninstall-man \
-	uninstall-man1 uninstall-man7 uninstall-sbinPROGRAMS
+	clean-libtool clean-noinstLTLIBRARIES clean-sbinPROGRAMS \
+	cscopelist-am ctags ctags-am distclean distclean-compile \
+	distclean-generic distclean-libtool distclean-local \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-binPROGRAMS install-binSCRIPTS \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-exec-hook install-html \
+	install-html-am install-info install-info-am install-man \
+	install-man1 install-man7 install-pdf install-pdf-am \
+	install-ps install-ps-am install-sbinPROGRAMS install-strip \
+	installcheck installcheck-am installdirs installdirs-am \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am recheck tags tags-am uninstall \
+	uninstall-am uninstall-binPROGRAMS uninstall-binSCRIPTS \
+	uninstall-man uninstall-man1 uninstall-man7 \
+	uninstall-sbinPROGRAMS
 
 .PRECIOUS: Makefile
 
@@ -1701,7 +1752,7 @@ uninstall-man: uninstall-man1 uninstall-man7
 install-exec-hook:
 	$(SED) -e 's/HWLOC_top_builddir\/utils\/hwloc/bindir/' -e 's/HWLOC_top_builddir\/utils\/lstopo/bindir/' -e '/HWLOC_top_builddir/d' $(DESTDIR)$(bindir)/hwloc-compress-dir > $(DESTDIR)$(bindir)/hwloc-compress-dir.tmp && mv -f $(DESTDIR)$(bindir)/hwloc-compress-dir.tmp $(DESTDIR)$(bindir)/hwloc-compress-dir
 	chmod +x $(DESTDIR)$(bindir)/hwloc-compress-dir
-@HWLOC_HAVE_LINUX_TRUE@	$(SED) -e 's/HWLOC_top_builddir\/utils\/lstopo/bindir/' -e '/HWLOC_top_builddir/d' $(DESTDIR)$(bindir)/hwloc-gather-topology > $(DESTDIR)$(bindir)/hwloc-gather-topology.tmp && mv -f $(DESTDIR)$(bindir)/hwloc-gather-topology.tmp $(DESTDIR)$(bindir)/hwloc-gather-topology
+@HWLOC_HAVE_LINUX_TRUE@	$(SED) -e 's/HWLOC_top_builddir\/utils\/lstopo/bindir/' -e 's/HWLOC_top_builddir\/utils\/hwloc/bindir/' -e '/HWLOC_top_builddir/d' $(DESTDIR)$(bindir)/hwloc-gather-topology > $(DESTDIR)$(bindir)/hwloc-gather-topology.tmp && mv -f $(DESTDIR)$(bindir)/hwloc-gather-topology.tmp $(DESTDIR)$(bindir)/hwloc-gather-topology
 @HWLOC_HAVE_LINUX_TRUE@	chmod +x $(DESTDIR)$(bindir)/hwloc-gather-topology
 
 distclean-local:

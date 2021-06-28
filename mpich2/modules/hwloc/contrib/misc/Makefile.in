@@ -14,11 +14,12 @@
 
 @SET_MAKE@
 
-# Copyright © 2009-2017 Inria.  All rights reserved.
+# Copyright © 2009-2020 Inria.  All rights reserved.
 #
 # See COPYING in top-level directory.
 
 # This makefile is only reached when building in standalone mode
+
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -112,7 +113,8 @@ am__aclocal_m4_deps = $(top_srcdir)/config/hwloc.m4 \
 	$(top_srcdir)/config/netloc.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
-DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
+DIST_COMMON = $(srcdir)/Makefile.am $(dist_doc_DATA) \
+	$(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/private/autogen/config.h \
 	$(top_builddir)/include/hwloc/autogen/config.h
@@ -168,6 +170,35 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
+am__install_max = 40
+am__nobase_strip_setup = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
+am__nobase_strip = \
+  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
+am__nobase_list = $(am__nobase_strip_setup); \
+  for p in $$list; do echo "$$p $$p"; done | \
+  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
+  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
+    if (++n[$$2] == $(am__install_max)) \
+      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
+    END { for (dir in files) print dir, files[dir] }'
+am__base_list = \
+  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
+  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
+am__uninstall_files_from_dir = { \
+  test -z "$$files" \
+    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
+    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
+         $(am__cd) "$$dir" && rm -f $$files; }; \
+  }
+am__installdirs = "$(DESTDIR)$(docdir)"
+DATA = $(dist_doc_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 # Read a list of newline-separated strings from the standard input,
 # and print each of them once, without duplicates.  Input order is
@@ -236,6 +267,7 @@ HWLOC_CPPFLAGS = @HWLOC_CPPFLAGS@
 HWLOC_CUDA_LIBS = @HWLOC_CUDA_LIBS@
 HWLOC_DIFF_U = @HWLOC_DIFF_U@
 HWLOC_DIFF_W = @HWLOC_DIFF_W@
+HWLOC_DL_LIBS = @HWLOC_DL_LIBS@
 HWLOC_EMBEDDED_CFLAGS = @HWLOC_EMBEDDED_CFLAGS@
 HWLOC_EMBEDDED_CPPFLAGS = @HWLOC_EMBEDDED_CPPFLAGS@
 HWLOC_EMBEDDED_LDADD = @HWLOC_EMBEDDED_LDADD@
@@ -245,13 +277,17 @@ HWLOC_GL_LIBS = @HWLOC_GL_LIBS@
 HWLOC_HAVE_LIBXML2 = @HWLOC_HAVE_LIBXML2@
 HWLOC_HAVE_NVML = @HWLOC_HAVE_NVML@
 HWLOC_HAVE_OPENCL = @HWLOC_HAVE_OPENCL@
+HWLOC_HAVE_RSMI = @HWLOC_HAVE_RSMI@
 HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
 HWLOC_LIBS = @HWLOC_LIBS@
 HWLOC_LIBS_PRIVATE = @HWLOC_LIBS_PRIVATE@
 HWLOC_LIBXML2_CFLAGS = @HWLOC_LIBXML2_CFLAGS@
 HWLOC_LIBXML2_LIBS = @HWLOC_LIBXML2_LIBS@
+HWLOC_LTDL_LIBS = @HWLOC_LTDL_LIBS@
 HWLOC_MS_LIB = @HWLOC_MS_LIB@
 HWLOC_MS_LIB_ARCH = @HWLOC_MS_LIB_ARCH@
+HWLOC_NUMA_CFLAGS = @HWLOC_NUMA_CFLAGS@
+HWLOC_NUMA_LIBS = @HWLOC_NUMA_LIBS@
 HWLOC_NVML_LIBS = @HWLOC_NVML_LIBS@
 HWLOC_OPENCL_CFLAGS = @HWLOC_OPENCL_CFLAGS@
 HWLOC_OPENCL_LDFLAGS = @HWLOC_OPENCL_LDFLAGS@
@@ -260,8 +296,10 @@ HWLOC_PCIACCESS_CFLAGS = @HWLOC_PCIACCESS_CFLAGS@
 HWLOC_PCIACCESS_LIBS = @HWLOC_PCIACCESS_LIBS@
 HWLOC_PLUGINS_DIR = @HWLOC_PLUGINS_DIR@
 HWLOC_PLUGINS_PATH = @HWLOC_PLUGINS_PATH@
+HWLOC_PS_LIBS = @HWLOC_PS_LIBS@
 HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
 HWLOC_REQUIRES = @HWLOC_REQUIRES@
+HWLOC_RSMI_LIBS = @HWLOC_RSMI_LIBS@
 HWLOC_TERMCAP_LIBS = @HWLOC_TERMCAP_LIBS@
 HWLOC_VERSION = @HWLOC_VERSION@
 HWLOC_W3_GENERATOR = @HWLOC_W3_GENERATOR@
@@ -394,6 +432,7 @@ AM_CFLAGS = $(HWLOC_CFLAGS)
 AM_CPPFLAGS = $(HWLOC_CPPFLAGS)
 AM_LDFLAGS = $(HWLOC_LDFLAGS)
 LDADD = $(HWLOC_top_builddir)/hwloc/libhwloc.la
+dist_doc_DATA = dynamic_SVG_example.html
 EXTRA_DIST = hwloc-export-sysfs
 all: all-am
 
@@ -479,6 +518,27 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
+install-dist_docDATA: $(dist_doc_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(dist_doc_DATA)'; test -n "$(docdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(docdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(docdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(docdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(docdir)" || exit $$?; \
+	done
+
+uninstall-dist_docDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_doc_DATA)'; test -n "$(docdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(docdir)'; $(am__uninstall_files_from_dir)
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -565,8 +625,11 @@ distdir: $(DISTFILES)
 check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS)
 check: check-am
-all-am: Makefile
+all-am: Makefile $(DATA)
 installdirs:
+	for dir in "$(DESTDIR)$(docdir)"; do \
+	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
+	done
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -620,7 +683,7 @@ info: info-am
 
 info-am:
 
-install-data-am:
+install-data-am: install-dist_docDATA
 
 install-dvi: install-dvi-am
 
@@ -666,7 +729,7 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am:
+uninstall-am: uninstall-dist_docDATA
 
 .MAKE: check-am install-am install-strip
 
@@ -675,14 +738,15 @@ uninstall-am:
 	ctags ctags-am distclean distclean-compile distclean-generic \
 	distclean-libtool distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am
+	install-data-am install-dist_docDATA install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am tags tags-am uninstall uninstall-am \
+	uninstall-dist_docDATA
 
 .PRECIOUS: Makefile
 

@@ -1,12 +1,11 @@
 /*
- * Copyright © 2013-2018 Inria.  All rights reserved.
+ * Copyright © 2013-2020 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <private/autogen/config.h>
-#include <hwloc.h>
-#include <hwloc/diff.h>
-
+#include "private/autogen/config.h"
+#include "hwloc.h"
+#include "hwloc/diff.h"
 #include "misc.h"
 
 void usage(const char *callname __hwloc_attribute_unused, FILE *where)
@@ -22,7 +21,7 @@ int main(int argc, char *argv[])
 {
 	hwloc_topology_t topo1, topo2;
 	hwloc_topology_diff_t firstdiff = NULL, diff;
-	unsigned long flags = HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
+	unsigned long flags = HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED | HWLOC_TOPOLOGY_FLAG_IMPORT_SUPPORT;
 	char *callname, *input1, *input2, *output, *outputname, *refname = NULL;
 	char *xmlbuffer;
 	int xmlbuflen;
@@ -36,7 +35,8 @@ int main(int argc, char *argv[])
 
 	hwloc_utils_check_api_version(callname);
 
-	putenv((char *) "HWLOC_XML_VERBOSE=1");
+	if (!getenv("HWLOC_XML_VERBOSE"))
+		putenv((char *) "HWLOC_XML_VERBOSE=1");
 
 	while (argc && *argv[0] == '-') {
 		if (!strcmp (argv[0], "--refname")) {
@@ -49,6 +49,9 @@ int main(int argc, char *argv[])
 			argv++;
 		} else if (!strcmp (argv[0], "--version")) {
 			printf("%s %s\n", callname, HWLOC_VERSION);
+			exit(EXIT_SUCCESS);
+		} else if (!strcmp (argv[0], "-h") || !strcmp (argv[0], "--help")) {
+			usage(callname, stdout);
 			exit(EXIT_SUCCESS);
 		} else {
 			fprintf(stderr, "Unrecognized options: %s\n", argv[0]);
@@ -83,9 +86,13 @@ int main(int argc, char *argv[])
 	err = hwloc_topology_set_xml(topo1, input1);
 	if (err < 0) {
 		fprintf(stderr, "Failed to load 1st XML topology %s\n", input1);
-		goto out;
+		goto out_with_topo1;
 	}
-	hwloc_topology_load(topo1);
+	err = hwloc_topology_load(topo1);
+	if (err < 0) {
+		fprintf(stderr, "Failed to load 1st topology %s\n", input1);
+		goto out_with_topo1;
+	}
 
 	hwloc_topology_init(&topo2);
 	hwloc_topology_set_all_types_filter(topo2, HWLOC_TYPE_FILTER_KEEP_ALL);
@@ -93,9 +100,13 @@ int main(int argc, char *argv[])
 	err = hwloc_topology_set_xml(topo2, input2);
 	if (err < 0) {
 		fprintf(stderr, "Failed to load 2nd XML topology %s\n", input2);
-		goto out_with_topo1;
+		goto out_with_topo2;
 	}
-	hwloc_topology_load(topo2);
+	err = hwloc_topology_load(topo2);
+	if (err < 0) {
+		fprintf(stderr, "Failed to load 2nd topology %s\n", input2);
+		goto out_with_topo2;
+	}
 
 	if (!refname) {
 		refname = strrchr(input1, '/');
@@ -155,6 +166,5 @@ out_with_topo2:
 	hwloc_topology_destroy(topo2);
 out_with_topo1:
 	hwloc_topology_destroy(topo1);
-out:
 	exit(EXIT_FAILURE);
 }

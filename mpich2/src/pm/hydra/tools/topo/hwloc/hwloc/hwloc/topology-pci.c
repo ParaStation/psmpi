@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2018 Inria.  All rights reserved.
+ * Copyright © 2009-2020 Inria.  All rights reserved.
  * Copyright © 2009-2011, 2013 Université Bordeaux
  * Copyright © 2014-2018 Cisco Systems, Inc.  All rights reserved.
  * Copyright © 2015      Research Organization for Information Science
@@ -8,14 +8,14 @@
  * See COPYING in top-level directory.
  */
 
-#include <private/autogen/config.h>
-#include <hwloc.h>
-#include <hwloc/helper.h>
-#include <hwloc/plugins.h>
+#include "private/autogen/config.h"
+#include "hwloc.h"
+#include "hwloc/helper.h"
+#include "hwloc/plugins.h"
 
 /* private headers allowed for convenience because this plugin is built within hwloc */
-#include <private/debug.h>
-#include <private/misc.h>
+#include "private/debug.h"
+#include "private/misc.h"
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -87,15 +87,70 @@ static pthread_mutex_t hwloc_pciaccess_mutex = PTHREAD_MUTEX_INITIALIZER;
 #error No mutex implementation available
 #endif
 
-static int
-hwloc_look_pci(struct hwloc_backend *backend)
+static void
+hwloc_pci_get_obj_names(hwloc_obj_t obj, struct pci_id_match *m)
 {
+  const char *vendorname, *devicename;
+  m->vendor_id = obj->attr->pcidev.vendor_id;
+  m->device_id = obj->attr->pcidev.device_id;
+  pci_get_strings(m, &devicename, &vendorname, NULL, NULL);
+  if (vendorname && *vendorname)
+    hwloc_obj_add_info(obj, "PCIVendor", vendorname);
+  if (devicename && *devicename)
+    hwloc_obj_add_info(obj, "PCIDevice", devicename);
+}
+
+static void
+hwloc_pci_get_names(hwloc_topology_t topology)
+{
+  hwloc_obj_t obj;
+  struct pci_id_match m;
+
+  /* we need the lists of PCI and bridges */
+  hwloc_topology_reconnect(topology, 0);
+
+  m.subvendor_id = PCI_MATCH_ANY;
+  m.subdevice_id = PCI_MATCH_ANY;
+  m.device_class = 0;
+  m.device_class_mask = 0;
+  m.match_data = 0;
+
+  HWLOC_PCIACCESS_LOCK();
+
+  obj = NULL;
+  while ((obj = hwloc_get_next_pcidev(topology, obj)) != NULL)
+    hwloc_pci_get_obj_names(obj, &m);
+
+  obj = NULL;
+  while ((obj = hwloc_get_next_bridge(topology, obj)) != NULL)
+    if (obj->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_PCI)
+      hwloc_pci_get_obj_names(obj, &m);
+
+  HWLOC_PCIACCESS_UNLOCK();
+}
+
+static int
+hwloc_look_pci(struct hwloc_backend *backend, struct hwloc_disc_status *dstatus)
+{
+  /*
+   * This backend uses the underlying OS.
+   * However we don't enforce topology->is_thissystem so that
+   * we may still force use this backend when debugging with !thissystem.
+   */
+
   struct hwloc_topology *topology = backend->topology;
   enum hwloc_type_filter_e pfilter, bfilter;
-  struct hwloc_obj *tree = NULL, *tmp;
+  struct hwloc_obj *tree = NULL;
   int ret;
   struct pci_device_iterator *iter;
   struct pci_device *pcidev;
+  struct pci_id_match m;
+
+  m.subvendor_id = PCI_MATCH_ANY;
+  m.subdevice_id = PCI_MATCH_ANY;
+  m.device_class = 0;
+  m.device_class_mask = 0;
+  m.match_data = 0;
 
   hwloc_topology_get_type_filter(topology, HWLOC_OBJ_PCI_DEVICE, &pfilter);
   hwloc_topology_get_type_filter(topology, HWLOC_OBJ_BRIDGE, &bfilter);
@@ -103,18 +158,11 @@ hwloc_look_pci(struct hwloc_backend *backend)
       && pfilter == HWLOC_TYPE_FILTER_KEEP_NONE)
     return 0;
 
-  /* don't do anything if another backend attached PCI already
-   * (they are attached to root until later in the core discovery)
-   */
-  tmp = hwloc_get_root_obj(topology)->io_first_child;
-  while (tmp) {
-    if (tmp->type == HWLOC_OBJ_PCI_DEVICE
-	|| (tmp->type == HWLOC_OBJ_BRIDGE && tmp->attr->bridge.downstream_type == HWLOC_OBJ_BRIDGE_PCI)) {
-      hwloc_debug("%s", "PCI objects already added, ignoring linuxpci backend.\n");
-      return 0;
-    }
-    tmp = tmp->next_sibling;
+  if (dstatus->phase == HWLOC_DISC_PHASE_ANNOTATE) {
+    hwloc_pci_get_names(topology);
+    return 0;
   }
+  assert(dstatus->phase == HWLOC_DISC_PHASE_PCI);
 
   hwloc_debug("%s", "\nScanning PCI buses...\n");
 
@@ -127,7 +175,9 @@ hwloc_look_pci(struct hwloc_backend *backend)
   ret = pci_system_init();
   if (ret) {
     HWLOC_PCIACCESS_UNLOCK();
-    hwloc_debug("%s", "Can not initialize libpciaccess\n");
+    if (!hwloc_hide_errors())
+      fprintf(stderr, "PCI: Failed to initialize libpciaccess with pci_system_init(): %d (%s)\n",
+              ret, strerror(errno));
     return -1;
   }
 
@@ -138,11 +188,11 @@ hwloc_look_pci(struct hwloc_backend *backend)
        pcidev;
        pcidev = pci_device_next(iter))
   {
-    const char *vendorname, *devicename;
     unsigned char config_space_cache[CONFIG_SPACE_CACHESIZE];
     hwloc_obj_type_t type;
     struct hwloc_obj *obj;
     unsigned domain, bus, dev, func;
+    unsigned secondary_bus, subordinate_bus;
     unsigned device_class;
     unsigned short tmp16;
     unsigned offset;
@@ -151,6 +201,16 @@ hwloc_look_pci(struct hwloc_backend *backend)
     bus = pcidev->bus;
     dev = pcidev->dev;
     func = pcidev->func;
+
+#ifndef HWLOC_HAVE_32BITS_PCI_DOMAIN
+    if (domain > 0xffff) {
+      static int warned = 0;
+      if (!warned && !hwloc_hide_errors())
+	fprintf(stderr, "Ignoring PCI device with non-16bit domain.\nPass --enable-32bits-pci-domain to configure to support such devices\n(warning: it would break the library ABI, don't enable unless really needed).\n");
+      warned = 1;
+      continue;
+    }
+#endif
 
     /* initialize the config space in case we fail to read it (missing permissions, etc). */
     memset(config_space_cache, 0xff, CONFIG_SPACE_CACHESIZE);
@@ -162,6 +222,12 @@ hwloc_look_pci(struct hwloc_backend *backend)
 
     /* bridge or pci dev? */
     type = hwloc_pcidisc_check_bridge_type(device_class, config_space_cache);
+    if (type == HWLOC_OBJ_BRIDGE) {
+      if (hwloc_pcidisc_find_bridge_buses(domain, bus, dev, func,
+					  &secondary_bus, &subordinate_bus,
+					  config_space_cache) < 0)
+	continue;
+    }
 
     /* filtered? */
     if (type == HWLOC_OBJ_PCI_DEVICE) {
@@ -242,6 +308,16 @@ hwloc_look_pci(struct hwloc_backend *backend)
     obj->attr->pcidev.class_id = device_class;
     obj->attr->pcidev.revision = config_space_cache[PCI_REVISION_ID];
 
+    /* bridge specific attributes */
+    if (type == HWLOC_OBJ_BRIDGE) {
+      struct hwloc_bridge_attr_s *battr = &obj->attr->bridge;
+      battr->upstream_type = HWLOC_OBJ_BRIDGE_PCI;
+      battr->downstream_type = HWLOC_OBJ_BRIDGE_PCI;
+      battr->downstream.pci.domain = domain;
+      battr->downstream.pci.secondary_bus = secondary_bus;
+      battr->downstream.pci.subordinate_bus = subordinate_bus;
+    }
+
     obj->attr->pcidev.linkspeed = 0; /* unknown */
     offset = hwloc_pcidisc_find_cap(config_space_cache, PCI_CAP_ID_EXP);
 
@@ -250,7 +326,7 @@ hwloc_look_pci(struct hwloc_backend *backend)
 #ifdef HWLOC_LINUX_SYS
     } else {
       /* if not available from config-space (extended part is root-only), look in Linux sysfs files added in 4.13 */
-      char path[64];
+      char path[128];
       char value[16];
       FILE *file;
       size_t bytes_read;
@@ -278,11 +354,6 @@ hwloc_look_pci(struct hwloc_backend *backend)
 #endif
     }
 
-    if (type == HWLOC_OBJ_BRIDGE) {
-      if (hwloc_pcidisc_setup_bridge_attr(obj, config_space_cache) < 0)
-	continue;
-    }
-
     if (obj->type == HWLOC_OBJ_PCI_DEVICE) {
       memcpy(&tmp16, &config_space_cache[PCI_SUBSYSTEM_VENDOR_ID], sizeof(tmp16));
       obj->attr->pcidev.subvendor_id = tmp16;
@@ -295,22 +366,11 @@ hwloc_look_pci(struct hwloc_backend *backend)
        */
     }
 
-    /* get the vendor name */
-    vendorname = pci_device_get_vendor_name(pcidev);
-    if (vendorname && *vendorname)
-      hwloc_obj_add_info(obj, "PCIVendor", vendorname);
-
-    /* get the device name */
-    devicename = pci_device_get_device_name(pcidev);
-    if (devicename && *devicename)
-      hwloc_obj_add_info(obj, "PCIDevice", devicename);
-
-    hwloc_debug("  %04x:%02x:%02x.%01x %04x %04x:%04x %s %s\n",
+    hwloc_debug("  %04x:%02x:%02x.%01x %04x %04x:%04x\n",
 		domain, bus, dev, func,
-		device_class, pcidev->vendor_id, pcidev->device_id,
-		vendorname && *vendorname ? vendorname : "??",
-		devicename && *devicename ? devicename : "??");
+		device_class, pcidev->vendor_id, pcidev->device_id);
 
+    hwloc_pci_get_obj_names(obj, &m);
     hwloc_pcidisc_tree_insert_by_busid(&tree, obj);
   }
 
@@ -320,33 +380,41 @@ hwloc_look_pci(struct hwloc_backend *backend)
   HWLOC_PCIACCESS_UNLOCK();
 
   hwloc_pcidisc_tree_attach(topology, tree);
+
+  /* no need to run another PCI phase */
+  dstatus->excluded_phases |= HWLOC_DISC_PHASE_PCI;
+  /* no need to run the annotate phase, we did it above */
+  backend->phases &= HWLOC_DISC_PHASE_ANNOTATE;
   return 0;
 }
 
 static struct hwloc_backend *
-hwloc_pci_component_instantiate(struct hwloc_disc_component *component,
-				   const void *_data1 __hwloc_attribute_unused,
-				   const void *_data2 __hwloc_attribute_unused,
-				   const void *_data3 __hwloc_attribute_unused)
+hwloc_pci_component_instantiate(struct hwloc_topology *topology,
+				struct hwloc_disc_component *component,
+				unsigned excluded_phases __hwloc_attribute_unused,
+				const void *_data1 __hwloc_attribute_unused,
+				const void *_data2 __hwloc_attribute_unused,
+				const void *_data3 __hwloc_attribute_unused)
 {
   struct hwloc_backend *backend;
 
-#ifdef HWLOC_SOLARIS_SYS
-  if ((uid_t)0 != geteuid())
-    return NULL;
-#endif
-
-  backend = hwloc_backend_alloc(component);
+  backend = hwloc_backend_alloc(topology, component);
   if (!backend)
     return NULL;
   backend->discover = hwloc_look_pci;
+
+#ifdef HWLOC_SOLARIS_SYS
+  if ((uid_t)0 != geteuid())
+    backend->phases &= ~HWLOC_DISC_PHASE_PCI;
+#endif
+
   return backend;
 }
 
 static struct hwloc_disc_component hwloc_pci_disc_component = {
-  HWLOC_DISC_COMPONENT_TYPE_MISC,
   "pci",
-  HWLOC_DISC_COMPONENT_TYPE_GLOBAL,
+  HWLOC_DISC_PHASE_PCI | HWLOC_DISC_PHASE_ANNOTATE,
+  HWLOC_DISC_PHASE_GLOBAL,
   hwloc_pci_component_instantiate,
   20,
   1,

@@ -11,9 +11,9 @@
 #ifndef HWLOC_PRIVATE_MISC_H
 #define HWLOC_PRIVATE_MISC_H
 
-#include <hwloc/autogen/config.h>
-#include <private/autogen/config.h>
-#include <hwloc.h>
+#include "hwloc/autogen/config.h"
+#include "private/autogen/config.h"
+#include "hwloc.h"
 
 #ifdef HWLOC_HAVE_DECL_STRNCASECMP
 #ifdef HAVE_STRINGS_H
@@ -189,9 +189,9 @@ hwloc_ffsl_from_ffs32(unsigned long x)
 #ifdef __GNUC_____
 
 #  if (__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 4))
-#    define hwloc_flsl(x) (x ? (8*sizeof(long) - __builtin_clzl(x)) : 0)
+#    define hwloc_flsl(x) ((x) ? (8*sizeof(long) - __builtin_clzl(x)) : 0)
 #  else
-#    define hwloc_fls(x) (x ? (8*sizeof(int) - __builtin_clz(x)) : 0)
+#    define hwloc_fls(x) ((x) ? (8*sizeof(int) - __builtin_clz(x)) : 0)
 #    define HWLOC_NEED_FLSL
 #  endif
 
@@ -209,7 +209,7 @@ extern int flsl(long) __hwloc_attribute_const;
 extern int clzl(long) __hwloc_attribute_const;
 #  endif
 
-#  define hwloc_flsl(x) (x ? (8*sizeof(long) - clzl(x)) : 0)
+#  define hwloc_flsl(x) ((x) ? (8*sizeof(long) - clzl(x)) : 0)
 
 #elif defined(HWLOC_HAVE_FLS)
 
@@ -226,7 +226,7 @@ extern int fls(int) __hwloc_attribute_const;
 extern int clz(int) __hwloc_attribute_const;
 #  endif
 
-#  define hwloc_fls(x) (x ? (8*sizeof(int) - clz(x)) : 0)
+#  define hwloc_fls(x) ((x) ? (8*sizeof(int) - clz(x)) : 0)
 #  define HWLOC_NEED_FLSL
 
 #else /* no fls implementation */
@@ -439,14 +439,14 @@ hwloc_linux_pci_link_speed_from_string(const char *string)
 static __hwloc_inline int hwloc__obj_type_is_normal (hwloc_obj_type_t type)
 {
   /* type contiguity is asserted in topology_check() */
-  return type <= HWLOC_OBJ_GROUP;
+  return type <= HWLOC_OBJ_GROUP || type == HWLOC_OBJ_DIE;
 }
 
-/* Any object attached to memory children, currently only NUMA nodes */
+/* Any object attached to memory children, currently NUMA nodes or Memory-side caches */
 static __hwloc_inline int hwloc__obj_type_is_memory (hwloc_obj_type_t type)
 {
   /* type contiguity is asserted in topology_check() */
-  return type == HWLOC_OBJ_NUMANODE;
+  return type == HWLOC_OBJ_NUMANODE || type == HWLOC_OBJ_MEMCACHE;
 }
 
 /* I/O or Misc object, without cpusets or nodesets. */
@@ -463,6 +463,7 @@ static __hwloc_inline int hwloc__obj_type_is_io (hwloc_obj_type_t type)
   return type >= HWLOC_OBJ_BRIDGE && type <= HWLOC_OBJ_OS_DEVICE;
 }
 
+/* Any CPU caches (not Memory-side caches) */
 static __hwloc_inline int
 hwloc__obj_type_is_cache(hwloc_obj_type_t type)
 {
@@ -538,9 +539,9 @@ hwloc__obj_type_is_icache(hwloc_obj_type_t type)
 #endif
 
 #define hwloc_memory_size_printf_value(_size, _verbose) \
-  ((_size) < (10ULL<<20) || _verbose ? (((_size)>>9)+1)>>1 : (_size) < (10ULL<<30) ? (((_size)>>19)+1)>>1 : (_size) < (10ULL<<40) ? (((_size)>>29)+1)>>1 : (((_size)>>39)+1)>>1)
+  ((_size) < (10ULL<<20) || (_verbose) ? (((_size)>>9)+1)>>1 : (_size) < (10ULL<<30) ? (((_size)>>19)+1)>>1 : (_size) < (10ULL<<40) ? (((_size)>>29)+1)>>1 : (((_size)>>39)+1)>>1)
 #define hwloc_memory_size_printf_unit(_size, _verbose) \
-  ((_size) < (10ULL<<20) || _verbose ? "KB" : (_size) < (10ULL<<30) ? "MB" : (_size) < (10ULL<<40) ? "GB" : "TB")
+  ((_size) < (10ULL<<20) || (_verbose) ? "KB" : (_size) < (10ULL<<30) ? "MB" : (_size) < (10ULL<<40) ? "GB" : "TB")
 
 #ifdef HWLOC_WIN_SYS
 #  ifndef HAVE_SSIZE_T

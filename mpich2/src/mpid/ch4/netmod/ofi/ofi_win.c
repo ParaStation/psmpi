@@ -144,13 +144,20 @@ static int win_allgather(MPIR_Win * win, void *base, int disp_unit)
     int rc = 0, allrc = 0;
     MPIDI_OFI_WIN(win).mr = NULL;
     if (base || (win->create_flavor == MPI_WIN_FLAVOR_DYNAMIC && !MPIDI_OFI_ENABLE_MR_ALLOCATED)) {
+        size_t len;
+        if (win->create_flavor == MPI_WIN_FLAVOR_DYNAMIC) {
+            len = UINTPTR_MAX - (uintptr_t) base;
+        } else {
+            len = (size_t) win->size;
+        }
+
         /* device buffers are not currently supported */
         if (MPIR_GPU_query_pointer_is_dev(base))
             rc = -1;
         else
             MPIDI_OFI_CALL_RETURN(fi_mr_reg(MPIDI_OFI_global.ctx[0].domain,     /* In:  Domain Object */
                                             base,       /* In:  Lower memory address */
-                                            win->size,  /* In:  Length              */
+                                            len,        /* In:  Length              */
                                             FI_REMOTE_READ | FI_REMOTE_WRITE,   /* In:  Expose MR for read  */
                                             0ULL,       /* In:  offset(not used)    */
                                             MPIDI_OFI_WIN(win).mr_key,  /* In:  requested key       */
@@ -511,7 +518,13 @@ static int win_init(MPIR_Win * win)
 
     memset(&MPIDI_OFI_WIN(win), 0, sizeof(MPIDI_OFI_win_t));
 
-    MPIDI_OFI_WIN(win).win_id = MPIDI_OFI_mr_key_alloc();
+    MPIDI_OFI_WIN(win).win_id =
+        MPIDI_OFI_mr_key_alloc(MPIDI_OFI_COLL_MR_KEY, win->comm_ptr->context_id);
+    if (MPIDI_OFI_WIN(win).win_id == -1ULL) {
+        MPL_DBG_MSG(MPIDI_CH4_DBG_GENERAL, VERBOSE, "Failed to get global mr key.\n");
+        mpi_errno = MPIDI_OFI_ENAVAIL;
+        goto fn_exit;
+    }
 
     MPIDIU_map_set(MPIDI_OFI_global.win_map, MPIDI_OFI_WIN(win).win_id, win, MPL_MEM_RMA);
 
@@ -550,6 +563,10 @@ static void dwin_close_mr(void *obj)
     struct fid_mr *mr = (struct fid_mr *) obj;
     if (mr) {
         int ret;
+        if (!MPIDI_OFI_ENABLE_MR_PROV_KEY) {
+            uint64_t requested_key = fi_mr_key(mr);
+            MPIDI_OFI_mr_key_free(MPIDI_OFI_LOCAL_MR_KEY, requested_key);
+        }
         MPIDI_OFI_CALL_RETURN(fi_close(&mr->fid), ret);
         MPIR_Assert(ret >= 0);
     }
@@ -766,11 +783,6 @@ int MPIDI_OFI_mpi_win_create_dynamic_hook(MPIR_Win * win)
 
     /* This hook is called by CH4 generic call after CH4 initialization */
     if (MPIDI_OFI_ENABLE_RMA) {
-        /* FIXME: should the OFI specific size be stored inside OFI rather
-         * than overwriting CH4 info ? Now we simply followed original
-         * create_dynamic routine.*/
-        win->size = (uintptr_t) UINTPTR_MAX - (uintptr_t) MPI_BOTTOM;
-
         mpi_errno = win_init(win);
         MPIR_ERR_CHECK(mpi_errno);
 
@@ -841,7 +853,7 @@ int MPIDI_OFI_mpi_win_attach_hook(MPIR_Win * win, void *base, MPI_Aint size)
 
     uint64_t requested_key = 0ULL;
     if (!MPIDI_OFI_ENABLE_MR_PROV_KEY)
-        requested_key = MPIDI_OFI_mr_key_alloc();
+        requested_key = MPIDI_OFI_mr_key_alloc(MPIDI_OFI_LOCAL_MR_KEY, MPIDI_OFI_INVALID_MR_KEY);
 
     int rc = 0, allrc = 0;
     struct fid_mr *mr = NULL;
@@ -970,7 +982,7 @@ int MPIDI_OFI_mpi_win_free_hook(MPIR_Win * win)
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_OFI_MPI_WIN_FREE_HOOK);
 
     if (MPIDI_OFI_ENABLE_RMA) {
-        MPIDI_OFI_mr_key_free(MPIDI_OFI_WIN(win).win_id);
+        MPIDI_OFI_mr_key_free(MPIDI_OFI_COLL_MR_KEY, MPIDI_OFI_WIN(win).win_id);
         MPIDIU_map_erase(MPIDI_OFI_global.win_map, MPIDI_OFI_WIN(win).win_id);
         /* For scalable EP: push transmit context index back into available pool. */
         if (MPIDI_OFI_WIN(win).sep_tx_idx != -1) {

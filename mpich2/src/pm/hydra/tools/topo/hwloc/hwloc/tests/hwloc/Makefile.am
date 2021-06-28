@@ -1,14 +1,14 @@
-# Copyright © 2009-2018 Inria.  All rights reserved.
+# Copyright © 2009-2020 Inria.  All rights reserved.
 # Copyright © 2009-2012 Université Bordeaux
 # Copyright © 2009-2014 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
 
 AM_CFLAGS = $(HWLOC_CFLAGS)
-AM_CPPFLAGS = $(HWLOC_CPPFLAGS)
+AM_CPPFLAGS = $(HWLOC_CPPFLAGS) -DXMLTESTDIR=\"$(abs_top_srcdir)/tests/hwloc/xml/\"
 AM_LDFLAGS = $(HWLOC_LDFLAGS)
 
 SUBDIRS = . ports xml
-DIST_SUBDIRS = ports xml linux x86 rename
+DIST_SUBDIRS = ports xml linux x86 x86+linux rename
 
 if HWLOC_HAVE_LINUX
 SUBDIRS += linux
@@ -18,11 +18,19 @@ if HWLOC_HAVE_X86_CPUID
 SUBDIRS += x86
 endif HWLOC_HAVE_X86_CPUID
 
+if HWLOC_HAVE_LINUX
+if HWLOC_HAVE_X86_CPUID
+SUBDIRS += x86+linux
+endif HWLOC_HAVE_X86_CPUID
+endif HWLOC_HAVE_LINUX
+
 LDADD =
 
 LOG_COMPILER = $(builddir)/wrapper.sh
 
-check_PROGRAMS = hwloc_list_components \
+check_PROGRAMS = \
+        hwloc_api_version \
+        hwloc_list_components \
         hwloc_bitmap \
         hwloc_bitmap_string \
         hwloc_bitmap_compare_inclusion \
@@ -49,15 +57,18 @@ check_PROGRAMS = hwloc_list_components \
         hwloc_distances \
         hwloc_groups \
         hwloc_insert_misc \
+        hwloc_topology_allow \
         hwloc_topology_restrict \
         hwloc_topology_dup \
         hwloc_topology_diff \
         hwloc_topology_abi \
         hwloc_obj_infos \
         hwloc_iodevs \
+        cpuset_nodeset \
+        memattrs \
+        cpukinds \
         xmlbuffer \
-        gl \
-        intel-mic
+        gl
 
 if !HWLOC_HAVE_WINDOWS
 if !HWLOC_HAVE_DARWIN
@@ -93,6 +104,10 @@ if HWLOC_HAVE_NVML
 check_PROGRAMS += nvml
 endif HWLOC_HAVE_NVML
 
+if HWLOC_HAVE_RSMI
+check_PROGRAMS += rsmi
+endif HWLOC_HAVE_RSMI
+
 TESTS = $(check_PROGRAMS)
 
 # The library has a different name depending on whether we are
@@ -105,12 +120,14 @@ endif
 
 LDADD += $(HWLOC_top_builddir)/hwloc/$(hwloc_lib)
 
-linux_libnuma_LDADD = $(LDADD) -lnuma
+linux_libnuma_CFLAGS = $(AM_CFLAGS) $(HWLOC_NUMA_CFLAGS)
+linux_libnuma_LDADD = $(LDADD) $(HWLOC_NUMA_LIBS)
 openfabrics_verbs_LDADD = $(LDADD) -libverbs
 opencl_LDADD = $(LDADD) $(HWLOC_OPENCL_LIBS) $(HWLOC_OPENCL_LDFLAGS)
 cuda_LDADD = $(LDADD) -lcuda
 cudart_LDADD = $(LDADD) -lcuda -lcudart
 nvml_LDADD = $(LDADD) -lnvidia-ml
+rsmi_LDADD = $(LDADD) -lrocm_smi64
 hwloc_bind_LDADD = $(LDADD)
 if HWLOC_HAVE_PTHREAD
 hwloc_bind_LDADD += -lpthread

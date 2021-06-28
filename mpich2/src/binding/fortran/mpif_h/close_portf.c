@@ -271,10 +271,10 @@ FORT_DLL_SPEC void FORT_CALL mpi_close_port_ ( char *v1 FORT_MIXED_LEN(d1), MPI_
      int  li;
         while (*p == ' ' && p > v1) p--;
         p++;
-        p1 = (char *)MPL_malloc( p-v1 + 1, MPL_MEM_OTHER );
+        p1 = (char *)malloc(p-v1 + 1);
         for (li=0; li<(p-v1); li++) { p1[li] = v1[li]; }
         p1[li] = 0; 
     }
     *ierr = MPI_Close_port( p1 );
-    MPL_free( p1 );
+    free( p1 );
 }

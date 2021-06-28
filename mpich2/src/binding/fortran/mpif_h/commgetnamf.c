@@ -266,12 +266,12 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_get_name_( MPI_Fint *, char * FORT
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_comm_get_name_ ( MPI_Fint *v1, char *v2 FORT_MIXED_LEN(d2), MPI_Fint *v3, MPI_Fint *ierr FORT_END_LEN(d2) ){
     char *p2;
-    p2 = (char *)MPL_malloc( d2 + 1, MPL_MEM_OTHER );
+    p2 = (char *)malloc(d2 + 1);
     *ierr = MPI_Comm_get_name( (MPI_Comm)(*v1), p2, v3 );
 
     if (!*ierr) {char *p = v2, *pc=p2;
         while (*pc) {*p++ = *pc++;}
         while ((p-v2) < d2) { *p++ = ' '; }
     }
-    MPL_free( p2 );
+    free( p2 );
 }

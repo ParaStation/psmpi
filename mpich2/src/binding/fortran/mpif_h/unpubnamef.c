@@ -272,7 +272,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_unpublish_name_ ( char *v1 FORT_MIXED_LEN(d1), 
      int  li;
         while (*p == ' ' && p > v1) p--;
         p++;
-        p1 = (char *)MPL_malloc( p-v1 + 1, MPL_MEM_OTHER );
+        p1 = (char *)malloc(p-v1 + 1);
         for (li=0; li<(p-v1); li++) { p1[li] = v1[li]; }
         p1[li] = 0; 
     }
@@ -281,11 +281,11 @@ FORT_DLL_SPEC void FORT_CALL mpi_unpublish_name_ ( char *v1 FORT_MIXED_LEN(d1), 
      int  li;
         while (*p == ' ' && p > v3) p--;
         p++;
-        p3 = (char *)MPL_malloc( p-v3 + 1, MPL_MEM_OTHER );
+        p3 = (char *)malloc(p-v3 + 1);
         for (li=0; li<(p-v3); li++) { p3[li] = v3[li]; }
         p3[li] = 0; 
     }
     *ierr = MPI_Unpublish_name( p1, (MPI_Info)(*v2), p3 );
-    MPL_free( p1 );
-    MPL_free( p3 );
+    free( p1 );
+    free( p3 );
 }

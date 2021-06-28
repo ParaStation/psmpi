@@ -1,4 +1,4 @@
-# Copyright © 2009-2018 Inria.  All rights reserved.
+# Copyright © 2009-2020 Inria.  All rights reserved.
 # Copyright © 2009-2012, 2014, 2016 Université Bordeaux
 # Copyright © 2009-2014 Cisco Systems, Inc.  All rights reserved.
 #
@@ -20,7 +20,12 @@ EXTRA_DIST = \
         test-hwloc-distrib.output \
         test-hwloc-info.output
 
-noinst_HEADERS = misc.h
+noinst_HEADERS = misc.h common-ps.h
+
+# convenience library used by both hwloc-ps and lstopo
+noinst_LTLIBRARIES = libutils_common.la
+libutils_common_la_SOURCES = common-ps.c
+libutils_common_la_LIBADD = $(LDADD)
 
 bin_PROGRAMS = \
         hwloc-annotate \
@@ -51,29 +56,32 @@ endif HWLOC_HAVE_LINUX
 hwloc_dump_hwdata_SOURCES = \
 	hwloc-dump-hwdata.c \
 	hwloc-dump-hwdata-knl.c
-hwloc_dump_hwdata_CPPFLAGS = $(AM_CPPFLAGS) -DRUNSTATEDIR=\"$(HWLOC_runstatedir)\"
+hwloc_dump_hwdata_CPPFLAGS = $(AM_CPPFLAGS) -DRUNSTATEDIR="\"$(HWLOC_runstatedir)\""
 
 hwloc_calc_SOURCES = \
         hwloc-calc.h \
         hwloc-calc.c
+
+hwloc_ps_SOURCES = hwloc-ps.c
+# keep HWLOC_PS_LIBS first in case there's also -lnsl which cannot be before -lsocket
+hwloc_ps_LDADD = $(HWLOC_PS_LIBS) $(LDADD) libutils_common.la
 
 bin_SCRIPTS = hwloc-compress-dir
 if HWLOC_HAVE_LINUX
 bin_SCRIPTS += hwloc-gather-topology
 endif HWLOC_HAVE_LINUX
 
-if !HWLOC_HAVE_MINGW32
 TESTS = \
         test-hwloc-annotate.sh \
         test-hwloc-calc.sh \
         test-hwloc-compress-dir.sh \
         test-hwloc-diffpatch.sh \
         test-hwloc-distrib.sh \
-        test-hwloc-info.sh
+        test-hwloc-info.sh \
+        test-parsing-flags.sh
 if HWLOC_HAVE_PLUGINS
 TESTS += test-fake-plugin.sh
 endif HWLOC_HAVE_PLUGINS
-endif !HWLOC_HAVE_MINGW32
 
 SEDMAN = $(SED) -e 's/%PACKAGE_NAME%/@PACKAGE_NAME@/g' \
 	  -e 's/%PACKAGE_VERSION%/@PACKAGE_VERSION@/g' \
@@ -154,7 +162,7 @@ install-exec-hook:
 	$(SED) -e 's/HWLOC_top_builddir\/utils\/hwloc/bindir/' -e 's/HWLOC_top_builddir\/utils\/lstopo/bindir/' -e '/HWLOC_top_builddir/d' $(DESTDIR)$(bindir)/hwloc-compress-dir > $(DESTDIR)$(bindir)/hwloc-compress-dir.tmp && mv -f $(DESTDIR)$(bindir)/hwloc-compress-dir.tmp $(DESTDIR)$(bindir)/hwloc-compress-dir
 	chmod +x $(DESTDIR)$(bindir)/hwloc-compress-dir
 if HWLOC_HAVE_LINUX
-	$(SED) -e 's/HWLOC_top_builddir\/utils\/lstopo/bindir/' -e '/HWLOC_top_builddir/d' $(DESTDIR)$(bindir)/hwloc-gather-topology > $(DESTDIR)$(bindir)/hwloc-gather-topology.tmp && mv -f $(DESTDIR)$(bindir)/hwloc-gather-topology.tmp $(DESTDIR)$(bindir)/hwloc-gather-topology
+	$(SED) -e 's/HWLOC_top_builddir\/utils\/lstopo/bindir/' -e 's/HWLOC_top_builddir\/utils\/hwloc/bindir/' -e '/HWLOC_top_builddir/d' $(DESTDIR)$(bindir)/hwloc-gather-topology > $(DESTDIR)$(bindir)/hwloc-gather-topology.tmp && mv -f $(DESTDIR)$(bindir)/hwloc-gather-topology.tmp $(DESTDIR)$(bindir)/hwloc-gather-topology
 	chmod +x $(DESTDIR)$(bindir)/hwloc-gather-topology
 endif HWLOC_HAVE_LINUX
 

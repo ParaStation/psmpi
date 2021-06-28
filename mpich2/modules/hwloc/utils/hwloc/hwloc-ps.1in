@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.\" Copyright © 2010-2017 Inria.  All rights reserved.
+.\" Copyright © 2010-2021 Inria.  All rights reserved.
 .\" Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 .\" See COPYING in top-level directory.
 .TH HWLOC-PS "1" "%HWLOC_DATE%" "%PACKAGE_VERSION%" "%PACKAGE_NAME%"
@@ -33,6 +33,12 @@ Only show processes whose name contains \fI<name>\fR,
 even if they are not bound to any specific part of the machine.
 This is not supported on all operating systems.
 .TP
+\fB\--uid <uid>\fR
+Only show processes of the user whose UID is \fI<uid>\fR,
+or processes of all users if \fIall\fR is given.
+By default, only processes of the current user are displayed.
+This is currently only supported on Linux.
+.TP
 \fB\-p\fR \fB\-\-physical\fR
 Report OS/physical indexes instead of logical indexes
 .TP
@@ -55,14 +61,28 @@ Note that the result may already be outdated when reported
 since the operating system may move the tasks to other processors
 at any time according to the binding.
 .TP
-\fB\-\-whole\-system\fR
-Do not consider administration limitations.
+\fB\-\-disallowed\fR
+Include objects disallowed by administrative limitations.
 .TP
 \fB\-\-pid\-cmd <cmd>\fR
 Append the output of the given command to each PID line.
 For each displayed process ID, execute the command \fI<cmd> <pid>\fR
 and append \fBthe first line\fR of its output to the regular hwloc-ps
 line.
+.TP
+\fB\-\-json\-server\fR
+Run the tool as a JSON server that waits for other process' requests
+on a port and sends back binding information.
+See contrib/hwloc-ps.www/ for details.
+.TP
+\fB\-\-json\-port <port>\fR
+Use the given port number instead of the default 8888.
+.TP
+\fB\-v\fR \fB\-\-verbose\fR
+Increase verbosity of the JSON server.
+.TP
+\fB\-h\fR \fB\-\-help\fR
+Display help message and exit.
 .
 .\" **************************
 .\"    Description Section
@@ -80,7 +100,7 @@ binding.  The binding may be reported as objects or cpusets.
 .PP
 By default, process bindings are restricted to the currently available
 topology. If some processes are bound to processors that are not available
-to the current process, they are ignored unless \fB\-\-whole\-system\fR
+to the current process, they are ignored unless \fB\-\-disallowed\fR
 is given.
 .
 .PP
@@ -103,28 +123,28 @@ processes, if desired.
 .PP
 If a process is bound, it appears in the default output:
 
-    $ utils/hwloc-ps
+    $ hwloc-ps
     4759	Core:0		myprogram
 
 If a process is not bound but 3 of his 4 threads are bound,
 it only appears in the thread-aware output (or if explicitly selected):
 
-    $ utils/hwloc-ps
+    $ hwloc-ps
 
-    $ utils/hwloc-ps -t
+    $ hwloc-ps -t
     4759	Machine:0		myprogram
      4759	Machine:0
      4761	PU:0
      4762	PU:2
      4765	PU:1
 
-    $ utils/hwloc-ps --pid 4759
+    $ hwloc-ps --pid 4759
     4759	Machine:0		myprogram
 
 To display the binding of already running MPI processes (launched by
 Open MPI) and append their MPI rank (in MPI_COMM_WORLD) to each line:
 
-    $ utils/hwloc-ps --pid-cmd myscript
+    $ hwloc-ps --pid-cmd myscript
     29093	L1dCache:0	myprogram	OMPI_COMM_WORLD_RANK=0
     29094	L1dCache:2	myprogram	OMPI_COMM_WORLD_RANK=1
     29095	L1dCache:1	myprogram	OMPI_COMM_WORLD_RANK=2
@@ -141,5 +161,5 @@ where \fBmyscript\fR is a bash script doing:
 .SH SEE ALSO
 .
 .ft R
-hwloc(7), lstopo(1), hwloc-calc(1), hwloc-distrib(1)
+hwloc(7), lstopo(1), hwloc-calc(1), hwloc-distrib(1), and hwloc-ps.www/README
 .sp

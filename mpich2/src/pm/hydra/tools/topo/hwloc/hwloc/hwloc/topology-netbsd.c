@@ -1,14 +1,14 @@
 /*
  * Copyright © 2012 Aleksej Saushev, The NetBSD Foundation
- * Copyright © 2009-2017 Inria.  All rights reserved.
- * Copyright © 2009-2010 Université Bordeaux
+ * Copyright © 2009-2019 Inria.  All rights reserved.
+ * Copyright © 2009-2010, 2020 Université Bordeaux
  * Copyright © 2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
 #define _NETBSD_SOURCE /* request "_np" functions */
 
-#include <private/autogen/config.h>
+#include "private/autogen/config.h"
 
 #include <sys/types.h>
 #include <stdlib.h>
@@ -20,9 +20,9 @@
 #include <sys/sysctl.h>
 #endif
 
-#include <hwloc.h>
-#include <private/private.h>
-#include <private/debug.h>
+#include "hwloc.h"
+#include "private/private.h"
+#include "private/debug.h"
 
 static void
 hwloc_netbsd_bsd2hwloc(hwloc_bitmap_t hwloc_cpuset, const cpuset_t *cpuset)
@@ -133,26 +133,23 @@ hwloc_netbsd_get_thisthread_cpubind(hwloc_topology_t topology, hwloc_bitmap_t hw
   return hwloc_netbsd_get_thread_cpubind(topology, pthread_self(), hwloc_cpuset, flags);
 }
 
-#if (defined HAVE_SYSCTL) && (defined HAVE_SYS_SYSCTL_H)
-static void
-hwloc_netbsd_node_meminfo_info(struct hwloc_topology *topology)
-{
-  int mib[2] = { CTL_HW, HW_PHYSMEM64 };
-  unsigned long physmem;
-  size_t len = sizeof(physmem);
-  sysctl(mib, 2, &physmem, &len, NULL, 0);
-  topology->machine_memory.local_memory = physmem;
-}
-#endif
-
 static int
-hwloc_look_netbsd(struct hwloc_backend *backend)
+hwloc_look_netbsd(struct hwloc_backend *backend, struct hwloc_disc_status *dstatus)
 {
+  /*
+   * This backend uses the underlying OS.
+   * However we don't enforce topology->is_thissystem so that
+   * we may still force use this backend when debugging with !thissystem.
+   */
+
   struct hwloc_topology *topology = backend->topology;
+  int64_t memsize;
+
+  assert(dstatus->phase == HWLOC_DISC_PHASE_CPU);
 
   if (!topology->levels[0][0]->cpuset) {
     /* Nobody (even the x86 backend) created objects yet, setup basic objects */
-    int nbprocs = hwloc_fallback_nbprocessors(topology);
+    int nbprocs = hwloc_fallback_nbprocessors(0);
     if (nbprocs >= 1)
       topology->support.discovery->pu = 1;
     else
@@ -161,18 +158,19 @@ hwloc_look_netbsd(struct hwloc_backend *backend)
     hwloc_setup_pu_level(topology, nbprocs);
   }
 
+  memsize = hwloc_fallback_memsize();
+  if (memsize > 0)
+    topology->machine_memory.local_memory = memsize;;
+
   /* Add NetBSD specific information */
-#if (defined HAVE_SYSCTL) && (defined HAVE_SYS_SYSCTL_H)
-  hwloc_netbsd_node_meminfo_info(topology);
-#endif
   hwloc_obj_add_info(topology->levels[0][0], "Backend", "NetBSD");
   hwloc_add_uname_info(topology, NULL);
   return 0;
 }
 
 void
-hwloc_set_netbsd_hooks(struct hwloc_binding_hooks *hooks __hwloc_attribute_unused,
-                        struct hwloc_topology_support *support __hwloc_attribute_unused)
+hwloc_set_netbsd_hooks(struct hwloc_binding_hooks *hooks,
+		       struct hwloc_topology_support *support __hwloc_attribute_unused)
 {
   hooks->set_proc_cpubind = hwloc_netbsd_set_proc_cpubind;
   hooks->get_proc_cpubind = hwloc_netbsd_get_proc_cpubind;
@@ -186,13 +184,15 @@ hwloc_set_netbsd_hooks(struct hwloc_binding_hooks *hooks __hwloc_attribute_unuse
 }
 
 static struct hwloc_backend *
-hwloc_netbsd_component_instantiate(struct hwloc_disc_component *component,
+hwloc_netbsd_component_instantiate(struct hwloc_topology *topology,
+				   struct hwloc_disc_component *component,
+				   unsigned excluded_phases __hwloc_attribute_unused,
 				   const void *_data1 __hwloc_attribute_unused,
 				   const void *_data2 __hwloc_attribute_unused,
 				   const void *_data3 __hwloc_attribute_unused)
 {
   struct hwloc_backend *backend;
-  backend = hwloc_backend_alloc(component);
+  backend = hwloc_backend_alloc(topology, component);
   if (!backend)
     return NULL;
   backend->discover = hwloc_look_netbsd;
@@ -200,9 +200,9 @@ hwloc_netbsd_component_instantiate(struct hwloc_disc_component *component,
 }
 
 static struct hwloc_disc_component hwloc_netbsd_disc_component = {
-  HWLOC_DISC_COMPONENT_TYPE_CPU,
   "netbsd",
-  HWLOC_DISC_COMPONENT_TYPE_GLOBAL,
+  HWLOC_DISC_PHASE_CPU,
+  HWLOC_DISC_PHASE_GLOBAL,
   hwloc_netbsd_component_instantiate,
   50,
   1,

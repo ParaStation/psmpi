@@ -1,4 +1,4 @@
-# Copyright © 2015-2017 Inria.  All rights reserved.
+# Copyright © 2015-2020 Inria.  All rights reserved.
 # See COPYING in top-level directory.
 
 AM_CFLAGS = $(HWLOC_CFLAGS)
@@ -7,7 +7,13 @@ AM_LDFLAGS = $(HWLOC_LDFLAGS)
 
 # Add your expected output file here.
 # By default, it shows the output of `lstopo --of xml -'.
+#
+# XML outputs shouldn't have gp_index attributes to avoid spurious errors.
+# Remove them with: sed -r -e 's/ gp_index=\"[0-9]+\"//' -i foo.outpu
 cpuid_outputs = \
+	Intel-CPUID.1A-1p2co2t.output \
+	Intel-CPUID.1F-Qemu-2p3d3c2t.output \
+	Intel-CascadeLake-2xXeon6230.output \
 	Intel-Skylake-2xXeon6140.output \
 	Intel-Broadwell-2xXeon-E5-2650Lv4.output \
 	Intel-Haswell-2xXeon-E5-2680v3.output \
@@ -26,6 +32,7 @@ cpuid_outputs = \
 	AMD-K10-Istanbul-8xOpteron-8439SE.output \
 	AMD-K8-SantaRosa-2xOpteron-2218.output \
 	AMD-K8-SledgeHammer-2xOpteron-250.output \
+	Hygon-Dhyana-32cores.output \
 	Zhaoxin-CentaurHauls-ZXD-4600.output \
 	Zhaoxin-Shanghai-KaiSheng-ZXC+-FC1081.output
 
@@ -34,6 +41,9 @@ cpuid_outputs = \
 # Each output `xyz.output' must have a corresponding tarball `xyz.tar.bz2'
 # specifying which tarball to use
 cpuid_tarballs = \
+	Intel-CPUID.1A-1p2co2t.tar.bz2 \
+	Intel-CPUID.1F-Qemu-2p3d3c2t.tar.bz2 \
+	Intel-CascadeLake-2xXeon6230.tar.bz2 \
 	Intel-Skylake-2xXeon6140.tar.bz2 \
 	Intel-Broadwell-2xXeon-E5-2650Lv4.tar.bz2 \
 	Intel-Haswell-2xXeon-E5-2680v3.tar.bz2 \
@@ -52,16 +62,17 @@ cpuid_tarballs = \
 	AMD-K10-Istanbul-8xOpteron-8439SE.tar.bz2 \
 	AMD-K8-SantaRosa-2xOpteron-2218.tar.bz2 \
 	AMD-K8-SledgeHammer-2xOpteron-250.tar.bz2 \
+	Hygon-Dhyana-32cores.tar.bz2 \
 	Zhaoxin-CentaurHauls-ZXD-4600.tar.bz2 \
 	Zhaoxin-Shanghai-KaiSheng-ZXC+-FC1081.tar.bz2
 
 # Each output `xyz.output' may have a corresponding `xyz.options'
 # file modifying the behavior of lstopo
-cpuid_options = 
+cpuid_options =
 
 # Each output `xyz.output' may have a corresponding `xyz.env'
 # modifying the environment of lstopo
-cpuid_envs = 
+cpuid_envs = Intel-CPUID.1A-1p2co2t.env
 
 if HWLOC_HAVE_BUNZIPP
 TESTS = $(cpuid_outputs)

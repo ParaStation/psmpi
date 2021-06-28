@@ -1,9 +1,9 @@
 /*
- * Copyright © 2011-2017 Inria.  All rights reserved.
+ * Copyright © 2011-2021 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <hwloc.h>
+#include "hwloc.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -14,7 +14,7 @@
 int main(void)
 {
   hwloc_topology_t topology;
-  hwloc_obj_t obj;
+  hwloc_obj_t obj, group, saved, res, root;
   hwloc_obj_t objs[32];
   hwloc_uint64_t values[32*32];
   int depth;
@@ -22,6 +22,114 @@ int main(void)
   unsigned width;
   unsigned i, j;
   int err;
+
+  /* testing of adding specific groups */
+
+  hwloc_topology_init(&topology);
+  hwloc_topology_set_synthetic(topology, "pack:4 [numa] pu:4");
+  hwloc_topology_load(topology);
+  root = hwloc_get_root_obj(topology);
+  assert(hwloc_topology_get_depth(topology) == 3);
+  /* insert a group identical to root, will be merged */
+  group = hwloc_topology_alloc_group_object(topology);
+  assert(group);
+  group->cpuset = hwloc_bitmap_dup(root->cpuset);
+  res = hwloc_topology_insert_group_object(topology, group);
+  assert(res);
+  assert(res == root);
+  assert(hwloc_topology_get_depth(topology) == 3);
+  /* insert a group identical to a package, will be merged */
+  group = hwloc_topology_alloc_group_object(topology);
+  assert(group);
+  obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PACKAGE, 1);
+  assert(obj);
+  group->cpuset = hwloc_bitmap_dup(obj->cpuset);
+  res = hwloc_topology_insert_group_object(topology, group);
+  assert(res);
+  assert(res == obj);
+  assert(hwloc_topology_get_depth(topology) == 3);
+  /* insert a invalid group of two PUs in different packages, will fail */
+  group = hwloc_topology_alloc_group_object(topology);
+  assert(group);
+  obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PU, 1);
+  assert(obj);
+  group->cpuset = hwloc_bitmap_dup(obj->cpuset);
+  obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PU, 12);
+  assert(obj);
+  hwloc_bitmap_or(group->cpuset, group->cpuset, obj->cpuset);
+  res = hwloc_topology_insert_group_object(topology, group);
+  assert(!res);
+  assert(hwloc_topology_get_depth(topology) == 3);
+  /* insert a group of two packages with high kind (so that it gets merged later) */
+  group = hwloc_topology_alloc_group_object(topology);
+  assert(group);
+  obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PACKAGE, 1);
+  assert(obj);
+  group->cpuset = hwloc_bitmap_dup(obj->cpuset);
+  obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PACKAGE, 2);
+  assert(obj);
+  hwloc_bitmap_or(group->cpuset, group->cpuset, obj->cpuset);
+  group->attr->group.kind = (unsigned)-1;
+  res = hwloc_topology_insert_group_object(topology, group);
+  assert(res == group);
+  saved = group;
+  assert(hwloc_topology_get_depth(topology) == 4);
+  /* insert same group with lower kind to replace the previous one */
+  group = hwloc_topology_alloc_group_object(topology);
+  assert(group);
+  obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PACKAGE, 1);
+  assert(obj);
+  group->cpuset = hwloc_bitmap_dup(obj->cpuset);
+  obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PACKAGE, 2);
+  assert(obj);
+  hwloc_bitmap_or(group->cpuset, group->cpuset, obj->cpuset);
+  group->attr->group.kind = 0;
+  res = hwloc_topology_insert_group_object(topology, group);
+  assert(res == saved); /* the core should move the contents of this new group into a previous one */
+  assert(res != group);
+  assert(hwloc_topology_get_depth(topology) == 4);
+  /* insert yet another same group with higher kind, it will be dropped in favor of the previous-previous one */
+  group = hwloc_topology_alloc_group_object(topology);
+  assert(group);
+  obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PACKAGE, 1);
+  assert(obj);
+  group->cpuset = hwloc_bitmap_dup(obj->cpuset);
+  obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PACKAGE, 2);
+  assert(obj);
+  hwloc_bitmap_or(group->cpuset, group->cpuset, obj->cpuset);
+  group->attr->group.kind = (unsigned)-1;
+  res = hwloc_topology_insert_group_object(topology, group);
+  assert(res == saved);
+  assert(res != group);
+  assert(hwloc_topology_get_depth(topology) == 4);
+  /* insert a conflict group of two packages by nodeset, will fail */
+  group = hwloc_topology_alloc_group_object(topology);
+  assert(group);
+  obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PACKAGE, 0);
+  assert(obj);
+  group->nodeset = hwloc_bitmap_dup(obj->nodeset);
+  obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PACKAGE, 2);
+  assert(obj);
+  hwloc_bitmap_or(group->nodeset, group->nodeset, obj->nodeset);
+  res = hwloc_topology_insert_group_object(topology, group);
+  assert(!res);
+  /* insert a group of three packages by nodeset */
+  group = hwloc_topology_alloc_group_object(topology);
+  assert(group);
+  obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PACKAGE, 0);
+  assert(obj);
+  group->nodeset = hwloc_bitmap_dup(obj->nodeset);
+  obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PACKAGE, 1);
+  assert(obj);
+  hwloc_bitmap_or(group->nodeset, group->nodeset, obj->nodeset);
+  obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PACKAGE, 2);
+  assert(obj);
+  hwloc_bitmap_or(group->nodeset, group->nodeset, obj->nodeset);
+  res = hwloc_topology_insert_group_object(topology, group);
+  assert(res == group);
+  assert(hwloc_topology_get_depth(topology) == 5);
+
+  hwloc_topology_destroy(topology);
 
   /* intensive testing of two grouping cases (2+1 and 2+2+1) */
 
@@ -31,7 +139,6 @@ int main(void)
   hwloc_topology_load(topology);
   /* 3 group at depth 1 */
   depth = hwloc_get_type_depth(topology, HWLOC_OBJ_GROUP);
-printf("depth %d\n", depth);
   assert(depth == 1);
   width = hwloc_get_nbobjs_by_depth(topology, 1);
   assert(width == 3);
@@ -189,7 +296,7 @@ printf("depth %d\n", depth);
   /* play with accuracy */
   values[0] = 29; /* diagonal, instead of 3 (0.0333% error) */
   values[1] = 51; values[16] = 52; /* smallest group, instead of 5 (0.02% error) */
-  putenv("HWLOC_GROUPING_ACCURACY=0.1"); /* ok */
+  putenv((char *) "HWLOC_GROUPING_ACCURACY=0.1"); /* ok */
   hwloc_topology_init(&topology);
   hwloc_topology_set_synthetic(topology, "node:2 core:8 pu:1");
   hwloc_topology_load(topology);
@@ -202,7 +309,7 @@ printf("depth %d\n", depth);
   assert(depth == 6);
   hwloc_topology_destroy(topology);
 
-  putenv("HWLOC_GROUPING_ACCURACY=try"); /* ok */
+  putenv((char *) "HWLOC_GROUPING_ACCURACY=try"); /* ok */
   hwloc_topology_init(&topology);
   hwloc_topology_set_synthetic(topology, "node:2 core:8 pu:1");
   hwloc_topology_load(topology);
@@ -227,7 +334,7 @@ printf("depth %d\n", depth);
   assert(depth == 4);
   hwloc_topology_destroy(topology);
 
-  putenv("HWLOC_GROUPING_ACCURACY=0.01"); /* too small, cannot group */
+  putenv((char *) "HWLOC_GROUPING_ACCURACY=0.01"); /* too small, cannot group */
   hwloc_topology_init(&topology);
   hwloc_topology_set_synthetic(topology, "node:2 core:8 pu:1");
   hwloc_topology_load(topology);
@@ -240,7 +347,7 @@ printf("depth %d\n", depth);
   assert(depth == 4);
   hwloc_topology_destroy(topology);
 
-  putenv("HWLOC_GROUPING_ACCURACY=0"); /* full accuracy, cannot group */
+  putenv((char *) "HWLOC_GROUPING_ACCURACY=0"); /* full accuracy, cannot group */
   hwloc_topology_init(&topology);
   hwloc_topology_set_synthetic(topology, "node:2 core:8 pu:1");
   hwloc_topology_load(topology);

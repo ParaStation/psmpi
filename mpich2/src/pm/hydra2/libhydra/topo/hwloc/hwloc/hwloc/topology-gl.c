@@ -1,16 +1,16 @@
 /*
  * Copyright © 2012-2013 Blue Brain Project, BBP/EPFL. All rights reserved.
- * Copyright © 2012-2017 Inria.  All rights reserved.
+ * Copyright © 2012-2019 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <private/autogen/config.h>
-#include <hwloc.h>
-#include <hwloc/plugins.h>
+#include "private/autogen/config.h"
+#include "hwloc.h"
+#include "hwloc/plugins.h"
 
 /* private headers allowed for convenience because this plugin is built within hwloc */
-#include <private/misc.h>
-#include <private/debug.h>
+#include "private/misc.h"
+#include "private/debug.h"
 
 #include <stdarg.h>
 #include <errno.h>
@@ -22,12 +22,20 @@
 #define HWLOC_GL_SCREEN_MAX 10
 
 static int
-hwloc_gl_discover(struct hwloc_backend *backend)
+hwloc_gl_discover(struct hwloc_backend *backend, struct hwloc_disc_status *dstatus)
 {
+  /*
+   * This backend uses the underlying OS.
+   * However we don't enforce topology->is_thissystem so that
+   * we may still force use this backend when debugging with !thissystem.
+   */
+
   struct hwloc_topology *topology = backend->topology;
   enum hwloc_type_filter_e filter;
   unsigned i;
   int err;
+
+  assert(dstatus->phase == HWLOC_DISC_PHASE_IO);
 
   hwloc_topology_get_type_filter(topology, HWLOC_OBJ_OS_DEVICE, &filter);
   if (filter == HWLOC_TYPE_FILTER_KEEP_NONE)
@@ -35,7 +43,7 @@ hwloc_gl_discover(struct hwloc_backend *backend)
 
   for (i = 0; i < HWLOC_GL_SERVER_MAX; ++i) {
     Display* display;
-    char displayName[10];
+    char displayName[12];
     int opcode, event, error;
     unsigned j;
 
@@ -119,9 +127,7 @@ hwloc_gl_discover(struct hwloc_backend *backend)
       if (productname)
 	hwloc_obj_add_info(osdev, "GPUModel", productname);
 
-      parent = hwloc_pcidisc_find_by_busid(topology, (unsigned)nv_ctrl_pci_domain, (unsigned)nv_ctrl_pci_bus, (unsigned)nv_ctrl_pci_device, (unsigned)nv_ctrl_pci_func);
-      if (!parent)
-	parent = hwloc_pcidisc_find_busid_parent(topology, (unsigned)nv_ctrl_pci_domain, (unsigned)nv_ctrl_pci_bus, (unsigned)nv_ctrl_pci_device, (unsigned)nv_ctrl_pci_func);
+      parent = hwloc_pci_find_parent_by_busid(topology, (unsigned)nv_ctrl_pci_domain, (unsigned)nv_ctrl_pci_bus, (unsigned)nv_ctrl_pci_device, (unsigned)nv_ctrl_pci_func);
       if (!parent)
 	parent = hwloc_get_root_obj(topology);
 
@@ -138,14 +144,16 @@ hwloc_gl_discover(struct hwloc_backend *backend)
 }
 
 static struct hwloc_backend *
-hwloc_gl_component_instantiate(struct hwloc_disc_component *component,
+hwloc_gl_component_instantiate(struct hwloc_topology *topology,
+			       struct hwloc_disc_component *component,
+			       unsigned excluded_phases __hwloc_attribute_unused,
 			       const void *_data1 __hwloc_attribute_unused,
 			       const void *_data2 __hwloc_attribute_unused,
 			       const void *_data3 __hwloc_attribute_unused)
 {
   struct hwloc_backend *backend;
 
-  backend = hwloc_backend_alloc(component);
+  backend = hwloc_backend_alloc(topology, component);
   if (!backend)
     return NULL;
   backend->discover = hwloc_gl_discover;
@@ -153,9 +161,9 @@ hwloc_gl_component_instantiate(struct hwloc_disc_component *component,
 }
 
 static struct hwloc_disc_component hwloc_gl_disc_component = {
-  HWLOC_DISC_COMPONENT_TYPE_MISC,
   "gl",
-  HWLOC_DISC_COMPONENT_TYPE_GLOBAL,
+  HWLOC_DISC_PHASE_IO,
+  HWLOC_DISC_PHASE_GLOBAL,
   hwloc_gl_component_instantiate,
   10, /* after pci */
   1,

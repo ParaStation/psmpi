@@ -68,9 +68,41 @@
    don't. */
 #undef HAVE_DECL_GETPROGNAME
 
+/* Define to 1 if you have the declaration of `HW_MEMSIZE', and to 0 if you
+   don't. */
+#undef HAVE_DECL_HW_MEMSIZE
+
+/* Define to 1 if you have the declaration of `HW_MEMSIZE64', and to 0 if you
+   don't. */
+#undef HAVE_DECL_HW_MEMSIZE64
+
 /* Define to 1 if you have the declaration of `HW_NCPU', and to 0 if you
    don't. */
 #undef HAVE_DECL_HW_NCPU
+
+/* Define to 1 if you have the declaration of `HW_PHYSMEM', and to 0 if you
+   don't. */
+#undef HAVE_DECL_HW_PHYSMEM
+
+/* Define to 1 if you have the declaration of `HW_PHYSMEM64', and to 0 if you
+   don't. */
+#undef HAVE_DECL_HW_PHYSMEM64
+
+/* Define to 1 if you have the declaration of `HW_REALMEM', and to 0 if you
+   don't. */
+#undef HAVE_DECL_HW_REALMEM
+
+/* Define to 1 if you have the declaration of `HW_REALMEM64', and to 0 if you
+   don't. */
+#undef HAVE_DECL_HW_REALMEM64
+
+/* Define to 1 if you have the declaration of `HW_USERMEM', and to 0 if you
+   don't. */
+#undef HAVE_DECL_HW_USERMEM
+
+/* Define to 1 if you have the declaration of `HW_USERMEM64', and to 0 if you
+   don't. */
+#undef HAVE_DECL_HW_USERMEM64
 
 /* Define to 1 if you have the declaration of `lgrp_latency_cookie', and to 0
    if you don't. */
@@ -242,6 +274,9 @@
 /* Define to 1 if the system has the type `LOGICAL_PROCESSOR_RELATIONSHIP'. */
 #undef HAVE_LOGICAL_PROCESSOR_RELATIONSHIP
 
+/* Define to 1 if you have the <mach_init.h> header file. */
+#undef HAVE_MACH_INIT_H
+
 /* Define to 1 if you have the <mach/mach_host.h> header file. */
 #undef HAVE_MACH_MACH_HOST_H
 
@@ -327,6 +362,9 @@
 /* Define to 1 if the system has the type `RelationProcessorPackage'. */
 #undef HAVE_RELATIONPROCESSORPACKAGE
 
+/* Define to 1 if you have the <rocm_smi/rocm_smi.h> header file. */
+#undef HAVE_ROCM_SMI_ROCM_SMI_H
+
 /* Define to 1 if you have the <sched.h> header file. */
 #undef HAVE_SCHED_H
 
@@ -398,6 +436,9 @@
 /* Define to 1 if you have the <sys/cpuset.h> header file. */
 #undef HAVE_SYS_CPUSET_H
 
+/* Define to 1 if you have the <sys/domainset.h> header file. */
+#undef HAVE_SYS_DOMAINSET_H
+
 /* Define to 1 if you have the <sys/lgrp_user.h> header file. */
 #undef HAVE_SYS_LGRP_USER_H
 
@@ -415,6 +456,9 @@
 
 /* Define to 1 if you have the <sys/sysctl.h> header file. */
 #undef HAVE_SYS_SYSCTL_H
+
+/* Define to 1 if you have the <sys/thr.h> header file. */
+#undef HAVE_SYS_THR_H
 
 /* Define to 1 if you have the <sys/time.h> header file. */
 #undef HAVE_SYS_TIME_H
@@ -449,14 +493,8 @@
 /* Define to 1 if you have the <valgrind/valgrind.h> header file. */
 #undef HAVE_VALGRIND_VALGRIND_H
 
-/* Define to 1 if you have the <X11/keysym.h> header file. */
-#undef HAVE_X11_KEYSYM_H
-
 /* Define to 1 if you have the <X11/Xlib.h> header file. */
 #undef HAVE_X11_XLIB_H
-
-/* Define to 1 if you have the <X11/Xutil.h> header file. */
-#undef HAVE_X11_XUTIL_H
 
 /* define if the compiler defines __FUNCTION__ */
 #undef HAVE__FUNCTION__
@@ -484,6 +522,9 @@
 
 /* Define to 1 on *FREEBSD */
 #undef HWLOC_FREEBSD_SYS
+
+/* Define to 1 if --enable-32bits-pci-domain is called. */
+#undef HWLOC_HAVE_32BITS_PCI_DOMAIN
 
 /* Whether your compiler has __attribute__ or not */
 #undef HWLOC_HAVE_ATTRIBUTE
@@ -551,6 +592,10 @@
 /* Define to 1 if you have the `clzl' function. */
 #undef HWLOC_HAVE_CLZL
 
+/* Define to 1 if snprintf supports NULL output buffer and returns the correct
+   length on truncation */
+#undef HWLOC_HAVE_CORRECT_SNPRINTF
+
 /* Define to 1 if the CPU_SET macro works */
 #undef HWLOC_HAVE_CPU_SET
 
@@ -596,6 +641,12 @@
 /* Define to 1 if you have the `flsl' function. */
 #undef HWLOC_HAVE_FLSL
 
+/* Define to 1 if gcc -Wcast-function-type is supported and enabled */
+#undef HWLOC_HAVE_GCC_W_CAST_FUNCTION_TYPE
+
+/* Define to 1 if gcc -Wmissing-field-initializers is supported and enabled */
+#undef HWLOC_HAVE_GCC_W_MISSING_FIELD_INITIALIZERS
+
 /* Define to 1 if you have the GL module components. */
 #undef HWLOC_HAVE_GL
 
@@ -605,12 +656,15 @@
 /* Define to 1 if you have the `libxml2' library. */
 #undef HWLOC_HAVE_LIBXML2
 
-/* Define to 1 if building the Linux I/O component */
+/* Define to 1 for I/O discovery in the Linux component */
 #undef HWLOC_HAVE_LINUXIO
 
 /* Define to 1 if enabling Linux-specific PCI discovery in the Linux I/O
    component */
 #undef HWLOC_HAVE_LINUXPCI
+
+/* Define to 1 if the hwloc library should use ltdl for loading plugins */
+#undef HWLOC_HAVE_LTDL
 
 /* Define to 1 if you have the `NVML' library. */
 #undef HWLOC_HAVE_NVML
@@ -632,6 +686,9 @@
 /* Define to 1 if pthread mutexes are available */
 #undef HWLOC_HAVE_PTHREAD_MUTEX
 
+/* Define to 1 if you have the `RSMI' library. */
+#undef HWLOC_HAVE_RSMI
+
 /* Define to 1 if glibc provides a prototype of sched_setaffinity() */
 #undef HWLOC_HAVE_SCHED_SETAFFINITY
 
@@ -643,9 +700,6 @@
 
 /* Define to 1 if you have the `windows.h' header. */
 #undef HWLOC_HAVE_WINDOWS_H
-
-/* Define to 1 if X11 headers including Xutil.h and keysym.h are available. */
-#undef HWLOC_HAVE_X11_KEYSYM
 
 /* Define to 1 if you have x86 cpuid */
 #undef HWLOC_HAVE_X86_CPUID

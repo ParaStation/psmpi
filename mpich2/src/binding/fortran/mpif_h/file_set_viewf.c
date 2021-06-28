@@ -272,12 +272,12 @@ FORT_DLL_SPEC void FORT_CALL mpi_file_set_view_ ( MPI_Fint *v1, MPI_Offset *v2, 
      int  li;
         while (*p == ' ' && p > v5) p--;
         p++;
-        p5 = (char *)MPL_malloc( p-v5 + 1, MPL_MEM_OTHER );
+        p5 = (char *)malloc(p-v5 + 1);
         for (li=0; li<(p-v5); li++) { p5[li] = v5[li]; }
         p5[li] = 0; 
     }
     *ierr = MPI_File_set_view( MPI_File_f2c(*v1), (MPI_Offset)*v2, (MPI_Datatype)(*v3), (MPI_Datatype)(*v4), p5, (MPI_Info)(*v6) );
-    MPL_free( p5 );
+    free( p5 );
 #else
 *ierr = MPI_ERR_INTERN;
 #endif

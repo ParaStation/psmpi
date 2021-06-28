@@ -6,6 +6,7 @@
  */
 #ifndef ROMIOCONF_H_INCLUDED
 #define ROMIOCONF_H_INCLUDED
+#include <mplconfig.h>
 
 
 /* BGQ platform */
@@ -69,9 +70,6 @@
 
 /* Define to 1 if you have the `daos' library (-ldaos). */
 #undef HAVE_LIBDAOS
-
-/* Define to 1 if you have the `daos_common' library (-ldaos_common). */
-#undef HAVE_LIBDAOS_COMMON
 
 /* Define to 1 if you have the `dfs' library (-ldfs). */
 #undef HAVE_LIBDFS

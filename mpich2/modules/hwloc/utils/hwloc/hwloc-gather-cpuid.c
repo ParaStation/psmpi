@@ -1,11 +1,10 @@
 /*
- * Copyright © 2015-2018 Inria.  All rights reserved.
+ * Copyright © 2015-2021 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <private/autogen/config.h>
-#include <hwloc.h>
-
+#include "private/autogen/config.h"
+#include "hwloc.h"
 #include "misc.h"
 
 #include <stdio.h>
@@ -13,7 +12,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#include <private/cpuid-x86.h>
+#include "private/cpuid-x86.h"
 
 #if defined(HWLOC_WIN_SYS) && !defined(__CYGWIN__)
 #include <direct.h>
@@ -27,6 +26,8 @@
 #define W_OK 02
 #endif
 #endif
+
+static int verbose = 1;
 
 static void dump_one_cpuid(FILE *output, unsigned *regs, unsigned inregmask)
 {
@@ -48,7 +49,6 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
   unsigned highest_cpuid, highest_ext_cpuid;
   unsigned i;
   int has_intel_x2apic = 0;
-  int has_intel_pconfig = 0;
   int has_intel_sgx = 0;
   int has_amd_topoext = 0;
   FILE *output;
@@ -69,10 +69,12 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
       fprintf(stderr, "Cannot open file '%s' for writing: %s\n", path, strerror(errno));
       return -1;
     }
-    printf("Gathering CPUID of PU P#%u in path %s ...\n", pu->os_index, path);
+    if (verbose)
+      printf("Gathering CPUID of PU P#%u in path %s ...\n", pu->os_index, path);
   } else {
     output = stdout;
-    printf("Gathering CPUID of PU P#%u on stdout ...\n", pu->os_index);
+    if (verbose)
+      printf("Gathering CPUID of PU P#%u on stdout ...\n", pu->os_index);
   }
 
   fprintf(output, "# mask e[abcd]x => e[abcd]x\n");
@@ -114,6 +116,7 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
       regs[0] = 0x4; regs[2] = i;
       dump_one_cpuid(output, regs, 0x5);
       if (!(regs[0] & 0x1f))
+	/* invalid, no more caches */
 	break;
     }
   }
@@ -135,8 +138,6 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
     unsigned max;
     regs[0] = 0x7; regs[2] = 0;
     dump_one_cpuid(output, regs, 0x5);
-    if (regs[3] & (1<<18))
-      has_intel_pconfig = 1;
     if (regs[1] & (1<<2))
       has_intel_sgx = 1;
     max = regs[0];
@@ -163,7 +164,8 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
     for(i=0; ; i++) {
       regs[0] = 0xb; regs[2] = i;
       dump_one_cpuid(output, regs, 0x5);
-      if (!regs[0] && !regs[1])
+      if (!(regs[2] & 0xff00))
+	/* invalid, no more levels */
 	break;
     }
   }
@@ -194,7 +196,7 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
     }
   }
 
-  /* 0xf = Platform/L3 QoS enumeration on Intel ; Reserved on AMD */
+  /* 0xf = Platform/L3 QoS enumeration on Intel and AMD */
   if (highest_cpuid >= 0xf) {
     regs[0] = 0xf; regs[2] = 0;
     dump_one_cpuid(output, regs, 0x5);
@@ -202,7 +204,7 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
     dump_one_cpuid(output, regs, 0x5);
   }
 
-  /* 0x10 = Platform/L3 QoS enforcement enumeration on Intel ; Reserved on AMD */
+  /* 0x10 = Platform/L3 QoS enforcement enumeration on Intel and AMD */
   if (highest_cpuid >= 0x10) {
     /* Intel Resource Director Technology (Intel RDT) Allocation */
     regs[0] = 0x10; regs[2] = 0;
@@ -228,6 +230,7 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
       regs[0] = 0x12; regs[2] = i;
       dump_one_cpuid(output, regs, 0x5);
       if (!(regs[0] & 0xf))
+	/* invalid, no more subleaves */
 	break;
     }
   }
@@ -258,9 +261,11 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
     regs[0] = 0x17; regs[2] = 0;
     dump_one_cpuid(output, regs, 0x5);
     maxsocid = regs[0];
-    for(i=1; i<=maxsocid; i++) {
-      regs[0] = 0x17; regs[2] = i;
-      dump_one_cpuid(output, regs, 0x5);
+    if (maxsocid >= 3) {
+      for(i=1; i<=maxsocid; i++) {
+	regs[0] = 0x17; regs[2] = i;
+	dump_one_cpuid(output, regs, 0x5);
+      }
     }
   }
 
@@ -272,26 +277,35 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
     max = regs[0];
     for(i=1; i<=max; i++) {
       regs[0] = 0x18; regs[2] = i;
+      regs[3] = 0; /* mark as invalid in case the cpuid call doesn't do anything */
       dump_one_cpuid(output, regs, 0x5);
+      if (!(regs[3] & 0x1f))
+	/* invalid, but it doesn't mean the next subleaf will be invalid */
+        continue;
     }
   }
 
-  /* 0x1b = PCONFIG Information on Intel ; Reserved on AMD */
-  if (has_intel_pconfig && highest_cpuid >= 0x1b) {
-    for(i=0; ; i++) {
-      regs[0] = 0x1b; regs[2] = i;
-      dump_one_cpuid(output, regs, 0x5);
-      if (!(regs[0] & 0xfff))
-	break;
-    }
+  /* 0x19 = Key Locker Leaf on Intel ; Reserved on AMD */
+  if (highest_cpuid >= 0x19) {
+    regs[0] = 0x19;
+    dump_one_cpuid(output, regs, 0x1);
   }
+
+  /* 0x1a = Hybrid Information Enumeration Leaf on Intel ; Reserved on AMD */
+  if (highest_cpuid >= 0x1a) {
+    regs[0] = 0x1a; regs[2] = 0;
+    dump_one_cpuid(output, regs, 0x5);
+  }
+
+  /* 0x1b = (Removed) PCONFIG Information on Intel ; Reserved on AMD */
 
   /* 0x1f = V2 Extended Topology Enumeration on Intel ; Reserved on AMD */
   if (highest_cpuid >= 0x1f) {
     for(i=0; ; i++) {
       regs[0] = 0x1f; regs[2] = i;
       dump_one_cpuid(output, regs, 0x5);
-      if (!regs[0] && !regs[1])
+      if (!(regs[2] & 0xff00))
+	/* invalid, no more levels */
 	break;
     }
   }
@@ -365,6 +379,12 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
     dump_one_cpuid(output, regs, 0x1);
   }
 
+  /* 0x8000001a = Performance Optimization Identifiers on AMD ; Reserved on Intel */
+  if (highest_ext_cpuid >= 0x8000001a) {
+    regs[0] = 0x8000001a;
+    dump_one_cpuid(output, regs, 0x1);
+  }
+
   /* 0x8000001b = IBS on AMD ; Reserved on Intel */
   if (highest_ext_cpuid >= 0x8000001b) {
     regs[0] = 0x8000001b;
@@ -383,6 +403,7 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
       regs[0] = 0x8000001d; regs[2] = i;
       dump_one_cpuid(output, regs, 0x5);
       if (!(regs[0] & 0x1f))
+	/* no such cache, no more cache */
 	break;
     }
   }
@@ -397,6 +418,14 @@ static int dump_one_proc(hwloc_topology_t topo, hwloc_obj_t pu, const char *path
   if (highest_ext_cpuid >= 0x8000001f) {
     regs[0] = 0x8000001f;
     dump_one_cpuid(output, regs, 0x1);
+  }
+
+  /* 0x80000020 = Platform QoS Enforcement for Memory Bandwidth */
+  if (highest_ext_cpuid >= 0x80000020) {
+    regs[0] = 0x80000020; regs[2] = 0;
+    dump_one_cpuid(output, regs, 0x5);
+    regs[0] = 0x80000020; regs[2] = 1;
+    dump_one_cpuid(output, regs, 0x5);
   }
 
   if (highest_ext_cpuid > 0x8000001f) {
@@ -416,8 +445,9 @@ void usage(const char *callname, FILE *where)
   fprintf(where, "Usage : %s [ options ] ... [ outdir ]\n", callname);
   fprintf(where, "  outdir is an optional output directory instead of cpuid/\n");
   fprintf(where, "Options:\n");
-  fprintf(where, "  -c <n>     Only gather for logical processor with logical index <n>\n");
-  fprintf(where, "  -h --help  Show this usage\n");
+  fprintf(where, "  -c <n>       Only gather for logical processor with logical index <n>\n");
+  fprintf(where, "  -s --silent  Do not show verbose messages\n");
+  fprintf(where, "  -h --help    Show this usage\n");
 }
 
 int main(int argc, const char * const argv[])
@@ -448,10 +478,16 @@ int main(int argc, const char * const argv[])
       idx = atoi(argv[1]);
       argc -= 2;
       argv += 2;
+    } else if (argc >= 1 && (!strcmp(argv[0], "-s") || !strcmp(argv[0], "--silent"))) {
+      verbose--;
+      argc--;
+      argv++;
+    } else if (!strcmp(argv[0], "-h") || !strcmp(argv[0], "--help")) {
+      usage(callname, stdout);
+      goto out;
     } else {
       usage(callname, stderr);
-      if (strcmp(argv[0], "-h") && strcmp(argv[0], "--help"))
-	ret = EXIT_FAILURE;
+      ret = EXIT_FAILURE;
       goto out;
     }
   }
@@ -465,7 +501,12 @@ int main(int argc, const char * const argv[])
 
   hwloc_topology_init(&topo);
   hwloc_topology_set_all_types_filter(topo, HWLOC_TYPE_FILTER_KEEP_NONE);
-  hwloc_topology_load(topo);
+  err = hwloc_topology_load(topo);
+  if (err < 0) {
+    fprintf(stderr, "Failed to load topology\n");
+    ret = EXIT_FAILURE;
+    goto out;
+  }
 
   if (!hwloc_topology_is_thissystem(topo)) {
     fprintf(stderr, "%s must run on the current system topology, while this topology doesn't come from this system.\n", callname);
@@ -474,7 +515,8 @@ int main(int argc, const char * const argv[])
   }
 
   if (!strcmp(basedir, "-")) {
-    printf("Gathering on stdout ...\n");
+    if (verbose)
+      printf("Gathering on stdout ...\n");
     if (idx == (unsigned) -1) {
       fprintf(stderr, "Cannot gather multiple PUs on stdout.\n");
       ret = EXIT_FAILURE;
@@ -491,7 +533,8 @@ int main(int argc, const char * const argv[])
 	goto out_with_topo;
       }
     }
-    printf("Gathering in directory %s ...\n", basedir);
+    if (verbose)
+      printf("Gathering in directory %s ...\n", basedir);
 
     pathlen = strlen(basedir) + 20; /* for '/pu%u' or '/hwloc-cpuid-info' */
     path = malloc(pathlen);
@@ -512,7 +555,8 @@ int main(int argc, const char * const argv[])
     if (file) {
       fprintf(file, "Architecture: x86\n");
       fclose(file);
-      printf("Summary written to %s\n", path);
+      if (verbose)
+	printf("Summary written to %s\n", path);
     } else {
       fprintf(stderr, "Failed to open summary file '%s' for writing: %s\n", path, strerror(errno));
     }
@@ -529,9 +573,10 @@ int main(int argc, const char * const argv[])
     }
   }
 
-  printf("\n"
-	 "WARNING: Do not post these files on a public list or website unless you\n"
-	 "WARNING: are sure that no information about this platform is sensitive.\n");
+  if (verbose)
+    printf("\n"
+	   "WARNING: Do not post these files on a public list or website unless you\n"
+	   "WARNING: are sure that no information about this platform is sensitive.\n");
 
  out_with_path:
   free(path);

@@ -266,12 +266,12 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_get_processor_name_( char * FORT_MIXED_
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_get_processor_name_ ( char *v1 FORT_MIXED_LEN(d1), MPI_Fint *v2, MPI_Fint *ierr FORT_END_LEN(d1) ){
     char *p1;
-    p1 = (char *)MPL_malloc( d1 + 1, MPL_MEM_OTHER );
+    p1 = (char *)malloc(d1 + 1);
     *ierr = MPI_Get_processor_name( p1, v2 );
 
     if (!*ierr) {char *p = v1, *pc=p1;
         while (*pc) {*p++ = *pc++;}
         while ((p-v1) < d1) { *p++ = ' '; }
     }
-    MPL_free( p1 );
+    free( p1 );
 }

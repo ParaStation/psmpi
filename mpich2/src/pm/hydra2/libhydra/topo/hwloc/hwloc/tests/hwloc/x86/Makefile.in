@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# Copyright © 2015-2017 Inria.  All rights reserved.
+# Copyright © 2015-2020 Inria.  All rights reserved.
 # See COPYING in top-level directory.
 VPATH = @srcdir@
 am__is_gnu_make = { \
@@ -388,6 +388,7 @@ HWLOC_CPPFLAGS = @HWLOC_CPPFLAGS@
 HWLOC_CUDA_LIBS = @HWLOC_CUDA_LIBS@
 HWLOC_DIFF_U = @HWLOC_DIFF_U@
 HWLOC_DIFF_W = @HWLOC_DIFF_W@
+HWLOC_DL_LIBS = @HWLOC_DL_LIBS@
 HWLOC_EMBEDDED_CFLAGS = @HWLOC_EMBEDDED_CFLAGS@
 HWLOC_EMBEDDED_CPPFLAGS = @HWLOC_EMBEDDED_CPPFLAGS@
 HWLOC_EMBEDDED_LDADD = @HWLOC_EMBEDDED_LDADD@
@@ -397,13 +398,17 @@ HWLOC_GL_LIBS = @HWLOC_GL_LIBS@
 HWLOC_HAVE_LIBXML2 = @HWLOC_HAVE_LIBXML2@
 HWLOC_HAVE_NVML = @HWLOC_HAVE_NVML@
 HWLOC_HAVE_OPENCL = @HWLOC_HAVE_OPENCL@
+HWLOC_HAVE_RSMI = @HWLOC_HAVE_RSMI@
 HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
 HWLOC_LIBS = @HWLOC_LIBS@
 HWLOC_LIBS_PRIVATE = @HWLOC_LIBS_PRIVATE@
 HWLOC_LIBXML2_CFLAGS = @HWLOC_LIBXML2_CFLAGS@
 HWLOC_LIBXML2_LIBS = @HWLOC_LIBXML2_LIBS@
+HWLOC_LTDL_LIBS = @HWLOC_LTDL_LIBS@
 HWLOC_MS_LIB = @HWLOC_MS_LIB@
 HWLOC_MS_LIB_ARCH = @HWLOC_MS_LIB_ARCH@
+HWLOC_NUMA_CFLAGS = @HWLOC_NUMA_CFLAGS@
+HWLOC_NUMA_LIBS = @HWLOC_NUMA_LIBS@
 HWLOC_NVML_LIBS = @HWLOC_NVML_LIBS@
 HWLOC_OPENCL_CFLAGS = @HWLOC_OPENCL_CFLAGS@
 HWLOC_OPENCL_LDFLAGS = @HWLOC_OPENCL_LDFLAGS@
@@ -412,8 +417,10 @@ HWLOC_PCIACCESS_CFLAGS = @HWLOC_PCIACCESS_CFLAGS@
 HWLOC_PCIACCESS_LIBS = @HWLOC_PCIACCESS_LIBS@
 HWLOC_PLUGINS_DIR = @HWLOC_PLUGINS_DIR@
 HWLOC_PLUGINS_PATH = @HWLOC_PLUGINS_PATH@
+HWLOC_PS_LIBS = @HWLOC_PS_LIBS@
 HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
 HWLOC_REQUIRES = @HWLOC_REQUIRES@
+HWLOC_RSMI_LIBS = @HWLOC_RSMI_LIBS@
 HWLOC_TERMCAP_LIBS = @HWLOC_TERMCAP_LIBS@
 HWLOC_VERSION = @HWLOC_VERSION@
 HWLOC_W3_GENERATOR = @HWLOC_W3_GENERATOR@
@@ -548,7 +555,13 @@ AM_LDFLAGS = $(HWLOC_LDFLAGS)
 
 # Add your expected output file here.
 # By default, it shows the output of `lstopo --of xml -'.
+#
+# XML outputs shouldn't have gp_index attributes to avoid spurious errors.
+# Remove them with: sed -r -e 's/ gp_index=\"[0-9]+\"//' -i foo.outpu
 cpuid_outputs = \
+	Intel-CPUID.1A-1p2co2t.output \
+	Intel-CPUID.1F-Qemu-2p3d3c2t.output \
+	Intel-CascadeLake-2xXeon6230.output \
 	Intel-Skylake-2xXeon6140.output \
 	Intel-Broadwell-2xXeon-E5-2650Lv4.output \
 	Intel-Haswell-2xXeon-E5-2680v3.output \
@@ -567,6 +580,7 @@ cpuid_outputs = \
 	AMD-K10-Istanbul-8xOpteron-8439SE.output \
 	AMD-K8-SantaRosa-2xOpteron-2218.output \
 	AMD-K8-SledgeHammer-2xOpteron-250.output \
+	Hygon-Dhyana-32cores.output \
 	Zhaoxin-CentaurHauls-ZXD-4600.output \
 	Zhaoxin-Shanghai-KaiSheng-ZXC+-FC1081.output
 
@@ -576,6 +590,9 @@ cpuid_outputs = \
 # Each output `xyz.output' must have a corresponding tarball `xyz.tar.bz2'
 # specifying which tarball to use
 cpuid_tarballs = \
+	Intel-CPUID.1A-1p2co2t.tar.bz2 \
+	Intel-CPUID.1F-Qemu-2p3d3c2t.tar.bz2 \
+	Intel-CascadeLake-2xXeon6230.tar.bz2 \
 	Intel-Skylake-2xXeon6140.tar.bz2 \
 	Intel-Broadwell-2xXeon-E5-2650Lv4.tar.bz2 \
 	Intel-Haswell-2xXeon-E5-2680v3.tar.bz2 \
@@ -594,6 +611,7 @@ cpuid_tarballs = \
 	AMD-K10-Istanbul-8xOpteron-8439SE.tar.bz2 \
 	AMD-K8-SantaRosa-2xOpteron-2218.tar.bz2 \
 	AMD-K8-SledgeHammer-2xOpteron-250.tar.bz2 \
+	Hygon-Dhyana-32cores.tar.bz2 \
 	Zhaoxin-CentaurHauls-ZXD-4600.tar.bz2 \
 	Zhaoxin-Shanghai-KaiSheng-ZXC+-FC1081.tar.bz2
 
@@ -604,7 +622,7 @@ cpuid_options =
 
 # Each output `xyz.output' may have a corresponding `xyz.env'
 # modifying the environment of lstopo
-cpuid_envs = 
+cpuid_envs = Intel-CPUID.1A-1p2co2t.env
 @HWLOC_HAVE_BUNZIPP_TRUE@TESTS = $(cpuid_outputs)
 EXTRA_DIST = $(cpuid_outputs) $(cpuid_tarballs) $(cpuid_options) $(cpuid_envs)
 LOG_COMPILER = $(builddir)/test-topology.sh
@@ -797,6 +815,27 @@ recheck: all
 	        am__force_recheck=am--force-recheck \
 	        TEST_LOGS="$$log_list"; \
 	exit $$?
+Intel-CPUID.1A-1p2co2t.output.log: Intel-CPUID.1A-1p2co2t.output
+	@p='Intel-CPUID.1A-1p2co2t.output'; \
+	b='Intel-CPUID.1A-1p2co2t.output'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+Intel-CPUID.1F-Qemu-2p3d3c2t.output.log: Intel-CPUID.1F-Qemu-2p3d3c2t.output
+	@p='Intel-CPUID.1F-Qemu-2p3d3c2t.output'; \
+	b='Intel-CPUID.1F-Qemu-2p3d3c2t.output'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+Intel-CascadeLake-2xXeon6230.output.log: Intel-CascadeLake-2xXeon6230.output
+	@p='Intel-CascadeLake-2xXeon6230.output'; \
+	b='Intel-CascadeLake-2xXeon6230.output'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 Intel-Skylake-2xXeon6140.output.log: Intel-Skylake-2xXeon6140.output
 	@p='Intel-Skylake-2xXeon6140.output'; \
 	b='Intel-Skylake-2xXeon6140.output'; \
@@ -919,6 +958,13 @@ AMD-K8-SantaRosa-2xOpteron-2218.output.log: AMD-K8-SantaRosa-2xOpteron-2218.outp
 AMD-K8-SledgeHammer-2xOpteron-250.output.log: AMD-K8-SledgeHammer-2xOpteron-250.output
 	@p='AMD-K8-SledgeHammer-2xOpteron-250.output'; \
 	b='AMD-K8-SledgeHammer-2xOpteron-250.output'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+Hygon-Dhyana-32cores.output.log: Hygon-Dhyana-32cores.output
+	@p='Hygon-Dhyana-32cores.output'; \
+	b='Hygon-Dhyana-32cores.output'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

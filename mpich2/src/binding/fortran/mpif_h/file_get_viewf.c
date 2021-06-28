@@ -267,14 +267,14 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_view_( MPI_Fint *, MPI_Offset*
 FORT_DLL_SPEC void FORT_CALL mpi_file_get_view_ ( MPI_Fint *v1, MPI_Offset*v2, MPI_Fint *v3, MPI_Fint *v4, char *v5 FORT_MIXED_LEN(d5), MPI_Fint *ierr FORT_END_LEN(d5) ){
 #ifdef MPI_MODE_RDONLY
     char *p5;
-    p5 = (char *)MPL_malloc( d5 + 1, MPL_MEM_OTHER );
+    p5 = (char *)malloc(d5 + 1);
     *ierr = MPI_File_get_view( MPI_File_f2c(*v1), v2, (MPI_Datatype *)(v3), (MPI_Datatype *)(v4), p5 );
 
     if (!*ierr) {char *p = v5, *pc=p5;
         while (*pc) {*p++ = *pc++;}
         while ((p-v5) < d5) { *p++ = ' '; }
     }
-    MPL_free( p5 );
+    free( p5 );
 #else
 *ierr = MPI_ERR_INTERN;
 #endif

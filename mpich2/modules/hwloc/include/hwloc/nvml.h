@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2016 Inria.  All rights reserved.
+ * Copyright © 2012-2020 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
@@ -13,11 +13,11 @@
 #ifndef HWLOC_NVML_H
 #define HWLOC_NVML_H
 
-#include <hwloc.h>
-#include <hwloc/autogen/config.h>
-#include <hwloc/helper.h>
+#include "hwloc.h"
+#include "hwloc/autogen/config.h"
+#include "hwloc/helper.h"
 #ifdef HWLOC_LINUX_SYS
-#include <hwloc/linux.h>
+#include "hwloc/linux.h"
 #endif
 
 #include <nvml.h>
@@ -36,7 +36,7 @@ extern "C" {
  * @{
  */
 
-/** \brief Get the CPU set of logical processors that are physically
+/** \brief Get the CPU set of processors that are physically
  * close to NVML device \p device.
  *
  * Return the CPU set describing the locality of the NVML device \p device.

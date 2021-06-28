@@ -1,13 +1,13 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2018 Inria.  All rights reserved.
+ * Copyright © 2009-2020 Inria.  All rights reserved.
  * Copyright © 2009-2012 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <private/autogen/config.h>
-#include <hwloc.h>
+#include "private/autogen/config.h"
+#include "hwloc.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <assert.h>
 
+#include "private/debug.h" /* for HWLOC_BUILD_ASSERT() */
 #include "misc.h"
 #include "hwloc-calc.h"
 
@@ -27,6 +28,9 @@ static int show_ancestor_depth = HWLOC_TYPE_DEPTH_UNKNOWN;
 static int show_children = 0;
 static int show_descendants_depth = HWLOC_TYPE_DEPTH_UNKNOWN;
 static int show_index_prefix = 0;
+static int show_local_memory = 0;
+static int show_local_memory_flags = HWLOC_LOCAL_NUMANODE_FLAG_SMALLER_LOCALITY | HWLOC_LOCAL_NUMANODE_FLAG_LARGER_LOCALITY;
+static hwloc_memattr_id_t best_memattr_id = (hwloc_memattr_id_t) -1;
 static unsigned current_obj;
 
 void usage(const char *name, FILE *where)
@@ -42,10 +46,15 @@ void usage(const char *name, FILE *where)
   fprintf (where, "  --ancestor <type>     Only display the ancestor of the given type\n");
   fprintf (where, "  --children            Display all children\n");
   fprintf (where, "  --descendants <type>  Only display descendants of the given type\n");
+  fprintf (where, "  --local-memory        Only display the local memory nodes\n");
+  fprintf (where, "  --local-memory-flags <x>   Change flags for selecting local memory nodes\n");
+  fprintf (where, "  --best-memattr <attr> Only display the best target among the local nodes\n");
   fprintf (where, "  -n                    Prefix each line with the index of the considered object\n");
   fprintf (where, "Object filtering options:\n");
-  fprintf (where, "  --restrict <cpuset>   Restrict the topology to processors listed in <cpuset>\n");
+  fprintf (where, "  --restrict [nodeset=]<bitmap>\n");
+  fprintf (where, "                        Restrict the topology to some processors or NUMA nodes.\n");
   fprintf (where, "  --restrict binding    Restrict the topology to the current process binding\n");
+  fprintf (where, "  --restrict-flags <n>  Set the flags to be used during restrict\n");
   fprintf (where, "  --filter <type>:<knd> Filter objects of the given type, or all.\n");
   fprintf (where, "     <knd> may be `all' (keep all), `none' (remove all), `structure' or `important'\n");
   fprintf (where, "  --no-icaches          Do not show instruction caches\n");
@@ -57,7 +66,7 @@ void usage(const char *name, FILE *where)
   fprintf (where, "  --thissystem          Assume that the input topology provides the topology\n"
 		  "                        for the system on which we are running\n");
   fprintf (where, "  --pid <pid>           Detect topology as seen by process <pid>\n");
-  fprintf (where, "  --whole-system        Do not consider administration limitations\n");
+  fprintf (where, "  --disallowed          Include objects disallowed by administrative limitations\n");
   fprintf (where, "  -l --logical          Use logical object indexes for input (default)\n");
   fprintf (where, "  -p --physical         Use physical object indexes for input\n");
   fprintf (where, "Miscellaneous options:\n");
@@ -73,6 +82,8 @@ hwloc_info_show_obj(hwloc_topology_t topology, hwloc_obj_t obj, const char *type
     return;
   printf("%s type = %s\n", prefix, hwloc_obj_type_string(obj->type));
   printf("%s full type = %s\n", prefix, type);
+  if (obj->subtype)
+    printf("%s subtype = %s\n", prefix, obj->subtype);
   printf("%s logical index = %u\n", prefix, obj->logical_index);
   if (obj->os_index != (unsigned) -1)
     printf("%s os index = %u\n", prefix, obj->os_index);
@@ -131,6 +142,7 @@ hwloc_info_show_obj(hwloc_topology_t topology, hwloc_obj_t obj, const char *type
   case HWLOC_OBJ_L1ICACHE:
   case HWLOC_OBJ_L2ICACHE:
   case HWLOC_OBJ_L3ICACHE:
+  case HWLOC_OBJ_MEMCACHE:
     printf("%s attr cache depth = %u\n", prefix, obj->attr->cache.depth);
     switch (obj->attr->cache.type) {
     case HWLOC_OBJ_CACHE_UNIFIED: printf("%s attr cache type = Unified\n", prefix); break;
@@ -199,6 +211,91 @@ hwloc_info_show_obj(hwloc_topology_t topology, hwloc_obj_t obj, const char *type
   for(i=0; i<obj->infos_count; i++) {
     struct hwloc_info_s *info = &obj->infos[i];
     printf("%s info %s = %s\n", prefix, info->name, info->value);
+  }
+
+  if (hwloc_obj_type_is_normal(obj->type)) {
+    unsigned nr = hwloc_cpukinds_get_nr(topology, 0);
+    hwloc_bitmap_t cpuset = hwloc_bitmap_alloc();
+    for(i=0; i<nr; i++) {
+      int efficiency;
+      struct hwloc_info_s *infos;
+      unsigned nr_infos, j;
+      int partial;
+      hwloc_cpukinds_get_info(topology, i, cpuset, &efficiency, &nr_infos, &infos, 0);
+      if (hwloc_bitmap_isincluded(obj->cpuset, cpuset))
+        partial = 0;
+      else if (hwloc_bitmap_intersects(obj->cpuset, cpuset))
+        partial = 1;
+      else
+        continue;
+      printf("%s cpukind = %u%s\n",
+             prefix, i, partial ? " (partially)" : "");
+      if (efficiency != -1)
+        printf("%s cpukind efficiency = %d\n",
+               prefix, efficiency);
+      for(j=0; j<nr_infos; j++)
+        printf("%s cpukind info %s = %s\n",
+               prefix, infos[j].name, infos[j].value);
+    }
+    hwloc_bitmap_free(cpuset);
+  }
+
+  if (obj->type == HWLOC_OBJ_NUMANODE) {
+    /* FIXME display for non-NUMA too.
+     * but that's rare so maybe detect in advance whether it's needed?
+     */
+    unsigned id;
+    for(id=0; ; id++) {
+      const char *name;
+      unsigned long flags;
+      int err;
+
+      err = hwloc_memattr_get_name(topology, id, &name);
+      if (err < 0)
+        break;
+      err = hwloc_memattr_get_flags(topology, id, &flags);
+      assert(!err);
+
+      if (!(flags & HWLOC_MEMATTR_FLAG_NEED_INITIATOR)) {
+        hwloc_uint64_t value;
+        err = hwloc_memattr_get_value(topology, id, obj, NULL, 0, &value);
+        if (!err)
+          printf("%s memory attribute %s = %llu\n",
+                 prefix, name, (unsigned long long) value);
+      } else {
+        unsigned nr_initiators = 0;
+        err = hwloc_memattr_get_initiators(topology, id, obj, 0, &nr_initiators, NULL, NULL);
+        if (!err) {
+          struct hwloc_location *initiators = malloc(nr_initiators * sizeof(*initiators));
+          hwloc_uint64_t *values = malloc(nr_initiators * sizeof(*values));
+          if (initiators && values) {
+            err = hwloc_memattr_get_initiators(topology, id, obj, 0, &nr_initiators, initiators, values);
+            if (!err) {
+              unsigned j;
+              for(j=0; j<nr_initiators; j++) {
+                char *inits, _inits[256];
+                if (initiators[j].type == HWLOC_LOCATION_TYPE_CPUSET) {
+                  hwloc_bitmap_asprintf(&inits, initiators[j].location.cpuset);
+                } else if (initiators[j].type == HWLOC_LOCATION_TYPE_OBJECT) {
+                  char types[64];
+                  hwloc_obj_type_snprintf(types, sizeof(types), initiators[j].location.object, 1);
+                  snprintf(_inits, sizeof(_inits), "%s L#%u P#%u", types, initiators[j].location.object->logical_index, initiators[j].location.object->os_index);
+                  inits = _inits;
+                } else {
+                  assert(0);
+                }
+                printf("%s memory attribute %s from initiator %s = %llu\n",
+                       prefix, name, inits, (unsigned long long) values[j]);
+                if (inits != _inits)
+                  free(inits);
+              }
+            }
+          }
+          free(initiators);
+          free(values);
+        }
+      }
+    }
   }
 }
 
@@ -320,6 +417,59 @@ hwloc_calc_process_location_info_cb(struct hwloc_calc_location_context_s *lconte
 	i++;
       }
     }
+  } else if (show_local_memory) {
+    unsigned nrnodes;
+    hwloc_obj_t *nodes;
+    nrnodes = hwloc_bitmap_weight(hwloc_topology_get_topology_nodeset(topology));
+    nodes = malloc(nrnodes * sizeof(*nodes));
+    if (nodes) {
+      struct hwloc_location loc;
+      int err;
+      loc.type = HWLOC_LOCATION_TYPE_OBJECT;
+      loc.location.object = obj;
+      err = hwloc_get_local_numanode_objs(topology, &loc, &nrnodes, nodes, show_local_memory_flags);
+      if (!err) {
+        unsigned i;
+        if (best_memattr_id != (hwloc_memattr_id_t) -1) {
+          /* only keep the best one for that memattr */
+          int best;
+
+          /* won't work if obj is CPU-less: perf from I/O is likely different from perf from CPU objects */
+          loc.type = HWLOC_LOCATION_TYPE_CPUSET;
+          loc.location.cpuset = obj->cpuset;
+          best = hwloc_utils_get_best_node_in_array_by_memattr(topology, best_memattr_id,
+                                                               nrnodes, nodes, &loc);
+          if (best == -1) {
+            /* no perf info found, report nothing */
+            if (verbose > 0)
+              fprintf(stderr, "Failed to find a best local node for memory attribute.\n");
+            nrnodes = 0;
+          } else {
+            /* only report the best node, but keep the index intact */
+            for(i=0; i<nrnodes; i++)
+              if (i != (unsigned) best)
+                nodes[i] = NULL;
+          }
+        }
+        for(i=0; i<nrnodes; i++) {
+          char nodestr[128];
+          if (!nodes[i])
+            continue;
+          if (show_index_prefix)
+	    snprintf(prefix, sizeof(prefix), "%u.%u: ", current_obj, i);
+          hwloc_obj_type_snprintf(nodestr, sizeof(nodestr), nodes[i], 1);
+          if (verbose < 0)
+            printf("%s%s:%u\n", prefix, nodestr, nodes[i]->logical_index);
+          else
+            printf("%s%s L#%u = local memory #%u of %s L#%u\n",
+                   prefix, nodestr, nodes[i]->logical_index, i, objs, obj->logical_index);
+          hwloc_info_show_obj(topology, nodes[i], nodestr, prefix, verbose);
+        }
+      }
+    } else {
+      fprintf(stderr, "Failed to allocate array of local NUMA nodes\n");
+    }
+    free(nodes);
   } else {
     if (verbose < 0)
       printf("%s%s:%u\n", prefix, objs, obj->logical_index);
@@ -337,12 +487,14 @@ main (int argc, char *argv[])
   int err;
   hwloc_topology_t topology;
   int topodepth;
-  unsigned long flags = 0;
+  unsigned long flags = HWLOC_TOPOLOGY_FLAG_IMPORT_SUPPORT;
+  unsigned long restrict_flags = 0;
   char * callname;
   char * input = NULL;
   enum hwloc_utils_input_format input_format = HWLOC_UTILS_INPUT_DEFAULT;
   const char *show_ancestor_type = NULL;
   const char *show_descendants_type = NULL;
+  const char *best_memattr_str = NULL;
   char *restrictstring = NULL;
   size_t typelen;
   int opt;
@@ -360,8 +512,10 @@ main (int argc, char *argv[])
   hwloc_utils_check_api_version(callname);
 
   /* enable verbose backends */
-  putenv((char *) "HWLOC_XML_VERBOSE=1");
-  putenv((char *) "HWLOC_SYNTHETIC_VERBOSE=1");
+  if (!getenv("HWLOC_XML_VERBOSE"))
+    putenv((char *) "HWLOC_XML_VERBOSE=1");
+  if (!getenv("HWLOC_SYNTHETIC_VERBOSE"))
+    putenv((char *) "HWLOC_SYNTHETIC_VERBOSE=1");
 
   err = hwloc_topology_init (&topology);
   if (err)
@@ -409,6 +563,26 @@ main (int argc, char *argv[])
 	show_descendants_type = argv[1];
 	opt = 1;
       }
+      else if (!strcmp (argv[0], "--local-memory"))
+        show_local_memory = 1;
+      else if (!strcmp (argv[0], "--local-memory-flags")) {
+	if (argc < 2) {
+	  usage (callname, stderr);
+	  exit(EXIT_FAILURE);
+	}
+        show_local_memory = 1;
+	show_local_memory_flags = hwloc_utils_parse_local_numanode_flags(argv[1]);
+	opt = 1;
+      }
+      else if (!strcmp (argv[0], "--best-memattr")) {
+	if (argc < 2) {
+	  usage (callname, stderr);
+	  exit(EXIT_FAILURE);
+	}
+        show_local_memory = 1;
+        best_memattr_str = argv[1];
+        opt = 1;
+      }
       else if (!strcmp (argv[0], "--filter")) {
         hwloc_obj_type_t type;
         char *colon;
@@ -455,9 +629,10 @@ main (int argc, char *argv[])
           hwloc_topology_set_all_types_filter(topology, filter);
 	else if (allio)
           hwloc_topology_set_io_types_filter(topology, filter);
-	else if (allcaches)
+	else if (allcaches) {
 	  hwloc_topology_set_cache_types_filter(topology, filter);
-	else if (allicaches)
+	  hwloc_topology_set_type_filter(topology, HWLOC_OBJ_MEMCACHE, filter);
+	} else if (allicaches)
 	  hwloc_topology_set_icache_types_filter(topology, filter);
         else
           hwloc_topology_set_type_filter(topology, type, filter);
@@ -465,8 +640,8 @@ main (int argc, char *argv[])
       }
       else if (!strcmp (argv[0], "--no-icaches")) {
 	hwloc_topology_set_icache_types_filter(topology, HWLOC_TYPE_FILTER_KEEP_NONE);
-      } else if (!strcmp (argv[0], "--whole-system"))
-	flags |= HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
+      } else if (!strcmp (argv[0], "--disallowed") || !strcmp (argv[0], "--whole-system"))
+	flags |= HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED;
       else if (!strcmp (argv[0], "--no-io")) {
 	hwloc_topology_set_io_types_filter(topology, HWLOC_TYPE_FILTER_KEEP_NONE);
       } else if (!strcmp (argv[0], "--no-bridges")) {
@@ -480,7 +655,20 @@ main (int argc, char *argv[])
 	  usage (callname, stderr);
 	  exit(EXIT_FAILURE);
 	}
-	restrictstring = strdup(argv[1]);
+        if(strncmp(argv[1], "nodeset=", 8)) {
+          restrictstring = strdup(argv[1]);
+        } else {
+          restrictstring = strdup(argv[1]+8);
+          restrict_flags |= HWLOC_RESTRICT_FLAG_BYNODESET;
+        }
+	opt = 1;
+      }
+      else if (!strcmp (argv[0], "--restrict-flags")) {
+	if (argc < 2) {
+	  usage (callname, stderr);
+	  exit(EXIT_FAILURE);
+        }
+	restrict_flags = hwloc_utils_parse_restrict_flags(argv[1]);
 	opt = 1;
       }
 
@@ -520,7 +708,7 @@ main (int argc, char *argv[])
   hwloc_topology_set_flags(topology, flags);
 
   if (input) {
-    err = hwloc_utils_enable_input_format(topology, input, &input_format, verbose_mode, callname);
+    err = hwloc_utils_enable_input_format(topology, flags, input, &input_format, verbose_mode, callname);
     if (err)
       return err;
   }
@@ -534,8 +722,10 @@ main (int argc, char *argv[])
   }
 
   err = hwloc_topology_load (topology);
-  if (err)
+  if (err) {
+    perror("hwloc_topology_load");
     return EXIT_FAILURE;
+  }
 
   topodepth = hwloc_topology_get_depth(topology);
 
@@ -582,13 +772,23 @@ main (int argc, char *argv[])
     } else {
       hwloc_bitmap_sscanf(restrictset, restrictstring);
     }
-    err = hwloc_topology_restrict (topology, restrictset, 0);
+    err = hwloc_topology_restrict (topology, restrictset, restrict_flags);
     if (err) {
       perror("Restricting the topology");
       /* FALLTHRU */
     }
     hwloc_bitmap_free(restrictset);
     free(restrictstring);
+  }
+
+  if (best_memattr_str) {
+    if (!show_local_memory)
+      fprintf(stderr, "--best-memattr is ignored without --local-memory.\n");
+    best_memattr_id = hwloc_utils_parse_memattr_name(topology, best_memattr_str);
+    if (best_memattr_id == (hwloc_memattr_id_t) -1) {
+      fprintf(stderr, "unrecognized memattr %s\n", best_memattr_str);
+      return EXIT_FAILURE;
+    }
   }
 
   if (mode == HWLOC_INFO_MODE_UNKNOWN) {
@@ -603,10 +803,22 @@ main (int argc, char *argv[])
 
   } else if (mode == HWLOC_INFO_MODE_SUPPORT) {
     const struct hwloc_topology_support *support = hwloc_topology_get_support(topology);
+
+#ifdef HWLOC_DEBUG
+    HWLOC_BUILD_ASSERT(sizeof(struct hwloc_topology_support) == 4*sizeof(void*));
+    HWLOC_BUILD_ASSERT(sizeof(struct hwloc_topology_discovery_support) == 6);
+    HWLOC_BUILD_ASSERT(sizeof(struct hwloc_topology_cpubind_support) == 11);
+    HWLOC_BUILD_ASSERT(sizeof(struct hwloc_topology_membind_support) == 15);
+    HWLOC_BUILD_ASSERT(sizeof(struct hwloc_topology_misc_support) == 1);
+#endif
+
 #define DO(x,y) printf(#x ":" #y " = %u\n", (unsigned char) support->x->y);
     DO(discovery, pu);
+    DO(discovery, disallowed_pu);
     DO(discovery, numa);
     DO(discovery, numa_memory);
+    DO(discovery, disallowed_numa);
+    DO(discovery, cpukind_efficiency);
 
     DO(cpubind, set_thisproc_cpubind);
     DO(cpubind, get_thisproc_cpubind);
@@ -636,6 +848,9 @@ main (int argc, char *argv[])
     DO(membind, migrate_membind);
     DO(membind, get_area_memlocation);
 
+    DO(misc, imported_support);
+#undef DO
+
   } else if (mode == HWLOC_INFO_MODE_OBJECTS) {
     struct hwloc_calc_location_context_s lcontext;
     lcontext.topology = topology;
@@ -647,6 +862,9 @@ main (int argc, char *argv[])
     while (argc >= 1) {
       if (!strcmp(argv[0], "all") || !strcmp(argv[0], "root")) {
 	hwloc_calc_process_location_info_cb(&lcontext, NULL, hwloc_get_root_obj(topology));
+      } else if (*argv[0] == '-') {
+        fprintf(stderr, "Cannot handle command-line option %s after some locations.\n", argv[0]);
+        return EXIT_FAILURE;
       } else {
 	/* try to match a type/depth followed by a special character */
 	typelen = strspn(argv[0], "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");

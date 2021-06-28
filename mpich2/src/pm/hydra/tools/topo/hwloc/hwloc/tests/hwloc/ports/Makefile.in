@@ -14,8 +14,8 @@
 
 @SET_MAKE@
 
-# Copyright © 2009-2016 Inria.  All rights reserved.
-# Copyright © 2009, 2011-2012 Université Bordeaux
+# Copyright © 2009-2020 Inria.  All rights reserved.
+# Copyright © 2009, 2011-2012, 2020 Université Bordeaux
 # Copyright © 2009-2014 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
 VPATH = @srcdir@
@@ -118,13 +118,20 @@ CONFIG_CLEAN_FILES = topology-solaris.c topology-solaris-chiptype.c \
 	topology-aix.c topology-windows.c topology-darwin.c \
 	topology-freebsd.c topology-netbsd.c topology-hpux.c \
 	topology-bgq.c topology-opencl.c topology-cuda.c \
-	topology-nvml.c topology-gl.c lstopo-windows.c
+	topology-nvml.c topology-rsmi.c topology-gl.c lstopo-windows.c \
+	lstopo-android.c
 CONFIG_CLEAN_VPATH_FILES =
 ARFLAGS = cru
 AM_V_AR = $(am__v_AR_@AM_V@)
 am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
 am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
+liblstopo_port_android_a_AR = $(AR) $(ARFLAGS)
+liblstopo_port_android_a_LIBADD =
+nodist_liblstopo_port_android_a_OBJECTS =  \
+	liblstopo_port_android_a-lstopo-android.$(OBJEXT)
+liblstopo_port_android_a_OBJECTS =  \
+	$(nodist_liblstopo_port_android_a_OBJECTS)
 liblstopo_port_windows_a_AR = $(AR) $(ARFLAGS)
 liblstopo_port_windows_a_LIBADD =
 am_liblstopo_port_windows_a_OBJECTS =
@@ -211,6 +218,13 @@ libhwloc_port_opencl_la_OBJECTS =  \
 	$(am_libhwloc_port_opencl_la_OBJECTS) \
 	$(nodist_libhwloc_port_opencl_la_OBJECTS)
 @HWLOC_HAVE_LINUX_TRUE@am_libhwloc_port_opencl_la_rpath =
+libhwloc_port_rsmi_la_LIBADD =
+am_libhwloc_port_rsmi_la_OBJECTS =
+nodist_libhwloc_port_rsmi_la_OBJECTS =  \
+	libhwloc_port_rsmi_la-topology-rsmi.lo
+libhwloc_port_rsmi_la_OBJECTS = $(am_libhwloc_port_rsmi_la_OBJECTS) \
+	$(nodist_libhwloc_port_rsmi_la_OBJECTS)
+@HWLOC_HAVE_LINUX_TRUE@am_libhwloc_port_rsmi_la_rpath =
 libhwloc_port_solaris_la_LIBADD =
 am_libhwloc_port_solaris_la_OBJECTS =
 nodist_libhwloc_port_solaris_la_OBJECTS =  \
@@ -262,7 +276,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(liblstopo_port_windows_a_SOURCES) \
+SOURCES = $(nodist_liblstopo_port_android_a_SOURCES) \
+	$(liblstopo_port_windows_a_SOURCES) \
 	$(nodist_liblstopo_port_windows_a_SOURCES) \
 	$(libhwloc_port_aix_la_SOURCES) \
 	$(nodist_libhwloc_port_aix_la_SOURCES) \
@@ -284,6 +299,8 @@ SOURCES = $(liblstopo_port_windows_a_SOURCES) \
 	$(nodist_libhwloc_port_nvml_la_SOURCES) \
 	$(libhwloc_port_opencl_la_SOURCES) \
 	$(nodist_libhwloc_port_opencl_la_SOURCES) \
+	$(libhwloc_port_rsmi_la_SOURCES) \
+	$(nodist_libhwloc_port_rsmi_la_SOURCES) \
 	$(libhwloc_port_solaris_la_SOURCES) \
 	$(nodist_libhwloc_port_solaris_la_SOURCES) \
 	$(libhwloc_port_windows_la_SOURCES) \
@@ -299,6 +316,7 @@ DIST_SOURCES = $(liblstopo_port_windows_a_SOURCES) \
 	$(libhwloc_port_netbsd_la_SOURCES) \
 	$(libhwloc_port_nvml_la_SOURCES) \
 	$(libhwloc_port_opencl_la_SOURCES) \
+	$(libhwloc_port_rsmi_la_SOURCES) \
 	$(libhwloc_port_solaris_la_SOURCES) \
 	$(libhwloc_port_windows_la_SOURCES)
 am__can_run_installinfo = \
@@ -374,6 +392,7 @@ HWLOC_CPPFLAGS = @HWLOC_CPPFLAGS@
 HWLOC_CUDA_LIBS = @HWLOC_CUDA_LIBS@
 HWLOC_DIFF_U = @HWLOC_DIFF_U@
 HWLOC_DIFF_W = @HWLOC_DIFF_W@
+HWLOC_DL_LIBS = @HWLOC_DL_LIBS@
 HWLOC_EMBEDDED_CFLAGS = @HWLOC_EMBEDDED_CFLAGS@
 HWLOC_EMBEDDED_CPPFLAGS = @HWLOC_EMBEDDED_CPPFLAGS@
 HWLOC_EMBEDDED_LDADD = @HWLOC_EMBEDDED_LDADD@
@@ -383,13 +402,17 @@ HWLOC_GL_LIBS = @HWLOC_GL_LIBS@
 HWLOC_HAVE_LIBXML2 = @HWLOC_HAVE_LIBXML2@
 HWLOC_HAVE_NVML = @HWLOC_HAVE_NVML@
 HWLOC_HAVE_OPENCL = @HWLOC_HAVE_OPENCL@
+HWLOC_HAVE_RSMI = @HWLOC_HAVE_RSMI@
 HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
 HWLOC_LIBS = @HWLOC_LIBS@
 HWLOC_LIBS_PRIVATE = @HWLOC_LIBS_PRIVATE@
 HWLOC_LIBXML2_CFLAGS = @HWLOC_LIBXML2_CFLAGS@
 HWLOC_LIBXML2_LIBS = @HWLOC_LIBXML2_LIBS@
+HWLOC_LTDL_LIBS = @HWLOC_LTDL_LIBS@
 HWLOC_MS_LIB = @HWLOC_MS_LIB@
 HWLOC_MS_LIB_ARCH = @HWLOC_MS_LIB_ARCH@
+HWLOC_NUMA_CFLAGS = @HWLOC_NUMA_CFLAGS@
+HWLOC_NUMA_LIBS = @HWLOC_NUMA_LIBS@
 HWLOC_NVML_LIBS = @HWLOC_NVML_LIBS@
 HWLOC_OPENCL_CFLAGS = @HWLOC_OPENCL_CFLAGS@
 HWLOC_OPENCL_LDFLAGS = @HWLOC_OPENCL_LDFLAGS@
@@ -398,8 +421,10 @@ HWLOC_PCIACCESS_CFLAGS = @HWLOC_PCIACCESS_CFLAGS@
 HWLOC_PCIACCESS_LIBS = @HWLOC_PCIACCESS_LIBS@
 HWLOC_PLUGINS_DIR = @HWLOC_PLUGINS_DIR@
 HWLOC_PLUGINS_PATH = @HWLOC_PLUGINS_PATH@
+HWLOC_PS_LIBS = @HWLOC_PS_LIBS@
 HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
 HWLOC_REQUIRES = @HWLOC_REQUIRES@
+HWLOC_RSMI_LIBS = @HWLOC_RSMI_LIBS@
 HWLOC_TERMCAP_LIBS = @HWLOC_TERMCAP_LIBS@
 HWLOC_VERSION = @HWLOC_VERSION@
 HWLOC_W3_GENERATOR = @HWLOC_W3_GENERATOR@
@@ -544,17 +569,19 @@ SRC = $(HWLOC_top_srcdir)/hwloc
 @HWLOC_HAVE_LINUX_TRUE@        libhwloc-port-opencl.la \
 @HWLOC_HAVE_LINUX_TRUE@        libhwloc-port-cuda.la \
 @HWLOC_HAVE_LINUX_TRUE@        libhwloc-port-nvml.la \
+@HWLOC_HAVE_LINUX_TRUE@        libhwloc-port-rsmi.la \
 @HWLOC_HAVE_LINUX_TRUE@        libhwloc-port-gl.la
 
 @HWLOC_HAVE_LINUX_TRUE@check_LIBRARIES = \
-@HWLOC_HAVE_LINUX_TRUE@	liblstopo-port-windows.a
+@HWLOC_HAVE_LINUX_TRUE@	liblstopo-port-windows.a \
+@HWLOC_HAVE_LINUX_TRUE@        liblstopo-port-android.a
 
 
 # Note that AC_CONFIG_LINKS sets up the sym links for the files in
-# this directory (back to the $top_srcdir/src directory).  So if you
+# this directory (back to the $top_srcdir/hwloc directory).  So if you
 # need more sym-linked files in here, go edit configure.ac.  Note that
 # we have to use sym links in here rather than just directly
-# referencing the files via $HWLOC_top_srcdir/src/foo.c because of
+# referencing the files via $HWLOC_top_srcdir/hwloc/foo.c because of
 # dependencies issues when using the Automake option "subdir-objects".
 # We nodist these because they're created by configure.
 common_CPPFLAGS = \
@@ -598,7 +625,11 @@ libhwloc_port_freebsd_la_SOURCES = \
         include/freebsd/pthread.h \
         include/freebsd/pthread_np.h \
         include/freebsd/sys/cpuset.h \
-        include/freebsd/sys/sysctl.h
+        include/freebsd/sys/sysctl.h \
+        include/freebsd/sys/thr.h \
+        include/freebsd/sys/user.h \
+        include/freebsd/sys/param.h \
+        include/freebsd/sys/domainset.h
 
 libhwloc_port_freebsd_la_CPPFLAGS = $(common_CPPFLAGS) \
         -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/freebsd \
@@ -611,7 +642,9 @@ libhwloc_port_freebsd_la_CPPFLAGS = $(common_CPPFLAGS) \
         -Dhwloc_thread_t=pthread_t \
         -DHAVE_DECL_PTHREAD_SETAFFINITY_NP=1 \
         -DHAVE_DECL_PTHREAD_GETAFFINITY_NP=1 \
-        -DHAVE_CPUSET_SETID
+        -DHAVE_CPUSET_SETID \
+        -DHAVE_SYS_DOMAINSET_H \
+        -DHAVE_SYS_THR_H
 
 nodist_libhwloc_port_hpux_la_SOURCES = topology-hpux.c
 libhwloc_port_hpux_la_SOURCES = \
@@ -668,9 +701,14 @@ liblstopo_port_windows_a_CPPFLAGS = $(common_CPPFLAGS) \
         -I$(HWLOC_top_srcdir)/utils/hwloc \
         -DHWLOC_WIN_SYS
 
+nodist_liblstopo_port_android_a_SOURCES = lstopo-android.c
+liblstopo_port_android_a_CPPFLAGS = $(common_CPPFLAGS) \
+        -I$(HWLOC_top_srcdir)/utils/lstopo \
+        -I$(HWLOC_top_srcdir)/utils/hwloc
+
 nodist_libhwloc_port_opencl_la_SOURCES = topology-opencl.c
 libhwloc_port_opencl_la_SOURCES = \
-        include/opencl/CL/cl_ext.h
+        include/opencl/CL/cl.h
 
 libhwloc_port_opencl_la_CPPFLAGS = $(common_CPPFLAGS) \
         -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/opencl
@@ -689,6 +727,13 @@ libhwloc_port_nvml_la_SOURCES = \
 
 libhwloc_port_nvml_la_CPPFLAGS = $(common_CPPFLAGS) \
         -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/nvml
+
+nodist_libhwloc_port_rsmi_la_SOURCES = topology-rsmi.c
+libhwloc_port_rsmi_la_SOURCES = \
+        include/rsmi/rocm_smi/rocm_smi.h
+
+libhwloc_port_rsmi_la_CPPFLAGS = $(common_CPPFLAGS) \
+        -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/rsmi
 
 nodist_libhwloc_port_gl_la_SOURCES = topology-gl.c
 libhwloc_port_gl_la_SOURCES = \
@@ -736,6 +781,11 @@ $(am__aclocal_m4_deps):
 clean-checkLIBRARIES:
 	-test -z "$(check_LIBRARIES)" || rm -f $(check_LIBRARIES)
 
+liblstopo-port-android.a: $(liblstopo_port_android_a_OBJECTS) $(liblstopo_port_android_a_DEPENDENCIES) $(EXTRA_liblstopo_port_android_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f liblstopo-port-android.a
+	$(AM_V_AR)$(liblstopo_port_android_a_AR) liblstopo-port-android.a $(liblstopo_port_android_a_OBJECTS) $(liblstopo_port_android_a_LIBADD)
+	$(AM_V_at)$(RANLIB) liblstopo-port-android.a
+
 liblstopo-port-windows.a: $(liblstopo_port_windows_a_OBJECTS) $(liblstopo_port_windows_a_DEPENDENCIES) $(EXTRA_liblstopo_port_windows_a_DEPENDENCIES) 
 	$(AM_V_at)-rm -f liblstopo-port-windows.a
 	$(AM_V_AR)$(liblstopo_port_windows_a_AR) liblstopo-port-windows.a $(liblstopo_port_windows_a_OBJECTS) $(liblstopo_port_windows_a_LIBADD)
@@ -782,6 +832,9 @@ libhwloc-port-nvml.la: $(libhwloc_port_nvml_la_OBJECTS) $(libhwloc_port_nvml_la_
 libhwloc-port-opencl.la: $(libhwloc_port_opencl_la_OBJECTS) $(libhwloc_port_opencl_la_DEPENDENCIES) $(EXTRA_libhwloc_port_opencl_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK) $(am_libhwloc_port_opencl_la_rpath) $(libhwloc_port_opencl_la_OBJECTS) $(libhwloc_port_opencl_la_LIBADD) $(LIBS)
 
+libhwloc-port-rsmi.la: $(libhwloc_port_rsmi_la_OBJECTS) $(libhwloc_port_rsmi_la_DEPENDENCIES) $(EXTRA_libhwloc_port_rsmi_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(LINK) $(am_libhwloc_port_rsmi_la_rpath) $(libhwloc_port_rsmi_la_OBJECTS) $(libhwloc_port_rsmi_la_LIBADD) $(LIBS)
+
 libhwloc-port-solaris.la: $(libhwloc_port_solaris_la_OBJECTS) $(libhwloc_port_solaris_la_DEPENDENCIES) $(EXTRA_libhwloc_port_solaris_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK) $(am_libhwloc_port_solaris_la_rpath) $(libhwloc_port_solaris_la_OBJECTS) $(libhwloc_port_solaris_la_LIBADD) $(LIBS)
 
@@ -804,9 +857,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libhwloc_port_netbsd_la-topology-netbsd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libhwloc_port_nvml_la-topology-nvml.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libhwloc_port_opencl_la-topology-opencl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libhwloc_port_rsmi_la-topology-rsmi.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libhwloc_port_solaris_la-topology-solaris-chiptype.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libhwloc_port_solaris_la-topology-solaris.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libhwloc_port_windows_la-topology-windows.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblstopo_port_android_a-lstopo-android.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblstopo_port_windows_a-lstopo-windows.Po@am__quote@
 
 .c.o:
@@ -832,6 +887,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+liblstopo_port_android_a-lstopo-android.o: lstopo-android.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(liblstopo_port_android_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT liblstopo_port_android_a-lstopo-android.o -MD -MP -MF $(DEPDIR)/liblstopo_port_android_a-lstopo-android.Tpo -c -o liblstopo_port_android_a-lstopo-android.o `test -f 'lstopo-android.c' || echo '$(srcdir)/'`lstopo-android.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/liblstopo_port_android_a-lstopo-android.Tpo $(DEPDIR)/liblstopo_port_android_a-lstopo-android.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lstopo-android.c' object='liblstopo_port_android_a-lstopo-android.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(liblstopo_port_android_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o liblstopo_port_android_a-lstopo-android.o `test -f 'lstopo-android.c' || echo '$(srcdir)/'`lstopo-android.c
+
+liblstopo_port_android_a-lstopo-android.obj: lstopo-android.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(liblstopo_port_android_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT liblstopo_port_android_a-lstopo-android.obj -MD -MP -MF $(DEPDIR)/liblstopo_port_android_a-lstopo-android.Tpo -c -o liblstopo_port_android_a-lstopo-android.obj `if test -f 'lstopo-android.c'; then $(CYGPATH_W) 'lstopo-android.c'; else $(CYGPATH_W) '$(srcdir)/lstopo-android.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/liblstopo_port_android_a-lstopo-android.Tpo $(DEPDIR)/liblstopo_port_android_a-lstopo-android.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lstopo-android.c' object='liblstopo_port_android_a-lstopo-android.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(liblstopo_port_android_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o liblstopo_port_android_a-lstopo-android.obj `if test -f 'lstopo-android.c'; then $(CYGPATH_W) 'lstopo-android.c'; else $(CYGPATH_W) '$(srcdir)/lstopo-android.c'; fi`
 
 liblstopo_port_windows_a-lstopo-windows.o: lstopo-windows.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(liblstopo_port_windows_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT liblstopo_port_windows_a-lstopo-windows.o -MD -MP -MF $(DEPDIR)/liblstopo_port_windows_a-lstopo-windows.Tpo -c -o liblstopo_port_windows_a-lstopo-windows.o `test -f 'lstopo-windows.c' || echo '$(srcdir)/'`lstopo-windows.c
@@ -916,6 +985,13 @@ libhwloc_port_opencl_la-topology-opencl.lo: topology-opencl.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='topology-opencl.c' object='libhwloc_port_opencl_la-topology-opencl.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_port_opencl_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libhwloc_port_opencl_la-topology-opencl.lo `test -f 'topology-opencl.c' || echo '$(srcdir)/'`topology-opencl.c
+
+libhwloc_port_rsmi_la-topology-rsmi.lo: topology-rsmi.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_port_rsmi_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libhwloc_port_rsmi_la-topology-rsmi.lo -MD -MP -MF $(DEPDIR)/libhwloc_port_rsmi_la-topology-rsmi.Tpo -c -o libhwloc_port_rsmi_la-topology-rsmi.lo `test -f 'topology-rsmi.c' || echo '$(srcdir)/'`topology-rsmi.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libhwloc_port_rsmi_la-topology-rsmi.Tpo $(DEPDIR)/libhwloc_port_rsmi_la-topology-rsmi.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='topology-rsmi.c' object='libhwloc_port_rsmi_la-topology-rsmi.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_port_rsmi_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libhwloc_port_rsmi_la-topology-rsmi.lo `test -f 'topology-rsmi.c' || echo '$(srcdir)/'`topology-rsmi.c
 
 libhwloc_port_solaris_la-topology-solaris.lo: topology-solaris.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_port_solaris_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libhwloc_port_solaris_la-topology-solaris.lo -MD -MP -MF $(DEPDIR)/libhwloc_port_solaris_la-topology-solaris.Tpo -c -o libhwloc_port_solaris_la-topology-solaris.lo `test -f 'topology-solaris.c' || echo '$(srcdir)/'`topology-solaris.c

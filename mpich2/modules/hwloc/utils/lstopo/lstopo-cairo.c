@@ -1,12 +1,12 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2018 Inria.  All rights reserved.
- * Copyright © 2009-2010, 2014, 2017 Université Bordeaux
+ * Copyright © 2009-2020 Inria.  All rights reserved.
+ * Copyright © 2009-2010, 2014, 2017, 2020 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <private/autogen/config.h>
+#include "private/autogen/config.h"
 
 #include <cairo.h>
 
@@ -22,20 +22,27 @@
 #include <cairo-svg.h>
 #endif /* CAIRO_HAS_SVG_SURFACE */
 
-#ifndef HWLOC_HAVE_X11_KEYSYM
-/* In case X11 headers aren't availble, forcefully disable Cairo/Xlib.  */
-# undef CAIRO_HAS_XLIB_SURFACE
-#endif
-
-#ifdef CAIRO_HAS_XLIB_SURFACE
-#include <cairo-xlib.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/keysym.h>
-#include <X11/cursorfont.h>
+#ifdef LSTOPO_HAVE_X11
+/* configure should enable X11 only if Cairo has XLIB SURFACE and there are X11 headers */
+# ifndef HWLOC_HAVE_X11_KEYSYM
+#  error LSTOPO_HAVE_X11 enabled without HWLOC_HAVE_X11_KEYSYM?!
+# endif
+# ifndef CAIRO_HAS_XLIB_SURFACE
+#  error LSTOPO_HAVE_X11 enabled without CAIRO_HAS_XLIB_SURFACE?!
+# endif
+# include <cairo-xlib.h>
+# include <X11/Xlib.h>
+# include <X11/Xutil.h>
+# include <X11/Xresource.h>
+# include <X11/keysym.h>
+# include <X11/cursorfont.h>
 /* Avoid Xwindow's definition conflict with Windows' use for fields names.  */
-#undef Status
-#endif /* CAIRO_HAS_XLIB_SURFACE */
+# undef Status
+#else /* LSTOPO_HAVE_X11 */
+# if (defined HWLOC_HAVE_X11_KEYSYM) && (defined CAIRO_HAS_XLIB_SURFACE)
+#  error HWLOC_HAVE_X11_KEYSYM and CAIRO_HAS_XLIB_SURFACE defined but LSTOPO_HAVE_X11 not enabled?!
+# endif
+#endif /* LSTOPO_HAVE_X11 */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,7 +52,7 @@
 
 #include "lstopo.h"
 
-#if (defined CAIRO_HAS_XLIB_SURFACE) + (defined CAIRO_HAS_PNG_FUNCTIONS) + (defined CAIRO_HAS_PDF_SURFACE) + (defined CAIRO_HAS_PS_SURFACE) + (defined CAIRO_HAS_SVG_SURFACE)
+#if (defined LSTOPO_HAVE_X11) + (defined CAIRO_HAS_PNG_FUNCTIONS) + (defined CAIRO_HAS_PDF_SURFACE) + (defined CAIRO_HAS_PS_SURFACE) + (defined CAIRO_HAS_SVG_SURFACE)
 struct lstopo_cairo_output {
   struct lstopo_output *loutput;
   cairo_surface_t *surface;
@@ -54,9 +61,10 @@ struct lstopo_cairo_output {
 
 /* Cairo methods */
 static void
-topo_cairo_box(struct lstopo_output *loutput, const struct lstopo_color *lcolor, unsigned depth __hwloc_attribute_unused, unsigned x, unsigned width, unsigned y, unsigned height)
+topo_cairo_box(struct lstopo_output *loutput, const struct lstopo_color *lcolor, unsigned depth __hwloc_attribute_unused, unsigned x, unsigned width, unsigned y, unsigned height, hwloc_obj_t obj, unsigned box_id __hwloc_attribute_unused)
 {
   struct lstopo_cairo_output *coutput = loutput->backend_data;
+  struct lstopo_obj_userdata *ou = obj ? obj->userdata : NULL;
   cairo_t *c = coutput->context;
   int r = lcolor->r, g = lcolor->g, b = lcolor->b;
 
@@ -66,12 +74,23 @@ topo_cairo_box(struct lstopo_output *loutput, const struct lstopo_color *lcolor,
 
   cairo_rectangle(c, x, y, width, height);
   cairo_set_source_rgb(c, 0, 0, 0);
-  cairo_set_line_width(c, 1);
+
+  if (loutput->show_cpukinds && ou && ou->cpukind_style) {
+    double dash = (double)(1U << ou->cpukind_style);
+    cairo_set_dash(c, &dash, 1, 0);
+    cairo_set_line_width(c, loutput->thickness * (1 + ou->cpukind_style));
+  }
+
   cairo_stroke(c);
+
+  if (loutput->show_cpukinds && ou && ou->cpukind_style) {
+    cairo_set_dash(c, NULL, 0, 0);
+    cairo_set_line_width(c, loutput->thickness);
+  }
 }
 
 static void
-topo_cairo_line(struct lstopo_output *loutput, const struct lstopo_color *lcolor, unsigned depth __hwloc_attribute_unused, unsigned x1, unsigned y1, unsigned x2, unsigned y2)
+topo_cairo_line(struct lstopo_output *loutput, const struct lstopo_color *lcolor, unsigned depth __hwloc_attribute_unused, unsigned x1, unsigned y1, unsigned x2, unsigned y2, hwloc_obj_t obj __hwloc_attribute_unused, unsigned line_id __hwloc_attribute_unused)
 {
   struct lstopo_cairo_output *coutput = loutput->backend_data;
   cairo_t *c = coutput->context;
@@ -79,21 +98,28 @@ topo_cairo_line(struct lstopo_output *loutput, const struct lstopo_color *lcolor
 
   cairo_move_to(c, x1, y1);
   cairo_set_source_rgb(c, (float) r / 255, (float) g / 255, (float) b / 255);
-  cairo_set_line_width(c, 1);
   cairo_line_to(c, x2, y2);
   cairo_stroke(c);
 }
 
 static void
-topo_cairo_text(struct lstopo_output *loutput, const struct lstopo_color *lcolor, int fontsize, unsigned depth __hwloc_attribute_unused, unsigned x, unsigned y, const char *text)
+topo_cairo_text(struct lstopo_output *loutput, const struct lstopo_color *lcolor, int fontsize, unsigned depth __hwloc_attribute_unused, unsigned x, unsigned y, const char *text, hwloc_obj_t obj __hwloc_attribute_unused, unsigned text_id __hwloc_attribute_unused)
 {
   struct lstopo_cairo_output *coutput = loutput->backend_data;
+  struct lstopo_obj_userdata *ou = obj ? obj->userdata : NULL;
   cairo_t *c = coutput->context;
   int r = lcolor->r, g = lcolor->g, b = lcolor->b;
 
   cairo_move_to(c, x, y + fontsize);
   cairo_set_source_rgb(c, (float)r / 255, (float) g / 255, (float) b / 255);
+
+  if (loutput->show_cpukinds && ou && (ou->cpukind_style % 2))
+    cairo_select_font_face(c, "default", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
+
   cairo_show_text(c, text);
+
+  if (loutput->show_cpukinds && ou && (ou->cpukind_style % 2))
+    cairo_select_font_face(c, "default", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
 }
 
 static void
@@ -124,6 +150,7 @@ topo_cairo_paint(struct lstopo_cairo_output *coutput)
   cairo_t *c = cairo_create(cs);
   coutput->context = c;
   cairo_set_font_size(c, fontsize);
+  cairo_set_line_width(c, coutput->loutput->thickness);
   output_draw(coutput->loutput);
   cairo_show_page(c);
   cairo_destroy(c);
@@ -132,13 +159,11 @@ topo_cairo_paint(struct lstopo_cairo_output *coutput)
 
 
 
-static void topo_cairo_declare_color (struct lstopo_output *loutput __hwloc_attribute_unused, const struct lstopo_color *lcolor __hwloc_attribute_unused) {}
-#endif /* (CAIRO_HAS_XLIB_SURFACE + CAIRO_HAS_PNG_FUNCTIONS + CAIRO_HAS_PDF_SURFACE + CAIRO_HAS_PS_SURFACE + CAIRO_HAS_SVG_SURFACE) */
+#endif /* (LSTOPO_HAVE_X11 + CAIRO_HAS_PNG_FUNCTIONS + CAIRO_HAS_PDF_SURFACE + CAIRO_HAS_PS_SURFACE + CAIRO_HAS_SVG_SURFACE) */
 
 
-#ifdef CAIRO_HAS_XLIB_SURFACE
+#ifdef LSTOPO_HAVE_X11
 /* X11 back-end */
-static struct draw_methods x11_draw_methods;
 
 struct lstopo_x11_output {
   struct lstopo_cairo_output coutput; /* must be at the beginning */
@@ -152,6 +177,9 @@ struct lstopo_x11_output {
   int width, height;				/** total normal display size */
   int x, y;					/** top left corner of the visible part */
   float scale, last_scale;
+  int needs_redraw;
+  int needs_resize;
+  int auto_resize;
 };
 
 static void
@@ -188,7 +216,8 @@ move_x11(struct lstopo_x11_output *disp)
     disp->y = disp->scale / disp->last_scale * (float)disp->y;
   }
 
-  if (disp->screen_width != disp->last_screen_width
+  if (disp->needs_redraw
+      || disp->screen_width != disp->last_screen_width
       || disp->screen_height != disp->last_screen_height
       || disp->scale != disp->last_scale) {
     disp->last_screen_width = disp->screen_width;
@@ -212,6 +241,7 @@ move_x11(struct lstopo_x11_output *disp)
     topo_cairo_paint(coutput);
     disp->width = loutput->width;
     disp->height = loutput->height;
+    disp->needs_redraw = 0;
   }
 
   if (disp->width <= disp->screen_width) {
@@ -231,10 +261,22 @@ move_x11(struct lstopo_x11_output *disp)
     if (disp->y >= disp->height - disp->screen_height)
       disp->y = disp->height - disp->screen_height;
   }
+
+  if (disp->needs_resize >= 1) {
+    if (disp->auto_resize || disp->needs_resize >= 2) {
+      disp->last_screen_width = disp->screen_width = disp->width;
+      disp->last_screen_height = disp->screen_height = disp->height;
+      disp->x = 0;
+      disp->y = 0;
+      XResizeWindow(disp->dpy, disp->top, disp->screen_width, disp->screen_height);
+    }
+    disp->needs_resize = 0;
+  }
 }
 
 static struct draw_methods x11_draw_methods = {
-  topo_cairo_declare_color,
+  NULL,
+  NULL,
   topo_cairo_box,
   topo_cairo_line,
   topo_cairo_text,
@@ -251,11 +293,12 @@ output_x11(struct lstopo_output *loutput, const char *dummy __hwloc_attribute_un
   int scr;
   Screen *screen;
   int screen_width, screen_height;
-  unsigned int dpi_x, dpi_y, dpi;
+  unsigned int dpi_x, dpi_y, dpi = 0;
   int finish = 0;
   int state = 0;
   int x = 0, y = 0; /* shut warning down */
   int lastx, lasty;
+  char *resources;
 
   coutput = &disp->coutput;
   memset(coutput, 0, sizeof(*coutput));
@@ -269,14 +312,33 @@ output_x11(struct lstopo_output *loutput, const char *dummy __hwloc_attribute_un
     return -1;
   }
 
+  XrmInitialize();
+
   disp->dpy = dpy;
   disp->scr = scr = DefaultScreen(dpy);
   screen = ScreenOfDisplay(dpy, scr);
 
-  /* 25.4mm per inch */
-  dpi_x = ((double) DisplayWidth(dpy, scr) * 25.4) / DisplayWidthMM(dpy, scr);
-  dpi_y = ((double) DisplayHeight(dpy, scr) * 25.4) / DisplayHeightMM(dpy, scr);
-  dpi = (dpi_x + dpi_y) / 2;
+  /* Get DPI from xft, most often configured properly by users */
+  resources = XResourceManagerString(dpy);
+  if (resources) {
+    XrmDatabase database = XrmGetStringDatabase(resources);
+    char *type;
+    XrmValue value;
+
+    if (XrmGetResource(database, "Xft.dpi", "Xft.dpi", &type, &value))
+      if (type && strcmp(type, "String") == 0)
+        dpi = atoi(value.addr);
+
+    XrmDestroyDatabase(database);
+  }
+
+  if (dpi == 0) {
+    /* Fallback to value set by X server, but very often hardwired to 96dpi :/ */
+    /* 25.4mm per inch */
+    dpi_x = ((double) DisplayWidth(dpy, scr) * 25.4) / DisplayWidthMM(dpy, scr);
+    dpi_y = ((double) DisplayHeight(dpy, scr) * 25.4) / DisplayHeightMM(dpy, scr);
+    dpi = (dpi_x + dpi_y) / 2;
+  }
 
   /* Original values for fontsize/gridsize were tuned for 96dpi */
   coutput->loutput->fontsize = (coutput->loutput->fontsize * dpi) / 96;
@@ -296,7 +358,7 @@ output_x11(struct lstopo_output *loutput, const char *dummy __hwloc_attribute_un
   screen_height = loutput->height;
 
   disp->top = top = XCreateSimpleWindow(dpy, root, 0, 0, screen_width, screen_height, 0, WhitePixel(dpy, scr), WhitePixel(dpy, scr));
-  XStoreName(dpy, top, "lstopo");
+  XStoreName(dpy, top, loutput->title);
   XSetIconName(dpy, top, "lstopo");
   XSelectInput(dpy,top, StructureNotifyMask | KeyPressMask);
 
@@ -316,22 +378,16 @@ output_x11(struct lstopo_output *loutput, const char *dummy __hwloc_attribute_un
   disp->y = 0;
   disp->scale = disp->last_scale = 1.0f;
   /* TODO: if window got truncated, scale down? */
+  disp->needs_redraw = 0;
+  disp->needs_resize = 0;
+  disp->auto_resize = 1;
 
   x11_create(disp, loutput->width, loutput->height);
 
   XMapWindow(dpy, top);
 
-  printf("\n");
-  printf("Keyboard shortcuts:\n");
-  printf(" Zoom-in or out .................... + -\n");
-  printf(" Try to fit scale to window ........ f F\n");
-  printf(" Reset scale to default ............ 1\n");
-  printf(" Scroll vertically ................. Up Down PageUp PageDown\n");
-  printf(" Scroll horizontally ............... Left Right Ctrl+PageUp/Down\n");
-  printf(" Scroll to the top-left corner ..... Home\n");
-  printf(" Scroll to the bottom-right corner . End\n");
-  printf(" Exit .............................. q Q Esc\n");
-  printf("\n\n");
+  if (!loutput->refreshing)
+    lstopo_show_interactive_help();
 
   /* ready */
   declare_colors(loutput);
@@ -342,7 +398,7 @@ output_x11(struct lstopo_output *loutput, const char *dummy __hwloc_attribute_un
 
   topo_cairo_paint(coutput);
 
-  while (!finish) {
+  while (!finish && !loutput->needs_topology_refresh) {
     XEvent e;
     if (!XEventsQueued(disp->dpy, QueuedAfterFlush)) {
       /* No pending event, flush moving windows before waiting for next event */
@@ -402,57 +458,60 @@ output_x11(struct lstopo_output *loutput, const char *dummy __hwloc_attribute_un
 	KeySym keysym;
 	XLookupString(&e.xkey, NULL, 0, &keysym, NULL);
         switch (keysym) {
-          case XK_q:
-          case XK_Q:
-          case XK_Escape:
-            finish = 1;
-            break;
-          case XK_Left:
-            disp->x -= disp->screen_width/10;
-            move_x11(disp);
-            break;
-          case XK_Right:
-            disp->x += disp->screen_width/10;
-            move_x11(disp);
-            break;
-          case XK_Up:
-            disp->y -= disp->screen_height/10;
-            move_x11(disp);
-            break;
-          case XK_Down:
-            disp->y += disp->screen_height/10;
-            move_x11(disp);
-            break;
-          case XK_Page_Up:
-            if (e.xkey.state & ControlMask) {
-              disp->x -= disp->screen_width;
-              move_x11(disp);
-            } else {
-              disp->y -= disp->screen_height;
-              move_x11(disp);
-            }
-            break;
-          case XK_Page_Down:
-            if (e.xkey.state & ControlMask) {
-              disp->x += disp->screen_width;
-              move_x11(disp);
-            } else {
-              disp->y += disp->screen_height;
-              move_x11(disp);
-            }
-            break;
-          case XK_Home:
-            disp->x = 0;
-            disp->y = 0;
-            move_x11(disp);
-            break;
-          case XK_End:
-            disp->x = INT_MAX;
-            disp->y = INT_MAX;
-            move_x11(disp);
-            break;
-	case XK_f:
+	case XK_q:
+	case XK_Q:
+	case XK_Escape:
+	  finish = 1;
+	  break;
+        case XK_F5:
+          loutput->needs_topology_refresh = 1;
+          break;
+	case XK_Left:
+	  disp->x -= disp->screen_width/10;
+	  move_x11(disp);
+	  break;
+	case XK_Right:
+	  disp->x += disp->screen_width/10;
+	  move_x11(disp);
+	  break;
+	case XK_Up:
+	  disp->y -= disp->screen_height/10;
+	  move_x11(disp);
+	  break;
+	case XK_Down:
+	  disp->y += disp->screen_height/10;
+	  move_x11(disp);
+	  break;
+	case XK_Page_Up:
+	  if (e.xkey.state & ControlMask) {
+	    disp->x -= disp->screen_width;
+	    move_x11(disp);
+	  } else {
+	    disp->y -= disp->screen_height;
+	    move_x11(disp);
+	  }
+	  break;
+	case XK_Page_Down:
+	  if (e.xkey.state & ControlMask) {
+	    disp->x += disp->screen_width;
+	    move_x11(disp);
+	  } else {
+	    disp->y += disp->screen_height;
+	    move_x11(disp);
+	  }
+	  break;
+	case XK_Home:
+	  disp->x = 0;
+	  disp->y = 0;
+	  move_x11(disp);
+	  break;
+	case XK_End:
+	  disp->x = INT_MAX;
+	  disp->y = INT_MAX;
+	  move_x11(disp);
+	  break;
 	case XK_F: {
+	  /* fit drawing to window, dont't resize the window */
 	  float wscale = disp->screen_width / (float)disp->width;
 	  float hscale = disp->screen_height / (float)disp->height;
 	  disp->scale *= wscale > hscale ? hscale : wscale;
@@ -462,17 +521,124 @@ output_x11(struct lstopo_output *loutput, const char *dummy __hwloc_attribute_un
 	case XK_plus:
 	case XK_KP_Add:
 	  disp->scale *= 1.2f;
+	  disp->needs_resize = 1;
 	  move_x11(disp);
 	  break;
 	case XK_minus:
 	case XK_KP_Subtract:
 	  disp->scale /= 1.2f;
+	  disp->needs_resize = 1;
 	  move_x11(disp);
 	  break;
 	case XK_1:
 	case XK_KP_1:
 	  disp->scale = 1.0f;
+	  disp->needs_resize = 1;
 	  move_x11(disp);
+	  break;
+	case XK_r:
+	  disp->needs_resize = 2;
+	  move_x11(disp);
+	  break;
+	case XK_R:
+	  disp->auto_resize ^= 1;
+	  printf("%s window autoresizing\n", disp->auto_resize ? "enabled" : "disabled");
+	  disp->needs_resize = 1;
+	  move_x11(disp);
+	  break;
+	case XK_h:
+	case XK_H:
+	case XK_question:
+	  lstopo_show_interactive_help();
+	  break;
+	case XK_a:
+	  loutput->show_attrs_enabled ^= 1;
+	  printf("%s object attributes\n", loutput->show_attrs_enabled ? "enabled" : "disabled");
+	  disp->needs_redraw = 1;
+	  disp->needs_resize = 1;
+	  move_x11(disp);
+	  break;
+	case XK_t:
+	  loutput->show_text_enabled ^= 1;
+	  printf("%s object text\n", loutput->show_text_enabled ? "enabled" : "disabled");
+	  disp->needs_redraw = 1;
+	  disp->needs_resize = 1;
+	  move_x11(disp);
+	  break;
+	case XK_i:
+	  if (loutput->index_type == LSTOPO_INDEX_TYPE_DEFAULT) {
+	    loutput->index_type = LSTOPO_INDEX_TYPE_PHYSICAL;
+	    printf("switched to physical indexes\n");
+	  } else if (loutput->index_type == LSTOPO_INDEX_TYPE_PHYSICAL) {
+	    loutput->index_type = LSTOPO_INDEX_TYPE_LOGICAL;
+	    printf("switched to logical indexes\n");
+	  } else if (loutput->index_type == LSTOPO_INDEX_TYPE_LOGICAL) {
+	    loutput->index_type = LSTOPO_INDEX_TYPE_NONE;
+	    printf("switched to no indexes\n");
+	  } else if (loutput->index_type == LSTOPO_INDEX_TYPE_NONE) {
+	    loutput->index_type = LSTOPO_INDEX_TYPE_DEFAULT;
+	    printf("switched to default indexes\n");
+	  } else {
+	    abort();
+	  }
+	  disp->needs_redraw = 1;
+	  disp->needs_resize = 1;
+	  move_x11(disp);
+	  break;
+	case XK_b:
+	  loutput->show_binding ^= 1;
+	  printf("%s coloring of binding resources\n", loutput->show_binding ? "enabled" : "disabled");
+	  disp->needs_redraw = 1;
+	  move_x11(disp);
+	  break;
+	case XK_d:
+	  loutput->show_disallowed ^= 1;
+	  printf("%s coloring of disallowed resources\n", loutput->show_disallowed ? "enabled" : "disabled");
+	  disp->needs_redraw = 1;
+	  move_x11(disp);
+	  break;
+        case XK_k:
+          loutput->show_cpukinds ^= 1;
+          printf("%s displaying of CPU kinds\n", loutput->show_cpukinds ? "enabled" : "disabled");
+          disp->needs_redraw = 1;
+          move_x11(disp);
+          break;
+	case XK_f:
+	  /* alternate between factorize+collapse, collapse only, and none */
+	  if (loutput->factorize_enabled && loutput->pci_collapse_enabled) {
+	    loutput->factorize_enabled = 0;
+	    printf("factorizing disabled, PCI collapsing still enabled\n");
+	  } else if (!loutput->factorize_enabled && loutput->pci_collapse_enabled) {
+	    loutput->pci_collapse_enabled = 0;
+	    printf("factorizing and PCI collapsing disabled\n");
+	  } else {
+	    loutput->factorize_enabled = 1;
+	    loutput->pci_collapse_enabled = 1;
+	    printf("factorizing and PCI collapsing enabled\n");
+	  }
+	  disp->needs_redraw = 1;
+	  disp->needs_resize = 1;
+	  move_x11(disp);
+	  break;
+	case XK_l:
+          if (loutput->show_legend == LSTOPO_SHOW_LEGEND_ALL) {
+            loutput->show_legend = LSTOPO_SHOW_LEGEND_NONE;
+            printf("switched to no legend lines\n");
+          } else if (loutput->show_legend == LSTOPO_SHOW_LEGEND_NONE) {
+            loutput->show_legend = LSTOPO_SHOW_LEGEND_NO_DEFAULT;
+            printf("switched to no default legend lines\n");
+          } else if (loutput->show_legend == LSTOPO_SHOW_LEGEND_NO_DEFAULT) {
+            loutput->show_legend = LSTOPO_SHOW_LEGEND_ALL;
+            printf("switched to all legend lines\n");
+          } else {
+            abort();
+          }
+	  disp->needs_redraw = 1;
+	  disp->needs_resize = 1;
+	  move_x11(disp);
+	  break;
+	case XK_E:
+	  lstopo_show_interactive_cli_options(loutput);
 	  break;
 	}
       }
@@ -483,17 +649,18 @@ output_x11(struct lstopo_output *loutput, const char *dummy __hwloc_attribute_un
   XFreeCursor(disp->dpy, disp->hand);
   XCloseDisplay(disp->dpy);
 
+  destroy_colors(loutput);
   return 0;
 }
-#endif /* CAIRO_HAS_XLIB_SURFACE */
+#endif /* LSTOPO_HAVE_X11 */
 
 
 #ifdef CAIRO_HAS_PNG_FUNCTIONS
 /* PNG back-end */
-static struct draw_methods png_draw_methods;
 
 static struct draw_methods png_draw_methods = {
-  topo_cairo_declare_color,
+  NULL,
+  NULL,
   topo_cairo_box,
   topo_cairo_line,
   topo_cairo_text,
@@ -544,6 +711,7 @@ output_png(struct lstopo_output *loutput, const char *filename)
   if (output != stdout)
     fclose(output);
 
+  destroy_colors(loutput);
   return 0;
 }
 #endif /* CAIRO_HAS_PNG_FUNCTIONS */
@@ -551,10 +719,10 @@ output_png(struct lstopo_output *loutput, const char *filename)
 
 #ifdef CAIRO_HAS_PDF_SURFACE
 /* PDF back-end */
-static struct draw_methods pdf_draw_methods;
 
 static struct draw_methods pdf_draw_methods = {
-  topo_cairo_declare_color,
+  NULL,
+  NULL,
   topo_cairo_box,
   topo_cairo_line,
   topo_cairo_text,
@@ -605,6 +773,7 @@ output_pdf(struct lstopo_output *loutput, const char *filename)
   if (output != stdout)
     fclose(output);
 
+  destroy_colors(loutput);
   return 0;
 }
 #endif /* CAIRO_HAS_PDF_SURFACE */
@@ -612,10 +781,10 @@ output_pdf(struct lstopo_output *loutput, const char *filename)
 
 #ifdef CAIRO_HAS_PS_SURFACE
 /* PS back-end */
-static struct draw_methods ps_draw_methods;
 
 static struct draw_methods ps_draw_methods = {
-  topo_cairo_declare_color,
+  NULL,
+  NULL,
   topo_cairo_box,
   topo_cairo_line,
   topo_cairo_text,
@@ -666,6 +835,7 @@ output_ps(struct lstopo_output *loutput, const char *filename)
   if (output != stdout)
     fclose(output);
 
+  destroy_colors(loutput);
   return 0;
 }
 #endif /* CAIRO_HAS_PS_SURFACE */
@@ -673,10 +843,10 @@ output_ps(struct lstopo_output *loutput, const char *filename)
 
 #ifdef CAIRO_HAS_SVG_SURFACE
 /* SVG back-end */
-static struct draw_methods svg_draw_methods;
 
 static struct draw_methods svg_draw_methods = {
-  topo_cairo_declare_color,
+  NULL,
+  NULL,
   topo_cairo_box,
   topo_cairo_line,
   topo_cairo_text,
@@ -684,7 +854,7 @@ static struct draw_methods svg_draw_methods = {
 };
 
 int
-output_svg(struct lstopo_output *loutput, const char *filename)
+output_cairosvg(struct lstopo_output *loutput, const char *filename)
 {
   struct lstopo_cairo_output coutput;
   FILE *output;
@@ -727,6 +897,7 @@ output_svg(struct lstopo_output *loutput, const char *filename)
   if (output != stdout)
     fclose(output);
 
+  destroy_colors(loutput);
   return 0;
 }
 #endif /* CAIRO_HAS_SVG_SURFACE */

@@ -96,6 +96,7 @@ target_triplet = @target@
 @HWLOC_HAVE_CUDA_TRUE@am__append_6 = -DHWLOC_TEST_RENAME_CUDA=1
 @HWLOC_HAVE_CUDART_TRUE@am__append_7 = -DHWLOC_TEST_RENAME_CUDART=1
 @HWLOC_HAVE_NVML_TRUE@am__append_8 = -DHWLOC_TEST_RENAME_NVML=1
+@HWLOC_HAVE_RSMI_TRUE@am__append_9 = -DHWLOC_TEST_RENAME_RSMI=1
 subdir = tests/hwloc/rename
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/hwloc.m4 \
@@ -188,6 +189,7 @@ HWLOC_CPPFLAGS = @HWLOC_CPPFLAGS@
 HWLOC_CUDA_LIBS = @HWLOC_CUDA_LIBS@
 HWLOC_DIFF_U = @HWLOC_DIFF_U@
 HWLOC_DIFF_W = @HWLOC_DIFF_W@
+HWLOC_DL_LIBS = @HWLOC_DL_LIBS@
 HWLOC_EMBEDDED_CFLAGS = @HWLOC_EMBEDDED_CFLAGS@
 HWLOC_EMBEDDED_CPPFLAGS = @HWLOC_EMBEDDED_CPPFLAGS@
 HWLOC_EMBEDDED_LDADD = @HWLOC_EMBEDDED_LDADD@
@@ -197,13 +199,17 @@ HWLOC_GL_LIBS = @HWLOC_GL_LIBS@
 HWLOC_HAVE_LIBXML2 = @HWLOC_HAVE_LIBXML2@
 HWLOC_HAVE_NVML = @HWLOC_HAVE_NVML@
 HWLOC_HAVE_OPENCL = @HWLOC_HAVE_OPENCL@
+HWLOC_HAVE_RSMI = @HWLOC_HAVE_RSMI@
 HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
 HWLOC_LIBS = @HWLOC_LIBS@
 HWLOC_LIBS_PRIVATE = @HWLOC_LIBS_PRIVATE@
 HWLOC_LIBXML2_CFLAGS = @HWLOC_LIBXML2_CFLAGS@
 HWLOC_LIBXML2_LIBS = @HWLOC_LIBXML2_LIBS@
+HWLOC_LTDL_LIBS = @HWLOC_LTDL_LIBS@
 HWLOC_MS_LIB = @HWLOC_MS_LIB@
 HWLOC_MS_LIB_ARCH = @HWLOC_MS_LIB_ARCH@
+HWLOC_NUMA_CFLAGS = @HWLOC_NUMA_CFLAGS@
+HWLOC_NUMA_LIBS = @HWLOC_NUMA_LIBS@
 HWLOC_NVML_LIBS = @HWLOC_NVML_LIBS@
 HWLOC_OPENCL_CFLAGS = @HWLOC_OPENCL_CFLAGS@
 HWLOC_OPENCL_LDFLAGS = @HWLOC_OPENCL_LDFLAGS@
@@ -212,8 +218,10 @@ HWLOC_PCIACCESS_CFLAGS = @HWLOC_PCIACCESS_CFLAGS@
 HWLOC_PCIACCESS_LIBS = @HWLOC_PCIACCESS_LIBS@
 HWLOC_PLUGINS_DIR = @HWLOC_PLUGINS_DIR@
 HWLOC_PLUGINS_PATH = @HWLOC_PLUGINS_PATH@
+HWLOC_PS_LIBS = @HWLOC_PS_LIBS@
 HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
 HWLOC_REQUIRES = @HWLOC_REQUIRES@
+HWLOC_RSMI_LIBS = @HWLOC_RSMI_LIBS@
 HWLOC_TERMCAP_LIBS = @HWLOC_TERMCAP_LIBS@
 HWLOC_VERSION = @HWLOC_VERSION@
 HWLOC_W3_GENERATOR = @HWLOC_W3_GENERATOR@
@@ -344,7 +352,7 @@ top_srcdir = @top_srcdir@
 xz = @xz@
 TEST_CPPFLAGS = $(am__append_1) $(am__append_2) $(am__append_3) \
 	$(am__append_4) $(am__append_5) $(am__append_6) \
-	$(am__append_7) $(am__append_8)
+	$(am__append_7) $(am__append_8) $(am__append_9)
 EXTRA_DIST = main.c
 all: all-am
 
@@ -545,13 +553,13 @@ uninstall-am:
 dirs:
 	mkdir -p include/hwloc/autogen include/private/autogen
 
-include/hwloc/autogen/config.h: $(HWLOC_top_builddir)/include/hwloc/autogen/config.h
+include/hwloc/autogen/config.h: dirs $(HWLOC_top_builddir)/include/hwloc/autogen/config.h
 	sed	-e 's/^#define HWLOC_SYM_TRANSFORM 0/#define HWLOC_SYM_TRANSFORM 1/'                    \
 		-e 's/^#define HWLOC_SYM_PREFIX hwloc_/#define HWLOC_SYM_PREFIX foobar_/'               \
 		-e 's/^#define HWLOC_SYM_PREFIX_CAPS HWLOC_/#define HWLOC_SYM_PREFIX_CAPS FOOBAR_/'     \
 		$(HWLOC_top_builddir)/include/hwloc/autogen/config.h > include/hwloc/autogen/config.h
 
-include/private/autogen/config.h: $(HWLOC_top_builddir)/include/private/autogen/config.h
+include/private/autogen/config.h: dirs $(HWLOC_top_builddir)/include/private/autogen/config.h
 	sed	-e 's/^#define HWLOC_SYM_TRANSFORM 0/#define HWLOC_SYM_TRANSFORM 1/'                    \
 		-e 's/^#define HWLOC_SYM_PREFIX hwloc_/#define HWLOC_SYM_PREFIX foobar_/'               \
 		-e 's/^#define HWLOC_SYM_PREFIX_CAPS HWLOC_/#define HWLOC_SYM_PREFIX_CAPS FOOBAR_/'     \
@@ -564,18 +572,22 @@ useless:
 		| egrep -v '(HWLOC_RENAME_H|HWLOC_MUNGE_NAME|HWLOC_NAME)' \
 		| while read name ; do \
 			grep $$name -rwH $(HWLOC_top_srcdir)/include/ \
-			| grep -v rename.h: | grep -v .svn >/dev/null \
+			| grep -v rename.h: >/dev/null \
 			|| echo $$name; \
 			done \
 	 | grep '' ; then false ; else true ; fi
 	@echo "# done"
 
+cpp.out: include/hwloc/autogen/config.h include/private/autogen/config.h
+	@echo "# Checking for warnings/errors during renaming"
+	@echo "# using $(TEST_CPPFLAGS)"
+	@$(CPP) -Werror $(CPPFLAGS) $(TEST_CPPFLAGS) -Iinclude -I$(HWLOC_top_srcdir)/include -I$(HWLOC_top_builddir)/include $(srcdir)/main.c >$@
+
 # hwloc_uint64_t is ignored because it's always a typedef.
 # we have to manually concat a##b because some cpp let gcc do it (at least cpp 4.2.1 on OpenBSD 5.2).
-needed: dirs include/hwloc/autogen/config.h include/private/autogen/config.h
+needed: cpp.out
 	@echo "# Finding needed renaming"
-	@echo "# using $(TEST_CPPFLAGS)"
-	@if cpp $(CPPFLAGS) $(TEST_CPPFLAGS) -Iinclude -I$(HWLOC_top_srcdir)/include -I$(HWLOC_top_builddir)/include $(srcdir)/main.c \
+	@if cat cpp.out \
 		| sed -e 's/foobar_ ##   hwloc_ ## /foobar_hwloc_/g' \
 		| sed -e 's/FOOBAR_ ##   hwloc_ ## /FOOBAR_hwloc_/g' \
 		| grep -vw HWLOC_DEBUG_VERBOSE \

@@ -1,19 +1,19 @@
 /*
  * Copyright © 2009 CNRS
  * Copyright © 2009-2018 Inria.  All rights reserved.
- * Copyright © 2009-2011 Université Bordeaux
+ * Copyright © 2009-2011, 2020 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <private/autogen/config.h>
-#include <hwloc.h>
-#include <hwloc/plugins.h>
+#include "private/autogen/config.h"
+#include "hwloc.h"
+#include "hwloc/plugins.h"
 
 /* private headers allowed because this plugin is built within hwloc */
-#include <private/xml.h>
-#include <private/debug.h>
-#include <private/misc.h>
+#include "private/xml.h"
+#include "private/debug.h"
+#include "private/misc.h"
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -145,7 +145,7 @@ hwloc__libxml_import_close_child(hwloc__xml_import_state_t state __hwloc_attribu
 
 static int
 hwloc__libxml_import_get_content(hwloc__xml_import_state_t state,
-				 char **beginp, size_t expected_length)
+				 const char **beginp, size_t expected_length)
 {
   hwloc__libxml_import_state_data_t lstate = (void*) state->data;
   xmlNode *child;
@@ -155,14 +155,14 @@ hwloc__libxml_import_get_content(hwloc__xml_import_state_t state,
   if (!child || child->type != XML_TEXT_NODE) {
     if (expected_length)
       return -1;
-    *beginp = (char *) (const char *) "";
+    *beginp = "";
     return 0;
   }
 
   length = strlen((char *) child->content);
   if (length != expected_length)
     return -1;
-  *beginp = (char *) child->content;
+  *beginp = (const char*) child->content;
   return 1;
 }
 
@@ -537,6 +537,7 @@ hwloc__libxml2_prepare_export_diff(hwloc_topology_diff_t diff, const char *refna
   state.new_prop = hwloc__libxml_export_new_prop;
   state.add_content = hwloc__libxml_export_add_content;
   state.end_object = hwloc__libxml_export_end_object;
+  state.global = NULL;
 
   data->current_node = root_node;
 

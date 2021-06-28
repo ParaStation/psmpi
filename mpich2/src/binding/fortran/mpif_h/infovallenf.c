@@ -272,11 +272,11 @@ FORT_DLL_SPEC void FORT_CALL mpi_info_get_valuelen_ ( MPI_Fint *v1, char *v2 FOR
      int  li;
         while (*p == ' ' && p > v2) p--;
         p++;
-        p2 = (char *)MPL_malloc( p-v2 + 1, MPL_MEM_OTHER );
+        p2 = (char *)malloc(p-v2 + 1);
         for (li=0; li<(p-v2); li++) { p2[li] = v2[li]; }
         p2[li] = 0; 
     }
     *ierr = MPI_Info_get_valuelen( (MPI_Info)(*v1), p2, v3, &l4 );
     if (*ierr == MPI_SUCCESS) *v4 = MPII_TO_FLOG(l4);
-    MPL_free( p2 );
+    free( p2 );
 }

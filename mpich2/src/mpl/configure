@@ -1503,12 +1503,16 @@ Optional Packages:
         ticketlock - use ticketlock, a fair lock based on atomics and busyloop
 
   --with-uti=[PATH]       specify path where uti include directory and lib
-                          directory can be found
+                          directory can be found. Having this option
+                          explicitly requires the library. When PATH is not
+                          given, it checks the library from system paths.
   --with-uti-include=PATH specify path where uti include directory can be
                           found
   --with-uti-lib=PATH     specify path where uti lib directory can be found
   --with-argobots=[PATH]  specify path where argobots include directory and
-                          lib directory can be found
+                          lib directory can be found. Having this option
+                          explicitly requires the library. When PATH is not
+                          given, it checks the library from system paths.
   --with-argobots-include=PATH
                           specify path where argobots include directory can be
                           found
@@ -1532,13 +1536,17 @@ Optional Packages:
                           create shared memory using sysv or mmap (default is
                           auto)
   --with-cuda=[PATH]      specify path where cuda include directory and lib
-                          directory can be found
+                          directory can be found. Having this option
+                          explicitly requires the library. When PATH is not
+                          given, it checks the library from system paths.
   --with-cuda-include=PATH
                           specify path where cuda include directory can be
                           found
   --with-cuda-lib=PATH    specify path where cuda lib directory can be found
   --with-ze=[PATH]        specify path where ze include directory and lib
-                          directory can be found
+                          directory can be found. Having this option
+                          explicitly requires the library. When PATH is not
+                          given, it checks the library from system paths.
   --with-ze-include=PATH  specify path where ze include directory can be found
   --with-ze-lib=PATH      specify path where ze lib directory can be found
 --with-cacheline=<N>
@@ -14808,9 +14816,8 @@ fi
 # Check whether --with-uti was given.
 if test "${with_uti+set}" = set; then :
   withval=$with_uti;
-else
-  with_uti=
 fi
+
 
 
 # Check whether --with-uti-include was given.
@@ -14843,6 +14850,14 @@ fi
     # Now append -I/-L args to CPPFLAGS/LDFLAGS, with more specific options
     # taking priority
 
+    case "${with_uti}" in
+        embedded)
+            as_fn_error $? "embedded uti is requested but we do not have the embedded version" "$LINENO" 5
+            ;;
+        yes|no)
+            # skip
+            ;;
+        *)
     if test -n "${with_uti_include}"; then :
 
 
@@ -14908,6 +14923,8 @@ fi
 fi
 
 fi
+            ;;
+    esac
 
 
     failure=no
@@ -14918,6 +14935,13 @@ else
   failure=yes
 fi
 
+
+
+	if test -z "${pac_save_LIBS_nesting}" ; then
+	   pac_save_LIBS_nesting=0
+	fi
+	eval pac_save_LIBS_${pac_save_LIBS_nesting}='"$LIBS"'
+	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} + 1`
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for uti_attr_init in -luti" >&5
 $as_echo_n "checking for uti_attr_init in -luti... " >&6; }
@@ -14966,15 +14990,32 @@ else
   failure=yes
 fi
 
+
+	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} - 1`
+	eval LIBS="\$pac_save_LIBS_${pac_save_LIBS_nesting}"
+	eval pac_save_LIBS_${pac_save_LIBS_nesting}=""
+
     if test "$failure" = "no" ; then
        success=yes
     else
        success=no
     fi
 
-	if test "$success" = "no" ; then
-	   as_fn_error $? "'uti.h or libuti library not found. Did you specify --with-uti= or --with-uti-include= or --with-uti-lib=?'" "$LINENO" 5
-	fi
+    if test "$success" = "no" ; then
+        as_fn_error $? "uti.h or libuti library not found. Did you specify --with-uti= or --with-uti-include= or --with-uti-lib=?" "$LINENO" 5
+    fi
+
+
+
+	if echo "$LIBS" | $FGREP -e "\<-luti\>" >/dev/null 2>&1; then :
+  echo "LIBS(='$LIBS') contains '-luti', not appending" >&5
+else
+  echo "LIBS(='$LIBS') does not contain '-luti', appending" >&5
+		LIBS="$LIBS -luti"
+
+fi
+
+
 
 	THREAD_PACKAGE_NAME=MPL_THREAD_PACKAGE_UTI
 	;;
@@ -15079,9 +15120,8 @@ fi
 # Check whether --with-argobots was given.
 if test "${with_argobots+set}" = set; then :
   withval=$with_argobots;
-else
-  with_argobots=
 fi
+
 
 
 # Check whether --with-argobots-include was given.
@@ -15114,6 +15154,14 @@ fi
     # Now append -I/-L args to CPPFLAGS/LDFLAGS, with more specific options
     # taking priority
 
+    case "${with_argobots}" in
+        embedded)
+            as_fn_error $? "embedded argobots is requested but we do not have the embedded version" "$LINENO" 5
+            ;;
+        yes|no)
+            # skip
+            ;;
+        *)
     if test -n "${with_argobots_include}"; then :
 
 
@@ -15179,6 +15227,8 @@ fi
 fi
 
 fi
+            ;;
+    esac
 
 
     failure=no
@@ -15189,6 +15239,13 @@ else
   failure=yes
 fi
 
+
+
+	if test -z "${pac_save_LIBS_nesting}" ; then
+	   pac_save_LIBS_nesting=0
+	fi
+	eval pac_save_LIBS_${pac_save_LIBS_nesting}='"$LIBS"'
+	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} + 1`
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ABT_key_create in -labt" >&5
 $as_echo_n "checking for ABT_key_create in -labt... " >&6; }
@@ -15237,15 +15294,32 @@ else
   failure=yes
 fi
 
+
+	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} - 1`
+	eval LIBS="\$pac_save_LIBS_${pac_save_LIBS_nesting}"
+	eval pac_save_LIBS_${pac_save_LIBS_nesting}=""
+
     if test "$failure" = "no" ; then
        success=yes
     else
        success=no
     fi
 
-	if test "$success" = "no" ; then
-	   as_fn_error $? "'abt.h or libabt library not found. Did you specify --with-argobots= or --with-argobots-include= or --with-argobots-lib=?'" "$LINENO" 5
-	fi
+    if test "$success" = "no" ; then
+        as_fn_error $? "abt.h or libabt library not found. Did you specify --with-argobots= or --with-argobots-include= or --with-argobots-lib=?" "$LINENO" 5
+    fi
+
+
+
+	if echo "$LIBS" | $FGREP -e "\<-labt\>" >/dev/null 2>&1; then :
+  echo "LIBS(='$LIBS') contains '-labt', not appending" >&5
+else
+  echo "LIBS(='$LIBS') does not contain '-labt', appending" >&5
+		LIBS="$LIBS -labt"
+
+fi
+
+
 
         THREAD_PACKAGE_NAME=MPL_THREAD_PACKAGE_ARGOBOTS
         ;;
@@ -16670,12 +16744,12 @@ have_gpu="no"
 # Check CUDA availability
 
 
+
 # Check whether --with-cuda was given.
 if test "${with_cuda+set}" = set; then :
   withval=$with_cuda;
-else
-  with_cuda=
 fi
+
 
 
 # Check whether --with-cuda-include was given.
@@ -16708,6 +16782,14 @@ fi
     # Now append -I/-L args to CPPFLAGS/LDFLAGS, with more specific options
     # taking priority
 
+    case "${with_cuda}" in
+        embedded)
+            as_fn_error $? "embedded cuda is requested but we do not have the embedded version" "$LINENO" 5
+            ;;
+        yes|no)
+            # skip
+            ;;
+        *)
     if test -n "${with_cuda_include}"; then :
 
 
@@ -16773,7 +16855,14 @@ fi
 fi
 
 fi
+            ;;
+    esac
 
+    if test "${with_cuda}" = "embedded" ; then
+                pac_have_cuda=yes
+    elif test "${with_cuda}" = "no" ; then
+        pac_have_cuda=no
+    else
 
     failure=no
     ac_fn_c_check_header_mongrel "$LINENO" "cuda_runtime_api.h" "ac_cv_header_cuda_runtime_api_h" "$ac_includes_default"
@@ -16783,6 +16872,13 @@ else
   failure=yes
 fi
 
+
+
+	if test -z "${pac_save_LIBS_nesting}" ; then
+	   pac_save_LIBS_nesting=0
+	fi
+	eval pac_save_LIBS_${pac_save_LIBS_nesting}='"$LIBS"'
+	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} + 1`
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cudaStreamSynchronize in -lcudart" >&5
 $as_echo_n "checking for cudaStreamSynchronize in -lcudart... " >&6; }
@@ -16831,12 +16927,38 @@ else
   failure=yes
 fi
 
+
+	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} - 1`
+	eval LIBS="\$pac_save_LIBS_${pac_save_LIBS_nesting}"
+	eval pac_save_LIBS_${pac_save_LIBS_nesting}=""
+
     if test "$failure" = "no" ; then
-       have_cudart=yes
+       pac_have_cuda=yes
     else
-       have_cudart=no
+       pac_have_cuda=no
     fi
 
+        if test "${pac_have_cuda}" = "no" -a -n "${with_cuda}" ; then
+                        as_fn_error $? "--with-cuda is given but not found" "$LINENO" 5
+        fi
+        if test "${pac_have_cuda}" = "yes" ; then
+
+
+
+	if echo "$LIBS" | $FGREP -e "\<-lcudart\>" >/dev/null 2>&1; then :
+  echo "LIBS(='$LIBS') contains '-lcudart', not appending" >&5
+else
+  echo "LIBS(='$LIBS') does not contain '-lcudart', appending" >&5
+		LIBS="$LIBS -lcudart"
+
+fi
+
+
+        fi
+    fi
+
+if test "$pac_have_cuda" = "yes" ; then
+    # also require -lcuda (in addition to -lcudart)
 
     failure=no
     ac_fn_c_check_header_mongrel "$LINENO" "cuda.h" "ac_cv_header_cuda_h" "$ac_includes_default"
@@ -16846,6 +16968,13 @@ else
   failure=yes
 fi
 
+
+
+	if test -z "${pac_save_LIBS_nesting}" ; then
+	   pac_save_LIBS_nesting=0
+	fi
+	eval pac_save_LIBS_${pac_save_LIBS_nesting}='"$LIBS"'
+	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} + 1`
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cuMemGetAddressRange in -lcuda" >&5
 $as_echo_n "checking for cuMemGetAddressRange in -lcuda... " >&6; }
@@ -16894,20 +17023,37 @@ else
   failure=yes
 fi
 
+
+	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} - 1`
+	eval LIBS="\$pac_save_LIBS_${pac_save_LIBS_nesting}"
+	eval pac_save_LIBS_${pac_save_LIBS_nesting}=""
+
     if test "$failure" = "no" ; then
-       have_cuda=yes
+       pac_have_cuda=yes
     else
-       have_cuda=no
+       pac_have_cuda=no
     fi
 
-if test "X${have_cudart}" = "Xyes" -a \
-    "X${have_cuda}" = "Xyes" ; then
+fi
+if test "X${pac_have_cuda}" = "Xyes" ; then
+
+
+
+	if echo "$LIBS" | $FGREP -e "\<-lcuda\>" >/dev/null 2>&1; then :
+  echo "LIBS(='$LIBS') contains '-lcuda', not appending" >&5
+else
+  echo "LIBS(='$LIBS') does not contain '-lcuda', appending" >&5
+		LIBS="$LIBS -lcuda"
+
+fi
+
+
 
 $as_echo "#define HAVE_CUDA 1" >>confdefs.h
 
     have_gpu="yes"
 fi
- if test "X${have_cudart}" = "Xyes" -a "X${have_cuda}" = "Xyes"; then
+ if test "X${pac_have_cuda}" = "Xyes"; then
   MPL_HAVE_CUDA_TRUE=
   MPL_HAVE_CUDA_FALSE='#'
 else
@@ -16920,12 +17066,12 @@ if test "$have_gpu" = "no" ; then
     # Check Level Zero availability when no other GPU library is available
 
 
+
 # Check whether --with-ze was given.
 if test "${with_ze+set}" = set; then :
   withval=$with_ze;
-else
-  with_ze=
 fi
+
 
 
 # Check whether --with-ze-include was given.
@@ -16958,6 +17104,14 @@ fi
     # Now append -I/-L args to CPPFLAGS/LDFLAGS, with more specific options
     # taking priority
 
+    case "${with_ze}" in
+        embedded)
+            as_fn_error $? "embedded ze is requested but we do not have the embedded version" "$LINENO" 5
+            ;;
+        yes|no)
+            # skip
+            ;;
+        *)
     if test -n "${with_ze_include}"; then :
 
 
@@ -17023,7 +17177,14 @@ fi
 fi
 
 fi
+            ;;
+    esac
 
+    if test "${with_ze}" = "embedded" ; then
+                pac_have_ze=yes
+    elif test "${with_ze}" = "no" ; then
+        pac_have_ze=no
+    else
 
     failure=no
     ac_fn_c_check_header_mongrel "$LINENO" "level_zero/ze_api.h" "ac_cv_header_level_zero_ze_api_h" "$ac_includes_default"
@@ -17033,6 +17194,13 @@ else
   failure=yes
 fi
 
+
+
+	if test -z "${pac_save_LIBS_nesting}" ; then
+	   pac_save_LIBS_nesting=0
+	fi
+	eval pac_save_LIBS_${pac_save_LIBS_nesting}='"$LIBS"'
+	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} + 1`
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for zeInit in -lze_loader" >&5
 $as_echo_n "checking for zeInit in -lze_loader... " >&6; }
@@ -17081,20 +17249,44 @@ else
   failure=yes
 fi
 
+
+	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} - 1`
+	eval LIBS="\$pac_save_LIBS_${pac_save_LIBS_nesting}"
+	eval pac_save_LIBS_${pac_save_LIBS_nesting}=""
+
     if test "$failure" = "no" ; then
-       have_ze=yes
+       pac_have_ze=yes
     else
-       have_ze=no
+       pac_have_ze=no
     fi
 
-    if test "X${have_ze}" = "Xyes" ; then
+        if test "${pac_have_ze}" = "no" -a -n "${with_ze}" ; then
+                        as_fn_error $? "--with-ze is given but not found" "$LINENO" 5
+        fi
+        if test "${pac_have_ze}" = "yes" ; then
+
+
+
+	if echo "$LIBS" | $FGREP -e "\<-lze_loader\>" >/dev/null 2>&1; then :
+  echo "LIBS(='$LIBS') contains '-lze_loader', not appending" >&5
+else
+  echo "LIBS(='$LIBS') does not contain '-lze_loader', appending" >&5
+		LIBS="$LIBS -lze_loader"
+
+fi
+
+
+        fi
+    fi
+
+    if test "X${pac_have_ze}" = "Xyes" ; then
 
 $as_echo "#define HAVE_ZE 1" >>confdefs.h
 
         have_gpu="yes"
     fi
 fi
- if test "X${have_ze}" = "Xyes"; then
+ if test "X${pac_have_ze}" = "Xyes"; then
   MPL_HAVE_ZE_TRUE=
   MPL_HAVE_ZE_FALSE='#'
 else

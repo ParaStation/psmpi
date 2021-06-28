@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2018 Inria.  All rights reserved.
+ * Copyright © 2009-2020 Inria.  All rights reserved.
  * Copyright © 2009-2010, 2013 Université Bordeaux
  * Copyright © 2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -15,7 +15,7 @@
    pthread_pset_bind_np()
  */
 
-#include <private/autogen/config.h>
+#include "private/autogen/config.h"
 
 #include <sys/types.h>
 #ifdef HAVE_UNISTD_H
@@ -25,9 +25,9 @@
 #include <errno.h>
 #include <stdio.h>
 
-#include <hwloc.h>
-#include <private/private.h>
-#include <private/debug.h>
+#include "hwloc.h"
+#include "private/private.h"
+#include "private/debug.h"
 
 #include <sys/mpctl.h>
 #include <sys/mman.h>
@@ -175,14 +175,22 @@ hwloc_hpux_alloc_membind(hwloc_topology_t topology, size_t len, hwloc_const_node
 #endif /* MAP_MEM_FIRST_TOUCH */
 
 static int
-hwloc_look_hpux(struct hwloc_backend *backend)
+hwloc_look_hpux(struct hwloc_backend *backend, struct hwloc_disc_status *dstatus)
 {
+  /*
+   * This backend uses the underlying OS.
+   * However we don't enforce topology->is_thissystem so that
+   * we may still force use this backend when debugging with !thissystem.
+   */
+
   struct hwloc_topology *topology = backend->topology;
   int has_numa = sysconf(_SC_CCNUMA_SUPPORT) == 1;
   spu_t currentcpu;
   ldom_t currentnode;
   hwloc_obj_t *nodes, obj;
   int i, nbnodes = 0;
+
+  assert(dstatus->phase == HWLOC_DISC_PHASE_CPU);
 
   if (topology->levels[0][0]->cpuset)
     /* somebody discovered things */
@@ -191,7 +199,7 @@ hwloc_look_hpux(struct hwloc_backend *backend)
   hwloc_alloc_root_sets(topology->levels[0][0]);
 
   if (has_numa) {
-    nbnodes = mpctl((topology->flags & HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM) ?
+    nbnodes = mpctl((topology->flags & HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED) ?
       MPC_GETNUMLDOMS_SYS : MPC_GETNUMLDOMS, 0, 0);
   }
   hwloc_debug("%d nodes\n", nbnodes);
@@ -202,7 +210,7 @@ hwloc_look_hpux(struct hwloc_backend *backend)
 
   if (has_numa) {
     i = 0;
-    currentnode = mpctl((topology->flags & HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM) ?
+    currentnode = mpctl((topology->flags & HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED) ?
       MPC_GETFIRSTLDOM_SYS : MPC_GETFIRSTLDOM, 0, 0);
     while (currentnode != -1 && i < nbnodes) {
       hwloc_debug("node %d is %d\n", i, currentnode);
@@ -213,14 +221,14 @@ hwloc_look_hpux(struct hwloc_backend *backend)
       /* TODO: obj->attr->node.memory_kB */
       /* TODO: obj->attr->node.huge_page_free */
 
-      currentnode = mpctl((topology->flags & HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM) ?
+      currentnode = mpctl((topology->flags & HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED) ?
         MPC_GETNEXTLDOM_SYS : MPC_GETNEXTLDOM, currentnode, 0);
       i++;
     }
   }
 
   i = 0;
-  currentcpu = mpctl((topology->flags & HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM) ?
+  currentcpu = mpctl((topology->flags & HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED) ?
       MPC_GETFIRSTSPU_SYS : MPC_GETFIRSTSPU, 0,0);
   while (currentcpu != -1) {
     obj = hwloc_alloc_setup_object(topology, HWLOC_OBJ_PU, (unsigned) currentcpu);
@@ -246,21 +254,22 @@ hwloc_look_hpux(struct hwloc_backend *backend)
     }
 
     /* Add cpu */
-    hwloc_insert_object_by_cpuset(topology, obj);
+    hwloc__insert_object_by_cpuset(topology, NULL, obj, "hpux:pu");
 
-    currentcpu = mpctl((topology->flags & HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM) ?
+    currentcpu = mpctl((topology->flags & HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED) ?
       MPC_GETNEXTSPU_SYS : MPC_GETNEXTSPU, currentcpu, 0);
   }
 
   if (has_numa) {
     /* Add nodes */
     for (i = 0 ; i < nbnodes ; i++)
-      hwloc_insert_object_by_cpuset(topology, nodes[i]);
+      hwloc__insert_object_by_cpuset(topology, NULL, nodes[i], "hpux:numanode");
   }
 
   topology->support.discovery->pu = 1;
   if (has_numa)
     topology->support.discovery->numa = 1;
+  /* don't set disallowed_{pu,numa} since we don't set the allowed sets */
 
   hwloc_obj_add_info(topology->levels[0][0], "Backend", "HP-UX");
   hwloc_add_uname_info(topology, NULL);
@@ -290,13 +299,15 @@ hwloc_set_hpux_hooks(struct hwloc_binding_hooks *hooks,
 }
 
 static struct hwloc_backend *
-hwloc_hpux_component_instantiate(struct hwloc_disc_component *component,
+hwloc_hpux_component_instantiate(struct hwloc_topology *topology,
+				 struct hwloc_disc_component *component,
+				 unsigned excluded_phases __hwloc_attribute_unused,
 				 const void *_data1 __hwloc_attribute_unused,
 				 const void *_data2 __hwloc_attribute_unused,
 				 const void *_data3 __hwloc_attribute_unused)
 {
   struct hwloc_backend *backend;
-  backend = hwloc_backend_alloc(component);
+  backend = hwloc_backend_alloc(topology, component);
   if (!backend)
     return NULL;
   backend->discover = hwloc_look_hpux;
@@ -304,9 +315,9 @@ hwloc_hpux_component_instantiate(struct hwloc_disc_component *component,
 }
 
 static struct hwloc_disc_component hwloc_hpux_disc_component = {
-  HWLOC_DISC_COMPONENT_TYPE_CPU,
   "hpux",
-  HWLOC_DISC_COMPONENT_TYPE_GLOBAL,
+  HWLOC_DISC_PHASE_CPU,
+  HWLOC_DISC_PHASE_GLOBAL,
   hwloc_hpux_component_instantiate,
   50,
   1,

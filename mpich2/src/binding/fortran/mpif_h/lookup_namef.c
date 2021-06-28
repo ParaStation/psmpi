@@ -272,17 +272,17 @@ FORT_DLL_SPEC void FORT_CALL mpi_lookup_name_ ( char *v1 FORT_MIXED_LEN(d1), MPI
      int  li;
         while (*p == ' ' && p > v1) p--;
         p++;
-        p1 = (char *)MPL_malloc( p-v1 + 1, MPL_MEM_OTHER );
+        p1 = (char *)malloc(p-v1 + 1);
         for (li=0; li<(p-v1); li++) { p1[li] = v1[li]; }
         p1[li] = 0; 
     }
-    p3 = (char *)MPL_malloc( d3 + 1, MPL_MEM_OTHER );
+    p3 = (char *)malloc(d3 + 1);
     *ierr = MPI_Lookup_name( p1, (MPI_Info)(*v2), p3 );
 
     if (!*ierr) {char *p = v3, *pc=p3;
         while (*pc) {*p++ = *pc++;}
         while ((p-v3) < d3) { *p++ = ' '; }
     }
-    MPL_free( p1 );
-    MPL_free( p3 );
+    free( p1 );
+    free( p3 );
 }

@@ -4,6 +4,7 @@
     <ProjectGuid>{9DE76C6D-4773-4766-9F93-69C56166CB8D}</ProjectGuid>
     <RootNamespace>libhwloc</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="DebugStatic|x64">
@@ -28,27 +29,27 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugStatic|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -70,28 +71,28 @@
     <LinkIncremental>false</LinkIncremental>
     <EmbedManifest>true</EmbedManifest>
     <TargetName>$(ProjectName)-15</TargetName>
-    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugStatic|x64'">
     <LinkIncremental>false</LinkIncremental>
     <EmbedManifest>true</EmbedManifest>
     <TargetName>$(ProjectName)-15</TargetName>
-    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <EmbedManifest>true</EmbedManifest>
     <TargetName>$(ProjectName)-15</TargetName>
-    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'">
     <LinkIncremental>false</LinkIncremental>
     <EmbedManifest>true</EmbedManifest>
     <TargetName>$(ProjectName)-15</TargetName>
-    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugDll|x64'">
@@ -110,6 +111,9 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Manifest>
+      <AdditionalManifestFiles>app.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugStatic|x64'">
     <PreBuildEvent>
@@ -127,6 +131,9 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Manifest>
+      <AdditionalManifestFiles>app.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PreBuildEvent>
@@ -160,6 +167,9 @@
       <TargetMachine>MachineX64</TargetMachine>
       <LinkErrorReporting>NoErrorReport</LinkErrorReporting>
     </Link>
+    <Manifest>
+      <AdditionalManifestFiles>app.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'">
     <PreBuildEvent>
@@ -171,7 +181,7 @@
       </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>PSAPI_VERSION=1;WIN32;NDEBUG;WIN64;_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -185,7 +195,7 @@
       <IgnoreSpecificDefaultLibraries>libcmt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>$(OutDir)$(ProjectName).lib</ImportLibrary>
       <OptimizeReferences>true</OptimizeReferences>
-      <OutputFile>$(OutDir)$(TargetName).dll</OutputFile>
+      <OutputFile>$(OutDir)$(TargetName).lib</OutputFile>
       <ProgramDatabaseFile>$(OutDir)$(ProjectName).pdb</ProgramDatabaseFile>
       <ShowProgress>LinkVerboseLib</ShowProgress>
       <SubSystem>Console</SubSystem>
@@ -193,17 +203,22 @@
       <TargetMachine>MachineX64</TargetMachine>
       <LinkErrorReporting>NoErrorReport</LinkErrorReporting>
     </Link>
+    <Manifest>
+      <AdditionalManifestFiles>app.manifest</AdditionalManifestFiles>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\hwloc\base64.c" />
     <ClCompile Include="..\..\hwloc\bind.c" />
     <ClCompile Include="..\..\hwloc\bitmap.c" />
     <ClCompile Include="..\..\hwloc\components.c" />
-    <ClCompile Include="..\..\hwloc\distances.c" />
     <ClCompile Include="..\..\hwloc\diff.c" />
-    <ClCompile Include="..\..\hwloc\shmem.c" />
+    <ClCompile Include="..\..\hwloc\distances.c" />
+    <ClCompile Include="..\..\hwloc\memattrs.c" />
+    <ClCompile Include="..\..\hwloc\cpukinds.c" />
     <ClCompile Include="..\..\hwloc\misc.c" />
     <ClCompile Include="..\..\hwloc\pci-common.c" />
+    <ClCompile Include="..\..\hwloc\shmem.c" />
     <ClCompile Include="..\..\hwloc\topology-noos.c" />
     <ClCompile Include="..\..\hwloc\topology-synthetic.c" />
     <ClCompile Include="..\..\hwloc\topology-windows.c" />
@@ -219,10 +234,15 @@
     <ClInclude Include="..\..\include\private\autogen\config.h" />
     <ClInclude Include="..\..\include\hwloc.h" />
     <ClInclude Include="..\..\include\hwloc\bitmap.h" />
-    <ClInclude Include="..\..\include\hwloc\helper.h" />
-    <ClInclude Include="..\..\include\hwloc\openfabrics-verbs.h" />
-    <ClInclude Include="..\..\include\hwloc\plugins.h" />
+    <ClInclude Include="..\..\include\hwloc\deprecated.h" />
     <ClInclude Include="..\..\include\hwloc\diff.h" />
+    <ClInclude Include="..\..\include\hwloc\distances.h" />
+    <ClInclude Include="..\..\include\hwloc\export.h" />
+    <ClInclude Include="..\..\include\hwloc\helper.h" />
+    <ClInclude Include="..\..\include\hwloc\inlines.h" />
+    <ClInclude Include="..\..\include\hwloc\memattrs.h" />
+    <ClInclude Include="..\..\include\hwloc\cpukinds.h" />
+    <ClInclude Include="..\..\include\hwloc\plugins.h" />
     <ClInclude Include="..\..\include\hwloc\shmem.h" />
     <ClInclude Include="..\..\include\hwloc\rename.h" />
     <ClInclude Include="..\..\include\private\components.h" />

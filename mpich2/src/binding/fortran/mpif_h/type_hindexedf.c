@@ -271,7 +271,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_type_hindexed_ ( MPI_Fint *v1, MPI_Fint *v2, MP
 
     if (*v1 > 0) {
         int li;
-        l3 = (MPI_Aint *)MPL_malloc( *v1 * sizeof(MPI_Aint), MPL_MEM_OTHER );
+        l3 = (MPI_Aint *)malloc( *v1 * sizeof(MPI_Aint) );
         for (li=0; li<*v1; li++) 
             l3[li] = v3[li];
     }
@@ -282,6 +282,6 @@ FORT_DLL_SPEC void FORT_CALL mpi_type_hindexed_ ( MPI_Fint *v1, MPI_Fint *v2, MP
     *ierr = MPI_Type_hindexed( (int)*v1, v2, l3, (MPI_Datatype)(*v4), (MPI_Datatype *)(v5) );
 
 #ifdef HAVE_AINT_LARGER_THAN_FINT
-    MPL_free(l3);
+    free(l3);
 #endif
 }

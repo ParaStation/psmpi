@@ -278,8 +278,8 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_ ( MPI_Fint *v1, char *v2 F
 
       asize2 = (int)*v1 + 1;
 
-      p2 = (char **)MPL_malloc( asize2 * sizeof(char *), MPL_MEM_OTHER );
-      if (asize2-1 > 0) ptmp = (char *)MPL_malloc( asize2 * (d2 + 1), MPL_MEM_OTHER );
+      p2 = (char **)malloc( asize2 * sizeof(char *));
+      if (asize2-1 > 0) ptmp = (char *)malloc(asize2 * (d2 + 1));
       for (i=0; i<asize2-1; i++) {
           char *p = v2 + i * d2, *pin, *pdest;
           int j;
@@ -308,7 +308,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_ ( MPI_Fint *v1, char *v2 F
       int k;
 
       /* Allocate the array of pointers for the commands */
-      p3 = (char ***)MPL_malloc( *v1 * sizeof(char **), MPL_MEM_OTHER );
+      p3 = (char ***)malloc(*v1 * sizeof(char **));
 
       for (k=0; k<*v1; k++) {
         /* For each command, find the number of command-line arguments.
@@ -336,8 +336,8 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_ ( MPI_Fint *v1, char *v2 F
 
         /* argcnt is the number of provided arguments.  
            Allocate the necessary elements and copy, null terminating copies */
-        pargs = (char **)MPL_malloc( (argcnt+1)*sizeof(char *), MPL_MEM_OTHER );
-        pdata = (char *)MPL_malloc( arglen, MPL_MEM_OTHER );
+        pargs = (char **)malloc((argcnt+1)*sizeof(char *));
+        pdata = (char *)malloc(arglen);
         p3[k] = pargs;
         pargs[argcnt] = 0;  /* Null terminate end */
         /* Copy each argument to consequtive locations in pdata, 
@@ -363,15 +363,15 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_ ( MPI_Fint *v1, char *v2 F
 
     if ((MPI_Fint*)v9 == MPI_F_ERRCODES_IGNORE) { v9 = (MPI_Fint *)MPI_ERRCODES_IGNORE; }
     *ierr = MPI_Comm_spawn_multiple( (int)*v1, p2, p3, v4, (MPI_Info *)(v5), (int)*v6, (MPI_Comm)(*v7), (MPI_Comm *)(v8), (int *)v9 );
-    if (asize2-1 > 0) MPL_free( p2[0] );
-    MPL_free( p2 );
+    if (asize2-1 > 0) free( p2[0] );
+    free( p2 );
     if (v3 != (char *)MPI_ARGVS_NULL) { 
         int i; 
         for (i=0; i <*v1; i++) {
-            MPL_free( p3[i][0] );  /* Free space allocated to args */
-            MPL_free( p3[i] );       /* Free space allocated to arg array */
+            free( p3[i][0] );  /* Free space allocated to args */
+            free( p3[i] );       /* Free space allocated to arg array */
         }
         /* Free the array of arrays */
-        MPL_free( p3 );
+        free( p3 );
     }
 }

@@ -3,13 +3,14 @@
  * - getting CUDA and OpenCL attributes
  * - displaying the locality of the GPU
  *
- * Copyright © 2009-2018 Inria.  All rights reserved.
+ * Copyright © 2009-2019 Inria.  All rights reserved.
  * Copyright © 2009-2011,2017 Université Bordeaux
  * Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
-#include <hwloc.h>
+#include "hwloc.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -97,7 +98,7 @@ int main(void)
         char name[16];
         hwloc_obj_type_snprintf(name, sizeof(name), obj, 0);
         hwloc_bitmap_asprintf(&cpuset_string, obj->cpuset);
-        printf("Location: %s P#%d\n", name, obj->os_index);
+        printf("Location: %s P#%u\n", name, obj->os_index);
         printf("Cpuset: %s\n", cpuset_string);
       }
       printf("\n");

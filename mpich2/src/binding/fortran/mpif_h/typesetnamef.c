@@ -271,10 +271,10 @@ FORT_DLL_SPEC void FORT_CALL mpi_type_set_name_ ( MPI_Fint *v1, char *v2 FORT_MI
      int  li;
         while (*p == ' ' && p > v2) p--;
         p++;
-        p2 = (char *)MPL_malloc( p-v2 + 1, MPL_MEM_OTHER );
+        p2 = (char *)malloc(p-v2 + 1);
         for (li=0; li<(p-v2); li++) { p2[li] = v2[li]; }
         p2[li] = 0; 
     }
     *ierr = MPI_Type_set_name( (MPI_Datatype)(*v1), p2 );
-    MPL_free( p2 );
+    free( p2 );
 }

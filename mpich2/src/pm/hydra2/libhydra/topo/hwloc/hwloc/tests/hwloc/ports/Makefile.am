@@ -1,5 +1,5 @@
-# Copyright © 2009-2016 Inria.  All rights reserved.
-# Copyright © 2009, 2011-2012 Université Bordeaux
+# Copyright © 2009-2020 Inria.  All rights reserved.
+# Copyright © 2009, 2011-2012, 2020 Université Bordeaux
 # Copyright © 2009-2014 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
 
@@ -22,16 +22,18 @@ check_LTLIBRARIES = \
         libhwloc-port-opencl.la \
         libhwloc-port-cuda.la \
         libhwloc-port-nvml.la \
+        libhwloc-port-rsmi.la \
         libhwloc-port-gl.la
 check_LIBRARIES = \
-	liblstopo-port-windows.a
+	liblstopo-port-windows.a \
+        liblstopo-port-android.a
 endif HWLOC_HAVE_LINUX
 
 # Note that AC_CONFIG_LINKS sets up the sym links for the files in
-# this directory (back to the $top_srcdir/src directory).  So if you
+# this directory (back to the $top_srcdir/hwloc directory).  So if you
 # need more sym-linked files in here, go edit configure.ac.  Note that
 # we have to use sym links in here rather than just directly
-# referencing the files via $HWLOC_top_srcdir/src/foo.c because of
+# referencing the files via $HWLOC_top_srcdir/hwloc/foo.c because of
 # dependencies issues when using the Automake option "subdir-objects".
 # We nodist these because they're created by configure.
 
@@ -73,7 +75,11 @@ libhwloc_port_freebsd_la_SOURCES = \
         include/freebsd/pthread.h \
         include/freebsd/pthread_np.h \
         include/freebsd/sys/cpuset.h \
-        include/freebsd/sys/sysctl.h
+        include/freebsd/sys/sysctl.h \
+        include/freebsd/sys/thr.h \
+        include/freebsd/sys/user.h \
+        include/freebsd/sys/param.h \
+        include/freebsd/sys/domainset.h
 libhwloc_port_freebsd_la_CPPFLAGS = $(common_CPPFLAGS) \
         -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/freebsd \
         -DHWLOC_FREEBSD_SYS \
@@ -85,7 +91,9 @@ libhwloc_port_freebsd_la_CPPFLAGS = $(common_CPPFLAGS) \
         -Dhwloc_thread_t=pthread_t \
         -DHAVE_DECL_PTHREAD_SETAFFINITY_NP=1 \
         -DHAVE_DECL_PTHREAD_GETAFFINITY_NP=1 \
-        -DHAVE_CPUSET_SETID
+        -DHAVE_CPUSET_SETID \
+        -DHAVE_SYS_DOMAINSET_H \
+        -DHAVE_SYS_THR_H
 
 nodist_libhwloc_port_hpux_la_SOURCES = topology-hpux.c
 libhwloc_port_hpux_la_SOURCES = \
@@ -137,9 +145,14 @@ liblstopo_port_windows_a_CPPFLAGS = $(common_CPPFLAGS) \
         -I$(HWLOC_top_srcdir)/utils/hwloc \
         -DHWLOC_WIN_SYS
 
+nodist_liblstopo_port_android_a_SOURCES = lstopo-android.c
+liblstopo_port_android_a_CPPFLAGS = $(common_CPPFLAGS) \
+        -I$(HWLOC_top_srcdir)/utils/lstopo \
+        -I$(HWLOC_top_srcdir)/utils/hwloc
+
 nodist_libhwloc_port_opencl_la_SOURCES = topology-opencl.c
 libhwloc_port_opencl_la_SOURCES = \
-        include/opencl/CL/cl_ext.h
+        include/opencl/CL/cl.h
 libhwloc_port_opencl_la_CPPFLAGS = $(common_CPPFLAGS) \
         -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/opencl
 
@@ -155,6 +168,12 @@ libhwloc_port_nvml_la_SOURCES = \
         include/nvml/nvml.h
 libhwloc_port_nvml_la_CPPFLAGS = $(common_CPPFLAGS) \
         -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/nvml
+
+nodist_libhwloc_port_rsmi_la_SOURCES = topology-rsmi.c
+libhwloc_port_rsmi_la_SOURCES = \
+        include/rsmi/rocm_smi/rocm_smi.h
+libhwloc_port_rsmi_la_CPPFLAGS = $(common_CPPFLAGS) \
+        -I$(HWLOC_top_srcdir)/tests/hwloc/ports/include/rsmi
 
 nodist_libhwloc_port_gl_la_SOURCES = topology-gl.c
 libhwloc_port_gl_la_SOURCES = \

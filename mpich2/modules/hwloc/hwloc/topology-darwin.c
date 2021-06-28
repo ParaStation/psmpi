@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2018 Inria.  All rights reserved.
+ * Copyright © 2009-2020 Inria.  All rights reserved.
  * Copyright © 2009-2013 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -11,20 +11,26 @@
 
 /* Apparently, Darwin people do not _want_ to provide binding functions.  */
 
-#include <private/autogen/config.h>
+#include "private/autogen/config.h"
 
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #include <stdlib.h>
 #include <inttypes.h>
 
-#include <hwloc.h>
-#include <private/private.h>
-#include <private/debug.h>
+#include "hwloc.h"
+#include "private/private.h"
+#include "private/debug.h"
 
 static int
-hwloc_look_darwin(struct hwloc_backend *backend)
+hwloc_look_darwin(struct hwloc_backend *backend, struct hwloc_disc_status *dstatus)
 {
+  /*
+   * This backend uses the underlying OS.
+   * However we don't enforce topology->is_thissystem so that
+   * we may still force use this backend when debugging with !thissystem.
+   */
+
   struct hwloc_topology *topology = backend->topology;
   int64_t _nprocs;
   unsigned nprocs;
@@ -44,6 +50,8 @@ hwloc_look_darwin(struct hwloc_backend *backend)
   char cpufamilynumber[20], cpumodelnumber[20], cpustepping[20];
   int gotnuma = 0;
   int gotnumamemory = 0;
+
+  assert(dstatus->phase == HWLOC_DISC_PHASE_CPU);
 
   if (topology->levels[0][0]->cpuset)
     /* somebody discovered things */
@@ -135,7 +143,7 @@ hwloc_look_darwin(struct hwloc_backend *backend)
         if (cpustepping[0] != '\0')
           hwloc_obj_add_info(obj, "CPUStepping", cpustepping);
 
-        hwloc_insert_object_by_cpuset(topology, obj);
+        hwloc__insert_object_by_cpuset(topology, NULL, obj, "darwin:package");
       }
     else {
       if (cpuvendor[0] != '\0')
@@ -177,7 +185,7 @@ hwloc_look_darwin(struct hwloc_backend *backend)
 
           hwloc_debug_1arg_bitmap("core %u has cpuset %s\n",
                      i, obj->cpuset);
-          hwloc_insert_object_by_cpuset(topology, obj);
+          hwloc__insert_object_by_cpuset(topology, NULL, obj, "darwin:core");
         }
     }
   } else {
@@ -295,7 +303,7 @@ hwloc_look_darwin(struct hwloc_backend *backend)
             l1i->attr->cache.associativity = 0;
             l1i->attr->cache.type = HWLOC_OBJ_CACHE_INSTRUCTION;
 
-            hwloc_insert_object_by_cpuset(topology, l1i);
+            hwloc__insert_object_by_cpuset(topology, NULL, l1i, "darwin:l1icache");
           }
           if (i) {
             hwloc_debug_2args_bitmap("L%ucache %u has cpuset %s\n",
@@ -326,11 +334,11 @@ hwloc_look_darwin(struct hwloc_backend *backend)
 	    obj->attr->numanode.page_types[1].size = sysconf(_SC_LARGE_PAGESIZE);
 #endif
           }
-
-	  if (hwloc_filter_check_keep_object_type(topology, obj->type))
-	    hwloc_insert_object_by_cpuset(topology, obj);
-	  else
-	    hwloc_free_unlinked_object(obj); /* FIXME: don't built at all, just build the cpuset in case l1i needs it */
+          if (hwloc_filter_check_keep_object_type(topology, obj->type))
+            hwloc__insert_object_by_cpuset(topology, NULL, obj,
+                                           obj->type == HWLOC_OBJ_NUMANODE ? "darwin:numanode" : "darwin:cache");
+          else
+            hwloc_free_unlinked_object(obj); /* FIXME: don't built at all, just build the cpuset in case l1i needs it */
         }
       }
     }
@@ -359,13 +367,15 @@ hwloc_set_darwin_hooks(struct hwloc_binding_hooks *hooks __hwloc_attribute_unuse
 }
 
 static struct hwloc_backend *
-hwloc_darwin_component_instantiate(struct hwloc_disc_component *component,
+hwloc_darwin_component_instantiate(struct hwloc_topology *topology,
+				   struct hwloc_disc_component *component,
+				   unsigned excluded_phases __hwloc_attribute_unused,
 				   const void *_data1 __hwloc_attribute_unused,
 				   const void *_data2 __hwloc_attribute_unused,
 				   const void *_data3 __hwloc_attribute_unused)
 {
   struct hwloc_backend *backend;
-  backend = hwloc_backend_alloc(component);
+  backend = hwloc_backend_alloc(topology, component);
   if (!backend)
     return NULL;
   backend->discover = hwloc_look_darwin;
@@ -373,9 +383,9 @@ hwloc_darwin_component_instantiate(struct hwloc_disc_component *component,
 }
 
 static struct hwloc_disc_component hwloc_darwin_disc_component = {
-  HWLOC_DISC_COMPONENT_TYPE_CPU,
   "darwin",
-  HWLOC_DISC_COMPONENT_TYPE_GLOBAL,
+  HWLOC_DISC_PHASE_CPU,
+  HWLOC_DISC_PHASE_GLOBAL,
   hwloc_darwin_component_instantiate,
   50,
   1,
