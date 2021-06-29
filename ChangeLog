@@ -1,3 +1,11 @@
+2021-06-29  Carsten Clauss <clauss@par-tec.com>     -     5.4.10-0rc1
+
+2021-06-22  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Handling of messages > 2 GiB with built-in datatypes
+
+	* Testing: Partly revised and extended the 'parastation' test set
+
 2021-05-07  Simon Pickartz <pickartz@par-tec.com>   -     5.4.9-1
 
 2021-05-06  Simon Pickartz <pickartz@par-tec.com>   -     5.4.9-0rc1
