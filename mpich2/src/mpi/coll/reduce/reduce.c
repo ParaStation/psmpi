@@ -282,6 +282,7 @@ int MPIR_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype data
     void *in_recvbuf = recvbuf;
     void *host_sendbuf;
     void *host_recvbuf;
+    bool root_rank;
 
     MPIR_Coll_host_buffer_alloc(sendbuf, recvbuf, count, datatype, &host_sendbuf, &host_recvbuf);
     if (host_sendbuf)
@@ -298,8 +299,11 @@ int MPIR_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype data
                                      errflag);
     }
 
-    /* Copy out data from host recv buffer to GPU buffer */
-    if (host_recvbuf) {
+    /* take the inter-communicator case into account by checking for MPI_ROOT */
+    root_rank = (root == comm_ptr->rank) || (root == MPI_ROOT);
+
+    /* Copy out data from host recv buffer to GPU buffer at the root rank */
+    if (host_recvbuf && root_rank) {
         recvbuf = in_recvbuf;
         MPIR_Localcopy(host_recvbuf, count, datatype, recvbuf, count, datatype);
     }
