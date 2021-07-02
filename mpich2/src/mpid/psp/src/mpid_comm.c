@@ -275,6 +275,26 @@ int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 	/* The node IDs are unique, but do not have to be ordered and contiguous,
 	   nor do they have to be limited in value by the number of nodes!
 	*/
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+	/* In the case of topology awareness, we can use the badge table at the nodes level.
+	   If a badge at this level cannot be found, we fall back to the non-aware case.
+	 */
+	MPIDI_PSP_topo_level_t *level;
+	if (MPIDI_PSP_check_pg_for_level(MPIDI_PSP_TOPO_LEVEL__NODES, MPIDI_Process.my_pg, &level)) {
+		/* A badge table on node level exists. Get badge by comm rank: */
+		*id_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, level, rank);
+		assert(*id_p <= MPIDI_PSP_get_max_badge_by_level(level));
+		return MPI_SUCCESS;
+	}
+#endif
+	/* In the case without topology awareness, we cannot provide valid information
+	   unless the ID of the own rank is requested. In all other cases, we return
+	   a non-fatal error that can be handled in the higher MPICH layer.
+	*/
+	if (comm->vcr[rank]->pg_rank != MPIDI_Process.my_pg_rank) {
+		*id_p = -1;
+		return MPI_ERR_OTHER;
+	}
 	*id_p = MPIDI_Process.smp_node_id;
 	return MPI_SUCCESS;
 }
