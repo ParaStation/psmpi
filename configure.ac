@@ -611,22 +611,62 @@ fi
 AC_ARG_WITH([cuda], [
   --with-cuda
 			  Enable CUDA awareness within ParaStationMPI
-],[
-	if test "x${withval}" = "xyes"; then
-		CUDA_SUPPORT="true"
-		CONF_OPS="$CONF_OPS --enable-psp-cuda-awareness"
+],,[with_cuda=no])
 
-		CUDA_HOME="${CUDA_HOME-"/usr/local/cuda/"}"
-		if ! test -d "$CUDA_HOME" ; then
-			unset CUDA_HOME
-		fi
-		CONF_OPS="$CONF_OPS"
-		MPICCCONFDIR="${sysconfdir}"
-	else
-		CUDA_SUPPORT="no"
-		MPICCCONFDIR=""
-	fi
-])
+if test "x${with_cuda}" != "xno"; then
+	# Determine CUDA_HOME directory
+	AS_IF(	[test "x${with_cuda}" = "xyes"],
+		[CUDA_HOME="${CUDA_HOME-"/usr/local/cuda/"}"],
+		[CUDA_HOME="${with_cuda}"]
+	)
+
+	# Check if CUDA_HOME is a valid directory
+	AC_MSG_CHECKING([if ${CUDA_HOME} is a valid directory])
+	AS_IF(	[test -d "${CUDA_HOME}"],
+		[
+			AC_MSG_RESULT(yes)
+			have_cuda=yes
+		],
+		[
+			AC_MSG_RESULT(no)
+			have_cuda=no
+		]
+	)
+
+	# Check whether nvcc works (required for yaksa)
+	AC_MSG_CHECKING([if nvcc works])
+	cat>conftest.cu<<EOF
+    __global__ void foo(int x) {}
+EOF
+	${CUDA_HOME}/bin/nvcc -c conftest.cu 2> /dev/null
+	AS_IF(	[test "x$?" == "x0"],
+		[
+			AC_MSG_RESULT(yes)
+			have_nvcc=yes
+		],
+		[
+			AC_MSG_RESULT(no)
+			have_nvcc=no
+		]
+	)
+
+	# CUDA could be found and enabled
+	AS_IF(	[test "x${have_cuda}" = "xyes" -a "x${have_nvcc}" = "xyes"],
+		[
+			CUDA_SUPPORT="true"
+			CONF_OPS="$CONF_OPS --enable-psp-cuda-awareness --with-cuda=${CUDA_HOME}"
+			MPICCCONFDIR="${sysconfdir}"
+		],
+		[test "x${have_cuda}" = "xyes" -a "x{have_nvcc}" != "xyes"],
+		[AC_MSG_ERROR([CUDA found, but the 'nvcc' compiler is not working.])],
+		[
+			AC_MSG_ERROR([CUDA support is requested but CUDA home directory cannot be found])
+		]
+	)
+else
+	CUDA_SUPPORT="no"
+	MPICCCONFDIR=""
+fi
 
 
 if test "$PSP_THREADING" = "multiple" ; then
