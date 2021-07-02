@@ -433,8 +433,9 @@ case $CONFSET in
 	;;
 esac
 
-# Pass the confset to subconfigure.m4
-CONF_OPS="$CONF_OPS --with-psp-confset=$CONFSET"
+# Additional confset-agnostic options
+CONF_OPS="$CONF_OPS --with-psp-confset=$CONFSET"  # Make confset available to subconfigure.m4
+CONF_OPS="$CONF_OPS --with-datatype-engine=yaksa" # 'yaksa' is the default datatype enginge
 
 test -n "$CC"  && CONF_OPS="$CONF_OPS 'CC=$CC'"
 test -n "$CXX" && CONF_OPS="$CONF_OPS 'CXX=$CXX'"
@@ -683,6 +684,7 @@ if test "$ENABLE_TOPOLOGY_AWARENESS" = "true" ; then
 fi
 if test "$PSCOM_ALLIN" = "true" ; then
    echo "Preparing psmpi/mpich with pscom included."
+
 fi
 if test "$CUDA_SUPPORT" = "true" ; then
    echo "Preparing psmpi/mpich with CUDA support."
