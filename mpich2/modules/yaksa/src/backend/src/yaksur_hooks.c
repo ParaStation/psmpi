@@ -65,13 +65,21 @@ static void free_fn(void *buf, void *state)
     assert(0);
 }
 
-int yaksur_init_hook(void)
+int yaksur_init_hook(yaksi_info_s * info)
 {
     int rc = YAKSA_SUCCESS;
     yaksuri_gpudriver_id_e id;
 
     rc = yaksuri_seq_init_hook();
     YAKSU_ERR_CHECK(rc, fn_fail);
+
+    if (info) {
+        yaksuri_info_s *infopriv = info->backend.priv;
+        if (infopriv->gpudriver_id == YAKSURI_GPUDRIVER_ID__LAST) {
+            /* gpu disabled */
+            goto fn_exit;
+        }
+    }
 
     /* CUDA hooks */
     id = YAKSURI_GPUDRIVER_ID__CUDA;
@@ -226,8 +234,20 @@ int yaksur_info_create_hook(yaksi_info_s * info)
 {
     int rc = YAKSA_SUCCESS;
 
+    info->backend.pre_init = !yaksu_atomic_load(&yaksi_is_initialized);
+
+    info->backend.priv = (yaksuri_info_s *) malloc(sizeof(yaksuri_info_s));
+
+    yaksuri_info_s *infopriv;
+    infopriv = (yaksuri_info_s *) info->backend.priv;
+    infopriv->gpudriver_id = YAKSURI_GPUDRIVER_ID__UNSET;
+
     rc = yaksuri_seq_info_create_hook(info);
     YAKSU_ERR_CHECK(rc, fn_fail);
+
+    if (info->backend.pre_init) {
+        goto fn_exit;
+    }
 
     for (yaksuri_gpudriver_id_e id = YAKSURI_GPUDRIVER_ID__UNSET;
          id < YAKSURI_GPUDRIVER_ID__LAST; id++) {
@@ -237,12 +257,6 @@ int yaksur_info_create_hook(yaksi_info_s * info)
         rc = yaksuri_global.gpudriver[id].hooks->info_create(info);
         YAKSU_ERR_CHECK(rc, fn_fail);
     }
-
-    info->backend.priv = (yaksuri_info_s *) malloc(sizeof(yaksuri_info_s));
-
-    yaksuri_info_s *infopriv;
-    infopriv = (yaksuri_info_s *) info->backend.priv;
-    infopriv->gpudriver_id = YAKSURI_GPUDRIVER_ID__UNSET;
 
   fn_exit:
     return rc;
@@ -258,6 +272,10 @@ int yaksur_info_free_hook(yaksi_info_s * info)
 
     rc = yaksuri_seq_info_free_hook(info);
     YAKSU_ERR_CHECK(rc, fn_fail);
+
+    if (info->backend.pre_init) {
+        goto fn_exit;
+    }
 
     for (yaksuri_gpudriver_id_e id = YAKSURI_GPUDRIVER_ID__UNSET;
          id < YAKSURI_GPUDRIVER_ID__LAST; id++) {
@@ -285,6 +303,8 @@ int yaksur_info_keyval_append(yaksi_info_s * info, const char *key, const void *
             infopriv->gpudriver_id = YAKSURI_GPUDRIVER_ID__CUDA;
         } else if (!strncmp(val, "ze", vallen)) {
             infopriv->gpudriver_id = YAKSURI_GPUDRIVER_ID__ZE;
+        } else if (!strncmp(val, "nogpu", vallen)) {
+            infopriv->gpudriver_id = YAKSURI_GPUDRIVER_ID__LAST;
         } else {
             assert(0);
         }

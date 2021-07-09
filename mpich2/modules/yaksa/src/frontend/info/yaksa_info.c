@@ -34,7 +34,7 @@ int yaksa_info_free(yaksa_info_t info)
     int rc = YAKSA_SUCCESS;
     yaksi_info_s *yaksi_info = (yaksi_info_s *) info;
 
-    if (yaksu_atomic_decr(&yaksi_info->refcount) > 0)
+    if (yaksu_atomic_decr(&yaksi_info->refcount) > 1)
         goto fn_exit;
 
     rc = yaksur_info_free_hook(yaksi_info);
