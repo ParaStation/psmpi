@@ -1248,6 +1248,8 @@ BUILD_MPID_COMMON_THREAD_FALSE
 BUILD_MPID_COMMON_THREAD_TRUE
 PSP_CUDA_AWARE_SUPPORT
 PSP_TOPOLOGY_AWARENESS
+PSP_LIBS
+PSP_LDFLAGS
 PSP_CPPFLAGS
 PSCOM_ALLIN_LIBS
 PSCOM_RPATHLINK
@@ -1681,6 +1683,8 @@ PSCOM_LDFLAGS
 PSCOM_LIBRARY
 PSCOM_RPATHLINK
 PSP_CPPFLAGS
+PSP_LDFLAGS
+PSP_LIBS
 MPILIBNAME
 PMPILIBNAME
 MPICXXLIBNAME
@@ -2791,6 +2795,8 @@ Some influential environment variables:
               "-Wl,-rpath-link=/opt/parastation/lib64")
   PSP_CPPFLAGS
               C preprocessor flags for PSP macros
+  PSP_LDFLAGS additional linker flags for the PSP device
+  PSP_LIBS    additional libraries for the PSP device
   MPILIBNAME  can be used to override the name of the MPI library (default:
               "mpi")
   PMPILIBNAME can be used to override the name of the MPI profiling library
