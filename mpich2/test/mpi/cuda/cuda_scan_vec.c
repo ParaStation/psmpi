@@ -161,14 +161,14 @@ int main(int argc, char *argv[])
 	/* check the results */
 	for (i=0; i < NUM_ELEMENTS ; ++i) {
 		/* check first column */
-		if (fabs(outmat[i][0] - (rank)) > MAX_ERR) {
+		if (rank && (fabs(outmat[i][0] - (rank)) > MAX_ERR)) {
 			fprintf(stderr, "outmat[%d][0] = %f (!= %f)\n", i, outmat[i][0], (double)rank+1);
 			errs++;
 		}
 
 		/* check second column */
 		for (j=1; j<NUM_ELEMENTS; ++j) {
-			if (fabs(outmat[i][j]) > MAX_ERR) {
+			if (rank && (fabs(outmat[i][j]) > MAX_ERR)) {
 				fprintf(stderr, "outmat[%d][%d] = %f (!= %d)\n", i, j, outmat[i][j], size);
 				errs++;
 			}
