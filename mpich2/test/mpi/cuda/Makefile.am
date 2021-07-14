@@ -19,7 +19,7 @@ cuda_simple_kernel_SOURCES = cuda_simple_kernel.cu
 cuda_laplace_mpi_SOURCES = cuda_laplace_mpi.cu
 
 .cu.o:
-	$(CC) -cc=$(NVCC) $(MPICC_CUDA_CONF) $(NVCFLAGS) -o $@ -c $<
+	$(CC) -cc=$(NVCC) $(MPICC_CUDA_CONF) $(NVCFLAGS) $(AM_CPPFLAGS) -o $@ -c $<
 
 ## for all programs that are just built from the single corresponding source
 ## file, we don't need per-target _SOURCES rules, automake will infer them
