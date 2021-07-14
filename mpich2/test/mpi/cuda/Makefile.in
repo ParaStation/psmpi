@@ -983,7 +983,7 @@ testdir:
 		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
 .cu.o:
-	$(CC) -cc=$(NVCC) $(MPICC_CUDA_CONF) $(NVCFLAGS) -o $@ -c $<
+	$(CC) -cc=$(NVCC) $(MPICC_CUDA_CONF) $(NVCFLAGS) $(AM_CPPFLAGS) -o $@ -c $<
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
