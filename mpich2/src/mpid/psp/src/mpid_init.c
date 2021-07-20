@@ -490,7 +490,7 @@ int MPID_Init(int *argc, char ***argv,
 	      int *has_args, int *has_env)
 {
 	int mpi_errno = MPI_SUCCESS;
-	int pg_id_sz;
+	int pg_id_sz = 0;
 	int pg_rank = 0;
 	int pg_size = -1;
 	int appnum = -1;
@@ -702,7 +702,7 @@ int MPID_Init(int *argc, char ***argv,
 
 	PMICALL(PMI_KVS_Get_name_length_max(&pg_id_sz));
 
-	pg_id_name = MPL_malloc(pg_id_sz + 1, MPL_MEM_STRINGS);
+	pg_id_name = MPL_calloc(pg_id_sz + 1, sizeof(*pg_id_name), MPL_MEM_STRINGS);
 	if (!pg_id_name) { PRINTERROR("MPL_malloc()"); goto fn_fail; }
 
 	PMICALL(PMI_KVS_Get_my_name(pg_id_name, pg_id_sz));

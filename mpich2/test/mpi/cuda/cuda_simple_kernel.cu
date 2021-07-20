@@ -9,6 +9,9 @@
 */
 
 #include <mpi.h>
+extern "C" {
+#include "mpitest.h"
+}
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,8 +32,20 @@ __global__ void compute_square_roots(float *in_data, float *out_data)
 }
 
 
+#define CUDA_CHECK(call, fatal)                                         \
+	do {                                                            \
+		if ((cuda_error == cudaSuccess) && (((call) != cudaSuccess) || ((cuda_error = cudaGetLastError()) != cudaSuccess))) { \
+			MTestPrintfMsg(0, #call" returned: %s\n", cudaGetErrorString(cuda_error)); \
+			if (fatal) MTestError("Fatal CUDA error! Calling MPI_Abort()...\n");			\
+		}                                                       \
+	} while(0);
+
+
 int main(int argc, char *argv[])
 {
+	int errs = 0;
+	cudaError_t cuda_error = cudaSuccess;
+
 	int i;
 	int rank, np;
 	int block_size;
@@ -44,7 +59,7 @@ int main(int argc, char *argv[])
 	float local_sum;
 	float total_sum;
 
-	MPI_Init(&argc, &argv);
+	MTest_Init(&argc, &argv);
 
 	MPI_Comm_size(MPI_COMM_WORLD, &np);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -69,17 +84,18 @@ int main(int argc, char *argv[])
 		free(total_data);
 	}
 
-	cudaMalloc((void **)&dev_in_data, block_size * grid_size * sizeof(float));
-	cudaMalloc((void **)&dev_out_data, block_size * grid_size * sizeof(float));
+	CUDA_CHECK(cudaMalloc((void **)&dev_in_data, block_size * grid_size * sizeof(float)), 1);
+	CUDA_CHECK(cudaMalloc((void **)&dev_out_data, block_size * grid_size * sizeof(float)), 1);
 
-	cudaMemcpy(dev_in_data, local_data, block_size * grid_size * sizeof(float), cudaMemcpyHostToDevice);
+	CUDA_CHECK(cudaMemcpy(dev_in_data, local_data, block_size * grid_size * sizeof(float), cudaMemcpyHostToDevice), 0);
 
 	compute_square_roots<<<grid_size, block_size>>>(dev_in_data, dev_out_data);
+	CUDA_CHECK(cudaDeviceSynchronize(), 0);
 
 	cudaMemcpy(local_data, dev_out_data, block_size * grid_size * sizeof(float), cudaMemcpyDeviceToHost);
 
-	cudaFree(dev_in_data);
-	cudaFree(dev_out_data);
+	CUDA_CHECK(cudaFree(dev_in_data), 0);
+	CUDA_CHECK(cudaFree(dev_out_data), 0);
 
 	for (i = 0 , local_sum = 0.0; i < local_size; i++) {
 		local_sum += local_data[i];
@@ -89,12 +105,8 @@ int main(int argc, char *argv[])
 
 	free(local_data);
 
-	MPI_Finalize();
 
-	if (rank == 0) {
-		printf("No Errors\n");
-		fflush(stdout);
-	}
+	MTest_Finalize(errs);
+	return MTestReturnValue(errs);
 
-	return 0;
 }
