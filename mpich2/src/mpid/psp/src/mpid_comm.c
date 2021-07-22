@@ -288,14 +288,13 @@ int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 	}
 #endif
 	/* In the case without topology awareness, we cannot provide valid information
-	   unless the ID of the own rank is requested. In all other cases, we return
-	   a non-fatal error that can be handled in the higher MPICH layer.
+	   unless the ID of the own rank is requested.
 	*/
 	if (comm->vcr[rank]->pg_rank != MPIDI_Process.my_pg_rank) {
 		*id_p = -1;
-		return MPI_ERR_OTHER;
+	} else {
+		*id_p = MPIDI_Process.smp_node_id;
 	}
-	*id_p = MPIDI_Process.smp_node_id;
 	return MPI_SUCCESS;
 }
 
