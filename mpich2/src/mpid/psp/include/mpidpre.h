@@ -774,21 +774,6 @@ int MPID_Type_free_hook(MPIR_Datatype * type);
 int MPID_Op_commit_hook(MPIR_Op * op);
 int MPID_Op_free_hook(MPIR_Op * op);
 
-#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
-int MPID_PSP_Reduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
-			     MPI_Op op, int root, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
-int MPID_PSP_Allreduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
-				MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
-int MPID_PSP_Reduce_scatter_for_cuda(const void *sendbuf, void *recvbuf, const int recvcounts[],
-				     MPI_Datatype datatype, MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
-int MPID_PSP_Reduce_scatter_block_for_cuda(const void *sendbuf, void *recvbuf,  int recvcount,
-					   MPI_Datatype datatype, MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
-int MPID_PSP_Scan_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
-			   MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
-int MPID_PSP_Exscan_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
-			   MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
-#endif
-
 
 #ifdef MPIDI_PSP_WITH_SESSION_STATISTICS
 typedef enum {
