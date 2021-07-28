@@ -180,6 +180,7 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS"
 	;;
 "gcc"|\
+"gcc10"|\
 "default")
 	echo "Using confset=default"
 	CONF_OPS="--with-device=psp"
@@ -197,6 +198,12 @@ case $CONFSET in
 	   CONF_OPS="$CONF_OPS --enable-f77"
 	   CONF_OPS="$CONF_OPS --enable-fc"
 	   FC=gfortran
+	   if test "$CONFSET" = "gcc10" ; then
+	      # Workaround as mpich fails to build with gcc10 since gfortran will by default here
+	      # not compile files that call the same routine with arguments of different types:
+	      export FCFLAGS="${FCFLAGS} -fallow-argument-mismatch"
+	      export FFLAGS="${FFLAGS} -fallow-argument-mismatch"
+	   fi
 	fi
 	MODULEFILE_CONFSET=""
 	EXTRA_VERSION_INFO=" compiler: $(gcc --version|head -n 1)"
@@ -502,7 +509,7 @@ AC_ARG_WITH([pscom-allin], [
 	fi
 
 	case $CONFSET in
-		"default"|"gcc"|"intel"|"icc") ;;
+		"default"|"gcc"|"gcc10"|"intel"|"icc") ;;
 		*) confset_and_allin_does_not_match="yes" ;;
 	esac
 	if test "$confset_and_allin_does_not_match" = "yes" ; then
