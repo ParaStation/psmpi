@@ -66,18 +66,16 @@ underlying MPICH build system. It is strongly recommended to rely on these
 confsets for a proper installation! Currently, the following confsets are
 provided:
 ```
-none       : Do not configure mpich.
-             Prepare only for tar,rpm and srpm build
-default    : like gcc
+none       : Do not configure mpich. Prepare only for tar,rpm and srpm build
+default    : Like 'gcc'
 
 gcc        : Use Gnu compiler (gcc)
+gcc10      : Workaround for using gcc version 10
 intel      : Use intel compiler (icc)
 icc        : Like 'intel'
 pgi        : Portland group compiler (pgcc)
 nvhpc      : Nvidia hpc compiler (nvc)
 psc        : Pathscale compiler (pathcc)
-cellgcc    : ppu-gcc
-cellxlc    : ppuxlc
 
 devel      : With error checking and debug info (gcc)
 user       : No predefined options
@@ -189,6 +187,10 @@ Session Parameters
 | `PSP_MSA_AWARENESS=1`       | Take topology information into account (default = 0) |
 | `PSP_MSA_AWARE_COLLOPS=1`   | Enable/Disable MSA-aware collectives (default = 0)   |
 
+Please note that these features need to be configured with `--with-cuda`,
+`--with-hcoll`, and `--with-topology-awareness`, respectively, before they can
+be activated (see [optional configure arguments](#optional-configure-arguments)).
+
 ### Statistical Analysis
 
 | Environment Variable        | Description                                          |
@@ -198,7 +200,10 @@ Session Parameters
 | `PSP_HISTOGRAM_MAX=y`       | Set the upper message size limit for the histogram   |
 | `PSP_HISTOGRAM_SHIFT=z`     | Bit shift for the number of bins of the histogram    |
 | `PSP_HISTOGRAM_CONTYPE=con` | Limit the histogram to a particular connection type  |
+| `PSP_HCOLL_STATS=1`         | Enable the collection of HCOLL usage statistics      |
 
+Please note that statistical analysis requires `--with-session-statistics` as
+configure option (see [optional configure arguments](#optional-configure-arguments)).
 
 Test Suite
 ----------
