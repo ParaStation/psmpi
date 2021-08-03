@@ -1,4 +1,33 @@
+2021-08-03  Carsten Clauss <clauss@par-tec.com>     -     5.4.10-1
+
+2021-07-29  Carsten Clauss <clauss@par-tec.com>
+
+	* Documentation: Revise and update README.md
+
+	* Fix: Add 'gcc10' as new confset to work around Fortran issues
+	with gcc v10
+
+	* Fix: Topology awareness for HCOLL (inter-communicators and
+	zero-byte messages)
+
 2021-07-20  Carsten Clauss <clauss@par-tec.com>     -     5.4.10-0rc2
+
+2021-07-20  Carsten Clauss <clauss@par-tec.com>
+
+	* Testing: Revision of the CUDA kernels plus MPI tests
+
+	* Fix: Topology awareness for MSA (node IDs in the non COMM_SELF
+	case)
+
+	* Testing: Update Makefiles in test folders for TESTDIR=<folder>
+
+2021-07-14  Carsten Clauss <clauss@par-tec.com>
+
+	* Enhancement: Add PSP_LIBS and PSP_LDFLAGS for PSP device
+
+2021-07-13  Carsten Clauss <clauss@par-tec.com>
+
+	* Testing: Fix verification in cuda_scan_vec.c test
 
 2021-06-29  Carsten Clauss <clauss@par-tec.com>     -     5.4.10-0rc1
 
