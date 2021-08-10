@@ -749,7 +749,7 @@ if test "${CONFSET}" != "none" ; then
 
    # call original mpich configure
    # --disable-maintainer-mode prevent from refreshing autoconf generated files in the source folder.
-   eval ${TOP_SRCDIR}/mpich2/configure ${CONF_OPS} ${MPICHCONF} ${CONFIGARGS} --disable-maintainer-mode
+   eval ${TOP_SRCDIR}/mpich2/configure ${CONFIGARGS} ${CONF_OPS} ${MPICHCONF} --disable-maintainer-mode
 fi
 
 #
