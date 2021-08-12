@@ -43,12 +43,14 @@ int MPIR_Bcast_intra_scatter_recursive_doubling_allgather(void *buffer,
     int relative_rank, mask;
     int mpi_errno = MPI_SUCCESS;
     int mpi_errno_ret = MPI_SUCCESS;
-    int scatter_size;
+    MPI_Aint scatter_size;
     MPI_Aint curr_size, recv_size = 0;
     int j, k, i, tmp_mask, is_contig;
     MPI_Aint type_size, nbytes = 0;
-    int relative_dst, dst_tree_root, my_tree_root, send_offset;
-    int recv_offset, tree_root, nprocs_completed, offset;
+    int relative_dst, dst_tree_root, my_tree_root;
+    MPI_Aint send_offset;
+    MPI_Aint recv_offset;
+    int tree_root, nprocs_completed, offset;
     MPI_Aint position;
     MPIR_CHKLMEM_DECL(1);
     MPI_Aint true_extent, true_lb;
