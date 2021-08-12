@@ -11,11 +11,10 @@
 
 #include <mpi.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "mpitest.h"
 
 #define SIZE (2 * 1024 * 1024 * (1024 / sizeof(int)) + 4)
-
-int buffer[SIZE];
 
 static int errors = 0;
 
@@ -24,21 +23,30 @@ int main(int argc, char** argv)
 	size_t i;
 	int rank, nprocs;
 	MPI_Win win;
+	MPI_Request request;
+	int *buffer;
 
 	MTest_Init(&argc, &argv);
 
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
+	buffer = malloc(SIZE * sizeof(int));
+
 	if (rank == 0) {
 		for (i = 0; i < SIZE; i++) buffer[i] = 42;
 	}
 
-	MPI_Bcast(buffer, SIZE, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Irecv(buffer, SIZE, MPI_INT, 0, rank, MPI_COMM_WORLD, &request);
+	if (rank == 0) {
+		for (i = 0; i < nprocs; i++)
+			MPI_Send(buffer, SIZE, MPI_INT, i, i, MPI_COMM_WORLD);
+	}
+	MPI_Wait(&request, MPI_STATUS_IGNORE);
 
 	for (i = 0; i < SIZE; i++) {
 		if (buffer[i] != 42) {
-			printf("(%d) MPI_Bcast: Error at position %zu: %d vs. %d\n", rank, i, buffer[i], 42);
+			printf("(%d) MPI_Irecv: Error at position %zu: %d vs. %d\n", rank, i, buffer[i], 42);
 			errors++;
 			break;
 		}
@@ -91,6 +99,7 @@ int main(int argc, char** argv)
 	}
 
 	MPI_Win_free(&win);
+	free(buffer);
 
 	MPI_Barrier(MPI_COMM_WORLD);
 
