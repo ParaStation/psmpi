@@ -1,5 +1,9 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
+
+# Retrieve version information from MPICH
+m4_include([mpich2/maint/version.m4])
+
 AC_INIT([psmpi],[],[hauke@par-tec.com])
 AC_CONFIG_SRCDIR([configure.ac])
 
@@ -27,14 +31,12 @@ AC_SUBST([TOP_BUILDDIR])
 CONFIGARGS="$ac_configure_args"
 AC_SUBST([CONFIGARGS])
 
-# Try to find the version and release date
-. ${TOP_SRCDIR}/mpich2/maint/Version
-
-if test -z "$MPICH_VERSION"; then
-   AC_MSG_ERROR([MPICH_VERSION not found. Configuration aborted.])
-fi
+# Get the version and release date from MPICH
+MPICH_VERSION=MPICH_VERSION_m4
 AC_SUBST([MPICH_VERSION])
+MPICH_RELEASE_DATE="MPICH_RELEASE_DATE_m4"
 AC_SUBST([MPICH_RELEASE_DATE])
+
 # configure mpich2
 
 AC_ARG_WITH([hydra], [
