@@ -110,11 +110,11 @@ noinst_PROGRAMS = locknull$(EXEEXT) get_acc_loc$(EXEEXT) \
 	num_contexts_2k$(EXEEXT) num_contexts_4k$(EXEEXT) \
 	num_contexts_8k$(EXEEXT) num_contexts_16k$(EXEEXT) \
 	large_msg_typed$(EXEEXT) large_msg_builtin$(EXEEXT) \
-	intercomm_anysrc$(EXEEXT) intercomm_stress$(EXEEXT) \
-	large_acc_flush_local$(EXEEXT) acc_pairtype$(EXEEXT) \
-	acc_vecsum$(EXEEXT) get_acc_pairtype$(EXEEXT) \
-	get_acc_shm_pairtype$(EXEEXT) putfence1$(EXEEXT) \
-	getfence1$(EXEEXT) msa_split_type$(EXEEXT) \
+	large_msg_coll_bcast$(EXEEXT) intercomm_anysrc$(EXEEXT) \
+	intercomm_stress$(EXEEXT) large_acc_flush_local$(EXEEXT) \
+	acc_pairtype$(EXEEXT) acc_vecsum$(EXEEXT) \
+	get_acc_pairtype$(EXEEXT) get_acc_shm_pairtype$(EXEEXT) \
+	putfence1$(EXEEXT) getfence1$(EXEEXT) msa_split_type$(EXEEXT) \
 	msa_info_env$(EXEEXT)
 subdir = parastation
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -185,6 +185,11 @@ large_msg_builtin_SOURCES = large_msg_builtin.c
 large_msg_builtin_OBJECTS = large_msg_builtin.$(OBJEXT)
 large_msg_builtin_LDADD = $(LDADD)
 large_msg_builtin_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/dtpools/src/.libs/libdtpools.a
+large_msg_coll_bcast_SOURCES = large_msg_coll_bcast.c
+large_msg_coll_bcast_OBJECTS = large_msg_coll_bcast.$(OBJEXT)
+large_msg_coll_bcast_LDADD = $(LDADD)
+large_msg_coll_bcast_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/dtpools/src/.libs/libdtpools.a
 large_msg_typed_SOURCES = large_msg_typed.c
 large_msg_typed_OBJECTS = large_msg_typed.$(OBJEXT)
@@ -362,6 +367,7 @@ am__depfiles_remade = ./$(DEPDIR)/acc_pairtype.Po \
 	./$(DEPDIR)/intercomm_stress.Po \
 	./$(DEPDIR)/large_acc_flush_local.Po \
 	./$(DEPDIR)/large_msg_builtin.Po \
+	./$(DEPDIR)/large_msg_coll_bcast.Po \
 	./$(DEPDIR)/large_msg_typed.Po ./$(DEPDIR)/locknull.Po \
 	./$(DEPDIR)/mprobe.Po ./$(DEPDIR)/msa_info_env.Po \
 	./$(DEPDIR)/msa_split_type.Po ./$(DEPDIR)/num_contexts_16k.Po \
@@ -401,10 +407,11 @@ am__v_CCLD_1 =
 SOURCES = acc_pairtype.c acc_vecsum.c get_acc_loc.c get_acc_pairtype.c \
 	get_acc_shm_pairtype.c getfence1.c intercomm_anysrc.c \
 	intercomm_stress.c large_acc_flush_local.c large_msg_builtin.c \
-	large_msg_typed.c locknull.c $(mprobe_SOURCES) msa_info_env.c \
-	msa_split_type.c num_contexts_16k.c num_contexts_2k.c \
-	num_contexts_4k.c num_contexts_8k.c putfence1.c spawn_anysrc.c \
-	spawn_isend.c spawn_rma.c spawn_ssend.c spawn_univ_anysrc.c \
+	large_msg_coll_bcast.c large_msg_typed.c locknull.c \
+	$(mprobe_SOURCES) msa_info_env.c msa_split_type.c \
+	num_contexts_16k.c num_contexts_2k.c num_contexts_4k.c \
+	num_contexts_8k.c putfence1.c spawn_anysrc.c spawn_isend.c \
+	spawn_rma.c spawn_ssend.c spawn_univ_anysrc.c \
 	spawn_univ_comm.c spawn_univ_discon.c spawn_univ_split.c \
 	split_type_integrity.c win_flavor_err_dyn.c \
 	win_flavor_err_shm.c win_shm_dup_comm.c win_shm_large.c \
@@ -415,8 +422,8 @@ SOURCES = acc_pairtype.c acc_vecsum.c get_acc_loc.c get_acc_pairtype.c \
 DIST_SOURCES = acc_pairtype.c acc_vecsum.c get_acc_loc.c \
 	get_acc_pairtype.c get_acc_shm_pairtype.c getfence1.c \
 	intercomm_anysrc.c intercomm_stress.c large_acc_flush_local.c \
-	large_msg_builtin.c large_msg_typed.c locknull.c \
-	$(mprobe_SOURCES) msa_info_env.c msa_split_type.c \
+	large_msg_builtin.c large_msg_coll_bcast.c large_msg_typed.c \
+	locknull.c $(mprobe_SOURCES) msa_info_env.c msa_split_type.c \
 	num_contexts_16k.c num_contexts_2k.c num_contexts_4k.c \
 	num_contexts_8k.c putfence1.c spawn_anysrc.c spawn_isend.c \
 	spawn_rma.c spawn_ssend.c spawn_univ_anysrc.c \
@@ -774,6 +781,10 @@ large_msg_builtin$(EXEEXT): $(large_msg_builtin_OBJECTS) $(large_msg_builtin_DEP
 	@rm -f large_msg_builtin$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(large_msg_builtin_OBJECTS) $(large_msg_builtin_LDADD) $(LIBS)
 
+large_msg_coll_bcast$(EXEEXT): $(large_msg_coll_bcast_OBJECTS) $(large_msg_coll_bcast_DEPENDENCIES) $(EXTRA_large_msg_coll_bcast_DEPENDENCIES) 
+	@rm -f large_msg_coll_bcast$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(large_msg_coll_bcast_OBJECTS) $(large_msg_coll_bcast_LDADD) $(LIBS)
+
 large_msg_typed$(EXEEXT): $(large_msg_typed_OBJECTS) $(large_msg_typed_DEPENDENCIES) $(EXTRA_large_msg_typed_DEPENDENCIES) 
 	@rm -f large_msg_typed$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(large_msg_typed_OBJECTS) $(large_msg_typed_LDADD) $(LIBS)
@@ -914,6 +925,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/intercomm_stress.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large_acc_flush_local.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large_msg_builtin.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large_msg_coll_bcast.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large_msg_typed.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locknull.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mprobe.Po@am__quote@ # am--include-marker
@@ -1107,6 +1119,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/intercomm_stress.Po
 	-rm -f ./$(DEPDIR)/large_acc_flush_local.Po
 	-rm -f ./$(DEPDIR)/large_msg_builtin.Po
+	-rm -f ./$(DEPDIR)/large_msg_coll_bcast.Po
 	-rm -f ./$(DEPDIR)/large_msg_typed.Po
 	-rm -f ./$(DEPDIR)/locknull.Po
 	-rm -f ./$(DEPDIR)/mprobe.Po
@@ -1193,6 +1206,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/intercomm_stress.Po
 	-rm -f ./$(DEPDIR)/large_acc_flush_local.Po
 	-rm -f ./$(DEPDIR)/large_msg_builtin.Po
+	-rm -f ./$(DEPDIR)/large_msg_coll_bcast.Po
 	-rm -f ./$(DEPDIR)/large_msg_typed.Po
 	-rm -f ./$(DEPDIR)/locknull.Po
 	-rm -f ./$(DEPDIR)/mprobe.Po
