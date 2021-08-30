@@ -1,3 +1,7 @@
+2021-08-30  Carsten Clauss <clauss@par-tec.com>     -     5.4.11-1
+
+	* Fix: MPI_Bcast() and MPI_Ibcast() for messages > 2 GiB
+
 2021-08-03  Carsten Clauss <clauss@par-tec.com>     -     5.4.10-1
 
 2021-07-29  Carsten Clauss <clauss@par-tec.com>
