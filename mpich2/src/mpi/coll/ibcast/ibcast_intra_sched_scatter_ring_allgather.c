@@ -30,8 +30,10 @@ int MPIR_Ibcast_intra_sched_scatter_ring_allgather(void *buffer, MPI_Aint count,
 {
     int mpi_errno = MPI_SUCCESS;
     int comm_size, rank;
-    int is_contig, type_size, nbytes;
-    int scatter_size, curr_size;
+    int is_contig;
+    MPI_Aint type_size;
+    MPI_Aint nbytes;
+    MPI_Aint scatter_size, curr_size;
     int i, j, jnext, left, right;
     MPI_Aint true_extent, true_lb;
     void *tmp_buf = NULL;
@@ -103,7 +105,8 @@ int MPIR_Ibcast_intra_sched_scatter_ring_allgather(void *buffer, MPI_Aint count,
     j = rank;
     jnext = left;
     for (i = 1; i < comm_size; i++) {
-        int left_count, right_count, left_disp, right_disp, rel_j, rel_jnext;
+        MPI_Aint left_count, right_count, left_disp, right_disp;
+        int rel_j, rel_jnext;
 
         rel_j = (j - root + comm_size) % comm_size;
         rel_jnext = (jnext - root + comm_size) % comm_size;
