@@ -31,6 +31,7 @@ BuildRequires:	pscom-cuda
 %else
 BuildRequires:	pscom
 %endif
+BuildRequires:	automake autoconf libtool
 
 # Dont use internal find_requires, because we dont want dependencies
 # to the intel libs.
@@ -88,6 +89,7 @@ sleep 1
 %setup -q -n psmpi-%{version}-%{release}
 
 %build
+./autogen.sh
 %configure --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--with-threading} %{?cuda:--with-cuda}
 %make_build
 
