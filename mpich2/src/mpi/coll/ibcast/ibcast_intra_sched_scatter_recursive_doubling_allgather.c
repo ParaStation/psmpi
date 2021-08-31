@@ -54,10 +54,11 @@ int MPIR_Ibcast_intra_sched_scatter_recursive_doubling_allgather(void *buffer, i
     int mpi_errno = MPI_SUCCESS;
     int rank, comm_size, dst;
     int relative_rank, mask;
-    int scatter_size, nbytes, curr_size, incoming_count;
+    MPI_Aint scatter_size, nbytes, curr_size, incoming_count;
     int type_size, j, k, i, tmp_mask, is_contig;
-    int relative_dst, dst_tree_root, my_tree_root, send_offset;
-    int recv_offset, tree_root, nprocs_completed, offset;
+    int relative_dst, dst_tree_root, my_tree_root;
+    MPI_Aint send_offset, recv_offset, offset;
+    int tree_root, nprocs_completed;
     MPI_Aint true_extent, true_lb;
     void *tmp_buf;
     struct MPII_Ibcast_state *ibcast_state;
@@ -89,7 +90,7 @@ int MPIR_Ibcast_intra_sched_scatter_recursive_doubling_allgather(void *buffer, i
 
     MPIR_Datatype_get_size_macro(datatype, type_size);
 
-    nbytes = type_size * count;
+    nbytes = (MPI_Aint)type_size * count;
     ibcast_state->n_bytes = nbytes;
     ibcast_state->curr_bytes = 0;
     if (is_contig) {
