@@ -1,8 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include "mpi.h"
 #include <unistd.h>
 #include <stdio.h>
@@ -302,7 +302,7 @@ int struct_of_basics_test(void)
     }
 
     /* set up type */
-    err = MPI_Type_struct(10, blocks, indices, types, &parent_type);
+    err = MPI_Type_create_struct(10, blocks, indices, types, &parent_type);
 
     MPI_Type_commit(&parent_type);
 

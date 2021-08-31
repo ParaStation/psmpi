@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -25,10 +24,6 @@ int MPI_Is_thread_main(int *flag) __attribute__ ((weak, alias("PMPI_Is_thread_ma
 #define MPI_Is_thread_main PMPI_Is_thread_main
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Is_thread_main
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Is_thread_main - Returns a flag indicating whether this thread called
                         'MPI_Init' or 'MPI_Init_thread'
@@ -72,7 +67,7 @@ int MPI_Is_thread_main(int *flag)
         MPID_Thread_id_t my_thread_id;
 
         MPID_Thread_self(&my_thread_id);
-        MPID_Thread_same(&MPIR_ThreadInfo.master_thread, &my_thread_id, flag);
+        MPID_Thread_same(&MPIR_ThreadInfo.main_thread, &my_thread_id, flag);
     }
 #endif
     /* ... end of body of routine ... */
@@ -87,11 +82,11 @@ int MPI_Is_thread_main(int *flag)
 #ifdef HAVE_ERROR_CHECKING
   fn_fail:
     {
-        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+        mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__,
                                          MPI_ERR_OTHER, "**mpi_is_thread_main",
                                          "**mpi_is_thread_main %p", flag);
     }
-    mpi_errno = MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(0, __func__, mpi_errno);
     goto fn_exit;
 #endif
     /* --END ERROR HANDLING-- */

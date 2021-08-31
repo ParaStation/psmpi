@@ -1,12 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- *  Portions of this code were written by Intel Corporation.
- *  Copyright (C) 2011-2016 Intel Corporation.  Intel provides this material
- *  to Argonne National Laboratory subject to Software Grant and Corporate
- *  Contributor License Agreement dated February 8, 2012.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef SHM_PRE_H_INCLUDED
@@ -15,6 +9,13 @@
 #include <mpi.h>
 
 #include "../posix/posix_pre.h"
+#include "../ipc/src/ipc_pre.h"
 
-#include "shm_coll_params.h"
+#include "shm_types.h"
+
+typedef struct {
+    MPIDI_POSIX_Global_t posix;
+    MPIDI_SHMI_ctrl_cb ctrl_cbs[MPIDI_SHMI_CTRL_IDS_MAX];
+} MPIDI_SHM_Global_t;
+
 #endif /* SHM_PRE_H_INCLUDED */

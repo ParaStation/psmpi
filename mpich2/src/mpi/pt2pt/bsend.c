@@ -1,12 +1,9 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
-#include "bsendutil.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Bsend */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -29,10 +26,6 @@ int MPI_Bsend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Bsend
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Bsend - Basic send with user-provided buffering
 
@@ -91,7 +84,6 @@ int MPI_Bsend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Comm *comm_ptr = NULL;
-    MPIR_Request *request_ptr = NULL;
     MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_BSEND);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -132,7 +124,7 @@ int MPI_Bsend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
             MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 
             /* Validate datatype object */
-            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(datatype)) {
                 MPIR_Datatype *datatype_ptr = NULL;
 
                 MPIR_Datatype_get_ptr(datatype, datatype_ptr);
@@ -151,21 +143,14 @@ int MPI_Bsend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
     }
 #endif /* HAVE_ERROR_CHECKING */
 
+    /* Return immediately for dummy process */
+    if (unlikely(dest == MPI_PROC_NULL)) {
+        goto fn_exit;
+    }
+
     /* ... body of routine ...  */
 
-#ifdef MPID_HAS_TBSEND
-    {
-        mpi_errno = MPID_tBsend(buf, count, datatype, dest, tag, comm_ptr, 0);
-        if (mpi_errno == MPI_SUCCESS) {
-            goto fn_exit;
-        }
-        /* FIXME: Check for MPID_WOULD_BLOCK? */
-    }
-#endif
-
-    mpi_errno = MPIR_Bsend_isend(buf, count, datatype, dest, tag, comm_ptr, BSEND, &request_ptr);
-    /* Note that we can ignore the request_ptr because it is handled internally
-     * by the bsend util routines */
+    mpi_errno = MPIR_Bsend_isend(buf, count, datatype, dest, tag, comm_ptr, NULL);
     if (mpi_errno != MPI_SUCCESS)
         goto fn_fail;
 
@@ -181,12 +166,12 @@ int MPI_Bsend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_bsend", "**mpi_bsend %p %d %D %i %t %C", buf, count,
                                  datatype, dest, tag, comm);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

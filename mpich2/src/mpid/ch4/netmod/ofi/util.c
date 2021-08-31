@@ -1,31 +1,23 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- *  Portions of this code were written by Intel Corporation.
- *  Copyright (C) 2011-2016 Intel Corporation.  Intel provides this material
- *  to Argonne National Laboratory subject to Software Grant and Corporate
- *  Contributor License Agreement dated February 8, 2012.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include <mpidimpl.h>
 #include "ofi_impl.h"
 #include "ofi_events.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_OFI_handle_cq_error_util
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
+#define MPIDI_OFI_MR_KEY_PREFIX_SHIFT 63
+
 int MPIDI_OFI_handle_cq_error_util(int vni_idx, ssize_t ret)
 {
     int mpi_errno;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_NETMOD_OFI_HANDLE_CQ_ERROR);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_NETMOD_OFI_HANDLE_CQ_ERROR);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_OFI_HANDLE_CQ_ERROR_UTIL);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_OFI_HANDLE_CQ_ERROR_UTIL);
 
     mpi_errno = MPIDI_OFI_handle_cq_error(vni_idx, ret);
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_NETMOD_OFI_HANDLE_CQ_ERROR);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_OFI_HANDLE_CQ_ERROR_UTIL);
     return mpi_errno;
 }
 
@@ -34,31 +26,35 @@ int MPIDI_OFI_retry_progress()
     /* We do not call progress on hooks form netmod level
      * because it is not reentrant safe.
      */
-    return MPIDI_Progress_test(MPIDI_PROGRESS_NM | MPIDI_PROGRESS_SHM);
+    return MPID_Progress_test(NULL);
 }
 
-typedef struct MPIDI_OFI_index_allocator_t {
-    int chunk_size;
-    int num_ints;
-    int start;
-    int last_free_index;
+typedef struct MPIDI_OFI_mr_key_allocator_t {
+    uint64_t chunk_size;
+    uint64_t num_ints;
+    uint64_t last_free_mr_key;
     uint64_t *bitmask;
-} MPIDI_OFI_index_allocator_t;
+} MPIDI_OFI_mr_key_allocator_t;
 
-void MPIDI_OFI_index_allocator_create(void **indexmap, int start, MPL_memory_class class)
+static MPIDI_OFI_mr_key_allocator_t mr_key_allocator;
+
+int MPIDI_OFI_mr_key_allocator_init(void)
 {
-    MPIDI_OFI_index_allocator_t *allocator;
-    MPID_THREAD_CS_ENTER(POBJ, MPIDI_OFI_THREAD_UTIL_MUTEX);
-    allocator = MPL_malloc(sizeof(MPIDI_OFI_index_allocator_t), class);
-    allocator->chunk_size = 128;
-    allocator->num_ints = allocator->chunk_size;
-    allocator->start = start;
-    allocator->last_free_index = 0;
-    allocator->bitmask = MPL_malloc(sizeof(uint64_t) * allocator->num_ints, class);
-    memset(allocator->bitmask, 0xFF, sizeof(uint64_t) * allocator->num_ints);
-    assert(allocator != NULL);
-    *indexmap = allocator;
-    MPID_THREAD_CS_EXIT(POBJ, MPIDI_OFI_THREAD_UTIL_MUTEX);
+    int mpi_errno = MPI_SUCCESS;
+
+    mr_key_allocator.chunk_size = 128;
+    mr_key_allocator.num_ints = mr_key_allocator.chunk_size;
+    mr_key_allocator.last_free_mr_key = 0;
+    mr_key_allocator.bitmask = MPL_malloc(sizeof(uint64_t) * mr_key_allocator.num_ints,
+                                          MPL_MEM_RMA);
+    MPIR_ERR_CHKANDSTMT(mr_key_allocator.bitmask == NULL, mpi_errno,
+                        MPI_ERR_NO_MEM, goto fn_fail, "**nomem");
+    memset(mr_key_allocator.bitmask, 0xFF, sizeof(uint64_t) * mr_key_allocator.num_ints);
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 #define MPIDI_OFI_INDEX_CALC(val,nval,shift,mask) \
@@ -66,75 +62,118 @@ void MPIDI_OFI_index_allocator_create(void **indexmap, int start, MPL_memory_cla
         val >>= shift##ULL;                               \
         nval += shift;                                    \
     }
-int MPIDI_OFI_index_allocator_alloc(void *indexmap, MPL_memory_class class)
+
+/* when key_type is MPIDI_OFI_LOCAL_MR_KEY, the input requested_key is ignored
+ * and can be passed as MPIDI_OFI_INVALID_MR_KEY because mr key allocator will
+ * decide which key to use. When key_type is MPIDI_OFI_COLL_MR_KEY, user should
+ * pass a collectively unique key as requested_key and mr key allocator will mark
+ * coll bit of the key and return to user.
+ * we use highest bit of key to distinguish coll (user-specific key) and local
+ * (auto-generated) 64-bits key; since the highest bit is reserved for key type,
+ * a valid key has maximal 63 bits. */
+uint64_t MPIDI_OFI_mr_key_alloc(int key_type, uint64_t requested_key)
 {
-    int i;
-    MPIDI_OFI_index_allocator_t *allocator = indexmap;
-    MPID_THREAD_CS_ENTER(POBJ, MPIDI_OFI_THREAD_UTIL_MUTEX);
-    for (i = allocator->last_free_index; i < allocator->num_ints; i++) {
-        if (allocator->bitmask[i]) {
-            register uint64_t val, nval;
-            val = allocator->bitmask[i];
-            nval = 2;
-            MPIDI_OFI_INDEX_CALC(val, nval, 32, 0xFFFFFFFFULL);
-            MPIDI_OFI_INDEX_CALC(val, nval, 16, 0xFFFFULL);
-            MPIDI_OFI_INDEX_CALC(val, nval, 8, 0xFFULL);
-            MPIDI_OFI_INDEX_CALC(val, nval, 4, 0xFULL);
-            MPIDI_OFI_INDEX_CALC(val, nval, 2, 0x3ULL);
-            nval -= val & 0x1ULL;
-            allocator->bitmask[i] &= ~(0x1ULL << (nval - 1));
-            allocator->last_free_index = i;
-            MPID_THREAD_CS_EXIT(POBJ, MPIDI_OFI_THREAD_UTIL_MUTEX);
-            return i * sizeof(uint64_t) * 8 + (nval - 1) + allocator->start;
-        }
-        if (i == allocator->num_ints - 1) {
-            allocator->num_ints += allocator->chunk_size;
-            allocator->bitmask = MPL_realloc(allocator->bitmask,
-                                             sizeof(uint64_t) * allocator->num_ints, class);
-            MPIR_Assert(allocator->bitmask);
-            memset(&allocator->bitmask[i + 1], 0xFF, sizeof(uint64_t) * allocator->chunk_size);
-        }
+    uint64_t ret_key = MPIDI_OFI_INVALID_MR_KEY;
+
+    switch (key_type) {
+        case MPIDI_OFI_LOCAL_MR_KEY:
+            {
+                uint64_t i;
+                for (i = mr_key_allocator.last_free_mr_key; i < mr_key_allocator.num_ints; i++) {
+                    if (mr_key_allocator.bitmask[i]) {
+                        register uint64_t val, nval;
+                        val = mr_key_allocator.bitmask[i];
+                        nval = 2;
+                        MPIDI_OFI_INDEX_CALC(val, nval, 32, 0xFFFFFFFFULL);
+                        MPIDI_OFI_INDEX_CALC(val, nval, 16, 0xFFFFULL);
+                        MPIDI_OFI_INDEX_CALC(val, nval, 8, 0xFFULL);
+                        MPIDI_OFI_INDEX_CALC(val, nval, 4, 0xFULL);
+                        MPIDI_OFI_INDEX_CALC(val, nval, 2, 0x3ULL);
+                        nval -= val & 0x1ULL;
+                        mr_key_allocator.bitmask[i] &= ~(0x1ULL << (nval - 1));
+                        mr_key_allocator.last_free_mr_key = i;
+                        ret_key = i * sizeof(uint64_t) * 8 + (nval - 1);
+                        /* assert local key does not exceed its range */
+                        MPIR_Assert((ret_key & (1ULL << MPIDI_OFI_MR_KEY_PREFIX_SHIFT)) == 0);
+                        break;
+                    }
+                    if (i == mr_key_allocator.num_ints - 1) {
+                        mr_key_allocator.num_ints += mr_key_allocator.chunk_size;
+                        mr_key_allocator.bitmask = MPL_realloc(mr_key_allocator.bitmask,
+                                                               sizeof(uint64_t) *
+                                                               mr_key_allocator.num_ints,
+                                                               MPL_MEM_RMA);
+                        MPIR_Assert(mr_key_allocator.bitmask);
+                        memset(&mr_key_allocator.bitmask[i + 1], 0xFF,
+                               sizeof(uint64_t) * mr_key_allocator.chunk_size);
+                    }
+                }
+                break;
+            }
+
+        case MPIDI_OFI_COLL_MR_KEY:
+            {
+                MPIR_Assert(requested_key != MPIDI_OFI_INVALID_MR_KEY);
+                ret_key = requested_key | (1ULL << MPIDI_OFI_MR_KEY_PREFIX_SHIFT);
+                break;
+            }
+
+        default:
+            {
+                MPIR_Assert(0);
+            }
     }
-    MPID_THREAD_CS_EXIT(POBJ, MPIDI_OFI_THREAD_UTIL_MUTEX);
-    return -1;
+
+    return ret_key;
 }
 
-void MPIDI_OFI_index_allocator_free(void *indexmap, int index)
+void MPIDI_OFI_mr_key_free(int key_type, uint64_t alloc_key)
 {
-    int int_index, bitpos, numbits;
-    MPIDI_OFI_index_allocator_t *allocator = indexmap;
-    MPID_THREAD_CS_ENTER(POBJ, MPIDI_OFI_THREAD_UTIL_MUTEX);
-    numbits = sizeof(uint64_t) * 8;
-    int_index = (index + 1 - allocator->start) / numbits;
-    bitpos = (index - allocator->start) % numbits;
 
-    allocator->last_free_index = MPL_MIN(int_index, allocator->last_free_index);
-    allocator->bitmask[int_index] |= (0x1ULL << bitpos);
-    MPID_THREAD_CS_EXIT(POBJ, MPIDI_OFI_THREAD_UTIL_MUTEX);
+    switch (key_type) {
+        case MPIDI_OFI_LOCAL_MR_KEY:
+            {
+                uint64_t int_index, bitpos, numbits;
+
+                numbits = sizeof(uint64_t) * 8;
+                int_index = alloc_key / numbits;
+                bitpos = alloc_key % numbits;
+                mr_key_allocator.last_free_mr_key =
+                    MPL_MIN(int_index, mr_key_allocator.last_free_mr_key);
+                mr_key_allocator.bitmask[int_index] |= (0x1ULL << bitpos);
+                break;
+            }
+
+        case MPIDI_OFI_COLL_MR_KEY:
+            {
+                MPIR_Assert(alloc_key != MPIDI_OFI_INVALID_MR_KEY);
+                break;
+            }
+
+        default:
+            {
+                MPIR_Assert(0);
+            }
+    }
 }
 
-void MPIDI_OFI_index_allocator_destroy(void *indexmap)
+void MPIDI_OFI_mr_key_allocator_destroy()
 {
-    MPIDI_OFI_index_allocator_t *allocator;
-    MPID_THREAD_CS_ENTER(POBJ, MPIDI_OFI_THREAD_UTIL_MUTEX);
-    allocator = (MPIDI_OFI_index_allocator_t *) indexmap;
-    MPL_free(allocator->bitmask);
-    MPL_free(allocator);
-    MPID_THREAD_CS_EXIT(POBJ, MPIDI_OFI_THREAD_UTIL_MUTEX);
+    MPL_free(mr_key_allocator.bitmask);
 }
 
 /* Translate the control message to get a huge message into a request to
  * actually perform the data transfer. */
-static inline int MPIDI_OFI_get_huge(MPIDI_OFI_send_control_t * info)
+static int MPIDI_OFI_get_huge(MPIDI_OFI_send_control_t * info)
 {
-    MPIDI_OFI_huge_recv_t *recv = NULL;
+    MPIDI_OFI_huge_recv_t *recv_elem = NULL;
     MPIR_Comm *comm_ptr;
     int mpi_errno = MPI_SUCCESS;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_NETMOD_OFI_GET_HUGE);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_NETMOD_OFI_GET_HUGE);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_OFI_GET_HUGE);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_OFI_GET_HUGE);
 
     /* Look up the communicator */
-    comm_ptr = MPIDI_CH4U_context_id_to_comm(info->comm_id);
+    comm_ptr = MPIDIG_context_id_to_comm(info->comm_id);
 
     /* If there has been a posted receive, search through the list of unmatched
      * receives to find the one that goes with the incoming message. */
@@ -155,9 +194,20 @@ static inline int MPIDI_OFI_get_huge(MPIDI_OFI_send_control_t * info)
 
                 LL_DELETE(MPIDI_posted_huge_recv_head, MPIDI_posted_huge_recv_tail, list_ptr);
 
-                recv = (MPIDI_OFI_huge_recv_t *)
-                    MPIDI_CH4U_map_lookup(MPIDI_OFI_COMM(comm_ptr).huge_recv_counters,
-                                          list_ptr->rreq->handle);
+                recv_elem = (MPIDI_OFI_huge_recv_t *)
+                    MPIDIU_map_lookup(MPIDI_OFI_COMM(comm_ptr).huge_recv_counters,
+                                      list_ptr->rreq->handle);
+
+                /* If this is a "peek" element for an MPI_Probe, it shouldn't be matched. Grab the
+                 * important information and remove the element from the list. */
+                if (recv_elem->peek) {
+                    MPIR_STATUS_SET_COUNT(recv_elem->localreq->status, info->msgsize);
+                    MPIDI_OFI_REQUEST(recv_elem->localreq, util_id) = MPIDI_OFI_PEEK_FOUND;
+                    MPIDIU_map_erase(MPIDI_OFI_COMM(recv_elem->comm_ptr).huge_recv_counters,
+                                     recv_elem->localreq->handle);
+                    MPL_free(recv_elem);
+                    recv_elem = NULL;
+                }
 
                 MPL_free(list_ptr);
                 break;
@@ -165,28 +215,28 @@ static inline int MPIDI_OFI_get_huge(MPIDI_OFI_send_control_t * info)
         }
     }
 
-    if (recv == NULL) { /* Put the struct describing the transfer on an
-                         * unexpected list to be retrieved later */
+    if (recv_elem == NULL) {    /* Put the struct describing the transfer on an
+                                 * unexpected list to be retrieved later */
         MPL_DBG_MSG_FMT(MPIR_DBG_PT2PT, VERBOSE,
                         (MPL_DBG_FDEST, "CREATING UNEXPECTED HUGE RECV: (%d, %d, %d)",
                          info->comm_id, info->origin_rank, info->tag));
 
         /* If this is unexpected, create a new tracker and put it in the unexpected list. */
-        recv = (MPIDI_OFI_huge_recv_t *) MPL_calloc(sizeof(*recv), 1, MPL_MEM_COMM);
-        if (!recv)
+        recv_elem = (MPIDI_OFI_huge_recv_t *) MPL_calloc(sizeof(*recv_elem), 1, MPL_MEM_COMM);
+        if (!recv_elem)
             MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**nomem");
 
-        LL_APPEND(MPIDI_unexp_huge_recv_head, MPIDI_unexp_huge_recv_tail, recv);
+        LL_APPEND(MPIDI_unexp_huge_recv_head, MPIDI_unexp_huge_recv_tail, recv_elem);
     }
 
-    recv->event_id = MPIDI_OFI_EVENT_GET_HUGE;
-    recv->cur_offset = MPIDI_Global.max_send;
-    recv->remote_info = *info;
-    recv->comm_ptr = comm_ptr;
-    recv->next = NULL;
-    MPIDI_OFI_get_huge_event(NULL, (MPIR_Request *) recv);
+    recv_elem->event_id = MPIDI_OFI_EVENT_GET_HUGE;
+    recv_elem->cur_offset = MPIDI_OFI_global.max_msg_size;
+    recv_elem->remote_info = *info;
+    recv_elem->comm_ptr = comm_ptr;
+    recv_elem->next = NULL;
+    MPIDI_OFI_get_huge_event(NULL, (MPIR_Request *) recv_elem);
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_NETMOD_OFI_GET_HUGE);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_OFI_GET_HUGE);
 
   fn_exit:
     return mpi_errno;
@@ -194,20 +244,18 @@ static inline int MPIDI_OFI_get_huge(MPIDI_OFI_send_control_t * info)
     goto fn_exit;
 }
 
-int MPIDI_OFI_control_handler(int handler_id, void *am_hdr,
-                              void **data,
-                              size_t * data_sz,
-                              int *is_contig,
-                              MPIDIG_am_target_cmpl_cb * target_cmpl_cb, MPIR_Request ** req)
+int MPIDI_OFI_control_handler(int handler_id, void *am_hdr, void *data, MPI_Aint data_sz,
+                              int is_local, int is_async, MPIR_Request ** req)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_OFI_send_control_t *ctrlsend = (MPIDI_OFI_send_control_t *) am_hdr;
-    *req = NULL;
-    *target_cmpl_cb = NULL;
+
+    if (is_async)
+        *req = NULL;
 
     switch (ctrlsend->type) {
         case MPIDI_OFI_CTRL_HUGEACK:{
-                mpi_errno = MPIDI_OFI_dispatch_function(NULL, ctrlsend->ackreq, 0);
+                mpi_errno = MPIDI_OFI_dispatch_function(NULL, ctrlsend->ackreq);
                 goto fn_exit;
             }
             break;
@@ -260,11 +308,7 @@ int MPIDI_OFI_control_handler(int handler_id, void *am_hdr,
 #define isDOUBLE_COMPLEX(x) ((x) == MPI_DOUBLE_COMPLEX || (x) == MPI_COMPLEX8 || \
                               (x) == MPI_C_DOUBLE_COMPLEX)
 
-#undef FUNCNAME
-#define FUNCNAME check_mpi_acc_valid
-#undef FCNAME
-#define FCNAME MPL_QUOTE(check_mpi_acc_valid)
-MPL_STATIC_INLINE_PREFIX bool check_mpi_acc_valid(MPI_Datatype dtype, MPI_Op op)
+static bool check_mpi_acc_valid(MPI_Datatype dtype, MPI_Op op)
 {
     bool valid_flag = false;
 
@@ -287,11 +331,7 @@ MPL_STATIC_INLINE_PREFIX bool check_mpi_acc_valid(MPI_Datatype dtype, MPI_Op op)
     return valid_flag;
 }
 
-#undef FUNCNAME
-#define FUNCNAME mpi_to_ofi
-#undef FCNAME
-#define FCNAME MPL_QUOTE(mpi_to_ofi)
-static inline int mpi_to_ofi(MPI_Datatype dt, enum fi_datatype *fi_dt, MPI_Op op, enum fi_op *fi_op)
+static int mpi_to_ofi(MPI_Datatype dt, enum fi_datatype *fi_dt, MPI_Op op, enum fi_op *fi_op)
 {
     *fi_dt = FI_DATATYPE_LAST;
     *fi_op = FI_ATOMIC_OP_LAST;
@@ -414,49 +454,10 @@ static inline int mpi_to_ofi(MPI_Datatype dt, enum fi_datatype *fi_dt, MPI_Op op
     return -1;
 }
 
-static MPI_Datatype mpi_dtypes[] = {
-    MPI_CHAR, MPI_UNSIGNED_CHAR, MPI_SIGNED_CHAR, MPI_BYTE,
-    MPI_WCHAR, MPI_SHORT, MPI_UNSIGNED_SHORT, MPI_INT,
-    MPI_UNSIGNED, MPI_LONG, MPI_UNSIGNED_LONG, MPI_FLOAT,
-    MPI_DOUBLE, MPI_LONG_DOUBLE, MPI_LONG_LONG, MPI_UNSIGNED_LONG_LONG,
-    MPI_PACKED, MPI_LB, MPI_UB, MPI_2INT,
-
-    MPI_INT8_T, MPI_INT16_T, MPI_INT32_T,
-    MPI_INT64_T, MPI_UINT8_T, MPI_UINT16_T,
-    MPI_UINT32_T, MPI_UINT64_T, MPI_C_BOOL,
-    MPI_C_FLOAT_COMPLEX, MPI_C_DOUBLE_COMPLEX, MPI_C_LONG_DOUBLE_COMPLEX,
-    /* address/offset/count types */
-    MPI_AINT, MPI_OFFSET, MPI_COUNT,
-    /* Fortran types */
-#ifdef HAVE_FORTRAN_BINDING
-    MPI_COMPLEX, MPI_DOUBLE_COMPLEX, MPI_LOGICAL, MPI_REAL,
-    MPI_DOUBLE_PRECISION, MPI_INTEGER, MPI_2INTEGER,
-
-#ifdef MPICH_DEFINE_2COMPLEX
-    MPI_2COMPLEX, MPI_2DOUBLE_COMPLEX,
-#endif
-    MPI_2REAL, MPI_2DOUBLE_PRECISION, MPI_CHARACTER,
-    MPI_REAL4, MPI_REAL8, MPI_REAL16, MPI_COMPLEX8, MPI_COMPLEX16,
-    MPI_COMPLEX32, MPI_INTEGER1, MPI_INTEGER2, MPI_INTEGER4, MPI_INTEGER8,
-    MPI_INTEGER16,
-#endif
-    MPI_FLOAT_INT, MPI_DOUBLE_INT,
-    MPI_LONG_INT, MPI_SHORT_INT,
-    MPI_LONG_DOUBLE_INT,
-    (MPI_Datatype) - 1,
-};
-
-static MPI_Op mpi_ops[] = {
-    MPI_MAX, MPI_MIN, MPI_SUM, MPI_PROD,
-    MPI_LAND, MPI_BAND, MPI_LOR, MPI_BOR,
-    MPI_LXOR, MPI_BXOR, MPI_MINLOC, MPI_MAXLOC,
-    MPI_REPLACE, MPI_NO_OP, MPI_OP_NULL,
-};
-
-#define _TBL MPIDI_Global.win_op_table[i][j]
+#define _TBL MPIDI_OFI_global.win_op_table[i][j]
 #define CHECK_ATOMIC(fcn,field1,field2)            \
   atomic_count = 0;                                \
-  ret = fcn(MPIDI_Global.ctx[0].tx,                \
+  ret = fcn(MPIDI_OFI_global.ctx[0].tx,                \
     fi_dt,                                 \
     fi_op,                                 \
             &atomic_count);                        \
@@ -466,7 +467,7 @@ static MPI_Op mpi_ops[] = {
   _TBL.field2 = atomic_count;                  \
     }
 
-static inline void create_dt_map()
+static void create_dt_map()
 {
     int i, j;
     size_t dtsize[FI_DATATYPE_LAST];
@@ -489,11 +490,22 @@ static inline void create_dt_map()
      * enabled call fo fi_atomic*** may crash */
     MPIR_Assert(MPIDI_OFI_ENABLE_ATOMICS);
 
-    for (i = 0; i < MPIDI_OFI_DT_SIZES; i++)
-        for (j = 0; j < MPIDI_OFI_OP_SIZES; j++) {
+    memset(MPIDI_OFI_global.win_op_table, 0, sizeof(MPIDI_OFI_global.win_op_table));
+
+    for (i = 0; i < MPIR_DATATYPE_N_PREDEFINED; i++) {
+        MPI_Datatype dt = MPIR_Datatype_predefined_get_type(i);
+
+        /* MPICH sets predefined datatype handles to MPI_DATATYPE_NULL if they are not
+         * supported on the target platform. Skip it. */
+        if (dt == MPI_DATATYPE_NULL)
+            continue;
+
+        for (j = 0; j < MPIDIG_ACCU_NUM_OP; j++) {
+            MPI_Op op = MPIDIU_win_acc_get_op(j);
             enum fi_datatype fi_dt = (enum fi_datatype) -1;
             enum fi_op fi_op = (enum fi_op) -1;
-            mpi_to_ofi(mpi_dtypes[i], &fi_dt, mpi_ops[j], &fi_op);
+
+            mpi_to_ofi(dt, &fi_dt, op, &fi_op);
             MPIR_Assert(fi_dt != (enum fi_datatype) -1);
             MPIR_Assert(fi_op != (enum fi_op) -1);
             _TBL.dt = fi_dt;
@@ -502,7 +514,7 @@ static inline void create_dt_map()
             _TBL.max_atomic_count = 0;
             _TBL.max_fetch_atomic_count = 0;
             _TBL.max_compare_atomic_count = 0;
-            _TBL.mpi_acc_valid = check_mpi_acc_valid(mpi_dtypes[i], mpi_ops[j]);
+            _TBL.mpi_acc_valid = check_mpi_acc_valid(dt, op);
             ssize_t ret;
             size_t atomic_count;
 
@@ -514,110 +526,12 @@ static inline void create_dt_map()
                 _TBL.dtsize = dtsize[fi_dt];
             }
         }
-}
-
-static inline void add_index(MPI_Datatype datatype, int *index)
-{
-    MPIR_Datatype *dt_ptr;
-    MPIR_Datatype_get_ptr(datatype, dt_ptr);
-    MPIDI_OFI_DATATYPE(dt_ptr).index = *index;
-    (*index)++;
+    }
 }
 
 void MPIDI_OFI_index_datatypes()
 {
-    static bool needs_init = true;
-    int index = 0;
-
-    if (!needs_init)
-        return;
-
-    add_index(MPI_CHAR, &index);
-    add_index(MPI_UNSIGNED_CHAR, &index);
-    add_index(MPI_SIGNED_CHAR, &index);
-    add_index(MPI_BYTE, &index);
-    add_index(MPI_WCHAR, &index);
-    add_index(MPI_SHORT, &index);
-    add_index(MPI_UNSIGNED_SHORT, &index);
-    add_index(MPI_INT, &index);
-    add_index(MPI_UNSIGNED, &index);
-    add_index(MPI_LONG, &index);        /* count=10 */
-    add_index(MPI_UNSIGNED_LONG, &index);
-    add_index(MPI_FLOAT, &index);
-    add_index(MPI_DOUBLE, &index);
-    add_index(MPI_LONG_DOUBLE, &index);
-    add_index(MPI_LONG_LONG, &index);
-    add_index(MPI_UNSIGNED_LONG_LONG, &index);
-    add_index(MPI_PACKED, &index);
-    add_index(MPI_LB, &index);
-    add_index(MPI_UB, &index);
-    add_index(MPI_2INT, &index);        /* count=20 */
-
-    /* C99 types */
-    add_index(MPI_INT8_T, &index);
-    add_index(MPI_INT16_T, &index);
-    add_index(MPI_INT32_T, &index);
-    add_index(MPI_INT64_T, &index);
-    add_index(MPI_UINT8_T, &index);
-    add_index(MPI_UINT16_T, &index);
-    add_index(MPI_UINT32_T, &index);
-    add_index(MPI_UINT64_T, &index);
-    add_index(MPI_C_BOOL, &index);
-    add_index(MPI_C_FLOAT_COMPLEX, &index);     /* count=30 */
-    add_index(MPI_C_DOUBLE_COMPLEX, &index);
-    add_index(MPI_C_LONG_DOUBLE_COMPLEX, &index);
-
-    /* address/offset/count types */
-    add_index(MPI_AINT, &index);
-    add_index(MPI_OFFSET, &index);
-    add_index(MPI_COUNT, &index);       /* count=35 */
-
-    /* Fortran types (count=23) */
-#ifdef HAVE_FORTRAN_BINDING
-    add_index(MPI_COMPLEX, &index);
-    add_index(MPI_DOUBLE_COMPLEX, &index);
-    add_index(MPI_LOGICAL, &index);
-    add_index(MPI_REAL, &index);
-    add_index(MPI_DOUBLE_PRECISION, &index);    /* count=40 */
-    add_index(MPI_INTEGER, &index);
-    add_index(MPI_2INTEGER, &index);
-#ifdef MPICH_DEFINE_2COMPLEX
-    add_index(MPI_2COMPLEX, &index);
-    add_index(MPI_2DOUBLE_COMPLEX, &index);
-#endif
-    add_index(MPI_2REAL, &index);
-    add_index(MPI_2DOUBLE_PRECISION, &index);
-    add_index(MPI_CHARACTER, &index);
-    add_index(MPI_REAL4, &index);
-    add_index(MPI_REAL8, &index);
-    add_index(MPI_REAL16, &index);      /* count=50 */
-    add_index(MPI_COMPLEX8, &index);
-    add_index(MPI_COMPLEX16, &index);
-    add_index(MPI_COMPLEX32, &index);
-    add_index(MPI_INTEGER1, &index);
-    add_index(MPI_INTEGER2, &index);
-    add_index(MPI_INTEGER4, &index);
-    add_index(MPI_INTEGER8, &index);
-
-    if (MPI_INTEGER16 == MPI_DATATYPE_NULL)
-        index++;
-    else
-        add_index(MPI_INTEGER16, &index);
-
-#endif
-    add_index(MPI_FLOAT_INT, &index);
-    add_index(MPI_DOUBLE_INT, &index);  /* count=60 */
-    add_index(MPI_LONG_INT, &index);
-    add_index(MPI_SHORT_INT, &index);
-    add_index(MPI_LONG_DOUBLE_INT, &index);
-
-    /* check if static dt_size is correct */
-    MPIR_Assert(MPIDI_OFI_DT_SIZES == index);
-
     /* do not generate map when atomics are not enabled */
     if (MPIDI_OFI_ENABLE_ATOMICS)
         create_dt_map();
-
-    /* only need to do this once */
-    needs_init = false;
 }

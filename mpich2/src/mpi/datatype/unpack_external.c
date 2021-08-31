@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -29,10 +27,6 @@ int MPI_Unpack_external(const char datarep[], const void *inbuf, MPI_Aint insize
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Unpack_external
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Unpack_external - Unpack a buffer (packed with MPI_Pack_external)
    according to a datatype into contiguous memory
@@ -65,8 +59,6 @@ int MPI_Unpack_external(const char datarep[],
                         MPI_Aint * position, void *outbuf, int outcount, MPI_Datatype datatype)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPI_Aint first, last;
-    MPIR_Segment *segp;
     MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_UNPACK_EXTERNAL);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -87,7 +79,7 @@ int MPI_Unpack_external(const char datarep[],
 
             MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 
-            if (datatype != MPI_DATATYPE_NULL && HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+            if (datatype != MPI_DATATYPE_NULL && !HANDLE_IS_BUILTIN(datatype)) {
                 MPIR_Datatype *datatype_ptr = NULL;
 
                 MPIR_Datatype_get_ptr(datatype, datatype_ptr);
@@ -108,28 +100,12 @@ int MPI_Unpack_external(const char datarep[],
         goto fn_exit;
     }
 
-    segp = MPIR_Segment_alloc();
-    MPIR_ERR_CHKANDJUMP1((segp == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s",
-                         "MPIR_Segment_alloc");
-    mpi_errno = MPIR_Segment_init(outbuf, outcount, datatype, segp);
-    if (mpi_errno != MPI_SUCCESS)
+    MPI_Aint actual_unpack_bytes;
+    mpi_errno = MPIR_Typerep_unpack_external((void *) ((char *) inbuf + *position),
+                                             outbuf, outcount, datatype, &actual_unpack_bytes);
+    if (mpi_errno)
         goto fn_fail;
-
-    /* NOTE: buffer values and positions in MPI_Unpack_external are used very
-     * differently from use in MPIR_Segment_unpack_external...
-     */
-    first = 0;
-    last = SEGMENT_IGNORE_LAST;
-
-    /* Ensure that pointer increment fits in a pointer */
-    MPIR_Ensure_Aint_fits_in_pointer((MPIR_VOID_PTR_CAST_TO_MPI_AINT inbuf) + *position);
-
-    MPIR_Segment_unpack_external32(segp, first, &last, (void *) ((char *) inbuf + *position));
-
-    *position += last;
-
-    MPIR_Segment_free(segp);
-
+    *position += actual_unpack_bytes;
     /* ... end of body of routine ... */
 
   fn_exit:
@@ -141,13 +117,13 @@ int MPI_Unpack_external(const char datarep[],
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_unpack_external",
                                  "**mpi_unpack_external %s %p %d %p %p %d %D", datarep, inbuf,
                                  insize, position, outbuf, outcount, datatype);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

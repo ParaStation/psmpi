@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *   Copyright (C) 1997 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 
@@ -37,6 +35,12 @@ void ADIOI_GEN_ReadContig(ADIO_File fd, void *buf, int count,
 #ifdef AGGREGATION_PROFILE
     MPE_Log_event(5034, 0, NULL);
 #endif
+
+    if (count == 0) {
+        err = 0;
+        goto fn_exit;
+    }
+
     MPI_Type_size_x(datatype, &datatype_size);
     len = datatype_size * (ADIO_Offset) count;
 
@@ -96,6 +100,8 @@ void ADIOI_GEN_ReadContig(ADIO_File fd, void *buf, int count,
     if (file_ptr_type == ADIO_INDIVIDUAL) {
         fd->fp_ind += bytes_xfered;
     }
+
+  fn_exit:
 #ifdef HAVE_STATUS_SET_BYTES
     /* what if we only read half a datatype? */
     /* bytes_xfered could be larger than int */

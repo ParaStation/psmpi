@@ -1,8 +1,9 @@
 #! /bin/sh
-# 
-# (C) 2006 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
+
 # Update all of the derived files
 # For best performance, execute this in the top-level directory.
 # There are some experimental features to allow it to be executed in
@@ -96,13 +97,15 @@ do_geterrmsgs=yes
 do_getcvars=yes
 do_f77=yes
 do_build_configure=yes
-do_genstates=yes
+do_genstates=no
 do_atdir_check=no
 do_atver_check=yes
 do_subcfg_m4=yes
 do_izem=yes
 do_ofi=yes
 do_ucx=yes
+do_json=yes
+do_yaksa=yes
 
 export do_build_configure
 
@@ -110,7 +113,8 @@ export do_build_configure
 MAKE=${MAKE-make}
 
 # amdirs are the directories that make use of autoreconf
-amdirs=". src/mpl src/util/logging/rlog"
+amdirs=". src/mpl"
+# amdirs="$amdirs src/util/logging/rlog"
 
 autoreconf_args="-if"
 export autoreconf_args
@@ -224,6 +228,10 @@ for arg in "$@" ; do
 
     -without-ucx|--without-ucx)
         do_ucx=no
+        ;;
+
+    -without-json|--without-json)
+        do_json=no
         ;;
 
 	-help|--help|-usage|--usage)
@@ -534,11 +542,37 @@ fi
 
 
 ########################################################################
+## Checking for bash
+########################################################################
+
+echo_n "Checking for bash... "
+if test "`which bash 2>&1 > /dev/null ; echo $?`" = "0" ;then
+    echo "done"
+else
+    echo "bash not found" ;
+    exit 1;
+fi
+
+########################################################################
 ## Checking for UNIX find
 ########################################################################
 
 echo_n "Checking for UNIX find... "
 find ./maint -name 'configure.ac' > /dev/null 2>&1
+if [ $? = 0 ] ; then
+    echo "done"
+else
+    echo "not found (error)"
+    exit 1
+fi
+
+
+########################################################################
+## Checking for UNIX patch
+########################################################################
+
+echo_n "Checking for UNIX patch... "
+patch -v > /dev/null 2>&1
 if [ $? = 0 ] ; then
     echo "done"
 else
@@ -578,24 +612,32 @@ echo "###########################################################"
 echo
 
 # hwloc is always required
-check_submodule_presence src/hwloc
+check_submodule_presence modules/hwloc
 
 # external packages that require autogen.sh to be run for each of them
-externals="src/pm/hydra src/pm/hydra2 src/mpi/romio src/openpa src/hwloc test/mpi"
+externals="src/pm/hydra src/pm/hydra2 src/mpi/romio modules/hwloc test/mpi modules/json-c modules/yaksa"
 
 if [ "yes" = "$do_izem" ] ; then
-    check_submodule_presence src/izem
-    externals="${externals} src/izem"
+    check_submodule_presence modules/izem
+    externals="${externals} modules/izem"
 fi
 
 if [ "yes" = "$do_ucx" ] ; then
-    check_submodule_presence src/mpid/ch4/netmod/ucx/ucx
-    externals="${externals} src/mpid/ch4/netmod/ucx/ucx"
+    check_submodule_presence modules/ucx
+    externals="${externals} modules/ucx"
 fi
 
 if [ "yes" = "$do_ofi" ] ; then
-    check_submodule_presence src/mpid/ch4/netmod/ofi/libfabric
-    externals="${externals} src/mpid/ch4/netmod/ofi/libfabric"
+    check_submodule_presence modules/libfabric
+    externals="${externals} modules/libfabric"
+fi
+
+if [ "yes" = "$do_json" ] ; then
+    check_submodule_presence "modules/json-c"
+fi
+
+if [ "yes" = "$do_yaksa" ] ; then
+    check_submodule_presence "modules/yaksa"
 fi
 
 ########################################################################
@@ -615,12 +657,12 @@ confdb_dirs=
 confdb_dirs="${confdb_dirs} src/mpi/romio/confdb"
 confdb_dirs="${confdb_dirs} src/mpi/romio/mpl/confdb"
 confdb_dirs="${confdb_dirs} src/mpl/confdb"
-confdb_dirs="${confdb_dirs} src/openpa/confdb"
 confdb_dirs="${confdb_dirs} src/pm/hydra/confdb"
 confdb_dirs="${confdb_dirs} src/pm/hydra2/confdb"
 confdb_dirs="${confdb_dirs} src/pm/hydra/mpl/confdb"
 confdb_dirs="${confdb_dirs} src/pm/hydra2/mpl/confdb"
 confdb_dirs="${confdb_dirs} test/mpi/confdb"
+confdb_dirs="${confdb_dirs} test/mpi/dtpools/confdb"
 
 # hydra's copies of mpl and hwloc
 sync_external src/mpl src/pm/hydra/mpl
@@ -635,8 +677,8 @@ for destdir in $confdb_dirs ; do
 done
 
 # Copying hwloc to hydra
-sync_external src/hwloc src/pm/hydra/tools/topo/hwloc/hwloc
-sync_external src/hwloc src/pm/hydra2/libhydra/topo/hwloc/hwloc
+sync_external modules/hwloc src/pm/hydra/tools/topo/hwloc/hwloc
+sync_external modules/hwloc src/pm/hydra2/libhydra/topo/hwloc/hwloc
 # remove .git directories to avoid confusing git clean
 rm -rf src/pm/hydra/tools/topo/hwloc/hwloc/.git
 rm -rf src/pm/hydra2/libhydra/topo/hwloc/hwloc/.git
@@ -687,7 +729,7 @@ fi
 echo_n "Updating the README... "
 . ./maint/Version
 if [ -f README.vin ] ; then
-    sed -e "s/%VERSION%/${MPICH_VERSION}/g" README.vin > README
+    sed -e "s/%VERSION%/${MPICH_VERSION}/g" -e "s/%LIBFABRIC_VERSION%/${LIBFABRIC_VERSION}/g" README.vin > README
     echo "done"
 else
     echo "error"
@@ -888,6 +930,7 @@ echo
 
 # Run some of the simple codes
 echo_n "Creating the enumeration of logging states into src/include/mpiallstates.h... "
+touch src/include/mpiallstates.h # silience build errors when do_genstates is disabled
 if [ -x maint/extractstates -a $do_genstates = "yes" ] ; then
     ./maint/extractstates
 fi
@@ -960,10 +1003,21 @@ if [ "$do_build_configure" = "yes" ] ; then
                 arm_patch_requires_rebuild=no
                 ibm_patch_requires_rebuild=no
                 sys_lib_dlsearch_path_patch_requires_rebuild=no
+                macos_patch_requires_rebuild=no
                 echo_n "Patching libtool.m4 for system dynamic library search path..."
                 patch -N -s -l $amdir/confdb/libtool.m4 maint/patches/optional/confdb/sys_lib_dlsearch_path_spec.patch
                 if [ $? -eq 0 ] ; then
                     sys_lib_dlsearch_path_patch_requires_rebuild=yes
+                    # Remove possible leftovers, which don't imply a failure
+                    rm -f $amdir/confdb/libtool.m4.orig
+                    echo "done"
+                else
+                    echo "failed"
+                fi
+                echo_n "Patching libtool.m4 for compatibility macOS Big Sur..."
+                patch -N -s -l $amdir/confdb/libtool.m4 maint/patches/optional/confdb/big-sur.patch
+                if [ $? -eq 0 ] ; then
+                    macos_patch_requires_rebuild=yes
                     # Remove possible leftovers, which don't imply a failure
                     rm -f $amdir/confdb/libtool.m4.orig
                     echo "done"
@@ -1025,7 +1079,8 @@ if [ "$do_build_configure" = "yes" ] ; then
 
                 if [ $ifort_patch_requires_rebuild = "yes" ] || [ $oracle_patch_requires_rebuild = "yes" ] \
                     || [ $arm_patch_requires_rebuild = "yes" ] || [ $ibm_patch_requires_rebuild = "yes" ] \
-                    || [ $sys_lib_dlsearch_path_patch_requires_rebuild = "yes" ] || [ $flang_patch_requires_rebuild = "yes" ]; then
+                    || [ $sys_lib_dlsearch_path_patch_requires_rebuild = "yes" ] || [ $flang_patch_requires_rebuild = "yes" ] \
+                    || [ $macos_patch_requires_rebuild = "yes" ]; then
                     # Rebuild configure
                     (cd $amdir && $autoconf -f) || exit 1
                     # Reset libtool.m4 timestamps to avoid confusing make
@@ -1036,6 +1091,18 @@ if [ "$do_build_configure" = "yes" ] ; then
     done
 fi
 
-echo "Patching configure for compatibility with NVHPC compilers..."
-../scripts/patch_mpich_configure_for_nvhpc.sh 2>&1 >/dev/null
 
+echo
+echo
+echo "###########################################################"
+echo "## Creating JSON char arrays"
+echo "###########################################################"
+echo
+
+echo_n "generating json char arrays... "
+./maint/tuning/coll/json_gen.sh
+echo "done"
+
+echo_n "Patching configure for compatibility with NVHPC compilers..."
+../scripts/patch_mpich_configure_for_nvhpc.sh 2>&1 >/dev/null
+echo "done"

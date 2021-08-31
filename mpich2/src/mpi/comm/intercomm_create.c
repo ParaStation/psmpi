@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader, MPI_Comm peer_co
 #undef MPI_Intercomm_create
 #define MPI_Intercomm_create PMPI_Intercomm_create
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Intercomm_create_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Intercomm_create_impl(MPIR_Comm * local_comm_ptr, int local_leader,
                                MPIR_Comm * peer_comm_ptr, int remote_leader, int tag,
                                MPIR_Comm ** new_intercomm_ptr)
@@ -52,8 +46,7 @@ int MPIR_Intercomm_create_impl(MPIR_Comm * local_comm_ptr, int local_leader,
     mpi_errno = MPID_Intercomm_exchange_map(local_comm_ptr, local_leader,
                                             peer_comm_ptr, remote_leader,
                                             &remote_size, &remote_lpids, &is_low_group);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /*
      * Create the contexts.  Each group will have a context for sending
@@ -68,8 +61,7 @@ int MPIR_Intercomm_create_impl(MPIR_Comm * local_comm_ptr, int local_leader,
      * calling routine already holds the single criticial section */
     /* TODO: Make sure this is tag-safe */
     mpi_errno = MPIR_Get_contextid_sparse(local_comm_ptr, &recvcontext_id, FALSE);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
     MPIR_Assert(recvcontext_id != 0);
     MPL_DBG_MSG_FMT(MPIR_DBG_COMM, VERBOSE, (MPL_DBG_FDEST, "Got contextid=%d", recvcontext_id));
 
@@ -82,8 +74,7 @@ int MPIR_Intercomm_create_impl(MPIR_Comm * local_comm_ptr, int local_leader,
             MPIC_Sendrecv(&recvcontext_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, remote_leader, tag,
                           &remote_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, remote_leader, tag,
                           peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
         final_context_id = remote_context_id;
 
@@ -92,8 +83,7 @@ int MPIR_Intercomm_create_impl(MPIR_Comm * local_comm_ptr, int local_leader,
         comm_info[0] = final_context_id;
         MPL_DBG_MSG(MPIR_DBG_COMM, VERBOSE, "About to bcast on local_comm");
         mpi_errno = MPIR_Bcast(comm_info, 1, MPI_INT, local_leader, local_comm_ptr, &errflag);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
         MPL_DBG_MSG_D(MPIR_DBG_COMM, VERBOSE, "end of bcast on local_comm of size %d",
                       local_comm_ptr->local_size);
@@ -101,8 +91,7 @@ int MPIR_Intercomm_create_impl(MPIR_Comm * local_comm_ptr, int local_leader,
         /* we're the other processes */
         MPL_DBG_MSG(MPIR_DBG_COMM, VERBOSE, "About to receive bcast on local_comm");
         mpi_errno = MPIR_Bcast(comm_info, 1, MPI_INT, local_leader, local_comm_ptr, &errflag);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
 
         /* Extract the context and group sign informatin */
@@ -122,7 +111,6 @@ int MPIR_Intercomm_create_impl(MPIR_Comm * local_comm_ptr, int local_leader,
     (*new_intercomm_ptr)->recvcontext_id = recvcontext_id;
     (*new_intercomm_ptr)->remote_size = remote_size;
     (*new_intercomm_ptr)->local_size = local_comm_ptr->local_size;
-    (*new_intercomm_ptr)->pof2 = local_comm_ptr->pof2;
     (*new_intercomm_ptr)->rank = local_comm_ptr->rank;
     (*new_intercomm_ptr)->comm_kind = MPIR_COMM_KIND__INTERCOMM;
     (*new_intercomm_ptr)->local_comm = 0;
@@ -142,16 +130,14 @@ int MPIR_Intercomm_create_impl(MPIR_Comm * local_comm_ptr, int local_leader,
     }
     MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_POBJ_COMM_MUTEX(local_comm_ptr));
 
+    (*new_intercomm_ptr)->tainted = 1;
     mpi_errno = MPIR_Comm_commit(*new_intercomm_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
 
   fn_exit:
-    if (remote_lpids) {
-        MPL_free(remote_lpids);
-        remote_lpids = NULL;
-    }
+    MPL_free(remote_lpids);
+    remote_lpids = NULL;
     MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPIR_COMM_KIND__INTERCOMM_CREATE_IMPL);
     return mpi_errno;
   fn_fail:
@@ -162,10 +148,6 @@ int MPIR_Intercomm_create_impl(MPIR_Comm * local_comm_ptr, int local_leader,
 #endif /* MPICH_MPI_FROM_PMPI */
 
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Intercomm_create
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 
 MPI_Intercomm_create - Creates an intercommuncator from two intracommunicators
@@ -333,13 +315,13 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_intercomm_create",
                                  "**mpi_intercomm_create %C %d %C %d %d %p", local_comm,
                                  local_leader, peer_comm, remote_leader, tag, newintercomm);
     }
 #endif /* HAVE_ERROR_CHECKING */
-    mpi_errno = MPIR_Err_return_comm(local_comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(local_comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

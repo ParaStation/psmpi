@@ -1,11 +1,10 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*-
- *   vim: ts=8 sts=4 sw=4 noexpandtab
- *
- *   Copyright (C) 2006 Unknown (TODO: fix this)
+/*
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
-#include <assert.h>
 #include "adio.h"
+#include <assert.h>
 #include "adio_extern.h"
 #include "ad_pvfs2.h"
 #include "ad_pvfs2_io.h"

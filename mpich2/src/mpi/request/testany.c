@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -30,28 +28,22 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *indx, int *flag
 #undef MPI_Testany
 #define MPI_Testany PMPI_Testany
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Testany_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIR_Testany_impl(int count, MPIR_Request * request_ptrs[],
-                      int *indx, int *flag, MPI_Status * status)
+int MPIR_Testany_state(int count, MPIR_Request * request_ptrs[],
+                       int *indx, int *flag, MPI_Status * status, MPID_Progress_state * state)
 {
     int i;
     int n_inactive = 0;
     int mpi_errno = MPI_SUCCESS;
 
-    mpi_errno = MPID_Progress_test();
+    mpi_errno = MPID_Progress_test(state);
     /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
     /* --END ERROR HANDLING-- */
 
     for (i = 0; i < count; i++) {
         if ((i + 1) % MPIR_CVAR_REQUEST_POLL_FREQ == 0) {
-            mpi_errno = MPID_Progress_test();
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            mpi_errno = MPID_Progress_test(state);
+            MPIR_ERR_CHECK(mpi_errno);
         }
 
         if (request_ptrs[i] != NULL && MPIR_Request_has_poll_fn(request_ptrs[i])) {
@@ -79,12 +71,14 @@ int MPIR_Testany_impl(int count, MPIR_Request * request_ptrs[],
     goto fn_exit;
 }
 
+int MPIR_Testany_impl(int count, MPIR_Request * request_ptrs[],
+                      int *indx, int *flag, MPI_Status * status)
+{
+    return MPIR_Testany_state(count, request_ptrs, indx, flag, status, NULL);
+}
+
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Testany
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Testany - Tests for completion of any previdously initiated
                   requests
@@ -121,7 +115,6 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *indx,
     MPIR_Request **request_ptrs = request_ptr_array;
     int i;
     int n_inactive;
-    int active_flag;
     int last_disabled_anysource = -1;
     int first_nonnull = count;
     int mpi_errno = MPI_SUCCESS;
@@ -130,7 +123,7 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *indx,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
-    MPID_THREAD_CS_ENTER(VNI_GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPIR_FUNC_TERSE_REQUEST_ENTER(MPID_STATE_MPI_TESTANY);
 
     /* Check the arguments */
@@ -228,13 +221,12 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *indx,
     }
 
     if (*indx != MPI_UNDEFINED) {
-        mpi_errno = MPIR_Request_completion_processing(request_ptrs[*indx], status, &active_flag);
+        mpi_errno = MPIR_Request_completion_processing(request_ptrs[*indx], status);
         if (!MPIR_Request_is_persistent(request_ptrs[*indx])) {
             MPIR_Request_free(request_ptrs[*indx]);
             array_of_requests[*indx] = MPI_REQUEST_NULL;
         }
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         goto fn_exit;
     }
 
@@ -256,7 +248,7 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *indx,
     }
 
     MPIR_FUNC_TERSE_REQUEST_EXIT(MPID_STATE_MPI_TESTANY);
-    MPID_THREAD_CS_EXIT(VNI_GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:
@@ -264,12 +256,12 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *indx,
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_testany", "**mpi_testany %d %p %p %p %p", count,
                                  array_of_requests, indx, flag, status);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

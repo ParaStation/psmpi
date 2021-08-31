@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2015 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* This code tests the case when one process issues large number
@@ -77,7 +76,9 @@ int main(int argc, char *argv[])
     if (rank == 0) {
         for (i = 0; i < DATA_SIZE - COUNT; i++) {
             if (tar_buf[i] != OPS_NUM) {
-                printf("tar_buf[%d] = %d, expected %d\n", i, tar_buf[i], OPS_NUM);
+                if (errs < 10) {
+                    printf("tar_buf[%d] = %d, expected %d\n", i, tar_buf[i], OPS_NUM);
+                }
                 errs++;
             }
         }
@@ -109,7 +110,9 @@ int main(int argc, char *argv[])
     if (rank == 0) {
         for (i = 0; i < DATA_SIZE - COUNT; i++) {
             if (tar_buf[i] != OPS_NUM) {
-                printf("tar_buf[%d] = %d, expected %d\n", i, tar_buf[i], OPS_NUM);
+                if (errs < 10) {
+                    printf("tar_buf[%d] = %d, expected %d\n", i, tar_buf[i], OPS_NUM);
+                }
                 errs++;
             }
         }

@@ -1,18 +1,15 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *   ad_panfs.h
- *
- *   Copyright (C) 2001 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef AD_PANFS_H_INCLUDED
 #define AD_PANFS_H_INCLUDED
 
+#include "adio.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <fcntl.h>
-#include "adio.h"
 
 #ifndef NO_AIO
 #ifdef AIO_SUN

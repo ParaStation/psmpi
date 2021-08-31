@@ -1,4 +1,101 @@
 ===============================================================================
+                               Changes in 3.4.2
+===============================================================================
+
+# Update configure options to support --disable-ze and --disable-cuda
+  to explicitly disable GPU-awareness
+
+# Update embedded hwloc to version 2.4.1. Fixes a build issue on
+  systems with OpenCL.
+
+# Fixes for Argobots thread package support.
+
+# Fixes for the DAOS ROMIO driver (thanks to Intel for contributing)
+
+# Fix additional bugs in GPU-aware nonblocking op collectives
+
+# Fix 'make check' errors with embedded MPL and json-c libraries
+
+# Fix support for GNI provider in ch4:ofi netmod
+
+# Fix bug in dynamic window memory registration with ch4:ofi netmod
+
+# Fix bug in persistent pt2pt when used with MPI_PROC_NULL
+
+# Fix bug in hydra nameserver when freeing published entries
+
+# Fix bugs in GPFS ROMIO driver (thanks to IBM for contributing)
+
+# Fix bug in darray type creation (thanks to IBM for contributing)
+
+# Fix bugs in XPMEM support
+
+# Fix bug in MPI_Comm_spawn_multiple where non-root args were not ignored
+
+===============================================================================
+                               Changes in 3.4.1
+===============================================================================
+
+# Fix bug in GPU memory hooks that caused failures with NCCL
+
+# Fix bug in GPU-aware nonblocking op collectives
+
+# Hide symbols from embedded json-c module
+
+# Removed anonymous struct/union usage in MPL
+
+# Disable Java support in embedded UCX module
+
+===============================================================================
+                               Changes in 3.4
+===============================================================================
+
+# ch4 replaces ch3 as the default device configuration. If no network
+  module is specified at configuration-time, MPICH will search the
+  user environment in order to select one to build. The user will be
+  prompted to choose if no preferred network library is dectected.
+
+# Add support for Yaksa datatype engine (default in ch4).
+
+# Add support for GPU buffers (CUDA, Level Zero) in pt2pt,
+  collectives, and one-sided communication.
+
+# Add support for XPMEM.
+
+# Add support for multiple virtual communication interfaces for more
+  efficient MPI_THREAD_MULTIPLE (experimental).
+
+# Add DAOS ADIO driver to ROMIO (contributed by Intel).
+
+# Add Quobyte ADIO driver to ROMIO (contributed by Quobyte).
+
+# Add support for Arm compiler toolchain
+
+# Add support for flang/f18 Fortran compiler
+
+# Add support for AddressSanitizer and UndefinedBehaviorSanitizer to
+  debug configuration
+
+# Remove mxm, llc, and portals4 netmods from ch3.
+
+# Remove support for logical reduction operations on floating point
+  types.
+
+# Remove MPIX_Mutex interfaces.
+
+# Further improvements to ch4 business card exchange: extra
+  long address support and fixes for PMIx integration.
+
+# Un-inline non-critical ch4 code for improved build times.
+
+# Fix several test program bugs.
+
+# Fix several static analysis and compiler warnings.
+
+# Change the signature of MPID_Init to include requested and provided
+  thread levels.
+
+===============================================================================
                                Changes in 3.3.2
 ===============================================================================
 
@@ -96,7 +193,7 @@
 
    A full list of changes is available at the following link:
 
-     http://git.mpich.org/mpich.git/shortlog/v3.3..v3.3.1
+     http://git.mpich.org/mpich.git/shortlog/v3.2..v3.3
 
    A list of bugs that have been fixed is available at the following
    link:

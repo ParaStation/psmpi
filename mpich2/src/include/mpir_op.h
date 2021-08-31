@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPIR_OP_H_INCLUDED
@@ -41,6 +39,8 @@ typedef enum MPIR_Op_kind {
     MPIR_OP_KIND__USER_NONCOMMUTE = 32,
     MPIR_OP_KIND__USER = 33
 } MPIR_Op_kind;
+
+#define MPIR_OP_N_BUILTIN 15
 
 /*S
   MPIR_User_function - Definition of a user function for MPI_Op types.
@@ -108,7 +108,6 @@ typedef struct MPIR_Op {
      MPID_DEV_OP_DECL
 #endif
 } MPIR_Op;
-#define MPIR_OP_N_BUILTIN 15
 extern MPIR_Op MPIR_Op_builtin[MPIR_OP_N_BUILTIN];
 extern MPIR_Op MPIR_Op_direct[];
 extern MPIR_Object_alloc_t MPIR_Op_mem;
@@ -127,6 +126,24 @@ extern MPIR_Object_alloc_t MPIR_Op_mem;
             MPIR_Handle_obj_free(&MPIR_Op_mem, (op_p_)); \
         }                                                \
     } while (0)
+
+
+/* Query index of builtin op */
+MPL_STATIC_INLINE_PREFIX int MPIR_Op_builtin_get_index(MPI_Op op)
+{
+    MPIR_Assert(HANDLE_IS_BUILTIN(op));
+    return (0x000000ff & op) - 1;       /* index 1 to 14 in handle. */
+}
+
+/* Query builtin op by using index (from 0 to MPIR_OP_N_BUILTIN-1) */
+MPL_STATIC_INLINE_PREFIX MPI_Op MPIR_Op_builtin_get_op(int index)
+{
+    MPIR_Assert(index >= 0 && index < MPIR_OP_N_BUILTIN);
+    return (MPI_Op) (0x58000000 | (index + 1)); /* index 1 to 14 in handle */
+}
+
+MPI_Datatype MPIR_Op_builtin_search_by_shortname(const char *short_name);
+const char *MPIR_Op_builtin_get_shortname(MPI_Op op);
 
 void MPIR_MAXF(void *, void *, int *, MPI_Datatype *);
 void MPIR_MINF(void *, void *, int *, MPI_Datatype *);
@@ -160,7 +177,7 @@ int MPIR_NO_OP_check_dtype(MPI_Datatype);
 
 #define MPIR_Op_add_ref_if_not_builtin(op)               \
     do {                                                 \
-        if (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) {\
+        if (!HANDLE_IS_BUILTIN((op))) {\
             MPIR_Op *op_ptr = NULL;                      \
             MPIR_Op_get_ptr(op, op_ptr);                 \
             MPIR_Assert(op_ptr != NULL);                 \
@@ -171,7 +188,7 @@ int MPIR_NO_OP_check_dtype(MPI_Datatype);
 
 #define MPIR_Op_release_if_not_builtin(op)               \
     do {                                                 \
-        if (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) {\
+        if (!HANDLE_IS_BUILTIN((op))) {\
             MPIR_Op *op_ptr = NULL;                      \
             MPIR_Op_get_ptr(op, op_ptr);                 \
             MPIR_Assert(op_ptr != NULL);                 \
@@ -179,7 +196,6 @@ int MPIR_NO_OP_check_dtype(MPI_Datatype);
         }                                                \
     } while (0)                                          \
 
-#define MPIR_PREDEF_OP_COUNT 14
 extern MPI_User_function *MPIR_Op_table[];
 
 typedef int (MPIR_Op_check_dtype_fn) (MPI_Datatype);
@@ -188,7 +204,7 @@ extern MPIR_Op_check_dtype_fn *MPIR_Op_check_dtype_table[];
 #define MPIR_OP_HDL_TO_FN(op) MPIR_Op_table[((op)&0xf)]
 #define MPIR_OP_HDL_TO_DTYPE_FN(op) MPIR_Op_check_dtype_table[((op)&0xf)]
 
-int MPIR_Op_commutative(MPIR_Op * op_ptr, int *commute);
+int MPIR_Op_commutative(MPI_Op op, int *commute);
 
 int MPIR_Op_is_commutative(MPI_Op);
 

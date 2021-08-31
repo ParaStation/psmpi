@@ -1,11 +1,6 @@
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- *  Portions of this code were written by Intel Corporation.
- *  Copyright (C) 2011-2017 Intel Corporation.  Intel provides this material
- *  to Argonne National Laboratory subject to Software Grant and Corporate
- *  Contributor License Agreement dated February 8, 2012.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -16,10 +11,6 @@
 
 static void vtx_record_completion(MPII_Genutil_vtx_t * vtxp, MPII_Genutil_sched_t * sched);
 
-#undef FUNCNAME
-#define FUNCNAME vtx_extend_utarray
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 static void vtx_extend_utarray(UT_array * dst_array, int n_elems, int *elems)
 {
     int i;
@@ -29,26 +20,18 @@ static void vtx_extend_utarray(UT_array * dst_array, int n_elems, int *elems)
     }
 }
 
-#undef FUNCNAME
-#define FUNCNAME vtx_record_issue
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 static void vtx_record_issue(MPII_Genutil_vtx_t * vtxp, MPII_Genutil_sched_t * sched)
 {
     vtxp->vtx_state = MPII_GENUTIL_VTX_STATE__ISSUED;
     LL_APPEND(sched->issued_head, sched->issued_tail, vtxp);
 }
 
-#undef FUNCNAME
-#define FUNCNAME vtx_issue
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 static void vtx_issue(int vtxid, MPII_Genutil_vtx_t * vtxp, MPII_Genutil_sched_t * sched)
 {
     int i;
 
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPII_GENUTIL_ISSUE_VTX);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPII_GENUTIL_ISSUE_VTX);
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_VTX_ISSUE);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_VTX_ISSUE);
 
     /* Check if the vertex has not already been issued and its
      * incoming dependencies have completed */
@@ -105,6 +88,25 @@ static void vtx_issue(int vtxid, MPII_Genutil_vtx_t * vtxp, MPII_Genutil_sched_t
                 }
                 break;
 
+            case MPII_GENUTIL_VTX_KIND__ISSEND:{
+                    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
+
+                    MPIC_Issend(vtxp->u.issend.buf,
+                                vtxp->u.issend.count,
+                                vtxp->u.issend.dt,
+                                vtxp->u.issend.dest,
+                                vtxp->u.issend.tag, vtxp->u.issend.comm, &vtxp->u.issend.req,
+                                &errflag);
+
+                    MPL_DBG_MSG_FMT(MPIR_DBG_COLL, VERBOSE,
+                                    (MPL_DBG_FDEST,
+                                     "  --> GENTRAN transport (issend) issued, tag = %d",
+                                     vtxp->u.issend.tag));
+                    vtx_record_issue(vtxp, sched);
+                }
+                break;
+
+
             case MPII_GENUTIL_VTX_KIND__REDUCE_LOCAL:{
                     vtx_record_issue(vtxp, sched);
                     MPIR_Reduce_local(vtxp->u.reduce_local.inbuf,
@@ -158,6 +160,20 @@ static void vtx_issue(int vtxid, MPII_Genutil_vtx_t * vtxp, MPII_Genutil_sched_t
                     vtx_record_completion(vtxp, sched);
                 }
                 break;
+            default:{
+                    int mpi_errno, done;
+                    MPII_Genutil_vtx_type_t *vtype = ut_type_array(&sched->generic_types,
+                                                                   MPII_Genutil_vtx_type_t *) +
+                        vtxp->vtx_kind - MPII_GENUTIL_VTX_KIND__LAST - 1;
+                    MPIR_Assert(vtype != NULL);
+                    mpi_errno = vtype->issue_fn(vtxp, &done);
+                    MPIR_Assert(mpi_errno == MPI_SUCCESS);
+                    if (done)
+                        vtx_record_completion(vtxp, sched);
+                    else
+                        vtx_record_issue(vtxp, sched);
+                    break;
+                }
         }
 
 #ifdef MPL_USE_DBG_LOGGING
@@ -172,14 +188,10 @@ static void vtx_issue(int vtxid, MPII_Genutil_vtx_t * vtxp, MPII_Genutil_sched_t
 #endif
     }
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPII_GENUTIL_ISSUE_VTX);
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_VTX_ISSUE);
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME vtx_record_completion
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 static void vtx_record_completion(MPII_Genutil_vtx_t * vtxp, MPII_Genutil_sched_t * sched)
 {
     int i;
@@ -217,22 +229,31 @@ static void vtx_record_completion(MPII_Genutil_vtx_t * vtxp, MPII_Genutil_sched_
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Genutil_progress_hook
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPII_Genutil_progress_hook(int *made_progress)
 {
     int count = 0;
     int mpi_errno = MPI_SUCCESS;
     MPII_Coll_req_t *coll_req, *coll_req_tmp;
 
+    /* gentran progress may issue operations (e.g. MPIC_Isend) that will call into progress
+     * again (ref: MPIDI_OFI_retry_progress). Similar to MPIDU_Sched_progress, we should skip
+     * to avoid recursive entering.
+     */
+    static int in_genutil_progress = 0;
+
+    if (in_genutil_progress) {
+        return MPI_SUCCESS;
+    }
+
+    MPID_THREAD_CS_ENTER(VCI, MPIDIU_THREAD_TSP_QUEUE_MUTEX);
+    in_genutil_progress = 1;
+
     if (made_progress)
         *made_progress = FALSE;
 
     /* Go over up to MPIR_COLL_PROGRESS_MAX_COLLS collecives in the
      * queue and make progress on them */
-    DL_FOREACH_SAFE(coll_queue.head, coll_req, coll_req_tmp) {
+    DL_FOREACH_SAFE(MPII_coll_queue.head, coll_req, coll_req_tmp) {
         /* make progress on the collective operation */
         int done;
         MPII_Genutil_sched_t *sched = (MPII_Genutil_sched_t *) (coll_req->sched);
@@ -246,24 +267,23 @@ int MPII_Genutil_progress_hook(int *made_progress)
             coll_req->sched = NULL;
 
             req = MPL_container_of(coll_req, MPIR_Request, u.nbc.coll);
-            DL_DELETE(coll_queue.head, coll_req);
-            MPID_Request_complete(req);
+            DL_DELETE(MPII_coll_queue.head, coll_req);
+            MPIR_Request_complete(req);
         }
         if (++count >= MPIR_CVAR_PROGRESS_MAX_COLLS)
             break;
     }
 
-    if (coll_queue.head == NULL)
-        MPID_Progress_deactivate_hook(MPII_Genutil_progress_hook_id);
+    if (MPII_coll_queue.head == NULL)
+        MPIR_Progress_hook_deactivate(MPII_Genutil_progress_hook_id);
+
+    in_genutil_progress = 0;
+    MPID_THREAD_CS_EXIT(VCI, MPIDIU_THREAD_TSP_QUEUE_MUTEX);
 
     return mpi_errno;
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Genutil_vtx_copy
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPII_Genutil_vtx_copy(void *_dst, const void *_src)
 {
     vtx_t *dst = (vtx_t *) _dst;
@@ -284,10 +304,6 @@ void MPII_Genutil_vtx_copy(void *_dst, const void *_src)
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Genutil_vtx_dtor
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPII_Genutil_vtx_dtor(void *_elt)
 {
     vtx_t *elt = (vtx_t *) _elt;
@@ -297,10 +313,6 @@ void MPII_Genutil_vtx_dtor(void *_elt)
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Genutil_vtx_add_dependencies
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPII_Genutil_vtx_add_dependencies(MPII_Genutil_sched_t * sched, int vtx_id,
                                        int n_in_vtcs, int *in_vtcs)
 {
@@ -358,10 +370,6 @@ void MPII_Genutil_vtx_add_dependencies(MPII_Genutil_sched_t * sched, int vtx_id,
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Genutil_vtx_create
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPII_Genutil_vtx_create(MPII_Genutil_sched_t * sched, MPII_Genutil_vtx_t ** vtx)
 {
     MPII_Genutil_vtx_t *vtxp;
@@ -383,15 +391,10 @@ int MPII_Genutil_vtx_create(MPII_Genutil_sched_t * sched, MPII_Genutil_vtx_t ** 
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Genutil_sched_poke
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPII_Genutil_sched_poke(MPII_Genutil_sched_t * sched, int *is_complete, int *made_progress)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
-    void **p;
     vtx_t *vtxp, *vtxp_tmp;
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPII_GENUTIL_SCHED_POKE);
@@ -492,7 +495,42 @@ int MPII_Genutil_sched_poke(MPII_Genutil_sched_t * sched, int *is_complete, int 
                     vtx_record_completion(vtxp, sched);
                 break;
 
+            case MPII_GENUTIL_VTX_KIND__ISSEND:
+                if (MPIR_Request_is_complete(vtxp->u.issend.req)) {
+                    MPIR_Request_free(vtxp->u.issend.req);
+                    vtxp->u.issend.req = NULL;
+#ifdef MPL_USE_DBG_LOGGING
+                    MPL_DBG_MSG_FMT(MPIR_DBG_COLL, VERBOSE,
+                                    (MPL_DBG_FDEST,
+                                     "  --> GENTRAN transport (vtx_kind=%d) complete",
+                                     vtxp->vtx_kind));
+                    if (vtxp->u.issend.count >= 1)
+                        MPL_DBG_MSG_FMT(MPIR_DBG_COLL, VERBOSE,
+                                        (MPL_DBG_FDEST, "data sent: %d",
+                                         *(int *) (vtxp->u.issend.buf)));
+#endif
+                    vtx_record_completion(vtxp, sched);
+                    if (made_progress)
+                        *made_progress = TRUE;
+                }
+                break;
+
             default:
+                if (vtxp->vtx_kind > MPII_GENUTIL_VTX_KIND__LAST) {
+                    int is_completed;
+                    MPII_Genutil_vtx_type_t *vtype = ut_type_array(&sched->generic_types,
+                                                                   MPII_Genutil_vtx_type_t *) +
+                        vtxp->vtx_kind - MPII_GENUTIL_VTX_KIND__LAST - 1;
+                    MPIR_Assert(vtype != NULL);
+                    mpi_errno = vtype->complete_fn(vtxp, &is_completed);
+                    MPIR_ERR_CHKANDJUMP(mpi_errno != MPI_SUCCESS, mpi_errno,
+                                        MPI_ERR_OTHER, "**other");
+                    if (is_completed) {
+                        vtx_record_completion(vtxp, sched);
+                        if (made_progress)
+                            *made_progress = TRUE;
+                    }
+                }
                 break;
         }
     }
@@ -512,27 +550,12 @@ int MPII_Genutil_sched_poke(MPII_Genutil_sched_t * sched, int *is_complete, int 
         if (made_progress)
             *made_progress = TRUE;
 
-        /* free up the sched resources */
-        for (i = 0; i < sched->total_vtcs; i++) {
-            vtx_t *vtx = (vtx_t *) utarray_eltptr(sched->vtcs, i);
-            MPIR_Assert(vtx != NULL);
-
-            if (vtx->vtx_kind == MPII_GENUTIL_VTX_KIND__IMCAST) {
-                MPL_free(vtx->u.imcast.req);
-                utarray_free(vtx->u.imcast.dests);
-            }
-        }
-
-        /* free up the allocated buffers */
-        p = NULL;
-        while ((p = (void **) utarray_next(sched->buffers, p)))
-            MPL_free(*p);
-
-        utarray_free(sched->vtcs);
-        utarray_free(sched->buffers);
-        MPL_free(sched);
+        MPII_Genutil_sched_free(sched);
     }
 
+  fn_exit:
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPII_GENUTIL_SCHED_POKE);
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }

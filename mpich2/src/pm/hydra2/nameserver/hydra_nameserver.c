@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2017 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra.h"
@@ -63,12 +62,8 @@ static void free_publish_element(struct nameserv_publish *publish)
     if (publish == NULL)
         return;
 
-    if (publish->name)
-        MPL_free(publish->name);
-
-    if (publish->info)
-        MPL_free(publish->info);
-
+    MPL_free(publish->name);
+    MPL_free(publish->info);
     MPL_free(publish);
 }
 

@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPIR_POINTERS_H_INCLUDED
@@ -20,7 +18,7 @@
 #define MPIR_Valid_ptr_class(kind,ptr,errclass,err) \
     do {                                                                \
         if (!(ptr)) {                                                   \
-            err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, errclass, \
+            err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__, errclass, \
                                        "**nullptrtype", "**nullptrtype %s", #kind); \
             /* Explicitly tell Coverity that errclass != MPI_SUCCESS => err != MPI_SUCCESS */ \
             MPIR_Assert((errclass) == MPI_SUCCESS || ((err) != MPI_SUCCESS)); \
@@ -72,18 +70,5 @@
  */
 #define MPIR_Ensure_Aint_fits_in_int(aint) \
   MPIR_Assert((aint) == (MPI_Aint)(int)(aint));
-
-/*
- * Ensure an MPI_Aint value fits into a pointer.
- * Useful for detecting overflow when MPI_Aint is larger than a pointer.
- *
- * \param[in]  aint  Variable of type MPI_Aint
- */
-#ifndef SIZEOF_PTR_IS_AINT
-#define MPIR_Ensure_Aint_fits_in_pointer(aint) \
-  MPIR_Assert((aint) == (MPI_Aint)(uintptr_t) MPIR_AINT_CAST_TO_VOID_PTR(aint));
-#else
-#define MPIR_Ensure_Aint_fits_in_pointer(aint) do {} while (0)
-#endif
 
 #endif /* MPIR_POINTERS_H_INCLUDED */

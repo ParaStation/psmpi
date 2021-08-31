@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidimpl.h"
@@ -15,10 +14,6 @@
 /* FIXME: This routine *or* MPI_Abort should provide abort callbacks,
    similar to the support in MPI_Finalize */
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Abort
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_Abort(MPIR_Comm * comm, int mpi_errno, int exit_code,
 	       const char *error_msg)
 {
@@ -64,9 +59,6 @@ int MPID_Abort(MPIR_Comm * comm, int mpi_errno, int exit_code,
 	    MPL_snprintf(error_str, sizeof(error_str), "internal ABORT - process %d", rank);
 	}
     }
-    
-    MPIDU_Ftb_publish_me(MPIDU_FTB_EV_ABORT);
-    MPIDU_Ftb_finalize();
     
 #ifdef HAVE_DEBUGGER_SUPPORT
     MPIR_Debugger_set_aborting( error_msg );

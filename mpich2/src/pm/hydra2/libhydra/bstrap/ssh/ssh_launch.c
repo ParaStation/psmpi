@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2017 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra_bstrap_ssh.h"
@@ -64,8 +63,7 @@ HYD_status HYDI_bstrap_ssh_launch(const char *hostname, const char *launch_exec,
 
   fn_exit:
     HYD_str_free_list(targs);
-    if (lexec)
-        MPL_free(lexec);
+    MPL_free(lexec);
     HYD_FUNC_EXIT();
     return status;
 

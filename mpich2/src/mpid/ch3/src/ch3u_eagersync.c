@@ -1,8 +1,6 @@
-
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidimpl.h"
@@ -13,10 +11,6 @@
  * MPI_Issend for short messages.
  */
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_EagerSyncNoncontigSend
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /* MPIDI_CH3_EagerSyncNoncontigSend - Eagerly send noncontiguous data in
    synchronous mode.
 
@@ -63,15 +57,15 @@ int MPIDI_CH3_EagerSyncNoncontigSend( MPIR_Request **sreq_p,
 
     if (dt_contig)
     {
-        MPL_IOV iov[2];
+        struct iovec iov[2];
 	MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
                                             "sending contiguous sync eager message, data_sz=%" PRIdPTR,
 					    data_sz));
 	
-        iov[0].MPL_IOV_BUF = (MPL_IOV_BUF_CAST)es_pkt;
-        iov[0].MPL_IOV_LEN = sizeof(*es_pkt);
-	iov[1].MPL_IOV_BUF = (MPL_IOV_BUF_CAST) ((char *)buf + dt_true_lb);
-	iov[1].MPL_IOV_LEN = data_sz;	
+        iov[0].iov_base = (void *)es_pkt;
+        iov[0].iov_len = sizeof(*es_pkt);
+	iov[1].iov_base = (void *) ((char *)buf + dt_true_lb);
+	iov[1].iov_len = data_sz;
 	
 	MPID_THREAD_CS_ENTER(POBJ, vc->pobj_mutex);
 	mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, 2);
@@ -92,18 +86,18 @@ int MPIDI_CH3_EagerSyncNoncontigSend( MPIR_Request **sreq_p,
 	MPL_DBG_MSG_D(MPIDI_CH3_DBG_OTHER,VERBOSE,
 		       "sending non-contiguous sync eager message, data_sz=%" PRIdPTR,
 		       data_sz);
-	
-	sreq->dev.segment_ptr = MPIR_Segment_alloc( );
-        MPIR_ERR_CHKANDJUMP1((sreq->dev.segment_ptr == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPIR_Segment_alloc");
 
-	MPIR_Segment_init(buf, count, datatype, sreq->dev.segment_ptr);
-	sreq->dev.segment_first = 0;
-	sreq->dev.segment_size = data_sz;
+	sreq->dev.user_buf = (void *) buf;
+	sreq->dev.user_count = count;
+	sreq->dev.datatype = datatype;
+	sreq->dev.msg_offset = 0;
+	sreq->dev.msgsize = data_sz;
 	
 	MPID_THREAD_CS_ENTER(POBJ, vc->pobj_mutex);
-        mpi_errno = vc->sendNoncontig_fn(vc, sreq, es_pkt, sizeof(MPIDI_CH3_Pkt_eager_sync_send_t));
+        mpi_errno = vc->sendNoncontig_fn(vc, sreq, es_pkt, sizeof(MPIDI_CH3_Pkt_eager_sync_send_t),
+                                         NULL, 0);
 	MPID_THREAD_CS_EXIT(POBJ, vc->pobj_mutex);
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
  fn_exit:
@@ -180,9 +174,7 @@ int MPIDI_CH3_EagerSyncAck( MPIDI_VC_t *vc, MPIR_Request *rreq )
     MPID_THREAD_CS_ENTER(POBJ, vc->pobj_mutex);
     mpi_errno = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), &esa_req);
     MPID_THREAD_CS_EXIT(POBJ, vc->pobj_mutex);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIR_ERR_POP(mpi_errno);
-    }
+    MPIR_ERR_CHECK(mpi_errno);
     if (esa_req != NULL)
     {
 	MPIR_Request_free(esa_req);
@@ -208,10 +200,6 @@ int MPIDI_CH3_EagerSyncAck( MPIDI_VC_t *vc, MPIR_Request *rreq )
     MPIDI_Request_set_msg_type((rreq_), (msg_type_));		\
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_PktHandler_EagerSyncSend
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3_PktHandler_EagerSyncSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, void *data,
 					intptr_t *buflen, MPIR_Request **rreqp )
 {
@@ -256,9 +244,7 @@ int MPIDI_CH3_PktHandler_EagerSyncSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, vo
 	if (rreq->dev.recv_data_sz == 0) {
             *buflen = 0;
             mpi_errno = MPID_Request_complete(rreq);
-            if (mpi_errno != MPI_SUCCESS) {
-                MPIR_ERR_POP(mpi_errno);
-            }
+            MPIR_ERR_CHECK(mpi_errno);
 	    *rreqp = NULL;
 	}
 	else {
@@ -274,9 +260,7 @@ int MPIDI_CH3_PktHandler_EagerSyncSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, vo
             if (complete) 
             {
                 mpi_errno = MPID_Request_complete(rreq);
-                if (mpi_errno != MPI_SUCCESS) {
-                    MPIR_ERR_POP(mpi_errno);
-                }
+                MPIR_ERR_CHECK(mpi_errno);
                 *rreqp = NULL;
             }
             else
@@ -305,9 +289,7 @@ int MPIDI_CH3_PktHandler_EagerSyncSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, vo
 	if (rreq->dev.recv_data_sz == 0) {
             *buflen = 0;
             mpi_errno = MPID_Request_complete(rreq);
-            if (mpi_errno != MPI_SUCCESS) {
-                MPIR_ERR_POP(mpi_errno);
-            }
+            MPIR_ERR_CHECK(mpi_errno);
 	    *rreqp = NULL;
 	}
 	else {
@@ -323,9 +305,7 @@ int MPIDI_CH3_PktHandler_EagerSyncSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, vo
             if (complete) 
             {
                 mpi_errno = MPID_Request_complete(rreq);
-                if (mpi_errno != MPI_SUCCESS) {
-                    MPIR_ERR_POP(mpi_errno);
-                }
+                MPIR_ERR_CHECK(mpi_errno);
                 *rreqp = NULL;
             }
             else
@@ -339,10 +319,6 @@ int MPIDI_CH3_PktHandler_EagerSyncSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, vo
     return mpi_errno;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_PktHandler_EagerSyncAck
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3_PktHandler_EagerSyncAck( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, void *data ATTRIBUTE((unused)),
 				       intptr_t *buflen, MPIR_Request **rreqp )
 {
@@ -359,9 +335,7 @@ int MPIDI_CH3_PktHandler_EagerSyncAck( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, voi
 
     /* FIXME: This sometimes segfaults */
     mpi_errno = MPID_Request_complete(sreq);
-    if (mpi_errno != MPI_SUCCESS) {
-        MPIR_ERR_POP(mpi_errno);
-    }
+    MPIR_ERR_CHECK(mpi_errno);
     
     *buflen = 0;
     *rreqp = NULL;

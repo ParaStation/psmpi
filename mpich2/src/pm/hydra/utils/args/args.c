@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2008 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra.h"
@@ -105,10 +104,8 @@ HYD_status HYDU_find_in_path(const char *execname, char **path)
     *path = MPL_strdup("");
 
   fn_exit:
-    if (user_path)
-        MPL_free(user_path);
-    if (path_loc)
-        MPL_free(path_loc);
+    MPL_free(user_path);
+    MPL_free(path_loc);
     HYDU_FUNC_EXIT();
     return status;
 
@@ -381,8 +378,7 @@ char *HYDU_find_full_path(const char *execname)
 
   fn_exit:
     HYDU_free_strlist(tmp);
-    if (test_path)
-        MPL_free(test_path);
+    MPL_free(test_path);
     HYDU_FUNC_EXIT();
     return path;
 

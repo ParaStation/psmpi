@@ -1,8 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2008 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 /*
  * This program was sent in as an example that did not perform as expected.
  * The program has a bug in that it is sending 3 characters but receiving
@@ -56,8 +56,8 @@ int main(int argc, char *argv[])
     int contig_indexed_count = 3;
     int contig_indexed_blocklens[] = { 1, 2, 1 };
     int contig_indexed_indices[] = { 4, 8, 16 };
-    int contig_indexed_inner_type = MPI_INT;
-    int contig_indexed_type;
+    MPI_Datatype contig_indexed_inner_type = MPI_INT;
+    MPI_Datatype contig_indexed_type;
 
     MTest_Init(&argc, &argv);
     ret = MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
@@ -68,11 +68,11 @@ int main(int argc, char *argv[])
         exit(RESFAIL_ERROR);
     }
 
-    ret = MPI_Type_struct(small_non_contig_struct_count,
-                          small_non_contig_struct_blocklens,
-                          small_non_contig_struct_disps,
-                          small_non_contig_struct_types, &small_non_contig_struct_type);
-    if_error("MPI_Type_struct", "small_non_contig_struct_type", ret);
+    ret = MPI_Type_create_struct(small_non_contig_struct_count,
+                                 small_non_contig_struct_blocklens,
+                                 small_non_contig_struct_disps,
+                                 small_non_contig_struct_types, &small_non_contig_struct_type);
+    if_error("MPI_Type_create_struct", "small_non_contig_struct_type", ret);
 
     ret = MPI_Type_commit(&small_non_contig_struct_type);
     if_error("MPI_Type_commit", "small_non_contig_struct_type", ret);
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
     if (myrank == 1) {
         MPI_Send(src, 1, small_non_contig_struct_type, 0, 0xabc, MPI_COMM_WORLD);
     } else {
-        MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+        MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
         ret = MPI_Recv(sendrec, 1, contig_indexed_type, 1, 0xabc, MPI_COMM_WORLD, &status);
         if (ret == MPI_SUCCESS) {
             printf("MPI_Recv succeeded with non-matching datatype signature\n");

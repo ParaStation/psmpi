@@ -1,22 +1,16 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- * Portions of this code were written by Microsoft. Those portions are
- * Copyright (c) 2007 Microsoft Corporation. Microsoft grants
- * permission to use, reproduce, prepare derivative works, and to
- * redistribute to others. The code is licensed "as is." The User
- * bears the risk of using it. Microsoft gives no express warranties,
- * guarantees or conditions. To the extent permitted by law, Microsoft
- * excludes the implied warranties of merchantability, fitness for a
- * particular purpose and non-infringement.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPI_FORTIMPL_H_INCLUDED
 #define MPI_FORTIMPL_H_INCLUDED
 
 #include "mpichconf.h"
+#include "mpi.h"
+#include "mpir_attr_generic.h"
+#include "mpii_f77interface.h"
+#include <sys/types.h>  /* for ssize_t */
 
 /* Handle different mechanisms for passing Fortran CHARACTER to routines.
  *
@@ -123,8 +117,6 @@
 #endif
 
 /* ------------------------------------------------------------------------- */
-
-#include "mpiimpl.h"
 
 /* If there is no MPI I/O support, and we are still using MPIO_Request,
    make sure that one is defined */

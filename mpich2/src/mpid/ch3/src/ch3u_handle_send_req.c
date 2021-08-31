@@ -1,16 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidimpl.h"
 #include "mpidrma.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3U_Handle_send_req
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPIR_Request * sreq, int *complete)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -30,9 +25,7 @@ int MPIDI_CH3U_Handle_send_req(MPIDI_VC_t * vc, MPIR_Request * sreq, int *comple
     else {
         mpi_errno = reqFn(vc, sreq, complete);
     }
-    if (mpi_errno != MPI_SUCCESS) {
-        MPIR_ERR_POP(mpi_errno);
-    }
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ);
@@ -53,7 +46,7 @@ int MPIDI_CH3_ReqHandler_GetSendComplete(MPIDI_VC_t * vc ATTRIBUTE((unused)),
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Win *win_ptr;
-    MPIDI_CH3_Pkt_flags_t flags = sreq->dev.flags;
+    int pkt_flags = sreq->dev.pkt_flags;
 
     /* NOTE: It is possible that this request is already completed before
      * entering this handler. This happens when this req handler is called
@@ -82,18 +75,15 @@ int MPIDI_CH3_ReqHandler_GetSendComplete(MPIDI_VC_t * vc ATTRIBUTE((unused)),
 
     /* mark data transfer as complete and decrement CC */
     mpi_errno = MPID_Request_complete(sreq);
-    if (mpi_errno != MPI_SUCCESS) {
-        MPIR_ERR_POP(mpi_errno);
-    }
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* NOTE: finish_op_on_target() must be called after we complete this request,
      * because inside finish_op_on_target() we may call this request handler
      * on the same request again (in release_lock()). Marking this request as
      * completed will prevent us from processing the same request twice. */
     mpi_errno = finish_op_on_target(win_ptr, vc, TRUE /* has response data */ ,
-                                    flags, MPI_WIN_NULL);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+                                    pkt_flags, MPI_WIN_NULL);
+    MPIR_ERR_CHECK(mpi_errno);
 
     *complete = TRUE;
 
@@ -103,15 +93,11 @@ int MPIDI_CH3_ReqHandler_GetSendComplete(MPIDI_VC_t * vc ATTRIBUTE((unused)),
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_ReqHandler_GaccumSendComplete
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3_ReqHandler_GaccumSendComplete(MPIDI_VC_t * vc, MPIR_Request * rreq, int *complete)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Win *win_ptr;
-    MPIDI_CH3_Pkt_flags_t flags = rreq->dev.flags;
+    int pkt_flags = rreq->dev.pkt_flags;
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_CH3_REQHANDLER_GACCUMSENDCOMPLETE);
 
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_CH3_REQHANDLER_GACCUMSENDCOMPLETE);
@@ -137,8 +123,7 @@ int MPIDI_CH3_ReqHandler_GaccumSendComplete(MPIDI_VC_t * vc, MPIR_Request * rreq
     /* This function is triggered when sending back process of GACC/FOP/CAS
      * is finished. Only GACC used user_buf. FOP and CAS can fit all data
      * in response packet. */
-    if (rreq->dev.user_buf != NULL)
-        MPL_free(rreq->dev.user_buf);
+    MPL_free(rreq->dev.user_buf);
 
     MPIR_Win_get_ptr(rreq->dev.target_win_handle, win_ptr);
 
@@ -148,18 +133,15 @@ int MPIDI_CH3_ReqHandler_GaccumSendComplete(MPIDI_VC_t * vc, MPIR_Request * rreq
     MPIR_Assert(win_ptr->at_completion_counter >= 0);
 
     mpi_errno = MPID_Request_complete(rreq);
-    if (mpi_errno != MPI_SUCCESS) {
-        MPIR_ERR_POP(mpi_errno);
-    }
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* NOTE: finish_op_on_target() must be called after we complete this request,
      * because inside finish_op_on_target() we may call this request handler
      * on the same request again (in release_lock()). Marking this request as
      * completed will prevent us from processing the same request twice. */
     mpi_errno = finish_op_on_target(win_ptr, vc, TRUE /* has response data */ ,
-                                    flags, MPI_WIN_NULL);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+                                    pkt_flags, MPI_WIN_NULL);
+    MPIR_ERR_CHECK(mpi_errno);
 
     *complete = TRUE;
 
@@ -172,15 +154,11 @@ int MPIDI_CH3_ReqHandler_GaccumSendComplete(MPIDI_VC_t * vc, MPIR_Request * rreq
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_ReqHandler_CASSendComplete
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3_ReqHandler_CASSendComplete(MPIDI_VC_t * vc, MPIR_Request * rreq, int *complete)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Win *win_ptr;
-    MPIDI_CH3_Pkt_flags_t flags = rreq->dev.flags;
+    int pkt_flags = rreq->dev.pkt_flags;
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_CH3_REQHANDLER_CASSENDCOMPLETE);
 
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_CH3_REQHANDLER_CASSENDCOMPLETE);
@@ -206,8 +184,7 @@ int MPIDI_CH3_ReqHandler_CASSendComplete(MPIDI_VC_t * vc, MPIR_Request * rreq, i
     /* This function is triggered when sending back process of GACC/FOP/CAS
      * is finished. Only GACC used user_buf. FOP and CAS can fit all data
      * in response packet. */
-    if (rreq->dev.user_buf != NULL)
-        MPL_free(rreq->dev.user_buf);
+    MPL_free(rreq->dev.user_buf);
 
     MPIR_Win_get_ptr(rreq->dev.target_win_handle, win_ptr);
 
@@ -217,18 +194,15 @@ int MPIDI_CH3_ReqHandler_CASSendComplete(MPIDI_VC_t * vc, MPIR_Request * rreq, i
     MPIR_Assert(win_ptr->at_completion_counter >= 0);
 
     mpi_errno = MPID_Request_complete(rreq);
-    if (mpi_errno != MPI_SUCCESS) {
-        MPIR_ERR_POP(mpi_errno);
-    }
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* NOTE: finish_op_on_target() must be called after we complete this request,
      * because inside finish_op_on_target() we may call this request handler
      * on the same request again (in release_lock()). Marking this request as
      * completed will prevent us from processing the same request twice. */
     mpi_errno = finish_op_on_target(win_ptr, vc, TRUE /* has response data */ ,
-                                    flags, MPI_WIN_NULL);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+                                    pkt_flags, MPI_WIN_NULL);
+    MPIR_ERR_CHECK(mpi_errno);
 
     *complete = TRUE;
 
@@ -240,15 +214,11 @@ int MPIDI_CH3_ReqHandler_CASSendComplete(MPIDI_VC_t * vc, MPIR_Request * rreq, i
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_ReqHandler_FOPSendComplete
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3_ReqHandler_FOPSendComplete(MPIDI_VC_t * vc, MPIR_Request * rreq, int *complete)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Win *win_ptr;
-    MPIDI_CH3_Pkt_flags_t flags = rreq->dev.flags;
+    int pkt_flags = rreq->dev.pkt_flags;
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_CH3_REQHANDLER_FOPSENDCOMPLETE);
 
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_CH3_REQHANDLER_FOPSENDCOMPLETE);
@@ -274,8 +244,7 @@ int MPIDI_CH3_ReqHandler_FOPSendComplete(MPIDI_VC_t * vc, MPIR_Request * rreq, i
     /* This function is triggered when sending back process of GACC/FOP/CAS
      * is finished. Only GACC used user_buf. FOP and CAS can fit all data
      * in response packet. */
-    if (rreq->dev.user_buf != NULL)
-        MPL_free(rreq->dev.user_buf);
+    MPL_free(rreq->dev.user_buf);
 
     MPIR_Win_get_ptr(rreq->dev.target_win_handle, win_ptr);
 
@@ -285,18 +254,15 @@ int MPIDI_CH3_ReqHandler_FOPSendComplete(MPIDI_VC_t * vc, MPIR_Request * rreq, i
     MPIR_Assert(win_ptr->at_completion_counter >= 0);
 
     mpi_errno = MPID_Request_complete(rreq);
-    if (mpi_errno != MPI_SUCCESS) {
-        MPIR_ERR_POP(mpi_errno);
-    }
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* NOTE: finish_op_on_target() must be called after we complete this request,
      * because inside finish_op_on_target() we may call this request handler
      * on the same request again (in release_lock()). Marking this request as
      * completed will prevent us from processing the same request twice. */
     mpi_errno = finish_op_on_target(win_ptr, vc, TRUE /* has response data */ ,
-                                    flags, MPI_WIN_NULL);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+                                    pkt_flags, MPI_WIN_NULL);
+    MPIR_ERR_CHECK(mpi_errno);
 
     *complete = TRUE;
 

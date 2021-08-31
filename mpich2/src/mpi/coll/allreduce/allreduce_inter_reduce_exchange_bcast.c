@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -14,10 +13,6 @@
  * group.
  */
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Allreduce_inter_reduce_exchange_bcast
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Allreduce_inter_reduce_exchange_bcast(const void *sendbuf, void *recvbuf, int
                                                count, MPI_Datatype datatype, MPI_Op op,
                                                MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
@@ -32,10 +27,6 @@ int MPIR_Allreduce_inter_reduce_exchange_bcast(const void *sendbuf, void *recvbu
     if (comm_ptr->rank == 0) {
         MPIR_Type_get_true_extent_impl(datatype, &true_lb, &true_extent);
         MPIR_Datatype_get_extent_macro(datatype, extent);
-        /* I think this is the worse case, so we can avoid an assert()
-         * inside the for loop */
-        /* Should MPIR_CHKLMEM_MALLOC do this? */
-        MPIR_Ensure_Aint_fits_in_pointer(count * MPL_MAX(extent, true_extent));
         MPIR_CHKLMEM_MALLOC(tmp_buf, void *, count * (MPL_MAX(extent, true_extent)), mpi_errno,
                             "temporary buffer", MPL_MEM_BUFFER);
         /* adjust for potential negative lower bound in datatype */

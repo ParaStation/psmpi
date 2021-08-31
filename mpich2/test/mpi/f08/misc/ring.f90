@@ -7,7 +7,7 @@
 ! Copyright (c) 2009-2012 Los Alamos National Security, LLC.
 !                         All rights reserved.
 !  (C) 2014 by Argonne National Laboratory.
-!      See COPYRIGHT in top-level directory.
+!      See COPYRIGHT in top-level directory
 !
 ! $COPYRIGHT$
 !
@@ -32,7 +32,7 @@ program ring
   next = mod((rank + 1), size)
   from = mod((rank + size - 1), size)
 
-! If we are the "master" process (i.e., MPI_COMM_WORLD rank 0), put
+! If we are the "main" process (i.e., MPI_COMM_WORLD rank 0), put
 ! the number of times to go around the ring in the message.
 
   if (rank .eq. 0) then

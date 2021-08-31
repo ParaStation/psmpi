@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2017 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra.h"
@@ -153,10 +152,8 @@ static HYD_status flush_put_cache(void)
         }
     }
 
-    if (lengths)
-        MPL_free(lengths);
-    if (buf)
-        MPL_free(buf);
+    MPL_free(lengths);
+    MPL_free(buf);
 
   fn_exit:
     return status;

@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPIR_WIN_H_INCLUDED
@@ -73,10 +71,10 @@ struct MPIR_Win {
 
     char name[MPI_MAX_OBJECT_NAME];
 
-    MPIR_Win_flavor_t create_flavor;
-    MPIR_Win_model_t model;
-    MPIR_Win_flavor_t copyCreateFlavor;
-    MPIR_Win_model_t copyModel;
+    int create_flavor;
+    int model;
+    int copyCreateFlavor;
+    int copyModel;
 
     /* Other, device-specific information */
 #ifdef MPID_DEV_WIN_DECL

@@ -1,9 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2009 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,7 +72,7 @@ int main(int argc, char *argv[])
                 inargv[narg] = saveArgp;
                 /* We now have a valid intercomm */
 
-                /* Master */
+                /* Parent */
                 MPI_Comm_remote_size(intercomm, &rsize);
                 MPI_Comm_size(intercomm, &size);
                 MPI_Comm_rank(intercomm, &rank);
@@ -104,15 +103,13 @@ int main(int argc, char *argv[])
         } else {
             /* Note that worker also send errs to the parent */
             errs += worker(argc, argv, parentcomm, outargv, np);
-            MPI_Comm_free(&parentcomm);
-            MPI_Finalize();
-            return MTestReturnValue(errs);
         }
 
         /* Note that the MTest_Finalize get errs only over COMM_WORLD */
         if (parentcomm == MPI_COMM_NULL) {
             MTest_Finalize(errs);
         } else {
+            MPI_Comm_free(&parentcomm);
             MPI_Finalize();
         }
         /* free the argument vectors */
@@ -176,7 +173,7 @@ int worker(int argc, char *argv[], MPI_Comm intercomm, char *outargv[], int np)
     /* Restore the argument vector (not necessary in this case, since the
      * worker will exit) */
     outargv[narg] = saveoutArgp;
-    /* Send the errs back to the master process */
+    /* Send the errs back to the parent process */
     MPI_Ssend(&errs, 1, MPI_INT, 0, 1, intercomm);
 
     return errs;

@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2013 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include <stdio.h>
@@ -41,7 +39,7 @@ static MPI_Datatype make_largexfer_type_struct(MPI_Offset nbytes)
         MPI_Aint disp[] = { 0, (MPI_Aint) typechunk_size * (MPI_Aint) chunk_count };
         MPI_Datatype types[] = { chunktype, MPI_BYTE };
 
-        MPI_Type_struct(2, lens, disp, types, &memtype);
+        MPI_Type_create_struct(2, lens, disp, types, &memtype);
         MPI_Type_free(&chunktype);
     }
     MPI_Type_commit(&memtype);

@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -11,10 +9,6 @@
 
    Cost = lgp.alpha + n.lgp.beta + n.lgp.gamma
  */
-#undef FUNCNAME
-#define FUNCNAME MPIR_Reduce_intra_binomial
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Reduce_intra_binomial(const void *sendbuf,
                                void *recvbuf,
                                int count,
@@ -43,11 +37,6 @@ int MPIR_Reduce_intra_binomial(const void *sendbuf,
 
     is_commutative = MPIR_Op_is_commutative(op);
 
-    /* I think this is the worse case, so we can avoid an assert()
-     * inside the for loop */
-    /* should be buf+{this}? */
-    MPIR_Ensure_Aint_fits_in_pointer(count * MPL_MAX(extent, true_extent));
-
     MPIR_CHKLMEM_MALLOC(tmp_buf, void *, count * (MPL_MAX(extent, true_extent)),
                         mpi_errno, "temporary buffer", MPL_MEM_BUFFER);
     /* adjust for potential negative lower bound in datatype */
@@ -64,9 +53,7 @@ int MPIR_Reduce_intra_binomial(const void *sendbuf,
 
     if ((rank != root) || (sendbuf != MPI_IN_PLACE)) {
         mpi_errno = MPIR_Localcopy(sendbuf, count, datatype, recvbuf, count, datatype);
-        if (mpi_errno) {
-            MPIR_ERR_POP(mpi_errno);
-        }
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     MPIR_Datatype_get_size_macro(datatype, type_size);
@@ -79,7 +66,7 @@ int MPIR_Reduce_intra_binomial(const void *sendbuf,
      * node with that bit set and combine (as long as that node is within the
      * group)
      *
-     * Note that by receiving with source selection, we guarentee that we get
+     * Note that by receiving with source selection, we guarantee that we get
      * the same bits with the same input.  If we allowed the parent to receive
      * the children in any order, then timing differences could cause different
      * results (roundoff error, over/underflows in some cases, etc).
@@ -130,17 +117,13 @@ int MPIR_Reduce_intra_binomial(const void *sendbuf,
                  * the second argument (in the noncommutative case). */
                 if (is_commutative) {
                     mpi_errno = MPIR_Reduce_local(tmp_buf, recvbuf, count, datatype, op);
-                    if (mpi_errno)
-                        MPIR_ERR_POP(mpi_errno);
+                    MPIR_ERR_CHECK(mpi_errno);
                 } else {
                     mpi_errno = MPIR_Reduce_local(recvbuf, tmp_buf, count, datatype, op);
-                    if (mpi_errno)
-                        MPIR_ERR_POP(mpi_errno);
+                    MPIR_ERR_CHECK(mpi_errno);
 
                     mpi_errno = MPIR_Localcopy(tmp_buf, count, datatype, recvbuf, count, datatype);
-                    if (mpi_errno) {
-                        MPIR_ERR_POP(mpi_errno);
-                    }
+                    MPIR_ERR_CHECK(mpi_errno);
                 }
             }
         } else {

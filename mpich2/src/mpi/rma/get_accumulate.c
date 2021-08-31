@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -31,10 +29,6 @@ int MPI_Get_accumulate(const void *origin_addr, int origin_count,
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Get_accumulate
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Get_accumulate - Perform an atomic, one-sided read-and-accumulate operation.
 
@@ -154,7 +148,7 @@ int MPI_Get_accumulate(const void *origin_addr, int origin_count,
             if (win_ptr->create_flavor != MPI_WIN_FLAVOR_DYNAMIC)
                 MPIR_ERRTEST_DISP(target_disp, mpi_errno);
 
-            if (op != MPI_NO_OP && HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN) {
+            if (op != MPI_NO_OP && !HANDLE_IS_BUILTIN(origin_datatype)) {
                 MPIR_Datatype *datatype_ptr = NULL;
 
                 MPIR_Datatype_get_ptr(origin_datatype, datatype_ptr);
@@ -166,7 +160,7 @@ int MPI_Get_accumulate(const void *origin_addr, int origin_count,
                     goto fn_fail;
             }
 
-            if (HANDLE_GET_KIND(result_datatype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(result_datatype)) {
                 MPIR_Datatype *datatype_ptr = NULL;
 
                 MPIR_Datatype_get_ptr(result_datatype, datatype_ptr);
@@ -178,7 +172,7 @@ int MPI_Get_accumulate(const void *origin_addr, int origin_count,
                     goto fn_fail;
             }
 
-            if (HANDLE_GET_KIND(target_datatype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(target_datatype)) {
                 MPIR_Datatype *datatype_ptr = NULL;
 
                 MPIR_Datatype_get_ptr(target_datatype, datatype_ptr);
@@ -197,6 +191,11 @@ int MPI_Get_accumulate(const void *origin_addr, int origin_count,
         MPID_END_ERROR_CHECKS;
     }
 #endif /* HAVE_ERROR_CHECKING */
+
+    /* Return immediately for dummy process */
+    if (unlikely(target_rank == MPI_PROC_NULL)) {
+        goto fn_exit;
+    }
 
     /* ... body of routine ...  */
 
@@ -221,7 +220,7 @@ int MPI_Get_accumulate(const void *origin_addr, int origin_count,
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_get_accumulate",
                                  "**mpi_get_accumulate %p %d %D %p %d %D %d %d %d %D %O %W",
                                  origin_addr, origin_count, origin_datatype, result_addr,
@@ -229,7 +228,7 @@ int MPI_Get_accumulate(const void *origin_addr, int origin_count,
                                  target_count, target_datatype, op, win);
     }
 #endif
-    mpi_errno = MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_win(win_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

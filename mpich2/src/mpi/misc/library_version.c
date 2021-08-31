@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2012 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -42,13 +40,10 @@ Output Parameters:
 .N Errors
 .N MPI_SUCCESS
 @*/
-#undef FUNCNAME
-#define FUNCNAME MPI_Get_library_version
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPI_Get_library_version(char *version, int *resultlen)
 {
     int mpi_errno = MPI_SUCCESS;
+    int printed_len;
     MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_GET_LIBRARY_VERSION);
 
     /* Note that this routine may be called before MPI_Init */
@@ -69,19 +64,22 @@ int MPI_Get_library_version(char *version, int *resultlen)
 
     /* ... body of routine ...  */
 
-    MPL_snprintf(version, MPI_MAX_LIBRARY_VERSION_STRING,
-                 "MPICH Version:\t%s\n"
-                 "MPICH Release date:\t%s\n"
-                 "MPICH ABI:\t%s\n"
-                 "MPICH Device:\t%s\n"
-                 "MPICH configure:\t%s\n"
-                 "MPICH CC:\t%s\n"
-                 "MPICH CXX:\t%s\n"
-                 "MPICH F77:\t%s\n"
-                 "MPICH FC:\t%s\n",
-                 MPII_Version_string, MPII_Version_date, MPII_Version_ABI, MPII_Version_device,
-                 MPII_Version_configure, MPII_Version_CC, MPII_Version_CXX,
-                 MPII_Version_F77, MPII_Version_FC);
+    printed_len = MPL_snprintf(version, MPI_MAX_LIBRARY_VERSION_STRING,
+                               "MPICH Version:\t%s\n"
+                               "MPICH Release date:\t%s\n"
+                               "MPICH ABI:\t%s\n"
+                               "MPICH Device:\t%s\n"
+                               "MPICH configure:\t%s\n"
+                               "MPICH CC:\t%s\n"
+                               "MPICH CXX:\t%s\n"
+                               "MPICH F77:\t%s\n"
+                               "MPICH FC:\t%s\n",
+                               MPII_Version_string, MPII_Version_date, MPII_Version_ABI,
+                               MPII_Version_device, MPII_Version_configure, MPII_Version_CC,
+                               MPII_Version_CXX, MPII_Version_F77, MPII_Version_FC);
+    if (strlen(MPII_Version_custom) > 0)
+        MPL_snprintf(version + printed_len, MPI_MAX_LIBRARY_VERSION_STRING - printed_len,
+                     "MPICH Custom Information:\t%s\n", MPII_Version_custom);
 
     *resultlen = (int) strlen(version);
 
@@ -98,11 +96,11 @@ int MPI_Get_library_version(char *version, int *resultlen)
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__,
                                  MPI_ERR_OTHER, "**mpi_get_library_version",
                                  "**mpi_get_library_version %p %p", version, resultlen);
     }
-    mpi_errno = MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(0, __func__, mpi_errno);
     goto fn_exit;
 #endif
     /* --END ERROR HANDLING-- */

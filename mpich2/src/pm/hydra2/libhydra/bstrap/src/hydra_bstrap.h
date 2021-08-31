@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2017 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef BSTRAP_SERVER_H_INCLUDED
@@ -21,7 +20,7 @@ HYD_status HYD_bstrap_setup(const char *path, const char *launcher, const char *
                             struct HYD_int_hash **downstream_stderr_hash,
                             struct HYD_int_hash **downstream_control_hash,
                             int **downstream_proxy_id, int **downstream_pid, int debug,
-                            int tree_width);
+                            int tree_width, int time_left);
 
 HYD_status HYD_bstrap_finalize(const char *launcher);
 

@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -29,10 +27,6 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status * status)
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Request_get_status
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Request_get_status - Nondestructive test for the completion of a Request
 
@@ -111,7 +105,7 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status * status)
 
     if (!MPIR_Request_is_complete(request_ptr)) {
         /* request not complete. poke the progress engine. Req #3130 */
-        mpi_errno = MPID_Progress_test();
+        mpi_errno = MPID_Progress_test(NULL);
         if (mpi_errno != MPI_SUCCESS)
             goto fn_fail;
     }
@@ -120,10 +114,8 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status * status)
         switch (request_ptr->kind) {
             case MPIR_REQUEST_KIND__SEND:
                 {
-                    if (status != MPI_STATUS_IGNORE) {
-                        MPIR_STATUS_SET_CANCEL_BIT(*status,
-                                                   MPIR_STATUS_GET_CANCEL_BIT(request_ptr->status));
-                    }
+                    MPIR_Status_set_cancel_bit(status,
+                                               MPIR_STATUS_GET_CANCEL_BIT(request_ptr->status));
                     mpi_errno = request_ptr->status.MPI_ERROR;
                     break;
                 }
@@ -141,11 +133,9 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status * status)
 
                     if (prequest_ptr != NULL) {
                         if (prequest_ptr->kind != MPIR_REQUEST_KIND__GREQUEST) {
-                            if (status != MPI_STATUS_IGNORE) {
-                                MPIR_STATUS_SET_CANCEL_BIT(*status,
-                                                           MPIR_STATUS_GET_CANCEL_BIT
-                                                           (request_ptr->status));
-                            }
+                            MPIR_Status_set_cancel_bit(status,
+                                                       MPIR_STATUS_GET_CANCEL_BIT
+                                                       (request_ptr->status));
                             mpi_errno = prequest_ptr->status.MPI_ERROR;
                         } else {
                             /* This is needed for persistent Bsend requests */
@@ -155,11 +145,9 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status * status)
                             if (mpi_errno == MPI_SUCCESS) {
                                 mpi_errno = rc;
                             }
-                            if (status != MPI_STATUS_IGNORE) {
-                                MPIR_STATUS_SET_CANCEL_BIT(*status,
-                                                           MPIR_STATUS_GET_CANCEL_BIT
-                                                           (prequest_ptr->status));
-                            }
+                            MPIR_Status_set_cancel_bit(status,
+                                                       MPIR_STATUS_GET_CANCEL_BIT
+                                                       (prequest_ptr->status));
                             if (mpi_errno == MPI_SUCCESS) {
                                 mpi_errno = prequest_ptr->status.MPI_ERROR;
                             }
@@ -168,11 +156,9 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status * status)
                         if (request_ptr->status.MPI_ERROR != MPI_SUCCESS) {
                             /* if the persistent request failed to start then
                              * make the error code available */
-                            if (status != MPI_STATUS_IGNORE) {
-                                MPIR_STATUS_SET_CANCEL_BIT(*status,
-                                                           MPIR_STATUS_GET_CANCEL_BIT
-                                                           (request_ptr->status));
-                            }
+                            MPIR_Status_set_cancel_bit(status,
+                                                       MPIR_STATUS_GET_CANCEL_BIT
+                                                       (request_ptr->status));
                             mpi_errno = request_ptr->status.MPI_ERROR;
                         } else {
                             MPIR_Status_set_empty(status);
@@ -207,10 +193,8 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status * status)
                     if (mpi_errno == MPI_SUCCESS) {
                         mpi_errno = rc;
                     }
-                    if (status != MPI_STATUS_IGNORE) {
-                        MPIR_STATUS_SET_CANCEL_BIT(*status,
-                                                   MPIR_STATUS_GET_CANCEL_BIT(request_ptr->status));
-                    }
+                    MPIR_Status_set_cancel_bit(status,
+                                               MPIR_STATUS_GET_CANCEL_BIT(request_ptr->status));
                     MPIR_Request_extract_status(request_ptr, status);
 
                     break;
@@ -242,13 +226,13 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status * status)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
-                                         FCNAME, __LINE__, MPI_ERR_OTHER,
+                                         __func__, __LINE__, MPI_ERR_OTHER,
                                          "**mpi_request_get_status",
                                          "**mpi_request_get_status %R %p %p", request, flag,
                                          status);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(0, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

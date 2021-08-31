@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2014 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidimpl.h"
@@ -16,10 +15,6 @@
   arguments, where base represents a base address returned by a call
   to MPI_GET_ADDRESS and disp represents a signed integer displacement.
 */
-#undef FUNCNAME
-#define FUNCNAME MPID_Aint_add
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 MPI_Aint MPID_Aint_add(MPI_Aint base, MPI_Aint disp)
 {
     MPI_Aint result;
@@ -27,7 +22,7 @@ MPI_Aint MPID_Aint_add(MPI_Aint base, MPI_Aint disp)
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_AINT_ADD);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_AINT_ADD);
 
-    result =  MPIR_VOID_PTR_CAST_TO_MPI_AINT ((char*)MPIR_AINT_CAST_TO_VOID_PTR(base) + disp);
+    result = (MPI_Aint) ((char *) base + disp);
 
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_AINT_ADD);
     return result;
@@ -43,10 +38,6 @@ MPI_Aint MPID_Aint_add(MPI_Aint base, MPI_Aint disp)
   addr2 arguments, where addr1 and addr2 represent addresses returned by calls
   to MPI_GET_ADDRESS.
 */
-#undef FUNCNAME
-#define FUNCNAME MPID_Aint_diff
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 MPI_Aint MPID_Aint_diff(MPI_Aint addr1, MPI_Aint addr2)
 {
     MPI_Aint result;
@@ -54,7 +45,7 @@ MPI_Aint MPID_Aint_diff(MPI_Aint addr1, MPI_Aint addr2)
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_AINT_DIFF);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_AINT_DIFF);
 
-    result =  MPIR_PTR_DISP_CAST_TO_MPI_AINT ((char*)MPIR_AINT_CAST_TO_VOID_PTR(addr1) - (char*)MPIR_AINT_CAST_TO_VOID_PTR(addr2));
+    result = (MPI_Aint) ((char *) addr1 - (char *) addr2);
 
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_AINT_DIFF);
     return result;

@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPID_NEM_FBOX_H_INCLUDED
@@ -13,7 +12,7 @@ typedef struct MPID_nem_fboxq_elem
   struct MPID_nem_fboxq_elem *prev;
   struct MPID_nem_fboxq_elem *next;
   int grank;
-  MPID_nem_fbox_mpich_t *fbox;
+  MPID_nem_fastbox_t *fbox;
 } MPID_nem_fboxq_elem_t ;
 
 extern MPID_nem_fboxq_elem_t *MPID_nem_fboxq_head;
@@ -36,15 +35,17 @@ static inline int poll_active_fboxes(MPID_nem_cell_ptr_t *cell)
         orig_fboxq_elem = MPID_nem_curr_fboxq_elem;
         do
         {
-            MPID_nem_fbox_mpich_t *fbox;
+            MPID_nem_fastbox_t *fbox;
+            MPID_nem_cell_t *cell_ptr;
 
             fbox = MPID_nem_curr_fboxq_elem->fbox;
             MPIR_Assert(fbox != NULL);
-            if (OPA_load_acquire_int(&fbox->flag.value) &&
-                fbox->cell.pkt.header.seqno == MPID_nem_recv_seqno[MPID_nem_curr_fboxq_elem->grank])
+            cell_ptr = MPID_NEM_FBOX_TO_CELL(fbox);
+            if (MPL_atomic_acquire_load_int(&fbox->flag) &&
+                cell_ptr->header.seqno == MPID_nem_recv_seqno[MPID_nem_curr_fboxq_elem->grank])
             {
                 ++MPID_nem_recv_seqno[MPID_nem_curr_fboxq_elem->grank];
-                *cell = &fbox->cell;
+                *cell = cell_ptr;
                 found = TRUE;
                 goto fn_exit;
             }
@@ -63,15 +64,17 @@ fn_exit:
 static inline int poll_every_fbox(MPID_nem_cell_ptr_t *cell)
 {
     MPID_nem_fboxq_elem_t *orig_fbox_el = MPID_nem_curr_fbox_all_poll;
-    MPID_nem_fbox_mpich_t *fbox;
+    MPID_nem_fastbox_t *fbox;
+    MPID_nem_cell_t *cell_ptr;
     int found = FALSE;
 
     do {
         fbox = MPID_nem_curr_fbox_all_poll->fbox;
-        if (fbox && OPA_load_acquire_int(&fbox->flag.value) &&
-            fbox->cell.pkt.header.seqno == MPID_nem_recv_seqno[MPID_nem_curr_fbox_all_poll->grank]) {
+        cell_ptr = MPID_NEM_FBOX_TO_CELL(fbox);
+        if (fbox && MPL_atomic_acquire_load_int(&fbox->flag) &&
+            cell_ptr->header.seqno == MPID_nem_recv_seqno[MPID_nem_curr_fbox_all_poll->grank]) {
             ++MPID_nem_recv_seqno[MPID_nem_curr_fbox_all_poll->grank];
-            *cell = &fbox->cell;
+            *cell = cell_ptr;
             found = TRUE;
             break;
         }
@@ -86,14 +89,16 @@ static inline int poll_every_fbox(MPID_nem_cell_ptr_t *cell)
 
 #define poll_next_fbox(_cell, do_found)                                                             \
     do {                                                                                            \
-        MPID_nem_fbox_mpich_t *fbox;                                                               \
+        MPID_nem_fastbox_t *fbox;                                                               \
+        MPID_nem_cell_t *cell_ptr;                                                                  \
                                                                                                     \
         fbox = MPID_nem_curr_fbox_all_poll->fbox;                                                   \
-        if (fbox && OPA_load_acquire_int(&fbox->flag.value) &&                                      \
-            fbox->cell.pkt.header.seqno == MPID_nem_recv_seqno[MPID_nem_curr_fbox_all_poll->grank]) \
+        cell_ptr = MPID_NEM_FBOX_TO_CELL(fbox);                                                     \
+        if (fbox && MPL_atomic_acquire_load_int(&fbox->flag) &&                               \
+            cell_ptr->header.seqno == MPID_nem_recv_seqno[MPID_nem_curr_fbox_all_poll->grank])      \
         {                                                                                           \
             ++MPID_nem_recv_seqno[MPID_nem_curr_fbox_all_poll->grank];                              \
-            *(_cell) = &fbox->cell;                                                                 \
+            *(_cell) = cell_ptr;                                                                    \
             do_found;                                                                               \
         }                                                                                           \
         ++MPID_nem_curr_fbox_all_poll;                                                              \

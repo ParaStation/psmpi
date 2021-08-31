@@ -1,9 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include "mpiimpl.h"
 
 static int unweighted_dummy = 0x46618;
@@ -44,10 +43,6 @@ MPIR_Topology *MPIR_Topology_get(MPIR_Comm * comm_ptr)
     return NULL;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Topology_put
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Topology_put(MPIR_Comm * comm_ptr, MPIR_Topology * topo_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -62,13 +57,11 @@ int MPIR_Topology_put(MPIR_Comm * comm_ptr, MPIR_Topology * topo_ptr)
         mpi_errno = MPIR_Comm_create_keyval_impl(MPIR_Topology_copy_fn,
                                                  MPIR_Topology_delete_fn, &MPIR_Topology_keyval, 0);
         /* Register the finalize handler */
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         MPIR_Add_finalize(MPIR_Topology_finalize, (void *) 0, MPIR_FINALIZE_CALLBACK_PRIO - 1);
     }
     mpi_errno = MPIR_Comm_set_attr_impl(comm_ptr, MPIR_Topology_keyval, topo_ptr, MPIR_ATTR_PTR);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     return mpi_errno;
@@ -120,10 +113,6 @@ static int *MPIR_Copy_array(int n, const int a[], int *err)
    of enough integers for all fields (including the ones in the structure)
    and freeing the single object later.
 */
-#undef FUNCNAME
-#define FUNCNAME MPIR_Topology_copy_fn
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 static int MPIR_Topology_copy_fn(MPI_Comm comm ATTRIBUTE((unused)),
                                  int keyval ATTRIBUTE((unused)),
                                  void *extra_data ATTRIBUTE((unused)),
@@ -153,7 +142,7 @@ static int MPIR_Topology_copy_fn(MPI_Comm comm ATTRIBUTE((unused)),
                 MPIR_Copy_array(old_topology->topo.kind_.count_field_, \
                                 old_topology->topo.kind_.array_field_, \
                                 &mpi_errno); \
-            if (mpi_errno) MPIR_ERR_POP(mpi_errno); \
+            MPIR_ERR_CHECK(mpi_errno); \
             MPIR_CHKPMEM_REGISTER(copy_topology->topo.kind_.array_field_); \
         } while (0)
 
@@ -198,10 +187,6 @@ static int MPIR_Topology_copy_fn(MPI_Comm comm ATTRIBUTE((unused)),
     /* --END ERROR HANDLING-- */
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Topology_delete_fn
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 static int MPIR_Topology_delete_fn(MPI_Comm comm ATTRIBUTE((unused)),
                                    int keyval ATTRIBUTE((unused)),
                                    void *attr_val, void *extra_data ATTRIBUTE((unused)))
@@ -226,10 +211,8 @@ static int MPIR_Topology_delete_fn(MPI_Comm comm ATTRIBUTE((unused)),
     } else if (topology->kind == MPI_DIST_GRAPH) {
         MPL_free(topology->topo.dist_graph.in);
         MPL_free(topology->topo.dist_graph.out);
-        if (topology->topo.dist_graph.in_weights)
-            MPL_free(topology->topo.dist_graph.in_weights);
-        if (topology->topo.dist_graph.out_weights)
-            MPL_free(topology->topo.dist_graph.out_weights);
+        MPL_free(topology->topo.dist_graph.in_weights);
+        MPL_free(topology->topo.dist_graph.out_weights);
         MPL_free(topology);
     }
     /* --BEGIN ERROR HANDLING-- */
@@ -264,10 +247,6 @@ static int MPIR_Topology_delete_fn(MPI_Comm comm ATTRIBUTE((unused)),
  *     to be MPI_PROC_NULL.
  */
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Topo_canon_nhb_count
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Topo_canon_nhb_count(MPIR_Comm * comm_ptr, int *indegree, int *outdegree, int *weighted)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -279,13 +258,11 @@ int MPIR_Topo_canon_nhb_count(MPIR_Comm * comm_ptr, int *indegree, int *outdegre
     /* TODO consider dispatching via a vtable instead of doing if/else */
     if (topo_ptr->kind == MPI_DIST_GRAPH) {
         mpi_errno = MPIR_Dist_graph_neighbors_count_impl(comm_ptr, indegree, outdegree, weighted);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     } else if (topo_ptr->kind == MPI_GRAPH) {
         int nneighbors = 0;
         mpi_errno = MPIR_Graph_neighbors_count_impl(comm_ptr, comm_ptr->rank, &nneighbors);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         *indegree = *outdegree = nneighbors;
         *weighted = FALSE;
     } else if (topo_ptr->kind == MPI_CART) {
@@ -302,10 +279,6 @@ int MPIR_Topo_canon_nhb_count(MPIR_Comm * comm_ptr, int *indegree, int *outdegre
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Topo_canon_nhb
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Topo_canon_nhb(MPIR_Comm * comm_ptr,
                         int indegree, int sources[], int inweights[],
                         int outdegree, int dests[], int outweights[])
@@ -324,13 +297,11 @@ int MPIR_Topo_canon_nhb(MPIR_Comm * comm_ptr,
         mpi_errno = MPIR_Dist_graph_neighbors_impl(comm_ptr,
                                                    indegree, sources, inweights,
                                                    outdegree, dests, outweights);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     } else if (topo_ptr->kind == MPI_GRAPH) {
         MPIR_Assert(indegree == outdegree);
         mpi_errno = MPIR_Graph_neighbors_impl(comm_ptr, comm_ptr->rank, indegree, sources);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         MPIR_Memcpy(dests, sources, outdegree * sizeof(*dests));
         /* ignore inweights/outweights */
     } else if (topo_ptr->kind == MPI_CART) {
@@ -341,8 +312,7 @@ int MPIR_Topo_canon_nhb(MPIR_Comm * comm_ptr,
 
         for (d = 0; d < topo_ptr->topo.cart.ndims; ++d) {
             mpi_errno = MPIR_Cart_shift_impl(comm_ptr, d, 1, &sources[2 * d], &sources[2 * d + 1]);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
 
             dests[2 * d] = sources[2 * d];
             dests[2 * d + 1] = sources[2 * d + 1];

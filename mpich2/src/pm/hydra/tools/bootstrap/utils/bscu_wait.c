@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2008 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra.h"
@@ -107,17 +106,13 @@ HYD_status HYDT_bscu_wait_for_completion(int timeout)
         }
     }
 
-    if (HYD_bscu_pid_list) {
-        MPL_free(HYD_bscu_pid_list);
-        HYD_bscu_pid_list = NULL;
-        HYD_bscu_pid_count = 0;
-    }
+    MPL_free(HYD_bscu_pid_list);
+    HYD_bscu_pid_list = NULL;
+    HYD_bscu_pid_count = 0;
 
-    if (HYD_bscu_fd_list) {
-        MPL_free(HYD_bscu_fd_list);
-        HYD_bscu_fd_list = NULL;
-        HYD_bscu_fd_count = 0;
-    }
+    MPL_free(HYD_bscu_fd_list);
+    HYD_bscu_fd_list = NULL;
+    HYD_bscu_fd_count = 0;
 
   fn_exit:
     HYDU_FUNC_EXIT();

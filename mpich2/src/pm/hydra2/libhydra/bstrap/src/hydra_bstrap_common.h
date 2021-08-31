@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2017 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef BSTRAP_COMMON_H_INCLUDED
@@ -13,7 +12,7 @@
 struct HYDI_bstrap_cmd {
     enum {
         HYDI_BSTRAP_CMD__PROXY_ID = 0,
-        HYDI_BSTRAP_CMD__HOSTLIST,
+        HYDI_BSTRAP_CMD__HOSTLIST
     } type;
 
     union {

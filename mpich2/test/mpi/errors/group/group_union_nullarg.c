@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
+ */
+
 #include <mpi.h>
 #include <stdio.h>
 #include "mpitest.h"
@@ -16,7 +21,7 @@ int main(int argc, char **argv)
     MPI_Comm_group(comm, &basegroup);
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
-    MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
 
     MPI_Comm_split(comm, 0, size - rank, &newcomm);
     MPI_Comm_group(newcomm, &g1);

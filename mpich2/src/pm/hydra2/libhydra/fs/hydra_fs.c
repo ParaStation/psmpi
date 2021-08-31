@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2017 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra_fs.h"
@@ -102,10 +101,8 @@ HYD_status HYD_find_in_path(const char *execname, char **path)
     *path = MPL_strdup("");
 
   fn_exit:
-    if (user_path)
-        MPL_free(user_path);
-    if (path_loc)
-        MPL_free(path_loc);
+    MPL_free(user_path);
+    MPL_free(path_loc);
     HYD_FUNC_EXIT();
     return status;
 
@@ -171,8 +168,7 @@ char *HYD_find_full_path(const char *execname)
 
   fn_exit:
     HYD_str_free_list(tmp);
-    if (test_path)
-        MPL_free(test_path);
+    MPL_free(test_path);
     HYD_FUNC_EXIT();
     return path;
 

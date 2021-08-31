@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -25,67 +23,34 @@ int MPI_Type_commit(MPI_Datatype * datatype) __attribute__ ((weak, alias("PMPI_T
 #undef MPI_Type_commit
 #define MPI_Type_commit PMPI_Type_commit
 
-/*@
-  MPIR_Type_commit
-
-Input Parameters:
-. datatype_p - pointer to MPI datatype
-
-Output Parameters:
-
-  Return Value:
-  0 on success, -1 on failure.
-@*/
 int MPIR_Type_commit(MPI_Datatype * datatype_p)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Datatype *datatype_ptr;
 
-    MPIR_Assert(HANDLE_GET_KIND(*datatype_p) != HANDLE_KIND_BUILTIN);
+    MPIR_Assert(!HANDLE_IS_BUILTIN(*datatype_p));
 
     MPIR_Datatype_get_ptr(*datatype_p, datatype_ptr);
 
     if (datatype_ptr->is_committed == 0) {
         datatype_ptr->is_committed = 1;
 
-#ifdef MPID_NEEDS_DLOOP_ALL_BYTES
-        /* If MPID implementation needs use to reduce everything to
-         * a byte stream, do that. */
-        MPIR_Dataloop_create(*datatype_p,
-                             &datatype_ptr->dataloop,
-                             &datatype_ptr->dataloop_size,
-                             &datatype_ptr->dataloop_depth, MPIDU_DATALOOP_ALL_BYTES);
-#else
-        MPIR_Dataloop_create(*datatype_p,
-                             &datatype_ptr->dataloop,
-                             &datatype_ptr->dataloop_size,
-                             &datatype_ptr->dataloop_depth, MPIR_DATALOOP_DEFAULT);
-#endif
+        MPIR_Typerep_commit(*datatype_p);
 
         MPL_DBG_MSG_D(MPIR_DBG_DATATYPE, TERSE, "# contig blocks = %d\n",
-                      (int) datatype_ptr->max_contig_blocks);
+                      (int) datatype_ptr->typerep.num_contig_blocks);
 
-#if 0
-        MPII_Dataloop_dot_printf(datatype_ptr->dataloop, 0, 1);
-#endif
-
-#ifdef MPID_Type_commit_hook
         MPID_Type_commit_hook(datatype_ptr);
-#endif /* MPID_Type_commit_hook */
 
     }
     return mpi_errno;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Type_commit_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Type_commit_impl(MPI_Datatype * datatype)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    if (HANDLE_GET_KIND(*datatype) == HANDLE_KIND_BUILTIN)
+    if (HANDLE_IS_BUILTIN(*datatype))
         goto fn_exit;
 
     /* pair types stored as real types are a special case */
@@ -95,8 +60,7 @@ int MPIR_Type_commit_impl(MPI_Datatype * datatype)
         goto fn_exit;
 
     mpi_errno = MPIR_Type_commit(datatype);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     return mpi_errno;
@@ -106,10 +70,6 @@ int MPIR_Type_commit_impl(MPI_Datatype * datatype)
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Type_commit
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Type_commit - Commits the datatype
 
@@ -168,8 +128,7 @@ int MPI_Type_commit(MPI_Datatype * datatype)
     /* ... body of routine ... */
 
     mpi_errno = MPIR_Type_commit_impl(datatype);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* ... end of body of routine ... */
 
@@ -183,11 +142,11 @@ int MPI_Type_commit(MPI_Datatype * datatype)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_type_commit", "**mpi_type_commit %p", datatype);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

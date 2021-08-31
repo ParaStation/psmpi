@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -30,26 +29,13 @@ int MPI_Grequest_complete(MPI_Request request)
    are used by both the MPI and PMPI versions, use PMPI_LOCAL instead of
    static; this macro expands into "static" if weak symbols are supported and
    into nothing otherwise. */
-#undef FUNCNAME
-#define FUNCNAME MPIR_Grequest_complete
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPIR_Grequest_complete(MPIR_Request * request_ptr)
 {
-    /* Set the request as completed.  This does not change the
-     * reference count on the generalized request */
-    MPID_Request_complete(request_ptr);
-
-    /* The request release comes with the wait/test, not this complete
-     * routine, so we don't call the MPIR_Request_free routine */
+    MPIR_Request_complete(request_ptr);
 }
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Grequest_complete
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Grequest_complete - Notify MPI that a user-defined request is complete
 
@@ -98,7 +84,7 @@ int MPI_Grequest_complete(MPI_Request request)
             MPIR_Request_valid_ptr(request_ptr, mpi_errno);
             if (request_ptr && request_ptr->kind != MPIR_REQUEST_KIND__GREQUEST) {
                 mpi_errno =
-                    MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+                    MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__,
                                          MPI_ERR_ARG, "**notgenreq", 0);
             }
             if (mpi_errno)
@@ -126,10 +112,10 @@ int MPI_Grequest_complete(MPI_Request request)
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_grequest_complete", "**mpi_grequest_complete %R", request);
     }
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
 #endif
     /* --END ERROR HANDLING-- */

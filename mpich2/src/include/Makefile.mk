@@ -1,8 +1,6 @@
-## -*- Mode: Makefile; -*-
-## vim: set ft=automake :
 ##
-## (C) 2011 by Argonne National Laboratory.
-##     See COPYRIGHT in top-level directory.
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
 ##
 
 # nodist_ b/c these are created by config.status and should not be distributed
@@ -38,7 +36,7 @@ noinst_HEADERS +=                   \
     src/include/mpii_cxxinterface.h \
     src/include/mpii_fortlogical.h   \
     src/include/mpiallstates.h      \
-    src/include/mpii_bsend.h          \
+    src/include/mpir_bsend.h          \
     src/include/mpir_cvars.h        \
     src/include/mpichconfconst.h    \
     src/include/mpir_err.h          \
@@ -61,6 +59,7 @@ noinst_HEADERS +=                   \
     src/include/mpir_thread.h       \
     src/include/mpir_nbc.h          \
     src/include/mpir_op.h           \
+    src/include/mpir_pmi.h          \
     src/include/mpir_process.h      \
     src/include/mpir_misc.h         \
     src/include/mpir_tags.h         \
@@ -70,7 +69,10 @@ noinst_HEADERS +=                   \
     src/include/nopackage.h         \
     src/include/rlog.h              \
     src/include/rlog_macros.h       \
-    src/include/mpir_op_util.h
+    src/include/mpir_op_util.h      \
+    src/include/mpir_hwtopo.h       \
+    src/include/mpir_gpu.h          \
+    src/include/mpir_nettopo.h
 
 src/include/mpir_cvars.h:
 	$(top_srcdir)/maint/extractcvars --dirs="`cat $(top_srcdir)/maint/cvardirs`"

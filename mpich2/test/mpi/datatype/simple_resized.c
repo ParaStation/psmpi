@@ -1,8 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,7 +55,7 @@ int derived_resized_test(void)
     MPI_Datatype newtype, resizedtype;
 
     int size;
-    MPI_Aint extent;
+    MPI_Aint extent, tmp_lb;
 
     err = MPI_Type_contiguous(count, MPI_INT, &newtype);
     if (err != MPI_SUCCESS) {
@@ -84,7 +84,7 @@ int derived_resized_test(void)
         errs++;
     }
 
-    err = MPI_Type_extent(resizedtype, &extent);
+    err = MPI_Type_get_extent(resizedtype, &tmp_lb, &extent);
     if (err != MPI_SUCCESS) {
         if (verbose) {
             fprintf(stderr, "error obtaining type extent in derived_resized_test()\n");

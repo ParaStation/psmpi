@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -26,15 +24,12 @@ int MPI_Group_range_excl(MPI_Group group, int n, int ranges[][3], MPI_Group * ne
 #ifndef MPICH_MPI_FROM_PMPI
 #undef MPI_Group_range_excl
 #define MPI_Group_range_excl PMPI_Group_range_excl
-#undef FUNCNAME
-#define FUNCNAME MPIR_Group_range_excl_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Group_range_excl_impl(MPIR_Group * group_ptr, int n, int ranges[][3],
                                MPIR_Group ** new_group_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
     int size, i, j, k, nnew, first, last, stride;
+    int *flags = NULL;
     MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPIR_GROUP_RANGE_EXCL_IMPL);
 
     MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPIR_GROUP_RANGE_EXCL_IMPL);
@@ -72,9 +67,7 @@ int MPIR_Group_range_excl_impl(MPIR_Group * group_ptr, int n, int ranges[][3],
      * was enabled *and* we are not MPI_THREAD_MULTIPLE, but since this
      * is a low-usage routine, we haven't taken that optimization.  */
 
-    /* First, mark the members to exclude */
-    for (i = 0; i < size; i++)
-        group_ptr->lrank_to_lpid[i].flag = 0;
+    flags = MPL_calloc(size, sizeof(int), MPL_MEM_OTHER);
 
     for (i = 0; i < n; i++) {
         first = ranges[i][0];
@@ -82,11 +75,11 @@ int MPIR_Group_range_excl_impl(MPIR_Group * group_ptr, int n, int ranges[][3],
         stride = ranges[i][2];
         if (stride > 0) {
             for (j = first; j <= last; j += stride) {
-                group_ptr->lrank_to_lpid[j].flag = 1;
+                flags[j] = 1;
             }
         } else {
             for (j = first; j >= last; j += stride) {
-                group_ptr->lrank_to_lpid[j].flag = 1;
+                flags[j] = 1;
             }
         }
     }
@@ -94,7 +87,7 @@ int MPIR_Group_range_excl_impl(MPIR_Group * group_ptr, int n, int ranges[][3],
      * not excluded */
     k = 0;
     for (i = 0; i < size; i++) {
-        if (!group_ptr->lrank_to_lpid[i].flag) {
+        if (!flags[i]) {
             (*new_group_ptr)->lrank_to_lpid[k].lpid = group_ptr->lrank_to_lpid[i].lpid;
             if (group_ptr->rank == i) {
                 (*new_group_ptr)->rank = k;
@@ -107,6 +100,7 @@ int MPIR_Group_range_excl_impl(MPIR_Group * group_ptr, int n, int ranges[][3],
 
 
   fn_exit:
+    MPL_free(flags);
     MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPIR_GROUP_RANGE_EXCL_IMPL);
     return mpi_errno;
   fn_fail:
@@ -115,10 +109,6 @@ int MPIR_Group_range_excl_impl(MPIR_Group * group_ptr, int n, int ranges[][3],
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Group_range_excl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /*@
 
@@ -221,12 +211,12 @@ int MPI_Group_range_excl(MPI_Group group, int n, int ranges[][3], MPI_Group * ne
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_group_range_excl", "**mpi_group_range_excl %G %d %p %p",
                                  group, n, ranges, newgroup);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

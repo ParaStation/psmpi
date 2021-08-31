@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@ int MPI_Comm_remote_size(MPI_Comm comm, int *size)
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Comm_remote_size
-#undef FCNAME
-#define FCNAME "MPI_Comm_remote_size"
 
 /*@
 
@@ -87,7 +81,7 @@ int MPI_Comm_remote_size(MPI_Comm comm, int *size)
             /* If comm_ptr is not valid, it will be reset to null */
             if (comm_ptr && comm_ptr->comm_kind != MPIR_COMM_KIND__INTERCOMM) {
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
-                                                 MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+                                                 MPIR_ERR_RECOVERABLE, __func__, __LINE__,
                                                  MPI_ERR_COMM, "**commnotinter", 0);
             }
             if (mpi_errno)
@@ -115,11 +109,11 @@ int MPI_Comm_remote_size(MPI_Comm comm, int *size)
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_comm_remote_size", "**mpi_comm_remote_size %C %p", comm,
                                  size);
     }
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
 #endif
     /* --END ERROR HANDLING-- */

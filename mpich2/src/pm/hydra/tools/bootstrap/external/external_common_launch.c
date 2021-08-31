@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2008 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra.h"
@@ -202,8 +201,7 @@ HYD_status HYDT_bscd_common_launch_procs(char **args, struct HYD_proxy *proxy_li
     targs[idx] = NULL;
     for (proxy = proxy_list; proxy; proxy = proxy->next) {
 
-        if (targs[host_idx])
-            MPL_free(targs[host_idx]);
+        MPL_free(targs[host_idx]);
         if (proxy->node->user == NULL) {
             targs[host_idx] = MPL_strdup(proxy->node->hostname);
         } else {
@@ -214,8 +212,7 @@ HYD_status HYDT_bscd_common_launch_procs(char **args, struct HYD_proxy *proxy_li
         }
 
         /* append proxy ID */
-        if (targs[idx])
-            MPL_free(targs[idx]);
+        MPL_free(targs[idx]);
         targs[idx] = HYDU_int_to_str(proxy->proxy_id);
         targs[idx + 1] = NULL;
 
@@ -322,8 +319,7 @@ HYD_status HYDT_bscd_common_launch_procs(char **args, struct HYD_proxy *proxy_li
 
   fn_exit:
     HYDU_free_strlist(targs);
-    if (path)
-        MPL_free(path);
+    MPL_free(path);
     HYDU_FUNC_EXIT();
     return status;
 

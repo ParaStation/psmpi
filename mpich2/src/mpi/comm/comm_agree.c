@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -26,10 +25,6 @@ int MPIX_Comm_agree(MPI_Comm comm, int *flag) __attribute__ ((weak, alias("PMPIX
 #undef MPIX_Comm_agree
 #define MPIX_Comm_agree PMPIX_Comm_agree
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Comm_agree
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Comm_agree(MPIR_Comm * comm_ptr, int *flag)
 {
     int mpi_errno = MPI_SUCCESS, mpi_errno_tmp = MPI_SUCCESS;
@@ -45,8 +40,7 @@ int MPIR_Comm_agree(MPIR_Comm * comm_ptr, int *flag)
 
     /* Get the locally known (not acknowledged) group of failed procs */
     mpi_errno = MPID_Comm_failure_get_acked(comm_ptr, &failed_grp);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* First decide on the group of failed procs. */
     mpi_errno = MPID_Comm_get_all_failed_procs(comm_ptr, &global_failed, MPIR_AGREE_TAG);
@@ -54,13 +48,11 @@ int MPIR_Comm_agree(MPIR_Comm * comm_ptr, int *flag)
         errflag = MPIR_ERR_PROC_FAILED;
 
     mpi_errno = MPIR_Group_compare_impl(failed_grp, global_failed, &result);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* Create a subgroup without the failed procs */
     mpi_errno = MPIR_Group_difference_impl(comm_grp, global_failed, &new_group_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* If that group isn't the same as what we think is failed locally, then
      * mark it as such. */
@@ -111,10 +103,6 @@ int MPIR_Comm_agree(MPIR_Comm * comm_ptr, int *flag)
 
 #endif /* !defined(MPICH_MPI_FROM_PMPI) */
 
-#undef FUNCNAME
-#define FUNCNAME MPIX_Comm_agree
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPIX_Comm_agree - Performs agreement operation on comm
 
@@ -172,8 +160,7 @@ int MPIX_Comm_agree(MPI_Comm comm, int *flag)
 
     /* ... body of routine ... */
     mpi_errno = MPIR_Comm_agree(comm_ptr, flag);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* ... end of body of routine ... */
 
@@ -187,11 +174,11 @@ int MPIX_Comm_agree(MPI_Comm comm, int *flag)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__,
                                  MPI_ERR_OTHER, "**mpix_comm_agree", "**mpix_comm_agree %C", comm);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

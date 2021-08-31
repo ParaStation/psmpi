@@ -1,8 +1,6 @@
-## -*- Mode: Makefile; -*-
-## vim: set ft=automake :
 ##
-## (C) 2011 by Argonne National Laboratory.
-##     See COPYRIGHT in top-level directory.
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
 ##
 
 mpi_sources +=                 \
@@ -16,8 +14,13 @@ mpi_sources +=                 \
     src/mpi/init/querythread.c
 
 mpi_core_sources += \
+    src/mpi/init/globals.c        \
     src/mpi/init/initinfo.c       \
-    src/mpi/init/async.c          \
-    src/mpi/init/netloc_util.c
+    src/mpi/init/local_proc_attrs.c \
+    src/mpi/init/mutex.c \
+    src/mpi/init/init_async.c     \
+    src/mpi/init/init_windows.c   \
+    src/mpi/init/init_bindings.c  \
+    src/mpi/init/init_dbg_logging.c
 
 noinst_HEADERS += src/mpi/init/mpi_init.h

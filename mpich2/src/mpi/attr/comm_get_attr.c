@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -26,10 +24,6 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *
 #undef MPI_Comm_get_attr
 #define MPI_Comm_get_attr PMPI_Comm_get_attr
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Comm_get_attr
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /* Find the requested attribute.  If it exists, return either the attribute
    entry or the address of the entry, based on whether the request is for
    a pointer-valued attribute (C or C++) or an integer-valued attribute
@@ -89,7 +83,7 @@ int MPII_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val,
      * a pointer to a copy */
     /* Note that if we are called from Fortran, we must return the values,
      * not the addresses, of these attributes */
-    if (HANDLE_GET_KIND(comm_keyval) == HANDLE_KIND_BUILTIN) {
+    if (HANDLE_IS_BUILTIN(comm_keyval)) {
         int attr_idx = comm_keyval & 0x0000000f;
         void **attr_val_p = (void **) attribute_val;
 #ifdef HAVE_FORTRAN_BINDING
@@ -144,7 +138,7 @@ int MPII_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val,
                     *flag = 0;
                 } else {
                     /* We call MPID_Get_universe_size only once (see 10.5.1).
-                     * Thus, we must put the value into the "master" copy */
+                     * Thus, we must put the value into the "main" copy */
                     mpi_errno = MPID_Get_universe_size(&MPIR_Process.attrs.universe);
                     /* --BEGIN ERROR HANDLING-- */
                     if (mpi_errno != MPI_SUCCESS) {
@@ -260,12 +254,12 @@ int MPII_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val,
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpir_comm_get_attr", "**mpir_comm_get_attr %C %d %p %p", comm,
                                  comm_keyval, attribute_val, flag);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
@@ -288,10 +282,6 @@ int MPII_Comm_get_attr_fort(MPI_Comm comm, int comm_keyval, void *attribute_val,
 
 #endif /* MPICH_MPI_FROM_PMPI */
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Comm_get_attr
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /* FIXME: Attributes must be visable from all languages */
 /*@
@@ -351,7 +341,7 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val, int *
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_comm_get_attr", "**mpi_comm_get_attr %C %d %p %p", comm,
                                  comm_keyval, attribute_val, flag);
     }

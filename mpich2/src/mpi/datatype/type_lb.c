@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -26,13 +24,9 @@ int MPI_Type_lb(MPI_Datatype datatype, MPI_Aint * displacement)
 #undef MPI_Type_lb
 #define MPI_Type_lb PMPI_Type_lb
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Type_lb_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPIR_Type_lb_impl(MPI_Datatype datatype, MPI_Aint * displacement)
 {
-    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
+    if (HANDLE_IS_BUILTIN(datatype)) {
         *displacement = 0;
     } else {
         MPIR_Datatype *datatype_ptr = NULL;
@@ -43,10 +37,6 @@ void MPIR_Type_lb_impl(MPI_Datatype datatype, MPI_Aint * displacement)
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Type_lb
-#undef FCNAME
-#define FCNAME "MPI_Type_lb"
 /*@
     MPI_Type_lb - Returns the lower-bound of a datatype
 
@@ -126,10 +116,10 @@ int MPI_Type_lb(MPI_Datatype datatype, MPI_Aint * displacement)
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_type_lb", "**mpi_type_lb %D %p", datatype, displacement);
     }
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
 #endif
     /* --END ERROR HANDLING-- */

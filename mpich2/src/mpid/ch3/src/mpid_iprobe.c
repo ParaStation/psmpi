@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidimpl.h"
@@ -9,10 +8,6 @@
 int (*MPIDI_Anysource_iprobe_fn)(int tag, MPIR_Comm * comm, int context_offset, int *flag,
                                  MPI_Status * status) = NULL;
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Iprobe
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_Iprobe(int source, int tag, MPIR_Comm *comm, int context_offset,
 		int *flag, MPI_Status *status)
 {
@@ -22,15 +17,6 @@ int MPID_Iprobe(int source, int tag, MPIR_Comm *comm, int context_offset,
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_IPROBE);
 
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_IPROBE);
-
-    if (source == MPI_PROC_NULL)
-    {
-	MPIR_Status_set_procnull(status);
-	/* We set the flag to true because an MPI_Recv with this rank will
-	   return immediately */
-	*flag = TRUE;
-	goto fn_exit;
-    }
 
     /* Check to make sure the communicator hasn't already been revoked */
     if (comm->revoked &&
@@ -52,11 +38,11 @@ int MPID_Iprobe(int source, int tag, MPIR_Comm *comm, int context_offset,
             if (!found) {
                 /* not found, check network */
                 mpi_errno = MPIDI_Anysource_iprobe_fn(tag, comm, context_offset, &found, status);
-                if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+                MPIR_ERR_CHECK(mpi_errno);
                 if (!found) {
                     /* still not found, make some progress*/
                     mpi_errno = MPIDI_CH3_Progress_poke();
-                    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+                    MPIR_ERR_CHECK(mpi_errno);
                     /* check shm again */
                     MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_POBJ_MSGQ_MUTEX);
                     found = MPIDI_CH3U_Recvq_FU(source, tag, context, status);
@@ -64,7 +50,7 @@ int MPID_Iprobe(int source, int tag, MPIR_Comm *comm, int context_offset,
                     if (!found) {
                         /* check network again */
                         mpi_errno = MPIDI_Anysource_iprobe_fn(tag, comm, context_offset, &found, status);
-                        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+                        MPIR_ERR_CHECK(mpi_errno);
                     }
                 }
             }
@@ -76,7 +62,7 @@ int MPID_Iprobe(int source, int tag, MPIR_Comm *comm, int context_offset,
             MPIDI_Comm_get_vc_set_active(comm, source, &vc);
             if (vc->comm_ops && vc->comm_ops->iprobe) {
                 mpi_errno = vc->comm_ops->iprobe(vc, source, tag, comm, context_offset, &found, status);
-                if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+                MPIR_ERR_CHECK(mpi_errno);
                 *flag = found;
                 goto fn_exit;
             }

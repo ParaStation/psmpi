@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -26,22 +24,17 @@ int MPI_Test(MPI_Request * request, int *flag, MPI_Status * status)
 #undef MPI_Test
 #define MPI_Test PMPI_Test
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Test_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIR_Test_impl(MPIR_Request * request_ptr, int *flag, MPI_Status * status)
+int MPIR_Test_state(MPIR_Request * request_ptr, int *flag, MPI_Status * status,
+                    MPID_Progress_state * state)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    mpi_errno = MPID_Progress_test();
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    mpi_errno = MPID_Progress_test(state);
+    MPIR_ERR_CHECK(mpi_errno);
 
     if (MPIR_Request_has_poll_fn(request_ptr)) {
         mpi_errno = MPIR_Grequest_poll(request_ptr, status);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     if (MPIR_Request_is_complete(request_ptr))
@@ -56,14 +49,14 @@ int MPIR_Test_impl(MPIR_Request * request_ptr, int *flag, MPI_Status * status)
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Test
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPIR_Test_impl(MPIR_Request * request_ptr, int *flag, MPI_Status * status)
+{
+    return MPIR_Test_state(request_ptr, flag, status, NULL);
+}
+
 int MPIR_Test(MPI_Request * request, int *flag, MPI_Status * status)
 {
     int mpi_errno = MPI_SUCCESS;
-    int active_flag;
     MPIR_Request *request_ptr = NULL;
 
     /* If this is a null request handle, then return an empty status */
@@ -77,17 +70,15 @@ int MPIR_Test(MPI_Request * request, int *flag, MPI_Status * status)
     MPIR_Assert(request_ptr != NULL);
 
     mpi_errno = MPID_Test(request_ptr, flag, status);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     if (*flag) {
-        mpi_errno = MPIR_Request_completion_processing(request_ptr, status, &active_flag);
+        mpi_errno = MPIR_Request_completion_processing(request_ptr, status);
         if (!MPIR_Request_is_persistent(request_ptr)) {
             MPIR_Request_free(request_ptr);
             *request = MPI_REQUEST_NULL;
         }
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         /* Fall through to the exit */
     } else if (unlikely(MPIR_Request_is_anysrc_mismatched(request_ptr))) {
         MPIR_ERR_SET(mpi_errno, MPIX_ERR_PROC_FAILED_PENDING, "**failure_pending");
@@ -103,10 +94,6 @@ int MPIR_Test(MPI_Request * request, int *flag, MPI_Status * status)
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Test
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Test  - Tests for the completion of a request
 
@@ -139,7 +126,7 @@ int MPI_Test(MPI_Request * request, int *flag, MPI_Status * status)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
-    MPID_THREAD_CS_ENTER(VNI_GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPIR_FUNC_TERSE_REQUEST_ENTER(MPID_STATE_MPI_TEST);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -190,7 +177,7 @@ int MPI_Test(MPI_Request * request, int *flag, MPI_Status * status)
 
   fn_exit:
     MPIR_FUNC_TERSE_REQUEST_EXIT(MPID_STATE_MPI_TEST);
-    MPID_THREAD_CS_EXIT(VNI_GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:
@@ -198,11 +185,11 @@ int MPI_Test(MPI_Request * request, int *flag, MPI_Status * status)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_test", "**mpi_test %p %p %p", request, flag, status);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

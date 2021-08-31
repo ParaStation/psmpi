@@ -1,9 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2008 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 /*
       The MPI-2 specification makes it clear that delect attributes are
       called on MPI_COMM_WORLD and MPI_COMM_SELF at the very beginning of
@@ -29,7 +28,7 @@ int main(int argc, char **argv)
 {
     int errs = 0, wrank;
 
-    MTest_Init(&argc, &argv);
+    MPI_Init(&argc, &argv);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &wrank);
 
@@ -42,7 +41,7 @@ int main(int argc, char **argv)
     MPI_Keyval_free(&exit_key);
 
     /* Now, exit MPI */
-    MTest_Finalize(errs);
+    MPI_Finalize();
 
     /* Check that the exit handler was called, and without error */
     if (wrank == 0) {

@@ -1,5 +1,9 @@
 #! /usr/bin/env perl
-# -*- Mode: perl; -*-
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
+
 # @configure_input@
 #
 # Configure and build mpich with some of the options
@@ -52,7 +56,7 @@ $hasDemon   = 0;
 		  'error-messages;all;generic;class;none',
 		  'timer-type;linux86_cycle;gethrtime;clock_gettime;gettimeofday',
 		  'timing;none;all;runtime;log;log_detailed',
-		  'g;none;all;handle;dbg;log;meminit;handlealloc;instr;mem;mutex;mutexnesting;memarena',
+		  'g;none;all;handle;dbg;log;meminit;handlealloc;instr;mem;mutex;memarena',
 		  'fast;nochkmsg;notiming;ndebug;all',
 		  'f77',
 		  'fc',
@@ -69,7 +73,6 @@ $hasDemon   = 0;
                   'refcount;lock;lock-free;none',
                   'mutex-timing',
                   'multi-aliases',
-                  'wrapper-rpath',
                   'predefined-refcount',
                   'alloca',
                   'yield;sched_yield;yield;select;usleep;sleep',
@@ -83,6 +86,7 @@ $hasDemon   = 0;
 	       'pm;gforker', #;remshell
 	       'namepublisher;no;file', #;ldap:ldapserver',
 	       'device;ch3;ch3:sock',
+	       'wrapper-dl-type;runpath;rpath;none',
 );
 %chosenWith = ();
 @env_array = (

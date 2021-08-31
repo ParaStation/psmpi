@@ -1,8 +1,6 @@
-## -*- Mode: Makefile; -*-
-## vim: set ft=automake :
 ##
-## (C) 2011 by Argonne National Laboratory.
-##     See COPYRIGHT in top-level directory.
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
 ##
 
 mpi_core_sources +=				\
@@ -26,6 +24,4 @@ mpi_core_sources +=				\
     src/mpid/ch3/channels/nemesis/src/mpid_nem_debug.c		\
     src/mpid/ch3/channels/nemesis/src/mpid_nem_lmt.c		\
     src/mpid/ch3/channels/nemesis/src/mpid_nem_lmt_shm.c	\
-    src/mpid/ch3/channels/nemesis/src/mpid_nem_net_array.c	\
-    src/mpid/ch3/channels/nemesis/src/mpid_nem_lmt_dma.c	\
-    src/mpid/ch3/channels/nemesis/src/mpid_nem_lmt_vmsplice.c
+    src/mpid/ch3/channels/nemesis/src/mpid_nem_net_array.c

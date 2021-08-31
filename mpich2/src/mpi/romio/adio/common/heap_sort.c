@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *   Copyright (C) 2008 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "heap_sort.h"
@@ -127,7 +125,7 @@ static void print_heap(heap_t * heap)
     printf("heap->size = %d\n", heap->size);
     printf("offsets:\n");
     for (i = 0; i < heap->size; i++) {
-        printf("%lld ", heap->nodes[i].offset);
+        printf("%lld ", (long long) heap->nodes[i].offset);
 
         if ((i + 1) == next_level_idx) {
             printf("\n");

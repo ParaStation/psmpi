@@ -1,12 +1,10 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include "mpi.h"
 #include "mpitest.h"
 
@@ -48,7 +46,7 @@ int main(int argc, char *argv[])
 
         for (j = 0; j < LOOPS; j++) {
             MPI_Type_vector(nrows, 1, ncols, MPI_INT, &column[j]);
-            MPI_Type_hvector(ncols, 1, sizeof(int), column[j], &xpose[j]);
+            MPI_Type_create_hvector(ncols, 1, sizeof(int), column[j], &xpose[j]);
             MPI_Type_commit(&xpose[j]);
         }
 

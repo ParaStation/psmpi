@@ -5,10 +5,8 @@
 ### CH4
 
  * Build Issues
-   - CH4 will not build with Solaris compilers.
- * Stability with large buffers
-   - CH4 may suffer from stability issues when operating on large
-     communication buffers (>= 2GB)
+   - Embedded ucx or libfabric builds will not succeed with Solaris
+     compilers.
 
  * Dynamic process support
    - Requires fi_tagged capability in OFI netmod
@@ -35,24 +33,6 @@
    passing a lower optimization level than the default (-O2).
    Currently, this bug only seems to show up when the
    --disable-error-checking flag is passed to configure.
-
-### PGI compilers
-
- * ch3/nemesis will segfault during MPI_Init when built with recent
-   versions of PGI compilers.
-
-### PathScale compilers
- * Due to bugs in the PathScale compiler suite, some configurations of MPICH
-   do not build correctly.
-    - v5.0.1: When the --disable-shared configure option is passed to MPICH,
-      applications will give a segfault.
-
-    - v5.0.5: Unless you pass the --enable-fast=O0 configure flag to MPICH,
-      applications will hang.
-
-   See the following ticket for more information:
-
-    https://trac.mpich.org/projects/mpich/ticket/2104
 
 ### Fine-grained thread safety
 
@@ -88,19 +68,7 @@
    one.
 
 
-### Process Managers
-
- * Hydra has a bug related to stdin handling:
-
-     https://trac.mpich.org/projects/mpich/ticket/1782
-
-
 ### Performance issues
-
- * SMP-aware collectives do not perform as well, in select cases, as
-   non-SMP-aware collectives, e.g. MPI_Reduce with message sizes
-   larger than 64KiB. These can be disabled by setting the environment
-   variable MPIR_CVAR_ENABLE_SMP_COLLECTIVES to 0.
 
  * MPI_Irecv operations that are not explicitly completed before
    MPI_Finalize is called may fail to complete before MPI_Finalize

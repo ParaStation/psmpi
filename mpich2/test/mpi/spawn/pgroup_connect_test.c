@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /** PGROUP Creation (Connect/Accept Method)
@@ -11,7 +10,7 @@
   * In this test, processes create an intracommunicator and creation is
   * collective only on the members of the new communicator, not on the parent
   * communicator.  This is accomplished by building up and merging
-  * intercommunicators using Connect/Accept to merge with a master/controller
+  * intercommunicators using Connect/Accept to merge with a controller
   * process.
   */
 

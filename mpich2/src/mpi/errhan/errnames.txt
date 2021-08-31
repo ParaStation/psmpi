@@ -213,7 +213,13 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 **treetype: Invalid tree type used for initializing Tree algorithms
 **treetype %d: Invalid tree type (%d) used for initializing Tree algorithms
 
-**sockaddrfailed:MPL_get_sockaddr failed
+**invalidcollid: Invalid collective ID used.
+**sockaddrfailed: MPL_get_sockaddr failed
+
+**nomembind: hwloc_set_area_membind() is not available
+**invalidmembind: Invalid bind object identifier.
+**invalidmembind %d: cannot bind memory to object (%d). \
+A memory object id was expected but a non-memory object id was passed instead
 
 # -- FIXME: Some (but not all) of the messages below this line have been used
 #---- The messages below this line haven't been used yet.
@@ -378,6 +384,7 @@ be in the range 0 to %d
 **ioRMWrdwr:Must open file with MPI_MODE_RDWR for read-modify-write
 **iowsrc:Unable to read from the file as part of a strided write operation
 **iowswc:Unable to write to the file as part of a strided write operation
+**iorsrc:Unable to read from the file as part of a strided read operation
 **ioagnomatch:No aggregators match
 **iobadsize:Invalid size argument
 **unsupporteddatarep:Only native data representation currently supported
@@ -737,85 +744,6 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **open %s:open failed - %s
 **setenv:setenv failed
 **putenv:putenv failed
-**mxm_config_read_opts: mxm_config_read_opts failed
-**mxm_config_read_opts %s:mxm_config_read_opts failed (%s)
-**mxm_init: mxm_init failed
-**mxm_init %s:mxm_init failed (%s)
-**mxm_set_am_handler: mxm_set_am_handler failed
-**mxm_set_am_handler %s:mxm_set_am_handler failed (%s)
-**mxm_mq_create: mxm_mq_create failed
-**mxm_mq_create %s:mxm_mq_create failed (%s)
-**mxm_ep_create: mxm_ep_create failed
-**mxm_ep_create %s:mxm_ep_create failed (%s)
-**mxm_ep_get_address: mxm_ep_get_address failed
-**mxm_ep_get_address %s:mxm_ep_get_address failed (%s)
-**mxm_ep_connect: mxm_ep_connect failed
-**mxm_ep_connect %s:mxm_ep_connect failed (%s)
-**mxm_ep_disconnect: mxm_ep_disconnect failed
-**mxm_ep_disconnect %s:mxm_ep_disconnect failed (%s)
-**mx_close_endpoint: mx_close_endpoint failed
-**mx_close_endpoint %s:mx_close_endpoint failed (%s)
-**mx_finalize:mx_finalize failed
-**mx_finalize %s:mx_finalize failed (%s)
-**mx_init:mx_init failed
-**mx_init %s:mx_init failed (%s)
-**mx_open_endpoint:mx_open_endpoint failed
-**mx_open_endpoint %s:mx_open_endpoint failed (%s)
-**mx_get_endpoint_addr:mx_get_endpoint_addr failed
-**mx_get_endpoint_addr %s:mx_get_endpoint_addr failed (%s)
-**mx_decompose_endpoint_addr:mx_decompose_endpoint_addr failed
-**mx_decompose_endpoint_addr %s:mx_decompose_endpoint_addr failed (%s)
-**mx_connect:mx_connect failed
-**mx_connect %s:mx_connect failed (%s)
-**mx_irecv:mx_irecv failed
-**mx_irecv %s:mx_irecv failed (%s)
-**mx_isend:mx_isend failed
-**mx_isend %s:mx_isend failed (%s)
-**mx_cancel:mx_cancel failed
-**mx_cancel %s:mx_cancel failed (%s)
-**ibv_alloc_pd:ibv_alloc_pd failed
-**ibv_alloc_pd %s:ibv_alloc_pd failed for device (%s)
-**ibv_create_comp_channel:ibv_create_comp_channel failed
-**ibv_create_comp_channel %s:ibv_create_comp_channel failed for device (%s)
-**ibv_destroy_comp_channel:ibv_destroy_comp_channel failed
-**ibv_destroy_comp_channel %s:ibv_destroy_comp_channel failed (%s)
-**ibv_create_cq:ibv_create_cq failed
-**ibv_create_cq %s:ibv_create_cq failed for device (%s)
-**ibv_destroy_cq:ibv_destroy_cq failed
-**ibv_destroy_cq %s:ibv_destroy_cq failed (%s)
-**ibv_create_srq:ibv_create_srq failed
-**ibv_create_srq %s:ibv_create_srq failed for device (%s)
-**ibv_modify_srq:ibv_modify_srq failed
-**ibv_modify_srq %d:ibv_modify_srq failed (%d)
-**ibv_get_device_list:ibv_get_device_list failed
-**ibv_get_device_list %p:ibv_get_device_list failed got list (%p)
-**ibv_open_device:ibv_open_device failed
-**ibv_open_device %s:ibv_open_device failed for device (%s)
-**ibv_reg_mr:ibv_reg_mr failed
-**ibv_reg_mr %d:ibv_reg_mr failed for buffer length (%d)
-**ibv_dereg_mr:ibv_dereg_mr failed
-**ibv_dereg_mr %s:ibv_dereg_mr failed (%s)
-**ibv_create_qp:ibv_create_qp failed
-**ibv_create_qp %s:ibv_create_qp failed for device (%s)
-**ibv_destroy_qp:ibv_destroy_qp failed
-**ibv_destroy_qp %s:ibv_destroy_qp failed (%s)
-**ibv_query_device:ibv_query_device failed
-**ibv_query_device %s:ibv_query_device failed for device (%s)
-**ibv_modify_qp:ibv_modify_qp failed
-**ibv_modify_qp %s:ibv_modify_qp failed for device (%s)
-**ibv_post_recv:ibv_post_recv failed
-**ibv_post_recv %d:ibv_post_recv failed len (%d)
-**ibv_req_notify_cq:ibv_req_notify_cq failed
-**ibv_req_notify_cq %s:ibv_req_notify_cq failed for device (%s)
-**ibv_create_ah:ibv_create_ah failed
-**ibv_create_ah %p:ibv_create_ah failed returned handle (%p)
-**ibv_post_send:ibv_post_send failed
-**ibv_post_send %s:ibv_post_send failed msg (%s)
-**ibv_poll_cq:ibv_poll_cq failed
-**ibv_poll_cq %d:ibv_poll_cq failed ret (%d)
-**ibv_post_srq_recv:ibv_post_srq_recv failed
-**ibv_post_srq_recv %d:ibv_post_srq_recv failed ret (%d)
-**ibv_post_send %d:ibv_post_send failed ret (%d)
 **pthread_create:pthread_create failed
 **pthread_create %d:pthread_create failed with status (%d)
 **pthread_cancel:pthread_cancel failed
@@ -860,11 +788,7 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **abi_version_mismatch %D %D:ABI version mismatch, expected %D - got %D
 **recv_status:receive status failed
 **recv_status %d:receive status failed %d
-**invalid_knem_status:Invalid knem status value
-**invalid_knem_status %d:Invalid knem status value - %d
 
-**vmsplice:vmsplice failed
-**vmsplice %d %s:vmsplice failed - errno %d (%s)
 **mkfifo:mkfifo failed
 **mkfifo %d %s:mkfifo failed - errno %d (%s)
 **tempnam:tempnam failed
@@ -895,11 +819,14 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **tmpvc_connect_fail:Failure during connection protocol
 
 **coll_fail:Failure during collective
+**collalgo:User set collective algorithm is not usable for the provided arguments
 
 **blcr_mod:BLCR kernel module not present
 
 **envvarparse:Unable to parse environment variable
 **envvarparse %s:Unable to parse environment variable (%s)
+**cvar_val:Invalid CVAR value
+**cvar_val %s %s:Invalid %s value (%s)
 
 **infohintparse:Unable to parse info hint
 **infohintparse %s:Unable to parse info hint (%s)
@@ -1123,6 +1050,8 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpix_comm_shrink %C %p:MPIX_Comm_shrink(%C, new_comm=%p) failed
 **mpix_comm_agree:MPIX_Comm_agree failed
 **mpix_comm_agree %C:MPIX_Comm_agree(%C) failed
+**badgputype:Bad GPU type specified
+**badgputype %d:Bad GPU type (%d) specified
 **mpi_intercomm_create:MPI_Intercomm_create failed
 **mpi_intercomm_create %C %d %C %d %d %p:MPI_Intercomm_create(%C, local_leader=%d, %C, remote_leader=%d, tag=%d, newintercomm=%p) failed
 **mpi_intercomm_merge:MPI_Intercomm_merge failed
@@ -1211,7 +1140,7 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpi_comm_spawn_multiple:MPI_Comm_spawn_multiple failed
 **mpi_comm_spawn_multiple %d %p %p %p %p %d %C %p %p:MPI_Comm_spawn_multiple(count=%d, cmds=%p, argvs=%p, maxprocs=%p, infos=%p, root=%d, %C, intercomm=%p, errors=%p) failed
 **mpi_lookup_name:MPI_Lookup_name failed
-**mpi_lookup_name %s %I %s:MPI_Lookup_name(service=\"%s\", %I, port=%s) failed
+**mpi_lookup_name %s %I:MPI_Lookup_name(service=\"%s\", %I) failed
 **mpi_open_port:MPI_Open_port failed
 **mpi_open_port %I %p:MPI_Open_port(%I, port=%p) failed
 **mpi_publish_name:MPI_Publish_name failed
@@ -1461,49 +1390,6 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpi_win_set_info:MPI_Win_set_info failed
 **mpi_win_set_info %W %I:MPI_Win_set_info(win=%W, info=%I) failed
 
-# pmi2 errors
-**bad_keyval:PMI2 received malformed key-value pair
-**bad_cmd:PMI2 received malformed command
-**cmd_too_long: PMI2 command is too long
-**key_too_long: PMI2 key is too long
-**val_too_long: PMI2 value is too long
-**pmi_init_send: PMI2 failed to send init command
-**pmi_initack: PMI2 failed to receive init ack
-**pmi_initack %s: PMI2 failed to receive init ack: %s
-**pmi_fullinit: PMI2 init with process manager failed
-**pmi_fullinit %s: PMI2 init with process manager failed: %s
-**pmi_version: PMI2 version mismatch
-**pmi_version %s %s %s %s: PMI2 version mismatch (server version %s.%s, client verison %s.%s)
-**pmi_finalize: PMI2 Finalize failed
-**pmi_finalize %s: PMI2 Finalize failed: %s
-**pmi_jobgetid: PMI2 Job_GetID failed
-**pmi_jobgetid %s: PMI2 Job_GetID failed: %s
-**pmi_jobconnect: PMI2 Job_Connect failed
-**pmi_jobconnect %s: PMI2 Job_Connect failed: %s
-**pmi_jobdisconnect: PMI2 Job_Disconnect failed
-**pmi_jobdisconnect %s: PMI2 Job_Disconnect failed: %s
-**pmi_kvsput: PMI2 KVS_Put failed
-**pmi_kvsput %s: PMI2 KVS_Put failed: %s
-**pmi_kvsfence: PMI2 KVS_Fence failed
-**pmi_kvsfence %s: PMI2 KVS_Fence failed: %s
-**pmi_kvsget: PMI2 KVS_Get failed
-**pmi_kvsget %s: PMI2 KVS_Get failed: %s
-**pmi_kvsget %d: PMI2 KVS_Get failed: %d
-**pmi_kvsget_notfound: PMI2 Key not found in KVS_Get
-**pmi_kvsget_notfound %s: PMI2 Key not found in KVS_Get: %s
-**pmi_getnodeattr: PMI2 GetNodeAttr failed
-**pmi_getnodeattr %s: PMI2 GetNodeAttr failed: %s
-**pmi_putnodeattr: PMI2 PutNodeAttr failed
-**pmi_putnodeattr %s: PMI2 PutNodeAttr failed: %s
-**pmi_getjobattr: PMI2 GetJobAttr failed
-**pmi_getjobattr %s: PMI2 GetJobAttr failed: %s
-**pmi_nameservpublish: PMI2 Nameserv_publish failed
-**pmi_nameservpublish %s: PMI2 Nameserv_publish failed: %s
-**connect_to_pm: Unable to connect process manager
-**connect_to_pm %s %d: Unable to connect process manager at host %s port %d
-**pmi_port: Unable to decide hostport from PMI_PORT
-**pmi_port %s: Unable to decide hostport from \"%s\"
-
 # MPIR functions
 
 **mpir_comm_get_attr:MPIR_Comm_get_attr failed
@@ -1603,6 +1489,33 @@ is too big (> MPIU_SHMW_GHND_SZ)
 # Argobots related error messages
 **argobots_uninitialized:Argobots is not initialized
 
+## XPMEM related error messages
+**xpmem_make: xpmem_make failed
+**xpmem_segid: xpmem remote segid is unset
+**xpmem_get: xpmem_get failed
+**xpmem_attach: xpmem_attach failed
+**xpmem_detach: xpmem_detach failed
+**xpmem_release: xpmem_release failed
+**xpmem_remove: xpmem_remove failed
+**xpmem_segtree_init: xpmem_segtree_init failed
+
+## GPU related error messages
+**gpu_query_ptr: gpu_query_pointer_attr failed
+**gpu_ipc_handle_map: gpu_ipc_handle_map failed
+**gpu_ipc_handle_create: gpu_ipc_handle_create failed
+**gpu_ipc_handle_unmap: gpu_ipc_handle_unmap failed
+**gpu_init: gpu_init failed
+**gpu_finalize: gpu_finalize failed
+**gpu_get_global_dev_ids: gpu_get_global_dev_ids failed
+**gpu_get_buffer_info: gpu_get_buffer_info failed
+**gpu_get_dev_count: gpu_get_dev_count failed
+
+## GAVL tree related error messages
+**mpl_gavl_search: mpl_gavl_search failed
+**mpl_gavl_insert: mpl_gavl_insert failed
+**mpl_gavl_create: mpl_gavl_create failed
+**mpl_gavl_delete_range: mpl_gavl_delete_range failed
+**mpl_gavl_delete_start_addr: mpl_gavl_delete_start_addr failed
 # -----------------------------------------------------------------------------
 # The following names are defined but not used (see the -careful option 
 # for extracterrmsgs) (still to do: move the undefined names here)

@@ -1,11 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2016 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- *  Portions of this code were written by Mellanox Technologies Ltd.
- *  Copyright (C) Mellanox Technologies Ltd. 2016. ALL RIGHTS RESERVED
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #ifndef UCX_TYPES_H_INCLUDED
 #define UCX_TYPES_H_INCLUDED
 #include <ucp/api/ucp.h>
@@ -26,17 +23,15 @@
 #define MPIDI_UCX_AM_TAG               (1ULL << MPIR_Process.tag_bits)
 
 typedef struct {
-    int avtid;
-    ucp_context_h context;
     ucp_worker_h worker;
-    char addrname[UCP_PEER_NAME_MAX];
-    char *pmi_addr_table;
-    size_t addrname_len;
     ucp_address_t *if_address;
-    char kvsname[MPIDI_UCX_KVSAPPSTRLEN];
-    char pname[MPI_MAX_PROCESSOR_NAME];
-    int max_addr_len;
-    MPIR_Request *lw_send_req;
+    size_t addrname_len;
+} MPIDI_UCX_context_t;
+
+typedef struct {
+    ucp_context_h context;
+    MPIDI_UCX_context_t ctx[MPIDI_CH4_MAX_VCIS];
+    int num_vnis;
 } MPIDI_UCX_global_t;
 
 #define MPIDI_UCX_AV(av)     ((av)->netmod.ucx)

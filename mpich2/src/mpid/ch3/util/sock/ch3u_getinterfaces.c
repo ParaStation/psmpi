@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* We need to include the conf file first so that we can use
@@ -56,12 +55,8 @@ static int dbg_ifname = -1;
  *             and the type (e.g., AF_INET or AF_INET6).
  */
 
-#undef FUNCNAME
-#define FUNCNAME MPIDU_CH3U_GetSockInterfaceAddr
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIDU_CH3U_GetSockInterfaceAddr( int myRank, char *ifname, int maxIfname,
-				     MPL_sockaddr_t *p_addr )
+int MPIDU_CH3U_GetSockInterfaceAddr(int myRank, char *ifname, int maxIfname,
+				    MPL_sockaddr_t * p_addr)
 {
     char *ifname_string;
     int mpi_errno = MPI_SUCCESS;
@@ -103,7 +98,7 @@ int MPIDU_CH3U_GetSockInterfaceAddr( int myRank, char *ifname, int maxIfname,
 
 	/* If we have nothing, then use the host name */
 	mpi_errno = MPID_Get_processor_name(ifname, maxIfname, &len );
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 	ifname_string = ifname;
 
         ret = MPL_get_sockaddr_iface(NULL, p_addr);

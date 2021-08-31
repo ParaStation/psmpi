@@ -1,8 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include "mpi.h"
 #include "stdio.h"
 #include "mpitest.h"
@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
         /* create datatype for one column */
         MPI_Type_vector(NROWS, 1, NCOLS, MPI_INT, &column);
         /* create datatype for matrix in column-major order */
-        MPI_Type_hvector(NCOLS, 1, sizeof(int), column, &xpose);
+        MPI_Type_create_hvector(NCOLS, 1, sizeof(int), column, &xpose);
         MPI_Type_commit(&xpose);
 
         MPI_Win_create(B, NROWS * NCOLS * sizeof(int), sizeof(int), MPI_INFO_NULL, MPI_COMM_SELF,

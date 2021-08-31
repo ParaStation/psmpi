@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2009 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /*
@@ -18,7 +17,7 @@
 #include "mpitest.h"
 #include "mpithreadtest.h"
 
-/* This is the master test routine */
+/* This is the main test routine */
 #define MAX_CNT 660000
 /* #define MAX_LOOP 200 */
 #define MAX_LOOP 10
@@ -80,6 +79,13 @@ int main(int argc, char **argv)
 {
     int i, pmode, nprocs, rank;
     int errs = 0, err;
+
+    ownerWaits = 0;
+    for (i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-mode=1") == 0) {
+            ownerWaits = 1;
+        }
+    }
 
     MTest_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &pmode);
     if (pmode != MPI_THREAD_MULTIPLE) {

@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPID_NEM_DATATYPES_H_INCLUDED
@@ -35,12 +34,8 @@
    not really a fair comparison for studying the impact of atomic instructions.
    [goodell@ 2009-01-16] */
 
-#if !defined(MPID_NEM_USE_LOCK_FREE_QUEUES)
- #include "mpid_thread.h" 
-#endif
-
 #define MPID_NEM_OFFSETOF(struc, field) ((int)(&((struc *)0)->field))
-#define MPID_NEM_CACHE_LINE_LEN 64
+#define MPID_NEM_CACHE_LINE_LEN MPL_CACHELINE_SIZE
 #define MPID_NEM_NUM_CELLS      64
 #define MPID_NEM_CELL_LEN       (64*1024)
 
@@ -49,85 +44,34 @@
 
    --CELL------------------
    | next                 |
-   | padding              |
-   | --MPICH PKT-------- |
-   | | packet headers   | |
-   | | packet payload   | |
-   | |   .              | |
-   | |   .              | |
-   | |   .              | |
-   | |                  | |
-   | -------------------- |
+   | packet headers       |
+   | [padding]            |
+   | packet payload       |  -- 8-byte aligned
+   |     .                |
+   |     .                |
+   |     .                |
+   |                      |
    ------------------------
 
    For optimization, we want the cell to start at a cacheline boundary
    and the cell length to be a multiple of cacheline size.  This will
    avoid false sharing.  We also want payload to start at an 8-byte
-   boundary to to optimize memcpys and dataloop operations on the
-   payload.  To ensure payload is 8-byte aligned, we add padding after
-   the next pointer so the packet starts at the 8-byte boundary.
-
-   Forgive the misnomers of the macros.
+   boundary to to optimize memcpys and datatype operations on the
+   payload.  To ensure payload is 8-byte aligned, we add aligned attribute
+   to the payload field.
 
    MPID_NEM_CELL_LEN size of the whole cell (currently 64K)
-   
-   MPID_NEM_CELL_HEAD_LEN is the size of the next pointer plus the
-       padding.
    
    MPID_NEM_CELL_PAYLOAD_LEN is the maximum length of the packet.
        This is MPID_NEM_CELL_LEN minus the size of the next pointer
        and any padding.
 
-   MPID_NEM_MPICH_HEAD_LEN is the length of the mpich packet header
-       fields.
-
    MPID_NEM_MPICH_DATA_LEN is the maximum length of the mpich packet
-       payload and is basically what's left after the next pointer,
-       padding and packet header.  This is MPID_NEM_CELL_PAYLOAD_LEN -
-       MPID_NEM_MPICH_HEAD_LEN.
-
-   MPID_NEM_CALC_CELL_LEN is the amount of data plus headers in the
-       cell.  I.e., how much of a cell would need to be sent over a
-       network.
-
-   FIXME: Simplify this maddness!  Maybe something like this:
-
-       typedef struct mpich_pkt {
-           header_field1;
-           header_field2;
-           payload[1];
-       } mpich_pkt_t;
-   
-       typedef struct cell {
-           *next;
-           padding;
-           pkt;
-       } cell_t;
-
-       typedef union cell_container {
-           cell_t cell;
-           char padding[MPID_NEM_CELL_LEN];
-       } cell_container_t;
-
-       #define MPID_NEM_MPICH_DATA_LEN (sizeof(cell_container_t) - sizeof(cell_t) + 1)
-
-   The packet payload can overflow the array in the packet struct up
-   to MPID_NEM_MPICH_DATA_LEN bytes.
-   
+       payload and is basically what's payload to the end of cell.
 */
 
-#if (SIZEOF_OPA_PTR_T > 8)
-#  if (SIZEOF_OPA_PTR_T > 16)
-#    error unexpected size for OPA_ptr_t
-#  endif
-#  define MPID_NEM_CELL_HEAD_LEN  16 /* We use this to keep elements 64-bit aligned */
-#else /* (SIZEOF_OPA_PTR_T <= 8) */
-#  define MPID_NEM_CELL_HEAD_LEN  8 /* We use this to keep elements 64-bit aligned */
-#endif
-
-#define MPID_NEM_CELL_PAYLOAD_LEN (MPID_NEM_CELL_LEN - MPID_NEM_CELL_HEAD_LEN)
-
-#define MPID_NEM_CALC_CELL_LEN(cellp) (MPID_NEM_CELL_HEAD_LEN + MPID_NEM_MPICH_HEAD_LEN + MPID_NEM_CELL_DLEN (cell))
+#define MPID_NEM_CELL_PAYLOAD_LEN (MPID_NEM_CELL_LEN - offsetof(MPID_nem_cell_t, header))
+#define MPID_NEM_MPICH_DATA_LEN   (MPID_NEM_CELL_LEN - offsetof(MPID_nem_cell_t, payload))
 
 #define MPID_NEM_ALIGNED(addr, bytes) ((((unsigned long)addr) & (((unsigned long)bytes)-1)) == 0)
 
@@ -135,16 +79,11 @@
 #define MPID_NEM_PKT_MPICH      1
 #define MPID_NEM_PKT_MPICH_HEAD 2
 
-#define MPID_NEM_FBOX_SOURCE(cell) (MPID_nem_mem_region.local_procs[(cell)->pkt.header.source])
-#define MPID_NEM_CELL_SOURCE(cell) ((cell)->pkt.header.source)
-#define MPID_NEM_CELL_DEST(cell)   ((cell)->pkt.header.dest)
-#define MPID_NEM_CELL_DLEN(cell)   ((cell)->pkt.header.datalen)
-#define MPID_NEM_CELL_SEQN(cell)   ((cell)->pkt.header.seqno)
-
-#define MPID_NEM_MPICH_HEAD_LEN sizeof(MPID_nem_pkt_header_t)
-#define MPID_NEM_MPICH_DATA_LEN (MPID_NEM_CELL_PAYLOAD_LEN - MPID_NEM_MPICH_HEAD_LEN)
-
-#define MPID_NEM_PKT_HEADER_FIELDS   	    \
+#define MPID_NEM_FBOX_SOURCE(cell) (MPID_nem_mem_region.local_procs[(cell)->header.source])
+#define MPID_NEM_CELL_SOURCE(cell) ((cell)->header.source)
+#define MPID_NEM_CELL_DEST(cell)   ((cell)->header.dest)
+#define MPID_NEM_CELL_DLEN(cell)   ((cell)->header.datalen)
+#define MPID_NEM_CELL_SEQN(cell)   ((cell)->header.seqno)
 
 typedef struct MPID_nem_pkt_header
 {
@@ -154,15 +93,6 @@ typedef struct MPID_nem_pkt_header
     unsigned short seqno;
     unsigned short type; /* currently used only with checkpointing */
 } MPID_nem_pkt_header_t;
-
-typedef struct MPID_nem_pkt
-{
-    MPID_nem_pkt_header_t header;
-    union {
-        char payload[MPID_NEM_MPICH_DATA_LEN];
-        double dummy; /* align paylod to double */
-    } p;
-} MPID_nem_pkt_t;
 
 /* Nemesis cells which are to be used in shared memory need to use
  * "relative pointers" because the absolute pointers to a cell from
@@ -175,100 +105,44 @@ typedef struct MPID_nem_pkt
 /* This should always be exactly the size of a pointer */
 typedef struct MPID_nem_cell_rel_ptr
 {
-    OPA_ptr_t p;
+    MPL_atomic_ptr_t p;
 }
 MPID_nem_cell_rel_ptr_t;
 
-/* MPID_nem_cell and MPID_nem_abs_cell must be kept in sync so that we
- * can cast between them.  MPID_nem_abs_cell should only be used when
- * a cell is enqueued on a queue local to a single process (e.g., a
- * queue in a network module) where relative pointers are not
- * needed. */
+/* NOTE: for a queue local to a single process (e.g. a queue in a network module),
+ * relative pointers are not needed, and we could use a direct pointer. This
+ * optimization is left as todo when needed.
+ */
 
 typedef struct MPID_nem_cell
 {
     MPID_nem_cell_rel_ptr_t next;
-#if (MPID_NEM_CELL_HEAD_LEN > SIZEOF_OPA_PTR_T)
-    char padding[MPID_NEM_CELL_HEAD_LEN - sizeof(MPID_nem_cell_rel_ptr_t)];
-#endif
-    volatile MPID_nem_pkt_t pkt;
+    volatile MPID_nem_pkt_header_t header;
+    volatile char payload[] MPL_ATTR_ALIGNED(8);   /* C99 flexible array member with 8-byte alignment */
 } MPID_nem_cell_t;
 typedef MPID_nem_cell_t *MPID_nem_cell_ptr_t;
-
-typedef struct MPID_nem_abs_cell
-{
-    struct MPID_nem_abs_cell *next;
-#if (MPID_NEM_CELL_HEAD_LEN > SIZEOF_VOID_P)
-    char padding[MPID_NEM_CELL_HEAD_LEN - sizeof(struct MPID_nem_abs_cell*)];
-#endif
-    volatile MPID_nem_pkt_t pkt;
-} MPID_nem_abs_cell_t;
-typedef MPID_nem_abs_cell_t *MPID_nem_abs_cell_ptr_t;
-
-#define MPID_NEM_CELL_TO_PACKET(cellp) (&(cellp)->pkt)
-#define MPID_NEM_PACKET_TO_CELL(packetp) \
-    ((MPID_nem_cell_ptr_t) ((char*)(packetp) - (char *)MPID_NEM_CELL_TO_PACKET((MPID_nem_cell_ptr_t)0)))
-#define MPID_NEM_MIN_PACKET_LEN (sizeof (MPID_nem_pkt_header_t))
-#define MPID_NEM_MAX_PACKET_LEN (sizeof (MPID_nem_pkt_t))
-#define MPID_NEM_PACKET_LEN(pkt) ((pkt)->header.datalen + MPID_NEM_MPICH_HEAD_LEN)
-
-#define MPID_NEM_OPT_LOAD     16 
-#define MPID_NEM_OPT_SIZE     ((sizeof(MPIDI_CH3_Pkt_t)) + (MPID_NEM_OPT_LOAD))
-#define MPID_NEM_OPT_HEAD_LEN ((MPID_NEM_MPICH_HEAD_LEN) + (MPID_NEM_OPT_SIZE))
-
-#define MPID_NEM_PACKET_OPT_LEN(pkt) \
-    (((pkt)->header.datalen < MPID_NEM_OPT_SIZE) ? (MPID_NEM_OPT_HEAD_LEN) : (MPID_NEM_PACKET_LEN(pkt)))
-
-#define MPID_NEM_PACKET_PAYLOAD(pkt) ((pkt)->header.payload)
 
 typedef struct MPID_nem_queue
 {
     MPID_nem_cell_rel_ptr_t head;
     MPID_nem_cell_rel_ptr_t tail;
-#if (MPID_NEM_CACHE_LINE_LEN > (2 * SIZEOF_OPA_PTR_T))
     char padding1[MPID_NEM_CACHE_LINE_LEN - 2 * sizeof(MPID_nem_cell_rel_ptr_t)];
-#endif
     MPID_nem_cell_rel_ptr_t my_head;
-#if (MPID_NEM_CACHE_LINE_LEN > SIZEOF_OPA_PTR_T)
     char padding2[MPID_NEM_CACHE_LINE_LEN - sizeof(MPID_nem_cell_rel_ptr_t)];
-#endif
-#if !defined(MPID_NEM_USE_LOCK_FREE_QUEUES)
-    /* see FIXME in mpid_nem_queue.h */
-#define MPID_nem_queue_mutex_t MPID_Thread_mutex_t
-    MPID_nem_queue_mutex_t lock;
-    char padding3[MPID_NEM_CACHE_LINE_LEN - sizeof(MPID_Thread_mutex_t)];
-#endif
 } MPID_nem_queue_t, *MPID_nem_queue_ptr_t;
 
 /* Fast Boxes*/ 
-typedef union
+typedef struct MPID_nem_fastbox_t
 {
-    OPA_int_t value;
-#if MPID_NEM_CACHE_LINE_LEN != 0
-    char padding[MPID_NEM_CACHE_LINE_LEN];
-#endif
-}
-MPID_nem_opt_volint_t;
-
-typedef struct MPID_nem_fbox_common
-{
-    MPID_nem_opt_volint_t  flag;
-} MPID_nem_fbox_common_t, *MPID_nem_fbox_common_ptr_t;
-
-typedef struct MPID_nem_fbox_mpich
-{
-    MPID_nem_opt_volint_t flag;
-    MPID_nem_cell_t cell;
-} MPID_nem_fbox_mpich_t;
-
-#define MPID_NEM_FBOX_DATALEN MPID_NEM_MPICH_DATA_LEN
-
-typedef union 
-{
-    MPID_nem_fbox_common_t common;
-    MPID_nem_fbox_mpich_t mpich;
+    MPL_atomic_int_t flag;
+    char content[];  /* content is a placeholder for cacheline padding and MPID_nem_cell_t */
 } MPID_nem_fastbox_t;
 
+#define MPID_NEM_FBOX_TO_CELL(fbox_ptr_) \
+    ((MPID_nem_cell_t *)((char *)(fbox_ptr_) + MPID_NEM_CACHE_LINE_LEN))
+
+#define MPID_NEM_FBOX_LEN     (MPID_NEM_CELL_LEN + MPID_NEM_CACHE_LINE_LEN)
+#define MPID_NEM_FBOX_DATALEN MPID_NEM_MPICH_DATA_LEN
 
 typedef struct MPID_nem_fbox_arrays
 {

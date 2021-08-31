@@ -1,8 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 /* ----------------------------------------------------------------------- */
 /* A simple resource manager.
  * This file implements a simple resource manager.  By implementing the
@@ -403,12 +403,8 @@ int MPIE_FreeMachineTable(MachineTable * mt)
     int i;
     for (i = 0; i < mt->nHosts; i++) {
         MPL_free(mt->desc[i].hostname);
-        if (mt->desc[i].login) {
-            MPL_free(mt->desc[i].login);
-        }
-        if (mt->desc[i].netname) {
-            MPL_free(mt->desc[i].netname);
-        }
+        MPL_free(mt->desc[i].login);
+        MPL_free(mt->desc[i].netname);
     }
     MPL_free(mt->desc);
     MPL_free(mt);

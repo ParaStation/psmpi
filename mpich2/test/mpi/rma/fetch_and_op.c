@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2012 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include <stdio.h>
@@ -176,11 +174,11 @@ int main(int argc, char **argv)
     reset_vars(val_ptr, res_ptr, win);
 
     for (i = 0; i < ITER; i++) {
+        TYPE_C rank_cnv = (TYPE_C) rank;
         int j;
 
         MPI_Win_fence(MPI_MODE_NOPRECEDE, win);
         for (j = 0; j < nproc; j++) {
-            TYPE_C rank_cnv = (TYPE_C) rank;
             MPI_Fetch_and_op(&rank_cnv, &res_ptr[j], TYPE_MPI, j, rank, MPI_SUM, win);
         }
         MPI_Win_fence(MPI_MODE_NOSUCCEED, win);
@@ -213,11 +211,11 @@ int main(int argc, char **argv)
     reset_vars(val_ptr, res_ptr, win);
 
     for (i = 0; i < ITER; i++) {
+        TYPE_C rank_cnv = (TYPE_C) rank;
         int j;
 
         MPI_Win_lock_all(0, win);
         for (j = 0; j < nproc; j++) {
-            TYPE_C rank_cnv = (TYPE_C) rank;
             MPI_Fetch_and_op(&rank_cnv, &res_ptr[j], TYPE_MPI, j, rank, MPI_SUM, win);
         }
         MPI_Win_unlock_all(win);

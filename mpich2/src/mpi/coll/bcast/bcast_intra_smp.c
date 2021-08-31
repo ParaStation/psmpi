@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -12,24 +10,23 @@
  * the cutoff points for these algorithms.  If I've done this right, you should
  * be able to make changes along these lines almost exclusively in this function
  * and some new functions. [goodell@ 2008/01/07] */
-#undef FUNCNAME
-#define FUNCNAME MPIR_Bcast_intra_smp
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Bcast_intra_smp(void *buffer, int count, MPI_Datatype datatype, int root,
                          MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
 {
     int mpi_errno = MPI_SUCCESS;
     int mpi_errno_ret = MPI_SUCCESS;
     MPI_Aint type_size, nbytes = 0;
+    MPI_Status *status_p;
+#ifdef HAVE_ERROR_CHECKING
     MPI_Status status;
+    status_p = &status;
     MPI_Aint recvd_size;
+#else
+    status_p = MPI_STATUS_IGNORE;
+#endif
 
 #ifdef HAVE_ERROR_CHECKING
-    if (!MPIR_CVAR_ENABLE_SMP_COLLECTIVES || !MPIR_CVAR_ENABLE_SMP_BCAST) {
-        MPIR_Assert(0);
-    }
-    MPIR_Assert(MPIR_Comm_is_node_aware(comm_ptr));
+    MPIR_Assert(MPIR_Comm_is_parent_comm(comm_ptr));
 #endif
 
     MPIR_Datatype_get_size_macro(datatype, type_size);
@@ -61,7 +58,7 @@ int MPIR_Bcast_intra_smp(void *buffer, int count, MPI_Datatype datatype, int roo
             } else if (0 == comm_ptr->node_comm->rank) {
                 mpi_errno =
                     MPIC_Recv(buffer, count, datatype, MPIR_Get_intranode_rank(comm_ptr, root),
-                              MPIR_BCAST_TAG, comm_ptr->node_comm, &status, errflag);
+                              MPIR_BCAST_TAG, comm_ptr->node_comm, status_p, errflag);
                 if (mpi_errno) {
                     /* for communication errors, just record the error but continue */
                     *errflag =
@@ -70,8 +67,9 @@ int MPIR_Bcast_intra_smp(void *buffer, int count, MPI_Datatype datatype, int roo
                     MPIR_ERR_SET(mpi_errno, *errflag, "**fail");
                     MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
                 }
+#ifdef HAVE_ERROR_CHECKING
                 /* check that we received as much as we expected */
-                MPIR_Get_count_impl(&status, MPI_BYTE, &recvd_size);
+                MPIR_Get_count_impl(status_p, MPI_BYTE, &recvd_size);
                 if (recvd_size != nbytes) {
                     if (*errflag == MPIR_ERR_NONE)
                         *errflag = MPIR_ERR_OTHER;
@@ -80,6 +78,7 @@ int MPIR_Bcast_intra_smp(void *buffer, int count, MPI_Datatype datatype, int roo
                                   "**collective_size_mismatch %d %d", recvd_size, nbytes);
                     MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
                 }
+#endif
             }
 
         }

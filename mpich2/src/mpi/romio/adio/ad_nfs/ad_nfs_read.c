@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *   Copyright (C) 1997 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "ad_nfs.h"
@@ -21,6 +19,11 @@ void ADIOI_NFS_ReadContig(ADIO_File fd, void *buf, int count,
     size_t rd_count;
     static char myname[] = "ADIOI_NFS_READCONTIG";
     char *p;
+
+    if (count == 0) {
+        err = 0;
+        goto fn_exit;
+    }
 
     MPI_Type_size_x(datatype, &datatype_size);
     len = datatype_size * count;
@@ -66,8 +69,10 @@ void ADIOI_NFS_ReadContig(ADIO_File fd, void *buf, int count,
     if (file_ptr_type == ADIO_INDIVIDUAL) {
         fd->fp_ind += bytes_xfered;
     }
+
+  fn_exit:
 #ifdef HAVE_STATUS_SET_BYTES
-    if (err != -1)
+    if (status && err != -1)
         MPIR_Status_set_bytes(status, datatype, bytes_xfered);
 #endif
 
@@ -158,7 +163,7 @@ void ADIOI_NFS_ReadStrided(ADIO_File fd, void *buf, int count,
 
     ADIOI_Flatlist_node *flat_buf, *flat_file;
     ADIO_Offset i_offset, new_brd_size, brd_size, size;
-    int i, j, k, err, err_flag=0, st_index = 0;
+    int i, j, k, err, err_flag = 0, st_index = 0;
     MPI_Count num, bufsize;
     int n_etypes_in_filetype;
     ADIO_Offset n_filetypes, etype_in_filetype, st_n_filetypes, size_in_filetype;

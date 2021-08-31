@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -27,10 +25,6 @@ int MPI_Request_free(MPI_Request * request) __attribute__ ((weak, alias("PMPI_Re
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Request_free
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Request_free - Frees a communication request object
 
@@ -121,6 +115,8 @@ int MPI_Request_free(MPI_Request * request)
 
         case MPIR_REQUEST_KIND__PREQUEST_SEND:
             {
+                /* Tell the device that we are freeing a persistent request object */
+                MPID_Prequest_free_hook(request_ptr);
                 /* If this is an active persistent request, we must also
                  * release the partner request. */
                 if (request_ptr->u.persist.real_request != NULL) {
@@ -136,6 +132,8 @@ int MPI_Request_free(MPI_Request * request)
 
         case MPIR_REQUEST_KIND__PREQUEST_RECV:
             {
+                /* Tell the device that we are freeing a persistent request object */
+                MPID_Prequest_free_hook(request_ptr);
                 /* If this is an active persistent request, we must also
                  * release the partner request. */
                 if (request_ptr->u.persist.real_request != NULL) {
@@ -154,7 +152,7 @@ int MPI_Request_free(MPI_Request * request)
         default:
             {
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-                                                 FCNAME, __LINE__, MPI_ERR_OTHER,
+                                                 __func__, __LINE__, MPI_ERR_OTHER,
                                                  "**request_invalid_kind",
                                                  "**request_invalid_kind %d", request_ptr->kind);
                 break;
@@ -180,11 +178,11 @@ int MPI_Request_free(MPI_Request * request)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
-                                         FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_request_free",
+                                         __func__, __LINE__, MPI_ERR_OTHER, "**mpi_request_free",
                                          "**mpi_request_free %p", request);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(0, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

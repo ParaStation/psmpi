@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2009 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra.h"
@@ -148,6 +146,7 @@ struct hwloc_obj_info_table {
 static struct hwloc_obj_info_table hwloc_obj_info[] = {
     {"machine", HWLOC_OBJ_MACHINE},
     {"socket", HWLOC_OBJ_PACKAGE},
+    {"package", HWLOC_OBJ_PACKAGE},
     {"numa", HWLOC_OBJ_NUMANODE},
     {"core", HWLOC_OBJ_CORE},
     {"hwthread", HWLOC_OBJ_PU},

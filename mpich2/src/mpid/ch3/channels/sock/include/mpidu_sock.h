@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPIDU_SOCK_H_INCLUDED
@@ -18,7 +17,6 @@
 #endif
 
 CPLUSPLUS_BEGIN
-
 /* Load just the utility definitions that we need */
 #include "mpichconf.h"
 #include "mpl.h"
@@ -27,24 +25,22 @@ CPLUSPLUS_BEGIN
 #include "mpir_assert.h"
 #include "mpir_pointers.h"
 #include "mpir_cvars.h"
-/* implementation specific header file */    
+/* implementation specific header file */
 #include "mpidu_socki.h"
-
-
 /*D
 MPIDI_CH3I_SOCK_ERR - Extended error classes specific to the Sock module
 
 Notes:
-The actual meaning of these error classes is defined by each function.  
+The actual meaning of these error classes is defined by each function.
 
 Module:
 Utility-Sock
 D*/
 /* FIXME: This is not the right way to add error values to an MPICH module.
    Note that (a) the last class values are not respected by the error handling
-   code, (b) the entire point of codes and classes is to provide a 
-   natural grouping of codes to a class, (c) this approach can only be used 
-   by one module and hence breaks any component design, and (d) this is 
+   code, (b) the entire point of codes and classes is to provide a
+   natural grouping of codes to a class, (c) this approach can only be used
+   by one module and hence breaks any component design, and (d) this is
    what the MPI dynamic error codes and classes was designed for. */
 #define MPIDI_CH3I_SOCK_SUCCESS		MPI_SUCCESS
 #define MPIDI_CH3I_SOCK_ERR_FAIL		MPICH_ERR_LAST_CLASS + 1
@@ -64,8 +60,6 @@ D*/
 #define MPIDI_CH3I_SOCK_ERR_TIMEOUT		MPICH_ERR_LAST_CLASS + 15
 #define MPIDI_CH3I_SOCK_ERR_INTR		MPICH_ERR_LAST_CLASS + 16
 #define MPIDI_CH3I_SOCK_ERR_NO_NEW_SOCK	MPICH_ERR_LAST_CLASS + 17
-
-
 /*E
 MPIDI_CH3I_Sock_op_t - enumeration of posted operations that can be completed by the Sock module
 
@@ -77,8 +71,7 @@ being formed and that MPIDI_CH3I_Sock_accept() should be called.
 Module:
 Utility-Sock
 E*/
-typedef enum MPIDI_CH3I_Sock_op
-{
+    typedef enum MPIDI_CH3I_Sock_op {
     MPIDI_CH3I_SOCK_OP_READ,
     MPIDI_CH3I_SOCK_OP_WRITE,
     MPIDI_CH3I_SOCK_OP_ACCEPT,
@@ -103,11 +96,10 @@ The num_bytes field is only used when a posted read or write operation completes
 Module:
 Utility-Sock
 S*/
-typedef struct MPIDI_CH3I_Sock_event
-{
+typedef struct MPIDI_CH3I_Sock_event {
     MPIDI_CH3I_Sock_op_t op_type;
     size_t num_bytes;
-    void * user_ptr;
+    void *user_ptr;
     int error;
 } MPIDI_CH3I_Sock_event_t;
 
@@ -155,7 +147,7 @@ communication capabilities
 Input Parameters:
 + myRank - Rank of this process in its MPI_COMM_WORLD.  This can be used
   to find environment variables that are specific for this process.
-. host_description - character array in which the function can store a string 
+. host_description - character array in which the function can store a string
   describing the communication capabilities of the host
 - len - length of the character array
 
@@ -169,7 +161,7 @@ Return value: a MPI error code with a Sock extended error class
 - MPIDI_CH3I_SOCK_ERR_FAIL - unable to obtain network interface information from OS
 
 Notes:
-The host description string returned by the function is defined by the 
+The host description string returned by the function is defined by the
 implementation and should not be interpreted by the
 application.  This string is to be supplied to MPIDI_CH3I_Sock_post_connect() when
 one wishes to form a connection with this host.
@@ -177,7 +169,7 @@ one wishes to form a connection with this host.
 Module:
 Utility-Sock
 @*/
-int MPIDI_CH3I_Sock_get_host_description(int myRank, char * host_description, int len);
+int MPIDI_CH3I_Sock_get_host_description(int myRank, char *host_description, int len);
 
 
 /*@
@@ -205,7 +197,7 @@ specified by hostname.
 Module:
 Utility-Sock
 @*/
-int MPIDI_CH3I_Sock_hostname_to_host_description(char *hostname, char * host_description, int len);
+int MPIDI_CH3I_Sock_hostname_to_host_description(char *hostname, char *host_description, int len);
 
 /*@
 MPIDI_CH3I_Sock_create_set - create a new sock set object
@@ -254,7 +246,7 @@ be called repeatedly, untiluser_ptr == NULL. The reason for this is
 that the overlying protocoll may need the user_ptr for further cleanup.
 
 @*/
-int MPIDI_CH3I_Sock_close_open_sockets(struct MPIDI_CH3I_Sock_set * sock_set, void** user_ptr );
+int MPIDI_CH3I_Sock_close_open_sockets(struct MPIDI_CH3I_Sock_set *sock_set, void **user_ptr);
 
 
 /*@
@@ -310,9 +302,10 @@ function properly.
 Thread safety:
 The addition of a new sock object to the sock set may occur while other threads are performing operations on the same sock set.
 Thread safety of simultaneously operations on the same sock set must be guaranteed by the Sock implementation.
-  
+
 @*/
-int MPIDI_CH3I_Sock_native_to_sock(MPIDI_CH3I_Sock_set_t set, MPIDI_CH3I_SOCK_NATIVE_FD fd, void * user_ptr, MPIDI_CH3I_Sock_t * sock);
+int MPIDI_CH3I_Sock_native_to_sock(MPIDI_CH3I_Sock_set_t set, MPIDI_CH3I_SOCK_NATIVE_FD fd,
+                                   void *user_ptr, MPIDI_CH3I_Sock_t * sock);
 
 
 /*@
@@ -349,25 +342,26 @@ unlike the post routine, many MPIDI_CH3I_SOCK_OP_ACCEPT events can
 be generated from a listener (typically one per incoming connection attempt).
 
 The implementation may generate an event as soon it is notified that a
-new connection is forming.  In such an implementation, 
+new connection is forming.  In such an implementation,
 MPIDI_CH3I_Sock_accept() may be responsible for finalizing the connection.
-It is also possible that the connection may fail to 
+It is also possible that the connection may fail to
 complete, causing MPIDI_CH3I_Sock_accept() to be unable to obtain a sock
-despite the event notification. 
+despite the event notification.
 
 The environment variable MPICH_PORT_RANGE=min:max may be used to
-restrict the ports mpich processes listen on. 
+restrict the ports mpich processes listen on.
 
 Thread safety:
 The addition of the listener sock object to the sock set may occur
-while other threads are performing operations on the same sock 
+while other threads are performing operations on the same sock
 set.  Thread safety of simultaneously operations on the same sock set
-must be guaranteed by the Sock implementation. 
+must be guaranteed by the Sock implementation.
 
 Module:
 Utility-Sock
 @*/
-int MPIDI_CH3I_Sock_listen(MPIDI_CH3I_Sock_set_t set, void * user_ptr, int * port, MPIDI_CH3I_Sock_t * sock);
+int MPIDI_CH3I_Sock_listen(MPIDI_CH3I_Sock_set_t set, void *user_ptr, int *port,
+                           MPIDI_CH3I_Sock_t * sock);
 
 
 /*@
@@ -405,7 +399,8 @@ depleted.  In this case, MPIDI_CH3I_SOCK_ERR_NO_SOCK is returned.
 Module:
 Utility-Sock
 @*/
-int MPIDI_CH3I_Sock_accept(MPIDI_CH3I_Sock_t listener_sock, MPIDI_CH3I_Sock_set_t set, void * user_ptr, MPIDI_CH3I_Sock_t * sock);
+int MPIDI_CH3I_Sock_accept(MPIDI_CH3I_Sock_t listener_sock, MPIDI_CH3I_Sock_set_t set,
+                           void *user_ptr, MPIDI_CH3I_Sock_t * sock);
 
 
 /*@
@@ -454,7 +449,8 @@ Thread safety of simultaneously operations on the same sock set must be guarante
 Module:
 Utility-Sock
 @*/
-int MPIDI_CH3I_Sock_post_connect(MPIDI_CH3I_Sock_set_t set, void * user_ptr, char * host_description, int port, MPIDI_CH3I_Sock_t * sock);
+int MPIDI_CH3I_Sock_post_connect(MPIDI_CH3I_Sock_set_t set, void *user_ptr, char *host_description,
+                                 int port, MPIDI_CH3I_Sock_t * sock);
 
 /*@ MPIDI_CH3I_Sock_post_connect_ifaddr - Post a connection given an interface
   address (bytes, not string).
@@ -462,10 +458,9 @@ int MPIDI_CH3I_Sock_post_connect(MPIDI_CH3I_Sock_set_t set, void * user_ptr, cha
   This is the basic routine.  MPIDI_CH3I_Sock_post_connect converts the
   host description into the ifaddr and calls this routine.
   @*/
-int MPIDI_CH3I_Sock_post_connect_ifaddr( MPIDI_CH3I_Sock_set_t sock_set,
-				    void * user_ptr, 
-				    MPL_sockaddr_t *p_addr, int port,
-				    MPIDI_CH3I_Sock_t * sockp);
+int MPIDI_CH3I_Sock_post_connect_ifaddr(MPIDI_CH3I_Sock_set_t sock_set, void *user_ptr,
+                                        MPL_sockaddr_t * p_addr, int port,
+                                        MPIDI_CH3I_Sock_t * sockp);
 
 
 /*@
@@ -484,7 +479,7 @@ Return value: a MPI error code with a Sock extended error class
 Module:
 Utility-Sock
 @*/
-int MPIDI_CH3I_Sock_set_user_ptr(MPIDI_CH3I_Sock_t sock, void * user_ptr);
+int MPIDI_CH3I_Sock_set_user_ptr(MPIDI_CH3I_Sock_t sock, void *user_ptr);
 
 
 /*@
@@ -551,7 +546,7 @@ internal progress engine could block on an application routine.
 Module:
 Utility-Sock
 E*/
-typedef int (* MPIDI_CH3I_Sock_progress_update_func_t)(size_t num_bytes, void * user_ptr);
+typedef int (*MPIDI_CH3I_Sock_progress_update_func_t) (size_t num_bytes, void *user_ptr);
 
 
 /*@
@@ -610,8 +605,8 @@ one thread is not attempting to post a new operation while another thread is att
 Module:
 Utility-Sock
 @*/
-int MPIDI_CH3I_Sock_post_read(MPIDI_CH3I_Sock_t sock, void * buf, size_t minbr, size_t maxbr,
-                         MPIDI_CH3I_Sock_progress_update_func_t fn);
+int MPIDI_CH3I_Sock_post_read(MPIDI_CH3I_Sock_t sock, void *buf, size_t minbr, size_t maxbr,
+                              MPIDI_CH3I_Sock_progress_update_func_t fn);
 
 
 /*@
@@ -669,7 +664,8 @@ that one thread is not attempting to post a new operation while another thread i
 Module:
 Utility-Sock
 @*/
-int MPIDI_CH3I_Sock_post_readv(MPIDI_CH3I_Sock_t sock, MPL_IOV * iov, int iov_n, MPIDI_CH3I_Sock_progress_update_func_t fn);
+int MPIDI_CH3I_Sock_post_readv(MPIDI_CH3I_Sock_t sock, struct iovec * iov, int iov_n,
+                               MPIDI_CH3I_Sock_progress_update_func_t fn);
 
 
 /*@
@@ -729,8 +725,8 @@ need this flexibility?
 Module:
 Utility-Sock
 @*/
-int MPIDI_CH3I_Sock_post_write(MPIDI_CH3I_Sock_t sock, void * buf, size_t min, size_t max,
-			  MPIDI_CH3I_Sock_progress_update_func_t fn);
+int MPIDI_CH3I_Sock_post_write(MPIDI_CH3I_Sock_t sock, void *buf, size_t min, size_t max,
+                               MPIDI_CH3I_Sock_progress_update_func_t fn);
 
 
 /*@
@@ -788,7 +784,8 @@ that one thread is not attempting to post a new operation while another thread i
 Module:
 Utility-Sock
 @*/
-int MPIDI_CH3I_Sock_post_writev(MPIDI_CH3I_Sock_t sock, MPL_IOV * iov, int iov_n, MPIDI_CH3I_Sock_progress_update_func_t fn);
+int MPIDI_CH3I_Sock_post_writev(MPIDI_CH3I_Sock_t sock, struct iovec * iov, int iov_n,
+                                MPIDI_CH3I_Sock_progress_update_func_t fn);
 
 
 /*@
@@ -898,7 +895,7 @@ not attempting to perform an immediate read while another thread is attempting t
 Module:
 Utility-Sock
 @*/
-int MPIDI_CH3I_Sock_read(MPIDI_CH3I_Sock_t sock, void * buf, size_t len, size_t * num_read);
+int MPIDI_CH3I_Sock_read(MPIDI_CH3I_Sock_t sock, void *buf, size_t len, size_t * num_read);
 
 
 /*@
@@ -948,7 +945,7 @@ not attempting to perform an immediate read while another thread is attempting t
 Module:
 Utility-Sock
 @*/
-int MPIDI_CH3I_Sock_readv(MPIDI_CH3I_Sock_t sock, MPL_IOV * iov, int iov_n, size_t * num_read);
+int MPIDI_CH3I_Sock_readv(MPIDI_CH3I_Sock_t sock, struct iovec * iov, int iov_n, size_t * num_read);
 
 
 /*@
@@ -997,7 +994,7 @@ not attempting to perform an immediate write while another thread is attempting 
 Module:
 Utility-Sock
 @*/
-int MPIDI_CH3I_Sock_write(MPIDI_CH3I_Sock_t sock, void * buf, size_t len, size_t * num_written);
+int MPIDI_CH3I_Sock_write(MPIDI_CH3I_Sock_t sock, void *buf, size_t len, size_t * num_written);
 
 
 /*@
@@ -1046,7 +1043,7 @@ not attempting to perform an immediate write while another thread is attempting 
 Module:
 Utility-Sock
 @*/
-int MPIDI_CH3I_Sock_writev(MPIDI_CH3I_Sock_t sock, MPL_IOV * iov, int iov_n, size_t * num_written);
+int MPIDI_CH3I_Sock_writev(MPIDI_CH3I_Sock_t sock, struct iovec * iov, int iov_n, size_t * num_written);
 
 
 /*@
@@ -1114,5 +1111,4 @@ int MPIDI_CH3I_Sock_get_error_class_string(int error, char *error_string, size_t
 
 
 CPLUSPLUS_END
-
 #endif /* MPIDU_SOCK_H_INCLUDED */

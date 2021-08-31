@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* Allow fprintf to logfile */
@@ -41,7 +40,7 @@ struct PMIU_keyval_pairs {
     char key[MAXKEYLEN];
     char value[MAXVALLEN];
 };
-static struct PMIU_keyval_pairs PMIU_keyval_tab[64] = { {{0}, {0}} };
+static struct PMIU_keyval_pairs PMIU_keyval_tab[64];
 
 static int PMIU_keyval_tab_idx = 0;
 

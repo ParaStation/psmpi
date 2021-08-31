@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -27,10 +25,6 @@ int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3], MPI_Group * ne
 #undef MPI_Group_range_incl
 #define MPI_Group_range_incl PMPI_Group_range_incl
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Group_range_incl_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Group_range_incl_impl(MPIR_Group * group_ptr, int n, int ranges[][3],
                                MPIR_Group ** new_group_ptr)
 {
@@ -99,10 +93,6 @@ int MPIR_Group_range_incl_impl(MPIR_Group * group_ptr, int n, int ranges[][3],
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Group_range_incl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /*@
 
@@ -197,12 +187,12 @@ int MPI_Group_range_incl(MPI_Group group, int n, int ranges[][3], MPI_Group * ne
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_group_range_incl", "**mpi_group_range_incl %G %d %p %p",
                                  group, n, ranges, newgroup);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

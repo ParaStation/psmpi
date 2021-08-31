@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -26,10 +24,6 @@ int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
 #undef MPI_Graph_neighbors_count
 #define MPI_Graph_neighbors_count PMPI_Graph_neighbors_count
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Graph_neighbors_count_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Graph_neighbors_count_impl(MPIR_Comm * comm_ptr, int rank, int *nneighbors)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -57,10 +51,6 @@ int MPIR_Graph_neighbors_count_impl(MPIR_Comm * comm_ptr, int rank, int *nneighb
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Graph_neighbors_count
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /*@
 MPI_Graph_neighbors_count - Returns the number of neighbors of a node
@@ -127,8 +117,7 @@ int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
     /* ... body of routine ...  */
 
     mpi_errno = MPIR_Graph_neighbors_count_impl(comm_ptr, rank, nneighbors);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* ... end of body of routine ... */
 
@@ -141,12 +130,12 @@ int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_graph_neighbors_count",
                                  "**mpi_graph_neighbors_count %C %d %p", comm, rank, nneighbors);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

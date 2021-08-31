@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "trace_impl.h"
@@ -131,17 +130,13 @@ TRACE_EXPORT int TRACE_Close(TRACE_file * fp)
 
     if ((*fp)->pInput) {
         for (i = 0; i < (*fp)->pInput->nNumRanks; i++) {
-            if ((*fp)->ppEvent[i])
-                MPL_free((*fp)->ppEvent[i]);
-            if ((*fp)->ppEventAvail[i])
-                MPL_free((*fp)->ppEventAvail[i]);
+            MPL_free((*fp)->ppEvent[i]);
+            MPL_free((*fp)->ppEventAvail[i]);
         }
         RLOG_CloseInputStruct(&(*fp)->pInput);
     }
-    if ((*fp)->ppEvent)
-        MPL_free((*fp)->ppEvent);
-    if ((*fp)->ppEventAvail)
-        MPL_free((*fp)->ppEventAvail);
+    MPL_free((*fp)->ppEvent);
+    MPL_free((*fp)->ppEventAvail);
     MPL_free((*fp));
     *fp = NULL;
 

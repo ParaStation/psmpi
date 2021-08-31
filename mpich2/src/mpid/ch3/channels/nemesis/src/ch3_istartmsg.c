@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidi_ch3_impl.h"
@@ -20,10 +19,6 @@
  * condition also results in a request be allocated and the errror
  * being returned in the status field of the request.
  */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_iStartMsg
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, intptr_t hdr_sz, MPIR_Request **sreq_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -94,8 +89,8 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, intptr_t hdr_sz, MPIR_Reques
 	MPIR_Object_set_ref (sreq, 2);
 
 	sreq->dev.pending_pkt = *(MPIDI_CH3_Pkt_t *) hdr;
-	sreq->dev.iov[0].MPL_IOV_BUF = (char *) &sreq->dev.pending_pkt;
-	sreq->dev.iov[0].MPL_IOV_LEN = hdr_sz;
+	sreq->dev.iov[0].iov_base = (char *) &sreq->dev.pending_pkt;
+	sreq->dev.iov[0].iov_len = hdr_sz;
 	sreq->dev.iov_count = 1;
 	sreq->dev.iov_offset = 0;
         sreq->ch.noncontig = FALSE;
@@ -111,7 +106,7 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, intptr_t hdr_sz, MPIR_Reques
             /* FIXME we are sometimes called from within the progress engine, we
              * shouldn't be calling the progress engine again */
             mpi_errno = MPIDI_CH3I_Shm_send_progress();
-            if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
         }
     
 	*sreq_ptr = sreq;

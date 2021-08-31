@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -13,30 +11,32 @@
 cvars:
     - name        : MPIR_CVAR_SCAN_INTRA_ALGORITHM
       category    : COLLECTIVE
-      type        : string
+      type        : enum
       default     : auto
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : |-
         Variable to select allgather algorithm
-        auto               - Internal algorithm selection
+        auto - Internal algorithm selection (can be overridden with MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE)
         nb                 - Force nonblocking algorithm
+        smp                - Force smp algorithm
         recursive_doubling - Force recursive doubling algorithm
 
     - name        : MPIR_CVAR_SCAN_DEVICE_COLLECTIVE
       category    : COLLECTIVE
       type        : boolean
       default     : true
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : >-
-        If set to true, MPI_Scan will allow the device to override the
-        MPIR-level collective algorithms. The device still has the
-        option to call the MPIR-level algorithms manually.
-        If set to false, the device-level scan function will not be
-        called.
+        This CVAR is only used when MPIR_CVAR_DEVICE_COLLECTIVES
+        is set to "percoll".  If set to true, MPI_Scan will
+        allow the device to override the MPIR-level collective
+        algorithms.  The device might still call the MPIR-level
+        algorithms manually.  If set to false, the device-override
+        will be disabled.
 
 === END_MPI_T_CVAR_INFO_BLOCK ===
 */
@@ -61,69 +61,77 @@ int MPI_Scan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatyp
 #undef MPI_Scan
 #define MPI_Scan PMPI_Scan
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Scan_intra_auto
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIR_Scan_intra_auto(const void *sendbuf, void *recvbuf, int count,
-                         MPI_Datatype datatype, MPI_Op op, MPIR_Comm * comm_ptr,
-                         MPIR_Errflag_t * errflag)
+
+int MPIR_Scan_allcomm_auto(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+                           MPI_Op op, MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    /* In order to use the SMP-aware algorithm, the "op" can be
-     * either commutative or non-commutative, but we require a
-     * communicator in which all the nodes contain processes with
-     * consecutive ranks. */
+    MPIR_Csel_coll_sig_s coll_sig = {
+        .coll_type = MPIR_CSEL_COLL_TYPE__SCAN,
+        .comm_ptr = comm_ptr,
 
-    if (MPII_Comm_is_node_consecutive(comm_ptr)) {
-        mpi_errno = MPIR_Scan_intra_smp(sendbuf, recvbuf, count, datatype, op, comm_ptr, errflag);
-    } else {
-        mpi_errno =
-            MPIR_Scan_intra_recursive_doubling(sendbuf, recvbuf, count, datatype, op, comm_ptr,
-                                               errflag);
+        .u.scan.sendbuf = sendbuf,
+        .u.scan.recvbuf = recvbuf,
+        .u.scan.count = count,
+        .u.scan.datatype = datatype,
+        .u.scan.op = op,
+    };
+
+    MPII_Csel_container_s *cnt = MPIR_Csel_search(comm_ptr->csel_comm, coll_sig);
+    MPIR_Assert(cnt);
+
+    switch (cnt->id) {
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Scan_intra_recursive_doubling:
+            mpi_errno =
+                MPIR_Scan_intra_recursive_doubling(sendbuf, recvbuf, count, datatype, op, comm_ptr,
+                                                   errflag);
+            break;
+
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Scan_intra_smp:
+            mpi_errno =
+                MPIR_Scan_intra_smp(sendbuf, recvbuf, count, datatype, op, comm_ptr, errflag);
+            break;
+
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Scan_allcomm_nb:
+            mpi_errno =
+                MPIR_Scan_allcomm_nb(sendbuf, recvbuf, count, datatype, op, comm_ptr, errflag);
+            break;
+
+        default:
+            MPIR_Assert(0);
     }
 
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
-
-  fn_exit:
-    if (*errflag != MPIR_ERR_NONE)
-        MPIR_ERR_SET(mpi_errno, *errflag, "**coll_fail");
     return mpi_errno;
-
-  fn_fail:
-    goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Scan_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Scan_impl(const void *sendbuf, void *recvbuf, int count,
                    MPI_Datatype datatype, MPI_Op op, MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    switch (MPIR_Scan_intra_algo_choice) {
-        case MPIR_SCAN_INTRA_ALGO_RECURSIVE_DOUBLING:
+    switch (MPIR_CVAR_SCAN_INTRA_ALGORITHM) {
+        case MPIR_CVAR_SCAN_INTRA_ALGORITHM_recursive_doubling:
             mpi_errno =
                 MPIR_Scan_intra_recursive_doubling(sendbuf, recvbuf, count, datatype, op, comm_ptr,
                                                    errflag);
             break;
-        case MPIR_SCAN_INTRA_ALGO_NB:
+        case MPIR_CVAR_SCAN_INTRA_ALGORITHM_nb:
             mpi_errno =
                 MPIR_Scan_allcomm_nb(sendbuf, recvbuf, count, datatype, op, comm_ptr, errflag);
             break;
-        case MPIR_SCAN_INTRA_ALGO_AUTO:
-            MPL_FALLTHROUGH;
-        default:
+        case MPIR_CVAR_SCAN_INTRA_ALGORITHM_smp:
             mpi_errno =
-                MPIR_Scan_intra_auto(sendbuf, recvbuf, count, datatype, op, comm_ptr, errflag);
+                MPIR_Scan_intra_smp(sendbuf, recvbuf, count, datatype, op, comm_ptr, errflag);
             break;
+        case MPIR_CVAR_SCAN_INTRA_ALGORITHM_auto:
+            mpi_errno =
+                MPIR_Scan_allcomm_auto(sendbuf, recvbuf, count, datatype, op, comm_ptr, errflag);
+            break;
+        default:
+            MPIR_Assert(0);
     }
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     return mpi_errno;
@@ -132,30 +140,41 @@ int MPIR_Scan_impl(const void *sendbuf, void *recvbuf, int count,
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Scan
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Scan(const void *sendbuf, void *recvbuf, int count,
               MPI_Datatype datatype, MPI_Op op, MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
 {
     int mpi_errno = MPI_SUCCESS;
+    void *in_recvbuf = recvbuf;
+    void *host_sendbuf;
+    void *host_recvbuf;
 
-    if (MPIR_CVAR_SCAN_DEVICE_COLLECTIVE && MPIR_CVAR_DEVICE_COLLECTIVES) {
+    MPIR_Coll_host_buffer_alloc(sendbuf, recvbuf, count, datatype, &host_sendbuf, &host_recvbuf);
+    if (host_sendbuf)
+        sendbuf = host_sendbuf;
+    if (host_recvbuf)
+        recvbuf = host_recvbuf;
+
+    if ((MPIR_CVAR_DEVICE_COLLECTIVES == MPIR_CVAR_DEVICE_COLLECTIVES_all) ||
+        ((MPIR_CVAR_DEVICE_COLLECTIVES == MPIR_CVAR_DEVICE_COLLECTIVES_percoll) &&
+         MPIR_CVAR_SCAN_DEVICE_COLLECTIVE)) {
         mpi_errno = MPID_Scan(sendbuf, recvbuf, count, datatype, op, comm_ptr, errflag);
     } else {
         mpi_errno = MPIR_Scan_impl(sendbuf, recvbuf, count, datatype, op, comm_ptr, errflag);
     }
+
+    /* Copy out data from host recv buffer to GPU buffer */
+    if (host_recvbuf) {
+        recvbuf = in_recvbuf;
+        MPIR_Localcopy(host_recvbuf, count, datatype, recvbuf, count, datatype);
+    }
+
+    MPIR_Coll_host_buffer_free(host_sendbuf, host_recvbuf);
 
     return mpi_errno;
 }
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Scan
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 
 MPI_Scan - Computes the scan (partial reductions) of data on a collection of
@@ -229,7 +248,7 @@ int MPI_Scan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatyp
             MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
             MPIR_ERRTEST_OP(op, mpi_errno);
 
-            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(datatype)) {
                 MPIR_Datatype_get_ptr(datatype, datatype_ptr);
                 MPIR_Datatype_valid_ptr(datatype_ptr, mpi_errno);
                 if (mpi_errno != MPI_SUCCESS)
@@ -244,11 +263,10 @@ int MPI_Scan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatyp
             MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, count, mpi_errno);
             MPIR_ERRTEST_USERBUFFER(recvbuf, count, datatype, mpi_errno);
 
-            if (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(op)) {
                 MPIR_Op_get_ptr(op, op_ptr);
                 MPIR_Op_valid_ptr(op_ptr, mpi_errno);
-            }
-            if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
+            } else {
                 mpi_errno = (*MPIR_OP_HDL_TO_DTYPE_FN(op)) (datatype);
             }
             if (mpi_errno != MPI_SUCCESS)
@@ -279,12 +297,12 @@ int MPI_Scan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatyp
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_scan", "**mpi_scan %p %p %d %D %O %C", sendbuf, recvbuf,
                                  count, datatype, op, comm);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

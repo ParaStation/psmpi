@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2009 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -32,10 +30,6 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old, int indegree, const int so
  * correctly handle weak symbols and the profiling interface */
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Dist_graph_create_adjacent
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Dist_graph_create_adjacent - returns a handle to a new communicator to
 which the distributed graph topology information is attached.
@@ -148,9 +142,8 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
 
     /* following the spirit of the old topo interface, attributes do not
      * propagate to the new communicator (see MPI-2.1 pp. 243 line 11) */
-    mpi_errno = MPII_Comm_copy(comm_ptr, comm_ptr->local_size, &comm_dist_graph_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    mpi_errno = MPII_Comm_copy(comm_ptr, comm_ptr->local_size, NULL, &comm_dist_graph_ptr);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* Create the topology structure */
     MPIR_CHKPMEM_MALLOC(topo_ptr, MPIR_Topology *, sizeof(MPIR_Topology), mpi_errno, "topo_ptr",
@@ -165,25 +158,30 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
     dist_graph_ptr->out_weights = NULL;
     dist_graph_ptr->is_weighted = (sourceweights != MPI_UNWEIGHTED);
 
-    MPIR_CHKPMEM_MALLOC(dist_graph_ptr->in, int *, indegree * sizeof(int), mpi_errno,
-                        "dist_graph_ptr->in", MPL_MEM_COMM);
-    MPIR_CHKPMEM_MALLOC(dist_graph_ptr->out, int *, outdegree * sizeof(int), mpi_errno,
-                        "dist_graph_ptr->out", MPL_MEM_COMM);
-    MPIR_Memcpy(dist_graph_ptr->in, sources, indegree * sizeof(int));
-    MPIR_Memcpy(dist_graph_ptr->out, destinations, outdegree * sizeof(int));
+    if (indegree > 0) {
+        MPIR_CHKPMEM_MALLOC(dist_graph_ptr->in, int *, indegree * sizeof(int), mpi_errno,
+                            "dist_graph_ptr->in", MPL_MEM_COMM);
+        MPIR_Memcpy(dist_graph_ptr->in, sources, indegree * sizeof(int));
+        if (dist_graph_ptr->is_weighted) {
+            MPIR_CHKPMEM_MALLOC(dist_graph_ptr->in_weights, int *, indegree * sizeof(int),
+                                mpi_errno, "dist_graph_ptr->in_weights", MPL_MEM_COMM);
+            MPIR_Memcpy(dist_graph_ptr->in_weights, sourceweights, indegree * sizeof(int));
+        }
+    }
 
-    if (dist_graph_ptr->is_weighted) {
-        MPIR_CHKPMEM_MALLOC(dist_graph_ptr->in_weights, int *, indegree * sizeof(int), mpi_errno,
-                            "dist_graph_ptr->in_weights", MPL_MEM_COMM);
-        MPIR_CHKPMEM_MALLOC(dist_graph_ptr->out_weights, int *, outdegree * sizeof(int), mpi_errno,
-                            "dist_graph_ptr->out_weights", MPL_MEM_COMM);
-        MPIR_Memcpy(dist_graph_ptr->in_weights, sourceweights, indegree * sizeof(int));
-        MPIR_Memcpy(dist_graph_ptr->out_weights, destweights, outdegree * sizeof(int));
+    if (outdegree > 0) {
+        MPIR_CHKPMEM_MALLOC(dist_graph_ptr->out, int *, outdegree * sizeof(int), mpi_errno,
+                            "dist_graph_ptr->out", MPL_MEM_COMM);
+        MPIR_Memcpy(dist_graph_ptr->out, destinations, outdegree * sizeof(int));
+        if (dist_graph_ptr->is_weighted) {
+            MPIR_CHKPMEM_MALLOC(dist_graph_ptr->out_weights, int *, outdegree * sizeof(int),
+                                mpi_errno, "dist_graph_ptr->out_weights", MPL_MEM_COMM);
+            MPIR_Memcpy(dist_graph_ptr->out_weights, destweights, outdegree * sizeof(int));
+        }
     }
 
     mpi_errno = MPIR_Topology_put(comm_dist_graph_ptr, topo_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     MPIR_OBJ_PUBLISH_HANDLE(*comm_dist_graph, comm_dist_graph_ptr->handle);
     MPIR_CHKPMEM_COMMIT();
@@ -198,13 +196,13 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
     MPIR_CHKPMEM_REAP();
 #ifdef HAVE_ERROR_CHECKING
     mpi_errno =
-        MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+        MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                              "**mpi_dist_graph_create_adjacent",
                              "**mpi_dist_graph_create_adjacent %C %d %p %p %d %p %p %I %d %p",
                              comm_old, indegree, sources, sourceweights, outdegree, destinations,
                              destweights, info, reorder, comm_dist_graph);
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

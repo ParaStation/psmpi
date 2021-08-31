@@ -1,15 +1,10 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2012 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidimpl.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Imrecv
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype,
                 MPIR_Request *message, MPIR_Request **rreqp)
 {
@@ -22,8 +17,7 @@ int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype,
      * upper level */
     if (message == NULL)
     {
-        MPIDI_Request_create_null_rreq(rreq, mpi_errno, goto fn_fail);
-        *rreqp = rreq;
+        *rreqp = MPIR_Request_create_null_recv();
         goto fn_exit;
     }
 
@@ -66,7 +60,7 @@ int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype,
         {
             MPIDI_Comm_get_vc_set_active(comm, rreq->dev.match.parts.rank, &vc);
             mpi_errno = MPIDI_CH3_EagerSyncAck(vc, rreq);
-            if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
         }
 
         /* the request was found in the unexpected queue, so it has a
@@ -87,6 +81,7 @@ int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype,
             }
 
             mpi_errno = rreq->status.MPI_ERROR;
+            MPIR_ERR_CHECK(mpi_errno);
             goto fn_exit;
         }
         else
@@ -97,7 +92,7 @@ int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype,
             /* The data is still being transfered across the net.  We'll
                leave it to the progress engine to handle once the
                entire message has arrived. */
-            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+            if (!HANDLE_IS_BUILTIN(datatype))
             {
                 MPIR_Datatype_get_ptr(datatype, rreq->dev.datatype_ptr);
                 MPIR_Datatype_ptr_add_ref(rreq->dev.datatype_ptr);
@@ -110,8 +105,8 @@ int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype,
         MPIDI_Comm_get_vc_set_active(comm, rreq->dev.match.parts.rank, &vc);
 
         mpi_errno = vc->rndvRecv_fn(vc, rreq);
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
-        if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
+        MPIR_ERR_CHECK(mpi_errno);
+        if (!HANDLE_IS_BUILTIN(datatype))
         {
             MPIR_Datatype_get_ptr(datatype, rreq->dev.datatype_ptr);
             MPIR_Datatype_ptr_add_ref(rreq->dev.datatype_ptr);
@@ -120,7 +115,7 @@ int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype,
     else if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_SELF_MSG)
     {
         mpi_errno = MPIDI_CH3_RecvFromSelf(rreq, buf, count, datatype);
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
     else
     {
@@ -138,6 +133,8 @@ int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype,
 fn_exit:
     return mpi_errno;
 fn_fail:
+    MPIR_Request_free(rreq);
+    rreq = NULL;
     goto fn_exit;
 }
 

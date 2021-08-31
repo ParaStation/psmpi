@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -20,10 +18,6 @@
  * PVM/MPI 2003).
  */
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Allgatherv_intra_recursive_doubling
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Allgatherv_intra_recursive_doubling(const void *sendbuf,
                                              int sendcount,
                                              MPI_Datatype sendtype,
@@ -37,7 +31,7 @@ int MPIR_Allgatherv_intra_recursive_doubling(const void *sendbuf,
     int mpi_errno = MPI_SUCCESS;
     int mpi_errno_ret = MPI_SUCCESS;
     MPI_Status status;
-    MPI_Aint recvtype_extent, recvtype_true_extent, recvtype_true_lb;
+    MPI_Aint recvtype_extent, recvtype_sz;
     MPI_Aint curr_cnt, last_recv_cnt;
     int dst, total_count;
     void *tmp_buf;
@@ -61,22 +55,12 @@ int MPIR_Allgatherv_intra_recursive_doubling(const void *sendbuf,
     if (total_count == 0)
         goto fn_exit;
 
+    /* receive contiguously into tmp_buf */
     MPIR_Datatype_get_extent_macro(recvtype, recvtype_extent);
+    MPIR_Datatype_get_size_macro(recvtype, recvtype_sz);
 
-
-    /* need to receive contiguously into tmp_buf because
-     * displs could make the recvbuf noncontiguous */
-
-    MPIR_Type_get_true_extent_impl(recvtype, &recvtype_true_lb, &recvtype_true_extent);
-
-    MPIR_Ensure_Aint_fits_in_pointer(total_count *
-                                     (MPL_MAX(recvtype_true_extent, recvtype_extent)));
     MPIR_CHKLMEM_MALLOC(tmp_buf, void *,
-                        total_count * (MPL_MAX(recvtype_true_extent, recvtype_extent)),
-                        mpi_errno, "tmp_buf", MPL_MEM_BUFFER);
-
-    /* adjust for potential negative lower bound in datatype */
-    tmp_buf = (void *) ((char *) tmp_buf - recvtype_true_lb);
+                        total_count * recvtype_sz, mpi_errno, "tmp_buf", MPL_MEM_BUFFER);
 
     /* copy local data into right location in tmp_buf */
     position = 0;
@@ -85,18 +69,16 @@ int MPIR_Allgatherv_intra_recursive_doubling(const void *sendbuf,
     if (sendbuf != MPI_IN_PLACE) {
         mpi_errno = MPIR_Localcopy(sendbuf, sendcount, sendtype,
                                    ((char *) tmp_buf + position *
-                                    recvtype_extent), recvcounts[rank], recvtype);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+                                    recvtype_sz), recvcounts[rank] * recvtype_sz, MPI_BYTE);
+        MPIR_ERR_CHECK(mpi_errno);
     } else {
         /* if in_place specified, local data is found in recvbuf */
         mpi_errno = MPIR_Localcopy(((char *) recvbuf +
                                     displs[rank] * recvtype_extent),
                                    recvcounts[rank], recvtype,
                                    ((char *) tmp_buf + position *
-                                    recvtype_extent), recvcounts[rank], recvtype);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+                                    recvtype_sz), recvcounts[rank] * recvtype_sz, MPI_BYTE);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     curr_cnt = recvcounts[rank];
@@ -126,11 +108,11 @@ int MPIR_Allgatherv_intra_recursive_doubling(const void *sendbuf,
             for (j = 0; j < dst_tree_root; j++)
                 recv_offset += recvcounts[j];
 
-            mpi_errno = MPIC_Sendrecv(((char *) tmp_buf + send_offset * recvtype_extent),
-                                      curr_cnt, recvtype, dst,
+            mpi_errno = MPIC_Sendrecv(((char *) tmp_buf + send_offset * recvtype_sz),
+                                      curr_cnt * recvtype_sz, MPI_BYTE, dst,
                                       MPIR_ALLGATHERV_TAG,
-                                      ((char *) tmp_buf + recv_offset * recvtype_extent),
-                                      total_count - recv_offset, recvtype, dst,
+                                      ((char *) tmp_buf + recv_offset * recvtype_sz),
+                                      (total_count - recv_offset) * recvtype_sz, MPI_BYTE, dst,
                                       MPIR_ALLGATHERV_TAG, comm_ptr, &status, errflag);
             if (mpi_errno) {
                 /* for communication errors, just record the error but continue */
@@ -195,11 +177,10 @@ int MPIR_Allgatherv_intra_recursive_doubling(const void *sendbuf,
                     offset = 0;
                     for (j = 0; j < (my_tree_root + mask); j++)
                         offset += recvcounts[j];
-                    offset *= recvtype_extent;
 
-                    mpi_errno = MPIC_Send(((char *) tmp_buf + offset),
-                                          last_recv_cnt,
-                                          recvtype, dst, MPIR_ALLGATHERV_TAG, comm_ptr, errflag);
+                    mpi_errno = MPIC_Send(((char *) tmp_buf + offset * recvtype_sz),
+                                          last_recv_cnt * recvtype_sz,
+                                          MPI_BYTE, dst, MPIR_ALLGATHERV_TAG, comm_ptr, errflag);
                     if (mpi_errno) {
                         /* for communication errors, just record the error but continue */
                         *errflag =
@@ -222,8 +203,8 @@ int MPIR_Allgatherv_intra_recursive_doubling(const void *sendbuf,
                     for (j = 0; j < (my_tree_root + mask); j++)
                         offset += recvcounts[j];
 
-                    mpi_errno = MPIC_Recv(((char *) tmp_buf + offset * recvtype_extent),
-                                          total_count - offset, recvtype,
+                    mpi_errno = MPIC_Recv(((char *) tmp_buf + offset * recvtype_sz),
+                                          (total_count - offset) * recvtype_sz, MPI_BYTE,
                                           dst, MPIR_ALLGATHERV_TAG, comm_ptr, &status, errflag);
                     if (mpi_errno) {
                         /* for communication errors, just record the error but continue */
@@ -255,12 +236,11 @@ int MPIR_Allgatherv_intra_recursive_doubling(const void *sendbuf,
         if ((sendbuf != MPI_IN_PLACE) || (j != rank)) {
             /* not necessary to copy if in_place and
              * j==rank. otherwise copy. */
-            mpi_errno = MPIR_Localcopy(((char *) tmp_buf + position * recvtype_extent),
-                                       recvcounts[j], recvtype,
+            mpi_errno = MPIR_Localcopy(((char *) tmp_buf + position * recvtype_sz),
+                                       recvcounts[j] * recvtype_sz, MPI_BYTE,
                                        ((char *) recvbuf + displs[j] * recvtype_extent),
                                        recvcounts[j], recvtype);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
         }
         position += recvcounts[j];
     }

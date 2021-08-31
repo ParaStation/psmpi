@@ -1,18 +1,13 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- *  Portions of this code were written by Intel Corporation.
- *  Copyright (C) 2011-2016 Intel Corporation.  Intel provides this material
- *  to Argonne National Laboratory subject to Software Grant and Corporate
- *  Contributor License Agreement dated February 8, 2012.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #ifndef CH4_REQUEST_H_INCLUDED
 #define CH4_REQUEST_H_INCLUDED
 
 #include "ch4_impl.h"
-#include "ch4r_buf.h"
+#include "mpidu_genq.h"
 
 MPL_STATIC_INLINE_PREFIX int MPID_Request_is_anysource(MPIR_Request * req)
 {
@@ -78,10 +73,6 @@ MPL_STATIC_INLINE_PREFIX void MPID_Request_set_completed(MPIR_Request * req)
    the request because it does not know about the internals of
    the ch4r/netmod/shmmod fields of the request.
 */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_request_complete
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 MPL_STATIC_INLINE_PREFIX int MPID_Request_complete(MPIR_Request * req)
 {
     int incomplete, notify_counter;
@@ -98,16 +89,35 @@ MPL_STATIC_INLINE_PREFIX int MPID_Request_complete(MPIR_Request * req)
         if (req->completion_notification)
             MPIR_cc_decr(req->completion_notification, &notify_counter);
 
-        if (MPIDI_CH4U_REQUEST(req, req)) {
-            MPIDI_CH4R_release_buf(MPIDI_CH4U_REQUEST(req, req));
-            MPIDI_CH4U_REQUEST(req, req) = NULL;
+        if (MPIDIG_REQUEST(req, req)) {
+            MPIDU_genq_private_pool_free_cell(MPIDI_global.request_pool, MPIDIG_REQUEST(req, req));
+            MPIDIG_REQUEST(req, req) = NULL;
             MPIDI_NM_am_request_finalize(req);
+#ifndef MPIDI_CH4_DIRECT_NETMOD
+            MPIDI_SHM_am_request_finalize(req);
+#endif
         }
-        MPIR_Request_free(req);
+        MPIR_Request_free_unsafe(req);
     }
 
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_REQUEST_COMPLETE);
     return MPI_SUCCESS;
+}
+
+MPL_STATIC_INLINE_PREFIX void MPID_Prequest_free_hook(MPIR_Request * req)
+{
+    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_PREQUEST_FREE_HOOK);
+    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_PREQUEST_FREE_HOOK);
+
+    /* If a user passed a derived datatype for this persistent communication,
+     * free it.
+     * We could have done this cleanup in more general request cleanup functions,
+     * like MPID_Request_destroy_hook. However, that would always add a few
+     * instructions for any kind of request object, even if it's no a request
+     * from persistent communications. */
+    MPIR_Datatype_release_if_not_builtin(MPIDI_PREQUEST(req, datatype));
+
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_PREQUEST_FREE_HOOK);
 }
 
 #endif /* CH4_REQUEST_H_INCLUDED */

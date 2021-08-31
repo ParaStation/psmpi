@@ -570,7 +570,6 @@ WARN_LOGFILE           =
 
 INPUT                  = @top_srcdir@/tools/bind/bind.h \
 		       @top_srcdir@/tools/bootstrap/include/bsci.h.in \
-		       @top_srcdir@/tools/ckpoint/ckpoint.h \
 		       @top_srcdir@/tools/rmk/include/rmki.h.in \
 		       @top_srcdir@/pm/include/pmci.h
 
@@ -863,7 +862,7 @@ HHC_LOCATION           =
 
 # If the GENERATE_HTMLHELP tag is set to YES, the GENERATE_CHI flag
 # controls if a separate .chi index file is generated (YES) or that
-# it should be included in the master .chm file (NO).
+# it should be included in the main .chm file (NO).
 
 GENERATE_CHI           = NO
 

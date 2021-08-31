@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPIR_TYPE_DEFS_H_INCLUDED
@@ -71,11 +70,5 @@
 #else
 #define MPIR_Aint_to_ptr(a) (void*)(a)
 #endif
-
-/* Adding the 32-bit compute/64-bit I/O related type-casts in here as
- * they are not a part of the MPI standard yet. */
-#define MPIR_AINT_CAST_TO_VOID_PTR (void *)(intptr_t)
-#define MPIR_VOID_PTR_CAST_TO_MPI_AINT (MPI_Aint)(uintptr_t)
-#define MPIR_PTR_DISP_CAST_TO_MPI_AINT (MPI_Aint)(intptr_t)
 
 #endif /* MPIR_TYPE_DEFS_H_INCLUDED */

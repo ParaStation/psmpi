@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2010 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "pmip_pmi.h"
@@ -598,6 +597,7 @@ static HYD_status fn_finalize(int fd, char *args[])
 
     if (finalize_count == HYD_pmcd_pmip.local.proxy_process_count) {
         /* All processes have finalized */
+        HASH_CLEAR(hh, hash_get);
         for (i = 0; i < num_elems; i++) {
             MPL_free((cache_get + i)->key);
             MPL_free((cache_get + i)->val);

@@ -1,7 +1,6 @@
-/* -*- Mode: c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2012 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* This file contains functions that support the RMA code but use some "private"
@@ -16,10 +15,6 @@
 /* Returns true iff the given type is valid for use in MPI-3 RMA atomics, such
  * as MPI_Compare_and_swap or MPI_Fetch_and_op.  Does NOT return MPICH error
  * codes. */
-#undef FUNCNAME
-#define FUNCNAME MPIR_Sched_cb_free_buf
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Type_is_rma_atomic(MPI_Datatype type)
 {
     switch (type) {
@@ -46,10 +41,6 @@ int MPIR_Type_is_rma_atomic(MPI_Datatype type)
 /* Returns true if (a == b) when interepreted using the given datatype.
  * Currently, this is only defined for RMA atomic types.
  */
-#undef FUNCNAME
-#define FUNCNAME MPIR_COMPARE_EQUAL
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Compare_equal(const void *a, const void *b, MPI_Datatype type)
 {
     switch (type) {

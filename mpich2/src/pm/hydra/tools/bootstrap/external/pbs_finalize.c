@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2011 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra.h"
@@ -21,10 +20,8 @@ HYD_status HYDT_bscd_pbs_launcher_finalize(void)
 #endif /* HAVE_TM_H */
 
     if (HYDT_bscd_pbs_sys) {
-        if (HYDT_bscd_pbs_sys->task_id)
-            MPL_free(HYDT_bscd_pbs_sys->task_id);
-        if (HYDT_bscd_pbs_sys->spawn_events)
-            MPL_free(HYDT_bscd_pbs_sys->spawn_events);
+        MPL_free(HYDT_bscd_pbs_sys->task_id);
+        MPL_free(HYDT_bscd_pbs_sys->spawn_events);
         MPL_free(HYDT_bscd_pbs_sys);
     }
 

@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -27,8 +25,6 @@ double MPI_Wtick(void) __attribute__ ((weak, alias("PMPI_Wtick")));
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Wtick
 
 /*@
   MPI_Wtick - Returns the resolution of MPI_Wtime
@@ -49,7 +45,7 @@ double MPI_Wtick(void)
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
     MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPI_WTICK);
-    MPID_Wtick(&tick);
+    MPL_wtick(&tick);
     MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPI_WTICK);
 
     return tick;

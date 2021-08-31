@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -30,10 +28,6 @@ int MPI_Get_elements(const MPI_Status * status, MPI_Datatype datatype, int *coun
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Get_elements
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Get_elements - Returns the number of basic elements
                       in a datatype
@@ -90,7 +84,7 @@ int MPI_Get_elements(const MPI_Status * status, MPI_Datatype datatype, int *coun
             /* Convert MPI object handles to object pointers */
             MPIR_Datatype_get_ptr(datatype, datatype_ptr);
             /* Validate datatype_ptr */
-            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(datatype)) {
                 MPIR_Datatype_get_ptr(datatype, datatype_ptr);
                 MPIR_Datatype_valid_ptr(datatype_ptr, mpi_errno);
                 if (mpi_errno != MPI_SUCCESS)
@@ -109,8 +103,7 @@ int MPI_Get_elements(const MPI_Status * status, MPI_Datatype datatype, int *coun
 
     byte_count = MPIR_STATUS_GET_COUNT(*status);
     mpi_errno = MPIR_Get_elements_x_impl(&byte_count, datatype, &count_x);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* clip the value if it cannot be correctly returned to the user */
     *count = (count_x > INT_MAX) ? MPI_UNDEFINED : (int) count_x;
@@ -125,11 +118,11 @@ int MPI_Get_elements(const MPI_Status * status, MPI_Datatype datatype, int *coun
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_get_elements", "**mpi_get_elements %p %D %p", status,
                                  datatype, count);
     }
-    mpi_errno = MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(0, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

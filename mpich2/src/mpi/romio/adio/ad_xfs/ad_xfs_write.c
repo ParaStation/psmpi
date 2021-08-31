@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *   Copyright (C) 1997 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "ad_xfs.h"
@@ -25,6 +23,12 @@ void ADIOI_XFS_WriteContig(ADIO_File fd, void *buf, int count,
     ssize_t len;
     void *newbuf;
     static char myname[] = "ADIOI_XFS_WRITECONTIG";
+
+    if (count == 0) {
+        err = 0;
+        len = 0;
+        goto leaving;
+    }
 
     MPI_Type_size_x(datatype, &datatype_size);
     len = datatype_size * count;
@@ -110,11 +114,11 @@ void ADIOI_XFS_WriteContig(ADIO_File fd, void *buf, int count,
     if (file_ptr_type == ADIO_INDIVIDUAL)
         fd->fp_ind += len;
 
+  leaving:
 #ifdef HAVE_STATUS_SET_BYTES
-    if (err != -1)
+    if (status && err != -1)
         MPIR_Status_set_bytes(status, datatype, len);
 #endif
-  leaving:
     if (err == -1) {
         *error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
                                            myname, __LINE__, MPI_ERR_IO, "**io",

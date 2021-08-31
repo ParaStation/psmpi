@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2010 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra.h"
@@ -49,7 +48,6 @@ static HYD_status init_params(void)
     HYD_pmcd_pmip.local.spawner_kvsname = NULL;
     HYD_pmcd_pmip.local.proxy_core_count = -1;
     HYD_pmcd_pmip.local.proxy_process_count = -1;
-    HYD_pmcd_pmip.local.ckpoint_prefix_list = NULL;
     HYD_pmcd_pmip.local.retries = -1;
 
     HYD_pmcd_pmip.exec_list = NULL;
@@ -61,61 +59,31 @@ static HYD_status init_params(void)
 
 static void cleanup_params(void)
 {
-    int i;
-
     HYDU_finalize_user_global(&HYD_pmcd_pmip.user_global);
 
     /* System global */
-    if (HYD_pmcd_pmip.system_global.pmi_fd)
-        MPL_free(HYD_pmcd_pmip.system_global.pmi_fd);
-
-    if (HYD_pmcd_pmip.system_global.pmi_process_mapping)
-        MPL_free(HYD_pmcd_pmip.system_global.pmi_process_mapping);
+    MPL_free(HYD_pmcd_pmip.system_global.pmi_fd);
+    MPL_free(HYD_pmcd_pmip.system_global.pmi_process_mapping);
 
 
     /* Upstream */
-    if (HYD_pmcd_pmip.upstream.server_name)
-        MPL_free(HYD_pmcd_pmip.upstream.server_name);
+    MPL_free(HYD_pmcd_pmip.upstream.server_name);
 
 
     /* Downstream */
-    if (HYD_pmcd_pmip.downstream.out)
-        MPL_free(HYD_pmcd_pmip.downstream.out);
-
-    if (HYD_pmcd_pmip.downstream.err)
-        MPL_free(HYD_pmcd_pmip.downstream.err);
-
-    if (HYD_pmcd_pmip.downstream.pid)
-        MPL_free(HYD_pmcd_pmip.downstream.pid);
-
-    if (HYD_pmcd_pmip.downstream.exit_status)
-        MPL_free(HYD_pmcd_pmip.downstream.exit_status);
-
-    if (HYD_pmcd_pmip.downstream.pmi_rank)
-        MPL_free(HYD_pmcd_pmip.downstream.pmi_rank);
-
-    if (HYD_pmcd_pmip.downstream.pmi_fd)
-        MPL_free(HYD_pmcd_pmip.downstream.pmi_fd);
-
-    if (HYD_pmcd_pmip.downstream.pmi_fd_active)
-        MPL_free(HYD_pmcd_pmip.downstream.pmi_fd_active);
+    MPL_free(HYD_pmcd_pmip.downstream.out);
+    MPL_free(HYD_pmcd_pmip.downstream.err);
+    MPL_free(HYD_pmcd_pmip.downstream.pid);
+    MPL_free(HYD_pmcd_pmip.downstream.exit_status);
+    MPL_free(HYD_pmcd_pmip.downstream.pmi_rank);
+    MPL_free(HYD_pmcd_pmip.downstream.pmi_fd);
+    MPL_free(HYD_pmcd_pmip.downstream.pmi_fd_active);
 
 
     /* Local */
-    if (HYD_pmcd_pmip.local.iface_ip_env_name)
-        MPL_free(HYD_pmcd_pmip.local.iface_ip_env_name);
-
-    if (HYD_pmcd_pmip.local.hostname)
-        MPL_free(HYD_pmcd_pmip.local.hostname);
-
-    if (HYD_pmcd_pmip.local.spawner_kvsname)
-        MPL_free(HYD_pmcd_pmip.local.spawner_kvsname);
-
-    if (HYD_pmcd_pmip.local.ckpoint_prefix_list) {
-        for (i = 0; HYD_pmcd_pmip.local.ckpoint_prefix_list[i]; i++)
-            MPL_free(HYD_pmcd_pmip.local.ckpoint_prefix_list[i]);
-        MPL_free(HYD_pmcd_pmip.local.ckpoint_prefix_list);
-    }
+    MPL_free(HYD_pmcd_pmip.local.iface_ip_env_name);
+    MPL_free(HYD_pmcd_pmip.local.hostname);
+    MPL_free(HYD_pmcd_pmip.local.spawner_kvsname);
 
     HYD_pmcd_free_pmi_kvs_list(HYD_pmcd_pmip.local.kvs);
 
@@ -194,6 +162,7 @@ int main(int argc, char **argv)
                                   HYD_POLLIN, NULL, HYD_pmcd_pmip_control_cmd_cb);
     HYDU_ERR_POP(status, "unable to register fd\n");
 
+    done = 0;
     while (1) {
         /* Wait for some event to occur */
         status = HYDT_dmx_wait_for_event(-1);
@@ -213,10 +182,24 @@ int main(int argc, char **argv)
         }
         if (!count)
             break;
+
+        pid = waitpid(-1, &ret_status, WNOHANG);
+        if (pid > 0) {
+            for (i = 0; i < HYD_pmcd_pmip.local.proxy_process_count; i++) {
+                if (HYD_pmcd_pmip.downstream.pid[i] == pid) {
+                    HYD_pmcd_pmip.downstream.exit_status[i] = ret_status;
+                    if (WIFSIGNALED(ret_status)) {
+                        /* kill all processes */
+                        HYD_pmcd_pmip_send_signal(SIGKILL);
+                    }
+                    done++;
+                    break;
+                }
+            }
+        }
     }
 
     /* Now wait for the processes to finish */
-    done = 0;
     while (1) {
         pid = waitpid(-1, &ret_status, 0);
 
