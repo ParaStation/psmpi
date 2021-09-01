@@ -8,6 +8,7 @@ AC_INIT([psmpi],[],[hauke@par-tec.com])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CONFIG_AUX_DIR([scripts])
+AC_CONFIG_MACRO_DIR([mpich2/confdb])
 AC_CANONICAL_TARGET([])
 
 # AC_PROG_INSTALL
@@ -110,7 +111,21 @@ AC_ARG_WITH([mpichconf], [
   --with-mpichconf[=opts]   Additional mpich configuration options
 ],[
 	MPICHCONF="$withval"
+],[
+	unset MPICHCONF
 ])
+
+# Only test fortran-related behavior, if `--enable-fortran=[no|none]` was *not*
+# given. Otherwise, fortran might be disabled completely making this check
+# obsolete.
+if ! echo ${MPICHCONF} | grep -E 'enable-fortran=no'; then
+    PAC_PROG_F77_MISMATCHED_ARGS(addarg,yes)
+    if test "X$addarg" != "X" ; then
+	AC_MSG_WARN([The Fortran compiler $F77 does not accept programs that call the same routine with arguments of different types without the option $addarg. Running configure with FFLAGS=$addarg.])
+	FFLAGS="${FFLAGS} ${addarg}"
+    fi
+fi
+
 
 
 AC_ARG_WITH([profdir], [
@@ -182,7 +197,6 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS"
 	;;
 "gcc"|\
-"gcc10"|\
 "default")
 	echo "Using confset=default"
 	CONF_OPS="--with-device=psp"
@@ -200,12 +214,6 @@ case $CONFSET in
 	   CONF_OPS="$CONF_OPS --enable-f77"
 	   CONF_OPS="$CONF_OPS --enable-fc"
 	   FC=gfortran
-	   if test "$CONFSET" = "gcc10" ; then
-	      # Workaround as mpich fails to build with gcc10 since gfortran will by default here
-	      # not compile files that call the same routine with arguments of different types:
-	      export FCFLAGS="${FCFLAGS} -fallow-argument-mismatch"
-	      export FFLAGS="${FFLAGS} -fallow-argument-mismatch"
-	   fi
 	fi
 	MODULEFILE_CONFSET=""
 	EXTRA_VERSION_INFO=" compiler: $(gcc --version|head -n 1)"
@@ -445,6 +453,7 @@ test -n "$FC"  && CONF_OPS="$CONF_OPS 'FC=$FC'"
 test -n "$F77" && CONF_OPS="$CONF_OPS 'F77=$F77'"
 test -n "$AR"  && CONF_OPS="$CONF_OPS 'AR=$AR'"
 test -n "$RANLIB" && CONF_OPS="$CONF_OPS 'RANLIB=$RANLIB'"
+test -n "$FFLAGS" && CONF_OPS="$CONF_OPS 'FFLAGS=$FFLAGS'"
 
 AC_ARG_WITH([pscom-builtin], [
   --with-pscom-builtin[=list]
@@ -512,7 +521,7 @@ AC_ARG_WITH([pscom-allin], [
 	fi
 
 	case $CONFSET in
-		"default"|"gcc"|"gcc10"|"intel"|"icc") ;;
+		"default"|"gcc"|"intel"|"icc") ;;
 		*) confset_and_allin_does_not_match="yes" ;;
 	esac
 	if test "$confset_and_allin_does_not_match" = "yes" ; then
