@@ -443,9 +443,11 @@ case $CONFSET in
 	;;
 esac
 
-# Additional confset-agnostic options
-CONF_OPS="$CONF_OPS --with-psp-confset=$CONFSET"  # Make confset available to subconfigure.m4
-CONF_OPS="$CONF_OPS --with-datatype-engine=yaksa" # 'yaksa' is the default datatype enginge
+# Additional psp-specific options
+if ! echo ${CONFSET} | grep -Eq "ch[34]"; then
+	CONF_OPS="$CONF_OPS --with-psp-confset=$CONFSET"  # Make confset available to subconfigure.m4
+	CONF_OPS="$CONF_OPS --with-datatype-engine=yaksa" # 'yaksa' is the default datatype enginge
+fi
 
 test -n "$CC"  && CONF_OPS="$CONF_OPS 'CC=$CC'"
 test -n "$CXX" && CONF_OPS="$CONF_OPS 'CXX=$CXX'"
