@@ -418,11 +418,15 @@ case $CONFSET in
 	CONF_OPS=
 	;;
 "ch"[[34]]*)
-	echo "Using confset=${CONFSET}"
-	if test "$CONFSET" != "ch3" ; then
-		CONF_OPS="--with-device=${CONFSET}"
-		MODULEFILE_CONFSET="mpich"
+	# Explicitly set the UCX netwomod
+	if test "x${CONFSET}" = "xch4"; then
+		CONFSET="ch4:ucx"
 	fi
+
+	echo "Using confset=${CONFSET}"
+	CONF_OPS="--with-device=${CONFSET}"
+	MODULEFILE_CONFSET="mpich"
+
 	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
 	CONF_OPS="$CONF_OPS --enable-f77"
 	CONF_OPS="$CONF_OPS --enable-fc"
