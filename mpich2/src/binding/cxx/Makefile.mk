@@ -1,8 +1,6 @@
-## -*- Mode: Makefile; -*-
-## vim: set ft=automake :
 ##
-## (C) 2011 by Argonne National Laboratory.
-##     See COPYRIGHT in top-level directory.
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
 ##
 
 # ensure that the buildiface script ends up in the release tarball
@@ -19,7 +17,7 @@ cxx_buildiface_out_files = $(top_srcdir)/src/binding/cxx/mpicxx.h.in \
 if MAINTAINER_MODE
 $(cxx_buildiface_out_files): src/binding/cxx/buildiface-stamp
 src/binding/cxx/buildiface-stamp: $(top_srcdir)/src/binding/cxx/buildiface $(top_srcdir)/src/include/mpi.h.in
-	( cd $(top_srcdir)/src/binding/cxx && ./buildiface -nosep -initfile=cxx.vlist )
+	( cd $(top_srcdir)/src/binding/cxx && ./buildiface -nosep -initfile=./cxx.vlist )
 endif MAINTAINER_MODE
 
 

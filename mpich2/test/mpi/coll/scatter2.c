@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpi.h"
@@ -19,7 +17,7 @@ int main(int argc, char **argv)
     double *vecin, *vecout, ivalue;
     int root, i, n, stride, errs = 0;
     int rank, size;
-    MPI_Aint vextent;
+    MPI_Aint vextent, tmp_lb;
 
     MTest_Init(&argc, &argv);
 
@@ -33,7 +31,7 @@ int main(int argc, char **argv)
 
     MPI_Type_vector(n, 1, stride, MPI_DOUBLE, &vec);
     MPI_Type_commit(&vec);
-    MPI_Type_extent(vec, &vextent);
+    MPI_Type_get_extent(vec, &tmp_lb, &vextent);
     if (vextent != ((n - 1) * (MPI_Aint) stride + 1) * sizeof(double)) {
         errs++;
         printf("Vector extent is %ld, should be %ld\n",

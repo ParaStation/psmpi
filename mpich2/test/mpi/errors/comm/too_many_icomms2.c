@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2012 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* This test attempts to create a large number of communicators, in an effort
@@ -19,7 +17,7 @@
 #include <mpi.h>
 #include "mpitest.h"
 
-#define MAX_NCOMM 100000
+#define MAX_NCOMM 200000
 #define WAIT_COMM 7
 static const int verbose = 0;
 

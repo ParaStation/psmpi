@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -15,7 +13,7 @@ cvars:
       category    : COLLECTIVE
       type        : int
       default     : 8
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : >-
@@ -35,7 +33,7 @@ cvars:
       category    : COLLECTIVE
       type        : int
       default     : 12288
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : >-
@@ -55,7 +53,7 @@ cvars:
       category    : COLLECTIVE
       type        : int
       default     : 524288
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : >-
@@ -71,52 +69,43 @@ cvars:
         broadcast based on a scatter followed by a ring allgather algorithm.
         (See also: MPIR_CVAR_BCAST_MIN_PROCS, MPIR_CVAR_BCAST_SHORT_MSG_SIZE)
 
-    - name        : MPIR_CVAR_ENABLE_SMP_BCAST
-      category    : COLLECTIVE
-      type        : boolean
-      default     : true
-      class       : device
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_ALL_EQ
-      description : Enable SMP aware broadcast (See also: MPIR_CVAR_MAX_SMP_BCAST_MSG_SIZE)
-
     - name        : MPIR_CVAR_MAX_SMP_BCAST_MSG_SIZE
       category    : COLLECTIVE
       type        : int
       default     : 0
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : >-
         Maximum message size for which SMP-aware broadcast is used.  A
         value of '0' uses SMP-aware broadcast for all message sizes.
-        (See also: MPIR_CVAR_ENABLE_SMP_BCAST)
 
     - name        : MPIR_CVAR_BCAST_INTRA_ALGORITHM
       category    : COLLECTIVE
-      type        : string
+      type        : enum
       default     : auto
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : |-
         Variable to select bcast algorithm
-        auto                                    - Internal algorithm selection
+        auto - Internal algorithm selection (can be overridden with MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE)
         binomial                                - Force Binomial Tree
         nb                                      - Force nonblocking algorithm
+        smp                                     - Force smp algorithm
         scatter_recursive_doubling_allgather    - Force Scatter Recursive-Doubling Allgather
         scatter_ring_allgather                  - Force Scatter Ring
 
     - name        : MPIR_CVAR_BCAST_INTER_ALGORITHM
       category    : COLLECTIVE
-      type        : string
+      type        : enum
       default     : auto
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : |-
         Variable to select bcast algorithm
-        auto                    - Internal algorithm selection
+        auto - Internal algorithm selection (can be overridden with MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE)
         nb                      - Force nonblocking algorithm
         remote_send_local_bcast - Force remote-send-local-bcast algorithm
 
@@ -124,14 +113,16 @@ cvars:
       category    : COLLECTIVE
       type        : boolean
       default     : true
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : >-
-        If set to true, MPI_Bcast will allow the device to override the
-        MPIR-level collective algorithms. The device still has the
-        option to call the MPIR-level algorithms manually.  If set to false,
-        the device-level bcast function will not be called.
+        This CVAR is only used when MPIR_CVAR_DEVICE_COLLECTIVES
+        is set to "percoll".  If set to true, MPI_Bcast will
+        allow the device to override the MPIR-level collective
+        algorithms.  The device might still call the MPIR-level
+        algorithms manually.  If set to false, the device-override
+        will be disabled.
 
 === END_MPI_T_CVAR_INFO_BLOCK ===
 */
@@ -155,108 +146,63 @@ int MPI_Bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm
 #undef MPI_Bcast
 #define MPI_Bcast PMPI_Bcast
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Bcast_intra_auto
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIR_Bcast_intra_auto(void *buffer,
-                          int count,
-                          MPI_Datatype datatype,
-                          int root, MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
+
+int MPIR_Bcast_allcomm_auto(void *buffer, int count, MPI_Datatype datatype, int root,
+                            MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
 {
     int mpi_errno = MPI_SUCCESS;
-    int mpi_errno_ret = MPI_SUCCESS;
-    int comm_size;
-    MPI_Aint nbytes = 0;
-    MPI_Aint type_size;
-    MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPIR_BCAST);
 
-    MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPIR_BCAST);
+    MPIR_Csel_coll_sig_s coll_sig = {
+        .coll_type = MPIR_CSEL_COLL_TYPE__BCAST,
+        .comm_ptr = comm_ptr,
 
-    if (count == 0)
-        goto fn_exit;
+        .u.bcast.buffer = buffer,
+        .u.bcast.count = count,
+        .u.bcast.datatype = datatype,
+        .u.bcast.root = root,
+    };
 
-    MPIR_Datatype_get_size_macro(datatype, type_size);
-    nbytes = MPIR_CVAR_MAX_SMP_BCAST_MSG_SIZE ? type_size * count : 0;
-    if (MPIR_CVAR_ENABLE_SMP_COLLECTIVES && MPIR_CVAR_ENABLE_SMP_BCAST &&
-        nbytes <= MPIR_CVAR_MAX_SMP_BCAST_MSG_SIZE && MPIR_Comm_is_node_aware(comm_ptr)) {
-        mpi_errno = MPIR_Bcast_intra_smp(buffer, count, datatype, root, comm_ptr, errflag);
-        if (mpi_errno) {
-            /* for communication errors, just record the error but continue */
-            *errflag =
-                MPIX_ERR_PROC_FAILED ==
-                MPIR_ERR_GET_CLASS(mpi_errno) ? MPIR_ERR_PROC_FAILED : MPIR_ERR_OTHER;
-            MPIR_ERR_SET(mpi_errno, *errflag, "**fail");
-            MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
-        }
-        goto fn_exit;
-    }
+    MPII_Csel_container_s *cnt = MPIR_Csel_search(comm_ptr->csel_comm, coll_sig);
+    MPIR_Assert(cnt);
 
-    comm_size = comm_ptr->local_size;
+    switch (cnt->id) {
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Bcast_intra_binomial:
+            mpi_errno = MPIR_Bcast_intra_binomial(buffer, count, datatype, root, comm_ptr, errflag);
+            break;
 
-    MPIR_Datatype_get_size_macro(datatype, type_size);
-
-    nbytes = type_size * count;
-    if (nbytes == 0)
-        goto fn_exit;   /* nothing to do */
-
-    if ((nbytes < MPIR_CVAR_BCAST_SHORT_MSG_SIZE) || (comm_size < MPIR_CVAR_BCAST_MIN_PROCS)) {
-        mpi_errno = MPIR_Bcast_intra_binomial(buffer, count, datatype, root, comm_ptr, errflag);
-    } else {    /* (nbytes >= MPIR_CVAR_BCAST_SHORT_MSG_SIZE) && (comm_size >= MPIR_CVAR_BCAST_MIN_PROCS) */
-
-        if ((nbytes < MPIR_CVAR_BCAST_LONG_MSG_SIZE) && (MPL_is_pof2(comm_size, NULL))) {
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Bcast_intra_scatter_recursive_doubling_allgather:
             mpi_errno =
                 MPIR_Bcast_intra_scatter_recursive_doubling_allgather(buffer, count, datatype, root,
                                                                       comm_ptr, errflag);
-        } else {        /* (nbytes >= MPIR_CVAR_BCAST_LONG_MSG_SIZE) || !(comm_size_is_pof2) */
+            break;
 
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Bcast_intra_scatter_ring_allgather:
             mpi_errno =
                 MPIR_Bcast_intra_scatter_ring_allgather(buffer, count, datatype, root, comm_ptr,
                                                         errflag);
-        }
+            break;
+
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Bcast_intra_smp:
+            mpi_errno = MPIR_Bcast_intra_smp(buffer, count, datatype, root, comm_ptr, errflag);
+            break;
+
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Bcast_inter_remote_send_local_bcast:
+            mpi_errno =
+                MPIR_Bcast_inter_remote_send_local_bcast(buffer, count, datatype, root, comm_ptr,
+                                                         errflag);
+            break;
+
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Bcast_allcomm_nb:
+            mpi_errno = MPIR_Bcast_allcomm_nb(buffer, count, datatype, root, comm_ptr, errflag);
+            break;
+
+        default:
+            MPIR_Assert(0);
     }
-    if (mpi_errno) {
-        /* for communication errors, just record the error but continue */
-        *errflag =
-            MPIX_ERR_PROC_FAILED ==
-            MPIR_ERR_GET_CLASS(mpi_errno) ? MPIR_ERR_PROC_FAILED : MPIR_ERR_OTHER;
-        MPIR_ERR_SET(mpi_errno, *errflag, "**fail");
-        MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
-    }
-
-  fn_exit:
-    MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPIR_BCAST);
-
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno_ret)
-        mpi_errno = mpi_errno_ret;
-    else if (*errflag != MPIR_ERR_NONE)
-        MPIR_ERR_SET(mpi_errno, *errflag, "**coll_fail");
-    /* --END ERROR HANDLING-- */
-    return mpi_errno;
-}
-
-#undef FUNCNAME
-#define FUNCNAME MPIR_Bcast_inter_auto
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIR_Bcast_inter_auto(void *buffer,
-                          int count,
-                          MPI_Datatype datatype,
-                          int root, MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    mpi_errno =
-        MPIR_Bcast_inter_remote_send_local_bcast(buffer, count, datatype, root, comm_ptr, errflag);
 
     return mpi_errno;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Bcast_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Bcast_impl(void *buffer, int count, MPI_Datatype datatype, int root, MPIR_Comm * comm_ptr,
                     MPIR_Errflag_t * errflag)
 {
@@ -264,50 +210,55 @@ int MPIR_Bcast_impl(void *buffer, int count, MPI_Datatype datatype, int root, MP
 
     if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM) {
         /* intracommunicator */
-        switch (MPIR_Bcast_intra_algo_choice) {
-            case MPIR_BCAST_INTRA_ALGO_BINOMIAL:
+        switch (MPIR_CVAR_BCAST_INTRA_ALGORITHM) {
+            case MPIR_CVAR_BCAST_INTRA_ALGORITHM_binomial:
                 mpi_errno =
                     MPIR_Bcast_intra_binomial(buffer, count, datatype, root, comm_ptr, errflag);
                 break;
-            case MPIR_BCAST_INTRA_ALGO_SCATTER_RECURSIVE_DOUBLING_ALLGATHER:
+            case MPIR_CVAR_BCAST_INTRA_ALGORITHM_scatter_recursive_doubling_allgather:
                 mpi_errno =
                     MPIR_Bcast_intra_scatter_recursive_doubling_allgather(buffer, count, datatype,
                                                                           root, comm_ptr, errflag);
                 break;
-            case MPIR_BCAST_INTRA_ALGO_SCATTER_RING_ALLGATHER:
+            case MPIR_CVAR_BCAST_INTRA_ALGORITHM_scatter_ring_allgather:
                 mpi_errno =
                     MPIR_Bcast_intra_scatter_ring_allgather(buffer, count, datatype, root, comm_ptr,
                                                             errflag);
                 break;
-            case MPIR_BCAST_INTRA_ALGO_NB:
+            case MPIR_CVAR_BCAST_INTRA_ALGORITHM_nb:
                 mpi_errno = MPIR_Bcast_allcomm_nb(buffer, count, datatype, root, comm_ptr, errflag);
                 break;
-            case MPIR_BCAST_INTRA_ALGO_AUTO:
-                MPL_FALLTHROUGH;
-            default:
-                mpi_errno = MPIR_Bcast_intra_auto(buffer, count, datatype, root, comm_ptr, errflag);
+            case MPIR_CVAR_BCAST_INTRA_ALGORITHM_smp:
+                mpi_errno = MPIR_Bcast_intra_smp(buffer, count, datatype, root, comm_ptr, errflag);
                 break;
+            case MPIR_CVAR_BCAST_INTRA_ALGORITHM_auto:
+                mpi_errno =
+                    MPIR_Bcast_allcomm_auto(buffer, count, datatype, root, comm_ptr, errflag);
+                break;
+            default:
+                MPIR_Assert(0);
         }
     } else {
         /* intercommunicator */
-        switch (MPIR_Bcast_inter_algo_choice) {
-            case MPIR_BCAST_INTER_ALGO_REMOTE_SEND_LOCAL_BCAST:
+        switch (MPIR_CVAR_BCAST_INTER_ALGORITHM) {
+            case MPIR_CVAR_BCAST_INTER_ALGORITHM_remote_send_local_bcast:
                 mpi_errno =
                     MPIR_Bcast_inter_remote_send_local_bcast(buffer, count, datatype, root,
                                                              comm_ptr, errflag);
                 break;
-            case MPIR_BCAST_INTER_ALGO_NB:
+            case MPIR_CVAR_BCAST_INTER_ALGORITHM_nb:
                 mpi_errno = MPIR_Bcast_allcomm_nb(buffer, count, datatype, root, comm_ptr, errflag);
                 break;
-            case MPIR_BCAST_INTER_ALGO_AUTO:
-                MPL_FALLTHROUGH;
-            default:
-                mpi_errno = MPIR_Bcast_inter_auto(buffer, count, datatype, root, comm_ptr, errflag);
+            case MPIR_CVAR_BCAST_INTER_ALGORITHM_auto:
+                mpi_errno =
+                    MPIR_Bcast_allcomm_auto(buffer, count, datatype, root, comm_ptr, errflag);
                 break;
+            default:
+                MPIR_Assert(0);
         }
     }
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     return mpi_errno;
@@ -315,16 +266,14 @@ int MPIR_Bcast_impl(void *buffer, int count, MPI_Datatype datatype, int root, MP
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Bcast
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPIR_Comm * comm_ptr,
                MPIR_Errflag_t * errflag)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    if (MPIR_CVAR_BCAST_DEVICE_COLLECTIVE && MPIR_CVAR_DEVICE_COLLECTIVES) {
+    if ((MPIR_CVAR_DEVICE_COLLECTIVES == MPIR_CVAR_DEVICE_COLLECTIVES_all) ||
+        ((MPIR_CVAR_DEVICE_COLLECTIVES == MPIR_CVAR_DEVICE_COLLECTIVES_percoll) &&
+         MPIR_CVAR_BCAST_DEVICE_COLLECTIVE)) {
         mpi_errno = MPID_Bcast(buffer, count, datatype, root, comm_ptr, errflag);
     } else {
         mpi_errno = MPIR_Bcast_impl(buffer, count, datatype, root, comm_ptr, errflag);
@@ -336,10 +285,6 @@ int MPIR_Bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPIR_Co
 
 #endif /* MPICH_MPI_FROM_PMPI */
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Bcast
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /*@
 MPI_Bcast - Broadcasts a message from the process with rank "root" to
@@ -410,7 +355,7 @@ int MPI_Bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm
                 MPIR_ERRTEST_INTER_ROOT(comm_ptr, root, mpi_errno);
             }
 
-            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(datatype)) {
                 MPIR_Datatype_get_ptr(datatype, datatype_ptr);
                 MPIR_Datatype_valid_ptr(datatype_ptr, mpi_errno);
                 if (mpi_errno != MPI_SUCCESS)
@@ -430,8 +375,7 @@ int MPI_Bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm
     /* ... body of routine ...  */
 
     mpi_errno = MPIR_Bcast(buffer, count, datatype, root, comm_ptr, &errflag);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* ... end of body of routine ... */
 
@@ -445,12 +389,12 @@ int MPI_Bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_bcast", "**mpi_bcast %p %d %D %d %C", buffer, count,
                                  datatype, root, comm);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

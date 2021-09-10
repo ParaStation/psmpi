@@ -15,196 +15,164 @@
 #include "mpid_psp_packed_msg.h"
 #include "mpid_psp_request.h"
 
-#if 0
-void PREPEND_PREFIX(Segment_manipulate)(struct DLOOP_Segment *segp,
-					DLOOP_Offset first,
-					DLOOP_Offset *lastp,
-					int (*piecefn) (DLOOP_Offset *blocks_p,
-							DLOOP_Type el_type,
-							DLOOP_Offset rel_off,
-							void *bufp,
-							void *v_paramp),
-					int (*vectorfn) (DLOOP_Offset *blocks_p,
-							 int count,
-							 int blklen,
-							 DLOOP_Offset stride,
-							 DLOOP_Type el_type,
-							 DLOOP_Offset rel_off,
-							 void *bufp,
-							 void *v_paramp),
-					int (*blkidxfn) (DLOOP_Offset *blocks_p,
-							 int count,
-							 int blklen,
-							 DLOOP_Offset *offsetarray,
-							 DLOOP_Type el_type,
-							 DLOOP_Offset rel_off,
-							 void *bufp,
-							 void *v_paramp),
-					int (*indexfn) (DLOOP_Offset *blocks_p,
-							int count,
-							int *blockarray,
-							DLOOP_Offset *offsetarray,
-							DLOOP_Type el_type,
-							DLOOP_Offset rel_off,
-							void *bufp,
-							void *v_paramp),
-					DLOOP_Offset (*sizefn) (DLOOP_Type el_type),
-					void *pieceparams);
-#endif
-
-struct acc_params {
-	void		  *msg;
-	size_t		   msg_sz;
-	MPI_User_function *uop;
-	MPI_Op             op;
-	MPI_Datatype       dtype;
-};
-
-
-static
-int MPIR_Segment_contig_acc(DLOOP_Offset *blocks_p,
-			    DLOOP_Type el_type,
-			    DLOOP_Offset rel_off,
-			    void *bufp,
-			    void *v_paramp)
+int MPIDI_PSP_compute_acc_op(void *origin_addr, int origin_count,
+			      MPI_Datatype origin_datatype, void *target_addr,
+			      int target_count, MPI_Datatype target_datatype,
+			      MPI_Op op, int packed_source_buf)
 {
-	int el_size;
-	DLOOP_Offset size;
-	int count = *blocks_p;
-	struct acc_params *acc_params = v_paramp;
-/*	printf("%s() with type %08x\n", __func__, el_type); */
+	int mpi_errno = MPI_SUCCESS;
+	MPI_User_function *uop = NULL;
+	MPI_Aint origin_datatype_size = 0, origin_datatype_extent = 0;
+	int is_empty_source = (op == MPI_NO_OP)? TRUE : FALSE;
 
-	if( (acc_params->op == MPI_MINLOC || acc_params->op == MPI_MAXLOC) && el_type == MPI_BYTE ) {
-		/* Corner case of composed but built-in datatypes that degraded to MPI_BYTE when treated as derived:
-		   Contrary to the allowed datatypes for MPI_Accumulate, these are composed of different predefined
-		   types (e.g. MPI_DOUBLE_INT) and can only be used meaningfully with MPI_MINLOC/MAXLOC as ops... */
-		el_type = acc_params->dtype;
-		size  = count;
-		count = 1;
+	if (is_empty_source == FALSE) {
+		MPIR_Assert(MPIR_DATATYPE_IS_PREDEFINED(origin_datatype));
+		MPIR_Datatype_get_size_macro(origin_datatype, origin_datatype_size);
+		MPIR_Datatype_get_extent_macro(origin_datatype, origin_datatype_extent);
+	}
+
+	/* we only support buildin operations */
+	if ((HANDLE_IS_BUILTIN(op)) &&
+	    ((*MPIR_OP_HDL_TO_DTYPE_FN(op))(origin_datatype) == MPI_SUCCESS)) {
+		/* get the function by indexing into the op table */
+		uop = MPIR_OP_HDL_TO_FN(op);
 	} else {
-		/* Usual case of common built-in datatypes... */
-		el_size = MPIR_Datatype_get_basic_size(el_type);
-		size = *blocks_p * (DLOOP_Offset) el_size;
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+						 __func__, __LINE__, MPI_ERR_OP,
+						 "**opnotpredefined", "**opnotpredefined %d", op);
+		goto fn_exit;
 	}
-
-	/* replace would be: memcpy((char *) bufp + rel_off, paramp->u.unpack.unpack_buffer, size); */
-
-	acc_params->uop(acc_params->msg,
-			(char *) bufp + rel_off /* target */,
-			&count /* count */,
-			&el_type);
-
-	acc_params->msg = (char *) acc_params->msg + size;
-
-	return 0;
-}
-
-static
-int MPIR_Segment_vector_acc(DLOOP_Offset *blocks_p,
-			    DLOOP_Count count,
-			    DLOOP_Count blklen,
-			    DLOOP_Offset stride,
-			    DLOOP_Type el_type,
-			    DLOOP_Offset rel_off,
-			    DLOOP_Buffer bufp,
-			    void *v_paramp)
-{
-	int i;
-	int el_size;
-	DLOOP_Offset size;
-	struct acc_params *acc_params = v_paramp;
-
-	if( (acc_params->op == MPI_MINLOC || acc_params->op == MPI_MAXLOC) && el_type == MPI_BYTE ) {
-		/* Corner case of composed but built-in datatypes that degraded to MPI_BYTE when treated as derived:
-		   (see also MPIR_Segment_contig_acc) */
-		el_type = acc_params->dtype;
-		size   = blklen;
-		blklen = 1;
-	} else {
-
-		el_size = MPIR_Datatype_get_basic_size(el_type);
-		size = blklen * (DLOOP_Offset) el_size;
-	}
-
-	for(i=0; i<count; i++) {
-
-		acc_params->uop(acc_params->msg,
-				(char *) bufp + rel_off + i * stride /* target */,
-				(int*) &blklen /* count */,
-				&el_type);
-
-		acc_params->msg = (char *) acc_params->msg + size;
-	}
-
-	return 0;
-}
-
-
-/* tm: see src/mpi/coll/opreplace.c
-static
-void MPIR_REPLACE(void *invec, void *inoutvec, int *Len, MPI_Datatype *type)
-{
-	memcpy(inoutvec, invec, *Len);
-}
-*/
-
-void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Datatype datatype,
-			     void *msg, size_t msg_sz, MPI_Op op)
-{
-	MPIR_Segment segment;
-	DLOOP_Offset last = msg_sz;
-	struct acc_params acc_params;
-
-	void *acc_addr = (void*)target_addr;
 
 #ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
-	size_t target_sz = 0;
-
 	/* is target_addr within device memory? */
+	void *in_targetbuf = target_addr;
+	void *host_targetbuf = NULL;
+	MPL_pointer_attr_t attr;
 	if (pscom_is_gpu_mem(target_addr)) {
-		int contig;
-		MPIR_Datatype *dtp;
+		MPI_Aint extent, true_extent;
 		MPI_Aint true_lb;
 
-		MPIDI_Datatype_get_info(target_count, datatype,
-			contig, target_sz,
-			dtp, true_lb);
+		MPIR_Datatype_get_extent_macro(target_datatype, extent);
+		MPIR_Type_get_true_extent_impl(target_datatype, &true_lb, &true_extent);
+		extent = MPL_MAX(extent, true_extent);
 
-		acc_addr = MPL_malloc(target_sz, MPL_MEM_OTHER);
-		MPID_Memcpy(acc_addr, target_addr, target_sz);
-
-		// Avoid compiler warnings about unused variables:
-		(void)contig;
-		(void)true_lb;
+		host_targetbuf = MPL_malloc(extent * target_count, MPL_MEM_RMA);
+		MPIR_Assert(host_targetbuf);
+		MPIR_Localcopy(target_addr, target_count, target_datatype,
+			       host_targetbuf, target_count, target_datatype);
+		target_addr = host_targetbuf;
 	}
-#endif
+#endif /* MPIDI_PSP_WITH_CUDA_AWARENESS */
 
-	MPIR_Segment_init(acc_addr, target_count, datatype, &segment);
+	/* directly apply op if target dtp is predefined dtp OR source buffer is empty */
+	if ((is_empty_source == TRUE) || HANDLE_IS_BUILTIN(target_datatype)) {
+		(*uop)(origin_addr, target_addr, &origin_count, &origin_datatype);
+	} else {
+		/* derived datatype */
+		struct iovec *typerep_vec;
+		int i, count;
+		MPI_Aint vec_len, type_extent, type_size, src_type_stride;
+		MPI_Datatype type;
+		MPIR_Datatype *dtp;
+		MPI_Aint curr_len;
+		void *curr_loc;
+		int accumulated_count;
 
-	acc_params.op = op;
-	MPID_PSP_Datatype_get_basic_type(datatype, acc_params.dtype);
+		MPIR_Datatype_get_ptr(target_datatype, dtp);
+		MPIR_Assert(dtp != NULL);
+		vec_len = dtp->typerep.num_contig_blocks * target_count + 1;
+		/* +1 needed because Rob says so */
+		typerep_vec = (struct iovec *)
+		    MPL_malloc(vec_len * sizeof(struct iovec), MPL_MEM_RMA);
+		if (!typerep_vec) {
+			mpi_errno =
+			    MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__,
+						 MPI_ERR_OTHER, "**nomem", 0);
+			goto fn_exit;
+		}
 
-	acc_params.msg = msg;
-	acc_params.msg_sz = msg_sz;
-	/* get the function by indexing into the op table */
-	acc_params.uop = MPIR_OP_HDL_TO_FN(op);
+		MPI_Aint actual_iov_len, actual_iov_bytes;
+		MPIR_Typerep_to_iov(NULL, target_count, target_datatype, 0,
+				    typerep_vec, vec_len,
+				    origin_count * origin_datatype_size,
+				    &actual_iov_len, &actual_iov_bytes);
+		vec_len = actual_iov_len;
 
-	if (!acc_params.uop) return; /* Todo: report error */
+		type = dtp->basic_type;
+		MPIR_Assert(type != MPI_DATATYPE_NULL);
 
-	MPIR_Segment_manipulate(&segment, /* first */0, &last,
-				MPIR_Segment_contig_acc,
-				MPIR_Segment_vector_acc,
-				/* ToDo: implement MPIR_Segment_{blkidx,index}_acc! */
-				NULL /* MPIR_Segment_blkidx_acc */,
-				NULL /* MPIR_Segment_index_acc */,
-				NULL /* sizefn */,
-				&acc_params);
+		MPIR_Assert(type == origin_datatype);
+		type_size = origin_datatype_size;
+		type_extent = origin_datatype_extent;
+		/* If the source buffer has been packed by the caller, the distance between
+         * two elements can be smaller than extent. E.g., predefined pairtype may
+         * have larger extent than size.*/
+		/* when predefined pairtype have larger extent than size, we'll end up
+         * missaligned access. Memcpy the source to workaround the alignment issue.
+         */
+		char *src_ptr = NULL;
+		if (packed_source_buf) {
+			src_type_stride = origin_datatype_size;
+			if (origin_datatype_size < origin_datatype_extent) {
+				src_ptr = MPL_malloc(origin_datatype_extent, MPL_MEM_OTHER);
+			}
+		} else {
+			src_type_stride = origin_datatype_extent;
+		}
+
+		i = 0;
+		curr_loc = typerep_vec[0].iov_base;
+		curr_len = typerep_vec[0].iov_len;
+		accumulated_count = 0;
+		while (i != vec_len) {
+			if (curr_len < type_size) {
+				MPIR_Assert(i != vec_len);
+				i++;
+				curr_len += typerep_vec[i].iov_len;
+				continue;
+			}
+
+			MPIR_Assign_trunc(count, curr_len / type_size, int);
+
+			if (src_ptr) {
+				MPI_Aint unpacked_size;
+				MPIR_Typerep_unpack((char *)origin_addr + src_type_stride * accumulated_count,
+						    origin_datatype_size, src_ptr, 1, origin_datatype, 0, &unpacked_size);
+				(*uop)(src_ptr, (char *)target_addr + MPIR_Ptr_to_aint(curr_loc), &count, &type);
+			} else {
+				(*uop)((char *)origin_addr + src_type_stride * accumulated_count,
+				       (char *)target_addr + MPIR_Ptr_to_aint(curr_loc), &count, &type);
+			}
+
+			if (curr_len % type_size == 0) {
+				i++;
+				if (i != vec_len) {
+					curr_loc = typerep_vec[i].iov_base;
+					curr_len = typerep_vec[i].iov_len;
+				}
+			} else {
+				curr_loc = (void *)((char *)curr_loc + type_extent * count);
+				curr_len -= type_size * count;
+			}
+
+			accumulated_count += count;
+		}
+
+		MPL_free(src_ptr);
+		MPL_free(typerep_vec);
+	}
 
 #ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
-	/* do we need to unstage the buffer? */
-	if (acc_addr != target_addr) {
-		MPID_Memcpy((void*)target_addr, acc_addr, target_sz);
-		MPL_free(acc_addr);
+	if (host_targetbuf) {
+		target_addr = in_targetbuf;
+		MPIR_Localcopy(host_targetbuf, target_count, target_datatype,
+			       target_addr, target_count, target_datatype);
+		MPL_free(host_targetbuf);
 	}
-#endif
+#endif /*  MPIDI_PSP_WITH_CUDA_AWARENESS */
+
+fn_exit:
+	/* TODO: Error handling */
+	assert (mpi_errno == MPI_SUCCESS);
+	return mpi_errno;
 }

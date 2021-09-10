@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -26,10 +24,6 @@ int MPI_Type_get_true_extent(MPI_Datatype datatype, MPI_Aint * true_lb, MPI_Aint
 #undef MPI_Type_get_true_extent
 #define MPI_Type_get_true_extent PMPI_Type_get_true_extent
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Type_get_true_extent_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPIR_Type_get_true_extent_impl(MPI_Datatype datatype, MPI_Aint * true_lb,
                                     MPI_Aint * true_extent)
 {
@@ -42,10 +36,6 @@ void MPIR_Type_get_true_extent_impl(MPI_Datatype datatype, MPI_Aint * true_lb,
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Type_get_true_extent
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Type_get_true_extent - Get the true lower bound and extent for a
      datatype
@@ -124,12 +114,12 @@ int MPI_Type_get_true_extent(MPI_Datatype datatype, MPI_Aint * true_lb, MPI_Aint
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_type_get_true_extent",
                                  "**mpi_type_get_true_extent %D %p %p", datatype, true_lb,
                                  true_extent);
     }
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
 #endif
     /* --END ERROR HANDLING-- */

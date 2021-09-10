@@ -1,11 +1,6 @@
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- *  Portions of this code were written by Intel Corporation.
- *  Copyright (C) 2011-2017 Intel Corporation.  Intel provides this material
- *  to Argonne National Laboratory subject to Software Grant and Corporate
- *  Contributor License Agreement dated February 8, 2012.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -22,10 +17,14 @@ UT_icd vtx_t_icd = {
     MPII_Genutil_vtx_dtor
 };
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Genutil_sched_create
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
+/* UT_icd helper structure for MPII_Genutil_vtx_type_t utarray */
+UT_icd vtx_type_t_icd = {
+    sizeof(MPII_Genutil_vtx_type_t),
+    NULL,
+    NULL,
+    NULL
+};
+
 int MPII_Genutil_sched_create(MPII_Genutil_sched_t * sched)
 {
     sched->total_vtcs = 0;
@@ -36,6 +35,7 @@ int MPII_Genutil_sched_create(MPII_Genutil_sched_t * sched)
     utarray_new(sched->vtcs, &vtx_t_icd, MPL_MEM_COLL);
 
     utarray_new(sched->buffers, &ut_ptr_icd, MPL_MEM_COLL);
+    utarray_init(&sched->generic_types, &vtx_type_t_icd);
 
     sched->issued_head = NULL;
     sched->issued_tail = NULL;
@@ -43,11 +43,87 @@ int MPII_Genutil_sched_create(MPII_Genutil_sched_t * sched)
     return MPI_SUCCESS;
 }
 
+void MPII_Genutil_sched_free(MPII_Genutil_sched_t * sched)
+{
+    int i;
+    vtx_t *vtx;
+    void **p;
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Genutil_sched_isend
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
+    /* free up the sched resources */
+    vtx = ut_type_array(sched->vtcs, vtx_t *);
+    MPII_Genutil_vtx_type_t *vtype =
+        ut_type_array(&sched->generic_types, MPII_Genutil_vtx_type_t *);
+    for (i = 0; i < sched->total_vtcs; i++, vtx++) {
+        MPIR_Assert(vtx != NULL);
+        if (vtx->vtx_kind == MPII_GENUTIL_VTX_KIND__IMCAST) {
+            MPL_free(vtx->u.imcast.req);
+            utarray_free(vtx->u.imcast.dests);
+        } else if (vtx->vtx_kind > MPII_GENUTIL_VTX_KIND__LAST) {
+            MPII_Genutil_vtx_type_t *type = vtype + vtx->vtx_kind - MPII_GENUTIL_VTX_KIND__LAST - 1;
+            MPIR_Assert(type != NULL);
+            if (type->free_fn != NULL) {
+                int mpi_errno = type->free_fn(vtx);
+                /* TODO: change this function to return mpi_errno */
+                MPIR_Assert(mpi_errno == MPI_SUCCESS);
+            }
+        }
+    }
+
+    /* free up the allocated buffers */
+    p = NULL;
+    while ((p = (void **) utarray_next(sched->buffers, p)))
+        MPL_free(*p);
+
+    utarray_free(sched->vtcs);
+    utarray_free(sched->buffers);
+    utarray_done(&sched->generic_types);
+    MPL_free(sched);
+}
+
+int MPII_Genutil_sched_new_type(MPII_Genutil_sched_t * sched, MPII_Genutil_sched_issue_fn issue_fn,
+                                MPII_Genutil_sched_complete_fn complete_fn,
+                                MPII_Genutil_sched_free_fn free_fn)
+{
+    MPII_Genutil_vtx_type_t *newtype;
+    int type_id;
+
+    type_id = MPII_GENUTIL_VTX_KIND__LAST + utarray_len(&sched->generic_types) + 1;
+    utarray_extend_back(&sched->generic_types, MPL_MEM_COLL);
+    newtype = (MPII_Genutil_vtx_type_t *) utarray_back(&sched->generic_types);
+    newtype->id = type_id;
+    newtype->issue_fn = issue_fn;
+    newtype->complete_fn = complete_fn;
+    newtype->free_fn = free_fn;
+
+    return type_id;
+}
+
+int MPII_Genutil_sched_generic(int type_id, void *data,
+                               MPII_Genutil_sched_t * sched, int n_in_vtcs, int *in_vtcs,
+                               int *vtx_id)
+{
+    int mpi_errno = MPI_SUCCESS;
+    vtx_t *vtxp;
+
+    if (type_id <= MPII_GENUTIL_VTX_KIND__LAST ||
+        type_id - MPII_GENUTIL_VTX_KIND__LAST > utarray_len(&sched->generic_types)) {
+        MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**nomem");
+    }
+    MPIR_Assert(vtx_id);
+    *vtx_id = MPII_Genutil_vtx_create(sched, &vtxp);
+    vtxp->vtx_kind = type_id;
+    vtxp->u.generic.data = data;
+    MPII_Genutil_vtx_add_dependencies(sched, *vtx_id, n_in_vtcs, in_vtcs);
+
+    MPL_DBG_MSG_FMT(MPIR_DBG_COLL, VERBOSE,
+                    (MPL_DBG_FDEST, "Gentran: schedule [%d] generic [%d]", *vtx_id, type_id));
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
 int MPII_Genutil_sched_isend(const void *buf,
                              int count,
                              MPI_Datatype dt,
@@ -79,10 +155,6 @@ int MPII_Genutil_sched_isend(const void *buf,
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Genutil_sched_irecv
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPII_Genutil_sched_irecv(void *buf,
                              int count,
                              MPI_Datatype dt,
@@ -115,10 +187,6 @@ int MPII_Genutil_sched_irecv(void *buf,
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Genutil_sched_imcast
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPII_Genutil_sched_imcast(const void *buf,
                               int count,
                               MPI_Datatype dt,
@@ -155,10 +223,36 @@ int MPII_Genutil_sched_imcast(const void *buf,
     return vtx_id;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Genutil_sched_reduce_local
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
+int MPII_Genutil_sched_issend(const void *buf,
+                              int count,
+                              MPI_Datatype dt,
+                              int dest,
+                              int tag,
+                              MPIR_Comm * comm_ptr,
+                              MPII_Genutil_sched_t * sched, int n_in_vtcs, int *in_vtcs)
+{
+    vtx_t *vtxp;
+    int vtx_id;
+
+    /* assign a new vertex */
+    vtx_id = MPII_Genutil_vtx_create(sched, &vtxp);
+    vtxp->vtx_kind = MPII_GENUTIL_VTX_KIND__ISSEND;
+    MPII_Genutil_vtx_add_dependencies(sched, vtx_id, n_in_vtcs, in_vtcs);
+
+    /* store the arguments */
+    vtxp->u.issend.buf = buf;
+    vtxp->u.issend.count = count;
+    vtxp->u.issend.dt = dt;
+    vtxp->u.issend.dest = dest;
+    vtxp->u.issend.tag = tag;
+    vtxp->u.issend.comm = comm_ptr;
+
+    MPL_DBG_MSG_FMT(MPIR_DBG_COLL, VERBOSE,
+                    (MPL_DBG_FDEST, "Gentran: schedule [%d] issend", vtx_id));
+
+    return vtx_id;
+}
+
 int MPII_Genutil_sched_reduce_local(const void *inbuf, void *inoutbuf, int count,
                                     MPI_Datatype datatype, MPI_Op op, MPII_Genutil_sched_t * sched,
                                     int n_in_vtcs, int *in_vtcs)
@@ -186,10 +280,6 @@ int MPII_Genutil_sched_reduce_local(const void *inbuf, void *inoutbuf, int count
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Genutil_sched_localcopy
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPII_Genutil_sched_localcopy(const void *sendbuf, MPI_Aint sendcount, MPI_Datatype sendtype,
                                  void *recvbuf, MPI_Aint recvcount, MPI_Datatype recvtype,
                                  MPII_Genutil_sched_t * sched, int n_in_vtcs, int *in_vtcs)
@@ -220,10 +310,6 @@ int MPII_Genutil_sched_localcopy(const void *sendbuf, MPI_Aint sendcount, MPI_Da
 
 /* Transport function that adds a no op vertex in the graph that has
  * all the vertices posted before it as incoming vertices */
-#undef FUNCNAME
-#define FUNCNAME MPII_Genutil_sched_sink
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPII_Genutil_sched_sink(MPII_Genutil_sched_t * sched)
 {
     MPL_DBG_MSG_FMT(MPIR_DBG_COLL, VERBOSE,
@@ -268,10 +354,6 @@ int MPII_Genutil_sched_sink(MPII_Genutil_sched_t * sched)
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Genutil_sched_fence
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPII_Genutil_sched_fence(MPII_Genutil_sched_t * sched)
 {
     int fence_id;
@@ -286,10 +368,6 @@ void MPII_Genutil_sched_fence(MPII_Genutil_sched_t * sched)
     sched->last_fence = fence_id;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Genutil_sched_selective_sink
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPII_Genutil_sched_selective_sink(MPII_Genutil_sched_t * sched, int n_in_vtcs, int *in_vtcs)
 {
     vtx_t *vtxp;
@@ -308,10 +386,6 @@ int MPII_Genutil_sched_selective_sink(MPII_Genutil_sched_t * sched, int n_in_vtc
 
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Genutil_sched_malloc
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void *MPII_Genutil_sched_malloc(size_t size, MPII_Genutil_sched_t * sched)
 {
     void *addr = MPL_malloc(size, MPL_MEM_COLL);
@@ -319,10 +393,6 @@ void *MPII_Genutil_sched_malloc(size_t size, MPII_Genutil_sched_t * sched)
     return addr;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Genutil_sched_start
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPII_Genutil_sched_start(MPII_Genutil_sched_t * sched, MPIR_Comm * comm, MPIR_Request ** req)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -340,22 +410,29 @@ int MPII_Genutil_sched_start(MPII_Genutil_sched_t * sched, MPIR_Comm * comm, MPI
     *req = reqp;
     MPIR_Request_add_ref(reqp);
 
-    /* Make some progress */
+    if (unlikely(sched->total_vtcs == 0)) {
+        MPII_Genutil_sched_free(sched);
+        MPIR_Request_complete(reqp);
+        goto fn_exit;
+    }
+    /* Kick start progress on this collective's schedule */
     mpi_errno = MPII_Genutil_sched_poke(sched, &is_complete, &made_progress);
     if (is_complete) {
-        MPID_Request_complete(reqp);
+        MPIR_Request_complete(reqp);
         goto fn_exit;
     }
 
     /* Enqueue schedule and activate progress hook if not already activated */
     reqp->u.nbc.coll.sched = (void *) sched;
-    if (coll_queue.head == NULL)
-        MPID_Progress_activate_hook(MPII_Genutil_progress_hook_id);
-    DL_APPEND(coll_queue.head, &(reqp->u.nbc.coll));
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPII_GENUTIL_SCHED_START);
+    MPID_THREAD_CS_ENTER(VCI, MPIDIU_THREAD_TSP_QUEUE_MUTEX);
+    DL_APPEND(MPII_coll_queue.head, &(reqp->u.nbc.coll));
+    MPID_THREAD_CS_EXIT(VCI, MPIDIU_THREAD_TSP_QUEUE_MUTEX);
+
+    MPIR_Progress_hook_activate(MPII_Genutil_progress_hook_id);
 
   fn_exit:
+    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPII_GENUTIL_SCHED_START);
     return mpi_errno;
   fn_fail:
     goto fn_exit;

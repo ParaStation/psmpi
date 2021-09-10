@@ -1,8 +1,6 @@
-## -*- Mode: Makefile; -*-
-## vim: set ft=automake :
 ##
-## (C) 2011 by Argonne National Laboratory.
-##     See COPYRIGHT in top-level directory.
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
 ##
 
 ## NOTE: this is subtly different from the simplemake strategy.  The simplemake
@@ -35,7 +33,7 @@ endif BUILD_PM_GFORKER
 ## TODO convert these simplemake doc commands to the new scheme
 ##doc_sources = mpiexec.txt
 ##DOCDESTDIRS = html:www/www1,man:man/man1,latex:doc/refman
-##docargs_ADD       = ${master_top_srcdir}/doc/mansrc/cmdnotes
+##docargs_ADD       = ${main_top_srcdir}/doc/mansrc/cmdnotes
 ##doc_HTML_SOURCES  = ${doc_sources}
 ##doc_MAN_SOURCES   = ${doc_sources}
 ##doc_LATEX_SOURCES = ${doc_sources}

@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@ int MPI_Win_attach(MPI_Win win, void *base, MPI_Aint size)
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Win_attach
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Win_attach - Attach memory to a dynamic window.
 
@@ -100,12 +94,12 @@ int MPI_Win_attach(MPI_Win win, void *base, MPI_Aint size)
             if (size < 0)
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
                                                  MPIR_ERR_RECOVERABLE,
-                                                 FCNAME, __LINE__,
+                                                 __func__, __LINE__,
                                                  MPI_ERR_SIZE, "**rmasize", "**rmasize %d", size);
             if (size > 0 && base == NULL)
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
                                                  MPIR_ERR_RECOVERABLE,
-                                                 FCNAME, __LINE__,
+                                                 __func__, __LINE__,
                                                  MPI_ERR_ARG,
                                                  "**nullptr",
                                                  "**nullptr %s",
@@ -138,11 +132,11 @@ int MPI_Win_attach(MPI_Win win, void *base, MPI_Aint size)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_win_attach", "**mpi_win_attach %W %p %d", size, base, win);
     }
 #endif
-    mpi_errno = MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_win(win_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

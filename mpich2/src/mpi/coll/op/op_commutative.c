@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2009 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@ int MPI_Op_commutative(MPI_Op op, int *commute)
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Op_is_commutative
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /* TODO with a modest amount of work in the handle allocator code we should be
  * able to encode commutativity in the handle value and greatly simplify this
  * routine */
@@ -40,8 +34,12 @@ int MPIR_Op_is_commutative(MPI_Op op)
 {
     MPIR_Op *op_ptr;
 
-    if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
-        return TRUE;
+    if (HANDLE_IS_BUILTIN(op)) {
+        if (op == MPI_NO_OP || op == MPI_REPLACE) {
+            return FALSE;
+        } else {
+            return TRUE;
+        }
     } else {
         MPIR_Op_get_ptr(op, op_ptr);
         MPIR_Assert(op_ptr != NULL);
@@ -52,31 +50,15 @@ int MPIR_Op_is_commutative(MPI_Op op)
     }
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Op_commutative
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIR_Op_commutative(MPIR_Op * op_ptr, int *commute)
+int MPIR_Op_commutative(MPI_Op op, int *commute)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    /* Built-in op */
-    if (MPIR_OP_KIND__USER_NONCOMMUTE > op_ptr->kind) {
-        *commute = 1;
-    } else {
-        if (op_ptr->kind == MPIR_OP_KIND__USER_NONCOMMUTE)
-            *commute = 0;
-        else
-            *commute = 1;
-    }
+    *commute = MPIR_Op_is_commutative(op);
 
     return mpi_errno;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Op_commutative
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
   MPI_Op_commute - Queries an MPI reduction operation for its commutativity.
 
@@ -116,8 +98,7 @@ int MPI_Op_commutative(MPI_Op op, int *commute)
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_Op_valid_ptr(op_ptr, mpi_errno);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -125,7 +106,7 @@ int MPI_Op_commutative(MPI_Op op, int *commute)
 
     /* ... body of routine ...  */
 
-    MPIR_Op_commutative(op_ptr, commute);
+    MPIR_Op_commutative(op, commute);
 
     /* ... end of body of routine ... */
 
@@ -141,10 +122,10 @@ int MPI_Op_commutative(MPI_Op op, int *commute)
     /* --BEGIN ERROR HANDLING-- */
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_op_commutative", "**mpi_op_commutative %O %p", op, commute);
     }
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 #endif

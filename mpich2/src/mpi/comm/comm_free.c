@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -26,20 +24,12 @@ int MPI_Comm_free(MPI_Comm * comm) __attribute__ ((weak, alias("PMPI_Comm_free")
 #undef MPI_Comm_free
 #define MPI_Comm_free PMPI_Comm_free
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Comm_free_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Comm_free_impl(MPIR_Comm * comm_ptr)
 {
     return MPIR_Comm_release(comm_ptr);
 }
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Comm_free
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Comm_free - Marks the communicator object for deallocation
 
@@ -109,9 +99,9 @@ int MPI_Comm_free(MPI_Comm * comm)
             /* If comm_ptr is not valid, it will be reset to null */
 
             /* Cannot free the predefined communicators */
-            if (HANDLE_GET_KIND(*comm) == HANDLE_KIND_BUILTIN) {
+            if (HANDLE_IS_BUILTIN(*comm)) {
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
-                                                 MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+                                                 MPIR_ERR_RECOVERABLE, __func__, __LINE__,
                                                  MPI_ERR_COMM, "**commperm", "**commperm %s",
                                                  comm_ptr->name);
             }
@@ -142,11 +132,11 @@ int MPI_Comm_free(MPI_Comm * comm)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_comm_free", "**mpi_comm_free %p", comm);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

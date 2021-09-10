@@ -1,9 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include "mpi.h"
 #include "mpitest.h"
 #include <stdio.h>
@@ -154,7 +153,7 @@ int main(int argc, char *argv[])
                 MPI_Comm_disconnect(&intercomm);
             }
 
-            /* Send the errs back to the master process */
+            /* Send the errs back to the parent process */
             /* Errors cannot be sent back to the parent because there is no
              * communicator connected to the parent */
             /*MPI_Ssend(&errs, 1, MPI_INT, 0, 1, intercomm); */

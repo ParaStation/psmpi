@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -15,28 +13,18 @@ cvars:
       category    : COLLECTIVE
       type        : int
       default     : 2048
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : >-
         the short message algorithm will be used if the send buffer size is <=
         this value (in bytes)
 
-    - name        : MPIR_CVAR_ENABLE_SMP_REDUCE
-      category    : COLLECTIVE
-      type        : boolean
-      default     : true
-      class       : device
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_ALL_EQ
-      description : >-
-        Enable SMP aware reduce.
-
     - name        : MPIR_CVAR_MAX_SMP_REDUCE_MSG_SIZE
       category    : COLLECTIVE
       type        : int
       default     : 0
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : >-
@@ -45,28 +33,29 @@ cvars:
 
     - name        : MPIR_CVAR_REDUCE_INTRA_ALGORITHM
       category    : COLLECTIVE
-      type        : string
+      type        : enum
       default     : auto
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : |-
         Variable to select reduce algorithm
-        auto                  - Internal algorithm selection
+        auto - Internal algorithm selection (can be overridden with MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE)
         binomial              - Force binomial algorithm
         nb                    - Force nonblocking algorithm
+        smp                   - Force smp algorithm
         reduce_scatter_gather - Force reduce scatter gather algorithm
 
     - name        : MPIR_CVAR_REDUCE_INTER_ALGORITHM
       category    : COLLECTIVE
-      type        : string
+      type        : enum
       default     : auto
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : |-
         Variable to select reduce algorithm
-        auto                     - Internal algorithm selection
+        auto - Internal algorithm selection (can be overridden with MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE)
         local_reduce_remote_send - Force local-reduce-remote-send algorithm
         nb                       - Force nonblocking algorithm
 
@@ -74,15 +63,16 @@ cvars:
       category    : COLLECTIVE
       type        : boolean
       default     : true
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : >-
-        If set to true, MPI_Reduce will allow the device to override the
-        MPIR-level collective algorithms. The device still has the
-        option to call the MPIR-level algorithms manually.
-        If set to false, the device-level reduce function will not be
-        called.
+        This CVAR is only used when MPIR_CVAR_DEVICE_COLLECTIVES
+        is set to "percoll".  If set to true, MPI_Reduce will
+        allow the device to override the MPIR-level collective
+        algorithms.  The device might still call the MPIR-level
+        algorithms manually.  If set to false, the device-override
+        will be disabled.
 
 === END_MPI_T_CVAR_INFO_BLOCK ===
 */
@@ -163,105 +153,65 @@ int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datat
 */
 
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Reduce_intra_auto
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIR_Reduce_intra_auto(const void *sendbuf,
-                           void *recvbuf,
-                           int count,
-                           MPI_Datatype datatype,
-                           MPI_Op op, int root, MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
+
+int MPIR_Reduce_allcomm_auto(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+                             MPI_Op op, int root, MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
 {
     int mpi_errno = MPI_SUCCESS;
-    int mpi_errno_ret = MPI_SUCCESS;
-    int is_commutative, type_size, pof2;
-    int nbytes = 0;
 
-    if (count == 0)
-        return MPI_SUCCESS;
+    MPIR_Csel_coll_sig_s coll_sig = {
+        .coll_type = MPIR_CSEL_COLL_TYPE__REDUCE,
+        .comm_ptr = comm_ptr,
 
-    /* is the op commutative? We do SMP optimizations only if it is. */
-    is_commutative = MPIR_Op_is_commutative(op);
+        .u.reduce.sendbuf = sendbuf,
+        .u.reduce.recvbuf = recvbuf,
+        .u.reduce.count = count,
+        .u.reduce.datatype = datatype,
+        .u.reduce.op = op,
+        .u.reduce.root = root,
+    };
 
-    MPIR_Datatype_get_size_macro(datatype, type_size);
-    nbytes = MPIR_CVAR_MAX_SMP_REDUCE_MSG_SIZE ? type_size * count : 0;
+    MPII_Csel_container_s *cnt = MPIR_Csel_search(comm_ptr->csel_comm, coll_sig);
+    MPIR_Assert(cnt);
 
-    if (MPIR_CVAR_ENABLE_SMP_COLLECTIVES &&
-        MPIR_CVAR_ENABLE_SMP_REDUCE &&
-        MPIR_Comm_is_node_aware(comm_ptr) &&
-        is_commutative && nbytes <= MPIR_CVAR_MAX_SMP_REDUCE_MSG_SIZE) {
-        mpi_errno = MPIR_Reduce_intra_smp(sendbuf, recvbuf, count, datatype,
-                                          op, root, comm_ptr, errflag);
+    switch (cnt->id) {
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Reduce_intra_binomial:
+            mpi_errno =
+                MPIR_Reduce_intra_binomial(sendbuf, recvbuf, count, datatype, op, root, comm_ptr,
+                                           errflag);
+            break;
 
-        if (mpi_errno) {
-            /* for communication errors, just record the error but continue */
-            *errflag =
-                MPIX_ERR_PROC_FAILED ==
-                MPIR_ERR_GET_CLASS(mpi_errno) ? MPIR_ERR_PROC_FAILED : MPIR_ERR_OTHER;
-            MPIR_ERR_SET(mpi_errno, *errflag, "**fail");
-            MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
-        }
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Reduce_intra_reduce_scatter_gather:
+            mpi_errno =
+                MPIR_Reduce_intra_reduce_scatter_gather(sendbuf, recvbuf, count, datatype, op, root,
+                                                        comm_ptr, errflag);
+            break;
 
-        goto fn_exit;
-    }
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Reduce_intra_smp:
+            mpi_errno =
+                MPIR_Reduce_intra_smp(sendbuf, recvbuf, count, datatype, op, root, comm_ptr,
+                                      errflag);
+            break;
 
-    MPIR_Datatype_get_size_macro(datatype, type_size);
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Reduce_inter_local_reduce_remote_send:
+            mpi_errno =
+                MPIR_Reduce_inter_local_reduce_remote_send(sendbuf, recvbuf, count, datatype, op,
+                                                           root, comm_ptr, errflag);
+            break;
 
-    /* get nearest power-of-two less than or equal to number of ranks in the communicator */
-    pof2 = comm_ptr->pof2;
-
-    if ((count * type_size > MPIR_CVAR_REDUCE_SHORT_MSG_SIZE) &&
-        (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) && (count >= pof2)) {
-        /* do a reduce-scatter followed by gather to root. */
-        mpi_errno =
-            MPIR_Reduce_intra_reduce_scatter_gather(sendbuf, recvbuf, count, datatype, op, root,
-                                                    comm_ptr, errflag);
-    } else {
-        /* use a binomial tree algorithm */
-        mpi_errno =
-            MPIR_Reduce_intra_binomial(sendbuf, recvbuf, count, datatype, op, root, comm_ptr,
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Reduce_allcomm_nb:
+            mpi_errno =
+                MPIR_Reduce_allcomm_nb(sendbuf, recvbuf, count, datatype, op, root, comm_ptr,
                                        errflag);
+            break;
+
+        default:
+            MPIR_Assert(0);
     }
-    if (mpi_errno) {
-        /* for communication errors, just record the error but continue */
-        *errflag =
-            MPIX_ERR_PROC_FAILED ==
-            MPIR_ERR_GET_CLASS(mpi_errno) ? MPIR_ERR_PROC_FAILED : MPIR_ERR_OTHER;
-        MPIR_ERR_SET(mpi_errno, *errflag, "**fail");
-        MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
-    }
-
-  fn_exit:
-    if (mpi_errno_ret)
-        mpi_errno = mpi_errno_ret;
-    else if (*errflag != MPIR_ERR_NONE)
-        MPIR_ERR_SET(mpi_errno, *errflag, "**coll_fail");
-    return mpi_errno;
-}
-
-#undef FUNCNAME
-#define FUNCNAME MPIR_Reduce_inter_auto
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIR_Reduce_inter_auto(const void *sendbuf,
-                           void *recvbuf,
-                           int count,
-                           MPI_Datatype datatype,
-                           MPI_Op op, int root, MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    mpi_errno = MPIR_Reduce_inter_local_reduce_remote_send(sendbuf, recvbuf, count, datatype,
-                                                           op, root, comm_ptr, errflag);
 
     return mpi_errno;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Reduce_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Reduce_impl(const void *sendbuf, void *recvbuf, int count,
                      MPI_Datatype datatype, MPI_Op op, int root,
                      MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
@@ -270,50 +220,54 @@ int MPIR_Reduce_impl(const void *sendbuf, void *recvbuf, int count,
 
     if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM) {
         /* intracommunicator */
-        switch (MPIR_Reduce_intra_algo_choice) {
-            case MPIR_REDUCE_INTRA_ALGO_BINOMIAL:
+        switch (MPIR_CVAR_REDUCE_INTRA_ALGORITHM) {
+            case MPIR_CVAR_REDUCE_INTRA_ALGORITHM_binomial:
                 mpi_errno = MPIR_Reduce_intra_binomial(sendbuf, recvbuf,
                                                        count, datatype, op, root, comm_ptr,
                                                        errflag);
                 break;
-            case MPIR_REDUCE_INTRA_ALGO_REDUCE_SCATTER_GATHER:
+            case MPIR_CVAR_REDUCE_INTRA_ALGORITHM_reduce_scatter_gather:
                 mpi_errno = MPIR_Reduce_intra_reduce_scatter_gather(sendbuf, recvbuf,
                                                                     count, datatype, op, root,
                                                                     comm_ptr, errflag);
                 break;
-            case MPIR_REDUCE_INTRA_ALGO_NB:
+            case MPIR_CVAR_REDUCE_INTRA_ALGORITHM_nb:
                 mpi_errno = MPIR_Reduce_allcomm_nb(sendbuf, recvbuf,
                                                    count, datatype, op, root, comm_ptr, errflag);
                 break;
-            case MPIR_REDUCE_INTRA_ALGO_AUTO:
-                MPL_FALLTHROUGH;
-            default:
-                mpi_errno = MPIR_Reduce_intra_auto(sendbuf, recvbuf,
-                                                   count, datatype, op, root, comm_ptr, errflag);
+            case MPIR_CVAR_REDUCE_INTRA_ALGORITHM_smp:
+                mpi_errno =
+                    MPIR_Reduce_intra_smp(sendbuf, recvbuf, count, datatype, op, root, comm_ptr,
+                                          errflag);
                 break;
+            case MPIR_CVAR_REDUCE_INTRA_ALGORITHM_auto:
+                mpi_errno = MPIR_Reduce_allcomm_auto(sendbuf, recvbuf,
+                                                     count, datatype, op, root, comm_ptr, errflag);
+                break;
+            default:
+                MPIR_Assert(0);
         }
     } else {
         /* intercommunicator */
-        switch (MPIR_Reduce_inter_algo_choice) {
-            case MPIR_REDUCE_INTER_ALGO_LOCAL_REDUCE_REMOTE_SEND:
+        switch (MPIR_CVAR_REDUCE_INTER_ALGORITHM) {
+            case MPIR_CVAR_REDUCE_INTER_ALGORITHM_local_reduce_remote_send:
                 mpi_errno =
                     MPIR_Reduce_inter_local_reduce_remote_send(sendbuf, recvbuf, count, datatype,
                                                                op, root, comm_ptr, errflag);
                 break;
-            case MPIR_REDUCE_INTER_ALGO_NB:
+            case MPIR_CVAR_REDUCE_INTER_ALGORITHM_nb:
                 mpi_errno = MPIR_Reduce_allcomm_nb(sendbuf, recvbuf,
                                                    count, datatype, op, root, comm_ptr, errflag);
                 break;
-            case MPIR_REDUCE_INTER_ALGO_AUTO:
-                MPL_FALLTHROUGH;
-            default:
-                mpi_errno = MPIR_Reduce_inter_auto(sendbuf, recvbuf, count, datatype,
-                                                   op, root, comm_ptr, errflag);
+            case MPIR_CVAR_REDUCE_INTER_ALGORITHM_auto:
+                mpi_errno = MPIR_Reduce_allcomm_auto(sendbuf, recvbuf, count, datatype,
+                                                     op, root, comm_ptr, errflag);
                 break;
+            default:
+                MPIR_Assert(0);
         }
     }
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     return mpi_errno;
@@ -321,21 +275,40 @@ int MPIR_Reduce_impl(const void *sendbuf, void *recvbuf, int count,
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Reduce
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
                 MPI_Op op, int root, MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
 {
     int mpi_errno = MPI_SUCCESS;
+    void *in_recvbuf = recvbuf;
+    void *host_sendbuf;
+    void *host_recvbuf;
+    bool root_rank;
 
-    if (MPIR_CVAR_REDUCE_DEVICE_COLLECTIVE && MPIR_CVAR_DEVICE_COLLECTIVES) {
+    MPIR_Coll_host_buffer_alloc(sendbuf, recvbuf, count, datatype, &host_sendbuf, &host_recvbuf);
+    if (host_sendbuf)
+        sendbuf = host_sendbuf;
+    if (host_recvbuf)
+        recvbuf = host_recvbuf;
+
+    if ((MPIR_CVAR_DEVICE_COLLECTIVES == MPIR_CVAR_DEVICE_COLLECTIVES_all) ||
+        ((MPIR_CVAR_DEVICE_COLLECTIVES == MPIR_CVAR_DEVICE_COLLECTIVES_percoll) &&
+         MPIR_CVAR_REDUCE_DEVICE_COLLECTIVE)) {
         mpi_errno = MPID_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm_ptr, errflag);
     } else {
         mpi_errno = MPIR_Reduce_impl(sendbuf, recvbuf, count, datatype, op, root, comm_ptr,
                                      errflag);
     }
+
+    /* take the inter-communicator case into account by checking for MPI_ROOT */
+    root_rank = (root == comm_ptr->rank) || (root == MPI_ROOT);
+
+    /* Copy out data from host recv buffer to GPU buffer at the root rank */
+    if (host_recvbuf && root_rank) {
+        recvbuf = in_recvbuf;
+        MPIR_Localcopy(host_recvbuf, count, datatype, recvbuf, count, datatype);
+    }
+
+    MPIR_Coll_host_buffer_free(host_sendbuf, host_recvbuf);
 
     return mpi_errno;
 }
@@ -343,10 +316,6 @@ int MPIR_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype data
 #endif
 
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Reduce
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /*@
 
@@ -424,7 +393,7 @@ int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datat
 
                 MPIR_ERRTEST_COUNT(count, mpi_errno);
                 MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
-                if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+                if (!HANDLE_IS_BUILTIN(datatype)) {
                     MPIR_Datatype_get_ptr(datatype, datatype_ptr);
                     MPIR_Datatype_valid_ptr(datatype_ptr, mpi_errno);
                     if (mpi_errno != MPI_SUCCESS)
@@ -454,7 +423,7 @@ int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datat
                 if (root == MPI_ROOT) {
                     MPIR_ERRTEST_COUNT(count, mpi_errno);
                     MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
-                    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+                    if (!HANDLE_IS_BUILTIN(datatype)) {
                         MPIR_Datatype_get_ptr(datatype, datatype_ptr);
                         MPIR_Datatype_valid_ptr(datatype_ptr, mpi_errno);
                         if (mpi_errno != MPI_SUCCESS)
@@ -470,7 +439,7 @@ int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datat
                 else if (root != MPI_PROC_NULL) {
                     MPIR_ERRTEST_COUNT(count, mpi_errno);
                     MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
-                    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+                    if (!HANDLE_IS_BUILTIN(datatype)) {
                         MPIR_Datatype_get_ptr(datatype, datatype_ptr);
                         MPIR_Datatype_valid_ptr(datatype_ptr, mpi_errno);
                         if (mpi_errno != MPI_SUCCESS)
@@ -488,11 +457,10 @@ int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datat
 
             if (mpi_errno != MPI_SUCCESS)
                 goto fn_fail;
-            if (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(op)) {
                 MPIR_Op_get_ptr(op, op_ptr);
                 MPIR_Op_valid_ptr(op_ptr, mpi_errno);
-            }
-            if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
+            } else {
                 mpi_errno = (*MPIR_OP_HDL_TO_DTYPE_FN(op)) (datatype);
             }
             if (mpi_errno != MPI_SUCCESS)
@@ -505,8 +473,7 @@ int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datat
     /* ... body of routine ...  */
 
     mpi_errno = MPIR_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm_ptr, &errflag);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* ... end of body of routine ... */
 
@@ -520,12 +487,12 @@ int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datat
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
-                                         FCNAME, __LINE__, MPI_ERR_OTHER,
+                                         __func__, __LINE__, MPI_ERR_OTHER,
                                          "**mpi_reduce", "**mpi_reduce %p %p %d %D %O %d %C",
                                          sendbuf, recvbuf, count, datatype, op, root, comm);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

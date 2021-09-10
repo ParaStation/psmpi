@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2011 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -27,10 +26,6 @@ int MPI_T_cvar_read(MPI_T_cvar_handle handle, void *buf)
 
 /* any non-MPI functions go here, especially non-static ones */
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_T_cvar_read_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_T_cvar_read_impl(MPI_T_cvar_handle handle, void *buf)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -81,10 +76,6 @@ int MPIR_T_cvar_read_impl(MPI_T_cvar_handle handle, void *buf)
 
 #endif /* MPICH_MPI_FROM_PMPI */
 
-#undef FUNCNAME
-#define FUNCNAME MPI_T_cvar_read
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_T_cvar_read - Read the value of a control variable
 
@@ -125,8 +116,7 @@ int MPI_T_cvar_read(MPI_T_cvar_handle handle, void *buf)
     /* ... body of routine ...  */
 
     mpi_errno = MPIR_T_cvar_read_impl(handle, buf);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* ... end of body of routine ... */
 
@@ -140,11 +130,11 @@ int MPI_T_cvar_read(MPI_T_cvar_handle handle, void *buf)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_t_cvar_read", "**mpi_t_cvar_read %p %p", handle, buf);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

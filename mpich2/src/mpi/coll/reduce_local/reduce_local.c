@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2009 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@ int MPI_Reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype 
 /* any utility functions should go here, usually prefixed with PMPI_LOCAL to
  * correctly handle weak symbols and the profiling interface */
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Reduce_local_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Reduce_local_impl(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype,
                       MPI_Op op)
 {
@@ -48,17 +42,12 @@ int MPIR_Reduce_local_impl(const void *inbuf, void *inoutbuf, int count, MPI_Dat
     if (count == 0)
         goto fn_exit;
 
-    {
-        MPIR_Per_thread_t *per_thread = NULL;
-        int err = 0;
-
-        MPID_THREADPRIV_KEY_GET_ADDR(MPIR_ThreadInfo.isThreaded, MPIR_Per_thread_key,
-                                     MPIR_Per_thread, per_thread, &err);
-        MPIR_Assert(err == 0);
-        per_thread->op_errno = MPI_SUCCESS;
-    }
-
-    if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
+    if (HANDLE_IS_BUILTIN(op)) {
+        /* --BEGIN ERROR HANDLING-- */
+        mpi_errno = (*MPIR_OP_HDL_TO_DTYPE_FN(op)) (datatype);
+        if (mpi_errno != MPI_SUCCESS)
+            goto fn_exit;
+        /* --END ERROR HANDLING-- */
         /* get the function by indexing into the op table */
         uop = MPIR_OP_HDL_TO_FN(op);
     } else {
@@ -104,19 +93,6 @@ int MPIR_Reduce_local_impl(const void *inbuf, void *inoutbuf, int count, MPI_Dat
 #endif
     }
 
-    /* --BEGIN ERROR HANDLING-- */
-    {
-        MPIR_Per_thread_t *per_thread = NULL;
-        int err = 0;
-
-        MPID_THREADPRIV_KEY_GET_ADDR(MPIR_ThreadInfo.isThreaded, MPIR_Per_thread_key,
-                                     MPIR_Per_thread, per_thread, &err);
-        MPIR_Assert(err == 0);
-        if (per_thread->op_errno)
-            mpi_errno = per_thread->op_errno;
-    }
-    /* --END ERROR HANDLING-- */
-
   fn_exit:
     return mpi_errno;
 }
@@ -124,23 +100,17 @@ int MPIR_Reduce_local_impl(const void *inbuf, void *inoutbuf, int count, MPI_Dat
 #endif
 
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Reduce_local
-#undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIR_Reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype, MPI_Op op)
+int MPIR_Reduce_local(const void *inbuf, void *inoutbuf, int count,
+                      MPI_Datatype datatype, MPI_Op op)
 {
 #ifdef MPID_REDUCE_LOCAL_HOOK
-       return MPID_REDUCE_LOCAL_HOOK(inbuf, inoutbuf, count, datatype, op);
+    return MPID_REDUCE_LOCAL_HOOK(inbuf, inoutbuf, count, datatype, op);
 #else
-       return MPIR_Reduce_local_impl(inbuf, inoutbuf, count, datatype, op);
+    return MPIR_Reduce_local_impl(inbuf, inoutbuf, count, datatype, op);
 #endif
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Reduce_local
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
+
 /*@
 MPI_Reduce_local - Applies a reduction operator to local arguments.
 
@@ -183,14 +153,13 @@ int MPI_Reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype 
         {
             MPIR_ERRTEST_OP(op, mpi_errno);
 
-            if (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(op)) {
                 MPIR_Op *op_ptr;
                 MPIR_Op_get_ptr(op, op_ptr);
                 MPIR_Op_valid_ptr(op_ptr, mpi_errno);
                 if (mpi_errno != MPI_SUCCESS)
                     goto fn_fail;
-            }
-            if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
+            } else {
                 mpi_errno = (*MPIR_OP_HDL_TO_DTYPE_FN(op)) (datatype);
                 if (mpi_errno != MPI_SUCCESS)
                     goto fn_fail;
@@ -209,8 +178,7 @@ int MPI_Reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype 
     /* ... body of routine ...  */
 
     mpi_errno = MPIR_Reduce_local(inbuf, inoutbuf, count, datatype, op);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* ... end of body of routine ... */
 
@@ -223,11 +191,11 @@ int MPI_Reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype 
     /* --BEGIN ERROR HANDLING-- */
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_reduce_local", "**mpi_reduce_local %p %p %d %D %O", inbuf,
                                  inoutbuf, count, datatype, op);
     }
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

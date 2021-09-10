@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2007 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /*
@@ -124,9 +123,7 @@ int MPIE_InitForDebugger(ProcessWorld * pWorld)
 /* This routine is provided to free memory allocated in this routine */
 int MPIE_FreeFromDebugger(void)
 {
-    if (MPIR_proctable) {
-        MPL_free(MPIR_proctable);
-    }
+    MPL_free(MPIR_proctable);
     return 0;
 }
 

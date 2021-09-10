@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -23,10 +21,6 @@
  * medium-sized non-power-of-two messages.
  * Total Cost = (lgp+p-1).alpha + 2.n.((p-1)/p).beta
  */
-#undef FUNCNAME
-#define FUNCNAME MPIR_Bcast_intra_scatter_ring_allgather
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Bcast_intra_scatter_ring_allgather(void *buffer,
                                             int count,
                                             MPI_Datatype datatype,
@@ -38,7 +32,7 @@ int MPIR_Bcast_intra_scatter_ring_allgather(void *buffer,
     int mpi_errno_ret = MPI_SUCCESS;
     MPI_Aint scatter_size;
     int j, i, is_contig;
-    MPI_Aint nbytes, type_size, position;
+    MPI_Aint nbytes, type_size;
     int left, right, jnext;
     void *tmp_buf;
     MPI_Aint recvd_size, curr_size = 0;
@@ -53,7 +47,7 @@ int MPIR_Bcast_intra_scatter_ring_allgather(void *buffer,
     if (comm_size == 1)
         goto fn_exit;
 
-    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN)
+    if (HANDLE_IS_BUILTIN(datatype))
         is_contig = 1;
     else {
         MPIR_Datatype_is_contig(datatype, &is_contig);
@@ -73,11 +67,9 @@ int MPIR_Bcast_intra_scatter_ring_allgather(void *buffer,
     } else {
         MPIR_CHKLMEM_MALLOC(tmp_buf, void *, nbytes, mpi_errno, "tmp_buf", MPL_MEM_BUFFER);
 
-        position = 0;
         if (rank == root) {
-            mpi_errno = MPIR_Pack_impl(buffer, count, datatype, tmp_buf, nbytes, &position);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            mpi_errno = MPIR_Localcopy(buffer, count, datatype, tmp_buf, nbytes, MPI_BYTE);
+            MPIR_ERR_CHECK(mpi_errno);
         }
     }
 
@@ -139,6 +131,7 @@ int MPIR_Bcast_intra_scatter_ring_allgather(void *buffer,
         jnext = (comm_size + jnext - 1) % comm_size;
     }
 
+#ifdef HAVE_ERROR_CHECKING
     /* check that we received as much as we expected */
     if (curr_size != nbytes) {
         if (*errflag == MPIR_ERR_NONE)
@@ -148,13 +141,12 @@ int MPIR_Bcast_intra_scatter_ring_allgather(void *buffer,
                       "**collective_size_mismatch %d %d", curr_size, nbytes);
         MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
     }
+#endif
 
     if (!is_contig) {
         if (rank != root) {
-            position = 0;
-            mpi_errno = MPIR_Unpack_impl(tmp_buf, nbytes, &position, buffer, count, datatype);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            mpi_errno = MPIR_Localcopy(tmp_buf, nbytes, MPI_BYTE, buffer, count, datatype);
+            MPIR_ERR_CHECK(mpi_errno);
         }
     }
 

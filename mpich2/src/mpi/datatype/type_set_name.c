@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -29,10 +27,6 @@ int MPI_Type_set_name(MPI_Datatype datatype, const char *type_name)
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Type_set_name
-#undef FCNAME
-#define FCNAME "MPI_Type_set_name"
 
 /*@
    MPI_Type_set_name - set datatype name
@@ -53,7 +47,6 @@ int MPI_Type_set_name(MPI_Datatype datatype, const char *type_name)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Datatype *datatype_ptr = NULL;
-    static int setup = 0;
     MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_TYPE_SET_NAME);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -97,13 +90,6 @@ int MPI_Type_set_name(MPI_Datatype datatype, const char *type_name)
 
     /* ... body of routine ...  */
 
-    /* If this is the first call, initialize all of the predefined names.
-     * Note that type_get_name must also make the same call */
-    if (!setup) {
-        MPIR_Datatype_init_names();
-        setup = 1;
-    }
-
     /* Include the null in MPI_MAX_OBJECT_NAME */
     MPL_strncpy(datatype_ptr->name, type_name, MPI_MAX_OBJECT_NAME);
 
@@ -120,11 +106,11 @@ int MPI_Type_set_name(MPI_Datatype datatype, const char *type_name)
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_type_set_name", "**mpi_type_set_name %D %s", datatype,
                                  type_name);
     }
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
 #endif
     /* --END ERROR HANDLING-- */

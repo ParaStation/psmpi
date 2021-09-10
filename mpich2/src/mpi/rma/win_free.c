@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -27,10 +25,6 @@ int MPI_Win_free(MPI_Win * win) __attribute__ ((weak, alias("PMPI_Win_free")));
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Win_free
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Win_free - Free an MPI RMA window
 
@@ -105,8 +99,7 @@ int MPI_Win_free(MPI_Win * win)
         goto fn_fail;
 
     /* We need to release the error handler */
-    if (win_ptr->errhandler &&
-        !(HANDLE_GET_KIND(win_ptr->errhandler->handle) == HANDLE_KIND_BUILTIN)) {
+    if (win_ptr->errhandler && !(HANDLE_IS_BUILTIN(win_ptr->errhandler->handle))) {
         int in_use;
         MPIR_Errhandler_release_ref(win_ptr->errhandler, &in_use);
         if (!in_use) {
@@ -131,11 +124,11 @@ int MPI_Win_free(MPI_Win * win)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_win_free", "**mpi_win_free %p", win);
     }
 #endif
-    mpi_errno = MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_win(win_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

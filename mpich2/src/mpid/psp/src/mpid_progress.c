@@ -62,7 +62,7 @@ void MPIDI_PSP_Progress_start(MPID_Progress_state * state)
 /*  Wait for some communication since 'MPID_Progress_start'  */
 int MPIDI_PSP_Progress_wait(MPID_Progress_state * state)
 {
-	int made_progress;
+	int made_progress = 0;
 	int mpi_errno;
 
 	/* Make progress on nonblocking collectives */
@@ -94,7 +94,7 @@ void MPIDI_PSP_Progress_end(MPID_Progress_state * state)
 */
 int MPIDI_PSP_Progress_test(void)
 {
-	int made_progress;
+	int made_progress = 0;
 	int mpi_errno;
 
 	/* Make progress on nonblocking collectives */
@@ -122,6 +122,6 @@ int MPIDI_PSP_Progress_test(void)
 */
 int MPIDI_PSP_Progress_poke(void)
 {
-	MPID_Progress_test();
+	MPID_Progress_test(NULL);
 	return MPI_SUCCESS;
 }

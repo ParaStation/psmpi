@@ -182,10 +182,6 @@ int MPID_Mrecv(void *buf, int count, MPI_Datatype datatype,  MPIR_Request *messa
 
 	mpi_errno = MPIDI_PSP_Imrecv(buf, count, datatype, message, request);
 
-	if (mpi_errno == MPI_SUCCESS) {
-		mpi_errno = MPIDI_PSP_Wait(*request);
-	}
-
 	return mpi_errno;
 }
 

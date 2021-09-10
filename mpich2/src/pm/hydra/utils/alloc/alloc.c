@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2009 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra.h"
@@ -14,10 +13,7 @@ void HYDU_init_user_global(struct HYD_user_global *user_global)
 
     user_global->binding = NULL;
     user_global->topolib = NULL;
-
-    user_global->ckpointlib = NULL;
-    user_global->ckpoint_prefix = NULL;
-    user_global->ckpoint_num = -1;
+    user_global->topo_debug = -1;
 
     user_global->demux = NULL;
     user_global->iface = NULL;
@@ -27,38 +23,22 @@ void HYDU_init_user_global(struct HYD_user_global *user_global)
     user_global->usize = HYD_USIZE_UNSET;
 
     user_global->auto_cleanup = -1;
+    user_global->pmi_port = -1;
+    user_global->skip_launch_node = -1;
+    user_global->gpus_per_proc = HYD_GPUS_PER_PROC_UNSET;
 
     HYDU_init_global_env(&user_global->global_env);
 }
 
 void HYDU_finalize_user_global(struct HYD_user_global *user_global)
 {
-    if (user_global->rmk)
-        MPL_free(user_global->rmk);
-
-    if (user_global->launcher)
-        MPL_free(user_global->launcher);
-
-    if (user_global->launcher_exec)
-        MPL_free(user_global->launcher_exec);
-
-    if (user_global->binding)
-        MPL_free(user_global->binding);
-
-    if (user_global->topolib)
-        MPL_free(user_global->topolib);
-
-    if (user_global->ckpointlib)
-        MPL_free(user_global->ckpointlib);
-
-    if (user_global->ckpoint_prefix)
-        MPL_free(user_global->ckpoint_prefix);
-
-    if (user_global->demux)
-        MPL_free(user_global->demux);
-
-    if (user_global->iface)
-        MPL_free(user_global->iface);
+    MPL_free(user_global->rmk);
+    MPL_free(user_global->launcher);
+    MPL_free(user_global->launcher_exec);
+    MPL_free(user_global->binding);
+    MPL_free(user_global->topolib);
+    MPL_free(user_global->demux);
+    MPL_free(user_global->iface);
 
     HYDU_finalize_global_env(&user_global->global_env);
 }
@@ -82,8 +62,7 @@ void HYDU_finalize_global_env(struct HYD_env_global *global_env)
     if (global_env->inherited)
         HYDU_env_free_list(global_env->inherited);
 
-    if (global_env->prop)
-        MPL_free(global_env->prop);
+    MPL_free(global_env->prop);
 }
 
 HYD_status HYDU_alloc_node(struct HYD_node **node)
@@ -117,15 +96,9 @@ void HYDU_free_node_list(struct HYD_node *node_list)
     while (node) {
         tnode = node->next;
 
-        if (node->hostname)
-            MPL_free(node->hostname);
-
-        if (node->user)
-            MPL_free(node->user);
-
-        if (node->local_binding)
-            MPL_free(node->local_binding);
-
+        MPL_free(node->hostname);
+        MPL_free(node->user);
+        MPL_free(node->local_binding);
         MPL_free(node);
 
         node = tnode;
@@ -233,11 +206,8 @@ void HYDU_free_proxy_list(struct HYD_proxy *proxy_list)
             MPL_free(proxy->exec_launch_info);
         }
 
-        if (proxy->pid)
-            MPL_free(proxy->pid);
-
-        if (proxy->exit_status)
-            MPL_free(proxy->exit_status);
+        MPL_free(proxy->pid);
+        MPL_free(proxy->exit_status);
 
         HYDU_free_exec_list(proxy->exec_list);
 
@@ -282,11 +252,8 @@ void HYDU_free_exec_list(struct HYD_exec *exec_list)
         run = exec->next;
         HYDU_free_strlist(exec->exec);
 
-        if (exec->wdir)
-            MPL_free(exec->wdir);
-
-        if (exec->env_prop)
-            MPL_free(exec->env_prop);
+        MPL_free(exec->wdir);
+        MPL_free(exec->env_prop);
 
         HYDU_env_free_list(exec->user_env);
         exec->user_env = NULL;

@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
+ */
+
 #include <mpi.h>
 #include <stdio.h>
 #include "mpitest.h"
@@ -20,7 +25,7 @@ int main(int argc, char *argv[])
     MPI_Comm_create(comm, group, &newcomm);
     color = rank % 2;
     MPI_Comm_split(MPI_COMM_WORLD, color, rank, &scomm);
-    MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
 
     /*test comm_split_type for NULL variable */
     newinfo = MPI_INFO_NULL;

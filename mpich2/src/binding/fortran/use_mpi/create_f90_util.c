@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2004 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "create_f90_util.h"
@@ -36,10 +35,6 @@ static int MPIR_FreeF90Datatypes(void *d)
     return 0;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Create_unnamed_predefined
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Create_unnamed_predefined(MPI_Datatype old, int combiner,
                                    int r, int p, MPI_Datatype * new_ptr)
 {
@@ -78,8 +73,7 @@ int MPIR_Create_unnamed_predefined(MPI_Datatype old, int combiner,
 
     /* Create a contiguous type from one instance of the named type */
     mpi_errno = MPIR_Type_contiguous(1, old, &type->d);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* Initialize the contents data */
     {
@@ -103,11 +97,7 @@ int MPIR_Create_unnamed_predefined(MPI_Datatype old, int combiner,
 
         MPIR_Datatype_get_ptr(type->d, new_dtp);
         mpi_errno = MPIR_Datatype_set_contents(new_dtp, combiner, nvals, 0, 0, vals, NULL, NULL);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
-
-        /* FIXME should we be setting type->is_permanent=TRUE here too?  If so,
-         * will the cleanup code handle it correctly and not freak out? */
+        MPIR_ERR_CHECK(mpi_errno);
 
 #ifndef NDEBUG
         {
@@ -125,8 +115,7 @@ int MPIR_Create_unnamed_predefined(MPI_Datatype old, int combiner,
         /* the MPI Standard requires that these types are pre-committed
          * (MPI-2.2, sec 16.2.5, pg 492) */
         mpi_errno = MPIR_Type_commit(&type->d);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     *new_ptr = type->d;

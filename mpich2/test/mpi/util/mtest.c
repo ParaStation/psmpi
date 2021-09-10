@@ -1,11 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
-#include "mpi.h"
-#include "mpitestconf.h"
+
 #include "mpitest.h"
 #if defined(HAVE_STDIO_H) || defined(STDC_HEADERS)
 #include <stdio.h>
@@ -29,7 +26,6 @@
 #include <sys/resource.h>
 #endif
 #include <errno.h>
-
 
 /*
  * Utility routines for writing MPI tests.
@@ -84,6 +80,8 @@ void MTest_Init_thread(int *argc, char ***argv, int required, int *provided)
 {
     int flag;
     char *envval = 0;
+
+    MTest_init_thread_pkg();
 
     MPI_Initialized(&flag);
     if (!flag) {
@@ -180,6 +178,7 @@ void MTest_Init(int *argc, char ***argv)
 #endif
 }
 
+static void MTestCommRandomize_cleanup(void);
 /*
   Finalize MTest.  errs is the number of errors on the calling process;
   this routine will write the total number of errors over all of MPI_COMM_WORLD
@@ -208,11 +207,16 @@ void MTest_Finalize(int errs)
     if (usageOutput)
         MTestResourceSummary(stdout);
 
+    /* Clean up any comms from MTestCommRandomize() */
+    MTestCommRandomize_cleanup();
 
     /* Clean up any persistent objects that we allocated */
     MTestRMACleanup();
 
     MPI_Finalize();
+
+    MTest_finalize_thread_pkg();
+    MTest_finalize_gpu();
 }
 
 /* ------------------------------------------------------------------------ */
@@ -1022,6 +1026,33 @@ void MTestFreeComm(MPI_Comm * comm)
     }
 }
 
+/* Directly calling MTestGetIntercomm maybe insufficient since all the processes
+ * may end up with the same context_id even between different groups of the intercomm.
+ * Radomize it by duplicate MPI_Comm_self different times */
+
+#define MAX_COMM_SELF_DUPS 4
+static MPI_Comm comm_self_dups[MAX_COMM_SELF_DUPS];
+static int num_self_dups = 0;
+
+void MTestCommRandomize(void)
+{
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    srand(rank);
+
+    num_self_dups = rand() % MAX_COMM_SELF_DUPS;
+    for (int i = 0; i < num_self_dups; i++) {
+        MPI_Comm_dup(MPI_COMM_SELF, &comm_self_dups[i]);
+    }
+}
+
+static void MTestCommRandomize_cleanup(void)
+{
+    for (int i = 0; i < num_self_dups; i++) {
+        MPI_Comm_free(&comm_self_dups[i]);
+    }
+}
+
 /* ------------------------------------------------------------------------ */
 void MTestPrintError(int errcode)
 {
@@ -1314,5 +1345,3 @@ int MTestSpawnPossible(int *can_spawn)
     }
     return errs;
 }
-
-/* ------------------------------------------------------------------------ */

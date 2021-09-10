@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2014 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,8 +26,6 @@ MPI_Aint MPI_Aint_diff(MPI_Aint addr1, MPI_Aint addr2)
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Aint_diff
 
 /*@
 MPI_Aint_diff - Returns the difference between addr1 and addr2

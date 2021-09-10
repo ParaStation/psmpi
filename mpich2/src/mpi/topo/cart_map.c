@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -26,10 +24,6 @@ int MPI_Cart_map(MPI_Comm comm, int ndims, const int dims[], const int periods[]
 #undef MPI_Cart_map
 #define MPI_Cart_map PMPI_Cart_map
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Cart_map
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Cart_map(const MPIR_Comm * comm_ptr, int ndims, const int dims[],
                   const int periodic[], int *newrank)
 {
@@ -66,10 +60,6 @@ int MPIR_Cart_map(const MPIR_Comm * comm_ptr, int ndims, const int dims[],
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Cart_map_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Cart_map_impl(const MPIR_Comm * comm_ptr, int ndims, const int dims[],
                        const int periods[], int *newrank)
 {
@@ -79,14 +69,12 @@ int MPIR_Cart_map_impl(const MPIR_Comm * comm_ptr, int ndims, const int dims[],
         /* --BEGIN USEREXTENSION-- */
         mpi_errno = comm_ptr->topo_fns->cartMap(comm_ptr, ndims,
                                                 (const int *) dims, (const int *) periods, newrank);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         /* --END USEREXTENSION-- */
     } else {
         mpi_errno = MPIR_Cart_map(comm_ptr, ndims,
                                   (const int *) dims, (const int *) periods, newrank);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
   fn_exit:
@@ -97,10 +85,6 @@ int MPIR_Cart_map_impl(const MPIR_Comm * comm_ptr, int ndims, const int dims[],
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Cart_map
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Cart_map - Maps process to Cartesian topology information
 
@@ -166,7 +150,7 @@ int MPI_Cart_map(MPI_Comm comm, int ndims, const int dims[], const int periods[]
             if (ndims < 0) {
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
                                                  MPIR_ERR_RECOVERABLE,
-                                                 FCNAME, __LINE__, MPI_ERR_DIMS,
+                                                 __func__, __LINE__, MPI_ERR_DIMS,
                                                  "**dims", "**dims %d", ndims);
                 goto fn_fail;
             }
@@ -178,8 +162,7 @@ int MPI_Cart_map(MPI_Comm comm, int ndims, const int dims[], const int periods[]
     /* ... body of routine ...  */
     mpi_errno = MPIR_Cart_map_impl(comm_ptr, ndims,
                                    (const int *) dims, (const int *) periods, newrank);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
     /* ... end of body of routine ... */
 
   fn_exit:
@@ -191,12 +174,12 @@ int MPI_Cart_map(MPI_Comm comm, int ndims, const int dims[], const int periods[]
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_cart_map", "**mpi_cart_map %C %d %p %p %p", comm, ndims,
                                  dims, periods, newrank);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

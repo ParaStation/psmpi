@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2016 UChicago/Argonne LLC
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpioimpl.h"
@@ -240,10 +239,6 @@ static int comm_split_filesystem_heuristic(MPI_Comm comm, int key,
 /* not to be called directly (note the MPIR_ prefix), but instead from
  * MPI-level MPI_Comm_split_type implementation (e.g.
  * MPIR_Comm_split_type_impl). */
-#undef FUNCNAME
-#define FUNCNAME MPIR_Comm_split_filesystem
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /* split communicator based on access to directory 'dirname'. */
 int MPIR_Comm_split_filesystem(MPI_Comm comm, int key, const char *dirname, MPI_Comm * newcomm)
@@ -257,7 +252,3 @@ int MPIR_Comm_split_filesystem(MPI_Comm comm, int key, const char *dirname, MPI_
     }
     return mpi_errno;
 }
-
-/*
- * vim: ts=8 sts=4 sw=4 noexpandtab
- */

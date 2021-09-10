@@ -1,7 +1,6 @@
-## -*- Mode: Makefile; -*-
 ##
-## (C) 2017 by Argonne National Laboratory.
-##     See COPYRIGHT in top-level directory.
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
 ##
 
 noinst_LTLIBRARIES += libhydra.la
@@ -27,3 +26,4 @@ include libhydra/hostfile/Makefile.mk
 include libhydra/rmk/Makefile.mk
 include libhydra/hash/Makefile.mk
 include libhydra/debugger/Makefile.mk
+include libhydra/timeout/Makefile.mk

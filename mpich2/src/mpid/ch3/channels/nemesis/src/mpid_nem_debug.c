@@ -1,28 +1,23 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpid_nem_impl.h"
 #include "mpid_nem_debug.h"
 
 /* --BEGIN ERROR HANDLING-- */
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_dbg_dump_cell
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPID_nem_dbg_dump_cell (volatile struct MPID_nem_cell *cell)
 {
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_DBG_DUMP_CELL);
 
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_DBG_DUMP_CELL);
 
-    MPL_DBG_MSG_D (MPIR_DBG_OTHER, TERSE, "  src = %6d", cell->pkt.header.source);
-    MPL_DBG_MSG_D (MPIR_DBG_OTHER, TERSE, "  dst = %6d", cell->pkt.header.dest);
-    MPL_DBG_MSG_D (MPIR_DBG_OTHER, TERSE, "  len = %6d", (int)cell->pkt.header.datalen);
-    MPL_DBG_MSG_D (MPIR_DBG_OTHER, TERSE, "  sqn = %6d", cell->pkt.header.seqno);
-    MPL_DBG_MSG_D (MPIR_DBG_OTHER, TERSE, "  typ = %6d", cell->pkt.header.type);
+    MPL_DBG_MSG_D (MPIR_DBG_OTHER, TERSE, "  src = %6d", cell->header.source);
+    MPL_DBG_MSG_D (MPIR_DBG_OTHER, TERSE, "  dst = %6d", cell->header.dest);
+    MPL_DBG_MSG_D (MPIR_DBG_OTHER, TERSE, "  len = %6d", (int)cell->header.datalen);
+    MPL_DBG_MSG_D (MPIR_DBG_OTHER, TERSE, "  sqn = %6d", cell->header.seqno);
+    MPL_DBG_MSG_D (MPIR_DBG_OTHER, TERSE, "  typ = %6d", cell->header.type);
 
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_DBG_DUMP_CELL);
 }
@@ -53,10 +48,6 @@ void MPID_nem_dbg_print_vc_sendq(FILE *stream, MPIDI_VC_t *vc);
 
 /* This function can be called by a debugger to dump the sendq state of the
    given vc to the given stream. */
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_dbg_print_all_sendq
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPID_nem_dbg_print_vc_sendq(FILE *stream, MPIDI_VC_t *vc)
 {
     MPIR_Request * sreq;
@@ -101,10 +92,6 @@ void MPID_nem_dbg_print_all_sendq(FILE *stream);
 
 /* This function can be called by a debugger to dump the sendq state for all the
    vcs for all the pgs to the given stream. */
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_dbg_print_all_sendq
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPID_nem_dbg_print_all_sendq(FILE *stream)
 {
     int i;

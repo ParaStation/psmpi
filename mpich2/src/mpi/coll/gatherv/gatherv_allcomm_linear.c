@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -15,7 +13,7 @@ cvars:
       category    : COLLECTIVE
       type        : int
       default     : 32
-      class       : device
+      class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
       description : >-
@@ -37,10 +35,6 @@ cvars:
  *
  * Cost = (p-1).alpha + n.((p-1)/p).beta
 */
-#undef FUNCNAME
-#define FUNCNAME MPIR_Gatherv_allcomm_linear
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Gatherv_allcomm_linear(const void *sendbuf,
                                 int sendcount,
                                 MPI_Datatype sendtype,
@@ -71,9 +65,6 @@ int MPIR_Gatherv_allcomm_linear(const void *sendbuf,
             comm_size = comm_ptr->remote_size;
 
         MPIR_Datatype_get_extent_macro(recvtype, extent);
-        /* each node can make sure it is not going to overflow aint */
-        MPIR_Ensure_Aint_fits_in_pointer(MPIR_VOID_PTR_CAST_TO_MPI_AINT recvbuf +
-                                         displs[rank] * extent);
 
         MPIR_CHKLMEM_MALLOC(reqarray, MPIR_Request **, comm_size * sizeof(MPIR_Request *),
                             mpi_errno, "reqarray", MPL_MEM_BUFFER);
@@ -88,15 +79,13 @@ int MPIR_Gatherv_allcomm_linear(const void *sendbuf,
                         mpi_errno = MPIR_Localcopy(sendbuf, sendcount, sendtype,
                                                    ((char *) recvbuf + displs[rank] * extent),
                                                    recvcounts[rank], recvtype);
-                        if (mpi_errno)
-                            MPIR_ERR_POP(mpi_errno);
+                        MPIR_ERR_CHECK(mpi_errno);
                     }
                 } else {
                     mpi_errno = MPIC_Irecv(((char *) recvbuf + displs[i] * extent),
                                            recvcounts[i], recvtype, i,
                                            MPIR_GATHERV_TAG, comm_ptr, &reqarray[reqs++]);
-                    if (mpi_errno)
-                        MPIR_ERR_POP(mpi_errno);
+                    MPIR_ERR_CHECK(mpi_errno);
                 }
             }
         }

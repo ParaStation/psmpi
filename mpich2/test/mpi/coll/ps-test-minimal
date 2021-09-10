@@ -1,12 +1,12 @@
-allred 4
-allred 4 arg=100
+allred 4 arg=-count=10
+allred 4 arg=-count=100
 allredmany 4
 allred2 4
 allred4 4
 allred5 5
 allred6 4
 reduce 5
-reduce_local 2 mpiversion=2.2
+reduce_local 2
 op_commutative 2
 alltoallw_zeros 5
 allgatherv4 4 timeLimit=600
@@ -14,7 +14,7 @@ bcasttest 4
 bcastzerotype 1
 bcastzerotype 4
 coll2 5
-coll3 5
+gatherv 5
 coll4 4
 coll5 4
 coll6 5
@@ -23,14 +23,13 @@ coll7 5
 coll8 4
 coll9 4
 coll10 4
-coll11 4
 coll12 4
 coll13 4
 longuser 4
 redscat 4
 redscat2 4
-red_scat_block 4 mpiversion=2.2
-red_scat_block2 4 mpiversion=2.2
+red_scat_block 4
+red_scat_block2 4
 scantst 4
 exscan2 5
 gather 4
@@ -65,48 +64,21 @@ opminloc 4
 opmax 5
 opmaxloc 5
 uoplong 4
-nonblocking 4 mpiversion=3.0
-nonblocking2 1 mpiversion=3.0
-nonblocking2 5 mpiversion=3.0
-nonblocking3 1 mpiversion=3.0
-iallred 2 mpiversion=3.0
+nonblocking 4
+nonblocking2 1
+nonblocking2 5
+nonblocking3 1
+iallred 2
 # ibarrier will hang forever if it fails, but will complete quickly if it
 # succeeds
-ibarrier 2 mpiversion=3.0 timeLimit=15
+ibarrier 2 timeLimit=15
 
 # run some of the tests, relinked with the nbc_pmpi_adaptor.o file
-nbcoll2 5     mpiversion=3.0
-nbredscat 4   mpiversion=3.0
+nbcoll2 5
+nbredscat 4
 
-neighb_coll 4 mpiversion=3.0
-
-bcast__BASIC__L24 4 arg=-type=MPI_CHAR arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_BYTE arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_WCHAR arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_SHORT arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_INT arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_LONG arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_LONG_LONG_INT arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_UNSIGNED_CHAR arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_UNSIGNED_SHORT arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_UNSIGNED arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_UNSIGNED_LONG_LONG arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_FLOAT arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_INT16_T arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_INT32_T arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_INT64_T arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_UINT8_T arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_UINT16_T arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_UINT32_T arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_UINT64_T arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_C_COMPLEX arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_C_FLOAT_COMPLEX arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_C_DOUBLE_COMPLEX arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_C_LONG_DOUBLE_COMPLEX arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_FLOAT_INT arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_DOUBLE_INT arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_LONG_INT arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_2INT arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_SHORT_INT arg=-count=32768 timeLimit=1200
-bcast__BASIC__L24 4 arg=-type=MPI_LONG_DOUBLE_INT arg=-count=32768 timeLimit=1200
-bcast__STRUCT__L35 4 arg=-numtypes=4 arg=-types=MPI_CHAR,MPI_INT,MPI_INT,MPI_FLOAT arg=-counts=64,32,16,8
+neighb_allgather 4
+neighb_allgatherv 4
+neighb_alltoall 4
+neighb_alltoallv 4
+neighb_alltoallw 4

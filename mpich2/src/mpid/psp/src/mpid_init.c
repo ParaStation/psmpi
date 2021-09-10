@@ -24,15 +24,11 @@
 /*
  * MPIX_Query_cuda_support - Query CUDA support of the MPI library
  */
-#define FCNAME "MPIX_Query_cuda_support"
-#define FUNCNAME MPIX_Query_cuda_support
 int __attribute__((visibility("default")))
 MPIX_Query_cuda_support(void)
 {
 	return MPID_Query_cuda_support();
 }
-#undef FUNCNAME
-#undef FCNAME
 
 #if defined(__GNUC__) || defined (__PGI)
 #define dinit(name) .name =
@@ -271,8 +267,6 @@ void i_version_check(char *pg_id, int pg_rank, const char *ver)
 #define MAGIC_PMI_KEY	0x49aef1a2
 #define MAGIC_PMI_VALUE 0x29a5f212
 
-#define FCNAME "InitPortConnections"
-#define FUNCNAME InitPortConnections
 static
 int InitPortConnections(pscom_socket_t *socket) {
 	char key[50];
@@ -374,12 +368,8 @@ int InitPortConnections(pscom_socket_t *socket) {
 					 "InitPortConnections", __LINE__, MPI_ERR_OTHER, "**sock|connfailed", 0);
 	goto fn_exit;
 }
-#undef FUNCNAME
-#undef FCNAME
 
 #ifdef PSCOM_HAS_ON_DEMAND_CONNECTIONS
-#define FCNAME "InitPscomConnections"
-#define FUNCNAME InitPscomConnections
 static
 int InitPscomConnections(pscom_socket_t *socket) {
 	char key[50];
@@ -472,8 +462,6 @@ int InitPscomConnections(pscom_socket_t *socket) {
 					 "InitPscomConnections", __LINE__, MPI_ERR_OTHER, "**sock|connfailed", 0);
 	goto fn_exit;
 }
-#undef FUNCNAME
-#undef FCNAME
 #else /* !PSCOM_HAS_ON_DEMAND_CONNECTIONS */
 #warning "Pscom without on demand connections! You should update to pscom >= 5.0.24."
 static
@@ -483,11 +471,7 @@ int InitPscomConnections(void) {
 }
 #endif
 
-#define FCNAME "MPID_Init"
-#define FUNCNAME MPID_Init
-int MPID_Init(int *argc, char ***argv,
-	      int threadlevel_requested, int *threadlevel_provided,
-	      int *has_args, int *has_env)
+int MPID_Init(int requested, int *provided)
 {
 	int mpi_errno = MPI_SUCCESS;
 	int pg_id_sz = 0;
@@ -499,11 +483,6 @@ int MPID_Init(int *argc, char ***argv,
 	pscom_socket_t *socket;
 	pscom_err_t rc;
 	char *pg_id_name;
-
-	/* Call any and all MPID_Init type functions */
-	MPIR_Err_init();
-	MPIR_Datatype_init();
-	MPIR_Group_init();
 
 	mpid_debug_init();
 
@@ -525,9 +504,6 @@ int MPID_Init(int *argc, char ***argv,
 	PMICALL(PMI_Get_rank(&pg_rank));
 	PMICALL(PMI_Get_size(&pg_size));
 
-	*has_args = 1;
-	*has_env  = 1;
-
 	/* without PMI_Get_universe_size() we see pmi error:
 	   '[unset]: write_line error; fd=-1' in PMI_KVS_Get()! */
 	/* PMICALL(PMI_Get_universe_size(&universe_size)); */
@@ -539,7 +515,7 @@ int MPID_Init(int *argc, char ***argv,
 #ifndef MPICH_IS_THREADED
 		1
 #else
-		threadlevel_requested < MPI_THREAD_MULTIPLE
+		requested < MPI_THREAD_MULTIPLE
 #endif
 	) {
 		rc = pscom_init(PSCOM_VERSION);
@@ -766,9 +742,9 @@ int MPID_Init(int *argc, char ***argv,
 	}
 
 
-	if (threadlevel_provided) {
-		*threadlevel_provided = (MPICH_THREAD_LEVEL < threadlevel_requested) ?
-			MPICH_THREAD_LEVEL : threadlevel_requested;
+	if (provided) {
+		*provided = (MPICH_THREAD_LEVEL < requested) ?
+			MPICH_THREAD_LEVEL : requested;
 	}
 
 
@@ -784,8 +760,6 @@ fn_exit:
 	*/
 	_exit(1);
 }
-#undef FUNCNAME
-#undef FCNAME
 
 
 /* return connection_t for rank, NULL on error */
@@ -802,8 +776,6 @@ pscom_connection_t *MPID_PSCOM_rank2connection(MPIR_Comm *comm, int rank)
 /*
  * MPID_Get_universe_size - Get the universe size from the process manager
  */
-#define FCNAME "MPID_Get_universe_size"
-#define FUNCNAME MPID_Get_universe_size
 int MPID_Get_universe_size(int *universe_size)
 {
 	int mpi_errno = MPI_SUCCESS;
@@ -816,14 +788,10 @@ int MPID_Get_universe_size(int *universe_size)
  fn_fail:
 	goto fn_exit;
 }
-#undef FUNCNAME
-#undef FCNAME
 
 /*
  * MPID_Query_cuda_support - Query CUDA support of the device
  */
-#define FCNAME "MPID_Query_cuda_support"
-#define FUNCNAME MPID_Query_cuda_support
 int
 MPID_Query_cuda_support(void)
 {
@@ -833,5 +801,3 @@ MPID_Query_cuda_support(void)
 	return 0;
 #endif
 }
-#undef FUNCNAME
-#undef FCNAME

@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -21,10 +19,6 @@
  * maintaining a single buffer across the whole loop.  Something like
  * MADRE is probably the best solution for the MPI_IN_PLACE scenario.
  */
-#undef FUNCNAME
-#define FUNCNAME MPIR_Alltoall_intra_pairwise_sendrecv_replace
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Alltoall_intra_pairwise_sendrecv_replace(const void *sendbuf,
                                                   int sendcount,
                                                   MPI_Datatype sendtype,

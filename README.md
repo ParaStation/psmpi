@@ -52,10 +52,15 @@ Download the source code from GitHub:
 $ git clone https://github.com/ParaStation/psmpi.git psmpi
 ````
 
+Run autotools:
+```
+$ cd /path/to/psmpi
+$ ./autogen.sh
+```
+
 We encourage you *not* to build ParaStation MPI directly within the main source
 folder:
 ````
-$ cd /path/to/psmpi
 $ mkdir build && cd build
 ````
 

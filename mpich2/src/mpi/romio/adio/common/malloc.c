@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *   Copyright (C) 1997 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* These are routines for allocating and deallocating memory.
@@ -19,10 +17,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "mpipr.h"
-
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
 
 /* for the style checker */
 /* style: allow:malloc:1 sig:0 */

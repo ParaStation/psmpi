@@ -31,6 +31,7 @@ BuildRequires:	pscom-cuda
 %else
 BuildRequires:	pscom
 %endif
+BuildRequires:	automake autoconf libtool
 
 # Dont use internal find_requires, because we dont want dependencies
 # to the intel libs.
@@ -88,6 +89,7 @@ sleep 1
 %setup -q -n psmpi-%{version}-%{release}
 
 %build
+./autogen.sh
 %configure --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--with-threading} %{?cuda:--with-cuda}
 %make_build
 
@@ -108,28 +110,39 @@ sleep 1
 %{_bindir}/mpif90
 %{_bindir}/mpifort
 %{_bindir}/mpivars
-%{_includedir}/mpi_base.mod
-%{_includedir}/mpi_constants.mod
-%{_includedir}/mpicxx.h
 %{_includedir}/mpi-ext.h
-%{_includedir}/mpif.h
 %{_includedir}/mpi.h
 %{_includedir}/mpi.mod
-%{_includedir}/mpiof.h
-%{_includedir}/mpio.h
+%{_includedir}/mpi_base.mod
+%{_includedir}/mpi_c_interface.mod
+%{_includedir}/mpi_c_interface_cdesc.mod
+%{_includedir}/mpi_c_interface_glue.mod
+%{_includedir}/mpi_c_interface_nobuf.mod
+%{_includedir}/mpi_c_interface_types.mod
+%{_includedir}/mpi_constants.mod
+%{_includedir}/mpi_f08.mod
+%{_includedir}/mpi_f08_callbacks.mod
+%{_includedir}/mpi_f08_compile_constants.mod
+%{_includedir}/mpi_f08_link_constants.mod
+%{_includedir}/mpi_f08_types.mod
 %{_includedir}/mpi_sizeofs.mod
+%{_includedir}/mpicxx.h
+%{_includedir}/mpif.h
+%{_includedir}/mpio.h
+%{_includedir}/mpiof.h
+%{_includedir}/pmpi_f08.mod
 %{_sysconfdir}/modulefiles/mpi
 %{_libdir}/libfmpich.so
+%{_libdir}/libmpi.so*
+%{_libdir}/libmpich.so
 %{_libdir}/libmpichcxx.so
 %{_libdir}/libmpichf90.so
-%{_libdir}/libmpich.so
 %{_libdir}/libmpicxx.so*
 %{_libdir}/libmpifort.so*
-%{_libdir}/libmpi.so*
 %{_libdir}/libmpl.so
 %{_libdir}/libopa.so
 %{_libdir}/pkgconfig/mpich.pc
-%{_libdir}/pkgconfig/openpa.pc
+%{_libdir}/pkgconfig/yaksa.pc
 %if 0%{?cuda}
 %{_sysconfdir}/mpicc-cuda.conf
 %{_sysconfdir}/mpicxx-cuda.conf
@@ -138,26 +151,12 @@ sleep 1
 %{_sysconfdir}/mpifort-cuda.conf
 %endif
 %if "%{confset}" == "ch4"
-%{_bindir}/fi_info
-%{_bindir}/fi_pingpong
-%{_bindir}/fi_strerror
 %{_bindir}/hydra_nameserver
 %{_bindir}/hydra_persist
 %{_bindir}/hydra_pmi_proxy
 %{_bindir}/mpiexec
 %{_bindir}/mpiexec.hydra
 %{_bindir}/mpirun
-%{_includedir}/rdma/fabric.h
-%{_includedir}/rdma/fi_atomic.h
-%{_includedir}/rdma/fi_cm.h
-%{_includedir}/rdma/fi_domain.h
-%{_includedir}/rdma/fi_endpoint.h
-%{_includedir}/rdma/fi_eq.h
-%{_includedir}/rdma/fi_errno.h
-%{_includedir}/rdma/fi_rma.h
-%{_includedir}/rdma/fi_tagged.h
-%{_includedir}/rdma/fi_trigger.h
-%{_libdir}/pkgconfig/libfabric.pc
 %endif
 
 %package doc
@@ -170,9 +169,4 @@ The psmpi-doc package comprises the man pages and further user documentation on 
 
 %files doc
 %defattr(-,root,root)
-%doc %{_mandir}/man1/*
-%doc %{_mandir}/man3/*
 %doc %{_docdir}/mpich
-%if "%{confset}" == "ch4"
-%doc %{_mandir}/man7/*
-%endif

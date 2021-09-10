@@ -1,22 +1,16 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2017 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 
 /* This implementation of MPI_Reduce_scatter_block was obtained by taking
    the implementation of MPI_Reduce_scatter from reduce_scatter.c and replacing
-   recvcnts[i] with recvcount everywhere. */
+   recvcounts[i] with recvcount everywhere. */
 
 
 #include "mpiimpl.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Reduce_scatter_block_intra_recursive_halving
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 
 /* Algorithm: Recursive halving
  *
@@ -72,17 +66,6 @@ int MPIR_Reduce_scatter_block_intra_recursive_halving(const void *sendbuf,
     }
 #endif /* HAVE_ERROR_CHECKING */
 
-    /* set op_errno to 0. stored in perthread structure */
-    {
-        MPIR_Per_thread_t *per_thread = NULL;
-        int err = 0;
-
-        MPID_THREADPRIV_KEY_GET_ADDR(MPIR_ThreadInfo.isThreaded, MPIR_Per_thread_key,
-                                     MPIR_Per_thread, per_thread, &err);
-        MPIR_Assert(err == 0);
-        per_thread->op_errno = 0;
-    }
-
     if (recvcount == 0) {
         goto fn_exit;
     }
@@ -96,10 +79,6 @@ int MPIR_Reduce_scatter_block_intra_recursive_halving(const void *sendbuf,
     for (i = 0; i < comm_size; i++) {
         disps[i] = i * recvcount;
     }
-
-    /* total_count*extent eventually gets malloced. it isn't added to
-     * a user-passed in buffer */
-    MPIR_Ensure_Aint_fits_in_pointer(total_count * MPL_MAX(true_extent, extent));
 
     /* commutative and short. use recursive halving algorithm */
 
@@ -124,10 +103,9 @@ int MPIR_Reduce_scatter_block_intra_recursive_halving(const void *sendbuf,
         mpi_errno = MPIR_Localcopy(recvbuf, total_count, datatype,
                                    tmp_results, total_count, datatype);
 
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
-    pof2 = comm_ptr->pof2;
+    pof2 = comm_ptr->coll.pof2;
 
     rem = comm_size - pof2;
 
@@ -173,6 +151,7 @@ int MPIR_Reduce_scatter_block_intra_recursive_halving(const void *sendbuf,
              * ordering is right, it doesn't matter whether
              * the operation is commutative or not. */
             mpi_errno = MPIR_Reduce_local(tmp_recvbuf, tmp_results, total_count, datatype, op);
+            MPIR_ERR_CHECK(mpi_errno);
 
             /* change the rank */
             newrank = rank / 2;
@@ -181,7 +160,7 @@ int MPIR_Reduce_scatter_block_intra_recursive_halving(const void *sendbuf,
         newrank = rank - rem;
 
     if (newrank != -1) {
-        /* recalculate the recvcnts and disps arrays because the
+        /* recalculate the recvcounts and disps arrays because the
          * even-numbered processes who no longer participate will
          * have their result calculated by the process to their
          * right (rank+1). */
@@ -272,6 +251,7 @@ int MPIR_Reduce_scatter_block_intra_recursive_halving(const void *sendbuf,
                 mpi_errno = MPIR_Reduce_local((char *) tmp_recvbuf + newdisps[recv_idx] * extent,
                                               (char *) tmp_results + newdisps[recv_idx] * extent,
                                               recv_cnt, datatype, op);
+                MPIR_ERR_CHECK(mpi_errno);
             }
 
             /* update send_idx for next iteration */
@@ -284,8 +264,7 @@ int MPIR_Reduce_scatter_block_intra_recursive_halving(const void *sendbuf,
         mpi_errno = MPIR_Localcopy((char *) tmp_results +
                                    disps[rank] * extent,
                                    recvcount, datatype, recvbuf, recvcount, datatype);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     /* In the non-power-of-two case, all odd-numbered
@@ -315,17 +294,6 @@ int MPIR_Reduce_scatter_block_intra_recursive_halving(const void *sendbuf,
 
   fn_exit:
     MPIR_CHKLMEM_FREEALL();
-
-    {
-        MPIR_Per_thread_t *per_thread = NULL;
-        int err = 0;
-
-        MPID_THREADPRIV_KEY_GET_ADDR(MPIR_ThreadInfo.isThreaded, MPIR_Per_thread_key,
-                                     MPIR_Per_thread, per_thread, &err);
-        MPIR_Assert(err == 0);
-        if (per_thread->op_errno)
-            mpi_errno = per_thread->op_errno;
-    }
 
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno_ret)

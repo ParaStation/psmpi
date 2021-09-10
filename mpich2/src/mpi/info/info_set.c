@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -29,10 +28,6 @@ int MPI_Info_set(MPI_Info info, const char *key, const char *value)
 #define MPI_Info_set PMPI_Info_set
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Info_set
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Info_set - Adds a (key,value) pair to info
 
@@ -105,37 +100,32 @@ int MPI_Info_set(MPI_Info info, const char *key, const char *value)
 #endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    MPIR_Info_set_impl(info_ptr, key, value);
+    mpi_errno = MPIR_Info_set_impl(info_ptr, key, value);
+    MPIR_ERR_CHECK(mpi_errno);
     /* ... end of body of routine ... */
 
-#ifdef HAVE_ERROR_CHECKING
   fn_exit:
-#endif
     MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPI_INFO_SET);
     MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
-#ifdef HAVE_ERROR_CHECKING
   fn_fail:
     /* --BEGIN ERROR HANDLING-- */
+#ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_info_set", "**mpi_info_set %I %s %s", info, key, value);
     }
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+#endif
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
-#endif
 }
 
 
 #ifndef MPICH_MPI_FROM_PMPI
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Info_set_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Info_set_impl(MPIR_Info * info_ptr, const char *key, const char *value)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -161,8 +151,7 @@ int MPIR_Info_set_impl(MPIR_Info * info_ptr, const char *key, const char *value)
     if (!curr_ptr) {
         /* Key not present, insert value */
         mpi_errno = MPIR_Info_alloc(&curr_ptr);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
         /*printf("Inserting new elm %x at %x\n", curr_ptr->id, prev_ptr->id); */
         prev_ptr->next = curr_ptr;

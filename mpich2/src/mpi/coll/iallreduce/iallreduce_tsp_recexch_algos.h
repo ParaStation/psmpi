@@ -1,12 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- *  Portions of this code were written by Intel Corporation.
- *  Copyright (C) 2011-2017 Intel Corporation.  Intel provides this material
- *  to Argonne National Laboratory subject to Software Grant and Corporate
- *  Contributor License Agreement dated February 8, 2012.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* Header protection (i.e., IALLREDUCE_TSP_ALGOS_H_INCLUDED) is
@@ -16,14 +10,11 @@
 #include "algo_common.h"
 #include "tsp_namespace_def.h"
 #include "recexchalgo.h"
+#include "iallreduce_tsp_recursive_exchange_common_prototypes.h"
 
 /* Routine to schedule a recursive exchange based allreduce */
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Iallreduce_sched_intra_recexch
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_TSP_Iallreduce_sched_intra_recexch(const void *sendbuf, void *recvbuf, int count,
-                                            MPI_Datatype datatype, MPI_Op op, int tag,
+                                            MPI_Datatype datatype, MPI_Op op,
                                             MPIR_Comm * comm, int per_nbr_buffer, int k,
                                             MPIR_TSP_sched_t * sched)
 {
@@ -46,6 +37,7 @@ int MPIR_TSP_Iallreduce_sched_intra_recexch(const void *sendbuf, void *recvbuf, 
     void *tmp_buf;
     void **step1_recvbuf = NULL;
     void **nbr_buffer;
+    int tag;
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIR_TSP_IALLREDUCE_SCHED_INTRA_RECEXCH);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIR_TSP_IALLREDUCE_SCHED_INTRA_RECEXCH);
@@ -60,6 +52,10 @@ int MPIR_TSP_Iallreduce_sched_intra_recexch(const void *sendbuf, void *recvbuf, 
     is_commutative = MPIR_Op_is_commutative(op);
 
     tmp_buf = MPIR_TSP_sched_malloc(count * extent, sched);
+
+    /* For correctness, transport based collectives need to get the
+     * tag from the same pool as schedule based collectives */
+    mpi_errno = MPIR_Sched_next_tag(comm, &tag);
 
     /* if there is only 1 rank, copy data from sendbuf
      * to recvbuf and exit */
@@ -89,56 +85,12 @@ int MPIR_TSP_Iallreduce_sched_intra_recexch(const void *sendbuf, void *recvbuf, 
     MPL_DBG_MSG_FMT(MPIR_DBG_COLL, VERBOSE, (MPL_DBG_FDEST, "After initial dt copy"));
 
     /* Step 1 */
-    if (!in_step2) {
-        /* non-participating rank sends the data to a participating rank */
-        void *buf_to_send;
-        if (is_inplace)
-            buf_to_send = recvbuf;
-        else
-            buf_to_send = (void *) sendbuf;
-        MPIR_TSP_sched_isend(buf_to_send, count, datatype, step1_sendto, tag, comm, sched, 0, NULL);
-    } else {    /* Step 2 participating rank */
-        step1_recvbuf = (void **) MPL_malloc(sizeof(void *) * step1_nrecvs, MPL_MEM_COLL);
-        MPIR_Assert(step1_recvbuf != NULL);
-        if (per_nbr_buffer != 1 && step1_nrecvs > 0)
-            step1_recvbuf[0] = MPIR_TSP_sched_malloc(count * extent, sched);
-
-        for (i = 0; i < step1_nrecvs; i++) {    /* participating rank gets data from non-partcipating ranks */
-            if (per_nbr_buffer == 1)
-                step1_recvbuf[i] = MPIR_TSP_sched_malloc(count * extent, sched);
-            else
-                step1_recvbuf[i] = step1_recvbuf[0];
-
-            /* recv dependencies */
-            nvtcs = 0;
-            if (i != 0 && per_nbr_buffer == 0 && count != 0) {
-                vtcs[nvtcs++] = reduce_id[i - 1];
-                MPL_DBG_MSG_FMT(MPIR_DBG_COLL, VERBOSE,
-                                (MPL_DBG_FDEST, "step1 recv depend on reduce_id[%d] %d", i - 1,
-                                 reduce_id[i - 1]));
-            }
-            recv_id[i] = MPIR_TSP_sched_irecv(step1_recvbuf[i], count, datatype,
-                                              step1_recvfrom[i], tag, comm, sched, nvtcs, vtcs);
-            if (count != 0) {   /* Reduce only if data is present */
-                /* setup reduce dependencies */
-                nvtcs = 1;
-                vtcs[0] = recv_id[i];
-                if (is_commutative) {
-                    if (!is_inplace) {  /* wait for the data to be copied to recvbuf */
-                        vtcs[nvtcs++] = dtcopy_id;
-                    }
-                } else {        /* if not commutative */
-                    /* wait for datacopy to complete if i==0 && !is_inplace else wait for previous reduce */
-                    if (i == 0 && !is_inplace)
-                        vtcs[nvtcs++] = dtcopy_id;
-                    else if (i != 0)
-                        vtcs[nvtcs++] = reduce_id[i - 1];
-                }
-                reduce_id[i] = MPIR_TSP_sched_reduce_local(step1_recvbuf[i], recvbuf, count,
-                                                           datatype, op, sched, nvtcs, vtcs);
-            }
-        }
-    }
+    MPIR_TSP_Iallreduce_sched_intra_recexch_step1(sendbuf, recvbuf, count,
+                                                  datatype, op, is_commutative,
+                                                  tag, extent, dtcopy_id, recv_id, reduce_id, vtcs,
+                                                  is_inplace, step1_sendto, in_step2, step1_nrecvs,
+                                                  step1_recvfrom, per_nbr_buffer, &step1_recvbuf,
+                                                  comm, sched);
 
     step1_id = MPIR_TSP_sched_sink(sched);      /* sink for all the tasks up to end of Step 1 */
 
@@ -358,16 +310,11 @@ int MPIR_TSP_Iallreduce_sched_intra_recexch(const void *sendbuf, void *recvbuf, 
 
 
 /* Non-blocking recexch based ALLREDUCE */
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Iallreduce_intra_recexch
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_TSP_Iallreduce_intra_recexch(const void *sendbuf, void *recvbuf, int count,
                                       MPI_Datatype datatype, MPI_Op op, MPIR_Comm * comm,
                                       MPIR_Request ** req, int recexch_type, int k)
 {
     int mpi_errno = MPI_SUCCESS;
-    int tag;
     MPIR_TSP_sched_t *sched;
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIR_TSP_IALLREDUCE_INTRA_RECEXCH);
@@ -380,22 +327,14 @@ int MPIR_TSP_Iallreduce_intra_recexch(const void *sendbuf, void *recvbuf, int co
     MPIR_Assert(sched != NULL);
     MPIR_TSP_sched_create(sched);
 
-    /* For correctness, transport based collectives need to get the
-     * tag from the same pool as schedule based collectives */
-    mpi_errno = MPIR_Sched_next_tag(comm, &tag);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
-
     mpi_errno =
-        MPIR_TSP_Iallreduce_sched_intra_recexch(sendbuf, recvbuf, count, datatype, op, tag, comm,
+        MPIR_TSP_Iallreduce_sched_intra_recexch(sendbuf, recvbuf, count, datatype, op, comm,
                                                 recexch_type, k, sched);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* start and register the schedule */
     mpi_errno = MPIR_TSP_sched_start(sched, comm, req);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIR_TSP_IALLREDUCE_INTRA_RECEXCH);

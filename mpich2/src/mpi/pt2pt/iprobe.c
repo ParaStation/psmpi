@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status * statu
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Iprobe
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Iprobe - Nonblocking test for a message
 
@@ -64,7 +58,7 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status * statu
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
-    MPID_THREAD_CS_ENTER(VNI_GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPIR_FUNC_TERSE_PT2PT_ENTER(MPID_STATE_MPI_IPROBE);
 
     /* Validate handle parameters needing to be converted */
@@ -101,6 +95,13 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status * statu
     }
 #endif /* HAVE_ERROR_CHECKING */
 
+    /* Return immediately for dummy process */
+    if (source == MPI_PROC_NULL) {
+        MPIR_Status_set_procnull(status);
+        *flag = TRUE;
+        goto fn_exit;
+    }
+
     /* ... body of routine ...  */
 
     /* FIXME: Is this correct for intercomms? */
@@ -112,7 +113,7 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status * statu
 
   fn_exit:
     MPIR_FUNC_TERSE_PT2PT_EXIT(MPID_STATE_MPI_IPROBE);
-    MPID_THREAD_CS_EXIT(VNI_GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:
@@ -120,12 +121,12 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status * statu
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_iprobe", "**mpi_iprobe %i %t %C %p %p", source, tag, comm,
                                  flag, status);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

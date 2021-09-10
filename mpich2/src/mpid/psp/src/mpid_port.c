@@ -399,7 +399,7 @@ pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm *comm, MPIR_Comm *
 	}
 
 	err = FALSE;
-	mpi_error = MPIR_Gather_intra_auto(my_port, sizeof(pscom_port_str_t), MPI_CHAR,
+	mpi_error = MPIR_Gather_allcomm_auto(my_port, sizeof(pscom_port_str_t), MPI_CHAR,
 				      all_ports, sizeof(pscom_port_str_t), MPI_CHAR,
 				      root, comm, &err);
 
@@ -820,10 +820,6 @@ int count_total_processes(int count, const int maxprocs[])
 .N Errors
 .N MPI_SUCCESS
 @*/
-#undef FCNAME
-#define FCNAME "MPID_Comm_spawn_multiple"
-#undef FUNCNAME
-#define FUNCNAME MPID_Comm_spawn_multiple
 int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 			     char ** array_of_argv[], const int array_of_maxprocs[],
 			     MPIR_Info * array_of_info_ptrs[], int root,
@@ -927,5 +923,3 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 
 	return 0;
 }
-#undef FUNCNAME
-#undef FCNAME

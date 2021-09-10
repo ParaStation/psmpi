@@ -1,8 +1,6 @@
-## -*- Mode: Makefile; -*-
-## vim: set ft=automake :
 ##
-## (C) 2011 by Argonne National Laboratory.
-##     See COPYRIGHT in top-level directory.
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
 ##
 
 mpi_sources +=              \
@@ -12,4 +10,5 @@ mpi_sources +=              \
     src/mpi/misc/library_version.c \
     src/mpi/misc/aint_add.c \
     src/mpi/misc/aint_diff.c \
-    src/mpi/misc/utils.c
+    src/mpi/misc/utils.c \
+    src/mpi/misc/gpu.c

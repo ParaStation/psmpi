@@ -14,7 +14,6 @@
 #include "mpid_psp_datatype.h"
 #include "mpid_psp_packed_msg.h"
 #include "mpid_psp_request.h"
-#include "opa_primitives.h"
 
 /*
  * array containing "1"
@@ -659,7 +658,7 @@ int MPID_Win_sync(MPIR_Win *win_ptr)
 	}
 
 	if (win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED) {
-		OPA_read_write_barrier();
+		MPL_atomic_read_write_barrier();
 	}
 
         return MPI_SUCCESS;
@@ -810,7 +809,7 @@ int MPID_Win_flush_all(MPIR_Win *win_ptr)
 int MPID_Win_wait_local_completion(int rank, MPIR_Win *win_ptr)
 {
 	if (win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED) {
-		OPA_read_write_barrier();
+		MPL_atomic_read_write_barrier();
 	}
 
 	while (win_ptr->rma_local_pending_rank[rank]) {
@@ -841,7 +840,7 @@ int MPID_Win_flush_local_all(MPIR_Win *win_ptr)
 	}
 
 	if (win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED) {
-		OPA_read_write_barrier();
+		MPL_atomic_read_write_barrier();
 	}
 
 	while (win_ptr->rma_local_pending_cnt) {

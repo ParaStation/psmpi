@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -26,10 +24,6 @@ int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val, int *flag
 #undef MPI_Win_get_attr
 #define MPI_Win_get_attr PMPI_Win_get_attr
 
-#undef FUNCNAME
-#define FUNCNAME MPII_Win_get_attr
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPII_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val,
                       int *flag, MPIR_Attr_type outAttrType)
 {
@@ -80,7 +74,7 @@ int MPII_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val,
      * a pointer to a copy */
     /* Note that if we are called from Fortran, we must return the values,
      * not the addresses, of these attributes */
-    if (HANDLE_GET_KIND(win_keyval) == HANDLE_KIND_BUILTIN) {
+    if (HANDLE_IS_BUILTIN(win_keyval)) {
         void **attr_val_p = (void **) attribute_val;
 #ifdef HAVE_FORTRAN_BINDING
         /* Note that this routine only has a Fortran 90 binding,
@@ -118,7 +112,7 @@ int MPII_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val,
             case MPII_ATTR_C_TO_FORTRAN(MPI_WIN_BASE):
                 /* The Fortran routine that matches this routine should
                  * provide an address-sized integer, not an MPI_Fint */
-                *attr_int = MPIR_VOID_PTR_CAST_TO_MPI_AINT(win_ptr->base);
+                *attr_int = (MPI_Aint) win_ptr->base;
                 break;
             case MPII_ATTR_C_TO_FORTRAN(MPI_WIN_SIZE):
                 /* We do not need to copy because we return the value,
@@ -193,21 +187,17 @@ int MPII_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val,
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpir_wingetattr", "**mpir_wingetattr %W %d %p %p", win,
                                  win_keyval, attribute_val, flag);
     }
-    mpi_errno = MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_win(win_ptr, __func__, mpi_errno);
     goto fn_exit;
 #endif
     /* --END ERROR HANDLING-- */
 }
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Win_get_attr
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Win_get_attr - Get attribute cached on an MPI window object
 
@@ -263,12 +253,12 @@ int MPI_Win_get_attr(MPI_Win win, int win_keyval, void *attribute_val, int *flag
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_win_get_attr", "**mpi_win_get_attr %W %d %p %p", win,
                                  win_keyval, attribute_val, flag);
     }
     MPIR_Win_get_ptr(win, win_ptr);
-    mpi_errno = MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_win(win_ptr, __func__, mpi_errno);
 #endif
     goto fn_exit;
     /* --END ERROR HANDLING-- */

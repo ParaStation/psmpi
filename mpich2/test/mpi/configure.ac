@@ -1,3 +1,8 @@
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
+
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.67)
 dnl
@@ -19,10 +24,9 @@ AC_INIT([mpich-testsuite],
         [http://www.mpich.org/])
 
 AC_CONFIG_HEADER(include/mpitestconf.h)
-AH_TOP([/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+AH_TOP([/*
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 #ifndef MPITESTCONF_H_INCLUDED
 #define MPITESTCONF_H_INCLUDED
@@ -60,14 +64,14 @@ if test -z "$mpich_top_srcdir" ; then
 fi
 AC_SUBST(mpich_top_srcdir)
 
-# these (in particular master_top_srcdir) are needed to regenerate
+# these (in particular main_top_srcdir) are needed to regenerate
 # the f90 files from the f77 files
-AC_ARG_VAR([master_top_builddir],[path to the MPICH top-level build directory (if present)])
-AC_ARG_VAR([master_top_srcdir],[path to the MPICH top-level source directory (if present)])
+AC_ARG_VAR([main_top_builddir],[path to the MPICH top-level build directory (if present)])
+AC_ARG_VAR([main_top_srcdir],[path to the MPICH top-level source directory (if present)])
 
-# Ensure that master_top_srcdir is set if maintainer mode for is set, 
+# Ensure that main_top_srcdir is set if maintainer mode for is set,
 # since some of the Makefile targets require it.
-if test "X$master_top_srcdir" = "X" -a "$USE_MAINTAINER_MODE" = "yes" ; then
+if test "X$main_top_srcdir" = "X" -a "$USE_MAINTAINER_MODE" = "yes" ; then
     if test -z "$top_srcdir" ; then
        use_top_srcdir=$srcdir   
     else
@@ -82,9 +86,9 @@ if test "X$master_top_srcdir" = "X" -a "$USE_MAINTAINER_MODE" = "yes" ; then
     esac
     # Now, see if we can find the f77tof90 routine
     if test -x $use_top_srcdir/maint/f77tof90 ; then
-        master_top_srcdir=$use_top_srcdir
+        main_top_srcdir=$use_top_srcdir
     else 
-        AC_MSG_ERROR([Unable to find master source file - reconfigure using --disable-maintainer_mode])
+        AC_MSG_ERROR([Unable to find main source file - reconfigure using --disable-maintainer_mode])
     fi
 fi
 
@@ -151,6 +155,9 @@ AC_SUBST(DTP_SWITCH)
 AC_ARG_ENABLE(cuda,
         [AC_HELP_STRING([--enable-cuda],[Add some tests for CUDA-awareness])],,[enable_cuda=no])
 
+AC_ARG_ENABLE(cuda,
+    [AC_HELP_STRING([--enable-cuda],[Add some tests for CUDA awareness])],,[enable_cuda=no])
+
 AC_ARG_ENABLE(cxx,
 	[AC_HELP_STRING([--enable-cxx],[Turn on C++ tests (default)])],,[enable_cxx=yes])
 
@@ -193,8 +200,8 @@ AC_ARG_ENABLE(large-tests,
 
 AC_ARG_ENABLE(ft-tests,
 	[AC_HELP_STRING([--enable-ft-tests],
-		[Include tests for fault tolerance (default)])],,
-	[enable_ft_tests=yes])
+		[Include tests for fault tolerance (default no)])],,
+	[enable_ft_tests=no])
 
 AC_ARG_ENABLE(comm-overlap-tests,
 	[AC_HELP_STRING([--enable-comm-overlap-tests],
@@ -248,10 +255,26 @@ AC_ARG_ENABLE(xfail,
 		[Run tests marked for expected failure])],,
 	[enable_xfail=no])
 
-AC_ARG_ENABLE(collalgo-tests,
-              [AC_HELP_STRING([--enable-collalgo-tests],
-                              [Run extended collective algorithm tests])],,
-              [enable_collalgo_tests=no])
+AC_ARG_ENABLE(gpu-tests-only,
+        [AC_HELP_STRING([--enable-gpu-tests-only],
+                [Run only GPU tests])],,
+        [enable_gpu_tests_only=no])
+
+# DTPools test generation
+AC_ARG_WITH(dtpools-datatypes,
+    [AC_HELP_STRING([--with-dtpools-datatypes=typelist],
+        [Comma separated list of MPI datatypes to use for DTPools tests
+         generation. Typelist can be of the form: 'MPI_INT,MPI_DOUBLE,...',
+         for single element types, 'MPI_INT:4+MPI_DOUBLE:8,...', for multiple
+         element types, or a combination of both.])],,[with_dtpools_datatypes=MPI_INT,MPI_INT:4+MPI_DOUBLE:8])
+
+# parse args for typegen.sh script
+dtp_args="--with-dtpools-datatypes=${with_dtpools_datatypes}"
+
+AC_CONFIG_COMMANDS([gentests],[$srcdir/maint/gentests_dtp.sh $dtp_args],[dtp_args="$dtp_args"])
+AC_CONFIG_COMMANDS([gputests],[$srcdir/maint/generate_gpu_tests.sh])
+#Test collectives algorithms with CVARs
+AC_CONFIG_COMMANDS([collcvartests],[$srcdir/maint/test_coll_algos.sh])
 
 AC_ARG_WITH(mpi,
 	[AC_HELP_STRING([--with-mpi=dir],
@@ -627,10 +650,11 @@ export CC
 AC_CONFIG_SUBDIRS([dtpools])
 
 # Running C compiler tests
-PAC_PROG_CC
+AC_PROG_CC
+AC_PROG_CC_C99
 AM_PROG_CC_C_O
 
-# Note that some versions of autoconf will insist that the compiler 
+# Note that some versions of autoconf will insist that the compiler
 # produce executables at this point, which is why we must do something
 # special for building within MPICH
 
@@ -689,18 +713,8 @@ AC_C_RESTRICT
 AC_PROG_RANLIB
 AM_PROG_AR
 
-# Enable STRICT CFLAGS
-AC_ARG_ENABLE(stricttest,
-AC_HELP_STRING([--enable-stricttest], [Turn on strict GCC compilation]))
-dnl Initialize enable_strict_done so PAC_CC_STRICT won't exit right away
-dnl When it is configuring from within MPICH, because enable_strict_done=yes
-dnl is set in the environment by MPICH.
-enable_strict_done=no
-PAC_CC_STRICT($enable_stricttest)
-# -Wfloat-equal isn't meaningful in testsuite,
-# remove it if it is in strict flags.
-pac_cc_strict_flags="`echo $pac_cc_strict_flags | sed -e 's|-Wfloat-equal||g'`"
-CFLAGS="$CFLAGS $pac_cc_strict_flags"
+# Check for --enable-strict
+PAC_ARG_STRICT
 
 # General headers
 AC_HEADER_STDC
@@ -721,6 +735,73 @@ AC_TYPE_UINT64_T
 # Check for availability of C99 types
 AC_CHECK_TYPES([_Bool, float _Complex, double _Complex, long double _Complex])
 AC_CHECK_SIZEOF(void *,8)
+
+# Start of GPU libs check
+have_gpu="no"
+PAC_PUSH_FLAG([CPPFLAGS])
+PAC_PUSH_FLAG([LDFLAGS])
+PAC_PUSH_FLAG([LIBS])
+
+# Check CUDA availability
+PAC_CHECK_HEADER_LIB_OPTIONAL([cuda],[cuda_runtime_api.h],[cudart],[cudaStreamSynchronize])
+cuda_CPPFLAGS=""
+cuda_LDFLAGS=""
+cuda_LIBS=""
+if test "X${pac_have_cuda}" = "Xyes" ; then
+    AC_DEFINE([HAVE_CUDA],[1],[Define if CUDA is available])
+    have_gpu="yes"
+    if test -n "${with_cuda}" -a "$with_cuda" != "no" ; then
+        cuda_CPPFLAGS="-I${with_cuda}/include"
+        if test -d ${with_cuda}/lib64 ; then
+            cuda_LDFLAGS="-L${with_cuda}/lib64 -L${with_cuda}/lib"
+        else
+            cuda_LDFLAGS="-L${with_cuda}/lib"
+        fi
+    fi
+    cuda_LIBS="-lcudart"
+fi
+AM_CONDITIONAL([HAVE_CUDA],[test "X${pac_have_cuda}" = "Xyes"])
+AC_SUBST([cuda_CPPFLAGS])
+AC_SUBST([cuda_LDFLAGS])
+AC_SUBST([cuda_LIBS])
+
+if test "$have_gpu" = "no" ; then
+    # Check Level Zero availability when no other GPU library is available
+    PAC_CHECK_HEADER_LIB_OPTIONAL([ze],[level_zero/ze_api.h],[ze_loader],[zeInit])
+    ze_CPPFLAGS=""
+    ze_LDFLAGS=""
+    ze_LIBS=""
+    if test "X${pac_have_ze}" = "Xyes" ; then
+        AC_DEFINE([HAVE_ZE],[1],[Define if ZE is available])
+        have_gpu="yes"
+        if test -n "${with_ze}" -a "$with_ze" != "no" ; then
+            ze_CPPFLAGS="-I${with_ze}/include"
+            if test -d ${with_ze}/lib64 ; then
+                ze_LDFLAGS="-L${with_ze}/lib64 -L${with_ze}/lib"
+            else
+                ze_LDFLAGS="-L${with_ze}/lib"
+            fi
+        fi
+        ze_LIBS="-lze_loader"
+    fi
+    AC_SUBST([ze_CPPFLAGS])
+    AC_SUBST([ze_LDFLAGS])
+    AC_SUBST([ze_LIBS])
+fi
+AM_CONDITIONAL([HAVE_ZE],[test "X${pac_have_ze}" = "Xyes"])
+
+PAC_POP_FLAG([CPPFLAGS])
+PAC_POP_FLAG([LDFLAGS])
+PAC_POP_FLAG([LIBS])
+
+AM_CONDITIONAL([HAVE_GPU], [test $have_gpu = "yes"])
+# GPU only tests
+if test $have_gpu = "no" -a $enable_gpu_tests_only = "yes" ; then
+    AC_MSG_ERROR([GPU only test configuration requires GPU library (CUDA or LevelZero)])
+fi
+AM_CONDITIONAL([GPU_ONLY], [test $enable_gpu_tests_only = "yes"])
+# End of GPU libs Check
+
 # for tests that require large mem
 largetest="#"
 if test "$enable_large_tests" = "yes" -a $ac_cv_sizeof_void_p -ge 8; then
@@ -728,15 +809,31 @@ if test "$enable_large_tests" = "yes" -a $ac_cv_sizeof_void_p -ge 8; then
 fi
 AC_SUBST(largetest)
 
-# Extended collectives test
-if test "$enable_collalgo_tests" = "yes" ; then
-    source $srcdir/coll/test_coll_algos.sh
-else
-    coll_algo_tests=""
-fi
-AC_SUBST(coll_algo_tests)
-AM_SUBST_NOTMAKE(coll_algo_tests)
-
+# Enable device specific tests in impls/mpich
+ch3_tests="#"
+ch4_tests="#"
+case $with_device in
+    ch3*)
+        ch3_tests=""
+        ;;
+    ch4*)
+        ch4_tests=""
+        ;;
+esac
+ch4_ucx_tests="#"
+ch4_ofi_tests="#"
+case $with_device in
+    ch4:ucx*)
+        ch4_ucx_tests=""
+        ;;
+    ch4:ofi*)
+        ch4_ofi_tests=""
+        ;;
+esac
+AC_SUBST(ch3_tests)
+AC_SUBST(ch4_tests)
+AC_SUBST(ch4_ucx_tests)
+AC_SUBST(ch4_ofi_tests)
 
 # Only run the long double complex tests if that type is available
 if test "x$enable_long_double" = "xyes" && \
@@ -757,23 +854,39 @@ if test "$spawndir" = "spawn" ; then
     AC_SUBST(nslib)
 fi
 
+PAC_ARG_THREAD_PACKAGE
+
+THREAD_PACKAGE_NAME=THREAD_PACKAGE_INVALID
 threadlib=""
-# Headers needed for threads tests
-if test "$threadsdir" = "threads" ; then
-    # Check for needed threads headers and needed and optional routines
-    AC_CHECK_HEADERS(pthread.h)
+case $with_thread_package in
+    yes|posix|pthreads|solaris|uti)
+        AC_CHECK_HEADERS(pthread.h)
+        AC_CHECK_LIB([pthread],[pthread_key_create],[threadlib="-lpthread"])
+        THREAD_PACKAGE_NAME=THREAD_PACKAGE_POSIX
+        ;;
+    win|windows)
+        with_thread_package=win
+        THREAD_PACKAGE_NAME=THREAD_PACKAGE_WIN
+        AC_MSG_ERROR([The 'win' thread package is not supported via autoconf builds at this time.])
+        ;;
+    abt|argobots)
+        with_thread_package=argobots
+        PAC_CHECK_HEADER_LIB_FATAL([argobots], [abt.h], [abt], [ABT_key_create])
+        threadlib="-labt"
+        THREAD_PACKAGE_NAME=THREAD_PACKAGE_ARGOBOTS
+        ;;
+    no|none)
+        with_thread_package=none
+        THREAD_PACKAGE_NAME=THREAD_PACKAGE_NONE
+        ;;
+    *)
+	AC_MSG_ERROR([The specified thread package, $with_thread_package, is not supported.])
+        ;;
+esac
 
-    # we shouldn't actually need to do this, but we are dodging the chicken/egg
-    # problem b/c we don't have a working mpicc yet and we temporarily discarded
-    # the MPICH-set LIBS (probably the wrong thing to do)
-    AC_SEARCH_LIBS([pthread_create],[pthread],[threadlib="-lpthread"])
-    AC_SEARCH_LIBS([pthread_barrier_init],[pthread])
-
-    AC_CHECK_FUNCS(pthread_create pthread_yield pthread_barrier_init pthread_barrier_wait)
-    if test "$FROM_MPICH" != yes ; then
-        AC_CHECK_FUNCS(MPI_Init_thread)
-    fi    
-fi
+# Define and export the selected thread library so that other packages
+# know what's used
+AC_DEFINE_UNQUOTED([THREAD_PACKAGE_NAME],[$THREAD_PACKAGE_NAME],[set to the name of the thread package])
 AC_SUBST(threadlib)
 
 # Check for h_addr or h_addr_list.  This is needed for the singjoin test
@@ -839,7 +952,7 @@ AC_SUBST(MPI_VERSION)
 AC_SUBST(MPI_SUBVERSION)
 
 # Running Fortran 77 compiler tests
-PAC_PROG_F77
+AC_PROG_F77
 if test "$enable_f77" = yes ; then
     # If there is no working F77, then set enable_f77 to no
     if test -z "$F77" ; then
@@ -1144,7 +1257,7 @@ fi
 AC_SUBST(F77_MPI_ADDRESS)
 
 # Running Fortran 90+ compiler tests
-PAC_PROG_FC
+AC_PROG_FC
 if test "$enable_fc" = yes ; then
     # Work around feature in autoconf that adds -g -O2 to FCFLAGS
     saveFCFLAGS="$FCFLAGS"
@@ -1284,7 +1397,7 @@ if test "$enable_f08" = "yes" -a "$FROM_MPICH" = "yes" ; then
 fi
 
 # Running C++ compiler tests
-PAC_PROG_CXX
+AC_PROG_CXX
 if test "$enable_cxx" = yes ; then
     if test -z "$CXX" ; then
         enable_cxx=no
@@ -1381,6 +1494,9 @@ if test "$enable_cxx" = yes ; then
 fi
 
 AC_LANG_C
+
+LT_INIT()
+
 # IO
 iodir="#"
 if test "$enable_romio" != no ; then
@@ -1413,8 +1529,10 @@ if test $enable_strictmpi != "yes" ; then
    else
        AC_CACHE_CHECK([Is the MPI derived from MPICH],
        pac_cv_ismpich,[
-     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include "mpi.h"],[return 1 + MPICH;]),
-       pac_cv_ismpich=yes,pac_cv_ismpich=no])])
+           AC_COMPILE_IFELSE([
+               AC_LANG_PROGRAM([#include "mpi.h"],[return 1 + MPICH;])
+           ],[pac_cv_ismpich=yes],[pac_cv_ismpich=no])
+       ])
        if test "$pac_cv_ismpich" = "yes" ; then
            impldir="mpich"
        fi
@@ -1440,38 +1558,6 @@ else
 fi
 if test "$pac_cv_have_mpi_integer16" = yes ; then 
     AC_DEFINE(HAVE_MPI_INTEGER16,1,[Define if MPI_INTEGER16 is available])
-fi
-AC_CACHE_CHECK([whether MPI_2DOUBLE_COMPLEX is available],
-pac_cv_have_mpi_2double_complex,[
-    AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([#include "mpi.h"],[
-            MPI_Datatype t = MPI_2DOUBLE_COMPLEX;
-        ])
-    ],[
-        pac_cv_have_mpi_2double_complex=yes
-    ],[
-        pac_cv_have_mpi_2double_complex=no
-    ])
-])
-if test "$pac_cv_have_mpi_2double_complex" = yes ; then 
-    AC_DEFINE(HAVE_MPI_2DOUBLE_COMPLEX,1,[Define if MPI_2DOUBLE_COMPLEX is available])
-fi
-# 2COMPLEX was in MPI 1.0 and removed after that.  This allows us to 
-# test 2COMPLEX if it is present
-AC_CACHE_CHECK([whether MPI_2COMPLEX is available],
-pac_cv_have_mpi_2complex,[
-    AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([#include "mpi.h"],[
-            MPI_Datatype t = MPI_2COMPLEX;
-        ])
-    ],[
-        pac_cv_have_mpi_2complex=yes
-    ],[
-        pac_cv_have_mpi_2complex=no
-    ])
-])
-if test "$pac_cv_have_mpi_2complex" = yes ; then 
-    AC_DEFINE(HAVE_MPI_2COMPLEX,1,[Define if MPI_2COMPLEX is available])
 fi
 
 # MPI_Aint was intended as an address-sized int.  However, MPI didn't 
@@ -1570,6 +1656,12 @@ else
     AC_PATH_PROG(MPIEXEC,$MPIEXEC_NAME)
 fi
 
+# TODO: use variables such as has_f77 etc. instead of double use $f77dir etc.
+AM_CONDITIONAL([HAS_F77], [test $f77dir = f77])
+AM_CONDITIONAL([HAS_F90], [test $f90dir = f90])
+AM_CONDITIONAL([HAS_F08], [test $f08dir = f08])
+AM_CONDITIONAL([HAS_CXX], [test $cxxdir = cxx])
+
 AC_OUTPUT_COMMANDS([chmod a+x maint/testmerge])
 AC_OUTPUT_COMMANDS([chmod a+x runtests checktests])
 AC_OUTPUT_COMMANDS([chmod a+x manual/manyconnect])
@@ -1587,6 +1679,7 @@ AC_OUTPUT(maint/testmerge \
           coll/Makefile \
 	  coll/testlist \
           comm/Makefile \
+          comm/testlist \
           datatype/Makefile \
           datatype/testlist \
           errhan/Makefile \
@@ -1612,7 +1705,6 @@ AC_OUTPUT(maint/testmerge \
           f77/ext/add1size.h \
           f77/datatype/Makefile \
           f77/datatype/typeaints.h \
-          f77/util/Makefile \
           f77/coll/Makefile \
           f77/comm/Makefile \
           f77/topo/Makefile \
@@ -1636,7 +1728,6 @@ AC_OUTPUT(maint/testmerge \
           f90/attr/Makefile \
           f90/datatype/Makefile \
           f90/f90types/Makefile \
-          f90/util/Makefile \
           f90/coll/Makefile \
           f90/comm/Makefile \
           f90/topo/Makefile \
@@ -1656,7 +1747,6 @@ AC_OUTPUT(maint/testmerge \
 	  f08/Makefile \
 	      f08/attr/Makefile \
 	      f08/datatype/Makefile \
-	      f08/util/Makefile \
 	      f08/coll/Makefile \
 	      f08/comm/Makefile \
 	      f08/pt2pt/Makefile \
@@ -1674,7 +1764,6 @@ AC_OUTPUT(maint/testmerge \
           f08/misc/Makefile \
           f08/profile/Makefile \
      cxx/Makefile \
-          cxx/util/Makefile \
           cxx/attr/Makefile \
           cxx/attr/testlist \
           cxx/pt2pt/Makefile \
@@ -1692,7 +1781,6 @@ AC_OUTPUT(maint/testmerge \
 	  cxx/topo/Makefile \
           threads/Makefile \
           threads/pt2pt/Makefile \
-          threads/util/Makefile \
           threads/comm/Makefile \
           threads/comm/testlist \
           threads/init/Makefile \
@@ -1701,6 +1789,7 @@ AC_OUTPUT(maint/testmerge \
           threads/rma/Makefile \
           threads/coll/Makefile \
           threads/coll/testlist \
+          threads/perf/Makefile \
           errors/Makefile \
           errors/attr/Makefile \
           errors/basic/Makefile \
@@ -1748,10 +1837,12 @@ AC_OUTPUT(maint/testmerge \
           f90/rma/testlist \
           f08/rma/testlist \
           impls/Makefile \
-	  impls/hydra/Makefile \
-	  impls/hydra/proc_binding.sh \
+          impls/hydra/Makefile \
+          impls/hydra/proc_binding.sh \
           impls/mpich/Makefile \
           impls/mpich/testlist \
           impls/mpich/mpi_t/Makefile \
+          impls/mpich/comm/Makefile \
+          impls/mpich/comm/testlist \
           )
 

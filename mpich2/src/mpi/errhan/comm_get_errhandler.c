@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@ int MPI_Comm_get_errhandler(MPI_Comm comm, MPI_Errhandler * errhandler)
 
 /* MPIR_Comm_get_errhandler_impl
    returning NULL for errhandler_ptr means the default handler, MPI_ERRORS_ARE_FATAL is used */
-#undef FUNCNAME
-#define FUNCNAME MPIR_Comm_get_errhandler_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPIR_Comm_get_errhandler_impl(MPIR_Comm * comm_ptr, MPIR_Errhandler ** errhandler_ptr)
 {
     MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_POBJ_COMM_MUTEX(comm_ptr));
@@ -45,10 +39,6 @@ void MPIR_Comm_get_errhandler_impl(MPIR_Comm * comm_ptr, MPIR_Errhandler ** errh
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Comm_get_errhandler
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Comm_get_errhandler - Get the error handler attached to a communicator
 
@@ -129,11 +119,11 @@ int MPI_Comm_get_errhandler(MPI_Comm comm, MPI_Errhandler * errhandler)
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_comm_get_errhandler", "**mpi_comm_get_errhandler %C %p",
                                  comm, errhandler);
     }
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
 #endif
     /* --END ERROR HANDLING-- */

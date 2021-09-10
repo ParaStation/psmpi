@@ -1,9 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpi.h"
@@ -33,7 +32,7 @@ int main(int argc, char *argv[])
 
     MTest_Init(&argc, &argv);
 
-    MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
 
     comm = MPI_COMM_WORLD;
     MPI_Comm_rank(comm, &rank);

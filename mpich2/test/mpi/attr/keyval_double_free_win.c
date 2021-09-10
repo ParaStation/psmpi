@@ -1,9 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2015 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include <mpi.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -35,7 +34,7 @@ int main(int argc, char **argv)
     MPI_Alloc_mem(DATA_SZ, MPI_INFO_NULL, &base_ptr[1]);
     MPI_Win_create(base_ptr[1], DATA_SZ, 1, MPI_INFO_NULL, MPI_COMM_WORLD, &windows[1]);
 
-    MPI_Win_create_keyval(MPI_NULL_COPY_FN, delete_fn, &keyval, NULL);
+    MPI_Win_create_keyval(MPI_WIN_NULL_COPY_FN, delete_fn, &keyval, NULL);
     keyval_copy = keyval;
 
     MPI_Win_set_attr(windows[0], keyval, NULL);

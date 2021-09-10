@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef PMISERV_H_INCLUDED
@@ -79,14 +78,14 @@ typedef struct PMIKVSpace {
 } PMIKVSpace;
 
 /*
-   The master PMI structure contains the "shared" objects:
+   The main PMI structure contains the "shared" objects:
    groups and key-value spaces (kvs)
 */
-typedef struct PMIMaster {
+typedef struct PMIMain {
     int nGroups;                /* Number of groups allocated (non-decreasing) */
     PMIGroup *groups;           /* Pointer to allocated groups */
     PMIKVSpace *kvSpaces;       /* Pointer to allocated KV spaces */
-} PMIMaster;
+} PMIMain;
 
 typedef struct {
     int fdpair[2];              /* fd's used to communicate between the

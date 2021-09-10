@@ -1,12 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- *  Portions of this code were written by Intel Corporation.
- *  Copyright (C) 2011-2017 Intel Corporation.  Intel provides this material
- *  to Argonne National Laboratory subject to Software Grant and Corporate
- *  Contributor License Agreement dated February 8, 2012.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* Header protection (i.e., IALLGATHER_TSP_ALGOS_H_INCLUDED) is
@@ -16,10 +10,6 @@
 #include "recexchalgo.h"
 #include "tsp_namespace_def.h"
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Iallgather_sched_intra_recexch_data_exchange
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_TSP_Iallgather_sched_intra_recexch_data_exchange(int rank, int nranks, int k, int p_of_k,
                                                           int log_pofk, int T, void *recvbuf,
                                                           MPI_Datatype recvtype, size_t recv_extent,
@@ -62,10 +52,6 @@ int MPIR_TSP_Iallgather_sched_intra_recexch_data_exchange(int rank, int nranks, 
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Iallgather_sched_intra_recexch_step1
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_TSP_Iallgather_sched_intra_recexch_step1(int step1_sendto, int *step1_recvfrom,
                                                   int step1_nrecvs, int is_inplace, int rank,
                                                   int tag, const void *sendbuf, void *recvbuf,
@@ -103,10 +89,6 @@ int MPIR_TSP_Iallgather_sched_intra_recexch_step1(int step1_sendto, int *step1_r
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Iallgather_sched_intra_recexch_step2
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_TSP_Iallgather_sched_intra_recexch_step2(int step1_sendto, int step2_nphases,
                                                   int **step2_nbrs, int rank, int nranks, int k,
                                                   int p_of_k, int log_pofk, int T, int *nrecvs_,
@@ -179,10 +161,6 @@ int MPIR_TSP_Iallgather_sched_intra_recexch_step2(int step1_sendto, int step2_np
 }
 
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Iallgather_sched_intra_recexch_step3
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_TSP_Iallgather_sched_intra_recexch_step3(int step1_sendto, int *step1_recvfrom,
                                                   int step1_nrecvs, int step2_nphases,
                                                   void *recvbuf, int recvcount, int nranks, int k,
@@ -220,10 +198,6 @@ int MPIR_TSP_Iallgather_sched_intra_recexch_step3(int step1_sendto, int *step1_r
  * paper, Sack et al, "Faster topology-aware collective algorithms through
  * non-minimal communication", 2012.
  * */
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Iallgather_sched_intra_recexch
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_TSP_Iallgather_sched_intra_recexch(const void *sendbuf, int sendcount,
                                             MPI_Datatype sendtype, void *recvbuf, int recvcount,
                                             MPI_Datatype recvtype, MPIR_Comm * comm,
@@ -242,6 +216,7 @@ int MPIR_TSP_Iallgather_sched_intra_recexch(const void *sendbuf, int sendcount,
     int nrecvs;
     int *recv_id;
     int tag;
+    MPIR_CHKLMEM_DECL(1);
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIR_TSP_IALLGATHER_SCHED_INTRA_RECEXCH);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIR_TSP_IALLGATHER_SCHED_INTRA_RECEXCH);
@@ -249,8 +224,7 @@ int MPIR_TSP_Iallgather_sched_intra_recexch(const void *sendbuf, int sendcount,
     /* For correctness, transport based collectives need to get the
      * tag from the same pool as schedule based collectives */
     mpi_errno = MPIR_Sched_next_tag(comm, &tag);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     is_inplace = (sendbuf == MPI_IN_PLACE);
     nranks = MPIR_Comm_size(comm);
@@ -266,7 +240,8 @@ int MPIR_TSP_Iallgather_sched_intra_recexch(const void *sendbuf, int sendcount,
                                    &step2_nbrs, &step2_nphases, &p_of_k, &T);
     is_instep2 = (step1_sendto == -1);  /* whether this rank participates in Step 2 */
     log_pofk = step2_nphases;
-    recv_id = (int *) MPL_malloc(sizeof(int) * ((step2_nphases * (k - 1)) + 1), MPL_MEM_COLL);
+    MPIR_CHKLMEM_MALLOC(recv_id, int *, sizeof(int) * ((step2_nphases * (k - 1)) + 1),
+                        mpi_errno, "recv_id buffer", MPL_MEM_COLL);
 
     if (!is_inplace && is_instep2) {
         /* copy the data to recvbuf but only if you are a rank participating in Step 2 */
@@ -315,9 +290,9 @@ int MPIR_TSP_Iallgather_sched_intra_recexch(const void *sendbuf, int sendcount,
         MPL_free(step2_nbrs[i]);
     MPL_free(step2_nbrs);
     MPL_free(step1_recvfrom);
-    MPL_free(recv_id);
 
   fn_exit:
+    MPIR_CHKLMEM_FREEALL();
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIR_TSP_IALLGATHER_SCHED_INTRA_RECEXCH);
 
     return mpi_errno;
@@ -327,10 +302,6 @@ int MPIR_TSP_Iallgather_sched_intra_recexch(const void *sendbuf, int sendcount,
 
 
 /* Non-blocking recexch based Allgather */
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Iallgather_intra_recexch
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_TSP_Iallgather_intra_recexch(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                                       void *recvbuf, int recvcount, MPI_Datatype recvtype,
                                       MPIR_Comm * comm, MPIR_Request ** req, int allgather_type,
@@ -352,13 +323,11 @@ int MPIR_TSP_Iallgather_intra_recexch(const void *sendbuf, int sendcount, MPI_Da
     mpi_errno =
         MPIR_TSP_Iallgather_sched_intra_recexch(sendbuf, sendcount, sendtype, recvbuf, recvcount,
                                                 recvtype, comm, allgather_type, k, sched);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* start and register the schedule */
     mpi_errno = MPIR_TSP_sched_start(sched, comm, req);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIR_TSP_IALLGATHER_INTRA_RECEXCH);

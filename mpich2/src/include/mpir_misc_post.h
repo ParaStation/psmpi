@@ -1,18 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPIR_MISC_POST_H_INCLUDED
 #define MPIR_MISC_POST_H_INCLUDED
 
 /* Pull the error status out of the tag space and put it into an errflag. */
-#undef FUNCNAME
-#define FUNCNAME MPIR_process_status
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 static inline void MPIR_Process_status(MPI_Status * status, MPIR_Errflag_t * errflag)
 {
     if (MPI_PROC_NULL != status->MPI_SOURCE &&

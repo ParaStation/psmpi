@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -257,8 +256,6 @@ static int ndivisors_from_factor(int nf, const Factors * factors)
     return ndiv;
 }
 
-#undef FCNAME
-#define FCNAME "factor_to_divisors"
 static int factor_to_divisors(int nf, Factors * factors, int ndiv, int divs[])
 {
     int i, powers[MAX_FACTORS], curbase[MAX_FACTORS], nd, idx, val, mpi_errno;
@@ -413,9 +410,6 @@ static void factor_to_dims_by_rr(int nf, Factors f[], int nd, int dims[])
    values are known.  Then pass in the entire array.  This is needed
    to get the correct values for "ties" between the first and last values.
  */
-#undef FC_NAME
-#define FC_NAME "optbalance"
-
 static int optbalance(int n, int idx, int nd, int ndivs, const int divs[],
                       int trydims[], int *curbal_p, int optdims[])
 {
@@ -436,8 +430,6 @@ static int optbalance(int n, int idx, int nd, int ndivs, const int divs[],
         MPIR_CHKLMEM_DECL(1);
         int *newdivs;
         MPIR_CHKLMEM_MALLOC(newdivs, int *, ndivs * sizeof(int), mpi_errno, "divs", MPL_MEM_COMM);
-        if (mpi_errno)
-            return mpi_errno;
 
         /* At least 3 divisors to set (0...idx).  We try all choices
          * recursively, but stop looking when we can easily tell that
@@ -466,8 +458,11 @@ static int optbalance(int n, int idx, int nd, int ndivs, const int divs[],
             if (q % f == 0) {
                 newdivs[nndivs++] = f;
                 sf = f;
-            } else {
+            } else if (k + 1 < ndivs) {
                 sf = divs[k + 1];
+            } else {
+                /* run out of next factors, bail out */
+                break;
             }
             if (idx < nd - 1 && sf - min > curbal) {
                 MPIR_T_PVAR_COUNTER_INC(DIMS, dims_npruned, 1);
@@ -508,8 +503,10 @@ static int optbalance(int n, int idx, int nd, int ndivs, const int divs[],
             }
             MPIR_T_PVAR_TIMER_END(DIMS, dims_div);
             /* recursively try to find the best subset */
-            if (nndivs > 0)
-                optbalance(q, idx - 1, nd, nndivs, newdivs, trydims, curbal_p, optdims);
+            if (nndivs > 0) {
+                mpi_errno = optbalance(q, idx - 1, nd, nndivs, newdivs, trydims, curbal_p, optdims);
+                MPIR_ERR_CHECK(mpi_errno);
+            }
         }
         MPIR_CHKLMEM_FREEALL();
     } else if (idx == 1) {
@@ -537,7 +534,7 @@ static int optbalance(int n, int idx, int nd, int ndivs, const int divs[],
             }
             /* No valid solution.  Exit without changing current optdims */
             MPIR_T_PVAR_COUNTER_INC(DIMS, dims_npruned, 1);
-            return 0;
+            goto fn_exit;
         }
         if (MPIR_CVAR_DIMS_VERBOSE) {
             MPL_msg_printf("Found best factors %d,%d, from divs[%d]\n", q, f, k - 1);
@@ -571,9 +568,11 @@ static int optbalance(int n, int idx, int nd, int ndivs, const int divs[],
             *curbal_p = n - min;
         }
     }
-    return 0;
-  fn_fail:
+
+  fn_exit:
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 
@@ -803,10 +802,11 @@ PMPI_LOCAL int MPIR_Dims_create_impl(int nnodes, int ndims, int dims[])
             MPL_msg_printf("%d%c", chosen[i], (i + 1 < dims_needed) ? 'x' : '\n');
     }
     MPIR_T_PVAR_TIMER_START(DIMS, dims_bal);
-    optbalance(nnodes, dims_needed - nextidx - 1, dims_needed - nextidx,
-               ndivs, divs, trydims, &curbal, chosen + nextidx);
+    mpi_errno = optbalance(nnodes, dims_needed - nextidx - 1, dims_needed - nextidx,
+                           ndivs, divs, trydims, &curbal, chosen + nextidx);
     MPIR_T_PVAR_TIMER_END(DIMS, dims_bal);
     MPIR_CHKLMEM_FREEALL();
+    MPIR_ERR_CHECK(mpi_errno);
 
     if (MPIR_CVAR_DIMS_VERBOSE) {
         MPL_msg_printf("N: final decomp is: ");
@@ -833,10 +833,6 @@ extern volatile int MPIR_DIMS_initPCVars;
 
 #endif /* PMPI Local */
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Dims_create
-#undef FCNAME
-#define FCNAME "MPI_Dims_create"
 
 /*@
     MPI_Dims_create - Creates a division of processors in a cartesian grid
@@ -875,7 +871,11 @@ int MPI_Dims_create(int nnodes, int ndims, int dims[])
         {
             MPIR_ERRTEST_ARGNEG(nnodes, "nnodes", mpi_errno);
             MPIR_ERRTEST_ARGNEG(ndims, "ndims", mpi_errno);
-            MPIR_ERRTEST_ARGNULL(dims, "dims", mpi_errno);
+            if (!(nnodes == 1 && ndims == 0)) {
+                /* nnodes == 1 && ndims == 0 is allowed.
+                 * When ndims is 0, dims can be NULL. */
+                MPIR_ERRTEST_ARGNULL(dims, "dims", mpi_errno);
+            }
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -893,8 +893,7 @@ int MPI_Dims_create(int nnodes, int ndims, int dims[])
     } else {
         mpi_errno = MPIR_Dims_create_impl(nnodes, ndims, dims);
     }
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
     /* ... end of body of routine ... */
 
   fn_exit:
@@ -906,12 +905,12 @@ int MPI_Dims_create(int nnodes, int ndims, int dims[])
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_dims_create", "**mpi_dims_create %d %d %p", nnodes, ndims,
                                  dims);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

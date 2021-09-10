@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -29,10 +27,6 @@ int MPI_Pack_external(const char datarep[], const void *inbuf, int incount,
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Pack_external
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Pack_external - Packs a datatype into contiguous memory, using the
      external32 format
@@ -66,9 +60,7 @@ int MPI_Pack_external(const char datarep[],
                       MPI_Datatype datatype, void *outbuf, MPI_Aint outsize, MPI_Aint * position)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPI_Aint first, last;
 
-    MPIR_Segment *segp;
     MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_PACK_EXTERNAL);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -90,7 +82,7 @@ int MPI_Pack_external(const char datarep[],
 
             MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 
-            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(datatype)) {
                 MPIR_Datatype *datatype_ptr = NULL;
 
                 MPIR_Datatype_get_ptr(datatype, datatype_ptr);
@@ -109,37 +101,13 @@ int MPI_Pack_external(const char datarep[],
         goto fn_exit;
     }
 
-    segp = MPIR_Segment_alloc();
-    /* --BEGIN ERROR HANDLING-- */
-    if (segp == NULL) {
-        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
-                                         MPIR_ERR_RECOVERABLE,
-                                         FCNAME,
-                                         __LINE__,
-                                         MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPIR_Segment");
+    MPI_Aint actual_pack_bytes;
+    mpi_errno =
+        MPIR_Typerep_pack_external(inbuf, incount, datatype, (void *) ((char *) outbuf + *position),
+                                   &actual_pack_bytes);
+    if (mpi_errno)
         goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
-    mpi_errno = MPIR_Segment_init(inbuf, incount, datatype, segp);
-    if (mpi_errno != MPI_SUCCESS)
-        goto fn_fail;
-
-    /* NOTE: the use of buffer values and positions in MPI_Pack_external and
-     * in MPIR_Segment_pack_external are quite different.  See code or docs
-     * or something.
-     */
-    first = 0;
-    last = SEGMENT_IGNORE_LAST;
-
-    /* Ensure that pointer increment fits in a pointer */
-    MPIR_Ensure_Aint_fits_in_pointer((MPIR_VOID_PTR_CAST_TO_MPI_AINT outbuf) + *position);
-
-    MPIR_Segment_pack_external32(segp, first, &last, (void *) ((char *) outbuf + *position));
-
-    *position += last;
-
-    MPIR_Segment_free(segp);
-
+    *position += actual_pack_bytes;
     /* ... end of body of routine ... */
 
   fn_exit:
@@ -151,12 +119,12 @@ int MPI_Pack_external(const char datarep[],
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_pack_external", "**mpi_pack_external %s %p %d %D %p %d %p",
                                  datarep, inbuf, incount, datatype, outbuf, outsize, position);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(0, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

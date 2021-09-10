@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -30,10 +28,6 @@ int MPI_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Compare_and_swap
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Compare_and_swap - Perform one-sided atomic compare-and-swap.
 
@@ -132,6 +126,11 @@ int MPI_Compare_and_swap(const void *origin_addr, const void *compare_addr,
     }
 #endif /* HAVE_ERROR_CHECKING */
 
+    /* Return immediately for dummy process */
+    if (unlikely(target_rank == MPI_PROC_NULL)) {
+        goto fn_exit;
+    }
+
     /* ... body of routine ...  */
 
     mpi_errno = MPID_Compare_and_swap(origin_addr,
@@ -152,14 +151,14 @@ int MPI_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_compare_and_swap",
                                  "**mpi_compare_and_swap %p %p %p %D %d %d %W", origin_addr,
                                  compare_addr, result_addr, datatype, target_rank, target_disp,
                                  win);
     }
 #endif
-    mpi_errno = MPIR_Err_return_win(win_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_win(win_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

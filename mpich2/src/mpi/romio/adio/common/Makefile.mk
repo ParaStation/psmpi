@@ -1,8 +1,6 @@
-## -*- Mode: Makefile; -*-
-## vim: set ft=automake :
 ##
-## (C) 2011 by Argonne National Laboratory.
-##     See COPYRIGHT in top-level directory.
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
 ##
 
 romio_other_sources +=                  \
@@ -63,6 +61,7 @@ romio_other_sources +=                  \
     adio/common/heap_sort.c             \
     adio/common/iscontig.c              \
     adio/common/lock.c                  \
+    adio/common/lock_internal.c         \
     adio/common/malloc.c                \
     adio/common/shfp_fname.c            \
     adio/common/status_setb.c           \

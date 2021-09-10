@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2009 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -31,10 +29,6 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, const int sources[], const i
  * correctly handle weak symbols and the profiling interface */
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Dist_graph_create
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Dist_graph_create - MPI_DIST_GRAPH_CREATE returns a handle to a new
 communicator to which the distributed graph topology information is
@@ -166,9 +160,8 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, const int sources[],
 
     /* following the spirit of the old topo interface, attributes do not
      * propagate to the new communicator (see MPI-2.1 pp. 243 line 11) */
-    mpi_errno = MPII_Comm_copy(comm_ptr, comm_size, &comm_dist_graph_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    mpi_errno = MPII_Comm_copy(comm_ptr, comm_size, NULL, &comm_dist_graph_ptr);
+    MPIR_ERR_CHECK(mpi_errno);
     MPIR_Assert(comm_dist_graph_ptr != NULL);
 
     /* rin is an array of size comm_size containing pointers to arrays of
@@ -271,8 +264,7 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, const int sources[],
     /* compute the number of peers I will recv from */
     mpi_errno =
         MPIR_Reduce_scatter_block(rs, in_out_peers, 2, MPI_INT, MPI_SUM, comm_ptr, &errflag);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
     MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
 
     MPIR_Assert(in_out_peers[0] <= comm_size && in_out_peers[0] >= 0);
@@ -289,16 +281,14 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, const int sources[],
             mpi_errno =
                 MPIC_Isend(&rin[i][0], rin_sizes[i], MPI_INT, i, MPIR_TOPO_A_TAG, comm_ptr,
                            &reqs[idx++], &errflag);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
         }
         if (rout_sizes[i]) {
             /* send edges where i is a source to process i */
             mpi_errno =
                 MPIC_Isend(&rout[i][0], rout_sizes[i], MPI_INT, i, MPIR_TOPO_B_TAG, comm_ptr,
                            &reqs[idx++], &errflag);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
         }
     }
     MPIR_Assert(idx <= (2 * comm_size));
@@ -336,8 +326,7 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, const int sources[],
         int *buf;
         /* receive inbound edges */
         mpi_errno = MPIC_Probe(MPI_ANY_SOURCE, MPIR_TOPO_A_TAG, comm_old, &status);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         MPIR_Get_count_impl(&status, MPI_INT, &count);
         /* can't use CHKLMEM macros b/c we are in a loop */
         /* FIXME: Why not - there is only one allocated at a time. Is it only
@@ -349,8 +338,7 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, const int sources[],
             MPIC_Recv(buf, count, MPI_INT, MPI_ANY_SOURCE, MPIR_TOPO_A_TAG, comm_ptr,
                       MPI_STATUS_IGNORE, &errflag);
         /* FIXME: buf is never freed on error! */
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
         for (j = 0; j < count / 2; ++j) {
             int deg = dist_graph_ptr->indegree++;
@@ -377,8 +365,7 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, const int sources[],
         int *buf;
         /* receive outbound edges */
         mpi_errno = MPIC_Probe(MPI_ANY_SOURCE, MPIR_TOPO_B_TAG, comm_old, &status);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         MPIR_Get_count_impl(&status, MPI_INT, &count);
         /* can't use CHKLMEM macros b/c we are in a loop */
         /* Why not? */
@@ -389,8 +376,7 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, const int sources[],
             MPIC_Recv(buf, count, MPI_INT, MPI_ANY_SOURCE, MPIR_TOPO_B_TAG, comm_ptr,
                       MPI_STATUS_IGNORE, &errflag);
         /* FIXME: buf is never freed on error! */
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
         for (j = 0; j < count / 2; ++j) {
             int deg = dist_graph_ptr->outdegree++;
@@ -412,8 +398,7 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, const int sources[],
     }
 
     mpi_errno = MPIC_Waitall(idx, reqs, MPI_STATUSES_IGNORE, &errflag);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* remove any excess memory allocation */
     MPIR_REALLOC_ORJUMP(dist_graph_ptr->in, dist_graph_ptr->indegree * sizeof(int), MPL_MEM_COMM,
@@ -428,8 +413,7 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, const int sources[],
     }
 
     mpi_errno = MPIR_Topology_put(comm_dist_graph_ptr, topo_ptr);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     MPIR_CHKPMEM_COMMIT();
 
@@ -439,10 +423,8 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, const int sources[],
 
   fn_exit:
     for (i = 0; i < comm_size; ++i) {
-        if (rin[i])
-            MPL_free(rin[i]);
-        if (rout[i])
-            MPL_free(rout[i]);
+        MPL_free(rin[i]);
+        MPL_free(rout[i]);
     }
 
     MPIR_CHKLMEM_FREEALL();
@@ -453,24 +435,22 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, const int sources[],
 
     /* --BEGIN ERROR HANDLING-- */
   fn_fail:
-    if (dist_graph_ptr && dist_graph_ptr->in)
+    if (dist_graph_ptr) {
         MPL_free(dist_graph_ptr->in);
-    if (dist_graph_ptr && dist_graph_ptr->in_weights)
         MPL_free(dist_graph_ptr->in_weights);
-    if (dist_graph_ptr && dist_graph_ptr->out)
         MPL_free(dist_graph_ptr->out);
-    if (dist_graph_ptr && dist_graph_ptr->out_weights)
         MPL_free(dist_graph_ptr->out_weights);
+    }
     MPIR_CHKPMEM_REAP();
 #ifdef HAVE_ERROR_CHECKING
     mpi_errno =
-        MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+        MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                              "**mpi_dist_graph_create",
                              "**mpi_dist_graph_create %C %d %p %p %p %p %I %d %p", comm_old, n,
                              sources, degrees, destinations, weights, info, reorder,
                              comm_dist_graph);
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

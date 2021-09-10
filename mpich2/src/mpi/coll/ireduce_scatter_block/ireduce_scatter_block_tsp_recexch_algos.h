@@ -1,12 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- *  Portions of this code were written by Intel Corporation.
- *  Copyright (C) 2011-2017 Intel Corporation.  Intel provides this material
- *  to Argonne National Laboratory subject to Software Grant and Corporate
- *  Contributor License Agreement dated February 8, 2012.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* Header protection (i.e., IREDUCE_SCATTER_BLOCK_TSP_RECEXCH_ALGOS_H_INCLUDED) is
@@ -18,20 +12,15 @@
 #include "recexchalgo.h"
 
 /* Routine to schedule a recursive exchange based reduce_scatter with distance halving in each phase */
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Ireduce_scatter_block_sched_intra_recexch
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_TSP_Ireduce_scatter_block_sched_intra_recexch(const void *sendbuf, void *recvbuf,
                                                        int recvcount, MPI_Datatype datatype,
-                                                       MPI_Op op, int tag, MPIR_Comm * comm, int k,
+                                                       MPI_Op op, MPIR_Comm * comm, int k,
                                                        MPIR_TSP_sched_t * sched)
 {
     int mpi_errno = MPI_SUCCESS;
     int is_inplace;
     size_t extent;
     MPI_Aint lb, true_extent;
-    int is_commutative;
     int step1_sendto = -1, step2_nphases = 0, step1_nrecvs = 0;
     int in_step2;
     int *step1_recvfrom = NULL;
@@ -42,6 +31,7 @@ int MPIR_TSP_Ireduce_scatter_block_sched_intra_recexch(const void *sendbuf, void
     int dtcopy_id = -1, send_id = -1, recv_id = -1, reduce_id = -1, step1_id = -1;
     int nvtcs, vtcs[2];
     void *tmp_recvbuf = NULL, *tmp_results = NULL;
+    int tag;
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIR_TSP_IREDUCE_SCATTER_BLOCK_SCHED_INTRA_RECEXCH);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIR_TSP_IREDUCE_SCATTER_BLOCK_SCHED_INTRA_RECEXCH);
@@ -50,6 +40,10 @@ int MPIR_TSP_Ireduce_scatter_block_sched_intra_recexch(const void *sendbuf, void
         return mpi_errno;
     }
 
+    /* For correctness, transport based collectives need to get the
+     * tag from the same pool as schedule based collectives */
+    mpi_errno = MPIR_Sched_next_tag(comm, &tag);
+
     is_inplace = (sendbuf == MPI_IN_PLACE);
     nranks = MPIR_Comm_size(comm);
     rank = MPIR_Comm_rank(comm);
@@ -57,8 +51,7 @@ int MPIR_TSP_Ireduce_scatter_block_sched_intra_recexch(const void *sendbuf, void
     MPIR_Datatype_get_extent_macro(datatype, extent);
     MPIR_Type_get_true_extent_impl(datatype, &lb, &true_extent);
     extent = MPL_MAX(extent, true_extent);
-    is_commutative = MPIR_Op_is_commutative(op);
-    MPIR_Assert(is_commutative == 1);
+    MPIR_Assert(MPIR_Op_is_commutative(op) == 1);
 
     total_count = nranks * recvcount;
 
@@ -207,16 +200,11 @@ int MPIR_TSP_Ireduce_scatter_block_sched_intra_recexch(const void *sendbuf, void
 
 
 /* Non-blocking recexch based REDUCE_SCATTER_BLOCK */
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Ireduce_scatter_block_intra_recexch
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_TSP_Ireduce_scatter_block_intra_recexch(const void *sendbuf, void *recvbuf, int recvcount,
                                                  MPI_Datatype datatype, MPI_Op op, MPIR_Comm * comm,
                                                  MPIR_Request ** req, int k)
 {
     int mpi_errno = MPI_SUCCESS;
-    int tag;
     MPIR_TSP_sched_t *sched;
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIR_TSP_IREDUCE_SCATTER_BLOCK_INTRA_RECEXCH);
@@ -229,22 +217,14 @@ int MPIR_TSP_Ireduce_scatter_block_intra_recexch(const void *sendbuf, void *recv
     MPIR_Assert(sched != NULL);
     MPIR_TSP_sched_create(sched);
 
-    /* For correctness, transport based collectives need to get the
-     * tag from the same pool as schedule based collectives */
-    mpi_errno = MPIR_Sched_next_tag(comm, &tag);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
-
     mpi_errno =
         MPIR_TSP_Ireduce_scatter_block_sched_intra_recexch(sendbuf, recvbuf, recvcount, datatype,
-                                                           op, tag, comm, k, sched);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+                                                           op, comm, k, sched);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* start and register the schedule */
     mpi_errno = MPIR_TSP_sched_start(sched, comm, req);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIR_TSP_IREDUCE_SCATTER_BLOCK_INTRA_RECEXCH);

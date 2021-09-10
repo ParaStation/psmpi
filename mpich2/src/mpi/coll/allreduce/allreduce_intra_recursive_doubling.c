@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -18,10 +17,6 @@
  */
 
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Allreduce_intra_recursive_doubling
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Allreduce_intra_recursive_doubling(const void *sendbuf,
                                             void *recvbuf,
                                             int count,
@@ -46,7 +41,6 @@ int MPIR_Allreduce_intra_recursive_doubling(const void *sendbuf,
     MPIR_Type_get_true_extent_impl(datatype, &true_lb, &true_extent);
     MPIR_Datatype_get_extent_macro(datatype, extent);
 
-    MPIR_Ensure_Aint_fits_in_pointer(count * MPL_MAX(extent, true_extent));
     MPIR_CHKLMEM_MALLOC(tmp_buf, void *, count * (MPL_MAX(extent, true_extent)), mpi_errno,
                         "temporary buffer", MPL_MEM_BUFFER);
 
@@ -56,12 +50,11 @@ int MPIR_Allreduce_intra_recursive_doubling(const void *sendbuf,
     /* copy local data into recvbuf */
     if (sendbuf != MPI_IN_PLACE) {
         mpi_errno = MPIR_Localcopy(sendbuf, count, datatype, recvbuf, count, datatype);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     /* get nearest power-of-two less than or equal to comm_size */
-    pof2 = comm_ptr->pof2;
+    pof2 = comm_ptr->coll.pof2;
 
     rem = comm_size - pof2;
 
@@ -105,8 +98,7 @@ int MPIR_Allreduce_intra_recursive_doubling(const void *sendbuf,
              * ordering is right, it doesn't matter whether
              * the operation is commutative or not. */
             mpi_errno = MPIR_Reduce_local(tmp_buf, recvbuf, count, datatype, op);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
 
             /* change the rank */
             newrank = rank / 2;
@@ -151,18 +143,15 @@ int MPIR_Allreduce_intra_recursive_doubling(const void *sendbuf,
             if (is_commutative || (dst < rank)) {
                 /* op is commutative OR the order is already right */
                 mpi_errno = MPIR_Reduce_local(tmp_buf, recvbuf, count, datatype, op);
-                if (mpi_errno)
-                    MPIR_ERR_POP(mpi_errno);
+                MPIR_ERR_CHECK(mpi_errno);
             } else {
                 /* op is noncommutative and the order is not right */
                 mpi_errno = MPIR_Reduce_local(recvbuf, tmp_buf, count, datatype, op);
-                if (mpi_errno)
-                    MPIR_ERR_POP(mpi_errno);
+                MPIR_ERR_CHECK(mpi_errno);
 
                 /* copy result back into recvbuf */
                 mpi_errno = MPIR_Localcopy(tmp_buf, count, datatype, recvbuf, count, datatype);
-                if (mpi_errno)
-                    MPIR_ERR_POP(mpi_errno);
+                MPIR_ERR_CHECK(mpi_errno);
             }
             mask <<= 1;
         }

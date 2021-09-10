@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2009 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@ int MPI_Dist_graph_neighbors_count(MPI_Comm comm, int *indegree, int *outdegree,
 /* any utility functions should go here, usually prefixed with PMPI_LOCAL to
  * correctly handle weak symbols and the profiling interface */
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Dist_graph_neighbors_count_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Dist_graph_neighbors_count_impl(MPIR_Comm * comm_ptr, int *indegree, int *outdegree,
                                          int *weighted)
 {
@@ -54,10 +48,6 @@ int MPIR_Dist_graph_neighbors_count_impl(MPIR_Comm * comm_ptr, int *indegree, in
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Dist_graph_neighbors_count
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Dist_graph_neighbors_count - Provides adjacency information for a distributed graph topology.
 
@@ -122,8 +112,7 @@ int MPI_Dist_graph_neighbors_count(MPI_Comm comm, int *indegree, int *outdegree,
     /* ... body of routine ...  */
 
     mpi_errno = MPIR_Dist_graph_neighbors_count_impl(comm_ptr, indegree, outdegree, weighted);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* ... end of body of routine ... */
 
@@ -137,13 +126,13 @@ int MPI_Dist_graph_neighbors_count(MPI_Comm comm, int *indegree, int *outdegree,
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_dist_graph_neighbors_count",
                                  "**mpi_dist_graph_neighbors_count %C %p %p %p", comm, indegree,
                                  outdegree, weighted);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

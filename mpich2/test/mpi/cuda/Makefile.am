@@ -11,7 +11,7 @@ MPICC_CUDA_CONF = -config=cuda
 
 AM_CFLAGS = $(MPICC_CUDA_CONF)
 
-include $(top_srcdir)/Makefile.mtest
+include $(top_srcdir)/Makefile_single.mtest
 
 EXTRA_DIST = testlist
 

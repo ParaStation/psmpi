@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -18,10 +16,6 @@
  * max_size if dst < remote_size.
  */
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Alltoall_inter_pairwise_exchange
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Alltoall_inter_pairwise_exchange(const void *sendbuf, int sendcount,
                                           MPI_Datatype sendtype, void *recvbuf, int recvcount,
                                           MPI_Datatype recvtype, MPIR_Comm * comm_ptr,
@@ -45,10 +39,6 @@ int MPIR_Alltoall_inter_pairwise_exchange(const void *sendbuf, int sendcount,
 
     /* Do the pairwise exchanges */
     max_size = MPL_MAX(local_size, remote_size);
-    MPIR_Ensure_Aint_fits_in_pointer(MPIR_VOID_PTR_CAST_TO_MPI_AINT recvbuf +
-                                     max_size * recvcount * recvtype_extent);
-    MPIR_Ensure_Aint_fits_in_pointer(MPIR_VOID_PTR_CAST_TO_MPI_AINT sendbuf +
-                                     max_size * sendcount * sendtype_extent);
     for (i = 0; i < max_size; i++) {
         src = (rank - i + max_size) % max_size;
         dst = (rank + i) % max_size;

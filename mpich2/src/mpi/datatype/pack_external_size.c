@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -29,10 +27,6 @@ int MPI_Pack_external_size(const char datarep[], int incount, MPI_Datatype datat
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Pack_external_size
-#undef FCNAME
-#define FCNAME "MPI_Pack_external_size"
 
 /*@
   MPI_Pack_external_size - Returns the upper bound on the amount of
@@ -99,7 +93,7 @@ int MPI_Pack_external_size(const char datarep[],
 
     /* ... body of routine ... */
 
-    *size = (MPI_Aint) incount *(MPI_Aint) MPIR_Datatype_size_external32(datatype);
+    *size = (MPI_Aint) incount *(MPI_Aint) MPIR_Typerep_size_external32(datatype);
 
     /* ... end of body of routine ... */
 
@@ -114,11 +108,11 @@ int MPI_Pack_external_size(const char datarep[],
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_pack_external_size", "**mpi_pack_external_size %s %d %D %p",
                                  datarep, incount, datatype, size);
     }
-    mpi_errno = MPIR_Err_return_comm(0, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(0, __func__, mpi_errno);
     goto fn_exit;
 #endif
     /* --END ERROR HANDLING-- */

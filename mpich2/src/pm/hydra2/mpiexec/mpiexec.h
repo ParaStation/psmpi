@@ -1,12 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2017 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPIEXEC_H_INCLUDED
 #define MPIEXEC_H_INCLUDED
 
+#include "hydra_timeout.h"
 #include "uthash.h"
 
 #define MPIEXEC_USIZE__UNSET     (0)
@@ -54,7 +54,7 @@ struct mpiexec_params_s {
     int ppn;
     int print_all_exitcodes;
 
-    int timeout;
+    struct timeout_s timeout;
 
     enum {
         MPIEXEC_ENVPROP__UNSET = 0,

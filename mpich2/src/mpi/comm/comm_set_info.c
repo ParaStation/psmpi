@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2012 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,41 +26,16 @@ int MPI_Comm_set_info(MPI_Comm comm, MPI_Info info)
 #undef MPI_Comm_set_info
 #define MPI_Comm_set_info PMPI_Comm_set_info
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Comm_set_info_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Comm_set_info_impl(MPIR_Comm * comm_ptr, MPIR_Info * info_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIR_Info *curr_info = NULL;
     MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPIR_COMM_SET_INFO_IMPL);
 
     MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPIR_COMM_SET_INFO_IMPL);
 
-    mpi_errno = MPII_Comm_apply_hints(comm_ptr, info_ptr);
+    mpi_errno = MPII_Comm_set_hints(comm_ptr, info_ptr);
     if (mpi_errno != MPI_SUCCESS)
         goto fn_fail;
-
-    if (comm_ptr->info == NULL) {
-        /* Always have at least a blank info hint. */
-        mpi_errno = MPIR_Info_alloc(&(comm_ptr->info));
-        if (mpi_errno != MPI_SUCCESS)
-            goto fn_fail;
-    }
-
-    /* MPIR_Info_set_impl will do an O(n) search to prevent duplicate keys, so
-     * this _FOREACH loop will cost O(m*n) time, where "m" is the number of keys
-     * in info_ptr and "n" is the number of keys in comm_ptr->info. */
-    LL_FOREACH(info_ptr, curr_info) {
-        /* Have we hit the default, empty info hint? */
-        if (curr_info->key == NULL)
-            continue;
-
-        mpi_errno = MPIR_Info_set_impl(comm_ptr->info, curr_info->key, curr_info->value);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
-    }
 
   fn_exit:
     MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPIR_COMM_SET_INFO_IMPL);
@@ -73,10 +46,6 @@ int MPIR_Comm_set_info_impl(MPIR_Comm * comm_ptr, MPIR_Info * info_ptr)
 
 #endif /* MPICH_MPI_FROM_PMPI */
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Comm_set_info
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Comm_set_info - Set new values for the hints of the
    communicator associated with comm.  The call is collective on the
@@ -155,12 +124,12 @@ int MPI_Comm_set_info(MPI_Comm comm, MPI_Info info)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__,
                                  MPI_ERR_OTHER, "**mpi_comm_set_info",
                                  "**mpi_comm_set_info %W %p", comm, info);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

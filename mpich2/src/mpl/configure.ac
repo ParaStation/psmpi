@@ -1,8 +1,9 @@
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
+
 AC_PREREQ(2.63)
-#
-# (C) 2006 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
 
 AC_INIT([MPL], [0.1])
 
@@ -14,7 +15,8 @@ AC_CONFIG_MACRO_DIR(confdb)
 AM_INIT_AUTOMAKE([subdir-objects] [-Wall -Werror foreign 1.12.3])
 
 dnl must come before LT_INIT, which AC_REQUIREs AC_PROG_CC
-PAC_PROG_CC
+AC_PROG_CC
+AC_PROG_CC_C99
 AM_PROG_CC_C_O
 
 AC_USE_SYSTEM_EXTENSIONS
@@ -54,6 +56,7 @@ AC_C_INLINE
 
 PAC_C_MACRO_VA_ARGS
 PAC_C_BUILTIN_EXPECT
+PAC_C_STATIC_ASSERT
 
 AC_ARG_ENABLE(embedded,
     AC_HELP_STRING([--enable-embedded], [Build MPL in embedded mode (default is no)]),
@@ -71,24 +74,27 @@ AC_ARG_ENABLE(g,
 	    none|no   - No debugging
 	    log       - Enable debug event logging
 	    mem       - Enable memory tracing
-	    yes|all   - All of the above choices (except "none", obviously)
+	    most|yes|all   - All of the above choices (except "none", obviously)
 	]),,[enable_g=none])
 
 # enable-g
 # strip off multiple options, separated by commas
 PAC_PUSH_FLAG(IFS)
-IFS=","
+# Change IFS to process enable_g values; save for use after AC_MSG_WARN
+# below to provide single point of maintenance
+enable_g_IFS=","
+IFS="$enable_g_IFS"
 for option in $enable_g ; do
     case "$option" in
 	 log)
 	 enable_g_log=yes
 	 ;;
 
-	 mem)
+	 mem|memarena)
 	 enable_g_mem=yes
 	 ;;
 
-	 all|yes)
+	 most|yes|all)
 	 enable_g_log=yes
 	 enable_g_mem=yes
 	 ;;
@@ -97,7 +103,12 @@ for option in $enable_g ; do
 	 ;;
 
 	 *)
+	 # Default IFS required by AC_MSG_WARN
+	 PAC_POP_FLAG(IFS)
 	 AC_MSG_WARN([Unknown value $option for enable-g])
+	 # Restore previous IFS to process any remaining enable_g values
+	 PAC_PUSH_FLAG(IFS)
+	 IFS="$enable_g_IFS"
 	 ;;
     esac
 done
@@ -132,6 +143,37 @@ AC_CHECK_HEADERS(stdio.h stdlib.h string.h stdarg.h ctype.h sys/types.h sys/uio.
 # A C99 compliant compiler should have inttypes.h for fixed-size int types
 AC_CHECK_HEADERS(inttypes.h stdint.h)
 AC_HEADER_STDBOOL
+
+AC_ARG_ENABLE(fast,
+[  --enable-fast=option - Control the level of fast execution supported by MPL.
+        alwaysinline   - Force compiler to always inline functions with MPL_STATIC_INLINE_PREFIX|SUFFIX
+        all|yes  - Same as "alwaysinline"
+        none     - Disable alwaysinline (default)
+],,enable_fast=none)
+
+# enable-fast
+# only alwaysinline option is valid but still need break down multiple options
+# transferred from MPICH separated by commas
+enable_fast_alwaysinline=no
+save_IFS="$IFS"
+IFS=","
+for option in $enable_fast ; do
+    case "$option" in
+        alwaysinline)
+        enable_fast_alwaysinline=yes
+        ;;
+        all|yes)
+        enable_fast_alwaysinline=yes
+        ;;
+        *) # do not change default value (no) for other fast options
+        ;;
+    esac
+done
+IFS="$save_IFS"
+
+if test "$enable_fast_alwaysinline" = "yes"; then
+    AC_DEFINE(ENABLE_ALWAYS_INLINE,1,[Define if force compiler to always inline functions with MPL_STATIC_INLINE_PREFIX|SUFFIX])
+fi
 
 #######################################################################
 # valgrind support
@@ -251,7 +293,6 @@ AC_ARG_ENABLE(timer-type,
         gcc_ia64_cycle     - IPF ar.itc timer*
 	mach_absolute_time - Mach absolute time (alternative to clock_gettime
                              for OSX)
-        device             - The timer is provided by the device
 
         *Note that the cycle timers are intended to be used by
         developers for internal low-level timing.  Normal users should
@@ -504,11 +545,6 @@ pac_cv_ia64_cycle,[
     MPL_TIMER_TYPE="uint64_t"
     ;;
 
-    device)
-    # The device selected should export the datatype for the timer
-    MPL_TIMER_TYPE="void *"
-    ;;
-
     ppc64_cycle)
     AC_CACHE_CHECK([that ppc64 timebase cycle counter is available],
                 pac_cv_ppc64_cycle,[
@@ -577,7 +613,9 @@ AC_ARG_ENABLE([yield],
      AS_CASE([$host],
         [*-*-darwin*],
             [# In Lion, sched_yield worked but none of the other options had any effect
-             AS_IF([test "x$ac_cv_func_sched_yield" = "xyes"], [enable_yield=sched_yield],
+             # In Mojave x86_64, sched_yield may yield to threads in thread_wait_barrier which is slow to yield back,
+             #    usleep(0) seems work well.
+             AS_IF([test "x$ac_cv_func_usleep" = "xyes"], [enable_yield=usleep],
                    [enable_yield=nothing])],
         [*-*-linux*],
             [# sched_yield() has been broken in linux since 2.6.23, and no good alternative exists.
@@ -614,36 +652,13 @@ AS_CASE([$enable_yield],
 #######################################################################
 ## START OF THREADS CODE
 #######################################################################
-PAC_SET_HEADER_LIB_PATH(uti)
 
-AC_ARG_WITH([thread-package],
-[  --with-thread-package=package     Thread package to use. Supported thread packages include:
-        posix or pthreads - POSIX threads (default, if required)
-        solaris - Solaris threads (Solaris OS only)
-        abt or argobots - Argobots threads
-        win - windows threads
-        uti - POSIX threads plus Utility Thread Offloading library
-        none - no threads
-],,with_thread_package=posix)
-
-if test "${thread_pkg_required}" = "no" -o "${with_thread_package}" = "no" ; then
-   with_thread_package=none
-fi
-
-if test "${with_thread_package}" = "yes" ; then
-   with_thread_package=posix
-fi
-
-if test "${thread_pkg_required}" = "yes" -a "${with_thread_package}" = "none" ; then
-   AC_ERROR([if no thread package is available, use --enable-threads=single or funneled])
-fi
+PAC_ARG_THREAD_PACKAGE
+PAC_ARG_POSIX_MUTEX
 
 THREAD_PACKAGE_NAME=MPL_THREAD_PACKAGE_INVALID
 case $with_thread_package in
-    posix|pthreads|uti)
-	if test "${with_thread_package}" = "pthreads" ; then
-	    with_thread_package=posix
-	fi
+    yes|posix|pthreads)
 	AC_CHECK_HEADERS(pthread.h)
 
         # If pthreads library is found, just include it on the link line. We don't try
@@ -662,43 +677,11 @@ case $with_thread_package in
 
         # this check should come after the AC_CHECK_LIB for -lpthread
         AC_CHECK_FUNC([pthread_key_create],[],[AC_MSG_ERROR([unable to find pthreads library])])
-
-	# Check for a routine that specify a routine to call on
-	# thread exit.  We can use this to release memory that may
-	# be allocated by the MPL library in the thread.
-	# A complication: pthread_cleanup_push may be a macro; in that
-	# case, check_funcs will fail to find it.
-	# Under OSX, pthread_cleanup_push and pop are macros that must
-	# appear together in the same lexical scope, and hence are
-	# really useless in libraries that may allocate data within
-	# a user-managed thread.
-	AC_CHECK_FUNCS(pthread_cleanup_push)
-	if test "$ac_cv_func_pthread_cleanup_push" = "no" ; then
-            AC_CACHE_CHECK([whether pthread_cleanup_push is available (may be a macro in pthread.h)],pac_cv_func_pthread_cleanup_push,[
-	    AC_TRY_LINK([
-#include <pthread.h>
-void f1(void *a) { return; }],
-[pthread_cleanup_push( f1, (void *)0 );],
-            pac_cv_func_pthread_cleanup_push=yes,
-            pac_cv_func_pthread_cleanup_push=no)])
-            if test "$pac_cv_func_pthread_cleanup_push" = yes ; then
-	        AC_DEFINE(HAVE_PTHREAD_CLEANUP_PUSH_MACRO,1,[Define if pthread_cleanup_push is available, even as a macro])
-            fi
-
-        fi
-
-	if test "${with_thread_package}" = "uti" ; then
-	    PAC_CHECK_HEADER_LIB(uti.h,uti,uti_attr_init,have_uti=yes,have_uti=no)
-	    if test "${have_uti}" = "yes" ; then
-		AC_MSG_NOTICE([Using POSIX and Utility Thread Offloading library for thread package])
-	    else
-		AC_MSG_ERROR([Unable to find Utility Thread Offloading library])
-	    fi
-	    THREAD_PACKAGE_NAME=MPL_THREAD_PACKAGE_UTI
-	else
-	    AC_MSG_NOTICE([POSIX will be used for thread package.])
-	    THREAD_PACKAGE_NAME=MPL_THREAD_PACKAGE_POSIX
-	fi
+	THREAD_PACKAGE_NAME=MPL_THREAD_PACKAGE_POSIX
+	;;
+    uti)
+	PAC_CHECK_HEADER_LIB_FATAL(uti,uti.h,uti,uti_attr_init)
+	THREAD_PACKAGE_NAME=MPL_THREAD_PACKAGE_UTI
 	;;
     solaris)
 	AC_CHECK_HEADERS(thread.h)
@@ -717,9 +700,7 @@ void f1(void *a) { return; }],
         ;;
     abt|argobots)
         with_thread_package=argobots
-        AC_CHECK_HEADER([abt.h],[],AC_MSG_ERROR([unable to find Argobots header file]))
-        AC_CHECK_LIB([abt],[ABT_key_create],[],AC_MSG_ERROR([unable to find Argobots library]))
-        PAC_PREPEND_FLAG([-labt],[LIBS])
+        PAC_CHECK_HEADER_LIB_FATAL([argobots], [abt.h], [abt], [ABT_key_create])
         THREAD_PACKAGE_NAME=MPL_THREAD_PACKAGE_ARGOBOTS
         ;;
     no|none)
@@ -731,14 +712,20 @@ void f1(void *a) { return; }],
 	;;
 esac
 
-# Define and export the selected thread library so that other packages
-# know what's used in MPL
+case $with_posix_mutex in
+    ticketlock)
+        POSIX_MUTEX_NAME=MPL_POSIX_MUTEX_TICKETLOCK
+        ;;
+    *)
+        POSIX_MUTEX_NAME=MPL_POSIX_MUTEX_NATIVE
+        ;;
+esac
+
 AC_DEFINE_UNQUOTED([THREAD_PACKAGE_NAME],[$THREAD_PACKAGE_NAME],[set to the name of the thread package])
+AC_DEFINE_UNQUOTED([POSIX_MUTEX_NAME],[$POSIX_MUTEX_NAME],[set to the choice of the posix mutex])
 
 # check for compiler-support for thread-local storage (MPL_TLS)
-if test "${with_thread_package}" != "argobots" ; then
-    PAC_CC_CHECK_TLS
-fi
+PAC_CC_CHECK_TLS
 
 #######################################################################
 ## END OF THREADS CODE
@@ -839,6 +826,111 @@ fi
 #######################################################################
 
 #######################################################################
+## START OF ATOMIC CODE
+#######################################################################
+
+PAC_ARG_ATOMIC_PRIMITIVES
+
+AC_DEFUN([MPL_ATOMIC_TEST_PROGRAM], [AC_LANG_SOURCE([[
+    #include "$1"
+    int main()
+    {
+        struct MPL_atomic_int_t a, b;
+        int c;
+
+        MPL_atomic_relaxed_store_int(&a, 0);
+        MPL_atomic_relaxed_store_int(&b, 1);
+        c = MPL_atomic_relaxed_load_int(&a);
+
+        MPL_atomic_release_store_int(&a, 0);
+        MPL_atomic_release_store_int(&b, 1);
+        c = MPL_atomic_acquire_load_int(&a);
+
+        MPL_atomic_fetch_add_int(&a, 10);
+        MPL_atomic_fetch_sub_int(&a, 10);
+
+        c = MPL_atomic_cas_int(&a, 10, 11);
+        c = MPL_atomic_swap_int(&a, 10);
+
+        MPL_atomic_write_barrier();
+        MPL_atomic_read_barrier();
+        MPL_atomic_read_write_barrier();
+
+        return c;
+    }
+    ]])]
+)
+
+dnl MPL_TRY_ATOMIC_HEADER([header file from src/ dir],
+dnl                       [HAVE_ macro suffix],[feature description])
+dnl Does an AC_LINK_IFELSE() to see if the header file works.
+AC_DEFUN([MPL_TRY_ATOMIC_HEADER],[
+    checked_specified_primitive=yes
+    AC_MSG_CHECKING([for support for $3])
+
+    AC_LINK_IFELSE([MPL_ATOMIC_TEST_PROGRAM([$1])],
+        [AC_DEFINE([HAVE_$2], [1], [Define to 1 if we have support for $3])]
+        [AC_MSG_RESULT([yes])]
+        [mpl_atomic_primitives_set=true]
+    ,
+        [AC_MSG_RESULT([no])]
+    )
+])
+
+AC_CHECK_SIZEOF([void *])
+
+PAC_PUSH_FLAG([CFLAGS])
+CFLAGS="$CFLAGS -I${srcdir}/include"
+# Add -Werror to favor the option that does not result in warnings.
+# Do not add the flag if the compiler doesn't accept -Werror
+PAC_C_CHECK_COMPILER_OPTION([-Werror],[CFLAGS="$CFLAGS -Werror"],)
+mpl_atomic_primitives_set=false
+if test "$with_mpl_atomic_primitives" = "auto" \
+        -o "$with_mpl_atomic_primitives" = "gcc_sync"; then
+    MPL_TRY_ATOMIC_HEADER([mpl_atomic_gcc_sync.h], [GCC_INTRINSIC_SYNC],
+                          [gcc __sync intrinsics])
+fi
+if test "$with_mpl_atomic_primitives" = "auto" \
+        -o "$with_mpl_atomic_primitives" = "gcc_atomic"; then
+    MPL_TRY_ATOMIC_HEADER([mpl_atomic_gcc_atomic.h], [GCC_INTRINSIC_ATOMIC],
+                          [gcc __atomic intrinsics])
+fi
+if test "$with_mpl_atomic_primitives" = "auto" \
+        -o "$with_mpl_atomic_primitives" = "c11"; then
+    MPL_TRY_ATOMIC_HEADER([mpl_atomic_c11.h], [C11_ATOMICS],
+                          [C11 atomic intrinsics])
+fi
+if test "$with_mpl_atomic_primitives" = "auto" \
+        -o "$with_mpl_atomic_primitives" = "windows"; then
+    MPL_TRY_ATOMIC_HEADER([mpl_atomic_nt_intrinsics.h], [NT_INTRINSICS],
+                          [Windows NT atomic intrinsics])
+fi
+PAC_POP_FLAG([CFLAGS])
+
+if test "$mpl_atomic_primitives_set" = "true" ; then
+    : # got native atomic support already
+elif test "$with_mpl_atomic_primitives" = "auto" \
+        -o "$with_mpl_atomic_primitives" = "lock" ; then
+    AC_DEFINE(USE_LOCK_BASED_PRIMITIVES, 1,
+             [Define to 1 if mutex-based synchronization is used])
+    mpl_atomic_primitives_set=true
+elif test "$with_mpl_atomic_primitives" = "no" \
+          -o "$with_mpl_atomic_primitives" = "none" ; then
+    AC_DEFINE(USE_NO_ATOMIC_PRIMITIVES, 1,
+             [Define to 1 if no atomic primitives are used])
+    mpl_atomic_primitives_set=true
+fi
+
+if test "$mpl_atomic_primitives_set" = "false"; then
+    AC_MSG_ERROR([cannot support atomic primitives (argument: \
+`--with-mpl-atomic-primitives=$with_mpl_atomic_primitives`)])
+fi
+
+#######################################################################
+## END OF ATOMIC CODE
+#######################################################################
+
+#######################################################################
 ## START OF DBG CODE
 #######################################################################
 
@@ -866,21 +958,6 @@ AC_CHECK_FUNCS(getpid)
 dnl Check for shm
 PAC_ARG_SHARED_MEMORY
 
-case $with_shared_memory in
-    sysv)
-        AC_DEFINE(MPL_USE_SYSV_SHM,1,[Define if use SYSV shared memory])
-        ;;
-    mmap)
-        AC_DEFINE(MPL_USE_MMAP_SHM,1,[Define if use MMAP shared memory])
-        ;;
-    nt)
-        AC_DEFINE(MPL_USE_NT_SHM,1,[Define if use Windows shared memory])
-        ;;
-    *)
-        AC_MSG_ERROR([cannot support shared memory:  need either sysv shared memory functions or mmap in order to support shared memory])
-esac
-
-
 #######################################################################
 ## END OF SHM CODE
 #######################################################################
@@ -900,6 +977,35 @@ AC_SUBST(libmpl_so_versionflags)
 
 #######################################################################
 
+#######################################################################
+## START OF GPU CODE
+#######################################################################
+have_gpu="no"
+# Check CUDA availability
+PAC_CHECK_HEADER_LIB_OPTIONAL([cuda],[cuda_runtime_api.h],[cudart],[cudaStreamSynchronize])
+if test "$pac_have_cuda" = "yes" ; then
+    # also require -lcuda (in addition to -lcudart)
+    PAC_CHECK_HEADER_LIB([cuda.h],[cuda],[cuMemGetAddressRange], pac_have_cuda=yes, pac_have_cuda=no)
+fi
+if test "X${pac_have_cuda}" = "Xyes" ; then
+    PAC_LIBS_ADD(-lcuda)
+    AC_DEFINE([HAVE_CUDA],[1],[Define if CUDA is available])
+    have_gpu="yes"
+fi
+AM_CONDITIONAL([MPL_HAVE_CUDA],[test "X${pac_have_cuda}" = "Xyes"])
+
+if test "$have_gpu" = "no" ; then
+    # Check Level Zero availability when no other GPU library is available
+    PAC_CHECK_HEADER_LIB_OPTIONAL([ze],[level_zero/ze_api.h],[ze_loader],[zeInit])
+    if test "X${pac_have_ze}" = "Xyes" ; then
+        AC_DEFINE([HAVE_ZE],[1],[Define if ZE is available])
+        have_gpu="yes"
+    fi
+fi
+AM_CONDITIONAL([MPL_HAVE_ZE],[test "X${pac_have_ze}" = "Xyes"])
+#######################################################################
+## END OF GPU CODE
+#######################################################################
 
 # Check for strdup
 AC_CHECK_FUNCS(strdup)
@@ -911,12 +1017,6 @@ fi
 AC_CHECK_FUNCS(snprintf)
 if test "$ac_cv_func_snprintf" = "yes" ; then
     PAC_FUNC_NEEDS_DECL([#include <stdio.h>],snprintf)
-fi
-
-# Check for strncmp
-AC_CHECK_FUNCS(strncmp)
-if test "$ac_cv_func_strncmp" = "yes" ; then
-    PAC_FUNC_NEEDS_DECL([#include <string.h>],strncmp)
 fi
 
 # Check for putenv
@@ -947,47 +1047,19 @@ if test "$ac_cv_func_posix_memalign" = "yes" -o "$ac_cv_func_aligned_alloc" = "y
    AC_DEFINE([DEFINE_ALIGNED_ALLOC],[1],[Define to 1 if MPL enables MPL_aligned_alloc.])
 fi
 
-AC_CHECK_FUNCS(backtrace_symbols)
-
-# Check for libbacktrace support
-PAC_PUSH_FLAG([LIBS])
-PAC_PREPEND_FLAG([-lbacktrace],[LIBS])
-AC_LINK_IFELSE([
-    AC_LANG_PROGRAM([
-#include <backtrace.h>
-],[
-backtrace_create_state(0, 0, 0, 0);
-backtrace_print(0, 0, 0);
-])],
-    [ac_cv_lib_backtrace=yes],
-    [ac_cv_lib_backtrace=no]
-)
-PAC_POP_FLAG([LIBS])
-
-if test "$ac_cv_lib_backtrace" = "yes" ; then
-    AC_DEFINE([HAVE_LIBBACKTRACE],[1],[Define to 1 if you have the backtrace header (backtrace.h) and library (-lbacktrace)])
-    PAC_PREPEND_FLAG([-lbacktrace],[LIBS])
+# Define some configurable constants
+AC_ARG_WITH([cacheline],
+[--with-cacheline=<N>
+   Define cacheline size (default is 64)],
+[],
+[with_cacheline=64])
+if test $with_cacheline -le 0 ; then
+    AC_MSG_ERROR(Cache line size must be greater than 0)
 fi
-AC_CHECK_DECLS([backtrace_create_state, backtrace_print])
+AC_DEFINE_UNQUOTED([CACHELINE_SIZE],[$with_cacheline], [Define cache-line size.])
 
-# Check for libunwind support
-PAC_PUSH_FLAG([LIBS])
-PAC_PREPEND_FLAG([-lunwind],[LIBS])
-AC_LINK_IFELSE([
-    AC_LANG_PROGRAM([
-#include<libunwind.h>
-],[
-unw_backtrace(0, 0);
-])],
-    [ac_cv_lib_libunwind=yes],
-    [ac_cv_lib_libunwind=no]
-)
-PAC_POP_FLAG([LIBS])
-
-if test "$ac_cv_lib_libunwind" = "yes" ; then
-    AC_DEFINE([HAVE_LIBUNWIND],[1],[Define to 1 if you have the libunwind header (libunwind.h) and library (-lunwind)])
-    PAC_PREPEND_FLAG([-lunwind],[LIBS])
-fi
+# Check for execinfo backtrace support
+AX_EXECINFO
 
 AX_LIB_SOCKET_NSL
 AC_CHECK_HEADERS(ifaddrs.h arpa/inet.h)

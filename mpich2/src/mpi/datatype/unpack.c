@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -25,84 +23,8 @@ int MPI_Unpack(const void *inbuf, int insize, int *position, void *outbuf, int o
 #ifndef MPICH_MPI_FROM_PMPI
 #undef MPI_Unpack
 #define MPI_Unpack PMPI_Unpack
-
-#undef FUNCNAME
-#define FUNCNAME MPIR_Unpack_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
-int MPIR_Unpack_impl(const void *inbuf, MPI_Aint insize, MPI_Aint * position,
-                     void *outbuf, int outcount, MPI_Datatype datatype)
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPI_Aint first, last;
-    MPIR_Segment *segp;
-    int contig;
-    MPI_Aint dt_true_lb;
-    MPI_Aint data_sz;
-
-    if (insize == 0)
-        goto fn_exit;
-
-    /* Handle contig case quickly */
-    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
-        contig = TRUE;
-        dt_true_lb = 0;
-        data_sz = outcount * MPIR_Datatype_get_basic_size(datatype);
-    } else {
-        MPIR_Datatype *dt_ptr;
-        MPIR_Datatype_get_ptr(datatype, dt_ptr);
-        MPIR_Datatype_is_contig(datatype, &contig);
-        dt_true_lb = dt_ptr->true_lb;
-        data_sz = outcount * dt_ptr->size;
-    }
-
-    if (contig) {
-        MPIR_Memcpy((char *) outbuf + dt_true_lb, (char *) inbuf + *position, data_sz);
-        *position = (int) ((MPI_Aint) * position + data_sz);
-        goto fn_exit;
-    }
-
-
-    /* non-contig case */
-    segp = MPIR_Segment_alloc();
-    MPIR_ERR_CHKANDJUMP1(segp == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s",
-                         "MPIR_Segment_alloc");
-    mpi_errno = MPIR_Segment_init(outbuf, outcount, datatype, segp);
-    MPIR_Assert(mpi_errno == MPI_SUCCESS);
-
-    /* NOTE: the use of buffer values and positions in MPI_Unpack and in
-     * MPIR_Segment_unpack are quite different.  See code or docs or something.
-     */
-    first = 0;
-    last = SEGMENT_IGNORE_LAST;
-
-    /* Ensure that pointer increment fits in a pointer */
-    MPIR_Ensure_Aint_fits_in_pointer((MPIR_VOID_PTR_CAST_TO_MPI_AINT inbuf) +
-                                     (MPI_Aint) * position);
-
-    MPIR_Segment_unpack(segp, first, &last, (void *) ((char *) inbuf + *position));
-
-    /* Ensure that calculation fits into an int datatype. */
-    MPIR_Ensure_Aint_fits_in_int((MPI_Aint) * position + last);
-
-    *position = (int) ((MPI_Aint) * position + last);
-
-    MPIR_Segment_free(segp);
-
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Unpack
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Unpack - Unpack a buffer according to a datatype into contiguous memory
 
@@ -179,7 +101,7 @@ int MPI_Unpack(const void *inbuf, int insize, int *position,
 
             MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 
-            if (datatype != MPI_DATATYPE_NULL && HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+            if (datatype != MPI_DATATYPE_NULL && !HANDLE_IS_BUILTIN(datatype)) {
                 MPIR_Datatype *datatype_ptr = NULL;
 
                 MPIR_Datatype_get_ptr(datatype, datatype_ptr);
@@ -196,9 +118,15 @@ int MPI_Unpack(const void *inbuf, int insize, int *position,
     /* ... body of routine ...  */
 
     position_x = *position;
-    mpi_errno = MPIR_Unpack_impl(inbuf, insize, &position_x, outbuf, outcount, datatype);
+
+    MPI_Aint actual_unpack_bytes;
+    void *buf = (void *) ((char *) inbuf + position_x);
+    mpi_errno =
+        MPIR_Typerep_unpack(buf, insize, outbuf, outcount, datatype, 0, &actual_unpack_bytes);
     if (mpi_errno)
         goto fn_fail;
+
+    position_x += actual_unpack_bytes;
     MPIR_Assign_trunc(*position, position_x, int);
 
     /* ... end of body of routine ... */
@@ -213,12 +141,12 @@ int MPI_Unpack(const void *inbuf, int insize, int *position,
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_unpack", "**mpi_unpack %p %d %p %p %d %D %C", inbuf, insize,
                                  position, outbuf, outcount, datatype, comm);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

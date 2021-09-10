@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2015 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* This code tests the case when origin process issues 10 ACC
@@ -49,8 +48,8 @@ int main(int argc, char *argv[])
         if (rank != 0) {
             for (data_size = MIN_DATA_SIZE; data_size <= MAX_DATA_SIZE; data_size *= 2) {
                 for (i = 0; i < OPS_NUM; i++) {
-                    MPI_Accumulate(orig_buf, data_size, MPI_BYTE,
-                                   0, 0, data_size, MPI_BYTE, MPI_SUM, win);
+                    MPI_Accumulate(orig_buf, data_size, MPI_CHAR,
+                                   0, 0, data_size, MPI_CHAR, MPI_SUM, win);
                     MPI_Win_flush_local(0, win);
                 }
                 MPI_Win_flush(0, win);

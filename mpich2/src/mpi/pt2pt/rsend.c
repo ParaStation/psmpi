@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@ int MPI_Rsend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Rsend
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Rsend - Blocking ready send
 
@@ -99,7 +93,7 @@ int MPI_Rsend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
             MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 
             /* Validate datatype object */
-            if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+            if (!HANDLE_IS_BUILTIN(datatype)) {
                 MPIR_Datatype *datatype_ptr = NULL;
 
                 MPIR_Datatype_get_ptr(datatype, datatype_ptr);
@@ -118,6 +112,11 @@ int MPI_Rsend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
     }
 #endif /* HAVE_ERROR_CHECKING */
 
+    /* Return immediately for dummy process */
+    if (unlikely(dest == MPI_PROC_NULL)) {
+        goto fn_exit;
+    }
+
     /* ... body of routine ... */
 
     mpi_errno = MPID_Rsend(buf, count, datatype, dest, tag, comm_ptr,
@@ -132,8 +131,7 @@ int MPI_Rsend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
     /* If a request was returned, then we need to block until the request
      * is complete */
     mpi_errno = MPID_Wait(request_ptr, MPI_STATUS_IGNORE);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     mpi_errno = request_ptr->status.MPI_ERROR;
     MPIR_Request_free(request_ptr);
@@ -153,12 +151,12 @@ int MPI_Rsend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_rsend", "**mpi_rsend %p %d %D %i %t %C", buf, count,
                                  datatype, dest, tag, comm);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

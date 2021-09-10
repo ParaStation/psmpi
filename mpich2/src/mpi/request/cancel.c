@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -26,10 +24,6 @@ int MPI_Cancel(MPI_Request * request) __attribute__ ((weak, alias("PMPI_Cancel")
 #define MPI_Cancel PMPI_Cancel
 
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Cancel
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Cancel(MPIR_Request * request_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -38,16 +32,14 @@ int MPIR_Cancel(MPIR_Request * request_ptr)
         case MPIR_REQUEST_KIND__SEND:
             {
                 mpi_errno = MPID_Cancel_send(request_ptr);
-                if (mpi_errno)
-                    MPIR_ERR_POP(mpi_errno);
+                MPIR_ERR_CHECK(mpi_errno);
                 break;
             }
 
         case MPIR_REQUEST_KIND__RECV:
             {
                 mpi_errno = MPID_Cancel_recv(request_ptr);
-                if (mpi_errno)
-                    MPIR_ERR_POP(mpi_errno);
+                MPIR_ERR_CHECK(mpi_errno);
                 break;
             }
 
@@ -71,8 +63,7 @@ int MPIR_Cancel(MPIR_Request * request_ptr)
                          */
                         request_ptr->cc_ptr = request_ptr->u.persist.real_request->cc_ptr;
                         mpi_errno = MPID_Cancel_send(request_ptr->u.persist.real_request);
-                        if (mpi_errno)
-                            MPIR_ERR_POP(mpi_errno);
+                        MPIR_ERR_CHECK(mpi_errno);
                     } else {
                         /* This is needed for persistent Bsend requests */
                         /* FIXME why do we directly access the partner request's
@@ -82,8 +73,7 @@ int MPIR_Cancel(MPIR_Request * request_ptr)
                                                          MPIR_cc_is_complete(&request_ptr->
                                                                              u.persist.
                                                                              real_request->cc));
-                        if (mpi_errno)
-                            MPIR_ERR_POP(mpi_errno);
+                        MPIR_ERR_CHECK(mpi_errno);
                     }
                 } else {
                     MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_REQUEST, "**requestpersistactive");
@@ -95,8 +85,7 @@ int MPIR_Cancel(MPIR_Request * request_ptr)
             {
                 if (request_ptr->u.persist.real_request != NULL) {
                     mpi_errno = MPID_Cancel_recv(request_ptr->u.persist.real_request);
-                    if (mpi_errno)
-                        MPIR_ERR_POP(mpi_errno);
+                    MPIR_ERR_CHECK(mpi_errno);
                 } else {
                     MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_REQUEST, "**requestpersistactive");
                 }
@@ -107,8 +96,7 @@ int MPIR_Cancel(MPIR_Request * request_ptr)
             {
                 mpi_errno =
                     MPIR_Grequest_cancel(request_ptr, MPIR_cc_is_complete(&request_ptr->cc));
-                if (mpi_errno)
-                    MPIR_ERR_POP(mpi_errno);
+                MPIR_ERR_CHECK(mpi_errno);
                 break;
             }
 
@@ -129,10 +117,6 @@ int MPIR_Cancel(MPIR_Request * request_ptr)
 #endif
 
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Cancel
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Cancel - Cancels a communication request
 
@@ -172,7 +156,7 @@ int MPI_Cancel(MPI_Request * request)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
-    MPID_THREAD_CS_ENTER(VNI_GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
+    MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     MPIR_FUNC_TERSE_REQUEST_ENTER(MPID_STATE_MPI_CANCEL);
 
     /* Convert MPI object handles to object pointers */
@@ -202,7 +186,7 @@ int MPI_Cancel(MPI_Request * request)
 
   fn_exit:
     MPIR_FUNC_TERSE_REQUEST_EXIT(MPID_STATE_MPI_CANCEL);
-    MPID_THREAD_CS_EXIT(VNI_GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
+    MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     return mpi_errno;
 
   fn_fail:
@@ -210,11 +194,11 @@ int MPI_Cancel(MPI_Request * request)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE,
-                                         FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_cancel",
+                                         __func__, __LINE__, MPI_ERR_OTHER, "**mpi_cancel",
                                          "**mpi_cancel %p", request);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

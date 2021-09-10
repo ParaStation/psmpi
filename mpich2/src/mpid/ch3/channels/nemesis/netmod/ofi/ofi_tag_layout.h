@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
+ */
+
 #ifndef OFI_TAG_LAYOUT_H_INCLUDED
 #define OFI_TAG_LAYOUT_H_INCLUDED
 
@@ -42,8 +47,8 @@
 static inline uint64_t init_sendtag(MPIR_Context_id_t contextid, int source, int tag, uint64_t type)
 {
     uint64_t match_bits = 0;
-    match_bits |= ((uint64_t)source) << MPIDI_OFI_SOURCE_SHIFT;
-    match_bits |= ((uint64_t)contextid) << MPIDI_OFI_CTXID_SHIFT;
+    match_bits |= ((uint64_t) source) << MPIDI_OFI_SOURCE_SHIFT;
+    match_bits |= ((uint64_t) contextid) << MPIDI_OFI_CTXID_SHIFT;
     match_bits |= (MPIDI_OFI_TAG_MASK & tag) | type;
     return match_bits;
 }
@@ -54,13 +59,12 @@ static inline uint64_t init_recvtag(uint64_t * mask_bits,
 {
     uint64_t match_bits = 0;
     *mask_bits = MPIDI_OFI_SYNC_SEND;
-    match_bits |= ((uint64_t)contextid) << MPIDI_OFI_CTXID_SHIFT;
+    match_bits |= ((uint64_t) contextid) << MPIDI_OFI_CTXID_SHIFT;
 
     if (MPI_ANY_SOURCE == source) {
         *mask_bits |= MPIDI_OFI_SOURCE_MASK;
-    }
-    else {
-        match_bits |= ((uint64_t)source) << MPIDI_OFI_SOURCE_SHIFT;
+    } else {
+        match_bits |= ((uint64_t) source) << MPIDI_OFI_SOURCE_SHIFT;
     }
     if (MPI_ANY_TAG == tag)
         *mask_bits |= MPIDI_OFI_TAG_MASK;
@@ -115,18 +119,17 @@ static inline int get_port(uint64_t match_bits)
 static inline uint64_t init_sendtag_2(MPIR_Context_id_t contextid, int tag, uint64_t type)
 {
     uint64_t match_bits = 0;
-    match_bits |= ((uint64_t)contextid) << MPIDI_OFI_CTXID_SHIFT;
+    match_bits |= ((uint64_t) contextid) << MPIDI_OFI_CTXID_SHIFT;
     match_bits |= (MPIDI_OFI_TAG_MASK & tag) | type;
     return match_bits;
 }
 
 /* receive posting */
-static inline uint64_t init_recvtag_2(uint64_t * mask_bits,
-                                    MPIR_Context_id_t contextid, int tag)
+static inline uint64_t init_recvtag_2(uint64_t * mask_bits, MPIR_Context_id_t contextid, int tag)
 {
     uint64_t match_bits = 0;
     *mask_bits = MPIDI_OFI_SYNC_SEND;
-    match_bits |= ((uint64_t)contextid) << MPIDI_OFI_CTXID_SHIFT;
+    match_bits |= ((uint64_t) contextid) << MPIDI_OFI_CTXID_SHIFT;
 
     if (MPI_ANY_TAG == tag)
         *mask_bits |= MPIDI_OFI_TAG_MASK;

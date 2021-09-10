@@ -1,16 +1,10 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidimpl.h"
 
-#ifdef USE_PMI2_API
-#include "pmi2.h"
-#else
-#include "pmi.h"
-#endif
 #if defined(HAVE_LIMITS_H)
 #include <limits.h>
 #endif
@@ -22,7 +16,6 @@
 #endif
 #include <ctype.h>
 
-#include "build_nodemap.h"
 /*
 === BEGIN_MPI_T_CVAR_INFO_BLOCK ===
 
@@ -61,10 +54,6 @@ cvars:
   be added by assigning to elements of the vc array within the 
   'MPIDI_VCRT' object.
   @*/
-#undef FUNCNAME
-#define FUNCNAME MPIDI_VCRT_Create
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_VCRT_Create(int size, struct MPIDI_VCRT **vcrt_ptr)
 {
     MPIDI_VCRT_t * vcrt;
@@ -100,10 +89,6 @@ int MPIDI_VCRT_Create(int size, struct MPIDI_VCRT **vcrt_ptr)
   dynamic process operations.  It does not change the state of any of the
   virtural connections (VCs).
   @*/
-#undef FUNCNAME
-#define FUNCNAME MPIDI_VCRT_Add_ref
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_VCRT_Add_ref(struct MPIDI_VCRT *vcrt)
 {
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_VCRT_ADD_REF);
@@ -123,10 +108,6 @@ int MPIDI_VCRT_Add_ref(struct MPIDI_VCRT *vcrt)
   Notes:
   
   @*/
-#undef FUNCNAME
-#define FUNCNAME MPIDI_VCRT_Release
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_VCRT_Release(struct MPIDI_VCRT *vcrt, int isDisconnect )
 {
     int in_use;
@@ -239,10 +220,6 @@ int MPIDI_VCRT_Release(struct MPIDI_VCRT *vcrt, int isDisconnect )
   or 'MPI_Comm_connect/MPI_Comm_accept'.
   
   @*/
-#undef FUNCNAME
-#define FUNCNAME MPIDI_VCR_Dup
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_VCR_Dup(MPIDI_VCR orig_vcr, MPIDI_VCR * new_vcr)
 {
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_VCR_DUP);
@@ -271,10 +248,6 @@ int MPIDI_VCR_Dup(MPIDI_VCR orig_vcr, MPIDI_VCR * new_vcr)
 /*@
   MPID_Comm_get_lpid - Get the local process ID for a given VC reference
   @*/
-#undef FUNCNAME
-#define FUNCNAME MPID_Comm_get_lpid
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, int * lpid_ptr, bool is_remote)
 {
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_VCR_GET_LPID);
@@ -298,10 +271,6 @@ int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, int * lpid_ptr, bool is_rem
  */
 
 /* FIXME: These routines belong in a different place */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_GPID_GetAllInComm
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_GPID_GetAllInComm( MPIR_Comm *comm_ptr, int local_size,
                              MPIDI_Gpid local_gpids[], int *singlePG )
 {
@@ -340,10 +309,6 @@ int MPIDI_GPID_GetAllInComm( MPIR_Comm *comm_ptr, int local_size,
     return mpi_errno;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_GPID_Get
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_GPID_Get( MPIR_Comm *comm_ptr, int rank, MPIDI_Gpid *in_gpid )
 {
     int      pgid;
@@ -365,10 +330,6 @@ int MPIDI_GPID_Get( MPIR_Comm *comm_ptr, int rank, MPIDI_Gpid *in_gpid )
  * the GPIDs.  Note that this code requires that all processes
  * have information on the process groups.
  */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_GPID_ToLpidArray
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_GPID_ToLpidArray( int size, MPIDI_Gpid in_gpid[], int lpid[] )
 {
     int i, mpi_errno = MPI_SUCCESS;
@@ -424,10 +385,6 @@ int MPIDI_GPID_ToLpidArray( int size, MPIDI_Gpid in_gpid[], int lpid[] )
     return mpi_errno;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_LPID_GetAllInComm
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 static inline int MPIDI_LPID_GetAllInComm(MPIR_Comm *comm_ptr, int local_size,
                                           int local_lpids[])
 {
@@ -445,10 +402,6 @@ static inline int MPIDI_LPID_GetAllInComm(MPIR_Comm *comm_ptr, int local_size,
 /*@
   check_disjoint_lpids - Exchange address mapping for intercomm creation.
  @*/
-#undef FUNCNAME
-#define FUNCNAME check_disjoint_lpids
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 static int check_disjoint_lpids(int lpids1[], int n1, int lpids2[], int n2)
 {
     int i, mask_size, idx, bit, maxlpid = -1;
@@ -510,10 +463,6 @@ static int check_disjoint_lpids(int lpids1[], int n1, int lpids2[], int n2)
 /*@
   MPID_Intercomm_exchange_map - Exchange address mapping for intercomm creation.
  @*/
-#undef FUNCNAME
-#define FUNCNAME MPID_Intercomm_exchange_map
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
                                 MPIR_Comm *peer_comm_ptr, int remote_leader,
                                 int *remote_size, int **remote_lpids,
@@ -548,7 +497,7 @@ int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
                                       remote_size, 1, MPI_INT,
                                       remote_leader, cts_tag,
                                       peer_comm_ptr, MPI_STATUS_IGNORE, &errflag );
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
         MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST, "local size = %d, remote size = %d", local_size,
                                        *remote_size ));
@@ -560,7 +509,7 @@ int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
         MPIR_CHKLMEM_MALLOC(local_lpids,int*,local_size*sizeof(int), mpi_errno,"local_lpids", MPL_MEM_DYNAMIC);
 
         mpi_errno = MPIDI_GPID_GetAllInComm( local_comm_ptr, local_size, local_gpids, &singlePG );
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
         /* Exchange the lpid arrays */
         mpi_errno = MPIC_Sendrecv( local_gpids, local_size*sizeof(MPIDI_Gpid), MPI_BYTE,
@@ -568,16 +517,16 @@ int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
                                       remote_gpids, (*remote_size)*sizeof(MPIDI_Gpid), MPI_BYTE,
                                       remote_leader, cts_tag, peer_comm_ptr,
                                       MPI_STATUS_IGNORE, &errflag );
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
 
         /* Convert the remote gpids to the lpids */
         mpi_errno = MPIDI_GPID_ToLpidArray( *remote_size, remote_gpids, *remote_lpids );
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
         /* Get our own lpids */
         mpi_errno = MPIDI_LPID_GetAllInComm( local_comm_ptr, local_size, local_lpids );
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
 #       ifdef HAVE_ERROR_CHECKING
         {
@@ -586,7 +535,7 @@ int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
                 /* Now that we have both the local and remote processes,
                    check for any overlap */
                 mpi_errno = check_disjoint_lpids( local_lpids, local_size, *remote_lpids, *remote_size );
-                if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+                MPIR_ERR_CHECK(mpi_errno);
             }
             MPID_END_ERROR_CHECKS;
         }
@@ -610,11 +559,11 @@ int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
         comm_info[1] = *is_low_group;
         MPL_DBG_MSG(MPIDI_CH3_DBG_OTHER,VERBOSE,"About to bcast on local_comm");
         mpi_errno = MPIR_Bcast( comm_info, 2, MPI_INT, local_leader, local_comm_ptr, &errflag );
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
         mpi_errno = MPIR_Bcast( remote_gpids, (*remote_size)*sizeof(MPIDI_Gpid), MPI_BYTE, local_leader,
                                      local_comm_ptr, &errflag );
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
         MPL_DBG_MSG_D(MPIDI_CH3_DBG_OTHER,VERBOSE,"end of bcast on local_comm of size %d",
                        local_comm_ptr->local_size );
@@ -624,14 +573,14 @@ int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
         /* we're the other processes */
         MPL_DBG_MSG(MPIDI_CH3_DBG_OTHER,VERBOSE,"About to receive bcast on local_comm");
         mpi_errno = MPIR_Bcast( comm_info, 2, MPI_INT, local_leader, local_comm_ptr, &errflag );
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
         *remote_size = comm_info[0];
         MPIR_CHKLMEM_MALLOC(remote_gpids,MPIDI_Gpid*,(*remote_size)*sizeof(MPIDI_Gpid), mpi_errno,"remote_gpids", MPL_MEM_DYNAMIC);
         *remote_lpids = (int*) MPL_malloc((*remote_size)*sizeof(int), MPL_MEM_ADDRESS);
         mpi_errno = MPIR_Bcast( remote_gpids, (*remote_size)*sizeof(MPIDI_Gpid), MPI_BYTE, local_leader,
                                      local_comm_ptr, &errflag );
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
         MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
 
         /* Extract the context and group sign informatin */
@@ -660,7 +609,7 @@ int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
        group information */
     if (local_comm_ptr->rank != local_leader) {
         mpi_errno = MPIDI_GPID_ToLpidArray( *remote_size, remote_gpids, *remote_lpids );
-        if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
 fn_exit:
@@ -679,10 +628,6 @@ fn_fail:
   existing communicator, for example, in a 'MPI_Comm_spawn' or 
   'MPI_Comm_connect/MPI_Comm_accept'.  Thus, it is only used for intercommunicators.
  @*/
-#undef FUNCNAME
-#define FUNCNAME MPID_Create_intercomm_from_lpids
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_Create_intercomm_from_lpids( MPIR_Comm *newcomm_ptr,
 			    int size, const int lpids[] )
 {
@@ -762,10 +707,6 @@ fn_fail:
    information (in the KVS cache that contains information about 
    contacting any process in the process groups).
 */
-#undef FUNCNAME
-#define FUNCNAME MPIDI_PG_ForwardPGInfo
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_ptr, MPIR_Comm *comm_ptr,
 			   int nPGids, const MPIDI_Gpid in_gpids[],
 			   int root )
@@ -805,7 +746,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_ptr, MPIR_Comm *comm_ptr,
 
     /* See if everyone is happy */
     mpi_errno = MPIR_Allreduce( MPI_IN_PLACE, &allfound, 1, MPI_INT, MPI_LAND, comm_ptr, &errflag );
-    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
     MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
     
     if (allfound) return MPI_SUCCESS;
@@ -880,20 +821,12 @@ static int g_max_node_id = -1;
 char MPIU_hostname[MAX_HOSTNAME_LEN] = "_UNKNOWN_"; /* '_' is an illegal char for a hostname so */
                                                     /* this will never match */
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Get_node_id
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 {
     *id_p = comm->dev.vcrt->vcr_table[rank]->node_id;
     return MPI_SUCCESS;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Get_max_node_id
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /* Providing a comm argument permits optimization, but this function is always
    allowed to return the max for the universe. */
 int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
@@ -904,27 +837,19 @@ int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
     return MPI_SUCCESS;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIDI_Populate_vc_node_ids
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIDI_Populate_vc_node_ids(MPIDI_PG_t *pg, int our_pg_rank)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
     int *out_nodemap;
-    out_nodemap = (int *) MPL_malloc(pg->size * sizeof(int), MPL_MEM_ADDRESS);
-
-    mpi_errno = MPIR_NODEMAP_build_nodemap(pg->size, our_pg_rank, out_nodemap, &g_max_node_id);
-    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
-    MPIR_Assert(g_max_node_id >= 0);
+    out_nodemap = MPIR_Process.node_map;
+    g_max_node_id = MPIR_Process.size - 1;
 
     for (i = 0; i < pg->size; i++) {
         pg->vct[i].node_id = out_nodemap[i];
     }
 
 fn_exit:
-    MPL_free(out_nodemap);
     return mpi_errno;
 fn_fail:
     goto fn_exit;

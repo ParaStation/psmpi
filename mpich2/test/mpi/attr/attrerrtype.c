@@ -1,9 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 /*
 
   Exercise attribute routines.
@@ -84,7 +83,7 @@ int test_attrs(void)
 
     MPI_Type_dup(MPI_DOUBLE, &dup_type);
 
-    MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+    MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
 
     value = -11;
     if ((err = MPI_Type_create_keyval(copybomb_fn, deletebomb_fn, &key_1, &value)))

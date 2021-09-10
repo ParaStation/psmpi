@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -96,10 +94,6 @@ static void MPIR_Init_err_dyncodes(void)
     MPIR_Add_finalize(MPIR_Dynerrcodes_finalize, (void *) 0, 9);
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Err_set_msg
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*
   MPIR_Err_set_msg - Change the message for an error code or class
 
@@ -137,7 +131,7 @@ int MPIR_Err_set_msg(int code, const char *msg_string)
     if (code & ~(ERROR_CLASS_MASK | ERROR_DYN_MASK | ERROR_GENERIC_MASK)) {
         /* Check for invalid error code */
         return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-                                    FCNAME, __LINE__,
+                                    __func__, __LINE__,
                                     MPI_ERR_ARG, "**argerrcode", "**argerrcode %d", code);
     }
     /* --END ERROR HANDLING-- */
@@ -148,7 +142,7 @@ int MPIR_Err_set_msg(int code, const char *msg_string)
     /* --BEGIN ERROR HANDLING-- */
     if (!str) {
         return MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-                                    FCNAME, __LINE__, MPI_ERR_OTHER,
+                                    __func__, __LINE__, MPI_ERR_OTHER,
                                     "**nomem", "**nomem %s %d", "error message string", msg_len);
     }
     /* --END ERROR HANDLING-- */
@@ -157,9 +151,7 @@ int MPIR_Err_set_msg(int code, const char *msg_string)
     MPL_strncpy(str, msg_string, msg_len + 1);
     if (errcode) {
         if (errcode < first_free_code) {
-            if (user_code_msgs[errcode]) {
-                MPL_free((void *) (user_code_msgs[errcode]));
-            }
+            MPL_free((void *) (user_code_msgs[errcode]));
             user_code_msgs[errcode] = (const char *) str;
         } else {
             /* FIXME : Unallocated error code? */
@@ -167,9 +159,7 @@ int MPIR_Err_set_msg(int code, const char *msg_string)
         }
     } else {
         if (errclass < first_free_class) {
-            if (user_class_msgs[errclass]) {
-                MPL_free((void *) (user_class_msgs[errclass]));
-            }
+            MPL_free((void *) (user_class_msgs[errclass]));
             user_class_msgs[errclass] = (const char *) str;
         } else {
             /* FIXME : Unallocated error code? */
@@ -323,13 +313,11 @@ static int MPIR_Dynerrcodes_finalize(void *p ATTRIBUTE((unused)))
     if (not_initialized == 0) {
 
         for (i = 0; i < first_free_class; i++) {
-            if (user_class_msgs[i])
-                MPL_free((char *) user_class_msgs[i]);
+            MPL_free((char *) user_class_msgs[i]);
         }
 
         for (i = 0; i < first_free_code; i++) {
-            if (user_code_msgs[i])
-                MPL_free((char *) user_code_msgs[i]);
+            MPL_free((char *) user_code_msgs[i]);
         }
     }
     return 0;

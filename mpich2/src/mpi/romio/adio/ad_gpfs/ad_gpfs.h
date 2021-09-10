@@ -1,25 +1,21 @@
-/* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2007, 2008                               */
-/* ---------------------------------------------------------------- */
+/*
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
+ */
+
 /**
  * \file ad_gpfs.h
  * \brief ???
  */
 
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*
- *   Copyright (C) 1997 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
- */
-
 #ifndef AD_GPFS_H_INCLUDED
 #define AD_GPFS_H_INCLUDED
 
+#include "adio.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <fcntl.h>
-#include "adio.h"
 
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>

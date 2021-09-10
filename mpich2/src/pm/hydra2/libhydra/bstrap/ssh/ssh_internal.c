@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2010 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "ssh_internal.h"
@@ -115,7 +114,6 @@ HYD_status HYDI_ssh_store_launch_time(const char *hostname)
 HYD_status HYDI_ssh_free_launch_elements(void)
 {
     struct ssh_time_hash *e, *tmp;
-    HYD_status status = HYD_SUCCESS;
 
     HASH_ITER(hh, ssh_time_hash, e, tmp) {
         HASH_DEL(ssh_time_hash, e);
@@ -123,9 +121,5 @@ HYD_status HYDI_ssh_free_launch_elements(void)
         MPL_free(e);
     }
 
-  fn_exit:
-    return status;
-
-  fn_fail:
-    goto fn_exit;
+    return HYD_SUCCESS;
 }

@@ -1,4 +1,3 @@
-% -*- Mode: latex; -*-
 \documentclass[dvipdfm,11pt]{article}
 \usepackage[dvipdfm]{hyperref} % Upgraded url package
 \parskip=.1in
@@ -47,10 +46,11 @@ Mathematics and Computer Science Division\\
 Argonne National Laboratory}
 
 \author{
-Abdelhalim Amer \and Pavan Balaji \and Wesley Bland \and William Gropp \and
-Yanfei Guo \and Rob Latham \and Huiwei Lu \and Lena Oden \and Antonio J. Pe\~na
-\and Ken Raffenetti \and Sangmin Seo \and Min Si \and Rajeev Thakur \and
-Junchao Zhang \and Xin Zhao
+Abdelhalim Amer \and Pavan Balaji \and Sudheer Chunduri \and Giuseppe
+Congui \and Huansong Fu \and William Gropp \and Yanfei Guo \and
+Shintaro Iwasaki \and Travis Koehring \and Rob Latham \and Kavitha
+Madhu \and Kaiming Ouyang \and Ken Raffenetti \and Min Si \and Rajeev
+Thakur \and Rohit Zambre \and Hui Zhou
 }
 
 \maketitle
@@ -391,18 +391,18 @@ machines listed to satisfy the requested number of processes; you can list the
 same machine name multiple times if necessary.  
 
 
-\subsection{Using MPICH with SLURM and PBS}
+\subsection{Using MPICH with Slurm and PBS}
 \label{sec:external_pm}
 
-There are multiple ways of using MPICH with SLURM or PBS. Hydra
-provides native support for both SLURM and PBS, and is likely the
+There are multiple ways of using MPICH with Slurm or PBS. Hydra
+provides native support for both Slurm and PBS, and is likely the
 easiest way to use MPICH on these systems (see the Hydra
 documentation above for more details).
 
-Alternatively, SLURM also provides compatibility with MPICH's
+Alternatively, Slurm also provides compatibility with MPICH's
 internal process management interface. To use this, you need to
-configure MPICH with SLURM support, and then use the {\texttt srun}
-job launching utility provided by SLURM.
+configure MPICH with Slurm support, and then use the {\texttt srun}
+job launching utility provided by Slurm.
 
 For PBS, MPICH jobs can be launched in two ways: (i) use Hydra's
 mpiexec with the appropriate options corresponding to PBS, or (ii)

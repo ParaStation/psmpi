@@ -1,9 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,7 +34,7 @@ int main(int argc, char *argv[])
 
         /* To improve reporting of problems about operations, we
          * change the error handler to errors return */
-        MPI_Errhandler_set(comm, MPI_ERRORS_RETURN);
+        MPI_Comm_set_errhandler(comm, MPI_ERRORS_RETURN);
 
         for (count = 1; count < 65000; count = 2 * count) {
             /* The left group will send rank to the right group;

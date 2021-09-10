@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -21,10 +19,6 @@
  * FIXME: change algorithm to match intracommunicator alltoallv
  */
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Alltoallv_inter_pairwise_exchange
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Alltoallv_inter_pairwise_exchange(const void *sendbuf, const int *sendcounts,
                                            const int *sdispls, MPI_Datatype sendtype, void *recvbuf,
                                            const int *recvcounts, const int *rdispls,
@@ -57,8 +51,6 @@ int MPIR_Alltoallv_inter_pairwise_exchange(const void *sendbuf, const int *sendc
             recvaddr = NULL;
             recvcount = 0;
         } else {
-            MPIR_Ensure_Aint_fits_in_pointer(MPIR_VOID_PTR_CAST_TO_MPI_AINT recvbuf +
-                                             rdispls[src] * recv_extent);
             recvaddr = (char *) recvbuf + rdispls[src] * recv_extent;
             recvcount = recvcounts[src];
         }
@@ -67,8 +59,6 @@ int MPIR_Alltoallv_inter_pairwise_exchange(const void *sendbuf, const int *sendc
             sendaddr = NULL;
             sendcount = 0;
         } else {
-            MPIR_Ensure_Aint_fits_in_pointer(MPIR_VOID_PTR_CAST_TO_MPI_AINT sendbuf +
-                                             sdispls[dst] * send_extent);
             sendaddr = (char *) sendbuf + sdispls[dst] * send_extent;
             sendcount = sendcounts[dst];
         }

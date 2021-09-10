@@ -1,16 +1,16 @@
-mprobe 2 mpiversion=3.0
-locknull 2 mpiversion=3.0
-get_acc_loc 4 mpiversion=3.0
-win_sync_err_flush 2 mpiversion=3.0
-win_sync_err_flushall 2 mpiversion=3.0
-win_sync_err_lockall_pt 2 mpiversion=3.0
-win_sync_err_lockall_at 2 mpiversion=3.0
-win_sync_err_unlockall 2 mpiversion=3.0
-win_sync_err_reqops 2 mpiversion=3.0
-win_flavor_err_shm 2 mpiversion=3.0
-win_flavor_err_dyn 2 mpiversion=3.0
-win_shm_multiple 4 mpiversion=3.0
-win_shm_large 2 mpiversion=3.0
+mprobe 2
+locknull 2
+get_acc_loc 4
+win_sync_err_flush 2
+win_sync_err_flushall 2
+win_sync_err_lockall_pt 2
+win_sync_err_lockall_at 2
+win_sync_err_unlockall 2
+win_sync_err_reqops 2
+win_flavor_err_shm 2
+win_flavor_err_dyn 2
+win_shm_multiple 4
+win_shm_large 2
 spawn_isend 2
 spawn_ssend 2
 spawn_anysrc 2 timeLimit=30
@@ -28,8 +28,8 @@ msa_info_env 4 env=PSP_MSA_AWARENESS=1 env=PSP_MSA_MODULE_ID=3
 msa_info_env 4 env=PSP_MSA_AWARENESS=0 env=PSP_MSA_MODULE_ID=3
 acc_pairtype 2
 acc_vecsum 2
-get_acc_pairtype 2 mpiversion=3.0
-get_acc_shm_pairtype 2 mpiversion=3.0
+get_acc_pairtype 2
+get_acc_shm_pairtype 2
 bcast_root 7
 ibcast_root 7
 #

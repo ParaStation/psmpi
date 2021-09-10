@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef CH3USOCK_H_INCLUDED
@@ -38,7 +37,7 @@ typedef struct MPIDI_CH3I_Connection
     struct MPIR_Request * recv_active;
     MPIDI_CH3_Pkt_t pkt;
     char * pg_id;
-    MPL_IOV iov[2];
+    struct iovec iov[2];
 } MPIDI_CH3I_Connection_t;
 
 
@@ -60,15 +59,9 @@ void MPIDI_CH3I_Connection_free(MPIDI_CH3I_Connection_t *);
 /* Routines to get the socket address */
 int MPIDU_CH3U_GetSockInterfaceAddr( int, char *, int, MPL_sockaddr_t * );
 
-/* Return a string for the connection state */
-#ifdef MPL_USE_DBG_LOGGING
-const char * MPIDI_Conn_GetStateString(int);
-const char * MPIDI_CH3_VC_GetStateString( struct MPIDI_VC * );
-#endif
-
 int MPIDI_CH3I_Sock_get_conninfo_from_bc( const char *bc,
 				     char *host_description, int maxlen,
-				     int *port, MPL_sockaddr_t *ifaddr,
+				     int *port, MPL_sockaddr_t * ifaddr,
 				     int *hasIfaddr );
 
 /* These two routines from util/sock initialize and shutdown the 

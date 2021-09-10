@@ -1,8 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include "mpi.h"
 #include <stdio.h>
 #include "mpitest.h"
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
     int myid, numprocs, i;
     char *mem_buf = NULL, *unpack_buf = NULL;
     MPI_Datatype tmp_dtype, mem_dtype;
-    MPI_Aint mem_dtype_ext = -1;
+    MPI_Aint mem_dtype_ext = -1, tmp_lb;
     int mem_dtype_sz = -1;
     int mem_buf_sz = -1, unpack_buf_sz = -1, buf_pos = 0;
 
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
     MPI_Type_commit(&mem_dtype);
 
     MPI_Type_size(mem_dtype, &mem_dtype_sz);
-    MPI_Type_extent(mem_dtype, &mem_dtype_ext);
+    MPI_Type_get_extent(mem_dtype, &tmp_lb, &mem_dtype_ext);
 
     mem_buf_sz = 2 * mem_dtype_ext;
     unpack_buf_sz = 2 * mem_dtype_sz;

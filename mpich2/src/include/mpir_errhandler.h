@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPIR_ERRHANDLER_H_INCLUDED
@@ -78,13 +76,13 @@ extern MPIR_Errhandler MPIR_Errhandler_direct[];
  * for BUILTIN down in the MPIR_Object_* routines. */
 #define MPIR_Errhandler_add_ref(_errhand)                               \
     do {                                                                  \
-        if (HANDLE_GET_KIND((_errhand)->handle) != HANDLE_KIND_BUILTIN) { \
+        if (!HANDLE_IS_BUILTIN((_errhand)->handle)) { \
             MPIR_Object_add_ref(_errhand);                              \
         }                                                                 \
     } while (0)
 #define MPIR_Errhandler_release_ref(_errhand, _inuse)                   \
     do {                                                                  \
-        if (HANDLE_GET_KIND((_errhand)->handle) != HANDLE_KIND_BUILTIN) { \
+        if (!HANDLE_IS_BUILTIN((_errhand)->handle)) { \
             MPIR_Object_release_ref((_errhand), (_inuse));              \
         }                                                                 \
         else {                                                            \

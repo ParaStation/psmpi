@@ -20,8 +20,6 @@ int _getenv_i(const char *env_name, int _default)
 	return val ? atoi(val) : _default;
 }
 
-#define FCNAME "MPID_Abort"
-#define FUNCNAME MPID_Abort
 int MPID_Abort(MPIR_Comm * comm_ptr, int mpi_errno, int exit_code,
 	       const char *error_msg)
 {
@@ -56,5 +54,3 @@ int MPID_Abort(MPIR_Comm * comm_ptr, int mpi_errno, int exit_code,
 	}
 	return MPI_ERR_INTERN;
 }
-#undef FUNCNAME
-#undef FCNAME

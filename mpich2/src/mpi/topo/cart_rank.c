@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -26,10 +24,6 @@ int MPI_Cart_rank(MPI_Comm comm, const int coords[], int *rank)
 #undef MPI_Cart_rank
 #define MPI_Cart_rank PMPI_Cart_rank
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Cart_rank_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 void MPIR_Cart_rank_impl(MPIR_Topology * cart_ptr, const int coords[], int *rank)
 {
     int i, ndims, coord, multiplier;
@@ -57,10 +51,6 @@ void MPIR_Cart_rank_impl(MPIR_Topology * cart_ptr, const int coords[], int *rank
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Cart_rank
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
 MPI_Cart_rank - Determines process rank in communicator given Cartesian
                 location
@@ -170,11 +160,11 @@ int MPI_Cart_rank(MPI_Comm comm, const int coords[], int *rank)
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_cart_rank", "**mpi_cart_rank %C %p %p", comm, coords, rank);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

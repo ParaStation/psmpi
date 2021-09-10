@@ -12,8 +12,6 @@
 
 #include "mpidimpl.h"
 
-#define FCNAME "MPID_Recv"
-#define FUNCNAME MPID_Recv
 int MPID_Recv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
 	      MPIR_Comm * comm, int context_offset, MPI_Status * status, MPIR_Request ** request)
 {
@@ -22,11 +20,5 @@ int MPID_Recv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int t
 
 	mpi_errno = MPIDI_PSP_Irecv(buf, count, datatype, rank, tag, comm, context_offset, request);
 
-	if (mpi_errno == MPI_SUCCESS) {
-		mpi_errno = MPIDI_PSP_Wait(*request);
-	}
-
 	return mpi_errno;
 }
-#undef FUNCNAME
-#undef FCNAME

@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2017 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra.h"
@@ -437,7 +436,7 @@ HYD_status proxy_process_stderr_cb(int fd, HYD_dmx_event_t events, void *userp)
     goto fn_exit;
 }
 
-HYD_status proxy_send_pids_upstream()
+HYD_status proxy_send_pids_upstream(void)
 {
     HYD_status status = HYD_SUCCESS;
     struct MPX_cmd cmd;
@@ -493,7 +492,7 @@ HYD_status proxy_send_pids_upstream()
     goto fn_exit;
 }
 
-HYD_status proxy_send_exitcodes_upstream()
+HYD_status proxy_send_exitcodes_upstream(void)
 {
     HYD_status status = HYD_SUCCESS;
     struct MPX_cmd cmd;

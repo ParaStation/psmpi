@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2007 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "pmi2compat.h"
@@ -602,10 +601,6 @@ int PMI2_Job_GetId(char jobid[], int jobid_size)
     goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME PMI2_Job_Connect
-#undef FCNAME
-#define FCNAME PMI2DI_QUOTE(FUNCNAME)
 int PMI2_Job_Connect(const char jobid[], PMI2_Connect_comm_t * conn)
 {
     int pmi2_errno = PMI2_SUCCESS;
@@ -1325,7 +1320,7 @@ int PMIi_ReadCommand(int fd, PMI2_Command * cmd)
 #ifdef MPICH_IS_THREADED
     MPIR_THREAD_CHECK_BEGIN;
     {
-        MPL_thread_mutex_lock(&mutex, &err);
+        MPL_thread_mutex_lock(&mutex, &err, MPL_THREAD_PRIO_HIGH);
 
         while (blocked && !cmd->complete)
             MPL_thread_cond_wait(&cond, &mutex, &err);
@@ -1468,7 +1463,7 @@ int PMIi_ReadCommand(int fd, PMI2_Command * cmd)
 #ifdef MPICH_IS_THREADED
     MPIR_THREAD_CHECK_BEGIN;
     {
-        MPL_thread_mutex_lock(&mutex, &err);
+        MPL_thread_mutex_lock(&mutex, &err, MPL_THREAD_PRIO_HIGH);
         blocked = FALSE;
         MPL_thread_cond_broadcast(&cond, &err);
         MPL_thread_mutex_unlock(&mutex, &err);
@@ -1482,8 +1477,7 @@ int PMIi_ReadCommand(int fd, PMI2_Command * cmd)
   fn_exit:
     return pmi2_errno;
   fn_fail:
-    if (cmd_buf)
-        PMI2U_Free(cmd_buf);
+    PMI2U_Free(cmd_buf);
     goto fn_exit;
 }
 
@@ -1605,7 +1599,7 @@ int PMIi_WriteSimpleCommand(int fd, PMI2_Command * resp, const char cmd[],
 #ifdef MPICH_IS_THREADED
     MPIR_THREAD_CHECK_BEGIN;
     {
-        MPL_thread_mutex_lock(&mutex, &err);
+        MPL_thread_mutex_lock(&mutex, &err, MPL_THREAD_PRIO_HIGH);
 
         while (blocked)
             MPL_thread_cond_wait(&cond, &mutex, &err);
@@ -1633,7 +1627,7 @@ int PMIi_WriteSimpleCommand(int fd, PMI2_Command * resp, const char cmd[],
 #ifdef MPICH_IS_THREADED
     MPIR_THREAD_CHECK_BEGIN;
     {
-        MPL_thread_mutex_lock(&mutex, &err);
+        MPL_thread_mutex_lock(&mutex, &err, MPL_THREAD_PRIO_HIGH);
         blocked = FALSE;
         MPL_thread_cond_broadcast(&cond, &err);
         MPL_thread_mutex_unlock(&mutex, &err);

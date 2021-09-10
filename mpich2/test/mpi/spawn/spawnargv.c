@@ -1,9 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2003 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,7 +54,7 @@ int main(int argc, char *argv[])
         MPI_Comm_rank(intercomm, &rank);
 
         if (parentcomm == MPI_COMM_NULL) {
-            /* Master */
+            /* Parent */
             if (rsize != np) {
                 errs++;
                 printf("Did not create %d processes (got %d)\n", np, rsize);
@@ -100,7 +99,7 @@ int main(int argc, char *argv[])
                 errs++;
                 printf("Too few arguments to spawned command\n");
             }
-            /* Send the errs back to the master process */
+            /* Send the errs back to the parent process */
             MPI_Ssend(&errs, 1, MPI_INT, 0, 1, intercomm);
         }
 

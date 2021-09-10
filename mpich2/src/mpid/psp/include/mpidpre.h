@@ -20,10 +20,6 @@
 #include "mpid_sched.h"
 #include "mpid_cuda_aware.h"
 
-/* We simply use the fallback timer functionality and do not define
- * our own */
-#include "mpid_timers_fallback.h"
-
 /* MPIDI_PSP_WITH_SESSION_STATISTICS is set if psmpi is configured with --with-session-statistics */
 #ifdef MPIDI_PSP_WITH_SESSION_STATISTICS
 
@@ -130,6 +126,8 @@ typedef struct MPID_PSCOM_XHeader_Rma_get_req {
 typedef struct MPID_PSCOM_XHeader_Rma_accumulate {
 	MPID_PSCOM_XHeader_t common;
 /*	MPI_Aint	target_disp; */
+	MPI_Datatype	origin_datatype;
+	int		origin_count;
 	int		target_count;
 	char		*target_buf;
 /*	unsigned int	epoch; */
@@ -360,7 +358,7 @@ struct MPID_DEV_Request_recv
 	MPID_PSP_packed_msg_t msg;
 
 	/* for non-contiguous receive requests only: */
-	const char	*addr;
+	char		*addr;
 	int		count;
 	MPI_Datatype	datatype;
 
@@ -541,12 +539,14 @@ MPIDI_CH3I_comm_t;
 void MPID_PSP_rma_cleanup(void);
 void MPID_PSP_rma_pscom_sockets_cleanup(void);
 
-int MPID_PSP_comm_create_hook(struct MPIR_Comm * comm);
-int MPID_PSP_comm_destroy_hook(struct MPIR_Comm * comm);
+int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm);
+int MPIDI_PSP_Comm_commit_post_hook(MPIR_Comm *comm);
+int MPIDI_PSP_Comm_destroy_hook(MPIR_Comm * comm);
 
 #define HAVE_DEV_COMM_HOOK
-#define MPID_Comm_create_hook(comm_) MPID_PSP_comm_create_hook(comm_)
-#define MPID_Comm_free_hook(comm_) MPID_PSP_comm_destroy_hook(comm_)
+#define MPID_Comm_commit_pre_hook(comm_) MPIDI_PSP_Comm_commit_pre_hook(comm_)
+#define MPID_Comm_commit_post_hook(comm_) MPIDI_PSP_Comm_commit_post_hook(comm_)
+#define MPID_Comm_free_hook(comm_) MPIDI_PSP_Comm_destroy_hook(comm_)
 
 /* Progress hooks. */
 #define MPID_Progress_register_hook(fn_, id_) MPI_SUCCESS
@@ -561,8 +561,7 @@ int MPID_PSP_comm_destroy_hook(struct MPIR_Comm * comm);
 
 #define MPID_DEV_GPID_DECL int gpid[2];
 
-int MPID_Init( int *argc_p, char ***argv_p, int requested,
-	       int *provided, int *has_args, int *has_env );
+int MPID_Init(int required, int *provided);
 
 int MPID_InitCompleted( void );
 
@@ -594,6 +593,10 @@ int MPID_Send( const void *buf, MPI_Aint count, MPI_Datatype datatype,
 	       int dest, int tag, MPIR_Comm *comm, int context_offset,
 	       MPIR_Request **request );
 
+int MPID_Send_coll( const void *buf, MPI_Aint count, MPI_Datatype datatype,
+                    int dest, int tag, MPIR_Comm *comm, int context_offset,
+                    MPIR_Request **request, MPIR_Errflag_t * errflag );
+
 int MPID_Rsend( const void *buf, int count, MPI_Datatype datatype,
 		int dest, int tag, MPIR_Comm *comm, int context_offset,
 		MPIR_Request **request );
@@ -609,6 +612,10 @@ int MPID_Isend( const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		int dest, int tag, MPIR_Comm *comm, int context_offset,
 		MPIR_Request **request );
 */
+int MPID_Isend_coll( const void *buf, MPI_Aint count, MPI_Datatype datatype,
+                     int dest, int tag, MPIR_Comm *comm, int context_offset,
+                     MPIR_Request **request, MPIR_Errflag_t * errflag );
+
 int MPID_Irsend( const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		 int dest, int tag, MPIR_Comm *comm, int context_offset,
 		 MPIR_Request **request );
@@ -762,20 +769,10 @@ int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p);
 int MPID_Get_badge(MPIR_Comm *comm, int rank, int *badge_p);
 int MPID_Get_max_badge(MPIR_Comm *comm, int *max_badge_p);
 
-#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
-int MPID_PSP_Reduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
-			     MPI_Op op, int root, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
-int MPID_PSP_Allreduce_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
-				MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
-int MPID_PSP_Reduce_scatter_for_cuda(const void *sendbuf, void *recvbuf, const int recvcounts[],
-				     MPI_Datatype datatype, MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
-int MPID_PSP_Reduce_scatter_block_for_cuda(const void *sendbuf, void *recvbuf,  int recvcount,
-					   MPI_Datatype datatype, MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
-int MPID_PSP_Scan_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
-			   MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
-int MPID_PSP_Exscan_for_cuda(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
-			   MPI_Op op, MPIR_Comm *comm_ptr, MPIR_Errflag_t *errflag);
-#endif
+int MPID_Type_commit_hook(MPIR_Datatype * type);
+int MPID_Type_free_hook(MPIR_Datatype * type);
+int MPID_Op_commit_hook(MPIR_Op * op);
+int MPID_Op_free_hook(MPIR_Op * op);
 
 
 #ifdef MPIDI_PSP_WITH_SESSION_STATISTICS

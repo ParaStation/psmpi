@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2010 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra.h"
@@ -84,12 +83,8 @@ static void free_publish_element(struct HYDT_ns_publish *publish)
     if (publish == NULL)
         return;
 
-    if (publish->name)
-        MPL_free(publish->name);
-
-    if (publish->info)
-        MPL_free(publish->info);
-
+    MPL_free(publish->name);
+    MPL_free(publish->info);
     MPL_free(publish);
 }
 
@@ -211,8 +206,9 @@ static HYD_status request_cb(int fd, HYD_event_t events, void *userp)
                 for (tmp = publish_list; tmp->next && strcmp(tmp->next->name, name);
                      tmp = tmp->next);
                 if (tmp->next) {
+                    struct HYDT_ns_publish *next_entry = tmp->next;
                     tmp->next = tmp->next->next;
-                    free_publish_element(tmp->next);
+                    free_publish_element(next_entry);
                     success = 1;
                 }
             }

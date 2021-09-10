@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@ int MPI_Type_size(MPI_Datatype datatype, int *size) __attribute__ ((weak, alias(
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Type_size
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Type_size - Return the number of bytes occupied by entries
                     in the datatype
@@ -73,7 +67,7 @@ int MPI_Type_size(MPI_Datatype datatype, int *size)
 #endif /* HAVE_ERROR_CHECKING */
 
     /* If this is a built-in datatype, then get the size out of the handle */
-    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
+    if (HANDLE_IS_BUILTIN(datatype)) {
         MPIR_Datatype_get_size_macro(datatype, *size);
         goto fn_exit;
     }
@@ -100,8 +94,7 @@ int MPI_Type_size(MPI_Datatype datatype, int *size)
     /* ... body of routine ...  */
 
     mpi_errno = MPIR_Type_size_x_impl(datatype, &size_x);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     MPIR_Assert(size_x >= 0);
     /* handle overflow: see MPI-3 p.104 */
@@ -117,10 +110,10 @@ int MPI_Type_size(MPI_Datatype datatype, int *size)
   fn_fail:
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_type_size", "**mpi_type_size %D %p", datatype, size);
     }
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

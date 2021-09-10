@@ -1,12 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- *  Portions of this code were written by Intel Corporation.
- *  Copyright (C) 2011-2017 Intel Corporation.  Intel provides this material
- *  to Argonne National Laboratory subject to Software Grant and Corporate
- *  Contributor License Agreement dated February 8, 2012.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* Header protection (i.e., IREDUCE_TSP_ALGOS_H_INCLUDED) is
@@ -18,18 +12,14 @@
 #include "tsp_namespace_def.h"
 
 /* Routine to schedule a pipelined tree based reduce */
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Ireduce_sched_intra_tree
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_TSP_Ireduce_sched_intra_tree(const void *sendbuf, void *recvbuf, int count,
                                       MPI_Datatype datatype, MPI_Op op, int root,
-                                      MPIR_Comm * comm, int tree_type, int k, int maxbytes,
-                                      MPIR_TSP_sched_t * sched)
+                                      MPIR_Comm * comm, int tree_type, int k, int chunk_size,
+                                      int buffer_per_child, MPIR_TSP_sched_t * sched)
 {
     int mpi_errno = MPI_SUCCESS;
     int i, j, t;
-    int num_chunks, chunk_size_floor, chunk_size_ceil;
+    MPI_Aint num_chunks, chunk_size_floor, chunk_size_ceil;
     int offset = 0;
     size_t extent, type_size;
     MPI_Aint type_lb, true_extent;
@@ -44,13 +34,13 @@ int MPIR_TSP_Ireduce_sched_intra_tree(const void *sendbuf, void *recvbuf, int co
                                  * rank 0 sends the reduced data to the root of the ecollective op. */
     int is_tree_root, is_tree_leaf, is_tree_intermediate;       /* Variables to store location of this rank in the tree */
     int is_root;
-    MPII_Treealgo_tree_t my_tree;
+    MPIR_Treealgo_tree_t my_tree;
     void **child_buffer = NULL; /* Buffer array in which data from children is received */
     void *reduce_buffer;        /* Buffer in which reduced data is present */
     int *vtcs = NULL, *recv_id = NULL, *reduce_id = NULL;       /* Arrays to store graph vertex ids */
     int nvtcs;
-    int buffer_per_child = MPIR_CVAR_IREDUCE_TREE_BUFFER_PER_CHILD;
     int tag;
+    MPIR_CHKLMEM_DECL(3);
 
     MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIR_TSP_IREDUCE_SCHED_INTRA_TREE);
     MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIR_TSP_IREDUCE_SCHED_INTRA_TREE);
@@ -63,6 +53,20 @@ int MPIR_TSP_Ireduce_sched_intra_tree(const void *sendbuf, void *recvbuf, int co
     rank = MPIR_Comm_rank(comm);
     is_root = (rank == root);
 
+    /* take care of trivial cases */
+    if (count == 0) {
+        goto fn_exit;
+    }
+
+    if (size == 1) {
+        if (sendbuf != MPI_IN_PLACE) {
+            MPIR_TSP_sched_localcopy(sendbuf, count, datatype, recvbuf, count, datatype, sched,
+                                     0, NULL);
+        }
+        goto fn_exit;
+    }
+
+    /* main algorithm */
     MPIR_Datatype_get_size_macro(datatype, type_size);
     MPIR_Datatype_get_extent_macro(datatype, extent);
     MPIR_Type_get_true_extent_impl(datatype, &type_lb, &true_extent);
@@ -70,12 +74,12 @@ int MPIR_TSP_Ireduce_sched_intra_tree(const void *sendbuf, void *recvbuf, int co
     is_commutative = MPIR_Op_is_commutative(op);
 
     /* calculate chunking information for pipelining */
-    MPII_Algo_calculate_pipeline_chunk_info(maxbytes, type_size, count, &num_chunks,
+    MPIR_Algo_calculate_pipeline_chunk_info(chunk_size, type_size, count, &num_chunks,
                                             &chunk_size_floor, &chunk_size_ceil);
     /* print chunking information */
     MPL_DBG_MSG_FMT(MPIR_DBG_COLL, VERBOSE, (MPL_DBG_FDEST,
-                                             "Reduce pipeline info: maxbytes=%d count=%d num_chunks=%d chunk_size_floor=%d chunk_size_ceil=%d",
-                                             maxbytes, count, num_chunks,
+                                             "Reduce pipeline info: chunk_size=%d count=%d num_chunks=%d chunk_size_floor=%d chunk_size_ceil=%d",
+                                             chunk_size, count, num_chunks,
                                              chunk_size_floor, chunk_size_ceil));
 
     if (!is_commutative) {
@@ -89,15 +93,16 @@ int MPIR_TSP_Ireduce_sched_intra_tree(const void *sendbuf, void *recvbuf, int co
 
     /* initialize the tree */
     my_tree.children = NULL;
-    mpi_errno = MPII_Treealgo_tree_create(rank, size, tree_type, k, tree_root, &my_tree);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    mpi_errno = MPIR_Treealgo_tree_create(rank, size, tree_type, k, tree_root, &my_tree);
+    MPIR_ERR_CHECK(mpi_errno);
     num_children = my_tree.num_children;
 
     /* identify my locaion in the tree */
     is_tree_root = (rank == tree_root) ? 1 : 0;
-    is_tree_leaf = (num_children == 0 && !is_tree_root) ? 1 : 0;
+    is_tree_leaf = (num_children == 0) ? 1 : 0;
     is_tree_intermediate = (!is_tree_leaf && !is_tree_root);
+    /* ensure exclusiveness */
+    MPIR_Assert(!(is_tree_root && is_tree_leaf));
 
     /* Allocate buffers to receive data from children. Any memory required for execution
      * of the schedule, for example child_buffer, reduce_buffer below, is allocated using
@@ -148,9 +153,12 @@ int MPIR_TSP_Ireduce_sched_intra_tree(const void *sendbuf, void *recvbuf, int co
     }
 
     /* initialize arrays to store graph vertex indices */
-    vtcs = MPL_malloc(sizeof(int) * (num_children + 1), MPL_MEM_COLL);
-    reduce_id = MPL_malloc(sizeof(int) * num_children, MPL_MEM_COLL);
-    recv_id = MPL_malloc(sizeof(int) * num_children, MPL_MEM_COLL);
+    MPIR_CHKLMEM_MALLOC(vtcs, int *, sizeof(int) * (num_children + 1),
+                        mpi_errno, "vtcs buffer", MPL_MEM_COLL);
+    MPIR_CHKLMEM_MALLOC(reduce_id, int *, sizeof(int) * num_children,
+                        mpi_errno, "reduce_id buffer", MPL_MEM_COLL);
+    MPIR_CHKLMEM_MALLOC(recv_id, int *, sizeof(int) * num_children,
+                        mpi_errno, "recv_id buffer", MPL_MEM_COLL);
 
     /* do pipelined reduce */
     /* NOTE: Make sure you are handling non-contiguous datatypes
@@ -163,8 +171,7 @@ int MPIR_TSP_Ireduce_sched_intra_tree(const void *sendbuf, void *recvbuf, int co
         /* For correctness, transport based collectives need to get the
          * tag from the same pool as schedule based collectives */
         mpi_errno = MPIR_Sched_next_tag(comm, &tag);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
         for (i = 0; i < num_children; i++) {
             void *recv_address = (char *) child_buffer[i] + offset * extent;
@@ -244,12 +251,10 @@ int MPIR_TSP_Ireduce_sched_intra_tree(const void *sendbuf, void *recvbuf, int co
         offset += msgsize;
     }
 
-    MPII_Treealgo_tree_free(&my_tree);
+    MPIR_Treealgo_tree_free(&my_tree);
 
   fn_exit:
-    MPL_free(vtcs);
-    MPL_free(reduce_id);
-    MPL_free(recv_id);
+    MPIR_CHKLMEM_FREEALL();
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIR_TSP_IREDUCE_SCHED_INTRA_TREE);
     return mpi_errno;
   fn_fail:
@@ -258,13 +263,10 @@ int MPIR_TSP_Ireduce_sched_intra_tree(const void *sendbuf, void *recvbuf, int co
 
 
 /* Non-blocking tree based reduce */
-#undef FUNCNAME
-#define FUNCNAME MPIR_TSP_Ireduce_intra_tree
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_TSP_Ireduce_intra_tree(const void *sendbuf, void *recvbuf, int count,
                                 MPI_Datatype datatype, MPI_Op op, int root, MPIR_Comm * comm,
-                                MPIR_Request ** req, int tree_type, int k, int maxbytes)
+                                MPIR_Request ** req, int tree_type, int k, int chunk_size,
+                                int buffer_per_child)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_TSP_sched_t *sched;
@@ -282,14 +284,12 @@ int MPIR_TSP_Ireduce_intra_tree(const void *sendbuf, void *recvbuf, int count,
     /* schedule pipelined tree algo */
     mpi_errno =
         MPIR_TSP_Ireduce_sched_intra_tree(sendbuf, recvbuf, count, datatype, op, root, comm,
-                                          tree_type, k, maxbytes, sched);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+                                          tree_type, k, chunk_size, buffer_per_child, sched);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* start and register the schedule */
     mpi_errno = MPIR_TSP_sched_start(sched, comm, req);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIR_TSP_IREDUCE_INTRA_TREE);

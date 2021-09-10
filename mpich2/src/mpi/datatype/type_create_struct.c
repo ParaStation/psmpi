@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@ int MPI_Type_create_struct(int count, const int array_of_blocklengths[],
 #undef MPI_Type_create_struct
 #define MPI_Type_create_struct PMPI_Type_create_struct
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Type_create_struct_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Type_create_struct_impl(int count,
                                  const int array_of_blocklengths[],
                                  const MPI_Aint array_of_displacements[],
@@ -47,8 +41,7 @@ int MPIR_Type_create_struct_impl(int count,
                                  array_of_blocklengths,
                                  array_of_displacements, array_of_types, &new_handle);
 
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
 
     MPIR_CHKLMEM_MALLOC_ORJUMP(ints, int *, (count + 1) * sizeof(int), mpi_errno,
@@ -63,8 +56,7 @@ int MPIR_Type_create_struct_impl(int count,
                                            count,       /* aints (disps) */
                                            count,       /* types */
                                            ints, array_of_displacements, array_of_types);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     MPIR_OBJ_PUBLISH_HANDLE(*newtype, new_handle);
 
@@ -77,10 +69,6 @@ int MPIR_Type_create_struct_impl(int count,
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Type_create_struct
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
    MPI_Type_create_struct - Create an MPI datatype from a general set of
    datatypes, displacements, and block sizes
@@ -137,8 +125,7 @@ int MPI_Type_create_struct(int count,
                 MPIR_ERRTEST_ARGNEG(array_of_blocklengths[j], "blocklen", mpi_errno);
                 MPIR_ERRTEST_DATATYPE(array_of_types[j], "datatype[j]", mpi_errno);
 
-                if (array_of_types[j] != MPI_DATATYPE_NULL &&
-                    HANDLE_GET_KIND(array_of_types[j]) != HANDLE_KIND_BUILTIN) {
+                if (array_of_types[j] != MPI_DATATYPE_NULL && !HANDLE_IS_BUILTIN(array_of_types[j])) {
                     MPIR_Datatype_get_ptr(array_of_types[j], datatype_ptr);
                     MPIR_Datatype_valid_ptr(datatype_ptr, mpi_errno);
                     if (mpi_errno != MPI_SUCCESS)
@@ -169,14 +156,14 @@ int MPI_Type_create_struct(int count,
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_type_create_struct",
                                  "**mpi_type_create_struct %d %p %p %p %p", count,
                                  array_of_blocklengths, array_of_displacements, array_of_types,
                                  newtype);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

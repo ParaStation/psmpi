@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2009 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "hydra_server.h"
@@ -59,6 +58,9 @@ HYD_status HYD_pmcd_pmi_fill_in_proxy_args(struct HYD_string_stash *proxy_stash,
     if (HYD_server_info.user_global.debug)
         HYD_STRING_STASH(*proxy_stash, MPL_strdup("--debug"), status);
 
+    if (HYD_server_info.user_global.topo_debug)
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("--topo-debug"), status);
+
     if (HYDT_bsci_info.rmk) {
         HYD_STRING_STASH(*proxy_stash, MPL_strdup("--rmk"), status);
         HYD_STRING_STASH(*proxy_stash, MPL_strdup(HYDT_bsci_info.rmk), status);
@@ -94,6 +96,13 @@ HYD_status HYD_pmcd_pmi_fill_in_proxy_args(struct HYD_string_stash *proxy_stash,
 
     HYD_STRING_STASH(*proxy_stash, MPL_strdup("--usize"), status);
     HYD_STRING_STASH(*proxy_stash, HYDU_int_to_str(HYD_server_info.user_global.usize), status);
+
+    HYD_STRING_STASH(*proxy_stash, MPL_strdup("--pmi-port"), status);
+    HYD_STRING_STASH(*proxy_stash, HYDU_int_to_str(HYD_server_info.user_global.pmi_port), status);
+
+    HYD_STRING_STASH(*proxy_stash, MPL_strdup("--gpus-per-proc"), status);
+    HYD_STRING_STASH(*proxy_stash, HYDU_int_to_str(HYD_server_info.user_global.gpus_per_proc),
+                     status);
 
     HYD_STRING_STASH(*proxy_stash, MPL_strdup("--proxy-id"), status);
 
@@ -372,24 +381,6 @@ HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
             HYD_STRING_STASH(exec_stash, MPL_strdup(HYD_server_info.user_global.topolib), status);
         }
 
-        if (HYD_server_info.user_global.ckpointlib) {
-            HYD_STRING_STASH(exec_stash, MPL_strdup("--ckpointlib"), status);
-            HYD_STRING_STASH(exec_stash, MPL_strdup(HYD_server_info.user_global.ckpointlib),
-                             status);
-        }
-
-        if (HYD_server_info.user_global.ckpoint_prefix) {
-            HYD_STRING_STASH(exec_stash, MPL_strdup("--ckpoint-prefix"), status);
-            HYD_STRING_STASH(exec_stash, MPL_strdup(HYD_server_info.user_global.ckpoint_prefix),
-                             status);
-        }
-
-        if (HYD_server_info.user_global.ckpoint_num) {
-            HYD_STRING_STASH(exec_stash, MPL_strdup("--ckpoint-num"), status);
-            HYD_STRING_STASH(exec_stash, HYDU_int_to_str(HYD_server_info.user_global.ckpoint_num),
-                             status);
-        }
-
         HYD_STRING_STASH(exec_stash, MPL_strdup("--global-inherited-env"), status);
         for (i = 0, env = HYD_server_info.user_global.global_env.inherited; env;
              env = env->next, i++);
@@ -495,8 +486,7 @@ HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
     }
 
   fn_exit:
-    if (mapping)
-        MPL_free(mapping);
+    MPL_free(mapping);
     MPL_free(filler_pmi_ids);
     MPL_free(nonfiller_pmi_ids);
     return status;
@@ -555,11 +545,8 @@ HYD_status HYD_pmcd_pmi_free_pg_scratch(struct HYD_pg *pg)
     if (pg->pg_scratch) {
         pg_scratch = pg->pg_scratch;
 
-        if (pg_scratch->ecount)
-            MPL_free(pg_scratch->ecount);
-
-        if (pg_scratch->dead_processes)
-            MPL_free(pg_scratch->dead_processes);
+        MPL_free(pg_scratch->ecount);
+        MPL_free(pg_scratch->dead_processes);
 
         HYD_pmcd_free_pmi_kvs_list(pg_scratch->kvs);
 

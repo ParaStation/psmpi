@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -27,33 +25,14 @@ int MPI_Type_vector(int count, int blocklength, int stride, MPI_Datatype oldtype
 #undef MPI_Type_vector
 #define MPI_Type_vector PMPI_Type_vector
 
-/*@
-  MPIR_Type_vector - create a vector datatype
-
-Input Parameters:
-+ count - number of blocks in vector
-. blocklength - number of elements in each block
-. stride - distance from beginning of one block to the next (see next
-  parameter for units)
-. strideinbytes - if nonzero, then stride is in bytes, otherwise stride
-  is in terms of extent of oldtype
-- oldtype - type (using handle) of datatype on which vector is based
-
-Output Parameters:
-. newtype - handle of new vector datatype
-
-  Return Value:
-  0 on success, MPI error code on failure.
-@*/
 int MPIR_Type_vector(int count,
                      int blocklength,
                      MPI_Aint stride,
                      int strideinbytes, MPI_Datatype oldtype, MPI_Datatype * newtype)
 {
     int mpi_errno = MPI_SUCCESS;
-    int is_builtin, old_is_contig;
-    MPI_Aint el_sz, old_sz;
-    MPI_Datatype el_type;
+    int old_is_contig;
+    MPI_Aint old_sz;
     MPI_Aint old_lb, old_ub, old_extent, old_true_lb, old_true_ub, eff_stride;
 
     MPIR_Datatype *new_dtp;
@@ -73,22 +52,16 @@ int MPIR_Type_vector(int count,
 
     /* handle is filled in by MPIR_Handle_obj_alloc() */
     MPIR_Object_set_ref(new_dtp, 1);
-    new_dtp->is_permanent = 0;
     new_dtp->is_committed = 0;
     new_dtp->attributes = NULL;
-    new_dtp->cache_id = 0;
     new_dtp->name[0] = 0;
     new_dtp->contents = NULL;
+    new_dtp->flattened = NULL;
 
-    new_dtp->dataloop = NULL;
-    new_dtp->dataloop_size = -1;
-    new_dtp->dataloop_depth = -1;
+    new_dtp->typerep.handle = NULL;
 
-    is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
-
-    if (is_builtin) {
-        el_sz = (MPI_Aint) MPIR_Datatype_get_basic_size(oldtype);
-        el_type = oldtype;
+    if (HANDLE_IS_BUILTIN(oldtype)) {
+        MPI_Aint el_sz = (MPI_Aint) MPIR_Datatype_get_basic_size(oldtype);
 
         old_lb = 0;
         old_true_lb = 0;
@@ -99,15 +72,11 @@ int MPIR_Type_vector(int count,
         old_is_contig = 1;
 
         new_dtp->size = (MPI_Aint) count *(MPI_Aint) blocklength *el_sz;
-        new_dtp->has_sticky_lb = 0;
-        new_dtp->has_sticky_ub = 0;
 
         new_dtp->alignsize = el_sz;     /* ??? */
         new_dtp->n_builtin_elements = count * blocklength;
         new_dtp->builtin_element_size = el_sz;
-        new_dtp->basic_type = el_type;
-
-        new_dtp->max_contig_blocks = count;
+        new_dtp->basic_type = oldtype;
 
         eff_stride = (strideinbytes) ? stride : (stride * el_sz);
     } else {    /* user-defined base type (oldtype) */
@@ -115,8 +84,6 @@ int MPIR_Type_vector(int count,
         MPIR_Datatype *old_dtp;
 
         MPIR_Datatype_get_ptr(oldtype, old_dtp);
-        el_sz = old_dtp->builtin_element_size;
-        el_type = old_dtp->basic_type;
 
         old_lb = old_dtp->lb;
         old_true_lb = old_dtp->true_lb;
@@ -127,15 +94,11 @@ int MPIR_Type_vector(int count,
         MPIR_Datatype_is_contig(oldtype, &old_is_contig);
 
         new_dtp->size = count * blocklength * old_dtp->size;
-        new_dtp->has_sticky_lb = old_dtp->has_sticky_lb;
-        new_dtp->has_sticky_ub = old_dtp->has_sticky_ub;
 
         new_dtp->alignsize = old_dtp->alignsize;
         new_dtp->n_builtin_elements = count * blocklength * old_dtp->n_builtin_elements;
-        new_dtp->builtin_element_size = el_sz;
-        new_dtp->basic_type = el_type;
-
-        new_dtp->max_contig_blocks = old_dtp->max_contig_blocks * count * blocklength;
+        new_dtp->builtin_element_size = old_dtp->builtin_element_size;
+        new_dtp->basic_type = old_dtp->basic_type;
 
         eff_stride = (strideinbytes) ? stride : (stride * old_dtp->extent);
     }
@@ -155,22 +118,28 @@ int MPIR_Type_vector(int count,
     if ((MPI_Aint) (new_dtp->size) == new_dtp->extent &&
         eff_stride == (MPI_Aint) blocklength * old_sz && old_is_contig) {
         new_dtp->is_contig = 1;
-        new_dtp->max_contig_blocks = 1;
     } else {
         new_dtp->is_contig = 0;
+    }
+
+    if (strideinbytes) {
+        mpi_errno = MPIR_Typerep_create_hvector(count, blocklength, stride, oldtype, new_dtp);
+        MPIR_ERR_CHECK(mpi_errno);
+    } else {
+        mpi_errno = MPIR_Typerep_create_vector(count, blocklength, stride, oldtype, new_dtp);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     *newtype = new_dtp->handle;
 
     MPL_DBG_MSG_P(MPIR_DBG_DATATYPE, VERBOSE, "vector type %x created.", new_dtp->handle);
 
+  fn_exit:
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Type_vector_impl
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Type_vector_impl(int count, int blocklength, int stride, MPI_Datatype oldtype,
                           MPI_Datatype * newtype)
 {
@@ -182,8 +151,7 @@ int MPIR_Type_vector_impl(int count, int blocklength, int stride, MPI_Datatype o
     mpi_errno = MPIR_Type_vector(count, blocklength, (MPI_Aint) stride, 0,      /* stride not in bytes, in extents */
                                  oldtype, &new_handle);
 
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     ints[0] = count;
     ints[1] = blocklength;
@@ -193,8 +161,7 @@ int MPIR_Type_vector_impl(int count, int blocklength, int stride, MPI_Datatype o
                                            0,   /* aints */
                                            1,   /* types */
                                            ints, NULL, &oldtype);
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     MPIR_OBJ_PUBLISH_HANDLE(*newtype, new_handle);
 
@@ -206,10 +173,6 @@ int MPIR_Type_vector_impl(int count, int blocklength, int stride, MPI_Datatype o
 
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Type_vector
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 /*@
     MPI_Type_vector - Creates a vector (strided) datatype
 
@@ -254,7 +217,7 @@ int MPI_Type_vector(int count,
             MPIR_ERRTEST_ARGNEG(blocklength, "blocklen", mpi_errno);
             MPIR_ERRTEST_DATATYPE(oldtype, "datatype", mpi_errno);
 
-            if (oldtype != MPI_DATATYPE_NULL && HANDLE_GET_KIND(oldtype) != HANDLE_KIND_BUILTIN) {
+            if (oldtype != MPI_DATATYPE_NULL && !HANDLE_IS_BUILTIN(oldtype)) {
                 MPIR_Datatype_get_ptr(oldtype, old_ptr);
                 MPIR_Datatype_valid_ptr(old_ptr, mpi_errno);
                 if (mpi_errno)
@@ -284,12 +247,12 @@ int MPI_Type_vector(int count,
 #ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno =
-            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
+            MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, __func__, __LINE__, MPI_ERR_OTHER,
                                  "**mpi_type_vector", "**mpi_type_vector %d %d %d %D %p", count,
                                  blocklength, stride, oldtype, newtype);
     }
 #endif
-    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
+    mpi_errno = MPIR_Err_return_comm(NULL, __func__, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

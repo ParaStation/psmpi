@@ -1,13 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2010 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "pmip.h"
 #include "bsci.h"
 #include "topo.h"
-#include "ckpoint.h"
 #include "demux.h"
 #include "hydra.h"
 
@@ -50,8 +48,7 @@ static HYD_status control_port_fn(char *arg, char ***argv)
     (*argv)++;
 
   fn_exit:
-    if (port)
-        MPL_free(port);
+    MPL_free(port);
     return status;
 
   fn_fail:
@@ -90,6 +87,28 @@ static HYD_status usize_fn(char *arg, char ***argv)
     HYD_status status = HYD_SUCCESS;
 
     HYD_pmcd_pmip.user_global.usize = atoi(**argv);
+
+    (*argv)++;
+
+    return status;
+}
+
+static HYD_status pmi_port_fn(char *arg, char ***argv)
+{
+    HYD_status status = HYD_SUCCESS;
+
+    HYD_pmcd_pmip.user_global.pmi_port = atoi(**argv);
+
+    (*argv)++;
+
+    return status;
+}
+
+static HYD_status gpus_per_proc_fn(char *arg, char ***argv)
+{
+    HYD_status status = HYD_SUCCESS;
+
+    HYD_pmcd_pmip.user_global.gpus_per_proc = atoi(**argv);
 
     (*argv)++;
 
@@ -252,78 +271,9 @@ static HYD_status topolib_fn(char *arg, char ***argv)
     return status;
 }
 
-static HYD_status ckpointlib_fn(char *arg, char ***argv)
+static HYD_status topo_debug_fn(char *arg, char ***argv)
 {
-    HYD_status status = HYD_SUCCESS;
-
-    status = HYDU_set_str(arg, &HYD_pmcd_pmip.user_global.ckpointlib, **argv);
-
-    (*argv)++;
-
-    return status;
-}
-
-static HYD_status ckpoint_num_fn(char *arg, char ***argv)
-{
-    HYD_status status = HYD_SUCCESS;
-
-    status = HYDU_set_int(arg, &HYD_pmcd_pmip.user_global.ckpoint_num, atoi(**argv));
-
-    (*argv)++;
-
-    return status;
-}
-
-static HYD_status parse_ckpoint_prefix(char *pathlist)
-{
-    int i, prefixes;
-    char *dummy;
-    HYD_status status = HYD_SUCCESS;
-
-    /* Find the number of prefixes provided */
-    prefixes = 1;
-    for (i = 0; pathlist[i]; i++)
-        if (pathlist[i] == ':')
-            prefixes++;
-
-    /* Add one more to the prefix list for a NULL ending string */
-    prefixes++;
-
-    HYDU_MALLOC_OR_JUMP(HYD_pmcd_pmip.local.ckpoint_prefix_list, char **, prefixes * sizeof(char *),
-                        status);
-
-    dummy = strtok(pathlist, ":");
-    i = 0;
-    while (dummy) {
-        HYD_pmcd_pmip.local.ckpoint_prefix_list[i] = MPL_strdup(dummy);
-        dummy = strtok(NULL, ":");
-        i++;
-    }
-    HYD_pmcd_pmip.local.ckpoint_prefix_list[i] = NULL;
-
-  fn_exit:
-    return status;
-
-  fn_fail:
-    goto fn_exit;
-}
-
-static HYD_status ckpoint_prefix_fn(char *arg, char ***argv)
-{
-    HYD_status status = HYD_SUCCESS;
-
-    status = HYDU_set_str(arg, &HYD_pmcd_pmip.user_global.ckpoint_prefix, **argv);
-    HYDU_ERR_POP(status, "error setting checkpoint prefix\n");
-
-    status = parse_ckpoint_prefix(**argv);
-    HYDU_ERR_POP(status, "error setting checkpoint prefix\n");
-
-  fn_exit:
-    (*argv)++;
-    return status;
-
-  fn_fail:
-    goto fn_exit;
+    return HYDU_set_int(arg, &HYDT_topo_info.debug, 1);
 }
 
 static HYD_status global_env_fn(char *arg, char ***argv)
@@ -343,13 +293,9 @@ static HYD_status global_env_fn(char *arg, char ***argv)
             str[strlen(str) - 1] = 0;
         }
 
-        if (!strcmp(arg, "global-inherited-env")) {
+        if (!strcmp(arg, "global-inherited-env"))
             HYDU_append_env_str_to_list(str, &HYD_pmcd_pmip.user_global.global_env.inherited);
-            /* Make sure to let proxy aware of HYDRA related variables */
-            if (!strncmp(str, "HYDRA_", 6)) {
-                MPL_putenv(str);
-            }
-        } else if (!strcmp(arg, "global-system-env"))
+        else if (!strcmp(arg, "global-system-env"))
             HYDU_append_env_str_to_list(str, &HYD_pmcd_pmip.user_global.global_env.system);
         else if (!strcmp(arg, "global-user-env"))
             HYDU_append_env_str_to_list(str, &HYD_pmcd_pmip.user_global.global_env.user);
@@ -616,8 +562,9 @@ static HYD_status exec_args_fn(char *arg, char ***argv)
 
     for (exec = HYD_pmcd_pmip.exec_list; exec->next; exec = exec->next);
 
+    errno = 0;
     count = strtol(**argv, NULL, 10);
-    if (errno == ERANGE || errno == EINVAL)
+    if (errno != 0)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "Exec arg not convertible to integer\n");
     for (i = 0; i < count; i++) {
         (*argv)++;
@@ -641,6 +588,8 @@ struct HYD_arg_match_table HYD_pmcd_pmip_match_table[] = {
     {"pgid", pgid_fn, NULL},
     {"debug", debug_fn, NULL},
     {"usize", usize_fn, NULL},
+    {"pmi-port", pmi_port_fn, NULL},
+    {"gpus-per-proc", gpus_per_proc_fn, NULL},
     {"rmk", rmk_fn, NULL},
     {"launcher", launcher_fn, NULL},
     {"launcher-exec", launcher_exec_fn, NULL},
@@ -657,9 +606,7 @@ struct HYD_arg_match_table HYD_pmcd_pmip_match_table[] = {
     {"binding", binding_fn, NULL},
     {"mapping", mapping_fn, NULL},
     {"membind", membind_fn, NULL},
-    {"ckpointlib", ckpointlib_fn, NULL},
-    {"ckpoint-prefix", ckpoint_prefix_fn, NULL},
-    {"ckpoint-num", ckpoint_num_fn, NULL},
+    {"topo-debug", topo_debug_fn, NULL},
     {"global-inherited-env", global_env_fn, NULL},
     {"global-system-env", global_env_fn, NULL},
     {"global-user-env", global_env_fn, NULL},
@@ -711,6 +658,9 @@ HYD_status HYD_pmcd_pmip_get_params(char **t_argv)
 
     if (HYD_pmcd_pmip.user_global.debug == -1)
         HYD_pmcd_pmip.user_global.debug = 0;
+
+    if (HYDT_topo_info.debug == -1)
+        HYDT_topo_info.debug = 0;
 
     status = HYDT_bsci_init(HYD_pmcd_pmip.user_global.rmk,
                             HYD_pmcd_pmip.user_global.launcher,

@@ -55,7 +55,9 @@ int MPID_PSP_packed_msg_prepare(const void *addr, int count, MPI_Datatype dataty
 		msg->msg_sz = data_sz;
 		msg->tmp_buf = NULL;
 	} else {
-		ret = MPID_PSP_packed_msg_allocate(data_sz, msg);
+		MPI_Aint packsize;
+		MPIR_Pack_size_impl(count, datatype, &packsize);
+		ret = MPID_PSP_packed_msg_allocate(packsize, msg);
 	}
 
 /*	printf("Packed src:(%d) %s\n", origin_data_sz, pscom_dumpstr(msg->msg, pscom_min(origin_data_sz, 64)));
@@ -79,12 +81,15 @@ static inline
 void MPID_PSP_packed_msg_pack(const void *src_addr, int src_count, MPI_Datatype src_datatype,
 			      const MPID_PSP_packed_msg_t *msg)
 {
+	int res;
 	if (msg->tmp_buf) {
-		MPIR_Segment segment;
-		DLOOP_Offset last = msg->msg_sz;
+		MPI_Aint actual_pack_bytes;
 
-		MPIR_Segment_init(src_addr, src_count, src_datatype, &segment);
-		MPIR_Segment_pack(&segment, /* first */0, &last, msg->tmp_buf);
+		res = MPIR_Typerep_pack(src_addr, src_count, src_datatype, 0,
+					msg->msg, msg->msg_sz, &actual_pack_bytes);
+
+		assert(actual_pack_bytes == msg->msg_sz);
+		assert(res == MPI_SUCCESS);
 	}
 }
 
@@ -100,27 +105,28 @@ int MPID_PSP_packed_msg_need_unpack(const MPID_PSP_packed_msg_t *msg)
  * prepare msg with packed_msg_prepare()
  */
 static inline
-int MPID_PSP_packed_msg_unpack(const void *addr, int count, MPI_Datatype datatype,
+int MPID_PSP_packed_msg_unpack(void *addr, int count, MPI_Datatype datatype,
                                const MPID_PSP_packed_msg_t *msg, size_t data_len)
 {
-	if (msg->tmp_buf) {
-		MPIR_Segment segment;
-		DLOOP_Offset last  = pscom_min(msg->msg_sz, data_len);
+	int res = MPI_SUCCESS;
+	MPI_Aint actual_unpack_bytes;
 
-		MPIR_Segment_init(addr, count, datatype, &segment);
-		MPIR_Segment_unpack(&segment, /* first */0, &last, msg->tmp_buf);
+	if (msg->tmp_buf) {
+
+		res = MPIR_Typerep_unpack(msg->tmp_buf,
+				pscom_min(msg->msg_sz, data_len),
+				addr, count, datatype, 0, &actual_unpack_bytes);
 		/* From ch3u_handle_recv_pkt.c:
-		   "If the data can't be unpacked, then we have a mismatch between
-		   the datatype and the amount of data received."
-		   (see also Segment_manipulate() in mpid/common/datatype/dataloop/segment.c)
-		   For a matching signature, 'last' should still point to the end of the
-		   dataloop stream after unpacking it:
+                   "If the data can't be unpacked, the we have a
+                    mismatch between the datatype and the amount of
+                    data received.  Throw away received data."
 		*/
-		if( last != pscom_min(msg->msg_sz, data_len) ) {
-			return MPI_ERR_TYPE;
+		if (actual_unpack_bytes != pscom_min(msg->msg_sz, data_len)) {
+			res = MPI_ERR_TYPE;
 		}
 	}
-	return MPI_SUCCESS;
+
+	return res;
 }
 
 

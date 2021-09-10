@@ -1,8 +1,8 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 /* Based on test code provided by Lisandro Dalcí. */
 #include <mpi.h>
 #include <stdio.h>
@@ -92,6 +92,7 @@ int main(int argc, char *argv[])
     flag = 0;
     while (!flag) {
         MPI_Test(&request, &flag, &status);
+        MTest_thread_yield();
     }
     MTest_Join_threads();
 
@@ -102,6 +103,7 @@ int main(int argc, char *argv[])
     outcount = 0;
     while (!outcount) {
         MPI_Testsome(1, &request, &outcount, indices, &status);
+        MTest_thread_yield();
     }
     MTest_Join_threads();
 
@@ -112,6 +114,7 @@ int main(int argc, char *argv[])
     flag = 0;
     while (!flag) {
         MPI_Testall(1, &request, &flag, &status);
+        MTest_thread_yield();
     }
     MTest_Join_threads();
 

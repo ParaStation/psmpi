@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpidimpl.h"
@@ -11,10 +10,6 @@
    rather than direct routine calls.
  */
 
-#undef FUNCNAME
-#define FUNCNAME MPID_Finalize
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPID_Finalize(void)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -103,7 +98,7 @@ int MPID_Finalize(void)
     /* FIXME: The close actions should use the same code as the other
        connection close code */
     mpi_errno = MPIDI_PG_Close_VCs();
-    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
     /*
      * Wait for all VCs to finish the close protocol
      */
@@ -113,14 +108,14 @@ int MPID_Finalize(void)
 
 #ifdef MPID_NEEDS_ICOMM_WORLD
     mpi_errno = MPIR_Comm_release_always(MPIR_Process.icomm_world);
-    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 #endif
 
     mpi_errno = MPIR_Comm_release_always(MPIR_Process.comm_self);
-    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     mpi_errno = MPIR_Comm_release_always(MPIR_Process.comm_world);
-    if (mpi_errno) MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* Note that the CH3I_Progress_finalize call has been removed; the
        CH3_Finalize routine should call it */
@@ -152,8 +147,6 @@ int MPID_Finalize(void)
     MPIDI_RMA_finalize();
     
     MPL_free(MPIDI_failed_procs_string);
-
-    MPIDU_Ftb_finalize();
 
  fn_exit:
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_FINALIZE);

@@ -1,12 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2006 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- *  Portions of this code were written by Intel Corporation.
- *  Copyright (C) 2011-2017 Intel Corporation.  Intel provides this material
- *  to Argonne National Laboratory subject to Software Grant and Corporate
- *  Contributor License Agreement dated February 8, 2012.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 /* Header protection (i.e., IALLGATHERV_TSP_ALGOS_PROTOTYPES_H_INCLUDED) is
@@ -15,14 +9,14 @@
 
 #include "tsp_namespace_def.h"
 
-#undef MPIR_TSP_Iallgatherv_intra_recexch_data_exchange
-#define MPIR_TSP_Iallgatherv_intra_recexch_data_exchange        MPIR_TSP_NAMESPACE(Iallgatherv_intra_recexch_data_exchange)
-#undef MPIR_TSP_Iallgatherv_intra_recexch_step1
-#define MPIR_TSP_Iallgatherv_intra_recexch_step1                MPIR_TSP_NAMESPACE(Iallgatherv_intra_recexch_step1)
-#undef MPIR_TSP_Iallgatherv_intra_recexch_step2
-#define MPIR_TSP_Iallgatherv_intra_recexch_step2                MPIR_TSP_NAMESPACE(Iallgatherv_intra_recexch_step2)
-#undef MPIR_TSP_Iallgatherv_intra_recexch_step3
-#define MPIR_TSP_Iallgatherv_intra_recexch_step3                MPIR_TSP_NAMESPACE(Iallgatherv_intra_recexch_step3)
+#undef MPIR_TSP_Iallgatherv_sched_intra_recexch_data_exchange
+#define MPIR_TSP_Iallgatherv_sched_intra_recexch_data_exchange        MPIR_TSP_NAMESPACE(Iallgatherv_sched_intra_recexch_data_exchange)
+#undef MPIR_TSP_Iallgatherv_sched_intra_recexch_step1
+#define MPIR_TSP_Iallgatherv_sched_intra_recexch_step1                MPIR_TSP_NAMESPACE(Iallgatherv_sched_intra_recexch_step1)
+#undef MPIR_TSP_Iallgatherv_sched_intra_recexch_step2
+#define MPIR_TSP_Iallgatherv_sched_intra_recexch_step2                MPIR_TSP_NAMESPACE(Iallgatherv_sched_intra_recexch_step2)
+#undef MPIR_TSP_Iallgatherv_sched_intra_recexch_step3
+#define MPIR_TSP_Iallgatherv_sched_intra_recexch_step3                MPIR_TSP_NAMESPACE(Iallgatherv_sched_intra_recexch_step3)
 #undef MPIR_TSP_Iallgatherv_intra_recexch
 #define MPIR_TSP_Iallgatherv_intra_recexch                      MPIR_TSP_NAMESPACE(Iallgatherv_intra_recexch)
 #undef MPIR_TSP_Iallgatherv_sched_intra_recexch
@@ -63,7 +57,7 @@ int MPIR_TSP_Iallgatherv_sched_intra_recexch_step3(int step1_sendto, int *step1_
 int MPIR_TSP_Iallgatherv_sched_intra_recexch(const void *sendbuf, int sendcount,
                                              MPI_Datatype sendtype, void *recvbuf,
                                              const int *recvcounts, const int *displs,
-                                             MPI_Datatype recvtype, int tag, MPIR_Comm * comm,
+                                             MPI_Datatype recvtype, MPIR_Comm * comm,
                                              int is_dist_halving, int k, MPIR_TSP_sched_t * sched);
 
 int MPIR_TSP_Iallgatherv_intra_recexch(const void *sendbuf, int sendcount, MPI_Datatype sendtype,

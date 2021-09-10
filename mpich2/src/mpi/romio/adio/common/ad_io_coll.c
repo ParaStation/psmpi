@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *   Copyright (C) 2008 University of Chicago.
- *   See COPYRIGHT notice in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "adio.h"
@@ -364,26 +363,38 @@ void ADIOI_IOStridedColl(ADIO_File fd, void *buf, int count, int rdwr,
                                          &agg_comm_requests, &aggs_client_count);
 
                 if (fd->is_agg && aggs_client_count) {
+#ifdef MPI_STATUSES_IGNORE
+                    agg_comm_statuses = MPI_STATUSES_IGNORE;
+#else
                     agg_comm_statuses = ADIOI_Malloc(aggs_client_count * sizeof(MPI_Status));
+#endif
                     MPI_Waitall(aggs_client_count, agg_comm_requests, agg_comm_statuses);
 #ifdef AGGREGATION_PROFILE
                     MPE_Log_event(5033, 0, NULL);
 #endif
                     ADIOI_Free(agg_comm_requests);
+#ifndef MPI_STATUSES_IGNORE
                     ADIOI_Free(agg_comm_statuses);
+#endif
                 }
 
                 if (clients_agg_count) {
+#ifdef MPI_STATUSES_IGNORE
+                    client_comm_statuses = MPI_STATUSES_IGNORE;
+#else
                     client_comm_statuses = ADIOI_Malloc(clients_agg_count * sizeof(MPI_Status));
+#endif
                     MPI_Waitall(clients_agg_count, client_comm_requests, client_comm_statuses);
 #ifdef AGGREGATION_PROFILE
                     MPE_Log_event(5039, 0, NULL);
 #endif
                     ADIOI_Free(client_comm_requests);
+#ifndef MPI_STATUSES_IGNORE
                     ADIOI_Free(client_comm_statuses);
+#endif
                 }
 #ifdef DEBUG2
-                fprintf(stderr, "buffered_io_size = %lld\n", buffered_io_size);
+                fprintf(stderr, "buffered_io_size = %lld\n", (long long) buffered_io_size);
                 if (fd->is_agg && buffered_io_size) {
                     fprintf(stderr, "buf = [");
                     for (i = 0; i < bufextent; i++)
@@ -423,17 +434,23 @@ void ADIOI_IOStridedColl(ADIO_File fd, void *buf, int count, int rdwr,
                 fflush(NULL);
 #endif
 #ifdef DEBUG
-                fprintf(stderr, "buffered_io_size = %lld\n", buffered_io_size);
+                fprintf(stderr, "buffered_io_size = %lld\n", (long long) buffered_io_size);
 #endif
 
                 if (clients_agg_count) {
+#ifdef MPI_STATUSES_IGNORE
+                    client_comm_statuses = MPI_STATUSES_IGNORE;
+#else
                     client_comm_statuses = ADIOI_Malloc(clients_agg_count * sizeof(MPI_Status));
+#endif
                     MPI_Waitall(clients_agg_count, client_comm_requests, client_comm_statuses);
 #ifdef AGGREGATION_PROFILE
                     MPE_Log_event(5039, 0, NULL);
 #endif
                     ADIOI_Free(client_comm_requests);
+#ifndef MPI_STATUSES_IGNORE
                     ADIOI_Free(client_comm_statuses);
+#endif
                 }
 #ifdef DEBUG2
                 if (bufextent) {
@@ -447,15 +464,21 @@ void ADIOI_IOStridedColl(ADIO_File fd, void *buf, int count, int rdwr,
                 if (fd->is_agg && buffered_io_size) {
                     ADIOI_Assert(aggs_client_count != 0);
                     /* make sure we actually have the data to write out */
+#ifdef MPI_STATUSES_IGNORE
+                    agg_comm_statuses = MPI_STATUSES_IGNORE;
+#else
                     agg_comm_statuses = (MPI_Status *)
                         ADIOI_Malloc(aggs_client_count * sizeof(MPI_Status));
+#endif
 
                     MPI_Waitall(aggs_client_count, agg_comm_requests, agg_comm_statuses);
 #ifdef AGGREGATION_PROFILE
                     MPE_Log_event(5033, 0, NULL);
 #endif
                     ADIOI_Free(agg_comm_requests);
+#ifndef MPI_STATUSES_IGNORE
                     ADIOI_Free(agg_comm_statuses);
+#endif
 #ifdef DEBUG2
                     fprintf(stderr, "cb_buf = [");
                     for (i = 0; i < buffered_io_size; i++)
@@ -797,7 +820,8 @@ void ADIOI_Calc_bounds(ADIO_File fd, int count, MPI_Datatype buftype,
     *st_offset = st_byte_off;
     *end_offset = end_byte_off;
 #ifdef DEBUG
-    printf("st_offset = %lld\nend_offset = %lld\n", st_byte_off, end_byte_off);
+    printf("st_offset = %lld\nend_offset = %lld\n", (long long) st_byte_off,
+           (long long) end_byte_off);
 #endif
 #ifdef AGGREGATION_PROFILE
     MPE_Log_event(5001, 0, NULL);
@@ -917,7 +941,6 @@ static void Exch_data_amounts(ADIO_File fd, int nprocs,
     MPI_Request *recv_requests;
     MPI_Request *send_requests;
     MPI_Status status;
-    MPI_Status *send_statuses;
     /* Aggregators send amounts for data requested to clients */
     if (fd->hints->cb_alltoall != ADIOI_HINT_DISABLE) {
         MPI_Alltoall(client_comm_sz_arr, sizeof(ADIO_Offset), MPI_BYTE,
@@ -984,10 +1007,14 @@ static void Exch_data_amounts(ADIO_File fd, int nprocs,
         ADIOI_Free(recv_requests);
         if (fd->is_agg) {
             /* wait for all sends to complete */
-            send_statuses = ADIOI_Malloc(nprocs * sizeof(MPI_Status));
+#ifdef MPI_STATUSES_IGNORE
+            MPI_Waitall(nprocs, send_requests, MPI_STATUSES_IGNORE);
+#else
+            MPI_Status *send_statuses = ADIOI_Malloc(nprocs * sizeof(MPI_Status));
             MPI_Waitall(nprocs, send_requests, send_statuses);
-            ADIOI_Free(send_requests);
             ADIOI_Free(send_statuses);
+#endif
+            ADIOI_Free(send_requests);
         }
     }
 }

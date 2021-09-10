@@ -1,24 +1,10 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPIR_PROCESS_H_INCLUDED
 #define MPIR_PROCESS_H_INCLUDED
-
-#ifdef HAVE_HWLOC
-#include "hwloc.h"
-#endif
-
-#ifdef USE_PMIX_API
-#include "pmix.h"
-#endif
-
-#ifdef HAVE_NETLOC
-#include "netloc_util.h"
-#endif
 
 /* Per process data */
 typedef struct PreDefined_attrs {
@@ -32,8 +18,22 @@ typedef struct PreDefined_attrs {
 } PreDefined_attrs;
 
 typedef struct MPIR_Process_t {
-    OPA_int_t mpich_state;      /* State of MPICH. Use OPA_int_t to make MPI_Initialized() etc.
-                                 * thread-safe per MPI-3.1.  See MPI-Forum ticket 357 */
+    MPL_atomic_int_t mpich_state;       /* Need use atomics due to MPI_Initialized() etc.
+                                         * thread-safe per MPI-3.1.  See MPI-Forum ticket 357 */
+
+    /* Fields to be initialized by MPIR_pmi_init() */
+    int has_parent;
+    int appnum;
+    int rank;
+    int size;
+    int local_rank;
+    int local_size;
+    int num_nodes;
+    int *node_map;              /* int[size], maps rank to node_id */
+    int *node_local_map;        /* int[local_size], maps local_id to rank of local proc */
+    int *node_root_map;         /* int[num_nodes], maps node_id to the rank of node root */
+
+    /* -------------- */
     int do_error_checks;        /* runtime error check control */
     struct MPIR_Comm *comm_world;       /* Easy access to comm_world for
                                          * error handler */
@@ -42,26 +42,8 @@ typedef struct MPIR_Process_t {
     struct MPIR_Comm *icomm_world;      /* An internal version of comm_world
                                          * that is separate from user's
                                          * versions */
-    MPIR_Request *lw_req;       /* A pre-allocated, always complete request */
     PreDefined_attrs attrs;     /* Predefined attribute values */
     int tag_bits;               /* number of tag bits supported */
-
-#ifdef HAVE_HWLOC
-    hwloc_topology_t hwloc_topology;    /* HWLOC topology */
-    hwloc_cpuset_t bindset;     /* process binding */
-    int bindset_is_valid;       /* Flag to indicate if the bind set of the process is valid:
-                                 * 0 if invalid, 1 if valid */
-#endif
-
-#ifdef HAVE_NETLOC
-    netloc_topology_t netloc_topology;
-    MPIR_Netloc_network_attributes network_attr;
-#endif
-
-#ifdef USE_PMIX_API
-    pmix_proc_t pmix_proc;
-    pmix_proc_t pmix_wcproc;
-#endif
 
     /* The topology routines dimsCreate is independent of any communicator.
      * If this pointer is null, the default routine is used */

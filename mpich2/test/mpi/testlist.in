@@ -1,5 +1,3 @@
-# The next item ensures that the support routines are built first
-!util:all
 parastation
 @cudadir@
 attr
@@ -16,7 +14,7 @@ pt2pt
 @rmadir@
 @spawndir@
 topo
-#@perfdir@
+@perfdir@
 @iodir@
 @f77dir@
 @cxxdir@
@@ -25,5 +23,5 @@ topo
 @errordir@
 @threadsdir@
 @ckpointdir@
-#@ftdir@
+@ftdir@
 impls

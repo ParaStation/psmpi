@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -39,10 +38,6 @@
  * Cost = (2.floor(lgp)+2).alpha + (2.((p-1)/p) + 2).n.beta + n.(1+(p-1)/p).gamma
  */
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_Allreduce_intra_reduce_scatter_allgather
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Allreduce_intra_reduce_scatter_allgather(const void *sendbuf,
                                                   void *recvbuf,
                                                   int count,
@@ -66,7 +61,6 @@ int MPIR_Allreduce_intra_reduce_scatter_allgather(const void *sendbuf,
     MPIR_Type_get_true_extent_impl(datatype, &true_lb, &true_extent);
     MPIR_Datatype_get_extent_macro(datatype, extent);
 
-    MPIR_Ensure_Aint_fits_in_pointer(count * MPL_MAX(extent, true_extent));
     MPIR_CHKLMEM_MALLOC(tmp_buf, void *, count * (MPL_MAX(extent, true_extent)), mpi_errno,
                         "temporary buffer", MPL_MEM_BUFFER);
 
@@ -76,12 +70,11 @@ int MPIR_Allreduce_intra_reduce_scatter_allgather(const void *sendbuf,
     /* copy local data into recvbuf */
     if (sendbuf != MPI_IN_PLACE) {
         mpi_errno = MPIR_Localcopy(sendbuf, count, datatype, recvbuf, count, datatype);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     /* get nearest power-of-two less than or equal to comm_size */
-    pof2 = comm_ptr->pof2;
+    pof2 = comm_ptr->coll.pof2;
 
     rem = comm_size - pof2;
 
@@ -125,8 +118,7 @@ int MPIR_Allreduce_intra_reduce_scatter_allgather(const void *sendbuf,
              * ordering is right, it doesn't matter whether
              * the operation is commutative or not. */
             mpi_errno = MPIR_Reduce_local(tmp_buf, recvbuf, count, datatype, op);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
 
             /* change the rank */
             newrank = rank / 2;
@@ -144,7 +136,7 @@ int MPIR_Allreduce_intra_reduce_scatter_allgather(const void *sendbuf,
      * using recursive doubling in that case.) */
 
 #ifdef HAVE_ERROR_CHECKING
-    MPIR_Assert(HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN);
+    MPIR_Assert(HANDLE_IS_BUILTIN(op));
     MPIR_Assert(count >= pof2);
 #endif /* HAVE_ERROR_CHECKING */
 
@@ -214,8 +206,7 @@ int MPIR_Allreduce_intra_reduce_scatter_allgather(const void *sendbuf,
             mpi_errno = MPIR_Reduce_local(((char *) tmp_buf + disps[recv_idx] * extent),
                                           ((char *) recvbuf + disps[recv_idx] * extent),
                                           recv_cnt, datatype, op);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
 
             /* update send_idx for next iteration */
             send_idx = recv_idx;

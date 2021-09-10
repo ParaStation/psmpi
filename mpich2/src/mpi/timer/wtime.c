@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -24,8 +23,6 @@ double MPI_Wtime(void) __attribute__ ((weak, alias("PMPI_Wtime")));
 #define MPI_Wtime PMPI_Wtime
 #endif
 
-#undef FUNCNAME
-#define FUNCNAME MPI_Wtime
 
 /*@
   MPI_Wtime - Returns an elapsed time on the calling processor
@@ -47,14 +44,14 @@ double MPI_Wtime(void) __attribute__ ((weak, alias("PMPI_Wtime")));
 double MPI_Wtime(void)
 {
     double d;
-    MPID_Time_t t;
+    MPL_time_t t;
     MPIR_FUNC_TERSE_STATE_DECL(MPID_STATE_MPI_WTIME);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
     MPIR_FUNC_TERSE_ENTER(MPID_STATE_MPI_WTIME);
-    MPID_Wtime(&t);
-    MPID_Wtime_todouble(&t, &d);
+    MPL_wtime(&t);
+    MPL_wtime_todouble(&t, &d);
     MPIR_FUNC_TERSE_EXIT(MPID_STATE_MPI_WTIME);
 
     return d;

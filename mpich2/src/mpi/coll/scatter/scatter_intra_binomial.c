@@ -1,8 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpiimpl.h"
@@ -28,10 +26,6 @@
 
 
 /* not declared static because a machine-specific function may call this one in some cases */
-#undef FUNCNAME
-#define FUNCNAME MPIR_Scatter_intra_binomial
-#undef FCNAME
-#define FCNAME MPL_QUOTE(FUNCNAME)
 int MPIR_Scatter_intra_binomial(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                                 void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
                                 MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
@@ -65,13 +59,9 @@ int MPIR_Scatter_intra_binomial(const void *sendbuf, int sendcount, MPI_Datatype
          * in the event of recvbuf=MPI_IN_PLACE on the root,
          * recvcount and recvtype are not valid */
         MPIR_Datatype_get_size_macro(sendtype, sendtype_size);
-        MPIR_Ensure_Aint_fits_in_pointer(MPIR_VOID_PTR_CAST_TO_MPI_AINT sendbuf +
-                                         extent * sendcount * comm_size);
-
         nbytes = sendtype_size * sendcount;
     } else {
         MPIR_Datatype_get_size_macro(recvtype, recvtype_size);
-        MPIR_Ensure_Aint_fits_in_pointer(extent * recvcount * comm_size);
         nbytes = recvtype_size * recvcount;
     }
 
@@ -103,14 +93,12 @@ int MPIR_Scatter_intra_binomial(const void *sendbuf, int sendcount, MPI_Datatype
                                            sendcount * (comm_size - rank - 1),
                                            sendtype, (char *) tmp_buf + nbytes,
                                            nbytes * (comm_size - rank - 1), MPI_BYTE);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
 
             mpi_errno = MPIR_Localcopy(sendbuf, sendcount * rank, sendtype,
                                        ((char *) tmp_buf + nbytes * (comm_size - rank)),
                                        nbytes * rank, MPI_BYTE);
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
 
             curr_cnt = nbytes * comm_size;
         } else
@@ -204,14 +192,12 @@ int MPIR_Scatter_intra_binomial(const void *sendbuf, int sendcount, MPI_Datatype
     if ((rank == root) && (root == 0) && (recvbuf != MPI_IN_PLACE)) {
         /* for root=0, put root's data in recvbuf if not MPI_IN_PLACE */
         mpi_errno = MPIR_Localcopy(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     } else if (!(relative_rank % 2) && (recvbuf != MPI_IN_PLACE)) {
         /* for non-zero root and non-leaf nodes, copy from tmp_buf
          * into recvbuf */
         mpi_errno = MPIR_Localcopy(tmp_buf, nbytes, MPI_BYTE, recvbuf, recvcount, recvtype);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
   fn_exit:

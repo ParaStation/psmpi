@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
+ */
+
 MPIR_Copy_data(src_addr, src_count, src_datatype,
 	       dest_buff_addr, dest_count, dest_datatype)
 {
@@ -53,7 +58,7 @@ MPIR_Copy_data(src_addr, src_count, src_datatype,
 	/*
 	 *  The data arrangement at both the src and dest buffers is
 	 *  non-contiguous.  Theoretically, we should be able to manage the two
-	 *  dataloops and copy the data without an intermediate buffer.  I need
+	 *  typereps and copy the data without an intermediate buffer.  I need
 	 *  to talk to Rob/Bill about this.
 	 */
     }

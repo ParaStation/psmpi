@@ -1,9 +1,14 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
+
+# Retrieve version information from MPICH
+m4_include([mpich2/maint/version.m4])
+
 AC_INIT([psmpi],[],[hauke@par-tec.com])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CONFIG_AUX_DIR([scripts])
+AC_CONFIG_MACRO_DIR([mpich2/confdb])
 AC_CANONICAL_TARGET([])
 
 # AC_PROG_INSTALL
@@ -27,14 +32,12 @@ AC_SUBST([TOP_BUILDDIR])
 CONFIGARGS="$ac_configure_args"
 AC_SUBST([CONFIGARGS])
 
-# Try to find the version and release date
-. ${TOP_SRCDIR}/mpich2/maint/Version
-
-if test -z "$MPICH_VERSION"; then
-   AC_MSG_ERROR([MPICH_VERSION not found. Configuration aborted.])
-fi
+# Get the version and release date from MPICH
+MPICH_VERSION=MPICH_VERSION_m4
 AC_SUBST([MPICH_VERSION])
+MPICH_RELEASE_DATE="MPICH_RELEASE_DATE_m4"
 AC_SUBST([MPICH_RELEASE_DATE])
+
 # configure mpich2
 
 AC_ARG_WITH([hydra], [
@@ -108,7 +111,21 @@ AC_ARG_WITH([mpichconf], [
   --with-mpichconf[=opts]   Additional mpich configuration options
 ],[
 	MPICHCONF="$withval"
+],[
+	unset MPICHCONF
 ])
+
+# Only test fortran-related behavior, if `--enable-fortran=[no|none]` was *not*
+# given. Otherwise, fortran might be disabled completely making this check
+# obsolete.
+if ! echo ${MPICHCONF} | grep -E 'enable-fortran=no'; then
+    PAC_PROG_F77_MISMATCHED_ARGS(addarg,yes)
+    if test "X$addarg" != "X" ; then
+	AC_MSG_WARN([The Fortran compiler $F77 does not accept programs that call the same routine with arguments of different types without the option $addarg. Running configure with FFLAGS=$addarg.])
+	FFLAGS="${FFLAGS} ${addarg}"
+    fi
+fi
+
 
 
 AC_ARG_WITH([profdir], [
@@ -180,7 +197,6 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS"
 	;;
 "gcc"|\
-"gcc10"|\
 "default")
 	echo "Using confset=default"
 	CONF_OPS="--with-device=psp"
@@ -198,12 +214,6 @@ case $CONFSET in
 	   CONF_OPS="$CONF_OPS --enable-f77"
 	   CONF_OPS="$CONF_OPS --enable-fc"
 	   FC=gfortran
-	   if test "$CONFSET" = "gcc10" ; then
-	      # Workaround as mpich fails to build with gcc10 since gfortran will by default here
-	      # not compile files that call the same routine with arguments of different types:
-	      export FCFLAGS="${FCFLAGS} -fallow-argument-mismatch"
-	      export FFLAGS="${FFLAGS} -fallow-argument-mismatch"
-	   fi
 	fi
 	MODULEFILE_CONFSET=""
 	EXTRA_VERSION_INFO=" compiler: $(gcc --version|head -n 1)"
@@ -408,11 +418,15 @@ case $CONFSET in
 	CONF_OPS=
 	;;
 "ch"[[34]]*)
-	echo "Using confset=${CONFSET}"
-	if test "$CONFSET" != "ch3" ; then
-		CONF_OPS="--with-device=${CONFSET}"
-		MODULEFILE_CONFSET="mpich"
+	# Explicitly set the UCX netwomod
+	if test "x${CONFSET}" = "xch4"; then
+		CONFSET="ch4:ucx"
 	fi
+
+	echo "Using confset=${CONFSET}"
+	CONF_OPS="--with-device=${CONFSET}"
+	MODULEFILE_CONFSET="mpich"
+
 	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
 	CONF_OPS="$CONF_OPS --enable-f77"
 	CONF_OPS="$CONF_OPS --enable-fc"
@@ -433,8 +447,11 @@ case $CONFSET in
 	;;
 esac
 
-# Pass the confset to subconfigure.m4
-CONF_OPS="$CONF_OPS --with-psp-confset=$CONFSET"
+# Additional psp-specific options
+if ! echo ${CONFSET} | grep -Eq "ch[34]"; then
+	CONF_OPS="$CONF_OPS --with-psp-confset=$CONFSET"  # Make confset available to subconfigure.m4
+	CONF_OPS="$CONF_OPS --with-datatype-engine=yaksa" # 'yaksa' is the default datatype enginge
+fi
 
 test -n "$CC"  && CONF_OPS="$CONF_OPS 'CC=$CC'"
 test -n "$CXX" && CONF_OPS="$CONF_OPS 'CXX=$CXX'"
@@ -442,6 +459,7 @@ test -n "$FC"  && CONF_OPS="$CONF_OPS 'FC=$FC'"
 test -n "$F77" && CONF_OPS="$CONF_OPS 'F77=$F77'"
 test -n "$AR"  && CONF_OPS="$CONF_OPS 'AR=$AR'"
 test -n "$RANLIB" && CONF_OPS="$CONF_OPS 'RANLIB=$RANLIB'"
+test -n "$FFLAGS" && CONF_OPS="$CONF_OPS 'FFLAGS=$FFLAGS'"
 
 AC_ARG_WITH([pscom-builtin], [
   --with-pscom-builtin[=list]
@@ -509,7 +527,7 @@ AC_ARG_WITH([pscom-allin], [
 	fi
 
 	case $CONFSET in
-		"default"|"gcc"|"gcc10"|"intel"|"icc") ;;
+		"default"|"gcc"|"intel"|"icc") ;;
 		*) confset_and_allin_does_not_match="yes" ;;
 	esac
 	if test "$confset_and_allin_does_not_match" = "yes" ; then
@@ -611,22 +629,62 @@ fi
 AC_ARG_WITH([cuda], [
   --with-cuda
 			  Enable CUDA awareness within ParaStationMPI
-],[
-	if test "x${withval}" = "xyes"; then
-		CUDA_SUPPORT="true"
-		CONF_OPS="$CONF_OPS --enable-psp-cuda-awareness"
+],,[with_cuda=no])
 
-		CUDA_HOME="${CUDA_HOME-"/usr/local/cuda/"}"
-		if ! test -d "$CUDA_HOME" ; then
-			unset CUDA_HOME
-		fi
-		CONF_OPS="$CONF_OPS"
-		MPICCCONFDIR="${sysconfdir}"
-	else
-		CUDA_SUPPORT="no"
-		MPICCCONFDIR=""
-	fi
-])
+if test "x${with_cuda}" != "xno"; then
+	# Determine CUDA_HOME directory
+	AS_IF(	[test "x${with_cuda}" = "xyes"],
+		[CUDA_HOME="${CUDA_HOME-"/usr/local/cuda/"}"],
+		[CUDA_HOME="${with_cuda}"]
+	)
+
+	# Check if CUDA_HOME is a valid directory
+	AC_MSG_CHECKING([if ${CUDA_HOME} is a valid directory])
+	AS_IF(	[test -d "${CUDA_HOME}"],
+		[
+			AC_MSG_RESULT(yes)
+			have_cuda=yes
+		],
+		[
+			AC_MSG_RESULT(no)
+			have_cuda=no
+		]
+	)
+
+	# Check whether nvcc works (required for yaksa)
+	AC_MSG_CHECKING([if nvcc works])
+	cat>conftest.cu<<EOF
+    __global__ void foo(int x) {}
+EOF
+	${CUDA_HOME}/bin/nvcc -c conftest.cu 2> /dev/null
+	AS_IF(	[test "x$?" == "x0"],
+		[
+			AC_MSG_RESULT(yes)
+			have_nvcc=yes
+		],
+		[
+			AC_MSG_RESULT(no)
+			have_nvcc=no
+		]
+	)
+
+	# CUDA could be found and enabled
+	AS_IF(	[test "x${have_cuda}" = "xyes" -a "x${have_nvcc}" = "xyes"],
+		[
+			CUDA_SUPPORT="true"
+			CONF_OPS="$CONF_OPS --enable-psp-cuda-awareness --with-cuda=${CUDA_HOME}"
+			MPICCCONFDIR="${sysconfdir}"
+		],
+		[test "x${have_cuda}" = "xyes" -a "x{have_nvcc}" != "xyes"],
+		[AC_MSG_ERROR([CUDA found, but the 'nvcc' compiler is not working.])],
+		[
+			AC_MSG_ERROR([CUDA support is requested but CUDA home directory cannot be found])
+		]
+	)
+else
+	CUDA_SUPPORT="no"
+	MPICCCONFDIR=""
+fi
 
 
 if test "$PSP_THREADING" = "multiple" ; then
@@ -643,6 +701,7 @@ if test "$ENABLE_TOPOLOGY_AWARENESS" = "true" ; then
 fi
 if test "$PSCOM_ALLIN" = "true" ; then
    echo "Preparing psmpi/mpich with pscom included."
+
 fi
 if test "$CUDA_SUPPORT" = "true" ; then
    echo "Preparing psmpi/mpich with CUDA support."
@@ -707,7 +766,7 @@ if test "${CONFSET}" != "none" ; then
 
    # call original mpich configure
    # --disable-maintainer-mode prevent from refreshing autoconf generated files in the source folder.
-   eval ${TOP_SRCDIR}/mpich2/configure ${CONF_OPS} ${MPICHCONF} ${CONFIGARGS} --disable-maintainer-mode
+   eval ${TOP_SRCDIR}/mpich2/configure ${CONFIGARGS} ${CONF_OPS} ${MPICHCONF} --disable-maintainer-mode
 fi
 
 #

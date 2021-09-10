@@ -1,11 +1,14 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
-/* vim: set ft=c.mpich : */
 /*
- *  (C) 2016 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
+
 #ifndef MPL_SHM_SYSV_H_INCLUDED
 #define MPL_SHM_SYSV_H_INCLUDED
+
+#include <sys/stat.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
 typedef int MPLI_shm_lhnd_t;
 

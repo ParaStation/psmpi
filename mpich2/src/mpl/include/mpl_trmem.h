@@ -1,11 +1,18 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPL_TRMEM_H_INCLUDED
 #define MPL_TRMEM_H_INCLUDED
+
+/* Sometime we have memory allocated from external library but requires
+ * us to free. Use MPL_external_free for these cases.
+*/
+MPL_STATIC_INLINE_PREFIX void MPL_external_free(void *buf)
+{
+    free(buf);
+}
 
 #if defined MPL_NEEDS_STRDUP_DECL && !defined strdup
 extern char *strdup(const char *);
@@ -54,8 +61,6 @@ typedef struct {
     long num_allocations;       /* The total number of alloations */
 } MPL_memory_allocation_t;
 
-#ifdef MPL_USE_MEMORY_TRACING
-
 /*M
   MPL_malloc - Allocate memory
 
@@ -86,7 +91,6 @@ typedef struct {
   Module:
   Utility
   M*/
-#define MPL_malloc(a,b)    MPL_trmalloc((a),(b),__LINE__,__FILE__)
 
 /*M
   MPL_calloc - Allocate memory that is initialized to zero.
@@ -108,7 +112,6 @@ typedef struct {
   Module:
   Utility
   M*/
-#define MPL_calloc(a,b,c)    MPL_trcalloc((a),(b),(c),__LINE__,__FILE__)
 
 /*M
   MPL_free - Free memory
@@ -137,9 +140,6 @@ typedef struct {
   Module:
   Utility
   M*/
-#define MPL_free(a)      MPL_trfree(a,__LINE__,__FILE__)
-
-#define MPL_realloc(a,b,c)    MPL_trrealloc((a),(b),(c),__LINE__,__FILE__)
 
 /*M
   MPL_mmap - Map memory
@@ -175,7 +175,6 @@ typedef struct {
   Module:
   Utility
   M*/
-#define MPL_mmap(a,b,c,d,e,f,g) MPL_trmmap((a),(b),(c),(d),(e),(f),(g),__LINE__,__FILE__)
 
 /*M
   MPL_munmap - Unmapmemory
@@ -204,9 +203,7 @@ typedef struct {
   Module:
   Utility
   M*/
-#define MPL_munmap(a,b,c) MPL_trmunmap((a),(b),(c),__LINE__,__FILE__)
 
-#ifdef MPL_DEFINE_ALIGNED_ALLOC
 /*M
   MPL_aligned_alloc - Allocate aligned memory
 
@@ -232,15 +229,71 @@ typedef struct {
   Module:
   Utility
   M*/
+
+#ifdef MPL_USE_MEMORY_TRACING
+
+/* Define these as invalid C to catch their use in the code.
+ * The ::: should cause the compiler to choke; the string will give the explanation
+ */
+#define malloc(a)         'Error use MPL_malloc' :::
+#define calloc(a,b)       'Error use MPL_calloc' :::
+#define free(a)           'Error use MPL_free'   :::
+#define realloc(a)        'Error use MPL_realloc' :::
+/* These two functions can't be guarded because we use #include <sys/mman.h>
+ * throughout the code to be able to use other symbols in that header file.
+ * Because we include that header directly, we bypass this guard and cause
+ * compile problems.
+ * #define mmap(a,b,c,d,e,f) 'Error use MPL_mmap'   :::
+ * #define munmap(a,b)       'Error use MPL_munmap' :::
+ */
+#undef strdup   /* in case strdup is a macro */
+#define strdup(a)         'Error use MPL_strdup' :::
+
+#define MPL_malloc(a,b)    MPL_trmalloc((a),(b),__LINE__,__FILE__)
+#define MPL_calloc(a,b,c)    MPL_trcalloc((a),(b),(c),__LINE__,__FILE__)
+#define MPL_free(a)      MPL_trfree(a,__LINE__,__FILE__)
+#define MPL_realloc(a,b,c)    MPL_trrealloc((a),(b),(c),__LINE__,__FILE__)
+#define MPL_mmap(a,b,c,d,e,f,g) MPL_trmmap((a),(b),(c),(d),(e),(f),(g),__LINE__,__FILE__)
+#define MPL_munmap(a,b,c) MPL_trmunmap((a),(b),(c),__LINE__,__FILE__)
+
+#ifdef MPL_DEFINE_ALIGNED_ALLOC
 #define MPL_aligned_alloc(a,b,c) MPL_traligned_alloc((a),(b),(c),__LINE__,__FILE__)
 #endif /* #ifdef MPL_DEFINE_ALIGNED_ALLOC */
 
 #else /* MPL_USE_MEMORY_TRACING */
 /* No memory tracing; just use native functions */
-#define MPL_malloc(a,b)    malloc((size_t)(a))
-#define MPL_calloc(a,b,c)  calloc((size_t)(a),(size_t)(b))
+/* size_t allows for larger values than PTRDIFF_MAX.  GCC throws a
+ * warning if we pass a signed integer to MPL_malloc and friends,
+ * which when typecast to size_t becomes a very large number, saying
+ * that the max size exceeds that of PTRDIFF_MAX. */
+static inline void *MPL_malloc(size_t size, MPL_memory_class memclass)
+{
+    if (size <= PTRDIFF_MAX) {
+        return malloc(size);
+    } else {
+        return NULL;
+    }
+}
+
+static inline void *MPL_calloc(size_t nmemb, size_t size, MPL_memory_class memclass)
+{
+    if (size <= PTRDIFF_MAX) {
+        return calloc(nmemb, size);
+    } else {
+        return NULL;
+    }
+}
+
+static inline void *MPL_realloc(void *ptr, size_t size, MPL_memory_class memclass)
+{
+    if (size <= PTRDIFF_MAX) {
+        return realloc(ptr, size);
+    } else {
+        return NULL;
+    }
+}
+
 #define MPL_free(a)      free((void *)(a))
-#define MPL_realloc(a,b,c)  realloc((void *)(a),(size_t)(b))
 #define MPL_mmap(a,b,c,d,e,f,g) mmap((void *)(a),(size_t)(b),(int)(c),(int)(d),(int)(e),(off_t)(f))
 #define MPL_munmap(a,b,c)  munmap((void *)(a),(size_t)(b))
 
@@ -355,5 +408,7 @@ void *MPL_traligned_alloc(size_t alignment, size_t length, MPL_memory_class, int
 #include <stdio.h>
 void MPL_trdump(FILE *, int);
 void MPL_trcategorydump(FILE * fp);
+
+char *MPL_strdup_no_spaces(const char *str);
 
 #endif /* MPL_TRMEM_H_INCLUDED */

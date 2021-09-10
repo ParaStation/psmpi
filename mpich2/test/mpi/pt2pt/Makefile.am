@@ -1,11 +1,9 @@
-# -*- Mode: Makefile; -*-
-# vim: set ft=automake :
-#
-# (C) 2011 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
+##
+## Copyright (C) by Argonne National Laboratory
+##     See COPYRIGHT in top-level directory
+##
 
-include $(top_srcdir)/Makefile.mtest
+include $(top_srcdir)/Makefile_single.mtest
 
 EXTRA_DIST = testlist
 
@@ -31,6 +29,7 @@ noinst_PROGRAMS =  \
     bsendfrag      \
     bsendpending   \
     icsend         \
+    icprobe        \
     rqstatus       \
     rqfreeb        \
     greq1          \
@@ -56,12 +55,30 @@ noinst_PROGRAMS =  \
     huge_underflow \
     huge_anysrc    \
     huge_dupcomm   \
+    huge_ssend     \
+    multi_psend_derived  \
     dtype_send		 \
     recv_any		\
     irecv_any   \
-    large_tag
+    large_tag \
+    pingping  \
+    pingping_barrier  \
+    sendrecv1 \
+    sendself \
+    precv_anysrc \
+    precv_anysrc_exp
 
 irecv_any_CPPFLAGS = -DTEST_NB $(AM_CPPFLAGS)
 irecv_any_SOURCES  = recv_any.c
 
-include Makefile.dtp
+pingping_CPPFLAGS = $(AM_CPPFLAGS)
+pingping_SOURCES = pingping.c
+
+pingping_barrier_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_BARRIER
+pingping_barrier_SOURCES = pingping.c
+
+sendrecv1_CPPFLAGS = $(AM_CPPFLAGS)
+sendrecv1_SOURCES = sendrecv1.c
+
+sendself_CPPFLAGS = $(AM_CPPFLAGS)
+sendself_SOURCES = sendself.c

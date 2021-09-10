@@ -1,7 +1,6 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2001 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef MPIR_ASSERT_H_INCLUDED
@@ -14,15 +13,6 @@
 #if __has_extension(c_generic_selections)
 #define HAVE_C11__GENERIC 1
 #endif
-#if __has_extension(c_static_assert)
-#define HAVE_C11__STATIC_ASSERT 1
-#endif
-#endif
-
-/* GCC 4.6 added support for _Static_assert:
- * http://gcc.gnu.org/gcc-4.6/changes.html */
-#if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)) && !defined __cplusplus
-#define HAVE_C11__STATIC_ASSERT 1
 #endif
 
 /* prototypes for assertion implementation helpers */
