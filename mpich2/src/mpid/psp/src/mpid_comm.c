@@ -601,7 +601,7 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 
 		if(tl) { // This subcomm is not flat -> attach a further subcomm level: (to be handled in SMP-aware collectives)
 			assert(comm->comm_kind == MPIR_COMM_KIND__INTRACOMM);
-			mpi_errno = MPIR_Comm_dup_impl(comm, &comm->local_comm); // we "misuse" local_comm for this purpose
+			mpi_errno = MPIR_Comm_dup_impl(comm, NULL, &comm->local_comm); // we "misuse" local_comm for this purpose
 			assert(mpi_errno == MPI_SUCCESS);
 		}
 	}
