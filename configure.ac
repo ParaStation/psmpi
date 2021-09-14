@@ -684,6 +684,7 @@ EOF
 else
 	CUDA_SUPPORT="no"
 	MPICCCONFDIR=""
+	CONF_OPS="$CONF_OPS --without-cuda"
 fi
 
 
