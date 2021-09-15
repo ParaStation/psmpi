@@ -7,9 +7,9 @@
  *  to Argonne National Laboratory subject to Software Grant and Corporate
  *  Contributor License Agreement dated February 8, 2012.
  *
- *  Portions of this code were written/modified by
- *  ParTec Cluster Competence Center GmbH, Munich
- *  (C) 2016 ParTec Cluster Competence Center GmbH
+ *  Portions of this code were written/modified by ParTec AG
+ *  Copyright (C) 2016-2021 ParTec Cluster Competence Center GmbH, Munich
+ *  Copyright (C) 2021      ParTec AG, Munich
  *
  */
 

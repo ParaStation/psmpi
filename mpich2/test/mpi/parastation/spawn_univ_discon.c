@@ -6,8 +6,6 @@
  * This file may be distributed under the terms of the Q Public License
  * as defined in the file LICENSE.QPL included in the packaging of this
  * file.
- *
- * Author:	Carsten Clauss <clauss@par-tec.com>
  */
 
 #include <mpi.h>
