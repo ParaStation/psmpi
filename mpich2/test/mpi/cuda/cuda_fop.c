@@ -4,10 +4,9 @@
  *  (C) 2003 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  *
- *  Portions of this code were written/modified by
- *  ParTec Cluster Competence Center GmbH, Munich
- *  (C) 2019 ParTec Cluster Competence Center GmbH
- *
+ *  Portions of this code were written/modified by ParTec AG
+ *  Copyright (C) 2019-2021 ParTec Cluster Competence Center GmbH, Munich
+ *  Copyright (C) 2021      ParTec AG, Munich
  */
 
 #include "mpi.h"

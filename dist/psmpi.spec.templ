@@ -16,7 +16,7 @@
 %{expand:%define buildForSuSE %(if [ -e /etc/SuSE-release ]; then echo 1; else echo 0; fi)}
 
 Summary:   ParaStation MPI
-Vendor:    ParTec Cluster Competence Center GmbH, Munich, Germany
+Vendor:    ParTec AG, Munich, Germany
 Name:      psmpi%{?subname:-%{subname}}%{?threading:-mt}%{?cuda:-cuda}
 Version:   @VERSION_psmpi@
 Release:   @RELEASE_psmpi@

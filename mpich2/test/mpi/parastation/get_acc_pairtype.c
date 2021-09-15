@@ -7,9 +7,9 @@
 
 /*  Extended version of ANL's acc-pairtype test by ParTec. */
 
-/*  Portions of this code were written/modified by
- *  ParTec Cluster Competence Center GmbH, Munich
- *  (C) 2017 ParTec Cluster Competence Center GmbH
+/*  Portions of this code were written/modified by ParTec AG
+ *  Copyright (C) 2017-2021 ParTec Cluster Competence Center GmbH, Munich
+ *  Copyright (C) 2021      ParTec AG, Munich
  */
 
 #include "mpi.h"

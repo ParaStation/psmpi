@@ -4,7 +4,7 @@
 # Retrieve version information from MPICH
 m4_include([mpich2/maint/version.m4])
 
-AC_INIT([psmpi],[],[hauke@par-tec.com])
+AC_INIT([psmpi],[],[support@par-tec.com])
 AC_CONFIG_SRCDIR([configure.ac])
 
 AC_CONFIG_AUX_DIR([scripts])
