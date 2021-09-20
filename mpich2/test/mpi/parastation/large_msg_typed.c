@@ -9,139 +9,177 @@
  * file.
  */
 
+#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpi.h>
+#include "mpitest.h"
 
-#define _VERBOSE_ 0
+int factor = 2;
+#define SIZE (factor * 1024 * 1024 * (1024 / sizeof(int)) + factor)
+#define FACTOR (factor % 2 == 0 ? factor / 2 : factor)
 
-const int DIM = 16 * 1024;
-
-int main (int argc, char **argv)
+int main(int argc, char** argv)
 {
-	int errs;
-	int rank, size;
-
-	MPI_Win win;
-	MPI_Datatype mpi_array;
+	unsigned errs = 0;
+	int rank, nprocs;
 
 	size_t i;
-	double *a;
-	int x = DIM;
-	int f = 1;
+	int *buffer;
 
-	MPI_Init (&argc, &argv);
+	MPI_Win win;
+	MPI_Request request;
+	MPI_Datatype contig_type;
+	MPI_Aint lb, extent;
 
-	MPI_Comm_size (MPI_COMM_WORLD, &size);
-	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+	MTest_Init(&argc, &argv);
 
-	if(size != 2) {
-		fprintf(stderr, "error: %s must be started with %d MPI ranks\n", argv[0], size);
-		MPI_Finalize();
-		return 0;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+
+	if (argc > 1) {
+		factor = atoi(argv[1]);
 	}
 
-	if(argc > 1) {
-		f = atoi(argv[1]);
-	}
-
-	MPI_Type_contiguous (f * DIM * DIM + x, MPI_DOUBLE, &mpi_array);
-	MPI_Type_commit (&mpi_array);
-
-	a = (double *)malloc((f * DIM * DIM + x) * sizeof (double));
-
-	if(!a) {
-		fprintf(stderr, "error: could not allocate %d bytes of memory \n", (f * DIM * DIM + x) * sizeof (double));
+	if (factor < 0) {
+		fprintf(stderr, "ERROR: A valid factor parameter must be positive! (factor is %d)\n", factor);
 		MPI_Abort(MPI_COMM_WORLD, -1);
 	}
 
-	if (rank == 0) {
-		for (i = 0; i < f * DIM * DIM + x; i++) {
-			a[i] = (double)i;
-		}
+	buffer = malloc(SIZE * sizeof(int));
+
+	if (!buffer) {
+		fprintf(stderr, "ERROR: Could not allocate %ld bytes of memory!\n", SIZE * sizeof(int));
+		MPI_Abort(MPI_COMM_WORLD, -1);
 	}
 
-	if(rank == 0) {
+	MPI_Win_create(buffer, SIZE * sizeof(int), sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
 
-		if(_VERBOSE_) printf("Sending >%ld MB\n", ((f * DIM * DIM + x ) * sizeof (double)) / (1024*1024)) ;
+	// Create a large datatype (of ~1 GiB +x or, if factor is divisible by 2, of ~2 GiB +x):
+	MPI_Type_contiguous(factor % 2 == 0 ? 2 * SIZE / factor : SIZE / factor, MPI_INT, &contig_type);
+	MPI_Type_commit(&contig_type);
+	MPI_Type_get_extent(contig_type, &lb, &extent);
 
-		MPI_Send (a, 1, mpi_array, 1, 99, MPI_COMM_WORLD);
-
-	} else {
-
-		MPI_Recv (a, 1, mpi_array, 0, 99, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-		for (i = 0; i < f * DIM * DIM + x; i++) {
-			if (a[i] != (double)i) {
-				if(!errs) fprintf (stderr, "MPI_Recv: detected error at position %lld: %f vs. %f\n", (long long int)i, a[i], (double)i);
-				errs++;
-			}
-			a[i] = 0.0;
-		}
-	}
+#if 1   // Checking MPI_Send/Irecv for large messages:
 
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	MPI_Win_create(a, rank == 0 ? (f * DIM * DIM + x) * sizeof(double) : 0, sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
+	if (rank == 0) MTestPrintfMsg(1, "*** Checking MPI_Send/Irecv for messages > ~%d MB with a datatype of > ~%ld MB\n", (SIZE * sizeof(int)) / (1024*1024), extent / (1024*1024));
+
+	if (rank == 0) {
+		for (i = 0; i < SIZE; i++) buffer[i] = 42;
+	} else {
+		for (i = 0; i < SIZE; i++) buffer[i] = 0;
+	}
+
+	MPI_Irecv(buffer, FACTOR, contig_type, 0, rank, MPI_COMM_WORLD, &request);
+	if (rank == 0) {
+		for (i = 0; i < nprocs; i++)
+			MPI_Send(buffer, FACTOR, contig_type, i, i, MPI_COMM_WORLD);
+	}
+	MPI_Wait(&request, MPI_STATUS_IGNORE);
+
+	for (i = 0; i < SIZE; i++) {
+		if (buffer[i] != 42) {
+			if (errs < 10) fprintf(stderr, "(%d) MPI_Irecv: Error at position %zu: %d vs. %d\n", rank, i, buffer[i], 42);
+			errs++;
+		}
+	}
+#endif
+
+#if 1   // Checking MPI_Get for large messages:
+
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	if (rank == 0) MTestPrintfMsg(1, "*** Checking MPI_Get for messages > ~%d MB with a datatype of > ~%ld MB\n", (SIZE * sizeof(int)) / (1024*1024), extent / (1024*1024));
+
+	if (rank == 0) {
+		for (i = 0; i < SIZE; i++) buffer[i] = 19;
+	} else {
+		for (i = 0; i < SIZE; i++) buffer[i] = 0;
+	}
+
 	MPI_Win_fence(0, win);
 
-	if(rank == 1) {
-
-		if(_VERBOSE_) printf("Getting >%ld MB\n", ((f * DIM * DIM + x ) * sizeof (double)) / (1024*1024));
-
-		MPI_Get(a, 1, mpi_array, 0, 0, 1, mpi_array, win);
-		MPI_Win_fence(0, win);
-
-		for (i = 0; i < f * DIM * DIM + x; i++) {
-			if (a[i] != (double)i) {
-				if(!errs) fprintf (stderr, "MPI_Get: detected error at position %lld: %f vs. %f\n", (long long int)i, a[i], (double)i);
-				errs++;
-			}
-			a[i] = 1.0;
-		}
-	} else {
-		MPI_Win_fence(0, win);
+	if (rank > 0) {
+		MPI_Get(buffer, FACTOR, contig_type, 0, 0, FACTOR, contig_type, win);
 	}
+
+	MPI_Win_fence(0, win);
+
+	for (i = 0; i < SIZE; i++) {
+		if (buffer[i] != 19) {
+			if (errs < 10) fprintf(stderr ,"(%d) MPI_Get: Error at position %zu: %d vs. %d\n", rank, i, buffer[i], 19);
+			errs++;
+		}
+	}
+#endif
+
+#if 1   // Checking MPI_Put for large messages:
 
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	if(rank == 1) {
+	if (rank == 0) MTestPrintfMsg(1, "*** Checking MPI_Put for messages > ~%d MB with a datatype of > ~%ld MB\n", (SIZE * sizeof(int)) / (1024*1024), extent / (1024*1024));
 
-		if(_VERBOSE_) printf("Accumulating >%ld MB\n", ((f * DIM * DIM + x ) * sizeof (double)) / (1024*1024));
-
-		MPI_Accumulate(a, 1, mpi_array, 0, 0, 1, mpi_array, MPI_SUM, win);
-		MPI_Win_fence(0, win);
-
+	if (rank == 0) {
+		for (i = 0; i < SIZE; i++) buffer[i] = 23;
 	} else {
-		MPI_Win_fence(0, win);
+		for (i = 0; i < SIZE; i++) buffer[i] = 0;
+	}
 
-		for (i = 0; i < f * DIM * DIM + x; i++) {
-			if (a[i] != ((double)i + 1.0)) {
-				if(!errs) fprintf (stderr, "MPI_Accumulate: detected error at position %lld: %f vs. %f\n", (long long int)i, a[i], ((double)i + 1.0));
+	MPI_Win_fence(0, win);
+
+	if (rank == 0) {
+		for (i = 1; i < nprocs; i++) {
+			MPI_Put(buffer, FACTOR, contig_type, i, 0, FACTOR, contig_type, win);
+		}
+	}
+
+	MPI_Win_fence(0, win);
+
+	for (i = 0; i < SIZE; i++) {
+		if (buffer[i] != 23) {
+			if (errs < 10) fprintf(stderr, "(%d) MPI_Put: Error at position %zu: %d vs. %d\n", rank, i, buffer[i], 23);
+			errs++;
+		}
+	}
+#endif
+
+#if 1   // Checking MPI_Accumulate for large messages:
+
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	if (rank == 0) MTestPrintfMsg(1, "*** Checking MPI_Accumulate for messages > ~%d MB with a datatype of > ~%ld MB\n", (SIZE * sizeof(int)) / (1024*1024), extent / (1024*1024));
+
+	if (rank == 0) {
+		for (i = 0; i < SIZE; i++) buffer[i] = 0;
+	} else {
+		for (i = 0; i < SIZE; i++) buffer[i] = 1;
+	}
+
+	MPI_Win_fence(0, win);
+
+	if (rank > 0) {
+		MPI_Accumulate(buffer, FACTOR, contig_type, 0, 0, FACTOR, contig_type, MPI_SUM, win);
+	}
+
+	MPI_Win_fence(0, win);
+
+	if (rank == 0) {
+		for (i = 0; i < SIZE; i++) {
+			if (buffer[i] != nprocs - 1) {
+				if (errs < 10) fprintf(stderr, "(%d) MPI_Accumulate: Error at position %zu: %d vs. %d\n", rank, i, buffer[i], nprocs - 1);
 				errs++;
 			}
 		}
 	}
-
+#endif
 	MPI_Barrier(MPI_COMM_WORLD);
-
-	MPI_Reduce((rank == 0 ? MPI_IN_PLACE : &errs), &errs, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-
-	if(rank == 0) {
-		if(!errs) {
-			printf(" No Errors\n");
-		} else {
-			printf(" Found %d mismatches\n", errs);
-		}
-	}
-
-	free (a);
 
 	MPI_Win_free(&win);
+	MPI_Type_free(&contig_type);
+	free(buffer);
 
-	MPI_Type_free(&mpi_array);
+	MTest_Finalize(errs);
 
-	MPI_Finalize ();
-
-	return 0;
+	return MTestReturnValue(errs);
 }
