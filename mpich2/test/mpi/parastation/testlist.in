@@ -37,6 +37,17 @@ large_msg_coll_bcast 2 timeLimit=60 env=MPIR_CVAR_BCAST_INTRA_ALGORITHM=scatter_
 large_msg_coll_ibcast 2 timeLimit=60 env=MPIR_CVAR_IBCAST_INTRA_ALGORITHM=sched_binomial
 large_msg_coll_ibcast 2 timeLimit=60 env=MPIR_CVAR_IBCAST_INTRA_ALGORITHM=sched_scatter_ring_allgather
 large_msg_coll_ibcast 2 timeLimit=60 env=MPIR_CVAR_IBCAST_INTRA_ALGORITHM=sched_scatter_recursive_doubling_allgather
+large_msg_coll_allred 2 timeLimit=120 env=MPIR_CVAR_ALLREDUCE_INTRA_ALGORITHM=recursive_doubling
+large_msg_coll_allred 2 timeLimit=120 env=MPIR_CVAR_ALLREDUCE_INTRA_ALGORITHM=reduce_scatter_allgather
+large_msg_coll_iallred 2 timeLimit=120 env=MPIR_CVAR_IALLREDUCE_INTRA_ALGORITHM=sched_recursive_doubling
+large_msg_coll_iallred 2 timeLimit=120 env=MPIR_CVAR_IALLREDUCE_INTRA_ALGORITHM=sched_reduce_scatter_allgather
+# 'auto' will select 'reduce_scatter_gather' for large messages:
+large_msg_coll_reduce 2 timeLimit=90 env=MPIR_CVAR_REDUCE_INTRA_ALGORITHM=auto
+# ...whereas the next one would fail for very small messages -- and which is hence disabled here:
+# large_msg_coll_reduce 2 timeLimit=90 env=MPIR_CVAR_REDUCE_INTRA_ALGORITHM=reduce_scatter_gather
+large_msg_coll_reduce 2 timeLimit=90 env=MPIR_CVAR_REDUCE_INTRA_ALGORITHM=binomial
+large_msg_coll_ireduce 2 timeLimit=90 env=MPIR_CVAR_IREDUCE_INTRA_ALGORITHM=sched_binomial
+large_msg_coll_ireduce 2 timeLimit=90 env=MPIR_CVAR_IREDUCE_INTRA_ALGORITHM=sched_reduce_scatter_gather
 num_contexts_2k 1
 num_contexts_4k 1
 num_contexts_8k 1

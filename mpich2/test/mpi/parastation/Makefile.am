@@ -49,6 +49,10 @@ noinst_PROGRAMS =               \
 	large_msg_builtin       \
 	large_msg_coll_bcast    \
 	large_msg_coll_ibcast   \
+	large_msg_coll_allred   \
+	large_msg_coll_iallred  \
+	large_msg_coll_reduce   \
+	large_msg_coll_ireduce  \
 	intercomm_anysrc        \
 	intercomm_stress        \
 	large_acc_flush_local   \
