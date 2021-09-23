@@ -31,6 +31,7 @@ large_msg_typed 2  timeLimit=60
 large_msg_builtin 2  timeLimit=60
 @largetest@large_msg_typed 2 arg=8 timeLimit=300
 @largetest@large_msg_builtin 2 arg=7 timeLimit=300
+@largetest@large_msg_noncontig 2  timeLimit=300
 large_msg_coll_bcast 2 timeLimit=60 env=MPIR_CVAR_BCAST_INTRA_ALGORITHM=binomial
 large_msg_coll_bcast 2 timeLimit=60 env=MPIR_CVAR_BCAST_INTRA_ALGORITHM=scatter_ring_allgather
 large_msg_coll_bcast 2 timeLimit=60 env=MPIR_CVAR_BCAST_INTRA_ALGORITHM=scatter_recursive_doubling_allgather

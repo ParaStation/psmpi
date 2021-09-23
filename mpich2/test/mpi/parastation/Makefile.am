@@ -47,6 +47,7 @@ noinst_PROGRAMS =               \
 	num_contexts_16k        \
 	large_msg_typed         \
 	large_msg_builtin       \
+	large_msg_noncontig     \
 	large_msg_coll_bcast    \
 	large_msg_coll_ibcast   \
 	large_msg_coll_allred   \
