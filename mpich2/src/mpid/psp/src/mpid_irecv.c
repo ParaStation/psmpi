@@ -289,7 +289,7 @@ void prepare_probereq(MPIR_Request *req, int tag, MPIR_Comm * comm, int context_
 
 
 static
-void prepare_data(MPIR_Request *req, void * buf, int count, MPI_Datatype datatype)
+void prepare_data(MPIR_Request *req, void * buf, MPI_Aint count, MPI_Datatype datatype)
 {
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 	pscom_request_t *preq = rreq->common.pscom_req;
@@ -310,7 +310,7 @@ err_alloc_tmpbuf: /* ToDo: */
 
 
 static
-void prepare_cleanup(MPIR_Request *req, void * buf, int count, MPI_Datatype datatype)
+void prepare_cleanup(MPIR_Request *req, void * buf, MPI_Aint count, MPI_Datatype datatype)
 {
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 	pscom_request_t *preq = rreq->common.pscom_req;

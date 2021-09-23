@@ -36,7 +36,7 @@ int MPID_PSP_packed_msg_allocate(size_t data_sz, MPID_PSP_packed_msg_t *msg)
 /* May return MPI_ERR_NO_MEM.
    cleanup with packed_msg_cleanup */
 static inline
-int MPID_PSP_packed_msg_prepare(const void *addr, int count, MPI_Datatype datatype,
+int MPID_PSP_packed_msg_prepare(const void *addr, MPI_Aint count, MPI_Datatype datatype,
 				MPID_PSP_packed_msg_t *msg)
 {
 	int	contig;
@@ -104,7 +104,7 @@ int MPID_PSP_packed_msg_need_unpack(const MPID_PSP_packed_msg_t *msg)
  * prepare msg with packed_msg_prepare()
  */
 static inline
-int MPID_PSP_packed_msg_unpack(void *addr, int count, MPI_Datatype datatype,
+int MPID_PSP_packed_msg_unpack(void *addr, MPI_Aint count, MPI_Datatype datatype,
                                const MPID_PSP_packed_msg_t *msg, size_t data_len)
 {
 	int res = MPI_SUCCESS;
