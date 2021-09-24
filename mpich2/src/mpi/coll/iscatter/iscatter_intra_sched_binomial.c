@@ -10,7 +10,7 @@ struct shared_state {
     int sendcount;
     MPI_Aint curr_count;
     MPI_Aint send_subtree_count;
-    int nbytes;
+    MPI_Aint nbytes;
     MPI_Status status;
 };
 static int get_count(MPIR_Comm * comm, int tag, void *state)
@@ -69,10 +69,12 @@ int MPIR_Iscatter_intra_sched_binomial(const void *sendbuf, int sendcount, MPI_D
 {
     int mpi_errno = MPI_SUCCESS;
     MPI_Aint extent = 0;
-    int rank, comm_size, sendtype_size;
+    int rank, comm_size;
+    MPI_Aint sendtype_size;
     int relative_rank;
-    int mask, recvtype_size = 0, src, dst;
-    int tmp_buf_size = 0;
+    int mask, src, dst;
+    MPI_Aint recvtype_size = 0;
+    MPI_Aint tmp_buf_size = 0;
     void *tmp_buf = NULL;
     struct shared_state *ss = NULL;
     MPIR_SCHED_CHKPMEM_DECL(4);

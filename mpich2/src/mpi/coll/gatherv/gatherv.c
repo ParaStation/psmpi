@@ -319,7 +319,7 @@ int MPI_Gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                     /* catch common aliasing cases */
                     if (sendbuf != MPI_IN_PLACE && sendtype == recvtype &&
                         recvcounts[comm_ptr->rank] != 0 && sendcount != 0) {
-                        int recvtype_size;
+                        MPI_Aint recvtype_size;
                         MPIR_Datatype_get_size_macro(recvtype, recvtype_size);
                         MPIR_ERRTEST_ALIAS_COLL(sendbuf,
                                                 (char *) recvbuf +

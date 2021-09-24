@@ -319,7 +319,7 @@ int MPI_Scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                     /* catch common aliasing cases */
                     if (recvbuf != MPI_IN_PLACE && sendtype == recvtype && sendcount == recvcount &&
                         recvcount != 0) {
-                        int sendtype_size;
+                        MPI_Aint sendtype_size;
                         MPIR_Datatype_get_size_macro(sendtype, sendtype_size);
                         MPIR_ERRTEST_ALIAS_COLL(recvbuf,
                                                 (char *) sendbuf +

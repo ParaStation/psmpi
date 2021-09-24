@@ -35,7 +35,8 @@ int MPIR_Igather_intra_sched_binomial(const void *sendbuf, int sendcount, MPI_Da
     int mask, src, dst, relative_src;
     MPI_Aint recvtype_size, sendtype_size, curr_cnt = 0, nbytes;
     int recvblks;
-    int tmp_buf_size, missing;
+    MPI_Aint tmp_buf_size;
+    int missing;
     void *tmp_buf = NULL;
     int blocks[2];
     int displs[2];

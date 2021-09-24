@@ -86,14 +86,6 @@ int MPI_Iscatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void
 #undef MPI_Iscatter
 #define MPI_Iscatter PMPI_Iscatter
 
-/* helper callbacks and associated state structures */
-struct shared_state {
-    int sendcount;
-    int curr_count;
-    MPI_Aint send_subtree_count;
-    int nbytes;
-    MPI_Status status;
-};
 
 /* any non-MPI functions go here, especially non-static ones */
 
@@ -415,7 +407,7 @@ int MPI_Iscatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                     /* catch common aliasing cases */
                     if (recvbuf != MPI_IN_PLACE && sendtype == recvtype && sendcount == recvcount &&
                         recvcount != 0) {
-                        int sendtype_size;
+                        MPI_Aint sendtype_size;
                         MPIR_Datatype_get_size_macro(sendtype, sendtype_size);
                         MPIR_ERRTEST_ALIAS_COLL(recvbuf,
                                                 (char *) sendbuf +
