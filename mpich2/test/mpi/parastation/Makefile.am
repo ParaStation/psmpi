@@ -54,6 +54,10 @@ noinst_PROGRAMS =               \
 	large_msg_coll_iallred  \
 	large_msg_coll_reduce   \
 	large_msg_coll_ireduce  \
+	large_msg_coll_scatter  \
+	large_msg_coll_iscatter \
+	large_msg_coll_gather   \
+	large_msg_coll_igather  \
 	intercomm_anysrc        \
 	intercomm_stress        \
 	large_acc_flush_local   \
