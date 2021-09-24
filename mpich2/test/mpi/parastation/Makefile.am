@@ -58,6 +58,8 @@ noinst_PROGRAMS =               \
 	large_msg_coll_iscatter \
 	large_msg_coll_gather   \
 	large_msg_coll_igather  \
+	large_msg_coll_allgather  \
+	large_msg_coll_iallgather \
 	intercomm_anysrc        \
 	intercomm_stress        \
 	large_acc_flush_local   \
