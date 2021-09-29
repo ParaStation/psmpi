@@ -52,6 +52,9 @@ Get a version string from the last tag of the version control.
 
   --isrelease         test, if version number matches "x.y-r" or "x.y.z-r" with xyzr digits only.
 
+  --suffix            add a custom suffix to the version string instead of the
+                      branch name (only works with git)
+
   -v|--verbose        verbose
   -h, --help          help
 EOF
@@ -94,6 +97,7 @@ function parse_arg() {
 	    --fmt)		arg_fmt="$2";shift;;
 	    -n|--no-newline)	arg_newline="-n";;
 	    --isrelease)	arg_isrelease="1"; arg_fmt="none";;
+	    --suffix)		arg_suffix="$2";shift;;
 	    --no-dirty)		arg_dirty="";;
 	    --help|-h)		usage;;
 	    --verbose|-v)	arg_verbose=1;;
@@ -135,12 +139,21 @@ case "$arg_vc" in
 	version_prefix="${version/\/*}"
 	version="${version#*\/}" # Remove prefix e.g. "sf/"
 	if ! git describe --tags --exact-match --always --match "?*-?*" >/dev/null 2>&1; then
-	    # Append the branchname, if not exactly on a tag and branch != master
-	    branch="$(git symbolic-ref HEAD)"
-	    branch="${branch/*\/}"
-	    if [ "$branch" != "master" ]; then
-		version="$version-$branch"
+	    if [ -z "${arg_suffix+x}" ]; then
+		# Append the branchname, if not exactly on a tag and branch != master
+		branch="$(git symbolic-ref HEAD)"
+		branch="${branch/*\/}"
+		if [ "x${branch}" == "xmaster" ]; then
+			branch=""
+		else
+			branch="-${branch}"
+		fi
+	    elif [ -z "${arg_suffix}" ]; then
+		branch=""
+	    else
+		branch="-${arg_suffix}"
 	    fi
+	    version="$version$branch"
 	fi
 	;;
     svn)
