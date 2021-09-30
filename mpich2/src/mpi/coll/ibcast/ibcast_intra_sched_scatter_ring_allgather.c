@@ -29,7 +29,8 @@ int MPIR_Ibcast_intra_sched_scatter_ring_allgather(void *buffer, int count, MPI_
 {
     int mpi_errno = MPI_SUCCESS;
     int comm_size, rank;
-    int is_contig, type_size;
+    int is_contig;
+    MPI_Aint type_size;
     MPI_Aint nbytes;
     MPI_Aint scatter_size, curr_size;
     int i, j, jnext, left, right;

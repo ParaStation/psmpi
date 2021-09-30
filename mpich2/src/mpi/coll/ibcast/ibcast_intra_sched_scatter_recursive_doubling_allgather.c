@@ -55,7 +55,8 @@ int MPIR_Ibcast_intra_sched_scatter_recursive_doubling_allgather(void *buffer, i
     int rank, comm_size, dst;
     int relative_rank, mask;
     MPI_Aint scatter_size, nbytes, curr_size, incoming_count;
-    int type_size, j, k, i, tmp_mask, is_contig;
+    MPI_Aint type_size;
+    int j, k, i, tmp_mask, is_contig;
     int relative_dst, dst_tree_root, my_tree_root;
     MPI_Aint send_offset, recv_offset, offset;
     int tree_root, nprocs_completed;
