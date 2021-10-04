@@ -222,7 +222,8 @@ int MPIR_Ialltoall_intra_sched_auto(const void *sendbuf, int sendcount, MPI_Data
                                     MPIR_Comm * comm_ptr, MPIR_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
-    int nbytes, comm_size, sendtype_size;
+    MPI_Aint nbytes, sendtype_size;
+    int comm_size;
 
     comm_size = comm_ptr->local_size;
 
