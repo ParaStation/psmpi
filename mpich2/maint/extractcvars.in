@@ -330,6 +330,9 @@ foreach my $p (@cvars) {
     push @env_names, "${dep_ns}_" . $p->{name};
     push @env_names, "${alt_ns}_" . $p->{name};
     push @env_names, "${uc_ns}_" . $p->{name};
+    if (exists $p->{'alias'}) {
+        push @env_names, $p->{'alias'};
+    }
 
     foreach my $env_name (@env_names) {
         # assumes rc is defined
@@ -465,6 +468,9 @@ foreach my $p (@cvars) {
     push @env_names, map { "${uc_ns}_$_" } @{$p->{'alt-env'}};
     push @env_names, map { "${alt_ns}_$_" } @{$p->{'alt-env'}};
     push @env_names, map { "${dep_ns}_$_" } @{$p->{'alt-env'}};
+    if (exists $p->{'alias'}) {
+        push @env_names, $p->{'alias'};
+    }
 
     print OUTPUT_README "${uc_ns}_$p->{name}\n";
 
