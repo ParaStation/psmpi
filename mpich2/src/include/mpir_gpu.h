@@ -19,10 +19,11 @@ cvars:
     - name        : MPIR_CVAR_ENABLE_GPU
       category    : GPU
       type        : int
-      default     : 1
+      default     : 0
       class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
+      alias       : PSP_CUDA
       description : >-
         Control MPICH GPU support. If set to 0, all GPU support is disabled
         and we do not query the buffer type internally because we assume
