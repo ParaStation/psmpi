@@ -92,6 +92,11 @@ void mpid_debug_init(void)
 #ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
 				"+cuda"
 #endif
+#ifdef USE_PMI1_API
+				"+pmi"
+#elif defined USE_PMIX_API
+				"+pmix"
+#endif
 #ifdef PSCOM_ALLIN
 				"+allin"
 #endif
