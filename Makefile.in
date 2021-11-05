@@ -43,14 +43,20 @@ MPIEXEC=$(DESTDIR)$(prefix)/bin/mpiexec.hydra
 endif
 
 TESTSUMMARY := mpich2/test/mpi/summary
-TESTSETS    := testlist ps-test-minimal
-TESTSET     ?= testlist
+TESTSETS    := testlist testlist.dtp testlist.cvar testlist.gpu ps-test-minimal
 ifdef TESTDIR
 TESTDIR_    := $(TESTDIR)_
-TESTDIRS    := $(shell cd $(SRCDIR)/mpich2/test/mpi && find . -maxdepth 2 -mindepth 2 -type f -name "testlist" -o -name "testlist.in" | cut -d"/" -f2)
-TESTTARGET  := testdir
+TESTFOLDERS := $(shell cd $(SRCDIR)/mpich2/test/mpi && find . -maxdepth 2 -mindepth 2 -type f -name "testlist*" | cut -d"/" -f2)
+TESTDIRLIST := "TESTDIRS=$(TESTDIR)"
 else
-TESTTARGET  := testset
+TESTDIRLIST :=
+endif
+ifdef TESTSET
+TESTSET_    := $(TESTSET)_
+TESTSETLIST := "TESTLIST=$(TESTSET)"
+else
+TESTSET     := testlist
+TESTSETLIST :=
 endif
 
 test testing:
@@ -60,11 +66,11 @@ ifeq ($(filter $(TESTSET),$(TESTSETS)),)
 	@echo "The following testsets are available:"
 	@$(foreach set,$(TESTSETS), echo "* " $(set) ;)
 else
-ifneq ($(filter $(TESTDIR),$(TESTDIRS)),$(TESTDIR))
+ifneq ($(filter $(TESTDIR),$(TESTFOLDERS)),$(TESTDIR))
 	@echo "ERROR: The test directory '$(TESTDIR)' does not exist!"
 	@echo "Please provide a valid test directory to be used."
 	@echo "The following test directories are available:"
-	@$(foreach dir,$(TESTDIRS), echo "* " $(dir) ;)
+	@$(foreach dir,$(TESTFOLDERS), echo "* " $(dir) ;)
 else
 	export TESTSET=$(TESTSET); \
 	export MPIEXEC=$(MPIEXEC); \
@@ -72,11 +78,11 @@ else
 	export PSI_LOG_SILENT=1; \
 	export PSP_SCHED_YIELD=1; \
 	export MPIEXEC_UNIVERSE_SIZE=100; \
-	export _LOGNAME=$(SRCDIR)/doc/test-$$($(SRCDIR)/scripts/vcversion -r $(SRCDIR))-$(TESTDIR_)$(TESTSET)_$$(date +%F_%T); \
+	export _LOGNAME=$(SRCDIR)/doc/test-$$($(SRCDIR)/scripts/vcversion -r $(SRCDIR))-$(TESTDIR_)$(TESTSET_)$$(date +%F_%T); \
 	( cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) $(CUDA_TESTS)); \
 	( hostname; rpm -qi pscom; rpm -qi psmgmt; $(SRCDIR)/scripts/vcversion -r $(SRCDIR); \
 	  echo $(MPIEXEC); \
-	  $(MAKE) -C mpich2/test/mpi $(TESTTARGET); \
+	  $(MAKE) -C mpich2/test/mpi testing $(TESTSETLIST) $(TESTDIRLIST); \
 	  cp $(TESTSUMMARY).xml $${_LOGNAME}.xml; \
 	  cp $(TESTSUMMARY).tap $${_LOGNAME}.tap; \
 	  $(SRCDIR)/scripts/test-summary.sh $${_LOGNAME}.xml; \

@@ -46,19 +46,4 @@ testing:
 		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
 		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
 
-testset:
-	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=$(TESTSET) \
-		-mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
-		-tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
-
-testdir:
-	echo "${TESTDIR}" > "dirset.${TESTDIR}"
-	( test -f "${top_srcdir}/${TESTDIR}/${TESTSET}" && \
-		ln -sf "${top_srcdir}/${TESTDIR}/${TESTSET}" "$(top_builddir)/${TESTDIR}/dirset.${TESTDIR}" || \
-		ln -sf "./${TESTSET}" "$(top_builddir)/${TESTDIR}/dirset.${TESTDIR}" \
-	)
-	$(top_builddir)/runtests -srcdir=$(srcdir) -tests="dirset.${TESTDIR}"\
-                -mpiexec="${MPIEXEC}" -xmlfile=$(SUMMARY_BASENAME).xml \
-                -tapfile=$(SUMMARY_BASENAME).tap -junitfile=$(SUMMARY_BASENAME).junit.xml
-
-CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml dirset.*
+CLEANFILES = $(SUMMARY_BASENAME).xml $(SUMMARY_BASENAME).tap $(SUMMARY_BASENAME).junit.xml
