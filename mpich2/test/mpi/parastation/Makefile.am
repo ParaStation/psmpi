@@ -40,6 +40,9 @@ noinst_PROGRAMS =               \
 	spawn_univ_split        \
 	spawn_univ_comm         \
 	spawn_univ_anysrc       \
+	spawn_univ_anysrc_order \
+	spawn_univ_anysrc_order_mixed_comms \
+	spawn_univ_anysrc_cancel\
 	spawn_univ_discon       \
 	num_contexts_2k         \
 	num_contexts_4k         \
