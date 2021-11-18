@@ -968,27 +968,18 @@ sub AddMPIProgram {
     }
 
 
+    $progEnv =~ s/"env="/""/g;
     print STDOUT "Env includes $progEnv\n" if $verbose;
     print STDOUT "$mpiexec $np_arg $np $extraArgs $program_wrapper ./$programname $progArgs\n" if $verbose;
     print STDOUT "." if $showProgress;
-    # Save and restore the environment if necessary before running mpiexec.
-    if ($progEnv ne "") {
-        # Need to fix: 
-        # save_NAME_is_set=is old name set
-        # save_NAME=oldValue
-        # export NAME=newvalue
-        # (run) 
-        # export NAME=oldValue (if set!)
-        print STDERR "Batch output does not permit changes to environment\n";
-    }
     # The approach here is to move the test codes to a single directory from
     # which they can be run; this avoids complex code to change directories
     # and ensure that the output goes "into the right place".
     $testCount++;
     rename $programname, "$batrundir/$programname";
-    print BATOUT "echo \"# $mpiexec $np_arg $np $extraArgs $mpiexecArgs $program_wrapper $curdir/$programname $progArgs\" > runtests.$testCount.out\n";
+    print BATOUT "echo \"# $mpiexec $np_arg $np $extraArgs $mpiexecArgs env $progEnv $program_wrapper $curdir/$programname $progArgs\" > runtests.$testCount.out\n";
     # Some programs expect to run in the same directory as the executable
-    print BATOUT "$mpiexec $np_arg $np $extraArgs $mpiexecArgs $program_wrapper ./$programname $progArgs >> runtests.$testCount.out 2>&1\n";
+    print BATOUT "$mpiexec $np_arg $np $extraArgs $mpiexecArgs env $progEnv $program_wrapper ./$programname $progArgs >> runtests.$testCount.out 2>&1\n";
     print BATOUT "echo \$? > runtests.$testCount.status\n";
 }
 

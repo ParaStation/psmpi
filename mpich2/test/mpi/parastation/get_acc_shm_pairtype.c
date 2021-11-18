@@ -15,6 +15,7 @@
 #include "mpi.h"
 #include <stdio.h>
 #include <assert.h>
+#include "mpitest.h"
 
 #define DATA_SIZE 25
 
@@ -41,12 +42,15 @@ int main(int argc, char *argv[])
     int comm_shmem_rank;
     int comm_shmem_size;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
 
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
     MPI_Comm_rank(MPI_COMM_WORLD, &wrank);
 
-    assert(nproc == 2);
+    if (nproc != 2) {
+	printf("This program needs exactly np = 2 processes! Calling MPI_Abort()...\n");
+	MPI_Abort(MPI_COMM_WORLD, 1);
+    }
 
     MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &comm_shmem);
 
@@ -185,17 +189,13 @@ int main(int argc, char *argv[])
 
     MPI_Win_free(&win);
 
-    MPI_Comm_free(&comm_shmem);
-
     MPI_Free_mem(orig_buf);
     MPI_Free_mem(res_buf);
 
 exit:
-    if (wrank == 0) {
-        if (errors == 0)
-            printf(" No Errors\n");
-    }
+    MPI_Comm_free(&comm_shmem);
 
-    MPI_Finalize();
-    return 0;
+    MTest_Finalize(errors);
+
+    return MTestReturnValue(errors);
 }
