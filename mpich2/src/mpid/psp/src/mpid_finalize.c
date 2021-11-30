@@ -33,11 +33,37 @@ void sig_finalize_timeout(int signo)
 int MPID_Finalize(void)
 {
 	MPIDI_PG_t *pg_ptr;
+	int env_finalize_barrier;
+	int env_finalize_timeout;
+	int env_finalize_shutdown;
+	int env_finalize_exit;
 
 	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_FINALIZE);
 	MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_FINALIZE);
 
-	if(!_getenv_i("PSP_FINALIZE_BARRIER", 1)) {
+	/*
+	  - PSP_FINALIZE_BARRIER (default=1) -- If set to 0, then an experimental
+	  sparse synchronization scheme is used. If set to 2, then the PMI's
+	  PMI_Barrier() method is used instead. If it is unset or set to 1, the
+	  common MPIR_Barrier() is still used.
+
+	  - PSP_FINALIZE_TIMEOUT (default=30) -- Number of seconds that are allowed
+	  to elapse in MPI_Finalize() after leaving the first MPIR_Barrier() call
+	  until the second barrier call is aborted via a timeout signal.
+	  If set to 0, then no timeout and no second barrier are used.
+
+	  - PSP_FINALIZE_SHUTDOWN (default=0) -- If set to >=1, all pscom sockets
+	  are already shut down (synchronized) within MPI_Finalize().
+
+	  - PSP_FINALIZE_EXIT (default=0) -- If set to 1, then exit() is called
+	  at the very end of MPI_Finalize(). If set to 2, then it is _exit().
+	*/
+	env_finalize_barrier  = _getenv_i("PSP_FINALIZE_BARRIER", 1);
+	env_finalize_timeout  = _getenv_i("PSP_FINALIZE_TIMEOUT", 30);
+	env_finalize_shutdown = _getenv_i("PSP_FINALIZE_SHUTDOWN", 0);
+	env_finalize_exit     = _getenv_i("PSP_FINALIZE_EXIT", 0);
+
+	if (!env_finalize_barrier) {
 
 		/* A sparse synchronization scheme (!experimental!) that just uses the actually established connections: */
 
@@ -66,6 +92,12 @@ int MPID_Finalize(void)
 			}
 		}
 
+	} else if (env_finalize_barrier == 2) {
+
+		/* Use PMI_Barrier() for synchronization instead of the MPI Barrier (!no MPI progress here!) */
+
+		PMI_Barrier();
+
 	} else {
 
 		/* The common barrier synchronization across comm_world within MPI Finalize: */
@@ -79,7 +111,7 @@ int MPID_Finalize(void)
 		/* Finalize timeout: Default: 30sec.
 		   Overwrite with PSP_FINALIZE_TIMEOUT.
 		   Disable with PSP_FINALIZE_TIMEOUT=0 */
-		timeout = _getenv_i("PSP_FINALIZE_TIMEOUT", 30);
+		timeout = env_finalize_timeout;
 		if (timeout > 0) {
 			signal(SIGALRM, sig_finalize_timeout);
 			alarm(timeout);
@@ -190,7 +222,27 @@ int MPID_Finalize(void)
 	MPL_free(MPIDI_Process.stats.histo.limit);
 	MPL_free(MPIDI_Process.stats.histo.count);
 #endif
+	if (env_finalize_shutdown) {
+		/* Close _all_ pscom sockets here (NULL is a wildcard for this),
+		   which implies a synchronized shutdown of all pscom connections
+		   right here (and thus before the pscom's atexit() handler). */
+		pscom_close_socket(NULL);
+		/* Caution: This feature is currently for internal purposes only!
+		   If it should ever be made official, then the ABI version of the
+		   pscom should be adapted and checked here for compatibility!
+		   ...otherwise, a NULL argument for pscom_close_socket() will lead
+		   to a crash with older pscom versions (<= 5.4.8) here.
+		*/
+	}
 
 	MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_FINALIZE);
+
+	/* Exit here? */
+	if (env_finalize_exit == 1) {
+		exit(MPI_SUCCESS);
+	} else if (env_finalize_exit == 2) {
+		_exit(MPI_SUCCESS);
+	}
+
 	return MPI_SUCCESS;
 }
