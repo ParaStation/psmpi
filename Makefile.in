@@ -56,7 +56,11 @@ TESTSET_    := $(TESTSET)_
 TESTSETLIST := "TESTLIST=$(TESTSET)"
 else
 TESTSET     := testlist
+ifndef TESTLIST
+TESTSETLIST := "TESTLIST=testlist"
+else
 TESTSETLIST :=
+endif
 endif
 
 test testing:
