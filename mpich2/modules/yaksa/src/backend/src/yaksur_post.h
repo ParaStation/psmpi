@@ -10,7 +10,7 @@
 #include "yaksuri_cuda_post.h"
 #include "yaksuri_ze_post.h"
 
-int yaksur_init_hook(void);
+int yaksur_init_hook(yaksi_info_s * info);
 int yaksur_finalize_hook(void);
 int yaksur_type_create_hook(yaksi_type_s * type);
 int yaksur_type_free_hook(yaksi_type_s * type);
