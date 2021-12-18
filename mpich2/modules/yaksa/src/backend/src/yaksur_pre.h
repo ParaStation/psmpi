@@ -41,6 +41,7 @@ typedef struct {
 } yaksur_request_s;
 
 typedef struct {
+    bool pre_init;              /* set to true for info created before yaksa_init */
     yaksuri_seq_info_s seq;
     yaksuri_cuda_info_s cuda;
     yaksuri_ze_info_s ze;

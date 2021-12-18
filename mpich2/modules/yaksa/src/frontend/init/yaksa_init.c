@@ -158,7 +158,7 @@ int yaksa_init(yaksa_info_t info)
     /*************************************************************/
     /* initialize the backend */
     /*************************************************************/
-    rc = yaksur_init_hook();
+    rc = yaksur_init_hook((yaksi_info_s *) info);
     YAKSU_ERR_CHECK(rc, fn_fail);
 
 
