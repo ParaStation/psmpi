@@ -32,8 +32,6 @@ doc/mpich-patches/0007-mpich-Fix-for-Bcast-with-messages-2-GiB.patch \
 doc/mpich-patches/0008-mpich-Fix-for-Ibcast-with-messages-2-GiB.patch \
 doc/mpich-patches/list-of-patches.sh \
 doc/mpich-patches/list-of-patches.txt \
-mpich2/.github/pull_request_template.md \
-mpich2/.gitmodules \
 mpich2/.mailmap \
 mpich2/.travis.yml \
 mpich2/CHANGES \
@@ -246,8 +244,6 @@ mpich2/maint/tuning/coll/ch4/posix_generic.json \
 mpich2/maint/tuning/coll/json_gen.sh \
 mpich2/maint/tuning/coll/mpir/generic.json \
 mpich2/maint/version.m4 \
-mpich2/modules/hwloc/.github/contributing.md \
-mpich2/modules/hwloc/.github/issue_template.md \
 mpich2/modules/hwloc/AUTHORS \
 mpich2/modules/hwloc/COPYING \
 mpich2/modules/hwloc/HACKING \
@@ -2452,10 +2448,6 @@ mpich2/modules/libfabric/util/strerror.c \
 mpich2/modules/libfabric/util/windows/getopt/getopt.cpp \
 mpich2/modules/libfabric/util/windows/getopt/getopt.h \
 mpich2/modules/ucx/.ctags \
-mpich2/modules/ucx/.github/CONTRIBUTING.md \
-mpich2/modules/ucx/.github/ISSUE_TEMPLATE/bug_report.md \
-mpich2/modules/ucx/.github/PULL_REQUEST_TEMPLATE.md \
-mpich2/modules/ucx/.gitmodules \
 mpich2/modules/ucx/AUTHORS \
 mpich2/modules/ucx/LICENSE \
 mpich2/modules/ucx/Makefile.am \
@@ -3358,7 +3350,6 @@ mpich2/modules/ucx/test/mpi/test_memhooks.c \
 mpich2/modules/ucx/test/mpi/test_memhooks_lib.c \
 mpich2/modules/ucx/ucx.pc.in \
 mpich2/modules/ucx/ucx.spec.in \
-mpich2/modules/yaksa/.github/pull_request_template.md \
 mpich2/modules/yaksa/COPYRIGHT \
 mpich2/modules/yaksa/Doxyfile.in \
 mpich2/modules/yaksa/Makefile.am \
@@ -8356,6 +8347,7 @@ scripts/generate_modulefile.sh.in \
 scripts/generate_mpicc-conf.sh.in \
 scripts/install-sh \
 scripts/patch_mpich_configure_for_nvhpc.sh \
+scripts/release.py \
 scripts/run_osu_cuda_bench.sh \
 scripts/test-summary.sh \
 scripts/txt2man \
