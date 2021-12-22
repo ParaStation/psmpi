@@ -1690,6 +1690,7 @@ AC_OUTPUT(maint/testmerge \
           pt2pt/testlist \
           mpi_t/Makefile \
           parastation/Makefile \
+          parastation/testlist \
           cuda/Makefile \
           rma/Makefile \
           rma/testlist \
