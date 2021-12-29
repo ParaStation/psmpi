@@ -84,14 +84,14 @@ AC_SUBST([DISABLE_HCOLL])
 AC_ARG_WITH([confset], [
   --with-confset[=set]  Use predefined configuration set ["none"]
 	   none       : Do not configure mpich.
-			Prepare only for tar,rpm and srpm build
-	   default    : like gcc
+			Prepare only for tar, rpm and srpm build
+	   default    : Like 'gcc'
 
 	   gcc        : Use Gnu compiler (gcc)
-	   intel      : Use intel compiler (icc)
+	   intel      : Use Intel compiler (icc)
 	   icc        : Like 'intel'
-	   pgi	      : Portland group compiler (pgcc)
-	   nvhpc      : Nvidia hpc compiler (nvc)
+	   pgi	      : Portland Group compiler (pgcc)
+	   nvhpc      : Nvidia HPC compiler (nvc)
 
 	   devel      : With error checking and debug info (gcc)
 	   debug      : Like 'devel' but without any optimizations
@@ -167,64 +167,49 @@ AC_ARG_WITH([profile], [
 #
 
 EXTRA_VERSION_INFO=""
-# CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-error-messages=generic"
-CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-fast=O3,ndebug"
+
 CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-cache"
-CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-lib-depend"
-CONF_OPS_COMMON="$CONF_OPS_COMMON --disable-rpath"
-CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-shared"
 CONF_OPS_COMMON="$CONF_OPS_COMMON --disable-static"
+CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-shared"
+CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-romio"
+
+CONF_OPS_DEVEL="$CONF_OPS_DEVEL $CONF_OPS_COMMON"
+CONF_OPS_DEVEL="$CONF_OPS_DEVEL --enable-g=all"
+CONF_OPS_DEVEL="$CONF_OPS_DEVEL --enable-dependencies"
+CONF_OPS_DEVEL="$CONF_OPS_DEVEL --enable-error-checking=all"
+CONF_OPS_DEVEL="$CONF_OPS_DEVEL --enable-strict" # Compile with -Wall and other checks.
+
+CONF_OPS_DEPLOY="$CONF_OPS_DEPLOY $CONF_OPS_COMMON"
+CONF_OPS_DEPLOY="$CONF_OPS_DEPLOY --enable-fast=O3,ndebug"
+CONF_OPS_DEPLOY="$CONF_OPS_DEPLOY --enable-lib-depend"
+CONF_OPS_DEPLOY="$CONF_OPS_DEPLOY --disable-rpath"
+CONF_OPS_DEPLOY="$CONF_OPS_DEPLOY --enable-cxx"
+CONF_OPS_DEPLOY="$CONF_OPS_DEPLOY --enable-fortran=all"
+
 MODULEFILE_CONFSET="$CONFSET"
 
 case $CONFSET in
 "devel")
 	echo "Using confset=devel"
 	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS --enable-cache"
-	CONF_OPS="$CONF_OPS --enable-g=all"
-	CONF_OPS="$CONF_OPS --enable-dependencies"
-	# CONF_OPS="$CONF_OPS --disable-f77"
-	# CONF_OPS="$CONF_OPS --disable-fc"
-	# CONF_OPS="$CONF_OPS --disable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-shared"
-	CONF_OPS="$CONF_OPS --disable-static"
-	CONF_OPS="$CONF_OPS --enable-error-checking=all"
-	CONF_OPS="$CONF_OPS --enable-strict" # Compile with -Wall and other checks.
-
-	CONF_OPS="$CONF_OPS"
+	CONF_OPS="$CONF_OPS $CONF_OPS_DEVEL"
 	;;
 "debug")
 	echo "Using confset=debug"
 	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS --enable-cache"
-	CONF_OPS="$CONF_OPS --enable-g=all"
-	CONF_OPS="$CONF_OPS --enable-dependencies"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-shared"
-	CONF_OPS="$CONF_OPS --disable-static"
-	CONF_OPS="$CONF_OPS --enable-error-checking=all"
-	CONF_OPS="$CONF_OPS --enable-strict" # Compile with -Wall and other checks.
+	CONF_OPS="$CONF_OPS $CONF_OPS_DEVEL"
 	CONF_OPS="$CONF_OPS --disable-fast" # Complile with -O0
 	;;
 "gcc"|\
 "default")
 	echo "Using confset=default"
 	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-cache"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
 	CC=gcc
 	CXX=g++
+	FC=gfortran
 
-	if which gfortran >/dev/null 2>&1 ;then
-	   # found gfortran
-	   CONF_OPS="$CONF_OPS --enable-f77"
-	   CONF_OPS="$CONF_OPS --enable-fc"
-	   FC=gfortran
-	fi
 	MODULEFILE_CONFSET=""
 	EXTRA_VERSION_INFO=" compiler: $(gcc --version|head -n 1)"
 
@@ -242,11 +227,7 @@ case $CONFSET in
 "intel")
 	echo "Using confset=intel"
 	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-f77"
-	CONF_OPS="$CONF_OPS --enable-fc"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
 	CC=icc
 	CXX=icpc
@@ -271,11 +252,7 @@ case $CONFSET in
 "pgi")
 	echo "Using confset=pgi"
 	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-f77"
-	CONF_OPS="$CONF_OPS --enable-fc"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
 	CC=pgcc
 	CXX=pgc++
@@ -285,11 +262,7 @@ case $CONFSET in
 "nvhpc")
 	echo "Using confset=nvhpc"
 	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-f77"
-	CONF_OPS="$CONF_OPS --enable-fc"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
 	CC=nvc
 	CXX=nvc++
@@ -311,11 +284,7 @@ case $CONFSET in
 	CONF_OPS="--with-device=${CONFSET}"
 	MODULEFILE_CONFSET="mpich"
 
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-f77"
-	CONF_OPS="$CONF_OPS --enable-fc"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
 	CC=gcc
 	CXX=g++
@@ -570,7 +539,6 @@ else
 	CONF_OPS="$CONF_OPS --without-cuda"
 fi
 
-
 if test "$PSP_THREADING" = "multiple" ; then
    echo "Preparing psmpi/mpich with MPI_THREAD_MULTIPLE support."
 fi
@@ -585,7 +553,6 @@ if test "$ENABLE_TOPOLOGY_AWARENESS" = "true" ; then
 fi
 if test "$PSCOM_ALLIN" = "true" ; then
    echo "Preparing psmpi/mpich with pscom included."
-
 fi
 if test "$CUDA_SUPPORT" = "true" ; then
    echo "Preparing psmpi/mpich with CUDA support."
