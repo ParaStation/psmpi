@@ -94,6 +94,8 @@ AC_ARG_WITH([confset], [
 	   nvhpc      : Nvidia hpc compiler (nvc)
 
 	   devel      : With error checking and debug info (gcc)
+	   debug      : Like 'devel' but without any optimizations
+
 	   user       : No predefined options
 	   ch3|ch4    : original mpich ch3|ch4 device (no parastation)
 	   "--xyz --abc" : Use this to configure mpich without a set
@@ -191,6 +193,19 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-strict" # Compile with -Wall and other checks.
 
 	CONF_OPS="$CONF_OPS"
+	;;
+"debug")
+	echo "Using confset=debug"
+	CONF_OPS="--with-device=psp"
+	CONF_OPS="$CONF_OPS --enable-cache"
+	CONF_OPS="$CONF_OPS --enable-g=all"
+	CONF_OPS="$CONF_OPS --enable-dependencies"
+	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS --enable-shared"
+	CONF_OPS="$CONF_OPS --disable-static"
+	CONF_OPS="$CONF_OPS --enable-error-checking=all"
+	CONF_OPS="$CONF_OPS --enable-strict" # Compile with -Wall and other checks.
+	CONF_OPS="$CONF_OPS --disable-fast" # Complile with -O0
 	;;
 "gcc"|\
 "default")
