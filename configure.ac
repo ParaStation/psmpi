@@ -92,9 +92,6 @@ AC_ARG_WITH([confset], [
 	   icc        : Like 'intel'
 	   pgi	      : Portland group compiler (pgcc)
 	   nvhpc      : Nvidia hpc compiler (nvc)
-	   psc	      : Pathscale compiler (pathcc)
-	   cellgcc    : ppu-gcc
-	   cellxlc    :	ppuxlc
 
 	   devel      : With error checking and debug info (gcc)
 	   user       : No predefined options
@@ -287,129 +284,6 @@ case $CONFSET in
 	CC=nvc
 	CXX=nvc++
 	FC=nvfortran
-	;;
-"psc")
-	echo "Using confset=psc"
-	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-f77"
-	CONF_OPS="$CONF_OPS --enable-fc"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-
-	CC=pathcc
-	CXX=pathCC
-	FC=pathf90
-	;;
-"micgcc")
-	echo "Using confset=micgcc"
-	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-
-	CONF_OPS="$CONF_OPS --host=x86_64-k1om-linux"
-
-	CC=x86_64-k1om-linux-gcc
-	CXX=x86_64-k1om-linux-g++
-	F77=x86_64-k1om-linux-gfortran
-	FC=x86_64-k1om-linux-gfortran
-	AR=x86_64-k1om-linux-ar
-	RANLIB=x86_64-k1om-linux-ranlib
-
-	# FIXME: check whether all of these are valid in mpich 3.0.4,
-	# they were gathered with 1.5a2
-	CONF_OPS="$CONF_OPS 'CROSS_F77_FALSE_VALUE=0'"
-	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_DOUBLE_PRECISION=8'"
-	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_INTEGER=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_REAL=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_F77_TRUE_VALUE=1'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_ADDRESS_KIND=8'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_ALL_INTEGER_MODELS=2,1,4,2,9,4,18,8,'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_DOUBLE_MODEL=15,307'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_KIND=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_MODEL=9'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_MODEL_MAP={2,1,1},{4,2,2},{9,4,4},{18,8,8},'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_OFFSET_KIND=8'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_REAL_MODEL=6,37'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_DOUBLE_PRECISION=8'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_INTEGER=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_REAL=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_MPI_STATUS_SIZE=5'"
-
-	EXTRA_VERSION_INFO=" compiler: $(x86_64-k1om-linux-gcc --version|head -n 1)"
-	MODULEFILE_CONFSET="mic"
-	;;
-"micintel")
-	echo "Using confset=micintel"
-	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-
-	# Get Performance
-	CONF_OPS="$CONF_OPS --enable-g=none"
-	CONF_OPS="$CONF_OPS --enable-error-checking=no"
-
-	CONF_OPS="$CONF_OPS --host=x86_64-k1om-linux"
-	CC='icc -mmic'
-	CXX='icpc -mmic'
-	F77='ifort -mmic'
-	FC='ifort -mmic'
-
-	# FIXME: check whether all of these are valid in mpich 3.0.4,
-	# they were gathered with 1.5a2
-	CONF_OPS="$CONF_OPS 'CROSS_F77_FALSE_VALUE=0'"
-	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_DOUBLE_PRECISION=8'"
-	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_INTEGER=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_REAL=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_F77_TRUE_VALUE=1'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_ADDRESS_KIND=8'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_ALL_INTEGER_MODELS=2,1,4,2,9,4,18,8,'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_DOUBLE_MODEL=15,307'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_KIND=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_MODEL=9'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_MODEL_MAP={2,1,1},{4,2,2},{9,4,4},{18,8,8},'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_OFFSET_KIND=8'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_REAL_MODEL=6,37'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_DOUBLE_PRECISION=8'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_INTEGER=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_REAL=4'"
-	CONF_OPS="$CONF_OPS 'CROSS_MPI_STATUS_SIZE=5'"
-
-	EXTRA_VERSION_INFO=" compiler: $(icc -V 2>&1 |head -n 1)"
-	MODULEFILE_CONFSET="intel-mic"
-	;;
-"cellgcc")
-	echo "Using confset=cellgcc"
-	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-f77"
-	CONF_OPS="$CONF_OPS --enable-fc"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-
-	CC=ppu-gcc
-	CXX=ppu-c++
-	FC=ppu-gfortran
-	;;
-"cellxlc")
-	echo "Using confset=cellxlc"
-	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-f77"
-	CONF_OPS="$CONF_OPS --enable-fc"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-
-	CC='ppuxlc -q64'
-	CXX='ppuxlC -q64'
-	FC='ppuxlf -q64'
 	;;
 "none")
 	# No build
