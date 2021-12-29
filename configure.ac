@@ -185,7 +185,6 @@ case $CONFSET in
 	# CONF_OPS="$CONF_OPS --disable-fc"
 	# CONF_OPS="$CONF_OPS --disable-cxx"
 	CONF_OPS="$CONF_OPS --enable-romio"
-	# CONF_OPS="$CONF_OPS --disable-mpe"
 	CONF_OPS="$CONF_OPS --enable-shared"
 	CONF_OPS="$CONF_OPS --disable-static"
 	CONF_OPS="$CONF_OPS --enable-error-checking=all"
@@ -201,7 +200,6 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-cache"
 	CONF_OPS="$CONF_OPS --enable-cxx"
 	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
 	CC=gcc
 	CXX=g++
@@ -234,7 +232,6 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-fc"
 	CONF_OPS="$CONF_OPS --enable-cxx"
 	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
 	CC=icc
 	CXX=icpc
@@ -264,7 +261,6 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-fc"
 	CONF_OPS="$CONF_OPS --enable-cxx"
 	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
 	CC=pgcc
 	CXX=pgc++
@@ -279,7 +275,6 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-fc"
 	CONF_OPS="$CONF_OPS --enable-cxx"
 	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
 	CC=nvc
 	CXX=nvc++
@@ -306,7 +301,6 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-fc"
 	CONF_OPS="$CONF_OPS --enable-cxx"
 	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
 	CC=gcc
 	CXX=g++
