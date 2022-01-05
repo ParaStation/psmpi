@@ -82,10 +82,10 @@ AC_ARG_WITH([hcoll], [
 AC_SUBST([DISABLE_HCOLL])
 
 AC_ARG_WITH([confset], [
-  --with-confset[=set]  Use predefined configuration set ["none"]
+  --with-confset[=set]  Use predefined configuration set ["default"]
+	   default    : Like 'gcc'
 	   none       : Do not configure mpich.
 			Prepare only for tar, rpm and srpm build
-	   default    : Like 'gcc'
 
 	   gcc        : Use Gnu compiler (gcc)
 	   intel      : Use Intel compiler (icc)
@@ -102,7 +102,7 @@ AC_ARG_WITH([confset], [
 ],[
 	CONFSET="$withval"
 ],[
-	CONFSET="none"
+	CONFSET="default"
 ])
 
 
