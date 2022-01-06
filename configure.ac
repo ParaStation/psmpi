@@ -11,6 +11,8 @@ AC_CONFIG_AUX_DIR([scripts])
 AC_CONFIG_MACRO_DIR([mpich2/confdb])
 AC_CANONICAL_TARGET([])
 
+CONF_ECHO_PREFIX="psmpi: "
+
 # AC_PROG_INSTALL
 # AC_PROG_RANLIB
 
@@ -190,19 +192,16 @@ MODULEFILE_CONFSET="$CONFSET"
 
 case $CONFSET in
 "devel")
-	echo "Using confset=devel"
 	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEVEL"
 	;;
 "debug")
-	echo "Using confset=debug"
 	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEVEL"
 	CONF_OPS="$CONF_OPS --disable-fast" # Complile with -O0
 	;;
 "gcc"|\
 "default")
-	echo "Using confset=default"
 	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
@@ -225,7 +224,6 @@ case $CONFSET in
 	;;
 "icc"|\
 "intel")
-	echo "Using confset=intel"
 	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
@@ -250,7 +248,6 @@ case $CONFSET in
 	fi
 	;;
 "pgi")
-	echo "Using confset=pgi"
 	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
@@ -260,7 +257,6 @@ case $CONFSET in
 	;;
 
 "nvhpc")
-	echo "Using confset=nvhpc"
 	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
@@ -280,7 +276,6 @@ case $CONFSET in
 		CONFSET="ch4:ucx"
 	fi
 
-	echo "Using confset=${CONFSET}"
 	CONF_OPS="--with-device=${CONFSET}"
 	MODULEFILE_CONFSET="mpich"
 
@@ -294,7 +289,7 @@ case $CONFSET in
 	CHANNEL_DEVICE=`echo ${CONFSET} | cut -c 1-2`
 	;;
 *)
-	echo "Sorry. Unknown confset ${CONFSET}"
+	echo "${CONF_ECHO_PREFIX}Sorry. Unknown confset '${CONFSET}'."
 	exit 1
 	;;
 esac
@@ -321,6 +316,8 @@ AC_ARG_WITH([pscom-builtin], [
 	PSCOM_BUILTIN_PLUGINS="$withval"
 ])
 
+CONF_ECHO_ALLIN=""
+
 AC_ARG_WITH([pscom-allin], [
   --with-pscom-allin[=path]
 			  Enable pscom source code fusion and set path to pscom
@@ -337,7 +334,8 @@ AC_ARG_WITH([pscom-allin], [
 			mkdir -p "${TOP_BUILDDIR}/pscom" 2>/dev/null
 		fi
 		PSCOM_VC_VERSION=`${PSCOM_ALLIN_DIR}/../../scripts/vcversion -r ${PSCOM_ALLIN_DIR}/../.. -n`
-		echo "Including pscom version ${PSCOM_VC_VERSION}"
+		CONF_ECHO_ALLIN="${CONF_ECHO_ALLIN:+${CONF_ECHO_ALLIN}\n}"
+		CONF_ECHO_ALLIN="${CONF_ECHO_ALLIN}Including pscom version '${PSCOM_VC_VERSION}'."
 		echo "#define VC_VERSION \"${PSCOM_VC_VERSION}\"" > "${TOP_BUILDDIR}/pscom/vc_version.h"
 		export MPICHLIB_CFLAGS="-I${TOP_BUILDDIR}/pscom/ ${MPICHLIB_CFLAGS}"
 	fi
@@ -363,7 +361,8 @@ AC_ARG_WITH([pscom-allin], [
 		if test "$have_openib" = "yes" ; then
 			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_OPENIB"
 			export PSCOM_ALLIN_LIBS="${PSCOM_ALLIN_LIBS} -libverbs"
-			echo "Including openib as a built-in plugin for pscom"
+			CONF_ECHO_ALLIN="${CONF_ECHO_ALLIN:+${CONF_ECHO_ALLIN}\n}"
+			CONF_ECHO_ALLIN="${CONF_ECHO_ALLIN}Including openib as a built-in plugin for pscom."
 		else
 			AC_MSG_ERROR([openib support requested but not found])
 		fi
@@ -372,7 +371,8 @@ AC_ARG_WITH([pscom-allin], [
 		if test "$have_psm2" = "yes" ; then
 			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_PSM2"
 			export PSCOM_ALLIN_LIBS="${PSCOM_ALLIN_LIBS} -lpsm2"
-			echo "Including psm2 as a built-in plugin for pscom"
+			CONF_ECHO_ALLIN="${CONF_ECHO_ALLIN:+${CONF_ECHO_ALLIN}\n}"
+			CONF_ECHO_ALLIN="${CONF_ECHO_ALLIN}Including psm2 as a built-in plugin for pscom."
 		else
 			AC_MSG_ERROR([psm2 support requested but not found])
 		fi
@@ -539,29 +539,35 @@ else
 	CONF_OPS="$CONF_OPS --without-cuda"
 fi
 
+echo "${CONF_ECHO_PREFIX}Using confset='${CONFSET}'."
+CONF_ECHO_PREP_PHRASE="${CONF_ECHO_PREFIX}Preparing mpich/psp with "
 if test "$PSP_THREADING" = "multiple" ; then
-   echo "Preparing psmpi/mpich with MPI_THREAD_MULTIPLE support."
+   echo "${CONF_ECHO_PREP_PHRASE}MPI_THREAD_MULTIPLE support."
 fi
 if test "$ENABLE_HYDRA" = "true" ; then
-   echo "Preparing psmpi/mpich with Hydra's mpiexec support."
+   echo "${CONF_ECHO_PREP_PHRASE}Hydra's mpiexec support."
 fi
 if test "$ENABLE_SESSION_STATISTICS" = "true" ; then
-   echo "Preparing psmpi/mpich with support for statistics."
+   echo "${CONF_ECHO_PREP_PHRASE}support for statistics."
 fi
 if test "$ENABLE_TOPOLOGY_AWARENESS" = "true" ; then
-   echo "Preparing psmpi/mpich with topology awareness."
+   echo "${CONF_ECHO_PREP_PHRASE}topology awareness."
 fi
 if test "$PSCOM_ALLIN" = "true" ; then
-   echo "Preparing psmpi/mpich with pscom included."
+   echo "${CONF_ECHO_PREP_PHRASE}pscom included."
+   if test -n "${CONF_ECHO_ALLIN}" ; then
+      CONF_ECHO_ALLIN=`echo -en ${CONF_ECHO_ALLIN} | sed -z "s/\n/\n${CONF_ECHO_PREFIX}/g;s/,$/\n/"`
+      echo -e "${CONF_ECHO_PREFIX}${CONF_ECHO_ALLIN}"
+   fi
 fi
 if test "$CUDA_SUPPORT" = "true" ; then
-   echo "Preparing psmpi/mpich with CUDA support."
+   echo "${CONF_ECHO_PREP_PHRASE}CUDA support."
 fi
 if test -n "$WITH_HCOLL_DIR" ; then
    if test "$ENABLE_TOPOLOGY_AWARENESS" = "hcoll" ; then
-	echo "Preparing psmpi/mpich with topology awareness by HCOLL support."
+	echo "${CONF_ECHO_PREP_PHRASE}topology awareness by HCOLL support."
    else
-	echo "Preparing psmpi/mpich with HCOLL support."
+	echo "${CONF_ECHO_PREP_PHRASE}HCOLL support."
    fi
 fi
 sleep 1
