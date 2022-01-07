@@ -52,7 +52,7 @@ int MPIR_Iallgather_intra_sched_recursive_doubling(const void *sendbuf, int send
     int i, j, k;
     int mask, tmp_mask, dst;
     int dst_tree_root, my_tree_root, tree_root;
-    int offset, send_offset, recv_offset;
+    MPI_Aint offset, send_offset, recv_offset;
     MPI_Aint recvtype_extent;
     MPIR_Datatype *recv_dtp;
     MPIR_SCHED_CHKPMEM_DECL(1);

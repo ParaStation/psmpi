@@ -74,7 +74,7 @@ int MPID_Irsend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int ran
 
 
 /* ready send (same as send) */
-int MPID_Rsend(const void * buf, int count, MPI_Datatype datatype, int rank, int tag,
+int MPID_Rsend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
 	       MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
 {
 	int mpi_errno;

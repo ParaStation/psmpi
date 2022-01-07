@@ -264,24 +264,35 @@ int MPID_PSP_GetParentPort(char **parent_port);
 
 
 /*----------------------
-  BEGIN DATATYPE SECTION (from mpid/ch3/include/mpidimpl.h)
+  BEGIN DATATYPE SECTION (from mpid/ch4/src/ch4_impl.h)
   ----------------------*/
-#define MPIDI_Datatype_get_info(count_, datatype_, dt_contig_out_, data_sz_out_, dt_ptr_, dt_true_lb_) \
-{									\
-    if (HANDLE_IS_BUILTIN(datatype_))		\
-    {									\
-	(dt_ptr_) = NULL;						\
-	(dt_contig_out_) = TRUE;					\
-	(dt_true_lb_)    = 0;                                           \
-	(data_sz_out_) = (intptr_t) (count_) * MPIR_Datatype_get_basic_size(datatype_); \
-    } else {								\
-	MPIR_Datatype_get_ptr((datatype_), (dt_ptr_));			\
-	MPIR_Datatype_is_contig((datatype_), (&dt_contig_out_));	\
-	(data_sz_out_) = (intptr_t) (count_) * (dt_ptr_)->size;	\
-	(dt_true_lb_)    = (dt_ptr_)->true_lb;                          \
-    }									\
-}
-
+#define MPIDI_Datatype_get_info(count_, datatype_,              \
+                                dt_contig_out_, data_sz_out_,   \
+                                dt_ptr_, dt_true_lb_)           \
+    do {                                                        \
+        if (HANDLE_IS_BUILTIN(datatype_)) {                     \
+            (dt_ptr_)        = NULL;                            \
+            (dt_contig_out_) = TRUE;                            \
+            (dt_true_lb_)    = 0;                               \
+            (data_sz_out_)   = (size_t)(count_) *               \
+                MPIR_Datatype_get_basic_size(datatype_);        \
+        } else {                                                \
+            MPIR_Datatype_get_ptr((datatype_), (dt_ptr_));      \
+            if (dt_ptr_)                                        \
+            {                                                   \
+                (dt_contig_out_) = (dt_ptr_)->is_contig;        \
+                (dt_true_lb_)    = (dt_ptr_)->true_lb;          \
+                (data_sz_out_)   = (size_t)(count_) *           \
+                    (dt_ptr_)->size;                            \
+            }                                                   \
+            else                                                \
+            {                                                   \
+                (dt_contig_out_) = 1;                           \
+                (dt_true_lb_)    = 0;                           \
+                (data_sz_out_)   = 0;                           \
+            }                                                   \
+        }                                                       \
+    } while (0)
 /*--------------------
   END DATATYPE SECTION
   --------------------*/

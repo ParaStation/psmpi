@@ -47,8 +47,23 @@ noinst_PROGRAMS =               \
 	num_contexts_16k        \
 	large_msg_typed         \
 	large_msg_builtin       \
+	large_msg_noncontig     \
 	large_msg_coll_bcast    \
 	large_msg_coll_ibcast   \
+	large_msg_coll_allred   \
+	large_msg_coll_iallred  \
+	large_msg_coll_reduce   \
+	large_msg_coll_ireduce  \
+	large_msg_coll_scatter  \
+	large_msg_coll_iscatter \
+	large_msg_coll_gather   \
+	large_msg_coll_igather  \
+	large_msg_coll_allgather  \
+	large_msg_coll_iallgather \
+	large_msg_coll_alltoall   \
+	large_msg_coll_ialltoall  \
+	large_msg_coll_alltoall_inplace  \
+	large_msg_coll_ialltoall_inplace \
 	intercomm_anysrc        \
 	intercomm_stress        \
 	large_acc_flush_local   \

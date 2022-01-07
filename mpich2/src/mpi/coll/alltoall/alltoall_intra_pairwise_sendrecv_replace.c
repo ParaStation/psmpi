@@ -36,6 +36,10 @@ int MPIR_Alltoall_intra_pairwise_sendrecv_replace(const void *sendbuf,
     if (recvcount == 0)
         return MPI_SUCCESS;
 
+#ifdef HAVE_ERROR_CHECKING
+    MPIR_Assert(sendbuf == MPI_IN_PLACE);
+#endif
+
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
 

@@ -75,7 +75,7 @@ int MPIDI_PSP_compute_acc_op(void *origin_addr, int origin_count,
 		MPIR_Datatype *dtp;
 		MPI_Aint curr_len;
 		void *curr_loc;
-		int accumulated_count;
+		MPI_Aint accumulated_count;
 
 		MPIR_Datatype_get_ptr(target_datatype, dtp);
 		MPIR_Assert(dtp != NULL);
@@ -129,6 +129,25 @@ int MPIDI_PSP_compute_acc_op(void *origin_addr, int origin_count,
 				i++;
 				curr_len += typerep_vec[i].iov_len;
 				continue;
+			}
+
+			while (curr_len > INT_MAX * type_size) {
+				/* (*uop) can only handle a count up to INT_MAX within a single call.
+				 * Therefore, do it repeatedly if count is greater:
+				 */
+				count = INT_MAX;
+				if (src_ptr) {
+					MPI_Aint unpacked_size;
+					MPIR_Typerep_unpack((char *)origin_addr + src_type_stride * accumulated_count,
+							    origin_datatype_size, src_ptr, 1, origin_datatype, 0, &unpacked_size);
+					(*uop)(src_ptr, (char *)target_addr + MPIR_Ptr_to_aint(curr_loc), &count, &type);
+				} else {
+					(*uop)((char *)origin_addr + src_type_stride * accumulated_count,
+					       (char *)target_addr + MPIR_Ptr_to_aint(curr_loc), &count, &type);
+				}
+				curr_loc = (void *)((char *)curr_loc + type_extent * count);
+				curr_len -= type_size * count;
+				accumulated_count += count;
 			}
 
 			MPIR_Assign_trunc(count, curr_len / type_size, int);

@@ -63,7 +63,9 @@ TESTSETLIST :=
 endif
 endif
 
-test testing:
+largetest largetests largetesting: LARGE_TESTS="--enable-large-tests"
+
+test tests testing largetest largetests largetesting:
 ifeq ($(filter $(TESTSET),$(TESTSETS)),)
 	@echo "ERROR: The test set '$(TESTSET)' does not exist!"
 	@echo "Please provide a valid test set to be used."
@@ -83,7 +85,7 @@ else
 	export PSP_SCHED_YIELD=1; \
 	export MPIEXEC_UNIVERSE_SIZE=100; \
 	export _LOGNAME=$(SRCDIR)/doc/test-$$($(SRCDIR)/scripts/vcversion -r $(SRCDIR))-$(TESTDIR_)$(TESTSET_)$$(date +%F_%T); \
-	( cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) $(CUDA_TESTS)); \
+	( cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) $(CUDA_TESTS) $(LARGE_TESTS)); \
 	( hostname; rpm -qi pscom; rpm -qi psmgmt; $(SRCDIR)/scripts/vcversion -r $(SRCDIR); \
 	  echo $(MPIEXEC); \
 	  $(MAKE) -C mpich2/test/mpi testing $(TESTSETLIST) $(TESTDIRLIST); \

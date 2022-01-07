@@ -35,7 +35,8 @@ int MPIR_Igather_intra_sched_binomial(const void *sendbuf, int sendcount, MPI_Da
     int mask, src, dst, relative_src;
     MPI_Aint recvtype_size, sendtype_size, curr_cnt = 0, nbytes;
     int recvblks;
-    int tmp_buf_size, missing;
+    MPI_Aint tmp_buf_size;
+    int missing;
     void *tmp_buf = NULL;
     int blocks[2];
     int displs[2];
@@ -208,6 +209,8 @@ int MPIR_Igather_intra_sched_binomial(const void *sendbuf, int sendcount, MPI_Da
                 if (curr_cnt - nbytes != (int) (curr_cnt - nbytes)) {
                     blocks[1] = 1;
                     MPIR_Type_contiguous_x_impl(curr_cnt - nbytes, MPI_BYTE, &(types[1]));
+                    mpi_errno = MPIR_Type_commit_impl(&(types[1]));
+                    MPIR_ERR_CHECK(mpi_errno);
                 } else {
                     MPIR_Assign_trunc(blocks[1], curr_cnt - nbytes, int);
                     types[1] = MPI_BYTE;
@@ -226,6 +229,8 @@ int MPIR_Igather_intra_sched_binomial(const void *sendbuf, int sendcount, MPI_Da
 
                 /* this "premature" free is safe b/c the sched holds an actual ref to keep it alive */
                 MPIR_Type_free_impl(&tmp_type);
+                if (types[1] != MPI_BYTE)
+                        MPIR_Type_free_impl(&(types[1]));
             }
 
             break;

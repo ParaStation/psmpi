@@ -104,7 +104,7 @@ void sendrequest_prepare_cleanup(MPIR_Request *req)
 
 
 static
-int sendrequest_prepare_data(MPIR_Request *req, const void *buf, int count, MPI_Datatype datatype, size_t *len)
+int sendrequest_prepare_data(MPIR_Request *req, const void *buf, MPI_Aint count, MPI_Datatype datatype, size_t *len)
 {
 	struct MPID_DEV_Request_send *sreq = &req->dev.kind.send;
 	pscom_request_t *preq = sreq->common.pscom_req;
@@ -130,7 +130,7 @@ err_create_packed_msg:
 
 
 static
-void copy_data(MPIR_Request *req, const void *buf, int count, MPI_Datatype datatype)
+void copy_data(MPIR_Request *req, const void *buf, MPI_Aint count, MPI_Datatype datatype)
 {
 	struct MPID_DEV_Request_send *sreq = &req->dev.kind.send;
 	MPID_PSP_packed_msg_pack(buf, count, datatype, &sreq->msg);
@@ -138,7 +138,7 @@ void copy_data(MPIR_Request *req, const void *buf, int count, MPI_Datatype datat
 
 
 static inline
-int MPID_PSP_Sendtype(const void * buf, int count, MPI_Datatype datatype, int rank,
+int MPID_PSP_Sendtype(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
 		      int tag, MPIR_Comm * comm, int context_offset,
 		      MPIR_Request ** request, enum MPID_PSP_MSGTYPE type)
 {
