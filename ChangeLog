@@ -1,3 +1,14 @@
+2021-10-21  Simon Pickartz <pickartz@par-tec.com>     -     5.5.0-1
+
+2021-10-08  Simon Pickartz <pickartz@par-tec.com>     -     5.5.0-0rc2
+
+	* Fix: Enabling/disabling of CUDA awareness via the PSP_CUDA
+	environment variable.
+
+2021-09-29  Simon Pickartz <pickartz@par-tec.com>     -     5.5.0-0rc1
+
+	* MPICH 3.4.2
+
 2021-08-30  Carsten Clauss <clauss@par-tec.com>     -     5.4.11-1
 
 	* Fix: MPI_Bcast() and MPI_Ibcast() for messages > 2 GiB
