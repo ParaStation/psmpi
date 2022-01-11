@@ -107,3 +107,4 @@
 **pmix_resolve_nodes %d: PMIx_Resolve_nodes returned %d
 **pmix_resolve_peers: PMIx_Resolve_peers failed
 **pmix_resolve_peers %d: PMIx_Resolve_peers returned %d
+**pmix_spawn_not_supported: PMIx_Spawn is not supported
