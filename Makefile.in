@@ -105,8 +105,8 @@ all: no_all
 test testing: no_all
 
 no_all:
-	@echo "Please configure with '--with-confset=xyz' or use"
-	@echo "'make rpm', 'make srpm' or 'make tar'"
+	@echo "Please configure with a confset ('--with-confset') other than 'none'"
+	@echo "or use 'make rpm', 'make srpm' or 'make tar'."
 endif
 
 ########################################################
