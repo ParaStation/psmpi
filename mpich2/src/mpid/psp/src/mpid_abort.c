@@ -10,7 +10,6 @@
  */
 
 #include "mpidimpl.h"
-#include "pmi.h"
 
 static
 int _getenv_i(const char *env_name, int _default)
@@ -33,7 +32,7 @@ int MPID_Abort(MPIR_Comm * comm_ptr, int mpi_errno, int exit_code,
 		   Properly deregister from PMI in the COMM_SELF case
 		   so that other processes can still carry on.*/
 
-		PMI_Finalize();
+		MPIR_pmi_finalize();
 	}
 
 	MPL_error_printf("%s\n", error_msg);
@@ -44,7 +43,7 @@ int MPID_Abort(MPIR_Comm * comm_ptr, int mpi_errno, int exit_code,
 	case 0:
 		exit(exit_code);
 	case 1:
-		PMI_Abort(exit_code, error_msg);
+		MPIR_pmi_abort(exit_code, error_msg);
 		// fall through
 	case 2:
 		_exit(exit_code);

@@ -1671,7 +1671,7 @@ if test -n "${with_pmix}" -a "${with_pmix}" != "no" ; then
     # disable built-in PMI and process managers
     with_pmi="no"
     with_pm="no"
-    if test "${device_name}" != "ch4" ; then
+    if test "${device_name}" != "ch4" -a "${device_name}" != "psp"; then
         AC_MSG_ERROR([$device_name does not support PMIx])
     fi
     PAC_CHECK_HEADER_LIB_FATAL(pmix, pmix.h, pmix, PMIx_Init)

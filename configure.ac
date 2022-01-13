@@ -45,7 +45,11 @@ AC_SUBST([MPICH_RELEASE_DATE])
 AC_ARG_WITH([hydra], [
   --with-hydra            Install also Hydra (mpiexec).
 ],[
-	ENABLE_HYDRA="true"
+	if test "x$with_hydra" = "xno" ; then
+	   ENABLE_HYDRA="false"
+	else
+           ENABLE_HYDRA="true"
+	fi
 ],[
 	ENABLE_HYDRA="false"
 ])
@@ -478,6 +482,50 @@ if test -z "${CHANNEL_DEVICE}" ; then
    export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_DYNAMIC_PROC_WIDTH=0"
 fi
 
+AC_ARG_WITH([pmix], [
+  --with-pmix
+			  Use PMIx to talk to the process manager
+],,[with_pmix=no])
+
+if test "x${with_pmix}" != "xno"; then
+	# Determine PMIx home
+	AS_IF(	[test "x${with_pmix}" = "xyes"],
+		[PMIX_HOME="${PMIX_HOME-"/usr"}"],
+		[PMIX_HOME="${with_pmix}"]
+	)
+
+	# Check if PMIX_HOME is a valid directory
+	AC_MSG_CHECKING([if ${PMIX_HOME} is a valid directory])
+	AS_IF(	[test -d "${PMIX_HOME}"],
+		[
+			AC_MSG_RESULT(yes)
+			have_pmix=yes
+		],
+		[
+			AC_MSG_RESULT(no)
+			have_pmix=no
+		]
+	)
+
+	# PMIX_HOME could be found
+	AS_IF(
+		[test "x${have_pmix}" = "xyes" -a "x${ENABLE_HYDRA}" = "xtrue"],
+		[AC_MSG_ERROR([PMIx support and Hydra are mutually exclusive.])],
+		[test "x${have_pmix}" = "xyes"],
+		[
+			ENABLE_PMIX="true"
+			CONF_OPS="$CONF_OPS --with-pmix=${PMIX_HOME}"
+		],
+		[
+			AC_MSG_ERROR([PMIx support is requested but PMIx home directory cannot be found])
+		]
+	)
+else
+	ENABLE_PMIX="false"
+	CONF_OPS="$CONF_OPS --without-pmix"
+fi
+
+
 AC_ARG_WITH([cuda], [
   --with-cuda
 			  Enable CUDA awareness within ParaStationMPI
@@ -546,6 +594,11 @@ if test "$PSP_THREADING" = "multiple" ; then
 fi
 if test "$ENABLE_HYDRA" = "true" ; then
    echo "${CONF_ECHO_PREP_PHRASE}Hydra's mpiexec support."
+fi
+if test "$ENABLE_PMIX" = "true" ; then
+   echo "${CONF_ECHO_PREP_PHRASE}PMIx support."
+else
+   echo "${CONF_ECHO_PREP_PHRASE}PMI support."
 fi
 if test "$ENABLE_SESSION_STATISTICS" = "true" ; then
    echo "${CONF_ECHO_PREP_PHRASE}support for statistics."

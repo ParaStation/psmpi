@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include <signal.h>
 #include "mpidimpl.h"
-#include "pmi.h"
 
 static
 int _getenv_i(const char *env_name, int _default)
@@ -96,7 +95,7 @@ int MPID_Finalize(void)
 
 		/* Use PMI_Barrier() for synchronization instead of the MPI Barrier (!no MPI progress here!) */
 
-		PMI_Barrier();
+		MPIR_pmi_barrier();
 
 	} else {
 
@@ -194,8 +193,7 @@ int MPID_Finalize(void)
 	}
 #endif
 
-/*	fprintf(stderr, "%d PMI_Finalize\n", MPIDI_Process.my_pg_rank); */
-	PMI_Finalize();
+	MPIR_pmi_finalize();
 
 	/* Release standard communicators */
 #ifdef MPID_NEEDS_ICOMM_WORLD

@@ -10,10 +10,8 @@
  */
 
 #include "mpidimpl.h"
-#include "pmi.h"
 #include <unistd.h>
 #include <sys/types.h>
-#include "pmi.h"
 #include "mpid_debug.h"
 
 /*
@@ -77,7 +75,7 @@ Parent
 Spawn
   MPID_Open_port
   @root:
-    PMI_Spawn_multiple(port@root)
+    MPIR_pmi_Spawn_multiple(port@root)
 
   MPID_Comm_accept
   MPID_Close_port
@@ -705,20 +703,12 @@ static char parent_port_name[MPIDI_MAX_KVS_VALUE_LEN] = { 0 };
 int MPID_PSP_GetParentPort(char **parent_port)
 {
 	int mpi_errno = MPI_SUCCESS;
-	int pmi_errno;
 
 	if (!parent_port_name[0]) {
-		char *pg_id = MPIDI_Process.pg_id_name;
-
 		MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
-		pmi_errno = PMI_KVS_Get(pg_id, PARENT_PORT_KVSKEY, parent_port_name, sizeof(parent_port_name));
+		mpi_errno = MPIR_pmi_kvs_get(-1, PARENT_PORT_KVSKEY,  parent_port_name, sizeof(parent_port_name));
 		MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
-		if (pmi_errno) {
-			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, "MPID_PSP_GetParentPort",
-							 __LINE__, MPI_ERR_OTHER,
-							 "**pmi_kvsget", "**pmi_kvsget %d", pmi_errno);
-			goto fn_exit;
-		}
+		MPIR_ERR_CHECK(mpi_errno);
 	}
 
 	*parent_port = parent_port_name;
@@ -726,63 +716,9 @@ int MPID_PSP_GetParentPort(char **parent_port)
  fn_exit:
 	return mpi_errno;
  fn_fail:
+	PRINTERROR("MPI errno:  MPIR_pmi_kvs_get = %d in MPID_PSP_GetParentPort", mpi_errno);
 	goto fn_exit;
 }
-
-
-static
-int  mpi_to_pmi_keyvals(MPIR_Info *info_ptr, const PMI_keyval_t **kv_ptr,
-			       int *nkeys_ptr )
-{
-	char key[MPI_MAX_INFO_KEY];
-	PMI_keyval_t *kv = 0;
-	int          i, nkeys = 0, vallen, flag, mpi_errno=MPI_SUCCESS;
-
-	if (!info_ptr || info_ptr->handle == MPI_INFO_NULL) {
-		goto fn_exit;
-	}
-
-	MPIR_Info_get_nkeys_impl( info_ptr, &nkeys );
-	if (nkeys == 0) {
-		goto fn_exit;
-	}
-	kv = (PMI_keyval_t *)MPL_malloc( nkeys * sizeof(PMI_keyval_t) , MPL_MEM_PM);
-	assert(kv);
-
-	for (i=0; i<nkeys; i++) {
-		mpi_errno = MPIR_Info_get_nthkey_impl( info_ptr, i, key );
-		assert(mpi_errno == MPI_SUCCESS);
-		MPIR_Info_get_valuelen_impl( info_ptr, key, &vallen, &flag );
-
-		kv[i].key = MPL_strdup(key);
-		kv[i].val = MPL_malloc( vallen + 1 , MPL_MEM_PM);
-		assert(kv[i].key);
-		assert(kv[i].val);
-
-		MPIR_Info_get_impl( info_ptr, key, vallen+1, kv[i].val, &flag );
-		/* MPIU_DBG_PRINTF(("key: <%s>, value: <%s>\n", kv[i].key, kv[i].val)); */
-	}
-
- fn_exit:
-	*kv_ptr    = kv;
-	*nkeys_ptr = nkeys;
-	return mpi_errno;
-}
-
-
-static
-void pmi_keyvals_free(const PMI_keyval_t *kv, int nkeys)
-{
-	int i;
-	if (!kv) return;
-
-	for (i = 0; i < nkeys; i++) {
-		MPL_free((char *)kv[i].key);
-		MPL_free(kv[i].val);
-	}
-	MPL_free((void*)kv);
-}
-
 
 static
 int count_total_processes(int count, const int maxprocs[])
@@ -829,6 +765,10 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 
 	char port_name[MPI_MAX_PORT_NAME];
 
+	int mpi_errno = MPI_SUCCESS;
+#ifdef USE_PMIX_API
+	MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_SPAWN, "**pmix_spawn_not_supported");
+#endif
 	/*
 	printf("%s:%u:%s Spawn from context_id: %u\n", __FILE__, __LINE__, __func__, comm_ptr->context_id);
 	*/
@@ -837,34 +777,11 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 	assert(rc == MPI_SUCCESS);
 
 	if (comm_ptr->rank == root) {
+
 		int ret, i;
-		const PMI_keyval_t **info_keyval_vectors = 0;
-		PMI_keyval_t preput_keyval_vector;
-		int *info_keyval_sizes = 0;
-		int *pmi_errcodes;
 		int total_num_processes = count_total_processes(count, array_of_maxprocs);
-
-		info_keyval_sizes   = (int *)MPL_malloc(count * sizeof(int), MPL_MEM_OTHER);
-		assert(info_keyval_sizes);
-
-		info_keyval_vectors =
-			(const PMI_keyval_t**) MPL_malloc(count * sizeof(PMI_keyval_t*), MPL_MEM_OTHER);
-		assert(info_keyval_vectors);
-
-		if (!array_of_info_ptrs) {
-			for (i = 0; i < count; i++) {
-				info_keyval_vectors[i] = 0;
-				info_keyval_sizes[i]   = 0;
-			}
-		} else {
-			for (i = 0; i < count; i++) {
-				rc = mpi_to_pmi_keyvals(array_of_info_ptrs[i],
-							&info_keyval_vectors[i],
-							&info_keyval_sizes[i]);
-				assert(rc == MPI_SUCCESS);
-			}
-		}
-
+		int *pmi_errcodes;
+		struct MPIR_PMI_KEYVAL preput_keyval_vector;
 		preput_keyval_vector.key = PARENT_PORT_KVSKEY;
 		preput_keyval_vector.val = port_name;
 
@@ -872,21 +789,15 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 		pmi_errcodes = (int*)MPL_malloc(sizeof(int) * total_num_processes, MPL_MEM_OTHER);
 		assert(pmi_errcodes);
 
-		/* initialize them to 0 */
-		for (i = 0; i < total_num_processes; i++) pmi_errcodes[i] = 0;
-
-		ret = PMI_Spawn_multiple(count,
-					 (const char **)array_of_commands,
-					 (const char ***)array_of_argv,
+		ret = MPIR_pmi_spawn_multiple(count,
+					 array_of_commands,
+					 array_of_argv,
 					 array_of_maxprocs,
-
-					 info_keyval_sizes,
-					 info_keyval_vectors,
-
+					 array_of_info_ptrs,
 					 1,
 					 &preput_keyval_vector,
 					 pmi_errcodes);
-		assert(ret == PMI_SUCCESS);
+		assert(ret == MPI_SUCCESS);
 
 		if (array_of_errcodes != MPI_ERRCODES_IGNORE) {
 			for (i = 0; i < total_num_processes; i++) {
@@ -900,14 +811,7 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 			}
 			/* should_accept = !should_accept; *//* the `N' in NAND */
 		}
-
 		MPL_free(pmi_errcodes);
-		for (i = 0; i < count; i++) {
-			pmi_keyvals_free(info_keyval_vectors[i],
-					 info_keyval_sizes[i]);
-		}
-		MPL_free(info_keyval_vectors);
-		MPL_free(info_keyval_sizes);
 
 		/*
 		printf("%s:%u:%s Spawn done\n", __FILE__, __LINE__, __func__);
@@ -921,4 +825,7 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 	assert(rc == MPI_SUCCESS);
 
 	return 0;
+
+ fn_fail:
+	return mpi_errno;
 }

@@ -14,7 +14,6 @@
 #include "mpidimpl.h"
 #include "mpi-ext.h"
 #include "mpl.h"
-#include "pmi.h"
 #include "errno.h"
 #include "mpid_debug.h"
 #include "mpid_coll.h"
@@ -90,18 +89,6 @@ MPIDI_Process_t MPIDI_Process = {
 	},
 #endif /* MPIDI_PSP_WITH_SESSION_STATISTICS */
 };
-
-/*
- * Check the success/failure of PMI calls if and only if we are not a singleton
- * without a process manager
- */
-#define PMICALL(func) do {								\
-	int pmi_errno = MPIDI_Process.singleton_but_no_pm? PMI_SUCCESS : (func);	\
-	if (pmi_errno != PMI_SUCCESS) {							\
-		PRINTERROR("PMI: " #func " = %d", pmi_errno);				\
-		exit(1);								\
-	}										\
-} while (0)
 
 static
 void grank2con_set(int dest_grank, pscom_connection_t *con)
@@ -237,22 +224,30 @@ int do_connect(pscom_socket_t *socket, int pg_rank, int dest, char *dest_addr)
 
 
 static
-void i_version_set(char *pg_id, int pg_rank, const char *ver)
+int i_version_set(int pg_rank, const char *ver)
 {
+	int mpi_errno = MPI_SUCCESS;
 	if (pg_rank == 0) {
-		PMICALL(PMI_KVS_Put(pg_id, "i_version", ver));
+		mpi_errno = MPIR_pmi_kvs_put("i_version", ver);
+		MPIR_ERR_CHECK(mpi_errno);
 	}
+
+ fn_exit:
+	return mpi_errno;
+ fn_fail:
+	PRINTERROR("MPI errno:  MPIR_pmi_kvs_put  = %d in i_version_set", mpi_errno);
+	goto fn_exit;
 }
 
 
 static
-void i_version_check(char *pg_id, int pg_rank, const char *ver)
+int i_version_check(int pg_rank, const char *ver)
 {
+        int mpi_errno = MPI_SUCCESS;
 	if (pg_rank != 0) {
 		char val[100] = "unknown";
-		int pmi_errno = PMI_KVS_Get(pg_id, "i_version", val, sizeof(val));
-
-		assert(pmi_errno == PMI_SUCCESS);
+		mpi_errno = MPIR_pmi_kvs_get(0, "i_version", val, sizeof(val));
+		MPIR_ERR_CHECK(mpi_errno);
 
 		if (strcmp(val, ver)) {
 			fprintf(stderr,
@@ -260,6 +255,12 @@ void i_version_check(char *pg_id, int pg_rank, const char *ver)
 				val, pg_rank, ver);
 		}
 	}
+
+ fn_exit:
+	return mpi_errno;
+ fn_fail:
+	PRINTERROR("MPI errno:  MPIR_pmi_kvs_get  = %d in i_version_check", mpi_errno);
+	goto fn_exit;
 }
 
 
@@ -275,23 +276,26 @@ int InitPortConnections(pscom_socket_t *socket) {
 
 	int pg_rank = MPIDI_Process.my_pg_rank;
 	int pg_size = MPIDI_Process.my_pg_size;
-	char *pg_id = MPIDI_Process.pg_id_name;
 	char *listen_socket;
 	char **psp_port = NULL;
 
 	/* Distribute my contact information */
 	snprintf(key, sizeof(key), "psp%d", pg_rank);
-
 	listen_socket = MPL_strdup(pscom_listen_socket_str(socket));
-	PMICALL(PMI_KVS_Put(pg_id, key, listen_socket));
+
+	/* PMI(x)_put and PMI(x)_commit() */
+	mpi_errno = MPIR_pmi_kvs_put(key,listen_socket);
+	MPIR_ERR_CHECK(mpi_errno);
 
 #define INIT_VERSION "ps_v5.0"
-	i_version_set(pg_id, pg_rank, INIT_VERSION);
-	PMICALL(PMI_KVS_Commit(pg_id));
+	mpi_errno = i_version_set(pg_rank, INIT_VERSION);
+	MPIR_ERR_CHECK(mpi_errno);
 
-	PMICALL(PMI_Barrier());
+	mpi_errno = MPIR_pmi_barrier();
+	MPIR_ERR_CHECK(mpi_errno);
 
-	i_version_check(pg_id, pg_rank, INIT_VERSION);
+	mpi_errno = i_version_check(pg_rank, INIT_VERSION);
+	MPIR_ERR_CHECK(mpi_errno);
 
 	init_grank_port_mapping();
 
@@ -305,9 +309,10 @@ int InitPortConnections(pscom_socket_t *socket) {
 
 		if (i != pg_rank) {
 			snprintf(key, sizeof(key), "psp%d", i);
-			PMICALL(PMI_KVS_Get(pg_id, key, val, sizeof(val)));
-			/* simple_pmi.c has a bug.(fixed in mpich2-1.0.5)
-			   Test for the bugfix: */
+			/*"i" is the source who published the information */
+			mpi_errno = MPIR_pmi_kvs_get(i, key, val, sizeof(val));
+			MPIR_ERR_CHECK(mpi_errno);
+
 			assert(guard_pmi_value == MAGIC_PMI_VALUE);
 			assert(guard_pmi_key == MAGIC_PMI_KEY);
 		} else {
@@ -326,7 +331,7 @@ int InitPortConnections(pscom_socket_t *socket) {
 
 		if (!i || (pg_rank / i) % 2) {
 			/* connect, accept */
-			if (do_connect(socket, pg_rank, dest, psp_port[dest])) goto fn_fail;
+			if (do_connect(socket, pg_rank, dest, psp_port[dest])) goto fn_fail_connect;
 			if (!i || src != dest) {
 				do_wait(pg_rank, src);
 			}
@@ -334,7 +339,7 @@ int InitPortConnections(pscom_socket_t *socket) {
 			/* accept, connect */
 			do_wait(pg_rank, src);
 			if (src != dest) {
-				if (do_connect(socket, pg_rank, dest, psp_port[dest])) goto fn_fail;
+				if (do_connect(socket, pg_rank, dest, psp_port[dest])) goto fn_fail_connect;
 			}
 		}
 
@@ -362,9 +367,12 @@ int InitPortConnections(pscom_socket_t *socket) {
 	MPL_free(listen_socket);
 	return mpi_errno;
 	/* --- */
- fn_fail:
+ fn_fail_connect:
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
 					 "InitPortConnections", __LINE__, MPI_ERR_OTHER, "**sock|connfailed", 0);
+	goto fn_exit;
+ fn_fail:
+	PRINTERROR("MPI errno %d, PMI func failed at %d in InitPortConnections", mpi_errno, __LINE__);
 	goto fn_exit;
 }
 
@@ -378,24 +386,26 @@ int InitPscomConnections(pscom_socket_t *socket) {
 
 	int pg_rank = MPIDI_Process.my_pg_rank;
 	int pg_size = MPIDI_Process.my_pg_size;
-	char *pg_id = MPIDI_Process.pg_id_name;
 	char *listen_socket;
 	char **psp_port = NULL;
 
 	/* Distribute my contact information */
 	snprintf(key, sizeof(key), "pscom%d", pg_rank);
-
 	listen_socket = MPL_strdup(pscom_listen_socket_ondemand_str(socket));
-	PMICALL(PMI_KVS_Put(pg_id, key, listen_socket));
+
+	/* PMI(x)_put and PMI(x)_commit() */
+	mpi_errno = MPIR_pmi_kvs_put(key,listen_socket);
+	MPIR_ERR_CHECK(mpi_errno);
 
 #define IPSCOM_VERSION "pscom_v5.0"
-	i_version_set(pg_id, pg_rank, IPSCOM_VERSION);
+	mpi_errno = i_version_set(pg_rank, IPSCOM_VERSION);
+	MPIR_ERR_CHECK(mpi_errno);
 
-	PMICALL(PMI_KVS_Commit(pg_id));
+	mpi_errno = MPIR_pmi_barrier();
+	MPIR_ERR_CHECK(mpi_errno);
 
-	PMICALL(PMI_Barrier());
-
-	i_version_check(pg_id, pg_rank, IPSCOM_VERSION);
+	mpi_errno = i_version_check(pg_rank, IPSCOM_VERSION);
+	MPIR_ERR_CHECK(mpi_errno);
 
 	init_grank_port_mapping();
 
@@ -409,9 +419,10 @@ int InitPscomConnections(pscom_socket_t *socket) {
 
 		if (i != pg_rank) {
 			snprintf(key, sizeof(key), "pscom%d", i);
-			PMICALL(PMI_KVS_Get(pg_id, key, val, sizeof(val)));
-			/* simple_pmi.c has a bug.(fixed in mpich2-1.0.5)
-			   Test for the bugfix: */
+			/*"i" is the source who published the information */
+			mpi_errno = MPIR_pmi_kvs_get(i, key, val, sizeof(val));
+			MPIR_ERR_CHECK(mpi_errno);
+
 			assert(guard_pmi_value == MAGIC_PMI_VALUE);
 			assert(guard_pmi_key == MAGIC_PMI_KEY);
 		} else {
@@ -437,7 +448,7 @@ int InitPscomConnections(pscom_socket_t *socket) {
 		if (rc != PSCOM_SUCCESS) {
 			PRINTERROR("Connecting %s to %s (rank %d to %d) failed : %s",
 				   listen_socket, dest, pg_rank, i, pscom_err_str(rc));
-			goto fn_fail;
+			goto fn_fail_connect;
 		}
 
 		grank2con_set(i, con);
@@ -456,9 +467,12 @@ int InitPscomConnections(pscom_socket_t *socket) {
 	MPL_free(listen_socket);
 	return mpi_errno;
 	/* --- */
- fn_fail:
+ fn_fail_connect:
 	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
 					 "InitPscomConnections", __LINE__, MPI_ERR_OTHER, "**sock|connfailed", 0);
+	goto fn_exit;
+ fn_fail:
+	PRINTERROR("MPI errno %d, PMI func failed at %d in InitPscomConnections", mpi_errno, __LINE__);
 	goto fn_exit;
 }
 #else /* !PSCOM_HAS_ON_DEMAND_CONNECTIONS */
@@ -473,7 +487,6 @@ int InitPscomConnections(void) {
 int MPID_Init(int requested, int *provided)
 {
 	int mpi_errno = MPI_SUCCESS;
-	int pg_id_sz = 0;
 	int pg_rank = 0;
 	int pg_size = -1;
 	int appnum = -1;
@@ -481,7 +494,6 @@ int MPID_Init(int requested, int *provided)
 	int has_parent;
 	pscom_socket_t *socket;
 	pscom_err_t rc;
-	char *pg_id_name;
 
 	mpid_debug_init();
 
@@ -490,22 +502,19 @@ int MPID_Init(int requested, int *provided)
 	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_INIT);
 	MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_INIT);
 
-	/*
-	 * PMI_Init() and PMI_Get_appnum() have to be called in any case to
-	 * determine if we are a singleton without a process manager
-	 */
-	PMICALL(PMI_Init(&has_parent));
-	PMICALL(PMI_Get_appnum(&appnum));
+	// PMI or PMIx init
+	mpi_errno = MPIR_pmi_init();
+	MPIR_ERR_CHECK(mpi_errno);
+
+	pg_rank = MPIR_Process.rank;
+	pg_size = MPIR_Process.size;
+
+	// has_parent and appnum are set to 0 with PMIx
+	has_parent = MPIR_Process.has_parent ;
+	appnum = MPIR_Process.appnum;
 
 	/* keep track if we are a singleton without process manager */
 	MPIDI_Process.singleton_but_no_pm = (appnum == -1)? 1 : 0;
-
-	PMICALL(PMI_Get_rank(&pg_rank));
-	PMICALL(PMI_Get_size(&pg_size));
-
-	/* without PMI_Get_universe_size() we see pmi error:
-	   '[unset]: write_line error; fd=-1' in PMI_KVS_Get()! */
-	/* PMICALL(PMI_Get_universe_size(&universe_size)); */
 
 	if (pg_rank < 0) pg_rank = 0;
 	if (pg_size <= 0) pg_size = 1;
@@ -673,27 +682,23 @@ int MPID_Init(int requested, int *provided)
 #endif
 	MPIR_Process.attrs.tag_ub = MPIDI_TAG_UB;
 
-	/* obtain the id of the process group */
-
-	PMICALL(PMI_KVS_Get_name_length_max(&pg_id_sz));
-
-	pg_id_name = MPL_calloc(pg_id_sz + 1, sizeof(*pg_id_name), MPL_MEM_STRINGS);
-	if (!pg_id_name) { PRINTERROR("MPL_malloc()"); goto fn_fail; }
-
-	PMICALL(PMI_KVS_Get_my_name(pg_id_name, pg_id_sz));
-
 	/* safe */
 	/* MPIDI_Process.socket = socket; */
 	MPIDI_Process.my_pg_rank = pg_rank;
 	MPIDI_Process.my_pg_size = pg_size;
-	MPIDI_Process.pg_id_name = pg_id_name;
+        //now pg_id can be obtained directly from MPIR layer where pg_id is stored
+	MPIDI_Process.pg_id_name = MPL_strdup(MPIR_pmi_job_id()); //pg_id_name;
+
 
 	if (!MPIDI_Process.env.enable_ondemand) {
 		/* Create and establish all connections */
-		if (InitPortConnections(socket) != MPI_SUCCESS) goto fn_fail;
+		mpi_errno = InitPortConnections(socket);
+		MPIR_ERR_CHECK(mpi_errno);
+
 	} else {
 		/* Create all connections as "on demand" connections. */
-		if (InitPscomConnections(socket) != MPI_SUCCESS) goto fn_fail;
+		mpi_errno = InitPscomConnections(socket);
+		MPIR_ERR_CHECK(mpi_errno);
 	}
 
 	MPID_enable_receive_dispach(socket); /* ToDo: move MPID_enable_receive_dispach to bg thread */
@@ -746,18 +751,10 @@ int MPID_Init(int requested, int *provided)
 			MPICH_THREAD_LEVEL : requested;
 	}
 
-
+fn_fail:
 fn_exit:
     MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_INIT);
 	return mpi_errno;
-	/* --- */
- fn_fail:
-	/* A failing MPI_Init() did'nt call the MPI error handler, which
-	   mostly calls abort(). This cause MPI_Init() to return the mpi_errno,
-	   which nobody check, causing segfaultm double frees and so on. To
-	   prevent strange error messages, we now call _exit(1) here.
-	*/
-	_exit(1);
 }
 
 
@@ -779,12 +776,13 @@ int MPID_Get_universe_size(int *universe_size)
 {
 	int mpi_errno = MPI_SUCCESS;
 
-	PMICALL(PMI_Get_universe_size(universe_size));
+	mpi_errno = MPIR_pmi_get_universe_size(universe_size);
+	MPIR_ERR_CHECK(mpi_errno);
 
  fn_exit:
 	return mpi_errno;
-	/* --- */
  fn_fail:
+	PRINTERROR("MPI errno: MPIR_pmi_get_universe_size = %d", mpi_errno);
 	goto fn_exit;
 }
 
