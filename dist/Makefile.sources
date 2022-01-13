@@ -8004,6 +8004,9 @@ mpich2/test/mpi/parastation/spawn_isend.c \
 mpich2/test/mpi/parastation/spawn_rma.c \
 mpich2/test/mpi/parastation/spawn_ssend.c \
 mpich2/test/mpi/parastation/spawn_univ_anysrc.c \
+mpich2/test/mpi/parastation/spawn_univ_anysrc_cancel.c \
+mpich2/test/mpi/parastation/spawn_univ_anysrc_order.c \
+mpich2/test/mpi/parastation/spawn_univ_anysrc_order_mixed_comms.c \
 mpich2/test/mpi/parastation/spawn_univ_comm.c \
 mpich2/test/mpi/parastation/spawn_univ_discon.c \
 mpich2/test/mpi/parastation/spawn_univ_split.c \
