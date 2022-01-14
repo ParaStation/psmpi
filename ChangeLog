@@ -1,3 +1,26 @@
+2022-01-14  Simon Pickartz <pickartz@par-tec.com>     -     5.6.0-0rc1
+
+2022-01-13  Xu Huang <huang@par-tec.com>
+
+	* Enhancement: Add basic PMIx support
+
+2022-01-11  Carsten Clauss <clauss@par-tec.com>
+
+	* Enhancement: Cleanup configuration confsets and add new 'debug'
+	confset disabling compiler optimizations
+
+	* Fix: Support for large datatypes and messages for different
+	collectives: MPI_Ialltoall, MPI_(I)Allgather,
+	MPI_(I)Scatter/(I)Gather, MPI_(I)Bcast, MPI_Accumulate
+
+2021-12-21  Simon Pickartz <pickartz@par-tec.com>
+
+	* MPICH 3.4.3
+
+2021-11-18  Carsten Clauss <clauss@par-tec.com>
+
+	* Testing: Support environment variables in batch mode
+
 2021-10-21  Simon Pickartz <pickartz@par-tec.com>     -     5.5.0-1
 
 2021-10-08  Simon Pickartz <pickartz@par-tec.com>     -     5.5.0-0rc2
