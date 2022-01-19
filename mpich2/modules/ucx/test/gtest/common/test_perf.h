@@ -1,5 +1,6 @@
 /**
 * Copyright (C) Mellanox Technologies Ltd. 2001-2015.  ALL RIGHTS RESERVED.
+* Copyright (C) ARM Ltd. 2020.  ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -19,6 +20,7 @@ protected:
         ucx_perf_api_t         api;
         ucx_perf_cmd_t         command;
         ucx_perf_test_type_t   test_type;
+        ucx_perf_wait_mode_t   wait_mode;
         int                    data_layout;
         size_t                 msg_stride;
         size_t                 msglencnt;
@@ -34,8 +36,8 @@ protected:
 
     static std::vector<int> get_affinity();
 
-    void run_test(const test_spec& test, unsigned flags, bool check_perf,
-                  const std::string &tl_name, const std::string &dev_name);
+    double run_test(const test_spec& test, unsigned flags, bool check_perf, const
+                    std::string &tl_name, const std::string &dev_name);
 
 private:
     class rte_comm {

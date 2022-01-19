@@ -47,6 +47,7 @@ struct ADIOI_Hints_struct {
     int deferred_open;
     int start_iodevice;
     int min_fdomain_size;
+    int synchronizing_flush;    /* "romio_synchronized_flush" hint */
     char *cb_config_list;
     int *ranklist;
     union {
@@ -95,9 +96,18 @@ struct ADIOI_Hints_struct {
 typedef struct ADIOI_Datarep {
     char *name;
     void *state;
+    int is_large;
     MPI_Datarep_extent_function *extent_fn;
-    MPI_Datarep_conversion_function *read_conv_fn;
-    MPI_Datarep_conversion_function *write_conv_fn;
+    union {
+        struct {
+            MPI_Datarep_conversion_function *read_conv_fn;
+            MPI_Datarep_conversion_function *write_conv_fn;
+        } small;
+        struct {
+            MPI_Datarep_conversion_function_c *read_conv_fn;
+            MPI_Datarep_conversion_function_c *write_conv_fn;
+        } large;
+    } u;
     struct ADIOI_Datarep *next; /* pointer to next datarep */
 } ADIOI_Datarep;
 
@@ -362,7 +372,7 @@ void ADIOI_SetFunctions(ADIO_File fd);
 ADIOI_Flatlist_node *ADIOI_Flatten_datatype(MPI_Datatype type);
 void ADIOI_Flatten(MPI_Datatype type, ADIOI_Flatlist_node * flat,
                    ADIO_Offset st_offset, MPI_Count * curr_index);
-/* callbakcs for attribute-style flattened tracking */
+/* callbacks for attribute-style flattened tracking */
 int ADIOI_Flattened_type_copy(MPI_Datatype oldtype,
                               int type_keyval, void *extra_state, void *attribute_val_in,
                               void *attribute_val_out, int *flag);
@@ -609,7 +619,7 @@ typedef struct view_state {
     ADIO_Offset disp;           /* file view params */
     ADIO_Offset byte_off;
     ADIO_Offset sz;
-    ADIO_Offset ext;            /* preserved extent from MPI_Type_extent */
+    ADIO_Offset ext;            /* preserved extent from MPI_Type_get_extent */
     ADIO_Offset type_sz;
 
     /* Current state */
@@ -705,7 +715,7 @@ typedef struct ADIOI_OneSidedStripeParms {
     /* onesided algorithm.                                          */
     int lastStripedWriteCall;   /* whether this is the last call in the last segment of the  */
     /* onesided algorithm.                                        */
-    int iWasUsedStripingAgg;    /* whether this rank was ever a used agg for this striping segement */
+    int iWasUsedStripingAgg;    /* whether this rank was ever a used agg for this striping segment */
     int numStripesUsed;         /* the number of stripes packed into an aggregator */
     /* These 2 elements are the offset and lengths in the file corresponding to the actual stripes */
     ADIO_Offset *stripeWriteOffsets;
@@ -832,7 +842,27 @@ int MPIOI_File_iread_all(MPI_File fh,
                          void *buf,
                          int count, MPI_Datatype datatype, char *myname, MPI_Request * request);
 
+int MPIOI_File_read_ordered(MPI_File fh, void *buf, int count,
+                            MPI_Datatype datatype, MPI_Status * status);
+int MPIOI_File_read_ordered_begin(MPI_File fh, void *buf, int count, MPI_Datatype datatype);
+int MPIOI_File_read_shared(MPI_File fh, void *buf, int count,
+                           MPI_Datatype datatype, MPI_Status * status);
+int MPIOI_File_iread_shared(MPI_File fh, void *buf, int count,
+                            MPI_Datatype datatype, MPI_Request * request);
+int MPIOI_File_write_ordered(MPI_File fh, const void *buf, int count,
+                             MPI_Datatype datatype, MPI_Status * status);
+int MPIOI_File_write_ordered_begin(MPI_File fh, const void *buf, int count, MPI_Datatype datatype);
+int MPIOI_File_write_shared(MPI_File fh, const void *buf, int count,
+                            MPI_Datatype datatype, MPI_Status * status);
+int MPIOI_File_iwrite_shared(MPI_File fh, const void *buf, int count,
+                             MPI_Datatype datatype, MPIO_Request * request);
 
+typedef void (*MPIOI_VOID_FN) (void *);
+int MPIOI_Register_datarep(const char *datarep,
+                           MPIOI_VOID_FN * read_conversion_fn,
+                           MPIOI_VOID_FN * write_conversion_fn,
+                           MPI_Datarep_extent_function * dtype_file_extent_fn,
+                           void *extra_state, int is_large);
 
 /* Unix-style file locking */
 

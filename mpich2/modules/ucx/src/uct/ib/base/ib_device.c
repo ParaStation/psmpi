@@ -1,6 +1,7 @@
 /**
 * Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
 * Copyright (C) UT-Battelle, LLC. 2014. ALL RIGHTS RESERVED.
+* Copyright (C) Huawei Technologies Co., Ltd. 2020.  ALL RIGHTS RESERVED.
 * See file LICENSE for terms.
 */
 
@@ -20,8 +21,8 @@
 #include <ucs/sys/sock.h>
 #include <ucs/sys/sys.h>
 #include <sys/poll.h>
-#include <sched.h>
 #include <libgen.h>
+#include <sched.h>
 
 
 /* This table is according to "Encoding for RNR NAK Timer Field"
@@ -52,6 +53,24 @@ int uct_ib_kh_ah_hash_equal(struct ibv_ah_attr a, struct ibv_ah_attr b)
 KHASH_IMPL(uct_ib_ah, struct ibv_ah_attr, struct ibv_ah*, 1,
            uct_ib_kh_ah_hash_func, uct_ib_kh_ah_hash_equal)
 
+
+static UCS_F_ALWAYS_INLINE
+khint32_t uct_ib_async_event_hash_func(uct_ib_async_event_t event)
+{
+    return kh_int64_hash_func(((uint64_t)event.event_type << 32) |
+                              event.resource_id);
+}
+
+static UCS_F_ALWAYS_INLINE int
+uct_ib_async_event_hash_equal(uct_ib_async_event_t event1,
+                              uct_ib_async_event_t event2)
+{
+    return (event1.event_type  == event2.event_type) &&
+           (event1.resource_id == event2.resource_id);
+}
+
+KHASH_IMPL(uct_ib_async_event, uct_ib_async_event_t, uct_ib_async_event_val_t, 1,
+           uct_ib_async_event_hash_func, uct_ib_async_event_hash_equal)
 
 #ifdef ENABLE_STATS
 static ucs_stats_class_t uct_ib_device_stats_class = {
@@ -106,7 +125,25 @@ static uct_ib_device_spec_t uct_ib_builtin_device_specs[] = {
    UCT_IB_DEVICE_FLAG_DC_V2, 50},
   {"ConnectX-6 DX", {0x15b3, 4125},
    UCT_IB_DEVICE_FLAG_MELLANOX | UCT_IB_DEVICE_FLAG_MLX5_PRM |
-   UCT_IB_DEVICE_FLAG_DC_V2, 50},
+   UCT_IB_DEVICE_FLAG_DC_V2, 60},
+  {"ConnectX-6 DX VF", {0x15b3, 4126},
+   UCT_IB_DEVICE_FLAG_MELLANOX | UCT_IB_DEVICE_FLAG_MLX5_PRM |
+   UCT_IB_DEVICE_FLAG_DC_V2, 60},
+  {"ConnectX-6 LX", {0x15b3, 4127},
+   UCT_IB_DEVICE_FLAG_MELLANOX | UCT_IB_DEVICE_FLAG_MLX5_PRM |
+   UCT_IB_DEVICE_FLAG_DC_V2, 45},
+  {"ConnectX-7", {0x15b3, 4129},
+   UCT_IB_DEVICE_FLAG_MELLANOX | UCT_IB_DEVICE_FLAG_MLX5_PRM |
+   UCT_IB_DEVICE_FLAG_DC_V2, 70},
+  {"BlueField", {0x15b3, 0xa2d2},
+   UCT_IB_DEVICE_FLAG_MELLANOX | UCT_IB_DEVICE_FLAG_MLX5_PRM |
+   UCT_IB_DEVICE_FLAG_DC_V2, 41},
+  {"BlueField VF", {0x15b3, 0xa2d3},
+   UCT_IB_DEVICE_FLAG_MELLANOX | UCT_IB_DEVICE_FLAG_MLX5_PRM |
+   UCT_IB_DEVICE_FLAG_DC_V2, 41},
+  {"BlueField 2", {0x15b3, 0xa2d6},
+   UCT_IB_DEVICE_FLAG_MELLANOX | UCT_IB_DEVICE_FLAG_MLX5_PRM |
+   UCT_IB_DEVICE_FLAG_DC_V2, 61},
   {"Generic HCA", {0, 0}, 0, 0},
   {NULL}
 };
@@ -159,7 +196,124 @@ static void uct_ib_device_get_locality(const char *dev_name,
     *numa_node = (status == UCS_OK) ? n : -1;
 }
 
-static void uct_ib_async_event_handler(int fd, int events, void *arg)
+static void
+uct_ib_device_async_event_dispatch(uct_ib_device_t *dev,
+                                   const uct_ib_async_event_t *event)
+{
+    uct_ib_async_event_val_t *entry;
+    khiter_t iter;
+
+    ucs_spin_lock(&dev->async_event_lock);
+    iter = kh_get(uct_ib_async_event, &dev->async_events_hash, *event);
+    if (iter != kh_end(&dev->async_events_hash)) {
+        entry = &kh_value(&dev->async_events_hash, iter);
+        entry->flag = 1;
+        if (entry->wait_ctx != NULL) {
+            /* someone is waiting */
+            ucs_assert(entry->wait_ctx->cb_id == UCS_CALLBACKQ_ID_NULL);
+            entry->wait_ctx->cb_id = ucs_callbackq_add_safe(
+                    entry->wait_ctx->cbq, entry->wait_ctx->cb,
+                    entry->wait_ctx, 0);
+        }
+    }
+    ucs_spin_unlock(&dev->async_event_lock);
+}
+
+ucs_status_t
+uct_ib_device_async_event_register(uct_ib_device_t *dev,
+                                   enum ibv_event_type event_type,
+                                   uint32_t resource_id)
+{
+    uct_ib_async_event_val_t *entry;
+    uct_ib_async_event_t event;
+    ucs_status_t status;
+    khiter_t iter;
+    int ret;
+
+    event.event_type  = event_type;
+    event.resource_id = resource_id;
+
+    ucs_spin_lock(&dev->async_event_lock);
+    iter = kh_put(uct_ib_async_event, &dev->async_events_hash, event, &ret);
+    if (ret == UCS_KH_PUT_FAILED) {
+        status = UCS_ERR_NO_MEMORY;
+        goto out;
+    }
+
+    ucs_assert(ret != UCS_KH_PUT_KEY_PRESENT);
+    entry           = &kh_value(&dev->async_events_hash, iter);
+    entry->wait_ctx = NULL;
+    entry->flag     = 0;
+    status          = UCS_OK;
+
+out:
+    ucs_spin_unlock(&dev->async_event_lock);
+    return status;
+}
+
+ucs_status_t
+uct_ib_device_async_event_wait(uct_ib_device_t *dev,
+                               enum ibv_event_type event_type,
+                               uint32_t resource_id,
+                               uct_ib_async_event_wait_t *wait_ctx)
+{
+    uct_ib_async_event_val_t *entry;
+    uct_ib_async_event_t event;
+    ucs_status_t status;
+    khiter_t iter;
+
+    event.event_type  = event_type;
+    event.resource_id = resource_id;
+
+    ucs_spin_lock(&dev->async_event_lock);
+    iter  = kh_get(uct_ib_async_event, &dev->async_events_hash, event);
+    ucs_assert(iter != kh_end(&dev->async_events_hash));
+    entry = &kh_value(&dev->async_events_hash, iter);
+
+    if (entry->flag) {
+        /* event already arrived */
+        status          = UCS_OK;
+        entry->wait_ctx = NULL;
+    } else if (entry->wait_ctx != NULL) {
+        /* someone is already waiting for this event */
+        status          = UCS_ERR_BUSY;
+    } else {
+        /* start waiting for this event */
+        wait_ctx->cb_id = UCS_CALLBACKQ_ID_NULL;
+        status          = UCS_INPROGRESS;
+        entry->wait_ctx = wait_ctx;
+    }
+
+    ucs_spin_unlock(&dev->async_event_lock);
+    return status;
+}
+
+void uct_ib_device_async_event_unregister(uct_ib_device_t *dev,
+                                          enum ibv_event_type event_type,
+                                          uint32_t resource_id)
+{
+    uct_ib_async_event_val_t *entry;
+    uct_ib_async_event_t event;
+    khiter_t iter;
+
+    event.event_type  = event_type;
+    event.resource_id = resource_id;
+
+    ucs_spin_lock(&dev->async_event_lock);
+    iter = kh_get(uct_ib_async_event, &dev->async_events_hash, event);
+    ucs_assert(iter != kh_end(&dev->async_events_hash));
+    entry = &kh_value(&dev->async_events_hash, iter);
+    if ((entry->wait_ctx != NULL) &&
+        (entry->wait_ctx->cb_id != UCS_CALLBACKQ_ID_NULL)) {
+        /* cancel scheduled callback */
+        ucs_callbackq_remove_safe(entry->wait_ctx->cbq, entry->wait_ctx->cb_id);
+    }
+    kh_del(uct_ib_async_event, &dev->async_events_hash, iter);
+    ucs_spin_unlock(&dev->async_event_lock);
+}
+
+static void uct_ib_async_event_handler(int fd, ucs_event_set_types_t events,
+                                       void *arg)
 {
     uct_ib_device_t *dev = arg;
     struct ibv_async_event ibevent;
@@ -235,10 +389,14 @@ void uct_ib_handle_async_event(uct_ib_device_t *dev, uct_ib_async_event_t *event
                  ibv_event_type_str(event->event_type), event->cookie);
         level = UCS_LOG_LEVEL_ERROR;
         break;
+    case IBV_EVENT_COMM_EST:
+    case IBV_EVENT_QP_ACCESS_ERR:
+        snprintf(event_info, sizeof(event_info), "%s on QPN 0x%x",
+                 ibv_event_type_str(event->event_type), event->qp_num);
+        level = UCS_LOG_LEVEL_DIAG;
+        break;
     case IBV_EVENT_QP_FATAL:
     case IBV_EVENT_QP_REQ_ERR:
-    case IBV_EVENT_QP_ACCESS_ERR:
-    case IBV_EVENT_COMM_EST:
     case IBV_EVENT_SQ_DRAINED:
     case IBV_EVENT_PATH_MIG:
     case IBV_EVENT_PATH_MIG_ERR:
@@ -249,6 +407,7 @@ void uct_ib_handle_async_event(uct_ib_device_t *dev, uct_ib_async_event_t *event
     case IBV_EVENT_QP_LAST_WQE_REACHED:
         snprintf(event_info, sizeof(event_info), "SRQ-attached QP 0x%x was flushed",
                  event->qp_num);
+        uct_ib_device_async_event_dispatch(dev, event);
         level = UCS_LOG_LEVEL_DEBUG;
         break;
     case IBV_EVENT_SRQ_ERR:
@@ -262,12 +421,16 @@ void uct_ib_handle_async_event(uct_ib_device_t *dev, uct_ib_async_event_t *event
         level = UCS_LOG_LEVEL_DEBUG;
         break;
     case IBV_EVENT_DEVICE_FATAL:
-    case IBV_EVENT_PORT_ERR:
         snprintf(event_info, sizeof(event_info), "%s on port %d",
                  ibv_event_type_str(event->event_type), event->port_num);
         level = UCS_LOG_LEVEL_ERROR;
         break;
     case IBV_EVENT_PORT_ACTIVE:
+    case IBV_EVENT_PORT_ERR:
+        snprintf(event_info, sizeof(event_info), "%s on port %d",
+                 ibv_event_type_str(event->event_type), event->port_num);
+        level = UCS_LOG_LEVEL_DIAG;
+        break;
 #if HAVE_DECL_IBV_EVENT_GID_CHANGE
     case IBV_EVENT_GID_CHANGE:
 #endif
@@ -312,24 +475,95 @@ void uct_ib_handle_async_event(uct_ib_device_t *dev, uct_ib_async_event_t *event
     ucs_log(level, "IB Async event on %s: %s", uct_ib_device_name(dev), event_info);
 }
 
+static ucs_status_t uct_ib_device_get_path_buffer(uct_ib_device_t *dev,
+                                                  char *path_buffer)
+{
+    char *resolved_path;
+
+    resolved_path = realpath(dev->ibv_context->device->ibdev_path, path_buffer);
+    if (resolved_path == NULL) {
+        return UCS_ERR_IO_ERROR;
+    }
+
+    /* Make sure there is "/infiniband/" substring in path_buffer */
+    if (strstr(path_buffer, "/infiniband/") == NULL) {
+        return UCS_ERR_IO_ERROR;
+    }
+
+    return UCS_OK;
+}
+
+static ucs_status_t uct_ib_device_get_ids_from_path(const char *path,
+                                                    uint16_t *vendor_id,
+                                                    uint16_t *device_id)
+{
+    ucs_status_t status;
+    long value;
+
+    status = ucs_read_file_number(&value, 1, "%s/%s", path, "vendor");
+    if (status != UCS_OK) {
+        return status;
+    }
+    *vendor_id = value;
+
+    status = ucs_read_file_number(&value, 1, "%s/%s", path, "device");
+    if (status != UCS_OK) {
+        return status;
+    }
+    *device_id = value;
+
+    return UCS_OK;
+}
+
 static void uct_ib_device_get_ids(uct_ib_device_t *dev)
 {
-    long vendor_id, device_id;
+    char *ids_path;
+    char path_buffer[PATH_MAX];
+    ucs_status_t status;
 
-    if ((ucs_read_file_number(&vendor_id, 1, UCT_IB_DEVICE_SYSFS_FMT,
-                              uct_ib_device_name(dev), "vendor") == UCS_OK) &&
-        (ucs_read_file_number(&device_id, 1, UCT_IB_DEVICE_SYSFS_FMT,
-                              uct_ib_device_name(dev), "device") == UCS_OK)) {
-        dev->pci_id.vendor = vendor_id;
-        dev->pci_id.device = device_id;
-        ucs_debug("%s vendor_id: 0x%x device_id: %d", uct_ib_device_name(dev),
-                  dev->pci_id.vendor, dev->pci_id.device);
-    } else {
-        dev->pci_id.vendor = 0;
-        dev->pci_id.device = 0;
-        ucs_warn("%s: could not read device/vendor id from sysfs, "
-                 "performance may be affected", uct_ib_device_name(dev));
+    /* PF: realpath name is of form /sys/devices/.../0000:03:00.0/infiniband/mlx5_0 */
+    /* SF: realpath name is of form /sys/devices/.../0000:03:00.0/<UUID>/infiniband/mlx5_0 */
+
+    status = uct_ib_device_get_path_buffer(dev, path_buffer);
+    if (status != UCS_OK) {
+        goto not_found;
     }
+
+    /* PF: strip 2 layers. */
+    ids_path = ucs_dirname(path_buffer, 2);
+    if (ids_path == NULL) {
+        goto not_found;
+    }
+
+    status = uct_ib_device_get_ids_from_path(ids_path,
+                                             &dev->pci_id.vendor,
+                                             &dev->pci_id.device);
+    if (status == UCS_OK) {
+        ucs_debug("PF: %s vendor_id: 0x%x device_id: %d", uct_ib_device_name(dev),
+                  dev->pci_id.vendor, dev->pci_id.device);
+        return;
+    }
+
+    /* SF: strip 3 layers (1 more layer than PF). */
+    ids_path = ucs_dirname(path_buffer, 1);
+    if (ids_path == NULL) {
+        goto not_found;
+    }
+
+    status = uct_ib_device_get_ids_from_path(ids_path,
+                                             &dev->pci_id.vendor,
+                                             &dev->pci_id.device);
+    if (status == UCS_OK) {
+        ucs_debug("SF: %s vendor_id: 0x%x device_id: %d", uct_ib_device_name(dev),
+                  dev->pci_id.vendor, dev->pci_id.device);
+        return;
+    }
+
+not_found:
+    dev->pci_id.vendor = 0;
+    dev->pci_id.device = 0;
+    ucs_warn("%s: could not read device/vendor id from sysfs, "
+             "performance may be affected", uct_ib_device_name(dev));
 }
 
 ucs_status_t uct_ib_device_query(uct_ib_device_t *dev,
@@ -358,10 +592,10 @@ ucs_status_t uct_ib_device_query(uct_ib_device_t *dev,
     }
 
     if (dev->num_ports > UCT_IB_DEV_MAX_PORTS) {
-        ucs_error("%s has %d ports, but only up to %d are supported",
+        ucs_debug("%s has %d ports, but only up to %d are supported",
                   ibv_get_device_name(ibv_device), dev->num_ports,
                   UCT_IB_DEV_MAX_PORTS);
-        return UCS_ERR_UNSUPPORTED;
+        dev->num_ports = UCT_IB_DEV_MAX_PORTS;
     }
 
     /* Query all ports */
@@ -415,6 +649,8 @@ ucs_status_t uct_ib_device_init(uct_ib_device_t *dev,
 
     kh_init_inplace(uct_ib_ah, &dev->ah_hash);
     ucs_recursive_spinlock_init(&dev->ah_lock, 0);
+    kh_init_inplace(uct_ib_async_event, &dev->async_events_hash);
+    ucs_spinlock_init(&dev->async_event_lock, 0);
 
     ucs_debug("initialized device '%s' (%s) with %d ports", uct_ib_device_name(dev),
               ibv_node_type_str(ibv_device->node_type),
@@ -436,16 +672,16 @@ void uct_ib_device_cleanup_ah_cached(uct_ib_device_t *dev)
 
 void uct_ib_device_cleanup(uct_ib_device_t *dev)
 {
-    ucs_status_t status;
-
     ucs_debug("destroying ib device %s", uct_ib_device_name(dev));
 
-    kh_destroy_inplace(uct_ib_ah, &dev->ah_hash);
-
-    status = ucs_recursive_spinlock_destroy(&dev->ah_lock);
-    if (status != UCS_OK) {
-        ucs_warn("ucs_recursive_spinlock_destroy() failed (%d)", status);
+    if (kh_size(&dev->async_events_hash) != 0) {
+        ucs_warn("async_events_hash not empty");
     }
+
+    kh_destroy_inplace(uct_ib_async_event, &dev->async_events_hash);
+    ucs_spinlock_destroy(&dev->async_event_lock);
+    kh_destroy_inplace(uct_ib_ah, &dev->ah_hash);
+    ucs_recursive_spinlock_destroy(&dev->ah_lock);
 
     if (dev->async_events) {
         ucs_async_remove_handler(dev->ibv_context->async_fd, 1);
@@ -504,9 +740,16 @@ ucs_status_t uct_ib_device_port_check(uct_ib_device_t *dev, uint8_t port_num,
     uint8_t required_dev_flags;
     ucs_status_t status;
     union ibv_gid gid;
+    int gid_index;
 
     if (port_num < dev->first_port || port_num >= dev->first_port + dev->num_ports) {
         return UCS_ERR_NO_DEVICE;
+    }
+
+    if (uct_ib_device_port_attr(dev, port_num)->gid_tbl_len == 0) {
+        ucs_debug("%s:%d has no gid", uct_ib_device_name(dev),
+                  port_num);
+        return UCS_ERR_UNSUPPORTED;
     }
 
     if (uct_ib_device_port_attr(dev, port_num)->state != IBV_PORT_ACTIVE) {
@@ -544,18 +787,18 @@ ucs_status_t uct_ib_device_port_check(uct_ib_device_t *dev, uint8_t port_num,
         return UCS_ERR_UNSUPPORTED;
     }
 
-    if (md->check_subnet_filter && uct_ib_device_is_port_ib(dev, port_num)) {
-        status = uct_ib_device_query_gid(dev, port_num,
-                                         uct_ib_device_get_ib_gid_index(md), &gid);
-        if (status != UCS_OK) {
-            return status;
-        }
+    gid_index = uct_ib_device_get_ib_gid_index(md);
+    status    = uct_ib_device_query_gid(dev, port_num, gid_index, &gid,
+                                        UCS_LOG_LEVEL_DIAG);
+    if (status != UCS_OK) {
+        return status;
+    }
 
-        if (md->subnet_filter != gid.global.subnet_prefix) {
-            ucs_trace("%s:%d subnet_prefix does not match",
-                      uct_ib_device_name(dev), port_num);
-            return UCS_ERR_UNSUPPORTED;
-        }
+    if (md->check_subnet_filter && uct_ib_device_is_port_ib(dev, port_num) &&
+        (md->subnet_filter != gid.global.subnet_prefix)) {
+        ucs_trace("%s:%d subnet_prefix does not match", uct_ib_device_name(dev),
+                  port_num);
+        return UCS_ERR_UNSUPPORTED;
     }
 
     return UCS_OK;
@@ -595,8 +838,8 @@ static sa_family_t uct_ib_device_get_addr_family(union ibv_gid *gid, int gid_ind
     const uint32_t addr_last_bits = raw->s6_addr32[2] ^ htonl(0x0000ffff);
     char p[128];
 
-    ucs_debug("testing addr_family on gid index %d: %s",
-              gid_index, uct_ib_gid_str(gid, p, sizeof(p)));
+    ucs_trace_func("testing addr_family on gid index %d: %s",
+                   gid_index, uct_ib_gid_str(gid, p, sizeof(p)));
 
     if (!((raw->s6_addr32[0] | raw->s6_addr32[1]) | addr_last_bits) ||
         uct_ib_device_is_addr_ipv4_mcast(raw, addr_last_bits)) {
@@ -769,54 +1012,6 @@ const char *uct_ib_device_name(uct_ib_device_t *dev)
     return ibv_get_device_name(dev->ibv_context->device);
 }
 
-ucs_status_t uct_ib_device_bus(uct_ib_device_t *dev, int port_num,
-                               ucs_sys_bus_id_t *bus_id)
-{
-    char ib_realpath[PATH_MAX];
-    char *pcie_bus;
-    char *tmp;
-    int i, bus_len;
-    int num_inputs;
-
-    if (NULL == realpath(dev->ibv_context->device->ibdev_path, ib_realpath)) {
-        return UCS_ERR_NO_RESOURCE;
-    }
-
-    /* realpath name is of form /sys/devices/.../0000:05:00.0/infiniband/mlx5_0
-     * and bus_id is constructed from 0000:05:00.0 */
-
-    /* Make sure there is /infiniband substring in ib_realpath*/
-    tmp = strstr(ib_realpath, "/infiniband");
-    if (NULL == tmp) {
-        return UCS_ERR_NO_RESOURCE;
-    }
-
-    pcie_bus = dirname(ib_realpath);
-    pcie_bus = dirname(pcie_bus);
-    pcie_bus = basename(pcie_bus);
-
-    bus_len = strlen(pcie_bus);
-    for (i = 0; i < bus_len; i++) {
-        if ((pcie_bus[i] == ':') || (pcie_bus[i] == '.')) {
-            pcie_bus[i] = ' ';
-        }
-    }
-
-    num_inputs = sscanf(pcie_bus, "%hx %hhx %hhx %hhx", &bus_id->domain,
-                                                        &bus_id->bus,
-                                                        &bus_id->slot,
-                                                        &bus_id->function);
-    if (num_inputs != 4) {
-        return UCS_ERR_NO_RESOURCE;
-    }
-
-    ucs_debug("ib device = %s:%d, bus id = %hu:%hhu:%hhu.%hhu",
-               uct_ib_device_name(dev), port_num, bus_id->domain, bus_id->bus,
-               bus_id->slot, bus_id->function);
-
-    return UCS_OK;
-}
-
 size_t uct_ib_mtu_value(enum ibv_mtu mtu)
 {
     switch (mtu) {
@@ -889,6 +1084,49 @@ ucs_status_t uct_ib_modify_qp(struct ibv_qp *qp, enum ibv_qp_state state)
     return UCS_OK;
 }
 
+static ucs_sys_device_t uct_ib_device_get_sys_dev(uct_ib_device_t *dev)
+{
+    char path_buffer[PATH_MAX];
+    ucs_sys_device_t sys_dev;
+    ucs_sys_bus_id_t bus_id;
+    ucs_status_t status;
+    char *pcie_bus;
+    int num_fields;
+
+    /* realpath name is of form /sys/devices/.../0000:05:00.0/infiniband/mlx5_0
+     * and bus_id is constructed from 0000:05:00.0 */
+
+    status = uct_ib_device_get_path_buffer(dev, path_buffer);
+    if (status != UCS_OK) {
+        return UCS_SYS_DEVICE_ID_UNKNOWN;
+    }
+
+    pcie_bus = ucs_dirname(path_buffer, 2);
+    if (pcie_bus == NULL) {
+        return UCS_SYS_DEVICE_ID_UNKNOWN;
+    }
+    pcie_bus = basename(pcie_bus);
+    if (pcie_bus == NULL) {
+        return UCS_SYS_DEVICE_ID_UNKNOWN;
+    }
+
+    num_fields = sscanf(pcie_bus, "%hx:%hhx:%hhx.%hhx", &bus_id.domain,
+                        &bus_id.bus, &bus_id.slot, &bus_id.function);
+    if (num_fields != 4) {
+        return UCS_SYS_DEVICE_ID_UNKNOWN;
+    }
+
+    status = ucs_topo_find_device_by_bus_id(&bus_id, &sys_dev);
+    if (status != UCS_OK) {
+        return UCS_SYS_DEVICE_ID_UNKNOWN;
+    }
+
+    ucs_debug("%s bus id %hu:%hhu:%hhu.%hhu sys_dev %d",
+              uct_ib_device_name(dev), bus_id.domain, bus_id.bus, bus_id.slot,
+              bus_id.function, sys_dev );
+    return sys_dev;
+}
+
 ucs_status_t uct_ib_device_query_ports(uct_ib_device_t *dev, unsigned flags,
                                        uct_tl_device_resource_t **tl_devices_p,
                                        unsigned *num_tl_devices_p)
@@ -924,7 +1162,8 @@ ucs_status_t uct_ib_device_query_ports(uct_ib_device_t *dev, unsigned flags,
         ucs_snprintf_zero(tl_devices[num_tl_devices].name,
                           sizeof(tl_devices[num_tl_devices].name),
                           "%s:%d", uct_ib_device_name(dev), port_num);
-        tl_devices[num_tl_devices].type = UCT_DEVICE_TYPE_NET;
+        tl_devices[num_tl_devices].type       = UCT_DEVICE_TYPE_NET;
+        tl_devices[num_tl_devices].sys_device = uct_ib_device_get_sys_dev(dev);
         ++num_tl_devices;
     }
 
@@ -1003,7 +1242,8 @@ int uct_ib_device_is_gid_raw_empty(uint8_t *gid_raw)
 }
 
 ucs_status_t uct_ib_device_query_gid(uct_ib_device_t *dev, uint8_t port_num,
-                                     unsigned gid_index, union ibv_gid *gid)
+                                     unsigned gid_index, union ibv_gid *gid,
+                                     ucs_log_level_t error_level)
 {
     uct_ib_device_gid_info_t gid_info;
     ucs_status_t status;
@@ -1015,8 +1255,8 @@ ucs_status_t uct_ib_device_query_gid(uct_ib_device_t *dev, uint8_t port_num,
     }
 
     if (uct_ib_device_is_gid_raw_empty(gid_info.gid.raw)) {
-        ucs_error("Invalid gid[%d] on %s:%d", gid_index,
-                  uct_ib_device_name(dev), port_num);
+        ucs_log(error_level, "invalid gid[%d] on %s:%d", gid_index,
+                uct_ib_device_name(dev), port_num);
         return UCS_ERR_INVALID_ADDR;
     }
 
@@ -1162,9 +1402,9 @@ int uct_ib_get_cqe_size(int cqe_size_min)
     return cqe_size;
 }
 
-static ucs_status_t
+ucs_status_t
 uct_ib_device_get_roce_ndev_name(uct_ib_device_t *dev, uint8_t port_num,
-                                 char *ndev_name, size_t max)
+                                 uint8_t gid_index, char *ndev_name, size_t max)
 {
     ssize_t nread;
 
@@ -1173,7 +1413,7 @@ uct_ib_device_get_roce_ndev_name(uct_ib_device_t *dev, uint8_t port_num,
     /* get the network device name which corresponds to a RoCE port */
     nread = ucs_read_file_str(ndev_name, max, 1,
                               UCT_IB_DEVICE_SYSFS_GID_NDEV_FMT,
-                              uct_ib_device_name(dev), port_num, 0);
+                              uct_ib_device_name(dev), port_num, gid_index);
     if (nread < 0) {
         ucs_diag("failed to read " UCT_IB_DEVICE_SYSFS_GID_NDEV_FMT": %m",
                  uct_ib_device_name(dev), port_num, 0);
@@ -1184,14 +1424,15 @@ uct_ib_device_get_roce_ndev_name(uct_ib_device_t *dev, uint8_t port_num,
     return UCS_OK;
 }
 
-unsigned uct_ib_device_get_roce_lag_level(uct_ib_device_t *dev, uint8_t port_num)
+unsigned uct_ib_device_get_roce_lag_level(uct_ib_device_t *dev, uint8_t port_num,
+                                          uint8_t gid_index)
 {
     char ndev_name[IFNAMSIZ];
     unsigned roce_lag_level;
     ucs_status_t status;
 
-    status = uct_ib_device_get_roce_ndev_name(dev, port_num, ndev_name,
-                                              sizeof(ndev_name));
+    status = uct_ib_device_get_roce_ndev_name(dev, port_num, gid_index,
+                                              ndev_name, sizeof(ndev_name));
     if (status != UCS_OK) {
         return 1;
     }

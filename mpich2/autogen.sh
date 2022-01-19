@@ -97,24 +97,41 @@ do_geterrmsgs=yes
 do_getcvars=yes
 do_f77=yes
 do_build_configure=yes
-do_genstates=no
 do_atdir_check=no
 do_atver_check=yes
 do_subcfg_m4=yes
+do_hwloc=yes
 do_izem=yes
 do_ofi=yes
 do_ucx=yes
 do_json=yes
 do_yaksa=yes
+do_test=yes
+do_hydra=yes
+do_hydra2=yes
+do_romio=yes
 
-export do_build_configure
+do_quick=no
+# Check -quick option. When enabled, skip as much as we can.
+for arg in "$@" ; do
+    if test $arg = "-quick"; then
+        do_quick=yes
+        do_izem=no
+        do_ofi=no
+        do_ucx=no
+        do_yaksa=no
+        do_test=yes
+        do_hydra=yes
+        do_hydra2=no
+        do_romio=no
+    fi
+done
 
 # Allow MAKE to be set from the environment
 MAKE=${MAKE-make}
 
 # amdirs are the directories that make use of autoreconf
 amdirs=". src/mpl"
-# amdirs="$amdirs src/util/logging/rlog"
 
 autoreconf_args="-if"
 export autoreconf_args
@@ -125,11 +142,13 @@ export autoreconf_args
 
 # List of steps that we will consider (We do not include depend
 # because the values for depend are not just yes/no)
-AllSteps="geterrmsgs bindings f77 build_configure genstates getparms"
+AllSteps="geterrmsgs bindings f77 build_configure getparms"
 stepsCleared=no
 
 for arg in "$@" ; do
     case $arg in 
+        -quick)
+            ;;
 	-echo)
 	    set -x
 	    ;;
@@ -182,14 +201,6 @@ for arg in "$@" ; do
             export autoreconf_args
             ;;
 
-	-with-genstates|--with-genstates)
-	    do_genstates=yes
-	    ;;
-
-	-without-genstates|--without-genstates)
-	    do_genstates=no
-	    ;;
- 
 	-with-errmsgs|--with-errmsgs)
 	    do_geterrmsgs=yes
 	    ;;
@@ -218,20 +229,15 @@ for arg in "$@" ; do
 	    autotoolsdir=`echo "A$arg" | sed -e 's/.*=//'`
 	    ;;
 
-    -without-izem|--without-izem)
-        do_izem=no
+    -without-*|--without-*)
+        opt=`echo A$arg | sed -e 's/^A--*without-//'`
+        var=do_$opt
+        eval $var=no
         ;;
-
-    -without-ofi|--without-ofi|-without-libfabric|--without-libfabric)
-        do_ofi=no
-        ;;
-
-    -without-ucx|--without-ucx)
-        do_ucx=no
-        ;;
-
-    -without-json|--without-json)
-        do_json=no
+    -with-*|--with-*)
+        opt=`echo A$arg | sed -e 's/^A--*with-//'`
+        var=do_$opt
+        eval $var=yes
         ;;
 
 	-help|--help|-usage|--usage)
@@ -418,61 +424,64 @@ _EOF
     fi
 fi
 
-########################################################################
-## Verify autoconf version
-########################################################################
+if test $do_quick = "yes" ; then
+    : # skip autotool versions check in quick mode (since it is too slow)
+else
+    ########################################################################
+    ## Verify autoconf version
+    ########################################################################
 
-echo_n "Checking for autoconf version... "
-recreate_tmp
-ver=2.67
-# petsc.mcs.anl.gov's /usr/bin/autoreconf is version 2.65 which returns OK
-# if configure.ac has AC_PREREQ() withOUT AC_INIT.
-#
-# ~/> hostname
-# petsc
-# ~> /usr/bin/autoconf --version
-# autoconf (GNU Autoconf) 2.65
-# ....
-# ~/> cat configure.ac
-# AC_PREREQ(2.68)
-# ~/> /usr/bin/autoconf ; echo "rc=$?"
-# configure.ac:1: error: Autoconf version 2.68 or higher is required
-# configure.ac:1: the top level
-# autom4te: /usr/bin/m4 failed with exit status: 63
-# rc=63
-# ~/> /usr/bin/autoreconf ; echo "rc=$?"
-# rc=0
-cat > .tmp/configure.ac<<EOF
+    echo_n "Checking for autoconf version... "
+    recreate_tmp
+    ver=2.67
+    # petsc.mcs.anl.gov's /usr/bin/autoreconf is version 2.65 which returns OK
+    # if configure.ac has AC_PREREQ() withOUT AC_INIT.
+    #
+    # ~/> hostname
+    # petsc
+    # ~> /usr/bin/autoconf --version
+    # autoconf (GNU Autoconf) 2.65
+    # ....
+    # ~/> cat configure.ac
+    # AC_PREREQ(2.68)
+    # ~/> /usr/bin/autoconf ; echo "rc=$?"
+    # configure.ac:1: error: Autoconf version 2.68 or higher is required
+    # configure.ac:1: the top level
+    # autom4te: /usr/bin/m4 failed with exit status: 63
+    # rc=63
+    # ~/> /usr/bin/autoreconf ; echo "rc=$?"
+    # rc=0
+    cat > .tmp/configure.ac<<EOF
 AC_INIT
 AC_PREREQ($ver)
 AC_OUTPUT
 EOF
-if (cd .tmp && $autoreconf $autoreconf_args >/dev/null 2>&1 ) ; then
-    echo ">= $ver"
-else
-    echo "bad autoconf installation"
-    cat <<EOF
+    if (cd .tmp && $autoreconf $autoreconf_args >/dev/null 2>&1 ) ; then
+        echo ">= $ver"
+    else
+        echo "bad autoconf installation"
+        cat <<EOF
 You either do not have autoconf in your path or it is too old (version
 $ver or higher required). You may be able to use
 
-     autoconf --version
+    autoconf --version
 
 Unfortunately, there is no standard format for the version output and
 it changes between autotools versions.  In addition, some versions of
 autoconf choose among many versions and provide incorrect output).
 EOF
-    exit 1
-fi
+        exit 1
+    fi
 
 
-########################################################################
-## Verify automake version
-########################################################################
+    ########################################################################
+    ## Verify automake version
+    ########################################################################
 
-echo_n "Checking for automake version... "
-recreate_tmp
-ver=1.15
-cat > .tmp/configure.ac<<EOF
+    echo_n "Checking for automake version... "
+    recreate_tmp
+    ver=1.15
+    cat > .tmp/configure.ac<<EOF
 AC_INIT(testver,1.0)
 AC_CONFIG_AUX_DIR([m4])
 AC_CONFIG_MACRO_DIR([m4])
@@ -484,33 +493,33 @@ EOF
 cat <<EOF >.tmp/Makefile.am
 ACLOCAL_AMFLAGS = -I m4
 EOF
-if [ ! -d .tmp/m4 ] ; then mkdir .tmp/m4 >/dev/null 2>&1 ; fi
-if (cd .tmp && $autoreconf $autoreconf_args >/dev/null 2>&1 ) ; then
-    echo ">= $ver"
-else
-    echo "bad automake installation"
-    cat <<EOF
+    if [ ! -d .tmp/m4 ] ; then mkdir .tmp/m4 >/dev/null 2>&1 ; fi
+    if (cd .tmp && $autoreconf $autoreconf_args >/dev/null 2>&1 ) ; then
+        echo ">= $ver"
+    else
+        echo "bad automake installation"
+        cat <<EOF
 You either do not have automake in your path or it is too old (version
 $ver or higher required). You may be able to use
 
-     automake --version
+    automake --version
 
 Unfortunately, there is no standard format for the version output and
 it changes between autotools versions.  In addition, some versions of
 autoconf choose among many versions and provide incorrect output).
 EOF
-    exit 1
-fi
+        exit 1
+    fi
 
 
-########################################################################
-## Verify libtool version
-########################################################################
+    ########################################################################
+    ## Verify libtool version
+    ########################################################################
 
-echo_n "Checking for libtool version... "
-recreate_tmp
-ver=2.4.4
-cat <<EOF >.tmp/configure.ac
+    echo_n "Checking for libtool version... "
+    recreate_tmp
+    ver=2.4.4
+    cat <<EOF >.tmp/configure.ac
 AC_INIT(testver,1.0)
 AC_CONFIG_AUX_DIR([m4])
 AC_CONFIG_MACRO_DIR([m4])
@@ -519,27 +528,27 @@ LT_PREREQ($ver)
 LT_INIT()
 AC_MSG_RESULT([A message])
 EOF
-cat <<EOF >.tmp/Makefile.am
+    cat <<EOF >.tmp/Makefile.am
 ACLOCAL_AMFLAGS = -I m4
 EOF
-if [ ! -d .tmp/m4 ] ; then mkdir .tmp/m4 >/dev/null 2>&1 ; fi
-if (cd .tmp && $autoreconf $autoreconf_args >/dev/null 2>&1 ) ; then
-    echo ">= $ver"
-else
-    echo "bad libtool installation"
-    cat <<EOF
+    if [ ! -d .tmp/m4 ] ; then mkdir .tmp/m4 >/dev/null 2>&1 ; fi
+    if (cd .tmp && $autoreconf $autoreconf_args >/dev/null 2>&1 ) ; then
+        echo ">= $ver"
+    else
+        echo "bad libtool installation"
+        cat <<EOF
 You either do not have libtool in your path or it is too old
 (version $ver or higher required). You may be able to use
 
-     libtool --version
+    libtool --version
 
 Unfortunately, there is no standard format for the version output and
 it changes between autotools versions.  In addition, some versions of
 autoconf choose among many versions and provide incorrect output).
 EOF
-    exit 1
+        exit 1
+    fi
 fi
-
 
 ########################################################################
 ## Checking for bash
@@ -602,6 +611,27 @@ else
 fi
 
 ########################################################################
+## Check for Python 3
+########################################################################
+
+echo_n "Checking for Python 3... "
+PYTHON=
+if test 3 = `python -c 'import sys; print(sys.version_info[0])'`; then
+    PYTHON=python
+fi
+
+if test -z "$PYTHON" -a 3 = `python3 -c 'import sys; print(sys.version_info[0])'`; then
+    PYTHON=python3
+fi
+
+if test -z "$PYTHON" ; then
+    echo "not found"
+    exit 1
+else
+    echo "$PYTHON"
+fi
+
+########################################################################
 ## Setup external packages
 ########################################################################
 
@@ -615,7 +645,24 @@ echo
 check_submodule_presence modules/hwloc
 
 # external packages that require autogen.sh to be run for each of them
-externals="src/pm/hydra src/pm/hydra2 src/mpi/romio modules/hwloc test/mpi modules/json-c modules/yaksa"
+externals="test/mpi"
+
+if [ "yes" = "$do_hydra" ] ; then
+    externals="${externals} src/pm/hydra"
+fi
+
+if [ "yes" = "$do_hydra2" ] ; then
+    externals="${externals} src/pm/hydra2"
+fi
+
+if [ "yes" = "$do_romio" ] ; then
+    externals="${externals} src/mpi/romio"
+fi
+
+if [ "yes" = "$do_hwloc" ] ; then
+    check_submodule_presence modules/hwloc
+    externals="${externals} modules/hwloc"
+fi
 
 if [ "yes" = "$do_izem" ] ; then
     check_submodule_presence modules/izem
@@ -634,10 +681,12 @@ fi
 
 if [ "yes" = "$do_json" ] ; then
     check_submodule_presence "modules/json-c"
+    externals="${externals} modules/json-c"
 fi
 
 if [ "yes" = "$do_yaksa" ] ; then
     check_submodule_presence "modules/yaksa"
+    externals="${externals} modules/yaksa"
 fi
 
 ########################################################################
@@ -654,34 +703,41 @@ echo "####################################"
 echo
 
 confdb_dirs=
-confdb_dirs="${confdb_dirs} src/mpi/romio/confdb"
-confdb_dirs="${confdb_dirs} src/mpi/romio/mpl/confdb"
 confdb_dirs="${confdb_dirs} src/mpl/confdb"
-confdb_dirs="${confdb_dirs} src/pm/hydra/confdb"
-confdb_dirs="${confdb_dirs} src/pm/hydra2/confdb"
-confdb_dirs="${confdb_dirs} src/pm/hydra/mpl/confdb"
-confdb_dirs="${confdb_dirs} src/pm/hydra2/mpl/confdb"
-confdb_dirs="${confdb_dirs} test/mpi/confdb"
-confdb_dirs="${confdb_dirs} test/mpi/dtpools/confdb"
-
-# hydra's copies of mpl and hwloc
-sync_external src/mpl src/pm/hydra/mpl
-sync_external src/mpl src/pm/hydra2/mpl
-
-# ROMIO's copy of mpl
-sync_external src/mpl src/mpi/romio/mpl
+if test "$do_romio" = "yes" ; then
+    confdb_dirs="${confdb_dirs} src/mpi/romio/confdb"
+    if test "$do_quick" = "no" ; then
+        sync_external src/mpl src/mpi/romio/mpl
+        confdb_dirs="${confdb_dirs} src/mpi/romio/mpl/confdb"
+    fi
+fi
+if test "$do_hydra" = "yes" ; then
+    confdb_dirs="${confdb_dirs} src/pm/hydra/confdb"
+    if test "$do_quick" = "no" ; then
+        sync_external src/mpl src/pm/hydra/mpl
+        sync_external modules/hwloc src/pm/hydra/tools/topo/hwloc/hwloc
+        # remove .git directories to avoid confusing git clean
+        rm -rf src/pm/hydra/tools/topo/hwloc/hwloc/.git
+        confdb_dirs="${confdb_dirs} src/pm/hydra/mpl/confdb"
+    fi
+fi
+if test "$do_hydra2" = "yes" ; then
+    confdb_dirs="${confdb_dirs} src/pm/hydra2/confdb"
+    sync_external src/mpl src/pm/hydra2/mpl
+    sync_external modules/hwloc src/pm/hydra2/libhydra/topo/hwloc/hwloc
+    # remove .git directories to avoid confusing git clean
+    rm -rf src/pm/hydra2/libhydra/topo/hwloc/hwloc/.git
+    confdb_dirs="${confdb_dirs} src/pm/hydra2/mpl/confdb"
+fi
+if test "$do_test" = "yes" ; then
+    confdb_dirs="${confdb_dirs} test/mpi/confdb"
+    confdb_dirs="${confdb_dirs} test/mpi/dtpools/confdb"
+fi
 
 # all the confdb directories, by various names
 for destdir in $confdb_dirs ; do
     sync_external confdb "$destdir"
 done
-
-# Copying hwloc to hydra
-sync_external modules/hwloc src/pm/hydra/tools/topo/hwloc/hwloc
-sync_external modules/hwloc src/pm/hydra2/libhydra/topo/hwloc/hwloc
-# remove .git directories to avoid confusing git clean
-rm -rf src/pm/hydra/tools/topo/hwloc/hwloc/.git
-rm -rf src/pm/hydra2/libhydra/topo/hwloc/hwloc/.git
 
 # a couple of other random files
 if [ -f maint/version.m4 ] ; then
@@ -736,6 +792,7 @@ else
     error "README.vin file not present, unable to update README version number (perhaps we are running in a release tarball source tree?)"
 fi
 
+set -e
 
 ########################################################################
 ## Building subsys_include.m4
@@ -754,6 +811,21 @@ echo_n "Building ROMIO glue code... "
 ( cd src/glue/romio && chmod a+x ./all_romio_symbols && ./all_romio_symbols ../../mpi/romio/include/mpio.h.in )
 echo "done"
 
+########################################################################
+## Building Collective top-level code
+########################################################################
+
+echo_n "generating Collective functions..."
+$PYTHON maint/gen_coll.py
+echo "done"
+
+########################################################################
+## Building C interfaces
+########################################################################
+
+echo_n "generating MPI C functions..."
+$PYTHON maint/gen_binding_c.py
+echo "done"
 
 ########################################################################
 ## Building non-C interfaces
@@ -761,30 +833,16 @@ echo "done"
 
 # Create the bindings if necessary 
 if [ $do_bindings = "yes" ] ; then
-    build_f77=no
-    build_f90=no
-    build_cxx=no
     if [ $do_f77 = "yes" ] ; then
-        if [ ! -s src/binding/fortran/mpif_h/abortf.c ] ; then
-	    build_f77=yes
-        elif find src/binding/fortran/mpif_h -name 'buildiface' -newer 'src/binding/fortran/mpif_h/abortf.c' >/dev/null 2>&1 ; then
-	    build_f77=yes
-        fi
-        if [ ! -s src/binding/fortran/use_mpi/mpi_base.f90 ] ; then
- 	    build_f90=yes
-        elif find src/binding/fortran/use_mpi -name 'buildiface' -newer 'src/binding/fortran/use_mpi/mpi_base.f90' >/dev/null 2>&1 ; then
-	    build_f90=yes
-        fi
-        if [ ! -s src/binding/fortran/use_mpi_f08/wrappers_c/cdesc.c ] ; then
-	    build_f08=yes
-        elif find src/binding/fortran/use_mpi_f08 -name 'buildiface' -newer 'src/binding/fortran/use_mpi_f08/wrappers_c/cdesc.c' >/dev/null 2>&1 ; then
-	    build_f08=yes
-        fi
+        build_f77=yes
+        build_f90=yes
+        build_f08=yes
     fi
 
     if [ $build_f77 = "yes" ] ; then
 	echo_n "Building Fortran 77 interface... "
 	( cd src/binding/fortran/mpif_h && chmod a+x ./buildiface && ./buildiface )
+        $PYTHON maint/gen_binding_f77.py
 	echo "done"
     fi
     if [ $build_f90 = "yes" ] ; then
@@ -793,29 +851,17 @@ if [ $do_bindings = "yes" ] ; then
 	# Double precision vs. Real*8 option
 	rm -f src/binding/fortran/use_mpi/mpi_base.f90.orig
 	( cd src/binding/fortran/use_mpi && chmod a+x ./buildiface && ./buildiface )
-	( cd src/binding/fortran/use_mpi && ../mpif_h/buildiface -infile=cf90t.h -deffile=./cf90tdefs)
 	echo "done"
     fi
     if [ $build_f08 = "yes" ] ; then
 	echo_n "Building Fortran 08 interface... "
 	# Top-level files
 	( cd src/binding/fortran/use_mpi_f08 && chmod a+x ./buildiface && ./buildiface )
-        # Delete the old Makefile.mk
-        ( rm -f src/binding/fortran/use_mpi_f08/wrappers_c/Makefile.mk )
-        # Delete the old cdesc.h
-        ( rm -f src/binding/fortran/use_mpi_f08/wrappers_c/cdesc.h )
-        # Execute once for mpi.h.in ...
-	( cd src/binding/fortran/use_mpi_f08/wrappers_c && chmod a+x ./buildiface && ./buildiface ../../../../include/mpi.h.in )
-        # ... and once for mpio.h.in
-	( cd src/binding/fortran/use_mpi_f08/wrappers_c && chmod a+x ./buildiface && ./buildiface ../../../../mpi/romio/include/mpio.h.in )
+        # generate src/binding/fortran/use_mpi_f08/wrappers_c/...
 	echo "done"
     fi
 
-    if [ ! -s src/binding/cxx/mpicxx.h ] ; then 
-	build_cxx=yes
-    elif find src/binding/cxx -name 'buildiface' -newer 'src/binding/cxx/mpicxx.h' >/dev/null 2>&1 ; then
-	build_cxx=yes
-    fi
+    build_cxx=yes
     if [ $build_cxx = "yes" ] ; then
 	echo_n "Building C++ interface... "
 	( cd src/binding/cxx && chmod a+x ./buildiface &&
@@ -856,7 +902,7 @@ if [ $do_geterrmsgs = "yes" ] ; then
             fi
             rm -f .err .err2
         else
-            # Incase it exists but has zero size
+            # In case it exists but has zero size
             rm -f .err
         fi
 	if [ -s unusederr.txt ] ; then
@@ -898,7 +944,7 @@ fi  # do_geterrmsgs
 echo
 echo "------------------------------------"
 echo "Initiating building required scripts"
-# Build scripts such as genstates if necessary
+# Build scripts such as checkbuilds if necessary
 ran_maint_configure=no
 run_configure=no
 # The information that autoconf uses is saved in the autom4te*.cache
@@ -909,13 +955,13 @@ elif find maint -name 'configure.ac' -newer 'maint/configure' >/dev/null 2>&1 ; 
     # The above relies on the Unix find command
     (cd maint && $autoconf && rm -rf autom4te*.cache)
 fi
-if [ ! -x maint/genstates ] ; then
+if [ ! -x maint/checkbuilds ] ; then
     run_configure=yes
 fi
 
 # The following relies on the Unix find command
-if [ -s maint/genstates ] ; then 
-    if find maint -name 'genstates.in' -newer 'maint/genstates' >/dev/null 2>&1 ; then
+if [ -s maint/checkbuilds ] ; then 
+    if find maint -name 'checkbuilds.in' -newer 'maint/checkbuilds' >/dev/null 2>&1 ; then
         run_configure=yes
     fi
 else
@@ -929,14 +975,6 @@ fi
 echo "Done building required scripts"
 echo "------------------------------------"
 echo
-
-# Run some of the simple codes
-echo_n "Creating the enumeration of logging states into src/include/mpiallstates.h... "
-touch src/include/mpiallstates.h # silience build errors when do_genstates is disabled
-if [ -x maint/extractstates -a $do_genstates = "yes" ] ; then
-    ./maint/extractstates
-fi
-echo "done"
 
 # new parameter code
 echo_n "Extracting control variables (cvar) ... "
@@ -969,6 +1007,9 @@ if [ "$do_build_configure" = "yes" ] ; then
            echo "------------------------------------------------------------------------"
            echo "running third-party initialization in $external"
            (cd $external && ./autogen.sh) || exit 1
+       else
+           error "external directory $external missing"
+           exit 1
        fi
     done
 
@@ -980,7 +1021,7 @@ if [ "$do_build_configure" = "yes" ] ; then
             # Patching ltmain.sh
             if [ -f $amdir/confdb/ltmain.sh ] ; then
                 echo_n "Patching ltmain.sh for compatibility with Intel compiler options... "
-                patch -N -s -l $amdir/confdb/ltmain.sh maint/patches/optional/confdb/intel-compiler.patch
+                patch -N -s -l $amdir/confdb/ltmain.sh maint/patches/optional/confdb/intel-compiler.patch && :
                 if [ $? -eq 0 ] ; then
                     # Remove possible leftovers, which don't imply a failure
                     rm -f $amdir/confdb/ltmain.sh.orig
@@ -1007,7 +1048,7 @@ if [ "$do_build_configure" = "yes" ] ; then
                 sys_lib_dlsearch_path_patch_requires_rebuild=no
                 macos_patch_requires_rebuild=no
                 echo_n "Patching libtool.m4 for system dynamic library search path..."
-                patch -N -s -l $amdir/confdb/libtool.m4 maint/patches/optional/confdb/sys_lib_dlsearch_path_spec.patch
+                patch -N -s -l $amdir/confdb/libtool.m4 maint/patches/optional/confdb/sys_lib_dlsearch_path_spec.patch && :
                 if [ $? -eq 0 ] ; then
                     sys_lib_dlsearch_path_patch_requires_rebuild=yes
                     # Remove possible leftovers, which don't imply a failure
@@ -1016,8 +1057,8 @@ if [ "$do_build_configure" = "yes" ] ; then
                 else
                     echo "failed"
                 fi
-                echo_n "Patching libtool.m4 for compatibility macOS Big Sur..."
-                patch -N -s -l $amdir/confdb/libtool.m4 maint/patches/optional/confdb/big-sur.patch
+                echo_n "Patching libtool.m4 for compatibility macOS BigSur..."
+                patch -N -s -l $amdir/confdb/libtool.m4 maint/patches/optional/confdb/big-sur.patch && :
                 if [ $? -eq 0 ] ; then
                     macos_patch_requires_rebuild=yes
                     # Remove possible leftovers, which don't imply a failure
@@ -1028,7 +1069,7 @@ if [ "$do_build_configure" = "yes" ] ; then
                 fi
                 if [ $do_bindings = "yes" ] ; then
                     echo_n "Patching libtool.m4 for compatibility with ifort on OSX... "
-                    patch -N -s -l $amdir/confdb/libtool.m4 maint/patches/optional/confdb/darwin-ifort.patch
+                    patch -N -s -l $amdir/confdb/libtool.m4 maint/patches/optional/confdb/darwin-ifort.patch && :
                     if [ $? -eq 0 ] ; then
                         ifort_patch_requires_rebuild=yes
                         # Remove possible leftovers, which don't imply a failure
@@ -1038,7 +1079,7 @@ if [ "$do_build_configure" = "yes" ] ; then
                         echo "failed"
                     fi
                     echo_n "Patching libtool.m4 for fort compatibility with Oracle Dev Studio 12.6..."
-                    patch -N -s -l $amdir/confdb/libtool.m4 maint/patches/optional/confdb/oracle-fort.patch
+                    patch -N -s -l $amdir/confdb/libtool.m4 maint/patches/optional/confdb/oracle-fort.patch && :
                     if [ $? -eq 0 ] ; then
                         oracle_patch_requires_rebuild=yes
                         # Remove possible leftovers, which don't imply a failure
@@ -1048,7 +1089,7 @@ if [ "$do_build_configure" = "yes" ] ; then
                         echo "failed"
                     fi
                     echo_n "Patching libtool.m4 for compatibility with Flang..."
-                    patch -N -s -l $amdir/confdb/libtool.m4 maint/patches/optional/confdb/flang.patch
+                    patch -N -s -l $amdir/confdb/libtool.m4 maint/patches/optional/confdb/flang.patch && :
                     if [ $? -eq 0 ] ; then
                         flang_patch_requires_rebuild=yes
                         # Remove possible leftovers, which don't imply a failure
@@ -1058,7 +1099,7 @@ if [ "$do_build_configure" = "yes" ] ; then
                         echo "failed"
                     fi
                     echo_n "Patching libtool.m4 for compatibility with Arm LLVM compilers..."
-                    patch -N -s -l $amdir/confdb/libtool.m4 maint/patches/optional/confdb/arm-compiler.patch
+                    patch -N -s -l $amdir/confdb/libtool.m4 maint/patches/optional/confdb/arm-compiler.patch && :
                     if [ $? -eq 0 ] ; then
                         arm_patch_requires_rebuild=yes
                         # Remove possible leftovers, which don't imply a failure
@@ -1068,7 +1109,7 @@ if [ "$do_build_configure" = "yes" ] ; then
                         echo "failed"
                     fi
                     echo_n "Patching libtool.m4 for compatibility with IBM XL Fortran compilers..."
-                    patch -N -s -l $amdir/confdb/libtool.m4 maint/patches/optional/confdb/ibm-xlf.patch
+                    patch -N -s -l $amdir/confdb/libtool.m4 maint/patches/optional/confdb/ibm-xlf.patch && :
                     if [ $? -eq 0 ] ; then
                         ibm_patch_requires_rebuild=yes
                         # Remove possible leftovers, which don't imply a failure
@@ -1093,6 +1134,15 @@ if [ "$do_build_configure" = "yes" ] ; then
     done
 fi
 
+echo
+echo
+echo "###########################################################"
+echo "## Generating CH4 API boilerplates"
+echo "###########################################################"
+echo
+
+echo_n "generating ch4 API boilerplates... "
+$PYTHON ./maint/gen_ch4_api.py
 
 echo
 echo

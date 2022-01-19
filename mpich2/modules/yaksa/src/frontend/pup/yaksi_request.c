@@ -21,6 +21,7 @@ int yaksi_request_create(yaksi_request_s ** request)
     assert(req->id < ((yaksa_request_t) 1 << YAKSI_REQUEST_OBJECT_ID_BITS));
 
     yaksu_atomic_store(&req->cc, 0);
+    req->kind = YAKSI_REQUEST_KIND__NONBLOCKING;
 
     rc = yaksur_request_create_hook(req);
     YAKSU_ERR_CHECK(rc, fn_fail);
@@ -64,4 +65,15 @@ int yaksi_request_get(yaksa_request_t request, struct yaksi_request_s **yaksi_re
     return rc;
   fn_fail:
     goto fn_exit;
+}
+
+void yaksi_request_set_blocking(yaksi_request_s * request)
+{
+    request->kind = YAKSI_REQUEST_KIND__BLOCKING;
+}
+
+void yaksi_request_set_stream(yaksi_request_s * request, void *stream)
+{
+    request->kind = YAKSI_REQUEST_KIND__CUDA_STREAM;
+    request->stream = stream;
 }

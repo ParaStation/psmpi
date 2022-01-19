@@ -138,6 +138,15 @@
     <ClCompile Include="src\mem.c">
       <Filter>Source Files\src</Filter>
     </ClCompile>
+    <ClCompile Include="src\hmem.c">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hmem_cuda.c">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hmem_rocr.c">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
     <ClCompile Include="src\rbtree.c">
       <Filter>Source Files\src</Filter>
     </ClCompile>
@@ -184,6 +193,15 @@
       <Filter>Source Files\prov\util</Filter>
     </ClCompile>
     <ClCompile Include="prov\util\src\util_mr_cache.c">
+      <Filter>Source Files\prov\util</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\util\src\cuda_mem_monitor.c">
+      <Filter>Source Files\prov\util</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\util\src\rocr_mem_monitor.c">
+      <Filter>Source Files\prov\util</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\util\src\ze_mem_monitor.c">
       <Filter>Source Files\prov\util</Filter>
     </ClCompile>
     <ClCompile Include="src\windows\osd.c">
@@ -414,9 +432,6 @@
     <ClCompile Include="prov\tcp\src\tcpx_attr.c">
       <Filter>Source Files\prov\tcp\src</Filter>
     </ClCompile>
-    <ClCompile Include="prov\tcp\src\tcpx_comm.c">
-      <Filter>Source Files\prov\tcp\src</Filter>
-    </ClCompile>
     <ClCompile Include="prov\tcp\src\tcpx_conn_mgr.c">
       <Filter>Source Files\prov\tcp\src</Filter>
     </ClCompile>
@@ -503,6 +518,9 @@
     <ClInclude Include="include\ofi_enosys.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\ofi_hmem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\ofi_indexer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -546,6 +564,9 @@
       <Filter>Header Files\rdma</Filter>
     </ClInclude>
     <ClInclude Include="include\rdma\fi_errno.h">
+      <Filter>Header Files\rdma</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rdma\fi_ext.h">
       <Filter>Header Files\rdma</Filter>
     </ClInclude>
     <ClInclude Include="include\rdma\fi_rma.h">

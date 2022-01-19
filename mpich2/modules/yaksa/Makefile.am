@@ -11,7 +11,11 @@ EXTRA_PROGRAMS =
 .PHONY: doxygen
 
 pkgconfigdir = $(libdir)/pkgconfig
+if EMBEDDED_BUILD
+pkgconfig_DATA =
+else
 pkgconfig_DATA = maint/yaksa.pc
+endif !EMBEDDED_BUILD
 
 noinst_HEADERS =
 include_HEADERS =

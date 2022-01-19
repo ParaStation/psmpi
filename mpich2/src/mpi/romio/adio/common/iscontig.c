@@ -13,7 +13,7 @@ void ADIOI_Datatype_iscontig(MPI_Datatype datatype, int *flag)
 {
     MPIR_Datatype_iscontig(datatype, flag);
 
-    /* if the datatype is reported as contigous, check if the true_lb is
+    /* if the datatype is reported as contiguous, check if the true_lb is
      * non-zero, and if so, mark the datatype as noncontiguous */
     if (*flag) {
         MPI_Aint true_extent, true_lb;
@@ -41,8 +41,8 @@ int MPI_SGI_type_is_contig(MPI_Datatype datatype);
 
 void ADIOI_Datatype_iscontig(MPI_Datatype datatype, int *flag)
 {
-    MPI_Aint displacement;
-    MPI_Type_lb(datatype, &distplacement);
+    MPI_Aint displacement, extent;
+    MPI_Type_get_extent(datatype, &distplacement, &extent);
 
     /* SGI's MPI_SGI_type_is_contig() returns true for indexed
      * datatypes with holes at the beginning, which causes

@@ -53,7 +53,7 @@ int yaksi_flatten_size(yaksi_type_s * type, uintptr_t * flattened_type_size)
 
         case YAKSI_TYPE_KIND__HINDEXED:
             /* add space for array_of_blocklengths */
-            *flattened_type_size += type->u.hindexed.count * sizeof(int);
+            *flattened_type_size += type->u.hindexed.count * sizeof(intptr_t);
             /* add space for array_of_displs */
             *flattened_type_size += type->u.hindexed.count * sizeof(intptr_t);
 
@@ -64,7 +64,7 @@ int yaksi_flatten_size(yaksi_type_s * type, uintptr_t * flattened_type_size)
 
         case YAKSI_TYPE_KIND__STRUCT:
             /* add space for array_of_blocklengths */
-            *flattened_type_size += type->u.str.count * sizeof(int);
+            *flattened_type_size += type->u.str.count * sizeof(intptr_t);
             /* add space for array_of_displs */
             *flattened_type_size += type->u.str.count * sizeof(intptr_t);
 
@@ -91,7 +91,7 @@ int yaksi_flatten_size(yaksi_type_s * type, uintptr_t * flattened_type_size)
     goto fn_exit;
 }
 
-int yaksa_flatten_size(yaksa_type_t type, uintptr_t * flattened_type_size)
+YAKSA_API_PUBLIC int yaksa_flatten_size(yaksa_type_t type, uintptr_t * flattened_type_size)
 {
     int rc = YAKSA_SUCCESS;
     yaksi_type_s *yaksi_type;

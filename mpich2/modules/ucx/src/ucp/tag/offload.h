@@ -14,16 +14,15 @@
 
 
 enum {
-    UCP_TAG_OFFLOAD_CANCEL_FORCE = UCS_BIT(0),
-    UCP_TAG_OFFLOAD_CANCEL_DEREG = UCS_BIT(1)
+    UCP_TAG_OFFLOAD_CANCEL_FORCE = UCS_BIT(0)
 };
 
 /**
  * Header for unexpected rendezvous
  */
 typedef struct {
-    uintptr_t      ep_ptr;
-    uintptr_t      reqptr;       /* Request pointer */
+    uint64_t       ep_id;        /* Endpoint ID */
+    uint64_t       req_id;       /* Request ID */
     uint8_t        md_index;     /* md index */
 } UCS_S_PACKED ucp_tag_offload_unexp_rndv_hdr_t;
 
@@ -32,7 +31,7 @@ typedef struct {
  * Header for sync send acknowledgment
  */
 typedef struct {
-    uintptr_t         ep_ptr;
+    uint64_t          ep_id;
     ucp_tag_t         sender_tag;
 } UCS_S_PACKED ucp_offload_ssend_hdr_t;
 
@@ -68,7 +67,8 @@ ucs_status_t ucp_tag_offload_unexp_rndv(void *arg, unsigned flags, uint64_t stag
                                         uint64_t remote_addr, size_t length,
                                         const void *rkey_buf);
 
-void ucp_tag_offload_cancel(ucp_worker_t *worker, ucp_request_t *req, unsigned mode);
+void ucp_tag_offload_cancel(ucp_worker_t *worker, ucp_request_t *req,
+                            unsigned mode);
 
 int ucp_tag_offload_post(ucp_request_t *req, ucp_request_queue_t *req_queue);
 
@@ -98,7 +98,8 @@ ucp_tag_offload_try_post(ucp_worker_t *worker, ucp_request_t *req,
 }
 
 static UCS_F_ALWAYS_INLINE void
-ucp_tag_offload_try_cancel(ucp_worker_t *worker, ucp_request_t *req, unsigned mode)
+ucp_tag_offload_try_cancel(ucp_worker_t *worker, ucp_request_t *req,
+                           unsigned mode)
 {
     if (ucs_unlikely(req->flags & UCP_REQUEST_FLAG_OFFLOADED)) {
         ucp_tag_offload_cancel(worker, req, mode);
@@ -158,6 +159,5 @@ ucp_tag_offload_unexp(ucp_worker_iface_t *wiface, ucp_tag_t tag, size_t length)
         kh_value(&worker->tm.offload.tag_hash, hash_it) = wiface;
     }
 }
-
 
 #endif

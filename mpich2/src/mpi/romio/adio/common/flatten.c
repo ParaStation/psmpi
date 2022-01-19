@@ -128,7 +128,7 @@ ADIOI_Flatlist_node *ADIOI_Flatten_datatype(MPI_Datatype datatype)
             for (i = 0; i < flat->count; i++) {
                 DBG_FPRINTF(stderr,
                             "ADIOI_Flatten_datatype:: i %#X, blocklens %#llX, indices %#llX\n", i,
-                            flat->blocklens[i], flat->indices[i]);
+                            (long long) flat->blocklens[i], (long long) flat->indices[i]);
             }
         }
 #endif
@@ -153,7 +153,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
      * avoid >2G integer arithmetic problems */
     ADIO_Offset top_count;
     MPI_Count i, j, old_size, prev_index, basic_num, num, nonzeroth;
-    MPI_Aint old_extent;        /* Assume extents are non-negative */
+    MPI_Aint lb, old_extent;    /* Assume extents are non-negative */
     int *ints;
     MPI_Aint *adds;             /* Make no assumptions about +/- sign on these */
     MPI_Datatype *types;
@@ -164,8 +164,8 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
     MPI_Type_get_contents(datatype, nints, nadds, ntypes, ints, adds, types);
 
 #ifdef FLATTEN_DEBUG
-    DBG_FPRINTF(stderr, "ADIOI_Flatten:: st_offset %#llX, curr_index %#llX\n", st_offset,
-                *curr_index);
+    DBG_FPRINTF(stderr, "ADIOI_Flatten:: st_offset %#llX, curr_index %#llX\n",
+                (long long) st_offset, (long long) *curr_index);
     DBG_FPRINTF(stderr, "ADIOI_Flatten:: nints %#X, nadds %#X, ntypes %#X\n", nints, nadds, ntypes);
     for (i = 0; i < nints; ++i) {
         DBG_FPRINTF(stderr, "ADIOI_Flatten:: ints[%lld]=%#X\n", (long long) i, ints[i]);
@@ -238,13 +238,15 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
 #ifdef FLATTEN_DEBUG
                 DBG_FPRINTF(stderr,
                             "ADIOI_Flatten:: MPI_COMBINER_DARRAY <ADIOI_Flatten(dtype, flat->indices[%#X] %#llX, flat->blocklens[%#X] %#llX, st_offset %#llX, curr_index %#llX);\n",
-                            0, flat->indices[0], 0, flat->blocklens[0], st_offset, *curr_index);
+                            0, (long long) flat->indices[0], 0, (long long) flat->blocklens[0],
+                            (long long) st_offset, (long long) *curr_index);
 #endif
                 ADIOI_Flatten(dtype, flat, st_offset, curr_index);
 #ifdef FLATTEN_DEBUG
                 DBG_FPRINTF(stderr,
                             "ADIOI_Flatten:: MPI_COMBINER_DARRAY >ADIOI_Flatten(dtype, flat->indices[%#X] %#llX, flat->blocklens[%#X] %#llX, st_offset %#llX, curr_index %#llX);\n",
-                            0, flat->indices[0], 0, flat->blocklens[0], st_offset, *curr_index);
+                            0, (long long) flat->indices[0], 0, (long long) flat->blocklens[0],
+                            (long long) st_offset, (long long) *curr_index);
 #endif
                 MPI_Type_free(&dtype);
             }
@@ -272,7 +274,8 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
 #ifdef FLATTEN_DEBUG
                 DBG_FPRINTF(stderr,
                             "ADIOI_Flatten:: simple flat->indices[%#llX] %#llX, flat->blocklens[%#llX] %#llX\n",
-                            j, flat->indices[j], j, flat->blocklens[j]);
+                            (long long) j, (long long) flat->indices[j],
+                            (long long) j, (long long) flat->blocklens[j]);
 #endif
                 (*curr_index)++;
             } else {
@@ -281,7 +284,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
                 num = *curr_index - prev_index;
 
 /* The noncontiguous types have to be replicated count times */
-                MPI_Type_extent(types[0], &old_extent);
+                MPI_Type_get_extent(types[0], &lb, &old_extent);
                 for (m = 1; m < top_count; m++) {
                     for (i = 0; i < num; i++) {
                         flatlist_node_grow(flat, j);
@@ -291,7 +294,8 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
 #ifdef FLATTEN_DEBUG
                         DBG_FPRINTF(stderr,
                                     "ADIOI_Flatten:: derived flat->indices[%#llX] %#llX, flat->blocklens[%#llX] %#llX\n",
-                                    j, flat->indices[j], j, flat->blocklens[j]);
+                                    (long long) j, (long long) flat->indices[j],
+                                    (long long) j, (long long) flat->blocklens[j]);
 #endif
                         j++;
                     }
@@ -339,7 +343,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
 
 /* The noncontiguous types have to be replicated blocklen times
    and then strided. Replicate the first one. */
-                MPI_Type_extent(types[0], &old_extent);
+                MPI_Type_get_extent(types[0], &lb, &old_extent);
                 for (m = 1; m < blocklength; m++) {
                     for (i = 0; i < num; i++) {
                         flatlist_node_grow(flat, j);
@@ -406,7 +410,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
 
 /* The noncontiguous types have to be replicated blocklen times
    and then strided. Replicate the first one. */
-                MPI_Type_extent(types[0], &old_extent);
+                MPI_Type_get_extent(types[0], &lb, &old_extent);
                 for (m = 1; m < blocklength; m++) {
                     for (i = 0; i < num; i++) {
                         flatlist_node_grow(flat, j);
@@ -439,7 +443,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
             top_count = ints[0];
             MPI_Type_get_envelope(types[0], &old_nints, &old_nadds, &old_ntypes, &old_combiner);
             ADIOI_Datatype_iscontig(types[0], &old_is_contig);
-            MPI_Type_extent(types[0], &old_extent);
+            MPI_Type_get_extent(types[0], &lb, &old_extent);
 
             prev_index = *curr_index;
             if ((old_combiner != MPI_COMBINER_NAMED) && (!old_is_contig)) {
@@ -532,9 +536,8 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
 #if defined HAVE_DECL_MPI_COMBINER_HINDEXED_BLOCK && HAVE_DECL_MPI_COMBINER_HINDEXED_BLOCK
         case MPI_COMBINER_HINDEXED_BLOCK:
             is_hindexed_block = 1;
-            /* deliberate fall-through */
-            MPL_FALLTHROUGH;
 #endif
+            /* fall through */
         case MPI_COMBINER_INDEXED_BLOCK:
 #ifdef FLATTEN_DEBUG
             DBG_FPRINTF(stderr, "ADIOI_Flatten:: MPI_COMBINER_INDEXED_BLOCK\n");
@@ -542,7 +545,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
             top_count = ints[0];
             MPI_Type_get_envelope(types[0], &old_nints, &old_nadds, &old_ntypes, &old_combiner);
             ADIOI_Datatype_iscontig(types[0], &old_is_contig);
-            MPI_Type_extent(types[0], &old_extent);
+            MPI_Type_get_extent(types[0], &lb, &old_extent);
 
             prev_index = *curr_index;
             if ((old_combiner != MPI_COMBINER_NAMED) && (!old_is_contig)) {
@@ -590,7 +593,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
                         if (is_hindexed_block) {
                             /* this is the one place the hindexed case uses the
                              * extent of a type */
-                            MPI_Type_extent(types[0], &old_extent);
+                            MPI_Type_get_extent(types[0], &lb, &old_extent);
                         }
                         flatlist_node_grow(flat, j);
                         flat->indices[j] = flat->indices[j - num] +
@@ -663,7 +666,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
 
 /* The noncontiguous types have to be replicated blocklens[i] times
    and then strided. Replicate the first one. */
-                MPI_Type_extent(types[0], &old_extent);
+                MPI_Type_get_extent(types[0], &lb, &old_extent);
                 for (m = 1; m < ints[1]; m++) {
                     for (i = 0, nonzeroth = j; i < num; i++) {
                         if (flat->blocklens[j - num] > 0) {
@@ -755,7 +758,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
                     num = *curr_index - prev_index;
 
 /* The current type has to be replicated blocklens[n] times */
-                    MPI_Type_extent(types[n], &old_extent);
+                    MPI_Type_get_extent(types[n], &lb, &old_extent);
                     for (m = 1; m < ints[1 + n]; m++) {
                         for (i = 0; i < num; i++) {
                             flatlist_node_grow(flat, j);
@@ -766,7 +769,8 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
                             DBG_FPRINTF(stderr,
                                         "ADIOI_Flatten:: simple old_extent " MPI_AINT_FMT_HEX_SPEC
                                         ", flat->indices[%#llX] %#llX, flat->blocklens[%#llX] %#llX\n",
-                                        old_extent, j, flat->indices[j], j, flat->blocklens[j]);
+                                        old_extent, (long long) j, (long long) flat->indices[j],
+                                        (long long) j, (long long) flat->blocklens[j]);
 #endif
                             j++;
                         }
@@ -804,7 +808,8 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
                 DBG_FPRINTF(stderr,
                             "ADIOI_Flatten:: simple adds[%#X] " MPI_AINT_FMT_HEX_SPEC
                             ", flat->indices[%#llX] %#llX, flat->blocklens[%#llX] %#llX\n", 0,
-                            adds[0], j, flat->indices[j], j, flat->blocklens[j]);
+                            adds[0], (long long) j, (long long) flat->indices[j],
+                            (long long) j, (long long) flat->blocklens[j]);
 #endif
 
                 (*curr_index)++;
@@ -833,7 +838,8 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
                 DBG_FPRINTF(stderr,
                             "ADIOI_Flatten:: simple adds[%#X] " MPI_AINT_FMT_HEX_SPEC
                             ", flat->indices[%#llX] %#llX, flat->blocklens[%#llX] %#llX\n", 0,
-                            adds[0], j, flat->indices[j], j, flat->blocklens[j]);
+                            adds[0], (long long) j, (long long) flat->indices[j],
+                            (long long) j, (long long) flat->blocklens[j]);
 #endif
 
                 (*curr_index)++;
@@ -859,7 +865,8 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
             DBG_FPRINTF(stderr,
                         "ADIOI_Flatten:: simple adds[%#X] " MPI_AINT_FMT_HEX_SPEC
                         ", flat->indices[%#llX] %#llX, flat->blocklens[%#llX] %#llX\n", 1, adds[1],
-                        j, flat->indices[j], j, flat->blocklens[j]);
+                        (long long) j, (long long) flat->indices[j],
+                        (long long) j, (long long) flat->blocklens[j]);
 #endif
 
             (*curr_index)++;
@@ -883,8 +890,8 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node * flat,
     ADIOI_Free(types);
 
 #ifdef FLATTEN_DEBUG
-    DBG_FPRINTF(stderr, "ADIOI_Flatten:: return st_offset %#llX, curr_index %#llX\n", st_offset,
-                *curr_index);
+    DBG_FPRINTF(stderr, "ADIOI_Flatten:: return st_offset %#llX, curr_index %#llX\n",
+                (long long) st_offset, (long long) *curr_index);
 #endif
 
 }

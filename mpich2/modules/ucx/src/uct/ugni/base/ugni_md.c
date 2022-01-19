@@ -39,8 +39,9 @@ static ucs_status_t uct_ugni_md_query(uct_md_h md, uct_md_attr_t *md_attr)
     md_attr->cap.flags            = UCT_MD_FLAG_REG       |
                                     UCT_MD_FLAG_NEED_MEMH |
                                     UCT_MD_FLAG_NEED_RKEY;
-    md_attr->cap.reg_mem_types    = UCS_MEMORY_TYPES_CPU_ACCESSIBLE;
-    md_attr->cap.access_mem_type  = UCS_MEMORY_TYPE_HOST;
+    md_attr->cap.reg_mem_types    = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    md_attr->cap.alloc_mem_types  = 0;
+    md_attr->cap.access_mem_types = UCS_BIT(UCS_MEMORY_TYPE_HOST);
     md_attr->cap.detect_mem_types = 0;
     md_attr->cap.max_alloc        = 0;
     md_attr->cap.max_reg          = ULONG_MAX;
@@ -92,15 +93,19 @@ mem_err:
     return status;
 }
 
-static ucs_status_t uct_ugni_mem_dereg(uct_md_h md, uct_mem_h memh)
+static ucs_status_t uct_ugni_mem_dereg(uct_md_h md,
+                                       const uct_md_mem_dereg_params_t *params)
 {
     uct_ugni_md_t *ugni_md = ucs_derived_of(md, uct_ugni_md_t);
-    gni_mem_handle_t *mem_hndl = (gni_mem_handle_t *) memh;
+    gni_mem_handle_t *mem_hndl;
     gni_return_t ugni_rc;
     ucs_status_t status = UCS_OK;
 
+    UCT_MD_MEM_DEREG_CHECK_PARAMS(params, 0);
+
     uct_ugni_cdm_lock(&ugni_md->cdm);
-    ugni_rc = GNI_MemDeregister(ugni_md->cdm.nic_handle, mem_hndl);
+    mem_hndl = (gni_mem_handle_t *)params->memh;
+    ugni_rc  = GNI_MemDeregister(ugni_md->cdm.nic_handle, mem_hndl);
     uct_ugni_cdm_unlock(&ugni_md->cdm);
     if (GNI_RC_SUCCESS != ugni_rc) {
         ucs_error("GNI_MemDeregister failed, Error status: %s %d",
@@ -180,24 +185,22 @@ uct_ugni_md_open(uct_component_h component,const char *md_name,
                  const uct_md_config_t *md_config, uct_md_h *md_p)
 {
     ucs_status_t status = UCS_OK;
+    static uct_md_ops_t md_ops;
+    static uct_ugni_md_t md;
 
     pthread_mutex_lock(&uct_ugni_global_lock);
-    static uct_md_ops_t md_ops = {
-        .close              = uct_ugni_md_close,
-        .query              = uct_ugni_md_query,
-        .mem_alloc          = (void*)ucs_empty_function,
-        .mem_free           = (void*)ucs_empty_function,
-        .mem_reg            = uct_ugni_mem_reg,
-        .mem_dereg          = uct_ugni_mem_dereg,
-        .mkey_pack          = uct_ugni_rkey_pack,
-        .detect_memory_type = ucs_empty_function_return_unsupported,
-    };
+    md_ops.close              = uct_ugni_md_close;
+    md_ops.query              = uct_ugni_md_query;
+    md_ops.mem_alloc          = (void*)ucs_empty_function;
+    md_ops.mem_free           = (void*)ucs_empty_function;
+    md_ops.mem_reg            = uct_ugni_mem_reg;
+    md_ops.mem_dereg          = uct_ugni_mem_dereg;
+    md_ops.mkey_pack          = uct_ugni_rkey_pack;
+    md_ops.detect_memory_type = ucs_empty_function_return_unsupported;
 
-    static uct_ugni_md_t md = {
-        .super.ops          = &md_ops,
-        .super.component    = &uct_ugni_component,
-        .ref_count          = 0
-    };
+    md.super.ops              = &md_ops;
+    md.super.component        = &uct_ugni_component;
+    md.ref_count              = 0;
 
     *md_p = &md.super;
 

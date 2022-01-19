@@ -1,10 +1,10 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2012.  ALL RIGHTS RESERVED.
-* Copyright (c) UT-Battelle, LLC. 2014-2019. ALL RIGHTS RESERVED.
-* Copyright (C) ARM Ltd. 2016-2017.  ALL RIGHTS RESERVED.
-*
-* See file LICENSE for terms.
-*/
+ * Copyright (C) Mellanox Technologies Ltd. 2001-2012.  ALL RIGHTS RESERVED.
+ * Copyright (c) UT-Battelle, LLC. 2014-2019. ALL RIGHTS RESERVED.
+ * Copyright (C) ARM Ltd. 2016-2017.  ALL RIGHTS RESERVED.
+ *
+ * See file LICENSE for terms.
+ */
 
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
@@ -26,6 +26,7 @@
 #include <sys/shm.h>
 #include <sys/mman.h>
 #include <sys/types.h>
+#include <sys/resource.h>
 #include <net/if.h>
 #include <dirent.h>
 #include <sched.h>
@@ -47,17 +48,23 @@
 #define UCS_PROCESS_NS_FIRST       0xF0000000U
 #define UCS_PROCESS_NS_NET_DFLT    0xF0000080U
 
+#define UCS_NS_INFO_ITEM(_id, _name, _dflt) \
+    [_id] = {.name = (_name), .dflt = (_dflt), .value = (_dflt), \
+             .init_once = UCS_INIT_ONCE_INITIALIZER}
+
 
 struct {
-    const char  *name;
-    ucs_sys_ns_t dflt;
+    const char        *name;
+    const ucs_sys_ns_t dflt;
+    ucs_sys_ns_t       value;
+    ucs_init_once_t    init_once; /* use own initialization sequence per NS */
 } static ucs_sys_namespace_info[] = {
-    [UCS_SYS_NS_TYPE_IPC]  = {.name = "ipc",  .dflt = UCS_PROCESS_NS_FIRST - 1},
-    [UCS_SYS_NS_TYPE_MNT]  = {.name = "mnt",  .dflt = UCS_PROCESS_NS_FIRST - 0},
-    [UCS_SYS_NS_TYPE_NET]  = {.name = "net",  .dflt = UCS_PROCESS_NS_NET_DFLT},
-    [UCS_SYS_NS_TYPE_PID]  = {.name = "pid",  .dflt = UCS_PROCESS_NS_FIRST - 4},
-    [UCS_SYS_NS_TYPE_USER] = {.name = "user", .dflt = UCS_PROCESS_NS_FIRST - 3},
-    [UCS_SYS_NS_TYPE_UTS]  = {.name = "uts",  .dflt = UCS_PROCESS_NS_FIRST - 2}
+    UCS_NS_INFO_ITEM(UCS_SYS_NS_TYPE_IPC,  "ipc",  UCS_PROCESS_NS_FIRST - 1),
+    UCS_NS_INFO_ITEM(UCS_SYS_NS_TYPE_MNT,  "mnt",  UCS_PROCESS_NS_FIRST - 0),
+    UCS_NS_INFO_ITEM(UCS_SYS_NS_TYPE_NET,  "net",  UCS_PROCESS_NS_NET_DFLT),
+    UCS_NS_INFO_ITEM(UCS_SYS_NS_TYPE_PID,  "pid",  UCS_PROCESS_NS_FIRST - 4),
+    UCS_NS_INFO_ITEM(UCS_SYS_NS_TYPE_USER, "user", UCS_PROCESS_NS_FIRST - 3),
+    UCS_NS_INFO_ITEM(UCS_SYS_NS_TYPE_UTS,  "uts",  UCS_PROCESS_NS_FIRST - 2)
 };
 
 typedef struct {
@@ -283,15 +290,44 @@ int ucs_get_first_cpu()
 uint64_t ucs_generate_uuid(uint64_t seed)
 {
     struct timeval tv;
+    uint64_t high;
+    uint64_t low;
+    uint64_t boot_id = 0;
+    ucs_status_t status;
+
+    status = ucs_sys_get_boot_id(&high, &low);
+    if (status == UCS_OK) {
+        boot_id = high ^ low;
+    } else {
+        ucs_error("failed to get boot id");
+    }
 
     gettimeofday(&tv, NULL);
     return seed +
            ucs_get_prime(0) * ucs_get_tid() +
            ucs_get_prime(1) * ucs_get_time() +
-           ucs_get_prime(2) * ucs_get_mac_address() +
+           ucs_get_prime(2) * boot_id +
            ucs_get_prime(3) * tv.tv_sec +
            ucs_get_prime(4) * tv.tv_usec +
            __sumup_host_name(5);
+}
+
+int ucs_sys_max_open_files()
+{
+    static int file_limit = 0;
+    struct rlimit rlim;
+    int ret;
+
+    if (file_limit == 0) {
+        ret = getrlimit(RLIMIT_NOFILE, &rlim);
+        if (ret == 0) {
+            file_limit = (int)rlim.rlim_cur;
+        } else {
+            file_limit = 1024;
+        }
+    }
+
+    return file_limit;
 }
 
 ucs_status_t
@@ -466,22 +502,23 @@ size_t ucs_get_page_size()
     return page_size;
 }
 
-void ucs_get_mem_page_size(void *address, size_t size, size_t *min_page_size_p,
-                           size_t *max_page_size_p)
+void ucs_sys_iterate_vm(void *address, size_t size, ucs_sys_vma_cb_t cb,
+                        void *ctx)
 {
-    int found = 0;
+    ucs_sys_vma_info_t info;
     unsigned long start, end;
     unsigned long page_size_kb;
-    size_t page_size;
     char buf[1024];
+    char *p, *save;
     FILE *file;
     int n;
 
     file = fopen(UCS_PROCESS_SMAPS_FILE, "r");
     if (!file) {
-        goto out;
+        return;
     }
 
+    /* coverity[tainted_data_argument] */
     while (fgets(buf, sizeof(buf), file) != NULL) {
         n = sscanf(buf, "%lx-%lx", &start, &end);
         if (n != 2) {
@@ -497,29 +534,69 @@ void ucs_get_mem_page_size(void *address, size_t size, size_t *min_page_size_p,
             continue;
         }
 
+        memset(&info, 0, sizeof(info));
+        info.start = start;
+        info.end   = end;
+
         while (fgets(buf, sizeof(buf), file) != NULL) {
             n = sscanf(buf, "KernelPageSize: %lu kB", &page_size_kb);
-            if (n < 1) {
+            if (n == 1) {
+                info.page_size = page_size_kb * UCS_KBYTE;
                 continue;
             }
 
-            page_size = page_size_kb * UCS_KBYTE;
-            if (found) {
-                *min_page_size_p = ucs_min(*min_page_size_p, page_size);
-                *max_page_size_p = ucs_max(*max_page_size_p, page_size);
-            } else {
-                found            = 1;
-                *min_page_size_p = page_size;
-                *max_page_size_p = page_size;
+            n = 9;
+            if (memcmp(buf, "VmFlags: ", n) == 0) {
+                p = buf + n;
+                while ((p = strtok_r(p, " \n", &save)) != NULL) {
+                    if (strcmp(p, "dc") == 0) {
+                        info.flags |= UCS_SYS_VMA_FLAG_DONTCOPY;
+                    }
+
+                    p = NULL;
+                }
+
+                break;
             }
-            break;
         }
+
+        cb(&info, ctx);
     }
 
     fclose(file);
+}
 
-out:
-    if (!found) {
+typedef struct {
+    int    found;
+    size_t min_page_size;
+    size_t max_page_size;
+} ucs_mem_page_size_info_t;
+
+static void ucs_get_mem_page_size_cb(ucs_sys_vma_info_t *mem_info, void *ctx)
+{
+    ucs_mem_page_size_info_t *info = (ucs_mem_page_size_info_t *)ctx;
+
+    if (info->found) {
+        info->min_page_size = ucs_min(info->min_page_size, mem_info->page_size);
+        info->max_page_size = ucs_max(info->max_page_size, mem_info->page_size);
+    } else {
+        info->found         = 1;
+        info->min_page_size = mem_info->page_size;
+        info->max_page_size = mem_info->page_size;
+    }
+}
+
+void ucs_get_mem_page_size(void *address, size_t size, size_t *min_page_size_p,
+                           size_t *max_page_size_p)
+{
+    ucs_mem_page_size_info_t info = {};
+
+    ucs_sys_iterate_vm(address, size, ucs_get_mem_page_size_cb, &info);
+
+    if (info.found) {
+        *min_page_size_p = info.min_page_size;
+        *max_page_size_p = info.max_page_size;
+    } else {
         *min_page_size_p = *max_page_size_p = ucs_get_page_size();
     }
 }
@@ -759,6 +836,8 @@ ucs_status_t ucs_sysv_alloc(size_t *size, size_t max_size, void **address_p,
     ssize_t huge_page_size;
 #endif
     size_t alloc_size;
+    void *shmat_address;
+    int shmat_flags;
     int sys_errno;
     void *ptr;
     int ret;
@@ -810,10 +889,18 @@ ucs_status_t ucs_sysv_alloc(size_t *size, size_t max_size, void **address_p,
 
     /* Attach segment */
     if (*address_p) {
-        ptr = shmat(*shmid, *address_p, SHM_REMAP);
+#ifdef SHM_REMAP
+        shmat_address = *address_p;
+        shmat_flags   = SHM_REMAP;
+#else
+        return UCS_ERR_INVALID_PARAM;
+#endif
     } else {
-        ptr = shmat(*shmid, NULL, 0);
+        shmat_address = NULL;
+        shmat_flags   = 0;
     }
+
+    ptr = shmat(*shmid, shmat_address, shmat_flags);
 
     /* Remove segment, the attachment keeps a reference to the mapping */
     /* FIXME having additional attaches to a removed segment is not portable
@@ -830,7 +917,9 @@ ucs_status_t ucs_sysv_alloc(size_t *size, size_t max_size, void **address_p,
         } else if (RUNNING_ON_VALGRIND && (errno == EINVAL)) {
             return UCS_ERR_NO_MEMORY;
         } else {
-            ucs_error("shmat(shmid=%d) returned unexpected error: %m", *shmid);
+            ucs_error("shmat(shmid=%d, address=%p, flags=0x%x) returned "
+                      "unexpected error: %m",
+                      *shmid, shmat_address, shmat_flags);
             return UCS_ERR_SHMEM_SEGMENT;
         }
     }
@@ -1254,15 +1343,19 @@ ucs_sys_ns_t ucs_sys_get_ns(ucs_sys_namespace_type_t ns)
         return 0;
     }
 
-    snprintf(filename, sizeof(filename), "%s/%s", UCS_PROCESS_NS_DIR,
-             ucs_sys_namespace_info[ns].name);
+    UCS_INIT_ONCE(&ucs_sys_namespace_info[ns].init_once) {
+        snprintf(filename, sizeof(filename), "%s/%s", UCS_PROCESS_NS_DIR,
+                 ucs_sys_namespace_info[ns].name);
 
-    res = stat(filename, &st);
-    if (res == 0) {
-        return (ucs_sys_ns_t)st.st_ino;
+        res = stat(filename, &st);
+        if (res == 0) {
+            ucs_sys_namespace_info[ns].value = (ucs_sys_ns_t)st.st_ino;
+        } else {
+            ucs_debug("failed to stat(%s): %m", filename);
+        }
     }
 
-    return ucs_sys_namespace_info[ns].dflt;
+    return ucs_sys_namespace_info[ns].value;
 }
 
 int ucs_sys_ns_is_default(ucs_sys_namespace_type_t ns)
@@ -1305,7 +1398,7 @@ ucs_status_t ucs_sys_get_boot_id(uint64_t *high, uint64_t *low)
             boot_id.low  = ((uint64_t)v1) | ((uint64_t)v2 << 32) |
                            ((uint64_t)v3 << 48);
             boot_id.high = v4;
-            for (i = 0; i < ucs_array_size(v5); i++) {
+            for (i = 0; i < ucs_static_array_size(v5); i++) {
                 boot_id.high |= (uint64_t)v5[i] << (16 + (i * 8));
             }
         }
@@ -1321,7 +1414,7 @@ ucs_status_t ucs_sys_get_boot_id(uint64_t *high, uint64_t *low)
 
 ucs_status_t ucs_sys_readdir(const char *path, ucs_sys_readdir_cb_t cb, void *ctx)
 {
-    ucs_status_t res = 0;
+    ucs_status_t res = UCS_OK;
     DIR *dir;
     struct dirent *entry;
     struct dirent *entry_out;
@@ -1358,7 +1451,7 @@ static ucs_status_t ucs_sys_enum_threads_cb(struct dirent *entry, void *_ctx)
     ucs_sys_enum_threads_t *ctx = (ucs_sys_enum_threads_t*)_ctx;
 
     return strncmp(entry->d_name, ".", 1) ?
-           ctx->cb((pid_t)atoi(entry->d_name), ctx->ctx) : 0;
+           ctx->cb((pid_t)atoi(entry->d_name), ctx->ctx) : UCS_OK;
 }
 
 ucs_status_t ucs_sys_enum_threads(ucs_sys_enum_threads_cb_t cb, void *ctx)
@@ -1367,4 +1460,30 @@ ucs_status_t ucs_sys_enum_threads(ucs_sys_enum_threads_cb_t cb, void *ctx)
     ucs_sys_enum_threads_t param = {.ctx = ctx, .cb = cb};
 
     return ucs_sys_readdir(task_dir, &ucs_sys_enum_threads_cb, &param);
+}
+
+ucs_status_t ucs_sys_get_file_time(const char *name, ucs_sys_file_time_t type,
+                                   struct timespec *ts)
+{
+    struct stat stat_buf;
+    int res;
+
+    res = stat(name, &stat_buf);
+    if (res != 0) {
+        return UCS_ERR_IO_ERROR; /* failed to get file info */
+    }
+
+    switch (type) {
+    case UCS_SYS_FILE_TIME_CTIME:
+        *ts = stat_buf.st_ctim;
+        return UCS_OK;
+    case UCS_SYS_FILE_TIME_ATIME:
+        *ts = stat_buf.st_atim;
+        return UCS_OK;
+    case UCS_SYS_FILE_TIME_MTIME:
+        *ts = stat_buf.st_mtim;
+        return UCS_OK;
+    default:
+        return UCS_ERR_INVALID_PARAM;
+    }
 }

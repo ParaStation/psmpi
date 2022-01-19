@@ -1,10 +1,10 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
-* Copyright (c) UT-Battelle, LLC. 2014-2019. ALL RIGHTS RESERVED.
-* Copyright (C) ARM Ltd. 2016.  ALL RIGHTS RESERVED.
-*
-* See file LICENSE for terms.
-*/
+ * Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+ * Copyright (c) UT-Battelle, LLC. 2014-2019. ALL RIGHTS RESERVED.
+ * Copyright (C) ARM Ltd. 2016.  ALL RIGHTS RESERVED.
+ *
+ * See file LICENSE for terms.
+ */
 
 #ifndef UCS_SYS_H
 #define UCS_SYS_H
@@ -16,8 +16,10 @@
 #include <ucs/sys/compiler.h>
 #include <ucs/type/status.h>
 #include <ucs/type/cpu_set.h>
+#include <ucs/time/time_def.h>
 #include <ucs/debug/memtrack.h>
 #include <ucs/config/types.h>
+#include <ucs/config/parser.h>
 
 #include <errno.h>
 #include <sys/socket.h>
@@ -81,6 +83,35 @@ typedef enum {
     UCS_SYS_NS_TYPE_UTS,
     UCS_SYS_NS_TYPE_LAST
 } ucs_sys_namespace_type_t;
+
+
+/* virtual memory area flags */
+typedef enum {
+    UCS_SYS_VMA_FLAG_DONTCOPY = UCS_BIT(0),
+} ucs_sys_vma_info_flags_t;
+
+
+/* file time information */
+typedef enum {
+    UCS_SYS_FILE_TIME_CTIME, /**< create time */
+    UCS_SYS_FILE_TIME_ATIME, /**< access time */
+    UCS_SYS_FILE_TIME_MTIME  /**< modification time */
+} ucs_sys_file_time_t;
+
+
+/* information about virtual memory area */
+typedef struct {
+    unsigned long start;
+    unsigned long end;
+    size_t        page_size;
+    uint32_t      flags;
+} ucs_sys_vma_info_t;
+
+
+/**
+ * Callback function type used in ucs_sys_iterate_vm.
+ */
+typedef void (*ucs_sys_vma_cb_t)(ucs_sys_vma_info_t *info, void *ctx);
 
 
 /**
@@ -164,6 +195,16 @@ uint64_t ucs_generate_uuid(uint64_t seed);
 
 
 /**
+ * Returns a value one greater than the maximum file descriptor
+ * number that can be opened by this process. Attempts to exceed
+ * this limit yield the error EMFILE.
+ *
+ * @return The maximal number of files that could be opened simultaneously.
+ */
+int ucs_sys_max_open_files();
+
+
+/**
  * Open an output stream according to user configuration:
  *   - file:<name> - file name, %p, %h, %c are substituted.
  *   - stdout
@@ -240,12 +281,24 @@ size_t ucs_get_page_size();
 
 
 /**
- * Get page size of a memory region.
+ * Get info for memory range.
  *
- * @param [in]  address          Memory region start address,
- * @param [in]  size             Memory region size.
- * @param [out] min_page_size_p  Set to the minimal page size in the memory region.
- * @param [out] max_page_size_p  Set to the maximal page size in the memory region.
+ * @param address     Memory range start address,
+ * @param size        Memory range size.
+ * @param cb          Callback function which is called for every vm area.
+ * @param ctx         Context argument passed to @a cb call.
+ */
+void ucs_sys_iterate_vm(void *address, size_t size, ucs_sys_vma_cb_t cb,
+                        void *ctx);
+
+
+/**
+ * Get page size of a memory range.
+ *
+ * @param [in]  address          Memory range start address,
+ * @param [in]  size             Memory range size.
+ * @param [out] min_page_size_p  Set to the minimal page size in the memory range.
+ * @param [out] max_page_size_p  Set to the maximal page size in the memory range.
  */
 void ucs_get_mem_page_size(void *address, size_t size, size_t *min_page_size_p,
                            size_t *max_page_size_p);
@@ -508,7 +561,6 @@ int ucs_sys_ns_is_default(ucs_sys_namespace_type_t name);
  */
 ucs_status_t ucs_sys_get_boot_id(uint64_t *high, uint64_t *low);
 
-
 /**
  * Read directory
  *
@@ -542,6 +594,19 @@ ucs_status_t ucs_sys_readdir(const char *path, ucs_sys_readdir_cb_t cb, void *ct
  *       immediately and this value is returned from ucs_sys_enum_threads.
  */
 ucs_status_t ucs_sys_enum_threads(ucs_sys_enum_threads_cb_t cb, void *ctx);
+
+
+/**
+ * Get file time
+ *
+ * @param [in]  name  File name
+ * @param [in]  type  Type of file time information
+ * @param [out] ts    File time information
+ *
+ * @return UCS_OK if file is found and got information.
+ */
+ucs_status_t ucs_sys_get_file_time(const char *name, ucs_sys_file_time_t type,
+                                   struct timespec *ts);
 
 END_C_DECLS
 

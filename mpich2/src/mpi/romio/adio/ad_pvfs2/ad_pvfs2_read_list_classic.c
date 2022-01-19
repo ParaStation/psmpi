@@ -22,7 +22,7 @@ void ADIOI_PVFS2_OldReadStrided(ADIO_File fd, void *buf, int count,
     int n_filetypes, etype_in_filetype;
     ADIO_Offset abs_off_in_filetype = 0;
     MPI_Count filetype_size, etype_size, buftype_size;
-    MPI_Aint filetype_extent, buftype_extent;
+    MPI_Aint lb, filetype_extent, buftype_extent;
     int buf_count, buftype_is_contig, filetype_is_contig;
     ADIO_Offset off, disp, start_off, initial_off;
     int flag, st_frd_size, st_n_filetypes;
@@ -75,9 +75,9 @@ void ADIOI_PVFS2_OldReadStrided(ADIO_File fd, void *buf, int count,
         return;
     }
 
-    MPI_Type_extent(fd->filetype, &filetype_extent);
+    MPI_Type_get_extent(fd->filetype, &lb, &filetype_extent);
     MPI_Type_size_x(datatype, &buftype_size);
-    MPI_Type_extent(datatype, &buftype_extent);
+    MPI_Type_get_extent(datatype, &lb, &buftype_extent);
     etype_size = fd->etype_size;
 
     bufsize = buftype_size * count;
@@ -182,7 +182,7 @@ void ADIOI_PVFS2_OldReadStrided(ADIO_File fd, void *buf, int count,
 #ifdef HAVE_STATUS_SET_BYTES
         MPIR_Status_set_bytes(status, datatype, bufsize);
         /* This isa temporary way of filling in status.  The right way is to
-         * keep tracke of how much data was actually read adn placed in buf
+         * keep tracke of how much data was actually read and placed in buf
          * by ADIOI_BUFFERED_READ. */
 #endif
 
@@ -846,7 +846,7 @@ void ADIOI_PVFS2_OldReadStrided(ADIO_File fd, void *buf, int count,
      * at empty region at offset N+1)
      *
      * As we discussed on mpich-discuss in may/june 2009, the code below might
-     * look wierd, but by putting fp_ind at the last byte written, the next
+     * look weird, but by putting fp_ind at the last byte written, the next
      * time we run through the strided code we'll update the fp_ind to the
      * right location. */
     if (file_ptr_type == ADIO_INDIVIDUAL) {

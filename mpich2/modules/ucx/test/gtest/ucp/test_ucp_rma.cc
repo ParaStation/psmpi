@@ -6,303 +6,173 @@
 */
 
 #include "test_ucp_memheap.h"
+
 #include <ucs/sys/sys.h>
+extern "C" {
+#include <ucp/core/ucp_mm.h> /* for UCP_MEM_IS_ACCESSIBLE_FROM_CPU */
+}
 
 
 class test_ucp_rma : public test_ucp_memheap {
-private:
-    static void send_completion(void *request, ucs_status_t status){}
 public:
-    static ucp_params_t get_ctx_params() {
-        ucp_params_t params = ucp_test::get_ctx_params();
-        params.features |= UCP_FEATURE_RMA;
-        return params;
+    static void get_test_variants(std::vector<ucp_test_variant>& variants) {
+        add_variant_with_value(variants, UCP_FEATURE_RMA, 0, "flush_worker");
+        add_variant_with_value(variants, UCP_FEATURE_RMA, FLUSH_EP, "flush_ep");
+        add_variant_with_value(variants, UCP_FEATURE_RMA,
+                               FLUSH_EP | ENABLE_PROTO, "flush_ep_proto");
     }
 
-    std::vector<ucp_test_param>
-    static enum_test_params(const ucp_params_t& ctx_params,
-                            const std::string& name,
-                            const std::string& test_case_name,
-                            const std::string& tls)
-    {
-        std::vector<ucp_test_param> result;
-        generate_test_params_variant(ctx_params, name, test_case_name, tls, 0,
-                                     result);
-        generate_test_params_variant(ctx_params, name, test_case_name + "/map_nb",
-                                     tls, UCP_MEM_MAP_NONBLOCK, result);
-        return result;
-    }
-
-    void nonblocking_put_nbi(entity *e, size_t max_size,
-                             void *memheap_addr,
-                             ucp_rkey_h rkey,
-                             std::string& expected_data)
-    {
-        ucs_status_t status;
-        status = ucp_put_nbi(e->ep(), &expected_data[0], expected_data.length(),
-                             (uintptr_t)memheap_addr, rkey);
-        ASSERT_UCS_OK_OR_INPROGRESS(status);
-    }
-
-    void nonblocking_put_nb(entity *e, size_t max_size,
-                            void *memheap_addr,
-                            ucp_rkey_h rkey,
-                            std::string& expected_data)
-    {
-        void *status;
-
-        status = ucp_put_nb(e->ep(), &expected_data[0], expected_data.length(),
-                            (uintptr_t)memheap_addr, rkey, send_completion);
-        ASSERT_UCS_PTR_OK(status);
-        if (UCS_PTR_IS_PTR(status)) {
-            wait(status);
+    virtual void init() {
+        if (enable_proto()) {
+            modify_config("PROTO_ENABLE", "y");
         }
+        test_ucp_memheap::init();
     }
 
-    void nonblocking_get_nbi(entity *e, size_t max_size,
-                             void *memheap_addr,
-                             ucp_rkey_h rkey,
-                             std::string& expected_data)
-    {
-        ucs_status_t status;
-
-        ucs::fill_random(memheap_addr, ucs_min(max_size, 16384U));
-        status = ucp_get_nbi(e->ep(), (void *)&expected_data[0], expected_data.length(),
-                             (uintptr_t)memheap_addr, rkey);
-        ASSERT_UCS_OK_OR_INPROGRESS(status);
+    void put_b(size_t size, void *target_ptr, ucp_rkey_h rkey,
+               void *expected_data, void *arg) {
+        ucs_status_ptr_t status_ptr = do_put(size, target_ptr, rkey,
+                                             expected_data, arg);
+        request_wait(status_ptr);
     }
 
-    void nonblocking_get_nb(entity *e, size_t max_size,
-                            void *memheap_addr,
-                            ucp_rkey_h rkey,
-                            std::string& expected_data)
-    {
-        void *status;
+    void put_nbi(size_t size, void *target_ptr, ucp_rkey_h rkey,
+                 void *expected_data, void *arg) {
+        ucs_status_ptr_t status_ptr = do_put(size, target_ptr, rkey,
+                                             expected_data, arg);
+        request_release(status_ptr);
+    }
 
-        ucs::fill_random(memheap_addr, ucs_min(max_size, 16384U));
-        status = ucp_get_nb(e->ep(), &expected_data[0], expected_data.length(),
-                            (uintptr_t)memheap_addr, rkey, send_completion);
-        ASSERT_UCS_PTR_OK(status);
-        if (UCS_PTR_IS_PTR(status)) {
-            wait(status);
+    void get_b(size_t size, void *target_ptr, ucp_rkey_h rkey,
+               void *expected_data, void *arg) {
+        ucs_status_ptr_t status_ptr = do_get(size, target_ptr, rkey,
+                                             expected_data);
+        request_wait(status_ptr);
+    }
+
+    void get_nbi(size_t size, void *target_ptr, ucp_rkey_h rkey,
+                 void *expected_data, void *arg) {
+        ucs_status_ptr_t status_ptr = do_get(size, target_ptr, rkey,
+                                             expected_data);
+        request_release(status_ptr);
+    }
+
+protected:
+    static size_t default_max_size() {
+        return (100 * UCS_MBYTE) / ucs::test_time_multiplier();
+    }
+
+    void test_mem_types(send_func_t send_func,
+                        size_t max_size = default_max_size()) {
+        std::vector<std::vector<ucs_memory_type_t> > pairs =
+                ucs::supported_mem_type_pairs();
+
+        for (size_t i = 0; i < pairs.size(); ++i) {
+
+            /* Memory type put/get is fully supported only with new protocols */
+            if (!enable_proto() &&
+                (!UCP_MEM_IS_HOST(pairs[i][0]) ||
+                 !UCP_MEM_IS_HOST(pairs[i][1]))) {
+                continue;
+            }
+
+            test_message_sizes(send_func, max_size, pairs[i][0], pairs[i][1], 0);
         }
+
+        /* test non-blocking map with host memory */
+        test_message_sizes(send_func, max_size, UCS_MEMORY_TYPE_HOST,
+                           UCS_MEMORY_TYPE_HOST, UCP_MEM_MAP_NONBLOCK);
     }
 
-    void test_message_sizes(blocking_send_func_t func, size_t *msizes, int iters, int is_nbi);
+private:
+    /* Test variants */
+    enum {
+        FLUSH_EP     = UCS_BIT(0), /* If not set, flush worker */
+        ENABLE_PROTO = UCS_BIT(1)
+    };
+
+    ucs_status_ptr_t do_put(size_t size, void *target_ptr, ucp_rkey_h rkey,
+                            void *expected_data, void *arg) {
+        ucs_memory_type_t *mem_types = reinterpret_cast<ucs_memory_type_t*>(arg);
+        mem_buffer::pattern_fill(expected_data, size, ucs::rand(), mem_types[0]);
+
+        ucp_request_param_t param;
+        param.op_attr_mask = 0;
+        return ucp_put_nbx(sender().ep(), expected_data, size,
+                           (uintptr_t)target_ptr, rkey, &param);
+    }
+
+    ucs_status_ptr_t do_get(size_t size, void *target_ptr, ucp_rkey_h rkey,
+                            void *expected_data) {
+        ucp_request_param_t param;
+
+        param.op_attr_mask = 0;
+        return ucp_get_nbx(sender().ep(), expected_data, size,
+                           (uintptr_t)target_ptr, rkey, &param);
+    }
+
+    void test_message_sizes(send_func_t send_func, size_t max_size,
+                            ucs_memory_type_t send_mem_type,
+                            ucs_memory_type_t target_mem_type,
+                            unsigned mem_map_flags) {
+        ucs::detail::message_stream ms("INFO");
+
+        ms << ucs_memory_type_names[send_mem_type] << "->" <<
+              ucs_memory_type_names[target_mem_type] << " ";
+        if (mem_map_flags & UCP_MEM_MAP_NONBLOCK) {
+            ms << "map_nb ";
+        }
+
+        /* Test different random sizes */
+        for (size_t current_max_size = 128; current_max_size < max_size;
+             current_max_size *= 4) {
+
+            size_t size        = ucs::rand() % current_max_size;
+            unsigned num_iters = ucs_min(100, max_size / (size + 1));
+            num_iters          = ucs_max(1, num_iters / ucs::test_time_multiplier());
+
+            ms << num_iters << "x" << size << " ";
+            fflush(stdout);
+
+            ucs_memory_type_t mem_types[] = {send_mem_type, target_mem_type};
+            test_xfer(send_func, size, num_iters, 1, send_mem_type,
+                      target_mem_type, mem_map_flags, is_ep_flush(), mem_types);
+
+            if (HasFailure() || (num_errors() > 0)) {
+                break;
+            }
+       }
+    }
+
+    bool is_ep_flush() {
+        return get_variant_value() & FLUSH_EP;
+    }
+
+    bool enable_proto() {
+        return get_variant_value() & ENABLE_PROTO;
+    }
 };
 
-void test_ucp_rma::test_message_sizes(blocking_send_func_t func, size_t *msizes, int iters, int is_nbi)
-{
-   int i;
-
-   for (i = 0; msizes[i] > 0; i++) {
-       if (is_nbi) {
-           test_nonblocking_implicit_stream_xfer(static_cast<nonblocking_send_func_t>(func),
-                                                 msizes[i], i, 1, false, false);
-       } else {
-           test_blocking_xfer(func, msizes[i], iters, 1, false, false);
-       }
-   }
+UCS_TEST_P(test_ucp_rma, put_blocking) {
+    test_mem_types(static_cast<send_func_t>(&test_ucp_rma::put_b));
 }
 
-UCS_TEST_P(test_ucp_rma, nbi_small) {
-    size_t sizes[] = { 8, 24, 96, 120, 250, 0};
-
-    test_message_sizes(static_cast<blocking_send_func_t>(&test_ucp_rma::nonblocking_put_nbi),
-                       sizes, 1000, 1);
-    test_message_sizes(static_cast<blocking_send_func_t>(&test_ucp_rma::nonblocking_get_nbi), 
-                       sizes, 1000, 1);
+UCS_TEST_P(test_ucp_rma, put_nonblocking) {
+    test_mem_types(static_cast<send_func_t>(&test_ucp_rma::put_nbi));
 }
 
-UCS_TEST_P(test_ucp_rma, nbi_med) {
-    size_t sizes[] = { 1000, 3000, 9000, 17300, 31000, 99000, 130000, 0};
-
-    test_message_sizes(static_cast<blocking_send_func_t>(&test_ucp_rma::nonblocking_put_nbi),
-                       sizes, 100, 1);
-    test_message_sizes(static_cast<blocking_send_func_t>(&test_ucp_rma::nonblocking_get_nbi), 
-                       sizes, 100, 1);
+UCS_TEST_P(test_ucp_rma, get_blocking) {
+    test_mem_types(static_cast<send_func_t>(&test_ucp_rma::get_b));
 }
 
-UCS_TEST_SKIP_COND_P(test_ucp_rma, nbi_large, RUNNING_ON_VALGRIND) {
-    size_t sizes[] = { 1 * UCS_MBYTE, 3 * UCS_MBYTE, 9 * UCS_MBYTE,
-                       17 * UCS_MBYTE, 32 * UCS_MBYTE, 0};
-
-    test_message_sizes(static_cast<blocking_send_func_t>(&test_ucp_rma::nonblocking_put_nbi),
-                       sizes, 3, 1);
-    test_message_sizes(static_cast<blocking_send_func_t>(&test_ucp_rma::nonblocking_get_nbi), 
-                       sizes, 3, 1);
+UCS_TEST_P(test_ucp_rma, get_nonblocking) {
+    test_mem_types(static_cast<send_func_t>(&test_ucp_rma::get_nbi));
 }
 
-UCS_TEST_P(test_ucp_rma, nb_small) {
-    size_t sizes[] = { 8, 24, 96, 120, 250, 0};
-
-    test_message_sizes(static_cast<blocking_send_func_t>(&test_ucp_rma::nonblocking_put_nb),
-                       sizes, 1000, 1);
-    test_message_sizes(static_cast<blocking_send_func_t>(&test_ucp_rma::nonblocking_get_nb),
-                       sizes, 1000, 1);
+UCS_TEST_P(test_ucp_rma, get_blocking_zcopy, "ZCOPY_THRESH=0") {
+    /* test get_zcopy minimal message length is respected */
+    test_mem_types(static_cast<send_func_t>(&test_ucp_rma::get_b),
+                   64 * UCS_KBYTE);
 }
 
-UCS_TEST_P(test_ucp_rma, nb_med) {
-    size_t sizes[] = { 1000, 3000, 9000, 17300, 31000, 99000, 130000, 0};
-
-    test_message_sizes(static_cast<blocking_send_func_t>(&test_ucp_rma::nonblocking_put_nb),
-                       sizes, 100, 1);
-    test_message_sizes(static_cast<blocking_send_func_t>(&test_ucp_rma::nonblocking_get_nb),
-                       sizes, 100, 1);
-}
-
-UCS_TEST_SKIP_COND_P(test_ucp_rma, nb_large, RUNNING_ON_VALGRIND) {
-    size_t sizes[] = { 1 * UCS_MBYTE, 3 * UCS_MBYTE, 9 * UCS_MBYTE,
-                       17 * UCS_MBYTE, 32 * UCS_MBYTE, 0};
-
-    test_message_sizes(static_cast<blocking_send_func_t>(&test_ucp_rma::nonblocking_put_nb),
-                       sizes, 3, 1);
-    test_message_sizes(static_cast<blocking_send_func_t>(&test_ucp_rma::nonblocking_get_nb),
-                       sizes, 3, 1);
-}
-
-UCS_TEST_P(test_ucp_rma, nonblocking_put_nbi_flush_worker) {
-    test_blocking_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_put_nbi),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, false, false);
-    test_blocking_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_put_nbi),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, true, false);
-}
-
-UCS_TEST_P(test_ucp_rma, nonblocking_put_nbi_flush_ep) {
-    test_blocking_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_put_nbi),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, false, true);
-    test_blocking_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_put_nbi),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, true, true);
-}
-
-UCS_TEST_P(test_ucp_rma, nonblocking_stream_put_nbi_flush_worker) {
-    test_nonblocking_implicit_stream_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_put_nbi),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, false, false);
-    test_nonblocking_implicit_stream_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_put_nbi),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, true, false);
-}
-
-UCS_TEST_P(test_ucp_rma, nonblocking_stream_put_nbi_flush_ep) {
-    test_nonblocking_implicit_stream_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_put_nbi),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, false, true);
-    test_nonblocking_implicit_stream_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_put_nbi),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, true, true);
-}
-
-UCS_TEST_P(test_ucp_rma, nonblocking_put_nb_flush_worker) {
-    test_blocking_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_put_nb),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, false, false);
-    test_blocking_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_put_nb),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, true, false);
-}
-
-UCS_TEST_P(test_ucp_rma, nonblocking_put_nb_flush_ep) {
-    test_blocking_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_put_nb),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, false, true);
-    test_blocking_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_put_nb),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, true, true);
-}
-
-UCS_TEST_P(test_ucp_rma, nonblocking_stream_put_nb_flush_worker) {
-    test_nonblocking_implicit_stream_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_put_nb),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, false, false);
-    test_nonblocking_implicit_stream_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_put_nb),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, true, false);
-}
-
-UCS_TEST_P(test_ucp_rma, nonblocking_stream_put_nb_flush_ep) {
-    test_nonblocking_implicit_stream_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_put_nb),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, false, true);
-    test_nonblocking_implicit_stream_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_put_nb),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, true, true);
-}
-
-UCS_TEST_P(test_ucp_rma, nonblocking_get_nbi_flush_worker) {
-    test_blocking_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_get_nbi),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, false, false);
-    test_blocking_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_get_nbi),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, true, false);
-}
-
-UCS_TEST_P(test_ucp_rma, nonblocking_get_nbi_flush_ep) {
-    test_blocking_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_get_nbi),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, false, true);
-    test_blocking_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_get_nbi),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, true, true);
-}
-
-UCS_TEST_P(test_ucp_rma, nonblocking_stream_get_nbi_flush_worker) {
-    test_nonblocking_implicit_stream_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_get_nbi),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, false, false);
-    test_nonblocking_implicit_stream_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_get_nbi),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, true, false);
-}
-
-UCS_TEST_P(test_ucp_rma, nonblocking_stream_get_nbi_flush_ep) {
-    test_nonblocking_implicit_stream_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_get_nbi),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, false, true);
-    test_nonblocking_implicit_stream_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_get_nbi),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, true, true);
-}
-
-UCS_TEST_P(test_ucp_rma, nonblocking_get_nb_flush_worker) {
-    test_blocking_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_get_nb),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, false, false);
-    test_blocking_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_get_nb),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, true, false);
-}
-
-UCS_TEST_P(test_ucp_rma, nonblocking_get_nb_flush_ep) {
-    test_blocking_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_get_nb),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, false, true);
-    test_blocking_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_get_nb),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, true, true);
-}
-
-UCS_TEST_P(test_ucp_rma, nonblocking_stream_get_nb_flush_worker) {
-    test_nonblocking_implicit_stream_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_get_nb),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, false, false);
-    test_nonblocking_implicit_stream_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_get_nb),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, true, false);
-}
-
-UCS_TEST_P(test_ucp_rma, nonblocking_stream_get_nb_flush_ep) {
-    test_nonblocking_implicit_stream_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_get_nb),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, false, true);
-    test_nonblocking_implicit_stream_xfer(static_cast<nonblocking_send_func_t>(&test_ucp_rma::nonblocking_get_nb),
-                       DEFAULT_SIZE, DEFAULT_ITERS,
-                       1, true, true);
-}
-
-UCP_INSTANTIATE_TEST_CASE(test_ucp_rma)
+UCP_INSTANTIATE_TEST_CASE_GPU_AWARE(test_ucp_rma)

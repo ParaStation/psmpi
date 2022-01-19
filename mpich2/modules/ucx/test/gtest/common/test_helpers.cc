@@ -6,13 +6,19 @@
 
 #include "test_helpers.h"
 
+#include <ucs/async/async.h>
 #include <ucs/sys/math.h>
 #include <ucs/sys/sys.h>
 #include <ucs/sys/string.h>
+#include <ucs/config/global_opts.h>
 #include <ucs/config/parser.h>
 
-#include <sys/resource.h>
 #include <set>
+
+extern "C" {
+// On some platforms users have to declare environ explicitly
+extern char** environ;
+}
 
 namespace ucs {
 
@@ -20,7 +26,7 @@ typedef std::pair<std::string, ::testing::TimeInMillis> test_result_t;
 
 const double test_timeout_in_sec = 60.;
 
-const double watchdog_timeout_default = 900.; // 15 minutes
+double watchdog_timeout = 900.; // 15 minutes
 
 static test_watchdog_t watchdog;
 
@@ -72,7 +78,7 @@ void *watchdog_func(void *arg)
             watchdog.state = WATCHDOG_DEFAULT_SET;
             break;
         case WATCHDOG_DEFAULT_SET:
-            watchdog.timeout     = watchdog_timeout_default;
+            watchdog.timeout     = watchdog_timeout;
             watchdog.state       = WATCHDOG_RUN;
             watchdog.kill_signal = SIGABRT;
             break;
@@ -110,7 +116,7 @@ void watchdog_set(test_watchdog_state_t new_state, double new_timeout)
 
 void watchdog_set(test_watchdog_state_t new_state)
 {
-    watchdog_set(new_state, watchdog_timeout_default);
+    watchdog_set(new_state, watchdog_timeout);
 }
 
 void watchdog_set(double new_timeout)
@@ -167,7 +173,7 @@ int watchdog_start()
 
     pthread_mutex_lock(&watchdog.mutex);
     watchdog.state          = WATCHDOG_RUN;
-    watchdog.timeout        = watchdog_timeout_default;
+    watchdog.timeout        = watchdog_timeout;
     watchdog.kill_signal    = SIGABRT;
     watchdog.watched_thread = pthread_self();
     pthread_mutex_unlock(&watchdog.mutex);
@@ -335,16 +341,13 @@ int max_tcp_connections()
 {
     static int max_conn = 0;
 
-    if (!max_conn) {
-        max_conn = 65535 - 1024; /* limit on number of ports */
-
-        /* Limit numer of endpoints to number of open files, for TCP */
-        struct rlimit rlim;
-        int ret = getrlimit(RLIMIT_NOFILE, &rlim);
-        if (ret == 0) {
-            /* assume no more than 100 fd-s are already used */
-            max_conn = ucs_min((static_cast<int>(rlim.rlim_cur) - 100) / 2, max_conn);
-        }
+    if (max_conn == 0) {
+        /* assume no more than 100 fd-s are already used and consider
+         * that each side of the connection could create 2 socket fds
+         * (1 - from ucp_ep_create() API function, 2 - from accepting
+         * the remote connection), i.e. 4 socket fds per connection  */
+        max_conn = std::min((ucs_sys_max_open_files() - 100) / 4,
+                            65535 - 1024/* limit on number of ports */);
     }
 
     return max_conn;
@@ -568,27 +571,52 @@ std::string compact_string(const std::string &str, size_t length)
     return str.substr(0, length) + "..." + str.substr(str.length() - length);
 }
 
-sock_addr_storage::sock_addr_storage() : m_size(0), m_is_valid(false) {
+std::string exit_status_info(int exit_status)
+{
+    std::stringstream ss;
+
+    if (WIFEXITED(exit_status)) {
+        ss << ", exited with status " << WEXITSTATUS(exit_status);
+    }
+    if (WIFSIGNALED(exit_status)) {
+        ss << ", signaled with status " << WTERMSIG(exit_status);
+    }
+    if (WIFSTOPPED(exit_status)) {
+        ss << ", stopped with status " << WSTOPSIG(exit_status);
+    }
+
+    return ss.str().substr(2, std::string::npos);
+}
+
+sock_addr_storage::sock_addr_storage(bool is_rdmacm_netdev) :
+        m_size(0), m_is_valid(false), m_is_rdmacm_netdev(is_rdmacm_netdev)
+{
     memset(&m_storage, 0, sizeof(m_storage));
 }
 
-sock_addr_storage::sock_addr_storage(const ucs_sock_addr_t &ucs_sock_addr) {
+sock_addr_storage::sock_addr_storage(const ucs_sock_addr_t &ucs_sock_addr,
+                                     bool is_rdmacm_netdev)
+{
     if (sizeof(m_storage) < ucs_sock_addr.addrlen) {
         memset(&m_storage, 0, sizeof(m_storage));
-        m_size     = 0;
-        m_is_valid = false;
+        m_size             = 0;
+        m_is_valid         = false;
+        m_is_rdmacm_netdev = false;
     } else {
-        set_sock_addr(*ucs_sock_addr.addr, ucs_sock_addr.addrlen);
+        set_sock_addr(*ucs_sock_addr.addr, ucs_sock_addr.addrlen,
+                      is_rdmacm_netdev);
     }
 }
 
 void sock_addr_storage::set_sock_addr(const struct sockaddr &addr,
-                                      const size_t size) {
+                                      const size_t size, bool is_rdmacm_netdev)
+{
     ASSERT_GE(sizeof(m_storage), size);
     ASSERT_TRUE(ucs::is_inet_addr(&addr));
     memcpy(&m_storage, &addr, size);
-    m_size     = size;
-    m_is_valid = true;
+    m_size             = size;
+    m_is_valid         = true;
+    m_is_rdmacm_netdev = is_rdmacm_netdev;
 }
 
 void sock_addr_storage::reset_to_any() {
@@ -646,6 +674,11 @@ uint16_t sock_addr_storage::get_port() const {
     }
 }
 
+bool sock_addr_storage::is_rdmacm_netdev() const
+{
+    return m_is_rdmacm_netdev;
+}
+
 size_t sock_addr_storage::get_addr_size() const {
     return m_size;
 }
@@ -665,6 +698,18 @@ std::string sock_addr_storage::to_str() const {
 
 const struct sockaddr* sock_addr_storage::get_sock_addr_ptr() const {
     return m_is_valid ? (struct sockaddr *)(&m_storage) : NULL;
+}
+
+const void* sock_addr_storage::get_sock_addr_in_buf() const {
+    const struct sockaddr* saddr = get_sock_addr_ptr();
+
+    ucs_assert_always(saddr != NULL);
+    ucs_assert_always((saddr->sa_family == AF_INET) ||
+                      (saddr->sa_family == AF_INET6));
+
+    return (saddr->sa_family == AF_INET) ?
+           (const void*)&((struct sockaddr_in*)saddr)->sin_addr :
+           (const void*)&((struct sockaddr_in6*)saddr)->sin6_addr;
 }
 
 std::ostream& operator<<(std::ostream& os, const sock_addr_storage& sa_storage)
@@ -687,6 +732,17 @@ void* auto_buffer::operator*() const {
     return m_ptr;
 };
 
+scoped_log_level::scoped_log_level(ucs_log_level_t level)
+    : m_prev_level(ucs_global_opts.log_component.log_level)
+{
+    ucs_global_opts.log_component.log_level = level;
+}
+
+scoped_log_level::~scoped_log_level()
+{
+    ucs_global_opts.log_component.log_level = m_prev_level;
+}
+
 namespace detail {
 
 message_stream::message_stream(const std::string& title) {
@@ -704,6 +760,27 @@ message_stream::~message_stream() {
 }
 
 } // detail
+
+scoped_async_lock::scoped_async_lock(ucs_async_context_t &async) :
+    m_async(async)
+{
+    UCS_ASYNC_BLOCK(&m_async);
+}
+
+scoped_async_lock::~scoped_async_lock()
+{
+    UCS_ASYNC_UNBLOCK(&m_async);
+}
+
+scoped_mutex_lock::scoped_mutex_lock(pthread_mutex_t &mutex) : m_mutex(mutex)
+{
+    pthread_mutex_lock(&m_mutex);
+}
+
+scoped_mutex_lock::~scoped_mutex_lock()
+{
+    pthread_mutex_unlock(&m_mutex);
+}
 
 std::vector<std::vector<ucs_memory_type_t> > supported_mem_type_pairs() {
     static std::vector<std::vector<ucs_memory_type_t> > result;

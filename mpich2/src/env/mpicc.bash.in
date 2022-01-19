@@ -35,7 +35,7 @@ libdir=__LIBDIR_TO_BE_FILLED_AT_INSTALL_TIME__
 
 # Default settings for compiler, flags, and libraries.
 # Determined by a combination of environment variables and tests within
-# configure (e.g., determining whehter -lsocket is needee)
+# configure (e.g., determining whether -lsocket is needee)
 CC="@CC@"
 MPICH_VERSION="@MPICH_VERSION@"
 
@@ -60,6 +60,7 @@ Show=
 #
 # End of initialization of variables
 #---------------------------------------------------------------------
+
 # Environment Variables.
 # The environment variables MPICH_CC may be used to override the 
 # default choices.
@@ -87,7 +88,7 @@ fi
 # Argument processing.
 # This is somewhat awkward because of the handling of arguments within
 # the shell.  We want to handle arguments that include spaces without 
-# loosing the spacing (an alternative would be to use a more powerful
+# losing the spacing (an alternative would be to use a more powerful
 # scripting language that would allow us to retain the array of values, 
 # which the basic (rather than enhanced) Bourne shell does not.  
 #
@@ -99,6 +100,7 @@ allargs=("$@")
 argno=0
 interlib_deps=yes
 static_mpi=no
+showinfo=""
 for arg in "$@" ; do
     # Set addarg to no if this arg should be ignored by the C compiler
     addarg=yes
@@ -131,6 +133,16 @@ for arg in "$@" ; do
     -show)
     addarg=no
     Show=echo
+    ;;
+    -show-compile-info)
+    addarg=no
+    Show=echo
+    show_info=compile
+    ;;
+    -show-link-info)
+    addarg=no
+    Show=echo
+    show_info=link
     ;;
     -config=*)
     addarg=no
@@ -202,6 +214,16 @@ if [ $# -eq 0 ] ; then
     exit 1
 fi
 
+# Check recursive situations
+# User mistakes, e.g. setting MPICH_CC=mpicc, may end up recursively running
+# this script. A simple check to bail if that's the case.
+if [ -n "$MPICH_RECURSION_CHECK" ] ; then
+    echo "This script ($0) is being called recursively, check that MPICH_CC does not refer to mpicc."
+    exit 1
+fi
+MPICH_RECURSION_CHECK=1
+export MPICH_RECURSION_CHECK
+
 # -----------------------------------------------------------------------
 # Derived variables.  These are assembled from variables set from the
 # default, environment, configuration file (if any) and command-line
@@ -237,7 +259,7 @@ fi
 # -----------------------------------------------------------------------
 #
 # A temporary statement to invoke the compiler
-# Place the -L before any args incase there are any mpi libraries in there.
+# Place the -L before any args in case there are any mpi libraries in there.
 # Eventually, we'll want to move this after any non-MPI implementation 
 # libraries.
 # We use a single invocation of the compiler.  This will be adequate until
@@ -246,7 +268,19 @@ fi
 # accept any argument; we don't need to know if we've seen a source
 # file or an object file.  Instead, we just check for an option that
 # suppressing linking, such as -c or -M.
-if [ "$linking" = yes ] ; then
+if [ "$show_info" = compile ] ; then
+    echo ${final_cppflags} $PROFILE_INCPATHS ${final_cflags} -I$includedir
+elif [ "$show_info" = link ] ; then
+    if [ "$nativelinking" = yes ] ; then
+        echo ${final_ldflags}
+    else
+        if [ "$static_mpi" = no ] ; then
+            echo ${final_ldflags} -L$libdir $PROFILE_PRELIB $PROFILE_FOO ${wrapper_dl_type_flags} -l@MPILIBNAME@ @LPMPILIBNAME@ $PROFILE_POSTLIB ${final_libs}
+        else
+            echo ${final_ldflags} -L$libdir $PROFILE_PRELIB $PROFILE_FOO ${wrapper_dl_type_flags} $libdir/lib@MPILIBNAME@.a @LPMPILIBNAME@ $PROFILE_POSTLIB ${final_libs}
+        fi
+    fi
+elif [ "$linking" = yes ] ; then
     if [ "$nativelinking" = yes ] ; then
         $Show $CC ${final_cppflags} $PROFILE_INCPATHS ${final_cflags} ${final_ldflags} "${allargs[@]}" -I$includedir
         rc=$?

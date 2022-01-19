@@ -55,40 +55,61 @@ AC_ARG_WITH([cuda-sm],
             [with_cuda_sm=all])
 
 
-# --with=cuda
+# --with-cuda
 PAC_SET_HEADER_LIB_PATH([cuda])
-PAC_CHECK_HEADER_LIB([cuda_runtime_api.h],[cudart],[cudaStreamSynchronize],[have_cuda=yes],[have_cuda=no])
-if test "${have_cuda}" = "yes" ; then
-    AC_MSG_CHECKING([whether nvcc works])
-    cat>conftest.cu<<EOF
-    __global__ void foo(int x) {}
+if test "$with_cuda" != "no" ; then
+    PAC_CHECK_HEADER_LIB([cuda_runtime_api.h],[cudart],[cudaStreamSynchronize],[have_cuda=yes],[have_cuda=no])
+    if test "${have_cuda}" = "yes" ; then
+        AC_MSG_CHECKING([whether nvcc works])
+        cat>conftest.cu<<EOF
+        __global__ void foo(int x) {}
 EOF
-    ${with_cuda}/bin/nvcc -c conftest.cu 2> /dev/null
-    if test "$?" = "0" ; then
-        AC_DEFINE([HAVE_CUDA],[1],[Define is CUDA is available])
-        AS_IF([test -n "${with_cuda}"],[NVCC=${with_cuda}/bin/nvcc],[NVCC=nvcc])
-        AC_SUBST(NVCC)
-        # nvcc compiled applications need libstdc++ to be able to link
-        # with a C compiler
-        PAC_PUSH_FLAG([LIBS])
-        PAC_APPEND_FLAG([-lstdc++],[LIBS])
-        AC_LINK_IFELSE(
-            [AC_LANG_PROGRAM([int x = 5;],[x++;])],
-            [libstdcpp_works=yes],
-            [libstdcpp_works=no])
-        PAC_POP_FLAG([LIBS])
-        if test "${libstdcpp_works}" = "yes" ; then
+        if test -n "$ac_save_CC" ; then
+            NVCC_FLAGS="-ccbin $ac_save_CC"
+            # - pgcc doesn't work, use pgc++ instead
+            # - Extra optins such as `gcc -std=gnu99` doesn't work, strip the option
+            NVCC_FLAGS=$(echo $NVCC_FLAGS | sed -e 's/pgcc/pgc++/g' -e's/ -std=.*//g')
+        else
+            NVCC_FLAGS=""
+        fi
+        # try nvcc from PATH if 'with-cuda' does not contain a valid path
+        if test ${with_cuda} == "yes"; then
+            nvcc_bin="nvcc"
+        else
+            nvcc_bin=${with_cuda}/bin/nvcc
+        fi
+        ${nvcc_bin} $NVCC_FLAGS -c conftest.cu 2> /dev/null
+        if test "$?" = "0" ; then
+            AC_DEFINE([HAVE_CUDA],[1],[Define is CUDA is available])
+            AS_IF([test -n "${with_cuda}"],[NVCC=${with_cuda}/bin/nvcc],[NVCC=nvcc])
+            AC_SUBST(NVCC)
+            AC_SUBST(NVCC_FLAGS)
+            # nvcc compiled applications need libstdc++ to be able to link
+            # with a C compiler
+            PAC_PUSH_FLAG([LIBS])
             PAC_APPEND_FLAG([-lstdc++],[LIBS])
-            AC_MSG_RESULT([yes])
+            AC_LINK_IFELSE(
+                [AC_LANG_PROGRAM([int x = 5;],[x++;])],
+                [libstdcpp_works=yes],
+                [libstdcpp_works=no])
+            PAC_POP_FLAG([LIBS])
+            if test "${libstdcpp_works}" = "yes" ; then
+                PAC_APPEND_FLAG([-lstdc++],[LIBS])
+                AC_MSG_RESULT([yes])
+            else
+                have_cuda=no
+                AC_MSG_RESULT([no])
+            fi
         else
             have_cuda=no
             AC_MSG_RESULT([no])
+            AC_MSG_ERROR([CUDA was not functional with provided host compiler (CC)])
         fi
-    else
-        have_cuda=no
-        AC_MSG_RESULT([no])
+        rm -f conftest.*
     fi
-    rm -f conftest.*
+    if test "${have_cuda}" = "no" -a "$with_cuda" != ""; then
+        AC_MSG_ERROR([CUDA was requested but it is not functional])
+    fi
 fi
 AM_CONDITIONAL([BUILD_CUDA_BACKEND], [test x${have_cuda} = xyes])
 AM_CONDITIONAL([BUILD_CUDA_TESTS], [test x${have_cuda} = xyes])

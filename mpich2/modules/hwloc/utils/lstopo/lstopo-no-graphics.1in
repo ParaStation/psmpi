@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.\" Copyright © 2009-2020 Inria.  All rights reserved.
+.\" Copyright © 2009-2021 Inria.  All rights reserved.
 .\" Copyright © 2009-2010 Université of Bordeaux
 .\" Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 .\" Copyright © 2020 Hewlett Packard Enterprise.  All rights reserved.
@@ -90,6 +90,12 @@ Reduce the amount of details to show.
 \fB\-\-distances\fR
 Only display distance matrices.
 .TP
+\fB\-\-distances-transform\fR <links|merge-switch-ports|transitive-closure>
+Try applying a transformation to distances structures before displaying them.
+See hwloc_distances_transform() for details.
+More transformations may be applied using hwloc-annotate(1)
+(and it may save their output to XML).
+.TP
 \fB\-\-memattrs\fR
 Only display memory attributes.
 All of them are displayed (while the default textual output selects
@@ -97,6 +103,11 @@ memory attribute details depending on the verbosity level).
 .TP
 \fB\-\-cpukinds\fR
 Only display CPU kinds.
+.TP
+B\-\-windows\-processor\-groups\fR
+On Windows, only show information about processor groups.
+All of them are displayed, while the default verbose output
+only shows them if there are more than one.
 .TP
 \fB\-f\fR \fB\-\-force\fR
 If the destination file already exists, overwrite it.
@@ -196,7 +207,7 @@ Do not show levels that do not have a hierarchical impact.
 This sets HWLOC_TYPE_FILTER_KEEP_STRUCTURE for all object types.
 This is identical to \fB\-\-filter all:structure\fR.
 .TP
-\fB\-\-no-factorize\fR \fB\-\-no-factorize\fR=<type>
+\fB\-\-no\-factorize\fR \fB\-\-no\-factorize\fR=<type>
 Never factorize identical objects in the graphical output.
 
 If an object type is given, only factorizing of these objects is disabled.
@@ -218,7 +229,7 @@ Do not collapse identical PCI devices.
 By default, identical sibling PCI devices (such as many virtual functions
 inside a single physical device) are collapsed.
 .TP
-\fB\-\-no\-cpukinds
+\fB\-\-no\-cpukinds\fR
 Do not show different kinds of CPUs in the graphical output.
 By default, when supported, different types of lines, thickness
 and bold font may be used to display PU boxes of different kinds.

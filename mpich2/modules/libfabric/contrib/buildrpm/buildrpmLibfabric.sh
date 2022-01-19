@@ -51,6 +51,7 @@ create_modulefile=""
 unpack_spec=""
 verbose=""
 verboseoption=""
+build_binary_only=""
 st=""
 version=""
 modulepath=""
@@ -105,7 +106,7 @@ error()
 # usage information
 ###################
 usage="Usage: $0 [-i provider_name] [-e provider_name]
-       [-n] [-o] [-m] [-d] [-s] [-c] [-r] [-v] [-h] tarball
+       [-n] [-o] [-l] [-m] [-d] [-s] [-c] [-r] [-v] [-h] tarball
 
  Provider options:
 
@@ -116,10 +117,16 @@ usage="Usage: $0 [-i provider_name] [-e provider_name]
              exclude 'provider_name' provider support from the build
 
  General options:
+  -b         build binary packages only
+               {default: build binary and source packages}
+
   -n         no op, do nothing (useful with -v option)
 
   -o         install under /opt/libfabric/_VERSION_
                {default: install under /usr/ }
+
+  -l         create symbolic link 'default' to _VERSION_ (requires -o option) 
+              {default: link not create}
 
   -m         install modulefile
               {default: don't install modulefile}
@@ -160,8 +167,10 @@ usage="Usage: $0 [-i provider_name] [-e provider_name]
 # parse args
 ############
 export arguments="$@"
-while getopts DP:M:V:nomi:e:dc:r:svh flag; do
+while getopts DP:M:V:nolmi:e:dc:r:svhb flag; do
     case "$flag" in
+      b) build_binary_only="true"
+         ;;
       n) noop="true"
          ;;
       o) install_in_opt="true"
@@ -190,6 +199,8 @@ while getopts DP:M:V:nomi:e:dc:r:svh flag; do
       s) unpack_spec="true"
          ;;
       v) verbose="true"
+         ;;
+      l) version_symbolic_link="true"
          ;;
       h) echo "$usage"
          exit 0
@@ -261,6 +272,9 @@ if [[ -n "$install_in_opt" ]]; then
   if [[ -z "$prefix" ]] ; then
     prefix=$default_opt_prefix
   fi
+  if [[ -n "$version_symbolic_link" ]]; then
+    rpmbuild_options="$rpmbuild_options --define '_version_symbolic_link $prefix/libfabric/default'"
+  fi
   prefix="$prefix/libfabric/$version"
 
   if [[ -n "$modulepath" ]] ; then
@@ -327,7 +341,14 @@ if [[ -z "$verbose" ]]; then
 else
   build_opt="-v"
 fi
-cmd="rpmbuild $build_opt -bb $specfile $rpmbuild_options \
+
+if [[ -n "$build_binary_only" ]] ; then
+    rpmbuild_flag="-bb"
+else
+    rpmbuild_flag="-ba"
+fi
+
+cmd="rpmbuild $build_opt $rpmbuild_flag $specfile $rpmbuild_options \
   --define '_topdir $rpmbuilddir' \
   --define '_sourcedir $rpmbuilddir/SOURCES' \
   --define '_rpmdir $rpmbuilddir/RPMS' \

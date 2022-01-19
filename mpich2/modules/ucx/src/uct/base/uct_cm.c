@@ -16,6 +16,14 @@
 
 
 ucs_config_field_t uct_cm_config_table[] = {
+  {"FAILURE", "diag",
+   "Log level of network errors for the connection manager",
+   ucs_offsetof(uct_cm_config_t, failure), UCS_CONFIG_TYPE_ENUM(ucs_log_level_names)},
+
+  {"REUSEADDR", "no",
+   "Allow using an address that is already in use.",
+   ucs_offsetof(uct_cm_config_t, reuse_addr), UCS_CONFIG_TYPE_BOOL},
+
   {NULL}
 };
 
@@ -67,18 +75,31 @@ ucs_status_t uct_cm_ep_pack_cb(uct_cm_base_ep_t *cep, void *arg,
     if (ret < 0) {
         ucs_assert(ret > UCS_ERR_LAST);
         status = (ucs_status_t)ret;
-        ucs_error("private data pack function failed with error: %s",
+        ucs_debug("private data pack function failed with error: %s",
                   ucs_status_string(status));
         goto out;
     } else if (ret > priv_data_max) {
         status = UCS_ERR_EXCEEDS_LIMIT;
-        ucs_error("private data pack function returned %zd (max: %zu)",
+        ucs_debug("private data pack function returned %zd (max: %zu)",
                   ret, priv_data_max);
         goto out;
     }
 
     *priv_data_ret = ret;
 out:
+     return status;
+ }
+
+ucs_status_t uct_cm_ep_resolve_cb(uct_cm_base_ep_t *cep,
+                                  const uct_cm_ep_resolve_args_t *args)
+{
+    ucs_status_t status = cep->resolve_cb(cep->user_data, args);
+
+    if (status != UCS_OK) {
+        ucs_diag("resolve callback failed with error: %s",
+                 ucs_status_string(status));
+    }
+
     return status;
 }
 
@@ -114,7 +135,7 @@ void uct_cm_ep_server_conn_notify_cb(uct_cm_base_ep_t *cep, ucs_status_t status)
 static ucs_status_t uct_cm_check_ep_params(const uct_ep_params_t *params)
 {
     if (!(params->field_mask & UCT_EP_PARAM_FIELD_CM)) {
-        ucs_error("UCT_EP_PARAM_FIELD_CM is not set. field_mask 0x%lx",
+        ucs_error("UCT_EP_PARAM_FIELD_CM is not set. field_mask 0x%"PRIx64,
                   params->field_mask);
         return UCS_ERR_INVALID_PARAM;
     }
@@ -122,7 +143,8 @@ static ucs_status_t uct_cm_check_ep_params(const uct_ep_params_t *params)
     if (!(params->field_mask & UCT_EP_PARAM_FIELD_SOCKADDR_CB_FLAGS) ||
         !(params->sockaddr_cb_flags & UCT_CB_FLAG_ASYNC)) {
         ucs_error("UCT_EP_PARAM_FIELD_SOCKADDR_CB_FLAGS and UCT_CB_FLAG_ASYNC "
-                  "should be set. field_mask 0x%lx, sockaddr_cb_flags 0x%x",
+                  "should be set. field_mask 0x%"PRIx64
+                  ", sockaddr_cb_flags 0x%x",
                   params->field_mask, params->sockaddr_cb_flags);
         return UCS_ERR_UNSUPPORTED;
     }
@@ -130,8 +152,8 @@ static ucs_status_t uct_cm_check_ep_params(const uct_ep_params_t *params)
     return UCS_OK;
 }
 
-ucs_status_t uct_cm_set_common_data(uct_cm_base_ep_t *ep,
-                                    const uct_ep_params_t *params)
+ucs_status_t uct_cm_ep_set_common_data(uct_cm_base_ep_t *ep,
+                                       const uct_ep_params_t *params)
 {
     ucs_status_t status;
 
@@ -142,8 +164,14 @@ ucs_status_t uct_cm_set_common_data(uct_cm_base_ep_t *ep,
 
     status = UCT_CM_SET_CB(params, UCT_EP_PARAM_FIELD_SOCKADDR_PACK_CB,
                            ep->priv_pack_cb, params->sockaddr_pack_cb,
-                           uct_cm_ep_priv_data_pack_callback_t,
-                           ucs_empty_function_return_invalid_param);
+                           uct_cm_ep_priv_data_pack_callback_t, NULL);
+    if (status != UCS_OK) {
+        return status;
+    }
+
+    status = UCT_CM_SET_CB(params, UCT_EP_PARAM_FIELD_CM_RESOLVE_CB,
+                           ep->resolve_cb, params->cm_resolve_cb,
+                           uct_cm_ep_resolve_callback_t, NULL);
     if (status != UCS_OK) {
         return status;
     }
@@ -167,7 +195,7 @@ UCS_CLASS_INIT_FUNC(uct_cm_base_ep_t, const uct_ep_params_t *params)
 
     UCS_CLASS_CALL_SUPER_INIT(uct_base_ep_t, &params->cm->iface);
 
-    status = uct_cm_set_common_data(self, params);
+    status = uct_cm_ep_set_common_data(self, params);
     if (status != UCS_OK) {
         return status;
     }
@@ -222,6 +250,29 @@ ucs_status_t uct_listener_reject(uct_listener_h listener,
     return listener->cm->ops->listener_reject(listener, conn_request);
 }
 
+ucs_status_t uct_listener_backlog_adjust(const uct_listener_params_t *params,
+                                         int max_value, int *backlog)
+{
+    if (params->field_mask & UCT_LISTENER_PARAM_FIELD_BACKLOG) {
+        if (params->backlog > max_value) {
+            ucs_diag("configure value %d is greater than the max_value %d. "
+                     "using max_value", params->backlog, max_value);
+            *backlog = max_value;
+        } else {
+            *backlog = params->backlog;
+        }
+    } else {
+        *backlog = max_value;
+    }
+
+    if (*backlog <= 0) {
+        ucs_error("backlog (%d) must be a whole positive number", *backlog);
+        return UCS_ERR_INVALID_PARAM;
+    }
+
+    return UCS_OK;
+}
+
 
 #ifdef ENABLE_STATS
 static ucs_stats_class_t uct_cm_stats_class = {
@@ -231,7 +282,8 @@ static ucs_stats_class_t uct_cm_stats_class = {
 #endif
 
 UCS_CLASS_INIT_FUNC(uct_cm_t, uct_cm_ops_t* ops, uct_iface_ops_t* iface_ops,
-                    uct_worker_h worker, uct_component_h component)
+                    uct_worker_h worker, uct_component_h component,
+                    const uct_cm_config_t* config)
 {
     self->ops                     = ops;
     self->component               = component;
@@ -251,9 +303,12 @@ UCS_CLASS_INIT_FUNC(uct_cm_t, uct_cm_ops_t* ops, uct_iface_ops_t* iface_ops,
     self->iface.prog.refcount     = 0;
     self->iface.progress_flags    = 0;
 
+    self->config.failure_level    = config->failure;
+    self->config.reuse_addr       = config->reuse_addr;
+
     return UCS_STATS_NODE_ALLOC(&self->iface.stats, &uct_cm_stats_class,
                                 ucs_stats_get_root(), "%s-%p", "iface",
-                                self->iface);
+                                &self->iface);
 }
 
 UCS_CLASS_CLEANUP_FUNC(uct_cm_t)
@@ -263,5 +318,18 @@ UCS_CLASS_CLEANUP_FUNC(uct_cm_t)
 
 UCS_CLASS_DEFINE(uct_cm_t, void);
 UCS_CLASS_DEFINE_NEW_FUNC(uct_cm_t, void, uct_cm_ops_t*, uct_iface_ops_t*,
-                          uct_worker_h, uct_component_h);
+                          uct_worker_h, uct_component_h, const uct_cm_config_t*);
 UCS_CLASS_DEFINE_DELETE_FUNC(uct_cm_t, void);
+
+void uct_ep_connect_params_get(const uct_ep_connect_params_t *params,
+                               const void **priv_data_p,
+                               size_t *priv_data_length_p)
+{
+    *priv_data_p        = (params->field_mask &
+                           UCT_EP_CONNECT_PARAM_FIELD_PRIVATE_DATA) ?
+                          params->private_data : NULL;
+    *priv_data_length_p = (params->field_mask &
+                           UCT_EP_CONNECT_PARAM_FIELD_PRIVATE_DATA_LENGTH) ?
+                          params->private_data_length : 0;
+}
+

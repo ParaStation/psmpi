@@ -45,7 +45,9 @@ ucs_status_t uct_rc_mlx5_devx_iface_subscribe_event(uct_rc_mlx5_iface_common_t *
 }
 
 #if HAVE_DECL_MLX5DV_DEVX_SUBSCRIBE_DEVX_EVENT
-static void uct_rc_mlx5_devx_iface_event_handler(int fd, int events, void *arg)
+static void
+uct_rc_mlx5_devx_iface_event_handler(int fd, ucs_event_set_types_t events,
+                                     void *arg)
 {
     uct_rc_mlx5_iface_common_t *iface = arg;
     uct_ib_md_t *md                   = uct_ib_iface_md(&iface->super.super);
@@ -55,11 +57,14 @@ static void uct_rc_mlx5_devx_iface_event_handler(int fd, int events, void *arg)
 
     ret = mlx5dv_devx_get_event(iface->event_channel, &devx_event, sizeof(devx_event));
     if (ret < 0) {
-        ucs_warn("mlx5dv_devx_get_event() failed: %m");
+        if (errno != EAGAIN) {
+            ucs_warn("mlx5dv_devx_get_event() failed: %m");
+        }
         return;
     }
 
-    event.event_type = devx_event.cookie & UCT_IB_MLX5_DEVX_EVENT_TYPE_MASK;
+    event.event_type = (enum ibv_event_type)(devx_event.cookie &
+                                             UCT_IB_MLX5_DEVX_EVENT_TYPE_MASK);
     switch (event.event_type) {
     case IBV_EVENT_QP_LAST_WQE_REACHED:
         event.qp_num = devx_event.cookie >> UCT_IB_MLX5_DEVX_EVENT_DATA_SHIFT;
@@ -161,14 +166,14 @@ uct_rc_mlx5_devx_init_rx_common(uct_rc_mlx5_iface_common_t *iface,
 
     iface->rx.srq.db = &iface->rx.srq.devx.dbrec->db[MLX5_RCV_DBR];
 
-    if (iface->config.cyclic_srq_enable == UCS_NO) {
-        wq_type = UCT_RC_MLX5_MP_ENABLED(iface) ?
-                  UCT_IB_MLX5_SRQ_TOPO_LIST_MP_RQ :
-                  UCT_IB_MLX5_SRQ_TOPO_LIST;
-    } else {
+    if (iface->config.srq_topo == UCT_RC_MLX5_SRQ_TOPO_CYCLIC) {
         wq_type = UCT_RC_MLX5_MP_ENABLED(iface) ?
                   UCT_IB_MLX5_SRQ_TOPO_CYCLIC_MP_RQ :
                   UCT_IB_MLX5_SRQ_TOPO_CYCLIC;
+    } else {
+        wq_type = UCT_RC_MLX5_MP_ENABLED(iface) ?
+                  UCT_IB_MLX5_SRQ_TOPO_LIST_MP_RQ :
+                  UCT_IB_MLX5_SRQ_TOPO_LIST;
     }
 
     UCT_IB_MLX5DV_SET  (wq, wq, wq_type,       wq_type);
@@ -203,6 +208,7 @@ err_free_mem:
     return status;
 }
 
+#if IBV_HW_TM
 ucs_status_t
 uct_rc_mlx5_devx_init_rx_tm(uct_rc_mlx5_iface_common_t *iface,
                             const uct_rc_iface_common_config_t *config,
@@ -262,6 +268,7 @@ err_cleanup_srq:
     uct_rc_mlx5_devx_cleanup_srq(md, &iface->rx.srq);
     return status;
 }
+#endif
 
 ucs_status_t uct_rc_mlx5_devx_init_rx(uct_rc_mlx5_iface_common_t *iface,
                                       const uct_rc_iface_common_config_t *config)
@@ -321,13 +328,19 @@ uct_rc_mlx5_iface_common_devx_connect_qp(uct_rc_mlx5_iface_common_t *iface,
                                          uct_ib_mlx5_qp_t *qp,
                                          uint32_t dest_qp_num,
                                          struct ibv_ah_attr *ah_attr,
-                                         enum ibv_mtu path_mtu)
+                                         enum ibv_mtu path_mtu,
+                                         uint8_t path_index)
 {
+    uct_ib_mlx5_md_t *md = ucs_derived_of(uct_ib_iface_md(&iface->super.super),
+                                          uct_ib_mlx5_md_t);
     char in_2rtr[UCT_IB_MLX5DV_ST_SZ_BYTES(init2rtr_qp_in)]   = {};
     char out_2rtr[UCT_IB_MLX5DV_ST_SZ_BYTES(init2rtr_qp_out)] = {};
     char in_2rts[UCT_IB_MLX5DV_ST_SZ_BYTES(rtr2rts_qp_in)]    = {};
     char out_2rts[UCT_IB_MLX5DV_ST_SZ_BYTES(rtr2rts_qp_out)]  = {};
     uct_ib_device_t *dev = uct_ib_iface_device(&iface->super.super);
+    uint32_t opt_param_mask = UCT_IB_MLX5_QP_OPTPAR_RRE |
+                              UCT_IB_MLX5_QP_OPTPAR_RAE |
+                              UCT_IB_MLX5_QP_OPTPAR_RWE;
     struct mlx5_wqe_av mlx5_av;
     ucs_status_t status;
     struct ibv_ah *ah;
@@ -336,7 +349,6 @@ uct_rc_mlx5_iface_common_devx_connect_qp(uct_rc_mlx5_iface_common_t *iface,
     UCT_IB_MLX5DV_SET(init2rtr_qp_in, in_2rtr, opcode,
                       UCT_IB_MLX5_CMD_OP_INIT2RTR_QP);
     UCT_IB_MLX5DV_SET(init2rtr_qp_in, in_2rtr, qpn, qp->qp_num);
-    UCT_IB_MLX5DV_SET(init2rtr_qp_in, in_2rtr, opt_param_mask, 14);
 
     ucs_assert(path_mtu != UCT_IB_ADDRESS_INVALID_PATH_MTU);
     qpc = UCT_IB_MLX5DV_ADDR_OF(init2rtr_qp_in, in_2rtr, qpc);
@@ -365,23 +377,29 @@ uct_rc_mlx5_iface_common_devx_connect_qp(uct_rc_mlx5_iface_common_t *iface,
             UCT_IB_MLX5DV_SET(qpc, qpc, primary_address_path.udp_sport,
                               ah_attr->dlid);
             UCT_IB_MLX5DV_SET(qpc, qpc, primary_address_path.dscp,
-                              iface->super.super.config.traffic_class >> 2);
+                              uct_ib_iface_roce_dscp(&iface->super.super));
         }
+
+        uct_ib_mlx5_devx_set_qpc_port_affinity(md, path_index, qpc,
+                                               &opt_param_mask);
     } else {
         UCT_IB_MLX5DV_SET(qpc, qpc, primary_address_path.grh, ah_attr->is_global);
         UCT_IB_MLX5DV_SET(qpc, qpc, primary_address_path.rlid, ah_attr->dlid);
         UCT_IB_MLX5DV_SET(qpc, qpc, primary_address_path.mlid,
                           ah_attr->src_path_bits & 0x7f);
-        UCT_IB_MLX5DV_SET(qpc, qpc, primary_address_path.hop_limit,
-                          ah_attr->grh.hop_limit);
-        memcpy(UCT_IB_MLX5DV_ADDR_OF(qpc, qpc, primary_address_path.rgid_rip),
-               &ah_attr->grh.dgid,
-               UCT_IB_MLX5DV_FLD_SZ_BYTES(qpc, primary_address_path.rgid_rip));
         UCT_IB_MLX5DV_SET(qpc, qpc, primary_address_path.sl,
                           iface->super.super.config.sl);
-        /* TODO add flow_label support */
-        UCT_IB_MLX5DV_SET(qpc, qpc, primary_address_path.tclass,
-                          iface->super.super.config.traffic_class);
+
+        if (ah_attr->is_global) {
+            UCT_IB_MLX5DV_SET(qpc, qpc, primary_address_path.hop_limit,
+                              ah_attr->grh.hop_limit);
+            memcpy(UCT_IB_MLX5DV_ADDR_OF(qpc, qpc, primary_address_path.rgid_rip),
+                   &ah_attr->grh.dgid,
+                   UCT_IB_MLX5DV_FLD_SZ_BYTES(qpc, primary_address_path.rgid_rip));
+            /* TODO add flow_label support */
+            UCT_IB_MLX5DV_SET(qpc, qpc, primary_address_path.tclass,
+                              iface->super.super.config.traffic_class);
+        }
     }
 
     UCT_IB_MLX5DV_SET(qpc, qpc, primary_address_path.vhca_port_num, ah_attr->port_num);
@@ -392,6 +410,8 @@ uct_rc_mlx5_iface_common_devx_connect_qp(uct_rc_mlx5_iface_common_t *iface,
     UCT_IB_MLX5DV_SET(qpc, qpc, rwe, true);
     UCT_IB_MLX5DV_SET(qpc, qpc, rae, true);
     UCT_IB_MLX5DV_SET(qpc, qpc, min_rnr_nak, iface->super.config.min_rnr_timer);
+
+    UCT_IB_MLX5DV_SET(init2rtr_qp_in, in_2rtr, opt_param_mask, opt_param_mask);
 
     status = uct_ib_mlx5_devx_modify_qp(qp, in_2rtr, sizeof(in_2rtr),
                                         out_2rtr, sizeof(out_2rtr));

@@ -13,8 +13,7 @@ extern "C" {
 #include <ucs/sys/compiler.h>
 }
 
-class log_test : public ucs::test {
-
+class log_test : private ucs::clear_dontcopy_regions, public ucs::test {
 public:
     virtual void init() {
         /* skip because logger does not support file
@@ -60,7 +59,6 @@ public:
 
     virtual void cleanup() {
         ucs_log_cleanup();
-        m_num_log_handlers_before = 0;
         pop_config();
         check_log_file();
         unsigned files_count = log_files_foreach(&log_test::remove_file);
@@ -129,14 +127,10 @@ public:
             int ret = system(cmd_str.c_str());
             if (ret == 0) {
                 return true;
+            } else if (ret == -1) {
+                system_ret_str = ucs::to_string(errno);
             } else {
-                system_ret_str = "return value: ";
-                if (ret == -1) {
-                    system_ret_str += ucs::to_string(ret) +
-                                      ", errno: " + ucs::to_string(errno);
-                } else {
-                    system_ret_str += ucs::to_string(WEXITSTATUS(ret));
-                }
+                system_ret_str = ucs::exit_status_info(ret);
             }
 
             ucs_log_flush();
@@ -171,17 +165,50 @@ protected:
 };
 
 class log_test_info : public log_test {
-    virtual void check_log_file() {
-        if (!do_grep("UCX  INFO  hello world")) {
-            ADD_FAILURE() << read_logfile();
+protected:
+    log_test_info() :
+        m_spacer("  "), m_log_str("hello world"), m_exp_found(true)
+    {
+    }
+
+    virtual void check_log_file()
+    {
+        std::string log_str = "UCX  INFO" + m_spacer + m_log_str;
+        if (m_exp_found != do_grep(log_str)) {
+            ADD_FAILURE() << read_logfile() << " Expected to "
+                          << (m_exp_found ? "" : "not ") << "find " << log_str;
         }
     }
+
+    void log_info()
+    {
+        ucs_info("%s", m_log_str.c_str());
+    }
+
+    std::string m_spacer;
+    std::string m_log_str;
+    bool m_exp_found;
 };
 
 UCS_TEST_F(log_test_info, hello) {
-    ucs_info("hello world");
+    log_info();
 }
 
+UCS_TEST_F(log_test_info, hello_indent) {
+    ucs_log_indent(1);
+    log_info();
+    ucs_log_indent(-1);
+    m_spacer += "  ";
+}
+
+UCS_TEST_F(log_test_info, filter_on, "LOG_FILE_FILTER=*test_lo*.cc") {
+    log_info();
+}
+
+UCS_TEST_F(log_test_info, filter_off, "LOG_FILE_FILTER=file.c") {
+    log_info();
+    m_exp_found = false;
+}
 
 class log_test_print : public log_test {
     virtual void check_log_file() {
@@ -229,9 +256,11 @@ protected:
 
         ASSERT_TRUE(len != 0);
 
+        s.resize(len);
+
         for (size_t i = 0; i < len; ++i) {
-            s += possible_vals[ucs::rand() %
-                               (ucs_array_size(possible_vals) - 1)];
+            s[i] = possible_vals[ucs::rand() %
+                                 (ucs_static_array_size(possible_vals) - 1)];
         }
     }
 
@@ -315,4 +344,30 @@ class log_test_backtrace : public log_test {
 
 UCS_TEST_F(log_test_backtrace, backtrace) {
     ucs_log_print_backtrace(UCS_LOG_LEVEL_INFO);
+}
+
+class log_demo : public ucs::test {
+};
+
+UCS_MT_TEST_F(log_demo, indent, 4)
+{
+    ucs::scoped_log_level enable_debug(UCS_LOG_LEVEL_DEBUG);
+
+    ucs_debug("scope begin");
+
+    ucs_log_indent(1);
+    EXPECT_EQ(1, ucs_log_get_current_indent());
+    ucs_debug("nested log 1");
+
+    ucs_log_indent(1);
+    EXPECT_EQ(2, ucs_log_get_current_indent());
+    ucs_debug("nested log 1.1");
+    ucs_log_indent(-1);
+
+    EXPECT_EQ(1, ucs_log_get_current_indent());
+    ucs_debug("nested log 2");
+    ucs_log_indent(-1);
+
+    EXPECT_EQ(0, ucs_log_get_current_indent());
+    ucs_debug("done");
 }

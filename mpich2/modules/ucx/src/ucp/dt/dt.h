@@ -8,13 +8,15 @@
 #ifndef UCP_DT_H_
 #define UCP_DT_H_
 
-#include "dt_contig.h"
-#include "dt_iov.h"
-#include "dt_generic.h"
-
 #include <ucp/core/ucp_types.h>
 #include <uct/api/uct.h>
 #include <ucp/api/ucp.h>
+
+
+/**
+ * Datatype classification
+ */
+typedef enum ucp_dt_type          ucp_dt_class_t;
 
 
 /**
@@ -46,15 +48,24 @@ typedef struct ucp_dt_state {
 } ucp_dt_state_t;
 
 
+/**
+ * UCP layer memory information
+ */
+typedef struct {
+    uint8_t          type;    /**< Memory type, use uint8 for compact size */
+    ucs_sys_device_t sys_dev; /**< System device index */
+} ucp_memory_info_t;
+
+
+extern const char *ucp_datatype_class_names[];
+
 size_t ucp_dt_pack(ucp_worker_h worker, ucp_datatype_t datatype,
                    ucs_memory_type_t mem_type, void *dest, const void *src,
                    ucp_dt_state_t *state, size_t length);
 
-
 ucs_status_t ucp_mem_type_pack(ucp_worker_h worker, void *dest,
                                const void *src, size_t length,
                                ucs_memory_type_t mem_type);
-
 
 ucs_status_t ucp_mem_type_unpack(ucp_worker_h worker, void *buffer,
                                  const void *recv_data, size_t recv_length,

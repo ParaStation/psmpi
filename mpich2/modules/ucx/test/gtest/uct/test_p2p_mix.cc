@@ -22,9 +22,9 @@ ucs_status_t uct_p2p_mix_test::am_callback(void *arg, void *data, size_t length,
     return UCS_OK;
 }
 
-void uct_p2p_mix_test::completion_callback(uct_completion_t *comp, ucs_status_t status)
+void uct_p2p_mix_test::completion_callback(uct_completion_t *comp)
 {
-    EXPECT_UCS_OK(status);
+    EXPECT_UCS_OK(comp->status);
 }
 
 template <typename T, uct_atomic_op_t OP>
@@ -88,6 +88,26 @@ ucs_status_t uct_p2p_mix_test::am_short(const mapped_buffer &sendbuf,
     return status;
 }
 
+ucs_status_t uct_p2p_mix_test::am_short_iov(const mapped_buffer &sendbuf,
+                                            const mapped_buffer &recvbuf,
+                                            uct_completion_t *comp)
+{
+    ucs_status_t status;
+    uct_iov_t iov;
+
+    iov.buffer = sendbuf.ptr();
+    iov.length = sendbuf.length();
+    iov.count  = 1;
+    iov.stride = 0;
+    iov.memh   = sendbuf.memh();
+
+    status = uct_ep_am_short_iov(sender().ep(0), AM_ID, &iov, 1);
+    if (status == UCS_OK) {
+        ucs_atomic_add32(&am_pending, +1);
+    }
+    return status;
+}
+
 ucs_status_t uct_p2p_mix_test::am_zcopy(const mapped_buffer &sendbuf,
                                         const mapped_buffer &recvbuf,
                                         uct_completion_t *comp)
@@ -118,9 +138,10 @@ void uct_p2p_mix_test::random_op(const mapped_buffer &sendbuf,
     ucs_status_t status;
     int op;
 
-    op         = ucs::rand() % m_avail_send_funcs.size();
-    comp.count = 1;
-    comp.func  = completion_callback;
+    op          = ucs::rand() % m_avail_send_funcs.size();
+    comp.count  = 1;
+    comp.status = UCS_OK;
+    comp.func   = completion_callback;
 
     for (;;) {
         status = (this->*m_avail_send_funcs[op])(sendbuf, recvbuf, &comp);
@@ -144,7 +165,7 @@ void uct_p2p_mix_test::run(unsigned count) {
     if (m_avail_send_funcs.size() == 0) {
         UCS_TEST_SKIP_R("unsupported");
     }
-    if (sender().md_attr().cap.access_mem_type != UCS_MEMORY_TYPE_HOST) {
+    if (!(sender().md_attr().cap.access_mem_types & UCS_BIT(UCS_MEMORY_TYPE_HOST))) {
         UCS_TEST_SKIP_R("skipping on non-host memory");
     }
 
@@ -168,6 +189,9 @@ void uct_p2p_mix_test::init() {
     m_send_size = MAX_SIZE;
     if (sender().iface_attr().cap.flags & UCT_IFACE_FLAG_AM_SHORT) {
         m_avail_send_funcs.push_back(&uct_p2p_mix_test::am_short);
+        m_send_size = ucs_min(m_send_size, sender().iface_attr().cap.am.max_short);
+
+        m_avail_send_funcs.push_back(&uct_p2p_mix_test::am_short_iov);
         m_send_size = ucs_min(m_send_size, sender().iface_attr().cap.am.max_short);
     }
     if (sender().iface_attr().cap.flags & UCT_IFACE_FLAG_AM_ZCOPY) {

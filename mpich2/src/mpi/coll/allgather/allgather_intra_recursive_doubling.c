@@ -18,10 +18,10 @@
  * PVM/MPI 2003).
  */
 int MPIR_Allgather_intra_recursive_doubling(const void *sendbuf,
-                                            int sendcount,
+                                            MPI_Aint sendcount,
                                             MPI_Datatype sendtype,
                                             void *recvbuf,
-                                            int recvcount,
+                                            MPI_Aint recvcount,
                                             MPI_Datatype recvtype,
                                             MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
 {
@@ -35,9 +35,6 @@ int MPIR_Allgather_intra_recursive_doubling(const void *sendbuf,
     MPI_Status status;
     int mask, dst_tree_root, my_tree_root,
         send_offset, recv_offset, nprocs_completed, k, offset, tmp_mask, tree_root;
-
-    if (((sendcount == 0) && (sendbuf != MPI_IN_PLACE)) || (recvcount == 0))
-        return MPI_SUCCESS;
 
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;

@@ -1,6 +1,7 @@
 /**
 * Copyright (C) Mellanox Technologies Ltd. 2001-2017.  ALL RIGHTS RESERVED.
 * Copyright (C) UT-Battelle, LLC. 2015. ALL RIGHTS RESERVED.
+* Copyright (C) Arm, Ltd. 2021. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -25,6 +26,9 @@
  */
 #define UCS_STATIC_ASSERT(_cond) \
      switch(0) {case 0:case (_cond):;}
+
+/* Maximal allocation size for on-stack buffers */
+#define UCS_ALLOCA_MAX_SIZE  1200
 
 /* Aliasing structure */
 #define UCS_S_MAY_ALIAS __attribute__((may_alias))
@@ -107,16 +111,8 @@
  * Size of statically-declared array
  */
 #define ucs_static_array_size(_array) \
-    ({ \
-        UCS_STATIC_ASSERT((void*)&(_array) == (void*)&((_array)[0])); \
-        ( sizeof(_array) / sizeof((_array)[0]) ); \
-    })
-
-/**
- * @return count of elements in const-size array
- */
-#define ucs_array_size(_array) \
     (sizeof(_array) / sizeof((_array)[0]))
+
 
 /**
  * @return Offset of _member in _type. _type is a structure type.
@@ -124,12 +120,13 @@
 #define ucs_offsetof(_type, _member) \
     ((unsigned long)&( ((_type*)0)->_member ))
 
+
 /**
  * Get a pointer to a struct containing a member.
  *
- * @param __ptr   Pointer to the member.
- * @param type    Container type.
- * @param member  Element member inside the container.
+ * @param _ptr     Pointer to the member.
+ * @param _type    Container type.
+ * @param _member  Element member inside the container.
 
  * @return Address of the container structure.
  */

@@ -34,9 +34,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_recv_iov(void *buf, MPI_Aint count, size_
     MPI_Aint num_contig, size;
     int vni_remote = vni_src;
     int vni_local = vni_dst;
+    int ctx_idx = 0;
+    int sender_nic = 0, receiver_nic = 0;
 
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_OFI_RECV_IOV);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_OFI_RECV_IOV);
+    MPIR_FUNC_ENTER;
 
     /* if we cannot fit the entire data into a single IOV array,
      * fallback to pack */
@@ -44,6 +45,14 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_recv_iov(void *buf, MPI_Aint count, size_
                          &num_contig);
     if (num_contig > MPIDI_OFI_global.rx_iov_limit)
         goto unpack;
+
+    /* Calculate the correct NICs. */
+    sender_nic = MPIDI_OFI_multx_sender_nic_index(comm, comm->recvcontext_id, MPIR_Process.rank,
+                                                  MPIDI_OFI_init_get_tag(match_bits));
+    receiver_nic = MPIDI_OFI_multx_receiver_nic_index(comm, comm->recvcontext_id, rank,
+                                                      MPIDI_OFI_init_get_tag(match_bits));
+    MPIDI_OFI_REQUEST(rreq, nic_num) = receiver_nic;
+    ctx_idx = MPIDI_OFI_get_ctx_index(comm, vni_dst, MPIDI_OFI_REQUEST(rreq, nic_num));
 
     if (!flags) {
         flags = FI_COMPLETION;
@@ -66,7 +75,9 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_recv_iov(void *buf, MPI_Aint count, size_
         rreq->comm = comm;
         MPIR_Comm_add_ref(comm);
     }
-    MPIDI_OFI_REQUEST(rreq, util_id) = context_id;
+    /* Read ordering unnecessary for context_id, so use relaxed load */
+    MPL_atomic_relaxed_store_int(&MPIDI_OFI_REQUEST(rreq, util_id), context_id);
+
     MPIDI_OFI_REQUEST(rreq, event_id) = MPIDI_OFI_EVENT_RECV_NOPACK;
 
     msg.msg_iov = originv;
@@ -77,14 +88,14 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_recv_iov(void *buf, MPI_Aint count, size_
     msg.context = (void *) &(MPIDI_OFI_REQUEST(rreq, context));
     msg.data = 0;
     msg.addr =
-        (MPI_ANY_SOURCE == rank) ? FI_ADDR_UNSPEC : MPIDI_OFI_av_to_phys(addr, vni_local,
-                                                                         vni_remote);
+        (MPI_ANY_SOURCE == rank) ? FI_ADDR_UNSPEC : MPIDI_OFI_av_to_phys(addr, sender_nic,
+                                                                         vni_local, vni_remote);
 
-    MPIDI_OFI_CALL_RETRY(fi_trecvmsg(MPIDI_OFI_global.ctx[vni_dst].rx, &msg, flags), vni_local,
+    MPIDI_OFI_CALL_RETRY(fi_trecvmsg(MPIDI_OFI_global.ctx[ctx_idx].rx, &msg, flags), vni_local,
                          trecv, FALSE);
 
   fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_OFI_RECV_IOV);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
 
   unpack:
@@ -115,13 +126,13 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_irecv(void *buf,
     MPIR_Datatype *dt_ptr;
     struct fi_msg_tagged msg;
     char *recv_buf;
-    MPL_pointer_attr_t attr = { MPL_GPU_POINTER_UNREGISTERED_HOST, MPL_GPU_DEVICE_INVALID };
     bool force_gpu_pack = false;
     int vni_remote = vni_src;
     int vni_local = vni_dst;
+    int sender_nic = 0, receiver_nic = 0;
+    int ctx_idx = 0;
 
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_OFI_DO_IRECV);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_OFI_DO_IRECV);
+    MPIR_FUNC_ENTER;
 
     if (mode == MPIDI_OFI_ON_HEAP) {    /* Branch should compile out */
 #ifdef MPIDI_CH4_USE_WORK_QUEUES
@@ -145,6 +156,17 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_irecv(void *buf,
     }
 
     *request = rreq;
+    MPIDI_OFI_REQUEST(rreq, kind) = MPIDI_OFI_req_kind__any;
+    if (!flags) {
+        MPIDI_OFI_REQUEST(rreq, huge.remote_info) = NULL;       /* for huge recv remote info */
+    }
+
+    /* Calculate the correct NICs. */
+    sender_nic = MPIDI_OFI_multx_sender_nic_index(comm, comm->recvcontext_id, MPIR_Process.rank,
+                                                  tag);
+    receiver_nic = MPIDI_OFI_multx_receiver_nic_index(comm, comm->recvcontext_id, rank, tag);
+    MPIDI_OFI_REQUEST(rreq, nic_num) = receiver_nic;
+    ctx_idx = MPIDI_OFI_get_ctx_index(comm, vni_dst, MPIDI_OFI_REQUEST(rreq, nic_num));
 
     match_bits = MPIDI_OFI_init_recvtag(&mask_bits, context_id, tag);
 
@@ -152,7 +174,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_irecv(void *buf,
     MPIDI_OFI_REQUEST(rreq, datatype) = datatype;
     MPIR_Datatype_add_ref_if_not_builtin(datatype);
 
-    recv_buf = (char *) buf + dt_true_lb;
+    recv_buf = MPIR_get_contig_ptr(buf, dt_true_lb);
+    MPL_pointer_attr_t attr;
     MPIR_GPU_query_pointer_attr(recv_buf, &attr);
     if (data_sz && attr.type == MPL_GPU_POINTER_DEV) {
         if (!MPIDI_OFI_ENABLE_HMEM) {
@@ -164,9 +187,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_irecv(void *buf,
         }
     }
 
-    if (!dt_contig && data_sz) {
-        if (MPIDI_OFI_ENABLE_PT2PT_NOPACK && data_sz < MPIDI_OFI_global.max_msg_size &&
-            !force_gpu_pack) {
+    if (!dt_contig) {
+        if (MPIDI_OFI_ENABLE_PT2PT_NOPACK && !force_gpu_pack &&
+            ((data_sz < MPIDI_OFI_global.max_msg_size && !MPIDI_OFI_COMM(comm).enable_striping) ||
+             (data_sz < MPIDI_OFI_global.stripe_threshold &&
+              MPIDI_OFI_COMM(comm).enable_striping))) {
             mpi_errno =
                 MPIDI_OFI_recv_iov(buf, count, data_sz, rank, match_bits, mask_bits, comm,
                                    context_id, addr, vni_src, vni_dst, rreq, dt_ptr, flags);
@@ -186,8 +211,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_irecv(void *buf,
          * However, once the new buffer pool infrastructure is setup, we would simply be
          * allocating a buffer from the pool, so whether it's a regular malloc buffer or a GPU
          * registered buffer should be equivalent with respect to performance. */
-        MPL_gpu_malloc_host((void **) &MPIDI_OFI_REQUEST(rreq, noncontig.pack.pack_buffer),
-                            data_sz);
+        MPIR_gpu_malloc_host((void **) &MPIDI_OFI_REQUEST(rreq, noncontig.pack.pack_buffer),
+                             data_sz);
         MPIR_ERR_CHKANDJUMP1(MPIDI_OFI_REQUEST(rreq, noncontig.pack.pack_buffer) == NULL, mpi_errno,
                              MPI_ERR_OTHER, "**nomem", "**nomem %s", "Recv Pack Buffer alloc");
         recv_buf = MPIDI_OFI_REQUEST(rreq, noncontig.pack.pack_buffer);
@@ -203,28 +228,33 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_irecv(void *buf,
         rreq->comm = comm;
         MPIR_Comm_add_ref(comm);
     }
-    MPIDI_OFI_REQUEST(rreq, util_id) = context_id;
+    /* Read ordering unnecessary for context_id, so use relaxed load */
+    MPL_atomic_relaxed_store_int(&MPIDI_OFI_REQUEST(rreq, util_id), context_id);
+    MPIDI_OFI_REQUEST(rreq, util.iov.iov_base) = recv_buf;
+    MPIDI_OFI_REQUEST(rreq, util.iov.iov_len) = data_sz;
 
-    if (unlikely(data_sz >= MPIDI_OFI_global.max_msg_size)) {
+    if (unlikely(data_sz >= MPIDI_OFI_global.max_msg_size) && !MPIDI_OFI_COMM(comm).enable_striping) {
         MPIDI_OFI_REQUEST(rreq, event_id) = MPIDI_OFI_EVENT_RECV_HUGE;
         data_sz = MPIDI_OFI_global.max_msg_size;
+    } else if (MPIDI_OFI_COMM(comm).enable_striping &&
+               (data_sz >= MPIDI_OFI_global.stripe_threshold)) {
+        MPIDI_OFI_REQUEST(rreq, event_id) = MPIDI_OFI_EVENT_RECV_HUGE;
+        /* Receive has to be posted with size MPIDI_OFI_global.stripe_threshold to handle underflow */
+        data_sz = MPIDI_OFI_global.stripe_threshold;
     } else if (MPIDI_OFI_REQUEST(rreq, event_id) != MPIDI_OFI_EVENT_RECV_PACK)
         MPIDI_OFI_REQUEST(rreq, event_id) = MPIDI_OFI_EVENT_RECV;
 
-    if (!flags) /* Branch should compile out */
-        MPIDI_OFI_CALL_RETRY(fi_trecv(MPIDI_OFI_global.ctx[vni_dst].rx,
+    if (!flags) {
+        MPIDI_OFI_CALL_RETRY(fi_trecv(MPIDI_OFI_global.ctx[ctx_idx].rx,
                                       recv_buf,
                                       data_sz,
                                       NULL,
                                       (MPI_ANY_SOURCE == rank) ? FI_ADDR_UNSPEC :
-                                      MPIDI_OFI_av_to_phys(addr, vni_local, vni_remote),
+                                      MPIDI_OFI_av_to_phys(addr, sender_nic, vni_local, vni_remote),
                                       match_bits, mask_bits,
                                       (void *) &(MPIDI_OFI_REQUEST(rreq, context))), vni_local,
                              trecv, FALSE);
-    else {
-        MPIDI_OFI_REQUEST(rreq, util.iov.iov_base) = recv_buf;
-        MPIDI_OFI_REQUEST(rreq, util.iov.iov_len) = data_sz;
-
+    } else {
         msg.msg_iov = &MPIDI_OFI_REQUEST(rreq, util.iov);
         msg.desc = NULL;
         msg.iov_count = 1;
@@ -234,18 +264,18 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_irecv(void *buf,
         msg.data = 0;
         msg.addr = FI_ADDR_UNSPEC;
 
-        MPIDI_OFI_CALL_RETRY(fi_trecvmsg(MPIDI_OFI_global.ctx[vni_dst].rx, &msg, flags), vni_local,
+        MPIDI_OFI_CALL_RETRY(fi_trecvmsg(MPIDI_OFI_global.ctx[ctx_idx].rx, &msg, flags), vni_local,
                              trecv, FALSE);
     }
 
   fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_OFI_DO_IRECV);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
   fn_fail:
     goto fn_exit;
 }
 
-/* Common macro used by all MPIDI_NM_mpi_recv routines to facilitate tuning */
+/* Common macro used by all MPIDI_NM_mpi_irecv routines to facilitate tuning */
 #define MPIDI_OFI_RECV_VNIS(vni_src_, vni_dst_) \
     do { \
         if (*request != NULL) { \
@@ -260,38 +290,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_irecv(void *buf,
     } while (0)
 
 
-MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_recv(void *buf,
-                                               MPI_Aint count,
-                                               MPI_Datatype datatype,
-                                               int rank,
-                                               int tag,
-                                               MPIR_Comm * comm,
-                                               int context_offset, MPIDI_av_entry_t * addr,
-                                               MPI_Status * status, MPIR_Request ** request)
-{
-    int mpi_errno;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_NM_MPI_RECV);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_NM_MPI_RECV);
-
-    if (!MPIDI_OFI_ENABLE_TAGGED) {
-        mpi_errno =
-            MPIDIG_mpi_recv(buf, count, datatype, rank, tag, comm, context_offset, status, request,
-                            0);
-    } else {
-        int vni_src, vni_dst;
-        MPIDI_OFI_RECV_VNIS(vni_src, vni_dst);
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vni_dst).lock);
-        mpi_errno = MPIDI_OFI_do_irecv(buf, count, datatype, rank, tag, comm,
-                                       context_offset, addr, vni_src, vni_dst, request,
-                                       MPIDI_OFI_ON_HEAP, 0ULL);
-        MPIDI_REQUEST_SET_LOCAL(*request, 0, NULL);
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vni_dst).lock);
-    }
-
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_NM_MPI_RECV);
-    return mpi_errno;
-}
-
 MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_imrecv(void *buf,
                                                  MPI_Aint count,
                                                  MPI_Datatype datatype, MPIR_Request * message)
@@ -299,24 +297,23 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_imrecv(void *buf,
     int mpi_errno = MPI_SUCCESS;
     MPIR_Request *rreq;
     MPIDI_av_entry_t *av;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_NM_MPI_IMRECV);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_NM_MPI_IMRECV);
+    MPIR_FUNC_ENTER;
 
     if (!MPIDI_OFI_ENABLE_TAGGED) {
         mpi_errno = MPIDIG_mpi_imrecv(buf, count, datatype, message);
     } else {
         rreq = message;
         int vci = MPIDI_Request_get_vci(rreq);
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+        MPIDI_OFI_THREAD_CS_ENTER_VCI_OPTIONAL(vci);
         av = MPIDIU_comm_rank_to_av(rreq->comm, message->status.MPI_SOURCE);
         /* FIXME: need get vni_src in the request */
         mpi_errno = MPIDI_OFI_do_irecv(buf, count, datatype, message->status.MPI_SOURCE,
                                        message->status.MPI_TAG, rreq->comm, 0, av, 0, vci,
                                        &rreq, MPIDI_OFI_USE_EXISTING, FI_CLAIM | FI_COMPLETION);
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+        MPIDI_OFI_THREAD_CS_EXIT_VCI_OPTIONAL(vci);
     }
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_NM_MPI_IMRECV);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
 }
 
@@ -330,27 +327,25 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_irecv(void *buf,
                                                 MPIR_Request * partner)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_NM_MPI_IRECV);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_NM_MPI_IRECV);
+    MPIR_FUNC_ENTER;
 
+    int vni_src, vni_dst;
+    MPIDI_OFI_RECV_VNIS(vni_src, vni_dst);
     /* For anysource recv, we may be called while holding the vci lock of shm request (to
      * prevent shm progress). Therefore, recursive locking is allowed here */
     if (!MPIDI_OFI_ENABLE_TAGGED) {
-        mpi_errno =
-            MPIDIG_mpi_irecv(buf, count, datatype, rank, tag, comm, context_offset, request, 0,
-                             partner);
+        mpi_errno = MPIDIG_mpi_irecv(buf, count, datatype, rank, tag, comm, context_offset,
+                                     vni_dst, request, 0, partner);
     } else {
-        int vni_src, vni_dst;
-        MPIDI_OFI_RECV_VNIS(vni_src, vni_dst);
-        MPID_THREAD_CS_ENTER_REC_VCI(MPIDI_VCI(vni_dst).lock);
+        MPIDI_OFI_THREAD_CS_ENTER_REC_VCI_OPTIONAL(vni_dst);
         mpi_errno = MPIDI_OFI_do_irecv(buf, count, datatype, rank, tag, comm,
                                        context_offset, addr, vni_src, vni_dst, request,
                                        MPIDI_OFI_ON_HEAP, 0ULL);
         MPIDI_REQUEST_SET_LOCAL(*request, 0, partner);
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vni_dst).lock);
+        MPIDI_OFI_THREAD_CS_EXIT_VCI_OPTIONAL(vni_dst);
     }
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_NM_MPI_IRECV);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
 }
 
@@ -359,17 +354,18 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_cancel_recv(MPIR_Request * rreq)
 
     int mpi_errno = MPI_SUCCESS;
     ssize_t ret;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_NM_MPI_CANCEL_RECV);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_NM_MPI_CANCEL_RECV);
+    MPIR_FUNC_ENTER;
 
     int vni = MPIDI_Request_get_vci(rreq);
+    int ctx_idx = MPIDI_OFI_get_ctx_index(rreq->comm, vni, MPIDI_OFI_REQUEST(rreq, nic_num));
+
     if (!MPIDI_OFI_ENABLE_TAGGED) {
         mpi_errno = MPIDIG_mpi_cancel_recv(rreq);
         goto fn_exit;
     }
 
     /* Not using the OFI_CALL macro because there are error cases here that we want to catch */
-    ret = fi_cancel((fid_t) MPIDI_OFI_global.ctx[vni].rx, &(MPIDI_OFI_REQUEST(rreq, context)));
+    ret = fi_cancel((fid_t) MPIDI_OFI_global.ctx[ctx_idx].rx, &(MPIDI_OFI_REQUEST(rreq, context)));
     if (ret == -FI_ENOENT) {
         /* The context was not found inside libfabric which means it was matched previously and has
          * already been handled. Note that it is impossible to tell the difference in this case
@@ -388,8 +384,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_cancel_recv(MPIR_Request * rreq)
     if (ret == 0) {
         while ((!MPIR_STATUS_GET_CANCEL_BIT(rreq->status)) && (!MPIR_cc_is_complete(&rreq->cc))) {
             /* The cancel is local and must complete, so only poll this device (not global progress) */
-            if ((mpi_errno = MPIDI_OFI_progress(vni, 0)) != MPI_SUCCESS)
-                goto fn_exit;
+            mpi_errno = MPIDI_OFI_progress_uninlined(vni);
+            MPIR_ERR_CHECK(mpi_errno);
         }
 
         if (MPIR_STATUS_GET_CANCEL_BIT(rreq->status)) {
@@ -400,7 +396,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_cancel_recv(MPIR_Request * rreq)
     }
 
   fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_NM_MPI_CANCEL_RECV);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
   fn_fail:
     goto fn_exit;

@@ -8,9 +8,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
-int yaksi_type_create_subarray(int ndims, const int *array_of_sizes, const int *array_of_subsizes,
-                               const int *array_of_starts, yaksa_subarray_order_e order,
-                               yaksi_type_s * intype, yaksi_type_s ** newtype)
+int yaksi_type_create_subarray(int ndims, const intptr_t * array_of_sizes,
+                               const intptr_t * array_of_subsizes, const intptr_t * array_of_starts,
+                               yaksa_subarray_order_e order, yaksi_type_s * intype,
+                               yaksi_type_s ** newtype)
 {
     int rc = YAKSA_SUCCESS;
 
@@ -117,7 +118,8 @@ int yaksi_type_create_subarray(int ndims, const int *array_of_sizes, const int *
 
     outtype->num_contig = outtype->u.subarray.primary->num_contig;
 
-    yaksur_type_create_hook(outtype);
+    rc = yaksur_type_create_hook(outtype);
+    YAKSU_ERR_CHECK(rc, fn_fail);
     *newtype = outtype;
 
   fn_exit:
@@ -126,9 +128,11 @@ int yaksi_type_create_subarray(int ndims, const int *array_of_sizes, const int *
     goto fn_exit;
 }
 
-int yaksa_type_create_subarray(int ndims, const int *array_of_sizes, const int *array_of_subsizes,
-                               const int *array_of_starts, yaksa_subarray_order_e order,
-                               yaksa_type_t oldtype, yaksa_info_t info, yaksa_type_t * newtype)
+YAKSA_API_PUBLIC int yaksa_type_create_subarray(int ndims, const intptr_t * array_of_sizes,
+                                                const intptr_t * array_of_subsizes,
+                                                const intptr_t * array_of_starts,
+                                                yaksa_subarray_order_e order, yaksa_type_t oldtype,
+                                                yaksa_info_t info, yaksa_type_t * newtype)
 {
     int rc = YAKSA_SUCCESS;
 

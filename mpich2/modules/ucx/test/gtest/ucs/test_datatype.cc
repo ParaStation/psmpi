@@ -7,9 +7,11 @@
 
 #include <common/test.h>
 extern "C" {
+#include <ucs/datastruct/array.inl>
 #include <ucs/datastruct/list.h>
 #include <ucs/datastruct/hlist.h>
 #include <ucs/datastruct/ptr_array.h>
+#include <ucs/datastruct/ptr_map.inl>
 #include <ucs/datastruct/queue.h>
 #include <ucs/time/time.h>
 #include <ucs/arch/cpu.h>
@@ -133,7 +135,7 @@ UCS_TEST_F(test_datatype, hlist_basic) {
 
     /* add one element to head and extract it */
     ucs_hlist_add_head(&head, &elem1.hlist);
-    elem = ucs_list_extract_head_elem(&head, elem_t, hlist);
+    elem = ucs_hlist_extract_head_elem(&head, elem_t, hlist);
     EXPECT_EQ(&elem1, elem);
 
     /* add 3 elements */
@@ -164,6 +166,98 @@ UCS_TEST_F(test_datatype, hlist_basic) {
     EXPECT_TRUE(ucs_hlist_is_empty(&head));
 }
 
+UCS_TEST_F(test_datatype, hlist_for_each_extract_if) {
+    const size_t n_elems = 3;
+    std::vector<elem_t*> v_elems;
+    ucs_hlist_head_t head;
+    std::vector<int> v;
+    elem_t *elem;
+
+    for (size_t i = 0; i < n_elems; ++i) {
+        v_elems.push_back(new elem_t);
+        v_elems[i]->i = i;
+    }
+
+    /* initialize list, should be empty */
+    ucs_hlist_head_init(&head);
+    EXPECT_TRUE(ucs_hlist_is_empty(&head));
+
+    /* add one element to head */
+    ucs_hlist_add_head(&head, &v_elems[0]->hlist);
+    EXPECT_FALSE(ucs_hlist_is_empty(&head));
+
+    EXPECT_EQ(v_elems[0], ucs_hlist_head_elem(&head, elem_t, hlist));
+
+    /* test iteration over single-element list, don't remove */
+    ucs_hlist_for_each_extract_if(elem, &head, hlist, false) {
+        v.push_back(elem->i);
+    }
+    ASSERT_TRUE(v.empty());
+    ASSERT_FALSE(ucs_hlist_is_empty(&head));
+
+    /* test iteration over single-element list, remove */
+    ucs_hlist_for_each_extract_if(elem, &head, hlist, true) {
+        v.push_back(elem->i);
+    }
+    ASSERT_TRUE(ucs_hlist_is_empty(&head));
+    ASSERT_EQ(1ul, v.size());
+    EXPECT_EQ(0, v[0]);
+    v.clear();
+
+    /* when list is empty, extract_head should return NULL */
+    ucs_hlist_link_t *helem = ucs_hlist_extract_head(&head);
+    EXPECT_TRUE(helem == NULL);
+
+    /* test iteration over empty list */
+    v.clear();
+    ucs_hlist_for_each_extract_if(elem, &head, hlist, true) {
+        v.push_back(elem->i);
+    }
+    ASSERT_EQ(0ul, v.size());
+
+    ucs_hlist_for_each_extract_if(elem, &head, hlist, false) {
+        v.push_back(elem->i);
+    }
+    ASSERT_EQ(0ul, v.size());
+
+    /* add 3 elements */
+    ucs_hlist_add_tail(&head, &v_elems[1]->hlist);
+    ucs_hlist_add_head(&head, &v_elems[0]->hlist);
+    ucs_hlist_add_tail(&head, &v_elems[2]->hlist);
+
+    /* iterate and extract 2 elements */
+    v.clear();
+    ucs_hlist_for_each_extract_if(elem, &head, hlist, elem->i < 2) {
+        v.push_back(elem->i);
+    }
+    ASSERT_EQ(2ul, v.size());
+    EXPECT_EQ(0, v[0]);
+    EXPECT_EQ(1, v[1]);
+    /* iterate and extract last element */
+    ucs_hlist_for_each_extract_if(elem, &head, hlist, elem->i < 100) {
+        v.push_back(elem->i);
+    }
+    EXPECT_EQ(2, v[2]);
+
+    EXPECT_TRUE(ucs_hlist_is_empty(&head));
+
+    /* add 3 elements */
+    for (size_t i = 0; i < n_elems; ++i) {
+        ucs_hlist_add_tail(&head, &v_elems[i]->hlist);
+    }
+
+    /* iterate and delete all the extracted elements */
+    ucs_hlist_for_each_extract_if(elem, &head, hlist, true) {
+        EXPECT_EQ(v_elems[0], elem);
+        memset(elem, 0xff, sizeof(*elem));
+        delete elem;
+        v_elems.erase(v_elems.begin());
+    }
+
+    EXPECT_TRUE(ucs_hlist_is_empty(&head));
+    EXPECT_TRUE(v_elems.empty());
+}
+
 UCS_TEST_F(test_datatype, queue) {
 
     ucs_queue_head_t head;
@@ -181,9 +275,11 @@ UCS_TEST_F(test_datatype, queue) {
         ucs_queue_push(&head, &elem0.queue);
         EXPECT_FALSE(ucs_queue_is_empty(&head));
         EXPECT_EQ((unsigned long)1, ucs_queue_length(&head));
+        EXPECT_TRUE(ucs_queue_is_tail(&head, &elem0.queue));
 
         ucs_queue_push(&head, &elem1.queue);
         EXPECT_EQ((unsigned long)2, ucs_queue_length(&head));
+        EXPECT_TRUE(ucs_queue_is_tail(&head, &elem1.queue));
 
         EXPECT_EQ(&elem1, ucs_queue_tail_elem_non_empty(&head, elem_t, queue));
 
@@ -422,8 +518,14 @@ UCS_TEST_F(test_datatype, ptr_array_basic) {
 
     ucs_ptr_array_init(&pa, "ptr_array test");
 
+    EXPECT_EQ(ucs_ptr_array_get_elem_count(&pa), 0);
+    EXPECT_EQ(ucs_ptr_array_is_empty(&pa), 1);
+
     index = ucs_ptr_array_insert(&pa, &a);
     EXPECT_EQ(0u, index);
+
+    EXPECT_EQ(ucs_ptr_array_get_elem_count(&pa), 1);
+    EXPECT_EQ(ucs_ptr_array_is_empty(&pa), 0);
 
     index = ucs_ptr_array_insert(&pa, &b);
     EXPECT_EQ(1u, index);
@@ -466,13 +568,39 @@ UCS_TEST_F(test_datatype, ptr_array_basic) {
     EXPECT_FALSE(ucs_ptr_array_lookup(&pa, 101, vc));
     EXPECT_FALSE(ucs_ptr_array_lookup(&pa, 5005, vc));
 
+    EXPECT_EQ(ucs_ptr_array_get_elem_count(&pa), 7);
+
     ucs_ptr_array_remove(&pa, 0);
     ucs_ptr_array_remove(&pa, 1);
     ucs_ptr_array_remove(&pa, 2);
     ucs_ptr_array_remove(&pa, 3);
     ucs_ptr_array_remove(&pa, 4);
     ucs_ptr_array_remove(&pa, 6);
+
+    EXPECT_EQ(ucs_ptr_array_get_elem_count(&pa), 1);
+    EXPECT_EQ(ucs_ptr_array_is_empty(&pa), 0);
+
     ucs_ptr_array_remove(&pa, 100);
+
+    EXPECT_EQ(ucs_ptr_array_get_elem_count(&pa), 0);
+    EXPECT_EQ(ucs_ptr_array_is_empty(&pa), 1);
+
+    ucs_ptr_array_cleanup(&pa);
+}
+
+UCS_TEST_F(test_datatype, ptr_array_set_first) {
+    ucs_ptr_array_t pa;
+    int a = 1;
+
+    ucs_ptr_array_init(&pa, "ptr_array set-first test");
+
+    EXPECT_EQ(0u, pa.size);
+
+    ucs_ptr_array_set(&pa, 0, &a);
+
+    EXPECT_GT(pa.size, 0u);
+
+    ucs_ptr_array_remove(&pa, 0);
 
     ucs_ptr_array_cleanup(&pa);
 }
@@ -795,3 +923,209 @@ UCS_TEST_SKIP_COND_F(test_datatype, ptr_array_locked_perf,
     }
 }
 
+typedef struct {
+    int  num1;
+    int  num2;
+} test_value_type_t;
+
+static bool operator==(const test_value_type_t& v1, const test_value_type_t &v2) {
+    return (v1.num1 == v2.num1) && (v1.num2 == v2.num2);
+}
+
+static std::ostream& operator<<(std::ostream& os, const test_value_type_t &v) {
+    return os << "<" << v.num1 << "," << v.num2 << ">";
+}
+
+
+UCS_ARRAY_DEFINE_INLINE(test_2num, unsigned, test_value_type_t);
+UCS_ARRAY_DEFINE_INLINE(test_1int, size_t, int);
+
+class test_array : public test_datatype {
+protected:
+    void test_fixed(ucs_array_t(test_1int) *array, size_t capacity);
+};
+
+UCS_TEST_F(test_array, dynamic_array_2int_grow) {
+    ucs_array_t(test_2num) test_array;
+    test_value_type_t value;
+    ucs_status_t status;
+
+    ucs_array_init_dynamic(&test_array);
+    EXPECT_FALSE(ucs_array_is_fixed(&test_array));
+
+    /* grow the array enough to contain 'value_index' */
+    unsigned value_index = 9;
+    status = ucs_array_reserve(test_2num, &test_array, value_index + 1);
+    ASSERT_UCS_OK(status);
+
+    value.num1 = ucs::rand();
+    value.num2 = ucs::rand();
+
+    /* save the value in the array and check it's there */
+    ucs_array_elem(&test_array, value_index) = value;
+    EXPECT_EQ(value, ucs_array_elem(&test_array, value_index));
+
+    /* grow the array to larger size, check the value is not changed */
+    status = ucs_array_reserve(test_2num, &test_array, 40);
+    ASSERT_UCS_OK(status);
+    EXPECT_EQ(value, ucs_array_elem(&test_array, value_index));
+
+    /* grow the array with smaller size, check the value is not changed */
+    status = ucs_array_reserve(test_2num, &test_array, 30);
+    ASSERT_UCS_OK(status);
+    EXPECT_EQ(value, ucs_array_elem(&test_array, value_index));
+
+    ucs_array_cleanup_dynamic(&test_array);
+}
+
+UCS_TEST_F(test_array, dynamic_array_int_append) {
+    static const size_t NUM_ELEMS = 1000;
+
+    ucs_array_t(test_1int) test_array;
+    std::vector<int> vec;
+    ucs_status_t status;
+
+    ucs_array_init_dynamic(&test_array);
+    EXPECT_FALSE(ucs_array_is_fixed(&test_array));
+
+    /* push same elements to the array and the std::vector */
+    for (size_t i = 0; i < NUM_ELEMS; ++i) {
+        int value = ucs::rand();
+        status = ucs_array_append(test_1int, &test_array);
+        ASSERT_UCS_OK(status);
+        EXPECT_EQ(i + 1, ucs_array_length(&test_array));
+        *ucs_array_last(&test_array) = value;
+        vec.push_back(value);
+    }
+
+    /* validate array size and capacity */
+    EXPECT_EQ(NUM_ELEMS, ucs_array_length(&test_array));
+    EXPECT_GE(ucs_array_capacity(&test_array), NUM_ELEMS);
+
+    /* validate array contents  */
+    for (size_t i = 0; i < NUM_ELEMS; ++i) {
+        EXPECT_EQ(vec[i], ucs_array_elem(&test_array, i));
+    }
+
+    /* test for_each */
+    int *array_iter;
+    std::vector<int>::iterator vec_iter = vec.begin();
+    ucs_array_for_each(array_iter, &test_array) {
+        EXPECT_EQ(*vec_iter, *array_iter);
+        ++vec_iter;
+    }
+
+    /* test set_length */
+    size_t new_length = NUM_ELEMS * 2 / 3;
+    ucs_array_set_length(&test_array, new_length);
+    EXPECT_EQ(new_length, ucs_array_length(&test_array));
+
+    ucs_array_set_length(&test_array, NUM_ELEMS);
+    EXPECT_EQ(NUM_ELEMS, ucs_array_length(&test_array));
+
+    /* set length to max capacity */
+    new_length = ucs_array_capacity(&test_array);
+    ucs_array_set_length(&test_array, new_length);
+    EXPECT_EQ(new_length, ucs_array_length(&test_array));
+
+    ucs_array_cleanup_dynamic(&test_array);
+}
+
+void test_array::test_fixed(ucs_array_t(test_1int) *array, size_t capacity)
+{
+    ucs_status_t status;
+
+    /* check initial capacity */
+    size_t initial_capacity = ucs_array_capacity(array);
+    EXPECT_LE(initial_capacity, capacity);
+    EXPECT_GE(initial_capacity, capacity - 1);
+
+    /* append one element */
+    status = ucs_array_append(test_1int, array);
+    ASSERT_UCS_OK(status);
+
+    size_t idx = ucs_array_length(array) - 1;
+    ucs_array_elem(array, idx) = 17;
+    EXPECT_EQ(0u, idx);
+    EXPECT_EQ(1u, ucs_array_length(array));
+
+    /* check end capacity */
+    EXPECT_EQ(initial_capacity - 1, ucs_array_available_length(array));
+    EXPECT_EQ(&ucs_array_elem(array, 1), ucs_array_end(array));
+}
+
+UCS_TEST_F(test_array, fixed_static) {
+    const size_t num_elems = 100;
+    int buffer[num_elems];
+    ucs_array_t(test_1int) test_array =
+             UCS_ARRAY_FIXED_INITIALIZER(buffer, num_elems);
+    test_fixed(&test_array, num_elems);
+}
+
+UCS_TEST_F(test_array, fixed_init) {
+    const size_t num_elems = 100;
+    int buffer[num_elems];
+    ucs_array_t(test_1int) test_array;
+
+    ucs_array_init_fixed(&test_array, buffer, num_elems);
+    test_fixed(&test_array, num_elems);
+}
+
+UCS_TEST_F(test_array, fixed_onstack) {
+    const size_t num_elems = 100;
+    UCS_ARRAY_DEFINE_ONSTACK(test_array, test_1int, num_elems);
+    test_fixed(&test_array, num_elems);
+}
+
+UCS_TEST_F(test_datatype, ptr_map) {
+    typedef std::map<ucs_ptr_map_key_t, char*> std_map_t;
+
+    const size_t N = 10 * UCS_KBYTE;
+    ucs_ptr_map_key_t ptr_key;
+    ucs_ptr_map_t     ptr_map;
+    std_map_t         std_map;
+    ucs_status_t      status;
+
+    status = ucs_ptr_map_init(&ptr_map);
+    ASSERT_EQ(UCS_OK, status);
+
+    for (size_t i = 0; i < N; ++i) {
+        char *ptr     = new char;
+        bool indirect = ucs::rand() % 2;
+        status = ucs_ptr_map_put(&ptr_map, ptr, indirect, &ptr_key);
+        if (indirect) {
+            ASSERT_UCS_OK(status);
+            EXPECT_TRUE(ucs_ptr_map_key_indirect(ptr_key));
+        } else {
+            ASSERT_EQ(UCS_ERR_NO_PROGRESS, status);
+            EXPECT_FALSE(ucs_ptr_map_key_indirect(ptr_key));
+        }
+
+        std_map[ptr_key] = ptr;
+    }
+
+    for (std_map_t::iterator i = std_map.begin(); i != std_map.end(); ++i) {
+        bool indirect = ucs_ptr_map_key_indirect(i->first);
+        bool extract  = ucs::rand() % 2;
+        void *value;
+        status = ucs_ptr_map_get(&ptr_map, i->first, extract, &value);
+        if (indirect) {
+            ASSERT_EQ(UCS_OK, status);
+        } else {
+            ASSERT_EQ(UCS_ERR_NO_PROGRESS, status);
+        }
+
+        ASSERT_EQ(i->second, value);
+        if (!extract) {
+            status = ucs_ptr_map_del(&ptr_map, i->first);
+            if (indirect) {
+                ASSERT_EQ(UCS_OK, status);
+            } else {
+                ASSERT_EQ(UCS_ERR_NO_PROGRESS, status);
+            }
+        }
+        delete i->second;
+    }
+
+    ucs_ptr_map_destroy(&ptr_map);
+}

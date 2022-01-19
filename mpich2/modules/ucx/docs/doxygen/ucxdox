@@ -767,6 +767,7 @@ INPUT                  = $(SRCDIR)/src/ucp/api/             \
                          $(SRCDIR)/src/ucs/async/           \
                          $(SRCDIR)/src/ucs/config/          \
                          $(SRCDIR)/src/ucs/datastruct/      \
+                         $(SRCDIR)/src/ucs/memory/          \
                          $(SRCDIR)/src/ucs/time/            \
                          $(SRCDIR)/src/ucs/type/            \
                          $(SRCDIR)/src/ucs/sys/             \
@@ -803,6 +804,7 @@ FILE_PATTERNS          = ucp.h          \
                          compiler_def.h \
                          time_def.h     \
                          thread_mode.h  \
+                         memory_type.h  \
                          callbackq.h    \
                          types.h
 
@@ -872,8 +874,7 @@ EXAMPLE_RECURSIVE      = NO
 # that contain images that are to be included in the documentation (see the
 # \image command).
 
-IMAGE_PATH             = $(SRCDIR)/docs/figures \
-                         $(SRCDIR)/docs/doxygen
+IMAGE_PATH             = $(SRCDIR)/docs/doxygen
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program

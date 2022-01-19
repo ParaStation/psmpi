@@ -37,7 +37,7 @@ void uct_ib_log_dump_sg_list(uct_ib_iface_t *iface, uct_am_trace_type_t type,
                              struct ibv_sge *sg_list, int num_sge,
                              uint64_t inline_bitmap,
                              uct_log_data_dump_func_t data_dump,
-                             char *buf, size_t max);
+                             int data_dump_sge, char *buf, size_t max);
 
 void uct_ib_log_dump_remote_addr(uint64_t remote_addr, uint32_t rkey,
                                  char *buf, size_t max);
@@ -52,6 +52,10 @@ void uct_ib_log_dump_atomic_masked_fadd(int argsize, uint64_t add, uint64_t boun
 void uct_ib_log_dump_atomic_masked_cswap(int argsize, uint64_t compare, uint64_t compare_mask,
                                          uint64_t swap, uint64_t swap_mask,
                                          char *buf, size_t max);
+
+void uct_ib_log_dump_qp_peer_info(uct_ib_iface_t *iface,
+                                  const struct ibv_ah_attr *ah_attr,
+                                  uint32_t dest_qpn, char *buf, size_t max);
 
 void uct_ib_log_dump_recv_completion(uct_ib_iface_t *iface, uint32_t local_qp,
                                      uint32_t sender_qp, uint16_t sender_lid,

@@ -37,7 +37,7 @@
  */
 int MPIR_Reduce_scatter_block_intra_recursive_halving(const void *sendbuf,
                                                       void *recvbuf,
-                                                      int recvcount,
+                                                      MPI_Aint recvcount,
                                                       MPI_Datatype datatype,
                                                       MPI_Op op,
                                                       MPIR_Comm * comm_ptr,
@@ -65,10 +65,6 @@ int MPIR_Reduce_scatter_block_intra_recursive_halving(const void *sendbuf,
         MPIR_Assert(is_commutative);
     }
 #endif /* HAVE_ERROR_CHECKING */
-
-    if (recvcount == 0) {
-        goto fn_exit;
-    }
 
     MPIR_Datatype_get_extent_macro(datatype, extent);
     MPIR_Type_get_true_extent_impl(datatype, &true_lb, &true_extent);

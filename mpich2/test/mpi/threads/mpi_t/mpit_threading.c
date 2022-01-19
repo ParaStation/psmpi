@@ -40,7 +40,7 @@ int PrintControlVars(FILE * fp, int myThreadId);
 int PrintPerfVars(FILE * fp, int myThreadId);
 int PrintCategories(FILE * fp, int myThreadId);
 
-MTEST_THREAD_RETURN_TYPE RunTest(void *p)
+static MTEST_THREAD_RETURN_TYPE RunTest(void *p)
 {
     int myThreadId = (int) (long) p;
 
@@ -351,7 +351,7 @@ const char *mpit_scopeToStr(int scope)
             p = "SCOPE_ALL_EQ";
             break;
         default:
-            p = "Unrecoginized scope";
+            p = "Unrecognized scope";
             break;
     }
     return p;
@@ -494,9 +494,6 @@ const char *mpit_errclassToStr(int err)
             break;
         case MPI_T_ERR_INVALID_INDEX:
             p = "ERR_INVALID_INDEX";
-            break;
-        case MPI_T_ERR_INVALID_ITEM:
-            p = "ERR_INVALID_ITEM";
             break;
         case MPI_T_ERR_INVALID_HANDLE:
             p = "ERR_INVALID_HANDLE";

@@ -13,44 +13,41 @@
 int MPIDI_UCX_mpi_comm_commit_pre_hook(MPIR_Comm * comm)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_UCX_MPI_COMM_COMMIT_PRE_HOOK);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_UCX_MPI_COMM_COMMIT_PRE_HOOK);
+    MPIR_FUNC_ENTER;
 
 #if defined HAVE_LIBHCOLL
     hcoll_comm_create(comm, NULL);
 #endif
 
-  fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_UCX_MPI_COMM_COMMIT_PRE_HOOK);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
-  fn_fail:
-    goto fn_exit;
 }
 
 int MPIDI_UCX_mpi_comm_commit_post_hook(MPIR_Comm * comm)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_UCX_MPI_COMM_COMMIT_POST_HOOK);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_UCX_MPI_COMM_COMMIT_POST_HOOK);
+    MPIR_FUNC_ENTER;
 
-  fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_UCX_MPI_COMM_COMMIT_POST_HOOK);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
-  fn_fail:
-    goto fn_exit;
 }
 
 int MPIDI_UCX_mpi_comm_free_hook(MPIR_Comm * comm)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_UCX_MPI_COMM_FREE_HOOK);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_UCX_MPI_COMM_FREE_HOOK);
+    MPIR_FUNC_ENTER;
 
 #ifdef HAVE_LIBHCOLL
     hcoll_comm_destroy(comm, NULL);
 #endif
-  fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_UCX_MPI_COMM_FREE_HOOK);
+    MPIR_FUNC_EXIT;
+    return mpi_errno;
+}
+
+int MPIDI_UCX_comm_set_hints(MPIR_Comm * comm, MPIR_Info * info)
+{
+    int mpi_errno = MPI_SUCCESS;
+
     return mpi_errno;
 }

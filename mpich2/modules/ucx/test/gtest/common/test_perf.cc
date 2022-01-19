@@ -3,7 +3,7 @@
 * Copyright (C) UT-Battelle, LLC. 2015. ALL RIGHTS RESERVED.
 * Copyright (C) The University of Tennessee and The University 
 *               of Tennessee Research Foundation. 2015. ALL RIGHTS RESERVED.
-* Copyright (C) ARM Ltd. 2016.  ALL RIGHTS RESERVED.
+* Copyright (C) ARM Ltd. 2016-2020.  ALL RIGHTS RESERVED.
 * See file LICENSE for terms.
 */
 
@@ -16,6 +16,11 @@ extern "C" {
 #include <pthread.h>
 #include <string>
 #include <vector>
+
+
+#define UCP_ARM_PERF_TEST_MULTIPLIER  2
+#define UCT_ARM_PERF_TEST_MULTIPLIER 15
+#define UCT_PERF_TEST_MULTIPLIER      5
 
 
 test_perf::rte_comm::rte_comm() {
@@ -131,6 +136,7 @@ std::vector<int> test_perf::get_affinity() {
     cpu_set_t affinity;
     int ret, nr_cpus;
 
+    CPU_ZERO(&affinity);
     ret = sched_getaffinity(getpid(), sizeof(affinity), &affinity);
     if (ret != 0) {
         ucs_error("Failed to get CPU affinity: %m");
@@ -163,8 +169,10 @@ void test_perf::set_affinity(int cpu)
 void* test_perf::thread_func(void *arg)
 {
     thread_arg *a = (thread_arg*)arg;
+    rte *r        = reinterpret_cast<rte*>(a->params.rte_group);
     test_result *result;
 
+    ucs_log_set_thread_name("perf-%d", r->index());
     set_affinity(a->cpu);
     result = new test_result();
     result->status = ucx_perf_run(&a->params, &result->result);
@@ -180,19 +188,19 @@ test_perf::test_result test_perf::run_multi_threaded(const test_spec &test, unsi
 
     ucx_perf_params_t params;
     memset(&params, 0, sizeof(params));
-    params.api = test.api;
+    params.api             = test.api;
     params.command         = test.command;
     params.test_type       = test.test_type;
     params.thread_mode     = UCS_THREAD_MODE_SINGLE;
     params.async_mode      = UCS_ASYNC_THREAD_LOCK_TYPE;
     params.thread_count    = 1;
-    params.wait_mode       = UCX_PERF_WAIT_MODE_LAST;
+    params.wait_mode       = test.wait_mode;
     params.flags           = test.test_flags | flags;
-    params.am_hdr_size     = 8;
+    params.uct.am_hdr_size = 8;
     params.alignment       = ucs_get_page_size();
     params.max_outstanding = test.max_outstanding;
     if (ucs::test_time_multiplier() == 1) {
-        params.warmup_iter = test.iters / 10;
+        params.warmup_iter = ucs_max(1, test.iters / 100);
         params.max_iter    = test.iters;
     } else {
         params.warmup_iter = 0;
@@ -252,8 +260,8 @@ test_perf::test_result test_perf::run_multi_threaded(const test_spec &test, unsi
     return result;
 }
 
-void test_perf::run_test(const test_spec& test, unsigned flags, bool check_perf,
-                         const std::string &tl_name, const std::string &dev_name)
+double test_perf::run_test(const test_spec& test, unsigned flags, bool check_perf,
+                           const std::string &tl_name, const std::string &dev_name)
 {
     std::vector<int> cpus = get_affinity();
     if (cpus.size() < 2) {
@@ -271,7 +279,7 @@ void test_perf::run_test(const test_spec& test, unsigned flags, bool check_perf,
         if ((result.status == UCS_ERR_UNSUPPORTED) ||
             (result.status == UCS_ERR_UNREACHABLE))
         {
-            return; /* Skipped */
+            return 0.0; /* Skipped */
         }
 
         ASSERT_UCS_OK(result.status);
@@ -292,15 +300,16 @@ void test_perf::run_test(const test_spec& test, unsigned flags, bool check_perf,
         }
 
         if (!check_perf) {
-            return; /* Skip */
+            return value; /* Skip */
         } else if ((value >= test.min) && (value <= test.max)) {
-            return; /* Success */
+            return value; /* Success */
         } else {
             ucs::safe_sleep(ucs::perf_retry_interval);
         }
     }
 
-     ADD_FAILURE() << "Invalid " << test.title << " performance, expected: " <<
-                      std::setprecision(3) << test.min << ".." << test.max;
-}
+    ADD_FAILURE() << "Invalid " << test.title << " performance, expected: "
+                  << std::setprecision(3) << test.min << ".." << test.max;
 
+    return 0.0;
+}

@@ -37,7 +37,7 @@ modincdir=@modincdir@
 
 # Default settings for compiler, flags, and libraries
 # Determined by a combination of environment variables and tests within
-# configure (e.g., determining whehter -lsocket is needee)
+# configure (e.g., determining whether -lsocket is needee)
 FC="@FC@"
 FCCPP="@FCCPP@"
 #
@@ -76,6 +76,17 @@ Show=
 #
 # End of initialization of variables
 #---------------------------------------------------------------------
+
+# Check recursive situations
+# User mistakes, e.g. setting MPICH_CC=mpicc, may end up recursively running
+# this script. A simple check to bail if that's the case.
+if [ -n "$MPICH_RECURSION_CHECK" ] ; then
+    echo "This script ($0) is being called recursively, check that MPICH_FC does not refer to mpifort."
+    exit 1
+fi
+MPICH_RECURSION_CHECK=1
+export MPICH_RECURSION_CHECK
+
 # Environment Variables.
 # The environment variables MPICH_FC may be used to override the
 # default choices.
@@ -103,7 +114,7 @@ fi
 # Argument processing.
 # This is somewhat awkward because of the handling of arguments within
 # the shell.  We want to handle arguments that include spaces without
-# loosing the spacing (an alternative would be to use a more powerful
+# losing the spacing (an alternative would be to use a more powerful
 # scripting language that would allow us to retain the array of values,
 # which the basic (rather than enhanced) Bourne shell does not.
 #
@@ -333,7 +344,7 @@ if test "@INTERLIB_DEPS@" = "no" -o "${interlib_deps}" = "no" ; then
 fi
 
 # A temporary statement to invoke the compiler
-# Place the -L before any args incase there are any mpi libraries in there.
+# Place the -L before any args in case there are any mpi libraries in there.
 # Eventually, we'll want to move this after any non-MPI implementation
 # libraries
 if [ "$linking" = yes ] ; then

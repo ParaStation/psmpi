@@ -1,5 +1,10 @@
+sendself 1 test/mpi/pt2pt/sendself arg=-type=MPI_C_DOUBLE_COMPLEX arg=-sendcnt=8192 arg=-recvcnt=8192 arg=-seed=47 arg=-testsize=100
+sendself 2 test/mpi/pt2pt/sendself arg=-type=MPI_C_DOUBLE_COMPLEX arg=-sendcnt=8192 arg=-recvcnt=8192 arg=-seed=47 arg=-testsize=100
 sendrecv2 2
+sendrecv2 2 env=MPIR_CVAR_ASYNC_PROGRESS=1 env=MPIR_CVAR_CH4_PROGRESS_THREAD_AFFINITY=1,2 env=MPIR_CVAR_ODD_EVEN_CLIQUES=0 env=MPIR_CVAR_NUM_CLIQUES=1
+sendrecv2 2 env=MPIR_CVAR_ASYNC_PROGRESS=1 env=MPIR_CVAR_CH4_PROGRESS_THREAD_AFFINITY=auto env=MPIR_CVAR_ODD_EVEN_CLIQUES=0 env=MPIR_CVAR_NUM_CLIQUES=1
 sendrecv3 2
+sendrecv3 2 arg=-isendrecv
 sendflood 8
 sendall 4
 anyall 2
@@ -15,6 +20,8 @@ bsendpending 2
 isendself 1
 issendselfcancel 1 xfail=ticket2276
 isendirecv 10
+isendrecv 4
+isendrecv_replace 4
 bsendfrag 2
 icsend 4
 icsend 4 arg=-randomize=1
@@ -45,10 +52,14 @@ waitany_null 1
 # perhaps disable in the release tarball
 large_message 3 mem=6.5
 mprobe 2
+mprobe 2 env=MPIR_CVAR_CH4_OFI_EAGER_MAX_MSG_SIZE=16384
+mprobe 2 env=MPIR_CVAR_CH4_OFI_AM_LONG_FORCE_PIPELINE=true
 big_count_status 1
 many_isend 3
 manylmt 2
 huge_underflow 2
+huge_underflow 2 env=MPIR_CVAR_CH4_OFI_EAGER_MAX_MSG_SIZE=16384
+huge_underflow 2 env=MPIR_CVAR_CH4_OFI_AM_LONG_FORCE_PIPELINE=true
 huge_anysrc 2
 huge_dupcomm 2
 huge_ssend 2
@@ -60,3 +71,4 @@ large_tag 2
 precv_anysrc 2 timeLimit=60
 precv_anysrc 2 timeLimit=60 env=MPIR_CVAR_CH4_OFI_AM_LONG_FORCE_PIPELINE=true
 precv_anysrc_exp 2 timeLimit=60
+pt2pt_large 2

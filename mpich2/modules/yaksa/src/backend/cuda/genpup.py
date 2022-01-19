@@ -103,18 +103,14 @@ def resized(suffix, dtp, b, last):
 ########################################################################################
 ##### Core kernels
 ########################################################################################
-def generate_kernels(b, darray):
+def generate_kernels(b, darray, op):
     global need_extent
     global s
     global idx
 
-    # we don't need pup kernels for basic types
-    if (len(darray) == 0):
-        return
-
     for func in "pack","unpack":
         ##### figure out the function name to use
-        funcprefix = "%s_" % func
+        funcprefix = "%s_%s_" % (func, op)
         for d in darray:
             funcprefix = funcprefix + "%s_" % d
         funcprefix = funcprefix + b.replace(" ", "_")
@@ -153,7 +149,7 @@ def generate_kernels(b, darray):
                 yutils.display(OUTFILE, "inner_elements /= %s->u.%s.blocklength;\n" % (md, d))
             elif (d == "hindexed"):
                 yutils.display(OUTFILE, "uintptr_t x%d;\n" % idx)
-                yutils.display(OUTFILE, "for (int i = 0; i < %s->u.%s.count; i++) {\n" % (md, d))
+                yutils.display(OUTFILE, "for (intptr_t i = 0; i < %s->u.%s.count; i++) {\n" % (md, d))
                 yutils.display(OUTFILE, "    uintptr_t in_elems = %s->u.%s.array_of_blocklengths[i] *\n" % (md, d))
                 yutils.display(OUTFILE, "                         %s->u.%s.child->num_elements;\n" % (md, d))
                 yutils.display(OUTFILE, "    if (res < in_elems) {\n")
@@ -188,21 +184,43 @@ def generate_kernels(b, darray):
             dtp = dtp + "->u.%s.child" % d
 
         if (func == "pack"):
-            yutils.display(OUTFILE, "*((%s *) (void *) (dbuf + idx * sizeof(%s))) = *((const %s *) (const void *) (sbuf + %s));\n"
-                           % (b, b, b, s))
+            if ((b == "float" or b == "double") and (op == "MAX" or op == "MIN")):
+                yutils.display(OUTFILE, "YAKSURI_CUDAI_OP_%s_FLOAT(%s, *((const %s *) (const void *) (sbuf + %s)), *((%s *) (void *) (dbuf + idx * sizeof(%s))));\n" % (op, b, b, s, b, b))
+            else:
+                yutils.display(OUTFILE, "YAKSURI_CUDAI_OP_%s(*((const %s *) (const void *) (sbuf + %s)), *((%s *) (void *) (dbuf + idx * sizeof(%s))));\n" % (op, b, s, b, b))
         else:
-            yutils.display(OUTFILE, "*((%s *) (void *) (dbuf + %s)) = *((const %s *) (const void *) (sbuf + idx * sizeof(%s)));\n"
-                           % (b, s, b, b))
+            if ((b == "float" or b == "double") and (op == "MAX" or op == "MIN")):
+                yutils.display(OUTFILE, "YAKSURI_CUDAI_OP_%s_FLOAT(%s, *((const %s *) (const void *) (sbuf + idx * sizeof(%s))), *((%s *) (void *) (dbuf + %s)));\n" % (op, b, b, b, b, s))
+            else:
+                yutils.display(OUTFILE, "YAKSURI_CUDAI_OP_%s(*((const %s *) (const void *) (sbuf + idx * sizeof(%s))), *((%s *) (void *) (dbuf + %s)));\n" % (op, b, b, b, s))
 
         yutils.display(OUTFILE, "}\n\n")
 
-        # generate the host function
-        yutils.display(OUTFILE, "void yaksuri_cudai_%s(const void *inbuf, void *outbuf, uintptr_t count, yaksuri_cudai_md_s *md, int n_threads, int n_blocks_x, int n_blocks_y, int n_blocks_z, int device)\n" % funcprefix)
+
+def generate_host_function(b, darray):
+    for func in "pack","unpack":
+        funcprefix = "%s_" % func
+        for d in darray:
+            funcprefix = funcprefix + "%s_" % d
+        funcprefix = funcprefix + b.replace(" ", "_")
+
+        yutils.display(OUTFILE, "void yaksuri_cudai_%s(const void *inbuf, void *outbuf, uintptr_t count, yaksa_op_t op, yaksuri_cudai_md_s *md, int n_threads, int n_blocks_x, int n_blocks_y, int n_blocks_z, cudaStream_t stream)\n" % funcprefix)
         yutils.display(OUTFILE, "{\n")
         yutils.display(OUTFILE, "void *args[] = { &inbuf, &outbuf, &count, &md };\n")
-        yutils.display(OUTFILE, "cudaError_t cerr = cudaLaunchKernel((const void *) yaksuri_cudai_kernel_%s,\n" % funcprefix)
-        yutils.display(OUTFILE, "    dim3(n_blocks_x, n_blocks_y, n_blocks_z), dim3(n_threads), args, 0, yaksuri_cudai_global.stream[device]);\n")
-        yutils.display(OUTFILE, "YAKSURI_CUDAI_CUDA_ERR_CHECK(cerr);\n")
+
+        yutils.display(OUTFILE, "cudaError_t cerr;\n")
+        yutils.display(OUTFILE, "switch (op) {\n")
+        for op in gencomm.type_ops[b]:
+            funcprefix = "%s_%s_" % (func, op)
+            for d in darray:
+                funcprefix = funcprefix + "%s_" % d
+            funcprefix = funcprefix + b.replace(" ", "_")
+            yutils.display(OUTFILE, "case YAKSA_OP__%s:\n" % op)
+            yutils.display(OUTFILE, "cerr = cudaLaunchKernel((const void *) yaksuri_cudai_kernel_%s,\n" % funcprefix)
+            yutils.display(OUTFILE, "    dim3(n_blocks_x, n_blocks_y, n_blocks_z), dim3(n_threads), args, 0, stream);\n")
+            yutils.display(OUTFILE, "YAKSURI_CUDAI_CUDA_ERR_CHECK(cerr);\n")
+            yutils.display(OUTFILE, "break;\n\n")
+        yutils.display(OUTFILE, "}\n")
         yutils.display(OUTFILE, "}\n\n")
 
 
@@ -219,6 +237,28 @@ if __name__ == '__main__':
         print
         print("===> ERROR: pup-max-nesting must be positive")
         sys.exit(1)
+
+    ##### generate the core pack/unpack kernels (zero levels)
+    for b in builtin_types:
+        filename = "src/backend/cuda/pup/yaksuri_cudai_pup_%s.cu" % b.replace(" ","_")
+        yutils.copyright_c(filename)
+        OUTFILE = open(filename, "a")
+        yutils.display(OUTFILE, "#include <string.h>\n")
+        yutils.display(OUTFILE, "#include <stdint.h>\n")
+        yutils.display(OUTFILE, "#include <wchar.h>\n")
+        yutils.display(OUTFILE, "#include <assert.h>\n")
+        yutils.display(OUTFILE, "#include <cuda.h>\n")
+        yutils.display(OUTFILE, "#include <cuda_runtime.h>\n")
+        yutils.display(OUTFILE, "#include \"yaksuri_cudai_base.h\"\n")
+        yutils.display(OUTFILE, "#include \"yaksuri_cudai_pup.h\"\n")
+        yutils.display(OUTFILE, "\n")
+
+        emptylist = [ ]
+        for op in gencomm.type_ops[b]:
+            generate_kernels(b, emptylist, op)
+        generate_host_function(b, emptylist)
+
+        OUTFILE.close()
 
     ##### generate the core pack/unpack kernels (single level)
     for b in builtin_types:
@@ -238,7 +278,9 @@ if __name__ == '__main__':
 
             emptylist = [ ]
             emptylist.append(d)
-            generate_kernels(b, emptylist)
+            for op in gencomm.type_ops[b]:
+                generate_kernels(b, emptylist, op)
+            generate_host_function(b, emptylist)
             emptylist.pop()
 
             OUTFILE.close()
@@ -265,7 +307,9 @@ if __name__ == '__main__':
                 for darray in darraylist:
                     darray.append(d1)
                     darray.append(d2)
-                    generate_kernels(b, darray)
+                    for op in gencomm.type_ops[b]:
+                        generate_kernels(b, darray, op)
+                    generate_host_function(b, darray)
                     darray.pop()
                     darray.pop()
 
@@ -280,16 +324,56 @@ if __name__ == '__main__':
     yutils.display(OUTFILE, "\n")
     yutils.display(OUTFILE, "#include <string.h>\n")
     yutils.display(OUTFILE, "#include <stdint.h>\n")
+    yutils.display(OUTFILE, "#include \"yaksa.h\"\n")
     yutils.display(OUTFILE, "\n")
     yutils.display(OUTFILE, "#ifdef __cplusplus\n")
     yutils.display(OUTFILE, "extern \"C\"\n")
     yutils.display(OUTFILE, "{\n")
     yutils.display(OUTFILE, "#endif\n")
     yutils.display(OUTFILE, "\n")
+    yutils.display(OUTFILE, "#define YAKSURI_CUDAI_OP_MAX(in,out) \\\n")
+    yutils.display(OUTFILE, "    do { (out) = ((in) ^ (((in) ^ (out)) & -((in) < (out)))); } while (0)\n")
+    yutils.display(OUTFILE, "#define YAKSURI_CUDAI_OP_MIN(in,out) \\\n")
+    yutils.display(OUTFILE, "    do { (out) = ((out) ^ (((in) ^ (out)) & -((in) < (out)))); } while (0)\n")
+    yutils.display(OUTFILE, "#define YAKSURI_CUDAI_OP_MAX_FLOAT(type,in,out) \\\n")
+    yutils.display(OUTFILE, "    do { type x_[2] = { (in), (out) }; (out) = x_[(in) < (out)]; } while (0)\n")
+    yutils.display(OUTFILE, "#define YAKSURI_CUDAI_OP_MIN_FLOAT(type,in,out) \\\n")
+    yutils.display(OUTFILE, "    do { type x_[2] = { (in), (out) }; (out) = x_[(in) > (out)]; } while (0)\n")
+    yutils.display(OUTFILE, "#define YAKSURI_CUDAI_OP_SUM(in,out) \\\n")
+    yutils.display(OUTFILE, "    do { (out) += (in); } while (0)\n")
+    yutils.display(OUTFILE, "#define YAKSURI_CUDAI_OP_PROD(in,out) \\\n")
+    yutils.display(OUTFILE, "    do { (out) *= (in); } while (0)\n")
+    yutils.display(OUTFILE, "#define YAKSURI_CUDAI_OP_LAND(in,out) \\\n")
+    yutils.display(OUTFILE, "    do { (out) = ((out) && (in)); } while (0)\n")
+    yutils.display(OUTFILE, "#define YAKSURI_CUDAI_OP_BAND(in,out) \\\n")
+    yutils.display(OUTFILE, "    do { (out) &= (in); } while (0)\n")
+    yutils.display(OUTFILE, "#define YAKSURI_CUDAI_OP_LOR(in,out) \\\n")
+    yutils.display(OUTFILE, "    do { (out) = ((out) || (in)); } while (0)\n")
+    yutils.display(OUTFILE, "#define YAKSURI_CUDAI_OP_BOR(in,out) \\\n")
+    yutils.display(OUTFILE, "    do { (out) |= (in); } while (0)\n")
+    yutils.display(OUTFILE, "#define YAKSURI_CUDAI_OP_LXOR(in,out) \\\n")
+    yutils.display(OUTFILE, "    do { (out) = (!(out) != !(in)); } while (0)\n")
+    yutils.display(OUTFILE, "#define YAKSURI_CUDAI_OP_BXOR(in,out) \\\n")
+    yutils.display(OUTFILE, "    do { (out) ^= (in); } while (0)\n")
+    yutils.display(OUTFILE, "#define YAKSURI_CUDAI_OP_REPLACE(in,out) \\\n")
+    yutils.display(OUTFILE, "    do { (out) = (in); } while (0)\n")
+    yutils.display(OUTFILE, "\n")
 
     darraylist = [ ]
     yutils.generate_darrays(gencomm.derived_types, darraylist, args.pup_max_nesting)
     for b in builtin_types:
+        for func in "pack","unpack":
+            OUTFILE.write("void yaksuri_cudai_%s_%s" % (func, b.replace(" ", "_")))
+            OUTFILE.write("(const void *inbuf, ")
+            OUTFILE.write("void *outbuf, ")
+            OUTFILE.write("uintptr_t count, ")
+            OUTFILE.write("yaksa_op_t op, ")
+            OUTFILE.write("yaksuri_cudai_md_s *md, ")
+            OUTFILE.write("int n_threads, ")
+            OUTFILE.write("int n_blocks_x, ")
+            OUTFILE.write("int n_blocks_y, ")
+            OUTFILE.write("int n_blocks_z, ")
+            OUTFILE.write("cudaStream_t stream);\n")
         for darray in darraylist:
             # we don't need pup kernels for basic types
             if (len(darray) == 0):
@@ -305,12 +389,13 @@ if __name__ == '__main__':
                 OUTFILE.write("(const void *inbuf, ")
                 OUTFILE.write("void *outbuf, ")
                 OUTFILE.write("uintptr_t count, ")
+                OUTFILE.write("yaksa_op_t op, ")
                 OUTFILE.write("yaksuri_cudai_md_s *md, ")
                 OUTFILE.write("int n_threads, ")
                 OUTFILE.write("int n_blocks_x, ")
                 OUTFILE.write("int n_blocks_y, ")
                 OUTFILE.write("int n_blocks_z, ")
-                OUTFILE.write("int device);\n")
+                OUTFILE.write("cudaStream_t stream);\n")
 
     yutils.display(OUTFILE, "\n")
     yutils.display(OUTFILE, "#ifdef __cplusplus\n")
@@ -326,6 +411,7 @@ if __name__ == '__main__':
     OUTFILE = open(filename, "a")
     yutils.display(OUTFILE, "libyaksa_la_SOURCES += \\\n")
     for b in builtin_types:
+        yutils.display(OUTFILE, "\tsrc/backend/cuda/pup/yaksuri_cudai_pup_%s.cu \\\n" % b.replace(" ","_"))
         for d1 in gencomm.derived_types:
             yutils.display(OUTFILE, "\tsrc/backend/cuda/pup/yaksuri_cudai_pup_%s_%s.cu \\\n" % \
                            (d1, b.replace(" ","_")))

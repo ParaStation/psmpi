@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+* Copyright (C) Mellanox Technologies Ltd. 2001-2021.  ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -16,12 +16,20 @@
 #include <ucs/datastruct/mpool.h>
 #include <ucs/datastruct/queue.h>
 #include <ucs/debug/log.h>
+#include <ucs/debug/debug_int.h>
 #include <ucs/stats/stats.h>
 #include <ucs/sys/compiler.h>
-#include <ucs/sys/sys.h>
+#include <ucs/sys/uid.h>
 #include <ucs/type/class.h>
+#include <uct/api/v2/uct_v2.h>
+#include <ucs/type/param.h>
 
 #include <ucs/datastruct/mpool.inl>
+
+
+/* UCT IFACE local address flag which packed to ID and indicates if an address
+ * is extended by a system namespace information */
+#define UCT_IFACE_LOCAL_ADDR_FLAG_NS UCS_BIT(63)
 
 
 enum {
@@ -122,9 +130,17 @@ enum {
                     "UCT_EP_PARAM_FIELD_DEV_ADDR and UCT_EP_PARAM_FIELD_IFACE_ADDR are not defined")
 
 
+#define UCT_EP_PARAM_VALUE(_params, _name, _flag, _default) \
+    UCS_PARAM_VALUE(UCT_EP_PARAM_FIELD, _params, _name, _flag, _default)
+
+
+#define UCT_IFACE_PARAM_VALUE(_params, _name, _flag, _default) \
+    UCS_PARAM_VALUE(UCT_IFACE_PARAM_FIELD, _params, _name, _flag, _default)
+
+
 #define UCT_EP_PARAMS_GET_PATH_INDEX(_params) \
-    (((_params)->field_mask & UCT_EP_PARAM_FIELD_PATH_INDEX) ? \
-     (_params)->path_index : 0)
+    UCT_EP_PARAM_VALUE(_params, path_index, PATH_INDEX, 0)
+
 
 /**
  * Check the condition and return status as a pointer if not true.
@@ -182,6 +198,18 @@ enum {
 
 
 /**
+ * In debug mode, check that keepalive params are valid
+ */
+#define UCT_EP_KEEPALIVE_CHECK_PARAM(_flags, _comp) \
+    UCT_CHECK_PARAM((_comp) == NULL, "Unsupported completion on ep_check"); \
+    UCT_CHECK_PARAM((_flags) == 0, "Unsupported flags: %x", (_flags));
+
+
+#define UCT_IFACE_PARAM_VALUE(_params, _name, _flag, _default) \
+    UCS_PARAM_VALUE(UCT_IFACE_PARAM_FIELD, _params, _name, _flag, _default)
+
+
+/**
  * Declare classes for structures defined in api/tl.h
  */
 UCS_CLASS_DECLARE(uct_iface_h, uct_iface_ops_t, uct_md_h);
@@ -198,37 +226,55 @@ typedef struct uct_am_handler {
 } uct_am_handler_t;
 
 
+/* Performance estimation operation */
+typedef ucs_status_t (*uct_iface_estimate_perf_func_t)(
+        uct_iface_h iface, uct_perf_attr_t *perf_attr);
+
+
+/* Refresh the VFS representation of the interface */
+typedef void (*uct_iface_vfs_refresh_func_t)(uct_iface_h iface);
+
+
+/* Internal operations, not exposed by the external API */
+typedef struct uct_iface_internal_ops {
+    uct_iface_estimate_perf_func_t iface_estimate_perf;
+    uct_iface_vfs_refresh_func_t   iface_vfs_refresh;
+} uct_iface_internal_ops_t;
+
+
 /**
  * Base structure of all interfaces.
  * Includes the AM table which we don't want to expose.
  */
 typedef struct uct_base_iface {
-    uct_iface_t             super;
-    uct_md_h                md;               /* MD this interface is using */
-    uct_priv_worker_t       *worker;          /* Worker this interface is on */
-    uct_am_handler_t        am[UCT_AM_ID_MAX];/* Active message table */
-    uct_am_tracer_t         am_tracer;        /* Active message tracer */
-    void                    *am_tracer_arg;   /* Tracer argument */
-    uct_error_handler_t     err_handler;      /* Error handler */
-    void                    *err_handler_arg; /* Error handler argument */
-    uint32_t                err_handler_flags; /* Error handler callback flags */
-    uct_worker_progress_t   prog;             /* Will be removed once all transports
-                                                 support progress control */
-    unsigned                progress_flags;   /* Which progress is currently enabled */
+    uct_iface_t              super;
+    uct_iface_internal_ops_t *internal_ops;    /* Internal operations */
+    uct_md_h                 md;               /* MD this interface is using */
+    uct_priv_worker_t        *worker;          /* Worker this interface is on */
+    uct_am_handler_t         am[UCT_AM_ID_MAX];/* Active message table */
+    uct_am_tracer_t          am_tracer;        /* Active message tracer */
+    void                     *am_tracer_arg;   /* Tracer argument */
+    uct_error_handler_t      err_handler;      /* Error handler */
+    void                     *err_handler_arg; /* Error handler argument */
+    uint32_t                 err_handler_flags; /* Error handler callback flags */
+    uct_worker_progress_t    prog;             /* Will be removed once all transports
+                                                  support progress control */
+    unsigned                 progress_flags;   /* Which progress is currently enabled */
 
     struct {
-        unsigned            num_alloc_methods;
-        uct_alloc_method_t  alloc_methods[UCT_ALLOC_METHOD_LAST];
-        ucs_log_level_t     failure_level;
-        size_t              max_num_eps;
+        unsigned             num_alloc_methods;
+        uct_alloc_method_t   alloc_methods[UCT_ALLOC_METHOD_LAST];
+        ucs_log_level_t      failure_level;
+        size_t               max_num_eps;
     } config;
 
     UCS_STATS_NODE_DECLARE(stats)            /* Statistics */
 } uct_base_iface_t;
 
-UCS_CLASS_DECLARE(uct_base_iface_t, uct_iface_ops_t*,  uct_md_h, uct_worker_h,
-                  const uct_iface_params_t*, const uct_iface_config_t*
-                  UCS_STATS_ARG(ucs_stats_node_t*) UCS_STATS_ARG(const char*));
+UCS_CLASS_DECLARE(uct_base_iface_t, uct_iface_ops_t*, uct_iface_internal_ops_t*,
+                  uct_md_h, uct_worker_h, const uct_iface_params_t*,
+                  const uct_iface_config_t *UCS_STATS_ARG(ucs_stats_node_t*)
+                  UCS_STATS_ARG(const char*));
 
 
 /**
@@ -238,6 +284,15 @@ typedef struct uct_failed_iface {
     uct_iface_t       super;
     ucs_queue_head_t  pend_q;
 } uct_failed_iface_t;
+
+
+/**
+ * Keepalive info used by EP
+ */
+typedef struct uct_keepalive_info {
+    struct timespec start_time; /* Process start time */
+    char            proc[]; /* Process owner proc dir */
+} uct_keepalive_info_t;
 
 
 /**
@@ -284,12 +339,33 @@ typedef struct uct_tl {
 
 
 /**
+ * Base UCT IFACE local address
+ */
+typedef struct uct_iface_local_addr_base {
+    uint64_t id; /* System ID + @ref UCT_IFACE_LOCAL_ADDR_FLAG_NS if a local
+                    address is extended by a system namespace information */
+} UCS_S_PACKED uct_iface_local_addr_base_t;
+
+
+/**
+ * Extended UCT IFACE local address
+ */
+typedef struct uct_iface_local_addr_ns {
+    uct_iface_local_addr_base_t super; /* Base UCT IFACE local address */
+    ucs_sys_ns_t                sys_ns; /* System namespace (IPC or network) */
+} UCS_S_PACKED uct_iface_local_addr_ns_t;
+
+
+/**
  * Define a transport
  *
  * @param _component      Component to add the transport to
  * @param _name           Name of the transport (should be a token, not a string)
  * @param _query_devices  Function to query the list of available devices
  * @param _iface_class    Struct type defining the uct_iface class
+ * @param _cfg_prefix     Prefix for configuration variables
+ * @param _cfg_table      Transport configuration table
+ * @param _cfg_struct     Struct type defining transport configuration
  */
 #define UCT_TL_DEFINE(_component, _name, _query_devices, _iface_class, \
                       _cfg_prefix, _cfg_table, _cfg_struct) \
@@ -305,7 +381,7 @@ typedef struct uct_tl {
             .size           = sizeof(_cfg_struct), \
          } \
     }; \
-    UCS_CONFIG_REGISTER_TABLE_ENTRY(&(uct_##_name##_tl).config); \
+    UCS_CONFIG_REGISTER_TABLE_ENTRY(&(uct_##_name##_tl).config, &ucs_config_global_list); \
     UCS_STATIC_INIT { \
         ucs_list_add_tail(&(_component)->tl_list, &(uct_##_name##_tl).list); \
     }
@@ -431,7 +507,7 @@ uct_pending_req_priv_arb_elem(uct_pending_req_t *req)
 /**
  * Add a pending request to the head of group in arbiter.
  */
-#define uct_pending_req_arb_group_push_head(_arbiter, _arbiter_group, _req) \
+#define uct_pending_req_arb_group_push_head(_arbiter_group, _req) \
     do { \
         ucs_arbiter_elem_init(uct_pending_req_priv_arb_elem(_req)); \
         ucs_arbiter_group_push_head_elem_always(_arbiter_group, \
@@ -478,8 +554,6 @@ typedef struct {
  * @param _priv   Variable which will hold a pointer to request private data.
  * @param _queue  The pending queue.
  * @param _cond   Condition which should be true in order to keep dispatching.
- *
- * TODO support a callback returning UCS_INPROGRESS.
  */
 #define uct_pending_queue_dispatch(_priv, _queue, _cond) \
     while (!ucs_queue_is_empty(_queue)) { \
@@ -487,10 +561,8 @@ typedef struct {
         uct_pending_req_t *_req; \
         ucs_status_t _status; \
         \
-        _base_priv = \
-            ucs_queue_head_elem_non_empty((_queue), \
-                                          uct_pending_req_priv_queue_t, \
-                                          queue_elem); \
+        _base_priv = ucs_queue_head_elem_non_empty( \
+                (_queue), uct_pending_req_priv_queue_t, queue_elem); \
         \
         UCS_STATIC_ASSERT(sizeof(*(_priv)) <= UCT_PENDING_REQ_PRIV_LEN); \
         _priv = (typeof(_priv))(_base_priv); \
@@ -502,8 +574,15 @@ typedef struct {
         _req = ucs_container_of(_priv, uct_pending_req_t, priv); \
         ucs_queue_pull_non_empty(_queue); \
         _status = _req->func(_req); \
-        if (_status != UCS_OK) { \
-            ucs_queue_push_head(_queue, &_base_priv->queue_elem); \
+        if ((_status) == UCS_OK) { \
+            /* pending element should be removed from queue */ \
+            continue; \
+        } \
+        \
+        /* pending element did not complete; return it to the queue */ \
+        ucs_queue_push_head(_queue, &_base_priv->queue_elem); \
+        if (UCS_STATUS_IS_ERR(_status)) { \
+            break; \
         } \
     }
 
@@ -551,7 +630,25 @@ typedef struct {
     }
 
 
+/**
+ * Helper macro to invoke the function from iface operations.
+ *
+ * @param _iface    UCT interface.
+ * @param _ops_type Type of iface operations.
+ * @param _func     Function to call.
+ * @param ...       Parameters that is passed to the function.
+ */
+#define uct_iface_invoke_ops_func(_iface, _ops_type, _func, ...) \
+    ({ \
+        _ops_type *__ops = ucs_derived_of((_iface)->ops, _ops_type); \
+        __ops->_func(__VA_ARGS__); \
+    })
+
+
 extern ucs_config_field_t uct_iface_config_table[];
+
+
+extern uct_iface_internal_ops_t uct_base_iface_internal_ops;
 
 
 /**
@@ -582,13 +679,41 @@ void uct_iface_dump_am(uct_base_iface_t *iface, uct_am_trace_type_t type,
 
 void uct_iface_mpool_empty_warn(uct_base_iface_t *iface, ucs_mpool_t *mp);
 
-ucs_status_t uct_set_ep_failed(ucs_class_t* cls, uct_ep_h tl_ep, uct_iface_h
-                               tl_iface, ucs_status_t status);
+void uct_iface_set_async_event_params(const uct_iface_params_t *params,
+                                      uct_async_event_cb_t *event_cb,
+                                      void **event_arg);
+
+ucs_status_t uct_iface_handle_ep_err(uct_iface_h iface, uct_ep_h ep,
+                                      ucs_status_t status);
+
+/**
+ * Initialize AM data alignment and its offset based on the user configuration
+ * provided in interface parameters.
+ *
+ * @param [in]  params         User defined interface parameters.
+ * @param [in]  elem_size      Transport receive buffer size.
+ * @param [in]  base_offset    Default offset in the transport receive buffer,
+ *                             which should be aligned to the certain boundary.
+ * @param [in]  payload_offset Offset to the payload in the transport receive
+ *                             buffer.
+ * @param [out] align          Alignment of the Active Message data on the
+ *                             receiver.
+ * @param [out] align_offset   Offset in the incoming Active Message which
+ *                             should be aligned to the @a align boundary.
+ *
+ * @return UCS_OK on success or UCS_ERR_INVALID_PARAM if user specified invalid
+ *         combination of @a am_alignment and @a am_align_offset in @a params.
+ */
+ucs_status_t
+uct_iface_param_am_alignment(const uct_iface_params_t *params, size_t elem_size,
+                             size_t base_offset, size_t payload_offset,
+                             size_t *align, size_t *align_offset);
 
 void uct_base_iface_query(uct_base_iface_t *iface, uct_iface_attr_t *iface_attr);
 
 ucs_status_t uct_single_device_resource(uct_md_h md, const char *dev_name,
                                         uct_device_type_t dev_type,
+                                        ucs_sys_device_t sys_device,
                                         uct_tl_device_resource_t **tl_devices_p,
                                         unsigned *num_tl_devices_p);
 
@@ -604,10 +729,19 @@ void uct_base_iface_progress_enable_cb(uct_base_iface_t *iface,
 
 void uct_base_iface_progress_disable(uct_iface_h tl_iface, unsigned flags);
 
+ucs_status_t
+uct_base_iface_estimate_perf(uct_iface_h iface, uct_perf_attr_t *perf_attr);
+
 ucs_status_t uct_base_ep_flush(uct_ep_h tl_ep, unsigned flags,
                                uct_completion_t *comp);
 
 ucs_status_t uct_base_ep_fence(uct_ep_h tl_ep, unsigned flags);
+
+void uct_iface_get_local_address(uct_iface_local_addr_ns_t *addr_ns,
+                                 ucs_sys_namespace_type_t sys_ns_type);
+
+int uct_iface_local_is_reachable(uct_iface_local_addr_ns_t *addr_ns,
+                                 ucs_sys_namespace_type_t sys_ns_type);
 
 /*
  * Invoke active message handler.
@@ -643,15 +777,21 @@ uct_iface_invoke_am(uct_base_iface_t *iface, uint8_t id, void *data,
  * Invoke send completion.
  *
  * @param comp   Completion to invoke.
- * @param data   Optional completion data (operation reply).
+ * @param status Status of completed operation.
  */
 static UCS_F_ALWAYS_INLINE
 void uct_invoke_completion(uct_completion_t *comp, ucs_status_t status)
 {
-    ucs_trace_func("comp=%p, count=%d, status=%d", comp, comp->count, status);
-    ucs_assertv(comp->count > 0, "comp=%p count=%d", comp, comp->count);
+    ucs_trace_func("comp=%p (%s) count=%d status=%d", comp,
+                   ucs_debug_get_symbol_name((void*)comp->func), comp->count,
+                   status);
+    ucs_assertv(comp->count > 0, "comp=%p (%s) count=%d status=%d", comp,
+                ucs_debug_get_symbol_name((void*)comp->func), comp->count,
+                status);
+
+    uct_completion_update_status(comp, status);
     if (--comp->count == 0) {
-        comp->func(comp, status);
+        comp->func(comp);
     }
 }
 
@@ -677,5 +817,39 @@ void uct_am_short_fill_data(void *buffer, uint64_t header, const void *payload,
     /* cppcheck-suppress ctunullpointer */
     memcpy(packet->payload, payload, length);
 }
+
+
+static UCS_F_ALWAYS_INLINE
+ucs_log_level_t uct_base_iface_failure_log_level(uct_base_iface_t *iface,
+                                                 ucs_status_t err_handler_status,
+                                                 ucs_status_t status)
+{
+    if (err_handler_status != UCS_OK) {
+        return UCS_LOG_LEVEL_FATAL;
+    } else if ((status == UCS_ERR_ENDPOINT_TIMEOUT) ||
+               (status == UCS_ERR_CONNECTION_RESET)) {
+        return iface->config.failure_level;
+    } else {
+        return UCS_LOG_LEVEL_ERROR;
+    }
+}
+
+
+ucs_status_t uct_base_ep_am_short_iov(uct_ep_h ep, uint8_t id, const uct_iov_t *iov,
+                                      size_t iovcnt);
+
+int uct_ep_get_process_proc_dir(char *buffer, size_t max_len, pid_t pid);
+
+ucs_status_t uct_ep_keepalive_create(pid_t pid, uct_keepalive_info_t **ka_p);
+
+ucs_status_t uct_ep_keepalive_check(uct_ep_h ep, uct_keepalive_info_t **ka_p,
+                                    pid_t pid, unsigned flags,
+                                    uct_completion_t *comp);
+
+void uct_ep_set_iface(uct_ep_h ep, uct_iface_t *iface);
+
+ucs_status_t uct_base_ep_stats_reset(uct_base_ep_t *ep, uct_base_iface_t *iface);
+
+void uct_iface_vfs_refresh(void *obj);
 
 #endif

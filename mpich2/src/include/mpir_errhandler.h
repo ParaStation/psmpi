@@ -32,6 +32,7 @@ typedef union errhandler_fn {
     void (*C_Comm_Handler_function) (MPI_Comm *, int *, ...);
     void (*F77_Handler_function) (MPI_Fint *, MPI_Fint *);
     void (*C_Win_Handler_function) (MPI_Win *, int *, ...);
+    void (*C_Session_Handler_function) (MPI_Session *, int *, ...);
     void (*C_File_Handler_function) (MPI_File *, int *, ...);
 } errhandler_fn;
 
@@ -89,7 +90,5 @@ extern MPIR_Errhandler MPIR_Errhandler_direct[];
             *(_inuse) = 1;                                                \
         }                                                                 \
     } while (0)
-
-void MPIR_Errhandler_free(MPIR_Errhandler * errhan_ptr);
 
 #endif /* MPIR_ERRHANDLER_H_INCLUDED */

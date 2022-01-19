@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <ucs/arch/bitops.h>
+#include <ucs/type/status.h>
 
 BEGIN_C_DECLS
 
@@ -24,6 +25,7 @@ BEGIN_C_DECLS
 #define UCS_MBYTE    (1ull << 20)
 #define UCS_GBYTE    (1ull << 30)
 #define UCS_TBYTE    (1ull << 40)
+#define UCS_PBYTE    (1ull << 50)
 
 #define ucs_min(_a, _b) \
 ({ \
@@ -99,6 +101,12 @@ static inline double ucs_log2(double x)
     return log(x) / log(2.0);
 }
 
+static UCS_F_ALWAYS_INLINE size_t ucs_double_to_sizet(double value, size_t max)
+{
+    double round_value = value + 0.5;
+    return (round_value < (double)max) ? ((size_t)round_value) : max;
+}
+
 /**
  * Convert flags without a branch
  * @return '_newflag' if '_oldflag' is set in '_value', otherwise - 0
@@ -147,15 +155,65 @@ static inline double ucs_log2(double x)
 #define UCS_CIRCULAR_COMPARE32(__a, __op, __b)  UCS_CIRCULAR_COMPARE(__a, __op, __b, int32_t)
 #define UCS_CIRCULAR_COMPARE64(__a, __op, __b)  UCS_CIRCULAR_COMPARE(__a, __op, __b, int64_t)
 
-#define ucs_for_each_bit(_index, _map)                   \
+
+/**
+ * Enumerate on all bit values in the bitmap '_map'
+ */
+#define ucs_for_each_bit(_index, _map) \
     for ((_index) = ucs_ffs64_safe(_map); (_index) < 64; \
          (_index) = ucs_ffs64_safe((uint64_t)(_map) & (-2ull << (uint64_t)(_index))))
+
+
+/**
+ * Generate all sub-masks of the given mask, from 0 to _mask inclusive.
+ *
+ * @param _submask   Variable to iterate over the sub-masks
+ * @param _mask      Generate sub-masks of this value
+ */
+#define ucs_for_each_submask(_submask, _mask) \
+    for (/* start with 0 */ \
+         (_submask) = 0; \
+         /* end when reaching _mask + 1 */ \
+         (_submask) <= (_mask); \
+         /* Increment _submask by 1. If it became larger than _mask, do nothing \
+          * here, and next condition check will exit the loop. Otherwise, add \
+          * ~mask to fast-forward the carry (from ++ operation) to the next \
+          * valid bit in _mask, and then do "& _mask" to remove any bits which \
+          * are not in the mask. \
+          */ \
+         (_submask)++, \
+         ((_submask) <= (_mask)) ? \
+                 ((_submask) = ((_submask )+ ~(_mask)) & (_mask)) : 0)
 
 
 /*
  * Generate a large prime number
  */
 uint64_t ucs_get_prime(unsigned index);
+
+
+/*
+ * Generate a random seed
+ */
+void ucs_rand_seed_init();
+
+
+/*
+ * Generate a random number in the range 0..RAND_MAX
+ */
+int ucs_rand();
+
+
+/*
+ * Generate a random number in the given range (inclusive)
+ *
+ * @param [in]  range_min       Beginning of the range
+ * @param [in]  range_max       End of the range
+ * @param [out] rand_val        The generated random number
+ *
+ * @retrun UCS_OK on success or an error status on failure.
+ */
+ucs_status_t ucs_rand_range(int range_min, int range_max, int *rand_val);
 
 END_C_DECLS
 

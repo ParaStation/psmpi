@@ -138,8 +138,10 @@ _usnic_cppflags = \
         -DHAVE_LIBNL3=$(HAVE_LIBNL3) $(usnic_CPPFLAGS) \
         -I$(top_srcdir)/prov/usnic/src/usnic_direct
 
+if !EMBEDDED
 rdmainclude_HEADERS += \
 	prov/usnic/src/fi_ext_usnic.h
+endif
 
 if HAVE_USNIC_DL
 pkglib_LTLIBRARIES += libusnic-fi.la

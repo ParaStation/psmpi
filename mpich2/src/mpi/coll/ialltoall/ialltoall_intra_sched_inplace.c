@@ -17,9 +17,9 @@
  * Note that this is not an especially efficient algorithm in terms of time.
  * Something like MADRE is probably the best solution for the MPI_IN_PLACE
  * scenario. */
-int MPIR_Ialltoall_intra_sched_inplace(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
-                                       void *recvbuf, int recvcount, MPI_Datatype recvtype,
-                                       MPIR_Comm * comm_ptr, MPIR_Sched_t s)
+int MPIR_Ialltoall_intra_sched_inplace(const void *sendbuf, MPI_Aint sendcount,
+                                       MPI_Datatype sendtype, void *recvbuf, MPI_Aint recvcount,
+                                       MPI_Datatype recvtype, MPIR_Comm * comm_ptr, MPIR_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
     void *tmp_buf = NULL;
@@ -28,14 +28,10 @@ int MPIR_Ialltoall_intra_sched_inplace(const void *sendbuf, int sendcount, MPI_D
     int nbytes, recvtype_size;
     MPI_Aint recvtype_extent;
     int peer;
-    MPIR_SCHED_CHKPMEM_DECL(1);
 
 #ifdef HAVE_ERROR_CHECKING
     MPIR_Assert(sendbuf == MPI_IN_PLACE);
 #endif
-
-    if (recvcount == 0)
-        goto fn_exit;
 
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
@@ -43,7 +39,8 @@ int MPIR_Ialltoall_intra_sched_inplace(const void *sendbuf, int sendcount, MPI_D
     MPIR_Datatype_get_extent_macro(recvtype, recvtype_extent);
     nbytes = recvtype_size * recvcount;
 
-    MPIR_SCHED_CHKPMEM_MALLOC(tmp_buf, void *, nbytes, mpi_errno, "tmp_buf", MPL_MEM_BUFFER);
+    tmp_buf = MPIR_Sched_alloc_state(s, nbytes);
+    MPIR_ERR_CHKANDJUMP(!tmp_buf, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
     for (i = 0; i < comm_size; ++i) {
         /* start inner loop at i to avoid re-exchanging data */
@@ -73,10 +70,8 @@ int MPIR_Ialltoall_intra_sched_inplace(const void *sendbuf, int sendcount, MPI_D
         }
     }
 
-    MPIR_SCHED_CHKPMEM_COMMIT(s);
   fn_exit:
     return mpi_errno;
   fn_fail:
-    MPIR_SCHED_CHKPMEM_REAP(s);
     goto fn_exit;
 }

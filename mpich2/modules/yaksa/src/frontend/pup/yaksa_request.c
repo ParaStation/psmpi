@@ -7,7 +7,7 @@
 #include "yaksu.h"
 #include <assert.h>
 
-int yaksa_request_test(yaksa_request_t request, int *completed)
+YAKSA_API_PUBLIC int yaksa_request_test(yaksa_request_t request, int *completed)
 {
     int rc = YAKSA_SUCCESS;
 
@@ -40,7 +40,7 @@ int yaksa_request_test(yaksa_request_t request, int *completed)
     goto fn_exit;
 }
 
-int yaksa_request_wait(yaksa_request_t request)
+YAKSA_API_PUBLIC int yaksa_request_wait(yaksa_request_t request)
 {
     int rc = YAKSA_SUCCESS;
 

@@ -85,7 +85,7 @@ void *MPIR_Breakpoint(void);
 
 /*
  * In addition to the discussion in the paper "A Standard Interface for Debugger
- * Access to Message Queue Inforation in MPI" and the more recent paper "An
+ * Access to Message Queue Information in MPI" and the more recent paper "An
  * Interface to Support the Identification of Dynamic {MPI} 2 Processes for
  * Scalable Parallel Debugging", there are a few features that have become
  * defacto standard.  These include the "proctable" (a relic of the way
@@ -206,8 +206,8 @@ void MPII_Wait_for_debugger(void)
     init_lock();
 
 #ifdef MPIU_PROCTABLE_NEEDED
-    int rank = MPIR_Process.comm_world->rank;
-    int size = MPIR_Process.comm_world->local_size;
+    int rank = MPIR_Process.rank;
+    int size = MPIR_Process.size;
     int i, maxsize;
 
     /* FIXME: In MPICH, the executables may not have the information
@@ -414,7 +414,7 @@ void MPII_Sendq_remember(MPIR_Request * req, int rank, int tag, int context_id)
 void MPII_Sendq_forget(MPIR_Request * req)
 {
 #if defined HAVE_DEBUGGER_SUPPORT
-    MPIR_Sendq *p, *prev;
+    MPIR_Sendq *p = NULL, *prev = NULL;
 
     MPID_THREAD_CS_ENTER(VCI, lock);
     MPID_THREAD_CS_ENTER(POBJ, lock);

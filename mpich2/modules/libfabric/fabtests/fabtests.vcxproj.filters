@@ -48,6 +48,18 @@
     <ClCompile Include="common\jsmn.c">
       <Filter>Source Files\common</Filter>
     </ClCompile>
+    <ClCompile Include="common\hmem.c">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="common\hmem_cuda.c">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="common\hmem_rocr.c">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
+    <ClCompile Include="common\hmem_ze.c">
+      <Filter>Source Files\common</Filter>
+    </ClCompile>
     <ClCompile Include="common\shared.c">
       <Filter>Source Files\common</Filter>
     </ClCompile>
@@ -75,7 +87,7 @@
     <ClCompile Include="functional\rdm.c">
       <Filter>Source Files\functional</Filter>
     </ClCompile>
-    <ClCompile Include="functional\rdm_rma_simple.c">
+    <ClCompile Include="functional\rdm_rma_event.c">
       <Filter>Source Files\functional</Filter>
     </ClCompile>
     <ClCompile Include="functional\rdm_rma_trigger.c">
@@ -183,6 +195,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\jsmn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\hmem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\shared.h">

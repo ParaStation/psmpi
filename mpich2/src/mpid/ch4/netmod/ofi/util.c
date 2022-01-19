@@ -9,19 +9,7 @@
 
 #define MPIDI_OFI_MR_KEY_PREFIX_SHIFT 63
 
-int MPIDI_OFI_handle_cq_error_util(int vni_idx, ssize_t ret)
-{
-    int mpi_errno;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_OFI_HANDLE_CQ_ERROR_UTIL);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_OFI_HANDLE_CQ_ERROR_UTIL);
-
-    mpi_errno = MPIDI_OFI_handle_cq_error(vni_idx, ret);
-
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_OFI_HANDLE_CQ_ERROR_UTIL);
-    return mpi_errno;
-}
-
-int MPIDI_OFI_retry_progress()
+int MPIDI_OFI_retry_progress(void)
 {
     /* We do not call progress on hooks form netmod level
      * because it is not reentrant safe.
@@ -37,10 +25,15 @@ typedef struct MPIDI_OFI_mr_key_allocator_t {
 } MPIDI_OFI_mr_key_allocator_t;
 
 static MPIDI_OFI_mr_key_allocator_t mr_key_allocator;
+static MPID_Thread_mutex_t mr_key_allocator_lock;
 
 int MPIDI_OFI_mr_key_allocator_init(void)
 {
     int mpi_errno = MPI_SUCCESS;
+
+    int err;
+    MPID_Thread_mutex_create(&mr_key_allocator_lock, &err);
+    MPIR_Assert(err == 0);
 
     mr_key_allocator.chunk_size = 128;
     mr_key_allocator.num_ints = mr_key_allocator.chunk_size;
@@ -78,8 +71,8 @@ uint64_t MPIDI_OFI_mr_key_alloc(int key_type, uint64_t requested_key)
     switch (key_type) {
         case MPIDI_OFI_LOCAL_MR_KEY:
             {
-                uint64_t i;
-                for (i = mr_key_allocator.last_free_mr_key; i < mr_key_allocator.num_ints; i++) {
+                MPID_THREAD_CS_ENTER(VCI, mr_key_allocator_lock);
+                for (int i = mr_key_allocator.last_free_mr_key; i < mr_key_allocator.num_ints; i++) {
                     if (mr_key_allocator.bitmask[i]) {
                         register uint64_t val, nval;
                         val = mr_key_allocator.bitmask[i];
@@ -108,6 +101,7 @@ uint64_t MPIDI_OFI_mr_key_alloc(int key_type, uint64_t requested_key)
                                sizeof(uint64_t) * mr_key_allocator.chunk_size);
                     }
                 }
+                MPID_THREAD_CS_EXIT(VCI, mr_key_allocator_lock);
                 break;
             }
 
@@ -135,12 +129,14 @@ void MPIDI_OFI_mr_key_free(int key_type, uint64_t alloc_key)
             {
                 uint64_t int_index, bitpos, numbits;
 
+                MPID_THREAD_CS_ENTER(VCI, mr_key_allocator_lock);
                 numbits = sizeof(uint64_t) * 8;
                 int_index = alloc_key / numbits;
                 bitpos = alloc_key % numbits;
                 mr_key_allocator.last_free_mr_key =
                     MPL_MIN(int_index, mr_key_allocator.last_free_mr_key);
                 mr_key_allocator.bitmask[int_index] |= (0x1ULL << bitpos);
+                MPID_THREAD_CS_EXIT(VCI, mr_key_allocator_lock);
                 break;
             }
 
@@ -157,113 +153,38 @@ void MPIDI_OFI_mr_key_free(int key_type, uint64_t alloc_key)
     }
 }
 
-void MPIDI_OFI_mr_key_allocator_destroy()
+void MPIDI_OFI_mr_key_allocator_destroy(void)
 {
+    MPID_THREAD_CS_ENTER(VCI, mr_key_allocator_lock);
     MPL_free(mr_key_allocator.bitmask);
+    MPID_THREAD_CS_EXIT(VCI, mr_key_allocator_lock);
 }
 
-/* Translate the control message to get a huge message into a request to
- * actually perform the data transfer. */
-static int MPIDI_OFI_get_huge(MPIDI_OFI_send_control_t * info)
-{
-    MPIDI_OFI_huge_recv_t *recv_elem = NULL;
-    MPIR_Comm *comm_ptr;
-    int mpi_errno = MPI_SUCCESS;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_OFI_GET_HUGE);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_OFI_GET_HUGE);
-
-    /* Look up the communicator */
-    comm_ptr = MPIDIG_context_id_to_comm(info->comm_id);
-
-    /* If there has been a posted receive, search through the list of unmatched
-     * receives to find the one that goes with the incoming message. */
-    {
-        MPIDI_OFI_huge_recv_list_t *list_ptr;
-
-        MPL_DBG_MSG_FMT(MPIR_DBG_PT2PT, VERBOSE,
-                        (MPL_DBG_FDEST, "SEARCHING POSTED LIST: (%d, %d, %d)", info->comm_id,
-                         info->origin_rank, info->tag));
-
-        LL_FOREACH(MPIDI_posted_huge_recv_head, list_ptr) {
-            if (list_ptr->comm_id == info->comm_id &&
-                list_ptr->rank == info->origin_rank && list_ptr->tag == info->tag) {
-                MPL_DBG_MSG_FMT(MPIR_DBG_PT2PT, VERBOSE,
-                                (MPL_DBG_FDEST, "MATCHED POSTED LIST: (%d, %d, %d, %d)",
-                                 info->comm_id, info->origin_rank, info->tag,
-                                 list_ptr->rreq->handle));
-
-                LL_DELETE(MPIDI_posted_huge_recv_head, MPIDI_posted_huge_recv_tail, list_ptr);
-
-                recv_elem = (MPIDI_OFI_huge_recv_t *)
-                    MPIDIU_map_lookup(MPIDI_OFI_COMM(comm_ptr).huge_recv_counters,
-                                      list_ptr->rreq->handle);
-
-                /* If this is a "peek" element for an MPI_Probe, it shouldn't be matched. Grab the
-                 * important information and remove the element from the list. */
-                if (recv_elem->peek) {
-                    MPIR_STATUS_SET_COUNT(recv_elem->localreq->status, info->msgsize);
-                    MPIDI_OFI_REQUEST(recv_elem->localreq, util_id) = MPIDI_OFI_PEEK_FOUND;
-                    MPIDIU_map_erase(MPIDI_OFI_COMM(recv_elem->comm_ptr).huge_recv_counters,
-                                     recv_elem->localreq->handle);
-                    MPL_free(recv_elem);
-                    recv_elem = NULL;
-                }
-
-                MPL_free(list_ptr);
-                break;
-            }
-        }
-    }
-
-    if (recv_elem == NULL) {    /* Put the struct describing the transfer on an
-                                 * unexpected list to be retrieved later */
-        MPL_DBG_MSG_FMT(MPIR_DBG_PT2PT, VERBOSE,
-                        (MPL_DBG_FDEST, "CREATING UNEXPECTED HUGE RECV: (%d, %d, %d)",
-                         info->comm_id, info->origin_rank, info->tag));
-
-        /* If this is unexpected, create a new tracker and put it in the unexpected list. */
-        recv_elem = (MPIDI_OFI_huge_recv_t *) MPL_calloc(sizeof(*recv_elem), 1, MPL_MEM_COMM);
-        if (!recv_elem)
-            MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**nomem");
-
-        LL_APPEND(MPIDI_unexp_huge_recv_head, MPIDI_unexp_huge_recv_tail, recv_elem);
-    }
-
-    recv_elem->event_id = MPIDI_OFI_EVENT_GET_HUGE;
-    recv_elem->cur_offset = MPIDI_OFI_global.max_msg_size;
-    recv_elem->remote_info = *info;
-    recv_elem->comm_ptr = comm_ptr;
-    recv_elem->next = NULL;
-    MPIDI_OFI_get_huge_event(NULL, (MPIR_Request *) recv_elem);
-
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_OFI_GET_HUGE);
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-int MPIDI_OFI_control_handler(int handler_id, void *am_hdr, void *data, MPI_Aint data_sz,
-                              int is_local, int is_async, MPIR_Request ** req)
+int MPIDI_OFI_control_handler(void *am_hdr, void *data, MPI_Aint data_sz,
+                              uint32_t attr, MPIR_Request ** req)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_OFI_send_control_t *ctrlsend = (MPIDI_OFI_send_control_t *) am_hdr;
 
-    if (is_async)
+    if (attr & MPIDIG_AM_ATTR__IS_ASYNC) {
         *req = NULL;
+    }
 
+    int local_vci = MPIDIG_AM_ATTR_DST_VCI(attr);
+    MPIR_AssertDeclValue(int remote_vci, MPIDIG_AM_ATTR_SRC_VCI(attr));
     switch (ctrlsend->type) {
-        case MPIDI_OFI_CTRL_HUGEACK:{
-                mpi_errno = MPIDI_OFI_dispatch_function(NULL, ctrlsend->ackreq);
-                goto fn_exit;
-            }
+        case MPIDI_OFI_CTRL_HUGEACK:
+            mpi_errno = MPIDI_OFI_dispatch_function(local_vci, NULL, ctrlsend->u.huge_ack.ackreq);
             break;
 
-        case MPIDI_OFI_CTRL_HUGE:{
-                mpi_errno = MPIDI_OFI_get_huge(ctrlsend);
-                goto fn_exit;
-            }
+        case MPIDI_OFI_CTRL_HUGE:
+            MPIR_Assert(local_vci == ctrlsend->u.huge.info.vni_dst);
+            MPIR_Assert(remote_vci == ctrlsend->u.huge.info.vni_src);
+            mpi_errno = MPIDI_OFI_recv_huge_control(local_vci,
+                                                    ctrlsend->u.huge.info.comm_id,
+                                                    ctrlsend->u.huge.info.origin_rank,
+                                                    ctrlsend->u.huge.info.tag,
+                                                    &(ctrlsend->u.huge.info));
             break;
 
         default:
@@ -271,39 +192,14 @@ int MPIDI_OFI_control_handler(int handler_id, void *am_hdr, void *data, MPI_Aint
             MPIR_Assert(0);
     }
 
-  fn_exit:
     return mpi_errno;
 }
 
 
 /* MPI Datatype Processing for RMA */
-#define isS_INT(x) ((x)==MPI_INTEGER ||                                \
-    (x) == MPI_INT32_T || (x) == MPI_INTEGER4 ||       \
-                     (x) == MPI_INT)
-#define isUS_INT(x) ((x) == MPI_UINT32_T || (x) == MPI_UNSIGNED)
-#define isS_SHORT(x) ((x) == MPI_SHORT || (x) == MPI_INT16_T ||        \
-                       (x) == MPI_INTEGER2)
-#define isUS_SHORT(x) ((x) == MPI_UNSIGNED_SHORT || (x) == MPI_UINT16_T)
-#define isS_CHAR(x) ((x) == MPI_SIGNED_CHAR || (x) == MPI_INT8_T ||    \
-                      (x) == MPI_INTEGER1 || (x) == MPI_CHAR)
-#define isUS_CHAR(x) ((x) == MPI_BYTE ||                               \
-                       (x) == MPI_UNSIGNED_CHAR || (x) == MPI_UINT8_T)
-#define isS_LONG(x) ((x) == MPI_LONG || (x) == MPI_AINT)
-#define isUS_LONG(x) ((x) == MPI_UNSIGNED_LONG)
-#define isS_LONG_LONG(x) ((x) == MPI_INT64_T || (x) == MPI_OFFSET ||   \
-    (x) == MPI_INTEGER8 || (x) == MPI_LONG_LONG || \
-                           (x) == MPI_LONG_LONG_INT || (x) == MPI_COUNT)
-#define isUS_LONG_LONG(x) ((x) == MPI_UINT64_T || (x) == MPI_UNSIGNED_LONG_LONG)
 #define isFLOAT(x) ((x) == MPI_FLOAT || (x) == MPI_REAL)
 #define isDOUBLE(x) ((x) == MPI_DOUBLE || (x) == MPI_DOUBLE_PRECISION)
 #define isLONG_DOUBLE(x) ((x) == MPI_LONG_DOUBLE)
-#define isLOC_TYPE(x) ((x) == MPI_2REAL || (x) == MPI_2DOUBLE_PRECISION || \
-    (x) == MPI_2INTEGER || (x) == MPI_FLOAT_INT ||  \
-    (x) == MPI_DOUBLE_INT || (x) == MPI_LONG_INT || \
-    (x) == MPI_2INT || (x) == MPI_SHORT_INT ||      \
-                        (x) == MPI_LONG_DOUBLE_INT)
-#define isBOOL(x) ((x) == MPI_C_BOOL)
-#define isLOGICAL(x) ((x) == MPI_LOGICAL)
 #define isSINGLE_COMPLEX(x) ((x) == MPI_COMPLEX || (x) == MPI_C_FLOAT_COMPLEX)
 #define isDOUBLE_COMPLEX(x) ((x) == MPI_DOUBLE_COMPLEX || (x) == MPI_COMPLEX8 || \
                               (x) == MPI_C_DOUBLE_COMPLEX)
@@ -331,143 +227,143 @@ static bool check_mpi_acc_valid(MPI_Datatype dtype, MPI_Op op)
     return valid_flag;
 }
 
-static int mpi_to_ofi(MPI_Datatype dt, enum fi_datatype *fi_dt, MPI_Op op, enum fi_op *fi_op)
+static void mpi_to_ofi(MPI_Datatype dt, enum fi_datatype *fi_dt, MPI_Op op, enum fi_op *fi_op)
 {
     *fi_dt = FI_DATATYPE_LAST;
     *fi_op = FI_ATOMIC_OP_LAST;
 
-    if (isS_INT(dt))
-        *fi_dt = FI_INT32;
-    else if (isUS_INT(dt))
-        *fi_dt = FI_UINT32;
-    else if (isFLOAT(dt))
-        *fi_dt = FI_FLOAT;
-    else if (isDOUBLE(dt))
-        *fi_dt = FI_DOUBLE;
-    else if (isLONG_DOUBLE(dt))
-        *fi_dt = FI_LONG_DOUBLE;
-    else if (isS_CHAR(dt))
-        *fi_dt = FI_INT8;
-    else if (isUS_CHAR(dt))
-        *fi_dt = FI_UINT8;
-    else if (isS_SHORT(dt))
-        *fi_dt = FI_INT16;
-    else if (isUS_SHORT(dt))
-        *fi_dt = FI_UINT16;
-    else if (isS_LONG(dt))
-        *fi_dt = FI_INT64;
-    else if (isUS_LONG(dt))
-        *fi_dt = FI_UINT64;
-    else if (isS_LONG_LONG(dt))
-        *fi_dt = FI_INT64;
-    else if (isUS_LONG_LONG(dt))
-        *fi_dt = FI_UINT64;
-    else if (isSINGLE_COMPLEX(dt))
-        *fi_dt = FI_FLOAT_COMPLEX;
-    else if (isDOUBLE_COMPLEX(dt))
-        *fi_dt = FI_DOUBLE_COMPLEX;
-    else if (isLOC_TYPE(dt))
-        *fi_dt = FI_DATATYPE_LAST;
-    else if (isLOGICAL(dt))
-        *fi_dt = FI_UINT32;
-    else if (isBOOL(dt))
-        *fi_dt = FI_UINT8;
+    int dt_size;
+    MPIR_Datatype_get_size_macro(dt, dt_size);
 
-    if (*fi_dt == FI_DATATYPE_LAST)
-        goto fn_fail;
+    if (dt == MPI_BYTE || dt == MPI_CHAR || dt == MPI_SIGNED_CHAR || dt == MPI_SHORT ||
+        dt == MPI_INT || dt == MPI_LONG || dt == MPI_LONG_LONG ||
+        dt == MPI_INT8_T || dt == MPI_INT16_T || dt == MPI_INT32_T || dt == MPI_INT64_T ||
+        dt == MPI_INTEGER || dt == MPI_INTEGER1 || dt == MPI_INTEGER2 ||
+        dt == MPI_INTEGER4 || dt == MPI_INTEGER8 ||
+        dt == MPI_AINT || dt == MPI_COUNT || dt == MPI_OFFSET) {
+        switch (dt_size) {
+            case 1:
+                *fi_dt = FI_INT8;
+                break;
+            case 2:
+                *fi_dt = FI_INT16;
+                break;
+            case 4:
+                *fi_dt = FI_INT32;
+                break;
+            case 8:
+                *fi_dt = FI_INT64;
+                break;
+            default:
+                /* no matching type */
+                goto fn_exit;
+        }
+    } else if (dt == MPI_UNSIGNED_CHAR || dt == MPI_UNSIGNED_SHORT || dt == MPI_UNSIGNED ||
+               dt == MPI_UNSIGNED_LONG || dt == MPI_UNSIGNED_LONG_LONG ||
+               dt == MPI_UINT8_T || dt == MPI_UINT16_T || dt == MPI_UINT32_T ||
+               dt == MPI_UINT64_T || dt == MPI_C_BOOL || dt == MPI_LOGICAL) {
+        switch (dt_size) {
+            case 1:
+                *fi_dt = FI_UINT8;
+                break;
+            case 2:
+                *fi_dt = FI_UINT16;
+                break;
+            case 4:
+                *fi_dt = FI_UINT32;
+                break;
+            case 8:
+                *fi_dt = FI_UINT64;
+                break;
+            default:
+                /* no matching type */
+                goto fn_exit;
+        }
+    } else if (isFLOAT(dt)) {
+        *fi_dt = FI_FLOAT;
+    } else if (isDOUBLE(dt)) {
+        *fi_dt = FI_DOUBLE;
+    } else if (isLONG_DOUBLE(dt)) {
+        *fi_dt = FI_LONG_DOUBLE;
+    } else if (isSINGLE_COMPLEX(dt)) {
+        *fi_dt = FI_FLOAT_COMPLEX;
+    } else if (isDOUBLE_COMPLEX(dt)) {
+        *fi_dt = FI_DOUBLE_COMPLEX;
+    } else {
+        /* no matching type */
+        goto fn_exit;
+    }
 
     *fi_op = FI_ATOMIC_OP_LAST;
 
     switch (op) {
         case MPI_SUM:
             *fi_op = FI_SUM;
-            goto fn_exit;
-
+            break;
         case MPI_PROD:
             *fi_op = FI_PROD;
-            goto fn_exit;
-
+            break;
         case MPI_MAX:
             *fi_op = FI_MAX;
-            goto fn_exit;
-
+            break;
         case MPI_MIN:
             *fi_op = FI_MIN;
-            goto fn_exit;
-
+            break;
         case MPI_BAND:
             *fi_op = FI_BAND;
-            goto fn_exit;
-
+            break;
         case MPI_BOR:
             *fi_op = FI_BOR;
-            goto fn_exit;
-
+            break;
         case MPI_BXOR:
             *fi_op = FI_BXOR;
-            goto fn_exit;
             break;
-
         case MPI_LAND:
-            if (isLONG_DOUBLE(dt))
-                goto fn_fail;
-
-            *fi_op = FI_LAND;
-            goto fn_exit;
-
+            /* FIXME: ignore all fp types? */
+            if (!isLONG_DOUBLE(dt)) {
+                *fi_op = FI_LAND;
+            }
+            break;
         case MPI_LOR:
-            if (isLONG_DOUBLE(dt))
-                goto fn_fail;
-
-            *fi_op = FI_LOR;
-            goto fn_exit;
-
+            /* FIXME: ignore all fp types? */
+            if (!isLONG_DOUBLE(dt)) {
+                *fi_op = FI_LOR;
+            }
+            break;
         case MPI_LXOR:
-            if (isLONG_DOUBLE(dt))
-                goto fn_fail;
-
-            *fi_op = FI_LXOR;
-            goto fn_exit;
-
-        case MPI_REPLACE:{
-                *fi_op = FI_ATOMIC_WRITE;
-                goto fn_exit;
+            /* FIXME: ignore all fp types? */
+            if (!isLONG_DOUBLE(dt)) {
+                *fi_op = FI_LXOR;
             }
-
-        case MPI_NO_OP:{
-                *fi_op = FI_ATOMIC_READ;
-                goto fn_exit;
-            }
-
-        case MPI_OP_NULL:{
-                *fi_op = FI_CSWAP;
-                goto fn_exit;
-            }
-
+            break;
+        case MPI_REPLACE:
+            *fi_op = FI_ATOMIC_WRITE;
+            break;
+        case MPI_NO_OP:
+            *fi_op = FI_ATOMIC_READ;
+            break;
+        case MPI_OP_NULL:
+            *fi_op = FI_CSWAP;
+            break;
         default:
-            goto fn_fail;
+            /* no matching op */
+            break;
     }
 
   fn_exit:
-    return MPI_SUCCESS;
-  fn_fail:
-    return -1;
+    return;
 }
 
 #define _TBL MPIDI_OFI_global.win_op_table[i][j]
 #define CHECK_ATOMIC(fcn,field1,field2)            \
   atomic_count = 0;                                \
-  ret = fcn(MPIDI_OFI_global.ctx[0].tx,                \
-    fi_dt,                                 \
-    fi_op,                                 \
-            &atomic_count);                        \
-  if (ret == 0 && atomic_count != 0)                \
-    {                                              \
-  _TBL.field1 = 1;                             \
-  _TBL.field2 = atomic_count;                  \
-    }
+  ret = fcn(ep, fi_dt, fi_op, &atomic_count);      \
+  if (ret == 0 && atomic_count != 0) {             \
+    _TBL.field1 = 1;                               \
+    _TBL.field2 = atomic_count;                    \
+  }
 
-static void create_dt_map()
+static void create_dt_map(struct fid_ep *ep)
 {
     int i, j;
     size_t dtsize[FI_DATATYPE_LAST];
@@ -487,7 +383,7 @@ static void create_dt_map()
     dtsize[FI_LONG_DOUBLE_COMPLEX] = sizeof(long double complex);
 
     /* when atomics are disabled and atomics capability are not
-     * enabled call fo fi_atomic*** may crash */
+     * enabled call of fi_atomic*** may crash */
     MPIR_Assert(MPIDI_OFI_ENABLE_ATOMICS);
 
     memset(MPIDI_OFI_global.win_op_table, 0, sizeof(MPIDI_OFI_global.win_op_table));
@@ -529,9 +425,10 @@ static void create_dt_map()
     }
 }
 
-void MPIDI_OFI_index_datatypes()
+void MPIDI_OFI_index_datatypes(struct fid_ep *ep)
 {
     /* do not generate map when atomics are not enabled */
-    if (MPIDI_OFI_ENABLE_ATOMICS)
-        create_dt_map();
+    if (MPIDI_OFI_ENABLE_ATOMICS) {
+        create_dt_map(ep);
+    }
 }

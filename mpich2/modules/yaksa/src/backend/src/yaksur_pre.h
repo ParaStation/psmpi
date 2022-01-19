@@ -14,6 +14,7 @@
 #include "yaksuri_seq_pre.h"
 #include "yaksuri_cuda_pre.h"
 #include "yaksuri_ze_pre.h"
+#include "yaksuri_hip_pre.h"
 
 typedef struct {
     enum {
@@ -32,6 +33,7 @@ typedef struct yaksur_type_s {
     yaksuri_seq_type_s seq;
     yaksuri_cuda_type_s cuda;
     yaksuri_ze_type_s ze;
+    yaksuri_hip_type_s hip;
 } yaksur_type_s;
 
 typedef struct {
@@ -45,13 +47,18 @@ typedef struct {
     yaksuri_seq_info_s seq;
     yaksuri_cuda_info_s cuda;
     yaksuri_ze_info_s ze;
+    yaksuri_hip_info_s hip;
     void *priv;
 } yaksur_info_s;
+
+typedef void (*yaksur_hostfn_t) (void *userData);
 
 typedef struct yaksur_gpudriver_hooks_s {
     /* miscellaneous */
     int (*get_num_devices) (int *ndevices);
-    int (*check_p2p_comm) (int sdev, int ddev, bool * is_enabled);
+    /* *INDENT-OFF* */
+    bool (*check_p2p_comm) (int sdev, int ddev);
+    /* *INDENT-ON* */
     int (*finalize) (void);
 
     /* pup functions */
@@ -60,10 +67,20 @@ typedef struct yaksur_gpudriver_hooks_s {
     uintptr_t (*get_iov_unpack_threshold) (struct yaksi_info_s * info);
     /* *INDENT-ON* */
     int (*ipack) (const void *inbuf, void *outbuf, uintptr_t count,
-                  struct yaksi_type_s * type, struct yaksi_info_s * info, int device);
+                  struct yaksi_type_s * type, struct yaksi_info_s * info, yaksa_op_t op,
+                  int device);
     int (*iunpack) (const void *inbuf, void *outbuf, uintptr_t count, struct yaksi_type_s * type,
-                    struct yaksi_info_s * info, int device);
-    int (*pup_is_supported) (struct yaksi_type_s * type, bool * is_supported);
+                    struct yaksi_info_s * info, yaksa_op_t op, int device);
+    int (*pack_with_stream) (const void *inbuf, void *outbuf, uintptr_t count,
+                             struct yaksi_type_s * type, struct yaksi_info_s * info, yaksa_op_t op,
+                             int device, void *stream);
+    int (*unpack_with_stream) (const void *inbuf, void *outbuf, uintptr_t count,
+                               struct yaksi_type_s * type, struct yaksi_info_s * info,
+                               yaksa_op_t op, int device, void *stream);
+    int (*synchronize) (int device);    /* complete all outstanding tasks that are created by yaksa on the device */
+    int (*flush_all) (void);
+    int (*pup_is_supported) (struct yaksi_type_s * type, yaksa_op_t op, bool * is_supported);
+    int (*launch_hostfn) (void *stream, yaksur_hostfn_t fn, void *userData);
 
     /* memory management */
     void *(*host_malloc) (uintptr_t size);

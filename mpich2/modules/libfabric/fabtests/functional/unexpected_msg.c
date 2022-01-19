@@ -94,7 +94,7 @@ static char *get_rx_buf(int index)
 	return rx_buf + rx_size * index;
 }
 
-static int wait_recvs()
+static int wait_recv(void)
 {
 	struct fi_cq_tagged_entry entry;
 	int ret;
@@ -139,11 +139,14 @@ static int run_test_loop(void)
 			ret = ft_post_tx_buf(ep, remote_fi_addr,
 					     opts.transfer_size,
 					     op_data, &tx_ctx_arr[j].context,
-					     op_buf, mr_desc, op_tag);
+					     op_buf, mr_desc, op_tag + j);
 			if (ret) {
 				printf("ERROR send_msg returned %d\n", ret);
 				return ret;
 			}
+
+			/* Request send progress */
+			(void) fi_cq_read(txcq, NULL, 0);
 		}
 
 		ret = ft_sync();
@@ -154,15 +157,17 @@ static int run_test_loop(void)
 			op_buf = get_rx_buf(j);
 			ret = ft_post_rx_buf(ep, opts.transfer_size,
 					     &rx_ctx_arr[j].context, op_buf,
-					     mr_desc, op_tag);
+					     mr_desc,
+					     op_tag + (concurrent_msgs - 1) - j);
 			if (ret) {
 				printf("ERROR recv_msg returned %d\n", ret);
 				return ret;
 			}
-		}
 
-		for (j = 0; j < concurrent_msgs; j++) {
-			ret = wait_recvs();
+			/* Progress sends */
+			(void) fi_cq_read(txcq, NULL, 0);
+
+			ret = wait_recv();
 			if (ret < 1)
 				return ret;
 		}
@@ -222,42 +227,24 @@ int main(int argc, char **argv)
 	if (!hints)
 		return EXIT_FAILURE;
 
-	while ((op = getopt(argc, argv, "m:i:c:vdSh" ADDR_OPTS INFO_OPTS)) != -1) {
+	while ((op = getopt(argc, argv, "CM:h" CS_OPTS INFO_OPTS)) != -1) {
 		switch (op) {
 		default:
+			ft_parsecsopts(op, optarg, &opts);
 			ft_parse_addr_opts(op, optarg, &opts);
 			ft_parseinfo(op, optarg, hints, &opts);
 			break;
-		case 'c':
-			concurrent_msgs = strtoul(optarg, NULL, 0);
-			break;
-		case 'i':
-			num_iters = strtoul(optarg, NULL, 0);
-			break;
-		case 'S':
-			opts.comp_method = FT_COMP_SREAD;
-			break;
-		case 'v':
-			opts.options |= FT_OPT_VERIFY_DATA;
-			break;
-		case 'm':
-			opts.transfer_size = strtoul(optarg, NULL, 0);
-			break;
-		case 'd':
+		case 'C':
 			send_data = true;
+			break;
+		case 'M':
+			concurrent_msgs = strtoul(optarg, NULL, 0);
 			break;
 		case '?':
 		case 'h':
-			ft_usage(argv[0], "Unexpected message functional test");
-			FT_PRINT_OPTS_USAGE("-c <int>",
-				"Concurrent messages per iteration ");
-			FT_PRINT_OPTS_USAGE("-v", "Enable data verification");
-			FT_PRINT_OPTS_USAGE("-i <int>", "Number of iterations");
-			FT_PRINT_OPTS_USAGE("-S",
-				"Use fi_cq_sread instead of polling fi_cq_read");
-			FT_PRINT_OPTS_USAGE("-m <size>",
-				"Size of unexpected messages");
-			FT_PRINT_OPTS_USAGE("-d", "Send remote CQ data");
+			ft_csusage(argv[0], "Unexpected message handling test.");
+			FT_PRINT_OPTS_USAGE("-C", "transfer remote CQ data");
+			FT_PRINT_OPTS_USAGE("-M <count>", "number of concurrent msgs");
 			return EXIT_FAILURE;
 		}
 	}

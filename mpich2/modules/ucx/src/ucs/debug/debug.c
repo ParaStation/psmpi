@@ -8,7 +8,7 @@
 #  include "config.h"
 #endif
 
-#include "debug.h"
+#include "debug_int.h"
 #include "log.h"
 
 #include <ucs/datastruct/khash.h>
@@ -521,7 +521,7 @@ static void ucs_debug_print_source_file(const char *file, unsigned line,
         return;
     }
 
-    n = 0;
+    n = 1;
     fprintf(stream, "\n");
     fprintf(stream, "%s: [ %s() ]\n", file, function);
     if (line > context) {
@@ -1080,12 +1080,20 @@ void ucs_handle_error(const char *message)
     }
 }
 
+int ucs_debug_is_handle_errors()
+{
+    static const unsigned mask = UCS_BIT(UCS_HANDLE_ERROR_BACKTRACE) |
+                                 UCS_BIT(UCS_HANDLE_ERROR_FREEZE) |
+                                 UCS_BIT(UCS_HANDLE_ERROR_DEBUG);
+    return ucs_global_opts.handle_errors & mask;
+}
+
 static int ucs_debug_is_error_signal(int signum)
 {
     khiter_t hash_it;
     int result;
 
-    if (!ucs_global_opts.handle_errors) {
+    if (!ucs_debug_is_handle_errors()) {
         return 0;
     }
 
@@ -1159,7 +1167,7 @@ static void ucs_debug_signal_handler(int signo)
 {
     ucs_log_flush();
     ucs_global_opts.log_component.log_level = UCS_LOG_LEVEL_TRACE_DATA;
-    ucs_profile_dump();
+    ucs_profile_dump(ucs_profile_default_ctx);
 }
 
 static void ucs_debug_set_signal_alt_stack()
@@ -1260,6 +1268,7 @@ static int ucs_debug_backtrace_is_excluded(void *address, const char *symbol)
            !strcmp(symbol, "ucs_debug_handle_error_signal") ||
            !strcmp(symbol, "ucs_debug_backtrace_create") ||
            !strcmp(symbol, "ucs_debug_show_innermost_source_file") ||
+           !strcmp(symbol, "ucs_debug_print_backtrace") ||
            !strcmp(symbol, "ucs_log_default_handler") ||
            !strcmp(symbol, "__ucs_abort") ||
            !strcmp(symbol, "ucs_log_dispatch") ||
@@ -1314,7 +1323,7 @@ void ucs_debug_init()
     kh_init_inplace(ucs_signal_orig_action, &ucs_signal_orig_action_map);
     kh_init_inplace(ucs_debug_symbol, &ucs_debug_symbols_cache);
 
-    if (ucs_global_opts.handle_errors) {
+    if (ucs_debug_is_handle_errors()) {
         ucs_debug_set_signal_alt_stack();
         ucs_set_signal_handler(ucs_error_signal_handler);
     }
@@ -1339,7 +1348,6 @@ void ucs_debug_cleanup(int on_error)
     char *sym;
     int signum;
     struct sigaction *hndl;
-    ucs_status_t status;
 
     ucs_debug_initialized = 0;
 
@@ -1353,10 +1361,7 @@ void ucs_debug_cleanup(int on_error)
         kh_destroy_inplace(ucs_signal_orig_action, &ucs_signal_orig_action_map);
     }
 
-    status = ucs_recursive_spinlock_destroy(&ucs_kh_lock);
-    if (status != UCS_OK) {
-        ucs_warn("ucs_recursive_spinlock_destroy() failed (%d)", status);
-    }
+    ucs_recursive_spinlock_destroy(&ucs_kh_lock);
 }
 
 static inline void ucs_debug_disable_signal_nolock(int signum)

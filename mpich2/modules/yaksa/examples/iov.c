@@ -17,7 +17,7 @@ int main()
     int pack_buf[SIZE];
     int unpack_buf[SIZE];
     yaksa_type_t indexed_block;
-    int array_of_displacements[ROWS] = {
+    intptr_t array_of_displacements[ROWS] = {
         4, 12, 20, 28,
         32, 40, 48, 56
     };

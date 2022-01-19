@@ -7,12 +7,12 @@ tagline: Libfabric Programmer's Manual
 
 # NAME
 
-fi_fabric \- Fabric domain operations
+fi_fabric \- Fabric network operations
 
 fi_fabric / fi_close
-: Open / close a fabric domain
+: Open / close a fabric network
 
-fi_tostr
+fi_tostr / fi_tostr_r
 : Convert fabric attributes, flags, and capabilities to printable string
 
 # SYNOPSIS
@@ -26,6 +26,9 @@ int fi_fabric(struct fi_fabric_attr *attr,
 int fi_close(struct fid *fabric);
 
 char * fi_tostr(const void *data, enum fi_type datatype);
+
+char * fi_tostr(char *buf, size_t len, const void *data,
+    enum fi_type datatype);
 ```
 
 # ARGUMENTS
@@ -34,33 +37,51 @@ char * fi_tostr(const void *data, enum fi_type datatype);
 : Attributes of fabric to open.
 
 *fabric*
-: Fabric domain
+: Fabric network
 
 *context*
 : User specified context associated with the opened object.  This
   context is returned as part of any associated asynchronous event.
 
+*buf*
+: Output buffer to write string.
+
+*len*
+: Size in bytes of memory referenced by buf.
+
+*data*
+: Input data to convert into a string.  The format of data is determined
+  by the datatype parameter.
+
+*datatype*
+: Indicates the data to convert to a printable string.
+
 # DESCRIPTION
 
-A fabric domain represents a collection of hardware and software
+A fabric identifier is used to reference opened fabric resources
+and library related objects.
+
+The fabric network represents a collection of hardware and software
 resources that access a single physical or virtual network.  All
 network ports on a system that can communicate with each other through
-their attached networks belong to the same fabric domain.  A fabric
-domain shares network addresses and can span multiple providers.
+their attached networks belong to the same fabric.  A fabric
+network shares network addresses and can span multiple providers.  An
+application must open a fabric network prior to allocating other network
+resources, such as communication endpoints.
 
 ## fi_fabric
 
-Opens a fabric provider.  The attributes of the fabric provider are
+Opens a fabric network provider.  The attributes of the fabric provider are
 specified through the open call, and may be obtained by calling
 fi_getinfo.
 
 ## fi_close
 
 The fi_close call is used to release all resources associated with a
-fabric domain or interface.  All items associated with the opened
+fabric object.  All items associated with the opened
 fabric must be released prior to calling fi_close.
 
-## fi_tostr
+## fi_tostr / fi_tostr_r
 
 Converts fabric interface attributes, capabilities, flags, and enum
 values into a printable string.  The data parameter accepts a pointer
@@ -144,9 +165,16 @@ datatype or field value.
 *FI_TYPE_FID*
 : struct fid *
 
+*FI_TYPE_HMEM_IFACE*
+: enum fi_hmem_iface *
+
 fi_tostr() will return a pointer to an internal libfabric buffer that
 should not be modified, and will be overwritten the next time
 fi_tostr() is invoked.  fi_tostr() is not thread safe.
+
+The fi_tostr_r() function is a re-entrant and thread safe version of
+fi_tostr().  It writes the string into a buffer provided by the caller.
+fi_tostr_r() returns the start of the caller's buffer.
 
 # NOTES
 

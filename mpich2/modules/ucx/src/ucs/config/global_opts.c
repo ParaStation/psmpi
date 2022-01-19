@@ -20,7 +20,7 @@
 
 
 ucs_global_opts_t ucs_global_opts = {
-    .log_component         = {UCS_LOG_LEVEL_WARN, "UCX"},
+    .log_component         = {UCS_LOG_LEVEL_WARN, "UCX", "*"},
     .log_print_enable      = 0,
     .log_file              = "",
     .log_file_size         = SIZE_MAX,
@@ -46,6 +46,7 @@ ucs_global_opts_t ucs_global_opts = {
     .profile_file          = "",
     .stats_filter          = { NULL, 0 },
     .stats_format          = UCS_STATS_FULL,
+    .vfs_enable            = 1,
     .rcache_check_pfn      = 0,
     .module_dir            = UCX_MODULE_DIR, /* defined in Makefile.am */
     .module_log_level      = UCS_LOG_LEVEL_TRACE,
@@ -56,6 +57,7 @@ static const char *ucs_handle_error_modes[] = {
     [UCS_HANDLE_ERROR_BACKTRACE] = "bt",
     [UCS_HANDLE_ERROR_FREEZE]    = "freeze",
     [UCS_HANDLE_ERROR_DEBUG]     = "debug",
+    [UCS_HANDLE_ERROR_NONE]      = "none",
     [UCS_HANDLE_ERROR_LAST]      = NULL
 };
 
@@ -69,8 +71,15 @@ static ucs_config_field_t ucs_global_opts_table[] = {
   "UCS logging level. Messages with a level higher or equal to the selected "
   "will be printed.\n"
   "Possible values are: fatal, error, warn, info, debug, trace, data, func, poll.",
-  ucs_offsetof(ucs_global_opts_t, log_component),
+  ucs_offsetof(ucs_global_opts_t, log_component.log_level),
   UCS_CONFIG_TYPE_LOG_COMP},
+
+ {"LOG_FILE_FILTER", "*",
+  "Set a filter for log message according to source file path. See glob (7) for\n"
+  "pattern syntax.\n"
+  "NOTE: The source file path must fully match the given pattern.",
+  ucs_offsetof(ucs_global_opts_t, log_component.file_filter),
+               UCS_CONFIG_TYPE_STRING},
 
  {"LOG_FILE", "",
   "If not empty, UCS will print log messages to the specified file instead of stdout.\n"
@@ -115,8 +124,11 @@ static ucs_config_field_t ucs_global_opts_table[] = {
 #else
   "bt",
 #endif
-  "Error handling mode. A combination of: 'bt' (print backtrace),\n"
-  "'freeze' (freeze and wait for a debugger), 'debug' (attach debugger)",
+  "Error signal handling mode. Either 'none' to disable signal interception,\n"
+  "or a combination of:\n"
+  " - 'bt'     : Print backtrace\n"
+  " - 'freeze' : Freeze and wait for a debugger\n"
+  " - 'debug'  : Attach a debugger",
   ucs_offsetof(ucs_global_opts_t, handle_errors),
   UCS_CONFIG_TYPE_BITMAP(ucs_handle_error_modes)},
 
@@ -192,8 +204,11 @@ static ucs_config_field_t ucs_global_opts_table[] = {
    "  agg     - like full but there will also be an aggregation between similar counters\n"
    "  summary - all counters will be printed in the same line.",
    ucs_offsetof(ucs_global_opts_t, stats_format), UCS_CONFIG_TYPE_ENUM(ucs_stats_formats_names)},
-
 #endif
+
+ {"VFS_ENABLE", "y",
+  "Enable virtual monitoring filesystem",
+  ucs_offsetof(ucs_global_opts_t, vfs_enable), UCS_CONFIG_TYPE_BOOL},
 
 #ifdef ENABLE_MEMTRACK
  {"MEMTRACK_DEST", "",
@@ -242,7 +257,7 @@ static ucs_config_field_t ucs_global_opts_table[] = {
   {NULL}
 };
 UCS_CONFIG_REGISTER_TABLE(ucs_global_opts_table, "UCS global", NULL,
-                          ucs_global_opts_t)
+                          ucs_global_opts_t, &ucs_config_global_list)
 
 
 void ucs_global_opts_init()

@@ -1,5 +1,6 @@
 /**
  * Copyright (C) Mellanox Technologies Ltd. 2001-2016.  ALL RIGHTS RESERVED.
+ * Copyright (C) Huawei Technologies Co., Ltd. 2020.  ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -105,37 +106,6 @@ ucs_status_t uct_tcp_netif_caps(const char *if_name, double *latency_p,
     return UCS_OK;
 }
 
-ucs_status_t uct_tcp_netif_inaddr(const char *if_name, struct sockaddr_in *ifaddr,
-                                  struct sockaddr_in *netmask)
-{
-    ucs_status_t status;
-    struct ifreq ifra, ifrnm;
-
-    status = ucs_netif_ioctl(if_name, SIOCGIFADDR, &ifra);
-    if (status != UCS_OK) {
-        return status;
-    }
-
-    if (netmask != NULL) {
-        status = ucs_netif_ioctl(if_name, SIOCGIFNETMASK, &ifrnm);
-        if (status != UCS_OK) {
-            return status;
-        }
-    }
-
-    if ((ifra.ifr_addr.sa_family != AF_INET) ) {
-        ucs_error("%s address is not INET", if_name);
-        return UCS_ERR_INVALID_ADDR;
-    }
-
-    memcpy(ifaddr,  (struct sockaddr_in*)&ifra.ifr_addr,  sizeof(*ifaddr));
-    if (netmask != NULL) {
-        memcpy(netmask, (struct sockaddr_in*)&ifrnm.ifr_addr, sizeof(*netmask));
-    }
-
-    return UCS_OK;
-}
-
 ucs_status_t uct_tcp_netif_is_default(const char *if_name, int *result_p)
 {
     static const char *filename = "/proc/net/route";
@@ -156,9 +126,9 @@ ucs_status_t uct_tcp_netif_is_default(const char *if_name, int *result_p)
     */
     while (fgets(str, sizeof(str), f) != NULL) {
         ret = sscanf(str, "%s %*x %*x %*d %*d %*d %*d %x", name, &netmask);
-        if ((ret == 3) && !strcmp(name, if_name) && (netmask == 0)) {
+        if ((ret == 2) && !strcmp(name, if_name) && (netmask == 0)) {
             *result_p = 1;
-            break;
+            goto out;
         }
 
         /* Skip rest of the line */
@@ -166,6 +136,7 @@ ucs_status_t uct_tcp_netif_is_default(const char *if_name, int *result_p)
     }
 
     *result_p = 0;
+out:
     fclose(f);
     return UCS_OK;
 }

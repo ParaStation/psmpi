@@ -85,7 +85,8 @@ void *runtest(void *arg)
         uintptr_t actual_pack_bytes;
         yaksa_request_t request;
         rc = yaksa_ipack(sbuf + sobj.DTP_buf_offset, sobj.DTP_type_count, sobj.DTP_datatype,
-                         0, tbuf, ssize * sobj.DTP_type_count, &actual_pack_bytes, NULL, &request);
+                         0, tbuf, ssize * sobj.DTP_type_count, &actual_pack_bytes, NULL,
+                         YAKSA_OP__REPLACE, &request);
         assert(rc == YAKSA_SUCCESS);
         assert(actual_pack_bytes == ssize * sobj.DTP_type_count);
 
@@ -100,7 +101,8 @@ void *runtest(void *arg)
 
         uintptr_t actual_unpack_bytes;
         rc = yaksa_iunpack(tbuf, actual_pack_bytes, sbuf + sobj.DTP_buf_offset,
-                           sobj.DTP_type_count, newtype, 0, &actual_unpack_bytes, NULL, &request);
+                           sobj.DTP_type_count, newtype, 0, &actual_unpack_bytes, NULL,
+                           YAKSA_OP__REPLACE, &request);
         assert(rc == YAKSA_SUCCESS);
 
         if (request != YAKSA_REQUEST__NULL) {

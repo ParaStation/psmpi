@@ -9,21 +9,22 @@
 
 #include <ucp/api/ucp.h>
 #include <uct/api/uct.h>
+#include <ucs/datastruct/bitmap.h>
 #include <ucs/sys/preprocessor.h>
 #include <stdint.h>
 
 
-#define UCP_WORKER_NAME_MAX          32   /* Worker name for debugging */
-#define UCP_MIN_BCOPY                64   /* Minimal size for bcopy */
+#define UCP_WORKER_ADDRESS_NAME_MAX  32 /* Worker address name for debugging */
+#define UCP_MIN_BCOPY                64 /* Minimal size for bcopy */
 #define UCP_FEATURE_AMO              (UCP_FEATURE_AMO32|UCP_FEATURE_AMO64)
 
 /* Resources */
-#define UCP_MAX_RESOURCES            64 /* up to 64 only due to tl_bitmap usage */
+#define UCP_MAX_RESOURCES            128
 #define UCP_NULL_RESOURCE            ((ucp_rsc_index_t)-1)
 typedef uint8_t                      ucp_rsc_index_t;
 
 /* MDs */
-#define UCP_UINT_TYPE(_bits)         typedef UCS_PP_TOKENPASTE(UCS_PP_TOKENPASTE(uint, _bits), _t)
+#define UCP_UINT_TYPE(_bits)         typedef UCS_PP_TOKENPASTE3(uint, _bits, _t)
 #define UCP_MD_INDEX_BITS            64  /* How many bits are in MD index */
 typedef ucp_rsc_index_t              ucp_md_index_t;
 #define UCP_MAX_MDS                  ucs_min(UCP_MD_INDEX_BITS, UCP_MAX_RESOURCES)
@@ -36,8 +37,11 @@ UCP_UINT_TYPE(UCP_MD_INDEX_BITS)     ucp_md_map_t;
 typedef uint8_t                      ucp_lane_index_t;
 typedef uint8_t                      ucp_lane_map_t;
 
-/* Connection sequence number */
-typedef uint16_t                     ucp_ep_conn_sn_t;
+/* Worker configuration index for endpoint and rkey */
+typedef uint8_t                      ucp_worker_cfg_index_t;
+#define UCP_WORKER_MAX_EP_CONFIG     64
+#define UCP_WORKER_MAX_RKEY_CONFIG   128
+#define UCP_WORKER_CFG_INDEX_NULL    UINT8_MAX
 
 /* Forward declarations */
 typedef struct ucp_request              ucp_request_t;
@@ -54,13 +58,67 @@ typedef struct ucp_amo_proto            ucp_amo_proto_t;
 typedef struct ucp_wireup_sockaddr_data ucp_wireup_sockaddr_data_t;
 typedef struct ucp_ep_config            ucp_ep_config_t;
 typedef struct ucp_ep_config_key        ucp_ep_config_key_t;
+typedef struct ucp_rkey_config_key      ucp_rkey_config_key_t;
 typedef struct ucp_proto                ucp_proto_t;
+
+
+/**
+ * UCP TL bitmap
+ *
+ * Bitmap type for representing which TL resources are in use.
+ */
+typedef ucs_bitmap_t(UCP_MAX_RESOURCES) ucp_tl_bitmap_t;
+
+
+/**
+ * Max possible value of TL bitmap (all bits are 1)
+ */
+extern const ucp_tl_bitmap_t ucp_tl_bitmap_max;
+
+
+/**
+ * Min possible value of TL bitmap (all bits are 0)
+ */
+extern const ucp_tl_bitmap_t ucp_tl_bitmap_min;
+
+
+#define UCT_TL_BITMAP_FMT          "0x%lx 0x%lx"
+#define UCT_TL_BITMAP_ARG(_bitmap) (_bitmap)->bits[0], (_bitmap)->bits[1]
+
+
+/**
+ * Perform bitwise AND on a TL bitmap and a negation of a bitmap and return the result
+ *
+ * @param _bitmap1 First operand
+ * @param _bitmap2 Second operand
+ *
+ * @return A new bitmap, which is the logical AND NOT of the operands
+ */
+#define UCP_TL_BITMAP_AND_NOT(_bitmap1, _bitmap2) \
+    UCS_BITMAP_AND(_bitmap1, UCS_BITMAP_NOT(_bitmap2, UCP_MAX_RESOURCES), \
+                   UCP_MAX_RESOURCES)
+
+
+/**
+ * Operation for which protocol is selected
+ */
+typedef enum {
+    UCP_OP_ID_TAG_SEND,
+    UCP_OP_ID_TAG_SEND_SYNC,
+    UCP_OP_ID_PUT,
+    UCP_OP_ID_GET,
+    UCP_OP_ID_API_LAST,
+
+    UCP_OP_ID_RNDV_SEND = UCP_OP_ID_API_LAST,
+    UCP_OP_ID_RNDV_RECV,
+    UCP_OP_ID_LAST
+} ucp_operation_id_t;
 
 
 /**
  * Active message codes
  */
-enum {
+typedef enum {
     UCP_AM_ID_WIREUP            =  1, /* Connection establishment */
 
     UCP_AM_ID_EAGER_ONLY        =  2, /* Single packet eager TAG */
@@ -96,7 +154,7 @@ enum {
     UCP_AM_ID_SINGLE_REPLY      =  26, /* Single fragment user defined AM
                                           carrying remote ep for reply */
     UCP_AM_ID_LAST
-};
+} ucp_am_id_t;
 
 
 /**
@@ -115,11 +173,13 @@ typedef enum {
  * Communication scheme in RNDV protocol.
  */
 typedef enum {
+    UCP_RNDV_MODE_AUTO, /* Runtime automatically chooses optimal scheme to use */
     UCP_RNDV_MODE_GET_ZCOPY, /* Use get_zcopy scheme in RNDV protocol */
     UCP_RNDV_MODE_PUT_ZCOPY, /* Use put_zcopy scheme in RNDV protocol */
-    UCP_RNDV_MODE_AUTO,      /* Runtime automatically chooses optimal scheme to use */
+    UCP_RNDV_MODE_AM, /* Use active-messages based RNDV protocol */
     UCP_RNDV_MODE_LAST
 } ucp_rndv_mode_t;
+
 
 /**
  * Active message tracer.

@@ -4,9 +4,10 @@
 * See file LICENSE for terms.
 */
 
-#include "test_ucp_tag.h"
+#include <common/test.h>
 #include <common/mem_buffer.h>
 
+#include "test_ucp_tag.h"
 #include "ucp_datatype.h"
 
 extern "C" {
@@ -20,15 +21,14 @@ extern "C" {
 class test_ucp_tag_mem_type: public test_ucp_tag {
 public:
     enum {
-            VARIANT_DEFAULT     = UCS_BIT(0),
-            VARIANT_GDR_OFF     = UCS_BIT(1),
-            VARIANT_TAG_OFFLOAD = UCS_BIT(2),
-            VARIANT_MAX         = UCS_BIT(3)
+        VARIANT_GDR_OFF     = UCS_BIT(0),
+        VARIANT_TAG_OFFLOAD = UCS_BIT(1),
+        VARIANT_MAX         = UCS_BIT(2)
     };
 
     void init() {
-        int mem_type_pair_index = GetParam().variant % mem_type_pairs.size();
-        int varient_index       = GetParam().variant / mem_type_pairs.size();
+        int mem_type_pair_index = get_variant_value() % mem_type_pairs.size();
+        int varient_index       = get_variant_value() / mem_type_pairs.size();
 
         if (varient_index & VARIANT_GDR_OFF) {
             m_env.push_back(new ucs::scoped_setenv("UCX_IB_GPU_DIRECT_RDMA", "n"));
@@ -56,26 +56,34 @@ public:
         test_ucp_tag::cleanup();
     }
 
-    std::vector<ucp_test_param>
-    static enum_test_params(const ucp_params_t& ctx_params,
-                            const std::string& name,
-                            const std::string& test_case_name,
-                            const std::string& tls) {
-
-        std::vector<ucp_test_param> result;
+    static void get_test_variants(std::vector<ucp_test_variant>& variants) {
         int count = 0;
-
         for (int i = 0; i < VARIANT_MAX; i++) {
             for (std::vector<std::vector<ucs_memory_type_t> >::const_iterator iter =
                  mem_type_pairs.begin(); iter != mem_type_pairs.end(); ++iter) {
-                generate_test_params_variant(ctx_params, name, test_case_name + "/" +
-                                             std::string(ucs_memory_type_names[(*iter)[0]]) +
-                                             "<->" + std::string(ucs_memory_type_names[(*iter)[1]]),
-                                             tls, count++, result);
+                std::string name =
+                        std::string(ucs_memory_type_names[(*iter)[0]]) + ":" +
+                        std::string(ucs_memory_type_names[(*iter)[1]]);
+                if (i & VARIANT_GDR_OFF) {
+                    name += ",nogdr";
+                }
+                if (i & VARIANT_TAG_OFFLOAD) {
+                    name += ",offload";
+                }
+                add_variant_with_value(variants, get_ctx_params(), count, name);
+                ++count;
             }
         }
+    }
 
-        return result;
+    void do_basic_send(void *sbuf, void *rbuf, size_t length, ucp_datatype_t type,
+                       ucs_memory_type_t s_mem_type, ucs_memory_type_t r_mem_type)
+    {
+        mem_buffer::pattern_fill(rbuf, length, 1, r_mem_type);
+        mem_buffer::pattern_fill(sbuf, length, 2, s_mem_type);
+        size_t recvd = do_xfer(sbuf, rbuf, length, type, type, true, false, false);
+        ASSERT_EQ(length, recvd);
+        mem_buffer::pattern_check(rbuf, length, 2, r_mem_type);
     }
 
     static std::vector<std::vector<ucs_memory_type_t> > mem_type_pairs;
@@ -132,7 +140,7 @@ size_t test_ucp_tag_mem_type::do_xfer(const void *sendbuf, void *recvbuf,
     wait(rreq);
     if (sreq != NULL) {
         wait(sreq);
-        request_release(sreq);
+        request_free(sreq);
     }
 
     recvd = rreq->info.length;
@@ -143,37 +151,42 @@ size_t test_ucp_tag_mem_type::do_xfer(const void *sendbuf, void *recvbuf,
         EXPECT_EQ(UCS_ERR_MESSAGE_TRUNCATED, rreq->status);
     }
 
-    request_release(rreq);
+    request_free(rreq);
     return recvd;
 };
 
 UCS_TEST_P(test_ucp_tag_mem_type, basic)
 {
     ucp_datatype_t type = ucp_dt_make_contig(1);
+    size_t max_length;
 
     UCS_TEST_MESSAGE << "TEST: "
                      << ucs_memory_type_names[m_send_mem_type] << " <-> "
                      << ucs_memory_type_names[m_recv_mem_type];
 
     for (unsigned i = 1; i <= 7; ++i) {
-        size_t max = (long)pow(10.0, i);
-        size_t length = ucs::rand() % max + 1;
+        max_length = (size_t)pow(10.0, i);
+        size_t length = ucs::rand() % max_length + 1;
 
         mem_buffer m_recv_mem_buf(length, m_recv_mem_type);
         mem_buffer m_send_mem_buf(length, m_send_mem_type);
 
-        mem_buffer::pattern_fill(m_recv_mem_buf.ptr(), m_recv_mem_buf.size(),
-                                 1, m_recv_mem_buf.mem_type());
-
-        mem_buffer::pattern_fill(m_send_mem_buf.ptr(), m_send_mem_buf.size(),
-                                 2, m_send_mem_buf.mem_type());
-
-        size_t recvd = do_xfer(m_send_mem_buf.ptr(), m_recv_mem_buf.ptr(),
-                               length, type, type, true, false, false);
-        ASSERT_EQ(length, recvd);
-        mem_buffer::pattern_check(m_recv_mem_buf.ptr(), length,
-                                  2, m_recv_mem_buf.mem_type());
+        do_basic_send(m_send_mem_buf.ptr(),m_recv_mem_buf.ptr(), length, type,
+                      m_send_mem_buf.mem_type(), m_recv_mem_buf.mem_type());
     }
+
+    /*  test with re-using the buffers */
+    max_length = (size_t)pow(10.0, 7);
+    mem_buffer m_recv_mem_buf(max_length, m_recv_mem_type);
+    mem_buffer m_send_mem_buf(max_length, m_send_mem_type);
+
+    for (unsigned i = 0; i < 2; ++i) {
+        size_t length = ucs::rand() % max_length + 1;
+
+        do_basic_send(m_send_mem_buf.ptr(),m_recv_mem_buf.ptr(), length, type,
+                      m_send_mem_buf.mem_type(), m_recv_mem_buf.mem_type());
+    }
+
 }
 
 UCS_TEST_P(test_ucp_tag_mem_type, xfer_mismatch_length)

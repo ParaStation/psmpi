@@ -7,13 +7,52 @@
 #define CH4_IMPL_H_INCLUDED
 
 #include "ch4_types.h"
-#include "mpidig_am.h"
+#include "mpidig.h"
 #include "mpidu_shm.h"
-#include "ch4r_proc.h"
+#include "ch4_proc.h"
+#include "ch4_self.h"
+#include "ch4_vci.h"
 
-int MPIDI_Progress_test(int flags);
+int MPIDIU_Intercomm_map_bcast_intra(MPIR_Comm * local_comm, int local_leader, int *remote_size,
+                                     int *is_low_group, int pure_intracomm,
+                                     int *remote_upid_size, char *remote_upids,
+                                     uint64_t ** remote_gpids);
 int MPIDIG_get_context_index(uint64_t context_id);
 uint64_t MPIDIG_generate_win_id(MPIR_Comm * comm_ptr);
+
+/* define CH4_CALL to call netmod or shm API based on is_local */
+#ifdef MPIDI_CH4_DIRECT_NETMOD
+#define CH4_CALL(FUNC, is_local_, err_) \
+    do { \
+        err_ = MPIDI_NM_ ## FUNC; \
+    } while (0)
+#else
+#define CH4_CALL(FUNC, is_local_, err_) \
+    do { \
+        if (is_local_) { \
+            err_ = MPIDI_SHM_ ## FUNC; \
+        } else { \
+            err_ = MPIDI_NM_ ## FUNC; \
+        } \
+    } while (0)
+#endif
+
+/* Request creation with locking for LOCKLESS MT model */
+#define MPIDI_CH4_REQUEST_CREATE(req, kind, pool, ref_count)            \
+    do {                                                                \
+        if (MPIDI_CH4_MT_MODEL == MPIDI_CH4_MT_LOCKLESS)                \
+            (req) = MPIR_Request_create_from_pool_safe(kind, pool, ref_count); \
+        else                                                            \
+            (req) = MPIR_Request_create_from_pool(kind, pool, ref_count); \
+    } while (0)
+
+#define MPIDI_CH4_REQUEST_FREE(req)                                \
+    do {                                                           \
+        if (MPIDI_CH4_MT_MODEL == MPIDI_CH4_MT_LOCKLESS)           \
+            MPIR_Request_free_safe(req);                           \
+        else                                                       \
+            MPIR_Request_free_unsafe(req);                         \
+    } while (0)
 
 /* Static inlines */
 
@@ -23,67 +62,28 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_prequest_get_context_offset(MPIR_Request * pr
 {
     int context_offset;
 
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_PREQUEST_GET_CONTEXT_OFFSET);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_PREQUEST_GET_CONTEXT_OFFSET);
+    MPIR_FUNC_ENTER;
 
     MPIR_Assert(preq->kind == MPIR_REQUEST_KIND__PREQUEST_SEND ||
                 preq->kind == MPIR_REQUEST_KIND__PREQUEST_RECV);
 
     context_offset = MPIDI_PREQUEST(preq, context_id) - preq->comm->context_id;
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_PREQUEST_GET_CONTEXT_OFFSET);
+    MPIR_FUNC_EXIT;
 
     return context_offset;
-}
-
-MPL_STATIC_INLINE_PREFIX MPIR_Comm *MPIDIG_context_id_to_comm(uint64_t context_id)
-{
-    int comm_idx = MPIDIG_get_context_index(context_id);
-    int subcomm_type = MPIR_CONTEXT_READ_FIELD(SUBCOMM, context_id);
-    int is_localcomm = MPIR_CONTEXT_READ_FIELD(IS_LOCALCOMM, context_id);
-    MPIR_Comm *ret;
-
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_CONTEXT_ID_TO_COMM);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_CONTEXT_ID_TO_COMM);
-
-    MPIR_Assert(subcomm_type <= 3);
-    MPIR_Assert(is_localcomm <= 2);
-    ret = MPIDI_global.comm_req_lists[comm_idx].comm[is_localcomm][subcomm_type];
-
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIG_CONTEXT_ID_TO_COMM);
-    return ret;
-}
-
-MPL_STATIC_INLINE_PREFIX MPIDIG_rreq_t **MPIDIG_context_id_to_uelist(uint64_t context_id)
-{
-    int comm_idx = MPIDIG_get_context_index(context_id);
-    int subcomm_type = MPIR_CONTEXT_READ_FIELD(SUBCOMM, context_id);
-    int is_localcomm = MPIR_CONTEXT_READ_FIELD(IS_LOCALCOMM, context_id);
-    MPIDIG_rreq_t **ret;
-
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_CONTEXT_ID_TO_UELIST);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_CONTEXT_ID_TO_UELIST);
-
-    MPIR_Assert(subcomm_type <= 3);
-    MPIR_Assert(is_localcomm <= 2);
-
-    ret = &MPIDI_global.comm_req_lists[comm_idx].uelist[is_localcomm][subcomm_type];
-
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIG_CONTEXT_ID_TO_UELIST);
-    return ret;
 }
 
 MPL_STATIC_INLINE_PREFIX MPIR_Context_id_t MPIDIG_win_id_to_context(uint64_t win_id)
 {
     MPIR_Context_id_t ret;
 
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_WIN_ID_TO_CONTEXT);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_WIN_ID_TO_CONTEXT);
+    MPIR_FUNC_ENTER;
 
     /* pick the lower 32-bit to extract context id */
     ret = (win_id - 1) & 0xffffffff;
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIG_WIN_ID_TO_CONTEXT);
+    MPIR_FUNC_EXIT;
     return ret;
 }
 
@@ -91,12 +91,11 @@ MPL_STATIC_INLINE_PREFIX MPIR_Context_id_t MPIDIG_win_to_context(const MPIR_Win 
 {
     MPIR_Context_id_t ret;
 
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_WIN_TO_CONTEXT);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_WIN_TO_CONTEXT);
+    MPIR_FUNC_ENTER;
 
     ret = MPIDIG_win_id_to_context(MPIDIG_WIN(win, win_id));
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIG_WIN_TO_CONTEXT);
+    MPIR_FUNC_EXIT;
     return ret;
 }
 
@@ -104,21 +103,19 @@ MPL_STATIC_INLINE_PREFIX void MPIDIU_request_complete(MPIR_Request * req)
 {
     int incomplete;
 
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIU_REQUEST_COMPLETE);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIU_REQUEST_COMPLETE);
+    MPIR_FUNC_ENTER;
 
     MPIR_cc_decr(req->cc_ptr, &incomplete);
     if (!incomplete) {
-        MPIR_Request_free_unsafe(req);
+        MPIDI_CH4_REQUEST_FREE(req);
     }
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIU_REQUEST_COMPLETE);
+    MPIR_FUNC_EXIT;
 }
 
 MPL_STATIC_INLINE_PREFIX MPIDIG_win_target_t *MPIDIG_win_target_add(MPIR_Win * win, int rank)
 {
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_WIN_TARGET_ADD);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_WIN_TARGET_ADD);
+    MPIR_FUNC_ENTER;
 
     MPIDIG_win_target_t *target_ptr = NULL;
     target_ptr = (MPIDIG_win_target_t *) MPL_malloc(sizeof(MPIDIG_win_target_t), MPL_MEM_RMA);
@@ -133,19 +130,18 @@ MPL_STATIC_INLINE_PREFIX MPIDIG_win_target_t *MPIDIG_win_target_add(MPIR_Win * w
 
     HASH_ADD(hash_handle, MPIDIG_WIN(win, targets), rank, sizeof(int), target_ptr, MPL_MEM_RMA);
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIG_WIN_TARGET_ADD);
+    MPIR_FUNC_EXIT;
     return target_ptr;
 }
 
 MPL_STATIC_INLINE_PREFIX MPIDIG_win_target_t *MPIDIG_win_target_find(MPIR_Win * win, int rank)
 {
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_WIN_TARGET_FIND);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_WIN_TARGET_FIND);
+    MPIR_FUNC_ENTER;
 
     MPIDIG_win_target_t *target_ptr = NULL;
     HASH_FIND(hash_handle, MPIDIG_WIN(win, targets), &rank, sizeof(int), target_ptr);
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIG_WIN_TARGET_FIND);
+    MPIR_FUNC_EXIT;
     return target_ptr;
 }
 
@@ -160,19 +156,17 @@ MPL_STATIC_INLINE_PREFIX MPIDIG_win_target_t *MPIDIG_win_target_get(MPIR_Win * w
 MPL_STATIC_INLINE_PREFIX void MPIDIG_win_target_delete(MPIR_Win * win,
                                                        MPIDIG_win_target_t * target_ptr)
 {
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_WIN_TARGET_DELETE);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_WIN_TARGET_DELETE);
+    MPIR_FUNC_ENTER;
 
     HASH_DELETE(hash_handle, MPIDIG_WIN(win, targets), target_ptr);
     MPL_free(target_ptr);
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIG_WIN_TARGET_DELETE);
+    MPIR_FUNC_EXIT;
 }
 
 MPL_STATIC_INLINE_PREFIX void MPIDIG_win_target_cleanall(MPIR_Win * win)
 {
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_WIN_TARGET_CLEANALL);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_WIN_TARGET_CLEANALL);
+    MPIR_FUNC_ENTER;
 
     MPIDIG_win_target_t *target_ptr, *tmp;
     HASH_ITER(hash_handle, MPIDIG_WIN(win, targets), target_ptr, tmp) {
@@ -180,17 +174,16 @@ MPL_STATIC_INLINE_PREFIX void MPIDIG_win_target_cleanall(MPIR_Win * win)
         MPL_free(target_ptr);
     }
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIG_WIN_TARGET_CLEANALL);
+    MPIR_FUNC_EXIT;
 }
 
 MPL_STATIC_INLINE_PREFIX void MPIDIG_win_hash_clear(MPIR_Win * win)
 {
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_WIN_HASH_CLEAR);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_WIN_HASH_CLEAR);
+    MPIR_FUNC_ENTER;
 
     HASH_CLEAR(hash_handle, MPIDIG_WIN(win, targets));
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIG_WIN_HASH_CLEAR);
+    MPIR_FUNC_EXIT;
 }
 
 #define MPIDI_Datatype_get_info(count_, datatype_,              \
@@ -417,75 +410,49 @@ MPL_STATIC_INLINE_PREFIX void MPIDIG_win_hash_clear(MPIR_Win * win)
 /* We assume this routine is never called with rank=MPI_PROC_NULL. */
 MPL_STATIC_INLINE_PREFIX int MPIDIU_valid_group_rank(MPIR_Comm * comm, int rank, MPIR_Group * grp)
 {
-    int lpid;
+    uint64_t gpid;
     int size = grp->size;
     int z;
     int ret;
 
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIU_VALID_GROUP_RANK);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIU_VALID_GROUP_RANK);
+    MPIR_FUNC_ENTER;
 
-    MPIDI_NM_comm_get_lpid(comm, rank, &lpid, FALSE);
+    MPIDI_NM_comm_get_gpid(comm, rank, &gpid, FALSE);
 
-    for (z = 0; z < size && lpid != grp->lrank_to_lpid[z].lpid; ++z) {
+    for (z = 0; z < size && gpid != grp->lrank_to_lpid[z].lpid; ++z) {
     }
 
     ret = (z < size);
 
-  fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIU_VALID_GROUP_RANK);
+    MPIR_FUNC_EXIT;
     return ret;
 }
 
-/* TODO: Several unbounded loops call this macro. One way to avoid holding the
- * ALLFUNC_MUTEX lock forever is to insert YIELD in each loop. We choose to
- * insert it here for simplicity, but this might not be the best place. One
- * needs to investigate the appropriate place to yield the lock. */
-/* NOTE: Taking off VCI lock is necessary to avoid recursive locking and allow
- * more granular per-vci locks */
-/* TODO: MPIDI_global.vci_lock probably will be changed into granular generic lock
+/* Following progress macros are currently used by window synchronization calls.
+ *
+ * CAUTION: the macro uses MPIR_ERR_CHECK, be careful of it escaping the
+ * critical section.
+ *
+ * NOTE: when used in a loop, we insert a yield of global lock to prevent
+ * blocking other progress (under global granularity).
  */
 
-#define MPIDIU_PROGRESS()                                   \
-    do {                                                        \
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(0).lock); \
-        mpi_errno = MPID_Progress_test(NULL);                       \
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(0).lock); \
-        MPIR_ERR_CHECK(mpi_errno);  \
+/* declare to avoid header order dance */
+MPL_STATIC_INLINE_PREFIX int MPIDI_progress_test_vci(int vci);
+
+#define MPIDIU_PROGRESS_WHILE(cond, vci)         \
+    while (cond) {                          \
+        mpi_errno = MPIDI_progress_test_vci(vci);   \
+        MPIR_ERR_CHECK(mpi_errno); \
         MPID_THREAD_CS_YIELD(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX); \
-    } while (0)
+    }
 
-/* Optimized versions to avoid exessive locking/unlocking */
-/* FIXME: use inline function rather macros for cleaner semantics */
-
-#define MPIDIU_PROGRESS_WHILE(cond)         \
-    do {                                        \
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(0).lock); \
-        while (cond) {                          \
-            mpi_errno = MPID_Progress_test(NULL);   \
-            if (mpi_errno) break;               \
-            MPID_THREAD_CS_YIELD(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX); \
-        } \
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(0).lock); \
-        MPIR_ERR_CHECK(mpi_errno);              \
-    } while (0)
-
-/* This macro is refactored for original code that progress in a do-while loop
- * NOTE: it's already inside the progress lock and it is calling progress again.
- *       To avoid recursive locking, we yield the lock here.
- * TODO: Can we consolidate with previous macro? Double check the reasoning.
- */
-#define MPIDIU_PROGRESS_DO_WHILE(cond) \
-    do {                                        \
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(0).lock); \
-        do {                          \
-            mpi_errno = MPID_Progress_test(NULL);   \
-            if (mpi_errno) break;               \
-            MPID_THREAD_CS_YIELD(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX); \
-        } while (cond); \
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(0).lock); \
-        MPIR_ERR_CHECK(mpi_errno);              \
-    } while (0)
+#define MPIDIU_PROGRESS_DO_WHILE(cond, vci) \
+    do { \
+        mpi_errno = MPIDI_progress_test_vci(vci); \
+        MPIR_ERR_CHECK(mpi_errno); \
+        MPID_THREAD_CS_YIELD(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX); \
+    } while (cond)
 
 #ifdef HAVE_ERROR_CHECKING
 #define MPIDIG_EPOCH_CHECK_SYNC(win, mpi_errno, stmt)               \
@@ -660,10 +627,9 @@ MPL_STATIC_INLINE_PREFIX int MPIDIU_valid_group_rank(MPIR_Comm * comm, int rank,
 */
 MPL_STATIC_INLINE_PREFIX uintptr_t MPIDIG_win_base_at_origin(const MPIR_Win * win, int target_rank)
 {
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_WIN_BASE_AT_ORIGIN);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_WIN_BASE_AT_ORIGIN);
+    MPIR_FUNC_ENTER;
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIG_WIN_BASE_AT_ORIGIN);
+    MPIR_FUNC_EXIT;
 
     /* TODO: In future we may want to calculate the full virtual address
      * in the target at the origin side. It can be done by looking at
@@ -680,20 +646,17 @@ MPL_STATIC_INLINE_PREFIX uintptr_t MPIDIG_win_base_at_target(const MPIR_Win * wi
 {
     uintptr_t ret;
 
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_WIN_BASE_AT_TARGET);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_WIN_BASE_AT_TARGET);
+    MPIR_FUNC_ENTER;
 
     ret = (uintptr_t) win->base;
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIG_WIN_BASE_AT_TARGET);
+    MPIR_FUNC_EXIT;
     return ret;
 }
 
 MPL_STATIC_INLINE_PREFIX void MPIDIG_win_cmpl_cnts_incr(MPIR_Win * win, int target_rank,
                                                         MPIR_cc_t ** local_cmpl_cnts_ptr)
 {
-    int c = 0;
-
     /* Increase per-window counters for fence, and per-target counters for
      * all other synchronization. */
     switch (MPIDIG_WIN(win, sync).access_epoch_type) {
@@ -706,15 +669,15 @@ MPL_STATIC_INLINE_PREFIX void MPIDIG_win_cmpl_cnts_incr(MPIR_Win * win, int targ
             {
                 MPIDIG_win_target_t *target_ptr = MPIDIG_win_target_get(win, target_rank);
 
-                MPIR_cc_incr(&target_ptr->local_cmpl_cnts, &c);
-                MPIR_cc_incr(&target_ptr->remote_cmpl_cnts, &c);
+                MPIR_cc_inc(&target_ptr->local_cmpl_cnts);
+                MPIR_cc_inc(&target_ptr->remote_cmpl_cnts);
 
                 *local_cmpl_cnts_ptr = &target_ptr->local_cmpl_cnts;
                 break;
             }
         default:
-            MPIR_cc_incr(&MPIDIG_WIN(win, local_cmpl_cnts), &c);
-            MPIR_cc_incr(&MPIDIG_WIN(win, remote_cmpl_cnts), &c);
+            MPIR_cc_inc(&MPIDIG_WIN(win, local_cmpl_cnts));
+            MPIR_cc_inc(&MPIDIG_WIN(win, remote_cmpl_cnts));
 
             *local_cmpl_cnts_ptr = &MPIDIG_WIN(win, local_cmpl_cnts);
             break;
@@ -724,18 +687,17 @@ MPL_STATIC_INLINE_PREFIX void MPIDIG_win_cmpl_cnts_incr(MPIR_Win * win, int targ
 /* Increase counter for active message acc ops. */
 MPL_STATIC_INLINE_PREFIX void MPIDIG_win_remote_acc_cmpl_cnt_incr(MPIR_Win * win, int target_rank)
 {
-    int c = 0;
     switch (MPIDIG_WIN(win, sync).access_epoch_type) {
         case MPIDIG_EPOTYPE_LOCK:
         case MPIDIG_EPOTYPE_LOCK_ALL:
         case MPIDIG_EPOTYPE_START:
             {
                 MPIDIG_win_target_t *target_ptr = MPIDIG_win_target_get(win, target_rank);
-                MPIR_cc_incr(&target_ptr->remote_acc_cmpl_cnts, &c);
+                MPIR_cc_inc(&target_ptr->remote_acc_cmpl_cnts);
                 break;
             }
         default:
-            MPIR_cc_incr(&MPIDIG_WIN(win, remote_acc_cmpl_cnts), &c);
+            MPIR_cc_inc(&MPIDIG_WIN(win, remote_acc_cmpl_cnts));
             break;
     }
 }
@@ -743,7 +705,6 @@ MPL_STATIC_INLINE_PREFIX void MPIDIG_win_remote_acc_cmpl_cnt_incr(MPIR_Win * win
 /* Decrease counter for active message acc ops. */
 MPL_STATIC_INLINE_PREFIX void MPIDIG_win_remote_acc_cmpl_cnt_decr(MPIR_Win * win, int target_rank)
 {
-    int c = 0;
     switch (MPIDIG_WIN(win, sync).access_epoch_type) {
         case MPIDIG_EPOTYPE_LOCK:
         case MPIDIG_EPOTYPE_LOCK_ALL:
@@ -751,11 +712,11 @@ MPL_STATIC_INLINE_PREFIX void MPIDIG_win_remote_acc_cmpl_cnt_decr(MPIR_Win * win
             {
                 MPIDIG_win_target_t *target_ptr = MPIDIG_win_target_find(win, target_rank);
                 MPIR_Assert(target_ptr);
-                MPIR_cc_decr(&target_ptr->remote_acc_cmpl_cnts, &c);
+                MPIR_cc_dec(&target_ptr->remote_acc_cmpl_cnts);
                 break;
             }
         default:
-            MPIR_cc_decr(&MPIDIG_WIN(win, remote_acc_cmpl_cnts), &c);
+            MPIR_cc_dec(&MPIDIG_WIN(win, remote_acc_cmpl_cnts));
             break;
     }
 
@@ -763,8 +724,6 @@ MPL_STATIC_INLINE_PREFIX void MPIDIG_win_remote_acc_cmpl_cnt_decr(MPIR_Win * win
 
 MPL_STATIC_INLINE_PREFIX void MPIDIG_win_remote_cmpl_cnt_decr(MPIR_Win * win, int target_rank)
 {
-    int c = 0;
-
     /* Decrease per-window counter for fence, and per-target counters for
      * all other synchronization. */
     switch (MPIDIG_WIN(win, sync).access_epoch_type) {
@@ -774,11 +733,11 @@ MPL_STATIC_INLINE_PREFIX void MPIDIG_win_remote_cmpl_cnt_decr(MPIR_Win * win, in
             {
                 MPIDIG_win_target_t *target_ptr = MPIDIG_win_target_find(win, target_rank);
                 MPIR_Assert(target_ptr);
-                MPIR_cc_decr(&target_ptr->remote_cmpl_cnts, &c);
+                MPIR_cc_dec(&target_ptr->remote_cmpl_cnts);
                 break;
             }
         default:
-            MPIR_cc_decr(&MPIDIG_WIN(win, remote_cmpl_cnts), &c);
+            MPIR_cc_dec(&MPIDIG_WIN(win, remote_cmpl_cnts));
             break;
     }
 }
@@ -892,9 +851,9 @@ MPL_STATIC_INLINE_PREFIX void MPIDIU_map_set_unsafe(void *in_map, uint64_t id, v
 MPL_STATIC_INLINE_PREFIX void MPIDIU_map_set(void *in_map, uint64_t id, void *val,
                                              MPL_memory_class class)
 {
-    MPID_THREAD_CS_ENTER(POBJ, MPIDIU_THREAD_UTIL_MUTEX);
+    MPID_THREAD_CS_ENTER(VCI, MPIDIU_THREAD_UTIL_MUTEX);
     MPIDIU_map_set_unsafe(in_map, id, val, class);
-    MPID_THREAD_CS_EXIT(POBJ, MPIDIU_THREAD_UTIL_MUTEX);
+    MPID_THREAD_CS_EXIT(VCI, MPIDIU_THREAD_UTIL_MUTEX);
 }
 
 MPL_STATIC_INLINE_PREFIX void MPIDIU_map_erase(void *in_map, uint64_t id)
@@ -932,7 +891,7 @@ MPL_STATIC_INLINE_PREFIX void *MPIDIU_map_update(void *in_map, uint64_t id, void
     MPIDIU_map_t *map;
     MPIDIU_map_entry_t *map_entry;
 
-    MPID_THREAD_CS_ENTER(POBJ, MPIDI_THREAD_UTIL_MUTEX);
+    MPID_THREAD_CS_ENTER(VCI, MPIDIU_THREAD_UTIL_MUTEX);
     map = (MPIDIU_map_t *) in_map;
     HASH_FIND(hh, map->head, &id, sizeof(uint64_t), map_entry);
     if (map_entry == NULL) {
@@ -942,7 +901,7 @@ MPL_STATIC_INLINE_PREFIX void *MPIDIU_map_update(void *in_map, uint64_t id, void
         rc = map_entry->value;
         map_entry->value = new_val;
     }
-    MPID_THREAD_CS_EXIT(POBJ, MPIDI_THREAD_UTIL_MUTEX);
+    MPID_THREAD_CS_EXIT(VCI, MPIDIU_THREAD_UTIL_MUTEX);
     return rc;
 }
 
@@ -955,7 +914,7 @@ MPL_STATIC_INLINE_PREFIX MPIDI_av_entry_t *MPIDIU_win_rank_to_av(MPIR_Win * win,
     MPIDI_av_entry_t *av = NULL;
 
     if (winattr & MPIDI_WINATTR_DIRECT_INTRA_COMM) {
-        av = &MPIDI_av_table0->table[rank];
+        av = &MPIDI_global.avt_mgr.av_table0->table[rank];
     } else
         av = MPIDIU_comm_rank_to_av(win->comm_ptr, rank);
     return av;
@@ -967,7 +926,7 @@ MPL_STATIC_INLINE_PREFIX MPIDI_av_entry_t *MPIDIU_win_rank_to_av(MPIR_Win * win,
 MPL_STATIC_INLINE_PREFIX int MPIDIU_win_comm_rank(MPIR_Win * win, MPIDI_winattr_t winattr)
 {
     if (winattr & MPIDI_WINATTR_DIRECT_INTRA_COMM)
-        return MPIR_Process.comm_world->rank;
+        return MPIR_Process.rank;
     else
         return win->comm_ptr->rank;
 }
@@ -985,13 +944,22 @@ MPL_STATIC_INLINE_PREFIX int MPIDIU_win_rank_to_intra_rank(MPIR_Win * win, int r
 }
 
 /* Wait until active message acc ops are done. */
+/* NOTE: this function is currently only called from ofi_rma.h, it is being called
+ * outside per-vci critical section */
 MPL_STATIC_INLINE_PREFIX int MPIDIG_wait_am_acc(MPIR_Win * win, int target_rank)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDIG_win_target_t *target_ptr = MPIDIG_win_target_find(win, target_rank);
+    MPID_Progress_state state;
+    state.vci_count = 1;
+    state.vci[0] = 0;   /* MPIDIG only uses vci 0 for now */
+    state.flag = MPIDI_PROGRESS_ALL;
+    /* skip other state fields for MPID_Progress_test */
     while ((target_ptr && MPIR_cc_get(target_ptr->remote_acc_cmpl_cnts) != 0) ||
            MPIR_cc_get(MPIDIG_WIN(win, remote_acc_cmpl_cnts)) != 0) {
-        MPIDIU_PROGRESS();
+        mpi_errno = MPID_Progress_test(&state);
+        MPIR_ERR_CHECK(mpi_errno);
+        MPID_THREAD_CS_YIELD(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     }
   fn_exit:
     return mpi_errno;
@@ -1010,186 +978,27 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_compute_acc_op(void *source_buf, int source_
                                                    MPI_Op acc_op, int src_kind)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPI_User_function *uop = NULL;
-    MPI_Aint source_dtp_size = 0, source_dtp_extent = 0;
-    int is_empty_source = FALSE;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDIG_COMPUTE_ACC_OP);
 
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDIG_COMPUTE_ACC_OP);
 
-    /* first Judge if source buffer is empty */
-    if (acc_op == MPI_NO_OP)
-        is_empty_source = TRUE;
+    MPIR_FUNC_ENTER;
 
-    if (is_empty_source == FALSE) {
-        MPIR_Assert(MPIR_DATATYPE_IS_PREDEFINED(source_dtp));
-        MPIR_Datatype_get_size_macro(source_dtp, source_dtp_size);
-        MPIR_Datatype_get_extent_macro(source_dtp, source_dtp_extent);
-    }
+    mpi_errno = MPIR_Typerep_op(source_buf, source_count, source_dtp,
+                                target_buf, target_count, target_dtp,
+                                acc_op, src_kind == MPIDIG_ACC_SRCBUF_PACKED, -1);
 
-    if ((HANDLE_IS_BUILTIN(acc_op))
-        && ((*MPIR_OP_HDL_TO_DTYPE_FN(acc_op)) (source_dtp) == MPI_SUCCESS)) {
-        /* get the function by indexing into the op table */
-        uop = MPIR_OP_HDL_TO_FN(acc_op);
-    } else {
-        /* --BEGIN ERROR HANDLING-- */
-        mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
-                                         __func__, __LINE__, MPI_ERR_OP,
-                                         "**opnotpredefined", "**opnotpredefined %d", acc_op);
-        return mpi_errno;
-        /* --END ERROR HANDLING-- */
-    }
-
-    void *in_targetbuf = target_buf;
-    void *host_targetbuf = NULL;
-    MPL_pointer_attr_t attr;
-    MPIR_GPU_query_pointer_attr(target_buf, &attr);
-    /* FIXME: use typerep/yaksa GPU-aware accumulate when available */
-    if (attr.type == MPL_GPU_POINTER_DEV) {
-        MPI_Aint extent, true_extent;
-        MPI_Aint true_lb;
-
-        MPIR_Datatype_get_extent_macro(target_dtp, extent);
-        MPIR_Type_get_true_extent_impl(target_dtp, &true_lb, &true_extent);
-        extent = MPL_MAX(extent, true_extent);
-
-        host_targetbuf = MPL_malloc(extent * target_count, MPL_MEM_RMA);
-        MPIR_Assert(host_targetbuf);
-        MPIR_Localcopy(target_buf, target_count, target_dtp, host_targetbuf, target_count,
-                       target_dtp);
-        target_buf = host_targetbuf;
-    }
-
-    if (is_empty_source == TRUE || HANDLE_IS_BUILTIN(target_dtp)) {
-        /* directly apply op if target dtp is predefined dtp OR source buffer is empty */
-        (*uop) (source_buf, target_buf, &source_count, &source_dtp);
-    } else {
-        /* derived datatype */
-        struct iovec *typerep_vec;
-        int i, count;
-        MPI_Aint vec_len, type_extent, type_size, src_type_stride;
-        MPI_Datatype type;
-        MPIR_Datatype *dtp;
-        MPI_Aint curr_len;
-        void *curr_loc;
-        int accumulated_count;
-
-        MPIR_Datatype_get_ptr(target_dtp, dtp);
-        MPIR_Assert(dtp != NULL);
-        vec_len = dtp->typerep.num_contig_blocks * target_count + 1;
-        /* +1 needed because Rob says so */
-        typerep_vec = (struct iovec *)
-            MPL_malloc(vec_len * sizeof(struct iovec), MPL_MEM_RMA);
-        /* --BEGIN ERROR HANDLING-- */
-        if (!typerep_vec) {
-            mpi_errno =
-                MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__,
-                                     MPI_ERR_OTHER, "**nomem", 0);
-            goto fn_exit;
-        }
-        /* --END ERROR HANDLING-- */
-
-        MPI_Aint actual_iov_len, actual_iov_bytes;
-        MPIR_Typerep_to_iov(NULL, target_count, target_dtp, 0, typerep_vec, vec_len,
-                            source_count * source_dtp_size, &actual_iov_len, &actual_iov_bytes);
-        vec_len = actual_iov_len;
-
-        type = dtp->basic_type;
-        MPIR_Assert(type != MPI_DATATYPE_NULL);
-
-        MPIR_Assert(type == source_dtp);
-        type_size = source_dtp_size;
-        type_extent = source_dtp_extent;
-        /* If the source buffer has been packed by the caller, the distance between
-         * two elements can be smaller than extent. E.g., predefined pairtype may
-         * have larger extent than size.*/
-        /* when predefined pairtype have larger extent than size, we'll end up
-         * missaligned access. Memcpy the source to workaround the alignment issue.
-         */
-        char *src_ptr = NULL;
-        if (src_kind == MPIDIG_ACC_SRCBUF_PACKED) {
-            src_type_stride = source_dtp_size;
-            if (source_dtp_size < source_dtp_extent) {
-                src_ptr = MPL_malloc(source_dtp_extent, MPL_MEM_OTHER);
-            }
-        } else {
-            src_type_stride = source_dtp_extent;
-        }
-
-        i = 0;
-        curr_loc = typerep_vec[0].iov_base;
-        curr_len = typerep_vec[0].iov_len;
-        accumulated_count = 0;
-        while (i != vec_len) {
-            if (curr_len < type_size) {
-                MPIR_Assert(i != vec_len);
-                i++;
-                curr_len += typerep_vec[i].iov_len;
-                continue;
-            }
-
-            MPIR_Assign_trunc(count, curr_len / type_size, int);
-
-            if (src_ptr) {
-                MPI_Aint unpacked_size;
-                MPIR_Typerep_unpack((char *) source_buf + src_type_stride * accumulated_count,
-                                    source_dtp_size, src_ptr, 1, source_dtp, 0, &unpacked_size);
-                (*uop) (src_ptr, (char *) target_buf + MPIR_Ptr_to_aint(curr_loc), &count, &type);
-            } else {
-                (*uop) ((char *) source_buf + src_type_stride * accumulated_count,
-                        (char *) target_buf + MPIR_Ptr_to_aint(curr_loc), &count, &type);
-            }
-
-            if (curr_len % type_size == 0) {
-                i++;
-                if (i != vec_len) {
-                    curr_loc = typerep_vec[i].iov_base;
-                    curr_len = typerep_vec[i].iov_len;
-                }
-            } else {
-                curr_loc = (void *) ((char *) curr_loc + type_extent * count);
-                curr_len -= type_size * count;
-            }
-
-            accumulated_count += count;
-        }
-
-        MPL_free(src_ptr);
-        MPL_free(typerep_vec);
-    }
-
-    if (host_targetbuf) {
-        target_buf = in_targetbuf;
-        MPIR_Localcopy(host_targetbuf, target_count, target_dtp, target_buf, target_count,
-                       target_dtp);
-        MPL_free(host_targetbuf);
-    }
-
-  fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDIG_COMPUTE_ACC_OP);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
 }
 
+/* NOTE: the slot for MPI_OP_NULL refers to RMA cswap */
 MPL_STATIC_INLINE_PREFIX int MPIDIU_win_acc_op_get_index(MPI_Op op)
 {
-    if (op == MPI_OP_NULL) {
-        /* Builtin index is from 0 to MPIR_OP_N_BUILTIN-1.
-         * Thus use MPIR_OP_N_BUILTIN as index for special OP_NULL as RMA cswap */
-        return MPIR_OP_N_BUILTIN - 1;
-    } else {
-        return MPIR_Op_builtin_get_index(op);
-    }
+    return MPIR_Op_builtin_get_index(op);
 }
 
 MPL_STATIC_INLINE_PREFIX MPI_Op MPIDIU_win_acc_get_op(int index)
 {
-    if (index == MPIR_OP_N_BUILTIN - 1) {
-        /* Builtin index is from 0 to MPIR_OP_N_BUILTIN-1.
-         * Thus use MPIR_OP_N_BUILTIN as index for special OP_NULL as RMA cswap */
-        return MPI_OP_NULL;
-    } else {
-        return MPIR_Op_builtin_get_op(index);
-    }
+    return MPIR_Op_builtin_get_op(index);
 }
 
 /* Determine whether need poll progress for RMA target-side active message.
@@ -1233,6 +1042,54 @@ MPL_STATIC_INLINE_PREFIX bool MPIDIG_rma_need_poll_am(void)
 MPL_STATIC_INLINE_PREFIX void MPIDIG_rma_set_am_flag(void)
 {
     MPL_atomic_store_int(&MPIDIG_global.rma_am_flag, 1);
+}
+
+MPL_STATIC_INLINE_PREFIX void update_sender_vci(MPIR_Comm * comm, int value)
+{
+    comm->hints[MPIR_COMM_HINT_SENDER_VCI] = value % MPIDI_global.n_vcis;
+}
+
+MPL_STATIC_INLINE_PREFIX void update_receiver_vci(MPIR_Comm * comm, int value)
+{
+    comm->hints[MPIR_COMM_HINT_RECEIVER_VCI] = value % MPIDI_global.n_vcis;
+}
+
+MPL_STATIC_INLINE_PREFIX void update_comm_vci(MPIR_Comm * comm, int value)
+{
+    /* update the comm hints vci, sender_vci, and receiver_vci */
+    comm->hints[MPIR_COMM_HINT_VCI] = value % MPIDI_global.n_vcis;
+    update_sender_vci(comm, value);
+    update_receiver_vci(comm, value);
+}
+
+MPL_STATIC_INLINE_PREFIX int MPIDI_set_comm_hint_sender_vci(MPIR_Comm * comm, int type, int value)
+{
+    /* if the generic hint "vci" is set, update all of "vci", "sender_vci", and "receiver_vci"
+     * for consistency */
+    if (comm->hints[MPIR_COMM_HINT_VCI] != MPIDI_VCI_INVALID) {
+        update_comm_vci(comm, value);
+    } else {
+        update_sender_vci(comm, value);
+    }
+    return MPI_SUCCESS;
+}
+
+MPL_STATIC_INLINE_PREFIX int MPIDI_set_comm_hint_receiver_vci(MPIR_Comm * comm, int type, int value)
+{
+    /* if the generic hint "vci" is set, update all of "vci", "sender_vci", and "receiver_vci"
+     * for consistency */
+    if (comm->hints[MPIR_COMM_HINT_VCI] != MPIDI_VCI_INVALID) {
+        update_comm_vci(comm, value);
+    } else {
+        update_receiver_vci(comm, value);
+    }
+    return MPI_SUCCESS;
+}
+
+MPL_STATIC_INLINE_PREFIX int MPIDI_set_comm_hint_vci(MPIR_Comm * comm, int type, int value)
+{
+    update_comm_vci(comm, value);
+    return MPI_SUCCESS;
 }
 
 #endif /* CH4_IMPL_H_INCLUDED */

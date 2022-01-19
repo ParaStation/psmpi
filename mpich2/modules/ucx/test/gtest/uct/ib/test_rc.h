@@ -19,8 +19,15 @@ extern "C" {
 
 class test_rc : public uct_test {
 public:
+    typedef struct pending_send_request {
+        uct_pending_req_t uct;
+        int               cb_count;
+        int               purge_count;
+        uct_ep_h          ep;
+    } pending_send_request_t;
+
     virtual void init();
-    void connect();
+    virtual void connect();
 
     uct_rc_iface_t* rc_iface(entity *e) {
         return ucs_derived_of(e->iface(), uct_rc_iface_t);

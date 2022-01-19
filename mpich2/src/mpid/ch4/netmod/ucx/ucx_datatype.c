@@ -26,13 +26,14 @@ static void finish_pack(void *state);
 static void *start_pack(void *context, const void *buffer, size_t count)
 {
     struct pack_state *state;
+    MPIR_Datatype *dt_ptr = context;
 
     /* Todo: Add error handling */
     state = MPL_malloc(sizeof(struct pack_state), MPL_MEM_DATATYPE);
 
     state->buffer = (void *) buffer;
     state->count = count;
-    state->datatype = *((MPI_Datatype *) context);
+    state->datatype = dt_ptr->handle;
 
     return (void *) state;
 }
@@ -40,13 +41,14 @@ static void *start_pack(void *context, const void *buffer, size_t count)
 static void *start_unpack(void *context, void *buffer, size_t count)
 {
     struct pack_state *state;
+    MPIR_Datatype *dt_ptr = context;
 
     /* Todo: Add error handling */
     state = MPL_malloc(sizeof(struct pack_state), MPL_MEM_DATATYPE);
 
     state->buffer = buffer;
     state->count = count;
-    state->datatype = *((MPI_Datatype *) context);
+    state->datatype = dt_ptr->handle;
 
     return (void *) state;
 }
@@ -56,7 +58,7 @@ static size_t pack_size(void *state)
     struct pack_state *pack_state = (struct pack_state *) state;
     MPI_Aint packsize;
 
-    MPIR_Pack_size_impl(pack_state->count, pack_state->datatype, &packsize);
+    MPIR_Pack_size(pack_state->count, pack_state->datatype, &packsize);
 
     return (size_t) packsize;
 }
@@ -79,7 +81,7 @@ static ucs_status_t unpack(void *state, size_t offset, const void *src, size_t c
     MPI_Aint actual_unpack_bytes;
     MPI_Aint packsize;
 
-    MPIR_Pack_size_impl(pack_state->count, pack_state->datatype, &packsize);
+    MPIR_Pack_size(pack_state->count, pack_state->datatype, &packsize);
     max_unpack_bytes = MPL_MIN(packsize, count);
 
     MPIR_Typerep_unpack(src, max_unpack_bytes, pack_state->buffer, pack_state->count,

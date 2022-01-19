@@ -4,6 +4,8 @@
 * See file LICENSE for terms.
 */
 
+#include <common/test.h>
+
 #include "ucp_test.h"
 #include "common/test.h"
 #include "ucp/ucp_test.h"
@@ -19,12 +21,8 @@ extern "C" {
 
 class test_ucp_wireup : public ucp_test {
 public:
-    static std::vector<ucp_test_param>
-    enum_test_params_features(const ucp_params_t& ctx_params,
-                              const std::string& name,
-                              const std::string& test_case_name,
-                              const std::string& tls,
-                              uint64_t features, bool test_all = 0);
+    static void get_test_variants(std::vector<ucp_test_variant>& variants,
+                                  uint64_t features, bool test_all = false);
 
 protected:
     enum {
@@ -58,11 +56,12 @@ protected:
     void send_recv(ucp_ep_h send_ep, ucp_worker_h recv_worker, ucp_ep_h recv_ep,
                    size_t vecsize, int repeat);
 
-    void waitall(std::vector<void*> reqs);
-
     void disconnect(ucp_ep_h ep);
 
     void disconnect(ucp_test::entity &e);
+
+    static void close_completion(void *request, ucs_status_t status,
+                                 void *user_data);
 
     static void send_completion(void *request, ucs_status_t status);
 
@@ -79,6 +78,9 @@ protected:
 
     ucp_rkey_h get_rkey(ucp_ep_h ep, ucp_mem_h memh);
 
+    bool ep_iface_has_caps(const entity& e, const std::string& tl,
+                           uint64_t caps);
+
 protected:
     vec_type                               m_send_data;
     vec_type                               m_recv_data;
@@ -93,60 +95,40 @@ private:
     static void unmap_memh(ucp_mem_h memh, ucp_context_h context);
 };
 
-std::vector<ucp_test_param>
-test_ucp_wireup::enum_test_params_features(const ucp_params_t& ctx_params,
-                                           const std::string& name,
-                                           const std::string& test_case_name,
-                                           const std::string& tls,
-                                           uint64_t features, bool test_all)
+void test_ucp_wireup::get_test_variants(std::vector<ucp_test_variant>& variants,
+                                        uint64_t features, bool test_all)
 {
     std::vector<ucp_test_param> result;
-    ucp_params_t tmp_ctx_params = ctx_params;
 
     if (features & UCP_FEATURE_RMA) {
-        tmp_ctx_params.features = UCP_FEATURE_RMA;
-        generate_test_params_variant(tmp_ctx_params, name, test_case_name + "/rma",
-                                     tls, TEST_RMA, result);
-
-        generate_test_params_variant(tmp_ctx_params, name, test_case_name + "/rma",
-                                     tls, TEST_RMA | UNIFIED_MODE, result);
+        add_variant_with_value(variants, UCP_FEATURE_RMA, TEST_RMA, "rma");
+        add_variant_with_value(variants, UCP_FEATURE_RMA,
+                               TEST_RMA | UNIFIED_MODE, "rma,unified");
     }
 
     if (features & UCP_FEATURE_TAG) {
-        tmp_ctx_params.features = UCP_FEATURE_TAG;
-        generate_test_params_variant(tmp_ctx_params, name, test_case_name + "/tag",
-                                     tls, TEST_TAG, result);
-
-        generate_test_params_variant(tmp_ctx_params, name, test_case_name + "/tag",
-                                     tls, TEST_TAG | UNIFIED_MODE, result);
+        add_variant_with_value(variants, UCP_FEATURE_TAG, TEST_TAG, "tag");
+        add_variant_with_value(variants, UCP_FEATURE_TAG,
+                               TEST_TAG | UNIFIED_MODE, "tag,unified");
     }
 
     if (features & UCP_FEATURE_STREAM) {
-        tmp_ctx_params.features = UCP_FEATURE_STREAM;
-        generate_test_params_variant(tmp_ctx_params, name, test_case_name + "/stream",
-                                     tls, TEST_STREAM, result);
-
-        generate_test_params_variant(tmp_ctx_params, name, test_case_name + "/stream",
-                                     tls, TEST_STREAM | UNIFIED_MODE, result);
+        add_variant_with_value(variants, UCP_FEATURE_STREAM, TEST_STREAM, "stream");
+        add_variant_with_value(variants, UCP_FEATURE_STREAM,
+                               TEST_STREAM | UNIFIED_MODE, "stream,unified");
     }
 
     if (features & (UCP_FEATURE_AMO32 | UCP_FEATURE_AMO64)) {
-        tmp_ctx_params.features = (UCP_FEATURE_AMO32 | UCP_FEATURE_AMO64);
-        generate_test_params_variant(tmp_ctx_params, name, test_case_name + "/amo",
-                                     tls, TEST_AMO, result);
+        add_variant_with_value(variants, UCP_FEATURE_AMO32 | UCP_FEATURE_AMO64,
+                               TEST_AMO, "amo");
     }
 
     if (test_all) {
         uint64_t all_flags = (TEST_TAG | TEST_RMA | TEST_STREAM);
-        tmp_ctx_params.features = features;
-        generate_test_params_variant(tmp_ctx_params, name, test_case_name + "/all",
-                                     tls, all_flags, result);
-
-        generate_test_params_variant(tmp_ctx_params, name, test_case_name + "/all",
-                                     tls, all_flags | UNIFIED_MODE, result);
+        add_variant_with_value(variants, features, all_flags, "all");
+        add_variant_with_value(variants, features, all_flags | UNIFIED_MODE,
+                               "all,unified");
     }
-
-    return result;
 }
 
 void test_ucp_wireup::unmap_memh(ucp_mem_h memh, ucp_context_h context)
@@ -159,7 +141,7 @@ void test_ucp_wireup::unmap_memh(ucp_mem_h memh, ucp_context_h context)
 
 void test_ucp_wireup::init()
 {
-    if (GetParam().variant & UNIFIED_MODE) {
+    if (get_variant_value() & UNIFIED_MODE) {
         modify_config("UNIFIED_MODE",  "y");
     }
 
@@ -168,7 +150,7 @@ void test_ucp_wireup::init()
     m_send_data.resize(BUFFER_LENGTH, 0);
     m_recv_data.resize(BUFFER_LENGTH, 0);
 
-    if (GetParam().variant & (TEST_RMA | TEST_AMO)) {
+    if (get_variant_value() & (TEST_RMA | TEST_AMO)) {
         ucs_status_t status;
         ucp_mem_map_params_t params;
         ucp_mem_h memh;
@@ -236,7 +218,7 @@ void test_ucp_wireup::clear_recv_data() {
 void test_ucp_wireup::send_nb(ucp_ep_h ep, size_t length, int repeat,
                               std::vector<void*>& reqs, uint64_t send_data)
 {
-    if (GetParam().variant & TEST_TAG) {
+    if (get_variant_value() & TEST_TAG) {
         std::fill(m_send_data.begin(), m_send_data.end(), send_data);
         for (int i = 0; i < repeat; ++i) {
             void *req = ucp_tag_send_nb(ep, &m_send_data[0], length,
@@ -247,7 +229,7 @@ void test_ucp_wireup::send_nb(ucp_ep_h ep, size_t length, int repeat,
                 ASSERT_UCS_OK(UCS_PTR_STATUS(req));
             }
         }
-    } else if (GetParam().variant & TEST_STREAM) {
+    } else if (get_variant_value() & TEST_STREAM) {
         std::fill(m_send_data.begin(), m_send_data.end(), send_data);
         for (int i = 0; i < repeat; ++i) {
             void *req = ucp_stream_send_nb(ep, &m_send_data[0], length, DT_U64,
@@ -258,7 +240,7 @@ void test_ucp_wireup::send_nb(ucp_ep_h ep, size_t length, int repeat,
                 ASSERT_UCS_OK(UCS_PTR_STATUS(req));
             }
         }
-    } else if (GetParam().variant & TEST_RMA) {
+    } else if (get_variant_value() & TEST_RMA) {
         clear_recv_data();
 
         ucp_mem_h memh  = (sender().ucph() == ep->worker->context) ?
@@ -287,22 +269,22 @@ void test_ucp_wireup::send_b(ucp_ep_h ep, size_t length, int repeat,
 {
     std::vector<void*> reqs;
     send_nb(ep, length, repeat, reqs, send_data);
-    waitall(reqs);
+    requests_wait(reqs);
 }
 
 void test_ucp_wireup::recv_b(ucp_worker_h worker, ucp_ep_h ep, size_t length,
                              int repeat, uint64_t recv_data)
 {
-    if (GetParam().variant & (TEST_TAG | TEST_STREAM)) {
+    if (get_variant_value() & (TEST_TAG | TEST_STREAM)) {
         for (int i = 0; i < repeat; ++i) {
             size_t recv_length;
             void *req;
 
             clear_recv_data();
-            if (GetParam().variant & TEST_TAG) {
+            if (get_variant_value() & TEST_TAG) {
                 req = ucp_tag_recv_nb(worker, &m_recv_data[0], length, DT_U64,
                                       TAG, (ucp_tag_t)-1, tag_recv_completion);
-            } else if (GetParam().variant & TEST_STREAM) {
+            } else if (get_variant_value() & TEST_STREAM) {
                 req = ucp_stream_recv_nb(ep, &m_recv_data[0], length, DT_U64,
                                          stream_recv_completion, &recv_length,
                                          UCP_STREAM_RECV_FLAG_WAITALL);
@@ -310,7 +292,7 @@ void test_ucp_wireup::recv_b(ucp_worker_h worker, ucp_ep_h ep, size_t length,
                 req = NULL;
             }
             if (UCS_PTR_IS_PTR(req)) {
-                wait(req);
+                request_wait(req);
             } else {
                 ASSERT_UCS_OK(UCS_PTR_STATUS(req));
             }
@@ -321,7 +303,7 @@ void test_ucp_wireup::recv_b(ucp_worker_h worker, ucp_ep_h ep, size_t length,
                                          m_recv_data.begin() + length,
                                          recv_data));
         }
-    } else if (GetParam().variant & TEST_RMA) {
+    } else if (get_variant_value() & TEST_RMA) {
         for (size_t i = 0; i < length; ++i) {
             while (m_recv_data[i] != recv_data + repeat - 1) {
                 progress();
@@ -333,6 +315,14 @@ void test_ucp_wireup::recv_b(ucp_worker_h worker, ucp_ep_h ep, size_t length,
 void test_ucp_wireup::send_completion(void *request, ucs_status_t status)
 {
 }
+
+void test_ucp_wireup::close_completion(void *request, ucs_status_t status,
+                                       void *user_data)
+{
+    ASSERT_UCS_OK(status);
+    ASSERT_NE((test_ucp_wireup *)NULL, (test_ucp_wireup *)user_data);
+}
+
 
 void test_ucp_wireup::tag_recv_completion(void *request, ucs_status_t status,
                                           ucp_tag_recv_info_t *info)
@@ -353,7 +343,7 @@ void test_ucp_wireup::send_recv(ucp_ep_h send_ep, ucp_worker_h recv_worker,
 
     send_nb(send_ep, length, repeat, send_reqs, send_data);
     recv_b (recv_worker, recv_ep, length, repeat, send_data);
-    waitall(send_reqs);
+    requests_wait(send_reqs);
     m_rkeys.clear();
 }
 
@@ -362,29 +352,38 @@ void test_ucp_wireup::disconnect(ucp_ep_h ep) {
     if (!UCS_PTR_IS_PTR(req)) {
         ASSERT_UCS_OK(UCS_PTR_STATUS(req));
     }
-    wait(req);
+    request_wait(req);
 }
 
 void test_ucp_wireup::disconnect(ucp_test::entity &e) {
     disconnect(e.revoke_ep());
 }
 
-void test_ucp_wireup::waitall(std::vector<void*> reqs)
+bool test_ucp_wireup::ep_iface_has_caps(const entity& e, const std::string& tl,
+                                        uint64_t caps)
 {
-    while (!reqs.empty()) {
-        wait(reqs.back());
-        reqs.pop_back();
+    ucp_worker_h worker = e.worker();
+    ucp_context_h ctx   = worker->context;
+
+    for (unsigned i = 0; i < worker->num_ifaces; ++i) {
+        ucp_worker_iface_t *wiface = worker->ifaces[i];
+
+        char* name = ctx->tl_rscs[wiface->rsc_index].tl_rsc.tl_name;
+        if ((tl.empty() || !strcmp(name, tl.c_str())) &&
+            ucs_test_all_flags(wiface->attr.cap.flags, caps)) {
+            return true;
+        }
     }
+
+    return false;
 }
 
 class test_ucp_wireup_1sided : public test_ucp_wireup {
 public:
-    static std::vector<ucp_test_param>
-    enum_test_params(const ucp_params_t& ctx_params, const std::string& name,
-                     const std::string& test_case_name, const std::string& tls)
+    static void get_test_variants(std::vector<ucp_test_variant>& variants)
     {
-        return enum_test_params_features(ctx_params, name, test_case_name, tls,
-                                         UCP_FEATURE_RMA | UCP_FEATURE_TAG);
+        test_ucp_wireup::get_test_variants(variants,
+                                           UCP_FEATURE_RMA | UCP_FEATURE_TAG);
     }
 
     test_ucp_wireup_1sided() {
@@ -401,10 +400,10 @@ UCS_TEST_P(test_ucp_wireup_1sided, address) {
     size_t size;
     void *buffer;
     std::set<uint8_t> packed_dev_priorities, unpacked_dev_priorities;
+    std::set<ucs_sys_device_t> packed_sys_devices, unpacked_sys_devices;
     ucp_rsc_index_t tl;
 
-    status = ucp_address_pack(sender().worker(), NULL,
-                              std::numeric_limits<uint64_t>::max(),
+    status = ucp_address_pack(sender().worker(), NULL, &ucp_tl_bitmap_max,
                               UCP_ADDRESS_PACK_FLAGS_ALL, m_lanes2remote, &size,
                               &buffer);
     ASSERT_UCS_OK(status);
@@ -412,11 +411,15 @@ UCS_TEST_P(test_ucp_wireup_1sided, address) {
     ASSERT_GT(size, 0ul);
     EXPECT_LE(size, 2048ul); /* Expect a reasonable address size */
 
-    ucs_for_each_bit(tl, sender().worker()->context->tl_bitmap) {
-        if (sender().worker()->context->tl_rscs[tl].flags & UCP_TL_RSC_FLAG_SOCKADDR) {
+    UCS_BITMAP_FOR_EACH_BIT(sender().worker()->context->tl_bitmap, tl) {
+        const ucp_tl_resource_desc_t &rsc =
+                sender().worker()->context->tl_rscs[tl];
+        if (rsc.flags & UCP_TL_RSC_FLAG_SOCKADDR) {
             continue;
         }
-        packed_dev_priorities.insert(ucp_worker_iface_get_attr(sender().worker(), tl)->priority);
+        packed_dev_priorities.insert(
+                ucp_worker_iface_get_attr(sender().worker(), tl)->priority);
+        packed_sys_devices.insert(rsc.tl_rsc.sys_device);
     }
 
     ucp_unpacked_address unpacked_address;
@@ -427,7 +430,7 @@ UCS_TEST_P(test_ucp_wireup_1sided, address) {
 
     EXPECT_EQ(sender().worker()->uuid, unpacked_address.uuid);
 #if ENABLE_DEBUG_DATA
-    EXPECT_EQ(std::string(ucp_worker_get_name(sender().worker())),
+    EXPECT_EQ(std::string(ucp_worker_get_address_name(sender().worker())),
               std::string(unpacked_address.name));
 #endif
     EXPECT_LE(unpacked_address.address_count,
@@ -436,6 +439,7 @@ UCS_TEST_P(test_ucp_wireup_1sided, address) {
     const ucp_address_entry_t *ae;
     ucp_unpacked_address_for_each(ae, &unpacked_address) {
         unpacked_dev_priorities.insert(ae->iface_attr.priority);
+        unpacked_sys_devices.insert(ae->sys_dev);
     }
 
     /* TODO test addresses */
@@ -445,6 +449,7 @@ UCS_TEST_P(test_ucp_wireup_1sided, address) {
     /* Make sure that the packed device priorities are equal to the unpacked
      * device priorities */
     ASSERT_TRUE(packed_dev_priorities == unpacked_dev_priorities);
+    ASSERT_TRUE(packed_sys_devices == unpacked_sys_devices);
 }
 
 UCS_TEST_P(test_ucp_wireup_1sided, ep_address, "IB_NUM_PATHS?=2") {
@@ -455,9 +460,8 @@ UCS_TEST_P(test_ucp_wireup_1sided, ep_address, "IB_NUM_PATHS?=2") {
     sender().connect(&receiver(), get_ep_params());
 
     status = ucp_address_pack(sender().worker(), sender().ep(),
-                              std::numeric_limits<uint64_t>::max(),
-                              UCP_ADDRESS_PACK_FLAGS_ALL, m_lanes2remote, &size,
-                              &buffer);
+                              &ucp_tl_bitmap_max, UCP_ADDRESS_PACK_FLAGS_ALL,
+                              m_lanes2remote, &size, &buffer);
     ASSERT_UCS_OK(status);
     ASSERT_TRUE(buffer != NULL);
 
@@ -480,7 +484,7 @@ UCS_TEST_P(test_ucp_wireup_1sided, empty_address) {
     size_t size;
     void *buffer;
 
-    status = ucp_address_pack(sender().worker(), NULL, 0,
+    status = ucp_address_pack(sender().worker(), NULL, &ucp_tl_bitmap_min,
                               UCP_ADDRESS_PACK_FLAGS_ALL, m_lanes2remote, &size,
                               &buffer);
     ASSERT_UCS_OK(status);
@@ -495,7 +499,7 @@ UCS_TEST_P(test_ucp_wireup_1sided, empty_address) {
 
     EXPECT_EQ(sender().worker()->uuid, unpacked_address.uuid);
 #if ENABLE_DEBUG_DATA
-    EXPECT_EQ(std::string(ucp_worker_get_name(sender().worker())),
+    EXPECT_EQ(std::string(ucp_worker_get_address_name(sender().worker())),
               std::string(unpacked_address.name));
 #endif
     EXPECT_EQ(0u, unpacked_address.address_count);
@@ -513,10 +517,16 @@ UCS_TEST_P(test_ucp_wireup_1sided, one_sided_wireup) {
 UCS_TEST_P(test_ucp_wireup_1sided, one_sided_wireup_rndv, "RNDV_THRESH=1") {
     sender().connect(&receiver(), get_ep_params());
     send_recv(sender().ep(), receiver().worker(), receiver().ep(), BUFFER_LENGTH, 1);
-    if (is_loopback() && (GetParam().variant & TEST_TAG)) {
+    if (is_loopback() && (get_variant_value() & TEST_TAG)) {
         /* expect the endpoint to be connected to itself */
-        ucp_ep_h ep = sender().ep();
-        EXPECT_EQ((uintptr_t)ep, ucp_ep_dest_ep_ptr(ep));
+        ucp_ep_h ep         = sender().ep();
+        ucp_worker_h worker = sender().worker();
+        ucp_ep_h ep_by_id;
+        ucs_status_t status = ucp_worker_get_ep_by_id(worker,
+                                                      ucp_ep_remote_id(ep),
+                                                      &ep_by_id);
+        ASSERT_EQ(UCS_OK, status);
+        EXPECT_EQ(ep, ep_by_id);
     }
     flush_worker(sender());
 }
@@ -631,7 +641,15 @@ UCS_TEST_P(test_ucp_wireup_1sided, send_disconnect_reply1) {
     recv_b(sender().worker(), sender().ep(), 8, 1);
 }
 
-UCS_TEST_P(test_ucp_wireup_1sided, send_disconnect_reply2) {
+UCS_TEST_SKIP_COND_P(test_ucp_wireup_1sided, send_disconnect_reply2,
+                     /* skip the test for TCP, because it fails from time to
+                      * time: the sender re-uses a socket fd from the already
+                      * accepted connection from the receiver, but then the
+                      * socket fd is closed, since the receiver closed the
+                      * connection and the underlying TCP EP isn't able to
+                      * receive the data on the failed socket.
+                      * TODO: fix the bug on TCP level */
+                     has_transport("tcp")) {
     sender().connect(&receiver(), get_ep_params());
 
     send_b(sender().ep(), 8, 1);
@@ -664,7 +682,7 @@ UCS_TEST_P(test_ucp_wireup_1sided, disconnect_nb_onesided) {
     sender().close_ep_req_free(req);
 
     recv_b(receiver().worker(), receiver().ep(), 1000, 1000);
-    waitall(sreqs);
+    requests_wait(sreqs);
 }
 
 UCS_TEST_P(test_ucp_wireup_1sided, multi_ep_1sided) {
@@ -683,13 +701,10 @@ UCP_INSTANTIATE_TEST_CASE(test_ucp_wireup_1sided)
 
 class test_ucp_wireup_2sided : public test_ucp_wireup {
 public:
-    static std::vector<ucp_test_param>
-    enum_test_params(const ucp_params_t& ctx_params, const std::string& name,
-                     const std::string& test_case_name, const std::string& tls)
+    static void get_test_variants(std::vector<ucp_test_variant>& variants)
     {
-        return enum_test_params_features(ctx_params, name, test_case_name, tls,
-                                         UCP_FEATURE_RMA | UCP_FEATURE_TAG |
-                                         UCP_FEATURE_STREAM);
+        test_ucp_wireup::get_test_variants(variants, UCP_FEATURE_RMA |
+                                           UCP_FEATURE_TAG | UCP_FEATURE_STREAM);
     }
 
 protected:
@@ -731,7 +746,7 @@ void test_ucp_wireup_2sided::test_connect_loopback(bool delay_before_connect,
 
         EXPECT_NE(ep1, ep2);
 
-        if (GetParam().variant & TEST_STREAM) {
+        if (get_variant_value() & TEST_STREAM) {
             uint64_t data1 = (base_index * 10) + 1;
             uint64_t data2 = (base_index * 10) + 2;
 
@@ -769,7 +784,7 @@ UCS_TEST_P(test_ucp_wireup_2sided, no_loopback_with_delay) {
 }
 
 UCS_TEST_SKIP_COND_P(test_ucp_wireup_2sided, async_connect,
-                     !(GetParam().ctx_params.features & UCP_FEATURE_TAG)) {
+                     !(get_variant_ctx_params().features & UCP_FEATURE_TAG)) {
     sender().connect(&receiver(), get_ep_params());
     ucp_ep_h send_ep = sender().ep();
     std::vector<void *> reqs;
@@ -778,7 +793,7 @@ UCS_TEST_SKIP_COND_P(test_ucp_wireup_2sided, async_connect,
     EXPECT_FALSE(UCS_PTR_IS_ERR(reqs.back()));
 
     ucs_time_t deadline = ucs::get_deadline();
-    /* waiting of async reply on wiriup without calling progress on receiver */
+    /* waiting of async reply on wireup without calling progress on receiver */
     while(!(send_ep->flags & UCP_EP_FLAG_LOCAL_CONNECTED) &&
           (ucs_get_time() < deadline)) {
         ucp_worker_progress(sender().worker());
@@ -788,7 +803,7 @@ UCS_TEST_SKIP_COND_P(test_ucp_wireup_2sided, async_connect,
     reqs.push_back(ucp_tag_recv_nb(receiver().worker(), NULL, 0, DT_U64, 1,
                                    (ucp_tag_t)-1, tag_recv_completion));
     EXPECT_FALSE(UCS_PTR_IS_ERR(reqs.back()));
-    waitall(reqs);
+    requests_wait(reqs);
 }
 
 UCS_TEST_P(test_ucp_wireup_2sided, connect_disconnect) {
@@ -800,6 +815,32 @@ UCS_TEST_P(test_ucp_wireup_2sided, connect_disconnect) {
     if (!is_loopback()) {
         disconnect(receiver());
     }
+}
+
+UCS_TEST_P(test_ucp_wireup_2sided, close_nbx_callback) {
+    sender().connect(&receiver(), get_ep_params());
+    if (!is_loopback()) {
+        receiver().connect(&sender(), get_ep_params());
+    }
+
+    std::vector<void *> reqs;
+    ucp_request_param_t param;
+
+    param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK  |
+                         UCP_OP_ATTR_FIELD_USER_DATA |
+                         UCP_OP_ATTR_FLAG_NO_IMM_CMPL;
+    param.cb.send      = close_completion;
+    param.user_data    = this;
+
+    reqs.push_back(ucp_ep_close_nbx(sender().revoke_ep(), &param));
+    EXPECT_FALSE(UCS_PTR_IS_ERR(reqs.back()));
+
+    if (!is_loopback()) {
+        reqs.push_back(ucp_ep_close_nbx(receiver().revoke_ep(), &param));
+        EXPECT_FALSE(UCS_PTR_IS_ERR(reqs.back()));
+    }
+
+    requests_wait(reqs);
 }
 
 UCS_TEST_P(test_ucp_wireup_2sided, multi_ep_2sided) {
@@ -882,13 +923,10 @@ public:
         m_num_lanes = 0;
     }
 
-    static std::vector<ucp_test_param>
-    enum_test_params(const ucp_params_t& ctx_params, const std::string& name,
-                     const std::string& test_case_name, const std::string& tls)
+    static void get_test_variants(std::vector<ucp_test_variant>& variants)
     {
-        return enum_test_params_features(ctx_params, name, test_case_name, tls,
-                                         UCP_FEATURE_TAG | UCP_FEATURE_RMA |
-                                         UCP_FEATURE_STREAM, 1);
+        test_ucp_wireup::get_test_variants(variants, UCP_FEATURE_RMA |
+                                           UCP_FEATURE_TAG | UCP_FEATURE_STREAM);
     }
 
     void init() {
@@ -902,7 +940,7 @@ public:
     bool check_scalable_tls(const ucp_worker_h worker, size_t est_num_eps) {
         ucp_rsc_index_t rsc_index;
 
-        ucs_for_each_bit(rsc_index, worker->context->tl_bitmap) {
+        UCS_BITMAP_FOR_EACH_BIT(worker->context->tl_bitmap, rsc_index) {
             ucp_md_index_t md_index      = worker->context->tl_rscs[rsc_index].md_index;
             const uct_md_attr_t *md_attr = &worker->context->tl_mds[md_index].attr;
 
@@ -914,10 +952,12 @@ public:
             }
 
             if (ucp_worker_iface_get_attr(worker, rsc_index)->max_num_eps >= est_num_eps) {
-                EXPECT_TRUE((worker->scalable_tl_bitmap & UCS_BIT(rsc_index)) != 0);
+                EXPECT_TRUE(
+                        UCS_BITMAP_GET(worker->scalable_tl_bitmap, rsc_index));
                 return true;
             } else {
-                EXPECT_TRUE((worker->scalable_tl_bitmap & UCS_BIT(rsc_index)) == 0);
+                EXPECT_TRUE(UCS_BITMAP_GET(worker->scalable_tl_bitmap,
+                                           rsc_index) == 0);
             }
         }
 
@@ -1024,7 +1064,7 @@ UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_wireup_fallback,
 /* Test two scalable enough transports */
 UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_wireup_fallback,
                               dc_ud, "dc_x,ud_x,ud_v")
-/* Test unsacalable transports only */
+/* Test unscalable transports only */
 UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_wireup_fallback,
                               rc, "rc_x,rc_v")
 /* Test all available IB transports */
@@ -1036,18 +1076,10 @@ UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_wireup_fallback,
 
 class test_ucp_wireup_unified : public test_ucp_wireup {
 public:
-    static std::vector<ucp_test_param>
-    enum_test_params(const ucp_params_t& ctx_params, const std::string& name,
-                     const std::string& test_case_name, const std::string& tls)
+    static void get_test_variants(std::vector<ucp_test_variant>& variants)
     {
-        std::vector<ucp_test_param> result;
-        ucp_params_t tmp_ctx_params = ctx_params;
-
-        tmp_ctx_params.features = UCP_FEATURE_TAG;
-
-        generate_test_params_variant(tmp_ctx_params, name, test_case_name + "/uni",
-                                     tls, TEST_TAG | UNIFIED_MODE, result);
-        return result;
+        add_variant_with_value(variants, UCP_FEATURE_TAG,
+                               TEST_TAG | UNIFIED_MODE, "uni");
     }
 
     bool context_has_tls(ucp_context_h ctx, const std::string& tl,
@@ -1084,6 +1116,7 @@ public:
                 return true;
             }
         }
+
         return false;
     }
 
@@ -1101,8 +1134,10 @@ public:
             }
 
             ASSERT_TRUE(ctx->num_tls > worker->num_ifaces);
-            EXPECT_TRUE(worker_has_tls(worker, better_tl, i));
-            EXPECT_FALSE(worker_has_tls(worker, tl, i));
+            EXPECT_TRUE(worker_has_tls(worker, better_tl, i)) <<
+                " transport " << better_tl << " should not be closed";
+            EXPECT_FALSE(worker_has_tls(worker, tl, i)) <<
+                " transport " << better_tl << " should be closed";
         }
     }
 };
@@ -1110,7 +1145,7 @@ public:
 
 UCS_TEST_P(test_ucp_wireup_unified, select_best_ifaces)
 {
-    // Accelerated transports have better performance charasteristics than their
+    // Accelerated transports have better performance characteristics than their
     // verbs counterparts. Check that corresponding verbs transports are not used
     // by workers in unified mode.
     check_unified_ifaces(&sender(), "rc_mlx5", "rc_verbs");
@@ -1123,9 +1158,12 @@ UCS_TEST_P(test_ucp_wireup_unified, select_best_ifaces)
 
     // Set some big enough number of endpoints for DC to be more performance
     // efficient than RC. Now check that DC is selected over RC.
-    modify_config("NUM_EPS", "1000");
-    entity *e = create_entity();
-    check_unified_ifaces(e, "dc_mlx5", "rc_mlx5");
+    // TODO: enable test when keepalive feature is enabled for DC transport
+    //modify_config("NUM_EPS", "1000");
+    //entity *e = create_entity();
+    //check_unified_ifaces(e, "dc_mlx5", "rc_mlx5");
+    EXPECT_FALSE(ep_iface_has_caps(sender(), "dc_mlx5",
+                                   UCT_IFACE_FLAG_EP_CHECK));
 }
 
 UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_wireup_unified, rc, "rc")
@@ -1133,6 +1171,7 @@ UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_wireup_unified, ud, "ud")
 UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_wireup_unified, rc_dc, "rc,dc")
 
 class test_ucp_wireup_fallback_amo : public test_ucp_wireup {
+protected:
     void init() {
         size_t device_atomics_cnt = 0;
 
@@ -1145,7 +1184,8 @@ class test_ucp_wireup_fallback_amo : public test_ucp_wireup {
                 device_atomics_cnt++;
             }
         }
-        bool device_atomics_supported = sender().worker()->atomic_tls != 0;
+        bool device_atomics_supported = !UCS_BITMAP_IS_ZERO_INPLACE(
+                &sender().worker()->atomic_tls);
 
         test_ucp_wireup::cleanup();
 
@@ -1157,8 +1197,6 @@ class test_ucp_wireup_fallback_amo : public test_ucp_wireup {
     void cleanup() {
         /* do nothing */
     }
-
-protected:
 
     bool use_device_amo(ucp_ep_h ep) {
         ucp_ep_config_t *ep_config = ucp_ep_config(ep);
@@ -1220,40 +1258,22 @@ protected:
     }
 
 public:
-
-    static ucp_params_t get_ctx_params() {
-        ucp_params_t params = test_ucp_wireup::get_ctx_params();
-        params.field_mask  |= UCP_PARAM_FIELD_FEATURES;
-        params.features    |= (UCP_FEATURE_AMO32 |
-                               UCP_FEATURE_AMO64);
-        return params;
+    static void get_test_variants(std::vector<ucp_test_variant>& variants)
+    {
+        test_ucp_wireup::get_test_variants(variants, UCP_FEATURE_AMO32 |
+                                           UCP_FEATURE_AMO64);
     }
 };
 
 class test_ucp_wireup_amo : public test_ucp_wireup {
 public:
-    typedef struct {
-        test_ucp_wireup_amo *test;
-    } request_t;
-
-    static ucp_params_t get_ctx_params() {
-        ucp_params_t params = test_ucp_wireup::get_ctx_params();
-        params.field_mask  |= UCP_PARAM_FIELD_REQUEST_SIZE;
-        params.request_size = sizeof(request_t);
-        return params;
-    }
-
-    static std::vector<ucp_test_param>
-    enum_test_params(const ucp_params_t& ctx_params, const std::string& name,
-                     const std::string& test_case_name, const std::string& tls)
+    static void get_test_variants(std::vector<ucp_test_variant>& variants)
     {
-        uint64_t amo_features;
-
-        EXPECT_TRUE((sizeof(elem_type) == 4ul) || (sizeof(elem_type) == 8ul));
-        amo_features = (sizeof(elem_type) == 4ul) ? UCP_FEATURE_AMO32 :
-                       UCP_FEATURE_AMO64;
-        return enum_test_params_features(ctx_params, name, test_case_name, tls,
-                                         amo_features, false);
+        UCS_STATIC_ASSERT((sizeof(elem_type) == sizeof(uint32_t)) ||
+                          (sizeof(elem_type) == sizeof(uint64_t)));
+        uint64_t amo_features = (sizeof(elem_type) == sizeof(uint32_t)) ?
+                                UCP_FEATURE_AMO32 : UCP_FEATURE_AMO64;
+        test_ucp_wireup::get_test_variants(variants, amo_features);
     }
 
 protected:
@@ -1276,12 +1296,12 @@ protected:
         m_send_data[0] = ucs_generate_uuid(0);
     }
 
-    static void flush_cb(void *req, ucs_status_t status) {
-        request_t *request = (request_t *)req;
+    static void flush_cb(void *req, ucs_status_t status, void *user_data) {
+        test_ucp_wireup_amo *test = (test_ucp_wireup_amo*)user_data;
 
         ASSERT_UCS_OK(status);
-        request->test->rkeys_cleanup();
-        request->test->memhs_cleanup();
+        test->rkeys_cleanup();
+        test->memhs_cleanup();
     }
 };
 
@@ -1298,10 +1318,15 @@ UCS_TEST_P(test_ucp_wireup_amo, relese_key_after_flush) {
                                           m_send_data[0], sizeof(elem_type),
                                           (uint64_t)&m_recv_data[0], rkey);
     ASSERT_UCS_OK(status);
-    request_t *req = (request_t *)ucp_ep_flush_nb(sender().ep(), 0, flush_cb);
+
+    ucp_request_param_t param;
+    param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
+                         UCP_OP_ATTR_FIELD_USER_DATA;
+    param.cb.send      = flush_cb;
+    param.user_data    = this;
+    void *req = ucp_ep_flush_nbx(sender().ep(), &param);
     if (UCS_PTR_IS_PTR(req)) {
-        req->test = this;
-        wait(req);
+        request_wait(req);
     } else {
         ASSERT_UCS_OK(UCS_PTR_STATUS(req));
     }
@@ -1365,8 +1390,8 @@ protected:
                         receiver().worker(), &recv_data[0], size,
                         ucp_dt_make_contig(1), 1, 1,
                         (ucp_tag_recv_callback_t)ucs_empty_function);
-        wait(sreq);
-        wait(rreq);
+        request_wait(sreq);
+        request_wait(rreq);
 
         EXPECT_EQ(send_data, recv_data);
     }
@@ -1389,11 +1414,8 @@ protected:
     std::vector<std::string> m_ib_devices;
 
 public:
-    static ucp_params_t get_ctx_params() {
-        ucp_params_t params = ucp_test::get_ctx_params();
-        params.field_mask  |= UCP_PARAM_FIELD_FEATURES;
-        params.features     = UCP_FEATURE_TAG;
-        return params;
+    static void get_test_variants(std::vector<ucp_test_variant>& variants) {
+        add_variant(variants, UCP_FEATURE_TAG);
     }
 };
 
@@ -1436,3 +1458,49 @@ UCS_TEST_SKIP_COND_P(test_ucp_wireup_asymmetric, connect, is_self()) {
 UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_wireup_asymmetric, rcv, "rc_v")
 UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_wireup_asymmetric, rcx, "rc_x")
 UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_wireup_asymmetric, ib, "ib")
+
+class test_ucp_wireup_keepalive : public test_ucp_wireup {
+public:
+    test_ucp_wireup_keepalive() {
+        m_env.push_back(new ucs::scoped_setenv("UCX_TCP_KEEPIDLE", "inf"));
+    }
+
+    static void get_test_variants(std::vector<ucp_test_variant>& variants)
+    {
+        test_ucp_wireup::get_test_variants(variants, UCP_FEATURE_TAG);
+    }
+
+    ucp_ep_params_t get_ep_params() {
+        ucp_ep_params_t params;
+        memset(&params, 0, sizeof(params));
+        params.field_mask      = UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE |
+                                 UCP_EP_PARAM_FIELD_ERR_HANDLER;
+        params.err_mode        = UCP_ERR_HANDLING_MODE_PEER;
+        params.err_handler.cb  = reinterpret_cast<ucp_err_handler_cb_t>
+                                 (ucs_empty_function);
+        params.err_handler.arg = reinterpret_cast<void*>(this);
+        return params;
+    }
+
+    void init() {
+        test_ucp_wireup::init();
+
+        sender().connect(&receiver(), get_ep_params());
+        receiver().connect(&sender(), get_ep_params());
+    }
+
+protected:
+    ucs::ptr_vector<ucs::scoped_setenv> m_env;
+};
+
+/* test if EP has non-empty keepalive lanes mask */
+UCS_TEST_P(test_ucp_wireup_keepalive, attr) {
+    if (!sender().has_lane_with_caps(UCT_IFACE_FLAG_EP_CHECK)) {
+        UCS_TEST_SKIP_R("Unsupported");
+    }
+
+    ucp_ep_config_t *ep_config = ucp_ep_config(sender().ep());
+    EXPECT_NE(0, ep_config->key.ep_check_map);
+}
+
+UCP_INSTANTIATE_TEST_CASE(test_ucp_wireup_keepalive)

@@ -63,39 +63,25 @@ public:
 
         uct_test::init();
 
-        entity *sender = uct_test::create_entity(0ul, NULL, unexp_eager,
-                                                 unexp_rndv,
-                                                 reinterpret_cast<void*>(this),
-                                                 reinterpret_cast<void*>(this));
-        m_entities.push_back(sender);
-
+        uct_test::create_connected_entities(0ul, NULL, unexp_eager, unexp_rndv,
+                                            reinterpret_cast<void*>(this),
+                                            reinterpret_cast<void*>(this));
         check_skip_test();
-
-        if (UCT_DEVICE_TYPE_SELF == GetParam()->dev_type) {
-            sender->connect(0, *sender, 0);
-        } else {
-            entity *receiver = uct_test::create_entity(0ul, NULL, unexp_eager,
-                                                       unexp_rndv,
-                                                       reinterpret_cast<void*>(this),
-                                                       reinterpret_cast<void*>(this));
-            m_entities.push_back(receiver);
-
-            sender->connect(0, *receiver, 0);
-        }
     }
 
     void init_send_ctx(send_ctx &s,mapped_buffer *b, uct_tag_t t, uint64_t i,
                        bool unexp_flow = true)
     {
-        s.mbuf           = b;
-        s.rndv_op        = NULL;
-        s.tag            = t;
-        s.imm_data       = i;
-        s.uct_comp.count = 1;
-        s.uct_comp.func  = send_completion;
-        s.sw_rndv        = s.comp = false;
-        s.unexp          = unexp_flow;
-        s.status         = UCS_ERR_NO_PROGRESS;
+        s.mbuf            = b;
+        s.rndv_op         = NULL;
+        s.tag             = t;
+        s.imm_data        = i;
+        s.uct_comp.count  = 1;
+        s.uct_comp.status = UCS_OK;
+        s.uct_comp.func   = send_completion;
+        s.sw_rndv         = s.comp = false;
+        s.unexp           = unexp_flow;
+        s.status          = UCS_ERR_NO_PROGRESS;
     }
 
     void init_recv_ctx(recv_ctx &r,  mapped_buffer *b, uct_tag_t t,
@@ -370,25 +356,32 @@ public:
         user_ctx->consumed = true;
     }
 
-    static void completed(uct_tag_context_t *self, uct_tag_t stag, uint64_t imm,
-                          size_t length, ucs_status_t status)
+    static void verify_completed(recv_ctx *user_ctx, uct_tag_t stag, size_t length)
     {
-        recv_ctx *user_ctx = ucs_container_of(self, recv_ctx, uct_ctx);
-        user_ctx->comp     = true;
-        user_ctx->status   = status;
         EXPECT_EQ(user_ctx->tag, (stag & user_ctx->tmask));
         EXPECT_EQ(user_ctx->mbuf->length(), length);
     }
 
+    static void completed(uct_tag_context_t *self, uct_tag_t stag, uint64_t imm,
+                          size_t length, void *inline_data, ucs_status_t status)
+    {
+        recv_ctx *user_ctx = ucs_container_of(self, recv_ctx, uct_ctx);
+        user_ctx->comp     = true;
+        user_ctx->status   = status;
+        verify_completed(user_ctx, stag, length);
+    }
+
     static void sw_rndv_completed(uct_tag_context_t *self, uct_tag_t stag,
                                   const void *header, unsigned header_length,
-                                  ucs_status_t status)
+                                  ucs_status_t status, unsigned flags)
     {
         recv_ctx *user_ctx = ucs_container_of(self, recv_ctx, uct_ctx);
         user_ctx->sw_rndv  = true;
         user_ctx->status   = status;
-        EXPECT_EQ(user_ctx->tag, (stag & user_ctx->tmask));
-        EXPECT_EQ(user_ctx->mbuf->length(), header_length);
+        if (flags & UCT_TAG_RECV_CB_INLINE_DATA) {
+            memcpy(user_ctx->mbuf->ptr(), header, header_length);
+        }
+        verify_completed(user_ctx, stag, header_length);
     }
 
     static ucs_status_t unexp_eager(void *arg, void *data, size_t length,
@@ -450,11 +443,11 @@ public:
         return UCS_LOG_FUNC_RC_CONTINUE;
     }
 
-    static void send_completion(uct_completion_t *self, ucs_status_t status)
+    static void send_completion(uct_completion_t *self)
     {
         send_ctx *user_ctx = ucs_container_of(self, send_ctx, uct_comp);
         user_ctx->comp     = true;
-        user_ctx->status   = status;
+        user_ctx->status   = self->status;
     }
 
 
@@ -1001,9 +994,10 @@ test_tag_mp_xrq::test_tag_mp_xrq() : m_hold_uct_desc(false),
                                      m_first_received(false),
                                      m_last_received(false)
 {
-    m_max_hdr        = sizeof(ibv_tmh) + sizeof(ibv_rvh);
-    m_uct_comp.count = 512; // We do not need completion func to be invoked
-    m_uct_comp.func  = NULL;
+    m_max_hdr         = sizeof(ibv_tmh) + sizeof(ibv_rvh);
+    m_uct_comp.count  = 512; // We do not need completion func to be invoked
+    m_uct_comp.status = UCS_OK;
+    m_uct_comp.func   = NULL;
 }
 
 uct_rc_mlx5_iface_common_t* test_tag_mp_xrq::rc_mlx5_iface(entity &e)

@@ -35,7 +35,6 @@
 #include "ofi_atomic.h"
 #include "fabtest.h"
 
-static int alph_index = 0;
 static const char integ_alphabet[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 static const int integ_alphabet_length = (sizeof(integ_alphabet)/sizeof(*integ_alphabet)) - 1;
 
@@ -53,15 +52,15 @@ static const int integ_alphabet_length = (sizeof(integ_alphabet)/sizeof(*integ_a
 	} while (0)				\
 
 
-#define FT_FILL(dst,cnt,TYPE)				\
-	do {								\
-		int i;							\
-		TYPE *d = (dst);					\
-		for (i = 0; i < cnt; i++) {				\
-			d[i] = (TYPE) (integ_alphabet[alph_index++]);	\
-			if (alph_index >= integ_alphabet_length)	\
-				alph_index = 0;				\
-		}							\
+#define FT_FILL(dst,cnt,TYPE)					\
+	do {							\
+		int i, a = 0;					\
+		TYPE *d = (dst);				\
+		for (i = 0; i < cnt; i++) {			\
+			d[i] = (TYPE) (integ_alphabet[a]);	\
+			if (++a >= integ_alphabet_length)	\
+				a = 0;				\
+		}						\
 	} while (0)
 
 #define SWITCH_TYPES(type,FUNC,...)				\
@@ -132,13 +131,11 @@ static int verify_atomic(void)
 	}
 
 	if (is_compare_func(test_info.class_function)) {
-		ofi_atomic_swap_handlers[op - OFI_SWAP_OP_START][type](dst,
-			src, cmp, tmp, count);
+		ofi_atomic_swap_handler(op, type, dst, src, cmp, tmp, count);
 	} else if (is_fetch_func(test_info.class_function)) {
-		ofi_atomic_readwrite_handlers[op][type](dst,
-			src, tmp, count);
+		ofi_atomic_readwrite_handler(op, type, dst, src, tmp, count);
 	} else {
-		ofi_atomic_write_handlers[op][type](dst, src, count);
+		ofi_atomic_write_handler(op, type, dst, src, count);
 	}
 
 	SWITCH_TYPES(type, CHECK_LOCAL, dst, ft_mr_ctrl.buf, count, ret);
@@ -165,7 +162,7 @@ int ft_verify_bufs()
 		compare_buf = (char *) ft_rx_ctrl.buf;
 	}
 
-	return ft_check_buf(compare_buf, compare_size) ? -FI_EIO : 0;
+	return ft_check_buf(compare_buf, compare_size);
 }
 
 void ft_verify_comp(void *buf)

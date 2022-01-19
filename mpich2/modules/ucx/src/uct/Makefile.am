@@ -1,5 +1,5 @@
 #
-# Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+# Copyright (C) Mellanox Technologies Ltd. 2001-2021.  ALL RIGHTS RESERVED.
 # Copyright (c) UT-Battelle, LLC. 2014-2017. ALL RIGHTS RESERVED.
 # Copyright (c) The University of Tennesse and the University of Tennessee
 #               Research Foundation. 2016.  ALL RIGHTS RESERVED.
@@ -44,11 +44,7 @@ noinst_HEADERS = \
 	tcp/tcp.h \
 	tcp/tcp_sockcm.h \
 	tcp/tcp_listener.h \
-	tcp/tcp_sockcm_ep.h \
-	tcp/sockcm/sockcm_def.h \
-	tcp/sockcm/sockcm_iface.h \
-	tcp/sockcm/sockcm_ep.h \
-	tcp/sockcm/sockcm_md.h
+	tcp/tcp_sockcm_ep.h
 
 
 libuct_la_SOURCES = \
@@ -56,6 +52,7 @@ libuct_la_SOURCES = \
 	base/uct_mem.c \
 	base/uct_component.c \
 	base/uct_iface.c \
+	base/uct_iface_vfs.c \
 	base/uct_worker.c \
 	base/uct_cm.c \
 	sm/base/sm_ep.c \
@@ -76,7 +73,4 @@ libuct_la_SOURCES = \
 	tcp/tcp_base.c \
 	tcp/tcp_sockcm.c \
 	tcp/tcp_listener.c \
-	tcp/tcp_sockcm_ep.c \
-	tcp/sockcm/sockcm_iface.c \
-	tcp/sockcm/sockcm_ep.c \
-	tcp/sockcm/sockcm_md.c
+	tcp/tcp_sockcm_ep.c

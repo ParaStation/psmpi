@@ -160,8 +160,10 @@ src_libfabric_la_LDFLAGS += $(gni_LDFLAGS)
 src_libfabric_la_LIBADD += $(gni_LIBS)
 endif !HAVE_GNI_DL
 
+if !EMBEDDED
 rdmainclude_HEADERS += \
 	prov/gni/include/fi_ext_gni.h
+endif
 
 prov_install_man_pages += man/man7/fi_gni.7
 

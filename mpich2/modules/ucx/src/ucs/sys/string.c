@@ -14,11 +14,13 @@
 #include <ucs/config/parser.h>
 #include <ucs/arch/bitops.h>
 #include <ucs/sys/math.h>
+#include <ucs/debug/log.h>
 
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <time.h>
+#include <libgen.h>
 
 
 const char *ucs_memunits_suffixes[] = {"", "K", "M", "G", "T", "P", "E", NULL};
@@ -70,12 +72,12 @@ void ucs_fill_filename_template(const char *tmpl, char *buf, size_t max)
             p += strlen(p);
             break;
         case 'u':
-            snprintf(p, end - p, "%s", basename(ucs_get_user_name()));
+            snprintf(p, end - p, "%s", ucs_basename(ucs_get_user_name()));
             pf = pp + 2;
             p += strlen(p);
             break;
         case 'e':
-            snprintf(p, end - p, "%s", basename(ucs_get_exe()));
+            snprintf(p, end - p, "%s", ucs_basename(ucs_get_exe()));
             pf = pp + 2;
             p += strlen(p);
             break;
@@ -152,6 +154,24 @@ char *ucs_memunits_to_str(size_t value, char *buf, size_t max)
     return buf;
 }
 
+const char *ucs_memunits_range_str(size_t range_start, size_t range_end,
+                                   char *buf, size_t max)
+{
+    char buf_start[64], buf_end[64];
+
+    if (range_start == range_end) {
+        snprintf(buf, max, "%s",
+                 ucs_memunits_to_str(range_start, buf_start,
+                                     sizeof(buf_start)));
+    } else {
+        snprintf(buf, max, "%s..%s",
+                 ucs_memunits_to_str(range_start, buf_start, sizeof(buf_start)),
+                 ucs_memunits_to_str(range_end, buf_end, sizeof(buf_end)));
+    }
+
+    return buf;
+}
+
 ucs_status_t ucs_str_to_memunits(const char *buf, void *dest)
 {
     char units[3];
@@ -188,6 +208,17 @@ ucs_status_t ucs_str_to_memunits(const char *buf, void *dest)
     return UCS_OK;
 }
 
+char *ucs_dirname(char *path, int num_layers)
+{
+    while (num_layers-- > 0) {
+        path = dirname(path);
+        if (path == NULL) {
+            return NULL;
+        }
+    }
+    return path;
+}
+
 void ucs_snprintf_safe(char *buf, size_t size, const char *fmt, ...)
 {
     va_list ap;
@@ -197,7 +228,7 @@ void ucs_snprintf_safe(char *buf, size_t size, const char *fmt, ...)
     }
 
     va_start(ap, fmt);
-    vsnprintf(buf, size - 1, fmt, ap);
+    vsnprintf(buf, size, fmt, ap);
     buf[size - 1] = '\0';
     va_end(ap);
 }
@@ -295,32 +326,72 @@ const char* ucs_flags_str(char *buf, size_t max,
     return buf;
 }
 
+size_t ucs_string_count_char(const char *str, char c)
+{
+    size_t count = 0;
+    const char *p;
+
+    for (p = str; *p != '\0'; ++p) {
+        if (*p == c) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+size_t ucs_string_common_prefix_len(const char *str1, const char *str2)
+{
+    const char *p1 = str1;
+    const char *p2 = str2;
+
+    /* as long as *p1==*p2, if *p1 is not '\0' then neither is *p2 */
+    while ((*p1 != '\0') && (*p1 == *p2)) {
+        p1++;
+        p2++;
+    }
+
+    return (p1 - str1);
+}
+
 ssize_t ucs_path_calc_distance(const char *path1, const char *path2)
 {
     unsigned distance = 0;
-    int same          = 1;
-    char resolved_path1[PATH_MAX], resolved_path2[PATH_MAX];
-    size_t comp_len, i;
-    size_t rp_len1, rp_len2;
+    size_t common_length;
+    char rpath1[PATH_MAX], rpath2[PATH_MAX];
 
-    if ((NULL == realpath(path1, resolved_path1)) ||
-        (NULL == realpath(path2, resolved_path2))) {
+    if ((NULL == realpath(path1, rpath1)) ||
+        (NULL == realpath(path2, rpath2))) {
         return UCS_ERR_INVALID_PARAM;
     }
 
-    rp_len1  = strlen(resolved_path1);
-    rp_len2  = strlen(resolved_path2);
-    comp_len = ucs_min(rp_len1, rp_len2);
+    common_length = ucs_string_common_prefix_len(rpath1, rpath2);
 
-    for (i = 0; i < comp_len; i++) {
-        if (resolved_path1[i] != resolved_path2[i]) {
-            same = 0;
-        }
-
-        if ((resolved_path1[i] == '/') && !same) {
-            distance++;
-        }
+    if (rpath1[common_length] != rpath2[common_length]) {
+        ++distance; /* count the differentiating path component */
     }
 
+    distance += ucs_max(ucs_string_count_char(rpath1 + common_length, '/'),
+                        ucs_string_count_char(rpath2 + common_length, '/'));
+
     return distance;
+}
+
+const char* ucs_mask_str(uint64_t mask, ucs_string_buffer_t *strb)
+{
+    uint8_t bit;
+
+    if (mask == 0) {
+        ucs_string_buffer_appendf(strb, "<none>");
+        goto out;
+    }
+
+    ucs_for_each_bit(bit, mask) {
+        ucs_string_buffer_appendf(strb, "%u, ", bit);
+    }
+
+    ucs_string_buffer_rtrim(strb, ", ");
+
+out:
+    return ucs_string_buffer_cstr(strb);
 }

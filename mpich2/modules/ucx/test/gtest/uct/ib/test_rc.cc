@@ -7,6 +7,7 @@
 
 #include "test_rc.h"
 #include <uct/ib/rc/verbs/rc_verbs.h>
+#include <uct/test_peer_failure.h>
 
 
 void test_rc::init()
@@ -98,6 +99,19 @@ UCS_TEST_P(test_rc, tx_cq_moderation) {
     EXPECT_EQ(init_rsc, rc_ep(m_e1)->txqp.available);
 }
 
+UCS_TEST_P(test_rc, flush_fc, "FLUSH_MODE?=fc") {
+    send_am_messages(m_e1, 1, UCS_OK);
+
+    ucs_status_t status;
+    do {
+        status = uct_ep_flush(m_e1->ep(0), 0, NULL);
+        short_progress_loop();
+        if (status != UCS_ERR_NO_RESOURCE) {
+            ASSERT_UCS_OK_OR_INPROGRESS(status);
+        }
+    } while (status != UCS_OK);
+}
+
 UCT_INSTANTIATE_RC_TEST_CASE(test_rc)
 
 
@@ -131,6 +145,12 @@ UCT_INSTANTIATE_RC_TEST_CASE(test_rc_max_wr)
 
 class test_rc_get_limit : public test_rc {
 public:
+    struct am_completion_t {
+        uct_completion_t uct;
+        uct_ep_h         ep;
+        int              cb_count;
+    };
+
     test_rc_get_limit() {
         m_num_get_bytes = 8 * UCS_KBYTE + 557; // some non power of 2 value
         modify_config("RC_TX_NUM_GET_BYTES",
@@ -141,10 +161,11 @@ public:
                       ucs::to_string(m_max_get_zcopy).c_str());
 
         modify_config("RC_TX_QUEUE_LEN", "32");
-        modify_config("RC_TM_ENABLE", "y", true);
+        modify_config("RC_TM_ENABLE", "y", SETENV_IF_NOT_EXIST);
 
-        m_comp.count = 300000; // some big value to avoid func invocation
-        m_comp.func  = NULL;
+        m_comp.func   = NULL;
+        m_comp.count  = 300000; // some big value to avoid func invocation
+        m_comp.status = UCS_OK;
     }
 
     void init() {
@@ -193,14 +214,56 @@ public:
         EXPECT_GE(0u, reads_available(e));
     }
 
+    void add_pending_ams(pending_send_request_t *reqs, int num_reqs) {
+        for (int i = 0; i < num_reqs; ++i) {
+            reqs[i].uct.func = pending_cb_send_am;
+            reqs[i].ep       = m_e1->ep(0);
+            reqs[i].cb_count = i;
+            ASSERT_UCS_OK(uct_ep_pending_add(m_e1->ep(0), &reqs[i].uct, 0));
+        }
+    }
+
+    static ucs_status_t pending_cb_send_am(uct_pending_req_t *self) {
+        pending_send_request_t *req = ucs_container_of(self,
+                                                       pending_send_request_t,
+                                                       uct);
+
+        return uct_ep_am_short(req->ep, AM_CHECK_ORDER_ID, req->cb_count,
+                               NULL, 0);
+    }
+
+    static ucs_status_t am_handler_ordering(void *arg, void *data,
+                                            size_t length, unsigned flags) {
+        uint64_t *prev_sn = (uint64_t*)arg;
+        uint64_t sn       = *(uint64_t*)data;
+
+        EXPECT_LE(*prev_sn, sn);
+
+        *prev_sn = sn;
+
+        return UCS_OK;
+    }
+
+    static void get_comp_cb(uct_completion_t *self) {
+        am_completion_t *comp = ucs_container_of(self, am_completion_t, uct);
+
+        EXPECT_UCS_OK(self->status);
+
+        ucs_status_t status = uct_ep_am_short(comp->ep, AM_CHECK_ORDER_ID,
+                                              comp->cb_count, NULL, 0);
+        EXPECT_TRUE(!UCS_STATUS_IS_ERR(status) ||
+                    (status == UCS_ERR_NO_RESOURCE));
+    }
+
     static size_t empty_pack_cb(void *dest, void *arg) {
         return 0ul;
     }
 
 protected:
-    unsigned         m_num_get_bytes;
-    unsigned         m_max_get_zcopy;
-    uct_completion_t m_comp;
+    static const uint8_t AM_CHECK_ORDER_ID = 1;
+    unsigned             m_num_get_bytes;
+    unsigned             m_max_get_zcopy;
+    uct_completion_t     m_comp;
 };
 
 UCS_TEST_SKIP_COND_P(test_rc_get_limit, get_ops_limit,
@@ -341,10 +404,11 @@ UCS_TEST_SKIP_COND_P(test_rc_get_limit, check_rma_ops,
                   uct_ep_atomic_cswap32(ep, 0, 0, 0, 0, NULL, NULL));
     }
 
-    EXPECT_UCS_OK(uct_ep_am_short(ep, 0, 0, NULL, 0));
-    EXPECT_EQ(0l, uct_ep_am_bcopy(ep, 0, empty_pack_cb, NULL, 0));
-    EXPECT_FALSE(UCS_STATUS_IS_ERR(uct_ep_am_zcopy(ep, 0, NULL, 0, iov, iovcnt,
-                                                   0, NULL)));
+    EXPECT_EQ(UCS_ERR_NO_RESOURCE, uct_ep_am_short(ep, 0, 0, NULL, 0));
+    EXPECT_EQ(UCS_ERR_NO_RESOURCE, uct_ep_am_bcopy(ep, 0, empty_pack_cb, NULL,
+                                                   0));
+    EXPECT_EQ(UCS_ERR_NO_RESOURCE, uct_ep_am_zcopy(ep, 0, NULL, 0, iov, iovcnt,
+                                                   0, NULL));
 
     if (check_caps(UCT_IFACE_FLAG_TAG_EAGER_BCOPY)) {
         // we do not have partial tag offload support
@@ -352,17 +416,16 @@ UCS_TEST_SKIP_COND_P(test_rc_get_limit, check_rma_ops,
                                UCT_IFACE_FLAG_TAG_EAGER_ZCOPY |
                                UCT_IFACE_FLAG_TAG_RNDV_ZCOPY));
 
-        EXPECT_UCS_OK(uct_ep_tag_eager_short(ep, 0ul, NULL, 0));
-        EXPECT_EQ(0l, uct_ep_tag_eager_bcopy(ep, 0ul, 0ul, empty_pack_cb,
-                                             NULL, 0));
-        EXPECT_FALSE(UCS_STATUS_IS_ERR(uct_ep_tag_eager_zcopy(ep, 0ul, 0ul, iov,
-                                                              iovcnt, 0u,
-                                                              NULL)));
+        EXPECT_EQ(UCS_ERR_NO_RESOURCE, uct_ep_tag_eager_short(ep, 0ul, NULL, 0));
+        EXPECT_EQ(UCS_ERR_NO_RESOURCE,
+                  uct_ep_tag_eager_bcopy(ep, 0ul, 0ul, empty_pack_cb, NULL, 0));
+        EXPECT_EQ(UCS_ERR_NO_RESOURCE,
+                  uct_ep_tag_eager_zcopy(ep, 0ul, 0ul, iov, iovcnt, 0u, NULL));
         void *rndv_op = uct_ep_tag_rndv_zcopy(ep, 0ul, NULL, 0u, iov, iovcnt,
                                               0u, NULL);
-        EXPECT_FALSE(UCS_PTR_IS_ERR(rndv_op));
-        EXPECT_UCS_OK(uct_ep_tag_rndv_cancel(ep, rndv_op));
-        EXPECT_UCS_OK(uct_ep_tag_rndv_request(ep, 0ul, NULL, 0u, 0u));
+        EXPECT_TRUE(UCS_PTR_IS_ERR(rndv_op));
+        EXPECT_EQ(UCS_ERR_NO_RESOURCE,
+                  uct_ep_tag_rndv_request(ep, 0ul, NULL, 0u, 0u));
     }
 
     flush();
@@ -389,7 +452,7 @@ UCS_TEST_SKIP_COND_P(test_rc_get_limit, get_zcopy_purge,
         ASSERT_EQ(1ul, m_e1->num_eps());
         status = uct_ep_flush(m_e1->ep(0), flags, NULL);
         progress();
-        if (flags & UCT_FLUSH_FLAG_CANCEL) {
+        if ((flags & UCT_FLUSH_FLAG_CANCEL) && (status != UCS_ERR_NO_RESOURCE)) {
             ASSERT_UCS_OK_OR_INPROGRESS(status);
             flags = UCT_FLUSH_FLAG_LOCAL;
             continue;
@@ -398,6 +461,91 @@ UCS_TEST_SKIP_COND_P(test_rc_get_limit, get_zcopy_purge,
              (ucs_get_time() < deadline));
 
     m_e1->destroy_eps();
+    flush();
+    EXPECT_EQ(m_num_get_bytes, reads_available(m_e1));
+}
+
+// Check that it is not possible to send while not all pendings are dispatched
+// yet. RDMA_READ resources are released in get function completion callbacks.
+// Since in RC transports completions are handled after pending dispatch
+// (to preserve ordering), RDMA_READ resources should be returned to iface
+// in deferred manner.
+UCS_TEST_SKIP_COND_P(test_rc_get_limit, ordering_pending,
+                     !check_caps(UCT_IFACE_FLAG_GET_ZCOPY |
+                                 UCT_IFACE_FLAG_GET_BCOPY |
+                                 UCT_IFACE_FLAG_AM_SHORT  |
+                                 UCT_IFACE_FLAG_PENDING))
+{
+    volatile uint64_t sn = 0;
+    ucs_status_t status;
+
+    uct_iface_set_am_handler(m_e2->iface(), AM_CHECK_ORDER_ID,
+                             am_handler_ordering, (void*)&sn, 0);
+
+    mapped_buffer sendbuf(1024, 0ul, *m_e1);
+    mapped_buffer recvbuf(1024, 0ul, *m_e2);
+
+    post_max_reads(m_e1, sendbuf, recvbuf);
+
+    EXPECT_EQ(UCS_ERR_NO_RESOURCE,
+              uct_ep_am_short(m_e1->ep(0), AM_CHECK_ORDER_ID, 0, NULL, 0));
+
+    const uint64_t num_pend = 3;
+    pending_send_request_t reqs[num_pend];
+    add_pending_ams(reqs, num_pend);
+
+    do {
+        progress();
+        status = uct_ep_am_short(m_e1->ep(0), AM_CHECK_ORDER_ID, num_pend,
+                                 NULL, 0);
+    } while (status != UCS_OK);
+
+    wait_for_value(&sn, num_pend, true);
+    EXPECT_EQ(num_pend, sn);
+
+    flush();
+    EXPECT_EQ(m_num_get_bytes, reads_available(m_e1));
+}
+
+UCS_TEST_SKIP_COND_P(test_rc_get_limit, ordering_comp_cb,
+                     !check_caps(UCT_IFACE_FLAG_GET_ZCOPY |
+                                 UCT_IFACE_FLAG_GET_BCOPY |
+                                 UCT_IFACE_FLAG_AM_SHORT  |
+                                 UCT_IFACE_FLAG_PENDING))
+{
+    volatile uint64_t sn    = 0;
+    const uint64_t num_pend = 3;
+
+    uct_iface_set_am_handler(m_e2->iface(), AM_CHECK_ORDER_ID,
+                             am_handler_ordering, (void*)&sn, 0);
+
+    mapped_buffer sendbuf(1024, 0ul, *m_e1);
+    mapped_buffer recvbuf(1024, 0ul, *m_e2);
+
+    am_completion_t comp;
+    comp.uct.func       = get_comp_cb;
+    comp.uct.count      = 1;
+    comp.uct.status     = UCS_OK;
+    comp.ep             = m_e1->ep(0);
+    comp.cb_count       = num_pend;
+    ucs_status_t status = uct_ep_get_bcopy(m_e1->ep(0),
+                                           (uct_unpack_callback_t)memcpy,
+                                           sendbuf.ptr(), sendbuf.length(),
+                                           recvbuf.addr(), recvbuf.rkey(),
+                                           &comp.uct);
+    ASSERT_FALSE(UCS_STATUS_IS_ERR(status));
+
+    post_max_reads(m_e1, sendbuf, recvbuf);
+
+    EXPECT_EQ(UCS_ERR_NO_RESOURCE,
+              uct_ep_am_short(m_e1->ep(0), AM_CHECK_ORDER_ID, 0, NULL, 0));
+
+    pending_send_request_t reqs[num_pend];
+    add_pending_ams(reqs, num_pend);
+
+    wait_for_value(&sn, num_pend - 1, true);
+    EXPECT_EQ(num_pend - 1, sn);
+
     flush();
     EXPECT_EQ(m_num_get_bytes, reads_available(m_e1));
 }
@@ -481,11 +629,12 @@ void test_rc_flow_control::test_pending_grant(int wnd)
     send_am_messages(m_e1, 1, UCS_ERR_NO_RESOURCE);
     EXPECT_LE(get_fc_ptr(m_e1)->fc_wnd, 0);
 
-    /* Enable send capabilities of m_e2 and send AM message
-     * to force pending queue dispatch */
+    /* Enable send capabilities of m_e2 and send short put message to force
+     * pending queue dispatch. Can't send AM message for that, because it may
+     * trigger reordering assert due to disable/enable entity hack. */
     enable_entity(m_e2);
     set_tx_moderation(m_e2, 0);
-    send_am_messages(m_e2, 1, UCS_OK);
+    EXPECT_EQ(UCS_OK, uct_ep_put_short(m_e2->ep(0), NULL, 0, 0, 0));
 
     /* Check that m_e1 got grant */
     validate_grant(m_e1);
@@ -706,3 +855,146 @@ UCS_TEST_P(test_rc_iface_attrs, iface_attrs)
 
 UCT_INSTANTIATE_RC_TEST_CASE(test_rc_iface_attrs)
 
+class test_rc_keepalive : public test_uct_peer_failure {
+public:
+    uct_rc_iface_t* rc_iface(entity *e) {
+        return ucs_derived_of(e->iface(), uct_rc_iface_t);
+    }
+
+    virtual void disable_entity(entity *e) {
+        rc_iface(e)->tx.cq_available = 0;
+    }
+
+    virtual void enable_entity(entity *e, unsigned cq_num = 128) {
+        rc_iface(e)->tx.cq_available = cq_num;
+    }
+};
+
+/* this test is quite tricky: it emulates missing iface resources
+ * to force keepalive operation push into arbiter. after this
+ * iface resources are restored, peer is killed and initiated processing
+ * of arbiter operations.
+ * we can't just call progress to initiate arbiter because there is
+ * no completions, and we can't initiate completion by any operation
+ * because it will produce failure (even in case if keepalive is not
+ * called and test will pass even in case if keepalive doesn't work).
+ */
+UCS_TEST_SKIP_COND_P(test_rc_keepalive, pending,
+                     !check_caps(UCT_IFACE_FLAG_EP_CHECK))
+{
+    ucs_status_t status;
+
+    scoped_log_handler slh(wrap_errors_logger);
+    flush();
+    /* ensure that everything works as expected */
+    EXPECT_EQ(0, m_err_count);
+
+    /* regular ep_check operation should be completed successfully */
+    status = uct_ep_check(ep0(), 0, NULL);
+    ASSERT_UCS_OK(status);
+    flush();
+    EXPECT_EQ(0, m_err_count);
+
+    /* emulate for lack of iface resources. after this all
+     * send/keepalive/etc operations will not be processed */
+    disable_entity(m_sender);
+
+    /* try to send keepalive message: there are TX resources, but not CQ
+     * resources. keepalive operation should be posted to pending queue */
+    status = uct_ep_check(ep0(), 0, NULL);
+    ASSERT_UCS_OK(status);
+
+    kill_receiver();
+
+    enable_entity(m_sender);
+
+    /* initiate processing of pending operations: scheduled keepalive
+     * operation should be processed & failed because peer is killed */
+    ucs_arbiter_dispatch(&rc_iface(m_sender)->tx.arbiter, 1,
+                         uct_rc_ep_process_pending, NULL);
+
+    wait_for_flag(&m_err_count);
+    EXPECT_EQ(1, m_err_count);
+}
+
+UCT_INSTANTIATE_RC_TEST_CASE(test_rc_keepalive)
+
+
+#ifdef HAVE_MLX5_HW
+
+class test_rc_srq : public test_rc {
+public:
+    test_rc_srq() : m_buf8b(NULL), m_buf8k(NULL)
+    {
+    }
+
+    void init()
+    {
+        test_rc::init();
+
+        m_buf8b = new mapped_buffer(8, 0x1, *m_e1);
+        m_buf8k = new mapped_buffer(8 * UCS_KBYTE, 0x2, *m_e1);
+    }
+
+    void connect()
+    {
+        test_rc::connect();
+
+        m_e1->connect(0, *m_e2, 0);
+        m_e2->connect(0, *m_e1, 0);
+        m_e1->connect(1, *m_e2, 1);
+        m_e2->connect(1, *m_e1, 1);
+    }
+
+    bool send(int ep, void *buf)
+    {
+        ssize_t status;
+
+        status = uct_ep_am_bcopy(m_e1->ep(ep), 0, mapped_buffer::pack, buf, 0);
+        if (status == UCS_ERR_NO_RESOURCE) {
+            short_progress_loop();
+            return false;
+        } else if (status < 0) {
+            ASSERT_UCS_OK((ucs_status_t)status);
+        }
+
+        return true;
+    }
+
+    void test_reorder() {
+        unsigned i = 0;
+        ucs_time_t deadline = ucs::get_deadline();
+        while ((i < 10000) && (ucs_get_time() < deadline)) {
+            if (send(0, m_buf8k) && send(1, m_buf8b)) {
+                i++;
+            }
+        }
+    }
+
+    void cleanup() {
+        delete m_buf8b;
+        delete m_buf8k;
+        test_rc::cleanup();
+    }
+
+protected:
+    mapped_buffer *m_buf8b, *m_buf8k;
+};
+
+UCS_TEST_SKIP_COND_P(test_rc_srq, reorder_list,
+                     !check_caps(UCT_IFACE_FLAG_AM_BCOPY),
+                     "RC_SRQ_TOPO?=list")
+{
+    test_reorder();
+}
+
+UCS_TEST_SKIP_COND_P(test_rc_srq, reorder_cyclic,
+                     !check_caps(UCT_IFACE_FLAG_AM_BCOPY),
+                     "RC_SRQ_TOPO?=cyclic,cyclic_emulated")
+{
+    test_reorder();
+}
+
+UCT_INSTANTIATE_RC_DC_TEST_CASE(test_rc_srq);
+
+#endif

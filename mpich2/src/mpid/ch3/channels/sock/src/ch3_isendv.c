@@ -9,9 +9,8 @@ static void update_request(MPIR_Request * sreq, struct iovec * iov, int iov_coun
                            int iov_offset, size_t nb)
 {
     int i;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_UPDATE_REQUEST);
 
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_UPDATE_REQUEST);
+    MPIR_FUNC_ENTER;
 
     for (i = 0; i < iov_count; i++) {
         sreq->dev.iov[i] = iov[i];
@@ -26,7 +25,7 @@ static void update_request(MPIR_Request * sreq, struct iovec * iov, int iov_coun
     sreq->dev.iov[iov_offset].iov_len -= nb;
     sreq->dev.iov_count = iov_count;
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_UPDATE_REQUEST);
+    MPIR_FUNC_EXIT;
 }
 
 int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPIR_Request * sreq, struct iovec * iov, int n_iov)
@@ -34,9 +33,8 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPIR_Request * sreq, struct iovec * iov, i
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_VC *vcch = &vc->ch;
     int (*reqFn) (MPIDI_VC_t *, MPIR_Request *, int *);
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
 
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
+    MPIR_FUNC_ENTER;
 
     MPIR_Assert(n_iov <= MPL_IOV_LIMIT);
     MPIR_Assert(iov[0].iov_len <= sizeof(MPIDI_CH3_Pkt_t));
@@ -61,8 +59,8 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPIR_Request * sreq, struct iovec * iov, i
              * channel, thus insuring that the progress engine does
              * also try to write */
 
-            /* FIXME: the current code only agressively writes the first IOV.
-             * Eventually it should be changed to agressively write
+            /* FIXME: the current code only aggressively writes the first IOV.
+             * Eventually it should be changed to aggressively write
              * as much as possible.  Ideally, the code would be shared between
              * the send routines and the progress engine. */
             rc = MPIDI_CH3I_Sock_writev(vcch->sock, iov, n_iov, &nb);
@@ -196,6 +194,6 @@ int MPIDI_CH3_iSendv(MPIDI_VC_t * vc, MPIR_Request * sreq, struct iovec * iov, i
     /* --END ERROR HANDLING-- */
 
   fn_fail:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
 }

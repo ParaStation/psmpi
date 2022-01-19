@@ -36,11 +36,6 @@ AM_COND_IF([BUILD_CH4_NETMOD_OFI],[
     ofilib=""
     AC_SUBST([ofilib])
 
-    ofi_embedded=""
-    if test $have_libfabric = no ; then
-        ofi_embedded="yes"
-    fi
-
     runtime_capabilities="no"
     no_providers="no"
     # $netmod_args - contains the OFI provider
@@ -50,7 +45,7 @@ AM_COND_IF([BUILD_CH4_NETMOD_OFI],[
     elif test "x$netmod_args" = "x" || test "$netmod_args" = "runtime"; then
         runtime_capabilities="yes"
         no_providers="yes"
-        AC_MSG_NOTICE([Using runtime capability set due to no selected provider or explicity runtime selection])
+        AC_MSG_NOTICE([Using runtime capability set due to no selected provider or explicitly runtime selection])
     fi
 
     if test "$no_providers" = "no" ; then
@@ -263,9 +258,13 @@ AM_COND_IF([BUILD_CH4_NETMOD_OFI],[
         esac
     fi
 
-    if test "${ofi_embedded}" = "yes" ; then
+    if test "$pac_have_libfabric" = "no" ; then
+        with_libfabric=embedded
+    fi
+    if test "$with_libfabric" = "embedded" ; then
+        ofi_embedded="yes"
         AC_MSG_NOTICE([CH4 OFI Netmod:  Using an embedded libfabric])
-        ofi_subdir_args="--enable-embedded"
+        ofi_subdir_args="--enable-embedded --disable-psm3"
 
         prov_config=""
         if test "x${netmod_args}" != "x" ; then
@@ -299,6 +298,7 @@ AM_COND_IF([BUILD_CH4_NETMOD_OFI],[
         dnl Unset all of these env vars so they don't pollute the libfabric configuration
         PAC_PUSH_ALL_FLAGS()
         PAC_RESET_ALL_FLAGS()
+        CFLAGS="$CFLAGS $VISIBILITY_CFLAGS"
         PAC_CONFIG_SUBDIR_ARGS([modules/libfabric],[$ofi_subdir_args],[],[AC_MSG_ERROR(libfabric configure failed)])
         PAC_POP_ALL_FLAGS()
         PAC_APPEND_FLAG([-I${main_top_builddir}/modules/libfabric/include], [CPPFLAGS])
@@ -314,7 +314,7 @@ AM_COND_IF([BUILD_CH4_NETMOD_OFI],[
         ofilib="modules/libfabric/src/libfabric.la"
     else
         AC_MSG_NOTICE([CH4 OFI Netmod:  Using an external libfabric])
-        PAC_APPEND_FLAG([-lfabric],[WRAPPER_LIBS])
+        PAC_LIBS_ADD([-lfabric])
     fi
 
     # check for libfabric depedence libs
@@ -339,6 +339,19 @@ AM_COND_IF([BUILD_CH4_NETMOD_OFI],[
 
     if test "$enable_ofi_domain" = "yes"; then
         AC_DEFINE(MPIDI_OFI_VNI_USE_DOMAIN, 1, [CH4/OFI should use domain for vni contexts])
+    fi
+
+    AC_MSG_CHECKING([if fi_info struct has nic field])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include "rdma/fabric.h"],
+                       [struct fi_info info;
+                       if (info.nic) {
+                         return 0;
+                       } else {
+                         return 1;
+                       }])],[have_libfabric_nic=yes],[have_libfabric_nic=no])
+    AC_MSG_RESULT([$have_libfabric_nic])
+    if test "$have_libfabric_nic" = "yes" ; then
+        AC_DEFINE(HAVE_LIBFABRIC_NIC,1,[Define if libfabric library has nic field in fi_info struct])
     fi
 
 ])dnl end AM_COND_IF(BUILD_CH4_NETMOD_OFI,...)

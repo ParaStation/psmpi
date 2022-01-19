@@ -18,10 +18,20 @@
 #if !defined ATTRIBUTE
 #if defined HAVE_GCC_ATTRIBUTE
 #define ATTRIBUTE(a_) __attribute__(a_)
-#else /* MPL_HAVE_GCC_ATTRIBUTE */
+#else /* HAVE_GCC_ATTRIBUTE */
 #define ATTRIBUTE(a_)
-#endif /* MPL_HAVE_GCC_ATTRIBUTE */
+#endif /* HAVE_GCC_ATTRIBUTE */
 #endif /* ATTRIBUTE */
+
+#if defined(YAKSA_C_HAVE_VISIBILITY) && !defined YAKSA_EMBEDDED_BUILD
+#if defined(__GNUC__) && !defined(__clang__)
+#define YAKSA_API_PUBLIC __attribute__((visibility ("default"), externally_visible))
+#else
+#define YAKSA_API_PUBLIC __attribute__((visibility ("default")))
+#endif
+#else
+#define YAKSA_API_PUBLIC
+#endif
 
 #define YAKSI_ENV_DEFAULT_NESTING_LEVEL  (3)
 
@@ -99,26 +109,26 @@ typedef struct yaksi_type_s {
 
     union {
         struct {
-            int count;
-            int blocklength;
+            intptr_t count;
+            intptr_t blocklength;
             intptr_t stride;
             struct yaksi_type_s *child;
         } hvector;
         struct {
-            int count;
-            int blocklength;
+            intptr_t count;
+            intptr_t blocklength;
             intptr_t *array_of_displs;
             struct yaksi_type_s *child;
         } blkhindx;
         struct {
-            int count;
-            int *array_of_blocklengths;
+            intptr_t count;
+            intptr_t *array_of_blocklengths;
             intptr_t *array_of_displs;
             struct yaksi_type_s *child;
         } hindexed;
         struct {
-            int count;
-            int *array_of_blocklengths;
+            intptr_t count;
+            intptr_t *array_of_blocklengths;
             intptr_t *array_of_displs;
             struct yaksi_type_s **array_of_types;
         } str;
@@ -126,7 +136,7 @@ typedef struct yaksi_type_s {
             struct yaksi_type_s *child;
         } resized;
         struct {
-            int count;
+            intptr_t count;
             struct yaksi_type_s *child;
         } contig;
         struct {
@@ -145,10 +155,18 @@ typedef struct yaksi_type_s {
     yaksur_type_s backend;
 } yaksi_type_s;
 
+#define YAKSI_REQUEST_KIND__NONBLOCKING 0
+#define YAKSI_REQUEST_KIND__BLOCKING    1
+#define YAKSI_REQUEST_KIND__CUDA_STREAM 2
+
 typedef struct yaksi_request_s {
     yaksu_handle_t id;
     yaksu_atomic_int cc;        /* completion counter */
-
+    /* kind takes value of YAKSI_REQUEST_KIND__{NONBLOCKING, BLOCKING, CUDA_STREAM}
+     * ipack/iunpack are nonblocking; pack/unpack are blocking;
+     * pack_stream/unpack_stream sets stream */
+    int kind;
+    void *stream;               /* for CUDA, it's pointer to cudaStream_t */
     /* give some private space for the backend to store content */
     yaksur_request_s backend;
 
@@ -213,43 +231,44 @@ typedef struct {
 
 
 /* function declarations come at the very end */
-int yaksi_type_create_hvector(int count, int blocklength, intptr_t stride, yaksi_type_s * intype,
-                              yaksi_type_s ** outtype);
-int yaksi_type_create_contig(int count, yaksi_type_s * intype, yaksi_type_s ** outtype);
+int yaksi_type_create_hvector(intptr_t count, intptr_t blocklength, intptr_t stride,
+                              yaksi_type_s * intype, yaksi_type_s ** outtype);
+int yaksi_type_create_contig(intptr_t count, yaksi_type_s * intype, yaksi_type_s ** outtype);
 int yaksi_type_create_dup(yaksi_type_s * intype, yaksi_type_s ** outtype);
-int yaksi_type_create_hindexed(int count, const int *array_of_blocklengths,
+int yaksi_type_create_hindexed(intptr_t count, const intptr_t * array_of_blocklengths,
                                const intptr_t * array_of_displacements, yaksi_type_s * intype,
                                yaksi_type_s ** outtype);
-int yaksi_type_create_hindexed_block(int count, int blocklength,
+int yaksi_type_create_hindexed_block(intptr_t count, intptr_t blocklength,
                                      const intptr_t * array_of_displacements, yaksi_type_s * intype,
                                      yaksi_type_s ** outtype);
 int yaksi_type_create_resized(yaksi_type_s * intype, intptr_t lb, intptr_t extent,
                               yaksi_type_s ** outtype);
-int yaksi_type_create_struct(int count, const int *array_of_blocklengths,
+int yaksi_type_create_struct(intptr_t count, const intptr_t * array_of_blocklengths,
                              const intptr_t * array_of_displacements,
                              yaksi_type_s ** array_of_intypes, yaksi_type_s ** outtype);
-int yaksi_type_create_subarray(int ndims, const int *array_of_sizes, const int *array_of_subsizes,
-                               const int *array_of_starts, yaksa_subarray_order_e order,
-                               yaksi_type_s * intype, yaksi_type_s ** outtype);
+int yaksi_type_create_subarray(int ndims, const intptr_t * array_of_sizes,
+                               const intptr_t * array_of_subsizes, const intptr_t * array_of_starts,
+                               yaksa_subarray_order_e order, yaksi_type_s * intype,
+                               yaksi_type_s ** outtype);
 int yaksi_type_free(yaksi_type_s * type);
 
 int yaksi_ipack(const void *inbuf, uintptr_t incount, yaksi_type_s * type, uintptr_t inoffset,
                 void *outbuf, uintptr_t max_pack_bytes, uintptr_t * actual_pack_bytes,
-                yaksi_info_s * info, yaksi_request_s * request);
+                yaksi_info_s * info, yaksa_op_t op, yaksi_request_s * request);
 int yaksi_ipack_backend(const void *inbuf, void *outbuf, uintptr_t count, yaksi_type_s * type,
-                        yaksi_info_s * info, yaksi_request_s * request);
+                        yaksi_info_s * info, yaksa_op_t op, yaksi_request_s * request);
 int yaksi_ipack_element(const void *inbuf, yaksi_type_s * type, uintptr_t inoffset, void *outbuf,
                         uintptr_t max_pack_bytes, uintptr_t * actual_pack_bytes,
-                        yaksi_info_s * info, yaksi_request_s * request);
+                        yaksi_info_s * info, yaksa_op_t op, yaksi_request_s * request);
 
 int yaksi_iunpack(const void *inbuf, uintptr_t insize, void *outbuf, uintptr_t outcount,
                   yaksi_type_s * type, uintptr_t outoffset, uintptr_t * actual_unpack_bytes,
-                  yaksi_info_s * info, yaksi_request_s * request);
+                  yaksi_info_s * info, yaksa_op_t op, yaksi_request_s * request);
 int yaksi_iunpack_backend(const void *inbuf, void *outbuf, uintptr_t outcount, yaksi_type_s * type,
-                          yaksi_info_s * info, yaksi_request_s * request);
+                          yaksi_info_s * info, yaksa_op_t op, yaksi_request_s * request);
 int yaksi_iunpack_element(const void *inbuf, uintptr_t insize, void *outbuf, yaksi_type_s * type,
                           uintptr_t outoffset, uintptr_t * actual_unpack_bytes,
-                          yaksi_info_s * info, yaksi_request_s * request);
+                          yaksi_info_s * info, yaksa_op_t op, yaksi_request_s * request);
 
 int yaksi_iov_len(uintptr_t count, yaksi_type_s * type, uintptr_t * iov_len);
 int yaksi_iov(const char *buf, uintptr_t count, yaksi_type_s * type, uintptr_t iov_offset,
@@ -266,5 +285,7 @@ int yaksi_type_get(yaksa_type_t type, yaksi_type_s ** yaksi_type);
 int yaksi_request_create(yaksi_request_s ** request);
 int yaksi_request_free(yaksi_request_s * request);
 int yaksi_request_get(yaksa_request_t request, yaksi_request_s ** yaksi_request);
+void yaksi_request_set_blocking(yaksi_request_s * request);
+void yaksi_request_set_stream(yaksi_request_s * request, void *stream);
 
 #endif /* YAKSI_H_INCLUDED */

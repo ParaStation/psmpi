@@ -8,56 +8,6 @@
 
 #include "mpl.h"
 
-/*
-=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
-
-categories:
-    - name        : NODEMAP
-      description : cvars that control behavior of nodemap
-
-cvars:
-    - name        : MPIR_CVAR_NOLOCAL
-      category    : NODEMAP
-      alt-env     : MPIR_CVAR_NO_LOCAL
-      type        : boolean
-      default     : false
-      class       : none
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_ALL_EQ
-      description : >-
-        If true, force all processes to operate as though all processes
-        are located on another node.  For example, this disables shared
-        memory communication hierarchical collectives.
-
-    - name        : MPIR_CVAR_ODD_EVEN_CLIQUES
-      category    : NODEMAP
-      alt-env     : MPIR_CVAR_EVEN_ODD_CLIQUES
-      type        : boolean
-      default     : false
-      class       : none
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_ALL_EQ
-      description : >-
-        If true, odd procs on a node are seen as local to each other, and even
-        procs on a node are seen as local to each other.  Used for debugging on
-        a single machine. Deprecated in favor of MPIR_CVAR_NUM_CLIQUES.
-
-    - name        : MPIR_CVAR_NUM_CLIQUES
-      category    : NODEMAP
-      alt-env     : MPIR_CVAR_NUM_CLIQUES
-      type        : int
-      default     : 1
-      class       : none
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_ALL_EQ
-      description : >-
-        Specify the number of cliques that should be used to partition procs on
-        a local node. Procs with the same clique number are seen as local to
-        each other. Used for debugging on a single machine.
-
-=== END_MPI_T_CVAR_INFO_BLOCK ===
-*/
-
 #if !defined(USE_PMI2_API) && !defined(USE_PMIX_API)
 /* this function is not used in pmi2 or pmix */
 static inline int MPIR_NODEMAP_publish_node_id(int sz, int myrank)
@@ -69,7 +19,7 @@ static inline int MPIR_NODEMAP_publish_node_id(int sz, int myrank)
     int key_max_sz;
     char *kvs_name;
     char hostname[MAX_HOSTNAME_LEN];
-    char strerrbuf[MPIR_STRERROR_BUF_SIZE];
+    char strerrbuf[MPIR_STRERROR_BUF_SIZE] ATTRIBUTE((unused));
     MPIR_CHKLMEM_DECL(2);
 
     /* set hostname */
@@ -119,7 +69,7 @@ static inline int MPIR_NODEMAP_publish_node_id(int sz, int myrank)
 #define MPIR_NODEMAP_PARSE_ERROR() MPIR_ERR_INTERNALANDJUMP(mpi_errno, "parse error")
 /* advance _c until we find a non whitespace character */
 #define MPIR_NODEMAP_SKIP_SPACE(_c) while (isspace(*(_c))) ++(_c)
-/* return true iff _c points to a character valid as an indentifier, i.e., [-_a-zA-Z0-9] */
+/* return true iff _c points to a character valid as an identifier, i.e., [-_a-zA-Z0-9] */
 #define MPIR_NODEMAP_ISIDENT(_c) (isalnum(_c) || (_c) == '-' || (_c) == '_')
 
 /* give an error iff *_c != _e */
@@ -325,7 +275,7 @@ static inline int MPIR_NODEMAP_populate_ids_from_mapping(char *mapping,
    processes (g_num_global).  Each process determines maximum node id
    and assigns a node id to each process (g_node_ids[]):
 
-     For each hostname the process seaches the list of unique nodes
+     For each hostname the process searches the list of unique nodes
      names (node_names[]) for a match.  If a match is found, the node id
      is recorded for that matching process.  Otherwise, the hostname is
      added to the list of node names.
@@ -342,7 +292,7 @@ static inline int MPIR_NODEMAP_build_nodemap_fallback(int sz, int myrank, int *o
     char *key = MPL_malloc(key_max_sz, MPL_MEM_OTHER);
     char **node_names = MPL_malloc(sz * sizeof(char *), MPL_MEM_OTHER);
     char *node_name_buf = MPL_malloc(sz * key_max_sz, MPL_MEM_OTHER);
-    char strerrbuf[MPIR_STRERROR_BUF_SIZE];
+    char strerrbuf[MPIR_STRERROR_BUF_SIZE] ATTRIBUTE((unused));
 
     for (int i = 0; i < sz; ++i) {
         node_names[i] = &node_name_buf[i * key_max_sz];

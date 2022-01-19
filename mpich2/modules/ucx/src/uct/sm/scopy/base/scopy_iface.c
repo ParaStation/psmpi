@@ -77,10 +77,14 @@ void uct_scopy_iface_query(uct_scopy_iface_t *iface, uct_iface_attr_t *iface_att
                                           UCT_IFACE_FLAG_PUT_ZCOPY |
                                           UCT_IFACE_FLAG_PENDING   |
                                           UCT_IFACE_FLAG_CONNECT_TO_IFACE;
+    iface_attr->cap.event_flags         = UCT_IFACE_FLAG_EVENT_SEND_COMP |
+                                          UCT_IFACE_FLAG_EVENT_RECV      |
+                                          UCT_IFACE_FLAG_EVENT_ASYNC_CB;
     iface_attr->latency                 = ucs_linear_func_make(80e-9, 0); /* 80 ns */
 }
 
-UCS_CLASS_INIT_FUNC(uct_scopy_iface_t, uct_scopy_iface_ops_t *ops, uct_md_h md,
+UCS_CLASS_INIT_FUNC(uct_scopy_iface_t, uct_iface_ops_t *ops,
+                    uct_scopy_iface_ops_t *scopy_ops, uct_md_h md,
                     uct_worker_h worker, const uct_iface_params_t *params,
                     const uct_iface_config_t *tl_config)
 {
@@ -89,9 +93,10 @@ UCS_CLASS_INIT_FUNC(uct_scopy_iface_t, uct_scopy_iface_ops_t *ops, uct_md_h md,
     size_t elem_size;
     ucs_status_t status;
 
-    UCS_CLASS_CALL_SUPER_INIT(uct_sm_iface_t, &ops->super, md, worker, params, tl_config);
+    UCS_CLASS_CALL_SUPER_INIT(uct_sm_iface_t, ops, &scopy_ops->super, md,
+                              worker, params, tl_config);
 
-    self->tx              = ops->ep_tx;
+    self->tx              = scopy_ops->ep_tx;
     self->config.max_iov  = ucs_min(config->max_iov, ucs_iov_get_max());
     self->config.seg_size = config->seg_size;
     self->config.tx_quota = config->tx_quota;
@@ -134,6 +139,19 @@ unsigned uct_scopy_iface_progress(uct_iface_h tl_iface)
     }
 
     return count;
+}
+
+ucs_status_t uct_scopy_iface_event_arm(uct_iface_h tl_iface, unsigned events)
+{
+    uct_scopy_iface_t *iface = ucs_derived_of(tl_iface, uct_scopy_iface_t);
+
+    if ((events & UCT_EVENT_SEND_COMP) &&
+        !ucs_arbiter_is_empty(&iface->arbiter)) {
+        /* cannot go to sleep, need to progress pending operations */
+        return UCS_ERR_BUSY;
+    }
+
+    return UCS_OK;
 }
 
 ucs_status_t uct_scopy_iface_flush(uct_iface_h tl_iface, unsigned flags,

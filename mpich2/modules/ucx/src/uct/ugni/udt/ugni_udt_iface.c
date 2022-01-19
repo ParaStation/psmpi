@@ -191,7 +191,10 @@ static ucs_status_t uct_ugni_udt_iface_query(uct_iface_h tl_iface, uct_iface_att
     return UCS_OK;
 }
 
-void uct_ugni_proccess_datagram_pipe(int event_id, int events, void *arg) {
+void uct_ugni_proccess_datagram_pipe(int event_id,
+                                     ucs_event_set_types_t events,
+                                     void *arg)
+{
     uct_ugni_udt_iface_t *iface = (uct_ugni_udt_iface_t *)arg;
     uct_ugni_udt_ep_t *ep;
     uct_ugni_udt_desc_t *datagram;
@@ -256,7 +259,7 @@ static void uct_ugni_udt_clean_wildcard(uct_ugni_udt_iface_t *iface)
 {
     gni_return_t ugni_rc;
     uint32_t rem_addr, rem_id;
-    gni_post_state_t post_state;
+    gni_post_state_t post_state = 0;
     uct_ugni_cdm_lock(&iface->super.cdm);
     ugni_rc = GNI_EpPostDataCancelById(iface->ep_any, UCT_UGNI_UDT_ANY);
     if (GNI_RC_SUCCESS != ugni_rc) {
@@ -352,6 +355,7 @@ static UCS_CLASS_DEFINE_DELETE_FUNC(uct_ugni_udt_iface_t, uct_iface_t);
 
 static uct_iface_ops_t uct_ugni_udt_iface_ops = {
     .ep_am_short              = uct_ugni_udt_ep_am_short,
+    .ep_am_short_iov          = uct_base_ep_am_short_iov,
     .ep_am_bcopy              = uct_ugni_udt_ep_am_bcopy,
     .ep_pending_add           = uct_ugni_udt_ep_pending_add,
     .ep_pending_purge         = uct_ugni_udt_ep_pending_purge,

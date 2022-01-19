@@ -172,10 +172,10 @@ public:
         return UCS_OK;
     }
 
-    static void completion_cb(uct_completion_t *self, ucs_status_t c_status) {
+    static void completion_cb(uct_completion_t *self) {
         am_completion_t *comp = ucs_container_of(self, am_completion_t, uct);
 
-        EXPECT_UCS_OK(c_status);
+        EXPECT_UCS_OK(self->status);
 
         ucs_status_t status = uct_ep_am_short(comp->ep, AM_ID, COMP_HDR,
                                               NULL, 0);
@@ -632,10 +632,11 @@ UCS_TEST_SKIP_COND_P(test_uct_pending, send_ooo_with_comp,
     UCS_TEST_GET_BUFFER_IOV(iov, iovcnt, sendbuf.ptr(), sendbuf.length(),
                             sendbuf.memh(), 1);
     am_completion_t comp;
-    comp.uct.func        = completion_cb;
-    comp.uct.count       = 1;
-    comp.ep              = m_e1->ep(0);
-    ucs_status_t status  = uct_ep_am_zcopy(m_e1->ep(0), AM_ID, &AM_HDR,
+    comp.uct.func       = completion_cb;
+    comp.uct.count      = 1;
+    comp.uct.status     = UCS_OK;
+    comp.ep             = m_e1->ep(0);
+    ucs_status_t status = uct_ep_am_zcopy(m_e1->ep(0), AM_ID, &AM_HDR,
                                            sizeof(AM_HDR), iov, iovcnt, 0,
                                            &comp.uct);
     ASSERT_FALSE(UCS_STATUS_IS_ERR(status));
@@ -643,8 +644,8 @@ UCS_TEST_SKIP_COND_P(test_uct_pending, send_ooo_with_comp,
     uint64_t send_data = 0xFAFAul;
     send_ams_and_add_pending(&send_data, AM_HDR);
 
-    wait_for_flag(&n_pending);
-    EXPECT_TRUE(n_pending);
+    wait_for_flag(&pend_received);
+    EXPECT_TRUE(pend_received);
 
     flush();
 }

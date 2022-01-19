@@ -31,10 +31,10 @@ extern struct MPIR_Request *MPIDI_CH3I_shm_active_send;
         MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_CHANNEL, VERBOSE, (MPL_DBG_FDEST,                         \
                           "MPIDI_CH3I_Sendq_enqueue req=%p (handle=%#x), queue=%p",     \
                           ep, (ep)->handle, qp));                                       \
-        GENERIC_Q_ENQUEUE (qp, ep, dev.next);                                           \
+        GENERIC_Q_ENQUEUE (qp, ep, next);                                           \
     } while (0)
 #define MPIDI_CH3I_Sendq_dequeue(qp, ep)  do {                                          \
-        GENERIC_Q_DEQUEUE (qp, ep, dev.next);                                           \
+        GENERIC_Q_DEQUEUE (qp, ep, next);                                           \
         MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_CHANNEL, VERBOSE, (MPL_DBG_FDEST,                         \
                           "MPIDI_CH3I_Sendq_dequeuereq=%p (handle=%#x), queue=%p",      \
                           *(ep), *(ep) ? (*(ep))->handle : -1, qp));                    \
@@ -43,7 +43,7 @@ extern struct MPIR_Request *MPIDI_CH3I_shm_active_send;
 #define MPIDI_CH3I_Sendq_enqueue_multiple_no_refcount(qp, ep0, ep1)             \
     /* used to move reqs from one queue to another, so we don't update */       \
     /* the refcounts */                                                         \
-    GENERIC_Q_ENQUEUE_MULTIPLE(qp, ep0, ep1, dev.next)
+    GENERIC_Q_ENQUEUE_MULTIPLE(qp, ep0, ep1, next)
 
 int MPIDI_CH3I_Shm_supported(void);
 int MPIDI_CH3I_Progress_init(void);
@@ -89,35 +89,23 @@ int MPIDI_CH3_SHM_Win_free(MPIR_Win **win_ptr);
 #if !defined(HAVE_WINDOWS_H)
 #define MPIDI_CH3I_SHM_MUTEX_LOCK(win_ptr)                                              \
     do {                                                                                \
-        int pt_err = pthread_mutex_lock((win_ptr)->shm_mutex);                          \
-        MPIR_ERR_CHKANDJUMP1(pt_err, mpi_errno, MPI_ERR_OTHER, "**pthread_lock",        \
-                             "**pthread_lock %s", strerror(pt_err));                    \
+        MPIR_AssertDeclValue(int pt_err, 0);                                            \
+        pt_err = pthread_mutex_lock((win_ptr)->shm_mutex);                              \
+        MPIR_Assert(pt_err == 0); \
     } while (0)
 
 #define MPIDI_CH3I_SHM_MUTEX_UNLOCK(win_ptr)                                            \
     do {                                                                                \
-        int pt_err = pthread_mutex_unlock((win_ptr)->shm_mutex);                        \
-        MPIR_ERR_CHKANDJUMP1(pt_err, mpi_errno, MPI_ERR_OTHER, "**pthread_unlock",      \
-                             "**pthread_unlock %s", strerror(pt_err));                  \
+        MPIR_AssertDeclValue(int pt_err, 0);                                            \
+        pt_err = pthread_mutex_unlock((win_ptr)->shm_mutex);                            \
+        MPIR_Assert(pt_err == 0); \
     } while (0)
 
 #define MPIDI_CH3I_SHM_MUTEX_INIT(win_ptr)                                              \
     do {                                                                                \
         int pt_err;                                                                     \
-        pthread_mutexattr_t attr;                                                       \
-                                                                                        \
-        pt_err = pthread_mutexattr_init(&attr);                                         \
-        MPIR_ERR_CHKANDJUMP1(pt_err, mpi_errno, MPI_ERR_OTHER, "**pthread_mutex",       \
-                             "**pthread_mutex %s", strerror(pt_err));                   \
-        pt_err = pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);           \
-        MPIR_ERR_CHKANDJUMP1(pt_err, mpi_errno, MPI_ERR_OTHER, "**pthread_mutex",       \
-                             "**pthread_mutex %s", strerror(pt_err));                   \
-        pt_err = pthread_mutex_init((win_ptr)->shm_mutex, &attr);                       \
-        MPIR_ERR_CHKANDJUMP1(pt_err, mpi_errno, MPI_ERR_OTHER, "**pthread_mutex",       \
-                             "**pthread_mutex %s", strerror(pt_err));                   \
-        pt_err = pthread_mutexattr_destroy(&attr);                                      \
-        MPIR_ERR_CHKANDJUMP1(pt_err, mpi_errno, MPI_ERR_OTHER, "**pthread_mutex",       \
-                             "**pthread_mutex %s", strerror(pt_err));                   \
+        MPL_proc_mutex_create((win_ptr)->shm_mutex, &pt_err);                           \
+        MPIR_ERR_CHECK(pt_err);                                                         \
     } while (0);
 
 #define MPIDI_CH3I_SHM_MUTEX_DESTROY(win_ptr)                                           \

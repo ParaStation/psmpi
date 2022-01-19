@@ -10,7 +10,8 @@
 #include <uct/api/uct.h>
 
 #include <assert.h>
-#include <ctype.h>
+#include <inttypes.h>
+
 
 typedef enum {
     FUNC_AM_SHORT,
@@ -148,10 +149,10 @@ ucs_status_t do_am_bcopy(iface_info_t *if_info, uct_ep_h ep, uint8_t id,
 }
 
 /* Completion callback for am_zcopy */
-void zcopy_completion_cb(uct_completion_t *self, ucs_status_t status)
+void zcopy_completion_cb(uct_completion_t *self)
 {
     zcopy_comp_t *comp = (zcopy_comp_t *)self;
-    assert((comp->uct_comp.count == 0) && (status == UCS_OK));
+    assert((comp->uct_comp.count == 0) && (self->status == UCS_OK));
     if (comp->memh != UCT_MEM_HANDLE_NULL) {
         uct_md_mem_dereg(comp->md, comp->memh);
     }
@@ -173,16 +174,17 @@ ucs_status_t do_am_zcopy(iface_info_t *if_info, uct_ep_h ep, uint8_t id,
         memh = UCT_MEM_HANDLE_NULL;
     }
 
-    iov.buffer          = buf;
-    iov.length          = cmd_args->test_strlen;
-    iov.memh            = memh;
-    iov.stride          = 0;
-    iov.count           = 1;
+    iov.buffer = buf;
+    iov.length = cmd_args->test_strlen;
+    iov.memh   = memh;
+    iov.stride = 0;
+    iov.count  = 1;
 
-    comp.uct_comp.func  = zcopy_completion_cb;
-    comp.uct_comp.count = 1;
-    comp.md             = if_info->md;
-    comp.memh           = memh;
+    comp.uct_comp.func   = zcopy_completion_cb;
+    comp.uct_comp.count  = 1;
+    comp.uct_comp.status = UCS_OK;
+    comp.md              = if_info->md;
+    comp.memh            = memh;
 
     if (status == UCS_OK) {
         do {
@@ -205,7 +207,8 @@ static void print_strings(const char *label, const char *local_str,
                           const char *remote_str, size_t length)
 {
     fprintf(stdout, "\n\n----- UCT TEST SUCCESS ----\n\n");
-    fprintf(stdout, "[%s] %s sent %s", label, local_str, remote_str);
+    fprintf(stdout, "[%s] %s sent %s (%" PRIu64 " bytes)", label, local_str,
+            (length != 0) ? remote_str : "<none>", length);
     fprintf(stdout, "\n\n---------------------------\n");
     fflush(stdout);
 }
@@ -423,8 +426,11 @@ int print_err_usage()
     fprintf(stderr, func_template, 'i', func_am_t_str(FUNC_AM_SHORT), " (default)");
     fprintf(stderr, func_template, 'b', func_am_t_str(FUNC_AM_BCOPY), "");
     fprintf(stderr, func_template, 'z', func_am_t_str(FUNC_AM_ZCOPY), "");
-    fprintf(stderr, "  -d      Select device name\n");
-    fprintf(stderr, "  -t      Select transport layer\n");
+    fprintf(stderr, "  -d        Select device name\n");
+    fprintf(stderr, "  -t        Select transport layer\n");
+    fprintf(stderr, "  -n <name> Set node name or IP address "
+            "of the server (required for client and should be ignored "
+            "for server)\n");
     print_common_help();
     fprintf(stderr, "\nExample:\n");
     fprintf(stderr, "  Server: uct_hello_world -d eth0 -t tcp\n");
@@ -445,7 +451,6 @@ int parse_cmd(int argc, char * const argv[], cmd_args_t *args)
     args->func_am_type  = FUNC_AM_SHORT;
     args->test_strlen   = 16;
 
-    opterr = 0;
     while ((c = getopt(argc, argv, "ibzd:t:n:p:s:m:h")) != -1) {
         switch (c) {
         case 'i':
@@ -476,7 +481,7 @@ int parse_cmd(int argc, char * const argv[], cmd_args_t *args)
             break;
         case 's':
             args->test_strlen = atol(optarg);
-            if (args->test_strlen <= 0) {
+            if (args->test_strlen < 0) {
                 fprintf(stderr, "Wrong string size %ld\n", args->test_strlen);
                 return UCS_ERR_UNSUPPORTED;
             }
@@ -487,14 +492,6 @@ int parse_cmd(int argc, char * const argv[], cmd_args_t *args)
                 return UCS_ERR_UNSUPPORTED;
             }
             break;
-        case '?':
-            if (optopt == 's') {
-                fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-            } else if (isprint (optopt)) {
-                fprintf(stderr, "Unknown option `-%c'.\n", optopt);
-            } else {
-                fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
-            }
         case 'h':
         default:
             return print_err_usage();
@@ -564,6 +561,11 @@ int sendrecv(int sock, const void *sbuf, size_t slen, void **rbuf)
     return 0;
 }
 
+static void progress_worker(void *arg)
+{
+    uct_worker_progress((uct_worker_h)arg);
+}
+
 int main(int argc, char **argv)
 {
     uct_device_addr_t   *peer_dev   = NULL;
@@ -602,6 +604,11 @@ int main(int argc, char **argv)
     status = dev_tl_lookup(&cmd_args, &if_info);
     CHKERR_JUMP(UCS_OK != status, "find supported device and transport",
                 out_destroy_worker);
+
+    /* Set active message handler */
+    status = uct_iface_set_am_handler(if_info.iface, id, hello_world,
+                                      &cmd_args.func_am_type, 0);
+    CHKERR_JUMP(UCS_OK != status, "set callback", out_destroy_iface);
 
     own_dev = (uct_device_addr_t*)calloc(1, if_info.iface_attr.device_addr_len);
     CHKERR_JUMP(NULL == own_dev, "allocate memory for dev addr",
@@ -663,7 +670,7 @@ int main(int argc, char **argv)
 
         /* Connect endpoint to a remote endpoint */
         status = uct_ep_connect_to_ep(ep, peer_dev, peer_ep);
-        if (barrier(oob_sock)) {
+        if (barrier(oob_sock, progress_worker, if_info.worker)) {
             status = UCS_ERR_IO_ERROR;
             goto out_free_ep;
         }
@@ -687,11 +694,6 @@ int main(int argc, char **argv)
                 func_am_max_size(cmd_args.func_am_type, &if_info.iface_attr));
         goto out_free_ep;
     }
-
-    /* Set active message handler */
-    status = uct_iface_set_am_handler(if_info.iface, id, hello_world,
-                                      &cmd_args.func_am_type, 0);
-    CHKERR_JUMP(UCS_OK != status, "set callback", out_free_ep);
 
     if (cmd_args.server_name) {
         char *str = (char *)mem_type_malloc(cmd_args.test_strlen);
@@ -732,7 +734,7 @@ int main(int argc, char **argv)
         }
     }
 
-    if (barrier(oob_sock)) {
+    if (barrier(oob_sock, progress_worker, if_info.worker)) {
         status = UCS_ERR_IO_ERROR;
     }
 

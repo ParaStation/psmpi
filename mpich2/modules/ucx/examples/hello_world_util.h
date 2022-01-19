@@ -9,6 +9,7 @@
 
 #include <ucs/memory/memory_type.h>
 
+#include <sys/poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -181,18 +182,15 @@ ucs_memory_type_t parse_mem_type(const char *opt_arg)
 
 void print_common_help()
 {
-    fprintf(stderr, "  -n name Set node name or IP address "
-            "of the server (required for client and should be ignored "
-            "for server)\n");
-    fprintf(stderr, "  -p port Set alternative server port (default:13337)\n");
-    fprintf(stderr, "  -s size Set test string length (default:16)\n");
-    fprintf(stderr, "  -m <mem type>  memory type of messages\n");
-    fprintf(stderr, "                 host - system memory (default)\n");
+    fprintf(stderr, "  -p <port>     Set alternative server port (default:13337)\n");
+    fprintf(stderr, "  -s <size>     Set test string length (default:16)\n");
+    fprintf(stderr, "  -m <mem type> Memory type of messages\n");
+    fprintf(stderr, "                host - system memory (default)\n");
     if (check_mem_type_support(UCS_MEMORY_TYPE_CUDA)) {
-        fprintf(stderr, "                 cuda - NVIDIA GPU memory\n");
+        fprintf(stderr, "                cuda - NVIDIA GPU memory\n");
     }
     if (check_mem_type_support(UCS_MEMORY_TYPE_CUDA_MANAGED)) {
-        fprintf(stderr, "                 cuda-managed - NVIDIA GPU managed/unified memory\n");
+        fprintf(stderr, "                cuda-managed - NVIDIA GPU managed/unified memory\n");
     }
 }
 
@@ -268,8 +266,10 @@ err:
     return -1;
 }
 
-static int barrier(int oob_sock)
+static inline int
+barrier(int oob_sock, void (*progress_cb)(void *arg), void *arg)
 {
+    struct pollfd pfd;
     int dummy = 0;
     ssize_t res;
 
@@ -278,13 +278,21 @@ static int barrier(int oob_sock)
         return res;
     }
 
+    pfd.fd      = oob_sock;
+    pfd.events  = POLLIN;
+    pfd.revents = 0;
+    do {
+        res = poll(&pfd, 1, 1);
+        progress_cb(arg);
+    } while (res != 1);
+
     res = recv(oob_sock, &dummy, sizeof(dummy), MSG_WAITALL);
 
     /* number of received bytes should be the same as sent */
     return !(res == sizeof(dummy));
 }
 
-static int generate_test_string(char *str, int size)
+static inline int generate_test_string(char *str, int size)
 {
     char *tmp_str;
     int i;

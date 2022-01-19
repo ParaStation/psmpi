@@ -3,10 +3,11 @@
  *     See COPYRIGHT in top-level directory
  */
 
+#include "mpidimpl.h"
 #include "posix_impl.h"
 #include "posix_types.h"
 
-MPIDI_POSIX_global_t MPIDI_POSIX_global = { 0 };
+MPIDI_POSIX_global_t MPIDI_POSIX_global;
 
 MPIDI_POSIX_eager_funcs_t *MPIDI_POSIX_eager_func = NULL;
 

@@ -21,7 +21,7 @@ namespace ucp {
 
 /* Can't be destroyed before related UCP request is completed */
 class data_type_desc_t {
-public: 
+public:
     enum {
         MAX_IOV = 40
     };
@@ -52,23 +52,19 @@ public:
 
     data_type_desc_t &forward_to(size_t offset) {
         EXPECT_LE(offset, m_length);
-        invalidate();
         return make(m_dt, (const void *)(m_origin + offset), m_length - offset,
                     m_iov_cnt_limit);
     };
 
     ucp_datatype_t dt() const {
-        EXPECT_TRUE(is_valid());
         return m_dt;
     };
 
     void *buf() const {
-        EXPECT_TRUE(is_valid());
         return const_cast<void *>(m_buf);
     };
 
     ssize_t buf_length() const {
-        EXPECT_TRUE(is_valid());
         if (UCP_DT_IS_CONTIG(m_dt) || UCP_DT_IS_GENERIC(m_dt)) {
             return m_length - (uintptr_t(m_buf) - m_origin);
         } else if (UCP_DT_IS_IOV(m_dt)) {
@@ -83,25 +79,12 @@ public:
     }
 
     size_t count() const {
-        EXPECT_TRUE(is_valid());
         return m_count;
     };
-
-    bool is_valid() const {
-        return (m_buf != NULL) && (m_count != 0) &&
-               (UCP_DT_IS_IOV(m_dt) ? (m_count <= m_iov_cnt_limit) :
-               (UCP_DT_IS_CONTIG(m_dt) || UCP_DT_IS_GENERIC(m_dt)));
-    }
 
 private:
     data_type_desc_t &make(ucp_datatype_t datatype, const void *buf,
                            size_t length, size_t iov_count);
-
-    void invalidate() {
-        EXPECT_TRUE(is_valid());
-        m_buf   = NULL;
-        m_count = 0;
-    }
 
     uintptr_t       m_origin;
     size_t          m_length;
@@ -119,13 +102,20 @@ struct dt_gen_state {
     int                 started;
     uint32_t            magic;
     void                *context;
+    void                *buffer;
 };
+
+std::vector<std::vector<ucp_datatype_t> >
+datatype_pairs(const ucp_generic_dt_ops_t *ops, size_t contig_elem_size = 1);
+
+std::string datatype_name(ucp_datatype_t dt);
 
 extern int dt_gen_start_count;
 extern int dt_gen_finish_count;
 extern ucp_generic_dt_ops test_dt_uint32_ops;
 extern ucp_generic_dt_ops test_dt_uint32_err_ops;
 extern ucp_generic_dt_ops test_dt_uint8_ops;
+extern ucp_generic_dt_ops test_dt_copy_ops;
 
 } // ucp
 

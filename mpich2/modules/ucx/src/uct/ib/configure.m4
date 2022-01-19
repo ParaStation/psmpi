@@ -205,7 +205,9 @@ AS_IF([test "x$with_ib" = "xyes"],
                            mlx5dv_is_supported,
                            mlx5dv_devx_subscribe_devx_event,
                            MLX5DV_CQ_INIT_ATTR_MASK_CQE_SIZE,
-                           MLX5DV_QP_CREATE_ALLOW_SCATTER_TO_CQE],
+                           MLX5DV_QP_CREATE_ALLOW_SCATTER_TO_CQE,
+                           MLX5DV_UAR_ALLOC_TYPE_BF,
+                           MLX5DV_UAR_ALLOC_TYPE_NC],
                                   [], [], [[#include <infiniband/mlx5dv.h>]])
                        AC_CHECK_MEMBERS([struct mlx5dv_cq.cq_uar],
                                   [], [], [[#include <infiniband/mlx5dv.h>]])
@@ -446,7 +448,6 @@ AM_CONDITIONAL([HAVE_EXP],     [test "x$verbs_exp" != xno])
 AM_CONDITIONAL([HAVE_MLX5_HW_UD], [test "x$with_mlx5_hw" != xno -a "x$has_get_av" != xno])
 
 uct_ib_modules=""
-m4_include([src/uct/ib/cm/configure.m4])
 m4_include([src/uct/ib/rdmacm/configure.m4])
 AC_DEFINE_UNQUOTED([uct_ib_MODULES], ["${uct_ib_modules}"], [IB loadable modules])
 AC_CONFIG_FILES([src/uct/ib/Makefile])

@@ -22,7 +22,7 @@ double ucs::perf_retry_interval  = 1.0;
 
 void parse_test_opts(int argc, char **argv) {
     int c;
-    while ((c = getopt(argc, argv, "s:p:i:")) != -1) {
+    while ((c = getopt(argc, argv, "s:p:i:t:")) != -1) {
         switch (c) {
         case 's':
             ucs_gtest_random_seed = atoi(optarg);
@@ -33,8 +33,12 @@ void parse_test_opts(int argc, char **argv) {
         case 'i':
             ucs::perf_retry_interval = atof(optarg);
             break;
+        case 't':
+            ucs::watchdog_timeout = atof(optarg);
+            break;
         default:
-            fprintf(stderr, "Usage: gtest [ -s rand-seed ] [ -p count ] [ -i interval ]\n");
+            fprintf(stderr, "Usage: gtest [ -s rand-seed ] [ -p count ] "
+                            "[ -i interval ] [ -t timeout ]\n");
             exit(1);
         }
     }
@@ -92,6 +96,9 @@ int main(int argc, char **argv) {
     }
     ucs_global_opts.warn_unused_env_vars = 0; /* Avoid warnings if not all
                                                  config vars are being used */
+
+    /* set gpu context for tests that need it */
+    mem_buffer::set_device_context();
 
     ret = ucs::watchdog_start();
     if (ret != 0) {

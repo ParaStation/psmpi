@@ -26,8 +26,8 @@
 
 
 /* not declared static because a machine-specific function may call this one in some cases */
-int MPIR_Scatter_intra_binomial(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
-                                void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
+int MPIR_Scatter_intra_binomial(const void *sendbuf, MPI_Aint sendcount, MPI_Datatype sendtype,
+                                void *recvbuf, MPI_Aint recvcount, MPI_Datatype recvtype, int root,
                                 MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
 {
     MPI_Status status;
@@ -44,9 +44,6 @@ int MPIR_Scatter_intra_binomial(const void *sendbuf, int sendcount, MPI_Datatype
 
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
-
-    if (((rank == root) && (sendcount == 0)) || ((rank != root) && (recvcount == 0)))
-        return MPI_SUCCESS;
 
     if (rank == root)
         MPIR_Datatype_get_extent_macro(sendtype, extent);
@@ -150,7 +147,7 @@ int MPIR_Scatter_intra_binomial(const void *sendbuf, int sendcount, MPI_Datatype
     }
 
     /* This process is responsible for all processes that have bits
-     * set from the LSB upto (but not including) mask.  Because of
+     * set from the LSB up to (but not including) mask.  Because of
      * the "not including", we start by shifting mask back down
      * one. */
 

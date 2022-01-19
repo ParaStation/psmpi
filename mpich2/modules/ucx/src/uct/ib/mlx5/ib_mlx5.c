@@ -18,6 +18,7 @@
 #include <ucs/debug/log.h>
 #include <ucs/sys/compiler.h>
 #include <ucs/sys/sys.h>
+#include <ucs/vfs/base/vfs_obj.h>
 #include <string.h>
 
 
@@ -50,6 +51,21 @@ ucs_config_field_t uct_ib_mlx5_iface_config_table[] = {
      ucs_offsetof(uct_ib_mlx5_iface_config_t, mmio_mode),
      UCS_CONFIG_TYPE_ENUM(uct_ib_mlx5_mmio_modes)},
 
+    {"AR_ENABLE", "auto",
+     "Enable Adaptive Routing (out of order) feature on SL that supports it.\n"
+     "SLs are selected as follows:\n"
+     "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
+     "+                                         + UCX_IB_AR_ENABLE=yes  + UCX_IB_AR_ENABLE=no   + UCX_IB_AR_ENABLE=try  + UCX_IB_AR_ENABLE=auto +\n"
+     "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
+     "+ UCX_IB_SL=auto + AR enabled on some SLs + Use 1st SL with AR    + Use 1st SL without AR + Use 1st SL with AR    + Use SL=0              +\n"
+     "+                + AR enabled on all SLs  + Use SL=0              + Failure               + Use SL=0              + Use SL=0              +\n"
+     "+                + AR disabled on all SLs + Failure               + Use SL=0              + Use SL=0              + Use SL=0              +\n"
+     "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
+     "+ UCX_IB_SL=<sl> + AR enabled on <sl>     + Use SL=<sl>           + Failure               + Use SL=<sl>           + Use SL=<sl>           +\n"
+     "+                + AR disabled on <sl>    + Failure               + Use SL=<sl>           + Use SL=<sl>           + Use SL=<sl>           +\n"
+     "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n",
+     ucs_offsetof(uct_ib_mlx5_iface_config_t, ar_enable), UCS_CONFIG_TYPE_TERNARY_AUTO},
+
     {NULL}
 };
 
@@ -58,12 +74,12 @@ ucs_status_t uct_ib_mlx5_create_cq(uct_ib_iface_t *iface, uct_ib_dir_t dir,
                                    int preferred_cpu, size_t inl)
 {
 #if HAVE_DECL_MLX5DV_CQ_INIT_ATTR_MASK_CQE_SIZE
-    uct_ib_device_t *dev = uct_ib_iface_device(iface);
-    struct ibv_cq *cq;
+    uct_ib_device_t *dev               = uct_ib_iface_device(iface);
     struct ibv_cq_init_attr_ex cq_attr = {};
     struct mlx5dv_cq_init_attr dv_attr = {};
+    struct ibv_cq *cq;
 
-    cq_attr.cqe         = init_attr->cq_len[dir];
+    cq_attr.cqe         = uct_ib_cq_size(iface, init_attr, dir);
     cq_attr.channel     = iface->comp_channel;
     cq_attr.comp_vector = preferred_cpu;
     if (init_attr->flags & UCT_IB_CQ_IGNORE_OVERRUN) {
@@ -79,7 +95,7 @@ ucs_status_t uct_ib_mlx5_create_cq(uct_ib_iface_t *iface, uct_ib_dir_t dir,
     }
 
     iface->cq[dir]                 = cq;
-    iface->config.max_inl_cqe[dir] = dv_attr.cqe_size / 2;
+    iface->config.max_inl_cqe[dir] = (inl > 0) ? (dv_attr.cqe_size / 2) : 0;
     return UCS_OK;
 #else
     return uct_ib_verbs_create_cq(iface, dir, init_attr, preferred_cpu, inl);
@@ -385,15 +401,56 @@ int uct_ib_mlx5_devx_uar_cmp(uct_ib_mlx5_devx_uar_t *uar,
     return uar->ctx == md->super.dev.ibv_context;
 }
 
+#if HAVE_DEVX
+static ucs_status_t
+uct_ib_mlx5_devx_alloc_uar(uct_ib_mlx5_md_t *md, unsigned flags, int log_level,
+                           char *title, char *fallback,
+                           struct mlx5dv_devx_uar **uar_p)
+{
+    struct mlx5dv_devx_uar *uar;
+    char buf[512];
+
+    uar = mlx5dv_devx_alloc_uar(md->super.dev.ibv_context, flags);
+    if (uar == NULL) {
+        sprintf(buf, "mlx5dv_devx_alloc_uar(device=%s, flags=0x%x(%s)) "
+                "failed: %m", uct_ib_device_name(&md->super.dev), flags, title);
+        if (fallback == NULL) {
+            ucs_log(log_level, "%s", buf);
+        } else {
+            ucs_log(log_level, "%s, fallback to %s", buf, fallback);
+        }
+
+        return UCS_ERR_NO_MEMORY;
+    }
+
+    *uar_p = uar;
+    return UCS_OK;
+}
+#endif
+
 ucs_status_t uct_ib_mlx5_devx_uar_init(uct_ib_mlx5_devx_uar_t *uar,
                                        uct_ib_mlx5_md_t *md,
                                        uct_ib_mlx5_mmio_mode_t mmio_mode)
 {
 #if HAVE_DEVX
-    uar->uar            = mlx5dv_devx_alloc_uar(md->super.dev.ibv_context, 0);
-    if (uar->uar == NULL) {
-        ucs_error("mlx5dv_devx_alloc_uar() failed: %m");
-        return UCS_ERR_NO_MEMORY;
+    ucs_status_t status;
+
+#if HAVE_DECL_MLX5DV_UAR_ALLOC_TYPE_NC
+    status = uct_ib_mlx5_devx_alloc_uar(md, UCT_IB_MLX5_UAR_ALLOC_TYPE_WC,
+                                        UCS_LOG_LEVEL_DEBUG, "WC", "NC",
+                                        &uar->uar);
+    if (status != UCS_OK) {
+        status = uct_ib_mlx5_devx_alloc_uar(md, UCT_IB_MLX5_UAR_ALLOC_TYPE_NC,
+                                            UCS_LOG_LEVEL_ERROR, "NC", NULL,
+                                            &uar->uar);
+    }
+#else
+    status = uct_ib_mlx5_devx_alloc_uar(md, UCT_IB_MLX5_UAR_ALLOC_TYPE_WC,
+                                        UCS_LOG_LEVEL_ERROR, "WC", NULL,
+                                        &uar->uar);
+#endif
+    if (status != UCS_OK) {
+        return status;
     }
 
     uar->super.addr.ptr = uar->uar->reg_addr;
@@ -423,6 +480,29 @@ void uct_ib_mlx5_txwq_reset(uct_ib_mlx5_txwq_t *txwq)
 #endif
     uct_ib_fence_info_init(&txwq->fi);
     memset(txwq->qstart, 0, UCS_PTR_BYTE_DIFF(txwq->qstart, txwq->qend));
+}
+
+void uct_ib_mlx5_txwq_vfs_populate(uct_ib_mlx5_txwq_t *txwq, void *parent_obj)
+{
+    ucs_vfs_obj_add_ro_file(parent_obj, ucs_vfs_show_primitive,
+                            &txwq->super.qp_num, UCS_VFS_TYPE_U32_HEX,
+                            "qp_num");
+    ucs_vfs_obj_add_ro_file(parent_obj, ucs_vfs_show_primitive, &txwq->sw_pi,
+                            UCS_VFS_TYPE_U16, "sw_pi");
+    ucs_vfs_obj_add_ro_file(parent_obj, ucs_vfs_show_primitive,
+                            &txwq->prev_sw_pi, UCS_VFS_TYPE_U16, "prev_sw_pi");
+    ucs_vfs_obj_add_ro_file(parent_obj, ucs_vfs_show_primitive, &txwq->qstart,
+                            UCS_VFS_TYPE_POINTER, "qstart");
+    ucs_vfs_obj_add_ro_file(parent_obj, ucs_vfs_show_primitive, &txwq->qend,
+                            UCS_VFS_TYPE_POINTER, "qend");
+    ucs_vfs_obj_add_ro_file(parent_obj, ucs_vfs_show_primitive, &txwq->bb_max,
+                            UCS_VFS_TYPE_U16, "bb_max");
+    ucs_vfs_obj_add_ro_file(parent_obj, ucs_vfs_show_primitive, &txwq->sig_pi,
+                            UCS_VFS_TYPE_U16, "sig_pi");
+#if UCS_ENABLE_ASSERT
+    ucs_vfs_obj_add_ro_file(parent_obj, ucs_vfs_show_primitive, &txwq->hw_ci,
+                            UCS_VFS_TYPE_U16, "hw_ci");
+#endif
 }
 
 ucs_status_t
@@ -519,21 +599,22 @@ ucs_status_t uct_ib_mlx5_txwq_init(uct_priv_worker_t *worker,
     return UCS_OK;
 }
 
-void uct_ib_mlx5_txwq_cleanup(uct_ib_mlx5_txwq_t* txwq)
+void uct_ib_mlx5_qp_mmio_cleanup(uct_ib_mlx5_qp_t *qp,
+                                 uct_ib_mlx5_mmio_reg_t *reg)
 {
-    uct_ib_mlx5_devx_uar_t *uar = ucs_derived_of(txwq->reg,
-                                                 uct_ib_mlx5_devx_uar_t);
-    switch (txwq->super.type) {
+    uct_ib_mlx5_devx_uar_t *uar = ucs_derived_of(reg, uct_ib_mlx5_devx_uar_t);
+
+    switch (qp->type) {
     case UCT_IB_MLX5_OBJ_TYPE_DEVX:
         uct_worker_tl_data_put(uar, uct_ib_mlx5_devx_uar_cleanup);
         break;
     case UCT_IB_MLX5_OBJ_TYPE_VERBS:
-        uct_ib_mlx5_iface_put_res_domain(&txwq->super);
-        uct_worker_tl_data_put(txwq->reg, uct_ib_mlx5_mmio_cleanup);
+        uct_ib_mlx5_iface_put_res_domain(qp);
+        uct_worker_tl_data_put(reg, uct_ib_mlx5_mmio_cleanup);
         break;
     case UCT_IB_MLX5_OBJ_TYPE_LAST:
-        if (txwq->reg != NULL) {
-            uct_worker_tl_data_put(txwq->reg, uct_ib_mlx5_mmio_cleanup);
+        if (reg != NULL) {
+            uct_worker_tl_data_put(reg, uct_ib_mlx5_mmio_cleanup);
         }
     }
 }
@@ -631,7 +712,6 @@ void uct_ib_mlx5_srq_buff_init(uct_ib_mlx5_srq_t *srq, uint32_t head,
     srq->ready_idx = UINT16_MAX;
     srq->sw_pi     = UINT16_MAX;
     srq->mask      = tail;
-    srq->tail      = tail;
     srq->stride    = uct_ib_mlx5_srq_stride(sge_num);
 
     for (i = head; i <= tail; ++i) {
@@ -647,27 +727,6 @@ void uct_ib_mlx5_srq_buff_init(uct_ib_mlx5_srq_t *srq, uint32_t head,
     }
 }
 
-void uct_ib_mlx5_verbs_srq_cleanup(uct_ib_mlx5_srq_t *srq,
-                                   struct ibv_srq *verbs_srq)
-{
-    uct_ib_mlx5dv_srq_t srq_info = {};
-    uct_ib_mlx5dv_t obj = {};
-    ucs_status_t status;
-
-    if (srq->type != UCT_IB_MLX5_OBJ_TYPE_VERBS) {
-        return;
-    }
-
-    /* check if mlx5 driver didn't modified SRQ */
-    obj.dv.srq.in = verbs_srq;
-    obj.dv.srq.out = &srq_info.dv;
-
-    status = uct_ib_mlx5dv_init_obj(&obj, MLX5DV_OBJ_SRQ);
-    ucs_assert_always(status == UCS_OK);
-    ucs_assertv_always(srq->tail == srq_info.dv.tail, "srq->tail=%d srq_info.tail=%d",
-                       srq->tail, srq_info.dv.tail);
-}
-
 ucs_status_t uct_ib_mlx5_modify_qp_state(uct_ib_mlx5_md_t *md,
                                          uct_ib_mlx5_qp_t *qp,
                                          enum ibv_qp_state state)
@@ -676,6 +735,20 @@ ucs_status_t uct_ib_mlx5_modify_qp_state(uct_ib_mlx5_md_t *md,
         return uct_ib_mlx5_devx_modify_qp_state(qp, state);
     } else {
         return uct_ib_modify_qp(qp->verbs.qp, state);
+    }
+}
+
+ucs_status_t
+uct_ib_mlx5_query_qp_peer_info(uct_ib_iface_t *iface, uct_ib_mlx5_qp_t *qp,
+                               struct ibv_ah_attr *ah_attr, uint32_t *dest_qpn)
+{
+    uct_ib_mlx5_md_t *md = ucs_derived_of(iface->super.md, uct_ib_mlx5_md_t);
+
+    if (md->flags & UCT_IB_MLX5_MD_FLAG_DEVX) {
+        return uct_ib_mlx5_devx_query_qp_peer_info(iface, qp, ah_attr,
+                                                   dest_qpn);
+    } else {
+        return uct_ib_query_qp_peer_info(qp->verbs.qp, ah_attr, dest_qpn);
     }
 }
 
@@ -707,3 +780,142 @@ unsupported:
     return UCS_ERR_UNSUPPORTED;
 }
 
+void uct_ib_mlx5_destroy_qp(uct_ib_mlx5_md_t *md, uct_ib_mlx5_qp_t *qp)
+{
+    switch (qp->type) {
+    case UCT_IB_MLX5_OBJ_TYPE_VERBS:
+        uct_ib_destroy_qp(qp->verbs.qp);
+        break;
+    case UCT_IB_MLX5_OBJ_TYPE_DEVX:
+        uct_ib_mlx5_devx_destroy_qp(md, qp);
+        break;
+    case UCT_IB_MLX5_OBJ_TYPE_LAST:
+        break;
+    }
+}
+
+/* Keep the function as a separate to test SL selection */
+ucs_status_t
+uct_ib_mlx5_select_sl(const uct_ib_iface_config_t *ib_config,
+                      ucs_ternary_auto_value_t ar_enable,
+                      uint16_t hw_sl_mask, int have_sl_mask_cap,
+                      const char *dev_name, uint8_t port_num,
+                      uint8_t *sl_p)
+{
+    ucs_status_t status = UCS_OK;
+    const char UCS_V_UNUSED *sl_ar_support_str;
+    uint16_t sl_allow_mask, sls_with_ar, sls_without_ar;
+    ucs_string_buffer_t sls_with_ar_str, sls_without_ar_str;
+    char sl_str[8];
+    char ar_enable_str[8];
+    uint8_t sl;
+
+    ucs_assert(have_sl_mask_cap || (hw_sl_mask == 0));
+
+    /* which SLs are allowed by user config */
+    sl_allow_mask = (ib_config->sl == UCS_ULUNITS_AUTO) ?
+                    UCS_MASK(UCT_IB_SL_NUM) : UCS_BIT(ib_config->sl);
+
+    if (have_sl_mask_cap) {
+        sls_with_ar    = sl_allow_mask & hw_sl_mask;
+        sls_without_ar = sl_allow_mask & ~hw_sl_mask;
+    } else {
+        sls_with_ar    =
+        sls_without_ar = 0;
+    }
+
+    ucs_string_buffer_init(&sls_with_ar_str);
+    ucs_string_buffer_init(&sls_without_ar_str);
+
+    if (ar_enable == UCS_AUTO) {
+        /* selects SL requested by a user */
+        sl                    = ucs_ffs64(sl_allow_mask);
+        if (have_sl_mask_cap) {
+            sl_ar_support_str = (sl & sls_with_ar) ? "yes" : "no";
+        } else {
+            sl_ar_support_str = "unknown";
+        }
+    } else if (((ar_enable == UCS_YES) || (ar_enable == UCS_TRY)) &&
+               (sls_with_ar != 0)) {
+        /* have SLs with AR, and AR is YES/TRY */
+        sl                = ucs_ffs64(sls_with_ar);
+        sl_ar_support_str = "yes";
+    } else if (((ar_enable == UCS_NO) || (ar_enable == UCS_TRY)) &&
+               (sls_without_ar != 0)) {
+        /* have SLs without AR, and AR is NO/TRY */
+        sl                = ucs_ffs64(sls_without_ar);
+        sl_ar_support_str = "no";
+    } else if (ar_enable == UCS_TRY) {
+        ucs_assert(!have_sl_mask_cap);
+        sl                = ucs_ffs64(sl_allow_mask);
+        sl_ar_support_str = "unknown"; /* we don't know which SLs support AR */
+    } else {
+        sl_ar_support_str = (ar_enable == UCS_YES) ? "with" : "without";
+        goto err;
+    }
+
+    *sl_p = sl;
+    ucs_debug("SL=%u (AR support - %s) was selected on %s:%u,"
+              " SLs with AR support = { %s }, SLs without AR support = { %s }",
+              sl, sl_ar_support_str, dev_name, port_num,
+              ucs_mask_str(sls_with_ar, &sls_with_ar_str),
+              ucs_mask_str(sls_without_ar, &sls_without_ar_str));
+out_str_buf_clean:
+    ucs_string_buffer_cleanup(&sls_with_ar_str);
+    ucs_string_buffer_cleanup(&sls_without_ar_str);
+    return status;
+
+err:
+    ucs_assert(ar_enable != UCS_TRY);
+    ucs_config_sprintf_ulunits(sl_str, sizeof(sl_str), &ib_config->sl, NULL);
+    ucs_config_sprintf_ternary_auto(ar_enable_str, sizeof(ar_enable_str),
+                                    &ar_enable, NULL);
+    ucs_error("AR=%s was requested for SL=%s, but %s %s AR on %s:%u,"
+              " SLs with AR support = { %s }, SLs without AR support = { %s }",
+              ar_enable_str, sl_str,
+              have_sl_mask_cap ? "could not select SL" :
+              "could not detect AR mask for SLs. Please, set SL manually",
+              sl_ar_support_str, dev_name, port_num,
+              ucs_mask_str(sls_with_ar, &sls_with_ar_str),
+              ucs_mask_str(sls_without_ar, &sls_without_ar_str));
+    status = UCS_ERR_UNSUPPORTED;
+    goto out_str_buf_clean;
+}
+
+ucs_status_t
+uct_ib_mlx5_iface_select_sl(uct_ib_iface_t *iface,
+                            const uct_ib_mlx5_iface_config_t *ib_mlx5_config,
+                            const uct_ib_iface_config_t *ib_config)
+{
+#if HAVE_DEVX
+    uct_ib_mlx5_md_t *md = ucs_derived_of(iface->super.md, uct_ib_mlx5_md_t);
+#endif
+    uint16_t ooo_sl_mask = 0;
+    ucs_status_t status;
+
+    ucs_assert(iface->config.sl == UCT_IB_SL_NUM);
+
+    if (uct_ib_device_is_port_roce(uct_ib_iface_device(iface),
+                                   iface->config.port_num)) {
+        /* Ethernet priority for RoCE devices can't be selected regardless
+         * AR support requested by user, pass empty ooo_sl_mask */
+        return uct_ib_mlx5_select_sl(ib_config, UCS_NO, 0, 1,
+                                     UCT_IB_IFACE_ARG(iface),
+                                     &iface->config.sl);
+    }
+
+#if HAVE_DEVX
+    status = uct_ib_mlx5_devx_query_ooo_sl_mask(md, iface->config.port_num,
+                                                &ooo_sl_mask);
+    if ((status != UCS_OK) && (status != UCS_ERR_UNSUPPORTED)) {
+        return status;
+    }
+#else
+    status = UCS_ERR_UNSUPPORTED;
+#endif
+
+    return uct_ib_mlx5_select_sl(ib_config, ib_mlx5_config->ar_enable,
+                                 ooo_sl_mask, status == UCS_OK,
+                                 UCT_IB_IFACE_ARG(iface),
+                                 &iface->config.sl);
+}

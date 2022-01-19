@@ -9,6 +9,7 @@ info
 init
 mpi_t
 pt2pt
+@partdir@
 @rmadir@
 @spawndir@
 topo

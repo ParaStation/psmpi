@@ -9,15 +9,22 @@ extern "C" {
 #include <ucs/sys/sys.h>
 }
 
-
-class test_ucp_context : public ucp_test {
-public:
-    static ucp_params_t get_ctx_params() {
-        ucp_params_t params = ucp_test::get_ctx_params();
-        params.features |= UCP_FEATURE_TAG | UCP_FEATURE_WAKEUP;
-        return params;
-    }
+class test_ucp_lib_query : public ucs::test {
 };
+
+UCS_TEST_F(test_ucp_lib_query, test_max_thread_support) {
+    ucs_status_t status;
+    ucp_lib_attr_t params;
+    memset(&params, 0, sizeof(ucp_lib_attr_t));
+    params.field_mask = UCP_LIB_ATTR_FIELD_MAX_THREAD_LEVEL;
+    status            = ucp_lib_query(&params);
+    ASSERT_EQ(UCS_OK, status);
+#if ENABLE_MT
+    EXPECT_EQ(UCS_THREAD_MODE_MULTI, params.max_thread_level);
+#else
+    EXPECT_EQ(UCS_THREAD_MODE_SERIALIZED, params.max_thread_level);
+#endif
+}
 
 UCS_TEST_P(test_ucp_context, minimal_field_mask) {
     ucs::handle<ucp_config_t*> config;
@@ -32,7 +39,7 @@ UCS_TEST_P(test_ucp_context, minimal_field_mask) {
         ucp_params_t params;
         VALGRIND_MAKE_MEM_UNDEFINED(&params, sizeof(params));
         params.field_mask = UCP_PARAM_FIELD_FEATURES;
-        params.features   = get_ctx_params().features;
+        params.features   = get_variant_ctx_params().features;
 
         UCS_TEST_CREATE_HANDLE(ucp_context_h, ucph, ucp_cleanup,
                                ucp_init, &params, config.get());
@@ -75,14 +82,14 @@ UCS_TEST_P(test_ucp_version, wrong_api_version) {
     UCS_TEST_CREATE_HANDLE(ucp_config_t*, config, ucp_config_release,
                            ucp_config_read, NULL, NULL);
 
-    ucp_params_t params = get_ctx_params();
     ucp_context_h ucph;
     ucs_status_t status;
     size_t warn_count;
     {
         scoped_log_handler slh(hide_warns_logger);
         warn_count = m_warnings.size();
-        status = ucp_init_version(99, 99, &params, config.get(), &ucph);
+        status = ucp_init_version(99, 99, &get_variant_ctx_params(),
+                                  config.get(), &ucph);
     }
     if (status != UCS_OK) {
         ADD_FAILURE() << "Failed to create UCP with wrong version";

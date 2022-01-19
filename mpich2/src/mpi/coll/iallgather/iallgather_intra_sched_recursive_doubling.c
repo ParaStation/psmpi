@@ -41,9 +41,9 @@ static int dtp_release_ref(MPIR_Comm * comm, int tag, void *state)
  * property of recursive doubling (see Benson et al paper in Euro
  * PVM/MPI 2003).
  */
-int MPIR_Iallgather_intra_sched_recursive_doubling(const void *sendbuf, int sendcount,
+int MPIR_Iallgather_intra_sched_recursive_doubling(const void *sendbuf, MPI_Aint sendcount,
                                                    MPI_Datatype sendtype, void *recvbuf,
-                                                   int recvcount, MPI_Datatype recvtype,
+                                                   MPI_Aint recvcount, MPI_Datatype recvtype,
                                                    MPIR_Comm * comm_ptr, MPIR_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -55,7 +55,6 @@ int MPIR_Iallgather_intra_sched_recursive_doubling(const void *sendbuf, int send
     int offset, send_offset, recv_offset;
     MPI_Aint recvtype_extent;
     MPIR_Datatype *recv_dtp;
-    MPIR_SCHED_CHKPMEM_DECL(1);
 
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
@@ -82,8 +81,8 @@ int MPIR_Iallgather_intra_sched_recursive_doubling(const void *sendbuf, int send
         MPIR_SCHED_BARRIER(s);
     }
 
-    MPIR_SCHED_CHKPMEM_MALLOC(ss, struct shared_state *, sizeof(struct shared_state), mpi_errno,
-                              "ss", MPL_MEM_BUFFER);
+    ss = MPIR_Sched_alloc_state(s, sizeof(struct shared_state));
+    MPIR_ERR_CHKANDJUMP(!ss, mpi_errno, MPI_ERR_OTHER, "**nomem");
     ss->curr_count = recvcount;
     ss->recvtype = recvtype;
     /* ensure that recvtype doesn't disappear immediately after last _recv but before _cb */
@@ -212,10 +211,8 @@ int MPIR_Iallgather_intra_sched_recursive_doubling(const void *sendbuf, int send
         MPIR_ERR_CHECK(mpi_errno);
     }
 
-    MPIR_SCHED_CHKPMEM_COMMIT(s);
   fn_exit:
     return mpi_errno;
   fn_fail:
-    MPIR_SCHED_CHKPMEM_REAP(s);
     goto fn_exit;
 }

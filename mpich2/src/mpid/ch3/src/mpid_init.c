@@ -33,11 +33,11 @@ static int init_pg(int *has_parent, int *pg_rank_p, MPIDI_PG_t **pg_p);
 static int pg_compare_ids(void * id1, void * id2);
 static int pg_destroy(MPIDI_PG_t * pg );
 
-MPIDI_Process_t MPIDI_Process = { NULL };
-MPIDI_CH3U_SRBuf_element_t * MPIDI_CH3U_SRBuf_pool = NULL;
-MPIDI_CH3U_Win_fns_t MPIDI_CH3U_Win_fns = { NULL };
-MPIDI_CH3U_Win_hooks_t MPIDI_CH3U_Win_hooks = { NULL };
-MPIDI_CH3U_Win_pkt_ordering_t MPIDI_CH3U_Win_pkt_orderings = { 0 };
+MPIDI_Process_t MPIDI_Process;
+MPIDI_CH3U_SRBuf_element_t * MPIDI_CH3U_SRBuf_pool;
+MPIDI_CH3U_Win_fns_t MPIDI_CH3U_Win_fns;
+MPIDI_CH3U_Win_hooks_t MPIDI_CH3U_Win_hooks;
+MPIDI_CH3U_Win_pkt_ordering_t MPIDI_CH3U_Win_pkt_orderings;
 
 #if defined(MPL_USE_DBG_LOGGING)
 MPL_dbg_class MPIDI_CH3_DBG_CONNECT;
@@ -62,20 +62,35 @@ static int finalize_failed_procs_group(void *param)
     return mpi_errno;
 }
 
+static int init_local(int requested, int *provided);
+static int init_world(void);
+
 int MPID_Init(int requested, int *provided)
 {
-    int pmi_errno;
     int mpi_errno = MPI_SUCCESS;
-    int has_parent;
-    MPIDI_PG_t * pg=NULL;
-    int pg_rank=-1;
-    int pg_size;
-    MPIR_Comm * comm;
-    int p;
-    int val;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_INIT);
+    MPIR_FUNC_ENTER;
 
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_INIT);
+    mpi_errno = init_local(requested, provided);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    mpi_errno = init_world();
+    MPIR_ERR_CHECK(mpi_errno);
+
+  fn_exit:
+    MPIR_FUNC_EXIT;
+    return mpi_errno;
+
+    /* --BEGIN ERROR HANDLING-- */
+  fn_fail:
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */
+}
+
+int init_local(int requested, int *provided)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_FUNC_ENTER;
+    int pmi_errno;
 
     if (MPICH_THREAD_LEVEL >= requested)
         *provided = requested;
@@ -95,6 +110,7 @@ int MPID_Init(int requested, int *provided)
 #ifdef USE_PMI2_API
     MPIDI_failed_procs_string = MPL_malloc(sizeof(char) * PMI2_MAX_VALLEN, MPL_MEM_STRINGS);
 #else
+    int val;
     pmi_errno = PMI_KVS_Get_value_length_max(&val);
     if (pmi_errno != PMI_SUCCESS)
     {
@@ -114,13 +130,13 @@ int MPID_Init(int requested, int *provided)
     /*
      * Perform channel-independent PMI initialization
      */
+    MPIDI_PG_t * pg=NULL;
+    int has_parent, pg_rank;
     mpi_errno = init_pg(&has_parent, &pg_rank, &pg);
     if (mpi_errno) {
 	MPIR_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|ch3_init");
     }
     
-    /* FIXME: Why are pg_size and pg_rank handled differently? */
-    pg_size = MPIDI_PG_Get_size(pg);
     MPIDI_Process.my_pg = pg;  /* brad : this is rework for shared memories 
 				* because they need this set earlier
                                 * for getting the business card
@@ -153,13 +169,25 @@ int MPID_Init(int requested, int *provided)
     MPIDI_CH3_DBG_REFCOUNT = MPL_dbg_class_alloc("REFCOUNT", "refcount");
 #endif /* MPL_USE_DBG_LOGGING */
 
+  fn_exit:
+    MPIR_FUNC_EXIT;
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+int init_world(void)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_FUNC_ENTER;
     /*
      * Let the channel perform any necessary initialization
      * The channel init should assume that PMI_Init has been called and that
      * the basic information about the job has been extracted from PMI (e.g.,
      * the size and rank of this process, and the process group id)
      */
-    mpi_errno = MPIDI_CH3_Init(has_parent, pg, pg_rank);
+    int has_parent = MPIR_Process.has_parent;
+    mpi_errno = MPIDI_CH3_Init(has_parent, MPIDI_Process.my_pg, MPIR_Process.rank);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIR_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|ch3_init");
     }
@@ -171,80 +199,14 @@ int MPID_Init(int requested, int *provided)
     /* Ask channel to expose Window packet ordering. */
     MPIDI_CH3_Win_pkt_orderings_init(&MPIDI_CH3U_Win_pkt_orderings);
 
-    /*
-     * Initialize the MPI_COMM_WORLD object
-     */
-    comm = MPIR_Process.comm_world;
-
-    comm->rank        = pg_rank;
-    comm->remote_size = pg_size;
-    comm->local_size  = pg_size;
-    
-    mpi_errno = MPIDI_VCRT_Create(comm->remote_size, &comm->dev.vcrt);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	MPIR_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,"**dev|vcrt_create", 
-			     "**dev|vcrt_create %s", "MPI_COMM_WORLD");
-    }
-
-    /* Initialize the connection table on COMM_WORLD from the process group's
-       connection table */
-    for (p = 0; p < pg_size; p++)
-    {
-	MPIDI_VCR_Dup(&pg->vct[p], &comm->dev.vcrt->vcr_table[p]);
-    }
-
-    mpi_errno = MPIR_Comm_commit(comm);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    /*
-     * Initialize the MPI_COMM_SELF object
-     */
-    comm = MPIR_Process.comm_self;
-    comm->rank        = 0;
-    comm->remote_size = 1;
-    comm->local_size  = 1;
-    
-    mpi_errno = MPIDI_VCRT_Create(comm->remote_size, &comm->dev.vcrt);
-    if (mpi_errno != MPI_SUCCESS)
-    {
-	MPIR_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**dev|vcrt_create", 
-			     "**dev|vcrt_create %s", "MPI_COMM_SELF");
-    }
-    
-    MPIDI_VCR_Dup(&pg->vct[pg_rank], &comm->dev.vcrt->vcr_table[0]);
-
-    mpi_errno = MPIR_Comm_commit(comm);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    /* Currently, mpidpre.h always defines MPID_NEEDS_ICOMM_WORLD. */
-#ifdef MPID_NEEDS_ICOMM_WORLD
-    /*
-     * Initialize the MPIR_ICOMM_WORLD object (an internal, private version
-     * of MPI_COMM_WORLD) 
-     */
-    comm = MPIR_Process.icomm_world;
-
-    comm->rank        = pg_rank;
-    comm->remote_size = pg_size;
-    comm->local_size  = pg_size;
-    MPIDI_VCRT_Add_ref( MPIR_Process.comm_world->dev.vcrt );
-    comm->dev.vcrt = MPIR_Process.comm_world->dev.vcrt;
-    
-    mpi_errno = MPIR_Comm_commit(comm);
-    MPIR_ERR_CHECK(mpi_errno);
-#endif
-
-    MPIR_Process.has_parent = has_parent;
-
     MPIR_Comm_register_hint(MPIR_COMM_HINT_EAGER_THRESH, "eager_rendezvous_threshold",
-                            NULL, MPIR_COMM_HINT_TYPE_INT, 0);
+                            NULL, MPIR_COMM_HINT_TYPE_INT, 0, 0);
 
     mpi_errno = MPIDI_RMA_init();
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_INIT);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
 
     /* --BEGIN ERROR HANDLING-- */
@@ -257,8 +219,7 @@ static int init_spawn(void)
 {
     int mpi_errno = MPI_SUCCESS;
     char * parent_port;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_INIT_SPAWN);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_INIT_SPAWN);
+    MPIR_FUNC_ENTER;
 #ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
 
     /* FIXME: To allow just the "root" process to
@@ -295,7 +256,7 @@ static int init_spawn(void)
     /* FIXME: Check that this intercommunicator gets freed in MPI_Finalize
        if not already freed.  */
 #endif
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_INIT_SPAWN);
+    MPIR_FUNC_EXIT;
   fn_exit:
     return mpi_errno;
   fn_fail:
@@ -365,7 +326,7 @@ static int init_pg(int *has_parent, int *pg_rank_p, MPIDI_PG_t **pg_p)
        return errors if the routines are in fact used */
     if (usePMI) {
 	/*
-	 * Initialize the process manangement interface (PMI), 
+	 * Initialize the process management interface (PMI), 
 	 * and get rank and size information about our process group
 	 */
 
@@ -377,7 +338,7 @@ static int init_pg(int *has_parent, int *pg_rank_p, MPIDI_PG_t **pg_p)
         pg_size = MPIR_Process.size;
         appnum = MPIR_Process.appnum;
 
-	/* Note that if pmi is not availble, the value of MPI_APPNUM is 
+	/* Note that if pmi is not available, the value of MPI_APPNUM is 
 	   not set */
 	if (appnum != -1) {
 	    MPIR_Process.attrs.appnum = appnum;
@@ -457,7 +418,7 @@ int MPIDI_CH3I_BCInit( char **bc_val_p, int *val_max_sz_p )
                              "**pmi_kvs_get_value_length_max %d", pmi_errno);
     }
 #endif
-    /* This memroy is returned by this routine */
+    /* This memory is returned by this routine */
     *bc_val_p = MPL_malloc(*val_max_sz_p, MPL_MEM_ADDRESS);
     if (*bc_val_p == NULL) {
 	MPIR_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**nomem","**nomem %d",

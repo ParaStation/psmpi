@@ -32,7 +32,7 @@ int main()
 
     yaksa_request_t request;
     rc = yaksa_ipack(inbuf, 1, vector_vector, 0, outbuf, DIMSIZE * DIMSIZE * sizeof(int), &actual,
-                     NULL, &request);
+                     NULL, YAKSA_OP__REPLACE, &request);
     assert(rc == YAKSA_SUCCESS);
     assert(actual == 5 * 3 * 2 * sizeof(int));
 
@@ -57,7 +57,7 @@ int main()
 
     uintptr_t actual_unpack_bytes;
     rc = yaksa_iunpack(outbuf, actual, inbuf, 1, vector_vector, 0, &actual_unpack_bytes,
-                       NULL, &request);
+                       NULL, YAKSA_OP__REPLACE, &request);
     assert(rc == YAKSA_SUCCESS);
 
     rc = yaksa_request_wait(request);

@@ -45,11 +45,10 @@ int main(int argc, char *argv[])
 {
     int err, errs = 0;
     int attrval;
-    int i, j, key[32], keyval, saveKeyval;
+    int i, key[32], keyval, saveKeyval;
     int seed, testsize;
     int obj_idx;
     MPI_Aint count, maxbufsize;
-    int tnlen;
     MPI_Datatype type, duptype;
     DTP_pool_s dtp;
     DTP_obj_s obj;
@@ -98,28 +97,22 @@ int main(int argc, char *argv[])
 
         if (attrval != 1) {
             errs++;
-            char *desc;
-            DTP_obj_get_description(obj, &desc);
-            printf("attrval is %d, should be 1, before dup in type %s\n", attrval, desc);
-            free(desc);
+            printf("attrval is %d, should be 1, before dup in type %s\n", attrval,
+                   DTP_obj_get_description(obj));
         }
         MPI_Type_dup(type, &duptype);
         /* Check that the attribute was copied */
         if (attrval != 2) {
             errs++;
-            char *desc;
-            DTP_obj_get_description(obj, &desc);
-            printf("Attribute not incremented when type dup'ed (%s)\n", desc);
-            free(desc);
+            printf("Attribute not incremented when type dup'ed (%s)\n",
+                   DTP_obj_get_description(obj));
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
         MPI_Type_free(&duptype);
         if (attrval != 1) {
             errs++;
-            char *desc;
-            DTP_obj_get_description(obj, &desc);
-            printf("Attribute not decremented when duptype %s freed\n", desc);
-            free(desc);
+            printf("Attribute not decremented when duptype %s freed\n",
+                   DTP_obj_get_description(obj));
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
         /* Check that the attribute was freed in the duptype */
@@ -128,10 +121,8 @@ int main(int argc, char *argv[])
             DTP_obj_free(obj);
             if (attrval != 0) {
                 errs++;
-                char *desc;
-                DTP_obj_get_description(obj, &desc);
-                fprintf(stderr, "Attribute not decremented when type %s freed\n", desc);
-                free(desc);
+                fprintf(stderr, "Attribute not decremented when type %s freed\n",
+                        DTP_obj_get_description(obj));
                 MPI_Abort(MPI_COMM_WORLD, 1);
             }
         } else {

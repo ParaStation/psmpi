@@ -1,5 +1,6 @@
 /**
 * Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (C) Huawei Technologies Co., Ltd. 2020.  ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -13,16 +14,17 @@
 #include <uct/base/uct_iface.h>
 #include <ucs/stats/stats.h>
 #include <ucs/debug/assert.h>
+#include <ucs/datastruct/callbackq.h>
 #include <ucs/datastruct/khash.h>
 #include <ucs/type/spinlock.h>
 #include <ucs/sys/sock.h>
-#include <ucs/sys/topo.h>
 
 #include <endian.h>
 #include <linux/ip.h>
 
 
 #define UCT_IB_QPN_ORDER                  24  /* How many bits can be an IB QP number */
+#define UCT_IB_UIDX_SHIFT                 8   /* BE uidx shift */
 #define UCT_IB_LRH_LEN                    8   /* IB Local routing header */
 #define UCT_IB_GRH_LEN                    40  /* IB GLobal routing header */
 #define UCT_IB_BTH_LEN                    12  /* IB base transport header */
@@ -50,6 +52,9 @@
 #define UCT_IB_SITE_LOCAL_MASK            be64toh(0xffffffffffff0000ul) /* IBTA 4.1.1 12b */
 #define UCT_IB_DEFAULT_ROCEV2_DSCP        106  /* Default DSCP for RoCE v2 */
 #define UCT_IB_ROCE_UDP_SRC_PORT_BASE     0xC000
+#define UCT_IB_CQE_SL_PKTYPE_MASK         0x7 /* SL for IB or packet type
+                                                 (GRH/IPv4/IPv6) for RoCE in the
+                                                 CQE */
 #define UCT_IB_DEVICE_SYSFS_PFX           "/sys/class/infiniband/%s"
 #define UCT_IB_DEVICE_SYSFS_FMT           UCT_IB_DEVICE_SYSFS_PFX "/device/%s"
 #define UCT_IB_DEVICE_SYSFS_GID_ATTR_PFX  UCT_IB_DEVICE_SYSFS_PFX "/ports/%d/gid_attrs"
@@ -156,6 +161,44 @@ typedef struct uct_ib_device_spec {
 
 KHASH_TYPE(uct_ib_ah, struct ibv_ah_attr, struct ibv_ah*);
 
+
+/**
+ * IB async event descriptor.
+ */
+typedef struct uct_ib_async_event {
+    enum ibv_event_type event_type;             /* Event type */
+    union {
+        uint8_t         port_num;               /* Port number */
+        uint32_t        qp_num;                 /* QP number */
+        uint32_t        dct_num;                /* DCT number */
+        void            *cookie;                /* Pointer to resource */
+        uint32_t        resource_id;            /* Opaque resource ID */
+    };
+} uct_ib_async_event_t;
+
+
+/**
+ * IB async event waiting context.
+ */
+typedef struct uct_ib_async_event_wait {
+    ucs_callback_t      cb;                     /* Callback */
+    ucs_callbackq_t     *cbq;                   /* Async queue for callback */
+    int                 cb_id;                  /* Scheduled callback ID */
+} uct_ib_async_event_wait_t;
+
+
+/**
+ * IB async event state.
+ */
+typedef struct {
+    unsigned                  flag;             /* Event happened */
+    uct_ib_async_event_wait_t *wait_ctx;        /* Waiting context */
+} uct_ib_async_event_val_t;
+
+
+KHASH_TYPE(uct_ib_async_event, uct_ib_async_event_t, uct_ib_async_event_val_t);
+
+
 /**
  * IB device (corresponds to HCA)
  */
@@ -179,9 +222,13 @@ typedef struct uct_ib_device {
     uint8_t                     pci_fadd_arg_sizes;
     uint8_t                     pci_cswap_arg_sizes;
     uint8_t                     atomic_align;
+    uint8_t                     lag_level;
     /* AH hash */
     khash_t(uct_ib_ah)          ah_hash;
     ucs_recursive_spinlock_t    ah_lock;
+    /* Async event subscribers */
+    ucs_spinlock_t              async_event_lock;
+    khash_t(uct_ib_async_event) async_events_hash;
 } uct_ib_device_t;
 
 
@@ -202,16 +249,6 @@ typedef struct {
     uct_ib_roce_version_info_t roce_info;    /* For a RoCE port */
 } uct_ib_device_gid_info_t;
 
-
-typedef struct {
-    enum ibv_event_type event_type;
-    union {
-        uint8_t         port_num;
-        uint32_t        qp_num;
-        uint32_t        dct_num;
-        void            *cookie;
-    };
-} uct_ib_async_event_t;
 
 
 extern const double uct_ib_qp_rnr_time_ms[];
@@ -271,16 +308,6 @@ ucs_status_t uct_ib_device_select_gid(uct_ib_device_t *dev,
  */
 const char *uct_ib_device_name(uct_ib_device_t *dev);
 
-
-/**
- * For the given IB device find the associated bus information
- *
- * @param [in]  dev             IB device.
- * @param [in]  port_num        Port number.
- * @param [out] bus_id          Bus information.
- */
-ucs_status_t uct_ib_device_bus(uct_ib_device_t *dev, int port_num,
-                               ucs_sys_bus_id_t *bus_id);
 
 /**
  * @return whether the port is InfiniBand
@@ -345,8 +372,14 @@ ucs_status_t uct_ib_device_create_ah_cached(uct_ib_device_t *dev,
 
 void uct_ib_device_cleanup_ah_cached(uct_ib_device_t *dev);
 
+ucs_status_t uct_ib_device_get_roce_ndev_name(uct_ib_device_t *dev,
+                                              uint8_t port_num,
+                                              uint8_t gid_index,
+                                              char *ndev_name, size_t max);
+
 unsigned uct_ib_device_get_roce_lag_level(uct_ib_device_t *dev,
-                                          uint8_t port_num);
+                                          uint8_t port_num,
+                                          uint8_t gid_index);
 
 
 static inline struct ibv_port_attr*
@@ -366,7 +399,8 @@ const char *uct_ib_roce_version_str(uct_ib_roce_version_t roce_ver);
 const char *uct_ib_gid_str(const union ibv_gid *gid, char *str, size_t max_size);
 
 ucs_status_t uct_ib_device_query_gid(uct_ib_device_t *dev, uint8_t port_num,
-                                     unsigned gid_index, union ibv_gid *gid);
+                                     unsigned gid_index, union ibv_gid *gid,
+                                     ucs_log_level_t error_level);
 
 ucs_status_t uct_ib_device_query_gid_info(struct ibv_context *ctx, const char *dev_name,
                                           uint8_t port_num, unsigned gid_index,
@@ -375,6 +409,21 @@ ucs_status_t uct_ib_device_query_gid_info(struct ibv_context *ctx, const char *d
 int uct_ib_device_test_roce_gid_index(uct_ib_device_t *dev, uint8_t port_num,
                                       const union ibv_gid *gid,
                                       uint8_t gid_index);
+
+ucs_status_t
+uct_ib_device_async_event_register(uct_ib_device_t *dev,
+                                   enum ibv_event_type event_type,
+                                   uint32_t resource_id);
+
+ucs_status_t
+uct_ib_device_async_event_wait(uct_ib_device_t *dev,
+                               enum ibv_event_type event_type,
+                               uint32_t resource_id,
+                               uct_ib_async_event_wait_t *wait_ctx);
+
+void uct_ib_device_async_event_unregister(uct_ib_device_t *dev,
+                                          enum ibv_event_type event_type,
+                                          uint32_t resource_id);
 
 int uct_ib_get_cqe_size(int cqe_size_min);
 

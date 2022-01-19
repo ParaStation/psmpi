@@ -4,15 +4,16 @@
 * Copyright (C) UT-Battelle, LLC. 2014-2015. ALL RIGHTS RESERVED.
 * See file LICENSE for terms.
 */
+
+#include "uct_test.h"
+#include "uct_p2p_test.h"
+#include <common/test.h>
 extern "C" {
 #include <uct/api/uct.h>
 #include <uct/base/uct_iface.h>
 
 #include <ucs/time/time.h>
 }
-#include <common/test.h>
-#include "uct_test.h"
-#include "uct_p2p_test.h"
 
 #ifdef ENABLE_STATS
 
@@ -27,8 +28,9 @@ extern "C" {
 class test_uct_stats : public uct_p2p_test {
 public:
     test_uct_stats() : uct_p2p_test(0), lbuf(NULL), rbuf(NULL) {
-        m_comp.func  = NULL;
-        m_comp.count = 0;
+        m_comp.func   = NULL;
+        m_comp.count  = 0;
+        m_comp.status = UCS_OK;
     }
 
     virtual void init() {
@@ -90,8 +92,13 @@ public:
     void init_bufs(size_t min, size_t max)
     {
         size_t size = ucs_max(min, ucs_min(64ul, max));
-        lbuf = new mapped_buffer(size, 0, sender(), 0, sender().md_attr().cap.access_mem_type);
-        rbuf = new mapped_buffer(size, 0, receiver(), 0, sender().md_attr().cap.access_mem_type);
+        uint8_t mem_type_index;
+
+        ucs_assert(sender().md_attr().cap.access_mem_types != 0);
+        mem_type_index = ucs_ffs64(sender().md_attr().cap.access_mem_types);
+
+        lbuf = new mapped_buffer(size, 0, sender(), 0, (ucs_memory_type_t)mem_type_index);
+        rbuf = new mapped_buffer(size, 0, receiver(), 0, (ucs_memory_type_t)mem_type_index);
     }
 
     virtual void cleanup() {
@@ -162,13 +169,14 @@ public:
     }
 
     void init_completion() {
-        m_comp.count = 2;
-        m_comp.func  = NULL;
+        m_comp.count  = 2;
+        m_comp.status = UCS_OK;
+        m_comp.func   = NULL;
     }
 
     void wait_for_completion(ucs_status_t status) {
 
-        EXPECT_TRUE(UCS_INPROGRESS == status || UCS_OK == status);
+        EXPECT_FALSE(UCS_STATUS_IS_ERR(status));
         if (status == UCS_OK) {
             --m_comp.count;
         }
@@ -210,6 +218,30 @@ UCS_TEST_SKIP_COND_P(test_uct_stats, am_short,
     EXPECT_STAT(sender, uct_ep, UCT_EP_STAT_BYTES_SHORT,
                 sizeof(hdr) + sizeof(send_data));
     check_am_rx_counters(sizeof(hdr) + sizeof(send_data));
+}
+
+UCS_TEST_SKIP_COND_P(test_uct_stats, am_short_iov,
+                     !check_caps(UCT_IFACE_FLAG_AM_SHORT))
+{
+    ucs_status_t status;
+
+    init_bufs(0, sender().iface_attr().cap.am.max_short);
+
+    status = uct_iface_set_am_handler(receiver().iface(), 0, am_handler, 0,
+                                      UCT_CB_FLAG_ASYNC);
+    EXPECT_UCS_OK(status);
+
+    UCS_TEST_GET_BUFFER_IOV(
+        iov, iovcnt, lbuf->ptr(), lbuf->length(), lbuf->memh(),
+        ucs_min(lbuf->length(), sender().iface_attr().cap.am.max_iov));
+
+    UCT_TEST_CALL_AND_TRY_AGAIN(uct_ep_am_short_iov(sender_ep(), 0, iov, iovcnt),
+                                status);
+    EXPECT_UCS_OK(status);
+
+    EXPECT_STAT(sender, uct_ep, UCT_EP_STAT_AM, 1UL);
+    EXPECT_STAT(sender, uct_ep, UCT_EP_STAT_BYTES_SHORT, lbuf->length());
+    check_am_rx_counters(lbuf->length());
 }
 
 UCS_TEST_SKIP_COND_P(test_uct_stats, am_bcopy,
@@ -303,7 +335,7 @@ UCS_TEST_SKIP_COND_P(test_uct_stats, put_zcopy,
     UCT_TEST_CALL_AND_TRY_AGAIN(
         uct_ep_put_zcopy(sender_ep(), iov, iovcnt, rbuf->addr(),
                          rbuf->rkey(), 0), status);
-    EXPECT_TRUE(UCS_INPROGRESS == status || UCS_OK == status);
+    EXPECT_FALSE(UCS_STATUS_IS_ERR(status));
 
     EXPECT_STAT(sender, uct_ep, UCT_EP_STAT_PUT, 1UL);
     EXPECT_STAT(sender, uct_ep, UCT_EP_STAT_BYTES_ZCOPY,
@@ -584,8 +616,7 @@ UCS_TEST_SKIP_COND_P(test_uct_stats, pending_add,
                                            UCT_CB_FLAG_ASYNC));
 
     // Check that counter is not increased if pending_add returns NOT_OK
-    EXPECT_EQ(uct_ep_pending_add(sender().ep(0), &p_reqs[0], 0),
-              UCS_ERR_BUSY);
+    EXPECT_EQ(UCS_ERR_BUSY, uct_ep_pending_add(sender().ep(0), &p_reqs[0], 0));
     EXPECT_STAT(sender, uct_ep, UCT_EP_STAT_PENDING, 0UL);
 
     // Check that counter gets increased on every successfull pending_add returns NOT_OK

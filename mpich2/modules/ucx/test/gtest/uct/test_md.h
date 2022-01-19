@@ -34,15 +34,17 @@ protected:
     virtual void init();
     virtual void cleanup();
     virtual void modify_config(const std::string& name, const std::string& value,
-                               bool optional);
+                               modify_config_mode_t mode);
     bool check_caps(uint64_t flags);
+    bool check_reg_mem_type(ucs_memory_type_t mem_type);
     void alloc_memory(void **address, size_t size, char *fill,
                       ucs_memory_type_t mem_type);
     void check_memory(void *address, void *expect, size_t size,
                       ucs_memory_type_t mem_type);
     void free_memory(void *address, ucs_memory_type_t mem_type);
-
     void test_registration();
+    static bool is_device_detected(ucs_memory_type_t mem_type);
+    static void* alloc_thread(void *arg);
 
     uct_md_h md() const {
         return m_md;
@@ -52,8 +54,9 @@ protected:
         return m_md_attr;
     }
 
+    static void dereg_cb(void *arg);
 
-    static void* alloc_thread(void *arg);
+    size_t                        m_comp_count;
 
 private:
     ucs::handle<uct_md_config_t*> m_md_config;

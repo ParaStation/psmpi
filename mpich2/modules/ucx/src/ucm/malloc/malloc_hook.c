@@ -25,6 +25,7 @@
 #include <ucm/mmap/mmap.h>
 #include <ucm/util/log.h>
 #include <ucm/util/reloc.h>
+#include <ucm/util/khash_safe.h>
 #include <ucm/util/sys.h>
 #include <ucs/datastruct/queue.h>
 #include <ucs/sys/compiler.h>
@@ -34,14 +35,6 @@
 #include <ucs/type/spinlock.h>
 
 
-/* make khash allocate memory directly from operating system */
-#define kmalloc  ucm_sys_malloc
-#define kcalloc  ucm_sys_calloc
-#define kfree    ucm_sys_free
-#define krealloc ucm_sys_realloc
-#include <ucs/datastruct/khash.h>
-
-#include <string.h>
 #include <netdb.h>
 
 
@@ -148,8 +141,8 @@ static void ucm_malloc_mmaped_ptr_add(void *ptr)
 
     hash_it = kh_put(mmap_ptrs, &ucm_malloc_hook_state.ptrs, ptr,
                      &hash_extra_status);
-    ucs_assert_always(hash_extra_status >= 0);
-    ucs_assert_always(hash_it != kh_end(&ucm_malloc_hook_state.ptrs));
+    ucm_assert_always(hash_extra_status >= 0);
+    ucm_assert_always(hash_it != kh_end(&ucm_malloc_hook_state.ptrs));
 
     ucs_recursive_spin_unlock(&ucm_malloc_hook_state.lock);
 }
@@ -557,7 +550,7 @@ static void ucm_malloc_sbrk(ucm_event_type_t event_type,
     if (ucm_malloc_hook_state.heap_start == (void*)-1) {
         ucm_malloc_hook_state.heap_start = event->sbrk.result; /* sbrk() returns the previous break */
     }
-    ucm_malloc_hook_state.heap_end = ucm_orig_sbrk(0);
+    ucm_malloc_hook_state.heap_end = ucm_get_current_brk();
 
     ucm_trace("sbrk(%+ld)=%p - adjusting heap to [%p..%p]",
               event->sbrk.increment, event->sbrk.result,
@@ -667,6 +660,7 @@ static void ucm_malloc_install_symbols(ucm_reloc_patch_t *patches)
     ucm_reloc_patch_t *patch;
 
     for (patch = patches; patch->symbol != NULL; ++patch) {
+        patch->prev_value = NULL;
         ucm_reloc_modify(patch);
     }
 }

@@ -71,7 +71,8 @@ void uct_p2p_rma_test::test_xfer(send_func_t send, size_t length,
 {
     ucs_memory_type_t src_mem_type = UCS_MEMORY_TYPE_HOST;
 
-    if (has_transport("cuda_ipc")) {
+    if (has_transport("cuda_ipc") ||
+        has_transport("rocm_copy")) {
         src_mem_type = mem_type;
     }
 
@@ -133,7 +134,14 @@ UCS_TEST_SKIP_COND_P(uct_p2p_rma_test, get_zcopy,
                     TEST_UCT_FLAG_RECV_ZCOPY);
 }
 
-UCS_TEST_SKIP_COND_P(uct_p2p_rma_test, madvise,
+UCT_INSTANTIATE_TEST_CASE(uct_p2p_rma_test)
+
+class test_p2p_rma_madvise : private ucs::clear_dontcopy_regions,
+                             public uct_p2p_rma_test
+{
+};
+
+UCS_TEST_SKIP_COND_P(test_p2p_rma_madvise, madvise,
                      !check_caps(UCT_IFACE_FLAG_GET_ZCOPY))
 {
     mapped_buffer sendbuf(4096, 0, sender());
@@ -144,11 +152,12 @@ UCS_TEST_SKIP_COND_P(uct_p2p_rma_test, madvise,
                   sender_ep(), sendbuf, recvbuf, true);
     flush();
 
-    EXPECT_EQ(0, system(cmd_str));
+    int exit_status = system(cmd_str);
+    EXPECT_EQ(0, exit_status) << ucs::exit_status_info(exit_status);
 
     blocking_send(static_cast<send_func_t>(&uct_p2p_rma_test::get_zcopy),
                   sender_ep(), sendbuf, recvbuf, true);
     flush();
 }
 
-UCT_INSTANTIATE_TEST_CASE(uct_p2p_rma_test)
+UCT_INSTANTIATE_TEST_CASE(test_p2p_rma_madvise)

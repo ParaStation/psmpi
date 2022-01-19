@@ -1,5 +1,5 @@
 #
-# Copyright © 2018-2020 Inria.  All rights reserved.
+# Copyright © 2018-2021 Inria.  All rights reserved.
 # See COPYING in top-level directory.
 #
 
@@ -23,8 +23,10 @@ _lstopo() {
 		   -v --verbose
 		   -s --silent
 		   --distances
+		   --distances-transform
 		   --memattrs
 		   --cpukinds
+		   --windows-processor-groups
 		   -c --cpuset
 		   -C --cpuset-only
 		   --taskset
@@ -54,6 +56,7 @@ _lstopo() {
 		   --fontsize
 		   --gridsize
 		   --linespacing
+		   --thickness
 		   --horiz --horiz=
 		   --vert --vert=
 		   --rect --rect=
@@ -117,7 +120,7 @@ _lstopo() {
 	    --allow)
 		COMPREPLY=( `compgen -W "all local <mask> nodeset=<mask>" -- "$cur"` )
 		;;
-	    --restrict-flags | --export-xml-flags | --export-synthetic-flags | --fontsize | --gridsize | --linespacing)
+	    --restrict-flags | --export-xml-flags | --export-synthetic-flags | --fontsize | --gridsize | --linespacing | --thickness)
 		COMPREPLY=( "<integer>" "" )
 		;;
 	    --append-legend)
@@ -131,6 +134,9 @@ _lstopo() {
 		;;
 	    --children-order)
 		COMPREPLY=( `compgen -W "plain memoryabove" -- "$cur"` )
+		;;
+	    --distances-transform)
+	        COMPREPLY=( `compgen -W "links merge-switch-ports transitive-closure" -- "$cur"` )
 		;;
 	esac
     fi
@@ -352,7 +358,7 @@ complete -F _hwloc_calc hwloc-calc
 
 
 _hwloc_annotate(){
-    local OPTIONS=(--ci --ri --cu --cd -h --help)
+    local OPTIONS=(--ci --ri --cu --cd --version -h --help)
     local cur=${COMP_WORDS[COMP_CWORD]}
 
     if [[ $COMP_CWORD == 1 || $cur == -* ]] ; then
@@ -403,6 +409,7 @@ complete -F _hwloc_patch hwloc-patch
 _hwloc_compress_dir(){
     local OPTIONS=(-R --reverse
 		   -v --verbose
+		   --version
 		   -h --help
 		  )
     local cur=${COMP_WORDS[COMP_CWORD]}
@@ -465,17 +472,20 @@ _hwloc_ps(){
     local OPTIONS=(-a
 		   --pid
 		   --name
+		   --uid
 		   -l --logical
 		   -p --physical
 		   -c --cpuset
+		   --single-ancestor
 		   -t --threads
 		   -e --get-last-cpu-location
 		   --pid-cmd
-		   --uid
+		   --short-name
 		   --disallowed --whole-system
 		   --json-server
 		   --json-port
 		   -v --verbose
+		   --version
 		   -h --help
 		  )
     local cur=${COMP_WORDS[COMP_CWORD]}
@@ -509,6 +519,7 @@ complete -F _hwloc_ps hwloc-ps
 _hwloc_gather_cpuid(){
     local OPTIONS=(-c
 		   -s --silent
+		   --version
 		   -h --help
 		   )
     local cur=${COMP_WORDS[COMP_CWORD]}
@@ -532,6 +543,7 @@ _hwloc_gather_topology(){
 		   --dmi
 		   --no-cpuid
 		   --keep
+		   --version
 		   -h --help
 		  )
     local cur=${COMP_WORDS[COMP_CWORD]}

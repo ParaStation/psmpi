@@ -1,6 +1,9 @@
 /**
 * Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
 * Copyright (C) UT-Battelle, LLC. 2014. ALL RIGHTS RESERVED.
+* Copyright (C) 2021 Broadcom. ALL RIGHTS RESERVED. The term “Broadcom”
+* refers to Broadcom Inc. and/or its subsidiaries.
+*
 * See file LICENSE for terms.
 */
 
@@ -234,7 +237,7 @@ static inline int ibv_exp_cq_ignore_overrun(struct ibv_cq *cq) { return 0; }
 #else
 static inline int ibv_exp_cq_ignore_overrun(struct ibv_cq *cq)
 {
-    errno = ENOSYS;
+    errno = EOPNOTSUPP;
     return -1;
 }
 #endif /* HAVE_IBV_EXP_CQ_IGNORE_OVERRUN */
@@ -273,12 +276,11 @@ static inline int ibv_exp_cq_ignore_overrun(struct ibv_cq *cq)
 
 typedef uint8_t uct_ib_uint24_t[3];
 
-static inline void uct_ib_pack_uint24(uct_ib_uint24_t buf, const uint32_t qp_num)
+static inline void uct_ib_pack_uint24(uct_ib_uint24_t buf, uint32_t val)
 {
-
-    buf[0] = (qp_num >> 0)  & 0xFF;
-    buf[1] = (qp_num >> 8)  & 0xFF;
-    buf[2] = (qp_num >> 16) & 0xFF;
+    buf[0] = (val >> 0)  & 0xFF;
+    buf[1] = (val >> 8)  & 0xFF;
+    buf[2] = (val >> 16) & 0xFF;
 }
 
 static inline uint32_t uct_ib_unpack_uint24(const uct_ib_uint24_t buf)
@@ -324,8 +326,26 @@ static inline ucs_status_t uct_ib_qp_max_send_sge(struct ibv_qp *qp,
     return UCS_OK;
 }
 
-typedef struct uct_ib_qpnum {
-    uct_ib_uint24_t qp_num;
-} uct_ib_qpnum_t;
+static inline ucs_status_t
+uct_ib_query_qp_peer_info(struct ibv_qp *qp, struct ibv_ah_attr *ah_attr,
+                          uint32_t *dest_qpn)
+{
+    struct ibv_qp_attr qp_attr           = {};
+    struct ibv_qp_init_attr qp_init_attr = {};
+    int ret;
+
+    ret = ibv_query_qp(qp, &qp_attr, IBV_QP_AV | IBV_QP_DEST_QPN,
+                       &qp_init_attr);
+    if (ret) {
+        ucs_error("failed to query qp 0x%u (ret=%d): %m", qp->qp_num, ret);
+        return UCS_ERR_IO_ERROR;
+    }
+
+    *dest_qpn = qp_attr.dest_qp_num;
+
+    memcpy(ah_attr, &qp_attr.ah_attr, sizeof(*ah_attr));
+
+    return UCS_OK;
+}
 
 #endif /* UCT_IB_VERBS_H */

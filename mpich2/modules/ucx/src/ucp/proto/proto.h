@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2020.  ALL RIGHTS RESERVED.
+ * Copyright (C) Mellanox Technologies Ltd. 2021.  ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -34,12 +34,28 @@
 #define UCP_PROTO_ID_INVALID        ((ucp_proto_id_t)-1)
 
 
+/** Maximal length of ucp_proto_config_str_func_t output */
+#define UCP_PROTO_CONFIG_STR_MAX 128
+
+
 /* Protocol identifier */
 typedef unsigned ucp_proto_id_t;
 
 
 /* Bitmap of protocols */
 typedef uint64_t ucp_proto_id_mask_t;
+
+
+/**
+ * Protocol flags for internal usage, to allow searching for specific protocols
+ */
+enum {
+    UCP_PROTO_FLAG_AM_SHORT  = UCS_BIT(0), /* The protocol uses only uct_ep_am_short() */
+    UCP_PROTO_FLAG_PUT_SHORT = UCS_BIT(1), /* The protocol uses only uct_ep_put_short() */
+    UCP_PROTO_FLAG_TAG_SHORT = UCS_BIT(2), /* The protocol uses only
+                                              uct_ep_tag_eager_short() */
+    UCP_PROTO_FLAG_INVALID   = UCS_BIT(3)  /* The protocol is a placeholder */
+};
 
 
 /**
@@ -62,8 +78,16 @@ typedef struct {
  * Protocol and its private configuration
  */
 typedef struct {
-    const ucp_proto_t       *proto;  /* Protocol definition */
-    const void              *priv;   /* Protocol private configuration space */
+    const ucp_proto_t        *proto;       /* Protocol definition */
+    const void               *priv;        /* Protocol private configuration space */
+    ucp_worker_cfg_index_t   ep_cfg_index; /* Endpoint configuration index this
+                                              protocol was selected on */
+    ucp_worker_cfg_index_t   rkey_cfg_index; /* Remote key configuration index
+                                                this protocol was elected on
+                                                (can be UCP_WORKER_CFG_INDEX_NULL) */
+    ucp_proto_select_param_t select_param; /* Copy of protocol selection parameters,
+                                              used to re-select protocol for existing
+                                              in-progress request */
 } ucp_proto_config_t;
 
 
@@ -81,9 +105,10 @@ typedef struct {
  * UCP protocol capabilities (per operation parameters)
  */
 typedef struct {
-    size_t                  cfg_thresh; /* Configured protocol threshold */
-    size_t                  min_length; /* Minimal message size */
-    unsigned                num_ranges; /* Number of entries in 'ranges' */
+    size_t                  cfg_thresh;   /* Configured protocol threshold */
+    unsigned                cfg_priority; /* Priority of configuration */
+    size_t                  min_length;   /* Minimal message size */
+    unsigned                num_ranges;   /* Number of entries in 'ranges' */
 
     /* Performance estimation function for different message sizes */
     ucp_proto_perf_range_t  ranges[UCP_PROTO_MAX_PERF_RANGES];
@@ -96,9 +121,14 @@ typedef struct {
  */
 typedef struct {
     /* Input parameters */
-    ucp_worker_h                   worker;         /* Worker to initialize on */
-    const ucp_proto_select_param_t *sel_param;     /* Operation parameters */
-    const ucp_ep_config_key_t      *ep_config_key; /* Endpoint configuration */
+    ucp_worker_h                   worker;           /* Worker to initialize on */
+    const ucp_proto_select_param_t *select_param;    /* Operation parameters */
+    ucp_worker_cfg_index_t         ep_cfg_index;     /* Endpoint configuration index */
+    const ucp_ep_config_key_t      *ep_config_key;   /* Endpoint configuration */
+    const ucp_rkey_config_key_t    *rkey_config_key; /* Remote key configuration,
+                                                        may be NULL */
+    const char                     *proto_name;      /* Name of the initialized
+                                                        protocol, for debugging */
 
     /* Output parameters */
     void                           *priv;       /* Pointer to priv buffer */
@@ -123,14 +153,18 @@ typedef ucs_status_t
 /**
  * Dump protocol-specific configuration.
  *
- * @param [in]  priv      Protocol private data, which was previously filled by
- *                        @ref ucp_proto_init_func_t.
- * @param [out] strb      Filled with a string of protocol configuration text.
- *                        The user is responsible to release the string by
- *                        calling @ref ucs_string_buffer_cleanup.
+ * @param [in]  min_length  Return information starting from this message length.
+ * @param [in]  max_length  Return information up to this message length (inclusive).
+ * @param [in]  priv        Protocol private data, which was previously filled by
+ *                          @ref ucp_proto_init_func_t.
+ * @param [out] strb        Protocol configuration text should be written to this
+ *                          string buffer. This function should only **append**
+ *                          data to the buffer, and should not initialize, release
+ *                          or erase any data already in the buffer.
  */
-typedef void
-(*ucp_proto_config_str_func_t)(const void *priv, ucs_string_buffer_t *strb);
+typedef void (*ucp_proto_config_str_func_t)(size_t min_length,
+                                            size_t max_length, const void *priv,
+                                            ucs_string_buffer_t *strb);
 
 
 /**
@@ -138,9 +172,14 @@ typedef void
  */
 struct ucp_proto {
     const char                      *name;      /* Protocol name */
+    unsigned                        flags;      /* Protocol flags for special handling */
     ucp_proto_init_func_t           init;       /* Initialization function */
     ucp_proto_config_str_func_t     config_str; /* Configuration dump function */
-    uct_pending_callback_t          progress;   /* UCT progress function */
+
+    /* Initial UCT progress function, can be changed during the protocol
+     * request lifetime to implement different stages
+     */
+    uct_pending_callback_t          progress;
 };
 
 

@@ -12,6 +12,7 @@
 
 #include <common/mem_buffer.h>
 
+#include <ucs/async/async_fwd.h>
 #include <ucs/config/types.h>
 #include <ucs/sys/preprocessor.h>
 #include <ucs/sys/checker.h>
@@ -176,8 +177,7 @@
 namespace ucs {
 
 extern const double test_timeout_in_sec;
-extern const double watchdog_timeout_default;
-
+extern double watchdog_timeout;
 extern std::set< const ::testing::TestInfo*> skipped_tests;
 
 typedef enum {
@@ -266,7 +266,7 @@ ucs_time_t get_deadline(double timeout_in_sec = test_timeout_in_sec);
  */
 int max_tcp_connections();
 
- 
+
 /**
  * Signal-safe sleep.
  */
@@ -304,6 +304,12 @@ void *mmap_fixed_address();
 std::string compact_string(const std::string &str, size_t length);
 
 
+/*
+ * Converts exit status from waitpid()/system() to a status string
+ */
+std::string exit_status_info(int exit_status);
+
+
 /**
  * Return the IP address of the given interface address.
  */
@@ -319,11 +325,13 @@ std::string sockaddr_to_str(const S *saddr) {
  */
 class sock_addr_storage {
 public:
-    sock_addr_storage();
+    sock_addr_storage(bool is_rdmacm_netdev = false);
 
-    sock_addr_storage(const ucs_sock_addr_t &ucs_sock_addr);
+    sock_addr_storage(const ucs_sock_addr_t &ucs_sock_addr,
+                      bool is_rdmacm_netdev = false);
 
-    void set_sock_addr(const struct sockaddr &addr, const size_t size);
+    void set_sock_addr(const struct sockaddr &addr, const size_t size,
+                       bool is_rdmacm_netdev = false);
 
     void reset_to_any();
 
@@ -333,6 +341,8 @@ public:
 
     uint16_t get_port() const;
 
+    bool is_rdmacm_netdev() const;
+
     size_t get_addr_size() const;
 
     ucs_sock_addr_t to_ucs_sock_addr() const;
@@ -341,10 +351,13 @@ public:
 
     const struct sockaddr* get_sock_addr_ptr() const;
 
+    const void* get_sock_addr_in_buf() const;
+
 private:
     struct sockaddr_storage m_storage;
     size_t                  m_size;
     bool                    m_is_valid;
+    bool                    m_is_rdmacm_netdev;
 };
 
 
@@ -794,6 +807,16 @@ static void deleter(T *ptr) {
 }
 
 
+class scoped_log_level {
+public:
+    scoped_log_level(ucs_log_level_t level);
+    ~scoped_log_level();
+
+private:
+    const ucs_log_level_t m_prev_level;
+};
+
+
 extern int    perf_retry_count;
 extern double perf_retry_interval;
 
@@ -841,6 +864,29 @@ private:
 };
 
 } // detail
+
+
+class scoped_async_lock {
+public:
+    scoped_async_lock(ucs_async_context_t &async);
+
+    ~scoped_async_lock();
+
+private:
+    ucs_async_context_t &m_async;
+};
+
+
+class scoped_mutex_lock {
+public:
+    scoped_mutex_lock(pthread_mutex_t &mutex);
+
+    ~scoped_mutex_lock();
+
+private:
+    pthread_mutex_t &m_mutex;
+};
+
 
 /**
  * N-ary Cartesian product over the N vectors provided in the input vector

@@ -138,19 +138,30 @@ static ucs_status_t uct_cma_mem_reg(uct_md_h md, void *address, size_t length,
     return UCS_OK;
 }
 
+static ucs_status_t uct_cma_mem_dereg(uct_md_h uct_md,
+                                      const uct_md_mem_dereg_params_t *params)
+{
+    UCT_MD_MEM_DEREG_CHECK_PARAMS(params, 0);
+
+    ucs_assert(params->memh == (void*)0xdeadbeef);
+
+    return UCS_OK;
+}
+
 static ucs_status_t
 uct_cma_md_open(uct_component_t *component, const char *md_name,
                 const uct_md_config_t *md_config, uct_md_h *md_p)
 {
     static uct_md_ops_t md_ops = {
-        .close              = (uct_md_close_func_t)ucs_empty_function,
-        .query              = uct_cma_md_query,
-        .mem_alloc          = (uct_md_mem_alloc_func_t)ucs_empty_function_return_success,
-        .mem_free           = (uct_md_mem_free_func_t)ucs_empty_function_return_success,
-        .mkey_pack          = (uct_md_mkey_pack_func_t)ucs_empty_function_return_success,
-        .mem_reg            = uct_cma_mem_reg,
-        .mem_dereg          = (uct_md_mem_dereg_func_t)ucs_empty_function_return_success,
-        .detect_memory_type = ucs_empty_function_return_unsupported,
+        .close                  = (uct_md_close_func_t)ucs_empty_function,
+        .query                  = uct_cma_md_query,
+        .mem_alloc              = (uct_md_mem_alloc_func_t)ucs_empty_function_return_success,
+        .mem_free               = (uct_md_mem_free_func_t)ucs_empty_function_return_success,
+        .mkey_pack              = (uct_md_mkey_pack_func_t)ucs_empty_function_return_success,
+        .mem_reg                = uct_cma_mem_reg,
+        .mem_dereg              = uct_cma_mem_dereg,
+        .is_sockaddr_accessible = ucs_empty_function_return_zero_int,
+        .detect_memory_type     = ucs_empty_function_return_unsupported,
     };
     static uct_md_t md = {
         .ops          = &md_ops,
@@ -165,8 +176,9 @@ ucs_status_t uct_cma_md_query(uct_md_h md, uct_md_attr_t *md_attr)
 {
     md_attr->rkey_packed_size     = 0;
     md_attr->cap.flags            = UCT_MD_FLAG_REG;
-    md_attr->cap.reg_mem_types    = UCS_MEMORY_TYPES_CPU_ACCESSIBLE;
-    md_attr->cap.access_mem_type  = UCS_MEMORY_TYPE_HOST;
+    md_attr->cap.reg_mem_types    = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    md_attr->cap.alloc_mem_types  = 0;
+    md_attr->cap.access_mem_types = UCS_BIT(UCS_MEMORY_TYPE_HOST);
     md_attr->cap.detect_mem_types = 0;
     md_attr->cap.max_alloc        = 0;
     md_attr->cap.max_reg          = ULONG_MAX;

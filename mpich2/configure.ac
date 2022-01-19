@@ -3,7 +3,7 @@
 ##     See COPYRIGHT in top-level directory
 ##
 
-AC_PREREQ(2.63)
+AC_PREREQ([2.69])
 
 dnl Process this file with autoconf to produce a configure script.
 dnl
@@ -93,7 +93,6 @@ dnl To let other scripts and in particular the configure in test/mpi
 dnl know that they are being invoked from within the MPICH configure,
 dnl the following environment variables are set and exported:
 dnl    FROM_MPICH
-dnl    MPICH_ENABLE_F77
 dnl    MPICH_ENABLE_FC
 dnl    MPICH_ENABLE_CXX
 dnl
@@ -177,7 +176,7 @@ MPICH_NUMVERSION=`expr $V1$V2$V3$V4$V5 + 0`
 AC_SUBST(MPICH_NUMVERSION)
 
 AC_ARG_WITH(custom-version-string,
-            AC_HELP_STRING([--with-custom-version-string], [Adds a user-specified value to the output of the mpichversion executable]),,with_custom_version_string="")
+            AS_HELP_STRING([--with-custom-version-string], [Adds a user-specified value to the output of the mpichversion executable]),,with_custom_version_string="")
 MPICH_CUSTOM_STRING=$with_custom_version_string
 AC_SUBST(MPICH_CUSTOM_STRING)
 
@@ -201,7 +200,7 @@ fi
 echo "Running on system: `uname -a`"
 
 dnl Definitions will be placed in this file rather than in the DEFS variable
-AC_CONFIG_HEADER(src/include/mpichconf.h)
+AC_CONFIG_HEADERS([src/include/mpichconf.h])
 AH_TOP([/*
  * Copyright (C) by Argonne National Laboratory
  *     See COPYRIGHT in top-level directory
@@ -253,10 +252,6 @@ AC_CONFIG_MACRO_DIR([confdb])
 # built from within MPICH
 FROM_MPICH=yes
 export FROM_MPICH
-
-# Save a copy of precious flags as USER_* before any of these flags
-# are being modified by configure tests.
-PAC_PREFIX_ALL_FLAGS(USER)
 
 # WRAPPER_xFLAGS are used by mpicc and friends.
 #
@@ -314,6 +309,10 @@ CXXFLAGS="$CXXFLAGS $MPICHLIB_CXXFLAGS"
 FFLAGS="$FFLAGS $MPICHLIB_FFLAGS"
 FCFLAGS="$FCFLAGS $MPICHLIB_FCFLAGS"
 
+# Save a copy of precious flags as USER_* before any of these flags
+# are being modified by configure tests.
+PAC_PREFIX_ALL_FLAGS(USER)
+
 dnl include all subsystem m4 fragments now that the core autoconf functionality
 dnl has been setup.  No fragment should do anything except define
 dnl PAC_SUBCFG_{PREREQ,BODY} macros which will be expanded later as
@@ -325,7 +324,7 @@ m4_include([subsys_include.m4])
 dnl ----------------------------------------------------------------------------
 dnl setup top-level argument handling
 AC_ARG_ENABLE(echo,
-	AC_HELP_STRING([--enable-echo], [Turn on strong echoing. The default is enable=no.]),
+	AS_HELP_STRING([--enable-echo], [Turn on strong echoing. The default is enable=no.]),
 	set -x)
 
 AC_ARG_ENABLE(error-checking,
@@ -401,13 +400,20 @@ AC_ARG_ENABLE([mpit-pvars],
         recvq    - All message queue-related
         nem      - All nemesis-related
         rma      - All rma-related
+        multinic - All multinic-related
         all      - All variables above
 ],[],[enable_mpit_pvars=none])
+
+AC_ARG_ENABLE([mpit-events],
+[ --enable-mpit-events=yes|no - Enable MPI_T events. (Default is "no"):
+        yes    - All available events
+        no     - No events
+],[],[enable_mpit_events=no])
 
 dnl We may want to force MPI_Aint to be the same size as MPI_Offset,
 dnl particularly on 32 bit systems with large (64 bit) file systems.
 AC_ARG_WITH(aint-size,
-	AC_HELP_STRING([--with-aint-size], [Override the size of MPI_AINT (in bytes)]),,
+	AS_HELP_STRING([--with-aint-size], [Override the size of MPI_AINT (in bytes)]),,
 	with_aint_size=0)
 
 AC_ARG_ENABLE(fast,
@@ -425,10 +431,10 @@ AC_ARG_ENABLE(fast,
 ],,enable_fast=O2)
 
 AC_ARG_ENABLE(interlib-deps,
-	[AC_HELP_STRING([--enable-interlib-deps - Enable interlibrary dependencies])],,enable_interlib_deps=yes)
+	[AS_HELP_STRING([--enable-interlib-deps - Enable interlibrary dependencies])],,enable_interlib_deps=yes)
 
 AC_ARG_ENABLE(check-compiler-flags,
-	AC_HELP_STRING([--enable-check-compiler-flags], [enable the checks for all compiler
+	AS_HELP_STRING([--enable-check-compiler-flags], [enable the checks for all compiler
                        options, xxxFLAGS, MPICH_xxxFLAGS. Default is on.]),,
 		       enable_check_compiler_flags=yes)
 
@@ -437,34 +443,24 @@ dnl In addition, we check whether f77 and fc can work together.
 AC_ARG_ENABLE(fortran,
 [  --enable-fortran=option - Control the level of Fortran support in the MPICH implementation.
 	yes|all   - Enable all available Fortran implementations (F77, F90+)
-	f77       - Enable Fortran 77 support
-	fc        - Enable Fortran 90 and 2008 support
 	no|none   - No Fortran support
 ],,[enable_fortran=all])
 
-AC_ARG_ENABLE(f77,
-	AC_HELP_STRING([--enable-f77],
-		[DEPRECATED: Use --enable-fortran or --disable-fortran instead]),,[enable_f77=yes])
-
-AC_ARG_ENABLE(fc,
-	AC_HELP_STRING([--enable-fc],
-		[DEPRECATED: Use --enable-fortran or --disable-fortran instead]),,[enable_fc=yes])
-
 AC_ARG_ENABLE(cxx,
-	AC_HELP_STRING([--enable-cxx], [Enable C++ bindings]),,enable_cxx=yes)
+	AS_HELP_STRING([--enable-cxx], [Enable C++ bindings]),,enable_cxx=yes)
 
 AC_ARG_ENABLE(romio,
-	AC_HELP_STRING([--enable-romio], [Enable ROMIO MPI I/O implementation]),,
+	AS_HELP_STRING([--enable-romio], [Enable ROMIO MPI I/O implementation]),,
 	enable_romio=yes)
 
 AC_ARG_ENABLE(debuginfo,
-	AC_HELP_STRING([--enable-debuginfo], [Enable support for debuggers]),,
+	AS_HELP_STRING([--enable-debuginfo], [Enable support for debuggers]),,
 	enable_debuginfo=no)
 
 
 ## Enable creation of libtool-style versioning or no versioning
 AC_ARG_ENABLE(versioning,
-        [AC_HELP_STRING([--enable-versioning],[Enable library versioning])],,
+        [AS_HELP_STRING([--enable-versioning],[Enable library versioning])],,
         [enable_versioning=yes])
 
 if test "$enable_versioning" = "yes" ; then
@@ -483,15 +479,15 @@ dnl load to access the MPICH internal data structures.
 dnl "default" is a special device that allows MPICH to choose one
 dnl based on the environment.
 AC_ARG_WITH(device,
-	AC_HELP_STRING([--with-device=name], [Specify the communication device for MPICH]),,
+	AS_HELP_STRING([--with-device=name], [Specify the communication device for MPICH]),,
 	with_device=ch4)
 
 AC_ARG_WITH(pmi,
-	AC_HELP_STRING([--with-pmi=name], [Specify the pmi interface for MPICH]),,
+	AS_HELP_STRING([--with-pmi=name], [Specify the pmi interface for MPICH]),,
 	with_pmi=default)
 
 AC_ARG_WITH(pm,
-	AC_HELP_STRING([--with-pm=name],
+	AS_HELP_STRING([--with-pm=name],
 		[Specify the process manager for MPICH.  "no" or "none" are
                  valid values.  Multiple process managers may be specified as
                  long as they all use the same pmi interface by separating them
@@ -500,10 +496,6 @@ AC_ARG_WITH(pm,
                  builds the two process managers hydra, and gforker;
                  only the mpiexec from hydra is installed into the bin
                  directory.]),,with_pm=default)
-
-AC_ARG_WITH(logging,
-	AC_HELP_STRING([--with-logging=name], [Specify the logging library for MPICH]),
-	[if test -z "$withval" ; then with_logging=rlog ; fi],with_logging=none)
 
 AC_ARG_ENABLE(threads,
 [  --enable-threads=level - Control the level of thread support in the
@@ -520,15 +512,15 @@ AC_ARG_ENABLE(threads,
 ],,enable_threads=default)
 
 AC_ARG_ENABLE(thread-cs,
-	AC_HELP_STRING([--enable-thread-cs=type],
+	AS_HELP_STRING([--enable-thread-cs=type],
 			[Choose the method used for critical sections
                          and other atomic updates when multiple
                          threads are present.  Values may be default, global,
-                         per-object, per-vci, lock-free. By default, CH3 uses global,
-                         while CH4 uses per-vci.]),,enable_thread_cs=default)
+                         per-object, per-vci, lock-free. Default is global.
+                        ]),,enable_thread_cs=default)
 
 AC_ARG_ENABLE(refcount,
-	AC_HELP_STRING([--enable-refcount=type],
+	AS_HELP_STRING([--enable-refcount=type],
 			[Choose the method for ensuring atomic updates
                          to the reference counts for MPI objects.
                          Values may be lock-free or none.  The
@@ -538,7 +530,7 @@ AC_ARG_ENABLE(refcount,
                          enable_refcount=default)
 
 AC_ARG_ENABLE(mutex-timing,
-	AC_HELP_STRING([--enable-mutex-timing], [calculate the time spent waiting on mutexes]),
+	AS_HELP_STRING([--enable-mutex-timing], [calculate the time spent waiting on mutexes]),
 	AC_DEFINE(MPIU_MUTEX_WAIT_TIME,1,[Define to enable timing mutexes]))
 
 AC_ARG_ENABLE([predefined-refcount],
@@ -549,9 +541,22 @@ AC_ARG_ENABLE([predefined-refcount],
               [enable_predefined_refcount=default])
 
 AC_ARG_ENABLE(weak-symbols,
-	AC_HELP_STRING([--enable-weak-symbols],
+	AS_HELP_STRING([--enable-weak-symbols],
 			[Use weak symbols to implement PMPI routines (default)]),,
 		enable_weak_symbols=yes)
+
+AC_ARG_ENABLE(qmpi,
+	AS_HELP_STRING([--enable-qmpi],
+			[Enable QMPI support (default)]),,
+		enable_qmpi=no)
+
+if test "$enable_qmpi" = "yes" ; then
+    AC_DEFINE(ENABLE_QMPI,1,[Define if QMPI enabled])
+    ENABLE_QMPI=1
+else
+    ENABLE_QMPI=0
+fi
+AC_SUBST(ENABLE_QMPI)
 
 AC_ARG_ENABLE([two-level-namespace],
               [AS_HELP_STRING([--enable-two-level-namespace],
@@ -567,12 +572,12 @@ AC_ARG_ENABLE([two-level-namespace],
               [enable_two_level_namespace=no])
 
 AC_ARG_ENABLE(multi-aliases,
-	AC_HELP_STRING([--enable-multi-aliases],
+	AS_HELP_STRING([--enable-multi-aliases],
 		[Multiple aliasing to support multiple fortran compilers (default)]),,
 		enable_multi_aliases=yes)
 
 AC_ARG_WITH([wrapper-dl-type],
-            [AC_HELP_STRING([--enable-wrapper-dl-type],
+            [AS_HELP_STRING([--enable-wrapper-dl-type],
                             [Dynamic loading model for alternate MPI
                              libraries, used when programs are linked
                              by mpicc compiler wrappers.  This only
@@ -587,7 +592,7 @@ AC_ARG_WITH([wrapper-dl-type],
 AC_SUBST([with_wrapper_dl_type])
 
 AC_ARG_ENABLE([long-double],
-              [AC_HELP_STRING([--disable-long-double],
+              [AS_HELP_STRING([--disable-long-double],
                               [Pass --disable-long-double to prevent the MPI
                                library from supporting the C "long double" type,
                                even if the C compiler supports it.  "long
@@ -597,7 +602,7 @@ AC_ARG_ENABLE([long-double],
               [enable_long_double=yes])
 
 AC_ARG_WITH(cross,
-	AC_HELP_STRING([--with-cross=file],
+	AS_HELP_STRING([--with-cross=file],
 		[Specify the values of variables that configure cannot
                  determine in a cross-compilation environment]),,
 		 with_cross=$MPID_DEFAULT_CROSS_FILE)
@@ -613,7 +618,7 @@ AC_ARG_WITH(name-publisher,
     [],
     with_namepublisher=$with_name_publisher,)
 
-AC_ARG_ENABLE(nolocal, AC_HELP_STRING([--enable-nolocal], [enables nolocal mode where shared-memory communication is disabled]),
+AC_ARG_ENABLE(nolocal, AS_HELP_STRING([--enable-nolocal], [enables nolocal mode where shared-memory communication is disabled]),
     AC_DEFINE(ENABLE_NO_LOCAL, 1, [Define to disable shared-memory communication]))
 
 AC_CANONICAL_TARGET
@@ -637,8 +642,6 @@ if test "$pac_cross_compiling" = "yes" -a "$ac_cv_prog_cc_cross" = "no" ; then
 fi
 PAC_POP_FLAG([CFLAGS])
 
-# also needed by hwloc in embedded mode, must also come early for expansion
-# ordering reasons
 AC_USE_SYSTEM_EXTENSIONS
 
 dnl now that autoconf and core compilers are setup, init automake and libtool
@@ -685,7 +688,7 @@ dnl lead to weird AM_CONDITIONAL errors and potentially other problems.
 # support for this language. This should save a bit of configure time and also
 # prevent user complaints like ticket #1570.
 #
-# NOTE: we are skipping overiding CXX as some modules (e.g. ucx) may depend on CXX
+# NOTE: we are skipping overriding CXX as some modules (e.g. ucx) may depend on CXX
 #
 AS_IF([test "x$enable_f77" = "xno"],[F77=no])
 AS_IF([test "x$enable_fc"  = "xno"],[FC=no])
@@ -694,58 +697,43 @@ AS_IF([test "x$enable_fc"  = "xno"],[FC=no])
 : ${CXXFLAGS=""}
 AC_PROG_CXX
 
-# suppress default "-g -O2" from AC_PROG_FC
-: ${FCFLAGS=""}
-AC_PROG_FC
-
-save_IFS="$IFS"
-IFS=","
 enable_f77=no
 enable_fc=no
-for option in $enable_fortran ; do
-    case "$option" in
-        yes|all)
-		enable_f77=yes
-		enable_fc=yes
-		;;
-        no|none)
-		;;
-        f77)
-		enable_f77=yes
-		;;
-        fc)
-		enable_fc=yes
-		;;
-        *)
-		IFS="$save_IFS"
-		AC_MSG_WARN([Unknown value $option for --enable-fortran])
-		IFS=","
-		;;
-    esac
-done
-IFS="$save_IFS"
+case "$enable_fortran" in
+    yes|all)
+            enable_f77=yes
+            enable_fc=yes
+            ;;
+    no|none)
+            ;;
+    *)
+            AC_MSG_WARN([Unknown value $option for --enable-fortran])
+            ;;
+esac
 
-if test "$enable_f77" = "no" ; then
-   if test "$enable_fc" = "yes" ; then
-      AC_MSG_ERROR([Fortran 90 support requires enabling Fortran 77])
-   fi
+if test "$enable_fortran" != "no" ; then
+    # suppress default "-g -O2" from AC_PROG_FC
+    : ${FCFLAGS=""}
+    AC_PROG_FC
+
+    # HACK, use $FC as F77. We should remove all the F77 usages.
+    if test "$enable_fc" = "yes" ; then
+        F77=$FC
+        if test ! -z "$FCFLAGS" ; then
+            FFLAGS=$FCFLAGS
+        fi
+    fi
+
+    # This needs to come after we've potentially set F77=$FC. Otherwise, we could
+    # override the user's Fortran compiler selection when only specifying FC at configure
+    # time, as is allowed.
+    # suppress default "-g -O2" from AC_PROG_F77
+    : ${FFLAGS=""}
+    AC_PROG_F77
+
 fi
 
-if test ! -z "$FC" -a -z "$F77" ; then
-   F77=$FC
-   if test ! -z "$FCFLAGS" -a -z "$FFLAGS" ; then
-      FFLAGS=$FCFLAGS
-   fi
-fi
-
-AM_CONDITIONAL([INSTALL_MPIF77],[test "$F77" != "$FC" -a "$FFLAGS" != "$FCFLAGS"])
-
-# This needs to come after we've potentially set F77=$FC. Otherwise, we could
-# override the user's Fortran compiler selection when only specifying FC at configure
-# time, as is allowed.
-# suppress default "-g -O2" from AC_PROG_F77
-: ${FFLAGS=""}
-AC_PROG_F77
+AM_CONDITIONAL([INSTALL_MPIF77],[test "$enable_fc" = "yes" -a "$F77" != "$FC" -a "$FFLAGS" != "$FCFLAGS"])
 
 # compute canonical system types
 AC_CANONICAL_BUILD
@@ -829,7 +817,6 @@ export LIBS
 export MPILIBNAME
 export PMPILIBNAME
 export OPALIBNAME
-export MPLLIBNAME
 # ----------------------------------------------------------------------------
 # with-device
 #
@@ -850,6 +837,10 @@ devicereldir=src/mpid/$device_name
 export device_name
 export device_args
 export devicedir
+
+if test "$device_name" = "ch4" ; then
+    AC_DEFINE([ENABLE_LOCAL_SESSION_INIT], 1, [Define to skip initializing builtin world comm during MPI_Session_init])
+fi
 
 # expand all of the prereq macros in the correct order
 m4_map([PAC_SUBCFG_DO_PREREQ], [PAC_SUBCFG_MODULE_LIST])
@@ -998,169 +989,6 @@ if test "$enable_extended_context_bits" = "yes" ; then
     AC_DEFINE([HAVE_EXTENDED_CONTEXT_BITS],[1],[Define to enable extended context id bit space])
 fi
 
-# MPL
-AC_ARG_VAR([MPLLIBNAME],[can be used to override the name of the MPL library (default: "mpl")])
-MPLLIBNAME=${MPLLIBNAME:-"mpl"}
-export MPLLIBNAME
-AC_SUBST(MPLLIBNAME)
-AC_ARG_WITH([mpl-prefix],
-            [AS_HELP_STRING([[--with-mpl-prefix[=DIR]]],
-                            [use the MPL library installed in DIR,
-                             rather than the one included in src/mpl.  Pass
-                             "embedded" to force usage of the MPL source
-                             distributed with MPICH.])],
-            [],dnl action-if-given
-            [with_mpl_prefix=embedded]) dnl action-if-not-given
-mplsrcdir=""
-AC_SUBST([mplsrcdir])
-mpllibdir=""
-AC_SUBST([mpllibdir])
-mpllib=""
-AC_SUBST([mpllib])
-if test "$with_mpl_prefix" = "embedded" ; then
-    # no need for libtool versioning when embedding MPL
-    mpl_subdir_args="--disable-versioning --enable-embedded"
-    PAC_CONFIG_SUBDIR_ARGS([src/mpl],[$mpl_subdir_args],[],[AC_MSG_ERROR(MPL configure failed)])
-    PAC_APPEND_FLAG([-I${main_top_builddir}/src/mpl/include], [CPPFLAGS])
-    PAC_APPEND_FLAG([-I${use_top_srcdir}/src/mpl/include], [CPPFLAGS])
-
-    mplsrcdir="src/mpl"
-    mpllib="src/mpl/lib${MPLLIBNAME}.la"
-else
-    # The user specified an already-installed MPL; just sanity check, don't
-    # subconfigure it
-    AS_IF([test -s "${with_mpl_prefix}/include/mplconfig.h"],
-          [:],[AC_MSG_ERROR([the MPL installation in "${with_mpl_prefix}" appears broken])])
-    PAC_APPEND_FLAG([-I${with_mpl_prefix}/include],[CPPFLAGS])
-    PAC_PREPEND_FLAG([-l${MPLLIBNAME}],[WRAPPER_LIBS])
-    PAC_APPEND_FLAG([-L${with_mpl_prefix}/lib],[WRAPPER_LDFLAGS])
-    mpllibdir="-L${with_mpl_prefix}/lib"
-fi
-
-# Izem
-
-AC_ARG_ENABLE([izem-queue],[  --enable-izem-queue],,[enable_izem_queue=no])
-if test "${enable_izem_queue}" = "yes" ; then
-    AC_DEFINE(ENABLE_IZEM_QUEUE,1,[Define to enable using Izem queues])
-fi
-
-AC_ARG_VAR([ZMLIBNAME],[can be used to override the name of the Izem library (default: "zm")])
-ZMLIBNAME=${ZMLIBNAME:-"zm"}
-export ZMLIBNAME
-AC_SUBST(ZMLIBNAME)
-AC_ARG_WITH([zm-prefix],
-[  --with-zm-prefix@<:@=ARG@:>@
-                          specify the Izem library to use. No argument implies "yes".
-                          Accepted values for ARG are:
-                          yes|embedded - use the embedded Izem
-                          system       - search system paths for an Izem installation
-                          no           - disable Izem
-                          <PATH>       - use the Izem at PATH],,
-[with_zm_prefix=no])
-
-zmsrcdir=""
-AC_SUBST([zmsrcdir])
-zmlibdir=""
-AC_SUBST([zmlibdir])
-zmlib=""
-AC_SUBST([zmlib])
-
-if test "$enable_izem_queue" != "no" && test "$enable_izem_queue" != "none"; then
-    if test "$with_zm_prefix" = "yes" || test "$with_zm_prefix" = "embedded"; then
-        if test -e "${use_top_srcdir}/modules/izem" ; then
-            zm_subdir_args="--enable-embedded"
-            PAC_CONFIG_SUBDIR_ARGS([modules/izem],[$zm_subdir_args],[],[AC_MSG_ERROR(Izem configure failed)])
-            zmsrcdir="${main_top_builddir}/modules/izem"
-            zmlib="${main_top_builddir}/modules/izem/src/lib${ZMLIBNAME}.la"
-            PAC_APPEND_FLAG([-I${use_top_srcdir}/modules/izem/src/include],[CPPFLAGS])
-            PAC_APPEND_FLAG([-I${main_top_builddir}/modules/izem/src/include],[CPPFLAGS])
-        else
-            AC_MSG_WARN([Attempted to use the embedded Izem source tree in "modules/izem", but it is missing.  Configuration or compilation may fail later.])
-        fi
-    elif test "$with_zm_prefix" = "system"; then
-        # check if an Izem installation exists on this system
-        PAC_PUSH_FLAG([LIBS])
-        PAC_PREPEND_FLAG([-l${ZMLIBNAME}],[LIBS])
-        AC_LINK_IFELSE([AC_LANG_PROGRAM([#include "lock/zm_ticket.h"
-                                        ],
-                                        [zm_ticket_t lock;
-                                         zm_ticket_init(&lock);
-                                         zm_ticket_acquire(&lock);
-                                         zm_ticket_release(&lock);])],
-                       [AC_MSG_ERROR([No usable Izem installation was found on this system])],
-                       [PAC_PREPEND_FLAG([-l${ZMLIBNAME}],[WRAPPER_LIBS])])
-        PAC_POP_FLAG([LIBS])
-    elif test "$with_zm_prefix" = "no"; then
-        AC_MSG_ERROR([Izem features were requested with --enable-izem but Izem was disabled.])
-    else
-        # The user specified an already-installed Izem; just sanity check, don't
-        # subconfigure it
-
-        AS_IF([test -s "${with_zm_prefix}/include/lock/zm_lock.h" -a -s "${with_zm_prefix}/include/cond/zm_cond.h"],
-              [:],[AC_MSG_ERROR([Izem headers at "${with_zm_prefix}/include" are missing])])
-        PAC_APPEND_FLAG([-I${with_zm_prefix}/include],[CPPFLAGS])
-
-        PAC_PUSH_FLAG([LIBS])
-        PAC_PUSH_FLAG([LDFLAGS])
-        PAC_PREPEND_FLAG([-l${ZMLIBNAME}],[LIBS])
-        PAC_APPEND_FLAG([-L${with_zm_prefix}/lib],[LDFLAGS])
-        AC_LINK_IFELSE([AC_LANG_PROGRAM([#include "lock/zm_ticket.h"
-                                        ],
-                                        [zm_ticket_t lock;
-                                         zm_ticket_init(&lock);
-                                         zm_ticket_acquire(&lock);
-                                         zm_ticket_release(&lock);])],
-                       [],[AC_MSG_ERROR([The Izem installation at "${with_zm_prefix}" seems broken])])
-        PAC_POP_FLAG([LIBS])
-        PAC_POP_FLAG([LDFLAGS])
-        PAC_APPEND_FLAG([-L${with_zm_prefix}/lib],[WRAPPER_LDFLAGS])
-        PAC_PREPEND_FLAG([-l${ZMLIBNAME}],[WRAPPER_LIBS])
-        zmlibdir="-L${with_zm_prefix}/lib"
-    fi
-fi
-
-# YAKSA
-AC_ARG_VAR([YAKSALIBNAME],[can be used to override the name of the YAKSA library (default: "yaksa")])
-YAKSALIBNAME=${YAKSALIBNAME:-"yaksa"}
-export YAKSALIBNAME
-AC_SUBST(YAKSALIBNAME)
-AC_ARG_WITH([yaksa-prefix],
-            [AS_HELP_STRING([[--with-yaksa-prefix[=DIR]]],
-                            [use the YAKSA library installed in DIR,
-                             rather than the one included in modules/yaksa.  Pass
-                             "embedded" to force usage of the YAKSA source
-                             distributed with MPICH.])],
-            [],dnl action-if-given
-            [with_yaksa_prefix=embedded]) dnl action-if-not-given
-
-yaksasrcdir=""
-AC_SUBST([yaksasrcdir])
-yaksalibdir=""
-AC_SUBST([yaksalibdir])
-yaksalib=""
-AC_SUBST([yaksalib])
-
-if test "$with_yaksa_prefix" = "embedded" ; then
-    # no need for libtool versioning when embedding YAKSA
-    yaksa_subdir_args="--enable-embedded"
-    PAC_CONFIG_SUBDIR_ARGS([modules/yaksa],[$yaksa_subdir_args],[],[AC_MSG_ERROR(YAKSA configure failed)])
-    PAC_APPEND_FLAG([-I${main_top_builddir}/modules/yaksa/src/frontend/include], [CPPFLAGS])
-    PAC_APPEND_FLAG([-I${use_top_srcdir}/modules/yaksa/src/frontend/include], [CPPFLAGS])
-
-    yaksasrcdir="modules/yaksa"
-    yaksalib="modules/yaksa/lib${YAKSALIBNAME}.la"
-else
-    # The user specified an already-installed YAKSA; just sanity check, don't
-    # subconfigure it
-    AS_IF([test -s "${with_yaksa_prefix}/include/yaksa_config.h"],
-          [:],[AC_MSG_ERROR([the YAKSA installation in "${with_yaksa_prefix}" appears broken])])
-    PAC_APPEND_FLAG([-I${with_yaksa_prefix}/include],[CPPFLAGS])
-    PAC_PREPEND_FLAG([-l${YAKSALIBNAME}],[WRAPPER_LIBS])
-    PAC_APPEND_FLAG([-L${with_yaksa_prefix}/lib],[WRAPPER_LDFLAGS])
-    yaksalibdir="-L${with_yaksa_prefix}/lib"
-fi
-
-
 # Set NEEDSPLIB to yes if link commands need both -l$MPILIBNAME
 # and -lp$MPILIBNAME.
 NEEDSPLIB=yes
@@ -1186,6 +1014,53 @@ if test "$NEEDSPLIB" = "yes" ; then
     VISIBILITY_CFLAGS=""
 fi
 
+# MPL
+mplsrcdir=""
+AC_SUBST([mplsrcdir])
+mpllibdir=""
+AC_SUBST([mpllibdir])
+mpllib=""
+AC_SUBST([mpllib])
+
+m4_define([mpl_embedded_dir],[src/mpl])
+PAC_CONFIG_MPL
+
+# Izem
+
+AC_ARG_ENABLE([izem-queue],[  --enable-izem-queue],,[enable_izem_queue=no])
+if test "${enable_izem_queue}" = "yes" ; then
+    AC_DEFINE(ENABLE_IZEM_QUEUE,1,[Define to enable using Izem queues])
+fi
+
+AC_ARG_VAR([ZMLIBNAME],[can be used to override the name of the Izem library (default: "zm")])
+ZMLIBNAME=${ZMLIBNAME:-"zm"}
+export ZMLIBNAME
+AC_SUBST(ZMLIBNAME)
+zmsrcdir=""
+AC_SUBST([zmsrcdir])
+zmlibdir=""
+AC_SUBST([zmlibdir])
+zmlib=""
+AC_SUBST([zmlib])
+
+m4_define([zm_embedded_dir],[modules/izem])
+PAC_CHECK_HEADER_LIB_EXPLICIT([zm],[lock/zm_ticket.h],[$ZMLIBNAME],[zm_ticket_init])
+if test "$enable_izem_queue" != "no" && test "$enable_izem_queue" != "none"; then
+    if test "$with_zm" = "embedded" ; then
+        if test -e "${use_top_srcdir}/modules/izem" ; then
+            zm_subdir_args="--enable-embedded"
+            PAC_CONFIG_SUBDIR_ARGS([modules/izem],[$zm_subdir_args],[],[AC_MSG_ERROR(Izem configure failed)])
+            zmsrcdir="${main_top_builddir}/modules/izem"
+            zmlib="${main_top_builddir}/modules/izem/src/lib${ZMLIBNAME}.la"
+            PAC_APPEND_FLAG([-I${use_top_srcdir}/modules/izem/src/include],[CPPFLAGS])
+            PAC_APPEND_FLAG([-I${main_top_builddir}/modules/izem/src/include],[CPPFLAGS])
+        else
+            AC_MSG_WARN([Attempted to use the embedded Izem source tree in "modules/izem", but it is missing.  Configuration or compilation may fail later.])
+        fi
+    fi
+fi
+
+
 # json-c
 
 jsonsrcdir=""
@@ -1203,118 +1078,23 @@ PAC_APPEND_FLAG([-I${use_top_srcdir}/modules/json-c],[CPPFLAGS])
 PAC_APPEND_FLAG([-I${main_top_builddir}/modules/json-c],[CPPFLAGS])
 
 # ----------------------------------------------------------------------------
-# HWLOC
+# HWLOC / NETLOC
 # ----------------------------------------------------------------------------
-# Allow the user to override the hwloc location (from embedded to user
-# or system path)
-PAC_CHECK_PREFIX(hwloc)
 hwlocsrcdir=""
 AC_SUBST([hwlocsrcdir])
-hwloclibdir=""
-AC_SUBST([hwloclibdir])
 hwloclib=""
 AC_SUBST([hwloclib])
 
-if test "$with_hwloc_prefix" = "no" ; then
-   have_hwloc=no
-elif test "$with_hwloc_prefix" = "embedded" ; then
-   # Disable visibility when setting up hwloc
-   PAC_PUSH_FLAG([enable_visibility])
-   enable_visibility=no;
-   HWLOC_SETUP_CORE([modules/hwloc],[have_hwloc=yes],[have_hwloc=no],[1])
-   if test "$have_hwloc" = "yes" ; then
-      hwlocsrcdir="modules/hwloc"
-      hwloclib="$HWLOC_EMBEDDED_LDADD"
-      PAC_PREPEND_FLAG([$HWLOC_EMBEDDED_LIBS], [WRAPPER_LIBS])
-      PAC_APPEND_FLAG([$HWLOC_EMBEDDED_LDFLAGS], [WRAPPER_LDFLAGS])
-      # if possible, do not expose hwloc symbols in libmpi.so
-      PAC_PREPEND_FLAG([$VISIBILITY_CFLAGS], [HWLOC_CFLAGS])
-   fi
-   PAC_POP_FLAG([enable_visibility])
-else
-   AC_CHECK_HEADERS([hwloc.h])
-   PAC_PUSH_FLAG([LIBS])
-   AC_CHECK_LIB([hwloc],[hwloc_topology_set_pid])
-   PAC_POP_FLAG([LIBS])
-   AC_MSG_CHECKING([if non-embedded hwloc works])
-   if test "$ac_cv_header_hwloc_h" = "yes" -a "$ac_cv_lib_hwloc_hwloc_topology_set_pid" = "yes" ; then
-      have_hwloc=yes
-      PAC_PREPEND_FLAG([-lhwloc], [WRAPPER_LIBS])
-   else
-      have_hwloc=no
-   fi
-   AC_MSG_RESULT([$have_hwloc])
+m4_define([hwloc_embedded_dir],[modules/hwloc])
+PAC_CONFIG_HWLOC
 
-   if test "$have_hwloc" = "yes" ; then
-       AC_MSG_CHECKING([if hwloc meets minimum version requirement])
-       AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <hwloc.h>], [
-                          #if HWLOC_API_VERSION < 0x00020000
-                          #error
-                          #endif
-                          return 0;])],[],[have_hwloc=no])
-       AC_MSG_RESULT([$have_hwloc])
-
-       # if an old hwloc was specified by the user, throw an error
-       if test "$have_hwloc" = "no" ; then
-           AC_MSG_ERROR([hwloc installation does not meet minimum version requirement])
-       fi
-   fi
-
-   # FIXME: Disable hwloc on Cygwin for now. The hwloc package,
-   # atleast as of 1.0.2, does not install correctly on Cygwin
-   AS_CASE([$host], [*-*-cygwin], [have_hwloc=no])
-
-   if test "$have_hwloc" = "yes" ; then
-      if test -d ${with_hwloc_prefix}/lib64 ; then
-         PAC_APPEND_FLAG([-L${with_hwloc_prefix}/lib64],[WRAPPER_LDFLAGS])
-      else
-         PAC_APPEND_FLAG([-L${with_hwloc_prefix}/lib],[WRAPPER_LDFLAGS])
-      fi
-   fi
+if test "$pac_have_hwloc" = "yes" ; then
+    AC_DEFINE(HAVE_HWLOC,1,[Define if hwloc is available])
 fi
 
-if test "$have_hwloc" = "yes" ; then
-   AC_DEFINE(HAVE_HWLOC,1,[Define if hwloc is available])
-fi
-
-HWLOC_DO_AM_CONDITIONALS
-
-# ----------------------------------------------------------------------------
-# NETLOC
-# ----------------------------------------------------------------------------
-AC_ARG_WITH([netloc-prefix],
-            [AS_HELP_STRING([[--with-netloc-prefix[=DIR]]],
-                            [use the NETLOC library installed in DIR]) or system to use the system library], [],
-                            [with_netloc_prefix=no])
-
-netloclibdir=""
-AC_SUBST([netloclibdir])
-
-if test "$have_hwloc" = "yes" ; then
-    if test "${with_netloc_prefix}" != "no" ; then
-        if test "${with_netloc_prefix}" != "system"; then
-            # The user specified an already-installed Netloc; just sanity check,
-            # don't subconfigure it
-            AS_IF([test -s "${with_netloc_prefix}/include/netloc.h"],
-              [:],[AC_MSG_ERROR([the Netloc installation in "${with_netloc_prefix}" appears broken])])
-            PAC_APPEND_FLAG([-I${with_netloc_prefix}/include],[CPPFLAGS])
-            PAC_APPEND_FLAG([-I${with_netloc_prefix}/include],[CFLAGS])
-            PAC_PREPEND_FLAG([-lnetloc],[WRAPPER_LIBS])
-            if test -d ${with_netloc_prefix}/lib64 ; then
-                PAC_APPEND_FLAG([-L${with_netloc_prefix}/lib64],[WRAPPER_LDFLAGS])
-                netloclibdir="-L${with_netloc_prefix}/lib64"
-            else
-                PAC_APPEND_FLAG([-L${with_netloc_prefix}/lib],[WRAPPER_LDFLAGS])
-                netloclibdir="-L${with_netloc_prefix}/lib"
-            fi
-       else
-           AC_LINK_IFELSE([AC_LANG_PROGRAM([#include "netloc.h"
-                                   ],
-                                   [])],
-                          [AC_MSG_ERROR([the Netloc installation seems to be added from system path])], [])
-       fi
-       AC_DEFINE(HAVE_NETLOC,1,[Define if netloc is available in either user specified path or in system path])
-    fi
+PAC_CHECK_HEADER_LIB_OPTIONAL([netloc],[netloc.h],[netloc],[netloc_get_all_host_nodes])
+if test "$pac_have_netloc" = "yes" ; then
+    AC_DEFINE(HAVE_NETLOC,1,[Define if netloc is available])
 fi
 
 # ----------------------------------------------------------------------------
@@ -1324,7 +1104,7 @@ fi
 # * MPID_MAX_THREAD_LEVEL, set in one of the device subconfigure.m4,
 #    determines the maximum thread level, typically MPI_THREAD_MULTIPLE.
 #    If missing, equivallent to single.
-# * --enable-threads, explict user config option, raise error if beyond
+# * --enable-threads, explicit user config option, raise error if beyond
 #    MPID_MAX_THREAD_LEVEL.
 #    It default to MPID_MAX_THREAD_LEVEL.
 # * MPICH_THREAD_LEVEL is set by enable_threads
@@ -1632,7 +1412,7 @@ if test "$enable_romio" = "yes" ; then
        # make it possible to "#include" mpio.h at build time
        #
        # This ought to be sufficient, but there is also a symlink setup in
-       # src/include to accomodate current mpicc limitations.  See
+       # src/include to accommodate current mpicc limitations.  See
        # src/mpi/Makefile.mk for more info.
        PAC_APPEND_FLAG([-I${main_top_builddir}/src/mpi/romio/include],[CPPFLAGS])
 
@@ -1667,15 +1447,14 @@ else
     # Make device_name available to subdirs
 fi
 
-if test -n "${with_pmix}" -a "${with_pmix}" != "no" ; then
+PAC_CHECK_HEADER_LIB_EXPLICIT(pmix, pmix.h, pmix, PMIx_Init)
+if test "$pac_have_pmix" = "yes" ; then
     # disable built-in PMI and process managers
     with_pmi="no"
     with_pm="no"
     if test "${device_name}" != "ch4" ; then
         AC_MSG_ERROR([$device_name does not support PMIx])
     fi
-    PAC_CHECK_HEADER_LIB_FATAL(pmix, pmix.h, pmix, PMIx_Init)
-    PAC_LIBS_ADD([-lpmix])
     AC_DEFINE(USE_PMIX_API, 1, [Define if PMIx API must be used])
 fi
 
@@ -1773,7 +1552,7 @@ AC_SUBST(pm_name)
 
 # Step 2:
 # Once we've selected the process manager (or managers), we can
-# check that we have a compatible PMI implemenatation.
+# check that we have a compatible PMI implementation.
 # with-pmi
 if test "$with_pmi" != "no" ; then
     if test "$with_pmi" = "default" -o "$with_pmi" = "yes" ; then
@@ -1822,11 +1601,6 @@ done
 
 # Check for whether the compiler defines a symbol that contains the
 # function name. The MPICH code uses this for debugging purposes.
-
-# NOTE: C99, C11 defines __func__. If not supported, it will only
-# break debugging, not the main code.
-
-PAC_CC_FUNCTION_NAME_SYMBOL
 
 # Check if $MPI_DEFAULT_COPTS is valid with $CC
 if test -n "$MPI_DEFAULT_COPTS" ; then
@@ -1880,13 +1654,15 @@ for var in $enable_mpit_pvars ; do
             [nem],[enable_pvar_nem=yes],
             [recvq],[enable_pvar_recvq=yes],
             [rma],[enable_pvar_rma=yes],
-	    [dims],[enable_pvar_dims=yes],
+            [dims],[enable_pvar_dims=yes],
+            [multinic],[enable_pvar_multinic=yes],
             [all|yes],
             [enable_pvar_nem=yes
              enable_pvar_recvq=yes
              enable_pvar_rma=yes
-	     enable_pvar_dims=yes
-	     ],
+             enable_pvar_dims=yes
+             enable_pvar_multinic=yes
+             ],
             [no|none],[],
             [IFS=$save_IFS
              AC_MSG_WARN([Unknown value ($option) for enable-mpit-pvars])
@@ -1925,6 +1701,21 @@ else
 fi
 AC_DEFINE_UNQUOTED(ENABLE_PVAR_DIMS,$status_dims_pvars,
           [Define to 1 to enable getdims-related MPI_T performance variables])
+
+# ---------------------------------------------------------------------------
+# Support for MPI_T Events
+if test "$enable_mpit_events" = "yes" ; then
+    AC_DEFINE(HAVE_MPIT_EVENTS, [1], [Define if MPI_T Events are enabled])
+fi
+
+if test -n "$enable_pvar_multinic" ; then
+    status_multinic_pvars=1
+else
+    status_multinic_pvars=0
+fi
+AC_DEFINE_UNQUOTED(ENABLE_PVAR_MULTINIC,$status_multinic_pvars,
+          [Define to 1 to enable message count transmitted through multiple NICs MPI_T performance variables])
+
 # ---------------------------------------------------------------------------
 # Support for the language bindings: Fortran 77, Fortran 90, and C++
 #
@@ -1945,21 +1736,13 @@ AC_DEFINE_UNQUOTED(ENABLE_PVAR_DIMS,$status_dims_pvars,
 #
 # First, determine whether we are/can support the language bindings
 #
-# Since F90/F90FLAGS are replaced by FC/FCFLAGS, rather than silently
-# substituting them, i.e. FC=$F90 and FCFLAGS=$F90FLAGS, we choose to emit
-# an error message and abort to avoid any ambiguous/hidden bug in choosing
-# Fortran90 compilers.
-if test -n "$F90" -o -n "$F90FLAGS" ; then
-    AC_MSG_ERROR([F90 and F90FLAGS are replaced by FC and FCFLAGS respectively in this configure, please unset F90/F90FLAGS and set FC/FCFLAGS instead and rerun configure again.])
-fi
-# ----------------------------------------------------------------------------
 # Handle default choices for the Fortran compilers
 # Note that these have already been set above
 
-if test "$enable_f77" = "yes"; then
-    if test "$F77" = "" -o "$F77" = "no"; then
-        # No Fortran 77 compiler found; abort
-        AC_MSG_ERROR([No Fortran 77 compiler found. If you don't need to
+if test "$enable_fc" = "yes"; then
+    if test "$FC" = "" -o "$FC" = "no"; then
+        # No Fortran compiler found; abort
+        AC_MSG_ERROR([No Fortran compiler found. If you don't need to
         build any Fortran programs, you can disable Fortran support using
         --disable-fortran. If you do want to build Fortran
         programs, you need to install a Fortran compiler such as gfortran
@@ -2049,7 +1832,7 @@ information to configure with the FCFLAGS environment variable.])
    #    gfortran
    # Add others as they become known
    AC_ARG_ENABLE(f77characterlen,
-       AC_HELP_STRING([--enable-f77characterlen],
+       AS_HELP_STRING([--enable-f77characterlen],
            [Select between int and size_t for the length of a Fortran CHARACTER, depending on the F77 compiler.  If --enable-f77characterlen=size_t is given, force the use of size_t.  This is used for passing Fortran CHARACTER data between C and Fortran, and is provided for experts.  Note that the documentation provided by compiler vendors on the calling convention may not be accurate.]),,enable_f77characterlen=no)
 
    # Set the default
@@ -2166,7 +1949,7 @@ if test "$enable_f77" = "yes" ; then
     PAC_COMPILER_SHLIB_FLAGS([F77],[$f77_shlib_conf])
     AC_SUBST_FILE([f77_shlib_conf])
 
-    AC_LANG_FORTRAN77
+    AC_LANG([Fortran 77])
     PAC_PROG_F77_EXCLAIM_COMMENTS(has_exclaim="yes",has_exclaim="no")
     PAC_PROG_F77_HAS_INCDIR(src)
     PAC_PROG_F77_LIBRARY_DIR_FLAG
@@ -2209,7 +1992,7 @@ if test "$enable_f77" = "yes" ; then
 	# that turns off checking for *everything* is not something that
 	# configure should do - if the user wants this, they can follow
 	# the instructions in the following error message.
-	AC_MSG_ERROR([The Fortran compiler $F77 does not accept programs that call the same routine with arguments of different types without the option $addarg.  Rerun configure with FFLAGS=$addarg])
+        AC_MSG_ERROR([The Fortran compiler $FC does not accept programs that call the same routine with arguments of different types without the option $addarg.  Rerun configure with FCFLAGS=$addarg])
     fi
 
     bindings="$bindings f77"
@@ -2222,7 +2005,7 @@ fi
 dnl By modifying mpif.h to use ! for comments, it can work with many f90
 dnl compilers without creating a separate version.
 dnl Note that this is run AFTER the AC_OUTPUT actions
-AC_OUTPUT_COMMANDS([if test "$enable_f77" = yes ; then
+AC_CONFIG_COMMANDS([src/include/mpif.h],[if test "$enable_f77" = yes ; then
 if test "$has_exclaim" = "yes" ; then
     sed -e 's/^C/\!/g' src/binding/fortran/mpif_h/mpif.h > src/include/mpif.h
 	cp src/include/mpif.h src/binding/fortran/mpif_h/mpif.h
@@ -2453,14 +2236,15 @@ if test "$enable_cxx" = "yes" ; then
     AC_CACHE_CHECK([whether the C++ compiler $CXX can build an executable],
     pac_cv_cxx_builds_exe,[
  AC_LANG_PUSH([C++])
- AC_TRY_LINK([
-class mytest {
-  int a;
-public:
-  mytest(void) : a(1) {}
-  ~mytest(void) {}
-};],[mytest a;],
- pac_cv_cxx_builds_exe=yes, pac_cv_cxx_builds_exe=no)
+ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+    class mytest {
+        int a;
+      public:
+        mytest(void) : a(1) {}
+        ~mytest(void) {}
+    };
+    ]],[[mytest a;]])],
+    pac_cv_cxx_builds_exe=yes, pac_cv_cxx_builds_exe=no)
  AC_LANG_POP([C++])
 ])
     if test "$pac_cv_cxx_builds_exe" != yes ; then
@@ -2470,14 +2254,15 @@ public:
     # The Intel icpc 10.x compiler fails with <string> if gcc 4.2 is installed.
     AC_CACHE_CHECK([whether C++ compiler works with string],pac_cv_cxx_compiles_string,[
     AC_LANG_PUSH([C++])
-    AC_TRY_COMPILE([#include <string>],[return 0;],pac_cv_cxx_compiles_string=yes,pac_cv_cxx_compiles_string=no)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <string>]],[[return 0;]])],
+        pac_cv_cxx_compiles_string=yes,pac_cv_cxx_compiles_string=no)
     AC_LANG_POP([C++])
 ])
     if test "$pac_cv_cxx_compiles_string" != yes ; then
         AC_MSG_WARN([The C++ compiler $CXX cannot compile a program containing the <string> header - this may indicate a problem with the C++ installation.  Consider configuing with --disable-cxx])
     fi
 
-    AC_LANG_CPLUSPLUS
+    AC_LANG([C++])
     AX_CXX_EXCEPTIONS
     AX_CXX_BOOL
     AX_CXX_NAMESPACES
@@ -2491,15 +2276,13 @@ public:
     fi
     # iostream and math are needed for examples/cxx/cxxpi.cxx
     AC_CACHE_CHECK([whether <iostream> available],pac_cv_cxx_has_iostream,[
-    AC_TRY_COMPILE([
-#include <iostream>
-],[using namespace std;],pac_cv_cxx_has_iostream=yes,pac_cv_cxx_has_iostream=no)])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <iostream>]],[[using namespace std;]])],
+        pac_cv_cxx_has_iostream=yes,pac_cv_cxx_has_iostream=no)])
     AX_CXX_NAMESPACE_STD
 
     AC_CACHE_CHECK([whether <math> available],pac_cv_cxx_has_math,[
-    AC_TRY_COMPILE([
-#include <math>
-],[using namespace std;],pac_cv_cxx_has_math=yes,pac_cv_cxx_has_math=no)])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <math>]],[[using namespace std;]])],
+        pac_cv_cxx_has_math=yes,pac_cv_cxx_has_math=no)])
 
     # GNU changed the calling conventions between minor releases (!!!)
     # This is too hard to detect, but we should be able to detect
@@ -2524,20 +2307,21 @@ public:
        "$GNUCXX_VERSION" = 0 -a "$GNUCXX_MINORVERSION" = 0 ; then
          ac_vals=""
 	 AC_MSG_CHECKING([for GNU g++ version])
-         AC_TRY_RUN([#include <stdio.h>
-int main() {
-    int v = -1, m = -1;
-    FILE *fp = fopen("conftest.out","w");
-#ifdef __GNUC_MINOR__
-    m = __GNUC_MINOR__;
-#endif
-#ifdef __GNUC__
-    v = __GNUC__;
-#endif
-    fprintf( fp, "v=%d, m=%d\n", v, m );
-    fclose( fp );
-    return 0;
-}],ac_vals=`cat conftest.out`)
+         AC_RUN_IFELSE([AC_LANG_SOURCE([[
+            #include <stdio.h>
+            int main() {
+                int v = -1, m = -1;
+                FILE *fp = fopen("conftest.out","w");
+            #ifdef __GNUC_MINOR__
+                m = __GNUC_MINOR__;
+            #endif
+            #ifdef __GNUC__
+                v = __GNUC__;
+            #endif
+                fprintf( fp, "v=%d, m=%d\n", v, m );
+                fclose( fp );
+                return 0;
+            }]])],ac_vals=`cat conftest.out`)
          if test -n "$ac_vals" ; then
              v=`echo "$ac_vals" | sed -e 's/v=\(.*\),.*/\1/'`
              m=`echo "$ac_vals" | sed -e 's/.*m=\(.*\)/\1/'`
@@ -2562,18 +2346,6 @@ int main() {
     # so that it may be used in #if statements without adding to
     # the CPP name space
     AC_SUBST(FORTRAN_BINDING)
-
-    # Special C++ datatypes.  Set to DATATYPE NULL first; we'll
-    # replace the ones that we have later, after we have determined
-    # the C datatypes
-    MPIR_CXX_BOOL=0x0c000000
-    MPIR_CXX_COMPLEX=0x0c000000
-    MPIR_CXX_DOUBLE_COMPLEX=0x0c000000
-    MPIR_CXX_LONG_DOUBLE_COMPLEX=0x0c000000
-    AC_SUBST(MPIR_CXX_BOOL)
-    AC_SUBST(MPIR_CXX_COMPLEX)
-    AC_SUBST(MPIR_CXX_DOUBLE_COMPLEX)
-    AC_SUBST(MPIR_CXX_LONG_DOUBLE_COMPLEX)
 
     # determine shared library flags for CXX
     cxx_shlib_conf=src/env/cxx_shlib.conf
@@ -2600,7 +2372,7 @@ AC_SUBST(bindings)
 # End of the bindings support
 # ----------------------------------------------------------------------------
 
-AC_LANG_C
+AC_LANG([C])
 #
 # ----------------------------------------------------------------------------
 # Done with the basic argument processing and decisions about which
@@ -2707,7 +2479,7 @@ if test "$enable_debuginfo" = "yes" ; then
    #    +noobjdebug
    # for C, Fortran, and C++.  We don't have a good test for this yet,
    # so we add a warning
-   if test "$ac_cv_prog_gcc" = "yes" ; then
+   if test "$ac_cv_c_compiler_gnu" = "yes" ; then
        AC_MSG_WARN([Some versions of gcc do not include debugging information
 within the executable.  Totalview requires this information to detect
 an MPICH code.  If you have trouble, try linking with the additional
@@ -2840,11 +2612,11 @@ PAC_C_GNU_ATTRIBUTE
 PAC_C_BUILTIN_EXPECT
 PAC_C_STATIC_ASSERT
 
-# We need to check for the endianess in order to implement the
+# We need to check for the endianness in order to implement the
 # "external32" representations.  This defines "WORDS_BIGENDIAN when
 # the system is bigendian.
 # As of autoconf 2.62, this macro takes an additional argument for systems
-# that can produce object files for either endianess.
+# that can produce object files for either endianness.
 # With the as-always-incompatible-with-every-version autoconf, the
 # arguments for this macro *changed* in 2.62 to
 # (if-bigendian,if-littleendian,unknown,universal)
@@ -2867,7 +2639,7 @@ case $byteOrdering in
     AC_DEFINE(WORDS_UNIVERSAL_ENDIAN,1,[Define if configure will not tell us, for universal binaries])
     ;;
     unknown)
-    AC_MSG_ERROR([Unable to determine endianess])
+    AC_MSG_ERROR([Unable to determine endianness])
     ;;
 esac
 
@@ -2881,15 +2653,15 @@ You may need to specify an additional argument to your C compiler to
 force it to allow unaligned accesses.)])
 fi
 # Check for __func__ (defined in C99) or __FUNCTION__ (defined in older GCC)
-AC_CACHE_CHECK([whether $CC supports __func__],pac_cv_cc_has___func__,
-[AC_TRY_COMPILE([],
- [const char *cp = __func__; ],pac_cv_cc_has___func__=yes,
-pac_cv_cc_has___func__=no)])
+AC_CACHE_CHECK([whether $CC supports __func__],pac_cv_cc_has___func__, [
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[[const char *cp = __func__;]])],
+        pac_cv_cc_has___func__=yes, pac_cv_cc_has___func__=no)
+])
 if test "$pac_cv_cc_has___func__" != "yes" ; then
-    AC_CACHE_CHECK([whether $CC supports __FUNCTION__],pac_cv_cc_has___FUNCTION__,
-[AC_TRY_COMPILE([],
- [const char *cp = __FUNCTION__;],pac_cv_cc_has___FUNCTION__=yes,
-pac_cv_cc_has___FUNCTION__=no)])
+    AC_CACHE_CHECK([whether $CC supports __FUNCTION__],pac_cv_cc_has___FUNCTION__,[
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[[const char *cp = __FUNCTION__;]])],
+            pac_cv_cc_has___FUNCTION__=yes, pac_cv_cc_has___FUNCTION__=no)
+    ])
 fi
 
 # ----------------------------------------------------------------------------
@@ -2901,8 +2673,8 @@ fi
 if test "$MPID_NO_LONG_DOUBLE" != "yes" && test "X$enable_long_double" != "Xno" ; then
     AC_CACHE_CHECK([whether long double is supported],
     pac_cv_have_long_double,[
-    AC_TRY_COMPILE(,[long double a;],
-    pac_cv_have_long_double=yes,pac_cv_have_long_double=no)])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[[long double a;]])],
+        pac_cv_have_long_double=yes,pac_cv_have_long_double=no)])
     if test "$pac_cv_have_long_double" = "yes" ; then
         AC_DEFINE(HAVE_LONG_DOUBLE,1,[Define if long double is supported])
     fi
@@ -2910,8 +2682,8 @@ fi
 if test "$MPID_NO_LONG_LONG" != "yes" ; then
     AC_CACHE_CHECK([whether long long is supported],
     pac_cv_have_long_long,[
-    AC_TRY_COMPILE(,[long long a;],
-    pac_cv_have_long_long=yes,pac_cv_have_long_long=no)])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[[long long a;]])],
+        pac_cv_have_long_long=yes,pac_cv_have_long_long=no)])
     if test "$pac_cv_have_long_long" = "yes" ; then
         AC_DEFINE(HAVE_LONG_LONG_INT,1,[Define if long long is supported])
     fi
@@ -2959,7 +2731,6 @@ AC_CHECK_SIZEOF(double)
 AC_CHECK_SIZEOF(long double)
 AC_CHECK_SIZEOF(void *)
 
-AC_HEADER_STDC
 AC_CHECK_HEADERS([stddef.h])
 AC_CHECK_SIZEOF(wchar_t, 0, [
 #ifdef HAVE_STDDEF_H
@@ -2968,6 +2739,9 @@ AC_CHECK_SIZEOF(wchar_t, 0, [
 ])
 
 AC_CHECK_SIZEOF(__float128, 0)
+if test "$ac_cv_sizeof___float128" = "16" ; then
+    AC_DEFINE(HAVE_FLOAT128, 1, [Define if __float128 is supported])
+fi
 
 AC_CHECK_SIZEOF(float_int, 0, [typedef struct { float a; int b; } float_int; ])
 AC_CHECK_SIZEOF(double_int, 0, [typedef struct { double a; int b; } double_int; ])
@@ -3080,365 +2854,22 @@ AS_IF([test "X$pac_cv_have_long_double" = "Xyes"],[
   AC_CHECK_TYPES([long double _Complex])
 ])
 
+dnl define shell functions e.g. to_hex, to_dec, get_c_int_type, get_c_float_type
+PAC_DATATYPE_UTILS()
+
 # Generate a hex version of the size of each type
-for type in short int long long_long float double long_double wchar_t \
-    float_int double_int long_int short_int two_int long_double_int     \
-    _Bool float__Complex double__Complex long_double__Complex \
-    _Float16; do
+for type in short int long float double \
+    float_int double_int long_int short_int two_int ; do
     eval len=\$ac_cv_sizeof_$type
     if test -z "$len" ; then
-       len=0
-       # Check for sizes from the CHECK_SIZEOF_DERIVED macro
-       eval pclen=\$ac_cv_sizeof_$type
-       if test -n "$pclen" ; then
-           len=$pclen
-       else
-           # check for a non-optional type
-           if test $type != long_long -a \
-                   $type != long_double -a \
-                   $type != long_double_int -a \
-                   $type != _Bool -a \
-                   $type != float__Complex -a \
-                   $type != double__Complex -a \
-                   $type != long_double__Complex ; then
-               AC_MSG_ERROR([Configure was unable to determine the size of $type ; if cross compiling,
+        AC_MSG_ERROR([Configure was unable to determine the size of $type ; if cross compiling,
 use the environment variables CROSS_SIZEOF_typename, e.g., CROSS_SIZEOF_SHORT,
 or use the --with-cross=file configure option to specify a file containing
 Bourne (sh) shell assignments to CROSS_SIZEOF_typename for all datatype
 types.  The program maint/getcross.c can be compiled and run on the target
 system; this program outputs an appropriate file for the --with-cross option])
-	   fi
-       fi
-    fi
-    #
-    # Take len and turn it into two hex digits (there are 8 bits available
-    # in the built-in datatype handle for the length; see
-    # src/mpid/common/datatype/mpidu_datatype.h)
-    if test "$len" -gt 255 ; then
-         AC_MSG_ERROR([Type sizes greater than 255 bytes are not supported (type $type is $len bytes)])
-    fi
-    tmplen=$len
-    hexlen=""
-    while test $tmplen -gt 0 ; do
-        lowdigit=`expr $tmplen - 16 \* \( $tmplen / 16 \)`
-	case $lowdigit in
-         10) char=a ;;
-	 11) char=b ;;
-	 12) char=c ;;
-	 13) char=d ;;
-	 14) char=e ;;
-	 15) char=f ;;
-	  *) char=$lowdigit ;;
-	esac
-	hexlen="$char$hexlen"
-	tmplen=`expr $tmplen / 16`
-    done
-    if test $len -lt 16 ; then
-        hexlen="0$hexlen"
-    fi
-    if test $len = 0 ; then
-        # This sometimes happens for wchar_t
-        hexlen="00";
-    fi
-    eval len_$type=$hexlen
-done
-# By definition, sizeof char is 1
-MPI_CHAR="0x4c000101"
-MPI_UNSIGNED_CHAR="0x4c000102"
-MPI_SHORT="0x4c00${len_short}03"
-MPI_UNSIGNED_SHORT="0x4c00${len_short}04"
-MPI_INT="0x4c00${len_int}05"
-MPI_UNSIGNED_INT="0x4c00${len_int}06"
-MPI_LONG="0x4c00${len_long}07"
-MPI_UNSIGNED_LONG="0x4c00${len_long}08"
-if test "$len_long_long" != 0 -a "$MPID_NO_LONG_LONG" != yes ; then
-    MPI_LONG_LONG="0x4c00${len_long_long}09"
-else
-    MPI_LONG_LONG=MPI_DATATYPE_NULL;
-fi
-MPI_FLOAT="0x4c00${len_float}0a"
-MPI_DOUBLE="0x4c00${len_double}0b"
-if test "$len_long_double" != 0 -a "$MPID_NO_LONG_DOUBLE" != yes ; then
-    MPI_LONG_DOUBLE="0x4c00${len_long_double}0c"
-else
-    MPI_LONG_DOUBLE=MPI_DATATYPE_NULL
-fi
-# If you change MPI_BYTE, you must change it in src/binding/fortran/mpif_h/buildiface
-MPI_BYTE="0x4c00010d"
-MPI_WCHAR="0x4c00${len_wchar_t}0e"
-MPI_PACKED="0x4c00010f"
-MPI_LB="0x4c000010"
-MPI_UB="0x4c000011"
-#
-# These should define the mixed types *only* for contiguous data.
-# For example, MPI_SHORT_INT may have a gap; it will need to be defined
-# as a derived type instead.  For IA32, this only affects short_int.
-MPI_2INT="0x4c00${len_two_int}16"
-#
-# For now we aren't being too clever about figuring out which of these
-# are in fact contiguous, so these are all allocated as "real" types.
-#
-# These values correspond to direct types 0..5.
-#
-dnl MPI_FLOAT_INT="0x4c00${len_float_int}12"
-dnl MPI_DOUBLE_INT="0x4c00${len_double_int}13"
-dnl MPI_LONG_INT="0x4c00${len_long_int}14"
-dnl MPI_SHORT_INT="0x4c00${len_short_int}15"
-dnl MPI_LONG_DOUBLE_INT="0x4c00${len_long_double_int}17"
-MPI_FLOAT_INT="0x8c000000"
-MPI_DOUBLE_INT="0x8c000001"
-MPI_LONG_INT="0x8c000002"
-MPI_SHORT_INT="0x8c000003"
-if test "$MPID_NO_LONG_DOUBLE" != yes ; then
-    MPI_LONG_DOUBLE_INT="0x8c000004"
-else
-    MPI_LONG_DOUBLE_INT=MPI_DATATYPE_NULL
-fi
-
-# 2 additional predefined types named in MPI-2
-MPI_SIGNED_CHAR="0x4c000118"
-if test "$len_long_long" != 0 -a "$MPID_NO_LONG_LONG" != yes ; then
-    MPI_UNSIGNED_LONG_LONG="0x4c00${len_long_long}19"
-else
-    MPI_UNSIGNED_LONG_LONG=MPI_DATATYPE_NULL
-fi
-
-AC_SUBST(MPI_CHAR)
-AC_SUBST(MPI_UNSIGNED_CHAR)
-AC_SUBST(MPI_SHORT)
-AC_SUBST(MPI_UNSIGNED_SHORT)
-AC_SUBST(MPI_INT)
-AC_SUBST(MPI_UNSIGNED_INT)
-AC_SUBST(MPI_LONG)
-AC_SUBST(MPI_UNSIGNED_LONG)
-AC_SUBST(MPI_LONG_LONG)
-AC_SUBST(MPI_FLOAT)
-AC_SUBST(MPI_DOUBLE)
-AC_SUBST(MPI_LONG_DOUBLE)
-AC_SUBST(MPI_BYTE)
-AC_SUBST(MPI_WCHAR)
-AC_SUBST(MPI_PACKED)
-AC_SUBST(MPI_LB)
-AC_SUBST(MPI_UB)
-AC_SUBST(MPI_FLOAT_INT)
-AC_SUBST(MPI_DOUBLE_INT)
-AC_SUBST(MPI_LONG_INT)
-AC_SUBST(MPI_SHORT_INT)
-AC_SUBST(MPI_2INT)
-AC_SUBST(MPI_LONG_DOUBLE_INT)
-AC_SUBST(MPI_SIGNED_CHAR)
-AC_SUBST(MPI_UNSIGNED_LONG_LONG)
-#
-# FIXME: Leftover from separate fortran system
-## Export the basic C types so that the Fortran system can use them
-#export MPI_CHAR
-#export MPI_SHORT
-#export MPI_INT
-#export MPI_LONG
-#export MPI_LONG_LONG
-#export MPI_FLOAT
-#export MPI_DOUBLE
-#export MPI_LONG_DOUBLE
-#
-# Size-specific types.  Initialize as NULL
-MPI_REAL4=MPI_DATATYPE_NULL
-MPI_REAL8=MPI_DATATYPE_NULL
-MPI_REAL16=MPI_DATATYPE_NULL
-MPI_COMPLEX8=MPI_DATATYPE_NULL
-MPI_COMPLEX16=MPI_DATATYPE_NULL
-MPI_COMPLEX32=MPI_DATATYPE_NULL
-MPI_INTEGER1=MPI_DATATYPE_NULL
-MPI_INTEGER2=MPI_DATATYPE_NULL
-MPI_INTEGER4=MPI_DATATYPE_NULL
-MPI_INTEGER8=MPI_DATATYPE_NULL
-MPI_INTEGER16=MPI_DATATYPE_NULL
-AC_SUBST(MPI_REAL4)
-AC_SUBST(MPI_REAL8)
-AC_SUBST(MPI_REAL16)
-AC_SUBST(MPI_COMPLEX8)
-AC_SUBST(MPI_COMPLEX16)
-AC_SUBST(MPI_COMPLEX32)
-AC_SUBST(MPI_INTEGER1)
-AC_SUBST(MPI_INTEGER2)
-AC_SUBST(MPI_INTEGER4)
-AC_SUBST(MPI_INTEGER8)
-AC_SUBST(MPI_INTEGER16)
-export MPI_REAL4
-export MPI_REAL8
-export MPI_REAL16
-export MPI_COMPLEX8
-export MPI_COMPLEX16
-export MPI_COMPLEX32
-export MPI_INTEGER1
-export MPI_INTEGER2
-export MPI_INTEGER4
-export MPI_INTEGER8
-export MPI_INTEGER16
-#
-# Try to find corresponding types for the size-specific types.
-#
-# Assume that the float/double/long double are simply spaced
-# Datatypes used up through 26 in Fortran
-# 27,28,29,2a,2b,2c
-if test "$ac_cv_sizeof_float" = "4" ; then
-    MPI_REAL4="0x4c000427"
-    MPI_COMPLEX8="0x4c000828"
-    MPIR_REAL4_CTYPE=float
-fi
-if test "$ac_cv_sizeof_double" = "8" ; then
-    MPI_REAL8="0x4c000829"
-    MPI_COMPLEX16="0x4c00102a"
-    MPIR_REAL8_CTYPE=double
-fi
-if test "$ac_cv_sizeof___float128" = "16" ; then
-    MPI_REAL16="0x4c00102b"
-    MPI_COMPLEX32="0x4c00202c"
-    MPIR_REAL16_CTYPE="__float128"
-elif test "$ac_cv_sizeof_long_double" = "16" -a "$MPID_NO_LONG_DOUBLE" != yes ; then
-    MPI_REAL16="0x4c00102b"
-    MPI_COMPLEX32="0x4c00202c"
-    MPIR_REAL16_CTYPE="long double"
-fi
-if test -n "$MPIR_REAL4_CTYPE" ; then
-    AC_DEFINE_UNQUOTED(MPIR_REAL4_CTYPE,$MPIR_REAL4_CTYPE,[C type to use for MPI_REAL4])
-fi
-if test -n "$MPIR_REAL8_CTYPE" ; then
-    AC_DEFINE_UNQUOTED(MPIR_REAL8_CTYPE,$MPIR_REAL8_CTYPE,[C type to use for MPI_REAL8])
-fi
-if test -n "$MPIR_REAL16_CTYPE" ; then
-    AC_DEFINE_UNQUOTED(MPIR_REAL16_CTYPE,$MPIR_REAL16_CTYPE,[C type to use for MPI_REAL16])
-fi
-# For complex 8/16/32, we assume that these are 2 consequetive real4/8/16
-#
-# Search for the integer types
-for type in char short int long long_long ; do
-    # ctype is a valid C type which we can use to declare a C version of
-    # this item
-    ctype=`echo $type | sed 's/_/ /'`
-    eval len=\$ac_cv_sizeof_$type
-    if test -n "$len" ; then
-    case $len in
-    1) if test "$MPI_INTEGER1" = "MPI_DATATYPE_NULL" ; then
-           MPI_INTEGER1="0x4c00012d"
-	   MPIR_INTEGER1_CTYPE="$ctype"
-       fi
-       ;;
-    2) if test "$MPI_INTEGER2" = "MPI_DATATYPE_NULL" ; then
-           MPI_INTEGER2="0x4c00022f"
-	   MPIR_INTEGER2_CTYPE="$ctype"
-       fi
-       ;;
-    4) if test "$MPI_INTEGER4" = "MPI_DATATYPE_NULL" ; then
-           MPI_INTEGER4="0x4c000430"
-	   MPIR_INTEGER4_CTYPE="$ctype"
-       fi
-       ;;
-    8) if test "$MPI_INTEGER8" = "MPI_DATATYPE_NULL" ; then
-           MPI_INTEGER8="0x4c000831"
-	   MPIR_INTEGER8_CTYPE="$ctype"
-       fi
-       ;;
-    16) if test "$MPI_INTEGER16" = "MPI_DATATYPE_NULL" ; then
-           MPI_INTEGER16="0x4c001032"
-	   MPIR_INTEGER16_CTYPE="$ctype"
-       fi
-       ;;
-    *)
-    ;;
-    esac
     fi
 done
-#
-# Add the definitions of these types
-if test -n "$MPIR_INTEGER1_CTYPE" ; then
-    AC_DEFINE_UNQUOTED(MPIR_INTEGER1_CTYPE,$MPIR_INTEGER1_CTYPE,[C type to use for MPI_INTEGER1])
-fi
-if test -n "$MPIR_INTEGER2_CTYPE" ; then
-   AC_DEFINE_UNQUOTED(MPIR_INTEGER2_CTYPE,$MPIR_INTEGER2_CTYPE,[C type to use for MPI_INTEGER2])
-fi
-if test -n "$MPIR_INTEGER4_CTYPE" ; then
-   AC_DEFINE_UNQUOTED(MPIR_INTEGER4_CTYPE,$MPIR_INTEGER4_CTYPE,[C type to use for MPI_INTEGER4])
-fi
-if test -n "$MPIR_INTEGER8_CTYPE" ; then
-   AC_DEFINE_UNQUOTED(MPIR_INTEGER8_CTYPE,$MPIR_INTEGER8_CTYPE,[C type to use for MPI_INTEGER8])
-fi
-if test -n "$MPIR_INTEGER16_CTYPE" ; then
-   AC_DEFINE_UNQUOTED(MPIR_INTEGER16_CTYPE,$MPIR_INTEGER16_CTYPE,[C type to use for MPI_INTEGER16])
-fi
-
-# ----------------------------------------------------------------------------
-
-# C99 types
-# The predefined types must be distinct types (as opposed to aliases to MPI_INT
-# or MPI_WHATEVER) in order to correctly support MPI_Type_{get,set}_name.
-#
-# FIXME the "basic id" portion should be automatically assigned.  It's too easy
-# to have a conflict when this is done by hand.
-#
-# Because we make up a matching type for the fixed-width types if one doesn't
-# exist, we don't ever set these to MPI_DATATYPE_NULL.  If we come across a
-# platform where 64-bit sizes aren't supported just add a test like the other
-# types.
-MPI_INT8_T=0x4c000137
-MPI_INT16_T=0x4c000238
-MPI_INT32_T=0x4c000439
-MPI_INT64_T=0x4c00083a
-MPI_UINT8_T=0x4c00013b
-MPI_UINT16_T=0x4c00023c
-MPI_UINT32_T=0x4c00043d
-MPI_UINT64_T=0x4c00083e
-
-# The compiler may or may not support these types, depending on its level of C99
-# compliance.  We check for each one individually before assigning a handle
-# number.
-MPI_C_BOOL=MPI_DATATYPE_NULL
-MPI_C_FLOAT_COMPLEX=MPI_DATATYPE_NULL
-MPI_C_DOUBLE_COMPLEX=MPI_DATATYPE_NULL
-MPI_C_LONG_DOUBLE_COMPLEX=MPI_DATATYPE_NULL
-MPIX_C_FLOAT16=MPI_DATATYPE_NULL
-if test ${len__Bool} != 0 ; then
-    MPI_C_BOOL=0x4c00${len__Bool}3f
-fi
-if test ${len_float__Complex} != 0 ; then
-    MPI_C_FLOAT_COMPLEX=0x4c00${len_float__Complex}40
-fi
-if test ${len_double__Complex} != 0 ; then
-    MPI_C_DOUBLE_COMPLEX=0x4c00${len_double__Complex}41
-fi
-if test ${len_long_double__Complex} != 0 ; then
-    MPI_C_LONG_DOUBLE_COMPLEX=0x4c00${len_long_double__Complex}42
-fi
-if test ${len__Float16} != 0 ; then
-    MPIX_C_FLOAT16=0x4c000246
-fi
-
-AC_SUBST(MPI_INT8_T)
-AC_SUBST(MPI_INT16_T)
-AC_SUBST(MPI_INT32_T)
-AC_SUBST(MPI_INT64_T)
-AC_SUBST(MPI_UINT8_T)
-AC_SUBST(MPI_UINT16_T)
-AC_SUBST(MPI_UINT32_T)
-AC_SUBST(MPI_UINT64_T)
-AC_SUBST(MPI_C_BOOL)
-AC_SUBST(MPI_C_FLOAT_COMPLEX)
-AC_SUBST(MPI_C_DOUBLE_COMPLEX)
-AC_SUBST(MPI_C_LONG_DOUBLE_COMPLEX)
-AC_SUBST(MPIX_C_FLOAT16)
-export MPI_INT8_T
-export MPI_INT16_T
-export MPI_INT32_T
-export MPI_INT64_T
-export MPI_UINT8_T
-export MPI_UINT16_T
-export MPI_UINT32_T
-export MPI_UINT64_T
-export MPI_C_BOOL
-export MPI_C_FLOAT_COMPLEX
-export MPI_C_DOUBLE_COMPLEX
-export MPI_C_LONG_DOUBLE_COMPLEX
-export MPIX_C_FLOAT16
-
 
 # ----------------------------------------------------------------------------
 # We can now create the Fortran versions of the datatype values, along with
@@ -3454,10 +2885,12 @@ export MPIX_C_FLOAT16
 #
 # In addition, we need to look at a few additional constants that depend
 # on how the compiler sizes some datatypes.  These are:
-#    STATUS_SIZE, INTEGER_KIND, ADDRESS_KIND, and OFFSET_KIND
+#    INTEGER_KIND, ADDRESS_KIND, and OFFSET_KIND
 #
 # ----------------------------------------------------------------------------
 if test "$enable_f77" = yes ; then
+    pac_cv_f77_sizeof_character=1
+
     # Up to size checking code in main configure.ac (where it tries to
     # find the matching C sizes) as part of defining mpi_integer8 etc.
     # The results are available in pac_cv_sizeof_f77_<type>
@@ -3473,7 +2906,7 @@ if test "$enable_f77" = yes ; then
     PAC_PROG_F77_CHECK_SIZEOF_EXT(integer,$CROSS_F77_SIZEOF_INTEGER)
     PAC_PROG_F77_CHECK_SIZEOF_EXT(real,$CROSS_F77_SIZEOF_REAL)
     PAC_PROG_F77_CHECK_SIZEOF_EXT(double precision,$CROSS_F77_SIZEOF_DOUBLE_PRECISION)
-    AC_LANG_FORTRAN77
+    AC_LANG([Fortran 77])
     # If we have sizes for real and double, we do not need to call
     # mpir_get_fsize at run time.
     # For the size-defined types (e.g., integer*2), we assume that if the
@@ -3511,462 +2944,53 @@ if test "$enable_f77" = yes ; then
         pac_cv_fort_real16=yes,
         pac_cv_fort_real16=no)])
 
-    # Create the default datatype names for the standard MPI Fortran types
-    MPI_CHARACTER=0x4c00011a
-    AC_SUBST(MPI_CHARACTER)
-
     if test -z "$pac_cv_f77_sizeof_integer" -o \
        "X$pac_cv_f77_sizeof_integer" = "X0" ; then
         AC_MSG_ERROR([Unable to configure with Fortran support because configure could not determine the size of a Fortran INTEGER.  Consider setting CROSS_F77_SIZEOF_INTEGER to the length in bytes of a Fortran INTEGER])
     fi
-    len_integer=$pac_cv_f77_sizeof_integer
-    # Convert to two digit hex
-    len=$len_integer
-    #
-    # Take len and turn it into two hex digits (there are 8 bits available
-    # in the built-in datatype handle for the length; see
-    # src/mpid/common/datatype/mpidu_datatype.h).  This code is taken
-    # from the code in mpich/configure.ac
-    if test "$len" -gt 255 ; then
-        AC_MSG_ERROR([Type sizes greater than 255 bytes are not supported (type INTEGER is $len bytes)])
-    fi
-    tmplen=$len
-    hexlen=""
-    while test $tmplen -gt 0 ; do
-        lowdigit=`expr $tmplen - 16 \* \( $tmplen / 16 \)`
-        case $lowdigit in
-        10) char=a ;;
-        11) char=b ;;
-        12) char=c ;;
-        13) char=d ;;
-        14) char=e ;;
-        15) char=f ;;
-         *) char=$lowdigit ;;
-        esac
-        hexlen="$char$hexlen"
-        tmplen=`expr $tmplen / 16`
-    done
-    if test $len -lt 16 ; then
-        hexlen="0$hexlen"
-    fi
-    len_integer=$hexlen
-    if test "$len_integer" = 0 ; then
-        # We have a problem
-        AC_MSG_WARN([Unable to determine size of an INTEGER type; using 4])
-        # We make the length 4
-        len_integer="04"
-    fi
-    MPI_INTEGER=0x4c00${len_integer}1b
-    MPI_REAL=0x4c00${len_integer}1c
-    MPI_LOGICAL=0x4c00${len_integer}1d
-    AC_SUBST(MPI_INTEGER)
+
+    len_real=`printf "%02x" $pac_cv_f77_sizeof_real`
+    MPI_REAL=0x4c00${len_real}1c
     AC_SUBST(MPI_REAL)
-    AC_SUBST(MPI_LOGICAL)
 
     if test -z "$pac_cv_f77_sizeof_double_precision" ; then
         AC_MSG_ERROR([Unable to configure with Fortran support because configure could not determine the size of a Fortran DOUBLE PRECISION.  Consider setting CROSS_F77_SIZEOF_DOUBLE_PRECISION to the length in bytes of a Fortran DOUBLE PRECISION])
     fi
-    len_double=$pac_cv_f77_sizeof_double_precision
-    # Convert to two digit hex
-    len=$len_double
-    #
-    # Take len and turn it into two hex digits (there are 8 bits available
-    # in the built-in datatype handle for the length; see
-    # src/mpid/common/datatype/mpidu_datatype.h).  This code is taken
-    # from the code in mpich/configure.ac
-    if test "$len" -gt 255 ; then
-        AC_MSG_ERROR([Type sizes greater than 255 bytes are not supported (type DOUBLE is $len bytes)])
-    fi
-    tmplen=$len
-    hexlen=""
-    while test $tmplen -gt 0 ; do
-        lowdigit=`expr $tmplen - 16 \* \( $tmplen / 16 \)`
-        case $lowdigit in
-        10) char=a ;;
-        11) char=b ;;
-        12) char=c ;;
-        13) char=d ;;
-        14) char=e ;;
-        15) char=f ;;
-         *) char=$lowdigit ;;
-        esac
-        hexlen="$char$hexlen"
-        tmplen=`expr $tmplen / 16`
-    done
-    if test $len -lt 16 ; then
-        hexlen="0$hexlen"
-    fi
-    len_double=$hexlen
-    if test "$len_double" = 0 ; then
-       # We have a problem
-       AC_MSG_WARN([Unable to determine size of a DOUBLE PRECISION type; using 8])
-       # We make the length 8
-       len_double="08"
-    fi
+
+    # Provide the corresponding C types for MPI_INTEGER
+    AC_MSG_CHECKING([for C type matching Fortran integer])
+    get_c_int_type $pac_cv_f77_sizeof_integer
+    MPI_FINT=$pac_retval
+    AC_MSG_RESULT($MPI_FINT)
 
     # Provide the corresponding C types for MPI_REAL and MPI_DOUBLE
-    AC_MSG_CHECKING([for C type matching Fortran real])
-    noval=yes
-    for c_type in float double "long_double" ; do
-        eval ctypelen=\$"ac_cv_sizeof_$c_type"
-        if test "$pac_cv_f77_sizeof_real" = "$ctypelen" -a \
-          "$ctypelen" -gt 0 ; then
-	    c_type=`echo $c_type | sed -e 's/_/ /g'`
-	    AC_MSG_RESULT($c_type)
-	    MPIR_FC_REAL_CTYPE=$c_type
-	    noval="no"
-	    break
-        fi
-    done
-    if test "$noval" = "yes" ; then
-        # Set a default
-        MPIR_FC_REAL_CTYPE="float"
-        AC_MSG_RESULT([unavailable])
-    fi
-
-    noval=yes
-    AC_MSG_CHECKING([for C type matching Fortran double])
-    for c_type in double "long_double" float ; do
-        eval ctypelen=\$"ac_cv_sizeof_$c_type"
-        if test "$pac_cv_f77_sizeof_double_precision" = "$ctypelen" -a \
-          "$ctypelen" -gt 0 ; then
-	    c_type=`echo $c_type | sed -e 's/_/ /g'`
-	    AC_MSG_RESULT($c_type)
-	    MPIR_FC_DOUBLE_CTYPE=$c_type
-	    noval="no"
-	    break
-        fi
-    done
-    if test "$noval" = "yes" ; then
-        # Set a default
-        MPIR_FC_DOUBLE_CTYPE="double"
-        AC_MSG_RESULT([unavailable])
-    fi
-
     # These are needed to correctly implement the MPI reduction operations
-    AC_DEFINE_UNQUOTED([MPIR_FC_REAL_CTYPE],[$MPIR_FC_REAL_CTYPE],
-     [The C type for FORTRAN REAL])
-    AC_DEFINE_UNQUOTED([MPIR_FC_DOUBLE_CTYPE],[$MPIR_FC_DOUBLE_CTYPE],
-     [The C type for FORTRAN DOUBLE PRECISION])
 
-    # Use the proper length values for these items in case we are building
-    # with Fortran integers that are not the same size as C ints and
-    # reals and double precision that are the same size (not valid Fortran,
-    # but used by some applications)
+    AC_MSG_CHECKING([for C type matching Fortran real])
+    get_c_float_type $pac_cv_f77_sizeof_real
+    MPIR_FC_REAL_CTYPE=$pac_retval
+    AC_MSG_RESULT($MPIR_FC_REAL_CTYPE)
+    AC_DEFINE_UNQUOTED([MPIR_FC_REAL_CTYPE],[$MPIR_FC_REAL_CTYPE], [The C type for FORTRAN REAL])
 
-    len_2integer=`expr 2 \* $len_integer`
-    len_2real=`expr 2 \* $len_integer`
-    len_doublecplx=`expr $pac_cv_f77_sizeof_double_precision \* 2`
-    if test "$len_doublecplx" = 0 ; then
-        # We have a problem
-        AC_MSG_WARN([Unable to determine size of a DOUBLE PRECISION type; using 8])
-        # We make the length 8*2 (in hex)
-        len_doublecplx="16"
-    fi
+    AC_MSG_CHECKING([for C type matching Fortran double])
+    get_c_float_type $pac_cv_f77_sizeof_double_precision
+    MPIR_FC_DOUBLE_CTYPE=$pac_retval
+    AC_MSG_RESULT($MPIR_FC_DOUBLE_CTYPE)
+    AC_DEFINE_UNQUOTED([MPIR_FC_DOUBLE_CTYPE],[$MPIR_FC_DOUBLE_CTYPE], [The C type for FORTRAN DOUBLE PRECISION])
 
-    for lenname in len_2integer len_2real len_doublecplx ; do
-        eval len=\$$lenname
-	if test "$len" -gt 255 ; then
-            AC_MSG_ERROR([Type sizes greater than 255 bytes are not supported (type $lenname is $len bytes)])
-	fi
-    	tmplen=$len
-        hexlen=""
-        while test $tmplen -gt 0 ; do
-            lowdigit=`expr $tmplen - 16 \* \( $tmplen / 16 \)`
-            case $lowdigit in
-            10) char=a ;;
-            11) char=b ;;
-            12) char=c ;;
-            13) char=d ;;
-            14) char=e ;;
-            15) char=f ;;
-            *) char=$lowdigit ;;
-            esac
-            hexlen="$char$hexlen"
-            tmplen=`expr $tmplen / 16`
-        done
-        if test $len -lt 16 ; then
-            hexlen="0$hexlen"
-        fi
-        eval ${lenname}=$hexlen
-        if test "$hexlen" = 0 ; then
-           # We have a problem
-           AC_MSG_WARN([Unable to determine size of a $lenname type; using 8])
-           # We make the length 8
-           eval ${lenname}=$hexlen
-        fi
-    done
+    # get C types for Fortran fixed-size REAL and INTEGER. If no equivallent C type, set
+    # pac_cv_f77_sizeof_real# to 0, so that PAC_SET_MPI_TYPE can skip the type.
 
-    MPI_DOUBLE_PRECISION=0x4c00${len_double}1f
-    MPI_2INTEGER=0x4c00${len_2integer}20
-    MPI_2REAL=0x4c00${len_2real}21
-    MPI_COMPLEX=0x4c00${len_2real}1e
-    AC_SUBST(MPI_COMPLEX)
-    AC_SUBST(MPI_DOUBLE_PRECISION)
-    AC_SUBST(MPI_2INTEGER)
-    AC_SUBST(MPI_2REAL)
+    PAC_F77_CHECK_FIXED_REAL(4)
+    PAC_F77_CHECK_FIXED_REAL(8)
+    PAC_F77_CHECK_FIXED_REAL(16)
 
-dnl     len=$len_doublecplx
-dnl     #
-dnl     # Take len and turn it into two hex digits (there are 8 bits available
-dnl     # in the built-in datatype handle for the length; see
-dnl     # src/mpid/common/datatype/mpidu_datatype.h).  This code is taken
-dnl     # from the code in mpich/configure.ac
-dnl     if test "$len" -gt 255 ; then
-dnl         AC_MSG_ERROR([Type sizes greater than 255 bytes are not supported (type DOUBLE COMPLEX is $len bytes)])
-dnl     fi
-dnl     tmplen=$len
-dnl     hexlen=""
-dnl     while test $tmplen -gt 0 ; do
-dnl         lowdigit=`expr $tmplen - 16 \* \( $tmplen / 16 \)`
-dnl         case $lowdigit in
-dnl         10) char=a ;;
-dnl         11) char=b ;;
-dnl         12) char=c ;;
-dnl         13) char=d ;;
-dnl         14) char=e ;;
-dnl         15) char=f ;;
-dnl          *) char=$lowdigit ;;
-dnl         esac
-dnl         hexlen="$char$hexlen"
-dnl         tmplen=`expr $tmplen / 16`
-dnl     done
-dnl     if test $len -lt 16 ; then
-dnl         hexlen="0$hexlen"
-dnl     fi
-dnl     len_doublecplx=$hexlen
+    PAC_F77_CHECK_FIXED_INTEGER(1)
+    PAC_F77_CHECK_FIXED_INTEGER(2)
+    PAC_F77_CHECK_FIXED_INTEGER(4)
+    PAC_F77_CHECK_FIXED_INTEGER(8)
+    PAC_F77_CHECK_FIXED_INTEGER(16)
 
-    MPI_DOUBLE_COMPLEX=0x4c00${len_doublecplx}22
-    MPI_2DOUBLE_PRECISION=0x4c00${len_doublecplx}23
-    AC_SUBST(MPI_DOUBLE_COMPLEX)
-    AC_SUBST(MPI_2DOUBLE_PRECISION)
-
-dnl Removed MPI_2COMPLEX and MPI_2DOUBLE_COMPLEX, leaving comments to explain the gap in seq id
-    # MPI_2COMPLEX=0x4c00${len_doublecplx}24
-    # MPI_2DOUBLE_COMPLEX=0x4c00${len_2dc}25
-
-    #
-    # Temporary for the vast majority of systems that use 4 byte reals and
-    # 8 byte doubles
-    # Lengths at this point are in hex, hence "10" = 10 base 16 = 16 base 10.
-    if test "$len_double" = "08" ; then
-        F77_COMPLEX8=$MPI_COMPLEX
-    fi
-    if test "$len_doublecplx" = "10" ; then
-        F77_COMPLEX16=$MPI_DOUBLE_COMPLEX
-    fi
-    if test "$len_long_double" = "10" -a "$MPID_NO_LONG_DOUBLE" != "yes" ; then
-        F77_COMPLEX32="0x4c002025"
-    else
-        F77_COMPLEX32="MPI_DATATYPE_NULL"
-    fi
-
-    MPI_F77_PACKED=$MPI_PACKED
-    MPI_F77_UB=$MPI_UB
-    MPI_F77_LB=$MPI_LB
-    MPI_F77_BYTE=$MPI_BYTE
-    AC_SUBST(MPI_F77_PACKED)
-    AC_SUBST(MPI_F77_UB)
-    AC_SUBST(MPI_F77_LB)
-    AC_SUBST(MPI_F77_BYTE)
-    #
-    # We must convert all hex values to decimal (!)
-    # It would be nice to use expr to extract the next character rather than
-    # the heavier-weight sed, but expr under Tru64 Unix discards leading zeros,
-    # even when used only with the match (:) command.  Rather than have
-    # configure figure out if expr works, we just use sed.  Sigh.
-    for var in CHARACTER INTEGER REAL LOGICAL DOUBLE_PRECISION COMPLEX \
-        DOUBLE_COMPLEX 2INTEGER 2REAL 2DOUBLE_PRECISION \
-        F77_PACKED F77_UB F77_LB F77_BYTE; do
-        fullvar="MPI_$var"
-        eval fullvarvalue=\$$fullvar
-        #echo "$fullvar = $fullvarvalue"
-        value=0
-        fullvarvalue=`echo $fullvarvalue | sed -e 's/..\(.*\)/\1/'`
-        for pos in 3 4 5 6 7 8 9 10 ; do
-            # This works, even for Tru64, because only a single character
-  	    # is extracted
-            char=`expr $fullvarvalue : '\(.\)'`
-	    # FIXME: Tru64 Unix eliminates leading zeros (!)
- 	    # How do we fix something that broken?
-	    fullvarvalue=`echo $fullvarvalue | sed -e 's/.\(.*\)/\1/'`
-            case $char in
-                a) char=10 ;;
-	        b) char=11 ;;
-	        c) char=12 ;;
-	        d) char=13 ;;
-	        e) char=14 ;;
-	        f) char=15 ;;
-            esac
-            value=`expr $value \* 16 + $char`
-        done
-        #echo "$fullvar = $value"
-	if test "X$value" = "X"; then
-            eval origvarvalue=\$$fullvar
-	    AC_MSG_ERROR([Internal Error: Failed to convert $fullvar value to hex!  Original value was $origvarvalue])
-        fi
-        eval $fullvar=$value
-    done
-    AC_LANG_C
-
-    # Now, handle the sized types
-    #
-    # Preload the C mpi types
-    # THESE MUST MATCH THE DEFINITIONS IN MPI.H and MPIF.H
-    # We use these to match the optional Fortran types
-    char_mpi=${MPI_CHAR:-0}
-    short_mpi=${MPI_SHORT:-0}
-    int_mpi=${MPI_INT:-0}
-    long_mpi=${MPI_LONG:-0}
-    long_long_mpi=${MPI_LONG_LONG:-0}
-    float_mpi=${MPI_FLOAT:-0}
-    double_mpi=${MPI_DOUBLE:-0}
-    long_double_mpi=${MPI_LONG_DOUBLE:-0}
-
-    #
-    # The following code was correct for MPI-1, which allowed these datatypes
-    # to be an alias for another MPI type.  MPI-2 requires these to
-    # be distinct types, so these are enumerated
-    if test "$use_alias_types" = yes ; then
-        for len in 1 2 4 8 16 ; do
-            eval F77_INTEGER$len=0
-            #eval testval=\$"pac_cv_f77_sizeof_integer_$len"
-            eval testval=\$"pac_cv_fort_integer$len"
-            if test "$testval" = no ; then continue ; fi
-	    testval=$len
-            noval="yes"
-            AC_MSG_CHECKING([for C type matching Fortran integer*$len])
-            for c_type in char short int long "long_long" ; do
-	        eval ctypelen=\$"ac_cv_sizeof_$c_type"
-  	        if test "$testval" = "$ctypelen" -a "$ctypelen" -gt 0 ; then
-	            AC_MSG_RESULT($c_type)
-  	            eval F77_INTEGER$len=\$"${c_type}_mpi"
-	            noval="no"
-	            break
-                fi
-            done
-            if test "$noval" = "yes" ; then
-                AC_MSG_RESULT([unavailable])
-            fi
-        done
-
-        # Complex is set separately above
-        for len in 4 8 16 ; do
-            len2=`expr $len + $len`
-            eval F77_REAL$len=0
-            #eval F77_COMPLEX$len2=0
-            #eval testval=\$"pac_cv_f77_sizeof_real_$len"
-            eval testval=\$"pac_cv_fort_real$len"
-            if test "$testval" = no ; then continue ; fi
-	    testval=$len
-            noval="yes"
-            AC_MSG_CHECKING([for C type matching Fortran real*$len])
-            for c_type in float double "long_double" ; do
-	        eval ctypelen=\$"ac_cv_sizeof_$c_type"
-	        if test "$testval" = "$ctypelen" -a "$ctypelen" -gt 0 ; then
-	            AC_MSG_RESULT($c_type)
-  	            eval F77_REAL$len=\$"${c_type}_mpi"
-	            #eval F77_COMPLEX$len2=\$"${c_type}_cplx_mpi"
-                    noval="no"
-	            break
-                fi
-            done
-            if test "$noval" = "yes" ; then
-                AC_MSG_RESULT([unavailable])
-            fi
-        done
-    else
-        # Simply determine which types exist.  These may have been set by the
-        # toplevel configure
-        for var in INTEGER1 INTEGER2 INTEGER4 INTEGER8 INTEGER16 \
-            REAL4 REAL8 REAL16 COMPLEX8 COMPLEX16 COMPLEX32 ; do
-  	    eval varname=MPI_$var
-            eval varvalue=\$$varname
-	    #echo "$varname = $varvalue"
-  	    if test "$varvalue" = MPI_DATATYPE_NULL ; then
-	        eval F77_$var=0
-  	    else
-                eval F77_$var=\$$varname
-  	    fi
-       done
-    fi
-    # We must convert all hex values to decimal (!)
-    for var in INTEGER1 INTEGER2 INTEGER4 INTEGER8 INTEGER16 \
-        REAL4 REAL8 REAL16 COMPLEX8 COMPLEX16 COMPLEX32 ; do
-        fullvar="F77_$var"
-        eval fullvarvalue=\$$fullvar
-        if test "$fullvarvalue" = 0 -o -z "$fullvarvalue" ; then
-            eval $fullvar=MPI_DATATYPE_NULL
-            continue
-        fi
-        #echo "$fullvar = $fullvarvalue"
-        value=0
-        # See the comments above on why expr with : cannot be used here
-        fullvarvalue=`echo $fullvarvalue | sed -e 's/..\(.*\)/\1/'`
-        for pos in 3 4 5 6 7 8 9 10 ; do
-            #char=`expr substr $fullvarvalue $pos 1`
-            char=`expr $fullvarvalue : '\(.\)'`
-	    # We don't test for success of expr here because some expr's are
-  	    # buggy and set the status to one on expressions like
-            #    expr 00ccc : '\(.\)'
-            # while both
-            #    expr 00ccc : '\(..\)'
-            # and
-            #    expr 100cc : '\(.\)'
-            # return a zero status.  So the status is set even on success,
-            # if the result is a single character that is a zero (!)
-	    #rc=$?
-    	    #if test "$rc" != 0 ; then
-  	    dnl #    AC_MSG_WARN([Failure (status $rc) in extracting first char from $fullvarvalue])
-  	    #    break
-	    #fi
-	    fullvarvalue=`echo $fullvarvalue | sed -e 's/.\(.*\)/\1/'`
-            case $char in
-                a) char=10 ;;
-	        b) char=11 ;;
-	        c) char=12 ;;
-	        d) char=13 ;;
-	        e) char=14 ;;
-	        f) char=15 ;;
-            esac
-            value=`expr $value \* 16 + $char`
-	    if test $? != 0 ; then
-	        AC_MSG_WARN([Failure to evaluate $value \* 16 + $char])
-	    fi
-        done
-        #echo "$fullvar = $value"
-        eval $fullvar=$value
-    done
-    AC_SUBST(F77_INTEGER1)
-    AC_SUBST(F77_INTEGER2)
-    AC_SUBST(F77_INTEGER4)
-    AC_SUBST(F77_INTEGER8)
-    AC_SUBST(F77_INTEGER16)
-    AC_SUBST(F77_REAL4)
-    AC_SUBST(F77_REAL8)
-    AC_SUBST(F77_REAL16)
-    AC_SUBST(F77_COMPLEX8)
-    AC_SUBST(F77_COMPLEX16)
-    AC_SUBST(F77_COMPLEX32)
-
-    noval="yes"
-    AC_MSG_CHECKING([for C type matching Fortran integer])
-    for c_type in char short int long "long_long" ; do
-        eval ctypelen=\$"ac_cv_sizeof_$c_type"
-        if test "$pac_cv_f77_sizeof_integer" = "$ctypelen" -a \
-          "$ctypelen" -gt 0 ; then
-	    c_type=`echo $c_type | sed -e 's/_/ /g'`
-	    AC_MSG_RESULT($c_type)
-	    MPI_FINT=$c_type
-	    noval="no"
-	    break
-        fi
-    done
-    if test "$noval" = "yes" ; then
-        # Set a default
-        MPI_FINT="int"
-        AC_MSG_RESULT([unavailable])
-    fi
     # We also need to check the size of MPI_Aint vs MPI_Fint, and
     # define AINT_LARGER_THAN_FINT if aint is larger (this
     # affects code in MPI_Address)
@@ -3980,118 +3004,11 @@ dnl Removed MPI_2COMPLEX and MPI_2DOUBLE_COMPLEX, leaving comments to explain th
     fi
 
     # Include a defined value for Fint is int
-    if test "$MPI_FINT" = "int" ; then
+    if test "$pac_cv_f77_sizeof_integer" == "$ac_cv_sizeof_int" ; then
         AC_DEFINE(HAVE_FINT_IS_INT,1,[Define if Fortran integer are the same size as C ints])
-    elif test "$SIZEOF_F77_INTEGER" != "$ac_cv_sizeof_int" ; then
-        # Make this fatal because we do not want to build a broken fortran
-	# interface (was error)
-	# Check to see if the f77 binding has enabled the code to support
-	# the case of int != fint.
-	if grep HAVE_FINT_IS_INT $main_top_srcdir/src/binding/fortran/mpif_h/testf.c 2>&1 1>/dev/null ; then
-	    AC_MSG_WARN([Fortran integers and C ints are not the same size.  Support for this case is experimental; use at your own risk])
-	else
-            AC_MSG_ERROR([Fortran integers and C ints are not the same size.  The current Fortran binding does not support this case.  Either force the Fortran compiler to use integers of $ac_cv_sizeof_int bytes, or use --disable-fortran on the configure line for MPICH.])
-	fi
+    else
+        AC_MSG_WARN([Fortran integers and C ints are not the same size.  Support for this case is experimental; use at your own risk])
     fi
-
-    # We must convert all hex values to decimal (!).
-    # This is for the C types so they are also available in Fortran
-    for var in CHAR SIGNED_CHAR UNSIGNED_CHAR WCHAR SHORT \
-                  UNSIGNED_SHORT INT UNSIGNED_INT LONG UNSIGNED_LONG \
-                  FLOAT DOUBLE LONG_DOUBLE LONG_LONG_INT \
-                  UNSIGNED_LONG_LONG LONG_LONG FLOAT_INT DOUBLE_INT \
-                  LONG_INT SHORT_INT "2INT" LONG_DOUBLE_INT \
-                  INT8_T INT16_T INT32_T INT64_T            \
-                  UINT8_T UINT16_T UINT32_T UINT64_T        \
-                  C_BOOL C_FLOAT_COMPLEX C_DOUBLE_COMPLEX   \
-                  C_LONG_DOUBLE_COMPLEX AINT OFFSET ; do
-        fullvar="MPI_$var"
-        fullf77var="MPI_F77_$var"
-        eval fullvarvalue=\$$fullvar
-        #echo "$fullvar = $fullvarvalue"
-        if test "x$fullvarvalue" = "x" -o \
-                "x$fullvarvalue" = "xMPI_DATATYPE_NULL" ; then
-             eval $fullf77var="MPI_DATATYPE_NULL"
-              continue
-        fi
-        value=0
-        fullvarvalue=`echo $fullvarvalue | sed -e 's/..\(.*\)/\1/'`
-        offset=0
-        for pos in 3 4 5 6 7 8 9 10 ; do
-            # This works, even for Tru64, because only a single character
-            # is extracted
-            char=`expr $fullvarvalue : '\(.\)'`
-            # FIXME: Tru64 Unix eliminates leading zeros (!)
-            # How do we fix something that broken?
-            fullvarvalue=`echo $fullvarvalue | sed -e 's/.\(.*\)/\1/'`
-            case $char in
-                a) char=10 ;;
-                b) char=11 ;;
-                c) char=12 ;;
-                d) char=13 ;;
-                e) char=14 ;;
-                f) char=15 ;;
-            esac
-            # For Fortran, if the value is too big for an unsigned int,
-            # we need to make it a signed (negative) int. Currently, the
-            # types in this class are the minloc/maxloc types.
-            if test $pos = 3 -a $char -ge 8 ; then
-                #echo "for $var in position $pos found a value >= 8"
-                char=`expr $char - 8`
-                offset=-2147483648
-            fi
-            value=`expr $value \* 16 + $char`
-        done
-        if test "$offset" != 0 ; then
-            #echo "$fullf77var: $value, $offset"
-            value=`expr $value + $offset`
-        fi
-        #echo "$fullf77var = $value"
-        eval $fullf77var=$value
-    done
-    AC_SUBST(MPI_F77_CHAR)
-    AC_SUBST(MPI_F77_SIGNED_CHAR)
-    AC_SUBST(MPI_F77_UNSIGNED_CHAR)
-    AC_SUBST(MPI_F77_WCHAR)
-    AC_SUBST(MPI_F77_SHORT)
-    AC_SUBST(MPI_F77_UNSIGNED_SHORT)
-    MPI_F77_UNSIGNED=$MPI_F77_UNSIGNED_INT
-    AC_SUBST(MPI_F77_UNSIGNED)
-    AC_SUBST(MPI_F77_INT)
-    AC_SUBST(MPI_F77_LONG)
-    AC_SUBST(MPI_F77_UNSIGNED_LONG)
-    AC_SUBST(MPI_F77_FLOAT)
-    AC_SUBST(MPI_F77_DOUBLE)
-    AC_SUBST(MPI_F77_LONG_DOUBLE)
-    AC_SUBST(MPI_F77_UNSIGNED_LONG_LONG)
-    MPI_F77_LONG_LONG_INT=$MPI_F77_LONG_LONG
-    AC_SUBST(MPI_F77_LONG_LONG_INT)
-    AC_SUBST(MPI_F77_LONG_LONG)
-    AC_SUBST(MPI_F77_FLOAT_INT)
-    AC_SUBST(MPI_F77_DOUBLE_INT)
-    AC_SUBST(MPI_F77_LONG_INT)
-    AC_SUBST(MPI_F77_SHORT_INT)
-    AC_SUBST(MPI_F77_2INT)
-    AC_SUBST(MPI_F77_LONG_DOUBLE_INT)
-    AC_SUBST(MPI_F77_INT8_T)
-    AC_SUBST(MPI_F77_INT16_T)
-    AC_SUBST(MPI_F77_INT32_T)
-    AC_SUBST(MPI_F77_INT64_T)
-    AC_SUBST(MPI_F77_UINT8_T)
-    AC_SUBST(MPI_F77_UINT16_T)
-    AC_SUBST(MPI_F77_UINT32_T)
-    AC_SUBST(MPI_F77_UINT64_T)
-    AC_SUBST(MPI_F77_C_BOOL)
-    AC_SUBST(MPI_F77_C_FLOAT_COMPLEX)
-    # C_COMPLEX is an alias for FLOAT_COMPLEX
-    MPI_F77_C_COMPLEX=$MPI_F77_C_FLOAT_COMPLEX
-    AC_SUBST(MPI_F77_C_COMPLEX)
-    AC_SUBST(MPI_F77_C_DOUBLE_COMPLEX)
-    AC_SUBST(MPI_F77_C_LONG_DOUBLE_COMPLEX)
-    # these two are not yet defined, but AC_SUBST only cares about them at
-    # AC_OUTPUT-time
-    AC_SUBST(MPI_F77_AINT)
-    AC_SUBST(MPI_F77_OFFSET)
 
     # Try and compute the values of .true. and .false. in Fortran
     # This code has been removed because the Fortran binding code does
@@ -4282,52 +3199,37 @@ dnl Removed MPI_2COMPLEX and MPI_2DOUBLE_COMPLEX, leaving comments to explain th
     AC_SUBST(REQI8)
     #
 
-    AC_LANG_C
+    AC_LANG([C])
+else
+    MPI_FINT=int
+
+    # set following sizes to 0 will disable the corresponding datatype
+    pac_cv_f77_sizeof_character=0
+    pac_cv_f77_sizeof_integer=0
+    pac_cv_f77_sizeof_real=0
+    pac_cv_f77_sizeof_double_precision=0
+    pac_cv_f77_sizeof_integer1=0
+    pac_cv_f77_sizeof_integer2=0
+    pac_cv_f77_sizeof_integer4=0
+    pac_cv_f77_sizeof_integer8=0
+    pac_cv_f77_sizeof_integer16=0
+    pac_cv_f77_sizeof_real4=0
+    pac_cv_f77_sizeof_real8=0
+    pac_cv_f77_sizeof_real16=0
+
+    AC_DEFINE(HAVE_NO_FORTRAN_MPI_TYPES_IN_C,1,[Define if the Fortran types are not available in C])
 fi
 # ----------------------------------------------------------------------------
 # C++ types
 
-# default to null types
-# Set to "0x0c000000" instead of "MPI_DATATYPE_NULL" because these values
-# sometimes are used in preprocessor tests where we cannot compare the
-# type-casted values.
-MPIR_CXX_BOOL=0x0c000000
-MPIR_CXX_COMPLEX=0x0c000000
-MPIR_CXX_DOUBLE_COMPLEX=0x0c000000
-MPIR_CXX_LONG_DOUBLE_COMPLEX=0x0c000000
-MPI_F77_CXX_BOOL=MPI_DATATYPE_NULL
-MPI_F77_CXX_FLOAT_COMPLEX=MPI_DATATYPE_NULL
-MPI_F77_CXX_DOUBLE_COMPLEX=MPI_DATATYPE_NULL
-MPI_F77_CXX_LONG_DOUBLE_COMPLEX=MPI_DATATYPE_NULL
 if test "$enable_cxx" = "yes" ; then
-    AC_LANG_CPLUSPLUS
+    AC_LANG([C++])
     AC_CHECK_SIZEOF(bool)
 
-    # Find a C type that matches the size of the C++ boolean type
-    case "$ac_cv_sizeof_bool" in
-    	 $ac_cv_sizeof__Bool)
-		bool_type=_Bool
-		;;
-    	 $ac_cv_sizeof_unsigned_char)
-		bool_type="unsigned char"
-		;;
-    	 $ac_cv_sizeof_unsigned_short)
-		bool_type="unsigned short"
-		;;
-    	 $ac_cv_sizeof_unsigned_int)
-		bool_type="unsigned int"
-		;;
-    	 $ac_cv_sizeof_unsigned_long)
-		bool_type="unsigned long"
-		;;
-    	 $ac_cv_sizeof_unsigned_long_long)
-		bool_type="unsigned long long"
-		;;
-         *)
-		AC_MSG_ERROR([unable to determine matching C type for C++ bool])
-		;;
-    esac
-    AC_DEFINE_UNQUOTED([MPIR_CXX_BOOL_CTYPE],[$bool_type],
+    AC_MSG_CHECKING([for C types matching C++ bool])
+    get_c_bool_type $ac_cv_sizeof_bool
+    AC_MSG_RESULT([$pac_retval])
+    AC_DEFINE_UNQUOTED([MPIR_CXX_BOOL_CTYPE],[$pac_retval],
 			[a C type used to compute C++ bool reductions])
 
     AC_CHECK_HEADER(complex)
@@ -4358,306 +3260,31 @@ using namespace std;
                 "$ac_cv_sizeof_DoubleComplex" != 0 ; then
             AC_DEFINE(HAVE_CXX_COMPLEX,1,[Define is C++ supports complex types])
         fi
-
-        # Datatypes are given by
-        # 0x4c00 <length in bytes> (1 byte) <unique num> (1 byte)
-        # where the unique nums are
-        # 33,34,35,36
-        case "$ac_cv_sizeof_bool" in
-           1)    MPIR_CXX_BOOL=0x4c000133 ;;
-           2)    MPIR_CXX_BOOL=0x4c000233 ;;
-           4)    MPIR_CXX_BOOL=0x4c000433 ;;
-           8)    MPIR_CXX_BOOL=0x4c000833 ;;
-           *) ;;
-        esac
-        case "$ac_cv_sizeof_Complex" in
-           8)    MPIR_CXX_COMPLEX=0x4c000834 ;;
-           16)   MPIR_CXX_COMPLEX=0x4c001034 ;;
-           *) ;;
-        esac
-        case "$ac_cv_sizeof_DoubleComplex" in
-           8)    MPIR_CXX_DOUBLE_COMPLEX=0x4c000835 ;;
-           16)   MPIR_CXX_DOUBLE_COMPLEX=0x4c001035 ;;
-           32)   MPIR_CXX_DOUBLE_COMPLEX=0x4c002035 ;;
-           *) ;;
-        esac
-        # only enable CXX "long double" if we have a C "long double", since we
-        # currently perform reductions on CXX "long double" types via C.
-        if test "X$pac_cv_have_long_double" = "Xyes" ; then
-            case "$ac_cv_sizeof_LongDoubleComplex" in
-               8)    MPIR_CXX_LONG_DOUBLE_COMPLEX=0x4c000836 ;;
-               16)   MPIR_CXX_LONG_DOUBLE_COMPLEX=0x4c001036 ;;
-               24)   MPIR_CXX_LONG_DOUBLE_COMPLEX=0x4c001836 ;;
-               32)   MPIR_CXX_LONG_DOUBLE_COMPLEX=0x4c002036 ;;
-               *) ;;
-            esac
+        # mark availability of c++ long double complex
+        if test $ac_cv_sizeof_long_double__Complex != 0 ; then
+            AC_DEFINE([HAVE_CXX_LONG_DOUBLE_COMPLEX], 1, [Define if C++ supports long double complex])
         fi
+
     fi
-    AC_LANG_C
 
-    # Make these available to the collective operations and other code
-    AC_DEFINE_UNQUOTED(MPIR_CXX_BOOL_VALUE,$MPIR_CXX_BOOL,[Define as the MPI Datatype handle for MPI::BOOL])
-    AC_DEFINE_UNQUOTED(MPIR_CXX_COMPLEX_VALUE,$MPIR_CXX_COMPLEX,[Define as the MPI Datatype handle for MPI::COMPLEX])
-    AC_DEFINE_UNQUOTED(MPIR_CXX_DOUBLE_COMPLEX_VALUE,$MPIR_CXX_DOUBLE_COMPLEX,[Define as the MPI Datatype handle for MPI::DOUBLE_COMPLEX])
-    AC_DEFINE_UNQUOTED(MPIR_CXX_LONG_DOUBLE_COMPLEX_VALUE,$MPIR_CXX_LONG_DOUBLE_COMPLEX,[Define as the MPI Datatype handle for MPI::LONG_DOUBLE_COMPLEX])
-
-    # compute F77 decimal constant values for these types
-    PAC_CONV_HEX_TO_DEC([$MPIR_CXX_BOOL],               [MPI_F77_CXX_BOOL])
-    PAC_CONV_HEX_TO_DEC([$MPIR_CXX_COMPLEX],            [MPI_F77_CXX_FLOAT_COMPLEX])
-    PAC_CONV_HEX_TO_DEC([$MPIR_CXX_DOUBLE_COMPLEX],     [MPI_F77_CXX_DOUBLE_COMPLEX])
-    PAC_CONV_HEX_TO_DEC([$MPIR_CXX_LONG_DOUBLE_COMPLEX],[MPI_F77_CXX_LONG_DOUBLE_COMPLEX])
-fi
-AC_SUBST([MPIR_CXX_BOOL])
-AC_SUBST([MPIR_CXX_COMPLEX])
-AC_SUBST([MPIR_CXX_DOUBLE_COMPLEX])
-AC_SUBST([MPIR_CXX_LONG_DOUBLE_COMPLEX])
-AC_SUBST([MPI_F77_CXX_BOOL])
-AC_SUBST([MPI_F77_CXX_FLOAT_COMPLEX])
-AC_SUBST([MPI_F77_CXX_DOUBLE_COMPLEX])
-AC_SUBST([MPI_F77_CXX_LONG_DOUBLE_COMPLEX])
-
-# ------------------------------------------------------------------------
-# Test if  type_tag_for_datatype is agnostic to modifiers such as const, volatile, and restrict
-# if not, the type tags are disabled to avoid compiler warings. A new type_tag for const etc. does
-# does not help, since only the latest type_tag definition is used. Type tags are defined in mpi.h,
-# therefore, they must be also be activated/deavtivated there
-PAC_PUSH_FLAG([CFLAGS])
-PAC_C_CHECK_COMPILER_OPTION([-Werror],[CFLAGS="$CFLAGS -Werror"])
-AC_TRY_COMPILE([
-typedef int TEST_Datatype;
-#define TEST_INT ((TEST_Datatype)0x44)
-static const TEST_Datatype test_int  __attribute__((type_tag_for_datatype(TEST,int)))  = TEST_INT;
-void test(const void* buffer, TEST_Datatype datatype)__attribute__((pointer_with_type_tag(TEST,1,2)));],[
-const int buf[10];
-test(buf, TEST_INT);],ac_attr_support=yes, ac_attr_support=no)
-if test "$ac_attr_support" = yes
-then
-    DISABLE_TAG_SUPPORT="#undef NO_TAGS_WITH_MODIFIERS"
+    AC_LANG([C])
 else
-    DISABLE_TAG_SUPPORT="#define NO_TAGS_WITH_MODIFIERS 1"
-fi
-PAC_POP_FLAG([CFLAGS])
-AC_SUBST(DISABLE_TAG_SUPPORT)
-
-# ----------------------------------------------------------------------------
-# Check for the alignment rules moves with types int64_t etc.  These
-# are used in the datatype code to perform pack and unpack operations.
-# These only determine if different alignments *work*, not whether they
-# work efficiently.  The datatype pack code (should) allow the developer
-# to include stricter alignment rules than are needed for correctness to
-# get better performance.
-if test "$ac_cv_c_int64_t" != "no" -o -n "$INT64_T" ; then
-    default_int64_t_alignment=${CROSS_INT64_T_ALIGNMENT:-"unknown"}
-    if test -z "$INT64_T" ; then
-         if test "$ac_cv_c_int64_t" = yes ; then
-	     INT64_T="int64_t"
-         else
-             INT64_T="$ac_cv_int64_t"
-         fi
-    fi
-    # We use the type that we're going use for int64.
-    AC_CACHE_CHECK([for alignment restrictions on $INT64_T],pac_cv_int64_t_alignment,[
-    AC_TRY_RUN([
-#include <sys/types.h>
-#include <stdlib.h>
-int main(int argc, char **argv )
-{
-    $INT64_T *p1, v;
-    char    *buf_p = (char *)malloc( 64 ), *bp;
-    bp = buf_p;
-    /* Make bp aligned on 4, not 8 bytes */
-    if (!( (long)bp & 0x7 ) ) bp += 4;
-    p1 = ($INT64_T *)bp;
-    v = -1;
-    *p1 = v;
-    if (!( (long)bp & 0x3 ) ) bp += 2;
-    p1 = ($INT64_T *)bp;
-    *p1 = 1;
-    if (!( (long)bp & 0x1 ) ) bp += 1;
-    p1 = ($INT64_T *)bp;
-    *p1 = 1;
-    return 0;
-}
-],pac_cv_int64_t_alignment=no,pac_cv_int64_t_alignment=yes,pac_cv_int64_t_alignment=$default_int64_t_alignment)
-])
-    if test "$pac_cv_int64_t_alignment" = "no" ; then
-         AC_DEFINE(HAVE_ANY_INT64_T_ALIGNMENT,1,[Define if int64_t works with any alignment])
-    fi
+    # set following sizes to 0 to disable the corresponding datatypes
+    ac_cv_sizeof_bool=0
+    ac_cv_sizeof_Complex=0
+    ac_cv_sizeof_DoubleComplex=0
+    ac_cv_sizeof_LongDoubleComplex=0
 fi
 
-if test "$ac_cv_int32_t" != "no" ; then
-    default_int32_t_alignment=${CROSS_INT32_T_ALIGNMENT:-"unknown"}
-    if test -z "$INT32_T" ; then
-         if test "$ac_cv_c_int32_t" = yes ; then
-	     INT32_T="int32_t"
-         else
-             INT32_T="$ac_cv_int32_t"
-         fi
-    fi
+# ------------
+# MPI_FINT
+# ------------
+# MPI_FINT is already set
+AC_SUBST(MPI_FINT)
 
-    AC_CACHE_CHECK([for alignment restrictions on int32_t],pac_cv_int32_t_alignment,[
-    AC_TRY_RUN([
-#include <sys/types.h>
-#include <stdlib.h>
-int main(int argc, char **argv )
-{
-    $INT32_T *p1, v;
-    char    *buf_p = (char *)malloc( 64 ), *bp;
-    bp = buf_p;
-    /* Make bp aligned on 4, not 8 bytes */
-    if (!( (long)bp & 0x7 ) ) bp += 4;
-    p1 = ($INT32_T *)bp;
-    v = -1;
-    *p1 = v;
-    if (!( (long)bp & 0x3 ) ) bp += 2;
-    p1 = ($INT32_T *)bp;
-    *p1 = 1;
-    if (!( (long)bp & 0x1 ) ) bp += 1;
-    p1 = ($INT32_T *)bp;
-    *p1 = 1;
-    return 0;
-}
-],pac_cv_int32_t_alignment=no,pac_cv_int32_t_alignment=yes,pac_cv_int32_t_alignment=$default_int32_t_alignment)
-])
-    if test "$pac_cv_int32_t_alignment" = "no" ; then
-         AC_DEFINE(HAVE_ANY_INT32_T_ALIGNMENT,1,[Define if int32_t works with any alignment])
-    fi
-fi
-
-# -----------------------------------------------------------------------------
-# Check for support of enable-coverage.  Put this near the end of the tests
-# because the coverage options may affect the other tests.
-PAC_ENABLE_COVERAGE
-
-# -----------------------------------------------------------------------------
-# Look for Standard headers
-AC_HEADER_STDC
-# Check for a specific header
-# Grrr.  OS/X fails the test for sys/uio.h because uio *requires* sys/types.h
-# to compile.  Thus, we'll make that a separate test
-# stddef.h is sometimes needed for types like wchar_t
-AC_CHECK_HEADERS(stdlib.h stdarg.h sys/types.h string.h inttypes.h limits.h stddef.h errno.h sys/socket.h sys/time.h unistd.h endian.h assert.h sys/param.h)
-AC_CACHE_CHECK([for sys/uio.h],ac_cv_header_sys_uio_h,[
-AC_TRY_COMPILE([
-#include <sys/types.h>
-#include <sys/uio.h>
-],[int a;],ac_cv_header_sys_uio_h=yes,ac_cv_header_sys_uio_h=no)])
-if test "$ac_cv_header_sys_uio_h" = yes ; then
-    AC_DEFINE(HAVE_SYS_UIO_H,1,[Define if you have the <sys/uio.h> header file.])
-fi
-
-# Check for special types
-AC_TYPE_SIZE_T
-
-# These are used to support timeouts
-AC_CHECK_FUNCS(setitimer alarm)
-# These are used for error reporting
-AC_CHECK_FUNCS(vsnprintf vsprintf)
-if test "$ac_cv_func_vsnprintf" = "yes" ; then
-    # vsnprintf may be declared in stdio.h and may need stdarg.h
-    PAC_FUNC_NEEDS_DECL([#include <stdio.h>
-#include <stdarg.h>],vsnprintf)
-fi
-# We would like to use strerror in the file namepublisher; it is also used
-# in MPIR_Strerror
-AC_CHECK_FUNCS(strerror strncasecmp)
-AC_FUNC_STRERROR_R
-if test "$ac_cv_func_strerror_r" = "yes" ; then
-    PAC_FUNC_NEEDS_DECL([#include <string.h>],strerror_r)
-fi
-
-# Use snprintf if possible when creating messages
-AC_CHECK_FUNCS(snprintf)
-if test "$ac_cv_func_snprintf" = "yes" ; then
-    PAC_FUNC_NEEDS_DECL([#include <stdio.h>],snprintf)
-fi
-
-# qsort will be used in MPI_Comm_split, if available
-AC_CHECK_FUNCS([qsort])
-
-# if we are using stdarg, we may need va_copy .  Test to see if we have it
-# Since it may be a built-in instead of a function, we must try to
-# compile and link a program that uses it.
-# va_copy is currently used only in src/util/dbg_printf.c, in an obsolete
-# debugging routine.  We may want to withdraw this (saving the
-# test in confdb/aclocal_cc.m4).
-AC_CACHE_CHECK([for va_copy],pac_cv_func_va_copy,[
-AC_TRY_LINK([
-#include <stdarg.h>
-void foo1( char *fmt, ... ) {
-    va_list ap, list;
-    va_start(ap,fmt);
-    va_copy(list,ap);
-    va_end(list);
-    va_end(ap);
-}
-],[foo1("a test %d", 3);],pac_cv_func_va_copy=yes,pac_cv_func_va_copy=no)])
-
-if test "$pac_cv_func_va_copy" = "yes" ; then
-    AC_DEFINE(HAVE_VA_COPY,1,[Define if we have va_copy])
-else
-    AC_CACHE_CHECK([for __va_copy],pac_cv_func___va_copy,[
-    AC_TRY_LINK([
-#include <stdarg.h>
-void foo1( char *fmt, ... ) {
-    va_list ap, list;
-    va_start(ap,fmt);
-    __va_copy(list,ap);
-    va_end(list);
-    va_end(ap);
-}
-],[foo1("a test %d", 3);],pac_cv_func___va_copy=yes,pac_cv_func___va_copy=no)])
-    if test "$pac_cv_func___va_copy" = "yes" ; then
-        AC_DEFINE(HAVE___VA_COPY,1,[Define if we have __va_copy])
-    fi
-fi
-
-PAC_C_MACRO_VA_ARGS
-
-# Check for alloca function.  May set HAVE_ALLOCA_H and HAVE_ALLOCA
-AC_FUNC_ALLOCA
-# We don't use alloca unless USE_ALLOCA is also set.
-AC_ARG_ENABLE(alloca,
-	AC_HELP_STRING([--enable-alloca],
-		[Use alloca to allocate temporary memory if available]),,enable_alloca=no)
-if test "$enable_alloca" = yes ; then
-    AC_DEFINE(USE_ALLOCA,1,[Define if alloca should be used if available])
-fi
-
-if test "$enable_g_mem" != "yes" ; then
-    # Strdup is needed only if memory tracing is not enabled.
-    AC_CHECK_FUNCS(strdup)
-    if test "$ac_cv_func_strdup" = "yes" ; then
-        # Do we need to declare strdup?
-        PAC_FUNC_NEEDS_DECL([#include <string.h>],strdup)
-    fi
-fi
-
-# ----------------------------------------------------------------------------
-# Look for some non-posix, but commonly provided functions
-# ----------------------------------------------------------------------------
-# mkstemp() is a better replacement for mktemp()
-AC_HAVE_FUNCS(mkstemp)
-if test "$ac_cv_func_mkstemp" = "yes" ; then
-    PAC_FUNC_NEEDS_DECL([#include <stdlib.h>],mkstemp)
-fi
-# putenv() sets environment variable
-AC_HAVE_FUNCS(putenv)
-if test "$ac_cv_func_putenv" = "yes" ; then
-    PAC_FUNC_NEEDS_DECL([#include <stdlib.h>],putenv)
-fi
-
-
-# ----------------------------------------------------------------------------
-# Setup other replaceable values
-AC_SUBST(MPILIBNAME)
-AC_SUBST(PMPILIBNAME)
-
-if test "$NEEDSPLIB" = "yes" ; then
-   LPMPILIBNAME="-l${PMPILIBNAME}"
-fi
-AC_SUBST(LPMPILIBNAME)
-
+# ------------
+# MPI_AINT
+# ------------
 # Note that aint_size must be used instead of void_p where the desired check
 # is on the size of MPI_Aint
 aint_size=$ac_cv_sizeof_void_p
@@ -4667,249 +3294,55 @@ if test "$with_aint_size" -gt 0 ; then
         AC_MSG_RESULT([Overriding MPI_Aint to be $aint_size bytes])
    fi
 fi
-MPI_AINT=int
-for type in int long long_long short ; do
-    eval len=\$ac_cv_sizeof_$type
-    if test "$len" = "$aint_size" ; then
-        MPI_AINT=`echo $type | sed -e 's/_/ /'`
-        # Make the sizeof AINT available to other configures
-        MPI_SIZEOF_AINT=$len
-        export MPI_SIZEOF_AINT
-        case $type in
-            int)
-                MPI_AINT_FMT_DEC_SPEC="%d"
-                MPI_AINT_FMT_HEX_SPEC="%x"
-                MPIR_AINT_MAX="INT_MAX"
-                ;;
-            long)
-                MPI_AINT_FMT_DEC_SPEC="%ld"
-                MPI_AINT_FMT_HEX_SPEC="%lx"
-                MPIR_AINT_MAX="LONG_MAX"
-                ;;
-            long_long)
-                MPI_AINT_FMT_DEC_SPEC="%lld"
-                MPI_AINT_FMT_HEX_SPEC="%llx"
-                # tt#1776: if LLONG_MAX is missing, we fix it up in C, b/c it's
-                # easier there.  See mpiiimpl.h.
-                MPIR_AINT_MAX="LLONG_MAX"
-                ;;
-            short)
-                MPI_AINT_FMT_DEC_SPEC="%hd"
-                MPI_AINT_FMT_HEX_SPEC="%hx"
-                MPIR_AINT_MAX="SHRT_MAX"
-                ;;
-            *)
-                AC_MSG_WARN([unable to determine format specifiers for MPI_Aint, defaulting to int])
-                MPI_AINT_FMT_DEC_SPEC="%d"
-                MPI_AINT_FMT_HEX_SPEC="%x"
-                MPIR_AINT_MAX="INT_MAX"
-            ;;
-        esac
-        export MPI_AINT_FMT_DEC_SPEC MPI_AINT_FMT_HEX_SPEC
-        break
-    fi
-done
+if test "$ac_cv_sizeof_void_p" -lt "$aint_size" ; then
+    AC_DEFINE(USE_AINT_FOR_ATTRVAL,1,[Define if MPI_Aint should be used instead of void * for storing attribute values])
+fi
+
+get_c_int_type $aint_size
+MPI_AINT=$pac_retval
+MPI_SIZEOF_AINT=$aint_size
+export MPI_SIZEOF_AINT
+
+case $MPI_AINT in
+    int)
+        MPI_AINT_FMT_DEC_SPEC="%d"
+        MPI_AINT_FMT_HEX_SPEC="%x"
+        MPIR_AINT_MAX="INT_MAX"
+        ;;
+    long)
+        MPI_AINT_FMT_DEC_SPEC="%ld"
+        MPI_AINT_FMT_HEX_SPEC="%lx"
+        MPIR_AINT_MAX="LONG_MAX"
+        ;;
+    long_long)
+        MPI_AINT_FMT_DEC_SPEC="%lld"
+        MPI_AINT_FMT_HEX_SPEC="%llx"
+        # tt#1776: if LLONG_MAX is missing, we fix it up in C, b/c it's
+        # easier there.  See mpiiimpl.h.
+        MPIR_AINT_MAX="LLONG_MAX"
+        ;;
+    short)
+        MPI_AINT_FMT_DEC_SPEC="%hd"
+        MPI_AINT_FMT_HEX_SPEC="%hx"
+        MPIR_AINT_MAX="SHRT_MAX"
+        ;;
+    *)
+        AC_MSG_WARN([unable to determine format specifiers for MPI_Aint, defaulting to int])
+        MPI_AINT_FMT_DEC_SPEC="%d"
+        MPI_AINT_FMT_HEX_SPEC="%x"
+        MPIR_AINT_MAX="INT_MAX"
+    ;;
+esac
+export MPI_AINT_FMT_DEC_SPEC MPI_AINT_FMT_HEX_SPEC
+
 AC_SUBST(MPI_AINT)
 AC_SUBST(MPI_AINT_FMT_DEC_SPEC)
 AC_SUBST(MPI_AINT_FMT_HEX_SPEC)
 AC_DEFINE_UNQUOTED([MPIR_AINT_MAX],[$MPIR_AINT_MAX],[limits.h _MAX constant for MPI_Aint])
 
-# ----------------------------------------------------------------------------
-# MPI_AINT datatype
-# ----------------------------------------------------------------------------
-# Must be done after MPI_Aint type determination but before subconfigures.
-
-# convert to 2-char hex size
-case "$MPI_SIZEOF_AINT" in
-    4)    len_mpi_aint=04 ;;
-    8)    len_mpi_aint=08 ;;
-    16)   len_mpi_aint=10 ;;
-    *)    AC_MSG_ERROR([Unable to convert MPI_SIZEOF_AINT to a hex string.  This is either because we are building on a very strange platform or there is a bug somewhere in configure.]) ;;
-esac
-# MPI_AINT and MPI_OFFSET are already taken, appending a _DATATYPE suffix
-MPI_AINT_DATATYPE=0x4c00${len_mpi_aint}43
-AC_SUBST(MPI_AINT_DATATYPE)
-export MPI_AINT_DATATYPE
-
-# 0x4c000043 is 1275068483 in decimal, add ($MPI_SIZEOF_AINT * 256) and you get
-# the decimal equivalent of the hex number
-MPI_F77_AINT=`expr 1275068483 '+' '(' 256 '*' $MPI_SIZEOF_AINT ')'`
-AC_SUBST(MPI_F77_AINT)
-export MPI_F77_AINT
-# ----------------------------------------------------------------------------
-
-if test "$ac_cv_sizeof_void_p" -lt "$aint_size" ; then
-    AC_DEFINE(USE_AINT_FOR_ATTRVAL,1,[Define if MPI_Aint should be used instead of void * for storing attribute values])
-fi
-
-# with MPI_AINT defined, now we can
-# Get the size for the bsendoverhead
-AC_CHECK_SIZEOF(MPII_Bsend_data_t,0,[
-#define MPI_Datatype int
-typedef $MPI_AINT MPI_Aint;
-
-struct MPIR_Request;
-typedef struct MPIR_Request MPIR_Request;
-
-struct MPIR_Comm;
-typedef struct MPIR_Comm MPIR_Comm;
-
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-
-#include "${main_top_srcdir}/src/include/mpir_bsend.h"]
-)
-if test "$ac_cv_sizeof_MPII_Bsend_data_t" = "0" ; then
-    AC_MSG_ERROR([Unable to determine the size of MPI_BSEND_OVERHEAD])
-    # In the past, a default of 128 was used (still likely good enough),
-    # but the autoconf SIZEOF macro has been changed to ignore the second
-    # argument, so code that depended on the prior defined behavior now
-    # silently breaks.
-fi
-BSEND_OVERHEAD=$ac_cv_sizeof_MPII_Bsend_data_t
-export BSEND_OVERHEAD
-AC_SUBST(BSEND_OVERHEAD)
-
-dnl Configure any subdirectories.  Note that config.status will *not*
-dnl reexecute these!
-dnl
-dnl Gastly problem.  CONFIG_SUBDIRS only adds the directories to the
-dnl list of directories to be configured.  It does NOT control the
-dnl timing of the configuration.  For that, we must do something different.
-dnl Our original solution was to use a separate macro that does cause
-dnl immediate configure; this macro made use of the code that autoconf
-dnl uses to handle the subdir configure.  However, later versions of
-dnl autoconf did this in a way that caused problems, paritcularly with
-dnl errors reported as inconsistent cache files.  Instead, we simply
-dnl invoke the configure scripts (if present) directly.
-
-# Check for the Linux functions for controlling processor affinity.
-# LINUX: sched_setaffinity
-# AIX:   bindprocessor
-# OSX (Leopard): thread_policy_set
-AC_CHECK_FUNCS(sched_setaffinity sched_getaffinity bindprocessor thread_policy_set)
-if test "$ac_cv_func_sched_setaffinity" = "yes" ; then
-    # Test for the cpu process set type
-    AC_CACHE_CHECK([whether cpu_set_t available],pac_cv_have_cpu_set_t,[
-    AC_TRY_COMPILE( [
-#include <sched.h>],[ cpu_set_t t; ],pac_cv_have_cpu_set_t=yes,pac_cv_have_cpu_set_t=no)])
-    if test "$pac_cv_have_cpu_set_t" = yes ; then
-        AC_DEFINE(HAVE_CPU_SET_T,1,[Define if cpu_set_t is defined in sched.h])
-
-	AC_CACHE_CHECK([whether the CPU_SET and CPU_ZERO macros are defined],
-	pac_cv_cpu_set_defined,[
-        AC_TRY_LINK( [
-#include <sched.h>],[ cpu_set_t t; CPU_ZERO(&t); CPU_SET(1,&t); ],
-        pac_cv_cpu_set_defined=yes,pac_cv_cpu_set_defined=no)])
-	if test "$pac_cv_cpu_set_defined" = "yes" ; then
-	    AC_DEFINE(HAVE_CPU_SET_MACROS,1,[Define if CPU_SET and CPU_ZERO defined])
-        fi
-	# FIXME: Some versions of sched_setaffinity return ENOSYS (!),
-	# so we should test for the unfriendly and useless behavior
-    fi
-fi
-if test "$ac_cv_func_thread_policy_set" = yes ; then
-    AC_CACHE_CHECK([whether thread affinity macros defined],
-    pac_cv_have_thread_affinity_policy,[
-    AC_TRY_COMPILE([#include <mach/thread_policy.h>],[
-#if !defined(THREAD_AFFINITY_POLICY) || !defined(THREAD_AFFINITY_TAG_NULL)
-    :'thread macros not defined
-],pac_cv_have_thread_affinity_policy=yes,
-  pac_cv_have_thread_affinity_policy=no)])
-    if test "$pac_cv_have_thread_affinity_policy" = yes ; then
-        AC_DEFINE(HAVE_OSX_THREAD_AFFINITY,1,[Define is the OSX thread affinity policy macros defined])
-    fi
-fi
-
-# -----------------------------------------------------------------------------
-# End of thread configure
-# -----------------------------------------------------------------------------
-
-
-# Checkpointing
-AC_ARG_ENABLE(checkpointing,
-    [AC_HELP_STRING([--enable-checkpointing], [Enable application checkpointing])],
-    [ if test "$enableval" != "no" ; then
-	PAC_CHECK_HEADER_LIB_FATAL(blcr, libcr.h, cr, cr_init)
-	PAC_LIBS_ADD([-lcr])
-        AC_DEFINE(ENABLE_CHECKPOINTING,1,[Application checkpointing enabled])
-      fi ],
-)
-
-# Update the cache first with the results of the previous configure steps
-# We don't use the subdir cache because ensuring that the cache is consistant
-# with the way in which configure wishes to use it is very difficult and
-# too prone to error.
-dnl PAC_SUBDIR_CACHE(always)
-# -----------------------------------------------------------------------------
-# experiment with creating a cache file
-#if test "$CONF_USE_CACHEFILE" = yes ; then
-#    basecachefile=`pwd`/cache.base
-#    set | grep ac_cv > $basecachefile
-#    # Tell other configures to load this file
-#    echo "Creating and exporting the base cache file $basecachefile"
-#    CONF_BASE_CACHEFILE=$basecachefile
-#    export CONF_BASE_CACHEFILE
-#fi
-PAC_CREATE_BASE_CACHE
-# -----------------------------------------------------------------------------
-
-#
-# Configure the device second.  This way, any libraries or variables that
-# it needs can be extracted before building the other subsystems (this is
-# particularly important for the bindings, which may need to know the
-# libraries in order to create the compilation scripts)
-
-user_specified_atomic_primitives=no
-if test "$DEBUG_SUBDIR_CACHE" = yes ; then
-    set -x
-fi
-
-dnl "configure" the device here via subconfigure.m4 files
-m4_map([PAC_SUBCFG_CONFIGURE_SUBSYS], [PAC_SUBCFG_MODULE_LIST])
-
-# now configure any actual recursively configures subsystems, such as ROMIO and
-# hydra, or older components that haven't been updated to a subconfigure.m4 yet
-for subsys in $devsubsystems $subsystems ; do
-    PAC_CONFIG_SUBDIR([$subsys],[],[AC_MSG_ERROR([$subsys configure failed])])
-done
-if test "$DEBUG_SUBDIR_CACHE" = yes -a "$enable_echo" != yes ; then
-    set +x
-fi
-dnl PAC_SUBDIR_CACHE_CLEANUP
-
-# Make subsystems available to makefiles.
-# FIXME does the makefile actually need this?
-subsystems="$devsubsystems $subsystems $bindingsubsystems"
-
-if test "$enable_f77" != "yes" ; then
-    # These are Fortran datatypes ONLY.  Set to null if no Fortran compiler.
-    for name in CHARACTER INTEGER REAL LOGICAL COMPLEX DOUBLE_PRECISION \
-	2INTEGER 2REAL DOUBLE_COMPLEX 2DOUBLE_PRECISION ; do
-	fullname="MPI_$name"
-	eval $fullname=MPI_DATATYPE_NULL
-    done
-    AC_MSG_WARN([Could not define Fortran MPI datatypes for C])
-    AC_DEFINE(HAVE_NO_FORTRAN_MPI_TYPES_IN_C,1,[Define if the Fortran types are not available in C])
-    # Temporary values for MPI_Fint (need help from the Fortran subsystem)
-    MPI_FINT=int
-fi
-AC_SUBST(MPI_CHARACTER)
-AC_SUBST(MPI_INTEGER)
-AC_SUBST(MPI_REAL)
-AC_SUBST(MPI_LOGICAL)
-AC_SUBST(MPI_COMPLEX)
-AC_SUBST(MPI_DOUBLE_PRECISION)
-AC_SUBST(MPI_2INTEGER)
-AC_SUBST(MPI_2REAL)
-AC_SUBST(MPI_DOUBLE_COMPLEX)
-AC_SUBST(MPI_2DOUBLE_PRECISION)
-AC_SUBST(MPI_FINT)
-
+# ------------
+# MPI_OFFSET
+# ------------
 # If ROMIO was successfully configured, then ROMIO will have exported the
 # definition of MPI_OFFSET_TYPE through its localdefs file (created by the
 # ROMIO configure in src/mpi/romio/localdefs).  If MPI_OFFSET_TYPE was not
@@ -5000,31 +3433,10 @@ if test "$enable_f77" = yes -a "$enable_fc" = yes ; then
     fi
 fi
 AC_SUBST(FORTRAN_MPI_OFFSET)
-#
 
-# ----------------------------------------------------------------------------
-# MPI_OFFSET datatype
-# ----------------------------------------------------------------------------
-# must be done after ROMIO configure step
-case "$MPI_SIZEOF_OFFSET" in
-    4)    len_mpi_offset=04 ;;
-    8)    len_mpi_offset=08 ;;
-    16)   len_mpi_offset=10 ;;
-    *)    AC_MSG_ERROR([Unable to convert MPI_SIZEOF_OFFSET to a hex string.  This is either because we are building on a very strange platform or there is a bug somewhere in configure.]) ;;
-esac
-MPI_OFFSET_DATATYPE=0x4c00${len_mpi_offset}44
-AC_SUBST(MPI_OFFSET_DATATYPE)
-export MPI_OFFSET_DATATYPE
-
-# 0x4c000044 is 1275068484 in decimal, add ($MPI_SIZEOF_OFFSET * 256) and you get
-# the decimal equivalent of the hex number
-MPI_F77_OFFSET=`expr 1275068484 '+' '(' 256 '*' $MPI_SIZEOF_OFFSET ')'`
-AC_SUBST(MPI_F77_OFFSET)
-export MPI_F77_OFFSET
-
-# ----------------------------------------------------------------------------
-# MPI_COUNT datatype
-# ----------------------------------------------------------------------------
+# ------------
+# MPI_COUNT
+# ------------
 # quick sanity checking to avoid a bad test immediately below
 AS_IF([test -z "$MPI_SIZEOF_AINT"],
       [AC_MSG_ERROR([size of MPI_Aint is unknown at this stage])])
@@ -5048,75 +3460,438 @@ AC_SUBST([COUNT_KIND])
 AC_DEFINE_UNQUOTED([MPIR_COUNT_MAX],[$MPIR_COUNT_MAX],[limits.h _MAX constant for MPI_Count])
 AC_DEFINE_UNQUOTED(MPIR_Ucount,unsigned $MPI_COUNT,[MPIR_Ucount is an unsigned MPI_Count-sized integer])
 
-AS_CASE([$MPI_SIZEOF_COUNT],
-        [4], [len_mpi_count=04],
-        [8], [len_mpi_count=08],
-        [16],[len_mpi_count=10],
-        [AC_MSG_ERROR([Unable to convert MPI_SIZEOF_COUNT to a hex string!])])
-MPI_COUNT_DATATYPE=0x4c00${len_mpi_count}45
-AC_SUBST([MPI_COUNT_DATATYPE])
+#--------------------------------------------------------------------------------
+# Now we collected all the datatype sizes, we can set values for MPI builtin datatypes
+AC_MSG_CHECKING([MPI datatypes])
+# PAC_SET_MPI_TYPE(hex_idx, NAME, len)
+PAC_SET_MPI_TYPE(01, MPI_CHAR, 1)
+PAC_SET_MPI_TYPE(02, MPI_UNSIGNED_CHAR, 1)
+PAC_SET_MPI_TYPE(03, MPI_SHORT, $ac_cv_sizeof_short)
+PAC_SET_MPI_TYPE(04, MPI_UNSIGNED_SHORT, $ac_cv_sizeof_short)
+PAC_SET_MPI_TYPE(05, MPI_INT, $ac_cv_sizeof_int)
+PAC_SET_MPI_TYPE(06, MPI_UNSIGNED, $ac_cv_sizeof_int)
+PAC_SET_MPI_TYPE(07, MPI_LONG, $ac_cv_sizeof_long)
+PAC_SET_MPI_TYPE(08, MPI_UNSIGNED_LONG, $ac_cv_sizeof_long)
+PAC_SET_MPI_TYPE(09, MPI_LONG_LONG_INT, $ac_cv_sizeof_long_long)
+PAC_SET_MPI_TYPE(0a, MPI_FLOAT, $ac_cv_sizeof_float)
+PAC_SET_MPI_TYPE(0b, MPI_DOUBLE, $ac_cv_sizeof_double)
+PAC_SET_MPI_TYPE(0c, MPI_LONG_DOUBLE, $ac_cv_sizeof_long_double)
+PAC_SET_MPI_TYPE(0d, MPI_BYTE, 1)
+PAC_SET_MPI_TYPE(0e, MPI_WCHAR, $ac_cv_sizeof_wchar_t)
+PAC_SET_MPI_TYPE(0f, MPI_PACKED, 1)
+PAC_SET_MPI_LBUB(10, MPI_LB)
+PAC_SET_MPI_LBUB(11, MPI_UB)
 
-# 0x4c000045 is 1275068485 in decimal, add ($MPI_SIZEOF_COUNT * 256) and you get
-# the decimal equivalent of the hex number
-MPI_F77_COUNT=`expr 1275068485 '+' '(' 256 '*' $MPI_SIZEOF_OFFSET ')'`
-AC_SUBST([MPI_F77_COUNT])
+PAC_SET_MPI_PAIRTYPE(00, MPI_FLOAT_INT)
+PAC_SET_MPI_PAIRTYPE(01, MPI_DOUBLE_INT)
+PAC_SET_MPI_PAIRTYPE(02, MPI_LONG_INT)
+PAC_SET_MPI_PAIRTYPE(03, MPI_SHORT_INT)
+PAC_SET_MPI_TYPE(16, MPI_2INT, $ac_cv_sizeof_two_int)
+PAC_SET_MPI_PAIRTYPE(04, MPI_LONG_DOUBLE_INT)
+PAC_SET_MPI_TYPE(18, MPI_SIGNED_CHAR, 1)
+PAC_SET_MPI_TYPE(19, MPI_UNSIGNED_LONG_LONG, $ac_cv_sizeof_long_long)
+PAC_SET_MPI_TYPE(1a, MPI_CHARACTER, $pac_cv_f77_sizeof_character)
+PAC_SET_MPI_TYPE(1b, MPI_INTEGER, $pac_cv_f77_sizeof_integer)
+PAC_SET_MPI_TYPE(1c, MPI_REAL, $pac_cv_f77_sizeof_real)
+PAC_SET_MPI_TYPE(1d, MPI_LOGICAL, $pac_cv_f77_sizeof_integer)
+PAC_SET_MPI_TYPE(1e, MPI_COMPLEX, $pac_cv_f77_sizeof_real, 2)
+PAC_SET_MPI_TYPE(1f, MPI_DOUBLE_PRECISION, $pac_cv_f77_sizeof_double_precision)
+PAC_SET_MPI_TYPE(20, MPI_2INTEGER, $pac_cv_f77_sizeof_integer, 2)
+PAC_SET_MPI_TYPE(21, MPI_2REAL, $pac_cv_f77_sizeof_real, 2)
+PAC_SET_MPI_TYPE(22, MPI_DOUBLE_COMPLEX, $pac_cv_f77_sizeof_double_precision, 2)
+PAC_SET_MPI_TYPE(23, MPI_2DOUBLE_PRECISION, $pac_cv_f77_sizeof_double_precision, 2)
+PAC_SET_MPI_TYPE(24, MPI_2COMPLEX, $pac_cv_f77_sizeof_real, 4)
+PAC_SET_MPI_TYPE(25, MPI_2DOUBLE_COMPLEX, $pac_cv_f77_sizeof_double_precision, 4)
+
+PAC_SET_MPI_TYPE(27, MPI_REAL4, $pac_cv_f77_sizeof_real4)
+PAC_SET_MPI_TYPE(28, MPI_COMPLEX8, $pac_cv_f77_sizeof_real4, 2)
+PAC_SET_MPI_TYPE(29, MPI_REAL8, $pac_cv_f77_sizeof_real8)
+PAC_SET_MPI_TYPE(2a, MPI_COMPLEX16, $pac_cv_f77_sizeof_real8, 2)
+PAC_SET_MPI_TYPE(2b, MPI_REAL16, $pac_cv_f77_sizeof_real16)
+PAC_SET_MPI_TYPE(2c, MPI_COMPLEX32, $pac_cv_f77_sizeof_real16, 2)
+PAC_SET_MPI_TYPE(2d, MPI_INTEGER1, $pac_cv_f77_sizeof_integer1)
+
+PAC_SET_MPI_TYPE(2f, MPI_INTEGER2, $pac_cv_f77_sizeof_integer2)
+PAC_SET_MPI_TYPE(30, MPI_INTEGER4, $pac_cv_f77_sizeof_integer4)
+PAC_SET_MPI_TYPE(31, MPI_INTEGER8, $pac_cv_f77_sizeof_integer8)
+PAC_SET_MPI_TYPE(32, MPI_INTEGER16, $pac_cv_f77_sizeof_integer16)
+PAC_SET_MPI_TYPE(33, MPIR_CXX_BOOL, $ac_cv_sizeof_bool)
+PAC_SET_MPI_TYPE(34, MPIR_CXX_FLOAT_COMPLEX, $ac_cv_sizeof_Complex)
+PAC_SET_MPI_TYPE(35, MPIR_CXX_DOUBLE_COMPLEX, $ac_cv_sizeof_DoubleComplex)
+PAC_SET_MPI_TYPE(36, MPIR_CXX_LONG_DOUBLE_COMPLEX, $ac_cv_sizeof_LongDoubleComplex)
+PAC_SET_MPI_TYPE(37, MPI_INT8_T, 1)
+PAC_SET_MPI_TYPE(38, MPI_INT16_T, 2)
+PAC_SET_MPI_TYPE(39, MPI_INT32_T, 4)
+PAC_SET_MPI_TYPE(3a, MPI_INT64_T, 8)
+PAC_SET_MPI_TYPE(3b, MPI_UINT8_T, 1)
+PAC_SET_MPI_TYPE(3c, MPI_UINT16_T, 2)
+PAC_SET_MPI_TYPE(3d, MPI_UINT32_T, 4)
+PAC_SET_MPI_TYPE(3e, MPI_UINT64_T, 8)
+PAC_SET_MPI_TYPE(3f, MPI_C_BOOL, $ac_cv_sizeof__Bool)
+PAC_SET_MPI_TYPE(40, MPI_C_FLOAT_COMPLEX, $ac_cv_sizeof_float__Complex)
+PAC_SET_MPI_TYPE(41, MPI_C_DOUBLE_COMPLEX, $ac_cv_sizeof_double__Complex)
+PAC_SET_MPI_TYPE(42, MPI_C_LONG_DOUBLE_COMPLEX, $ac_cv_sizeof_long_double__Complex)
+PAC_SET_MPI_TYPE(43, MPI_AINT_DATATYPE, $MPI_SIZEOF_AINT)
+PAC_SET_MPI_TYPE(44, MPI_OFFSET_DATATYPE, $MPI_SIZEOF_OFFSET)
+PAC_SET_MPI_TYPE(45, MPI_COUNT_DATATYPE, $MPI_SIZEOF_COUNT)
+PAC_SET_MPI_TYPE(46, MPIX_C_FLOAT16, 2)
+AC_MSG_RESULT([done])
+
+# aliases
+PAC_SET_MPI_DATATYPE_ALIAS(MPI_LONG_LONG, MPI_LONG_LONG_INT)
+PAC_SET_MPI_DATATYPE_ALIAS(MPI_C_COMPLEX, MPI_C_FLOAT_COMPLEX)
+
+# ------------------------------------------------------------------------
+# Test if  type_tag_for_datatype is agnostic to modifiers such as const, volatile, and restrict
+# if not, the type tags are disabled to avoid compiler warings. A new type_tag for const etc. does
+# does not help, since only the latest type_tag definition is used. Type tags are defined in mpi.h,
+# therefore, they must be also be activated/deavtivated there
+PAC_PUSH_FLAG([CFLAGS])
+PAC_C_CHECK_COMPILER_OPTION([-Werror],[CFLAGS="$CFLAGS -Werror"])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+    typedef int TEST_Datatype;
+    #define TEST_INT ((TEST_Datatype)0x44)
+    static const TEST_Datatype test_int  __attribute__((type_tag_for_datatype(TEST,int)))  = TEST_INT;
+    void test(const void* buffer, TEST_Datatype datatype)__attribute__((pointer_with_type_tag(TEST,1,2)));
+    ]],[[
+    const int buf[10];
+    test(buf, TEST_INT);
+    ]])],ac_attr_support=yes, ac_attr_support=no)
+if test "$ac_attr_support" = yes
+then
+    DISABLE_TAG_SUPPORT="#undef NO_TAGS_WITH_MODIFIERS"
+else
+    DISABLE_TAG_SUPPORT="#define NO_TAGS_WITH_MODIFIERS 1"
+fi
+PAC_POP_FLAG([CFLAGS])
+AC_SUBST(DISABLE_TAG_SUPPORT)
+
+# ----------------------------------------------------------------------------
+# Check for the alignment rules moves with types int64_t etc.  These
+# are used in the datatype code to perform pack and unpack operations.
+# These only determine if different alignments *work*, not whether they
+# work efficiently.  The datatype pack code (should) allow the developer
+# to include stricter alignment rules than are needed for correctness to
+# get better performance.
+if test "$ac_cv_c_int64_t" != "no" -o -n "$INT64_T" ; then
+    default_int64_t_alignment=${CROSS_INT64_T_ALIGNMENT:-"unknown"}
+    if test -z "$INT64_T" ; then
+         if test "$ac_cv_c_int64_t" = yes ; then
+	     INT64_T="int64_t"
+         else
+             INT64_T="$ac_cv_int64_t"
+         fi
+    fi
+    # We use the type that we're going use for int64.
+    AC_CACHE_CHECK([for alignment restrictions on $INT64_T],pac_cv_int64_t_alignment,[
+        AC_RUN_IFELSE([AC_LANG_SOURCE([[
+            #include <sys/types.h>
+            #include <stdlib.h>
+            int main(int argc, char **argv )
+            {
+                $INT64_T *p1, v;
+                char    *buf_p = (char *)malloc( 64 ), *bp;
+                bp = buf_p;
+                /* Make bp aligned on 4, not 8 bytes */
+                if (!( (long)bp & 0x7 ) ) bp += 4;
+                p1 = ($INT64_T *)bp;
+                v = -1;
+                *p1 = v;
+                if (!( (long)bp & 0x3 ) ) bp += 2;
+                p1 = ($INT64_T *)bp;
+                *p1 = 1;
+                if (!( (long)bp & 0x1 ) ) bp += 1;
+                p1 = ($INT64_T *)bp;
+                *p1 = 1;
+                return 0;
+            }
+        ]])],pac_cv_int64_t_alignment=no,pac_cv_int64_t_alignment=yes,pac_cv_int64_t_alignment=$default_int64_t_alignment)
+    ])
+    if test "$pac_cv_int64_t_alignment" = "no" ; then
+         AC_DEFINE(HAVE_ANY_INT64_T_ALIGNMENT,1,[Define if int64_t works with any alignment])
+    fi
+fi
+
+if test "$ac_cv_int32_t" != "no" ; then
+    default_int32_t_alignment=${CROSS_INT32_T_ALIGNMENT:-"unknown"}
+    if test -z "$INT32_T" ; then
+         if test "$ac_cv_c_int32_t" = yes ; then
+	     INT32_T="int32_t"
+         else
+             INT32_T="$ac_cv_int32_t"
+         fi
+    fi
+
+    AC_CACHE_CHECK([for alignment restrictions on int32_t],pac_cv_int32_t_alignment,[
+        AC_RUN_IFELSE([AC_LANG_SOURCE([[
+            #include <sys/types.h>
+            #include <stdlib.h>
+            int main(int argc, char **argv )
+            {
+                $INT32_T *p1, v;
+                char    *buf_p = (char *)malloc( 64 ), *bp;
+                bp = buf_p;
+                /* Make bp aligned on 4, not 8 bytes */
+                if (!( (long)bp & 0x7 ) ) bp += 4;
+                p1 = ($INT32_T *)bp;
+                v = -1;
+                *p1 = v;
+                if (!( (long)bp & 0x3 ) ) bp += 2;
+                p1 = ($INT32_T *)bp;
+                *p1 = 1;
+                if (!( (long)bp & 0x1 ) ) bp += 1;
+                p1 = ($INT32_T *)bp;
+                *p1 = 1;
+                return 0;
+            }
+        ]])],pac_cv_int32_t_alignment=no,pac_cv_int32_t_alignment=yes,pac_cv_int32_t_alignment=$default_int32_t_alignment)
+    ])
+    if test "$pac_cv_int32_t_alignment" = "no" ; then
+         AC_DEFINE(HAVE_ANY_INT32_T_ALIGNMENT,1,[Define if int32_t works with any alignment])
+    fi
+fi
+
+# -----------------------------------------------------------------------------
+# Check for support of enable-coverage.  Put this near the end of the tests
+# because the coverage options may affect the other tests.
+PAC_ENABLE_COVERAGE
+
+# -----------------------------------------------------------------------------
+# Check for a specific header
+# Grrr.  OS/X fails the test for sys/uio.h because uio *requires* sys/types.h
+# to compile.  Thus, we'll make that a separate test
+# stddef.h is sometimes needed for types like wchar_t
+AC_CHECK_HEADERS(stdlib.h stdarg.h sys/types.h string.h inttypes.h limits.h stddef.h errno.h sys/socket.h sys/time.h unistd.h endian.h assert.h sys/param.h)
+AC_CACHE_CHECK([for sys/uio.h],ac_cv_header_sys_uio_h,[
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+        #include <sys/types.h>
+        #include <sys/uio.h>
+        ]],[[
+        int a;
+        ]])],ac_cv_header_sys_uio_h=yes,ac_cv_header_sys_uio_h=no)
+])
+if test "$ac_cv_header_sys_uio_h" = yes ; then
+    AC_DEFINE(HAVE_SYS_UIO_H,1,[Define if you have the <sys/uio.h> header file.])
+fi
+
+# Check for special types
+AC_TYPE_SIZE_T
+
+# These are used to support timeouts
+AC_CHECK_FUNCS(setitimer alarm)
+# These are used for error reporting
+AC_CHECK_FUNCS(vsnprintf vsprintf)
+if test "$ac_cv_func_vsnprintf" = "yes" ; then
+    # vsnprintf may be declared in stdio.h and may need stdarg.h
+    PAC_FUNC_NEEDS_DECL([#include <stdio.h>
+#include <stdarg.h>],vsnprintf)
+fi
+# We would like to use strerror in the file namepublisher; it is also used
+# in MPIR_Strerror
+AC_CHECK_FUNCS(strerror strncasecmp)
+AC_FUNC_STRERROR_R
+if test "$ac_cv_func_strerror_r" = "yes" ; then
+    PAC_FUNC_NEEDS_DECL([#include <string.h>],strerror_r)
+fi
+
+# Use snprintf if possible when creating messages
+AC_CHECK_FUNCS(snprintf)
+if test "$ac_cv_func_snprintf" = "yes" ; then
+    PAC_FUNC_NEEDS_DECL([#include <stdio.h>],snprintf)
+fi
+
+# qsort will be used in MPI_Comm_split, if available
+AC_CHECK_FUNCS([qsort])
+
+PAC_C_MACRO_VA_ARGS
+
+if test "$enable_g_mem" != "yes" ; then
+    # Strdup is needed only if memory tracing is not enabled.
+    AC_CHECK_FUNCS(strdup)
+    if test "$ac_cv_func_strdup" = "yes" ; then
+        # Do we need to declare strdup?
+        PAC_FUNC_NEEDS_DECL([#include <string.h>],strdup)
+    fi
+fi
+
+# ----------------------------------------------------------------------------
+# Look for some non-posix, but commonly provided functions
+# ----------------------------------------------------------------------------
+# mkstemp() is a better replacement for mktemp()
+AC_CHECK_FUNCS(mkstemp)
+if test "$ac_cv_func_mkstemp" = "yes" ; then
+    PAC_FUNC_NEEDS_DECL([#include <stdlib.h>],mkstemp)
+fi
+# putenv() sets environment variable
+AC_CHECK_FUNCS(putenv)
+if test "$ac_cv_func_putenv" = "yes" ; then
+    PAC_FUNC_NEEDS_DECL([#include <stdlib.h>],putenv)
+fi
+
+
+# ----------------------------------------------------------------------------
+# Setup other replaceable values
+AC_SUBST(MPILIBNAME)
+AC_SUBST(PMPILIBNAME)
+
+if test "$NEEDSPLIB" = "yes" ; then
+   LPMPILIBNAME="-l${PMPILIBNAME}"
+fi
+AC_SUBST(LPMPILIBNAME)
 
 # ----------------------------------------------------------------------------
 
-#
-# Set size of MPI_Status.  Must come after MPI_Count determination.
-#
+# with MPI_AINT defined, now we can
+# Get the size for the bsendoverhead
+AC_CHECK_SIZEOF(MPII_Bsend_data_t,0,[
+#define MPI_Datatype int
+typedef $MPI_AINT MPI_Aint;
 
-#
-# The size of MPI_Status is needed for the Fortran interface.
-#
-# WARNING!!! this is a spot where we duplicate code from mpi.h.in and it *must*
-# be kept in sync in order to make a proper computation
-AC_CACHE_CHECK([for size of MPI_Status],[pac_cv_sizeof_mpi_status],[
-dnl "double-quote" (in m4), otherwise you end up with a heinous bug because of
-dnl the array subscripting below
-[
-    rm -f pac_mpi_status.h
-    cat > pac_mpi_status.h <<_EOF
-typedef struct {
-    int count_lo;
-    int count_hi_and_cancelled;
-    int MPI_SOURCE;
-    int MPI_TAG;
-    int MPI_ERROR;
-} MPI_Status;
-_EOF
-]
+struct MPIR_Request;
+typedef struct MPIR_Request MPIR_Request;
 
-dnl just compute it, since a 1s-complement or sign-and-magnitude machine is
-dnl *highly* unlikely.  Users will report the error if it is ever
-dnl encountered, which will be safer than attempting some never-tested
-dnl default fallback.
-    AC_COMPUTE_INT([pac_cv_sizeof_mpi_status],
-                   [sizeof(MPI_Status)],
-                   [#include "pac_mpi_status.h"],
-                   [AC_MSG_ERROR([unable to compute status size, are you compiling on a non-2s-complement host?])])
-    rm -f pac_mpi_status.h
-])
+struct MPIR_Comm;
+typedef struct MPIR_Comm MPIR_Comm;
 
-SIZEOF_MPI_STATUS=$pac_cv_sizeof_mpi_status
-export SIZEOF_MPI_STATUS
-AC_SUBST([SIZEOF_MPI_STATUS])
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
 
-if test "$enable_f77" = yes -a -z "$MPI_STATUS_SIZE" ; then
-    if test -n "$SIZEOF_MPI_STATUS" ; then
-        # compute from the C sizeof
-        AS_VAR_ARITH([MPI_STATUS_SIZE],[$SIZEOF_MPI_STATUS / $ac_cv_sizeof_int])
-        if test "$MPI_STATUS_SIZE" = "0" ; then
-            AC_MSG_ERROR([Could not compute the size of MPI_Status])
+#include "${main_top_srcdir}/src/include/mpir_bsend.h"]
+)
+if test "$ac_cv_sizeof_MPII_Bsend_data_t" = "0" ; then
+    AC_MSG_ERROR([Unable to determine the size of MPI_BSEND_OVERHEAD])
+    # In the past, a default of 128 was used (still likely good enough),
+    # but the autoconf SIZEOF macro has been changed to ignore the second
+    # argument, so code that depended on the prior defined behavior now
+    # silently breaks.
+fi
+BSEND_OVERHEAD=$ac_cv_sizeof_MPII_Bsend_data_t
+export BSEND_OVERHEAD
+AC_SUBST(BSEND_OVERHEAD)
+
+dnl Configure any subdirectories.  Note that config.status will *not*
+dnl reexecute these!
+dnl
+dnl Gastly problem.  CONFIG_SUBDIRS only adds the directories to the
+dnl list of directories to be configured.  It does NOT control the
+dnl timing of the configuration.  For that, we must do something different.
+dnl Our original solution was to use a separate macro that does cause
+dnl immediate configure; this macro made use of the code that autoconf
+dnl uses to handle the subdir configure.  However, later versions of
+dnl autoconf did this in a way that caused problems, paritcularly with
+dnl errors reported as inconsistent cache files.  Instead, we simply
+dnl invoke the configure scripts (if present) directly.
+
+# Check for the Linux functions for controlling processor affinity.
+# LINUX: sched_setaffinity
+# AIX:   bindprocessor
+# OSX (Leopard): thread_policy_set
+AC_CHECK_FUNCS(sched_setaffinity sched_getaffinity bindprocessor thread_policy_set)
+if test "$ac_cv_func_sched_setaffinity" = "yes" ; then
+    # Test for the cpu process set type
+    AC_CACHE_CHECK([whether cpu_set_t available],pac_cv_have_cpu_set_t,[
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sched.h>]],[[cpu_set_t t;]])],
+        pac_cv_have_cpu_set_t=yes,pac_cv_have_cpu_set_t=no)])
+    if test "$pac_cv_have_cpu_set_t" = yes ; then
+        AC_DEFINE(HAVE_CPU_SET_T,1,[Define if cpu_set_t is defined in sched.h])
+
+	AC_CACHE_CHECK([whether the CPU_SET and CPU_ZERO macros are defined],
+	pac_cv_cpu_set_defined,[
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sched.h>]],[[cpu_set_t t; CPU_ZERO(&t); CPU_SET(1,&t);]])],
+            pac_cv_cpu_set_defined=yes,pac_cv_cpu_set_defined=no)])
+	if test "$pac_cv_cpu_set_defined" = "yes" ; then
+	    AC_DEFINE(HAVE_CPU_SET_MACROS,1,[Define if CPU_SET and CPU_ZERO defined])
         fi
-    else
-        AC_MSG_ERROR([MPI_STATUS_SIZE was not defined!])
+	# FIXME: Some versions of sched_setaffinity return ENOSYS (!),
+	# so we should test for the unfriendly and useless behavior
     fi
-fi # enable_f77 and mpi_status_size not set
+fi
+if test "$ac_cv_func_thread_policy_set" = yes ; then
+    AC_CACHE_CHECK([whether thread affinity macros defined], pac_cv_have_thread_affinity_policy,[
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+            #include <mach/thread_policy.h>
+            ]],[[
+            #if !defined(THREAD_AFFINITY_POLICY) || !defined(THREAD_AFFINITY_TAG_NULL)
+                :'thread macros not defined
+            ]])],
+            pac_cv_have_thread_affinity_policy=yes,
+            pac_cv_have_thread_affinity_policy=no)
+    ])
+    if test "$pac_cv_have_thread_affinity_policy" = yes ; then
+        AC_DEFINE(HAVE_OSX_THREAD_AFFINITY,1,[Define is the OSX thread affinity policy macros defined])
+    fi
+fi
+
+# -----------------------------------------------------------------------------
+# End of thread configure
+# -----------------------------------------------------------------------------
+
+
+# Checkpointing
+AC_ARG_ENABLE(checkpointing,
+    [AS_HELP_STRING([--enable-checkpointing], [Enable application checkpointing])],
+    [ if test "$enableval" != "no" ; then
+	PAC_CHECK_HEADER_LIB_FATAL(blcr, libcr.h, cr, cr_init)
+        AC_DEFINE(ENABLE_CHECKPOINTING,1,[Application checkpointing enabled])
+      fi ],
+)
+
+# Update the cache first with the results of the previous configure steps
+# We don't use the subdir cache because ensuring that the cache is consistent
+# with the way in which configure wishes to use it is very difficult and
+# too prone to error.
+dnl PAC_SUBDIR_CACHE(always)
+# -----------------------------------------------------------------------------
+# experiment with creating a cache file
+#if test "$CONF_USE_CACHEFILE" = yes ; then
+#    basecachefile=`pwd`/cache.base
+#    set | grep ac_cv > $basecachefile
+#    # Tell other configures to load this file
+#    echo "Creating and exporting the base cache file $basecachefile"
+#    CONF_BASE_CACHEFILE=$basecachefile
+#    export CONF_BASE_CACHEFILE
+#fi
+PAC_CREATE_BASE_CACHE
+# -----------------------------------------------------------------------------
+
+#
+# Configure the device second.  This way, any libraries or variables that
+# it needs can be extracted before building the other subsystems (this is
+# particularly important for the bindings, which may need to know the
+# libraries in order to create the compilation scripts)
+
+user_specified_atomic_primitives=no
+if test "$DEBUG_SUBDIR_CACHE" = yes ; then
+    set -x
+fi
+
+dnl "configure" the device here via subconfigure.m4 files
+m4_map([PAC_SUBCFG_CONFIGURE_SUBSYS], [PAC_SUBCFG_MODULE_LIST])
+
+# now configure any actual recursively configures subsystems, such as ROMIO and
+# hydra, or older components that haven't been updated to a subconfigure.m4 yet
+PAC_PUSH_ALL_FLAGS()
+PAC_RESET_ALL_FLAGS()
+for subsys in $devsubsystems $subsystems ; do
+    PAC_CONFIG_SUBDIR([$subsys],[],[AC_MSG_ERROR([$subsys configure failed])])
+done
+PAC_POP_ALL_FLAGS()
+if test "$DEBUG_SUBDIR_CACHE" = yes -a "$enable_echo" != yes ; then
+    set +x
+fi
+dnl PAC_SUBDIR_CACHE_CLEANUP
+
+# Make subsystems available to makefiles.
+# FIXME does the makefile actually need this?
+subsystems="$devsubsystems $subsystems $bindingsubsystems"
+
+# MPI_STATUS_SIZE is hardcoded and need to be synchronized with mpi.h
+MPI_STATUS_SIZE=5
 AC_SUBST([MPI_STATUS_SIZE])
-MPIF_STATUS_SIZE=$MPI_STATUS_SIZE
-AC_DEFINE_UNQUOTED([MPIF_STATUS_SIZE],[$MPIF_STATUS_SIZE],[Size of an MPI_STATUS, in Fortran, in Fortran integers])
 
 if test "$enable_f77" = yes ; then
     # Check if multiple __attribute__((alias)) is available
@@ -5188,10 +3963,8 @@ dnl steps because it does not depend on them.
 # that the correct decisions are made since this configure happens before the
 # MPICH library is built.
 MPICH_ENABLE_CXX=$enable_cxx
-MPICH_ENABLE_F77=$enable_f77
 MPICH_ENABLE_FC=$enable_fc
 export MPICH_ENABLE_CXX
-export MPICH_ENABLE_F77
 export MPICH_ENABLE_FC
 AM_CONDITIONAL([BUILD_CXX_BINDING],[test "$enable_cxx" = "yes"])
 AM_CONDITIONAL([BUILD_F77_BINDING],[test "$enable_f77" = "yes"])
@@ -5230,7 +4003,7 @@ dnl from the file.
 dnl
 dnl Run a setup command for any external modules (normally, this is empty)
 dnl Pass a subset of the environment to the invoked process.
-AC_OUTPUT_COMMANDS([
+AC_CONFIG_COMMANDS([external_setups],[
 for prog in $EXTERNAL_SETUPS - ; do
     if test "$prog" != "-" ; then
       dir=`dirname $prog`
@@ -5270,10 +4043,12 @@ dnl
 dnl If we rerun configure, place a file in the lib directory with the
 dnl date.  We can use this to avoid rebuilding the library when
 dnl a build aborts due to an error (this is intended to help developers)
-AC_OUTPUT_COMMANDS([if [ ! -d lib ] ; then mkdir lib ; fi
-date > lib/newconfig])
+AC_CONFIG_COMMANDS([lib/newconfig],[
+    mkdir -p lib
+    date > lib/newconfig
+])
 
-AC_OUTPUT_COMMANDS([chmod a+x test/commands/cmdtests])
+AC_CONFIG_COMMANDS([chmod],[chmod a+x test/commands/cmdtests])
 
 
 AC_DEFINE(HAVE_MPICHCONF,1,[Define so that we can test whether the mpichconf.h file has been included])
@@ -5344,7 +4119,7 @@ if test "X$enable_shared" = "Xyes" ; then
             PAC_POP_FLAG([LDFLAGS])
 
             # Technically we may not be able to use the same form of the argument
-            # for all four compilers (CC/CXX/F77/FC).  But we only think this is
+            # for all three compilers (CC/CXX/FC).  But we only think this is
             # necessary for Darwin for now, so this unconditional, single-var
             # approximation will work for now.
             if test "X$pac_cv_wl_flat_namespace_works" = "Xyes" ; then
@@ -5384,103 +4159,7 @@ if test "X$enable_shared" = "Xyes" ; then
     )
 fi
 
-# Set F08 versions of datatypes, which have type MPI_Datatype and are not integers anymore.
-# If the correspoinding F77 datatypes exist, i.e., not MPI_DATATYPE_NULL, we simply use their
-# integer value (already converted into decimal) in F08 counterparts. Otherwise, we use
-# MPI_VAL value of F08 MPI_DATATYPE_NULL.
-# We put the code at the end to ensure all F77 datatypes have been set.
-
 if test "X$f08_works" = "Xyes"; then
-    for type in INTEGER1 INTEGER2 INTEGER4 INTEGER8 INTEGER16 \
-                REAL4 REAL8 REAL16 \
-                COMPLEX8 COMPLEX16 COMPLEX32; do
-        eval f77typename=F77_$type
-        eval f77typevalue=\$$f77typename
-        if test "$f77typevalue" = MPI_DATATYPE_NULL ; then
-            eval F08_$type=MPI_DATATYPE_NULL%MPI_VAL
-        else
-            eval F08_$type=$f77typevalue
-        fi
-    done
-    AC_SUBST(F08_INTEGER1)
-    AC_SUBST(F08_INTEGER2)
-    AC_SUBST(F08_INTEGER4)
-    AC_SUBST(F08_INTEGER8)
-    AC_SUBST(F08_INTEGER16)
-    AC_SUBST(F08_REAL4)
-    AC_SUBST(F08_REAL8)
-    AC_SUBST(F08_REAL16)
-    AC_SUBST(F08_COMPLEX8)
-    AC_SUBST(F08_COMPLEX16)
-    AC_SUBST(F08_COMPLEX32)
-
-    for type in PACKED UB LB BYTE \
-                CHAR SIGNED_CHAR UNSIGNED_CHAR WCHAR SHORT \
-                UNSIGNED_SHORT UNSIGNED INT LONG UNSIGNED_INT UNSIGNED_LONG \
-                FLOAT DOUBLE LONG_DOUBLE LONG_LONG_INT \
-                UNSIGNED_LONG_LONG LONG_LONG FLOAT_INT DOUBLE_INT \
-                LONG_INT SHORT_INT "2INT" LONG_DOUBLE_INT \
-                INT8_T INT16_T INT32_T INT64_T            \
-                UINT8_T UINT16_T UINT32_T UINT64_T        \
-                C_BOOL C_FLOAT_COMPLEX C_COMPLEX C_DOUBLE_COMPLEX  C_LONG_DOUBLE_COMPLEX \
-                AINT OFFSET COUNT \
-                CXX_BOOL CXX_FLOAT_COMPLEX CXX_DOUBLE_COMPLEX CXX_LONG_DOUBLE_COMPLEX; do
-        eval f77typename=MPI_F77_$type
-        eval f77typevalue=\$$f77typename
-        if test "$f77typevalue" = MPI_DATATYPE_NULL ; then
-            eval F08_$type=MPI_DATATYPE_NULL%MPI_VAL
-        else
-            eval F08_$type=$f77typevalue
-        fi
-    done
-    AC_SUBST(F08_PACKED)
-    AC_SUBST(F08_UB)
-    AC_SUBST(F08_LB)
-    AC_SUBST(F08_BYTE)
-    AC_SUBST(F08_CHAR)
-    AC_SUBST(F08_SIGNED_CHAR)
-    AC_SUBST(F08_UNSIGNED_CHAR)
-    AC_SUBST(F08_WCHAR)
-    AC_SUBST(F08_SHORT)
-    AC_SUBST(F08_UNSIGNED_SHORT)
-    AC_SUBST(F08_UNSIGNED)
-    AC_SUBST(F08_INT)
-    AC_SUBST(F08_LONG)
-    AC_SUBST(F08_UNSIGNED_INT)
-    AC_SUBST(F08_UNSIGNED_LONG)
-    AC_SUBST(F08_FLOAT)
-    AC_SUBST(F08_DOUBLE)
-    AC_SUBST(F08_LONG_DOUBLE)
-    AC_SUBST(F08_LONG_LONG_INT)
-    AC_SUBST(F08_UNSIGNED_LONG_LONG)
-    AC_SUBST(F08_LONG_LONG)
-    AC_SUBST(F08_FLOAT_INT)
-    AC_SUBST(F08_DOUBLE_INT)
-    AC_SUBST(F08_LONG_INT)
-    AC_SUBST(F08_SHORT_INT)
-    AC_SUBST(F08_2INT)
-    AC_SUBST(F08_LONG_DOUBLE_INT)
-    AC_SUBST(F08_INT8_T)
-    AC_SUBST(F08_INT16_T)
-    AC_SUBST(F08_INT32_T)
-    AC_SUBST(F08_INT64_T)
-    AC_SUBST(F08_UINT8_T)
-    AC_SUBST(F08_UINT16_T)
-    AC_SUBST(F08_UINT32_T)
-    AC_SUBST(F08_UINT64_T)
-    AC_SUBST(F08_C_BOOL)
-    AC_SUBST(F08_C_FLOAT_COMPLEX)
-    AC_SUBST(F08_C_COMPLEX)
-    AC_SUBST(F08_C_DOUBLE_COMPLEX)
-    AC_SUBST(F08_C_LONG_DOUBLE_COMPLEX)
-    AC_SUBST(F08_AINT)
-    AC_SUBST(F08_OFFSET)
-    AC_SUBST(F08_COUNT)
-    AC_SUBST(F08_CXX_BOOL)
-    AC_SUBST(F08_CXX_FLOAT_COMPLEX)
-    AC_SUBST(F08_CXX_DOUBLE_COMPLEX)
-    AC_SUBST(F08_CXX_LONG_DOUBLE_COMPLEX)
-
     AS_CASE([$MPI_AINT],
         [short],       [F08_C_AINT="c_short"],
         [int],         [F08_C_AINT="c_int"],
@@ -5521,9 +4200,23 @@ fi
 AC_SUBST(pkgconfigdir)
 export pkgconfigdir
 
+if test "$f08_works" = "yes" ; then
+    PAC_CHECK_PYTHON
+    PAC_FC_CHECK_REAL128
+    cmd="$PYTHON $srcdir/maint/gen_binding_f08.py"
+    if test "$pac_fc_has_real128" = "no" ; then
+        cmd="$cmd -no-real128"
+    fi
+    if test "$enable_romio" = "no" ; then
+        cmd="$cmd -no-mpiio"
+    fi
+    cmd="$cmd -fint-size=$pac_cv_f77_sizeof_integer -aint-size=$MPI_SIZEOF_AINT -count-size=$MPI_SIZEOF_COUNT -cint-size=$ac_cv_sizeof_int"
+    AC_CONFIG_COMMANDS([gen_binding_f08], [$cmd_gen_binding_f08], [cmd_gen_binding_f08="$cmd"])
+fi
+
 dnl This includes an experimental pkgconfig file for ch3 in the src/pkgconfig
 dnl directory
-AC_OUTPUT(Makefile \
+AC_CONFIG_FILES([Makefile \
           examples/Makefile \
           test/Makefile \
           test/commands/Makefile \
@@ -5546,27 +4239,20 @@ AC_OUTPUT(Makefile \
 	  src/env/mpicc.bash \
           src/env/mpicxx.sh \
 	  src/env/mpicxx.bash \
-	  src/env/mpif77.sh \
-	  src/env/mpif77.bash \
 	  src/env/mpifort.sh \
 	  src/env/mpifort.bash \
           src/env/parkill \
           src/include/mpi.h \
           doc/design/Makefile \
           doc/installguide/Makefile \
-          doc/logging/Makefile \
           doc/refman/Makefile \
           doc/userguide/Makefile \
-          test/commands/cmdtests)
+          test/commands/cmdtests])
+AC_OUTPUT
 
+echo '*****************************************************'
 if test ${device_name} = "ch4" ; then
-cat <<EOF
-***
-*** device: ch4
-*** netmods: ${ch4_netmods}
-*** shm: ${ch4_shm}
-***
-EOF
+    PAC_CH4_CONFIG_SUMMARY()
 elif test ${DEVICE} = "ch3:nemesis" ; then
 cat <<EOF
 ***
@@ -5581,5 +4267,6 @@ cat <<EOF
 ***
 EOF
 fi
+echo '*****************************************************'
 
 echo 'Configuration completed.'

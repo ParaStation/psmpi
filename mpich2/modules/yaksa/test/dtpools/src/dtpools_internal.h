@@ -122,8 +122,8 @@ typedef struct {
     /* in case the base type is a struct */
     int base_type_is_struct;
     struct {
-        int numblks;
-        int *array_of_blklens;
+        intptr_t numblks;
+        intptr_t *array_of_blklens;
         intptr_t *array_of_displs;
         yaksa_type_t *array_of_types;
     } base_type_attrs;
@@ -371,7 +371,7 @@ typedef struct DTPI_Attr {
 
     union {
         struct {
-            int blklen;
+            intptr_t blklen;
         } contig;
 
         struct {
@@ -380,52 +380,52 @@ typedef struct DTPI_Attr {
         } resized;
 
         struct {
-            int numblks;
-            int blklen;
-            int stride;
+            intptr_t numblks;
+            intptr_t blklen;
+            intptr_t stride;
         } vector;
 
         struct {
-            int numblks;
-            int blklen;
+            intptr_t numblks;
+            intptr_t blklen;
             intptr_t stride;
         } hvector;
 
         struct {
-            int numblks;
-            int blklen;
-            int *array_of_displs;
+            intptr_t numblks;
+            intptr_t blklen;
+            intptr_t *array_of_displs;
         } blkindx;
 
         struct {
-            int numblks;
-            int blklen;
+            intptr_t numblks;
+            intptr_t blklen;
             intptr_t *array_of_displs;
         } blkhindx;
 
         struct {
-            int numblks;
-            int *array_of_blklens;
-            int *array_of_displs;
+            intptr_t numblks;
+            intptr_t *array_of_blklens;
+            intptr_t *array_of_displs;
         } indexed;
 
         struct {
-            int numblks;
-            int *array_of_blklens;
+            intptr_t numblks;
+            intptr_t *array_of_blklens;
             intptr_t *array_of_displs;
         } hindexed;
 
         struct {
-            int ndims;
-            int *array_of_sizes;
-            int *array_of_subsizes;
-            int *array_of_starts;
+            intptr_t ndims;
+            intptr_t *array_of_sizes;
+            intptr_t *array_of_subsizes;
+            intptr_t *array_of_starts;
             int order;
         } subarray;
 
         struct {
-            int numblks;
-            int *array_of_blklens;
+            intptr_t numblks;
+            intptr_t *array_of_blklens;
             intptr_t *array_of_displs;
         } structure;
     } u;
@@ -438,10 +438,13 @@ typedef struct {
 
 int DTPI_obj_free(DTPI_obj_s * obj_priv);
 int DTPI_parse_base_type_str(DTP_pool_s * dtp, const char *str);
+int DTPI_parse_desc(const char *desc, const char **desc_list, int *depth, int max_depth);
 unsigned int DTPI_low_count(unsigned int count);
 unsigned int DTPI_high_count(unsigned int count);
 int DTPI_construct_datatype(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s ** attr_tree,
                             yaksa_type_t * newtype, uintptr_t * new_count);
+int DTPI_custom_datatype(DTP_pool_s dtp, DTPI_Attr_s ** attr_tree, yaksa_type_t * newtype,
+                         uintptr_t * new_count, const char **desc_list, int depth);
 int DTPI_populate_dtp_desc(DTPI_obj_s * obj_priv, DTPI_pool_s * dtpi, char **desc);
 int DTPI_rand(DTPI_pool_s * dtpi);
 int DTPI_init_verify(DTP_pool_s dtp, DTP_obj_s obj, void *buf, DTPI_Attr_s * attr_tree,

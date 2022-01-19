@@ -29,9 +29,8 @@ int MPID_nem_tcp_get_vc_from_conninfo(char *pg_id, int pg_rank, struct MPIDI_VC 
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_PG_t *pg;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_TCP_GET_VC_FROM_CONNINFO);
 
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_TCP_GET_VC_FROM_CONNINFO);
+    MPIR_FUNC_ENTER;
 
     MPL_DBG_MSG_FMT(MPIDI_NEM_TCP_DBG_DET, VERBOSE,
                     (MPL_DBG_FDEST, "pg_id=%s pg_rank=%d", pg_id, pg_rank));
@@ -46,7 +45,7 @@ int MPID_nem_tcp_get_vc_from_conninfo(char *pg_id, int pg_rank, struct MPIDI_VC 
     MPIDI_PG_Get_vc_set_active(pg, pg_rank, vc);
 
   fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_TCP_GET_VC_FROM_CONNINFO);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -58,7 +57,9 @@ int MPID_nem_tcp_set_sockopts(int fd)
     int option, flags;
     int ret;
     socklen_t len;
+#ifdef HAVE_ERROR_CHECKING
     char strerrbuf[MPIR_STRERROR_BUF_SIZE];
+#endif
 
 /*     fprintf(stdout, __func__ " Enter\n"); fflush(stdout); */
     /* I heard you have to read the options after setting them in some implementations */
@@ -110,7 +111,7 @@ there is an error in the socket or whether the peer has closed it (i.e we have r
 EOF and hence recv returns 0). Either way, we deccide the socket fd is not usable any
 more. So, same return code is used.
 A design decision is not to write also, if the peer has closed the socket. Please note that
-write will still be succesful, even if the peer has sent us FIN. Only the subsequent
+write will still be successful, even if the peer has sent us FIN. Only the subsequent
 write will fail. So, this function is made tight enough and this should be called
 before doing any read/write at least in the connection establishment state machine code.
 
@@ -203,7 +204,7 @@ void MPID_nem_tcp_vc_dbg_print_sendq(FILE * stream, MPIDI_VC_t * vc)
                 sreq->dev.match.parts.context_id,
                 sreq->dev.match.parts.rank, sreq->dev.match.parts.tag);
         ++i;
-        sreq = sreq->dev.next;
+        sreq = sreq->next;
     }
 }
 

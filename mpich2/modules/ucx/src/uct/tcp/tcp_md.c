@@ -18,8 +18,9 @@ static ucs_status_t uct_tcp_md_query(uct_md_h md, uct_md_attr_t *attr)
     attr->cap.flags               = UCT_MD_FLAG_REG |
                                     UCT_MD_FLAG_NEED_RKEY; /* TODO ignore rkey in rma/amo ops */
     attr->cap.max_alloc           = 0;
-    attr->cap.reg_mem_types       = UCS_MEMORY_TYPES_CPU_ACCESSIBLE;
-    attr->cap.access_mem_type     = UCS_MEMORY_TYPE_HOST;
+    attr->cap.reg_mem_types       = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    attr->cap.alloc_mem_types     = 0;
+    attr->cap.access_mem_types    = UCS_BIT(UCS_MEMORY_TYPE_HOST);
     attr->cap.detect_mem_types    = 0;
     attr->cap.max_reg             = ULONG_MAX;
     attr->rkey_packed_size        = 0;
@@ -36,6 +37,16 @@ static ucs_status_t uct_tcp_md_mem_reg(uct_md_h md, void *address, size_t length
     return UCS_OK;
 }
 
+static ucs_status_t uct_tcp_mem_dereg(uct_md_h uct_md,
+                                      const uct_md_mem_dereg_params_t *params)
+{
+    UCT_MD_MEM_DEREG_CHECK_PARAMS(params, 0);
+
+    ucs_assert(params->memh == (void*)0xdeadbeef);
+
+    return UCS_OK;
+}
+
 static ucs_status_t
 uct_tcp_md_open(uct_component_t *component, const char *md_name,
                 const uct_md_config_t *md_config, uct_md_h *md_p)
@@ -45,7 +56,7 @@ uct_tcp_md_open(uct_component_t *component, const char *md_name,
         .query              = uct_tcp_md_query,
         .mkey_pack          = ucs_empty_function_return_success,
         .mem_reg            = uct_tcp_md_mem_reg,
-        .mem_dereg          = ucs_empty_function_return_success,
+        .mem_dereg          = uct_tcp_mem_dereg,
         .detect_memory_type = ucs_empty_function_return_unsupported
     };
     static uct_md_t md = {

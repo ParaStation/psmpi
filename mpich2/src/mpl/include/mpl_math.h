@@ -12,6 +12,8 @@ extern "C" {
 #endif
 /* *INDENT-OFF* */
 
+#define MPL_DIV_ROUNDUP(total, chunk)  ((total + (chunk - 1)) / chunk)
+
 /* Returns the nearest (smaller than or equal to) power of two of a number*/
 static inline int MPL_pof2(int number)
 {
@@ -40,17 +42,6 @@ static inline int MPL_is_pof2(int val, int *ceil_pof2)
         return 1;
     else
         return 0;
-}
-
-/* Routine to calculate log_k of an integer */
-static inline int MPL_ilog(int k, int number)
-{
-    int i = 1, p = k - 1;
-
-    for (; p - 1 < number; i++)
-        p *= k;
-
-    return i;
 }
 
 /* Routing to calculate base^exp for integers */

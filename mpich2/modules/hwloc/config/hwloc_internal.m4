@@ -1,6 +1,6 @@
 dnl -*- Autoconf -*-
 dnl
-dnl Copyright © 2010-2020 Inria.  All rights reserved.
+dnl Copyright © 2010-2021 Inria.  All rights reserved.
 dnl Copyright © 2009, 2011 Université Bordeaux
 dnl Copyright © 2004-2005 The Trustees of Indiana University and Indiana
 dnl                         University Research and Technology
@@ -26,27 +26,30 @@ AC_DEFUN([HWLOC_BUILD_STANDALONE],[
 AC_DEFUN([HWLOC_DEFINE_ARGS],[
     # Embedded mode, or standalone?
     AC_ARG_ENABLE([embedded-mode],
-                    AC_HELP_STRING([--enable-embedded-mode],
+                    AS_HELP_STRING([--enable-embedded-mode],
                                    [Using --enable-embedded-mode puts the HWLOC into "embedded" mode.  The default is --disable-embedded-mode, meaning that the HWLOC is in "standalone" mode.]))
 
     # Change the symbol prefix?
     AC_ARG_WITH([hwloc-symbol-prefix],
-                AC_HELP_STRING([--with-hwloc-symbol-prefix=STRING],
+                AS_HELP_STRING([--with-hwloc-symbol-prefix=STRING],
                                [STRING can be any valid C symbol name.  It will be prefixed to all public HWLOC symbols.  Default: "hwloc_"]))
+
+    # For the windows build
+    AC_ARG_VAR([HWLOC_MS_LIB], [Path to Microsoft's Visual Studio `lib' tool])
 
     # Debug mode?
     AC_ARG_ENABLE([debug],
-                  AC_HELP_STRING([--enable-debug],
+                  AS_HELP_STRING([--enable-debug],
                                  [Using --enable-debug enables various hwloc maintainer-level debugging controls.  This option is not recomended for end users.]))
 
     # Doxygen?
     AC_ARG_ENABLE([doxygen],
-        [AC_HELP_STRING([--enable-doxygen],
+        [AS_HELP_STRING([--enable-doxygen],
                         [enable support for building Doxygen documentation (note that this option is ONLY relevant in developer builds; Doxygen documentation is pre-built for tarball builds and this option is therefore ignored)])])
 
     # Picky?
     AC_ARG_ENABLE(picky,
-                  AC_HELP_STRING([--disable-picky],
+                  AS_HELP_STRING([--disable-picky],
                                  [When in developer checkouts of hwloc and compiling with gcc, the default is to enable maximum compiler pickyness.  Using --disable-picky or --enable-picky overrides any default setting]))
 
     # Cairo?
@@ -67,7 +70,7 @@ AC_DEFUN([HWLOC_DEFINE_ARGS],[
     # I/O?
     AC_ARG_ENABLE([io],
                   AS_HELP_STRING([--disable-io],
-                                 [Disable I/O discovery build entirely (PCI, LinuxIO, CUDA, OpenCL, NVML, RSMI, GL) instead of only disabling it at runtime by default]))
+                                 [Disable I/O discovery build entirely (PCI, LinuxIO, CUDA, OpenCL, NVML, RSMI, LevelZero, GL) instead of only disabling it at runtime by default]))
 
     # PCI?
     AC_ARG_ENABLE([pci],
@@ -93,10 +96,25 @@ AC_DEFUN([HWLOC_DEFINE_ARGS],[
                   AS_HELP_STRING([--disable-nvml],
                                  [Disable the NVML device discovery build (instead of only disabling NVML at runtime by default)]))
 
+    # CUDA version (for using its pkg-config cuda-x.y.pc)
+    AC_ARG_WITH([cuda-version],
+                AS_HELP_STRING([--with-cuda-version=<version>],
+		               [Specify the CUDA version (e.g. 11.2) for selecting the appropriate pkg-config file]))
+    AC_ARG_VAR([CUDA_VERSION], [The CUDA version (e.g. 11.2) for selecting the appropriate pkg-config file])
+    # CUDA install path (and NVML and OpenCL)
+    AC_ARG_WITH([cuda],
+                AS_HELP_STRING([--with-cuda=<dir>],
+                               [Specify the CUDA installation directory, used for NVIDIA NVML and OpenCL too]))
+
     # RSMI?
     AC_ARG_ENABLE([rsmi],
                   AS_HELP_STRING([--disable-rsmi],
                                  [Disable the ROCm SMI device discovery]))
+
+    # LevelZero
+    AC_ARG_ENABLE([levelzero],
+                  AS_HELP_STRING([--disable-levelzero],
+                                 [Disable the oneAPI Level Zero device discovery]))
 
     # GL/Display
     AC_ARG_ENABLE([gl],
@@ -116,12 +134,12 @@ AC_DEFUN([HWLOC_DEFINE_ARGS],[
     # Look for dlopen
     # Not --disable-dlopen because $enable_dlopen is already used/set
     AC_ARG_ENABLE([plugin-dlopen],
-                  AC_HELP_STRING([--disable-plugin-dlopen],
+                  AS_HELP_STRING([--disable-plugin-dlopen],
                                  [Do not use dlopen for loading plugins.]))
     # Look for ltdl
     # Not --disable-ltdl for consistency wrt dlopen above
     AC_ARG_ENABLE([plugin-ltdl],
-                  AC_HELP_STRING([--disable-plugin-ltdl],
+                  AS_HELP_STRING([--disable-plugin-ltdl],
                                  [Do not use ltdl for loading plugins.]))
 
 ])dnl
@@ -129,7 +147,7 @@ AC_DEFUN([HWLOC_DEFINE_ARGS],[
 #-----------------------------------------------------------------------
 
 dnl We only build documentation if this is a developer checkout.
-dnl Distribution tarballs just install pre-built docuemntation that was
+dnl Distribution tarballs just install pre-built documentation that was
 dnl included in the tarball.
 
 # Probably only ever invoked by hwloc's configure.ac
@@ -321,7 +339,7 @@ EOF
     chosen_curses=""
     for curses in ncurses curses
     do
-      for lib in "" -ltermcap -l${curses}w -l$curses -ltinfo
+      for lib in "" -l${curses}w -l$curses -ltinfo -ltermcap
       do
         AC_MSG_CHECKING(termcap support using $curses and $lib)
         LIBS="$hwloc_old_LIBS $lib"
@@ -419,7 +437,10 @@ EOF
     AC_CHECK_HEADERS([infiniband/verbs.h], [
       AC_CHECK_LIB([ibverbs], [ibv_open_device],
                    [AC_DEFINE([HAVE_LIBIBVERBS], 1, [Define to 1 if we have -libverbs])
-                    hwloc_have_libibverbs=yes])
+                    hwloc_have_libibverbs=yes
+		    HWLOC_IBVERBS_LIBS=-libverbs
+		    AC_SUBST(HWLOC_IBVERBS_LIBS)
+		   ])
     ])
 
     AC_CHECK_PROGS(XMLLINT, [xmllint])
@@ -530,6 +551,7 @@ int foo(void) {
 	hwloc_config_prefix[tests/hwloc/ports/topology-cuda.c]:hwloc_config_prefix[hwloc/topology-cuda.c]
 	hwloc_config_prefix[tests/hwloc/ports/topology-nvml.c]:hwloc_config_prefix[hwloc/topology-nvml.c]
 	hwloc_config_prefix[tests/hwloc/ports/topology-rsmi.c]:hwloc_config_prefix[hwloc/topology-rsmi.c]
+	hwloc_config_prefix[tests/hwloc/ports/topology-levelzero.c]:hwloc_config_prefix[hwloc/topology-levelzero.c]
 	hwloc_config_prefix[tests/hwloc/ports/topology-gl.c]:hwloc_config_prefix[hwloc/topology-gl.c]
 	hwloc_config_prefix[tests/hwloc/ports/lstopo-windows.c]:hwloc_config_prefix[utils/lstopo/lstopo-windows.c]
         hwloc_config_prefix[tests/hwloc/ports/lstopo-android.c]:hwloc_config_prefix[utils/lstopo/lstopo-android.c])

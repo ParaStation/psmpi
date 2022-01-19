@@ -65,10 +65,10 @@
                      UCT_IB_MLX5_AM_ZCOPY_MAX_HDR(_av_size), "am_zcopy header");
 
 
-#define UCT_RC_MLX5_CHECK_AM_SHORT(_id, _length, _av_size) \
+#define UCT_RC_MLX5_CHECK_AM_SHORT(_id, _header_t, _length, _av_size) \
     UCT_CHECK_AM_ID(_id); \
-    UCT_CHECK_LENGTH(sizeof(uct_rc_mlx5_am_short_hdr_t) + _length, 0, \
-        UCT_IB_MLX5_AM_MAX_SHORT(_av_size), "am_short");
+    UCT_CHECK_LENGTH(sizeof(_header_t) + _length, 0, \
+                     UCT_IB_MLX5_AM_MAX_SHORT(_av_size), "am_short");
 
 
 /* there is no need to do a special check for length == 0 because in that
@@ -103,6 +103,15 @@
 UCT_RC_MLX5_DECLARE_ATOMIC_LE_HANDLER(32)
 UCT_RC_MLX5_DECLARE_ATOMIC_LE_HANDLER(64)
 
+
+typedef enum {
+    UCT_RC_MLX5_SRQ_TOPO_LIST,
+    UCT_RC_MLX5_SRQ_TOPO_CYCLIC,
+    UCT_RC_MLX5_SRQ_TOPO_CYCLIC_EMULATED,
+    UCT_RC_MLX5_SRQ_TOPO_LAST
+} uct_rc_mlx5_srq_topo_t;
+
+
 enum {
     UCT_RC_MLX5_IFACE_STAT_RX_INL_32,
     UCT_RC_MLX5_IFACE_STAT_RX_INL_64,
@@ -119,17 +128,6 @@ enum {
 enum {
     UCT_RC_MLX5_OPCODE_TAG_MATCHING          = 0x28,
     UCT_RC_MLX5_CQE_APP_TAG_MATCHING         = 1,
-
-    /* last packet flag for multi-packet RQs */
-    UCT_RC_MLX5_MP_RQ_LAST_MSG_FIELD         = 0x40000000,
-
-    /* byte count mask for multi-packet RQs */
-    UCT_RC_MLX5_MP_RQ_BYTE_CNT_FIELD_MASK    = 0x0000FFFF,
-
-    UCT_RC_MLX5_MP_RQ_NUM_STRIDES_FIELD_MASK = 0x3FFF0000,
-
-    /* filler cqe indicator */
-    UCT_RC_MLX5_MP_RQ_FILLER_CQE             = UCS_BIT(31),
 
     /* tag segment flags */
     UCT_RC_MLX5_SRQ_FLAG_TM_SW_CNT           = (1 << 6),
@@ -148,7 +146,8 @@ enum {
 enum {
     UCT_RC_MLX5_POLL_FLAG_TM                 = UCS_BIT(0),
     UCT_RC_MLX5_POLL_FLAG_HAS_EP             = UCS_BIT(1),
-    UCT_RC_MLX5_POLL_FLAG_TAG_CQE            = UCS_BIT(2)
+    UCT_RC_MLX5_POLL_FLAG_TAG_CQE            = UCS_BIT(2),
+    UCT_RC_MLX5_POLL_FLAG_LINKED_LIST        = UCS_BIT(3)
 };
 
 
@@ -425,7 +424,7 @@ typedef struct uct_rc_mlx5_iface_common {
 #endif
     struct {
         uint8_t                        atomic_fence_flag;
-        ucs_ternary_value_t            cyclic_srq_enable;
+        uct_rc_mlx5_srq_topo_t         srq_topo;
     } config;
     UCS_STATS_NODE_DECLARE(stats)
 } uct_rc_mlx5_iface_common_t;
@@ -434,25 +433,23 @@ typedef struct uct_rc_mlx5_iface_common {
  * Common RC/DC mlx5 interface configuration
  */
 typedef struct uct_rc_mlx5_iface_common_config {
-    uct_ib_mlx5_iface_config_t       super;
-    unsigned                         tx_max_bb;
+    uct_ib_mlx5_iface_config_t           super;
+    unsigned                             tx_max_bb;
     struct {
-        int                          enable;
-        unsigned                     list_size;
-        size_t                       seg_size;
-        ucs_ternary_value_t          mp_enable;
-        size_t                       mp_num_strides;
+        int                              enable;
+        unsigned                         list_size;
+        size_t                           seg_size;
+        ucs_ternary_auto_value_t         mp_enable;
+        size_t                           mp_num_strides;
     } tm;
-    unsigned                         exp_backoff;
-    ucs_ternary_value_t              cyclic_srq_enable;
+    unsigned                             exp_backoff;
+    UCS_CONFIG_STRING_ARRAY_FIELD(types) srq_topo;
 } uct_rc_mlx5_iface_common_config_t;
 
 
-UCS_CLASS_DECLARE(uct_rc_mlx5_iface_common_t,
-                  uct_rc_iface_ops_t*,
-                  uct_md_h, uct_worker_h,
-                  const uct_iface_params_t*,
-                  uct_rc_iface_common_config_t*,
+UCS_CLASS_DECLARE(uct_rc_mlx5_iface_common_t, uct_rc_iface_ops_t*,
+                  uct_iface_ops_t*, uct_md_h, uct_worker_h,
+                  const uct_iface_params_t*, uct_rc_iface_common_config_t*,
                   uct_rc_mlx5_iface_common_config_t*,
                   uct_ib_iface_init_attr_t*);
 
@@ -511,7 +508,7 @@ UCS_CLASS_DECLARE(uct_rc_mlx5_iface_common_t,
 void uct_rc_mlx5_handle_unexp_rndv(uct_rc_mlx5_iface_common_t *iface,
                                    struct ibv_tmh *tmh, uct_tag_t tag,
                                    struct mlx5_cqe64 *cqe, unsigned flags,
-                                   unsigned byte_len);
+                                   unsigned byte_len, int poll_flags);
 
 
 static UCS_F_ALWAYS_INLINE void
@@ -594,6 +591,7 @@ uct_rc_mlx5_handle_rndv_fin(uct_rc_mlx5_iface_common_t *iface, uint32_t app_ctx)
 extern ucs_config_field_t uct_rc_mlx5_common_config_table[];
 
 unsigned uct_rc_mlx5_iface_srq_post_recv(uct_rc_mlx5_iface_common_t *iface);
+unsigned uct_rc_mlx5_iface_srq_post_recv_ll(uct_rc_mlx5_iface_common_t *iface);
 
 void uct_rc_mlx5_iface_common_prepost_recvs(uct_rc_mlx5_iface_common_t *iface);
 
@@ -619,6 +617,13 @@ void uct_rc_mlx5_iface_common_update_cqs_ci(uct_rc_mlx5_iface_common_t *iface,
 
 void uct_rc_mlx5_iface_common_sync_cqs_ci(uct_rc_mlx5_iface_common_t *iface,
                                           uct_ib_iface_t *ib_iface);
+
+ucs_status_t
+uct_rc_mlx5_iface_common_arm_cq(uct_ib_iface_t *ib_iface, uct_ib_dir_t dir,
+                                int solicited_only);
+
+void uct_rc_mlx5_iface_common_event_cq(uct_ib_iface_t *ib_iface,
+                                       uct_ib_dir_t dir);
 
 int uct_rc_mlx5_iface_commom_clean(uct_ib_mlx5_cq_t *mlx5_cq,
                                    uct_ib_mlx5_srq_t *srq, uint32_t qpn);
@@ -705,13 +710,21 @@ uct_rc_mlx5_am_hdr_fill(uct_rc_mlx5_hdr_t *rch, uint8_t id)
     rch->rc_hdr.am_id = id;
 }
 
+#if HAVE_DECL_MLX5DV_CREATE_QP
+void uct_rc_mlx5_common_fill_dv_qp_attr(uct_rc_mlx5_iface_common_t *iface,
+                                        struct ibv_qp_init_attr_ex *qp_attr,
+                                        struct mlx5dv_qp_init_attr *dv_attr,
+                                        unsigned scat2cqe_dir_mask);
+#endif
+
 #if HAVE_DEVX
 ucs_status_t
 uct_rc_mlx5_iface_common_devx_connect_qp(uct_rc_mlx5_iface_common_t *iface,
                                          uct_ib_mlx5_qp_t *qp,
                                          uint32_t dest_qp_num,
                                          struct ibv_ah_attr *ah_attr,
-                                         enum ibv_mtu path_mtu);
+                                         enum ibv_mtu path_mtu,
+                                         uint8_t path_index);
 
 #else
 static UCS_F_MAYBE_UNUSED ucs_status_t
@@ -719,7 +732,8 @@ uct_rc_mlx5_iface_common_devx_connect_qp(uct_rc_mlx5_iface_common_t *iface,
                                          uct_ib_mlx5_qp_t *qp,
                                          uint32_t dest_qp_num,
                                          struct ibv_ah_attr *ah_attr,
-                                         enum ibv_mtu path_mtu)
+                                         enum ibv_mtu path_mtu,
+                                         uint8_t path_index)
 {
     return UCS_ERR_UNSUPPORTED;
 }

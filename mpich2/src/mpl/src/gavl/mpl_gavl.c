@@ -184,7 +184,7 @@ static MPLI_gavl_tree_node_s *gavl_tree_search_internal(MPLI_gavl_tree_s * tree_
 
 /* if avl tree is possibly unbalanced, gavl_tree_rebalance should be called to rebalance
  * it. In unbalanced avl tree, the height difference between left and right child is at
- * most 2; gavl_tree_rebalance takes it as a premise in order to rebalance tree correcly */
+ * most 2; gavl_tree_rebalance takes it as a premise in order to rebalance tree correctly */
 static void gavl_tree_rebalance(MPLI_gavl_tree_s * tree_ptr)
 {
     MPLI_gavl_tree_node_s *cur_node = tree_ptr->cur_node;
@@ -286,7 +286,8 @@ int MPL_gavl_tree_insert(MPL_gavl_tree_t gavl_tree, const void *addr, uintptr_t 
         /* find which side the new node should be inserted */
         if (cmp_ret == MPLI_GAVL_BUFFER_MATCH) {
             /* new node is duplicate, we need to delete new node and exit */
-            tree_ptr->gavl_free_fn((void *) node_ptr->val);
+            if (tree_ptr->gavl_free_fn)
+                tree_ptr->gavl_free_fn((void *) node_ptr->val);
             MPL_free(node_ptr);
             goto fn_exit;
         }
@@ -388,12 +389,12 @@ static void gavl_tree_remove_node_internal(MPLI_gavl_tree_s * tree_ptr,
         }
 
         /* remove inorder_node from the tree. */
+        if (inorder_node->u.s.right)
+            inorder_node->u.s.right->u.s.parent = inorder_node->u.s.parent;
         if (inorder_node->u.s.parent != dnode) {
-            if (inorder_node->u.s.right)
-                inorder_node->u.s.right->u.s.parent = inorder_node->u.s.parent;
             inorder_node->u.s.parent->u.s.left = inorder_node->u.s.right;
         } else {
-            dnode->u.s.right = NULL;
+            dnode->u.s.right = inorder_node->u.s.right;
         }
 
         /* exchange inorder_node with dnode and then add dnode into remove_list */
@@ -444,10 +445,7 @@ int MPL_gavl_tree_delete_range(MPL_gavl_tree_t gavl_tree, const void *addr, uint
     /* free nodes and buffer objects from remove list */
     gavl_tree_delete_removed_nodes(tree_ptr, (uintptr_t) addr, len, MPLI_GAVL_INTERSECTION_SEARCH);
 
-  fn_exit:
     return mpl_err;
-  fn_fail:
-    goto fn_exit;
 }
 
 
@@ -469,10 +467,7 @@ int MPL_gavl_tree_delete_start_addr(MPL_gavl_tree_t gavl_tree, const void *addr)
     /* free nodes and buffer objects from remove list */
     gavl_tree_delete_removed_nodes(tree_ptr, (uintptr_t) addr, 0, MPLI_GAVL_START_ADDR_SEARCH);
 
-  fn_exit:
     return mpl_err;
-  fn_fail:
-    goto fn_exit;
 }
 
 static void gavl_tree_remove_nodes(MPLI_gavl_tree_s * tree_ptr, uintptr_t addr, uintptr_t len,
@@ -495,7 +490,7 @@ static void gavl_tree_remove_nodes(MPLI_gavl_tree_s * tree_ptr, uintptr_t addr, 
         gavl_tree_remove_node_internal(tree_ptr, dnode);
 
         /* we perform rebalance after every internal deletion in order to ensure
-         * lightweight rebalance that rotates left and right childs with at most
+         * lightweight rebalance that rotates left and right children with at most
          * 2 height difference. */
         gavl_tree_rebalance(tree_ptr);
     };
