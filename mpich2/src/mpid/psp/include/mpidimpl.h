@@ -101,7 +101,7 @@ void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num);
 
 typedef struct MPIDI_Process
 {
-	/* pscom_socket_t *socket; // moved To comm_ptr->pscom_socket */
+	pscom_socket_t *socket;
 
 	pscom_connection_t **grank2con;
 
@@ -117,6 +117,7 @@ typedef struct MPIDI_Process
 
 	int smp_node_id;
 	int msa_module_id;
+	uint8_t use_world_model;
 
 	struct {
 		unsigned debug_level;

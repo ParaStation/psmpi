@@ -34,6 +34,7 @@ MPIX_Query_cuda_support(void)
 #define dinit(name)
 #endif
 MPIDI_Process_t MPIDI_Process = {
+	dinit(socket)		NULL,
 	dinit(grank2con)	NULL,
 	dinit(my_pg_rank)	-1,
 	dinit(my_pg_size)	0,
@@ -44,6 +45,7 @@ MPIDI_Process_t MPIDI_Process = {
 	dinit(shm_attr_key)	0,
 	dinit(smp_node_id)      -1,
 	dinit(msa_module_id)    -1,
+	dinit(use_world_model)  0,
 	dinit(env)		{
 		dinit(debug_level)		0,
 		dinit(debug_version)		0,
@@ -491,7 +493,6 @@ int MPID_Init(int requested, int *provided)
 	int pg_size = -1;
 	int appnum = -1;
 	/* int universe_size; */
-	int has_parent;
 	pscom_socket_t *socket;
 	pscom_err_t rc;
 
@@ -508,8 +509,7 @@ int MPID_Init(int requested, int *provided)
 	pg_rank = MPIR_Process.rank;
 	pg_size = MPIR_Process.size;
 
-	// has_parent and appnum are set to 0 with PMIx
-	has_parent = MPIR_Process.has_parent ;
+	// appnum is set to 0 with PMIx
 	appnum = MPIR_Process.appnum;
 
 	/* keep track if we are a singleton without process manager */
@@ -689,15 +689,37 @@ int MPID_Init(int requested, int *provided)
 	}
 
 	MPID_enable_receive_dispach(socket); /* ToDo: move MPID_enable_receive_dispach to bg thread */
-	MPIR_Process.comm_world->pscom_socket = socket;
-	MPIR_Process.comm_self->pscom_socket = socket;
+	MPIDI_Process.socket = socket;
+
+	MPID_PSP_shm_rma_init();
+
+	if (provided) {
+		*provided = (MPICH_THREAD_LEVEL < requested) ?
+			MPICH_THREAD_LEVEL : requested;
+	}
+
+fn_fail:
+fn_exit:
+    MPIR_FUNC_EXIT;
+	return mpi_errno;
+}
+
+
+int MPID_InitCompleted( void )
+{
+	int mpi_errno = MPI_SUCCESS;
+
+	/* Do the world model related device initialization here. */
+	MPIDI_Process.use_world_model = 1;
+
+	MPIR_Process.comm_world->pscom_socket = MPIDI_Process.socket;
+	MPIR_Process.comm_self->pscom_socket = MPIDI_Process.socket;
 
 	/* Call the other init routines */
-	mpi_errno = MPID_PSP_comm_init(has_parent);
+	mpi_errno = MPID_PSP_comm_init(MPIR_Process.has_parent);
 	if (MPI_SUCCESS != mpi_errno) {
 		MPIR_ERR_POP(mpi_errno);
 	}
-	MPID_PSP_shm_rma_init();
 
 	/*
 	 * Setup the MPI_INFO_ENV object
@@ -732,17 +754,15 @@ int MPID_Init(int requested, int *provided)
 #endif
 	}
 
-
-	if (provided) {
-		*provided = (MPICH_THREAD_LEVEL < requested) ?
-			MPICH_THREAD_LEVEL : requested;
-	}
+	return MPI_SUCCESS;
 
 fn_fail:
 fn_exit:
     MPIR_FUNC_EXIT;
 	return mpi_errno;
 }
+
+
 
 
 /* return connection_t for rank, NULL on error */

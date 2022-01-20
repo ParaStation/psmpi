@@ -20,27 +20,18 @@ int _getenv_i(const char *env_name, int _default)
 	return val ? atoi(val) : _default;
 }
 
-static
-void sig_finalize_timeout(int signo)
-{
-	if (_getenv_i("PSP_DEBUG", 0) > 0) {
-		fprintf(stderr, "Warning: PSP_FINALIZE_TIMEOUT\n");
-	}
-	_exit(0);
-}
 
 int MPID_Finalize(void)
 {
 	MPIDI_PG_t *pg_ptr;
 	int env_finalize_barrier;
-	int env_finalize_timeout;
 	int env_finalize_shutdown;
 	int env_finalize_exit;
 
 	MPIR_FUNC_ENTER;
 
 	/*
-	  - PSP_FINALIZE_BARRIER (default=1) -- If set to 0, then an experimental
+	  - PSP_FINALIZE_BARRIER (default=0) -- If set to 0, then an experimental
 	  sparse synchronization scheme is used. If set to 2, then the PMI's
 	  PMI_Barrier() method is used instead. If it is unset or set to 1, the
 	  common MPIR_Barrier() is still used.
@@ -56,12 +47,11 @@ int MPID_Finalize(void)
 	  - PSP_FINALIZE_EXIT (default=0) -- If set to 1, then exit() is called
 	  at the very end of MPI_Finalize(). If set to 2, then it is _exit().
 	*/
-	env_finalize_barrier  = _getenv_i("PSP_FINALIZE_BARRIER", 1);
-	env_finalize_timeout  = _getenv_i("PSP_FINALIZE_TIMEOUT", 30);
+	env_finalize_barrier  = _getenv_i("PSP_FINALIZE_BARRIER", 0);
 	env_finalize_shutdown = _getenv_i("PSP_FINALIZE_SHUTDOWN", 0);
 	env_finalize_exit     = _getenv_i("PSP_FINALIZE_EXIT", 0);
 
-	if (!env_finalize_barrier) {
+	if (env_finalize_barrier == 1) {
 
 		/* A sparse synchronization scheme (!experimental!) that just uses the actually established connections: */
 
@@ -96,25 +86,6 @@ int MPID_Finalize(void)
 
 		MPIR_pmi_barrier();
 
-	} else {
-
-		/* The common barrier synchronization across comm_world within MPI Finalize: */
-
-		MPIR_Errflag_t errflag = MPIR_ERR_NONE;
-		int timeout;
-		// TODO: check THREADPRIV API!
-
-		MPIR_Barrier_impl(MPIR_Process.comm_world, &errflag);
-
-		/* Finalize timeout: Default: 30sec.
-		   Overwrite with PSP_FINALIZE_TIMEOUT.
-		   Disable with PSP_FINALIZE_TIMEOUT=0 */
-		timeout = env_finalize_timeout;
-		if (timeout > 0) {
-			signal(SIGALRM, sig_finalize_timeout);
-			alarm(timeout);
-			MPIR_Barrier_impl(MPIR_Process.comm_world, &errflag);
-		}
 	}
 
 #ifdef MPID_PSP_HISTOGRAM
@@ -184,25 +155,20 @@ int MPID_Finalize(void)
 	MPII_Keyval_get_ptr(MPIDI_Process.shm_attr_key, keyval_ptr);
 	MPIR_free_keyval(keyval_ptr);
 
-	MPI_Info_delete(MPI_INFO_ENV, "cuda_aware");
+	if (MPIDI_Process.use_world_model)
+	{
+		MPI_Info_delete(MPI_INFO_ENV, "cuda_aware");
 #ifdef MPID_PSP_MSA_AWARENESS
-	if(MPIDI_Process.msa_module_id >= 0) {
-		MPI_Info_delete(MPI_INFO_ENV, "msa_module_id");
-	}
-	if(MPIDI_Process.smp_node_id >= 0 && MPIDI_Process.env.enable_msa_awareness) {
-		MPI_Info_delete(MPI_INFO_ENV, "msa_node_id");
-	}
+		if (MPIDI_Process.msa_module_id >= 0) {
+			MPI_Info_delete(MPI_INFO_ENV, "msa_module_id");
+		}
+		if (MPIDI_Process.smp_node_id >= 0 && MPIDI_Process.env.enable_msa_awareness) {
+			MPI_Info_delete(MPI_INFO_ENV, "msa_node_id");
+		}
 #endif
+	}
 
 	MPIR_pmi_finalize();
-
-	/* Release standard communicators */
-#ifdef MPID_NEEDS_ICOMM_WORLD
-	/* psp don't need icomm. But this might change? */
-	MPIR_Comm_release_always(MPIR_Process.icomm_world);
-#endif
-	MPIR_Comm_release_always(MPIR_Process.comm_self);
-	MPIR_Comm_release_always(MPIR_Process.comm_world);
 
 	/* Cleanups */
 	pg_ptr = MPIDI_Process.my_pg->next;

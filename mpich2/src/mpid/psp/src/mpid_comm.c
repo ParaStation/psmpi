@@ -413,11 +413,8 @@ int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 	/* In the case without topology awareness, we cannot provide valid information
 	   unless the ID of the own rank is requested.
 	*/
-	if (comm->vcr[rank]->pg_rank != MPIDI_Process.my_pg_rank) {
-		*id_p = -1;
-	} else {
-		*id_p = MPIDI_Process.smp_node_id;
-	}
+	uint64_t lpid = comm->vcr[rank]->lpid;
+	*id_p = MPIR_Process.node_map[lpid];
 
 	return MPI_SUCCESS;
 }
@@ -431,14 +428,9 @@ int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 */
 int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 {
-	/* Since the node IDs are not necessarily ordered and contiguous,
-	   we cannot determine a meaningful maximum here and therefore
-	   exit with a non-fatal error. This shall then only disable
-	   the creation of SMP-aware  communicators in the higher
-	   MPICH layer (see MPIR_Find_local_and_external()).
-	*/
-	*max_id_p = 0;
-	return MPI_ERR_OTHER;
+	*max_id_p = MPIR_Process.num_nodes - 1;
+
+	return MPI_SUCCESS;
 }
 #endif
 
@@ -452,9 +444,9 @@ int MPID_PSP_comm_init(int has_parent)
 	MPIDI_PG_t * pg_ptr;
 	MPIDI_VCRT_t * vcrt;
 	int mpi_errno = MPI_SUCCESS;
-
 	int pg_rank = MPIDI_Process.my_pg_rank;
 	int pg_size = MPIDI_Process.my_pg_size;
+
 	char* pg_id_name = MPIDI_Process.pg_id_name;
 
 	MPIDI_PSP_topo_level_t *topo_levels = NULL;
@@ -464,19 +456,6 @@ int MPID_PSP_comm_init(int has_parent)
 	memset(&MPIR_PSP_Comm_fns, 0, sizeof(MPIR_PSP_Comm_fns));
 	MPIR_Comm_fns = &MPIR_PSP_Comm_fns;
 	MPIR_Comm_fns->split_type = MPID_PSP_split_type;
-
-
-	/*
-	 * Initialize the MPI_COMM_WORLD object
-	 */
-	comm = MPIR_Process.comm_world;
-	comm->rank        = pg_rank;
-	comm->remote_size = pg_size;
-	comm->local_size  = pg_size;
-
-	vcrt = MPIDI_VCRT_Create(comm->remote_size);
-	assert(vcrt);
-	MPID_PSP_comm_set_vcrt(comm, vcrt);
 
 
 	if(MPIDI_Process.env.enable_msa_awareness) {
@@ -501,7 +480,7 @@ int MPID_PSP_comm_init(int has_parent)
 			   corresponds to the IPv4 address of the node, it is safe to force the most significant
 			   bit to be unset so that it is positive and can thus also be used as a split color.)
 			*/
-			MPIDI_Process.smp_node_id = (int)((unsigned)MPIR_Process.comm_world->pscom_socket->local_con_info.node_id & (unsigned)0x7fffffff);
+			MPIDI_Process.smp_node_id = (int)((unsigned)MPIDI_Process.socket->local_con_info.node_id & (unsigned)0x7fffffff);
 		}
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
@@ -511,44 +490,6 @@ int MPID_PSP_comm_init(int has_parent)
 #endif
 	}
 
-
-	/* Create my home PG for MPI_COMM_WORLD: */
-	MPIDI_PG_Convert_id(pg_id_name, &pg_id_num);
-	MPIDI_PG_Create(pg_size, pg_id_num, topo_levels, &pg_ptr);
-	assert(pg_ptr == MPIDI_Process.my_pg);
-
-	for (grank = 0; grank < pg_size; grank++) {
-		/* MPIR_CheckDisjointLpids() in mpi/comm/intercomm_create.c expect
-		   lpid to be smaller than 4096!!!
-		   Else you will see an "Fatal error in MPI_Intercomm_create"
-		*/
-
-		pscom_connection_t *con = MPIDI_Process.grank2con[grank];
-
-		pg_ptr->vcr[grank] = MPIDI_VC_Create(pg_ptr, grank, con, grank);
-		comm->vcr[grank] = MPIDI_VC_Dup(pg_ptr->vcr[grank]);
-	}
-
-	mpi_errno = MPIR_Comm_commit(comm);
-	assert(mpi_errno == MPI_SUCCESS);
-
-
-	/*
-	 * Initialize the MPI_COMM_SELF object
-	 */
-	comm = MPIR_Process.comm_self;
-	comm->rank        = 0;
-	comm->remote_size = 1;
-	comm->local_size  = 1;
-
-	vcrt = MPIDI_VCRT_Create(comm->remote_size);
-	assert(vcrt);
-	MPID_PSP_comm_set_vcrt(comm, vcrt);
-
-	comm->vcr[0] = MPIDI_VC_Dup(MPIR_Process.comm_world->vcr[pg_rank]);
-
-	mpi_errno = MPIR_Comm_commit(comm);
-	assert(mpi_errno == MPI_SUCCESS);
 
 	if (has_parent) {
 		MPIR_Comm * comm_parent;
@@ -659,11 +600,62 @@ fn_fail:
 int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 {
 	pscom_connection_t *con1st;
-	int i;
+	int mpi_errno = MPI_SUCCESS;
+	int i, grank;
+	int pg_id_num;
+	int pg_rank = MPIDI_Process.my_pg_rank;
+	int pg_size = MPIDI_Process.my_pg_size;
+	char* pg_id_name = MPIDI_Process.pg_id_name;
+	MPIDI_PG_t * pg_ptr;
+
+	MPIDI_PSP_topo_level_t *topo_levels = NULL;
+	MPIDI_VCRT_t * vcrt;
+
 	MPIR_FUNC_ENTER;
 
 	if (comm->mapper_head) {
 		MPID_PSP_comm_create_mapper(comm);
+	}
+
+	if (comm == MPIR_Process.comm_world) {
+		/*
+		 * Initialize the MPI_COMM_WORLD object
+		 */
+		comm->rank        = pg_rank;
+		comm->remote_size = pg_size;
+		comm->local_size  = pg_size;
+
+		vcrt = MPIDI_VCRT_Create(comm->remote_size);
+		assert(vcrt);
+		MPID_PSP_comm_set_vcrt(comm, vcrt);
+
+		/* Create my home PG for MPI_COMM_WORLD: */
+		MPIDI_PG_Convert_id(pg_id_name, &pg_id_num);
+		MPIDI_PG_Create(pg_size, pg_id_num, topo_levels, &pg_ptr);
+		assert(pg_ptr == MPIDI_Process.my_pg);
+
+		for (grank = 0; grank < pg_size; grank++) {
+
+			pscom_connection_t *con = MPIDI_Process.grank2con[grank];
+
+			pg_ptr->vcr[grank] = MPIDI_VC_Create(pg_ptr, grank, con, grank);
+			comm->vcr[grank] = MPIDI_VC_Dup(pg_ptr->vcr[grank]);
+		}
+
+	} else if (comm == MPIR_Process.comm_self) {
+		/*
+		 * Initialize the MPI_COMM_SELF object
+		 */
+		comm = MPIR_Process.comm_self;
+		comm->rank        = 0;
+		comm->remote_size = 1;
+		comm->local_size  = 1;
+
+		vcrt = MPIDI_VCRT_Create(comm->remote_size);
+		assert(vcrt);
+		MPID_PSP_comm_set_vcrt(comm, vcrt);
+
+		comm->vcr[0] = MPIDI_VC_Dup(MPIR_Process.comm_world->vcr[pg_rank]);
 	}
 
 	comm->is_disconnected = 0;
