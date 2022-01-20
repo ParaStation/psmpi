@@ -69,21 +69,28 @@ int MPID_PSP_Bsend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int 
 {
 	/* See src/mpid/ch3/src/mpid_startall.c:105   "MPID_Startall(): case MPIDI_REQUEST_TYPE_BSEND:"*/
 	MPI_Request sreq_handle;
-	int rc;
+	int mpi_errno = MPI_SUCCESS;
 
 	// TODO: check THREADPRIV API!
 
-	{
-		rc = MPIR_Ibsend_impl((void *)buf, count, datatype, rank,
-				      tag, comm, &sreq_handle);
-		if (rc == MPI_SUCCESS)
-		{
-			MPIR_Request *r;
-			MPIR_Request_get_ptr(sreq_handle, r);
-			*request = r;
-		}
-	}
-	return rc;
+	mpi_errno = MPIR_Bsend_isend((void *)buf, count, datatype, rank, tag,
+				     comm, NULL);
+	if (mpi_errno)
+		goto fn_fail;
+
+	/* Ibsend is local-complete */
+	MPIR_Request *request_ptr = MPIR_Request_create_complete(MPIR_REQUEST_KIND__SEND);
+	MPIR_Request *r;
+	MPIR_Request_get_ptr(sreq_handle, r);
+	*request = r;
+
+  fn_exit:
+	return mpi_errno;
+
+  fn_fail:
+	*request = NULL;
+	mpi_errno = MPIR_Err_return_comm(comm, __func__, mpi_errno);
+	goto fn_exit;
 }
 
 
