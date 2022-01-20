@@ -72,17 +72,84 @@ int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_leve
 		}
 		tl=tl->next;
 	}
+	if (level) *level = NULL;
 	return 0;
 }
 
 static
-int MPIDI_PSP_create_badge_table(int my_badge, int pg_rank, int pg_size, int *max_badge, int **badge_table, int normalize)
+int MPIDI_PSP_publish_badge(int my_pg_rank, int degree, int my_badge, int normalize)
 {
+	int mpi_errno = MPI_SUCCESS;
+	int pmi_max_key_size = MPIR_pmi_max_key_size();
+	int pmi_max_val_size = MPIR_pmi_max_val_size();
+	char *key = NULL;
+	char *val = NULL;
+
+	key = MPL_malloc(pmi_max_key_size * sizeof(char), MPL_MEM_STRINGS);
+	val = MPL_malloc(pmi_max_val_size * sizeof(char), MPL_MEM_STRINGS);
+
+	snprintf(key, pmi_max_key_size, "badge:%d:%d:%d", my_pg_rank, degree, !normalize);
+	snprintf(val, pmi_max_val_size, "%d", my_badge);
+
+	mpi_errno = MPIR_pmi_kvs_put(key, val);
+	MPIR_ERR_CHECK(mpi_errno);
+
+fn_exit:
+	MPL_free(key);
+	MPL_free(val);
+
+	return mpi_errno;
+fn_fail:
+	goto fn_exit;
+}
+
+static
+int MPIDI_PSP_lookup_badge(int pg_rank, int degree, int* badge, int normalize)
+{
+	int mpi_errno = MPI_SUCCESS;
+	int pmi_max_key_size = MPIR_pmi_max_key_size();
+	int pmi_max_val_size = MPIR_pmi_max_val_size();
+	char *key = NULL;
+	char *val = NULL;
+	char *tmp = NULL;
+
+	key = MPL_malloc(pmi_max_key_size * sizeof(char), MPL_MEM_STRINGS);
+	val = MPL_malloc(pmi_max_val_size * sizeof(char), MPL_MEM_STRINGS);
+
+	snprintf(key, pmi_max_key_size, "badge:%d:%d:%d", pg_rank, degree, !normalize);
+
+	mpi_errno = MPIR_pmi_kvs_get(pg_rank, key, val, pmi_max_val_size);
+	MPIR_ERR_CHECK(mpi_errno);
+
+	if (mpi_errno == MPI_SUCCESS) {
+		*badge = strtol(val, &tmp, 0);
+	}
+	if (!tmp || (*tmp != '\0')) {
+		*badge = MPIDI_PSP_TOPO_BADGE__NULL;
+	}
+
+fn_exit:
+	MPL_free(key);
+	MPL_free(val);
+
+	return mpi_errno;
+fn_fail:
+	goto fn_exit;
+}
+
+static
+int MPIDI_PSP_create_badge_table(int degree, int my_badge, int my_pg_rank, int pg_size, int *max_badge, int **badge_table, int normalize)
+{
+	int mpi_errno = MPI_SUCCESS;
 	int rc;
 	int grank;
 	int remote_badge;
 
 	if(*badge_table != NULL) {
+
+		/* When we get here, it is already the second round for normalizing,
+		   which itself must not be further normalized. (See assertion.) */
+		assert(!normalize);
 
 		for (grank = 0; grank < pg_size; grank++) {
 			if(my_badge == (*badge_table)[grank]) {
@@ -96,33 +163,58 @@ int MPIDI_PSP_create_badge_table(int my_badge, int pg_rank, int pg_size, int *ma
 
 	*badge_table = MPL_malloc(pg_size * sizeof(int), MPL_MEM_OBJECT);
 
-	if(pg_rank != 0) {
+	if(!MPIDI_Process.env.enable_ondemand) {
 
-		/* gather: */
-		pscom_connection_t *con = MPIDI_Process.grank2con[0];
-		assert(con);
-		pscom_send(con, NULL, 0, &my_badge, sizeof(int));
+		/* In the non-ondemand case, we use the traditional all-to-all scheme
+		   on pt2pt basis via pscom's send/recv functions for exchanging the
+		   badge information since all pscom connections have here already
+		   been established and can directly be used for the exchange.
+		*/
 
-		/* bcast: */
-		rc = pscom_recv_from(con, NULL, 0, *badge_table, pg_size*sizeof(int));
-		assert(rc == PSCOM_SUCCESS);
+		if(my_pg_rank != 0) {
 
+			/* gather: */
+			pscom_connection_t *con = MPIDI_Process.grank2con[0];
+			assert(con);
+			pscom_send(con, NULL, 0, &my_badge, sizeof(int));
+
+			/* bcast: */
+			rc = pscom_recv_from(con, NULL, 0, *badge_table, pg_size*sizeof(int));
+			assert(rc == PSCOM_SUCCESS);
+
+		} else {
+
+			/* gather: */
+			(*badge_table)[0] = my_badge;
+			for(grank=1; grank < pg_size; grank++) {
+				pscom_connection_t *con = MPIDI_Process.grank2con[grank];
+				assert(con);
+				rc = pscom_recv_from(con, NULL, 0, &remote_badge, sizeof(int));
+				assert(rc == PSCOM_SUCCESS);
+				(*badge_table)[grank] = remote_badge;
+			}
+
+			/* bcast: */
+			for(grank=1; grank < pg_size; grank++) {
+				pscom_connection_t *con = MPIDI_Process.grank2con[grank];
+				pscom_send(con, NULL, 0, *badge_table, pg_size*sizeof(int));
+			}
+		}
 	} else {
 
-		/* gather: */
-		(*badge_table)[0] = my_badge;
-		for(grank=1; grank < pg_size; grank++) {
-			pscom_connection_t *con = MPIDI_Process.grank2con[grank];
-			assert(con);
-			rc = pscom_recv_from(con, NULL, 0, &remote_badge, sizeof(int));
-			assert(rc == PSCOM_SUCCESS);
-			(*badge_table)[grank] = remote_badge;
-		}
+		/* In the ondemand case, however, we prefer not to exchange the badge
+		   information via pscom and use the key/value space (KVS) of PMI(x)
+		   for this instead. This way, no (perhaps later unnecessary) pscom
+		   connections are already established at this point.
+		*/
 
-		/* bcast: */
-		for(grank=1; grank < pg_size; grank++) {
-			pscom_connection_t *con = MPIDI_Process.grank2con[grank];
-			pscom_send(con, NULL, 0, *badge_table, pg_size*sizeof(int));
+		MPIDI_PSP_publish_badge(my_pg_rank, degree, my_badge, normalize);
+
+		mpi_errno = MPIR_pmi_barrier();
+		MPIR_ERR_CHECK(mpi_errno);
+
+		for(grank = 0; grank < pg_size; grank++) {
+			MPIDI_PSP_lookup_badge(grank, degree, &(*badge_table)[grank], normalize);
 		}
 	}
 
@@ -132,10 +224,13 @@ int MPIDI_PSP_create_badge_table(int my_badge, int pg_rank, int pg_size, int *ma
 	}
 
 	if(*max_badge >= pg_size && normalize) {
-		MPIDI_PSP_create_badge_table(my_badge, pg_rank, pg_size, max_badge, badge_table, normalize);
+		MPIDI_PSP_create_badge_table(degree, my_badge, my_pg_rank, pg_size, max_badge, badge_table, !normalize /* == 0 */);
 	}
 
-	return MPI_SUCCESS;
+fn_exit:
+	return mpi_errno;
+fn_fail:
+	goto fn_exit;
 }
 
 static
@@ -180,7 +275,7 @@ int MPIDI_PSP_get_badge_by_level_and_comm_rank(MPIR_Comm *comm, MPIDI_PSP_topo_l
 	if(likely(comm->vcr[rank]->pg == MPIDI_Process.my_pg)) { // rank is in local process group
 
 		if(unlikely(!level->badge_table)) { // "dummy" level
-			assert(level->max_badge == -1);
+			assert(level->max_badge == MPIDI_PSP_TOPO_BADGE__NULL);
 			goto badge_unknown;
 		}
 
@@ -209,7 +304,7 @@ int MPIDI_PSP_get_badge_by_level_and_comm_rank(MPIR_Comm *comm, MPIDI_PSP_topo_l
 	}
 
 badge_unknown:
-	return MPIDI_PSP_get_max_badge_by_level(level) + 1; // plus 1 as wildcard for an unknown badge
+	return MPIDI_PSP_TOPO_BADGE__UNKNOWN(level);
 }
 
 static
@@ -229,12 +324,37 @@ int MPIDI_PSP_comm_is_flat_on_level(MPIR_Comm *comm, MPIDI_PSP_topo_level_t *lev
 	return 1;
 }
 
+static
+int MPIDI_PSP_create_topo_level(int my_badge, int degree, int badges_are_global, int normalize, MPIDI_PSP_topo_level_t **topo_level)
+{
+	int* module_badge_table = NULL;
+	int module_max_badge = 0;
+	MPIDI_PSP_topo_level_t *level = NULL;
+
+	int pg_rank = MPIDI_Process.my_pg_rank;
+	int pg_size = MPIDI_Process.my_pg_size;
+
+	MPIDI_PSP_create_badge_table(degree, my_badge, pg_rank, pg_size, &module_max_badge, &module_badge_table, normalize);
+	assert(module_badge_table);
+
+	level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
+	level->badge_table = module_badge_table;
+	level->max_badge = module_max_badge;
+	level->degree = degree;
+	level->badges_are_global = badges_are_global;
+
+	level->next = *topo_level;
+	*topo_level = level;
+
+	return MPI_SUCCESS;
+}
+
 int MPID_Get_badge(MPIR_Comm *comm, int rank, int *badge_p)
 {
 	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
 
 	if(tl == NULL) {
-		*badge_p = -1;
+		*badge_p = MPIDI_PSP_TOPO_BADGE__NULL;
 		return MPI_ERR_OTHER;
 	}
 
@@ -244,6 +364,7 @@ int MPID_Get_badge(MPIR_Comm *comm, int rank, int *badge_p)
 	}
 
 	*badge_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, tl, rank);
+
 	return MPI_SUCCESS;
 }
 
@@ -262,6 +383,8 @@ int MPID_Get_max_badge(MPIR_Comm *comm, int *max_badge_p)
 	}
 
 	*max_badge_p =  MPIDI_PSP_get_max_badge_by_level(tl) + 1; // plus 1 for the "unknown badge" wildcard
+	assert(*max_badge_p == MPIDI_PSP_TOPO_BADGE__UNKNOWN(tl)); // and this wildcard is moreover the max value
+
 	return MPI_SUCCESS;
 }
 
@@ -354,22 +477,7 @@ int MPID_PSP_comm_init(int has_parent)
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 		if(MPIDI_Process.env.enable_msa_aware_collops) {
-
-			int* module_badge_table = NULL;
-			int module_max_badge = 0;
-			MPIDI_PSP_topo_level_t *level = NULL;
-
-			MPIDI_PSP_create_badge_table(MPIDI_Process.msa_module_id, pg_rank, pg_size, &module_max_badge, &module_badge_table, 0 /* normalize*/);
-			assert(module_badge_table);
-
-			level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
-			level->badge_table = module_badge_table;
-			level->max_badge = module_max_badge;
-			level->degree = MPIDI_PSP_TOPO_LEVEL__MODULES;
-			level->badges_are_global = 1;
-
-			level->next = topo_levels;
-			topo_levels = level;
+			MPIDI_PSP_create_topo_level(MPIDI_Process.msa_module_id, MPIDI_PSP_TOPO_LEVEL__MODULES, 1/*badges_are_global*/, 0/*normalize*/, &topo_levels);
 		}
 #endif
 	}
@@ -387,22 +495,7 @@ int MPID_PSP_comm_init(int has_parent)
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 		if(MPIDI_Process.env.enable_smp_aware_collops) {
-
-			int* node_badge_table = NULL;
-			int node_max_badge = 0;
-			MPIDI_PSP_topo_level_t *level = NULL;
-
-			MPIDI_PSP_create_badge_table(MPIDI_Process.smp_node_id, pg_rank, pg_size, &node_max_badge, &node_badge_table, 1 /* normalize*/);
-			assert(node_badge_table);
-
-			level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
-			level->badge_table = node_badge_table;
-			level->max_badge = node_max_badge;
-			level->degree = MPIDI_PSP_TOPO_LEVEL__NODES;
-			level->badges_are_global = 0;
-
-			level->next = topo_levels;
-			topo_levels = level;
+			MPIDI_PSP_create_topo_level(MPIDI_Process.smp_node_id, MPIDI_PSP_TOPO_LEVEL__NODES, 0/*badges_are_global*/, 1/*normalize*/, &topo_levels);
 		}
 #endif
 	}

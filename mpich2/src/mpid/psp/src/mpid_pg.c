@@ -854,7 +854,7 @@ void MPIDI_PSP_pack_topology_badges(int** pack_msg, int* pack_size, MPIDI_PG_t *
 			if(tl->badge_table) {
 				*msg = tl->badge_table[i];
 			} else {
-				*msg = -1;
+				*msg = MPIDI_PSP_TOPO_BADGE__NULL;
 			}
 		}
 		*msg = tl->degree;  msg++;
@@ -878,13 +878,13 @@ void MPIDI_PSP_unpack_topology_badges(int* pack_msg, int pg_size, int num_levels
 
 		level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
 
-		if(*msg != -1) {
+		if(*msg != MPIDI_PSP_TOPO_BADGE__NULL) {
 			level->badge_table = MPL_malloc(pg_size * sizeof(int), MPL_MEM_OBJECT);
 			for(j=0; j<pg_size; j++) {
 				level->badge_table[j] = msg[j];
 			}
 		} else { // just a "dummy" table
-			assert(msg[pg_size + 1] == -1);
+			assert(msg[pg_size + 1] == MPIDI_PSP_TOPO_BADGE__NULL);
 			level->badge_table = NULL;
 		}
 		level->degree = msg[pg_size];
@@ -939,7 +939,7 @@ int MPIDI_PSP_add_flat_level_to_pg(MPIDI_PG_t *pg, int degree)
 
 	level->degree = degree;
 	level->badges_are_global = 1;
-	level->max_badge = -1;
+	level->max_badge = MPIDI_PSP_TOPO_BADGE__NULL;
 	level->badge_table = NULL;
 
 	return MPIDI_PSP_add_topo_level_to_pg(pg, level);

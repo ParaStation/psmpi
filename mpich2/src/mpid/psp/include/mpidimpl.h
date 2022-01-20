@@ -39,6 +39,8 @@ struct MPIDI_PSP_topo_level {
 	int badges_are_global; // FIX ME: Do we want to have an array for this?
 	int *badge_table;
 };
+#define MPIDI_PSP_TOPO_BADGE__UNKNOWN(level) (MPIDI_PSP_get_max_badge_by_level(level) + 1)
+#define MPIDI_PSP_TOPO_BADGE__NULL -1
 #define MPIDI_PSP_TOPO_LEVEL__MODULES 4096
 #define MPIDI_PSP_TOPO_LEVEL__NODES   1024
 
