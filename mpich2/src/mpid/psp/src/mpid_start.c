@@ -26,19 +26,15 @@ int MPID_Start(MPIR_Request * req)
         case MPIR_REQUEST_KIND__PREQUEST_RECV:
             mpi_errno = MPID_PSP_persistent_start(req);
             break;
-
-        case MPIR_REQUEST_KIND__PREQUEST_COLL:
-
-            //mpi_errno = MPIR_Persist_coll_start(req);
-            break;
-
         case MPIR_REQUEST_KIND__PART_SEND:
             MPID_PSP_LOCKFREE_CALL(mpi_errno = MPID_PSP_psend_start(req));
             break;
         case MPIR_REQUEST_KIND__PART_RECV:
             MPID_PSP_LOCKFREE_CALL(mpi_errno = MPID_PSP_precv_start(req));
             break;
-
+        case MPIR_REQUEST_KIND__PREQUEST_COLL:
+            mpi_errno = MPIR_Persist_coll_start(req);
+            break;
         default:
             mpi_errno = MPI_ERR_INTERN;
     }

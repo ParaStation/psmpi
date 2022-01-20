@@ -121,6 +121,7 @@ void MPID_Request_create_hook(MPIR_Request *req)
 			break;
 		case MPIR_REQUEST_KIND__PREQUEST_RECV:
 		case MPIR_REQUEST_KIND__PREQUEST_SEND:
+		case MPIR_REQUEST_KIND__PREQUEST_COLL:
 			MPIDI_PSP_Request_persistent_create_hook(req);
 			break;
 		case MPIR_REQUEST_KIND__PART_RECV:
@@ -137,6 +138,7 @@ void MPID_Request_create_hook(MPIR_Request *req)
 			mreq->mprobe_tag = NULL;
 			break;
 		}
+		case MPIR_REQUEST_KIND__PART:
 		case MPIR_REQUEST_KIND__UNDEFINED:
 		case MPIR_REQUEST_KIND__LAST:
 			assert(0);
@@ -154,6 +156,7 @@ void MPID_Request_destroy_hook(MPIR_Request *req)
 		break;
 	case MPIR_REQUEST_KIND__PREQUEST_RECV:
 	case MPIR_REQUEST_KIND__PREQUEST_SEND:
+	case MPIR_REQUEST_KIND__PREQUEST_COLL:
 		MPIDI_PSP_Request_persistent_destroy_hook(req);
 		break;
 	case MPIR_REQUEST_KIND__PART_RECV:
@@ -165,6 +168,7 @@ void MPID_Request_destroy_hook(MPIR_Request *req)
 	case MPIR_REQUEST_KIND__MPROBE:
 	case MPIR_REQUEST_KIND__GREQUEST:
 		break;
+	case MPIR_REQUEST_KIND__PART:
 	case MPIR_REQUEST_KIND__UNDEFINED:
 	case MPIR_REQUEST_KIND__LAST:
 		assert(0);
