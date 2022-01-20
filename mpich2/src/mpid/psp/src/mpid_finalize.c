@@ -37,8 +37,7 @@ int MPID_Finalize(void)
 	int env_finalize_shutdown;
 	int env_finalize_exit;
 
-	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_FINALIZE);
-	MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_FINALIZE);
+	MPIR_FUNC_ENTER;
 
 	/*
 	  - PSP_FINALIZE_BARRIER (default=1) -- If set to 0, then an experimental
@@ -181,7 +180,9 @@ int MPID_Finalize(void)
 
 	MPID_PSP_rma_cleanup();
 
-	MPIR_Comm_free_keyval_impl(MPIDI_Process.shm_attr_key);
+	MPII_Keyval *keyval_ptr;
+	MPII_Keyval_get_ptr(MPIDI_Process.shm_attr_key, keyval_ptr);
+	MPIR_free_keyval(keyval_ptr);
 
 	MPI_Info_delete(MPI_INFO_ENV, "cuda_aware");
 #ifdef MPID_PSP_MSA_AWARENESS
@@ -233,7 +234,7 @@ int MPID_Finalize(void)
 		*/
 	}
 
-	MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_FINALIZE);
+	MPIR_FUNC_EXIT;
 
 	/* Exit here? */
 	if (env_finalize_exit == 1) {

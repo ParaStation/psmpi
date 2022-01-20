@@ -499,8 +499,7 @@ int MPID_Init(int requested, int *provided)
 
 	assert(PSCOM_ANYPORT == -1); /* all codeplaces which depends on it are marked with: "assert(PSP_ANYPORT == -1);"  */
 
-	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_INIT);
-	MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_INIT);
+	MPIR_FUNC_ENTER;
 
 	// PMI or PMIx init
 	mpi_errno = MPIR_pmi_init();
@@ -559,9 +558,9 @@ int MPID_Init(int requested, int *provided)
 	/* take SMP-related locality information into account (e.g., for MPI_Win_allocate_shared) */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
 	if(MPIDI_Process.env.enable_smp_awareness) {
-		pscom_env_get_uint(&MPIDI_Process.smp_node_id, "PSP_SMP_NODE_ID");
+		pscom_env_get_int(&MPIDI_Process.smp_node_id, "PSP_SMP_NODE_ID");
 #ifdef MPID_PSP_MSA_AWARENESS
-		pscom_env_get_uint(&MPIDI_Process.smp_node_id, "PSP_MSA_NODE_ID");
+		pscom_env_get_int(&MPIDI_Process.smp_node_id, "PSP_MSA_NODE_ID");
 #endif
 	}
 
@@ -569,7 +568,7 @@ int MPID_Init(int requested, int *provided)
 	/* take MSA-related topology information into account */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_msa_awareness, "PSP_MSA_AWARENESS");
 	if(MPIDI_Process.env.enable_msa_awareness) {
-		pscom_env_get_uint(&MPIDI_Process.msa_module_id, "PSP_MSA_MODULE_ID");
+		pscom_env_get_int(&MPIDI_Process.msa_module_id, "PSP_MSA_MODULE_ID");
 	}
 #endif
 
@@ -741,7 +740,7 @@ int MPID_Init(int requested, int *provided)
 
 fn_fail:
 fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_INIT);
+    MPIR_FUNC_EXIT;
 	return mpi_errno;
 }
 

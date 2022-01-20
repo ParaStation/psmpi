@@ -48,7 +48,7 @@ int MPIDI_GPID_GetAllInComm(MPIR_Comm *comm_ptr, int local_size,
 	return 0;
 }
 
-int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], int lpid[])
+int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], uint64_t lpid[])
 {
 	int i, mpi_errno = MPI_SUCCESS;
 	int pgid;
@@ -68,7 +68,7 @@ int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], int lpid[])
 				MPIDI_PG_t *new_pg;
 
 				MPIDI_PG_Create(gpid->gpid[1]+1, gpid->gpid[0], NULL, &new_pg);
-				assert(new_pg->lpids[gpid->gpid[1]] == -1);
+				assert(new_pg->lpids[gpid->gpid[1]] == MPIDI_PSP_INVALID_LPID);
 				if (!MPIDI_Process.next_lpid) MPIDI_Process.next_lpid = MPIR_Process.comm_world->local_size;
 				lpid[i] = MPIDI_Process.next_lpid++;
 				new_pg->lpids[gpid->gpid[1]] = lpid[i];
@@ -91,24 +91,24 @@ int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], int lpid[])
 
 						pg->size = gpid->gpid[1]+1;
 						pg->vcr = MPL_realloc(pg->vcr, sizeof(MPIDI_VC_t*)*pg->size, MPL_MEM_OBJECT);
-						pg->lpids = MPL_realloc(pg->lpids, sizeof(int)*pg->size, MPL_MEM_OBJECT);
+						pg->lpids = MPL_realloc(pg->lpids, sizeof(uint64_t)*pg->size, MPL_MEM_OBJECT);
 						pg->cons = MPL_realloc(pg->cons, sizeof(pscom_connection_t*)*pg->size, MPL_MEM_OBJECT);
 
 						for(; k<pg->size; k++) {
 							pg->vcr[k] = NULL;
-							pg->lpids[k] = -1;
+							pg->lpids[k] = MPIDI_PSP_INVALID_LPID;
 							pg->cons[k] = NULL;
 						}
 					}
 
 					if(!pg->vcr[gpid->gpid[1]]) {
-						assert(pg->lpids[gpid->gpid[1]] == -1);
+						assert(pg->lpids[gpid->gpid[1]] == MPIDI_PSP_INVALID_LPID);
 						/* VCR not yet initialized (connection establishment still needed)
 						   Assign next free LPID (MPIDI_Process.next_lpid):
 						*/
 						if (!MPIDI_Process.next_lpid) MPIDI_Process.next_lpid = MPIR_Process.comm_world->local_size;
 						lpid[i] = MPIDI_Process.next_lpid++;
-						/*printf("(%d) LPID NOT found! Assigned next lipd: %d\n", getpid(), lpid[i]);*/
+						/*printf("(%d) LPID NOT found! Assigned next lipd: %" PRIu64 "\n", getpid(), lpid[i]);*/
 						pg->lpids[gpid->gpid[1]] = lpid[i];
 						break;
 					}
@@ -692,7 +692,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 
 								pg->cons[j] = con;
 							} else {
-								assert(pg->lpids[j] > -1);
+								assert(pg->lpids[j] != MPIDI_PSP_INVALID_LPID);
 							}
 						}
 					}
@@ -756,7 +756,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 
 							assert(con);
 
-							if(pg->lpids[j] > 0) {
+							if (pg->lpids[j] != MPIDI_PSP_INVALID_LPID) {
 								pg->vcr[j] = MPIDI_VC_Create(pg, j, con, pg->lpids[j]);
 							} else {
 								if (!MPIDI_Process.next_lpid) MPIDI_Process.next_lpid = MPIR_Process.comm_world->local_size;
@@ -954,13 +954,12 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t *levels, 
 	int i;
 	int mpi_errno = MPI_SUCCESS;
 	MPIR_CHKPMEM_DECL(4);
-	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_PG_CREATE);
 
-	MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_PG_CREATE);
+	MPIR_FUNC_ENTER;
 
 	MPIR_CHKPMEM_MALLOC(pg, MPIDI_PG_t* ,sizeof(MPIDI_PG_t), mpi_errno, "pg", MPL_MEM_OBJECT);
 	MPIR_CHKPMEM_MALLOC(pg->vcr, MPIDI_VC_t**, sizeof(MPIDI_VC_t)*pg_size, mpi_errno,"pg->vcr", MPL_MEM_OBJECT);
-	MPIR_CHKPMEM_MALLOC(pg->lpids, int*, sizeof(int)*pg_size, mpi_errno,"pg->lpids", MPL_MEM_OBJECT);
+	MPIR_CHKPMEM_MALLOC(pg->lpids, uint64_t*, sizeof(uint64_t)*pg_size, mpi_errno,"pg->lpids", MPL_MEM_OBJECT);
 	MPIR_CHKPMEM_MALLOC(pg->cons, pscom_connection_t **, sizeof(pscom_connection_t*)*pg_size, mpi_errno,"pg->cons", MPL_MEM_OBJECT);
 
 	pg->size = pg_size;
@@ -971,7 +970,7 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t *levels, 
 #endif
 	for(i=0; i<pg_size; i++) {
 		pg->vcr[i] = NULL;
-		pg->lpids[i] = -1;
+		pg->lpids[i] = MPIDI_PSP_INVALID_LPID;
 		pg->cons[i] = NULL;
 	}
 
@@ -1012,7 +1011,7 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t *levels, 
 	if(pg_ptr) *pg_ptr = pg;
 
 fn_exit:
-	MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_PG_CREATE);
+	MPIR_FUNC_EXIT;
 	return mpi_errno;
 
 fn_fail:

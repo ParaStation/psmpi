@@ -136,8 +136,9 @@ AC_ARG_WITH([mpichconf], [
 if ! echo ${MPICHCONF} | grep -E 'enable-fortran=no' > /dev/null; then
     PAC_PROG_F77_MISMATCHED_ARGS(addarg,yes)
     if test "X$addarg" != "X" ; then
-	AC_MSG_WARN([The Fortran compiler $F77 does not accept programs that call the same routine with arguments of different types without the option $addarg. Running configure with FFLAGS=$addarg.])
-	FFLAGS="${FFLAGS} ${addarg}"
+	AC_MSG_WARN([The Fortran compiler $FC does not accept programs that call the same routine with arguments of different types without the option $addarg. Running configure with FFLAGS=$addarg and FCFLAGS=$addarg.])
+	FFLAGS="${FFLAGS}${FFLAGS:+ }${addarg}"
+	FCFLAGS="${FCFLAGS}${FCFLAGS:+ }${addarg}"
     fi
 fi
 
@@ -324,6 +325,7 @@ test -n "$F77" && CONF_OPS="$CONF_OPS 'F77=$F77'"
 test -n "$AR"  && CONF_OPS="$CONF_OPS 'AR=$AR'"
 test -n "$RANLIB" && CONF_OPS="$CONF_OPS 'RANLIB=$RANLIB'"
 test -n "$FFLAGS" && CONF_OPS="$CONF_OPS 'FFLAGS=$FFLAGS'"
+test -n "$FCFLAGS" && CONF_OPS="$CONF_OPS 'FCFLAGS=$FCFLAGS'"
 
 AC_ARG_WITH([pscom-builtin], [
   --with-pscom-builtin[=list]
@@ -680,17 +682,14 @@ AC_CONFIG_FILES([scripts/generate_mpicc-conf.sh], [chmod +x scripts/generate_mpi
 AC_OUTPUT
 
 if test "x$DISABLE_HWLOC" = "xtrue" ; then
-   CONF_OPS="$CONF_OPS --with-hwloc-prefix='no'"
+   CONF_OPS="$CONF_OPS --without-hwloc"
    CONF_OPS="$CONF_OPS --with-hydra-topolib='no'"
 else
    if test -n "${WITH_HWLOC_DIR}" ; then
-      CONF_OPS="$CONF_OPS --with-hwloc-prefix=${WITH_HWLOC_DIR}"
-      export CPATH=$CPATH:${WITH_HWLOC_DIR}/include
-      export LIBRARY_PATH=$LIBRARY_PATH:${WITH_HWLOC_DIR}/lib:${WITH_HWLOC_DIR}/lib64
-      export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${WITH_HWLOC_DIR}/lib:${WITH_HWLOC_DIR}/lib64
-      export MPICHLIB_CFLAGS="$MPICHLIB_CFLAGS -I${WITH_HWLOC_DIR}/include"
-      export MPICHLIB_CFLAGS="$MPICHLIB_CFLAGS -L${WITH_HWLOC_DIR}/lib"
-      export MPICHLIB_CFLAGS="$MPICHLIB_CFLAGS -L${WITH_HWLOC_DIR}/lib64"
+      CONF_OPS="$CONF_OPS --with-hwloc=${WITH_HWLOC_DIR}"
+   else
+       # Mute --with-hwloc from the top-level configure and let MPICH check for external or embedded HWLOC.
+       CONFIGARGS=`echo "$CONFIGARGS" | sed "s/'--with-hwloc'//"`
    fi
 fi
 

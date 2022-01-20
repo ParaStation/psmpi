@@ -149,16 +149,16 @@ static inline int MPID_Progress_test(MPID_Progress_state * state) /* state is un
 struct MPIR_Comm;
 int MPIDI_GPID_GetAllInComm(MPIR_Comm *comm_ptr, int local_size,
 			   MPIDI_Gpid local_gpids[], int *singlePG);
-int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], int lpid[]);
+int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], uint64_t lpid[]);
 int MPID_Create_intercomm_from_lpids(MPIR_Comm *newcomm_ptr,
-			   int size, const int lpids[]);
+			   int size, const uint64_t lpids[]);
 int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_ptr, MPIR_Comm *comm_ptr,
 			   int nPGids, const MPIDI_Gpid gpids[],
 			   int root, int remote_leader, int cts_tag,
 			   pscom_connection_t *con, char *all_ports, pscom_socket_t *pscom_socket );
 int MPID_Intercomm_exchange_map( MPIR_Comm *local_comm_ptr, int local_leader,
                                  MPIR_Comm *peer_comm_ptr, int remote_leader,
-                                 int *remote_size, int **remote_lpids,
+                                 int *remote_size, uint64_t **remote_lpids,
                                  int *is_low_group);
 
 int MPIDI_GPID_Get(MPIR_Comm *comm_ptr, int rank, MPIDI_Gpid gpid[]);

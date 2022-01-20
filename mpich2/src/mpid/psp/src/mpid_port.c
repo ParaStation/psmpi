@@ -255,7 +255,7 @@ int forward_pg_info(pscom_connection_t *con,  MPIR_Comm *comm, int root, pscom_p
 	int remote_size = 0;
 	MPIDI_Gpid *local_gpids;
 	MPIDI_Gpid *remote_gpids;
-	int *remote_lpids;
+	uint64_t *remote_lpids;
 	int local_context_id;
 	int remote_context_id;
 
@@ -313,7 +313,7 @@ int forward_pg_info(pscom_connection_t *con,  MPIR_Comm *comm, int root, pscom_p
 	/* Update intercom (without creating a VCRT because it will be created in the MPID_Create_intercomm_from_lpids() call below) */
 	init_intercomm(comm, remote_context_id, remote_size, intercomm, 0 /*create_vcrt_flag*/);
 
-	remote_lpids = (int*)MPL_malloc(remote_size*sizeof(int), MPL_MEM_OTHER);
+	remote_lpids = (uint64_t*)MPL_malloc(remote_size*sizeof(uint64_t), MPL_MEM_OTHER);
 	MPIDI_GPID_ToLpidArray(remote_size, remote_gpids, remote_lpids);
 	MPID_Create_intercomm_from_lpids(intercomm, remote_size, remote_lpids);
 

@@ -19,7 +19,7 @@
  */
 
 static unsigned int array_1_size = 0;
-static int *array_1 = NULL;
+static MPI_Aint *array_1 = NULL;
 
 static void cleanup_array_1(void)
 {
@@ -31,7 +31,7 @@ static void cleanup_array_1(void)
 }
 
 static
-int *get_array_1(unsigned int size)
+MPI_Aint *get_array_1(unsigned int size)
 {
 	if (size > array_1_size) {
 		unsigned int i;
@@ -133,7 +133,7 @@ int MPID_Win_fence(int assert, MPIR_Win *win_ptr)
 {
 	int mpi_errno, comm_size;
 	MPIR_Comm *comm_ptr;
-	int * recvcnts;
+	MPI_Aint *recvcnts;
 	unsigned int total_rma_puts_accs;
 	MPIR_Errflag_t errflag = 0;
 

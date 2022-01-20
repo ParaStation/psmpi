@@ -553,11 +553,13 @@ void MPID_PSP_rma_pscom_sockets_cleanup(void);
 int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm);
 int MPIDI_PSP_Comm_commit_post_hook(MPIR_Comm *comm);
 int MPIDI_PSP_Comm_destroy_hook(MPIR_Comm * comm);
+int MPIDI_PSP_Comm_set_hints(MPIR_Comm *comm_ptr, MPIR_Info *info_ptr);
 
 #define HAVE_DEV_COMM_HOOK
 #define MPID_Comm_commit_pre_hook(comm_) MPIDI_PSP_Comm_commit_pre_hook(comm_)
 #define MPID_Comm_commit_post_hook(comm_) MPIDI_PSP_Comm_commit_post_hook(comm_)
 #define MPID_Comm_free_hook(comm_) MPIDI_PSP_Comm_destroy_hook(comm_)
+#define MPID_Comm_set_hints(comm_, info_) MPIDI_PSP_Comm_set_hints(comm_, info_)
 
 /* Progress hooks. */
 #define MPID_Progress_register_hook(fn_, id_) MPI_SUCCESS
@@ -759,7 +761,7 @@ int MPID_Progress_poke(void);
 
 int MPID_Get_processor_name( char *name, int namelen, int *resultlen);
 int MPID_Get_universe_size(int  * universe_size);
-int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, int * lpid_ptr, bool is_remote);
+int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, uint64_t * lpid_ptr, bool is_remote);
 
 void MPID_Request_create_hook(MPIR_Request *);
 void MPID_Request_free_hook(MPIR_Request *);

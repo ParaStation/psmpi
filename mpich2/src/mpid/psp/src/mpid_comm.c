@@ -48,7 +48,9 @@ int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
 
 		mpi_errno = MPIR_Comm_split_impl(comm_ptr, color, key, newcomm_ptr);
 
-	} else if (split_type == MPIX_COMM_TYPE_NEIGHBORHOOD) {
+	} else if ((split_type == MPIX_COMM_TYPE_NEIGHBORHOOD) ||
+		   (split_type == MPI_COMM_TYPE_HW_GUIDED) ||
+		   (split_type == MPI_COMM_TYPE_HW_UNGUIDED)) {
 		// we don't know how to handle this split types -> so hand it back to the upper MPICH layer:
 		mpi_errno = MPIR_Comm_split_type(comm_ptr, split_type, key, info_ptr, newcomm_ptr);
 	} else {
@@ -416,9 +418,17 @@ int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 	} else {
 		*id_p = MPIDI_Process.smp_node_id;
 	}
+
 	return MPI_SUCCESS;
 }
 
+#if 0
+/* It seems that this ADI3 function is no longer used in the higher MPICH layers and
+   has been replaced by a direct access to MPIR_Process.num_nodes.
+   Therefore, this function is commented out here so that it cannot be used by mistake.
+   In the MSA case, however, we must continue to pay attention that MPID_Get_max_badge()
+   (see above) is still used also in the higher layers.
+*/
 int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 {
 	/* Since the node IDs are not necessarily ordered and contiguous,
@@ -430,6 +440,7 @@ int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 	*max_id_p = 0;
 	return MPI_ERR_OTHER;
 }
+#endif
 
 
 int MPID_PSP_comm_init(int has_parent)
@@ -563,7 +574,7 @@ fn_fail:
 	goto fn_exit;
 }
 
-int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, int * lpid_ptr, bool is_remote)
+int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, uint64_t * lpid_ptr, bool is_remote)
 {
 	if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM || is_remote) {
 		*lpid_ptr = comm_ptr->vcr[idx]->lpid;
@@ -574,7 +585,7 @@ int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, int * lpid_ptr, bool is_rem
 	return MPI_SUCCESS;
 }
 
-int MPID_Create_intercomm_from_lpids(MPIR_Comm *newcomm_ptr, int size, const int lpids[])
+int MPID_Create_intercomm_from_lpids(MPIR_Comm *newcomm_ptr, int size, const uint64_t lpids[])
 {
 	int mpi_errno = MPI_SUCCESS;
 	MPIR_Comm *commworld_ptr;
@@ -595,9 +606,16 @@ int MPID_Create_intercomm_from_lpids(MPIR_Comm *newcomm_ptr, int size, const int
 		   we can just take the corresponding entry from comm_world.
 		   Otherwise, we need to search through the process groups.
 		*/
-		/* printf( "[%d] Remote rank %d has lpid %d\n",
+		/* printf( "[%d] Remote rank %d has lpid %" PRIu64 "\n",
 		   MPIR_Process.comm_world->rank, i, lpids[i] ); */
-		if ((lpids[i] >=0) && (lpids[i] < commworld_ptr->remote_size)) {
+
+		/* All LPIDs passed in the array must be valid, because otherwise we
+		 * cannot find the matching VC here. Therefore, we check this with
+		 * an assertion just to be safe...
+		 */
+		MPIR_Assert(lpids[i] != MPIDI_PSP_INVALID_LPID);
+
+		if (lpids[i] < commworld_ptr->remote_size) {
 			vcr = commworld_ptr->vcr[lpids[i]];
 			assert(vcr);
 		}
@@ -642,8 +660,7 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 {
 	pscom_connection_t *con1st;
 	int i;
-	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_COMM_COMMIT_PRE_HOOK);
-	MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_COMM_COMMIT_PRE_HOOK);
+	MPIR_FUNC_ENTER;
 
 	if (comm->mapper_head) {
 		MPID_PSP_comm_create_mapper(comm);
@@ -692,7 +709,7 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 
 		if(tl) { // This subcomm is not flat -> attach a further subcomm level: (to be handled in SMP-aware collectives)
 			assert(comm->comm_kind == MPIR_COMM_KIND__INTRACOMM);
-			mpi_errno = MPIR_Comm_dup_impl(comm, NULL, &comm->local_comm); // we "misuse" local_comm for this purpose
+			mpi_errno = MPIR_Comm_dup_impl(comm, &comm->local_comm); // we "misuse" local_comm for this purpose
 			assert(mpi_errno == MPI_SUCCESS);
 		}
 	}
@@ -709,18 +726,17 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 	       __func__, comm, comm->name, comm->context_id, comm->local_size););
 	*/
 fn_exit:
-	MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_COMM_COMMIT_PRE_HOOK);
+	MPIR_FUNC_EXIT;
 	return MPI_SUCCESS;
 }
 
 int MPIDI_PSP_Comm_commit_post_hook(MPIR_Comm *comm)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_COMM_COMMIT_POST_HOOK);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_COMM_COMMIT_POST_HOOK);
+    MPIR_FUNC_ENTER;
 
   fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_COMM_COMMIT_POST_HOOK);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -758,4 +774,14 @@ int MPIDI_PSP_Comm_destroy_hook(MPIR_Comm * comm)
 #endif
 
 	return MPI_SUCCESS;
+}
+
+
+int MPIDI_PSP_Comm_set_hints(MPIR_Comm *comm_ptr, MPIR_Info *info_ptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_FUNC_ENTER;
+
+    MPIR_FUNC_EXIT;
+    return mpi_errno;
 }

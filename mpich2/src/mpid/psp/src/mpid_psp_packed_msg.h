@@ -55,7 +55,7 @@ int MPID_PSP_packed_msg_prepare(const void *addr, MPI_Aint count, MPI_Datatype d
 		msg->tmp_buf = NULL;
 	} else {
 		MPI_Aint packsize;
-		MPIR_Pack_size_impl(count, datatype, &packsize);
+		MPIR_Pack_size(count, datatype, &packsize);
 		ret = MPID_PSP_packed_msg_allocate(packsize, msg);
 	}
 

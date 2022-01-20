@@ -44,6 +44,8 @@ struct MPIDI_PSP_topo_level {
 #define MPIDI_PSP_TOPO_LEVEL__MODULES 4096
 #define MPIDI_PSP_TOPO_LEVEL__NODES   1024
 
+#define MPIDI_PSP_INVALID_LPID ((uint64_t)-1)
+
 typedef struct MPIDI_PG MPIDI_PG_t;
 struct MPIDI_PG {
 	struct MPIDI_PG * next;
@@ -51,7 +53,7 @@ struct MPIDI_PG {
 	int size;
 	int id_num;
 	MPIDI_VC_t **vcr;
-	int * lpids;
+	uint64_t * lpids;
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	struct MPIDI_PSP_topo_level *topo_levels;
 #endif
@@ -62,7 +64,7 @@ struct MPIDI_PG {
 
 struct MPIDI_VC {
 	pscom_connection_t *con;
-	int lpid;
+	uint64_t lpid;
 	int pg_rank;
 	MPIDI_PG_t * pg;
 	int refcnt;
@@ -83,7 +85,7 @@ MPIDI_VCRT_t *MPIDI_VCRT_Dup(MPIDI_VCRT_t *vcrt);
 int MPIDI_VCRT_Release(MPIDI_VCRT_t *vcrt, int isDisconnect);
 
 MPIDI_VC_t *MPIDI_VC_Dup(MPIDI_VC_t *orig_vcr);
-MPIDI_VC_t *MPIDI_VC_Create(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid);
+MPIDI_VC_t *MPIDI_VC_Create(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, uint64_t lpid);
 
 int MPID_PSP_get_host_hash(void);
 int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key, MPIR_Info * info_ptr, MPIR_Comm ** newcomm_ptr);
@@ -108,7 +110,7 @@ typedef struct MPIDI_Process
 	unsigned int 	singleton_but_no_pm;
 
 	char *pg_id_name;
-	int next_lpid;
+	uint64_t next_lpid;
 	MPIDI_PG_t * my_pg;
 
 	int shm_attr_key;
