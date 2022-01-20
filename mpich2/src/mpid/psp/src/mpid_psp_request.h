@@ -32,7 +32,17 @@ int MPID_PSP_Subrequest_completed(MPIR_Request *req)
 {
 	/* ToDo: should be explicit atomic */
 	(*(req->cc_ptr))--;
-	return ((*(req->cc_ptr)) == 0);
+
+	int completed = (*(req->cc_ptr)) == 0;
+
+	if(completed && req->completion_notification) {
+		/* decrement the completion notification counter*/
+		MPIR_cc_dec(req->completion_notification);
+		/*release reference of subrequest*/
+		MPIR_Request_free(req);
+	}
+
+	return completed;
 }
 
 static inline

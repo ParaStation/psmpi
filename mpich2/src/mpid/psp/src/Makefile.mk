@@ -12,6 +12,7 @@ mpi_core_sources +=               src/mpid/psp/src/mpid_abort.c			\
                                   src/mpid/psp/src/mpid_irecv.c			\
                                   src/mpid/psp/src/mpid_isend.c			\
                                   src/mpid/psp/src/mpid_op.c			\
+                                  src/mpid/psp/src/mpid_part.c			\
                                   src/mpid/psp/src/mpid_persistent.c		\
                                   src/mpid/psp/src/mpid_progress.c		\
                                   src/mpid/psp/src/mpid_port.c			\
@@ -27,6 +28,7 @@ mpi_core_sources +=               src/mpid/psp/src/mpid_abort.c			\
                                   src/mpid/psp/src/mpid_rma_put.c		\
                                   src/mpid/psp/src/mpid_rma_sync.c		\
                                   src/mpid/psp/src/mpid_send.c			\
+                                  src/mpid/psp/src/mpid_start.c			\
                                   src/mpid/psp/src/mpid_unresolved.c		\
                                   src/mpid/psp/src/mpid_vc.c
 

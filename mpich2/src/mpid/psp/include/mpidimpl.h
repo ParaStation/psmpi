@@ -165,6 +165,14 @@ typedef struct MPIDI_Process
        } stats;
 #endif /* MPIDI_PSP_WITH_SESSION_STATISTICS */
 
+	/* 	Partitioned communication lists used on receiver side
+		TODO: the following two lists can be optimized
+		by saving the requests structured per source rank
+		instead of one global list for all source ranks
+	*/
+	struct list_head part_unexp_list; /* list of unexpected receives (stores received SEND_INIT that can not be matched to partitioned receive request yet)*/
+	struct list_head part_posted_list; /* list of posted receive request that could not be matched to SEND_INIT yet*/
+
 } MPIDI_Process_t;
 
 extern MPIDI_Process_t MPIDI_Process;
@@ -172,6 +180,7 @@ extern MPIDI_Process_t MPIDI_Process;
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level);
 #endif
+
 
 int MPIDI_PSP_Isend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		    int dest, int tag, MPIR_Comm *comm, int context_offset,
@@ -192,6 +201,25 @@ int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int t
 		   MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
 */
 
+/*init persistent request*/
+int MPID_PSP_persistent_init(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
+			     MPIR_Comm *comm, int context_offset, MPIR_Request **request,
+			     int (*call)(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
+					 int tag, struct MPIR_Comm * comm, int context_offset, MPIR_Request ** request),
+			     MPIR_Request_kind_t type);
+
+/*start persistent request*/
+int MPID_PSP_persistent_start(MPIR_Request *req);
+
+/*start partitioned receive request*/
+int MPID_PSP_precv_start(MPIR_Request * req);
+/*start partitioned send request*/
+int MPID_PSP_psend_start(MPIR_Request * req);
+/*callbacks for partitioned communication*/
+pscom_request_t * MPID_do_recv_part_send_init(pscom_connection_t *con, pscom_header_net_t *header_net);
+pscom_request_t * MPID_do_recv_part_cts(pscom_connection_t *con, pscom_header_net_t *header_net);
+
+
 /* Control messages */
 #define MPIDI_PSP_CTRL_TAG__WIN__POST	  11
 #define MPIDI_PSP_CTRL_TAG__WIN__COMPLETE 12
@@ -201,6 +229,8 @@ void MPIDI_PSP_SendCtrl(int tag, int context_id, int src_rank, pscom_connection_
 void MPIDI_PSP_RecvCtrl(int tag, int context_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype);
 void MPIDI_PSP_IprobeCtrl(int tag, int context_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype, int *flag);
 void MPIDI_PSP_SendRmaCtrl(MPIR_Win *win_ptr, MPIR_Comm *comm, pscom_connection_t *con, int dest_rank, enum MPID_PSP_MSGTYPE msgtype);
+void MPIDI_PSP_SendPartitionedCtrl(int tag, int context_id, int src_rank, pscom_connection_t *con, MPI_Aint sdata_size, int requests, MPIR_Request * sreq, MPIR_Request * rreq, enum MPID_PSP_MSGTYPE msgtype);
+void MPIDI_PSP_RecvPartitionedCtrl(int tag, int context_id, int src_rank,	pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype);
 
 /* from mpid_rma_put.c: */
 pscom_request_t *MPID_do_recv_rma_put(pscom_connection_t *con, MPID_PSCOM_XHeader_Rma_put_t *xhead_rma);

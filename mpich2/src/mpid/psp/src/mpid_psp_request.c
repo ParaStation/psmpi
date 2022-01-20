@@ -28,6 +28,13 @@ void MPIDI_PSP_Request_persistent_create_hook(MPIR_Request *req)
 }
 
 static inline
+void MPIDI_PSP_Request_partitioned_create_hook(MPIR_Request *req)
+{
+	struct MPID_DEV_Request_partitioned *preq = &req->dev.kind.partitioned;
+	preq->datatype = 0;
+}
+
+static inline
 void MPIDI_PSP_Request_send_create_hook(MPIR_Request *req)
 {
 	struct MPID_DEV_Request_send *sreq = &req->dev.kind.send;
@@ -51,6 +58,15 @@ void MPIDI_PSP_Request_persistent_destroy_hook(MPIR_Request *req)
 //	if (preq->comm) {
 //		MPIR_Comm_release(preq->comm);
 //	}
+}
+
+static inline
+void MPIDI_PSP_Request_partitioned_destroy_hook(MPIR_Request *req)
+{
+	struct MPID_DEV_Request_partitioned *preq = &req->dev.kind.partitioned;
+	if (preq->datatype) {
+		MPID_PSP_Datatype_release(preq->datatype);
+	}
 }
 
 
@@ -107,6 +123,10 @@ void MPID_Request_create_hook(MPIR_Request *req)
 		case MPIR_REQUEST_KIND__PREQUEST_SEND:
 			MPIDI_PSP_Request_persistent_create_hook(req);
 			break;
+		case MPIR_REQUEST_KIND__PART_RECV:
+		case MPIR_REQUEST_KIND__PART_SEND:
+			MPIDI_PSP_Request_partitioned_create_hook(req);
+			break;
 		case MPIR_REQUEST_KIND__RECV:
 		case MPIR_REQUEST_KIND__GREQUEST:
 		case MPIR_REQUEST_KIND__COLL:
@@ -135,6 +155,10 @@ void MPID_Request_destroy_hook(MPIR_Request *req)
 	case MPIR_REQUEST_KIND__PREQUEST_RECV:
 	case MPIR_REQUEST_KIND__PREQUEST_SEND:
 		MPIDI_PSP_Request_persistent_destroy_hook(req);
+		break;
+	case MPIR_REQUEST_KIND__PART_RECV:
+	case MPIR_REQUEST_KIND__PART_SEND:
+		MPIDI_PSP_Request_partitioned_destroy_hook(req);
 		break;
 	case MPIR_REQUEST_KIND__RECV:
 	case MPIR_REQUEST_KIND__COLL:

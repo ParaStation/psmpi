@@ -131,6 +131,7 @@ int MPIDI_PSP_Progress_poke(void);
  */
 
 #define MPID_Prequest_free_hook(req_) do {} while(0)
+#define MPID_Part_request_free_hook(req_) do {} while(0)
 
 /*
  * Device level progress engine macros

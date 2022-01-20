@@ -153,6 +153,13 @@ typedef struct MPID_PSCOM_XHeader_Rma_lock {
 	struct MPIR_Win	*win_ptr;
 } MPID_PSCOM_XHeader_Rma_lock_t;
 
+typedef struct MPID_PSCOM_XHeader_Part {
+	MPID_PSCOM_XHeader_t common;
+	MPI_Aint sdata_size;
+	int requests;
+	MPIR_Request * sreq_ptr;
+	MPIR_Request * rreq_ptr;
+} MPID_PSCOM_XHeader_Part_t;
 
 #define PSCOM_XHEADER_USER_TYPE union pscom_xheader_user
 union pscom_xheader_user
@@ -164,6 +171,7 @@ union pscom_xheader_user
 	MPID_PSCOM_XHeader_Rma_get_answer_t	get_answer;
 	MPID_PSCOM_XHeader_Rma_accumulate_t	accumulate;
 	MPID_PSCOM_XHeader_Rma_lock_t	rma_lock;
+	MPID_PSCOM_XHeader_Part_t part;
 };
 
 
@@ -324,6 +332,10 @@ enum MPID_PSP_MSGTYPE {
 	MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_REQUEST,
 	MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_ANSWER,
 
+	/*Partitioned communication*/
+	MPID_PSP_MSGTYPE_PART_SEND_INIT, /*issued by sender during Psend_init*/
+	MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND, /*clear to send message issued by receiver once start is called and receive request matched to send request*/
+
 	MPID_PSP_MSGTYPE_FINALIZE_TOKEN
 };
 
@@ -416,6 +428,33 @@ struct MPID_DEV_Request_persistent
 };
 
 
+struct MPID_DEV_Request_partitioned
+{
+	struct MPID_DEV_Request_common common;
+
+	void			*buf;
+	int 			partitions; /* number of partitions  */
+	int			count; /* for partitioned requests: count is per partition */
+	MPI_Datatype		datatype;
+	int			rank;
+	int			tag;
+	int 			context_id; /* context_id, used during init msg exchange for matching on receiver side */
+	MPIR_Info 		*info;
+	int			context_offset;
+	MPIR_Request 		*peer_request; /* pointer to the peer request, only used for synchronization, never de-referenced */
+	MPI_Aint		sdata_size; /* size of send data */
+	int			part_per_req; /* number of partitiones per send/ recv request */
+	int			requests; /* number of send/ recv requests for partitioned data transmission of the entire buffer */
+
+	/* receiver */
+	struct list_head 	next; /* use partitioned requests in lists (see list.h) */
+
+	/* sender */
+	bool 			*part_ready; /* array with length equal to number of partitions, saving the ready status of each partition */
+	int			first_use; /* 1 means this is the first call to MPI_start for this request, 0 means it is a consecutive call */
+	int 			send_ctr; /* counting submitted send requests */
+};
+
 struct MPI_Status;
 
 
@@ -430,6 +469,7 @@ struct MPID_DEV_Request
 		struct MPID_DEV_Request_send  send;
 		struct MPID_DEV_Request_multi multi;
 		struct MPID_DEV_Request_persistent persistent; /* Persistent send/recv */
+		struct MPID_DEV_Request_partitioned partitioned; /* Partitioned send/recv */
 		struct MPID_DEV_Request_mprobe mprobe;
 	} kind;
 };
@@ -680,6 +720,20 @@ int MPID_Mrecv(void *buf, int count, MPI_Datatype datatype,
 
 int MPID_Cancel_send(MPIR_Request *);
 int MPID_Cancel_recv(MPIR_Request *);
+
+int MPID_Psend_init(const void *buf, int partitions, MPI_Count count,
+                    MPI_Datatype datatype, int dest, int tag, MPIR_Comm *comm,
+		    MPIR_Info *info, MPIR_Request **request);
+int MPID_Precv_init(void *buf, int partitions, MPI_Count count,
+                    MPI_Datatype datatype, int source, int tag, MPIR_Comm *comm,
+		    MPIR_Info *info,MPIR_Request **request );
+
+int MPID_Pready_range(int partition_low, int partition_high,
+                      MPIR_Request *sreq);
+int MPID_Pready_list(int length, const int array_of_partitions[], MPIR_Request *sreq);
+int MPID_Parrived(MPIR_Request *rreq, int partition, int *flag);
+
+
 
 MPI_Aint MPID_Aint_add(MPI_Aint base, MPI_Aint disp);
 

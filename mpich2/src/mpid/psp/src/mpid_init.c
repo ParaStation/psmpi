@@ -714,6 +714,10 @@ int MPID_Init(int requested, int *provided)
 			MPICH_THREAD_LEVEL : requested;
 	}
 
+	/* init lists for partitioned communication operations (used on receiver side) */
+	INIT_LIST_HEAD(&(MPIDI_Process.part_posted_list));
+	INIT_LIST_HEAD(&(MPIDI_Process.part_unexp_list));
+
 fn_fail:
 fn_exit:
     MPIR_FUNC_EXIT;
