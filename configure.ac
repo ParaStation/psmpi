@@ -385,7 +385,7 @@ AC_ARG_WITH([pscom-allin], [
 	fi
 
 	case $CONFSET in
-		"default"|"gcc"|"intel"|"icc") ;;
+		"default"|"gcc"|"intel"|"icc"|"devel"|"debug") ;;
 		*) confset_and_allin_does_not_match="yes" ;;
 	esac
 	if test "$confset_and_allin_does_not_match" = "yes" ; then
