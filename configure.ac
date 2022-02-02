@@ -222,7 +222,7 @@ case $CONFSET in
 		if test "$ENABLE_PROFILE" = "gen" ; then
 			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -fprofile-generate -fprofile-dir=$PROFILE_DIR"
 			# Fix me! Disable Fortran for avoiding issues when compiling with FDO enabled:
-			CONF_OPS=`echo "$CONF_OPS" | sed -e s/enable-f77/disable-fortran/g`
+			CONF_OPS=`echo "$CONF_OPS" | sed -e s/enable-fortran=all/enable-fortran=no/g`
 		fi
 	fi
 	;;
@@ -248,6 +248,8 @@ case $CONFSET in
 	else
 		if test "$ENABLE_PROFILE" = "gen" ; then
 			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -prof-gen -prof-dir=$PROFILE_DIR"
+			# Fix me! Disable Fortran for avoiding issues when compiling with PGO enabled:
+			CONF_OPS=`echo "$CONF_OPS" | sed -e s/enable-fortran=all/enable-fortran=no/g`
 		fi
 	fi
 	;;
