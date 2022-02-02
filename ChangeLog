@@ -1,3 +1,7 @@
+2022-02-02  Simon Pickartz <pickartz@par-tec.com>     -     5.6.0-0rc2
+
+	* Fix: Configure option for PGO/FDO-related builds
+
 2022-01-14  Simon Pickartz <pickartz@par-tec.com>     -     5.6.0-0rc1
 
 2022-01-13  Xu Huang <huang@par-tec.com>
