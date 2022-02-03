@@ -154,7 +154,7 @@ if test "$enable_psp_cuda_awareness" = "yes" ; then
 		AC_MSG_ERROR([The pscom library is missing CUDA awareness. Abort!])
 	],[
 		AS_IF([test "x$PSCOM_ALLIN"  != "xtrue" -a "$have_pscom_memcpy" != "yes" ],[
-			AC_MSG_ERROR([The pscom library is lacking the pscom_memcpy() symbol. Please re-compile the pscom with "--enable-cuda". Abort!])
+			AC_MSG_ERROR([The pscom library is lacking the pscom_memcpy() symbol. Please re-compile the pscom with CUDA support. Abort!])
 		],[
 			PSP_CUDA_AWARE_SUPPORT=1
 			AC_DEFINE([MPIDI_PSP_WITH_CUDA_AWARENESS], [], [Define to enable GPU memory awareness in PSP device if CUDA is found])
