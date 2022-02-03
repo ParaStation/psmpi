@@ -124,7 +124,7 @@ AC_ARG_WITH([mpichconf], [
 # Only test fortran-related behavior, if `--enable-fortran=[no|none]` was *not*
 # given. Otherwise, fortran might be disabled completely making this check
 # obsolete.
-if ! echo ${MPICHCONF} | grep -E 'enable-fortran=no'; then
+if ! echo ${MPICHCONF} | grep -E 'enable-fortran=no' > /dev/null; then
     PAC_PROG_F77_MISMATCHED_ARGS(addarg,yes)
     if test "X$addarg" != "X" ; then
 	AC_MSG_WARN([The Fortran compiler $F77 does not accept programs that call the same routine with arguments of different types without the option $addarg. Running configure with FFLAGS=$addarg.])
