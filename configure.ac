@@ -10,6 +10,7 @@ AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([scripts])
 AC_CONFIG_MACRO_DIR([mpich2/confdb])
 AC_CANONICAL_TARGET([])
+AC_PROG_CC
 
 CONF_ECHO_PREFIX="psmpi: "
 
