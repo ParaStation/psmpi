@@ -14,6 +14,7 @@ import glob
 import os
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 
@@ -58,7 +59,9 @@ def main():
         end=end_marker,
     )
     subprocess.run(
-        ["git", "clone", args.path, cloned_repo_path], capture_output=not args.verbose
+        ["git", "clone", args.path, cloned_repo_path],
+        stdout=sys.stdout if args.verbose else subprocess.DEVNULL,
+        stderr=subprocess.STDOUT
     )
     print("done")
 
@@ -66,7 +69,8 @@ def main():
         print(f"===> Checking out '{args.ref}'... ", end=end_marker)
         subprocess.run(
             ["git", "checkout", args.ref],
-            capture_output=not args.verbose,
+            stdout=sys.stdout if args.verbose else subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
             cwd=cloned_repo_path,
         )
         print("done")
@@ -104,7 +108,10 @@ def main():
 
     print("===> Running autotools... ", end=end_marker, flush=True)
     subprocess.run(
-        ["./autogen.sh"], capture_output=not args.verbose, cwd=packaged_repo_path
+        ["./autogen.sh"],
+        stdout=sys.stdout if args.verbose else subprocess.DEVNULL,
+        stderr=subprocess.STDOUT,
+        cwd=packaged_repo_path
     )
     print("done")
 
