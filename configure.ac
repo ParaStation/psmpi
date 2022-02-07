@@ -112,6 +112,10 @@ AC_ARG_WITH([confset], [
 	CONFSET="default"
 ])
 
+AC_ARG_WITH([pscom-allin], [
+  --with-pscom-allin[=path]
+			  Enable pscom source code fusion and set path to pscom
+],,[with_pscom_allin=no])
 
 AC_ARG_WITH([mpichconf], [
   --with-mpichconf[=opts]   Additional mpich configuration options
@@ -325,12 +329,14 @@ AC_ARG_WITH([pscom-builtin], [
 
 CONF_ECHO_ALLIN=""
 
-AC_ARG_WITH([pscom-allin], [
-  --with-pscom-allin[=path]
-			  Enable pscom source code fusion and set path to pscom
-],[
+AS_IF([test "x$with_pscom_allin" != "xno"],[
+	# Ensure somethin else than "yes" was given
+	AS_IF([test "x$with_pscom_allin" == "xyes"],[
+		AC_MSG_ERROR(["You have to provide a path to the pscom sources. Abort!"])
+	])
+
 	export PSCOM_ALLIN="true"
-	PSCOM_ALLIN_DIR="$withval"
+	PSCOM_ALLIN_DIR="$with_pscom_allin"
 	AC_CHECK_FILE(["${PSCOM_ALLIN_DIR}/lib/all/pscom_all.c"], [
 		PSCOM_ALLIN_DIR="${PSCOM_ALLIN_DIR}/lib/all/"
 	])
