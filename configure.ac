@@ -117,6 +117,11 @@ AC_ARG_WITH([pscom-allin], [
 			  Enable pscom source code fusion and set path to pscom
 ],,[with_pscom_allin=no])
 
+AC_ARG_WITH([pscom], [
+  --with-pscom[=path]
+			  Path to the pscom installation
+],[],[with_pscom=yes])
+
 AC_ARG_WITH([mpichconf], [
   --with-mpichconf[=opts]   Additional mpich configuration options
 ],[
@@ -309,6 +314,7 @@ esac
 if ! echo ${CONFSET} | grep -Eq "ch[34]"; then
 	CONF_OPS="$CONF_OPS --with-psp-confset=$CONFSET"  # Make confset available to subconfigure.m4
 	CONF_OPS="$CONF_OPS --with-datatype-engine=yaksa" # 'yaksa' is the default datatype enginge
+	CONF_OPS="$CONF_OPS --with-psp-pscom=${with_pscom}"
 fi
 
 test -n "$CC"  && CONF_OPS="$CONF_OPS 'CC=$CC'"
@@ -657,6 +663,9 @@ AC_SUBST([MPICCCONFDIR])
 
 # ToDo: directly  use PSCOM_LDFLAGS from mpich2/src/mpid/psp/subconfigure.m4
 PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
+AS_IF([test "x$with_pscom" != "xno" -a "x$with_pscom" != "xyes"],[
+	PSCOM_LDFLAGS="-L${with_pscom}/lib64"
+])
 AC_SUBST([PSCOM_LDFLAGS])
 
 PSCOM_LIBRARY="${PSCOM_LIBRARY-"-lpscom"}"
