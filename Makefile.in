@@ -32,8 +32,24 @@ ifneq ($(CONFSET),none)
 SUBDIRS += mpich2
 all: mpich2_all
 
+ENABLE_CUDA_SWITCH=--enable-cuda ## Add some tests for CUDA awareness
+DISABLE_CUDA_SWITCH=--without-cuda ## Disable CUDA for test suite configure
 ifeq ($(CUDA_SUPPORT),true)
-CUDA_TESTS = --enable-cuda
+CUDA_TESTS = $(ENABLE_CUDA_SWITCH)
+else
+CUDA_TESTS = $(DISABLE_CUDA_SWITCH)
+endif
+ifdef TESTCUDA
+_TESTCUDA = $(TESTCUDA)
+ifeq ($(TESTCUDA),yes)
+CUDA_TESTS = $(ENABLE_CUDA_SWITCH)
+else
+ifeq ($(TESTCUDA),no)
+CUDA_TESTS = $(DISABLE_CUDA_SWITCH)
+else
+_TESTCUDA = unknown
+endif
+endif
 endif
 
 ifeq ($(ENABLE_HYDRA),false)
@@ -78,6 +94,9 @@ ifneq ($(filter $(TESTDIR),$(TESTFOLDERS)),$(TESTDIR))
 	@echo "The following test directories are available:"
 	@$(foreach dir,$(TESTFOLDERS), echo "* " $(dir) ;)
 else
+ifeq ($(_TESTCUDA),unknown)
+	@echo "ERROR: The option 'TESTCUDA=${TESTCUDA}' is unknown!"
+else
 	export TESTSET=$(TESTSET); \
 	export MPIEXEC=$(MPIEXEC); \
 	export PSI_OVERBOOK=1; \
@@ -95,6 +114,7 @@ else
 	) 2>&1 | tee -a $${_LOGNAME}.log; \
 	echo -e "\nSummary written to $${_LOGNAME}*"
 	@! fgrep 'not ok' $(TESTSUMMARY).tap
+endif
 endif
 endif
 
