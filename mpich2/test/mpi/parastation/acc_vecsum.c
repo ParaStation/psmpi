@@ -9,7 +9,7 @@
 
 /*  Portions of this code were written/modified by ParTec AG
  *  Copyright (C) 2017-2021 ParTec Cluster Competence Center GmbH, Munich
- *  Copyright (C) 2021      ParTec AG, Munich
+ *  Copyright (C) 2021-2022 ParTec AG, Munich
  */
 
 #include "mpi.h"
