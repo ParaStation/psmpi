@@ -317,7 +317,7 @@ test -n "$FFLAGS" && CONF_OPS="$CONF_OPS 'FFLAGS=$FFLAGS'"
 AC_ARG_WITH([pscom-builtin], [
   --with-pscom-builtin[=list]
 			  Define list of pscom plugins that shall be built-in
-			  Default: openib,psm2 / Needs pscom source code fusion
+			  Default: psm2,ucp / Requires '--with-pscom-allin'
 ],[
 	PSCOM_BUILTIN_PLUGINS="$withval"
 ])
@@ -363,7 +363,6 @@ AC_ARG_WITH([pscom-allin], [
 		done
 		unset IFS
 	else
-		openib_enabled="$have_openib"
 		psm2_enabled="$have_psm2"
 		ucp_enabled="$have_ucp"
 	fi
