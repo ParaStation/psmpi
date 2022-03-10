@@ -41,10 +41,10 @@ void rma_accumulate_done(pscom_request_t *req)
 
 
 static
-int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
-			    int target_rank, MPI_Aint target_disp, int target_count,
-			    MPI_Datatype target_datatype, MPI_Op op, MPIR_Win *win_ptr,
-			    MPIR_Request **request)
+int MPIDI_PSP_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
+				 int target_rank, MPI_Aint target_disp, int target_count,
+				 MPI_Datatype target_datatype, MPI_Op op, MPIR_Win *win_ptr,
+				 MPIR_Request **request)
 {
 	int mpi_error = MPI_SUCCESS;
 	MPID_PSP_packed_msg_t msg;
@@ -77,15 +77,15 @@ int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datat
 		 */
 		if(unlikely(win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED)) {
 			MPID_PSP_shm_rma_mutex_lock(win_ptr);
-			mpi_error =  MPID_Put_generic(origin_addr, origin_count, origin_datatype,
-						target_rank, target_disp, target_count,
-						target_datatype, win_ptr, request);
+			mpi_error =  MPIDI_PSP_Put_generic(origin_addr, origin_count, origin_datatype,
+							   target_rank, target_disp, target_count,
+							   target_datatype, win_ptr, request);
 			MPID_PSP_shm_rma_mutex_unlock(win_ptr);
 			return mpi_error;
 		} else {
-			return MPID_Put_generic(origin_addr, origin_count, origin_datatype,
-						target_rank, target_disp, target_count,
-						target_datatype, win_ptr, request);
+			return MPIDI_PSP_Put_generic(origin_addr, origin_count, origin_datatype,
+						     target_rank, target_disp, target_count,
+						     target_datatype, win_ptr, request);
 		}
 	}
 
@@ -378,18 +378,18 @@ int MPID_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype orig
 		    int target_rank, MPI_Aint target_disp, int target_count,
 		    MPI_Datatype target_datatype, MPI_Op op, MPIR_Win *win_ptr)
 {
-	return MPID_Accumulate_generic(origin_addr, origin_count, origin_datatype,
-				       target_rank, target_disp, target_count, target_datatype,
-				       op, win_ptr, NULL);
+	return MPIDI_PSP_Accumulate_generic(origin_addr, origin_count, origin_datatype,
+					    target_rank, target_disp, target_count, target_datatype,
+					    op, win_ptr, NULL);
 }
 
 int MPID_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 		     int target_rank, MPI_Aint target_disp, int target_count, MPI_Datatype target_datatype,
 		     MPI_Op op, MPIR_Win *win_ptr, MPIR_Request **request)
 {
-	return MPID_Accumulate_generic((void*)origin_addr, origin_count, origin_datatype,
-				       target_rank, target_disp, target_count, target_datatype,
-				       op, win_ptr, request);
+	return MPIDI_PSP_Accumulate_generic((void*)origin_addr, origin_count, origin_datatype,
+					    target_rank, target_disp, target_count, target_datatype,
+					    op, win_ptr, request);
 }
 
 
@@ -398,11 +398,11 @@ int MPID_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype ori
  */
 
 static
-int MPID_Get_accumulate_generic(const void *origin_addr, int origin_count,
-				MPI_Datatype origin_datatype, void *result_addr, int result_count,
-				MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
-				int target_count, MPI_Datatype target_datatype, MPI_Op op, MPIR_Win *win_ptr,
-				MPIR_Request **request)
+int MPIDI_PSP_Get_accumulate_generic(const void *origin_addr, int origin_count,
+				     MPI_Datatype origin_datatype, void *result_addr, int result_count,
+				     MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
+				     int target_count, MPI_Datatype target_datatype, MPI_Op op, MPIR_Win *win_ptr,
+				     MPIR_Request **request)
 {
 	if (unlikely(target_rank == MPI_PROC_NULL)) {
 
@@ -417,22 +417,22 @@ int MPID_Get_accumulate_generic(const void *origin_addr, int origin_count,
 	}
 
 	if (unlikely(op == MPI_NO_OP)) {
-		return MPID_Get_generic(result_addr, result_count, result_datatype,
-					target_rank, target_disp, target_count,
-					target_datatype, win_ptr, request);
+		return MPIDI_PSP_Get_generic(result_addr, result_count, result_datatype,
+					     target_rank, target_disp, target_count,
+					     target_datatype, win_ptr, request);
 	}
 
 	if(1) { /* TODO: This implementation is just based on the common Get/Accumulate ops (plus some additional internal locking): */
 
-		MPID_Win_lock_internal(target_rank, win_ptr);
+		MPIDI_PSP_Win_lock_internal(target_rank, win_ptr);
 
 		MPID_Get(result_addr, result_count, result_datatype, target_rank, target_disp, target_count, target_datatype, win_ptr);
 
-		MPID_Win_wait_local_completion(target_rank, win_ptr);
+		MPIDI_PSP_Win_wait_local_completion(target_rank, win_ptr);
 
-		MPID_Accumulate_generic((void*)origin_addr, origin_count, origin_datatype, target_rank, target_disp, target_count, target_datatype, op, win_ptr, request);
+		MPIDI_PSP_Accumulate_generic((void*)origin_addr, origin_count, origin_datatype, target_rank, target_disp, target_count, target_datatype, op, win_ptr, request);
 
-		MPID_Win_unlock_internal(target_rank, win_ptr);
+		MPIDI_PSP_Win_unlock_internal(target_rank, win_ptr);
 	}
 	else {
 		/* TODO: A dedicated Get_accumulate() implementation goes here... */
@@ -447,8 +447,8 @@ int MPID_Get_accumulate(const void *origin_addr, int origin_count,
 			MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
 			int target_count, MPI_Datatype target_datatype, MPI_Op op, MPIR_Win *win_ptr)
 {
-	return MPID_Get_accumulate_generic(origin_addr, origin_count, origin_datatype, result_addr, result_count, result_datatype,
-					   target_rank, target_disp, target_count, target_datatype, op, win_ptr, NULL);
+	return MPIDI_PSP_Get_accumulate_generic(origin_addr, origin_count, origin_datatype, result_addr, result_count, result_datatype,
+						target_rank, target_disp, target_count, target_datatype, op, win_ptr, NULL);
 }
 
 int MPID_Rget_accumulate(const void *origin_addr, int origin_count,
@@ -457,8 +457,8 @@ int MPID_Rget_accumulate(const void *origin_addr, int origin_count,
 			 int target_count, MPI_Datatype target_datatype, MPI_Op op, MPIR_Win *win_ptr,
 			 MPIR_Request **request)
 {
-	return MPID_Get_accumulate_generic(origin_addr, origin_count, origin_datatype, result_addr, result_count, result_datatype,
-					   target_rank, target_disp, target_count, target_datatype, op, win_ptr, request);
+	return MPIDI_PSP_Get_accumulate_generic(origin_addr, origin_count, origin_datatype, result_addr, result_count, result_datatype,
+						target_rank, target_disp, target_count, target_datatype, op, win_ptr, request);
 }
 
 
@@ -498,7 +498,7 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 			goto fn_exit;
 		}
 
-		MPID_Win_lock_internal(target_rank, win_ptr);
+		MPIDI_PSP_Win_lock_internal(target_rank, win_ptr);
 
 #ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
 		/* check whether we need to stage the buffers */
@@ -525,14 +525,14 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 
 		MPID_Get(result_addr_tmp, 1, datatype, target_rank, target_disp, 1, datatype, win_ptr);
 
-		MPID_Win_wait_local_completion(target_rank, win_ptr);
+		MPIDI_PSP_Win_wait_local_completion(target_rank, win_ptr);
 
 		if(MPIR_Compare_equal(compare_addr_tmp, result_addr_tmp, datatype)) {
 
 			MPID_Put((void*)origin_addr, 1, datatype, target_rank, target_disp, 1, datatype, win_ptr);
 		}
 
-		MPID_Win_unlock_internal(target_rank, win_ptr);
+		MPIDI_PSP_Win_unlock_internal(target_rank, win_ptr);
 
 #ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
 		/* did we stage any buffers? */

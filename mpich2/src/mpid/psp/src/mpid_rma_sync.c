@@ -809,7 +809,7 @@ int MPID_Win_flush_all(MPIR_Win *win_ptr)
 	return MPI_SUCCESS;
 }
 
-int MPID_Win_wait_local_completion(int rank, MPIR_Win *win_ptr)
+int MPIDI_PSP_Win_wait_local_completion(int rank, MPIR_Win *win_ptr)
 {
 	if (win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED) {
 		MPL_atomic_read_write_barrier();
@@ -840,7 +840,7 @@ int MPID_Win_flush_local(int rank, MPIR_Win *win_ptr)
 		return MPI_ERR_RMA_SYNC;
 	}
 
-	MPID_Win_wait_local_completion(rank, win_ptr);
+	MPIDI_PSP_Win_wait_local_completion(rank, win_ptr);
 
 	return MPI_SUCCESS;
 }
@@ -960,7 +960,7 @@ void MPID_do_recv_rma_unlock_internal_req(pscom_request_t *req)
 	do_unlock_internal(win_ptr);
 }
 
-int MPID_Win_lock_internal(int dest, MPIR_Win *win_ptr)
+int MPIDI_PSP_Win_lock_internal(int dest, MPIR_Win *win_ptr)
 {
         MPIR_Comm *comm;
         pscom_connection_t *con;
@@ -988,7 +988,7 @@ int MPID_Win_lock_internal(int dest, MPIR_Win *win_ptr)
         return MPI_SUCCESS;
 }
 
-int MPID_Win_unlock_internal(int dest, MPIR_Win *win_ptr)
+int MPIDI_PSP_Win_unlock_internal(int dest, MPIR_Win *win_ptr)
 {
         MPIR_Comm *comm;
         pscom_connection_t *con;

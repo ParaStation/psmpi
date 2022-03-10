@@ -62,9 +62,9 @@ void io_done_rma_get_answer(pscom_request_t *request)
 }
 
 
-int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
-		     int target_rank, MPI_Aint target_disp, int target_count,
-		     MPI_Datatype target_datatype, MPIR_Win *win_ptr, MPIR_Request **request)
+int MPIDI_PSP_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
+			  int target_rank, MPI_Aint target_disp, int target_count,
+			  MPI_Datatype target_datatype, MPIR_Win *win_ptr, MPIR_Request **request)
 {
 	int mpi_error = MPI_SUCCESS;
 	MPID_Win_rank_info *ri = win_ptr->rank_info + target_rank;
@@ -333,8 +333,8 @@ int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 	     int target_rank, MPI_Aint target_disp, int target_count,
 	     MPI_Datatype target_datatype, MPIR_Win *win_ptr)
 {
-	return MPID_Get_generic(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
-				target_count, target_datatype, win_ptr, NULL);
+	return MPIDI_PSP_Get_generic(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
+				     target_count, target_datatype, win_ptr, NULL);
 }
 
 int MPID_Rget(void *origin_addr, int origin_count,
@@ -342,6 +342,6 @@ int MPID_Rget(void *origin_addr, int origin_count,
 	      int target_count, MPI_Datatype target_datatype, MPIR_Win *win_ptr,
 	      MPIR_Request **request)
 {
-	return MPID_Get_generic(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
-				target_count, target_datatype, win_ptr, request);
+	return MPIDI_PSP_Get_generic(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
+				     target_count, target_datatype, win_ptr, request);
 }
