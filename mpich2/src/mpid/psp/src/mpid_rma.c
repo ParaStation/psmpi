@@ -279,6 +279,9 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info *info_pt
 	MPIR_CHKPMEM_MALLOC(win_ptr->rma_local_pending_rank, int *, comm_size * sizeof(int),
 			    mpi_errno, "win_ptr->rma_local_pending_rank", MPL_MEM_OBJECT);
 
+	MPIR_CHKPMEM_MALLOC(win_ptr->rma_passive_pending_rank, int *, comm_size * sizeof(int),
+			    mpi_errno, "win_ptr->rma_passive_pending_rank", MPL_MEM_OBJECT);
+
 	MPIR_CHKPMEM_MALLOC(win_ptr->remote_lock_state, enum MPID_PSP_Win_lock_state *, comm_size * sizeof(int),
 			    mpi_errno, "win_ptr->remote_lock_state", MPL_MEM_OBJECT);
 
@@ -351,6 +354,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info *info_pt
 		ri->win_ptr = ti->win_ptr;
 
 		win_ptr->rma_local_pending_rank[i] = 0;
+		win_ptr->rma_passive_pending_rank[i] = 0;
 		win_ptr->remote_lock_state[i] = MPID_PSP_LOCK_UNLOCKED;
 		win_ptr->rma_pending_accumulates[i] = 0;
 	}
@@ -432,6 +436,8 @@ int MPID_Win_free(MPIR_Win **_win_ptr)
 	MPL_free(win_ptr->rma_puts_accs);
 
 	MPL_free(win_ptr->rma_local_pending_rank);
+
+	MPL_free(win_ptr->rma_passive_pending_rank);
 
 	MPL_free(win_ptr->remote_lock_state);
 

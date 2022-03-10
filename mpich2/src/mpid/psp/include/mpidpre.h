@@ -222,6 +222,8 @@ typedef struct pscom_request_get_answer_recv {
 typedef struct pscom_request_get_answer_send {
 	MPID_PSP_packed_msg_t	msg;
 	MPI_Datatype		datatype;
+	struct MPIR_Win		*win_ptr;
+	int                     src_rank;
 } pscom_request_get_answer_send_t;
 
 
@@ -485,6 +487,7 @@ typedef struct MPID_Win_rank_info
 	unsigned int rma_puts_accs_received;				\
 	unsigned int rma_local_pending_cnt;	/* pending io counter */ \
 	unsigned int *rma_local_pending_rank;   /* pending io counter per rank */ \
+	unsigned int *rma_passive_pending_rank; /* pending io counter at passive target per origin rank */ \
 	MPIR_Group *start_group_ptr; /* group passed in MPI_Win_start */ \
 	int *ranks_start;		/* ranks of last MPID_Win_start call */	\
 	unsigned int ranks_start_sz;					\

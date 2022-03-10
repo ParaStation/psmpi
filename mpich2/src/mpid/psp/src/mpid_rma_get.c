@@ -256,6 +256,8 @@ void io_done_get_answer_send(pscom_request_t *req)
 
 	MPID_PSP_packed_msg_cleanup(&gas->msg);
 
+	gas->win_ptr->rma_passive_pending_rank[gas->src_rank]--;
+
 	pscom_request_free(req);
 }
 
@@ -272,6 +274,9 @@ void io_done_get_answer_recv(pscom_request_t *req)
 	pscom_request_get_answer_send_t *gas = &req->user->type.get_answer_send;
 	MPID_PSCOM_XHeader_Rma_get_answer_t *xhead_answ = &req->xheader.user.get_answer;
 	int ret;
+
+	MPIR_Win *win_ptr = xhead_get->win_ptr;
+	int src_rank = xhead_get->common.src_rank;
 
 	ret = MPID_PSP_packed_msg_prepare(xhead_get->mem_locations.target_buf,
 					xhead_get->target_count, datatype,
@@ -297,6 +302,9 @@ void io_done_get_answer_recv(pscom_request_t *req)
 	req->ops.io_done = io_done_get_answer_send;
 	/* req->connection = connection; <- set in MPID_do_recv_rma_get_req() */
 
+	gas->win_ptr = win_ptr;
+	gas->src_rank = src_rank;
+
 	pscom_post_send(req);
 }
 
@@ -314,6 +322,8 @@ pscom_request_t *MPID_do_recv_rma_get_req(pscom_connection_t *connection, MPID_P
 
 	/* save datatype */
 	req->user->type.get_answer_send.datatype = MPID_PSP_Datatype_decode(xhead_get->encoded_type);
+
+	xhead_get->win_ptr->rma_passive_pending_rank[xhead_get->common.src_rank]++;
 
 	return req;
 }

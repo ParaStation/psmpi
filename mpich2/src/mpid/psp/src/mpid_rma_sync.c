@@ -363,6 +363,8 @@ int MPID_Win_wait(MPIR_Win *win_ptr)
 		int rank = ranks[i];
 		pscom_connection_t *con = MPID_PSCOM_rank2connection(win_ptr->comm_ptr, rank);
 
+		MPIDI_PSP_Win_wait_passive_completion(rank, win_ptr);
+
 		/* Recv tag COMPLETE from MPID_Win_complete of rank: */
 		MPIDI_PSP_RecvCtrl(MPIDI_PSP_CTRL_TAG__WIN__COMPLETE, win_ptr->comm_ptr->recvcontext_id + MPIR_CONTEXT_INTRA_PT2PT, rank, con, MPID_PSP_MSGTYPE_RMA_SYNC);
 	}
@@ -523,6 +525,8 @@ void MPID_do_recv_rma_unlock_req(pscom_request_t *req)
 	MPID_PSCOM_XHeader_Rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
 
 	MPIR_Win *win_ptr = xhead_lock->win_ptr;
+
+	MPIDI_PSP_Win_wait_passive_completion(xhead_lock->common.src_rank, win_ptr);
 
 	/* reuse orignal header, but overwrite type,src_rank and xheader_len: */
 	xhead_lock->common.type = MPID_PSP_MSGTYPE_RMA_UNLOCK_ANSWER;
@@ -727,9 +731,9 @@ void MPID_do_recv_rma_flush_req(pscom_request_t *req)
 {
 	/* This is an pscom callback. Global lock state undefined! */
 	MPID_PSCOM_XHeader_Rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
-	/*
 	MPIR_Win *win_ptr = xhead_lock->win_ptr;
-	*/
+
+	MPIDI_PSP_Win_wait_passive_completion(xhead_lock->common.src_rank, win_ptr);
 
 	/* reuse orignal header, but overwrite type,src_rank and xheader_len: */
 	xhead_lock->common.type = MPID_PSP_MSGTYPE_RMA_FLUSH_ANSWER;
@@ -812,6 +816,16 @@ int MPID_Win_wait_local_completion(int rank, MPIR_Win *win_ptr)
 	}
 
 	while (win_ptr->rma_local_pending_rank[rank]) {
+
+		MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
+	}
+
+	return MPI_SUCCESS;
+}
+
+int MPIDI_PSP_Win_wait_passive_completion(int rank, MPIR_Win *win_ptr)
+{
+	while (win_ptr->rma_passive_pending_rank[rank]) {
 
 		MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
 	}
@@ -929,6 +943,8 @@ void MPID_do_recv_rma_unlock_internal_req(pscom_request_t *req)
 	MPID_PSCOM_XHeader_Rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
 
 	MPIR_Win *win_ptr = xhead_lock->win_ptr;
+
+	MPIDI_PSP_Win_wait_passive_completion(xhead_lock->common.src_rank, win_ptr);
 
 	/* reuse orignal header, but overwrite type,src_rank and xheader_len: */
 	xhead_lock->common.type = MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_ANSWER;

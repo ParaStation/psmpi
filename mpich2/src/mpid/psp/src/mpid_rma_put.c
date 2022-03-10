@@ -236,6 +236,9 @@ void rma_put_receive_done(pscom_request_t *req)
 
 	/* ToDo: This is not treadsave. */
 	xhead_rma->win_ptr->rma_puts_accs_received ++;
+
+	xhead_rma->win_ptr->rma_passive_pending_rank[xhead_rma->common.src_rank]--;
+
 	pscom_request_free(req);
 }
 
@@ -256,6 +259,8 @@ pscom_request_t *MPID_do_recv_rma_put(pscom_connection_t *con, MPID_PSCOM_XHeade
 	req->ops.io_done = rma_put_receive_done;
 
 	rpr->datatype = datatype;
+
+	xhead_rma->win_ptr->rma_passive_pending_rank[xhead_rma->common.src_rank]++;
 
 	return req;
 }

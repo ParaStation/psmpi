@@ -340,6 +340,9 @@ void rma_accumulate_receive_done(pscom_request_t *req)
 	MPID_PSP_Datatype_release(target_datatype);
 	/* ToDo: this is not threadsave */
 	win_ptr->rma_puts_accs_received ++;
+
+	xhead_rma->win_ptr->rma_passive_pending_rank[xhead_rma->common.src_rank]--;
+
 	pscom_request_free(req);
 }
 
@@ -364,6 +367,8 @@ pscom_request_t *MPID_do_recv_rma_accumulate(pscom_connection_t *con, pscom_head
 
 	rpr->datatype = datatype;
 	req->ops.io_done = rma_accumulate_receive_done;
+
+	xhead_rma->win_ptr->rma_passive_pending_rank[xhead_rma->common.src_rank]++;
 
 	return req;
 }

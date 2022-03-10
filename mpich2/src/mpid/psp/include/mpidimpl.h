@@ -236,6 +236,7 @@ int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_da
 int MPID_Win_lock_internal(int dest, MPIR_Win *win_ptr);
 int MPID_Win_unlock_internal(int dest, MPIR_Win *win_ptr);
 int MPID_Win_wait_local_completion(int rank, MPIR_Win *win_ptr);
+int MPID_Win_wait_passive_completion(int rank, MPIR_Win *win_ptr);
 
 void mpid_debug_init(void);
 const char *mpid_msgtype_str(enum MPID_PSP_MSGTYPE msg_type);
