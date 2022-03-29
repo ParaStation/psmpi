@@ -10,6 +10,7 @@ AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([scripts])
 AC_CONFIG_MACRO_DIR([mpich2/confdb])
 AC_CANONICAL_TARGET([])
+AC_PROG_CC
 
 CONF_ECHO_PREFIX="psmpi: "
 
@@ -111,6 +112,15 @@ AC_ARG_WITH([confset], [
 	CONFSET="default"
 ])
 
+AC_ARG_WITH([pscom-allin], [
+  --with-pscom-allin[=path]
+			  Enable pscom source code fusion and set path to pscom
+],,[with_pscom_allin=no])
+
+AC_ARG_WITH([pscom], [
+  --with-pscom[=path]
+			  Path to the pscom installation
+],[],[with_pscom=yes])
 
 AC_ARG_WITH([mpichconf], [
   --with-mpichconf[=opts]   Additional mpich configuration options
@@ -123,7 +133,7 @@ AC_ARG_WITH([mpichconf], [
 # Only test fortran-related behavior, if `--enable-fortran=[no|none]` was *not*
 # given. Otherwise, fortran might be disabled completely making this check
 # obsolete.
-if ! echo ${MPICHCONF} | grep -E 'enable-fortran=no'; then
+if ! echo ${MPICHCONF} | grep -E 'enable-fortran=no' > /dev/null; then
     PAC_PROG_F77_MISMATCHED_ARGS(addarg,yes)
     if test "X$addarg" != "X" ; then
 	AC_MSG_WARN([The Fortran compiler $F77 does not accept programs that call the same routine with arguments of different types without the option $addarg. Running configure with FFLAGS=$addarg.])
@@ -304,6 +314,7 @@ esac
 if ! echo ${CONFSET} | grep -Eq "ch[34]"; then
 	CONF_OPS="$CONF_OPS --with-psp-confset=$CONFSET"  # Make confset available to subconfigure.m4
 	CONF_OPS="$CONF_OPS --with-datatype-engine=yaksa" # 'yaksa' is the default datatype enginge
+	CONF_OPS="$CONF_OPS --with-psp-pscom=${with_pscom}"
 fi
 
 test -n "$CC"  && CONF_OPS="$CONF_OPS 'CC=$CC'"
@@ -324,12 +335,14 @@ AC_ARG_WITH([pscom-builtin], [
 
 CONF_ECHO_ALLIN=""
 
-AC_ARG_WITH([pscom-allin], [
-  --with-pscom-allin[=path]
-			  Enable pscom source code fusion and set path to pscom
-],[
+AS_IF([test "x$with_pscom_allin" != "xno"],[
+	# Ensure somethin else than "yes" was given
+	AS_IF([test "x$with_pscom_allin" == "xyes"],[
+		AC_MSG_ERROR(["You have to provide a path to the pscom sources. Abort!"])
+	])
+
 	export PSCOM_ALLIN="true"
-	PSCOM_ALLIN_DIR="$withval"
+	PSCOM_ALLIN_DIR="$with_pscom_allin"
 	AC_CHECK_FILE(["${PSCOM_ALLIN_DIR}/lib/all/pscom_all.c"], [
 		PSCOM_ALLIN_DIR="${PSCOM_ALLIN_DIR}/lib/all/"
 	])
@@ -650,6 +663,9 @@ AC_SUBST([MPICCCONFDIR])
 
 # ToDo: directly  use PSCOM_LDFLAGS from mpich2/src/mpid/psp/subconfigure.m4
 PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
+AS_IF([test "x$with_pscom" != "xno" -a "x$with_pscom" != "xyes"],[
+	PSCOM_LDFLAGS="-L${with_pscom}/lib64"
+])
 AC_SUBST([PSCOM_LDFLAGS])
 
 PSCOM_LIBRARY="${PSCOM_LIBRARY-"-lpscom"}"

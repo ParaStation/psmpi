@@ -22,6 +22,12 @@ AC_ARG_WITH(psp-confset,
 		),,with_psp_confset="default")
 AC_DEFINE_UNQUOTED([MPIDI_PSP_CONFSET], ["$with_psp_confset"], [The configuration set of the PSP layer])
 
+AC_ARG_WITH(psp-pscom,
+	AC_HELP_STRING(
+		[--with-psp-pscom=path],
+		[Define the path to the pscom installation to be used]
+		),,with_psp_pscom="yes")
+
 # maximum length of a processor name, as used by
 # MPI_GET_PROCESSOR_NAME
 MPID_MAX_PROCESSOR_NAME=1024
@@ -44,6 +50,18 @@ PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
 PSCOM_LIBRARY="${PSCOM_LIBRARY-"-lpscom"}"
 PSCOM_RPATHLINK="${PSCOM_RPATHLINK-"${PSCOM_LDFLAGS//-L/-Wl,-rpath-link=}"}"
 case "$PSCOM_RPATHLINK" in '/'*) PSCOM_RPATHLINK="-Wl,-rpath-link=${PSCOM_RPATHLINK}" ;; esac
+
+AS_IF([test "x$with_psp_pscom" != "xno"],[
+	AS_IF([test "x$with_psp_pscom" != "xyes"],[
+		PSCOM_CPPFLAGS="-I${with_psp_pscom}/include"
+		PSCOM_LDFLAGS="-L${with_psp_pscom}/lib64"
+	])
+],[
+	AS_IF([test "x$PSCOM_ALLIN" != "xtrue"],[
+		AC_MSG_ERROR(["A pscom installation is required for building ParaStation MPI using the psp device. Abort!"])
+	])
+])
+
 AC_ARG_VAR([PSCOM_CPPFLAGS], [C preprocessor flags for PSCOM headers
 			    (default: "-I/opt/parastation/include")])
 AC_ARG_VAR([PSCOM_LDFLAGS], [linker flags for PSCOM libraries
@@ -154,7 +172,7 @@ if test "$enable_psp_cuda_awareness" = "yes" ; then
 		AC_MSG_ERROR([The pscom library is missing CUDA awareness. Abort!])
 	],[
 		AS_IF([test "x$PSCOM_ALLIN"  != "xtrue" -a "$have_pscom_memcpy" != "yes" ],[
-			AC_MSG_ERROR([The pscom library is lacking the pscom_memcpy() symbol. Please re-compile the pscom with "--enable-cuda". Abort!])
+			AC_MSG_ERROR([The pscom library is lacking the pscom_memcpy() symbol. Please re-compile the pscom with CUDA support. Abort!])
 		],[
 			PSP_CUDA_AWARE_SUPPORT=1
 			AC_DEFINE([MPIDI_PSP_WITH_CUDA_AWARENESS], [], [Define to enable GPU memory awareness in PSP device if CUDA is found])
