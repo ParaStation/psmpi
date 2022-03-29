@@ -317,7 +317,7 @@ test -n "$FFLAGS" && CONF_OPS="$CONF_OPS 'FFLAGS=$FFLAGS'"
 AC_ARG_WITH([pscom-builtin], [
   --with-pscom-builtin[=list]
 			  Define list of pscom plugins that shall be built-in
-			  Default: openib,psm2 / Needs pscom source code fusion
+			  Default: psm2,ucp / Requires '--with-pscom-allin'
 ],[
 	PSCOM_BUILTIN_PLUGINS="$withval"
 ])
@@ -348,6 +348,9 @@ AC_ARG_WITH([pscom-allin], [
 
 	AC_CHECK_HEADER([infiniband/verbs.h], [have_openib=yes], [have_openib=no])
 	AC_CHECK_HEADER([psm2.h], [have_psm2=yes], [have_psm2=no])
+	AC_CHECK_HEADER([ucp/api/ucp.h], [have_ucp_h=yes], [have_ucp_h=no])
+	AC_CHECK_HEADER([ucp/api/ucp_def.h], [have_ucp_def_h=yes], [have_ucp_def_h=no])
+	AS_IF([test "x${have_ucp_h}" = "xyes" -a "x${have_ucp_def_h}" = "xyes"], [have_ucp=yes], [have_ucp=no])
 
 	if test -n "$PSCOM_BUILTIN_PLUGINS" ; then
 		IFS=","
@@ -355,12 +358,13 @@ AC_ARG_WITH([pscom-allin], [
 			case "$plugin" in
 				"openib") openib_enabled="yes" ;;
 				"psm2")   psm2_enabled="yes"   ;;
+				"ucp")    ucp_enabled="yes"    ;;
 			esac
 		done
 		unset IFS
 	else
-		openib_enabled="$have_openib"
 		psm2_enabled="$have_psm2"
+		ucp_enabled="$have_ucp"
 	fi
 
 	if test "$openib_enabled" = "yes" ; then
@@ -383,9 +387,19 @@ AC_ARG_WITH([pscom-allin], [
 			AC_MSG_ERROR([psm2 support requested but not found])
 		fi
 	fi
+	if test "$ucp_enabled" = "yes" ; then
+		if test "$have_ucp" = "yes" ; then
+			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_UCP"
+			export PSCOM_ALLIN_LIBS="${PSCOM_ALLIN_LIBS} -lucp -lucs"
+			CONF_ECHO_ALLIN="${CONF_ECHO_ALLIN:+${CONF_ECHO_ALLIN}\n}"
+			CONF_ECHO_ALLIN="${CONF_ECHO_ALLIN}Including ucp as a built-in plugin for pscom."
 
+		else
+			AC_MSG_ERROR([ucp support requested but not found])
+		fi
+	fi
 	case $CONFSET in
-		"default"|"gcc"|"intel"|"icc") ;;
+		"default"|"gcc"|"intel"|"nvhpc"|"icc"|"devel"|"debug") ;;
 		*) confset_and_allin_does_not_match="yes" ;;
 	esac
 	if test "$confset_and_allin_does_not_match" = "yes" ; then

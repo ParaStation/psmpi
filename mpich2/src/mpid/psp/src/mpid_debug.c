@@ -72,6 +72,29 @@ void mpid_debug_init_gnuc(unsigned debug_level)
 
 #include "mpidimpl.h"
 
+#ifdef PSCOM_ALLIN
+static
+char* MPIDI_PSP_pscom_allin_get_plugin_list_as_string()
+{
+	static char pscom_allin_plugin_list[] =
+#ifdef PSCOM_ALLIN_OPENIB
+		"openib,"
+#endif
+#ifdef PSCOM_ALLIN_PSM2
+		"psm2,"
+#endif
+#ifdef PSCOM_ALLIN_UCP
+		"ucp,"
+#endif
+		"";
+	if (sizeof(pscom_allin_plugin_list) > 1) {
+		pscom_allin_plugin_list[sizeof(pscom_allin_plugin_list) - 2] = '\0';
+	}
+
+	return pscom_allin_plugin_list;
+}
+#endif
+
 void mpid_debug_init(void)
 {
 	/* evaluate environment variables */
@@ -98,12 +121,15 @@ void mpid_debug_init(void)
 				"+pmix"
 #endif
 #ifdef PSCOM_ALLIN
-				"+allin"
+				"+allin(%s)"
 #endif
 				"\n",
 			__DATE__, MPIDI_PSP_VC_VERSION, MPIDI_PSP_CONFSET
 #ifdef MPICH_IS_THREADED
 			, MPIR_ThreadInfo.isThreaded
+#endif
+#ifdef PSCOM_ALLIN
+			, MPIDI_PSP_pscom_allin_get_plugin_list_as_string()
 #endif
 		);
 	}

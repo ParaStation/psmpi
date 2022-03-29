@@ -285,5 +285,14 @@ int MPIDI_PSP_Issend(const void * buf, MPI_Aint count, MPI_Datatype datatype, in
 #ifdef PSCOM_ALLIN
 #define PSCOM_ALLIN_INCLUDE_TOKEN
 #include "mpid_irecv.c"
+#if defined(MPL_USE_MEMORY_TRACING)
+/* MPICH's memory tracing disables the usability of malloc & co. by macro overloading.
+   Therefore, we have to undefine those macros here before including pscom_all.c */
+#undef malloc
+#undef free
+#undef calloc
+#undef realloc
+#undef strdup
+#endif
 #include "pscom_all.c"
 #endif
