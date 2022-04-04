@@ -1,0 +1,4 @@
+# This test configuration can be used to run the tests with psmgmt's
+# mpiexec even if Hydra was activated during the configuration of psmpi.
+export MPIEXEC=/opt/parastation/bin/mpiexec
+export MPITEST_MPIEXECARG="${MPITEST_MPIEXECARG} -e MPIEXEC_UNIVERSE_SIZE"

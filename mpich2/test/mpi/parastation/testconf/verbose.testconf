@@ -1,0 +1,2 @@
+# Switch on verbose mode for 'runtests' script:
+export RUNTESTS_VERBOSE=1

@@ -1,0 +1,4 @@
+# Run the tests on Valgrind (and psmgmt's mpiexec) with leak-check=full
+SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+source ${SCRIPTDIR}/../psmgmt.testconf
+export MPITEST_MPIEXECARG="${MPITEST_MPIEXECARG} --memcheck"

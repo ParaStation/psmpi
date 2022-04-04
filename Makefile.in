@@ -10,7 +10,7 @@
 #############################################################################
 
 SRCDIR := $(shell cd @srcdir@;pwd)
-TOP_BUILDDIR:=@TOP_BUILDDIR@
+export TOP_BUILDDIR:=@TOP_BUILDDIR@
 CONFSET:=@CONFSET@
 CUDA_SUPPORT:=@CUDA_SUPPORT@
 export TOP_SRCDIR = $(SRCDIR)
@@ -61,11 +61,13 @@ MPIEXEC=$(DESTDIR)$(prefix)/bin/mpiexec.hydra
 endif
 endif
 
+ifndef TESTCONF
 ifndef MPIEXECARG
 ifeq ($(ENABLE_HYDRA),false)
 MPIEXECARG=-e MPIEXEC_UNIVERSE_SIZE
 else
 MPIEXECARG=
+endif
 endif
 endif
 
@@ -89,6 +91,11 @@ else
 TESTSETLIST :=
 endif
 endif
+ifdef TESTCONF
+TESTCONFDIR := $(SRCDIR)/mpich2/test/mpi/parastation/testconf
+TESTCONFIGS := $(shell cd $(TESTCONFDIR) && find . -type f -name "*.testconf" | cut -d"." -f2 | cut -b1 --complement)
+TESTCONFFILE:= $(TESTCONFDIR)/$(TESTCONF).testconf
+endif
 
 largetest largetests largetesting: LARGE_TESTS="--enable-large-tests"
 
@@ -104,6 +111,12 @@ ifneq ($(filter $(TESTDIR),$(TESTFOLDERS)),$(TESTDIR))
 	@echo "Please provide a valid test directory to be used."
 	@echo "The following test directories are available:"
 	@$(foreach dir,$(TESTFOLDERS), echo "* " $(dir) ;)
+else
+ifneq ($(filter $(TESTCONF),$(TESTCONFIGS)),$(TESTCONF))
+	@echo "ERROR: The test configuration '$(TESTCONF)' does not exist!"
+	@echo "Please provide a valid test configuration to be used."
+	@echo "The following test configurations are available:"
+	@$(foreach cfg,$(TESTCONFIGS), echo "* " $(cfg) ;)
 else
 ifeq ($(_TESTCUDA),unknown)
 	@echo "ERROR: The option 'TESTCUDA=${TESTCUDA}' is unknown!"
@@ -123,7 +136,9 @@ else
 	export MPITEST_MPIEXECARG="$${MPITEST_MPIEXECARG} $(MPIEXECARG)"; \
 	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH}:$(PSCOM_LD_LIBRARY_PATH); \
 	export _LOGNAME=$(SRCDIR)/doc/test-$$($(SRCDIR)/scripts/vcversion -r $(SRCDIR))-$(TESTDIR_)$(TESTSET_)$$(date +%F_%T); \
-	( mkdir -p mpich2/test/mpi; cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) $(CUDA_TESTS) $(LARGE_TESTS)); \
+	export TESTCONFFILE=$(TESTCONFFILE); \
+	if [ -n "${TESTCONFFILE}" ] ; then source $(TESTCONFFILE); fi; \
+	( mkdir -p mpich2/test/mpi ; cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) $(CUDA_TESTS) $(LARGE_TESTS)); \
 	( hostname; rpm -qi pscom; rpm -qi psmgmt; $(SRCDIR)/scripts/vcversion -r $(SRCDIR); \
 	  echo $(MPIEXEC); \
 	  $(MAKE) -C mpich2/test/mpi testing $(TESTSETLIST) $(TESTDIRLIST) && \
@@ -133,6 +148,7 @@ else
 	) 2>&1 | tee -a $${_LOGNAME}.log; \
 	echo -e "\nSummary written to $${_LOGNAME}*"
 	@! if test -f $(TESTSUMMARY).tap ; then fgrep 'not ok' $(TESTSUMMARY).tap; else echo -e "\nERROR: make $@ failed!" ; fi
+endif
 endif
 endif
 endif
