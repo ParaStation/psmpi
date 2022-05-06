@@ -65,6 +65,9 @@ int MPI_Get_library_version(char *version, int *resultlen)
     /* ... body of routine ...  */
 
     printed_len = MPL_snprintf(version, MPI_MAX_LIBRARY_VERSION_STRING,
+#if defined(MPID_DEV_VERSION_STRING)
+                               MPID_DEV_VERSION_STRING
+#endif
                                "MPICH Version:\t%s\n"
                                "MPICH Release date:\t%s\n"
                                "MPICH ABI:\t%s\n"
@@ -74,6 +77,9 @@ int MPI_Get_library_version(char *version, int *resultlen)
                                "MPICH CXX:\t%s\n"
                                "MPICH F77:\t%s\n"
                                "MPICH FC:\t%s\n",
+#if defined(MPID_DEV_VERSION_STRING) && defined(MPID_DEV_VERSION_STRING_ARGS)
+                               MPID_DEV_VERSION_STRING_ARGS,
+#endif
                                MPII_Version_string, MPII_Version_date, MPII_Version_ABI,
                                MPII_Version_device, MPII_Version_configure, MPII_Version_CC,
                                MPII_Version_CXX, MPII_Version_F77, MPII_Version_FC);

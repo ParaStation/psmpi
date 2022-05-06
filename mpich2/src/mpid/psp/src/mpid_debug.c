@@ -95,6 +95,39 @@ char* MPIDI_PSP_pscom_allin_get_plugin_list_as_string()
 }
 #endif
 
+char* MPIDI_PSP_get_psmpi_version_string()
+{
+	static char* psmpi_version_string = NULL;
+	static char psmpi_version_string_pattern[] =
+		"Version(PSMPI): %s (%s)+confset(%s)"
+#ifdef MPICH_IS_THREADED
+				"+threaded"
+#endif
+#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
+				"+cuda"
+#endif
+#ifdef USE_PMI1_API
+				"+pmi"
+#elif defined USE_PMIX_API
+				"+pmix"
+#endif
+#ifdef PSCOM_ALLIN
+				"+allin(%s)"
+#endif
+		                "";
+
+	if (!psmpi_version_string) {
+		asprintf(&psmpi_version_string, psmpi_version_string_pattern,
+			__DATE__, MPIDI_PSP_VC_VERSION, MPIDI_PSP_CONFSET
+#ifdef PSCOM_ALLIN
+			, MPIDI_PSP_pscom_allin_get_plugin_list_as_string()
+#endif
+		);
+	}
+
+	return psmpi_version_string;
+}
+
 void mpid_debug_init(void)
 {
 	/* evaluate environment variables */
@@ -108,30 +141,7 @@ void mpid_debug_init(void)
 	if ((MPIDI_Process.env.debug_level > 2) ||
 	    (MPIDI_Process.env.debug_version))
 	{
-		fprintf(stderr, "# Version(PSMPI): %s (%s)+confset(%s)"
-#ifdef MPICH_IS_THREADED
-				"+threaded(%d)"
-#endif
-#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
-				"+cuda"
-#endif
-#ifdef USE_PMI1_API
-				"+pmi"
-#elif defined USE_PMIX_API
-				"+pmix"
-#endif
-#ifdef PSCOM_ALLIN
-				"+allin(%s)"
-#endif
-				"\n",
-			__DATE__, MPIDI_PSP_VC_VERSION, MPIDI_PSP_CONFSET
-#ifdef MPICH_IS_THREADED
-			, MPIR_ThreadInfo.isThreaded
-#endif
-#ifdef PSCOM_ALLIN
-			, MPIDI_PSP_pscom_allin_get_plugin_list_as_string()
-#endif
-		);
+		fprintf(stderr, "# %s\n", MPIDI_PSP_get_psmpi_version_string());
 	}
 }
 
