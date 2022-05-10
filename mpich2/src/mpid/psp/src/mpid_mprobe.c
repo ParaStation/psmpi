@@ -189,6 +189,7 @@ int MPID_Mprobe(int rank, int tag, MPIR_Comm *comm, int context_offset, MPIR_Req
 	pscom_connection_t *con;
 	pscom_socket_t *sock;
 	MPIR_Request *req;
+	struct MPID_DEV_Request_recv *rreq;
 
 	*message = NULL;
 
@@ -201,6 +202,9 @@ int MPID_Mprobe(int rank, int tag, MPIR_Comm *comm, int context_offset, MPIR_Req
 		if (unlikely(!req)) goto err_request_recv_create;
 		req->comm = comm;
 		MPIR_Comm_add_ref(comm);
+
+		rreq = &req->dev.kind.recv;
+		rreq->mprobe_tag = NULL;
 
 		prepare_mprobereq(req, tag, comm, context_offset);
 		prepare_source(req, con, sock);
@@ -238,6 +242,7 @@ int MPID_Improbe(int rank, int tag, MPIR_Comm *comm, int context_offset, int *fl
 	pscom_connection_t *con;
 	pscom_socket_t *sock;
 	MPIR_Request *req;
+	struct MPID_DEV_Request_recv *rreq;
 
 	*message = NULL;
 
@@ -250,6 +255,9 @@ int MPID_Improbe(int rank, int tag, MPIR_Comm *comm, int context_offset, int *fl
 		if (unlikely(!req)) goto err_request_recv_create;
 		req->comm = comm;
 		MPIR_Comm_add_ref(comm);
+
+		rreq = &req->dev.kind.recv;
+		rreq->mprobe_tag = NULL;
 
 		prepare_mprobereq(req, tag, comm, context_offset);
 
