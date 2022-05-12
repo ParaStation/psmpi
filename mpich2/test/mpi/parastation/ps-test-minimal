@@ -1,4 +1,4 @@
-mprobe 2
+mprobe_threaded 2
 locknull 2
 get_acc_loc 4
 win_sync_err_flush 2

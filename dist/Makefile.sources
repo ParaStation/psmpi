@@ -7991,7 +7991,7 @@ mpich2/test/mpi/parastation/large_msg_coll_scatter.c \
 mpich2/test/mpi/parastation/large_msg_noncontig.c \
 mpich2/test/mpi/parastation/large_msg_typed.c \
 mpich2/test/mpi/parastation/locknull.c \
-mpich2/test/mpi/parastation/mprobe.c \
+mpich2/test/mpi/parastation/mprobe_threaded.c \
 mpich2/test/mpi/parastation/msa_info_env.c \
 mpich2/test/mpi/parastation/msa_split_type.c \
 mpich2/test/mpi/parastation/num_contexts_16k.c \

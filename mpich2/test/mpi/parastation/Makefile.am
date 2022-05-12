@@ -9,15 +9,13 @@ include $(top_srcdir)/Makefile_single.mtest
 
 EXTRA_DIST = testlist
 
-bin_PROGRAMS = mprobe
-
-mprobe_SOURCES = mprobe.c
-mprobe_LDADD = -lpthread
+mprobe_threaded_LDADD = $(LDADD) -lpthread
 
 ## for all programs that are just built from the single corresponding source
 ## file, we don't need per-target _SOURCES rules, automake will infer them
 ## correctly
 noinst_PROGRAMS =               \
+	mprobe_threaded		\
 	locknull                \
 	get_acc_loc             \
 	win_sync_err_flush      \
