@@ -28,14 +28,14 @@ static
 int cb_accept_data_mprobe(pscom_request_t *request, pscom_connection_t *connection, pscom_header_net_t *header_net)
 {
 	MPIR_Request *req = request->user->type.sr.mpid_req;
-	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
+	struct MPID_DEV_Request_mprobe *mreq = &req->dev.kind.mprobe;
 	MPID_PSCOM_XHeader_t *xhead = &header_net->xheader->user.common;
 
 	if( (xhead->type <= MPID_PSP_MSGTYPE_DATA_REQUEST_ACK) &&
-	    ((xhead->tag == rreq->tag) || (rreq->tag == MPI_ANY_TAG)) &&
-	    (xhead->context_id == rreq->context_id) ) {
+	    ((xhead->tag == mreq->recv.tag) || (mreq->recv.tag == MPI_ANY_TAG)) &&
+	    (xhead->context_id == mreq->recv.context_id) ) {
 
-		rreq->mprobe_tag = xhead;
+		mreq->mprobe_tag = xhead;
 
 		/* Reserve this message for mrecv by changing the message type */
 		if (xhead->type == MPID_PSP_MSGTYPE_DATA) {
@@ -49,19 +49,19 @@ int cb_accept_data_mprobe(pscom_request_t *request, pscom_connection_t *connecti
 
 	return  ((xhead->type == MPID_PSP_MSGTYPE_MPROBE_RESERVED_REQUEST) ||
 		 (xhead->type == MPID_PSP_MSGTYPE_MPROBE_RESERVED_REQUEST_ACK)) &&
-		(rreq->mprobe_tag == xhead);
+		(mreq->mprobe_tag == xhead);
 }
 
 static
 int cb_accept_data_mrecv(pscom_request_t *request, pscom_connection_t *connection, pscom_header_net_t *header_net)
 {
 	MPIR_Request *req = request->user->type.sr.mpid_req;
-	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
+	struct MPID_DEV_Request_mprobe *mreq = &req->dev.kind.mprobe;
 	MPID_PSCOM_XHeader_t *xhead = &header_net->xheader->user.common;
 
 	return  ((xhead->type == MPID_PSP_MSGTYPE_MPROBE_RESERVED_REQUEST) ||
 		 (xhead->type == MPID_PSP_MSGTYPE_MPROBE_RESERVED_REQUEST_ACK)) &&
-		(rreq->mprobe_tag == xhead);
+		(mreq->mprobe_tag == xhead);
 }
 
 static
@@ -189,7 +189,6 @@ int MPID_Mprobe(int rank, int tag, MPIR_Comm *comm, int context_offset, MPIR_Req
 	pscom_connection_t *con;
 	pscom_socket_t *sock;
 	MPIR_Request *req;
-	struct MPID_DEV_Request_recv *rreq;
 
 	*message = NULL;
 
@@ -198,13 +197,10 @@ int MPID_Mprobe(int rank, int tag, MPIR_Comm *comm, int context_offset, MPIR_Req
 
 	if (con || (rank == MPI_ANY_SOURCE)) {
 
-		req = MPIR_Request_create(MPIR_REQUEST_KIND__RECV);
+		req = MPIR_Request_create(MPIR_REQUEST_KIND__MPROBE);
 		if (unlikely(!req)) goto err_request_recv_create;
 		req->comm = comm;
 		MPIR_Comm_add_ref(comm);
-
-		rreq = &req->dev.kind.recv;
-		rreq->mprobe_tag = NULL;
 
 		prepare_mprobereq(req, tag, comm, context_offset);
 		prepare_source(req, con, sock);
@@ -215,8 +211,6 @@ int MPID_Mprobe(int rank, int tag, MPIR_Comm *comm, int context_offset, MPIR_Req
 		/* Save the status */
 		set_probe_status(req->dev.kind.recv.common.pscom_req, &req->status);
 
-		/* convert the recv request into an mprobe request (aka MPI_Message) and return it: */
-		req->kind = MPIR_REQUEST_KIND__MPROBE;
 		*message = req;
 
 	} else switch (rank) {
@@ -242,7 +236,6 @@ int MPID_Improbe(int rank, int tag, MPIR_Comm *comm, int context_offset, int *fl
 	pscom_connection_t *con;
 	pscom_socket_t *sock;
 	MPIR_Request *req;
-	struct MPID_DEV_Request_recv *rreq;
 
 	*message = NULL;
 
@@ -251,13 +244,10 @@ int MPID_Improbe(int rank, int tag, MPIR_Comm *comm, int context_offset, int *fl
 
 	if (con || (rank == MPI_ANY_SOURCE)) {
 
-		req = MPIR_Request_create(MPIR_REQUEST_KIND__RECV);
+		req = MPIR_Request_create(MPIR_REQUEST_KIND__MPROBE);
 		if (unlikely(!req)) goto err_request_recv_create;
 		req->comm = comm;
 		MPIR_Comm_add_ref(comm);
-
-		rreq = &req->dev.kind.recv;
-		rreq->mprobe_tag = NULL;
 
 		prepare_mprobereq(req, tag, comm, context_offset);
 
@@ -268,8 +258,6 @@ int MPID_Improbe(int rank, int tag, MPIR_Comm *comm, int context_offset, int *fl
 			set_probe_status(req->dev.kind.recv.common.pscom_req, status);
 			/* Save the status */
 			set_probe_status(req->dev.kind.recv.common.pscom_req, &req->status);
-			/* convert the recv request into an mprobe request (aka MPI_Message): */
-			req->kind = MPIR_REQUEST_KIND__MPROBE;
 		} else {
 			/* No matching message found. Release the request. */
 			MPID_PSP_Subrequest_completed(req);
