@@ -133,11 +133,7 @@ int MPIDI_PSP_Imrecv(void *buf, int count, MPI_Datatype datatype, MPIR_Request *
 	int rank;
 
 	if (message == NULL) {
-		req = MPIR_Request_create(MPIR_REQUEST_KIND__RECV);
-		req->comm = NULL;
-		MPIR_Status_set_procnull(&req->status);
-		MPIDI_PSP_Request_set_completed(req);
-		*request = req;
+		*request = MPIR_Request_create_null_recv();
 		return MPI_SUCCESS;
 	}
 
