@@ -6744,6 +6744,7 @@ mpich2/test/mpi/cuda/cuda_reduce_vec.c \
 mpich2/test/mpi/cuda/cuda_scan_vec.c \
 mpich2/test/mpi/cuda/cuda_simple_kernel.cu \
 mpich2/test/mpi/cuda/cuda_sync_memops.c \
+mpich2/test/mpi/cuda/ps-test-minimal \
 mpich2/test/mpi/cuda/testlist \
 mpich2/test/mpi/cxx/Makefile.am \
 mpich2/test/mpi/cxx/attr/Makefile.am \
@@ -8044,7 +8045,7 @@ mpich2/test/mpi/perf/twovec.c \
 mpich2/test/mpi/project.txt \
 mpich2/test/mpi/project_cxx.txt \
 mpich2/test/mpi/project_f.txt \
-mpich2/test/mpi/ps-test-minimal \
+mpich2/test/mpi/ps-test-minimal.in \
 mpich2/test/mpi/pt2pt/Makefile.am \
 mpich2/test/mpi/pt2pt/anyall.c \
 mpich2/test/mpi/pt2pt/big_count_status.c \
