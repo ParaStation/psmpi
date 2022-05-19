@@ -303,6 +303,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info *info_pt
 	win_ptr->epoch_state = MPID_PSP_EPOCH_NONE;
 	win_ptr->epoch_lock_count = 0;
 	win_ptr->rma_accumulate_ordering = 1; /* default since MPI-3 */
+	win_ptr->explicit_wait_on_passive_side = 1; /* be conservative by default here */
 
 	if (info_ptr) {
 		char* value;
@@ -320,6 +321,25 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info *info_pt
 		}
 	}
 	pscom_env_get_uint(&win_ptr->rma_accumulate_ordering, "PSP_ACCUMULATE_ORDERING");
+
+	if (info_ptr) {
+		char* value;
+		int value_len, flag;
+		char key[] = "wait_on_passive_side";
+		MPIR_Info_get_valuelen_impl(info_ptr, key, &value_len, &flag);
+		if (flag) {
+			value = MPL_malloc((value_len+1) * sizeof(char), MPL_MEM_OBJECT);
+			MPIR_Info_get_impl(info_ptr, key, value_len, value, &flag);
+			assert(flag);
+			if (strncmp(value, "none", value_len+1) == 0) {
+				win_ptr->explicit_wait_on_passive_side = 0;
+			} if (strncmp(value, "explicit", value_len+1) == 0) {
+				win_ptr->explicit_wait_on_passive_side = 1;
+			}
+			MPL_free(value);
+		}
+	}
+	pscom_env_get_uint(&win_ptr->explicit_wait_on_passive_side, "PSP_RMA_EXPLICIT_WAIT");
 
 	/* get the addresses of the windows, window objects, and completion counters
 	   of all processes.  allocate temp. buffer for communication */

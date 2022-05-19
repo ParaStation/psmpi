@@ -825,9 +825,12 @@ int MPIDI_PSP_Win_wait_local_completion(int rank, MPIR_Win *win_ptr)
 
 int MPIDI_PSP_Win_wait_passive_completion(int rank, MPIR_Win *win_ptr)
 {
-	while (win_ptr->rma_passive_pending_rank[rank]) {
+	if (win_ptr->explicit_wait_on_passive_side) {
 
-		MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
+		while (win_ptr->rma_passive_pending_rank[rank]) {
+
+			MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
+		}
 	}
 
 	return MPI_SUCCESS;
