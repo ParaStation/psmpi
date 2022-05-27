@@ -164,7 +164,7 @@ int MPID_Finalize(void)
 			}
 		}
 		MPIR_Allreduce_impl(MPI_IN_PLACE, max_digits, mpidi_psp_stats_collops_enum__MAX, MPI_INT, MPI_MAX, MPIR_Process.comm_world, &errflag);
-		printf("(r%07d) hcoll stats | Barrier: %*lld | Bcast: %*lld | Reduce: %*lld | Allreduce: %*lld | Allgather: %*lld | Alltoall: %*lld | Alltoallv: %*ld\n",
+		printf("(r%07d) hcoll stats | Barrier: %*lld | Bcast: %*lld | Reduce: %*lld | Allreduce: %*lld | Allgather: %*lld | Alltoall: %*lld | Alltoallv: %*lld\n",
 		       MPIDI_Process.my_pg_rank,
 		       max_digits[mpidi_psp_stats_collops_enum__barrier],   MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__barrier],
 		       max_digits[mpidi_psp_stats_collops_enum__bcast],     MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__bcast],
