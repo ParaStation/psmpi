@@ -114,6 +114,14 @@ char* MPIDI_PSP_get_psmpi_version_string()
 #ifdef PSCOM_ALLIN
 				"+allin(%s)"
 #endif
+#ifdef MPIDI_PSP_WITH_TOPOLOGY_AWARENESS
+				"+topology-awareness"
+#ifdef HAVE_LIBHCOLL
+				"(hcoll)"
+#else
+				"(msa)"
+#endif
+#endif
 		                "";
 
 	if (!psmpi_version_string) {
