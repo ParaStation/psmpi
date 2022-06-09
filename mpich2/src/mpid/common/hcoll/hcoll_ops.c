@@ -9,7 +9,6 @@
 int hcoll_Barrier(MPIR_Comm * comm_ptr, MPIR_Errflag_t err)
 {
     int rc = -1;
-    MPI_Comm comm = comm_ptr->handle;
 
     if (!comm_ptr->hcoll_priv.is_hcoll_init)
         return rc;
@@ -32,7 +31,7 @@ int hcoll_Bcast(void *buffer, MPI_Aint count, MPI_Datatype datatype, int root,
 
     MPL_DBG_MSG(MPIR_DBG_HCOLL, VERBOSE, "RUNNING HCOLL BCAST.");
     dtype = mpi_dtype_2_hcoll_dtype(datatype, count, TRY_FIND_DERIVED);
-    MPI_Comm comm = comm_ptr->handle;
+
     if (HCOL_DTE_IS_COMPLEX(dtype) || HCOL_DTE_IS_ZERO(dtype)) {
         /*If we are here then datatype is not simple predefined datatype */
         /*In future we need to add more complex mapping to the dte_data_representation_t */
@@ -85,7 +84,6 @@ int hcoll_Allreduce(const void *sendbuf, void *recvbuf, MPI_Aint count, MPI_Data
     dte_data_representation_t Dtype;
     hcoll_dte_op_t *Op;
     int rc = -1;
-    MPI_Comm comm = comm_ptr->handle;
 
     if (!comm_ptr->hcoll_priv.is_hcoll_init)
         return rc;
@@ -113,7 +111,6 @@ int hcoll_Allgather(const void *sbuf, int scount, MPI_Datatype sdtype,
                     void *rbuf, int rcount, MPI_Datatype rdtype, MPIR_Comm * comm_ptr,
                     MPIR_Errflag_t err)
 {
-    MPI_Comm comm = comm_ptr->handle;
     dte_data_representation_t stype;
     dte_data_representation_t rtype;
     int rc = -1;
@@ -147,7 +144,6 @@ int hcoll_Alltoall(const void *sbuf, int scount, MPI_Datatype sdtype,
                    void *rbuf, int rcount, MPI_Datatype rdtype, MPIR_Comm * comm_ptr,
                    MPIR_Errflag_t err)
 {
-    MPI_Comm comm = comm_ptr->handle;
     dte_data_representation_t stype;
     dte_data_representation_t rtype;
     int rc = -1;
@@ -182,7 +178,6 @@ int hcoll_Alltoallv(const void *sbuf, const MPI_Aint * scounts, const MPI_Aint *
                     const MPI_Aint * rdispls, MPI_Datatype rdtype, MPIR_Comm * comm_ptr,
                     MPIR_Errflag_t err)
 {
-    MPI_Comm comm = comm_ptr->handle;
     dte_data_representation_t stype;
     dte_data_representation_t rtype;
     int rc = -1;
