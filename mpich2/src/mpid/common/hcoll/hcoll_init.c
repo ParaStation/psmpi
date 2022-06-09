@@ -173,7 +173,6 @@ int hcoll_comm_create(MPIR_Comm * comm_ptr, void *param)
 int hcoll_comm_destroy(MPIR_Comm * comm_ptr, void *param)
 {
     int mpi_errno;
-    int context_destroyed;
     if (0 >= hcoll_enable) {
         goto fn_exit;
     }
@@ -182,10 +181,15 @@ int hcoll_comm_destroy(MPIR_Comm * comm_ptr, void *param)
     if (comm_ptr->handle == MPI_COMM_WORLD)
         world_comm_destroying = 1;
 
-    context_destroyed = 0;
     if ((NULL != comm_ptr) && (0 != comm_ptr->hcoll_priv.is_hcoll_init)) {
+#if HCOLL_API >= HCOLL_VERSION(3,7)
+        hcoll_context_free(comm_ptr->hcoll_priv.hcoll_context,
+                           (rte_grp_handle_t) comm_ptr);
+#else
+        int context_destroyed = 0;
         hcoll_destroy_context(comm_ptr->hcoll_priv.hcoll_context,
                               (rte_grp_handle_t) comm_ptr, &context_destroyed);
+#endif
         comm_ptr->hcoll_priv.is_hcoll_init = 0;
     }
   fn_exit:
