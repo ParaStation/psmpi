@@ -46,9 +46,7 @@ int world_comm_destroying = 0;
 MPL_dbg_class MPIR_DBG_HCOLL;
 #endif /* MPL_USE_DBG_LOGGING */
 
-void hcoll_rte_fns_setup(void);
-
-
+static
 int hcoll_destroy(void *param ATTRIBUTE((unused)))
 {
     if (1 == hcoll_initialized) {
@@ -129,7 +127,7 @@ int hcoll_comm_create(MPIR_Comm * comm_ptr, void *param)
 {
     int mpi_errno;
     int num_ranks;
-    int context_destroyed;
+
     mpi_errno = MPI_SUCCESS;
 
     if (0 == hcoll_initialized) {

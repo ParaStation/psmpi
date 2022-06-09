@@ -309,6 +309,7 @@ static int world_rank(rte_grp_handle_t grp_h, rte_ec_handle_t ec)
 }
 
 #if HCOLL_API >= HCOLL_VERSION(3,6)
+static
 hcoll_mpi_type_combiner_t mpi_combiner_2_hcoll_combiner(int combiner)
 {
     switch (combiner) {
@@ -383,7 +384,6 @@ static int get_mpi_type_contents(void *mpi_type, int max_integers, int max_addre
 static int get_hcoll_type(void *mpi_type, dte_data_representation_t * hcoll_type)
 {
     MPI_Datatype dt_handle = (MPI_Datatype) (intptr_t) mpi_type;
-    MPIR_Datatype *dt_ptr;
 
     *hcoll_type = mpi_dtype_2_hcoll_dtype(dt_handle, -1, TRY_FIND_DERIVED);
 

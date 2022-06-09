@@ -19,6 +19,7 @@ extern MPL_dbg_class MPIR_DBG_HCOLL;
 #endif /* MPL_USE_DBG_LOGGING */
 
 int hcoll_initialize(void);
+void hcoll_rte_fns_setup(void);
 
 int hcoll_comm_create(MPIR_Comm * comm, void *param);
 int hcoll_comm_destroy(MPIR_Comm * comm, void *param);
