@@ -25,6 +25,7 @@ cvars:
 
 static int hcoll_comm_world_initialized = 0;
 static int hcoll_progress_hook_id = 0;
+static hcoll_init_opts_t *init_opts;
 
 int hcoll_initialized = 0;
 int hcoll_enable = -1;
@@ -51,6 +52,9 @@ void hcoll_rte_fns_setup(void);
 int hcoll_destroy(void *param ATTRIBUTE((unused)))
 {
     if (1 == hcoll_initialized) {
+#if HCOLL_API >= HCOLL_VERSION(3,2)
+        hcoll_free_init_opts(init_opts);
+#endif
         hcoll_finalize();
         MPIR_Progress_hook_deactivate(hcoll_progress_hook_id);
         MPIR_Progress_hook_deregister(hcoll_progress_hook_id);
@@ -72,7 +76,6 @@ int hcoll_initialize(void)
 {
     int mpi_errno;
     char *envar;
-    hcoll_init_opts_t *init_opts;
     mpi_errno = MPI_SUCCESS;
 
     hcoll_enable = (MPIR_CVAR_ENABLE_HCOLL | MPIR_CVAR_CH3_ENABLE_HCOLL) &&
