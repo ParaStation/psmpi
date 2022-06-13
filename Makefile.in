@@ -24,6 +24,7 @@ ENABLE_HYDRA=@ENABLE_HYDRA@
 MPICH_VERSION=@MPICH_VERSION@
 MPICH_RELEASE_DATE=@MPICH_RELEASE_DATE@
 EXTRA_VERSION_INFO="@EXTRA_VERSION_INFO@"
+PSCOM_LD_LIBRARY_PATH=@PSCOM_LD_LIBRARY_PATH@
 all:
 
 SUBDIRS += dist
@@ -103,6 +104,7 @@ else
 	export PSI_LOG_SILENT=1; \
 	export PSP_SCHED_YIELD=1; \
 	export MPIEXEC_UNIVERSE_SIZE=100; \
+	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH}:$(PSCOM_LD_LIBRARY_PATH); \
 	export _LOGNAME=$(SRCDIR)/doc/test-$$($(SRCDIR)/scripts/vcversion -r $(SRCDIR))-$(TESTDIR_)$(TESTSET_)$$(date +%F_%T); \
 	( cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) $(CUDA_TESTS) $(LARGE_TESTS)); \
 	( hostname; rpm -qi pscom; rpm -qi psmgmt; $(SRCDIR)/scripts/vcversion -r $(SRCDIR); \
