@@ -130,6 +130,10 @@ enum {
                     "UCT_EP_PARAM_FIELD_DEV_ADDR and UCT_EP_PARAM_FIELD_IFACE_ADDR are not defined")
 
 
+#define UCT_ATTR_VALUE(_obj, _attrs, _name, _flag, _default) \
+    UCS_PARAM_VALUE(UCS_PP_TOKENPASTE3(UCT_, _obj, _ATTR_FIELD), _attrs, \
+                    _name, _flag, _default)
+
 #define UCT_EP_PARAM_VALUE(_params, _name, _flag, _default) \
     UCS_PARAM_VALUE(UCT_EP_PARAM_FIELD, _params, _name, _flag, _default)
 
@@ -205,10 +209,6 @@ enum {
     UCT_CHECK_PARAM((_flags) == 0, "Unsupported flags: %x", (_flags));
 
 
-#define UCT_IFACE_PARAM_VALUE(_params, _name, _flag, _default) \
-    UCS_PARAM_VALUE(UCT_IFACE_PARAM_FIELD, _params, _name, _flag, _default)
-
-
 /**
  * Declare classes for structures defined in api/tl.h
  */
@@ -235,10 +235,15 @@ typedef ucs_status_t (*uct_iface_estimate_perf_func_t)(
 typedef void (*uct_iface_vfs_refresh_func_t)(uct_iface_h iface);
 
 
+/* Query the attributes of the ep */
+typedef ucs_status_t (*uct_ep_query_func_t)(uct_ep_h ep, uct_ep_attr_t *ep_attr);
+
+
 /* Internal operations, not exposed by the external API */
 typedef struct uct_iface_internal_ops {
     uct_iface_estimate_perf_func_t iface_estimate_perf;
     uct_iface_vfs_refresh_func_t   iface_vfs_refresh;
+    uct_ep_query_func_t            ep_query;
 } uct_iface_internal_ops_t;
 
 
@@ -618,7 +623,7 @@ typedef struct {
  * @param _type     Message type (send/receive)
  * @param _am_id    Active message ID.
  * @param _payload  Active message payload.
- * @paral _length   Active message length
+ * @param _length   Active message length
  */
 #define uct_iface_trace_am(_iface, _type, _am_id, _payload, _length, _fmt, ...) \
     if (ucs_log_is_enabled(UCS_LOG_LEVEL_TRACE_DATA)) { \
@@ -767,8 +772,12 @@ uct_iface_invoke_am(uct_base_iface_t *iface, uint8_t id, void *data,
 
     handler = &iface->am[id];
     status = handler->cb(handler->arg, data, length, flags);
-    ucs_assert((status == UCS_OK) ||
-               ((status == UCS_INPROGRESS) && (flags & UCT_CB_PARAM_FLAG_DESC)));
+    ucs_assertv((status == UCS_OK) ||
+                ((status == UCS_INPROGRESS) && (flags &
+                                                UCT_CB_PARAM_FLAG_DESC)),
+                "%s(arg=%p data=%p length=%u flags=0x%x) returned %s",
+                ucs_debug_get_symbol_name((void*)handler->cb), handler->arg,
+                data, length, flags, ucs_status_string(status));
     return status;
 }
 
@@ -851,5 +860,14 @@ void uct_ep_set_iface(uct_ep_h ep, uct_iface_t *iface);
 ucs_status_t uct_base_ep_stats_reset(uct_base_ep_t *ep, uct_base_iface_t *iface);
 
 void uct_iface_vfs_refresh(void *obj);
+
+
+static UCS_F_ALWAYS_INLINE int uct_ep_op_is_zcopy(uct_ep_operation_t op)
+{
+    return UCS_BIT(op) & (UCS_BIT(UCT_EP_OP_AM_ZCOPY) |
+                          UCS_BIT(UCT_EP_OP_PUT_ZCOPY) |
+                          UCS_BIT(UCT_EP_OP_GET_ZCOPY) |
+                          UCS_BIT(UCT_EP_OP_EAGER_ZCOPY));
+}
 
 #endif

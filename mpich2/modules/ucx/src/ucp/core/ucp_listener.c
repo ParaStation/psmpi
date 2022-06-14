@@ -18,6 +18,7 @@
 #include <ucp/core/ucp_ep.inl>
 #include <ucs/debug/log.h>
 #include <ucs/sys/sock.h>
+#include <ucs/type/serialize.h>
 #include <ucs/vfs/base/vfs_obj.h>
 
 
@@ -63,7 +64,10 @@ void ucp_listener_schedule_accept_cb(ucp_conn_request_h conn_request)
 ucs_status_t ucp_conn_request_query(ucp_conn_request_h conn_request,
                                     ucp_conn_request_attr_t *attr)
 {
+    ucp_wireup_sockaddr_data_base_t *sa_data;
     ucs_status_t status;
+    uint8_t sa_data_ver;
+    void *ucp_addr;
 
     if (attr->field_mask & UCP_CONN_REQUEST_ATTR_FIELD_CLIENT_ADDR) {
         if (conn_request->client_address.ss_family == 0) {
@@ -75,6 +79,15 @@ ucs_status_t ucp_conn_request_query(ucp_conn_request_h conn_request,
         if (status != UCS_OK) {
             return status;
         }
+    }
+
+    if (attr->field_mask & UCP_CONN_REQUEST_ATTR_FIELD_CLIENT_ID) {
+        sa_data     = (ucp_wireup_sockaddr_data_base_t*)(conn_request + 1);
+        sa_data_ver = sa_data->header >> UCP_SA_DATA_HEADER_VERSION_SHIFT;
+        ucp_addr    = UCS_PTR_BYTE_OFFSET(sa_data,
+                                          ucp_cm_sa_data_length(sa_data_ver));
+         /* coverity[overrun-local] */
+        attr->client_id = ucp_address_get_client_id(ucp_addr);
     }
 
     return UCS_OK;

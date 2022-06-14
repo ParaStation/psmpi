@@ -11,9 +11,9 @@
 #include <common/test_helpers.h>
 #include <ucs/sys/sys.h>
 #include <ifaddrs.h>
-#include <sys/poll.h>
 
 extern "C" {
+#include <uct/base/uct_worker.h>
 #include <ucp/core/ucp_listener.h>
 #include <ucp/core/ucp_ep.h>
 #include <ucp/core/ucp_ep.inl>
@@ -46,7 +46,8 @@ public:
     enum {
         TEST_MODIFIER_MASK               = UCS_MASK(16),
         TEST_MODIFIER_MT                 = UCS_BIT(16),
-        TEST_MODIFIER_CM_USE_ALL_DEVICES = UCS_BIT(17)
+        TEST_MODIFIER_CM_USE_ALL_DEVICES = UCS_BIT(17),
+        TEST_MODIFIER_SA_DATA_V2         = UCS_BIT(18)
     };
 
     enum {
@@ -66,14 +67,7 @@ public:
         m_err_count = 0;
         modify_config("KEEPALIVE_INTERVAL", "10s");
         modify_config("CM_USE_ALL_DEVICES", cm_use_all_devices() ? "y" : "n");
-
-        /*
-         * FIXME: this is a workaround of the issue reproduced by
-         *        the 'close_ep_force_before_err_cb' test with RC transport
-         *        where TX-queue less than FC_WND, so uct_flush cancel returns
-         *        UCS_ERR_NO_RESOURCES and can not be handled after error
-         */
-        modify_config("RC_FC_WND_SIZE", "128", SETENV_IF_NOT_EXIST); 
+        modify_config("SA_DATA_VERSION", sa_data_version_v2() ? "v2" : "v1");
 
         get_sockaddr();
         ucp_test::init();
@@ -94,6 +88,9 @@ public:
     {
         get_test_variants_mt(variants, features,
                              modifier | TEST_MODIFIER_CM_USE_ALL_DEVICES, name);
+        get_test_variants_mt(variants, features,
+                             modifier | TEST_MODIFIER_CM_USE_ALL_DEVICES |
+                             TEST_MODIFIER_SA_DATA_V2, name + ",sa_data_v2");
         get_test_variants_mt(variants, features, modifier, name + ",not_all_devs");
     }
 
@@ -190,11 +187,12 @@ public:
                     continue;
                 }
 
-                saddrs.push_back(ucs::sock_addr_storage(
-                        ucs::is_rdmacm_netdev(ifa->ifa_name)));
+                saddrs.push_back(ucs::sock_addr_storage());
                 status = ucs_sockaddr_sizeof(ifa->ifa_addr, &size);
                 ASSERT_UCS_OK(status);
-                saddrs.back().set_sock_addr(*ifa->ifa_addr, size);
+                saddrs.back().set_sock_addr(*ifa->ifa_addr, size,
+                                            ucs::is_rdmacm_netdev(
+                                                    ifa->ifa_name));
                 saddrs.back().set_port(0); /* listen on any port then update */
             }
         }
@@ -220,13 +218,19 @@ public:
 
     void start_listener(ucp_test_base::entity::listen_cb_type_t cb_type)
     {
+        start_listener(cb_type, NULL);
+    }
+
+    void start_listener(ucp_test_base::entity::listen_cb_type_t cb_type,
+                        ucp_listener_conn_handler_t *custom_cb)
+    {
         ucs_time_t deadline = ucs::get_deadline();
         ucs_status_t status;
 
         do {
             status = receiver().listen(cb_type, m_test_addr.get_sock_addr_ptr(),
                                        m_test_addr.get_addr_size(),
-                                       get_server_ep_params());
+                                       get_server_ep_params(), custom_cb, 0);
             if (m_test_addr.get_port() == 0) {
                 /* any port can't be busy */
                 break;
@@ -300,41 +304,6 @@ public:
         EXPECT_UCS_OK(status);
     }
 
-    static void wait_for_wakeup(ucp_worker_h send_worker, ucp_worker_h recv_worker)
-    {
-        int ret, send_efd, recv_efd;
-        ucs_status_t status;
-
-        ASSERT_UCS_OK(ucp_worker_get_efd(send_worker, &send_efd));
-        ASSERT_UCS_OK(ucp_worker_get_efd(recv_worker, &recv_efd));
-
-        status = ucp_worker_arm(recv_worker);
-        if (status == UCS_ERR_BUSY) {
-            return;
-        }
-        ASSERT_UCS_OK(status);
-
-        status = ucp_worker_arm(send_worker);
-        if (status == UCS_ERR_BUSY) {
-            return;
-        }
-        ASSERT_UCS_OK(status);
-
-        do {
-            struct pollfd pfd[2];
-            pfd[0].fd     = send_efd;
-            pfd[1].fd     = recv_efd;
-            pfd[0].events = POLLIN;
-            pfd[1].events = POLLIN;
-            ret = poll(pfd, 2, -1);
-        } while ((ret < 0) && (errno == EINTR));
-        if (ret < 0) {
-            UCS_TEST_MESSAGE << "poll() failed: " << strerror(errno);
-        }
-
-        EXPECT_GE(ret, 1);
-    }
-
     void check_events(ucp_worker_h send_worker, ucp_worker_h recv_worker,
                       bool wakeup, void *req)
     {
@@ -347,7 +316,7 @@ public:
         }
 
         if (wakeup) {
-            wait_for_wakeup(send_worker, recv_worker);
+            wait_for_wakeup({ send_worker, recv_worker });
         }
     }
 
@@ -483,7 +452,7 @@ public:
         ep_params.field_mask      |= UCP_EP_PARAM_FIELD_FLAGS |
                                      UCP_EP_PARAM_FIELD_SOCK_ADDR |
                                      UCP_EP_PARAM_FIELD_USER_DATA;
-        ep_params.flags            = UCP_EP_PARAMS_FLAGS_CLIENT_SERVER;
+        ep_params.flags           |= UCP_EP_PARAMS_FLAGS_CLIENT_SERVER;
         ep_params.sockaddr.addr    = m_test_addr.get_sock_addr_ptr();
         ep_params.sockaddr.addrlen = m_test_addr.get_addr_size();
         ep_params.user_data        = &sender();
@@ -546,6 +515,36 @@ public:
     {
         listen(ucp_test_base::entity::LISTEN_CB_REJECT);
         connect_and_reject(wakeup);
+    }
+
+    void ep_query()
+    {
+        ucp_ep_attr_t attr;
+
+        attr.field_mask = UCP_EP_ATTR_FIELD_LOCAL_SOCKADDR |
+                          UCP_EP_ATTR_FIELD_REMOTE_SOCKADDR;
+        ucs_status_t status = ucp_ep_query(receiver().ep(), &attr);
+        ASSERT_UCS_OK(status);
+
+        EXPECT_EQ(m_test_addr, attr.local_sockaddr);
+
+        /* The ports are expected to be different. Ignore them. */
+        ucs_sockaddr_set_port((struct sockaddr*)&attr.remote_sockaddr,
+                              m_test_addr.get_port());
+        EXPECT_EQ(m_test_addr, attr.remote_sockaddr);
+
+        memset(&attr, 0, sizeof(attr));
+        attr.field_mask = UCP_EP_ATTR_FIELD_LOCAL_SOCKADDR |
+                          UCP_EP_ATTR_FIELD_REMOTE_SOCKADDR;
+        status = ucp_ep_query(sender().ep(), &attr);
+        ASSERT_UCS_OK(status);
+
+        EXPECT_EQ(m_test_addr, attr.remote_sockaddr);
+
+        /* The ports are expected to be different. Ignore them.*/
+        ucs_sockaddr_set_port((struct sockaddr*)&attr.local_sockaddr,
+                              m_test_addr.get_port());
+        EXPECT_EQ(m_test_addr, attr.local_sockaddr);
     }
 
     void one_sided_disconnect(entity &e, enum ucp_ep_close_mode mode) {
@@ -678,11 +677,31 @@ protected:
         return get_variant_value() & TEST_MODIFIER_CM_USE_ALL_DEVICES;
     }
 
-    static void cmp_cfg_lanes(ucp_ep_config_key_t *key1, ucp_lane_index_t lane1,
-                              ucp_ep_config_key_t *key2, ucp_lane_index_t lane2) {
-        EXPECT_TRUE(((lane1 == UCP_NULL_LANE) && (lane2 == UCP_NULL_LANE)) ||
-                    ((lane1 != UCP_NULL_LANE) && (lane2 != UCP_NULL_LANE) &&
-                     ucp_ep_config_lane_is_peer_match(key1, lane1, key2, lane2)));
+    bool sa_data_version_v2() const {
+        return get_variant_value() & TEST_MODIFIER_SA_DATA_V2;
+    }
+
+    bool has_rndv_lanes(ucp_ep_h ep)
+    {
+        for (ucp_lane_index_t lane_idx = 0;
+             lane_idx < ucp_ep_num_lanes(ep); ++lane_idx) {
+            if ((lane_idx != ucp_ep_get_cm_lane(ep)) &&
+                (ucp_ep_get_iface_attr(ep, lane_idx)->cap.flags &
+                 (UCT_IFACE_FLAG_GET_ZCOPY | UCT_IFACE_FLAG_PUT_ZCOPY)) &&
+                /* RNDV lanes should be selected if transport supports GET/PUT
+                 * Zcopy and: */
+                (/* - either memory invalidation can be done on its MD */
+                 (ucp_ep_md_attr(ep, lane_idx)->cap.flags &
+                  UCT_MD_FLAG_INVALIDATE) ||
+                 /* - or CONNECT_TO_EP connection establishment mode is used */
+                 (ucp_ep_is_lane_p2p(ep, lane_idx)))) {
+                EXPECT_NE(UCP_NULL_LANE, ucp_ep_config(ep)->key.rma_bw_lanes[0])
+                        << "RNDV lanes should be selected";
+                return true;
+            }
+        }
+
+        return false;
     }
 
 protected:
@@ -705,6 +724,11 @@ UCS_TEST_P(test_ucp_sockaddr, listen_s2c) {
 
 UCS_TEST_P(test_ucp_sockaddr, listen_bidi) {
     listen_and_communicate(false, SEND_DIRECTION_BIDI);
+}
+
+UCS_TEST_P(test_ucp_sockaddr, ep_query) {
+    listen_and_communicate(false, 0);
+    ep_query();
 }
 
 UCS_TEST_P(test_ucp_sockaddr, onesided_disconnect) {
@@ -938,15 +962,90 @@ UCS_TEST_SKIP_COND_P(test_ucp_sockaddr, listener_invalid_params,
     ucp_listener_destroy(listener);
 }
 
-UCS_TEST_SKIP_COND_P(test_ucp_sockaddr, compare_cm_and_wireup_configs,
+UCP_INSTANTIATE_ALL_TEST_CASE(test_ucp_sockaddr)
+
+class test_ucp_sockaddr_conn_request : public test_ucp_sockaddr {
+public:
+    virtual ucp_worker_params_t get_worker_params() {
+        ucp_worker_params_t params = test_ucp_sockaddr::get_worker_params();
+        params.field_mask         |= UCP_WORKER_PARAM_FIELD_CLIENT_ID;
+        params.client_id           = reinterpret_cast<uint64_t>(this);
+        return params;
+    }
+
+    ucp_ep_params_t get_client_ep_params() {
+        ucp_ep_params_t ep_params = test_ucp_sockaddr::get_ep_params();
+        ep_params.field_mask     |= UCP_EP_PARAM_FIELD_FLAGS;
+        ep_params.flags          |= UCP_EP_PARAMS_FLAGS_SEND_CLIENT_ID;
+        return ep_params;
+    }
+
+    static void conn_handler_cb(ucp_conn_request_h conn_request, void *arg)
+    {
+        ucp_conn_request_attr_t attr;
+        ucs_status_t status;
+
+        attr.field_mask = UCP_CONN_REQUEST_ATTR_FIELD_CLIENT_ID;
+        status          = ucp_conn_request_query(conn_request, &attr);
+        EXPECT_EQ(UCS_OK, status);
+        EXPECT_EQ(reinterpret_cast<uint64_t>(arg), attr.client_id);
+
+        test_ucp_sockaddr_conn_request *self =
+            reinterpret_cast<test_ucp_sockaddr_conn_request*>(arg);
+        ucp_listener_reject(self->receiver().listenerh(), conn_request);
+    }
+};
+
+UCS_TEST_P(test_ucp_sockaddr_conn_request, conn_request_query_worker_id)
+{
+    ucp_listener_conn_handler_t conn_handler;
+
+    conn_handler.cb  = test_ucp_sockaddr_conn_request::conn_handler_cb;
+    conn_handler.arg = reinterpret_cast<void*>(this);
+    start_listener(ucp_test_base::entity::LISTEN_CB_CUSTOM, &conn_handler);
+    {
+        scoped_log_handler slh(detect_error_logger);
+        client_ep_connect_basic(get_client_ep_params());
+        send_recv(sender(), receiver(), SEND_RECV_TAG, false,
+                  ucp_test_base::entity::LISTEN_CB_REJECT);
+    }
+}
+
+UCP_INSTANTIATE_ALL_TEST_CASE(test_ucp_sockaddr_conn_request)
+
+class test_ucp_sockaddr_wireup : public test_ucp_sockaddr {
+public:
+    static void
+    get_test_variants(std::vector<ucp_test_variant>& variants,
+                      uint64_t features = UCP_FEATURE_TAG) {
+        /* It is enough to check TAG-only, since we are interested in WIREUP
+         * testing only */
+        get_test_variants_cm_mode(variants, features, CONN_REQ_TAG, "tag");
+    }
+
+protected:
+    static void cmp_cfg_lanes(ucp_ep_config_key_t *key1, ucp_lane_index_t lane1,
+                              ucp_ep_config_key_t *key2, ucp_lane_index_t lane2) {
+        EXPECT_TRUE(((lane1 == UCP_NULL_LANE) && (lane2 == UCP_NULL_LANE)) ||
+                    ((lane1 != UCP_NULL_LANE) && (lane2 != UCP_NULL_LANE) &&
+                     ucp_ep_config_lane_is_peer_match(key1, lane1, key2, lane2)));
+    }
+};
+
+
+UCS_TEST_SKIP_COND_P(test_ucp_sockaddr_wireup, compare_cm_and_wireup_configs,
                      !cm_use_all_devices()) {
     ucp_worker_cfg_index_t cm_ep_cfg_index, wireup_ep_cfg_index;
     ucp_ep_config_key_t *cm_ep_cfg_key, *wireup_ep_cfg_key;
+    bool should_check_rndv_lanes;
 
     /* get configuration index for EP created through CM */
     listen_and_communicate(false, SEND_DIRECTION_C2S);
-    cm_ep_cfg_index = sender().ep()->cfg_index;
-    cm_ep_cfg_key   = &ucp_ep_config(sender().ep())->key;
+    cm_ep_cfg_index         = sender().ep()->cfg_index;
+    cm_ep_cfg_key           = &ucp_ep_config(sender().ep())->key;
+    /* Don't check RNDV lanes, because CM prefers p2p connection mode for RNDV
+     * lanes and they don't support memory invalidation on MD */
+    should_check_rndv_lanes = !has_rndv_lanes(sender().ep());
     EXPECT_NE(UCP_NULL_LANE, ucp_ep_get_cm_lane(sender().ep()));
     disconnect(sender());
     disconnect(receiver());
@@ -967,10 +1066,6 @@ UCS_TEST_SKIP_COND_P(test_ucp_sockaddr, compare_cm_and_wireup_configs,
      * the other doesn't */
     EXPECT_NE(cm_ep_cfg_index, wireup_ep_cfg_index);
 
-    /* EP config RMA BW must be equal */
-    EXPECT_EQ(cm_ep_cfg_key->rma_bw_md_map,
-              wireup_ep_cfg_key->rma_bw_md_map);
-
     /* compare AM lanes */
     cmp_cfg_lanes(cm_ep_cfg_key, cm_ep_cfg_key->am_lane,
                   wireup_ep_cfg_key, wireup_ep_cfg_key->am_lane);
@@ -987,10 +1082,17 @@ UCS_TEST_SKIP_COND_P(test_ucp_sockaddr, compare_cm_and_wireup_configs,
     }
 
     /* compare RMA BW lanes */
-    for (ucp_lane_index_t lane = 0;
-         cm_ep_cfg_key->rma_bw_lanes[lane] != UCP_NULL_LANE; ++lane) {
-        cmp_cfg_lanes(cm_ep_cfg_key, cm_ep_cfg_key->rma_bw_lanes[lane],
-                      wireup_ep_cfg_key, wireup_ep_cfg_key->rma_bw_lanes[lane]);
+    if (should_check_rndv_lanes) {
+        /* EP config RMA BW must be equal */
+        EXPECT_EQ(cm_ep_cfg_key->rma_bw_md_map,
+                  wireup_ep_cfg_key->rma_bw_md_map);
+
+        for (ucp_lane_index_t lane = 0;
+             cm_ep_cfg_key->rma_bw_lanes[lane] != UCP_NULL_LANE; ++lane) {
+            cmp_cfg_lanes(cm_ep_cfg_key, cm_ep_cfg_key->rma_bw_lanes[lane],
+                          wireup_ep_cfg_key,
+                          wireup_ep_cfg_key->rma_bw_lanes[lane]);
+        }
     }
 
     /* compare RKEY PTR lanes */
@@ -1012,32 +1114,261 @@ UCS_TEST_SKIP_COND_P(test_ucp_sockaddr, compare_cm_and_wireup_configs,
     }
 }
 
-UCS_TEST_SKIP_COND_P(test_ucp_sockaddr, connect_and_fail_wireup,
+UCP_INSTANTIATE_ALL_TEST_CASE(test_ucp_sockaddr_wireup)
+
+
+class test_ucp_sockaddr_wireup_fail : public test_ucp_sockaddr_wireup {
+protected:
+    typedef enum {
+        FAIL_WIREUP_MSG_SEND,
+        FAIL_WIREUP_MSG_ADDR_PACK,
+        FAIL_WIREUP_SET_EP_FAILED
+    } fail_wireup_t;
+
+    virtual bool test_all_ep_flags(entity &e, uint32_t flags) const
+    {
+        UCS_ASYNC_BLOCK(&e.worker()->async);
+        bool result = ucs_test_all_flags(e.ep()->flags, flags);
+        UCS_ASYNC_UNBLOCK(&e.worker()->async);
+
+        return result;
+    }
+
+    bool test_any_ep_flag(entity &e, uint32_t flags) const
+    {
+        UCS_ASYNC_BLOCK(&e.worker()->async);
+        bool result = e.ep()->flags & flags;
+        UCS_ASYNC_UNBLOCK(&e.worker()->async);
+
+        return result;
+    }
+
+    void check_p2p_lanes(entity &e, uint32_t wait_ep_flags)
+    {
+        if (!ucp_ep_config(e.ep())->p2p_lanes &&
+            (wait_ep_flags & UCP_EP_FLAG_SERVER_NOTIFY_CB)) {
+            /* Since no p2p transports selected on the endpoint, it sends
+             * WIREUP_MSG/REPLY with empty addresses from the server */
+            UCS_TEST_SKIP_R("don't have p2p lanes to do address pack for");
+        }
+    }
+
+    void connect_and_fail_wireup(entity &e, fail_wireup_t fail_wireup_type,
+                                 uint32_t wait_ep_flags,
+                                 bool wait_cm_failure = false)
+    {
+        start_listener(cb_type());
+
+        scoped_log_handler slh(wrap_errors_logger);
+        client_ep_connect();
+        if (!wait_cm_failure && !wait_for_server_ep(false)) {
+            UCS_TEST_SKIP_R("cannot connect to server");
+        }
+
+        ucp_worker_h worker = e.worker();
+        if (fail_wireup_type == FAIL_WIREUP_MSG_SEND) {
+            /* Emulate failure of WIREUP MSG sending by setting the AM Bcopy
+             * function which always return EP_TIMEOUT error */
+            UCS_ASYNC_BLOCK(&worker->async);
+            for (ucp_rsc_index_t iface_id = 0; iface_id < worker->num_ifaces;
+                 ++iface_id) {
+                ucp_worker_iface_t *wiface = worker->ifaces[iface_id];
+
+                wiface->iface->ops.ep_am_bcopy =
+                        reinterpret_cast<uct_ep_am_bcopy_func_t>(
+                                ucs_empty_function_return_bc_ep_timeout);
+            }
+            UCS_ASYNC_UNBLOCK(&worker->async);
+        }
+
+        ucs_time_t deadline = ucs::get_deadline();
+        while (!test_all_ep_flags(e, wait_ep_flags) &&
+               (sender().get_err_num() == 0) && (ucs_get_time() < deadline)) {
+            progress();
+        }
+        EXPECT_TRUE(test_all_ep_flags(e, wait_ep_flags) ||
+                    (sender().get_err_num() > 0));
+
+        if (fail_wireup_type == FAIL_WIREUP_MSG_ADDR_PACK) {
+            check_p2p_lanes(e, wait_ep_flags);
+
+            /* Emulate failure of preparation of WIREUP MSG sending by setting
+             * the device address getter to the function that always returns
+             * error */
+            UCS_ASYNC_BLOCK(&worker->async);
+            for (ucp_rsc_index_t iface_id = 0; iface_id < worker->num_ifaces;
+                 ++iface_id) {
+                ucp_worker_iface_t *wiface = worker->ifaces[iface_id];
+
+                wiface->iface->ops.iface_get_device_address =
+                        reinterpret_cast<uct_iface_get_device_address_func_t>(
+                                ucs_empty_function_return_ep_timeout);
+            }
+            UCS_ASYNC_UNBLOCK(&worker->async);
+
+            deadline = ucs::get_deadline();
+            while (!test_any_ep_flag(e, UCP_EP_FLAG_CONNECT_ACK_SENT |
+                                        UCP_EP_FLAG_CONNECT_REP_SENT) &&
+                   (m_err_count == 0) && (ucs_get_time() < deadline)) {
+                progress();
+            }
+            EXPECT_TRUE(test_any_ep_flag(e, UCP_EP_FLAG_CONNECT_ACK_SENT |
+                                            UCP_EP_FLAG_CONNECT_REP_SENT) ||
+                        (m_err_count > 0));
+
+            /* Check p2p lanes existence again, because EP maybe reconfigured
+             * to not have p2p lanes prior sending WIREUP_MSG/REPLY */
+            check_p2p_lanes(e, wait_ep_flags);
+        } else if (fail_wireup_type == FAIL_WIREUP_SET_EP_FAILED) {
+            /* Emulate failure of the endpoint by invoking error handling
+             * procedure */
+            UCS_ASYNC_BLOCK(&worker->async);
+            ucp_ep_set_failed(e.ep(), UCP_NULL_LANE, UCS_ERR_ENDPOINT_TIMEOUT);
+            UCS_ASYNC_UNBLOCK(&worker->async);
+        }
+
+        wait_for_flag(&m_err_count);
+        EXPECT_TRUE(m_err_count > 0);
+
+        if (wait_cm_failure) {
+            one_sided_disconnect(e, UCP_EP_CLOSE_MODE_FORCE);
+        } else {
+            concurrent_disconnect(UCP_EP_CLOSE_MODE_FORCE);
+        }
+    }
+};
+
+
+UCS_TEST_SKIP_COND_P(test_ucp_sockaddr_wireup_fail,
+                     connect_and_fail_wireup_msg_send_on_client,
                      !cm_use_all_devices())
 {
-    start_listener(cb_type());
-
-    scoped_log_handler slh(wrap_errors_logger);
-    client_ep_connect();
-    if (!wait_for_server_ep(false)) {
-        UCS_TEST_SKIP_R("cannot connect to server");
-    }
-
-    ucp_lane_index_t am_lane = ucp_ep_get_wireup_msg_lane(sender().ep());
-    uct_ep_h uct_ep          = sender().ep()->uct_eps[am_lane];
-
-    /* Emulate failure of WIREUP MSG sending */
-    uct_ep->iface->ops.ep_am_bcopy = reinterpret_cast<uct_ep_am_bcopy_func_t>(
-            ucs_empty_function_return_bc_ep_timeout);
-
-    while (!(sender().ep()->flags & UCP_EP_FLAG_CONNECT_REQ_QUEUED)) {
-        progress();
-    }
-
-    concurrent_disconnect(UCP_EP_CLOSE_MODE_FORCE);
+    connect_and_fail_wireup(sender(), FAIL_WIREUP_MSG_SEND,
+                            /* WIREUP_MSGs are sent after the client
+                             * is fully connected */
+                            UCP_EP_FLAG_CLIENT_CONNECT_CB);
 }
 
-UCP_INSTANTIATE_ALL_TEST_CASE(test_ucp_sockaddr)
+UCS_TEST_SKIP_COND_P(test_ucp_sockaddr_wireup_fail,
+                     connect_and_fail_wireup_msg_send_on_server,
+                     !cm_use_all_devices())
+{
+    connect_and_fail_wireup(receiver(), FAIL_WIREUP_MSG_SEND,
+                            /* WIREUP_MSGs are sent after the server
+                             * is fully connected */
+                            UCP_EP_FLAG_SERVER_NOTIFY_CB);
+}
+
+UCS_TEST_SKIP_COND_P(test_ucp_sockaddr_wireup_fail,
+                     connect_and_fail_wireup_msg_pack_addr_on_client,
+                     !cm_use_all_devices())
+{
+    connect_and_fail_wireup(sender(), FAIL_WIREUP_MSG_ADDR_PACK,
+                            /* WIREUP_MSGs are sent after the client
+                             * is fully connected and it packs
+                             * addresses when sending WIREUP_MSGs */
+                            UCP_EP_FLAG_CLIENT_CONNECT_CB);
+}
+
+UCS_TEST_SKIP_COND_P(test_ucp_sockaddr_wireup_fail,
+                     connect_and_fail_wireup_msg_pack_addr_on_server,
+                     !cm_use_all_devices())
+{
+    connect_and_fail_wireup(receiver(), FAIL_WIREUP_MSG_ADDR_PACK,
+                            /* WIREUP_MSGs are sent after the server
+                             * is fully connected and it packs
+                             * addresses when sending WIREUP_MSGs */
+                            UCP_EP_FLAG_SERVER_NOTIFY_CB);
+}
+
+UCS_TEST_P(test_ucp_sockaddr_wireup_fail,
+           connect_and_fail_wireup_set_ep_failed_on_client)
+{
+    connect_and_fail_wireup(sender(), FAIL_WIREUP_SET_EP_FAILED,
+                            UCP_EP_FLAG_CLIENT_CONNECT_CB);
+}
+
+UCS_TEST_P(test_ucp_sockaddr_wireup_fail,
+           connect_and_fail_wireup_set_ep_failed_on_server)
+{
+    connect_and_fail_wireup(receiver(), FAIL_WIREUP_SET_EP_FAILED,
+                            UCP_EP_FLAG_SERVER_NOTIFY_CB);
+}
+
+UCP_INSTANTIATE_ALL_TEST_CASE(test_ucp_sockaddr_wireup_fail)
+
+
+class test_ucp_sockaddr_wireup_fail_try_next_cm :
+        public test_ucp_sockaddr_wireup_fail  {
+private:
+    typedef struct {
+        entity &e;
+        bool   found;
+    } find_try_next_cm_arg_t;
+
+    static int find_try_next_cm_cb(const ucs_callbackq_elem_t *elem, void *arg)
+    {
+        find_try_next_cm_arg_t *find_try_next_cm_arg =
+                reinterpret_cast<find_try_next_cm_arg_t*>(arg);
+
+        if ((elem->cb == ucp_cm_client_try_next_cm_progress) &&
+            (elem->arg == find_try_next_cm_arg->e.ep())) {
+            find_try_next_cm_arg->found = true;
+        }
+
+        return 0;
+    }
+
+    virtual bool test_all_ep_flags(entity &e, uint32_t flags) const
+    {
+        /* The test expects that only CLIENT_CONNECT_CB flag will be tested
+         * here. So, skip the test if CLIENT_CONNECT_CB flag set on the
+         * endpoint, since it means that trying next CM won't be done */
+        if (!ucs_test_all_flags(flags, UCP_EP_FLAG_CLIENT_CONNECT_CB)) {
+            UCS_TEST_ABORT("Error: expect that only " << std::hex <<
+                           UCP_EP_FLAG_CLIENT_CONNECT_CB << " flag is set,"
+                           " but " << flags << " flags are given");
+        }
+
+        if (test_ucp_sockaddr_wireup_fail::test_all_ep_flags(e, flags)) {
+            UCS_TEST_SKIP_R("trying the next CM calback wasn't scheduled");
+        }
+
+        /* Waiting for ucp_cm_client_try_next_cm_progress() callback being
+         * scheduled on a progress. When it is found, the test emulates failure
+         * to check that the callback is removed from the callback queue on
+         * the worker */
+        find_try_next_cm_arg_t find_try_next_cm_arg = { e, false };
+
+        UCS_ASYNC_BLOCK(&e.worker()->async);
+        uct_priv_worker_t *worker = ucs_derived_of(e.worker()->uct,
+                                                   uct_priv_worker_t);
+        ucs_callbackq_remove_if(&worker->super.progress_q,
+                                find_try_next_cm_cb, &find_try_next_cm_arg);
+        UCS_ASYNC_UNBLOCK(&e.worker()->async);
+
+        return find_try_next_cm_arg.found;
+    }
+};
+
+
+UCS_TEST_P(test_ucp_sockaddr_wireup_fail_try_next_cm,
+           connect_and_fail_wireup_next_cm_tcp2rdmacm_set_ep_failed_on_client,
+           "SOCKADDR_TLS_PRIORITY=tcp,rdmacm")
+{
+    connect_and_fail_wireup(sender(), FAIL_WIREUP_SET_EP_FAILED,
+                            UCP_EP_FLAG_CLIENT_CONNECT_CB, true);
+}
+
+UCS_TEST_P(test_ucp_sockaddr_wireup_fail_try_next_cm,
+           connect_and_fail_wireup_next_cm_rdmacm2tcp_set_ep_failed_on_client,
+           "SOCKADDR_TLS_PRIORITY=rdmacm,tcp")
+{
+    connect_and_fail_wireup(sender(), FAIL_WIREUP_SET_EP_FAILED,
+                            UCP_EP_FLAG_CLIENT_CONNECT_CB, true);
+}
+
+UCP_INSTANTIATE_ALL_TEST_CASE(test_ucp_sockaddr_wireup_fail_try_next_cm)
 
 
 class test_ucp_sockaddr_different_tl_rsc : public test_ucp_sockaddr
@@ -1231,18 +1562,36 @@ UCS_TEST_P(test_ucp_sockaddr_cm_private_data,
 UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_sockaddr_cm_private_data, all, "all")
 
 
+class test_ucp_sockaddr_check_lanes : public test_ucp_sockaddr {
+};
+
+
+UCS_TEST_SKIP_COND_P(test_ucp_sockaddr_check_lanes, check_rndv_lanes,
+                     !cm_use_all_devices())
+{
+    listen_and_communicate(false, SEND_DIRECTION_BIDI);
+
+    EXPECT_EQ(has_rndv_lanes(sender().ep()),
+              has_rndv_lanes(receiver().ep()));
+
+    concurrent_disconnect(UCP_EP_CLOSE_MODE_FLUSH);
+}
+
+UCP_INSTANTIATE_ALL_TEST_CASE(test_ucp_sockaddr_check_lanes)
+
+
 class test_ucp_sockaddr_destroy_ep_on_err : public test_ucp_sockaddr {
 public:
     test_ucp_sockaddr_destroy_ep_on_err() {
-        set_tl_timeouts(m_env);
+        set_tl_small_timeouts();
     }
 
     virtual ucp_ep_params_t get_server_ep_params() {
         ucp_ep_params_t params = test_ucp_sockaddr::get_server_ep_params();
 
         params.field_mask      |= UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE |
-                                 UCP_EP_PARAM_FIELD_ERR_HANDLER        |
-                                 UCP_EP_PARAM_FIELD_USER_DATA;
+                                  UCP_EP_PARAM_FIELD_ERR_HANDLER       |
+                                  UCP_EP_PARAM_FIELD_USER_DATA;
         params.err_mode         = UCP_ERR_HANDLING_MODE_PEER;
         params.err_handler.cb   = err_handler_cb;
         params.err_handler.arg  = NULL;
@@ -1255,9 +1604,6 @@ public:
         entity *e = reinterpret_cast<entity *>(arg);
         e->disconnect_nb(0, 0, UCP_EP_CLOSE_MODE_FORCE);
     }
-
-private:
-    ucs::ptr_vector<ucs::scoped_setenv> m_env;
 };
 
 UCS_TEST_P(test_ucp_sockaddr_destroy_ep_on_err, empty) {
@@ -2085,7 +2431,7 @@ public:
 
 protected:
     test_ucp_sockaddr_protocols_err() {
-        set_tl_timeouts(m_env);
+        set_tl_small_timeouts();
     }
 
     void test_tag_send_recv(size_t size, bool is_exp,
@@ -2099,8 +2445,6 @@ protected:
                                                         variants & SEND_STOP,
                                                         variants & RECV_STOP);
     }
-
-    ucs::ptr_vector<ucs::scoped_setenv> m_env;
 };
 
 
@@ -2159,3 +2503,107 @@ UCS_TEST_P(test_ucp_sockaddr_protocols_err, tag_rndv_unexp_put_scheme,
 }
 
 UCP_INSTANTIATE_CM_TEST_CASE(test_ucp_sockaddr_protocols_err)
+
+class test_ucp_sockaddr_protocols_err_sender
+      : public test_ucp_sockaddr_protocols {
+public:
+    virtual void init() {
+        m_err_count = 0;
+        modify_config("CM_USE_ALL_DEVICES", cm_use_all_devices() ? "y" : "n");
+        /* receiver should try to read wrong data, instead of detecting error
+           in keepalive process and closing the connection */
+        disable_keepalive();
+        get_sockaddr();
+        ucp_test::init();
+        skip_loopback();
+        start_listener(cb_type());
+        client_ep_connect();
+    }
+
+protected:
+    static void tag_recv_cb(void *request, ucs_status_t status,
+                            ucp_tag_recv_info_t *info) {
+    }
+
+    test_ucp_sockaddr_protocols_err_sender() {
+        set_tl_small_timeouts();
+        m_env.push_back(new ucs::scoped_setenv("UCX_IB_REG_METHODS",
+                                               "rcache,odp,direct"));
+    }
+
+    ucs::ptr_vector<ucs::scoped_setenv> m_env;
+};
+
+/* This test is quite tricky: it checks for incorrect behavior on RNDV send
+ * on DC transport: in case if sender EP was killed right after sent RTS
+ * then receiver may get incorrect/corrupted data */
+UCS_TEST_P(test_ucp_sockaddr_protocols_err_sender, tag_rndv_killed_sender,
+           "RNDV_THRESH=10k", "RNDV_SCHEME=get_zcopy")
+{
+    static size_t size = 64 * UCS_KBYTE;
+    static const std::string dc_tls[] = { "dc", "dc_x" };
+    bool has_dc = has_any_transport(
+        std::vector<std::string>(dc_tls,
+                                 dc_tls + ucs_static_array_size(dc_tls)));
+
+    if (!has_dc)
+    {
+        UCS_TEST_SKIP_R("Unsupported");
+    }
+
+    /* Warmup */
+    test_tag_send_recv(size, false);
+    request_wait(sender().flush_worker_nb());
+    request_wait(receiver().flush_worker_nb());
+
+    std::string send_buf(size, 'x');
+    std::string recv_buf(size, 'y');
+    std::string recv_copy(size, 'y');
+    std::string str_z(size, 'z');
+
+    void *rreq = NULL, *sreq = NULL;
+    ucp_tag_message_h message;
+    ucp_tag_recv_info_t info;
+    ucs_status_t status;
+
+    /* Ignore all errors - it is expected */
+    scoped_log_handler slh(wrap_errors_logger);
+    sreq = ucp_tag_send_nbx(sender().ep(), &send_buf[0], size, 0,
+                            &ucp_request_null_param);
+    ASSERT_TRUE(UCS_PTR_IS_PTR(sreq));
+    ASSERT_EQ(UCS_INPROGRESS, ucp_request_check_status(sreq));
+
+    /* Allow receiver to get RTS notification, but do not receive message
+     * body */
+    message = message_wait(receiver(), 0, 0, &info);
+    ASSERT_NE((void*)NULL, message);
+    ASSERT_EQ(UCS_INPROGRESS, ucp_request_check_status(sreq));
+
+    /* Close sender EP to force send operation to complete with CANCEL status */
+    ucp_worker_h sender_worker = sender().worker();
+    void *close_req = sender().disconnect_nb(0, 0, UCP_EP_CLOSE_MODE_FORCE);
+    if (UCS_PTR_IS_PTR(close_req)) {
+        while (ucp_request_check_status(close_req) == UCS_INPROGRESS) {
+            ucp_worker_progress(sender_worker);
+        }
+    }
+
+    status = request_wait(sreq);
+    ASSERT_EQ(UCS_ERR_CANCELED, status);
+
+    /* Receive buffer should not be updated */
+    ASSERT_EQ(recv_buf, recv_copy);
+    /* Update send buffer by new data - emulation of free(buffer) */
+    memset(&send_buf[0], 'z', size);
+
+    /* Complete receive operation */
+    rreq = ucp_tag_msg_recv_nb(receiver().worker(), &recv_buf[0], size,
+                               ucp_dt_make_contig(1), message, tag_recv_cb);
+    ASSERT_TRUE(UCS_PTR_IS_PTR(rreq));
+    status = request_wait(rreq);
+
+    /* Receive request should fail or data should be valid */
+    EXPECT_TRUE((status != UCS_OK) || (recv_buf == send_buf));
+}
+
+UCP_INSTANTIATE_CM_TEST_CASE(test_ucp_sockaddr_protocols_err_sender)

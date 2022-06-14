@@ -1,7 +1,8 @@
 /**
 * Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
-*
 * Copyright (C) UT-Battelle, LLC. 2015. ALL RIGHTS RESERVED.
+* Copyright (C) Huawei Technologies Co., Ltd. 2021.  ALL RIGHTS RESERVED.
+*
 * See file LICENSE for terms.
 */
 
@@ -28,10 +29,30 @@ typedef struct uct_base_ep_error_handle_info {
 } uct_base_ep_error_handle_info_t;
 
 
+const char *uct_ep_operation_names[] = {
+    [UCT_EP_OP_AM_SHORT]     = "am_short",
+    [UCT_EP_OP_AM_BCOPY]     = "am_bcopy",
+    [UCT_EP_OP_AM_ZCOPY]     = "am_zcopy",
+    [UCT_EP_OP_PUT_SHORT]    = "put_short",
+    [UCT_EP_OP_PUT_BCOPY]    = "put_bcopy",
+    [UCT_EP_OP_PUT_ZCOPY]    = "put_zcopy",
+    [UCT_EP_OP_GET_SHORT]    = "get_short",
+    [UCT_EP_OP_GET_BCOPY]    = "get_bcopy",
+    [UCT_EP_OP_GET_ZCOPY]    = "get_zcopy",
+    [UCT_EP_OP_EAGER_SHORT]  = "eager_short",
+    [UCT_EP_OP_EAGER_BCOPY]  = "eager_bcopy",
+    [UCT_EP_OP_EAGER_ZCOPY]  = "eager_zcopy",
+    [UCT_EP_OP_RNDV_ZCOPY]   = "rndv_zcopy",
+    [UCT_EP_OP_ATOMIC_POST]  = "atomic_post",
+    [UCT_EP_OP_ATOMIC_FETCH] = "atomic_fetch",
+    [UCT_EP_OP_LAST]         = NULL
+};
+
 #ifdef ENABLE_STATS
 static ucs_stats_class_t uct_ep_stats_class = {
-    .name = "uct_ep",
-    .num_counters = UCT_EP_STAT_LAST,
+    .name          = "uct_ep",
+    .num_counters  = UCT_EP_STAT_LAST,
+    .class_id      = UCS_STATS_CLASS_ID_INVALID,
     .counter_names = {
         [UCT_EP_STAT_AM]          = "am",
         [UCT_EP_STAT_PUT]         = "put",
@@ -52,8 +73,9 @@ static ucs_stats_class_t uct_ep_stats_class = {
 };
 
 static ucs_stats_class_t uct_iface_stats_class = {
-    .name = "uct_iface",
-    .num_counters = UCT_IFACE_STAT_LAST,
+    .name          = "uct_iface",
+    .num_counters  = UCT_IFACE_STAT_LAST,
+    .class_id      = UCS_STATS_CLASS_ID_INVALID,
     .counter_names = {
         [UCT_IFACE_STAT_RX_AM]       = "rx_am",
         [UCT_IFACE_STAT_RX_AM_BYTES] = "rx_am_bytes",
@@ -201,6 +223,13 @@ int uct_iface_is_reachable(const uct_iface_h iface, const uct_device_addr_t *dev
                            const uct_iface_addr_t *iface_addr)
 {
     return iface->ops.iface_is_reachable(iface, dev_addr, iface_addr);
+}
+
+int uct_iface_is_reachable_v2(const uct_iface_h iface,
+                              const uct_iface_is_reachable_params_t *params)
+{
+    ucs_fatal("uct_iface_is_reachable_v2 not supported yet");
+    return 0;
 }
 
 ucs_status_t uct_ep_check(const uct_ep_h ep, unsigned flags,
@@ -396,8 +425,8 @@ ucs_status_t uct_single_device_resource(uct_md_h md, const char *dev_name,
 ucs_status_t
 uct_base_iface_estimate_perf(uct_iface_h iface, uct_perf_attr_t *perf_attr)
 {
-    ucs_status_t status;
     uct_iface_attr_t iface_attr;
+    ucs_status_t status;
 
     status = uct_iface_query(iface, &iface_attr);
     if (status != UCS_OK) {
@@ -405,12 +434,25 @@ uct_base_iface_estimate_perf(uct_iface_h iface, uct_perf_attr_t *perf_attr)
     }
 
     /* By default, the performance is assumed to be the same for all operations */
+
+    if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_SEND_PRE_OVERHEAD) {
+        perf_attr->send_pre_overhead = iface_attr.overhead;
+    }
+
+    if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_SEND_POST_OVERHEAD) {
+        perf_attr->send_post_overhead = 0;
+    }
+
+    if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_RECV_OVERHEAD) {
+        perf_attr->recv_overhead = iface_attr.overhead;
+    }
+
     if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_BANDWIDTH) {
         perf_attr->bandwidth = iface_attr.bandwidth;
     }
 
-    if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_OVERHEAD) {
-        perf_attr->overhead = iface_attr.overhead;
+    if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_LATENCY) {
+        perf_attr->latency = iface_attr.latency;
     }
 
     return UCS_OK;
@@ -419,6 +461,7 @@ uct_base_iface_estimate_perf(uct_iface_h iface, uct_perf_attr_t *perf_attr)
 uct_iface_internal_ops_t uct_base_iface_internal_ops = {
     .iface_estimate_perf = uct_base_iface_estimate_perf,
     .iface_vfs_refresh   = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
+    .ep_query            = (uct_ep_query_func_t)ucs_empty_function_return_unsupported
 };
 
 UCS_CLASS_INIT_FUNC(uct_iface_t, uct_iface_ops_t *ops)
@@ -464,6 +507,10 @@ UCS_CLASS_INIT_FUNC(uct_base_iface_t, uct_iface_ops_t *ops,
     UCT_CB_FLAGS_CHECK((params->field_mask &
                         UCT_IFACE_PARAM_FIELD_ERR_HANDLER_FLAGS) ?
                        params->err_handler_flags : 0);
+
+    ucs_assert(internal_ops->iface_estimate_perf != NULL);
+    ucs_assert(internal_ops->iface_vfs_refresh != NULL);
+    ucs_assert(internal_ops->ep_query != NULL);
 
     self->md                = md;
     self->internal_ops      = internal_ops;
@@ -529,8 +576,15 @@ ucs_status_t uct_iface_reject(uct_iface_h iface,
 
 ucs_status_t uct_ep_create(const uct_ep_params_t *params, uct_ep_h *ep_p)
 {
+    ucs_status_t status;
+
     if (params->field_mask & UCT_EP_PARAM_FIELD_IFACE) {
-        return params->iface->ops.ep_create(params, ep_p);
+        status = params->iface->ops.ep_create(params, ep_p);
+        if (status == UCS_OK) {
+            ucs_vfs_obj_set_dirty(params->iface, uct_iface_vfs_refresh);
+        }
+
+        return status;
     } else if (params->field_mask & UCT_EP_PARAM_FIELD_CM) {
         return params->cm->ops->ep_create(params, ep_p);
     }
@@ -550,6 +604,7 @@ ucs_status_t uct_ep_disconnect(uct_ep_h ep, unsigned flags)
 
 void uct_ep_destroy(uct_ep_h ep)
 {
+    ucs_vfs_obj_remove(ep);
     ep->iface->ops.ep_destroy(ep);
 }
 
@@ -567,6 +622,13 @@ ucs_status_t uct_ep_connect_to_ep(uct_ep_h ep, const uct_device_addr_t *dev_addr
 ucs_status_t uct_cm_client_ep_conn_notify(uct_ep_h ep)
 {
     return ep->iface->ops.cm_ep_conn_notify(ep);
+}
+
+ucs_status_t uct_ep_query(uct_ep_h ep, uct_ep_attr_t *ep_attr)
+{
+    const uct_base_iface_t *iface = ucs_derived_of(ep->iface, uct_base_iface_t);
+
+    return iface->internal_ops->ep_query(ep, ep_attr);
 }
 
 void uct_ep_set_iface(uct_ep_h ep, uct_iface_t *iface)
@@ -617,8 +679,8 @@ UCS_CLASS_INIT_FUNC(uct_base_ep_t, uct_base_iface_t *iface)
 {
     UCS_CLASS_CALL_SUPER_INIT(uct_ep_t, &iface->super);
 
-    return UCS_STATS_NODE_ALLOC(&self->stats, &uct_ep_stats_class, iface->stats,
-                                "-%p", self);
+    return UCS_STATS_NODE_ALLOC(&self->stats, &uct_ep_stats_class,
+                                iface->stats, "-%p", self);
 }
 
 static UCS_CLASS_CLEANUP_FUNC(uct_base_ep_t)
@@ -669,8 +731,8 @@ ucs_status_t uct_base_ep_stats_reset(uct_base_ep_t *ep, uct_base_iface_t *iface)
 
     UCS_STATS_NODE_FREE(ep->stats);
 
-    status = UCS_STATS_NODE_ALLOC(&ep->stats, &uct_ep_stats_class, iface->stats,
-                                  "-%p", ep);
+    status = UCS_STATS_NODE_ALLOC(&ep->stats, &uct_ep_stats_class,
+                                  iface->stats, "-%p", ep);
 #ifdef ENABLE_STATS
     if (status != UCS_OK) {
         /* set the stats to NULL so that the UCS_STATS_NODE_FREE call on the

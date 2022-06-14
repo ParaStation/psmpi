@@ -192,6 +192,8 @@ extern char *cplus_demangle(const char *, int);
 #endif
 
 static int ucs_debug_backtrace_is_excluded(void *address, const char *symbol);
+static int orig_sigaction(int signum, const struct sigaction *act,
+                          struct sigaction *oact);
 
 
 static char *ucs_debug_strdup(const char *str)
@@ -382,8 +384,7 @@ ucs_status_t ucs_debug_backtrace_create(backtrace_h *bckt, int strip)
     ucs_status_t status;
 
     *bckt  = NULL;
-    status = ucs_mmap_alloc(&size, (void**)bckt, 0
-                            UCS_MEMTRACK_NAME("debug backtrace object"));
+    status = ucs_mmap_alloc(&size, (void**)bckt, 0, "debug backtrace object");
     if (status != UCS_OK) {
         return status;
     }
@@ -589,8 +590,7 @@ ucs_status_t ucs_debug_backtrace_create(backtrace_h *bckt, int strip)
     ucs_status_t status;
 
     *bckt  = NULL;
-    status = ucs_mmap_alloc(&size, (void**)bckt, 0
-                            UCS_MEMTRACK_NAME("debug backtrace object"));
+    status = ucs_mmap_alloc(&size, (void**)bckt, 0, "debug backtrace object");
     if (status != UCS_OK) {
         return status;
     }
@@ -892,9 +892,17 @@ static void ucs_debug_send_mail(const char *message)
 
 static void ucs_error_freeze(const char *message)
 {
+    struct sigaction sigact = {
+        .sa_handler = SIG_DFL,
+        .sa_flags   = 0
+    };
     static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
     char response;
     int ret;
+
+    /* restore original SIGINT handler to allow termitate process via Ctrl+C */
+    sigemptyset(&sigact.sa_mask);
+    orig_sigaction(SIGINT, &sigact, NULL);
 
     ucs_debug_stop_other_threads();
 
@@ -1088,6 +1096,26 @@ int ucs_debug_is_handle_errors()
     return ucs_global_opts.handle_errors & mask;
 }
 
+static void* ucs_debug_get_orig_func(const char *symbol, void *replacement)
+{
+    void *func_ptr;
+
+    func_ptr = dlsym(RTLD_NEXT, symbol);
+    if (func_ptr == NULL) {
+        func_ptr = dlsym(RTLD_DEFAULT, symbol);
+    }
+    return func_ptr;
+}
+
+#ifdef ENABLE_SIGACTION_OVERRIDE
+#if !HAVE_SIGHANDLER_T
+#if HAVE___SIGHANDLER_T
+typedef __sighandler_t *sighandler_t;
+#else
+#error "Port me"
+#endif
+#endif
+
 static int ucs_debug_is_error_signal(int signum)
 {
     khiter_t hash_it;
@@ -1105,24 +1133,6 @@ static int ucs_debug_is_error_signal(int signum)
     return result;
 }
 
-static void* ucs_debug_get_orig_func(const char *symbol, void *replacement)
-{
-    void *func_ptr;
-
-    func_ptr = dlsym(RTLD_NEXT, symbol);
-    if (func_ptr == NULL) {
-        func_ptr = dlsym(RTLD_DEFAULT, symbol);
-    }
-    return func_ptr;
-}
-
-#if !HAVE_SIGHANDLER_T
-#if HAVE___SIGHANDLER_T
-typedef __sighandler_t *sighandler_t;
-#else
-#error "Port me"
-#endif
-#endif
 sighandler_t signal(int signum, sighandler_t handler)
 {
     typedef sighandler_t (*sighandler_func_t)(int, sighandler_t);
@@ -1140,6 +1150,17 @@ sighandler_t signal(int signum, sighandler_t handler)
     return orig(signum, handler);
 }
 
+int sigaction(int signum, const struct sigaction *act, struct sigaction *oact)
+{
+    if (ucs_debug_initialized && ucs_debug_is_error_signal(signum)) {
+        return orig_sigaction(signum, NULL, oact); /* Return old, do not set new */
+    }
+
+    return orig_sigaction(signum, act, oact);
+}
+
+#endif /* ENABLE_SIGACTION_OVERRIDE */
+
 static int orig_sigaction(int signum, const struct sigaction *act,
                           struct sigaction *oact)
 {
@@ -1152,15 +1173,6 @@ static int orig_sigaction(int signum, const struct sigaction *act,
     }
 
     return orig(signum, act, oact);
-}
-
-int sigaction(int signum, const struct sigaction *act, struct sigaction *oact)
-{
-    if (ucs_debug_initialized && ucs_debug_is_error_signal(signum)) {
-        return orig_sigaction(signum, NULL, oact); /* Return old, do not set new */
-    }
-
-    return orig_sigaction(signum, act, oact);
 }
 
 static void ucs_debug_signal_handler(int signo)
@@ -1275,45 +1287,6 @@ static int ucs_debug_backtrace_is_excluded(void *address, const char *symbol)
            !strcmp(symbol, "__ucs_log") ||
            !strcmp(symbol, "ucs_debug_send_mail") ||
            (strstr(symbol, "_L_unlock_") == symbol);
-}
-
-static ucs_status_t ucs_debug_get_lib_info(Dl_info *dl_info)
-{
-    int ret;
-
-    (void)dlerror();
-    ret = dladdr(ucs_debug_get_lib_info, dl_info);
-    if (ret == 0) {
-        return UCS_ERR_NO_MEMORY;
-    }
-
-    return UCS_OK;
-}
-
-const char *ucs_debug_get_lib_path()
-{
-    ucs_status_t status;
-    Dl_info dl_info;
-
-    status = ucs_debug_get_lib_info(&dl_info);
-    if (status != UCS_OK) {
-        return "<failed to resolve libucs path>";
-    }
-
-    return dl_info.dli_fname;
-}
-
-unsigned long ucs_debug_get_lib_base_addr()
-{
-    ucs_status_t status;
-    Dl_info dl_info;
-
-    status = ucs_debug_get_lib_info(&dl_info);
-    if (status != UCS_OK) {
-        return 0;
-    }
-
-    return (uintptr_t)dl_info.dli_fbase;
 }
 
 void ucs_debug_init()

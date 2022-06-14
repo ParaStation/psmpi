@@ -16,9 +16,7 @@ $basedir/../configure \
 	--disable-debug \
 	--disable-assertions \
 	--disable-params-check \
-	--enable-backtrace-detail \
 	--enable-profiling \
 	--enable-frame-pointer \
 	--enable-stats \
-	--enable-memtrack \
 	"$@"

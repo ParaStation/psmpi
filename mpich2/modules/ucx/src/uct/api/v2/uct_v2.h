@@ -11,6 +11,7 @@
 #include <ucs/sys/compiler_def.h>
 #include <ucs/memory/memory_type.h>
 #include <uct/api/uct.h>
+#include <ucs/sys/topo.h>
 
 #include <stdint.h>
 
@@ -28,26 +29,28 @@ BEGIN_C_DECLS
 */
 
 /**
+ * @ingroup UCT_RESOURCE
  * @brief All existing UCT operations
  *
  * This enumeration defines all available UCT operations.
  */
 typedef enum uct_ep_operation {
-    UCT_OP_AM_SHORT,     /**< Short active message */
-    UCT_OP_AM_BCOPY,     /**< Buffered active message */
-    UCT_OP_AM_ZCOPY,     /**< Zero-copy active message */
-    UCT_OP_PUT_SHORT,    /**< Short put */
-    UCT_OP_PUT_BCOPY,    /**< Buffered put */
-    UCT_OP_PUT_ZCOPY,    /**< Zero-copy put */
-    UCT_OP_GET_SHORT,    /**< Short get */
-    UCT_OP_GET_BCOPY,    /**< Buffered get */
-    UCT_OP_GET_ZCOPY,    /**< Zero-copy get */
-    UCT_OP_EAGER_SHORT,  /**< Tag matching short eager */
-    UCT_OP_EAGER_BCOPY,  /**< Tag matching bcopy eager */
-    UCT_OP_EAGER_ZCOPY,  /**< Tag matching zcopy eager */
-    UCT_OP_RNDV_ZCOPY,   /**< Tag matching rendezvous eager */
-    UCT_OP_ATOMIC_POST,  /**< Atomic post */
-    UCT_OP_ATOMIC_FETCH  /**< Atomic fetch */
+    UCT_EP_OP_AM_SHORT,     /**< Short active message */
+    UCT_EP_OP_AM_BCOPY,     /**< Buffered active message */
+    UCT_EP_OP_AM_ZCOPY,     /**< Zero-copy active message */
+    UCT_EP_OP_PUT_SHORT,    /**< Short put */
+    UCT_EP_OP_PUT_BCOPY,    /**< Buffered put */
+    UCT_EP_OP_PUT_ZCOPY,    /**< Zero-copy put */
+    UCT_EP_OP_GET_SHORT,    /**< Short get */
+    UCT_EP_OP_GET_BCOPY,    /**< Buffered get */
+    UCT_EP_OP_GET_ZCOPY,    /**< Zero-copy get */
+    UCT_EP_OP_EAGER_SHORT,  /**< Tag matching short eager */
+    UCT_EP_OP_EAGER_BCOPY,  /**< Tag matching bcopy eager */
+    UCT_EP_OP_EAGER_ZCOPY,  /**< Tag matching zcopy eager */
+    UCT_EP_OP_RNDV_ZCOPY,   /**< Tag matching rendezvous eager */
+    UCT_EP_OP_ATOMIC_POST,  /**< Atomic post */
+    UCT_EP_OP_ATOMIC_FETCH, /**< Atomic fetch */
+    UCT_EP_OP_LAST
 } uct_ep_operation_t;
 
 
@@ -68,11 +71,26 @@ enum uct_perf_attr_field {
     /** Enables @ref uct_perf_attr_t::remote_memory_type */
     UCT_PERF_ATTR_FIELD_REMOTE_MEMORY_TYPE = UCS_BIT(2),
 
-    /** Enables @ref uct_perf_attr_t::overhead */
-    UCT_PERF_ATTR_FIELD_OVERHEAD           = UCS_BIT(3),
+    /** Enables @ref uct_perf_attr_t::local_sys_device */
+    UCT_PERF_ATTR_FIELD_LOCAL_SYS_DEVICE   = UCS_BIT(3),
+
+    /** Enables @ref uct_perf_attr_t::remote_sys_device */
+    UCT_PERF_ATTR_FIELD_REMOTE_SYS_DEIVCE  = UCS_BIT(4),
+
+    /** Enables @ref uct_perf_attr_t::send_pre_overhead */
+    UCT_PERF_ATTR_FIELD_SEND_PRE_OVERHEAD  = UCS_BIT(5),
+
+    /** Enables @ref uct_perf_attr_t::send_post_overhead */
+    UCT_PERF_ATTR_FIELD_SEND_POST_OVERHEAD = UCS_BIT(6),
+
+    /** Enables @ref uct_perf_attr_t::recv_overhead */
+    UCT_PERF_ATTR_FIELD_RECV_OVERHEAD      = UCS_BIT(7),
 
     /** Enables @ref uct_perf_attr_t::bandwidth */
-    UCT_PERF_ATTR_FIELD_BANDWIDTH          = UCS_BIT(4)
+    UCT_PERF_ATTR_FIELD_BANDWIDTH          = UCS_BIT(8),
+
+    /** Enables @ref uct_perf_attr_t::latency */
+    UCT_PERF_ATTR_FIELD_LATENCY            = UCS_BIT(9)
 };
 
 
@@ -110,14 +128,52 @@ typedef struct {
     ucs_memory_type_t   remote_memory_type;
 
     /**
-     * Message overhead time, in seconds. This field is set by the UCT layer.
+     * System device where the local memory type resides.
+     * Can be UCS_SYS_DEVICE_ID_UNKNOWN.
+     * This field must be initialized by the caller.
      */
-    double              overhead;
+    ucs_sys_device_t    local_sys_device;
+
+    /**
+     * System device where the remote memory type resides.
+     * Can be UCS_SYS_DEVICE_ID_UNKNOWN and be the same as local system device.
+     * This field must be initialized by the caller.
+     */
+    ucs_sys_device_t    remote_sys_device;
+
+    /**
+     * This is the time spent in the UCT layer to prepare message request and
+     * pass it to the hardware or system software layers, in seconds.
+     * This field is set by the UCT layer.
+     */
+    double              send_pre_overhead;
+
+    /**
+     * This is the time spent in the UCT layer after the message request has
+     * been passed to the hardware or system software layers and before
+     * operation has been finalized, in seconds.
+     * This value has no effect on how long it takes to deliver the message to
+     * remote side.
+     * This field is set by the UCT layer.
+     */
+    double              send_post_overhead;
+
+    /**
+     * Message receive overhead time, in seconds.
+     * This field is set by the UCT layer.
+     */
+    double              recv_overhead;
 
     /**
      * Bandwidth model. This field is set by the UCT layer.
      */
     uct_ppn_bandwidth_t bandwidth;
+
+    /**
+     * Latency as a function of number of endpoints.
+     * This field is set by the UCT layer.
+     */
+    ucs_linear_func_t   latency;
 } uct_perf_attr_t;
 
 
@@ -126,11 +182,37 @@ typedef struct {
  * @brief MD memory de-registration operation flags.
  */
 typedef enum {
-    UCT_MD_MEM_DEREG_FIELD_MEMH     = UCS_BIT(0), /**< memh field */
-    UCT_MD_MEM_DEREG_FIELD_FLAGS    = UCS_BIT(1), /**< flags field */
-    UCT_MD_MEM_DEREG_FIELD_CALLBACK = UCS_BIT(2), /**< cb field */
-    UCT_MD_MEM_DEREG_FIELD_ARG      = UCS_BIT(3)  /**< arg field */
+    UCT_MD_MEM_DEREG_FIELD_MEMH       = UCS_BIT(0), /**< memh field */
+    UCT_MD_MEM_DEREG_FIELD_FLAGS      = UCS_BIT(1), /**< flags field */
+    UCT_MD_MEM_DEREG_FIELD_COMPLETION = UCS_BIT(2)  /**< comp field */
 } uct_md_mem_dereg_field_mask_t;
+
+
+/**
+ * @ingroup UCT_RESOURCE
+ * @brief UCT endpoint attributes field mask.
+ *
+ * The enumeration allows specifying which fields in @ref uct_ep_attr_t are
+ * present, for backward compatibility support.
+ */
+enum uct_ep_attr_field {
+    /** Enables @ref uct_ep_attr::local_address */
+    UCT_EP_ATTR_FIELD_LOCAL_SOCKADDR  = UCS_BIT(0),
+    /** Enables @ref uct_ep_attr::remote_address */
+    UCT_EP_ATTR_FIELD_REMOTE_SOCKADDR = UCS_BIT(1)
+};
+
+
+/**
+ * @ingroup UCT_RESOURCE
+ * @brief field mask of @ref uct_iface_is_reachable_v2
+ */
+typedef enum {
+    UCT_IFACE_IS_REACHABLE_FIELD_DEVICE_ADDR        = UCS_BIT(0), /**< device_addr field */
+    UCT_IFACE_IS_REACHABLE_FIELD_IFACE_ADDR         = UCS_BIT(1), /**< iface_addr field */
+    UCT_IFACE_IS_REACHABLE_FIELD_INFO_STRING        = UCS_BIT(2), /**< info_string field */
+    UCT_IFACE_IS_REACHABLE_FIELD_INFO_STRING_LENGTH = UCS_BIT(3)  /**< info_string_length field */
+} uct_iface_is_reachable_field_mask_t;
 
 
 typedef enum {
@@ -141,8 +223,32 @@ typedef enum {
      * invalidated and will not be accessed anymore by zero-copy or remote
      * memory access operations.
      */
-    UCT_MD_MEM_DEREG_FLAG_INVALIDATE = UCS_BIT(0) 
+    UCT_MD_MEM_DEREG_FLAG_INVALIDATE = UCS_BIT(0)
 } uct_md_mem_dereg_flags_t;
+
+
+/**
+ * @ingroup UCT_RESOURCE
+ * @brief Endpoint attributes, capabilities and limitations.
+ */
+struct uct_ep_attr {
+    /**
+     * Mask of valid fields in this structure, using bits from
+     * @ref uct_ep_attr_field. Fields not specified by this mask
+     * will be ignored.
+     */
+    uint64_t                field_mask;
+
+    /**
+     * Local sockaddr used by the endpoint.
+     */
+    struct sockaddr_storage local_address;
+
+    /**
+     * Remote sockaddr the endpoint is connected to.
+     */
+    struct sockaddr_storage remote_address;
+};
 
 
 /**
@@ -150,7 +256,7 @@ typedef enum {
  * @brief Completion callback for memory region invalidation.
  *
  * This callback routine is invoked when is no longer accessible by remote peer.
- * 
+ *
  * $note: in some implementations this callback may be called immediately after
  *        @ref uct_md_mem_dereg_v2 is called, but it is possible that the
  *        callback call will be delayed until all references to the memory
@@ -187,15 +293,59 @@ typedef struct uct_md_mem_dereg_params {
     uct_mem_h                    memh;
 
     /**
-     * Callback function that is invoked when region is invalidated.
+     * Pointer to UCT completion object that is invoked when region is
+     * invalidated.
      */
-    uct_md_mem_invalidate_cb_t   cb;
+    uct_completion_t             *comp;
+} uct_md_mem_dereg_params_t;
+
+
+/**
+ * @ingroup UCT_RESOURCE
+ * @brief Names for UCT endpoint operations.
+ */
+extern const char *uct_ep_operation_names[];
+
+
+/**
+ * @ingroup UCT_RESOURCE
+ * @brief Operation parameters passed to @ref uct_iface_is_reachable_v2.
+ */
+typedef struct uct_iface_is_reachable_params {
+    /**
+     * Mask of valid fields in this structure, using bits from
+     * @ref uct_iface_is_reachable_field_mask_t. Fields not specified in this
+     * mask will be ignored. Provides ABI compatibility with respect to adding
+     * new fields.
+     */
+    uint64_t                     field_mask;
 
     /**
-     * User-defined argument for the callback function.
+     * Device address to check for reachability.
+     * This field must not be passed if iface_attr.dev_addr_len == 0.
      */
-    void                         *arg;
-} uct_md_mem_dereg_params_t;
+    const uct_device_addr_t      *device_addr;
+
+    /**
+     * Interface address to check for reachability.
+     * This field must not be passed if iface_attr.iface_addr_len == 0.
+     */
+    const uct_iface_addr_t       *iface_addr;
+
+    /**
+     * User-provided pointer to a string buffer.
+     * The function @ref uct_iface_is_reachable_v2 fills this buffer with a
+     * null-terminated information string explaining why the remote address is
+     * not reachable if the return value is 0.
+     */
+    char                         *info_string;
+
+    /**
+     * The length of the @a info_string is provided in bytes.
+     * This value must be specified in conjunction with @a info_string.
+     */
+    size_t                        info_string_length;
+} uct_iface_is_reachable_params_t;
 
 
 /**
@@ -220,13 +370,47 @@ uct_iface_estimate_perf(uct_iface_h tl_iface, uct_perf_attr_t *perf_attr);
  * This routine deregisters the memory region registered by @ref uct_md_mem_reg
  * and allow the memory region to be invalidated with callback called when the
  * memory region is unregistered.
- * 
+ *
  * @param [in]  md          Memory domain that was used to register the memory.
- * @param [in]  params      Operation parameters, see @ref 
+ * @param [in]  params      Operation parameters, see @ref
  *                          uct_md_mem_dereg_params_t.
  */
 ucs_status_t uct_md_mem_dereg_v2(uct_md_h md,
                                  const uct_md_mem_dereg_params_t *params);
+
+
+/**
+ * @ingroup UCT_RESOURCE
+ * @brief Get ep's attributes.
+ *
+ * This routine fetches information about the endpoint.
+ *
+ * @param [in]  ep         Endpoint to query.
+ * @param [out] ep_attr    Filled with endpoint attributes.
+ *
+ * @return Error code.
+ */
+ucs_status_t uct_ep_query(uct_ep_h ep, uct_ep_attr_t *ep_attr);
+
+
+/**
+ * @ingroup UCT_RESOURCE
+ * @brief Check if remote iface address is reachable.
+ *
+ * This function checks if a remote address can be reached from a local
+ * interface. If the function returns a non-zero value, it does not necessarily
+ * mean a connection and/or data transfer would succeed; as the reachability
+ * check is a local operation it does not detect issues such as network
+ * mis-configuration or lack of connectivity.
+ *
+ * @param [in]  iface       Local interface to check reachability from.
+ * @param [in]  params      Operation parameters, see @ref
+ *                          uct_iface_is_reachable_params_t.
+ *
+ * @return Nonzero if reachable, 0 if not.
+ */
+int uct_iface_is_reachable_v2(uct_iface_h iface,
+                              const uct_iface_is_reachable_params_t *params);
 
 END_C_DECLS
 

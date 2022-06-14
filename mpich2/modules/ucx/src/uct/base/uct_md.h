@@ -39,7 +39,7 @@
             if (!(_invalidate_supported)) { \
                 return UCS_ERR_UNSUPPORTED; \
             } \
-            if (!UCT_MD_MEM_DEREG_FIELD_VALUE(params, cb, FIELD_CALLBACK, \
+            if (!UCT_MD_MEM_DEREG_FIELD_VALUE(params, comp, FIELD_COMPLETION, \
                                               NULL)) { \
                 return UCS_ERR_INVALID_PARAM; \
             } \
@@ -48,15 +48,17 @@
 
 
 typedef struct uct_md_rcache_config {
-    size_t               alignment;    /**< Force address alignment */
-    unsigned             event_prio;   /**< Memory events priority */
-    double               overhead;     /**< Lookup overhead estimation */
-    unsigned long        max_regions;  /**< Maximal number of rcache regions */
-    size_t               max_size;     /**< Maximal size of mapped memory */
+    size_t        alignment;      /**< Force address alignment */
+    unsigned      event_prio;     /**< Memory events priority */
+    ucs_time_t    overhead;       /**< Lookup overhead estimation */
+    unsigned long max_regions;    /**< Maximal number of rcache regions */
+    size_t        max_size;       /**< Maximal size of mapped memory */
+    size_t        max_unreleased; /**< Threshold for triggering a cleanup */
 } uct_md_rcache_config_t;
 
 
 extern ucs_config_field_t uct_md_config_rcache_table[];
+extern const char *uct_device_type_names[];
 
 /**
  * "Base" structure which defines MD configuration options.
@@ -152,17 +154,6 @@ struct uct_md {
     }
 
 
-static UCS_F_ALWAYS_INLINE void*
-uct_md_fill_md_name(uct_md_h md, void *buffer)
-{
-#if ENABLE_DEBUG_DATA
-    memcpy(buffer, md->component->name, UCT_COMPONENT_NAME_MAX);
-    return (char*)buffer + UCT_COMPONENT_NAME_MAX;
-#else
-    return buffer;
-#endif
-}
-
 /*
  * Base implementation of query_md_resources(), which returns a single md
  * resource whose name is identical to component name.
@@ -231,6 +222,7 @@ ucs_status_t uct_mem_alloc_check_params(size_t length,
 void uct_md_set_rcache_params(ucs_rcache_params_t *rcache_params,
                               const uct_md_rcache_config_t *rcache_config);
 
+double uct_md_rcache_overhead(const uct_md_rcache_config_t *rcache_config);
 
 extern ucs_config_field_t uct_md_config_table[];
 
@@ -239,5 +231,9 @@ static inline ucs_log_level_t uct_md_reg_log_lvl(unsigned flags)
     return (flags & UCT_MD_MEM_FLAG_HIDE_ERRORS) ? UCS_LOG_LEVEL_DIAG :
             UCS_LOG_LEVEL_ERROR;
 }
+
+
+void uct_md_vfs_init(uct_component_h component, uct_md_h md,
+                     const char *md_name);
 
 #endif

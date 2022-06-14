@@ -15,8 +15,9 @@
 #include <ucp/wireup/ep_match.h>
 #include <ucp/api/ucp.h>
 #include <uct/api/uct.h>
+#include <uct/api/v2/uct_v2.h>
 #include <ucs/datastruct/queue.h>
-#include <ucs/datastruct/ptr_map.inl>
+#include <ucs/datastruct/ptr_map.h>
 #include <ucs/datastruct/strided_alloc.h>
 #include <ucs/debug/assert.h>
 #include <ucs/stats/stats.h>
@@ -48,6 +49,9 @@ typedef uint16_t                   ucp_ep_flags_t;
 #define UCP_EP_ASSERT_COUNTER_INC(_counter)
 #define UCP_EP_ASSERT_COUNTER_DEC(_counter)
 #endif
+
+
+#define UCP_SA_DATA_HEADER_VERSION_SHIFT 5
 
 
 /**
@@ -120,9 +124,10 @@ enum {
                                                            CM phase */
     UCP_EP_INIT_FLAG_INTERNAL          = UCS_BIT(6),  /**< Endpoint for internal usage
                                                            (e.g. memtype, reply on keepalive) */
-    UCP_EP_INIT_CONNECT_TO_IFACE_ONLY  = UCS_BIT(7)   /**< Select transports which
+    UCP_EP_INIT_CONNECT_TO_IFACE_ONLY  = UCS_BIT(7),  /**< Select transports which
                                                            support CONNECT_TO_IFACE
                                                            mode only */
+    UCP_EP_INIT_CREATE_AM_LANE_ONLY    = UCS_BIT(8)   /**< Endpoint requires an AM lane only */
 };
 
 
@@ -137,6 +142,8 @@ typedef struct ucp_ep_config_key_lane {
     uint8_t              path_index; /* Device path index */
     ucp_lane_type_mask_t lane_types; /* Which types of operations this lane
                                         was selected for */
+    size_t               seg_size; /* Maximal fragment size which can be
+                                      received by the peer */
 } ucp_ep_config_key_lane_t;
 
 
@@ -433,7 +440,7 @@ typedef struct {
     ucp_err_handler_cb_t     err_cb; /* Error handler */
     ucp_ep_close_proto_req_t close_req; /* Close protocol request */
 #if UCS_ENABLE_ASSERT
-    size_t                   ka_count; /* Number of KA rounds done */
+    ucs_time_t               ka_last_round; /* Time of last KA round done */
 #endif
 } ucp_ep_ext_control_t;
 
@@ -477,27 +484,60 @@ typedef struct {
 
 
 enum {
-    UCP_WIREUP_SA_DATA_CM_ADDR = 2      /* Sockaddr client data contains address
-                                           for CM based wireup: there is only
-                                           iface and ep address of transport
-                                           lanes, remote device address is
-                                           provided by CM and has to be added to
-                                           unpacked UCP address locally. */
+    UCP_WIREUP_SA_DATA_CM_ADDR   = UCS_BIT(1)  /* Sockaddr client data contains address
+                                                  for CM based wireup: there is only
+                                                  iface and ep address of transport
+                                                  lanes, remote device address is
+                                                  provided by CM and has to be added to
+                                                  unpacked UCP address locally. */
 };
 
 
-struct ucp_wireup_sockaddr_data {
-    uint64_t                  ep_id;         /**< Endpoint ID */
-    uint8_t                   err_mode;      /**< Error handling mode */
-    uint8_t                   addr_mode;     /**< The attached address format
-                                                  defined by
-                                                  UCP_WIREUP_SA_DATA_xx */
-    uint8_t                   dev_index;     /**< Device address index used to
-                                                  build remote address in
-                                                  UCP_WIREUP_SA_DATA_CM_ADDR
-                                                  mode */
+/* Sockaddr data flags that are packed to the header field in
+ * ucp_wireup_sockaddr_data_base_t structure.
+ */
+enum {
+    /* Indicates support of UCP_ERR_HANDLING_MODE_PEER error mode. */
+    UCP_SA_DATA_FLAG_ERR_MODE_PEER = UCS_BIT(0)
+};
+
+
+/* Basic sockaddr data. Version 1 uses some additional fields which are not
+ * really needed and removed in version 2.
+ */
+typedef struct ucp_wireup_sockaddr_data_base {
+    uint64_t                  ep_id; /**< Endpoint ID */
+
+    /* This field has different meaning for sa_data v1 and other versions:
+     * v1:           it is error handling mode
+     * v2 and newer: it is sa_data header with the following format:
+     *   +---+-----+
+     *   | 3 |  5  |
+     *   +---+-----+
+     *     v    |
+     * version  |
+     *          v
+     *        flags
+     *
+     * It is safe to keep version in 3 MSB, because it will always be zeros
+     * (i.e. UCP_OBJECT_VERSION_V1) in sa_data v1 (err_mode value is small).
+     */
+    uint8_t                   header;
+    /* packed worker address (or sa_data v1) follows */
+} UCS_S_PACKED ucp_wireup_sockaddr_data_base_t;
+
+
+typedef struct ucp_wireup_sockaddr_data_v1 {
+    ucp_wireup_sockaddr_data_base_t super;
+    uint8_t                         addr_mode; /**< The attached address format
+                                                    defined by
+                                                    UCP_WIREUP_SA_DATA_xx */
+    uint8_t                         dev_index; /**< Device address index used to
+                                                    build remote address in
+                                                    UCP_WIREUP_SA_DATA_CM_ADDR
+                                                    mode */
     /* packed worker address follows */
-} UCS_S_PACKED;
+} UCS_S_PACKED ucp_wireup_sockaddr_data_v1_t;
 
 
 typedef struct ucp_conn_request {
@@ -509,9 +549,21 @@ typedef struct ucp_conn_request {
     uct_device_addr_t           *remote_dev_addr;
     struct sockaddr_storage     client_address;
     ucp_ep_h                    ep; /* valid only if request is handled internally */
-    ucp_wireup_sockaddr_data_t  sa_data;
-    /* packed worker address follows */
+    /* sa_data and packed worker address follow */
 } ucp_conn_request_t;
+
+
+/**
+ * Argument for discarding UCP endpoint's lanes
+ */
+typedef struct ucp_ep_discard_lanes_arg {
+    unsigned     counter; /* How many discarding operations on UCT lanes are
+                           * in-progress if purging of the UCP endpoint is
+                           * required */
+    ucs_status_t status; /* Completion status of operations after discarding is
+                          * done */
+    ucp_ep_h     ucp_ep; /* UCP endpoint which should be discarded */
+} ucp_ep_discard_lanes_arg_t;
 
 
 int ucp_is_uct_ep_failed(uct_ep_h uct_ep);
@@ -638,12 +690,16 @@ unsigned ucp_ep_local_disconnect_progress(void *arg);
 
 size_t ucp_ep_tag_offload_min_rndv_thresh(ucp_ep_config_t *config);
 
+void ucp_ep_config_rndv_zcopy_commit(ucp_lane_index_t lanes_count,
+                                     ucp_ep_rndv_zcopy_config_t *rndv_zcopy);
+
 void ucp_ep_get_lane_info_str(ucp_ep_h ucp_ep, ucp_lane_index_t lane,
                               ucs_string_buffer_t *lane_info_strb);
 
-void ucp_ep_invoke_err_cb(ucp_ep_h ep, ucs_status_t status);
+void ucp_ep_config_rndv_zcopy_commit(ucp_lane_index_t lanes_count,
+                                     ucp_ep_rndv_zcopy_config_t *rndv_zcopy);
 
-int ucp_ep_config_test_rndv_support(const ucp_ep_config_t *config);
+void ucp_ep_invoke_err_cb(ucp_ep_h ep, ucs_status_t status);
 
 ucs_status_t ucp_ep_flush_progress_pending(uct_pending_req_t *self);
 
@@ -655,7 +711,9 @@ void
 ucp_ep_purge_lanes(ucp_ep_h ep, uct_pending_purge_callback_t purge_cb,
                    void *purge_arg);
 
-void ucp_ep_discard_lanes(ucp_ep_h ucp_ep, ucs_status_t status);
+unsigned ucp_ep_discard_lanes(ucp_ep_h ep, ucs_status_t discard_status,
+                              ucp_send_nbx_callback_t discard_cb,
+                              ucp_ep_discard_lanes_arg_t *discard_arg);
 
 void ucp_ep_register_disconnect_progress(ucp_request_t *req);
 
@@ -680,10 +738,26 @@ ucs_status_t ucp_ep_do_uct_ep_keepalive(ucp_ep_h ucp_ep, uct_ep_h uct_ep,
  * @brief Do keepalive operation.
  *
  * @param [in] ep    UCP Endpoint object to operate keepalive.
+ * @param [in] now   Current time when keepalive started.
  *
  * @return Indication whether keepalive was fully done for UCP Endpoint or not.
  */
-int ucp_ep_do_keepalive(ucp_ep_h ep);
+int ucp_ep_do_keepalive(ucp_ep_h ep, ucs_time_t now);
+
+
+/**
+ * @brief Purge the protocol request scheduled on a given UCP endpoint.
+ *
+ * @param [in]     ucp_ep           Endpoint object on which the request should
+ *                                  be purged.
+ * @param [in]     req              The request to purge.
+ * @param [in]     status           Completion status.
+ * @param [in]     recursive        Indicates if the function was called from
+ *                                  the @ref ucp_ep_req_purge recursively.
+ */
+void ucp_ep_req_purge(ucp_ep_h ucp_ep, ucp_request_t *req,
+                      ucs_status_t status, int recursive);
+
 
 /**
  * @brief Purge flush and protocol requests scheduled on a given UCP endpoint.

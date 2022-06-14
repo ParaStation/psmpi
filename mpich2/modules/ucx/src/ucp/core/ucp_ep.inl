@@ -70,6 +70,12 @@ static inline ucp_rsc_index_t ucp_ep_get_rsc_index(ucp_ep_h ep, ucp_lane_index_t
     return ucp_ep_config(ep)->key.lanes[lane].rsc_index;
 }
 
+static inline const uct_tl_resource_desc_t *
+ucp_ep_get_tl_rsc(ucp_ep_h ep, ucp_lane_index_t lane)
+{
+    return &ep->worker->context->tl_rscs[ucp_ep_get_rsc_index(ep, lane)].tl_rsc;
+}
+
 static inline uint8_t ucp_ep_get_path_index(ucp_ep_h ep, ucp_lane_index_t lane)
 {
     return ucp_ep_config(ep)->key.lanes[lane].path_index;
@@ -82,12 +88,16 @@ static inline uct_iface_attr_t *ucp_ep_get_iface_attr(ucp_ep_h ep, ucp_lane_inde
 
 static inline size_t ucp_ep_get_max_bcopy(ucp_ep_h ep, ucp_lane_index_t lane)
 {
-    return ucp_ep_get_iface_attr(ep, lane)->cap.am.max_bcopy;
+    size_t max_bcopy = ucp_ep_get_iface_attr(ep, lane)->cap.am.max_bcopy;
+
+    return ucs_min(ucp_ep_config(ep)->key.lanes[lane].seg_size, max_bcopy);
 }
 
 static inline size_t ucp_ep_get_max_zcopy(ucp_ep_h ep, ucp_lane_index_t lane)
 {
-    return ucp_ep_get_iface_attr(ep, lane)->cap.am.max_zcopy;
+    size_t max_zcopy = ucp_ep_get_iface_attr(ep, lane)->cap.am.max_zcopy;
+
+    return ucs_min(ucp_ep_config(ep)->key.lanes[lane].seg_size, max_zcopy);
 }
 
 static inline size_t ucp_ep_get_max_iov(ucp_ep_h ep, ucp_lane_index_t lane)
@@ -272,16 +282,13 @@ static UCS_F_ALWAYS_INLINE ucp_lane_index_t ucp_ep_get_cm_lane(ucp_ep_h ep)
     return ucp_ep_config(ep)->key.cm_lane;
 }
 
-static inline int
+static UCS_F_ALWAYS_INLINE int
 ucp_ep_config_connect_p2p(ucp_worker_h worker,
                           const ucp_ep_config_key_t *ep_config_key,
                           ucp_rsc_index_t rsc_index)
 {
-    /* The EP with CM lane has to be connected to remote EP, so prefer native
-     * UCT p2p capability. */
-    return ucp_ep_config_key_has_cm_lane(ep_config_key) ?
-           ucp_worker_is_tl_p2p(worker, rsc_index) :
-           !ucp_worker_is_tl_2iface(worker, rsc_index);
+    return ucp_wireup_connect_p2p(worker, rsc_index,
+                                  ucp_ep_config_key_has_cm_lane(ep_config_key));
 }
 
 static UCS_F_ALWAYS_INLINE int ucp_ep_use_indirect_id(ucp_ep_h ep)

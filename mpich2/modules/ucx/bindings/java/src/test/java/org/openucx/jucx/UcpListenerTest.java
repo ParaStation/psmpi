@@ -22,8 +22,6 @@ import java.util.stream.Stream;
 import static org.junit.Assert.*;
 
 public class UcpListenerTest  extends UcxTest {
-    static final int port = Integer.parseInt(
-        System.getenv().getOrDefault("JUCX_TEST_PORT", "55321"));
 
     static Stream<NetworkInterface> getInterfaces() {
         try {
@@ -51,54 +49,54 @@ public class UcpListenerTest  extends UcxTest {
             .collect(Collectors.toList());
         Collections.reverse(addresses);
         for (InetAddress address : addresses) {
-            for (int i = 0; i < 10; i++) {
-                try {
-                    result = worker.newListener(
-                        params.setSockAddr(new InetSocketAddress(address, port + i)));
-                    break;
-                } catch (UcxException ex) {
-                    if (ex.getStatus() != UcsConstants.STATUS.UCS_ERR_BUSY) {
-                        break;
-                    }
-                }
-            }
+            result = worker.newListener(params.setSockAddr(new InetSocketAddress(address, 0)));
         }
         assertNotNull("Could not find socket address to start UcpListener", result);
+        assertNotEquals(0, result.getAddress().getPort());
         System.out.println("Bound UcpListner on: " + result.getAddress());
         return result;
     }
 
     @Test
     public void testConnectionHandler() throws Exception {
+        long clientId = 3L;
         UcpContext context1 = new UcpContext(new UcpParams().requestStreamFeature()
             .requestRmaFeature());
         UcpContext context2 = new UcpContext(new UcpParams().requestStreamFeature()
             .requestRmaFeature());
         UcpWorker serverWorker1 = context1.newWorker(new UcpWorkerParams());
         UcpWorker serverWorker2 = context1.newWorker(new UcpWorkerParams());
-        UcpWorker clientWorker = context2.newWorker(new UcpWorkerParams());
+        UcpWorker clientWorker = context2.newWorker(new UcpWorkerParams().setClientId(clientId));
 
-        AtomicReference<UcpConnectionRequest> conRequest = new AtomicReference<>(null);
+        AtomicReference<UcpConnectionRequest> connRequest = new AtomicReference<>(null);
+        AtomicReference<UcpConnectionRequest> connReject = new AtomicReference<>(null);
 
         // Create listener and set connection handler
         UcpListenerParams listenerParams = new UcpListenerParams()
-            .setConnectionHandler(conRequest::set);
+            .setConnectionHandler((UcpConnectionRequest connectionRequest) -> {
+                if (connRequest.get() == null) {
+                    connRequest.set(connectionRequest);
+                } else {
+                    connReject.set(connectionRequest);
+                }
+            });
         UcpListener serverListener = tryBindListener(serverWorker1, listenerParams);
         UcpListener clientListener = tryBindListener(clientWorker, listenerParams);
 
         UcpEndpoint clientToServer = clientWorker.newEndpoint(new UcpEndpointParams()
-            .setErrorHandler((ep, status, errorMsg) ->
+            .sendClientId().setErrorHandler((ep, status, errorMsg) ->
                 System.err.println("clientToServer error: " + errorMsg))
             .setPeerErrorHandlingMode().setSocketAddress(serverListener.getAddress()));
 
-        while (conRequest.get() == null) {
+        while (connRequest.get() == null) {
             serverWorker1.progress();
             clientWorker.progress();
         }
 
-        assertNotNull(conRequest.get().getClientAddress());
+        assertEquals(clientId, connRequest.get().getClientId());
+        assertNotNull(connRequest.get().getClientAddress());
         UcpEndpoint serverToClientListener = serverWorker2.newEndpoint(
-            new UcpEndpointParams().setSocketAddress(conRequest.get().getClientAddress())
+            new UcpEndpointParams().setSocketAddress(connRequest.get().getClientAddress())
                                    .setPeerErrorHandlingMode()
                                    .setErrorHandler((errEp, status, errorMsg) ->
                                        System.err.println("serverToClientListener error: " +
@@ -107,34 +105,26 @@ public class UcpListenerTest  extends UcxTest {
 
         // Create endpoint from another worker from pool.
         UcpEndpoint serverToClient = serverWorker2.newEndpoint(
-            new UcpEndpointParams().setConnectionRequest(conRequest.get()));
+            new UcpEndpointParams().setConnectionRequest(connRequest.get()));
 
         // Test connection handler persists
         for (int i = 0; i < 10; i++) {
-            conRequest.set(null);
-            UcpEndpoint tmpEp = clientWorker.newEndpoint(new UcpEndpointParams()
+            clientWorker.newEndpoint(new UcpEndpointParams()
                 .setSocketAddress(serverListener.getAddress()).setPeerErrorHandlingMode()
-                .setErrorHandler((ep, status, errorMsg) ->
-                    System.err.println("tmpEp error: " + errorMsg)));
+                .setErrorHandler((ep, status, errorMsg) -> {
+                    ep.close();
+                    assertEquals(UcsConstants.STATUS.UCS_ERR_REJECTED, status);
+                }));
 
-            while (conRequest.get() == null) {
+            while (connReject.get() == null) {
                 serverWorker1.progress();
                 serverWorker2.progress();
                 clientWorker.progress();
             }
 
-            UcpEndpoint tmpEp2 = serverWorker2.newEndpoint(
-                new UcpEndpointParams().setPeerErrorHandlingMode()
-                    .setConnectionRequest(conRequest.get()));
+            connReject.get().reject();
+            connReject.set(null);
 
-            UcpRequest close1 = tmpEp.closeNonBlockingFlush();
-            UcpRequest close2 = tmpEp2.closeNonBlockingFlush();
-
-            while (!close1.isCompleted() || !close2.isCompleted()) {
-                serverWorker1.progress();
-                serverWorker2.progress();
-                clientWorker.progress();
-            }
         }
 
         UcpRequest sent = serverToClient.sendStreamNonBlocking(

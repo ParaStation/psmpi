@@ -34,7 +34,6 @@ static ucs_status_t uct_knem_iface_query(uct_iface_h tl_iface,
     iface_attr->iface_addr_len      = 0;
     iface_attr->bandwidth.shared    = iface->super.super.config.bandwidth;
     iface_attr->bandwidth.dedicated = 0;
-    iface_attr->overhead            = 0.25e-6; /* 0.25 us */
 
     return UCS_OK;
 }
@@ -68,6 +67,7 @@ static uct_scopy_iface_ops_t uct_knem_iface_ops = {
     .super = {
         .iface_estimate_perf = uct_base_iface_estimate_perf,
         .iface_vfs_refresh   = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
+        .ep_query            = (uct_ep_query_func_t)ucs_empty_function_return_unsupported
     },
     .ep_tx = uct_knem_ep_tx,
 };

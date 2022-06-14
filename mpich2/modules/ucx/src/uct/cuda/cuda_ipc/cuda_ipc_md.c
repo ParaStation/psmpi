@@ -15,7 +15,7 @@
 #include <limits.h>
 #include <ucs/debug/log.h>
 #include <ucs/sys/sys.h>
-#include <ucs/debug/memtrack.h>
+#include <ucs/debug/memtrack_int.h>
 #include <ucs/type/class.h>
 #include <ucs/profile/profile.h>
 #include <sys/types.h>
@@ -30,8 +30,9 @@ static ucs_config_field_t uct_cuda_ipc_md_config_table[] = {
 
 static ucs_status_t uct_cuda_ipc_md_query(uct_md_h md, uct_md_attr_t *md_attr)
 {
-    md_attr->cap.flags            = UCT_MD_FLAG_REG |
-                                    UCT_MD_FLAG_NEED_RKEY;
+    md_attr->cap.flags            = UCT_MD_FLAG_REG       |
+                                    UCT_MD_FLAG_NEED_RKEY |
+                                    UCT_MD_FLAG_INVALIDATE;
     md_attr->cap.reg_mem_types    = UCS_BIT(UCS_MEMORY_TYPE_CUDA);
     md_attr->cap.alloc_mem_types  = 0;
     md_attr->cap.access_mem_types = UCS_BIT(UCS_MEMORY_TYPE_CUDA);
@@ -348,7 +349,9 @@ uct_cuda_ipc_component_t uct_cuda_ipc_component = {
         },
         .cm_config          = UCS_CONFIG_EMPTY_GLOBAL_LIST_ENTRY,
         .tl_list            = UCT_COMPONENT_TL_LIST_INITIALIZER(&uct_cuda_ipc_component.super),
-        .flags              = 0
+        .flags              = 0,
+        .md_vfs_init        =
+                (uct_component_md_vfs_init_func_t)ucs_empty_function
     },
     .md                     = NULL,
 };

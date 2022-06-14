@@ -138,6 +138,7 @@ AC_ARG_ENABLE([g],AS_HELP_STRING([--enable-g],[alias for --enable-debug]),,[enab
 AC_ARG_ENABLE([debug],AS_HELP_STRING([--enable-debug],[adds -g to CFLAGS]),,[enable_debug=${enable_g}])
 if test "${enable_debug}" != "no" ; then
     PAC_APPEND_FLAG([-g],[CFLAGS])
+    AC_DEFINE(YAKSA_DEBUG, [1], [Define if debugging is enabled])
 fi
 
 # --enable-fast

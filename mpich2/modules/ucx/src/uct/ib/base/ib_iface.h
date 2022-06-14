@@ -290,7 +290,7 @@ typedef struct uct_ib_fence_info {
 } uct_ib_fence_info_t;
 
 
-UCS_CLASS_DECLARE(uct_ib_iface_t, uct_ib_iface_ops_t*, uct_iface_ops_t*,
+UCS_CLASS_DECLARE(uct_ib_iface_t, uct_iface_ops_t*, uct_ib_iface_ops_t*,
                   uct_md_h, uct_worker_h, const uct_iface_params_t*,
                   const uct_ib_iface_config_t*,
                   const uct_ib_iface_init_attr_t*);
@@ -462,6 +462,10 @@ ucs_status_t uct_ib_iface_query(uct_ib_iface_t *iface, size_t xport_hdr_len,
                                 uct_iface_attr_t *iface_attr);
 
 
+ucs_status_t
+uct_ib_iface_estimate_perf(uct_iface_h tl_iface, uct_perf_attr_t *perf_attr);
+
+
 int uct_ib_iface_is_roce_v2(uct_ib_iface_t *iface, uct_ib_device_t *dev);
 
 
@@ -512,7 +516,7 @@ int uct_ib_iface_prepare_rx_wrs(uct_ib_iface_t *iface, ucs_mpool_t *mp,
 
 ucs_status_t uct_ib_iface_create_ah(uct_ib_iface_t *iface,
                                     struct ibv_ah_attr *ah_attr,
-                                    struct ibv_ah **ah_p);
+                                    const char *usage, struct ibv_ah **ah_p);
 
 void uct_ib_iface_fill_ah_attr_from_gid_lid(uct_ib_iface_t *iface, uint16_t lid,
                                             const union ibv_gid *gid,
@@ -549,9 +553,12 @@ uint8_t uct_ib_iface_config_select_sl(const uct_ib_iface_config_t *ib_config);
 
 
 #define UCT_IB_IFACE_FMT \
-    "%s:%d"
+    "%s:%d/%s"
 #define UCT_IB_IFACE_ARG(_iface) \
-    uct_ib_device_name(uct_ib_iface_device(_iface)), (_iface)->config.port_num
+    uct_ib_device_name(uct_ib_iface_device(_iface)), \
+    (_iface)->config.port_num, \
+    uct_ib_iface_is_roce(_iface) ? "RoCE" : "IB"
+    
 
 
 #define UCT_IB_IFACE_VERBS_COMPLETION_ERR(_type, _iface, _i,  _wc) \
@@ -635,5 +642,25 @@ uct_ib_iface_roce_dscp(uct_ib_iface_t *iface)
     ucs_assert(uct_ib_iface_is_roce(iface));
     return iface->config.traffic_class >> 2;
 }
+
+#if HAVE_DECL_IBV_CREATE_CQ_EX
+static UCS_F_ALWAYS_INLINE void
+uct_ib_fill_cq_attr(struct ibv_cq_init_attr_ex *cq_attr,
+                    const uct_ib_iface_init_attr_t *init_attr,
+                    uct_ib_iface_t *iface, int preferred_cpu, unsigned cq_size)
+{
+    cq_attr->cqe         = cq_size;
+    cq_attr->channel     = iface->comp_channel;
+    cq_attr->comp_vector = preferred_cpu;
+#if HAVE_DECL_IBV_CREATE_CQ_ATTR_IGNORE_OVERRUN
+    /* Always check CQ overrun if assert mode enabled. */
+    /* coverity[dead_error_condition] */
+    if (!UCS_ENABLE_ASSERT && (init_attr->flags & UCT_IB_CQ_IGNORE_OVERRUN)) {
+        cq_attr->comp_mask = IBV_CQ_INIT_ATTR_MASK_FLAGS;
+        cq_attr->flags     = IBV_CREATE_CQ_ATTR_IGNORE_OVERRUN;
+    }
+#endif /* HAVE_DECL_IBV_CREATE_CQ_ATTR_IGNORE_OVERRUN */
+}
+#endif /* HAVE_DECL_IBV_CREATE_CQ_EX */
 
 #endif

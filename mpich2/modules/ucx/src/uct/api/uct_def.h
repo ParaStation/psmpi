@@ -86,6 +86,7 @@ typedef struct uct_md_ops            uct_md_ops_t;
 typedef void                         *uct_rkey_ctx_h;
 typedef struct uct_iface_attr        uct_iface_attr_t;
 typedef struct uct_iface_params      uct_iface_params_t;
+typedef struct uct_ep_attr           uct_ep_attr_t;
 typedef struct uct_md_attr           uct_md_attr_t;
 typedef struct uct_completion        uct_completion_t;
 typedef struct uct_pending_req       uct_pending_req_t;
@@ -179,7 +180,12 @@ enum uct_cm_ep_resolve_args_field {
     /**
      * Indicates that @ref uct_cm_ep_resolve_args::dev_name is valid.
      */
-    UCT_CM_EP_RESOLVE_ARGS_FIELD_DEV_NAME       = UCS_BIT(0)
+    UCT_CM_EP_RESOLVE_ARGS_FIELD_DEV_NAME       = UCS_BIT(0),
+
+    /**
+     * Indicates that @ref uct_cm_ep_resolve_args::status is valid.
+     */
+    UCT_CM_EP_RESOLVE_ARGS_FIELD_STATUS         = UCS_BIT(1)
 };
 
 
@@ -221,13 +227,23 @@ typedef struct uct_cm_ep_resolve_args {
      */
     uint64_t                    field_mask;
 
-   /**
+    /**
      * Device name indicates the device that the endpoint was bound to during
      * address and route resolution. The device name that is passed to this
-     * callback, corresponds to @ref uct_tl_resource_desc_t::dev_name as
+     * callback corresponds to @ref uct_tl_resource_desc_t::dev_name as
      * returned from @ref uct_md_query_tl_resources.
      */
     char                        dev_name[UCT_DEVICE_NAME_MAX];
+
+    /**
+     * Indicates address resolution status:
+     * UCS_OK                   - address of the remote server was resolved
+     *                            successfully.
+     * UCS_ERR_UNREACHABLE      - the remote server is unreachable.
+     * Otherwise                - indicates an internal connection establishment
+     *                            error on the local (client) side.
+     */
+    ucs_status_t                status;
 } uct_cm_ep_resolve_args_t;
 
 
@@ -337,7 +353,7 @@ typedef struct uct_cm_listener_conn_request_args {
     /**
      * Mask of valid fields in this structure, using bits from
      * @ref uct_cm_listener_conn_request_args_field.
-     * Fields not specified by this mask should not be acceessed by the callback.
+     * Fields not specified by this mask should not be accessed by the callback.
      */
     uint64_t                   field_mask;
 

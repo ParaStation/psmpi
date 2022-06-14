@@ -199,7 +199,7 @@ BEGIN_C_DECLS
  */
 #define _UCS_PROFILE_CTX_NAMED_CALL(_ctx, _name, _func, ...) \
     ({ \
-        typeof(_func(__VA_ARGS__)) retval; \
+        ucs_typeof(_func(__VA_ARGS__)) retval; \
         UCS_PROFILE_CTX_SCOPE_BEGIN((_ctx)); \
         retval = _func(__VA_ARGS__); \
         UCS_PROFILE_CTX_SCOPE_END((_ctx), _name); \
@@ -349,15 +349,6 @@ void ucs_profile_record(ucs_profile_context_t *ctx, ucs_profile_type_t type,
                         const char *name, uint32_t param32, uint64_t param64,
                         const char *file, int line, const char *function,
                         volatile int *loc_id_p);
-
-
-/**
- * Reset the internal array of profiling locations.
- * Used for testing purposes only.
- *
- * @param [in] ctx Global profile context.
- */
-void ucs_profile_reset_locations(ucs_profile_context_t *ctx);
 
 
 END_C_DECLS

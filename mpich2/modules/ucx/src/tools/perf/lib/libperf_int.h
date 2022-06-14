@@ -28,6 +28,13 @@ BEGIN_C_DECLS
 #define TIMING_QUEUE_SIZE    2048
 #define UCT_PERF_TEST_AM_ID  5
 #define ADDR_BUF_SIZE        2048
+#define EXTRA_INFO_SIZE      256
+
+#define UCX_PERF_TEST_FOREACH(perf) \
+    while (!ucx_perf_context_done(perf))
+
+#define rte_call(_perf, _func, ...) \
+    ((_perf)->params.rte->_func((_perf)->params.rte_group, ## __VA_ARGS__))
 
 
 typedef struct ucx_perf_context        ucx_perf_context_t;
@@ -39,10 +46,6 @@ typedef struct ucx_perf_thread_context ucx_perf_thread_context_t;
 struct ucx_perf_allocator {
     ucs_memory_type_t mem_type;
     ucs_status_t (*init)(ucx_perf_context_t *perf);
-    ucs_status_t (*ucp_alloc)(const ucx_perf_context_t *perf, size_t length,
-                              void **address_p, ucp_mem_h *memh, int non_blk_flag);
-    void         (*ucp_free)(const ucx_perf_context_t *perf, void *address,
-                             ucp_mem_h memh);
     ucs_status_t (*uct_alloc)(const ucx_perf_context_t *perf, size_t length,
                               unsigned flags, uct_allocated_memory_t *alloc_mem);
     void         (*uct_free)(const ucx_perf_context_t *perf,
@@ -79,6 +82,7 @@ struct ucx_perf_context {
     ucs_time_t                   timing_queue[TIMING_QUEUE_SIZE];
     unsigned                     timing_queue_head;
     const ucx_perf_allocator_t   *allocator;
+    char                         extra_info[EXTRA_INFO_SIZE];
 
     union {
         struct {
@@ -109,7 +113,6 @@ struct ucx_perf_context {
     };
 };
 
-
 struct ucx_perf_thread_context {
     pthread_t           pt;
     int                 tid;
@@ -118,49 +121,52 @@ struct ucx_perf_thread_context {
     ucx_perf_result_t   result;
 };
 
-
 struct uct_peer {
     uct_ep_h                     ep;
     unsigned long                remote_addr;
     uct_rkey_bundle_t            rkey;
 };
 
-
 struct ucp_perf_request {
     void                         *context;
 };
 
+typedef struct {
+    ucs_status_t (*setup)(ucx_perf_context_t *perf);
+    void         (*cleanup)(ucx_perf_context_t *perf);
+    ucs_status_t (*run)(ucx_perf_context_t *perf);
+    void         (*barrier)(ucx_perf_context_t *perf);
+} ucx_perf_funcs_t;
 
-#define UCX_PERF_TEST_FOREACH(perf) \
-    while (!ucx_perf_context_done(perf))
+extern ucx_perf_funcs_t ucx_perf_funcs[];
 
-#define rte_call(_perf, _func, ...) \
-    ((_perf)->params.rte->_func((_perf)->params.rte_group, ## __VA_ARGS__))
-
-
+unsigned rte_peer_index(unsigned group_size, unsigned group_index);
 void ucx_perf_test_start_clock(ucx_perf_context_t *perf);
-
-
 void uct_perf_ep_flush_b(ucx_perf_context_t *perf, int peer_index);
-
-
 void uct_perf_iface_flush_b(ucx_perf_context_t *perf);
-
-
 ucs_status_t uct_perf_test_dispatch(ucx_perf_context_t *perf);
-
-
 ucs_status_t ucp_perf_test_dispatch(ucx_perf_context_t *perf);
-
-
 void ucx_perf_calc_result(ucx_perf_context_t *perf, ucx_perf_result_t *result);
-
-
 void uct_perf_barrier(ucx_perf_context_t *perf);
-
 void ucp_perf_thread_barrier(ucx_perf_context_t *perf);
-
 void ucp_perf_barrier(ucx_perf_context_t *perf);
+
+ucs_status_t ucp_perf_test_alloc_mem(ucx_perf_context_t *perf);
+void ucp_perf_test_free_mem(ucx_perf_context_t *perf);
+ucs_status_t uct_perf_test_alloc_mem(ucx_perf_context_t *perf);
+void uct_perf_test_free_mem(ucx_perf_context_t *perf);
+ucs_status_t ucx_perf_thread_spawn(ucx_perf_context_t *perf,
+                                   ucx_perf_result_t* result);
+void ucx_perf_test_prepare_new_run(ucx_perf_context_t *perf,
+                                   const ucx_perf_params_t *params);
+void ucx_perf_set_warmup(ucx_perf_context_t* perf,
+                         const ucx_perf_params_t* params);
+/**
+ * Get the total length of the message size given by parameters
+ */
+size_t ucx_perf_get_message_size(const ucx_perf_params_t *params);
+
+void ucx_perf_report(ucx_perf_context_t *perf);
 
 
 static UCS_F_ALWAYS_INLINE int ucx_perf_context_done(ucx_perf_context_t *perf)
@@ -168,7 +174,6 @@ static UCS_F_ALWAYS_INLINE int ucx_perf_context_done(ucx_perf_context_t *perf)
     return ucs_unlikely((perf->current.iters >= perf->max_iter) ||
                         (perf->current.time  > perf->end_time));
 }
-
 
 static inline void ucx_perf_get_time(ucx_perf_context_t *perf)
 {
@@ -184,11 +189,10 @@ static inline void ucx_perf_omp_barrier(ucx_perf_context_t *perf)
 #endif
 }
 
-static inline void ucx_perf_update(ucx_perf_context_t *perf,
-                                   ucx_perf_counter_t iters, size_t bytes)
+static UCS_F_ALWAYS_INLINE void ucx_perf_update(ucx_perf_context_t *perf,
+                                                ucx_perf_counter_t iters,
+                                                size_t bytes)
 {
-    ucx_perf_result_t result;
-
     perf->current.time   = ucs_get_time();
     perf->current.iters += iters;
     perf->current.bytes += bytes;
@@ -203,33 +207,10 @@ static inline void ucx_perf_update(ucx_perf_context_t *perf,
 
     perf->prev_time = perf->current.time;
 
-    if (perf->current.time - perf->prev.time >= perf->report_interval) {
-        ucx_perf_get_time(perf);
-
-        ucx_perf_calc_result(perf, &result);
-        rte_call(perf, report, &result, perf->params.report_arg, 0, 0);
-
-        perf->prev = perf->current;
+    if (ucs_unlikely((perf->current.time - perf->prev.time) >=
+                     perf->report_interval)) {
+        ucx_perf_report(perf);
     }
-}
-
-
-/**
- * Get the total length of the message size given by parameters
- */
-static inline
-size_t ucx_perf_get_message_size(const ucx_perf_params_t *params)
-{
-    size_t length, it;
-
-    ucs_assert(params->msg_size_list != NULL);
-
-    length = 0;
-    for (it = 0; it < params->msg_size_cnt; ++it) {
-        length += params->msg_size_list[it];
-    }
-
-    return length;
 }
 
 END_C_DECLS

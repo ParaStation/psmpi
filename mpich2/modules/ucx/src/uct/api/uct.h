@@ -1235,9 +1235,6 @@ struct uct_ep_params {
      * This callback is invoked when the remote server address provided in field
      * @ref uct_ep_params_t::sockaddr is resolved to the local device to be used
      * for connection establishment.
-     * @note In the event of a connection error, this callback will not be
-     *       invoked; @ref uct_ep_params_t::sockaddr_cb_client with indicating
-     *       the error code will be invoked instead.
      * @note This field is mutually exclusive with
      *       @ref uct_ep_params::sockaddr_pack_cb.
      */
@@ -1365,7 +1362,7 @@ struct uct_listener_params {
  */
 struct uct_md_attr {
     struct {
-        size_t               max_alloc; /**< Maximal allocation size */
+        uint64_t             max_alloc; /**< Maximal allocation size */
         size_t               max_reg;   /**< Maximal registration size */
         uint64_t             flags;     /**< UCT_MD_FLAG_xx */
         uint64_t             reg_mem_types; /**< Bitmap of memory types that Memory Domain can be registered with */
@@ -1617,6 +1614,7 @@ enum {
 
 
 extern const char *uct_alloc_method_names[];
+extern const char *uct_device_type_names[];
 
 
 /**
@@ -2468,7 +2466,6 @@ ucs_status_t uct_mem_free(const uct_allocated_memory_t *mem);
 ucs_status_t uct_md_config_read(uct_component_h component,
                                 const char *env_prefix, const char *filename,
                                 uct_md_config_t **config_p);
-
 
 
 /**

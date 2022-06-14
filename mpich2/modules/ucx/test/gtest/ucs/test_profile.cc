@@ -20,6 +20,7 @@ class scoped_profile {
 public:
     scoped_profile(ucs::test_base& test, const std::string &file_name,
                    const char *mode) : m_test(test), m_file_name(file_name) {
+        ucs_profile_reset_locations_id(ucs_profile_default_ctx);
         ucs_profile_cleanup(ucs_profile_default_ctx);
         m_test.push_config();
         m_test.modify_config("PROFILE_MODE", mode);
@@ -38,6 +39,7 @@ public:
     }
 
     ~scoped_profile() {
+        ucs_profile_reset_locations_id(ucs_profile_default_ctx);
         ucs_profile_cleanup(ucs_profile_default_ctx);
         unlink(m_file_name.c_str());
         m_test.pop_config();
@@ -365,8 +367,8 @@ UCS_TEST_P(test_profile, log_accum) {
             "log,accum");
 }
 
-INSTANTIATE_TEST_CASE_P(st, test_profile, ::testing::Values(1));
-INSTANTIATE_TEST_CASE_P(mt, test_profile, ::testing::Values(2, 4, 8));
+INSTANTIATE_TEST_SUITE_P(st, test_profile, ::testing::Values(1));
+INSTANTIATE_TEST_SUITE_P(mt, test_profile, ::testing::Values(2, 4, 8));
 
 class test_profile_perf : public test_profile {
 };
@@ -428,6 +430,6 @@ UCS_TEST_SKIP_COND_P(test_profile_perf, overhead, RUNNING_ON_VALGRIND) {
     EXPECT_LT(overhead_nsec, EXP_OVERHEAD_NSEC) << "Profiling overhead is too high";
 }
 
-INSTANTIATE_TEST_CASE_P(st, test_profile_perf, ::testing::Values(1));
+INSTANTIATE_TEST_SUITE_P(st, test_profile_perf, ::testing::Values(1));
 
 #endif

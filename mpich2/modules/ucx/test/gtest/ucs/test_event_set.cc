@@ -173,13 +173,13 @@ static void event_set_func1(void *callback_data, ucs_event_set_types_t events,
 
     EXPECT_EQ(UCS_EVENT_SET_EVREAD, events);
 
-    n = read(fd, buf, MAX_BUF_LEN);
+    n = read(fd, buf, MAX_BUF_LEN - 1);
     if (n == -1) {
         ADD_FAILURE();
         return;
     }
-    EXPECT_EQ(0, strcmp(UCS_EVENT_SET_TEST_STRING, buf));
-    EXPECT_EQ(0, strcmp(UCS_EVENT_SET_EXTRA_STRING, extra_str));
+    EXPECT_EQ(0, strncmp(UCS_EVENT_SET_TEST_STRING, buf, n));
+    EXPECT_EQ(0, strncmp(UCS_EVENT_SET_EXTRA_STRING, extra_str,n ));
     EXPECT_EQ(UCS_EVENT_SET_EXTRA_NUM, *extra_num);
 }
 
@@ -279,7 +279,7 @@ UCS_TEST_P(test_event_set, ucs_event_set_trig_modes) {
     event_set_cleanup();
 }
 
-INSTANTIATE_TEST_CASE_P(ext_fd, test_event_set,
+INSTANTIATE_TEST_SUITE_P(ext_fd, test_event_set,
                         ::testing::Values(static_cast<int>(
                                               UCS_EVENT_SET_EXTERNAL_FD)));
-INSTANTIATE_TEST_CASE_P(int_fd, test_event_set, ::testing::Values(0));
+INSTANTIATE_TEST_SUITE_P(int_fd, test_event_set, ::testing::Values(0));

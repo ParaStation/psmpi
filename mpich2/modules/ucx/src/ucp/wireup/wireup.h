@@ -39,7 +39,6 @@ enum {
 typedef struct {
     const char  *title;             /* Name of the criteria for debugging */
     uint64_t    local_md_flags;     /* Required local MD flags */
-    uint64_t    remote_md_flags;    /* Required remote MD flags */
     uint64_t    local_iface_flags;  /* Required local interface flags */
     uint64_t    remote_iface_flags; /* Required remote interface flags */
     uint64_t    local_event_flags;  /* Required local event flags */
@@ -109,6 +108,8 @@ double ucp_wireup_amo_score_func(ucp_context_h context,
 
 size_t ucp_wireup_msg_pack(void *dest, void *arg);
 
+const char* ucp_wireup_msg_str(uint8_t msg_type);
+
 ucs_status_t ucp_wireup_msg_progress(uct_pending_req_t *self);
 
 ucs_status_t
@@ -138,10 +139,18 @@ ucp_wireup_select_lanes(ucp_ep_h ep, unsigned ep_init_flags,
 void ucp_wireup_replay_pending_requests(ucp_ep_h ucp_ep,
                                         ucs_queue_head_t *tmp_pending_queue);
 
+/* Set lanes which are wireup_ep as remote connected.
+   If 'ready' is true - also mark them as ready and switch them to the real
+   transport uct_ep in the next progress call */
+void ucp_wireup_remote_connect_lanes(ucp_ep_h ep, int ready);
+
 void ucp_wireup_remote_connected(ucp_ep_h ep);
 
 unsigned ucp_ep_init_flags(const ucp_worker_h worker,
                            const ucp_ep_params_t *params);
+
+int ucp_wireup_connect_p2p(ucp_worker_h worker, ucp_rsc_index_t rsc_index,
+                           int has_cm_lane);
 
 ucs_status_t
 ucp_wireup_connect_local(ucp_ep_h ep,
@@ -149,7 +158,5 @@ ucp_wireup_connect_local(ucp_ep_h ep,
                          const ucp_lane_index_t *lanes2remote);
 
 uct_ep_h ucp_wireup_extract_lane(ucp_ep_h ep, ucp_lane_index_t lane);
-
-void ucp_wireup_pending_purge_cb(uct_pending_req_t *self, void *arg);
 
 #endif

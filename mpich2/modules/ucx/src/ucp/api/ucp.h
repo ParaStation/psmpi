@@ -169,7 +169,10 @@ enum ucp_worker_params_field {
     UCP_WORKER_PARAM_FIELD_EVENT_FD     = UCS_BIT(4), /**< External event file
                                                            descriptor */
     UCP_WORKER_PARAM_FIELD_FLAGS        = UCS_BIT(5), /**< Worker flags */
-    UCP_WORKER_PARAM_FIELD_NAME         = UCS_BIT(6)  /**< Worker name */
+    UCP_WORKER_PARAM_FIELD_NAME         = UCS_BIT(6), /**< Worker name */
+    UCP_WORKER_PARAM_FIELD_AM_ALIGNMENT = UCS_BIT(7), /**< Alignment of active
+                                                           messages on the receiver */
+    UCP_WORKER_PARAM_FIELD_CLIENT_ID    = UCS_BIT(8)  /**< Client id */
 };
 
 
@@ -266,7 +269,7 @@ enum ucp_ep_params_flags_field {
                                                            must be provided and
                                                            contain the address
                                                            of the remote peer */
-    UCP_EP_PARAMS_FLAGS_NO_LOOPBACK    = UCS_BIT(1)   /**< Avoid connecting the
+    UCP_EP_PARAMS_FLAGS_NO_LOOPBACK    = UCS_BIT(1),  /**< Avoid connecting the
                                                            endpoint to itself when
                                                            connecting the endpoint
                                                            to the same worker it
@@ -275,6 +278,14 @@ enum ucp_ep_params_flags_field {
                                                            send to a particular
                                                            remote endpoint, for
                                                            example stream */
+    UCP_EP_PARAMS_FLAGS_SEND_CLIENT_ID = UCS_BIT(2)   /**< Send client id
+                                                           when connecting to remote
+                                                           socket address as part of the
+                                                           connection request payload.
+                                                           On the remote side value
+                                                           can be obtained from
+                                                           @ref ucp_conn_request_h using
+                                                           @ref ucp_conn_request_query */
 };
 
 
@@ -446,6 +457,19 @@ enum ucp_worker_attr_field {
 
 /**
  * @ingroup UCP_WORKER
+ * @brief UCP worker address attributes field mask.
+ *
+ * The enumeration allows specifying which fields in
+ * @ref ucp_worker_address_attr_t are present. It is used to enable backward
+ * compatibility support.
+ */
+enum ucp_worker_address_attr_field {
+    UCP_WORKER_ADDRESS_ATTR_FIELD_UID = UCS_BIT(0) /**< Unique id of the worker */
+};
+
+
+/**
+ * @ingroup UCP_WORKER
  * @brief UCP listener attributes field mask.
  *
  * The enumeration allows specifying which fields in @ref ucp_listener_attr_t are
@@ -464,7 +488,8 @@ enum ucp_listener_attr_field {
  * are present. It is used to enable backward compatibility support.
  */
 enum ucp_conn_request_attr_field {
-    UCP_CONN_REQUEST_ATTR_FIELD_CLIENT_ADDR = UCS_BIT(0) /**< Client's address */
+    UCP_CONN_REQUEST_ATTR_FIELD_CLIENT_ADDR = UCS_BIT(0), /**< Client's address */
+    UCP_CONN_REQUEST_ATTR_FIELD_CLIENT_ID   = UCS_BIT(1)  /**< Remote client id */
 };
 
 
@@ -589,7 +614,7 @@ enum ucp_cb_param_flags {
  * @brief Atomic operation requested for ucp_atomic_post
  *
  * This enumeration defines which atomic memory operation should be
- * performed by the ucp_atomic_post family of fuctions. All of these are
+ * performed by the ucp_atomic_post family of functions. All of these are
  * non-fetching atomics and will not result in a request handle.
  */
 typedef enum {
@@ -683,10 +708,14 @@ typedef enum {
                                                         synchronization with the
                                                         remote peer before releasing
                                                         the local send buffer */
-    UCP_OP_ATTR_FLAG_FORCE_IMM_CMPL = UCS_BIT(18)  /**< force immediate complete
+    UCP_OP_ATTR_FLAG_FORCE_IMM_CMPL = UCS_BIT(18), /**< force immediate complete
                                                         operation, fail if the
                                                         operation cannot be
                                                         completed immediately */
+    UCP_OP_ATTR_FLAG_MULTI_SEND     = UCS_BIT(19)  /**< optimize for bandwidth of
+                                                        multiple in-flight operations,
+                                                        rather than for the latency
+                                                        of a single operation */
 } ucp_op_attr_t;
 
 
@@ -802,7 +831,8 @@ enum ucp_am_handler_param_field {
  * @brief Structure for scatter-gather I/O.
  *
  * This structure is used to specify a list of buffers which can be used
- * within a single data transfer function call.
+ * within a single data transfer function call. This list should remain valid
+ * until the data transfer request is completed.
  *
  * @note If @a length is zero, the memory pointed to by @a buffer
  *       will not be accessed. Otherwise, @a buffer must point to valid memory.
@@ -1264,7 +1294,43 @@ typedef struct ucp_worker_params {
      */
     const char              *name;
 
+    /**
+     * Minimal address alignment of the active message data pointer as passed
+     * in argument @a data to the active message handler, defined as
+     * @a ucp_am_recv_callback_t.
+     */
+    size_t                  am_alignment;
+
+    /**
+    * Client id that is sent as part of the connection request payload
+    * when connecting to a remote socket address. On the remote side,
+    * this value can be obtained from @ref ucp_conn_request_h
+    * using @ref ucp_conn_request_query.
+    */
+    uint64_t                client_id;
 } ucp_worker_params_t;
+
+
+/**
+ * @ingroup UCP_WORKER
+ * @brief UCP worker address attributes.
+ *
+ * The structure defines the attributes of the particular worker address.
+ */
+typedef struct ucp_worker_address_attr {
+    /**
+     * Mask of valid fields in this structure, using bits from
+     * @ref ucp_worker_address_attr_field.
+     * Fields not specified in this mask will be ignored.
+     * Provides ABI compatibility with respect to adding new fields.
+     */
+    uint64_t              field_mask;
+
+    /**
+     * Unique id of the worker this address belongs to.
+     */
+    uint64_t              worker_uid;
+} ucp_worker_address_attr_t;
 
 
 /**
@@ -1360,6 +1426,12 @@ typedef struct ucp_conn_request_attr {
      * server.
      */
     struct sockaddr_storage client_address;
+
+    /**
+     * Remote client id if remote endpoint's flag
+     * @ref UCP_EP_PARAMS_FLAGS_SEND_CLIENT_ID is set.
+     */
+    uint64_t                client_id;
 } ucp_conn_request_attr_t;
 
 
@@ -1884,7 +1956,7 @@ ucs_status_t ucp_init_version(unsigned api_major_version, unsigned api_minor_ver
  * This routine checks API version compatibility, then discovers the available
  * network interfaces, and initializes the network resources required for
  * discovering of the network and memory related devices.
- *  This routine is responsible for initialization all information required for
+ * This routine is responsible for initialization all information required for
  * a particular application scope, for example, MPI application, OpenSHMEM
  * application, etc.
  *
@@ -2081,6 +2153,22 @@ ucs_status_t ucp_worker_get_address(ucp_worker_h worker,
  * errors when worker != address
  */
 void ucp_worker_release_address(ucp_worker_h worker, ucp_address_t *address);
+
+
+/**
+ * @ingroup UCP_WORKER
+ * @brief Get attributes of the particular worker address.
+ *
+ * This routine fetches information about the worker address. The address can be
+ * either of local or remote worker.
+ *
+ * @param [in]  address    Worker address to query.
+ * @param [out] attr       Filled with attributes of the worker address.
+ *
+ * @return Error code as defined by @ref ucs_status_t.
+ */
+ucs_status_t ucp_worker_address_query(ucp_address_t *address,
+                                      ucp_worker_address_attr_t *attr);
 
 
 /**
@@ -4493,7 +4581,9 @@ ucs_status_ptr_t ucp_worker_flush_nbx(ucp_worker_h worker,
  * present. It is used to enable backward compatibility support.
  */
 enum ucp_ep_attr_field {
-    UCP_EP_ATTR_FIELD_NAME = UCS_BIT(0) /**< UCP endpoint name */
+    UCP_EP_ATTR_FIELD_NAME            = UCS_BIT(0), /**< UCP endpoint name */
+    UCP_EP_ATTR_FIELD_LOCAL_SOCKADDR  = UCS_BIT(1), /**< Sockaddr used by the endpoint */
+    UCP_EP_ATTR_FIELD_REMOTE_SOCKADDR = UCS_BIT(2)  /**< Sockaddr the endpoint is connected to */
 };
 
 
@@ -4518,12 +4608,28 @@ typedef struct ucp_ep_attr {
      * this name.
      */
     char     name[UCP_ENTITY_NAME_MAX];
+
+    /**
+     * Local socket address for this endpoint. Valid only for endpoints created
+     * by connecting to a socket address.
+     * If this field is specified for an endpoint not connected to a socket address,
+     * UCS_ERR_NOT_CONNECTED will be returned.
+     */
+    struct sockaddr_storage local_sockaddr;
+
+    /**
+     * Remote socket address this endpoint is connected to. Valid only for endpoints
+     * created by connecting to a socket address.
+     * If this field is specified for an endpoint not connected to a socket address,
+     * UCS_ERR_NOT_CONNECTED will be returned.
+     */
+    struct sockaddr_storage remote_sockaddr;
 } ucp_ep_attr_t;
 
 
 /**
  * @ingroup UCP_ENDPOINT
- * @brief Get attributes specific to a particular endpoint.
+ * @brief Get attributes of a given endpoint.
  *
  * This routine fetches information about the endpoint.
  *

@@ -135,6 +135,7 @@ struct ucs_rcache_params {
     int                    flags;               /**< Flags */
     unsigned long          max_regions;         /**< Maximal number of regions */
     size_t                 max_size;            /**< Maximal total size of regions */
+    size_t                 max_unreleased;      /**< Threshold for triggering a cleanup */
 };
 
 
@@ -151,7 +152,7 @@ struct ucs_rcache_region {
     uint8_t                lru_flags; /**< LRU flags */
     union {
         uint64_t           priv;      /**< Used internally */
-        unsigned long     *pfn;       /**< Pointer to PFN array. In case if requested 
+        unsigned long     *pfn;       /**< Pointer to PFN array. In case if requested
                                            evaluation more than 1 page - PFN array is
                                            allocated, if 1 page requested - used
                                            in-place priv value. */

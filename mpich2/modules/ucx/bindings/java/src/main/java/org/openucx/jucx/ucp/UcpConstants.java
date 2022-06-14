@@ -51,6 +51,7 @@ public class UcpConstants {
     static long UCP_WORKER_PARAM_FIELD_EVENTS;
     static long UCP_WORKER_PARAM_FIELD_USER_DATA;
     static long UCP_WORKER_PARAM_FIELD_EVENT_FD;
+    static long UCP_WORKER_PARAM_FIELD_CLIENT_ID;
 
     /**
      * Mask of events which are expected on wakeup.
@@ -82,6 +83,7 @@ public class UcpConstants {
     static long UCP_EP_PARAM_FIELD_SOCK_ADDR;
     static long UCP_EP_PARAM_FIELD_FLAGS;
     static long UCP_EP_PARAM_FIELD_CONN_REQUEST;
+    static long UCP_EP_PARAM_FIELD_NAME;
 
     /**
      * UCP error handling mode.
@@ -93,6 +95,7 @@ public class UcpConstants {
      */
     static long UCP_EP_PARAMS_FLAGS_CLIENT_SERVER;
     static long UCP_EP_PARAMS_FLAGS_NO_LOOPBACK;
+    static long UCP_EP_PARAMS_FLAGS_SEND_CLIENT_ID;
 
     /**
      *  The enumeration is used to specify the behavior of UcpEndpoint closeNonBlocking.

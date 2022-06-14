@@ -143,6 +143,7 @@ WATCHDOG_DEFINE_GETTER(kill_signal, int)
 int watchdog_start()
 {
     pthread_mutexattr_t mutex_attr;
+    ucs_status_t status;
     int ret;
 
     ret = pthread_mutexattr_init(&mutex_attr);
@@ -178,8 +179,9 @@ int watchdog_start()
     watchdog.watched_thread = pthread_self();
     pthread_mutex_unlock(&watchdog.mutex);
 
-    ret = pthread_create(&watchdog.thread, NULL, watchdog_func, NULL);
-    if (ret != 0) {
+    status = ucs_pthread_create(&watchdog.thread, watchdog_func, NULL,
+                                "watchdog");
+    if (status != UCS_OK) {
         goto err_destroy_barrier;
     }
 
@@ -588,8 +590,8 @@ std::string exit_status_info(int exit_status)
     return ss.str().substr(2, std::string::npos);
 }
 
-sock_addr_storage::sock_addr_storage(bool is_rdmacm_netdev) :
-        m_size(0), m_is_valid(false), m_is_rdmacm_netdev(is_rdmacm_netdev)
+sock_addr_storage::sock_addr_storage() :
+        m_size(0), m_is_valid(false), m_is_rdmacm_netdev(false)
 {
     memset(&m_storage, 0, sizeof(m_storage));
 }
@@ -782,7 +784,8 @@ scoped_mutex_lock::~scoped_mutex_lock()
     pthread_mutex_unlock(&m_mutex);
 }
 
-std::vector<std::vector<ucs_memory_type_t> > supported_mem_type_pairs() {
+const std::vector<std::vector<ucs_memory_type_t> >& supported_mem_type_pairs()
+{
     static std::vector<std::vector<ucs_memory_type_t> > result;
 
     if (result.empty()) {

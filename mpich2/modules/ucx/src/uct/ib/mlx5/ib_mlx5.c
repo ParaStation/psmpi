@@ -18,6 +18,7 @@
 #include <ucs/debug/log.h>
 #include <ucs/sys/compiler.h>
 #include <ucs/sys/sys.h>
+#include <ucs/vfs/base/vfs_cb.h>
 #include <ucs/vfs/base/vfs_obj.h>
 #include <string.h>
 
@@ -79,13 +80,9 @@ ucs_status_t uct_ib_mlx5_create_cq(uct_ib_iface_t *iface, uct_ib_dir_t dir,
     struct mlx5dv_cq_init_attr dv_attr = {};
     struct ibv_cq *cq;
 
-    cq_attr.cqe         = uct_ib_cq_size(iface, init_attr, dir);
-    cq_attr.channel     = iface->comp_channel;
-    cq_attr.comp_vector = preferred_cpu;
-    if (init_attr->flags & UCT_IB_CQ_IGNORE_OVERRUN) {
-        cq_attr.comp_mask = IBV_CQ_INIT_ATTR_MASK_FLAGS;
-        cq_attr.flags     = IBV_CREATE_CQ_ATTR_IGNORE_OVERRUN;
-    }
+    uct_ib_fill_cq_attr(&cq_attr, init_attr, iface, preferred_cpu,
+                        uct_ib_cq_size(iface, init_attr, dir));
+
     dv_attr.comp_mask = MLX5DV_CQ_INIT_ATTR_MASK_CQE_SIZE;
     dv_attr.cqe_size  = uct_ib_get_cqe_size(inl > 32 ? 128 : 64);
     cq = ibv_cq_ex_to_cq(mlx5dv_create_cq(dev->ibv_context, &cq_attr, &dv_attr));
@@ -332,7 +329,7 @@ ucs_status_t uct_ib_mlx5_get_compact_av(uct_ib_iface_t *iface, int *compact_av)
 
     uct_ib_iface_fill_ah_attr_from_addr(iface, ib_addr, 0, &ah_attr, &path_mtu);
     ah_attr.is_global = iface->config.force_global_addr;
-    status = uct_ib_iface_create_ah(iface, &ah_attr, &ah);
+    status = uct_ib_iface_create_ah(iface, &ah_attr, "compact AV check", &ah);
     if (status != UCS_OK) {
         return status;
     }
@@ -435,7 +432,6 @@ ucs_status_t uct_ib_mlx5_devx_uar_init(uct_ib_mlx5_devx_uar_t *uar,
 #if HAVE_DEVX
     ucs_status_t status;
 
-#if HAVE_DECL_MLX5DV_UAR_ALLOC_TYPE_NC
     status = uct_ib_mlx5_devx_alloc_uar(md, UCT_IB_MLX5_UAR_ALLOC_TYPE_WC,
                                         UCS_LOG_LEVEL_DEBUG, "WC", "NC",
                                         &uar->uar);
@@ -444,11 +440,7 @@ ucs_status_t uct_ib_mlx5_devx_uar_init(uct_ib_mlx5_devx_uar_t *uar,
                                             UCS_LOG_LEVEL_ERROR, "NC", NULL,
                                             &uar->uar);
     }
-#else
-    status = uct_ib_mlx5_devx_alloc_uar(md, UCT_IB_MLX5_UAR_ALLOC_TYPE_WC,
-                                        UCS_LOG_LEVEL_ERROR, "WC", NULL,
-                                        &uar->uar);
-#endif
+
     if (status != UCS_OK) {
         return status;
     }
@@ -477,9 +469,14 @@ void uct_ib_mlx5_txwq_reset(uct_ib_mlx5_txwq_t *txwq)
     txwq->prev_sw_pi = UINT16_MAX;
 #if UCS_ENABLE_ASSERT
     txwq->hw_ci      = 0xFFFF;
+    txwq->flags      = 0;
 #endif
     uct_ib_fence_info_init(&txwq->fi);
     memset(txwq->qstart, 0, UCS_PTR_BYTE_DIFF(txwq->qstart, txwq->qend));
+
+    /* Make uct_ib_mlx5_txwq_num_posted_wqes() work if no wqe has completed by
+       setting number-of-segments (ds) field of the last wqe to 1 */
+    uct_ib_mlx5_set_ctrl_qpn_ds(uct_ib_mlx5_txwq_get_wqe(txwq, 0xffff), 0, 1);
 }
 
 void uct_ib_mlx5_txwq_vfs_populate(uct_ib_mlx5_txwq_t *txwq, void *parent_obj)
@@ -597,6 +594,36 @@ ucs_status_t uct_ib_mlx5_txwq_init(uct_priv_worker_t *worker,
 
     uct_ib_mlx5_txwq_reset(txwq);
     return UCS_OK;
+}
+
+void *uct_ib_mlx5_txwq_get_wqe(const uct_ib_mlx5_txwq_t *txwq, uint16_t pi)
+{
+    uint16_t num_bb = UCS_PTR_BYTE_DIFF(txwq->qstart, txwq->qend) /
+                      MLX5_SEND_WQE_BB;
+    return UCS_PTR_BYTE_OFFSET(txwq->qstart, (pi % num_bb) * MLX5_SEND_WQE_BB);
+}
+
+uint16_t uct_ib_mlx5_txwq_num_posted_wqes(const uct_ib_mlx5_txwq_t *txwq,
+                                          uint16_t outstanding)
+{
+    struct mlx5_wqe_ctrl_seg *ctrl;
+    uint16_t pi, count;
+    size_t wqe_size;
+
+    /* Start iteration with the most recently completed WQE, so count from -1.
+       uct_ib_mlx5_txwq_reset() sets qpn_ds in the last WQE in case no WQE has
+       completed */
+    pi    = txwq->prev_sw_pi - outstanding;
+    count = -1;
+    ucs_assert(pi == txwq->hw_ci);
+    do {
+        ctrl     = uct_ib_mlx5_txwq_get_wqe(txwq, pi);
+        wqe_size = (ctrl->qpn_ds >> 24) * UCT_IB_MLX5_WQE_SEG_SIZE;
+        pi      += (wqe_size + MLX5_SEND_WQE_BB - 1) / MLX5_SEND_WQE_BB;
+        ++count;
+    } while (pi != txwq->sw_pi);
+
+    return count;
 }
 
 void uct_ib_mlx5_qp_mmio_cleanup(uct_ib_mlx5_qp_t *qp,
@@ -890,6 +917,7 @@ uct_ib_mlx5_iface_select_sl(uct_ib_iface_t *iface,
 #if HAVE_DEVX
     uct_ib_mlx5_md_t *md = ucs_derived_of(iface->super.md, uct_ib_mlx5_md_t);
 #endif
+    const char *dev_name = uct_ib_device_name(uct_ib_iface_device(iface));
     uint16_t ooo_sl_mask = 0;
     ucs_status_t status;
 
@@ -899,8 +927,8 @@ uct_ib_mlx5_iface_select_sl(uct_ib_iface_t *iface,
                                    iface->config.port_num)) {
         /* Ethernet priority for RoCE devices can't be selected regardless
          * AR support requested by user, pass empty ooo_sl_mask */
-        return uct_ib_mlx5_select_sl(ib_config, UCS_NO, 0, 1,
-                                     UCT_IB_IFACE_ARG(iface),
+        return uct_ib_mlx5_select_sl(ib_config, UCS_NO, 0, 1, dev_name,
+                                     iface->config.port_num,
                                      &iface->config.sl);
     }
 
@@ -915,7 +943,75 @@ uct_ib_mlx5_iface_select_sl(uct_ib_iface_t *iface,
 #endif
 
     return uct_ib_mlx5_select_sl(ib_config, ib_mlx5_config->ar_enable,
-                                 ooo_sl_mask, status == UCS_OK,
-                                 UCT_IB_IFACE_ARG(iface),
+                                 ooo_sl_mask, status == UCS_OK, dev_name,
+                                 iface->config.port_num,
                                  &iface->config.sl);
+}
+
+int uct_ib_mlx5_iface_has_ar(uct_ib_iface_t *iface)
+{
+#if HAVE_DEVX
+    uct_ib_mlx5_md_t *md = ucs_derived_of(iface->super.md, uct_ib_mlx5_md_t);
+    uint16_t ooo_sl_mask = 0;
+    ucs_status_t status;
+
+    status = uct_ib_mlx5_devx_query_ooo_sl_mask(md, iface->config.port_num,
+                                                &ooo_sl_mask);
+    if (status != UCS_OK) {
+        return 0;
+    }
+
+    return (ooo_sl_mask & UCS_BIT(iface->config.sl)) != 0;
+#else
+    return 0;
+#endif
+}
+
+void uct_ib_mlx5_txwq_validate_always(uct_ib_mlx5_txwq_t *wq, uint16_t num_bb,
+                                      int hw_ci_updated)
+{
+#if UCS_ENABLE_ASSERT
+    uint16_t wqe_first_bb, wqe_last_pi;
+    uint16_t qp_length, max_pi;
+    uint16_t hw_ci;
+
+    /* num_bb must be non-zero and not larger than MAX_BB */
+    ucs_assertv((num_bb > 0) && (num_bb <= UCT_IB_MLX5_MAX_BB), "num_bb=%u",
+                num_bb);
+
+    /* bb_max must be smaller than the full QP length */
+    qp_length = UCS_PTR_BYTE_DIFF(wq->qstart, wq->qend) / MLX5_SEND_WQE_BB;
+    ucs_assertv(wq->bb_max < qp_length, "bb_max=%u qp_length=%u ", wq->bb_max,
+                qp_length);
+
+    /* wq->curr and wq->sw_pi should be in sync */
+    wqe_first_bb = UCS_PTR_BYTE_DIFF(wq->qstart, wq->curr) / MLX5_SEND_WQE_BB;
+    ucs_assertv(wqe_first_bb == (wq->sw_pi % qp_length),
+                "first_bb=%u sw_pi=%u qp_length=%u", wqe_first_bb, wq->sw_pi,
+                qp_length);
+
+    /* sw_pi must be ahead of prev_sw_pi */
+    ucs_assertv(UCS_CIRCULAR_COMPARE16(wq->sw_pi, >, wq->prev_sw_pi),
+                "sw_pi=%u prev_sw_pi=%u", wq->sw_pi, wq->prev_sw_pi);
+
+    if (!hw_ci_updated) {
+        return;
+    }
+
+    hw_ci = wq->hw_ci;
+
+    /* hw_ci must be less or equal to prev_sw_pi, since we could get completion
+       only for what was actually posted */
+    ucs_assertv(UCS_CIRCULAR_COMPARE16(hw_ci, <=, wq->prev_sw_pi),
+                "hw_ci=%u prev_sw_pi=%u", hw_ci, wq->prev_sw_pi);
+
+    /* Check for QP overrun: our WQE's last BB index must be <= hw_ci+qp_length.
+       max_pi is the largest BB index that is guaranteed to be free. */
+    wqe_last_pi = wq->sw_pi + num_bb - 1;
+    max_pi      = hw_ci + qp_length;
+    ucs_assertv(UCS_CIRCULAR_COMPARE16(wqe_last_pi, <=, max_pi),
+                "TX WQ overrun: wq=%p wqe_last_pi=%u max_pi=%u sw_pi=%u "
+                "num_bb=%u hw_ci=%u qp_length=%u",
+                wq, wqe_last_pi, max_pi, wq->sw_pi, num_bb, hw_ci, qp_length);
+#endif
 }

@@ -8,7 +8,7 @@
 #ifndef UCS_TEST_HELPERS_H
 #define UCS_TEST_HELPERS_H
 
-#include "gtest.h"
+#include "googletest/gtest.h"
 
 #include <common/mem_buffer.h>
 
@@ -58,11 +58,12 @@
 /* Abort test */
 #define UCS_TEST_ABORT(_message) \
     do { \
-        std::stringstream ss; \
-        ss << _message; \
-        GTEST_MESSAGE_(ss.str().c_str(), ::testing::TestPartResult::kFatalFailure); \
+        std::stringstream _ss; \
+        _ss << _message; \
+        GTEST_MESSAGE_(_ss.str().c_str(), \
+                       ::testing::TestPartResult::kFatalFailure); \
         throw ucs::test_abort_exception(); \
-    } while(0)
+    } while (0)
 
 
 /* UCS error check */
@@ -73,31 +74,59 @@
     } while (0)
 
 
+/**
+ * Checks whether a condition check with ucs_status_t is true or not.
+ *
+ * @param _condition Condition that should be checked.
+ * @param _expr      Expression which returns UCS status which needs to be
+ *                   checked.
+ */
+#define _ASSERT_UCS_STATUS(_condition, _expr, ...) \
+    do { \
+        ucs_status_t __status = (_expr); \
+        if (!(_condition)) { \
+            UCS_TEST_ABORT("Error: " \
+                    << ucs_status_string(__status)  __VA_ARGS__); \
+        } \
+    } while (0)
+
+
+/**
+ * Check equality of the status returned from the expression and the expected
+ * status.
+ *
+ * @param _exp_status Expected UCS status.
+ * @param _expr       Expression which returns UCS status which needs to be
+ *                    checked.
+ */
+#define ASSERT_UCS_STATUS_EQ(_exp_status, _expr, ...) \
+    _ASSERT_UCS_STATUS(((__status) == (_exp_status)), _expr, ## __VA_ARGS__)
+
+
+/**
+ * Check equality of the status returned from the expression to the one of the
+ * expected statuses.
+ *
+ * @param _exp_status1 First expected UCS status.
+ * @param _exp_status2 Second expected UCS status.
+ * @param _expr        Expression which returns UCS status which needs to be
+ *                     checked.
+ */
+#define ASSERT_UCS_STATUS_EQ2(_exp_status1, _exp_status2, _expr, ...) \
+    _ASSERT_UCS_STATUS((((__status) == (_exp_status1)) || \
+                       ((__status) == (_exp_status2))), _expr, ## __VA_ARGS__)
+
+
 #define ASSERT_UCS_OK(_expr, ...) \
-    do { \
-        ucs_status_t _status = (_expr); \
-        if ((_status) != UCS_OK) { \
-            UCS_TEST_ABORT("Error: " << ucs_status_string(_status)  __VA_ARGS__); \
-        } \
-    } while (0)
+    ASSERT_UCS_STATUS_EQ(UCS_OK, _expr, ## __VA_ARGS__)
 
 
-#define ASSERT_UCS_OK_OR_INPROGRESS(_expr) \
-    do { \
-        ucs_status_t _status = (_expr); \
-        if (((_status) != UCS_OK) && ((_status) != UCS_INPROGRESS)) { \
-            UCS_TEST_ABORT("Error: " << ucs_status_string(_status)); \
-        } \
-    } while (0)
+#define ASSERT_UCS_OK_OR_INPROGRESS(_expr, ...) \
+    ASSERT_UCS_STATUS_EQ2(UCS_OK, UCS_INPROGRESS, _expr, ## __VA_ARGS__)
 
 
-#define ASSERT_UCS_OK_OR_BUSY(_expr) \
-    do { \
-        ucs_status_t _status = (_expr); \
-        if (((_status) != UCS_OK) && ((_status) != UCS_ERR_BUSY)) { \
-            UCS_TEST_ABORT("Error: " << ucs_status_string(_status)); \
-        } \
-    } while (0)
+#define ASSERT_UCS_OK_OR_BUSY(_expr, ...) \
+    ASSERT_UCS_STATUS_EQ2(UCS_OK, UCS_ERR_BUSY, _expr, ## __VA_ARGS__)
 
 
 #define ASSERT_UCS_PTR_OK(_expr) \
@@ -325,7 +354,7 @@ std::string sockaddr_to_str(const S *saddr) {
  */
 class sock_addr_storage {
 public:
-    sock_addr_storage(bool is_rdmacm_netdev = false);
+    sock_addr_storage();
 
     sock_addr_storage(const ucs_sock_addr_t &ucs_sock_addr,
                       bool is_rdmacm_netdev = false);
@@ -388,6 +417,10 @@ std::ostream& operator<<(std::ostream& os, const std::vector<char>& vec);
 static inline int rand() {
     /* coverity[dont_call] */
     return ::rand();
+}
+
+static inline int rand_range(int max) {
+    return rand() % max;
 }
 
 static inline void srand(unsigned seed) {
@@ -939,7 +972,7 @@ std::vector<std::vector<T> > make_pairs(const std::vector<T> &input_vec) {
     return result;
 }
 
-std::vector<std::vector<ucs_memory_type_t> > supported_mem_type_pairs();
+const std::vector<std::vector<ucs_memory_type_t> >& supported_mem_type_pairs();
 
 
 /**

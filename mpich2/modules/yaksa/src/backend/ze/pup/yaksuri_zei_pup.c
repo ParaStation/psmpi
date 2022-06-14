@@ -419,10 +419,7 @@ int yaksuri_zei_synchronize(int target)
     int rc = YAKSA_SUCCESS;
     rc = yaksuri_zei_add_dependency(target, -1);
 
-  fn_exit:
     return rc;
-  fn_fail:
-    goto fn_exit;
 }
 
 int yaksuri_zei_flush_all(void)

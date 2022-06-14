@@ -566,11 +566,9 @@ UCS_TEST_SKIP_COND_P(test_tag, tag_hold_uct_desc,
                             msg_size, true);
     }
 
-    for (ucs::ptr_vector<void>::const_iterator iter = m_uct_descs.begin();
-         iter != m_uct_descs.end(); ++iter)
-    {
-        uct_iface_release_desc(*iter);
-    }
+    std::for_each(m_uct_descs.begin(), m_uct_descs.end(),
+                  uct_iface_release_desc);
+
 }
 
 
@@ -1075,6 +1073,11 @@ void test_tag_mp_xrq::send_rndv_zcopy(mapped_buffer *buf)
                                                      iovcnt, 0, &m_uct_comp);
     ASSERT_FALSE(UCS_PTR_IS_ERR(rndv_op));
 
+    // Check the returned status_ptr to suppress Coverity warning about
+    // passing the negative value to TAG RNDV cancel which expect that the
+    // value is always >= 0
+    ucs_assert_always(reinterpret_cast<int64_t>(rndv_op) >= 0);
+
     // There will be no real RNDV performed, cancel the op to avoid mpool
     // warning on exit
     ASSERT_UCS_OK(uct_ep_tag_rndv_cancel(sender().ep(0),rndv_op));
@@ -1238,11 +1241,8 @@ UCS_TEST_P(test_tag_mp_xrq, desc_release)
         test_common(sfuncs[i].first, 3, 3, sfuncs[i].second);
     }
 
-    for (ucs::ptr_vector<void>::const_iterator iter = m_uct_descs.begin();
-         iter != m_uct_descs.end(); ++iter)
-    {
-        uct_iface_release_desc(*iter);
-    }
+    std::for_each(m_uct_descs.begin(), m_uct_descs.end(),
+                  uct_iface_release_desc);
 }
 
 UCS_TEST_P(test_tag_mp_xrq, am)

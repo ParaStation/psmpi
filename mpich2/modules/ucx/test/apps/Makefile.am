@@ -18,10 +18,12 @@ endif
 
 noinst_PROGRAMS = \
 	test_ucp_dlopen \
+	test_ucp_config \
 	test_ucs_dlopen \
 	test_link_map \
 	test_dlopen_cfg_print \
-	test_init_mt
+	test_init_mt \
+	test_memtrack_limit
 
 objdir = $(shell sed -n -e 's/^objdir=\(.*\)$$/\1/p' $(LIBTOOL))
 
@@ -36,6 +38,16 @@ test_ucp_dlopen_CPPFLAGS = $(BASE_CPPFLAGS) \
                            -DLIB_PATH=$(abs_top_builddir)/src/ucp/$(objdir)/libucp.so
 test_ucp_dlopen_CFLAGS   = $(BASE_CFLAGS)
 test_ucp_dlopen_LDADD    = -ldl
+
+test_ucp_config_SOURCES  = test_ucp_config.c
+test_ucp_config_CPPFLAGS = $(BASE_CPPFLAGS)
+test_ucp_config_CFLAGS   = $(BASE_CFLAGS)
+test_ucp_config_LDADD    = $(top_builddir)/src/ucp/libucp.la
+
+test_memtrack_limit_SOURCES  = test_memtrack_limit.c
+test_memtrack_limit_CPPFLAGS = $(BASE_CPPFLAGS)
+test_memtrack_limit_CFLAGS   = $(BASE_CFLAGS)
+test_memtrack_limit_LDADD    = $(top_builddir)/src/ucs/libucs.la
 
 test_link_map_SOURCES  = test_link_map.c
 test_link_map_CPPFLAGS = $(BASE_CPPFLAGS)

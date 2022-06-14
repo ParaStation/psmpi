@@ -9,8 +9,8 @@
 AC_PREREQ([2.63])
 
 define([ucx_ver_major], 1)
-define([ucx_ver_minor], 11)
-define([ucx_ver_patch], 2)
+define([ucx_ver_minor], 12)
+define([ucx_ver_patch], 0)
 define([ts], esyscmd([sh -c "date +%Y%m%d%H%M%S"]))
 
 # This is the API version (see libtool library versioning)
@@ -117,7 +117,7 @@ AC_DEFINE_UNQUOTED([UCX_CONFIGURE_FLAGS], ["$config_flags"], [UCX configure flag
 #
 # Define path of ucx.conf configuration file
 #
-AC_SUBST([ucx_conf_dir], [${sysconfdir}/ucx])
+AC_SUBST([ucx_config_dir], [${sysconfdir}/ucx])
 
 #
 # Provide the functionality of AS_VAR_APPEND if Autoconf does not have it.
@@ -179,7 +179,6 @@ AS_IF([test "x$with_docs_only" = xyes],
      AM_CONDITIONAL([HAVE_GTEST], [false])
      AM_CONDITIONAL([HAVE_STATS], [false])
      AM_CONDITIONAL([HAVE_TUNING], [false])
-     AM_CONDITIONAL([HAVE_MEMTRACK], [false])
      AM_CONDITIONAL([HAVE_IB], [false])
      AM_CONDITIONAL([HAVE_MLX5_HW], [false])
      AM_CONDITIONAL([HAVE_MLX5_HW_UD], [false])
@@ -207,6 +206,7 @@ AS_IF([test "x$with_docs_only" = xyes],
      AM_CONDITIONAL([HAVE_PROFILING], [false])
      AM_CONDITIONAL([HAVE_UCM_PTMALLOC286], [false])
      AM_CONDITIONAL([HAVE_JAVA], [false])
+     AM_CONDITIONAL([HAVE_GO], [false])
      AM_CONDITIONAL([HAVE_CXX11], [false])
      AM_CONDITIONAL([HAVE_GNUXX11], [false])
      AM_CONDITIONAL([HAVE_GLIBCXX_NOTHROW], [false])
@@ -228,6 +228,7 @@ AS_IF([test "x$with_docs_only" = xyes],
      m4_include([config/m4/mpi.m4])
      m4_include([config/m4/rte.m4])
      m4_include([config/m4/fuse3.m4])
+     m4_include([config/m4/go.m4])
      m4_include([config/m4/java.m4])
      m4_include([config/m4/cuda.m4])
      m4_include([config/m4/rocm.m4])
@@ -380,10 +381,15 @@ AC_CONFIG_FILES([
                  test/apps/sockaddr/Makefile
                  test/apps/profiling/Makefile
                  test/mpi/Makefile
+                 bindings/go/Makefile
                  bindings/java/Makefile
                  bindings/java/pom.xml
                  bindings/java/src/main/native/Makefile
                  examples/Makefile
+                 cmake/Makefile
+                 cmake/ucx-config-version.cmake
+                 cmake/ucx-config.cmake
+                 cmake/ucx-targets.cmake
                  ])
 
 AC_CONFIG_FILES([test/mpi/run_mpi.sh], [chmod a+x test/mpi/run_mpi.sh])
@@ -404,7 +410,7 @@ AC_MSG_NOTICE([Building documents only])
 [
 AC_MSG_NOTICE([UCX build configuration:])
 AC_MSG_NOTICE([        Build prefix:   ${prefix}])
-AC_MSG_NOTICE([   Configuration dir:   ${ucx_conf_dir}])
+AC_MSG_NOTICE([   Configuration dir:   ${ucx_config_dir}])
 AC_MSG_NOTICE([  Preprocessor flags:   ${BASE_CPPFLAGS}])
 AC_MSG_NOTICE([          C compiler:   ${CC} ${BASE_CFLAGS}])
 AC_MSG_NOTICE([        C++ compiler:   ${CXX} ${BASE_CXXFLAGS}])

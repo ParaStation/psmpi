@@ -123,8 +123,6 @@ int yaksuri_zei_event_record(int device, void **event_)
   fn_exit:
     pthread_mutex_unlock(&device_state->mutex);
     return rc;
-  fn_fail:
-    goto fn_exit;
 }
 
 int yaksuri_zei_event_query(void *event_, int *completed)

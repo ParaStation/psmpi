@@ -138,15 +138,19 @@ def dump_f08_wrappers_c(func, is_large):
         G.out.append("#else")
     G.out.append("INDENT");
     G.out.append("int err = MPI_SUCCESS;")
-    for l in vardecl_list:
-        G.out.append(l)
-    G.out.append("")
-    for l in code_list:
-        G.out.append(l)
-    G.out.append("err = %s(%s);" % (get_function_name(func, is_large), ', '.join(c_arg_list)))
-    G.out.append("")
-    for l in end_list:
-        G.out.append(l)
+    if re.match(r'MPI_F_sync_reg', func['name'], re.IGNORECASE):
+        # dummy
+        pass
+    else:
+        for l in vardecl_list:
+            G.out.append(l)
+        G.out.append("")
+        for l in code_list:
+            G.out.append(l)
+        G.out.append("err = %s(%s);" % (get_function_name(func, is_large), ', '.join(c_arg_list)))
+        G.out.append("")
+        for l in end_list:
+            G.out.append(l)
     G.out.append("return err;")
     G.out.append("DEDENT")
     if re.match(r'MPI_File_', func['name']):
@@ -1124,7 +1128,7 @@ def dump_mpi_f08_types():
             for a in G.f08_handle_list:
                 # e.g. MPI_Comm_eq
                 G.out.append("")
-                G.out.append("FUNCTION MPI_%s_%s(x, y) result(res)" % (a, op))
+                G.out.append("elemental FUNCTION MPI_%s_%s(x, y) result(res)" % (a, op))
                 G.out.append("    TYPE(MPI_%s), INTENT(in) :: x, y" % a)
                 G.out.append("    LOGICAL :: res")
                 if op == "eq":
@@ -1137,7 +1141,7 @@ def dump_mpi_f08_types():
                 for p in [("f08", "f"), ("f", "f08")]:
                     func_name = "MPI_%s_%s_%s_%s" % (a, p[0], op, p[1])
                     G.out.append("")
-                    G.out.append("FUNCTION %s(%s, %s) result(res)" % (func_name, p[0], p[1]))
+                    G.out.append("elemental FUNCTION %s(%s, %s) result(res)" % (func_name, p[0], p[1]))
                     G.out.append("    TYPE(MPI_%s), INTENT(in) :: f08" % a)
                     G.out.append("    INTEGER, INTENT(in) :: f")
                     G.out.append("    LOGICAL :: res")

@@ -417,6 +417,18 @@ static unsigned ucs_callbackq_slow_proxy(void *arg)
     return count;
 }
 
+static void ucs_callbackq_array_show(const ucs_callbackq_elem_t *elems,
+                                     unsigned count, const char *title)
+{
+    unsigned i;
+
+    for (i = 0; i < count; ++i) {
+        ucs_diag("%s[%u]: cb %s (%p) arg %p id %d flags 0x%x", title, i,
+                 ucs_debug_get_symbol_name(elems[i].cb), elems[i].cb,
+                 elems[i].arg, elems[i].id, elems[i].flags);
+    }
+}
+
 ucs_status_t ucs_callbackq_init(ucs_callbackq_t *cbq)
 {
     ucs_callbackq_priv_t *priv = ucs_callbackq_priv(cbq);
@@ -450,6 +462,12 @@ void ucs_callbackq_cleanup(ucs_callbackq_t *cbq)
     if ((priv->num_fast_elems) > 0 || (priv->num_slow_elems > 0)) {
         ucs_warn("%d fast-path and %d slow-path callbacks remain in the queue",
                  priv->num_fast_elems, priv->num_slow_elems);
+
+        ucs_log_indent(1);
+        ucs_callbackq_array_show(cbq->fast_elems, priv->num_fast_elems, "fast");
+        ucs_callbackq_array_show(priv->slow_elems, priv->num_slow_elems,
+                                 "slow");
+        ucs_log_indent(-1);
     }
 
     ucs_callbackq_array_free(priv->slow_elems, sizeof(*priv->slow_elems),
@@ -560,28 +578,28 @@ void ucs_callbackq_remove_if(ucs_callbackq_t *cbq, ucs_callbackq_predicate_t pre
 
     ucs_callbackq_purge_fast(cbq);
 
-    /* remote fast-path elements  */
-    elem = cbq->fast_elems;
-    while (elem->cb != NULL) {
+    /* Mark matched fast-path elements to be removed  */
+    for (elem = cbq->fast_elems; elem->cb != NULL; ++elem) {
         if (pred(elem, arg)) {
-            idx = ucs_callbackq_put_id_noflag(cbq, elem->id);
-            ucs_assert(idx == (elem - cbq->fast_elems));
-            ucs_callbackq_remove_fast(cbq, idx);
-        } else {
-            ++elem;
-       }
+            ucs_callbackq_remove_safe(cbq, elem->id);
+        }
     }
 
-    /* remote slow-path elements */
-    elem = priv->slow_elems;
-    while (elem < priv->slow_elems + priv->num_slow_elems) {
+    /* Purge fast-path elements marked for removal.
+     * Elements are collected and then removed to suppress Coverity warning
+     * about using the element's argument after freeing it, Coverity wrongly
+     * assumes that reusing the same element for the next element could be
+     * harmful */
+    ucs_callbackq_purge_fast(cbq);
+
+    /* Remove slow-path elements */ 
+    for (elem = priv->slow_elems;
+         elem < (priv->slow_elems + priv->num_slow_elems); ++elem) {
         if (pred(elem, arg)) {
             idx = ucs_callbackq_put_id_noflag(cbq, elem->id);
             ucs_assert(idx == (elem - priv->slow_elems));
             ucs_callbackq_remove_slow(cbq, idx);
-        } else {
-            ++elem;
-       }
+        }
     }
 
     ucs_callbackq_leave(cbq);

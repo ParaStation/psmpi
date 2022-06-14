@@ -54,7 +54,7 @@ size_t ucp_wireup_msg_pack(void *dest, void *arg)
                         UCS_IOV_COPY_TO_BUF);
 }
 
-static const char* ucp_wireup_msg_str(uint8_t msg_type)
+const char* ucp_wireup_msg_str(uint8_t msg_type)
 {
     switch (msg_type) {
     case UCP_WIREUP_MSG_PRE_REQUEST:
@@ -149,6 +149,8 @@ ucs_status_t ucp_wireup_msg_progress(uct_pending_req_t *self)
         }
 
         ucs_diag("failed to send wireup: %s", ucs_status_string(status));
+        ucp_ep_set_failed_schedule(ep, req->send.lane, status);
+
         status = UCS_OK;
         goto out_free_req;
     } else {
@@ -185,8 +187,9 @@ ucp_wireup_msg_prepare(ucp_ep_h ep, uint8_t type,
                        ucp_wireup_msg_t *msg_hdr, void **address_p,
                        size_t *address_length_p)
 {
-    unsigned pack_flags = ucp_worker_default_address_pack_flags(ep->worker) |
-                          UCP_ADDRESS_PACK_FLAG_TL_RSC_IDX;
+    ucp_context_h context = ep->worker->context;
+    unsigned pack_flags   = ucp_worker_default_address_pack_flags(ep->worker) |
+                            UCP_ADDRESS_PACK_FLAG_TL_RSC_IDX;
     ucs_status_t status;
 
     msg_hdr->type      = type;
@@ -196,11 +199,14 @@ ucp_wireup_msg_prepare(ucp_ep_h ep, uint8_t type,
     if (ep->flags & UCP_EP_FLAG_REMOTE_ID) {
         msg_hdr->dst_ep_id = ucp_ep_remote_id(ep);
     } else {
+        /* Destination UCP endpoint ID must be packed in case of CM */
+        ucs_assert(!ucp_ep_has_cm_lane(ep));
         msg_hdr->dst_ep_id = UCS_PTR_MAP_KEY_INVALID;
     }
 
     /* pack all addresses */
     status = ucp_address_pack(ep->worker, ep, tl_bitmap, pack_flags,
+                              context->config.ext.worker_addr_version,
                               lanes2remote, address_length_p, address_p);
     if (status != UCS_OK) {
         ucs_error("failed to pack address: %s", ucs_status_string(status));
@@ -208,10 +214,6 @@ ucp_wireup_msg_prepare(ucp_ep_h ep, uint8_t type,
 
     return status;
 }
-
-/*
- * @param [in] rsc_tli  Resource index for every lane.
- */
 
 static ucs_status_t
 ucp_wireup_msg_send(ucp_ep_h ep, uint8_t type, const ucp_tl_bitmap_t *tl_bitmap,
@@ -234,7 +236,8 @@ ucp_wireup_msg_send(ucp_ep_h ep, uint8_t type, const ucp_tl_bitmap_t *tl_bitmap,
     req = ucp_request_mem_alloc("wireup_msg_req");
     if (req == NULL) {
         ucs_error("failed to allocate request for sending WIREUP message");
-        return UCS_ERR_NO_MEMORY;
+        status = UCS_ERR_NO_MEMORY;
+        goto err;
     }
 
     req->flags         = 0;
@@ -248,11 +251,16 @@ ucp_wireup_msg_send(ucp_ep_h ep, uint8_t type, const ucp_tl_bitmap_t *tl_bitmap,
                                     &req->send.length);
     if (status != UCS_OK) {
         ucp_request_mem_free(req);
-        return status;
+        goto err;
     }
 
-    ucp_request_send(req, 0);
+    ucp_request_send(req);
+    /* coverity[leaked_storage] */
     return UCS_OK;
+
+err:
+    ucp_ep_set_failed_schedule(ep, UCP_NULL_LANE, status);
+    return status;
 }
 
 static ucp_tl_bitmap_t
@@ -271,6 +279,16 @@ ucp_wireup_get_ep_tl_bitmap(ucp_ep_h ep, ucp_lane_map_t lane_map)
     }
 
     return tl_bitmap;
+}
+
+int ucp_wireup_connect_p2p(ucp_worker_h worker, ucp_rsc_index_t rsc_index,
+                           int has_cm_lane)
+{
+    /* The EP with CM lane has to be connected to remote EP, so prefer native
+     * UCT p2p capability. */
+    return has_cm_lane ?
+           ucp_worker_is_tl_p2p(worker, rsc_index) :
+           !ucp_worker_is_tl_2iface(worker, rsc_index);
 }
 
 /*
@@ -397,10 +415,19 @@ out:
     return status;
 }
 
-void ucp_wireup_remote_connected(ucp_ep_h ep)
+void ucp_wireup_remote_connect_lanes(ucp_ep_h ep, int ready)
 {
     ucp_lane_index_t lane;
 
+    for (lane = 0; lane < ucp_ep_num_lanes(ep); ++lane) {
+        if (ucp_wireup_ep_test(ep->uct_eps[lane])) {
+            ucp_wireup_ep_remote_connected(ep->uct_eps[lane], ready);
+        }
+    }
+}
+
+void ucp_wireup_remote_connected(ucp_ep_h ep)
+{
     if (ep->flags & UCP_EP_FLAG_REMOTE_CONNECTED) {
         return;
     }
@@ -416,11 +443,7 @@ void ucp_wireup_remote_connected(ucp_ep_h ep)
         ucp_ep_update_flags(ep, UCP_EP_FLAG_REMOTE_CONNECTED, 0);
     }
 
-    for (lane = 0; lane < ucp_ep_num_lanes(ep); ++lane) {
-        if (ucp_wireup_ep_test(ep->uct_eps[lane])) {
-            ucp_wireup_ep_remote_connected(ep->uct_eps[lane]);
-        }
-    }
+    ucp_wireup_remote_connect_lanes(ep, 1);
 
     ucs_assert(ep->flags & UCP_EP_FLAG_REMOTE_ID);
 }
@@ -476,10 +499,7 @@ ucp_wireup_process_pre_request(ucp_worker_h worker, ucp_ep_h ep,
         return;
     }
 
-    status = ucp_wireup_send_request(ep);
-    if (status != UCS_OK) {
-        ucp_ep_cleanup_lanes(ep);
-    }
+    ucp_wireup_send_request(ep);
 }
 
 static UCS_F_NOINLINE void
@@ -523,8 +543,16 @@ ucp_wireup_process_request(ucp_worker_h worker, ucp_ep_h ep,
 
             /* add internal endpoint to hash */
             ep->conn_sn = msg->conn_sn;
-            ucp_ep_match_insert(worker, ep, remote_uuid, ep->conn_sn,
-                                UCS_CONN_MATCH_QUEUE_UNEXP);
+            if (!ucp_ep_match_insert(worker, ep, remote_uuid, ep->conn_sn,
+                                     UCS_CONN_MATCH_QUEUE_UNEXP)) {
+                if (worker->context->config.features & UCP_FEATURE_STREAM) {
+                    ucs_diag("worker %p: created the endpoint %p without"
+                             " connection matching, but Stream API support was"
+                             " requested on the context %p",
+                             worker, ep, worker->context);
+                }
+                ucp_ep_flush_state_reset(ep);
+            }
         } else {
             ucp_ep_flush_state_reset(ep);
         }
@@ -675,6 +703,17 @@ ucp_wireup_process_reply(ucp_worker_h worker, ucp_ep_h ep,
     }
 }
 
+static void ucp_ep_removed_flush_completion(ucp_request_t *req)
+{
+    ucs_log_level_t level = UCS_STATUS_IS_ERR(req->status) ?
+                                    UCS_LOG_LEVEL_DIAG :
+                                    UCS_LOG_LEVEL_DEBUG;
+
+    ucs_log(level, "flushing ep_removed (req %p) completed with status %s", req,
+            ucs_status_string(req->status));
+    ucp_ep_register_disconnect_progress(req);
+}
+
 static UCS_F_NOINLINE void
 ucp_wireup_send_ep_removed(ucp_worker_h worker, const ucp_wireup_msg_t *msg,
                            const ucp_unpacked_address_t *remote_address)
@@ -717,7 +756,7 @@ ucp_wireup_send_ep_removed(ucp_worker_h worker, const ucp_wireup_msg_t *msg,
 
     req = ucp_ep_flush_internal(reply_ep, UCP_REQUEST_FLAG_RELEASED,
                                 &ucp_request_null_param, NULL,
-                                ucp_ep_register_disconnect_progress, "close");
+                                ucp_ep_removed_flush_completion, "close");
     if (UCS_PTR_IS_PTR(req)) {
         return;
     }
@@ -826,7 +865,7 @@ ucp_wireup_replay_pending_request(uct_pending_req_t *self, void *arg)
     ucp_request_t *req = ucs_container_of(self, ucp_request_t, send.uct);
 
     ucs_assert(req->send.ep == (ucp_ep_h)arg);
-    ucp_request_send(req, 0);
+    ucp_request_send(req);
 }
 
 void ucp_wireup_replay_pending_requests(ucp_ep_h ucp_ep,
@@ -860,11 +899,11 @@ ucp_wireup_connect_lane_to_iface(ucp_ep_h ep, ucp_lane_index_t lane,
     ucs_status_t status;
 
     ucs_assert(wiface->attr.cap.flags & UCT_IFACE_FLAG_CONNECT_TO_IFACE);
-
-    if ((ep->uct_eps[lane] != NULL) && !ucp_wireup_ep_test(ep->uct_eps[lane])) {
-        /* Lane already exists */
-        return UCS_ERR_UNREACHABLE;
-    }
+    ucs_assertv_always((ep->uct_eps[lane] == NULL) ||
+                       ucp_wireup_ep_test(ep->uct_eps[lane]),
+                       "ep %p: lane %u (uct_ep=%p is_wireup=%d) exists",
+                       ep, lane, ep->uct_eps[lane],
+                       ucp_wireup_ep_test(ep->uct_eps[lane]));
 
     /* create an endpoint connected to the remote interface */
     ucs_trace("ep %p: connect uct_ep[%d] to addr %p", ep, lane,
@@ -1203,15 +1242,13 @@ ucp_wireup_check_config_intersect(ucp_ep_h ep, ucp_ep_config_key_t *new_key,
         /* previous wireup lane is not part of new configuration, so add it as
          * auxiliary endpoint inside cm lane, to be able to continue wireup
          * messages exchange */
-        ucs_assert(cm_wireup_ep != NULL);
-
         new_key->wireup_msg_lane = new_key->cm_lane;
         reuse_lane               = old_key->wireup_msg_lane;
         ucp_wireup_ep_set_aux(cm_wireup_ep,
                               ucp_wireup_ep_extract_next_ep(ep->uct_eps[reuse_lane]),
                               old_key->lanes[reuse_lane].rsc_index);
         ucp_wireup_ep_pending_queue_purge(ep->uct_eps[reuse_lane],
-                                          ucp_wireup_pending_purge_cb,
+                                          ucp_request_purge_enqueue_cb,
                                           replay_pending_queue);
 
         /* reset the UCT EP from the previous WIREUP lane and destroy its WIREUP EP,
@@ -1231,7 +1268,7 @@ ucp_wireup_check_config_intersect(ucp_ep_h ep, ucp_ep_config_key_t *new_key,
                 ucs_assert(lane != ucp_ep_get_cm_lane(ep));
                 ucp_worker_discard_uct_ep(
                         ep, ep->uct_eps[lane], UCT_FLUSH_FLAG_LOCAL,
-                        ucp_wireup_pending_purge_cb, replay_pending_queue,
+                        ucp_request_purge_enqueue_cb, replay_pending_queue,
                         (ucp_send_nbx_callback_t)ucs_empty_function, NULL);
                 ep->uct_eps[lane] = NULL;
             }
@@ -1398,16 +1435,6 @@ ucs_status_t ucp_wireup_send_request(ucp_ep_h ep)
     return status;
 }
 
-void ucp_wireup_pending_purge_cb(uct_pending_req_t *self, void *arg)
-{
-    ucp_request_t *req      = ucs_container_of(self, ucp_request_t, send.uct);
-    ucs_queue_head_t *queue = arg;
-
-    ucs_trace_req("ep %p: extracted request %p from pending queue", req->send.ep,
-                  req);
-    ucs_queue_push(queue, (ucs_queue_elem_t*)&req->send.uct.priv);
-}
-
 ucs_status_t ucp_wireup_send_pre_request(ucp_ep_h ep)
 {
     ucs_status_t status;
@@ -1471,7 +1498,7 @@ ucs_status_t ucp_wireup_connect_remote(ucp_ep_h ep, ucp_lane_index_t lane)
      * could not be progressed any more after switching to wireup proxy).
      */
     ucs_queue_head_init(&tmp_q);
-    uct_ep_pending_purge(uct_ep, ucp_wireup_pending_purge_cb, &tmp_q);
+    uct_ep_pending_purge(uct_ep, ucp_request_purge_enqueue_cb, &tmp_q);
 
     /* the wireup ep should use the existing [am_lane] as next_ep */
     ucp_wireup_ep_set_next_ep(ep->uct_eps[lane], uct_ep);

@@ -1,0 +1,21 @@
+===============================================================================
+                               Changes in 0.2
+===============================================================================
+
+# Add support for reduction operations (e.g. sum, prod, min, max, ...)
+
+# Add support for AMD GPUs via HIP backend
+
+# Add "nogpu" info hint to avoid unnecessary pointer attribute queries
+
+# Add stream-based pack/unpack APIs
+
+# Add blocking pack/unpack APIs
+
+# Add support for NVIDIA HPC SDK compilers
+
+# Improve compile time for Level Zero kernels
+
+# Extend tests to support subdevices (tiles) of Intel GPUs
+
+# Many bug fixes and code cleanups

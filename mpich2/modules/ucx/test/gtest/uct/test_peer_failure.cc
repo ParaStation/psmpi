@@ -93,6 +93,7 @@ ucs_status_t test_uct_peer_failure::err_cb(void *arg, uct_ep_h ep,
     test_uct_peer_failure *self = reinterpret_cast<test_uct_peer_failure*>(arg);
 
     self->m_err_count++;
+    self->m_failed_eps.insert(std::make_pair(ep, status));
 
     switch (status) {
     case UCS_ERR_ENDPOINT_TIMEOUT:
@@ -140,10 +141,20 @@ void test_uct_peer_failure::set_am_handlers()
 ucs_status_t test_uct_peer_failure::send_am(int index)
 {
     ucs_status_t status;
-    while ((status = uct_ep_am_short(m_sender->ep(index), 0, 0, NULL, 0)) ==
-           UCS_ERR_NO_RESOURCE) {
+
+    do {
         progress();
-    };
+
+        /* If the endpoint has failed, return error and avoid calling send */
+        std::map<uct_ep_h, ucs_status_t>::iterator it =
+                m_failed_eps.find(m_sender->ep(index));
+        if (it != m_failed_eps.end()) {
+            return it->second;
+        }
+
+        status = uct_ep_am_short(m_sender->ep(index), 0, 0, NULL, 0);
+    } while (status == UCS_ERR_NO_RESOURCE);
+
     return status;
 }
 
@@ -335,30 +346,6 @@ UCS_TEST_SKIP_COND_P(test_uct_peer_failure, two_pairs_send,
 }
 
 
-UCS_TEST_SKIP_COND_P(test_uct_peer_failure, two_pairs_send_after,
-                     !check_caps(m_required_caps))
-{
-    set_am_handlers();
-
-    {
-        scoped_log_handler slh(wrap_errors_logger);
-        kill_receiver();
-        for (int i = 0; (i < 100) && (m_err_count == 0); ++i) {
-            send_am(0);
-        }
-        flush();
-    }
-
-    wait_for_value(&m_err_count, size_t(1), true);
-    m_am_count = 0;
-    send_am(1);
-    ucs_debug("flushing");
-    flush_ep(1);
-    ucs_debug("flushed");
-    wait_for_flag(&m_am_count);
-    EXPECT_EQ(m_am_count, 1ul);
-}
-
 UCT_INSTANTIATE_TEST_CASE(test_uct_peer_failure)
 
 class test_uct_peer_failure_multiple : public test_uct_peer_failure
@@ -376,14 +363,16 @@ void test_uct_peer_failure_multiple::init()
 
     if (ucs_get_page_size() > 4096) {
         /* NOTE: Too much receivers may cause failure of ibv_open_device */
-        test_uct_peer_failure::m_nreceivers = 10;
+        m_nreceivers = 10;
     } else {
-        test_uct_peer_failure::m_nreceivers = tx_queue_len;
+        m_nreceivers = tx_queue_len;
     }
 
-    test_uct_peer_failure::m_nreceivers =
-        std::min(test_uct_peer_failure::m_nreceivers,
-                 static_cast<size_t>(max_connections()));
+    /* Do not create more receivers than the number allowed connections or
+       number of workers (assuming each worker can open up to 16 files) */
+    int max_workers = ucs_sys_max_open_files() / 16;
+    m_nreceivers    = std::min(m_nreceivers,
+                               std::min<size_t>(max_connections(), max_workers));
 
     test_uct_peer_failure::m_tx_window  = tx_queue_len / 3;
 
@@ -441,17 +430,16 @@ UCS_TEST_SKIP_COND_P(test_uct_peer_failure_multiple, test,
 
     {
         scoped_log_handler slh(wrap_errors_logger);
-        for (size_t idx = 0; idx < m_nreceivers - 1; ++idx) {
+        for (size_t idx = 0; idx < (m_nreceivers - 1); ++idx) {
             for (size_t i = 0; i < m_tx_window; ++i) {
-                send_am(idx);
+                EXPECT_UCS_OK(send_am(idx));
             }
             kill_receiver();
         }
         flush(timeout);
 
-        /* if EPs are not failed yet, these ops should trigger that */
-        for (size_t idx = 0; (idx < m_nreceivers - 1) &&
-                             (m_err_count == 0); ++idx) {
+        for (size_t idx = 0; idx < (m_nreceivers - 1); ++idx) {
+            /* If EP were not failed yet, these ops should trigger that */
             for (size_t i = 0; i < m_tx_window; ++i) {
                 if (UCS_STATUS_IS_ERR(send_am(idx))) {
                     break;
@@ -463,7 +451,7 @@ UCS_TEST_SKIP_COND_P(test_uct_peer_failure_multiple, test,
     }
 
     m_am_count = 0;
-    send_am(m_nreceivers - 1);
+    EXPECT_UCS_OK(send_am(m_nreceivers - 1));
     ucs_debug("flushing");
     flush_ep(m_nreceivers - 1);
     ucs_debug("flushed");

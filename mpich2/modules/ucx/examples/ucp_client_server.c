@@ -47,7 +47,9 @@
 
 
 static long test_string_length = 16;
+static long iov_cnt            = 1;
 static uint16_t server_port    = DEFAULT_PORT;
+static sa_family_t ai_family   = AF_INET;
 static int num_iterations      = DEFAULT_NUM_ITERATIONS;
 
 
@@ -95,25 +97,73 @@ static struct {
  */
 static void usage(void);
 
+void buffer_free(ucp_dt_iov_t *iov)
+{
+    size_t idx;
+
+    for (idx = 0; idx < iov_cnt; idx++) {
+        mem_type_free(iov[idx].buffer);
+    }
+}
+
+int buffer_malloc(ucp_dt_iov_t *iov)
+{
+    size_t idx;
+
+    for (idx = 0; idx < iov_cnt; idx++) {
+        iov[idx].length = test_string_length;
+        iov[idx].buffer = mem_type_malloc(iov[idx].length);
+        if (iov[idx].buffer == NULL) {
+            buffer_free(iov);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+int fill_buffer(ucp_dt_iov_t *iov)
+{
+    int ret = 0;
+    size_t idx;
+
+    for (idx = 0; idx < iov_cnt; idx++) {
+        ret = generate_test_string(iov[idx].buffer, iov[idx].length);
+        if (ret != 0) {
+            break;
+        }
+    }
+    CHKERR_ACTION(ret != 0, "generate test string", return -1;);
+    return 0;
+}
+
+static void common_cb(void *user_data, const char *type_str)
+{
+    test_req_t *ctx;
+
+    if (user_data == NULL) {
+        fprintf(stderr, "user_data passed to %s mustn't be NULL\n", type_str);
+        return;
+    }
+
+    ctx           = user_data;
+    ctx->complete = 1;
+}
+
 static void tag_recv_cb(void *request, ucs_status_t status,
                         const ucp_tag_recv_info_t *info, void *user_data)
 {
-    test_req_t *ctx = user_data;
-
-    ctx->complete = 1;
+    common_cb(user_data, "tag_recv_cb");
 }
 
 /**
  * The callback on the receiving side, which is invoked upon receiving the
  * stream message.
  */
-static void
-stream_recv_cb(void *request, ucs_status_t status, size_t length,
-               void *user_data)
+static void stream_recv_cb(void *request, ucs_status_t status, size_t length,
+                           void *user_data)
 {
-    test_req_t *ctx = user_data;
-
-    ctx->complete = 1;
+    common_cb(user_data, "stream_recv_cb");
 }
 
 /**
@@ -123,9 +173,7 @@ stream_recv_cb(void *request, ucs_status_t status, size_t length,
 static void am_recv_cb(void *request, ucs_status_t status, size_t length,
                        void *user_data)
 {
-    test_req_t *ctx = user_data;
-
-    ctx->complete = 1;
+    common_cb(user_data, "am_recv_cb");
 }
 
 /**
@@ -134,9 +182,7 @@ static void am_recv_cb(void *request, ucs_status_t status, size_t length,
  */
 static void send_cb(void *request, ucs_status_t status, void *user_data)
 {
-    test_req_t *ctx = user_data;
-
-    ctx->complete = 1;
+    common_cb(user_data, "send_cb");
 }
 
 /**
@@ -151,38 +197,53 @@ static void err_cb(void *arg, ucp_ep_h ep, ucs_status_t status)
 /**
  * Set an address for the server to listen on - INADDR_ANY on a well known port.
  */
-void set_listen_addr(const char *address_str, struct sockaddr_in *listen_addr)
+void set_sock_addr(const char *address_str, struct sockaddr_storage *saddr)
 {
-    /* The server will listen on INADDR_ANY */
-    memset(listen_addr, 0, sizeof(struct sockaddr_in));
-    listen_addr->sin_family      = AF_INET;
-    listen_addr->sin_addr.s_addr = (address_str) ? inet_addr(address_str) : INADDR_ANY;
-    listen_addr->sin_port        = htons(server_port);
-}
+    struct sockaddr_in *sa_in;
+    struct sockaddr_in6 *sa_in6;
 
-/**
- * Set an address to connect to. A given IP address on a well known port.
- */
-void set_connect_addr(const char *address_str, struct sockaddr_in *connect_addr)
-{
-    memset(connect_addr, 0, sizeof(struct sockaddr_in));
-    connect_addr->sin_family      = AF_INET;
-    connect_addr->sin_addr.s_addr = inet_addr(address_str);
-    connect_addr->sin_port        = htons(server_port);
+    /* The server will listen on INADDR_ANY */
+    memset(saddr, 0, sizeof(*saddr));
+
+    switch (ai_family) {
+    case AF_INET:
+        sa_in = (struct sockaddr_in*)saddr;
+        if (address_str != NULL) {
+            inet_pton(AF_INET, address_str, &sa_in->sin_addr);
+        } else {
+            sa_in->sin_addr.s_addr = INADDR_ANY;
+        }
+        sa_in->sin_family = AF_INET;
+        sa_in->sin_port   = htons(server_port);
+        break;
+    case AF_INET6:
+        sa_in6 = (struct sockaddr_in6*)saddr;
+        if (address_str != NULL) {
+            inet_pton(AF_INET6, address_str, &sa_in6->sin6_addr);
+        } else {
+            sa_in6->sin6_addr = in6addr_any;
+        }
+        sa_in6->sin6_family = AF_INET6;
+        sa_in6->sin6_port   = htons(server_port);
+        break;
+    default:
+        fprintf(stderr, "Invalid address family");
+        break;
+    }
 }
 
 /**
  * Initialize the client side. Create an endpoint from the client side to be
  * connected to the remote server (to the given IP).
  */
-static ucs_status_t start_client(ucp_worker_h ucp_worker, const char *ip,
-                                 ucp_ep_h *client_ep)
+static ucs_status_t start_client(ucp_worker_h ucp_worker,
+                                 const char *address_str, ucp_ep_h *client_ep)
 {
     ucp_ep_params_t ep_params;
-    struct sockaddr_in connect_addr;
+    struct sockaddr_storage connect_addr;
     ucs_status_t status;
 
-    set_connect_addr(ip, &connect_addr);
+    set_sock_addr(address_str, &connect_addr);
 
     /*
      * Endpoint field mask bits:
@@ -211,32 +272,44 @@ static ucs_status_t start_client(ucp_worker_h ucp_worker, const char *ip,
 
     status = ucp_ep_create(ucp_worker, &ep_params, client_ep);
     if (status != UCS_OK) {
-        fprintf(stderr, "failed to connect to %s (%s)\n", ip, ucs_status_string(status));
+        fprintf(stderr, "failed to connect to %s (%s)\n", address_str,
+                ucs_status_string(status));
     }
 
     return status;
+}
+
+static void print_iov(const ucp_dt_iov_t *iov)
+{
+    char *msg = alloca(test_string_length);
+    size_t idx;
+
+    for (idx = 0; idx < iov_cnt; idx++) {
+        /* In case of Non-System memory */
+        mem_type_memcpy(msg, iov[idx].buffer, test_string_length);
+        printf("%s.\n", msg);
+    }
 }
 
 /**
  * Print the received message on the server side or the sent data on the client
  * side.
  */
-static void print_result(int is_server, char *msg_str, int current_iter)
+static
+void print_result(int is_server, const ucp_dt_iov_t *iov, int current_iter)
 {
     if (is_server) {
         printf("Server: iteration #%d\n", (current_iter + 1));
         printf("UCX data message was received\n");
         printf("\n\n----- UCP TEST SUCCESS -------\n\n");
-        printf("%s", msg_str);
-        printf("\n\n------------------------------\n\n");
     } else {
         printf("Client: iteration #%d\n", (current_iter + 1));
-        printf("\n\n-----------------------------------------\n\n");
-        printf("Client sent message: \n%s.\nlength: %ld\n",
-               (test_string_length != 0) ? msg_str : "<none>",
-               test_string_length);
-        printf("\n-----------------------------------------\n\n");
+        printf("\n\n------------------------------\n\n");
     }
+
+    print_iov(iov);
+
+    printf("\n\n------------------------------\n\n");
 }
 
 /**
@@ -251,11 +324,11 @@ static ucs_status_t request_wait(ucp_worker_h ucp_worker, void *request,
     if (request == NULL) {
         return UCS_OK;
     }
-    
+
     if (UCS_PTR_IS_ERR(request)) {
         return UCS_PTR_STATUS(request);
     }
-    
+
     while (ctx->complete == 0) {
         ucp_worker_progress(ucp_worker);
     }
@@ -267,32 +340,53 @@ static ucs_status_t request_wait(ucp_worker_h ucp_worker, void *request,
 }
 
 static int request_finalize(ucp_worker_h ucp_worker, test_req_t *request,
-                            test_req_t *ctx, int is_server, void *msg,
+                            test_req_t *ctx, int is_server, ucp_dt_iov_t *iov,
                             int current_iter)
 {
+    int ret = 0;
     ucs_status_t status;
-    char *msg_str;
 
     status = request_wait(ucp_worker, request, ctx);
     if (status != UCS_OK) {
         fprintf(stderr, "unable to %s UCX message (%s)\n",
                 is_server ? "receive": "send", ucs_status_string(status));
-        return -1;
+        ret = -1;
+        goto release_iov;
     }
 
     /* Print the output of the first, last and every PRINT_INTERVAL iteration */
     if ((current_iter == 0) || (current_iter == (num_iterations - 1)) ||
         !((current_iter + 1) % (PRINT_INTERVAL))) {
-        msg_str = calloc(1, test_string_length + 1);
-        if (msg_str == NULL) {
-            fprintf(stderr, "memory allocation failed\n");
-            return -1;
-        }
-
-        mem_type_memcpy(msg_str, msg, test_string_length);
-        print_result(is_server, msg_str, current_iter);
-        free(msg_str);
+        print_result(is_server, iov, current_iter);
     }
+
+release_iov:
+    buffer_free(iov);
+    return ret;
+}
+
+static int
+fill_request_param(ucp_dt_iov_t *iov, int is_client,
+                   void **msg, size_t *msg_length,
+                   test_req_t *ctx, ucp_request_param_t *param)
+{
+    CHKERR_ACTION(buffer_malloc(iov) != 0, "allocate memory", return -1;);
+
+    if (is_client && (fill_buffer(iov) != 0)) {
+        buffer_free(iov);
+        return -1;
+    }
+
+    *msg        = (iov_cnt == 1) ? iov[0].buffer : iov;
+    *msg_length = (iov_cnt == 1) ? iov[0].length : iov_cnt;
+
+    ctx->complete       = 0;
+    param->op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
+                          UCP_OP_ATTR_FIELD_DATATYPE |
+                          UCP_OP_ATTR_FIELD_USER_DATA;
+    param->datatype     = (iov_cnt == 1) ? ucp_dt_make_contig(1) :
+                          UCP_DATATYPE_IOV;
+    param->user_data    = ctx;
 
     return 0;
 }
@@ -305,27 +399,21 @@ static int request_finalize(ucp_worker_h ucp_worker, test_req_t *request,
 static int send_recv_stream(ucp_worker_h ucp_worker, ucp_ep_h ep, int is_server,
                             int current_iter)
 {
+    ucp_dt_iov_t *iov = alloca(iov_cnt * sizeof(ucp_dt_iov_t));
     ucp_request_param_t param;
     test_req_t *request;
     size_t msg_length;
     void *msg;
     test_req_t ctx;
-    int ret;
 
-    msg_length = test_string_length;
-    msg        = mem_type_malloc(msg_length);
-    CHKERR_ACTION(msg == NULL, "allocate memory\n", return -1;);
-    mem_type_memset(msg, 0, msg_length);
+    memset(iov, 0, iov_cnt * sizeof(*iov));
 
-    ctx.complete       = 0;
-    param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
-                         UCP_OP_ATTR_FIELD_USER_DATA;
-    param.user_data    = &ctx;
+    if (fill_request_param(iov, !is_server, &msg, &msg_length,
+                           &ctx, &param) != 0) {
+        return -1;
+    }
 
     if (!is_server) {
-        ret = generate_test_string(msg, msg_length);
-        CHKERR_ACTION(ret < 0, "generate test string", return -1;);
-
         /* Client sends a message to the server using the stream API */
         param.cb.send = send_cb;
         request       = ucp_stream_send_nbx(ep, msg, msg_length, &param);
@@ -338,7 +426,7 @@ static int send_recv_stream(ucp_worker_h ucp_worker, ucp_ep_h ep, int is_server,
                                                    &msg_length, &param);
     }
 
-    return request_finalize(ucp_worker, request, &ctx, is_server, msg,
+    return request_finalize(ucp_worker, request, &ctx, is_server, iov,
                             current_iter);
 }
 
@@ -350,26 +438,21 @@ static int send_recv_stream(ucp_worker_h ucp_worker, ucp_ep_h ep, int is_server,
 static int send_recv_tag(ucp_worker_h ucp_worker, ucp_ep_h ep, int is_server,
                          int current_iter)
 {
+    ucp_dt_iov_t *iov = alloca(iov_cnt * sizeof(ucp_dt_iov_t));
     ucp_request_param_t param;
     void *request;
     size_t msg_length;
     void *msg;
     test_req_t ctx;
-    int ret;
 
-    msg_length = test_string_length;
-    msg        = mem_type_malloc(msg_length);
-    CHKERR_ACTION(msg == NULL, "allocate memory\n", return -1;);
-    mem_type_memset(msg, 0, msg_length);
+    memset(iov, 0, iov_cnt * sizeof(*iov));
 
-    ctx.complete       = 0;
-    param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
-                         UCP_OP_ATTR_FIELD_USER_DATA;
-    param.user_data    = &ctx;
+    if (fill_request_param(iov, !is_server, &msg, &msg_length,
+                           &ctx, &param) != 0) {
+        return -1;
+    }
+
     if (!is_server) {
-        ret = generate_test_string(msg, msg_length);
-        CHKERR_ACTION(ret < 0, "generate test string", return -1;);
-
         /* Client sends a message to the server using the Tag-Matching API */
         param.cb.send = send_cb;
         request       = ucp_tag_send_nbx(ep, msg, msg_length, TAG, &param);
@@ -380,7 +463,7 @@ static int send_recv_tag(ucp_worker_h ucp_worker, ucp_ep_h ep, int is_server,
                                          &param);
     }
 
-    return request_finalize(ucp_worker, request, &ctx, is_server, msg,
+    return request_finalize(ucp_worker, request, &ctx, is_server, iov,
                             current_iter);
 }
 
@@ -388,13 +471,17 @@ ucs_status_t ucp_am_data_cb(void *arg, const void *header, size_t header_length,
                             void *data, size_t length,
                             const ucp_am_recv_param_t *param)
 {
-    if (length != test_string_length) {
+    ucp_dt_iov_t *iov;
+    size_t idx;
+    size_t offset;
+
+    if (length != iov_cnt * test_string_length) {
         fprintf(stderr, "received wrong data length %ld (expected %ld)",
-                length, test_string_length);
+                length, iov_cnt * test_string_length);
         return UCS_OK;
     }
 
-    if ((header != NULL) || (header_length != 0)) {
+    if (header_length != 0) {
         fprintf(stderr, "received unexpected header, length %ld", header_length);
     }
 
@@ -414,7 +501,14 @@ ucs_status_t ucp_am_data_cb(void *arg, const void *header, size_t header_length,
      * immediately
      */
     am_data_desc.is_rndv = 0;
-    mem_type_memcpy(am_data_desc.recv_buf, data, length);
+
+    iov = am_data_desc.recv_buf;
+    offset = 0;
+    for (idx = 0; idx < iov_cnt; idx++) {
+        mem_type_memcpy(iov[idx].buffer, UCS_PTR_BYTE_OFFSET(data, offset),
+                        iov[idx].length);
+        offset += iov[idx].length;
+    }
 
     return UCS_OK;
 }
@@ -428,25 +522,22 @@ ucs_status_t ucp_am_data_cb(void *arg, const void *header, size_t header_length,
 static int send_recv_am(ucp_worker_h ucp_worker, ucp_ep_h ep, int is_server,
                         int current_iter)
 {
+    ucp_dt_iov_t *iov = alloca(iov_cnt * sizeof(ucp_dt_iov_t));
     test_req_t *request;
     ucp_request_param_t params;
     size_t msg_length;
     void *msg;
     test_req_t ctx;
-    int ret;
 
-    msg_length = test_string_length;
-    msg        = mem_type_malloc(msg_length);
-    CHKERR_ACTION(msg == NULL, "allocate memory\n", return -1;);
-    mem_type_memset(msg, 0, msg_length);
+    memset(iov, 0, iov_cnt * sizeof(*iov));
 
-    ctx.complete        = 0;
-    params.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
-                          UCP_OP_ATTR_FIELD_USER_DATA;
-    params.user_data    = &ctx;
+    if (fill_request_param(iov, !is_server, &msg, &msg_length,
+                           &ctx, &params) != 0) {
+        return -1;
+    }
 
     if (is_server) {
-        am_data_desc.recv_buf = msg;
+        am_data_desc.recv_buf = iov;
 
         /* waiting for AM callback has called */
         while (!am_data_desc.complete) {
@@ -471,16 +562,13 @@ static int send_recv_am(ucp_worker_h ucp_worker, ucp_ep_h ep, int is_server,
             request = NULL;
         }
     } else {
-        ret = generate_test_string(msg, msg_length);
-        CHKERR_ACTION(ret < 0, "generate test string", return -1;);
-
         /* Client sends a message to the server using the AM API */
         params.cb.send = (ucp_send_nbx_callback_t)send_cb,
         request        = ucp_am_send_nbx(ep, TEST_AM_ID, NULL, 0ul, msg,
                                          msg_length, &params);
     }
 
-    return request_finalize(ucp_worker, request, &ctx, is_server, msg,
+    return request_finalize(ucp_worker, request, &ctx, is_server, iov,
                             current_iter);
 }
 
@@ -537,6 +625,9 @@ static void usage()
     fprintf(stderr, "  -i Number of iterations to run. Client and server must "
                     "have the same value. (default = %d).\n",
                     num_iterations);
+    fprintf(stderr, "  -v Number of buffers in a single data "
+                    "transfer function call. (default = %ld).\n",
+                    iov_cnt);
     print_common_help();
     fprintf(stderr, "\n");
 }
@@ -550,7 +641,7 @@ static int parse_cmd(int argc, char *const argv[], char **server_addr,
     int c = 0;
     int port;
 
-    while ((c = getopt(argc, argv, "a:l:p:c:i:s:m:h")) != -1) {
+    while ((c = getopt(argc, argv, "a:l:p:c:6i:s:v:m:h")) != -1) {
         switch (c) {
         case 'a':
             *server_addr = optarg;
@@ -579,6 +670,9 @@ static int parse_cmd(int argc, char *const argv[], char **server_addr,
             }
             server_port = port;
             break;
+        case '6':
+            ai_family = AF_INET6;
+            break;
         case 'i':
             num_iterations = atoi(optarg);
             break;
@@ -587,7 +681,14 @@ static int parse_cmd(int argc, char *const argv[], char **server_addr,
             if (test_string_length < 0) {
                 fprintf(stderr, "Wrong string size %ld\n", test_string_length);
                 return UCS_ERR_UNSUPPORTED;
-            }	
+            }
+            break;
+        case 'v':
+            iov_cnt = atol(optarg);
+            if (iov_cnt <= 0) {
+                fprintf(stderr, "Wrong iov count %ld\n", iov_cnt);
+                return UCS_ERR_UNSUPPORTED;
+            }
             break;
         case 'm':
             test_mem_type = parse_mem_type(optarg);
@@ -762,18 +863,18 @@ static ucs_status_t server_create_ep(ucp_worker_h data_worker,
 /**
  * Initialize the server side. The server starts listening on the set address.
  */
-static ucs_status_t start_server(ucp_worker_h ucp_worker,
-                                 ucx_server_ctx_t *context,
-                                 ucp_listener_h *listener_p, const char *ip)
+static ucs_status_t
+start_server(ucp_worker_h ucp_worker, ucx_server_ctx_t *context,
+             ucp_listener_h *listener_p, const char *address_str)
 {
-    struct sockaddr_in listen_addr;
+    struct sockaddr_storage listen_addr;
     ucp_listener_params_t params;
     ucp_listener_attr_t attr;
     ucs_status_t status;
     char ip_str[IP_STRING_LEN];
     char port_str[PORT_STRING_LEN];
 
-    set_listen_addr(ip, &listen_addr);
+    set_sock_addr(address_str, &listen_addr);
 
     params.field_mask         = UCP_LISTENER_PARAM_FIELD_SOCK_ADDR |
                                 UCP_LISTENER_PARAM_FIELD_CONN_HANDLER;

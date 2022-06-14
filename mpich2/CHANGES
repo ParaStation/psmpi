@@ -1,4 +1,59 @@
 ===============================================================================
+                               Changes in 4.0.2
+===============================================================================
+
+# Fix CUDA configuration logic in yaksa
+
+# Fix support for dynamic process functionality with PMI2 clients
+
+# Fix non-zero appnum bug in PMI2 server in Hydra
+
+# Fix MPI_Op support for types created with MPI_Type_create_f90_xxx
+
+# Fix building ch4 with Intel compilers on macOS
+
+# Fix Level Zero properties initialization in MPL. Thanks to Brice
+  Videau for the report and patch.
+
+# Use standard names for CPU affinity functions with POSIX
+  threads. Fixes building against Musl libc. Thanks to Mosè Giordano for
+  the report and patch.
+
+# Add elemental to eq/neq operators in Fortran 2008 binding
+
+# Workaround for inter-process mutex bug on FreeBSD
+
+===============================================================================
+                               Changes in 4.0.1
+===============================================================================
+
+# Multiple fixes for NVIDIA/PGI HPC Compilers support
+
+# Fix ch4:ofi:gni provider capability set
+
+# Fix MPI_SESSION_INIT "thread_level" info hint
+
+# Fix build on macOS with --disable-shared
+
+# Fix QMPI function definitions
+
+# Fix support for "host" info hint in MPI_COMM_SPAWN[_MULTIPLE]
+
+# Fix manpage generation
+
+# Add missing MPI_F_sync_reg function
+
+# Add missing const to MPI_Psend_init buffer argument
+
+# Make Python 3 optional in configure script
+
+# Remove -Wl,flat_namespace from compile wrappers by default (macOS only)
+
+# Update UCX module to v1.12.0
+
+# Update yaksa module to support latest Ampere compute capability
+
+===============================================================================
                                Changes in 4.0
 ===============================================================================
 

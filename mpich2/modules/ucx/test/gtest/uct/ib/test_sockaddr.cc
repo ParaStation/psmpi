@@ -9,8 +9,10 @@
 
 extern "C" {
 #include <uct/api/uct.h>
+#include <uct/api/v2/uct_v2.h>
 #include <ucs/sys/sys.h>
 #include <ucs/sys/string.h>
+#include <ucs/type/param.h>
 #include <ucs/arch/atomic.h>
 }
 
@@ -120,7 +122,7 @@ public:
         m_listen_addr  = GetParam()->listen_sock_addr;
         m_connect_addr = GetParam()->connect_sock_addr;
 
-        const ucs::sock_addr_storage &src_sock_addr = 
+        const ucs::sock_addr_storage &src_sock_addr =
                                                 GetParam()->source_sock_addr;
         if (src_sock_addr.get_sock_addr_ptr() != NULL) {
             int sa_family   = src_sock_addr.get_sock_addr_ptr()->sa_family;
@@ -196,6 +198,24 @@ protected:
         m_connect_addr.set_port(m_listen_addr.get_port());
     }
 
+    void handle_client_connecting_status(ucs_status_t status) {
+        switch (status) {
+        case UCS_OK:
+            return;
+        case UCS_ERR_REJECTED:
+            m_state |= TEST_STATE_CLIENT_GOT_REJECT;
+            return;
+        case UCS_ERR_UNREACHABLE:
+        case UCS_ERR_NOT_CONNECTED:
+        case UCS_ERR_CONNECTION_RESET:
+            m_state |= TEST_STATE_CLIENT_GOT_SERVER_UNAVAILABLE;
+            return;
+        default:
+            m_state |= TEST_STATE_CLIENT_GOT_ERROR;
+            return;
+        }
+    }
+
     void connect(uct_test::entity &e, unsigned index,
                  uct_ep_disconnect_cb_t disconnect_cb) {
         client_user_data *user_data = new client_user_data(*this, e, index);
@@ -214,6 +234,36 @@ protected:
         connect();
         wait_for_bits(&m_state, TEST_STATE_CONNECT_REQUESTED);
         EXPECT_TRUE(m_state & TEST_STATE_CONNECT_REQUESTED);
+    }
+
+    void ep_query(unsigned index = 0) {
+        uct_ep_attr_t attr;
+        ucs_status_t status;
+
+        attr.field_mask = UCT_EP_ATTR_FIELD_LOCAL_SOCKADDR |
+                          UCT_EP_ATTR_FIELD_REMOTE_SOCKADDR;
+        status = uct_ep_query(m_server->ep(index), &attr);
+        ASSERT_UCS_OK(status);
+
+        EXPECT_EQ(m_connect_addr, attr.local_address);
+
+        /* The ports are expected to be different. Ignore them. */
+        ucs_sockaddr_set_port((struct sockaddr*)&attr.remote_address,
+                              m_connect_addr.get_port());
+        EXPECT_EQ(m_connect_addr, attr.remote_address);
+
+        memset(&attr, 0, sizeof(attr));
+        attr.field_mask = UCT_EP_ATTR_FIELD_LOCAL_SOCKADDR |
+                          UCT_EP_ATTR_FIELD_REMOTE_SOCKADDR;
+        status = uct_ep_query(m_client->ep(index), &attr);
+        ASSERT_UCS_OK(status);
+
+        /* The ports are expected to be different. Ignore them. */
+        ucs_sockaddr_set_port((struct sockaddr*)&attr.local_address,
+                              m_connect_addr.get_port());
+        EXPECT_EQ(m_connect_addr, attr.local_address);
+
+        EXPECT_EQ(m_connect_addr, attr.remote_address);
     }
 
     size_t priv_data_do_pack(size_t pack_limit, void *priv_data) {
@@ -241,13 +291,23 @@ protected:
         client_user_data *sa_user_data =
                 reinterpret_cast<client_user_data*>(user_data);
         test_uct_sockaddr *self = sa_user_data->get_test();
-
         std::vector<char> priv_data_buf(self->m_client->max_conn_priv);
-        ssize_t packed = self->common_priv_data_cb(priv_data_buf.size(),
-                                                   priv_data_buf.data());
+        ucs_status_t status;
+        ssize_t packed;
+
+        status = UCS_PARAM_VALUE(UCT_CM_EP_RESOLVE_ARGS_FIELD, args, status,
+                                 STATUS, UCS_OK);
+
+        self->handle_client_connecting_status(status);
+        if (status != UCS_OK) {
+            goto err;
+        }
+
+        packed = self->common_priv_data_cb(priv_data_buf.size(),
+                                           priv_data_buf.data());
         if (packed < 0) {
-            self->del_user_data(sa_user_data);
-            return ucs_status_t(packed);
+            status = ucs_status_t(packed);
+            goto err;
         }
 
         uct_ep_connect_params_t params;
@@ -256,6 +316,10 @@ protected:
         params.private_data        = priv_data_buf.data();
         params.private_data_length = packed;
         return uct_ep_connect(sa_user_data->get_ep(), &params);
+
+    err:
+        self->del_user_data(sa_user_data);
+        return status;
     }
 
     static void check_connection_status(ucs_status_t status, bool can_fail)
@@ -440,15 +504,8 @@ protected:
         remote_data = connect_args->remote_data;
         status      = connect_args->status;
 
-        if (status == UCS_ERR_REJECTED) {
-            self->m_state |= TEST_STATE_CLIENT_GOT_REJECT;
-        } else if ((status == UCS_ERR_UNREACHABLE) ||
-                   (status == UCS_ERR_NOT_CONNECTED) ||
-                   (status == UCS_ERR_CONNECTION_RESET)) {
-            self->m_state |= TEST_STATE_CLIENT_GOT_SERVER_UNAVAILABLE;
-        } else if (status != UCS_OK) {
-            self->m_state |= TEST_STATE_CLIENT_GOT_ERROR;
-        } else {
+        self->handle_client_connecting_status(status);
+        if (status == UCS_OK) {
             EXPECT_TRUE(ucs_test_all_flags(remote_data->field_mask,
                                            (UCT_CM_REMOTE_DATA_FIELD_CONN_PRIV_DATA_LENGTH |
                                             UCT_CM_REMOTE_DATA_FIELD_CONN_PRIV_DATA)));
@@ -462,9 +519,7 @@ protected:
 
             self->m_state |= TEST_STATE_CLIENT_CONNECTED;
             self->m_client_connect_cb_cnt++;
-        }
-
-        if (status != UCS_OK) {
+        } else {
             self->del_user_data(sa_user_data);
         }
     }
@@ -737,6 +792,20 @@ UCS_TEST_P(test_uct_sockaddr, listener_query)
     ASSERT_UCS_OK(status);
 
     EXPECT_EQ(m_listen_addr.get_port(), port);
+}
+
+UCS_TEST_P(test_uct_sockaddr, ep_query)
+{
+    listen_and_connect();
+
+    wait_for_bits(&m_state, TEST_STATE_SERVER_CONNECTED |
+                            TEST_STATE_CLIENT_CONNECTED);
+    EXPECT_TRUE(ucs_test_all_flags(m_state, (TEST_STATE_SERVER_CONNECTED |
+                                             TEST_STATE_CLIENT_CONNECTED)));
+
+    ep_query();
+
+    cm_disconnect(m_client);
 }
 
 UCS_TEST_P(test_uct_sockaddr, cm_open_listen_close)
@@ -1114,6 +1183,16 @@ public:
 
         ucs_memory_cpu_store_fence();
         self->m_server_recv_req_cnt++;
+    }
+
+    static void
+    server_connect_cb(uct_ep_h ep, void *arg,
+                      const uct_cm_ep_server_conn_notify_args_t *notify_args) {
+        test_uct_sockaddr_stress *self =
+                reinterpret_cast<test_uct_sockaddr_stress*>(arg);
+
+        test_uct_sockaddr::server_connect_cb(ep, arg, notify_args);
+        EXPECT_TRUE(self->m_state & TEST_STATE_SERVER_CONNECTED);
     }
 
 protected:

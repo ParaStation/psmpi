@@ -47,39 +47,28 @@ static void ucp_ep_flush_progress(ucp_request_t *req)
 
     /* If the number of lanes changed since flush operation was submitted, adjust
      * the number of expected completions */
-    if (ucs_unlikely(req->send.flush.num_lanes != num_lanes)) {
-        ucp_trace_req(req, "ep %p: number of lanes changed from %d to %d",
-                      ep, req->send.flush.num_lanes, num_lanes);
-        diff                      = num_lanes - req->send.flush.num_lanes;
-        req->send.flush.num_lanes = num_lanes;
-        if (diff >= 0) {
-            ucp_trace_req(req,
-                          "ep %p: adjusting expected flush completion count by %d",
-                          ep, diff);
+    diff = num_lanes - req->send.flush.num_lanes;
+    if (ucs_unlikely(diff != 0)) {
+        if (diff > 0) {
+            ucs_debug("ep %p: flush req %p lanes changed from %d to %d, "
+                      "adding %d to completion count",
+                      ep, req, req->send.flush.num_lanes, num_lanes, diff);
             req->send.state.uct_comp.count += diff;
         } else {
-            /* If we have less lanes, it means we are in error flow:
-             * - if count == 0, we have completed the flush on all lanes
-             * - otherwise, flush progress was re-scheduled from flush progress
-             *   pending right after ucp_worker_iface_err_handle_progress(),
-             *   so remove destroyed/failed lanes from started_lanes and count
-             *   them completed.
-             */
-            ucs_assert(ep->flags & UCP_EP_FLAG_FAILED);
-            if (req->send.state.uct_comp.count > 0) {
-                destroyed_lanes = req->send.flush.started_lanes & ~all_lanes;
-
-                ucs_debug("req %p: lanes 0x%x were destroyed so reducing comp "
-                          "count by %d", req, destroyed_lanes,
-                          ucs_popcount(destroyed_lanes));
-                req->send.flush.started_lanes  &= ~destroyed_lanes;
-                req->send.state.uct_comp.count -= ucs_popcount(destroyed_lanes);
-            }
-
-            ucs_assertv(req->send.state.uct_comp.count == 0,
-                        "uct_comp.count=%d num_lanes=%d",
-                        req->send.state.uct_comp.count, num_lanes);
+            /* Some lanes that we wanted to flush were destroyed. If we already
+               started to flush them, they would be completed by discard flow,
+               so reduce completion count only by the lanes we have not started
+               to flush yet. */
+            destroyed_lanes = UCS_MASK(req->send.flush.num_lanes) & ~all_lanes &
+                              ~req->send.flush.started_lanes;
+            ucs_debug("ep %p: flush req %p lanes changed from %d to %d, "
+                      "destroyed_lanes 0x%x, reducing completion count by %d",
+                      ep, req, req->send.flush.num_lanes, num_lanes,
+                      destroyed_lanes, ucs_popcount(destroyed_lanes));
+            ucs_assert(!(req->send.flush.started_lanes & destroyed_lanes));
+            req->send.state.uct_comp.count -= ucs_popcount(destroyed_lanes);
         }
+        req->send.flush.num_lanes = num_lanes;
     }
 
     ucs_trace("ep %p flags 0x%x: progress flush req %p, started_lanes 0x%x "
@@ -204,9 +193,9 @@ static unsigned ucp_ep_flush_resume_slow_path_callback(void *arg)
 
 ucs_status_t ucp_ep_flush_progress_pending(uct_pending_req_t *self)
 {
-    ucp_request_t *req = ucs_container_of(self, ucp_request_t, send.uct);
+    ucp_request_t *req    = ucs_container_of(self, ucp_request_t, send.uct);
     ucp_lane_index_t lane = req->send.lane;
-    ucp_ep_h ep = req->send.ep;
+    ucp_ep_h ep           = req->send.ep;
     ucs_status_t status;
     int completed;
 
@@ -214,10 +203,12 @@ ucs_status_t ucp_ep_flush_progress_pending(uct_pending_req_t *self)
 
     status = uct_ep_flush(ep->uct_eps[lane], req->send.flush.uct_flags,
                           &req->send.state.uct_comp);
-    ucs_trace("flushing ep %p lane[%d]: %s", ep, lane,
+    ucs_trace("flushing ep %p lane[%d]=%p: %s", ep, lane, ep->uct_eps[lane],
               ucs_status_string(status));
     if (status == UCS_OK) {
         --req->send.state.uct_comp.count; /* UCT endpoint is flushed */
+    } else if (UCS_STATUS_IS_ERR(status) && (status != UCS_ERR_NO_RESOURCE)) {
+        ucp_ep_flush_error(req, status);
     }
 
     /* since req->flush.pend.lane is still non-NULL, this function will not
@@ -236,18 +227,16 @@ ucs_status_t ucp_ep_flush_progress_pending(uct_pending_req_t *self)
                                           req, 0, &req->send.flush.prog_id);
     }
 
-    if ((status == UCS_OK) || (status == UCS_INPROGRESS)) {
+    if (status == UCS_ERR_NO_RESOURCE) {
+        return UCS_ERR_NO_RESOURCE;
+    } else if (!UCS_STATUS_IS_ERR(status)) {
         /* flushed callback might release the request */
         if (!completed) {
             req->send.lane = UCP_NULL_LANE;
         }
-        return UCS_OK;
-    } else if (status == UCS_ERR_NO_RESOURCE) {
-        return UCS_ERR_NO_RESOURCE;
-    } else {
-        ucp_ep_flush_error(req, status);
-        return UCS_OK;
     }
+
+    return UCS_OK;
 }
 
 void ucp_ep_flush_completion(uct_completion_t *self)
@@ -256,9 +245,10 @@ void ucp_ep_flush_completion(uct_completion_t *self)
                                           send.state.uct_comp);
     ucs_status_t status = self->status;
 
-    ucs_trace_req("flush completion req=%p status=%d", req, status);
+    ucp_trace_req(req, "flush completion status=%d", status);
 
     ucs_assert(!(req->flags & UCP_REQUEST_FLAG_COMPLETED));
+    ucs_assert(status != UCS_INPROGRESS);
 
     req->status = status;
 
@@ -271,7 +261,8 @@ void ucp_ep_flush_completion(uct_completion_t *self)
     }
 
 
-    ucs_trace_req("flush completion req=%p comp_count=%d", req, req->send.state.uct_comp.count);
+    ucp_trace_req(req, "flush completion comp_count %d status %s",
+                  req->send.state.uct_comp.count, ucs_status_string(status));
     ucp_flush_check_completion(req);
 }
 
@@ -294,10 +285,7 @@ void ucp_ep_flush_request_ff(ucp_request_t *req, ucs_status_t status)
     ucs_assert(req->send.state.uct_comp.count >= num_comps);
     req->send.state.uct_comp.count -= num_comps;
     uct_completion_update_status(&req->send.state.uct_comp, status);
-
-    if (req->send.state.uct_comp.count == 0) {
-        req->send.state.uct_comp.func(&req->send.state.uct_comp);
-    }
+    ucp_send_request_invoke_uct_completion(req);
 }
 
 void ucp_ep_flush_remote_completed(ucp_request_t *req)
@@ -478,6 +466,9 @@ static void ucp_worker_flush_complete_one(ucp_request_t *req, ucs_status_t statu
             ucp_worker_flush_req_set_next_ep(req, 1, &worker->all_eps);
         }
 
+        /* Coverity wrongly resolves completion callback function to
+         * 'ucp_cm_server_conn_request_progress' */
+        /* coverity[offset_free] */
         ucp_request_complete(req, flush_worker.cb, status, req->user_data);
     }
 }

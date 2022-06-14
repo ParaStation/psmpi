@@ -19,6 +19,7 @@
 extern "C" {
 #include <ucp/core/ucp_am.h>
 #include <ucp/core/ucp_ep.inl>
+#include <ucs/datastruct/mpool.inl>
 }
 
 #define NUM_MESSAGES 17
@@ -326,6 +327,12 @@ protected:
         return attr.max_am_header;
     }
 
+    size_t fragment_size()
+    {
+        return ucp_ep_config(sender().ep())->am.max_bcopy -
+               sizeof(ucp_am_hdr_t);
+    }
+
     virtual unsigned get_send_flag()
     {
         return 0;
@@ -491,13 +498,12 @@ protected:
                                                    data, m_rx_dt_desc.buf(),
                                                    m_rx_dt_desc.count(),
                                                    &params);
-        //ucs_warn("imm_compl %d, sp %p, rx len %zu", imm_compl_flag, sp, rx_length);
         if (UCS_PTR_IS_PTR(sp)) {
             ucp_request_release(sp);
             status = UCS_INPROGRESS;
         } else {
             EXPECT_EQ(NULL, sp);
-            EXPECT_EQ(rx_length, length);
+            EXPECT_EQ(length, rx_length);
             am_recv_check_data(rx_length);
             status = UCS_OK;
         }
@@ -685,6 +691,64 @@ UCS_TEST_P(test_ucp_am_nbx, max_short_thresh_zcopy, "ZCOPY_THRESH=0")
     EXPECT_LE(max_reply_short, ep_cfg->am.zcopy_thresh[0]);
 }
 
+UCS_TEST_P(test_ucp_am_nbx, rx_am_mpools,
+           "RX_MPOOL_SIZES=2,8,64,128", "RNDV_THRESH=inf")
+{
+    void *rx_data = NULL;
+
+    set_am_data_handler(receiver(), TEST_AM_NBX_ID, am_data_hold_cb, &rx_data,
+                        UCP_AM_FLAG_PERSISTENT_DATA);
+
+    static const std::string ib_tls[] = { "dc_x", "rc_v", "rc_x", "ud_v",
+                                          "ud_x", "ib" };
+
+    // UCP takes desc from mpool only for data arrived as inlined from UCT.
+    // Typically, with IB, data is inlined up to 32 bytes, so use smaller range
+    // of values for IB transports.
+    bool has_ib = has_any_transport(
+            std::vector<std::string>(ib_tls,
+                                     ib_tls + ucs_static_array_size(ib_tls)));
+    ssize_t length = ucs::rand() % (has_ib ? 32 : 256);
+    std::vector<char> sbuf(length, 'd');
+
+    ucp_request_param_t param;
+    param.op_attr_mask = 0ul;
+
+    ucs_status_ptr_t sptr = ucp_am_send_nbx(sender().ep(), TEST_AM_NBX_ID, NULL,
+                                            0ul, sbuf.data(), sbuf.size(),
+                                            &param);
+    wait_for_flag(&rx_data);
+    EXPECT_TRUE(rx_data != NULL);
+    EXPECT_EQ(UCS_OK, request_wait(sptr));
+
+    ucp_recv_desc_t *rdesc = (ucp_recv_desc_t*)rx_data - 1;
+    if (rdesc->flags & UCP_RECV_DESC_FLAG_UCT_DESC) {
+        ucp_am_data_release(receiver().worker(), rx_data);
+        UCS_TEST_SKIP_R("non-inline data arrived");
+    } else {
+        UCS_TEST_MESSAGE << "length " << length;
+    }
+
+    ucp_worker_h worker = receiver().worker();
+
+    for (int i = 0; i < ucs_popcount(worker->am_mps.bitmap); ++i) {
+        ucs_mpool_t *mpool =
+            &reinterpret_cast<ucs_mpool_t*>(worker->am_mps.data)[i];
+        ssize_t elem_size  = mpool->data->elem_size - (sizeof(ucs_mpool_elem_t) +
+                             UCP_WORKER_HEADROOM_SIZE + worker->am.alignment);
+        ASSERT_TRUE(elem_size >= 0);
+
+        if (elem_size >= (length + 1)) {
+            EXPECT_EQ(ucs_mpool_obj_owner(rdesc), mpool);
+            break;
+        }
+
+        EXPECT_NE(ucs_mpool_obj_owner(rdesc), mpool);
+    }
+
+    ucp_am_data_release(receiver().worker(), rx_data);
+}
+
 UCP_INSTANTIATE_TEST_CASE(test_ucp_am_nbx)
 
 
@@ -862,12 +926,6 @@ public:
         ucp_am_data_release(receiver().worker(), m_data_ptr);
     }
 
-    size_t fragment_size()
-    {
-        return ucp_ep_config(sender().ep())->am.max_bcopy -
-               sizeof(ucp_am_hdr_t);
-    }
-
 private:
     void *m_data_ptr;
 };
@@ -888,6 +946,66 @@ UCS_TEST_P(test_ucp_am_nbx_eager_data_release, multi)
 }
 
 UCP_INSTANTIATE_TEST_CASE(test_ucp_am_nbx_eager_data_release)
+
+class test_ucp_am_nbx_align : public test_ucp_am_nbx {
+public:
+    test_ucp_am_nbx_align()
+    {
+        m_alignment = pow(2, ucs::rand() % 13);
+    }
+
+    virtual ucp_worker_params_t get_worker_params()
+    {
+        ucp_worker_params_t params = ucp_test::get_worker_params();
+        params.field_mask         |= UCP_WORKER_PARAM_FIELD_AM_ALIGNMENT;
+        params.am_alignment        = m_alignment;
+        return params;
+    }
+
+    static void get_test_variants(std::vector<ucp_test_variant> &variants)
+    {
+        add_variant_values(variants, test_ucp_am_base::get_test_variants, 0);
+        add_variant_values(variants, test_ucp_am_base::get_test_variants,
+                           UCP_AM_SEND_REPLY, "reply");
+    }
+
+    virtual unsigned get_send_flag()
+    {
+        return get_variant_value(0);
+    }
+
+    virtual ucs_status_t
+    am_data_handler(const void *header, size_t header_length, void *data,
+                    size_t length, const ucp_am_recv_param_t *rx_param)
+    {
+        test_ucp_am_nbx::am_data_handler(header, header_length, data, length,
+                                         rx_param);
+
+        if (rx_param->recv_attr & UCP_AM_RECV_ATTR_FLAG_DATA) {
+            EXPECT_EQ(0u, (uintptr_t)data % m_alignment)
+                      << " data ptr " << data;
+        }
+
+        return UCS_OK;
+    }
+
+private:
+    size_t m_alignment;
+};
+
+UCS_TEST_P(test_ucp_am_nbx_align, basic)
+{
+    test_am_send_recv(fragment_size() / 2, 0, 0, UCS_MEMORY_TYPE_HOST,
+                      UCP_AM_FLAG_PERSISTENT_DATA);
+}
+
+UCS_TEST_P(test_ucp_am_nbx_align, multi)
+{
+    test_am_send_recv(fragment_size() * 5, 0, 0, UCS_MEMORY_TYPE_HOST,
+                      UCP_AM_FLAG_PERSISTENT_DATA);
+}
+
+UCP_INSTANTIATE_TEST_CASE(test_ucp_am_nbx_align)
 
 
 class test_ucp_am_nbx_dts : public test_ucp_am_nbx {
@@ -1267,3 +1385,50 @@ UCS_TEST_P(test_ucp_am_nbx_rndv_memtype, rndv)
 }
 
 UCP_INSTANTIATE_TEST_CASE_GPU_AWARE(test_ucp_am_nbx_rndv_memtype);
+
+
+class test_ucp_am_nbx_rndv_memtype_disable_zcopy :
+        public test_ucp_am_nbx_rndv_memtype {
+protected:
+    void disable_rndv_zcopy_config(entity &e, uint64_t zcopy_caps)
+    {
+        ucp_ep_h ep             = e.ep();
+        ucp_ep_config_t *config = ucp_ep_config(ep);
+
+        if (zcopy_caps & UCT_IFACE_FLAG_PUT_ZCOPY) {
+            ucp_ep_config_rndv_zcopy_commit(0, &config->rndv.put_zcopy);
+        }
+
+        if (zcopy_caps & UCT_IFACE_FLAG_GET_ZCOPY) {
+            ucp_ep_config_rndv_zcopy_commit(0, &config->rndv.get_zcopy);
+        }
+    }
+
+    void test_disabled_rndv_zcopy(uint64_t zcopy_caps)
+    {
+        disable_rndv_zcopy_config(sender(), zcopy_caps);
+        disable_rndv_zcopy_config(receiver(), zcopy_caps);
+
+        ucs_memory_type_t mt = static_cast<ucs_memory_type_t>(get_variant_value(0));
+        test_am_send_recv(64 * UCS_KBYTE, 8, 0, mt);
+    }
+};
+
+UCS_TEST_P(test_ucp_am_nbx_rndv_memtype_disable_zcopy, rndv_disable_put_zcopy)
+{
+    test_disabled_rndv_zcopy(UCT_IFACE_FLAG_PUT_ZCOPY);
+}
+
+UCS_TEST_P(test_ucp_am_nbx_rndv_memtype_disable_zcopy, rndv_disable_get_zcopy)
+{
+    test_disabled_rndv_zcopy(UCT_IFACE_FLAG_GET_ZCOPY);
+}
+
+UCS_TEST_P(test_ucp_am_nbx_rndv_memtype_disable_zcopy,
+           rndv_disable_put_and_get_zcopy)
+{
+    test_disabled_rndv_zcopy(UCT_IFACE_FLAG_PUT_ZCOPY |
+                             UCT_IFACE_FLAG_GET_ZCOPY);
+}
+
+UCP_INSTANTIATE_TEST_CASE_GPU_AWARE(test_ucp_am_nbx_rndv_memtype_disable_zcopy);

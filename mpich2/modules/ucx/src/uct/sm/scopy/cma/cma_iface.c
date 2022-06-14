@@ -56,12 +56,12 @@ static ucs_status_t uct_cma_iface_query(uct_iface_h tl_iface,
 
     uct_scopy_iface_query(&iface->super, iface_attr);
 
-    iface_attr->iface_addr_len      = ucs_sys_ns_is_default(UCS_SYS_NS_TYPE_PID) ?
-                                      sizeof(ucs_cma_iface_base_device_addr_t) :
-                                      sizeof(ucs_cma_iface_ext_device_addr_t);
+    iface_attr->iface_addr_len      =
+            ucs_sys_ns_is_default(UCS_SYS_NS_TYPE_PID) ?
+            sizeof(ucs_cma_iface_base_device_addr_t) :
+            sizeof(ucs_cma_iface_ext_device_addr_t);
     iface_attr->bandwidth.dedicated = iface->super.super.config.bandwidth;
     iface_attr->bandwidth.shared    = 0;
-    iface_attr->overhead            = 0.4e-6; /* 0.4 us */
     iface_attr->cap.flags          |= UCT_IFACE_FLAG_ERRHANDLE_PEER_FAILURE |
                                       UCT_IFACE_FLAG_EP_CHECK;
 
@@ -116,6 +116,7 @@ static uct_scopy_iface_ops_t uct_cma_iface_ops = {
     .super = {
         .iface_estimate_perf = uct_base_iface_estimate_perf,
         .iface_vfs_refresh   = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
+        .ep_query            = (uct_ep_query_func_t)ucs_empty_function_return_unsupported
     },
     .ep_tx = uct_cma_ep_tx,
 };

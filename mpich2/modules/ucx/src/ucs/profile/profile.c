@@ -13,6 +13,7 @@
 #include <ucs/datastruct/list.h>
 #include <ucs/debug/debug_int.h>
 #include <ucs/debug/log.h>
+#include <ucs/sys/lib.h>
 #include <ucs/sys/string.h>
 #include <ucs/sys/sys.h>
 #include <ucs/time/time.h>
@@ -246,7 +247,7 @@ static void ucs_profile_write(ucs_profile_context_t *ctx)
     ucs_read_file(header.cmdline, sizeof(header.cmdline), 1, "/proc/self/cmdline");
     strncpy(header.hostname, ucs_get_host_name(), sizeof(header.hostname) - 1);
     header.version       = UCS_PROFILE_FILE_VERSION;
-    strncpy(header.ucs_path, ucs_debug_get_lib_path(), sizeof(header.ucs_path) - 1);
+    strncpy(header.ucs_path, ucs_sys_get_lib_path(), sizeof(header.ucs_path) - 1);
     header.pid           = getpid();
     header.mode          = ctx->profile_mode;
     header.num_locations = ctx->num_locations;
@@ -364,12 +365,12 @@ static void ucs_profile_thread_key_destr(void *data)
  * code, before the first record of each such location is made.
  * SHOULD NOT be used directly - use UCS_PROFILE macros instead.
  *
- * @param [in]  ctx          Pofile context.
+ * @param [in]  ctx          Profile context.
  * @param [in]  type         Location type.
+ * @param [in]  name         Location name.
  * @param [in]  file         Source file name.
  * @param [in]  line         Source line number.
  * @param [in]  function     Calling function name.
- * @param [in]  name         Location name.
  * @param [out] loc_id_p     Filled with location ID:
  *                             0   - profiling is disabled
  *                             >0  - location index + 1
@@ -550,7 +551,7 @@ static void ucs_profile_check_active_threads(ucs_profile_context_t *ctx)
     }
 }
 
-void ucs_profile_reset_locations(ucs_profile_context_t *ctx)
+void ucs_profile_reset_locations_id(ucs_profile_context_t *ctx)
 {
     ucs_profile_global_location_t *loc;
 
@@ -559,6 +560,13 @@ void ucs_profile_reset_locations(ucs_profile_context_t *ctx)
     ucs_profile_ctx_for_each_location(ctx, loc) {
         *loc->loc_id_p = -1;
     }
+
+    pthread_mutex_unlock(&ctx->mutex);
+}
+
+static void ucs_profile_reset_locations(ucs_profile_context_t *ctx)
+{
+    pthread_mutex_lock(&ctx->mutex);
 
     ctx->num_locations = 0;
     ctx->max_locations = 0;
@@ -621,6 +629,7 @@ ucs_status_t ucs_profile_init(unsigned profile_mode, const char *file_name,
     ctx->profile_mode     = profile_mode;
     ctx->file_name        = file_name;
     ctx->max_file_size    = max_file_size;
+    /* coverity[missing_lock] */
     ctx->num_locations    = 0;
     ctx->locations        = NULL;
     ctx->max_locations    = 0;

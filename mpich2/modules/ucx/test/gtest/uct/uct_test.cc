@@ -982,7 +982,7 @@ void uct_test::entity::mem_type_dereg(uct_allocated_memory_t *mem) const {
     if ((mem->memh != UCT_MEM_HANDLE_NULL) &&
         (md_attr().cap.reg_mem_types & UCS_BIT(mem->mem_type))) {
         ucs_status_t status = uct_md_mem_dereg(m_md, mem->memh);
-        ASSERT_UCS_OK(status);
+        ucs_assert_always(status == UCS_OK);
         mem->memh = UCT_MEM_HANDLE_NULL;
         mem->md   = NULL;
     }
@@ -1016,8 +1016,9 @@ void uct_test::entity::rkey_unpack(const uct_allocated_memory_t *mem,
 void uct_test::entity::rkey_release(const uct_rkey_bundle *rkey_bundle) const
 {
     if (rkey_bundle->rkey != UCT_INVALID_RKEY) {
-        ucs_status_t status = uct_rkey_release(m_resource.component, rkey_bundle);
-        ASSERT_UCS_OK(status);
+        ucs_status_t status = uct_rkey_release(m_resource.component,
+                                               rkey_bundle);
+        ucs_assert_always(status == UCS_OK);
     }
 }
 
@@ -1408,6 +1409,11 @@ void uct_test::mapped_buffer::pattern_check(uint64_t seed) {
     mem_buffer::pattern_check(ptr(), length(), seed, m_mem.mem_type);
 }
 
+void uct_test::mapped_buffer::memset(int c)
+{
+    mem_buffer::memset(ptr(), length(), c, m_mem.mem_type);
+}
+
 void *uct_test::mapped_buffer::ptr() const {
     return m_buf;
 }
@@ -1488,32 +1494,37 @@ void uct_test::async_event_ctx::signal() {
 }
 
 bool uct_test::async_event_ctx::wait_for_event(entity &e, double timeout_sec) {
-    if (wakeup_fd.fd == -1) {
+    /* Caching fd locally to workaround bug in gcc (GCC) 11.2.1 20210728 FC35
+     * See details in https://github.com/openucx/ucx/issues/7705 */
+    struct pollfd local_fd = wakeup_fd;
+
+    if (local_fd.fd == -1) {
         /* create wakeup */
         if (e.iface_attr().cap.event_flags & UCT_IFACE_FLAG_EVENT_FD) {
-            ucs_status_t status =
-                uct_iface_event_fd_get(e.iface(), &wakeup_fd.fd);
+            ucs_status_t status = uct_iface_event_fd_get(e.iface(),
+                                                         &local_fd.fd);
             ASSERT_UCS_OK(status);
         } else {
-            ucs_status_t status =
-                ucs_async_pipe_create(&aux_pipe);
+            ucs_status_t status = ucs_async_pipe_create(&aux_pipe);
             ASSERT_UCS_OK(status);
             aux_pipe_init = true;
-            wakeup_fd.fd = ucs_async_pipe_rfd(&aux_pipe);
+            local_fd.fd   = ucs_async_pipe_rfd(&aux_pipe);
         }
     }
 
     int timeout_ms = static_cast<int>((timeout_sec * UCS_MSEC_PER_SEC) *
                                       ucs::test_time_multiplier());
-    int ret        = poll(&wakeup_fd, 1, timeout_ms);
+    int ret        = poll(&local_fd, 1, timeout_ms);
     EXPECT_TRUE((ret == 0) || (ret == 1));
     if (ret > 0) {
         if (e.iface_attr().cap.event_flags & UCT_IFACE_FLAG_EVENT_ASYNC_CB) {
             ucs_async_pipe_drain(&aux_pipe);
         }
+        wakeup_fd = local_fd;
         return true;
     }
 
+    wakeup_fd = local_fd;
     return false;
 }
 

@@ -24,8 +24,8 @@ void ucp_tag_rndv_matched(ucp_worker_h worker, ucp_request_t *rreq,
     rreq->recv.tag.info.length     = rts_hdr->size;
 
     if (worker->context->config.ext.proto_enable) {
-        ucp_proto_rndv_receive(worker, rreq, rts_hdr, rts_hdr + 1,
-                               hdr_length - sizeof(*rts_hdr));
+        ucp_proto_rndv_receive_start(worker, rreq, rts_hdr, rts_hdr + 1,
+                                     hdr_length - sizeof(*rts_hdr));
     } else {
         ucp_rndv_receive(worker, rreq, rts_hdr, rts_hdr + 1);
     }
@@ -55,8 +55,8 @@ ucs_status_t ucp_tag_rndv_process_rts(ucp_worker_h worker,
     ucs_assert(length >= sizeof(*rts_hdr));
 
     status = ucp_recv_desc_init(worker, rts_hdr, length, 0, tl_flags,
-                                sizeof(*rts_hdr), UCP_RECV_DESC_FLAG_RNDV, 0,
-                                &rdesc);
+                                sizeof(*rts_hdr), UCP_RECV_DESC_FLAG_RNDV, 0, 1,
+                                "tag_rndv_process_rts", &rdesc);
     if (!UCS_STATUS_IS_ERR(status)) {
         ucs_assert(ucp_rdesc_get_tag(rdesc) ==
                    ucp_tag_hdr_from_rts(rts_hdr)->tag);
@@ -77,7 +77,7 @@ size_t ucp_tag_rndv_rts_pack(void *dest, void *arg)
     return ucp_rndv_rts_pack(sreq, rts_hdr, UCP_RNDV_RTS_TAG_OK);
 }
 
-UCS_PROFILE_FUNC(ucs_status_t, ucp_proto_progress_rndv_rts, (self),
+UCS_PROFILE_FUNC(ucs_status_t, ucp_proto_progress_tag_rndv_rts, (self),
                  uct_pending_req_t *self)
 {
     ucp_request_t *sreq = ucs_container_of(self, ucp_request_t, send.uct);
@@ -107,7 +107,7 @@ ucs_status_t ucp_tag_send_start_rndv(ucp_request_t *sreq)
         status = ucp_tag_offload_start_rndv(sreq);
     } else {
         ucs_assert(sreq->send.lane == ucp_ep_get_am_lane(ep));
-        sreq->send.uct.func = ucp_proto_progress_rndv_rts;
+        sreq->send.uct.func = ucp_proto_progress_tag_rndv_rts;
         status              = ucp_rndv_reg_send_buffer(sreq);
     }
 
@@ -153,6 +153,6 @@ static ucp_proto_t ucp_tag_rndv_proto = {
     .flags      = 0,
     .init       = ucp_proto_rndv_rts_init,
     .config_str = ucp_proto_rndv_ctrl_config_str,
-    .progress   = ucp_tag_rndv_rts_progress
+    .progress   = {ucp_tag_rndv_rts_progress}
 };
 UCP_PROTO_REGISTER(&ucp_tag_rndv_proto);
