@@ -109,13 +109,13 @@ else
 	( cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) $(CUDA_TESTS) $(LARGE_TESTS)); \
 	( hostname; rpm -qi pscom; rpm -qi psmgmt; $(SRCDIR)/scripts/vcversion -r $(SRCDIR); \
 	  echo $(MPIEXEC); \
-	  $(MAKE) -C mpich2/test/mpi testing $(TESTSETLIST) $(TESTDIRLIST); \
-	  cp $(TESTSUMMARY).xml $${_LOGNAME}.xml; \
-	  cp $(TESTSUMMARY).tap $${_LOGNAME}.tap; \
+	  $(MAKE) -C mpich2/test/mpi testing $(TESTSETLIST) $(TESTDIRLIST) && \
+	  cp $(TESTSUMMARY).xml $${_LOGNAME}.xml && \
+	  cp $(TESTSUMMARY).tap $${_LOGNAME}.tap && \
 	  $(SRCDIR)/scripts/test-summary.sh $${_LOGNAME}.xml; \
 	) 2>&1 | tee -a $${_LOGNAME}.log; \
 	echo -e "\nSummary written to $${_LOGNAME}*"
-	@! fgrep 'not ok' $(TESTSUMMARY).tap
+	@! if test -f $(TESTSUMMARY).tap ; then fgrep 'not ok' $(TESTSUMMARY).tap; else echo -e "\nERROR: make $@ failed!" ; fi
 endif
 endif
 endif
