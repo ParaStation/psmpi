@@ -98,6 +98,12 @@ else
 ifeq ($(_TESTCUDA),unknown)
 	@echo "ERROR: The option 'TESTCUDA=${TESTCUDA}' is unknown!"
 else
+	@set ENABLE_CUDA_SWITCH=$(ENABLE_CUDA_SWITCH)
+	@set CUDA_SUPPORT=$(CUDA_SUPPORT)
+	@set CUDA_TESTS=$(CUDA_TESTS)
+	@if [ "${CUDA_SUPPORT}" != "true" -a "${CUDA_TESTS}" == "${ENABLE_CUDA_SWITCH}" ] ; \
+	then echo "WARNING: CUDA tests enabled, but psmpi is not configured with CUDA awareness!" ; \
+	sleep 2 ; fi
 	export TESTSET=$(TESTSET); \
 	export MPIEXEC=$(MPIEXEC); \
 	export PSI_OVERBOOK=1; \
