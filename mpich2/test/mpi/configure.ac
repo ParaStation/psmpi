@@ -1824,6 +1824,7 @@ AC_OUTPUT(maint/testmerge \
           manual/mpi_t/Makefile \
           perf/Makefile \
           testlist \
+          ps-test-minimal \
           cxx/testlist \
 	  cxx/topo/testlist \
           f77/testlist \
