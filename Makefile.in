@@ -24,6 +24,7 @@ ENABLE_HYDRA=@ENABLE_HYDRA@
 MPICH_VERSION=@MPICH_VERSION@
 MPICH_RELEASE_DATE=@MPICH_RELEASE_DATE@
 EXTRA_VERSION_INFO="@EXTRA_VERSION_INFO@"
+PSCOM_LD_LIBRARY_PATH=@PSCOM_LD_LIBRARY_PATH@
 all:
 
 SUBDIRS += dist
@@ -32,8 +33,24 @@ ifneq ($(CONFSET),none)
 SUBDIRS += mpich2
 all: mpich2_all
 
+ENABLE_CUDA_SWITCH=--enable-cuda ## Add some tests for CUDA awareness
+DISABLE_CUDA_SWITCH=--without-cuda ## Disable CUDA for test suite configure
 ifeq ($(CUDA_SUPPORT),true)
-CUDA_TESTS = --enable-cuda
+CUDA_TESTS = $(ENABLE_CUDA_SWITCH)
+else
+CUDA_TESTS = $(DISABLE_CUDA_SWITCH)
+endif
+ifdef TESTCUDA
+_TESTCUDA = $(TESTCUDA)
+ifeq ($(TESTCUDA),yes)
+CUDA_TESTS = $(ENABLE_CUDA_SWITCH)
+else
+ifeq ($(TESTCUDA),no)
+CUDA_TESTS = $(DISABLE_CUDA_SWITCH)
+else
+_TESTCUDA = unknown
+endif
+endif
 endif
 
 ifeq ($(ENABLE_HYDRA),false)
@@ -78,23 +95,34 @@ ifneq ($(filter $(TESTDIR),$(TESTFOLDERS)),$(TESTDIR))
 	@echo "The following test directories are available:"
 	@$(foreach dir,$(TESTFOLDERS), echo "* " $(dir) ;)
 else
+ifeq ($(_TESTCUDA),unknown)
+	@echo "ERROR: The option 'TESTCUDA=${TESTCUDA}' is unknown!"
+else
+	@set ENABLE_CUDA_SWITCH=$(ENABLE_CUDA_SWITCH)
+	@set CUDA_SUPPORT=$(CUDA_SUPPORT)
+	@set CUDA_TESTS=$(CUDA_TESTS)
+	@if [ "${CUDA_SUPPORT}" != "true" -a "${CUDA_TESTS}" == "${ENABLE_CUDA_SWITCH}" ] ; \
+	then echo "WARNING: CUDA tests enabled, but psmpi is not configured with CUDA awareness!" ; \
+	sleep 2 ; fi
 	export TESTSET=$(TESTSET); \
 	export MPIEXEC=$(MPIEXEC); \
 	export PSI_OVERBOOK=1; \
 	export PSI_LOG_SILENT=1; \
 	export PSP_SCHED_YIELD=1; \
 	export MPIEXEC_UNIVERSE_SIZE=100; \
+	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH}:$(PSCOM_LD_LIBRARY_PATH); \
 	export _LOGNAME=$(SRCDIR)/doc/test-$$($(SRCDIR)/scripts/vcversion -r $(SRCDIR))-$(TESTDIR_)$(TESTSET_)$$(date +%F_%T); \
 	( cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) $(CUDA_TESTS) $(LARGE_TESTS)); \
 	( hostname; rpm -qi pscom; rpm -qi psmgmt; $(SRCDIR)/scripts/vcversion -r $(SRCDIR); \
 	  echo $(MPIEXEC); \
-	  $(MAKE) -C mpich2/test/mpi testing $(TESTSETLIST) $(TESTDIRLIST); \
-	  cp $(TESTSUMMARY).xml $${_LOGNAME}.xml; \
-	  cp $(TESTSUMMARY).tap $${_LOGNAME}.tap; \
+	  $(MAKE) -C mpich2/test/mpi testing $(TESTSETLIST) $(TESTDIRLIST) && \
+	  cp $(TESTSUMMARY).xml $${_LOGNAME}.xml && \
+	  cp $(TESTSUMMARY).tap $${_LOGNAME}.tap && \
 	  $(SRCDIR)/scripts/test-summary.sh $${_LOGNAME}.xml; \
 	) 2>&1 | tee -a $${_LOGNAME}.log; \
 	echo -e "\nSummary written to $${_LOGNAME}*"
-	@! fgrep 'not ok' $(TESTSUMMARY).tap
+	@! if test -f $(TESTSUMMARY).tap ; then fgrep 'not ok' $(TESTSUMMARY).tap; else echo -e "\nERROR: make $@ failed!" ; fi
+endif
 endif
 endif
 

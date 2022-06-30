@@ -665,8 +665,10 @@ AC_SUBST([MPICCCONFDIR])
 PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
 AS_IF([test "x$with_pscom" != "xno" -a "x$with_pscom" != "xyes"],[
 	PSCOM_LDFLAGS="-L${with_pscom}/lib64"
+	PSCOM_LD_LIBRARY_PATH="${with_pscom}/lib64"
 ])
 AC_SUBST([PSCOM_LDFLAGS])
+AC_SUBST([PSCOM_LD_LIBRARY_PATH])
 
 PSCOM_LIBRARY="${PSCOM_LIBRARY-"-lpscom"}"
 AC_SUBST([PSCOM_LIBRARY])
