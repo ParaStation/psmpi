@@ -53,7 +53,7 @@
 
 #define MPID_DEV_VERSION_STRING "=== ParaStation MPI %s ===\n%s\n"
 #define MPID_DEV_VERSION_STRING_ARGS MPIDI_PSP_VC_VERSION, MPIDI_PSP_get_psmpi_version_string()
-char* MPIDI_PSP_get_psmpi_version_string();
+char* MPIDI_PSP_get_psmpi_version_string(void);
 
 #ifdef HAVE_LIBHCOLL
 #include "hcoll/api/hcoll_dte.h"
