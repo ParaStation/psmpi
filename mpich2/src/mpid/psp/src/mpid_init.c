@@ -657,7 +657,7 @@ int MPID_Init(int requested, int *provided)
 
 	{
 		char name[10];
-		snprintf(name, sizeof(name), "r%07u", (unsigned)pg_rank);
+		snprintf(name, sizeof(name), "r%07u", (unsigned)pg_rank % 100000000);
 		pscom_socket_set_name(socket, name);
 	}
 

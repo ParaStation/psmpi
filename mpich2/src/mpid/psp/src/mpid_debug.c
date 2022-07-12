@@ -95,7 +95,7 @@ char* MPIDI_PSP_pscom_allin_get_plugin_list_as_string()
 }
 #endif
 
-char* MPIDI_PSP_get_psmpi_version_string()
+char* MPIDI_PSP_get_psmpi_version_string(void)
 {
 	static char* psmpi_version_string = NULL;
 	static char psmpi_version_string_pattern[] =
