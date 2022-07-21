@@ -62,9 +62,9 @@ void io_done_rma_get_answer(pscom_request_t *request)
 }
 
 
-int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
-		     int target_rank, MPI_Aint target_disp, int target_count,
-		     MPI_Datatype target_datatype, MPIR_Win *win_ptr, MPIR_Request **request)
+int MPIDI_PSP_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
+			  int target_rank, MPI_Aint target_disp, int target_count,
+			  MPI_Datatype target_datatype, MPIR_Win *win_ptr, MPIR_Request **request)
 {
 	int mpi_error = MPI_SUCCESS;
 	MPID_Win_rank_info *ri = win_ptr->rank_info + target_rank;
@@ -256,6 +256,8 @@ void io_done_get_answer_send(pscom_request_t *req)
 
 	MPID_PSP_packed_msg_cleanup(&gas->msg);
 
+	gas->win_ptr->rma_passive_pending_rank[gas->src_rank]--;
+
 	pscom_request_free(req);
 }
 
@@ -272,6 +274,9 @@ void io_done_get_answer_recv(pscom_request_t *req)
 	pscom_request_get_answer_send_t *gas = &req->user->type.get_answer_send;
 	MPID_PSCOM_XHeader_Rma_get_answer_t *xhead_answ = &req->xheader.user.get_answer;
 	int ret;
+
+	MPIR_Win *win_ptr = xhead_get->win_ptr;
+	int src_rank = xhead_get->common.src_rank;
 
 	ret = MPID_PSP_packed_msg_prepare(xhead_get->mem_locations.target_buf,
 					xhead_get->target_count, datatype,
@@ -297,6 +302,9 @@ void io_done_get_answer_recv(pscom_request_t *req)
 	req->ops.io_done = io_done_get_answer_send;
 	/* req->connection = connection; <- set in MPID_do_recv_rma_get_req() */
 
+	gas->win_ptr = win_ptr;
+	gas->src_rank = src_rank;
+
 	pscom_post_send(req);
 }
 
@@ -315,6 +323,8 @@ pscom_request_t *MPID_do_recv_rma_get_req(pscom_connection_t *connection, MPID_P
 	/* save datatype */
 	req->user->type.get_answer_send.datatype = MPID_PSP_Datatype_decode(xhead_get->encoded_type);
 
+	xhead_get->win_ptr->rma_passive_pending_rank[xhead_get->common.src_rank]++;
+
 	return req;
 }
 
@@ -323,8 +333,8 @@ int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 	     int target_rank, MPI_Aint target_disp, int target_count,
 	     MPI_Datatype target_datatype, MPIR_Win *win_ptr)
 {
-	return MPID_Get_generic(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
-				target_count, target_datatype, win_ptr, NULL);
+	return MPIDI_PSP_Get_generic(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
+				     target_count, target_datatype, win_ptr, NULL);
 }
 
 int MPID_Rget(void *origin_addr, int origin_count,
@@ -332,6 +342,6 @@ int MPID_Rget(void *origin_addr, int origin_count,
 	      int target_count, MPI_Datatype target_datatype, MPIR_Win *win_ptr,
 	      MPIR_Request **request)
 {
-	return MPID_Get_generic(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
-				target_count, target_datatype, win_ptr, request);
+	return MPIDI_PSP_Get_generic(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
+				     target_count, target_datatype, win_ptr, request);
 }

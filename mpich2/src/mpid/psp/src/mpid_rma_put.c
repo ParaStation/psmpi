@@ -40,9 +40,9 @@ void rma_put_done(pscom_request_t *req)
 }
 
 
-int MPID_Put_generic(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
-		     int target_rank, MPI_Aint target_disp, int target_count,
-		     MPI_Datatype target_datatype, MPIR_Win *win_ptr, MPIR_Request **request)
+int MPIDI_PSP_Put_generic(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
+			  int target_rank, MPI_Aint target_disp, int target_count,
+			  MPI_Datatype target_datatype, MPIR_Win *win_ptr, MPIR_Request **request)
 {
 	int mpi_error = MPI_SUCCESS;
 	MPID_PSP_packed_msg_t msg;
@@ -236,6 +236,9 @@ void rma_put_receive_done(pscom_request_t *req)
 
 	/* ToDo: This is not treadsave. */
 	xhead_rma->win_ptr->rma_puts_accs_received ++;
+
+	xhead_rma->win_ptr->rma_passive_pending_rank[xhead_rma->common.src_rank]--;
+
 	pscom_request_free(req);
 }
 
@@ -257,6 +260,8 @@ pscom_request_t *MPID_do_recv_rma_put(pscom_connection_t *con, MPID_PSCOM_XHeade
 
 	rpr->datatype = datatype;
 
+	xhead_rma->win_ptr->rma_passive_pending_rank[xhead_rma->common.src_rank]++;
+
 	return req;
 }
 
@@ -265,8 +270,8 @@ int MPID_Put(const void *origin_addr, int origin_count, MPI_Datatype origin_data
 	     int target_rank, MPI_Aint target_disp, int target_count,
 	     MPI_Datatype target_datatype, MPIR_Win *win_ptr)
 {
-	return MPID_Put_generic(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
-				target_count, target_datatype, win_ptr, NULL);
+	return MPIDI_PSP_Put_generic(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
+				     target_count, target_datatype, win_ptr, NULL);
 }
 
 int MPID_Rput(const void *origin_addr, int origin_count,
@@ -274,6 +279,6 @@ int MPID_Rput(const void *origin_addr, int origin_count,
 	      int target_count, MPI_Datatype target_datatype, MPIR_Win *win_ptr,
 	      MPIR_Request **request)
 {
-	return MPID_Put_generic(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
-				target_count, target_datatype, win_ptr, request);
+	return MPIDI_PSP_Put_generic(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
+				     target_count, target_datatype, win_ptr, request);
 }
