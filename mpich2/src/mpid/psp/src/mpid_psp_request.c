@@ -110,8 +110,13 @@ void MPID_Request_create_hook(MPIR_Request *req)
 		case MPIR_REQUEST_KIND__RECV:
 		case MPIR_REQUEST_KIND__GREQUEST:
 		case MPIR_REQUEST_KIND__COLL:
-		case MPIR_REQUEST_KIND__MPROBE:
 			break;
+		case MPIR_REQUEST_KIND__MPROBE:
+		{
+			struct MPID_DEV_Request_mprobe *mreq = &req->dev.kind.mprobe;
+			mreq->mprobe_tag = NULL;
+			break;
+		}
 		case MPIR_REQUEST_KIND__UNDEFINED:
 		case MPIR_REQUEST_KIND__LAST:
 			assert(0);

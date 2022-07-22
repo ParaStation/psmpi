@@ -366,11 +366,13 @@ struct MPID_DEV_Request_recv
 	char		*addr;
 	int		count;
 	MPI_Datatype	datatype;
-
-	/* for mrecv only. Reference to the mprobed request. */
-	void *mprobe_tag;
 };
 
+struct MPID_DEV_Request_mprobe
+{
+	struct MPID_DEV_Request_recv recv;
+	void *mprobe_tag;
+};
 
 struct MPID_DEV_Request_send
 {
@@ -427,7 +429,7 @@ struct MPID_DEV_Request
 		struct MPID_DEV_Request_send  send;
 		struct MPID_DEV_Request_multi multi;
 		struct MPID_DEV_Request_persistent persistent; /* Persistent send/recv */
-		/* mprobe requests using also MPID_DEV_Request_recv recv */
+		struct MPID_DEV_Request_mprobe mprobe;
 	} kind;
 };
 
