@@ -201,11 +201,20 @@ void do_wait(int pg_rank, int src) {
 
 
 static
+void init_send_done(pscom_req_state_t state, void *priv)
+{
+	int *send_done = (int *)priv;
+	*send_done = 1;
+}
+
+
+static
 int do_connect(pscom_socket_t *socket, int pg_rank, int dest, char *dest_addr)
 {
 	pscom_connection_t *con;
 	pscom_err_t rc;
 	struct InitMsg init_msg;
+	int init_msg_sent = 0;
 
 	/* printf("Connecting (rank %d to %d) (%s)\n", pg_rank, dest, dest_addr); */
 	con = pscom_open_connection(socket);
@@ -219,8 +228,15 @@ int do_connect(pscom_socket_t *socket, int pg_rank, int dest, char *dest_addr)
 	}
 	grank2con_set(dest, con);
 
+	/* send the initialization message and wait for its completion */
 	init_msg.from_rank = pg_rank;
-	pscom_send(con, NULL, 0, &init_msg, sizeof(init_msg));
+	pscom_send_inplace(con, NULL, 0, &init_msg, sizeof(init_msg),
+			   init_send_done, &init_msg_sent);
+
+	while (!init_msg_sent) {
+		pscom_wait_any();
+	}
+
 	return 0;
 }
 
