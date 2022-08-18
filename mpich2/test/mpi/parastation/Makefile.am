@@ -72,6 +72,8 @@ noinst_PROGRAMS =               \
 	acc_vecsum              \
 	get_acc_pairtype        \
 	get_acc_shm_pairtype    \
+	bcast_root		\
+	ibcast_root		\
 	putfence1               \
 	getfence1               \
 	msa_split_type          \
