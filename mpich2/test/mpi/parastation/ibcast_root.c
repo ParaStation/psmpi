@@ -13,19 +13,24 @@
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
+#include "mpitest.h"
 
-/* This test rotates in a loop through the root rank for Ibcast() with 
- * a total of np operations and then waits in Waitall for their completion.
+/* This test iterates in a loop with increasing message sizes
+ * over all possible root ranks for Ibcast() operations and
+ * then waits in Waitall for their completion.
  */
 
 /* 12288 = MPIR_CVAR_BCAST_SHORT_MSG_SIZE */
-#define MAX_MSGLEN 2 * 12288 + 10
+#define MAX_MSGLEN 2 * 12288
 #define MAX_PROCS 256
 
 char buf[MAX_PROCS][MAX_MSGLEN];
 
+#define MIN(X,Y) ((X < Y) ? (X) : (Y))
+
 int main(int argc, char* argv[])
 {
+	unsigned errs = 0;
 	int i, j;
 	int msglen;
 	int icomm_rank;
@@ -34,49 +39,46 @@ int main(int argc, char* argv[])
 	MPI_Request reqs[MAX_PROCS];
 	MPI_Status stats[MAX_PROCS];
 
-	MPI_Init(&argc, &argv);
+	MTest_Init(&argc, &argv);
 
 	icomm = MPI_COMM_WORLD;
 
 	MPI_Comm_size(icomm, &icomm_size);
 	MPI_Comm_rank(icomm, &icomm_rank);
 
-	if(icomm_size > MAX_PROCS) {
+	if (icomm_size > MAX_PROCS) {
 		printf("This program can handle up to np = %d (vs. %d started) processes! Calling MPI_Abort()...\n", MAX_PROCS, icomm_size);
 		MPI_Abort(MPI_COMM_WORLD, -1);
 	}
 
+	/* ensure to test with messages before/after the MPIR_CVAR_BCAST_SHORT_MSG_SIZE threshold (= MAX_MSGLEN / 2), see above */
+	for (msglen = 1; msglen <= MAX_MSGLEN; msglen = MIN(MAX_MSGLEN, msglen * 2) + (msglen == MAX_MSGLEN)) {
 
-	for(msglen = 1; msglen < MAX_MSGLEN; msglen = msglen*2 + rand() % 10) {
 		for (i = 0; i < icomm_size; ++i) {
-			for(j = 0; j < msglen; j++) {
+			for (j = 0; j < msglen; j++) {
 				if (icomm_rank == i) {
 					buf[i][j] = icomm_rank;
 				} else {
 					buf[i][j] = -1;
 				}
-			}			
+			}
 			MPI_Ibcast(buf[i], msglen, MPI_BYTE, i, icomm, &reqs[i]);
 		}
 
 		MPI_Waitall(icomm_size, reqs, stats);
 
 		for (i = 0; i < icomm_size; ++i) {
-			for(j = 0; j < msglen; j++) {
-				if(buf[i][j] != i) {
-					printf("(%d) ERROR: got %d but expected %d at index %d\n", icomm_rank, buf[i][j], i, j);
-					MPI_Abort(MPI_COMM_WORLD, -1);
+			for (j = 0; j < msglen; j++) {
+				if (buf[i][j] != i) {
+					if (errs < 10) fprintf(stderr, "(%d) ERROR: got %d but expected %d at index %d\n", icomm_rank, buf[i][j], i, j);
+					errs++;
 				}
 				buf[i][j] = -1;
 			}
 		}
 	}
 
-	if(icomm_rank == 0) {
-		printf(" No errors\n");
-	}
-
-	MPI_Finalize();
+	MTest_Finalize(errs);
 
 	return 0;
 }
