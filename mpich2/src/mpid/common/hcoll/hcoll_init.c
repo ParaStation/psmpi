@@ -17,6 +17,7 @@ cvars:
       class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_LOCAL
+      alias       : PSP_HCOLL
       description : >-
         Enable hcoll collective support.
 
@@ -76,8 +77,13 @@ int hcoll_initialize(void)
     char *envar;
     mpi_errno = MPI_SUCCESS;
 
+#ifdef MPID_PSP_WITH_HCOLL
+    hcoll_enable = MPIR_CVAR_ENABLE_HCOLL &&
+        MPIR_ThreadInfo.thread_provided != MPI_THREAD_MULTIPLE;
+#else
     hcoll_enable = (MPIR_CVAR_ENABLE_HCOLL | MPIR_CVAR_CH3_ENABLE_HCOLL) &&
         MPIR_ThreadInfo.thread_provided != MPI_THREAD_MULTIPLE;
+#endif
     if (0 >= hcoll_enable) {
         goto fn_exit;
     }
