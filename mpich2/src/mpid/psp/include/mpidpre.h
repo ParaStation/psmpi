@@ -56,6 +56,7 @@
 char* MPIDI_PSP_get_psmpi_version_string(void);
 
 #ifdef HAVE_LIBHCOLL
+#define MPID_PSP_WITH_HCOLL
 #include "hcoll/api/hcoll_dte.h"
 typedef struct {
     hcoll_datatype_t hcoll_datatype;

@@ -578,9 +578,8 @@ int MPID_Init(int requested, int *provided)
 	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_aware_collops, "PSP_SMP_AWARE_COLLOPS");
 
 #ifdef HAVE_LIBHCOLL
-	pscom_env_get_uint(&MPIDI_Process.env.enable_hcoll, "PSP_HCOLL");
-	if(MPIDI_Process.env.enable_hcoll) {
-		MPIR_CVAR_ENABLE_HCOLL = 1;
+	MPIDI_Process.env.enable_hcoll = MPIR_CVAR_ENABLE_HCOLL;
+	if (MPIDI_Process.env.enable_hcoll) {
 		/* HCOLL demands for MPICH's SMP awareness: */
 		MPIDI_Process.env.enable_smp_awareness     = 1;
 		MPIDI_Process.env.enable_smp_aware_collops = 1;
@@ -593,10 +592,6 @@ int MPID_Init(int requested, int *provided)
 			MPIDI_Process.env.enable_smp_awareness     = 1;
 			MPIDI_Process.env.enable_smp_aware_collops = 1;
 		}
-	} else {
-		/* Avoid possible conflicts with externally set variables: */
-		unsetenv("MPIR_CVAR_ENABLE_HCOLL");
-		unsetenv("MPIR_CVAR_CH3_ENABLE_HCOLL");
 	}
 	/* (For now, the usage of HCOLL and MSA aware collops are mutually exclusive / FIX ME!) */
 #else
