@@ -580,13 +580,6 @@ int MPID_Init(int requested, int *provided)
 #ifdef HAVE_LIBHCOLL
 	pscom_env_get_uint(&MPIDI_Process.env.enable_hcoll, "PSP_HCOLL");
 	if(MPIDI_Process.env.enable_hcoll) {
-		if(1) { /* HCOLL with SHARP support? Just map the envars... */
-			int hcoll_enable_sharp = 0;
-			pscom_env_get_uint(&hcoll_enable_sharp, "PSP_HCOLL_ENABLE_SHARP");
-			if(hcoll_enable_sharp) {
-				setenv("HCOLL_ENABLE_SHARP", "1", 0);
-			}
-		}
 		MPIR_CVAR_ENABLE_HCOLL = 1;
 		/* HCOLL demands for MPICH's SMP awareness: */
 		MPIDI_Process.env.enable_smp_awareness     = 1;
