@@ -63,7 +63,7 @@ TESTSUMMARY := mpich2/test/mpi/summary
 TESTSETS    := testlist testlist.dtp testlist.cvar testlist.gpu ps-test-minimal
 ifdef TESTDIR
 TESTDIR_    := $(TESTDIR)_
-TESTFOLDERS := $(shell cd $(SRCDIR)/mpich2/test/mpi && find . -maxdepth 2 -mindepth 2 -type f -name "testlist*" | cut -d"/" -f2)
+TESTFOLDERS := $(shell cd $(SRCDIR)/mpich2/test/mpi && find . -maxdepth 2 -mindepth 2 -type f -name "testlist" -o -name "testlist.in" | cut -d"/" -f2)
 TESTDIRLIST := "TESTDIRS=$(TESTDIR)"
 else
 TESTDIRLIST :=
