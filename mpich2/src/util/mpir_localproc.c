@@ -168,7 +168,13 @@ int MPIR_Find_external(MPIR_Comm * comm, int *external_size_p, int *external_ran
     MPIR_CHKPMEM_MALLOC(internode_table, int *, sizeof(int) * comm->remote_size, mpi_errno,
                         "internode_table", MPL_MEM_COMM);
 
+#ifndef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
     int num_nodes = MPIR_Process.num_nodes;
+#else
+    int num_nodes;
+    mpi_errno = MPID_Get_max_badge(comm, &num_nodes);
+    MPIR_ERR_CHECK(mpi_errno);
+#endif
     MPIR_CHKLMEM_MALLOC(nodes, int *, sizeof(int) * num_nodes, mpi_errno, "nodes", MPL_MEM_COMM);
 
     /* nodes maps node_id to rank in external_ranks of leader for that node */
