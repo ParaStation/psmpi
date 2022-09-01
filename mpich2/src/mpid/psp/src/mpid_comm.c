@@ -306,89 +306,6 @@ int MPIDI_PSP_create_topo_level(int my_badge, int degree, int badges_are_global,
 	return MPI_SUCCESS;
 }
 
-int MPID_Get_badge(MPIR_Comm *comm, int rank, int *badge_p)
-{
-	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
-
-	if(tl == NULL) {
-		*badge_p = MPIDI_PSP_TOPO_BADGE__NULL;
-		return MPI_ERR_OTHER;
-	}
-
-	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
-		assert(tl->badge_table);
-		tl = tl->next;
-	}
-
-	*badge_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, tl, rank);
-
-	return MPI_SUCCESS;
-}
-
-int MPID_Get_max_badge(MPIR_Comm *comm, int *max_badge_p)
-{
-	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
-
-	if(tl == NULL) {
-		*max_badge_p = 0;
-		return MPI_ERR_OTHER;
-	}
-
-	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
-		assert(tl->badge_table);
-		tl = tl->next;
-	}
-
-	*max_badge_p =  MPIDI_PSP_get_max_badge_by_level(tl) + 1; // plus 1 for the "unknown badge" wildcard
-	assert(*max_badge_p == MPIDI_PSP_TOPO_BADGE__UNKNOWN(tl)); // and this wildcard is moreover the max value
-
-	return MPI_SUCCESS;
-}
-
-#endif /* MPID_PSP_TOPOLOGY_AWARE_COLLOPS */
-
-
-int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
-{
-	/* The node IDs are unique, but do not have to be ordered and contiguous,
-	   nor do they have to be limited in value by the number of nodes!
-	*/
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
-	/* In the case of topology awareness, we can use the badge table at the nodes level.
-	   If a badge at this level cannot be found, we fall back to the non-aware case.
-	 */
-	MPIDI_PSP_topo_level_t *level;
-	if (MPIDI_PSP_check_pg_for_level(MPIDI_PSP_TOPO_LEVEL__NODES, MPIDI_Process.my_pg, &level)) {
-		/* A badge table on node level exists. Get badge by comm rank: */
-		*id_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, level, rank);
-		assert(*id_p <= MPIDI_PSP_get_max_badge_by_level(level));
-		return MPI_SUCCESS;
-	}
-#endif
-	/* In the case without topology awareness, we cannot provide valid information
-	   unless the ID of the own rank is requested.
-	*/
-	uint64_t lpid = comm->vcr[rank]->lpid;
-	*id_p = MPIR_Process.node_map[lpid];
-
-	return MPI_SUCCESS;
-}
-
-#if 0
-/* It seems that this ADI3 function is no longer used in the higher MPICH layers and
-   has been replaced by a direct access to MPIR_Process.num_nodes.
-   Therefore, this function is commented out here so that it cannot be used by mistake.
-   In the MSA case, however, we must continue to pay attention that MPID_Get_max_badge()
-   (see above) is still used also in the higher layers.
-*/
-int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
-{
-	*max_id_p = MPIR_Process.num_nodes - 1;
-
-	return MPI_SUCCESS;
-}
-#endif
-
 int MPIDI_PSP_topo_init(void)
 {
 	MPIDI_Process.topo_levels = NULL;
@@ -427,6 +344,93 @@ int MPIDI_PSP_topo_init(void)
 
 	return MPI_SUCCESS;
 }
+
+int MPID_Get_badge(MPIR_Comm *comm, int rank, int *badge_p)
+{
+	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
+
+	if(tl == NULL) {
+		return MPID_Get_node_id(comm, rank, badge_p);
+	}
+
+	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
+		assert(tl->badge_table);
+		tl = tl->next;
+	}
+
+	*badge_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, tl, rank);
+
+	return MPI_SUCCESS;
+}
+
+int MPID_Get_max_badge(MPIR_Comm *comm, int *max_badge_p)
+{
+	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
+
+	if(tl == NULL) {
+		*max_badge_p = 0;
+		return MPI_ERR_OTHER;
+	}
+
+	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
+		assert(tl->badge_table);
+		tl = tl->next;
+	}
+
+	/* The value we need to return here to the MPICH layer is the maximum badge of the
+	 * level plus 1, where the "plus 1" corresponds to the "unknown badge" wildcard.
+	 * (See also the definition of MPIDI_PSP_TOPO_BADGE__UNKNOWN.)
+	 */
+	*max_badge_p =  MPIDI_PSP_get_max_badge_by_level(tl) + 1;
+
+	return MPI_SUCCESS;
+}
+
+#endif /* MPID_PSP_TOPOLOGY_AWARE_COLLOPS */
+
+
+int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
+{
+	uint64_t lpid = comm->vcr[rank]->lpid;
+
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+	/* In the case of enabled MSA awareness, we can use the badge table at the nodes level.
+	   If a badge at this level cannot be found, we fall back to MPICH's node_map table...
+	 */
+	MPIDI_PSP_topo_level_t *level;
+	if (MPIDI_PSP_check_pg_for_level(MPIDI_PSP_TOPO_LEVEL__NODES, MPIDI_Process.my_pg, &level)) {
+		/* A badge table on node level exists. Get badge by comm rank: */
+		*id_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, level, rank);
+		assert(*id_p <= MPIDI_PSP_get_max_badge_by_level(level));
+		return MPI_SUCCESS;
+	}
+#endif
+	if (comm->vcr[rank]->pg == MPIDI_Process.my_pg) {
+		// rank is within the own MPI_COMM_WORLD -> use map
+		*id_p = MPIR_Process.node_map[lpid];
+	} else {
+		// node ids of remote process groups are unknown...
+		*id_p = -1;
+	}
+
+	return MPI_SUCCESS;
+}
+
+#if 0
+/* It seems that this ADI3 function is no longer used in the higher MPICH layers and
+   has been replaced by a direct access to MPIR_Process.num_nodes.
+   Therefore, this function is commented out here so that it cannot be used by mistake.
+   In the MSA case, however, we must continue to pay attention that MPID_Get_max_badge()
+   (see above) is still used also in the higher layers.
+*/
+int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
+{
+	*max_id_p = MPIR_Process.num_nodes - 1;
+
+	return MPI_SUCCESS;
+}
+#endif
+
 
 int MPID_PSP_comm_init(int has_parent)
 {
