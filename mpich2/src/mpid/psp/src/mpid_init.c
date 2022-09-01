@@ -707,6 +707,7 @@ int MPID_Init(int requested, int *provided)
 	MPID_enable_receive_dispach(socket); /* ToDo: move MPID_enable_receive_dispach to bg thread */
 	MPIDI_Process.socket = socket;
 
+	MPIDI_PSP_topo_init();
 	MPID_PSP_shm_rma_init();
 
 	if (provided) {

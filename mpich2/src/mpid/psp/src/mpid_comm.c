@@ -143,9 +143,7 @@ static
 int MPIDI_PSP_create_badge_table(int degree, int my_badge, int my_pg_rank, int pg_size, int *max_badge, int **badge_table, int normalize)
 {
 	int mpi_errno = MPI_SUCCESS;
-	int rc;
 	int grank;
-	int remote_badge;
 
 	if(*badge_table != NULL) {
 
@@ -165,59 +163,16 @@ int MPIDI_PSP_create_badge_table(int degree, int my_badge, int my_pg_rank, int p
 
 	*badge_table = MPL_malloc(pg_size * sizeof(int), MPL_MEM_OBJECT);
 
-	if(!MPIDI_Process.env.enable_ondemand) {
+	/* The exchange of the badge information is done here via the key/value space (KVS) of PMI(x).
+	   This way, no (perhaps later unnecessary) pscom connections are already established at this point.
+	*/
+	MPIDI_PSP_publish_badge(my_pg_rank, degree, my_badge, normalize);
 
-		/* In the non-ondemand case, we use the traditional all-to-all scheme
-		   on pt2pt basis via pscom's send/recv functions for exchanging the
-		   badge information since all pscom connections have here already
-		   been established and can directly be used for the exchange.
-		*/
+	mpi_errno = MPIR_pmi_barrier();
+	MPIR_ERR_CHECK(mpi_errno);
 
-		if(my_pg_rank != 0) {
-
-			/* gather: */
-			pscom_connection_t *con = MPIDI_Process.grank2con[0];
-			assert(con);
-			pscom_send(con, NULL, 0, &my_badge, sizeof(int));
-
-			/* bcast: */
-			rc = pscom_recv_from(con, NULL, 0, *badge_table, pg_size*sizeof(int));
-			assert(rc == PSCOM_SUCCESS);
-
-		} else {
-
-			/* gather: */
-			(*badge_table)[0] = my_badge;
-			for(grank=1; grank < pg_size; grank++) {
-				pscom_connection_t *con = MPIDI_Process.grank2con[grank];
-				assert(con);
-				rc = pscom_recv_from(con, NULL, 0, &remote_badge, sizeof(int));
-				assert(rc == PSCOM_SUCCESS);
-				(*badge_table)[grank] = remote_badge;
-			}
-
-			/* bcast: */
-			for(grank=1; grank < pg_size; grank++) {
-				pscom_connection_t *con = MPIDI_Process.grank2con[grank];
-				pscom_send(con, NULL, 0, *badge_table, pg_size*sizeof(int));
-			}
-		}
-	} else {
-
-		/* In the ondemand case, however, we prefer not to exchange the badge
-		   information via pscom and use the key/value space (KVS) of PMI(x)
-		   for this instead. This way, no (perhaps later unnecessary) pscom
-		   connections are already established at this point.
-		*/
-
-		MPIDI_PSP_publish_badge(my_pg_rank, degree, my_badge, normalize);
-
-		mpi_errno = MPIR_pmi_barrier();
-		MPIR_ERR_CHECK(mpi_errno);
-
-		for(grank = 0; grank < pg_size; grank++) {
-			MPIDI_PSP_lookup_badge(grank, degree, &(*badge_table)[grank], normalize);
-		}
+	for(grank = 0; grank < pg_size; grank++) {
+		MPIDI_PSP_lookup_badge(grank, degree, &(*badge_table)[grank], normalize);
 	}
 
 	*max_badge = (*badge_table)[0];
@@ -434,29 +389,9 @@ int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 }
 #endif
 
-
-int MPID_PSP_comm_init(int has_parent)
+int MPIDI_PSP_topo_init(void)
 {
-	MPIR_Comm * comm;
-	int grank;
-	int pg_id_num;
-	char *parent_port;
-	MPIDI_PG_t * pg_ptr;
-	MPIDI_VCRT_t * vcrt;
-	int mpi_errno = MPI_SUCCESS;
-	int pg_rank = MPIDI_Process.my_pg_rank;
-	int pg_size = MPIDI_Process.my_pg_size;
-
-	char* pg_id_name = MPIDI_Process.pg_id_name;
-
-	MPIDI_PSP_topo_level_t *topo_levels = NULL;
-
-
-	/* Initialize and overload Comm_ops (currently merely used for comm_split_type) */
-	memset(&MPIR_PSP_Comm_fns, 0, sizeof(MPIR_PSP_Comm_fns));
-	MPIR_Comm_fns = &MPIR_PSP_Comm_fns;
-	MPIR_Comm_fns->split_type = MPID_PSP_split_type;
-
+	MPIDI_Process.topo_levels = NULL;
 
 	if(MPIDI_Process.env.enable_msa_awareness) {
 
@@ -467,7 +402,7 @@ int MPID_PSP_comm_init(int has_parent)
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 		if(MPIDI_Process.env.enable_msa_aware_collops) {
-			MPIDI_PSP_create_topo_level(MPIDI_Process.msa_module_id, MPIDI_PSP_TOPO_LEVEL__MODULES, 1/*badges_are_global*/, 0/*normalize*/, &topo_levels);
+			MPIDI_PSP_create_topo_level(MPIDI_Process.msa_module_id, MPIDI_PSP_TOPO_LEVEL__MODULES, 1/*badges_are_global*/, 0/*normalize*/, &MPIDI_Process.topo_levels);
 		}
 #endif
 	}
@@ -485,11 +420,23 @@ int MPID_PSP_comm_init(int has_parent)
 
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 		if(MPIDI_Process.env.enable_smp_aware_collops) {
-			MPIDI_PSP_create_topo_level(MPIDI_Process.smp_node_id, MPIDI_PSP_TOPO_LEVEL__NODES, 0/*badges_are_global*/, 1/*normalize*/, &topo_levels);
+			MPIDI_PSP_create_topo_level(MPIDI_Process.smp_node_id, MPIDI_PSP_TOPO_LEVEL__NODES, 0/*badges_are_global*/, 1/*normalize*/, &MPIDI_Process.topo_levels);
 		}
 #endif
 	}
 
+	return MPI_SUCCESS;
+}
+
+int MPID_PSP_comm_init(int has_parent)
+{
+	char *parent_port;
+	int mpi_errno = MPI_SUCCESS;
+
+	/* Initialize and overload Comm_ops (currently merely used for comm_split_type) */
+	memset(&MPIR_PSP_Comm_fns, 0, sizeof(MPIR_PSP_Comm_fns));
+	MPIR_Comm_fns = &MPIR_PSP_Comm_fns;
+	MPIR_Comm_fns->split_type = MPID_PSP_split_type;
 
 	if (has_parent) {
 		MPIR_Comm * comm_parent;
@@ -607,8 +554,6 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 	int pg_size = MPIDI_Process.my_pg_size;
 	char* pg_id_name = MPIDI_Process.pg_id_name;
 	MPIDI_PG_t * pg_ptr;
-
-	MPIDI_PSP_topo_level_t *topo_levels = NULL;
 	MPIDI_VCRT_t * vcrt;
 
 	MPIR_FUNC_ENTER;
@@ -631,7 +576,7 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 
 		/* Create my home PG for MPI_COMM_WORLD: */
 		MPIDI_PG_Convert_id(pg_id_name, &pg_id_num);
-		MPIDI_PG_Create(pg_size, pg_id_num, topo_levels, &pg_ptr);
+		MPIDI_PG_Create(pg_size, pg_id_num, MPIDI_Process.topo_levels, &pg_ptr);
 		assert(pg_ptr == MPIDI_Process.my_pg);
 
 		for (grank = 0; grank < pg_size; grank++) {
@@ -691,7 +636,6 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 #ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (MPIDI_Process.env.enable_msa_aware_collops > 1)) {
 
-		int mpi_errno;
 		MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
 
 		while(tl && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {

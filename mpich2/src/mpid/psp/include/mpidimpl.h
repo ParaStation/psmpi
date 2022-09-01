@@ -95,6 +95,8 @@ void MPID_PSP_comm_set_vcrt(MPIR_Comm *comm, MPIDI_VCRT_t *vcrt);
 void MPID_PSP_comm_set_local_vcrt(MPIR_Comm *comm, MPIDI_VCRT_t *vcrt);
 void MPID_PSP_comm_create_mapper(MPIR_Comm * comm);
 
+int MPIDI_PSP_topo_init(void);
+
 int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t *level, MPIDI_PG_t ** pg_ptr);
 MPIDI_PG_t* MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr);
 void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num);
@@ -112,7 +114,9 @@ typedef struct MPIDI_Process
 	char *pg_id_name;
 	uint64_t next_lpid;
 	MPIDI_PG_t * my_pg;
-
+#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+	MPIDI_PSP_topo_level_t *topo_levels;
+#endif
 	int shm_attr_key;
 
 	int smp_node_id;
