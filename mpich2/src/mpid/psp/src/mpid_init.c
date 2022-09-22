@@ -245,6 +245,11 @@ static
 int i_version_set(int pg_rank, const char *ver)
 {
 	int mpi_errno = MPI_SUCCESS;
+
+	/* There is no need to check for version in the singleton case and we moreover must
+	   not use MPIR_pmi_kvs_put() in this case either since there is no process manager. */
+	if (MPIDI_Process.singleton_but_no_pm) goto fn_exit;
+
 	if (pg_rank == 0) {
 		mpi_errno = MPIR_pmi_kvs_put("i_version", ver);
 		MPIR_ERR_CHECK(mpi_errno);
@@ -262,6 +267,11 @@ static
 int i_version_check(int pg_rank, const char *ver)
 {
         int mpi_errno = MPI_SUCCESS;
+
+	/* There is no need to check for version in the singleton case and we moreover must
+	   not use MPIR_pmi_kvs_get() in this case either since there is no process manager. */
+	if (MPIDI_Process.singleton_but_no_pm) goto fn_exit;
+
 	if (pg_rank != 0) {
 		char val[100] = "unknown";
 		mpi_errno = MPIR_pmi_kvs_get(0, "i_version", val, sizeof(val));
