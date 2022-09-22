@@ -320,9 +320,9 @@ int MPIDI_PSP_topo_init(void)
 
 	if(MPIDI_Process.env.enable_msa_awareness) {
 
-		if(MPIDI_Process.msa_module_id < 0) {
-			/* If no msa_module_id is set explicitly, use the appnum for this: */
-			MPIDI_Process.msa_module_id = MPIR_Process.attrs.appnum;
+		if (MPIDI_Process.msa_module_id < 0) {
+			/* No module ID found: Let all these processes fall into module 0... */
+			MPIDI_Process.msa_module_id = 0;
 		}
 
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
