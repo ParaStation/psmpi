@@ -115,12 +115,10 @@ char* MPIDI_PSP_get_psmpi_version_string(void)
 				"+allin(%s)"
 #endif
 #ifdef MPIDI_PSP_WITH_MSA_AWARENESS
-				"+msa-awareness"
-#ifdef HAVE_LIBHCOLL
-				"(hcoll)"
-#else
-				"(msa)"
+				"+msa"
 #endif
+#ifdef HAVE_LIBHCOLL
+				"+hcoll"
 #endif
 		                "";
 
