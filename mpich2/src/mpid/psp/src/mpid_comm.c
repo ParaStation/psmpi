@@ -163,16 +163,24 @@ int MPIDI_PSP_create_badge_table(int degree, int my_badge, int my_pg_rank, int p
 
 	*badge_table = MPL_malloc(pg_size * sizeof(int), MPL_MEM_OBJECT);
 
-	/* The exchange of the badge information is done here via the key/value space (KVS) of PMI(x).
-	   This way, no (perhaps later unnecessary) pscom connections are already established at this point.
-	*/
-	MPIDI_PSP_publish_badge(my_pg_rank, degree, my_badge, normalize);
+	if (MPIDI_Process.singleton_but_no_pm) {
 
-	mpi_errno = MPIR_pmi_barrier();
-	MPIR_ERR_CHECK(mpi_errno);
+		/* Use shortcut w/o badge exchange in the MPI singleton case: */
+		MPIR_Assert(pg_size == 1);
+		(*badge_table)[0] = my_badge;
 
-	for(grank = 0; grank < pg_size; grank++) {
-		MPIDI_PSP_lookup_badge(grank, degree, &(*badge_table)[grank], normalize);
+	} else {
+
+		/* The exchange of the badge information is done here via the key/value space (KVS) of PMI(x).
+		   This way, no (perhaps later unnecessary) pscom connections are already established at this point. */
+		MPIDI_PSP_publish_badge(my_pg_rank, degree, my_badge, normalize);
+
+		mpi_errno = MPIR_pmi_barrier();
+		MPIR_ERR_CHECK(mpi_errno);
+
+		for (grank = 0; grank < pg_size; grank++) {
+			MPIDI_PSP_lookup_badge(grank, degree, &(*badge_table)[grank], normalize);
+		}
 	}
 
 	*max_badge = (*badge_table)[0];
