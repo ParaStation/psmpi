@@ -412,7 +412,11 @@ int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 	if (MPIDI_PSP_check_pg_for_level(MPIDI_PSP_TOPO_LEVEL__NODES, MPIDI_Process.my_pg, &level)) {
 		/* A badge table on node level exists. Get badge by comm rank: */
 		*id_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, level, rank);
-		assert(*id_p <= MPIDI_PSP_get_max_badge_by_level(level));
+		/* The badge we get here is less than or equal to the maximum node-level badge
+		 * plus 1, where the latter corresponds to the "unknown badge" wildcard.
+		 * (See also the definition of MPIDI_PSP_TOPO_BADGE__UNKNOWN.)
+		 */
+		MPIR_Assert(*id_p <= MPIDI_PSP_get_max_badge_by_level(level) + 1);
 		return MPI_SUCCESS;
 	}
 #endif
