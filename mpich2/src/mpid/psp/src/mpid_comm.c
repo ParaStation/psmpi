@@ -299,6 +299,9 @@ int MPIDI_PSP_create_topo_level(int my_badge, int degree, int badges_are_global,
 	int pg_rank = MPIDI_Process.my_pg_rank;
 	int pg_size = MPIDI_Process.my_pg_size;
 
+	// Normalized badges are not unique and thus cannot be global!
+	MPIR_Assert(!normalize || (normalize && !badges_are_global));
+
 	MPIDI_PSP_create_badge_table(degree, my_badge, pg_rank, pg_size, &module_max_badge, &module_badge_table, normalize);
 	assert(module_badge_table);
 
