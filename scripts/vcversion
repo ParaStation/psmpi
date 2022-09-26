@@ -143,7 +143,7 @@ case "$arg_vc" in
 		# Append the branchname, if not exactly on a tag and branch != master
 		branch="$(git symbolic-ref HEAD)"
 		branch="${branch/*\/}"
-		if [ "x${branch}" == "xmaster" ]; then
+		if [ "x${branch}" == "xmaster" ] || [ "x${branch}" == "x" ]; then
 			branch=""
 		else
 			branch="-${branch}"
