@@ -151,8 +151,12 @@ static int typerep_do_pack(const void *inbuf, MPI_Aint incount, MPI_Datatype dat
     }
 
     MPL_pointer_attr_t inattr, outattr;
-    MPIR_GPU_query_pointer_attr(inbuf_ptr, &inattr);
-    MPIR_GPU_query_pointer_attr(outbuf, &outattr);
+
+    /* only query the attributes if we have contiguous memory */
+    if (is_contig) {
+        MPIR_GPU_query_pointer_attr(inbuf_ptr, &inattr);
+        MPIR_GPU_query_pointer_attr(outbuf, &outattr);
+    }
 
     if (is_contig && element_size > 0 && IS_HOST(inattr) && IS_HOST(outattr)) {
         MPI_Aint real_bytes = MPL_MIN(total_size - inoffset, max_pack_bytes);
@@ -164,7 +168,7 @@ static int typerep_do_pack(const void *inbuf, MPI_Aint incount, MPI_Datatype dat
     }
 
     yaksa_type_t type = MPII_Typerep_get_yaksa_type(datatype);
-    yaksa_info_t info = MPII_yaksa_get_info(&inattr, &outattr);
+    yaksa_info_t info = (is_contig)? MPII_yaksa_get_info(&inattr, &outattr) : NULL;
 
     uintptr_t real_pack_bytes;
     if (typerep_req) {
@@ -177,8 +181,10 @@ static int typerep_do_pack(const void *inbuf, MPI_Aint incount, MPI_Datatype dat
     }
     MPIR_ERR_CHKANDJUMP(rc, mpi_errno, MPI_ERR_INTERN, "**yaksa");
 
-    rc = MPII_yaksa_free_info(info);
-    MPIR_ERR_CHKANDJUMP(rc, mpi_errno, MPI_ERR_INTERN, "**yaksa");
+    if (info) {
+        rc = MPII_yaksa_free_info(info);
+        MPIR_ERR_CHKANDJUMP(rc, mpi_errno, MPI_ERR_INTERN, "**yaksa");
+    }
 
     *actual_pack_bytes = (MPI_Aint) real_pack_bytes;
 
@@ -290,8 +296,12 @@ static int typerep_do_unpack(const void *inbuf, MPI_Aint insize, void *outbuf, M
     }
 
     MPL_pointer_attr_t inattr, outattr;
-    MPIR_GPU_query_pointer_attr(inbuf, &inattr);
-    MPIR_GPU_query_pointer_attr(outbuf_ptr, &outattr);
+
+    /* only query the attributes if we have contiguous memory */
+    if (is_contig) {
+        MPIR_GPU_query_pointer_attr(inbuf, &inattr);
+        MPIR_GPU_query_pointer_attr(outbuf_ptr, &outattr);
+    }
 
     if (is_contig && IS_HOST(inattr) && IS_HOST(outattr)) {
         *actual_unpack_bytes = MPL_MIN(total_size - outoffset, insize);
@@ -302,7 +312,7 @@ static int typerep_do_unpack(const void *inbuf, MPI_Aint insize, void *outbuf, M
     }
 
     yaksa_type_t type = MPII_Typerep_get_yaksa_type(datatype);
-    yaksa_info_t info = MPII_yaksa_get_info(&inattr, &outattr);
+    yaksa_info_t info = (is_contig) ? MPII_yaksa_get_info(&inattr, &outattr) : NULL;
 
     uintptr_t real_insize = MPL_MIN(total_size - outoffset, insize);
 
@@ -317,8 +327,10 @@ static int typerep_do_unpack(const void *inbuf, MPI_Aint insize, void *outbuf, M
     }
     MPIR_ERR_CHKANDJUMP(rc, mpi_errno, MPI_ERR_INTERN, "**yaksa");
 
-    rc = MPII_yaksa_free_info(info);
-    MPIR_ERR_CHKANDJUMP(rc, mpi_errno, MPI_ERR_INTERN, "**yaksa");
+    if (info) {
+        rc = MPII_yaksa_free_info(info);
+        MPIR_ERR_CHKANDJUMP(rc, mpi_errno, MPI_ERR_INTERN, "**yaksa");
+    }
 
     *actual_unpack_bytes = (MPI_Aint) real_unpack_bytes;
 
