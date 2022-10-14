@@ -10,12 +10,13 @@
 #include "yaksuri.h"
 
 static int ipup(const void *inbuf, void *outbuf, uintptr_t count, yaksi_type_s * type,
-                yaksi_info_s * info, yaksa_op_t op, yaksi_request_s * request)
+                yaksi_info_s * info, yaksa_op_t op, yaksi_request_s * request,
+                bool always_query_ptr_attr)
 {
     int rc = YAKSA_SUCCESS;
     yaksuri_request_s *reqpriv = (yaksuri_request_s *) request->backend.priv;
 
-    if (reqpriv->gpudriver_id != YAKSURI_GPUDRIVER_ID__UNSET)
+    if (!always_query_ptr_attr && reqpriv->gpudriver_id != YAKSURI_GPUDRIVER_ID__UNSET)
         goto query_done;
 
     yaksuri_info_s *infopriv;
@@ -27,7 +28,7 @@ static int ipup(const void *inbuf, void *outbuf, uintptr_t count, yaksi_type_s *
     }
 
     yaksuri_gpudriver_id_e id;
-    id = reqpriv->gpudriver_id;
+    id = always_query_ptr_attr ? YAKSURI_GPUDRIVER_ID__UNSET : reqpriv->gpudriver_id;
     if (id == YAKSURI_GPUDRIVER_ID__UNSET) {
         for (id = YAKSURI_GPUDRIVER_ID__UNSET; id < YAKSURI_GPUDRIVER_ID__LAST; id++) {
             if (id == YAKSURI_GPUDRIVER_ID__UNSET || yaksuri_global.gpudriver[id].hooks == NULL)
@@ -96,7 +97,7 @@ int yaksur_ipack(const void *inbuf, void *outbuf, uintptr_t count, yaksi_type_s 
     yaksuri_request_s *reqpriv = (yaksuri_request_s *) request->backend.priv;
 
     reqpriv->optype = YAKSURI_OPTYPE__PACK;
-    rc = ipup(inbuf, outbuf, count, type, info, op, request);
+    rc = ipup(inbuf, outbuf, count, type, info, op, request, request->always_query_ptr_attr);
     YAKSU_ERR_CHECK(rc, fn_fail);
 
   fn_exit:
@@ -112,7 +113,7 @@ int yaksur_iunpack(const void *inbuf, void *outbuf, uintptr_t count, yaksi_type_
     yaksuri_request_s *reqpriv = (yaksuri_request_s *) request->backend.priv;
 
     reqpriv->optype = YAKSURI_OPTYPE__UNPACK;
-    rc = ipup(inbuf, outbuf, count, type, info, op, request);
+    rc = ipup(inbuf, outbuf, count, type, info, op, request, request->always_query_ptr_attr);
     YAKSU_ERR_CHECK(rc, fn_fail);
 
   fn_exit:

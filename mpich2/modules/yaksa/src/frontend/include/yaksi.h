@@ -166,6 +166,7 @@ typedef struct yaksi_request_s {
      * ipack/iunpack are nonblocking; pack/unpack are blocking;
      * pack_stream/unpack_stream sets stream */
     int kind;
+    bool always_query_ptr_attr;
     void *stream;               /* for CUDA, it's pointer to cudaStream_t */
     /* give some private space for the backend to store content */
     yaksur_request_s backend;

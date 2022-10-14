@@ -82,6 +82,8 @@ typedef struct yaksuri_subreq {
         } multiple;
     } u;
 
+    yaksuri_gpudriver_id_e gpudriver_id;
+
     struct yaksuri_subreq *next;
     struct yaksuri_subreq *prev;
 } yaksuri_subreq_s;

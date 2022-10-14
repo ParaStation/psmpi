@@ -2946,6 +2946,9 @@ int yaksuri_progress_enqueue(const void *inbuf, void *outbuf, uintptr_t count, y
         goto fn_exit;
     }
 
+    /* id (i.e., reqpriv->gpudriver_id) may differ between differen calls to yaksuri_progress_enqueue() */
+    subreq->gpudriver_id = id;
+
     pthread_mutex_lock(&progress_mutex);
     DL_APPEND(reqpriv->subreqs, subreq);
 
@@ -2989,11 +2992,11 @@ int yaksuri_progress_poke(void)
     /**********************************************************************/
     yaksuri_request_s *reqpriv, *tmp;
     HASH_ITER(hh, pending_reqs, reqpriv, tmp) {
-        id = reqpriv->gpudriver_id;
         assert(reqpriv->subreqs);
 
         yaksuri_subreq_s *subreq, *tmp2;
         DL_FOREACH_SAFE(reqpriv->subreqs, subreq, tmp2) {
+            id = subreq->gpudriver_id;
             if (subreq->kind == YAKSURI_SUBREQ_KIND__SINGLE_CHUNK) {
                 int completed;
                 rc = event_query(id, subreq->u.single.event, &completed);
@@ -3029,11 +3032,11 @@ int yaksuri_progress_poke(void)
     /* Step 2: Issue new operations */
     /**********************************************************************/
     HASH_ITER(hh, pending_reqs, reqpriv, tmp) {
-        id = reqpriv->gpudriver_id;
         assert(reqpriv->subreqs);
 
         yaksuri_subreq_s *subreq, *tmp2;
         DL_FOREACH_SAFE(reqpriv->subreqs, subreq, tmp2) {
+            id = subreq->gpudriver_id;
             if (subreq->kind == YAKSURI_SUBREQ_KIND__SINGLE_CHUNK)
                 continue;
 

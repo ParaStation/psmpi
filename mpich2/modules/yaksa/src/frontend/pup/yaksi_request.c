@@ -22,6 +22,7 @@ int yaksi_request_create(yaksi_request_s ** request)
 
     yaksu_atomic_store(&req->cc, 0);
     req->kind = YAKSI_REQUEST_KIND__NONBLOCKING;
+    req->always_query_ptr_attr = false;
 
     rc = yaksur_request_create_hook(req);
     YAKSU_ERR_CHECK(rc, fn_fail);

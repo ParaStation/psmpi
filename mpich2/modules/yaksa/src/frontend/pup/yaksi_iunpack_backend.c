@@ -41,6 +41,11 @@ static inline int unpack_backend(const void *inbuf, void *outbuf, uintptr_t coun
 {
     int rc = YAKSA_SUCCESS;
 
+    /* always query the ptr attributes for datatypes with absolue addresses */
+    if (!outbuf) {
+        request->always_query_ptr_attr = true;
+    }
+
     switch (type->kind) {
         case YAKSI_TYPE_KIND__BUILTIN:
             switch (type->u.builtin.handle) {
@@ -212,7 +217,8 @@ int yaksi_iunpack_backend(const void *inbuf, void *outbuf, uintptr_t count, yaks
 {
     int rc = YAKSA_SUCCESS;
 
-    rc = yaksur_iunpack(inbuf, outbuf, count, type, info, op, request);
+    rc = (outbuf) ? yaksur_iunpack(inbuf, outbuf, count, type, info, op,
+                                   request) : YAKSA_ERR__NOT_SUPPORTED;
     if (rc == YAKSA_ERR__NOT_SUPPORTED) {
         rc = unpack_backend(inbuf, outbuf, count, type, info, op, request);
         YAKSU_ERR_CHECK(rc, fn_fail);
