@@ -20,6 +20,67 @@ int _getenv_i(const char *env_name, int _default)
 	return val ? atoi(val) : _default;
 }
 
+int MPIDI_PSP_print_psp_stats(void *param ATTRIBUTE((unused)))
+{
+#ifdef MPID_PSP_HISTOGRAM
+	if (MPIDI_Process.env.enable_histogram && MPIDI_Process.stats.histo.points > 0) {
+
+		int idx;
+		MPIR_Errflag_t errflag = MPIR_ERR_NONE;
+
+		if (MPIR_Process.comm_world->rank != 0) {
+			MPIR_Reduce_impl(MPIDI_Process.stats.histo.count, NULL, MPIDI_Process.stats.histo.points, MPI_LONG_LONG_INT, MPI_SUM, 0, MPIR_Process.comm_world, &errflag);
+		} else {
+			MPIR_Reduce_impl(MPI_IN_PLACE, MPIDI_Process.stats.histo.count, MPIDI_Process.stats.histo.points, MPI_LONG_LONG_INT, MPI_SUM, 0, MPIR_Process.comm_world, &errflag);
+
+			/* determine digits for formated printing */
+			int max_limit = MPIDI_Process.stats.histo.limit[MPIDI_Process.stats.histo.points-2];
+			int max_digits;
+
+			for (max_digits = 0; max_limit > 0; ++max_digits) {
+				max_limit /= 10;
+			}
+
+			/* print the histogram */
+			if (!MPIDI_Process.stats.histo.con_type_str)
+				printf(" %*s  freq\n", max_digits, "bin");
+			else
+				printf(" %*s  freq (%s)\n", max_digits, "bin", MPIDI_Process.stats.histo.con_type_str);
+			for (idx=0; idx < MPIDI_Process.stats.histo.points; idx++) {
+				printf("%c%*d  %lld\n", (idx < MPIDI_Process.stats.histo.points-1) ? ' ' : '>', max_digits, MPIDI_Process.stats.histo.limit[idx-(idx == MPIDI_Process.stats.histo.points-1)], MPIDI_Process.stats.histo.count[idx]);
+			}
+		}
+	}
+#endif
+
+#ifdef MPID_PSP_HCOLL_STATS
+	if (MPIDI_Process.env.enable_hcoll_stats) {
+
+		int op;
+		int max_limit;
+		int max_digits[mpidi_psp_stats_collops_enum__MAX];
+		MPIR_Errflag_t errflag = MPIR_ERR_NONE;
+
+		for (op = 0; op < mpidi_psp_stats_collops_enum__MAX; op ++) {
+			max_limit = MPIDI_Process.stats.hcoll.counter[op];
+			for (max_digits[op] = 0; max_limit > 0; ++max_digits[op]) {
+				max_limit /= 10;
+			}
+		}
+		MPIR_Allreduce_impl(MPI_IN_PLACE, max_digits, mpidi_psp_stats_collops_enum__MAX, MPI_INT, MPI_MAX, MPIR_Process.comm_world, &errflag);
+		printf("(r%07d) hcoll stats | Barrier: %*lld | Bcast: %*lld | Reduce: %*lld | Allreduce: %*lld | Allgather: %*lld | Alltoall: %*lld | Alltoallv: %*lld\n",
+		       MPIDI_Process.my_pg_rank,
+		       max_digits[mpidi_psp_stats_collops_enum__barrier],   MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__barrier],
+		       max_digits[mpidi_psp_stats_collops_enum__bcast],     MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__bcast],
+		       max_digits[mpidi_psp_stats_collops_enum__reduce],    MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__reduce],
+		       max_digits[mpidi_psp_stats_collops_enum__allreduce], MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__allreduce],
+		       max_digits[mpidi_psp_stats_collops_enum__allgather], MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__allgather],
+		       max_digits[mpidi_psp_stats_collops_enum__alltoall],  MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__alltoall],
+		       max_digits[mpidi_psp_stats_collops_enum__alltoallv], MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__alltoallv]);
+	}
+#endif
+	return 0;
+}
 
 int MPID_Finalize(void)
 {
@@ -87,64 +148,6 @@ int MPID_Finalize(void)
 		MPIR_pmi_barrier();
 
 	}
-
-#ifdef MPID_PSP_HISTOGRAM
-	if (MPIDI_Process.env.enable_histogram && MPIDI_Process.stats.histo.points > 0) {
-
-		int idx;
-		MPIR_Errflag_t errflag = MPIR_ERR_NONE;
-
-		if (MPIR_Process.comm_world->rank != 0) {
-			MPIR_Reduce_impl(MPIDI_Process.stats.histo.count, NULL, MPIDI_Process.stats.histo.points, MPI_LONG_LONG_INT, MPI_SUM, 0, MPIR_Process.comm_world, &errflag);
-		} else {
-			MPIR_Reduce_impl(MPI_IN_PLACE, MPIDI_Process.stats.histo.count, MPIDI_Process.stats.histo.points, MPI_LONG_LONG_INT, MPI_SUM, 0, MPIR_Process.comm_world, &errflag);
-
-			/* determine digits for formated printing */
-			int max_limit = MPIDI_Process.stats.histo.limit[MPIDI_Process.stats.histo.points-2];
-			int max_digits;
-
-			for (max_digits = 0; max_limit > 0; ++max_digits) {
-				max_limit /= 10;
-			}
-
-			/* print the histogram */
-			if (!MPIDI_Process.stats.histo.con_type_str)
-				printf(" %*s  freq\n", max_digits, "bin");
-			else
-				printf(" %*s  freq (%s)\n", max_digits, "bin", MPIDI_Process.stats.histo.con_type_str);
-			for (idx=0; idx < MPIDI_Process.stats.histo.points; idx++) {
-				printf("%c%*d  %lld\n", (idx < MPIDI_Process.stats.histo.points-1) ? ' ' : '>', max_digits, MPIDI_Process.stats.histo.limit[idx-(idx == MPIDI_Process.stats.histo.points-1)], MPIDI_Process.stats.histo.count[idx]);
-			}
-		}
-	}
-#endif
-
-#ifdef MPID_PSP_HCOLL_STATS
-	if (MPIDI_Process.env.enable_hcoll_stats) {
-
-		int op;
-		int max_limit;
-		int max_digits[mpidi_psp_stats_collops_enum__MAX];
-		MPIR_Errflag_t errflag = MPIR_ERR_NONE;
-
-		for (op = 0; op < mpidi_psp_stats_collops_enum__MAX; op ++) {
-			max_limit = MPIDI_Process.stats.hcoll.counter[op];
-			for (max_digits[op] = 0; max_limit > 0; ++max_digits[op]) {
-				max_limit /= 10;
-			}
-		}
-		MPIR_Allreduce_impl(MPI_IN_PLACE, max_digits, mpidi_psp_stats_collops_enum__MAX, MPI_INT, MPI_MAX, MPIR_Process.comm_world, &errflag);
-		printf("(r%07d) hcoll stats | Barrier: %*lld | Bcast: %*lld | Reduce: %*lld | Allreduce: %*lld | Allgather: %*lld | Alltoall: %*lld | Alltoallv: %*lld\n",
-		       MPIDI_Process.my_pg_rank,
-		       max_digits[mpidi_psp_stats_collops_enum__barrier],   MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__barrier],
-		       max_digits[mpidi_psp_stats_collops_enum__bcast],     MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__bcast],
-		       max_digits[mpidi_psp_stats_collops_enum__reduce],    MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__reduce],
-		       max_digits[mpidi_psp_stats_collops_enum__allreduce], MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__allreduce],
-		       max_digits[mpidi_psp_stats_collops_enum__allgather], MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__allgather],
-		       max_digits[mpidi_psp_stats_collops_enum__alltoall],  MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__alltoall],
-		       max_digits[mpidi_psp_stats_collops_enum__alltoallv], MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__alltoallv]);
-	}
-#endif
 
 /*	fprintf(stderr, "%d cleanup queue\n", MPIDI_Process.my_pg_rank); */
 //	MPID_req_queue_cleanup();

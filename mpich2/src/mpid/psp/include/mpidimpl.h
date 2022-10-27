@@ -188,6 +188,7 @@ int MPIDI_PSP_topo_init(void);
 int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level);
 #endif
 
+int MPIDI_PSP_print_psp_stats(void *param);
 
 int MPIDI_PSP_Isend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		    int dest, int tag, MPIR_Comm *comm, int context_offset,
