@@ -34,7 +34,7 @@ int hcoll_Bcast(void *buffer, MPI_Aint count, MPI_Datatype datatype, int root,
     dte_data_representation_t dtype;
     int rc = -1;
 
-    if (!hcoll_enable_bcast || !comm_ptr->hcoll_priv.is_hcoll_init)
+    if (!hcoll_enable_bcast || !comm_ptr->hcoll_priv.is_hcoll_init || (count > INT_MAX))
         return rc;
 
     MPL_DBG_MSG(MPIR_DBG_HCOLL, VERBOSE, "RUNNING HCOLL BCAST.");
@@ -62,7 +62,7 @@ int hcoll_Reduce(const void *sendbuf, void *recvbuf, MPI_Aint count, MPI_Datatyp
     hcoll_dte_op_t *Op;
     int rc = -1;
 
-    if (!hcoll_enable_reduce || !comm_ptr->hcoll_priv.is_hcoll_init)
+    if (!hcoll_enable_reduce || !comm_ptr->hcoll_priv.is_hcoll_init || (count > INT_MAX))
         return rc;
 
     MPL_DBG_MSG(MPIR_DBG_HCOLL, VERBOSE, "RUNNING HCOLL REDUCE.");
@@ -93,7 +93,7 @@ int hcoll_Allreduce(const void *sendbuf, void *recvbuf, MPI_Aint count, MPI_Data
     hcoll_dte_op_t *Op;
     int rc = -1;
 
-    if (!hcoll_enable_allreduce || !comm_ptr->hcoll_priv.is_hcoll_init)
+    if (!hcoll_enable_allreduce || !comm_ptr->hcoll_priv.is_hcoll_init || (count > INT_MAX))
         return rc;
 
     MPL_DBG_MSG(MPIR_DBG_HCOLL, VERBOSE, "RUNNING HCOL ALLREDUCE.");
@@ -115,15 +115,16 @@ int hcoll_Allreduce(const void *sendbuf, void *recvbuf, MPI_Aint count, MPI_Data
     return rc;
 }
 
-int hcoll_Allgather(const void *sbuf, int scount, MPI_Datatype sdtype,
-                    void *rbuf, int rcount, MPI_Datatype rdtype, MPIR_Comm * comm_ptr,
+int hcoll_Allgather(const void *sbuf, MPI_Aint scount, MPI_Datatype sdtype,
+                    void *rbuf, MPI_Aint rcount, MPI_Datatype rdtype, MPIR_Comm * comm_ptr,
                     MPIR_Errflag_t * err)
 {
     dte_data_representation_t stype;
     dte_data_representation_t rtype;
     int rc = -1;
 
-    if (!hcoll_enable_allgather || !comm_ptr->hcoll_priv.is_hcoll_init)
+    if (!hcoll_enable_allgather || !comm_ptr->hcoll_priv.is_hcoll_init || (scount > INT_MAX) ||
+        (rcount > INT_MAX))
         return rc;
 
     MPL_DBG_MSG(MPIR_DBG_HCOLL, VERBOSE, "RUNNING HCOLL ALLGATHER.");
@@ -148,15 +149,16 @@ int hcoll_Allgather(const void *sbuf, int scount, MPI_Datatype sdtype,
     return rc;
 }
 
-int hcoll_Alltoall(const void *sbuf, int scount, MPI_Datatype sdtype,
-                   void *rbuf, int rcount, MPI_Datatype rdtype, MPIR_Comm * comm_ptr,
+int hcoll_Alltoall(const void *sbuf, MPI_Aint scount, MPI_Datatype sdtype,
+                   void *rbuf, MPI_Aint rcount, MPI_Datatype rdtype, MPIR_Comm * comm_ptr,
                    MPIR_Errflag_t * err)
 {
     dte_data_representation_t stype;
     dte_data_representation_t rtype;
     int rc = -1;
 
-    if (!hcoll_enable_alltoall || !comm_ptr->hcoll_priv.is_hcoll_init)
+    if (!hcoll_enable_alltoall || !comm_ptr->hcoll_priv.is_hcoll_init || (scount > INT_MAX) ||
+        (rcount > INT_MAX))
         return rc;
 
     MPL_DBG_MSG(MPIR_DBG_HCOLL, VERBOSE, "RUNNING HCOLL ALLGATHER.");
@@ -189,9 +191,24 @@ int hcoll_Alltoallv(const void *sbuf, const MPI_Aint * scounts, const MPI_Aint *
     dte_data_representation_t stype;
     dte_data_representation_t rtype;
     int rc = -1;
+    int fallback = 0;
+    int n =
+        (comm_ptr->comm_kind ==
+         MPIR_COMM_KIND__INTERCOMM) ? comm_ptr->remote_size : comm_ptr->local_size;
 
     if (!hcoll_enable_alltoallv || !comm_ptr->hcoll_priv.is_hcoll_init)
         return rc;
+
+    for (int i = 0; i < n; i++) {
+        if (((sbuf != MPI_IN_PLACE) && ((scounts[i] > INT_MAX) || (sdispls[i] > INT_MAX))) ||
+            (rcounts[i] > INT_MAX) || (rdispls[i] > INT_MAX)) {
+            fallback = 1;
+            break;
+        }
+    }
+    if (hcoll_Allreduce(MPI_IN_PLACE, &fallback, 1, MPI_INT, MPI_LOR, comm_ptr, err) || fallback) {
+        return rc;
+    }
 
     MPL_DBG_MSG(MPIR_DBG_HCOLL, VERBOSE, "RUNNING HCOLL ALLGATHER.");
     rtype = mpi_dtype_2_hcoll_dtype(rdtype, 0, TRY_FIND_DERIVED);
