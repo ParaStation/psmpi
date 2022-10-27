@@ -133,8 +133,8 @@ typedef struct MPIDI_Process
 		unsigned enable_ondemand_spawn;
 		unsigned enable_smp_awareness;
 		unsigned enable_msa_awareness;
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 		unsigned enable_smp_aware_collops;
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 		unsigned enable_msa_aware_collops;
 #endif
 #ifdef HAVE_LIBHCOLL
