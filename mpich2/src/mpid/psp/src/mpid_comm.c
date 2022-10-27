@@ -686,7 +686,7 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 	*/
 fn_exit:
 	MPIR_FUNC_EXIT;
-	return MPI_SUCCESS;
+	return mpi_errno;
 }
 
 int MPIDI_PSP_Comm_commit_post_hook(MPIR_Comm *comm)

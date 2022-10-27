@@ -631,9 +631,9 @@ int MPID_Init(int requested, int *provided)
 #ifdef MPID_PSP_HISTOGRAM
 	/* collect statistics information and print them at the end of a run */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_histogram, "PSP_HISTOGRAM");
-	pscom_env_get_uint(&MPIDI_Process.stats.histo.max_size,   "PSP_HISTOGRAM_MAX");
-	pscom_env_get_uint(&MPIDI_Process.stats.histo.min_size,   "PSP_HISTOGRAM_MIN");
-	pscom_env_get_uint(&MPIDI_Process.stats.histo.step_width, "PSP_HISTOGRAM_SHIFT");
+	pscom_env_get_int(&MPIDI_Process.stats.histo.max_size,   "PSP_HISTOGRAM_MAX");
+	pscom_env_get_int(&MPIDI_Process.stats.histo.min_size,   "PSP_HISTOGRAM_MIN");
+	pscom_env_get_int(&MPIDI_Process.stats.histo.step_width, "PSP_HISTOGRAM_SHIFT");
 	MPIDI_Process.stats.histo.con_type_str = getenv("PSP_HISTOGRAM_CONTYPE");
 	if (MPIDI_Process.stats.histo.con_type_str) {
 		for (MPIDI_Process.stats.histo.con_type_int = PSCOM_CON_TYPE_GW; MPIDI_Process.stats.histo.con_type_int >  PSCOM_CON_TYPE_NONE; MPIDI_Process.stats.histo.con_type_int--) {
