@@ -61,7 +61,7 @@ def main():
     subprocess.run(
         ["git", "clone", args.path, cloned_repo_path],
         stdout=sys.stdout if args.verbose else subprocess.DEVNULL,
-        stderr=subprocess.STDOUT
+        stderr=subprocess.STDOUT,
     )
     print("done")
 
@@ -111,7 +111,7 @@ def main():
         ["./autogen.sh"],
         stdout=sys.stdout if args.verbose else subprocess.DEVNULL,
         stderr=subprocess.STDOUT,
-        cwd=packaged_repo_path
+        cwd=packaged_repo_path,
     )
     print("done")
 
