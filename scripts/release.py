@@ -95,15 +95,25 @@ def main():
     print("done")
 
     print("===> Exporting code from git... ", end="")
+
+    # Create a git archive as basis fo the tarball
     ps_archive = subprocess.Popen(
         ["git", "archive", args.ref, f"--prefix=psmpi-{version}/"],
-        cwd=cloned_repo_path,
         stdout=subprocess.PIPE,
+        cwd=cloned_repo_path,
     )
-    with tarfile.open(fileobj=ps_archive.stdout, mode="r|") as tar:
-        tar.extractall(release_dir.name)
-    ps_archive.wait()
 
+    # Directly extract the git archive created above
+    ps_extract = subprocess.Popen(
+        ["tar", "-xav", f"--directory={release_dir.name}"],
+        stdin=ps_archive.stdout,
+        stdout=sys.stdout if args.verbose else subprocess.DEVNULL,
+        stderr=subprocess.STDOUT,
+        cwd=cloned_repo_path,
+    )
+
+    ps_archive.stdout.close()
+    ps_extract.communicate()
     print("done")
 
     print("===> Running autotools... ", end=end_marker, flush=True)
