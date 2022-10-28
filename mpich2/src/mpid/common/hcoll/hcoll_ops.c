@@ -6,12 +6,19 @@
 #include "mpiimpl.h"
 #include "hcoll.h"
 
+extern int hcoll_enable_barrier;
+extern int hcoll_enable_bcast;
+extern int hcoll_enable_reduce;
+extern int hcoll_enable_allgather;
+extern int hcoll_enable_allreduce;
+extern int hcoll_enable_alltoall;
+extern int hcoll_enable_alltoallv;
+
 int hcoll_Barrier(MPIR_Comm * comm_ptr, MPIR_Errflag_t * err)
 {
     int rc = -1;
-    MPI_Comm comm = comm_ptr->handle;
 
-    if (!comm_ptr->hcoll_priv.is_hcoll_init)
+    if (!hcoll_enable_barrier || !comm_ptr->hcoll_priv.is_hcoll_init)
         return rc;
 
     MPL_DBG_MSG(MPIR_DBG_HCOLL, VERBOSE, "RUNNING HCOL BARRIER.");
@@ -27,12 +34,12 @@ int hcoll_Bcast(void *buffer, int count, MPI_Datatype datatype, int root,
     dte_data_representation_t dtype;
     int rc = -1;
 
-    if (!comm_ptr->hcoll_priv.is_hcoll_init)
+    if (!hcoll_enable_bcast || !comm_ptr->hcoll_priv.is_hcoll_init)
         return rc;
 
     MPL_DBG_MSG(MPIR_DBG_HCOLL, VERBOSE, "RUNNING HCOLL BCAST.");
     dtype = mpi_dtype_2_hcoll_dtype(datatype, count, TRY_FIND_DERIVED);
-    MPI_Comm comm = comm_ptr->handle;
+
     if (HCOL_DTE_IS_COMPLEX(dtype) || HCOL_DTE_IS_ZERO(dtype)) {
         /*If we are here then datatype is not simple predefined datatype */
         /*In future we need to add more complex mapping to the dte_data_representation_t */
@@ -55,7 +62,7 @@ int hcoll_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype dat
     hcoll_dte_op_t *Op;
     int rc = -1;
 
-    if (!comm_ptr->hcoll_priv.is_hcoll_init)
+    if (!hcoll_enable_reduce || !comm_ptr->hcoll_priv.is_hcoll_init)
         return rc;
 
     MPL_DBG_MSG(MPIR_DBG_HCOLL, VERBOSE, "RUNNING HCOLL REDUCE.");
@@ -85,9 +92,8 @@ int hcoll_Allreduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype 
     dte_data_representation_t Dtype;
     hcoll_dte_op_t *Op;
     int rc = -1;
-    MPI_Comm comm = comm_ptr->handle;
 
-    if (!comm_ptr->hcoll_priv.is_hcoll_init)
+    if (!hcoll_enable_allreduce || !comm_ptr->hcoll_priv.is_hcoll_init)
         return rc;
 
     MPL_DBG_MSG(MPIR_DBG_HCOLL, VERBOSE, "RUNNING HCOL ALLREDUCE.");
@@ -113,12 +119,11 @@ int hcoll_Allgather(const void *sbuf, int scount, MPI_Datatype sdtype,
                     void *rbuf, int rcount, MPI_Datatype rdtype, MPIR_Comm * comm_ptr,
                     MPIR_Errflag_t * err)
 {
-    MPI_Comm comm = comm_ptr->handle;
     dte_data_representation_t stype;
     dte_data_representation_t rtype;
     int rc = -1;
 
-    if (!comm_ptr->hcoll_priv.is_hcoll_init)
+    if (!hcoll_enable_allgather || !comm_ptr->hcoll_priv.is_hcoll_init)
         return rc;
 
     MPL_DBG_MSG(MPIR_DBG_HCOLL, VERBOSE, "RUNNING HCOLL ALLGATHER.");
@@ -147,12 +152,11 @@ int hcoll_Alltoall(const void *sbuf, int scount, MPI_Datatype sdtype,
                    void *rbuf, int rcount, MPI_Datatype rdtype, MPIR_Comm * comm_ptr,
                    MPIR_Errflag_t * err)
 {
-    MPI_Comm comm = comm_ptr->handle;
     dte_data_representation_t stype;
     dte_data_representation_t rtype;
     int rc = -1;
 
-    if (!comm_ptr->hcoll_priv.is_hcoll_init)
+    if (!hcoll_enable_alltoall || !comm_ptr->hcoll_priv.is_hcoll_init)
         return rc;
 
     MPL_DBG_MSG(MPIR_DBG_HCOLL, VERBOSE, "RUNNING HCOLL ALLGATHER.");
@@ -181,12 +185,11 @@ int hcoll_Alltoallv(const void *sbuf, const int *scounts, const int *sdispls, MP
                     void *rbuf, const int *rcounts, const int *rdispls, MPI_Datatype rdtype,
                     MPIR_Comm * comm_ptr, MPIR_Errflag_t * err)
 {
-    MPI_Comm comm = comm_ptr->handle;
     dte_data_representation_t stype;
     dte_data_representation_t rtype;
     int rc = -1;
 
-    if (!comm_ptr->hcoll_priv.is_hcoll_init)
+    if (!hcoll_enable_alltoallv || !comm_ptr->hcoll_priv.is_hcoll_init)
         return rc;
 
     MPL_DBG_MSG(MPIR_DBG_HCOLL, VERBOSE, "RUNNING HCOLL ALLGATHER.");
