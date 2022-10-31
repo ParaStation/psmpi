@@ -1,3 +1,31 @@
+2022-10-31  Simon Pickartz <pickartz@par-tec.com>     -     5.7.0-0rc1
+
+	* Enhancement: Improvements to scripts/release.py for generating
+	release tarballs: remove Python 3.8 dependency, do not make use of
+	tar.extractall().
+
+2022-10-28  Carsten Clauss <clauss@par-tec.com>
+	* Enhancement: Remove PSP_HCOLL_ENABLE_SHARP alias since SHARP support
+	comes transparently with HCOLL.
+
+	* Enhancement: Update HCOLL support to the v3.7 API.
+
+	* Fix: Message matching when using MPI_(I)Mprobe().
+
+	* Fix: Fix passive-side RMA synchronization.
+
+	* Enhancement: Extend the output of MPI_Get_library_version().
+
+2022-03-29  Simon Pickartz <pickartz@par-tec.com>
+
+	* Enhancement: Add `--with-pscom` configure option.
+
+2022-03-29  Carsten Clauss <clauss@par-tec.com>
+
+	* Enhancement: Several improvements w.r.t. the "allin" build: support
+	for nvhcp, pscom4ucp, devel, and debug; disable pscom4openib as allin
+	default; list built-in plugins with PSP_DEBUG_VERSION.
+
 2022-02-03  Simon Pickartz <pickartz@par-tec.com>     -     5.6.0-1
 
 2022-02-02  Simon Pickartz <pickartz@par-tec.com>     -     5.6.0-0rc2
