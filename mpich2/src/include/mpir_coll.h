@@ -52,7 +52,5 @@ int MPIC_Waitall(int numreq, MPIR_Request * requests[], MPI_Status statuses[],
 
 int MPIR_Reduce_local(const void *inbuf, void *inoutbuf, MPI_Aint count, MPI_Datatype datatype,
                       MPI_Op op);
-int MPIR_Reduce_local_impl(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype,
-                           MPI_Op op);
 
 #endif /* MPIR_COLL_H_INCLUDED */
