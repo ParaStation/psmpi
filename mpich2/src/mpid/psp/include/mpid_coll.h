@@ -1397,17 +1397,4 @@ static inline int MPID_Neighbor_alltoallw_init(const void *sendbuf,
 }
 
 
-#ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
-int MPIR_Reduce_local_impl(const void *inbuf, void *inoutbuf, MPI_Aint count, MPI_Datatype datatype, MPI_Op op);
-int MPID_PSP_Reduce_local_for_cuda(const void *inbuf, void *inoutbuf, MPI_Aint count, MPI_Datatype datatype, MPI_Op op);
-#define MPID_REDUCE_LOCAL_HOOK(inbuf, inoutbuf, count, datatype, op) \
-	MPID_PSP_Reduce_local_for_cuda(inbuf, inoutbuf, count, datatype, op)
-
-static inline
-int MPIDI_PSP_needs_staging(const void *ptr)
-{
-	return (ptr == MPI_IN_PLACE)? 0 : pscom_is_gpu_mem(ptr);
-}
-#endif /* MPIDI_PSP_WITH_CUDA_AWARENESS */
-
 #endif /* MPID_COLL_H_INCLUDED */
