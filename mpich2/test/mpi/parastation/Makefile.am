@@ -44,8 +44,6 @@ noinst_PROGRAMS =               \
 	spawn_univ_discon       \
 	num_contexts_2k         \
 	num_contexts_4k         \
-	num_contexts_8k         \
-	num_contexts_16k        \
 	large_msg_typed         \
 	large_msg_builtin       \
 	large_msg_noncontig     \

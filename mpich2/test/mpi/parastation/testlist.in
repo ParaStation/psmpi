@@ -72,8 +72,6 @@ large_msg_coll_igather 2 timeLimit=90 env=MPIR_CVAR_IGATHER_INTRA_ALGORITHM=sche
 @largetest@large_msg_coll_ialltoall_inplace 2 timeLimit=300 env=MPIR_CVAR_IALLTOALL_INTRA_ALGORITHM=sched_inplace env=MPIR_CVAR_IALLTOALLV_INTRA_ALGORITHM=sched_inplace
 num_contexts_2k 1
 num_contexts_4k 1
-num_contexts_8k 1
-num_contexts_16k 1
 msa_info_env 1
 msa_info_env 1 env=PSP_MSA_AWARENESS=1
 msa_info_env 4 env=PSP_MSA_AWARENESS=1 env=PSP_MSA_MODULE_ID=3
