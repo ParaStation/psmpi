@@ -341,6 +341,19 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info *info_pt
 	}
 	pscom_env_get_uint(&win_ptr->explicit_wait_on_passive_side, "PSP_RMA_EXPLICIT_WAIT");
 
+	/*
+	 * Ensure all counters (especially regarding the passive side) are
+	 * initialized before any subsequent communication call. Any call
+	 * triggering the progress engine might implicate remote RMA operations.
+	 */
+	for (i=0; i<comm_size; i++) {
+		win_ptr->rma_puts_accs[i] = 0;
+		win_ptr->rma_local_pending_rank[i] = 0;
+		win_ptr->rma_passive_pending_rank[i] = 0;
+		win_ptr->remote_lock_state[i] = MPID_PSP_LOCK_UNLOCKED;
+		win_ptr->rma_pending_accumulates[i] = 0;
+	}
+
 	/* get the addresses of the windows, window objects, and completion counters
 	   of all processes.  allocate temp. buffer for communication */
 	MPIR_CHKLMEM_MALLOC(tmp_buf, MPID_Wincreate_msg *,
@@ -363,7 +376,6 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info *info_pt
 		MPID_Win_rank_info *ri = win_ptr->rank_info + i;
 		MPID_Wincreate_msg *ti = tmp_buf + i;
 
-		win_ptr->rma_puts_accs[i] = 0;
 /*		ri->epoch_origin = i    * 1000000 + rank * 1000 + 1000000000; */
 /*		ri->epoch_target = rank * 1000000 +    i * 1000 + 1000000000; */
 
@@ -372,11 +384,6 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info *info_pt
 		ri->base_addr = ti->base;
 		ri->disp_unit = ti->disp_unit;
 		ri->win_ptr = ti->win_ptr;
-
-		win_ptr->rma_local_pending_rank[i] = 0;
-		win_ptr->rma_passive_pending_rank[i] = 0;
-		win_ptr->remote_lock_state[i] = MPID_PSP_LOCK_UNLOCKED;
-		win_ptr->rma_pending_accumulates[i] = 0;
 	}
 
 	/* ToDo: post psport_recv request. */
