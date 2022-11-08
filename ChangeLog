@@ -1,3 +1,10 @@
+2022-11-08  Simon Pickartz <pickartz@par-tec.com>     -     5.7.0-0rc2
+
+2022-11-08  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Initialization of RMA windows w.r.t. the counters regarding
+	passive operations.
+
 2022-10-31  Simon Pickartz <pickartz@par-tec.com>     -     5.7.0-0rc1
 
 	* Enhancement: Improvements to scripts/release.py for generating
@@ -5,6 +12,7 @@
 	tar.extractall().
 
 2022-10-28  Carsten Clauss <clauss@par-tec.com>
+
 	* Enhancement: Remove PSP_HCOLL_ENABLE_SHARP alias since SHARP support
 	comes transparently with HCOLL.
 
