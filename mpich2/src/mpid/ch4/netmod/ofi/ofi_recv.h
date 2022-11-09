@@ -47,10 +47,12 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_recv_iov(void *buf, MPI_Aint count, size_
         goto unpack;
 
     /* Calculate the correct NICs. */
-    sender_nic = MPIDI_OFI_multx_sender_nic_index(comm, comm->recvcontext_id, MPIR_Process.rank,
-                                                  MPIDI_OFI_init_get_tag(match_bits));
-    receiver_nic = MPIDI_OFI_multx_receiver_nic_index(comm, comm->recvcontext_id, rank,
-                                                      MPIDI_OFI_init_get_tag(match_bits));
+    sender_nic =
+        MPIDI_OFI_multx_sender_nic_index(comm, comm->recvcontext_id, rank, comm->rank,
+                                         MPIDI_OFI_init_get_tag(match_bits));
+    receiver_nic =
+        MPIDI_OFI_multx_receiver_nic_index(comm, comm->recvcontext_id, rank, comm->rank,
+                                           MPIDI_OFI_init_get_tag(match_bits));
     MPIDI_OFI_REQUEST(rreq, nic_num) = receiver_nic;
     ctx_idx = MPIDI_OFI_get_ctx_index(comm, vni_dst, MPIDI_OFI_REQUEST(rreq, nic_num));
 
@@ -162,9 +164,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_irecv(void *buf,
     }
 
     /* Calculate the correct NICs. */
-    sender_nic = MPIDI_OFI_multx_sender_nic_index(comm, comm->recvcontext_id, MPIR_Process.rank,
-                                                  tag);
-    receiver_nic = MPIDI_OFI_multx_receiver_nic_index(comm, comm->recvcontext_id, rank, tag);
+    sender_nic =
+        MPIDI_OFI_multx_sender_nic_index(comm, comm->recvcontext_id, rank, comm->rank, tag);
+    receiver_nic =
+        MPIDI_OFI_multx_receiver_nic_index(comm, comm->recvcontext_id, rank, comm->rank, tag);
     MPIDI_OFI_REQUEST(rreq, nic_num) = receiver_nic;
     ctx_idx = MPIDI_OFI_get_ctx_index(comm, vni_dst, MPIDI_OFI_REQUEST(rreq, nic_num));
 
@@ -207,12 +210,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_irecv(void *buf,
         }
         /* Unpack */
         MPIDI_OFI_REQUEST(rreq, event_id) = MPIDI_OFI_EVENT_RECV_PACK;
-        /* FIXME: allocating a GPU registered host buffer adds some additional overhead.
-         * However, once the new buffer pool infrastructure is setup, we would simply be
-         * allocating a buffer from the pool, so whether it's a regular malloc buffer or a GPU
-         * registered buffer should be equivalent with respect to performance. */
-        MPIR_gpu_malloc_host((void **) &MPIDI_OFI_REQUEST(rreq, noncontig.pack.pack_buffer),
-                             data_sz);
+        MPIDI_OFI_REQUEST(rreq, noncontig.pack.pack_buffer) = MPL_malloc(data_sz, MPL_MEM_OTHER);
         MPIR_ERR_CHKANDJUMP1(MPIDI_OFI_REQUEST(rreq, noncontig.pack.pack_buffer) == NULL, mpi_errno,
                              MPI_ERR_OTHER, "**nomem", "**nomem %s", "Recv Pack Buffer alloc");
         recv_buf = MPIDI_OFI_REQUEST(rreq, noncontig.pack.pack_buffer);
@@ -349,7 +347,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_irecv(void *buf,
     return mpi_errno;
 }
 
-MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_cancel_recv(MPIR_Request * rreq)
+MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_cancel_recv(MPIR_Request * rreq, bool is_blocking)
 {
 
     int mpi_errno = MPI_SUCCESS;
@@ -381,17 +379,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_cancel_recv(MPIR_Request * rreq)
                              fi_strerror(-ret));
     }
 
-    if (ret == 0) {
-        while ((!MPIR_STATUS_GET_CANCEL_BIT(rreq->status)) && (!MPIR_cc_is_complete(&rreq->cc))) {
-            /* The cancel is local and must complete, so only poll this device (not global progress) */
+    if (is_blocking) {
+        while (!MPIR_cc_is_complete(&rreq->cc)) {
             mpi_errno = MPIDI_OFI_progress_uninlined(vni);
             MPIR_ERR_CHECK(mpi_errno);
-        }
-
-        if (MPIR_STATUS_GET_CANCEL_BIT(rreq->status)) {
-            MPIR_STATUS_SET_CANCEL_BIT(rreq->status, TRUE);
-            MPIR_STATUS_SET_COUNT(rreq->status, 0);
-            MPIDIU_request_complete(rreq);
         }
     }
 

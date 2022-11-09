@@ -31,7 +31,7 @@ MPL_STATIC_INLINE_PREFIX void MPIDI_UCX_recv_cmpl_cb(void *request, ucs_status_t
         MPIR_STATUS_SET_COUNT(rreq->status, count);
     }
 
-    MPIDIU_request_complete(rreq);
+    MPIDI_Request_complete_fast(rreq);
     ucp_request->req = NULL;
     ucp_request_release(ucp_request);
 
@@ -58,7 +58,7 @@ MPL_STATIC_INLINE_PREFIX void MPIDI_UCX_mrecv_cmpl_cb(void *request, ucs_status_
     rreq->status.MPI_TAG = MPIDI_UCX_get_tag(info->sender_tag);
 
     /* complete the request */
-    MPIDIU_request_complete(rreq);
+    MPIDI_Request_complete_fast(rreq);
     ucp_request->req = NULL;
     ucp_request_release(ucp_request);
 
@@ -213,7 +213,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_irecv(void *buf,
     return mpi_errno;
 }
 
-MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_cancel_recv(MPIR_Request * rreq)
+MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_cancel_recv(MPIR_Request * rreq, bool is_blocking)
 {
     MPIR_FUNC_ENTER;
 

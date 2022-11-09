@@ -23,6 +23,7 @@ noinst_PROGRAMS =      \
     allred4            \
     allred5            \
     allred6            \
+    allred_derived     \
     allredmany         \
     alltoall1          \
     alltoallv          \
@@ -148,6 +149,7 @@ noinst_PROGRAMS =      \
     neighb_alltoall    \
     neighb_alltoallv   \
     neighb_alltoallw   \
+    neighb_alltoallw2  \
     bcast              \
     bcast_comm_world_only \
     coll_large	       \

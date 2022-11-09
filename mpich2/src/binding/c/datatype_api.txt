@@ -87,12 +87,20 @@ MPI_Get_elements:
 
     /* clip the value if it cannot be correctly returned to the user */
     *count = (count_x > INT_MAX) ? MPI_UNDEFINED : (int) count_x;
+
+    if (byte_count != 0) {
+        *count = MPI_UNDEFINED;
+    }
 }
 { -- large_count --
     MPI_Count byte_count = MPIR_STATUS_GET_COUNT(*status);
     mpi_errno = MPIR_Get_elements_x_impl(&byte_count, datatype, count);
     if (mpi_errno) {
         goto fn_fail;
+    }
+
+    if (byte_count != 0) {
+        *count = MPI_UNDEFINED;
     }
 }
 
@@ -104,6 +112,10 @@ MPI_Get_elements_x:
     MPI_Count byte_count = MPIR_STATUS_GET_COUNT(*status);
     mpi_errno = MPIR_Get_elements_x_impl(&byte_count, datatype, count);
     MPIR_ERR_CHECK(mpi_errno);
+
+    if (byte_count != 0) {
+        *count = MPI_UNDEFINED;
+    }
 }
 
 MPI_Pack:
@@ -122,6 +134,13 @@ MPI_Pack:
 { -- error_check -- inbuf, outbuf
     if (incount > 0) {
         MPIR_ERRTEST_ARGNULL(inbuf, "inbuf", mpi_errno);
+    }
+}
+{ -- early_return --
+    MPI_Aint dt_size;
+    MPIR_Datatype_get_size_macro(datatype, dt_size);
+    if (dt_size == 0) {
+        goto fn_exit;
     }
 }
 
@@ -157,6 +176,13 @@ MPI_Unpack:
         MPIR_ERRTEST_ARGNULL(outbuf, "outbuf", mpi_errno);
     }
 }
+{ -- early_return --
+    MPI_Aint dt_size;
+    MPIR_Datatype_get_size_macro(datatype, dt_size);
+    if (dt_size == 0) {
+        goto fn_exit;
+    }
+}
 
 MPI_Unpack_external:
     .desc: Unpack a buffer (packed with MPI_Pack_external) according to a datatype into contiguous memory
@@ -180,6 +206,12 @@ MPI_Status_set_elements:
     .desc: Set the number of elements in a status
 {
     mpi_errno = MPIR_Status_set_elements_x_impl(status, datatype, (MPI_Count) count);
+    if (mpi_errno) {
+        goto fn_fail;
+    }
+}
+{ -- large_count --
+    mpi_errno = MPIR_Status_set_elements_x_impl(status, datatype, count);
     if (mpi_errno) {
         goto fn_fail;
     }
@@ -266,7 +298,7 @@ MPI_Type_get_contents:
 
 MPI_Type_get_envelope:
     .desc: get type envelope
-    .skip: ThreadSafe
+    .skip: global_cs
 
 MPI_Type_get_extent:
     .desc: Get the lower bound and extent for a Datatype

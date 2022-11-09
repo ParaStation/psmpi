@@ -113,8 +113,6 @@ int MPIR_Request_free_impl(MPIR_Request * request_ptr)
     MPID_Progress_poke();
     switch (request_ptr->kind) {
         case MPIR_REQUEST_KIND__SEND:
-            MPII_SENDQ_FORGET(request_ptr);
-            break;
         case MPIR_REQUEST_KIND__RECV:
             break;
         case MPIR_REQUEST_KIND__PREQUEST_SEND:
@@ -1258,7 +1256,7 @@ int MPIR_Waitany(int count, MPI_Request array_of_requests[], MPIR_Request * requ
     if (*indx == MPI_UNDEFINED) {
         if (unlikely(last_disabled_anysource != -1)) {
             int flag;
-            mpi_errno = MPI_Testany(count, array_of_requests, indx, &flag, status);
+            mpi_errno = PMPI_Testany(count, array_of_requests, indx, &flag, status);
             goto fn_exit;
         }
 
@@ -1393,8 +1391,8 @@ int MPIR_Waitsome(int incount, MPI_Request array_of_requests[], MPIR_Request * r
     }
 
     if (unlikely(disabled_anysource)) {
-        mpi_errno =
-            MPI_Testsome(incount, array_of_requests, outcount, array_of_indices, array_of_statuses);
+        mpi_errno = PMPI_Testsome(incount, array_of_requests, outcount, array_of_indices,
+                                  array_of_statuses);
         goto fn_exit;
     }
 
