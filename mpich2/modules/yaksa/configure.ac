@@ -47,16 +47,16 @@ else
     if test "$V3" = "" ; then V3="0"; fi
     if test "$V3" -le 9 ; then V3="0$V3" ; fi
     if test "$V4" = "a" ; then
-	V4=0
+        V4=0
     elif test "$V4" = "b" ; then
-	V4=1
+        V4=1
     elif test "$V4" = "rc" ; then
-	V4=2
+        V4=2
     elif test "$V4" = "" ; then
-	V4=3
-	V5=0
+        V4=3
+        V5=0
     elif test "$V4" = "p" ; then
-	V4=3
+        V4=3
     fi
     if test "$V5" -le 9 ; then V5="0$V5" ; fi
 
@@ -101,7 +101,19 @@ PAC_C_CHECK_COMPILER_OPTION([-std=c11],[c11_available=yes],[c11_available=no])
 PAC_POP_FLAG([CFLAGS])
 if test "${c11_available}" = "yes" ; then
     PAC_APPEND_FLAG([-std=c11],[CFLAGS])
+else
+    # PGI does not support -std option, it uses -c11 for C11
+    PAC_PUSH_FLAG([CFLAGS])
+    PAC_APPEND_FLAG([-c11],[CFLAGS])
+    PAC_C_CHECK_COMPILER_OPTION([-c11],[c11_available=yes],[c11_available=no])
+    PAC_POP_FLAG([CFLAGS])
+    if test "${c11_available}" = "yes" ; then
+        PAC_APPEND_FLAG([-c11],[CFLAGS])
+    fi
 fi
+
+PAC_CHECK_VISIBILITY
+PAC_APPEND_FLAG([$YAKSA_VISIBILITY_CFLAGS],[CFLAGS])
 
 AC_HEADER_STDC
 
@@ -117,12 +129,16 @@ PAC_ARG_STRICT
 # embedded builds
 AC_ARG_ENABLE([embedded],AS_HELP_STRING([--enable-embedded],[enables embedded builds]),,[enable_embedded=no])
 AM_CONDITIONAL([EMBEDDED_BUILD], [test x${enable_embedded} = xyes])
+if test x${enable_embedded} = xyes; then
+    AC_DEFINE(YAKSA_EMBEDDED_BUILD, [1], [Define if yaksa is embedded])
+fi
 
 # --enable-debug
 AC_ARG_ENABLE([g],AS_HELP_STRING([--enable-g],[alias for --enable-debug]),,[enable_g=no])
 AC_ARG_ENABLE([debug],AS_HELP_STRING([--enable-debug],[adds -g to CFLAGS]),,[enable_debug=${enable_g}])
 if test "${enable_debug}" != "no" ; then
     PAC_APPEND_FLAG([-g],[CFLAGS])
+    AC_DEFINE(YAKSA_DEBUG, [1], [Define if debugging is enabled])
 fi
 
 # --enable-fast
@@ -133,13 +149,20 @@ for option in ${enable_fast} ; do
     case "$option" in
         O*)
             PAC_APPEND_FLAG([-${option}],[CFLAGS])
-	    ;;
-	ndebug)
-	    PAC_APPEND_FLAG([-DNDEBUG],[CFLAGS])
-	    ;;
-	*)
-	    # ignore unknown options
-	    ;;
+            ;;
+        ndebug)
+            PAC_APPEND_FLAG([-DNDEBUG],[CFLAGS])
+            ;;
+        all|yes)
+            PAC_APPEND_FLAG([-O2],[CFLAGS])
+            PAC_APPEND_FLAG([-DNDEBUG],[CFLAGS])
+            ;;
+        none|no)
+            PAC_APPEND_FLAG([-O0],[CFLAGS])
+            ;;
+        *)
+            # ignore unknown options
+            ;;
     esac
 done
 PAC_POP_FLAG(IFS)
@@ -166,10 +189,60 @@ else
     AC_ERROR([pthreads not found on the system])
 fi
 
+# check alignments
+AC_CHECK_ALIGNOF(_Bool)
+AC_CHECK_ALIGNOF(char)
+AC_CHECK_ALIGNOF(signed char)
+AC_CHECK_ALIGNOF(unsigned char)
+AC_CHECK_ALIGNOF(wchar_t)
+AC_CHECK_ALIGNOF(int8_t)
+AC_CHECK_ALIGNOF(int16_t)
+AC_CHECK_ALIGNOF(int32_t)
+AC_CHECK_ALIGNOF(int64_t)
+AC_CHECK_ALIGNOF(uint8_t)
+AC_CHECK_ALIGNOF(uint16_t)
+AC_CHECK_ALIGNOF(uint32_t)
+AC_CHECK_ALIGNOF(uint64_t)
+AC_CHECK_ALIGNOF(int)
+AC_CHECK_ALIGNOF(unsigned)
+AC_CHECK_ALIGNOF(short)
+AC_CHECK_ALIGNOF(unsigned short)
+AC_CHECK_ALIGNOF(long)
+AC_CHECK_ALIGNOF(unsigned long)
+AC_CHECK_ALIGNOF(long long)
+AC_CHECK_ALIGNOF(unsigned long long)
+AC_CHECK_ALIGNOF(int_fast8_t)
+AC_CHECK_ALIGNOF(int_fast16_t)
+AC_CHECK_ALIGNOF(int_fast32_t)
+AC_CHECK_ALIGNOF(int_fast64_t)
+AC_CHECK_ALIGNOF(uint_fast8_t)
+AC_CHECK_ALIGNOF(uint_fast16_t)
+AC_CHECK_ALIGNOF(uint_fast32_t)
+AC_CHECK_ALIGNOF(uint_fast64_t)
+AC_CHECK_ALIGNOF(int_least8_t)
+AC_CHECK_ALIGNOF(int_least16_t)
+AC_CHECK_ALIGNOF(int_least32_t)
+AC_CHECK_ALIGNOF(int_least64_t)
+AC_CHECK_ALIGNOF(uint_least8_t)
+AC_CHECK_ALIGNOF(uint_least16_t)
+AC_CHECK_ALIGNOF(uint_least32_t)
+AC_CHECK_ALIGNOF(uint_least64_t)
+AC_CHECK_ALIGNOF(byte)
+AC_CHECK_ALIGNOF(intmax_t)
+AC_CHECK_ALIGNOF(uintmax_t)
+AC_CHECK_ALIGNOF(size_t)
+AC_CHECK_ALIGNOF(intptr_t)
+AC_CHECK_ALIGNOF(uintptr_t)
+AC_CHECK_ALIGNOF(ptrdiff_t)
+AC_CHECK_ALIGNOF(float)
+AC_CHECK_ALIGNOF(double)
+AC_CHECK_ALIGNOF(long double)
+
 # backend devices
 supported_backends="seq"
 m4_include([src/backend/cuda/subconfigure.m4])
 m4_include([src/backend/ze/subconfigure.m4])
+m4_include([src/backend/hip/subconfigure.m4])
 
 
 dnl ----------------------------------------------------------------------------
@@ -197,7 +270,7 @@ AH_BOTTOM([
 AC_CONFIG_FILES([Makefile
                  Doxyfile
                  maint/yaksa.pc
-		 src/frontend/include/yaksa.h
+                 src/frontend/include/yaksa.h
 ])
 AC_OUTPUT
 

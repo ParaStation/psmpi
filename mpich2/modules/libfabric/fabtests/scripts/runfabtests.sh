@@ -74,12 +74,19 @@ declare -i pass_count=0
 declare -i fail_count=0
 declare -i total_failures=0
 
-if [[ "$(uname)" == "FreeBSD" ]]; then
-    declare -ri FI_ENODATA=$(python -c 'import errno; print(errno.ENOMSG)')
-else
-    declare -ri FI_ENODATA=$(python -c 'import errno; print(errno.ENODATA)')
+python=$(which python3 2>/dev/null) || python=$(which python2 2>/dev/null) || python=$(which python 2>/dev/null)
+
+if [ $? -ne 0 ]; then
+	echo "Unable to find python dependency, exiting..."
+	exit 1
 fi
-declare -ri FI_ENOSYS=$(python -c 'import errno; print(errno.ENOSYS)')
+
+if [[ "$(uname)" == "FreeBSD" ]]; then
+    declare -ri FI_ENODATA=$($python -c 'import errno; print(errno.ENOMSG)')
+else
+    declare -ri FI_ENODATA=$($python -c 'import errno; print(errno.ENODATA)')
+fi
+declare -ri FI_ENOSYS=$($python -c 'import errno; print(errno.ENOSYS)')
 
 neg_unit_tests=(
 	"fi_dgram g00n13s"
@@ -102,7 +109,8 @@ functional_tests=(
 	"fi_poll -t queue"
 	"fi_poll -t counter"
 	"fi_rdm"
-	"fi_rdm_rma_simple"
+	"fi_rdm -U"
+	"fi_rdm_rma_event"
 	"fi_rdm_rma_trigger"
 	"fi_shared_ctx"
 	"fi_shared_ctx --no-tx-shared-ctx"
@@ -121,8 +129,6 @@ functional_tests=(
 	"fi_recv_cancel -e rdm -V"
 	"fi_unexpected_msg -e msg -i 10"
 	"fi_unexpected_msg -e rdm -i 10"
-	"fi_unexpected_msg -e msg -S -i 10"
-	"fi_unexpected_msg -e rdm -S -i 10"
 	"fi_inj_complete -e msg"
 	"fi_inj_complete -e rdm"
 	"fi_inj_complete -e dgram"
@@ -130,6 +136,7 @@ functional_tests=(
 	"fi_inj_complete -e rdm -SR"
 	"fi_inj_complete -e dgram -SR"
 	"fi_bw -e rdm -v -T 1"
+	"fi_bw -e rdm -v -T 1 -U"
 	"fi_bw -e msg -v -T 1"
 )
 
@@ -142,18 +149,28 @@ short_tests=(
 	"fi_rma_bw -e msg -o read -I 5"
 	"fi_rma_bw -e msg -o writedata -I 5"
 	"fi_rma_bw -e rdm -o write -I 5"
+	"fi_rma_bw -e rdm -o write -I 5 -U"
 	"fi_rma_bw -e rdm -o read -I 5"
+	"fi_rma_bw -e rdm -o read -I 5 -U"
 	"fi_rma_bw -e rdm -o writedata -I 5"
+	"fi_rma_bw -e rdm -o writedata -I 5 -U"
 	"fi_rdm_atomic -I 5 -o all"
+	"fi_rdm_atomic -I 5 -o all -U"
 	"fi_rdm_cntr_pingpong -I 5"
 	"fi_multi_recv -e rdm -I 5"
 	"fi_multi_recv -e msg -I 5"
 	"fi_rdm_pingpong -I 5"
+	"fi_rdm_pingpong -I 5 -U"
 	"fi_rdm_pingpong -I 5 -v"
+	"fi_rdm_pingpong -I 5 -v -U"
 	"fi_rdm_tagged_pingpong -I 5"
+	"fi_rdm_tagged_pingpong -I 5 -U"
 	"fi_rdm_tagged_pingpong -I 5 -v"
+	"fi_rdm_tagged_pingpong -I 5 -v -U"
 	"fi_rdm_tagged_bw -I 5"
+	"fi_rdm_tagged_bw -I 5 -U"
 	"fi_rdm_tagged_bw -I 5 -v"
+	"fi_rdm_tagged_bw -I 5 -v -U"
 	"fi_dgram_pingpong -I 5"
 )
 
@@ -168,20 +185,32 @@ standard_tests=(
 	"fi_rma_bw -e msg -o read"
 	"fi_rma_bw -e msg -o writedata"
 	"fi_rma_bw -e rdm -o write"
+	"fi_rma_bw -e rdm -o write -U"
 	"fi_rma_bw -e rdm -o read"
+	"fi_rma_bw -e rdm -o read -U"
 	"fi_rma_bw -e rdm -o writedata"
+	"fi_rma_bw -e rdm -o writedata -U"
 	"fi_rdm_atomic -o all -I 1000"
+	"fi_rdm_atomic -o all -I 1000 -U"
 	"fi_rdm_cntr_pingpong"
 	"fi_multi_recv -e rdm"
 	"fi_multi_recv -e msg"
 	"fi_rdm_pingpong"
+	"fi_rdm_pingpong -U"
 	"fi_rdm_pingpong -v"
+	"fi_rdm_pingpong -v -U"
 	"fi_rdm_pingpong -k"
+	"fi_rdm_pingpong -k -U"
 	"fi_rdm_pingpong -k -v"
+	"fi_rdm_pingpong -k -v -U"
 	"fi_rdm_tagged_pingpong"
+	"fi_rdm_tagged_pingpong -U"
 	"fi_rdm_tagged_pingpong -v"
+	"fi_rdm_tagged_pingpong -v -U"
 	"fi_rdm_tagged_bw"
+	"fi_rdm_tagged_bw -U"
 	"fi_rdm_tagged_bw -v"
+	"fi_rdm_tagged_bw -v -U"
 	"fi_dgram_pingpong"
 	"fi_dgram_pingpong -k"
 )
@@ -447,7 +476,12 @@ function cs_test {
 	wait $c_pid
 	c_ret=$?
 
-	[[ c_ret -ne 0 ]] && kill -9 $s_pid 2> /dev/null
+	if [[ $c_ret -ne 0 ]] && ps -p $s_pid > /dev/null; then
+	    if [[ $STRICT_MODE -eq 0 ]]; then
+	        sleep 2
+	    fi
+	    kill -9 $s_pid 2> /dev/null
+	fi
 
 	wait $s_pid
 	s_ret=$?
@@ -476,6 +510,10 @@ function set_cfg_file {
 	local parent=$UTIL
 	local name=$CORE
 
+	if [[ ! -z "$COMPLEX_CFG" ]]; then
+		return
+	fi
+
 	if [ -z $UTIL ]; then
 		parent=$CORE
 		name=$1
@@ -503,9 +541,9 @@ function complex_test {
 	local end_time
 	local test_time
 
-	is_excluded "$test" && return
+	set_cfg_file $config
 	if [[ -z "$COMPLEX_CFG" ]]; then
-		set_cfg_file $config
+		is_excluded "$test" && return
 	fi
 
 	start_time=$(date '+%s')
@@ -520,12 +558,12 @@ function complex_test {
 		opts+=" -E"
 	fi
 
-	s_cmd="${BIN_PATH}${test_exe} -x $opts"
+	s_cmd="${BIN_PATH}${test_exe} ${S_ARGS} -x $opts"
 	FI_LOG_LEVEL=error ${SERVER_CMD} "${EXPORT_ENV} $s_cmd" &> $s_outp &
 	s_pid=$!
 	sleep 1
 
-	c_cmd="${BIN_PATH}${test_exe} -u "${COMPLEX_CFG}" $S_INTERFACE $opts"
+	c_cmd="${BIN_PATH}${test_exe} ${C_ARGS} -u "${COMPLEX_CFG}" $S_INTERFACE $opts"
 	FI_LOG_LEVEL=error ${CLIENT_CMD} "${EXPORT_ENV} $c_cmd" &> $c_outp &
 	c_pid=$!
 
@@ -573,7 +611,7 @@ function multinode_test {
 	local c_ret=0
 	local c_out_arr=()
 	local num_procs=$2
-	local test_exe="${test} -n $num_procs -p \"${PROV}\"" 	
+	local test_exe="${test} -n $num_procs -p \"${PROV}\""
 	local c_out
 	local start_time
 	local end_time
@@ -582,18 +620,18 @@ function multinode_test {
 	is_excluded "$test" && return
 
 	start_time=$(date '+%s')
-	
+
 	s_cmd="${BIN_PATH}${test_exe} ${S_ARGS} -s ${S_INTERFACE}"
 	${SERVER_CMD} "${EXPORT_ENV} $s_cmd" &> $s_outp &
 	s_pid=$!
 	sleep 1
-	
-	c_pid_arr=()	
+
+	c_pid_arr=()
 	for ((i=1; i<num_procs; i++))
 	do
 		local c_out=$(mktemp fabtests.c_outp${i}.XXXXXX)
 		c_cmd="${BIN_PATH}${test_exe} ${S_ARGS} -s ${S_INTERFACE}"
-		${CLIENT_CMD} "${EXPORT_ENV} $c_cmd" &> $c_out & 
+		${CLIENT_CMD} "${EXPORT_ENV} $c_cmd" &> $c_out &
 		c_pid_arr+=($!)
 		c_out_arr+=($c_out)
 	done
@@ -602,21 +640,26 @@ function multinode_test {
 		wait $pid
 		c_ret=($?)||$c_ret
 	done
-	
-	[[ c_ret -ne 0 ]] && kill -9 $s_pid 2> /dev/null
+
+	if [[ $c_ret -ne 0 ]] && ps -p $s_pid > /dev/null; then
+	    if [[ $STRICT_MODE -eq 0 ]]; then
+	        sleep 2
+	    fi
+	    kill -9 $s_pid 2> /dev/null
+	fi
 
 	wait $s_pid
 	s_ret=$?
 	echo "server finished"
-	
+
 	end_time=$(date '+%s')
 	test_time=$(compute_duration "$start_time" "$end_time")
-	
+
 	pe=1
 	if [[ $STRICT_MODE -eq 0 && $s_ret -eq $FI_ENODATA && $c_ret -eq $FI_ENODATA ]] ||
 	   [[ $STRICT_MODE -eq 0 && $s_ret -eq $FI_ENOSYS && $c_ret -eq $FI_ENOSYS ]]; then
 		print_results "$test_exe" "Notrun" "$test_time" "$s_outp" "$s_cmd" "" "$c_cmd"
-		for c_out in "${c_out_arr[@]}" 
+		for c_out in "${c_out_arr[@]}"
 		do
 			printf -- "  client_stdout $pe: |\n"
 			sed -e 's/^/    /' < $c_out
@@ -625,7 +668,7 @@ function multinode_test {
 		skip_count+=1
 	elif [ $s_ret -ne 0 -o $c_ret -ne 0 ]; then
 		print_results "$test_exe" "Fail" "$test_time" "$s_outp" "$s_cmd" "" "$c_cmd"
-		for c_out in "${c_out_arr[@]}" 
+		for c_out in "${c_out_arr[@]}"
 		do
 			printf -- "  client_stdout $pe: |\n"
 			sed -e 's/^/    /' < $c_out
@@ -637,7 +680,7 @@ function multinode_test {
 		fail_count+=1
 	else
 		print_results "$test_exe" "Pass" "$test_time" "$s_outp" "$s_cmd" "" "$c_cmd"
-		for c_out in "${c_out_arr[@]}" 
+		for c_out in "${c_out_arr[@]}"
 		do
 			printf -- "  client_stdout $pe: |\n"
 			sed -e 's/^/    /' < $c_out
@@ -668,7 +711,7 @@ function main {
 
 	set_core_util
 	set_excludes
-	
+
 
 	if [[ $1 == "quick" ]]; then
 		local -r tests="unit functional short"
@@ -767,6 +810,7 @@ function usage {
 			 regex patterns e.g. \"dgram,rma.*write\""
 	errcho -e " -E\texport provided variable name and value to ssh client and server processes.
 			 options must of of the form '-E var=value'"
+	errcho -e " -U\trun fabtests with FI_DELIVERY_COMPLETE set"
 	errcho -e " -f\texclude tests file: File containing list of test names /
 			 regex patterns to exclude (one per line)"
 	errcho -e " -N\tskip negative unit tests"

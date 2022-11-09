@@ -54,8 +54,6 @@ public:
         return m_entities.at(0);
     }
 
-    static void completion_cb(uct_completion_t *self, ucs_status_t status) {}
-
     class worker {
     public:
         worker(uct_fence_test* test, send_func_t send, recv_func_t recv,
@@ -110,11 +108,12 @@ public:
     private:
         void run() {
             uct_completion_t uct_comp;
-            uct_comp.func = completion_cb;
+            uct_comp.func = (uct_completion_callback_t)ucs_empty_function;
             for (unsigned i = 0; i < uct_fence_test::count(); i++) {
                 uint64_t local_val  = ucs::rand();
                 uint64_t remote_val = ucs::rand();
                 uct_comp.count      = 1;
+                uct_comp.status     = UCS_OK;
 
                 if (m_recvbuf.length() == sizeof(uint32_t)) {
                     *(uint32_t*)m_recvbuf.ptr() = remote_val;

@@ -38,7 +38,7 @@ These tests are a mix of very basic functionality tests that show major
 features of libfabric.
 
 *fi_av_xfer*
-: Tests communication for unconnected endpoints, as addresses
+: Tests communication for connectionless endpoints, as addresses
   are inserted and removed from the local address vector.
 
 *fi_cm_data*
@@ -51,7 +51,7 @@ features of libfabric.
 : A basic datagram endpoint example.
 
 *fi_dgram_waitset*
-: Transfers datagrams using waitsets for completion notifcation.
+: Transfers datagrams using waitsets for completion notification.
 
 *fi_inj_complete*
 : Sends messages using the FI_INJECT_COMPLETE operation flag.
@@ -64,7 +64,7 @@ features of libfabric.
 
 *fi_msg_epoll*
 : Transfers messages with completion queues configured to use file
-  descriptors as wait objetcts.  The file descriptors are retrieved
+  descriptors as wait objects.  The file descriptors are retrieved
   by the program and used directly with the Linux epoll API.
 
 *fi_msg_sockets*
@@ -101,8 +101,9 @@ features of libfabric.
 : Transfers multiple messages over an RDM endpoint that are received
   into a single buffer, posted using the FI_MULTI_RECV flag.
 
-*fi_rdm_rma_simple*
-: A simple RMA write example over an RDM endpoint.
+*fi_rdm_rma_event*
+: An RMA write example over an RDM endpoint that uses RMA events
+  to notify the peer that the RMA transfer has completed.
 
 *fi_rdm_rma_trigger*
 : A basic example of queuing an RMA write operation that is initiated
@@ -121,7 +122,7 @@ features of libfabric.
 
 *fi_resmgmt_test*
 : Tests the resource management enabled feature.  This verifies that the
-  provider prevents applications from overruning local and remote command
+  provider prevents applications from overrunning local and remote command
   queues and completion queues.  This corresponds to setting the domain
   attribute resource_mgmt to FI_RM_ENABLED.
 
@@ -209,17 +210,17 @@ testing scope is limited.
 *fi_mr_test*
 : Tests memory registration.
 
-*fi_resource_freeing*
-: Allocates and closes fabric resources to check for proper cleanup.
+*fi_mr_cache_evict*
+: Tests provider MR cache eviction capabilities.
 
 # Multinode
 
 This test runs a series of tests over multiple formats and patterns to help
 validate at scale. The patterns are an all to all, one to all, all to one and
-a ring. The tests also run accross multiple capabilites, such as messages, rma,
-atomics, and tagged messages. Currently, there is no option to run these 
+a ring. The tests also run across multiple capabilities, such as messages, rma,
+atomics, and tagged messages. Currently, there is no option to run these
 capabilities and patterns independently, however the test is short enough to be
-all run at once.   
+all run at once.
 
 # Ubertest
 
@@ -229,7 +230,7 @@ number of tests by iterating over a large number of test variables.  As a
 result, a full ubertest run can take a significant amount of time.  Because
 ubertest iterates over input variables, it relies on a test configuration
 file for control, rather than extensive command line options that are used
-by other fabtests.  A configuration file must be constructured for each
+by other fabtests.  A configuration file must be constructed for each
 provider.  Example test configurations are at test_configs.
 
 *fi_ubertest*
@@ -260,7 +261,7 @@ The following keys and respective key values may be used in the config file.
   FT_FUNC_INJECT, FT_FUNC_INJECTDATA, FT_FUNC_SENDDATA
 
   For FT_CAP_RMA: FT_FUNC_WRITE, FT_FUNC_WRITEV, FT_FUNC_WRITEMSG,
-  FT_FUNC_WRITEDATA, FT_FUNC_INJECT_WRITE, FT_FUNC_INJECT_WRITEDATA
+  FT_FUNC_WRITEDATA, FT_FUNC_INJECT_WRITE, FT_FUNC_INJECT_WRITEDATA,
   FT_FUNC_READ, FT_FUNC_READV, FT_FUNC_READMSG
 
   For FT_CAP_ATOMIC: FT_FUNC_ATOMIC, FT_FUNC_ATOMICV, FT_FUNC_ATOMICMSG,
@@ -312,10 +313,10 @@ The following keys and respective key values may be used in the config file.
 *datatype*
 : For FT_CAP_ATOMIC: FI_INT8, FI_UINT8, FI_INT16, FI_UINT16, FI_INT32,
   FI_UINT32, FI_INT64, FI_UINT64, FI_FLOAT, FI_DOUBLE, FI_FLOAT_COMPLEX,
-  FI_DOUBLE_COMPLEX, FI_LONG_DOUBLE, FI_LONG_DOUBLE_COMPLE
+  FI_DOUBLE_COMPLEX, FI_LONG_DOUBLE, FI_LONG_DOUBLE_COMPLEX
 
 *msg_flags - values OR'ed together*
-: For FT_FUNC_XXXMSG: FI_REMOTE_CQ_DATA, FI_COMPLETION
+: For FT_FUNC_[SEND,WRITE,READ,ATOMIC]MSG: FI_REMOTE_CQ_DATA, FI_COMPLETION
 
 *rx_cq_bind_flags - values OR'ed together*
 : FI_SELECTIVE_COMPLETION
@@ -366,6 +367,10 @@ the list available for that test.
 : Use the specified endpoint type for the test.  Valid options are msg,
   dgram, and rdm.  The default endpoint type is rdm.
 
+*-D <device_name>*
+: Allocate data buffers on the specified device, rather than in host
+  memory.  Valid options are ze and cuda.
+
 *-a <address vector name>*
 : The name of a shared address vector.  This option only applies to tests
   that support shared address vectors.
@@ -379,6 +384,12 @@ the list available for that test.
 *-s <address>*
 : Specifies the address of the local endpoint.
 
+*-F <address_format>
+: Specifies the address format.
+
+*-K
+: Fork a child process after initializing endpoint.
+
 *-b[=oob_port]*
 : Enables out-of-band (via sockets) address exchange and test
   synchronization.  A port for the out-of-band connection may be specified
@@ -389,8 +400,14 @@ the list available for that test.
   out-of-band connection may be specified as part of this option to override
   the default. Cannot be used together with the '-b' option.
 
+*-U*
+: Run fabtests with FI_DELIVERY_COMPLETE.
+
 *-I <number>*
 : Number of data transfer iterations.
+
+*-Q*
+: Associated any EQ with the domain, rather than directly with the EP.
 
 *-w <number>*
 : Number of warm-up data transfer iterations.
@@ -454,12 +471,12 @@ This will run "fi_rdm_atomic" for all atomic operations with
 
 ## Run multinode tests
 
-	Server and clients are invoked with the same command: 
+	Server and clients are invoked with the same command:
 		fi_multinode -n <number of processes> -s <server_addr> -C <mode>
-	
-	A process on the server must be started before any of the clients can be started 
+
+	A process on the server must be started before any of the clients can be started
 	succesfully. -C lists the mode that the tests will run in. Currently the options are
-  for rma and msg. If not provided, the test will default to msg. 
+  for rma and msg. If not provided, the test will default to msg.
 
 ## Run fi_ubertest
 

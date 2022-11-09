@@ -107,26 +107,29 @@ static int get_num_devices(int *ndevices)
     return YAKSA_SUCCESS;
 }
 
-static int check_p2p_comm(int sdev, int ddev, bool * is_enabled)
+static bool check_p2p_comm(int sdev, int ddev)
 {
+    bool is_enabled = 0;
 #if ZE_P2P == ZE_P2P_ENABLED
-    *is_enabled = yaksuri_zei_global.p2p[sdev][ddev];
+    is_enabled = yaksuri_zei_global.p2p[sdev][ddev];
 #elif ZE_P2P == ZE_P2P_CLIQUES
-    if ((sdev + ddev) % 2)
-        *is_enabled = 0;
-    else
-        *is_enabled = yaksuri_zei_global.p2p[sdev][ddev];
-#else
-    *is_enabled = 0;
+    if ((sdev + ddev) % 2 == 0)
+        is_enabled = yaksuri_zei_global.p2p[sdev][ddev];
 #endif
 
-    return YAKSA_SUCCESS;
+    return is_enabled;
 }
 
 int yaksuri_ze_init_hook(yaksur_gpudriver_hooks_s ** hooks)
 {
     int rc = YAKSA_SUCCESS;
     ze_result_t zerr;
+    uint32_t num_drivers = 0;
+    ze_driver_handle_t *all_drivers = NULL;
+    uint32_t num_devices = 0;
+    ze_device_handle_t *all_devices = NULL;
+    ze_context_desc_t contextDesc;
+    ze_event_pool_desc_t pool_desc;
 
     ze_init_flag_t flags = ZE_INIT_FLAG_GPU_ONLY;
     zerr = zeInit(flags);
@@ -142,35 +145,29 @@ int yaksuri_ze_init_hook(yaksur_gpudriver_hooks_s ** hooks)
 
     /* get driver for Intel GPUs by first discovering all the drivers,
      * and then picks the first driver that supports GPU devices */
-    uint32_t num_drivers = 0;
     zerr = zeDriverGet(&num_drivers, NULL);
     YAKSURI_ZEI_ZE_ERR_CHKANDJUMP(zerr, rc, fn_fail);
 
-    ze_driver_handle_t *all_drivers =
-        (ze_driver_handle_t *) malloc(num_drivers * sizeof(ze_driver_handle_t));
+    all_drivers = (ze_driver_handle_t *) malloc(num_drivers * sizeof(ze_driver_handle_t));
     zerr = zeDriverGet(&num_drivers, all_drivers);
     YAKSURI_ZEI_ZE_ERR_CHKANDJUMP(zerr, rc, fn_fail);
 
     yaksuri_zei_global.driver = all_drivers[0];
     free(all_drivers);
 
-    uint32_t num_devices = 0;
     zerr = zeDeviceGet(yaksuri_zei_global.driver, &num_devices, NULL);
     YAKSURI_ZEI_ZE_ERR_CHKANDJUMP(zerr, rc, fn_fail);
 
-    ze_device_handle_t *all_devices =
-        (ze_device_handle_t *) malloc(num_devices * sizeof(ze_device_handle_t));
+    all_devices = (ze_device_handle_t *) malloc(num_devices * sizeof(ze_device_handle_t));
     zerr = zeDeviceGet(yaksuri_zei_global.driver, &num_devices, all_devices);
     YAKSURI_ZEI_ZE_ERR_CHKANDJUMP(zerr, rc, fn_fail);
 
     yaksuri_zei_global.ndevices = num_devices;
     yaksuri_zei_global.device = all_devices;
 
-    ze_context_desc_t contextDesc = {
-        .stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC,
-        .pNext = NULL,
-        .flags = 0,
-    };
+    contextDesc.stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC;
+    contextDesc.pNext = NULL;
+    contextDesc.flags = 0;
     zerr = zeContextCreate(yaksuri_zei_global.driver, &contextDesc, &yaksuri_zei_global.context);
     assert(zerr == ZE_RESULT_SUCCESS);
 
@@ -180,50 +177,50 @@ int yaksuri_ze_init_hook(yaksur_gpudriver_hooks_s ** hooks)
     zerr = zeDeviceGetProperties(yaksuri_zei_global.device[0], &deviceProperties);
     assert(zerr == ZE_RESULT_SUCCESS);
 
-    printf("maxHardwareContexts: %d\n", deviceProperties.maxHardwareContexts);
+    printf("maxHardwareContexts: %u\n", deviceProperties.maxHardwareContexts);
     printf("maxMemAllocSize: %ld\n", deviceProperties.maxMemAllocSize);
     printf("numThreadsPerEU: %d\n", deviceProperties.numThreadsPerEU);
 #endif
-
-    /* discover sub-devices */
-    yaksuri_zei_global.subdevices =
-        (ze_device_handle_t **) calloc(yaksuri_zei_global.ndevices, sizeof(ze_device_handle_t *));
-    yaksuri_zei_global.nsubdevices = 0;
-    for (int i = 0; i < yaksuri_zei_global.ndevices; i++) {
-        int subcount = 0;
-        zerr = zeDeviceGetSubDevices(yaksuri_zei_global.device[i], &subcount, NULL);
-        YAKSURI_ZEI_ZE_ERR_CHKANDJUMP(zerr, rc, fn_fail);
-        if (yaksuri_zei_global.nsubdevices == 0)
-            yaksuri_zei_global.nsubdevices = subcount;
-        if (subcount <= 1)
-            break;
-        yaksuri_zei_global.subdevices[i] =
-            (ze_device_handle_t *) malloc(sizeof(ze_device_handle_t) * subcount);
-        zerr =
-            zeDeviceGetSubDevices(yaksuri_zei_global.device[i], &subcount,
-                                  yaksuri_zei_global.subdevices[i]);
-        YAKSURI_ZEI_ZE_ERR_CHKANDJUMP(zerr, rc, fn_fail);
-    }
 
     /* device state */
     yaksuri_zei_global.device_states =
         (yaksuri_zei_device_state_s *) calloc(yaksuri_zei_global.ndevices,
                                               sizeof(yaksuri_zei_device_state_s));
     yaksuri_zei_global.throttle_threshold = ZE_THROTTLE_THRESHOLD;
-    yaksuri_zei_global.ev_pool_cap = ZE_EVENT_POOL_CAP;
-    ze_event_pool_desc_t pool_desc = { ZE_STRUCTURE_TYPE_EVENT_POOL_DESC };
+    pool_desc.stype = ZE_STRUCTURE_TYPE_EVENT_POOL_DESC;
     pool_desc.flags = 0;
-    pool_desc.count = yaksuri_zei_global.ev_pool_cap;
+    pool_desc.count = ZE_EVENT_POOL_CAP;
 
     for (int i = 0; i < yaksuri_zei_global.ndevices; i++) {
         yaksuri_zei_device_state_s *device_state = yaksuri_zei_global.device_states + i;
         device_state->dev_id = i;
+        ze_device_properties_t deviceProperties;
+        zerr = zeDeviceGetProperties(yaksuri_zei_global.device[i], &deviceProperties);
+        YAKSURI_ZEI_ZE_ERR_CHKANDJUMP(zerr, rc, fn_fail);
+        device_state->deviceId = deviceProperties.deviceId;
+
+        /* discover sub-devices */
+        uint32_t subcount = 0;
+        zerr = zeDeviceGetSubDevices(yaksuri_zei_global.device[i], &subcount, NULL);
+        YAKSURI_ZEI_ZE_ERR_CHKANDJUMP(zerr, rc, fn_fail);
+        if (subcount == 1)
+            subcount = 0;
+        device_state->nsubdevices = subcount;
+        if (subcount > 1) {
+            device_state->subdevices =
+                (ze_device_handle_t *) malloc(sizeof(ze_device_handle_t) * subcount);
+            zerr =
+                zeDeviceGetSubDevices(yaksuri_zei_global.device[i], &subcount,
+                                      device_state->subdevices);
+            YAKSURI_ZEI_ZE_ERR_CHKANDJUMP(zerr, rc, fn_fail);
+        }
+
         /* create one event pool for each device */
         zerr = zeEventPoolCreate(yaksuri_zei_global.context, &pool_desc, 1,
                                  &yaksuri_zei_global.device[i], &device_state->ep);
         YAKSURI_ZEI_ZE_ERR_CHKANDJUMP(zerr, rc, fn_fail);
         device_state->events =
-            (ze_event_handle_t *) calloc(yaksuri_zei_global.ev_pool_cap, sizeof(ze_event_handle_t));
+            (ze_event_handle_t *) calloc(ZE_EVENT_POOL_CAP, sizeof(ze_event_handle_t));
         device_state->last_event_idx = -1;
         device_state->ev_lb = device_state->ev_ub = -1;
         device_state->cl_pool_size = ZE_CMD_LIST_INIT_POOL_SIZE;
@@ -275,6 +272,8 @@ int yaksuri_ze_init_hook(yaksur_gpudriver_hooks_s ** hooks)
     (*hooks)->finalize = finalize_hook;
     (*hooks)->ipack = yaksuri_zei_ipack;
     (*hooks)->iunpack = yaksuri_zei_iunpack;
+    (*hooks)->synchronize = yaksuri_zei_synchronize;
+    (*hooks)->flush_all = yaksuri_zei_flush_all;
     (*hooks)->pup_is_supported = yaksuri_zei_pup_is_supported;
     (*hooks)->get_iov_pack_threshold = yaksuri_zei_get_iov_pack_threshold;
     (*hooks)->get_iov_unpack_threshold = yaksuri_zei_get_iov_unpack_threshold;

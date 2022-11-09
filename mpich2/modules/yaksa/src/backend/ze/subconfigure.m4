@@ -8,19 +8,47 @@
 ##### capture user arguments
 ##########################################################################
 
-# --with=ze
+# --with-ze
 PAC_SET_HEADER_LIB_PATH([ze])
-if test x"${with_ze}" != x ; then
+if test "$with_ze" != "no" ; then
     PAC_CHECK_HEADER_LIB([level_zero/ze_api.h],[ze_loader],[zeCommandQueueCreate],[have_ze=yes],[have_ze=no])
     AC_MSG_CHECKING([whether ocloc is installed])
     if ! command -v ocloc &> /dev/null; then
-        AC_MSG_ERROR([ocloc not found; either install it or disable ze support])
+        if test "$with_ze" = "yes" ; then
+            AC_MSG_ERROR([ocloc not found; either install it or disable ze support])
+        else
+            AC_MSG_RESULT([no])
+            have_ze=no
+        fi
     else
         AC_MSG_RESULT([yes])
     fi
-fi
-if test "${have_ze}" = "yes" ; then
-    AC_DEFINE([HAVE_ZE],[1],[Define is ZE is available])
+    # ze_api.h relies on support for c11
+    if test "${have_ze}" = "yes" ; then
+        PAC_PUSH_FLAG([CFLAGS])
+        CFLAGS="$CFLAGS -Werror"
+        AC_CACHE_CHECK([for -Werror],ac_cv_werror,[
+        AC_TRY_COMPILE([],[],ac_cv_werror=yes,ac_cv_werror=no)])
+        if test "${ac_cv_werror}" = "yes" ; then
+            AC_CACHE_CHECK([for c11 support],ac_cv_support_c11,[
+            AC_TRY_COMPILE([
+    typedef struct _ze_ipc_mem_handle_t
+    {
+        int data;
+    } ze_ipc_mem_handle_t;
+    typedef struct _ze_ipc_mem_handle_t ze_ipc_mem_handle_t;
+            ],[],ac_cv_support_c11=yes,ac_cv_support_c11=no)])
+            if test "${ac_cv_support_c11}" = "no" ; then
+                have_ze=no
+            fi
+        fi
+        PAC_POP_FLAG([CFLAGS])
+    fi
+    if test "${have_ze}" = "yes" ; then
+        AC_DEFINE([HAVE_ZE],[1],[Define is ZE is available])
+    elif test "$with_ze" != ""; then
+        AC_MSG_ERROR([ZE was requested but it is not functional])
+    fi
 fi
 AM_CONDITIONAL([BUILD_ZE_BACKEND], [test x${have_ze} = xyes])
 AM_CONDITIONAL([BUILD_ZE_TESTS], [test x${have_ze} = xyes])

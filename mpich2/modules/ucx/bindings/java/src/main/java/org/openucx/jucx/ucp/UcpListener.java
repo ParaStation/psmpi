@@ -17,19 +17,26 @@ import java.net.InetSocketAddress;
 public class UcpListener extends UcxNativeStruct implements Closeable {
 
     private InetSocketAddress address;
+    private UcpListenerConnectionHandler connectionHandler;
 
     public UcpListener(UcpWorker worker, UcpListenerParams params) {
         if (params.getSockAddr() == null) {
             throw new UcxException("UcpListenerParams.sockAddr must be non-null.");
         }
+        if (params.connectionHandler == null) {
+            throw new UcxException("Connection handler must be set");
+        }
+        this.connectionHandler = params.connectionHandler;
         setNativeId(createUcpListener(params, worker.getNativeId()));
-        address = params.getSockAddr();
     }
 
     /**
      * Returns a socket address of this listener.
      */
     public InetSocketAddress getAddress() {
+        if (address == null) {
+            address = queryAddressNative(getNativeId());
+        }
         return address;
     }
 
@@ -39,7 +46,9 @@ public class UcpListener extends UcxNativeStruct implements Closeable {
         setNativeId(null);
     }
 
-    private static native long createUcpListener(UcpListenerParams params, long workerId);
+    private native long createUcpListener(UcpListenerParams params, long workerId);
+
+    private static native InetSocketAddress queryAddressNative(long listenerId);
 
     private static native void destroyUcpListenerNative(long listenerId);
 }

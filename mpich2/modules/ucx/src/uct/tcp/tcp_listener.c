@@ -14,7 +14,9 @@
 #include <ucs/async/async.h>
 
 
-static void uct_tcp_listener_conn_req_handler(int fd, int events, void *arg)
+static void
+uct_tcp_listener_conn_req_handler(int fd, ucs_event_set_types_t events,
+                                  void *arg)
 {
     uct_tcp_listener_t *listener = (uct_tcp_listener_t *)arg;
     char ip_port_str[UCS_SOCKADDR_STRING_LEN];
@@ -106,10 +108,15 @@ UCS_CLASS_INIT_FUNC(uct_tcp_listener_t, uct_cm_h cm,
     self->conn_request_cb = params->conn_request_cb;
     self->user_data       = (params->field_mask & UCT_LISTENER_PARAM_FIELD_USER_DATA) ?
                             params->user_data : NULL;
-    backlog               = (params->field_mask & UCT_LISTENER_PARAM_FIELD_BACKLOG) ?
-                            params->backlog : ucs_socket_max_conn();
 
-    status = ucs_socket_server_init(saddr, socklen, backlog, &self->listen_fd);
+    status = uct_listener_backlog_adjust(params, ucs_socket_max_conn(), &backlog);
+    if (status != UCS_OK) {
+        goto err;
+    }
+
+    status = ucs_socket_server_init(saddr, socklen, backlog, 0,
+                                    self->sockcm->super.config.reuse_addr,
+                                    &self->listen_fd);
     if (status != UCS_OK) {
         goto err;
     }
@@ -154,6 +161,7 @@ ucs_status_t uct_tcp_listener_reject(uct_listener_h listener,
 {
     uct_tcp_sockcm_ep_t *cep         = (uct_tcp_sockcm_ep_t *)conn_request;
     uct_tcp_sockcm_t *tcp_sockcm     = uct_tcp_sockcm_ep_get_cm(cep);
+    uct_tcp_sockcm_priv_data_hdr_t *hdr;
     char peer_str[UCS_SOCKADDR_STRING_LEN];
     ucs_status_t status;
 
@@ -171,11 +179,23 @@ ucs_status_t uct_tcp_listener_reject(uct_listener_h listener,
               cep, cep->fd, cep->state,
               uct_tcp_sockcm_cm_ep_peer_addr_str(cep, peer_str, UCS_SOCKADDR_STRING_LEN));
 
-    status = UCS_OK;
+    hdr                  = (uct_tcp_sockcm_priv_data_hdr_t*)cep->comm_ctx.buf;
+    hdr->length          = 0;   /* sending only the header in the reject message */
+    hdr->status          = (uint8_t)UCS_ERR_REJECTED;
+    cep->comm_ctx.length = sizeof(*hdr);
+
+    /* the server needs to send a reject message to the client */
+    ucs_async_modify_handler(cep->fd, UCS_EVENT_SET_EVWRITE);
+
+    cep->state |= UCT_TCP_SOCKCM_EP_SERVER_REJECT_CALLED;
+    status      = uct_tcp_sockcm_ep_progress_send(cep);
+
 out:
+    if (status != UCS_OK) {
+        UCS_CLASS_DELETE(uct_tcp_sockcm_ep_t, cep);
+    }
+
     UCS_ASYNC_UNBLOCK(tcp_sockcm->super.iface.worker->async);
-    /* reject the connection request by closing the endpoint which will close its fd */
-    UCS_CLASS_DELETE(uct_tcp_sockcm_ep_t, cep);
     return status;
 }
 

@@ -85,7 +85,7 @@ int yaksi_type_free(yaksi_type_s * type)
     goto fn_exit;
 }
 
-int yaksa_type_free(yaksa_type_t type)
+YAKSA_API_PUBLIC int yaksa_type_free(yaksa_type_t type)
 {
     yaksi_type_s *yaksi_type;
     int rc = YAKSA_SUCCESS;

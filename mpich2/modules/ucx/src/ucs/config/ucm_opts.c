@@ -27,6 +27,13 @@ static const char *ucm_mmap_hook_modes[] = {
     [UCM_MMAP_HOOK_LAST]   = NULL
 };
 
+static const char *ucm_module_unload_prevent_modes[] = {
+    [UCM_UNLOAD_PREVENT_MODE_LAZY] = "lazy",
+    [UCM_UNLOAD_PREVENT_MODE_NOW]  = "now",
+    [UCM_UNLOAD_PREVENT_MODE_NONE] = "none",
+    [UCM_UNLOAD_PREVENT_MODE_LAST] = NULL
+};
+
 static ucs_config_field_t ucm_global_config_table[] = {
   {"LOG_LEVEL", "warn",
    "Logging level for memory events", ucs_offsetof(ucm_global_config_t, log_level),
@@ -42,12 +49,13 @@ static ucs_config_field_t ucm_global_config_table[] = {
 
   {"MMAP_HOOK_MODE", UCM_DEFAULT_HOOK_MODE_STR,
    "MMAP hook mode\n"
-   " none   - don't set mmap hooks.\n"
-   " reloc  - use ELF relocation table to set hooks.\n"
+   " none   - Don't set mmap hooks.\n"
+   " reloc  - Use ELF relocation table to set hooks.\n"
 #if UCM_BISTRO_HOOKS
-   " bistro - use binary instrumentation to set hooks.\n"
+   " bistro - Use binary instrumentation to set hooks.\n"
 #endif
-   ,ucs_offsetof(ucm_global_config_t, mmap_hook_mode), UCS_CONFIG_TYPE_ENUM(ucm_mmap_hook_modes)},
+   ,ucs_offsetof(ucm_global_config_t, mmap_hook_mode),
+                 UCS_CONFIG_TYPE_ENUM(ucm_mmap_hook_modes)},
 
   {"MALLOC_HOOKS", "yes",
    "Enable using glibc malloc hooks",
@@ -61,10 +69,28 @@ static ucs_config_field_t ucm_global_config_table[] = {
    "which would use the original implementation and not ours.",
    ucs_offsetof(ucm_global_config_t, enable_malloc_reloc), UCS_CONFIG_TYPE_BOOL},
 
+  {"CUDA_HOOK_MODE",
+#if UCM_BISTRO_HOOKS
+    UCM_MMAP_HOOK_BISTRO_STR ","
+#endif
+   UCM_MMAP_HOOK_RELOC_STR,
+   "Cuda memory hook modes. A combination of:\n"
+   " none   - Don't set Cuda hooks.\n"
+   " reloc  - Use ELF relocation table to set hooks. In this mode, if any\n"
+   "          part of the application is linked with Cuda runtime statically,\n"
+   "          some memory events may be missed and not reported."
+#if UCM_BISTRO_HOOKS
+   " bistro - Use binary instrumentation to set hooks. In this mode, it's\n"
+   "          possible to intercept calls from the Cuda runtime library to\n"
+   "          Cuda driver APIs, so memory events are reported properly even\n"
+   "          for statically-linked applications."
+#endif
+   ,ucs_offsetof(ucm_global_config_t, cuda_hook_modes),
+                 UCS_CONFIG_TYPE_BITMAP(ucm_mmap_hook_modes)},
+
   {"CUDA_RELOC", "yes",
-   "Enable installing CUDA symbols in the relocation table",
-   ucs_offsetof(ucm_global_config_t, enable_cuda_reloc),
-   UCS_CONFIG_TYPE_BOOL},
+   "The configuration parameter replaced by UCX_MEM_CUDA_HOOK_MODE",
+   UCS_CONFIG_DEPRECATED_FIELD_OFFSET, UCS_CONFIG_TYPE_DEPRECATED},
 
   {"DYNAMIC_MMAP_THRESH", "yes",
    "Enable dynamic mmap threshold: for every released block, the\n"
@@ -80,13 +106,23 @@ static ucs_config_field_t ucm_global_config_table[] = {
    ucs_offsetof(ucm_global_config_t, dlopen_process_rpath),
    UCS_CONFIG_TYPE_BOOL},
 
+  {"MODULE_UNLOAD_PREVENT_MODE", "lazy",
+   "Module unload prevention mode\n"
+   " lazy - use RTLD_LAZY flag to add reference to module.\n"
+   " now  - use RTLD_NOW flag to add reference to module.\n"
+   " none - don't prevent module unload, use it for debug purposes only."
+   ,ucs_offsetof(ucm_global_config_t, module_unload_prevent_mode), UCS_CONFIG_TYPE_ENUM(ucm_module_unload_prevent_modes)},
+
   {NULL}
 };
 
 UCS_CONFIG_REGISTER_TABLE(ucm_global_config_table, "UCM", UCM_CONFIG_PREFIX,
-                          ucm_global_config_t)
+                          ucm_global_config_t, &ucs_config_global_list)
 
 UCS_STATIC_INIT {
-    (void)ucs_config_parser_fill_opts(&ucm_global_opts, ucm_global_config_table,
-                                      UCS_DEFAULT_ENV_PREFIX, UCM_CONFIG_PREFIX, 0);
+    ucm_global_config_t ucm_opts;
+    (void)ucs_config_parser_fill_opts(&ucm_opts, ucm_global_config_table,
+                                      UCS_DEFAULT_ENV_PREFIX, UCM_CONFIG_PREFIX,
+                                      0);
+    ucm_library_init(&ucm_opts);
 }

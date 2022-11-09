@@ -74,13 +74,16 @@ int main(int argc, char **argv)
 	if (!hints)
 		return EXIT_FAILURE;
 
-	while ((op = getopt(argc, argv, "h" CS_OPTS INFO_OPTS BENCHMARK_OPTS)) !=
+	while ((op = getopt(argc, argv, "Uh" CS_OPTS INFO_OPTS BENCHMARK_OPTS)) !=
 			-1) {
 		switch (op) {
 		default:
 			ft_parse_benchmark_opts(op, optarg);
 			ft_parseinfo(op, optarg, hints, &opts);
 			ft_parsecsopts(op, optarg, &opts);
+			break;
+		case 'U':
+			hints->tx_attr->op_flags |= FI_DELIVERY_COMPLETE;
 			break;
 		case '?':
 		case 'h':
@@ -98,6 +101,8 @@ int main(int argc, char **argv)
 	hints->mode = FI_CONTEXT;
 	hints->domain_attr->mr_mode = opts.mr_mode;
 	hints->domain_attr->threading = FI_THREAD_DOMAIN;
+	hints->tx_attr->tclass = FI_TC_LOW_LATENCY;
+	hints->addr_format = opts.address_format;
 
 	ret = run();
 

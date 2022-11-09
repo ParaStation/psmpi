@@ -33,7 +33,7 @@ extern zm_atomic_uint_t zm_hplist_length; /* N: correlates with the number
 /* per-thread pointer to its own hazard pointer node */
 extern zm_thread_local zm_hzdptr_lnode_t* zm_my_hplnode;
 
-static inline void zm_hzdptr_allocate() {
+static inline void zm_hzdptr_allocate(void) {
     int i;
     zm_hzdptr_lnode_t *cur_hplnode = (zm_hzdptr_lnode_t*) zm_atomic_load(&zm_hzdptr_list, zm_memord_acquire);
     zm_ptr_t old_hplhead;
@@ -64,7 +64,7 @@ static inline void zm_hzdptr_allocate() {
     zm_sdlist_init(&zm_my_hplnode->rlist);
 }
 
-static inline void zm_hzdptr_scan() {
+static inline void zm_hzdptr_scan(void) {
     int i;
     zm_sdlist_t plist;
     /* stage 1: pull non-null values from hzdptr_list */
@@ -89,7 +89,7 @@ static inline void zm_hzdptr_scan() {
     zm_sdlist_free(&plist);
 }
 
-static inline void zm_hzdptr_helpscan() {
+static inline void zm_hzdptr_helpscan(void) {
     zm_hzdptr_lnode_t *cur_hplnode = (zm_hzdptr_lnode_t*) zm_hzdptr_list;
     while((zm_ptr_t)cur_hplnode != ZM_NULL) {
         if(zm_atomic_flag_test_and_set(&cur_hplnode->active, zm_memord_acq_rel)) {
@@ -117,7 +117,7 @@ static inline void zm_hzdptr_retire(zm_ptr_t node) {
     }
 }
 
-static inline zm_hzdptr_t* zm_hzdptr_get() {
+static inline zm_hzdptr_t* zm_hzdptr_get(void) {
     if(zm_unlikely(zm_my_hplnode == NULL))
         zm_hzdptr_allocate();
     return zm_my_hplnode->hzdptrs;

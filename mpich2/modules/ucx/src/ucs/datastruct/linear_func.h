@@ -7,8 +7,8 @@
 #ifndef UCS_LINEAR_FUNC_H_
 #define UCS_LINEAR_FUNC_H_
 
-#include <ucs/sys/compiler_def.h>
 #include <ucs/type/status.h>
+#include <ucs/sys/compiler_def.h>
 #include <math.h>
 
 
@@ -68,6 +68,23 @@ static UCS_F_ALWAYS_INLINE ucs_linear_func_t
 ucs_linear_func_add(ucs_linear_func_t func1, ucs_linear_func_t func2)
 {
     return ucs_linear_func_make(func1.c + func2.c, func1.m + func2.m);
+}
+
+
+/**
+ * Sum three linear functions.
+ *
+ * @param [in]  func1    First function to add.
+ * @param [in]  func2    Second function to add.
+ * @param [in]  func3    Third function to add.
+ *
+ * @return Linear function representing (func1 + func2 + func3)
+ */
+static UCS_F_ALWAYS_INLINE ucs_linear_func_t
+ucs_linear_func_add3(ucs_linear_func_t func1, ucs_linear_func_t func2,
+                     ucs_linear_func_t func3)
+{
+    return ucs_linear_func_add(ucs_linear_func_add(func1, func2), func3);
 }
 
 
@@ -167,6 +184,22 @@ ucs_linear_func_add_value_at(ucs_linear_func_t *func,
                              ucs_linear_func_t baseline_func, double baseline_x)
 {
     func->c += ucs_linear_func_apply(baseline_func, baseline_x);
+}
+
+
+/*
+ * Check if two linear functions are equal.
+ *
+ * @param [in] func1    First function to compare.
+ * @param [in] func2    Second function to compare.
+ * @param [in] epsilon  Threshold to consider two floating-point values as equal.
+ */
+static inline int
+ucs_linear_func_is_equal(ucs_linear_func_t func1, ucs_linear_func_t func2,
+                         double epsilon)
+{
+    return (fabs(func1.m - func2.m) < epsilon) &&
+           (fabs(func1.c - func2.c) < epsilon);
 }
 
 #endif

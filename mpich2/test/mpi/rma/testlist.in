@@ -93,6 +93,18 @@ fetch_and_op_int 4
 fetch_and_op_long 4
 fetch_and_op_double 4
 fetch_and_op_long_double 4
+fetch_and_op_char_hwacc 4
+fetch_and_op_short_hwacc 4
+fetch_and_op_int_hwacc 4
+fetch_and_op_long_hwacc 4
+fetch_and_op_double_hwacc 4
+fetch_and_op_long_double_hwacc 4
+fetch_and_op_char_accop_hwacc 4
+fetch_and_op_short_accop_hwacc 4
+fetch_and_op_int_accop_hwacc 4
+fetch_and_op_long_accop_hwacc 4
+fetch_and_op_double_accop_hwacc 4
+fetch_and_op_long_double_accop_hwacc 4
 get_accumulate_double 4
 get_accumulate_double_derived 4
 get_accumulate_int 4
@@ -119,7 +131,8 @@ mutex_bench 4
 mutex_bench_shared 4
 mutex_bench_shm 4
 mutex_bench_shm_ordered 4
-rma_contig 2 timeLimit=720
+rma_contig 2 arg=-iter=10
+rma_contig 2 arg=-iter=10000
 badrma 2
 acc_loc 4
 acc_ordering 2

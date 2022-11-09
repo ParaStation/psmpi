@@ -93,6 +93,11 @@ int yaksur_init_hook(yaksi_info_s * info)
     rc = yaksuri_ze_init_hook(&yaksuri_global.gpudriver[id].hooks);
     YAKSU_ERR_CHECK(rc, fn_fail);
 
+    /* HIP hooks */
+    id = YAKSURI_GPUDRIVER_ID__HIP;
+    yaksuri_global.gpudriver[id].hooks = NULL;
+    rc = yaksuri_hip_init_hook(&yaksuri_global.gpudriver[id].hooks);
+    YAKSU_ERR_CHECK(rc, fn_fail);
     /* final setup for all drivers */
     for (id = YAKSURI_GPUDRIVER_ID__UNSET; id < YAKSURI_GPUDRIVER_ID__LAST; id++) {
         if (id == YAKSURI_GPUDRIVER_ID__UNSET || yaksuri_global.gpudriver[id].hooks == NULL)
@@ -120,6 +125,9 @@ int yaksur_init_hook(yaksi_info_s * info)
         yaksuri_global.gpudriver[id].ndevices = ndevices;
     }
 
+    rc = yaksuri_progress_init();
+    YAKSU_ERR_CHECK(rc, fn_fail);
+
   fn_exit:
     return rc;
   fn_fail:
@@ -129,6 +137,9 @@ int yaksur_init_hook(yaksi_info_s * info)
 int yaksur_finalize_hook(void)
 {
     int rc = YAKSA_SUCCESS;
+
+    rc = yaksuri_progress_finalize();
+    YAKSU_ERR_CHECK(rc, fn_fail);
 
     rc = yaksuri_seq_finalize_hook();
     YAKSU_ERR_CHECK(rc, fn_fail);
@@ -241,6 +252,7 @@ int yaksur_info_create_hook(yaksi_info_s * info)
     yaksuri_info_s *infopriv;
     infopriv = (yaksuri_info_s *) info->backend.priv;
     infopriv->gpudriver_id = YAKSURI_GPUDRIVER_ID__UNSET;
+    infopriv->mapped_device = -1;
 
     rc = yaksuri_seq_info_create_hook(info);
     YAKSU_ERR_CHECK(rc, fn_fail);
@@ -303,11 +315,18 @@ int yaksur_info_keyval_append(yaksi_info_s * info, const char *key, const void *
             infopriv->gpudriver_id = YAKSURI_GPUDRIVER_ID__CUDA;
         } else if (!strncmp(val, "ze", vallen)) {
             infopriv->gpudriver_id = YAKSURI_GPUDRIVER_ID__ZE;
+        } else if (!strncmp(val, "hip", vallen)) {
+            infopriv->gpudriver_id = YAKSURI_GPUDRIVER_ID__HIP;
         } else if (!strncmp(val, "nogpu", vallen)) {
             infopriv->gpudriver_id = YAKSURI_GPUDRIVER_ID__LAST;
         } else {
             assert(0);
         }
+        goto fn_exit;
+    } else if (!strncmp(key, "yaksa_mapped_device", YAKSA_INFO_MAX_KEYLEN)) {
+        yaksuri_info_s *infopriv = info->backend.priv;
+        assert(vallen == sizeof(int));
+        infopriv->mapped_device = *((const int *) val);
         goto fn_exit;
     }
 

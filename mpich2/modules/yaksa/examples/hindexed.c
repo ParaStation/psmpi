@@ -14,7 +14,7 @@ int main()
     int pack_buf[SIZE];
     int unpack_buf[SIZE];
     yaksa_type_t hindexed;
-    int array_of_blocklengths[ROWS - 1] = {
+    intptr_t array_of_blocklengths[ROWS - 1] = {
         1, 2, 2, 4, 4, 4, 4
     };
     intptr_t array_of_displacements[ROWS - 1] = {
@@ -37,14 +37,14 @@ int main()
     yaksa_request_t request;
     uintptr_t actual_pack_bytes;
     rc = yaksa_ipack(input_matrix, 1, hindexed, 0, pack_buf, 21 * sizeof(int), &actual_pack_bytes,
-                     NULL, &request);
+                     NULL, YAKSA_OP__REPLACE, &request);
     assert(rc == YAKSA_SUCCESS);
     rc = yaksa_request_wait(request);
     assert(rc == YAKSA_SUCCESS);
 
     uintptr_t actual_unpack_bytes;
     rc = yaksa_iunpack(pack_buf, 21 * sizeof(int), unpack_buf, 1, hindexed, 0, &actual_unpack_bytes,
-                       NULL, &request);
+                       NULL, YAKSA_OP__REPLACE, &request);
     assert(rc == YAKSA_SUCCESS);
     rc = yaksa_request_wait(request);
     assert(rc == YAKSA_SUCCESS);

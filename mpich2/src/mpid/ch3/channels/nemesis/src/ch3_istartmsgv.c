@@ -17,11 +17,11 @@
  * pointed to by the iovec (which is assumed to be a MPIDI_CH3_Pkt_t)
  * are copied into the request, and a pointer to the request is
  * returned.  An error condition also results in a request be
- * allocated and the errror being returned in the status field of the
+ * allocated and the error being returned in the status field of the
  * request.
  */
 
-/* NOTE - The completion action associated with a request created by CH3_iStartMsgv() is alway null (onDataAvail = 0).  This
+/* NOTE - The completion action associated with a request created by CH3_iStartMsgv() is always null (onDataAvail = 0).  This
    implies that CH3_iStartMsgv() can only be used when the entire message can be described by a single iovec of size
    MPL_IOV_LIMIT. */
 
@@ -32,9 +32,8 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, struct iovec *iov, int n_iov, MPIR_Req
     int in_cs = FALSE;
     int again = 0;
     int j;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
+    MPIR_FUNC_ENTER;
 
     MPIR_ERR_CHKANDJUMP1(vc->state == MPIDI_VC_STATE_MORIBUND, mpi_errno, MPIX_ERR_PROC_FAILED, "**comm_fail", "**comm_fail %d", vc->pg_rank);
 
@@ -180,7 +179,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, struct iovec *iov, int n_iov, MPIR_Req
     if (in_cs) {
         MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     }
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     goto fn_exit;

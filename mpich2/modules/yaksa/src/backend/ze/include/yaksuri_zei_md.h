@@ -9,7 +9,7 @@
 typedef struct yaksuri_zei_md_s {
     union {
         struct {
-            int count;
+            long count;
             long stride;
             struct yaksuri_zei_md_s *child;
         } contig;
@@ -20,20 +20,20 @@ typedef struct yaksuri_zei_md_s {
             struct yaksuri_zei_md_s *child;
         } resized;
         struct {
-            int count;
-            int blocklength;
+            long count;
+            long blocklength;
             long stride;
             struct yaksuri_zei_md_s *child;
         } hvector;
         struct {
-            int count;
-            int blocklength;
+            long count;
+            long blocklength;
             long *array_of_displs;
             struct yaksuri_zei_md_s *child;
         } blkhindx;
         struct {
-            int count;
-            int *array_of_blocklengths;
+            long count;
+            long *array_of_blocklengths;
             long *array_of_displs;
             struct yaksuri_zei_md_s *child;
         } hindexed;

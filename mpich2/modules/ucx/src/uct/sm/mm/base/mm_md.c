@@ -36,8 +36,9 @@ ucs_status_t uct_mm_query_md_resources(uct_component_t *component,
                                        unsigned *num_resources_p)
 {
     ucs_status_t status;
+    int UCS_V_UNUSED attach_shm_file;
 
-    status = uct_mm_mdc_mapper_ops(component)->query();
+    status = uct_mm_mdc_mapper_ops(component)->query(&attach_shm_file);
     switch (status) {
     case UCS_OK:
         return uct_md_query_single_md_resource(component, resources_p,
@@ -66,7 +67,7 @@ ucs_status_t uct_mm_seg_new(void *address, size_t length, uct_mm_seg_t **seg_p)
     return UCS_OK;
 }
 
-void uct_mm_md_query(uct_md_h md, uct_md_attr_t *md_attr, int support_alloc)
+void uct_mm_md_query(uct_md_h md, uct_md_attr_t *md_attr, uint64_t max_alloc)
 {
     memset(md_attr, 0, sizeof(*md_attr));
 
@@ -74,12 +75,13 @@ void uct_mm_md_query(uct_md_h md, uct_md_attr_t *md_attr, int support_alloc)
                                     UCT_MD_FLAG_NEED_RKEY;
     md_attr->cap.max_reg          = 0;
     md_attr->cap.max_alloc        = 0;
-    md_attr->cap.access_mem_type  = UCS_MEMORY_TYPE_HOST;
+    md_attr->cap.alloc_mem_types  = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    md_attr->cap.access_mem_types = UCS_BIT(UCS_MEMORY_TYPE_HOST);
     md_attr->cap.detect_mem_types = 0;
 
-    if (support_alloc) {
+    if (max_alloc > 0) {
         md_attr->cap.flags       |= UCT_MD_FLAG_ALLOC | UCT_MD_FLAG_FIXED;
-        md_attr->cap.max_alloc    = ULONG_MAX;
+        md_attr->cap.max_alloc    = max_alloc;
     }
 
     memset(&md_attr->local_cpus, 0xff, sizeof(md_attr->local_cpus));

@@ -7,9 +7,10 @@
 #include "yaksu.h"
 #include <assert.h>
 
-int yaksa_ipack(const void *inbuf, uintptr_t incount, yaksa_type_t type, uintptr_t inoffset,
-                void *outbuf, uintptr_t max_pack_bytes, uintptr_t * actual_pack_bytes,
-                yaksa_info_t info, yaksa_request_t * request)
+YAKSA_API_PUBLIC int yaksa_ipack(const void *inbuf, uintptr_t incount, yaksa_type_t type,
+                                 uintptr_t inoffset, void *outbuf, uintptr_t max_pack_bytes,
+                                 uintptr_t * actual_pack_bytes, yaksa_info_t info, yaksa_op_t op,
+                                 yaksa_request_t * request)
 {
     int rc = YAKSA_SUCCESS;
 
@@ -38,7 +39,7 @@ int yaksa_ipack(const void *inbuf, uintptr_t incount, yaksa_type_t type, uintptr
     yaksi_info_s *yaksi_info;
     yaksi_info = (yaksi_info_s *) info;
     rc = yaksi_ipack(inbuf, incount, yaksi_type, inoffset, outbuf, max_pack_bytes,
-                     actual_pack_bytes, yaksi_info, yaksi_request);
+                     actual_pack_bytes, yaksi_info, op, yaksi_request);
     YAKSU_ERR_CHECK(rc, fn_fail);
 
     if (yaksu_atomic_load(&yaksi_request->cc)) {

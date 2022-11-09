@@ -198,7 +198,7 @@ Additionally, endpoints that use manual progress must be associated
 with relevant completion queues or event queues in order to drive
 progress.  For endpoints that are only used as the target of RMA or
 atomic operations, this means binding the endpoint to a completion
-queue associated with receive processing.  Unconnected endpoints must
+queue associated with receive processing.  Connectionless endpoints must
 be bound to an address vector.
 
 Once an endpoint has been activated, it may be associated with an address
@@ -479,7 +479,7 @@ The following option levels and option names and parameters are defined.
 : Defines the maximum size of a buffered message that will be reported
   to users as part of a receive completion when the FI_BUFFERED_RECV mode
   is enabled on an endpoint.
-  
+
   fi_getopt() will return the currently configured threshold, or the
   provider's default threshold if one has not be set by the application.
   fi_setopt() allows an application to configure the threshold.  If the
@@ -594,7 +594,7 @@ desired.  Supported types are:
   flow control that maintains message boundaries.
 
 *FI_EP_RDM*
-: Reliable datagram message.  Provides a reliable, unconnected data
+: Reliable datagram message.  Provides a reliable, connectionless data
   transfer service with flow control that maintains message
   boundaries.
 
@@ -658,6 +658,10 @@ protocol value set to one.
   performance scaled messaging version 2.  PSMX2 is an extended version of the
   PSM2 protocol to support the libfabric interfaces.
 
+*FI_PROTO_PSMX3*
+: The protocol is Intel's protocol known as PSM3, performance scaled
+  messaging version 3.  PSMX3 is implemented over RoCEv2 and verbs.
+
 *FI_PROTO_RDMA_CM_IB_RC*
 : The protocol runs over Infiniband reliable-connected queue pairs,
   using the RDMA CM protocol for connection establishment.
@@ -693,7 +697,7 @@ The protocol version allows providers to extend an existing protocol,
 by adding support for additional features or functionality for example,
 in a backward compatible manner.  Providers that support different versions
 of the same protocol should inter-operate, but only when using the
-capabilities defined for the lesser version. 
+capabilities defined for the lesser version.
 
 ## max_msg_size - Max Message Size
 
@@ -714,16 +718,26 @@ data into target memory for RMA and atomic operations.  Data ordering
 is separate, but dependent on message ordering (defined below).  Data
 ordering is unspecified where message order is not defined.
 
-Data ordering refers to the access of target memory by subsequent
+Data ordering refers to the access of the same target memory by subsequent
 operations.  When back to back RMA read or write operations access the
 same registered memory location, data ordering indicates whether the
 second operation reads or writes the target memory after the first
-operation has completed.  Because RMA ordering applies between two
-operations, and not within a single data transfer, ordering is defined
-per byte-addressable memory location.  I.e.  ordering specifies
+operation has completed.  For example, will an RMA read that follows
+an RMA write read back the data that was written?  Similarly, will an
+RMA write that follows an RMA read update the target buffer after the
+read has transferred the original data?  Data ordering answers these
+questions, even in the presence of errors, such as the need to resend
+data because of lost or corrupted network traffic.
+
+RMA ordering applies between two operations, and not within a single
+data transfer.  Therefore, ordering is defined
+per byte-addressable memory location.  I.e. ordering specifies
 whether location X is accessed by the second operation after the first
 operation.  Nothing is implied about the completion of the first
-operation before the second operation is initiated.
+operation before the second operation is initiated.  For example, if
+the first operation updates locations X and Y, but the second operation
+only accesses location X, there are no guarantees defined relative to
+location Y and the second operation.
 
 In order to support large data transfers being broken into multiple packets
 and sent using multiple paths through the fabric, data ordering may be
@@ -830,7 +844,7 @@ details.
 ## auth_key_size - Authorization Key Length
 
 The length of the authorization key in bytes.  This field will be 0 if
-authorization keys are not available or used.  This field is ignored 
+authorization keys are not available or used.  This field is ignored
 unless the fabric is opened with API version 1.5 or greater.
 
 ## auth_key - Authorization Key
@@ -841,9 +855,9 @@ to limit communication between endpoints.  Only peer endpoints that are
 programmed to use the same authorization key may communicate.
 Authorization keys are often used to implement job keys, to ensure
 that processes running in different jobs do not accidentally
-cross traffic.  The domain authorization key will be used if auth_key_size 
+cross traffic.  The domain authorization key will be used if auth_key_size
 is set to 0.  This field is ignored unless the fabric is opened with API
-version 1.5 or greater. 
+version 1.5 or greater.
 
 # TRANSMIT CONTEXT ATTRIBUTES
 
@@ -875,7 +889,8 @@ capability bits from the fi_info structure will be used.
 
 The following capabilities apply to the transmit attributes: FI_MSG,
 FI_RMA, FI_TAGGED, FI_ATOMIC, FI_READ, FI_WRITE, FI_SEND, FI_HMEM,
-FI_TRIGGER, FI_FENCE, FI_MULTICAST, FI_RMA_PMEM, and FI_NAMED_RX_CTX.
+FI_TRIGGER, FI_FENCE, FI_MULTICAST, FI_RMA_PMEM, FI_NAMED_RX_CTX,
+and FI_COLLECTIVE.
 
 Many applications will be able to ignore this field and rely solely
 on the fi_info::caps field.  Use of this field provides fine grained
@@ -1037,7 +1052,7 @@ message order.  Relaxed completion order may enable faster reporting of
 completed transfers, allow acknowledgments to be sent over different
 fabric paths, and support more sophisticated retry mechanisms.
 This can result in lower-latency completions, particularly when
-using unconnected endpoints.  Strict completion ordering may require
+using connectionless endpoints.  Strict completion ordering may require
 that providers queue completed operations or limit available optimizations.
 
 For transmit requests, completion ordering depends on the endpoint
@@ -1071,9 +1086,21 @@ be used with the FI_INJECT data transfer flag.
 
 ## size
 
-The size of the context.  The size is specified as the minimum number
-of transmit operations that may be posted to the endpoint without the
-operation returning -FI_EAGAIN.
+The size of the transmit context.  The mapping of the size value to resources
+is provider specific, but it is directly related to the number of command
+entries allocated for the endpoint.  A smaller size value consumes fewer
+hardware and software resources, while a larger size allows queuing more
+transmit requests.
+
+While the size attribute guides the size of underlying endpoint transmit
+queue, there is not necessarily a one-to-one mapping between a transmit
+operation and a queue entry.  A single transmit operation may consume
+multiple queue entries; for example, one per scatter-gather entry.
+Additionally, the size field is intended to guide the allocation of the
+endpoint's transmit context.  Specifically, for connectionless endpoints,
+there may be lower-level queues use to track communication on a per peer basis.
+The sizes of any lower-level queues may only be significantly smaller than
+the endpoint's transmit size, in order to reduce resource utilization.
 
 ## iov_limit
 
@@ -1171,7 +1198,8 @@ capability bits from the fi_info structure will be used.
 The following capabilities apply to the receive attributes: FI_MSG,
 FI_RMA, FI_TAGGED, FI_ATOMIC, FI_REMOTE_READ, FI_REMOTE_WRITE, FI_RECV,
 FI_HMEM, FI_TRIGGER, FI_RMA_PMEM, FI_DIRECTED_RECV, FI_VARIABLE_MSG,
-FI_MULTI_RECV, FI_SOURCE, FI_RMA_EVENT, and FI_SOURCE_ERR.
+FI_MULTI_RECV, FI_SOURCE, FI_RMA_EVENT, FI_SOURCE_ERR, and
+FI_COLLECTIVE.
 
 Many applications will be able to ignore this field and rely solely
 on the fi_info::caps field.  Use of this field provides fine grained
@@ -1252,9 +1280,21 @@ anticipate receiving unexpected messages, rather than modifying this value.
 
 ## size
 
-The size of the context.  The size is specified as the minimum number
-of receive operations that may be posted to the endpoint without the
-operation returning -FI_EAGAIN.
+The size of the receive context.  The mapping of the size value to resources
+is provider specific, but it is directly related to the number of command
+entries allocated for the endpoint.  A smaller size value consumes fewer
+hardware and software resources, while a larger size allows queuing more
+transmit requests.
+
+While the size attribute guides the size of underlying endpoint receive
+queue, there is not necessarily a one-to-one mapping between a receive
+operation and a queue entry.  A single receive operation may consume
+multiple queue entries; for example, one per scatter-gather entry.
+Additionally, the size field is intended to guide the allocation of the
+endpoint's receive context.  Specifically, for connectionless endpoints,
+there may be lower-level queues use to track communication on a per peer basis.
+The sizes of any lower-level queues may only be significantly smaller than
+the endpoint's receive size, in order to reduce resource utilization.
 
 ## iov_limit
 
@@ -1359,7 +1399,7 @@ associated with completion queues or counters.  Completed receive
 operations are posted to the CQs bound to the endpoint.  An endpoint
 may only be associated with a single receive context, and all
 connectionless endpoints associated with a shared receive context must
-also share the same address vector. 
+also share the same address vector.
 
 Endpoints associated with a shared transmit context may use dedicated
 receive contexts, and vice-versa.  Or an endpoint may use shared

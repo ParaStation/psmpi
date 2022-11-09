@@ -277,3 +277,57 @@
    Memcheck:Cond
    fun:gdr_unmap
 }
+{
+    is_cuda_supported_unint_access
+    Memcheck:Param
+    ioctl(generic)
+    fun:ioctl
+    ...
+    fun:cuDeviceTotalMem_v2
+    ...
+    fun:cudaGetDeviceCount
+}
+{
+   rdmacm_event_channel
+   Memcheck:Leak
+   ...
+   fun:rdma_create_event_channel
+}
+{
+   rdmacm_bind_addr
+   Memcheck:Leak
+   ...
+   fun:rdma_bind_addr
+}
+{
+   xpmem_get
+   Memcheck:Cond
+   fun:xpmem_get
+}
+{
+   libc_resolv_leak
+   Memcheck:Leak
+   ...
+   fun:__resolv_conf_allocate
+   fun:__resolv_conf_load
+   ...
+   fun:__resolv_context_get
+}
+{
+   libnl_trans
+   Memcheck:Leak
+   ...
+   fun:__trans_list_add
+}
+{
+   ibv_cmd_create_srq
+   Memcheck:Cond
+   ...
+   fun:ibv_cmd_create_srq
+}
+{
+   ibv_poll_cq
+   Memcheck:Cond
+   obj:*libmlx5*
+   fun:ibv_poll_cq
+}

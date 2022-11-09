@@ -25,7 +25,7 @@
 
 static int pack_sub_hvector(const void *inbuf, yaksi_type_s * type, uintptr_t inoffset,
                             void *outbuf, uintptr_t max_pack_bytes, uintptr_t * actual_pack_bytes,
-                            yaksi_info_s * info, yaksi_request_s * request)
+                            yaksi_info_s * info, yaksa_op_t op, yaksi_request_s * request)
 {
     int rc = YAKSA_SUCCESS;
 
@@ -55,7 +55,7 @@ static int pack_sub_hvector(const void *inbuf, yaksi_type_s * type, uintptr_t in
         assert(bytes_in_block > remoffset);
 
         rc = yaksi_ipack(sbuf, type->u.hvector.blocklength, type->u.hvector.child, remoffset,
-                         dbuf, rem_pack_bytes, &tmp_pack_bytes, info, request);
+                         dbuf, rem_pack_bytes, &tmp_pack_bytes, info, op, request);
         YAKSU_ERR_CHECK(rc, fn_fail);
 
         *actual_pack_bytes += tmp_pack_bytes;
@@ -81,7 +81,7 @@ static int pack_sub_hvector(const void *inbuf, yaksi_type_s * type, uintptr_t in
     numblocks = rem_pack_bytes / bytes_in_block;
     for (int i = 0; i < numblocks; i++) {
         rc = yaksi_ipack_backend(sbuf, dbuf, type->u.hvector.blocklength, type->u.hvector.child,
-                                 info, request);
+                                 info, op, request);
         YAKSU_ERR_CHECK(rc, fn_fail);
 
         *actual_pack_bytes += bytes_in_block;
@@ -95,7 +95,7 @@ static int pack_sub_hvector(const void *inbuf, yaksi_type_s * type, uintptr_t in
     /* step 4: partial pack the next block */
     if (rem_pack_bytes) {
         rc = yaksi_ipack(sbuf, type->u.hvector.blocklength, type->u.hvector.child, remoffset,
-                         dbuf, rem_pack_bytes, &tmp_pack_bytes, info, request);
+                         dbuf, rem_pack_bytes, &tmp_pack_bytes, info, op, request);
         YAKSU_ERR_CHECK(rc, fn_fail);
 
         *actual_pack_bytes += tmp_pack_bytes;
@@ -109,7 +109,7 @@ static int pack_sub_hvector(const void *inbuf, yaksi_type_s * type, uintptr_t in
 
 static int pack_sub_blkhindx(const void *inbuf, yaksi_type_s * type, uintptr_t inoffset,
                              void *outbuf, uintptr_t max_pack_bytes, uintptr_t * actual_pack_bytes,
-                             yaksi_info_s * info, yaksi_request_s * request)
+                             yaksi_info_s * info, yaksa_op_t op, yaksi_request_s * request)
 {
     int rc = YAKSA_SUCCESS;
 
@@ -141,7 +141,7 @@ static int pack_sub_blkhindx(const void *inbuf, yaksi_type_s * type, uintptr_t i
 
         sbuf = (const char *) inbuf + type->u.blkhindx.array_of_displs[blockid++];
         rc = yaksi_ipack(sbuf, type->u.blkhindx.blocklength, type->u.blkhindx.child, remoffset,
-                         dbuf, rem_pack_bytes, &tmp_pack_bytes, info, request);
+                         dbuf, rem_pack_bytes, &tmp_pack_bytes, info, op, request);
         YAKSU_ERR_CHECK(rc, fn_fail);
         dbuf += tmp_pack_bytes;
 
@@ -167,7 +167,7 @@ static int pack_sub_blkhindx(const void *inbuf, yaksi_type_s * type, uintptr_t i
     for (int i = 0; i < numblocks; i++) {
         sbuf = (const char *) inbuf + type->u.blkhindx.array_of_displs[blockid++];
         rc = yaksi_ipack_backend(sbuf, dbuf, type->u.blkhindx.blocklength, type->u.blkhindx.child,
-                                 info, request);
+                                 info, op, request);
         YAKSU_ERR_CHECK(rc, fn_fail);
         dbuf += type->u.blkhindx.blocklength * type->u.blkhindx.child->size;
 
@@ -180,7 +180,7 @@ static int pack_sub_blkhindx(const void *inbuf, yaksi_type_s * type, uintptr_t i
     if (rem_pack_bytes) {
         sbuf = (const char *) inbuf + type->u.blkhindx.array_of_displs[blockid++];
         rc = yaksi_ipack(sbuf, type->u.blkhindx.blocklength, type->u.blkhindx.child, remoffset,
-                         dbuf, rem_pack_bytes, &tmp_pack_bytes, info, request);
+                         dbuf, rem_pack_bytes, &tmp_pack_bytes, info, op, request);
         YAKSU_ERR_CHECK(rc, fn_fail);
         dbuf += tmp_pack_bytes;
 
@@ -195,7 +195,7 @@ static int pack_sub_blkhindx(const void *inbuf, yaksi_type_s * type, uintptr_t i
 
 static int pack_sub_hindexed(const void *inbuf, yaksi_type_s * type, uintptr_t inoffset,
                              void *outbuf, uintptr_t max_pack_bytes, uintptr_t * actual_pack_bytes,
-                             yaksi_info_s * info, yaksi_request_s * request)
+                             yaksi_info_s * info, yaksa_op_t op, yaksi_request_s * request)
 {
     int rc = YAKSA_SUCCESS;
 
@@ -239,7 +239,7 @@ static int pack_sub_hindexed(const void *inbuf, yaksi_type_s * type, uintptr_t i
         sbuf = (const char *) inbuf + type->u.hindexed.array_of_displs[blockid];
         rc = yaksi_ipack(sbuf, type->u.hindexed.array_of_blocklengths[blockid],
                          type->u.hindexed.child, remoffset, dbuf, rem_pack_bytes, &tmp_pack_bytes,
-                         info, request);
+                         info, op, request);
         YAKSU_ERR_CHECK(rc, fn_fail);
         dbuf += tmp_pack_bytes;
 
@@ -273,7 +273,7 @@ static int pack_sub_hindexed(const void *inbuf, yaksi_type_s * type, uintptr_t i
 
         sbuf = (const char *) inbuf + type->u.hindexed.array_of_displs[blockid];
         rc = yaksi_ipack_backend(sbuf, dbuf, type->u.hindexed.array_of_blocklengths[blockid],
-                                 type->u.hindexed.child, info, request);
+                                 type->u.hindexed.child, info, op, request);
         YAKSU_ERR_CHECK(rc, fn_fail);
         dbuf += bytes_in_block;
 
@@ -299,7 +299,7 @@ static int pack_sub_hindexed(const void *inbuf, yaksi_type_s * type, uintptr_t i
         sbuf = (const char *) inbuf + type->u.hindexed.array_of_displs[blockid];
         rc = yaksi_ipack(sbuf, type->u.hindexed.array_of_blocklengths[blockid],
                          type->u.hindexed.child, remoffset, dbuf, rem_pack_bytes, &tmp_pack_bytes,
-                         info, request);
+                         info, op, request);
         YAKSU_ERR_CHECK(rc, fn_fail);
         dbuf += tmp_pack_bytes;
 
@@ -315,7 +315,7 @@ static int pack_sub_hindexed(const void *inbuf, yaksi_type_s * type, uintptr_t i
 
 static int pack_sub_struct(const void *inbuf, yaksi_type_s * type, uintptr_t inoffset,
                            void *outbuf, uintptr_t max_pack_bytes, uintptr_t * actual_pack_bytes,
-                           yaksi_info_s * info, yaksi_request_s * request)
+                           yaksi_info_s * info, yaksa_op_t op, yaksi_request_s * request)
 {
     int rc = YAKSA_SUCCESS;
 
@@ -359,7 +359,7 @@ static int pack_sub_struct(const void *inbuf, yaksi_type_s * type, uintptr_t ino
         sbuf = (const char *) inbuf + type->u.str.array_of_displs[blockid];
         rc = yaksi_ipack(sbuf, type->u.str.array_of_blocklengths[blockid],
                          type->u.str.array_of_types[blockid], remoffset, dbuf, rem_pack_bytes,
-                         &tmp_pack_bytes, info, request);
+                         &tmp_pack_bytes, info, op, request);
         YAKSU_ERR_CHECK(rc, fn_fail);
         dbuf += tmp_pack_bytes;
 
@@ -393,7 +393,7 @@ static int pack_sub_struct(const void *inbuf, yaksi_type_s * type, uintptr_t ino
 
         sbuf = (const char *) inbuf + type->u.str.array_of_displs[blockid];
         rc = yaksi_ipack_backend(sbuf, dbuf, type->u.str.array_of_blocklengths[blockid],
-                                 type->u.str.array_of_types[blockid], info, request);
+                                 type->u.str.array_of_types[blockid], info, op, request);
         YAKSU_ERR_CHECK(rc, fn_fail);
         dbuf += bytes_in_block;
 
@@ -419,7 +419,7 @@ static int pack_sub_struct(const void *inbuf, yaksi_type_s * type, uintptr_t ino
         sbuf = (const char *) inbuf + type->u.str.array_of_displs[blockid];
         rc = yaksi_ipack(sbuf, type->u.str.array_of_blocklengths[blockid],
                          type->u.str.array_of_types[blockid], remoffset, dbuf, rem_pack_bytes,
-                         &tmp_pack_bytes, info, request);
+                         &tmp_pack_bytes, info, op, request);
         YAKSU_ERR_CHECK(rc, fn_fail);
         dbuf += tmp_pack_bytes;
 
@@ -435,7 +435,7 @@ static int pack_sub_struct(const void *inbuf, yaksi_type_s * type, uintptr_t ino
 
 int yaksi_ipack_element(const void *inbuf, yaksi_type_s * type, uintptr_t inoffset,
                         void *outbuf, uintptr_t max_pack_bytes, uintptr_t * actual_pack_bytes,
-                        yaksi_info_s * info, yaksi_request_s * request)
+                        yaksi_info_s * info, yaksa_op_t op, yaksi_request_s * request)
 {
     int rc = YAKSA_SUCCESS;
 
@@ -451,37 +451,37 @@ int yaksi_ipack_element(const void *inbuf, yaksi_type_s * type, uintptr_t inoffs
     switch (type->kind) {
         case YAKSI_TYPE_KIND__HVECTOR:
             rc = pack_sub_hvector(inbuf, type, inoffset, outbuf, max_pack_bytes, actual_pack_bytes,
-                                  info, request);
+                                  info, op, request);
             YAKSU_ERR_CHECK(rc, fn_fail);
             break;
 
         case YAKSI_TYPE_KIND__BLKHINDX:
             rc = pack_sub_blkhindx(inbuf, type, inoffset, outbuf, max_pack_bytes,
-                                   actual_pack_bytes, info, request);
+                                   actual_pack_bytes, info, op, request);
             YAKSU_ERR_CHECK(rc, fn_fail);
             break;
 
         case YAKSI_TYPE_KIND__HINDEXED:
             rc = pack_sub_hindexed(inbuf, type, inoffset, outbuf, max_pack_bytes,
-                                   actual_pack_bytes, info, request);
+                                   actual_pack_bytes, info, op, request);
             YAKSU_ERR_CHECK(rc, fn_fail);
             break;
 
         case YAKSI_TYPE_KIND__STRUCT:
             rc = pack_sub_struct(inbuf, type, inoffset, outbuf, max_pack_bytes, actual_pack_bytes,
-                                 info, request);
+                                 info, op, request);
             YAKSU_ERR_CHECK(rc, fn_fail);
             break;
 
         case YAKSI_TYPE_KIND__RESIZED:
             rc = yaksi_ipack_element(inbuf, type->u.resized.child, inoffset, outbuf,
-                                     max_pack_bytes, actual_pack_bytes, info, request);
+                                     max_pack_bytes, actual_pack_bytes, info, op, request);
             YAKSU_ERR_CHECK(rc, fn_fail);
             break;
 
         case YAKSI_TYPE_KIND__CONTIG:
             rc = yaksi_ipack(inbuf, type->u.contig.count, type->u.contig.child, inoffset,
-                             outbuf, max_pack_bytes, actual_pack_bytes, info, request);
+                             outbuf, max_pack_bytes, actual_pack_bytes, info, op, request);
             YAKSU_ERR_CHECK(rc, fn_fail);
             break;
 
@@ -490,7 +490,7 @@ int yaksi_ipack_element(const void *inbuf, yaksi_type_s * type, uintptr_t inoffs
                 yaksi_type_s *primary = type->u.subarray.primary;
                 const char *sbuf = (const char *) inbuf + type->true_lb - primary->true_lb;
                 rc = yaksi_ipack_element(sbuf, primary, inoffset, outbuf, max_pack_bytes,
-                                         actual_pack_bytes, info, request);
+                                         actual_pack_bytes, info, op, request);
                 YAKSU_ERR_CHECK(rc, fn_fail);
                 break;
             }

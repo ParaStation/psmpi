@@ -5,12 +5,18 @@
 
 #include <mpidimpl.h>
 #include "ofi_impl.h"
-MPIDI_OFI_global_t MPIDI_OFI_global = { 0 };
+MPIDI_OFI_global_t MPIDI_OFI_global;
 
-MPIDI_OFI_huge_recv_t *MPIDI_unexp_huge_recv_head = NULL;
-MPIDI_OFI_huge_recv_t *MPIDI_unexp_huge_recv_tail = NULL;
-MPIDI_OFI_huge_recv_list_t *MPIDI_posted_huge_recv_head = NULL;
-MPIDI_OFI_huge_recv_list_t *MPIDI_posted_huge_recv_tail = NULL;
+unsigned long long PVAR_COUNTER_nic_sent_bytes_count[MPIDI_OFI_MAX_NICS] ATTRIBUTE((unused));
+unsigned long long PVAR_COUNTER_nic_recvd_bytes_count[MPIDI_OFI_MAX_NICS] ATTRIBUTE((unused));
+unsigned long long PVAR_COUNTER_striped_nic_sent_bytes_count[MPIDI_OFI_MAX_NICS]
+ATTRIBUTE((unused));
+unsigned long long PVAR_COUNTER_striped_nic_recvd_bytes_count[MPIDI_OFI_MAX_NICS]
+ATTRIBUTE((unused));
+unsigned long long PVAR_COUNTER_rma_pref_phy_nic_put_bytes_count[MPIDI_OFI_MAX_NICS]
+ATTRIBUTE((unused));
+unsigned long long PVAR_COUNTER_rma_pref_phy_nic_get_bytes_count[MPIDI_OFI_MAX_NICS]
+ATTRIBUTE((unused));
 
 MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
 /* Initialize a runtime version of all of the capability sets defined in
@@ -21,7 +27,6 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_DEFAULT,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_DEFAULT,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_DEFAULT,
-     .enable_mr_scalable = MPIDI_OFI_ENABLE_MR_SCALABLE_DEFAULT,
      .enable_mr_virt_address = MPIDI_OFI_ENABLE_MR_VIRT_ADDRESS_DEFAULT,
      .enable_mr_allocated = MPIDI_OFI_ENABLE_MR_ALLOCATED_DEFAULT,
      .enable_mr_prov_key = MPIDI_OFI_ENABLE_MR_PROV_KEY_DEFAULT,
@@ -46,7 +51,6 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_MINIMAL,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_MINIMAL,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_MINIMAL,
-     .enable_mr_scalable = MPIDI_OFI_ENABLE_MR_SCALABLE_MINIMAL,
      .enable_mr_virt_address = MPIDI_OFI_ENABLE_MR_VIRT_ADDRESS_MINIMAL,
      .enable_mr_allocated = MPIDI_OFI_ENABLE_MR_ALLOCATED_MINIMAL,
      .enable_mr_prov_key = MPIDI_OFI_ENABLE_MR_PROV_KEY_MINIMAL,
@@ -71,7 +75,6 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_PSM2,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_PSM2,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_PSM2,
-     .enable_mr_scalable = MPIDI_OFI_ENABLE_MR_SCALABLE_PSM2,
      .enable_mr_virt_address = MPIDI_OFI_ENABLE_MR_VIRT_ADDRESS_PSM2,
      .enable_mr_allocated = MPIDI_OFI_ENABLE_MR_ALLOCATED_PSM2,
      .enable_mr_prov_key = MPIDI_OFI_ENABLE_MR_PROV_KEY_PSM2,
@@ -89,14 +92,13 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .context_bits = MPIDI_OFI_CONTEXT_BITS_PSM2,
      .source_bits = MPIDI_OFI_SOURCE_BITS_PSM2,
      .tag_bits = MPIDI_OFI_TAG_BITS_PSM2,
-     .major_version = MPIDI_OFI_MAJOR_VERSION_MINIMAL,
-     .minor_version = MPIDI_OFI_MINOR_VERSION_MINIMAL}
+     .major_version = MPIDI_OFI_MAJOR_VERSION_PSM2,
+     .minor_version = MPIDI_OFI_MINOR_VERSION_PSM2}
     ,
     {   /* sockets */
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_SOCKETS,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_SOCKETS,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_SOCKETS,
-     .enable_mr_scalable = MPIDI_OFI_ENABLE_MR_SCALABLE_SOCKETS,
      .enable_mr_virt_address = MPIDI_OFI_ENABLE_MR_VIRT_ADDRESS_SOCKETS,
      .enable_mr_allocated = MPIDI_OFI_ENABLE_MR_ALLOCATED_SOCKETS,
      .enable_mr_prov_key = MPIDI_OFI_ENABLE_MR_PROV_KEY_SOCKETS,
@@ -114,14 +116,13 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .context_bits = MPIDI_OFI_CONTEXT_BITS_SOCKETS,
      .source_bits = MPIDI_OFI_SOURCE_BITS_SOCKETS,
      .tag_bits = MPIDI_OFI_TAG_BITS_SOCKETS,
-     .major_version = MPIDI_OFI_MAJOR_VERSION_MINIMAL,
-     .minor_version = MPIDI_OFI_MINOR_VERSION_MINIMAL}
+     .major_version = MPIDI_OFI_MAJOR_VERSION_SOCKETS,
+     .minor_version = MPIDI_OFI_MINOR_VERSION_SOCKETS}
     ,
     {   /* bgq */
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_BGQ,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_BGQ,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_BGQ,
-     .enable_mr_scalable = MPIDI_OFI_ENABLE_MR_SCALABLE_BGQ,
      .enable_mr_virt_address = MPIDI_OFI_ENABLE_MR_VIRT_ADDRESS_BGQ,
      .enable_mr_allocated = MPIDI_OFI_ENABLE_MR_ALLOCATED_BGQ,
      .enable_mr_prov_key = MPIDI_OFI_ENABLE_MR_PROV_KEY_BGQ,
@@ -139,14 +140,13 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .context_bits = MPIDI_OFI_CONTEXT_BITS_BGQ,
      .source_bits = MPIDI_OFI_SOURCE_BITS_BGQ,
      .tag_bits = MPIDI_OFI_TAG_BITS_BGQ,
-     .major_version = MPIDI_OFI_MAJOR_VERSION_MINIMAL,
-     .minor_version = MPIDI_OFI_MINOR_VERSION_MINIMAL}
+     .major_version = MPIDI_OFI_MAJOR_VERSION_BGQ,
+     .minor_version = MPIDI_OFI_MINOR_VERSION_BGQ}
     ,
     {   /* VERBS_RXM */
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_VERBS_RXM,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_VERBS_RXM,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_VERBS_RXM,
-     .enable_mr_scalable = MPIDI_OFI_ENABLE_MR_SCALABLE_VERBS_RXM,
      .enable_mr_virt_address = MPIDI_OFI_ENABLE_MR_VIRT_ADDRESS_VERBS_RXM,
      .enable_mr_allocated = MPIDI_OFI_ENABLE_MR_ALLOCATED_VERBS_RXM,
      .enable_mr_prov_key = MPIDI_OFI_ENABLE_MR_PROV_KEY_VERBS_RXM,
@@ -164,14 +164,13 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .context_bits = MPIDI_OFI_CONTEXT_BITS_VERBS_RXM,
      .source_bits = MPIDI_OFI_SOURCE_BITS_VERBS_RXM,
      .tag_bits = MPIDI_OFI_TAG_BITS_VERBS_RXM,
-     .major_version = MPIDI_OFI_MAJOR_VERSION_MINIMAL,
-     .minor_version = MPIDI_OFI_MINOR_VERSION_MINIMAL}
+     .major_version = MPIDI_OFI_MAJOR_VERSION_RXM,
+     .minor_version = MPIDI_OFI_MINOR_VERSION_RXM}
     ,
     {   /* RxM */
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_RXM,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_RXM,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_RXM,
-     .enable_mr_scalable = MPIDI_OFI_ENABLE_MR_SCALABLE_RXM,
      .enable_mr_virt_address = MPIDI_OFI_ENABLE_MR_VIRT_ADDRESS_RXM,
      .enable_mr_allocated = MPIDI_OFI_ENABLE_MR_ALLOCATED_RXM,
      .enable_mr_prov_key = MPIDI_OFI_ENABLE_MR_PROV_KEY_RXM,
@@ -189,14 +188,13 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .context_bits = MPIDI_OFI_CONTEXT_BITS_RXM,
      .source_bits = MPIDI_OFI_SOURCE_BITS_RXM,
      .tag_bits = MPIDI_OFI_TAG_BITS_RXM,
-     .major_version = MPIDI_OFI_MAJOR_VERSION_MINIMAL,
-     .minor_version = MPIDI_OFI_MINOR_VERSION_MINIMAL}
+     .major_version = MPIDI_OFI_MAJOR_VERSION_RXM,
+     .minor_version = MPIDI_OFI_MINOR_VERSION_RXM}
     ,
     {   /* GNI */
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_GNI,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_GNI,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_GNI,
-     .enable_mr_scalable = MPIDI_OFI_ENABLE_MR_SCALABLE_GNI,
      .enable_mr_virt_address = MPIDI_OFI_ENABLE_MR_VIRT_ADDRESS_GNI,
      .enable_mr_allocated = MPIDI_OFI_ENABLE_MR_ALLOCATED_GNI,
      .enable_mr_prov_key = MPIDI_OFI_ENABLE_MR_PROV_KEY_GNI,
@@ -214,6 +212,6 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .context_bits = MPIDI_OFI_CONTEXT_BITS_GNI,
      .source_bits = MPIDI_OFI_SOURCE_BITS_GNI,
      .tag_bits = MPIDI_OFI_TAG_BITS_GNI,
-     .major_version = MPIDI_OFI_MAJOR_VERSION_MINIMAL,
-     .minor_version = MPIDI_OFI_MINOR_VERSION_MINIMAL}
+     .major_version = MPIDI_OFI_MAJOR_VERSION_GNI,
+     .minor_version = MPIDI_OFI_MINOR_VERSION_GNI}
 };

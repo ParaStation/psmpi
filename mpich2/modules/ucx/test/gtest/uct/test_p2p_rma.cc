@@ -71,7 +71,8 @@ void uct_p2p_rma_test::test_xfer(send_func_t send, size_t length,
 {
     ucs_memory_type_t src_mem_type = UCS_MEMORY_TYPE_HOST;
 
-    if (has_transport("cuda_ipc")) {
+    if (has_transport("cuda_ipc") ||
+        has_transport("rocm_copy")) {
         src_mem_type = mem_type;
     }
 
@@ -80,11 +81,11 @@ void uct_p2p_rma_test::test_xfer(send_func_t send, size_t length,
 
     blocking_send(send, sender_ep(), sendbuf, recvbuf, true);
     if (flags & TEST_UCT_FLAG_SEND_ZCOPY) {
-        sendbuf.pattern_fill(SEED3);
+        sendbuf.memset(0);
         wait_for_remote();
         recvbuf.pattern_check(SEED1);
     } else if (flags & TEST_UCT_FLAG_RECV_ZCOPY) {
-        recvbuf.pattern_fill(SEED3);
+        recvbuf.memset(0);
         sendbuf.pattern_check(SEED2);
         wait_for_remote();
     }
@@ -133,22 +134,33 @@ UCS_TEST_SKIP_COND_P(uct_p2p_rma_test, get_zcopy,
                     TEST_UCT_FLAG_RECV_ZCOPY);
 }
 
-UCS_TEST_SKIP_COND_P(uct_p2p_rma_test, madvise,
-                     !check_caps(UCT_IFACE_FLAG_GET_ZCOPY))
+UCT_INSTANTIATE_TEST_CASE(uct_p2p_rma_test)
+
+class test_p2p_rma_madvise : private ucs::clear_dontcopy_regions,
+                             public uct_p2p_rma_test
+{
+};
+
+UCS_TEST_SKIP_COND_P(test_p2p_rma_madvise, madvise,
+                     !check_caps(UCT_IFACE_FLAG_GET_ZCOPY),
+                     /* Allocate with mmap to avoid pinning other heap memory */
+                     "IB_ALLOC?=mmap")
 {
     mapped_buffer sendbuf(4096, 0, sender());
     mapped_buffer recvbuf(4096, 0, receiver());
-    char cmd_str[] = "/bin/true";
+    char cmd_str[] = "/bin/bash -c 'exit 42'";
 
     blocking_send(static_cast<send_func_t>(&uct_p2p_rma_test::get_zcopy),
                   sender_ep(), sendbuf, recvbuf, true);
     flush();
 
-    EXPECT_EQ(0, system(cmd_str));
+    int exit_status = system(cmd_str);
+    EXPECT_TRUE(WIFEXITED(exit_status));
+    EXPECT_EQ(42, WEXITSTATUS(exit_status)) << ucs::exit_status_info(exit_status);
 
     blocking_send(static_cast<send_func_t>(&uct_p2p_rma_test::get_zcopy),
                   sender_ep(), sendbuf, recvbuf, true);
     flush();
 }
 
-UCT_INSTANTIATE_TEST_CASE(uct_p2p_rma_test)
+UCT_INSTANTIATE_TEST_CASE(test_p2p_rma_madvise)

@@ -14,16 +14,15 @@
  * where n is the total size of the data to be scattered from the root.
  */
 
-int MPIR_Iscatter_inter_sched_remote_send_local_scatter(const void *sendbuf, int sendcount,
+int MPIR_Iscatter_inter_sched_remote_send_local_scatter(const void *sendbuf, MPI_Aint sendcount,
                                                         MPI_Datatype sendtype, void *recvbuf,
-                                                        int recvcount, MPI_Datatype recvtype,
+                                                        MPI_Aint recvcount, MPI_Datatype recvtype,
                                                         int root, MPIR_Comm * comm_ptr,
                                                         MPIR_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
     int rank, local_size, remote_size;
     MPIR_Comm *newcomm_ptr = NULL;
-    MPIR_SCHED_CHKPMEM_DECL(1);
 
     if (root == MPI_PROC_NULL) {
         /* local processes other than root do nothing */
@@ -49,9 +48,8 @@ int MPIR_Iscatter_inter_sched_remote_send_local_scatter(const void *sendbuf, int
 
         if (rank == 0) {
             MPIR_Datatype_get_size_macro(recvtype, recvtype_sz);
-            MPIR_SCHED_CHKPMEM_MALLOC(tmp_buf, void *,
-                                      recvcount * local_size * recvtype_sz,
-                                      mpi_errno, "tmp_buf", MPL_MEM_BUFFER);
+            tmp_buf = MPIR_Sched_alloc_state(s, recvcount * local_size * recvtype_sz);
+            MPIR_ERR_CHKANDJUMP(!tmp_buf, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
             mpi_errno =
                 MPIR_Sched_recv(tmp_buf, recvcount * local_size * recvtype_sz, MPI_BYTE,
@@ -59,7 +57,7 @@ int MPIR_Iscatter_inter_sched_remote_send_local_scatter(const void *sendbuf, int
             MPIR_ERR_CHECK(mpi_errno);
             MPIR_SCHED_BARRIER(s);
         } else {
-            /* silience -Wmaybe-uninitialized due to MPIR_Iscatter_sched_auto by non-zero ranks */
+            /* silience -Wmaybe-uninitialized due to MPIR_Iscatter_intra_sched_auto by non-zero ranks */
             recvtype_sz = 0;
         }
 
@@ -71,17 +69,15 @@ int MPIR_Iscatter_inter_sched_remote_send_local_scatter(const void *sendbuf, int
 
         /* now do the usual scatter on this intracommunicator */
         mpi_errno =
-            MPIR_Iscatter_sched_auto(tmp_buf, recvcount * recvtype_sz, MPI_BYTE,
-                                     recvbuf, recvcount, recvtype, 0, newcomm_ptr, s);
+            MPIR_Iscatter_intra_sched_auto(tmp_buf, recvcount * recvtype_sz, MPI_BYTE,
+                                           recvbuf, recvcount, recvtype, 0, newcomm_ptr, s);
         MPIR_ERR_CHECK(mpi_errno);
         MPIR_SCHED_BARRIER(s);
     }
 
   fn_exit:
-    MPIR_SCHED_CHKPMEM_COMMIT(s);
     return mpi_errno;
 
   fn_fail:
-    MPIR_SCHED_CHKPMEM_REAP(s);
     goto fn_exit;
 }

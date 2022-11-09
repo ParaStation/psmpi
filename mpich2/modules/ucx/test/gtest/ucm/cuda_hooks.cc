@@ -7,13 +7,6 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-extern "C" {
-#include <ucm/util/sys.h>
-#include <ucs/sys/topo.h>
-#include <ucs/memory/memory_type.h>
-#include <string.h>
-}
-
 static ucm_event_t alloc_event, free_event;
 
 static void cuda_mem_alloc_callback(ucm_event_type_t event_type,
@@ -90,7 +83,8 @@ protected:
                                 int expect_mem_type = UCS_MEMORY_TYPE_CUDA)  {
         ASSERT_EQ(ptr, alloc_event.mem_type.address);
         ASSERT_EQ(size, alloc_event.mem_type.size);
-        ASSERT_EQ(expect_mem_type, alloc_event.mem_type.mem_type);
+        EXPECT_TRUE((alloc_event.mem_type.mem_type == expect_mem_type) ||
+                    (alloc_event.mem_type.mem_type == UCS_MEMORY_TYPE_UNKNOWN));
     }
 
     void check_mem_free_events(void *ptr, size_t size,
@@ -149,11 +143,11 @@ UCS_TEST_F(cuda_hooks, test_cuMemAllocManaged) {
 
     ret = cuMemAllocManaged(&dptr, 64, CU_MEM_ATTACH_GLOBAL);
     ASSERT_EQ(ret, CUDA_SUCCESS);
-    check_mem_alloc_events((void *)dptr, 64, UCS_MEMORY_TYPE_CUDA_MANAGED);
+    check_mem_alloc_events((void*)dptr, 64, UCS_MEMORY_TYPE_CUDA_MANAGED);
 
     ret = cuMemFree(dptr);
     ASSERT_EQ(ret, CUDA_SUCCESS);
-    check_mem_free_events((void *)dptr, 0);
+    check_mem_free_events((void*)dptr, 0);
 }
 
 UCS_TEST_F(cuda_hooks, test_cuMemAllocPitch) {
@@ -239,22 +233,4 @@ UCS_TEST_F(cuda_hooks, test_cudaMallocPitch) {
     ret = cudaFree(devPtr);
     ASSERT_EQ(ret, cudaSuccess);
     check_mem_free_events(devPtr, 0);
-}
-
-UCS_TEST_F(cuda_hooks, test_get_mem_type_current_device_info) {
-    ucs_sys_bus_id_t bus_id_ref = {0xffff, 0xff, 0xff, 0xff};
-    ucs_sys_bus_id_t bus_id;
-    cudaError_t ret;
-    void *devPtr;
-    ucs_status_t status;
-
-    ret = cudaMalloc(&devPtr, 64);
-    ASSERT_EQ(ret, cudaSuccess);
-
-    status = ucm_get_mem_type_current_device_info(UCS_MEMORY_TYPE_CUDA, &bus_id);
-    ASSERT_UCS_OK(status);
-    ASSERT_NE(memcmp(&bus_id, &bus_id_ref, sizeof(bus_id)), 0);
-
-    ret = cudaFree(devPtr);
-    ASSERT_EQ(ret, cudaSuccess);
 }

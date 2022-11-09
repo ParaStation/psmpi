@@ -42,14 +42,14 @@ static MPI_Datatype make_stats_type(ADIO_File fd)
     MPI_Datatype newtype;
 
     lens[BLOCKSIZE] = 1;
-    MPI_Address(&fd->blksize, &offsets[BLOCKSIZE]);
+    MPI_Get_address(&fd->blksize, &offsets[BLOCKSIZE]);
     types[BLOCKSIZE] = MPI_LONG;
 
     lens[STRIPE_SIZE] = lens[STRIPE_FACTOR] = lens[START_IODEVICE] = 1;
     types[STRIPE_SIZE] = types[STRIPE_FACTOR] = types[START_IODEVICE] = MPI_INT;
-    MPI_Address(&fd->hints->striping_unit, &offsets[STRIPE_SIZE]);
-    MPI_Address(&fd->hints->striping_factor, &offsets[STRIPE_FACTOR]);
-    MPI_Address(&fd->hints->start_iodevice, &offsets[START_IODEVICE]);
+    MPI_Get_address(&fd->hints->striping_unit, &offsets[STRIPE_SIZE]);
+    MPI_Get_address(&fd->hints->striping_factor, &offsets[STRIPE_FACTOR]);
+    MPI_Get_address(&fd->hints->start_iodevice, &offsets[START_IODEVICE]);
 
 
     MPI_Type_create_struct(STAT_ITEMS, lens, offsets, types, &newtype);
@@ -165,7 +165,7 @@ void ADIOI_GEN_OpenColl(ADIO_File fd, int rank, int access_mode, int *error_code
     if (fd->access_mode != orig_amode_excl)
         fd->access_mode = orig_amode_excl;
 
-    /* broadcast information to all proceses in
+    /* broadcast information to all processes in
      * communicator, not just those who participated in open */
 
     stats_type = make_stats_type(fd);
@@ -178,5 +178,8 @@ void ADIOI_GEN_OpenColl(ADIO_File fd, int rank, int access_mode, int *error_code
     /* for deferred open: this process has opened the file (because if we are
      * not an aggregaor and we are doing deferred open, we returned earlier)*/
     fd->is_open = 1;
+
+    /* sync optimization: we can omit the fsync() call if we do no writes */
+    fd->dirty_write = 0;
 
 }

@@ -1,11 +1,11 @@
 dnl
 dnl Copyright (c) 2016-2017 Cisco Systems, Inc.  All rights reserved.
-dnl Copyright (c) 2018-2020 Intel Corporation, Inc.  All rights reserved.
+dnl Copyright (c) 2018-2021 Intel Corporation, Inc.  All rights reserved.
 dnl
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.57)
-AC_INIT([fabtests], [1.10.1], [ofiwg@lists.openfabrics.org])
+AC_INIT([fabtests], [1.13.1], [ofiwg@lists.openfabrics.org])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
 AC_CONFIG_HEADERS(config.h)
@@ -50,6 +50,16 @@ AC_ARG_ENABLE([debug],
 
 AC_DEFINE_UNQUOTED([ENABLE_DEBUG], [$dbg],
 	[defined to 1 if configured with --enable-debug])
+
+AC_ARG_ENABLE([asan],
+	      [AS_HELP_STRING([--enable-asan],
+			      [Enable address sanitizer @<:@default=no@:>@])
+	      ],
+	      [],
+	      [enable_asan=no])
+
+AS_IF([test x"$enable_asan" != x"no"],
+      [CFLAGS="-fsanitize=address $CFLAGS"])
 
 dnl Fix autoconf's habit of adding -g -O2 by default
 AS_IF([test -z "$CFLAGS"],
@@ -96,6 +106,36 @@ AC_ARG_WITH([libfabric],
              LDFLAGS="-L$withval/$fab_libdir $LDFLAGS"],
             [])
 
+dnl Check for CUDA support. Require fabtests to dlopen CUDA runtime.
+AC_ARG_WITH([cuda],
+            [AC_HELP_STRING([--with-cuda=DIR],
+                            [Provide path to where the CUDA development
+                             and runtime libraries are installed.])],
+            [AS_IF([test "$freebsd" == "0"],
+                   [AC_CHECK_LIB(dl, dlopen, [], [AC_MSG_ERROR([dlopen not found.])])],
+                   [])
+             CPPFLAGS="-I$withval/include $CPPFLAGS"
+             AC_CHECK_HEADER([cuda_runtime.h],
+                             [AC_DEFINE([HAVE_CUDA_RUNTIME_H], [1],
+                                        [Define to 1 if you have <cuda_runtime.h>])],
+                             [AC_MSG_ERROR([<cuda_runtime.h> not found])])],
+            [])
+
+dnl Check for ROCR support. Require fabtests to dlopen ROCR.
+AC_ARG_WITH([rocr],
+            [AC_HELP_STRING([--with-rocr=DIR],
+                            [Provide path to where the ROCR development
+                             and runtime libraries are installed.])],
+            [AS_IF([test "$freebsd" == "0"],
+                   [AC_CHECK_LIB(dl, dlopen, [], [AC_MSG_ERROR([dlopen not found.])])],
+                   [])
+             CPPFLAGS="-I$withval/include $CPPFLAGS"
+             AC_CHECK_HEADER([hsa/hsa.h],
+                             [AC_DEFINE([HAVE_ROCR_RUNTIME_H], [1],
+                                        [Define to 1 if you have <hsa/hsa.h>])],
+                             [AC_MSG_ERROR([<hsa/hsa.h> not found])])],
+            [])
+
 dnl Checks for libraries
 AC_CHECK_LIB([fabric], fi_getinfo, [],
     AC_MSG_ERROR([fi_getinfo() not found.  fabtests requires libfabric.]))
@@ -104,6 +144,23 @@ dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADER([rdma/fabric.h], [],
     [AC_MSG_ERROR([<rdma/fabric.h> not found.  fabtests requires libfabric.])])
+
+AC_ARG_WITH([ze],
+            AC_HELP_STRING([--with-ze], [Use non-default ZE location - default NO]),
+            AS_IF([test x"$withval" != x"no"],
+		  [CPPFLAGS="-I$withval/include $CPPFLAGS"
+		   LDFLAGS="-L$withval/$lib $LDFLAGS"]))
+
+dnl Checks for ZE support. Require fabtests to dlopen ZE libraries
+have_ze=0
+AS_IF([test x"$with_ze" != x"no"],
+      [AC_CHECK_HEADER([level_zero/ze_api.h], [have_ze=1])])
+
+AS_IF([test x"$with_ze" != x"no" && test -n "$with_ze" && test "$have_ze" = "0" ],
+	[AC_MSG_ERROR([ZE support requested but ZE runtime not available.])],
+	[])
+
+AC_DEFINE_UNQUOTED([HAVE_LIBZE], [$have_ze], [ZE support])
 
 AC_MSG_CHECKING([for fi_trywait support])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <rdma/fi_eq.h>]],

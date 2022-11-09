@@ -89,11 +89,13 @@ int yaksuri_cudai_md_alloc(yaksi_type_s * type)
                    type->u.hindexed.count * sizeof(intptr_t));
 
             cerr = cudaMallocManaged((void **) &cuda->md->u.hindexed.array_of_blocklengths,
-                                     type->u.hindexed.count * sizeof(int), cudaMemAttachGlobal);
+                                     type->u.hindexed.count * sizeof(intptr_t),
+                                     cudaMemAttachGlobal);
             YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
 
             memcpy(cuda->md->u.hindexed.array_of_blocklengths,
-                   type->u.hindexed.array_of_blocklengths, type->u.hindexed.count * sizeof(int));
+                   type->u.hindexed.array_of_blocklengths,
+                   type->u.hindexed.count * sizeof(intptr_t));
 
             rc = yaksuri_cudai_md_alloc(type->u.hindexed.child);
             YAKSU_ERR_CHECK(rc, fn_fail);

@@ -7,7 +7,7 @@
 #include <common/test.h>
 
 extern "C" {
-#include <ucs/debug/memtrack.h>
+#include <ucs/debug/memtrack_int.h>
 #include <ucs/sys/sys.h>
 }
 
@@ -18,8 +18,6 @@ extern "C" {
 #include <fcntl.h>
 #include <limits>
 
-
-#ifdef ENABLE_MEMTRACK
 
 class test_memtrack : public ucs::test {
 protected:
@@ -46,6 +44,21 @@ protected:
         EXPECT_EQ(0lu, total.count);
         EXPECT_EQ(peak_count, total.peak_count);
         EXPECT_EQ(peak_size,  total.peak_size);
+    }
+
+    void test_total_memalign_realloc(size_t peak_count, size_t peak_size) {
+        /* ucs_posix_memalign_realloc() call may hold two buffers
+           for a short time if malloc() returned an unaligned pointer */
+        ucs_memtrack_entry_t total;
+
+        ucs_memtrack_total(&total);
+        EXPECT_EQ(0lu, total.count);
+        EXPECT_EQ(total.peak_count % peak_count, 0);
+        EXPECT_EQ(total.peak_size  % peak_size,  0);
+        EXPECT_GT(total.peak_count / peak_count, 0);
+        EXPECT_GT(total.peak_size  / peak_size,  0);
+        EXPECT_LT(total.peak_count / peak_count, 3);
+        EXPECT_LT(total.peak_size  / peak_size,  3);
     }
 };
 
@@ -97,7 +110,7 @@ UCS_TEST_F(test_memtrack, parse_dump) {
     }
 
     /* Parse */
-    ASSERT_NE((void *)NULL, strstr(buf, "TOTAL"));
+    ASSERT_NE((void*)NULL, strstr(buf, "TOTAL"));
     free(buf);
 }
 
@@ -105,10 +118,10 @@ UCS_TEST_F(test_memtrack, malloc_realloc) {
     void* ptr;
 
     ptr = ucs_malloc(ALLOC_SIZE, ALLOC_NAME);
-    ASSERT_NE((void *)NULL, ptr);
+    ASSERT_NE((void*)NULL, ptr);
 
     ptr = ucs_realloc(ptr, 2 * ALLOC_SIZE, ALLOC_NAME);
-    ASSERT_NE((void *)NULL, ptr);
+    ASSERT_NE((void*)NULL, ptr);
     ucs_free(ptr);
 
     test_total(1, 2 * ALLOC_SIZE);
@@ -118,7 +131,7 @@ UCS_TEST_F(test_memtrack, realloc_null) {
     void* ptr;
 
     ptr = ucs_realloc(NULL, ALLOC_SIZE, ALLOC_NAME);
-    ASSERT_NE((void *)NULL, ptr);
+    ASSERT_NE((void*)NULL, ptr);
     ucs_free(ptr);
 
     test_total(1, ALLOC_SIZE);
@@ -128,11 +141,11 @@ UCS_TEST_F(test_memtrack, calloc) {
     void* ptr;
 
     ptr = ucs_calloc(1, ALLOC_SIZE, ALLOC_NAME);
-    ASSERT_NE((void *)NULL, ptr);
+    ASSERT_NE((void*)NULL, ptr);
     ucs_free(ptr);
 
     ptr = ucs_calloc(ALLOC_SIZE, 1, ALLOC_NAME);
-    ASSERT_NE((void *)NULL, ptr);
+    ASSERT_NE((void*)NULL, ptr);
     ucs_free(ptr);
 
     test_total(1, ALLOC_SIZE);
@@ -149,7 +162,7 @@ UCS_TEST_F(test_memtrack, sysv) {
     status = ucs_sysv_alloc(&size, std::numeric_limits<size_t>::max(), &ptr, 0,
                             ALLOC_NAME, &shmid);
     ASSERT_UCS_OK(status);
-    ASSERT_NE((void *)NULL, ptr);
+    ASSERT_NE((void*)NULL, ptr);
 
     memset(ptr, 0xAA, size);
     ucs_sysv_free(ptr);
@@ -162,22 +175,47 @@ UCS_TEST_F(test_memtrack, memalign_realloc) {
     int ret;
 
     ret = ucs_posix_memalign(&ptr, 8, ALLOC_SIZE, ALLOC_NAME);
+    ucs_free(ptr);
     ASSERT_EQ(0, ret);
-    ASSERT_NE((void *)NULL, ptr);
+    ASSERT_NE((void*)NULL, ptr);
+    /* Silence coverity warning. */
+    ptr = NULL;
+
+    ret = ucs_posix_memalign(&ptr, UCS_KBYTE, ALLOC_SIZE, ALLOC_NAME);
+    ASSERT_EQ(0, ret);
+    ASSERT_NE((void*)NULL, ptr);
+    ASSERT_EQ(0, (uintptr_t)ptr % UCS_KBYTE);
+
+    ptr = ucs_realloc(ptr, 2 * ALLOC_SIZE, ALLOC_NAME);
+    ASSERT_NE((void*)NULL, ptr);
+
+    ptr = ucs_realloc(ptr, ALLOC_SIZE, ALLOC_NAME);
+    ASSERT_NE((void*)NULL, ptr);
+
     ucs_free(ptr);
     /* Silence coverity warning. */
     ptr = NULL;
 
-    ret = ucs_posix_memalign(&ptr, 1024, ALLOC_SIZE, ALLOC_NAME);
-    ASSERT_EQ(0, ret);
-    ASSERT_NE((void *)NULL, ptr);
+    test_total_memalign_realloc(1, 2 * ALLOC_SIZE);
 
-    ptr = ucs_realloc(ptr, 2*ALLOC_SIZE, ALLOC_NAME);
-    ASSERT_NE((void *)NULL, ptr);
+    ret = ucs_posix_memalign(&ptr, UCS_KBYTE, ALLOC_SIZE, ALLOC_NAME);
+    ASSERT_EQ(0, ret);
+    ASSERT_NE((void*)NULL, ptr);
+    ASSERT_EQ(0, (uintptr_t)ptr % UCS_KBYTE);
+
+    ret = ucs_posix_memalign_realloc(&ptr, UCS_KBYTE, 4 * ALLOC_SIZE,
+                                     ALLOC_NAME);
+    ASSERT_EQ(0, ret);
+    ASSERT_NE((void*)NULL, ptr);
+    ASSERT_EQ(0, (uintptr_t)ptr % UCS_KBYTE);
+
+    ret = ucs_posix_memalign_realloc(&ptr, UCS_MBYTE, 2 * ALLOC_SIZE,
+                                     ALLOC_NAME);
+    ASSERT_EQ(0, ret);
+    ASSERT_NE((void*)NULL, ptr);
+    ASSERT_EQ(0, (uintptr_t)ptr % UCS_MBYTE);
 
     ucs_free(ptr);
-
-    test_total(1, 2 * ALLOC_SIZE);
 }
 
 UCS_TEST_F(test_memtrack, mmap) {
@@ -185,7 +223,7 @@ UCS_TEST_F(test_memtrack, mmap) {
 
     ptr = ucs_mmap(NULL, ALLOC_SIZE, PROT_READ|PROT_WRITE,
                    MAP_PRIVATE|MAP_ANONYMOUS, -1, 0, ALLOC_NAME);
-    ASSERT_NE((void *)NULL, ptr);
+    ASSERT_NE((void*)NULL, ptr);
     ucs_munmap(ptr, ALLOC_SIZE);
 
     test_total(1, ALLOC_SIZE);
@@ -205,5 +243,3 @@ UCS_TEST_F(test_memtrack, custom) {
 
     test_total(1, ALLOC_SIZE);
 }
-
-#endif

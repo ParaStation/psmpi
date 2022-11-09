@@ -52,8 +52,8 @@ static int flatten(yaksi_type_s * type, void *flattened_type)
 
         case YAKSI_TYPE_KIND__HINDEXED:
             memcpy(flatbuf, type->u.hindexed.array_of_blocklengths,
-                   type->u.hindexed.count * sizeof(int));
-            flatbuf += type->u.hindexed.count * sizeof(int);
+                   type->u.hindexed.count * sizeof(intptr_t));
+            flatbuf += type->u.hindexed.count * sizeof(intptr_t);
 
             memcpy(flatbuf, type->u.hindexed.array_of_displs,
                    type->u.hindexed.count * sizeof(intptr_t));
@@ -64,13 +64,14 @@ static int flatten(yaksi_type_s * type, void *flattened_type)
             break;
 
         case YAKSI_TYPE_KIND__STRUCT:
-            memcpy(flatbuf, type->u.str.array_of_blocklengths, type->u.str.count * sizeof(int));
-            flatbuf += type->u.str.count * sizeof(int);
+            memcpy(flatbuf, type->u.str.array_of_blocklengths,
+                   type->u.str.count * sizeof(intptr_t));
+            flatbuf += type->u.str.count * sizeof(intptr_t);
 
             memcpy(flatbuf, type->u.str.array_of_displs, type->u.str.count * sizeof(intptr_t));
             flatbuf += type->u.str.count * sizeof(intptr_t);
 
-            for (int i = 0; i < type->u.str.count; i++) {
+            for (intptr_t i = 0; i < type->u.str.count; i++) {
                 rc = flatten(type->u.str.array_of_types[i], flatbuf);
                 YAKSU_ERR_CHECK(rc, fn_fail);
 
@@ -97,7 +98,7 @@ static int flatten(yaksi_type_s * type, void *flattened_type)
     goto fn_exit;
 }
 
-int yaksa_flatten(yaksa_type_t type, void *flattened_type)
+YAKSA_API_PUBLIC int yaksa_flatten(yaksa_type_t type, void *flattened_type)
 {
     int rc = YAKSA_SUCCESS;
     yaksi_type_s *yaksi_type;

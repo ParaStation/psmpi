@@ -16,7 +16,6 @@
 
 #define UCT_UD_QP_HASH_SIZE     256
 #define UCT_UD_TX_MODERATION    64
-#define UCT_UD_HASH_SIZE        997
 #define UCT_UD_RX_BATCH_MIN     8
 
 #define UCT_UD_INITIAL_PSN      1   /* initial packet serial number */
@@ -41,7 +40,7 @@ typedef uint16_t                 uct_ud_psn_t;
 typedef struct uct_ud_iface      uct_ud_iface_t;
 typedef struct uct_ud_ep         uct_ud_ep_t;
 typedef struct uct_ud_ctl_hdr    uct_ud_ctl_hdr_t;
-typedef uct_ib_qpnum_t           uct_ud_iface_addr_t;
+typedef struct uct_ud_iface_addr uct_ud_iface_addr_t;
 typedef struct uct_ud_ep_addr    uct_ud_ep_addr_t;
 typedef struct uct_ud_iface_peer uct_ud_iface_peer_t;
 
@@ -56,7 +55,7 @@ enum {
     UCT_UD_PACKET_FLAG_AM      = UCS_BIT(24),
     UCT_UD_PACKET_FLAG_ACK_REQ = UCS_BIT(25),
     UCT_UD_PACKET_FLAG_ECN     = UCS_BIT(26),
-    UCT_UD_PACKET_FLAG_NAK     = UCS_BIT(27),
+    UCT_UD_PACKET_FLAG_NACK    = UCS_BIT(27),
     UCT_UD_PACKET_FLAG_PUT     = UCS_BIT(28),
     UCT_UD_PACKET_FLAG_CTL     = UCS_BIT(29),
 
@@ -74,7 +73,7 @@ network header layout
 
 A - ack request
 E - explicit congestion notification (ecn)
-N - negative acknoledgement
+N - negative acknowledgement
 P - put emulation (will be disabled in the future)
 C - control packet extended header
 
@@ -105,7 +104,7 @@ Control packet header
         struct { // am false
             uint8_t ack_req:1;
             uint8_t ecn:1;
-            uint8_t nak:1;
+            uint8_t nack:1;
             uint8_t put:1;
             uint8_t ctl:1;
             uint8_t reserved:2;
@@ -163,8 +162,8 @@ typedef struct uct_ud_send_skb {
  * Call user completion handler
  */
 typedef struct uct_ud_comp_desc {
-    uct_completion_t        *comp;
-    ucs_status_t            status;     /* used in case of failure */
+    uct_completion_t *comp;
+    uct_ud_ep_t      *ep;
 } uct_ud_comp_desc_t;
 
 

@@ -1,5 +1,6 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (C) Mellanox Technologies Ltd. 2001-2021.  ALL RIGHTS RESERVED.
+* Copyright (C) Huawei Technologies Co., Ltd. 2021.  ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -12,9 +13,11 @@
 #include "rc_ep.h"
 
 #include <ucs/arch/cpu.h>
-#include <ucs/debug/memtrack.h>
+#include <ucs/debug/memtrack_int.h>
 #include <ucs/debug/log.h>
 #include <ucs/type/class.h>
+#include <ucs/vfs/base/vfs_cb.h>
+#include <ucs/vfs/base/vfs_obj.h>
 
 
 static const char *uct_rc_fence_mode_values[] = {
@@ -90,6 +93,11 @@ ucs_config_field_t uct_rc_iface_common_config_table[] = {
    "Maximal number of bytes simultaneously transferred by get/RDMA_READ operations.",
    ucs_offsetof(uct_rc_iface_common_config_t, tx.max_get_bytes), UCS_CONFIG_TYPE_MEMUNITS},
 
+  {"TX_POLL_ALWAYS", "n",
+   "When enabled, TX completions are polled every time the progress function is invoked.\n"
+   "Otherwise poll TX completions only if no RX completions found.",
+   ucs_offsetof(uct_rc_iface_common_config_t, tx.poll_always), UCS_CONFIG_TYPE_BOOL},
+
   {NULL}
 };
 
@@ -119,8 +127,9 @@ ucs_config_field_t uct_rc_iface_config_table[] = {
 
 #ifdef ENABLE_STATS
 static ucs_stats_class_t uct_rc_iface_stats_class = {
-    .name = "rc_iface",
-    .num_counters = UCT_RC_IFACE_STAT_LAST,
+    .name          = "rc_iface",
+    .num_counters  = UCT_RC_IFACE_STAT_LAST,
+    .class_id      = UCS_STATS_CLASS_ID_INVALID,
     .counter_names = {
         [UCT_RC_IFACE_STAT_RX_COMPLETION] = "rx_completion",
         [UCT_RC_IFACE_STAT_TX_COMPLETION] = "tx_completion",
@@ -132,29 +141,25 @@ static ucs_stats_class_t uct_rc_iface_stats_class = {
 #endif /* ENABLE_STATS */
 
 
-static ucs_mpool_ops_t uct_rc_fc_pending_mpool_ops = {
+static ucs_mpool_ops_t uct_rc_pending_mpool_ops = {
     .chunk_alloc   = ucs_mpool_chunk_malloc,
     .chunk_release = ucs_mpool_chunk_free,
     .obj_init      = NULL,
-    .obj_cleanup   = NULL
+    .obj_cleanup   = NULL,
+    .obj_str       = NULL
 };
 
-static void
-uct_rc_iface_flush_comp_init(ucs_mpool_t *mp, void *obj, void *chunk)
-{
-    uct_rc_iface_t *iface      = ucs_container_of(mp, uct_rc_iface_t, tx.flush_mp);
-    uct_rc_iface_send_op_t *op = obj;
 
-    op->handler = uct_rc_ep_flush_op_completion_handler;
-    op->flags   = 0;
-    op->iface   = iface;
-}
+static void ucp_send_op_mpool_obj_str(ucs_mpool_t *mp, void *obj,
+                                      ucs_string_buffer_t *strb);
 
-static ucs_mpool_ops_t uct_rc_flush_comp_mpool_ops = {
+
+static ucs_mpool_ops_t uct_rc_send_op_mpool_ops = {
     .chunk_alloc   = ucs_mpool_chunk_malloc,
     .chunk_release = ucs_mpool_chunk_free,
-    .obj_init      = uct_rc_iface_flush_comp_init,
-    .obj_cleanup   = NULL
+    .obj_init      = NULL,
+    .obj_cleanup   = NULL,
+    .obj_str       = ucp_send_op_mpool_obj_str
 };
 
 ucs_status_t uct_rc_iface_query(uct_rc_iface_t *iface,
@@ -348,13 +353,21 @@ ucs_status_t uct_rc_iface_fc_handler(uct_rc_iface_t *iface, unsigned qp_num,
 {
     ucs_status_t status;
     int16_t      cur_wnd;
-    uct_rc_fc_request_t *fc_req;
+    uct_rc_pending_req_t *fc_req;
     uct_rc_ep_t  *ep  = uct_rc_iface_lookup_ep(iface, qp_num);
     uint8_t fc_hdr    = uct_rc_fc_get_fc_hdr(hdr->am_id);
 
     ucs_assert(iface->config.fc_enabled);
 
-    if (fc_hdr & UCT_RC_EP_FC_FLAG_GRANT) {
+    if ((ep == NULL) || (ep->flags & UCT_RC_EP_FLAG_FLUSH_CANCEL)) {
+        /* We get fc for ep which is being removed or cancelled, so should ignore it */
+        if (fc_hdr == UCT_RC_EP_FC_PURE_GRANT) {
+            return UCS_OK;
+        }
+        goto out;
+    }
+
+    if (fc_hdr & UCT_RC_EP_FLAG_FC_GRANT) {
         UCS_STATS_UPDATE_COUNTER(ep->fc.stats, UCT_RC_FC_STAT_RX_GRANT, 1);
 
         /* Got either grant flag or special FC grant message */
@@ -380,16 +393,16 @@ ucs_status_t uct_rc_iface_fc_handler(uct_rc_iface_t *iface, unsigned qp_num,
         }
     }
 
-    if (fc_hdr & UCT_RC_EP_FC_FLAG_SOFT_REQ) {
+    if (fc_hdr & UCT_RC_EP_FLAG_FC_SOFT_REQ) {
         UCS_STATS_UPDATE_COUNTER(ep->fc.stats, UCT_RC_FC_STAT_RX_SOFT_REQ, 1);
 
         /* Got soft credit request. Mark ep that it needs to grant
          * credits to the peer in outgoing AM (if any). */
-        ep->fc.flags |= UCT_RC_EP_FC_FLAG_GRANT;
+        ep->flags |= UCT_RC_EP_FLAG_FC_GRANT;
 
-    } else if (fc_hdr & UCT_RC_EP_FC_FLAG_HARD_REQ) {
+    } else if (fc_hdr & UCT_RC_EP_FLAG_FC_HARD_REQ) {
         UCS_STATS_UPDATE_COUNTER(ep->fc.stats, UCT_RC_FC_STAT_RX_HARD_REQ, 1);
-        fc_req = ucs_mpool_get(&iface->tx.fc_mp);
+        fc_req = ucs_mpool_get(&iface->tx.pending_mp);
         if (ucs_unlikely(fc_req == NULL)) {
             ucs_error("Failed to allocate FC request. "
                       "Grant will not be sent on ep %p", ep);
@@ -404,8 +417,7 @@ ucs_status_t uct_rc_iface_fc_handler(uct_rc_iface_t *iface, unsigned qp_num,
         if (status == UCS_ERR_NO_RESOURCE){
             /* force add request to group & schedule group to eliminate
              * FC deadlock */
-            uct_pending_req_arb_group_push_head(&iface->tx.arbiter,
-                                                &ep->arb_group, &fc_req->super);
+            uct_pending_req_arb_group_push_head(&ep->arb_group, &fc_req->super);
             ucs_arbiter_group_schedule(&iface->tx.arbiter, &ep->arb_group);
         } else {
             ucs_assertv_always(status == UCS_OK, "Failed to send FC grant msg: %s",
@@ -413,6 +425,7 @@ ucs_status_t uct_rc_iface_fc_handler(uct_rc_iface_t *iface, unsigned qp_num,
         }
     }
 
+out:
     return uct_iface_invoke_am(&iface->super.super,
                                (hdr->am_id & ~UCT_RC_EP_FC_MASK),
                                hdr + 1, length, flags);
@@ -441,10 +454,10 @@ static ucs_status_t uct_rc_iface_tx_ops_init(uct_rc_iface_t *iface)
     /* Create memory pool for flush completions. Can't just alloc a certain
      * size buffer, because number of simultaneous flushes is not limited by
      * CQ or QP resources. */
-    status = ucs_mpool_init(&iface->tx.flush_mp, 0, sizeof(*op), 0,
+    status = ucs_mpool_init(&iface->tx.send_op_mp, 0, sizeof(*op), 0,
                             UCS_SYS_CACHE_LINE_SIZE, 256,
-                            UINT_MAX, &uct_rc_flush_comp_mpool_ops,
-                            "flush-comps-only");
+                            UINT_MAX, &uct_rc_send_op_mpool_ops,
+                            "send-ops-mpool");
 
     return status;
 }
@@ -466,7 +479,7 @@ static void uct_rc_iface_tx_ops_cleanup(uct_rc_iface_t *iface)
     }
     ucs_free(iface->tx.ops_buffer);
 
-    ucs_mpool_cleanup(&iface->tx.flush_mp, 1);
+    ucs_mpool_cleanup(&iface->tx.send_op_mp, 1);
 }
 
 unsigned uct_rc_iface_do_progress(uct_iface_h tl_iface)
@@ -510,41 +523,47 @@ static int uct_rc_iface_config_limit_value(const char *name,
      }
 }
 
-UCS_CLASS_INIT_FUNC(uct_rc_iface_t, uct_rc_iface_ops_t *ops, uct_md_h md,
-                    uct_worker_h worker, const uct_iface_params_t *params,
+UCS_CLASS_INIT_FUNC(uct_rc_iface_t, uct_iface_ops_t *tl_ops,
+                    uct_rc_iface_ops_t *ops, uct_md_h md, uct_worker_h worker,
+                    const uct_iface_params_t *params,
                     const uct_rc_iface_common_config_t *config,
-                    uct_ib_iface_init_attr_t *init_attr)
+                    const uct_ib_iface_init_attr_t *init_attr)
 {
     uct_ib_device_t *dev = &ucs_derived_of(md, uct_ib_md_t)->dev;
     uint32_t max_ib_msg_size;
     ucs_status_t status;
+    unsigned tx_cq_size;
 
-    UCS_CLASS_CALL_SUPER_INIT(uct_ib_iface_t, &ops->super, md, worker, params,
-                              &config->super, init_attr);
+    UCS_CLASS_CALL_SUPER_INIT(uct_ib_iface_t, tl_ops, &ops->super, md, worker,
+                              params, &config->super, init_attr);
 
-    self->tx.cq_available           = init_attr->cq_len[UCT_IB_DIR_TX] - 1;
-    self->rx.srq.available          = 0;
-    self->rx.srq.quota              = 0;
-    self->config.tx_qp_len          = config->super.tx.queue_len;
-    self->config.tx_min_sge         = config->super.tx.min_sge;
-    self->config.tx_min_inline      = config->super.tx.min_inline;
-    self->config.tx_ops_count       = init_attr->cq_len[UCT_IB_DIR_TX];
-    self->config.min_rnr_timer      = uct_ib_to_rnr_fabric_time(config->tx.rnr_timeout);
-    self->config.timeout            = uct_ib_to_qp_fabric_time(config->tx.timeout);
-    self->config.rnr_retry          = uct_rc_iface_config_limit_value(
-                                                  "RNR_RETRY_COUNT",
-                                                  config->tx.rnr_retry_count,
-                                                  UCT_RC_QP_MAX_RETRY_COUNT);
-    self->config.retry_cnt          = uct_rc_iface_config_limit_value(
-                                                  "RETRY_COUNT",
-                                                  config->tx.retry_count,
-                                                  UCT_RC_QP_MAX_RETRY_COUNT);
-    self->config.max_rd_atomic      = config->max_rd_atomic;
-    self->config.ooo_rw             = config->ooo_rw;
+    tx_cq_size                  = uct_ib_cq_size(&self->super, init_attr,
+                                                 UCT_IB_DIR_TX);
+    self->tx.cq_available       = tx_cq_size - 1;
+    self->rx.srq.available      = 0;
+    self->rx.srq.quota          = 0;
+    self->config.tx_qp_len      = config->super.tx.queue_len;
+    self->config.tx_min_sge     = config->super.tx.min_sge;
+    self->config.tx_min_inline  = config->super.tx.min_inline;
+    self->config.tx_poll_always = config->tx.poll_always;
+    self->config.tx_ops_count   = tx_cq_size;
+    self->config.min_rnr_timer  = uct_ib_to_rnr_fabric_time(config->tx.rnr_timeout);
+    self->config.timeout        = uct_ib_to_qp_fabric_time(config->tx.timeout);
+    self->config.rnr_retry      = uct_rc_iface_config_limit_value(
+                                                     "RNR_RETRY_COUNT",
+                                                     config->tx.rnr_retry_count,
+                                                     UCT_RC_QP_MAX_RETRY_COUNT);
+    self->config.retry_cnt      = uct_rc_iface_config_limit_value(
+                                                     "RETRY_COUNT",
+                                                     config->tx.retry_count,
+                                                     UCT_RC_QP_MAX_RETRY_COUNT);
+    self->config.max_rd_atomic  = config->max_rd_atomic;
+    self->config.ooo_rw         = config->ooo_rw;
 #if UCS_ENABLE_ASSERT
-    self->config.tx_cq_len          = init_attr->cq_len[UCT_IB_DIR_TX];
+    self->config.tx_cq_len      = tx_cq_size;
+    self->tx.in_pending         = 0;
 #endif
-    max_ib_msg_size                 = uct_ib_iface_port_attr(&self->super)->max_msg_sz;
+    max_ib_msg_size             = uct_ib_iface_port_attr(&self->super)->max_msg_sz;
 
     if (config->tx.max_get_zcopy == UCS_MEMUNITS_AUTO) {
         self->config.max_get_zcopy = max_ib_msg_size;
@@ -564,10 +583,13 @@ UCS_CLASS_INIT_FUNC(uct_rc_iface_t, uct_rc_iface_ops_t *ops, uct_md_h md,
         self->tx.reads_available = config->tx.max_get_bytes;
     }
 
+    self->tx.reads_completed = 0;
+
     uct_ib_fence_info_init(&self->tx.fi);
     memset(self->eps, 0, sizeof(self->eps));
     ucs_arbiter_init(&self->tx.arbiter);
     ucs_list_head_init(&self->ep_list);
+    ucs_list_head_init(&self->qp_gc_list);
 
     /* Check FC parameters correctness */
     if ((config->fc.hard_thresh <= 0) || (config->fc.hard_thresh >= 1)) {
@@ -578,7 +600,7 @@ UCS_CLASS_INIT_FUNC(uct_rc_iface_t, uct_rc_iface_ops_t *ops, uct_md_h md,
     }
 
     /* Create RX buffers mempool */
-    status = uct_ib_iface_recv_mpool_init(&self->super, &config->super,
+    status = uct_ib_iface_recv_mpool_init(&self->super, &config->super, params,
                                           "rc_recv_desc", &self->rx.mp);
     if (status != UCS_OK) {
         goto err;
@@ -616,7 +638,7 @@ UCS_CLASS_INIT_FUNC(uct_rc_iface_t, uct_rc_iface_ops_t *ops, uct_md_h md,
                                         uct_rc_ep_atomic_handler_64_be0;
 
     status = UCS_STATS_NODE_ALLOC(&self->stats, &uct_rc_iface_stats_class,
-                                  self->super.super.stats);
+                                  self->super.super.stats, "-%p", self);
     if (status != UCS_OK) {
         goto err_cleanup_tx_ops;
     }
@@ -627,34 +649,28 @@ UCS_CLASS_INIT_FUNC(uct_rc_iface_t, uct_rc_iface_ops_t *ops, uct_md_h md,
         goto err_destroy_stats;
     }
 
-    self->config.fc_enabled      = config->fc.enable;
+    /* Create mempool for pending requests */
+    ucs_assert(init_attr->fc_req_size >= sizeof(uct_rc_pending_req_t));
+    status = ucs_mpool_init(&self->tx.pending_mp, 0, init_attr->fc_req_size,
+                            0, 1, 128, UINT_MAX, &uct_rc_pending_mpool_ops,
+                            "pending-ops");
+    if (status != UCS_OK) {
+        goto err_cleanup_rx;
+    }
 
+    self->config.fc_enabled = config->fc.enable;
     if (self->config.fc_enabled) {
         /* Assume that number of recv buffers is the same on all peers.
          * Then FC window size is the same for all endpoints as well.
          * TODO: Make wnd size to be a property of the particular interface.
          * We could distribute it via rc address then.*/
-        self->config.fc_wnd_size     = ucs_min(config->fc.wnd_size,
-                                               config->super.rx.queue_len);
-        self->config.fc_hard_thresh  = ucs_max((int)(self->config.fc_wnd_size *
-                                               config->fc.hard_thresh), 1);
-
-        /* Create mempool for pending requests for FC grant */
-        status = ucs_mpool_init(&self->tx.fc_mp,
-                                0,
-                                init_attr->fc_req_size,
-                                0,
-                                1,
-                                128,
-                                UINT_MAX,
-                                &uct_rc_fc_pending_mpool_ops,
-                                "pending-fc-grants-only");
-        if (status != UCS_OK) {
-            goto err_cleanup_rx;
-        }
+        self->config.fc_wnd_size    = ucs_min(config->fc.wnd_size,
+                                              config->super.rx.queue_len);
+        self->config.fc_hard_thresh = ucs_max((int)(self->config.fc_wnd_size *
+                                              config->fc.hard_thresh), 1);
     } else {
-        self->config.fc_wnd_size     = INT16_MAX;
-        self->config.fc_hard_thresh  = 0;
+        self->config.fc_wnd_size    = INT16_MAX;
+        self->config.fc_hard_thresh = 0;
     }
 
     return UCS_OK;
@@ -671,6 +687,40 @@ err_destroy_rx_mp:
     ucs_mpool_cleanup(&self->rx.mp, 1);
 err:
     return status;
+}
+
+unsigned uct_rc_iface_qp_cleanup_progress(void *arg)
+{
+    uct_rc_iface_qp_cleanup_ctx_t *cleanup_ctx = arg;
+    uct_rc_iface_t *iface                      = cleanup_ctx->iface;
+    uct_rc_iface_ops_t *ops;
+
+    uct_ib_device_async_event_unregister(uct_ib_iface_device(&iface->super),
+                                         IBV_EVENT_QP_LAST_WQE_REACHED,
+                                         cleanup_ctx->qp_num);
+
+    ops = ucs_derived_of(iface->super.ops, uct_rc_iface_ops_t);
+    ops->cleanup_qp(cleanup_ctx);
+
+    if (cleanup_ctx->cq_credits > 0) {
+        uct_rc_iface_add_cq_credits_dispatch(iface, cleanup_ctx->cq_credits);
+    }
+
+    ucs_list_del(&cleanup_ctx->list);
+    ucs_free(cleanup_ctx);
+    return 1;
+}
+
+void uct_rc_iface_cleanup_qps(uct_rc_iface_t *iface)
+{
+    uct_rc_iface_qp_cleanup_ctx_t *cleanup_ctx, *tmp;
+
+    ucs_list_for_each_safe(cleanup_ctx, tmp, &iface->qp_gc_list, list) {
+        cleanup_ctx->cq_credits = 0; /* prevent arbiter dispatch */
+        uct_rc_iface_qp_cleanup_progress(cleanup_ctx);
+    }
+
+    ucs_assert(ucs_list_is_empty(&iface->qp_gc_list));
 }
 
 static UCS_CLASS_CLEANUP_FUNC(uct_rc_iface_t)
@@ -695,9 +745,7 @@ static UCS_CLASS_CLEANUP_FUNC(uct_rc_iface_t)
     uct_rc_iface_tx_ops_cleanup(self);
     ucs_mpool_cleanup(&self->tx.mp, 1);
     ucs_mpool_cleanup(&self->rx.mp, 0); /* Cannot flush SRQ */
-    if (self->config.fc_enabled) {
-        ucs_mpool_cleanup(&self->tx.fc_mp, 1);
-    }
+    ucs_mpool_cleanup(&self->tx.pending_mp, 1);
 }
 
 UCS_CLASS_DEFINE(uct_rc_iface_t, uct_ib_iface_t);
@@ -893,5 +941,58 @@ ucs_status_t uct_rc_iface_fence(uct_iface_h tl_iface, unsigned flags)
 
     UCT_TL_IFACE_STAT_FENCE(&iface->super.super);
     return UCS_OK;
+}
+
+void uct_rc_iface_vfs_populate(uct_rc_iface_t *iface)
+{
+    ucs_vfs_obj_add_ro_file(iface, ucs_vfs_show_primitive,
+                            &iface->tx.cq_available, UCS_VFS_TYPE_INT,
+                            "cq_available");
+    ucs_vfs_obj_add_ro_file(iface, ucs_vfs_show_primitive,
+                            &iface->tx.reads_available, UCS_VFS_TYPE_SSIZET,
+                            "reads_available");
+    ucs_vfs_obj_add_ro_file(iface, ucs_vfs_show_primitive,
+                            &iface->tx.reads_completed, UCS_VFS_TYPE_SSIZET,
+                            "reads_completed");
+}
+
+void uct_rc_iface_vfs_refresh(uct_iface_h iface)
+{
+    uct_rc_iface_t *rc_iface         = ucs_derived_of(iface, uct_rc_iface_t);
+    uct_rc_iface_ops_t *rc_iface_ops = ucs_derived_of(rc_iface->super.ops,
+                                                      uct_rc_iface_ops_t);
+    uct_rc_ep_t *ep;
+
+    /* Add iface resources */
+    uct_rc_iface_vfs_populate(rc_iface);
+
+    /* Add objects for EPs */
+    ucs_list_for_each(ep, &rc_iface->ep_list, list) {
+        rc_iface_ops->ep_vfs_populate(ep);
+    }
+}
+
+static void ucp_send_op_mpool_obj_str(ucs_mpool_t *mp, void *obj,
+                                      ucs_string_buffer_t *strb)
+{
+    uct_rc_iface_send_op_t *op    = obj;
+    const char *handler_func_name = ucs_debug_get_symbol_name(op->handler);
+    const char *comp_func_name;
+
+    ucs_string_buffer_appendf(strb, "flags:0x%x handler:%s()", op->flags,
+                              handler_func_name);
+
+    if (op->flags & UCT_RC_IFACE_SEND_OP_STATUS) {
+        ucs_string_buffer_appendf(strb, " status:%d", op->status);
+    }
+
+    if (op->user_comp != NULL) {
+        comp_func_name = ucs_debug_get_symbol_name(op->user_comp->func);
+        ucs_string_buffer_appendf(strb, " comp:%s()", comp_func_name);
+    }
+
+#if ENABLE_DEBUG_DATA
+    ucs_string_buffer_appendf(strb, " name:%s", op->name);
+#endif
 }
 

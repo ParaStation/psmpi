@@ -9,7 +9,7 @@
 #include <string.h>
 #include <assert.h>
 
-int yaksa_info_create(yaksa_info_t * info)
+YAKSA_API_PUBLIC int yaksa_info_create(yaksa_info_t * info)
 {
     int rc = YAKSA_SUCCESS;
     yaksi_info_s *yaksi_info;
@@ -29,7 +29,7 @@ int yaksa_info_create(yaksa_info_t * info)
     goto fn_exit;
 }
 
-int yaksa_info_free(yaksa_info_t info)
+YAKSA_API_PUBLIC int yaksa_info_free(yaksa_info_t info)
 {
     int rc = YAKSA_SUCCESS;
     yaksi_info_s *yaksi_info = (yaksi_info_s *) info;
@@ -48,8 +48,8 @@ int yaksa_info_free(yaksa_info_t info)
     goto fn_exit;
 }
 
-int yaksa_info_keyval_append(yaksa_info_t info, const char *key, const void *val,
-                             unsigned int vallen)
+YAKSA_API_PUBLIC int yaksa_info_keyval_append(yaksa_info_t info, const char *key, const void *val,
+                                              unsigned int vallen)
 {
     int rc = YAKSA_SUCCESS;
     yaksi_info_s *yaksi_info = (yaksi_info_s *) info;

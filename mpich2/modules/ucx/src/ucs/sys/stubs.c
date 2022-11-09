@@ -26,7 +26,22 @@ int64_t ucs_empty_function_return_zero_int64()
     return 0;
 }
 
+int ucs_empty_function_return_zero_int()
+{
+    return 0;
+}
+
+size_t ucs_empty_function_return_zero_size_t()
+{
+    return 0;
+}
+
 unsigned ucs_empty_function_return_one()
+{
+    return 1;
+}
+
+int ucs_empty_function_return_one_int()
 {
     return 1;
 }
@@ -80,4 +95,9 @@ int ucs_empty_function_do_assert()
 {
     ucs_assert_always(0);
     return 0;
+}
+
+void ucs_empty_function_do_assert_void()
+{
+    ucs_assert_always(0);
 }

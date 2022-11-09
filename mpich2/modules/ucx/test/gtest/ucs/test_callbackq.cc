@@ -32,6 +32,7 @@ protected:
         uint32_t                  count;
         int                       command;
         callback_ctx              *to_add;
+        unsigned                  flags;
         int                       key;
     };
 
@@ -81,9 +82,11 @@ protected:
     void init_ctx(callback_ctx *ctx, int key = 0)
     {
         ctx->test        = this;
+        ctx->callback_id = UCS_CALLBACKQ_ID_NULL;
         ctx->count       = 0;
         ctx->command     = COMMAND_NONE;
-        ctx->callback_id = UCS_CALLBACKQ_ID_NULL;
+        ctx->to_add      = NULL;
+        ctx->flags       = 0;
         ctx->key         = key;
     }
 
@@ -95,7 +98,7 @@ protected:
     {
         ctx->callback_id = ucs_callbackq_add(&m_cbq, callback_proxy,
                                              reinterpret_cast<void*>(ctx),
-                                             cb_flags() | flags);
+                                             ctx->flags | cb_flags() | flags);
     }
 
     void remove(int callback_id)
@@ -123,7 +126,7 @@ protected:
     static int remove_if_pred(const ucs_callbackq_elem_t *elem, void *arg)
     {
         callback_ctx *ctx = reinterpret_cast<callback_ctx*>(elem->arg);
-        int key = *reinterpret_cast<int*>(arg);
+        int key           = *reinterpret_cast<int*>(arg);
 
         /* remove callbacks with the given key */
         return (elem->cb == callback_proxy) && (ctx->key == key);
@@ -215,19 +218,22 @@ UCS_TEST_P(test_callbackq, add_another) {
     ctx.command = COMMAND_NONE;
 
     unsigned count = ctx.count;
+    if (cb_flags() & UCS_CALLBACKQ_FLAG_FAST) {
+        count++; /* fast CBs are executed immediately after "add" */
+    }
 
     dispatch();
     EXPECT_EQ(2u, ctx.count);
-    EXPECT_EQ(count + 1, ctx2.count);
+    EXPECT_EQ(count, ctx2.count);
 
     remove(&ctx);
     dispatch();
     EXPECT_EQ(2u, ctx.count);
-    EXPECT_EQ(count + 2, ctx2.count);
+    EXPECT_EQ(count + 1, ctx2.count);
 
     remove(&ctx2);
     dispatch();
-    EXPECT_EQ(count + 2, ctx2.count);
+    EXPECT_EQ(count + 1, ctx2.count);
 }
 
 UCS_MT_TEST_P(test_callbackq, threads, 10) {
@@ -314,9 +320,9 @@ UCS_MT_TEST_P(test_callbackq, remove, 10) {
     }
 }
 
-INSTANTIATE_TEST_CASE_P(fast_path, test_callbackq, ::
+INSTANTIATE_TEST_SUITE_P(fast_path, test_callbackq, ::
                         testing::Values(static_cast<int>(UCS_CALLBACKQ_FLAG_FAST)));
-INSTANTIATE_TEST_CASE_P(slow_path, test_callbackq, ::testing::Values(0));
+INSTANTIATE_TEST_SUITE_P(slow_path, test_callbackq, ::testing::Values(0));
 
 
 class test_callbackq_noflags : public test_callbackq {
@@ -335,6 +341,24 @@ UCS_TEST_F(test_callbackq_noflags, oneshot) {
     add(&ctx, UCS_CALLBACKQ_FLAG_ONESHOT);
     dispatch(100);
     EXPECT_EQ(1u, ctx.count);
+}
+
+UCS_TEST_F(test_callbackq_noflags, oneshot_recursive) {
+    callback_ctx ctx;
+
+    init_ctx(&ctx);
+    ctx.command = COMMAND_ADD_ANOTHER;
+    ctx.flags   = UCS_CALLBACKQ_FLAG_ONESHOT;
+    ctx.to_add  = &ctx;
+
+    add(&ctx);
+
+    for (unsigned i = 0; i < 10; ++i) {
+        dispatch(1);
+        EXPECT_LE(i + 1, ctx.count);
+    }
+
+    remove(ctx.callback_id);
 }
 
 UCS_TEST_F(test_callbackq_noflags, remove_if) {

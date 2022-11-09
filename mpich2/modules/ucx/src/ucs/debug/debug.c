@@ -8,7 +8,7 @@
 #  include "config.h"
 #endif
 
-#include "debug.h"
+#include "debug_int.h"
 #include "log.h"
 
 #include <ucs/datastruct/khash.h>
@@ -192,6 +192,8 @@ extern char *cplus_demangle(const char *, int);
 #endif
 
 static int ucs_debug_backtrace_is_excluded(void *address, const char *symbol);
+static int orig_sigaction(int signum, const struct sigaction *act,
+                          struct sigaction *oact);
 
 
 static char *ucs_debug_strdup(const char *str)
@@ -382,8 +384,7 @@ ucs_status_t ucs_debug_backtrace_create(backtrace_h *bckt, int strip)
     ucs_status_t status;
 
     *bckt  = NULL;
-    status = ucs_mmap_alloc(&size, (void**)bckt, 0
-                            UCS_MEMTRACK_NAME("debug backtrace object"));
+    status = ucs_mmap_alloc(&size, (void**)bckt, 0, "debug backtrace object");
     if (status != UCS_OK) {
         return status;
     }
@@ -521,7 +522,7 @@ static void ucs_debug_print_source_file(const char *file, unsigned line,
         return;
     }
 
-    n = 0;
+    n = 1;
     fprintf(stream, "\n");
     fprintf(stream, "%s: [ %s() ]\n", file, function);
     if (line > context) {
@@ -589,8 +590,7 @@ ucs_status_t ucs_debug_backtrace_create(backtrace_h *bckt, int strip)
     ucs_status_t status;
 
     *bckt  = NULL;
-    status = ucs_mmap_alloc(&size, (void**)bckt, 0
-                            UCS_MEMTRACK_NAME("debug backtrace object"));
+    status = ucs_mmap_alloc(&size, (void**)bckt, 0, "debug backtrace object");
     if (status != UCS_OK) {
         return status;
     }
@@ -892,9 +892,17 @@ static void ucs_debug_send_mail(const char *message)
 
 static void ucs_error_freeze(const char *message)
 {
+    struct sigaction sigact = {
+        .sa_handler = SIG_DFL,
+        .sa_flags   = 0
+    };
     static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
     char response;
     int ret;
+
+    /* restore original SIGINT handler to allow termitate process via Ctrl+C */
+    sigemptyset(&sigact.sa_mask);
+    orig_sigaction(SIGINT, &sigact, NULL);
 
     ucs_debug_stop_other_threads();
 
@@ -1080,21 +1088,12 @@ void ucs_handle_error(const char *message)
     }
 }
 
-static int ucs_debug_is_error_signal(int signum)
+int ucs_debug_is_handle_errors()
 {
-    khiter_t hash_it;
-    int result;
-
-    if (!ucs_global_opts.handle_errors) {
-        return 0;
-    }
-
-    /* If this signal is error, but was disabled. */
-    ucs_recursive_spin_lock(&ucs_kh_lock);
-    hash_it = kh_get(ucs_signal_orig_action, &ucs_signal_orig_action_map, signum);
-    result = (hash_it != kh_end(&ucs_signal_orig_action_map));
-    ucs_recursive_spin_unlock(&ucs_kh_lock);
-    return result;
+    static const unsigned mask = UCS_BIT(UCS_HANDLE_ERROR_BACKTRACE) |
+                                 UCS_BIT(UCS_HANDLE_ERROR_FREEZE) |
+                                 UCS_BIT(UCS_HANDLE_ERROR_DEBUG);
+    return ucs_global_opts.handle_errors & mask;
 }
 
 static void* ucs_debug_get_orig_func(const char *symbol, void *replacement)
@@ -1108,6 +1107,7 @@ static void* ucs_debug_get_orig_func(const char *symbol, void *replacement)
     return func_ptr;
 }
 
+#ifdef ENABLE_SIGACTION_OVERRIDE
 #if !HAVE_SIGHANDLER_T
 #if HAVE___SIGHANDLER_T
 typedef __sighandler_t *sighandler_t;
@@ -1115,6 +1115,24 @@ typedef __sighandler_t *sighandler_t;
 #error "Port me"
 #endif
 #endif
+
+static int ucs_debug_is_error_signal(int signum)
+{
+    khiter_t hash_it;
+    int result;
+
+    if (!ucs_debug_is_handle_errors()) {
+        return 0;
+    }
+
+    /* If this signal is error, but was disabled. */
+    ucs_recursive_spin_lock(&ucs_kh_lock);
+    hash_it = kh_get(ucs_signal_orig_action, &ucs_signal_orig_action_map, signum);
+    result = (hash_it != kh_end(&ucs_signal_orig_action_map));
+    ucs_recursive_spin_unlock(&ucs_kh_lock);
+    return result;
+}
+
 sighandler_t signal(int signum, sighandler_t handler)
 {
     typedef sighandler_t (*sighandler_func_t)(int, sighandler_t);
@@ -1132,6 +1150,17 @@ sighandler_t signal(int signum, sighandler_t handler)
     return orig(signum, handler);
 }
 
+int sigaction(int signum, const struct sigaction *act, struct sigaction *oact)
+{
+    if (ucs_debug_initialized && ucs_debug_is_error_signal(signum)) {
+        return orig_sigaction(signum, NULL, oact); /* Return old, do not set new */
+    }
+
+    return orig_sigaction(signum, act, oact);
+}
+
+#endif /* ENABLE_SIGACTION_OVERRIDE */
+
 static int orig_sigaction(int signum, const struct sigaction *act,
                           struct sigaction *oact)
 {
@@ -1146,20 +1175,11 @@ static int orig_sigaction(int signum, const struct sigaction *act,
     return orig(signum, act, oact);
 }
 
-int sigaction(int signum, const struct sigaction *act, struct sigaction *oact)
-{
-    if (ucs_debug_initialized && ucs_debug_is_error_signal(signum)) {
-        return orig_sigaction(signum, NULL, oact); /* Return old, do not set new */
-    }
-
-    return orig_sigaction(signum, act, oact);
-}
-
 static void ucs_debug_signal_handler(int signo)
 {
     ucs_log_flush();
     ucs_global_opts.log_component.log_level = UCS_LOG_LEVEL_TRACE_DATA;
-    ucs_profile_dump();
+    ucs_profile_dump(ucs_profile_default_ctx);
 }
 
 static void ucs_debug_set_signal_alt_stack()
@@ -1260,51 +1280,13 @@ static int ucs_debug_backtrace_is_excluded(void *address, const char *symbol)
            !strcmp(symbol, "ucs_debug_handle_error_signal") ||
            !strcmp(symbol, "ucs_debug_backtrace_create") ||
            !strcmp(symbol, "ucs_debug_show_innermost_source_file") ||
+           !strcmp(symbol, "ucs_debug_print_backtrace") ||
            !strcmp(symbol, "ucs_log_default_handler") ||
            !strcmp(symbol, "__ucs_abort") ||
            !strcmp(symbol, "ucs_log_dispatch") ||
            !strcmp(symbol, "__ucs_log") ||
            !strcmp(symbol, "ucs_debug_send_mail") ||
            (strstr(symbol, "_L_unlock_") == symbol);
-}
-
-static ucs_status_t ucs_debug_get_lib_info(Dl_info *dl_info)
-{
-    int ret;
-
-    (void)dlerror();
-    ret = dladdr(ucs_debug_get_lib_info, dl_info);
-    if (ret == 0) {
-        return UCS_ERR_NO_MEMORY;
-    }
-
-    return UCS_OK;
-}
-
-const char *ucs_debug_get_lib_path()
-{
-    ucs_status_t status;
-    Dl_info dl_info;
-
-    status = ucs_debug_get_lib_info(&dl_info);
-    if (status != UCS_OK) {
-        return "<failed to resolve libucs path>";
-    }
-
-    return dl_info.dli_fname;
-}
-
-unsigned long ucs_debug_get_lib_base_addr()
-{
-    ucs_status_t status;
-    Dl_info dl_info;
-
-    status = ucs_debug_get_lib_info(&dl_info);
-    if (status != UCS_OK) {
-        return 0;
-    }
-
-    return (uintptr_t)dl_info.dli_fbase;
 }
 
 void ucs_debug_init()
@@ -1314,7 +1296,7 @@ void ucs_debug_init()
     kh_init_inplace(ucs_signal_orig_action, &ucs_signal_orig_action_map);
     kh_init_inplace(ucs_debug_symbol, &ucs_debug_symbols_cache);
 
-    if (ucs_global_opts.handle_errors) {
+    if (ucs_debug_is_handle_errors()) {
         ucs_debug_set_signal_alt_stack();
         ucs_set_signal_handler(ucs_error_signal_handler);
     }
@@ -1339,7 +1321,6 @@ void ucs_debug_cleanup(int on_error)
     char *sym;
     int signum;
     struct sigaction *hndl;
-    ucs_status_t status;
 
     ucs_debug_initialized = 0;
 
@@ -1353,10 +1334,7 @@ void ucs_debug_cleanup(int on_error)
         kh_destroy_inplace(ucs_signal_orig_action, &ucs_signal_orig_action_map);
     }
 
-    status = ucs_recursive_spinlock_destroy(&ucs_kh_lock);
-    if (status != UCS_OK) {
-        ucs_warn("ucs_recursive_spinlock_destroy() failed (%d)", status);
-    }
+    ucs_recursive_spinlock_destroy(&ucs_kh_lock);
 }
 
 static inline void ucs_debug_disable_signal_nolock(int signum)

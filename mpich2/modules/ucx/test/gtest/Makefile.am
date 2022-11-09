@@ -4,6 +4,7 @@
 # Copyright (C) The University of Tennessee and the University of Tennessee Research Foundation. 2016. ALL RIGHTS RESERVED.
 # Copyright (C) Los Alamos National Security, LLC. 2018 ALL RIGHTS RESERVED.
 # Copyright (C) Advanced Micro Devices, Inc. 2019. ALL RIGHTS RESERVED.
+# Copyright (C) ARM Ltd. 2020.  ALL RIGHTS RESERVED.
 #
 # See file LICENSE for terms.
 #
@@ -19,7 +20,7 @@ GTEST_EXTRA_ARGS         ?=
 LAUNCHER                 ?=
 VALGRIND_EXTRA_ARGS      ?=
 
-SUBDIRS = ucs/test_module ucm/test_dlopen
+SUBDIRS = ucs/test_module ucm/test_dlopen common/googletest
 
 export UCX_HANDLE_ERRORS
 export UCX_LOG_LEVEL
@@ -42,19 +43,26 @@ VALGRIND_ARGS = \
 
 noinst_PROGRAMS = gtest
 
+EXTRA_DIST = \
+	ucs/ucx.conf \
+	ucs/ucx_test.conf
+
 gtestdir  = $(includedir)
 gtest_LDADD = \
 	$(top_builddir)/src/ucs/libucs.la \
+	$(top_builddir)/src/ucs/vfs/sock/libucs_vfs_sock.la \
 	$(top_builddir)/src/uct/libuct.la \
 	$(top_builddir)/src/ucm/libucm.la \
 	$(top_builddir)/src/ucp/libucp.la \
 	$(top_builddir)/src/tools/perf/lib/libucxperf.la \
+	common/googletest/libgtest.la \
 	$(OPENMP_CFLAGS) \
 	$(GTEST_LIBS)
 
 
 gtest_CPPFLAGS = \
 	$(BASE_CPPFLAGS) \
+	-DTOP_SRCDIR=\"$(abs_top_srcdir)\" \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/test \
 	-I$(top_builddir)/src \
@@ -65,11 +73,10 @@ gtest_CPPFLAGS = \
 gtest_LDFLAGS  = $(GTEST_LDFLAGS) -no-install -Wl,-dynamic-list-data
 gtest_CFLAGS   = $(BASE_CFLAGS)
 gtest_CXXFLAGS = \
-	$(BASE_CXXFLAGS) $(GTEST_CXXFLAGS) \
+	$(BASE_CXXFLAGS) $(GTEST_CXXFLAGS) -std=c++11 \
 	-DGTEST_UCM_HOOK_LIB_DIR="\"${abs_builddir}/ucm/test_dlopen/.libs\""
 
 gtest_SOURCES = \
-	common/gtest-all.cc \
 	common/main.cc \
 	common/test_gtest_cmn.cc \
 	common/mem_buffer.cc \
@@ -103,6 +110,7 @@ gtest_SOURCES = \
 	uct/test_progress.cc \
 	uct/test_uct_ep.cc \
 	uct/test_uct_perf.cc \
+	uct/v2/test_uct_query.cc \
 	uct/test_zcopy_comp.cc \
 	uct/uct_p2p_test.cc \
 	uct/uct_test.cc \
@@ -114,10 +122,12 @@ gtest_SOURCES = \
 	uct/tcp/test_tcp.cc \
 	\
 	ucp/test_ucp_am.cc \
+	ucp/test_ucp_ep.cc \
 	ucp/test_ucp_stream.cc \
 	ucp/test_ucp_peer_failure.cc \
 	ucp/test_ucp_atomic.cc \
 	ucp/test_ucp_dt.cc \
+	ucp/test_ucp_tls.cc \
 	ucp/test_ucp_memheap.cc \
 	ucp/test_ucp_mmap.cc \
 	ucp/test_ucp_mem_type.cc \
@@ -135,7 +145,9 @@ gtest_SOURCES = \
 	ucp/test_ucp_tag_mem_type.cc \
 	ucp/test_ucp_tag.cc \
 	ucp/test_ucp_context.cc \
+	ucp/test_ucp_worker.cc \
 	ucp/test_ucp_wireup.cc \
+	ucp/test_ucp_request.cc \
 	ucp/test_ucp_wakeup.cc \
 	ucp/test_ucp_fence.cc \
 	ucp/test_ucp_sockaddr.cc \
@@ -145,15 +157,19 @@ gtest_SOURCES = \
 	ucs/test_algorithm.cc \
 	ucs/test_arbiter.cc \
 	ucs/test_async.cc \
+	ucs/test_bitmap.cc \
 	ucs/test_callbackq.cc \
 	ucs/test_class.cc \
 	ucs/test_config.cc \
+	ucs/test_conn_match.cc \
 	ucs/test_datatype.cc \
+	ucs/test_bitops.cc \
 	ucs/test_debug.cc \
 	ucs/test_memtrack.cc \
 	ucs/test_math.cc \
 	ucs/test_mpmc.cc \
 	ucs/test_mpool.cc \
+	ucs/test_mpool_set.cc \
 	ucs/test_pgtable.cc \
 	ucs/test_profile.cc \
 	ucs/test_rcache.cc \
@@ -170,6 +186,7 @@ gtest_SOURCES = \
 	ucs/test_type.cc \
 	ucs/test_log.cc \
 	ucs/test_iov.cc \
+	ucs/test_vfs.cc \
 	ucs/arch/test_x86_64.cc
 
 if HAVE_IB
@@ -200,7 +217,7 @@ endif
 if HAVE_TL_RC
 gtest_SOURCES += \
 	uct/ib/test_rc.cc
-endif	
+endif
 if HAVE_TL_DC
 gtest_SOURCES += \
 	uct/ib/test_dc.cc
@@ -216,8 +233,10 @@ gtest_SOURCES += \
 	ucm/cuda_hooks.cc
 gtest_CPPFLAGS += \
 	$(CUDA_CPPFLAGS)
+gtest_LDFLAGS += \
+	$(CUDA_LDFLAGS)
 gtest_LDADD += \
-	$(CUDA_LDFLAGS) \
+	$(CUDA_LIBS) \
 	$(top_builddir)/src/uct/cuda/libuct_cuda.la
 endif
 
@@ -237,7 +256,6 @@ endif
 endif
 
 noinst_HEADERS = \
-	common/gtest.h \
 	common/mem_buffer.h \
 	common/test.h \
 	common/test_helpers.h \
@@ -253,8 +271,8 @@ noinst_HEADERS = \
 	uct/uct_p2p_test.h \
 	uct/uct_test.h \
 	uct/test_md.h \
+	uct/test_peer_failure.h \
 	\
-	ucp/test_ucp_atomic.h \
 	ucp/test_ucp_memheap.h \
 	ucp/test_ucp_tag.h \
 	ucp/ucp_test.h \

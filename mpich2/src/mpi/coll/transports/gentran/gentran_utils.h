@@ -7,9 +7,7 @@
 #define GENTRAN_UTILS_H_INCLUDED
 
 #include "mpiimpl.h"
-#include "tsp_gentran_types.h"
-#include "tsp_gentran.h"
-#include "utarray.h"
+#include "gentran_types.h"
 
 extern MPII_Coll_queue_t MPII_coll_queue;
 extern int MPII_Genutil_progress_hook_id;

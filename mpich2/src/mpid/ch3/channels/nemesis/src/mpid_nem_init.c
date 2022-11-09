@@ -84,7 +84,7 @@ static int MPID_nem_init_stats(int n_local_ranks)
         MPI_UNSIGNED_LONG_LONG,
         nem_fbox_fall_back_to_queue_count, /* name */
         MPID_nem_fbox_fall_back_to_queue_count, /* address */
-        n_local_ranks, /* count, known at pvar registeration time */
+        n_local_ranks, /* count, known at pvar registration time */
         MPI_T_VERBOSITY_USER_DETAIL,
         MPI_T_BIND_NO_OBJECT,
         MPIR_T_PVAR_FLAG_CONTINUOUS, /* flags */
@@ -93,10 +93,7 @@ static int MPID_nem_init_stats(int n_local_ranks)
         "NEMESIS", /* category */
         "Array counting how many times nemesis had to fall back to the regular queue when sending messages between pairs of local processes");
 
-fn_exit:
     return mpi_errno;
-fn_fail:
-    goto fn_exit;
 }
 
 int
@@ -120,7 +117,9 @@ MPID_nem_init(int pg_rank, MPIDI_PG_t *pg_p, int has_parent ATTRIBUTE((unused)))
     void *cells_p = NULL;
     MPID_nem_queue_t *recv_queues_p = NULL;
     MPID_nem_queue_t *free_queues_p = NULL;
+#ifdef HAVE_ERROR_CHECKING
     char strerrbuf[MPIR_STRERROR_BUF_SIZE];
+#endif
 
     MPIR_CHKPMEM_DECL(8);
 
@@ -314,7 +313,7 @@ MPID_nem_init(int pg_rank, MPIDI_PG_t *pg_p, int has_parent ATTRIBUTE((unused)))
         MPIR_ERR_CHECK(mpi_errno);
     }
 
-    /* Register detroy hooks after netmod init so the netmod hooks get called
+    /* Register destroy hooks after netmod init so the netmod hooks get called
        before nemesis hooks. */
     mpi_errno = MPIDI_CH3U_Comm_register_destroy_hook(MPIDI_CH3I_comm_destroy, NULL);
     MPIR_ERR_CHECK(mpi_errno);
@@ -434,9 +433,8 @@ MPID_nem_vc_init (MPIDI_VC_t *vc)
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_VC *vc_ch = &vc->ch;
     MPIR_CHKPMEM_DECL(1);
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_VC_INIT);
 
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_VC_INIT);
+    MPIR_FUNC_ENTER;
     
     vc_ch->pkt_handler = NULL;
     vc_ch->num_pkt_handlers = 0;
@@ -602,7 +600,7 @@ MPID_nem_vc_init (MPIDI_VC_t *vc)
 
     MPIR_CHKPMEM_COMMIT();
  fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_VC_INIT);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     MPIR_CHKPMEM_REAP();
@@ -614,9 +612,8 @@ MPID_nem_vc_destroy(MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_VC *vc_ch = &vc->ch;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_NEM_VC_DESTROY);
 
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_NEM_VC_DESTROY);
+    MPIR_FUNC_ENTER;
 
     MPL_free(vc_ch->pending_pkt);
 
@@ -624,7 +621,7 @@ MPID_nem_vc_destroy(MPIDI_VC_t *vc)
     MPIR_ERR_CHECK(mpi_errno);
 
     fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_NEM_VC_DESTROY);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     goto fn_exit;

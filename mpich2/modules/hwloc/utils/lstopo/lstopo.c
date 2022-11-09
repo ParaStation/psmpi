@@ -160,7 +160,7 @@ static void add_process_objects(hwloc_topology_t topology)
 
   hwloc_ps_foreach_process(topology, root->cpuset,
 			   foreach_process_cb, NULL,
-			   HWLOC_PS_FLAG_THREADS | HWLOC_PS_FLAG_SHORTNAME, NULL, HWLOC_PS_ALL_UIDS, NULL);
+			   HWLOC_PS_FLAG_THREADS | HWLOC_PS_FLAG_SHORTNAME, NULL, HWLOC_PS_ALL_UIDS);
 }
 
 static __hwloc_inline void lstopo_update_factorize_bounds(unsigned min, unsigned *first, unsigned *last)
@@ -406,8 +406,13 @@ void usage(const char *name, FILE *where)
   fprintf (where, "  -v --verbose          Include additional details\n");
   fprintf (where, "  -s --silent           Reduce the amount of details to show\n");
   fprintf (where, "  --distances           Only show distance matrices\n");
+  fprintf (where, "  --distances-transform <links|merge-switch-ports|transitive-closure>\n");
+  fprintf (where, "                        Transform distances before displaying them\n");
   fprintf (where, "  --memattrs            Only show memory attributes\n");
   fprintf (where, "  --cpukinds            Only show CPU kinds\n");
+#ifdef HWLOC_WIN_SYS
+  fprintf (where, "  --windows-processor-groups    Only show Windows processor groups\n");
+#endif
   fprintf (where, "  -c --cpuset           Show the cpuset of each object\n");
   fprintf (where, "  -C --cpuset-only      Only show the cpuset of each object\n");
   fprintf (where, "  --taskset             Show taskset-specific cpuset strings\n");
@@ -476,6 +481,7 @@ void usage(const char *name, FILE *where)
   /* --shmem-output-addr is undocumented on purpose */
   fprintf (where, "  --ps --top            Display processes within the hierarchy\n");
   fprintf (where, "  --version             Report version and exit\n");
+  fprintf (where, "  -h --help             Show this usage\n");
 }
 
 void lstopo_show_interactive_help(void)
@@ -741,9 +747,11 @@ main (int argc, char *argv[])
   loutput.show_distances_only = 0;
   loutput.show_memattrs_only = 0;
   loutput.show_cpukinds_only = 0;
+  loutput.show_windows_processor_groups_only = 0;
   loutput.show_only = HWLOC_OBJ_TYPE_NONE;
   loutput.show_cpuset = 0;
   loutput.show_taskset = 0;
+  loutput.transform_distances = -1;
 
   loutput.nr_cpukind_styles = 0;
 
@@ -781,6 +789,9 @@ main (int argc, char *argv[])
   loutput.show_disallowed = 1;
   loutput.show_cpukinds = 1;
 
+  /* show all error messages */
+  if (!getenv("HWLOC_HIDE_ERRORS"))
+    putenv((char *) "HWLOC_HIDE_ERRORS=0");
   /* enable verbose backends */
   if (!getenv("HWLOC_XML_VERBOSE"))
     putenv((char *) "HWLOC_XML_VERBOSE=1");
@@ -806,10 +817,28 @@ main (int argc, char *argv[])
 	loutput.verbose_mode--;
       } else if (!strcmp (argv[0], "--distances")) {
 	loutput.show_distances_only = 1;
+      } else if (!strcmp (argv[0], "--distances-transform")) {
+	if (argc < 2)
+	  goto out_usagefailure;
+        if (!strcmp (argv[1], "links"))
+          loutput.transform_distances = HWLOC_DISTANCES_TRANSFORM_LINKS;
+        else if (!strcmp (argv[1], "merge-switch-ports"))
+          loutput.transform_distances = HWLOC_DISTANCES_TRANSFORM_MERGE_SWITCH_PORTS;
+        else if (!strcmp (argv[1], "transitive-closure"))
+          loutput.transform_distances = HWLOC_DISTANCES_TRANSFORM_TRANSITIVE_CLOSURE;
+        else {
+          fprintf(stderr, "Unrecognized argument `%s' passed to --distances-transform\n", argv[1]);
+          goto out_usagefailure;
+        }
+        opt = 1;
       } else if (!strcmp (argv[0], "--memattrs")) {
         loutput.show_memattrs_only = 1;
       } else if (!strcmp (argv[0], "--cpukinds")) {
         loutput.show_cpukinds_only = 1;
+#ifdef HWLOC_WIN_SYS
+      } else if (!strcmp (argv[0], "--windows-processor-groups")) {
+        loutput.show_windows_processor_groups_only = 1;
+#endif
       } else if (!strcmp (argv[0], "-h") || !strcmp (argv[0], "--help")) {
 	usage(callname, stdout);
         exit(EXIT_SUCCESS);
@@ -1305,6 +1334,7 @@ main (int argc, char *argv[])
 	|| loutput.show_distances_only
         || loutput.show_memattrs_only
         || loutput.show_cpukinds_only
+        || loutput.show_windows_processor_groups_only
         || loutput.verbose_mode != LSTOPO_VERBOSE_MODE_DEFAULT)
       output_format = LSTOPO_OUTPUT_CONSOLE;
   }
@@ -1406,7 +1436,7 @@ main (int argc, char *argv[])
 
   err = hwloc_topology_set_flags(topology, flags);
   if (err < 0) {
-    fprintf(stderr, "Failed to set flags %lx (%s).\n", flags, strerror(errno));
+    fprintf(stderr, "Failed to set flags 0x%lx (%s).\n", flags, strerror(errno));
     goto out_with_topology;
   }
 

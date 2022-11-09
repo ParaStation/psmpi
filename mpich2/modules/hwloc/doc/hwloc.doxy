@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2020 Inria.  All rights reserved.
+ * Copyright © 2009-2021 Inria.  All rights reserved.
  * Copyright © 2009-2013 Université Bordeaux
  * Copyright © 2009-2020 Cisco Systems, Inc.  All rights reserved.
  * Copyright © 2020 Hewlett Packard Enterprise.  All rights reserved.
@@ -134,6 +134,7 @@ The hwloc core may also benefit from the following development packages:
 <li>AMD or NVIDIA OpenCL implementations for OpenCL device discovery.
 </li>
 <li>the NVIDIA CUDA Toolkit for CUDA device discovery.
+  See \ref faq_cuda_build.
 </li>
 <li>the NVIDIA Management Library (NVML) for NVML device discovery.
   It is included in CUDA since version 8.0.
@@ -149,6 +150,10 @@ The hwloc core may also benefit from the following development packages:
 <li>the AMD ROCm SMI library for RSMI device discovery.
   The relevant development package is usually <tt>rocm-smi-lib64</tt>
   or <tt>librocm-smi-dev</tt>.
+</li>
+<li>the oneAPI Level Zero library.
+  The relevant development package is usually <tt>level-zero-dev</tt>
+  or <tt>level-zero-devel</tt>.
 </li>
 <li>libxml2 for full XML import/export support (otherwise, the
     internal minimalistic parser will only be able to import
@@ -997,13 +1002,21 @@ following environment variables.
   which gathers all resources but marks the unavailable ones as disallowed.
   </dt>
 
-<dt>HWLOC_HIDE_ERRORS=0</dt>
+<dt>HWLOC_HIDE_ERRORS=1</dt>
   <dd>enables or disables verbose reporting of errors.
   The hwloc library may issue warnings to the standard error stream
   when it detects a problem during topology discovery, for instance
   if the operating system (or user) gives contradictory topology
-  information.   Setting this environment variable to 1 removes the
-  actual displaying of these error messages.
+  information.
+
+  By default (1), hwloc only shows critical errors such as invalid
+  hardware topology information or invalid configuration.
+  If set to 0 (default in lstopo), more errors are displayed,
+  for instance a failure to initialize CUDA or NVML.
+  If set to 2, no hwloc error messages are shown.
+
+  Note that additional verbose messages may be enabled with
+  other variables such as HWLOC_GROUPING_VERBOSE.
   </dd>
 
 <dt>HWLOC_USE_NUMA_DISTANCES=7</dt>
@@ -1284,6 +1297,11 @@ following environment variables.
   force rsmi_shutdown to make valgrind happy
   not enabled by default on rsmi <= 3.3.x because those old libs do not
   refcount and somebody else might be using rsmi
+ HWLOC_NVML_USE_OPENCAPI_LOCALITY
+  use the OpenCAPI bridge locality for finding the CPU where a NVLink
+  OpenCAPI endpoint is connecter. this may be wrong on POWER8, that's
+  why we use the GPU locality instead (assuming GPU have PCIe and
+  NVLink connecting to the same socket).
 -->
 
 
@@ -1483,20 +1501,27 @@ components when I/O discovery is enabled and supported.
 <li>GPUs (::HWLOC_OBJ_OSDEV_GPU)
  <ul>
  <li><em>rsmi0</em> for the first RSMI device
-  (RSMI component, using the AMD ROCm SMI library)</li>
+  ("RSMI" subtype, from the RSMI component, using the AMD ROCm SMI library)</li>
+ <li><em>ze0</em> for the first Level Zero device
+  ("LevelZero" subtype, from the levelzero component, using the oneAPI Level Zero library)</li>
  <li><em>nvml0</em> for the first NVML device
-  (NVML component, using the NVIDIA Management Library)</li>
+  ("NVML" subtype, from the NVML component, using the NVIDIA Management Library)</li>
  <li><em>:0.0</em> for the first display
-  (GL component, using the NV-CONTROL X extension library, NVCtrl)</li>
+  ("Display" subtype, from the GL component, using the NV-CONTROL X extension library, NVCtrl)</li>
+ <li><em>card0</em> and <em>renderD128</em> for DRM device files
+  (from the Linux component, filtered-out by default because considered non-important)</li>
  </ul>
 </li>
 <li>Co-Processors (::HWLOC_OBJ_OSDEV_COPROC)
  <ul>
  <li><em>opencl0d0</em> for the first device of the first OpenCL platform,
   <em>opencl1d3</em> for the fourth device of the second OpenCL platform
-  (OpenCL component)</li>
+  ("OpenCL" subtype, from the  OpenCL component)</li>
  <li><em>cuda0</em> for the first NVIDIA CUDA device
-  (CUDA component, using the NVIDIA CUDA Library)</li>
+  ("CUDA" subtype, from the CUDA component, using the NVIDIA CUDA Library)</li>
+ <li><em>ve0</em> for the first NEC Vector Engine device
+  ("VectorEngine" subtype, from the Linux component)</li>
+ </ul>
 </li>
 <li>DMA engine channel (::HWLOC_OBJ_OSDEV_DMA)
  <ul>
@@ -1904,6 +1929,22 @@ and SectorSize (in bytes).
 <dt>OpenCLComputeUnits, OpenCLGlobalMemorySize (OpenCL OS devices)</dt>
 <dd>The number of compute units and global memory size (in kB) of an OpenCL device.
 </dd>
+<dt>LevelZeroVendor, LevelZeroModel, LevelZeroBrand,</dt>
+<dt>LevelZeroSerialNumber, LevelZeroBoardNumber (LevelZero OS devices)</dt>
+<dd>
+ The name of the vendor, device mode, brand of a Level Zero device,
+ and its serial and board numbers.
+</dd>
+<dt>LevelZeroDriverIndex, LevelZeroDriverDeviceIndex (LevelZero OS devices)</dt>
+<dd>The index of the Level Zero driver within the list of drivers,
+ and the index of the device within the list of devices managed by this driver.
+</dd>
+<dt>LevelZeroCQGroups, LevelZeroCQGroup2 (LevelZero OS devices)</dt>
+<dd>The number of completion queue groups, and the description of the third group
+(as <tt>N*0xX</tt> where <tt>N</tt> is the number of queues in the group,
+ and <tt>0xX</tt> is the hexadecimal bitmask of <tt>ze_command_queue_group_property_flag_t</tt>
+ listing properties of those queues).
+</dd>
 <dt>AMDUUID, AMDSerial (RSMI GPU OS devices)</dt>
 <dd>The UUID and serial number of AMD GPUs.
 </dd>
@@ -1926,6 +1967,22 @@ and SectorSize (in bytes).
  multiprocessor, the global memory size, the (global) L2 cache size,
  and size of the shared memory in each multiprocessor of a CUDA device.
  Sizes are in kB.
+</dd>
+<dt>VectorEngineModel, VectorEngineSerialNumber (VectorEngine OS devices)</dt>
+<dd>
+ The model and serial number of a VectorEngine device.
+</dd>
+<dt>VectorEngineCores, VectorEngineMemorySize, VectorEngineLLCSize,</dt>
+<dt>VectorEngineL2Size, VectorEngineL1dSize, VectorEngineL1iSize (VectorEngine OS devices)</dt>
+<dd>
+ The number of cores, memory size, and the sizes of the (global)
+ last level cache and of L2, L1d and L1i caches of a VectorEngine device.
+ Sizes are in kB.
+</dd>
+<dt>VectorEngineNUMAPartitioned (VectorEngine OS devices)</dt>
+<dd>
+ If this attribute exists, the VectorEngine device is configured in
+ partitioned mode with multiple NUMA nodes.
 </dd>
 <dt>Address, Port (Network interface OS devices)</dt>
 <dd>The MAC address and the port number of a software network
@@ -2040,6 +2097,48 @@ Distances structures currently created by hwloc are:
 <dt>NUMALatency (Linux, Solaris, FreeBSD)</dt>
 <dd>This is the matrix of theoretical latencies described above.
 </dd>
+<dt>XGMIBandwidth (RSMI)</dt>
+<dd>This is matrix of unidirectional XGMI bandwidths between AMD GPUs (in MB/s).
+It contains 0 when there is no direct XGMI link between objects.
+Values on the diagonal are artificially set to very high so
+that local access always appears faster than remote access.
+
+GPUs are identified by RSMI OS devices such as "rsmi0".
+They may be converted into the corresponding OpenCL or PCI devices
+using hwloc_get_obj_with_same_locality() or the hwloc-annotate tool.
+
+hwloc_distances_transform() or hwloc-annotate may also be used
+to transform this matrix into something more convenient,
+for instance by replacing bandwidths with numbers of links between peers.
+</dt>
+<dt>NVLinkBandwidth (NVML)</dt>
+<dd>This is the matrix of unidirectional NVLink bandwidths between
+NVIDIA GPUs (in MB/s).
+It contains 0 when there is no direct NVLink between objects.
+When there are multiple links, their bandwidth is aggregated.
+Values on the diagonal are artificially set to very high so
+that local access always appears faster than remote access.
+
+On POWER platforms, NVLinks may also connects GPUs to CPUs.
+On NVIDIA platforms such as DGX-2, a NVSwitch may interconnect GPUs through NVLinks.
+In these cases, the distances structure is heterogeneous.
+GPUs always appear first in the matrix (as NVML OS devices such as "nvml0"),
+and non-GPU objects may appear at the end (Package for POWER processors,
+PCI device for NVSwitch).
+
+NVML OS devices may be converted into the corresponding CUDA, OpenCL or PCI devices
+using hwloc_get_obj_with_same_locality() or the hwloc-annotate tool.
+
+hwloc_distances_transform() or hwloc-annotate may also be used
+to transform this matrix into something more convenient,
+for instance by removing switches or CPU ports,
+or by replacing bandwidths with numbers of links between peers.
+
+When a NVSwitch interconnects GPUs, only links between one GPU and
+different NVSwitch ports are reported. They may be merged into a single
+switch port with hwloc_distances_transform() or hwloc-annotate.
+Or a transitive closure may also be applied to report the bandwidth
+between GPUs across the NVSwitch.
 </dl>
 
 Users may also specify their own matrices between any set of objects,
@@ -2414,6 +2513,14 @@ enabled for the current topology.
   hwloc/linux.h offers Linux-specific helpers that utilize some
   non-portable features of the Linux system, such as binding threads
   through their thread ID ("tid") or parsing kernel CPU mask files.
+  See \ref hwlocality_linux.
+ </dd>
+
+<dt>Windows specific features</dt>
+ <dd>
+  hwloc/windows.h offers Windows-specific helpers to query information
+  about Windows processor groups.
+  See \ref hwlocality_windows.
  </dd>
 
 <dt>Linux libnuma</dt>
@@ -2421,6 +2528,7 @@ enabled for the current topology.
   hwloc/linux-libnuma.h provides conversion helpers between hwloc CPU
   sets and libnuma-specific types, such as  bitmasks.  It
   helps you use libnuma memory-binding functions with hwloc CPU sets.
+  See \ref hwlocality_linux_libnuma_bitmask and \ref hwlocality_linux_libnuma_ulongs.
  </dd>
 
 <dt>Glibc</dt>
@@ -2428,6 +2536,7 @@ enabled for the current topology.
   hwloc/glibc-sched.h offers conversion routines between Glibc and
   hwloc CPU sets in order to use hwloc with functions such as
   sched_getaffinity() or pthread_attr_setaffinity_np().
+  See \ref hwlocality_glibc_sched.
  </dd>
 
 <dt>OpenFabrics Verbs</dt>
@@ -2437,6 +2546,7 @@ enabled for the current topology.
   processors near an OpenFabrics device.
   It may also return the corresponding OS device hwloc object for further
   information (if I/O device discovery is enabled).
+  See \ref hwlocality_openfabrics.
  </dd>
 
 <dt>OpenCL</dt>
@@ -2447,6 +2557,16 @@ enabled for the current topology.
   a <tt>cl_device_id</tt>.
   It may also return the corresponding OS device hwloc object for further
   information (if I/O device discovery is enabled).
+  See \ref hwlocality_opencl.
+ </dd>
+
+<dt>oneAPI Level Zero</dt>
+ <dd>
+  hwloc/levelzero.h enables interoperability with the oneAPI Level Zero interface.
+  It may return the list of processors near an accelerator or GPU.
+  It may also return the corresponding OS device hwloc object for further
+  information (if I/O device discovery is enabled).
+  See \ref hwlocality_levelzero.
  </dd>
 
 <dt>AMD ROCm SMI Library (RSMI)</dt>
@@ -2455,6 +2575,7 @@ enabled for the current topology.
   It may return the list of processors near an AMD GPU.
   It may also return the corresponding OS device hwloc object for further
   information (if I/O device discovery is enabled).
+  See \ref hwlocality_rsmi.
  </dd>
 
 <dt>NVIDIA CUDA</dt>
@@ -2464,6 +2585,7 @@ enabled for the current topology.
   return the list of processors near NVIDIA GPUs.
   It may also return the corresponding OS device hwloc object for further
   information (if I/O device discovery is enabled).
+  See \ref hwlocality_cuda and \ref hwlocality_cudart.
  </dd>
 
 <dt>NVIDIA Management Library (NVML)</dt>
@@ -2473,6 +2595,7 @@ enabled for the current topology.
   a <tt>nvmlDevice_t</tt>.
   It may also return the corresponding OS device hwloc object for further
   information (if I/O device discovery is enabled).
+  See \ref hwlocality_nvml.
  </dd>
 
 <dt>NVIDIA displays</dt>
@@ -2483,6 +2606,7 @@ enabled for the current topology.
   hwloc object that corresponds to a display
   given as a name such as <em>:0.0</em>
   or given as a port/device pair (server/screen).
+  See \ref hwlocality_gl.
  </dd>
 
 <dt>Taskset command-line tool</dt>
@@ -2493,6 +2617,9 @@ enabled for the current topology.
   string in fixed-size subsets and separates them with commas).
   To ease interoperability, hwloc offers routines to convert
   hwloc CPU sets from/to taskset-specific string format.
+  See for instance hwloc_bitmap_taskset_snprintf() in
+  \ref hwlocality_bitmap().
+
   Most hwloc command-line tools also support the <tt>\--taskset</tt>
   option to manipulate taskset-specific strings.
  </dd>
@@ -2547,7 +2674,7 @@ For reference, ::hwloc_topology_t modification operations include
   (see \ref hwlocality_tinker) may modify the topology significantly by adding
   objects inside the tree, changing the topology depth, etc.
 
-  <tt>hwloc_distances_add()</tt> and <tt>hwloc_distances_remove()</tt>
+  <tt>hwloc_distances_add_commit()</tt> and <tt>hwloc_distances_remove()</tt>
   (see \ref hwlocality_distances_add) modify the list of distance structures
   in the topology, and the former may even insert new Group objects.
 
@@ -2821,6 +2948,12 @@ environment variable (see \ref envvar).
 <dd>
  This component creates GPU OS device objects such as
  <em>rsmi0</em> for describing AMD GPUs.
+ <b>It may be built as a plugin</b>.
+</dd>
+<dt>levelzero</dt>
+<dd>
+ This component creates co-processor OS device objects such as
+ <em>ze0</em> for describing oneAPI Level Zero devices.
  <b>It may be built as a plugin</b>.
 </dd>
 <dt>cuda</dt>
@@ -3659,6 +3792,31 @@ You should pass the following command-line option to Valgrind to use it:
 \section faq4 Platform-specific
 
 
+\subsection faq_cuda_build How do I enable CUDA and select which CUDA version to use?
+
+hwloc enables CUDA as soon as it finds CUDA development headers and libraries
+on the system.
+This detection may be performed thanks to <tt>pkg-config</tt> but it requires
+hwloc to know which CUDA version to look for. This may be done by passing
+<tt>\--with-cuda-version=11.0</tt> to the configure script. Otherwise hwloc
+will also look for the <tt>CUDA_VERSION</tt> environment variable.
+
+If <tt>pkg-config</tt> does not work, passing <tt>\--with-cuda=/path/to/cuda</tt>
+to the configure script is another way to define the corresponding library
+and header paths.
+Finally, these paths may also be set through environment variables such
+as <tt>LIBRARY_PATH</tt> and <tt>C_INCLUDE_PATH</tt>.
+
+These paths, either detected by <tt>pkg-config</tt> or given manually, will
+also be used to detect NVML and OpenCL libraries and enable their hwloc backends.
+
+To find out whether CUDA was detected and enabled, look in <i>Probe / display I/O devices</i>
+at the end of the configure script output.
+Passing <tt>\--enable-cuda</tt> will also cause configure to fail
+if CUDA could not be found and enabled in hwloc.
+
+
+
 \subsection faq_knl_numa How do I find the local MCDRAM NUMA node on Intel Xeon Phi processor?
 
 Intel Xeon Phi processors introduced a new memory architecture by
@@ -3764,6 +3922,8 @@ Such an environment allows using the Unix-like <tt>configure</tt>, <tt>make</tt>
 and <tt>make install</tt> steps without having to tweak too many variables or options.
 One may look at <tt>contrib/ci.inria.fr/job-3-mingw.sh</tt> in the hwloc
 repository for an example used for nightly testing.
+
+hwloc also supports the Cygwin environment for porting Unix code to Windows.
 
 hwloc releases also contain a basic Microsoft Visual Studio solution
 under <tt>contrib/windows/</tt>.

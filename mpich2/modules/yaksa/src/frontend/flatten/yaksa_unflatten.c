@@ -67,10 +67,10 @@ static inline int unflatten(yaksi_type_s ** type, const void *flattened_type)
 
         case YAKSI_TYPE_KIND__HINDEXED:
             newtype->u.hindexed.array_of_blocklengths =
-                (int *) malloc(newtype->u.hindexed.count * sizeof(int));
+                (intptr_t *) malloc(newtype->u.hindexed.count * sizeof(intptr_t));
             memcpy(newtype->u.hindexed.array_of_blocklengths, flatbuf,
-                   newtype->u.hindexed.count * sizeof(int));
-            flatbuf += newtype->u.hindexed.count * sizeof(int);
+                   newtype->u.hindexed.count * sizeof(intptr_t));
+            flatbuf += newtype->u.hindexed.count * sizeof(intptr_t);
 
             newtype->u.hindexed.array_of_displs =
                 (intptr_t *) malloc(newtype->u.hindexed.count * sizeof(intptr_t));
@@ -84,10 +84,10 @@ static inline int unflatten(yaksi_type_s ** type, const void *flattened_type)
 
         case YAKSI_TYPE_KIND__STRUCT:
             newtype->u.str.array_of_blocklengths =
-                (int *) malloc(newtype->u.str.count * sizeof(int));
+                (intptr_t *) malloc(newtype->u.str.count * sizeof(intptr_t));
             memcpy(newtype->u.str.array_of_blocklengths, flatbuf,
-                   newtype->u.str.count * sizeof(int));
-            flatbuf += newtype->u.str.count * sizeof(int);
+                   newtype->u.str.count * sizeof(intptr_t));
+            flatbuf += newtype->u.str.count * sizeof(intptr_t);
 
             newtype->u.str.array_of_displs =
                 (intptr_t *) malloc(newtype->u.str.count * sizeof(intptr_t));
@@ -127,7 +127,7 @@ static inline int unflatten(yaksi_type_s ** type, const void *flattened_type)
     goto fn_exit;
 }
 
-int yaksa_unflatten(yaksa_type_t * type, const void *flattened_type)
+YAKSA_API_PUBLIC int yaksa_unflatten(yaksa_type_t * type, const void *flattened_type)
 {
     int rc = YAKSA_SUCCESS;
     yaksi_type_s *yaksi_type;

@@ -271,8 +271,8 @@ HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
     }
 
     total_core_count = 0;
-    for (node = HYD_server_info.node_list; node; node = node->next)
-        total_core_count += node->core_count;
+    for (proxy = pg->proxy_list; proxy; proxy = proxy->next)
+        total_core_count += proxy->node->core_count;
 
     HYDU_MALLOC_OR_JUMP(filler_pmi_ids, int *, proxy_count * sizeof(int), status);
     HYDU_MALLOC_OR_JUMP(nonfiller_pmi_ids, int *, proxy_count * sizeof(int), status);
@@ -507,6 +507,8 @@ HYD_status HYD_pmcd_pmi_alloc_pg_scratch(struct HYD_pg *pg)
     pg_scratch = (struct HYD_pmcd_pmi_pg_scratch *) pg->pg_scratch;
 
     pg_scratch->barrier_count = 0;
+    pg_scratch->epoch = 0;
+    pg_scratch->fence_count = 0;
 
     HYDU_MALLOC_OR_JUMP(pg_scratch->ecount, struct HYD_pmcd_pmi_ecount *,
                         pg->pg_process_count * sizeof(struct HYD_pmcd_pmi_ecount), status);

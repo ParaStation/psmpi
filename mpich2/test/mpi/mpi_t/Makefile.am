@@ -12,6 +12,8 @@ EXTRA_DIST = testlist
 ## correctly
 noinst_PROGRAMS =     \
     mpi_t_str   \
+    mpit_isendirecv \
     mpit_vars   \
     cvarwrite   \
-    getindex
+    getindex    \
+    qmpi_test

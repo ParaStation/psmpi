@@ -8,8 +8,10 @@
 #define UCP_RMA_H_
 
 #include <ucp/core/ucp_types.h>
+#include <ucp/core/ucp_rkey.h>
 #include <ucp/proto/proto_am.h>
 #include <uct/api/uct.h>
+#include <ucs/datastruct/ptr_map.h>
 
 
 /**
@@ -43,12 +45,13 @@ typedef union {
 
 typedef struct {
     uint64_t                  address;
-    uintptr_t                 ep_ptr;
+    uint64_t                  ep_id;
+    ucs_memory_type_t         mem_type;
 } UCS_S_PACKED ucp_put_hdr_t;
 
 
 typedef struct {
-    uintptr_t                 ep_ptr;
+    uint64_t                  ep_id;
 } UCS_S_PACKED ucp_cmpl_hdr_t;
 
 
@@ -56,17 +59,18 @@ typedef struct {
     uint64_t                  address;
     uint64_t                  length;
     ucp_request_hdr_t         req;
+    ucs_memory_type_t         mem_type;
 } UCS_S_PACKED ucp_get_req_hdr_t;
 
 
 typedef struct {
-    uintptr_t                 req;
+    uint64_t                  req_id;
 } UCS_S_PACKED ucp_rma_rep_hdr_t;
 
 
 typedef struct {
     uint64_t                  address;
-    ucp_request_hdr_t         req; /* NULL if no reply */
+    ucp_request_hdr_t         req; /* invalid req_id if no reply */
     uint8_t                   length;
     uint8_t                   opcode;
 } UCS_S_PACKED ucp_atomic_req_hdr_t;
@@ -78,11 +82,24 @@ extern ucp_amo_proto_t ucp_amo_basic_proto;
 extern ucp_amo_proto_t ucp_amo_sw_proto;
 
 
+extern const ucp_rma_proto_t *ucp_rma_proto_list[];
+extern const ucp_amo_proto_t *ucp_amo_proto_list[];
+
+
 ucs_status_t ucp_rma_request_advance(ucp_request_t *req, ssize_t frag_length,
-                                     ucs_status_t status);
+                                     ucs_status_t status,
+                                     ucs_ptr_map_key_t req_id);
 
 void ucp_ep_flush_remote_completed(ucp_request_t *req);
 
 void ucp_rma_sw_send_cmpl(ucp_ep_h ep);
+
+/*
+ * Check RMA protocol requirements
+ */
+#define UCP_RMA_PROTO_INIT_CHECK(_init_params, _op_id) \
+    if ((_init_params)->select_param->op_id != (_op_id)) { \
+        return UCS_ERR_UNSUPPORTED; \
+    }
 
 #endif

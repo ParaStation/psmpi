@@ -44,7 +44,11 @@
 #if HWLOC_TEST_RENAME_RSMI
 #include "hwloc/rsmi.h"
 #endif
+#if HWLOC_TEST_RENAME_LEVELZERO
+#include "hwloc/levelzero.h"
+#endif
 #include "hwloc/gl.h"
+#include "hwloc/windows.h"
 
 #include "private/components.h"
 #include "private/internal-components.h"

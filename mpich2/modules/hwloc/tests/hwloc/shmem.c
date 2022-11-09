@@ -1,5 +1,5 @@
 /*
- * Copyright © 2011-2018 Inria.  All rights reserved.
+ * Copyright © 2011-2021 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
@@ -20,6 +20,10 @@
 #include <string.h>
 #include <stdint.h>
 #include <assert.h>
+
+#ifndef PATH_MAX
+#define PATH_MAX 1024
+#endif
 
 #define EXIT_SKIP 77
 
@@ -130,7 +134,7 @@ static int test(hwloc_topology_t orig, const char *callname) {
   unsigned long forced_addr;
   unsigned long fileoffset;
   size_t shmem_length;
-  int synthetic_with_distances = (hwloc_obj_get_info_by_name(hwloc_get_root_obj(orig), "SyntheticDescription") != NULL);
+  int synthetic_with_distances = (hwloc_obj_get_info_by_name(hwloc_get_root_obj(orig), "ShmemSyntheticWithDistances") != NULL);
   char tmpname[] = "/tmp/hwloc_test_shmem.XXXXXX";
   char cmd[512];
   struct stat st;
@@ -204,7 +208,9 @@ int main(int argc, char *argv[])
   static hwloc_topology_t orig;
   hwloc_obj_t nodes[3];
   uint64_t node_distances[9];
+  hwloc_distances_add_handle_t handle;
   unsigned i,j;
+  const char *top_srcdir;
   int err, ret, ret2;
 
   if (argc > 1) {
@@ -258,6 +264,8 @@ int main(int argc, char *argv[])
   assert(!err);
   err = hwloc_topology_load(orig);
   assert(!err);
+  err = hwloc_obj_add_info(hwloc_get_root_obj(orig), "ShmemSyntheticWithDistances", "1");
+  assert(!err);
 
   printf("adding distance matrix\n");
   for(i=0; i<3; i++) {
@@ -265,15 +273,53 @@ int main(int argc, char *argv[])
     for(j=0; j<3; j++)
       node_distances[i*3+j] = (i == j ? 10 : 20);
   }
-  err = hwloc_distances_add(orig, 3, nodes, node_distances,
-                            HWLOC_DISTANCES_KIND_MEANS_LATENCY|HWLOC_DISTANCES_KIND_FROM_USER,
-                            HWLOC_DISTANCES_ADD_FLAG_GROUP);
+  handle = hwloc_distances_add_create(orig, NULL,
+                                      HWLOC_DISTANCES_KIND_MEANS_LATENCY|HWLOC_DISTANCES_KIND_FROM_USER,
+                                      0);
+  assert(handle);
+  err = hwloc_distances_add_values(orig, handle, 3, nodes, node_distances, 0);
+  assert(!err);
+  err = hwloc_distances_add_commit(orig, handle,
+                                   HWLOC_DISTANCES_ADD_FLAG_GROUP);
   assert(!err);
 
   ret2 = test(orig, argv[0]);
 
   printf("destroying original\n");
   hwloc_topology_destroy(orig);
+
+  top_srcdir = getenv("HWLOC_TOP_SRCDIR");
+  if (top_srcdir) {
+    const char *xmlnames[4] = {
+      "16intel64-manyVFs.xml",
+      "8intel64-4n2t-memattrs.xml",
+      "fakecpukinds.xml",
+      "fakeheterodistances.xml"
+    };
+    for(i=0; i<4; i++) {
+      char xmlpath[PATH_MAX];
+      snprintf(xmlpath, sizeof(xmlpath), "%s/tests/hwloc/xml/%s", top_srcdir, xmlnames[i]);
+
+      printf("#########################################\n");
+      printf("creating from XML %s\n", xmlpath);
+      err = hwloc_topology_init(&orig);
+      assert(!err);
+      err = hwloc_topology_set_xml(orig, xmlpath);
+      assert(!err);
+      err = hwloc_topology_set_all_types_filter(orig, HWLOC_TYPE_FILTER_KEEP_ALL);
+      assert(!err);
+      err = hwloc_topology_load(orig);
+      assert(!err);
+
+      ret = test(orig, argv[0]);
+
+      printf("destroying original\n");
+      hwloc_topology_destroy(orig);
+    }
+  } else {
+    printf("#########################################\n");
+    printf("Skipping XML tests because HWLOC_TOP_SRCDIR isn't defined in the environment\n");
+  }
 
   /* we caught errors above.
    * return SKIP if both returned SKIP. otherwise SUCCESS

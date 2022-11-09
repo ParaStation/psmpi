@@ -6,19 +6,6 @@
 #ifndef NETMOD_AM_FALLBACK_RECV_H_INCLUDED
 #define NETMOD_AM_FALLBACK_RECV_H_INCLUDED
 
-MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_recv(void *buf,
-                                               MPI_Aint count,
-                                               MPI_Datatype datatype,
-                                               int rank,
-                                               int tag,
-                                               MPIR_Comm * comm,
-                                               int context_offset, MPIDI_av_entry_t * addr,
-                                               MPI_Status * status, MPIR_Request ** request)
-{
-    return MPIDIG_mpi_recv(buf, count, datatype, rank, tag, comm, context_offset, status, request,
-                           0);
-}
-
 MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_imrecv(void *buf,
                                                  MPI_Aint count, MPI_Datatype datatype,
                                                  MPIR_Request * message)
@@ -35,11 +22,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_irecv(void *buf,
                                                 MPIDI_av_entry_t * addr, MPIR_Request ** request,
                                                 MPIR_Request * partner)
 {
-    return MPIDIG_mpi_irecv(buf, count, datatype, rank, tag, comm, context_offset, request, 0,
+    return MPIDIG_mpi_irecv(buf, count, datatype, rank, tag, comm, context_offset, 0, request, 0,
                             partner);
 }
 
-MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_cancel_recv(MPIR_Request * rreq)
+MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_cancel_recv(MPIR_Request * rreq, bool is_blocking)
 {
     return MPIDIG_mpi_cancel_recv(rreq);
 }

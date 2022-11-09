@@ -29,39 +29,20 @@ typedef struct {
     int comm_recvcontext_id_offs;
     int comm_next_offs;
     int comm_name_offs;
-#ifdef HAVE_CH4_DEBUGGER_SUPPORT
-    /* In CH4, message queues can be global or per-communicator. */
-    int comm_posted_offs;
-    int comm_unexp_offs;
-#endif
 
     /* Fields in MPIR_Request (including structures within the request) */
     int req_status_offs;
     int req_cc_offs;
-    int req_dev_offs;
-    int req_tag_offs;
-    int req_rank_offs;
-    int req_context_id_offs;
-    int req_user_buf_offs;
-    int req_user_count_offs;
     int req_datatype_offs;
-#ifdef HAVE_CH4_DEBUGGER_SUPPORT
-    /* CH4 only has message queue for active messages. */
-    int am_rreq_next_offs;
-    /* offset of MPIR_Request in MPIDI_CH4U_rreq_t  */
-    int req_offs;
-    /* offset of AM in MPIR_Request */
-    int req_am_offs;
-#else
-    int req_next_offs;
-#endif
 
-    /* Fields in MPIR_Sendq */
-    int sendq_next_offs;
-    int sendq_tag_offs;
-    int sendq_rank_offs;
-    int sendq_context_id_offs;
-    int sendq_req_offs;
+    /* Fields in MPIR_Debugq */
+    int debugq_next_offs;
+    int debugq_tag_offs;
+    int debugq_rank_offs;
+    int debugq_context_id_offs;
+    int debugq_user_buf_offs;
+    int debugq_user_count_offs;
+    int debugq_req_offs;
 } mpich_image_info;
 
 /***********************************************************************
@@ -85,10 +66,8 @@ typedef struct {
     mqs_target_type_sizes sizes;        /* Process architecture information */
 
     /* Addresses in the target process */
-#ifndef HAVE_CH4_DEBUGGER_SUPPORT
     mqs_taddr_t posted_base;    /* Where to find the message queues */
     mqs_taddr_t unexpected_base;
-#endif
     mqs_taddr_t sendq_base;     /* Where to find the send queue */
     mqs_taddr_t commlist_base;  /* Where to find the list of communicators */
 

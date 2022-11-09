@@ -78,8 +78,7 @@ fi_find_param(const struct fi_provider *provider, const char *param_name)
 	return NULL;
 }
 
-__attribute__((visibility ("default"),EXTERNALLY_VISIBLE))
-int DEFAULT_SYMVER_PRE(fi_getparams)(struct fi_param **params, int *count)
+int fi_getparams(struct fi_param **params, int *count)
 {
 	struct fi_param *vhead = NULL;
 	struct fi_param_entry *param;
@@ -124,10 +123,8 @@ out:
 	*params = vhead;
 	return FI_SUCCESS;
 }
-DEFAULT_SYMVER(fi_getparams_, fi_getparams, FABRIC_1.0);
 
-__attribute__((visibility ("default"),EXTERNALLY_VISIBLE))
-void DEFAULT_SYMVER_PRE(fi_freeparams)(struct fi_param *params)
+void fi_freeparams(struct fi_param *params)
 {
 	int i;
 	for (i = 0; params[i].name; ++i) {
@@ -137,7 +134,6 @@ void DEFAULT_SYMVER_PRE(fi_freeparams)(struct fi_param *params)
 	}
 	free(params);
 }
-DEFAULT_SYMVER(fi_freeparams_, fi_freeparams, FABRIC_1.0);
 
 static void fi_free_param(struct fi_param_entry *param)
 {
@@ -164,8 +160,7 @@ void fi_param_undefine(const struct fi_provider *provider)
 	}
 }
 
-__attribute__((visibility ("default"),EXTERNALLY_VISIBLE))
-int DEFAULT_SYMVER_PRE(fi_param_define)(const struct fi_provider *provider,
+int fi_param_define(const struct fi_provider *provider,
 		const char *param_name, enum fi_param_type type,
 		const char *help_string_fmt, ...)
 {
@@ -231,7 +226,6 @@ int DEFAULT_SYMVER_PRE(fi_param_define)(const struct fi_provider *provider,
 	FI_DBG(provider, FI_LOG_CORE, "registered var %s\n", param_name);
 	return FI_SUCCESS;
 }
-DEFAULT_SYMVER(fi_param_define_, fi_param_define, FABRIC_1.0);
 
 static int fi_parse_bool(const char *str_value)
 {
@@ -252,12 +246,12 @@ static int fi_parse_bool(const char *str_value)
 	return -1;
 }
 
-__attribute__((visibility ("default"),EXTERNALLY_VISIBLE))
-int DEFAULT_SYMVER_PRE(fi_param_get)(struct fi_provider *provider,
+int fi_param_get(struct fi_provider *provider,
 		const char *param_name, void *value)
 {
 	struct fi_param_entry *param;
 	char *str_value;
+	int parsed_boolean;
 	int ret = FI_SUCCESS;
 
 	if (!provider)
@@ -294,11 +288,17 @@ int DEFAULT_SYMVER_PRE(fi_param_get)(struct fi_provider *provider,
 			"read int var %s=%d\n", param_name, *(int *) value);
 		break;
 	case FI_PARAM_BOOL:
-		* ((int *) value) = fi_parse_bool(str_value);
+		parsed_boolean = fi_parse_bool(str_value);
+		if (parsed_boolean == -1) {
+			ret = -FI_EINVAL;
+			FI_WARN(provider, FI_LOG_CORE,
+					"failed to parse bool var %s=%s\n", param_name, str_value);
+			break;
+		}
+
+		* ((int *) value) = parsed_boolean;
 		FI_INFO(provider, FI_LOG_CORE,
 			"read bool var %s=%d\n", param_name, *(int *) value);
-		if (*(int *) value == -1)
-			ret = -FI_EINVAL;
 		break;
 	case FI_PARAM_SIZE_T:
 		* ((size_t *) value) = strtol(str_value, NULL, 0);
@@ -310,7 +310,6 @@ int DEFAULT_SYMVER_PRE(fi_param_get)(struct fi_provider *provider,
 out:
 	return ret;
 }
-DEFAULT_SYMVER(fi_param_get_, fi_param_get, FABRIC_1.0);
 
 
 void fi_param_init(void)

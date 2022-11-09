@@ -1,10 +1,9 @@
 			MPICH Release %VERSION%
 
 MPICH is a high-performance and widely portable implementation of the
-MPI-3.1 standard from the Argonne National Laboratory.  This release
-has all MPI 3.1 functions and features required by the standard with
-the exception of support for the "external32" portable I/O format and
-user-defined data representations for I/O.
+MPI-4.0 standard from the Argonne National Laboratory.  This release
+has all MPI 4.0 functions and features required by the standard with
+the exception of support for user-defined data representations for I/O.
 
 This README file should contain enough information to get you started
 with MPICH. More extensive installation and user guides can be found
@@ -44,6 +43,8 @@ shared memory), Hydra process management) of MPICH up and running.
 
     - REQUIRED: This tar file mpich-%VERSION%.tar.gz
 
+    - REQUIRED: Perl
+
     - REQUIRED: A C compiler (C99 support is required. See
       https://wiki.mpich.org/mpich/index.php/Shifting_toward_C99)
 
@@ -58,6 +59,8 @@ shared memory), Hydra process management) of MPICH up and running.
       Fortran applications, you can disable this support using
       --disable-fortran (configuring MPICH is described in step 1(d)
       below).
+
+    - OPTIONAL: Python 3. Python 3 is needed to generate Fortran bindings.
 
     Also, you need to know what shell you are using since different shell
     has different command syntax. Command "echo $SHELL" prints out the
@@ -92,9 +95,8 @@ shared memory), Hydra process management) of MPICH up and running.
       ./configure --prefix=/home/<USERNAME>/mpich-install 2>&1 | tee c.txt
 
     The configure will try to determine the best device (the internal
-    network modules) based on system environment. It will abort when it
-    can't decide which is the best choice. Supply the device option to
-    proceed. E.g.
+    network modules) based on system environment. You may also supply
+    a device configuration. E.g.
 
       ./configure --prefix=... --with-device=ch4:ofi |...
 
@@ -495,8 +497,7 @@ for the requested provider by removing runtime branches to determine
 provider capabilities. Note that using this feature with a version of the
 libfabric library older than that recommended with this version of MPICH is
 unsupported and may result in unexpected behavior. This is also true when
-using the environment variable MPIR_CVAR_OFI_USE_PROVIDER, which will also
-do some optimization for the requested provider.
+using the environment variable FI_PROVIDER.
 
 The currently expected version of libfabric is: %LIBFABRIC_VERSION%.
 
@@ -526,6 +527,28 @@ to "error" instead of the default "warn" by using:
 
   UCX_LOG_LEVEL=error
   export UCX_LOG_LEVEL
+
+GPU support
+***********
+
+GPU support is automatically enabled if CUDA, ZE, or HIP runtime is
+detected during configure. To specify where your GPU runtime is
+installed, use:
+
+  --with-cuda=<path>  or --with-ze=<path> or --with-hip=<path>
+
+If the lib/ and include/ are not in the same path, both can be specified
+separately, for example:
+
+  --with-cuda-include= and --with-cuda-lib=
+
+In addition, GPU support can be explicitly disabled by using:
+
+  --without-cuda  or  --without-ze or --without-hip
+
+If desirable, GPU support can be disabled during runtime by setting
+environment variable MPIR_CVAR_ENABLE_GPU=0. This may help avoid the GPU
+initialization and detection overhead for non-GPU applications.
 
 -------------------------------------------------------------------------
 
@@ -725,7 +748,7 @@ If the C compiler that is used to build MPICH libraries supports both
 multiple weak symbols and multiple aliases of common symbols, the
 Fortran binding can support multiple Fortran compilers. The
 multiple weak symbols support allow MPICH to provide different name
-mangling scheme (of subroutine names) required by differen Fortran
+mangling scheme (of subroutine names) required by different Fortran
 compilers. The multiple aliases of common symbols support enables
 MPICH to equal different common block symbols of the MPI Fortran
 constant, e.g. MPI_IN_PLACE, MPI_STATUS_IGNORE. So they are understood
@@ -807,24 +830,25 @@ This will setup the OFI netmod to use the optimal configuration for the
 sockets provider, and will set various compile time constants. These settings
 cannot be changed at runtime.
 
-If runtime configuration is needed, continue to use the device string as before
-(without the OFI provider extension) and set various environment variables to
+If runtime configuration is needed, use:
+
+    --with-device=ch4:ofi
+
+i.e. without the OFI provider extension, and set various environment variables to
 achieve a similar configuration. To select the desired provider:
 
-    % export MPIR_CVAR_OFI_USE_PROVIDER=sockets
+    % export FI_PROVIDER=sockets
 
 This will select the OFI provider and the associated MPICH capability set. To
 change the preset configuration, there exists an extended set of environment
-variables. As an example, the immediate data fields can be disabled by using
+variables. As an example, native provider RMA atomics can be disabled by using
 the environment variable:
 
-    % export MPIR_CVAR_OFI_ENABLE_TAGGED=0
+    % export MPIR_CVAR_CH4_OFI_ENABLE_ATOMICS=0
 
-For some configuration options (in particular, MPIR_CVAR_OFI_ENABLE_TAGGED and
-MPIR_CVAR_OFI_ENABLE_RMA), a default build of MPICH using the CH4 OFI netmod
-will fail if these options are not enabled. This is so that, for performance,
-MPICH can assume that some commonly available features are enabled by the OFI
-provider.
+For some configuration options (in particular, MPIR_CVAR_CH4_OFI_ENABLE_TAGGED and
+MPIR_CVAR_CH4_OFI_ENABLE_RMA), if disabled, some functionality may fallback to
+generic implementations.
 
 A full list of capability set configuration variables can be found in the
 environment variables README.envvar.
@@ -833,6 +857,37 @@ environment variables README.envvar.
 
 13. Threads
 ===========
+
+The supported thread level are configured by option:
+
+    --enable-threads={single,funneled,serialized,multiple}
+
+The default depends on the configured device. With ch4, "multiple" is the
+default. Set thread level to "single" provides best performance when application
+does not use multiple threads. Use "multiple" to allow application to access
+MPI from multiple threads concurrently.
+
+With "multiple" thread level, there are a few choices for the internal critical
+section models. This is controlled by configure option:
+
+    --enable-thread-cs={global,per-vci}
+
+Current default is to use "global" cs. Applications that do heavy concurrent
+MPI communications may experience slow down due to this global cs. The
+"per-vci" cs internally will use multiple VCI (virtual communication
+interface) critical sections, thus can provide much better performance. To
+achieve the best performance, applications should try to expose as much
+parallel information to MPI as possible. For example, if each threads use
+separate communicators, MPICH may be able to assign separate VCI for each
+thread, thus achieving the maximum performance.
+
+The multiple VCI support may increase the resource allocation and overheads
+during initialization. By default, only a single vci is used. Set
+
+    MPIR_CVAR_CH4_NUM_VCIS=<N>
+
+to enable multiple vcis at runtime. For best performance, match number of VCIs
+to the number threads application is using.
 
 MPICH supports multiple threading packages.  The default is posix
 threads (pthreads), but solaris threads, windows threads and argobots

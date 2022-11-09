@@ -53,11 +53,7 @@ int MPIR_Find_local(MPIR_Comm * comm, int *local_size_p, int *local_rank_p,
     for (i = 0; i < comm->remote_size; ++i)
         intranode_table[i] = -1;
 
-#ifndef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
     mpi_errno = MPID_Get_node_id(comm, comm->rank, &my_node_id);
-#else
-    mpi_errno = MPID_Get_badge(comm, comm->rank, &my_node_id);
-#endif
     MPIR_ERR_CHECK(mpi_errno);
     MPIR_Assert(my_node_id >= 0);
 
@@ -66,11 +62,7 @@ int MPIR_Find_local(MPIR_Comm * comm, int *local_size_p, int *local_rank_p,
 
     /* Scan through the list of processes in comm. */
     for (i = 0; i < comm->remote_size; ++i) {
-#ifndef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
         mpi_errno = MPID_Get_node_id(comm, i, &node_id);
-#else
-        mpi_errno = MPID_Get_badge(comm, i, &node_id);
-#endif
         MPIR_ERR_CHECK(mpi_errno);
 
         /* The upper level can catch this non-fatal error and should be
@@ -127,8 +119,8 @@ int MPIR_Find_local(MPIR_Comm * comm, int *local_size_p, int *local_rank_p,
  * builds a list of external processes, i.e., one process from each node.
  * You can think of this as the root or main process for each node.
  *
- * Note that this will not work correctly for spawned or attached
- * processes.
+ * Note that this will return non-fatal error if there are spawned or attached
+ * processes. The caller (MPIR_Comm_create_subcomms) should handle it.
  *
  *  OUT:
  *    external_size_p   - number of external processes
@@ -149,7 +141,7 @@ int MPIR_Find_external(MPIR_Comm * comm, int *external_size_p, int *external_ran
     int *nodes;
     int i, external_size, external_rank;
     int *external_ranks, *internode_table;
-    int max_node_id, node_id;
+    int node_id;
 
     MPIR_CHKLMEM_DECL(1);
     MPIR_CHKPMEM_DECL(2);
@@ -168,36 +160,25 @@ int MPIR_Find_external(MPIR_Comm * comm, int *external_size_p, int *external_ran
     MPIR_CHKPMEM_MALLOC(internode_table, int *, sizeof(int) * comm->remote_size, mpi_errno,
                         "internode_table", MPL_MEM_COMM);
 
-#ifndef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
-    mpi_errno = MPID_Get_max_node_id(comm, &max_node_id);
-#else
-    mpi_errno = MPID_Get_max_badge(comm, &max_node_id);
-#endif
-    MPIR_ERR_CHECK(mpi_errno);
-    MPIR_Assert(max_node_id >= 0);
-    MPIR_CHKLMEM_MALLOC(nodes, int *, sizeof(int) * (max_node_id + 1), mpi_errno, "nodes",
-                        MPL_MEM_COMM);
+    int num_nodes = MPIR_Process.num_nodes;
+    MPIR_CHKLMEM_MALLOC(nodes, int *, sizeof(int) * num_nodes, mpi_errno, "nodes", MPL_MEM_COMM);
 
     /* nodes maps node_id to rank in external_ranks of leader for that node */
-    for (i = 0; i < (max_node_id + 1); ++i)
+    for (i = 0; i < num_nodes; ++i)
         nodes[i] = -1;
 
     external_size = 0;
     external_rank = -1;
 
     for (i = 0; i < comm->remote_size; ++i) {
-#ifndef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
         mpi_errno = MPID_Get_node_id(comm, i, &node_id);
-#else
-        mpi_errno = MPID_Get_badge(comm, i, &node_id);
-#endif
         MPIR_ERR_CHECK(mpi_errno);
 
         /* The upper level can catch this non-fatal error and should be
          * able to recover gracefully. */
         MPIR_ERR_CHKANDJUMP(node_id < 0, mpi_errno, MPI_ERR_OTHER, "**dynamic_node_ids");
 
-        MPIR_Assert(node_id <= max_node_id);
+        MPIR_Assert(node_id < num_nodes);
 
         /* build list of external processes */
         if (nodes[node_id] == -1) {
@@ -226,7 +207,7 @@ int MPIR_Find_external(MPIR_Comm * comm, int *external_size_p, int *external_ran
     for (i = 0; i < comm->remote_size; ++i)
         printf("[%d]  internode_table[%d] = %d\n", comm->rank, i, internode_table[i]);
     printf("[%d]nodes = %p\n", comm->rank, nodes);
-    for (i = 0; i < (max_node_id + 1); ++i)
+    for (i = 0; i < num_nodes; ++i)
         printf("[%d]  nodes[%d] = %d\n", comm->rank, i, nodes[i]);
 #endif
 

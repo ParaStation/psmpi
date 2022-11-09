@@ -5,7 +5,9 @@ pipeline {
     timestamps()             
     timeout(activity: true, time: 4, unit: 'HOURS')
     }
-    
+    environment {
+        JOB_CADENCE = 'daily'
+    }    
     stages {
         stage ('fetch-opa-psm2')  {
              steps {
@@ -487,6 +489,7 @@ pipeline {
         withEnv(['PATH+EXTRA=/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/bin:$PYTHONPATH']) {
             sh "rm -rf '/mpibuilddir/mpich-build-dir/${env.JOB_NAME}/${env.BUILD_NUMBER}'"
             sh "rm -rf '/mpibuilddir/ompi-build-dir/${env.JOB_NAME}/${env.BUILD_NUMBER}'"
+            sh "rm -rf '/mpibuilddir/mpich-suite-build-dir/${env.JOB_NAME}/${env.BUILD_NUMBER}'"
             dir("${env.WORKSPACE}"){
                 deleteDir()
             }

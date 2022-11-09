@@ -279,16 +279,17 @@ D*/
   Returns 'MPI_SUCCESS' on success and an MPI error code on failure.
 
   Notes:
-  This is a collective call across the job.  It has semantics that are
-  similar to those for MPI_Win_fence and hence is most easily
-  implemented as a barrier across all of the processes in the job.
-  Specifically, all PMI2_KVS_Put operations performed by any process in
-  the same job must be visible to all processes (by using PMI2_KVS_Get)
-  after PMI2_KVS_Fence completes.  However, a PMI implementation could
-  make this a lazy operation by not waiting for all processes to enter
-  their corresponding PMI2_KVS_Fence until some process issues a
-  PMI2_KVS_Get. This might be appropriate for some wide-area
-  implementations.
+  This is a collective call across the job.  All PMI2_KVS_Put operations
+  performed by any process in the same job must be visible to all
+  processes (by using PMI2_KVS_Get) after PMI2_KVS_Fence completes.
+  However, a PMI implementation could make this a lazy operation by not
+  waiting for all processes to enter their corresponding PMI2_KVS_Fence
+  until some process issues a PMI2_KVS_Get. Thus PMI2_KVS_Fence alone
+  may not serve as a barrier.  Using PMI2_KVS_GET for a non-existent key
+  after PMI2_KVS_Fence will have the same effect as an barrier since
+  PMI2_KVS_GET will not return until all processes posted PMI2_KVS_Fence,
+  even though PMI2_KVS_Get will return error since the key does not
+  exist.
 
 @*/
     int PMI2_KVS_Fence(void);
@@ -300,7 +301,7 @@ D*/
   Input Parameters:
   + jobid - the job id identifying the key-value space in which to look
     for key.  If jobid is NULL, look in the key-value space of this job.
-  . src_pmi_id - the pmi id of the process which put this keypair.  This
+  . src_pmi_id - the pmi id of the process which put this key pair.  This
     is just a hint to the server.  PMI2_ID_NULL should be passed if no
     hint is provided.
   . key - key

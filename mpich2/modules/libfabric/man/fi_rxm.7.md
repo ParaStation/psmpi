@@ -131,14 +131,23 @@ The ofi_rxm provider checks for the following environment variables.
 : Defines the maximum number of MSG provider CQ entries (default: 1) that would
   be read per progress (RxM CQ read).
 
+*FI_OFI_RXM_ENABLE_DYN_RBUF*
+: Enables support for dynamic receive buffering, if available by the message
+  endpoint provider.  This feature allows direct placement of received
+  message data into application buffers, bypassing RxM bounce buffers.
+  This feature targets providers that provide internal network buffering,
+  such as the tcp provider.  (default: false)
+
 *FI_OFI_RXM_SAR_LIMIT*
 : Set this environment variable to control the RxM SAR (Segmentation And Reassembly)
   protocol. Messages of size greater than this (default: 128 Kb) would be transmitted
   via rendezvous protocol.
 
 *FI_OFI_RXM_USE_SRX*
-: Set this to 1 to use shared receive context from MSG provider. This reduces
-  overall memory usage but there may be a slight increase in latency (default: 0).
+: Set this to 1 to use shared receive context from MSG provider, or 0 to
+  disable using shared receive context. Shared receive contexts reduce overall
+  memory usage, but may increase in message latency.  If not set, verbs will
+  not use shared receive contexts by default, but the tcp provider will.
 
 *FI_OFI_RXM_TX_SIZE*
 : Defines default TX context size (default: 1024)
@@ -158,7 +167,7 @@ with (default: 256).
 
 *FI_OFI_RXM_CM_PROGRESS_INTERVAL*
 : Defines the duration of time in microseconds between calls to RxM CM progression
-  functions when using manual progress. Higher values may provide less noise for 
+  functions when using manual progress. Higher values may provide less noise for
   calls to fi_cq read functions, but may increase connection setup time (default: 10000)
 
 *FI_OFI_RXM_CQ_EQ_FAIRNESS*

@@ -12,17 +12,24 @@
 #include <level_zero/ze_api.h>
 #include "yaksuri_zei_md.h"
 
+#define ZE_DEBUG 0
+
 #define ZE_P2P_ENABLED  (1)
 #define ZE_P2P_DISABLED (2)
 #define ZE_P2P_CLIQUES  (3)
 
 #define YAKSURI_KERNEL_NULL   -1
 
+/* create yaksuri_zei_md_s in USM host memory instead of USM shared memory */
+#define ZE_MD_HOST             1
+
 #define ZE_THROTTLE_THRESHOLD  (4 * 1024)
-#define ZE_EVENT_POOL_CAP      (6 * 1024)
 #define ZE_CMD_LIST_INIT_POOL_SIZE      8
 
-#define ZE_DEBUG 0
+#define ZE_EVENT_POOL_BITS      13
+#define ZE_EVENT_POOL_CAP       (1 << ZE_EVENT_POOL_BITS)
+#define ZE_EVENT_POOL_MASK      ((1 << ZE_EVENT_POOL_BITS) - 1)
+#define ZE_EVENT_POOL_INDEX(x)  ((x) & ZE_EVENT_POOL_MASK)
 
 #define YAKSURI_ZEI_INFO__DEFAULT_IOV_PUP_THRESHOLD     (16384)
 
@@ -49,6 +56,9 @@ extern "C" {
     } while (0)
 
 typedef struct {
+    ze_device_handle_t *subdevices;
+    uint32_t nsubdevices;
+    uint32_t deviceId;          /* level zero device Id */
     ze_event_pool_handle_t ep;  /* event pool, one per device */
     int ev_pool_idx;
     int ev_lb, ev_ub;           /* [lb,ub] defines the events being used */
@@ -62,7 +72,7 @@ typedef struct {
     int cl_pool_cnt;
     pthread_mutex_t cl_mutex;
     ze_command_queue_group_properties_t *queueProperties;
-    int numQueueGroups;
+    uint32_t numQueueGroups;
     pthread_mutex_t mutex;
     int dev_id;
 } yaksuri_zei_device_state_s;
@@ -71,16 +81,10 @@ typedef struct {
     ze_driver_handle_t driver;
     uint32_t ndevices;
     ze_device_handle_t *device;
-    uint32_t nsubdevices;
-    ze_device_handle_t **subdevices;
     ze_context_handle_t context;
-
+    int throttle_threshold;
     bool **p2p;
     pthread_mutex_t ze_mutex;
-
-    int ev_pool_cap;
-    int throttle_threshold;
-
     yaksuri_zei_device_state_s *device_states;
 } yaksuri_zei_global_s;
 extern yaksuri_zei_global_s yaksuri_zei_global;
@@ -94,13 +98,14 @@ typedef struct {
 } yaksuri_zei_event_s;
 
 typedef struct yaksuri_zei_type_s {
-    int pack;
-    int unpack;
-    ze_kernel_handle_t *pack_kernels;
-    ze_kernel_handle_t *unpack_kernels;
+    int pack[YAKSA_OP__LAST];
+    int unpack[YAKSA_OP__LAST];
+    ze_kernel_handle_t *pack_kernels[YAKSA_OP__LAST];
+    ze_kernel_handle_t *unpack_kernels[YAKSA_OP__LAST];
     yaksuri_zei_md_s **md;
     pthread_mutex_t mdmutex;
     uintptr_t num_elements;
+    const char *name;
 } yaksuri_zei_type_s;
 
 typedef struct {
@@ -138,15 +143,20 @@ int yaksuri_zei_md_alloc(yaksi_type_s * type, int dev_id);
 int yaksuri_zei_populate_pupfns(yaksi_type_s * type);
 
 int yaksuri_zei_ipack(const void *inbuf, void *outbuf, uintptr_t count, yaksi_type_s * type,
-                      yaksi_info_s * info, int target);
+                      yaksi_info_s * info, yaksa_op_t op, int target);
 int yaksuri_zei_iunpack(const void *inbuf, void *outbuf, uintptr_t count, yaksi_type_s * type,
-                        yaksi_info_s * info, int target);
-int yaksuri_zei_pup_is_supported(yaksi_type_s * type, bool * is_supported);
+                        yaksi_info_s * info, yaksa_op_t op, int target);
+int yaksuri_zei_synchronize(int target);
+int yaksuri_zei_flush_all(void);
+int yaksuri_zei_pup_is_supported(yaksi_type_s * type, yaksa_op_t op, bool * is_supported);
 uintptr_t yaksuri_zei_get_iov_pack_threshold(yaksi_info_s * info);
 uintptr_t yaksuri_zei_get_iov_unpack_threshold(yaksi_info_s * info);
 
 ze_result_t yaksuri_ze_init_module_kernel(void);
 ze_result_t yaksuri_ze_finalize_module_kernel(void);
+
+int yaksuri_zei_type_make_resident(yaksi_type_s * type, int dev_id);
+int yaksuri_zei_type_evict_resident(yaksi_type_s * type, int dev_id);
 
 int create_ze_event(int dev_id, ze_event_handle_t * ze_event, int *idx);
 void recycle_command_list(ze_command_list_handle_t cl, int dev_id);

@@ -13,14 +13,6 @@ int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype,
     MPIR_Comm *comm;
     MPIDI_VC_t *vc = NULL;
 
-    /* message==NULL is equivalent to MPI_MESSAGE_NO_PROC being passed at the
-     * upper level */
-    if (message == NULL)
-    {
-        *rreqp = MPIR_Request_create_null_recv();
-        goto fn_exit;
-    }
-
     MPIR_Assert(message != NULL);
     MPIR_Assert(message->kind == MPIR_REQUEST_KIND__MPROBE);
 
@@ -36,6 +28,7 @@ int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype,
     rreq->dev.user_buf = buf;
     rreq->dev.user_count = count;
     rreq->dev.datatype = datatype;
+    MPII_RECVQ_REMEMBER(rreq, rreq->status.MPI_SOURCE, rreq->status.MPI_TAG, rreq->comm->recvcontext_id, buf, count);
 
 #ifdef ENABLE_COMM_OVERRIDES
     MPIDI_Comm_get_vc(comm, rreq->status.MPI_SOURCE, &vc);
@@ -89,7 +82,7 @@ int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype,
             /* there should never be outstanding completion events for an unexpected
              * recv without also having a "pending recv" */
             MPIR_Assert(recv_pending);
-            /* The data is still being transfered across the net.  We'll
+            /* The data is still being transferred across the net.  We'll
                leave it to the progress engine to handle once the
                entire message has arrived. */
             if (!HANDLE_IS_BUILTIN(datatype))

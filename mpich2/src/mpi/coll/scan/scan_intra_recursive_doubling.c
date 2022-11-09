@@ -42,7 +42,7 @@
 
 int MPIR_Scan_intra_recursive_doubling(const void *sendbuf,
                                        void *recvbuf,
-                                       int count,
+                                       MPI_Aint count,
                                        MPI_Datatype datatype,
                                        MPI_Op op, MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
 {
@@ -54,9 +54,6 @@ int MPIR_Scan_intra_recursive_doubling(const void *sendbuf,
     MPI_Aint true_extent, true_lb, extent;
     void *partial_scan, *tmp_buf;
     MPIR_CHKLMEM_DECL(2);
-
-    if (count == 0)
-        return MPI_SUCCESS;
 
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;

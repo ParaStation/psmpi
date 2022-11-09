@@ -34,15 +34,17 @@ protected:
     virtual void init();
     virtual void cleanup();
     virtual void modify_config(const std::string& name, const std::string& value,
-                               bool optional);
+                               modify_config_mode_t mode);
     bool check_caps(uint64_t flags);
+    bool check_reg_mem_type(ucs_memory_type_t mem_type);
     void alloc_memory(void **address, size_t size, char *fill,
                       ucs_memory_type_t mem_type);
     void check_memory(void *address, void *expect, size_t size,
                       ucs_memory_type_t mem_type);
     void free_memory(void *address, ucs_memory_type_t mem_type);
-
     void test_registration();
+    static bool is_device_detected(ucs_memory_type_t mem_type);
+    static void* alloc_thread(void *arg);
 
     uct_md_h md() const {
         return m_md;
@@ -52,17 +54,28 @@ protected:
         return m_md_attr;
     }
 
+    typedef struct {
+        test_md          *self;
+        uct_completion_t comp;
+    } test_md_comp_t;
 
-    static void* alloc_thread(void *arg);
+    test_md_comp_t &comp() {
+        return m_comp;
+    }
+
+    static void dereg_cb(uct_completion_t *comp);
+
+    size_t                        m_comp_count;
 
 private:
     ucs::handle<uct_md_config_t*> m_md_config;
     ucs::handle<uct_md_h>         m_md;
     uct_md_attr_t                 m_md_attr;
+    test_md_comp_t                m_comp;
 };
 
 
 #define _UCT_MD_INSTANTIATE_TEST_CASE(_test_case, _cmpt_name) \
-    INSTANTIATE_TEST_CASE_P(_cmpt_name, _test_case, \
+    INSTANTIATE_TEST_SUITE_P(_cmpt_name, _test_case, \
                             testing::ValuesIn(_test_case::enum_mds(#_cmpt_name)));
 #endif

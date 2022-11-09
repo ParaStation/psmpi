@@ -12,7 +12,7 @@
  * binomial broadcast.  It does _not_ start the schedule.  This permits callers
  * to build up a larger hierarchical broadcast from multiple invocations of this
  * function. */
-int MPIR_Ibcast_intra_sched_binomial(void *buffer, int count, MPI_Datatype datatype, int root,
+int MPIR_Ibcast_intra_sched_binomial(void *buffer, MPI_Aint count, MPI_Datatype datatype, int root,
                                      MPIR_Comm * comm_ptr, MPIR_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -24,32 +24,31 @@ int MPIR_Ibcast_intra_sched_binomial(void *buffer, int count, MPI_Datatype datat
     int src, dst;
     struct MPII_Ibcast_state *ibcast_state;
     void *tmp_buf = NULL;
-    MPIR_SCHED_CHKPMEM_DECL(2);
 
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
 
-    if (comm_size == 1) {
-        /* nothing to add, this is a useless broadcast */
-        goto fn_exit;
+    MPIR_Datatype_is_contig(datatype, &is_contig);
+    MPIR_Datatype_get_size_macro(datatype, type_size);
+    nbytes = type_size * count;
+
+    /* we'll allocate tmp_buf along with ibcast_state.
+     * Alternatively, we can add init callback to allocate the tmp_buf.
+     */
+    MPI_Aint tmp_size = 0;
+    if (!is_contig) {
+        tmp_size = nbytes;
     }
 
-    MPIR_Datatype_is_contig(datatype, &is_contig);
-
-    MPIR_SCHED_CHKPMEM_MALLOC(ibcast_state, struct MPII_Ibcast_state *,
-                              sizeof(struct MPII_Ibcast_state), mpi_errno, "MPI_Stauts",
-                              MPL_MEM_BUFFER);
-
-
-    MPIR_Datatype_get_size_macro(datatype, type_size);
-
-    nbytes = type_size * count;
+    ibcast_state = MPIR_Sched_alloc_state(s, sizeof(struct MPII_Ibcast_state) + tmp_size);
+    MPIR_ERR_CHKANDJUMP(!ibcast_state, mpi_errno, MPI_ERR_OTHER, "**nomem");
+    if (!is_contig) {
+        tmp_buf = ibcast_state + 1;
+    }
 
     ibcast_state->n_bytes = nbytes;
 
     if (!is_contig) {
-        MPIR_SCHED_CHKPMEM_MALLOC(tmp_buf, void *, nbytes, mpi_errno, "tmp_buf", MPL_MEM_BUFFER);
-
         /* TODO: Pipeline the packing and communication */
         if (rank == root) {
             mpi_errno = MPIR_Sched_copy(buffer, count, datatype, tmp_buf, nbytes, MPI_BYTE, s);
@@ -109,7 +108,7 @@ int MPIR_Ibcast_intra_sched_binomial(void *buffer, int count, MPI_Datatype datat
     }
 
     /* This process is responsible for all processes that have bits
-     * set from the LSB upto (but not including) mask.  Because of
+     * set from the LSB up to (but not including) mask.  Because of
      * the "not including", we start by shifting mask back down one.
      *
      * We can easily change to a different algorithm at any power of two
@@ -146,10 +145,8 @@ int MPIR_Ibcast_intra_sched_binomial(void *buffer, int count, MPI_Datatype datat
         }
     }
 
-    MPIR_SCHED_CHKPMEM_COMMIT(s);
   fn_exit:
     return mpi_errno;
   fn_fail:
-    MPIR_SCHED_CHKPMEM_REAP(s);
     goto fn_exit;
 }

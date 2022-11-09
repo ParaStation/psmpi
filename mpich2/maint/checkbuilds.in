@@ -74,7 +74,6 @@ $hasDemon   = 0;
                   'mutex-timing',
                   'multi-aliases',
                   'predefined-refcount',
-                  'alloca',
                   'yield;sched_yield;yield;select;usleep;sleep',
                   'checkpointing',
 		  'runtimevalues',   # Fortran true/false
@@ -284,7 +283,7 @@ sub RunTest {
 	return;
     }
     # Clean the installation and build directories
-    # Even better would be to remove the installation directory alltogether,
+    # Even better would be to remove the installation directory altogether,
     # but we should only do that if explicitly requested (we could
     # *require* an empty directory for the tests instead)
     if (-d "$instdir/lib") {

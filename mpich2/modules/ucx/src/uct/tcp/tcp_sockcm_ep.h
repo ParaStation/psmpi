@@ -20,10 +20,16 @@ typedef enum uct_tcp_sockcm_ep_state {
     UCT_TCP_SOCKCM_EP_CLIENT_NOTIFY_CALLED        = UCS_BIT(9),  /* ep on the client called notify API call */
     UCT_TCP_SOCKCM_EP_CLIENT_NOTIFY_SENT          = UCS_BIT(10), /* ep on the client sent the notify message to the server */
     UCT_TCP_SOCKCM_EP_DISCONNECTING               = UCS_BIT(11), /* @ref uct_ep_disconnect was called on the ep */
-    UCT_TCP_SOCKCM_EP_GOT_DISCONNECT              = UCS_BIT(12), /* ep received a disconnect notice from the remote peer */
+    UCT_TCP_SOCKCM_EP_DISCONNECTED                = UCS_BIT(12), /* ep is calling the upper layer disconnect callback */
     UCT_TCP_SOCKCM_EP_FAILED                      = UCS_BIT(13), /* ep is in error state due to an internal local error */
-    UCT_TCP_SOCKCM_EP_CLIENT_GOT_REJECTED         = UCS_BIT(14), /* ep on the client side received a reject from the server
+    UCT_TCP_SOCKCM_EP_CLIENT_GOT_REJECT           = UCS_BIT(14), /* ep on the client side received a reject from the server
                                                                     (debug flag) */
+    UCT_TCP_SOCKCM_EP_PACK_CB_FAILED              = UCS_BIT(15), /* the upper layer's priv_pack_cb failed */
+    UCT_TCP_SOCKCM_EP_SERVER_REJECT_CALLED        = UCS_BIT(16), /* ep on the server called reject API call */
+    UCT_TCP_SOCKCM_EP_SERVER_REJECT_SENT          = UCS_BIT(17), /* ep on the server sent the reject message to the client */
+    UCT_TCP_SOCKCM_EP_RESOLVE_CB_FAILED           = UCS_BIT(18), /* the upper layer's resolve_cb failed */
+    UCT_TCP_SOCKCM_EP_RESOLVE_CB_INVOKED          = UCS_BIT(19), /* resolve_cb invoked */
+    UCT_TCP_SOCKCM_EP_SERVER_CONN_REQ_CB_INVOKED  = UCS_BIT(20)  /* server ep was passed to a user via conn_req_cb */
 } uct_tcp_sockcm_ep_state_t;
 
 
@@ -33,7 +39,7 @@ typedef enum uct_tcp_sockcm_ep_state {
 struct uct_tcp_sockcm_ep {
     uct_cm_base_ep_t   super;
     int                fd;        /* the fd of the socket on the ep */
-    uint16_t           state;     /* ep state (uct_tcp_sockcm_ep_state_t) */
+    uint32_t           state;     /* ep state (uct_tcp_sockcm_ep_state_t) */
     uct_tcp_listener_t *listener; /* the listener the ep belongs to - used on the server side */
     ucs_list_link_t    list;      /* list item on the cm ep_list - used on the server side */
     struct {
@@ -59,9 +65,14 @@ void uct_tcp_sockcm_ep_close_fd(int *fd);
 
 ucs_status_t uct_tcp_sockcm_ep_create(const uct_ep_params_t *params, uct_ep_h* ep_p);
 
+ucs_status_t uct_tcp_sockcm_ep_connect(uct_ep_h ep,
+                                       const uct_ep_connect_params_t *params);
+
 ucs_status_t uct_tcp_sockcm_ep_disconnect(uct_ep_h ep, unsigned flags);
 
 ucs_status_t uct_tcp_sockcm_ep_send(uct_tcp_sockcm_ep_t *cep);
+
+ucs_status_t uct_tcp_sockcm_ep_progress_send(uct_tcp_sockcm_ep_t *cep);
 
 ucs_status_t uct_tcp_sockcm_ep_recv(uct_tcp_sockcm_ep_t *cep);
 
@@ -69,7 +80,12 @@ ucs_status_t uct_tcp_sockcm_ep_set_sockopt(uct_tcp_sockcm_ep_t *ep);
 
 ucs_status_t uct_tcp_sockcm_cm_ep_conn_notify(uct_ep_h ep);
 
-void uct_tcp_sockcm_ep_handle_error(uct_tcp_sockcm_ep_t *cep, ucs_status_t status);
-
 const char *uct_tcp_sockcm_cm_ep_peer_addr_str(uct_tcp_sockcm_ep_t *cep,
                                                char *buf, size_t max);
+
+void uct_tcp_sockcm_close_ep(uct_tcp_sockcm_ep_t *ep);
+
+void uct_tcp_sockcm_ep_handle_event_status(uct_tcp_sockcm_ep_t *ep,
+                                           ucs_status_t status,
+                                           ucs_event_set_types_t events,
+                                           const char *reason);

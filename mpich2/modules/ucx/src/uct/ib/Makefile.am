@@ -5,7 +5,7 @@
 
 if HAVE_IB
 
-SUBDIRS = . cm rdmacm
+SUBDIRS = . rdmacm
 
 module_LTLIBRARIES    = libuct_ib.la
 libuct_ib_la_CPPFLAGS = $(BASE_CPPFLAGS) $(IBVERBS_CPPFLAGS)
@@ -101,6 +101,7 @@ endif # HAVE_TL_RC
 if HAVE_TL_DC
 noinst_HEADERS += \
 	dc/dc_mlx5_ep.h \
+	dc/dc_mlx5.inl \
 	dc/dc_mlx5.h
 
 libuct_ib_la_SOURCES += \

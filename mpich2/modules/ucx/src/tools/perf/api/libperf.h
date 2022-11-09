@@ -1,8 +1,9 @@
 /**
 * Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
 * Copyright (C) UT-Battelle, LLC. 2015. ALL RIGHTS RESERVED.
-* Copyright (C) The University of Tennessee and The University 
+* Copyright (C) The University of Tennessee and The University
 *               of Tennessee Research Foundation. 2015. ALL RIGHTS RESERVED.
+* Copyright (C) ARM Ltd. 2020-2021.  ALL RIGHTS RESERVED.
 * See file LICENSE for terms.
 */
 
@@ -15,12 +16,8 @@ BEGIN_C_DECLS
 
 /** @file libperf.h */
 
-#include <sys/uio.h>
 #include <uct/api/uct.h>
 #include <ucp/api/ucp.h>
-#include <ucs/sys/math.h>
-#include <ucs/sys/stubs.h>
-#include <ucs/type/status.h>
 
 
 typedef enum {
@@ -47,6 +44,8 @@ typedef enum {
 
 typedef enum {
     UCX_PERF_TEST_TYPE_PINGPONG,         /* Ping-pong mode */
+    UCX_PERF_TEST_TYPE_PINGPONG_WAIT_MEM,/* Ping-pong mode with
+                                            ucp_worker_wait_mem() */
     UCX_PERF_TEST_TYPE_STREAM_UNI,       /* Unidirectional stream */
     UCX_PERF_TEST_TYPE_STREAM_BI,        /* Bidirectional stream */
     UCX_PERF_TEST_TYPE_LAST
@@ -61,6 +60,7 @@ typedef enum {
 
 typedef enum {
     UCT_PERF_DATA_LAYOUT_SHORT,
+    UCT_PERF_DATA_LAYOUT_SHORT_IOV,
     UCT_PERF_DATA_LAYOUT_BCOPY,
     UCT_PERF_DATA_LAYOUT_ZCOPY,
     UCT_PERF_DATA_LAYOUT_LAST
@@ -68,7 +68,7 @@ typedef enum {
 
 
 typedef enum {
-    UCX_PERF_WAIT_MODE_PROGRESS,     /* Repeatedly call progress */
+    UCX_PERF_WAIT_MODE_POLL,         /* Repeatedly call progress */
     UCX_PERF_WAIT_MODE_SLEEP,        /* Go to sleep */
     UCX_PERF_WAIT_MODE_SPIN,         /* Spin without calling progress */
     UCX_PERF_WAIT_MODE_LAST
@@ -84,7 +84,10 @@ enum ucx_perf_test_flags {
     UCX_PERF_TEST_FLAG_TAG_UNEXP_PROBE  = UCS_BIT(5), /* For tag tests, use probe to get unexpected receive */
     UCX_PERF_TEST_FLAG_VERBOSE          = UCS_BIT(7), /* Print error messages */
     UCX_PERF_TEST_FLAG_STREAM_RECV_DATA = UCS_BIT(8), /* For stream tests, use recv data API */
-    UCX_PERF_TEST_FLAG_FLUSH_EP         = UCS_BIT(9)  /* Issue flush on endpoint instead of worker */
+    UCX_PERF_TEST_FLAG_FLUSH_EP         = UCS_BIT(9), /* Issue flush on endpoint instead of worker */
+    UCX_PERF_TEST_FLAG_WAKEUP           = UCS_BIT(10), /* Create context with wakeup feature enabled */
+    UCX_PERF_TEST_FLAG_ERR_HANDLING     = UCS_BIT(11), /* Create UCP eps with error handling support */
+    UCX_PERF_TEST_FLAG_LOOPBACK         = UCS_BIT(12)  /* Use loopback connection */
 };
 
 
@@ -115,7 +118,7 @@ typedef struct ucx_perf_result {
     double                  elapsed_time;
     ucx_perf_counter_t      bytes;
     struct {
-        double              typical;
+        double              percentile;
         double              moment_average; /* Average since last report */
         double              total_average;  /* Average of the whole test */
     }
@@ -138,8 +141,8 @@ typedef void (*ucx_perf_rte_recv_func_t)(void *rte_group, unsigned src,
 typedef void (*ucx_perf_rte_exchange_vec_func_t)(void *rte_group, void *req);
 typedef void (*ucx_perf_rte_report_func_t)(void *rte_group,
                                            const ucx_perf_result_t *result,
-                                           void *arg, int is_final,
-                                           int is_multi_thread);
+                                           void *arg, const char *extra_info,
+                                           int is_final, int is_multi_thread);
 
 /**
  * RTE used to bring-up the test
@@ -187,13 +190,14 @@ typedef struct ucx_perf_params {
     size_t                 iov_stride;      /* Distance between starting address
                                                of consecutive IOV entries. It is
                                                similar to UCT uct_iov_t type stride */
-    size_t                 am_hdr_size;     /* Active message header size (included in message size) */
     size_t                 alignment;       /* Message buffer alignment */
     unsigned               max_outstanding; /* Maximal number of outstanding sends */
     ucx_perf_counter_t     warmup_iter;     /* Number of warm-up iterations */
     ucx_perf_counter_t     max_iter;        /* Iterations limit, 0 - unlimited */
     double                 max_time;        /* Time limit (seconds), 0 - unlimited */
     double                 report_interval; /* Interval at which to call the report callback */
+    double                 percentile_rank; /* The percentile rank of the percentile reported
+                                               in latency tests */
 
     void                   *rte_group;      /* Opaque RTE group handle */
     ucx_perf_rte_t         *rte;            /* RTE functions used to exchange data */
@@ -205,12 +209,16 @@ typedef struct ucx_perf_params {
         char                   md_name[UCT_MD_NAME_MAX];      /* Memory domain name to use */
         uct_perf_data_layout_t data_layout; /* Data layout to use */
         unsigned               fc_window;   /* Window size for flow control <= UCX_PERF_TEST_MAX_FC_WINDOW */
+        size_t                 am_hdr_size; /* UCT Active Message header size
+                                               (included in message size) */
     } uct;
 
     struct {
         unsigned               nonblocking_mode; /* TBD */
         ucp_perf_datatype_t    send_datatype;
         ucp_perf_datatype_t    recv_datatype;
+        size_t                 am_hdr_size; /* UCP Active Message header size
+                                               (not included in message size) */
     } ucp;
 
 } ucx_perf_params_t;

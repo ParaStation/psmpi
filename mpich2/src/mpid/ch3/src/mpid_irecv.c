@@ -12,9 +12,8 @@ int MPID_Irecv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int 
     MPIR_Request * rreq = NULL;
     int found;
     int mpi_errno = MPI_SUCCESS;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_IRECV);
 
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_IRECV);
+    MPIR_FUNC_ENTER;
 
     MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
 			"rank=%d, tag=%d, context=%d", 
@@ -42,7 +41,7 @@ int MPID_Irecv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int 
     {
 	MPIDI_VC_t * vc;
 	
-	/* Message was found in the unexepected queue */
+	/* Message was found in the unexpected queue */
 	MPL_DBG_MSG(MPIDI_CH3_DBG_OTHER,VERBOSE,"request found in unexpected queue");
 
 	/* Release the message queue - we've removed this request from 
@@ -90,7 +89,7 @@ int MPID_Irecv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int 
                 /* there should never be outstanding completion events for an unexpected
                  * recv without also having a "pending recv" */
                 MPIR_Assert(recv_pending);
-		/* The data is still being transfered across the net.  We'll 
+		/* The data is still being transferred across the net.  We'll 
 		   leave it to the progress engine to handle once the
 		   entire message has arrived. */
 		if (!HANDLE_IS_BUILTIN(datatype))
@@ -156,7 +155,8 @@ int MPID_Irecv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int 
     *request = rreq;
     MPL_DBG_MSG_P(MPIDI_CH3_DBG_OTHER,VERBOSE,"request allocated, handle=0x%08x",
 		   rreq->handle);
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_IRECV);
+    MPII_RECVQ_REMEMBER(rreq, rank, tag, comm->recvcontext_id, buf, count);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
 
  fn_fail:

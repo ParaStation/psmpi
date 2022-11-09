@@ -17,11 +17,11 @@
  * single buffer across the whole loop.  Something like MADRE is probably the
  * best solution for the MPI_IN_PLACE scenario.
  */
-int MPIR_Ialltoallw_intra_sched_inplace(const void *sendbuf, const int sendcounts[],
-                                        const int sdispls[], const MPI_Datatype sendtypes[],
-                                        void *recvbuf, const int recvcounts[], const int rdispls[],
-                                        const MPI_Datatype recvtypes[], MPIR_Comm * comm_ptr,
-                                        MPIR_Sched_t s)
+int MPIR_Ialltoallw_intra_sched_inplace(const void *sendbuf, const MPI_Aint sendcounts[],
+                                        const MPI_Aint sdispls[], const MPI_Datatype sendtypes[],
+                                        void *recvbuf, const MPI_Aint recvcounts[],
+                                        const MPI_Aint rdispls[], const MPI_Datatype recvtypes[],
+                                        MPIR_Comm * comm_ptr, MPIR_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
     int comm_size, i, j;
@@ -29,7 +29,6 @@ int MPIR_Ialltoallw_intra_sched_inplace(const void *sendbuf, const int sendcount
     MPI_Aint recvtype_sz;
     int max_size;
     void *tmp_buf = NULL;
-    MPIR_SCHED_CHKPMEM_DECL(1);
 
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
@@ -53,8 +52,8 @@ int MPIR_Ialltoallw_intra_sched_inplace(const void *sendbuf, const int sendcount
         MPIR_Datatype_get_size_macro(recvtypes[i], recvtype_sz);
         max_size = MPL_MAX(max_size, recvcounts[i] * recvtype_sz);
     }
-    MPIR_SCHED_CHKPMEM_MALLOC(tmp_buf, void *, max_size, mpi_errno, "Ialltoallw tmp_buf",
-                              MPL_MEM_BUFFER);
+    tmp_buf = MPIR_Sched_alloc_state(s, max_size);
+    MPIR_ERR_CHKANDJUMP(!tmp_buf, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
     for (i = 0; i < comm_size; ++i) {
         /* start inner loop at i to avoid re-exchanging data */
@@ -85,10 +84,8 @@ int MPIR_Ialltoallw_intra_sched_inplace(const void *sendbuf, const int sendcount
         }
     }
 
-    MPIR_SCHED_CHKPMEM_COMMIT(s);
   fn_exit:
     return mpi_errno;
   fn_fail:
-    MPIR_SCHED_CHKPMEM_REAP(s);
     goto fn_exit;
 }

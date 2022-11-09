@@ -11,7 +11,7 @@
 
 int yaksi_ipack(const void *inbuf, uintptr_t incount, yaksi_type_s * type, uintptr_t inoffset,
                 void *outbuf, uintptr_t max_pack_bytes, uintptr_t * actual_pack_bytes,
-                yaksi_info_s * info, yaksi_request_s * request)
+                yaksi_info_s * info, yaksa_op_t op, yaksi_request_s * request)
 {
     int rc = YAKSA_SUCCESS;
 
@@ -55,7 +55,7 @@ int yaksi_ipack(const void *inbuf, uintptr_t incount, yaksi_type_s * type, uintp
         assert(type->size > remoffset);
 
         rc = yaksi_ipack_element(sbuf, type, remoffset, dbuf, rem_pack_bytes, &tmp_pack_bytes,
-                                 info, request);
+                                 info, op, request);
         YAKSU_ERR_CHECK(rc, fn_fail);
 
         *actual_pack_bytes += tmp_pack_bytes;
@@ -80,7 +80,7 @@ int yaksi_ipack(const void *inbuf, uintptr_t incount, yaksi_type_s * type, uintp
     uintptr_t numelems;
     numelems = rem_pack_bytes / type->size;
     if (numelems) {
-        rc = yaksi_ipack_backend(sbuf, dbuf, numelems, type, info, request);
+        rc = yaksi_ipack_backend(sbuf, dbuf, numelems, type, info, op, request);
         YAKSU_ERR_CHECK(rc, fn_fail);
 
         *actual_pack_bytes += numelems * type->size;
@@ -94,7 +94,7 @@ int yaksi_ipack(const void *inbuf, uintptr_t incount, yaksi_type_s * type, uintp
     /* step 4: partial pack the next element */
     if (rem_pack_bytes) {
         rc = yaksi_ipack_element(sbuf, type, remoffset, dbuf, rem_pack_bytes, &tmp_pack_bytes,
-                                 info, request);
+                                 info, op, request);
         YAKSU_ERR_CHECK(rc, fn_fail);
 
         *actual_pack_bytes += tmp_pack_bytes;

@@ -48,7 +48,8 @@ int yaksi_type_create_resized(yaksi_type_s * intype, intptr_t lb, intptr_t exten
 
     outtype->u.resized.child = intype;
 
-    yaksur_type_create_hook(outtype);
+    rc = yaksur_type_create_hook(outtype);
+    YAKSU_ERR_CHECK(rc, fn_fail);
     *newtype = outtype;
 
   fn_exit:
@@ -57,8 +58,8 @@ int yaksi_type_create_resized(yaksi_type_s * intype, intptr_t lb, intptr_t exten
     goto fn_exit;
 }
 
-int yaksa_type_create_resized(yaksa_type_t oldtype, intptr_t lb, intptr_t extent,
-                              yaksa_info_t info, yaksa_type_t * newtype)
+YAKSA_API_PUBLIC int yaksa_type_create_resized(yaksa_type_t oldtype, intptr_t lb, intptr_t extent,
+                                               yaksa_info_t info, yaksa_type_t * newtype)
 {
     int rc = YAKSA_SUCCESS;
 

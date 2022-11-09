@@ -41,6 +41,12 @@ int MPII_Ibcast_sched_test_curr_length(MPIR_Comm * comm, int tag, void *state)
     return mpi_errno;
 }
 
+int MPII_Ibcast_sched_init_length(MPIR_Comm * comm, int tag, void *state)
+{
+    struct MPII_Ibcast_state *ibcast_state = (struct MPII_Ibcast_state *) state;
+    ibcast_state->curr_bytes = ibcast_state->initial_bytes;
+    return MPI_SUCCESS;
+}
 
 int MPII_Ibcast_sched_add_length(MPIR_Comm * comm, int tag, void *state)
 {
@@ -114,7 +120,7 @@ int MPII_Iscatter_for_bcast_sched(void *tmp_buf, int root, MPIR_Comm * comm_ptr,
     }
 
     /* This process is responsible for all processes that have bits
-     * set from the LSB upto (but not including) mask.  Because of the
+     * set from the LSB up to (but not including) mask.  Because of the
      * "not including", we start by shifting mask back down one. */
 
     mask >>= 1;

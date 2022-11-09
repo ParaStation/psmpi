@@ -47,7 +47,8 @@ AC_ARG_WITH([cuda-sm],
 
                 # Ampere architecture
                 ampere - build compatibility for all Ampere GPUs
-                80     - RTX Ampere - RTX 3080
+                80     - A100, A30
+                86     - RTX Ampere, MX570, A40, A16, A10, A2
 
                 # Other
                 <numeric> - specific SM numeric to use
@@ -55,40 +56,68 @@ AC_ARG_WITH([cuda-sm],
             [with_cuda_sm=all])
 
 
-# --with=cuda
+# --with-cuda
 PAC_SET_HEADER_LIB_PATH([cuda])
-PAC_CHECK_HEADER_LIB([cuda_runtime_api.h],[cudart],[cudaStreamSynchronize],[have_cuda=yes],[have_cuda=no])
-if test "${have_cuda}" = "yes" ; then
-    AC_MSG_CHECKING([whether nvcc works])
-    cat>conftest.cu<<EOF
-    __global__ void foo(int x) {}
-EOF
-    ${with_cuda}/bin/nvcc -c conftest.cu 2> /dev/null
-    if test "$?" = "0" ; then
-        AC_DEFINE([HAVE_CUDA],[1],[Define is CUDA is available])
-        AS_IF([test -n "${with_cuda}"],[NVCC=${with_cuda}/bin/nvcc],[NVCC=nvcc])
-        AC_SUBST(NVCC)
-        # nvcc compiled applications need libstdc++ to be able to link
-        # with a C compiler
-        PAC_PUSH_FLAG([LIBS])
-        PAC_APPEND_FLAG([-lstdc++],[LIBS])
-        AC_LINK_IFELSE(
-            [AC_LANG_PROGRAM([int x = 5;],[x++;])],
-            [libstdcpp_works=yes],
-            [libstdcpp_works=no])
-        PAC_POP_FLAG([LIBS])
-        if test "${libstdcpp_works}" = "yes" ; then
-            PAC_APPEND_FLAG([-lstdc++],[LIBS])
-            AC_MSG_RESULT([yes])
+if test "$with_cuda" != "no" ; then
+    PAC_CHECK_HEADER_LIB([cuda_runtime_api.h],[cudart],[cudaStreamSynchronize],[have_cuda=yes],[have_cuda=no])
+    if test "${have_cuda}" = "yes" ; then
+        AC_MSG_CHECKING([whether nvcc works])
+        if test -n "$ac_save_CC" ; then
+            NVCC_FLAGS="$NVCC_FLAGS -ccbin $ac_save_CC"
+            # - pgcc/nvc doesn't work, use pgc++/nvc++ instead
+            # - Extra optins such as `gcc -std=gnu99` doesn't work, strip the option
+            NVCC_FLAGS=$(echo $NVCC_FLAGS | sed -e 's/nvc/nvc++/g' -e 's/pgcc/pgc++/g' -e's/ -std=.*//g')
+        fi
+        # try nvcc from PATH if 'with-cuda' does not contain a valid path
+        if test -d ${with_cuda} ; then
+            nvcc_bin=${with_cuda}/bin/nvcc
         else
+            nvcc_bin=nvcc
+        fi
+
+        # save language settings, customize ac_ext and ac_compile to support CUDA
+        AC_LANG_PUSH([C])
+        ac_ext=cu
+        ac_compile='$nvcc_bin $NVCC_FLAGS -c conftest.$ac_ext >&5'
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([__global__ void foo(int x) {}],[])],
+        [
+            AC_DEFINE([HAVE_CUDA],[1],[Define is CUDA is available])
+            AS_IF([test -d "${with_cuda}"],[NVCC=${with_cuda}/bin/nvcc],[NVCC=nvcc])
+            AC_SUBST(NVCC)
+            AC_SUBST(NVCC_FLAGS)
+            AC_MSG_RESULT([yes])
+        ],[
             have_cuda=no
             AC_MSG_RESULT([no])
+        ])
+        # done with CUDA, back to C
+        AC_LANG_POP([C])
+
+        if test "${have_cuda}" != "no" ; then
+            # nvcc compiled applications need libstdc++ to be able to link
+            # with a C compiler
+            AC_MSG_CHECKING([if $CC can link libstdc++])
+            PAC_PUSH_FLAG([LIBS])
+            PAC_APPEND_FLAG([-lstdc++],[LIBS])
+            AC_LINK_IFELSE(
+                [AC_LANG_PROGRAM([int x = 5;],[x++;])],
+                [libstdcpp_works=yes],
+                [libstdcpp_works=no])
+            PAC_POP_FLAG([LIBS])
+            if test "${libstdcpp_works}" = "yes" ; then
+                PAC_APPEND_FLAG([-lstdc++],[LIBS])
+                AC_MSG_RESULT([yes])
+            else
+                have_cuda=no
+                AC_MSG_RESULT([no])
+            fi
         fi
-    else
-        have_cuda=no
-        AC_MSG_RESULT([no])
     fi
-    rm -f conftest.*
+
+    # if the user requested CUDA and it didn't work, throw an error
+    if test "${have_cuda}" = "no" -a "$with_cuda" != ""; then
+        AC_MSG_ERROR([CUDA was requested but it is not functional])
+    fi
 fi
 AM_CONDITIONAL([BUILD_CUDA_BACKEND], [test x${have_cuda} = xyes])
 AM_CONDITIONAL([BUILD_CUDA_TESTS], [test x${have_cuda} = xyes])
@@ -111,12 +140,11 @@ fi
 ##########################################################################
 
 if test "${have_cuda}" = "yes" ; then
-    for maj_version in 11 10 9 8 7 6 5 ; do
-        version=$((maj_version * 1000))
+    for version in 11010 11000 10000 9000 8000 7000 6000 5000 ; do
         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
                               #include <cuda.h>
                               int x[[CUDA_VERSION - $version]];
-                          ],)],[cuda_version=${maj_version}],[])
+                          ],)],[cuda_version=${version}],[])
         if test ! -z ${cuda_version} ; then break ; fi
     done
     PAC_PUSH_FLAG([IFS])
@@ -125,22 +153,25 @@ if test "${have_cuda}" = "yes" ; then
     for sm in ${with_cuda_sm} ; do
         case "$sm" in
             all)
-                if test ${cuda_version} -ge 11 ; then
+                if test ${cuda_version} -ge 11010 ; then
+                    # maxwell (52) to ampere (86)
+                    supported_cuda_sms="52 53 60 61 62 70 72 75 80 86"
+                elif test ${cuda_version} -ge 11000 ; then
                     # maxwell (52) to ampere (80)
                     supported_cuda_sms="52 53 60 61 62 70 72 75 80"
-                elif test ${cuda_version} -ge 10 ; then
+                elif test ${cuda_version} -ge 10000 ; then
                     # kepler (30) to turing (75)
                     supported_cuda_sms="30 35 37 50 52 53 60 61 62 70 72 75"
-                elif test ${cuda_version} -ge 9 ; then
+                elif test ${cuda_version} -ge 9000 ; then
                     # kepler (30) to volta (72)
                     supported_cuda_sms="30 35 37 50 52 53 60 61 62 70 72"
-                elif test ${cuda_version} -ge 8 ; then
+                elif test ${cuda_version} -ge 8000 ; then
                     # kepler (30) to pascal (62)
                     supported_cuda_sms="30 35 37 50 52 53 60 61 62"
-                elif test ${cuda_version} -ge 6 ; then
+                elif test ${cuda_version} -ge 6000 ; then
                     # kepler (30) to maxwell (53)
                     supported_cuda_sms="30 35 37 50 52 53"
-                elif test ${cuda_version} -ge 5 ; then
+                elif test ${cuda_version} -ge 5000 ; then
                     # kepler (30) to kepler (37)
                     supported_cuda_sms="30 35 37"
                 fi
@@ -179,6 +210,7 @@ if test "${have_cuda}" = "yes" ; then
 
             ampere)
                 PAC_APPEND_FLAG([80],[CUDA_SM])
+                PAC_APPEND_FLAG([86],[CUDA_SM])
                 ;;
 
             none)

@@ -30,8 +30,8 @@
  */
 /* It would be nice to just call:
  * ----8<----
- * MPIR_Iscatter_sched_auto(...);
- * MPIR_Iallgather_sched_auto(...);
+ * MPIR_Iscatter_intra_sched_auto(...);
+ * MPIR_Iallgather_intra_sched_auto(...);
  * ----8<----
  *
  * But that results in inefficient additional memory allocation and copies
@@ -46,7 +46,7 @@
  * bytes and knows how to deal with a "ragged edge" vector length and we
  * implement the recursive doubling algorithm here.
  */
-int MPIR_Ibcast_intra_sched_scatter_recursive_doubling_allgather(void *buffer, int count,
+int MPIR_Ibcast_intra_sched_scatter_recursive_doubling_allgather(void *buffer, MPI_Aint count,
                                                                  MPI_Datatype datatype, int root,
                                                                  MPIR_Comm * comm_ptr,
                                                                  MPIR_Sched_t s)
@@ -54,16 +54,13 @@ int MPIR_Ibcast_intra_sched_scatter_recursive_doubling_allgather(void *buffer, i
     int mpi_errno = MPI_SUCCESS;
     int rank, comm_size, dst;
     int relative_rank, mask;
-    MPI_Aint scatter_size, nbytes, curr_size, incoming_count;
-    MPI_Aint type_size;
-    int j, k, i, tmp_mask, is_contig;
-    int relative_dst, dst_tree_root, my_tree_root;
-    MPI_Aint send_offset, recv_offset, offset;
-    int tree_root, nprocs_completed;
+    int scatter_size, nbytes, curr_size, incoming_count;
+    int type_size, j, k, i, tmp_mask, is_contig;
+    int relative_dst, dst_tree_root, my_tree_root, send_offset;
+    int recv_offset, tree_root, nprocs_completed, offset;
     MPI_Aint true_extent, true_lb;
     void *tmp_buf;
     struct MPII_Ibcast_state *ibcast_state;
-    MPIR_SCHED_CHKPMEM_DECL(2);
 
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
@@ -75,33 +72,36 @@ int MPIR_Ibcast_intra_sched_scatter_recursive_doubling_allgather(void *buffer, i
     MPIR_Assert(MPL_is_pof2(comm_size, NULL));
 #endif /* HAVE_ERROR_CHECKING */
 
-    /* If there is only one process, return */
-    if (comm_size == 1)
-        goto fn_exit;
-
     if (HANDLE_IS_BUILTIN(datatype)) {
         is_contig = 1;
     } else {
         MPIR_Datatype_is_contig(datatype, &is_contig);
     }
 
-    MPIR_SCHED_CHKPMEM_MALLOC(ibcast_state, struct MPII_Ibcast_state *,
-                              sizeof(struct MPII_Ibcast_state), mpi_errno, "MPI_Status",
-                              MPL_MEM_BUFFER);
-
     MPIR_Datatype_get_size_macro(datatype, type_size);
+    nbytes = type_size * count;
 
-    nbytes = (MPI_Aint)type_size * count;
+    /* we'll allocate tmp_buf along with ibcast_state.
+     * Alternatively, we can add init callback to allocate the tmp_buf.
+     */
+    MPI_Aint tmp_size = 0;
+    if (!is_contig) {
+        tmp_size = nbytes;
+    }
+
+    ibcast_state = MPIR_Sched_alloc_state(s, sizeof(struct MPII_Ibcast_state) + tmp_size);
+    MPIR_ERR_CHKANDJUMP(!ibcast_state, mpi_errno, MPI_ERR_OTHER, "**nomem");
+    if (!is_contig) {
+        tmp_buf = ibcast_state + 1;
+    }
+
     ibcast_state->n_bytes = nbytes;
-    ibcast_state->curr_bytes = 0;
     if (is_contig) {
         /* contiguous. no need to pack. */
         MPIR_Type_get_true_extent_impl(datatype, &true_lb, &true_extent);
 
-        tmp_buf = (char *) buffer + true_lb;
+        tmp_buf = MPIR_get_contig_ptr(buffer, true_lb);
     } else {
-        MPIR_SCHED_CHKPMEM_MALLOC(tmp_buf, void *, nbytes, mpi_errno, "tmp_buf", MPL_MEM_BUFFER);
-
         if (rank == root) {
             mpi_errno = MPIR_Sched_copy(buffer, count, datatype, tmp_buf, nbytes, MPI_BYTE, s);
             MPIR_ERR_CHECK(mpi_errno);
@@ -122,7 +122,9 @@ int MPIR_Ibcast_intra_sched_scatter_recursive_doubling_allgather(void *buffer, i
     if (curr_size < 0)
         curr_size = 0;
     /* curr_size bytes already inplace */
-    ibcast_state->curr_bytes = curr_size;
+    ibcast_state->initial_bytes = curr_size;
+    mpi_errno = MPIR_Sched_cb(&MPII_Ibcast_sched_init_length, ibcast_state, s);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* initialize because the compiler can't tell that it is always initialized when used */
     incoming_count = -1;
@@ -270,10 +272,8 @@ int MPIR_Ibcast_intra_sched_scatter_recursive_doubling_allgather(void *buffer, i
         }
     }
 
-    MPIR_SCHED_CHKPMEM_COMMIT(s);
   fn_exit:
     return mpi_errno;
   fn_fail:
-    MPIR_SCHED_CHKPMEM_REAP(s);
     goto fn_exit;
 }

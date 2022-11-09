@@ -5,11 +5,11 @@
 
 #include "mpiimpl.h"
 
-int MPIR_Iallgatherv_intra_sched_recursive_doubling(const void *sendbuf, int sendcount,
+int MPIR_Iallgatherv_intra_sched_recursive_doubling(const void *sendbuf, MPI_Aint sendcount,
                                                     MPI_Datatype sendtype, void *recvbuf,
-                                                    const int recvcounts[], const int displs[],
-                                                    MPI_Datatype recvtype, MPIR_Comm * comm_ptr,
-                                                    MPIR_Sched_t s)
+                                                    const MPI_Aint recvcounts[],
+                                                    const MPI_Aint displs[], MPI_Datatype recvtype,
+                                                    MPIR_Comm * comm_ptr, MPIR_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
     int comm_size, rank, i, j, k;
@@ -17,7 +17,6 @@ int MPIR_Iallgatherv_intra_sched_recursive_doubling(const void *sendbuf, int sen
     int mask, dst, total_count, position, offset, my_tree_root, dst_tree_root;
     MPI_Aint recvtype_extent, recvtype_sz;
     void *tmp_buf = NULL;
-    MPIR_SCHED_CHKPMEM_DECL(1);
 
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
@@ -40,8 +39,8 @@ int MPIR_Iallgatherv_intra_sched_recursive_doubling(const void *sendbuf, int sen
     if (total_count == 0)
         goto fn_exit;
 
-    MPIR_SCHED_CHKPMEM_MALLOC(tmp_buf, void *, total_count * recvtype_sz,
-                              mpi_errno, "tmp_buf", MPL_MEM_BUFFER);
+    tmp_buf = MPIR_Sched_alloc_state(s, total_count * recvtype_sz);
+    MPIR_ERR_CHKANDJUMP(!tmp_buf, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
     /* copy local data into right location in tmp_buf */
     position = 0;
@@ -229,10 +228,8 @@ int MPIR_Iallgatherv_intra_sched_recursive_doubling(const void *sendbuf, int sen
         position += recvcounts[j];
     }
 
-    MPIR_SCHED_CHKPMEM_COMMIT(s);
   fn_exit:
     return mpi_errno;
   fn_fail:
-    MPIR_SCHED_CHKPMEM_REAP(s);
     goto fn_exit;
 }

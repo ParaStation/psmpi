@@ -8,7 +8,8 @@
 
 
 class test_zcopy_comp : public uct_test {
-    void init() {
+protected:
+    virtual void init() {
         uct_test::init();
 
         m_sender = create_entity(0);
@@ -38,7 +39,7 @@ UCS_TEST_SKIP_COND_P(test_zcopy_comp, issue1440,
     size_t size_large = ucs_min(65536ul, m_sender->iface_attr().cap.put.max_zcopy);
     ucs_assert(size_large > size_small);
 
-    if (m_sender->md_attr().cap.access_mem_type != UCS_MEMORY_TYPE_HOST) {
+    if (!(m_sender->md_attr().cap.access_mem_types & UCS_BIT(UCS_MEMORY_TYPE_HOST))) {
         std::stringstream ss;
         ss << "test_zcopy_comp is not supported by " << GetParam();
         UCS_TEST_SKIP_R(ss.str());
@@ -53,7 +54,7 @@ UCS_TEST_SKIP_COND_P(test_zcopy_comp, issue1440,
      * Send a mix of small messages to one destination and large messages to
      * another destination. This can trigger overriding RC/DC send completions.
      */
-    uct_completion_t dummy_comp = { NULL, INT_MAX };
+    uct_completion_t dummy_comp = { NULL, INT_MAX, UCS_OK };
     int num_small_sends = 1000000 / ucs::test_time_multiplier();
     int num_large_sends = 1000 / ucs::test_time_multiplier();
     while (num_small_sends || num_large_sends) {

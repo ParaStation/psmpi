@@ -95,8 +95,9 @@ int main(int argc, char **argv)
 	hints->domain_attr->resource_mgmt = FI_RM_ENABLED;
 	hints->mode = FI_CONTEXT;
 	hints->domain_attr->threading = FI_THREAD_DOMAIN;
+	hints->addr_format = opts.address_format;
 
-	while ((op = getopt(argc, argv, "ho:" CS_OPTS INFO_OPTS BENCHMARK_OPTS)) != -1) {
+	while ((op = getopt(argc, argv, "Uho:" CS_OPTS INFO_OPTS BENCHMARK_OPTS)) != -1) {
 		switch (op) {
 		default:
 			ft_parse_benchmark_opts(op, optarg);
@@ -105,6 +106,9 @@ int main(int argc, char **argv)
 			ret = ft_parse_rma_opts(op, optarg, hints, &opts);
 			if (ret)
 				return ret;
+			break;
+		case 'U':
+			hints->tx_attr->op_flags |= FI_DELIVERY_COMPLETE;
 			break;
 		case '?':
 		case 'h':
@@ -123,6 +127,7 @@ int main(int argc, char **argv)
 		opts.dst_addr = argv[optind];
 
 	hints->domain_attr->mr_mode = opts.mr_mode;
+	hints->tx_attr->tclass = FI_TC_BULK_DATA;
 
 	ret = run();
 

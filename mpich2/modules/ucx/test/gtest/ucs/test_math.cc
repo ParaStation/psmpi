@@ -54,29 +54,6 @@ UCS_TEST_F(test_math, circular_compare) {
     EXPECT_TRUE(  UCS_CIRCULAR_COMPARE32(0xffffffffU, <,  0x7fffffffU) );
 }
 
-UCS_TEST_F(test_math, bitops) {
-    EXPECT_EQ(0u,  ucs_ffs64(0xfffff));
-    EXPECT_EQ(16u, ucs_ffs64(0xf0000));
-    EXPECT_EQ(1u,  ucs_ffs64(0x4002));
-    EXPECT_EQ(41u, ucs_ffs64(1ull<<41));
-
-    EXPECT_EQ(0u,  ucs_ilog2(1));
-    EXPECT_EQ(2u,  ucs_ilog2(4));
-    EXPECT_EQ(2u,  ucs_ilog2(5));
-    EXPECT_EQ(2u,  ucs_ilog2(7));
-    EXPECT_EQ(14u, ucs_ilog2(17000));
-    EXPECT_EQ(40u, ucs_ilog2(1ull<<40));
-
-    EXPECT_EQ(0,  ucs_popcount(0));
-    EXPECT_EQ(2,  ucs_popcount(5));
-    EXPECT_EQ(16, ucs_popcount(0xffff));
-    EXPECT_EQ(48, ucs_popcount(0xffffffffffffUL));
-
-    EXPECT_EQ(0, ucs_count_trailing_zero_bits(1));
-    EXPECT_EQ(28, ucs_count_trailing_zero_bits(0x10000000));
-    EXPECT_EQ(32, ucs_count_trailing_zero_bits(0x100000000UL));
-}
-
 #define TEST_ATOMIC_ADD(_bitsize) \
     { \
         typedef uint##_bitsize##_t inttype; \
@@ -177,7 +154,7 @@ UCS_TEST_F(test_math, for_each_bit) {
 
     mask = ucs_generate_uuid(0);
 
-    ucs_for_each_bit (idx, mask) {
+    ucs_for_each_bit(idx, mask) {
         EXPECT_EQ(gen_mask & UCS_BIT(idx), 0ull);
         gen_mask |= UCS_BIT(idx);
     }
@@ -203,13 +180,41 @@ UCS_TEST_F(test_math, for_each_bit) {
     EXPECT_EQ(UCS_BIT(63), gen_mask);
 }
 
+UCS_TEST_F(test_math, for_each_submask) {
+    /* Generate mask values to test */
+    std::vector<int64_t> masks;
+    masks.push_back(0);
+    masks.push_back(1);
+    masks.push_back(65536);
+    for (int i = 0; i < 100; ++i) {
+        masks.push_back((ucs::rand() % 65536) + 2);
+    }
+
+    for (std::vector<int64_t>::const_iterator iter = masks.begin();
+         iter != masks.end(); ++iter) {
+        int64_t mask         = *iter;
+        int64_t prev_submask = -1;
+        unsigned count       = 0;
+        int64_t submask;
+        ucs_for_each_submask(submask, mask) {
+            EXPECT_GT(submask, prev_submask); /* expect strictly monotonic series */
+            EXPECT_EQ(0u, submask & ~mask);   /* sub-mask contained in the mask */
+            prev_submask = submask;
+            ++count;
+        }
+
+        /* expect to get all possible values */
+        EXPECT_EQ(UCS_BIT(ucs_popcount(mask)), count);
+    }
+}
+
 UCS_TEST_F(test_math, linear_func) {
-    ucs_linear_func_t func[2];
-    double x, y[2];
+    ucs_linear_func_t func[3];
+    double x, y[3];
 
     /* Generate 2 random functions */
     x = ucs::rand() / (double)RAND_MAX;
-    for (unsigned i = 0; i < 2; ++i) {
+    for (unsigned i = 0; i < 3; ++i) {
         func[i] = ucs_linear_func_make(ucs::rand() / (double)RAND_MAX,
                                        ucs::rand() / (double)RAND_MAX);
         y[i]    = ucs_linear_func_apply(func[i], x);
@@ -219,6 +224,13 @@ UCS_TEST_F(test_math, linear_func) {
     ucs_linear_func_t sum_func = ucs_linear_func_add(func[0], func[1]);
     double y_sum               = ucs_linear_func_apply(sum_func, x);
     EXPECT_NEAR(y[0] + y[1], y_sum, 1e-6);
+
+    /* Add */
+    ucs_linear_func_t sum3_func = ucs_linear_func_add3(func[0], func[1],
+                                                       func[2]);
+    double y_sum3               = ucs_linear_func_apply(sum3_func, x);
+    EXPECT_NEAR(y[0] + y[1] + y[2], y_sum3, 1e-6);
+
 
     /* Add in-place */
     ucs_linear_func_t sum_func_inplace = func[0];
@@ -255,6 +267,11 @@ UCS_TEST_F(test_math, linear_func) {
                                                             &x_intersect);
     ASSERT_EQ(UCS_ERR_INVALID_PARAM, status) << x_intersect;
 
+    /* Compare */
+    EXPECT_FALSE(ucs_linear_func_is_equal(tmp_func1, tmp_func2, 1e-20));
+    EXPECT_TRUE (ucs_linear_func_is_equal(tmp_func1, tmp_func1, 1e-20));
+    EXPECT_TRUE (ucs_linear_func_is_equal(tmp_func2, tmp_func2, 1e-20));
+
     /* Compose */
     ucs_linear_func_t compose_func = ucs_linear_func_compose(func[0], func[1]);
     double y_compose               = ucs_linear_func_apply(compose_func, x);
@@ -266,4 +283,12 @@ UCS_TEST_F(test_math, linear_func) {
     ucs_linear_func_add_value_at(&added_func, func[1], x);
     double y_added_func = ucs_linear_func_apply(added_func, x);
     EXPECT_NEAR(y[0] + y[1], y_added_func, 1e-6);
+}
+
+UCS_TEST_F(test_math, double_to_sizet) {
+    EXPECT_EQ(SIZE_MAX, ucs_double_to_sizet(1e20, SIZE_MAX));
+    EXPECT_EQ(SIZE_MAX, ucs_double_to_sizet(1e30, SIZE_MAX));
+    EXPECT_EQ(SIZE_MAX, ucs_double_to_sizet((double)SIZE_MAX, SIZE_MAX));
+    EXPECT_EQ(10, ucs_double_to_sizet(10.0, SIZE_MAX));
+    EXPECT_EQ(UCS_MBYTE, ucs_double_to_sizet(UCS_MBYTE, SIZE_MAX));
 }

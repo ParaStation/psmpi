@@ -29,9 +29,14 @@ public:
         size_t num = 0;
         uct_tcp_ep_t *ep;
 
+        // go through all EPs on iface with lock held, since EPs are created
+        // and inserted to the EP list from async thread during accepting a
+        // connection
+        UCS_ASYNC_BLOCK(m_tcp_iface->super.worker->async);
         ucs_list_for_each(ep, &m_tcp_iface->ep_list, list) {
             num += (ep->conn_state == UCT_TCP_EP_CONN_STATE_RECV_MAGIC_NUMBER);
         }
+        UCS_ASYNC_UNBLOCK(m_tcp_iface->super.worker->async);
 
         return num;
     }
@@ -43,9 +48,9 @@ public:
 
         scoped_log_handler slh(wrap_errors_logger);
         if (nb) {
-            status = ucs_socket_recv_nb(fd, &msg, &msg_size, NULL, NULL);
+            status = ucs_socket_recv_nb(fd, &msg, &msg_size);
         } else {
-            status = ucs_socket_recv(fd, &msg, msg_size, NULL, NULL);
+            status = ucs_socket_recv(fd, &msg, msg_size);
         }
 
         return status;
@@ -53,8 +58,7 @@ public:
 
     void post_send(int fd, const std::vector<char> &buf) {
         scoped_log_handler slh(wrap_errors_logger);
-        ucs_status_t status = ucs_socket_send(fd, &buf[0],
-                                              buf.size(), NULL, NULL);
+        ucs_status_t status = ucs_socket_send(fd, &buf[0], buf.size());
         // send can be OK or fail when a connection was closed by a peer
         // before all data were sent
         ASSERT_TRUE((status == UCS_OK) ||
@@ -175,16 +179,17 @@ private:
         status = uct_iface_get_address(to.iface(), iface_addr);
         ASSERT_UCS_OK(status);
 
-        struct sockaddr_in dest_addr;
-        dest_addr.sin_family = AF_INET;
-        dest_addr.sin_port   = *(in_port_t*)iface_addr;
-        dest_addr.sin_addr   = *(struct in_addr*)dev_addr;
+        struct sockaddr_storage dest_addr;
+        uct_tcp_ep_set_dest_addr(dev_addr, iface_addr,
+                                 (struct sockaddr*)&dest_addr);
 
         int fd;
-        status = ucs_socket_create(AF_INET, SOCK_STREAM, &fd);
+        EXPECT_TRUE((dest_addr.ss_family == AF_INET) ||
+                    (dest_addr.ss_family == AF_INET6));
+        status = ucs_socket_create(dest_addr.ss_family, SOCK_STREAM, &fd);
         ASSERT_UCS_OK(status);
 
-        status = ucs_socket_connect(fd, (const struct sockaddr*)&dest_addr);
+        status = ucs_socket_connect(fd, (struct sockaddr*)&dest_addr);
         ASSERT_UCS_OK(status);
 
         status = ucs_sys_fcntl_modfl(fd, O_NONBLOCK, 0);
@@ -253,5 +258,33 @@ UCS_TEST_P(test_uct_tcp, listener_flood_connect_and_close) {
         ucs::test_time_multiplier();
     test_listener_flood(*m_ent, max_conn, 0);
 }
+
+UCS_TEST_P(test_uct_tcp, check_addr_len)
+{
+    uct_iface_attr_t iface_attr;
+
+    ucs_status_t status = uct_iface_query(m_ent->iface(), &iface_attr);
+    ASSERT_UCS_OK(status);
+
+    UCS_TEST_MESSAGE << m_ent->md()->component->name;
+    if (!GetParam()->dev_name.compare("lo")) {
+        EXPECT_EQ(sizeof(uct_tcp_device_addr_t) +
+                          sizeof(uct_iface_local_addr_ns_t),
+                  iface_attr.device_addr_len);
+    } else {
+        struct sockaddr *saddr = reinterpret_cast<struct sockaddr*>(
+                                         &m_tcp_iface->config.ifaddr);
+        size_t in_addr_len;
+        status = ucs_sockaddr_inet_addr_sizeof(saddr, &in_addr_len);
+        ASSERT_UCS_OK(status);
+
+        EXPECT_EQ(sizeof(uct_tcp_device_addr_t) + in_addr_len,
+                  iface_attr.device_addr_len);
+    }
+
+    EXPECT_EQ(sizeof(uct_tcp_iface_addr_t), iface_attr.iface_addr_len);
+    EXPECT_EQ(sizeof(uct_tcp_ep_addr_t), iface_attr.ep_addr_len);
+}
+
 
 _UCT_INSTANTIATE_TEST_CASE(test_uct_tcp, tcp)

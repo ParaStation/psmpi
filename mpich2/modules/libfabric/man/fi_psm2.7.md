@@ -115,6 +115,12 @@ The *psm2* provider checks for the following environment variables:
 
   The default UUID is 00FF00FF-0000-0000-0000-00FF0F0F00FF.
 
+  It is possible to create endpoints with UUID different from the one
+  set here. To achieve that, set 'info->ep_attr->auth_key' to the uuid
+  value and 'info->ep_attr->auth_key_size' to its size (16 bytes) when
+  calling fi_endpoint() or fi_scalable_ep(). It is still true that an
+  endpoint can only communicate with endpoints with the same UUID.
+
 *FI_PSM2_NAME_SERVER*
 : The *psm2* provider has a simple built-in name server that can be used
   to resolve an IP address or host name into a transport address needed
@@ -256,8 +262,21 @@ The *psm2* provider checks for the following environment variables:
   to 1 (means *tag60*) or 2 (means *tag64*), the choice is fixed at compile time
   and this runtime option will be disabled.
 
+# PSM2 EXTENSIONS
+
+The *psm2* provider supports limited low level parameter setting through the
+fi_set_val() and fi_get_val() functions. Currently the following parameters
+can be set via the domain fid:
+
+* FI_PSM2_DISCONNECT *
+: Overwite the global runtime parameter *FI_PSM2_DISCONNECT* for this domain.
+  See the *RUNTIME PARAMETERS* section for details.
+
+Valid parameter names are defined in the header file *rdma/fi_ext_psm2.h*.
+
 # SEE ALSO
 
 [`fabric`(7)](fabric.7.html),
 [`fi_provider`(7)](fi_provider.7.html),
 [`fi_psm`(7)](fi_psm.7.html),
+[`fi_psm3`(7)](fi_psm3.7.html),

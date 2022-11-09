@@ -24,7 +24,6 @@
 
 static inline int get_set_state(struct zm_mpbqueue *q, int offset) {
     int llong_width  = (int) sizeof(long long);
-    int nbucket_sets = q->nbuckets/llong_width;
     int bucket_setsz = llong_width/sizeof(char);
 
     long long *bucket_state_sets = (long long *)q->bucket_states;

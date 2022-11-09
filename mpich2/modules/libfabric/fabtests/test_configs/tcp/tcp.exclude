@@ -3,7 +3,7 @@
 ^fi_dgram
 -e dgram
 
-rdm_rma_simple
+rdm_rma_event
 rdm_rma_trigger
 shared_ctx
 scalable_ep
@@ -13,6 +13,7 @@ atomic
 inj_complete -e msg
 unexpected_msg -e msg
 multi_recv
+-k
 
 # TODO. Following fails with macOS. will fix them later
 cq_data -e rdm

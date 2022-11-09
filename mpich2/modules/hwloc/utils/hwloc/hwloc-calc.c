@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2020 Inria.  All rights reserved.
+ * Copyright © 2009-2021 Inria.  All rights reserved.
  * Copyright © 2009-2011 Université Bordeaux
  * Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -61,6 +61,7 @@ void usage(const char *callname __hwloc_attribute_unused, FILE *where)
   fprintf(where, "  -q --quiet                Hide non-fatal error messages\n");
   fprintf(where, "  -v --verbose              Show verbose messages\n");
   fprintf(where, "  --version                 Report version and exit\n");
+  fprintf(where, "  -h --help                 Show this usage\n");
 }
 
 static int verbose = 0;
@@ -114,10 +115,14 @@ hwloc_calc_hierarch_output(hwloc_topology_t topology, const char *prefix, const 
   while ((obj = hwloc_get_next_obj_covering_cpuset_by_depth(topology, root->cpuset, hierdepth[level], prev)) != NULL) {
     char string[256];
     char type[32];
+    unsigned idx = logicalo ? logi : obj->os_index;
     if (!hwloc_bitmap_intersects(set, obj->cpuset))
      goto next;
     hwloc_obj_type_snprintf(type, sizeof(type), obj, 1);
-    snprintf(string, sizeof(string), "%s%s%s:%u", prefix, level ? "." : "", type, logicalo ? logi : obj->os_index);
+    if (idx == (unsigned)-1)
+      snprintf(string, sizeof(string), "%s%s%s:-1", prefix, level ? "." : "", type);
+    else
+      snprintf(string, sizeof(string), "%s%s%s:%u", prefix, level ? "." : "", type, idx);
     if (!first)
       printf("%s", sep);
     first = 0;
@@ -189,9 +194,13 @@ hwloc_calc_output(hwloc_topology_t topology, const char *sep, hwloc_bitmap_t set
     if (!sep)
       sep = ",";
     while ((proc = hwloc_calc_get_next_obj_covering_set_by_depth(topology, set, nodeseto, intersectdepth, prev)) != NULL) {
+      unsigned idx = logicalo ? proc->logical_index : proc->os_index;
       if (prev)
 	printf("%s", sep);
-      printf("%u", logicalo ? proc->logical_index : proc->os_index);
+      if (idx == (unsigned)-1)
+        printf("-1");
+      else
+        printf("%u", idx);
       prev = proc;
     }
     printf("\n");
@@ -306,7 +315,12 @@ int main(int argc, char *argv[])
   struct hwloc_calc_location_context_s lcontext;
   struct hwloc_calc_set_context_s scontext;
 
-  callname = argv[0];
+  callname = strrchr(argv[0], '/');
+  if (!callname)
+    callname = argv[0];
+  else
+    callname++;
+
   /* skip argv[0], handle options */
   argv++;
   argc--;
@@ -432,6 +446,10 @@ int main(int argc, char *argv[])
     opt = 0;
 
     if (*argv[0] == '-') {
+      if (!strcmp (argv[0], "-h") || !strcmp (argv[0], "--help")) {
+        usage(callname, stdout);
+        exit(EXIT_SUCCESS);
+      }
       if (!strcmp(argv[0], "-v") || !strcmp(argv[0], "--verbose")) {
         verbose++;
         goto next;

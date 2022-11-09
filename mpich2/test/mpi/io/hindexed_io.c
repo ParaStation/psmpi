@@ -15,7 +15,7 @@
 #define HEADER 144
 #define BLK_COUNT 3
 
-static void handle_error(int errcode, char *str)
+static void handle_error(int errcode, const char *str)
 {
     char msg[MPI_MAX_ERROR_STRING];
     int resultlen;
@@ -83,7 +83,7 @@ int main(int argc, char **argv)
         for (k = 0; k < (DATA_SIZE / sizeof(int)); k++) {
             if (verify[(HEADER + PAD) / sizeof(int) + k + j * (DATA_SIZE / sizeof(int))] != data[k]) {
                 errs++;
-                fprintf(stderr, "expcted %d, read %d\n", data[k],
+                fprintf(stderr, "expected %d, read %d\n", data[k],
                         verify[(HEADER + PAD) / sizeof(int) + k + j * (DATA_SIZE / sizeof(int))]);
             }
             i++;

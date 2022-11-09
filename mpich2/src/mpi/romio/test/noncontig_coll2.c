@@ -14,7 +14,7 @@
  *
  * . generalized file writing/reading to handle arbitrary number of processors
  * . provides the "cb_config_list" hint with several permutations of the
- *   avaliable processors.
+ *   available processors.
  *   [ makes use of code copied from ROMIO's ADIO code to collect the names of
  *   the processors ]
  */
@@ -393,7 +393,7 @@ int test_file(char *filename, int mynod, int nprocs, char *cb_hosts, const char 
     t[1] = typevec;
     t[2] = MPI_UB;
 
-    MPI_Type_struct(3, b, d, t, &newtype);
+    MPI_Type_create_struct(3, b, d, t, &newtype);
     MPI_Type_commit(&newtype);
     MPI_Type_free(&typevec);
 

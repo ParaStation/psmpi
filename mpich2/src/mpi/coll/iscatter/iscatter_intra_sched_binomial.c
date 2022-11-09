@@ -63,9 +63,10 @@ static int calc_curr_count(MPIR_Comm * comm, int tag, void *state)
 
    End Algorithm: MPI_Scatter
 */
-int MPIR_Iscatter_intra_sched_binomial(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
-                                       void *recvbuf, int recvcount, MPI_Datatype recvtype,
-                                       int root, MPIR_Comm * comm_ptr, MPIR_Sched_t s)
+int MPIR_Iscatter_intra_sched_binomial(const void *sendbuf, MPI_Aint sendcount,
+                                       MPI_Datatype sendtype, void *recvbuf, MPI_Aint recvcount,
+                                       MPI_Datatype recvtype, int root, MPIR_Comm * comm_ptr,
+                                       MPIR_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
     MPI_Aint extent = 0;
@@ -77,16 +78,12 @@ int MPIR_Iscatter_intra_sched_binomial(const void *sendbuf, int sendcount, MPI_D
     MPI_Aint tmp_buf_size = 0;
     void *tmp_buf = NULL;
     struct shared_state *ss = NULL;
-    MPIR_SCHED_CHKPMEM_DECL(4);
 
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
 
-    if (((rank == root) && (sendcount == 0)) || ((rank != root) && (recvcount == 0)))
-        goto fn_exit;
-
-    MPIR_SCHED_CHKPMEM_MALLOC(ss, struct shared_state *, sizeof(struct shared_state), mpi_errno,
-                              "shared_state", MPL_MEM_BUFFER);
+    ss = MPIR_Sched_alloc_state(s, sizeof(struct shared_state));
+    MPIR_ERR_CHKANDJUMP(!ss, mpi_errno, MPI_ERR_OTHER, "**nomem");
     ss->sendcount = sendcount;
 
     if (rank == root)
@@ -111,8 +108,8 @@ int MPIR_Iscatter_intra_sched_binomial(const void *sendbuf, int sendcount, MPI_D
      * receive data of max size (ss->nbytes*comm_size)/2 */
     if (relative_rank && !(relative_rank % 2)) {
         tmp_buf_size = (ss->nbytes * comm_size) / 2;
-        MPIR_SCHED_CHKPMEM_MALLOC(tmp_buf, void *, tmp_buf_size, mpi_errno, "tmp_buf",
-                                  MPL_MEM_BUFFER);
+        tmp_buf = MPIR_Sched_alloc_state(s, tmp_buf_size);
+        MPIR_ERR_CHKANDJUMP(!tmp_buf, mpi_errno, MPI_ERR_OTHER, "**nomem");
     }
 
     /* if the root is not rank 0, we reorder the sendbuf in order of
@@ -122,8 +119,8 @@ int MPIR_Iscatter_intra_sched_binomial(const void *sendbuf, int sendcount, MPI_D
     if (rank == root) {
         if (root != 0) {
             tmp_buf_size = ss->nbytes * comm_size;
-            MPIR_SCHED_CHKPMEM_MALLOC(tmp_buf, void *, tmp_buf_size, mpi_errno, "tmp_buf",
-                                      MPL_MEM_BUFFER);
+            tmp_buf = MPIR_Sched_alloc_state(s, tmp_buf_size);
+            MPIR_ERR_CHKANDJUMP(!tmp_buf, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
             if (recvbuf != MPI_IN_PLACE)
                 mpi_errno = MPIR_Sched_copy(((char *) sendbuf + extent * sendcount * rank),
@@ -183,7 +180,7 @@ int MPIR_Iscatter_intra_sched_binomial(const void *sendbuf, int sendcount, MPI_D
     }
 
     /* This process is responsible for all processes that have bits
-     * set from the LSB upto (but not including) mask.  Because of
+     * set from the LSB up to (but not including) mask.  Because of
      * the "not including", we start by shifting mask back down
      * one. */
 
@@ -245,10 +242,8 @@ int MPIR_Iscatter_intra_sched_binomial(const void *sendbuf, int sendcount, MPI_D
         MPIR_SCHED_BARRIER(s);
     }
 
-    MPIR_SCHED_CHKPMEM_COMMIT(s);
   fn_exit:
     return mpi_errno;
   fn_fail:
-    MPIR_SCHED_CHKPMEM_REAP(s);
     goto fn_exit;
 }

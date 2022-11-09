@@ -26,7 +26,7 @@
  * Total Cost = 2.lgp.alpha + 2.n.((p-1)/p).beta
 */
 int MPIR_Bcast_intra_scatter_recursive_doubling_allgather(void *buffer,
-                                                          int count,
+                                                          MPI_Aint count,
                                                           MPI_Datatype datatype,
                                                           int root,
                                                           MPIR_Comm * comm_ptr,
@@ -53,16 +53,6 @@ int MPIR_Bcast_intra_scatter_recursive_doubling_allgather(void *buffer,
     rank = comm_ptr->rank;
     relative_rank = (rank >= root) ? rank - root : rank - root + comm_size;
 
-    /* If there is only one process, return */
-    if (comm_size == 1)
-        goto fn_exit;
-
-#ifdef HAVE_ERROR_CHECKING
-    /* This algorithm can currently handle only power of 2 cases,
-     * non-power of 2 is still experimental */
-    MPIR_Assert(MPL_is_pof2(comm_size, NULL));
-#endif /* HAVE_ERROR_CHECKING */
-
     if (HANDLE_IS_BUILTIN(datatype))
         is_contig = 1;
     else {
@@ -79,7 +69,7 @@ int MPIR_Bcast_intra_scatter_recursive_doubling_allgather(void *buffer,
         /* contiguous. no need to pack. */
         MPIR_Type_get_true_extent_impl(datatype, &true_lb, &true_extent);
 
-        tmp_buf = (char *) buffer + true_lb;
+        tmp_buf = MPIR_get_contig_ptr(buffer, true_lb);
     } else {
         MPIR_CHKLMEM_MALLOC(tmp_buf, void *, nbytes, mpi_errno, "tmp_buf", MPL_MEM_BUFFER);
 
@@ -105,6 +95,7 @@ int MPIR_Bcast_intra_scatter_recursive_doubling_allgather(void *buffer,
 
     /* curr_size is the amount of data that this process now has stored in
      * buffer at byte offset (relative_rank*scatter_size) */
+    /* Note: since we are rounding up scatter_size, higher ranks may not have data and nbytes-offset may be negative */
     curr_size = MPL_MIN(scatter_size, (nbytes - (relative_rank * scatter_size)));
     if (curr_size < 0)
         curr_size = 0;
@@ -230,7 +221,7 @@ int MPIR_Bcast_intra_scatter_recursive_doubling_allgather(void *buffer,
                     /* printf("Rank %d waiting to recv from rank %d\n",
                      * relative_rank, dst); */
                     mpi_errno = MPIC_Recv(((char *) tmp_buf + offset),
-                                          nbytes - offset,
+                                          nbytes - offset < 0 ? 0 : nbytes - offset,
                                           MPI_BYTE, dst, MPIR_BCAST_TAG,
                                           comm_ptr, &status, errflag);
                     /* nprocs_completed is also equal to the no. of processes

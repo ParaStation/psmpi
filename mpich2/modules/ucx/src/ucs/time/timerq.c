@@ -11,7 +11,7 @@
 #include "timerq.h"
 
 #include <ucs/debug/log.h>
-#include <ucs/debug/memtrack.h>
+#include <ucs/debug/memtrack_int.h>
 #include <ucs/sys/math.h>
 #include <stdlib.h>
 
@@ -30,19 +30,13 @@ ucs_status_t ucs_timerq_init(ucs_timer_queue_t *timerq)
 
 void ucs_timerq_cleanup(ucs_timer_queue_t *timerq)
 {
-    ucs_status_t status;
-
     ucs_trace_func("timerq=%p", timerq);
 
     if (timerq->num_timers > 0) {
         ucs_warn("timer queue with %d timers being destroyed", timerq->num_timers);
     }
     ucs_free(timerq->timers);
-
-    status = ucs_recursive_spinlock_destroy(&timerq->lock);
-    if (status != UCS_OK) {
-        ucs_warn("ucs_recursive_spinlock_destroy() failed (%d)", status);
-    }
+    ucs_recursive_spinlock_destroy(&timerq->lock);
 }
 
 ucs_status_t ucs_timerq_add(ucs_timer_queue_t *timerq, int timer_id,
@@ -114,7 +108,7 @@ ucs_status_t ucs_timerq_remove(ucs_timer_queue_t *timerq, int timer_id)
     /* TODO realloc - shrink */
     if (timerq->num_timers == 0) {
         ucs_assert(timerq->min_interval == UCS_TIME_INFINITY);
-        free(timerq->timers);
+        ucs_free(timerq->timers);
         timerq->timers = NULL;
     } else {
         ucs_assert(timerq->min_interval != UCS_TIME_INFINITY);

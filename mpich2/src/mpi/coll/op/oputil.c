@@ -5,6 +5,44 @@
 
 #include "mpiimpl.h"
 
+/* The order of entries in this table must match the definitions in
+   mpi.h.in */
+MPIR_op_function *MPIR_Op_table[] = {
+    NULL,
+    MPIR_MAXF,
+    MPIR_MINF,
+    MPIR_SUM,
+    MPIR_PROD,
+    MPIR_LAND,
+    MPIR_BAND,
+    MPIR_LOR,
+    MPIR_BOR,
+    MPIR_LXOR,
+    MPIR_BXOR,
+    MPIR_MINLOC,
+    MPIR_MAXLOC,
+    MPIR_REPLACE,
+    MPIR_NO_OP
+};
+
+MPIR_Op_check_dtype_fn *MPIR_Op_check_dtype_table[] = {
+    NULL,
+    MPIR_MAXF_check_dtype,
+    MPIR_MINF_check_dtype,
+    MPIR_SUM_check_dtype,
+    MPIR_PROD_check_dtype,
+    MPIR_LAND_check_dtype,
+    MPIR_BAND_check_dtype,
+    MPIR_LOR_check_dtype,
+    MPIR_BOR_check_dtype,
+    MPIR_LXOR_check_dtype,
+    MPIR_BXOR_check_dtype,
+    MPIR_MINLOC_check_dtype,
+    MPIR_MAXLOC_check_dtype,
+    MPIR_REPLACE_check_dtype,
+    MPIR_NO_OP_check_dtype
+};
+
 typedef struct op_name {
     MPI_Op op;
     const char *short_name;     /* used in info */
@@ -47,4 +85,26 @@ const char *MPIR_Op_builtin_get_shortname(MPI_Op op)
             return mpi_ops[i].short_name;
     }
     return "";
+}
+
+/* for some predefined datatypes, e.g. from MPI_Type_create_f90_xxx, we need
+ * use its basic type for operations */
+MPI_Datatype MPIR_Op_get_alt_datatype(MPI_Op op, MPI_Datatype datatype)
+{
+    MPI_Datatype alt_dt = MPI_DATATYPE_NULL;
+    if (!HANDLE_IS_BUILTIN(datatype)) {
+        MPIR_Datatype *dt_ptr;
+        MPIR_Datatype_get_ptr(datatype, dt_ptr);
+
+        if (dt_ptr && dt_ptr->contents) {
+            int combiner = dt_ptr->contents->combiner;
+            if (combiner == MPI_COMBINER_F90_REAL ||
+                combiner == MPI_COMBINER_F90_COMPLEX || combiner == MPI_COMBINER_F90_INTEGER) {
+                if (MPI_SUCCESS == (*MPIR_OP_HDL_TO_DTYPE_FN(op)) (dt_ptr->basic_type)) {
+                    alt_dt = dt_ptr->basic_type;
+                }
+            }
+        }
+    }
+    return alt_dt;
 }

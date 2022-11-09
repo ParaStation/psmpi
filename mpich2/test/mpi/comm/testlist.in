@@ -12,6 +12,7 @@ iccreate 8
 ctxalloc 2 timeLimit=300
 ctxsplit 4 timeLimit=300
 cmfree 4
+cmfree2 2
 cmsplit 4
 cmsplit2 12
 probe_intercomm 2
@@ -41,6 +42,9 @@ comm_idup_comm2 6
 dup_with_info 2
 dup_with_info 4
 dup_with_info 9
+idup_with_info 2
+idup_with_info 4
+idup_with_info 8
 comm_info 6
 comm_info2 1
 comm_create_group_idup 4
