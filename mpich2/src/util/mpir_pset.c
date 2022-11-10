@@ -333,6 +333,16 @@ int add_pm_psets(MPIR_Session * session_ptr)
     return MPI_SUCCESS;
 }
 
+int MPIR_Finalize_pm_pset_cb(void *param ATTRIBUTE((unused)))
+{
+    /* Deregister PM event handler for pset define and delete events */
+    MPIR_pmi_deregister_process_set_event_handlers();
+
+    /* Free memory allocated for PM pset array and destroy the mutex */
+    MPIR_Pset_array_destroy(MPIR_Process.pm_pset_array);
+    return 0;
+}
+
 int MPIR_Session_psets_init(MPIR_Session * session_ptr)
 {
     int mpi_errno = MPI_SUCCESS;

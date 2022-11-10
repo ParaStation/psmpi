@@ -75,6 +75,14 @@ int MPIR_Pset_array_add(MPIR_Pset_array * pset_array, MPIR_Pset * pset);
 int MPIR_Pset_array_invalidate(MPIR_Pset_array * pset_array, char *pset_name);
 
 /**
+ * @brief   Finalize callback for global PM pset array
+ *          De-registers PM event handlers and destroys the pset array
+ *
+ * @return  int 0
+ */
+int MPIR_Finalize_pm_pset_cb(void *param ATTRIBUTE((unused)));
+
+/**
  * @brief   Initialize the process set array of a session
  *
  * @param   session_ptr Session pointer

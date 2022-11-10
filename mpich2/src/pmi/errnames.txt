@@ -108,3 +108,7 @@
 **pmix_resolve_peers: PMIx_Resolve_peers failed
 **pmix_resolve_peers %d: PMIx_Resolve_peers returned %d
 **pmix_spawn_not_supported: PMIx_Spawn is not supported
+**pmix_register_event_handler:PMIX_Register_event_handler failed
+**pmix_register_event_handler %d:PMIX_Register_event_handler returned %d
+**pmix_deregister_event_handler:PMIX_Deregister_event_handler failed
+**pmix_deregister_event_handler %d:PMIX_Deregister_event_handler returned %d
