@@ -188,7 +188,13 @@ int MPIDI_PSP_topo_init(void);
 int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level);
 #endif
 
-int MPIDI_PSP_print_psp_stats(void *param);
+/* The following two functions are callbacks that are added in MPID_Init() via
+ * MPIR_Add_finalize() to the set of finalize hooks that are then called during
+ * MPII_Finalize(). Both of them require that the built-in comms are still valid
+ * and have thus to be applied with a priority > MPIR_FINALIZE_CALLBACK_PRIO.
+ */
+int MPIDI_PSP_finalize_print_stats_cb(void *param);
+int MPIDI_PSP_finalize_add_barrier_cb(void *param);
 
 int MPIDI_PSP_Isend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		    int dest, int tag, MPIR_Comm *comm, int context_offset,

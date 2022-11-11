@@ -584,6 +584,9 @@ int MPID_Init(int requested, int *provided)
 	MPIDI_Process.env.enable_ondemand_spawn = MPIDI_Process.env.enable_ondemand;
 	pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand_spawn, "PSP_ONDEMAND_SPAWN");
 
+	/* add the callback for applying a Barrier (if enabled) at the very beginninf of Finalize */
+	MPIR_Add_finalize(MPIDI_PSP_finalize_add_barrier_cb, NULL, MPIR_FINALIZE_CALLBACK_MAX_PRIO);
+
 	/* take SMP-related locality information into account (e.g., for MPI_Win_allocate_shared) */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
 	if(MPIDI_Process.env.enable_smp_awareness) {
@@ -646,7 +649,8 @@ int MPID_Init(int requested, int *provided)
 	pscom_env_get_uint(&MPIDI_Process.env.enable_hcoll_stats, "PSP_HCOLL_STATS");
 #endif
 #ifdef MPIDI_PSP_WITH_SESSION_STATISTICS
-	MPIR_Add_finalize(MPIDI_PSP_print_psp_stats, 0, MPIR_FINALIZE_CALLBACK_PRIO + 1);
+	/* add a callback for printing statistical information (if enabled) during Finalize */
+	MPIR_Add_finalize(MPIDI_PSP_finalize_print_stats_cb, NULL, MPIR_FINALIZE_CALLBACK_PRIO + 1);
 #endif
 
 	pscom_env_get_uint(&MPIDI_Process.env.enable_lazy_disconnect, "PSP_LAZY_DISCONNECT");
