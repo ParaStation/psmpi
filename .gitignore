@@ -1,13 +1,25 @@
-.svn
-*.o
-*~
-*.d
+# IDE config
+.idea/
+*.vc.db
+*.vc.opendb
+*.vcxproj.user
+.vscode/
+.vs
+
+# Build output
 build*/*
-autom4te.cache/*
-mpich2/autom4te.cache/*
-mpich2/src/openpa/autom4te.cache/*
-mpich2/src/pm/hydra/autom4te.cache/*
-mpich2/test/mpi/autom4te.cache/*
-mpich2/**/Makefile.am-stamp
+
+# Test reports
+doc/test-*.log
+doc/test-*.tap
+doc/test-*.xml
+
+# RPM packages
 dist/psmpi-*
-mpich2/test/mpi/dtpools/autom4te.cache/*
+
+# Autotools
+aclocal.m4
+autom4te.cache/*
+configure
+configure~
+scripts/config.guess~
