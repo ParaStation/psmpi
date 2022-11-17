@@ -19,6 +19,10 @@
 #include "mpid_coll.h"
 #include "datatype.h"
 
+#define MAX_KEY_LENGTH 50
+
+static int conn_init_counter = 0;
+
 /*
  * MPIX_Query_cuda_support - Query CUDA support of the MPI library
  */
@@ -130,14 +134,8 @@ pscom_connection_t *grank2con_get(int dest_grank)
 static
 void init_grank_port_mapping(void)
 {
-	static int initialized = 0;
 	unsigned int pg_size = MPIDI_Process.my_pg_size;
 	unsigned int i;
-
-	if (initialized) {
-		PRINTERROR("Multiple calls of init_grank_port_mapping()\n");
-		exit(1);
-	}
 
 	MPIDI_Process.grank2con = MPL_malloc(sizeof(MPIDI_Process.grank2con[0]) * pg_size, MPL_MEM_OBJECT);
 	assert(MPIDI_Process.grank2con);
@@ -145,8 +143,6 @@ void init_grank_port_mapping(void)
 	for (i = 0; i < pg_size; i++) {
 		grank2con_set(i, NULL);
 	}
-
-	initialized = 1;
 }
 
 
@@ -305,13 +301,28 @@ int i_version_check(int pg_rank, const char *ver)
 	goto fn_exit;
 }
 
+static void create_socket_key(char * key, const char *base_key, int rank)
+{
+	/* Overwriting a value for an existing key with a KVS put operation is not allowed.
+	 * This holds for PMI1, PMI2 and PMIx APIs.
+	 * Create key based on base key, rank and counter of connection inits.
+	 *
+	 * Remark: This solution needs to be revised for dynamic resources and MPI sessions,
+	 * especially for an expansion of the number of processes over a re-init. In such
+	 * a case, the counter variable will be different in the original and new processes
+	 * which will lead to incompatible keys.
+	 * A potential solution to this issue is the usage of a publish/lookup/unpublish
+	 * mechanism per process instead of put/get operations on the global KVS.*/
+	snprintf(key, MAX_KEY_LENGTH, "%s-conn%i-%i", base_key, conn_init_counter, rank);
+}
 
 #define MAGIC_PMI_KEY	0x49aef1a2
 #define MAGIC_PMI_VALUE 0x29a5f212
 
 static
 int InitPortConnections(pscom_socket_t *socket) {
-	char key[50];
+	char key[MAX_KEY_LENGTH];
+	const char base_key[] = "psp";
 	unsigned long guard_pmi_key = MAGIC_PMI_KEY;
 	int i;
 	int mpi_errno = MPI_SUCCESS;
@@ -322,7 +333,7 @@ int InitPortConnections(pscom_socket_t *socket) {
 	char **psp_port = NULL;
 
 	/* Distribute my contact information */
-	snprintf(key, sizeof(key), "psp%d", pg_rank);
+	create_socket_key(key, base_key, pg_rank);
 	listen_socket = MPL_strdup(pscom_listen_socket_str(socket));
 
 	/* PMI(x)_put and PMI(x)_commit() */
@@ -350,7 +361,7 @@ int InitPortConnections(pscom_socket_t *socket) {
 		unsigned long guard_pmi_value = MAGIC_PMI_VALUE;
 
 		if (i != pg_rank) {
-			snprintf(key, sizeof(key), "psp%d", i);
+			create_socket_key(key, base_key, i);
 			/*"i" is the source who published the information */
 			mpi_errno = MPIR_pmi_kvs_get(i, key, val, sizeof(val));
 			MPIR_ERR_CHECK(mpi_errno);
@@ -421,7 +432,8 @@ int InitPortConnections(pscom_socket_t *socket) {
 #ifdef PSCOM_HAS_ON_DEMAND_CONNECTIONS
 static
 int InitPscomConnections(pscom_socket_t *socket) {
-	char key[50];
+	char key[MAX_KEY_LENGTH];
+	const char base_key[] = "pscom";
 	unsigned long guard_pmi_key = MAGIC_PMI_KEY;
 	int i;
 	int mpi_errno = MPI_SUCCESS;
@@ -432,7 +444,7 @@ int InitPscomConnections(pscom_socket_t *socket) {
 	char **psp_port = NULL;
 
 	/* Distribute my contact information */
-	snprintf(key, sizeof(key), "pscom%d", pg_rank);
+	create_socket_key(key, base_key, pg_rank);
 	listen_socket = MPL_strdup(pscom_listen_socket_ondemand_str(socket));
 
 	/* PMI(x)_put and PMI(x)_commit() */
@@ -460,7 +472,7 @@ int InitPscomConnections(pscom_socket_t *socket) {
 		unsigned long guard_pmi_value = MAGIC_PMI_VALUE;
 
 		if (i != pg_rank) {
-			snprintf(key, sizeof(key), "pscom%d", i);
+			create_socket_key(key, base_key, i);
 			/*"i" is the source who published the information */
 			mpi_errno = MPIR_pmi_kvs_get(i, key, val, sizeof(val));
 			MPIR_ERR_CHECK(mpi_errno);
@@ -532,6 +544,7 @@ int MPID_Init(int requested, int *provided)
 	int pg_rank = 0;
 	int pg_size = -1;
 	int appnum = -1;
+
 	/* int universe_size; */
 	pscom_socket_t *socket;
 	pscom_err_t rc;
@@ -777,6 +790,9 @@ int MPID_Init(int requested, int *provided)
 		mpi_errno = InitPscomConnections(socket);
 		MPIR_ERR_CHECK(mpi_errno);
 	}
+
+	/* Increment connection init counter */
+	conn_init_counter++;
 
 	MPID_enable_receive_dispach(socket); /* ToDo: move MPID_enable_receive_dispach to bg thread */
 	MPIDI_Process.socket = socket;

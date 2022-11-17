@@ -147,11 +147,16 @@ int MPID_Finalize(void)
 	MPIR_pmi_finalize();
 
 	/* Cleanups */
-	pg_ptr = MPIDI_Process.my_pg->next;
-	while(pg_ptr) {
-		pg_ptr = MPIDI_PG_Destroy(pg_ptr);
+	if(MPIDI_Process.my_pg){
+		pg_ptr = MPIDI_Process.my_pg->next;
+		while(pg_ptr) {
+			pg_ptr = MPIDI_PG_Destroy(pg_ptr);
+		}
+		MPIDI_PG_Destroy(MPIDI_Process.my_pg);
+		MPIDI_Process.my_pg = NULL;
 	}
-	MPIDI_PG_Destroy(MPIDI_Process.my_pg);
+	/*for re-init*/
+	MPIDI_Process.next_lpid = 0;
 
 	MPL_free(MPIDI_Process.grank2con);
 	MPIDI_Process.grank2con = NULL;
