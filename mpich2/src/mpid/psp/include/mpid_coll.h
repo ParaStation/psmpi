@@ -8,7 +8,7 @@
 #define MPID_COLL_H_INCLUDED
 
 #include "mpiimpl.h"
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
 #include "../../common/hcoll/hcoll.h"
 #endif
 
@@ -26,7 +26,7 @@ static inline int MPID_Barrier(MPIR_Comm * comm, MPIR_Errflag_t * errflag)
 {
     int mpi_errno = MPI_SUCCESS;
 
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
     mpi_errno = hcoll_Barrier(comm, errflag);
     if (mpi_errno == MPI_SUCCESS) {
 #ifdef MPID_PSP_HCOLL_STATS
@@ -59,7 +59,7 @@ static inline int MPID_Bcast(void *buffer, MPI_Aint count, MPI_Datatype datatype
 {
     int mpi_errno = MPI_SUCCESS;
 
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
     int typesize;
     MPIR_Datatype_get_size_macro(datatype, typesize);
     if (unlikely(count * typesize == 0) && comm->hcoll_priv.is_hcoll_init) {
@@ -98,7 +98,7 @@ static inline int MPID_Allreduce(const void *sendbuf, void *recvbuf, MPI_Aint co
 {
     int mpi_errno = MPI_SUCCESS;
 
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
     int typesize;
     MPIR_Datatype_get_size_macro(datatype, typesize);
     if (unlikely(count * typesize == 0) && comm->hcoll_priv.is_hcoll_init) {
@@ -137,7 +137,7 @@ static inline int MPID_Allgather(const void *sendbuf, MPI_Aint sendcount, MPI_Da
 {
     int mpi_errno = MPI_SUCCESS;
 
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
     int stypesize, rtypesize;
     MPIR_Datatype_get_size_macro(sendtype, stypesize);
     MPIR_Datatype_get_size_macro(recvtype, rtypesize);
@@ -266,7 +266,7 @@ static inline int MPID_Alltoall(const void *sendbuf, MPI_Aint sendcount, MPI_Dat
 {
     int mpi_errno = MPI_SUCCESS;
 
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
     int stypesize, rtypesize;
     MPIR_Datatype_get_size_macro(sendtype, stypesize);
     MPIR_Datatype_get_size_macro(recvtype, rtypesize);
@@ -302,7 +302,7 @@ static inline int MPID_Alltoallv(const void *sendbuf, const MPI_Aint sendcounts[
 {
     int mpi_errno = MPI_SUCCESS;
 
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
     mpi_errno = hcoll_Alltoallv(sendbuf, sendcounts, sdispls, sendtype,
                                 recvbuf, recvcounts, rdispls, recvtype,
                                 comm, errflag);
@@ -354,7 +354,7 @@ static inline int MPID_Reduce(const void *sendbuf, void *recvbuf, MPI_Aint count
 {
     int mpi_errno = MPI_SUCCESS;
 
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
     int typesize;
     MPIR_Datatype_get_size_macro(datatype, typesize);
     if (unlikely(count * typesize == 0) && comm->hcoll_priv.is_hcoll_init) {

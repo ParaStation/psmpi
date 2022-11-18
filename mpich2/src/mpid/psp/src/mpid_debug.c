@@ -117,7 +117,7 @@ char* MPIDI_PSP_get_psmpi_version_string(void)
 #ifdef MPIDI_PSP_WITH_MSA_AWARENESS
 				"+msa"
 #endif
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
 				"+hcoll"
 #endif
 		                "";

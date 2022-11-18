@@ -27,7 +27,7 @@
  * about the distribution of message sizes will be gathered during the run by all processes
  * and eventually accumulated and printed by world rank 0 within the MPI_Finalize call. */
 
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
 #define MPID_PSP_HCOLL_STATS
 /* When MPID_PSP_HCOLL_STATS is defined and HCOLL is enabled and PSP_HCOLL_STATS=1 is set,
  * MPI_Finalize also prints some information about the usage of HCOLL collectives. */
@@ -55,7 +55,7 @@
 #define MPID_DEV_VERSION_STRING_ARGS MPIDI_PSP_VC_VERSION, MPIDI_PSP_get_psmpi_version_string()
 char* MPIDI_PSP_get_psmpi_version_string(void);
 
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
 #define MPID_PSP_WITH_HCOLL
 #include "hcoll/api/hcoll_dte.h"
 typedef struct {

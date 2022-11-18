@@ -61,7 +61,7 @@ MPIDI_Process_t MPIDI_Process = {
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
 		dinit(enable_msa_aware_collops)	1,
 #endif
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
 		dinit(enable_hcoll)	        0,
 #endif
 #ifdef MPID_PSP_HISTOGRAM
@@ -604,7 +604,7 @@ int MPID_Init(int requested, int *provided)
 	/* use hierarchy-aware collectives on SMP level */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_aware_collops, "PSP_SMP_AWARE_COLLOPS");
 
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
 	MPIDI_Process.env.enable_hcoll = MPIR_CVAR_ENABLE_HCOLL;
 	if (MPIDI_Process.env.enable_hcoll) {
 		/* HCOLL demands for MPICH's SMP awareness: */

@@ -652,7 +652,7 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 		}
 	}
 
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
 	hcoll_comm_create(comm, NULL);
 #endif
 
@@ -711,7 +711,7 @@ int MPIDI_PSP_Comm_destroy_hook(MPIR_Comm * comm)
 		MPIDI_VCRT_Release(comm->local_vcrt, comm->is_disconnected);
 	}
 
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
 	hcoll_comm_destroy(comm, NULL);
 #endif
 
