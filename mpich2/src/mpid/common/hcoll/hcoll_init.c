@@ -109,8 +109,6 @@ int hcoll_initialize(void)
 
         MPIR_Progress_hook_activate(hcoll_progress_hook_id);
     }
-    /* set priority to finalize before finalizing world comm */
-    MPIR_Add_finalize(hcoll_destroy, 0, MPIR_FINALIZE_CALLBACK_PRIO + 1);
 
     CHECK_ENABLE_ENV_VARS(BARRIER, barrier);
     CHECK_ENABLE_ENV_VARS(BCAST, bcast);
@@ -196,6 +194,9 @@ int hcoll_comm_destroy(MPIR_Comm * comm_ptr, void *param)
                               (rte_grp_handle_t) comm_ptr, &context_destroyed);
 #endif
         comm_ptr->hcoll_priv.is_hcoll_init = 0;
+    }
+    if (comm_ptr->handle == MPI_COMM_WORLD) {
+        hcoll_destroy(NULL);
     }
   fn_exit:
     return mpi_errno;
