@@ -128,6 +128,9 @@ int MPIR_Group_difference_impl(MPIR_Group * group_ptr1, MPIR_Group * group_ptr2,
                 k++;
             }
         }
+
+        MPIR_Group_set_session_ptr(*new_group_ptr, group_ptr1->session_ptr);
+
         /* TODO calculate is_local_dense_monotonic */
     }
 
@@ -175,6 +178,9 @@ int MPIR_Group_excl_impl(MPIR_Group * group_ptr, int n, const int ranks[],
 
     (*new_group_ptr)->size = size - n;
     (*new_group_ptr)->idx_of_first_lpid = -1;
+
+    MPIR_Group_set_session_ptr(*new_group_ptr, group_ptr->session_ptr);
+
     /* TODO calculate is_local_dense_monotonic */
 
   fn_exit:
@@ -227,6 +233,9 @@ int MPIR_Group_incl_impl(MPIR_Group * group_ptr, int n, const int ranks[],
     }
     (*new_group_ptr)->size = n;
     (*new_group_ptr)->idx_of_first_lpid = -1;
+
+    MPIR_Group_set_session_ptr(*new_group_ptr, group_ptr->session_ptr);
+
     /* TODO calculate is_local_dense_monotonic */
 
 
@@ -298,6 +307,8 @@ int MPIR_Group_intersection_impl(MPIR_Group * group_ptr1, MPIR_Group * group_ptr
             k++;
         }
     }
+
+    MPIR_Group_set_session_ptr(*new_group_ptr, group_ptr1->session_ptr);
 
   fn_exit:
     MPL_free(flags);
@@ -378,6 +389,8 @@ int MPIR_Group_range_excl_impl(MPIR_Group * group_ptr, int n, int ranges[][3],
         }
     }
 
+    MPIR_Group_set_session_ptr(*new_group_ptr, group_ptr->session_ptr);
+
     /* TODO calculate is_local_dense_monotonic */
 
   fn_exit:
@@ -442,6 +455,8 @@ int MPIR_Group_range_incl_impl(MPIR_Group * group_ptr, int n, int ranges[][3],
             }
         }
     }
+
+    MPIR_Group_set_session_ptr(*new_group_ptr, group_ptr->session_ptr);
 
     /* TODO calculate is_local_dense_monotonic */
 
@@ -619,6 +634,8 @@ int MPIR_Group_union_impl(MPIR_Group * group_ptr1, MPIR_Group * group_ptr2,
         }
     }
 
+    MPIR_Group_set_session_ptr(*new_group_ptr, group_ptr1->session_ptr);
+
     /* TODO calculate is_local_dense_monotonic */
 
   fn_exit:
@@ -671,6 +688,8 @@ int MPIR_Group_from_session_pset_impl(MPIR_Session * session_ptr, const char *ps
     }
     group_ptr->lrank_to_lpid[group_ptr->size - 1].next_lpid = -1;
     group_ptr->idx_of_first_lpid = 0;
+
+    MPIR_Group_set_session_ptr(group_ptr, session_ptr);
 
     *new_group_ptr = group_ptr;
 
