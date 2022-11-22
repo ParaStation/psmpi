@@ -224,11 +224,27 @@ int hcoll_Alltoallv(const void *sbuf, const MPI_Aint * scounts, const MPI_Aint *
                     "unsupported data layout; calling fallback allgather.");
         rc = -1;
     } else {
+        int *tmp_array = MPL_malloc(n * 4 * sizeof(int), MPL_MEM_OTHER);
+        if (sbuf != MPI_IN_PLACE) {
+            for (int i = 0; i < n; i++) {
+                tmp_array[i] = (int) scounts[i];
+            }
+            for (int i = 0; i < n; i++) {
+                tmp_array[n + i] = (int) sdispls[i];
+            }
+        }
+        for (int i = 0; i < n; i++) {
+            tmp_array[n * 2 + i] = (int) rcounts[i];
+        }
+        for (int i = 0; i < n; i++) {
+            tmp_array[n * 3 + i] = (int) rdispls[i];
+        }
         MPID_THREAD_CS_ENTER(VCI, MPIDIU_THREAD_HCOLL_MUTEX);
-        rc = hcoll_collectives.coll_alltoallv((void *) sbuf, (int *) scounts, (int *) sdispls,
-                                              stype, rbuf, (int *) rcounts, (int *) rdispls, rtype,
+        rc = hcoll_collectives.coll_alltoallv((void *) sbuf, tmp_array, tmp_array + n, stype,
+                                              rbuf, tmp_array + n * 2, tmp_array + n * 3, rtype,
                                               comm_ptr->hcoll_priv.hcoll_context);
         MPID_THREAD_CS_EXIT(VCI, MPIDIU_THREAD_HCOLL_MUTEX);
+        MPL_free(tmp_array);
     }
     return rc;
 }
