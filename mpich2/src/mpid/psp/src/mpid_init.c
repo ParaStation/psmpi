@@ -717,7 +717,7 @@ int MPID_Init(int requested, int *provided)
 	MPID_enable_receive_dispach(socket); /* ToDo: move MPID_enable_receive_dispach to bg thread */
 	MPIDI_Process.socket = socket;
 
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARENESS
 	/* Initialize the hierarchical topology information as used for MSA-aware collectives. */
 	MPIDI_PSP_topo_init();
 #endif

@@ -30,6 +30,7 @@ typedef char pscom_port_str_t[PSCOM_PORT_MAXLEN];
 
 pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm *comm, MPIR_Comm *intercomm);
 
+#ifdef MPID_PSP_MSA_AWARENESS
 typedef struct MPIDI_PSP_topo_level MPIDI_PSP_topo_level_t;
 struct MPIDI_PSP_topo_level {
 	struct MPIDI_PG *pg;
@@ -43,6 +44,9 @@ struct MPIDI_PSP_topo_level {
 #define MPIDI_PSP_TOPO_BADGE__NULL -1
 #define MPIDI_PSP_TOPO_LEVEL__MODULES 4096
 #define MPIDI_PSP_TOPO_LEVEL__NODES   1024
+#else
+typedef void MPIDI_PSP_topo_level_t;
+#endif
 
 #define MPIDI_PSP_INVALID_LPID ((uint64_t)-1)
 
@@ -54,7 +58,7 @@ struct MPIDI_PG {
 	int id_num;
 	MPIDI_VC_t **vcr;
 	uint64_t * lpids;
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARENESS
 	struct MPIDI_PSP_topo_level *topo_levels;
 #endif
 	pscom_connection_t **cons;
@@ -112,7 +116,7 @@ typedef struct MPIDI_Process
 	char *pg_id_name;
 	uint64_t next_lpid;
 	MPIDI_PG_t * my_pg;
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARENESS
 	MPIDI_PSP_topo_level_t *topo_levels;
 #endif
 	int shm_attr_key;
@@ -179,7 +183,7 @@ typedef struct MPIDI_Process
 
 extern MPIDI_Process_t MPIDI_Process;
 
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARENESS
 int MPIDI_PSP_topo_init(void);
 int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level);
 #endif

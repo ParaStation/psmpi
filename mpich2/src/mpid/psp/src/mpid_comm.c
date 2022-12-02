@@ -61,7 +61,7 @@ int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
 }
 
 
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARENESS
 
 int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level)
 {
@@ -397,7 +397,7 @@ int MPID_Get_max_badge(MPIR_Comm *comm, int *max_badge_p)
 	return MPI_SUCCESS;
 }
 
-#endif /* MPID_PSP_MSA_AWARE_COLLOPS */
+#endif /* MPID_PSP_MSA_AWARENESS */
 
 
 int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
