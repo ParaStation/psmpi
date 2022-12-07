@@ -114,8 +114,8 @@ char* MPIDI_PSP_get_psmpi_version_string(void)
 #ifdef PSCOM_ALLIN
 				"+allin(%s)"
 #endif
-#ifdef MPIDI_PSP_WITH_TOPOLOGY_AWARENESS
-				"+topology-awareness"
+#ifdef MPIDI_PSP_WITH_MSA_AWARENESS
+				"+msa-awareness"
 #ifdef HAVE_LIBHCOLL
 				"(hcoll)"
 #else

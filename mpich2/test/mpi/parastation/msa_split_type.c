@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
 	}
 
 	} else {
-#if defined(MPIX_TOPOLOGY_AWARENESS) && MPIX_TOPOLOGY_AWARENESS
+#if defined(MPIX_MSA_AWARENESS) && MPIX_MSA_AWARENESS
 		module_id = 0;
 		if (_VERBOSE_) {
 			printf("(%d) Found no entry for \"msa_module_id\"\n", world_rank);
@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
 
 	MPI_Comm_split(MPI_COMM_WORLD, module_id, 0, &split_comm);
 
-#if defined(MPIX_TOPOLOGY_AWARENESS) && MPIX_TOPOLOGY_AWARENESS
+#if defined(MPIX_MSA_AWARENESS) && MPIX_MSA_AWARENESS
 	/* Test MPIX_COMM_TYPE_MODULE: */
 	if (_VERBOSE_) {
 		printf("(%d) Calling MPI_Comm_split_type with type = MPIX_COMM_TYPE_MODULE...\n", world_rank);
@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
 	}
 #else
 	if (_VERBOSE_) {
-		printf("(%d) No topology awareness detected... (MPIX_TOPOLOGY_AWARENESS not set)\n", world_rank);
+		printf("(%d) No topology awareness detected... (MPIX_MSA_AWARENESS not set)\n", world_rank);
 	}
 	if (flag && (module_id != 0)) {
 		printf("ERROR: Topology awareness not enabled but module_id = %d detected\n", module_id);

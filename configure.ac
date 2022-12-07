@@ -486,29 +486,19 @@ AC_ARG_WITH([session-statistics], [
 	fi
 ])
 
-AC_ARG_WITH([topology-awareness], [
-  --with-topology-awareness
-			  Enable topology/hierarchy awareness for collectives
+AC_ARG_WITH([msa-awareness], [
+  --with-msa-awareness
+			  Enable MSA awareness like hierarchical collectives
 ],[
 	if test "x${withval}" != "xno"; then
-		ENABLE_TOPOLOGY_AWARENESS="true"
-		CONF_OPS="$CONF_OPS --enable-psp-topology-awareness"
+		ENABLE_MSA_AWARENESS="true"
+		CONF_OPS="$CONF_OPS --enable-psp-msa-awareness"
 	else
-		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_SUBCOMM_WIDTH=0"
-		ENABLE_TOPOLOGY_AWARENESS="false"
-	fi
-],[
-	if test -n "$WITH_HCOLL_DIR" ; then
-		ENABLE_TOPOLOGY_AWARENESS="hcoll"
-		CONF_OPS="$CONF_OPS --enable-psp-topology-awareness"
-	else
-		if test -z "${CHANNEL_DEVICE}" ; then
-			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_SUBCOMM_WIDTH=0"
-		fi
+		ENABLE_MSA_AWARENESS="false"
 	fi
 ])
 
-AC_SUBST([ENABLE_TOPOLOGY_AWARENESS])
+AC_SUBST([ENABLE_MSA_AWARENESS])
 if test -z "${CHANNEL_DEVICE}" ; then
    export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_DYNAMIC_PROC_WIDTH=0"
 fi
@@ -634,8 +624,8 @@ fi
 if test "$ENABLE_SESSION_STATISTICS" = "true" ; then
    echo "${CONF_ECHO_PREP_PHRASE}support for statistics."
 fi
-if test "$ENABLE_TOPOLOGY_AWARENESS" = "true" ; then
-   echo "${CONF_ECHO_PREP_PHRASE}topology awareness."
+if test "$ENABLE_MSA_AWARENESS" = "true" ; then
+   echo "${CONF_ECHO_PREP_PHRASE}MSA awareness."
 fi
 if test "$PSCOM_ALLIN" = "true" ; then
    echo "${CONF_ECHO_PREP_PHRASE}pscom included."
@@ -648,11 +638,7 @@ if test "$CUDA_SUPPORT" = "true" ; then
    echo "${CONF_ECHO_PREP_PHRASE}CUDA support."
 fi
 if test -n "$WITH_HCOLL_DIR" ; then
-   if test "$ENABLE_TOPOLOGY_AWARENESS" = "hcoll" ; then
-	echo "${CONF_ECHO_PREP_PHRASE}topology awareness by HCOLL support."
-   else
-	echo "${CONF_ECHO_PREP_PHRASE}HCOLL support."
-   fi
+   echo "${CONF_ECHO_PREP_PHRASE}HCOLL support."
 fi
 sleep 1
 

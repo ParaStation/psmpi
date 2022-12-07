@@ -35,16 +35,16 @@
 
 #endif /* MPIDI_PSP_WITH_SESSION_STATISTICS */
 
-/* MPIDI_PSP_WITH_TOPOLOGY_AWARENESS is set if psmpi is configured with --with-topology-awareness */
-#ifdef MPIDI_PSP_WITH_TOPOLOGY_AWARENESS
+/* MPIDI_PSP_WITH_MSA_AWARENESS is set if psmpi is configured with --with-msa-awareness */
+#ifdef MPIDI_PSP_WITH_MSA_AWARENESS
 
 #define MPID_PSP_MSA_AWARENESS
 /* When MPID_PSP_MSA_AWARNESS is defined, the MPI_INFO_ENV object contains a key/value pair
  * indicating the module affiliation of the querying rank. The info key is "msa_module_id".
  */
 
-#define MPID_PSP_TOPOLOGY_AWARE_COLLOPS
-/* When MPID_PSP_TOPOLOGY_AWARE_COLLOPS is defined, the additional functions MPID_Get_badge()
+#define MPID_PSP_MSA_AWARE_COLLOPS
+/* When MPID_PSP_MSA_AWARE_COLLOPS is defined, the additional functions MPID_Get_badge()
  * and MPID_Get_max_badge() have to provide topology information (in terms of node IDs for
  * SMP islands) for identifying SMP nodes and/or MSA modules for applying hierarchy-aware
  * communication topologies for collective MPI operations within the upper MPICH layer.

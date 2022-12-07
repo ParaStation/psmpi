@@ -108,17 +108,17 @@ if test "$enable_psp_session_statistics" = "yes" ; then
 fi
 
 # Topology awareness
-AC_ARG_ENABLE(psp-topology-awareness,
+AC_ARG_ENABLE(psp-msa-awareness,
     AC_HELP_STRING(
-        [--enable-psp-topology-awareness],
+        [--enable-psp-msa-awareness],
         [Enable topology awareness for the PSP device
-    ]),,enable_psp_topology_awareness=no)
-PSP_TOPOLOGY_AWARENESS=0
-if test "$enable_psp_topology_awareness" = "yes" ; then
-   PSP_TOPOLOGY_AWARENESS=1
-   AC_DEFINE([MPIDI_PSP_WITH_TOPOLOGY_AWARENESS], [], [Define to enable topology awareness in PSP device])
+    ]),,enable_psp_msa_awareness=no)
+PSP_MSA_AWARENESS=0
+if test "$enable_psp_msa_awareness" = "yes" ; then
+   PSP_MSA_AWARENESS=1
+   AC_DEFINE([MPIDI_PSP_WITH_MSA_AWARENESS], [], [Define to enable topology awareness in PSP device])
 fi
-AC_SUBST([PSP_TOPOLOGY_AWARENESS])
+AC_SUBST([PSP_MSA_AWARENESS])
 
 # CUDA support
 AC_ARG_ENABLE(psp-cuda-awareness,

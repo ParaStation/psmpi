@@ -54,7 +54,7 @@ MPIDI_Process_t MPIDI_Process = {
 		dinit(enable_ondemand_spawn)	0,
 		dinit(enable_smp_awareness)	1,
 		dinit(enable_msa_awareness)	0,
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 		dinit(enable_smp_aware_collops)	0,
 		dinit(enable_msa_aware_collops)	1,
 #ifdef HAVE_LIBHCOLL
@@ -588,7 +588,7 @@ int MPID_Init(int requested, int *provided)
 	}
 #endif
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 	/* use hierarchy-aware collectives on SMP level */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_aware_collops, "PSP_SMP_AWARE_COLLOPS");
 
@@ -707,7 +707,10 @@ int MPID_Init(int requested, int *provided)
 	MPID_enable_receive_dispach(socket); /* ToDo: move MPID_enable_receive_dispach to bg thread */
 	MPIDI_Process.socket = socket;
 
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+	/* Initialize the hierarchical topology information as used for MSA-aware collectives. */
 	MPIDI_PSP_topo_init();
+#endif
 	MPID_PSP_shm_rma_init();
 
 	if (provided) {

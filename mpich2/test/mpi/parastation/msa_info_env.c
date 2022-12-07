@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
 
 	rc += MPI_Info_get(MPI_INFO_ENV, "msa_module_id", MPI_MAX_INFO_VAL, value, &flag);
 
-#if defined(MPIX_TOPOLOGY_AWARENESS) && MPIX_TOPOLOGY_AWARENESS
+#if defined(MPIX_MSA_AWARENESS) && MPIX_MSA_AWARENESS
 	if (flag) { /* This MPI environment is modularity-aware! */
 
 		if (msa_enabled) {

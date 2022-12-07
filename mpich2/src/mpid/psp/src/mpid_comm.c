@@ -61,7 +61,7 @@ int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
 }
 
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 
 int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level)
 {
@@ -317,7 +317,7 @@ int MPIDI_PSP_topo_init(void)
 			MPIDI_Process.msa_module_id = MPIR_Process.attrs.appnum;
 		}
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 		if(MPIDI_Process.env.enable_msa_aware_collops) {
 			MPIDI_PSP_create_topo_level(MPIDI_Process.msa_module_id, MPIDI_PSP_TOPO_LEVEL__MODULES, 1/*badges_are_global*/, 0/*normalize*/, &MPIDI_Process.topo_levels);
 		}
@@ -335,7 +335,7 @@ int MPIDI_PSP_topo_init(void)
 			MPIDI_Process.smp_node_id = (int)((unsigned)MPIDI_Process.socket->local_con_info.node_id & (unsigned)0x7fffffff);
 		}
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 		if(MPIDI_Process.env.enable_smp_aware_collops) {
 			MPIDI_PSP_create_topo_level(MPIDI_Process.smp_node_id, MPIDI_PSP_TOPO_LEVEL__NODES, 0/*badges_are_global*/, 1/*normalize*/, &MPIDI_Process.topo_levels);
 		}
@@ -386,14 +386,14 @@ int MPID_Get_max_badge(MPIR_Comm *comm, int *max_badge_p)
 	return MPI_SUCCESS;
 }
 
-#endif /* MPID_PSP_TOPOLOGY_AWARE_COLLOPS */
+#endif /* MPID_PSP_MSA_AWARE_COLLOPS */
 
 
 int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 {
 	uint64_t lpid = comm->vcr[rank]->lpid;
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 	/* In the case of enabled MSA awareness, we can use the badge table at the nodes level.
 	   If a badge at this level cannot be found, we fall back to MPICH's node_map table...
 	 */
@@ -580,7 +580,11 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 
 		/* Create my home PG for MPI_COMM_WORLD: */
 		MPIDI_PG_Convert_id(pg_id_name, &pg_id_num);
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 		MPIDI_PG_Create(pg_size, pg_id_num, MPIDI_Process.topo_levels, &pg_ptr);
+#else
+		MPIDI_PG_Create(pg_size, pg_id_num, NULL, &pg_ptr);
+#endif
 		assert(pg_ptr == MPIDI_Process.my_pg);
 
 		for (grank = 0; grank < pg_size; grank++) {
@@ -637,7 +641,7 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 	hcoll_comm_create(comm, NULL);
 #endif
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 	if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (MPIDI_Process.env.enable_msa_aware_collops > 1)) {
 
 		MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
@@ -696,7 +700,7 @@ int MPIDI_PSP_Comm_destroy_hook(MPIR_Comm * comm)
 	hcoll_comm_destroy(comm, NULL);
 #endif
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 	if (comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) {
 		if(comm->local_comm) {
 			// Recursively release also further subcomm levels:
