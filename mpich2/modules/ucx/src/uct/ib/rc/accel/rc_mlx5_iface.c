@@ -1,5 +1,6 @@
 /**
 * Copyright (C) Mellanox Technologies Ltd. 2001-2018.  ALL RIGHTS RESERVED.
+* Copyright (C) Huawei Technologies Co., Ltd. 2021.  ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -23,7 +24,7 @@
 enum {
     UCT_RC_MLX5_IFACE_ADDR_TYPE_BASIC,
 
-    /* Tag Matching address. It additionaly contains QP number which
+    /* Tag Matching address. It additionally contains QP number which
      * is used for hardware offloads. */
     UCT_RC_MLX5_IFACE_ADDR_TYPE_TM
 };
@@ -53,11 +54,13 @@ ucs_config_field_t uct_rc_mlx5_iface_config_table[] = {
 
 
 static uct_rc_iface_ops_t uct_rc_mlx5_iface_ops;
+static uct_iface_ops_t uct_rc_mlx5_iface_tl_ops;
 
 #ifdef ENABLE_STATS
 ucs_stats_class_t uct_rc_mlx5_iface_stats_class = {
-    .name = "mlx5",
-    .num_counters = UCT_RC_MLX5_IFACE_STAT_LAST,
+    .name          = "mlx5",
+    .num_counters  = UCT_RC_MLX5_IFACE_STAT_LAST,
+    .class_id      = UCS_STATS_CLASS_ID_INVALID,
     .counter_names = {
      [UCT_RC_MLX5_IFACE_STAT_RX_INL_32] = "rx_inl_32",
      [UCT_RC_MLX5_IFACE_STAT_RX_INL_64] = "rx_inl_64"
@@ -66,7 +69,8 @@ ucs_stats_class_t uct_rc_mlx5_iface_stats_class = {
 #endif
 
 void uct_rc_mlx5_iface_check_rx_completion(uct_rc_mlx5_iface_common_t *iface,
-                                           struct mlx5_cqe64 *cqe)
+                                           struct mlx5_cqe64 *cqe,
+                                           int poll_flags)
 {
     uct_ib_mlx5_cq_t *cq      = &iface->cq[UCT_IB_DIR_RX];
     struct mlx5_err_cqe *ecqe = (void*)cqe;
@@ -77,7 +81,8 @@ void uct_rc_mlx5_iface_check_rx_completion(uct_rc_mlx5_iface_common_t *iface,
 
     if (((ecqe->op_own >> 4) == MLX5_CQE_RESP_ERR) &&
         (ecqe->syndrome == MLX5_CQE_SYNDROME_REMOTE_ABORTED_ERR) &&
-        (ecqe->vendor_err_synd == UCT_IB_MLX5_CQE_VENDOR_SYND_ODP))
+        ((ecqe->vendor_err_synd == UCT_IB_MLX5_CQE_VENDOR_SYND_ODP) ||
+         (ecqe->vendor_err_synd == UCT_IB_MLX5_CQE_VENDOR_SYND_PSN)))
     {
         /* Release the aborted segment */
         wqe_ctr = ntohs(ecqe->wqe_counter);
@@ -86,11 +91,37 @@ void uct_rc_mlx5_iface_check_rx_completion(uct_rc_mlx5_iface_common_t *iface,
         /* TODO: Check if ib_stride_index valid for error CQE */
         uct_rc_mlx5_iface_release_srq_seg(iface, seg, cqe, wqe_ctr, UCS_OK,
                                           iface->super.super.config.rx_headroom_offset,
-                                          &iface->super.super.release_desc);
+                                          &iface->super.super.release_desc,
+                                          poll_flags);
     } else {
         ucs_assert((ecqe->op_own >> 4) != MLX5_CQE_INVALID);
         uct_ib_mlx5_check_completion(&iface->super.super, cq, cqe);
     }
+}
+
+static UCS_F_ALWAYS_INLINE void
+uct_rc_mlx5_iface_update_tx_res(uct_rc_iface_t *rc_iface,
+                                uct_rc_mlx5_ep_t *rc_mlx5_ep, uint16_t hw_ci)
+{
+    uct_ib_mlx5_txwq_t *txwq = &rc_mlx5_ep->tx.wq;
+    uct_rc_txqp_t *txqp      = &rc_mlx5_ep->super.txqp;
+    uint16_t bb_num;
+
+    bb_num = uct_ib_mlx5_txwq_update_bb(txwq, hw_ci) -
+             uct_rc_txqp_available(txqp);
+
+    /* Must always have positive number of released resources. The first
+     * completion will report bb_num=1 (because prev_sw_pi is initialized to -1)
+     * and all the rest report the amount of BBs the previous WQE has consumed.
+     */
+    ucs_assertv(bb_num > 0, "hw_ci=%d prev_sw_pi=%d available=%d bb_num=%d",
+                hw_ci, txwq->prev_sw_pi, txqp->available, bb_num);
+
+    uct_rc_txqp_available_add(txqp, bb_num);
+    ucs_assert(uct_rc_txqp_available(txqp) <= txwq->bb_max);
+
+    uct_rc_iface_update_reads(rc_iface);
+    uct_rc_iface_add_cq_credits_dispatch(rc_iface, bb_num);
 }
 
 static UCS_F_ALWAYS_INLINE unsigned
@@ -106,47 +137,57 @@ uct_rc_mlx5_iface_poll_tx(uct_rc_mlx5_iface_common_t *iface)
         return 0;
     }
 
-    UCS_STATS_UPDATE_COUNTER(iface->super.stats, UCT_RC_IFACE_STAT_TX_COMPLETION, 1);
+    UCS_STATS_UPDATE_COUNTER(iface->super.stats,
+                             UCT_RC_IFACE_STAT_TX_COMPLETION, 1);
 
     ucs_memory_cpu_load_fence();
 
     qp_num = ntohl(cqe->sop_drop_qpn) & UCS_MASK(UCT_IB_QPN_ORDER);
     ep = ucs_derived_of(uct_rc_iface_lookup_ep(&iface->super, qp_num),
                         uct_rc_mlx5_ep_t);
-    /* TODO: temporary workaround for uct_ep_flush(cancel) case when EP has been
-     *       destroyed but successful CQE was not polled out from the CQ */
-    if (ucs_unlikely(ep == NULL)) {
-        return 1;
-    }
+    ucs_assert(ep != NULL);
 
     hw_ci = ntohs(cqe->wqe_counter);
-    ucs_trace_poll("rc_mlx5 iface %p tx_cqe: ep %p qpn 0x%x hw_ci %d", iface, ep,
-                   qp_num, hw_ci);
-
-    uct_rc_mlx5_common_update_tx_res(&iface->super, &ep->tx.wq, &ep->super.txqp,
-                                     hw_ci);
-
-    /* process pending elements prior to CQ entries to avoid out-of-order
-     * transmission in completion callbacks */
-    ucs_arbiter_group_schedule(&iface->super.tx.arbiter, &ep->super.arb_group);
-    ucs_arbiter_dispatch(&iface->super.tx.arbiter, 1, uct_rc_ep_process_pending,
-                         NULL);
+    ucs_trace_poll("rc_mlx5 iface %p tx_cqe: ep %p qpn 0x%x hw_ci %d", iface,
+                   ep, qp_num, hw_ci);
 
     uct_rc_mlx5_txqp_process_tx_cqe(&ep->super.txqp, cqe, hw_ci);
+    ucs_arbiter_group_schedule(&iface->super.tx.arbiter, &ep->super.arb_group);
+    uct_rc_mlx5_iface_update_tx_res(&iface->super, ep, hw_ci);
+    uct_ib_mlx5_update_db_cq_ci(&iface->cq[UCT_IB_DIR_TX]);
 
     return 1;
 }
 
-unsigned uct_rc_mlx5_iface_progress(void *arg)
+static UCS_F_ALWAYS_INLINE unsigned
+uct_rc_mlx5_iface_progress(void *arg, int flags)
 {
     uct_rc_mlx5_iface_common_t *iface = arg;
     unsigned count;
 
-    count = uct_rc_mlx5_iface_common_poll_rx(iface, UCT_RC_MLX5_POLL_FLAG_HAS_EP);
-    if (count > 0) {
+    count = uct_rc_mlx5_iface_common_poll_rx(iface, flags);
+    if (!uct_rc_iface_poll_tx(&iface->super, count)) {
         return count;
     }
-    return uct_rc_mlx5_iface_poll_tx(iface);
+
+    return count + uct_rc_mlx5_iface_poll_tx(iface);
+}
+
+static unsigned uct_rc_mlx5_iface_progress_cyclic(void *arg)
+{
+    return uct_rc_mlx5_iface_progress(arg, UCT_RC_MLX5_POLL_FLAG_HAS_EP);
+}
+
+static unsigned uct_rc_mlx5_iface_progress_ll(void *arg)
+{
+    return uct_rc_mlx5_iface_progress(arg, UCT_RC_MLX5_POLL_FLAG_HAS_EP |
+                                           UCT_RC_MLX5_POLL_FLAG_LINKED_LIST);
+}
+
+static unsigned uct_rc_mlx5_iface_progress_tm(void *arg)
+{
+    return uct_rc_mlx5_iface_progress(arg, UCT_RC_MLX5_POLL_FLAG_HAS_EP |
+                                           UCT_RC_MLX5_POLL_FLAG_TM);
 }
 
 static ucs_status_t uct_rc_mlx5_iface_query(uct_iface_h tl_iface, uct_iface_attr_t *iface_attr)
@@ -177,29 +218,16 @@ static ucs_status_t uct_rc_mlx5_iface_query(uct_iface_h tl_iface, uct_iface_attr
 
     uct_rc_mlx5_iface_common_query(&rc_iface->super, iface_attr, max_am_inline,
                                    UCT_RC_MLX5_TM_EAGER_ZCOPY_MAX_IOV(0));
+    iface_attr->cap.flags     |= UCT_IFACE_FLAG_EP_CHECK;
     iface_attr->latency.m     += 1e-9; /* 1 ns per each extra QP */
     iface_attr->ep_addr_len    = sizeof(uct_rc_mlx5_ep_address_t);
     iface_attr->iface_addr_len = sizeof(uint8_t);
     return UCS_OK;
 }
 
-static ucs_status_t uct_rc_mlx5_iface_arm_cq(uct_ib_iface_t *ib_iface,
-                                             uct_ib_dir_t dir,
-                                             int solicited_only)
-{
-    uct_rc_mlx5_iface_common_t *iface = ucs_derived_of(ib_iface, uct_rc_mlx5_iface_common_t);
-#if HAVE_DECL_MLX5DV_INIT_OBJ
-    return uct_ib_mlx5dv_arm_cq(&iface->cq[dir], solicited_only);
-#else
-    uct_ib_mlx5_update_cq_ci(iface->super.super.cq[dir],
-                             iface->cq[dir].cq_ci);
-    return uct_ib_iface_arm_cq(ib_iface, dir, solicited_only);
-#endif
-}
-
 static void
 uct_rc_mlx5_iface_handle_failure(uct_ib_iface_t *ib_iface, void *arg,
-                                 ucs_status_t status)
+                                 ucs_status_t ep_status)
 {
     struct mlx5_cqe64  *cqe    = arg;
     uct_rc_iface_t     *iface  = ucs_derived_of(ib_iface, uct_rc_iface_t);
@@ -208,32 +236,36 @@ uct_rc_mlx5_iface_handle_failure(uct_ib_iface_t *ib_iface, void *arg,
     uct_rc_mlx5_ep_t   *ep     = ucs_derived_of(uct_rc_iface_lookup_ep(iface,
                                                                        qp_num),
                                                 uct_rc_mlx5_ep_t);
-    ucs_log_level_t    log_lvl = UCS_LOG_LEVEL_FATAL;
-    uct_ib_mlx5_txwq_t txwq_copy;
-    size_t             txwq_size;
+    uint16_t           pi      = ntohs(cqe->wqe_counter);
+    ucs_log_level_t    log_lvl;
+    ucs_status_t       status;
 
-    if (!ep) {
+    if (ep == NULL) {
+        ucs_diag("ignoring failure on removed qpn 0x%x wqe[%d]", qp_num, pi);
+        uct_rc_iface_add_cq_credits_dispatch(iface, 1);
         return;
     }
 
-    /* Create a copy of RC txwq for completion error reporting, since the QP
-     * would be released by set_ep_failed()*/
-    txwq_copy = ep->tx.wq;
-    txwq_size = UCS_PTR_BYTE_DIFF(ep->tx.wq.qstart, ep->tx.wq.qend);
-    txwq_copy.qstart = ucs_malloc(txwq_size, "rc_txwq_copy");
-    if (txwq_copy.qstart != NULL) {
-        memcpy(txwq_copy.qstart, ep->tx.wq.qstart, txwq_size);
-        txwq_copy.qend = UCS_PTR_BYTE_OFFSET(txwq_copy.qstart, txwq_size);
+    uct_rc_txqp_purge_outstanding(iface, &ep->super.txqp, ep_status, pi, 0);
+
+    /* Do not invoke pending requests on a failed endpoint */
+    ucs_arbiter_group_desched(&iface->tx.arbiter, &ep->super.arb_group);
+    uct_rc_mlx5_iface_update_tx_res(iface, ep, pi);
+    uct_ib_mlx5_txwq_update_flags(&ep->tx.wq, UCT_IB_MLX5_TXWQ_FLAG_FAILED, 0);
+
+    if (ep->super.flags & (UCT_RC_EP_FLAG_ERR_HANDLER_INVOKED |
+                           UCT_RC_EP_FLAG_FLUSH_CANCEL)) {
+        return;
     }
 
-    if (uct_rc_mlx5_ep_handle_failure(ep, status) == UCS_OK) {
-        log_lvl = ib_iface->super.config.failure_level;
-    }
+    ep->super.flags |= UCT_RC_EP_FLAG_ERR_HANDLER_INVOKED;
 
-    uct_ib_mlx5_completion_with_err(ib_iface, arg,
-                                    txwq_copy.qstart ? &txwq_copy : NULL,
-                                    log_lvl);
-    ucs_free(txwq_copy.qstart);
+    status  = uct_iface_handle_ep_err(&iface->super.super.super,
+                                      &ep->super.super.super, ep_status);
+    log_lvl = uct_base_iface_failure_log_level(&ib_iface->super, status,
+                                               ep_status);
+
+    uct_ib_mlx5_completion_with_err(ib_iface, arg, &ep->tx.wq, log_lvl);
 }
 
 static void uct_rc_mlx5_iface_progress_enable(uct_iface_h tl_iface, unsigned flags)
@@ -262,7 +294,7 @@ ucs_status_t uct_rc_mlx5_iface_create_qp(uct_rc_mlx5_iface_common_t *iface,
     struct mlx5dv_qp_init_attr dv_attr = {};
 
     if (md->flags & UCT_IB_MLX5_MD_FLAG_DEVX_RC_QP) {
-        attr->mmio_mode = iface->tx.mmio_mode;
+        attr->uidx      = 0xffffff;
         status = uct_ib_mlx5_devx_create_qp(ib_iface, qp, txwq, attr);
         if (status != UCS_OK) {
             return status;
@@ -284,10 +316,9 @@ ucs_status_t uct_rc_mlx5_iface_create_qp(uct_rc_mlx5_iface_common_t *iface,
     }
 
     uct_ib_iface_fill_attr(ib_iface, &attr->super);
-#if HAVE_DECL_MLX5DV_QP_CREATE_ALLOW_SCATTER_TO_CQE
-    dv_attr.comp_mask    = MLX5DV_QP_INIT_ATTR_MASK_QP_CREATE_FLAGS;
-    dv_attr.create_flags = MLX5DV_QP_CREATE_ALLOW_SCATTER_TO_CQE;
-#endif
+    uct_rc_mlx5_common_fill_dv_qp_attr(iface, &attr->super.ibv, &dv_attr,
+                                       UCS_BIT(UCT_IB_DIR_TX) |
+                                       UCS_BIT(UCT_IB_DIR_RX));
     qp->verbs.qp = mlx5dv_create_qp(dev->ibv_context, &attr->super.ibv, &dv_attr);
     if (qp->verbs.qp == NULL) {
         ucs_error("mlx5dv_create_qp("UCT_IB_IFACE_FMT"): failed: %m",
@@ -327,20 +358,6 @@ err:
     return status;
 }
 
-static UCS_F_MAYBE_UNUSED unsigned uct_rc_mlx5_iface_progress_tm(void *arg)
-{
-    uct_rc_mlx5_iface_common_t *iface = arg;
-    unsigned count;
-
-    count = uct_rc_mlx5_iface_common_poll_rx(iface,
-                                             UCT_RC_MLX5_POLL_FLAG_HAS_EP |
-                                             UCT_RC_MLX5_POLL_FLAG_TM);
-    if (count > 0) {
-        return count;
-    }
-    return uct_rc_mlx5_iface_poll_tx(iface);
-}
-
 #if IBV_HW_TM
 static ucs_status_t uct_rc_mlx5_iface_tag_recv_zcopy(uct_iface_h tl_iface,
                                                      uct_tag_t tag,
@@ -365,6 +382,34 @@ static ucs_status_t uct_rc_mlx5_iface_tag_recv_cancel(uct_iface_h tl_iface,
 }
 #endif
 
+static ucs_status_t
+uct_rc_mlx5_iface_parse_srq_topo(uct_ib_mlx5_md_t *md,
+                                 uct_rc_mlx5_iface_common_config_t *config,
+                                 uct_rc_mlx5_srq_topo_t *topo_p)
+
+{
+    int i;
+
+    for (i = 0; i < config->srq_topo.count; ++i) {
+        if (!strcasecmp(config->srq_topo.types[i], "list")) {
+            *topo_p = UCT_RC_MLX5_SRQ_TOPO_LIST;
+            return UCS_OK;
+        } else if (!strcasecmp(config->srq_topo.types[i], "cyclic")) {
+            /* real cyclic list requires DevX support */
+            if (!(md->flags & UCT_IB_MLX5_MD_FLAG_DEVX_RC_SRQ)) {
+                continue;
+            }
+            *topo_p = UCT_RC_MLX5_SRQ_TOPO_CYCLIC;
+            return UCS_OK;
+        } else if (!strcasecmp(config->srq_topo.types[i], "cyclic_emulated")) {
+            *topo_p = UCT_RC_MLX5_SRQ_TOPO_CYCLIC_EMULATED;
+            return UCS_OK;
+        }
+    }
+
+    return UCS_ERR_INVALID_PARAM;
+}
+
 static ucs_status_t uct_rc_mlx5_iface_preinit(uct_rc_mlx5_iface_common_t *iface,
                                               uct_md_h tl_md,
                                               uct_rc_iface_common_config_t *rc_config,
@@ -372,16 +417,20 @@ static ucs_status_t uct_rc_mlx5_iface_preinit(uct_rc_mlx5_iface_common_t *iface,
                                               const uct_iface_params_t *params,
                                               uct_ib_iface_init_attr_t *init_attr)
 {
-    uct_ib_mlx5_md_t *md              = ucs_derived_of(tl_md, uct_ib_mlx5_md_t);
+    uct_ib_mlx5_md_t *md = ucs_derived_of(tl_md, uct_ib_mlx5_md_t);
 #if IBV_HW_TM
-    uct_ib_device_t UCS_V_UNUSED *dev = &md->super.dev;
+    uct_ib_device_t *dev = &md->super.dev;
     struct ibv_tmh tmh;
     int mtu;
     int tm_params;
-    ucs_status_t status;
 #endif
+    ucs_status_t status;
 
-    iface->config.cyclic_srq_enable = mlx5_config->cyclic_srq_enable;
+    status = uct_rc_mlx5_iface_parse_srq_topo(md, mlx5_config,
+                                              &iface->config.srq_topo);
+    if (status != UCS_OK) {
+        return status;
+    }
 
 #if IBV_HW_TM
     /* Both eager and rndv callbacks should be provided for
@@ -408,12 +457,10 @@ static ucs_status_t uct_rc_mlx5_iface_preinit(uct_rc_mlx5_iface_common_t *iface,
 
     iface->tm.eager_unexp.cb  = params->eager_cb;
     iface->tm.rndv_unexp.cb   = params->rndv_cb;
-    iface->tm.eager_unexp.arg = (params->field_mask &
-                                 UCT_IFACE_PARAM_FIELD_HW_TM_EAGER_ARG) ?
-                                params->eager_arg : NULL;
-    iface->tm.rndv_unexp.arg  = (params->field_mask &
-                                 UCT_IFACE_PARAM_FIELD_HW_TM_RNDV_ARG) ?
-                                params->rndv_arg : NULL;
+    iface->tm.eager_unexp.arg = UCT_IFACE_PARAM_VALUE(params, eager_arg,
+                                                      HW_TM_EAGER_ARG, NULL);
+    iface->tm.rndv_unexp.arg  = UCT_IFACE_PARAM_VALUE(params, eager_arg,
+                                                      HW_TM_RNDV_ARG, NULL);
     iface->tm.unexpected_cnt  = 0;
     iface->tm.num_outstanding = 0;
     iface->tm.num_tags        = ucs_min(IBV_DEVICE_TM_CAPS(dev, max_num_tags),
@@ -527,7 +574,11 @@ uct_rc_mlx5_iface_init_rx(uct_rc_iface_t *rc_iface,
         return status;
     }
 
-    iface->super.progress = uct_rc_mlx5_iface_progress;
+    if (iface->config.srq_topo == UCT_RC_MLX5_SRQ_TOPO_LIST) {
+        iface->super.progress = uct_rc_mlx5_iface_progress_ll;
+    } else {
+        iface->super.progress = uct_rc_mlx5_iface_progress_cyclic;
+    }
     return UCS_OK;
 }
 
@@ -540,12 +591,34 @@ static void uct_rc_mlx5_iface_cleanup_rx(uct_rc_iface_t *rc_iface)
     uct_rc_mlx5_destroy_srq(md, &iface->rx.srq);
 }
 
-static void uct_rc_mlx5_iface_event_cq(uct_ib_iface_t *ib_iface,
-                                       uct_ib_dir_t dir)
+static void
+uct_rc_mlx5_iface_qp_cleanup(uct_rc_iface_qp_cleanup_ctx_t *rc_cleanup_ctx)
 {
-    uct_rc_mlx5_iface_common_t *iface = ucs_derived_of(ib_iface, uct_rc_mlx5_iface_common_t);
+    uct_rc_mlx5_iface_qp_cleanup_ctx_t *cleanup_ctx =
+            ucs_derived_of(rc_cleanup_ctx, uct_rc_mlx5_iface_qp_cleanup_ctx_t);
+    uct_rc_mlx5_iface_common_t *iface = ucs_derived_of(
+            cleanup_ctx->super.iface, uct_rc_mlx5_iface_common_t);
+    uct_ib_mlx5_md_t *md = ucs_derived_of(iface->super.super.super.md,
+                                          uct_ib_mlx5_md_t);
 
-    iface->cq[dir].cq_sn++;
+#if !HAVE_DECL_MLX5DV_INIT_OBJ
+    iface->super.rx.srq.available += uct_rc_mlx5_iface_commom_clean(
+            &iface->cq[UCT_IB_DIR_RX], &iface->rx.srq, cleanup_ctx->qp.qp_num);
+    uct_rc_mlx5_iface_common_update_cqs_ci(iface, &iface->super.super);
+#endif
+
+#if IBV_HW_TM
+    if (UCT_RC_MLX5_TM_ENABLED(iface)) {
+        /* Using uct_ib_mlx5_iface_put_res_domain and not
+         * uct_ib_mlx5_qp_mmio_cleanup: in case of devx, we don't have uar,
+         * and uct_ib_mlx5_qp_mmio_cleanup would try to release uar */
+        uct_ib_mlx5_iface_put_res_domain(&cleanup_ctx->tm_qp);
+        uct_ib_mlx5_destroy_qp(md, &cleanup_ctx->tm_qp);
+    }
+#endif
+
+    uct_ib_mlx5_qp_mmio_cleanup(&cleanup_ctx->qp, cleanup_ctx->reg);
+    uct_ib_mlx5_destroy_qp(md, &cleanup_ctx->qp);
 }
 
 static uint8_t uct_rc_mlx5_iface_get_address_type(uct_iface_h tl_iface)
@@ -578,10 +651,9 @@ int uct_rc_mlx5_iface_is_reachable(const uct_iface_h tl_iface,
     return uct_ib_iface_is_reachable(tl_iface, dev_addr, iface_addr);
 }
 
-UCS_CLASS_INIT_FUNC(uct_rc_mlx5_iface_common_t,
-                    uct_rc_iface_ops_t *ops,
-                    uct_md_h tl_md, uct_worker_h worker,
-                    const uct_iface_params_t *params,
+UCS_CLASS_INIT_FUNC(uct_rc_mlx5_iface_common_t, uct_iface_ops_t *tl_ops,
+                    uct_rc_iface_ops_t *ops, uct_md_h tl_md,
+                    uct_worker_h worker, const uct_iface_params_t *params,
                     uct_rc_iface_common_config_t *rc_config,
                     uct_rc_mlx5_iface_common_config_t *mlx5_config,
                     uct_ib_iface_init_attr_t *init_attr)
@@ -589,6 +661,12 @@ UCS_CLASS_INIT_FUNC(uct_rc_mlx5_iface_common_t,
     uct_ib_mlx5_md_t *md = ucs_derived_of(tl_md, uct_ib_mlx5_md_t);
     uct_ib_device_t *dev;
     ucs_status_t status;
+
+    if (rc_config->super.seg_size > UCT_IB_MLX5_MP_RQ_BYTE_CNT_MASK) {
+        ucs_error("IB segment size is too big %ld, it must not exceed %d",
+                  rc_config->super.seg_size, UCT_IB_MLX5_MP_RQ_BYTE_CNT_MASK);
+        return UCS_ERR_INVALID_PARAM;
+    }
 
     status = uct_rc_mlx5_iface_preinit(self, tl_md, rc_config, mlx5_config,
                                        params, init_attr);
@@ -601,8 +679,8 @@ UCS_CLASS_INIT_FUNC(uct_rc_mlx5_iface_common_t,
     init_attr->rx_hdr_len            = UCT_RC_MLX5_MP_ENABLED(self) ?
                                        0 : sizeof(uct_rc_mlx5_hdr_t);
 
-    UCS_CLASS_CALL_SUPER_INIT(uct_rc_iface_t, ops, tl_md, worker, params,
-                              rc_config, init_attr);
+    UCS_CLASS_CALL_SUPER_INIT(uct_rc_iface_t, tl_ops, ops, tl_md, worker,
+                              params, rc_config, init_attr);
 
     dev                       = uct_ib_iface_device(&self->super.super);
     self->tx.mmio_mode        = mlx5_config->super.mmio_mode;
@@ -611,6 +689,13 @@ UCS_CLASS_INIT_FUNC(uct_rc_mlx5_iface_common_t,
 
     if (!UCT_RC_MLX5_MP_ENABLED(self)) {
         self->tm.am_desc.offset = self->super.super.config.rx_headroom_offset;
+    }
+
+    status = uct_ib_mlx5_iface_select_sl(&self->super.super,
+                                         &mlx5_config->super,
+                                         &rc_config->super);
+    if (status != UCS_OK) {
+        return status;
     }
 
     status = uct_ib_mlx5_get_cq(self->super.super.cq[UCT_IB_DIR_TX],
@@ -626,7 +711,7 @@ UCS_CLASS_INIT_FUNC(uct_rc_mlx5_iface_common_t,
     }
 
     status = UCS_STATS_NODE_ALLOC(&self->stats, &uct_rc_mlx5_iface_stats_class,
-                                  self->super.stats);
+                                  self->super.stats, "");
     if (status != UCS_OK) {
         return status;
     }
@@ -645,6 +730,7 @@ UCS_CLASS_INIT_FUNC(uct_rc_mlx5_iface_common_t,
     self->super.config.fence_mode  = (uct_rc_fence_mode_t)rc_config->fence_mode;
     self->super.rx.srq.quota       = self->rx.srq.mask + 1;
     self->super.config.exp_backoff = mlx5_config->exp_backoff;
+    self->config.log_ack_req_freq  = mlx5_config->log_ack_req_freq;
 
     if ((rc_config->fence_mode == UCT_RC_FENCE_MODE_WEAK) ||
         ((rc_config->fence_mode == UCT_RC_FENCE_MODE_AUTO) &&
@@ -715,6 +801,7 @@ cleanup_stats:
 
 static UCS_CLASS_CLEANUP_FUNC(uct_rc_mlx5_iface_common_t)
 {
+    uct_rc_iface_cleanup_qps(&self->super);
 #if HAVE_DEVX
     uct_rc_mlx5_devx_iface_free_events(self);
 #endif
@@ -741,9 +828,8 @@ UCS_CLASS_INIT_FUNC(uct_rc_mlx5_iface_t,
     uct_ib_iface_init_attr_t init_attr = {};
     ucs_status_t status;
 
-    init_attr.fc_req_size           = sizeof(uct_rc_fc_request_t);
+    init_attr.fc_req_size           = sizeof(uct_rc_pending_req_t);
     init_attr.flags                 = UCT_IB_CQ_IGNORE_OVERRUN;
-    init_attr.rx_hdr_len            = sizeof(uct_rc_mlx5_hdr_t);
     init_attr.cq_len[UCT_IB_DIR_TX] = config->super.tx_cq_len;
     init_attr.qp_type               = IBV_QPT_RC;
 
@@ -751,12 +837,15 @@ UCS_CLASS_INIT_FUNC(uct_rc_mlx5_iface_t,
         init_attr.flags  |= UCT_IB_TM_SUPPORTED;
     }
 
-    UCS_CLASS_CALL_SUPER_INIT(uct_rc_mlx5_iface_common_t, &uct_rc_mlx5_iface_ops,
+    UCS_CLASS_CALL_SUPER_INIT(uct_rc_mlx5_iface_common_t,
+                              &uct_rc_mlx5_iface_tl_ops, &uct_rc_mlx5_iface_ops,
                               tl_md, worker, params, &config->super.super,
                               &config->rc_mlx5_common, &init_attr);
 
     self->super.super.config.tx_moderation = ucs_min(config->super.tx_cq_moderation,
                                                      self->super.tx.bb_max / 4);
+    self->super.config.log_ack_req_freq    = ucs_min(config->super.log_ack_req_freq,
+                                                     UCT_RC_MLX5_MAX_LOG_ACK_REQ_FREQ);
 
     status = uct_rc_init_fc_thresh(&config->super, &self->super.super);
     if (status != UCS_OK) {
@@ -781,14 +870,34 @@ static UCS_CLASS_DEFINE_NEW_FUNC(uct_rc_mlx5_iface_t, uct_iface_t, uct_md_h,
 static UCS_CLASS_DEFINE_DELETE_FUNC(uct_rc_mlx5_iface_t, uct_iface_t);
 
 static uct_rc_iface_ops_t uct_rc_mlx5_iface_ops = {
-    {
-    {
+    .super = {
+        .super = {
+            .iface_estimate_perf = uct_ib_iface_estimate_perf,
+            .iface_vfs_refresh   = uct_rc_iface_vfs_refresh,
+            .ep_query            = (uct_ep_query_func_t)ucs_empty_function_return_unsupported
+        },
+        .create_cq      = uct_ib_mlx5_create_cq,
+        .arm_cq         = uct_rc_mlx5_iface_common_arm_cq,
+        .event_cq       = uct_rc_mlx5_iface_common_event_cq,
+        .handle_failure = uct_rc_mlx5_iface_handle_failure,
+    },
+    .init_rx         = uct_rc_mlx5_iface_init_rx,
+    .cleanup_rx      = uct_rc_mlx5_iface_cleanup_rx,
+    .fc_ctrl         = uct_rc_mlx5_ep_fc_ctrl,
+    .fc_handler      = uct_rc_iface_fc_handler,
+    .cleanup_qp      = uct_rc_mlx5_iface_qp_cleanup,
+    .ep_post_check   = uct_rc_mlx5_ep_post_check,
+    .ep_vfs_populate = uct_rc_mlx5_ep_vfs_populate
+};
+
+static uct_iface_ops_t uct_rc_mlx5_iface_tl_ops = {
     .ep_put_short             = uct_rc_mlx5_ep_put_short,
     .ep_put_bcopy             = uct_rc_mlx5_ep_put_bcopy,
     .ep_put_zcopy             = uct_rc_mlx5_ep_put_zcopy,
     .ep_get_bcopy             = uct_rc_mlx5_ep_get_bcopy,
     .ep_get_zcopy             = uct_rc_mlx5_ep_get_zcopy,
     .ep_am_short              = uct_rc_mlx5_ep_am_short,
+    .ep_am_short_iov          = uct_rc_mlx5_ep_am_short_iov,
     .ep_am_bcopy              = uct_rc_mlx5_ep_am_bcopy,
     .ep_am_zcopy              = uct_rc_mlx5_ep_am_zcopy,
     .ep_atomic_cswap64        = uct_rc_mlx5_ep_atomic_cswap64,
@@ -801,6 +910,7 @@ static uct_rc_iface_ops_t uct_rc_mlx5_iface_ops = {
     .ep_pending_purge         = uct_rc_ep_pending_purge,
     .ep_flush                 = uct_rc_mlx5_ep_flush,
     .ep_fence                 = uct_rc_mlx5_ep_fence,
+    .ep_check                 = uct_rc_ep_check,
     .ep_create                = UCS_CLASS_NEW_FUNC_NAME(uct_rc_mlx5_ep_t),
     .ep_destroy               = UCS_CLASS_DELETE_FUNC_NAME(uct_rc_mlx5_ep_t),
     .ep_get_address           = uct_rc_mlx5_ep_get_address,
@@ -827,18 +937,7 @@ static uct_rc_iface_ops_t uct_rc_mlx5_iface_ops = {
     .iface_get_address        = uct_rc_mlx5_iface_get_address,
     .iface_get_device_address = uct_ib_iface_get_device_address,
     .iface_is_reachable       = uct_rc_mlx5_iface_is_reachable
-    },
-    .create_cq                = uct_ib_mlx5_create_cq,
-    .arm_cq                   = uct_rc_mlx5_iface_arm_cq,
-    .event_cq                 = uct_rc_mlx5_iface_event_cq,
-    .handle_failure           = uct_rc_mlx5_iface_handle_failure,
-    .set_ep_failed            = uct_rc_mlx5_ep_set_failed,
-    },
-    .init_rx                  = uct_rc_mlx5_iface_init_rx,
-    .cleanup_rx               = uct_rc_mlx5_iface_cleanup_rx,
-    .fc_ctrl                  = uct_rc_mlx5_ep_fc_ctrl,
-    .fc_handler               = uct_rc_iface_fc_handler,
-};
+    };
 
 static ucs_status_t
 uct_rc_mlx5_query_tl_devices(uct_md_h md, uct_tl_device_resource_t **tl_devices_p,

@@ -48,7 +48,7 @@ int MPIDI_GPID_GetAllInComm(MPIR_Comm *comm_ptr, int local_size,
 	return 0;
 }
 
-int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], int lpid[])
+int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], uint64_t lpid[])
 {
 	int i, mpi_errno = MPI_SUCCESS;
 	int pgid;
@@ -68,7 +68,7 @@ int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], int lpid[])
 				MPIDI_PG_t *new_pg;
 
 				MPIDI_PG_Create(gpid->gpid[1]+1, gpid->gpid[0], NULL, &new_pg);
-				assert(new_pg->lpids[gpid->gpid[1]] == -1);
+				assert(new_pg->lpids[gpid->gpid[1]] == MPIDI_PSP_INVALID_LPID);
 				if (!MPIDI_Process.next_lpid) MPIDI_Process.next_lpid = MPIR_Process.comm_world->local_size;
 				lpid[i] = MPIDI_Process.next_lpid++;
 				new_pg->lpids[gpid->gpid[1]] = lpid[i];
@@ -91,24 +91,24 @@ int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], int lpid[])
 
 						pg->size = gpid->gpid[1]+1;
 						pg->vcr = MPL_realloc(pg->vcr, sizeof(MPIDI_VC_t*)*pg->size, MPL_MEM_OBJECT);
-						pg->lpids = MPL_realloc(pg->lpids, sizeof(int)*pg->size, MPL_MEM_OBJECT);
+						pg->lpids = MPL_realloc(pg->lpids, sizeof(uint64_t)*pg->size, MPL_MEM_OBJECT);
 						pg->cons = MPL_realloc(pg->cons, sizeof(pscom_connection_t*)*pg->size, MPL_MEM_OBJECT);
 
 						for(; k<pg->size; k++) {
 							pg->vcr[k] = NULL;
-							pg->lpids[k] = -1;
+							pg->lpids[k] = MPIDI_PSP_INVALID_LPID;
 							pg->cons[k] = NULL;
 						}
 					}
 
 					if(!pg->vcr[gpid->gpid[1]]) {
-						assert(pg->lpids[gpid->gpid[1]] == -1);
+						assert(pg->lpids[gpid->gpid[1]] == MPIDI_PSP_INVALID_LPID);
 						/* VCR not yet initialized (connection establishment still needed)
 						   Assign next free LPID (MPIDI_Process.next_lpid):
 						*/
 						if (!MPIDI_Process.next_lpid) MPIDI_Process.next_lpid = MPIR_Process.comm_world->local_size;
 						lpid[i] = MPIDI_Process.next_lpid++;
-						/*printf("(%d) LPID NOT found! Assigned next lipd: %d\n", getpid(), lpid[i]);*/
+						/*printf("(%d) LPID NOT found! Assigned next lipd: %" PRIu64 "\n", getpid(), lpid[i]);*/
 						pg->lpids[gpid->gpid[1]] = lpid[i];
 						break;
 					}
@@ -128,7 +128,7 @@ int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], int lpid[])
 }
 
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 static int MPIDI_PSP_get_num_topology_levels(MPIDI_PG_t *pg);
 static void MPIDI_PSP_pack_topology_badges(int** pack_msg, int* msg_size, MPIDI_PG_t *pg);
 static void MPIDI_PSP_unpack_topology_badges(int* pack_msg, int pg_size, int num_levels, MPIDI_PSP_topo_level_t **levels);
@@ -247,7 +247,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 		int* remote_pg_ids;
 		int* remote_pg_sizes;
 		int  new_pg_count = 0;
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 		int  max_pg_count;
 		int*  local_pg_topo_levels;
 		int** local_pg_topo_badges;
@@ -277,7 +277,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 		remote_pg_ids   = MPL_malloc(pg_count_remote * sizeof(int), MPL_MEM_OBJECT);
 		remote_pg_sizes = MPL_malloc(pg_count_remote * sizeof(int), MPL_MEM_OBJECT);
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 		max_pg_count = pg_count_local > pg_count_remote ? pg_count_local : pg_count_remote;
 
 		local_pg_topo_levels = MPL_malloc(max_pg_count * sizeof(int), MPL_MEM_OBJECT);
@@ -298,7 +298,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 		for(i=0; i<pg_count_local; i++) {
 			local_pg_ids[i] = pg->id_num;
 			local_pg_sizes[i] = pg->size;
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 			local_pg_topo_levels[i] = MPIDI_PSP_get_num_topology_levels(pg);
 			MPIDI_PSP_pack_topology_badges(&local_pg_topo_badges[i], &local_pg_topo_msglen[i], pg);
 #endif
@@ -320,7 +320,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 						  peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
 			assert(mpi_errno == MPI_SUCCESS);
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 			mpi_errno = MPIC_Sendrecv(local_pg_topo_levels, pg_count_local, MPI_INT,
 						  remote_leader, cts_tag,
 						  remote_pg_topo_levels, pg_count_remote, MPI_INT,
@@ -355,7 +355,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 			pscom_send(peer_con, NULL, 0, local_pg_sizes, pg_count_local * sizeof(int));
 			rc = pscom_recv_from(peer_con, NULL, 0, remote_pg_sizes, pg_count_remote * sizeof(int));
 			assert(rc == PSCOM_SUCCESS);
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 			pscom_send(peer_con, NULL, 0, local_pg_topo_levels, pg_count_local * sizeof(int));
 			rc = pscom_recv_from(peer_con, NULL, 0, remote_pg_topo_levels, pg_count_remote * sizeof(int));
 			assert(rc == PSCOM_SUCCESS);
@@ -402,7 +402,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 
 				if(needed) {
 					MPIDI_PSP_topo_level_t* levels = NULL;
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 					if(remote_pg_topo_msglen[i]) {
 						MPIDI_PSP_unpack_topology_badges(remote_pg_topo_badges[i], remote_pg_sizes[i], remote_pg_topo_levels[i], &levels);
 					} else {
@@ -414,7 +414,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 					new_pg_count++;
 				}
 			}
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 			else {
 				if(!pg->topo_levels && remote_pg_topo_levels[i] && remote_pg_topo_msglen[i]) { // PG already added (in MPIDI_GPID_ToLpidArray) but still without topo information
 					MPIDI_PSP_topo_level_t* levels = NULL;
@@ -431,7 +431,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 		MPL_free(remote_pg_ids);
 		MPL_free(remote_pg_sizes);
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 		for(i=0; i<max_pg_count; i++) {
 			if(remote_pg_topo_badges[i]) {
 				MPL_free(remote_pg_topo_badges[i]);
@@ -458,7 +458,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 
 		int pg_size;
 		int pg_id_num;
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 		int *pg_topo_badges;
 		int pg_topo_msglen;
 		int pg_topo_num_levels;
@@ -467,7 +467,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 			assert(pg);
 			pg_id_num = pg->id_num;
 			pg_size   = pg->size;
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 			MPIDI_PSP_pack_topology_badges(&pg_topo_badges, &pg_topo_msglen, pg);
 			pg_topo_num_levels = MPIDI_PSP_get_num_topology_levels(pg);
 #endif
@@ -479,7 +479,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 		mpi_errno = MPIR_Bcast_impl(&pg_id_num, 1, MPI_INT, root, comm_ptr, &errflag);
 		assert(mpi_errno == MPI_SUCCESS);
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 		mpi_errno = MPIR_Bcast_impl(&pg_topo_num_levels, 1, MPI_INT, root, comm_ptr, &errflag);
 		assert(mpi_errno == MPI_SUCCESS);
 
@@ -519,7 +519,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 				if(needed) {
 					/* New Process Group: */
 					MPIDI_PSP_topo_level_t* levels = NULL;
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 					if(pg_topo_msglen) {
 						MPIDI_PSP_unpack_topology_badges(pg_topo_badges, pg_size, pg_topo_num_levels, &levels);
 					} else {
@@ -530,7 +530,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 					MPIDI_PG_Create(pg_size, pg_id_num, levels, NULL);
 				}
 			}
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 			else {
 				if(!pg->topo_levels && pg_topo_num_levels && pg_topo_msglen) { // PG already added (in MPIDI_GPID_ToLpidArray) but still without topo information
 					MPIDI_PSP_topo_level_t* levels = NULL;
@@ -546,7 +546,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 			pg = pg->next;
 		}
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 		if(pg_topo_badges) {
 			MPL_free(pg_topo_badges);
 		}
@@ -692,7 +692,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 
 								pg->cons[j] = con;
 							} else {
-								assert(pg->lpids[j] > -1);
+								assert(pg->lpids[j] != MPIDI_PSP_INVALID_LPID);
 							}
 						}
 					}
@@ -756,7 +756,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 
 							assert(con);
 
-							if(pg->lpids[j] > 0) {
+							if (pg->lpids[j] != MPIDI_PSP_INVALID_LPID) {
 								pg->vcr[j] = MPIDI_VC_Create(pg, j, con, pg->lpids[j]);
 							} else {
 								if (!MPIDI_Process.next_lpid) MPIDI_Process.next_lpid = MPIR_Process.comm_world->local_size;
@@ -823,7 +823,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_comm_ptr, MPIR_Comm *comm_ptr,
 }
 
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 
 static
 int MPIDI_PSP_get_num_topology_levels(MPIDI_PG_t *pg)
@@ -945,7 +945,7 @@ int MPIDI_PSP_add_flat_level_to_pg(MPIDI_PG_t *pg, int degree)
 	return MPIDI_PSP_add_topo_level_to_pg(pg, level);
 }
 
-#endif /* MPID_PSP_TOPOLOGY_AWARE_COLLOPS */
+#endif /* MPID_PSP_MSA_AWARE_COLLOPS */
 
 
 int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t *levels, MPIDI_PG_t ** pg_ptr)
@@ -954,24 +954,23 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t *levels, 
 	int i;
 	int mpi_errno = MPI_SUCCESS;
 	MPIR_CHKPMEM_DECL(4);
-	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_PG_CREATE);
 
-	MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_PG_CREATE);
+	MPIR_FUNC_ENTER;
 
 	MPIR_CHKPMEM_MALLOC(pg, MPIDI_PG_t* ,sizeof(MPIDI_PG_t), mpi_errno, "pg", MPL_MEM_OBJECT);
 	MPIR_CHKPMEM_MALLOC(pg->vcr, MPIDI_VC_t**, sizeof(MPIDI_VC_t)*pg_size, mpi_errno,"pg->vcr", MPL_MEM_OBJECT);
-	MPIR_CHKPMEM_MALLOC(pg->lpids, int*, sizeof(int)*pg_size, mpi_errno,"pg->lpids", MPL_MEM_OBJECT);
+	MPIR_CHKPMEM_MALLOC(pg->lpids, uint64_t*, sizeof(uint64_t)*pg_size, mpi_errno,"pg->lpids", MPL_MEM_OBJECT);
 	MPIR_CHKPMEM_MALLOC(pg->cons, pscom_connection_t **, sizeof(pscom_connection_t*)*pg_size, mpi_errno,"pg->cons", MPL_MEM_OBJECT);
 
 	pg->size = pg_size;
 	pg->id_num = pg_id_num;
 	pg->refcnt = 0;
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 	pg->topo_levels = NULL;
 #endif
 	for(i=0; i<pg_size; i++) {
 		pg->vcr[i] = NULL;
-		pg->lpids[i] = -1;
+		pg->lpids[i] = MPIDI_PSP_INVALID_LPID;
 		pg->cons[i] = NULL;
 	}
 
@@ -993,7 +992,7 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t *levels, 
 		pgnext->next = pg;
 	}
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 	MPIDI_PSP_add_topo_levels_to_pg(pg, levels);
 
 	if(pg != MPIDI_Process.my_pg) { // This is for the rare case that joined PGs do not feature the same set of level degrees!
@@ -1012,7 +1011,7 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t *levels, 
 	if(pg_ptr) *pg_ptr = pg;
 
 fn_exit:
-	MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_PG_CREATE);
+	MPIR_FUNC_EXIT;
 	return mpi_errno;
 
 fn_fail:
@@ -1064,7 +1063,7 @@ MPIDI_PG_t* MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr)
 		}
 	}
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 	while(pg_ptr->topo_levels) {
 		MPIDI_PSP_topo_level_t *level = pg_ptr->topo_levels;
 		pg_ptr->topo_levels = level->next;

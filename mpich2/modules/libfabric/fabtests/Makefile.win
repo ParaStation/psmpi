@@ -18,6 +18,10 @@ CFLAGS = $(CFLAGS) /Zi /Od /MTd
 outdir = $(output_root)$(arch)\debug-v141
 CFLAGS = $(CFLAGS) /Zi /Od /MTd
 !endif
+!if "$(config)" == "Debug-v142"
+outdir = $(output_root)$(arch)\debug-v142
+CFLAGS = $(CFLAGS) /Zi /Od /MTd
+!endif
 !if "$(config)" == "Release-v140"
 outdir = $(output_root)$(arch)\release-v140
 CFLAGS = $(CFLAGS) /O2 /MT
@@ -26,9 +30,14 @@ CFLAGS = $(CFLAGS) /O2 /MT
 outdir = $(output_root)$(arch)\release-v141
 CFLAGS = $(CFLAGS) /O2 /MT
 !endif
+!if "$(config)" == "Release-v142"
+outdir = $(output_root)$(arch)\release-v142
+CFLAGS = $(CFLAGS) /O2 /MT
+!endif
 
-basedeps = common\shared.c common\jsmn.c common\windows\getopt.c \
-	common\windows\osd.c
+basedeps = common\hmem.c common\shared.c common\jsmn.c \
+	common\windows\getopt.c common\windows\osd.c \
+	common\hmem_cuda.c common\hmem_rocr.c common\hmem_ze.c
 
 includes = /Iinclude /Iinclude\windows /I..\include /FIft_osd.h \
 	/Iinclude\windows\getopt
@@ -59,7 +68,7 @@ benchmarks: $(outdir)\msg_pingpong.exe $(outdir)\rdm_cntr_pingpong.exe \
 
 functional: $(outdir)\cq_data.exe $(outdir)\dgram.exe $(outdir)\dgram_waitset.exe $(outdir)\msg.exe \
 	$(outdir)\msg_epoll.exe $(outdir)\msg_sockets.exe \
-	$(outdir)\poll.exe $(outdir)\rdm.exe $(outdir)\rdm_rma_simple.exe $(outdir)\rdm_rma_trigger.exe \
+	$(outdir)\poll.exe $(outdir)\rdm.exe $(outdir)\rdm_rma_event.exe $(outdir)\rdm_rma_trigger.exe \
 	$(outdir)\rdm_tagged_peek.exe $(outdir)\scalable_ep.exe $(outdir)\inj_complete.exe $(outdir)\bw.exe
 
 unit: $(outdir)\av_test.exe $(outdir)\dom_test.exe $(outdir)\eq_test.exe
@@ -95,7 +104,7 @@ $(outdir)\poll.exe: {functional}poll.c $(basedeps)
 
 $(outdir)\rdm.exe: {functional}rdm.c $(basedeps)
 
-$(outdir)\rdm_rma_simple.exe: {functional}rdm_rma_simple.c $(basedeps)
+$(outdir)\rdm_rma_event.exe: {functional}rdm_rma_event.c $(basedeps)
 
 $(outdir)\rdm_rma_trigger.exe: {functional}rdm_rma_trigger.c $(basedeps)
 

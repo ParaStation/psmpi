@@ -7,7 +7,7 @@
 #include "yaksu.h"
 #include <assert.h>
 
-#define BUILTIN_PAIRTYPE_PACK(type, TYPE1, TYPE2, inbuf, count, outbuf, info, request) \
+#define BUILTIN_PAIRTYPE_PACK(type, TYPE1, TYPE2, inbuf, count, outbuf, info, op, request) \
     do {                                                                \
         type z;                                                         \
         uintptr_t offset = (char *) &z.y - (char *) &z;                 \
@@ -23,11 +23,11 @@
         YAKSU_ERR_CHECK(rc, fn_fail);                                   \
                                                                         \
         for (int i = 0; i < count; i++) {                               \
-            rc = yaksi_ipack_backend(sbuf, dbuf, 1, type1, info, request); \
+            rc = yaksi_ipack_backend(sbuf, dbuf, 1, type1, info, op, request); \
             YAKSU_ERR_CHECK(rc, fn_fail);                               \
             dbuf += type1->size;                                        \
                                                                         \
-            rc = yaksi_ipack_backend(sbuf + offset, dbuf, 1, type2, info, request); \
+            rc = yaksi_ipack_backend(sbuf + offset, dbuf, 1, type2, info, op, request); \
             YAKSU_ERR_CHECK(rc, fn_fail);                               \
             dbuf += type2->size;                                        \
                                                                         \
@@ -36,9 +36,16 @@
     } while (0)
 
 static inline int pack_backend(const void *inbuf, void *outbuf, uintptr_t count,
-                               yaksi_type_s * type, yaksi_info_s * info, yaksi_request_s * request)
+                               yaksi_type_s * type, yaksi_info_s * info, yaksa_op_t op,
+                               yaksi_request_s * request)
 {
     int rc = YAKSA_SUCCESS;
+
+
+    /* always query the ptr attributes for datatypes with absolue addresses */
+    if (!inbuf) {
+        request->always_query_ptr_attr = true;
+    }
 
     switch (type->kind) {
         case YAKSI_TYPE_KIND__BUILTIN:
@@ -46,27 +53,27 @@ static inline int pack_backend(const void *inbuf, void *outbuf, uintptr_t count,
             switch (type->u.builtin.handle) {
                 case YAKSA_TYPE__FLOAT_INT:
                     BUILTIN_PAIRTYPE_PACK(yaksi_float_int_s, FLOAT, INT, inbuf, count, outbuf,
-                                          info, request);
+                                          info, op, request);
                     break;
 
                 case YAKSA_TYPE__DOUBLE_INT:
                     BUILTIN_PAIRTYPE_PACK(yaksi_double_int_s, DOUBLE, INT, inbuf, count, outbuf,
-                                          info, request);
+                                          info, op, request);
                     break;
 
                 case YAKSA_TYPE__LONG_INT:
                     BUILTIN_PAIRTYPE_PACK(yaksi_long_int_s, LONG, INT, inbuf, count, outbuf,
-                                          info, request);
+                                          info, op, request);
                     break;
 
                 case YAKSA_TYPE__SHORT_INT:
                     BUILTIN_PAIRTYPE_PACK(yaksi_short_int_s, SHORT, INT, inbuf, count, outbuf,
-                                          info, request);
+                                          info, op, request);
                     break;
 
                 case YAKSA_TYPE__LONG_DOUBLE_INT:
                     BUILTIN_PAIRTYPE_PACK(yaksi_long_double_int_s, LONG_DOUBLE, INT, inbuf, count,
-                                          outbuf, info, request);
+                                          outbuf, info, op, request);
                     break;
 
                 default:
@@ -84,7 +91,7 @@ static inline int pack_backend(const void *inbuf, void *outbuf, uintptr_t count,
                 for (int i = 0; i < count; i++) {
                     for (int j = 0; j < type->u.hvector.count; j++) {
                         rc = yaksi_ipack_backend(sbuf, dbuf, type->u.hvector.blocklength,
-                                                 type->u.hvector.child, info, request);
+                                                 type->u.hvector.child, info, op, request);
                         YAKSU_ERR_CHECK(rc, fn_fail);
                         sbuf += type->u.hvector.stride;
                         dbuf += size;
@@ -108,7 +115,7 @@ static inline int pack_backend(const void *inbuf, void *outbuf, uintptr_t count,
                             (const char *) inbuf + i * type->extent +
                             type->u.blkhindx.array_of_displs[j];
                         rc = yaksi_ipack_backend(sbuf, dbuf, type->u.blkhindx.blocklength,
-                                                 type->u.blkhindx.child, info, request);
+                                                 type->u.blkhindx.child, info, op, request);
                         YAKSU_ERR_CHECK(rc, fn_fail);
                         dbuf += size;
                     }
@@ -131,7 +138,7 @@ static inline int pack_backend(const void *inbuf, void *outbuf, uintptr_t count,
                             type->u.hindexed.array_of_displs[j];
                         rc = yaksi_ipack_backend(sbuf, dbuf,
                                                  type->u.hindexed.array_of_blocklengths[j],
-                                                 type->u.hindexed.child, info, request);
+                                                 type->u.hindexed.child, info, op, request);
                         YAKSU_ERR_CHECK(rc, fn_fail);
                         dbuf +=
                             type->u.hindexed.array_of_blocklengths[j] *
@@ -155,7 +162,7 @@ static inline int pack_backend(const void *inbuf, void *outbuf, uintptr_t count,
                             (const char *) inbuf + i * type->extent +
                             type->u.str.array_of_displs[j];
                         rc = yaksi_ipack_backend(sbuf, dbuf, type->u.str.array_of_blocklengths[j],
-                                                 type->u.str.array_of_types[j], info, request);
+                                                 type->u.str.array_of_types[j], info, op, request);
                         YAKSU_ERR_CHECK(rc, fn_fail);
                         dbuf +=
                             type->u.str.array_of_blocklengths[j] *
@@ -170,7 +177,8 @@ static inline int pack_backend(const void *inbuf, void *outbuf, uintptr_t count,
                 const char *sbuf = (const char *) inbuf;
                 char *dbuf = (char *) outbuf;
                 for (int i = 0; i < count; i++) {
-                    rc = yaksi_ipack_backend(sbuf, dbuf, 1, type->u.resized.child, info, request);
+                    rc = yaksi_ipack_backend(sbuf, dbuf, 1, type->u.resized.child, info, op,
+                                             request);
                     YAKSU_ERR_CHECK(rc, fn_fail);
 
                     sbuf += type->extent;
@@ -182,7 +190,7 @@ static inline int pack_backend(const void *inbuf, void *outbuf, uintptr_t count,
         case YAKSI_TYPE_KIND__CONTIG:
             {
                 rc = yaksi_ipack_backend(inbuf, outbuf, count * type->u.contig.count,
-                                         type->u.contig.child, info, request);
+                                         type->u.contig.child, info, op, request);
                 YAKSU_ERR_CHECK(rc, fn_fail);
             }
             break;
@@ -192,7 +200,7 @@ static inline int pack_backend(const void *inbuf, void *outbuf, uintptr_t count,
                 const char *sbuf =
                     (const char *) inbuf + type->true_lb - type->u.subarray.primary->true_lb;
                 rc = yaksi_ipack_backend(sbuf, outbuf, count, type->u.subarray.primary, info,
-                                         request);
+                                         op, request);
                 YAKSU_ERR_CHECK(rc, fn_fail);
             }
             break;
@@ -208,13 +216,14 @@ static inline int pack_backend(const void *inbuf, void *outbuf, uintptr_t count,
 }
 
 int yaksi_ipack_backend(const void *inbuf, void *outbuf, uintptr_t count, yaksi_type_s * type,
-                        yaksi_info_s * info, yaksi_request_s * request)
+                        yaksi_info_s * info, yaksa_op_t op, yaksi_request_s * request)
 {
     int rc = YAKSA_SUCCESS;
 
-    rc = yaksur_ipack(inbuf, outbuf, count, type, info, request);
+    rc = (inbuf) ? yaksur_ipack(inbuf, outbuf, count, type, info, op,
+                                request) : YAKSA_ERR__NOT_SUPPORTED;
     if (rc == YAKSA_ERR__NOT_SUPPORTED) {
-        rc = pack_backend(inbuf, outbuf, count, type, info, request);
+        rc = pack_backend(inbuf, outbuf, count, type, info, op, request);
         YAKSU_ERR_CHECK(rc, fn_fail);
     } else {
         YAKSU_ERR_CHECK(rc, fn_fail);

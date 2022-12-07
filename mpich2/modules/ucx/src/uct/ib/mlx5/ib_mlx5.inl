@@ -62,6 +62,16 @@ uct_ib_mlx5_gid_from_cqe(struct mlx5_cqe64* cqe)
     return UCS_PTR_BYTE_OFFSET(cqe, -UCT_IB_GRH_LEN);
 }
 
+
+static UCS_F_ALWAYS_INLINE void
+uct_ib_mlx5_update_db_cq_ci(uct_ib_mlx5_cq_t *cq)
+{
+#if UCS_ENABLE_ASSERT
+    cq->dbrec[UCT_IB_MLX5_CQ_SET_CI] = htobe32(cq->cq_ci & 0xffffff);
+#endif
+}
+
+
 static UCS_F_ALWAYS_INLINE struct mlx5_cqe64*
 uct_ib_mlx5_poll_cq(uct_ib_iface_t *iface, uct_ib_mlx5_cq_t *cq)
 {
@@ -79,6 +89,7 @@ uct_ib_mlx5_poll_cq(uct_ib_iface_t *iface, uct_ib_mlx5_cq_t *cq)
         UCS_STATIC_ASSERT(MLX5_CQE_INVALID & (UCT_IB_MLX5_CQE_OP_OWN_ERR_MASK >> 4));
         ucs_assert((op_own >> 4) != MLX5_CQE_INVALID);
         uct_ib_mlx5_check_completion(iface, cq, cqe);
+        uct_ib_mlx5_update_db_cq_ci(cq);
         return NULL; /* No CQE */
     }
 
@@ -97,52 +108,32 @@ uct_ib_mlx5_txwq_update_bb(uct_ib_mlx5_txwq_t *wq, uint16_t hw_ci)
 }
 
 
-/* check that work queue has enough space for the new work request */
-static inline void
-uct_ib_mlx5_txwq_validate(uct_ib_mlx5_txwq_t *wq, uint16_t num_bb)
+
+static UCS_F_ALWAYS_INLINE void
+uct_ib_mlx5_txwq_update_flags(uct_ib_mlx5_txwq_t *txwq, uint32_t flags_add,
+                              uint32_t flags_remove)
 {
-
 #if UCS_ENABLE_ASSERT
-    uint16_t wqe_s, wqe_e;
-    uint16_t hw_ci, sw_pi;
-    uint16_t wqe_cnt;
-    int is_ok = 1;
+    txwq->flags = (txwq->flags | flags_add) & ~flags_remove;
+#endif
+}
 
-    if (wq->hw_ci == 0xFFFF) {
-        return;
-    }
 
-    wqe_cnt = UCS_PTR_BYTE_DIFF(wq->qstart, wq->qend) / MLX5_SEND_WQE_BB;
-    if (wqe_cnt < wq->bb_max) {
-        ucs_fatal("wqe count (%u) < bb_max (%u)", wqe_cnt, wq->bb_max);
-    }
-
-    wqe_s = UCS_PTR_BYTE_DIFF(wq->qstart, wq->curr) / MLX5_SEND_WQE_BB;
-    wqe_e = (wqe_s + num_bb) % wqe_cnt;
-
-    sw_pi = wq->prev_sw_pi % wqe_cnt;
-    hw_ci = wq->hw_ci % wqe_cnt;
-
-    if (hw_ci <= sw_pi) {
-        if (hw_ci <= wqe_s && wqe_s <= sw_pi) {
-            is_ok = 0;
-        }
-        if (hw_ci <= wqe_e && wqe_e <= sw_pi) {
-            is_ok = 0;
-        }
-    }
-    else {
-        if (!(sw_pi < wqe_s && wqe_s < hw_ci)) {
-            is_ok = 0;
-        }
-        if (!(sw_pi < wqe_e && wqe_e < hw_ci)) {
-            is_ok = 0;
-        }
-    }
-    if (!is_ok) {
-        ucs_fatal("tx wq overrun: hw_ci: %u sw_pi: %u cur: %u-%u num_bb: %u wqe_cnt: %u",
-                hw_ci, sw_pi, wqe_s, wqe_e, num_bb, wqe_cnt);
-    }
+/**
+ * Check the work queue is in a consistent state, and that it has enough space
+ * for the new work request.
+ *
+ * @param wq             Work queue to validate.
+ * @param num_bb         How much we are posting now.
+ * @param hw_ci_updated  Whether wq->hw_ci field kept up-to-date on this
+ *                       workqueue.
+ */
+static UCS_F_ALWAYS_INLINE void
+uct_ib_mlx5_txwq_validate(uct_ib_mlx5_txwq_t *wq, uint16_t num_bb,
+                          int hw_ci_updated)
+{
+#if UCS_ENABLE_ASSERT
+    uct_ib_mlx5_txwq_validate_always(wq, num_bb, hw_ci_updated);
 #endif
 }
 
@@ -171,6 +162,36 @@ uct_ib_mlx5_inline_copy(void *restrict dest, const void *restrict src, unsigned
         n = UCS_PTR_BYTE_DIFF(dest, wq->qend);
         memcpy(dest, src, n);
         memcpy(wq->qstart, UCS_PTR_BYTE_OFFSET(src, n), length - n);
+    }
+}
+
+
+/**
+ * Copy uct_iov_t array to inline segment, taking into account QP wrap-around.
+ *
+ * @param dest     Inline data in the WQE to copy to.
+ * @param iov      A pointer to an array of uct_iov_t elements.
+ * @param iov_cnt  A number of elements in iov array.
+ * @param length   A total size of data in iov array.
+ * @param wq       Send work-queue.
+ */
+static UCS_F_ALWAYS_INLINE void
+uct_ib_mlx5_inline_iov_copy(void *restrict dest, const uct_iov_t *iov,
+                            size_t iovcnt, size_t length,
+                            uct_ib_mlx5_txwq_t *wq)
+{
+    ptrdiff_t remainder;
+    ucs_iov_iter_t iov_iter;
+
+    ucs_assert(dest != NULL);
+
+    ucs_iov_iter_init(&iov_iter);
+    remainder = UCS_PTR_BYTE_DIFF(dest, wq->qend);
+    if (ucs_likely(length <= remainder)) {
+        uct_iov_to_buffer(iov, iovcnt, &iov_iter, dest, SIZE_MAX);
+    } else {
+        uct_iov_to_buffer(iov, iovcnt, &iov_iter, dest, remainder);
+        uct_iov_to_buffer(iov, iovcnt, &iov_iter, wq->qstart, SIZE_MAX);
     }
 }
 
@@ -252,46 +273,62 @@ uct_ib_mlx5_set_dgram_seg(struct mlx5_wqe_datagram_seg *seg,
                           uct_ib_mlx5_base_av_t *av, struct mlx5_grh_av *grh_av,
                           int qp_type)
 {
+    struct mlx5_base_av *to_av    = mlx5_av_base(&seg->av);
+    struct mlx5_grh_av *to_grh_av = mlx5_av_grh(&seg->av);
+
     if (qp_type == IBV_QPT_UD) {
-        mlx5_av_base(&seg->av)->key.qkey.qkey  = htonl(UCT_IB_KEY);
+        to_av->key.qkey.qkey = htonl(UCT_IB_KEY);
 #if HAVE_TL_DC
     } else if (qp_type == UCT_IB_QPT_DCI) {
-        mlx5_av_base(&seg->av)->key.dc_key     = htobe64(UCT_IB_KEY);
+        to_av->key.dc_key    = htobe64(UCT_IB_KEY);
 #endif
     }
     ucs_assert(av != NULL);
     /* cppcheck-suppress ctunullpointer */
-    mlx5_av_base(&seg->av)->dqp_dct            = av->dqp_dct;
-    mlx5_av_base(&seg->av)->stat_rate_sl       = av->stat_rate_sl;
-    mlx5_av_base(&seg->av)->fl_mlid            = av->fl_mlid;
-    mlx5_av_base(&seg->av)->rlid               = av->rlid;
+    UCT_IB_MLX5_SET_BASE_AV(to_av, av);
 
-    if (grh_av) {
-        ucs_assert(av->dqp_dct & UCT_IB_MLX5_EXTENDED_UD_AV);
+    if (grh_av != NULL) {
+        ucs_assert(to_av->dqp_dct & UCT_IB_MLX5_EXTENDED_UD_AV);
 #if HAVE_STRUCT_MLX5_GRH_AV_RMAC
-        memcpy(mlx5_av_grh(&seg->av)->rmac, grh_av->rmac,
-               sizeof(mlx5_av_grh(&seg->av)->rmac));
+        memcpy(to_grh_av->rmac, grh_av->rmac, sizeof(to_grh_av->rmac));
 #endif
-        mlx5_av_grh(&seg->av)->tclass      = grh_av->tclass;
-        mlx5_av_grh(&seg->av)->hop_limit   = grh_av->hop_limit;
-        mlx5_av_grh(&seg->av)->grh_gid_fl  = grh_av->grh_gid_fl;
-        memcpy(mlx5_av_grh(&seg->av)->rgid, grh_av->rgid,
-               sizeof(mlx5_av_grh(&seg->av)->rgid));
+        to_grh_av->tclass     = grh_av->tclass;
+        to_grh_av->hop_limit  = grh_av->hop_limit;
+        to_grh_av->grh_gid_fl = grh_av->grh_gid_fl;
+        memcpy(to_grh_av->rgid, grh_av->rgid, sizeof(to_grh_av->rgid));
     } else if (av->dqp_dct & UCT_IB_MLX5_EXTENDED_UD_AV) {
-        mlx5_av_grh(&seg->av)->grh_gid_fl  = 0;
+        to_grh_av->grh_gid_fl = 0;
     }
 }
 
+static UCS_F_ALWAYS_INLINE void
+uct_ib_mlx5_set_ctrl_qpn_ds(struct mlx5_wqe_ctrl_seg *ctrl, uint32_t qp_num,
+                            uint8_t ds)
+{
+    ctrl->qpn_ds = htonl((qp_num << 8) | ds);
+}
 
 static UCS_F_ALWAYS_INLINE void
 uct_ib_mlx5_set_ctrl_seg(struct mlx5_wqe_ctrl_seg* ctrl, uint16_t pi,
                          uint8_t opcode, uint8_t opmod, uint32_t qp_num,
                          uint8_t fm_ce_se, unsigned wqe_size)
 {
-    uint8_t ds;
+    uint8_t ds = ucs_div_round_up(wqe_size, UCT_IB_MLX5_WQE_SEG_SIZE);
+#if defined(__ARM_NEON)
+    uint8x16_t table = {1,               /* opmod */
+                        5,  4,           /* sw_pi in BE */
+                        2,               /* opcode */
+                        14, 13, 12,      /* QP num */
+                        8,               /* data size */
+                        16,              /* signature (set 0) */
+                        16, 16,          /* reserved (set 0) */
+                        0,               /* signal/fence_mode */
+                        16, 16, 16, 16}; /* immediate (set to 0)*/
+    uint32x4_t data = {(opcode << 16) | (opmod << 8) | (uint32_t)fm_ce_se,
+                       pi, ds, qp_num};
+#endif
 
     ucs_assert(((unsigned long)ctrl % UCT_IB_MLX5_WQE_SEG_SIZE) == 0);
-    ds = ucs_div_round_up(wqe_size, UCT_IB_MLX5_WQE_SEG_SIZE);
 #if defined(__SSE4_2__)
     *(__m128i *) ctrl = _mm_shuffle_epi8(
                     _mm_set_epi32(qp_num, ds, pi,
@@ -307,21 +344,10 @@ uct_ib_mlx5_set_ctrl_seg(struct mlx5_wqe_ctrl_seg* ctrl, uint16_t pi,
                                  1           /* opmod */
                                  ));
 #elif defined(__ARM_NEON)
-    uint8x16_t table = {1,               /* opmod */
-                        5,  4,           /* sw_pi in BE */
-                        2,               /* opcode */
-                        14, 13, 12,      /* QP num */
-                        8,               /* data size */
-                        16,              /* signature (set 0) */
-                        16, 16,          /* reserved (set 0) */
-                        0,               /* signal/fence_mode */
-                        16, 16, 16, 16}; /* immediate (set to 0)*/
-    uint32x4_t data = {(opcode << 16) | (opmod << 8) | (uint32_t)fm_ce_se,
-                       pi, ds, qp_num};
     *(uint8x16_t *)ctrl = vqtbl1q_u8((uint8x16_t)data, table);
 #else
     ctrl->opmod_idx_opcode = (opcode << 24) | (htons(pi) << 8) | opmod;
-    ctrl->qpn_ds           = htonl((qp_num << 8) | ds);
+    uct_ib_mlx5_set_ctrl_qpn_ds(ctrl, qp_num, ds);
     ctrl->fm_ce_se         = fm_ce_se;
 #endif
 }
@@ -332,10 +358,23 @@ uct_ib_mlx5_set_ctrl_seg_with_imm(struct mlx5_wqe_ctrl_seg* ctrl, uint16_t pi,
                                   uint8_t opcode, uint8_t opmod, uint32_t qp_num,
                                   uint8_t fm_ce_se, unsigned wqe_size, uint32_t imm)
 {
-    uint8_t ds;
+    uint8_t ds = ucs_div_round_up(wqe_size, UCT_IB_MLX5_WQE_SEG_SIZE);
+#if defined(__ARM_NEON)
+    uint8x16_t table = {1,               /* opmod */
+                        5,  4,           /* sw_pi in BE */
+                        2,               /* opcode */
+                        14, 13, 12,      /* QP num */
+                        6,               /* data size */
+                        16,              /* signature (set 0) */
+                        16, 16,          /* reserved (set 0) */
+                        0,               /* signal/fence_mode */
+                        8, 9, 10, 11}; /* immediate (set to 0)*/
+    uint32x4_t data = {(opcode << 16) | (opmod << 8) | (uint32_t)fm_ce_se,
+                       (ds << 16) | pi, imm,  qp_num};
+#endif
 
     ucs_assert(((unsigned long)ctrl % UCT_IB_MLX5_WQE_SEG_SIZE) == 0);
-    ds = ucs_div_round_up(wqe_size, UCT_IB_MLX5_WQE_SEG_SIZE);
+
 #if defined(__SSE4_2__)
     *(__m128i *) ctrl = _mm_shuffle_epi8(
                     _mm_set_epi32(qp_num, imm, (ds << 16) | pi,
@@ -351,21 +390,10 @@ uct_ib_mlx5_set_ctrl_seg_with_imm(struct mlx5_wqe_ctrl_seg* ctrl, uint16_t pi,
                                  1             /* opmod */
                                  ));
 #elif defined(__ARM_NEON)
-    uint8x16_t table = {1,               /* opmod */
-                        5,  4,           /* sw_pi in BE */
-                        2,               /* opcode */
-                        14, 13, 12,      /* QP num */
-                        6,               /* data size */
-                        16,              /* signature (set 0) */
-                        16, 16,          /* reserved (set 0) */
-                        0,               /* signal/fence_mode */
-                        8, 9, 10, 11}; /* immediate (set to 0)*/
-    uint32x4_t data = {(opcode << 16) | (opmod << 8) | (uint32_t)fm_ce_se,
-                       (ds << 16) | pi, imm,  qp_num};
     *(uint8x16_t *)ctrl = vqtbl1q_u8((uint8x16_t)data, table);
 #else
     ctrl->opmod_idx_opcode = (opcode << 24) | (htons(pi) << 8) | opmod;
-    ctrl->qpn_ds           = htonl((qp_num << 8) | ds);
+    uct_ib_mlx5_set_ctrl_qpn_ds(ctrl, qp_num, ds);
     ctrl->fm_ce_se         = fm_ce_se;
     ctrl->imm              = imm;
 #endif
@@ -441,8 +469,8 @@ void *uct_ib_mlx5_bf_copy(void *dst, void *src, uint16_t num_bb,
 }
 
 static UCS_F_ALWAYS_INLINE uint16_t
-uct_ib_mlx5_post_send(uct_ib_mlx5_txwq_t *wq,
-                      struct mlx5_wqe_ctrl_seg *ctrl, unsigned wqe_size)
+uct_ib_mlx5_post_send(uct_ib_mlx5_txwq_t *wq, struct mlx5_wqe_ctrl_seg *ctrl,
+                      unsigned wqe_size, int hw_ci_updated)
 {
     uint16_t sw_pi, num_bb, res_count;
     void *src, *dst;
@@ -451,7 +479,8 @@ uct_ib_mlx5_post_send(uct_ib_mlx5_txwq_t *wq,
     num_bb  = ucs_div_round_up(wqe_size, MLX5_SEND_WQE_BB);
     sw_pi   = wq->sw_pi;
 
-    uct_ib_mlx5_txwq_validate(wq, num_bb);
+    uct_ib_mlx5_txwq_validate(wq, num_bb, hw_ci_updated);
+
     /* TODO Put memory store fence here too, to prevent WC being flushed after DBrec */
     ucs_memory_cpu_store_fence();
 
@@ -542,19 +571,4 @@ uct_ib_mlx5_iface_fill_attr(uct_ib_iface_t *iface,
 #endif
 
     return UCS_OK;
-}
-
-static void UCS_F_MAYBE_UNUSED
-uct_ib_mlx5_destroy_qp(uct_ib_mlx5_md_t *md, uct_ib_mlx5_qp_t *qp)
-{
-    switch (qp->type) {
-    case UCT_IB_MLX5_OBJ_TYPE_VERBS:
-        uct_ib_destroy_qp(qp->verbs.qp);
-        break;
-    case UCT_IB_MLX5_OBJ_TYPE_DEVX:
-        uct_ib_mlx5_devx_destroy_qp(md, qp);
-        break;
-    case UCT_IB_MLX5_OBJ_TYPE_LAST:
-        break;
-    }
 }

@@ -78,8 +78,7 @@ int hcoll_initialize(void)
     mpi_errno = MPI_SUCCESS;
 
 #ifdef MPID_PSP_WITH_HCOLL
-    hcoll_enable = MPIR_CVAR_ENABLE_HCOLL &&
-        MPIR_ThreadInfo.thread_provided != MPI_THREAD_MULTIPLE;
+    hcoll_enable = MPIR_CVAR_ENABLE_HCOLL && MPIR_ThreadInfo.thread_provided != MPI_THREAD_MULTIPLE;
 #else
     hcoll_enable = (MPIR_CVAR_ENABLE_HCOLL | MPIR_CVAR_CH3_ENABLE_HCOLL) &&
         MPIR_ThreadInfo.thread_provided != MPI_THREAD_MULTIPLE;
@@ -109,7 +108,6 @@ int hcoll_initialize(void)
 
         MPIR_Progress_hook_activate(hcoll_progress_hook_id);
     }
-    MPIR_Add_finalize(hcoll_destroy, 0, 0);
 
     CHECK_ENABLE_ENV_VARS(BARRIER, barrier);
     CHECK_ENABLE_ENV_VARS(BCAST, bcast);
@@ -187,14 +185,16 @@ int hcoll_comm_destroy(MPIR_Comm * comm_ptr, void *param)
 
     if ((NULL != comm_ptr) && (0 != comm_ptr->hcoll_priv.is_hcoll_init)) {
 #if HCOLL_API >= HCOLL_VERSION(3,7)
-        hcoll_context_free(comm_ptr->hcoll_priv.hcoll_context,
-                           (rte_grp_handle_t) comm_ptr);
+        hcoll_context_free(comm_ptr->hcoll_priv.hcoll_context, (rte_grp_handle_t) comm_ptr);
 #else
         int context_destroyed = 0;
         hcoll_destroy_context(comm_ptr->hcoll_priv.hcoll_context,
                               (rte_grp_handle_t) comm_ptr, &context_destroyed);
 #endif
         comm_ptr->hcoll_priv.is_hcoll_init = 0;
+    }
+    if (comm_ptr->handle == MPI_COMM_WORLD) {
+        hcoll_destroy(NULL);
     }
   fn_exit:
     return mpi_errno;

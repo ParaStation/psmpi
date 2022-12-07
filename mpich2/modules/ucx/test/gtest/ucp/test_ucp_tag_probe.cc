@@ -86,13 +86,13 @@ public:
             EXPECT_EQ((ucp_tag_t)0x111337, recv_req->info.sender_tag);
             EXPECT_EQ(sendbuf, recvbuf);
         }
-        request_release(recv_req);
+        request_free(recv_req);
 
         if (UCS_PTR_IS_PTR(send_req)) {
             wait(send_req);
             EXPECT_TRUE(send_req->completed);
             EXPECT_EQ(UCS_OK, send_req->status);
-            request_release(send_req);
+            request_free(send_req);
         }
     }
 
@@ -113,7 +113,7 @@ public:
                                                  &recvbuf[0], recvbuf.size(),
                                                  DATATYPE, message, recv_callback);
              wait(req);
-             request_release(req);
+             request_free(req);
              ++count;
         }
     }
@@ -166,9 +166,14 @@ UCS_TEST_P(test_ucp_tag_probe, send_rndv_msg_probe, "RNDV_THRESH=1048576") {
     EXPECT_EQ((ucp_tag_t)0x111337, info.sender_tag);
 
     /* receiver - process the rts and schedule a get operation */
-    my_recv_req = (request*)ucp_tag_msg_recv_nb(receiver().worker(), &recvbuf[0],
-                                                recvbuf.size(), DATATYPE, message,
-                                                recv_callback);
+    ucp_request_param_t param;
+    param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK | UCP_OP_ATTR_FIELD_DATATYPE |
+                         UCP_OP_ATTR_FLAG_NO_IMM_CMPL;
+    param.cb.recv      = recv_callback;
+    param.datatype     = DATATYPE;
+
+    my_recv_req = (request*)ucp_tag_msg_recv_nbx(receiver().worker(), &recvbuf[0],
+                                                 recvbuf.size(), message, &param);
     ASSERT_TRUE(!UCS_PTR_IS_ERR(my_recv_req));
 
     /* receiver - perform rndv get and send the ATS */
@@ -184,7 +189,7 @@ UCS_TEST_P(test_ucp_tag_probe, send_rndv_msg_probe, "RNDV_THRESH=1048576") {
     EXPECT_EQ(sendbuf, recvbuf);
 
     wait_and_validate(my_send_req);
-    request_release(my_recv_req);
+    request_free(my_recv_req);
 }
 
 UCS_TEST_P(test_ucp_tag_probe, send_2_msg_probe, "RNDV_THRESH=inf") {
@@ -256,7 +261,7 @@ UCS_TEST_P(test_ucp_tag_probe, send_2_msg_probe, "RNDV_THRESH=inf") {
         request *req = reqs.back();
         EXPECT_TRUE(req->completed);
         EXPECT_EQ(UCS_OK, req->status);
-        request_release(req);
+        request_free(req);
         reqs.pop_back();
     }
 }
@@ -307,7 +312,7 @@ UCS_TEST_P(test_ucp_tag_probe, limited_probe_size) {
 
     while (!reqs.empty()) {
         wait(reqs.back());
-        request_release(reqs.back());
+        request_free(reqs.back());
         reqs.pop_back();
     }
 }

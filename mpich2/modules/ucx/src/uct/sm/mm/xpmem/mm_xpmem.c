@@ -14,7 +14,7 @@
 #include <uct/sm/mm/base/mm_md.h>
 #include <uct/sm/mm/base/mm_iface.h>
 #include <ucs/datastruct/khash.h>
-#include <ucs/debug/memtrack.h>
+#include <ucs/debug/memtrack_int.h>
 #include <ucs/type/init_once.h>
 #include <ucs/type/spinlock.h>
 #include <ucs/memory/rcache.h>
@@ -70,30 +70,39 @@ static ucs_config_field_t uct_xpmem_md_config_table[] = {
   {NULL}
 };
 
+static ucs_config_field_t uct_xpmem_iface_config_table[] = {
+  {"MM_", "", NULL, 0, UCS_CONFIG_TYPE_TABLE(uct_mm_iface_config_table)},
+
+  {NULL}
+};
+
 UCS_STATIC_INIT {
     ucs_recursive_spinlock_init(&uct_xpmem_remote_mem_lock, 0);
     kh_init_inplace(xpmem_remote_mem, &uct_xpmem_remote_mem_hash);
 }
 
 UCS_STATIC_CLEANUP {
+    unsigned long num_leaked_segments;
     uct_xpmem_remote_mem_t *rmem;
-    ucs_status_t status;
 
+    num_leaked_segments = 0;
     kh_foreach_value(&uct_xpmem_remote_mem_hash, rmem, {
-        ucs_warn("remote segment id %lx apid %lx is not released, refcount %d",
-                 (unsigned long)rmem->xsegid, (unsigned long)rmem->apid,
-                 rmem->refcount);
+        ucs_debug("remote segment id %lx apid %lx is not released, refcount %d",
+                  (unsigned long)rmem->xsegid, (unsigned long)rmem->apid,
+                  rmem->refcount);
+        ++num_leaked_segments;
     })
     kh_destroy_inplace(xpmem_remote_mem, &uct_xpmem_remote_mem_hash);
 
-    status = ucs_recursive_spinlock_destroy(&uct_xpmem_remote_mem_lock);
-    if (status != UCS_OK) {
-        ucs_warn("ucs_recursive_spinlock_destroy() failed: %s",
-                 ucs_status_string(status));
+    if (num_leaked_segments > 0) {
+        ucs_diag("%lu xpmem remote segments were not released at exit",
+                 num_leaked_segments);
     }
+
+    ucs_recursive_spinlock_destroy(&uct_xpmem_remote_mem_lock);
 }
 
-static ucs_status_t uct_xpmem_query()
+static ucs_status_t uct_xpmem_query(int *attach_shm_file_p)
 {
     int version;
 
@@ -105,6 +114,9 @@ static ucs_status_t uct_xpmem_query()
     }
 
     ucs_debug("xpmem version: %d", version);
+
+    *attach_shm_file_p = 0;
+
     return UCS_OK;
 }
 
@@ -115,7 +127,7 @@ static ucs_status_t uct_xpmem_md_query(uct_md_h md, uct_md_attr_t *md_attr)
     md_attr->cap.flags        |= UCT_MD_FLAG_REG;
     md_attr->reg_cost          = ucs_linear_func_make(60.0e-9, 0);
     md_attr->cap.max_reg       = ULONG_MAX;
-    md_attr->cap.reg_mem_types = UCS_MEMORY_TYPES_CPU_ACCESSIBLE;
+    md_attr->cap.reg_mem_types = UCS_BIT(UCS_MEMORY_TYPE_HOST);
     md_attr->rkey_packed_size  = sizeof(uct_xpmem_packed_rkey_t);
 
     return UCS_OK;
@@ -267,6 +279,8 @@ uct_xpmem_rmem_add(xpmem_segid_t xsegid, uct_xpmem_remote_mem_t **rmem_p)
     rcache_params.ops                = &uct_xpmem_rcache_ops;
     rcache_params.context            = rmem;
     rcache_params.flags              = UCS_RCACHE_FLAG_NO_PFN_CHECK;
+    rcache_params.max_regions        = ULONG_MAX;
+    rcache_params.max_size           = SIZE_MAX;
 
     status = ucs_rcache_create(&rcache_params, "xpmem_remote_mem",
                                ucs_stats_get_root(), &rmem->rcache);
@@ -417,9 +431,15 @@ static ucs_status_t uct_xmpem_mem_reg(uct_md_h md, void *address, size_t length,
     return UCS_OK;
 }
 
-static ucs_status_t uct_xmpem_mem_dereg(uct_md_h md, uct_mem_h memh)
+static ucs_status_t
+uct_xmpem_mem_dereg(uct_md_h md,
+                    const uct_md_mem_dereg_params_t *params)
 {
-    uct_mm_seg_t *seg = memh;
+    uct_mm_seg_t *seg;
+
+    UCT_MD_MEM_DEREG_CHECK_PARAMS(params, 0);
+
+    seg = params->memh;
     ucs_free(seg);
     return UCS_OK;
 }
@@ -534,22 +554,22 @@ static uct_mm_md_mapper_ops_t uct_xpmem_md_ops = {
     .super = {
         .close                  = uct_mm_md_close,
         .query                  = uct_xpmem_md_query,
-        .mem_alloc              = (uct_md_mem_alloc_func_t)ucs_empty_function_return_unsupported,
-        .mem_free               = (uct_md_mem_free_func_t)ucs_empty_function_return_unsupported,
-        .mem_advise             = (uct_md_mem_advise_func_t)ucs_empty_function_return_unsupported,
+        .mem_alloc              = ucs_empty_function_return_unsupported,
+        .mem_free               = ucs_empty_function_return_unsupported,
+        .mem_advise             = ucs_empty_function_return_unsupported,
         .mem_reg                = uct_xmpem_mem_reg,
         .mem_dereg              = uct_xmpem_mem_dereg,
         .mkey_pack              = uct_xpmem_mkey_pack,
-        .is_sockaddr_accessible = (uct_md_is_sockaddr_accessible_func_t)ucs_empty_function_return_zero,
-        .detect_memory_type     = (uct_md_detect_memory_type_func_t)ucs_empty_function_return_unsupported
+        .is_sockaddr_accessible = ucs_empty_function_return_zero_int,
+        .detect_memory_type     = ucs_empty_function_return_unsupported
     },
-   .query                       = uct_xpmem_query,
-   .iface_addr_length           = uct_xpmem_iface_addr_length,
-   .iface_addr_pack             = uct_xpmem_iface_addr_pack,
-   .mem_attach                  = uct_xpmem_mem_attach,
-   .mem_detach                  = uct_xpmem_mem_detach,
-   .is_reachable                = (uct_mm_mapper_is_reachable_func_t)ucs_empty_function_return_one
+    .query             = uct_xpmem_query,
+    .iface_addr_length = uct_xpmem_iface_addr_length,
+    .iface_addr_pack   = uct_xpmem_iface_addr_pack,
+    .mem_attach        = uct_xpmem_mem_attach,
+    .mem_detach        = uct_xpmem_mem_detach,
+    .is_reachable      = ucs_empty_function_return_one_int
 };
 
 UCT_MM_TL_DEFINE(xpmem, &uct_xpmem_md_ops, uct_xpmem_rkey_unpack,
-                 uct_xpmem_rkey_release, "XPMEM_")
+                 uct_xpmem_rkey_release, "XPMEM_", uct_xpmem_iface_config_table)

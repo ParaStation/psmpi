@@ -30,6 +30,7 @@ typedef char pscom_port_str_t[PSCOM_PORT_MAXLEN];
 
 pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm *comm, MPIR_Comm *intercomm);
 
+#ifdef MPID_PSP_MSA_AWARENESS
 typedef struct MPIDI_PSP_topo_level MPIDI_PSP_topo_level_t;
 struct MPIDI_PSP_topo_level {
 	struct MPIDI_PG *pg;
@@ -43,6 +44,11 @@ struct MPIDI_PSP_topo_level {
 #define MPIDI_PSP_TOPO_BADGE__NULL -1
 #define MPIDI_PSP_TOPO_LEVEL__MODULES 4096
 #define MPIDI_PSP_TOPO_LEVEL__NODES   1024
+#else
+typedef void MPIDI_PSP_topo_level_t;
+#endif
+
+#define MPIDI_PSP_INVALID_LPID ((uint64_t)-1)
 
 typedef struct MPIDI_PG MPIDI_PG_t;
 struct MPIDI_PG {
@@ -51,8 +57,8 @@ struct MPIDI_PG {
 	int size;
 	int id_num;
 	MPIDI_VC_t **vcr;
-	int * lpids;
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+	uint64_t * lpids;
+#ifdef MPID_PSP_MSA_AWARENESS
 	struct MPIDI_PSP_topo_level *topo_levels;
 #endif
 	pscom_connection_t **cons;
@@ -62,7 +68,7 @@ struct MPIDI_PG {
 
 struct MPIDI_VC {
 	pscom_connection_t *con;
-	int lpid;
+	uint64_t lpid;
 	int pg_rank;
 	MPIDI_PG_t * pg;
 	int refcnt;
@@ -83,7 +89,7 @@ MPIDI_VCRT_t *MPIDI_VCRT_Dup(MPIDI_VCRT_t *vcrt);
 int MPIDI_VCRT_Release(MPIDI_VCRT_t *vcrt, int isDisconnect);
 
 MPIDI_VC_t *MPIDI_VC_Dup(MPIDI_VC_t *orig_vcr);
-MPIDI_VC_t *MPIDI_VC_Create(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid);
+MPIDI_VC_t *MPIDI_VC_Create(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, uint64_t lpid);
 
 int MPID_PSP_get_host_hash(void);
 int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key, MPIR_Info * info_ptr, MPIR_Comm ** newcomm_ptr);
@@ -99,7 +105,7 @@ void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num);
 
 typedef struct MPIDI_Process
 {
-	/* pscom_socket_t *socket; // moved To comm_ptr->pscom_socket */
+	pscom_socket_t *socket;
 
 	pscom_connection_t **grank2con;
 
@@ -108,13 +114,16 @@ typedef struct MPIDI_Process
 	unsigned int 	singleton_but_no_pm;
 
 	char *pg_id_name;
-	int next_lpid;
+	uint64_t next_lpid;
 	MPIDI_PG_t * my_pg;
-
+#ifdef MPID_PSP_MSA_AWARENESS
+	MPIDI_PSP_topo_level_t *topo_levels;
+#endif
 	int shm_attr_key;
 
 	int smp_node_id;
 	int msa_module_id;
+	uint8_t use_world_model;
 
 	struct {
 		unsigned debug_level;
@@ -124,11 +133,11 @@ typedef struct MPIDI_Process
 		unsigned enable_ondemand_spawn;
 		unsigned enable_smp_awareness;
 		unsigned enable_msa_awareness;
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 		unsigned enable_smp_aware_collops;
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 		unsigned enable_msa_aware_collops;
 #endif
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
 		unsigned enable_hcoll;
 #endif
 #ifdef MPID_PSP_HISTOGRAM
@@ -162,13 +171,30 @@ typedef struct MPIDI_Process
        } stats;
 #endif /* MPIDI_PSP_WITH_SESSION_STATISTICS */
 
+	/* 	Partitioned communication lists used on receiver side
+		TODO: the following two lists can be optimized
+		by saving the requests structured per source rank
+		instead of one global list for all source ranks
+	*/
+	struct list_head part_unexp_list; /* list of unexpected receives (stores received SEND_INIT that can not be matched to partitioned receive request yet)*/
+	struct list_head part_posted_list; /* list of posted receive request that could not be matched to SEND_INIT yet*/
+
 } MPIDI_Process_t;
 
 extern MPIDI_Process_t MPIDI_Process;
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARENESS
+int MPIDI_PSP_topo_init(void);
 int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level);
 #endif
+
+/* The following two functions are callbacks that are added in MPID_Init() via
+ * MPIR_Add_finalize() to the set of finalize hooks that are then called during
+ * MPII_Finalize(). Both of them require that the built-in comms are still valid
+ * and have thus to be applied with a priority > MPIR_FINALIZE_CALLBACK_PRIO.
+ */
+int MPIDI_PSP_finalize_print_stats_cb(void *param);
+int MPIDI_PSP_finalize_add_barrier_cb(void *param);
 
 int MPIDI_PSP_Isend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		    int dest, int tag, MPIR_Comm *comm, int context_offset,
@@ -189,6 +215,25 @@ int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int t
 		   MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
 */
 
+/*init persistent request*/
+int MPID_PSP_persistent_init(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
+			     MPIR_Comm *comm, int context_offset, MPIR_Request **request,
+			     int (*call)(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
+					 int tag, struct MPIR_Comm * comm, int context_offset, MPIR_Request ** request),
+			     MPIR_Request_kind_t type);
+
+/*start persistent request*/
+int MPID_PSP_persistent_start(MPIR_Request *req);
+
+/*start partitioned receive request*/
+int MPID_PSP_precv_start(MPIR_Request * req);
+/*start partitioned send request*/
+int MPID_PSP_psend_start(MPIR_Request * req);
+/*callbacks for partitioned communication*/
+pscom_request_t * MPID_do_recv_part_send_init(pscom_connection_t *con, pscom_header_net_t *header_net);
+pscom_request_t * MPID_do_recv_part_cts(pscom_connection_t *con, pscom_header_net_t *header_net);
+
+
 /* Control messages */
 #define MPIDI_PSP_CTRL_TAG__WIN__POST	  11
 #define MPIDI_PSP_CTRL_TAG__WIN__COMPLETE 12
@@ -198,6 +243,8 @@ void MPIDI_PSP_SendCtrl(int tag, int context_id, int src_rank, pscom_connection_
 void MPIDI_PSP_RecvCtrl(int tag, int context_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype);
 void MPIDI_PSP_IprobeCtrl(int tag, int context_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype, int *flag);
 void MPIDI_PSP_SendRmaCtrl(MPIR_Win *win_ptr, MPIR_Comm *comm, pscom_connection_t *con, int dest_rank, enum MPID_PSP_MSGTYPE msgtype);
+void MPIDI_PSP_SendPartitionedCtrl(int tag, int context_id, int src_rank, pscom_connection_t *con, MPI_Aint sdata_size, int requests, MPIR_Request * sreq, MPIR_Request * rreq, enum MPID_PSP_MSGTYPE msgtype);
+void MPIDI_PSP_RecvPartitionedCtrl(int tag, int context_id, int src_rank,	pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype);
 
 /* from mpid_rma_put.c: */
 pscom_request_t *MPID_do_recv_rma_put(pscom_connection_t *con, MPID_PSCOM_XHeader_Rma_put_t *xhead_rma);

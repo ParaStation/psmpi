@@ -20,7 +20,7 @@ int yaksi_iov_len(uintptr_t count, yaksi_type_s * type, uintptr_t * iov_len)
     return YAKSA_SUCCESS;
 }
 
-int yaksa_iov_len(uintptr_t count, yaksa_type_t type, uintptr_t * iov_len)
+YAKSA_API_PUBLIC int yaksa_iov_len(uintptr_t count, yaksa_type_t type, uintptr_t * iov_len)
 {
     yaksi_type_s *yaksi_type;
     int rc = YAKSA_SUCCESS;

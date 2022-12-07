@@ -551,7 +551,8 @@ if test "$enable_strict_done" != "yes" ; then
     "
 
     enable_c89=no
-    enable_c99=yes
+    enable_c99=no
+    enable_c11=no
     enable_posix=2001
     enable_opt=yes
     flags="`echo $1 | sed -e 's/:/ /g' -e 's/,/ /g'`"
@@ -561,11 +562,19 @@ if test "$enable_strict_done" != "yes" ; then
 		enable_strict_done="yes"
 		enable_c89=yes
                 enable_c99=no
+                enable_c11=no
 		;;
 	     c99)
 		enable_strict_done="yes"
                 enable_c89=no
 		enable_c99=yes
+                enable_c11=no
+		;;
+	     c11)
+		enable_strict_done="yes"
+                enable_c89=no
+		enable_c99=no
+                enable_c11=yes
 		;;
 	     posix1995)
 		enable_strict_done="yes"
@@ -593,7 +602,6 @@ if test "$enable_strict_done" != "yes" ; then
 		;;
 	     all|yes)
 		enable_strict_done="yes"
-		enable_c99=yes
 		enable_posix=2001
 		enable_opt=yes
 	        ;;
@@ -622,9 +630,11 @@ if test "$enable_strict_done" != "yes" ; then
             2008) PAC_APPEND_FLAG([-D_POSIX_C_SOURCE=200809L],[pac_cc_strict_flags]) ;;
             *)    AC_MSG_ERROR([internal error, unexpected POSIX version: '$enable_posix']) ;;
        esac
-       # We only allow one of strict-C99 or strict-C89 to be
-       # enabled. If C99 is enabled, we automatically disable C89.
-       if test "${enable_c99}" = "yes" ; then
+       # We only allow one of strict-C11, strict-C99 or strict-C89 to be
+       # enabled.
+       if test "${enable_c11}" = "yes" ; then
+       	  PAC_APPEND_FLAG([-std=c11],[pac_cc_strict_flags])
+       elif test "${enable_c99}" = "yes" ; then
        	  PAC_APPEND_FLAG([-std=c99],[pac_cc_strict_flags])
        elif test "${enable_c89}" = "yes" ; then
        	  PAC_APPEND_FLAG([-std=c89],[pac_cc_strict_flags])

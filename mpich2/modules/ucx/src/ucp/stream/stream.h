@@ -13,7 +13,7 @@
 
 
 typedef struct {
-    uintptr_t                ep_ptr;
+    uint64_t                 ep_id;
 } UCS_S_PACKED ucp_stream_am_hdr_t;
 
 
@@ -27,7 +27,7 @@ typedef struct {
 
 void ucp_stream_ep_init(ucp_ep_h ep);
 
-void ucp_stream_ep_cleanup(ucp_ep_h ep);
+void ucp_stream_ep_cleanup(ucp_ep_h ep, ucs_status_t status);
 
 void ucp_stream_ep_activate(ucp_ep_h ep);
 

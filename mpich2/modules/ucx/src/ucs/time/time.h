@@ -9,7 +9,6 @@
 
 #include <ucs/arch/cpu.h>
 #include <ucs/time/time_def.h>
-#include <ucs/sys/math.h>
 #include <sys/time.h>
 #include <limits.h>
 
@@ -30,10 +29,17 @@ typedef uint32_t             ucs_short_time_t;
 
 
 #define UCS_TIME_INFINITY  ULLONG_MAX
+#define UCS_TIME_AUTO      (UCS_TIME_INFINITY - 1)
 
-#define UCS_MSEC_PER_SEC   1000ull       /* Milli */
-#define UCS_USEC_PER_SEC   1000000ul     /* Micro */
-#define UCS_NSEC_PER_SEC   1000000000ul  /* Nano */
+
+/* Milli per sec */
+#define UCS_MSEC_PER_SEC   1000ull
+/* Micro per sec */
+#define UCS_USEC_PER_SEC   1000000ul
+/* Nano per sec */
+#define UCS_NSEC_PER_SEC   1000000000ul
+/* Nano per micro */
+#define UCS_NSEC_PER_USEC  (UCS_NSEC_PER_SEC / UCS_USEC_PER_SEC)
 
 
 double ucs_get_cpu_clocks_per_sec();
@@ -74,6 +80,7 @@ static inline ucs_time_t ucs_time_from_sec(double sec)
 {
     return (ucs_time_t)(sec * ucs_time_sec_value() + 0.5);
 }
+
 
 /**
  * Convert seconds to UCS time units.

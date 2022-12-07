@@ -14,16 +14,16 @@
 
 
 enum {
-    UCP_TAG_OFFLOAD_CANCEL_FORCE = UCS_BIT(0),
-    UCP_TAG_OFFLOAD_CANCEL_DEREG = UCS_BIT(1)
+    UCP_TAG_OFFLOAD_CANCEL_FORCE = UCS_BIT(0)
 };
+
 
 /**
  * Header for unexpected rendezvous
  */
 typedef struct {
-    uintptr_t      ep_ptr;
-    uintptr_t      reqptr;       /* Request pointer */
+    uint64_t       ep_id;        /* Endpoint ID */
+    uint64_t       req_id;       /* Request ID */
     uint8_t        md_index;     /* md index */
 } UCS_S_PACKED ucp_tag_offload_unexp_rndv_hdr_t;
 
@@ -32,19 +32,31 @@ typedef struct {
  * Header for sync send acknowledgment
  */
 typedef struct {
-    uintptr_t         ep_ptr;
+    uint64_t          ep_id;
     ucp_tag_t         sender_tag;
 } UCS_S_PACKED ucp_offload_ssend_hdr_t;
 
 
 /**
- * Header for multi-fragmented sync send acknowledgment
- * (carried by last fragment)
+ * Header for the first tag offload fragment. It is not actually sent on the
+ * wire, receiver adds it right before the data to simplify further processing.
  */
 typedef struct {
-    ucp_eager_middle_hdr_t    super;
-    ucp_offload_ssend_hdr_t   ssend_ack;
-} UCS_S_PACKED ucp_offload_last_ssend_hdr_t;
+    /* The first field of every tagged message must be the tag
+     * (needed for proper matching).
+     */
+    ucp_eager_hdr_t      super;
+
+    /* The total length is not sent with the first fragment in tag offload flow.
+     * This field is used to accumulate the total_length (every incoming
+     * fragment adds its length to this value).
+     */
+    size_t               total_length;
+
+    /* The queue of message fragments.
+     */
+    ucp_tag_frag_match_t matchq;
+} UCS_S_PACKED ucp_offload_first_desc_t;
 
 
 extern const ucp_request_send_proto_t ucp_tag_offload_proto;
@@ -68,7 +80,8 @@ ucs_status_t ucp_tag_offload_unexp_rndv(void *arg, unsigned flags, uint64_t stag
                                         uint64_t remote_addr, size_t length,
                                         const void *rkey_buf);
 
-void ucp_tag_offload_cancel(ucp_worker_t *worker, ucp_request_t *req, unsigned mode);
+void ucp_tag_offload_cancel(ucp_worker_t *worker, ucp_request_t *req,
+                            unsigned mode);
 
 int ucp_tag_offload_post(ucp_request_t *req, ucp_request_queue_t *req_queue);
 
@@ -98,7 +111,8 @@ ucp_tag_offload_try_post(ucp_worker_t *worker, ucp_request_t *req,
 }
 
 static UCS_F_ALWAYS_INLINE void
-ucp_tag_offload_try_cancel(ucp_worker_t *worker, ucp_request_t *req, unsigned mode)
+ucp_tag_offload_try_cancel(ucp_worker_t *worker, ucp_request_t *req,
+                           unsigned mode)
 {
     if (ucs_unlikely(req->flags & UCP_REQUEST_FLAG_OFFLOADED)) {
         ucp_tag_offload_cancel(worker, req, mode);
@@ -159,5 +173,12 @@ ucp_tag_offload_unexp(ucp_worker_iface_t *wiface, ucp_tag_t tag, size_t length)
     }
 }
 
+static UCS_F_ALWAYS_INLINE void ucp_tag_offload_sync_posted(ucp_request_t *req)
+{
+    ucp_worker_t *worker = req->send.ep->worker;
+
+    req->send.tag_offload.ssend_tag = req->send.msg_proto.tag;
+    ucs_queue_push(&worker->tm.offload.sync_reqs, &req->send.tag_offload.queue);
+}
 
 #endif

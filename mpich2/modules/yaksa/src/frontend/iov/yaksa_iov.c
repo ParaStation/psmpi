@@ -366,8 +366,9 @@ int yaksi_iov(const char *buf, uintptr_t count, yaksi_type_s * type, uintptr_t i
     goto fn_exit;
 }
 
-int yaksa_iov(const char *buf, uintptr_t count, yaksa_type_t type, uintptr_t iov_offset,
-              struct iovec *iov, uintptr_t max_iov_len, uintptr_t * actual_iov_len)
+YAKSA_API_PUBLIC int yaksa_iov(const char *buf, uintptr_t count, yaksa_type_t type,
+                               uintptr_t iov_offset, struct iovec *iov, uintptr_t max_iov_len,
+                               uintptr_t * actual_iov_len)
 {
     yaksi_type_s *yaksi_type;
     int rc = YAKSA_SUCCESS;

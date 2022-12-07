@@ -1,6 +1,6 @@
 /**
  * Copyright (c) UT-Battelle, LLC. 2014-2015. ALL RIGHTS RESERVED.
- * Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+ * Copyright (C) Mellanox Technologies Ltd. 2001-2021.  ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -23,6 +23,8 @@
 /* Maximal number of events to clear from the signaling pipe in single call */
 #define UCT_MM_IFACE_MAX_SIG_EVENTS  32
 
+#define UCT_MM_IFACE_OVERHEAD 10e-9
+#define UCT_MM_IFACE_LATENCY  ucs_linear_func_make(80e-9, 0)
 
 ucs_config_field_t uct_mm_iface_config_table[] = {
     {"SM_", "ALLOC=md,mmap,heap", NULL,
@@ -60,6 +62,9 @@ ucs_config_field_t uct_mm_iface_config_table[] = {
     {"FIFO_MAX_POLL", UCS_PP_MAKE_STRING(UCT_MM_IFACE_FIFO_MAX_POLL),
      "Maximal number of receive completions to pick during RX poll",
      ucs_offsetof(uct_mm_iface_config_t, fifo_max_poll), UCS_CONFIG_TYPE_ULUNITS},
+
+    {"ERROR_HANDLING", "n", "Expose error handling support capability",
+     ucs_offsetof(uct_mm_iface_config_t, error_handling), UCS_CONFIG_TYPE_BOOL},
 
     {NULL}
 };
@@ -120,6 +125,8 @@ static ucs_status_t uct_mm_iface_query(uct_iface_h tl_iface,
 {
     uct_mm_iface_t *iface = ucs_derived_of(tl_iface, uct_mm_iface_t);
     uct_mm_md_t    *md    = ucs_derived_of(iface->super.super.md, uct_mm_md_t);
+    int attach_shm_file;
+    ucs_status_t status;
 
     uct_base_iface_query(&iface->super.super, iface_attr);
 
@@ -146,7 +153,7 @@ static ucs_status_t uct_mm_iface_query(uct_iface_h tl_iface,
     iface_attr->cap.am.max_zcopy        = 0;
     iface_attr->cap.am.opt_zcopy_align  = UCS_SYS_CACHE_LINE_SIZE;
     iface_attr->cap.am.align_mtu        = iface_attr->cap.am.opt_zcopy_align;
-    iface_attr->cap.am.max_iov          = 1;
+    iface_attr->cap.am.max_iov          = SIZE_MAX;
 
     iface_attr->iface_addr_len          = sizeof(uct_mm_iface_addr_t) +
                                           md->iface_addr_len;
@@ -161,9 +168,23 @@ static ucs_status_t uct_mm_iface_query(uct_iface_h tl_iface,
                                           UCT_IFACE_FLAG_AM_BCOPY            |
                                           UCT_IFACE_FLAG_PENDING             |
                                           UCT_IFACE_FLAG_CB_SYNC             |
-                                          UCT_IFACE_FLAG_CONNECT_TO_IFACE;
+                                          UCT_IFACE_FLAG_CONNECT_TO_IFACE    |
+                                          iface->config.extra_cap_flags;
+
+    status = uct_mm_md_mapper_ops(md)->query(&attach_shm_file);
+    ucs_assert_always(status == UCS_OK);
+    if (attach_shm_file) {
+        /*
+         * Only MM transports with attaching to SHM file can support error
+         * handling mechanisms (e.g. EP checking) to check if a peer was down,
+         * there is no safe way to check a process existence (touching a shared
+         * memory block of a peer leads to "bus" error in case of a peer is
+         * down) */
+        iface_attr->cap.flags |= UCT_IFACE_FLAG_EP_CHECK;
+    }
+
     iface_attr->cap.event_flags         = UCT_IFACE_FLAG_EVENT_SEND_COMP     |
-                                          UCT_IFACE_FLAG_EVENT_RECV_SIG      |
+                                          UCT_IFACE_FLAG_EVENT_RECV          |
                                           UCT_IFACE_FLAG_EVENT_FD;
 
     iface_attr->cap.atomic32.op_flags   =
@@ -179,10 +200,10 @@ static ucs_status_t uct_mm_iface_query(uct_iface_h tl_iface,
                                           UCS_BIT(UCT_ATOMIC_OP_SWAP)        |
                                           UCS_BIT(UCT_ATOMIC_OP_CSWAP);
 
-    iface_attr->latency                 = ucs_linear_func_make(80e-9, 0); /* 80 ns */
+    iface_attr->latency                 = UCT_MM_IFACE_LATENCY;
     iface_attr->bandwidth.dedicated     = iface->super.config.bandwidth;
     iface_attr->bandwidth.shared        = 0;
-    iface_attr->overhead                = 10e-9; /* 10 ns */
+    iface_attr->overhead                = UCT_MM_IFACE_OVERHEAD;
     iface_attr->priority                = 0;
 
     return UCS_OK;
@@ -218,17 +239,17 @@ uct_mm_assign_desc_to_fifo_elem(uct_mm_iface_t *iface,
     return UCS_OK;
 }
 
-static UCS_F_ALWAYS_INLINE void
-uct_mm_iface_process_recv(uct_mm_iface_t *iface,
-                          uct_mm_fifo_element_t* elem)
+static UCS_F_ALWAYS_INLINE void uct_mm_iface_process_recv(uct_mm_iface_t *iface)
 {
+    uct_mm_fifo_element_t *elem = iface->read_index_elem;
     ucs_status_t status;
-    void         *data;
+    void *data;
 
     if (ucs_likely(elem->flags & UCT_MM_FIFO_ELEM_FLAG_INLINE)) {
         /* read short (inline) messages from the FIFO elements */
-        uct_iface_trace_am(&iface->super.super, UCT_AM_TRACE_TYPE_RECV,
-                           elem->am_id, elem + 1, elem->length, "RX: AM_SHORT");
+        uct_mm_iface_trace_am(iface, UCT_AM_TRACE_TYPE_RECV, elem->flags,
+                              elem->am_id, elem + 1, elem->length,
+                              iface->read_index);
         uct_mm_iface_invoke_am(iface, elem->am_id, elem + 1, elem->length, 0);
         return;
     }
@@ -242,9 +263,8 @@ uct_mm_iface_process_recv(uct_mm_iface_t *iface,
     /* read bcopy messages from the receive descriptors */
     data = elem->desc_data;
     VALGRIND_MAKE_MEM_DEFINED(data, elem->length);
-
-    uct_iface_trace_am(&iface->super.super, UCT_AM_TRACE_TYPE_RECV,
-                       elem->am_id, data, elem->length, "RX: AM_BCOPY");
+    uct_mm_iface_trace_am(iface, UCT_AM_TRACE_TYPE_RECV, elem->flags,
+                          elem->am_id, data, elem->length, iface->read_index);
 
     status = uct_mm_iface_invoke_am(iface, elem->am_id, data, elem->length,
                                     UCT_CB_PARAM_FLAG_DESC);
@@ -275,9 +295,10 @@ uct_mm_iface_poll_fifo(uct_mm_iface_t *iface)
 
     /* read from read_index_elem */
     ucs_memory_cpu_load_fence();
-    ucs_assert(iface->read_index <= iface->recv_fifo_ctl->head);
+    ucs_assert(iface->read_index <=
+               (iface->recv_fifo_ctl->head & ~UCT_MM_IFACE_FIFO_HEAD_EVENT_ARMED));
 
-    uct_mm_iface_process_recv(iface, iface->read_index_elem);
+    uct_mm_iface_process_recv(iface);
 
     /* raise the read_index */
     iface->read_index++;
@@ -351,28 +372,74 @@ static ucs_status_t uct_mm_iface_event_fd_get(uct_iface_h tl_iface, int *fd_p)
     return UCS_OK;
 }
 
-static ucs_status_t uct_mm_iface_event_fd_arm(uct_iface_h tl_iface,
-                                              unsigned events)
+
+static ucs_status_t
+uct_mm_iface_event_fd_arm(uct_iface_h tl_iface, unsigned events)
 {
     uct_mm_iface_t *iface = ucs_derived_of(tl_iface, uct_mm_iface_t);
     char dummy[UCT_MM_IFACE_MAX_SIG_EVENTS]; /* pop multiple signals at once */
+    uint64_t head, prev_head;
     int ret;
 
+    if ((events & UCT_EVENT_SEND_COMP) &&
+        !ucs_arbiter_is_empty(&iface->arbiter)) {
+        /* if we have outstanding send operations, can't go to sleep */
+        return UCS_ERR_BUSY;
+    }
+
+    if (!(events & UCT_EVENT_RECV)) {
+        /* Nothing to do anymore */
+        return UCS_OK;
+    }
+
+    /* Make the next sender which writes to the FIFO signal the receiver */
+    head = iface->recv_fifo_ctl->head;
+    if ((head & ~UCT_MM_IFACE_FIFO_HEAD_EVENT_ARMED) > iface->read_index) {
+        /* head element was not read yet */
+        ucs_trace("iface %p: cannot arm, head %" PRIu64 " read_index %" PRIu64,
+                  iface, head & ~UCT_MM_IFACE_FIFO_HEAD_EVENT_ARMED,
+                  iface->read_index);
+        return UCS_ERR_BUSY;
+    }
+
+    if (!(head & UCT_MM_IFACE_FIFO_HEAD_EVENT_ARMED)) {
+        /* Try to mark the head index as armed in an atomic way; fail if any
+           sender managed to update the head at the same time */
+        prev_head = ucs_atomic_cswap64(
+                ucs_unaligned_ptr(&iface->recv_fifo_ctl->head), head,
+                head | UCT_MM_IFACE_FIFO_HEAD_EVENT_ARMED);
+        if (prev_head != head) {
+            /* race with sender; need to retry */
+            ucs_assert(!(prev_head & UCT_MM_IFACE_FIFO_HEAD_EVENT_ARMED));
+            ucs_trace("iface %p: cannot arm, head %" PRIu64
+                      " prev_head %" PRIu64,
+                      iface, head, prev_head);
+            return UCS_ERR_BUSY;
+        }
+    }
+
+    /* check for pending events */
     ret = recvfrom(iface->signal_fd, &dummy, sizeof(dummy), 0, NULL, 0);
     if (ret > 0) {
+        ucs_trace("iface %p: cannot arm, got a signal", iface);
         return UCS_ERR_BUSY;
     } else if (ret == -1) {
         if (errno == EAGAIN) {
+            ucs_trace("iface %p: armed head %" PRIu64 " read_index %" PRIu64,
+                      iface, head & ~UCT_MM_IFACE_FIFO_HEAD_EVENT_ARMED,
+                      iface->read_index);
             return UCS_OK;
         } else if (errno == EINTR) {
             return UCS_ERR_BUSY;
         } else {
-            ucs_error("failed to retrieve message from signal pipe: %m");
+            ucs_error("iface %p: failed to retrieve message from socket: %m",
+                      iface);
             return UCS_ERR_IO_ERROR;
         }
     } else {
         ucs_assert(ret == 0);
-        return UCS_OK;
+        ucs_trace("iface %p: remote socket closed", iface);
+        return UCS_ERR_CONNECTION_RESET;
     }
 }
 
@@ -383,6 +450,7 @@ static uct_iface_ops_t uct_mm_iface_ops = {
     .ep_put_bcopy             = uct_sm_ep_put_bcopy,
     .ep_get_bcopy             = uct_sm_ep_get_bcopy,
     .ep_am_short              = uct_mm_ep_am_short,
+    .ep_am_short_iov          = uct_mm_ep_am_short_iov,
     .ep_am_bcopy              = uct_mm_ep_am_bcopy,
     .ep_atomic_cswap64        = uct_sm_ep_atomic_cswap64,
     .ep_atomic64_post         = uct_sm_ep_atomic64_post,
@@ -394,6 +462,7 @@ static uct_iface_ops_t uct_mm_iface_ops = {
     .ep_pending_purge         = uct_mm_ep_pending_purge,
     .ep_flush                 = uct_mm_ep_flush,
     .ep_fence                 = uct_sm_ep_fence,
+    .ep_check                 = uct_mm_ep_check,
     .ep_create                = UCS_CLASS_NEW_FUNC_NAME(uct_mm_ep_t),
     .ep_destroy               = UCS_CLASS_DELETE_FUNC_NAME(uct_mm_ep_t),
     .iface_flush              = uct_mm_iface_flush,
@@ -408,6 +477,75 @@ static uct_iface_ops_t uct_mm_iface_ops = {
     .iface_get_device_address = uct_sm_iface_get_device_address,
     .iface_get_address        = uct_mm_iface_get_address,
     .iface_is_reachable       = uct_mm_iface_is_reachable
+};
+
+static ucs_status_t
+uct_mm_estimate_perf(uct_iface_h tl_iface, uct_perf_attr_t *perf_attr)
+{
+    uct_mm_iface_t *iface = ucs_derived_of(tl_iface, uct_mm_iface_t);
+    uct_ep_operation_t op = UCT_ATTR_VALUE(PERF, perf_attr, operation,
+                                           OPERATION, UCT_EP_OP_LAST);
+    double short_overhead, am_overhead;
+
+    if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_BANDWIDTH) {
+        perf_attr->bandwidth.shared = 0;
+        perf_attr->bandwidth.dedicated = iface->super.config.bandwidth;
+    }
+
+    switch (ucs_arch_get_cpu_vendor()) {
+    case UCS_CPU_VENDOR_FUJITSU_ARM:
+        short_overhead = 40e-9;
+        am_overhead    = 220e-9;
+        break;
+    default:
+        short_overhead = UCT_MM_IFACE_OVERHEAD;
+        am_overhead    = UCT_MM_IFACE_OVERHEAD;
+    }
+
+
+    if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_SEND_PRE_OVERHEAD) {
+        switch (op) {
+        case UCT_EP_OP_AM_SHORT:
+            perf_attr->send_pre_overhead = short_overhead;
+            break;
+        case UCT_EP_OP_AM_BCOPY:
+            perf_attr->send_pre_overhead = am_overhead;
+            break;
+        default:
+            perf_attr->send_pre_overhead = UCT_MM_IFACE_OVERHEAD;
+            break;
+        }
+    }
+
+    if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_RECV_OVERHEAD) {
+        switch (op) {
+        case UCT_EP_OP_AM_SHORT:
+            perf_attr->recv_overhead = short_overhead;
+            break;
+        case UCT_EP_OP_AM_BCOPY:
+            perf_attr->recv_overhead = am_overhead;
+            break;
+        default:
+            perf_attr->recv_overhead = UCT_MM_IFACE_OVERHEAD;
+            break;
+        }
+    }
+
+    if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_SEND_POST_OVERHEAD) {
+        perf_attr->send_post_overhead = 0;
+    }
+
+    if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_LATENCY) {
+        perf_attr->latency = UCT_MM_IFACE_LATENCY;
+    }
+
+    return UCS_OK;
+}
+
+static uct_iface_internal_ops_t uct_mm_iface_internal_ops = {
+    .iface_estimate_perf = uct_mm_estimate_perf,
+    .iface_vfs_refresh   = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
+    .ep_query            = (uct_ep_query_func_t)ucs_empty_function,
 };
 
 static void uct_mm_iface_recv_desc_init(uct_iface_h tl_iface, void *obj,
@@ -530,7 +668,8 @@ static void uct_mm_iface_log_created(uct_mm_iface_t *iface)
 {
     uct_mm_seg_t UCS_V_UNUSED *seg = iface->recv_fifo_mem.memh;
 
-    ucs_debug("created mm iface %p FIFO id 0x%lx va %p size %zu (%u x %u elems)",
+    ucs_debug("created mm iface %p FIFO id 0x%"PRIx64
+              " va %p size %zu (%u x %u elems)",
               iface, seg->seg_id, seg->address, seg->length,
               iface->config.fifo_elem_size, iface->config.fifo_size);
 }
@@ -542,11 +681,13 @@ static UCS_CLASS_INIT_FUNC(uct_mm_iface_t, uct_md_h md, uct_worker_h worker,
     uct_mm_iface_config_t *mm_config =
                     ucs_derived_of(tl_config, uct_mm_iface_config_t);
     uct_mm_fifo_element_t* fifo_elem_p;
+    size_t alignment, align_offset, payload_offset;
     ucs_status_t status;
     unsigned i;
 
-    UCS_CLASS_CALL_SUPER_INIT(uct_sm_iface_t, &uct_mm_iface_ops, md,
-                              worker, params, tl_config);
+    UCS_CLASS_CALL_SUPER_INIT(uct_sm_iface_t, &uct_mm_iface_ops,
+                              &uct_mm_iface_internal_ops, md, worker, params,
+                              tl_config);
 
     if (ucs_derived_of(worker, uct_priv_worker_t)->thread_mode == UCS_THREAD_MODE_MULTI) {
         ucs_error("Shared memory transport does not support multi-threaded worker");
@@ -583,6 +724,10 @@ static UCS_CLASS_INIT_FUNC(uct_mm_iface_t, uct_md_h md, uct_worker_h worker,
                                       UCT_MM_IFACE_FIFO_MAX_POLL :
                                       /* trim by the maximum unsigned integer value */
                                       ucs_min(mm_config->fifo_max_poll, UINT_MAX));
+
+    self->config.extra_cap_flags   = (mm_config->error_handling == UCS_YES) ?
+                                     UCT_IFACE_FLAG_ERRHANDLE_PEER_FAILURE :
+                                     0ul;
     self->fifo_prev_wnd_cons       = 0;
     self->fifo_poll_count          = self->config.fifo_max_poll;
     /* cppcheck-suppress internalAstError */
@@ -610,10 +755,12 @@ static UCS_CLASS_INIT_FUNC(uct_mm_iface_t, uct_md_h md, uct_worker_h worker,
                                &self->recv_fifo_ctl, &self->recv_fifo_elems);
     self->recv_fifo_ctl->head = 0;
     self->recv_fifo_ctl->tail = 0;
+    self->recv_fifo_ctl->pid  = getpid();
     self->read_index          = 0;
     self->read_index_elem     = UCT_MM_IFACE_GET_FIFO_ELEM(self,
                                                            self->recv_fifo_elems,
                                                            self->read_index);
+    payload_offset            = sizeof(uct_mm_recv_desc_t) + self->rx_headroom;
 
     /* create a unix file descriptor to receive event notifications */
     status = uct_mm_iface_create_signal_fd(self);
@@ -621,17 +768,19 @@ static UCS_CLASS_INIT_FUNC(uct_mm_iface_t, uct_md_h md, uct_worker_h worker,
         goto err_free_fifo;
     }
 
+    status = uct_iface_param_am_alignment(params, self->config.seg_size,
+                                          payload_offset, payload_offset,
+                                          &alignment, &align_offset);
+    if (status != UCS_OK) {
+        goto err_close_signal_fd;
+    }
+
     /* create a memory pool for receive descriptors */
-    status = uct_iface_mpool_init(&self->super.super,
-                                  &self->recv_desc_mp,
-                                  sizeof(uct_mm_recv_desc_t) + self->rx_headroom +
-                                  self->config.seg_size,
-                                  sizeof(uct_mm_recv_desc_t),
-                                  UCS_SYS_CACHE_LINE_SIZE,
-                                  &mm_config->mp,
+    status = uct_iface_mpool_init(&self->super.super, &self->recv_desc_mp,
+                                  payload_offset + self->config.seg_size,
+                                  align_offset, alignment, &mm_config->mp,
                                   mm_config->mp.bufs_grow,
-                                  uct_mm_iface_recv_desc_init,
-                                  "mm_recv_desc");
+                                  uct_mm_iface_recv_desc_init, "mm_recv_desc");
     if (status != UCS_OK) {
         ucs_error("failed to create a receive descriptor memory pool for the MM transport");
         goto err_close_signal_fd;

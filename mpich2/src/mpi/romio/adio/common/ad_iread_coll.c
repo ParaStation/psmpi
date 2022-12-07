@@ -530,6 +530,7 @@ static void ADIOI_Iread_and_exch(ADIOI_NBC_Request * nbc_req, int *error_code)
     MPI_Datatype datatype = vars->datatype;
     int nprocs = vars->nprocs;
     ADIOI_Access *others_req = vars->others_req;
+    MPI_Aint lb;
 
     /* Read in sizes of no more than coll_bufsize, an info parameter.
      * Send data to appropriate processes.
@@ -625,7 +626,7 @@ static void ADIOI_Iread_and_exch(ADIOI_NBC_Request * nbc_req, int *error_code)
     if (!vars->buftype_is_contig) {
         vars->flat_buf = ADIOI_Flatten_and_find(datatype);
     }
-    MPI_Type_extent(datatype, &vars->buftype_extent);
+    MPI_Type_get_extent(datatype, &lb, &vars->buftype_extent);
 
     vars->done = 0;
     vars->off = st_loc;
@@ -742,7 +743,7 @@ static void ADIOI_Iread_and_exch_l1_begin(ADIOI_NBC_Request * nbc_req, int *erro
                     count[i]++;
                     ADIOI_Assert((((ADIO_Offset) (uintptr_t) read_buf) + req_off - real_off) ==
                                  (ADIO_Offset) (uintptr_t) (read_buf + req_off - real_off));
-                    MPI_Address(read_buf + req_off - real_off, &(others_req[i].mem_ptrs[j]));
+                    MPI_Get_address(read_buf + req_off - real_off, &(others_req[i].mem_ptrs[j]));
                     ADIOI_Assert((real_off + real_size - req_off) ==
                                  (int) (real_off + real_size - req_off));
                     send_size[i] +=
@@ -967,9 +968,7 @@ static void ADIOI_R_Iexchange_data_recv(ADIOI_NBC_Request * nbc_req, int *error_
     int *start_pos = vars->start_pos;
     int *partial_send = vars->partial_send;
     int nprocs = vars->nprocs;
-    int myrank = vars->myrank;
     ADIOI_Access *others_req = vars->others_req;
-    int iter = vars->iter;
     MPI_Aint *buf_idx = vars->buf_idx;
 
     int i, j, k = 0, tmp = 0, nprocs_recv, nprocs_send;
@@ -1004,7 +1003,7 @@ static void ADIOI_R_Iexchange_data_recv(ADIOI_NBC_Request * nbc_req, int *error_
         for (i = 0; i < nprocs; i++)
             if (recv_size[i]) {
                 MPI_Irecv(((char *) vars->buf) + buf_idx[i], recv_size[i],
-                          MPI_BYTE, i, myrank + i + 100 * iter, fd->comm, vars->req2 + j);
+                          MPI_BYTE, i, ADIOI_COLL_TAG(i, vars->iter), fd->comm, vars->req2 + j);
                 j++;
                 buf_idx[i] += recv_size[i];
             }
@@ -1020,11 +1019,11 @@ static void ADIOI_R_Iexchange_data_recv(ADIOI_NBC_Request * nbc_req, int *error_
         for (i = 0; i < nprocs; i++)
             if (recv_size[i]) {
                 MPI_Irecv(recv_buf[i], recv_size[i], MPI_BYTE, i,
-                          myrank + i + 100 * iter, fd->comm, vars->req2 + j);
+                          ADIOI_COLL_TAG(i, vars->iter), fd->comm, vars->req2 + j);
                 j++;
 #ifdef RDCOLL_DEBUG
                 DBG_FPRINTF(stderr, "node %d, recv_size %d, tag %d \n",
-                            myrank, recv_size[i], myrank + i + 100 * iter);
+                            vars->myrank, recv_size[i], ADIOI_COLL_TAG(i, vars->iter));
 #endif
             }
     }
@@ -1046,7 +1045,7 @@ static void ADIOI_R_Iexchange_data_recv(ADIOI_NBC_Request * nbc_req, int *error_
                                          MPI_BYTE, &send_type);
             /* absolute displacement; use MPI_BOTTOM in send */
             MPI_Type_commit(&send_type);
-            MPI_Isend(MPI_BOTTOM, 1, send_type, i, myrank + i + 100 * iter,
+            MPI_Isend(MPI_BOTTOM, 1, send_type, i, ADIOI_COLL_TAG(i, vars->iter),
                       fd->comm, vars->req2 + nprocs_recv + j);
             MPI_Type_free(&send_type);
             if (partial_send[i])

@@ -14,11 +14,13 @@
 #include <ucs/config/parser.h>
 #include <ucs/arch/bitops.h>
 #include <ucs/sys/math.h>
+#include <ucs/debug/log.h>
 
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <time.h>
+#include <libgen.h>
 
 
 const char *ucs_memunits_suffixes[] = {"", "K", "M", "G", "T", "P", "E", NULL};
@@ -70,12 +72,12 @@ void ucs_fill_filename_template(const char *tmpl, char *buf, size_t max)
             p += strlen(p);
             break;
         case 'u':
-            snprintf(p, end - p, "%s", basename(ucs_get_user_name()));
+            snprintf(p, end - p, "%s", ucs_basename(ucs_get_user_name()));
             pf = pp + 2;
             p += strlen(p);
             break;
         case 'e':
-            snprintf(p, end - p, "%s", basename(ucs_get_exe()));
+            snprintf(p, end - p, "%s", ucs_basename(ucs_get_exe()));
             pf = pp + 2;
             p += strlen(p);
             break;
@@ -152,6 +154,24 @@ char *ucs_memunits_to_str(size_t value, char *buf, size_t max)
     return buf;
 }
 
+const char *ucs_memunits_range_str(size_t range_start, size_t range_end,
+                                   char *buf, size_t max)
+{
+    char buf_start[64], buf_end[64];
+
+    if (range_start == range_end) {
+        snprintf(buf, max, "%s",
+                 ucs_memunits_to_str(range_start, buf_start,
+                                     sizeof(buf_start)));
+    } else {
+        snprintf(buf, max, "%s..%s",
+                 ucs_memunits_to_str(range_start, buf_start, sizeof(buf_start)),
+                 ucs_memunits_to_str(range_end, buf_end, sizeof(buf_end)));
+    }
+
+    return buf;
+}
+
 ucs_status_t ucs_str_to_memunits(const char *buf, void *dest)
 {
     char units[3];
@@ -188,17 +208,33 @@ ucs_status_t ucs_str_to_memunits(const char *buf, void *dest)
     return UCS_OK;
 }
 
-void ucs_snprintf_safe(char *buf, size_t size, const char *fmt, ...)
+char *ucs_dirname(char *path, int num_layers)
 {
-    va_list ap;
+    while (num_layers-- > 0) {
+        path = dirname(path);
+        if (path == NULL) {
+            return NULL;
+        }
+    }
+    return path;
+}
 
+void ucs_vsnprintf_safe(char *buf, size_t size, const char *fmt, va_list ap)
+{
     if (size == 0) {
         return;
     }
 
-    va_start(ap, fmt);
-    vsnprintf(buf, size - 1, fmt, ap);
+    vsnprintf(buf, size, fmt, ap);
     buf[size - 1] = '\0';
+}
+
+void ucs_snprintf_safe(char *buf, size_t size, const char *fmt, ...)
+{
+    va_list ap;
+
+    va_start(ap, fmt);
+    ucs_vsnprintf_safe(buf, size, fmt, ap);
     va_end(ap);
 }
 
@@ -295,32 +331,129 @@ const char* ucs_flags_str(char *buf, size_t max,
     return buf;
 }
 
-ssize_t ucs_path_calc_distance(const char *path1, const char *path2)
+size_t ucs_string_count_char(const char *str, char c)
 {
-    unsigned distance = 0;
-    int same          = 1;
-    char resolved_path1[PATH_MAX], resolved_path2[PATH_MAX];
-    size_t comp_len, i;
-    size_t rp_len1, rp_len2;
+    size_t count = 0;
+    const char *p;
 
-    if ((NULL == realpath(path1, resolved_path1)) ||
-        (NULL == realpath(path2, resolved_path2))) {
-        return UCS_ERR_INVALID_PARAM;
-    }
-
-    rp_len1  = strlen(resolved_path1);
-    rp_len2  = strlen(resolved_path2);
-    comp_len = ucs_min(rp_len1, rp_len2);
-
-    for (i = 0; i < comp_len; i++) {
-        if (resolved_path1[i] != resolved_path2[i]) {
-            same = 0;
-        }
-
-        if ((resolved_path1[i] == '/') && !same) {
-            distance++;
+    for (p = str; *p != '\0'; ++p) {
+        if (*p == c) {
+            count++;
         }
     }
 
-    return distance;
+    return count;
+}
+
+size_t ucs_string_common_prefix_len(const char *str1, const char *str2)
+{
+    const char *p1 = str1;
+    const char *p2 = str2;
+
+    /* as long as *p1==*p2, if *p1 is not '\0' then neither is *p2 */
+    while ((*p1 != '\0') && (*p1 == *p2)) {
+        p1++;
+        p2++;
+    }
+
+    return (p1 - str1);
+}
+
+static size_t
+ucs_path_common_parent_length(const char *path1, const char *path2)
+{
+    size_t offset, parent_length;
+
+    offset        = 0;
+    parent_length = 0;
+    do {
+        /* A path component ends by either a '/' or a '\0' */
+        if (((path1[offset] == '/') || (path1[offset] == '\0')) &&
+            ((path2[offset] == '/') || (path2[offset] == '\0'))) {
+            parent_length = offset;
+        }
+    } while ((path1[offset] == path2[offset]) && (path1[offset++] != '\0'));
+
+    return parent_length;
+}
+
+void ucs_path_get_common_parent(const char *path1, const char *path2,
+                                char *common_path)
+{
+    size_t parent_length;
+
+    parent_length = ucs_path_common_parent_length(path1, path2);
+    memcpy(common_path, path1, parent_length);
+    common_path[parent_length] = '\0';
+}
+
+size_t ucs_path_calc_distance(const char *path1, const char *path2)
+{
+    size_t common_length = ucs_path_common_parent_length(path1, path2);
+
+    return ucs_string_count_char(path1 + common_length, '/') +
+           ucs_string_count_char(path2 + common_length, '/');
+}
+
+const char* ucs_mask_str(uint64_t mask, ucs_string_buffer_t *strb)
+{
+    uint8_t bit;
+
+    if (mask == 0) {
+        ucs_string_buffer_appendf(strb, "<none>");
+        goto out;
+    }
+
+    ucs_for_each_bit(bit, mask) {
+        ucs_string_buffer_appendf(strb, "%u, ", bit);
+    }
+
+    ucs_string_buffer_rtrim(strb, ", ");
+
+out:
+    return ucs_string_buffer_cstr(strb);
+}
+
+ssize_t ucs_string_find_in_list(const char *str, const char **string_list,
+                                int case_sensitive)
+{
+    size_t i;
+
+    for (i = 0; string_list[i] != NULL; ++i) {
+        if ((case_sensitive && (strcmp(string_list[i], str) == 0)) ||
+            (!case_sensitive && (strcasecmp(string_list[i], str) == 0))) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+char* ucs_string_split(char *str, const char *delim, int count, ...)
+{
+    char *p = str;
+    size_t length;
+    va_list ap;
+    int i;
+
+    va_start(ap, count);
+    for (i = 0; i < count; ++i) {
+        *va_arg(ap, char**) = p;
+        if (p == NULL) {
+            continue;
+        }
+
+        length = strcspn(p, delim);
+        if (p[length] == '\0') {
+            /* 'p' is last element, so point to NULL from now on */
+            p = NULL;
+        } else {
+            /* There is another element after 'p', so point 'p' to it */
+            p[length] = '\0';
+            p        += length + 1;
+        }
+    }
+    va_end(ap);
+
+    return p;
 }

@@ -1,6 +1,7 @@
 /**
 * Copyright (C) Mellanox Technologies Ltd. 2019.  ALL RIGHTS RESERVED.
 * Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
+* Copyright (C) Huawei Technologies Co., Ltd. 2020.  ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -28,6 +29,8 @@
 
 #define UCS_NETIF_BOND_AD_NUM_PORTS_FMT  "/sys/class/net/%s/bonding/ad_num_ports"
 #define UCS_SOCKET_MAX_CONN_PATH         "/proc/sys/net/core/somaxconn"
+/* The port space of IPv6 is shared with IPv4 */
+#define UCX_PROCESS_IP_PORT_RANGE        "/proc/sys/net/ipv4/ip_local_port_range"
 
 
 typedef ssize_t (*ucs_socket_io_func_t)(int fd, void *data,
@@ -36,6 +39,19 @@ typedef ssize_t (*ucs_socket_io_func_t)(int fd, void *data,
 typedef ssize_t (*ucs_socket_iov_func_t)(int fd, const struct msghdr *msg,
                                          int flags);
 
+
+static void ucs_socket_print_error_info(const char *err_str, int sys_errno)
+{
+    if (sys_errno == EMFILE) {
+        ucs_error("%s: the maximal number of files that could be opened "
+                  "simultaneously was reached, try to increase the limit "
+                  "by setting the max open files limit (ulimit -n) to "
+                  "a greater value (current: %d)",
+                  err_str, ucs_sys_max_open_files());
+    } else {
+        ucs_error("%s: %m", err_str);
+    }
+}
 
 void ucs_close_fd(int *fd_p)
 {
@@ -53,7 +69,7 @@ void ucs_close_fd(int *fd_p)
 
 int ucs_netif_flags_is_active(unsigned int flags)
 {
-    return (flags & IFF_UP) && (flags & IFF_RUNNING) && !(flags & IFF_LOOPBACK);
+    return (flags & IFF_UP) && (flags & IFF_RUNNING);
 }
 
 ucs_status_t ucs_netif_ioctl(const char *if_name, unsigned long request,
@@ -84,22 +100,73 @@ out:
     return status;
 }
 
-int ucs_netif_is_active(const char *if_name)
+ucs_status_t ucs_netif_get_addr(const char *if_name, sa_family_t af,
+                                struct sockaddr *saddr,
+                                struct sockaddr *netmask)
 {
-    ucs_status_t status;
-    struct ifreq ifr;
+    ucs_status_t status = UCS_ERR_NO_DEVICE;
+    struct ifaddrs *ifa;
+    struct ifaddrs *ifaddrs;
+    const struct sockaddr_in6 *saddr6;
+    size_t addrlen;
 
-    status = ucs_netif_ioctl(if_name, SIOCGIFADDR, &ifr);
-    if (status != UCS_OK) {
-        return 0;
+    if (getifaddrs(&ifaddrs)) {
+        ucs_warn("getifaddrs error: %m");
+        status = UCS_ERR_IO_ERROR;
+        goto out;
     }
 
-    status = ucs_netif_ioctl(if_name, SIOCGIFFLAGS, &ifr);
-    if (status != UCS_OK) {
-        return 0;
+    for (ifa = ifaddrs; ifa != NULL; ifa = ifa->ifa_next) {
+        if ((if_name != NULL) && (0 != strcmp(if_name, ifa->ifa_name))) {
+            continue;
+        }
+
+        if ((ifa->ifa_addr == NULL) ||
+            ((ifa->ifa_addr->sa_family != AF_INET) &&
+             (ifa->ifa_addr->sa_family != AF_INET6))) {
+            continue;
+        }
+
+        if (!ucs_netif_flags_is_active(ifa->ifa_flags)) {
+            continue;
+        }
+
+        if (ifa->ifa_addr->sa_family == AF_INET6) {
+            saddr6 = (const struct sockaddr_in6*)ifa->ifa_addr;
+            if (IN6_IS_ADDR_LOOPBACK(&saddr6->sin6_addr) ||
+                IN6_IS_ADDR_LINKLOCAL(&saddr6->sin6_addr)) {
+                continue;
+            }
+        }
+
+        if ((af == AF_UNSPEC) || (ifa->ifa_addr->sa_family == af)) {
+            status = ucs_sockaddr_sizeof(ifa->ifa_addr, &addrlen);
+            if (status != UCS_OK) {
+                goto out_free_ifaddr;
+            }
+
+            if (saddr != NULL) {
+                memcpy(saddr, ifa->ifa_addr, addrlen);
+            }
+
+            if (netmask != NULL) {
+                memcpy(netmask, ifa->ifa_netmask, addrlen);
+            }
+
+            status = UCS_OK;
+            break;
+        }
     }
 
-    return ucs_netif_flags_is_active(ifr.ifr_flags);
+out_free_ifaddr:
+    freeifaddrs(ifaddrs);
+out:
+    return status;
+}
+
+int ucs_netif_is_active(const char *if_name, sa_family_t af)
+{
+    return ucs_netif_get_addr(if_name, af, NULL, NULL) == UCS_OK;
 }
 
 unsigned ucs_netif_bond_ad_num_ports(const char *bond_name)
@@ -111,7 +178,7 @@ unsigned ucs_netif_bond_ad_num_ports(const char *bond_name)
                                   UCS_NETIF_BOND_AD_NUM_PORTS_FMT, bond_name);
     if ((status != UCS_OK) || (ad_num_ports <= 0) ||
         (ad_num_ports > UINT_MAX)) {
-        ucs_diag("failed to read from " UCS_NETIF_BOND_AD_NUM_PORTS_FMT ": %m, "
+        ucs_trace("failed to read from " UCS_NETIF_BOND_AD_NUM_PORTS_FMT ": %m, "
                  "assuming 802.3ad bonding is disabled", bond_name);
         return 1;
     }
@@ -123,7 +190,7 @@ ucs_status_t ucs_socket_create(int domain, int type, int *fd_p)
 {
     int fd = socket(domain, type, 0);
     if (fd < 0) {
-        ucs_error("socket create failed: %m");
+        ucs_socket_print_error_info("socket create failed", errno);
         return UCS_ERR_IO_ERROR;
     }
 
@@ -166,17 +233,30 @@ ucs_status_t ucs_socket_getopt(int fd, int level, int optname,
     return UCS_OK;
 }
 
+ucs_status_t ucs_socket_getname(int fd, struct sockaddr_storage *sock_addr,
+                                socklen_t *addr_len)
+{
+    int ret;
+
+    *addr_len = sizeof(struct sockaddr_storage);
+    ret       = getsockname(fd, (struct sockaddr*)sock_addr,
+                            addr_len);
+    if (ret < 0) {
+        ucs_error("getsockname(fd=%d) failed: %m", fd);
+        return UCS_ERR_IO_ERROR;
+    }
+
+    return UCS_OK;
+}
+
 const char *ucs_socket_getname_str(int fd, char *str, size_t max_size)
 {
     struct sockaddr_storage sock_addr = {0}; /* Suppress Clang false-positive */
     socklen_t addr_size;
-    int ret;
+    ucs_status_t status;
 
-    addr_size = sizeof(sock_addr);
-    ret       = getsockname(fd, (struct sockaddr*)&sock_addr,
-                            &addr_size);
-    if (ret < 0) {
-        ucs_debug("getsockname(fd=%d) failed: %m", fd);
+    status = ucs_socket_getname(fd, &sock_addr, &addr_size);
+    if (status != UCS_OK) {
         ucs_strncpy_safe(str, "-", max_size);
         return str;
     }
@@ -202,6 +282,9 @@ static ucs_status_t ucs_socket_check_errno(int io_errno)
     } else if (io_errno == ETIMEDOUT) {
         /* Connection establishment procedure timed out */
         return UCS_ERR_TIMED_OUT;
+    } else if (io_errno == EPIPE) {
+        /* The local end has been shut down */
+        return UCS_ERR_CONNECTION_RESET;
     }
 
     return UCS_ERR_IO_ERROR;
@@ -262,6 +345,7 @@ ucs_status_t ucs_socket_accept(int fd, struct sockaddr *addr, socklen_t *length_
 {
     ucs_status_t status;
     char ip_port_str[UCS_SOCKADDR_STRING_LEN];
+    UCS_STRING_BUFFER_ONSTACK(strb, 128);
 
     *accept_fd = accept(fd, addr, length_ptr);
     if (*accept_fd < 0) {
@@ -270,8 +354,11 @@ ucs_status_t ucs_socket_accept(int fd, struct sockaddr *addr, socklen_t *length_
             return status;
         }
 
-        ucs_error("accept() failed (client addr %s): %m",
-                  ucs_sockaddr_str(addr, ip_port_str, UCS_SOCKADDR_STRING_LEN));
+        ucs_string_buffer_appendf(&strb, "accept() failed (client addr %s)",
+                                  ucs_sockaddr_str(addr, ip_port_str,
+                                                   UCS_SOCKADDR_STRING_LEN));
+        ucs_socket_print_error_info(ucs_string_buffer_cstr(&strb), errno);
+
         return status;
     }
 
@@ -344,14 +431,17 @@ ucs_status_t ucs_socket_set_buffer_size(int fd, size_t sockopt_sndbuf,
 }
 
 ucs_status_t ucs_socket_server_init(const struct sockaddr *saddr, socklen_t socklen,
-                                    int backlog, int *listen_fd)
+                                    int backlog, int silent_err_in_use,
+                                    int reuse_addr, int *listen_fd)
 {
+    int so_reuse_optval = 1;
     char ip_port_str[UCS_SOCKADDR_STRING_LEN];
+    ucs_log_level_t bind_log_level;
     ucs_status_t status;
-    int ret, fd = -1;
-    uint16_t port;
+    int ret, fd;
 
     /* Create the server socket for accepting incoming connections */
+    fd     = -1; /* Suppress compiler warning */
     status = ucs_socket_create(saddr->sa_family, SOCK_STREAM, &fd);
     if (status != UCS_OK) {
         goto err;
@@ -363,20 +453,24 @@ ucs_status_t ucs_socket_server_init(const struct sockaddr *saddr, socklen_t sock
         goto err_close_socket;
     }
 
-    status = ucs_sockaddr_get_port(saddr, &port);
-    if (status != UCS_OK) {
-        goto err_close_socket;
+    if (reuse_addr) {
+        status = ucs_socket_setopt(fd, SOL_SOCKET, SO_REUSEADDR,
+                                   &so_reuse_optval, sizeof(so_reuse_optval));
+        if (status != UCS_OK) {
+            goto err_close_socket;
+        }
     }
 
-    do {
-        ret = bind(fd, saddr, socklen);
-    } while (!port && (ret < 0) && (errno == EADDRINUSE));
-
+    ret = bind(fd, saddr, socklen);
     if (ret < 0) {
-        ucs_error("bind(fd=%d addr=%s) failed: %m",
-                  fd, ucs_sockaddr_str((struct sockaddr *)saddr,
-                                       ip_port_str, sizeof(ip_port_str)));
+        if ((errno == EADDRINUSE) && silent_err_in_use) {
+            bind_log_level = UCS_LOG_LEVEL_DEBUG;
+        } else {
+            bind_log_level = UCS_LOG_LEVEL_ERROR;
+        }
         status = (errno == EADDRINUSE) ? UCS_ERR_BUSY : UCS_ERR_IO_ERROR;
+        ucs_log(bind_log_level, "bind(fd=%d addr=%s) failed: %m",
+                fd, ucs_sockaddr_str(saddr, ip_port_str, sizeof(ip_port_str)));
         goto err_close_socket;
     }
 
@@ -415,8 +509,7 @@ int ucs_socket_max_conn()
 }
 
 static ucs_status_t
-ucs_socket_handle_io_error(int fd, const char *name, ssize_t io_retval, int io_errno,
-                           ucs_socket_io_err_cb_t err_cb, void *err_cb_arg)
+ucs_socket_handle_io_error(int fd, const char *name, ssize_t io_retval, int io_errno)
 {
     ucs_status_t status;
 
@@ -425,30 +518,11 @@ ucs_socket_handle_io_error(int fd, const char *name, ssize_t io_retval, int io_e
          * the connection was dropped by peer */
         ucs_assert(!strcmp(name, "recv"));
         ucs_trace("fd %d is closed", fd);
-        return UCS_ERR_NOT_CONNECTED; /* Connection closed by peer */
+        status = UCS_ERR_NOT_CONNECTED; /* Connection closed by peer */
+    } else {
+        ucs_debug("%s(%d) failed: %s", name, fd, strerror(io_errno));
+        status = ucs_socket_check_errno(io_errno);
     }
-
-    status = ucs_socket_check_errno(io_errno);
-    if (status == UCS_ERR_NO_PROGRESS) {
-        return UCS_ERR_NO_PROGRESS;
-    }
-
-    if (err_cb != NULL) {
-        status = err_cb(err_cb_arg, status);
-        if (status == UCS_OK) {
-            /* UCS_ERR_CANCELED has to be returned if no other actions
-             * are required in order to prevent an endless loop in
-             * blocking IO operations (they continue a loop if UCS_OK
-             * or UCS_ERR_NO_PROGRESS is returned) */
-            return UCS_ERR_CANCELED;
-        } else if (status == UCS_ERR_NO_PROGRESS) {
-            /* No error will be printed, a caller should continue
-             * calling function later in order to send/recv data */
-            return UCS_ERR_NO_PROGRESS;
-        }
-    }
-
-    ucs_error("%s(fd=%d) failed: %s", name, fd, strerror(io_errno));
 
     return status;
 }
@@ -467,16 +541,13 @@ ucs_socket_handle_io_error(int fd, const char *name, ssize_t io_retval, int io_e
  *                         operation).
  * @param [in]  io_retval  The result of the IO operation.
  * @param [in]  io_errno   IO operation errno.
- * @param [in]  err_cb     Error callback.
- * @param [in]  err_cb_arg User's argument for the error callback.
  *
  * @return if the IO operation was successful - UCS_OK, otherwise - error status.
  */
 static inline ucs_status_t
 ucs_socket_handle_io(int fd, const void *data, size_t count,
                      size_t *length_p, int is_iov, int io_retval,
-                     int io_errno, const char *name,
-                     ucs_socket_io_err_cb_t err_cb, void *err_cb_arg)
+                     int io_errno, const char *name)
 {
     /* The IO operation is considered as successful if: */
     if (ucs_likely(io_retval > 0)) {
@@ -497,31 +568,27 @@ ucs_socket_handle_io(int fd, const void *data, size_t count,
     }
 
     *length_p = 0;
-    return ucs_socket_handle_io_error(fd, name, io_retval, io_errno,
-                                      err_cb, err_cb_arg);
+    return ucs_socket_handle_io_error(fd, name, io_retval, io_errno);
 }
 
 static inline ucs_status_t
 ucs_socket_do_io_nb(int fd, void *data, size_t *length_p,
-                    ucs_socket_io_func_t io_func, const char *name,
-                    ucs_socket_io_err_cb_t err_cb, void *err_cb_arg)
+                    ucs_socket_io_func_t io_func, const char *name)
 {
     ssize_t ret = io_func(fd, data, *length_p, MSG_NOSIGNAL);
     return ucs_socket_handle_io(fd, data, *length_p, length_p, 0,
-                                ret, errno, name, err_cb, err_cb_arg);
+                                ret, errno, name);
 }
 
 static inline ucs_status_t
 ucs_socket_do_io_b(int fd, void *data, size_t length,
-                   ucs_socket_io_func_t io_func, const char *name,
-                   ucs_socket_io_err_cb_t err_cb, void *err_cb_arg)
+                   ucs_socket_io_func_t io_func, const char *name)
 {
     size_t done_cnt = 0, cur_cnt = length;
     ucs_status_t status;
 
     do {
-        status = ucs_socket_do_io_nb(fd, data, &cur_cnt, io_func,
-                                     name, err_cb, err_cb_arg);
+        status = ucs_socket_do_io_nb(fd, data, &cur_cnt, io_func, name);
         done_cnt += cur_cnt;
         ucs_assert(done_cnt <= length);
         cur_cnt = length - done_cnt;
@@ -533,8 +600,7 @@ ucs_socket_do_io_b(int fd, void *data, size_t length,
 
 static inline ucs_status_t
 ucs_socket_do_iov_nb(int fd, struct iovec *iov, size_t iov_cnt, size_t *length_p,
-                     ucs_socket_iov_func_t iov_func, const char *name,
-                     ucs_socket_io_err_cb_t err_cb, void *err_cb_arg)
+                     ucs_socket_iov_func_t iov_func, const char *name)
 {
     struct msghdr msg = {
         .msg_iov    = iov,
@@ -543,17 +609,13 @@ ucs_socket_do_iov_nb(int fd, struct iovec *iov, size_t iov_cnt, size_t *length_p
     ssize_t ret;
 
     ret = iov_func(fd, &msg, MSG_NOSIGNAL);
-    return ucs_socket_handle_io(fd, iov, iov_cnt, length_p, 1,
-                                ret, errno, name, err_cb, err_cb_arg);
+    return ucs_socket_handle_io(fd, iov, iov_cnt, length_p, 1, ret, errno, name);
 }
 
-ucs_status_t ucs_socket_send_nb(int fd, const void *data, size_t *length_p,
-                                ucs_socket_io_err_cb_t err_cb,
-                                void *err_cb_arg)
+ucs_status_t ucs_socket_send_nb(int fd, const void *data, size_t *length_p)
 {
     return ucs_socket_do_io_nb(fd, (void*)data, length_p,
-                               (ucs_socket_io_func_t)send,
-                               "send", err_cb, err_cb_arg);
+                               (ucs_socket_io_func_t)send, "send");
 }
 
 /* recv is declared as 'always_inline' on some platforms, it leads to
@@ -563,37 +625,26 @@ static ssize_t ucs_socket_recv_io(int fd, void *data, size_t size, int flags)
     return recv(fd, data, size, flags);
 }
 
-ucs_status_t ucs_socket_recv_nb(int fd, void *data, size_t *length_p,
-                                ucs_socket_io_err_cb_t err_cb,
-                                void *err_cb_arg)
+ucs_status_t ucs_socket_recv_nb(int fd, void *data, size_t *length_p)
 {
-    return ucs_socket_do_io_nb(fd, data, length_p, ucs_socket_recv_io,
-                               "recv", err_cb, err_cb_arg);
+    return ucs_socket_do_io_nb(fd, data, length_p, ucs_socket_recv_io, "recv");
 }
 
-ucs_status_t ucs_socket_send(int fd, const void *data, size_t length,
-                             ucs_socket_io_err_cb_t err_cb,
-                             void *err_cb_arg)
+ucs_status_t ucs_socket_send(int fd, const void *data, size_t length)
 {
     return ucs_socket_do_io_b(fd, (void*)data, length,
-                              (ucs_socket_io_func_t)send,
-                              "send", err_cb, err_cb_arg);
+                              (ucs_socket_io_func_t)send, "send");
 }
 
-ucs_status_t ucs_socket_recv(int fd, void *data, size_t length,
-                             ucs_socket_io_err_cb_t err_cb,
-                             void *err_cb_arg)
+ucs_status_t ucs_socket_recv(int fd, void *data, size_t length)
 {
-    return ucs_socket_do_io_b(fd, data, length, ucs_socket_recv_io,
-                              "recv", err_cb, err_cb_arg);
+    return ucs_socket_do_io_b(fd, data, length, ucs_socket_recv_io, "recv");
 }
 
 ucs_status_t
-ucs_socket_sendv_nb(int fd, struct iovec *iov, size_t iov_cnt, size_t *length_p,
-                    ucs_socket_io_err_cb_t err_cb, void *err_cb_arg)
+ucs_socket_sendv_nb(int fd, struct iovec *iov, size_t iov_cnt, size_t *length_p)
 {
-    return ucs_socket_do_iov_nb(fd, iov, iov_cnt, length_p, sendmsg,
-                                "sendv", err_cb, err_cb_arg);
+    return ucs_socket_do_iov_nb(fd, iov, iov_cnt, length_p, sendmsg, "sendv");
 }
 
 ucs_status_t ucs_sockaddr_sizeof(const struct sockaddr *addr, size_t *size_p)
@@ -654,7 +705,44 @@ const void *ucs_sockaddr_get_inet_addr(const struct sockaddr *addr)
     }
 }
 
-static unsigned ucs_sockaddr_is_known_af(const struct sockaddr *sa)
+ucs_status_t ucs_sockaddr_set_inet_addr(struct sockaddr *addr,
+                                        const void *in_addr)
+{
+    switch (addr->sa_family) {
+    case AF_INET:
+        memcpy(&UCS_SOCKET_INET_ADDR(addr), in_addr, UCS_IPV4_ADDR_LEN);
+        return UCS_OK;
+    case AF_INET6:
+        memcpy(&UCS_SOCKET_INET6_ADDR(addr), in_addr, UCS_IPV6_ADDR_LEN);
+        return UCS_OK;
+    default:
+        ucs_error("unknown address family: %d", addr->sa_family);
+        return UCS_ERR_INVALID_PARAM;
+    }
+}
+
+ucs_status_t ucs_sockaddr_inet_addr_size(sa_family_t af, size_t *size_p)
+{
+    switch (af) {
+    case AF_INET:
+        *size_p = UCS_IPV4_ADDR_LEN;
+        return UCS_OK;
+    case AF_INET6:
+        *size_p = UCS_IPV6_ADDR_LEN;
+        return UCS_OK;
+    default:
+        ucs_error("unknown address family: %d", af);
+        return UCS_ERR_INVALID_PARAM;
+    }
+}
+
+ucs_status_t
+ucs_sockaddr_inet_addr_sizeof(const struct sockaddr *addr, size_t *size_p)
+{
+    return ucs_sockaddr_inet_addr_size(addr->sa_family, size_p);
+}
+
+int ucs_sockaddr_is_known_af(const struct sockaddr *sa)
 {
     return ((sa->sa_family == AF_INET) ||
             (sa->sa_family == AF_INET6));
@@ -666,14 +754,19 @@ const char* ucs_sockaddr_str(const struct sockaddr *sock_addr,
     uint16_t port;
     size_t str_len;
 
+    if (sock_addr == NULL) {
+        ucs_strncpy_zero(str, "<null>", max_size);
+        return str;
+    }
+
     if (!ucs_sockaddr_is_known_af(sock_addr)) {
         ucs_strncpy_zero(str, "<invalid address family>", max_size);
         return str;
     }
 
-    if (!inet_ntop(sock_addr->sa_family, ucs_sockaddr_get_inet_addr(sock_addr),
-                   str, max_size)) {
-        ucs_strncpy_zero(str, "<failed to convert sockaddr to string>", max_size);
+    if (ucs_sockaddr_get_ipstr(sock_addr, str, max_size) != UCS_OK) {
+        ucs_strncpy_zero(str, "<failed to convert sockaddr to string>",
+                         max_size);
         return str;
     }
 
@@ -687,6 +780,33 @@ const char* ucs_sockaddr_str(const struct sockaddr *sock_addr,
     ucs_snprintf_zero(str + str_len, max_size - str_len, ":%d", port);
 
     return str;
+}
+
+ucs_status_t ucs_sock_ipstr_to_sockaddr(const char *ip_str,
+                                        struct sockaddr_storage *sa_storage)
+{
+    struct sockaddr_in* sa_in;
+    struct sockaddr_in6* sa_in6;
+    int ret;
+
+    /* try IPv4 */
+    sa_in             = (struct sockaddr_in*)sa_storage;
+    sa_in->sin_family = AF_INET;
+    ret = inet_pton(AF_INET, ip_str, &sa_in->sin_addr);
+    if (ret == 1) {
+        return UCS_OK;
+    }
+
+    /* try IPv6 */
+    sa_in6              = (struct sockaddr_in6*)sa_storage;
+    sa_in6->sin6_family = AF_INET6;
+    ret = inet_pton(AF_INET6, ip_str, &sa_in6->sin6_addr);
+    if (ret == 1) {
+        return UCS_OK;
+    }
+
+    ucs_error("invalid address %s", ip_str);
+    return UCS_ERR_INVALID_ADDR;
 }
 
 int ucs_sockaddr_cmp(const struct sockaddr *sa1,
@@ -753,13 +873,48 @@ int ucs_sockaddr_ip_cmp(const struct sockaddr *sa1, const struct sockaddr *sa2)
                   UCS_IPV4_ADDR_LEN : UCS_IPV6_ADDR_LEN);
 }
 
-int ucs_sockaddr_is_inaddr_any(struct sockaddr *addr)
+ucs_status_t ucs_sockaddr_set_inaddr_any(struct sockaddr *saddr, sa_family_t af)
+{
+    struct sockaddr_in *sa_in;
+    struct sockaddr_in6 *sa_in6;
+
+    switch (af) {
+    case AF_INET:
+        sa_in                  = (struct sockaddr_in*)saddr;
+        sa_in->sin_addr.s_addr = INADDR_ANY;
+        break;
+    case AF_INET6:
+        sa_in6            = (struct sockaddr_in6*)saddr;
+        sa_in6->sin6_addr = in6addr_any;
+        break;
+    default:
+        ucs_debug("invalid address family: %d", af);
+        return UCS_ERR_INVALID_PARAM;
+    }
+    return UCS_OK;
+}
+
+int ucs_sockaddr_is_inaddr_any(const struct sockaddr *addr)
 {
     switch (addr->sa_family) {
     case AF_INET:
-        return UCS_SOCKET_INET_ADDR(addr).s_addr == INADDR_ANY;
+        return UCS_SOCKET_INET_ADDR(addr).s_addr == htonl(INADDR_ANY);
     case AF_INET6:
         return !memcmp(&(UCS_SOCKET_INET6_ADDR(addr)), &in6addr_any,
+                       sizeof(UCS_SOCKET_INET6_ADDR(addr)));
+    default:
+        ucs_debug("invalid address family: %d", addr->sa_family);
+        return 0;
+    }
+}
+
+int ucs_sockaddr_is_inaddr_loopback(const struct sockaddr *addr)
+{
+    switch (addr->sa_family) {
+    case AF_INET:
+        return UCS_SOCKET_INET_ADDR(addr).s_addr == htonl(INADDR_LOOPBACK);
+    case AF_INET6:
+        return !memcmp(&(UCS_SOCKET_INET6_ADDR(addr)), &in6addr_loopback,
                        sizeof(UCS_SOCKET_INET6_ADDR(addr)));
     default:
         ucs_debug("invalid address family: %d", addr->sa_family);
@@ -807,7 +962,7 @@ ucs_status_t ucs_sockaddr_get_ifname(int fd, char *ifname_str, size_t max_strlen
         return UCS_ERR_INVALID_PARAM;
     }
 
-    ucs_debug("check ifname for socket on %s", 
+    ucs_debug("check ifname for socket on %s",
               ucs_sockaddr_str(my_addr, str_local_addr, UCS_SOCKADDR_STRING_LEN));
 
     if (getifaddrs(&ifaddrs)) {
@@ -823,7 +978,7 @@ ucs_status_t ucs_sockaddr_get_ifname(int fd, char *ifname_str, size_t max_strlen
             continue;
         }
 
-        if (((sa->sa_family == AF_INET) ||(sa->sa_family == AF_INET6)) && 
+        if (((sa->sa_family == AF_INET) ||(sa->sa_family == AF_INET6)) &&
             (!ucs_sockaddr_cmp(sa, my_addr, NULL))) {
             ucs_debug("matching ip found iface on %s", ifa->ifa_name);
             ucs_strncpy_safe(ifname_str, ifa->ifa_name, max_strlen);
@@ -847,4 +1002,41 @@ const char *ucs_sockaddr_address_family_str(sa_family_t af)
     default:
         return "not IPv4 or IPv6";
     }
+}
+
+ucs_status_t ucs_sockaddr_get_ip_local_port_range(ucs_range_spec_t *port_range)
+{
+    char ip_local_port_range[32];
+    char *endptr;
+    ssize_t nread;
+
+    nread = ucs_read_file_str(ip_local_port_range, sizeof(ip_local_port_range),
+                              1, UCX_PROCESS_IP_PORT_RANGE);
+    if (nread < 0) {
+        ucs_diag("failed to read " UCX_PROCESS_IP_PORT_RANGE);
+        return UCS_ERR_IO_ERROR;
+    }
+
+    port_range->first = strtol(ip_local_port_range, &endptr, 10);
+    if ((port_range->first <= 0) || (*endptr == '\0')) {
+        return UCS_ERR_IO_ERROR;
+    }
+
+    port_range->last = strtol(endptr, &endptr, 10);
+    if (port_range->last <= 0) {
+        return UCS_ERR_IO_ERROR;
+    }
+
+    return UCS_OK;
+}
+
+ucs_status_t
+ucs_sockaddr_get_ipstr(const struct sockaddr *addr, char *str, size_t max_size)
+{
+    if (inet_ntop(addr->sa_family, ucs_sockaddr_get_inet_addr(addr), str,
+                  max_size) == NULL) {
+        return UCS_ERR_INVALID_PARAM;
+    }
+
+    return UCS_OK;
 }

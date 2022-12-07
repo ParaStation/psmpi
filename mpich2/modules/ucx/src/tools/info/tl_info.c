@@ -118,7 +118,7 @@ static const char *size_limit_to_str(size_t min_size, size_t max_size)
 static void print_iface_info(uct_worker_h worker, uct_md_h md,
                              uct_tl_resource_desc_t *resource)
 {
-    char buf[200]                   = {0};
+    char buf[256]                   = {0};
     uct_iface_params_t iface_params = {
         .field_mask            = UCT_IFACE_PARAM_FIELD_OPEN_MODE   |
                                  UCT_IFACE_PARAM_FIELD_DEVICE      |
@@ -143,8 +143,15 @@ static void print_iface_info(uct_worker_h worker, uct_md_h md,
         return;
     }
 
-    printf("#   Transport: %s\n", resource->tl_name);
-    printf("#      Device: %s\n", resource->dev_name);
+    printf("#      Transport: %s\n", resource->tl_name);
+    printf("#         Device: %s\n", resource->dev_name);
+    printf("#           Type: %s\n", uct_device_type_names[resource->dev_type]);
+    printf("#  System device: %s",
+           ucs_topo_sys_device_get_name(resource->sys_device));
+    if (resource->sys_device != UCS_SYS_DEVICE_ID_UNKNOWN) {
+        printf(" (%d)", resource->sys_device);
+    }
+    printf("\n");
 
     status = uct_iface_open(md, worker, &iface_params, iface_config, &iface);
     uct_config_release(iface_config);
@@ -285,12 +292,14 @@ static void print_iface_info(uct_worker_h worker, uct_md_h md,
         }
 
         buf[0] = '\0';
-        if (iface_attr.cap.flags & (UCT_IFACE_FLAG_ERRHANDLE_SHORT_BUF   |
-                                    UCT_IFACE_FLAG_ERRHANDLE_BCOPY_BUF   |
-                                    UCT_IFACE_FLAG_ERRHANDLE_ZCOPY_BUF   |
-                                    UCT_IFACE_FLAG_ERRHANDLE_AM_ID       |
-                                    UCT_IFACE_FLAG_ERRHANDLE_REMOTE_MEM  |
-                                    UCT_IFACE_FLAG_ERRHANDLE_PEER_FAILURE)) {
+        if (iface_attr.cap.flags & (UCT_IFACE_FLAG_ERRHANDLE_SHORT_BUF    |
+                                    UCT_IFACE_FLAG_ERRHANDLE_BCOPY_BUF    |
+                                    UCT_IFACE_FLAG_ERRHANDLE_ZCOPY_BUF    |
+                                    UCT_IFACE_FLAG_ERRHANDLE_AM_ID        |
+                                    UCT_IFACE_FLAG_ERRHANDLE_REMOTE_MEM   |
+                                    UCT_IFACE_FLAG_ERRHANDLE_PEER_FAILURE |
+                                    UCT_IFACE_FLAG_EP_CHECK               |
+                                    UCT_IFACE_FLAG_EP_KEEPALIVE)) {
 
             if (iface_attr.cap.flags & (UCT_IFACE_FLAG_ERRHANDLE_SHORT_BUF |
                                         UCT_IFACE_FLAG_ERRHANDLE_BCOPY_BUF |
@@ -316,6 +325,12 @@ static void print_iface_info(uct_worker_h worker, uct_md_h md,
             }
             if (iface_attr.cap.flags & UCT_IFACE_FLAG_ERRHANDLE_PEER_FAILURE) {
                 strncat(buf, " peer failure,", sizeof(buf) - strlen(buf) - 1);
+            }
+            if (iface_attr.cap.flags & UCT_IFACE_FLAG_EP_CHECK) {
+                strncat(buf, " ep_check,", sizeof(buf) - strlen(buf) - 1);
+            }
+            if (iface_attr.cap.flags & UCT_IFACE_FLAG_EP_KEEPALIVE) {
+                strncat(buf, " keepalive,", sizeof(buf) - strlen(buf) - 1);
             }
             buf[strlen(buf) - 1] = '\0';
         } else {
@@ -398,6 +413,10 @@ static void print_md_info(uct_component_h component,
         goto out_close_md;
     }
 
+    if (!(print_opts & PRINT_DEVICES)) {
+        goto out_free_list;
+    }
+
     if (req_tl_name != NULL) {
         resource_index = 0;
         while (resource_index < num_resources) {
@@ -437,9 +456,6 @@ static void print_md_info(uct_component_h component,
         }
         if (md_attr.cap.flags & UCT_MD_FLAG_RKEY_PTR) {
             printf("#           rkey_ptr is supported\n");
-        }
-        if (md_attr.cap.flags & UCT_MD_FLAG_SOCKADDR) {
-            printf("#           supports client-server connection establishment via sockaddr\n");
         }
     }
 
@@ -570,12 +586,14 @@ static void print_uct_component_info(uct_component_h component,
 
     for (i = 0; i < component_attr.md_resource_count; ++i) {
         print_md_info(component, &component_attr,
-                      component_attr.md_resources[i].md_name,
-                      print_opts, print_flags, req_tl_name);
+                      component_attr.md_resources[i].md_name, print_opts,
+                      print_flags, req_tl_name);
     }
 
-    if (component_attr.flags & UCT_COMPONENT_FLAG_CM) {
-        print_cm_info(component, &component_attr);
+    if (print_opts & PRINT_DEVICES) {
+        if (component_attr.flags & UCT_COMPONENT_FLAG_CM) {
+            print_cm_info(component, &component_attr);
+        }
     }
 }
 
@@ -592,11 +610,9 @@ void print_uct_info(int print_opts, ucs_config_print_flags_t print_flags,
         return;
     }
 
-    if (print_opts & PRINT_DEVICES) {
-        for (i = 0; i < num_components; ++i) {
-            print_uct_component_info(components[i], print_opts, print_flags,
-                                     req_tl_name);
-        }
+    for (i = 0; i < num_components; ++i) {
+        print_uct_component_info(components[i], print_opts, print_flags,
+                                 req_tl_name);
     }
 
     uct_release_component_list(components);

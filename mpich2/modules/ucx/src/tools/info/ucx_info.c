@@ -28,6 +28,7 @@ static void usage() {
     printf("  -y              Show type and structures information\n");
     printf("  -s              Show system information\n");
     printf("  -c              Show UCX configuration\n");
+    printf("  -C              Comment-out default configuration values\n");
     printf("  -a              Show also hidden configuration\n");
     printf("  -f              Display fully decorated output\n");
     printf("\nUCP information (-u is required):\n");
@@ -39,8 +40,9 @@ static void usage() {
     printf("                    'a' : atomic operations\n");
     printf("                    'r' : remote memory access\n");
     printf("                    't' : tag matching \n");
-    printf("                    'w' : wakeup\n");
+    printf("                    'm' : active messages \n");
     printf("                  Modifiers to use in combination with above features:\n");
+    printf("                    'w' : wakeup\n");
     printf("                    'e' : error handling\n");
     printf("\nOther settings:\n");
     printf("  -t <name>       Filter devices information using specified transport (requires -d)\n");
@@ -51,15 +53,35 @@ static void usage() {
     printf("                    'shm'  : shared memory devices only\n");
     printf("                    'net'  : network devices only\n");
     printf("                    'self' : self transport only\n");
+    printf("  -P <type>       Set peer process placement for printing UCP endpoint configuration:\n");
+    printf("                    'self'  : same process (default)\n");
+    printf("                    'intra' : same node\n");
+    printf("                    'inter' : different node\n");
+    printf("  -A <ip>         Local IP device address to use for creating\n"
+           "                  endpoint in client/server mode\n");
+    printf("  -6              IPv6 address specified with option -A\n");
+    printf("  -T              Print system topology\n");
+    printf("  -M              Print memory copy bandwidth\n");
     printf("  -h              Show this help message\n");
     printf("\n");
 }
 
+static void ep_error_callback(void *arg, ucp_ep_h ep, ucs_status_t status)
+{
+    /* Empty error callback */
+}
+
 int main(int argc, char **argv)
 {
+    const uint64_t required_ucp_features = UCP_FEATURE_AMO32 |
+                                           UCP_FEATURE_AMO64 | UCP_FEATURE_RMA |
+                                           UCP_FEATURE_TAG | UCP_FEATURE_AM;
+    char *ip_addr = NULL;
+    sa_family_t ip_addr_family;
     ucs_config_print_flags_t print_flags;
     ucp_ep_params_t ucp_ep_params;
     unsigned dev_type_bitmap;
+    process_placement_t proc_placement;
     uint64_t ucp_features;
     size_t ucp_num_eps;
     size_t ucp_num_ppn;
@@ -76,8 +98,11 @@ int main(int argc, char **argv)
     ucp_num_ppn              = 1;
     mem_size                 = NULL;
     dev_type_bitmap          = UINT_MAX;
+    proc_placement           = PROCESS_PLACEMENT_SELF;
     ucp_ep_params.field_mask = 0;
-    while ((c = getopt(argc, argv, "fahvcydbswpet:n:u:D:m:N:")) != -1) {
+    ip_addr_family           = AF_INET;
+
+    while ((c = getopt(argc, argv, "fahvc6ydbswpeCt:n:u:D:P:m:N:A:TM")) != -1) {
         switch (c) {
         case 'f':
             print_flags |= UCS_CONFIG_PRINT_CONFIG | UCS_CONFIG_PRINT_HEADER | UCS_CONFIG_PRINT_DOC;
@@ -87,6 +112,9 @@ int main(int argc, char **argv)
             break;
         case 'c':
             print_flags |= UCS_CONFIG_PRINT_CONFIG;
+            break;
+        case 'C':
+            print_flags |= UCS_CONFIG_PRINT_COMMENT_DEFAULT;
             break;
         case 'v':
             print_opts |= PRINT_VERSION;
@@ -137,12 +165,18 @@ int main(int argc, char **argv)
                 case 't':
                     ucp_features |= UCP_FEATURE_TAG;
                     break;
+                case 'm':
+                    ucp_features |= UCP_FEATURE_AM;
+                    break;
                 case 'w':
                     ucp_features |= UCP_FEATURE_WAKEUP;
                     break;
                 case 'e':
-                    ucp_ep_params.field_mask |= UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE;
-                    ucp_ep_params.err_mode    = UCP_ERR_HANDLING_MODE_PEER;
+                    ucp_ep_params.field_mask |=
+                            UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE |
+                            UCP_EP_PARAM_FIELD_ERR_HANDLER;
+                    ucp_ep_params.err_mode       = UCP_ERR_HANDLING_MODE_PEER;
+                    ucp_ep_params.err_handler.cb = ep_error_callback;
                     break;
                 default:
                     usage();
@@ -156,13 +190,38 @@ int main(int argc, char **argv)
             } else if (!strcasecmp(optarg, "shm")) {
                 dev_type_bitmap = UCS_BIT(UCT_DEVICE_TYPE_SHM);
             } else if (!strcasecmp(optarg, "self")) {
-                dev_type_bitmap = UCS_BIT(UCT_DEVICE_TYPE_SELF);
-            } else if (!strcasecmp(optarg, "all")) {
-                dev_type_bitmap = UINT_MAX;
-            } else {
+                dev_type_bitmap = (UCS_BIT(UCT_DEVICE_TYPE_SELF) |
+                                   UCS_BIT(UCT_DEVICE_TYPE_ACC));
+            } else if (strcasecmp(optarg, "all")) {
                 usage();
                 return -1;
             }
+            break;
+        case 'P':
+            if (!strcasecmp(optarg, "intra")) {
+                /* Only Network and SHM devices are allowed for processes on the
+                 * same node */
+                proc_placement = PROCESS_PLACEMENT_INTRA;
+            } else if (!strcasecmp(optarg, "inter")) {
+                /* Only Network devices are allowed for processes on the
+                 * different node */
+                proc_placement = PROCESS_PLACEMENT_INTER;
+            } else if (strcasecmp(optarg, "self")) {
+                usage();
+                return -1;
+            }
+            break;
+        case 'A':
+            ip_addr = optarg;
+            break;
+        case '6':
+            ip_addr_family = AF_INET6;
+            break;
+        case 'T':
+            print_opts |= PRINT_SYS_TOPO;
+            break;
+        case 'M':
+            print_opts |= PRINT_MEMCPY_BW;
             break;
         case 'h':
             usage();
@@ -182,10 +241,6 @@ int main(int argc, char **argv)
         print_version();
     }
 
-    if (print_opts & PRINT_SYS_INFO) {
-        print_sys_info();
-    }
-
     if (print_opts & PRINT_BUILD_CONFIG) {
         print_build_config();
     }
@@ -194,26 +249,35 @@ int main(int argc, char **argv)
         print_type_info(tl_name);
     }
 
-    if ((print_opts & PRINT_DEVICES) || (print_flags & UCS_CONFIG_PRINT_CONFIG)) {
+    if ((print_opts & (PRINT_DEVICES | PRINT_SYS_TOPO)) ||
+        (print_flags & UCS_CONFIG_PRINT_CONFIG)) {
         /* if UCS_CONFIG_PRINT_CONFIG is ON, trigger loading UCT modules by
          * calling print_uct_info()->uct_component_query()
          */
         print_uct_info(print_opts, print_flags, tl_name);
     }
 
+    if (print_opts & (PRINT_SYS_INFO | PRINT_MEMCPY_BW | PRINT_SYS_TOPO)) {
+        print_sys_info(print_opts);
+    }
+
     if (print_flags & UCS_CONFIG_PRINT_CONFIG) {
         ucs_config_parser_print_all_opts(stdout, UCS_DEFAULT_ENV_PREFIX,
-                                         print_flags);
+                                         print_flags, &ucs_config_global_list);
     }
 
     if (print_opts & (PRINT_UCP_CONTEXT|PRINT_UCP_WORKER|PRINT_UCP_EP|PRINT_MEM_MAP)) {
-        if (ucp_features == 0) {
-            printf("Please select UCP features using -u switch: a|r|t|w\n");
+        if (!(ucp_features & required_ucp_features)) {
+            printf("Please select at least one of 'a','r','t','m' UCP features "
+                   "using -u switch.\n");
             usage();
             return -1;
         }
-        print_ucp_info(print_opts, print_flags, ucp_features, &ucp_ep_params,
-                       ucp_num_eps, ucp_num_ppn, dev_type_bitmap, mem_size);
+
+        return print_ucp_info(print_opts, print_flags, ucp_features,
+                              &ucp_ep_params, ucp_num_eps, ucp_num_ppn,
+                              dev_type_bitmap, proc_placement, mem_size,
+                              ip_addr, ip_addr_family);
     }
 
     return 0;

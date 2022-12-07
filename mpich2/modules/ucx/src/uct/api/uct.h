@@ -134,14 +134,16 @@ BEGIN_C_DECLS
  * @ref uct_ep_create
  *      Connect to the client by creating an endpoint if the request is accepted.
  *      The server creates a new endpoint for every connection request that it accepts.
- * @ref uct_cm_ep_priv_data_pack_callback_t
- *      This callback is invoked by the UCT transport to fill auxiliary data in
- *      the connection acknowledgement or reject notification back to the client.
- *      Send the client a connection acknowledgement or reject notification.
- *      Wait for an acknowledgment from the client, indicating that it is connected.
  * @ref uct_cm_ep_server_conn_notify_callback_t
  *      This callback is invoked by the UCT transport to handle the connection
  *      notification from the client.
+ * @note The private data which the server should send to the client can be
+ *       either provided directly to @ref uct_ep_create, or filled by
+ *       @ref uct_cm_ep_priv_data_pack_callback_t provided to
+ *       @ref uct_ep_create.
+ * @note In order to reject a connection request, can either call
+ *       @ref uct_listener_reject or return failure status as defined by
+ *       @ref ucs_status_t from @ref uct_cm_ep_priv_data_pack_callback_t.
  *
  * Disconnecting:
  * @ref uct_ep_disconnect
@@ -169,12 +171,14 @@ BEGIN_C_DECLS
  *      Open a connection manager.
  * @ref uct_ep_create
  *      Create an endpoint for establishing a connection to the server.
- * @ref uct_cm_ep_priv_data_pack_callback_t
- *      This callback is invoked by the UCT transport to fill the user's private data
- *      in the connection request to be sent to the server. This connection request
- *      should be created by the transport.
- *      Send the connection request to the server.
- *      Wait for an acknowledgment from the server, indicating that it is connected.
+ * @ref uct_cm_ep_resolve_callback_t
+ *      This callback is invoked on the client side of the connection manager,
+ *      after the remote server address was resolved to the local device to be
+ *      used for connection establishment.
+ * @ref uct_ep_connect
+ *      This function should be called on the client side, in order to send
+ *      private data and resume connection establishment, following an
+ *      address-resolved notification via @ref uct_cm_ep_resolve_callback_t.
  * @ref uct_cm_ep_client_connect_callback_t
  *      This callback is invoked by the UCT transport to handle a connection response
  *      from the server.
@@ -412,6 +416,13 @@ typedef enum uct_atomic_op {
                                                        and it may also be invoked when uct_worker_progress()
                                                        is called. */
 
+        /* Keepalive */
+#define UCT_IFACE_FLAG_EP_KEEPALIVE   UCS_BIT(46) /**< Transport endpoint has built-in keepalive feature,
+                                                       which guarantees the error callback on the transport
+                                                       interface will be called if the communication
+                                                       channel with remote peer is broken, even if there
+                                                       are no outstanding send operations */
+
         /* Tag matching operations */
 #define UCT_IFACE_FLAG_TAG_EAGER_SHORT UCS_BIT(50) /**< Hardware tag matching short eager support */
 #define UCT_IFACE_FLAG_TAG_EAGER_BCOPY UCS_BIT(51) /**< Hardware tag matching bcopy eager support */
@@ -590,51 +601,60 @@ enum uct_iface_open_mode {
  */
 enum uct_iface_params_field {
     /** Enables @ref uct_iface_params_t::cpu_mask */
-    UCT_IFACE_PARAM_FIELD_CPU_MASK          = UCS_BIT(0),
+    UCT_IFACE_PARAM_FIELD_CPU_MASK           = UCS_BIT(0),
 
     /** Enables @ref uct_iface_params_t::open_mode */
-    UCT_IFACE_PARAM_FIELD_OPEN_MODE         = UCS_BIT(1),
+    UCT_IFACE_PARAM_FIELD_OPEN_MODE          = UCS_BIT(1),
 
     /** Enables @ref uct_iface_params_t_mode_device
      *  "uct_iface_params_t::mode::device" */
-    UCT_IFACE_PARAM_FIELD_DEVICE            = UCS_BIT(2),
+    UCT_IFACE_PARAM_FIELD_DEVICE             = UCS_BIT(2),
 
     /** Enables @ref uct_iface_params_t_mode_sockaddr
      *  "uct_iface_params_t::mode::sockaddr" */
-    UCT_IFACE_PARAM_FIELD_SOCKADDR          = UCS_BIT(3),
+    UCT_IFACE_PARAM_FIELD_SOCKADDR           = UCS_BIT(3),
 
     /** Enables @ref uct_iface_params_t::stats_root */
-    UCT_IFACE_PARAM_FIELD_STATS_ROOT        = UCS_BIT(4),
+    UCT_IFACE_PARAM_FIELD_STATS_ROOT         = UCS_BIT(4),
 
     /** Enables @ref uct_iface_params_t::rx_headroom */
-    UCT_IFACE_PARAM_FIELD_RX_HEADROOM       = UCS_BIT(5),
+    UCT_IFACE_PARAM_FIELD_RX_HEADROOM        = UCS_BIT(5),
 
     /** Enables @ref uct_iface_params_t::err_handler_arg */
-    UCT_IFACE_PARAM_FIELD_ERR_HANDLER_ARG   = UCS_BIT(6),
+    UCT_IFACE_PARAM_FIELD_ERR_HANDLER_ARG    = UCS_BIT(6),
 
     /** Enables @ref uct_iface_params_t::err_handler */
-    UCT_IFACE_PARAM_FIELD_ERR_HANDLER       = UCS_BIT(7),
+    UCT_IFACE_PARAM_FIELD_ERR_HANDLER        = UCS_BIT(7),
 
     /** Enables @ref uct_iface_params_t::err_handler_flags */
-    UCT_IFACE_PARAM_FIELD_ERR_HANDLER_FLAGS = UCS_BIT(8),
+    UCT_IFACE_PARAM_FIELD_ERR_HANDLER_FLAGS  = UCS_BIT(8),
 
     /** Enables @ref uct_iface_params_t::eager_arg */
-    UCT_IFACE_PARAM_FIELD_HW_TM_EAGER_ARG   = UCS_BIT(9),
+    UCT_IFACE_PARAM_FIELD_HW_TM_EAGER_ARG    = UCS_BIT(9),
 
     /** Enables @ref uct_iface_params_t::eager_cb */
-    UCT_IFACE_PARAM_FIELD_HW_TM_EAGER_CB    = UCS_BIT(10),
+    UCT_IFACE_PARAM_FIELD_HW_TM_EAGER_CB     = UCS_BIT(10),
 
     /** Enables @ref uct_iface_params_t::rndv_arg */
-    UCT_IFACE_PARAM_FIELD_HW_TM_RNDV_ARG    = UCS_BIT(11),
+    UCT_IFACE_PARAM_FIELD_HW_TM_RNDV_ARG     = UCS_BIT(11),
 
     /** Enables @ref uct_iface_params_t::rndv_cb */
-    UCT_IFACE_PARAM_FIELD_HW_TM_RNDV_CB     = UCS_BIT(12),
+    UCT_IFACE_PARAM_FIELD_HW_TM_RNDV_CB      = UCS_BIT(12),
 
     /** Enables @ref uct_iface_params_t::async_event_arg */
-    UCT_IFACE_PARAM_FIELD_ASYNC_EVENT_ARG   = UCS_BIT(13),
+    UCT_IFACE_PARAM_FIELD_ASYNC_EVENT_ARG    = UCS_BIT(13),
 
     /** Enables @ref uct_iface_params_t::async_event_cb */
-    UCT_IFACE_PARAM_FIELD_ASYNC_EVENT_CB    = UCS_BIT(14)
+    UCT_IFACE_PARAM_FIELD_ASYNC_EVENT_CB     = UCS_BIT(14),
+
+    /** Enables @ref uct_iface_params_t::keepalive_interval */
+    UCT_IFACE_PARAM_FIELD_KEEPALIVE_INTERVAL = UCS_BIT(15),
+
+    /** Enables @ref uct_iface_params_t::am_alignment */
+    UCT_IFACE_PARAM_FIELD_AM_ALIGNMENT       = UCS_BIT(16),
+
+    /** Enables @ref uct_iface_params_t::am_align_offset */
+    UCT_IFACE_PARAM_FIELD_AM_ALIGN_OFFSET    = UCS_BIT(17)
 };
 
 /**
@@ -669,9 +689,10 @@ enum {
     UCT_MD_FLAG_RKEY_PTR   = UCS_BIT(6),  /**< MD supports direct access to
                                                remote memory via a pointer that
                                                is returned by @ref uct_rkey_ptr */
-    UCT_MD_FLAG_SOCKADDR   = UCS_BIT(7)   /**< MD support for client-server
+    UCT_MD_FLAG_SOCKADDR   = UCS_BIT(7),  /**< MD support for client-server
                                                connection establishment via
                                                sockaddr */
+    UCT_MD_FLAG_INVALIDATE = UCS_BIT(8)   /**< MD supports memory invalidation */
 };
 
 /**
@@ -699,15 +720,21 @@ enum uct_md_mem_flags {
     UCT_MD_MEM_ACCESS_REMOTE_PUT    = UCS_BIT(5), /**< enable remote put access */
     UCT_MD_MEM_ACCESS_REMOTE_GET    = UCS_BIT(6), /**< enable remote get access */
     UCT_MD_MEM_ACCESS_REMOTE_ATOMIC = UCS_BIT(7), /**< enable remote atomic access */
+    UCT_MD_MEM_ACCESS_LOCAL_READ    = UCS_BIT(8), /**< enable local read access */
+    UCT_MD_MEM_ACCESS_LOCAL_WRITE   = UCS_BIT(9), /**< enable local write access */
 
     /** enable local and remote access for all operations */
     UCT_MD_MEM_ACCESS_ALL =  (UCT_MD_MEM_ACCESS_REMOTE_PUT|
                               UCT_MD_MEM_ACCESS_REMOTE_GET|
-                              UCT_MD_MEM_ACCESS_REMOTE_ATOMIC),
+                              UCT_MD_MEM_ACCESS_REMOTE_ATOMIC|
+                              UCT_MD_MEM_ACCESS_LOCAL_READ|
+                              UCT_MD_MEM_ACCESS_LOCAL_WRITE),
 
     /** enable local and remote access for put and get operations */
     UCT_MD_MEM_ACCESS_RMA = (UCT_MD_MEM_ACCESS_REMOTE_PUT|
-                             UCT_MD_MEM_ACCESS_REMOTE_GET)
+                             UCT_MD_MEM_ACCESS_REMOTE_GET|
+                             UCT_MD_MEM_ACCESS_LOCAL_READ|
+                             UCT_MD_MEM_ACCESS_LOCAL_WRITE)
 };
 
 
@@ -814,7 +841,32 @@ enum uct_ep_params_field {
     UCT_EP_PARAM_FIELD_SOCKADDR_DISCONNECT_CB     = UCS_BIT(11),
 
     /** Enables @ref uct_ep_params::path_index */
-    UCT_EP_PARAM_FIELD_PATH_INDEX                 = UCS_BIT(12)
+    UCT_EP_PARAM_FIELD_PATH_INDEX                 = UCS_BIT(12),
+
+    /** Enables @ref uct_ep_params::cm_resolve_cb */
+    UCT_EP_PARAM_FIELD_CM_RESOLVE_CB              = UCS_BIT(13),
+
+    /** Enables @ref uct_ep_params::private_data */
+    UCT_EP_PARAM_FIELD_PRIV_DATA                  = UCS_BIT(14),
+
+    /** Enables @ref uct_ep_params::private_data_length */
+    UCT_EP_PARAM_FIELD_PRIV_DATA_LENGTH           = UCS_BIT(15)
+};
+
+
+/**
+ * @ingroup UCT_CLIENT_SERVER
+ * @brief UCT endpoint connected by @ref uct_ep_connect parameters field mask.
+ *
+ * The enumeration allows specifying which fields in
+ * @ref uct_ep_connect_params_t are present, for backward compatibility support.
+ */
+enum uct_ep_connect_params_field {
+    /** Enables @ref uct_ep_connect_params::private_data */
+    UCT_EP_CONNECT_PARAM_FIELD_PRIVATE_DATA         = UCS_BIT(0),
+
+    /** Enables @ref uct_ep_connect_params::private_data_length */
+    UCT_EP_CONNECT_PARAM_FIELD_PRIVATE_DATA_LENGTH  = UCS_BIT(1)
 };
 
 
@@ -873,8 +925,9 @@ struct uct_iface_attr {
         } get;                           /**< Attributes for GET operations */
 
         struct {
-            size_t           max_short;  /**< Total max. size (incl. the header) */
-            size_t           max_bcopy;  /**< Total max. size (incl. the header) */
+            size_t           max_short;  /**< Total maximum size (incl. the header)
+                                              @anchor uct_iface_attr_cap_am_max_short */
+            size_t           max_bcopy;  /**< Total maximum size (incl. the header) */
             size_t           min_zcopy;  /**< Minimal size for am_zcopy (incl. the
                                               header and total of @ref uct_iov_t::length
                                               of the @a iov parameter) */
@@ -1039,6 +1092,36 @@ struct uct_iface_params {
      * read by user if the iface has @ref UCT_IFACE_FLAG_EVENT_ASYNC_CB
      * capability */
     uct_async_event_cb_t                         async_event_cb;
+
+    /* Time period between keepalive rounds */
+    ucs_time_t                                   keepalive_interval;
+
+    /**
+     * Desired alignment for Active Messages on the receiver. Note that only
+     * data received in the UCT descriptor can be aligned (i.e.
+     * @a UCT_CB_PARAM_FLAG_DESC flag is provided in the Active Message
+     * handler callback). The provided value must be power of 2. The default
+     * value is 1.
+     */
+    size_t                                       am_alignment;
+
+    /**
+     * Offset in the Active Message receive buffer, which should be aligned to
+     * the @a am_alignment boundary. Note this parameter has no effect without
+     * setting @a am_alignment parameter. The provided value must be less than
+     * the given @a am_alignment value. The default value is 0.
+     *
+     * +-+ pointer to @a data in @ref uct_am_callback_t
+     * |
+     * |        + alignment boundary
+     * |        |
+     * v        v
+     * +-------------------+
+     * | align  |          |
+     * | offset |          |
+     * +-------------------+
+     */
+    size_t                                       am_align_offset;
 };
 
 
@@ -1089,9 +1172,12 @@ struct uct_ep_params {
     const ucs_sock_addr_t             *sockaddr;
 
     /**
-     * @ref uct_cb_flags to indicate @ref uct_ep_params_t::sockaddr_pack_cb
-     * behavior. If @ref uct_ep_params_t::sockaddr_pack_cb is not set, this
-     * field will be ignored.
+     * @ref uct_cb_flags to indicate @ref uct_ep_params_t::sockaddr_pack_cb,
+     * @ref uct_ep_params_t::sockaddr_cb_client,
+     * @ref uct_ep_params_t::sockaddr_cb_server,
+     * @ref uct_ep_params_t::disconnect_cb and
+     * @ref uct_ep_params_t::cm_resolve_cb behavior.
+     * If none from these are not set, this field will be ignored.
      */
     uint32_t                          sockaddr_cb_flags;
 
@@ -1099,9 +1185,11 @@ struct uct_ep_params {
      * Callback that will be used for filling the user's private data to be
      * delivered to the remote peer by the callback on the server or client side.
      * This field is only valid if @ref uct_ep_params_t::sockaddr is set.
-     * @note It is never guaranteed that the callaback will be called. If, for
+     * @note It is never guaranteed that the callback will be called. If, for
      * example, the endpoint goes into error state before issuing the connection
      * request, the callback will not be invoked.
+     * @note Can not be set together with @ref uct_ep_params_t::private_data or
+     * @ref uct_ep_params_t::cm_resolve_cb.
      */
     uct_cm_ep_priv_data_pack_callback_t sockaddr_pack_cb;
 
@@ -1142,8 +1230,55 @@ struct uct_ep_params {
      * 0..(@ref uct_iface_attr_t.dev_num_paths - 1).
      */
     unsigned                            path_index;
+
+    /**
+     * This callback is invoked when the remote server address provided in field
+     * @ref uct_ep_params_t::sockaddr is resolved to the local device to be used
+     * for connection establishment.
+     * @note This field is mutually exclusive with
+     *       @ref uct_ep_params::sockaddr_pack_cb.
+     */
+    uct_cm_ep_resolve_callback_t        cm_resolve_cb;
+
+    /**
+     * Private data to be passed from server to client. Can be used only along
+     * with @ref uct_ep_params::conn_request.
+     * @note This field is mutually exclusive with
+     *       @ref uct_ep_params::sockaddr_pack_cb.
+     */
+    const void                          *private_data;
+
+    /**
+     * Length of @ref uct_ep_params::private_data, the maximal allowed value is
+     * indicated by the @ref uct_cm_attr::max_conn_priv.
+     */
+    size_t                              private_data_length;
 };
 
+
+/**
+ * @ingroup UCT_CLIENT_SERVER
+ * @brief Parameters for connecting a UCT endpoint by @ref uct_ep_connect.
+ */
+struct uct_ep_connect_params {
+    /**
+     * Mask of valid fields in this structure, using bits from
+     * @ref uct_ep_connect_params_field. Fields not specified by this mask
+     * will be ignored.
+     */
+    uint64_t                            field_mask;
+
+    /**
+     * User's private data to be passed from client to server.
+     */
+    const void                          *private_data;
+
+    /**
+     * Length of @ref uct_ep_connect_params::private_data, the maximal allowed
+     * value is indicated by the @ref uct_cm_attr::max_conn_priv.
+     */
+    size_t                              private_data_length;
+};
 
 /**
  * @ingroup UCT_CLIENT_SERVER
@@ -1198,8 +1333,9 @@ struct uct_listener_params {
     uint64_t                                field_mask;
 
     /**
-     * Backlog of incoming connection requests.
-     * If not specified, SOMAXCONN, as defined in <sys/socket.h>, will be used.
+     * Backlog of incoming connection requests. If specified, must be a positive value.
+     * If not specified, each CM component will use its maximal allowed value,
+     * based on the system's setting.
      */
     int                                     backlog;
 
@@ -1221,16 +1357,18 @@ struct uct_listener_params {
  *
  * This structure defines the attributes of a Memory Domain which includes
  * maximum memory that can be allocated, credentials required for accessing the memory,
- * and CPU mask indicating the proximity of CPUs.
+ * CPU mask indicating the proximity of CPUs, and bitmaps indicating the types
+ * of memory (CPU/CUDA/ROCM) that can be detected, allocated and accessed.
  */
 struct uct_md_attr {
     struct {
-        size_t               max_alloc; /**< Maximal allocation size */
+        uint64_t             max_alloc; /**< Maximal allocation size */
         size_t               max_reg;   /**< Maximal registration size */
         uint64_t             flags;     /**< UCT_MD_FLAG_xx */
         uint64_t             reg_mem_types; /**< Bitmap of memory types that Memory Domain can be registered with */
         uint64_t             detect_mem_types; /**< Bitmap of memory types that Memory Domain can detect if address belongs to it */
-        ucs_memory_type_t    access_mem_type; /**< Memory type that Memory Domain can access */
+        uint64_t             alloc_mem_types;  /**< Bitmap of memory types that Memory Domain can allocate memory on */
+        uint64_t             access_mem_types; /**< Memory types that Memory Domain can access */
     } cap;
 
     ucs_linear_func_t        reg_cost;  /**< Memory registration cost estimation
@@ -1250,14 +1388,20 @@ struct uct_md_attr {
  * The enumeration allows specifying which fields in @ref uct_md_mem_attr_t
  * are present.
  */
-enum uct_md_mem_attr_field {
-    UCT_MD_MEM_ATTR_FIELD_MEM_TYPE = UCS_BIT(0), /**< Indicate if memory type
-                                                      is populated. E.g. CPU/GPU */
-    UCT_MD_MEM_ATTR_FIELD_SYS_DEV  = UCS_BIT(1)  /**< Indicate if details of
-                                                      system device backing
-                                                      the pointer are populated.
-                                                      E.g. NUMA/GPU */
-};
+typedef enum uct_md_mem_attr_field {
+    UCT_MD_MEM_ATTR_FIELD_MEM_TYPE     = UCS_BIT(0), /**< Indicate if memory type
+                                                          is populated. E.g. CPU/GPU */
+    UCT_MD_MEM_ATTR_FIELD_SYS_DEV      = UCS_BIT(1), /**< Indicate if details of
+                                                          system device backing
+                                                          the pointer are populated.
+                                                          E.g. NUMA/GPU */
+    UCT_MD_MEM_ATTR_FIELD_BASE_ADDRESS = UCS_BIT(2), /**< Request base address of the
+                                                          allocation to which the buffer
+                                                          belongs. */
+    UCT_MD_MEM_ATTR_FIELD_ALLOC_LENGTH = UCS_BIT(3)  /**< Request the whole length of the
+                                                          allocation to which the buffer
+                                                          belongs. */
+} uct_md_mem_attr_field_t;
 
 
 /**
@@ -1271,22 +1415,37 @@ enum uct_md_mem_attr_field {
 typedef struct uct_md_mem_attr {
     /**
      * Mask of valid fields in this structure, using bits from
-     * @ref uct_md_mem_attr_t. Note that the field mask is
-     * populated upon return from uct_md_mem_query and not set by user.
-     * Subsequent use of members of the structure are valid after ensuring that
-     * relevant bits in the field_mask are set.
+     * @ref uct_md_mem_attr_field_t.
      */
     uint64_t          field_mask;
 
     /**
-     * The type of memory. E.g. CPU/GPU memory or some other valid type
+     * The type of memory. E.g. CPU/GPU memory or some other valid type.
+     * If the md does not support sys_dev query, then UCS_MEMORY_TYPE_UNKNOWN
+     * is returned.
      */
     ucs_memory_type_t mem_type;
 
     /**
      * Index of the system device on which the buffer resides. eg: NUMA/GPU
+     * If the md does not support sys_dev query, then UCS_SYS_DEVICE_ID_UNKNOWN
+     * is returned.
      */
     ucs_sys_device_t  sys_dev;
+
+    /**
+     * Base address of the allocation to which the provided buffer belongs to.
+     * If the md not support base address query, then the pointer passed to
+     * uct_md_mem_query is returned as is.
+     */
+    void              *base_address;
+
+    /**
+     * Length of the whole allocation to which the provided buffer belongs to.
+     * If the md not support querying allocation length, then the length passed
+     * to uct_md_mem_query is returned as is.
+     */
+    size_t            alloc_length;
 } uct_md_mem_attr_t;
 
 
@@ -1294,8 +1453,8 @@ typedef struct uct_md_mem_attr {
  * @ingroup UCT_MD
  * @brief Query attributes of a given pointer
  *
- * Return attributes such as memory type, and system device for the
- * given pointer of specific length.
+ * Return attributes such as memory type, base address, allocation length,
+ * and system device for the given pointer of specific length.
  *
  * @param [in]     md          Memory domain to run the query on. This function
  *                             returns an error if the md does not recognize the
@@ -1305,11 +1464,12 @@ typedef struct uct_md_mem_attr {
  * @param [in]     length      Length of the memory region to examine.
  *                             Must be nonzero else UCS_ERR_INVALID_PARAM error
  *                             is returned.
- * @param [out]    mem_attr    If successful, filled with ptr attributes.
+ * @param [inout]  mem_attr    If successful, filled with ptr attributes.
  *
- * @return Error code.
+ * @return UCS_OK if at least one attribute is successfully queried otherwise
+ *         an error code as defined by @ref ucs_status_t is returned.
  */
-ucs_status_t uct_md_mem_query(uct_md_h md, const void *address, const size_t length,
+ucs_status_t uct_md_mem_query(uct_md_h md, const void *address, size_t length,
                               uct_md_mem_attr_t *mem_attr);
 
 
@@ -1350,7 +1510,7 @@ typedef struct uct_rkey_bundle {
  * @brief Completion handle.
  *
  * This structure should be allocated by the user and can be passed to communication
- * primitives. User has to initializes both fields of the structure.
+ * primitives. The user must initialize all fields of the structure.
  *  If the operation returns UCS_INPROGRESS, this structure will be in use by the
  * transport until the operation completes. When the operation completes, "count"
  * field is decremented by 1, and whenever it reaches 0 - the callback is called.
@@ -1360,10 +1520,15 @@ typedef struct uct_rkey_bundle {
  *    without the need to wait for completion.
  *  - If the number of operations is smaller than the initial value of the counter,
  *    the callback will not be called at all, so it may be left undefined.
+ *  - status field is required to track the first time the error occurred, and
+ *    report it via a callback when count reaches 0.
  */
 struct uct_completion {
     uct_completion_callback_t func;    /**< User callback function */
     int                       count;   /**< Completion counter */
+    ucs_status_t              status;  /**< Completion status, this field must
+                                            be initialized with UCS_OK before
+                                            first operation is started. */
 };
 
 
@@ -1399,11 +1564,16 @@ struct uct_tag_context {
     /**
      * Tag processing is completed by the transport.
      *
-     * @param [in]  self    Pointer to relevant context structure, which was
-     *                      initially passed to @ref uct_iface_tag_recv_zcopy.
-     * @param [in]  stag    Tag from sender.
-     * @param [in]  imm     Immediate data from sender. For rendezvous, it's always 0.
-     * @param [in]  length  Completed length.
+     * @param [in]  self        Pointer to relevant context structure, which was
+     *                          initially passed to @ref uct_iface_tag_recv_zcopy.
+     * @param [in]  stag        Tag from sender.
+     * @param [in]  imm         Immediate data from sender. For rendezvous, it's always 0.
+     * @param [in]  length      Completed length.
+     * @param [in]  inline_data If non-null, points to a temporary buffer which contains
+                                the received data. In this case the received data was not
+                                placed directly in the receive buffer. This callback routine
+                                is responsible for copy-out the inline data, otherwise it is
+                                released.
      * @param [in]  status  Completion status:
      * (a)   UCS_OK - Success, data placed in provided buffer.
      * (b)   UCS_ERR_TRUNCATED - Sender's length exceed posted
@@ -1411,7 +1581,7 @@ struct uct_tag_context {
      * (c)   UCS_ERR_CANCELED - Canceled by user.
      */
      void (*completed_cb)(uct_tag_context_t *self, uct_tag_t stag, uint64_t imm,
-                          size_t length, ucs_status_t status);
+                          size_t length, void *inline_data, ucs_status_t status);
 
     /**
      * Tag was matched by a rendezvous request, which should be completed by
@@ -1423,16 +1593,28 @@ struct uct_tag_context {
      * @param [in]  header        User defined header.
      * @param [in]  header_length User defined header length in bytes.
      * @param [in]  status        Completion status.
+     * @param [in]  flags         Flags defined by UCT_TAG_RECV_CB_xx.
      */
      void (*rndv_cb)(uct_tag_context_t *self, uct_tag_t stag, const void *header,
-                     unsigned header_length, ucs_status_t status);
+                     unsigned header_length, ucs_status_t status, unsigned flags);
 
      /** A placeholder for the private data used by the transport */
      char priv[UCT_TAG_PRIV_LEN];
 };
 
 
+/**
+ * @ingroup UCT_RESOURCE
+ * @brief flags of @ref uct_tag_context.
+ */
+enum {
+    /* If set, header points to inline data, otherwise it is user buffer. */
+    UCT_TAG_RECV_CB_INLINE_DATA = UCS_BIT(0)
+};
+
+
 extern const char *uct_alloc_method_names[];
+extern const char *uct_device_type_names[];
 
 
 /**
@@ -1980,6 +2162,23 @@ ucs_status_t uct_ep_create(const uct_ep_params_t *params, uct_ep_h *ep_p);
 
 /**
  * @ingroup UCT_CLIENT_SERVER
+ * @brief Connect a client side endpoint after it is bound to a local network
+ *        device, i.e. @ref uct_ep_params_t::cm_resolve_cb was invoked.
+ *
+ * This non-blocking routine establishes connection of the client side endpoint
+ * and sends private data to the peer.
+ *
+ * @param [in] ep       Endpoint to connect.
+ * @param [in] params   Parameters as defined in @ref uct_ep_connect_params_t.
+ *
+ * @return UCS_OK       Operation has been initiated successfully.
+ *         Other error codes as defined by @ref ucs_status_t.
+ */
+ucs_status_t uct_ep_connect(uct_ep_h ep, const uct_ep_connect_params_t *params);
+
+
+/**
+ * @ingroup UCT_CLIENT_SERVER
  * @brief Initiate a disconnection of an endpoint connected to a
  *        sockaddr by a connection manager @ref uct_cm_h.
  *
@@ -2059,33 +2258,89 @@ ucs_status_t uct_md_query(uct_md_h md, uct_md_attr_t *md_attr);
 
 /**
  * @ingroup UCT_MD
- * @brief Allocate memory for zero-copy sends and remote access.
+ * @brief UCT allocation parameters specification field mask
  *
- * Allocate memory on the memory domain. In order to use this function, MD
- * must support @ref UCT_MD_FLAG_ALLOC flag.
- *
- * @param [in]     md          Memory domain to allocate memory on.
- * @param [in,out] length_p    Points to the size of memory to allocate. Upon successful
- *                             return, filled with the actual size that was allocated,
- *                             which may be larger than the one requested. Must be >0.
- * @param [in,out] address_p   The address
- * @param [in]     flags       Memory allocation flags, see @ref uct_md_mem_flags.
- * @param [in]     name        Name of the allocated region, used to track memory
- *                             usage for debugging and profiling.
- * @param [out]    memh_p      Filled with handle for allocated region.
+ * The enumeration allows specifying which fields in @ref uct_mem_alloc_params_t
+ * are present.
  */
-ucs_status_t uct_md_mem_alloc(uct_md_h md, size_t *length_p, void **address_p,
-                              unsigned flags, const char *name, uct_mem_h *memh_p);
+typedef enum {
+    /** Enables @ref uct_mem_alloc_params_t::flags */
+    UCT_MEM_ALLOC_PARAM_FIELD_FLAGS          = UCS_BIT(0),
+
+    /** Enables @ref uct_mem_alloc_params_t::address */
+    UCT_MEM_ALLOC_PARAM_FIELD_ADDRESS        = UCS_BIT(1),
+
+    /** Enables @ref uct_mem_alloc_params_t::mem_type */
+    UCT_MEM_ALLOC_PARAM_FIELD_MEM_TYPE       = UCS_BIT(2),
+
+    /** Enables @ref uct_mem_alloc_params_t::mds */
+    UCT_MEM_ALLOC_PARAM_FIELD_MDS            = UCS_BIT(3),
+
+    /** Enables @ref uct_mem_alloc_params_t::name */
+    UCT_MEM_ALLOC_PARAM_FIELD_NAME           = UCS_BIT(4)
+} uct_mem_alloc_params_field_t;
 
 
 /**
  * @ingroup UCT_MD
- * @brief Release memory allocated by @ref uct_md_mem_alloc.
- *
- * @param [in]     md          Memory domain memory was allocated on.
- * @param [in]     memh        Memory handle, as returned from @ref uct_md_mem_alloc.
+ * @brief Parameters for allocating memory using @ref uct_mem_alloc
  */
-ucs_status_t uct_md_mem_free(uct_md_h md, uct_mem_h memh);
+typedef struct {
+    /**
+     * Mask of valid fields in this structure, using bits from
+     * @ref uct_mem_alloc_params_field_t. Fields not specified in this mask will
+     * be ignored.
+     */
+    uint64_t                     field_mask;
+
+    /**
+     * Memory allocation flags, see @ref uct_md_mem_flags
+     * If UCT_MEM_ALLOC_PARAM_FIELD_FLAGS is not specified in field_mask, then
+     * (UCT_MD_MEM_ACCESS_LOCAL_READ | UCT_MD_MEM_ACCESS_LOCAL_WRITE) is used by
+     * default.
+     */
+    unsigned                     flags;
+
+    /**
+     * If @a address is NULL, the underlying allocation routine will
+     * choose the address at which to create the mapping. If @a address
+     * is non-NULL and UCT_MD_MEM_FLAG_FIXED is not set, the address
+     * will be interpreted as a hint as to where to establish the mapping. If
+     * @a address is non-NULL and UCT_MD_MEM_FLAG_FIXED is set, then the
+     * specified address is interpreted as a requirement. In this case, if the
+     * mapping to the exact address cannot be made, the allocation request
+     * fails.
+     */
+    void                         *address;
+
+    /**
+     * Type of memory to be allocated.
+     */
+    ucs_memory_type_t            mem_type;
+
+    struct {
+        /**
+         * Array of memory domains to attempt to allocate
+         * the memory with, for MD allocation method.
+         */
+        const uct_md_h           *mds;
+
+        /**
+         *  Length of 'mds' array. May be empty, in such case
+         *  'mds' may be NULL, and MD allocation method will
+         *  be skipped.
+         */
+        unsigned                 count;
+    } mds;
+
+    /**
+     * Name of the allocated region, used to track memory
+     * usage for debugging and profiling.
+     * If UCT_MEM_ALLOC_PARAM_FIELD_NAME is not specified in field_mask, then
+     * "anonymous-uct_mem_alloc" is used by default.
+     */
+    const char                   *name;
+} uct_mem_alloc_params_t;
 
 
 /**
@@ -2098,7 +2353,7 @@ ucs_status_t uct_md_mem_free(uct_md_h md, uct_mem_h memh);
  * ignored.
  *
  * @param [in]     md          Memory domain memory was allocated or registered on.
- * @param [in]     memh        Memory handle, as returned from @ref uct_md_mem_alloc
+ * @param [in]     memh        Memory handle, as returned from @ref uct_mem_alloc
  * @param [in]     addr        Memory base address. Memory range must belong to the
  *                             @a memh
  * @param [in]     length      Length of memory to advise. Must be >0.
@@ -2140,7 +2395,6 @@ ucs_status_t uct_md_mem_dereg(uct_md_h md, uct_mem_h memh);
  * @ingroup UCT_MD
  * @brief Detect memory type
  *
- *
  * @param [in]     md           Memory domain to detect memory type
  * @param [in]     addr         Memory address to detect.
  * @param [in]     length       Size of memory
@@ -2158,39 +2412,29 @@ ucs_status_t uct_md_detect_memory_type(uct_md_h md, const void *addr,
  * @ingroup UCT_MD
  * @brief Allocate memory for zero-copy communications and remote access.
  *
- * Allocate potentially registered memory. Every one of the provided allocation
- * methods will be used, in turn, to perform the allocation, until one succeeds.
- * Whenever the MD method is encountered, every one of the provided MDs will be
- * used, in turn, to allocate the memory, until one succeeds, or they are
- * exhausted. In this case the next allocation method from the initial list will
- * be attempted.
+ * Allocate potentially registered memory.
  *
- * @param [in]     addr        If @a addr is NULL, the underlying allocation routine
- *                             will choose the address at which to create the mapping.
- *                             If @a addr is non-NULL but UCT_MD_MEM_FLAG_FIXED is
- *                             not set, the address will be interpreted as a hint
- *                             as to where to establish the mapping. If @a addr is
- *                             non-NULL and UCT_MD_MEM_FLAG_FIXED is set, then
- *                             the specified address is interpreted as a requirement.
- *                             In this case, if the mapping to the exact address
- *                             cannot be made, the allocation request fails.
- * @param [in]     min_length  Minimal size to allocate. The actual size may be
- *                             larger, for example because of alignment restrictions.
- * @param [in]     flags       Memory allocation flags, see @ref uct_md_mem_flags.
+ * @param [in]     length      The minimal size to allocate. The actual size may
+ *                             be larger, for example because of alignment
+ *                             restrictions. Must be >0.
  * @param [in]     methods     Array of memory allocation methods to attempt.
+ *                             Each of the provided allocation methods will be
+ *                             tried in array order, to perform the allocation,
+ *                             until one succeeds. Whenever the MD method is
+ *                             encountered, each of the provided MDs will be
+ *                             tried in array order, to allocate the memory,
+ *                             until one succeeds, or they are exhausted. In
+ *                             this case the next allocation method from the
+ *                             initial list will be attempted.
  * @param [in]     num_methods Length of 'methods' array.
- * @param [in]     mds         Array of memory domains to attempt to allocate
- *                             the memory with, for MD allocation method.
- * @param [in]     num_mds     Length of 'mds' array. May be empty, in such case
- *                             'mds' may be NULL, and MD allocation method will
- *                             be skipped.
- * @param [in]     name        Name of the allocation. Used for memory statistics.
+ * @param [in]     params      Memory allocation characteristics, see
+ *                             @ref uct_mem_alloc_params_t.
  * @param [out]    mem         In case of success, filled with information about
- *                              the allocated memory. @ref uct_allocated_memory_t.
+ *                             the allocated memory. @ref uct_allocated_memory_t
  */
-ucs_status_t uct_mem_alloc(void *addr, size_t min_length, unsigned flags,
-                           uct_alloc_method_t *methods, unsigned num_methods,
-                           uct_md_h *mds, unsigned num_mds, const char *name,
+ucs_status_t uct_mem_alloc(size_t length, const uct_alloc_method_t *methods,
+                           unsigned num_methods,
+                           const uct_mem_alloc_params_t *params,
                            uct_allocated_memory_t *mem);
 
 
@@ -2222,7 +2466,6 @@ ucs_status_t uct_mem_free(const uct_allocated_memory_t *mem);
 ucs_status_t uct_md_config_read(uct_component_h component,
                                 const char *env_prefix, const char *filename,
                                 uct_md_config_t **config_p);
-
 
 
 /**
@@ -2547,6 +2790,43 @@ UCT_INLINE_API ucs_status_t uct_ep_am_short(uct_ep_h ep, uint8_t id, uint64_t he
                                             const void *payload, unsigned length)
 {
     return ep->iface->ops.ep_am_short(ep, id, header, payload, length);
+}
+
+
+/**
+ * @ingroup UCT_AM
+ * @brief Short io-vector send operation.
+ *
+ * This routine sends a message using @ref uct_short_protocol_desc "short" protocol.
+ * The input data in @a iov array of @ref ::uct_iov_t structures is sent to remote
+ * side to contiguous buffer keeping the order of the data in the array.
+ *
+ * @param [in] ep              Destination endpoint handle.
+ * @param [in] id              Active message id. Must be in range 0..UCT_AM_ID_MAX-1.
+ * @param [in] iov             Points to an array of @ref ::uct_iov_t structures.
+ *                             The @a iov pointer must be a valid address of an array
+ *                             of @ref ::uct_iov_t structures. A particular structure
+ *                             pointer must be a valid address. A NULL terminated
+ *                             array is not required. @a stride and @a count fields in
+ *                             @ref ::uct_iov_t structure are ignored in current
+ *                             implementation. The total size of the data buffers in
+ *                             the array is limited by
+ *                             @ref uct_iface_attr_cap_am_max_short
+ *                             "uct_iface_attr::cap::am::max_short".
+ * @param [in] iovcnt          Size of the @a iov data @ref ::uct_iov_t structures
+ *                             array. If @a iovcnt is zero, the data is considered empty.
+ *                             @a iovcnt is limited by @ref uct_iface_attr_cap_am_max_iov
+ *                             "uct_iface_attr::cap::am::max_iov".
+ *
+ * @return UCS_OK              Operation completed successfully.
+ * @return UCS_ERR_NO_RESOURCE Could not start the operation due to lack of
+ *                             send resources.
+ * @return otherwise           Error code.
+ */
+UCT_INLINE_API ucs_status_t uct_ep_am_short_iov(uct_ep_h ep, uint8_t id,
+                                                const uct_iov_t *iov, size_t iovcnt)
+{
+    return ep->iface->ops.ep_am_short_iov(ep, id, iov, iovcnt);
 }
 
 
@@ -3278,6 +3558,23 @@ ucs_status_t uct_listener_reject(uct_listener_h listener,
  */
 ucs_status_t uct_listener_query(uct_listener_h listener,
                                 uct_listener_attr_t *listener_attr);
+
+
+/**
+ * @ingroup UCT_RESOURCE
+ * @brief Update status of UCT completion handle.
+ *
+ * @param comp   [in]         Completion handle to update.
+ * @param status [in]         Status to update @a comp handle.
+ */
+static UCS_F_ALWAYS_INLINE
+void uct_completion_update_status(uct_completion_t *comp, ucs_status_t status)
+{
+    if (ucs_unlikely(status != UCS_OK) && (comp->status == UCS_OK)) {
+        /* store first failure status */
+        comp->status = status;
+    }
+}
 
 
 /**

@@ -11,6 +11,7 @@
 /* vci is embedded in the request's pool index */
 
 #define MPIDI_Request_get_vci(req) MPIR_REQUEST_POOL(req)
+#define MPIDI_VCI_INVALID (-1)
 
 /* VCI hashing function (fast path)
  * NOTE: The returned vci should always MOD NUMVCIS, where NUMVCIS is
@@ -59,7 +60,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_get_vci(int flag, MPIR_Comm * comm_ptr,
 MPL_STATIC_INLINE_PREFIX int MPIDI_get_vci(int flag, MPIR_Comm * comm_ptr,
                                            int src_rank, int dst_rank, int tag)
 {
-    if (flag & 0x1) {
+    if (!(flag & 0x1)) {
         /* src */
         return (tag == MPI_ANY_TAG) ? 0 : ((tag >> 10) & 0x1f);
     } else {
@@ -69,14 +70,171 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_get_vci(int flag, MPIR_Comm * comm_ptr,
 }
 
 #elif MPIDI_CH4_VCI_METHOD == MPICH_VCI__IMPLICIT
+
+/* Map comm to vci_idx */
+MPL_STATIC_INLINE_PREFIX int MPIDI_map_contextid_to_vci(MPIR_Context_id_t context_id)
+{
+    return (MPIR_CONTEXT_READ_FIELD(PREFIX, context_id)) % MPIDI_global.n_vcis;
+}
+
+/* Map comm and rank to vci_idx */
+MPL_STATIC_INLINE_PREFIX int MPIDI_map_contextid_rank_to_vci(MPIR_Context_id_t context_id, int rank)
+{
+    return (MPIR_CONTEXT_READ_FIELD(PREFIX, context_id) + rank) % MPIDI_global.n_vcis;
+}
+
+/* Map comm and tag to vci_idx */
+MPL_STATIC_INLINE_PREFIX int MPIDI_map_contextid_tag_to_vci(MPIR_Context_id_t context_id, int tag)
+{
+    return (MPIR_CONTEXT_READ_FIELD(PREFIX, context_id) + tag) % MPIDI_global.n_vcis;;
+}
+
+/* Map comm, rank, and tag to vci_idx */
+MPL_STATIC_INLINE_PREFIX int MPIDI_map_contextid_rank_tag_to_vci(MPIR_Context_id_t context_id,
+                                                                 int rank, int tag)
+{
+    return (MPIR_CONTEXT_READ_FIELD(PREFIX, context_id) + rank + tag) % MPIDI_global.n_vcis;;
+}
+
+static bool is_vci_restricted_to_zero(MPIR_Comm * comm)
+{
+    bool vci_restricted = false;
+    if (!(comm->comm_kind == MPIR_COMM_KIND__INTRACOMM && !comm->tainted)) {
+        vci_restricted |= true;
+    }
+#ifdef  MPIDI_OFI_VNI_USE_DOMAIN
+    if (!MPIDI_global.is_initialized) {
+        vci_restricted |= true;
+    }
+#endif /* ifdef  MPIDI_OFI_VNI_USE_DOMAIN */
+
+    return vci_restricted;
+}
+
+
+/* Return VCI index of a send transmit context.
+ * Used for two purposes:
+ *   1. For the sender side to determine which VCI index of a transmit context
+ *      to send a message from
+ *   2. For the receiver side to determine which VCI of the remote peer to address
+ *      to when sending ack for sync sends
+ * Note: the unused parameters can be used in future
+ *
+ * ctxid_in_effect: communicator's context ID used to calculate the VCI index.
+ *   For an intercommunicator, the right one may be either comm->context_id
+ *   or comm->recvcontext_id, depending on situation.
+ *   This parameter allows caller to explicitly specify context ID.
+ *
+ * When this function is called from the sender side, ctxid_in_effect should be comm->context_id.
+ * Otherwise (receiver side), it should be comm->recvcontext_id.
+ */
+MPL_STATIC_INLINE_PREFIX int MPIDI_get_sender_vci(MPIR_Comm * comm,
+                                                  MPIR_Context_id_t ctxid_in_effect,
+                                                  int sender_rank, int receiver_rank, int tag)
+{
+#if MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY__VCI
+    MPIR_Assert(comm);
+    int vci_idx = MPIDI_VCI_INVALID;
+    bool use_user_defined_vci = (comm->hints[MPIR_COMM_HINT_SENDER_VCI] != MPIDI_VCI_INVALID);
+    bool use_tag = comm->hints[MPIR_COMM_HINT_NO_ANY_TAG];
+
+    if (is_vci_restricted_to_zero(comm)) {
+        vci_idx = 0;
+    } else if (use_user_defined_vci) {
+        vci_idx = comm->hints[MPIR_COMM_HINT_SENDER_VCI];
+    } else {
+        if (use_tag) {
+            vci_idx = MPIDI_map_contextid_rank_tag_to_vci(ctxid_in_effect, receiver_rank, tag);
+        } else {
+            /* General unoptimized case */
+            vci_idx = MPIDI_map_contextid_rank_to_vci(ctxid_in_effect, receiver_rank);
+        }
+    }
+    return vci_idx;
+#else
+    return 0;
+#endif
+}
+
+/* Return VCI index of a receive transmit context.
+ * Used for two purposes:
+ *   1. For the receive side to determine where to post a receive call
+ *   2. For the sender side to determine which VCI in the remote peer to address to
+ * Note: the unused parameters can be used in future
+ *
+ * ctxid_in_effect: communicator's context ID used to calculate the VCI index.
+ *   For an intercommunicator, the right one may be either comm->context_id
+ *   or comm->recvcontext_id, depending on situation.
+ *   This parameter allows caller to explicitly specify context ID.
+ *
+ * When this function is called from the sender side, ctxid_in_effect should be comm->context_id.
+ * Otherwise (receiver side), it should be comm->recvcontext_id.
+ */
+MPL_STATIC_INLINE_PREFIX int MPIDI_get_receiver_vci(MPIR_Comm * comm,
+                                                    MPIR_Context_id_t ctxid_in_effect,
+                                                    int sender_rank, int receiver_rank, int tag)
+{
+#if MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY__VCI
+    MPIR_Assert(comm);
+    int vci_idx = MPIDI_VCI_INVALID;
+    bool use_user_defined_vci = (comm->hints[MPIR_COMM_HINT_RECEIVER_VCI] != MPIDI_VCI_INVALID);
+    bool use_tag = comm->hints[MPIR_COMM_HINT_NO_ANY_TAG];
+    bool use_source = comm->hints[MPIR_COMM_HINT_NO_ANY_SOURCE];
+
+    if (is_vci_restricted_to_zero(comm)) {
+        vci_idx = 0;
+    } else if (use_user_defined_vci) {
+        vci_idx = comm->hints[MPIR_COMM_HINT_RECEIVER_VCI];
+    } else {
+        /* If mpi_any_tag and mpi_any_source can be used for recv, all messages
+         * should be received on a single vci. Otherwise, messages sent from a
+         * rank can concurrently match at different vcis. This can allow a
+         * mesasge to be received in different order than it was sent. We
+         * should avoid this.
+         * However, if we know mpi_any_source and MPI_any_tag are absent, we
+         * don't have this risk and hence we can utilize multiple vcis on the
+         * receive side.
+         */
+        if (use_tag && use_source) {
+            vci_idx = MPIDI_map_contextid_rank_tag_to_vci(ctxid_in_effect, sender_rank, tag);
+        } else if (use_source) {
+            vci_idx = MPIDI_map_contextid_rank_to_vci(ctxid_in_effect, sender_rank);
+        } else if (use_tag) {
+            vci_idx = MPIDI_map_contextid_tag_to_vci(ctxid_in_effect, tag);
+        } else {
+            /* General unoptimized case */
+            vci_idx = MPIDI_map_contextid_to_vci(ctxid_in_effect);
+        }
+    }
+    return vci_idx;
+#else
+    return 0;
+#endif
+}
+
+
 /* Figure out vci based on (comm, rank, tag) plus hints
  * This is essentially an "auto" method, we use "implicit" as a contrast * to "explicit", which could be available with, e.g. MPI endpoints.
  */
-#error "MPICH_VCI__IMPLICIT not implemented."
 MPL_STATIC_INLINE_PREFIX int MPIDI_get_vci(int flag, MPIR_Comm * comm_ptr,
                                            int src_rank, int dst_rank, int tag)
 {
-    return 0;
+    int ctxid_in_effect;
+    if (!(flag & 0x2)) {
+        /* called from sender */
+        ctxid_in_effect = comm_ptr->context_id;
+    } else {
+        /* called from receiver */
+        ctxid_in_effect = comm_ptr->recvcontext_id;
+    }
+
+    if (!(flag & 0x1)) {
+        /* src */
+        return MPIDI_get_sender_vci(comm_ptr, ctxid_in_effect, src_rank, dst_rank, tag);
+    } else {
+        /* dst */
+        return MPIDI_get_receiver_vci(comm_ptr, ctxid_in_effect, src_rank, dst_rank, tag);
+    }
 }
 
 #elif MPIDI_CH4_VCI_METHOD == MPICH_VCI__EXPLICIT

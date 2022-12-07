@@ -60,7 +60,8 @@ enum {
     UCT_IB_DEVX_OBJ_RCQP,
     UCT_IB_DEVX_OBJ_RCSRQ,
     UCT_IB_DEVX_OBJ_DCT,
-    UCT_IB_DEVX_OBJ_DCSRQ
+    UCT_IB_DEVX_OBJ_DCSRQ,
+    UCT_IB_DEVX_OBJ_DCI
 };
 
 typedef struct uct_ib_md_ext_config {
@@ -69,7 +70,6 @@ typedef struct uct_ib_md_ext_config {
     int                      prefer_nearest_device; /**< Give priority for near
                                                          device */
     int                      enable_indirect_atomic; /** Enable indirect atomic */
-    int                      enable_gpudirect_rdma; /** Enable GPUDirect RDMA */
 #ifdef HAVE_EXP_UMR
     unsigned                 max_inline_klm_list; /* Maximal length of inline KLM list */
 #endif
@@ -135,6 +135,7 @@ typedef struct uct_ib_md {
     int                      relaxed_order;
     int                      fork_init;
     size_t                   memh_struct_size;
+    uint64_t                 reg_mem_types;
 } uct_ib_md_t;
 
 
@@ -164,6 +165,7 @@ typedef struct uct_ib_md_config {
     unsigned                 devx;         /**< DEVX support */
     unsigned                 devx_objs;    /**< Objects to be created by DevX */
     ucs_on_off_auto_value_t  mr_relaxed_order; /**< Allow reorder memory accesses */
+    int                      enable_gpudirect_rdma; /**< Enable GPUDirect RDMA */
 } uct_ib_md_config_t;
 
 /**
@@ -208,7 +210,8 @@ typedef ucs_status_t (*uct_ib_md_reg_key_func_t)(struct uct_ib_md *md,
                                                  void *address, size_t length,
                                                  uint64_t access,
                                                  uct_ib_mem_t *memh,
-                                                 uct_ib_mr_type_t mr_type);
+                                                 uct_ib_mr_type_t mr_type,
+                                                 int silent);
 
 /**
  * Memory domain method to deregister memory area.
@@ -271,7 +274,8 @@ typedef ucs_status_t (*uct_ib_md_reg_multithreaded_func_t)(uct_ib_md_t *md,
                                                            size_t length,
                                                            uint64_t access,
                                                            uct_ib_mem_t *memh,
-                                                           uct_ib_mr_type_t mr_type);
+                                                           uct_ib_mr_type_t mr_type,
+                                                           int silent);
 
 /**
  * Memory domain method to deregister memory area.
@@ -444,6 +448,8 @@ static UCS_F_ALWAYS_INLINE uint32_t uct_ib_memh_get_lkey(uct_mem_h memh)
 ucs_status_t uct_ib_md_open(uct_component_t *component, const char *md_name,
                             const uct_md_config_t *uct_md_config, uct_md_h *md_p);
 
+int uct_ib_device_is_accessible(struct ibv_device *device);
+
 ucs_status_t uct_ib_md_open_common(uct_ib_md_t *md,
                                    struct ibv_device *ib_device,
                                    const uct_ib_md_config_t *md_config);
@@ -451,14 +457,15 @@ ucs_status_t uct_ib_md_open_common(uct_ib_md_t *md,
 void uct_ib_md_close(uct_md_h uct_md);
 
 ucs_status_t uct_ib_reg_mr(struct ibv_pd *pd, void *addr, size_t length,
-                           uint64_t access, struct ibv_mr **mr_p);
+                           uint64_t access, struct ibv_mr **mr_p, int silent);
 ucs_status_t uct_ib_dereg_mr(struct ibv_mr *mr);
 ucs_status_t uct_ib_dereg_mrs(struct ibv_mr **mrs, size_t mr_num);
 
 ucs_status_t
 uct_ib_md_handle_mr_list_multithreaded(uct_ib_md_t *md, void *address,
                                        size_t length, uint64_t access,
-                                       size_t chunk, struct ibv_mr **mrs);
+                                       size_t chunk, struct ibv_mr **mrs,
+                                       int silent);
 
 void uct_ib_md_parse_relaxed_order(uct_ib_md_t *md,
                                    const uct_ib_md_config_t *md_config);
@@ -466,5 +473,5 @@ void uct_ib_md_parse_relaxed_order(uct_ib_md_t *md,
 ucs_status_t uct_ib_reg_key_impl(uct_ib_md_t *md, void *address,
                                  size_t length, uint64_t access_flags,
                                  uct_ib_mem_t *memh, uct_ib_mr_t *mrs,
-                                 uct_ib_mr_type_t mr_type);
+                                 uct_ib_mr_type_t mr_type, int silent);
 #endif

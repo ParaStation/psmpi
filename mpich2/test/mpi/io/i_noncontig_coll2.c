@@ -3,11 +3,11 @@
  *     See COPYRIGHT in top-level directory
  */
 
+#include "mpitest.h"
 #include "mpi.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "mpitest.h"
 
 /* tests noncontiguous reads/writes using nonblocking collective I/O */
 
@@ -15,7 +15,7 @@
  *
  * . generalized file writing/reading to handle arbitrary number of processors
  * . provides the "cb_config_list" hint with several permutations of the
- *   avaliable processors.
+ *   available processors.
  *   [ makes use of code copied from ROMIO's ADIO code to collect the names of
  *   the processors ]
  */
@@ -249,8 +249,8 @@ void simple_shuffle_str(int mynod, int len, ADIO_cb_name_array array, char *dest
 
 int main(int argc, char **argv)
 {
-    int i, mynod, nprocs, len, errs = 0, sum_errs = 0, verbose = 0;
-    char *filename;
+    int i, mynod, nprocs, len, errs = 0, verbose = 0;
+    char *filename = NULL;
     char *cb_config_string;
     int cb_config_len;
     ADIO_cb_name_array array;

@@ -17,12 +17,6 @@ using namespace ucs; /* For vector<char> serialization */
 
 class test_ucp_rma_mt : public ucp_test {
 public:
-    static ucp_params_t get_ctx_params() {
-        ucp_params_t params = ucp_test::get_ctx_params();
-        params.features     = UCP_FEATURE_RMA;
-        return params;
-    }
-
     void init()
     {
         ucp_test::init();
@@ -37,25 +31,17 @@ public:
     {
     }
 
-    static std::vector<ucp_test_param> enum_test_params(const ucp_params_t& ctx_params,
-                                                        const std::string& name,
-                                                        const std::string& test_case_name,
-                                                        const std::string& tls)
-    {
-        std::vector<ucp_test_param> result;
-
-        generate_test_params_variant(ctx_params, name, test_case_name, tls, 0,
-                                     result, MULTI_THREAD_CONTEXT);
-        generate_test_params_variant(ctx_params, name, test_case_name, tls, 0,
-                                     result, MULTI_THREAD_WORKER);
-        return result;
+    static void get_test_variants(std::vector<ucp_test_variant>& variants) {
+        add_variant(variants, UCP_FEATURE_RMA, MULTI_THREAD_CONTEXT);
+        add_variant(variants, UCP_FEATURE_RMA, MULTI_THREAD_WORKER);
     }
 };
 
 UCS_TEST_P(test_ucp_rma_mt, put_get) {
+    const unsigned num_threads = mt_num_threads();
     ucs_status_t st;
-    uint64_t orig_data[MT_TEST_NUM_THREADS] GTEST_ATTRIBUTE_UNUSED_;
-    uint64_t target_data[MT_TEST_NUM_THREADS] GTEST_ATTRIBUTE_UNUSED_;
+    uint64_t orig_data[num_threads] GTEST_ATTRIBUTE_UNUSED_;
+    uint64_t target_data[num_threads] GTEST_ATTRIBUTE_UNUSED_;
 
     ucp_mem_map_params_t params;
     ucp_mem_h memh;
@@ -65,8 +51,8 @@ UCS_TEST_P(test_ucp_rma_mt, put_get) {
                         UCP_MEM_MAP_PARAM_FIELD_LENGTH |
                         UCP_MEM_MAP_PARAM_FIELD_FLAGS;
     params.address    = memheap;
-    params.length     = sizeof(uint64_t) * MT_TEST_NUM_THREADS;
-    params.flags      = GetParam().variant;
+    params.length     = sizeof(uint64_t) * num_threads;
+    params.flags      = get_variant_value();
 
     st = ucp_mem_map(receiver().ucph(), &params, &memh);
     ASSERT_UCS_OK(st);
@@ -78,14 +64,14 @@ UCS_TEST_P(test_ucp_rma_mt, put_get) {
     ASSERT_UCS_OK(st);
 
     std::vector<ucp_rkey_h> rkey;
-    rkey.resize(MT_TEST_NUM_THREADS);
+    rkey.resize(num_threads);
 
     /* test parallel rkey unpack */
 #if _OPENMP && ENABLE_MT
 #pragma omp parallel for
-    for (int i = 0; i < MT_TEST_NUM_THREADS; i++) {
+    for (int i = 0; i < num_threads; i++) {
         int worker_index = 0;
-        if (GetParam().thread_type == MULTI_THREAD_CONTEXT) {
+        if (get_variant_thread_type() == MULTI_THREAD_CONTEXT) {
             worker_index = i;
         }
         ucs_status_t status = ucp_ep_rkey_unpack(sender().ep(worker_index),
@@ -98,24 +84,24 @@ UCS_TEST_P(test_ucp_rma_mt, put_get) {
 
     /* test blocking PUT */
 
-    for (int i = 0; i < MT_TEST_NUM_THREADS; i++) {
+    for (int i = 0; i < num_threads; i++) {
         orig_data[i] = 0xdeadbeefdeadbeef + 10 * i;
         target_data[i] = 0;
     }
 
 #if _OPENMP && ENABLE_MT
 #pragma omp parallel for
-    for (int i = 0; i < MT_TEST_NUM_THREADS; i++) {
+    for (int i = 0; i < num_threads; i++) {
         int worker_index = 0;
 
-        if (GetParam().thread_type == MULTI_THREAD_CONTEXT) {
+        if (get_variant_thread_type() == MULTI_THREAD_CONTEXT) {
             worker_index = i;
         }
 
         void* req = ucp_put_nb(sender().ep(worker_index), &orig_data[i],
                                sizeof(uint64_t), (uintptr_t)((uint64_t*)memheap + i),
                                rkey[i], send_cb);
-        wait(req, worker_index);
+        request_wait(req, worker_index);
 
         flush_worker(sender(), worker_index);
 
@@ -125,18 +111,18 @@ UCS_TEST_P(test_ucp_rma_mt, put_get) {
 
     /* test nonblocking PUT */
 
-    for (int i = 0; i < MT_TEST_NUM_THREADS; i++) {
+    for (int i = 0; i < num_threads; i++) {
         orig_data[i] = 0xdeadbeefdeadbeef + 10 * i;
         target_data[i] = 0;
     }
 
 #if _OPENMP && ENABLE_MT
 #pragma omp parallel for
-    for (int i = 0; i < MT_TEST_NUM_THREADS; i++) {
+    for (int i = 0; i < num_threads; i++) {
         ucs_status_t status;
         int worker_index = 0;
 
-        if (GetParam().thread_type == MULTI_THREAD_CONTEXT)
+        if (get_variant_thread_type() == MULTI_THREAD_CONTEXT)
             worker_index = i;
 
         status = ucp_put_nbi(sender().ep(worker_index), &orig_data[i], sizeof(uint64_t),
@@ -151,24 +137,24 @@ UCS_TEST_P(test_ucp_rma_mt, put_get) {
 
     /* test blocking GET */
 
-    for (int i = 0; i < MT_TEST_NUM_THREADS; i++) {
+    for (int i = 0; i < num_threads; i++) {
         orig_data[i] = 0;
         target_data[i] = 0xdeadbeefdeadbeef + 10 * i;
     }
 
 #if _OPENMP && ENABLE_MT
 #pragma omp parallel for
-    for (int i = 0; i < MT_TEST_NUM_THREADS; i++) {
+    for (int i = 0; i < num_threads; i++) {
         int worker_index = 0;
 
-        if (GetParam().thread_type == MULTI_THREAD_CONTEXT) {
+        if (get_variant_thread_type() == MULTI_THREAD_CONTEXT) {
             worker_index = i;
         }
 
         void *req = ucp_get_nb(sender().ep(worker_index), &orig_data[i],
                                sizeof(uint64_t), (uintptr_t)((uint64_t*)memheap + i),
                                rkey[i], send_cb);
-        wait(req, worker_index);
+        request_wait(req, worker_index);
 
         flush_worker(sender(), worker_index);
 
@@ -178,19 +164,20 @@ UCS_TEST_P(test_ucp_rma_mt, put_get) {
 
     /* test nonblocking GET */
 
-    for (int i = 0; i < MT_TEST_NUM_THREADS; i++) {
+    for (int i = 0; i < num_threads; i++) {
         orig_data[i] = 0;
         target_data[i] = 0xdeadbeefdeadbeef + 10 * i;
     }
 
 #if _OPENMP && ENABLE_MT
 #pragma omp parallel for
-    for (int i = 0; i < MT_TEST_NUM_THREADS; i++) {
+    for (int i = 0; i < num_threads; i++) {
         ucs_status_t status;
         int worker_index = 0;
 
-        if (GetParam().thread_type == MULTI_THREAD_CONTEXT)
+        if (get_variant_thread_type() == MULTI_THREAD_CONTEXT) {
             worker_index = i;
+        }
 
         status = ucp_get_nbi(sender().ep(worker_index), &orig_data[i], sizeof(uint64_t),
                              (uintptr_t)((uint64_t *)memheap + i), rkey[i]);
@@ -204,7 +191,7 @@ UCS_TEST_P(test_ucp_rma_mt, put_get) {
 
 #if _OPENMP && ENABLE_MT
 #pragma omp parallel for
-    for (int i = 0; i < MT_TEST_NUM_THREADS; i++) {
+    for (int i = 0; i < num_threads; i++) {
         ucp_rkey_destroy(rkey[i]);
     }
 #endif

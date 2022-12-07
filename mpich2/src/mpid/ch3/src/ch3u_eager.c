@@ -26,9 +26,8 @@ int MPIDI_CH3_SendNoncontig_iov( MPIDI_VC_t *vc, MPIR_Request *sreq,
     int mpi_errno = MPI_SUCCESS;
     int iov_n, iovcnt = 0;
     struct iovec iov[MPL_IOV_LIMIT];
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPIDI_CH3_SENDNONCONTIG_IOV);
 
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPIDI_CH3_SENDNONCONTIG_IOV);
+    MPIR_FUNC_ENTER;
 
     iov[iovcnt].iov_base = header;
     iov[iovcnt].iov_len = hdr_sz;
@@ -53,7 +52,7 @@ int MPIDI_CH3_SendNoncontig_iov( MPIDI_VC_t *vc, MPIR_Request *sreq,
     {
 	iov_n += iovcnt;  /* add count of hdr iovs */
 	
-	/* Note this routine is invoked withing a CH3 critical section */
+	/* Note this routine is invoked within a CH3 critical section */
 	/* MPID_THREAD_CS_ENTER(POBJ, vc->pobj_mutex); */
 	mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
 	/* MPID_THREAD_CS_EXIT(POBJ, vc->pobj_mutex); */
@@ -78,7 +77,7 @@ int MPIDI_CH3_SendNoncontig_iov( MPIDI_VC_t *vc, MPIR_Request *sreq,
 
 
  fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPIDI_CH3_SENDNONCONTIG_IOV);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
  fn_fail:
     goto fn_exit;
@@ -374,9 +373,7 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, v
 		{
 		    unsigned char const * restrict p = 
 			(unsigned char *)eagershort_pkt->data;
-		    unsigned char * restrict bufp = 
-			(unsigned char *)(char*)(rreq->dev.user_buf) + 
-			dt_true_lb;
+		    unsigned char * restrict bufp = MPIR_get_contig_ptr(rreq->dev.user_buf, dt_true_lb);
 		    int i;
 		    for (i=0; i<data_sz; i++) {
 			*bufp++ = *p++;

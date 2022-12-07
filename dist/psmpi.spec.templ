@@ -26,10 +26,12 @@ Packager:  support@par-tec.de
 Source0:   psmpi-%{version}-%{release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
+%if "%{confset}" != "ch4"
 %if 0%{?cuda}
 BuildRequires:	pscom-cuda
 %else
 BuildRequires:	pscom
+%endif
 %endif
 BuildRequires:	automake autoconf libtool
 
@@ -125,6 +127,7 @@ sleep 1
 %{_includedir}/mpi_f08_compile_constants.mod
 %{_includedir}/mpi_f08_link_constants.mod
 %{_includedir}/mpi_f08_types.mod
+%{_includedir}/mpi_proto.h
 %{_includedir}/mpi_sizeofs.mod
 %{_includedir}/mpicxx.h
 %{_includedir}/mpif.h
@@ -142,7 +145,6 @@ sleep 1
 %{_libdir}/libmpl.so
 %{_libdir}/libopa.so
 %{_libdir}/pkgconfig/mpich.pc
-%{_libdir}/pkgconfig/yaksa.pc
 %if 0%{?cuda}
 %{_sysconfdir}/mpicc-cuda.conf
 %{_sysconfdir}/mpicxx-cuda.conf

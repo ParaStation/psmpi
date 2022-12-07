@@ -22,8 +22,6 @@ static inline zm_faseg_t *zm_faseg_alloc(zm_ulong_t seg_id) {
 }
 
 static inline void zm_faseg_free(zm_faseg_t *seg) {
-    zm_hzdptr_t *hzdptrs = zm_hzdptr_get();
-    hzdptrs[0] <- (zm_ptr_t)seg;
     zm_hzdptr_retire((zm_ptr_t)seg);
 }
 
@@ -98,7 +96,7 @@ int zm_faqueue_dequeue(zm_faqueue_t* q, void **data) {
         assert(seg_id == seg_head->id);
     }
 
-    if ((seg_head->cells[cell_disp].data == ZM_FAQUEUE_ALPHA)) /* general case of empty q */
+    if (seg_head->cells[cell_disp].data == ZM_FAQUEUE_ALPHA) /* general case of empty q */
         return 0;
     else {
         *data = seg_head->cells[cell_disp].data;

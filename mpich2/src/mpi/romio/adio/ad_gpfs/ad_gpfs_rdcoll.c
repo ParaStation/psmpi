@@ -169,7 +169,7 @@ void ADIOI_GPFS_ReadStridedColl(ADIO_File fd, void *buf, int count,
         ADIO_Offset my_count_size = 0;
         /* One-sided aggregation needs the amount of data per rank as well
          * because the difference in starting and ending offsets for 1 byte is
-         * 0 the same as 0 bytes so it cannot be distiguished.
+         * 0 the same as 0 bytes so it cannot be distinguished.
          */
         if ((romio_read_aggmethod == 1) || (romio_read_aggmethod == 2)) {
             count_sizes = (ADIO_Offset *) ADIOI_Malloc(nprocs * sizeof(ADIO_Offset));
@@ -475,7 +475,7 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
     int req_len, flag, rank;
     MPI_Status status;
     ADIOI_Flatlist_node *flat_buf = NULL;
-    MPI_Aint buftype_extent;
+    MPI_Aint lb, buftype_extent;
     int coll_bufsize;
 #ifdef RDCOLL_DEBUG
     int iii;
@@ -555,7 +555,7 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
     if (!buftype_is_contig) {
         flat_buf = ADIOI_Flatten_and_find(datatype);
     }
-    MPI_Type_extent(datatype, &buftype_extent);
+    MPI_Type_get_extent(datatype, &lb, &buftype_extent);
 
     done = 0;
     off = st_loc;
@@ -640,7 +640,8 @@ static void ADIOI_Read_and_exch(ADIO_File fd, void *buf, MPI_Datatype
                         count[i]++;
                         ADIOI_Assert((((ADIO_Offset) (uintptr_t) read_buf) + req_off - real_off) ==
                                      (ADIO_Offset) (uintptr_t) (read_buf + req_off - real_off));
-                        MPI_Address(read_buf + req_off - real_off, &(others_req[i].mem_ptrs[j]));
+                        MPI_Get_address(read_buf + req_off - real_off,
+                                        &(others_req[i].mem_ptrs[j]));
                         ADIOI_Assert((real_off + real_size - req_off) ==
                                      (int) (real_off + real_size - req_off));
                         send_size[i] +=
@@ -828,7 +829,7 @@ static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
         for (i = 0; i < nprocs; i++)
             if (recv_size[i]) {
                 MPI_Irecv(((char *) buf) + buf_idx[i], recv_size[i],
-                          MPI_BYTE, i, myrank + i + 100 * iter, fd->comm, requests + j);
+                          MPI_BYTE, i, ADIOI_COLL_TAG(i, iter), fd->comm, requests + j);
                 j++;
                 buf_idx[i] += recv_size[i];
             }
@@ -844,11 +845,11 @@ static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
         for (i = 0; i < nprocs; i++) {
             if (recv_size[i]) {
                 MPI_Irecv(recv_buf[i], recv_size[i], MPI_BYTE, i,
-                          myrank + i + 100 * iter, fd->comm, requests + j);
+                          ADIOI_COLL_TAG(i, iter), fd->comm, requests + j);
                 j++;
 #ifdef RDCOLL_DEBUG
                 DBG_FPRINTF(stderr, "node %d, recv_size %d, tag %d \n",
-                            myrank, recv_size[i], myrank + i + 100 * iter);
+                            myrank, recv_size[i], ADIOI_COLL_TAG(i, iter));
 #endif
             }
         }
@@ -871,7 +872,7 @@ static void ADIOI_R_Exchange_data(ADIO_File fd, void *buf, ADIOI_Flatlist_node
                                          MPI_BYTE, &send_type);
             /* absolute displacement; use MPI_BOTTOM in send */
             MPI_Type_commit(&send_type);
-            MPI_Isend(MPI_BOTTOM, 1, send_type, i, myrank + i + 100 * iter,
+            MPI_Isend(MPI_BOTTOM, 1, send_type, i, ADIOI_COLL_TAG(i, iter),
                       fd->comm, requests + nprocs_recv + j);
             MPI_Type_free(&send_type);
             if (partial_send[i])

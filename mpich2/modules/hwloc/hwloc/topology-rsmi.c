@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2020 Inria.  All rights reserved.
+ * Copyright © 2012-2021 Inria.  All rights reserved.
  * Copyright (c) 2020, Advanced Micro Devices, Inc. All rights reserved.
  * Written by Advanced Micro Devices,
  * See COPYING in top-level directory.
@@ -14,6 +14,38 @@
 #include "private/debug.h"
 
 #include <rocm_smi/rocm_smi.h>
+
+static int
+hwloc__rsmi_add_xgmi_bandwidth(hwloc_topology_t topology,
+                               unsigned nbobjs, hwloc_obj_t *objs, hwloc_uint64_t *bws)
+{
+  void *handle;
+  int err;
+
+  handle = hwloc_backend_distances_add_create(topology, "XGMIBandwidth",
+                                              HWLOC_DISTANCES_KIND_FROM_OS|HWLOC_DISTANCES_KIND_MEANS_BANDWIDTH,
+                                              0);
+  if (!handle)
+    goto out;
+
+  err = hwloc_backend_distances_add_values(topology, handle, nbobjs, objs, bws, 0);
+  if (err < 0)
+    goto out;
+  /* arrays are now attached to the handle */
+  objs = NULL;
+  bws = NULL;
+
+  err = hwloc_backend_distances_add_commit(topology, handle, 0 /* don't group GPUs */);
+  if (err < 0)
+    goto out;
+
+  return 0;
+
+ out:
+  free(objs);
+  free(bws);
+  return -1;
+}
 
 /*
  * Get the name of the GPU
@@ -30,7 +62,7 @@ static int get_device_name(uint32_t dv_ind, char *device_name, unsigned int size
     if (!hwloc_hide_errors()) {
       const char *status_string;
       rsmi_rc = rsmi_status_string(rsmi_rc, &status_string);
-      fprintf(stderr, "RSMI: GPU(%u): Failed to get name: %s\n", (unsigned)dv_ind, status_string);
+      fprintf(stderr, "hwloc/rsmi: GPU(%u): Failed to get name: %s\n", (unsigned)dv_ind, status_string);
     }
     return -1;
   }
@@ -51,7 +83,7 @@ static int get_device_pci_info(uint32_t dv_ind, uint64_t *bdfid)
     if (!hwloc_hide_errors()) {
       const char *status_string;
       rsmi_rc = rsmi_status_string(rsmi_rc, &status_string);
-      fprintf(stderr, "RSMI: GPU(%u): Failed to get PCI Info: %s\n", (unsigned)dv_ind, status_string);
+      fprintf(stderr, "hwloc/rsmi: GPU(%u): Failed to get PCI Info: %s\n", (unsigned)dv_ind, status_string);
     }
     return -1;
   }
@@ -132,7 +164,7 @@ static int get_device_xgmi_hive_id(uint32_t dv_ind, char *buffer)
     if (!hwloc_hide_errors()) {
       const char *status_string;
       rsmi_rc = rsmi_status_string(rsmi_rc, &status_string);
-      fprintf(stderr, "RSMI: GPU(%u): Failed to get hive id: %s\n", (unsigned)dv_ind, status_string);
+      fprintf(stderr, "hwloc/rsmi: GPU(%u): Failed to get hive id: %s\n", (unsigned)dv_ind, status_string);
     }
     return -1;
   }
@@ -158,7 +190,7 @@ static int get_device_io_link_type(uint32_t dv_ind_src, uint32_t dv_ind_dst,
     if (!hwloc_hide_errors()) {
       const char *status_string;
       rsmi_rc = rsmi_status_string(rsmi_rc, &status_string);
-      fprintf(stderr, "RSMI: GPU(%u): Failed to get link type: %s\n", (unsigned)dv_ind_src, status_string);
+      fprintf(stderr, "hwloc/rsmi: GPU(%u): Failed to get link type: %s\n", (unsigned)dv_ind_src, status_string);
     }
     return -1;
   }
@@ -176,6 +208,9 @@ hwloc_rsmi_discover(struct hwloc_backend *backend, struct hwloc_disc_status *dst
 
   struct hwloc_topology *topology = backend->topology;
   enum hwloc_type_filter_e filter;
+  hwloc_obj_t *osdevs = NULL;
+  hwloc_uint64_t *xgmi_bws = NULL;
+  int got_xgmi_bws = 0;
   rsmi_version_t version;
   rsmi_status_t ret;
   int may_shutdown;
@@ -192,7 +227,7 @@ hwloc_rsmi_discover(struct hwloc_backend *backend, struct hwloc_disc_status *dst
     if (!hwloc_hide_errors()) {
       const char *status_string;
       rsmi_status_string(ret, &status_string);
-      fprintf(stderr, "RSMI: Failed to initialize with rsmi_init(): %s\n", status_string);
+      fprintf(stderr, "hwloc/rsmi: Failed to initialize with rsmi_init(): %s\n", status_string);
     }
     return 0;
   }
@@ -204,11 +239,15 @@ hwloc_rsmi_discover(struct hwloc_backend *backend, struct hwloc_disc_status *dst
     if (RSMI_STATUS_SUCCESS != ret && !hwloc_hide_errors()) {
       const char *status_string;
       rsmi_status_string(ret, &status_string);
-      fprintf(stderr, "RSMI: Failed to get number of devices with rsmi_num_monitor_devices(): %s\n", status_string);
+      fprintf(stderr, "hwloc/rsmi: Failed to get number of devices with rsmi_num_monitor_devices(): %s\n", status_string);
     }
-    rsmi_shut_down();
-    return 0;
+    goto out;
   }
+
+  osdevs = malloc(nb *sizeof(*osdevs));
+  xgmi_bws = calloc(nb*nb, sizeof(*xgmi_bws));
+  if (!osdevs || !xgmi_bws)
+    goto out;
 
   for (i=0; i<nb; i++) {
     uint64_t bdfid = 0;
@@ -220,6 +259,7 @@ hwloc_rsmi_discover(struct hwloc_backend *backend, struct hwloc_disc_status *dst
     osdev = hwloc_alloc_setup_object(topology, HWLOC_OBJ_OS_DEVICE, HWLOC_UNKNOWN_INDEX);
     snprintf(buffer, sizeof(buffer), "rsmi%u", i);
     osdev->name = strdup(buffer);
+    osdev->subtype = strdup("RSMI");
     osdev->depth = HWLOC_TYPE_DEPTH_UNKNOWN;
     osdev->attr->osdev.type = HWLOC_OBJ_OSDEV_GPU;
 
@@ -253,10 +293,12 @@ hwloc_rsmi_discover(struct hwloc_backend *backend, struct hwloc_disc_status *dst
         if ((get_device_io_link_type(i, j, &type) == 0) &&
             (type == RSMI_IOLINK_TYPE_XGMI)) {
           xgmi_peers_ptr += sprintf(xgmi_peers_ptr, "rsmi%u ", j);
+          xgmi_bws[i*nb+j] = 100000; /* TODO: verify the XGMI version before putting 100GB/s here? */
+          got_xgmi_bws = 1;
+        }
       }
       if (xgmi_peers[0] != '\0')
         hwloc_obj_add_info(osdev, "XGMIPeers", xgmi_peers);
-      }
       free(xgmi_peers);
     }
 
@@ -275,8 +317,23 @@ hwloc_rsmi_discover(struct hwloc_backend *backend, struct hwloc_disc_status *dst
     }
 
     hwloc_insert_object_by_parent(topology, parent, osdev);
+    osdevs[i] = osdev;
   }
 
+  if (got_xgmi_bws) {
+    /* add very high artifical values on the diagonal since local is faster than remote.
+     * XGMI links are 100GB/s, so use 1TB/s for local, it somehow matches the HBM.
+     */
+    for(i=0; i<nb; i++)
+      xgmi_bws[i*nb+i] = 1000000;
+
+    hwloc__rsmi_add_xgmi_bandwidth(topology, nb, osdevs, xgmi_bws);
+    /* don't free arrays, they were given to the distance internals */
+    osdevs = NULL;
+    xgmi_bws = NULL;
+  }
+
+ out:
   may_shutdown = 0;
   if (version.major > 3 || (version.major == 3 && version.minor > 3)) {
     may_shutdown = 1;
@@ -291,6 +348,8 @@ hwloc_rsmi_discover(struct hwloc_backend *backend, struct hwloc_disc_status *dst
   if (may_shutdown)
     rsmi_shut_down();
 
+  free(osdevs);
+  free(xgmi_bws);
   return 0;
 }
 

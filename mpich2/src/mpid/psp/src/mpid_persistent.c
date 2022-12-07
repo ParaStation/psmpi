@@ -13,8 +13,6 @@
 #include "mpid_psp_request.h"
 #include "mpid_psp_datatype.h"
 
-
-static
 int MPID_PSP_persistent_init(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
 			     MPIR_Comm *comm, int context_offset, MPIR_Request **request,
 			     int (*call)(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
@@ -63,27 +61,62 @@ err_request_recv_create:
 }
 
 
+int MPID_PSP_persistent_start(MPIR_Request *req)
+{
+	int mpi_errno = MPI_SUCCESS;
+	struct MPID_DEV_Request_persistent * preq;
+	preq = &req->dev.kind.persistent;
+/*
+	printf("#%d ps--- %s() called\n", MPIDI_Process.my_pg_rank, __func__);
+*/
+	assert(req->u.persist.real_request == NULL); /* assure inactive persistent request! */
+
+	mpi_errno = preq->call(preq->buf, preq->count, preq->datatype, preq->rank,
+			       preq->tag, preq->comm, preq->context_offset,
+			       &req->u.persist.real_request);
+
+	if (req->u.persist.real_request) {
+		/* Use cc_ptr from partner request.
+		   MPIR_Request_complete() in pt2pt/mpir_request.c will reset it to
+		   req->cc = 0;
+		   req->cc_ptr = &req->cc;
+		   req->u.persist.real_request = NULL;
+		   when done.
+		 */
+		req->cc_ptr = req->u.persist.real_request->cc_ptr;
+	}
+	return mpi_errno;
+}
+
+
 static
 int MPID_PSP_Bsend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
 		   MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
 {
 	/* See src/mpid/ch3/src/mpid_startall.c:105   "MPID_Startall(): case MPIDI_REQUEST_TYPE_BSEND:"*/
 	MPI_Request sreq_handle;
-	int rc;
+	int mpi_errno = MPI_SUCCESS;
 
 	// TODO: check THREADPRIV API!
 
-	{
-		rc = MPIR_Ibsend_impl((void *)buf, count, datatype, rank,
-				      tag, comm, &sreq_handle);
-		if (rc == MPI_SUCCESS)
-		{
-			MPIR_Request *r;
-			MPIR_Request_get_ptr(sreq_handle, r);
-			*request = r;
-		}
-	}
-	return rc;
+	mpi_errno = MPIR_Bsend_isend((void *)buf, count, datatype, rank, tag,
+				     comm, NULL);
+	if (mpi_errno)
+		goto fn_fail;
+
+	/* Ibsend is local-complete */
+	MPIR_Request *request_ptr = MPIR_Request_create_complete(MPIR_REQUEST_KIND__SEND);
+	MPIR_Request *r;
+	MPIR_Request_get_ptr(sreq_handle, r);
+	*request = r;
+
+  fn_exit:
+	return mpi_errno;
+
+  fn_fail:
+	*request = NULL;
+	mpi_errno = MPIR_Err_return_comm(comm, __func__, mpi_errno);
+	goto fn_exit;
 }
 
 
@@ -130,51 +163,4 @@ int MPID_Ssend_init(const void * buf, int count, MPI_Datatype datatype,
 {
 	return MPID_PSP_persistent_init(buf, count, datatype, rank, tag, comm,
 					context_offset, request, MPIDI_PSP_Issend, MPIR_REQUEST_KIND__PREQUEST_SEND);
-}
-
-
-static
-int MPID_Start(MPIR_Request *req)
-{
-	int mpi_errno = MPI_SUCCESS;
-
-	struct MPID_DEV_Request_persistent *preq = &req->dev.kind.persistent;
-/*
-	printf("#%d ps--- %s() called\n", MPIDI_Process.my_pg_rank, __func__);
-*/
-	assert(req->u.persist.real_request == NULL); /* assure inactive persistent request! */
-
-	mpi_errno = preq->call(preq->buf, preq->count, preq->datatype, preq->rank,
-			       preq->tag, preq->comm, preq->context_offset,
-			       &req->u.persist.real_request);
-
-	if (req->u.persist.real_request) {
-		/* Use cc_ptr from partner request.
-		   MPIR_Request_complete() in pt2pt/mpir_request.c will reset it to
-		   req->cc = 0;
-		   req->cc_ptr = &req->cc;
-		   req->u.persist.real_request = NULL;
-		   when done.
-		 */
-		req->cc_ptr = req->u.persist.real_request->cc_ptr;
-	}
-
-	return mpi_errno;
-}
-
-
-int MPID_Startall(int count, MPIR_Request * requests[])
-{
-	int mpi_errno = MPI_SUCCESS;
-
-	while (count) {
-		mpi_errno = MPID_Start(*requests);
-		if (mpi_errno != MPI_SUCCESS)
-			break;
-
-		requests ++;
-		count --;
-	}
-
-	return mpi_errno;
 }

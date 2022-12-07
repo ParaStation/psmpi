@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2020 Inria.  All rights reserved.
+ * Copyright © 2009-2021 Inria.  All rights reserved.
  * Copyright © 2009-2010, 2012 Université Bordeaux
  * Copyright © 2009-2018 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -64,6 +64,7 @@ void usage(const char *name, FILE *where)
   fprintf(where, "  -q --quiet     Hide non-fatal error messages\n");
   fprintf(where, "  -v --verbose   Show verbose messages\n");
   fprintf(where, "  --version      Report version and exit\n");
+  fprintf(where, "  -h --help      Show this usage\n");
 }
 
 int main(int argc, char *argv[])
@@ -101,7 +102,12 @@ int main(int argc, char *argv[])
   struct hwloc_calc_location_context_s lcontext;
   struct hwloc_calc_set_context_s scontext;
 
-  callname = argv[0];
+  callname = strrchr(argv[0], '/');
+  if (!callname)
+    callname = argv[0];
+  else
+    callname++;
+
   /* skip argv[0], handle options */
   argv++;
   argc--;
@@ -510,10 +516,10 @@ int main(int argc, char *argv[])
       char *s;
       hwloc_bitmap_asprintf(&s, membind_set);
       if (pid_number > 0)
-        fprintf(stderr, "hwloc_set_proc_membind %s (policy %d flags %x) PID %d failed (errno %d %s)\n",
+        fprintf(stderr, "hwloc_set_proc_membind %s (policy %d flags 0x%x) PID %d failed (errno %d %s)\n",
 		s, membind_policy, membind_flags, pid_number, bind_errno, errmsg);
       else
-        fprintf(stderr, "hwloc_set_membind %s (policy %d flags %x) failed (errno %d %s)\n",
+        fprintf(stderr, "hwloc_set_membind %s (policy %d flags 0x%x) failed (errno %d %s)\n",
 		s, membind_policy, membind_flags, bind_errno, errmsg);
       free(s);
     }
@@ -570,13 +576,13 @@ int main(int argc, char *argv[])
       char *s;
       hwloc_bitmap_asprintf(&s, cpubind_set);
       if (pid_number > 0)
-        fprintf(stderr, "hwloc_set_proc_cpubind %s (flags %x) PID %d failed (errno %d %s)\n",
+        fprintf(stderr, "hwloc_set_proc_cpubind %s (flags 0x%x) PID %d failed (errno %d %s)\n",
 		s, cpubind_flags, pid_number, bind_errno, errmsg);
       else if (tid_number > 0)
-        fprintf(stderr, "hwloc_set_tid_cpubind %s (flags %x) PID %d failed (errno %d %s)\n",
+        fprintf(stderr, "hwloc_set_tid_cpubind %s (flags 0x%x) PID %d failed (errno %d %s)\n",
 		s, cpubind_flags, tid_number, bind_errno, errmsg);
       else
-        fprintf(stderr, "hwloc_set_cpubind %s (flags %x) failed (errno %d %s)\n",
+        fprintf(stderr, "hwloc_set_cpubind %s (flags 0x%x) failed (errno %d %s)\n",
 		s, cpubind_flags, bind_errno, errmsg);
       free(s);
     }

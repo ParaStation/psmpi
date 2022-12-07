@@ -111,3 +111,16 @@ int yaksuri_cudai_add_dependency(int device1, int device2)
   fn_fail:
     goto fn_exit;
 }
+
+int yaksuri_cudai_launch_hostfn(void *stream, yaksur_hostfn_t fn, void *userData)
+{
+    int rc = YAKSA_SUCCESS;
+    cudaError_t cerr;
+    cerr = cudaLaunchHostFunc(*(cudaStream_t *) stream, fn, userData);
+    YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
+
+  fn_exit:
+    return rc;
+  fn_fail:
+    goto fn_exit;
+}

@@ -34,9 +34,8 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 			     int array_of_errcodes[]) 
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
 
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
+    MPIR_FUNC_ENTER;
 
     /* Check to make sure the communicator hasn't already been revoked */
     if (comm_ptr->revoked) {
@@ -57,8 +56,9 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 		  "**notimpl %s", __func__);
 #   endif
     
-fn_fail:
-fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_COMM_SPAWN_MULTIPLE);
+  fn_exit:
+    MPIR_FUNC_EXIT;
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }

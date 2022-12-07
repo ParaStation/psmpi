@@ -145,7 +145,7 @@ static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #define CHUNK_SIZE (1024)
 
-int yaksa_init(yaksa_info_t info)
+YAKSA_API_PUBLIC int yaksa_init(yaksa_info_t info)
 {
     int rc = YAKSA_SUCCESS;
 
@@ -278,7 +278,7 @@ int yaksa_init(yaksa_info_t info)
     goto fn_exit;
 }
 
-int yaksa_finalize(void)
+YAKSA_API_PUBLIC int yaksa_finalize(void)
 {
     int rc = YAKSA_SUCCESS;
 

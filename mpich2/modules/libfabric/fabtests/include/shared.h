@@ -56,6 +56,10 @@ extern "C" {
 #define OFI_UTIL_PREFIX "ofi_"
 #define OFI_NAME_DELIM ';'
 
+#define ALIGN_MASK(x, mask) (((x) + (mask)) & ~(mask))
+#define ALIGN(x, a) ALIGN_MASK(x, (typeof(x))(a) - 1)
+#define ALIGN_DOWN(x, a) ALIGN((x) - ((a) - 1), (a))
+
 #define OFI_MR_BASIC_MAP (FI_MR_ALLOCATED | FI_MR_PROV_KEY | FI_MR_VIRT_ADDR)
 
 /* exit codes must be 0-255 */
@@ -111,6 +115,10 @@ enum {
 	FT_OPT_OOB_ADDR_EXCH	= 1 << 14,
 	FT_OPT_ALLOC_MULT_MR	= 1 << 15,
 	FT_OPT_SERVER_PERSIST	= 1 << 16,
+	FT_OPT_ENABLE_HMEM	= 1 << 17,
+	FT_OPT_USE_DEVICE	= 1 << 18,
+	FT_OPT_DOMAIN_EQ	= 1 << 19,
+	FT_OPT_FORK_CHILD	= 1 << 20,
 	FT_OPT_OOB_CTRL		= FT_OPT_OOB_SYNC | FT_OPT_OOB_ADDR_EXCH,
 };
 
@@ -163,10 +171,14 @@ struct ft_opts {
 	char *oob_port;
 	int argc;
 	int num_connections;
+	int address_format;
 
 	uint64_t mr_mode;
 	/* Fail if the selected provider does not support FI_MSG_PREFIX.  */
 	int force_prefix;
+	enum fi_hmem_iface iface;
+	uint64_t device;
+
 	char **argv;
 };
 
@@ -219,8 +231,8 @@ void ft_usage(char *name, char *desc);
 void ft_mcusage(char *name, char *desc);
 void ft_csusage(char *name, char *desc);
 
-void ft_fill_buf(void *buf, int size);
-int ft_check_buf(void *buf, int size);
+void ft_fill_buf(void *buf, size_t size);
+int ft_check_buf(void *buf, size_t size);
 int ft_check_opts(uint64_t flags);
 uint64_t ft_init_cq_data(struct fi_info *info);
 int ft_sock_listen(char *node, char *service);
@@ -236,10 +248,10 @@ extern int ft_parent_proc;
 extern int ft_socket_pair[2];
 extern int sock;
 extern int listen_sock;
-#define ADDR_OPTS "B:P:s:a:b::E::C:"
-#define FAB_OPTS "f:d:p:"
+#define ADDR_OPTS "B:P:s:a:b::E::C:F:"
+#define FAB_OPTS "f:d:p:D:i:HK"
 #define INFO_OPTS FAB_OPTS "e:M:"
-#define CS_OPTS ADDR_OPTS "I:S:mc:t:w:l"
+#define CS_OPTS ADDR_OPTS "I:QS:mc:t:w:l"
 #define NO_CQ_DATA 0
 
 extern char default_port[8];
@@ -258,7 +270,10 @@ extern char default_port[8];
 		.rma_op = FT_RMA_WRITE, \
 		.oob_port = NULL, \
 		.mr_mode = FI_MR_LOCAL | OFI_MR_BASIC_MAP, \
-		.argc = argc, .argv = argv \
+		.iface = FI_HMEM_SYSTEM, \
+		.device = 0, \
+		.argc = argc, .argv = argv, \
+		.address_format = FI_FORMAT_UNSPEC \
 	}
 
 #define FT_STR_LEN 32
@@ -421,6 +436,7 @@ static inline bool ft_check_prefix_forced(struct fi_info *info,
 int ft_sync(void);
 int ft_sync_pair(int status);
 int ft_fork_and_pair(void);
+int ft_fork_child(void);
 int ft_wait_child(void);
 int ft_finalize(void);
 int ft_finalize_ep(struct fid_ep *ep);

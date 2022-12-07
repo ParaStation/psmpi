@@ -24,6 +24,8 @@ noinst_PROGRAMS =  \
     isendself      \
     issendselfcancel \
     isendirecv     \
+    isendrecv      \
+    isendrecv_replace \
     eagerdt        \
     isendselfprobe \
     bsendfrag      \
@@ -65,8 +67,10 @@ noinst_PROGRAMS =  \
     pingping_barrier  \
     sendrecv1 \
     sendself \
+    pt2pt_large \
     precv_anysrc \
-    precv_anysrc_exp
+    precv_anysrc_exp \
+    mprobe_self_free
 
 irecv_any_CPPFLAGS = -DTEST_NB $(AM_CPPFLAGS)
 irecv_any_SOURCES  = recv_any.c

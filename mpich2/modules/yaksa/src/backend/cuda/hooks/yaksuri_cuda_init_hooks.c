@@ -89,20 +89,17 @@ static int get_num_devices(int *ndevices)
     return YAKSA_SUCCESS;
 }
 
-static int check_p2p_comm(int sdev, int ddev, bool * is_enabled)
+static bool check_p2p_comm(int sdev, int ddev)
 {
+    bool is_enabled = 0;
 #if CUDA_P2P == CUDA_P2P_ENABLED
-    *is_enabled = yaksuri_cudai_global.p2p[sdev][ddev];
+    is_enabled = yaksuri_cudai_global.p2p[sdev][ddev];
 #elif CUDA_P2P == CUDA_P2P_CLIQUES
-    if ((sdev + ddev) % 2)
-        *is_enabled = 0;
-    else
-        *is_enabled = yaksuri_cudai_global.p2p[sdev][ddev];
-#else
-    *is_enabled = 0;
+    if ((sdev + ddev) % 2 == 0)
+        is_enabled = yaksuri_cudai_global.p2p[sdev][ddev];
 #endif
 
-    return YAKSA_SUCCESS;
+    return is_enabled;
 }
 
 int yaksuri_cuda_init_hook(yaksur_gpudriver_hooks_s ** hooks)
@@ -193,6 +190,10 @@ int yaksuri_cuda_init_hook(yaksur_gpudriver_hooks_s ** hooks)
     (*hooks)->get_iov_unpack_threshold = yaksuri_cudai_get_iov_unpack_threshold;
     (*hooks)->ipack = yaksuri_cudai_ipack;
     (*hooks)->iunpack = yaksuri_cudai_iunpack;
+    (*hooks)->pack_with_stream = yaksuri_cudai_ipack_with_stream;
+    (*hooks)->unpack_with_stream = yaksuri_cudai_iunpack_with_stream;
+    (*hooks)->synchronize = yaksuri_cudai_synchronize;
+    (*hooks)->flush_all = yaksuri_cudai_flush_all;
     (*hooks)->pup_is_supported = yaksuri_cudai_pup_is_supported;
     (*hooks)->host_malloc = cuda_host_malloc;
     (*hooks)->host_free = cuda_host_free;
@@ -202,6 +203,7 @@ int yaksuri_cuda_init_hook(yaksur_gpudriver_hooks_s ** hooks)
     (*hooks)->event_record = yaksuri_cudai_event_record;
     (*hooks)->event_query = yaksuri_cudai_event_query;
     (*hooks)->add_dependency = yaksuri_cudai_add_dependency;
+    (*hooks)->launch_hostfn = yaksuri_cudai_launch_hostfn;
     (*hooks)->type_create = yaksuri_cudai_type_create_hook;
     (*hooks)->type_free = yaksuri_cudai_type_free_hook;
     (*hooks)->info_create = yaksuri_cudai_info_create_hook;

@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2020 Inria.  All rights reserved.
+ * Copyright © 2009-2021 Inria.  All rights reserved.
  * Copyright © 2009-2012 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -315,33 +315,78 @@ static __hwloc_inline void
 hwloc_utils_print_distance_matrix(FILE *output, unsigned nbobjs, hwloc_obj_t *objs, hwloc_uint64_t *matrix, int logical, int show_types)
 {
   unsigned i, j;
+#define MATRIX_ITEM_SIZE_MAX 17 /* 16 + ending \0 */
+  char *headers;
+  char *values;
+  char *buf;
+  size_t len, max;
 
-  /* column header */
-  fprintf(output, "  index");
-  for(j=0; j<nbobjs; j++) {
-    if (show_types)
-      fprintf(output, " %s:%d",
-	      hwloc_obj_type_string(objs[j]->type),
-	      (int) (logical ? objs[j]->logical_index : objs[j]->os_index));
-    else
-      fprintf(output, " % 5d",
-	      (int) (logical ? objs[j]->logical_index : objs[j]->os_index));
+  headers = malloc((nbobjs+1)*MATRIX_ITEM_SIZE_MAX);
+  values = malloc(nbobjs*nbobjs*MATRIX_ITEM_SIZE_MAX);
+  if (!headers || !values) {
+    free(headers);
+    free(values);
+    return;
   }
-  fprintf(output, "\n");
 
-  /* each line */
-  for(i=0; i<nbobjs; i++) {
-    /* row header */
-    fprintf(output, "  % 5d",
-	    (int) (logical ? objs[i]->logical_index : objs[i]->os_index));
-
-    /* row values */
-    for(j=0; j<nbobjs; j++) {
-      for(j=0; j<nbobjs; j++)
-	fprintf(output, " % 5d", (int) matrix[i*nbobjs+j]);
-      fprintf(output, "\n");
+  snprintf(headers, MATRIX_ITEM_SIZE_MAX, "           index" /* 16 */);
+  max = 5;
+  /* prepare column headers */
+  for(i=0, buf = headers + MATRIX_ITEM_SIZE_MAX;
+      i<nbobjs;
+      i++, buf += MATRIX_ITEM_SIZE_MAX) {
+    char tmp[MATRIX_ITEM_SIZE_MAX];
+    hwloc_obj_t obj = objs[i];
+    unsigned index = logical ? obj->logical_index : obj->os_index;
+    if (obj->type == HWLOC_OBJ_OS_DEVICE)
+      len = snprintf(tmp, MATRIX_ITEM_SIZE_MAX,
+                     "%s", obj->name);
+    else if (obj->type == HWLOC_OBJ_PCI_DEVICE)
+      len = snprintf(tmp, MATRIX_ITEM_SIZE_MAX,
+                     "%04x:%02x:%02x.%01x",
+                     obj->attr->pcidev.domain, obj->attr->pcidev.bus, obj->attr->pcidev.dev, obj->attr->pcidev.func);
+    else if (show_types)
+      len = snprintf(tmp, MATRIX_ITEM_SIZE_MAX,
+                     "%s:%d", hwloc_obj_type_string(obj->type), (int) index);
+    else
+      len = snprintf(tmp, MATRIX_ITEM_SIZE_MAX,
+                     "%d", (int) index);
+    if (len >= max)
+      max = len;
+    /* store it at the end of the slot in headers */
+    memcpy(buf + (MATRIX_ITEM_SIZE_MAX - len - 1), tmp, len+1);
+    /* and pad with spaces at the begining */
+    memset(buf, ' ', MATRIX_ITEM_SIZE_MAX - len - 1);
+  }
+  /* prepare values */
+  for(i=0, buf = values;
+      i<nbobjs;
+      i++) {
+    for(j=0; j<nbobjs; j++, buf += MATRIX_ITEM_SIZE_MAX) {
+     char tmp[MATRIX_ITEM_SIZE_MAX];
+     len = snprintf(tmp, MATRIX_ITEM_SIZE_MAX, "%llu", (unsigned long long) matrix[i*nbobjs+j]);
+      if (len >= max)
+        max = len;
+      /* store it at the end of the slot in values */
+      memcpy(buf + (MATRIX_ITEM_SIZE_MAX - len - 1), tmp, len+1);
+      /* and pad with spaces at the begining */
+      memset(buf, ' ', MATRIX_ITEM_SIZE_MAX - len - 1);
     }
   }
+
+  /* now display everything */
+  for(i=0; i<nbobjs + 1; i++)
+    fprintf(output, " %s", headers + i*MATRIX_ITEM_SIZE_MAX + MATRIX_ITEM_SIZE_MAX-max-1);
+  fprintf(output, "\n");
+  for(i=0; i<nbobjs; i++) {
+    fprintf(output, " %s", headers + (i+1)*MATRIX_ITEM_SIZE_MAX + MATRIX_ITEM_SIZE_MAX-max-1);
+    for(j=0; j<nbobjs; j++)
+      fprintf(output, " %s", values + (i*nbobjs+j)*MATRIX_ITEM_SIZE_MAX + MATRIX_ITEM_SIZE_MAX-max-1);
+    fprintf(output, "\n");
+  }
+
+  free(headers);
+  free(values);
 }
 
 static __hwloc_inline int
@@ -793,7 +838,10 @@ hwloc_utils_parse_topology_flags(char * str) {
     HWLOC_UTILS_PARSING_FLAG(HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED),
     HWLOC_UTILS_PARSING_FLAG(HWLOC_TOPOLOGY_FLAG_IS_THISSYSTEM),
     HWLOC_UTILS_PARSING_FLAG(HWLOC_TOPOLOGY_FLAG_THISSYSTEM_ALLOWED_RESOURCES),
-    HWLOC_UTILS_PARSING_FLAG(HWLOC_TOPOLOGY_FLAG_IMPORT_SUPPORT)
+    HWLOC_UTILS_PARSING_FLAG(HWLOC_TOPOLOGY_FLAG_IMPORT_SUPPORT),
+    HWLOC_UTILS_PARSING_FLAG(HWLOC_TOPOLOGY_FLAG_RESTRICT_TO_CPUBINDING),
+    HWLOC_UTILS_PARSING_FLAG(HWLOC_TOPOLOGY_FLAG_RESTRICT_TO_MEMBINDING),
+    HWLOC_UTILS_PARSING_FLAG(HWLOC_TOPOLOGY_FLAG_DONT_CHANGE_BINDING)
   };
 
   return hwloc_utils_parse_flags(str, possible_flags, (int) sizeof(possible_flags) / sizeof(possible_flags[0]), "topology");

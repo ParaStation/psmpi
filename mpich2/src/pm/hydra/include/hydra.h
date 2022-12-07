@@ -19,16 +19,12 @@
 extern char *HYD_dbg_prefix;
 
 /* C89 headers can be included without a check */
-#if defined STDC_HEADERS
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
 #include <errno.h>
 #include <signal.h>
-#else
-#error "STDC_HEADERS are assumed in the Hydra code"
-#endif /* STDC_HEADERS */
 
 #if defined NEEDS_POSIX_FOR_SIGACTION
 #define _POSIX_SOURCE
@@ -430,26 +426,11 @@ struct HYD_user_global {
         HYDU_dump_noprefix(fp, __VA_ARGS__);    \
     }
 
-#if defined HAVE__FUNC__
-#define HYDU_FUNC __func__
-#elif defined HAVE_CAP__FUNC__
-#define HYDU_FUNC __FUNC__
-#elif defined HAVE__FUNCTION__
-#define HYDU_FUNC __FUNCTION__
-#endif
-
-#if defined __FILE__ && defined HYDU_FUNC
+#if defined __FILE__
 #define HYDU_error_printf(...)                                          \
     {                                                                   \
         HYDU_dump_prefix(stderr);                                       \
-        HYDU_dump_noprefix(stderr, "%s (%s:%d): ", HYDU_FUNC, __FILE__, __LINE__); \
-        HYDU_dump_noprefix(stderr, __VA_ARGS__);                        \
-    }
-#elif defined __FILE__
-#define HYDU_error_printf(...)                                          \
-    {                                                                   \
-        HYDU_dump_prefix(stderr);                                       \
-        HYDU_dump_noprefix(stderr, "%s (%d): ", __FILE__, __LINE__);    \
+        HYDU_dump_noprefix(stderr, "%s (%s:%d): ", __func__, __FILE__, __LINE__); \
         HYDU_dump_noprefix(stderr, __VA_ARGS__);                        \
     }
 #else

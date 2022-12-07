@@ -4,7 +4,9 @@
 ##
 
 mpi_core_sources += \
-   src/mpi/datatype/typerep/src/typerep_flatten.c
+   src/mpi/datatype/typerep/src/typerep_ext32.c \
+   src/mpi/datatype/typerep/src/typerep_flatten.c \
+   src/mpi/datatype/typerep/src/typerep_op.c
 
 if BUILD_YAKSA_ENGINE
 mpi_core_sources += \
@@ -30,4 +32,5 @@ mpi_core_sources += \
 endif !BUILD_YAKSA_ENGINE
 
 noinst_HEADERS += \
-    src/mpi/datatype/typerep/src/typerep_internal.h
+    src/mpi/datatype/typerep/src/typerep_internal.h   \
+    src/mpi/datatype/typerep/src/typerep_pre.h

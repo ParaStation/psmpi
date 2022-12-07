@@ -48,7 +48,9 @@ int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
 
 		mpi_errno = MPIR_Comm_split_impl(comm_ptr, color, key, newcomm_ptr);
 
-	} else if (split_type == MPIX_COMM_TYPE_NEIGHBORHOOD) {
+	} else if ((split_type == MPIX_COMM_TYPE_NEIGHBORHOOD) ||
+		   (split_type == MPI_COMM_TYPE_HW_GUIDED) ||
+		   (split_type == MPI_COMM_TYPE_HW_UNGUIDED)) {
 		// we don't know how to handle this split types -> so hand it back to the upper MPICH layer:
 		mpi_errno = MPIR_Comm_split_type(comm_ptr, split_type, key, info_ptr, newcomm_ptr);
 	} else {
@@ -59,7 +61,7 @@ int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key,
 }
 
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARENESS
 
 int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t *pg, MPIDI_PSP_topo_level_t **level)
 {
@@ -141,9 +143,7 @@ static
 int MPIDI_PSP_create_badge_table(int degree, int my_badge, int my_pg_rank, int pg_size, int *max_badge, int **badge_table, int normalize)
 {
 	int mpi_errno = MPI_SUCCESS;
-	int rc;
 	int grank;
-	int remote_badge;
 
 	if(*badge_table != NULL) {
 
@@ -163,57 +163,22 @@ int MPIDI_PSP_create_badge_table(int degree, int my_badge, int my_pg_rank, int p
 
 	*badge_table = MPL_malloc(pg_size * sizeof(int), MPL_MEM_OBJECT);
 
-	if(!MPIDI_Process.env.enable_ondemand) {
+	if (MPIDI_Process.singleton_but_no_pm) {
 
-		/* In the non-ondemand case, we use the traditional all-to-all scheme
-		   on pt2pt basis via pscom's send/recv functions for exchanging the
-		   badge information since all pscom connections have here already
-		   been established and can directly be used for the exchange.
-		*/
+		/* Use shortcut w/o badge exchange in the MPI singleton case: */
+		MPIR_Assert(pg_size == 1);
+		(*badge_table)[0] = my_badge;
 
-		if(my_pg_rank != 0) {
-
-			/* gather: */
-			pscom_connection_t *con = MPIDI_Process.grank2con[0];
-			assert(con);
-			pscom_send(con, NULL, 0, &my_badge, sizeof(int));
-
-			/* bcast: */
-			rc = pscom_recv_from(con, NULL, 0, *badge_table, pg_size*sizeof(int));
-			assert(rc == PSCOM_SUCCESS);
-
-		} else {
-
-			/* gather: */
-			(*badge_table)[0] = my_badge;
-			for(grank=1; grank < pg_size; grank++) {
-				pscom_connection_t *con = MPIDI_Process.grank2con[grank];
-				assert(con);
-				rc = pscom_recv_from(con, NULL, 0, &remote_badge, sizeof(int));
-				assert(rc == PSCOM_SUCCESS);
-				(*badge_table)[grank] = remote_badge;
-			}
-
-			/* bcast: */
-			for(grank=1; grank < pg_size; grank++) {
-				pscom_connection_t *con = MPIDI_Process.grank2con[grank];
-				pscom_send(con, NULL, 0, *badge_table, pg_size*sizeof(int));
-			}
-		}
 	} else {
 
-		/* In the ondemand case, however, we prefer not to exchange the badge
-		   information via pscom and use the key/value space (KVS) of PMI(x)
-		   for this instead. This way, no (perhaps later unnecessary) pscom
-		   connections are already established at this point.
-		*/
-
+		/* The exchange of the badge information is done here via the key/value space (KVS) of PMI(x).
+		   This way, no (perhaps later unnecessary) pscom connections are already established at this point. */
 		MPIDI_PSP_publish_badge(my_pg_rank, degree, my_badge, normalize);
 
 		mpi_errno = MPIR_pmi_barrier();
 		MPIR_ERR_CHECK(mpi_errno);
 
-		for(grank = 0; grank < pg_size; grank++) {
+		for (grank = 0; grank < pg_size; grank++) {
 			MPIDI_PSP_lookup_badge(grank, degree, &(*badge_table)[grank], normalize);
 		}
 	}
@@ -334,6 +299,9 @@ int MPIDI_PSP_create_topo_level(int my_badge, int degree, int badges_are_global,
 	int pg_rank = MPIDI_Process.my_pg_rank;
 	int pg_size = MPIDI_Process.my_pg_size;
 
+	// Normalized badges are not unique and thus cannot be global!
+	MPIR_Assert(!normalize || (normalize && !badges_are_global));
+
 	MPIDI_PSP_create_badge_table(degree, my_badge, pg_rank, pg_size, &module_max_badge, &module_badge_table, normalize);
 	assert(module_badge_table);
 
@@ -349,13 +317,51 @@ int MPIDI_PSP_create_topo_level(int my_badge, int degree, int badges_are_global,
 	return MPI_SUCCESS;
 }
 
+int MPIDI_PSP_topo_init(void)
+{
+	MPIDI_Process.topo_levels = NULL;
+
+	if(MPIDI_Process.env.enable_msa_awareness) {
+
+		if (MPIDI_Process.msa_module_id < 0) {
+			/* No module ID found: Let all these processes fall into module 0... */
+			MPIDI_Process.msa_module_id = 0;
+		}
+
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+		if(MPIDI_Process.env.enable_msa_aware_collops) {
+			MPIDI_PSP_create_topo_level(MPIDI_Process.msa_module_id, MPIDI_PSP_TOPO_LEVEL__MODULES, 1/*badges_are_global*/, 0/*normalize*/, &MPIDI_Process.topo_levels);
+		}
+#endif
+	}
+
+	if(MPIDI_Process.env.enable_smp_awareness) {
+
+		if(MPIDI_Process.smp_node_id < 0) {
+			/* If no smp_node_id is set explicitly, use the pscom's node_id for this:
+			   (...which is an int and might be negative. However, since we know that it actually
+			   corresponds to the IPv4 address of the node, it is safe to force the most significant
+			   bit to be unset so that it is positive and can thus also be used as a split color.)
+			*/
+			MPIDI_Process.smp_node_id = (int)((unsigned)MPIDI_Process.socket->local_con_info.node_id & (unsigned)0x7fffffff);
+		}
+
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+		if(MPIDI_Process.env.enable_smp_aware_collops) {
+			MPIDI_PSP_create_topo_level(MPIDI_Process.smp_node_id, MPIDI_PSP_TOPO_LEVEL__NODES, 0/*badges_are_global*/, 1/*normalize*/, &MPIDI_Process.topo_levels);
+		}
+#endif
+	}
+
+	return MPI_SUCCESS;
+}
+
 int MPID_Get_badge(MPIR_Comm *comm, int rank, int *badge_p)
 {
 	MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
 
 	if(tl == NULL) {
-		*badge_p = MPIDI_PSP_TOPO_BADGE__NULL;
-		return MPI_ERR_OTHER;
+		return MPID_Get_node_id(comm, rank, badge_p);
 	}
 
 	while(tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
@@ -382,162 +388,74 @@ int MPID_Get_max_badge(MPIR_Comm *comm, int *max_badge_p)
 		tl = tl->next;
 	}
 
-	*max_badge_p =  MPIDI_PSP_get_max_badge_by_level(tl) + 1; // plus 1 for the "unknown badge" wildcard
-	assert(*max_badge_p == MPIDI_PSP_TOPO_BADGE__UNKNOWN(tl)); // and this wildcard is moreover the max value
+	/* The value we need to return here to the MPICH layer is the maximum badge of the
+	 * level plus 1, where the "plus 1" corresponds to the "unknown badge" wildcard.
+	 * (See also the definition of MPIDI_PSP_TOPO_BADGE__UNKNOWN.)
+	 */
+	*max_badge_p =  MPIDI_PSP_get_max_badge_by_level(tl) + 1;
 
 	return MPI_SUCCESS;
 }
 
-#endif /* MPID_PSP_TOPOLOGY_AWARE_COLLOPS */
+#endif /* MPID_PSP_MSA_AWARENESS */
 
 
 int MPID_Get_node_id(MPIR_Comm *comm, int rank, int *id_p)
 {
-	/* The node IDs are unique, but do not have to be ordered and contiguous,
-	   nor do they have to be limited in value by the number of nodes!
-	*/
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
-	/* In the case of topology awareness, we can use the badge table at the nodes level.
-	   If a badge at this level cannot be found, we fall back to the non-aware case.
+	uint64_t lpid = comm->vcr[rank]->lpid;
+
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+	/* In the case of enabled MSA awareness, we can use the badge table at the nodes level.
+	   If a badge at this level cannot be found, we fall back to MPICH's node_map table...
 	 */
 	MPIDI_PSP_topo_level_t *level;
 	if (MPIDI_PSP_check_pg_for_level(MPIDI_PSP_TOPO_LEVEL__NODES, MPIDI_Process.my_pg, &level)) {
 		/* A badge table on node level exists. Get badge by comm rank: */
 		*id_p = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, level, rank);
-		assert(*id_p <= MPIDI_PSP_get_max_badge_by_level(level));
+		/* The badge we get here is less than or equal to the maximum node-level badge
+		 * plus 1, where the latter corresponds to the "unknown badge" wildcard.
+		 * (See also the definition of MPIDI_PSP_TOPO_BADGE__UNKNOWN.)
+		 */
+		MPIR_Assert(*id_p <= MPIDI_PSP_get_max_badge_by_level(level) + 1);
 		return MPI_SUCCESS;
 	}
 #endif
-	/* In the case without topology awareness, we cannot provide valid information
-	   unless the ID of the own rank is requested.
-	*/
-	if (comm->vcr[rank]->pg_rank != MPIDI_Process.my_pg_rank) {
-		*id_p = -1;
+	if (comm->vcr[rank]->pg == MPIDI_Process.my_pg) {
+		// rank is within the own MPI_COMM_WORLD -> use map
+		*id_p = MPIR_Process.node_map[lpid];
 	} else {
-		*id_p = MPIDI_Process.smp_node_id;
+		// node ids of remote process groups are unknown...
+		*id_p = -1;
 	}
+
 	return MPI_SUCCESS;
 }
 
+#if 0
+/* It seems that this ADI3 function is no longer used in the higher MPICH layers and
+   has been replaced by a direct access to MPIR_Process.num_nodes.
+   Therefore, this function is commented out here so that it cannot be used by mistake.
+   In the MSA case, however, we must continue to pay attention that MPID_Get_max_badge()
+   (see above) is still used also in the higher layers.
+*/
 int MPID_Get_max_node_id(MPIR_Comm *comm, int *max_id_p)
 {
-	/* Since the node IDs are not necessarily ordered and contiguous,
-	   we cannot determine a meaningful maximum here and therefore
-	   exit with a non-fatal error. This shall then only disable
-	   the creation of SMP-aware  communicators in the higher
-	   MPICH layer (see MPIR_Find_local_and_external()).
-	*/
-	*max_id_p = 0;
-	return MPI_ERR_OTHER;
+	*max_id_p = MPIR_Process.num_nodes - 1;
+
+	return MPI_SUCCESS;
 }
+#endif
 
 
 int MPID_PSP_comm_init(int has_parent)
 {
-	MPIR_Comm * comm;
-	int grank;
-	int pg_id_num;
 	char *parent_port;
-	MPIDI_PG_t * pg_ptr;
-	MPIDI_VCRT_t * vcrt;
 	int mpi_errno = MPI_SUCCESS;
-
-	int pg_rank = MPIDI_Process.my_pg_rank;
-	int pg_size = MPIDI_Process.my_pg_size;
-	char* pg_id_name = MPIDI_Process.pg_id_name;
-
-	MPIDI_PSP_topo_level_t *topo_levels = NULL;
-
 
 	/* Initialize and overload Comm_ops (currently merely used for comm_split_type) */
 	memset(&MPIR_PSP_Comm_fns, 0, sizeof(MPIR_PSP_Comm_fns));
 	MPIR_Comm_fns = &MPIR_PSP_Comm_fns;
 	MPIR_Comm_fns->split_type = MPID_PSP_split_type;
-
-
-	/*
-	 * Initialize the MPI_COMM_WORLD object
-	 */
-	comm = MPIR_Process.comm_world;
-	comm->rank        = pg_rank;
-	comm->remote_size = pg_size;
-	comm->local_size  = pg_size;
-
-	vcrt = MPIDI_VCRT_Create(comm->remote_size);
-	assert(vcrt);
-	MPID_PSP_comm_set_vcrt(comm, vcrt);
-
-
-	if(MPIDI_Process.env.enable_msa_awareness) {
-
-		if(MPIDI_Process.msa_module_id < 0) {
-			/* If no msa_module_id is set explicitly, use the appnum for this: */
-			MPIDI_Process.msa_module_id = MPIR_Process.attrs.appnum;
-		}
-
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
-		if(MPIDI_Process.env.enable_msa_aware_collops) {
-			MPIDI_PSP_create_topo_level(MPIDI_Process.msa_module_id, MPIDI_PSP_TOPO_LEVEL__MODULES, 1/*badges_are_global*/, 0/*normalize*/, &topo_levels);
-		}
-#endif
-	}
-
-	if(MPIDI_Process.env.enable_smp_awareness) {
-
-		if(MPIDI_Process.smp_node_id < 0) {
-			/* If no smp_node_id is set explicitly, use the pscom's node_id for this:
-			   (...which is an int and might be negative. However, since we know that it actually
-			   corresponds to the IPv4 address of the node, it is safe to force the most significant
-			   bit to be unset so that it is positive and can thus also be used as a split color.)
-			*/
-			MPIDI_Process.smp_node_id = (int)((unsigned)MPIR_Process.comm_world->pscom_socket->local_con_info.node_id & (unsigned)0x7fffffff);
-		}
-
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
-		if(MPIDI_Process.env.enable_smp_aware_collops) {
-			MPIDI_PSP_create_topo_level(MPIDI_Process.smp_node_id, MPIDI_PSP_TOPO_LEVEL__NODES, 0/*badges_are_global*/, 1/*normalize*/, &topo_levels);
-		}
-#endif
-	}
-
-
-	/* Create my home PG for MPI_COMM_WORLD: */
-	MPIDI_PG_Convert_id(pg_id_name, &pg_id_num);
-	MPIDI_PG_Create(pg_size, pg_id_num, topo_levels, &pg_ptr);
-	assert(pg_ptr == MPIDI_Process.my_pg);
-
-	for (grank = 0; grank < pg_size; grank++) {
-		/* MPIR_CheckDisjointLpids() in mpi/comm/intercomm_create.c expect
-		   lpid to be smaller than 4096!!!
-		   Else you will see an "Fatal error in MPI_Intercomm_create"
-		*/
-
-		pscom_connection_t *con = MPIDI_Process.grank2con[grank];
-
-		pg_ptr->vcr[grank] = MPIDI_VC_Create(pg_ptr, grank, con, grank);
-		comm->vcr[grank] = MPIDI_VC_Dup(pg_ptr->vcr[grank]);
-	}
-
-	mpi_errno = MPIR_Comm_commit(comm);
-	assert(mpi_errno == MPI_SUCCESS);
-
-
-	/*
-	 * Initialize the MPI_COMM_SELF object
-	 */
-	comm = MPIR_Process.comm_self;
-	comm->rank        = 0;
-	comm->remote_size = 1;
-	comm->local_size  = 1;
-
-	vcrt = MPIDI_VCRT_Create(comm->remote_size);
-	assert(vcrt);
-	MPID_PSP_comm_set_vcrt(comm, vcrt);
-
-	comm->vcr[0] = MPIDI_VC_Dup(MPIR_Process.comm_world->vcr[pg_rank]);
-
-	mpi_errno = MPIR_Comm_commit(comm);
-	assert(mpi_errno == MPI_SUCCESS);
 
 	if (has_parent) {
 		MPIR_Comm * comm_parent;
@@ -563,7 +481,7 @@ fn_fail:
 	goto fn_exit;
 }
 
-int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, int * lpid_ptr, bool is_remote)
+int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, uint64_t * lpid_ptr, bool is_remote)
 {
 	if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM || is_remote) {
 		*lpid_ptr = comm_ptr->vcr[idx]->lpid;
@@ -574,7 +492,7 @@ int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, int * lpid_ptr, bool is_rem
 	return MPI_SUCCESS;
 }
 
-int MPID_Create_intercomm_from_lpids(MPIR_Comm *newcomm_ptr, int size, const int lpids[])
+int MPID_Create_intercomm_from_lpids(MPIR_Comm *newcomm_ptr, int size, const uint64_t lpids[])
 {
 	int mpi_errno = MPI_SUCCESS;
 	MPIR_Comm *commworld_ptr;
@@ -595,9 +513,16 @@ int MPID_Create_intercomm_from_lpids(MPIR_Comm *newcomm_ptr, int size, const int
 		   we can just take the corresponding entry from comm_world.
 		   Otherwise, we need to search through the process groups.
 		*/
-		/* printf( "[%d] Remote rank %d has lpid %d\n",
+		/* printf( "[%d] Remote rank %d has lpid %" PRIu64 "\n",
 		   MPIR_Process.comm_world->rank, i, lpids[i] ); */
-		if ((lpids[i] >=0) && (lpids[i] < commworld_ptr->remote_size)) {
+
+		/* All LPIDs passed in the array must be valid, because otherwise we
+		 * cannot find the matching VC here. Therefore, we check this with
+		 * an assertion just to be safe...
+		 */
+		MPIR_Assert(lpids[i] != MPIDI_PSP_INVALID_LPID);
+
+		if (lpids[i] < commworld_ptr->remote_size) {
 			vcr = commworld_ptr->vcr[lpids[i]];
 			assert(vcr);
 		}
@@ -641,12 +566,64 @@ fn_fail:
 int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 {
 	pscom_connection_t *con1st;
-	int i;
-	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_COMM_COMMIT_PRE_HOOK);
-	MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_COMM_COMMIT_PRE_HOOK);
+	int mpi_errno = MPI_SUCCESS;
+	int i, grank;
+	int pg_id_num;
+	int pg_rank = MPIDI_Process.my_pg_rank;
+	int pg_size = MPIDI_Process.my_pg_size;
+	char* pg_id_name = MPIDI_Process.pg_id_name;
+	MPIDI_PG_t * pg_ptr;
+	MPIDI_VCRT_t * vcrt;
+
+	MPIR_FUNC_ENTER;
 
 	if (comm->mapper_head) {
 		MPID_PSP_comm_create_mapper(comm);
+	}
+
+	if (comm == MPIR_Process.comm_world) {
+		/*
+		 * Initialize the MPI_COMM_WORLD object
+		 */
+		comm->rank        = pg_rank;
+		comm->remote_size = pg_size;
+		comm->local_size  = pg_size;
+
+		vcrt = MPIDI_VCRT_Create(comm->remote_size);
+		assert(vcrt);
+		MPID_PSP_comm_set_vcrt(comm, vcrt);
+
+		/* Create my home PG for MPI_COMM_WORLD: */
+		MPIDI_PG_Convert_id(pg_id_name, &pg_id_num);
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+		MPIDI_PG_Create(pg_size, pg_id_num, MPIDI_Process.topo_levels, &pg_ptr);
+#else
+		MPIDI_PG_Create(pg_size, pg_id_num, NULL, &pg_ptr);
+#endif
+		assert(pg_ptr == MPIDI_Process.my_pg);
+
+		for (grank = 0; grank < pg_size; grank++) {
+
+			pscom_connection_t *con = MPIDI_Process.grank2con[grank];
+
+			pg_ptr->vcr[grank] = MPIDI_VC_Create(pg_ptr, grank, con, grank);
+			comm->vcr[grank] = MPIDI_VC_Dup(pg_ptr->vcr[grank]);
+		}
+
+	} else if (comm == MPIR_Process.comm_self) {
+		/*
+		 * Initialize the MPI_COMM_SELF object
+		 */
+		comm = MPIR_Process.comm_self;
+		comm->rank        = 0;
+		comm->remote_size = 1;
+		comm->local_size  = 1;
+
+		vcrt = MPIDI_VCRT_Create(comm->remote_size);
+		assert(vcrt);
+		MPID_PSP_comm_set_vcrt(comm, vcrt);
+
+		comm->vcr[0] = MPIDI_VC_Dup(MPIR_Process.comm_world->vcr[pg_rank]);
 	}
 
 	comm->is_disconnected = 0;
@@ -675,14 +652,13 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 		}
 	}
 
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
 	hcoll_comm_create(comm, NULL);
 #endif
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 	if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (MPIDI_Process.env.enable_msa_aware_collops > 1)) {
 
-		int mpi_errno;
 		MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
 
 		while(tl && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
@@ -692,7 +668,7 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 
 		if(tl) { // This subcomm is not flat -> attach a further subcomm level: (to be handled in SMP-aware collectives)
 			assert(comm->comm_kind == MPIR_COMM_KIND__INTRACOMM);
-			mpi_errno = MPIR_Comm_dup_impl(comm, NULL, &comm->local_comm); // we "misuse" local_comm for this purpose
+			mpi_errno = MPIR_Comm_dup_impl(comm, &comm->local_comm); // we "misuse" local_comm for this purpose
 			assert(mpi_errno == MPI_SUCCESS);
 		}
 	}
@@ -709,18 +685,17 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 	       __func__, comm, comm->name, comm->context_id, comm->local_size););
 	*/
 fn_exit:
-	MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_COMM_COMMIT_PRE_HOOK);
-	return MPI_SUCCESS;
+	MPIR_FUNC_EXIT;
+	return mpi_errno;
 }
 
 int MPIDI_PSP_Comm_commit_post_hook(MPIR_Comm *comm)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_COMM_COMMIT_POST_HOOK);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_COMM_COMMIT_POST_HOOK);
+    MPIR_FUNC_ENTER;
 
   fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_COMM_COMMIT_POST_HOOK);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -736,11 +711,11 @@ int MPIDI_PSP_Comm_destroy_hook(MPIR_Comm * comm)
 		MPIDI_VCRT_Release(comm->local_vcrt, comm->is_disconnected);
 	}
 
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
 	hcoll_comm_destroy(comm, NULL);
 #endif
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 	if (comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) {
 		if(comm->local_comm) {
 			// Recursively release also further subcomm levels:
@@ -758,4 +733,14 @@ int MPIDI_PSP_Comm_destroy_hook(MPIR_Comm * comm)
 #endif
 
 	return MPI_SUCCESS;
+}
+
+
+int MPIDI_PSP_Comm_set_hints(MPIR_Comm *comm_ptr, MPIR_Info *info_ptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_FUNC_ENTER;
+
+    MPIR_FUNC_EXIT;
+    return mpi_errno;
 }

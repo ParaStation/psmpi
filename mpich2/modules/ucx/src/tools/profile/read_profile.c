@@ -10,6 +10,7 @@
 
 #include <ucs/profile/profile.h>
 #include <ucs/datastruct/khash.h>
+#include <ucs/sys/string.h>
 
 #include <sys/signal.h>
 #include <sys/fcntl.h>
@@ -456,8 +457,8 @@ static void show_profile_data_log(profile_data_t *data, options_t *opts,
                                       3 * strlen(CLEAR_COLOR)), \
                                 buf, \
                                 LOC_COLOR, \
-                                basename(loc->file), loc->line, loc->function, \
-                                CLEAR_COLOR)
+                                ucs_basename(loc->file), loc->line, \
+                                loc->function, CLEAR_COLOR)
 
     scope_ends = calloc(1, sizeof(*scope_ends) * num_records);
     if (scope_ends == NULL) {
@@ -557,7 +558,7 @@ static void show_profile_data_log(profile_data_t *data, options_t *opts,
                     reqid = reqid_ctr++;
                     kh_value(&reqids, hash_it) = reqid;
                 }
-                action = "NEW";
+                action = "NEW ";
             } else {
                 hash_it = kh_get(request_ids, &reqids, rec->param64);
                 if (hash_it == kh_end(&reqids)) {

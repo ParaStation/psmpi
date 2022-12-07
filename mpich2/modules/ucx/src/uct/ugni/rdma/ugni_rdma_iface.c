@@ -186,6 +186,7 @@ static uct_iface_ops_t uct_ugni_aries_rdma_iface_ops = {
     .ep_get_bcopy             = uct_ugni_ep_get_bcopy,
     .ep_get_zcopy             = uct_ugni_ep_get_zcopy,
     .ep_am_short              = uct_ugni_ep_am_short,
+    .ep_am_short_iov          = uct_base_ep_am_short_iov,
     .ep_atomic_cswap64        = uct_ugni_ep_atomic_cswap64,
     .ep_atomic_cswap32        = uct_ugni_ep_atomic_cswap32,
     .ep_atomic64_post         = uct_ugni_ep_atomic64_post,
@@ -217,6 +218,7 @@ static uct_iface_ops_t uct_ugni_gemini_rdma_iface_ops = {
     .ep_get_bcopy             = uct_ugni_ep_get_bcopy,
     .ep_get_zcopy             = uct_ugni_ep_get_zcopy,
     .ep_am_short              = uct_ugni_ep_am_short,
+    .ep_am_short_iov          = uct_base_ep_am_short_iov,
     .ep_atomic_cswap64        = uct_ugni_ep_atomic_cswap64,
     .ep_pending_add           = uct_ugni_ep_pending_add,
     .ep_pending_purge         = uct_ugni_ep_pending_purge,
@@ -240,7 +242,8 @@ static ucs_mpool_ops_t uct_ugni_rdma_desc_mpool_ops = {
     .chunk_alloc   = ucs_mpool_hugetlb_malloc,
     .chunk_release = ucs_mpool_hugetlb_free,
     .obj_init      = uct_ugni_base_desc_init,
-    .obj_cleanup   = NULL
+    .obj_cleanup   = NULL,
+    .obj_str       = NULL
 };
 
 static uct_iface_ops_t *uct_ugni_rdma_choose_ops_by_device(uct_ugni_device_t *dev)

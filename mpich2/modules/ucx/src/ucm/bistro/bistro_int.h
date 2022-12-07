@@ -30,19 +30,7 @@
 
 ucs_status_t ucm_bistro_apply_patch(void *dst, void *patch, size_t len);
 
-ucs_status_t ucm_bistro_create_restore_point(void *addr, ucm_bistro_restore_point_t **rp);
-
-static inline void *ucm_bistro_lookup(const char *symbol)
-{
-    void *addr;
-
-    ucs_assert(symbol != NULL);
-
-    addr = dlsym(RTLD_NEXT, symbol);
-    if (!addr) {
-        addr = dlsym(RTLD_DEFAULT, symbol);
-    }
-    return addr;
-}
+ucs_status_t ucm_bistro_create_restore_point(void *addr, size_t len,
+                                             ucm_bistro_restore_point_t **rp);
 
 #endif

@@ -10,33 +10,49 @@
 
 #include "log.h"
 
-#include <ucs/debug/debug.h>
+#include <ucs/arch/atomic.h>
+#include <ucs/debug/debug_int.h>
+#include <ucs/datastruct/khash.h>
 #include <ucs/sys/compiler.h>
 #include <ucs/sys/checker.h>
 #include <ucs/sys/string.h>
 #include <ucs/sys/sys.h>
 #include <ucs/sys/math.h>
+#include <ucs/type/spinlock.h>
 #include <ucs/config/parser.h>
+#include <fnmatch.h>
+
 
 #define UCS_MAX_LOG_HANDLERS    32
 
 #define UCS_LOG_TIME_FMT        "[%lu.%06lu]"
-#define UCS_LOG_FILE_FMT        "%16s:%-4u"
-#define UCS_LOG_METADATA_FMT    "%-4s %-5s"
-#define UCS_LOG_PROC_DATA_FMT   "[%s:%-5d:%d]"
-#define UCS_LOG_SHORT_FMT       UCS_LOG_TIME_FMT" "UCS_LOG_FILE_FMT" " \
-                                UCS_LOG_METADATA_FMT" ""%s\n"
-#define UCS_LOG_FMT             UCS_LOG_TIME_FMT" "UCS_LOG_PROC_DATA_FMT" " \
-                                UCS_LOG_FILE_FMT" "UCS_LOG_METADATA_FMT" ""%s\n"
+#define UCS_LOG_METADATA_FMT    "%17s:%-4u %-4s %-5s %*s"
+#define UCS_LOG_PROC_DATA_FMT   "[%s:%-5d:%s]"
+
+#define UCS_LOG_SHORT_FMT       UCS_LOG_TIME_FMT " [%s] " UCS_LOG_METADATA_FMT "%s\n"
+#define UCS_LOG_FMT             UCS_LOG_TIME_FMT " " UCS_LOG_PROC_DATA_FMT " " \
+                                UCS_LOG_METADATA_FMT "%s\n"
 
 #define UCS_LOG_TIME_ARG(_tv)  (_tv)->tv_sec, (_tv)->tv_usec
-#define UCS_LOG_SHORT_ARG(_short_file, _line, _level, _comp_conf, _tv, _message) \
-    UCS_LOG_TIME_ARG(_tv), _short_file, _line, (_comp_conf)->name, \
-    ucs_log_level_names[_level], _message
+
+#define UCS_LOG_METADATA_ARG(_short_file, _line, _level, _comp_conf) \
+    (_short_file), (_line), (_comp_conf)->name, \
+    ucs_log_level_names[_level], (ucs_log_current_indent * 2), ""
+
+#define UCS_LOG_PROC_DATA_ARG() \
+    ucs_log_hostname, ucs_log_pid, ucs_log_get_thread_name()
+
+#define UCS_LOG_SHORT_ARG(_short_file, _line, _level, _comp_conf, _tv, \
+                          _message) \
+    UCS_LOG_TIME_ARG(_tv), ucs_log_get_thread_name(), \
+            UCS_LOG_METADATA_ARG(_short_file, _line, _level, _comp_conf), \
+            (_message)
+
 #define UCS_LOG_ARG(_short_file, _line, _level, _comp_conf, _tv, _message) \
-    UCS_LOG_TIME_ARG(_tv), ucs_log_hostname, ucs_log_pid, \
-    ucs_log_get_thread_num(),_short_file, _line, (_comp_conf)->name, \
-    ucs_log_level_names[_level], _message
+    UCS_LOG_TIME_ARG(_tv), UCS_LOG_PROC_DATA_ARG(), \
+    UCS_LOG_METADATA_ARG(_short_file, _line, _level, _comp_conf), (_message)
+
+KHASH_MAP_INIT_STR(ucs_log_filter, char);
 
 const char *ucs_log_level_names[] = {
     [UCS_LOG_LEVEL_FATAL]        = "FATAL",
@@ -55,58 +71,44 @@ const char *ucs_log_level_names[] = {
     [UCS_LOG_LEVEL_PRINT]        = "PRINT"
 };
 
-static unsigned ucs_log_handlers_count      = 0;
-static int ucs_log_initialized              = 0;
-static char ucs_log_hostname[HOST_NAME_MAX] = {0};
-static int  ucs_log_pid                     = 0;
-static FILE *ucs_log_file                   = NULL;
-static char *ucs_log_file_base_name         = NULL;
-static int ucs_log_file_close               = 0;
-static int ucs_log_file_last_idx            = 0;
-static unsigned threads_count               = 0;
-static pthread_spinlock_t threads_lock      = 0;
-static pthread_t threads[128]               = {0};
+static unsigned ucs_log_handlers_count       = 0;
+static int ucs_log_initialized               = 0;
+static int __thread ucs_log_current_indent   = 0;
+static char ucs_log_hostname[HOST_NAME_MAX]  = {0};
+static int ucs_log_pid                       = 0;
+static FILE *ucs_log_file                    = NULL;
+static char *ucs_log_file_base_name          = NULL;
+static int ucs_log_file_close                = 0;
+static int ucs_log_file_last_idx             = 0;
+static uint32_t ucs_log_thread_count         = 0;
+static char __thread ucs_log_thread_name[32] = {0};
 static ucs_log_func_t ucs_log_handlers[UCS_MAX_LOG_HANDLERS];
+static ucs_spinlock_t ucs_log_global_filter_lock;
+static khash_t(ucs_log_filter) ucs_log_global_filter;
 
 
-static int ucs_log_get_thread_num(void)
+static const char *ucs_log_get_thread_name()
 {
-    pthread_t self = pthread_self();
-    int i;
+    char *name = ucs_log_thread_name;
+    uint32_t thread_num;
 
-    for (i = 0; i < threads_count; ++i) {
-        if (threads[i] == self) {
-            return i;
-        }
+    if (ucs_unlikely(name[0] == '\0')) {
+        thread_num = ucs_atomic_fadd32(&ucs_log_thread_count, 1);
+        ucs_snprintf_safe(ucs_log_thread_name, sizeof(ucs_log_thread_name),
+                          "%u", thread_num);
     }
 
-    pthread_spin_lock(&threads_lock);
-
-    for (i = 0; i < threads_count; ++i) {
-        if (threads[i] == self) {
-            goto unlock_and_return_i;
-        }
-    }
-
-    if (threads_count >= ucs_static_array_size(threads)) {
-        i = -1;
-        goto unlock_and_return_i;
-    }
-
-    i = threads_count;
-    ++threads_count;
-    threads[i] = self;
-
-unlock_and_return_i:
-    pthread_spin_unlock(&threads_lock);
-    return i;
+    return name;
 }
 
 void ucs_log_flush()
 {
     if (ucs_log_file != NULL) {
         fflush(ucs_log_file);
-        fsync(fileno(ucs_log_file));
+
+        if (ucs_log_file_close) { /* non-stdout/stderr */
+            fsync(fileno(ucs_log_file));
+        }
     }
 }
 
@@ -239,12 +241,36 @@ ucs_log_default_handler(const char *file, unsigned line, const char *function,
 {
     size_t buffer_size = ucs_log_get_buffer_size();
     char *saveptr      = "";
-    char *log_line;
+    const char *short_file;
     struct timeval tv;
+    khiter_t khiter;
+    char *log_line;
+    char match;
+    int khret;
     char *buf;
 
-    if (!ucs_log_component_is_enabled(level, comp_conf) && (level != UCS_LOG_LEVEL_PRINT)) {
-         return UCS_LOG_FUNC_RC_CONTINUE;
+    if (!ucs_log_component_is_enabled(level, comp_conf) &&
+        (level != UCS_LOG_LEVEL_PRINT)) {
+        return UCS_LOG_FUNC_RC_CONTINUE;
+    }
+
+    ucs_spin_lock(&ucs_log_global_filter_lock);
+    khiter = kh_get(ucs_log_filter, &ucs_log_global_filter, file);
+    if (ucs_unlikely(khiter == kh_end(&ucs_log_global_filter))) {
+        /* Add source file name to the hash */
+        match  = fnmatch(ucs_global_opts.log_component.file_filter, file, 0) !=
+                 FNM_NOMATCH;
+        khiter = kh_put(ucs_log_filter, &ucs_log_global_filter, file, &khret);
+        ucs_assert((khret == UCS_KH_PUT_BUCKET_EMPTY) ||
+                   (khret == UCS_KH_PUT_BUCKET_CLEAR));
+        kh_val(&ucs_log_global_filter, khiter) = match;
+    } else {
+        match = kh_val(&ucs_log_global_filter, khiter);
+    }
+    ucs_spin_unlock(&ucs_log_global_filter_lock);
+
+    if (!match) {
+        return UCS_LOG_FUNC_RC_CONTINUE;
     }
 
     buf = ucs_alloca(buffer_size + 1);
@@ -254,12 +280,13 @@ ucs_log_default_handler(const char *file, unsigned line, const char *function,
     if (level <= ucs_global_opts.log_level_trigger) {
         ucs_fatal_error_message(file, line, function, buf);
     } else {
+        short_file = ucs_basename(file);
         gettimeofday(&tv, NULL);
 
         log_line = strtok_r(buf, "\n", &saveptr);
         while (log_line != NULL) {
-            ucs_log_print(buffer_size, ucs_basename(file), line, level, comp_conf,
-                          &tv, log_line);
+            ucs_log_print(buffer_size, short_file, line, level, comp_conf, &tv,
+                          log_line);
             log_line = strtok_r(NULL, "\n", &saveptr);
         }
     }
@@ -284,6 +311,17 @@ void ucs_log_pop_handler()
     if (ucs_log_handlers_count > 0) {
         --ucs_log_handlers_count;
     }
+}
+
+void ucs_log_indent(int delta)
+{
+    ucs_log_current_indent += delta;
+    ucs_assert(ucs_log_current_indent >= 0);
+}
+
+int ucs_log_get_current_indent()
+{
+    return ucs_log_current_indent;
 }
 
 unsigned ucs_log_num_handlers()
@@ -323,8 +361,8 @@ void ucs_log_fatal_error(const char *format, ...)
     p = buffer;
 
     /* Print hostname:pid */
-    snprintf(p, buffer_size, "[%s:%-5d:%d:%d] ", ucs_log_hostname, ucs_log_pid,
-             ucs_log_get_thread_num(), ucs_get_tid());
+    snprintf(p, buffer_size, "[%s:%-5d:%s:%d] ", ucs_log_hostname, ucs_log_pid,
+             ucs_log_get_thread_name(), ucs_get_tid());
     buffer_size -= strlen(p);
     p           += strlen(p);
 
@@ -413,8 +451,12 @@ void ucs_log_early_init()
     ucs_log_file          = NULL;
     ucs_log_file_last_idx = 0;
     ucs_log_file_close    = 0;
-    threads_count         = 0;
-    pthread_spin_init(&threads_lock, 0);
+    ucs_log_thread_count  = 0;
+}
+
+static void ucs_log_atfork_child()
+{
+    ucs_log_pid = getpid();
 }
 
 void ucs_log_init()
@@ -438,6 +480,8 @@ void ucs_log_init()
                   ucs_global_opts.log_file_rotate, INT_MAX);
     }
 
+    ucs_spinlock_init(&ucs_log_global_filter_lock, 0);
+    kh_init_inplace(ucs_log_filter, &ucs_log_global_filter);
 
     strcpy(ucs_log_hostname, ucs_get_host_name());
     ucs_log_file           = stdout;
@@ -452,6 +496,8 @@ void ucs_log_init()
                                &ucs_log_file, &ucs_log_file_close,
                                &next_token, &ucs_log_file_base_name);
     }
+
+    pthread_atfork(NULL, NULL, ucs_log_atfork_child);
 }
 
 void ucs_log_cleanup()
@@ -462,8 +508,9 @@ void ucs_log_cleanup()
     if (ucs_log_file_close) {
         fclose(ucs_log_file);
     }
-    pthread_spin_destroy(&threads_lock);
 
+    ucs_spinlock_destroy(&ucs_log_global_filter_lock);
+    kh_destroy_inplace(ucs_log_filter, &ucs_log_global_filter);
     ucs_free(ucs_log_file_base_name);
     ucs_log_file_base_name = NULL;
     ucs_log_file           = NULL;
@@ -493,4 +540,14 @@ void ucs_log_print_backtrace(ucs_log_level_t level)
     ucs_log(level, "=================================\n");
 
     ucs_debug_backtrace_destroy(bckt);
+}
+
+void ucs_log_set_thread_name(const char *format, ...)
+{
+    va_list ap;
+
+    va_start(ap, format);
+    memset(ucs_log_thread_name, 0, sizeof(ucs_log_thread_name));
+    vsnprintf(ucs_log_thread_name, sizeof(ucs_log_thread_name) - 1, format, ap);
+    va_end(ap);
 }

@@ -8,8 +8,12 @@
 #ifndef UCP_DT_CONTIG_H_
 #define UCP_DT_CONTIG_H_
 
-#include <ucp/api/ucp.h>
+#include "dt.h"
+
+#include <ucp/core/ucp_mm.h>
+#include <ucs/arch/cpu.h>
 #include <ucs/debug/assert.h>
+#include <ucs/profile/profile.h>
 
 
 /**
@@ -21,7 +25,7 @@ typedef struct {
 } ucp_memcpy_pack_context_t;
 
 
-size_t ucp_memcpy_pack(void *dest, void *arg);
+size_t ucp_memcpy_pack_cb(void *dest, void *arg);
 
 
 static inline size_t ucp_contig_dt_elem_size(ucp_datatype_t datatype)
@@ -37,5 +41,13 @@ static inline size_t ucp_contig_dt_length(ucp_datatype_t datatype, size_t count)
     ucs_assert(UCP_DT_IS_CONTIG(datatype));
     return count * ucp_contig_dt_elem_size(datatype);
 }
+
+
+void ucp_dt_contig_pack(ucp_worker_h worker, void *dest, const void *src,
+                        size_t length, ucs_memory_type_t mem_type);
+
+
+void ucp_dt_contig_unpack(ucp_worker_h worker, void *dest, const void *src,
+                          size_t length, ucs_memory_type_t mem_type);
 
 #endif

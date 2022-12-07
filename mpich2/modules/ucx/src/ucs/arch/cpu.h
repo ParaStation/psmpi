@@ -1,6 +1,7 @@
 /**
 * Copyright (C) Mellanox Technologies Ltd. 2001-2015.  ALL RIGHTS RESERVED.
 * Copyright (C) ARM Ltd. 2016.  ALL RIGHTS RESERVED.
+* Copyright (C) Shanghai Zhaoxin Semiconductor Co., Ltd. 2020. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -30,6 +31,9 @@ typedef enum ucs_cpu_model {
     UCS_CPU_MODEL_ARM_AARCH64,
     UCS_CPU_MODEL_AMD_NAPLES,
     UCS_CPU_MODEL_AMD_ROME,
+    UCS_CPU_MODEL_ZHAOXIN_ZHANGJIANG,
+    UCS_CPU_MODEL_ZHAOXIN_WUDAOKOU,
+    UCS_CPU_MODEL_ZHAOXIN_LUJIAZUI,
     UCS_CPU_MODEL_LAST
 } ucs_cpu_model_t;
 
@@ -59,6 +63,7 @@ typedef enum ucs_cpu_vendor {
     UCS_CPU_VENDOR_GENERIC_ARM,
     UCS_CPU_VENDOR_GENERIC_PPC,
     UCS_CPU_VENDOR_FUJITSU_ARM,
+    UCS_CPU_VENDOR_ZHAOXIN,
     UCS_CPU_VENDOR_LAST
 } ucs_cpu_vendor_t;
 
@@ -115,7 +120,7 @@ void __clear_cache(void* beg, void* end);
  *
  * @param type  Cache type.
  * @param value Filled with the cache size.
- * 
+ *
  * @return Cache size value or 0 if cache is not supported or can't be read.
  */
 size_t ucs_cpu_get_cache_size(ucs_cpu_cache_type_t type);
@@ -139,7 +144,7 @@ static inline void ucs_clear_cache(void *start, void *end)
 
 /**
  * Get memory copy bandwidth.
- * 
+ *
  * @return Memory copy bandwidth estimation based on CPU used.
  */
 double ucs_cpu_get_memcpy_bw();

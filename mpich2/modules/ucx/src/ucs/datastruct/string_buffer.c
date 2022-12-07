@@ -12,92 +12,78 @@
 
 #include <ucs/debug/assert.h>
 #include <ucs/debug/log.h>
-#include <ucs/debug/memtrack.h>
+#include <ucs/debug/memtrack_int.h>
+#include <ucs/sys/string.h>
 #include <ucs/sys/math.h>
 #include <string.h>
 #include <ctype.h>
 
-
-#define UCS_STRING_BUFFER_GROW                32
-#define UCS_STRING_BUFFER_ALLOC_NAME          "string_buffer"
+#include <ucs/datastruct/array.inl>
 
 
-static void ucs_string_buffer_reset(ucs_string_buffer_t *strb)
-{
-    strb->buffer   = NULL;
-    strb->length   = 0;
-    strb->capacity = 0;
-}
+/* Minimal reserve size when appending new data */
+#define UCS_STRING_BUFFER_RESERVE  32
+
+UCS_ARRAY_IMPL(string_buffer, size_t, char, static UCS_F_ALWAYS_INLINE)
 
 void ucs_string_buffer_init(ucs_string_buffer_t *strb)
 {
-    ucs_string_buffer_reset(strb);
+    ucs_array_init_dynamic(&strb->str);
+}
+
+void ucs_string_buffer_init_fixed(ucs_string_buffer_t *strb, char *buffer,
+                                  size_t capacity)
+{
+    ucs_array_init_fixed(&strb->str, buffer, capacity);
 }
 
 void ucs_string_buffer_cleanup(ucs_string_buffer_t *strb)
 {
-    ucs_free(strb->buffer);
-    ucs_string_buffer_reset(strb);
+    ucs_array_cleanup_dynamic(&strb->str);
 }
 
-/*
- * Grow the buffer to at least the required size and at least double the
- * previous size (to reduce the amortized cost of realloc)
- */
-static ucs_status_t ucs_string_buffer_grow(ucs_string_buffer_t *strb,
-                                           size_t min_capacity)
+void ucs_string_buffer_reset(ucs_string_buffer_t *strb)
 {
-    size_t new_capacity;
-    char *new_buffer;
-
-    new_capacity = ucs_max(strb->capacity * 2, min_capacity);
-    new_buffer   = ucs_realloc(strb->buffer, new_capacity,
-                               UCS_STRING_BUFFER_ALLOC_NAME);
-    if (new_buffer == NULL) {
-        ucs_error("failed to grow string from %zu to %zu characters",
-                  strb->capacity, new_capacity);
-        return UCS_ERR_NO_MEMORY;
-    }
-
-    strb->buffer   = new_buffer;
-    strb->capacity = new_capacity;
-    /* length stays the same */
-    return UCS_OK;
+    ucs_array_length(&strb->str) = 0;
 }
 
-ucs_status_t ucs_string_buffer_appendf(ucs_string_buffer_t *strb,
-                                       const char *fmt, ...)
+size_t ucs_string_buffer_length(ucs_string_buffer_t *strb)
+{
+    return ucs_array_length(&strb->str);
+}
+
+void ucs_string_buffer_appendf(ucs_string_buffer_t *strb, const char *fmt, ...)
 {
     ucs_status_t status;
     size_t max_print;
     va_list ap;
     int ret;
 
-    /* set minimal initial size */
-    if ((strb->capacity - strb->length) <= 1) {
-        status = ucs_string_buffer_grow(strb,
-                                        strb->capacity + UCS_STRING_BUFFER_GROW);
-        if (status != UCS_OK) {
-            return status;
-        }
-    }
+    ucs_array_reserve(string_buffer, &strb->str,
+                      ucs_array_length(&strb->str) + UCS_STRING_BUFFER_RESERVE);
 
     /* try to write to existing buffer */
     va_start(ap, fmt);
-    max_print = strb->capacity - strb->length - 1;
-    ret       = vsnprintf(strb->buffer + strb->length, max_print, fmt, ap);
+    max_print = ucs_array_available_length(&strb->str);
+    ret       = vsnprintf(ucs_array_end(&strb->str), max_print, fmt, ap);
     va_end(ap);
 
     /* if failed, grow the buffer accommodate for the expected extra length */
     if (ret >= max_print) {
-        status = ucs_string_buffer_grow(strb, strb->length + ret + 1);
+        status = ucs_array_reserve(string_buffer, &strb->str,
+                                   ucs_array_length(&strb->str) + ret + 1);
         if (status != UCS_OK) {
-            return status;
+            /* cannot grow the buffer, just set null terminator at the end, and
+             * the string will contain only what could fit in.
+             */
+            ucs_array_length(&strb->str) = ucs_array_capacity(&strb->str) - 1;
+            *ucs_array_end(&strb->str)   = '\0';
+            goto out;
         }
 
         va_start(ap, fmt);
-        max_print = strb->capacity - strb->length;
-        ret       = vsnprintf(strb->buffer + strb->length, max_print, fmt, ap);
+        max_print = ucs_array_available_length(&strb->str);
+        ret       = vsnprintf(ucs_array_end(&strb->str), max_print, fmt, ap);
         va_end(ap);
 
         /* since we've grown the buffer, it should be sufficient now */
@@ -105,20 +91,62 @@ ucs_status_t ucs_string_buffer_appendf(ucs_string_buffer_t *strb,
     }
 
     /* string length grows by the amount of characters written by vsnprintf */
-    strb->length += ret;
+    ucs_array_set_length(&strb->str, ucs_array_length(&strb->str) + ret);
 
-    ucs_assert(strb->length < strb->capacity);
-    ucs_assert(strb->buffer[strb->length] == '\0'); /* \0 is written by vsnprintf */
+    /* \0 should be written by vsnprintf */
+out:
+    ucs_assert(ucs_array_available_length(&strb->str) >= 1);
+    ucs_assert(*ucs_array_end(&strb->str) == '\0');
+}
 
-    return UCS_OK;
+void ucs_string_buffer_append_hex(ucs_string_buffer_t *strb, const void *data,
+                                  size_t size, size_t per_line)
+{
+    size_t prev_length    = ucs_array_length(&strb->str);
+    size_t hexdump_length = (size * 2) + (size / 4) + (size / per_line);
+    size_t new_length;
+
+    ucs_array_reserve(string_buffer, &strb->str, prev_length + hexdump_length);
+    ucs_str_dump_hex(data, size, ucs_array_end(&strb->str),
+                     ucs_array_available_length(&strb->str), per_line);
+
+    new_length = prev_length + strlen(ucs_array_end(&strb->str));
+    ucs_array_set_length(&strb->str, new_length);
+    ucs_assert(*ucs_array_end(&strb->str) == '\0');
+}
+
+void ucs_string_buffer_append_flags(ucs_string_buffer_t *strb, uint64_t mask,
+                                    const char **flag_names)
+{
+    unsigned flag;
+
+    ucs_for_each_bit(flag, mask) {
+        if (flag_names == NULL) {
+            ucs_string_buffer_appendf(strb, "%u,", flag);
+        } else {
+            ucs_string_buffer_appendf(strb, "%s|", flag_names[flag]);
+        }
+    }
+    ucs_string_buffer_rtrim(strb, ",|");
+}
+
+void ucs_string_buffer_append_iovec(ucs_string_buffer_t *strb,
+                                    const struct iovec *iov, size_t iovcnt)
+{
+    size_t iov_index;
+
+    for (iov_index = 0; iov_index < iovcnt; ++iov_index) {
+        ucs_string_buffer_appendf(strb, "%p,%zu|", iov[iov_index].iov_base,
+                                  iov[iov_index].iov_len);
+    }
+    ucs_string_buffer_rtrim(strb, "|");
 }
 
 void ucs_string_buffer_rtrim(ucs_string_buffer_t *strb, const char *charset)
 {
-    char *ptr;
+    char *ptr = ucs_array_end(&strb->str);
 
-    ptr = &strb->buffer[strb->length];
-    while (strb->length > 0) {
+    while (ucs_array_length(&strb->str) > 0) {
         --ptr;
         if (((charset == NULL) && !isspace(*ptr)) ||
             ((charset != NULL) && (strchr(charset, *ptr) == NULL))) {
@@ -126,7 +154,7 @@ void ucs_string_buffer_rtrim(ucs_string_buffer_t *strb, const char *charset)
             break;
         }
 
-        --strb->length;
+        ucs_array_set_length(&strb->str, ucs_array_length(&strb->str) - 1);
     }
 
     /* mark the new end of string */
@@ -135,11 +163,60 @@ void ucs_string_buffer_rtrim(ucs_string_buffer_t *strb, const char *charset)
 
 const char *ucs_string_buffer_cstr(const ucs_string_buffer_t *strb)
 {
-    if (strb->length == 0) {
+    char *c_str;
+
+    if (ucs_array_is_empty(&strb->str)) {
         return "";
     }
 
-    ucs_assert(strb->buffer  != NULL);
-    ucs_assert(strb->capacity > 0);
-    return strb->buffer;
+    c_str = ucs_array_begin(&strb->str);
+    ucs_assert(c_str != NULL);
+    return c_str;
+}
+
+void ucs_string_buffer_dump(const ucs_string_buffer_t *strb,
+                            const char *line_prefix, FILE *stream)
+{
+    const char *next_tok, *tok;
+    size_t size, remaining;
+
+    if (ucs_array_is_empty(&strb->str)) {
+        return;
+    }
+
+    tok      = ucs_array_begin(&strb->str);
+    next_tok = strchr(tok, '\n');
+    while (next_tok != NULL) {
+        fputs(line_prefix, stream);
+
+        /* Write the line, handle partial writes */
+        remaining = UCS_PTR_BYTE_DIFF(tok, next_tok + 1);
+        while (remaining > 0) {
+            size       = fwrite(tok, sizeof(*tok), remaining, stream);
+            tok        = UCS_PTR_BYTE_OFFSET(tok, size);
+            remaining -= size;
+        }
+
+        next_tok = strchr(tok, '\n');
+    }
+
+    /* Write last line */
+    if (*tok != '\0') {
+        fputs(line_prefix, stream);
+        fputs(tok, stream);
+    }
+}
+
+char *ucs_string_buffer_extract_mem(ucs_string_buffer_t *strb)
+{
+    char *c_str;
+
+    if (ucs_array_is_fixed(&strb->str)) {
+        c_str = ucs_strdup(ucs_array_begin(&strb->str), "ucs_string_buffer");
+    } else {
+        c_str = ucs_array_begin(&strb->str);
+        ucs_array_init_dynamic(&strb->str);
+    }
+
+    return c_str;
 }

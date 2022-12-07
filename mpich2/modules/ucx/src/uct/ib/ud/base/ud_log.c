@@ -38,8 +38,8 @@ void uct_ud_dump_packet(uct_base_iface_t *iface, uct_am_trace_type_t type,
         p += strlen(p);
         uct_iface_dump_am(iface, type, am_id, neth + 1,
                           length - sizeof(*neth), p, endp - p);
-    } else if (neth->packet_type & UCT_UD_PACKET_FLAG_NAK) {
-        snprintf(p, endp - p, " NAK");
+    } else if (neth->packet_type & UCT_UD_PACKET_FLAG_NACK) {
+        snprintf(p, endp - p, " NACK");
     } else if (neth->packet_type & UCT_UD_PACKET_FLAG_PUT) {
         puth = (uct_ud_put_hdr_t *)(neth + 1);
         snprintf(p, endp - p, " PUT: 0x%0lx len %zu", puth->rva,
@@ -54,7 +54,7 @@ void uct_ud_dump_packet(uct_base_iface_t *iface, uct_am_trace_type_t type,
                      uct_ib_unpack_uint24(ctlh->conn_req.ep_addr.iface_addr.qp_num),
                      uct_ib_address_str(uct_ud_creq_ib_addr(ctlh), buf, sizeof(buf)),
                      uct_ib_unpack_uint24(ctlh->conn_req.ep_addr.ep_id),
-                     ctlh->conn_req.conn_id, ctlh->conn_req.path_index);
+                     ctlh->conn_req.conn_sn, ctlh->conn_req.path_index);
             break;
         case UCT_UD_PACKET_CREP:
             snprintf(p, endp - p, " CREP from %s:%d src_ep_id %d",

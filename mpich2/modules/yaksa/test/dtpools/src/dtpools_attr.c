@@ -259,13 +259,13 @@ static int construct_vector(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s * a
         }
         if (!VALUE_FITS_IN_INT(stride))
             goto retry;
-        attr->u.vector.stride = (int) stride;
+        attr->u.vector.stride = (intptr_t) stride;
 
         /* calculate the extent for our datatype, to decide whether we
          * want to use this or try again */
-        int max_displ_idx = -1;
-        int min_displ_idx = -1;
-        for (int i = 0; i < attr->u.vector.numblks; i++) {
+        intptr_t max_displ_idx = -1;
+        intptr_t min_displ_idx = -1;
+        for (intptr_t i = 0; i < attr->u.vector.numblks; i++) {
             if (max_displ_idx == -1)
                 max_displ_idx = i;
             else if (attr->u.vector.stride > 0)
@@ -377,9 +377,9 @@ static int construct_hvector(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s * 
 
         /* calculate the extent for our datatype, to decide whether we
          * want to use this or try again */
-        int max_displ_idx = -1;
-        int min_displ_idx = -1;
-        for (int i = 0; i < attr->u.hvector.numblks; i++) {
+        intptr_t max_displ_idx = -1;
+        intptr_t min_displ_idx = -1;
+        for (intptr_t i = 0; i < attr->u.hvector.numblks; i++) {
             if (max_displ_idx == -1)
                 max_displ_idx = i;
             else if (attr->u.hvector.stride > 0)
@@ -473,44 +473,44 @@ static int construct_blkindx(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s * 
 
         count /= attr->u.blkindx.blklen;
 
-        DTPI_ALLOC_OR_FAIL(attr->u.blkindx.array_of_displs, attr->u.blkindx.numblks * sizeof(int),
-                           rc);
+        DTPI_ALLOC_OR_FAIL(attr->u.blkindx.array_of_displs,
+                           attr->u.blkindx.numblks * sizeof(intptr_t), rc);
 
         uint64_t total_displ = 0;
         int displs_attr = DTPI_rand(dtpi) % DTPI_ATTR_BLKINDX_DISPLS__LAST;
         if (displs_attr == DTPI_ATTR_BLKINDX_DISPLS__SMALL) {
-            for (int i = 0; i < attr->u.blkindx.numblks; i++) {
-                attr->u.blkindx.array_of_displs[i] = (int) total_displ;
+            for (intptr_t i = 0; i < attr->u.blkindx.numblks; i++) {
+                attr->u.blkindx.array_of_displs[i] = (intptr_t) total_displ;
                 total_displ += attr->u.blkindx.blklen + 1;
                 if (!VALUE_FITS_IN_INT(total_displ))
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_BLKINDX_DISPLS__LARGE) {
-            for (int i = 0; i < attr->u.blkindx.numblks; i++) {
-                attr->u.blkindx.array_of_displs[i] = (int) total_displ;
+            for (intptr_t i = 0; i < attr->u.blkindx.numblks; i++) {
+                attr->u.blkindx.array_of_displs[i] = (intptr_t) total_displ;
                 total_displ += attr->u.blkindx.blklen * 4;
                 if (!VALUE_FITS_IN_INT(total_displ))
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_BLKINDX_DISPLS__REDUCING) {
-            for (int i = 0; i < attr->u.blkindx.numblks; i++) {
-                int idx = attr->u.blkindx.numblks - i - 1;
-                attr->u.blkindx.array_of_displs[idx] = (int) total_displ;
+            for (intptr_t i = 0; i < attr->u.blkindx.numblks; i++) {
+                intptr_t idx = attr->u.blkindx.numblks - i - 1;
+                attr->u.blkindx.array_of_displs[idx] = (intptr_t) total_displ;
                 total_displ += attr->u.blkindx.blklen + 1;
                 if (!VALUE_FITS_IN_INT(total_displ))
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_BLKINDX_DISPLS__REVERSE) {
-            for (int i = 0; i < attr->u.blkindx.numblks; i++) {
-                int idx = attr->u.blkindx.numblks - i - 1;
-                attr->u.blkindx.array_of_displs[idx] = (int) total_displ;
+            for (intptr_t i = 0; i < attr->u.blkindx.numblks; i++) {
+                intptr_t idx = attr->u.blkindx.numblks - i - 1;
+                attr->u.blkindx.array_of_displs[idx] = (intptr_t) total_displ;
                 total_displ += attr->u.blkindx.blklen;
                 if (!VALUE_FITS_IN_INT(total_displ))
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_BLKINDX_DISPLS__UNEVEN) {
-            for (int i = 0; i < attr->u.blkindx.numblks; i++) {
-                attr->u.blkindx.array_of_displs[i] = (int) total_displ;
+            for (intptr_t i = 0; i < attr->u.blkindx.numblks; i++) {
+                attr->u.blkindx.array_of_displs[i] = (intptr_t) total_displ;
                 total_displ += attr->u.blkindx.blklen + i;
                 if (!VALUE_FITS_IN_INT(total_displ))
                     goto retry;
@@ -521,9 +521,9 @@ static int construct_blkindx(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s * 
 
         /* calculate the extent for our datatype, to decide whether we
          * want to use this or try again */
-        int max_displ_idx = -1;
-        int min_displ_idx = -1;
-        for (int i = 0; i < attr->u.blkindx.numblks; i++) {
+        intptr_t max_displ_idx = -1;
+        intptr_t min_displ_idx = -1;
+        for (intptr_t i = 0; i < attr->u.blkindx.numblks; i++) {
             if (max_displ_idx == -1)
                 max_displ_idx = i;
             else if (attr->u.blkindx.array_of_displs[i] >
@@ -626,37 +626,37 @@ static int construct_blkhindx(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s *
         uint64_t total_displ = 8;
         int displs_attr = DTPI_rand(dtpi) % DTPI_ATTR_BLKHINDX_DISPLS__LAST;
         if (displs_attr == DTPI_ATTR_BLKHINDX_DISPLS__SMALL) {
-            for (int i = 0; i < attr->u.blkhindx.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.blkhindx.numblks; i++) {
                 attr->u.blkhindx.array_of_displs[i] = (intptr_t) total_displ;
                 total_displ += (attr->u.blkhindx.blklen + 1) * attr->child_type_extent;
                 if (!VALUE_FITS_IN_INTPTR_T(total_displ))
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_BLKHINDX_DISPLS__LARGE) {
-            for (int i = 0; i < attr->u.blkhindx.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.blkhindx.numblks; i++) {
                 attr->u.blkhindx.array_of_displs[i] = (intptr_t) total_displ;
                 total_displ += (attr->u.blkhindx.blklen * 4) * attr->child_type_extent;
                 if (!VALUE_FITS_IN_INTPTR_T(total_displ))
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_BLKHINDX_DISPLS__REDUCING) {
-            for (int i = 0; i < attr->u.blkhindx.numblks; i++) {
-                int idx = attr->u.blkhindx.numblks - i - 1;
+            for (intptr_t i = 0; i < attr->u.blkhindx.numblks; i++) {
+                intptr_t idx = attr->u.blkhindx.numblks - i - 1;
                 attr->u.blkhindx.array_of_displs[idx] = (intptr_t) total_displ;
                 total_displ += (attr->u.blkhindx.blklen + 1) * attr->child_type_extent;
                 if (!VALUE_FITS_IN_INTPTR_T(total_displ))
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_BLKHINDX_DISPLS__REVERSE) {
-            for (int i = 0; i < attr->u.blkhindx.numblks; i++) {
-                int idx = attr->u.blkhindx.numblks - i - 1;
+            for (intptr_t i = 0; i < attr->u.blkhindx.numblks; i++) {
+                intptr_t idx = attr->u.blkhindx.numblks - i - 1;
                 attr->u.blkhindx.array_of_displs[idx] = (intptr_t) total_displ;
                 total_displ += attr->u.blkhindx.blklen * attr->child_type_extent;
                 if (!VALUE_FITS_IN_INTPTR_T(total_displ))
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_BLKHINDX_DISPLS__UNEVEN) {
-            for (int i = 0; i < attr->u.blkhindx.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.blkhindx.numblks; i++) {
                 attr->u.blkhindx.array_of_displs[i] = (intptr_t) total_displ;
                 total_displ += (attr->u.blkhindx.blklen + i) * attr->child_type_extent;
                 if (!VALUE_FITS_IN_INTPTR_T(total_displ))
@@ -668,9 +668,9 @@ static int construct_blkhindx(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s *
 
         /* calculate the extent for our datatype, to decide whether we
          * want to use this or try again */
-        int max_displ_idx = -1;
-        int min_displ_idx = -1;
-        for (int i = 0; i < attr->u.blkhindx.numblks; i++) {
+        intptr_t max_displ_idx = -1;
+        intptr_t min_displ_idx = -1;
+        for (intptr_t i = 0; i < attr->u.blkhindx.numblks; i++) {
             if (max_displ_idx == -1)
                 max_displ_idx = i;
             else if (attr->u.blkhindx.array_of_displs[i] >
@@ -756,28 +756,28 @@ static int construct_indexed(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s * 
 
         count /= attr->u.indexed.numblks;
 
-        DTPI_ALLOC_OR_FAIL(attr->u.indexed.array_of_blklens, attr->u.indexed.numblks * sizeof(int),
-                           rc);
+        DTPI_ALLOC_OR_FAIL(attr->u.indexed.array_of_blklens,
+                           attr->u.indexed.numblks * sizeof(intptr_t), rc);
 
-        int total_blklen = 0;
-        int blklen_attr = DTPI_rand(dtpi) % DTPI_ATTR_INDEXED_BLKLEN__LAST;
+        intptr_t total_blklen = 0;
+        intptr_t blklen_attr = DTPI_rand(dtpi) % DTPI_ATTR_INDEXED_BLKLEN__LAST;
         if (blklen_attr == DTPI_ATTR_INDEXED_BLKLEN__ONE) {
-            for (int i = 0; i < attr->u.indexed.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.indexed.numblks; i++) {
                 attr->u.indexed.array_of_blklens[i] = 1;
                 total_blklen += attr->u.indexed.array_of_blklens[i];
             }
         } else if (blklen_attr == DTPI_ATTR_INDEXED_BLKLEN__SMALL) {
-            for (int i = 0; i < attr->u.indexed.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.indexed.numblks; i++) {
                 attr->u.indexed.array_of_blklens[i] = DTPI_low_count(count);
                 total_blklen += attr->u.indexed.array_of_blklens[i];
             }
         } else if (blklen_attr == DTPI_ATTR_INDEXED_BLKLEN__LARGE) {
-            for (int i = 0; i < attr->u.indexed.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.indexed.numblks; i++) {
                 attr->u.indexed.array_of_blklens[i] = DTPI_high_count(count);
                 total_blklen += attr->u.indexed.array_of_blklens[i];
             }
         } else if (blklen_attr == DTPI_ATTR_INDEXED_BLKLEN__UNEVEN) {
-            for (int i = 0; i < attr->u.indexed.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.indexed.numblks; i++) {
                 if (i % 2 == 0)
                     attr->u.indexed.array_of_blklens[i] = DTPI_low_count(count) + 1;
                 else
@@ -786,7 +786,7 @@ static int construct_indexed(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s * 
             }
             if (attr->u.indexed.numblks % 2) {
                 /* if we have an odd number of blocks, adjust the counts */
-                int idx = attr->u.indexed.numblks - 1;
+                intptr_t idx = attr->u.indexed.numblks - 1;
                 attr->u.indexed.array_of_blklens[idx]--;
                 total_blklen--;
             }
@@ -797,44 +797,44 @@ static int construct_indexed(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s * 
         count *= attr->u.indexed.numblks;
         count /= total_blklen;
 
-        DTPI_ALLOC_OR_FAIL(attr->u.indexed.array_of_displs, attr->u.indexed.numblks * sizeof(int),
-                           rc);
+        DTPI_ALLOC_OR_FAIL(attr->u.indexed.array_of_displs,
+                           attr->u.indexed.numblks * sizeof(intptr_t), rc);
 
         uint64_t total_displ = 0;
         int displs_attr = DTPI_rand(dtpi) % DTPI_ATTR_INDEXED_DISPLS__LAST;
         if (displs_attr == DTPI_ATTR_INDEXED_DISPLS__SMALL) {
-            for (int i = 0; i < attr->u.indexed.numblks; i++) {
-                attr->u.indexed.array_of_displs[i] = (int) total_displ;
+            for (intptr_t i = 0; i < attr->u.indexed.numblks; i++) {
+                attr->u.indexed.array_of_displs[i] = (intptr_t) total_displ;
                 total_displ += attr->u.indexed.array_of_blklens[i] + 1;
                 if (!VALUE_FITS_IN_INT(total_displ))
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_INDEXED_DISPLS__LARGE) {
-            for (int i = 0; i < attr->u.indexed.numblks; i++) {
-                attr->u.indexed.array_of_displs[i] = (int) total_displ;
+            for (intptr_t i = 0; i < attr->u.indexed.numblks; i++) {
+                attr->u.indexed.array_of_displs[i] = (intptr_t) total_displ;
                 total_displ += attr->u.indexed.array_of_blklens[i] * 4;
                 if (!VALUE_FITS_IN_INT(total_displ))
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_INDEXED_DISPLS__REDUCING) {
-            for (int i = 0; i < attr->u.indexed.numblks; i++) {
-                int idx = attr->u.indexed.numblks - i - 1;
-                attr->u.indexed.array_of_displs[idx] = (int) total_displ;
+            for (intptr_t i = 0; i < attr->u.indexed.numblks; i++) {
+                intptr_t idx = attr->u.indexed.numblks - i - 1;
+                attr->u.indexed.array_of_displs[idx] = (intptr_t) total_displ;
                 total_displ += attr->u.indexed.array_of_blklens[idx] + 1;
                 if (!VALUE_FITS_IN_INT(total_displ))
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_INDEXED_DISPLS__REVERSE) {
-            for (int i = 0; i < attr->u.indexed.numblks; i++) {
-                int idx = attr->u.indexed.numblks - i - 1;
-                attr->u.indexed.array_of_displs[idx] = (int) total_displ;
+            for (intptr_t i = 0; i < attr->u.indexed.numblks; i++) {
+                intptr_t idx = attr->u.indexed.numblks - i - 1;
+                attr->u.indexed.array_of_displs[idx] = (intptr_t) total_displ;
                 total_displ += attr->u.indexed.array_of_blklens[idx];
                 if (!VALUE_FITS_IN_INT(total_displ))
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_INDEXED_DISPLS__UNEVEN) {
-            for (int i = 0; i < attr->u.indexed.numblks; i++) {
-                attr->u.indexed.array_of_displs[i] = (int) total_displ;
+            for (intptr_t i = 0; i < attr->u.indexed.numblks; i++) {
+                attr->u.indexed.array_of_displs[i] = (intptr_t) total_displ;
                 total_displ += attr->u.indexed.array_of_blklens[i] + i;
                 if (!VALUE_FITS_IN_INT(total_displ))
                     goto retry;
@@ -845,9 +845,9 @@ static int construct_indexed(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s * 
 
         /* calculate the extent for our datatype, to decide whether we
          * want to use this or try again */
-        int max_displ_idx = -1;
-        int min_displ_idx = -1;
-        for (int i = 0; i < attr->u.indexed.numblks; i++) {
+        intptr_t max_displ_idx = -1;
+        intptr_t min_displ_idx = -1;
+        for (intptr_t i = 0; i < attr->u.indexed.numblks; i++) {
             if (attr->u.indexed.array_of_blklens[i]) {
                 if (max_displ_idx == -1)
                     max_displ_idx = i;
@@ -936,27 +936,27 @@ static int construct_hindexed(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s *
         count /= attr->u.hindexed.numblks;
 
         DTPI_ALLOC_OR_FAIL(attr->u.hindexed.array_of_blklens,
-                           attr->u.hindexed.numblks * sizeof(int), rc);
+                           attr->u.hindexed.numblks * sizeof(intptr_t), rc);
 
-        int total_blklen = 0;
-        int blklen_attr = DTPI_rand(dtpi) % DTPI_ATTR_HINDEXED_BLKLEN__LAST;
+        intptr_t total_blklen = 0;
+        intptr_t blklen_attr = DTPI_rand(dtpi) % DTPI_ATTR_HINDEXED_BLKLEN__LAST;
         if (blklen_attr == DTPI_ATTR_HINDEXED_BLKLEN__ONE) {
-            for (int i = 0; i < attr->u.hindexed.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.hindexed.numblks; i++) {
                 attr->u.hindexed.array_of_blklens[i] = 1;
                 total_blklen += attr->u.hindexed.array_of_blklens[i];
             }
         } else if (blklen_attr == DTPI_ATTR_HINDEXED_BLKLEN__SMALL) {
-            for (int i = 0; i < attr->u.hindexed.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.hindexed.numblks; i++) {
                 attr->u.hindexed.array_of_blklens[i] = DTPI_low_count(count);
                 total_blklen += attr->u.hindexed.array_of_blklens[i];
             }
         } else if (blklen_attr == DTPI_ATTR_HINDEXED_BLKLEN__LARGE) {
-            for (int i = 0; i < attr->u.hindexed.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.hindexed.numblks; i++) {
                 attr->u.hindexed.array_of_blklens[i] = DTPI_high_count(count);
                 total_blklen += attr->u.hindexed.array_of_blklens[i];
             }
         } else if (blklen_attr == DTPI_ATTR_HINDEXED_BLKLEN__UNEVEN) {
-            for (int i = 0; i < attr->u.hindexed.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.hindexed.numblks; i++) {
                 if (i % 2 == 0)
                     attr->u.hindexed.array_of_blklens[i] = DTPI_low_count(count) + 1;
                 else
@@ -965,7 +965,7 @@ static int construct_hindexed(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s *
             }
             if (attr->u.hindexed.numblks % 2) {
                 /* if we have an odd number of blocks, adjust the counts */
-                int idx = attr->u.hindexed.numblks - 1;
+                intptr_t idx = attr->u.hindexed.numblks - 1;
                 attr->u.hindexed.array_of_blklens[idx]--;
                 total_blklen--;
             }
@@ -985,22 +985,22 @@ static int construct_hindexed(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s *
         uint64_t total_displ = 8;
         int displs_attr = DTPI_rand(dtpi) % DTPI_ATTR_HINDEXED_DISPLS__LAST;
         if (displs_attr == DTPI_ATTR_HINDEXED_DISPLS__SMALL) {
-            for (int i = 0; i < attr->u.hindexed.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.hindexed.numblks; i++) {
                 attr->u.hindexed.array_of_displs[i] = (intptr_t) total_displ;
                 total_displ += attr->child_type_extent * (attr->u.hindexed.array_of_blklens[i] + 1);
                 if (!VALUE_FITS_IN_INTPTR_T(total_displ))
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_HINDEXED_DISPLS__LARGE) {
-            for (int i = 0; i < attr->u.hindexed.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.hindexed.numblks; i++) {
                 attr->u.hindexed.array_of_displs[i] = (intptr_t) total_displ;
                 total_displ += attr->child_type_extent * (attr->u.hindexed.array_of_blklens[i] * 4);
                 if (!VALUE_FITS_IN_INTPTR_T(total_displ))
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_HINDEXED_DISPLS__REDUCING) {
-            for (int i = 0; i < attr->u.hindexed.numblks; i++) {
-                int idx = attr->u.hindexed.numblks - i - 1;
+            for (intptr_t i = 0; i < attr->u.hindexed.numblks; i++) {
+                intptr_t idx = attr->u.hindexed.numblks - i - 1;
                 attr->u.hindexed.array_of_displs[idx] = (intptr_t) total_displ;
                 total_displ +=
                     attr->child_type_extent * (attr->u.hindexed.array_of_blklens[idx] + 1);
@@ -1008,15 +1008,15 @@ static int construct_hindexed(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s *
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_HINDEXED_DISPLS__REVERSE) {
-            for (int i = 0; i < attr->u.hindexed.numblks; i++) {
-                int idx = attr->u.hindexed.numblks - i - 1;
+            for (intptr_t i = 0; i < attr->u.hindexed.numblks; i++) {
+                intptr_t idx = attr->u.hindexed.numblks - i - 1;
                 attr->u.hindexed.array_of_displs[idx] = (intptr_t) total_displ;
                 total_displ += attr->child_type_extent * attr->u.hindexed.array_of_blklens[idx];
                 if (!VALUE_FITS_IN_INTPTR_T(total_displ))
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_HINDEXED_DISPLS__UNEVEN) {
-            for (int i = 0; i < attr->u.hindexed.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.hindexed.numblks; i++) {
                 attr->u.hindexed.array_of_displs[i] = (intptr_t) total_displ;
                 total_displ += attr->child_type_extent * (attr->u.hindexed.array_of_blklens[i] + i);
                 if (!VALUE_FITS_IN_INTPTR_T(total_displ))
@@ -1028,9 +1028,9 @@ static int construct_hindexed(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s *
 
         /* calculate the extent for our datatype, to decide whether we
          * want to use this or try again */
-        int max_displ_idx = -1;
-        int min_displ_idx = -1;
-        for (int i = 0; i < attr->u.hindexed.numblks; i++) {
+        intptr_t max_displ_idx = -1;
+        intptr_t min_displ_idx = -1;
+        for (intptr_t i = 0; i < attr->u.hindexed.numblks; i++) {
             if (attr->u.hindexed.array_of_blklens[i]) {
                 if (max_displ_idx == -1)
                     max_displ_idx = i;
@@ -1100,10 +1100,12 @@ static int construct_subarray(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s *
         DTPI_ERR_ASSERT(0, rc);
     }
 
-    DTPI_ALLOC_OR_FAIL(attr->u.subarray.array_of_sizes, attr->u.subarray.ndims * sizeof(int), rc);
+    DTPI_ALLOC_OR_FAIL(attr->u.subarray.array_of_sizes, attr->u.subarray.ndims * sizeof(intptr_t),
+                       rc);
     DTPI_ALLOC_OR_FAIL(attr->u.subarray.array_of_subsizes,
-                       attr->u.subarray.ndims * sizeof(int), rc);
-    DTPI_ALLOC_OR_FAIL(attr->u.subarray.array_of_starts, attr->u.subarray.ndims * sizeof(int), rc);
+                       attr->u.subarray.ndims * sizeof(intptr_t), rc);
+    DTPI_ALLOC_OR_FAIL(attr->u.subarray.array_of_starts, attr->u.subarray.ndims * sizeof(intptr_t),
+                       rc);
 
     uintptr_t tmp_count = count;
     while (1) {
@@ -1115,17 +1117,17 @@ static int construct_subarray(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s *
 
         int subsizes_attr = DTPI_rand(dtpi) % DTPI_ATTR_SUBARRAY_SUBSIZES__LAST;
         if (subsizes_attr == DTPI_ATTR_SUBARRAY_SUBSIZES__ONE) {
-            for (int i = 0; i < attr->u.subarray.ndims; i++) {
+            for (intptr_t i = 0; i < attr->u.subarray.ndims; i++) {
                 attr->u.subarray.array_of_subsizes[i] = 1;
                 count /= attr->u.subarray.array_of_subsizes[i];
             }
         } else if (subsizes_attr == DTPI_ATTR_SUBARRAY_SUBSIZES__SMALL) {
-            for (int i = 0; i < attr->u.subarray.ndims; i++) {
+            for (intptr_t i = 0; i < attr->u.subarray.ndims; i++) {
                 attr->u.subarray.array_of_subsizes[i] = DTPI_low_count(count);
                 count /= attr->u.subarray.array_of_subsizes[i];
             }
         } else if (subsizes_attr == DTPI_ATTR_SUBARRAY_SUBSIZES__LARGE) {
-            for (int i = 0; i < attr->u.subarray.ndims; i++) {
+            for (intptr_t i = 0; i < attr->u.subarray.ndims; i++) {
                 attr->u.subarray.array_of_subsizes[i] = DTPI_high_count(count);
                 count /= attr->u.subarray.array_of_subsizes[i];
             }
@@ -1135,19 +1137,19 @@ static int construct_subarray(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s *
 
         int sizes_attr = DTPI_rand(dtpi) % DTPI_ATTR_SUBARRAY_SIZES__LAST;
         if (sizes_attr == DTPI_ATTR_SUBARRAY_SIZES__ONE) {
-            for (int i = 0; i < attr->u.subarray.ndims; i++) {
+            for (intptr_t i = 0; i < attr->u.subarray.ndims; i++) {
                 attr->u.subarray.array_of_sizes[i] = attr->u.subarray.array_of_subsizes[i];
                 attr->u.subarray.array_of_starts[i] = 0;
                 extent *= attr->u.subarray.array_of_sizes[i];
             }
         } else if (sizes_attr == DTPI_ATTR_SUBARRAY_SIZES__SMALL) {
-            for (int i = 0; i < attr->u.subarray.ndims; i++) {
+            for (intptr_t i = 0; i < attr->u.subarray.ndims; i++) {
                 attr->u.subarray.array_of_sizes[i] = attr->u.subarray.array_of_subsizes[i] + 1;
                 attr->u.subarray.array_of_starts[i] = 1;
                 extent *= attr->u.subarray.array_of_sizes[i];
             }
         } else if (sizes_attr == DTPI_ATTR_SUBARRAY_SIZES__LARGE) {
-            for (int i = 0; i < attr->u.subarray.ndims; i++) {
+            for (intptr_t i = 0; i < attr->u.subarray.ndims; i++) {
                 attr->u.subarray.array_of_sizes[i] = attr->u.subarray.array_of_subsizes[i] * 4;
                 attr->u.subarray.array_of_starts[i] = attr->u.subarray.array_of_subsizes[i];
                 extent *= attr->u.subarray.array_of_sizes[i];
@@ -1236,27 +1238,27 @@ static int construct_struct(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s * a
         count /= attr->u.structure.numblks;
 
         DTPI_ALLOC_OR_FAIL(attr->u.structure.array_of_blklens,
-                           attr->u.structure.numblks * sizeof(int), rc);
+                           attr->u.structure.numblks * sizeof(intptr_t), rc);
 
-        int total_blklen = 0;
-        int blklen_attr = DTPI_rand(dtpi) % DTPI_ATTR_STRUCTURE_BLKLEN__LAST;
+        intptr_t total_blklen = 0;
+        intptr_t blklen_attr = DTPI_rand(dtpi) % DTPI_ATTR_STRUCTURE_BLKLEN__LAST;
         if (blklen_attr == DTPI_ATTR_STRUCTURE_BLKLEN__ONE) {
-            for (int i = 0; i < attr->u.structure.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.structure.numblks; i++) {
                 attr->u.structure.array_of_blklens[i] = 1;
                 total_blklen += attr->u.structure.array_of_blklens[i];
             }
         } else if (blklen_attr == DTPI_ATTR_STRUCTURE_BLKLEN__SMALL) {
-            for (int i = 0; i < attr->u.structure.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.structure.numblks; i++) {
                 attr->u.structure.array_of_blklens[i] = DTPI_low_count(count);
                 total_blklen += attr->u.structure.array_of_blklens[i];
             }
         } else if (blklen_attr == DTPI_ATTR_STRUCTURE_BLKLEN__LARGE) {
-            for (int i = 0; i < attr->u.structure.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.structure.numblks; i++) {
                 attr->u.structure.array_of_blklens[i] = DTPI_high_count(count);
                 total_blklen += attr->u.structure.array_of_blklens[i];
             }
         } else if (blklen_attr == DTPI_ATTR_STRUCTURE_BLKLEN__UNEVEN) {
-            for (int i = 0; i < attr->u.structure.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.structure.numblks; i++) {
                 if (i % 2 == 0)
                     attr->u.structure.array_of_blklens[i] = DTPI_low_count(count) + 1;
                 else
@@ -1265,7 +1267,7 @@ static int construct_struct(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s * a
             }
             if (attr->u.structure.numblks % 2) {
                 /* if we have an odd number of blocks, adjust the counts */
-                int idx = attr->u.structure.numblks - 1;
+                intptr_t idx = attr->u.structure.numblks - 1;
                 attr->u.structure.array_of_blklens[idx]--;
                 total_blklen--;
             }
@@ -1285,7 +1287,7 @@ static int construct_struct(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s * a
         uint64_t total_displ = 8;
         int displs_attr = DTPI_rand(dtpi) % DTPI_ATTR_STRUCTURE_DISPLS__LAST;
         if (displs_attr == DTPI_ATTR_STRUCTURE_DISPLS__SMALL) {
-            for (int i = 0; i < attr->u.structure.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.structure.numblks; i++) {
                 attr->u.structure.array_of_displs[i] = (intptr_t) total_displ;
                 total_displ +=
                     attr->child_type_extent * (attr->u.structure.array_of_blklens[i] + 1);
@@ -1293,7 +1295,7 @@ static int construct_struct(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s * a
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_STRUCTURE_DISPLS__LARGE) {
-            for (int i = 0; i < attr->u.structure.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.structure.numblks; i++) {
                 attr->u.structure.array_of_displs[i] = (intptr_t) total_displ;
                 total_displ +=
                     attr->child_type_extent * (attr->u.structure.array_of_blklens[i] * 4);
@@ -1301,8 +1303,8 @@ static int construct_struct(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s * a
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_STRUCTURE_DISPLS__REDUCING) {
-            for (int i = 0; i < attr->u.structure.numblks; i++) {
-                int idx = attr->u.structure.numblks - i - 1;
+            for (intptr_t i = 0; i < attr->u.structure.numblks; i++) {
+                intptr_t idx = attr->u.structure.numblks - i - 1;
                 attr->u.structure.array_of_displs[idx] = (intptr_t) total_displ;
                 total_displ +=
                     attr->child_type_extent * (attr->u.structure.array_of_blklens[idx] + 1);
@@ -1310,15 +1312,15 @@ static int construct_struct(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s * a
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_STRUCTURE_DISPLS__REVERSE) {
-            for (int i = 0; i < attr->u.structure.numblks; i++) {
-                int idx = attr->u.structure.numblks - i - 1;
+            for (intptr_t i = 0; i < attr->u.structure.numblks; i++) {
+                intptr_t idx = attr->u.structure.numblks - i - 1;
                 attr->u.structure.array_of_displs[idx] = (intptr_t) total_displ;
                 total_displ += attr->child_type_extent * attr->u.structure.array_of_blklens[idx];
                 if (!VALUE_FITS_IN_INTPTR_T(total_displ))
                     goto retry;
             }
         } else if (displs_attr == DTPI_ATTR_STRUCTURE_DISPLS__UNEVEN) {
-            for (int i = 0; i < attr->u.structure.numblks; i++) {
+            for (intptr_t i = 0; i < attr->u.structure.numblks; i++) {
                 attr->u.structure.array_of_displs[i] = (intptr_t) total_displ;
                 total_displ +=
                     attr->child_type_extent * (attr->u.structure.array_of_blklens[i] + i);
@@ -1331,9 +1333,9 @@ static int construct_struct(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s * a
 
         /* calculate the extent for our datatype, to decide whether we
          * want to use this or try again */
-        int max_displ_idx = -1;
-        int min_displ_idx = -1;
-        for (int i = 0; i < attr->u.structure.numblks; i++) {
+        intptr_t max_displ_idx = -1;
+        intptr_t min_displ_idx = -1;
+        for (intptr_t i = 0; i < attr->u.structure.numblks; i++) {
             if (attr->u.structure.array_of_blklens[i]) {
                 if (max_displ_idx == -1)
                     max_displ_idx = i;
@@ -1362,7 +1364,7 @@ static int construct_struct(DTP_pool_s dtp, int attr_tree_depth, DTPI_Attr_s * a
         yaksa_type_t *array_of_types;
 
         DTPI_ALLOC_OR_FAIL(array_of_types, attr->u.structure.numblks * sizeof(yaksa_type_t), rc);
-        for (int i = 0; i < attr->u.structure.numblks; i++)
+        for (intptr_t i = 0; i < attr->u.structure.numblks; i++)
             array_of_types[i] = type;
 
         rc = yaksa_type_create_struct(attr->u.structure.numblks,

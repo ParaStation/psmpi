@@ -13,6 +13,9 @@
 #include <stdint.h>
 #endif
 
+#define __STDC_FORMAT_MACROS 1
+#include <inttypes.h>
+
 #include "test_helpers.h"
 
 #include <ucs/debug/log.h>
@@ -30,23 +33,28 @@ namespace ucs {
  */
 class test_base {
 public:
+    typedef enum {
+        IGNORE_IF_NOT_EXIST,
+        FAIL_IF_NOT_EXIST,
+        SETENV_IF_NOT_EXIST,
+        SKIP_IF_NOT_EXIST
+    } modify_config_mode_t;
+
     test_base();
     virtual ~test_base();
 
     void set_num_threads(unsigned num_threads);
     unsigned num_threads() const;
 
-    void get_config(const std::string& name, std::string& value,
-                            size_t max);
-    virtual void set_config(const std::string& config_str);
+    virtual void set_config(const std::string& config_str = "");
     virtual void modify_config(const std::string& name, const std::string& value,
-                               bool optional = false);
+                               modify_config_mode_t mode = FAIL_IF_NOT_EXIST);
     virtual void push_config();
     virtual void pop_config();
 
 protected:
     class scoped_log_handler {
-public:
+    public:
         scoped_log_handler(ucs_log_func_t handler) {
             ucs_log_push_handler(handler);
         }
@@ -98,6 +106,16 @@ public:
                        const ucs_log_component_config_t *comp_conf,
                        const char *message, va_list ap);
 
+    static ucs_log_func_rc_t
+    wrap_warns_logger(const char *file, unsigned line, const char *function,
+                      ucs_log_level_t level,
+                      const ucs_log_component_config_t *comp_conf,
+                      const char *message, va_list ap);
+
+    unsigned num_errors();
+
+    unsigned num_warnings();
+
     state_t                         m_state;
     bool                            m_initialized;
     unsigned                        m_num_threads;
@@ -113,6 +131,7 @@ public:
     static unsigned                 m_total_warnings;
     static std::vector<std::string> m_errors;
     static std::vector<std::string> m_warnings;
+    static std::vector<std::string> m_first_warns_and_errors;
 
 private:
     void skipped(const test_skip_exception& e);
@@ -120,6 +139,14 @@ private:
     static void push_debug_message_with_limit(std::vector<std::string>& vec,
                                               const std::string& message,
                                               const size_t limit);
+
+    static ucs_log_func_rc_t
+    common_logger(ucs_log_level_t log_level_to_handle, bool print,
+                  std::vector<std::string> &messages_vec, size_t limit,
+                  const char *file, unsigned line, const char *function,
+                  ucs_log_level_t level,
+                  const ucs_log_component_config_t *comp_conf,
+                  const char *message, va_list ap);
 
     static void *thread_func(void *arg);
 
@@ -189,6 +216,14 @@ public:
 
     ucs::ptr_vector<T> m_entities;
 };
+/* Make sure no MADV_DONTCOPY memory areas left behind when constructed.
+ * Tests which use fork()/system() should inherit from this class as 1st parent,
+ * to make sure its constructor is called before any other parent's.
+ */
+class clear_dontcopy_regions {
+public:
+    clear_dontcopy_regions();
+};
 
 }
 
@@ -198,19 +233,23 @@ public:
 /*
  * Helper macro
  */
-#define UCS_TEST_(test_case_name, test_name, parent_class, parent_id, \
+#define UCS_TEST_(test_case_name, test_name, parent_id, \
                   num_threads, skip_cond, skip_reason, ...) \
-class GTEST_TEST_CLASS_NAME_(test_case_name, test_name) : public parent_class { \
+class GTEST_TEST_CLASS_NAME_(test_case_name, test_name) : public test_case_name { \
  public: \
   GTEST_TEST_CLASS_NAME_(test_case_name, test_name)() { \
      set_num_threads(num_threads); \
-     UCS_PP_FOREACH(UCS_TEST_SET_CONFIG, _, __VA_ARGS__) \
+  } \
+ protected: \
+  virtual void init() { \
+      UCS_PP_FOREACH(UCS_TEST_SET_CONFIG, _, __VA_ARGS__) \
+	  test_case_name::init(); \
   } \
  private: \
   virtual void check_skip_test() { \
-     if (skip_cond) { \
-         UCS_TEST_SKIP_R(skip_reason); \
-     } \
+      if (skip_cond) { \
+          UCS_TEST_SKIP_R(skip_reason); \
+      } \
   } \
   virtual void test_body(); \
   static ::testing::TestInfo* const test_info_;\
@@ -224,9 +263,10 @@ class GTEST_TEST_CLASS_NAME_(test_case_name, test_name) : public parent_class { 
         #test_case_name, \
         (num_threads == 1) ? #test_name : #test_name "/mt_" #num_threads, \
         "", "", \
+        ::testing::internal::CodeLocation(__FILE__, __LINE__), \
         (parent_id), \
-        parent_class::SetUpTestCase, \
-        parent_class::TearDownTestCase, \
+		test_case_name::SetUpTestCase, \
+		test_case_name::TearDownTestCase, \
         new ::testing::internal::TestFactoryImpl< \
             GTEST_TEST_CLASS_NAME_(test_case_name, test_name)>); \
 void GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::test_body()
@@ -235,8 +275,8 @@ void GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::test_body()
 /*
  * Define test fixture with modified configuration
  */
-#define UCS_TEST_F(test_fixture, test_name, ...)\
-  UCS_TEST_(test_fixture, test_name, test_fixture, \
+#define UCS_TEST_F(test_fixture, test_name, ...) \
+  UCS_TEST_(test_fixture, test_name, \
             ::testing::internal::GetTypeId<test_fixture>(), \
             1, 0, "", __VA_ARGS__)
 
@@ -245,7 +285,7 @@ void GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::test_body()
  * Define test fixture with modified configuration and check skip condition
  */
 #define UCS_TEST_SKIP_COND_F(test_fixture, test_name, skip_cond, ...) \
-  UCS_TEST_(test_fixture, test_name, test_fixture, \
+  UCS_TEST_(test_fixture, test_name, \
             ::testing::internal::GetTypeId<test_fixture>(), \
             1, skip_cond, #skip_cond, __VA_ARGS__)
 
@@ -254,7 +294,7 @@ void GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::test_body()
  * Define test fixture with multiple threads
  */
 #define UCS_MT_TEST_F(test_fixture, test_name, num_threads, ...) \
-  UCS_TEST_(test_fixture, test_name, test_fixture, \
+  UCS_TEST_(test_fixture, test_name, \
             ::testing::internal::GetTypeId<test_fixture>(), \
             num_threads, 0, "", __VA_ARGS__)
 
@@ -269,9 +309,13 @@ void GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::test_body()
    public: \
     GTEST_TEST_CLASS_NAME_(test_case_name, test_name)() { \
        set_num_threads(num_threads); \
-       UCS_PP_FOREACH(UCS_TEST_SET_CONFIG, _, __VA_ARGS__); \
     } \
     virtual void test_body(); \
+   protected: \
+    virtual void init() { \
+        UCS_PP_FOREACH(UCS_TEST_SET_CONFIG, _, __VA_ARGS__) \
+		test_case_name::init(); \
+    } \
    private: \
     virtual void check_skip_test() { \
         if (skip_cond) { \
@@ -281,7 +325,7 @@ void GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::test_body()
     static int AddToRegistry() { \
         ::testing::UnitTest::GetInstance()->parameterized_test_registry(). \
             GetTestCasePatternHolder<test_case_name>( \
-                #test_case_name, __FILE__, __LINE__)->AddTestPattern( \
+                #test_case_name, ::testing::internal::CodeLocation(__FILE__, __LINE__))->AddTestPattern( \
                     #test_case_name, \
                     (num_threads == 1) ? #test_name : #test_name "/mt_" #num_threads, \
                     new ::testing::internal::TestMetaFactory< \

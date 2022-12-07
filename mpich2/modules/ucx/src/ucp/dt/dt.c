@@ -9,12 +9,21 @@
 #endif
 
 #include "dt.h"
+#include "dt_iov.h"
+#include "dt_contig.h"
 
 #include <ucp/core/ucp_ep.inl>
 #include <ucp/core/ucp_request.h>
 #include <ucp/core/ucp_mm.h>
 #include <ucs/profile/profile.h>
 
+
+const char * ucp_datatype_class_names[] = {
+    [UCP_DATATYPE_CONTIG]   = "contiguous",
+    [UCP_DATATYPE_STRIDED]  = "strided",
+    [UCP_DATATYPE_IOV]      = "iov",
+    [UCP_DATATYPE_GENERIC]  = "generic"
+};
 
 UCS_PROFILE_FUNC(ucs_status_t, ucp_mem_type_unpack,
                  (worker, buffer, recv_data, recv_length, mem_type),
@@ -108,26 +117,21 @@ size_t ucp_dt_pack(ucp_worker_h worker, ucp_datatype_t datatype,
 
     switch (datatype & UCP_DATATYPE_CLASS_MASK) {
     case UCP_DATATYPE_CONTIG:
-        if (UCP_MEM_IS_ACCESSIBLE_FROM_CPU(mem_type)) {
-            UCS_PROFILE_CALL(ucs_memcpy_relaxed, dest,
-                             UCS_PTR_BYTE_OFFSET(src, state->offset), length);
-        } else {
-            ucp_mem_type_pack(worker, dest,
-                              UCS_PTR_BYTE_OFFSET(src, state->offset),
-                              length, mem_type);
-        }
+        ucp_dt_contig_pack(worker, dest,
+                           UCS_PTR_BYTE_OFFSET(src, state->offset),
+                           length, mem_type);
         result_len = length;
         break;
 
     case UCP_DATATYPE_IOV:
-        UCS_PROFILE_CALL_VOID(ucp_dt_iov_gather, dest, src, length,
+        UCS_PROFILE_CALL_VOID(ucp_dt_iov_gather, worker, dest, src, length,
                               &state->dt.iov.iov_offset,
-                              &state->dt.iov.iovcnt_offset);
+                              &state->dt.iov.iovcnt_offset, mem_type);
         result_len = length;
         break;
 
     case UCP_DATATYPE_GENERIC:
-        dt = ucp_dt_generic(datatype);
+        dt         = ucp_dt_to_generic(datatype);
         result_len = UCS_PROFILE_NAMED_CALL("dt_pack", dt->ops.pack,
                                             state->dt.generic.state,
                                             state->offset, dest, length);

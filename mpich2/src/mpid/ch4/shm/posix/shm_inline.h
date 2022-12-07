@@ -14,8 +14,8 @@
 #include "posix_rma.h"
 #include "posix_am.h"
 #include "posix_coll.h"
+#include "posix_part.h"
 #include "posix_unimpl.h"
-#include "posix_proc.h"
 
 /* Not-inlined shm functions */
 #include "posix_noinline.h"

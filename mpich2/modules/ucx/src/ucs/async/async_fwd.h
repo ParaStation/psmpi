@@ -16,6 +16,10 @@ BEGIN_C_DECLS
 
 /** @file async_fwd.h */
 
+
+#define UCS_ASYNC_PTHREAD_ID_NULL ((pthread_t)-1)
+
+
 typedef struct ucs_async_context ucs_async_context_t;
 
 
@@ -28,7 +32,8 @@ typedef struct ucs_async_context ucs_async_context_t;
  * @param events       The events that triggered the callback.
  * @param arg          User-defined argument.
  */
-typedef void (*ucs_async_event_cb_t)(int id, int events, void *arg);
+typedef void (*ucs_async_event_cb_t)(int id, ucs_event_set_types_t events,
+                                     void *arg);
 
 
 /**
@@ -48,8 +53,9 @@ typedef void (*ucs_async_event_cb_t)(int id, int events, void *arg);
  * @return Error code as defined by @ref ucs_status_t.
  */
 ucs_status_t ucs_async_set_event_handler(ucs_async_mode_t mode, int event_fd,
-                                         int events, ucs_async_event_cb_t cb,
-                                         void *arg, ucs_async_context_t *async);
+                                         ucs_event_set_types_t events,
+                                         ucs_async_event_cb_t cb, void *arg,
+                                         ucs_async_context_t *async);
 
 
 /**
@@ -98,7 +104,7 @@ ucs_status_t ucs_async_remove_handler(int id, int sync);
  *
  * @return Error code as defined by @ref ucs_status_t.
  */
-ucs_status_t ucs_async_modify_handler(int fd, int events);
+ucs_status_t ucs_async_modify_handler(int fd, ucs_event_set_types_t events);
 
 
 /**
@@ -108,7 +114,7 @@ ucs_status_t ucs_async_modify_handler(int fd, int events);
  * Allocate and initialize an asynchronous execution context.
  * This can be used to ensure safe event delivery.
  *
- * @param mode            Indicates whether to use signals or polling threads 
+ * @param mode            Indicates whether to use signals or polling threads
  *                        for waiting.
  * @param async_p         Event context pointer to initialize.
  *

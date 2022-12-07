@@ -47,7 +47,7 @@ def printout_make(line, ret, elapsed_time, output):
     global num_failures
 
     sys.stdout.write(colors.PREFIX + ">>>> " + colors.END)
-    sys.stdout.write("return status: ")
+    sys.stdout.write("make return status: ")
     if (ret == 0):
         sys.stdout.write(colors.SUCCESS + "SUCCESS\n" + colors.END)
     else:
@@ -74,7 +74,7 @@ def printout_exec(line, ret, elapsed_time, output):
 
     num_tests = num_tests + 1
     sys.stdout.write(colors.PREFIX + ">>>> " + colors.END)
-    sys.stdout.write("return status: ")
+    sys.stdout.write("exec return status: ")
     if (ret == 0):
         sys.stdout.write(colors.SUCCESS + "SUCCESS\n" + colors.END)
     else:

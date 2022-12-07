@@ -13,25 +13,11 @@ AM_CONDITIONAL([BUILD_CH4],[test "$device_name" = "ch4"])
 AM_COND_IF([BUILD_CH4],[
 AC_MSG_NOTICE([RUNNING PREREQ FOR CH4 DEVICE])
 
-# check availability of libfabric
-if test x"$with_libfabric" != x"embedded" ; then
-    PAC_SET_HEADER_LIB_PATH(libfabric)
-    PAC_PUSH_FLAG(LIBS)
-    PAC_CHECK_HEADER_LIB([rdma/fabric.h], [fabric], [fi_getinfo], [have_libfabric=yes], [have_libfabric=no])
-    PAC_POP_FLAG(LIBS)
-else
-    have_libfabric=no
-fi
-
-# check availability of ucx
-if test x"$with_ucx" != x"embedded" ; then
-    PAC_SET_HEADER_LIB_PATH(ucx)
-    PAC_PUSH_FLAG(LIBS)
-    PAC_CHECK_HEADER_LIB([ucp/api/ucp.h], [ucp], [ucp_config_read], [have_ucx=yes], [have_ucx=no])
-    PAC_POP_FLAG(LIBS)
-else
-    have_ucx=no
-fi
+# check availability of libfabric, ucx (for purpose of setting default)
+m4_define([libfabric_embedded_dir],[modules/libfabric])
+m4_define([ucx_embedded_dir],[modules/ucx])
+PAC_PROBE_HEADER_LIB(libfabric,[rdma/fabric.h], [fabric], [fi_getinfo])
+PAC_PROBE_HEADER_LIB(ucx,[ucp/api/ucp.h], [ucp], [ucp_config_read], [-lucs -lucm -luct])
 
 # the CH4 device depends on the common NBC scheduler code
 build_mpid_common_sched=yes
@@ -44,40 +30,26 @@ MPID_MAX_THREAD_LEVEL=MPI_THREAD_MULTIPLE
 MPID_MAX_PROCESSOR_NAME=128
 MPID_MAX_ERROR_STRING=512
 
+pac_ch4_choice=none
+
 # $device_args - contains the netmods
 if test -z "${device_args}" ; then
   AS_CASE([$host_os],
   [linux*],[
     dnl attempt to choose a netmod from the installed libraries
-    if test $have_ucx = "yes" -a $have_libfabric = "no" ; then
+    if test $pac_have_ucx = "yes" -a $pac_have_libfabric = "no" ; then
+        pac_ch4_choice="ucx-have-ucx"
         ch4_netmods=ucx
-    elif test $have_ucx = "no" -a $have_libfabric = "yes" ; then
+    elif test $pac_have_ucx = "no" -a $pac_have_libfabric = "yes" ; then
+        pac_ch4_choice="ofi-have-libfabric"
         ch4_netmods=ofi
     else
-        dnl prompt the user to choose
-        AC_MSG_ERROR([no ch4 netmod selected
-
-  The default ch4 device could not detect a preferred network
-  library. Supported options are ofi (libfabric) and ucx:
-
-    --with-device=ch4:ofi or --with-device=ch4:ucx
-
-  Configure will use an embedded copy of libfabric or ucx if one is
-  not found in the user environment. An installation can be specified
-  by adding
-
-    --with-libfabric=<path/to/install> or --with-ucx=<path/to/install>
-
-  to the configuration.
-
-  The previous MPICH default device (ch3) is also available and
-  supported with option:
-
-    --with-device=ch3
-    ])
+        pac_ch4_choice="ofi-default"
+        ch4_netmods=ofi
     fi],
     [
       dnl non-linux use libfabric
+      pac_ch4_choice="ofi-default"
       ch4_netmods=ofi
     ])
 else
@@ -210,6 +182,12 @@ MPIDI_${net_upper}_win_t ${net};"
         ch4_netmod_addr_decl="${ch4_netmod_addr_decl} \\
 MPIDI_${net_upper}_addr_t ${net};"
     fi
+    if test -z "$ch4_netmod_part_decl" ; then
+        ch4_netmod_part_decl="MPIDI_${net_upper}_part_t ${net};"
+    else
+        ch4_netmod_part_decl="${ch4_netmod_part_decl} \\
+MPIDI_${net_upper}_part_t ${net};"
+    fi
 
 
 
@@ -237,6 +215,7 @@ AC_SUBST(ch4_netmod_dt_decl)
 AC_SUBST(ch4_netmod_win_decl)
 AC_SUBST(ch4_netmod_addr_decl)
 AC_SUBST(ch4_netmod_op_decl)
+AC_SUBST(ch4_netmod_part_decl)
 AM_SUBST_NOTMAKE(ch4_netmod_pre_include)
 AM_SUBST_NOTMAKE(ch4_netmod_coll_globals_default)
 AM_SUBST_NOTMAKE(ch4_netmod_coll_params_include)
@@ -247,6 +226,7 @@ AM_SUBST_NOTMAKE(ch4_netmod_dt_decl)
 AM_SUBST_NOTMAKE(ch4_netmod_win_decl)
 AM_SUBST_NOTMAKE(ch4_netmod_addr_decl)
 AM_SUBST_NOTMAKE(ch4_netmod_op_decl)
+AM_SUBST_NOTMAKE(ch4_netmod_part_decl)
 
 AC_ARG_ENABLE(ch4-netmod-inline,
     [--enable-ch4-netmod-inline
@@ -325,41 +305,33 @@ AC_DEFUN([PAC_SUBCFG_BODY_]PAC_SUBCFG_AUTO_SUFFIX,[
 AM_COND_IF([BUILD_CH4],[
 AC_MSG_NOTICE([RUNNING CONFIGURE FOR CH4 DEVICE])
 
-AC_ARG_WITH(ch4-rank-bits, [--with-ch4-rank-bits=16/32     Number of bits allocated to the rank field (16 or 32)],
-			   [ rankbits=$withval ],
-			   [ rankbits=32 ])
-if test "$rankbits" != "16" -a "$rankbits" != "32" ; then
-   AC_MSG_ERROR(Only 16 or 32-bit ranks are supported)
-fi
-AC_DEFINE_UNQUOTED(CH4_RANK_BITS,$rankbits,[Define the number of CH4_RANK_BITS])
-
-AC_ARG_ENABLE(ch4r-per-comm-msg-queue,
-    [--enable-ch4r-per-comm-msg-queue=option
-       Enable use of per-communicator message queues for posted recvs/unexpected messages
-         yes       - Use per-communicator message queue. (Default)
-         no        - Use global queue for posted recvs/unexpected messages.
-    ],,enable_ch4r_per_comm_msg_queue=yes)
-
-if test "$enable_ch4r_per_comm_msg_queue" = "yes" ; then
-    AC_DEFINE([MPIDI_CH4U_USE_PER_COMM_QUEUE], [1],
-        [Define if CH4U will use per-communicator message queues])
-fi
-
+dnl Note: the maximum of 64 is due to the fact that we use 6 bits in the
+dnl request handle to encode pool index
 AC_ARG_WITH(ch4-max-vcis,
     [--with-ch4-max-vcis=<N>
-       Select max number of VCIs to configure (default is 1; minimum is 1)],
-    [], [with_ch4_max_vcis=1 ])
-if test $with_ch4_max_vcis -le 0 ; then
-   AC_MSG_ERROR(Number of VCIs must be greater than 0)
+       Select max number of VCIs to configure (default is 1; minimum is 1; maximum is 64)],
+    [], [with_ch4_max_vcis=default])
+
+if test "$with_ch4_max_vcis" = "default" ; then
+    if test $thread_granularity = MPICH_THREAD_GRANULARITY__VCI ; then
+        with_ch4_max_vcis=64
+    else
+        with_ch4_max_vcis=1
+    fi
+else
+    if test $thread_granularity != MPICH_THREAD_GRANULARITY__VCI ; then
+        AC_MSG_ERROR(Option --with-ch4-max-vcis requires --enable-thread-cs=per-vci)
+    fi
 fi
-if test $with_ch4_max_vcis -gt 1 -a $thread_granularity != MPICH_THREAD_GRANULARITY__VCI ; then
-    AC_MSG_ERROR(CH4_MAX_VCIS greater than 1 requires --enable-thread-cs=per-vci)
+
+if test $with_ch4_max_vcis -lt 1 -o $with_ch4_max_vcis -gt 64; then
+   AC_MSG_ERROR(Number of VCIs must be between 1 and 64)
 fi
 AC_DEFINE_UNQUOTED([MPIDI_CH4_MAX_VCIS], [$with_ch4_max_vcis], [Number of VCIs configured in CH4])
 
 # Check for enable-ch4-vci-method choice
 AC_ARG_ENABLE(ch4-vci-method,
-	AC_HELP_STRING([--enable-ch4-vci-method=type],
+	AS_HELP_STRING([--enable-ch4-vci-method=type],
 			[Choose the method used for vci selection when enable-thread-cs=per-vci is selected.
                           Values may be default, zero, communicator, tag, implicit, explicit]),,enable_ch4_vci_method=default)
 
@@ -403,6 +375,7 @@ AC_ARG_ENABLE(ch4-mt,
        Select model for multi-threading
          direct    - Each thread directly accesses lower-level fabric (default)
          handoff   - Use the hand-off model (spawns progress thread)
+         lockless  - Use the thread safe serialization model supported by the provider
          runtime   - Determine the model at runtime through a CVAR
     ],,enable_ch4_mt=direct)
 
@@ -415,6 +388,10 @@ case $enable_ch4_mt in
          AC_DEFINE([MPIDI_CH4_USE_MT_HANDOFF], [1],
             [Define to enable hand-off multi-threading model])
         ;;
+     lockless)
+         AC_DEFINE([MPIDI_CH4_USE_MT_LOCKLESS], [1],
+            [Define to enable lockless multi-threading model])
+        ;;
      runtime)
          AC_DEFINE([MPIDI_CH4_USE_MT_RUNTIME], [1],
             [Define to enable runtime multi-threading model])
@@ -426,11 +403,11 @@ esac
 
 #
 # Dependency checks for CH4 MT modes
-# Currently, "handoff" and "runtime" require the followings:
+# Currently, "handoff" and "runtime" require the following:
 # - izem linked in (--with-zm-prefix)
 # - enable-thread-cs=per-vci
 #
-if test "$enable_ch4_mt" != "direct"; then
+if test "$enable_ch4_mt" != "direct" -a "$enable_ch4_mt" != "lockless"; then
     if test "${with_zm_prefix}" == "no" -o "${with_zm_prefix}" == "none" -o "${enable_izem_queue}" != "yes" ; then
         AC_MSG_ERROR([Multi-threading model `${enable_ch4_mt}` requires izem queue. Set `--enable-izem={queue|all} --with-zm-prefix` and retry.])
     elif test "${enable_thread_cs}" != "per-vci" -a "${enable_thread_cs}" != "per_vci"; then
@@ -462,5 +439,57 @@ AM_CONDITIONAL([BUILD_CH4_SHM],[test "${with_ch4_shmmods}" != "none" -a "${with_
 AM_CONDITIONAL([BUILD_CH4_COLL_TUNING],[test -e "$srcdir/src/mpid/ch4/src/ch4_coll_globals.c"])
 
 ])dnl end _BODY
+
+dnl Summary notes at the end of configure
+AC_DEFUN([PAC_CH4_CONFIG_SUMMARY], [
+    t_netmod=$ch4_netmods
+    if test "$ch4_netmods" = "ofi" -a "$with_libfabric" = "embedded"; then
+        t_netmod="ofi (embedded libfabric)"
+    elif test "$ch4_netmods" = "ucx" -a "$with_ucx" = "embedded"; then
+        t_netmod="ucx (embedded)"
+    fi
+    t_xpmem=""
+    if test "$pac_have_xpmem" = "yes" ; then
+        t_xpmem="xpmem"
+    fi
+    t_gpu="disabled"
+    if test -n "${GPU_SUPPORT}" ; then
+        t_gpu="${GPU_SUPPORT}"
+    fi
+    cat <<EOF
+***
+*** device      : ch4:${t_netmod}
+*** shm feature : ${ch4_shm} $t_xpmem
+*** gpu support : ${t_gpu}
+***
+EOF    
+
+    if test "$pac_ch4_choice" = "ofi-default" ; then
+        cat <<EOF
+  MPICH is configured with device ch4:ofi, which should work
+  for TCP networks and any high-bandwidth interconnect
+  supported by libfabric. MPICH can also be configured with
+  "--with-device=ch4:ucx", which should work for TCP networks
+  and any high-bandwidth interconnect supported by the UCX
+  library. In addition, the legacy device ch3 (--with-device=ch3)
+  is also available. 
+EOF        
+    elif test "$pac_ch4_choice" = "ofi-have-libfabric" ; then
+        cat <<EOF
+  MPICH is configured with device ch4:ofi using libfabric.
+  Alternatively, MPICH can be configured using
+  "--with-device=ch4:ucx" to use the UCX library. In addition,
+  the legacy device ch3 (--with-device=ch3) is also available.
+EOF        
+    elif test "$pac_ch4_choice" = "ofi-have-ucx" ; then
+        cat <<EOF
+  MPICH is configured with device ch4:ucx using UCX library.
+  Alternatively, MPICH can be configured using
+  "--with-device=ch4:ofi" to use the libfabric library. In
+  addition, the legacy device ch3 (--with-device=ch3) is also
+  available.
+EOF        
+    fi
+])
 
 [#] end of __file__

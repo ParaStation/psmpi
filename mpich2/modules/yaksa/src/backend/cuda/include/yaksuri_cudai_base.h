@@ -28,7 +28,7 @@ extern yaksuri_cudai_global_s yaksuri_cudai_global;
 typedef struct yaksuri_cudai_md_s {
     union {
         struct {
-            int count;
+            intptr_t count;
             intptr_t stride;
             struct yaksuri_cudai_md_s *child;
         } contig;
@@ -36,20 +36,20 @@ typedef struct yaksuri_cudai_md_s {
             struct yaksuri_cudai_md_s *child;
         } resized;
         struct {
-            int count;
-            int blocklength;
+            intptr_t count;
+            intptr_t blocklength;
             intptr_t stride;
             struct yaksuri_cudai_md_s *child;
         } hvector;
         struct {
-            int count;
-            int blocklength;
+            intptr_t count;
+            intptr_t blocklength;
             intptr_t *array_of_displs;
             struct yaksuri_cudai_md_s *child;
         } blkhindx;
         struct {
-            int count;
-            int *array_of_blocklengths;
+            intptr_t count;
+            intptr_t *array_of_blocklengths;
             intptr_t *array_of_displs;
             struct yaksuri_cudai_md_s *child;
         } hindexed;

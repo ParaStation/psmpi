@@ -1,6 +1,7 @@
 /**
 * Copyright (C) Mellanox Technologies Ltd. 2001-2017.  ALL RIGHTS RESERVED.
 * Copyright (C) UT-Battelle, LLC. 2015. ALL RIGHTS RESERVED.
+* Copyright (C) Arm, Ltd. 2021. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -25,6 +26,9 @@
  */
 #define UCS_STATIC_ASSERT(_cond) \
      switch(0) {case 0:case (_cond):;}
+
+/* Maximal allocation size for on-stack buffers */
+#define UCS_ALLOCA_MAX_SIZE  1200
 
 /* Aliasing structure */
 #define UCS_S_MAY_ALIAS __attribute__((may_alias))
@@ -62,7 +66,7 @@
  * which can't optimize properly.
  */
 #if (((__GNUC__ == 4) && (__GNUC_MINOR__ == 1)) || !defined(__OPTIMIZE__))
-#  define UCS_V_INITIALIZED(_v)  (_v = (typeof(_v))0)
+#  define UCS_V_INITIALIZED(_v)  (_v = (ucs_typeof(_v))0)
 #else
 #  define UCS_V_INITIALIZED(_v)  ((void)0)
 #endif
@@ -96,7 +100,7 @@
 
 /* Helper macro to calculate an address with offset equal to size of _type */
 #define UCS_PTR_TYPE_OFFSET(_ptr, _type) \
-    ((void *)((typeof(_type) *)(_ptr) + 1))
+    ((void *)((ucs_typeof(_type) *)(_ptr) + 1))
 
 /* Helper macro to calculate ptr difference (_end - _start) */
 #define UCS_PTR_BYTE_DIFF(_start, _end) \
@@ -107,16 +111,8 @@
  * Size of statically-declared array
  */
 #define ucs_static_array_size(_array) \
-    ({ \
-        UCS_STATIC_ASSERT((void*)&(_array) == (void*)&((_array)[0])); \
-        ( sizeof(_array) / sizeof((_array)[0]) ); \
-    })
-
-/**
- * @return count of elements in const-size array
- */
-#define ucs_array_size(_array) \
     (sizeof(_array) / sizeof((_array)[0]))
+
 
 /**
  * @return Offset of _member in _type. _type is a structure type.
@@ -124,17 +120,29 @@
 #define ucs_offsetof(_type, _member) \
     ((unsigned long)&( ((_type*)0)->_member ))
 
+
 /**
  * Get a pointer to a struct containing a member.
  *
- * @param __ptr   Pointer to the member.
- * @param type    Container type.
- * @param member  Element member inside the container.
+ * @param _ptr     Pointer to the member.
+ * @param _type    Container type.
+ * @param _member  Element member inside the container.
 
  * @return Address of the container structure.
  */
 #define ucs_container_of(_ptr, _type, _member) \
     ( (_type*)( (char*)(void*)(_ptr) - ucs_offsetof(_type, _member) )  )
+
+
+/**
+ * Get the type of a structure or variable.
+ * 
+ * @param _type  Return the type of this argument.
+ * 
+ * @return The type of the given argument.
+ */
+#define ucs_typeof(_type) \
+    __typeof__(_type)
 
 
 /**
@@ -164,7 +172,7 @@
  * @return Type of _field in _type.
  */
 #define ucs_field_type(_type, _field) \
-    typeof(((_type*)0)->_field)
+    ucs_typeof(((_type*)0)->_field)
 
 /**
  * Prevent compiler from reordering instructions
@@ -194,5 +202,11 @@
  */
 #define UCS_STATIC_CLEANUP \
     static void UCS_F_DTOR UCS_PP_APPEND_UNIQUE_ID(ucs_initializer_dtor)()
+
+/*
+ * Check if the two types are the same
+ */
+#define ucs_same_type(_type1, _type2) \
+    __builtin_types_compatible_p(_type1, _type2)
 
 #endif /* UCS_COMPILER_DEF_H */

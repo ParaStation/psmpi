@@ -15,14 +15,7 @@
 /* Macros and inlines */
 #define MPIDIU_MAP_NOT_FOUND      ((void*)(-1UL))
 
-/* VCI attributes */
-enum {
-    MPIDI_VCI_TX = 0x1,         /* Can send */
-    MPIDI_VCI_RX = 0x2, /* Can receive */
-};
-
 #define MPIDIU_REQUEST_POOL_NUM_CELLS_PER_CHUNK (1024)
-#define MPIDIU_REQUEST_POOL_MAX_NUM_CELLS (257 * 1024)
 #define MPIDIU_REQUEST_POOL_CELL_SIZE (256)
 
 /* Flags for MPIDI_Progress_test
@@ -30,13 +23,14 @@ enum {
  * Flags argument allows to control execution of different parts of progress function,
  * for aims of prioritization of different transports and reentrant-safety of progress call.
  *
- * MPIDI_PROGRESS_HOOKS - enables progress on progress hooks. Hooks may invoke upper-level logic internaly,
+ * MPIDI_PROGRESS_HOOKS - enables progress on progress hooks. Hooks may invoke upper-level logic internally,
  *      that's why MPIDI_Progress_test call with MPIDI_PROGRESS_HOOKS set isn't reentrant safe, and shouldn't be called from netmod's fallback logic.
  * MPIDI_PROGRESS_NM and MPIDI_PROGRESS_SHM enables progress on transports only, and guarantee reentrant-safety.
  */
 #define MPIDI_PROGRESS_HOOKS  (1)
 #define MPIDI_PROGRESS_NM     (1<<1)
 #define MPIDI_PROGRESS_SHM    (1<<2)
+#define MPIDI_PROGRESS_NM_LOCKLESS     (1<<3)   /* to support lockless MT model */
 
 #define MPIDI_PROGRESS_ALL (MPIDI_PROGRESS_HOOKS|MPIDI_PROGRESS_NM|MPIDI_PROGRESS_SHM)
 
@@ -67,9 +61,10 @@ typedef struct MPIDIG_hdr_t {
     int tag;
     MPIR_Context_id_t context_id;
     int error_bits;
-    uint8_t flags;
+    int flags;
     MPIR_Request *sreq_ptr;
-    size_t data_sz;
+    MPI_Aint data_sz;
+    MPI_Aint rndv_hdr_sz;
 } MPIDIG_hdr_t;
 
 typedef struct MPIDIG_send_cts_msg_t {
@@ -84,6 +79,23 @@ typedef struct MPIDIG_send_data_msg_t {
 typedef struct MPIDIG_ssend_ack_msg_t {
     MPIR_Request *sreq_ptr;
 } MPIDIG_ssend_ack_msg_t;
+
+typedef struct MPIDIG_part_send_init_msg_t {
+    int src_rank;
+    int tag;
+    MPIR_Context_id_t context_id;
+    MPIR_Request *sreq_ptr;
+    MPI_Aint data_sz;           /* size of entire send data */
+} MPIDIG_part_send_init_msg_t;
+
+typedef struct MPIDIG_part_cts_msg_t {
+    MPIR_Request *sreq_ptr;
+    MPIR_Request *rreq_ptr;
+} MPIDIG_part_cts_msg_t;
+
+typedef struct MPIDIG_part_send_data_msg_t {
+    MPIR_Request *rreq_ptr;
+} MPIDIG_part_send_data_msg_t;
 
 typedef struct MPIDIG_win_cntrl_msg_t {
     uint64_t win_id;
@@ -100,6 +112,7 @@ typedef struct MPIDIG_put_msg_t {
     MPI_Aint target_datatype;
     MPI_Aint target_true_lb;
     int flattened_sz;
+    MPI_Aint origin_data_sz;
 } MPIDIG_put_msg_t;
 
 typedef struct MPIDIG_put_dt_ack_msg_t {
@@ -133,6 +146,7 @@ typedef struct MPIDIG_get_msg_t {
 
 typedef struct MPIDIG_get_ack_msg_t {
     MPIR_Request *greq_ptr;
+    MPI_Aint target_data_sz;
 } MPIDIG_get_ack_msg_t;
 
 typedef struct MPIDIG_cswap_req_msg_t {
@@ -157,7 +171,7 @@ typedef struct MPIDIG_acc_req_msg_t {
     MPI_Datatype target_datatype;
     MPI_Op op;
     MPI_Aint target_disp;
-    uint64_t result_data_sz;
+    MPI_Aint result_data_sz;
     int n_iov;
     int flattened_sz;
 } MPIDIG_acc_req_msg_t;
@@ -170,17 +184,22 @@ typedef struct MPIDIG_acc_ack_msg_t {
 
 typedef MPIDIG_acc_ack_msg_t MPIDIG_get_acc_ack_msg_t;
 
-typedef struct MPIDIG_comm_req_list_t {
-    MPIR_Comm *comm[2][4];
-    MPIDIG_rreq_t *uelist[2][4];
-} MPIDIG_comm_req_list_t;
+typedef struct {
+    MPIR_OBJECT_HEADER;
+    int size;
+    MPIDI_av_entry_t table[];
+} MPIDI_av_table_t;
 
 typedef struct {
     int max_n_avts;
     int n_avts;
-    int next_avtid;
-    int *free_avtid;
+    int n_free;
+    MPIDI_av_table_t *av_table0;
+    MPIDI_av_table_t **av_tables;
 } MPIDIU_avt_manager;
+
+#define MPIDIU_get_av_table(avtid) (MPIDI_global.avt_mgr.av_tables[(avtid)])
+#define MPIDIU_get_av(avtid, lpid) (MPIDI_global.avt_mgr.av_tables[(avtid)]->table[(lpid)])
 
 typedef struct {
     uint64_t key;
@@ -201,55 +220,59 @@ typedef struct {
 #define MPIDIU_THREAD_PROGRESS_MUTEX      MPIDI_global.m[0]
 #define MPIDIU_THREAD_UTIL_MUTEX          MPIDI_global.m[1]
 
-/* Protects MPIDIG global structures (e.g. global unexpected message queue) */
-#define MPIDIU_THREAD_MPIDIG_GLOBAL_MUTEX MPIDI_global.m[2]
-
 #define MPIDIU_THREAD_SCHED_LIST_MUTEX    MPIDI_global.m[3]
 #define MPIDIU_THREAD_TSP_QUEUE_MUTEX     MPIDI_global.m[4]
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
 #define MPIDIU_THREAD_HCOLL_MUTEX         MPIDI_global.m[5]
 #endif
 
 /* Protects dynamic process tag, connection_id, avtable etc. */
 #define MPIDIU_THREAD_DYNPROC_MUTEX       MPIDI_global.m[6]
 
-#define MAX_CH4_MUTEXES 7
+/* Protects alloc_mem hash */
+#define MPIDIU_THREAD_ALLOC_MEM_MUTEX     MPIDI_global.m[7]
+
+#define MAX_CH4_MUTEXES 8
+
+extern MPID_Thread_mutex_t MPIR_THREAD_VCI_HANDLE_POOL_MUTEXES[REQUEST_POOL_MAX];
 
 /* per-VCI structure -- using union to force minimum size */
-typedef union MPIDI_vci {
-    struct {
-        int attr;
-        MPID_Thread_mutex_t lock;
-    } vci;
-    char pad[MPL_CACHELINE_SIZE];
-} MPIDI_vci_t;
+typedef struct MPIDI_per_vci {
+    MPID_Thread_mutex_t lock;
+    /* The progress counts are mostly accessed in a VCI critical section and thus updated in a
+     * relaxed manner.  MPL_atomic_int_t is used here only for MPIDI_set_progress_vci() and
+     * MPIDI_set_progress_vci_n(), which access these progress counts outside a VCI critical
+     * section. */
+    MPL_atomic_int_t progress_count;
 
-#define MPIDI_VCI(i) MPIDI_global.vci[i].vci
+    MPIR_Request *posted_list;
+    MPIR_Request *unexp_list;
+    MPIDU_genq_private_pool_t request_pool;
+    MPIDU_genq_private_pool_t unexp_pack_buf_pool;
+
+    MPIDIG_req_ext_t *cmpl_list;
+    MPL_atomic_uint64_t exp_seq_no;
+    MPL_atomic_uint64_t nxt_seq_no;
+
+    char pad MPL_ATTR_ALIGNED(MPL_CACHELINE_SIZE);
+} MPIDI_per_vci_t;
+
+#define MPIDI_VCI(i) MPIDI_global.per_vci[i]
 
 typedef struct MPIDI_CH4_Global_t {
-    MPIR_Request *request_test;
-    MPIR_Comm *comm_test;
     int pname_set;
     int pname_len;
     char pname[MPI_MAX_PROCESSOR_NAME];
     char parent_port[MPIDI_MAX_KVS_VALUE_LEN];
     int is_initialized;
     MPIDIU_avt_manager avt_mgr;
-    int is_ch4u_initialized;
-    int **node_map, max_node_id;
-    MPIDIG_comm_req_list_t *comm_req_lists;
     MPIR_Commops MPIR_Comm_fns_store;
     MPID_Thread_mutex_t m[MAX_CH4_MUTEXES];
     MPIDIU_map_t *win_map;
-#ifndef MPIDI_CH4U_USE_PER_COMM_QUEUE
-    MPIDIG_rreq_t *posted_list;
-    MPIDIG_rreq_t *unexp_list;
-#endif
-    MPIDIG_req_ext_t *cmpl_list;
-    MPL_atomic_uint64_t exp_seq_no;
-    MPL_atomic_uint64_t nxt_seq_no;
-    MPIDU_genq_private_pool_t request_pool;
-    MPIDU_genq_private_pool_t unexp_pack_buf_pool;
+
+    MPIR_Request *part_posted_list;
+    MPIR_Request *part_unexp_list;
+
 #ifdef HAVE_SIGNAL
     void (*prev_sighandler) (int);
     volatile int sigusr1_count;
@@ -257,8 +280,7 @@ typedef struct MPIDI_CH4_Global_t {
 #endif
 
     int n_vcis;
-    MPIDI_vci_t vci[MPIDI_CH4_MAX_VCIS];
-    int progress_counts[MPIDI_CH4_MAX_VCIS];
+    MPIDI_per_vci_t per_vci[MPIDI_CH4_MAX_VCIS];
 
 #if defined(MPIDI_CH4_USE_WORK_QUEUES)
     /* TODO: move into MPIDI_vci to have per-vci workqueue */

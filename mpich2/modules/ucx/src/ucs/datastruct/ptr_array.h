@@ -9,7 +9,7 @@
 #define PTR_ARRAY_H_
 
 #include <ucs/sys/math.h>
-#include <ucs/debug/memtrack.h>
+#include <ucs/debug/memtrack_int.h>
 #include <ucs/type/spinlock.h>
 #include <ucs/debug/assert.h>
 
@@ -27,7 +27,7 @@
  * free_ahead is the number of consecutive free elements ahead.
  *
  * The remove / insert algorithm works as follows:
- * On remove of an index: If start[index+1] is free ==> 
+ * On remove of an index: If start[index+1] is free ==>
  * start[index].free_elements_ahead = start[index+1].free_elements_ahead+1
  * Then, the removed index is pushed to the HEAD of the freelist.
  * NOTE, that if start[index+1] is free ==> It's already in the freelist !!!
@@ -64,12 +64,11 @@ typedef uint64_t ucs_ptr_array_elem_t;
  * A sparse array of pointers.
  */
 typedef struct ucs_ptr_array {
-    ucs_ptr_array_elem_t     *start;
-    unsigned                 freelist;
-    unsigned                 size;
-#ifdef ENABLE_MEMTRACK
-    char                     name[64];
-#endif
+    ucs_ptr_array_elem_t     *start;   /* Pointer to the allocated array */
+    unsigned                 freelist; /* Index of first free slot (see above) */
+    unsigned                 size;     /* Number of allocated array slots */
+    unsigned                 count;    /* Actual number of occupied slots */
+    const char               *name;    /* Name of this pointer array */
 } ucs_ptr_array_t;
 
 
@@ -99,10 +98,10 @@ void ucs_ptr_array_init(ucs_ptr_array_t *ptr_array, const char *name);
  * Cleanup the array.
  *
  * @param ptr_array  Pointer to a ptr array.
- *
- * @note All values should already be removed from it.
+ * @param leak_check Whether to check for leaks (elements which were not
+ *                   freed from this ptr array).
  */
-void ucs_ptr_array_cleanup(ucs_ptr_array_t *ptr_array);
+void ucs_ptr_array_cleanup(ucs_ptr_array_t *ptr_array, int leak_check);
 
 
 /**
@@ -118,6 +117,23 @@ void ucs_ptr_array_cleanup(ucs_ptr_array_t *ptr_array);
  * @note The array will grow if needed.
  */
 unsigned ucs_ptr_array_insert(ucs_ptr_array_t *ptr_array, void *value);
+
+
+/**
+ * Allocate a number of contiguous array slots.
+ *
+ * @param [in] ptr_array      Pointer to a ptr array.
+ * @param [in] element_count  Number of slots to allocate
+ *
+ * @return The index of the requested amount of slots (initialized to zero).
+ *
+ * Complexity: O(n*n) - not recommended for data-path
+ *
+ * @note The array will grow if needed.
+ * @note Use @ref ucs_ptr_array_remove to "deallocate" the slots.
+ */
+unsigned
+ucs_ptr_array_bulk_alloc(ucs_ptr_array_t *ptr_array, unsigned element_count);
 
 
 /**
@@ -158,16 +174,30 @@ void *ucs_ptr_array_replace(ucs_ptr_array_t *ptr_array, unsigned element_index,
 
 
 /**
- * Get the current size of the ptr array
+ * Get the current number of elements in the ptr array.
  *
  * @param [in] ptr_array      Pointer to a ptr array.
  *
- * @return Size of the ptr array.
+ * @return Number of elements of the ptr array.
  */
 static UCS_F_ALWAYS_INLINE unsigned
-ucs_ptr_array_get_size(ucs_ptr_array_t *ptr_array)
+ucs_ptr_array_get_elem_count(ucs_ptr_array_t *ptr_array)
 {
-    return ptr_array->size;
+    return ptr_array->count;
+}
+
+
+/**
+ * Check whether the ptr array is empty.
+ *
+ * @param [in] ptr_array      Pointer to a ptr array.
+ *
+ * @return Whether the ptr array is empty.
+ */
+static UCS_F_ALWAYS_INLINE int
+ucs_ptr_array_is_empty(ucs_ptr_array_t *ptr_array)
+{
+    return ptr_array->count == 0;
 }
 
 
@@ -183,7 +213,7 @@ ucs_ptr_array_get_size(ucs_ptr_array_t *ptr_array)
  * Complexity: O(1)
  */
 #define ucs_ptr_array_lookup(_ptr_array, _index, _var) \
-    (((_index) >= (_ptr_array)->size) ? \
+    (ucs_unlikely((_index) >= (_ptr_array)->size) ? \
                     (UCS_V_INITIALIZED(_var), 0) : \
                     !__ucs_ptr_array_is_free(_var = (void*)((_ptr_array)->start[_index])))
 
@@ -211,7 +241,6 @@ __ucs_ptr_array_for_each_get_step_size(ucs_ptr_array_t *ptr_array,
 
     /* Prefetch the next item */
     ucs_prefetch(&ptr_array->start[element_index + size_elem]);
-    ucs_assert(size_elem > 0);
 
     return size_elem;
 }
@@ -270,10 +299,11 @@ ucs_ptr_array_locked_init(ucs_ptr_array_locked_t *locked_ptr_array,
  * Cleanup the locked array.
  *
  * @param [in] locked_ptr_array    Pointer to a locked ptr array.
- *
- * @note All values should already be removed from it.
+ * @param leak_check Whether to check for leaks (elements which were not
+ *                   freed from this ptr array).
  */
-void ucs_ptr_array_locked_cleanup(ucs_ptr_array_locked_t *locked_ptr_array);
+void ucs_ptr_array_locked_cleanup(ucs_ptr_array_locked_t *locked_ptr_array,
+                                  int leak_check);
 
 
 /**
@@ -290,6 +320,24 @@ void ucs_ptr_array_locked_cleanup(ucs_ptr_array_locked_t *locked_ptr_array);
  */
 unsigned ucs_ptr_array_locked_insert(ucs_ptr_array_locked_t *locked_ptr_array,
                                      void *value);
+
+
+/**
+ * Allocate a number of contiguous slots in the locked array.
+ *
+ * @param [in] locked_ptr_array  Pointer to a locked ptr array.
+ * @param [in] element_count     Number of slots to allocate
+ *
+ * @return The index of the requested amount of slots (initialized to zero).
+ *
+ * Complexity: O(n*n) - not recommended for data-path
+ *
+ * @note The array will grow if needed.
+ * @note Use @ref ucs_ptr_array_locked_remove to "deallocate" the slots.
+ */
+unsigned
+ucs_ptr_array_locked_bulk_alloc(ucs_ptr_array_locked_t *locked_ptr_array,
+                                unsigned element_count);
 
 
 /**
@@ -377,16 +425,30 @@ ucs_ptr_array_locked_lookup(ucs_ptr_array_locked_t *locked_ptr_array,
 
 
 /**
- * Get the current size of the locked ptr array
+ * Get the number of elements in the locked ptr array
  *
  * @param [in] locked_ptr_array      Pointer to a locked ptr array.
  *
- * @return Size of the locked ptr array.
+ * @return Number of elements in the locked ptr array.
  */
 static UCS_F_ALWAYS_INLINE unsigned
-ucs_ptr_array_locked_get_size(ucs_ptr_array_locked_t *locked_ptr_array)
+ucs_ptr_array_locked_get_elem_count(ucs_ptr_array_locked_t *locked_ptr_array)
 {
-    return ucs_ptr_array_get_size(&locked_ptr_array->super);
+    return ucs_ptr_array_get_elem_count(&locked_ptr_array->super);
+}
+
+
+/**
+ * Check whether the locked ptr array is empty.
+ *
+ * @param [in] ptr_array      Pointer to a locked ptr array.
+ *
+ * @return Whether the locked ptr array is empty.
+ */
+static UCS_F_ALWAYS_INLINE int
+ucs_ptr_array_locked_is_empty(ucs_ptr_array_locked_t *locked_ptr_array)
+{
+    return ucs_ptr_array_is_empty(&locked_ptr_array->super);
 }
 
 
@@ -414,7 +476,7 @@ __ucx_ptr_array_locked_foreach_finalize(ucs_ptr_array_locked_t *locked_ptr_array
 /**
  * Iterate over all valid elements in the locked array.
  *
- * Please notice that using break or return are not allowed in 
+ * Please notice that using break or return are not allowed in
  * this implementation.
  * Using break or return would require releasing the lock before by calling,
  * ucs_ptr_array_locked_release_lock(_locked_ptr_array);
@@ -433,4 +495,3 @@ __ucx_ptr_array_locked_foreach_finalize(ucs_ptr_array_locked_t *locked_ptr_array
             (void *)((&(_locked_ptr_array)->super)->start[(_index)]))))))
 
 #endif /* PTR_ARRAY_H_ */
-

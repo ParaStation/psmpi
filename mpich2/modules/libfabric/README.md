@@ -1,5 +1,6 @@
 [<img alt="libfabric master branch Travis CI status" src="https://travis-ci.org/ofiwg/libfabric.svg?branch=master"/>](https://travis-ci.org/ofiwg/libfabric)
-[<img alt="libfabric Coverity scan suild status" src="https://scan.coverity.com/projects/4274/badge.svg"/>](https://scan.coverity.com/projects/4274)
+[<img alt="libfabric Coverity scan build status" src="https://scan.coverity.com/projects/4274/badge.svg"/>](https://scan.coverity.com/projects/4274)
+[<img alt="libfabric master branch AppVeyor CI status" src="https://ci.appveyor.com/api/projects/status/github/ofiwg/libfabric?svg=true"/>](https://ci.appveyor.com/api/projects/status/github/ofiwg/libfabric)
 [![libfabric release version](https://img.shields.io/github/release/ofiwg/libfabric.svg)](https://github.com/ofiwg/libfabric/releases/latest)
 
 # libfabric
@@ -140,12 +141,6 @@ See the `fi_gni(7)` man page for more details.
 
 - The `gni` provider requires `gcc` version 4.9 or higher.
 
-### mxm
-
-***
-
-The MXM provider has been deprecated and was removed after the 1.4.0 release.
-
 ### psm
 
 ***
@@ -177,7 +172,21 @@ Intel TrueScale Fabric.
 
 See the `fi_psm2(7)` man page for more details.
 
+### psm3
+
+***
+
+The `psm3` provider provides optimized performance and scalability for most
+verbs UD devices. Additional features and optimizations can be enabled when
+running over Intel's E810 Ethernet NICs and using Intel's rendezvous kernel
+module ([`rv`](https://github.com/intel/iefs-kernel-updates)). PSM 3.x fully integrates the OFI provider and the underlying
+PSM3 protocols/implementation and only exports the OFI APIs.
+
+See [`fi_psm3`(7)](https://ofiwg.github.io/libfabric/master/man/fi_psm3.7.html) for more details.
+
 ### rxm
+
+***
 
 The `ofi_rxm` provider is an utility provider that supports RDM endpoints emulated
 over MSG endpoints of a core provider.
@@ -336,27 +345,6 @@ See the `fi_netdir(7)` man page for more details.
   root of provier directory, i.e. \prov\netdir\NetDirect, where NetDirect contains
   the header files), specify them in the configuration properties of the VS project.
 
-### mlx
-
-***
-
-The MLX provider enables applications using OFI to be run over UCX
-communication library. It uses libucp for connections control and data transfer operations.
-Supported UCP API version: 1.2
-
-See the `fi_mlx(7)` man page for more details.
-
-#### Dependencies
-
-- The MLX provider requires UCP API 1.2 capable libucp and libucs (tested with hpcx v1.8.0, v1.9.7).
-  If you are compiling Libfabric from source and want to enable MLX
-  support, you will also need the matching header files for UCX.
-  If the libraries and header files are not in default paths, specify them using:
-
-```
---with-mlx=<path to local UCX installation>
-```
-
 ### shm
 
 ***
@@ -406,6 +394,7 @@ Even though windows isn't fully supported yet it is possible to compile and link
       1-2: Debug/Release ICC (restricted support for Intel Compiler XE 15.0 only)
       3-4: Debug/Release v140 (VS 2015 tool set)
       5-6: Debug/Release v141 (VS 2017 tool set)
+      7-8: Debug/Release v142 (VS 2019 tool set)
 
   make sure you choose the correct target fitting your compiler.
   By default the library will be compiled to `<libfabricroot>\x64\<yourconfigchoice>`

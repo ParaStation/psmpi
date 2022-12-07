@@ -9,6 +9,7 @@ test_dtpools_libdtpools_la_CPPFLAGS = $(test_cppflags)
 
 test_dtpools_libdtpools_la_SOURCES = \
 	test/dtpools/src/dtpools.c \
+	test/dtpools/src/dtpools_custom.c \
 	test/dtpools/src/dtpools_attr.c \
 	test/dtpools/src/dtpools_desc.c \
 	test/dtpools/src/dtpools_init_verify.c \

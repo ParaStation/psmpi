@@ -43,6 +43,7 @@ sysfs_outputs = \
 		16em64t-4s2c2t.xml.output \
 		16ia64-8n2s.output \
 		32em64t-2n8c+1mic.output \
+		32intel64-2p8co2t+8ve.output \
 		40intel64-2g2n4c+pci.output \
 		40intel64-4n10c+pci-conflicts.output \
 		48amd64-4d2n6c-sparse.output \
@@ -62,7 +63,8 @@ sysfs_outputs = \
 		nvidiagpunumanodes.kept.output \
 		fakememinitiators-1np2c+1npp+gi.output \
 		fakecpuid1f-64intel64-2p4d2n2c2t.output \
-		fakeheterocpunuma.output
+		fakeheterocpunuma.output \
+		offline-cpu0-node0.output
 
 if HWLOC_HAVE_32BITS_PCI_DOMAIN
 sysfs_outputs += 2pa-pcidomain32bits.output
@@ -110,6 +112,7 @@ sysfs_tarballs = \
 		16em64t-4s2c2t.xml.source \
 		16ia64-8n2s.tar.bz2 \
 		32em64t-2n8c+1mic.tar.bz2 \
+		32intel64-2p8co2t+8ve.tar.bz2 \
 		40intel64-2g2n4c+pci.tar.bz2 \
 		40intel64-4n10c+pci-conflicts.tar.bz2 \
 		48amd64-4d2n6c-sparse.tar.bz2 \
@@ -131,7 +134,8 @@ sysfs_tarballs = \
 		nvidiagpunumanodes.kept.source \
 		fakememinitiators-1np2c+1npp+gi.tar.bz2 \
 		fakecpuid1f-64intel64-2p4d2n2c2t.tar.bz2 \
-		fakeheterocpunuma.tar.bz2
+		fakeheterocpunuma.tar.bz2 \
+		offline-cpu0-node0.tar.bz2
 
 # Each output `xyz.output' may have a corresponding exclude `xyz.exclude'
 sysfs_excludes = 

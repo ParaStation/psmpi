@@ -1,6 +1,7 @@
 /**
  * Copyright (C) Mellanox Technologies Ltd. 2019.  ALL RIGHTS RESERVED.
  * Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
+ * Copyright (C) Huawei Technologies Co., Ltd. 2020.  ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -9,6 +10,7 @@
 #define UCS_SOCKET_H
 
 #include <ucs/type/status.h>
+#include <ucs/config/parser.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -23,6 +25,8 @@ BEGIN_C_DECLS
 #define UCS_IPV4_ADDR_LEN            sizeof(struct in_addr)
 #define UCS_IPV6_ADDR_LEN            sizeof(struct in6_addr)
 
+#define UCS_IPV4_SOCKADDR_LEN        sizeof(struct sockaddr_in)
+#define UCS_IPV6_SOCKADDR_LEN        sizeof(struct sockaddr_in6)
 /* A string to hold the IP address and port from a sockaddr */
 #define UCS_SOCKADDR_STRING_LEN      60
 
@@ -31,25 +35,6 @@ BEGIN_C_DECLS
 
 #define UCS_SOCKET_INET6_ADDR(_addr) (((struct sockaddr_in6*)(_addr))->sin6_addr)
 #define UCS_SOCKET_INET6_PORT(_addr) (((struct sockaddr_in6*)(_addr))->sin6_port)
-
-
-/**
- * Error callback to handle errno and status of a given socket IO operation.
- *
- * @param [in] arg       User's argument for the error callback.
- * @param [in] io_status Status set for a given IO operation.
- *
- * @return UCS_OK if error handling was done in the callback and no other
- *         actions are required from a caller (UCS_ERR_CANCELED will be
- *         returned as the result of the IO operation), UCS_ERR_NO_PROGRESS
- *         if error handling was done in the callback and the IO operation
- *         should be continued (UCS_ERR_NO_PROGRESS will be retuned as the
- *         result of the IO operation), otherwise - the default error handling
- *         should be done and the returned status will be the result of
- *         the IO operation.
- */
-typedef ucs_status_t (*ucs_socket_io_err_cb_t)(void *arg,
-                                               ucs_status_t io_status);
 
 
 /**
@@ -89,10 +74,26 @@ ucs_status_t ucs_netif_ioctl(const char *if_name, unsigned long request,
  * Check if the given interface is in an active state.
  *
  * @param [in]  if_name      Interface name to check.
+ * @param [in]  af           Address family.
  *
  * @return 1 if true, otherwise 0
  */
-int ucs_netif_is_active(const char *if_name);
+int ucs_netif_is_active(const char *if_name, sa_family_t af);
+
+
+/**
+ * Get address and netmask for a given interface.
+ *
+ * @param [in]  if_name      Interface name to check.
+ * @param [in]  af           Address family.
+ * @param [out] addr         Interface address.
+ * @param [out] netmask      Interface address.
+ *
+ * @return UCS_OK on success or an error code on failure.
+ */
+ucs_status_t ucs_netif_get_addr(const char *if_name, sa_family_t af,
+                                struct sockaddr *saddr,
+                                struct sockaddr *netmask);
 
 
 /**
@@ -225,18 +226,24 @@ ucs_status_t ucs_socket_set_buffer_size(int fd, size_t sockopt_sndbuf,
  * Open a socket, bind a sockadrr to that socket and start listening on it for
  * incoming connection requests.
  *
- * @param [in]  saddr           Sockaddr for the server to listen on.
- *                              If the port number inside is set to zero -
- *                              use a random port.
- * @param [in]  socklen         Size of saddr.
- * @param [in]  backlog         Length of the queue for pending connections -
- *                              for the listen() call.
- * @param [out] listen_fd       The fd that belongs to the server.
+ * @param [in]  saddr             Sockaddr for the server to listen on.
+ *                                If the port number inside is set to zero -
+ *                                use a random port.
+ * @param [in]  socklen           Size of saddr.
+ * @param [in]  backlog           Length of the queue for pending connections -
+ *                                for the listen() call.
+ * @param [in]  silent_bind       Whether or not to print error message on bind
+ *                                failure with EADDRINUSE.
+ * @param [in]  reuse_addr        Whether or not to allow the socket to use an
+ *                                address that is already in use and was not
+ *                                released by another socket yet.
+ * @param [out] listen_fd         The fd that belongs to the server.
  *
  * @return UCS_OK on success or an error code on failure.
  */
 ucs_status_t ucs_socket_server_init(const struct sockaddr *saddr, socklen_t socklen,
-                                    int backlog, int *listen_fd);
+                                    int backlog, int silent_bind, int reuse_addr,
+                                    int *listen_fd);
 
 
 /**
@@ -260,19 +267,10 @@ int ucs_socket_max_conn();
  * @param [in/out]  length_p        The length, in bytes, of the data in buffer
  *                                  pointed to by the `data` parameter. The amount of
  *                                  data transmitted is written to this argument.
- * @param [in]      err_cb          Error callback.
- * @param [in]      err_cb_arg      User's argument for the error callback.
  *
- * @return UCS_OK on success, UCS_ERR_CANCELED if some error happened, but it
- *         was handled in a user's err_cb and no other actions are required,
- *         UCS_ERR_NO_PROGRESS if system call was interrupted or would block,
- *         UCS_ERR_NOT_CONNECTED if the connection was destroyed,
- *         UCS_ERR_IO_ERROR on failure, or any other errors returned from a
- *         user's error callback.
+ * @return UCS_OK on success or an error code on failure.
  */
-ucs_status_t ucs_socket_send_nb(int fd, const void *data, size_t *length_p,
-                                ucs_socket_io_err_cb_t err_cb,
-                                void *err_cb_arg);
+ucs_status_t ucs_socket_send_nb(int fd, const void *data, size_t *length_p);
 
 
 /**
@@ -285,19 +283,10 @@ ucs_status_t ucs_socket_send_nb(int fd, const void *data, size_t *length_p,
  * @param [in/out]  length_p        The length, in bytes, of the data in buffer
  *                                  pointed to by the `data` parameter. The amount of
  *                                  data received is written to this argument.
- * @param [in]      err_cb          Error callback.
- * @param [in]      err_cb_arg      User's argument for the error callback.
  *
- * @return UCS_OK on success, UCS_ERR_CANCELED if some error happened, but it
- *         was handled in user's err_cb and no other actions are required,
- *         UCS_ERR_NO_PROGRESS if system call was interrupted or would block,
- *         UCS_ERR_NOT_CONNECTED if the connection was destroyed,
- *         UCS_ERR_IO_ERROR on failure, or any other errors returned from a
- *         user's error callback.
+ * @return UCS_OK on success or an error code on failure.
  */
-ucs_status_t ucs_socket_recv_nb(int fd, void *data, size_t *length_p,
-                                ucs_socket_io_err_cb_t err_cb,
-                                void *err_cb_arg);
+ucs_status_t ucs_socket_recv_nb(int fd, void *data, size_t *length_p);
 
 
 /**
@@ -309,18 +298,10 @@ ucs_status_t ucs_socket_recv_nb(int fd, void *data, size_t *length_p,
  *                                  be transmitted.
  * @param [in/out]  length          The length, in bytes, of the data in buffer
  *                                  pointed to by the `data` parameter.
- * @param [in]      err_cb          Error callback.
- * @param [in]      err_cb_arg      User's argument for the error callback.
  *
- * @return UCS_OK on success, UCS_ERR_CANCELED if some error happened, but it
- *         was handled in user's err_cb and no other actions are required,
- *         UCS_ERR_NOT_CONNECTED if the connection was destroyed,
- *         UCS_ERR_IO_ERROR on failure, or any other errors returned from a
- *         user's error callback.
+ * @return UCS_OK on success or an error code on failure.
  */
-ucs_status_t ucs_socket_send(int fd, const void *data, size_t length,
-                             ucs_socket_io_err_cb_t err_cb,
-                             void *err_cb_arg);
+ucs_status_t ucs_socket_send(int fd, const void *data, size_t length);
 
 
 /**
@@ -333,19 +314,11 @@ ucs_status_t ucs_socket_send(int fd, const void *data, size_t length,
  *                                  the iov parameter.
  * @param [out]     length_p        The amount of data transmitted is written to
  *                                  this argument.
- * @param [in]      err_cb          Error callback.
- * @param [in]      err_cb_arg      User's argument for the error callback.
  *
- * @return UCS_OK on success, UCS_ERR_CANCELED if some error happened, but it
- *         was handled in user's err_cb and no other actions are required,
- *         UCS_ERR_NO_PROGRESS if system call was interrupted or would block,
- *         UCS_ERR_NOT_CONNECTED if the connection was destroyed,
- *         UCS_ERR_IO_ERROR on failure, or any other errors returned from a
- *         user's error callback.
+ * @return UCS_OK on success or an error code on failure.
  */
 ucs_status_t ucs_socket_sendv_nb(int fd, struct iovec *iov, size_t iov_cnt,
-                                 size_t *length_p, ucs_socket_io_err_cb_t err_cb,
-                                 void *err_cb_arg);
+                                 size_t *length_p);
 
 
 /**
@@ -357,26 +330,18 @@ ucs_status_t ucs_socket_sendv_nb(int fd, struct iovec *iov, size_t iov_cnt,
  *                                  data.
  * @param [in/out]  length          The length, in bytes, of the data in buffer
  *                                  pointed to by the `data` paramete.
- * @param [in]      err_cb          Error callback.
- * @param [in]      err_cb_arg      User's argument for the error callback.
  *
- * @return UCS_OK on success, UCS_ERR_CANCELED if some error happened, but it
- *         was handled in user's err_cb and no other actions are required,
- *         UCS_ERR_NOT_CONNECTED if the connection was destroyed,
- *         UCS_ERR_IO_ERROR on failure, or any other errors returned from a
- *         user's error callback.
+ * @return UCS_OK on success or an error code on failure.
  */
-ucs_status_t ucs_socket_recv(int fd, void *data, size_t length,
-                             ucs_socket_io_err_cb_t err_cb,
-                             void *err_cb_arg);
+ucs_status_t ucs_socket_recv(int fd, void *data, size_t length);
 
 
 /**
  * Return size of a given sockaddr structure.
- * 
+ *
  * @param [in]   addr       Pointer to sockaddr structure.
  * @param [out]  size_p     Pointer to variable where size of
- *                          sockaddr_in/sockaddr_in6 structure will be written
+ *                          sockaddr_in/sockaddr_in6 structure will be written.
  *
  * @return UCS_OK on success or UCS_ERR_INVALID_PARAM on failure.
  */
@@ -385,10 +350,11 @@ ucs_status_t ucs_sockaddr_sizeof(const struct sockaddr *addr, size_t *size_p);
 
 /**
  * Return port of a given sockaddr structure.
- * 
+ *
  * @param [in]   addr       Pointer to sockaddr structure.
  * @param [out]  port_p     Pointer to variable where port (host notation)
- *                          of sockaddr_in/sockaddr_in6 structure will be written
+ *                          of sockaddr_in/sockaddr_in6 structure will be
+ *                          written.
  *
  * @return UCS_OK on success or UCS_ERR_INVALID_PARAM on failure.
  */
@@ -397,9 +363,9 @@ ucs_status_t ucs_sockaddr_get_port(const struct sockaddr *addr, uint16_t *port_p
 
 /**
  * Set port to a given sockaddr structure.
- * 
+ *
  * @param [in]   addr       Pointer to sockaddr structure.
- * @param [in]   port       Port (host notation) that will be written
+ * @param [in]   port       Port (host notation) that will be written.
  *
  * @return UCS_OK on success or UCS_ERR_INVALID_PARAM on failure.
  */
@@ -408,7 +374,7 @@ ucs_status_t ucs_sockaddr_set_port(struct sockaddr *addr, uint16_t port);
 
 /**
  * Return IP addr of a given sockaddr structure.
- * 
+ *
  * @param [in]   addr       Pointer to sockaddr structure.
  *
  * @return IP address of sockaddr_in/sockaddr_in6 structure
@@ -418,17 +384,79 @@ const void *ucs_sockaddr_get_inet_addr(const struct sockaddr *addr);
 
 
 /**
+ * Set IP addr to a given sockaddr structure.
+ *
+ * @param [in]   addr        Pointer to sockaddr structure.
+ * @param [in]   in_addr     IP address that will be written.
+ *
+ * @return UCS_OK on success or UCS_ERR_INVALID_PARAM on failure.
+ */
+ucs_status_t ucs_sockaddr_set_inet_addr(struct sockaddr *addr,
+                                        const void *in_addr);
+
+
+/**
+ * Return size of IP address of a given sockaddr structure.
+ *
+ * @param [in]   addr       Pointer to sockaddr structure.
+ * @param [out]  size_p     Pointer to variable where size of IP address
+ *                          structure will be written.
+ *
+ * @return UCS_OK on success or UCS_ERR_INVALID_PARAM on failure.
+ */
+ucs_status_t ucs_sockaddr_inet_addr_sizeof(const struct sockaddr *addr,
+                                           size_t *size_p);
+
+
+/**
  * Extract the IP address from a given sockaddr and return it as a string.
  *
  * @param [in]   sock_addr   Sockaddr to take IP address from.
  * @param [out]  str         A string filled with the IP address.
  * @param [in]   max_size    Size of a string (considering '\0'-terminated symbol)
  *
- * @return ip_str if the sock_addr has a valid IP address or 'Invalid address'
- *         otherwise.
+ * @return '<null>' if NULL is specified or @a str if the sock_addr has a valid
+ *         IP address or 'Invalid address' otherwise.
  */
 const char* ucs_sockaddr_str(const struct sockaddr *sock_addr,
                              char *str, size_t max_size);
+
+
+/**
+ * Extract the IP address from a given string and return it as a sockaddr storage.
+ *
+ * @param [in]  ip_str       A string to take IP address from.
+ * @param [out] sa_storage   sockaddr storage filled with the IP address and
+ *                           address family.
+ *
+ * @return UCS_OK if @a ip_str has a valid IP address or UCS_ERR_INVALID_ADDR
+ *         otherwise.
+ */
+ucs_status_t ucs_sock_ipstr_to_sockaddr(const char *ip_str,
+                                        struct sockaddr_storage *sa_storage);
+
+
+/**
+ * Check if the address family of the given sockaddr is IPv4 or IPv6
+ *
+ * @param [in] sa       Pointer to sockaddr structure.
+ *
+ * @return Return whether the address family of the given sockaddr is IPv4 or IPv6.
+ */
+int ucs_sockaddr_is_known_af(const struct sockaddr *sa);
+
+
+/**
+ * Extract the IP address from a given socket fd.
+ *
+ * @param [in]   fd          Socket fd.
+ * @param [out]  sock_addr   IP address.
+ * @param [out]  addr_len    Length of the IP address.
+ *
+ * @return UCS_OK if sock_addr has a valid IP address.
+ */
+ucs_status_t ucs_socket_getname(int fd, struct sockaddr_storage *sock_addr,
+                                socklen_t *addr_len);
 
 
 /**
@@ -480,14 +508,37 @@ int ucs_sockaddr_ip_cmp(const struct sockaddr *sa1, const struct sockaddr *sa2);
 
 
 /**
- * Indicate if given IP addr is INADDR_ANY (IPV4) or in6addr_any (IPV6)
- * 
+ * Indicate if given IP address is INADDR_ANY (IPV4) or in6addr_any (IPV6)
+ *
  * @param [in]   addr       Pointer to sockaddr structure.
  *
  * @return 1 if input is INADDR_ANY or in6addr_any
  *         0 if not
  */
-int ucs_sockaddr_is_inaddr_any(struct sockaddr *addr);
+int ucs_sockaddr_is_inaddr_any(const struct sockaddr *addr);
+
+
+/**
+ * Indicate if given IP address is INADDR_LOOPBACK (IPV4) or in6addr_loopback
+ * (IPV6)
+ *
+ * @param [in]   addr       Pointer to sockaddr structure.
+ *
+ * @return 1 if input is INADDR_LOOPBACK or in6addr_loopback
+ *         0 if not
+ */
+int ucs_sockaddr_is_inaddr_loopback(const struct sockaddr *addr);
+
+
+/**
+ * set INADDR_ANY (IPV4) or in6addr_any (IPV6) to addr.
+ *
+ * @param [out]  addr       Pointer to sockaddr structure.
+ * @param [in]   af         Address family.
+ *
+ * @return UCS_OK on success or UCS_ERR_INVALID_PARAM on failure.
+ */
+ucs_status_t ucs_sockaddr_set_inaddr_any(struct sockaddr *addr, sa_family_t af);
 
 
 /**
@@ -511,7 +562,20 @@ ucs_status_t ucs_sockaddr_copy(struct sockaddr *dst_addr,
  * @param [out]  if_str      A string filled with the interface name.
  * @param [in]   max_strlen  Maximum length of the if_str.
  */
-ucs_status_t ucs_sockaddr_get_ifname(int fd, char *ifname_str, size_t max_strlen);
+ucs_status_t
+ucs_sockaddr_get_ifname(int fd, char *ifname_str, size_t max_strlen);
+
+
+/**
+ * Return size of a given sockaddr structure.
+ *
+ * @param [in]   af         Address family to check.
+ * @param [out]  size_p     Pointer to variable where size of
+ *                          sockaddr_in/sockaddr_in6 structure will be written
+ *
+ * @return UCS_OK on success or UCS_ERR_INVALID_PARAM on failure.
+ */
+ucs_status_t ucs_sockaddr_inet_addr_size(sa_family_t af, size_t *size_p);
 
 
 /**
@@ -522,6 +586,30 @@ ucs_status_t ucs_sockaddr_get_ifname(int fd, char *ifname_str, size_t max_strlen
  * Only IPv4 and IPv6 conversions are supported.
  */
 const char *ucs_sockaddr_address_family_str(sa_family_t af);
+
+
+/**
+ * Get the local ports range.
+ *
+ * @param [out]  port_range     Pointer to a struct holding the ports range.
+ *
+ * @return UCS_OK or error in case of failure.
+ */
+ucs_status_t ucs_sockaddr_get_ip_local_port_range(ucs_range_spec_t *port_range);
+
+
+/**
+ * Get IP address of a given sockaddr structure.
+ *
+ * @param [in]  addr     Pointer to the sockaddr structure.
+ * @param [out] str      A string filled with the IP address.
+ * @param [in]  max_size Size of the string including terminating
+ *                       null-character.
+ *
+ * @return UCS_OK on success or UCS_ERR_INVALID_PARAM on failure.
+ */
+ucs_status_t
+ucs_sockaddr_get_ipstr(const struct sockaddr *addr, char *str, size_t max_size);
 
 END_C_DECLS
 

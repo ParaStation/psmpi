@@ -43,7 +43,8 @@ std::vector<const resource*> uct_p2p_test::enum_resources(const std::string& tl_
         }
     }
 
-    return filter_resources(all_resources, tl_name);
+    return filter_resources<p2p_resource>(all_resources,
+                                          resource::is_equal_tl_name, tl_name);
 }
 
 uct_p2p_test::uct_p2p_test(size_t rx_headroom,
@@ -52,10 +53,11 @@ uct_p2p_test::uct_p2p_test(size_t rx_headroom,
     m_err_handler(err_handler),
     m_completion_count(0)
 {
-    m_null_completion      = false;
-    m_completion.self      = this;
-    m_completion.uct.func  = completion_cb;
-    m_completion.uct.count = 0;
+    m_null_completion       = false;
+    m_completion.self       = this;
+    m_completion.uct.func   = completion_cb;
+    m_completion.uct.count  = 0;
+    m_completion.uct.status = UCS_OK;
 }
 
 void uct_p2p_test::init() {
@@ -146,13 +148,12 @@ void uct_p2p_test::test_xfer_print(O& os, send_func_t send, size_t length,
 void uct_p2p_test::test_xfer_multi(send_func_t send, size_t min_length,
                                    size_t max_length, unsigned flags)
 {
-
-    for (int mem_type = 0; mem_type < UCS_MEMORY_TYPE_LAST; mem_type++) {
+    for (auto mem_type : mem_buffer::supported_mem_types()) {
         /* test mem type if md supports mem type
          * (or) if HOST MD can register mem type
          */
-        if (!((sender().md_attr().cap.access_mem_type == mem_type) ||
-            (sender().md_attr().cap.access_mem_type == UCS_MEMORY_TYPE_HOST &&
+        if (!((sender().md_attr().cap.access_mem_types & UCS_BIT(mem_type)) ||
+            ((sender().md_attr().cap.access_mem_types & UCS_BIT(UCS_MEMORY_TYPE_HOST)) &&
 		sender().md_attr().cap.reg_mem_types & UCS_BIT(mem_type)))) {
             continue;
         }
@@ -174,14 +175,15 @@ void uct_p2p_test::test_xfer_multi_mem_type(send_func_t send, size_t min_length,
 
     ms << "memory_type:" << ucs_memory_type_names[mem_type] << " " << std::flush;
 
+    /* Trim at the max allocation available. Divide by 2 for
+       2 buffers + 0.5 for spare capacity */
+    max_length = ucs_min(max_length, sender().md_attr().cap.max_alloc / 2.5);
+
     /* Trim at 4.1 GB */
     max_length = ucs_min(max_length, (size_t)(4.1 * (double)UCS_GBYTE));
 
     /* Trim at max. phys memory */
     max_length = ucs_min(max_length, ucs_get_phys_mem_size() / 8);
-
-    /* Trim at max. shared memory */
-    max_length = ucs_min(max_length, ucs_get_shmmax() * 0.8);
 
     /* Trim when short of available memory */
     max_length = ucs_min(max_length, ucs_get_memfree_size() / 4);
@@ -190,7 +192,7 @@ void uct_p2p_test::test_xfer_multi_mem_type(send_func_t send, size_t min_length,
     if (max_length > UCS_MBYTE) {
         max_length = max_length / ucs::test_time_multiplier();
         if (RUNNING_ON_VALGRIND) {
-            max_length = ucs_min(max_length, 20u * UCS_MBYTE);
+            max_length = ucs_min(max_length, UCS_MBYTE);
         }
     }
 
@@ -215,6 +217,9 @@ void uct_p2p_test::test_xfer_multi_mem_type(send_func_t send, size_t min_length,
     repeat_count = (256 * UCS_KBYTE) / ((max_length + min_length) / 2);
     if (repeat_count > 1000) {
         repeat_count = 1000;
+    }
+    if (mem_type != UCS_MEMORY_TYPE_HOST) {
+        repeat_count /= 8;
     }
     repeat_count /= ucs::test_time_multiplier();
     if (repeat_count == 0) {
@@ -282,7 +287,7 @@ void uct_p2p_test::blocking_send(send_func_t send, uct_ep_h ep,
             /* Call flush on local and remote ifaces to progress data
              * (e.g. if call flush only on local iface, a target side may
              *  not be able to send PUT ACK to an initiator in case of TCP) */
-            flush(); 
+            flush();
         } else {
             /* explicit non-blocking mode */
             while (m_completion_count <= prev_comp_count) {
@@ -320,7 +325,12 @@ uct_completion_t *uct_p2p_test::comp() {
     }
 }
 
-void uct_p2p_test::completion_cb(uct_completion_t *self, ucs_status_t status) {
+void uct_p2p_test::disable_comp()
+{
+    m_null_completion = true;
+}
+
+void uct_p2p_test::completion_cb(uct_completion_t *self) {
     completion *comp = ucs_container_of(self, completion, uct);
     ++comp->self->m_completion_count;
 }

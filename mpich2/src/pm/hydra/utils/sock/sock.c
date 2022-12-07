@@ -18,7 +18,7 @@ struct fwd_hash {
     struct fwd_hash *next;
 };
 
-/* FIXME: redudant code with PMIServGetPort. Can we call PMIServGetPort here? */
+/* FIXME: redundant code with PMIServGetPort. Can we call PMIServGetPort here? */
 HYD_status HYDU_sock_listen(int *listen_fd, char *port_range, uint16_t * port)
 {
     int ret;
@@ -54,7 +54,7 @@ HYD_status HYDU_sock_listen(int *listen_fd, char *port_range, uint16_t * port)
         high_port = *port;
     }
 
-  setup_socket:
+    /* setup_socket */
     *listen_fd = MPL_socket();
     /* FIXME: duplicate with pm/hydra2/libhydra/sock/hydra_sock.c */
     if (*listen_fd < 0)
@@ -242,7 +242,7 @@ HYD_status HYDU_sock_write(int fd, const void *buf, int maxlen, int *sent, int *
     while (1) {
         tmp = write(fd, (char *) buf + *sent, maxlen - *sent);
         if (tmp <= 0) {
-            if (errno == EAGAIN) {
+            if (errno == EAGAIN || errno == EINTR) {
                 if (flag == HYDU_SOCK_COMM_NONE)
                     goto fn_exit;
                 else

@@ -18,7 +18,7 @@ typedef struct ucs_async_handler ucs_async_handler_t;
 struct ucs_async_handler {
     int                        id;      /* Event/Timer ID */
     ucs_async_mode_t           mode;    /* Event delivery mode */
-    int                        events;  /* Bitmap of events */
+    ucs_event_set_types_t      events;  /* Bitmap of events */
     pthread_t                  caller;  /* Thread which invokes the callback */
     ucs_async_event_cb_t       cb;      /* Callback function */
     void                       *arg;    /* Callback argument */
@@ -35,7 +35,8 @@ struct ucs_async_handler {
  * @param count         Number of events
  * @param events        Events to pass to the handler
  */
-ucs_status_t ucs_async_dispatch_handlers(int *handler_ids, size_t count, int events);
+ucs_status_t ucs_async_dispatch_handlers(int *handler_ids, size_t count,
+                                         ucs_event_set_types_t events);
 
 
 /**
@@ -48,30 +49,65 @@ ucs_status_t ucs_async_dispatch_timerq(ucs_timer_queue_t *timerq,
                                        ucs_time_t current_time);
 
 
+typedef void (*ucs_async_init_t)();
+
+typedef void (*ucs_async_cleanup_t)();
+
+typedef int (*ucs_async_is_from_async_t)();
+
+typedef void (*ucs_async_block_t)();
+
+typedef void (*ucs_async_unblock_t)();
+
+typedef ucs_status_t (*ucs_async_context_init_t)(ucs_async_context_t *async);
+
+typedef void (*ucs_async_context_cleanup_t)(ucs_async_context_t *async);
+
+typedef int (*ucs_async_context_try_block_t)(ucs_async_context_t *async);
+
+typedef void (*ucs_async_context_unblock_t)(ucs_async_context_t *async);
+
+typedef ucs_status_t (*ucs_async_add_event_fd_t)(ucs_async_context_t *async,
+                                                 int event_fd,
+                                                 ucs_event_set_types_t events);
+
+typedef ucs_status_t (*ucs_async_remove_event_fd_t)(ucs_async_context_t *async,
+                                                    int event_fd);
+
+typedef ucs_status_t (*ucs_async_modify_event_fd_t)(ucs_async_context_t *async,
+                                                    int event_fd,
+                                                    ucs_event_set_types_t events);
+
+typedef ucs_status_t (*ucs_async_add_timer_t)(ucs_async_context_t *async,
+                                              int timer_id,
+                                              ucs_time_t interval);
+
+typedef ucs_status_t (*ucs_async_remove_timer_t)(ucs_async_context_t *async,
+                                                 int timer_id);
+
+
 /**
  * Operation for specific async event delivery method.
  */
 typedef struct ucs_async_ops {
-    void         (*init)();
-    void         (*cleanup)();
+    ucs_async_init_t              init;
+    ucs_async_cleanup_t           cleanup;
+    ucs_async_is_from_async_t     is_from_async;
 
-    void         (*block)();
-    void         (*unblock)();
+    ucs_async_block_t             block;
+    ucs_async_unblock_t           unblock;
 
-    ucs_status_t (*context_init)(ucs_async_context_t *async);
-    void         (*context_cleanup)(ucs_async_context_t *async);
-    int          (*context_try_block)(ucs_async_context_t *async);
-    void         (*context_unblock)(ucs_async_context_t *async);
+    ucs_async_context_init_t      context_init;
+    ucs_async_context_cleanup_t   context_cleanup;
+    ucs_async_context_try_block_t context_try_block;
+    ucs_async_context_unblock_t   context_unblock;
 
-    ucs_status_t (*add_event_fd)(ucs_async_context_t *async, int event_fd,
-                                 int events);
-    ucs_status_t (*remove_event_fd)(ucs_async_context_t *async, int event_fd);
-    ucs_status_t (*modify_event_fd)(ucs_async_context_t *async, int event_fd,
-                                    int events);
+    ucs_async_add_event_fd_t      add_event_fd;
+    ucs_async_remove_event_fd_t   remove_event_fd;
+    ucs_async_modify_event_fd_t   modify_event_fd;
 
-    ucs_status_t (*add_timer)(ucs_async_context_t *async, int timer_id,
-                              ucs_time_t interval);
-    ucs_status_t (*remove_timer)(ucs_async_context_t *async, int timer_id);
+    ucs_async_add_timer_t         add_timer;
+    ucs_async_remove_timer_t      remove_timer;
 } ucs_async_ops_t;
 
 

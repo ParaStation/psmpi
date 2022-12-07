@@ -15,16 +15,17 @@
 /* Check for 2k custom/dynamic communicators: (minus COMM_SELF, COMM_WORLD, and ICOMM_WORLD if needed) */
 #define NUM_COMMS (2 * 1024 - 3)
 
-/* As 2k is the default for the max number of contexts (see mpich2/src/include/mpiimpl.h), it's unlikely that this test fails. */
+/* As 2k is the default for the max number of contexts (see mpich2/src/include/mpir_contextid.h), it's unlikely that this test fails. */
 
 int main(int argc, char* argv[])
 {
+	unsigned errs = 0;
 	int i;
 	int world_rank, rank[NUM_COMMS];
 	int world_size, size[NUM_COMMS];
 	MPI_Comm comm_array[NUM_COMMS];
 
-	MPI_Init(&argc, &argv);
+	MTest_Init(&argc, &argv);
 
 	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
@@ -39,9 +40,10 @@ int main(int argc, char* argv[])
 		rc = MPI_Comm_split(MPI_COMM_WORLD, color, world_rank, &comm_array[i]);
 
 		if(rc != MPI_SUCCESS) {
-			printf("\nThe maximum number of custom/dynamic communicators/contexts is %d but this test checks for %d.\n", i, NUM_COMMS);
-			MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
-			MPI_Comm_split(MPI_COMM_WORLD, color, world_rank, &comm_array[i]);
+			if (!errs) {
+				fprintf(stderr,"\nERROR: The maximum number of custom/dynamic communicators/contexts is %d but this test checks for %d.\n", i, NUM_COMMS);
+			}
+			errs++;
 		}
 
 		MPI_Comm_rank(comm_array[i], &rank[i]);
@@ -52,7 +54,7 @@ int main(int argc, char* argv[])
 		MPI_Comm_free(&comm_array[i]);
 	}
 
-	printf(" No errors\n");
+	MTest_Finalize(errs);
 
-	MPI_Finalize();
+	return MTestReturnValue(errs);
 }

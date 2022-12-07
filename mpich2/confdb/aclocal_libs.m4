@@ -18,10 +18,10 @@ dnl TODO as written, this macro cannot handle a "with_option" arg that has "-"
 dnl characters in it.  Use AS_TR_SH (and possibly AS_VAR_* macros) to handle
 dnl this case if it ever arises.
 AC_DEFUN([PAC_SET_HEADER_LIB_PATH],[
-    AC_ARG_WITH([$1], [AC_HELP_STRING([--with-$1=[[PATH]]],PAC_WITH_LIB_HELP_STRING($1))])
+    AC_ARG_WITH([$1], [AS_HELP_STRING([--with-$1=[[PATH]]],PAC_WITH_LIB_HELP_STRING($1))])
 
     AC_ARG_WITH([$1-include],
-                [AC_HELP_STRING([--with-$1-include=PATH],
+                [AS_HELP_STRING([--with-$1-include=PATH],
                                 [specify path where $1 include directory can be found])],
                 [AS_CASE(["$withval"],
                          [yes|no|''],
@@ -29,7 +29,7 @@ AC_DEFUN([PAC_SET_HEADER_LIB_PATH],[
                           with_$1_include=""])],
                 [])
     AC_ARG_WITH([$1-lib],
-                [AC_HELP_STRING([--with-$1-lib=PATH],
+                [AS_HELP_STRING([--with-$1-lib=PATH],
                                 [specify path where $1 lib directory can be found])],
                 [AS_CASE(["$withval"],
                          [yes|no|''],
@@ -83,9 +83,12 @@ dnl prepend the library to WRAPPER_LIBS instead.
 AC_DEFUN([PAC_CHECK_HEADER_LIB],[
     failure=no
     AC_CHECK_HEADER([$1],,failure=yes)
-    PAC_PUSH_FLAG(LIBS)
-    AC_CHECK_LIB($2,$3,,failure=yes)
-    PAC_POP_FLAG(LIBS)
+    dnl Skip lib check if cannot find header
+    if test "$failure" = "no" ; then
+        PAC_PUSH_FLAG(LIBS)
+        AC_CHECK_LIB($2,$3,,failure=yes,$6)
+        PAC_POP_FLAG(LIBS)
+    fi
     if test "$failure" = "no" ; then
        $4
     else
@@ -110,13 +113,16 @@ AC_DEFUN([PAC_CHECK_HEADER_LIB_OPTIONAL],[
         pac_have_$1=no
     else
         dnl Other than "embedded" or "no", we check ...
-        PAC_CHECK_HEADER_LIB($2,$3,$4,pac_have_$1=yes,pac_have_$1=no)
+        for a in $3 ; do
+            PAC_CHECK_HEADER_LIB($2,$a,$4,pac_have_$1=yes,pac_have_$1=no,$5)
+            if test "$pac_have_$1" = "yes"; then
+                PAC_LIBS_ADD(-l$a)
+                break
+            fi
+        done
         if test "${pac_have_$1}" = "no" -a -n "${with_$1}" ; then
             dnl user asks for it, so missing is an error
             AC_MSG_ERROR([--with-$1 is given but not found])
-        fi
-        if test "${pac_have_$1}" = "yes" ; then
-            PAC_LIBS_ADD(-l$3)
         fi
     fi
 ])
@@ -135,7 +141,7 @@ AC_DEFUN([PAC_PROBE_HEADER_LIB],[
         pac_have_$1=no
     else
         dnl Other than "embedded" or "no", we check ...
-        PAC_CHECK_HEADER_LIB($2,$3,$4,pac_have_$1=yes,pac_have_$1=no)
+        PAC_CHECK_HEADER_LIB($2,$3,$4,pac_have_$1=yes,pac_have_$1=no,$5)
         if test "${pac_have_$1}" = "no" -a -n "${with_$1}" ; then
             dnl user asks for it, so missing is an error
             AC_MSG_ERROR([--with-$1 is given but not found])

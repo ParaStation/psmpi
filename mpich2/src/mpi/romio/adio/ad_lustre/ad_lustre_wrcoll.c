@@ -120,7 +120,7 @@ void ADIOI_LUSTRE_WriteStridedColl(ADIO_File fd, const void *buf, int count,
 
     orig_fp = fd->fp_ind;
 
-    /* IO patten identification if cb_write isn't disabled */
+    /* IO pattern identification if cb_write isn't disabled */
     if (fd->hints->cb_write != ADIOI_HINT_DISABLE) {
         /* For this process's request, calculate the list of offsets and
          * lengths in the file and determine the start and end offsets.
@@ -140,7 +140,7 @@ void ADIOI_LUSTRE_WriteStridedColl(ADIO_File fd, const void *buf, int count,
         ADIO_Offset my_count_size = 0;
         /* One-sided aggregation needs the amount of data per rank as well
          * because the difference in starting and ending offsets for 1 byte is
-         * 0 the same as 0 bytes so it cannot be distiguished.
+         * 0 the same as 0 bytes so it cannot be distinguished.
          */
         if ((romio_write_aggmethod == 1) || (romio_write_aggmethod == 2)) {
             count_sizes = (ADIO_Offset *) ADIOI_Malloc(nprocs * sizeof(ADIO_Offset));
@@ -396,7 +396,7 @@ static void ADIOI_LUSTRE_Exch_and_write(ADIO_File fd, const void *buf,
     char *write_buf = NULL;
     MPI_Status status;
     ADIOI_Flatlist_node *flat_buf = NULL;
-    MPI_Aint buftype_extent;
+    MPI_Aint lb, buftype_extent;
     int stripe_size = striping_info[0], avail_cb_nodes = striping_info[2];
     int data_sieving = 0;
     ADIO_Offset *srt_off = NULL;
@@ -496,7 +496,7 @@ static void ADIOI_LUSTRE_Exch_and_write(ADIO_File fd, const void *buf,
     if (!buftype_is_contig) {
         flat_buf = ADIOI_Flatten_and_find(datatype);
     }
-    MPI_Type_extent(datatype, &buftype_extent);
+    MPI_Type_get_extent(datatype, &lb, &buftype_extent);
     /* I need to check if there are any outstanding nonblocking writes to
      * the file, which could potentially interfere with the writes taking
      * place in this collective write call. Since this is not likely to be
@@ -576,7 +576,7 @@ static void ADIOI_LUSTRE_Exch_and_write(ADIO_File fd, const void *buf,
                         recv_count[i]++;
                         ADIOI_Assert((((ADIO_Offset) (uintptr_t) write_buf) + req_off - off) ==
                                      (ADIO_Offset) (uintptr_t) (write_buf + req_off - off));
-                        MPI_Address(write_buf + req_off - off, &(others_req[i].mem_ptrs[j]));
+                        MPI_Get_address(write_buf + req_off - off, &(others_req[i].mem_ptrs[j]));
                         recv_size[i] += req_len;
                     } else {
                         break;
@@ -806,8 +806,8 @@ static void ADIOI_LUSTRE_W_Exchange_data(ADIO_File fd, const void *buf,
         j = 0;
         for (i = 0; i < nprocs; i++) {
             if (recv_size[i]) {
-                MPI_Irecv(MPI_BOTTOM, 1, recv_types[j], i,
-                          myrank + i + 100 * iter, fd->comm, requests + j);
+                MPI_Irecv(MPI_BOTTOM, 1, recv_types[j], i, ADIOI_COLL_TAG(i, iter), fd->comm,
+                          requests + j);
                 j++;
             }
         }
@@ -824,7 +824,7 @@ static void ADIOI_LUSTRE_W_Exchange_data(ADIO_File fd, const void *buf,
             if (send_size[i]) {
                 ADIOI_Assert(buf_idx[i] != -1);
                 MPI_Issend(((char *) buf) + buf_idx[i], send_size[i],
-                           MPI_BYTE, i, myrank + i + 100 * iter, fd->comm, send_req + j);
+                           MPI_BYTE, i, ADIOI_COLL_TAG(i, iter), fd->comm, send_req + j);
                 j++;
             }
     } else if (nprocs_send) {
@@ -849,8 +849,8 @@ static void ADIOI_LUSTRE_W_Exchange_data(ADIO_File fd, const void *buf,
         for (i = 0; i < nprocs; i++) {
             MPI_Status wkl_status;
             if (recv_size[i]) {
-                MPI_Recv(MPI_BOTTOM, 1, recv_types[j], i,
-                         myrank + i + 100 * iter, fd->comm, &wkl_status);
+                MPI_Recv(MPI_BOTTOM, 1, recv_types[j], i, ADIOI_COLL_TAG(i, iter), fd->comm,
+                         &wkl_status);
                 j++;
             }
         }
@@ -1025,7 +1025,7 @@ static void ADIOI_LUSTRE_Fill_send_buffer(ADIO_File fd, const void *buf,
                     ADIOI_BUF_COPY}
                     if (send_buf_idx[p] == send_size[p]) {
                         MPI_Issend(send_buf[p], send_size[p], MPI_BYTE, p,
-                                   myrank + p + 100 * iter, fd->comm, requests + jj);
+                                   ADIOI_COLL_TAG(p, iter), fd->comm, requests + jj);
                         jj++;
                     }
                 } else {
@@ -1083,7 +1083,7 @@ static void ADIOI_LUSTRE_IterateOneSided(ADIO_File fd, const void *buf, int *str
     fd->hints->cb_nodes = numStripedAggs;
 
     /* Declare ADIOI_OneSidedStripeParms here - these parameters will be locally managed
-     * for this invokation of ADIOI_LUSTRE_IterateOneSided.  This will allow for concurrent
+     * for this invocation of ADIOI_LUSTRE_IterateOneSided.  This will allow for concurrent
      * one-sided collective writes via multi-threading as well as multiple communicators.
      */
     ADIOI_OneSidedStripeParms stripeParms;
@@ -1097,7 +1097,7 @@ static void ADIOI_LUSTRE_IterateOneSided(ADIO_File fd, const void *buf, int *str
     stripeParms.lastFlatBufIndice = 0;
     stripeParms.lastIndiceOffset = 0;
 
-    /* The general algorithm here is to divide the file up into segements, a segment
+    /* The general algorithm here is to divide the file up into segments, a segment
      * being defined as a contiguous region of the file which has up to one occurrence
      * of each stripe - the data for each stripe being written out by a particular
      * aggregator.  The segmentLen is the maximum size in bytes of each segment

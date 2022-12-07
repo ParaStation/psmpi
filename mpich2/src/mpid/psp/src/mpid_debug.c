@@ -114,13 +114,11 @@ char* MPIDI_PSP_get_psmpi_version_string(void)
 #ifdef PSCOM_ALLIN
 				"+allin(%s)"
 #endif
-#ifdef MPIDI_PSP_WITH_TOPOLOGY_AWARENESS
-				"+topology-awareness"
-#ifdef HAVE_LIBHCOLL
-				"(hcoll)"
-#else
-				"(msa)"
+#ifdef MPIDI_PSP_WITH_MSA_AWARENESS
+				"+msa"
 #endif
+#ifdef HAVE_HCOLL
+				"+hcoll"
 #endif
 		                "";
 
@@ -186,6 +184,9 @@ const char *mpid_msgtype_str(enum MPID_PSP_MSGTYPE msg_type)
 	case MPID_PSP_MSGTYPE_RMA_INTERNAL_LOCK_ANSWER:   return "RMA_LOCK_ANSWER";
 	case MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_REQUEST:return "RMA_UNLOCK_REQUEST";
 	case MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_ANSWER: return "RMA_UNLOCK_ANSWER";
+
+	case MPID_PSP_MSGTYPE_PART_SEND_INIT: return "PART_SEND_INIT";
+	case MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND: return "PART_CLEAR_TO_SEND";
 
 	case MPID_PSP_MSGTYPE_FINALIZE_TOKEN:   return "FINALIZE_TOKEN";
 	}

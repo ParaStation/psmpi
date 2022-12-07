@@ -1,4 +1,134 @@
 ===============================================================================
+                               Changes in 4.0.3
+===============================================================================
+
+# Fix message queue dumping interface support
+
+# Fix multinic usage in ch4:ofi
+
+# Fix bug in MPI_WIN_CREATE in ch4:ucx when UCX >= 1.13.0
+
+# Fix MPIR_pmi_barrier when PMI2 is used
+
+# Fix ROMIO lazy mutex initialization
+
+# Fix build with HIP support
+
+# Fix potential dynamic process message mixups in ch3
+
+# Add missing const to MPI_Pready_list array_of_partitions argument
+
+# Add support for C++ datatypes even when the C++ binding is disabled
+
+# Add support for Intel OneAPI compilers
+
+===============================================================================
+                               Changes in 4.0.2
+===============================================================================
+
+# Fix CUDA configuration logic in yaksa
+
+# Fix support for dynamic process functionality with PMI2 clients
+
+# Fix non-zero appnum bug in PMI2 server in Hydra
+
+# Fix MPI_Op support for types created with MPI_Type_create_f90_xxx
+
+# Fix building ch4 with Intel compilers on macOS
+
+# Fix Level Zero properties initialization in MPL. Thanks to Brice
+  Videau for the report and patch.
+
+# Use standard names for CPU affinity functions with POSIX
+  threads. Fixes building against Musl libc. Thanks to Mosè Giordano for
+  the report and patch.
+
+# Add elemental to eq/neq operators in Fortran 2008 binding
+
+# Workaround for inter-process mutex bug on FreeBSD
+
+===============================================================================
+                               Changes in 4.0.1
+===============================================================================
+
+# Multiple fixes for NVIDIA/PGI HPC Compilers support
+
+# Fix ch4:ofi:gni provider capability set
+
+# Fix MPI_SESSION_INIT "thread_level" info hint
+
+# Fix build on macOS with --disable-shared
+
+# Fix QMPI function definitions
+
+# Fix support for "host" info hint in MPI_COMM_SPAWN[_MULTIPLE]
+
+# Fix manpage generation
+
+# Add missing MPI_F_sync_reg function
+
+# Add missing const to MPI_Psend_init buffer argument
+
+# Make Python 3 optional in configure script
+
+# Remove -Wl,flat_namespace from compile wrappers by default (macOS only)
+
+# Update UCX module to v1.12.0
+
+# Update yaksa module to support latest Ampere compute capability
+
+===============================================================================
+                               Changes in 4.0
+===============================================================================
+
+# All MPI-4 APIs have been implemented. Major MPI-4 features include MPI
+  sessions, partitioned point-to-point communications, events in the MPI tool
+  information interface, large-count functions, persistent collectives,
+  MPI_Comm_idup_with_info, MPI_Isendrecv and MPI_Isendrecv_replace,
+  MPI_Info_get_string, MPI_Comm_split_type with new split_type --
+  MPI_COMM_TYPE_HW_GUIDED and MPI_COMM_TYPE_HW_UNGUIDED.
+
+# Add QMPI (experimental) support.
+
+# Add MPIX_Delete_error_{class,code,string}.
+
+# MPI_Info objects can be accessed before MPI_Init{_thread}.
+
+# Generate C API interface functions including man page notes and error
+  checking using Python scripts.
+
+# Generate Fortran (mpif.h, mpi_f08) bindings using Python scripts.
+
+# Generate collective entrance functions and generate per-algorithm tests.
+
+# Support explicit --without-cuda configure option.
+
+# Drop support for UCX version < 1.7.0.
+
+# Configure now optionally require Python 3 (when F08 is enabled).
+
+# Multi-NIC support in ch4:ofi.
+
+# Default to ch4:ofi when configure doesn't have a clear choice. Add message
+  block at the end of configure to advise user.
+
+# Multiple VCI is fully implemented including the active message fallback paths.
+
+# Extend IPC to support non-contig datatypes.
+
+# Add AMD GPU support using HIP.
+
+# Add generic RNDV callback mechanism with active messages.
+
+# Refactor ch4 dynamic process functions.
+
+# Avoid building MPL and hwloc multiple times.
+
+# Fix MPIX_Query_cuda_support.
+
+# Many bug fixes and code clean-ups.
+
+===============================================================================
                                Changes in 3.4.3
 ===============================================================================
 
@@ -83,7 +213,7 @@
 # ch4 replaces ch3 as the default device configuration. If no network
   module is specified at configuration-time, MPICH will search the
   user environment in order to select one to build. The user will be
-  prompted to choose if no preferred network library is dectected.
+  prompted to choose if no preferred network library is detected.
 
 # Add support for Yaksa datatype engine (default in ch4).
 
@@ -100,6 +230,8 @@
 # Add Quobyte ADIO driver to ROMIO (contributed by Quobyte).
 
 # Add support for Arm compiler toolchain
+
+# Add support for NVIDIA HPC compilers
 
 # Add support for flang/f18 Fortran compiler
 
@@ -256,7 +388,7 @@
  # Added experimental support for Open Fabrics Interfaces (OFI) version 1.0.0.
    https://github.com/ofiwg/libfabric (thanks to Intel for code contribution)
 
- # The Myrinet MX network module, which had a life cyle from 1.1 till
+ # The Myrinet MX network module, which had a life cycle from 1.1 till
    3.1.2, has now been deleted.
 
  # Several other minor bug fixes, memory leak fixes, and code cleanup.
@@ -1272,7 +1404,7 @@ www.mcs.anl.gov/mpi/mpich2/mpich2_1_0_6changes.htm.
 
 - Many enhancements to MPE
 
-- Enhanced support for features and idiosyncracies of Fortran 77 and 
+- Enhanced support for features and idiosyncrasies of Fortran 77 and 
   Fortran 90 compilers, including gfortran, g95, and xlf
 
 - Enhanced support for C++ compilers that do not fully support abstract
@@ -1286,13 +1418,13 @@ www.mcs.anl.gov/mpi/mpich2/mpich2_1_0_6changes.htm.
 - Man pages for mpiexec and mpif90
 
 - Enhancements for developers, including a more flexible and general 
-  mechanism for inserting logging and information messages, controlable
+  mechanism for inserting logging and information messages, controllable
   with --mpich-dbg-xxx command line arguments or MPICH_DBG_XXX environment
   variables.
 
 - Note to developers: 
   This release contains many changes to the structure of the CH3
-  device implementation (in src/mpid/ch3), including signficant
+  device implementation (in src/mpid/ch3), including significant
   reworking of the files (many files have been combined into fewer files
   representing logical grouping of functions).  The next release of 
   MPICH2 will contain even more significant changes to the device 
@@ -1323,7 +1455,7 @@ www.mcs.anl.gov/mpi/mpich2/mpich2_1_0_6changes.htm.
     and provides count of real drawables in preview drawables.
 
   - new slog2 tools, slog2filter and slog2updater, which both are logfile
-    format convertors.  slog2filter removes undesirable categories of
+    format converters.  slog2filter removes undesirable categories of
     drawables as well as alters the slog2 file structure.  slog2updater
     is a slog2filter that reads in older logfile format, 2.0.5, and 
     writes out the latest format 2.0.6.
@@ -1640,7 +1772,7 @@ www.mcs.anl.gov/mpi/mpich2/mpich2_1_0_6changes.htm.
 - The CH3 interface and device now provide a mechanism for using RDMA (remote
   direct memory access) to transfer data between processes.
 
-- Logging capabilities for MPI and internal routines have been readded.  See
+- Logging capabilities for MPI and internal routines have been re-added.  See
   the documentation in doc/logging for details.
 
 - A "meminit" option was added to --enable-g to force all bytes associated with

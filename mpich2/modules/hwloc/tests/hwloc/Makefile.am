@@ -1,4 +1,4 @@
-# Copyright © 2009-2020 Inria.  All rights reserved.
+# Copyright © 2009-2021 Inria.  All rights reserved.
 # Copyright © 2009-2012 Université Bordeaux
 # Copyright © 2009-2014 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
@@ -42,6 +42,7 @@ check_PROGRAMS = \
         hwloc_get_obj_inside_cpuset \
         hwloc_get_shared_cache_covering_obj \
         hwloc_get_obj_below_array_by_type \
+        hwloc_get_obj_with_same_locality \
         hwloc_bitmap_first_last_weight \
         hwloc_bitmap_singlify \
         hwloc_type_depth \
@@ -69,6 +70,10 @@ check_PROGRAMS = \
         cpukinds \
         xmlbuffer \
         gl
+
+if HWLOC_HAVE_WINDOWS
+check_PROGRAMS += windows_processor_groups
+endif HWLOC_HAVE_WINDOWS
 
 if !HWLOC_HAVE_WINDOWS
 if !HWLOC_HAVE_DARWIN
@@ -108,6 +113,10 @@ if HWLOC_HAVE_RSMI
 check_PROGRAMS += rsmi
 endif HWLOC_HAVE_RSMI
 
+if HWLOC_HAVE_LEVELZERO
+check_PROGRAMS += levelzero
+endif HWLOC_HAVE_LEVELZERO
+
 TESTS = $(check_PROGRAMS)
 
 # The library has a different name depending on whether we are
@@ -120,14 +129,30 @@ endif
 
 LDADD += $(HWLOC_top_builddir)/hwloc/$(hwloc_lib)
 
-linux_libnuma_CFLAGS = $(AM_CFLAGS) $(HWLOC_NUMA_CFLAGS)
-linux_libnuma_LDADD = $(LDADD) $(HWLOC_NUMA_LIBS)
-openfabrics_verbs_LDADD = $(LDADD) -libverbs
+linux_libnuma_CFLAGS = $(AM_CFLAGS) $(HWLOC_NUMA_CPPFLAGS) $(HWLOC_NUMA_CFLAGS)
+linux_libnuma_LDADD = $(LDADD) $(HWLOC_NUMA_LIBS) $(HWLOC_NUMA_LDFLAGS)
+
+openfabrics_verbs_CFLAGS = $(AM_CFLAGS) $(HWLOC_IBVERBS_CPPFLAGS) $(HWLOC_IBVERBS_CFLAGS)
+openfabrics_verbs_LDADD = $(LDADD) $(HWLOC_IBVERBS_LIBS) $(HWLOC_IBVERBS_LDFLAGS)
+
+opencl_CFLAGS = $(AM_CFLAGS) $(HWLOC_OPENCL_CPPFLAGS) $(HWLOC_OPENCL_CFLAGS)
 opencl_LDADD = $(LDADD) $(HWLOC_OPENCL_LIBS) $(HWLOC_OPENCL_LDFLAGS)
-cuda_LDADD = $(LDADD) -lcuda
-cudart_LDADD = $(LDADD) -lcuda -lcudart
-nvml_LDADD = $(LDADD) -lnvidia-ml
-rsmi_LDADD = $(LDADD) -lrocm_smi64
+
+cuda_CFLAGS = $(AM_CFLAGS) $(HWLOC_CUDA_CPPFLAGS) $(HWLOC_CUDA_CFLAGS)
+cuda_LDADD = $(LDADD) $(HWLOC_CUDA_LIBS) $(HWLOC_CUDA_LDFLAGS)
+
+cudart_CFLAGS = $(AM_CFLAGS) $(HWLOC_CUDART_CPPFLAGS) $(HWLOC_CUDART_CFLAGS)
+cudart_LDADD = $(LDADD) $(HWLOC_CUDART_LIBS) $(HWLOC_CUDART_LDFLAGS)
+
+nvml_CFLAGS = $(AM_CFLAGS) $(HWLOC_NVML_CPPFLAGS) $(HWLOC_NVML_CFLAGS)
+nvml_LDADD = $(LDADD) $(HWLOC_NVML_LIBS) $(HWLOC_NVML_LDFLAGS)
+
+rsmi_CFLAGS = $(AM_CFLAGS) $(HWLOC_RSMI_CPPFLAGS) $(HWLOC_RSMI_CFLAGS)
+rsmi_LDADD = $(LDADD) $(HWLOC_RSMI_LIBS) $(HWLOC_RSMI_LDFLAGS)
+
+levelzero_CFLAGS = $(AM_CFLAGS) $(HWLOC_LEVELZERO_CPPFLAGS) $(HWLOC_LEVELZERO_CFLAGS)
+levelzero_LDADD = $(LDADD) $(HWLOC_LEVELZERO_LIBS) $(HWLOC_LEVELZERO_LDFLAGS)
+
 hwloc_bind_LDADD = $(LDADD)
 if HWLOC_HAVE_PTHREAD
 hwloc_bind_LDADD += -lpthread

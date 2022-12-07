@@ -20,12 +20,16 @@ int MPIR_Assert_fail(const char *cond, const char *file_name, int line_num);
 int MPIR_Assert_fail_fmt(const char *cond, const char *file_name, int line_num, const char *fmt,
                          ...);
 
+/* Instead of "MPIR_Assert(0)", use "MPIR_Assert_error(error_msg)" */
+#define MPIR_Assert_error(errmsg) \
+    MPIR_Assert_fail(errmsg, __FILE__, __LINE__)
+
 /*
  * MPIR_Assert()
  *
  * Similar to assert() except that it performs an MPID_Abort() when the
  * assertion fails.  Also, for Windows, it doesn't popup a
- * mesage box on a remote machine.
+ * message box on a remote machine.
  */
 #if (defined(__COVERITY__) || defined(__KLOCWORK__))
 #include <assert.h>

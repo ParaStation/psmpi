@@ -13,7 +13,7 @@
 
 #include <ucs/arch/atomic.h>
 #include <ucs/datastruct/list.h>
-#include <ucs/debug/debug.h>
+#include <ucs/debug/debug_int.h>
 #include <ucs/debug/log.h>
 #include <ucs/sys/compiler.h>
 #include <ucs/sys/sys.h>
@@ -67,7 +67,7 @@ static pid_t ucs_async_signal_context_tid(ucs_async_context_t *async)
     if (pid == -1) {
         pid = getpid();
     }
-    return (async == NULL) ? pid : async->signal.tid;;
+    return (async == NULL) ? pid : async->signal.tid;
 }
 
 static ucs_status_t
@@ -183,7 +183,7 @@ static ucs_status_t ucs_async_signal_dispatch_timer(int uid)
 
 static inline int ucs_signal_map_to_events(int si_code)
 {
-    int events;
+    ucs_event_set_types_t events;
 
     switch (si_code) {
     case POLL_IN:
@@ -338,8 +338,9 @@ static void ucs_async_signal_cleanup(ucs_async_context_t *async)
     }
 }
 
-static ucs_status_t ucs_async_signal_modify_event_fd(ucs_async_context_t *async,
-                                                     int event_fd, int events)
+static ucs_status_t
+ucs_async_signal_modify_event_fd(ucs_async_context_t *async, int event_fd,
+                                 ucs_event_set_types_t events)
 {
     ucs_status_t status;
     int add, rm;
@@ -365,7 +366,8 @@ static ucs_status_t ucs_async_signal_modify_event_fd(ucs_async_context_t *async,
 }
 
 static ucs_status_t ucs_async_signal_add_event_fd(ucs_async_context_t *async,
-                                                  int event_fd, int events)
+                                                  int event_fd,
+                                                  ucs_event_set_types_t events)
 {
     ucs_status_t status;
     pid_t tid;
@@ -617,6 +619,8 @@ static void ucs_async_signal_global_cleanup()
 ucs_async_ops_t ucs_async_signal_ops = {
     .init               = ucs_async_signal_global_init,
     .cleanup            = ucs_async_signal_global_cleanup,
+    .is_from_async      =
+            (ucs_async_is_from_async_t)ucs_empty_function_return_zero,
     .block              = ucs_async_signal_block_all,
     .unblock            = ucs_async_signal_unblock_all,
     .context_init       = ucs_async_signal_init,

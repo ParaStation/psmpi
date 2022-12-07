@@ -576,6 +576,7 @@ static void ADIOI_Iexch_and_write(ADIOI_NBC_Request * nbc_req, int *error_code)
     MPI_Datatype datatype = vars->datatype;
     int nprocs = vars->nprocs;
     ADIOI_Access *others_req = vars->others_req;
+    MPI_Aint lb;
 
     /* Send data to appropriate processes and write in sizes of no more
      * than coll_bufsize.
@@ -671,7 +672,7 @@ static void ADIOI_Iexch_and_write(ADIOI_NBC_Request * nbc_req, int *error_code)
     if (!vars->buftype_is_contig) {
         vars->flat_buf = ADIOI_Flatten_and_find(datatype);
     }
-    MPI_Type_extent(datatype, &vars->buftype_extent);
+    MPI_Type_get_extent(datatype, &lb, &vars->buftype_extent);
 
 
     /* I need to check if there are any outstanding nonblocking writes to
@@ -769,7 +770,7 @@ static void ADIOI_Iexch_and_write_l1_begin(ADIOI_NBC_Request * nbc_req, int *err
                     count[i]++;
                     ADIOI_Assert((((ADIO_Offset) (uintptr_t) write_buf) + req_off - off) ==
                                  (ADIO_Offset) (uintptr_t) (write_buf + req_off - off));
-                    MPI_Address(write_buf + req_off - off, &(others_req[i].mem_ptrs[j]));
+                    MPI_Get_address(write_buf + req_off - off, &(others_req[i].mem_ptrs[j]));
                     ADIOI_Assert((off + size - req_off) == (int) (off + size - req_off));
                     recv_size[i] += (int) (MPL_MIN(off + size - req_off, (unsigned) req_len));
 
@@ -1080,7 +1081,7 @@ static void ADIOI_W_Iexchange_data_hole(ADIOI_NBC_Request * nbc_req, int *error_
      * processes are operating on noncontigous data.  But holes can also show
      * up at the beginning or end of the file domain (see John Bent ROMIO REQ
      * #835). Missing these holes would result in us writing more data than
-     * recieved by everyone else. */
+     * received by everyone else. */
 
     *hole = 0;
     if (sum) {
@@ -1155,7 +1156,7 @@ static void ADIOI_W_Iexchange_data_send(ADIOI_NBC_Request * nbc_req, int *error_
         j = 0;
         for (i = 0; i < nprocs; i++) {
             if (recv_size[i]) {
-                MPI_Irecv(MPI_BOTTOM, 1, recv_types[j], i, myrank + i + 100 * iter,
+                MPI_Irecv(MPI_BOTTOM, 1, recv_types[j], i, ADIOI_COLL_TAG(i, iter),
                           fd->comm, vars->requests + j);
                 j++;
             }
@@ -1174,7 +1175,7 @@ static void ADIOI_W_Iexchange_data_send(ADIOI_NBC_Request * nbc_req, int *error_
         for (i = 0; i < nprocs; i++)
             if (send_size[i]) {
                 MPI_Isend(((char *) buf) + buf_idx[i], send_size[i],
-                          MPI_BYTE, i, myrank + i + 100 * iter, fd->comm, vars->send_req + j);
+                          MPI_BYTE, i, ADIOI_COLL_TAG(i, iter), fd->comm, vars->send_req + j);
                 j++;
                 buf_idx[i] += send_size[i];
             }
@@ -1210,7 +1211,7 @@ static void ADIOI_W_Iexchange_data_send(ADIOI_NBC_Request * nbc_req, int *error_
         j = 0;
         for (i = 0; i < nprocs; i++) {
             if (recv_size[i]) {
-                MPI_Irecv(MPI_BOTTOM, 1, recv_types[j], i, myrank + i + 100 * iter,
+                MPI_Irecv(MPI_BOTTOM, 1, recv_types[j], i, ADIOI_COLL_TAG(i, iter),
                           fd->comm, vars->req3 + j);
                 j++;
             }

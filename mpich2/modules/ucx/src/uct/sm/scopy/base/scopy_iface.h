@@ -12,7 +12,7 @@
 #include <uct/sm/base/sm_iface.h>
 
 #define uct_scopy_trace_data(_tx) \
-    ucs_trace_data("%s [tx %p iov %zu/%zu length %zu/%zu] to %"PRIx64"(%+ld)", \
+    ucs_trace_data("%s [tx %p iov %zu/%zu length %zu/%zu] to %" PRIx64 "(%+ld)", \
                    uct_scopy_tx_op_str[(_tx)->op], (_tx), \
                    (_tx)->iov_iter.iov_index, (_tx)->iov_cnt, \
                    uct_iov_iter_flat_offset((_tx)->iov, (_tx)->iov_cnt, \
@@ -54,17 +54,20 @@ typedef struct uct_scopy_iface {
 
 
 typedef struct uct_scopy_iface_ops {
-    uct_iface_ops_t               super;
-    uct_scopy_ep_tx_func_t        ep_tx;
+    uct_iface_internal_ops_t super;
+    uct_scopy_ep_tx_func_t   ep_tx;
 } uct_scopy_iface_ops_t;
 
 
 void uct_scopy_iface_query(uct_scopy_iface_t *iface, uct_iface_attr_t *iface_attr);
 
-UCS_CLASS_DECLARE(uct_scopy_iface_t, uct_scopy_iface_ops_t*, uct_md_h, uct_worker_h,
-                  const uct_iface_params_t*, const uct_iface_config_t*);
+UCS_CLASS_DECLARE(uct_scopy_iface_t, uct_iface_ops_t*, uct_scopy_iface_ops_t*,
+                  uct_md_h, uct_worker_h, const uct_iface_params_t*,
+                  const uct_iface_config_t*);
 
 unsigned uct_scopy_iface_progress(uct_iface_h tl_iface);
+
+ucs_status_t uct_scopy_iface_event_arm(uct_iface_h tl_iface, unsigned events);
 
 ucs_status_t uct_scopy_iface_flush(uct_iface_h tl_iface, unsigned flags,
                                    uct_completion_t *comp);

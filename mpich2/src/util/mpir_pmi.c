@@ -7,6 +7,66 @@
 #include <mpiimpl.h>
 #include "mpir_nodemap.h"
 
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+categories:
+    - name        : NODEMAP
+      description : cvars that control behavior of nodemap
+
+cvars:
+    - name        : MPIR_CVAR_NOLOCAL
+      category    : NODEMAP
+      alt-env     : MPIR_CVAR_NO_LOCAL
+      type        : boolean
+      default     : false
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If true, force all processes to operate as though all processes
+        are located on another node.  For example, this disables shared
+        memory communication hierarchical collectives.
+
+    - name        : MPIR_CVAR_ODD_EVEN_CLIQUES
+      category    : NODEMAP
+      alt-env     : MPIR_CVAR_EVEN_ODD_CLIQUES
+      type        : boolean
+      default     : false
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If true, odd procs on a node are seen as local to each other, and even
+        procs on a node are seen as local to each other.  Used for debugging on
+        a single machine. Deprecated in favor of MPIR_CVAR_NUM_CLIQUES.
+
+    - name        : MPIR_CVAR_NUM_CLIQUES
+      category    : NODEMAP
+      type        : int
+      default     : 1
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        Specify the number of cliques that should be used to partition procs on
+        a local node. Procs with the same clique number are seen as local to
+        each other. Used for debugging on a single machine.
+
+    - name        : MPIR_CVAR_CLIQUES_BY_BLOCK
+      category    : NODEMAP
+      type        : boolean
+      default     : false
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        Specify to divide processes into cliques by uniform blocks. The default
+        is to divide in round-robin fashion. Used for debugging on a single machine.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
+
 static int build_nodemap(int *nodemap, int sz, int *p_max_node_id);
 static int build_locality(void);
 
@@ -270,6 +330,9 @@ int MPIR_pmi_barrier(void)
     pmi_errno = PMI2_KVS_Fence();
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI2_SUCCESS, mpi_errno, MPI_ERR_OTHER,
                          "**pmi_kvsfence", "**pmi_kvsfence %d", pmi_errno);
+    /* Get a non-existent key, it only returns after every process called fence */
+    int out_len;
+    PMI2_KVS_Get(pmi_jobid, PMI2_ID_NULL, "-NONEXIST-KEY", NULL, 0, &out_len);
 #elif defined(USE_PMIX_API)
     pmix_info_t *info;
     PMIX_INFO_CREATE(info, 1);
@@ -334,6 +397,7 @@ static int optimized_put(const char *key, const char *val, int is_local)
     int mpi_errno = MPI_SUCCESS;
 #if defined(USE_PMI1_API)
     mpi_errno = MPIR_pmi_kvs_put(key, val);
+    MPIR_ERR_CHECK(mpi_errno);
 #elif defined(USE_PMI2_API)
     if (!is_local) {
         mpi_errno = MPIR_pmi_kvs_put(key, val);
@@ -487,7 +551,7 @@ static int get_ex(int src, const char *key, void *buf, int *p_size, int is_local
 static int optional_bcast_barrier(MPIR_PMI_DOMAIN domain)
 {
 #if defined(USE_PMI1_API)
-    /* unless bcast is skipped alltogether */
+    /* unless bcast is skipped altogether */
     if (domain == MPIR_PMI_DOMAIN_ALL && MPIR_Process.size == 1) {
         return MPI_SUCCESS;
     } else if (domain == MPIR_PMI_DOMAIN_NODE_ROOTS && MPIR_Process.num_nodes == 1) {
@@ -769,7 +833,7 @@ char *MPIR_pmi_get_failed_procs(void)
   fn_exit:
     return failed_procs_string;
   fn_fail:
-    /* FIXME: approprate error messages here? */
+    /* FIXME: appropriate error messages here? */
     MPL_free(failed_procs_string);
     failed_procs_string = NULL;
     goto fn_exit;
@@ -825,8 +889,55 @@ int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
                          "**pmi_spawn_multiple", "**pmi_spawn_multiple %d", pmi_errno);
 #elif defined(USE_PMI2_API)
-    /* not supported yet */
-    MPIR_Assert(0);
+    struct MPIR_Info preput;
+    struct MPIR_Info *preput_p[1] = { &preput };
+    int *argcs = MPL_malloc(count * sizeof(int), MPL_MEM_DYNAMIC);
+    int *info_keyval_sizes = MPL_malloc(count * sizeof(int), MPL_MEM_DYNAMIC);
+    MPIR_Assert(argcs);
+    MPIR_Assert(info_keyval_sizes);
+
+    /* compute argcs array */
+    for (int i = 0; i < count; ++i) {
+        argcs[i] = 0;
+        if (argvs != NULL && argvs[i] != NULL) {
+            while (argvs[i][argcs[i]]) {
+                ++argcs[i];
+            }
+        }
+    }
+
+    /* FIXME cheating on constness */
+    preput.key = (char *) preput_keyvals->key;
+    preput.value = preput_keyvals->val;
+    preput.next = NULL;
+
+    /* determine info sizes */
+    if (!info_ptrs) {
+        for (int i = 0; i < count; i++) {
+            info_keyval_sizes[i] = 0;
+        }
+    } else {
+        for (int i = 0; i < count; i++) {
+            if (info_ptrs[i] != NULL) {
+                MPIR_Info_get_nkeys_impl(info_ptrs[i], &info_keyval_sizes[i]);
+                info_ptrs[i] = info_ptrs[i]->next;      /* skip empty MPIR_Info struct */
+            } else {
+                info_keyval_sizes[i] = 0;
+            }
+        }
+    }
+
+    pmi_errno = PMI2_Job_Spawn(count, (const char **) commands,
+                               argcs, (const char ***) argvs,
+                               maxprocs,
+                               info_keyval_sizes, (const MPIR_Info **) info_ptrs,
+                               1, (const struct MPIR_Info **) preput_p, NULL, 0, pmi_errcodes);
+    MPL_free(argcs);
+    MPL_free(info_keyval_sizes);
+    if (pmi_errno != PMI2_SUCCESS) {
+        MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER,
+                             "**pmi_spawn_multiple", "**pmi_spawn_multiple %d", pmi_errno);
+    }
 #elif defined(USE_PMIX_API)
     /* not supported yet */
     MPIR_Assert(0);
@@ -854,6 +965,7 @@ static int get_option_no_local(void);
 static int get_option_num_cliques(void);
 static int build_nodemap_nolocal(int *nodemap, int sz, int *p_max_node_id);
 static int build_nodemap_roundrobin(int num_cliques, int *nodemap, int sz, int *p_max_node_id);
+static int build_nodemap_byblock(int num_cliques, int *nodemap, int sz, int *p_max_node_id);
 
 #ifdef USE_PMI1_API
 static int build_nodemap_pmi1(int *nodemap, int sz, int *p_max_node_id);
@@ -886,7 +998,11 @@ static int build_nodemap(int *nodemap, int sz, int *p_max_node_id)
         num_cliques = sz;
     }
     if (*p_max_node_id == 0 && num_cliques > 1) {
-        mpi_errno = build_nodemap_roundrobin(num_cliques, nodemap, sz, p_max_node_id);
+        if (MPIR_CVAR_CLIQUES_BY_BLOCK) {
+            mpi_errno = build_nodemap_byblock(num_cliques, nodemap, sz, p_max_node_id);
+        } else {
+            mpi_errno = build_nodemap_roundrobin(num_cliques, nodemap, sz, p_max_node_id);
+        }
         MPIR_ERR_CHECK(mpi_errno);
     }
 
@@ -918,6 +1034,11 @@ static int get_option_num_cliques(void)
     }
 }
 
+int MPIR_pmi_has_local_cliques(void)
+{
+    return (get_option_num_cliques() > 1);
+}
+
 /* one process per node */
 int build_nodemap_nolocal(int *nodemap, int sz, int *p_max_node_id)
 {
@@ -933,6 +1054,24 @@ static int build_nodemap_roundrobin(int num_cliques, int *nodemap, int sz, int *
 {
     for (int i = 0; i < sz; ++i) {
         nodemap[i] = i % num_cliques;
+    }
+    *p_max_node_id = num_cliques - 1;
+    return MPI_SUCCESS;
+}
+
+/* assign processes to num_cliques nodes by uniform block */
+static int build_nodemap_byblock(int num_cliques, int *nodemap, int sz, int *p_max_node_id)
+{
+    int block_size = sz / num_cliques;
+    int remainder = sz % num_cliques;
+    /* The first `remainder` cliques have size `block_size + 1` */
+    int middle = (block_size + 1) * remainder;
+    for (int i = 0; i < sz; ++i) {
+        if (i < middle) {
+            nodemap[i] = i / (block_size + 1);
+        } else {
+            nodemap[i] = (i - remainder) / block_size;
+        }
     }
     *p_max_node_id = num_cliques - 1;
     return MPI_SUCCESS;
@@ -1133,8 +1272,7 @@ static int mpi_to_pmi_keyvals(MPIR_Info * info_ptr, PMI_keyval_t ** kv_ptr, int 
     PMI_keyval_t *kv = 0;
     int nkeys = 0, vallen, flag, mpi_errno = MPI_SUCCESS;
 
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPI_TO_PMI_KEYVALS);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPI_TO_PMI_KEYVALS);
+    MPIR_FUNC_ENTER;
 
     if (!info_ptr || info_ptr->handle == MPI_INFO_NULL)
         goto fn_exit;
@@ -1158,7 +1296,7 @@ static int mpi_to_pmi_keyvals(MPIR_Info * info_ptr, PMI_keyval_t ** kv_ptr, int 
   fn_exit:
     *kv_ptr = kv;
     *nkeys_ptr = nkeys;
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPI_TO_PMI_KEYVALS);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
 
   fn_fail:
@@ -1167,8 +1305,7 @@ static int mpi_to_pmi_keyvals(MPIR_Info * info_ptr, PMI_keyval_t ** kv_ptr, int 
 
 static void free_pmi_keyvals(PMI_keyval_t ** kv, int size, int *counts)
 {
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_FREE_PMI_KEYVALS);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_FREE_PMI_KEYVALS);
+    MPIR_FUNC_ENTER;
 
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < counts[i]; j++) {
@@ -1178,6 +1315,6 @@ static void free_pmi_keyvals(PMI_keyval_t ** kv, int size, int *counts)
         MPL_free(kv[i]);
     }
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_FREE_PMI_KEYVALS);
+    MPIR_FUNC_EXIT;
 }
 #endif /* USE_PMI1_API or USE_PMI2_API */

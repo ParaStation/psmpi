@@ -12,14 +12,6 @@
 #include "mpidimpl.h"
 
 
-/* This allows each channel to perform final initialization after the
- rest of MPI_Init completes.  */
-int MPID_InitCompleted( void )
-{
-	return MPI_SUCCESS;
-}
-
-
 #define WARN_NOT_IMPLEMENTED						\
 do {									\
 	static int warned = 0;						\

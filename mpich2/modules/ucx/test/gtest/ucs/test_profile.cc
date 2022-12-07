@@ -19,28 +19,34 @@ extern "C" {
 class scoped_profile {
 public:
     scoped_profile(ucs::test_base& test, const std::string &file_name,
-                   const char *mode) : m_test(test), m_file_name(file_name)
-{
-        ucs_profile_global_cleanup();
-        ucs_profile_reset_locations();
+                   const char *mode) : m_test(test), m_file_name(file_name) {
+        ucs_profile_reset_locations_id(ucs_profile_default_ctx);
+        ucs_profile_cleanup(ucs_profile_default_ctx);
         m_test.push_config();
         m_test.modify_config("PROFILE_MODE", mode);
         m_test.modify_config("PROFILE_FILE", m_file_name.c_str());
-        ucs_profile_global_init();
+        ucs_profile_init(ucs_global_opts.profile_mode,
+                         ucs_global_opts.profile_file,
+                         ucs_global_opts.profile_log_size,
+                         &ucs_profile_default_ctx);
     }
 
     std::string read() {
-        ucs_profile_dump();
+        ucs_profile_dump(ucs_profile_default_ctx);
         std::ifstream f(m_file_name.c_str());
         return std::string(std::istreambuf_iterator<char>(f),
                            std::istreambuf_iterator<char>());
     }
 
     ~scoped_profile() {
-        ucs_profile_global_cleanup();
+        ucs_profile_reset_locations_id(ucs_profile_default_ctx);
+        ucs_profile_cleanup(ucs_profile_default_ctx);
         unlink(m_file_name.c_str());
         m_test.pop_config();
-        ucs_profile_global_init();
+        ucs_profile_init(ucs_global_opts.profile_mode,
+                         ucs_global_opts.profile_file,
+                         ucs_global_opts.profile_log_size,
+                         &ucs_profile_default_ctx);
     }
 private:
     ucs::test_base&   m_test;
@@ -80,13 +86,18 @@ protected:
 
     void test_header(const ucs_profile_header_t *hdr, unsigned exp_mode,
                      const void **ptr);
+
     void test_locations(const ucs_profile_location_t *locations,
                         unsigned num_locations, const void **ptr);
+
     void test_thread_locations(const ucs_profile_thread_header_t *thread_hdr,
                                unsigned num_locations, uint64_t exp_count,
                                unsigned exp_num_records, const void **ptr);
 
-    void do_test(unsigned int_mode, const std::string& str_mode);
+    void test_nesting(const ucs_profile_location_t *loc, int nesting,
+                      const std::string &exp_name, int exp_nesting);
+
+    void do_test(unsigned int_mode, const std::string &str_mode);
 };
 
 static int sum(int a, int b)
@@ -254,6 +265,15 @@ void test_profile::test_thread_locations(
            num_locations;
 }
 
+void test_profile::test_nesting(const ucs_profile_location_t *loc, int nesting,
+                                const std::string &exp_name, int exp_nesting)
+{
+    if (loc->name == exp_name) {
+        EXPECT_EQ(exp_nesting, nesting)
+                << "nesting level of " << exp_name << " is wrong";
+    }
+}
+
 void test_profile::do_test(unsigned int_mode, const std::string& str_mode)
 {
     const int ITER           = 5;
@@ -288,8 +308,10 @@ void test_profile::do_test(unsigned int_mode, const std::string& str_mode)
                               exp_num_records, &ptr);
 
         const ucs_profile_record_t *records =
-                        reinterpret_cast<const ucs_profile_record_t*>(ptr);
+                reinterpret_cast<const ucs_profile_record_t*>(ptr);
         uint64_t prev_ts = records[0].timestamp;
+        int nesting      = 0;
+
         for (uint64_t i = 0; i < thread_hdr->num_records; ++i) {
             const ucs_profile_record_t *rec = &records[i];
 
@@ -303,12 +325,27 @@ void test_profile::do_test(unsigned int_mode, const std::string& str_mode)
 
             /* test param64 */
             const ucs_profile_location_t *loc = &locations[rec->location];
-            if ((loc->type == UCS_PROFILE_TYPE_REQUEST_NEW) ||
-                (loc->type == UCS_PROFILE_TYPE_REQUEST_EVENT) ||
-                (loc->type == UCS_PROFILE_TYPE_REQUEST_FREE))
-            {
+            switch (loc->type) {
+            case UCS_PROFILE_TYPE_REQUEST_NEW:
+            case UCS_PROFILE_TYPE_REQUEST_EVENT:
+            case UCS_PROFILE_TYPE_REQUEST_FREE:
                 EXPECT_EQ((uintptr_t)&test_request, rec->param64);
-            }
+                break;
+            case UCS_PROFILE_TYPE_SCOPE_BEGIN:
+                ++nesting;
+                break;
+            case UCS_PROFILE_TYPE_SCOPE_END:
+                --nesting;
+                break;
+            default:
+                break;
+            };
+
+            test_nesting(loc, nesting, "profile_test_func1", 0);
+            test_nesting(loc, nesting, "code", 1);
+            test_nesting(loc, nesting, "sample", 2);
+            test_nesting(loc, nesting, "profile_test_func2", 0);
+            test_nesting(loc, nesting, "sum", 1);
         }
 
         ptr = records + thread_hdr->num_records;
@@ -330,8 +367,8 @@ UCS_TEST_P(test_profile, log_accum) {
             "log,accum");
 }
 
-INSTANTIATE_TEST_CASE_P(st, test_profile, ::testing::Values(1));
-INSTANTIATE_TEST_CASE_P(mt, test_profile, ::testing::Values(2, 4, 8));
+INSTANTIATE_TEST_SUITE_P(st, test_profile, ::testing::Values(1));
+INSTANTIATE_TEST_SUITE_P(mt, test_profile, ::testing::Values(2, 4, 8));
 
 class test_profile_perf : public test_profile {
 };
@@ -393,6 +430,6 @@ UCS_TEST_SKIP_COND_P(test_profile_perf, overhead, RUNNING_ON_VALGRIND) {
     EXPECT_LT(overhead_nsec, EXP_OVERHEAD_NSEC) << "Profiling overhead is too high";
 }
 
-INSTANTIATE_TEST_CASE_P(st, test_profile_perf, ::testing::Values(1));
+INSTANTIATE_TEST_SUITE_P(st, test_profile_perf, ::testing::Values(1));
 
 #endif

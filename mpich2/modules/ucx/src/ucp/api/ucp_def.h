@@ -3,6 +3,7 @@
 * Copyright (C) UT-Battelle, LLC. 2014-2015. ALL RIGHTS RESERVED.
 * Copyright (C) IBM 2015. ALL RIGHTS RESERVED.
 * Copyright (C) Los Alamos National Security, LLC. 2018. ALL RIGHTS RESERVED.
+* Copyright (C) Arm, Ltd. 2021. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -10,6 +11,7 @@
 #ifndef UCP_DEF_H_
 #define UCP_DEF_H_
 
+#include <ucs/memory/memory_type.h>
 #include <ucs/type/status.h>
 #include <ucs/config/types.h>
 #include <stddef.h>
@@ -26,6 +28,13 @@
  * @ref ucp_tag_recv_callback_t callback argument.
  */
 typedef struct ucp_tag_recv_info             ucp_tag_recv_info_t;
+
+
+/**
+ * @ingroup UCP_WORKER
+ * @brief Operation parameters provided in @ref ucp_am_recv_callback_t callback.
+ */
+typedef struct ucp_am_recv_param             ucp_am_recv_param_t;
 
 
 /**
@@ -190,6 +199,11 @@ typedef struct ucp_mem_attr {
      * Size of the memory segment.
      */
      size_t                 length;
+
+     /**
+      * Type of allocated or registered memory
+      */
+     ucs_memory_type_t      mem_type;
 } ucp_mem_attr_t;
 
 
@@ -201,8 +215,9 @@ typedef struct ucp_mem_attr {
  * present. It is used to enable backward compatibility support.
  */
 enum ucp_mem_attr_field {
-    UCP_MEM_ATTR_FIELD_ADDRESS = UCS_BIT(0), /**< Virtual address */
-    UCP_MEM_ATTR_FIELD_LENGTH  = UCS_BIT(1)  /**< The size of memory region */
+    UCP_MEM_ATTR_FIELD_ADDRESS  = UCS_BIT(0), /**< Virtual address */
+    UCP_MEM_ATTR_FIELD_LENGTH   = UCS_BIT(1), /**< The size of memory region */
+    UCP_MEM_ATTR_FIELD_MEM_TYPE = UCS_BIT(2)  /**< Type of allocated or registered memory */
 };
 
 
@@ -486,14 +501,14 @@ typedef void (*ucp_tag_recv_callback_t)(void *request, ucs_status_t status,
  * "receive operation" is completed and the data is ready in the receive buffer.
  *
  * @param [in]  request   The completed receive request.
- * @param [in]  status    Completion status. If the send operation was completed
+ * @param [in]  status    Completion status. If the receive operation was completed
  *                        successfully UCS_OK is returned. If send operation was
- *                        canceled UCS_ERR_CANCELED is returned. If the data can
+ *                        canceled, UCS_ERR_CANCELED is returned. If the data can
  *                        not fit into the receive buffer the
  *                        @ref UCS_ERR_MESSAGE_TRUNCATED error code is returned.
  *                        Otherwise, an @ref ucs_status_t "error status" is
  *                        returned.
- * @param [in]  info      @ref ucp_tag_recv_info_t "Completion information"
+ * @param [in]  tag_info  @ref ucp_tag_recv_info_t "Completion information"
  *                        The @a info descriptor is Valid only if the status is
  *                        UCS_OK.
  * @param [in]  user_data User data passed to "user_data" value,
@@ -502,6 +517,28 @@ typedef void (*ucp_tag_recv_callback_t)(void *request, ucs_status_t status,
 typedef void (*ucp_tag_recv_nbx_callback_t)(void *request, ucs_status_t status,
                                             const ucp_tag_recv_info_t *tag_info,
                                             void *user_data);
+
+
+/**
+ * @ingroup UCP_COMM
+ * @brief Completion callback for non-blocking Active Message receives.
+ *
+ * This callback routine is invoked whenever the @ref ucp_am_recv_data_nbx
+ * "receive operation" is completed and the data is ready in the receive buffer.
+ *
+ * @param [in]  request   The completed receive request.
+ * @param [in]  status    Completion status. If the receive operation was
+ *                        completed successfully UCS_OK is returned. Otherwise,
+ *                        an @ref ucs_status_t "error status" is returned.
+ * @param [in]  length    The size of the received data in bytes, always
+ *                        boundary of base datatype size. The value is valid
+ *                        only if the status is UCS_OK.
+ * @param [in]  user_data User data passed to "user_data" value,
+ *                        see @ref ucp_request_param_t
+ */
+typedef void (*ucp_am_recv_data_nbx_callback_t)(void *request,
+                                                ucs_status_t status,
+                                                size_t length, void *user_data);
 
 
 /**
@@ -578,6 +615,65 @@ typedef ucs_status_t (*ucp_am_callback_t)(void *arg, void *data, size_t length,
 
 /**
  * @ingroup UCP_ENDPOINT
+ * @brief Callback to process incoming Active Message sent by
+ * @ref ucp_am_send_nbx routine.
+ *
+ * The callback is always called from the progress context, therefore calling
+ * @ref ucp_worker_progress() is not allowed. It is recommended to define
+ * callbacks with relatively short execution time to avoid blocking of
+ * communication progress.
+ *
+ * @param [in]  arg           User-defined argument.
+ * @param [in]  header        User defined active message header.
+ *                            If @a header_length is 0, this value is undefined
+ *                            and must not be accessed.
+ * @param [in]  header_length Active message header length in bytes. 
+ * @param [in]  data          Points to the received data if @a
+ *                            UCP_AM_RECV_ATTR_FLAG_RNDV flag is not set in
+ *                            @ref ucp_am_recv_param_t.recv_attr. Otherwise
+ *                            it points to the internal UCP descriptor which
+ *                            can further be used for initiating data receive
+ *                            by using @ref ucp_am_recv_data_nbx routine.
+ * @param [in]  length        Length of data. If @a UCP_AM_RECV_ATTR_FLAG_RNDV
+ *                            flag is set in @ref ucp_am_recv_param_t.recv_attr,
+ *                            it indicates the required receive buffer size for
+ *                            initiating rendezvous protocol.
+ * @param [in]  param         Data receive parameters.
+ *
+ * @return UCS_OK         @a data will not persist after the callback returns.
+ *                        If UCP_AM_RECV_ATTR_FLAG_RNDV flag is set in
+ *                        @a param->recv_attr and @ref ucp_am_recv_data_nbx was
+ *                        not called for this data, the data descriptor will be
+ *                        dropped and the corresponding @ref ucp_am_send_nbx
+ *                        call will complete with UCS_OK status.
+ *
+ * @return UCS_INPROGRESS Can only be returned if @a param->recv_attr flags
+ *                        contains UCP_AM_RECV_ATTR_FLAG_DATA or
+ *                        UCP_AM_RECV_ATTR_FLAG_RNDV. The @a data will persist
+ *                        after the callback has returned. To free the memory,
+ *                        a pointer to the data must be passed into
+ *                        @ref ucp_am_data_release or data receive is initiated
+ *                        by @ref ucp_am_recv_data_nbx.
+ *
+ * @return otherwise      Can only be returned if @a param->recv_attr contains
+ *                        UCP_AM_RECV_ATTR_FLAG_RNDV. In this case data
+ *                        descriptor @a data will be dropped and the
+ *                        corresponding @ref ucp_am_send_nbx call on the
+ *                        sender side will complete with the status returned
+ *                        from the callback.
+ *
+ * @note This callback should be set and released
+ *       by @ref ucp_worker_set_am_recv_handler function.
+ *
+ */
+typedef ucs_status_t (*ucp_am_recv_callback_t)(void *arg, const void *header,
+                                               size_t header_length,
+                                               void *data, size_t length,
+                                               const ucp_am_recv_param_t *param);
+
+
+/**
+ * @ingroup UCP_ENDPOINT
  * @brief Tuning parameters for the UCP endpoint.
  *
  * The structure defines the parameters that are used for the
@@ -645,7 +741,24 @@ typedef struct ucp_ep_params {
      */
     ucp_conn_request_h      conn_request;
 
+    /**
+     * Endpoint name. Tracing and analysis tools can identify the endpoint using
+     * this name. To retrieve the endpoint's name, use @ref ucp_ep_query, as the
+     * name you supply may be changed by UCX under some circumstances, e.g. a
+     * name conflict. This field is only assigned if you set
+     * @ref UCP_EP_PARAM_FIELD_NAME in the field mask. If not, then a default
+     * unique name will be created for you.
+     */
+    const char              *name;
 } ucp_ep_params_t;
+
+
+/**
+ * @ingroup UCP_CONTEXT
+ * @brief Maximum size of the UCP entity name in structure of entity attributes
+ * provided by a query method.
+ */
+#define UCP_ENTITY_NAME_MAX 32
 
 
 #endif

@@ -9,7 +9,7 @@
 #define UCT_KNEM_MD_H_
 
 #include <ucs/config/types.h>
-#include <ucs/debug/memtrack.h>
+#include <ucs/debug/memtrack_int.h>
 #include <ucs/type/status.h>
 #include <ucs/memory/rcache.h>
 #include <uct/base/uct_md.h>
@@ -39,9 +39,9 @@ typedef struct uct_knem_key {
  * KNEM memory domain configuration.
  */
 typedef struct uct_knem_md_config {
-    uct_md_config_t        super;
-    ucs_ternary_value_t    rcache_enable;
-    uct_md_rcache_config_t rcache;
+    uct_md_config_t          super;
+    ucs_ternary_auto_value_t rcache_enable;
+    uct_md_rcache_config_t   rcache;
 } uct_knem_md_config_t;
 
 /**

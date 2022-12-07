@@ -20,8 +20,6 @@ spawn_univ_comm 2 timeLimit=30
 intercomm_anysrc 4
 num_contexts_2k 1
 num_contexts_4k 1
-num_contexts_8k 1
-num_contexts_16k 1
 msa_info_env 1
 msa_info_env 1 env=PSP_MSA_AWARENESS=1
 msa_info_env 4 env=PSP_MSA_AWARENESS=1 env=PSP_MSA_MODULE_ID=3

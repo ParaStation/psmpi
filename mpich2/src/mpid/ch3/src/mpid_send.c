@@ -23,9 +23,8 @@ int MPID_Send(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
 #endif    
     int eager_threshold = -1;
     int mpi_errno = MPI_SUCCESS;    
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_SEND);
 
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_SEND);
+    MPIR_FUNC_ENTER;
 
     MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
                 "rank=%d, tag=%d, context=%d", 
@@ -118,7 +117,7 @@ int MPID_Send(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
     if (dt_contig && data_sz <= MPIDI_EAGER_SHORT_SIZE) {
 	mpi_errno = MPIDI_CH3_EagerContigShortSend( &sreq, 
 					       MPIDI_CH3_PKT_EAGERSHORT_SEND,
-					       (char *)buf + dt_true_lb,
+                                               MPIR_get_contig_ptr(buf, dt_true_lb),
 					       data_sz, rank, tag, comm, 
 					       context_offset );
     }
@@ -131,7 +130,7 @@ int MPID_Send(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
         {
  	    mpi_errno = MPIDI_CH3_EagerContigSend( &sreq, 
 						   MPIDI_CH3_PKT_EAGER_SEND,
-						   (char *)buf + dt_true_lb,
+                                                   MPIR_get_contig_ptr(buf, dt_true_lb),
 						   data_sz, rank, tag, comm, 
 						   context_offset );
 	}
@@ -161,6 +160,9 @@ int MPID_Send(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
  fn_fail:
  fn_exit:
     *request = sreq;
+    if (sreq) {
+        MPII_SENDQ_REMEMBER(sreq, rank, tag, comm->recvcontext_id, buf, count);
+    }
 
     MPL_DBG_STMT(MPIDI_CH3_DBG_OTHER,VERBOSE,
     {
@@ -178,7 +180,7 @@ int MPID_Send(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
     }
 		  );
     
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_SEND);
+    MPIR_FUNC_EXIT;
     return mpi_errno;
 }
 
@@ -188,8 +190,7 @@ int MPID_Send_coll(const void *buf, MPI_Aint count, MPI_Datatype datatype, int r
 {
     int mpi_errno = MPI_SUCCESS;
 
-    MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_SEND_COLL);
-    MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_SEND_COLL);
+    MPIR_FUNC_ENTER;
 
     switch (*errflag) {
     case MPIR_ERR_NONE:
@@ -203,7 +204,7 @@ int MPID_Send_coll(const void *buf, MPI_Aint count, MPI_Datatype datatype, int r
 
     mpi_errno = MPID_Send(buf, count, datatype, rank, tag, comm, context_offset, request);
 
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_SEND_COLL);
+    MPIR_FUNC_EXIT;
 
     return mpi_errno;
 }

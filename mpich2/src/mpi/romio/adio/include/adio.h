@@ -239,6 +239,7 @@ typedef struct ADIOI_FileD {
 #ifdef ROMIO_QUOBYTEFS
     struct quobyte_fh *file_handle;     /* file handle for quobytefs */
 #endif
+    int dirty_write;            /* this client has written data */
 } ADIOI_FileD;
 
 typedef struct ADIOI_FileD *ADIO_File;
@@ -318,11 +319,24 @@ typedef struct {
 #define ADIO_SCALABLE_RESIZE     307    /* file system supports resizing from one
                                          * processor (nfs, e.g. does not) */
 
+#define ADIO_IMMEDIATELY_VISIBLE 308    /* a write from one client immediately
+                                         * visible on other clients (POSIX semantics) */
+
 /* for default file permissions */
 #define ADIO_PERM_NULL           -1
 
 #define ADIOI_FILE_COOKIE 2487376
 #define ADIOI_REQ_COOKIE 3493740
+
+/* In collective read/write using send/recv for data exchange in multiple iterations,
+ * use following tag for consistency.
+ */
+/* Note: originally we used the formula - myrank + rank + 100 * iter. This is not
+ * safe since iter can be very large for huge messages and potentially exceed tag
+ * limit. Since we don't really need source/dest in the tag, and the message matching
+ * order is guaranteed, a constant tag will do.
+ */
+#define ADIOI_COLL_TAG(rank,iter) 0
 
 /* ADIO function prototypes */
 /* all these may not be necessary, as many of them are macro replaced to
@@ -428,7 +442,7 @@ int MPIO_Err_create_code(int lastcode, int fatal, const char fcname[],
 int MPIO_Err_return_file(MPI_File mpi_fh, int error_code);
 int MPIO_Err_return_comm(MPI_Comm mpi_comm, int error_code);
 
-/* request managment helper functions */
+/* request management helper functions */
 void MPIO_Completed_request_create(MPI_File * fh, MPI_Offset nbytes,
                                    int *error_code, MPI_Request * request);
 

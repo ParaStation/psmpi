@@ -22,7 +22,7 @@
  * Total Cost = (lgp+p-1).alpha + 2.n.((p-1)/p).beta
  */
 int MPIR_Bcast_intra_scatter_ring_allgather(void *buffer,
-                                            int count,
+                                            MPI_Aint count,
                                             MPI_Datatype datatype,
                                             int root,
                                             MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
@@ -43,10 +43,6 @@ int MPIR_Bcast_intra_scatter_ring_allgather(void *buffer,
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
 
-    /* If there is only one process, return */
-    if (comm_size == 1)
-        goto fn_exit;
-
     if (HANDLE_IS_BUILTIN(datatype))
         is_contig = 1;
     else {
@@ -63,7 +59,7 @@ int MPIR_Bcast_intra_scatter_ring_allgather(void *buffer,
         /* contiguous. no need to pack. */
         MPIR_Type_get_true_extent_impl(datatype, &true_lb, &true_extent);
 
-        tmp_buf = (char *) buffer + true_lb;
+        tmp_buf = MPIR_get_contig_ptr(buffer, true_lb);
     } else {
         MPIR_CHKLMEM_MALLOC(tmp_buf, void *, nbytes, mpi_errno, "tmp_buf", MPL_MEM_BUFFER);
 

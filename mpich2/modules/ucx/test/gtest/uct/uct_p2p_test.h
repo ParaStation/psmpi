@@ -43,9 +43,10 @@ protected:
         bool loopback;
 
         p2p_resource(const resource& res) :
-                     resource(res.component, res.md_name, res.local_cpus,
-                              res.tl_name, res.dev_name, res.dev_type),
-                              loopback(false) { }
+                     resource(res.component, res.component_name, res.md_name,
+                              res.local_cpus, res.tl_name, res.dev_name,
+                              res.dev_type), loopback(false) {
+        }
     };
 
     virtual void test_xfer(send_func_t send, size_t length, unsigned flags,
@@ -61,13 +62,14 @@ protected:
     uct_ep_h sender_ep();
     entity& receiver();
     uct_completion_t *comp();
+    void disable_comp();
 
 private:
     template <typename O>
     void test_xfer_print(O& os, send_func_t send, size_t length,
                          unsigned flags, ucs_memory_type_t mem_type);
 
-    static void completion_cb(uct_completion_t *self, ucs_status_t status);
+    static void completion_cb(uct_completion_t *self);
 
     static ucs_log_func_rc_t
     log_handler(const char *file, unsigned line, const char *function,

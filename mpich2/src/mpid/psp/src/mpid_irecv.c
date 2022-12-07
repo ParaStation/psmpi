@@ -247,6 +247,13 @@ pscom_request_t *receive_dispatch(pscom_connection_t *connection,
 
 	case MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_REQUEST:
 		return MPID_do_recv_forward_to(MPID_do_recv_rma_unlock_internal_req, header_net);
+
+	case MPID_PSP_MSGTYPE_PART_SEND_INIT:
+		return MPID_do_recv_part_send_init(connection, header_net);
+
+	case MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND:
+		return MPID_do_recv_part_cts(connection, header_net);
+
 	}
 
 	return NULL;

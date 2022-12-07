@@ -24,7 +24,7 @@ BEGIN_C_DECLS
  */
 
 
-/***
+/**
  * List element of a detached-head list.
  */
 typedef struct ucs_hlist_link {
@@ -119,6 +119,35 @@ ucs_hlist_add_tail(ucs_hlist_head_t *head, ucs_hlist_link_t *elem)
 /**
  * Remove an element from a detached-head list.
  *
+ * @param [in] head    List head to remove from.
+ * @param [in] elem    Element to remove.
+ * @param [in] is_head Flag that shows that the element is head
+ *
+ * @note If the element is not present in the list, this function has undefined
+ *       behavior.
+ */
+static UCS_F_ALWAYS_INLINE void
+ucs_hlist_del_common(ucs_hlist_head_t *head, ucs_hlist_link_t *elem,
+                     int is_head)
+{
+    if (ucs_list_is_empty(&elem->list)) {
+        /* Remove elem if it's not the only one in the list.
+         * We assume here that head->ptr == elem, but cannot assert() to avoid
+         * dependency of assert.h */
+        head->ptr = NULL;
+    } else {
+        if (is_head) {
+            /* removing head of non-empty list, point to next elem */
+            head->ptr = ucs_list_next(&elem->list, ucs_hlist_link_t, list);
+        }
+        ucs_list_del(&elem->list);
+    }
+}
+
+
+/**
+ * Remove an element from a detached-head list.
+ *
  * @param [in] head  List head to remove from.
  * @param [in] elem  Element to remove.
  *
@@ -128,18 +157,7 @@ ucs_hlist_add_tail(ucs_hlist_head_t *head, ucs_hlist_link_t *elem)
 static UCS_F_ALWAYS_INLINE void
 ucs_hlist_del(ucs_hlist_head_t *head, ucs_hlist_link_t *elem)
 {
-    if (ucs_list_is_empty(&elem->list)) {
-        /* Remove elem if it's not the only one in the list.
-         * We assume here that head->ptr == elem, but cannot assert() to avoid
-         * dependency of assert.h */
-        head->ptr = NULL;
-    } else {
-        if (head->ptr == elem) {
-            /* removing head of non-empty list, point to next elem */
-            head->ptr = ucs_list_next(&elem->list, ucs_hlist_link_t, list);
-        }
-        ucs_list_del(&elem->list);
-    }
+    ucs_hlist_del_common(head, elem, elem == head->ptr);
 }
 
 
@@ -160,7 +178,8 @@ ucs_hlist_extract_head(ucs_hlist_head_t *head)
     }
 
     elem = head->ptr;
-    ucs_hlist_del(head, elem); // TOOD optimize by assuming elem=head->ptr
+    ucs_hlist_del_common(head, elem, 1);
+
     return elem;
 }
 
@@ -188,7 +207,7 @@ ucs_hlist_extract_head(ucs_hlist_head_t *head)
 #define ucs_hlist_next_elem(_elem, _member) \
     ucs_container_of(ucs_list_next(&(_elem)->_member.list, ucs_hlist_link_t, \
                                    list), \
-                     typeof(*(_elem)), _member)
+                     ucs_typeof(*(_elem)), _member)
 
 
 /**
@@ -212,23 +231,24 @@ ucs_hlist_extract_head(ucs_hlist_head_t *head)
               * We can't check (&_elem->_member != NULL) because some compilers \
               * assume pointer-to-member is never NULL */ \
              (!ucs_hlist_is_empty(_head) && \
-              ((_elem = ucs_hlist_head_elem(_head, typeof(*(_elem)), _member)) \
+              ((_elem = ucs_hlist_head_elem(_head, ucs_typeof(*(_elem)), _member)) \
                      != NULL)) : \
              /* rest of iterations: check _elem != _head->ptr */ \
              ((_elem = ucs_hlist_next_elem(_elem, _member)) != \
-                     ucs_hlist_head_elem(_head, typeof(*(_elem)), _member)); \
+                     ucs_hlist_head_elem(_head, ucs_typeof(*(_elem)), _member)); \
          )
 
 
 /**
  * Remove the first element from a detached-head list, and return its containing
- * type.
+ * type. The function is intended for internal use only in hlist. It has to be
+ * used for non-empty hlist, otherwise, the result of the function is undefined.
  *
  * @param _head    List head to remove from.
  * @param _type    Type of the structure containing list element.
  * @param _member  List element inside the containing structure.
  */
-#define ucs_list_extract_head_elem(_head, _type, _member) \
+#define ucs_hlist_extract_head_elem(_head, _type, _member) \
     ucs_container_of(ucs_hlist_extract_head(_head), _type, _member)
 
 
@@ -241,9 +261,26 @@ ucs_hlist_extract_head(ucs_hlist_head_t *head)
  * @param _member   List element inside the containing structure.
  */
 #define ucs_hlist_for_each_extract(_elem, _head, _member) \
-    for (_elem = ucs_list_extract_head_elem(_head, typeof(*(_elem)), _member); \
-         _elem != ucs_container_of(NULL, typeof(*(_elem)), _member); \
-         _elem = ucs_list_extract_head_elem(_head, typeof(*(_elem)), _member))
+    for (_elem = ucs_hlist_extract_head_elem(_head, ucs_typeof(*(_elem)), _member); \
+         _elem != UCS_PTR_BYTE_OFFSET(NULL, -ucs_offsetof(ucs_typeof(*(_elem)), _member)); \
+         _elem = ucs_hlist_extract_head_elem(_head, ucs_typeof(*(_elem)), _member))
+
+
+/**
+ * Iterate over detached-head list, while removing the head element passes
+ * @a _cond or the list becomes empty.
+ *
+ * @param _elem     Variable to hold the current list element
+ * @param _head     Pointer to list head.
+ * @param _member   List element inside the containing structure.
+ * @param _cond     Condition to test for @a _head element before extract it.
+ */
+#define ucs_hlist_for_each_extract_if(_elem, _head, _member, _cond) \
+    for (_elem = ucs_hlist_head_elem(_head, ucs_typeof(*(_elem)), _member); \
+         (_elem != UCS_PTR_BYTE_OFFSET(NULL, -ucs_offsetof(ucs_typeof(*(_elem)), \
+                                                           _member))) && \
+         (_cond) && ucs_hlist_extract_head(_head); \
+         _elem = ucs_hlist_head_elem(_head, ucs_typeof(*(_elem)), _member))
 
 
 END_C_DECLS

@@ -1,7 +1,7 @@
 # -*- shell-script -*-
 #
 # Copyright © 2009      CNRS
-# Copyright © 2009-2020 Inria.  All rights reserved.
+# Copyright © 2009-2021 Inria.  All rights reserved.
 # Copyright © 2009, 2011-2012      Université Bordeaux
  * Copyright © 2009-2020 Cisco Systems, Inc.  All rights reserved.
 #
@@ -79,8 +79,8 @@ LT_PREREQ([2.2.6])
 
 # Setup libtool, but disable F77, Java and Windows Resource
 # Compiler support -- we don't need that stuff.
-AM_ENABLE_SHARED
-AM_DISABLE_STATIC
+AC_ENABLE_SHARED
+AC_DISABLE_STATIC
 
 # This did not exist pre AM 1.11.x (where x is somewhere >0 and <3),
 # but it is necessary in AM 1.12.x.
@@ -97,7 +97,8 @@ LT_LANG([C++])
 CFLAGS_save=$CFLAGS
 AC_PROG_CC
 AM_PROG_CC_C_O
-AC_PROG_CC_C99
+# AC_PROG_CC_C99 obsolete, detected inside AC_PROG_CC, since autoconf 2.70
+m4_version_prereq([2.70], [], [AC_PROG_CC_C99])
 CFLAGS=$CFLAGS_save
 
 AC_ARG_VAR(CC_FOR_BUILD,[build system C compiler])
@@ -142,7 +143,7 @@ HWLOC_SETUP_CORE([], [], [AC_MSG_ERROR([Cannot build hwloc core])], [1])
 AC_SUBST([libnetloc_so_version])
 
 AC_ARG_ENABLE([netloc],
-              [AC_HELP_STRING([--enable-netloc],
+              [AS_HELP_STRING([--enable-netloc],
                               [The Netloc functionality is disabled by default. Using --enable-netloc will cause configure to abort if Netloc cannot be build (e.g., not supported on your platform).])
               ])
 
@@ -256,6 +257,7 @@ test "x$hwloc_opencl_happy" = "xyes" && hwloc_probeio_list="$hwloc_probeio_list 
 test "x$hwloc_have_cudart" = "xyes" && hwloc_probeio_list="$hwloc_probeio_list CUDA"
 test "x$hwloc_nvml_happy" = "xyes" && hwloc_probeio_list="$hwloc_probeio_list NVML"
 test "x$hwloc_rsmi_happy" = "xyes" && hwloc_probeio_list="$hwloc_probeio_list RSMI"
+test "x$hwloc_levelzero_happy" = "xyes" && hwloc_probeio_list="$hwloc_probeio_list LevelZero"
 test "x$hwloc_gl_happy" = "xyes" && hwloc_probeio_list="$hwloc_probeio_list GL"
 # if nothing, say "no"
 test "x$hwloc_probeio_list" = "x" && hwloc_probeio_list=" no"

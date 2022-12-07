@@ -20,104 +20,9 @@ int _getenv_i(const char *env_name, int _default)
 	return val ? atoi(val) : _default;
 }
 
-static
-void sig_finalize_timeout(int signo)
+
+int MPIDI_PSP_finalize_print_stats_cb(void *param ATTRIBUTE((unused)))
 {
-	if (_getenv_i("PSP_DEBUG", 0) > 0) {
-		fprintf(stderr, "Warning: PSP_FINALIZE_TIMEOUT\n");
-	}
-	_exit(0);
-}
-
-int MPID_Finalize(void)
-{
-	MPIDI_PG_t *pg_ptr;
-	int env_finalize_barrier;
-	int env_finalize_timeout;
-	int env_finalize_shutdown;
-	int env_finalize_exit;
-
-	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_FINALIZE);
-	MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_FINALIZE);
-
-	/*
-	  - PSP_FINALIZE_BARRIER (default=1) -- If set to 0, then an experimental
-	  sparse synchronization scheme is used. If set to 2, then the PMI's
-	  PMI_Barrier() method is used instead. If it is unset or set to 1, the
-	  common MPIR_Barrier() is still used.
-
-	  - PSP_FINALIZE_TIMEOUT (default=30) -- Number of seconds that are allowed
-	  to elapse in MPI_Finalize() after leaving the first MPIR_Barrier() call
-	  until the second barrier call is aborted via a timeout signal.
-	  If set to 0, then no timeout and no second barrier are used.
-
-	  - PSP_FINALIZE_SHUTDOWN (default=0) -- If set to >=1, all pscom sockets
-	  are already shut down (synchronized) within MPI_Finalize().
-
-	  - PSP_FINALIZE_EXIT (default=0) -- If set to 1, then exit() is called
-	  at the very end of MPI_Finalize(). If set to 2, then it is _exit().
-	*/
-	env_finalize_barrier  = _getenv_i("PSP_FINALIZE_BARRIER", 1);
-	env_finalize_timeout  = _getenv_i("PSP_FINALIZE_TIMEOUT", 30);
-	env_finalize_shutdown = _getenv_i("PSP_FINALIZE_SHUTDOWN", 0);
-	env_finalize_exit     = _getenv_i("PSP_FINALIZE_EXIT", 0);
-
-	if (!env_finalize_barrier) {
-
-		/* A sparse synchronization scheme (!experimental!) that just uses the actually established connections: */
-
-		int j;
-
-		pg_ptr = MPIDI_Process.my_pg;
-
-		pscom_test_any();
-
-		for(j=0; j<pg_ptr->size; j++) {
-
-			if( (j != MPIDI_Process.my_pg_rank) &&
-			    (( (pg_ptr->cons[j]->type != PSCOM_CON_TYPE_ONDEMAND) && (pg_ptr->cons[j]->state == PSCOM_CON_STATE_RW) ) ||
-			     ( (pg_ptr->cons[j]->type == PSCOM_CON_TYPE_ONDEMAND) && (pg_ptr->cons[j]->state != PSCOM_CON_STATE_RW) ) ))
-			{
-				MPIDI_PSP_SendCtrl(0, MPIR_CONTEXT_INTRA_COLL, MPIDI_Process.my_pg_rank, pg_ptr->cons[j], MPID_PSP_MSGTYPE_FINALIZE_TOKEN);
-			}
-		}
-		for(j=0; j<pg_ptr->size; j++) {
-
-			if( (j != MPIDI_Process.my_pg_rank) &&
-			    (( (pg_ptr->cons[j]->type != PSCOM_CON_TYPE_ONDEMAND) && (pg_ptr->cons[j]->state == PSCOM_CON_STATE_RW) ) ||
-			     ( (pg_ptr->cons[j]->type == PSCOM_CON_TYPE_ONDEMAND) && (pg_ptr->cons[j]->state != PSCOM_CON_STATE_RW) ) ))
-			{
-				MPIDI_PSP_RecvCtrl(0, MPIR_CONTEXT_INTRA_COLL, j, pg_ptr->cons[j],  MPID_PSP_MSGTYPE_FINALIZE_TOKEN);
-			}
-		}
-
-	} else if (env_finalize_barrier == 2) {
-
-		/* Use PMI_Barrier() for synchronization instead of the MPI Barrier (!no MPI progress here!) */
-
-		MPIR_pmi_barrier();
-
-	} else {
-
-		/* The common barrier synchronization across comm_world within MPI Finalize: */
-
-		MPIR_Errflag_t errflag = MPIR_ERR_NONE;
-		int timeout;
-		// TODO: check THREADPRIV API!
-
-		MPIR_Barrier_impl(MPIR_Process.comm_world, &errflag);
-
-		/* Finalize timeout: Default: 30sec.
-		   Overwrite with PSP_FINALIZE_TIMEOUT.
-		   Disable with PSP_FINALIZE_TIMEOUT=0 */
-		timeout = env_finalize_timeout;
-		if (timeout > 0) {
-			signal(SIGALRM, sig_finalize_timeout);
-			alarm(timeout);
-			MPIR_Barrier_impl(MPIR_Process.comm_world, &errflag);
-		}
-	}
-
 #ifdef MPID_PSP_HISTOGRAM
 	if (MPIDI_Process.env.enable_histogram && MPIDI_Process.stats.histo.points > 0) {
 
@@ -175,33 +80,109 @@ int MPID_Finalize(void)
 		       max_digits[mpidi_psp_stats_collops_enum__alltoallv], MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__alltoallv]);
 	}
 #endif
+	return 0;
+}
+
+static
+void sig_finalize_timeout(int signo ATTRIBUTE((unused)))
+{
+	if (_getenv_i("PSP_DEBUG", 0) > 0) {
+		fprintf(stderr, "Warning: PSP_FINALIZE_TIMEOUT\n");
+	}
+	_exit(0);
+}
+
+int MPIDI_PSP_finalize_add_barrier_cb(void *param ATTRIBUTE((unused)))
+{
+	/* PSP_FINALIZE_BARRIER (default=0)
+	 * With setting this environment variable, an additional barrier call can be activated
+	 * via a hook within MPI_Finalize for explicitly synchronizing all processes at the end.
+	 * 0: Use _no_ additional (psp-related) barrier within MPI_Finalize()
+	 * 1: Use MPIR_Barrier() twice (with a timeout for the second, see PSP_FINALIZE_TIMEOUT)
+	 * 2: Use the barrier method of PMI/PMIx (Warning: without pscom progress within!)
+	 * others: N/A (i.e., no barrier)
+	 *
+	 * PSP_FINALIZE_TIMEOUT (default=30)
+	 * Set the number of seconds that are allowed to elapse in MPI_Finalize() after leaving
+	 * the first MPIR_Barrier() call (PSP_FINALIZE_BARRIER=1, see above) until the second
+	 * barrier call is aborted via a timeout signal.
+	 * If set to 0, then no timeout and no second barrier are used.
+	 */
+	int env_finalize_barrier = _getenv_i("PSP_FINALIZE_BARRIER", 0);
+	int env_finalize_timeout  = _getenv_i("PSP_FINALIZE_TIMEOUT", 30);
+
+	if (env_finalize_barrier == 1) {
+
+		/* The common barrier synchronization across comm_world within MPI Finalize: */
+
+		MPIR_Errflag_t errflag = MPIR_ERR_NONE;
+		int timeout;
+		// TODO: check THREADPRIV API!
+
+		MPIR_Barrier_impl(MPIR_Process.comm_world, &errflag);
+
+		/* Finalize timeout: Default: 30sec.
+		   Overwrite with PSP_FINALIZE_TIMEOUT.
+		   Disable with PSP_FINALIZE_TIMEOUT=0 */
+		timeout = env_finalize_timeout;
+		if (timeout > 0) {
+			signal(SIGALRM, sig_finalize_timeout);
+			alarm(timeout);
+			MPIR_Barrier_impl(MPIR_Process.comm_world, &errflag);
+		}
+
+	} else if (env_finalize_barrier == 2) {
+
+		/* Use PMI_Barrier() for synchronization instead of the MPI Barrier (!no MPI progress here!) */
+
+		MPIR_pmi_barrier();
+	}
+
+	return 0;
+}
+
+int MPID_Finalize(void)
+{
+	MPIDI_PG_t *pg_ptr;
+	int env_finalize_shutdown;
+	int env_finalize_exit;
+
+	MPIR_FUNC_ENTER;
+
+	/* PSP_FINALIZE_SHUTDOWN (default=0)
+	 * If set to >=1, all pscom sockets are already shut down (synchronized)
+	 * within MPI_Finalize().
+	 *
+	 * PSP_FINALIZE_EXIT (default=0)
+	 * If set to 1, then exit() is called at the very end of MPI_Finalize().
+	 * If set to 2, then it is _exit().
+	 */
+	env_finalize_shutdown = _getenv_i("PSP_FINALIZE_SHUTDOWN", 0);
+	env_finalize_exit     = _getenv_i("PSP_FINALIZE_EXIT", 0);
 
 /*	fprintf(stderr, "%d cleanup queue\n", MPIDI_Process.my_pg_rank); */
 //	MPID_req_queue_cleanup();
 
 	MPID_PSP_rma_cleanup();
 
-	MPIR_Comm_free_keyval_impl(MPIDI_Process.shm_attr_key);
+	MPII_Keyval *keyval_ptr;
+	MPII_Keyval_get_ptr(MPIDI_Process.shm_attr_key, keyval_ptr);
+	MPIR_free_keyval(keyval_ptr);
 
-	MPI_Info_delete(MPI_INFO_ENV, "cuda_aware");
+	if (MPIDI_Process.use_world_model)
+	{
+		MPI_Info_delete(MPI_INFO_ENV, "cuda_aware");
 #ifdef MPID_PSP_MSA_AWARENESS
-	if(MPIDI_Process.msa_module_id >= 0) {
-		MPI_Info_delete(MPI_INFO_ENV, "msa_module_id");
-	}
-	if(MPIDI_Process.smp_node_id >= 0 && MPIDI_Process.env.enable_msa_awareness) {
-		MPI_Info_delete(MPI_INFO_ENV, "msa_node_id");
-	}
+		if (MPIDI_Process.msa_module_id >= 0) {
+			MPI_Info_delete(MPI_INFO_ENV, "msa_module_id");
+		}
+		if (MPIDI_Process.smp_node_id >= 0 && MPIDI_Process.env.enable_msa_awareness) {
+			MPI_Info_delete(MPI_INFO_ENV, "msa_node_id");
+		}
 #endif
+	}
 
 	MPIR_pmi_finalize();
-
-	/* Release standard communicators */
-#ifdef MPID_NEEDS_ICOMM_WORLD
-	/* psp don't need icomm. But this might change? */
-	MPIR_Comm_release_always(MPIR_Process.icomm_world);
-#endif
-	MPIR_Comm_release_always(MPIR_Process.comm_self);
-	MPIR_Comm_release_always(MPIR_Process.comm_world);
 
 	/* Cleanups */
 	pg_ptr = MPIDI_Process.my_pg->next;
@@ -233,7 +214,7 @@ int MPID_Finalize(void)
 		*/
 	}
 
-	MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_FINALIZE);
+	MPIR_FUNC_EXIT;
 
 	/* Exit here? */
 	if (env_finalize_exit == 1) {

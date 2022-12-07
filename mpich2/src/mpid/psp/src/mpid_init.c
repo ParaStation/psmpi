@@ -34,6 +34,7 @@ MPIX_Query_cuda_support(void)
 #define dinit(name)
 #endif
 MPIDI_Process_t MPIDI_Process = {
+	dinit(socket)		NULL,
 	dinit(grank2con)	NULL,
 	dinit(my_pg_rank)	-1,
 	dinit(my_pg_size)	0,
@@ -41,9 +42,13 @@ MPIDI_Process_t MPIDI_Process = {
 	dinit(pg_id_name)	NULL,
 	dinit(next_lpid)	0,
 	dinit(my_pg)		NULL,
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+	dinit(topo_levels)      NULL,
+#endif
 	dinit(shm_attr_key)	0,
 	dinit(smp_node_id)      -1,
 	dinit(msa_module_id)    -1,
+	dinit(use_world_model)  0,
 	dinit(env)		{
 		dinit(debug_level)		0,
 		dinit(debug_version)		0,
@@ -52,12 +57,12 @@ MPIDI_Process_t MPIDI_Process = {
 		dinit(enable_ondemand_spawn)	0,
 		dinit(enable_smp_awareness)	1,
 		dinit(enable_msa_awareness)	0,
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 		dinit(enable_smp_aware_collops)	0,
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 		dinit(enable_msa_aware_collops)	1,
-#ifdef HAVE_LIBHCOLL
-		dinit(enable_hcoll)	        0,
 #endif
+#ifdef HAVE_HCOLL
+		dinit(enable_hcoll)	        0,
 #endif
 #ifdef MPID_PSP_HISTOGRAM
 		dinit(enable_histogram)		0,
@@ -199,11 +204,20 @@ void do_wait(int pg_rank, int src) {
 
 
 static
+void init_send_done(pscom_req_state_t state, void *priv)
+{
+	int *send_done = (int *)priv;
+	*send_done = 1;
+}
+
+
+static
 int do_connect(pscom_socket_t *socket, int pg_rank, int dest, char *dest_addr)
 {
 	pscom_connection_t *con;
 	pscom_err_t rc;
 	struct InitMsg init_msg;
+	int init_msg_sent = 0;
 
 	/* printf("Connecting (rank %d to %d) (%s)\n", pg_rank, dest, dest_addr); */
 	con = pscom_open_connection(socket);
@@ -217,8 +231,15 @@ int do_connect(pscom_socket_t *socket, int pg_rank, int dest, char *dest_addr)
 	}
 	grank2con_set(dest, con);
 
+	/* send the initialization message and wait for its completion */
 	init_msg.from_rank = pg_rank;
-	pscom_send(con, NULL, 0, &init_msg, sizeof(init_msg));
+	pscom_send_inplace(con, NULL, 0, &init_msg, sizeof(init_msg),
+			   init_send_done, &init_msg_sent);
+
+	while (!init_msg_sent) {
+		pscom_wait_any();
+	}
+
 	return 0;
 }
 
@@ -227,6 +248,11 @@ static
 int i_version_set(int pg_rank, const char *ver)
 {
 	int mpi_errno = MPI_SUCCESS;
+
+	/* There is no need to check for version in the singleton case and we moreover must
+	   not use MPIR_pmi_kvs_put() in this case either since there is no process manager. */
+	if (MPIDI_Process.singleton_but_no_pm) goto fn_exit;
+
 	if (pg_rank == 0) {
 		mpi_errno = MPIR_pmi_kvs_put("i_version", ver);
 		MPIR_ERR_CHECK(mpi_errno);
@@ -244,6 +270,11 @@ static
 int i_version_check(int pg_rank, const char *ver)
 {
         int mpi_errno = MPI_SUCCESS;
+
+	/* There is no need to check for version in the singleton case and we moreover must
+	   not use MPIR_pmi_kvs_get() in this case either since there is no process manager. */
+	if (MPIDI_Process.singleton_but_no_pm) goto fn_exit;
+
 	if (pg_rank != 0) {
 		char val[100] = "unknown";
 		mpi_errno = MPIR_pmi_kvs_get(0, "i_version", val, sizeof(val));
@@ -491,7 +522,6 @@ int MPID_Init(int requested, int *provided)
 	int pg_size = -1;
 	int appnum = -1;
 	/* int universe_size; */
-	int has_parent;
 	pscom_socket_t *socket;
 	pscom_err_t rc;
 
@@ -499,8 +529,7 @@ int MPID_Init(int requested, int *provided)
 
 	assert(PSCOM_ANYPORT == -1); /* all codeplaces which depends on it are marked with: "assert(PSP_ANYPORT == -1);"  */
 
-	MPIR_FUNC_VERBOSE_STATE_DECL(MPID_STATE_MPID_INIT);
-	MPIR_FUNC_VERBOSE_ENTER(MPID_STATE_MPID_INIT);
+	MPIR_FUNC_ENTER;
 
 	// PMI or PMIx init
 	mpi_errno = MPIR_pmi_init();
@@ -509,8 +538,7 @@ int MPID_Init(int requested, int *provided)
 	pg_rank = MPIR_Process.rank;
 	pg_size = MPIR_Process.size;
 
-	// has_parent and appnum are set to 0 with PMIx
-	has_parent = MPIR_Process.has_parent ;
+	// appnum is set to 0 with PMIx
 	appnum = MPIR_Process.appnum;
 
 	/* keep track if we are a singleton without process manager */
@@ -556,12 +584,15 @@ int MPID_Init(int requested, int *provided)
 	MPIDI_Process.env.enable_ondemand_spawn = MPIDI_Process.env.enable_ondemand;
 	pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand_spawn, "PSP_ONDEMAND_SPAWN");
 
+	/* add the callback for applying a Barrier (if enabled) at the very beginninf of Finalize */
+	MPIR_Add_finalize(MPIDI_PSP_finalize_add_barrier_cb, NULL, MPIR_FINALIZE_CALLBACK_MAX_PRIO);
+
 	/* take SMP-related locality information into account (e.g., for MPI_Win_allocate_shared) */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
 	if(MPIDI_Process.env.enable_smp_awareness) {
-		pscom_env_get_uint(&MPIDI_Process.smp_node_id, "PSP_SMP_NODE_ID");
+		pscom_env_get_int(&MPIDI_Process.smp_node_id, "PSP_SMP_NODE_ID");
 #ifdef MPID_PSP_MSA_AWARENESS
-		pscom_env_get_uint(&MPIDI_Process.smp_node_id, "PSP_MSA_NODE_ID");
+		pscom_env_get_int(&MPIDI_Process.smp_node_id, "PSP_MSA_NODE_ID");
 #endif
 	}
 
@@ -569,15 +600,14 @@ int MPID_Init(int requested, int *provided)
 	/* take MSA-related topology information into account */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_msa_awareness, "PSP_MSA_AWARENESS");
 	if(MPIDI_Process.env.enable_msa_awareness) {
-		pscom_env_get_uint(&MPIDI_Process.msa_module_id, "PSP_MSA_MODULE_ID");
+		pscom_env_get_int(&MPIDI_Process.msa_module_id, "PSP_MSA_MODULE_ID");
 	}
 #endif
 
-#ifdef MPID_PSP_TOPOLOGY_AWARE_COLLOPS
 	/* use hierarchy-aware collectives on SMP level */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_smp_aware_collops, "PSP_SMP_AWARE_COLLOPS");
 
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
 	MPIDI_Process.env.enable_hcoll = MPIR_CVAR_ENABLE_HCOLL;
 	if (MPIDI_Process.env.enable_hcoll) {
 		/* HCOLL demands for MPICH's SMP awareness: */
@@ -595,6 +625,7 @@ int MPID_Init(int requested, int *provided)
 	}
 	/* (For now, the usage of HCOLL and MSA aware collops are mutually exclusive / FIX ME!) */
 #else
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
 	/* use hierarchy-aware collectives on MSA level */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_msa_aware_collops, "PSP_MSA_AWARE_COLLOPS");
 #endif
@@ -603,9 +634,9 @@ int MPID_Init(int requested, int *provided)
 #ifdef MPID_PSP_HISTOGRAM
 	/* collect statistics information and print them at the end of a run */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_histogram, "PSP_HISTOGRAM");
-	pscom_env_get_uint(&MPIDI_Process.stats.histo.max_size,   "PSP_HISTOGRAM_MAX");
-	pscom_env_get_uint(&MPIDI_Process.stats.histo.min_size,   "PSP_HISTOGRAM_MIN");
-	pscom_env_get_uint(&MPIDI_Process.stats.histo.step_width, "PSP_HISTOGRAM_SHIFT");
+	pscom_env_get_int(&MPIDI_Process.stats.histo.max_size,   "PSP_HISTOGRAM_MAX");
+	pscom_env_get_int(&MPIDI_Process.stats.histo.min_size,   "PSP_HISTOGRAM_MIN");
+	pscom_env_get_int(&MPIDI_Process.stats.histo.step_width, "PSP_HISTOGRAM_SHIFT");
 	MPIDI_Process.stats.histo.con_type_str = getenv("PSP_HISTOGRAM_CONTYPE");
 	if (MPIDI_Process.stats.histo.con_type_str) {
 		for (MPIDI_Process.stats.histo.con_type_int = PSCOM_CON_TYPE_GW; MPIDI_Process.stats.histo.con_type_int >  PSCOM_CON_TYPE_NONE; MPIDI_Process.stats.histo.con_type_int--) {
@@ -616,6 +647,10 @@ int MPID_Init(int requested, int *provided)
 #ifdef MPID_PSP_HCOLL_STATS
 	/* collect usage information of hcoll collectives and print them at the end of a run */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_hcoll_stats, "PSP_HCOLL_STATS");
+#endif
+#ifdef MPIDI_PSP_WITH_SESSION_STATISTICS
+	/* add a callback for printing statistical information (if enabled) during Finalize */
+	MPIR_Add_finalize(MPIDI_PSP_finalize_print_stats_cb, NULL, MPIR_FINALIZE_CALLBACK_PRIO + 1);
 #endif
 
 	pscom_env_get_uint(&MPIDI_Process.env.enable_lazy_disconnect, "PSP_LAZY_DISCONNECT");
@@ -690,15 +725,45 @@ int MPID_Init(int requested, int *provided)
 	}
 
 	MPID_enable_receive_dispach(socket); /* ToDo: move MPID_enable_receive_dispach to bg thread */
-	MPIR_Process.comm_world->pscom_socket = socket;
-	MPIR_Process.comm_self->pscom_socket = socket;
+	MPIDI_Process.socket = socket;
+
+#ifdef MPID_PSP_MSA_AWARENESS
+	/* Initialize the hierarchical topology information as used for MSA-aware collectives. */
+	MPIDI_PSP_topo_init();
+#endif
+	MPID_PSP_shm_rma_init();
+
+	if (provided) {
+		*provided = (MPICH_THREAD_LEVEL < requested) ?
+			MPICH_THREAD_LEVEL : requested;
+	}
+
+	/* init lists for partitioned communication operations (used on receiver side) */
+	INIT_LIST_HEAD(&(MPIDI_Process.part_posted_list));
+	INIT_LIST_HEAD(&(MPIDI_Process.part_unexp_list));
+
+fn_fail:
+fn_exit:
+    MPIR_FUNC_EXIT;
+	return mpi_errno;
+}
+
+
+int MPID_InitCompleted( void )
+{
+	int mpi_errno = MPI_SUCCESS;
+
+	/* Do the world model related device initialization here. */
+	MPIDI_Process.use_world_model = 1;
+
+	MPIR_Process.comm_world->pscom_socket = MPIDI_Process.socket;
+	MPIR_Process.comm_self->pscom_socket = MPIDI_Process.socket;
 
 	/* Call the other init routines */
-	mpi_errno = MPID_PSP_comm_init(has_parent);
+	mpi_errno = MPID_PSP_comm_init(MPIR_Process.has_parent);
 	if (MPI_SUCCESS != mpi_errno) {
 		MPIR_ERR_POP(mpi_errno);
 	}
-	MPID_PSP_shm_rma_init();
 
 	/*
 	 * Setup the MPI_INFO_ENV object
@@ -733,17 +798,15 @@ int MPID_Init(int requested, int *provided)
 #endif
 	}
 
-
-	if (provided) {
-		*provided = (MPICH_THREAD_LEVEL < requested) ?
-			MPICH_THREAD_LEVEL : requested;
-	}
+	return MPI_SUCCESS;
 
 fn_fail:
 fn_exit:
-    MPIR_FUNC_VERBOSE_EXIT(MPID_STATE_MPID_INIT);
+    MPIR_FUNC_EXIT;
 	return mpi_errno;
 }
+
+
 
 
 /* return connection_t for rank, NULL on error */

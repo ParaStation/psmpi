@@ -226,6 +226,10 @@ extern "C" {
 	 ((err) == EWOULDBLOCK)		||	\
 	 ((err) == EAGAIN))
 
+#define OFI_SOCK_TRY_ACCEPT_AGAIN(err)		\
+	(((err) == EAGAIN)		||	\
+	 ((err) == EWOULDBLOCK))
+
 #define OFI_SOCK_TRY_CONN_AGAIN(err)		\
 	(((err) == EWOULDBLOCK)		||	\
 	 ((err) == EINPROGRESS))
@@ -261,6 +265,7 @@ do						\
 #define strcasecmp _stricmp
 #define snprintf _snprintf
 #define sleep(x) Sleep(x * 1000)
+#define strtok_r strtok_s
 
 #define __PRI64_PREFIX "ll"
 
@@ -709,40 +714,53 @@ static inline SOCKET ofi_socket(int domain, int type, int protocol)
 	return socket(domain, type, protocol);
 }
 
+/*
+ * The windows API limits socket send/recv transfers to INT_MAX.
+ * For nonblocking, stream sockets, we limit send/recv calls to that
+ * size, since the sockets aren't guaranteed to send the full amount
+ * requested.  For datagram sockets, we don't expect any transfers to
+ * be larger than a few KB.
+ * We do not handle blocking sockets that attempt to transfer more
+ * than INT_MAX data at a time.
+ */
+static inline ssize_t
+ofi_recv_socket(SOCKET fd, void *buf, size_t count, int flags)
+{
+	int len = count > INT_MAX ? INT_MAX : (int) count;
+	return (ssize_t) recv(fd, (char *) buf, len, flags);
+}
+
+static inline ssize_t
+ofi_send_socket(SOCKET fd, const void *buf, size_t count, int flags)
+{
+	int len = count > INT_MAX ? INT_MAX : (int) count;
+	return (ssize_t) send(fd, (const char*) buf, len, flags);
+}
+
 static inline ssize_t ofi_read_socket(SOCKET fd, void *buf, size_t count)
 {
-	return recv(fd, (char *)buf, (int)count, 0);
+	return ofi_recv_socket(fd, buf, count, 0);
 }
 
 static inline ssize_t ofi_write_socket(SOCKET fd, const void *buf, size_t count)
 {
-	return send(fd, (const char*)buf, (int)count, 0);
-}
-
-static inline ssize_t ofi_recv_socket(SOCKET fd, void *buf, size_t count,
-				      int flags)
-{
-	return recv(fd, (char *)buf, (int)count, flags);
+	return ofi_send_socket(fd, buf, count, 0);
 }
 
 static inline ssize_t
 ofi_recvfrom_socket(SOCKET fd, void *buf, size_t count, int flags,
 		    struct sockaddr *from, socklen_t *fromlen)
 {
-	return recvfrom(fd, (char*)buf, (int)count, flags, from, fromlen);
-}
-
-static inline ssize_t ofi_send_socket(SOCKET fd, const void *buf, size_t count,
-				      int flags)
-{
-	return send(fd, (const char*)buf, (int)count, flags);
+	int len = count > INT_MAX ? INT_MAX : (int) count;
+	return recvfrom(fd, (char*) buf, len, flags, from, (int *) fromlen);
 }
 
 static inline ssize_t
 ofi_sendto_socket(SOCKET fd, const void *buf, size_t count, int flags,
 		  const struct sockaddr *to, socklen_t tolen)
 {
-	return sendto(fd, (const char*)buf, (int)count, flags, to, tolen);
+	int len = count > INT_MAX ? INT_MAX : (int) count;
+	return sendto(fd, (const char*) buf, len, flags, to, (int) tolen);
 }
 
 ssize_t ofi_writev_socket(SOCKET fd, const struct iovec *iovec, size_t iov_cnt);
@@ -775,6 +793,12 @@ static inline int ofi_close_socket(SOCKET socket)
 static inline int fi_fd_nonblock(SOCKET fd)
 {
 	u_long argp = 1;
+	return ioctlsocket(fd, FIONBIO, &argp) ? -WSAGetLastError() : 0;
+}
+
+static inline int fi_fd_block(SOCKET fd)
+{
+	u_long argp = 0;
 	return ioctlsocket(fd, FIONBIO, &argp) ? -WSAGetLastError() : 0;
 }
 
@@ -987,11 +1011,15 @@ OFI_DEF_COMPLEX(long_double)
 /* atomics primitives */
 #ifdef HAVE_BUILTIN_ATOMICS
 #define InterlockedAdd32 InterlockedAdd
+#define InterlockedCompareExchange32 InterlockedCompareExchange
 typedef LONG ofi_atomic_int_32_t;
 typedef LONGLONG ofi_atomic_int_64_t;
 
 #define ofi_atomic_add_and_fetch(radix, ptr, val) InterlockedAdd##radix((ofi_atomic_int_##radix##_t *)(ptr), (ofi_atomic_int_##radix##_t)(val))
 #define ofi_atomic_sub_and_fetch(radix, ptr, val) InterlockedAdd##radix((ofi_atomic_int_##radix##_t *)(ptr), -(ofi_atomic_int_##radix##_t)(val))
+#define ofi_atomic_cas_bool(radix, ptr, expected, desired)					\
+	(InterlockedCompareExchange##radix(ptr, desired, expected) == expected)
+
 #endif /* HAVE_BUILTIN_ATOMICS */
 
 static inline int ofi_set_thread_affinity(const char *s)

@@ -79,6 +79,9 @@ typedef struct {
     /* Max. events per context, will be removed in the future */
     unsigned                   async_max_events;
 
+    /** Memtype cache */
+    int                        enable_memtype_cache;
+
     /* Destination for statistics: udp:host:port / file:path / stdout
      */
     char                       *stats_dest;
@@ -100,6 +103,9 @@ typedef struct {
      */
     char                       *memtrack_dest;
 
+    /* Memory limit handled by memtrack to abort application */
+    size_t                     memtrack_limit;
+
     /* Profiling mode */
     unsigned                   profile_mode;
 
@@ -115,6 +121,9 @@ typedef struct {
     /* statistics format options */
     ucs_stats_formats_t        stats_format;
 
+    /* Enable VFS monitoring */
+    int                        vfs_enable;
+
     /* registration cache checks if physical pages are not moved */
     unsigned                   rcache_check_pfn;
 
@@ -124,8 +133,14 @@ typedef struct {
     /* log level for module loader code */
     ucs_log_level_t            module_log_level;
 
+    /* which modules to load */
+    ucs_config_allow_list_t    modules;
+
     /* arch-specific global options */
-    ucs_arch_global_opts_t arch;
+    ucs_arch_global_opts_t     arch;
+
+    /* Enable affinity for virtual monitoring filesystem service thread */
+    int                        vfs_thread_affinity;
 } ucs_global_opts_t;
 
 
@@ -133,6 +148,8 @@ extern ucs_global_opts_t ucs_global_opts;
 
 void ucs_global_opts_init();
 ucs_status_t ucs_global_opts_set_value(const char *name, const char *value);
+ucs_status_t ucs_global_opts_set_value_modifiable(const char *name,
+                                                  const char *value);
 ucs_status_t ucs_global_opts_get_value(const char *name, char *value,
                                        size_t max);
 ucs_status_t ucs_global_opts_clone(void *dst);

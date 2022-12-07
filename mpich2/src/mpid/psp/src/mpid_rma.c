@@ -264,7 +264,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info *info_pt
 	win_ptr->my_counter = 0;
 	win_ptr->my_pt_rma_puts_accs = 0;
 */
-	mpi_errno = MPIR_Comm_dup_impl(comm_ptr, NULL, &win_ptr->comm_ptr);
+	mpi_errno = MPIR_Comm_dup_impl(comm_ptr, &win_ptr->comm_ptr);
 
 	if (mpi_errno) { MPIR_ERR_POP(mpi_errno); }
 
@@ -276,10 +276,10 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info *info_pt
 	MPIR_CHKPMEM_MALLOC(win_ptr->rma_puts_accs, unsigned int *, comm_size * sizeof(unsigned int),
 			    mpi_errno, "win_ptr->rma_puts_accs", MPL_MEM_OBJECT);
 
-	MPIR_CHKPMEM_MALLOC(win_ptr->rma_local_pending_rank, int *, comm_size * sizeof(int),
+	MPIR_CHKPMEM_MALLOC(win_ptr->rma_local_pending_rank, unsigned int *, comm_size * sizeof(int),
 			    mpi_errno, "win_ptr->rma_local_pending_rank", MPL_MEM_OBJECT);
 
-	MPIR_CHKPMEM_MALLOC(win_ptr->rma_passive_pending_rank, int *, comm_size * sizeof(int),
+	MPIR_CHKPMEM_MALLOC(win_ptr->rma_passive_pending_rank, unsigned int *, comm_size * sizeof(int),
 			    mpi_errno, "win_ptr->rma_passive_pending_rank", MPL_MEM_OBJECT);
 
 	MPIR_CHKPMEM_MALLOC(win_ptr->remote_lock_state, enum MPID_PSP_Win_lock_state *, comm_size * sizeof(int),
@@ -320,7 +320,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info *info_pt
 			MPL_free(value);
 		}
 	}
-	pscom_env_get_uint(&win_ptr->rma_accumulate_ordering, "PSP_ACCUMULATE_ORDERING");
+	pscom_env_get_int(&win_ptr->rma_accumulate_ordering, "PSP_ACCUMULATE_ORDERING");
 
 	if (info_ptr) {
 		char* value;
@@ -339,7 +339,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info *info_pt
 			MPL_free(value);
 		}
 	}
-	pscom_env_get_uint(&win_ptr->explicit_wait_on_passive_side, "PSP_RMA_EXPLICIT_WAIT");
+	pscom_env_get_int(&win_ptr->explicit_wait_on_passive_side, "PSP_RMA_EXPLICIT_WAIT");
 
 	/*
 	 * Ensure all counters (especially regarding the passive side) are

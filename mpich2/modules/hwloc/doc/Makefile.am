@@ -1,4 +1,4 @@
-# Copyright © 2009-2020 Inria.  All rights reserved.
+# Copyright © 2009-2021 Inria.  All rights reserved.
 # Copyright © 2009-2013, 2021 Université Bordeaux
 # Copyright © 2009-2016 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
@@ -82,7 +82,9 @@ dox_inputs = $(DOX_CONFIG) \
        $(hwloc_include_dir)/hwloc/cudart.h \
        $(hwloc_include_dir)/hwloc/nvml.h \
        $(hwloc_include_dir)/hwloc/rsmi.h \
+       $(hwloc_include_dir)/hwloc/levelzero.h \
        $(hwloc_include_dir)/hwloc/gl.h \
+       $(hwloc_include_dir)/hwloc/windows.h \
        $(hwloc_include_dir)/hwloc/openfabrics-verbs.h \
        $(srcdir)/netloc.doxy \
        $(hwloc_include_dir)/netloc.h
@@ -435,6 +437,9 @@ man3_configuration_DATA = \
         $(DOX_MAN_DIR)/man3/HWLOC_TOPOLOGY_FLAG_IS_THISSYSTEM.3 \
         $(DOX_MAN_DIR)/man3/HWLOC_TOPOLOGY_FLAG_THISSYSTEM_ALLOWED_RESOURCES.3 \
         $(DOX_MAN_DIR)/man3/HWLOC_TOPOLOGY_FLAG_IMPORT_SUPPORT.3 \
+        $(DOX_MAN_DIR)/man3/HWLOC_TOPOLOGY_FLAG_RESTRICT_TO_CPUBINDING.3 \
+        $(DOX_MAN_DIR)/man3/HWLOC_TOPOLOGY_FLAG_RESTRICT_TO_MEMBINDING.3 \
+        $(DOX_MAN_DIR)/man3/HWLOC_TOPOLOGY_FLAG_DONT_CHANGE_BINDING.3 \
         $(DOX_MAN_DIR)/man3/hwloc_topology_flags_e.3 \
         $(DOX_MAN_DIR)/man3/hwloc_topology_get_flags.3 \
         $(DOX_MAN_DIR)/man3/hwloc_topology_set_flags.3 \
@@ -661,14 +666,24 @@ man3_distances_DATA = \
         $(DOX_MAN_DIR)/man3/hwloc_distances_get_by_name.3 \
         $(DOX_MAN_DIR)/man3/hwloc_distances_get_name.3 \
         $(DOX_MAN_DIR)/man3/hwloc_distances_release.3 \
+        $(DOX_MAN_DIR)/man3/hwloc_distances_transform_e.3 \
+        $(DOX_MAN_DIR)/man3/HWLOC_DISTANCES_TRANSFORM_REMOVE_NULL.3 \
+        $(DOX_MAN_DIR)/man3/HWLOC_DISTANCES_TRANSFORM_LINKS.3 \
+        $(DOX_MAN_DIR)/man3/HWLOC_DISTANCES_TRANSFORM_TRANSITIVE_CLOSURE.3 \
+        $(DOX_MAN_DIR)/man3/HWLOC_DISTANCES_TRANSFORM_MERGE_SWITCH_PORTS.3 \
+        $(DOX_MAN_DIR)/man3/hwloc_distances_transform.3 \
         $(DOX_MAN_DIR)/man3/hwlocality_distances_consult.3 \
         $(DOX_MAN_DIR)/man3/hwloc_distances_obj_index.3 \
         $(DOX_MAN_DIR)/man3/hwloc_distances_obj_pair_values.3 \
         $(DOX_MAN_DIR)/man3/hwlocality_distances_add.3 \
+        $(DOX_MAN_DIR)/man3/hwloc_distances_add_handle_t.3 \
         $(DOX_MAN_DIR)/man3/hwloc_distances_add_flag_e.3 \
         $(DOX_MAN_DIR)/man3/HWLOC_DISTANCES_ADD_FLAG_GROUP.3 \
         $(DOX_MAN_DIR)/man3/HWLOC_DISTANCES_ADD_FLAG_GROUP_INACCURATE.3 \
-        $(DOX_MAN_DIR)/man3/hwloc_distances_add.3 \
+        $(DOX_MAN_DIR)/man3/hwloc_distances_add_create.3 \
+        $(DOX_MAN_DIR)/man3/hwloc_distances_add_values.3 \
+        $(DOX_MAN_DIR)/man3/hwloc_distances_add_commit.3 \
+        $(DOX_MAN_DIR)/man3/hwlocality_distances_remove.3 \
         $(DOX_MAN_DIR)/man3/hwloc_distances_remove.3 \
         $(DOX_MAN_DIR)/man3/hwloc_distances_remove_by_depth.3 \
         $(DOX_MAN_DIR)/man3/hwloc_distances_remove_by_type.3 \
@@ -764,6 +779,9 @@ man3_gpu_DATA = \
         $(DOX_MAN_DIR)/man3/hwloc_rsmi_get_device_cpuset.3 \
         $(DOX_MAN_DIR)/man3/hwloc_rsmi_get_device_osdev.3 \
         $(DOX_MAN_DIR)/man3/hwloc_rsmi_get_device_osdev_by_index.3 \
+        $(DOX_MAN_DIR)/man3/hwlocality_levelzero.3 \
+        $(DOX_MAN_DIR)/man3/hwloc_levelzero_get_device_cpuset.3 \
+        $(DOX_MAN_DIR)/man3/hwloc_levelzero_get_device_osdev.3 \
         $(DOX_MAN_DIR)/man3/hwlocality_gl.3 \
         $(DOX_MAN_DIR)/man3/hwloc_gl_get_display_osdev_by_port_device.3 \
         $(DOX_MAN_DIR)/man3/hwloc_gl_get_display_osdev_by_name.3 \
@@ -795,6 +813,12 @@ man3_linux_libnuma_DATA = \
         $(DOX_MAN_DIR)/man3/hwloc_nodeset_from_linux_libnuma_ulongs.3 \
         $(DOX_MAN_DIR)/man3/hwloc_cpuset_to_linux_libnuma_ulongs.3 \
         $(DOX_MAN_DIR)/man3/hwloc_nodeset_to_linux_libnuma_ulongs.3
+
+man3_windowsdir = $(man3dir)
+man3_windows_DATA = \
+	$(DOX_MAN_DIR)/man3/hwlocality_windows.3 \
+	$(DOX_MAN_DIR)/man3/hwloc_windows_get_nr_processor_groups.3 \
+	$(DOX_MAN_DIR)/man3/hwloc_windows_get_processor_group_cpuset.3
 
 man3_openfabricsdir = $(man3dir)
 man3_openfabrics_DATA = \
@@ -856,6 +880,7 @@ $(man3_cuda_DATA): $(DOX_TAG)
 $(man3_glibc_sched_DATA): $(DOX_TAG)
 $(man3_linux_DATA): $(DOX_TAG)
 $(man3_linux_libnuma_DATA): $(DOX_TAG)
+$(man3_windows_DATA): $(DOX_TAG)
 $(man3_openfabrics_DATA): $(DOX_TAG)
 
 $(DOX_LETTERPDF): $(DOX_TAG)

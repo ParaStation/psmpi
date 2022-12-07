@@ -27,7 +27,7 @@
  * about the distribution of message sizes will be gathered during the run by all processes
  * and eventually accumulated and printed by world rank 0 within the MPI_Finalize call. */
 
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
 #define MPID_PSP_HCOLL_STATS
 /* When MPID_PSP_HCOLL_STATS is defined and HCOLL is enabled and PSP_HCOLL_STATS=1 is set,
  * MPI_Finalize also prints some information about the usage of HCOLL collectives. */
@@ -35,16 +35,16 @@
 
 #endif /* MPIDI_PSP_WITH_SESSION_STATISTICS */
 
-/* MPIDI_PSP_WITH_TOPOLOGY_AWARENESS is set if psmpi is configured with --with-topology-awareness */
-#ifdef MPIDI_PSP_WITH_TOPOLOGY_AWARENESS
+/* MPIDI_PSP_WITH_MSA_AWARENESS is set if psmpi is configured with --with-msa-awareness */
+#ifdef MPIDI_PSP_WITH_MSA_AWARENESS
 
 #define MPID_PSP_MSA_AWARENESS
 /* When MPID_PSP_MSA_AWARNESS is defined, the MPI_INFO_ENV object contains a key/value pair
  * indicating the module affiliation of the querying rank. The info key is "msa_module_id".
  */
 
-#define MPID_PSP_TOPOLOGY_AWARE_COLLOPS
-/* When MPID_PSP_TOPOLOGY_AWARE_COLLOPS is defined, the additional functions MPID_Get_badge()
+#define MPID_PSP_MSA_AWARE_COLLOPS
+/* When MPID_PSP_MSA_AWARE_COLLOPS is defined, the additional functions MPID_Get_badge()
  * and MPID_Get_max_badge() have to provide topology information (in terms of node IDs for
  * SMP islands) for identifying SMP nodes and/or MSA modules for applying hierarchy-aware
  * communication topologies for collective MPI operations within the upper MPICH layer.
@@ -55,7 +55,7 @@
 #define MPID_DEV_VERSION_STRING_ARGS MPIDI_PSP_VC_VERSION, MPIDI_PSP_get_psmpi_version_string()
 char* MPIDI_PSP_get_psmpi_version_string(void);
 
-#ifdef HAVE_LIBHCOLL
+#ifdef HAVE_HCOLL
 #define MPID_PSP_WITH_HCOLL
 #include "hcoll/api/hcoll_dte.h"
 typedef struct {
@@ -153,6 +153,13 @@ typedef struct MPID_PSCOM_XHeader_Rma_lock {
 	struct MPIR_Win	*win_ptr;
 } MPID_PSCOM_XHeader_Rma_lock_t;
 
+typedef struct MPID_PSCOM_XHeader_Part {
+	MPID_PSCOM_XHeader_t common;
+	MPI_Aint sdata_size;
+	int requests;
+	MPIR_Request * sreq_ptr;
+	MPIR_Request * rreq_ptr;
+} MPID_PSCOM_XHeader_Part_t;
 
 #define PSCOM_XHEADER_USER_TYPE union pscom_xheader_user
 union pscom_xheader_user
@@ -164,6 +171,7 @@ union pscom_xheader_user
 	MPID_PSCOM_XHeader_Rma_get_answer_t	get_answer;
 	MPID_PSCOM_XHeader_Rma_accumulate_t	accumulate;
 	MPID_PSCOM_XHeader_Rma_lock_t	rma_lock;
+	MPID_PSCOM_XHeader_Part_t part;
 };
 
 
@@ -324,6 +332,10 @@ enum MPID_PSP_MSGTYPE {
 	MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_REQUEST,
 	MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_ANSWER,
 
+	/*Partitioned communication*/
+	MPID_PSP_MSGTYPE_PART_SEND_INIT, /*issued by sender during Psend_init*/
+	MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND, /*clear to send message issued by receiver once start is called and receive request matched to send request*/
+
 	MPID_PSP_MSGTYPE_FINALIZE_TOKEN
 };
 
@@ -416,6 +428,33 @@ struct MPID_DEV_Request_persistent
 };
 
 
+struct MPID_DEV_Request_partitioned
+{
+	struct MPID_DEV_Request_common common;
+
+	void			*buf;
+	int 			partitions; /* number of partitions  */
+	int			count; /* for partitioned requests: count is per partition */
+	MPI_Datatype		datatype;
+	int			rank;
+	int			tag;
+	int 			context_id; /* context_id, used during init msg exchange for matching on receiver side */
+	MPIR_Info 		*info;
+	int			context_offset;
+	MPIR_Request 		*peer_request; /* pointer to the peer request, only used for synchronization, never de-referenced */
+	MPI_Aint		sdata_size; /* size of send data */
+	int			part_per_req; /* number of partitiones per send/ recv request */
+	int			requests; /* number of send/ recv requests for partitioned data transmission of the entire buffer */
+
+	/* receiver */
+	struct list_head 	next; /* use partitioned requests in lists (see list.h) */
+
+	/* sender */
+	bool 			*part_ready; /* array with length equal to number of partitions, saving the ready status of each partition */
+	int			first_use; /* 1 means this is the first call to MPI_start for this request, 0 means it is a consecutive call */
+	int 			send_ctr; /* counting submitted send requests */
+};
+
 struct MPI_Status;
 
 
@@ -430,6 +469,7 @@ struct MPID_DEV_Request
 		struct MPID_DEV_Request_send  send;
 		struct MPID_DEV_Request_multi multi;
 		struct MPID_DEV_Request_persistent persistent; /* Persistent send/recv */
+		struct MPID_DEV_Request_partitioned partitioned; /* Partitioned send/recv */
 		struct MPID_DEV_Request_mprobe mprobe;
 	} kind;
 };
@@ -553,11 +593,13 @@ void MPID_PSP_rma_pscom_sockets_cleanup(void);
 int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm);
 int MPIDI_PSP_Comm_commit_post_hook(MPIR_Comm *comm);
 int MPIDI_PSP_Comm_destroy_hook(MPIR_Comm * comm);
+int MPIDI_PSP_Comm_set_hints(MPIR_Comm *comm_ptr, MPIR_Info *info_ptr);
 
 #define HAVE_DEV_COMM_HOOK
 #define MPID_Comm_commit_pre_hook(comm_) MPIDI_PSP_Comm_commit_pre_hook(comm_)
 #define MPID_Comm_commit_post_hook(comm_) MPIDI_PSP_Comm_commit_post_hook(comm_)
 #define MPID_Comm_free_hook(comm_) MPIDI_PSP_Comm_destroy_hook(comm_)
+#define MPID_Comm_set_hints(comm_, info_) MPIDI_PSP_Comm_set_hints(comm_, info_)
 
 /* Progress hooks. */
 #define MPID_Progress_register_hook(fn_, id_) MPI_SUCCESS
@@ -679,6 +721,20 @@ int MPID_Mrecv(void *buf, int count, MPI_Datatype datatype,
 int MPID_Cancel_send(MPIR_Request *);
 int MPID_Cancel_recv(MPIR_Request *);
 
+int MPID_Psend_init(const void *buf, int partitions, MPI_Count count,
+                    MPI_Datatype datatype, int dest, int tag, MPIR_Comm *comm,
+		    MPIR_Info *info, MPIR_Request **request);
+int MPID_Precv_init(void *buf, int partitions, MPI_Count count,
+                    MPI_Datatype datatype, int source, int tag, MPIR_Comm *comm,
+		    MPIR_Info *info,MPIR_Request **request );
+
+int MPID_Pready_range(int partition_low, int partition_high,
+                      MPIR_Request *sreq);
+int MPID_Pready_list(int length, const int array_of_partitions[], MPIR_Request *sreq);
+int MPID_Parrived(MPIR_Request *rreq, int partition, int *flag);
+
+
+
 MPI_Aint MPID_Aint_add(MPI_Aint base, MPI_Aint disp);
 
 MPI_Aint MPID_Aint_diff(MPI_Aint addr1, MPI_Aint addr2);
@@ -759,7 +815,7 @@ int MPID_Progress_poke(void);
 
 int MPID_Get_processor_name( char *name, int namelen, int *resultlen);
 int MPID_Get_universe_size(int  * universe_size);
-int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, int * lpid_ptr, bool is_remote);
+int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, uint64_t * lpid_ptr, bool is_remote);
 
 void MPID_Request_create_hook(MPIR_Request *);
 void MPID_Request_free_hook(MPIR_Request *);

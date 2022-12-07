@@ -35,13 +35,15 @@ typedef struct uct_ib_mlx5_mem {
 static ucs_status_t uct_ib_mlx5_reg_key(uct_ib_md_t *md, void *address,
                                         size_t length, uint64_t access_flags,
                                         uct_ib_mem_t *ib_memh,
-                                        uct_ib_mr_type_t mr_type)
+                                        uct_ib_mr_type_t mr_type,
+                                        int silent)
 {
     uct_ib_mlx5_mem_t *memh = ucs_derived_of(ib_memh, uct_ib_mlx5_mem_t);
     ucs_status_t status;
 
     ucs_assert(mr_type == UCT_IB_MR_DEFAULT);
-    status = uct_ib_reg_mr(md->pd, address, length, access_flags, &memh->mr);
+    status = uct_ib_reg_mr(md->pd, address, length, access_flags, &memh->mr,
+                           silent);
     if (status != UCS_OK) {
         return status;
     }
@@ -169,7 +171,8 @@ static ucs_status_t uct_ib_mlx5_exp_md_umr_qp_create(uct_ib_mlx5_md_t *md)
     qp_attr.ah_attr.dlid             = port_attr->lid;
     qp_attr.ah_attr.is_global        = 1;
     if (uct_ib_device_query_gid(ibdev, port_num, UCT_IB_MD_DEFAULT_GID_INDEX,
-                                &qp_attr.ah_attr.grh.dgid) != UCS_OK) {
+                                &qp_attr.ah_attr.grh.dgid,
+                                UCS_LOG_LEVEL_ERROR) != UCS_OK) {
         goto err_destroy_qp;
     }
 
@@ -487,9 +490,16 @@ static ucs_status_t uct_ib_mlx5_exp_dereg_atomic_key(uct_ib_md_t *ibmd,
 {
 #ifdef HAVE_EXP_UMR
     uct_ib_mlx5_mem_t *memh = ucs_derived_of(ib_memh, uct_ib_mlx5_mem_t);
+    struct ibv_mr *atomic_mr;
     int ret;
 
-    ret = UCS_PROFILE_CALL(ibv_dereg_mr, memh->atomic_mr);
+    if (memh->super.flags & UCT_IB_MEM_MULTITHREADED) {
+        atomic_mr = memh->ksm_data->atomic_mr;
+    } else {
+        atomic_mr = memh->atomic_mr;
+    }
+
+    ret = UCS_PROFILE_CALL(ibv_dereg_mr, atomic_mr);
     if (ret != 0) {
         ucs_error("ibv_dereg_mr() failed: %m");
         return UCS_ERR_IO_ERROR;
@@ -505,7 +515,8 @@ static ucs_status_t uct_ib_mlx5_exp_reg_multithreaded(uct_ib_md_t *ibmd,
                                                       void *address, size_t length,
                                                       uint64_t access_flags,
                                                       uct_ib_mem_t *ib_memh,
-                                                      uct_ib_mr_type_t mr_type)
+                                                      uct_ib_mr_type_t mr_type,
+                                                      int silent)
 {
 #if HAVE_EXP_UMR_KSM
     uct_ib_mlx5_mem_t *memh = ucs_derived_of(ib_memh, uct_ib_mlx5_mem_t);
@@ -537,7 +548,7 @@ static ucs_status_t uct_ib_mlx5_exp_reg_multithreaded(uct_ib_md_t *ibmd,
     ksm_data->mr_num = mr_num;
     status = uct_ib_md_handle_mr_list_multithreaded(ibmd, address, length,
                                                     access_flags, chunk,
-                                                    ksm_data->mrs);
+                                                    ksm_data->mrs, silent);
     if (status != UCS_OK) {
         goto err;
     }
@@ -555,7 +566,7 @@ static ucs_status_t uct_ib_mlx5_exp_reg_multithreaded(uct_ib_md_t *ibmd,
 
 err_dereg:
     uct_ib_md_handle_mr_list_multithreaded(ibmd, address, length, UCT_IB_MEM_DEREG,
-                                           chunk, ksm_data->mrs);
+                                           chunk, ksm_data->mrs, silent);
 err:
     ucs_free(ksm_data);
     return status;
@@ -573,17 +584,10 @@ static ucs_status_t uct_ib_mlx5_exp_dereg_multithreaded(uct_ib_md_t *ibmd,
     size_t chunk = ibmd->config.mt_reg_chunk;
     ucs_status_t s, status = UCS_OK;
 
-    if (memh->super.flags & UCT_IB_MEM_FLAG_ATOMIC_MR) {
-        s = uct_ib_dereg_mr(memh->ksm_data->atomic_mr);
-        if (s != UCS_OK) {
-            status = s;
-        }
-    }
-
     s = uct_ib_md_handle_mr_list_multithreaded(ibmd, memh->mr->addr,
                                                memh->mr->length,
                                                UCT_IB_MEM_DEREG, chunk,
-                                               memh->ksm_data->mrs);
+                                               memh->ksm_data->mrs, 1);
     if (s == UCS_ERR_UNSUPPORTED) {
         s = uct_ib_dereg_mrs(memh->ksm_data->mrs, memh->ksm_data->mr_num);
         if (s != UCS_OK) {
@@ -619,7 +623,8 @@ static ucs_status_t uct_ib_mlx5_exp_md_open(struct ibv_device *ibv_device,
 
     ctx = ibv_open_device(ibv_device);
     if (ctx == NULL) {
-        ucs_debug("ibv_open_device(%s) failed: %m", ibv_get_device_name(ibv_device));
+        ucs_diag("ibv_open_device(%s) failed: %m",
+                 ibv_get_device_name(ibv_device));
         status = UCS_ERR_UNSUPPORTED;
         goto err;
     }

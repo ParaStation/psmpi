@@ -26,6 +26,7 @@ $Text::Wrap::unexpand = 0; # disable hard tabs in output
 # set true to enable debug output
 my $debug = 0;
 my @cvars = ();
+my %cvars; # used for duplication detection
 my @categories=();
 my $yaml = YAML::Tiny->new();
 my @dirs = ();
@@ -57,7 +58,7 @@ Supported options:
     --help              - this output (optional)
     --debug             - enable some debugging output (optional)
     --namespace=STR     - use STR as variable/type prefix in generated code (optional, default=$ns)
-    --alt-namespace=STR - use STR as alternaive variable/type prefix in generated code (optional, default=$alt_ns)
+    --alt-namespace=STR - use STR as alternative variable/type prefix in generated code (optional, default=$alt_ns)
     --header=STR        - specify the header file name (optional, default=$header_file)
     --c-file=STR        - specify the C file name (optional, default=$c_file)
     --readme-file=STR   - specify the readme file name (optional, default=$readme_file)
@@ -253,10 +254,14 @@ print OUTPUT_C <<EOT;
 int ${fn_ns}_init(void)
 {
     int mpi_errno = MPI_SUCCESS;
-    int rc;
+    int rc, got_rc;
     const char *tmp_str;
     static int initialized = FALSE;
     MPIR_T_cvar_value_t defaultval;
+
+    int debug = 0;
+    rc = MPL_env2bool("MPIR_CVAR_DEBUG_CVARS", &debug);
+    MPIR_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_CVAR_DEBUG_CVARS");
 
     /* FIXME any MT issues here? */
     if (initialized)
@@ -334,27 +339,44 @@ foreach my $p (@cvars) {
         push @env_names, $p->{'alias'};
     }
 
+    print OUTPUT_C "    got_rc = 0;\n";
     foreach my $env_name (@env_names) {
         # assumes rc is defined
         if ($p->{type} eq 'range') {
 print OUTPUT_C <<EOT;
     rc = MPL_env2${env_fn}("$env_name", &($var_name.low), &($var_name.high));
     MPIR_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","$env_name");
+    got_rc += rc;
 EOT
         }
         elsif ($p->{type} eq 'string' or $p->{type} eq 'enum') {
 print OUTPUT_C <<EOT;
     rc = MPL_env2${env_fn}("$env_name", &tmp_str);
     MPIR_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","$env_name");
+    got_rc += rc;
 EOT
         }
         else {
 print OUTPUT_C <<EOT;
     rc = MPL_env2${env_fn}("$env_name", &($var_name));
     MPIR_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","$env_name");
+    got_rc += rc;
 EOT
         }
     }
+
+    # debugging
+    print OUTPUT_C "    if (got_rc && debug) {\n";
+    if ($p->{type} eq 'string' or $p->{type} eq 'enum') {
+        print OUTPUT_C "        printf(\"CVAR: $var_name = %s\\n\", tmp_str);\n";
+    } elsif ($p->{type} eq "range") {
+        print OUTPUT_C "        printf(\"CVAR: $var_name = %d-%d\\n\", $var_name.low, $var_name.high);\n";
+    } else {
+        print OUTPUT_C "        printf(\"CVAR: $var_name = %d\\n\", $var_name);\n";
+    }
+    print OUTPUT_C "    }\n";
+
+    # post process
     if ($p->{type} eq 'string') {
 print OUTPUT_C <<EOT;
     if (tmp_str != NULL) {
@@ -674,7 +696,17 @@ sub ProcessFile {
                 die "ERROR: cvar $cvar->{name} has no class in $cfile\n" unless exists $cvar->{class};
                 die "ERROR: cvar $cvar->{name} has no description in $cfile\n" unless exists $cvar->{description};
             }
-            push (@cvars, @{$info->{cvars}});
+            foreach my $cvar (@{$info->{cvars}}) {
+                if (!$cvars{$cvar->{name}}) {
+                    $cvars{$cvar->{name}} = $cvar;
+                    push (@cvars, $cvar);
+                } else {
+                    my $prev = $cvars{$cvar->{name}};
+                    if (cvar_cmp($prev, $cvar) != 0) {
+                        die "ERROR: duplicate CVAR definition, $cvar->{name}, and they are not the same\n";
+                    }
+                }
+            }
         }
 
         if (exists $info->{categories}) {
@@ -702,6 +734,8 @@ sub ExpandDir {
             next;
         } elsif (-d "$dir/$filename") {
             $subdirs[$#subdirs + 1] = "$dir/$filename";
+        } elsif ($filename =~ /^cvars.txt$/) {
+            $cfiles[$#cfiles + 1] = "$dir/$filename";
         } elsif ($filename =~ /(.*\.[Cchi])(pp){0,1}$/) {
             if (!defined($skipfiles{"$dir/$filename"}))
             {
@@ -715,4 +749,30 @@ sub ExpandDir {
     foreach $dir (@subdirs) {
         ExpandDir($dir);
     }
+}
+
+# Compare two cvar, return 0 if they are duplicate and compatible. Other wise, return non-zero.
+# This is useful so we can have duplicated cvar definition is separate modules, e.g. ch3:ofi and ch4:ofi.
+sub cvar_cmp {
+    my ($a, $b) = @_;
+    if ($a->{category} ne $b->{category}) {
+        return 1;
+    }
+    if ($a->{type} ne $b->{type}) {
+        return 1;
+    }
+    if ($a->{default} ne $b->{default}) {
+        return 1;
+    }
+    if ($a->{scope} ne $b->{scope}) {
+        return 1;
+    }
+    if ($a->{class} ne $b->{class}) {
+        return 1;
+    }
+    if ($a->{verbosity} ne $b->{verbosity}) {
+        return 1;
+    }
+    # they are the same
+    return 0;
 }

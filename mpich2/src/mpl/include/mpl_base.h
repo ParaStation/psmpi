@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <limits.h>
 
 #if defined MPL_HAVE_CTYPE_H
 #include <ctype.h>
@@ -48,12 +49,6 @@
 #else
 #define MPL_STATIC_INLINE_PREFIX static inline
 #define MPL_STATIC_INLINE_SUFFIX
-#endif
-
-#ifdef MPL_HAVE_FUNC_ATTRIBUTE_FALLTHROUGH
-#define MPL_FALLTHROUGH __attribute__((fallthrough))
-#else
-#define MPL_FALLTHROUGH
 #endif
 
 #ifdef MPL_HAVE_VAR_ATTRIBUTE_ALIGNED

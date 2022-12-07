@@ -17,7 +17,7 @@ static
 int MPIDI_VCR_DeleteFromPG(MPIDI_VC_t *vcr);
 
 static
-MPIDI_VC_t *new_VCR(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid)
+MPIDI_VC_t *new_VCR(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, uint64_t lpid)
 {
 	MPIDI_VC_t *vcr = MPL_malloc(sizeof(*vcr), MPL_MEM_OTHER);
 	assert(vcr);
@@ -136,9 +136,9 @@ int MPIDI_VCRT_Release(MPIDI_VCRT_t *vcrt, int isDisconnect)
 }
 
 /* used in mpid_init.c to set comm_world */
-MPIDI_VC_t *MPIDI_VC_Create(MPIDI_PG_t *pg, int pg_rank, pscom_connection_t *con, int lpid)
+MPIDI_VC_t *MPIDI_VC_Create(MPIDI_PG_t *pg, int pg_rank, pscom_connection_t *con, uint64_t lpid)
 {
-	Dprintf("(con=%p, lpid=%d)", con, lpid);
+	Dprintf("(con=%p, lpid=%" PRIu64 ")", con, lpid);
 
 	return new_VCR(pg, pg_rank, con, lpid);
 }
@@ -161,7 +161,7 @@ int MPIDI_VCR_DeleteFromPG(MPIDI_VC_t *vcr)
 
 	if(!MPIDI_Process.env.enable_lazy_disconnect) {
 		/* For lazy disconnect, we keep this information! */
-		pg->lpids[vcr->pg_rank] = -1;
+		pg->lpids[vcr->pg_rank] = MPIDI_PSP_INVALID_LPID;
 		pg->cons[vcr->pg_rank] = NULL;
 	}
 
@@ -181,7 +181,7 @@ int MPIDI_VCR_DeleteFromPG(MPIDI_VC_t *vcr)
 
 
 static inline int MPIDI_LPID_GetAllInComm(MPIR_Comm *comm_ptr, int local_size,
-                                          int local_lpids[])
+                                          uint64_t local_lpids[])
 {
     int i;
     int mpi_errno = MPI_SUCCESS;
@@ -197,12 +197,13 @@ static inline int MPIDI_LPID_GetAllInComm(MPIR_Comm *comm_ptr, int local_size,
  @*/
 int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
                                 MPIR_Comm *peer_comm_ptr, int remote_leader,
-                                int *remote_size, int **remote_lpids,
+                                int *remote_size, uint64_t **remote_lpids,
                                 int *is_low_group)
 {
     int mpi_errno = MPI_SUCCESS;
     int singlePG;
-    int local_size,*local_lpids=0;
+    int local_size = 0;
+    uint64_t *local_lpids = NULL;
     MPIDI_Gpid *local_gpids=NULL, *remote_gpids=NULL;
     int comm_info[2];
     int cts_tag;
@@ -232,9 +233,9 @@ int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
         /* With this information, we can now send and receive the
            global process ids from the peer. */
         MPIR_CHKLMEM_MALLOC(remote_gpids,MPIDI_Gpid*,(*remote_size)*sizeof(MPIDI_Gpid), mpi_errno,"remote_gpids", MPL_MEM_DYNAMIC);
-        *remote_lpids = (int*) MPL_malloc((*remote_size)*sizeof(int), MPL_MEM_ADDRESS);
+        *remote_lpids = (uint64_t*) MPL_malloc((*remote_size)*sizeof(uint64_t), MPL_MEM_ADDRESS);
         MPIR_CHKLMEM_MALLOC(local_gpids,MPIDI_Gpid*,local_size*sizeof(MPIDI_Gpid), mpi_errno,"local_gpids", MPL_MEM_DYNAMIC);
-        MPIR_CHKLMEM_MALLOC(local_lpids,int*,local_size*sizeof(int), mpi_errno,"local_lpids", MPL_MEM_DYNAMIC);
+        MPIR_CHKLMEM_MALLOC(local_lpids,uint64_t*,local_size*sizeof(uint64_t), mpi_errno,"local_lpids", MPL_MEM_DYNAMIC);
 
         mpi_errno = MPIDI_GPID_GetAllInComm( local_comm_ptr, local_size, local_gpids, &singlePG );
         if (mpi_errno) MPIR_ERR_POP(mpi_errno);
@@ -292,7 +293,7 @@ int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
         MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
         *remote_size = comm_info[0];
         MPIR_CHKLMEM_MALLOC(remote_gpids,MPIDI_Gpid*,(*remote_size)*sizeof(MPIDI_Gpid), mpi_errno,"remote_gpids", MPL_MEM_DYNAMIC);
-        *remote_lpids = (int*) MPL_malloc((*remote_size)*sizeof(int), MPL_MEM_ADDRESS);
+        *remote_lpids = (uint64_t*) MPL_malloc((*remote_size)*sizeof(uint64_t), MPL_MEM_ADDRESS);
         mpi_errno = MPIR_Bcast( remote_gpids, (*remote_size)*sizeof(MPIDI_Gpid), MPI_BYTE, local_leader,
                                      local_comm_ptr, &errflag );
         if (mpi_errno) MPIR_ERR_POP(mpi_errno);

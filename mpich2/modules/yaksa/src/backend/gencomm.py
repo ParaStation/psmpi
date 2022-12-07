@@ -11,8 +11,20 @@ import yutils
 ## loop through the derived and basic types to generate individual
 ## pack functions
 derived_types = [ "hvector", "blkhindx", "hindexed", "contig", "resized" ]
-
-
+type_ops = {'_Bool': {'REPLACE', 'LAND', 'LOR', 'LXOR'},
+            'bool': {'REPLACE', 'LAND', 'LOR', 'LXOR'},
+            'char': {'REPLACE'},
+            'wchar_t': {'REPLACE'},
+            'int8_t': {'REPLACE', 'SUM', 'PROD', 'MIN', 'MAX', 'LAND', 'LOR', 'LXOR', 'BAND', 'BOR', 'BXOR'},
+            'int16_t': {'REPLACE', 'SUM', 'PROD', 'MIN', 'MAX', 'LAND', 'LOR', 'LXOR', 'BAND', 'BOR', 'BXOR'},
+            'int32_t': {'REPLACE', 'SUM', 'PROD', 'MIN', 'MAX', 'LAND', 'LOR', 'LXOR', 'BAND', 'BOR', 'BXOR'},
+            'int64_t': {'REPLACE', 'SUM', 'PROD', 'MIN', 'MAX', 'LAND', 'LOR', 'LXOR', 'BAND', 'BOR', 'BXOR'},
+            'float': {'REPLACE', 'SUM', 'PROD', 'MIN', 'MAX'},
+            'double': {'REPLACE', 'SUM', 'PROD', 'MIN', 'MAX'},
+            'c_complex': {'REPLACE', 'SUM', 'PROD'},
+            'c_double_complex': {'REPLACE', 'SUM', 'PROD'},
+            'c_long_double_complex': {'REPLACE', 'SUM', 'PROD'},
+            'long double': {'REPLACE', 'SUM', 'PROD', 'MIN', 'MAX'}}
 ########################################################################################
 ##### Switch statement generation for pup function selection
 ########################################################################################
@@ -43,16 +55,39 @@ def switcher_builtin_element(backend, OUTFILE, blklens, typelist, pupstr, key, v
             else:
                 yutils.display(OUTFILE, "default:\n")
             yutils.display(OUTFILE, "if (max_nesting_level >= %d) {\n" % nesting_level)
-            yutils.display(OUTFILE, "%s->pack = yaksuri_%si_%s_blklen_%s_%s;\n" % (backend, backend, pupstr, blklen, val))
-            yutils.display(OUTFILE, "%s->unpack = yaksuri_%si_un%s_blklen_%s_%s;\n" % (backend, backend, pupstr, blklen, val))
+            if (backend == "ze"):
+                for op in type_ops[val]:
+                    yutils.display(OUTFILE, "%s->pack[YAKSA_OP__%s] = yaksuri_%si_pack_%s_%s_blklen_%s_%s;\n" % (backend, op, backend, op, pupstr, blklen, val))
+                    yutils.display(OUTFILE, "%s->unpack[YAKSA_OP__%s] = yaksuri_%si_unpack_%s_%s_blklen_%s_%s;\n" % (backend, op, backend, op, pupstr, blklen, val))
+                yutils.display(OUTFILE, "%s->name = \"yaksuri_%si_op_%s_blklen_%s_%s\";\n" % (backend, backend, pupstr, blklen, val))
+            else:
+                yutils.display(OUTFILE, "%s->pack = yaksuri_%si_pack_%s_blklen_%s_%s;\n" % (backend, backend, pupstr, blklen, val))
+                yutils.display(OUTFILE, "%s->unpack = yaksuri_%si_unpack_%s_blklen_%s_%s;\n" % (backend, backend, pupstr, blklen, val))
+                yutils.display(OUTFILE, "%s->name = \"yaksuri_%si_op_%s_blklen_%s_%s\";\n" % (backend, backend, pupstr, blklen, val))
             yutils.display(OUTFILE, "}\n")
             yutils.display(OUTFILE, "break;\n")
         yutils.display(OUTFILE, "}\n")
-    else:
+    elif (t != ""):
         yutils.display(OUTFILE, "if (max_nesting_level >= %d) {\n" % nesting_level)
-        yutils.display(OUTFILE, "%s->pack = yaksuri_%si_%s_%s;\n" % (backend, backend, pupstr, val))
-        yutils.display(OUTFILE, "%s->unpack = yaksuri_%si_un%s_%s;\n" % (backend, backend, pupstr, val))
+        if (backend == "ze"):
+            for op in type_ops[val]:
+                yutils.display(OUTFILE, "%s->pack[YAKSA_OP__%s] = yaksuri_%si_pack_%s_%s_%s;\n" % (backend, op, backend, op, pupstr, val))
+                yutils.display(OUTFILE, "%s->unpack[YAKSA_OP__%s] = yaksuri_%si_unpack_%s_%s_%s;\n" % (backend, op, backend, op, pupstr, val))
+            yutils.display(OUTFILE, "%s->name = \"yaksuri_%si_op_%s_%s\";\n" % (backend, backend, pupstr, val))
+        else:
+            yutils.display(OUTFILE, "%s->pack = yaksuri_%si_pack_%s_%s;\n" % (backend, backend, pupstr, val))
+            yutils.display(OUTFILE, "%s->unpack = yaksuri_%si_unpack_%s_%s;\n" % (backend, backend, pupstr, val))
+            yutils.display(OUTFILE, "%s->name = \"yaksuri_%si_op_%s_%s\";\n" % (backend, backend, pupstr, val))
         yutils.display(OUTFILE, "}\n")
+    else:
+        if (backend == "ze"):
+            for op in type_ops[val]:
+                yutils.display(OUTFILE, "%s->pack[YAKSA_OP__%s] = yaksuri_%si_pack_%s_%s;\n" % (backend, op, backend, op, val))
+                yutils.display(OUTFILE, "%s->unpack[YAKSA_OP__%s] = yaksuri_%si_unpack_%s_%s;\n" % (backend, op, backend, op, val))
+            yutils.display(OUTFILE, "%s->name = \"yaksuri_%si_op_%s\";\n" % (backend, backend, val))
+        else:
+            yutils.display(OUTFILE, "%s->pack = yaksuri_%si_pack_%s;\n" % (backend, backend, val))
+            yutils.display(OUTFILE, "%s->unpack = yaksuri_%si_unpack_%s;\n" % (backend, backend, val))
 
     if (t != ""):
         typelist.append(t)
@@ -62,7 +97,10 @@ def switcher_builtin(backend, OUTFILE, blklens, builtin_types, builtin_maps, typ
     yutils.display(OUTFILE, "switch (%s->u.builtin.handle) {\n" % child_type_str(typelist))
 
     for b in builtin_types:
-        switcher_builtin_element(backend, OUTFILE, blklens, typelist, pupstr, "YAKSA_TYPE__%s" % b.replace(" ", "_"), b.replace(" ", "_"))
+        if b == "bool":
+            switcher_builtin_element(backend, OUTFILE, blklens, typelist, pupstr, "YAKSA_TYPE___BOOL", "bool")
+        else:
+            switcher_builtin_element(backend, OUTFILE, blklens, typelist, pupstr, "YAKSA_TYPE__%s" % b.replace(" ", "_"), b.replace(" ", "_"))
     for key in builtin_maps:
         switcher_builtin_element(backend, OUTFILE, blklens, typelist, pupstr, key, builtin_maps[key])
 
@@ -112,9 +150,16 @@ def populate_pupfns(pup_max_nesting, backend, blklens, builtin_types, builtin_ma
     yutils.display(OUTFILE, "yaksuri_%si_type_s *%s = (yaksuri_%si_type_s *) type->backend.%s.priv;\n" \
                    % (backend, backend, backend, backend))
     yutils.display(OUTFILE, "\n")
-    yutils.display(OUTFILE, "%s->pack = YAKSURI_KERNEL_NULL;\n" % backend)
-    yutils.display(OUTFILE, "%s->unpack = YAKSURI_KERNEL_NULL;\n" % backend)
-    yutils.display(OUTFILE, "\n")
+    if (backend == "ze"):
+        yutils.display(OUTFILE, "for (int i = 0; i < YAKSA_OP__LAST; i++) {\n")
+        yutils.display(OUTFILE, "   %s->pack[i] = YAKSURI_KERNEL_NULL;\n" % backend)
+        yutils.display(OUTFILE, "   %s->unpack[i] = YAKSURI_KERNEL_NULL;\n" % backend)
+        yutils.display(OUTFILE, "}\n")
+    else:
+        yutils.display(OUTFILE, "%s->pack = YAKSURI_KERNEL_NULL;\n" % backend)
+        yutils.display(OUTFILE, "%s->unpack = YAKSURI_KERNEL_NULL;\n" % backend)
+        yutils.display(OUTFILE, "\n")
+
     yutils.display(OUTFILE, "switch (type->kind) {\n")
     for dtype1 in derived_types:
         yutils.display(OUTFILE, "case YAKSI_TYPE_KIND__%s:\n" % dtype1.upper())
@@ -133,6 +178,10 @@ def populate_pupfns(pup_max_nesting, backend, blklens, builtin_types, builtin_ma
         yutils.display(OUTFILE, "}\n")
         yutils.display(OUTFILE, "break;\n")
         yutils.display(OUTFILE, "\n")
+    yutils.display(OUTFILE, "case YAKSI_TYPE_KIND__BUILTIN:\n")
+    yutils.display(OUTFILE, "rc = yaksuri_%si_populate_pupfns_builtin(type);\n" % backend)
+    yutils.display(OUTFILE, "break;\n")
+    yutils.display(OUTFILE, "\n")
     yutils.display(OUTFILE, "default:\n")
     yutils.display(OUTFILE, "    break;\n")
     yutils.display(OUTFILE, "}\n")
@@ -170,7 +219,7 @@ def populate_pupfns(pup_max_nesting, backend, blklens, builtin_types, builtin_ma
             yutils.display(OUTFILE, "}\n")
             yutils.display(OUTFILE, "\n")
 
-            pupstr = "pack_%s_%s" % (dtype1, dtype2)
+            pupstr = "%s_%s" % (dtype1, dtype2)
             typelist = [ dtype1, dtype2 ]
             switcher(backend, OUTFILE, blklens, builtin_types, builtin_maps, typelist, pupstr, pup_max_nesting - 1)
             yutils.display(OUTFILE, "\n")
@@ -205,13 +254,41 @@ def populate_pupfns(pup_max_nesting, backend, blklens, builtin_types, builtin_ma
         yutils.display(OUTFILE, "}\n")
         yutils.display(OUTFILE, "\n")
 
-        pupstr = "pack_%s" % dtype1
+        pupstr = "%s" % dtype1
         typelist = [ dtype1 ]
         switcher_builtin(backend, OUTFILE, blklens, builtin_types, builtin_maps, typelist, pupstr)
         yutils.display(OUTFILE, "\n")
         yutils.display(OUTFILE, "return rc;\n")
         yutils.display(OUTFILE, "}\n")
         OUTFILE.close()
+
+    ### Generate mapping for reduction kernels of contiguous datatypes
+    filename = "src/backend/%s/pup/yaksuri_%si_populate_pupfns_builtin.c" % (backend, backend)
+    yutils.copyright_c(filename)
+    OUTFILE = open(filename, "a")
+    yutils.display(OUTFILE, "#include <stdio.h>\n")
+    yutils.display(OUTFILE, "#include <stdlib.h>\n")
+    yutils.display(OUTFILE, "#include <wchar.h>\n")
+    yutils.display(OUTFILE, "#include \"yaksi.h\"\n")
+    yutils.display(OUTFILE, "#include \"yaksu.h\"\n")
+    yutils.display(OUTFILE, "#include \"yaksuri_%si.h\"\n" % backend)
+    yutils.display(OUTFILE, "#include \"yaksuri_%si_populate_pupfns.h\"\n" % backend)
+    yutils.display(OUTFILE, "#include \"yaksuri_%si_pup.h\"\n" % backend)
+    yutils.display(OUTFILE, "\n")
+    yutils.display(OUTFILE, "int yaksuri_%si_populate_pupfns_builtin(yaksi_type_s * type)\n" % backend)
+    yutils.display(OUTFILE, "{\n")
+    yutils.display(OUTFILE, "int rc = YAKSA_SUCCESS;\n")
+    yutils.display(OUTFILE, "yaksuri_%si_type_s *%s = (yaksuri_%si_type_s *) type->backend.%s.priv;\n" \
+                    % (backend, backend, backend, backend))
+    yutils.display(OUTFILE, "\n")
+
+    pupstr = ""
+    typelist = [ ]
+    switcher_builtin(backend, OUTFILE, blklens, builtin_types, builtin_maps, typelist, pupstr)
+    yutils.display(OUTFILE, "\n")
+    yutils.display(OUTFILE, "return rc;\n")
+    yutils.display(OUTFILE, "}\n")
+    OUTFILE.close()
 
     ##### generate the Makefile for the pup function selection functions
     filename = "src/backend/%s/pup/Makefile.populate_pupfns.mk" % backend
@@ -222,6 +299,7 @@ def populate_pupfns(pup_max_nesting, backend, blklens, builtin_types, builtin_ma
         for dtype2 in derived_types:
             yutils.display(OUTFILE, "\tsrc/backend/%s/pup/yaksuri_%si_populate_pupfns_%s_%s.c \\\n" % (backend, backend, dtype1, dtype2))
         yutils.display(OUTFILE, "\tsrc/backend/%s/pup/yaksuri_%si_populate_pupfns_%s_builtin.c \\\n" % (backend, backend, dtype1))
+    yutils.display(OUTFILE, "\tsrc/backend/%s/pup/yaksuri_%si_populate_pupfns_builtin.c \\\n" % (backend, backend))
     yutils.display(OUTFILE, "\tsrc/backend/%s/pup/yaksuri_%si_populate_pupfns.c\n" % (backend, backend))
     yutils.display(OUTFILE, "\n")
     yutils.display(OUTFILE, "noinst_HEADERS += \\\n")
@@ -239,6 +317,7 @@ def populate_pupfns(pup_max_nesting, backend, blklens, builtin_types, builtin_ma
         for dtype2 in derived_types:
             yutils.display(OUTFILE, "int yaksuri_%si_populate_pupfns_%s_%s(yaksi_type_s * type);\n" % (backend, dtype1, dtype2))
         yutils.display(OUTFILE, "int yaksuri_%si_populate_pupfns_%s_builtin(yaksi_type_s * type);\n" % (backend, dtype1))
+    yutils.display(OUTFILE, "int yaksuri_%si_populate_pupfns_builtin(yaksi_type_s * type);\n" % backend)
     yutils.display(OUTFILE, "\n")
     yutils.display(OUTFILE, "#endif  /* YAKSURI_%sI_POPULATE_PUPFNS_H_INCLUDED */\n" % backend.upper())
     OUTFILE.close()

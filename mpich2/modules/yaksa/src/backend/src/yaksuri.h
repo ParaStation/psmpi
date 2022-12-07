@@ -12,6 +12,7 @@ typedef enum yaksuri_gpudriver_id_e {
     YAKSURI_GPUDRIVER_ID__UNSET = -1,
     YAKSURI_GPUDRIVER_ID__CUDA = 0,
     YAKSURI_GPUDRIVER_ID__ZE,
+    YAKSURI_GPUDRIVER_ID__HIP,
     YAKSURI_GPUDRIVER_ID__LAST,
 } yaksuri_gpudriver_id_e;
 
@@ -34,17 +35,19 @@ typedef struct {
 } yaksuri_global_s;
 extern yaksuri_global_s yaksuri_global;
 
-#define YAKSURI_SUBREQ_CHUNK_MAX_TMPBUFS (2)
+#define YAKSURI_SUBREQ_CHUNK_MAX_TMPBUFS (4)
+
+typedef struct yaksuri_tmpbuf {
+    void *buf;
+    yaksu_buffer_pool_s pool;
+} yaksuri_tmpbuf_s;
 
 typedef struct yaksuri_subreq_chunk {
     uintptr_t count_offset;
     uintptr_t count;
 
     int num_tmpbufs;
-    struct {
-        void *buf;
-        yaksu_buffer_pool_s pool;
-    } tmpbufs[YAKSURI_SUBREQ_CHUNK_MAX_TMPBUFS];
+    yaksuri_tmpbuf_s tmpbufs[YAKSURI_SUBREQ_CHUNK_MAX_TMPBUFS];
     void *event;
 
     struct yaksuri_subreq_chunk *next;
@@ -67,6 +70,7 @@ typedef struct yaksuri_subreq {
             void *outbuf;
             uintptr_t count;
             yaksi_type_s *type;
+            yaksa_op_t op;
 
             uintptr_t issued_count;
             yaksuri_subreq_chunk_s *chunks;
@@ -77,6 +81,8 @@ typedef struct yaksuri_subreq {
                             struct yaksuri_subreq_chunk * chunk);
         } multiple;
     } u;
+
+    yaksuri_gpudriver_id_e gpudriver_id;
 
     struct yaksuri_subreq *next;
     struct yaksuri_subreq *prev;
@@ -97,10 +103,13 @@ typedef struct yaksuri_request {
 
 typedef struct {
     yaksuri_gpudriver_id_e gpudriver_id;
+    int mapped_device;
 } yaksuri_info_s;
 
 int yaksuri_progress_enqueue(const void *inbuf, void *outbuf, uintptr_t count, yaksi_type_s * type,
-                             yaksi_info_s * info, yaksi_request_s * request);
+                             yaksi_info_s * info, yaksa_op_t op, yaksi_request_s * request);
 int yaksuri_progress_poke(void);
+int yaksuri_progress_init(void);
+int yaksuri_progress_finalize(void);
 
 #endif /* YAKSURI_H_INCLUDED */

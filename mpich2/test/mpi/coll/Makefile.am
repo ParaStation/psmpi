@@ -23,6 +23,7 @@ noinst_PROGRAMS =      \
     allred4            \
     allred5            \
     allred6            \
+    allred_derived     \
     allredmany         \
     alltoall1          \
     alltoallv          \
@@ -81,6 +82,30 @@ noinst_PROGRAMS =      \
     opminloc           \
     opprod             \
     opsum              \
+    p_allred           \
+    p_bcast            \
+    p_bcast2           \
+    p_red              \
+    p_alltoall         \
+    p_allgather        \
+    p_allgatherv       \
+    p_red_scat_block   \
+    p_redscat          \
+    p_scan             \
+    p_gather           \
+    p_gatherv          \
+    p_scatter          \
+    p_scatterv         \
+    p_alltoallv        \
+    p_alltoallw        \
+    p_exscan           \
+    p_barrier          \
+    p_neighb_allgather \
+    p_neighb_allgatherv\
+    p_neighb_alltoall  \
+    p_neighb_alltoallv \
+    p_neighb_alltoallw \
+    p_order            \
     red3               \
     red4               \
     red_scat_block     \
@@ -99,6 +124,8 @@ noinst_PROGRAMS =      \
     scattern           \
     scatterv           \
     uoplong            \
+    uoplong_large      \
+    uop_equal	       \
     nballtoall1        \
     nbredscat          \
     nbredscat3	       \
@@ -122,8 +149,11 @@ noinst_PROGRAMS =      \
     neighb_alltoall    \
     neighb_alltoallv   \
     neighb_alltoallw   \
+    neighb_alltoallw2  \
     bcast              \
-    bcast_comm_world_only
+    bcast_comm_world_only \
+    coll_large	       \
+    ring_neighbor_alltoall
 
 allgatherv4_LDADD = $(LDADD) -lm
 
@@ -178,3 +208,7 @@ bcast_SOURCES = bcast.c
 
 bcast_comm_world_only_CPPFLAGS = -DBCAST_COMM_WORLD_ONLY $(AM_CPPFLAGS)
 bcast_comm_world_only_SOURCES = bcast.c
+
+uoplong_large_SOURCES = uoplong.c
+uoplong_large_CPPFLAGS = -DOP_LARGE $(AM_CPPFLAGS)
+

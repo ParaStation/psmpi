@@ -4,8 +4,9 @@
 * See file LICENSE for terms.
 */
 
-#include "test_ucp_tag.h"
+#include <common/test.h>
 
+#include "test_ucp_tag.h"
 #include "ucp_datatype.h"
 
 extern "C" {
@@ -56,12 +57,13 @@ public:
         return req1;
     }
 
-    void send_recv(entity &se, ucp_tag_t tag, size_t length)
+    void send_recv(entity &se, ucp_tag_t tag, size_t length,
+                   ucp_datatype_t rx_dt = DATATYPE)
     {
         std::vector<uint8_t> sendbuf(length);
         std::vector<uint8_t> recvbuf(length);
 
-        request *rreq = recv_nb_exp(&recvbuf[0], length, DATATYPE, tag,
+        request *rreq = recv_nb_exp(&recvbuf[0], length, rx_dt, tag,
                                     UCP_TAG_MASK_FULL);
 
         request *sreq = (request*)ucp_tag_send_nb(se.ep(), &sendbuf[0], length,
@@ -309,6 +311,34 @@ UCS_TEST_P(test_ucp_tag_offload, connect)
     e->connect(&receiver(), get_ep_params());
 }
 
+// Send small chunk of data to be scattered to CQE on the receiver. Post bigger
+// chunk of memory for receive operation, so it would be posted to the HW.
+UCS_TEST_P(test_ucp_tag_offload, eager_send_less, "RNDV_THRESH=inf",
+           "TM_THRESH=0", "TM_MAX_BB_SIZE=0")
+{
+    activate_offload(sender());
+
+    uint8_t              send_data = 0;
+    size_t               length    = 4 * UCS_KBYTE;
+    ucp_tag_t            tag       = 0x11;
+    std::vector<uint8_t> recvbuf(length);
+
+    request *rreq = recv_nb_exp(&recvbuf[0], length, ucp_dt_make_contig(1), tag,
+                                UCP_TAG_MASK_FULL);
+
+    request *sreq = (request*)ucp_tag_send_nb(sender().ep(), &send_data,
+                                              sizeof(send_data),
+                                              ucp_dt_make_contig(1), tag,
+                                              send_callback);
+    if (UCS_PTR_IS_ERR(sreq)) {
+        ASSERT_UCS_OK(UCS_PTR_STATUS(sreq));
+    } else if (sreq != NULL) {
+        request_wait(sreq);
+    }
+
+    request_wait(rreq);
+}
+
 UCS_TEST_P(test_ucp_tag_offload, small_rndv, "RNDV_THRESH=0", "TM_THRESH=0")
 {
     activate_offload(sender());
@@ -324,18 +354,67 @@ UCS_TEST_P(test_ucp_tag_offload, small_sw_rndv, "RNDV_THRESH=0", "TM_THRESH=0",
     send_recv(sender(), 0x11ul, 1ul);
 }
 
+UCS_TEST_P(test_ucp_tag_offload, sw_rndv_rx_generic, "RNDV_THRESH=0",
+                                                     "TM_THRESH=0",
+                                                     "TM_SW_RNDV=y")
+{
+    activate_offload(sender());
+
+    ucp_datatype_t ucp_dt;
+    ASSERT_UCS_OK(ucp_dt_create_generic(&ucp::test_dt_copy_ops, NULL,
+                                        &ucp_dt));
+
+    send_recv(sender(), 0x11ul, 4 * UCS_KBYTE, ucp_dt);
+
+    ucp_dt_destroy(ucp_dt);
+}
+
+UCS_TEST_P(test_ucp_tag_offload, eager_multi_probe,
+           "RNDV_THRESH=inf", "TM_THRESH=0")
+{
+    activate_offload(sender());
+
+    // TODO: Update length to bigger value so that multi-fragment eager is used
+    //       when multi-eager offload probe issue is fixed (like below).
+    // size_t length = ucp_ep_config(sender().ep())->tag.rndv.am_thresh.remote - 1;
+    size_t length = ucp_ep_config(sender().ep())->tag.rndv.am_thresh.remote - 1;
+    ucp_tag_t tag = 0x11;
+    std::vector<uint8_t> sendbuf(length);
+
+    ucs_status_ptr_t sreq = ucp_tag_send_nb(sender().ep(), sendbuf.data(),
+                                          sendbuf.size(), ucp_dt_make_contig(1),
+                                          tag, send_callback);
+
+    ucp_tag_recv_info_t info;
+    ucp_tag_message_h msg = NULL;
+    ucs_time_t deadline = ucs::get_deadline();
+    while ((msg == NULL) && (ucs_get_time() < deadline)) {
+        short_progress_loop();
+        msg = ucp_tag_probe_nb(receiver().worker(), tag, 0xffff, 1, &info);
+    }
+    EXPECT_EQ(length, info.length);
+
+    std::vector<uint8_t> recvbuf(length);
+    ucs_status_ptr_t rreq = ucp_tag_msg_recv_nb(receiver().worker(),
+                                                &recvbuf[0], length,
+                                                ucp_dt_make_contig(1),
+                                                msg, recv_callback);
+    request_wait(sreq);
+    request_wait(rreq);
+}
+
 UCP_INSTANTIATE_TAG_OFFLOAD_TEST_CASE(test_ucp_tag_offload)
 
 
 class test_ucp_tag_offload_multi : public test_ucp_tag_offload {
 public:
 
-    static ucp_params_t get_ctx_params()
+    static void get_test_variants(std::vector<ucp_test_variant>& variants)
     {
         ucp_params_t params    = test_ucp_tag::get_ctx_params();
         params.field_mask     |= UCP_PARAM_FIELD_TAG_SENDER_MASK;
         params.tag_sender_mask = TAG_SENDER;
-        return params;
+        add_variant(variants, params);
     }
 
     void init()
@@ -383,14 +462,17 @@ public:
     {
         se.connect(&receiver(), get_ep_params());
         // Need to send twice:
-        // 1. to ensure that wireup's UCT iface has been closed and
-        //    it is not considered for num_active_iface on worker
-        //    (message has to be less than `UCX_TM_THRESH` value)
+        // 1. to ensure that wireup's UCT iface has been closed and it is not
+        //    considered for num_active_iface on worker (message has to be less
+        //    than `UCX_TM_THRESH` value) + UCP workers have to be flushed prior
+        //    to ensure that UCT ifaces were deactivated at the end of auxiliary
+        //    UCT EP discarding
         // 2. to activate tag ofload
-        //    (num_active_ifaces on worker is increased when any message
-        //     is received on any iface. Tag hashing is done when we have
-        //     more than 1 active ifaces and message has to be greater
-        //     than `UCX_TM_THRESH` value)
+        //    (num_active_ifaces on worker is increased when any message is
+        //    received on any iface. Tag hashing is done when we have more than
+        //    1 active ifaces and message has to be greater than `UCX_TM_THRESH`
+        //    value)
+        flush_workers();
         send_recv(se, tag, 8);
         send_recv(se, tag, 2048);
     }
@@ -493,12 +575,12 @@ UCS_TEST_P(test_ucp_tag_offload_selection, tag_lane)
     ucp_ep_config_t *ep_config = ucp_ep_config(ep);
 
     if (has_tag_offload && !has_shm_or_self) {
-        EXPECT_TRUE(ucp_ep_is_tag_offload_enabled(ep_config));
+        EXPECT_TRUE(ucp_ep_config_key_has_tag_lane(&ep_config->key));
         EXPECT_EQ(ep_config->key.tag_lane, ep_config->tag.lane);
     } else {
         // If shm or self transports exist they would be used for tag matching
         // rather than network offload
-        EXPECT_FALSE(ucp_ep_is_tag_offload_enabled(ep_config));
+        EXPECT_FALSE(ucp_ep_config_key_has_tag_lane(&ep_config->key));
         EXPECT_EQ(ep_config->key.am_lane, ep_config->tag.lane);
     }
 }
@@ -514,25 +596,15 @@ public:
         modify_config("RNDV_THRESH", "1024");
     }
 
-    std::vector<ucp_test_param>
-    static enum_test_params(const ucp_params_t& ctx_params,
-                            const std::string& name,
-                            const std::string& test_case_name,
-                            const std::string& tls)
-    {
-        std::vector<ucp_test_param> result;
-
-        generate_test_params_variant(ctx_params, name, test_case_name,
-                                     tls, UCS_MEMORY_TYPE_CUDA, result);
-        generate_test_params_variant(ctx_params, name, test_case_name,
-                                     tls, UCS_MEMORY_TYPE_ROCM, result);
-
-        return result;
+    static void get_test_variants(std::vector<ucp_test_variant>& variants) {
+        add_variant_memtypes(variants, test_ucp_tag::get_test_variants,
+                             UCS_BIT(UCS_MEMORY_TYPE_CUDA) |
+                             UCS_BIT(UCS_MEMORY_TYPE_ROCM));
     }
 
 protected:
     ucs_memory_type_t mem_type() const {
-        return static_cast<ucs_memory_type_t>(GetParam().variant);
+        return static_cast<ucs_memory_type_t>(get_variant_value());
     }
 };
 
@@ -577,8 +649,8 @@ UCS_TEST_P(test_ucp_tag_offload_gpu, rx_scatter_to_cqe, "TM_THRESH=1")
     wait_and_validate(sreq);
 }
 
-UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_tag_offload_gpu, rc_dc_gpu,
-                              "dc_x,rc_x," UCP_TEST_GPU_COPY_TLS)
+UCP_INSTANTIATE_TEST_CASE_TLS_GPU_AWARE(test_ucp_tag_offload_gpu, rc_dc_gpu,
+                                        "dc_x,rc_x")
 
 class test_ucp_tag_offload_status : public test_ucp_tag {
 public:
@@ -586,12 +658,10 @@ public:
         m_env.push_back(new ucs::scoped_setenv("UCX_RC_TM_ENABLE", "y"));
     }
 
-    static ucp_params_t get_ctx_params() {
-        ucp_params_t params = ucp_test::get_ctx_params();
+    static void get_test_variants(std::vector<ucp_test_variant>& variants) {
         // Do not pass UCP_FEATURE_TAG feature to check that UCT will not
         // initialize tag offload infrastructure in this case.
-        params.features     = UCP_FEATURE_RMA;
-        return params;
+        add_variant(variants, UCP_FEATURE_RMA);
     }
 };
 
@@ -799,25 +869,16 @@ public:
         m_env.push_back(new ucs::scoped_setenv("UCX_IB_GPU_DIRECT_RDMA", "n"));
     }
 
-    std::vector<ucp_test_param>
-    static enum_test_params(const ucp_params_t& ctx_params,
-                            const std::string& name,
-                            const std::string& test_case_name,
-                            const std::string& tls)
-    {
-        std::vector<ucp_test_param> result;
-
-        generate_test_params_variant(ctx_params, name, test_case_name,
-                                     tls, UCS_MEMORY_TYPE_CUDA, result);
-        generate_test_params_variant(ctx_params, name, test_case_name,
-                                     tls, UCS_MEMORY_TYPE_ROCM, result);
-
-        return result;
+    static void get_test_variants(std::vector<ucp_test_variant>& variants) {
+        add_variant_memtypes(variants,
+                             test_ucp_tag_offload_stats::get_test_variants,
+                             UCS_BIT(UCS_MEMORY_TYPE_CUDA) |
+                             UCS_BIT(UCS_MEMORY_TYPE_ROCM));
     }
 
 protected:
     ucs_memory_type_t mem_type() const {
-        return static_cast<ucs_memory_type_t>(GetParam().variant);
+        return static_cast<ucs_memory_type_t>(get_variant_value());
     }
 };
 
@@ -840,7 +901,7 @@ UCS_TEST_P(test_ucp_tag_offload_stats_gpu, block_gpu_no_gpu_direct,
     req_cancel(receiver(), rreq);
 }
 
-UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_tag_offload_stats_gpu, rc_dc_gpu,
-                              "dc_x,rc_x," UCP_TEST_GPU_COPY_TLS)
+UCP_INSTANTIATE_TEST_CASE_TLS_GPU_AWARE(test_ucp_tag_offload_stats_gpu,
+                                        rc_dc_gpu, "dc_x,rc_x")
 
 #endif

@@ -32,6 +32,9 @@ pipeline {
                 script {
                     GIT_DESCRIPTION = sh(returnStdout: true, script: "git describe --tags").trim()
                     LIBFABRIC_INSTALL = pwd tmp: true
+                    if (changeRequest()) {
+                        SFT_PR_ENV_VAR = 'SFT_PR=1'
+                    }
                 }
 
                 dir ('contrib/cray/bin') {
@@ -43,13 +46,17 @@ pipeline {
                 }
             }
         }
-        stage('Build') {
+        stage('Build CUDA and ROCR') {
             options {
                 timeout (time: 5, unit: 'MINUTES')
             }
+            environment {
+                LD_LIBRARY_PATH = "$ROCR_INSTALL_PATH/lib:$CUDA_INSTALL_PATH/lib64:$LD_LIBRARY_PATH"
+            }
             steps {
                 sh './autogen.sh'
-                sh "./configure --prefix=$LIBFABRIC_INSTALL"
+                sh """./configure --prefix=$LIBFABRIC_INSTALL --disable-memhooks-monitor \
+                   --with-cuda=$CUDA_INSTALL_PATH --with-rocr=$ROCR_INSTALL_PATH"""
                 sh "make -j 12"
                 sh "make install"
                 dir ("fabtests") {
@@ -60,12 +67,120 @@ pipeline {
                 }
             }
         }
+        stage("Verify CUDA and ROCR Build") {
+            steps {
+                script {
+                    cuda_link_count = sh(returnStdout: true,
+                                         script: """objdump -a -x $LIBFABRIC_INSTALL/lib/libfabric.so |
+                                                 grep NEED | grep cuda | wc -l""").trim()
+                    if (cuda_link_count != "2") {
+                        error("libfabric failed to link to CUDA")
+                    }
+                    rocr_link_count = sh(returnStdout: true,
+                                         script: """objdump -a -x $LIBFABRIC_INSTALL/lib/libfabric.so |
+                                                 grep NEED | grep hsa | wc -l""").trim()
+                    if (rocr_link_count != "1") {
+                        error("libfabric failed to link to ROCR")
+                    }
+                }
+            }
+        }
+        stage('Build CUDA and ROCR dlopen') {
+            options {
+                timeout (time: 5, unit: 'MINUTES')
+            }
+            steps {
+                sh './autogen.sh'
+                sh """./configure --prefix=$LIBFABRIC_INSTALL --disable-memhooks-monitor \
+                   --with-cuda=$CUDA_INSTALL_PATH --enable-cuda-dlopen \
+                   --with-rocr=$ROCR_INSTALL_PATH --enable-rocr-dlopen"""
+                sh "make -j 12"
+                sh "make install"
+                dir ("fabtests") {
+                    sh './autogen.sh'
+                    sh "./configure --with-libfabric=$LIBFABRIC_INSTALL --prefix=$FABTEST_PATH"
+                    sh "make -j12"
+                    sh "make -j12 install"
+                }
+            }
+        }
+        stage("Verify CUDA and ROCR Build dlopen") {
+            steps {
+                script {
+                    cuda_link_count = sh(returnStdout: true,
+                                         script: """objdump -a -x $LIBFABRIC_INSTALL/lib/libfabric.so |
+                                                 grep NEED | grep cuda | wc -l""").trim()
+                    if (cuda_link_count != "0") {
+                        error("libfabric failed to link to CUDA")
+                    }
+                    rocr_link_count = sh(returnStdout: true,
+                                         script: """objdump -a -x $LIBFABRIC_INSTALL/lib/libfabric.so |
+                                                 grep NEED | grep hsa | wc -l""").trim()
+                    if (rocr_link_count != "0") {
+                        error("libfabric failed to link to ROCR")
+                    }
+                }
+            }
+        }
+        stage('Build LTU') {
+            options {
+                timeout (time: 5, unit: 'MINUTES')
+            }
+            steps {
+                dir ('libfabric-test-utils') {
+                    deleteDir ()
+                }
+                dir ('libfabric-test-utils') {
+                    git url: "ssh://${env.LTU_GIT_REPO}", credentialsId: 'jenkins-nw-cje2-sshkey', branch: "${env.SRC_GIT_BRANCH}"
+                    sh "git remote -v"
+                    script {
+                        LTU_VERSION = sh(returnStdout: true, script: "cat .version").trim()
+                        GIT_SHORT_COMMIT = sh(returnStdout: true, script: "git log -n 1 --pretty=format:'%h'").trim()
+                        LTU_VERSION = "${LTU_VERSION}" + "_${GIT_SHORT_COMMIT}"
+                    }
+                    echo "*** Building libfabric-test-utils, Version: ${LTU_VERSION} ***"
+                    sh "./autogen.sh"
+                    sh """./configure --prefix=${LIBFABRIC_INSTALL} --with-libfabric=${LIBFABRIC_INSTALL} \
+                                      --with-nvidia=${CUDA_INSTALL_PATH} --with-amd=${ROCR_INSTALL_PATH} \
+                                      --with-pmi=${PMI_INSTALL_PATH} --with-pmi_include=${PMI_INCLUDE_PATH} \
+                                      --with-ltu-build-string=\"libfabric-test-utils-${LTU_VERSION}\""""
+                    sh "make -j 10"
+                    sh "make install"
+                }
+            }
+        }
+        stage('Build SFT') {
+            options {
+                timeout (time: 5, unit: 'MINUTES')
+            }
+            steps {
+                dir ('libfabric-sft') {
+                    deleteDir ()
+                }
+                dir ('libfabric-sft') {
+                    git url: "ssh://${env.SFT_GIT_REPO}", credentialsId: 'jenkins-nw-cje2-sshkey', branch: "${env.SRC_GIT_BRANCH}"
+                    sh "git remote -v"
+                    script {
+                        SFT_VERSION = sh(returnStdout: true, script: "cat .version").trim()
+                        GIT_SHORT_COMMIT = sh(returnStdout: true, script: "git log -n 1 --pretty=format:'%h'").trim()
+                        SFT_VERSION = "${SFT_VERSION}" + "_${GIT_SHORT_COMMIT}"
+                    }
+                    echo "*** Building libfabric-sft, Version: ${SFT_VERSION} ***"
+                    sh "./autogen.sh"
+                    sh """./configure --prefix=${LIBFABRIC_INSTALL} --with-libfabric=${LIBFABRIC_INSTALL} \
+                                      --with-libltu=${LIBFABRIC_INSTALL} \
+                                      --with-sft-build-string=\"libfabric-sft-${LTU_VERSION}\""""
+                    sh "make -j 10"
+                    sh "make install"
+                }
+            }
+        }
         stage('Test') {
             environment {
                 LD_LIBRARY_PATH = "$LIBFABRIC_INSTALL/lib:$LD_LIBRARY_PATH"
                 MPIR_CVAR_OFI_USE_PROVIDER = 'verbs;ofi_rxm'
                 LIBFABRIC_INSTALL_PATH = "$LIBFABRIC_INSTALL"
-                SFT_BIN = "${SFT_INSTALL_PATH + '/bin'}"
+                SFT_BIN = "${LIBFABRIC_INSTALL + '/bin'}"
                 SFT_MAX_JOB_TIME = '3'
                 SFT_NUM_JOBS = '6'
                 SFT_PROVIDER = 'verbs;ofi_rxm'
@@ -77,6 +192,7 @@ pipeline {
                 SFT_TEST_RESULTS_EXPECTED = 'expected_'
                 SFT_TEST_RESULTS_PREFIX = 'BUILD_'
                 SFT_TEST_RESULTS_CI = 'sft_ci_results.yaml'
+                FI_VERBS_MIN_RNR_TIMER= '4'
             }
             options {
                 timeout (time: 22, unit: 'MINUTES')
@@ -170,7 +286,7 @@ pipeline {
                                 try {
                                     dir ("${SFT_BIN}") {
                                         sh """
-                                            ./ci-all.sh \\
+                                            ${SFT_PR_ENV_VAR} ./ci-all.sh \\
                                                 --provider '${SFT_PROVIDER}' \\
                                                 -L ${SFT_TEST_RESULTS_DIR} \\
                                                 --num-jobs ${SFT_NUM_JOBS} \\
@@ -217,7 +333,7 @@ pipeline {
                                 try {
                                     dir ("${SFT_BIN}") {
                                         sh """
-                                            ./ci-all.sh \\
+                                            ${SFT_PR_ENV_VAR} ./ci-all.sh \\
                                                 --provider '${SFT_PROVIDER}' \\
                                                 -L ${SFT_TEST_RESULTS_DIR} \\
                                                 --num-jobs ${SFT_NUM_JOBS} \\
@@ -257,17 +373,27 @@ pipeline {
                 }
                 stage("Applications") {
                     steps {
-                        tee ('mpi.tap') {
+                        tee ('omb.tap') {
                             timeout(time: 10, unit: 'MINUTES') {
-                                sh '${BATS_INSTALL_PATH}/bats -t contrib/cray/bats/mpi.bats'
+                                sh '${BATS_INSTALL_PATH}/bats -t contrib/cray/bats/omb.bats'
                             }
                         }
+                        tee ('imb.tap') {
+                            timeout(time: 20, unit: 'MINUTES') {
+                                sh '${BATS_INSTALL_PATH}/bats -t contrib/cray/bats/imb.bats'
+			    }
+			}
                     }
                     post {
                         always {
                             sh """contrib/cray/bin/parse_logfiles.sh \\
-                                    -r mpi.tap \\
-                                    -w mpi.xml \\
+                                    -r omb.tap \\
+                                    -w omb.xml \\
+                                    tap applications.mpi applications"""
+
+                            sh """contrib/cray/bin/parse_logfiles.sh \\
+                                    -r imb.tap \\
+                                    -w imb.xml \\
                                     tap applications.mpi applications"""
                         }
                     }
@@ -298,10 +424,15 @@ pipeline {
                     step ([$class: 'XUnitPublisher',
                        thresholds: [
                             [$class: 'FailedThreshold', unstableThreshold: '0']],
-                            tools: [[$class: 'JUnitType', pattern: "mpi.xml"]]])
+                            tools: [[$class: 'JUnitType', pattern: "omb.xml"]]])
+                    step ([$class: 'XUnitPublisher',
+                       thresholds: [
+                            [$class: 'FailedThreshold', unstableThreshold: '0']],
+                            tools: [[$class: 'JUnitType', pattern: "imb.xml"]]])
                 }
                 cleanup {
-                    echo "*** Test: Post: Cleanup: env.BRANCH_NAME: ${BRANCH_NAME} ***"
+                    echo "*** Test: Post: Cleanup: env.BRANCH_NAME: ${env.BRANCH_NAME} ***"
+                    echo "*** Test: Post: Cleanup: isOfiwgBuild: " + isOfiwgBuild() + " ***"
                     script {
                         if ( isInternalBuild() ) {
                             echo "*** Test: Post: Cleanup: isInternalBuild: TRUE ***"
@@ -317,32 +448,35 @@ pipeline {
             when {
                 allOf {
                     expression { currentBuild.currentResult == 'SUCCESS' } ;
-                    expression { isInternalBuild() } ;
-                    anyOf {
-                        expression { env.BRANCH_NAME == 'master' } ;
-                        buildingTag() ;
-                    }
                 }
             }
             environment {
                 LIBFABRIC_INSTALL_PATH="${LIBFABRIC_BUILD_PATH + '/' + GIT_DESCRIPTION}"
             }
             steps {
-                sh './autogen.sh'
-                sh "./configure --prefix=$LIBFABRIC_INSTALL_PATH"
-                sh "make -j 12"
-                sh "make install"
+                script {
+                    BUILD_LIBFABRIC = 'false'
+                    if ( isInternalBuild &&
+                        (( env.BRANCH_NAME == 'master' ) || buildingTag())) {
+                        BUILD_LIBFABRIC = 'true'
+                    } else if ( isOfiwgBuild() && ( env.BRANCH_NAME == 'master' )) {
+                        LIBFABRIC_INSTALL_PATH="${LIBFABRIC_BUILD_PATH + '/' + 'OFIWG_' + GIT_DESCRIPTION}"
+                        BUILD_LIBFABRIC = 'true'
+                    }
+                    echo "*** Install Libfabric Build: BUILD_LIBFABRIC: $BUILD_LIBFABRIC ***"
+                    if ( BUILD_LIBFABRIC == 'true' ) {
+                        sh "./autogen.sh"
+                        sh "./configure --prefix=$LIBFABRIC_INSTALL_PATH --disable-memhooks-monitor"
+                        sh "make -j 12"
+                        sh "make install"
+                    }
+                }
             }
         }
         stage("Deploy") {
             when {
                 allOf {
                     expression { currentBuild.currentResult == 'SUCCESS' } ;
-                    expression { isInternalBuild() } ;
-                    anyOf {
-                        expression { env.BRANCH_NAME == 'master' } ;
-                        buildingTag()
-                    }
                 }
             }
             options {
@@ -355,7 +489,10 @@ pipeline {
             parallel {
                 stage("Create nightly link") {
                     when {
-                        expression { env.BRANCH_NAME == 'master' }
+                        allOf {
+                            expression { isInternalBuild() } ;
+                            expression { env.BRANCH_NAME == 'master' }
+                        }
                     }
                     steps {
                         dir (env.TAG_DIRECTORY) {
@@ -366,12 +503,29 @@ pipeline {
                 }
                 stage("Create tagged link") {
                     when {
-                        buildingTag()
+                        allOf {
+                            expression { isInternalBuild() } ;
+                            buildingTag()
+                        }
                     }
                     steps {
                         dir (env.TAG_DIRECTORY) {
                             sh "rm -f $BRANCH_NAME || true"
                             sh "ln -s ../$GIT_DESCRIPTION $BRANCH_NAME"
+                        }
+                    }
+                }
+                stage("Create upstream link") {
+                    when {
+                        allOf {
+                            expression { isOfiwgBuild() } ;
+                            expression { env.BRANCH_NAME == 'master' }
+                        }
+                    }
+                    steps {
+                        dir (env.TAG_DIRECTORY) {
+                            sh "rm -f upstream || true"
+                            sh "ln -s ../OFIWG_$GIT_DESCRIPTION upstream"
                         }
                     }
                 }
@@ -408,9 +562,20 @@ pipeline {
         ROOT_BUILD_PATH = "/scratch/jenkins/builds"
         FABTEST_PATH = "${WORKSPACE + '/installs/fabtests'}"
         LIBFABRIC_BUILD_PATH = "${ROOT_BUILD_PATH + '/libfabric'}"
-        OMB_BUILD_PATH = "${ROOT_BUILD_PATH + '/osu-micro-benchmarks/5.4.2/libexec/osu-micro-benchmarks/mpi'}"
-        MPICH_PATH = "${ROOT_BUILD_PATH + '/mpich/3.3'}"
+        OMB_BUILD_PATH = "${ROOT_BUILD_PATH + '/osu-micro-benchmarks/stable/libexec/osu-micro-benchmarks/mpi'}"
+        IMB_BUILD_PATH = "${ROOT_BUILD_PATH + '/imb/v2019.6'}"
+        MPICH_PATH = "${ROOT_BUILD_PATH + '/mpich/stable'}"
         SFT_INSTALL_PATH = "${ROOT_BUILD_PATH + '/libfabric-sft/stable'}"
+        SFT_PR_ENV_VAR = 'SFT_PR=0'
         BATS_INSTALL_PATH = "${ROOT_BUILD_PATH + '/bats/stable/bin'}"
+        CUDA_INSTALL_PATH = "/scratch/opt/cuda"
+        ROCR_INSTALL_PATH = "/opt/rocm"
+        PMI_INCLUDE_PATH = "/usr/include/slurm"
+        PMI_INSTALL_PATH = "/usr/lib64"
+        LTU_VERSION = "0.0.0"
+        SFT_VERSION = "0.0.0"
+        LTU_GIT_REPO = 'git@stash.us.cray.com:7999/ofi-cray/libfabric-test-utils.git'
+        SFT_GIT_REPO = 'git@stash.us.cray.com:7999/ofi-cray/libfabric-sft.git'
+        SRC_GIT_BRANCH = 'master'
     }
 }
