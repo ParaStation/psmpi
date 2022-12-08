@@ -1,3 +1,23 @@
+2022-12-07  Simon Pickartz <pickartz@par-tec.com>     -     5.8.0-0rc1
+
+2022-12-07  Carsten Clauss <clauss@par-tec.com>
+
+2022-12-07  Sonja Happ <sonja.happ@par-tec.com>
+
+	* MPICH 4.0.3:
+	- Disable staging for collectives on GPU buffers
+	- Rename "topology awareness" to "MSA awareness"
+	- Support for MPI-4 features including partitioned communication,
+	persistent collectives, and MPI sessions
+	- Enable SMP-aware collectives by default
+
+	* Enhancement: Disable finalize barrier by default and rely on the
+	proper shutdown of pscom.
+
+	* Fix: Wait for the completion of the init message within MPI_Init().
+
+	* Enhancement: Improve and extend the README.md.
+
 2022-11-09  Simon Pickartz <pickartz@par-tec.com>     -     5.7.0-1
 
 2022-11-08  Simon Pickartz <pickartz@par-tec.com>     -     5.7.0-0rc2
