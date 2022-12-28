@@ -4,7 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  *
  *  This code was written by ParTec AG.
- *  Copyright (C) 2022      ParTec AG.  ParTec provides this material
+ *  Copyright (C) 2022-2023 ParTec AG.  ParTec provides this material
  *  Argonne National Laboratory subject to MPICH Corporate Contributor
  *  License Agreement dated September 30, 2019.
  */
