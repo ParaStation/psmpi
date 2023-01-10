@@ -57,28 +57,38 @@ AC_ARG_WITH([cuda-sm],
 
 
 # --with-cuda
+AC_ARG_VAR([NVCC], [nvcc compiler to use])
 PAC_SET_HEADER_LIB_PATH([cuda])
 if test "$with_cuda" != "no" ; then
     PAC_CHECK_HEADER_LIB([cuda_runtime_api.h],[cudart],[cudaStreamSynchronize],[have_cuda=yes],[have_cuda=no])
     if test "${have_cuda}" = "yes" ; then
-        AC_MSG_CHECKING([whether nvcc works])
-        if test -n "$ac_save_CC" ; then
-            NVCC_FLAGS="$NVCC_FLAGS -ccbin $ac_save_CC"
-            # - pgcc/nvc doesn't work, use pgc++/nvc++ instead
-            # - Extra optins such as `gcc -std=gnu99` doesn't work, strip the option
-            NVCC_FLAGS=$(echo $NVCC_FLAGS | sed -e 's/nvc/nvc++/g' -e 's/pgcc/pgc++/g' -e's/ -std=.*//g')
-        fi
-        # try nvcc from PATH if 'with-cuda' does not contain a valid path
-        if test -d ${with_cuda} ; then
-            nvcc_bin=${with_cuda}/bin/nvcc
+        # check if NVCC has been set by the user
+        if test -z "$NVCC" ; then
+            if test -n "$ac_save_CC" ; then
+                NVCC_FLAGS="$NVCC_FLAGS -ccbin $ac_save_CC"
+                # - pgcc/nvc doesn't work, use pgc++/nvc++ instead
+                # - Extra optins such as `gcc -std=gnu99` doesn't work, strip the option
+                NVCC_FLAGS=$(echo $NVCC_FLAGS | sed -e 's/nvc/nvc++/g' -e 's/pgcc/pgc++/g' -e's/ -std=.*//g')
+            fi
+
+            # try nvcc from PATH if 'with-cuda' does not contain a valid path
+            if test -d ${with_cuda} ; then
+                nvcc_bin=${with_cuda}/bin/nvcc
+            else
+                nvcc_bin=nvcc
+            fi
+
+            # append the flags to be passed to nvcc
+            NVCC="$nvcc_bin $NVCC_FLAGS"
         else
-            nvcc_bin=nvcc
+            AC_MSG_WARN([Using user-provided nvcc: '${NVCC}'])
         fi
 
         # save language settings, customize ac_ext and ac_compile to support CUDA
         AC_LANG_PUSH([C])
         ac_ext=cu
-        ac_compile='$nvcc_bin $NVCC_FLAGS -c conftest.$ac_ext >&5'
+        ac_compile="$NVCC -c conftest.$ac_ext >&5"
+        AC_MSG_CHECKING([whether nvcc works])
         AC_COMPILE_IFELSE([AC_LANG_PROGRAM([__global__ void foo(int x) {}],[])],
         [
             AC_DEFINE([HAVE_CUDA],[1],[Define is CUDA is available])
@@ -90,6 +100,7 @@ if test "$with_cuda" != "no" ; then
             have_cuda=no
             AC_MSG_RESULT([no])
         ])
+
         # done with CUDA, back to C
         AC_LANG_POP([C])
 
