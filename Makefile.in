@@ -62,11 +62,13 @@ endif
 endif
 
 ifndef TESTCONF
+ifndef TESTCONFS
 ifndef MPIEXECARG
 ifeq ($(ENABLE_HYDRA),false)
 MPIEXECARG=-e MPIEXEC_UNIVERSE_SIZE
 else
 MPIEXECARG=
+endif
 endif
 endif
 endif
@@ -91,10 +93,11 @@ else
 TESTSETLIST :=
 endif
 endif
-ifdef TESTCONF
 TESTCONFDIR := $(SRCDIR)/mpich2/test/mpi/parastation/testconf
+TESTCONFSUFF:= .testconf
+ifdef TESTCONF
 TESTCONFIGS := $(shell cd $(TESTCONFDIR) && find . -type f -name "*.testconf" | cut -d"." -f2 | cut -b1 --complement)
-TESTCONFFILE:= $(TESTCONFDIR)/$(TESTCONF).testconf
+TESTCONFFILE:= $(TESTCONFDIR)/$(TESTCONF)$(TESTCONFSUFF)
 endif
 
 largetest largetests largetesting: LARGE_TESTS="--enable-large-tests"
@@ -138,6 +141,8 @@ else
 	export _LOGNAME=$(SRCDIR)/doc/test-$$($(SRCDIR)/scripts/vcversion -r $(SRCDIR))-$(TESTDIR_)$(TESTSET_)$$(date +%F_%T); \
 	export TESTCONFFILE=$(TESTCONFFILE); \
 	if [ -n "${TESTCONFFILE}" ] ; then source $(TESTCONFFILE); fi; \
+	export TESTCONFLIST=$(TESTCONFS); \
+	if [ -n "$${TESTCONFLIST}" ]; then OIFS=$IFS; IFS=,; for conffile in $${TESTCONFLIST}; do source "$(TESTCONFDIR)/$${conffile}$(TESTCONFSUFF)"; done; IFS=$OIFS; fi; \
 	( mkdir -p mpich2/test/mpi ; cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) $(CUDA_TESTS) $(LARGE_TESTS)); \
 	( hostname; rpm -qi pscom; rpm -qi psmgmt; $(SRCDIR)/scripts/vcversion -r $(SRCDIR); \
 	  echo $(MPIEXEC); \
