@@ -232,6 +232,28 @@ case $CONFSET in
 	CC=icc
 	CXX=icpc
 
+	# Check whether icc works as host compiler for nvcc
+	NVCC_FLAGS='-ccbin icc'
+
+	# save language settings, customize ac_ext and ac_compile to support CUDA
+	AC_LANG_PUSH([C])
+	ac_ext=cu
+	ac_compile="nvcc ${NVCC_FLAGS} -c conftest.$ac_ext >&5"
+
+	AC_MSG_CHECKING([whether nvcc works with NVCC_FLAGS='${NVCC_FLAGS}'])
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([__global__ void foo(int x) {}],[])],[
+		AC_MSG_RESULT([yes])
+	],[
+		AC_MSG_RESULT([no])
+		AC_MSG_WARN([Falling back to 'gcc' as host compiler])
+		NVCC_FLAGS='-ccbin gcc'
+	])
+
+        # done with CUDA, back to C
+        AC_LANG_POP([C])
+
+	NVCC="nvcc ${NVCC_FLAGS}"
+
 	# Append "-reentrancy threaded" to FC.
 	# FFLAGS, FCFLAGS, MPICHLIB_FCFLAGS, MPICHLIB_LDFLAGS and friends
 	# are not forwarded to the final linking with libtool which uses $(FC).
@@ -305,13 +327,14 @@ if ! echo ${CONFSET} | grep -Eq "ch[34]"; then
 	CONF_OPS="$CONF_OPS --with-psp-pscom=${with_pscom}"
 fi
 
-test -n "$CC"  && CONF_OPS="$CONF_OPS 'CC=$CC'"
-test -n "$CXX" && CONF_OPS="$CONF_OPS 'CXX=$CXX'"
-test -n "$FC"  && CONF_OPS="$CONF_OPS 'FC=$FC'"
-test -n "$F77" && CONF_OPS="$CONF_OPS 'F77=$F77'"
-test -n "$AR"  && CONF_OPS="$CONF_OPS 'AR=$AR'"
-test -n "$RANLIB" && CONF_OPS="$CONF_OPS 'RANLIB=$RANLIB'"
-test -n "$FFLAGS" && CONF_OPS="$CONF_OPS 'FFLAGS=$FFLAGS'"
+test -n "$CC"      && CONF_OPS="$CONF_OPS 'CC=$CC'"
+test -n "$CXX"     && CONF_OPS="$CONF_OPS 'CXX=$CXX'"
+test -n "$FC"      && CONF_OPS="$CONF_OPS 'FC=$FC'"
+test -n "$F77"     && CONF_OPS="$CONF_OPS 'F77=$F77'"
+test -n "$AR"      && CONF_OPS="$CONF_OPS 'AR=$AR'"
+test -n "$NVCC"    && CONF_OPS="$CONF_OPS 'NVCC=$NVCC'"
+test -n "$RANLIB"  && CONF_OPS="$CONF_OPS 'RANLIB=$RANLIB'"
+test -n "$FFLAGS"  && CONF_OPS="$CONF_OPS 'FFLAGS=$FFLAGS'"
 test -n "$FCFLAGS" && CONF_OPS="$CONF_OPS 'FCFLAGS=$FCFLAGS'"
 
 AC_ARG_WITH([pscom-builtin], [
