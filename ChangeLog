@@ -1,3 +1,11 @@
+2023-02-01  Simon Pickartz <pickartz@par-tec.com>     -     5.8.0-0rc2
+
+	* Fix: Check whether icc works as host compiler for nvcc and use gcc
+	as fallback.
+
+	* Fix: Only set the ignore-mismatch compiler flags when using the
+	mpif77 wrapper.
+
 2022-12-07  Simon Pickartz <pickartz@par-tec.com>     -     5.8.0-0rc1
 
 2022-12-07  Carsten Clauss <clauss@par-tec.com>
