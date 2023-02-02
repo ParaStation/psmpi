@@ -379,13 +379,15 @@ int MPIR_Session_psets_init(MPIR_Session * session_ptr)
 
 int MPIR_Session_psets_destroy(MPIR_Session * session_ptr)
 {
-    for (unsigned i = 0; i < utarray_len(session_ptr->psets); i++) {
-        MPIR_Pset_array **pset_array = (MPIR_Pset_array **) utarray_eltptr(session_ptr->psets, i);
-        MPIR_Pset_array_destroy(*pset_array);
-    }
+    if (session_ptr->psets != NULL) {
+        for (unsigned i = 0; i < utarray_len(session_ptr->psets); i++) {
+            MPIR_Pset_array **pset_array = (MPIR_Pset_array **) utarray_eltptr(session_ptr->psets, i);
+            MPIR_Pset_array_destroy(*pset_array);
+        }
 
-    /* Free pset array of session */
-    utarray_free(session_ptr->psets);
+        /* Free pset array of session */
+        utarray_free(session_ptr->psets);
+    }
 
     return MPI_SUCCESS;
 }

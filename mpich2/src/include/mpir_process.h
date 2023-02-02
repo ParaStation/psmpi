@@ -29,6 +29,30 @@ struct MPIR_Session {
 extern MPIR_Session MPIR_Session_direct[];
 extern MPIR_Object_alloc_t MPIR_Session_mem;
 
+#define MPIR_Session_add_ref(_session) \
+    do { MPIR_Object_add_ref(_session); } while (0)
+
+#define MPIR_Session_release_ref(_session, _inuse) \
+    do { MPIR_Object_release_ref(_session, _inuse); } while (0)
+
+/**
+ * @brief   Create a session object
+ *
+ * @param   p_session_ptr   Pointer to session object to be created
+ *
+ * @return  int             MPI_SUCCESS or error code if no memory available
+ **/
+int MPIR_Session_create(MPIR_Session **);
+
+/**
+ * @brief   Release a session object, free memory if its ref counter is zero
+ *
+ * @param   session_ptr Session object to be released
+ *
+ * @return  int         MPI_SUCCESS
+ */
+int MPIR_Session_release(MPIR_Session * session_prt);
+
 typedef struct MPIR_Process_t {
     MPL_atomic_int_t mpich_state;       /* Need use atomics due to MPI_Initialized() etc.
                                          * thread-safe per MPI-3.1.  See MPI-Forum ticket 357 */
