@@ -496,6 +496,10 @@ def process_func_parameters(func):
             func['_has_comm'] = name
         elif name == "win":
             func['_has_win'] = name
+        elif name == "session" and p['param_direction'] == 'out':
+            func['_has_session_init'] = name
+        elif name == "session":
+            func['_has_session'] = name
 
         if 'ANY' in func['_skip_validate'] or kind in func['_skip_validate'] or name in func['_skip_validate']:
             # -- user bypass --
@@ -1523,6 +1527,10 @@ def dump_mpi_fn_fail(func):
             G.out.append("mpi_errno = MPIR_Err_return_comm(%s_ptr, __func__, mpi_errno);" % func['_has_comm'])
         elif '_has_win' in func:
             G.out.append("mpi_errno = MPIR_Err_return_win(win_ptr, __func__, mpi_errno);")
+        elif '_has_session_init' in func:
+            G.out.append("mpi_errno = MPIR_Err_return_session_init(errhandler_ptr, __func__, mpi_errno);")
+        elif '_has_session' in func:
+            G.out.append("mpi_errno = MPIR_Err_return_session(session_ptr, __func__, mpi_errno);")
         else:
             G.out.append("mpi_errno = MPIR_Err_return_comm(0, __func__, mpi_errno);")
 
