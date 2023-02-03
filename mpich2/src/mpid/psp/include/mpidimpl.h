@@ -147,6 +147,10 @@ typedef struct MPIDI_Process
 		unsigned enable_hcoll_stats;
 #endif
 		unsigned enable_lazy_disconnect;
+		struct {
+			int enable_rma_accumulate_ordering;
+			int enable_explicit_wait_on_passive_side;
+		} rma;
 	} env;
 
 #ifdef MPIDI_PSP_WITH_SESSION_STATISTICS

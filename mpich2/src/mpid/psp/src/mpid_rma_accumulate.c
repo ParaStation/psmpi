@@ -70,7 +70,7 @@ int MPIDI_PSP_Accumulate_generic(const void *origin_addr, int origin_count, MPI_
 		goto fn_immed_completed;
 	}
 
-	if (!win_ptr->rma_accumulate_ordering && unlikely(op == MPI_REPLACE)) {
+	if (!win_ptr->enable_rma_accumulate_ordering && unlikely(op == MPI_REPLACE)) {
 		/*  MPI_PUT is a special case of MPI_ACCUMULATE, with the operation MPI_REPLACE.
 		 |  However, PUT and ACCUMULATE have different constraints on concurrent updates!
 		 |  Therefore, in the SHMEM case, the PUT/REPLACE operation must here be locked:
@@ -251,7 +251,7 @@ int MPIDI_PSP_Accumulate_generic(const void *origin_addr, int origin_count, MPI_
 		req->user->type.accumulate_send.target_rank = target_rank;
 		req->connection = ri->con;
 
-		if (win_ptr->rma_accumulate_ordering) {
+		if (win_ptr->enable_rma_accumulate_ordering) {
 			/* wait until a previous accumulated request is finished */
 			while (win_ptr->rma_pending_accumulates[target_rank]) {
 				pscom_test_any();

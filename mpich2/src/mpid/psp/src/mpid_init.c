@@ -71,6 +71,10 @@ MPIDI_Process_t MPIDI_Process = {
 		dinit(enable_hcoll_stats)       0,
 #endif
 		dinit(enable_lazy_disconnect)	1,
+		dinit(rma)                      {
+			dinit(enable_rma_accumulate_ordering)       -1,
+			dinit(enable_explicit_wait_on_passive_side) -1,
+		},
 	},
 #ifdef MPIDI_PSP_WITH_SESSION_STATISTICS
 	dinit(stats)            {
@@ -654,6 +658,9 @@ int MPID_Init(int requested, int *provided)
 #endif
 
 	pscom_env_get_uint(&MPIDI_Process.env.enable_lazy_disconnect, "PSP_LAZY_DISCONNECT");
+
+	pscom_env_get_int(&MPIDI_Process.env.rma.enable_rma_accumulate_ordering, "PSP_ACCUMULATE_ORDERING");
+	pscom_env_get_int(&MPIDI_Process.env.rma.enable_explicit_wait_on_passive_side, "PSP_RMA_EXPLICIT_WAIT");
 
 	/*
 	pscom_env_get_uint(&mpir_allgather_short_msg,	"PSP_ALLGATHER_SHORT_MSG");
