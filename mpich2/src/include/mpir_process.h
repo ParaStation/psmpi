@@ -22,6 +22,8 @@ struct MPIR_Session {
     MPID_Thread_mutex_t mutex;
     MPIR_Errhandler *errhandler;
     int thread_level;
+    MPIR_Pset_array *default_pset_array;        /* Default MPI process sets of the session */
+    UT_array *psets;            /* Array of process set arrays */
 };
 
 extern MPIR_Session MPIR_Session_direct[];
@@ -78,6 +80,9 @@ typedef struct MPIR_Process_t {
      * to specify the kind (comm,file,win) */
     void (*cxx_call_errfn) (int, int *, int *, void (*)(void));
 #endif                          /* HAVE_CXX_BINDING */
+
+    /* Global array of known psets managed by the process manager */
+    MPIR_Pset_array *pm_pset_array;
 } MPIR_Process_t;
 extern MPIR_Process_t MPIR_Process;
 
