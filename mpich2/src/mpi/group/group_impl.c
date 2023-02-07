@@ -4,6 +4,8 @@
  */
 
 #include "mpiimpl.h"
+#include "mpir_process.h"
+#include "mpir_pset.h"
 #include "group.h"
 
 int MPIR_Group_compare_impl(MPIR_Group * group_ptr1, MPIR_Group * group_ptr2, int *result)
@@ -621,33 +623,42 @@ int MPIR_Group_from_session_pset_impl(MPIR_Session * session_ptr, const char *ps
     int mpi_errno = MPI_SUCCESS;
     MPIR_Group *group_ptr;
 
-    if (MPL_stricmp(pset_name, "mpi://WORLD") == 0) {
-        mpi_errno = MPIR_Group_create(MPIR_Process.size, &group_ptr);
-        MPIR_ERR_CHECK(mpi_errno);
+    MPIR_Pset *pset = NULL;
 
-        group_ptr->size = MPIR_Process.size;
-        group_ptr->rank = MPIR_Process.rank;
-        group_ptr->is_local_dense_monotonic = TRUE;
-        for (int i = 0; i < group_ptr->size; i++) {
-            group_ptr->lrank_to_lpid[i].lpid = i;
-            group_ptr->lrank_to_lpid[i].next_lpid = i + 1;
-        }
-        group_ptr->lrank_to_lpid[group_ptr->size - 1].next_lpid = -1;
-        group_ptr->idx_of_first_lpid = 0;
-    } else if (MPL_stricmp(pset_name, "mpi://SELF") == 0) {
-        mpi_errno = MPIR_Group_create(1, &group_ptr);
-        MPIR_ERR_CHECK(mpi_errno);
+    mpi_errno = MPIR_Session_pset_by_name(session_ptr, pset_name, &pset);
 
-        group_ptr->size = 1;
-        group_ptr->rank = 0;
-        group_ptr->is_local_dense_monotonic = TRUE;
-        group_ptr->lrank_to_lpid[0].lpid = MPIR_Process.rank;
-        group_ptr->lrank_to_lpid[0].next_lpid = -1;
-        group_ptr->idx_of_first_lpid = 0;
-    } else {
-        /* TODO: Implement pset struct, locate pset struct ptr */
+    if (mpi_errno == MPI_ERR_OTHER || pset == NULL) {
+        /*  MPI-4 standard, Section 7.3.2, p.324: "If the pset_name does not exist,
+         * MPI_GROUP_NULL will be returned in the newgroup argument."
+         */
+        *new_group_ptr = NULL;
         MPIR_ERR_SETANDSTMT(mpi_errno, MPI_ERR_ARG, goto fn_fail, "**psetinvalidname");
     }
+
+    /* Remark: We do not check the pset for validity here. Creating a Process Group
+     * from an invalid pset should be possible as a local operation. However, creating
+     * an MPI communicator from a Process Group that is based on an invalid pset
+     * should raise an error. */
+
+    mpi_errno = MPIR_Group_create(pset->size, &group_ptr);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* Remark: The following logic assumes that pset->members is sorted in ascending order of ranks */
+    for (int i = 0; i < pset->size; i++) {
+        /*group rank is index of global rank in sorted array */
+        if (pset->members[i] == MPIR_Process.rank) {
+            group_ptr->rank = i;
+            break;
+        }
+    }
+
+    group_ptr->is_local_dense_monotonic = TRUE;
+    for (int i = 0; i < group_ptr->size; i++) {
+        group_ptr->lrank_to_lpid[i].lpid = i;
+        group_ptr->lrank_to_lpid[i].next_lpid = i + 1;
+    }
+    group_ptr->lrank_to_lpid[group_ptr->size - 1].next_lpid = -1;
+    group_ptr->idx_of_first_lpid = 0;
 
     *new_group_ptr = group_ptr;
 
