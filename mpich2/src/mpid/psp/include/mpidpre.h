@@ -364,6 +364,7 @@ enum MPID_PSP_Win_epoch_states {
 struct MPID_DEV_Request_common
 {
 	pscom_request_t	*pscom_req;
+	MPIR_cc_t	*completion_notification;
 };
 
 struct MPID_DEV_Request_recv

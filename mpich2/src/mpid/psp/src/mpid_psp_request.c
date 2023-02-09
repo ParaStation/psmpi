@@ -113,6 +113,9 @@ void MPID_Request_create_hook(MPIR_Request *req)
 	req->dev.rdma_iov_offset = 0;
 */
 
+    	struct MPID_DEV_Request_common *dev_req = &req->dev.kind.common;
+	dev_req->completion_notification = NULL;
+
 	/* request-specific initialization */
 	switch (req->kind) {
 		case MPIR_REQUEST_KIND__SEND:
