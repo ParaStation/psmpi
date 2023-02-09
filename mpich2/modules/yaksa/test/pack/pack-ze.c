@@ -85,7 +85,11 @@ void pack_ze_init_devices(int num_threads)
         global_devices = subdevices;
     }
 
-    ze_context_desc_t contextDesc = { };
+    ze_context_desc_t contextDesc = {
+        .stype = ZE_STRUCTURE_TYPE_CONTEXT_DESC,
+        .pNext = NULL,
+        .flags = 0,
+    };
     ret = zeContextCreate(global_ze_driver_handle, &contextDesc, &ze_context);
     assert(ret == ZE_RESULT_SUCCESS);
 

@@ -122,6 +122,8 @@ static void ofi_tostr_addr_format(char *buf, size_t len, uint32_t addr_format)
 	CASEENUMSTRN(FI_ADDR_IB_UD, len);
 	CASEENUMSTRN(FI_ADDR_EFA, len);
 	CASEENUMSTRN(FI_ADDR_PSMX3, len);
+	CASEENUMSTRN(FI_ADDR_OPX, len);
+	CASEENUMSTRN(FI_ADDR_CXI, len);
 	default:
 		if (addr_format & FI_PROV_SPECIFIC)
 			ofi_strncatf(buf, len, "Provider specific");
@@ -269,6 +271,9 @@ static void ofi_tostr_protocol(char *buf, size_t len, uint32_t protocol)
 	CASEENUMSTRN(FI_PROTO_RDMA_CM_IB_XRC, len);
 	CASEENUMSTRN(FI_PROTO_EFA, len);
 	CASEENUMSTRN(FI_PROTO_PSMX3, len);
+	CASEENUMSTRN(FI_PROTO_RXM_TCP, len);
+	CASEENUMSTRN(FI_PROTO_OPX, len);
+	CASEENUMSTRN(FI_PROTO_CXI, len);
 	default:
 		if (protocol & FI_PROV_SPECIFIC)
 			ofi_strncatf(buf, len, "Provider specific");
@@ -347,6 +352,7 @@ ofi_tostr_tx_attr(char *buf, size_t len, const struct fi_tx_attr *attr,
 		     attr->iov_limit);
 	ofi_strncatf(buf, len, "%s%srma_iov_limit: %zu\n", prefix, TAB,
 		     attr->rma_iov_limit);
+	ofi_strncatf(buf, len, "%s%stclass: 0x%x\n", prefix, TAB, attr->tclass);
 }
 
 static void
@@ -417,10 +423,16 @@ ofi_tostr_ep_attr(char *buf, size_t len, const struct fi_ep_attr *attr,
 	ofi_strncatf(buf, len, "%s%smem_tag_format: 0x%016llx\n", prefix, TAB,
 		     attr->mem_tag_format);
 
-	ofi_strncatf(buf, len, "%s%stx_ctx_cnt: %zu\n", prefix, TAB,
-		     attr->tx_ctx_cnt);
-	ofi_strncatf(buf, len, "%s%srx_ctx_cnt: %zu\n", prefix, TAB,
-		     attr->rx_ctx_cnt);
+	ofi_strncatf(buf, len, "%s%stx_ctx_cnt: ", prefix, TAB);
+	if (attr->tx_ctx_cnt == FI_SHARED_CONTEXT)
+		ofi_strncatf(buf, len, "FI_SHARED_CONTEXT\n");
+	else
+		ofi_strncatf(buf, len, "%zu\n", attr->tx_ctx_cnt);
+	ofi_strncatf(buf, len, "%s%srx_ctx_cnt: ", prefix, TAB);
+	if (attr->rx_ctx_cnt == FI_SHARED_CONTEXT)
+		ofi_strncatf(buf, len, "FI_SHARED_CONTEXT\n");
+	else
+		ofi_strncatf(buf, len, "%zu\n", attr->rx_ctx_cnt);
 
 	ofi_strncatf(buf, len, "%s%sauth_key_size: %zu\n", prefix, TAB,
 		     attr->auth_key_size);
@@ -464,6 +476,7 @@ static void ofi_tostr_mr_mode(char *buf, size_t len, int mr_mode)
 	IFFLAGSTRN(mr_mode, FI_MR_RMA_EVENT, len);
 	IFFLAGSTRN(mr_mode, FI_MR_ENDPOINT, len);
 	IFFLAGSTRN(mr_mode, FI_MR_HMEM, len);
+	IFFLAGSTRN(mr_mode, FI_MR_COLLECTIVE, len);
 
 	ofi_remove_comma(buf);
 }
@@ -546,11 +559,11 @@ ofi_tostr_domain_attr(char *buf, size_t len, const struct fi_domain_attr *attr,
 	ofi_strncatf(buf, len, "%s%smr_iov_limit: %zu\n", prefix, TAB,
 		     attr->mr_iov_limit);
 
-	ofi_strncatf(buf, len, "%scaps: [ ", TAB);
+	ofi_strncatf(buf, len, "%s%scaps: [ ", prefix, TAB);
 	ofi_tostr_caps(buf, len, attr->caps);
 	ofi_strncatf(buf, len, " ]\n");
 
-	ofi_strncatf(buf, len, "%smode: [ ", TAB);
+	ofi_strncatf(buf, len, "%s%smode: [ ", prefix, TAB);
 	ofi_tostr_mode(buf, len, attr->mode);
 	ofi_strncatf(buf, len, " ]\n");
 
@@ -559,6 +572,7 @@ ofi_tostr_domain_attr(char *buf, size_t len, const struct fi_domain_attr *attr,
 	ofi_strncatf(buf, len, "%s%smax_err_data: %zu\n", prefix, TAB,
 		     attr->max_err_data);
 	ofi_strncatf(buf, len, "%s%smr_cnt: %zu\n", prefix, TAB, attr->mr_cnt);
+	ofi_strncatf(buf, len, "%s%stclass: 0x%x\n", prefix, TAB, attr->tclass);
 }
 
 static void
@@ -611,7 +625,7 @@ static void ofi_tostr_info(char *buf, size_t len, const struct fi_info *info)
 	ofi_tostr_ep_attr(buf, len, info->ep_attr, TAB);
 	ofi_tostr_domain_attr(buf, len, info->domain_attr, TAB);
 	ofi_tostr_fabric_attr(buf, len, info->fabric_attr, TAB);
-	ofi_tostr_fid(TAB "nic_fid: ", buf, len, &info->nic->fid);
+	ofi_tostr_fid(TAB "nic: ", buf, len, &info->nic->fid);
 }
 
 static void ofi_tostr_atomic_type(char *buf, size_t len, enum fi_datatype type)
@@ -735,6 +749,22 @@ ofi_tostr_hmem_iface(char *buf, size_t len, enum fi_hmem_iface iface)
 	CASEENUMSTRN(FI_HMEM_CUDA, len);
 	CASEENUMSTRN(FI_HMEM_ROCR, len);
 	CASEENUMSTRN(FI_HMEM_ZE, len);
+	CASEENUMSTRN(FI_HMEM_NEURON, len);
+	default:
+		ofi_strncatf(buf, len, "Unknown");
+		break;
+	}
+}
+
+static void
+ofi_tostr_cq_format(char *buf, size_t len, enum fi_cq_format cq_format)
+{
+	switch (cq_format) {
+	CASEENUMSTRN(FI_CQ_FORMAT_UNSPEC, len);
+	CASEENUMSTRN(FI_CQ_FORMAT_CONTEXT, len);
+	CASEENUMSTRN(FI_CQ_FORMAT_MSG, len);
+	CASEENUMSTRN(FI_CQ_FORMAT_DATA, len);
+	CASEENUMSTRN(FI_CQ_FORMAT_TAGGED, len);
 	default:
 		ofi_strncatf(buf, len, "Unknown");
 		break;
@@ -835,6 +865,9 @@ char *fi_tostr_r(char *buf, size_t len, const void *data, enum fi_type datatype)
 		break;
 	case FI_TYPE_HMEM_IFACE:
 		ofi_tostr_hmem_iface(buf, len, *enumval);
+		break;
+	case FI_TYPE_CQ_FORMAT:
+		ofi_tostr_cq_format(buf, len, *enumval);
 		break;
 	default:
 		ofi_strncatf(buf, len, "Unknown type");

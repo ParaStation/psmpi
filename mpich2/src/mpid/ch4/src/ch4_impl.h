@@ -606,6 +606,9 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_progress_test_vci(int vci);
 #define MPIDIG_EPOCH_FENCE_EVENT(win, massert) do {} while (0)
 #endif /* HAVE_ERROR_CHECKING */
 
+#define MPIDI_WIN_TARGET_VCI(win, rank) \
+    (MPIDI_WIN(win, vci_table) ? MPIDI_WIN(win, vci_table)[rank] : MPIDI_WIN(win, am_vci))
+
 /*
   Calculate base address of the target window at the origin side
   Return zero to let the target side calculate the actual address
@@ -958,9 +961,9 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_wait_am_acc(MPIR_Win * win, int target_rank)
  * The source datatype can be only predefined; the target datatype can be
  * predefined or derived. If the source buffer has been packed by the caller,
  * src_kind must be set to MPIDIG_ACC_SRCBUF_PACKED.*/
-MPL_STATIC_INLINE_PREFIX int MPIDIG_compute_acc_op(void *source_buf, int source_count,
+MPL_STATIC_INLINE_PREFIX int MPIDIG_compute_acc_op(void *source_buf, MPI_Aint source_count,
                                                    MPI_Datatype source_dtp, void *target_buf,
-                                                   int target_count, MPI_Datatype target_dtp,
+                                                   MPI_Aint target_count, MPI_Datatype target_dtp,
                                                    MPI_Op acc_op, int src_kind)
 {
     int mpi_errno = MPI_SUCCESS;

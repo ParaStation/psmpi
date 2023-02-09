@@ -11,38 +11,12 @@
 # --with-hip-sm
 AC_ARG_WITH([hip-sm],
             [
-  --with-hip-sm=<options> (https://reviews.llvm.org/differential/changeset/?ref=2126544)
+  --with-hip-sm=<options>
           Comma-separated list of below options:
-                all - build compatibility for all GPUs supported by the HIP version (can increase compilation time)
-
-                # Kepler architecture
-                AMDGCN - build compatibility for all AMD GPUs
-                gfx600 - GFX600-DAG
-                gfx601 - GFX601-DAG
-                gfx700 - GFX700-DAG
-                gfx701 - GFX701-DAG
-                gfx702 - GFX702-DAG
-                gfx703 - GFX703-DAG
-                gfx704 - GFX704-DAG
-                gfx801 - GFX801-DAG
-                gfx802 - GFX802-DAG
-                gfx803 - GFX803-DAG
-                gfx810 - GFX810-DAG
-                gfx900 - GFX900-DAG
-                gfx902 - GFX902-DAG
-                gfx904 - GFX904-DAG
-                gfx906 - GFX906-DAG
-                gfx908 - GFX908-DAG
-                gfx909 - GFX909-DAG
-                gfx1010 - GFX1010-DAG
-                gfx1011 - GFX1011-DAG
-                gfx1012 - GFX1012-DAG
-                gfx1030 - GFX1030-DAG
-                gfx1031 - GFX1031-DAG
-                # Other
-                <numeric> - specific SM numeric to use
+                auto - let HIPCC to auto detect the target_id
+                <numeric> - specific target_id to use, see https://llvm.org/docs/AMDGPUUsage.html
             ],,
-            [with_hip_sm=all])
+            [with_hip_sm=auto])
 
 
 # --with-hip
@@ -121,25 +95,25 @@ if test "${have_hip}" = "yes" ; then
                           ],)],[hip_version=${maj_version}],[])
         if test ! -z ${hip_version} ; then break ; fi
     done
-    PAC_PUSH_FLAG([IFS])
-    IFS=","
-    HIP_SM=
-    for sm in ${with_hip_sm} ; do
-          PAC_APPEND_FLAG([$sm],[HIP_SM])
-    done
-    PAC_POP_FLAG([IFS])
+    HIP_GENCODE=
+    if test "${with_hip_sm}" != "auto"; then
+        PAC_PUSH_FLAG([IFS])
+        IFS=","
+        HIP_SM=
+        for sm in ${with_hip_sm} ; do
+            PAC_APPEND_FLAG([$sm], [HIP_SM])
+        done
+        PAC_POP_FLAG([IFS])
 
-    for sm in ${HIP_SM} ; do
-        if test -z "${HIP_GENCODE}" ; then
-            HIP_GENCODE="--offload-arch=${sm}"
-        else
-            HIP_GENCODE="${HIP_GENCODE} --offload-arch=${sm}"
-        fi
-    done
-    AC_SUBST(HIP_GENCODE)
-    if test -z "${HIP_GENCODE}" ; then
-        AC_MSG_ERROR([--with-hip-sm not specified; either specify it or disable hip support])
+        for sm in ${HIP_SM} ; do
+            if test -z "${HIP_GENCODE}" ; then
+                HIP_GENCODE="--offload-arch=${sm}"
+            else
+                HIP_GENCODE="${HIP_GENCODE} --offload-arch=${sm}"
+            fi
+        done
     fi
+    AC_SUBST(HIP_GENCODE)
 
     supported_backends="${supported_backends},hip"
     backend_info="${backend_info}

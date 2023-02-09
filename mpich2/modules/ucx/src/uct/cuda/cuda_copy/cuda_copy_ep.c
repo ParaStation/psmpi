@@ -81,8 +81,12 @@ uct_cuda_copy_get_mem_type(uct_md_h md, void *address, size_t length)
     ucs_status_t status;
 
     status = ucs_memtype_cache_lookup(address, length, &mem_info);
-    if ((status == UCS_ERR_NO_ELEM) ||
-        ((mem_info.type == UCS_MEMORY_TYPE_UNKNOWN))) {
+    if (status == UCS_ERR_NO_ELEM) {
+        return UCS_MEMORY_TYPE_HOST;
+    }
+
+    if ((status == UCS_ERR_UNSUPPORTED) ||
+        (mem_info.type == UCS_MEMORY_TYPE_UNKNOWN)) {
         status = uct_cuda_base_detect_memory_type(md, address, length,
                                                   &mem_info.type);
         if (status != UCS_OK) {
@@ -109,6 +113,15 @@ uct_cuda_copy_post_cuda_async_copy(uct_ep_h tl_ep, void *dst, void *src,
 
     if (!length) {
         return UCS_OK;
+    }
+
+    /* ensure context is set before creating events/streams */
+    if (iface->cuda_context == NULL) {
+        UCT_CUDADRV_FUNC_LOG_ERR(cuCtxGetCurrent(&iface->cuda_context));
+        if (iface->cuda_context == NULL) {
+            ucs_error("attempt to perform cuda memcpy without active context");
+            return UCS_ERR_IO_ERROR;
+        }
     }
 
     src_type = uct_cuda_copy_get_mem_type(base_iface->md, src, length);

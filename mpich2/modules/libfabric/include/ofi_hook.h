@@ -60,9 +60,19 @@ enum ofi_hook_class {
 	HOOK_NOOP,
 	HOOK_PERF,
 	HOOK_DEBUG,
-	MAX_HOOKS
+	HOOK_HMEM,
+	HOOK_DMABUF_PEER_MEM,
 };
 
+
+/*
+ * Default fi_ops members, can be used to construct custom fi_ops
+ */
+int hook_close(struct fid *fid);
+int hook_bind(struct fid *fid, struct fid *bfid, uint64_t flags);
+int hook_control(struct fid *fid, int command, void *arg);
+int hook_ops_open(struct fid *fid, const char *name,
+		  uint64_t flags, void **ops, void *context);
 
 /*
  * Define hook structs so we can cast from fid to parent using simple cast.
@@ -146,12 +156,19 @@ static inline struct fi_provider *hook_to_hprov(const struct fid *fid)
 	return hook_fabric_to_hprov(hook_to_fabric(fid));
 }
 
+struct ofi_ops_flow_ctrl;
+
 struct hook_domain {
 	struct fid_domain domain;
 	struct fid_domain *hdomain;
 	struct hook_fabric *fabric;
+	struct ofi_ops_flow_ctrl *base_ops_flow_ctrl;
+	ssize_t (*base_credit_handler)(struct fid_ep *ep_fid, size_t credits);
 };
 
+int hook_domain_init(struct fid_fabric *fabric, struct fi_info *info,
+		     struct fid_domain **domain, void *context,
+		     struct hook_domain *dom);
 int hook_domain(struct fid_fabric *fabric, struct fi_info *info,
 		struct fid_domain **domain, void *context);
 
@@ -216,6 +233,7 @@ struct hook_cq {
 	struct fid_cq *hcq;
 	struct hook_domain *domain;
 	void *context;
+	enum fi_cq_format format;
 };
 
 int hook_cq_init(struct fid_domain *domain, struct fi_cq_attr *attr,
@@ -255,8 +273,11 @@ int hook_srx_ctx(struct fid_domain *domain,
 
 int hook_query_atomic(struct fid_domain *domain, enum fi_datatype datatype,
 		  enum fi_op op, struct fi_atomic_attr *attr, uint64_t flags);
+int hook_query_collective(struct fid_domain *domain, enum fi_collective_op coll,
+			  struct fi_collective_attr *attr, uint64_t flags);
 
 extern struct fi_ops hook_fabric_fid_ops;
+extern struct fi_ops hook_domain_fid_ops;
 extern struct fi_ops_fabric hook_fabric_ops;
 extern struct fi_ops_domain hook_domain_ops;
 extern struct fi_ops_cq hook_cq_ops;

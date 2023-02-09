@@ -121,6 +121,8 @@ tests:
     neighbor_alltoallw:
         intra-blocking:
             neighb_alltoallw 4
+        persistent:
+            p_neighb_alltoallw 4
     reduce:
         intra-blocking:
             reduce 5
@@ -139,7 +141,6 @@ tests:
             redscat3 8
         persistent:
             p_redscat 4
-            redscat 4
     reduce_scatter_block:
         intra-blocking:
             red_scat_block 4
@@ -155,7 +156,6 @@ tests:
     scan:
         intra-blocking:
             scantst 4
-            op_coll 4
         persistent:
             p_scan 4
     scatter:
@@ -179,7 +179,11 @@ algorithms:
         inter-nonblocking:
             sched_local_gather_remote_bcast
         intra-blocking:
+            composition:1
+            composition:2
             brucks
+            k_brucks
+                .MPIR_CVAR_ALLGATHER_BRUCKS_KVAL=2,3,4
             recursive_doubling
             ring
         intra-nonblocking:
@@ -219,9 +223,24 @@ algorithms:
         inter-nonblocking:
             sched_remote_reduce_local_bcast
         intra-blocking:
+            composition:1
+            composition:2
+            composition:3
+            composition:4
             smp
             recursive_doubling
             reduce_scatter_allgather
+	    tree
+                .MPIR_CVAR_ALLREDUCE_TREE_TYPE=knomial_1,knomial_2,kary
+                .MPIR_CVAR_ALLREDUCE_TREE_KVAL=2,3,4
+                .MPIR_CVAR_ALLREDUCE_TREE_PIPELINE_CHUNK_SIZE=4096,8192
+            recexch
+                .MPIR_CVAR_ALLREDUCE_RECEXCH_KVAL=2,3,4,5,9
+                .MPIR_CVAR_ALLREDUCE_RECEXCH_SINGLE_PHASE_RECV=0,1
+            ring
+            k_reduce_scatter_allgather
+                .MPIR_CVAR_ALLREDUCE_RECEXCH_KVAL=2,3,4,5,9
+                .MPIR_CVAR_ALLREDUCE_RECEXCH_SINGLE_PHASE_RECV=0,1
             posix:release_gather
                 .MPIR_CVAR_COLL_SHM_LIMIT_PER_NODE=131072
                 .MPIR_CVAR_REDUCE_INTRANODE_BUFFER_TOTAL_SIZE=16384
@@ -246,7 +265,11 @@ algorithms:
         inter-nonblocking:
             sched_pairwise_exchange
         intra-blocking:
+            composition:1
+            composition:2
             brucks
+            k_brucks
+                .MPIR_CVAR_ALLTOALL_BRUCKS_KVAL=2,3,4
             pairwise
             pairwise_sendrecv_replace
             scattered
@@ -297,20 +320,39 @@ algorithms:
         inter-nonblocking:
             sched_bcast
         intra-blocking:
-            dissemination
+            composition:1
+            composition:2
+            k_dissemination
+                .MPIR_CVAR_BARRIER_DISSEM_KVAL=2,3,4,8
+            recexch
+                .MPIR_CVAR_BARRIER_RECEXCH_KVAL=2,3,4,8
+                .MPIR_CVAR_BARRIER_RECEXCH_SINGLE_PHASE_RECV=0,1
         intra-nonblocking:
             sched_recursive_doubling
             tsp_recexch
+                .MPIR_CVAR_IBARRIER_RECEXCH_KVAL=2,3,4,8
+            tsp_k_dissemination
+                .MPIR_CVAR_IBARRIER_DISSEM_KVAL=2,3,4,8
     bcast:
         inter-blocking:
             remote_send_local_bcast
         inter-nonblocking:
             sched_flat
         intra-blocking:
+            composition:1
+            composition:2
+            composition:3
             binomial
             smp
             scatter_recursive_doubling_allgather
             scatter_ring_allgather
+	    tree
+		.MPIR_CVAR_BCAST_TREE_TYPE=kary,knomial_1,knomial_2
+		.MPIR_CVAR_BCAST_IS_NON_BLOCKING=1
+	    pipelined_tree
+		.MPIR_CVAR_BCAST_TREE_TYPE=kary,knomial_1,knomial_2
+                .MPIR_CVAR_BCAST_IS_NON_BLOCKING=1	
+		.MPIR_CVAR_BCAST_TREE_PIPELINE_CHUNK_SIZE=4096,8192
             posix:release_gather
                 .MPIR_CVAR_COLL_SHM_LIMIT_PER_NODE=131072
                 .MPIR_CVAR_BCAST_INTRANODE_BUFFER_TOTAL_SIZE=16384,32768
@@ -329,6 +371,8 @@ algorithms:
             tsp_scatterv_recexch_allgatherv
                 .MPIR_CVAR_IBCAST_SCATTERV_KVAL=3
                 .MPIR_CVAR_IBCAST_ALLGATHER_RECEXCH=3
+            tsp_scatterv_ring_allgatherv
+                .MPIR_CVAR_IBCAST_SCATTERV_KVAL=3
             tsp_ring
                 .MPIR_CVAR_IBCAST_RING_CHUNK_SIZE=4096
     exscan:
@@ -400,6 +444,9 @@ algorithms:
         inter-nonblocking:
             sched_local_reduce_remote_send
         intra-blocking:
+            composition:1
+            composition:2
+            composition:3
             binomial
             smp
             reduce_scatter_gather

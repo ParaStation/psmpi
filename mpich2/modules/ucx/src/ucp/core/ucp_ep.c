@@ -21,7 +21,8 @@
 #include <ucp/wireup/wireup_cm.h>
 #include <ucp/tag/eager.h>
 #include <ucp/tag/offload.h>
-#include <ucp/proto/proto_select.h>
+#include <ucp/proto/proto_common.h>
+#include <ucp/proto/proto_debug.h>
 #include <ucp/rndv/rndv.h>
 #include <ucp/stream/stream.h>
 #include <ucp/core/ucp_listener.h>
@@ -34,10 +35,12 @@
 #include <ucs/debug/debug_int.h>
 #include <ucs/sys/string.h>
 #include <ucs/sys/sock.h>
-#include <ucs/vfs/base/vfs_cb.h>
 #include <ucs/vfs/base/vfs_obj.h>
 #include <string.h>
 
+__KHASH_IMPL(ucp_ep_peer_mem_hash, kh_inline, uint64_t,
+             ucp_ep_peer_mem_data_t, 1,
+             kh_int64_hash_func, kh_int64_hash_equal);
 
 typedef struct {
     double reg_growth;
@@ -56,6 +59,19 @@ typedef struct ucp_ep_set_failed_arg {
     ucp_lane_index_t lane; /* UCP endpoint lane which is failed  */
     ucs_status_t     status; /* Failure status */
 } ucp_ep_set_failed_arg_t;
+
+
+/**
+ * Argument for discarding UCP endpoint's lanes
+ */
+typedef struct ucp_ep_discard_lanes_arg {
+    unsigned     counter; /* How many discarding operations on UCT lanes are
+                           * in-progress if purging of the UCP endpoint is
+                           * required */
+    ucs_status_t status; /* Completion status of operations after discarding is
+                          * done */
+    ucp_ep_h     ucp_ep; /* UCP endpoint which should be discarded */
+} ucp_ep_discard_lanes_arg_t;
 
 
 extern const ucp_request_send_proto_t ucp_stream_am_proto;
@@ -114,11 +130,6 @@ static uct_ep_t ucp_failed_tl_ep = {
     .iface = &ucp_failed_tl_iface
 };
 
-static const char *ucp_err_handling_mode_names[] = {
-    [UCP_ERR_HANDLING_MODE_NONE] = "none",
-    [UCP_ERR_HANDLING_MODE_PEER] = "peer"
-};
-
 
 int ucp_is_uct_ep_failed(uct_ep_h uct_ep)
 {
@@ -142,12 +153,12 @@ void ucp_ep_config_key_reset(ucp_ep_config_key_t *key)
     key->am_lane          = UCP_NULL_LANE;
     key->wireup_msg_lane  = UCP_NULL_LANE;
     key->cm_lane          = UCP_NULL_LANE;
+    key->keepalive_lane   = UCP_NULL_LANE;
     key->rkey_ptr_lane    = UCP_NULL_LANE;
     key->tag_lane         = UCP_NULL_LANE;
     key->rma_bw_md_map    = 0;
     key->reachable_md_map = 0;
     key->dst_md_cmpts     = NULL;
-    key->ep_check_map     = 0;
     key->err_mode         = UCP_ERR_HANDLING_MODE_NONE;
     memset(key->am_bw_lanes,  UCP_NULL_LANE, sizeof(key->am_bw_lanes));
     memset(key->rma_lanes,    UCP_NULL_LANE, sizeof(key->rma_lanes));
@@ -155,17 +166,22 @@ void ucp_ep_config_key_reset(ucp_ep_config_key_t *key)
     memset(key->amo_lanes,    UCP_NULL_LANE, sizeof(key->amo_lanes));
 }
 
-ucs_status_t ucp_ep_create_base(ucp_worker_h worker, const char *peer_name,
-                                const char *message, ucp_ep_h *ep_p)
+static void ucp_ep_deallocate(ucp_ep_h ep)
 {
+    UCS_STATS_NODE_FREE(ep->stats);
+    ucs_free(ucp_ep_ext_control(ep));
+    ucs_strided_alloc_put(&ep->worker->ep_alloc, ep);
+}
+
+static ucp_ep_h ucp_ep_allocate(ucp_worker_h worker, const char *peer_name)
+{
+    ucp_ep_h ep;
     ucp_lane_index_t lane;
     ucs_status_t status;
-    ucp_ep_h ep;
 
     ep = ucs_strided_alloc_get(&worker->ep_alloc, "ucp_ep");
     if (ep == NULL) {
         ucs_error("Failed to allocate ep");
-        status = UCS_ERR_NO_MEMORY;
         goto err;
     }
 
@@ -174,28 +190,30 @@ ucs_status_t ucp_ep_create_base(ucp_worker_h worker, const char *peer_name,
                                                  "ep_control_ext");
     if (ucp_ep_ext_gen(ep)->control_ext == NULL) {
         ucs_error("Failed to allocate ep control extension");
-        status = UCS_ERR_NO_MEMORY;
         goto err_free_ep;
     }
 
-    ep->refcount                          = 1;
+    ep->refcount                          = 0;
     ep->cfg_index                         = UCP_WORKER_CFG_INDEX_NULL;
     ep->worker                            = worker;
     ep->am_lane                           = UCP_NULL_LANE;
     ep->flags                             = 0;
     ep->conn_sn                           = UCP_EP_MATCH_CONN_SN_MAX;
 #if UCS_ENABLE_ASSERT
-    ep->flush_iter_refcount               = 0;
-    ep->discard_refcount                  = 0;
+    ep->refcounts.create                  =
+    ep->refcounts.flush                   =
+    ep->refcounts.discard                 = 0;
 #endif
     ucp_ep_ext_gen(ep)->user_data         = NULL;
     ucp_ep_ext_control(ep)->cm_idx        = UCP_NULL_RESOURCE;
-    ucp_ep_ext_control(ep)->err_cb        = NULL;
     ucp_ep_ext_control(ep)->local_ep_id   = UCS_PTR_MAP_KEY_INVALID;
     ucp_ep_ext_control(ep)->remote_ep_id  = UCS_PTR_MAP_KEY_INVALID;
+    ucp_ep_ext_control(ep)->err_cb        = NULL;
+    ucp_ep_ext_control(ep)->close_req     = NULL;
 #if UCS_ENABLE_ASSERT
     ucp_ep_ext_control(ep)->ka_last_round = 0;
 #endif
+    ucp_ep_ext_control(ep)->peer_mem      = NULL;
 
     UCS_STATIC_ASSERT(sizeof(ucp_ep_ext_gen(ep)->ep_match) >=
                       sizeof(ucp_ep_ext_gen(ep)->flush_state));
@@ -203,18 +221,14 @@ ucs_status_t ucp_ep_create_base(ucp_worker_h worker, const char *peer_name,
            sizeof(ucp_ep_ext_gen(ep)->ep_match));
 
     ucs_hlist_head_init(&ucp_ep_ext_gen(ep)->proto_reqs);
-    ucp_stream_ep_init(ep);
-    ucp_am_ep_init(ep);
 
     for (lane = 0; lane < UCP_MAX_LANES; ++lane) {
         ep->uct_eps[lane] = NULL;
     }
-
 #if ENABLE_DEBUG_DATA
     ucs_snprintf_zero(ep->peer_name, UCP_WORKER_ADDRESS_NAME_MAX, "%s",
                       peer_name);
 #endif
-
     /* Create statistics */
     status = UCS_STATS_NODE_ALLOC(&ep->stats, &ucp_ep_stats_class,
                                   worker->stats, "-%p", ep);
@@ -222,17 +236,126 @@ ucs_status_t ucp_ep_create_base(ucp_worker_h worker, const char *peer_name,
         goto err_free_ep_control_ext;
     }
 
-    /* Create endpoint VFS node on demand to avoid memory bloat */
-    ucs_vfs_obj_set_dirty(worker, ucp_worker_vfs_refresh);
-
-    *ep_p = ep;
-    ucs_debug("created ep %p to %s %s", ep, ucp_ep_peer_name(ep), message);
-    return UCS_OK;
+    return ep;
 
 err_free_ep_control_ext:
     ucs_free(ucp_ep_ext_control(ep));
 err_free_ep:
     ucs_strided_alloc_put(&worker->ep_alloc, ep);
+err:
+    return NULL;
+}
+
+static int ucp_ep_shall_use_indirect_id(ucp_context_h context,
+                                        unsigned ep_init_flags)
+{
+    return !(ep_init_flags & UCP_EP_INIT_FLAG_INTERNAL) &&
+           ((context->config.ext.proto_indirect_id == UCS_CONFIG_ON) ||
+            ((context->config.ext.proto_indirect_id == UCS_CONFIG_AUTO) &&
+             (ep_init_flags & UCP_EP_INIT_ERR_MODE_PEER_FAILURE)));
+}
+
+void ucp_ep_peer_mem_destroy(ucp_context_h context,
+                             ucp_ep_peer_mem_data_t *ppln_data)
+{
+    ucp_md_map_t md_map;
+    ucs_status_t UCS_V_UNUSED status;
+
+    md_map = (ppln_data->md_index == UCP_NULL_RESOURCE) ?
+             0 : UCS_BIT(ppln_data->md_index);
+    status = ucp_mem_rereg_mds(context, 0, NULL, 0, 0, NULL,
+                               UCS_MEMORY_TYPE_UNKNOWN, NULL,
+                               &ppln_data->uct_memh, &md_map);
+    ucs_assertv(status == UCS_OK, "%s", ucs_status_string(status));
+
+    ucp_rkey_destroy(ppln_data->rkey);
+}
+
+ucp_ep_peer_mem_data_t*
+ucp_ep_peer_mem_get(ucp_context_h context, ucp_ep_h ep, uint64_t address,
+                    size_t size, void *rkey_buf, ucp_md_index_t md_index)
+{
+    khash_t(ucp_ep_peer_mem_hash) *peer_mem = ucp_ep_ext_control(ep)->peer_mem;
+    ucp_ep_peer_mem_data_t *data;
+    khiter_t iter;
+    int ret;
+
+    if (ucs_unlikely(peer_mem == NULL)) {
+        ucp_ep_ext_control(ep)->peer_mem =
+        peer_mem                         = kh_init(ucp_ep_peer_mem_hash);
+    }
+
+    iter = kh_put(ucp_ep_peer_mem_hash, peer_mem, address, &ret);
+    ucs_assert_always(ret != UCS_KH_PUT_FAILED);
+    data = &kh_val(ucp_ep_ext_control(ep)->peer_mem, iter);
+
+    if (ucs_likely(ret == UCS_KH_PUT_KEY_PRESENT)) {
+        if (ucs_likely(size <= data->size)) {
+            return data;
+        }
+
+        ucp_ep_peer_mem_destroy(context, data);
+    }
+
+    data->size     = size;
+    data->uct_memh = NULL;
+    ucp_ep_rkey_unpack_internal(ep, rkey_buf, 0, UCS_BIT(md_index),
+                                &data->rkey);
+    return data;
+}
+
+ucs_status_t ucp_ep_create_base(ucp_worker_h worker, unsigned ep_init_flags,
+                                const char *peer_name, const char *message,
+                                ucp_ep_h *ep_p)
+{
+    ucs_status_t status;
+    ucp_ep_h ep;
+
+    ep = ucp_ep_allocate(worker, peer_name);
+    if (ep == NULL) {
+        status = UCS_ERR_NO_MEMORY;
+        goto err;
+    }
+
+    ucp_stream_ep_init(ep);
+    ucp_am_ep_init(ep);
+
+    if (ucp_ep_shall_use_indirect_id(ep->worker->context, ep_init_flags)) {
+        ucp_ep_update_flags(ep, UCP_EP_FLAG_INDIRECT_ID, 0);
+    }
+
+    status = UCS_PTR_MAP_PUT(ep, &worker->ep_map, ep,
+                             ep->flags & UCP_EP_FLAG_INDIRECT_ID,
+                             &ucp_ep_ext_control(ep)->local_ep_id);
+    if ((status != UCS_OK) && (status != UCS_ERR_NO_PROGRESS)) {
+        ucs_error("ep %p: failed to allocate ID: %s", ep,
+                  ucs_status_string(status));
+        goto err_ep_deallocate;
+    }
+
+    ucp_ep_flush_state_reset(ep);
+
+    /* Create endpoint VFS node on demand to avoid memory bloat */
+    ucs_vfs_obj_set_dirty(worker, ucp_worker_vfs_refresh);
+
+    /* Insert new UCP endpoint to the UCP worker */
+    if (ep_init_flags & UCP_EP_INIT_FLAG_INTERNAL) {
+        ucp_ep_update_flags(ep, UCP_EP_FLAG_INTERNAL, 0);
+        ucs_list_add_tail(&worker->internal_eps, &ucp_ep_ext_gen(ep)->ep_list);
+    } else {
+        ucs_list_add_tail(&worker->all_eps, &ucp_ep_ext_gen(ep)->ep_list);
+        ucs_assert(ep->worker->num_all_eps < UINT_MAX);
+        ++ep->worker->num_all_eps;
+    }
+
+    ucp_ep_refcount_add(ep, create);
+
+    *ep_p = ep;
+    ucs_debug("created ep %p to %s %s", ep, ucp_ep_peer_name(ep), message);
+    return UCS_OK;
+
+err_ep_deallocate:
+    ucp_ep_deallocate(ep);
 err:
     return status;
 }
@@ -259,7 +382,7 @@ ucp_ep_local_disconnect_progress_remove_filter(const ucs_callbackq_elem_t *elem,
     ucs_assert(req->flags & UCP_REQUEST_FLAG_RELEASED);
     ucs_assert(req->send.uct.func == ucp_ep_flush_progress_pending);
 
-    ucp_request_complete_send(req, UCS_OK);
+    ucp_request_complete_send(req, req->status);
     return 1;
 }
 
@@ -304,97 +427,64 @@ static int ucp_ep_remove_filter(const ucs_callbackq_elem_t *elem, void *arg)
     return 0;
 }
 
-static void ucp_ep_destroy_base(ucp_ep_h ep)
+void ucp_ep_destroy_base(ucp_ep_h ep)
 {
-    ucs_assert(ep->refcount == 0);
-    ucs_assert(ep->flush_iter_refcount == 0);
-    ucs_assert(ep->discard_refcount == 0);
+    ucp_ep_peer_mem_data_t data;
+    ucp_ep_refcount_field_assert(ep, refcount, ==, 0);
+    ucp_ep_refcount_assert(ep, create, ==, 0);
+    ucp_ep_refcount_assert(ep, flush, ==, 0);
+    ucp_ep_refcount_assert(ep, discard, ==, 0);
     ucs_assert(ucs_hlist_is_empty(&ucp_ep_ext_gen(ep)->proto_reqs));
+
+    if (!(ep->flags & UCP_EP_FLAG_INTERNAL)) {
+        ucs_assert(ep->worker->num_all_eps > 0);
+        --ep->worker->num_all_eps;
+    }
+
+    ucp_worker_keepalive_remove_ep(ep);
+    ucp_ep_release_id(ep);
+    ucs_list_del(&ucp_ep_ext_gen(ep)->ep_list);
 
     ucs_vfs_obj_remove(ep);
     ucs_callbackq_remove_if(&ep->worker->uct->progress_q, ucp_ep_remove_filter,
                             ep);
     UCS_STATS_NODE_FREE(ep->stats);
-    ucs_free(ucp_ep_ext_control(ep));
-    ucs_strided_alloc_put(&ep->worker->ep_alloc, ep);
-}
+    if (ucp_ep_ext_control(ep)->peer_mem != NULL) {
+        kh_foreach_value(ucp_ep_ext_control(ep)->peer_mem, data, {
+            ucp_ep_peer_mem_destroy(ep->worker->context, &data);
+        });
 
-void ucp_ep_add_ref(ucp_ep_h ep)
-{
-    ucs_assert(ep->refcount < UINT8_MAX);
-    ++ep->refcount;
-}
-
-/* Return 1 if the endpoint was destroyed, 0 if not */
-int ucp_ep_remove_ref(ucp_ep_h ep)
-{
-    ucs_assert(ep->refcount > 0);
-    if (--ep->refcount == 0) {
-        ucp_ep_destroy_base(ep);
-        return 1;
+        kh_destroy(ucp_ep_peer_mem_hash, ucp_ep_ext_control(ep)->peer_mem);
     }
-
-    return 0;
-}
-
-ucs_status_t ucp_worker_create_ep(ucp_worker_h worker, unsigned ep_init_flags,
-                                  const char *peer_name, const char *message,
-                                  ucp_ep_h *ep_p)
-{
-    ucp_context_h context = worker->context;
-    ucs_status_t status;
-    ucp_ep_h ep;
-
-    status = ucp_ep_create_base(worker, peer_name, message, &ep);
-    if (status != UCS_OK) {
-        goto err;
-    }
-
-    if (!(ep_init_flags & UCP_EP_INIT_FLAG_INTERNAL) &&
-        ((context->config.ext.proto_indirect_id == UCS_CONFIG_ON) ||
-         ((context->config.ext.proto_indirect_id == UCS_CONFIG_AUTO) &&
-          (ep_init_flags & UCP_EP_INIT_ERR_MODE_PEER_FAILURE)))) {
-        ucp_ep_update_flags(ep, UCP_EP_FLAG_INDIRECT_ID, 0);
-    }
-
-    status = UCS_PTR_MAP_PUT(ep, &worker->ep_map, ep,
-                             !!(ep->flags & UCP_EP_FLAG_INDIRECT_ID),
-                             &ucp_ep_ext_control(ep)->local_ep_id);
-    if ((status != UCS_OK) && (status != UCS_ERR_NO_PROGRESS)) {
-        ucs_error("ep %p: failed to allocate ID: %s", ep,
-                  ucs_status_string(status));
-        goto err_destroy_ep_base;
-    }
-
-    if (ep_init_flags & UCP_EP_INIT_FLAG_INTERNAL) {
-        ucp_ep_update_flags(ep, UCP_EP_FLAG_INTERNAL, 0);
-        ucs_list_add_tail(&worker->internal_eps, &ucp_ep_ext_gen(ep)->ep_list);
-    } else {
-        ucs_list_add_tail(&worker->all_eps, &ucp_ep_ext_gen(ep)->ep_list);
-        ucs_assert(ep->worker->num_all_eps < UINT_MAX);
-        ++ep->worker->num_all_eps;
-    }
-
-    *ep_p = ep;
-    return UCS_OK;
-
-err_destroy_ep_base:
-    ucp_ep_remove_ref(ep);
-err:
-    return status;
+    ucp_ep_deallocate(ep);
 }
 
 void ucp_ep_delete(ucp_ep_h ep)
 {
-    if (!(ep->flags & UCP_EP_FLAG_INTERNAL)) {
-        ucs_assert(ep->worker->num_all_eps > 0);
-        --ep->worker->num_all_eps;
-        ucp_worker_keepalive_remove_ep(ep);
-    }
+    ucp_ep_refcount_assert(ep, create, ==, 1);
+    ucp_ep_refcount_remove(ep, create);
+}
 
-    ucp_ep_release_id(ep);
-    ucs_list_del(&ucp_ep_ext_gen(ep)->ep_list);
-    ucp_ep_remove_ref(ep);
+void ucp_ep_flush_state_reset(ucp_ep_h ep)
+{
+    ucp_ep_flush_state_t *flush_state = &ucp_ep_ext_gen(ep)->flush_state;
+
+    ucs_assert(!(ep->flags & UCP_EP_FLAG_ON_MATCH_CTX));
+    ucs_assert(!(ep->flags & UCP_EP_FLAG_FLUSH_STATE_VALID) ||
+               ((flush_state->send_sn == 0) &&
+                (flush_state->cmpl_sn == 0) &&
+                ucs_hlist_is_empty(&flush_state->reqs)));
+
+    flush_state->send_sn = 0;
+    flush_state->cmpl_sn = 0;
+    ucs_hlist_head_init(&flush_state->reqs);
+    ucp_ep_update_flags(ep, UCP_EP_FLAG_FLUSH_STATE_VALID, 0);
+}
+
+void ucp_ep_flush_state_invalidate(ucp_ep_h ep)
+{
+    ucs_assert(ucs_hlist_is_empty(&ucp_ep_flush_state(ep)->reqs));
+    ucp_ep_update_flags(ep, 0, UCP_EP_FLAG_FLUSH_STATE_VALID);
 }
 
 /* Since release function resets EP ID to @ref UCS_PTR_MAP_KEY_INVALID and PTR
@@ -423,16 +513,31 @@ void ucp_ep_config_key_set_err_mode(ucp_ep_config_key_t *key,
                     UCP_ERR_HANDLING_MODE_PEER : UCP_ERR_HANDLING_MODE_NONE;
 }
 
+ucs_status_t
+ucp_ep_config_err_mode_check_mismatch(ucp_ep_h ep,
+                                      ucp_err_handling_mode_t err_mode)
+{
+    if (ucp_ep_config(ep)->key.err_mode != err_mode) {
+        ucs_error("ep %p: asymmetric endpoint configuration is not supported,"
+                  " error handling level mismatch (expected: %d, got: %d)",
+                  ep, ucp_ep_config(ep)->key.err_mode, err_mode);
+        return UCS_ERR_UNSUPPORTED;
+    }
+
+    return UCS_OK;
+}
+
+
+/* Handles a case where the existing endpoint is incomplete */
 static ucs_status_t
 ucp_ep_adjust_params(ucp_ep_h ep, const ucp_ep_params_t *params)
 {
-    /* handle a case where the existing endpoint is incomplete */
+    ucs_status_t status;
 
     if (params->field_mask & UCP_EP_PARAM_FIELD_ERR_HANDLING_MODE) {
-        if (ucp_ep_config(ep)->key.err_mode != params->err_mode) {
-            ucs_error("asymmetric endpoint configuration is not supported, "
-                      "error handling level mismatch");
-            return UCS_ERR_UNSUPPORTED;
+        status = ucp_ep_config_err_mode_check_mismatch(ep, params->err_mode);
+        if (status != UCS_OK) {
+            return status;
         }
     }
 
@@ -505,18 +610,17 @@ ucs_status_t ucp_worker_mem_type_eps_create(ucp_worker_h worker)
     ucs_status_t status;
     void *address_buffer;
     size_t address_length;
+    ucp_tl_bitmap_t mem_access_tls;
     char ep_name[UCP_WORKER_ADDRESS_NAME_MAX];
 
     ucs_memory_type_for_each(mem_type) {
+        ucp_context_get_mem_access_tls(context, mem_type, &mem_access_tls);
         if (UCP_MEM_IS_HOST(mem_type) ||
-            UCS_BITMAP_IS_ZERO_INPLACE(
-                    &context->mem_type_access_tls[mem_type])) {
+            UCS_BITMAP_IS_ZERO_INPLACE(&mem_access_tls)) {
             continue;
         }
 
-        status = ucp_address_pack(worker, NULL,
-                                  &context->mem_type_access_tls[mem_type],
-                                  pack_flags,
+        status = ucp_address_pack(worker, NULL, &mem_access_tls, pack_flags,
                                   context->config.ext.worker_addr_version, NULL,
                                   &address_length, &address_buffer);
         if (status != UCS_OK) {
@@ -546,7 +650,6 @@ ucs_status_t ucp_worker_mem_type_eps_create(ucp_worker_h worker)
             goto err_free_address_list;
         }
 
-        ucp_ep_flush_state_reset(worker->mem_type_ep[mem_type]);
         UCS_ASYNC_UNBLOCK(&worker->async);
 
         ucs_free(local_address.address_list);
@@ -601,21 +704,22 @@ ucs_status_t ucp_ep_init_create_wireup(ucp_ep_h ep, unsigned ep_init_flags,
     ucp_ep_config_key_reset(&key);
     ucp_ep_config_key_set_err_mode(&key, ep_init_flags);
 
-    key.num_lanes           = 1;
+    key.num_lanes = 1;
     /* all operations will use the first lane, which is a stub endpoint before
      * reconfiguration */
-    key.am_lane             = 0;
+    key.am_lane = 0;
     if (ucp_ep_init_flags_has_cm(ep_init_flags)) {
-        key.cm_lane         = 0;
+        key.cm_lane = 0;
         /* Send keepalive on wireup_ep (which will send on aux_ep) */
         if (ep_init_flags & UCP_EP_INIT_ERR_MODE_PEER_FAILURE) {
-            key.ep_check_map |= UCS_BIT(key.cm_lane);
+            key.keepalive_lane = 0;
         }
     } else {
         key.wireup_msg_lane = 0;
     }
 
-    status = ucp_worker_get_ep_config(ep->worker, &key, 0, &ep->cfg_index);
+    status = ucp_worker_get_ep_config(ep->worker, &key, ep_init_flags,
+                                      &ep->cfg_index);
     if (status != UCS_OK) {
         return status;
     }
@@ -647,8 +751,8 @@ ucp_ep_create_to_worker_addr(ucp_worker_h worker,
     ucp_ep_h ep;
 
     /* allocate endpoint */
-    status = ucp_worker_create_ep(worker, ep_init_flags, remote_address->name,
-                                  message, &ep);
+    status = ucp_ep_create_base(worker, ep_init_flags, remote_address->name,
+                                message, &ep);
     if (status != UCS_OK) {
         goto err;
     }
@@ -695,8 +799,8 @@ static ucs_status_t ucp_ep_create_to_sock_addr(ucp_worker_h worker,
     ep_init_flags = ucp_ep_init_flags(worker, params) |
                     ucp_cm_ep_init_flags(params);
 
-    status = ucp_worker_create_ep(worker, ep_init_flags, peer_name,
-                                  "from api call", &ep);
+    status = ucp_ep_create_base(worker, ep_init_flags, peer_name,
+                                "from api call", &ep);
     if (status != UCS_OK) {
         goto err;
     }
@@ -720,8 +824,6 @@ static ucs_status_t ucp_ep_create_to_sock_addr(ucp_worker_h worker,
     if (status != UCS_OK) {
         goto err_cleanup_lanes;
     }
-
-    ucp_ep_flush_state_reset(ep);
 
     *ep_p = ep;
     return UCS_OK;
@@ -861,6 +963,8 @@ static ucs_status_t
 ucp_ep_create_api_to_worker_addr(ucp_worker_h worker,
                                  const ucp_ep_params_t *params, ucp_ep_h *ep_p)
 {
+    ucp_context_h context  = worker->context;
+    unsigned ep_init_flags = ucp_ep_init_flags(worker, params);
     ucp_unpacked_address_t remote_address;
     ucp_ep_match_conn_sn_t conn_sn;
     ucs_status_t status;
@@ -901,17 +1005,15 @@ ucp_ep_create_api_to_worker_addr(ucp_worker_h worker,
     if (ep != NULL) {
         status = ucp_ep_adjust_params(ep, params);
         if (status != UCS_OK) {
-            ucp_ep_destroy_internal(ep);
+            goto err_destroy_ep;
         }
 
-        ucp_ep_flush_state_reset(ep);
         ucp_stream_ep_activate(ep);
-        goto out_free_address;
+        goto out_resolve_remote_id;
     }
 
     status = ucp_ep_create_to_worker_addr(worker, &ucp_tl_bitmap_max,
-                                          &remote_address,
-                                          ucp_ep_init_flags(worker, params),
+                                          &remote_address, ep_init_flags,
                                           "from api call", &ep);
     if (status != UCS_OK) {
         goto out_free_address;
@@ -934,16 +1036,14 @@ ucp_ep_create_api_to_worker_addr(ucp_worker_h worker,
     if ((remote_address.uuid == worker->uuid) &&
         !(flags & UCP_EP_PARAMS_FLAGS_NO_LOOPBACK)) {
         ucp_ep_update_remote_id(ep, ucp_ep_local_id(ep));
-        ucp_ep_flush_state_reset(ep);
     } else if (!ucp_ep_match_insert(worker, ep, remote_address.uuid, conn_sn,
                                     UCS_CONN_MATCH_QUEUE_EXP)) {
-        if (worker->context->config.features & UCP_FEATURE_STREAM) {
+        if (context->config.features & UCP_FEATURE_STREAM) {
             status = UCS_ERR_EXCEEDS_LIMIT;
             ucs_error("worker %p: failed to create the endpoint without"
                       "connection matching and Stream API support", worker);
             goto err_destroy_ep;
         }
-        ucp_ep_flush_state_reset(ep);
     }
 
     /* if needed, send initial wireup message */
@@ -957,6 +1057,20 @@ ucp_ep_create_api_to_worker_addr(ucp_worker_h worker,
 
     status = UCS_OK;
 
+out_resolve_remote_id:
+    if ((context->config.ext.resolve_remote_ep_id == UCS_CONFIG_ON) ||
+        ((context->config.ext.resolve_remote_ep_id == UCS_CONFIG_AUTO) &&
+         (ep_init_flags & UCP_EP_INIT_ERR_MODE_PEER_FAILURE) &&
+         ucp_worker_keepalive_is_enabled(worker))) {
+        /* If resolving remote ID forced by configuration or PEER_FAILURE
+         * and keepalive were requested, resolve remote endpoint ID prior to
+         * communicating with a peer to make sure that remote peer's endpoint
+         * won't be changed during runtime */
+        status = ucp_ep_resolve_remote_id(ep, ep->am_lane);
+        if (ucs_unlikely(status != UCS_OK)) {
+            goto out_free_address;
+        }
+    }
 out_free_address:
     ucs_free(remote_address.address_list);
 out:
@@ -1023,7 +1137,10 @@ ucs_status_t ucp_ep_create(ucp_worker_h worker, const ucp_ep_params_t *params,
         ucp_ep_params_check_err_handling(ep, params);
         ucp_ep_update_flags(ep, UCP_EP_FLAG_USED, 0);
         *ep_p = ep;
+    } else {
+        ++worker->counters.ep_creation_failures;
     }
+    ++worker->counters.ep_creations;
 
     UCS_ASYNC_UNBLOCK(&worker->async);
     return status;
@@ -1054,7 +1171,13 @@ void ucp_ep_err_pending_purge(uct_pending_req_t *self, void *arg)
     ucp_request_t *req      = ucs_container_of(self, ucp_request_t, send.uct);
     ucs_status_t  status    = UCS_PTR_STATUS(arg);
 
-    ucp_request_send_state_ff(req, status);
+    /* TODO: check for context->config.ext.proto_enable when all protocols are
+     *       implemented, such as flush, AM/RNDV, etc */
+    if (req->flags & UCP_REQUEST_FLAG_PROTO_SEND) {
+        ucp_proto_request_abort(req, status);
+    } else {
+        ucp_request_send_state_ff(req, status);
+    }
 }
 
 void ucp_destroyed_ep_pending_purge(uct_pending_req_t *self, void *arg)
@@ -1091,10 +1214,10 @@ void ucp_ep_destroy_internal(ucp_ep_h ep)
 static void ucp_ep_check_lanes(ucp_ep_h ep)
 {
 #if UCS_ENABLE_ASSERT
-    uint8_t num_inprog       = ep->discard_refcount + ep->flush_iter_refcount;
+    uint8_t num_inprog       = ep->refcounts.discard + ep->refcounts.flush +
+                               ep->refcounts.create;
     uint8_t num_failed_tl_ep = 0;
     ucp_lane_index_t lane;
-
 
     for (lane = 0; lane < ucp_ep_num_lanes(ep); ++lane) {
         num_failed_tl_ep += ucp_is_uct_ep_failed(ep->uct_eps[lane]);
@@ -1102,17 +1225,7 @@ static void ucp_ep_check_lanes(ucp_ep_h ep)
 
     ucs_assert((num_failed_tl_ep == 0) ||
                (ucp_ep_num_lanes(ep) == num_failed_tl_ep));
-
-    if (num_failed_tl_ep != 0) {
-        /* EP reference count is the number of outstanding flush operations and
-         * discards, plus 1 if not destroyed yet */
-        ucs_assert((ep->refcount == num_inprog) ||
-                   (ep->refcount == (num_inprog + 1)));
-    } else {
-        /* EP is used, so reference count is the number of outstanding flush
-         * operations and discards plus 1 */
-        ucs_assert(ep->refcount == (num_inprog + 1));
-    }
+    ucp_ep_refcount_field_assert(ep, refcount, ==, num_inprog);
 #endif
 }
 
@@ -1137,6 +1250,27 @@ static void ucp_ep_set_lanes_failed(ucp_ep_h ep, uct_ep_h *uct_eps)
     }
 }
 
+void ucp_ep_unprogress_uct_ep(ucp_ep_h ep, uct_ep_h uct_ep,
+                              ucp_rsc_index_t rsc_index)
+{
+    ucp_worker_iface_t *wiface;
+
+    if ((rsc_index == UCP_NULL_RESOURCE) ||
+        !ep->worker->context->config.ext.adaptive_progress ||
+        /* Do not unprogress an already failed lane */
+        ucp_is_uct_ep_failed(uct_ep) ||
+        ucp_wireup_ep_test(uct_ep)) {
+        return;
+    }
+
+    wiface = ucp_worker_iface(ep->worker, rsc_index);
+    ucs_debug("ep %p: unprogress iface %p " UCT_TL_RESOURCE_DESC_FMT,
+              ep, wiface->iface,
+              UCT_TL_RESOURCE_DESC_ARG(
+              &(ep->worker->context->tl_rscs[rsc_index].tl_rsc)));
+    ucp_worker_iface_unprogress_ep(wiface);
+}
+
 static void ucp_ep_discard_lanes_callback(void *request, ucs_status_t status,
                                           void *user_data)
 {
@@ -1153,13 +1287,69 @@ static void ucp_ep_discard_lanes_callback(void *request, ucs_status_t status,
     ucs_free(arg);
 }
 
+static void ucp_ep_discard_lanes(ucp_ep_h ep, ucs_status_t discard_status)
+{
+    unsigned ep_flush_flags         = (ucp_ep_config(ep)->key.err_mode ==
+                                       UCP_ERR_HANDLING_MODE_NONE) ?
+                                      UCT_FLUSH_FLAG_LOCAL :
+                                      UCT_FLUSH_FLAG_CANCEL;
+    uct_ep_h uct_eps[UCP_MAX_LANES] = { NULL };
+    ucp_ep_discard_lanes_arg_t *discard_arg;
+    ucs_status_t status;
+    ucp_lane_index_t lane;
+    uct_ep_h uct_ep;
+
+    if (ep->flags & UCP_EP_FLAG_FAILED) {
+        /* Avoid calling ucp_ep_discard_lanes_callback() that will purge UCP
+         * endpoint's requests, if we already started discard and purge process
+         * this endpoint. Doing so could complete send requests before UCT lanes
+         * using them are flushed and destroyed. */
+        return;
+    }
+
+    discard_arg = ucs_malloc(sizeof(*discard_arg), "discard_lanes_arg");
+    if (discard_arg == NULL) {
+        ucs_error("ep %p: failed to allocate memory for discarding lanes"
+                  " argument", ep);
+        ucp_ep_cleanup_lanes(ep); /* Just close all UCT endpoints */
+        ucp_ep_reqs_purge(ep, discard_status);
+        return;
+    }
+
+    discard_arg->ucp_ep  = ep;
+    discard_arg->status  = discard_status;
+    discard_arg->counter = 1;
+
+    ucs_debug("ep %p: discarding lanes", ep);
+    ucp_ep_set_lanes_failed(ep, uct_eps);
+    for (lane = 0; lane < ucp_ep_num_lanes(ep); ++lane) {
+        uct_ep = uct_eps[lane];
+        if (uct_ep == NULL) {
+            continue;
+        }
+
+        ucs_debug("ep %p: discard uct_ep[%d]=%p", ep, lane, uct_ep);
+        status = ucp_worker_discard_uct_ep(ep, uct_ep,
+                                           ucp_ep_get_rsc_index(ep, lane),
+                                           ep_flush_flags,
+                                           ucp_ep_err_pending_purge,
+                                           UCS_STATUS_PTR(discard_status),
+                                           ucp_ep_discard_lanes_callback,
+                                           discard_arg);
+        if (status == UCS_INPROGRESS) {
+            ++discard_arg->counter;
+        }
+    }
+
+    ucp_ep_discard_lanes_callback(NULL, UCS_OK, discard_arg);
+}
+
 ucs_status_t
 ucp_ep_set_failed(ucp_ep_h ucp_ep, ucp_lane_index_t lane, ucs_status_t status)
 {
     UCS_STRING_BUFFER_ONSTACK(lane_info_strb, 64);
     ucp_ep_ext_control_t *ep_ext_control = ucp_ep_ext_control(ucp_ep);
     ucp_err_handling_mode_t err_mode;
-    ucp_ep_discard_lanes_arg_t *discard_arg;
     ucs_log_level_t log_level;
     ucp_request_t *close_req;
 
@@ -1181,31 +1371,18 @@ ucp_ep_set_failed(ucp_ep_h ucp_ep, ucp_lane_index_t lane, ucs_status_t status)
         return UCS_OK;
     }
 
-    discard_arg = ucs_malloc(sizeof(*discard_arg), "discard_lanes_arg");
-    if (discard_arg == NULL) {
-        ucs_error("ep %p: failed to allocate memory for discarding lanes"
-                  " argument", ucp_ep);
-        return UCS_ERR_NO_MEMORY;
-    }
+    ++ucp_ep->worker->counters.ep_failures;
 
     /* The EP can be closed from last completion callback */
-    discard_arg->ucp_ep   = ucp_ep;
-    discard_arg->status   = status;
-    discard_arg->counter  = 1;
-    discard_arg->counter += ucp_ep_discard_lanes(ucp_ep, status,
-                                                 ucp_ep_discard_lanes_callback,
-                                                 discard_arg);
-    ucp_ep_discard_lanes_callback(NULL, UCS_OK, discard_arg);
-
+    ucp_ep_discard_lanes(ucp_ep, status);
     ucp_stream_ep_cleanup(ucp_ep, status);
 
     if (ucp_ep->flags & UCP_EP_FLAG_USED) {
         if (ucp_ep->flags & UCP_EP_FLAG_CLOSED) {
-            if (ucp_ep->flags & UCP_EP_FLAG_CLOSE_REQ_VALID) {
+            if (ep_ext_control->close_req != NULL) {
                 /* Promote close operation to CANCEL in case of transport error,
                  * since the disconnect event may never arrive. */
-                close_req                        =
-                        ep_ext_control->close_req.req;
+                close_req                        = ep_ext_control->close_req;
                 close_req->send.flush.uct_flags |= UCT_FLUSH_FLAG_CANCEL;
                 ucp_ep_local_disconnect_progress(close_req);
             }
@@ -1291,6 +1468,8 @@ void ucp_ep_cleanup_lanes(ucp_ep_h ep)
 
         ucs_debug("ep %p: pending & destroy uct_ep[%d]=%p", ep, lane, uct_ep);
         uct_ep_pending_purge(uct_ep, ucp_destroyed_ep_pending_purge, ep);
+        ucp_ep_unprogress_uct_ep(ep, uct_ep, ucp_ep_get_rsc_index(ep, lane));
+
         /* coverity wrongly resolves ucp_failed_tl_ep's no-op EP destroy
          * function to 'ucp_proxy_ep_destroy' */
         /* coverity[incorrect_free] */
@@ -1308,7 +1487,6 @@ void ucp_ep_disconnected(ucp_ep_h ep, int force)
 
     ucp_stream_ep_cleanup(ep, UCS_ERR_CANCELED);
     ucp_am_ep_cleanup(ep);
-    ucp_ep_reqs_purge(ep, UCS_ERR_CANCELED);
 
     ucp_ep_update_flags(ep, 0, UCP_EP_FLAG_USED);
 
@@ -1350,11 +1528,10 @@ unsigned ucp_ep_local_disconnect_progress(void *arg)
 static void ucp_ep_set_close_request(ucp_ep_h ep, ucp_request_t *request,
                                      const char *debug_msg)
 {
+    ucs_assertv(ucp_ep_ext_control(ep)->close_req == NULL,
+                "ep=%p: close_req=%p", ep, ucp_ep_ext_control(ep)->close_req);
     ucs_trace("ep %p: setting close request %p, %s", ep, request, debug_msg);
-
-    ucp_ep_flush_state_invalidate(ep);
-    ucp_ep_ext_control(ep)->close_req.req = request;
-    ucp_ep_update_flags(ep, UCP_EP_FLAG_CLOSE_REQ_VALID, 0);
+    ucp_ep_ext_control(ep)->close_req = request;
 }
 
 void ucp_ep_register_disconnect_progress(ucp_request_t *req)
@@ -1417,44 +1594,6 @@ ucs_status_ptr_t ucp_ep_close_nb(ucp_ep_h ep, unsigned mode)
     return ucp_ep_close_nbx(ep, &param);
 }
 
-unsigned ucp_ep_discard_lanes(ucp_ep_h ep, ucs_status_t discard_status,
-                              ucp_send_nbx_callback_t discard_cb,
-                              ucp_ep_discard_lanes_arg_t *discard_arg)
-{
-    unsigned ep_flush_flags         = (ucp_ep_config(ep)->key.err_mode ==
-                                       UCP_ERR_HANDLING_MODE_NONE) ?
-                                      UCT_FLUSH_FLAG_LOCAL:
-                                      UCT_FLUSH_FLAG_CANCEL;
-    uct_ep_h uct_eps[UCP_MAX_LANES] = { NULL };
-    unsigned num_discard_lanes      = 0;
-    ucs_status_t status;
-    ucp_lane_index_t lane;
-    uct_ep_h uct_ep;
-
-    ucs_debug("ep %p: discarding lanes", ep);
-
-    ucp_ep_set_lanes_failed(ep, uct_eps);
-
-    for (lane = 0; lane < ucp_ep_num_lanes(ep); ++lane) {
-        uct_ep = uct_eps[lane];
-        if (uct_ep == NULL) {
-            continue;
-        }
-
-        ucs_debug("ep %p: discard uct_ep[%d]=%p", ep, lane, uct_ep);
-
-        status = ucp_worker_discard_uct_ep(ep, uct_ep, ep_flush_flags,
-                                           ucp_ep_err_pending_purge,
-                                           UCS_STATUS_PTR(discard_status),
-                                           discard_cb, discard_arg);
-        if (status == UCS_INPROGRESS) {
-            ++num_discard_lanes;
-        }
-    }
-
-    return num_discard_lanes;
-}
-
 ucs_status_ptr_t ucp_ep_close_nbx(ucp_ep_h ep, const ucp_request_param_t *param)
 {
     ucp_worker_h  worker = ep->worker;
@@ -1480,9 +1619,7 @@ ucs_status_ptr_t ucp_ep_close_nbx(ucp_ep_h ep, const ucp_request_param_t *param)
     ucp_ep_update_flags(ep, UCP_EP_FLAG_CLOSED, 0);
 
     if (ucp_request_param_flags(param) & UCP_EP_CLOSE_FLAG_FORCE) {
-        ucp_ep_discard_lanes(ep, UCS_ERR_CANCELED,
-                             (ucp_send_nbx_callback_t)ucs_empty_function,
-                             NULL);
+        ucp_ep_discard_lanes(ep, UCS_ERR_CANCELED);
         ucp_ep_disconnected(ep, 1);
     } else {
         request = ucp_ep_flush_internal(ep, 0, param, NULL,
@@ -1503,6 +1640,8 @@ ucs_status_ptr_t ucp_ep_close_nbx(ucp_ep_h ep, const ucp_request_param_t *param)
             }
         }
     }
+
+    ++worker->counters.ep_closures;
 
 out:
     UCS_ASYNC_UNBLOCK(&worker->async);
@@ -1650,8 +1789,8 @@ int ucp_ep_config_is_equal(const ucp_ep_config_key_t *key1,
         (key1->tag_lane != key2->tag_lane) ||
         (key1->wireup_msg_lane != key2->wireup_msg_lane) ||
         (key1->cm_lane != key2->cm_lane) ||
+        (key1->keepalive_lane != key2->keepalive_lane) ||
         (key1->rkey_ptr_lane != key2->rkey_ptr_lane) ||
-        (key1->ep_check_map != key2->ep_check_map) ||
         (key1->err_mode != key2->err_mode)) {
         return 0;
     }
@@ -1671,10 +1810,11 @@ int ucp_ep_config_is_equal(const ucp_ep_config_key_t *key1,
     return 1;
 }
 
-static void ucp_ep_config_calc_params(ucp_worker_h worker,
-                                      const ucp_ep_config_t *config,
-                                      const ucp_lane_index_t *lanes,
-                                      ucp_ep_thresh_params_t *params)
+static ucs_status_t ucp_ep_config_calc_params(ucp_worker_h worker,
+                                              const ucp_ep_config_t *config,
+                                              const ucp_lane_index_t *lanes,
+                                              ucp_ep_thresh_params_t *params,
+                                              int eager)
 {
     ucp_context_h context = worker->context;
     ucp_md_map_t md_map   = 0;
@@ -1683,6 +1823,10 @@ static void ucp_ep_config_calc_params(ucp_worker_h worker,
     ucp_md_index_t md_index;
     uct_md_attr_t *md_attr;
     uct_iface_attr_t *iface_attr;
+    ucp_worker_iface_t *wiface;
+    uct_perf_attr_t perf_attr;
+    ucs_status_t status;
+    double bw;
     int i;
 
     memset(params, 0, sizeof(*params));
@@ -1709,30 +1853,61 @@ static void ucp_ep_config_calc_params(ucp_worker_h worker,
             }
         }
 
-        params->bw += ucp_tl_iface_bandwidth(context, &iface_attr->bandwidth);
+        bw = ucp_tl_iface_bandwidth(context, &iface_attr->bandwidth);
+        if (eager && (iface_attr->cap.am.max_bcopy > 0)) {
+            /* Eager protocol has overhead for each fragment */
+            perf_attr.field_mask = UCT_PERF_ATTR_FIELD_OPERATION |
+                                   UCT_PERF_ATTR_FIELD_SEND_PRE_OVERHEAD |
+                                   UCT_PERF_ATTR_FIELD_SEND_POST_OVERHEAD;
+            perf_attr.operation  = UCT_EP_OP_AM_ZCOPY;
+
+            wiface = ucp_worker_iface(worker, rsc_index);
+            status = uct_iface_estimate_perf(wiface->iface, &perf_attr);
+            if (status != UCS_OK) {
+                return status;
+            }
+
+            params->bw += 1.0 / ((1.0 / bw) + ((perf_attr.send_pre_overhead +
+                                                perf_attr.send_post_overhead) /
+                                               iface_attr->cap.am.max_bcopy));
+        } else {
+            params->bw += bw;
+        }
     }
+
+    return UCS_OK;
 }
 
-static size_t ucp_ep_config_calc_rndv_thresh(ucp_worker_t *worker,
-                                             const ucp_ep_config_t *config,
-                                             const ucp_lane_index_t *eager_lanes,
-                                             const ucp_lane_index_t *rndv_lanes,
-                                             int recv_reg_cost)
+static ucs_status_t
+ucp_ep_config_calc_rndv_thresh(ucp_worker_t *worker,
+                               const ucp_ep_config_t *config,
+                               const ucp_lane_index_t *eager_lanes,
+                               const ucp_lane_index_t *rndv_lanes,
+                               int recv_reg_cost, size_t *thresh_p)
 {
     ucp_context_h context = worker->context;
     double diff_percent   = 1.0 - context->config.ext.rndv_perf_diff / 100.0;
     ucp_ep_thresh_params_t eager_zcopy;
     ucp_ep_thresh_params_t rndv;
-    double numerator, denumerator;
+    double numerator, denominator;
     ucp_rsc_index_t eager_rsc_index;
     uct_iface_attr_t *eager_iface_attr;
+    ucs_status_t status;
     double rts_latency;
 
     /* All formulas and descriptions are listed at
      * https://github.com/openucx/ucx/wiki/Rendezvous-Protocol-threshold-for-multilane-mode */
 
-    ucp_ep_config_calc_params(worker, config, eager_lanes, &eager_zcopy);
-    ucp_ep_config_calc_params(worker, config, rndv_lanes, &rndv);
+    status = ucp_ep_config_calc_params(worker, config, eager_lanes,
+                                       &eager_zcopy, 1);
+    if (status != UCS_OK) {
+        return status;
+    }
+
+    status = ucp_ep_config_calc_params(worker, config, rndv_lanes, &rndv, 0);
+    if (status != UCS_OK) {
+        return status;
+    }
 
     if ((eager_zcopy.bw == 0) || (rndv.bw == 0)) {
         goto fallback;
@@ -1749,17 +1924,23 @@ static size_t ucp_ep_config_calc_rndv_thresh(ucp_worker_t *worker,
                                 (2 * eager_zcopy.overhead) + rndv.overhead) -
                 eager_zcopy.reg_overhead - eager_zcopy.overhead;
 
-    denumerator = eager_zcopy.reg_growth +
+    denominator = eager_zcopy.reg_growth +
                   1.0 / ucs_min(eager_zcopy.bw, context->config.ext.bcopy_bw) -
                   diff_percent *
                   (rndv.reg_growth * (1 + recv_reg_cost) + 1.0 / rndv.bw);
 
-    if ((numerator > 0) && (denumerator > 0)) {
-        return ucs_max(numerator / denumerator, eager_iface_attr->cap.am.max_bcopy);
+    if ((numerator <= 0) || (denominator <= 0)) {
+        goto fallback;
     }
 
+    *thresh_p = ucs_max(numerator / denominator,
+                        eager_iface_attr->cap.am.max_bcopy);
+    return UCS_OK;
+
 fallback:
-    return context->config.ext.rndv_thresh_fallback;
+    *thresh_p = context->config.ext.rndv_thresh_fallback;
+    return UCS_OK;
+
 }
 
 static size_t ucp_ep_thresh(size_t thresh_value, size_t min_value,
@@ -1775,18 +1956,24 @@ static size_t ucp_ep_thresh(size_t thresh_value, size_t min_value,
     return thresh;
 }
 
-static size_t ucp_ep_config_calc_rma_zcopy_thresh(ucp_worker_t *worker,
-                                                  const ucp_ep_config_t *config,
-                                                  const ucp_lane_index_t *rma_lanes)
+static ucs_status_t
+ucp_ep_config_calc_rma_zcopy_thresh(ucp_worker_t *worker,
+                                    const ucp_ep_config_t *config,
+                                    const ucp_lane_index_t *rma_lanes,
+                                    ssize_t *thresh_p)
 {
     ucp_context_h context = worker->context;
     double bcopy_bw       = context->config.ext.bcopy_bw;
     ucp_ep_thresh_params_t rma;
     uct_md_attr_t *md_attr;
-    double numerator, denumerator;
+    double numerator, denominator;
     double reg_overhead, reg_growth;
+    ucs_status_t status;
 
-    ucp_ep_config_calc_params(worker, config, rma_lanes, &rma);
+    status = ucp_ep_config_calc_params(worker, config, rma_lanes, &rma, 0);
+    if (status != UCS_OK) {
+        return status;
+    }
 
     if (rma.bw == 0) {
         goto fallback;
@@ -1802,14 +1989,18 @@ static size_t ucp_ep_config_calc_rma_zcopy_thresh(ucp_worker_t *worker,
     }
 
     numerator   = reg_overhead;
-    denumerator = (1 / bcopy_bw) - reg_growth;
+    denominator = (1 / bcopy_bw) - reg_growth;
 
-    if (denumerator > 0) {
-        return numerator / denumerator;
+    if (denominator <= 0) {
+        goto fallback;
     }
 
+    *thresh_p = numerator / denominator;
+    return UCS_OK;
+
 fallback:
-    return SIZE_MAX;
+    *thresh_p = SIZE_MAX;
+    return UCS_OK;
 }
 
 static void ucp_ep_config_adjust_max_short(ssize_t *max_short,
@@ -1834,23 +2025,28 @@ static void ucp_ep_config_init_short_thresh(ucp_memtype_thresh_t *thresh)
     thresh->memtype_off = -1;
 }
 
-static void ucp_ep_config_set_am_rndv_thresh(
+static ucs_status_t ucp_ep_config_set_am_rndv_thresh(
         ucp_worker_h worker, uct_iface_attr_t *iface_attr,
         uct_md_attr_t *md_attr, ucp_ep_config_t *config, size_t min_rndv_thresh,
         size_t max_rndv_thresh, ucp_rndv_thresh_t *thresh)
 {
     ucp_context_h context = worker->context;
     size_t rndv_thresh, rndv_local_thresh, min_thresh;
+    ucs_status_t status;
 
     ucs_assert(config->key.am_lane != UCP_NULL_LANE);
     ucs_assert(config->key.lanes[config->key.am_lane].rsc_index != UCP_NULL_RESOURCE);
 
     if (context->config.ext.rndv_thresh == UCS_MEMUNITS_AUTO) {
         /* auto - Make UCX calculate the AM rndv threshold on its own.*/
-        rndv_thresh = ucp_ep_config_calc_rndv_thresh(worker, config,
-                                                     config->key.am_bw_lanes,
-                                                     config->key.am_bw_lanes,
-                                                     0);
+        status = ucp_ep_config_calc_rndv_thresh(worker, config,
+                                                config->key.am_bw_lanes,
+                                                config->key.am_bw_lanes,
+                                                0, &rndv_thresh);
+        if (status != UCS_OK) {
+            return status;
+        }
+
         rndv_local_thresh = context->config.ext.rndv_send_nbr_thresh;
         ucs_trace("active message rendezvous threshold is %zu", rndv_thresh);
     } else {
@@ -1864,6 +2060,8 @@ static void ucp_ep_config_set_am_rndv_thresh(
 
     ucs_trace("Active Message rndv threshold is %zu (fast local compl: %zu)",
               thresh->remote, thresh->local);
+
+    return UCS_OK;
 }
 
 static void
@@ -1876,6 +2074,7 @@ ucp_ep_config_set_rndv_thresh(ucp_worker_t *worker, ucp_ep_config_t *config,
     ucp_rsc_index_t rsc_index;
     size_t rndv_thresh, rndv_local_thresh, min_thresh;
     uct_iface_attr_t *iface_attr;
+    ucs_status_t status;
 
     if (lane == UCP_NULL_LANE) {
         goto out_not_supported;
@@ -1890,9 +2089,13 @@ ucp_ep_config_set_rndv_thresh(ucp_worker_t *worker, ucp_ep_config_t *config,
 
     if (context->config.ext.rndv_thresh == UCS_MEMUNITS_AUTO) {
         /* auto - Make UCX calculate the RMA (get_zcopy) rndv threshold on its own.*/
-        rndv_thresh       = ucp_ep_config_calc_rndv_thresh(worker, config,
-                                                           config->key.am_bw_lanes,
-                                                           lanes, 1);
+        status = ucp_ep_config_calc_rndv_thresh(worker, config,
+                                                config->key.am_bw_lanes,
+                                                lanes, 1, &rndv_thresh);
+        if (status != UCS_OK) {
+            goto out_not_supported;
+        }
+
         rndv_local_thresh = context->config.ext.rndv_send_nbr_thresh;
     } else {
         rndv_thresh       = context->config.ext.rndv_thresh;
@@ -2161,6 +2364,7 @@ ucs_status_t ucp_ep_config_init(ucp_worker_h worker, ucp_ep_config_t *config,
     config->tag.eager.zcopy_auto_thresh = 0;
     config->am.zcopy_auto_thresh        = 0;
     config->p2p_lanes                   = 0;
+    config->uct_rkey_pack_flags         = 0;
     if (context->config.ext.bcopy_thresh == UCS_MEMUNITS_AUTO) {
         config->bcopy_thresh = 0;
     } else {
@@ -2204,9 +2408,33 @@ ucs_status_t ucp_ep_config_init(ucp_worker_h worker, ucp_ep_config_t *config,
             config->md_index[lane] = context->tl_rscs[rsc_index].md_index;
             if (ucp_ep_config_connect_p2p(worker, &config->key, rsc_index)) {
                 config->p2p_lanes |= UCS_BIT(lane);
+            } else if (config->key.err_mode == UCP_ERR_HANDLING_MODE_PEER) {
+                config->uct_rkey_pack_flags |= UCT_MD_MKEY_PACK_FLAG_INVALIDATE;
             }
         } else {
             config->md_index[lane] = UCP_NULL_RESOURCE;
+        }
+    }
+
+    /* Memory domains of lanes that require registration and support AM_ZCOPY */
+    for (i = 0; (i < config->key.num_lanes) &&
+                (config->key.am_bw_lanes[i] != UCP_NULL_LANE);
+         ++i) {
+        lane = config->key.am_bw_lanes[i];
+        if (config->md_index[lane] == UCP_NULL_RESOURCE) {
+            continue;
+        }
+
+        md_attr = &context->tl_mds[config->md_index[lane]].attr;
+        if (!ucs_test_all_flags(md_attr->cap.flags,
+                                UCT_MD_FLAG_REG | UCT_MD_FLAG_NEED_MEMH)) {
+            continue;
+        }
+
+        rsc_index  = config->key.lanes[lane].rsc_index;
+        iface_attr = ucp_worker_iface_get_attr(worker, rsc_index);
+        if (iface_attr->cap.flags & UCT_IFACE_FLAG_AM_ZCOPY) {
+            config->am_bw_prereg_md_map |= UCS_BIT(config->md_index[lane]);
         }
     }
 
@@ -2225,7 +2453,7 @@ ucs_status_t ucp_ep_config_init(ucp_worker_h worker, ucp_ep_config_t *config,
             continue;
         }
 
-        md_attr    = &context->tl_mds[context->tl_rscs[rsc_index].md_index].attr;
+        md_attr    = &context->tl_mds[config->md_index[lane]].attr;
         iface_attr = ucp_worker_iface_get_attr(worker, rsc_index);
 
         /* GET Zcopy */
@@ -2248,7 +2476,7 @@ ucs_status_t ucp_ep_config_init(ucp_worker_h worker, ucp_ep_config_t *config,
 
         if (rsc_index != UCP_NULL_RESOURCE) {
             iface_attr = ucp_worker_iface_get_attr(worker, rsc_index);
-            md_attr    = &context->tl_mds[context->tl_rscs[rsc_index].md_index].attr;
+            md_attr    = &context->tl_mds[config->md_index[lane]].attr;
 
             /* GET Zcopy */
             ucp_ep_config_rndv_zcopy_set(context, UCT_IFACE_FLAG_GET_ZCOPY,
@@ -2277,8 +2505,7 @@ ucs_status_t ucp_ep_config_init(ucp_worker_h worker, ucp_ep_config_t *config,
     /* Rkey ptr */
     if (key->rkey_ptr_lane != UCP_NULL_LANE) {
         lane      = key->rkey_ptr_lane;
-        rsc_index = config->key.lanes[lane].rsc_index;
-        md_attr   = &context->tl_mds[context->tl_rscs[rsc_index].md_index].attr;
+        md_attr   = &context->tl_mds[config->md_index[lane]].attr;
         ucs_assert_always(md_attr->cap.flags & UCT_MD_FLAG_RKEY_PTR);
 
         config->rndv.rkey_ptr_dst_mds =
@@ -2323,11 +2550,13 @@ ucs_status_t ucp_ep_config_init(ucp_worker_h worker, ucp_ep_config_t *config,
                                               min_rndv_thresh, max_rndv_thresh,
                                               &config->tag.rndv.rma_thresh);
 
-                md_attr = &context->tl_mds[context->tl_rscs[rsc_index].md_index].attr;
-                ucp_ep_config_set_am_rndv_thresh(worker, iface_attr, md_attr,
-                                                 config, min_am_rndv_thresh,
-                                                 max_am_rndv_thresh,
-                                                 &config->tag.rndv.am_thresh);
+                md_attr = &context->tl_mds[config->md_index[lane]].attr;
+                status = ucp_ep_config_set_am_rndv_thresh(worker, iface_attr,
+                        md_attr, config, min_am_rndv_thresh,
+                        max_am_rndv_thresh, &config->tag.rndv.am_thresh);
+                if (status != UCS_OK) {
+                    goto err_free_dst_mds;
+                }
             }
 
             config->tag.eager.max_short = ucp_ep_config_max_short(
@@ -2349,7 +2578,7 @@ ucs_status_t ucp_ep_config_init(ucp_worker_h worker, ucp_ep_config_t *config,
         rsc_index   = config->key.lanes[lane].rsc_index;
         if (rsc_index != UCP_NULL_RESOURCE) {
             iface_attr = ucp_worker_iface_get_attr(worker, rsc_index);
-            md_attr    = &context->tl_mds[context->tl_rscs[rsc_index].md_index].attr;
+            md_attr    = &context->tl_mds[config->md_index[lane]].attr;
             ucp_ep_config_init_attrs(worker, rsc_index, &config->am,
                                      iface_attr->cap.am.max_bcopy,
                                      iface_attr->cap.am.max_zcopy,
@@ -2383,10 +2612,12 @@ ucs_status_t ucp_ep_config_init(ucp_worker_h worker, ucp_ep_config_t *config,
                                               &config->rndv.rma_thresh);
             }
 
-            ucp_ep_config_set_am_rndv_thresh(worker, iface_attr, md_attr,
-                                             config,
-                                             iface_attr->cap.am.min_zcopy,
-                                             SIZE_MAX, &config->rndv.am_thresh);
+            status = ucp_ep_config_set_am_rndv_thresh(worker, iface_attr,
+                    md_attr, config, iface_attr->cap.am.min_zcopy, SIZE_MAX,
+                    &config->rndv.am_thresh);
+            if (status != UCS_OK) {
+                goto err_free_dst_mds;
+            }
 
             am_max_eager_short = ucp_ep_config_max_short(
                     worker->context, iface_attr, UCT_IFACE_FLAG_AM_SHORT,
@@ -2441,8 +2672,12 @@ ucs_status_t ucp_ep_config_init(ucp_worker_h worker, ucp_ep_config_t *config,
 
     memset(&config->rma, 0, sizeof(config->rma));
 
-    rma_zcopy_thresh = ucp_ep_config_calc_rma_zcopy_thresh(worker, config,
-                                                           config->key.rma_lanes);
+    status = ucp_ep_config_calc_rma_zcopy_thresh(worker, config,
+                                                 config->key.rma_lanes,
+                                                 &rma_zcopy_thresh);
+    if (status != UCS_OK) {
+        goto err_free_dst_mds;
+    }
 
     /* Configuration for remote memory access */
     for (lane = 0; lane < config->key.num_lanes; ++lane) {
@@ -2706,6 +2941,10 @@ void ucp_ep_config_lane_info_str(ucp_worker_h worker,
         ucs_string_buffer_appendf(strbuf, " tag_offload");
     }
 
+    if (key->keepalive_lane == lane) {
+        ucs_string_buffer_appendf(strbuf, " keepalive");
+    }
+
     if (key->wireup_msg_lane == lane) {
         ucs_string_buffer_appendf(strbuf, " wireup");
         if (aux_rsc_index != UCP_NULL_RESOURCE) {
@@ -2757,6 +2996,14 @@ static void ucp_ep_config_print(FILE *stream, ucp_worker_h worker,
                                   config->tag.eager.sync_zcopy_thresh[0],
                                   config->tag.rndv.rma_thresh.remote,
                                   config->tag.rndv.am_thresh.remote);
+    }
+
+    if (context->config.features & UCP_FEATURE_STREAM) {
+        ucp_ep_config_print_proto(stream, "stream_send",
+                                  config->am.max_short,
+                                  config->am.zcopy_thresh[0],
+                                  /* disable rndv */
+                                  SIZE_MAX, SIZE_MAX);
     }
 
     if (context->config.features & UCP_FEATURE_AM) {
@@ -2828,7 +3075,7 @@ static void ucp_ep_print_info_internal(ucp_ep_h ep, const char *name,
 
     if (worker->context->config.ext.proto_enable) {
         ucs_string_buffer_init(&strb);
-        ucp_proto_select_dump(worker, ep->cfg_index, UCP_WORKER_CFG_INDEX_NULL,
+        ucp_proto_select_info(worker, ep->cfg_index, UCP_WORKER_CFG_INDEX_NULL,
                               &config->proto_select, &strb);
         ucs_string_buffer_dump(&strb, "# ", stream);
         ucs_string_buffer_cleanup(&strb);
@@ -2999,29 +3246,21 @@ void ucp_ep_invoke_err_cb(ucp_ep_h ep, ucs_status_t status)
     ucp_ep_ext_control(ep)->err_cb(ucp_ep_ext_gen(ep)->user_data, ep, status);
 }
 
-/* if we have ep2iface transport we need to send an active-message based
- * keepalive message to check the remote endpoint still exists */
-static UCS_F_ALWAYS_INLINE int
-ucp_ep_is_am_keepalive(ucp_ep_h ucp_ep, ucp_rsc_index_t rsc_idx)
+int ucp_ep_is_am_keepalive(ucp_ep_h ep, ucp_rsc_index_t rsc_index, int is_p2p)
 {
-    ucp_worker_iface_t *wiface;
-
-    if (!(ucp_ep->flags & UCP_EP_FLAG_REMOTE_ID) ||
-        (rsc_idx == UCP_NULL_RESOURCE)) {
-        /* if remote ID isn't defined or rsc index is NULL (i.e. it is CM lane),
-         * don't do AM keepalive */
-        return 0;
-    }
-
-    wiface = ucp_worker_iface(ucp_ep->worker, rsc_idx);
-    return ucs_test_all_flags(wiface->attr.cap.flags,
-                              UCT_IFACE_FLAG_CONNECT_TO_IFACE |
-                              UCT_IFACE_FLAG_AM_BCOPY);
+    return /* Not a CM lane */
+            (rsc_index != UCP_NULL_RESOURCE) &&
+            /* Have a remote endpoint ID to send in the keepalive active message */
+            (ep->flags & UCP_EP_FLAG_REMOTE_ID) &&
+            /* Transport is not connected as point-to-point */
+            !is_p2p &&
+            /* Transport supports active messages */
+            (ucp_worker_iface(ep->worker, rsc_index)->flags &
+             UCT_IFACE_FLAG_AM_BCOPY);
 }
 
-ucs_status_t ucp_ep_do_uct_ep_keepalive(ucp_ep_h ucp_ep, uct_ep_h uct_ep,
-                                        ucp_rsc_index_t rsc_idx, unsigned flags,
-                                        uct_completion_t *comp)
+ucs_status_t ucp_ep_do_uct_ep_am_keepalive(ucp_ep_h ucp_ep, uct_ep_h uct_ep,
+                                           ucp_rsc_index_t rsc_idx)
 {
     ucp_tl_bitmap_t tl_bitmap = UCS_BITMAP_ZERO;
     ucs_status_t status;
@@ -3030,16 +3269,6 @@ ucs_status_t ucp_ep_do_uct_ep_keepalive(ucp_ep_h ucp_ep, uct_ep_h uct_ep,
     ucp_wireup_msg_t wireup_msg;
 
     ucs_assert(!(ucp_ep->flags & UCP_EP_FLAG_FAILED));
-    ucs_assert((rsc_idx == UCP_NULL_RESOURCE) ||
-               (ucp_worker_iface(ucp_ep->worker, rsc_idx)->attr.cap.flags &
-                UCT_IFACE_FLAG_EP_CHECK));
-
-    if (!ucp_ep_is_am_keepalive(ucp_ep, rsc_idx)) {
-        return uct_ep_check(uct_ep, flags, comp);
-    }
-
-    ucs_assert(ucp_worker_iface(ucp_ep->worker, rsc_idx)->attr.cap.flags &
-               UCT_IFACE_FLAG_AM_BCOPY);
 
     UCS_BITMAP_SET(tl_bitmap, rsc_idx);
 
@@ -3055,76 +3284,21 @@ ucs_status_t ucp_ep_do_uct_ep_keepalive(ucp_ep_h ucp_ep, uct_ep_h uct_ep,
     wireup_msg_iov[0].iov_len  = sizeof(wireup_msg);
 
     packed_len = uct_ep_am_bcopy(uct_ep, UCP_AM_ID_WIREUP,
-                                 ucp_wireup_msg_pack, wireup_msg_iov, 0);
+                                 ucp_wireup_msg_pack, wireup_msg_iov,
+                                 UCT_SEND_FLAG_PEER_CHECK);
     ucs_free(wireup_msg_iov[1].iov_base);
     return (packed_len > 0) ? UCS_OK : (ucs_status_t)packed_len;
 }
 
-int ucp_ep_do_keepalive(ucp_ep_h ep, ucs_time_t now)
-{
-    ucp_worker_h worker = ep->worker;
-    ucp_lane_index_t lane;
-    ucs_status_t status;
-    ucp_rsc_index_t rsc_index;
-
-    UCP_WORKER_THREAD_CS_CHECK_IS_BLOCKED(ep->worker);
-
-    ucs_assert(!(ep->flags & UCP_EP_FLAG_FAILED));
-    ucs_assert(worker->keepalive.lane_map != 0);
-
-    ucs_for_each_bit(lane, worker->keepalive.lane_map) {
-        ucs_assert(lane < UCP_MAX_LANES);
-        rsc_index = ucp_ep_get_rsc_index(ep, lane);
-        ucs_assert((rsc_index != UCP_NULL_RESOURCE) ||
-                   (lane == ucp_ep_get_cm_lane(ep)));
-
-        ucs_trace("ep %p: do keepalive on lane[%d]=%p ep->flags=0x%x", ep, lane,
-                  ep->uct_eps[lane], ep->flags);
-
-        status = ucp_ep_do_uct_ep_keepalive(ep, ep->uct_eps[lane], rsc_index, 0,
-                                            NULL);
-        if (status == UCS_ERR_NO_RESOURCE) {
-            continue;
-        } else if (status != UCS_OK) {
-            ucs_diag("unexpected return status from doing keepalive(ep=%p, "
-                     "lane[%d]=%p): %s",
-                     ep, lane, ep->uct_eps[lane], ucs_status_string(status));
-        }
-
-        worker->keepalive.lane_map &= ~UCS_BIT(lane);
-    }
-
-    /* Keepalive round is still not finished for this ep - skip ka_last_round
-     * update */
-    if (worker->keepalive.lane_map != 0) {
-        return 0;
-    }
-
-    ucs_trace("worker %p: keepalive done on ep %p, now: <%lf sec>", worker, ep,
-              ucs_time_to_sec(now));
-
-#if UCS_ENABLE_ASSERT
-    ucs_assertv((now - ucp_ep_ext_control(ep)->ka_last_round) >=
-                        worker->context->config.ext.keepalive_interval,
-                "ep %p: now=<%lf sec> ka_last_round=<%lf sec>"
-                "(diff=<%lf sec>) ka_interval=<%lf sec>",
-                ep, ucs_time_to_sec(now),
-                ucs_time_to_sec(ucp_ep_ext_control(ep)->ka_last_round),
-                ucs_time_to_sec(now - ucp_ep_ext_control(ep)->ka_last_round),
-                ucs_time_to_sec(
-                        worker->context->config.ext.keepalive_interval));
-    ucp_ep_ext_control(ep)->ka_last_round = now;
-#endif
-
-    return 1;
-}
-
 static void ucp_ep_req_purge_send(ucp_request_t *req, ucs_status_t status)
 {
-    if ((status != UCS_OK) &&
-        (ucp_ep_config(req->send.ep)->key.err_mode !=
+    ucs_assertv(UCS_STATUS_IS_ERR(status), "req %p: status %s", req,
+                ucs_status_string(status));
+
+    if ((ucp_ep_config(req->send.ep)->key.err_mode !=
          UCP_ERR_HANDLING_MODE_NONE) &&
-        (req->flags & UCP_REQUEST_FLAG_RKEY_INUSE)) {
+        (req->flags & UCP_REQUEST_FLAG_RKEY_INUSE) &&
+        !(req->flags & UCP_REQUEST_FLAG_USER_MEMH)) {
         ucp_request_dt_invalidate(req, status);
         return;
     }
@@ -3212,13 +3386,16 @@ void ucp_ep_reqs_purge(ucp_ep_h ucp_ep, ucs_status_t status)
 
     while (!ucs_hlist_is_empty(proto_reqs)) {
         req = ucs_hlist_head_elem(proto_reqs, ucp_request_t, send.list);
-        ucp_ep_req_purge(ucp_ep, req, status, 0);
+        if (ucp_ep->worker->context->config.ext.proto_enable) {
+            ucp_proto_request_abort(req, status);
+        } else {
+            ucp_ep_req_purge(ucp_ep, req, status, 0);
+        }
     }
 
     if (/* Flush state is already valid (i.e. EP doesn't exist on matching
-         * context) and not invalidated yet, also remote EP ID is already set */
-        !(ucp_ep->flags &
-          (UCP_EP_FLAG_ON_MATCH_CTX | UCP_EP_FLAG_CLOSE_REQ_VALID))) {
+         * context) and not invalidated yet */
+        !(ucp_ep->flags & UCP_EP_FLAG_ON_MATCH_CTX)) {
         flush_state = ucp_ep_flush_state(ucp_ep);
 
         /* Adjust 'comp_sn' value to a value stored in 'send_sn' by emulating
@@ -3234,36 +3411,7 @@ void ucp_ep_reqs_purge(ucp_ep_h ucp_ep, ucs_status_t status)
     }
 }
 
-static void ucp_ep_vfs_show_peer_name(void *obj, ucs_string_buffer_t *strb,
-                                      void *arg_ptr, uint64_t arg_u64)
-{
-    ucp_ep_h ep = obj;
-
-    ucs_string_buffer_appendf(strb, "%s\n", ucp_ep_peer_name(ep));
-}
-
-void ucp_ep_vfs_init(ucp_ep_h ep)
-{
-    ucp_err_handling_mode_t err_mode;
-
-#if ENABLE_DEBUG_DATA
-    ucs_vfs_obj_add_dir(ep->worker, ep, "ep/%s", ep->name);
-    ucs_vfs_obj_add_ro_file(ep, ucs_vfs_show_memory_address, NULL, 0,
-                            "memory_address");
-#else
-    ucs_vfs_obj_add_dir(ep->worker, ep, "ep/%p", ep);
-#endif
-
-    ucs_vfs_obj_add_ro_file(ep, ucp_ep_vfs_show_peer_name, NULL, 0,
-                            "peer_name");
-
-    err_mode = ucp_ep_config(ep)->key.err_mode;
-    ucs_vfs_obj_add_ro_file(ep, ucs_vfs_show_primitive,
-                            (void*)ucp_err_handling_mode_names[err_mode],
-                            UCS_VFS_TYPE_STRING, "error_mode");
-}
-
-static ucs_status_t ucp_ep_query_sockaddr(ucp_ep_h ep, ucp_ep_attr_t *attr)
+ucs_status_t ucp_ep_query_sockaddr(ucp_ep_h ep, ucp_ep_attr_t *attr)
 {
     uct_ep_h uct_cm_ep = ucp_ep_get_cm_uct_ep(ep);
     uct_ep_attr_t uct_cm_ep_attr;
@@ -3289,7 +3437,7 @@ static ucs_status_t ucp_ep_query_sockaddr(ucp_ep_h ep, ucp_ep_attr_t *attr)
         return status;
     }
 
-    if (uct_cm_ep_attr.field_mask & UCT_EP_ATTR_FIELD_LOCAL_SOCKADDR) {
+    if (attr->field_mask & UCP_EP_ATTR_FIELD_LOCAL_SOCKADDR) {
         status = ucs_sockaddr_copy((struct sockaddr*)&attr->local_sockaddr,
                                    (struct sockaddr*)&uct_cm_ep_attr.local_address);
         if (status != UCS_OK) {
@@ -3297,7 +3445,7 @@ static ucs_status_t ucp_ep_query_sockaddr(ucp_ep_h ep, ucp_ep_attr_t *attr)
         }
     }
 
-    if (uct_cm_ep_attr.field_mask & UCT_EP_ATTR_FIELD_REMOTE_SOCKADDR) {
+    if (attr->field_mask & UCP_EP_ATTR_FIELD_REMOTE_SOCKADDR) {
         status = ucs_sockaddr_copy((struct sockaddr*)&attr->remote_sockaddr,
                                    (struct sockaddr*)&uct_cm_ep_attr.remote_address);
         if (status != UCS_OK) {

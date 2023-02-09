@@ -24,7 +24,8 @@
     do { \
         cudaError_t cerr = _code; \
         if (cerr != cudaSuccess) { \
-            UCS_TEST_ABORT(#_code << " failed with code " << cerr \
+            UCS_TEST_ABORT(#_code << " failed: " \
+                    << cudaGetErrorString(cerr) \
                     << _details); \
         } \
     } while (0)
@@ -75,12 +76,22 @@ bool mem_buffer::is_gpu_supported()
 bool mem_buffer::is_rocm_managed_supported()
 {
 #if HAVE_ROCM
-    int device_id, has_managed_mem;
-    return ((hipGetDevice(&device_id) == hipSuccess) &&
-            (hipDeviceGetAttribute(&has_managed_mem,
-                                   hipDeviceAttributeManagedMemory,
-                                   device_id) == hipSuccess) &&
-            has_managed_mem);
+    hipError_t ret;
+    void *dptr;
+    hipPointerAttribute_t attr;
+
+    ret = hipMallocManaged(&dptr, 64);
+    if (ret != hipSuccess) {
+        return false;
+    }
+
+    ret = hipPointerGetAttributes(&attr, dptr);
+    if (ret != hipSuccess) {
+        return false;
+    }
+
+    hipFree(dptr);
+    return attr.memoryType == hipMemoryTypeUnified;
 #else
     return false;
 #endif
@@ -118,6 +129,10 @@ void mem_buffer::set_device_context()
 #if HAVE_CUDA
     if (is_cuda_supported()) {
         cudaSetDevice(0);
+        /* need to call free as context maybe lazily initialized when calling
+         * cudaSetDevice(0) but calling cudaFree(0) should guarantee context
+         * creation upon return */
+        cudaFree(0);
     }
 #endif
 
@@ -301,7 +316,7 @@ void mem_buffer::memset(void *buffer, size_t length, int c,
     case UCS_MEMORY_TYPE_CUDA:
     case UCS_MEMORY_TYPE_CUDA_MANAGED:
         CUDA_CALL(cudaMemset(buffer, c, length),
-                  ": ptr=" << buffer << " value=" << c << "count=" << length);
+                  ": ptr=" << buffer << " value=" << c << " count=" << length);
         CUDA_CALL(cudaDeviceSynchronize(), "");
         break;
 #endif
@@ -358,7 +373,7 @@ void mem_buffer::copy_between(void *dst, const void *src, size_t length,
 #if HAVE_CUDA
     } else if (check_mem_types(dst_mem_type, src_mem_type, cuda_mem_types)) {
         CUDA_CALL(cudaMemcpy(dst, src, length, cudaMemcpyDefault),
-                  ": dst=" << dst << " src=" << src << "length=" << length);
+                  ": dst=" << dst << " src=" << src << " length=" << length);
         CUDA_CALL(cudaDeviceSynchronize(), "");
 #endif
 #if HAVE_ROCM

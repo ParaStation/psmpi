@@ -54,24 +54,32 @@ int MPIR_Typerep_to_iov_offset(const void *buf, MPI_Aint count, MPI_Datatype typ
                                MPI_Aint iov_offset, struct iovec *iov, MPI_Aint max_iov_len,
                                MPI_Aint * actual_iov_len);
 int MPIR_Typerep_iov_len(MPI_Aint count, MPI_Datatype type, MPI_Aint max_iov_bytes,
-                         MPI_Aint * iov_len);
+                         MPI_Aint * iov_len, MPI_Aint * actual_iov_bytes);
 
-int MPIR_Typerep_copy(void *outbuf, const void *inbuf, MPI_Aint num_bytes);
+/* We nearly always just want the total iov number */
+#define MPIR_Typerep_get_iov_len(count, type, iov_len) \
+    MPIR_Typerep_iov_len(count, type, -1, iov_len, NULL)
+
+#define MPIR_TYPEREP_FLAG_NONE          0x0UL
+#define MPIR_TYPEREP_FLAG_STREAM        0x1UL
+
+int MPIR_Typerep_copy(void *outbuf, const void *inbuf, MPI_Aint num_bytes, uint32_t flags);
 int MPIR_Typerep_pack(const void *inbuf, MPI_Aint incount, MPI_Datatype datatype,
                       MPI_Aint inoffset, void *outbuf, MPI_Aint max_pack_bytes,
-                      MPI_Aint * actual_pack_bytes);
+                      MPI_Aint * actual_pack_bytes, uint32_t flags);
 int MPIR_Typerep_unpack(const void *inbuf, MPI_Aint insize,
                         void *outbuf, MPI_Aint outcount, MPI_Datatype datatype, MPI_Aint outoffset,
-                        MPI_Aint * actual_unpack_bytes);
+                        MPI_Aint * actual_unpack_bytes, uint32_t flags);
 int MPIR_Typerep_icopy(void *outbuf, const void *inbuf, MPI_Aint num_bytes,
-                       MPIR_Typerep_req * typereq_req);
+                       MPIR_Typerep_req * typerep_req, uint32_t flags);
 int MPIR_Typerep_ipack(const void *inbuf, MPI_Aint incount, MPI_Datatype datatype,
                        MPI_Aint inoffset, void *outbuf, MPI_Aint max_pack_bytes,
-                       MPI_Aint * actual_pack_bytes, MPIR_Typerep_req * typereq_req);
-int MPIR_Typerep_iunpack(const void *inbuf, MPI_Aint insize,
-                         void *outbuf, MPI_Aint outcount, MPI_Datatype datatype, MPI_Aint outoffset,
-                         MPI_Aint * actual_unpack_bytes, MPIR_Typerep_req * typereq_req);
-int MPIR_Typerep_wait(MPIR_Typerep_req typereq_req);
+                       MPI_Aint * actual_pack_bytes, MPIR_Typerep_req * typerep_req,
+                       uint32_t flags);
+int MPIR_Typerep_iunpack(const void *inbuf, MPI_Aint insize, void *outbuf, MPI_Aint outcount,
+                         MPI_Datatype datatype, MPI_Aint outoffset, MPI_Aint * actual_unpack_bytes,
+                         MPIR_Typerep_req * typerep_req, uint32_t flags);
+int MPIR_Typerep_wait(MPIR_Typerep_req typerep_req);
 
 int MPIR_Typerep_size_external32(MPI_Datatype type);
 int MPIR_Typerep_pack_external(const void *inbuf, MPI_Aint incount, MPI_Datatype datatype,
@@ -87,4 +95,11 @@ int MPIR_Typerep_op(void *source_buf, MPI_Aint source_count, MPI_Datatype source
                     bool source_is_packed, int mapped_device);
 int MPIR_Typerep_reduce(const void *in_buf, void *out_buf, MPI_Aint count, MPI_Datatype datatype,
                         MPI_Op op);
+
+int MPIR_Typerep_pack_stream(const void *inbuf, MPI_Aint incount, MPI_Datatype datatype,
+                             MPI_Aint inoffset, void *outbuf, MPI_Aint max_pack_bytes,
+                             MPI_Aint * actual_pack_bytes, void *stream);
+int MPIR_Typerep_unpack_stream(const void *inbuf, MPI_Aint insize,
+                               void *outbuf, MPI_Aint outcount, MPI_Datatype datatype,
+                               MPI_Aint outoffset, MPI_Aint * actual_unpack_bytes, void *stream);
 #endif /* MPIR_TYPEREP_H_INCLUDED */

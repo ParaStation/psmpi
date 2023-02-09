@@ -147,6 +147,9 @@
     <ClCompile Include="src\hmem_rocr.c">
       <Filter>Source Files\src</Filter>
     </ClCompile>
+    <ClCompile Include="src\hmem_neuron.c">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
     <ClCompile Include="src\rbtree.c">
       <Filter>Source Files\src</Filter>
     </ClCompile>
@@ -358,6 +361,12 @@
       <Filter>Source Files\prov\rxm\src</Filter>
     </ClCompile>
     <ClCompile Include="prov\rxm\src\rxm_rma.c">
+      <Filter>Source Files\prov\rxm\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\rxm\src\rxm_msg.c">
+      <Filter>Source Files\prov\rxm\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\rxm\src\rxm_tagged.c">
       <Filter>Source Files\prov\rxm\src</Filter>
     </ClCompile>
     <ClCompile Include="src\iov.c">
@@ -621,6 +630,9 @@
       <Filter>Header Files\windows</Filter>
     </ClInclude>
     <ClInclude Include="include\windows\pthread.h">
+      <Filter>Header Files\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="include\windows\sched.h">
       <Filter>Header Files\windows</Filter>
     </ClInclude>
     <ClInclude Include="include\windows\unistd.h">

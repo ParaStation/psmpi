@@ -66,19 +66,52 @@ struct ibv_mr *vrb_mr_ibv_reg_dmabuf_mr(struct ibv_pd *pd, const void *buf,
 	void *base;
 	uint64_t offset;
 	int err;
+	struct ibv_mr *mr;
+	int saved_errno = 0;
+	enum { TRY, ALWAYS, NEVER };
+	static int failover_policy = TRY;
+
+	if (failover_policy == ALWAYS)
+		goto failover;
 
 	err = ze_hmem_get_handle((void *)buf, &handle);
 	if (err)
 		return NULL;
 
-	err = ze_hmem_get_base_addr((void *)buf, &base);
+	err = ze_hmem_get_base_addr((void *)buf, &base, NULL);
 	if (err)
 		return NULL;
 
 	offset = (uintptr_t)buf - (uintptr_t)base;
-	return ibv_reg_dmabuf_mr(pd, offset, len, (uint64_t)buf/* iova */,
-				 (int)(uintptr_t)handle/* dmabuf fd */,
-				 vrb_access);
+	mr = ibv_reg_dmabuf_mr(pd, offset, len, (uint64_t)buf/* iova */,
+			       (int)(uintptr_t)handle/* dmabuf fd */,
+			       vrb_access);
+	if (!mr && failover_policy == TRY && vrb_gl_data.peer_mem_support) {
+		saved_errno = errno;
+		goto failover;
+	}
+
+	failover_policy = NEVER;
+	return mr;
+
+failover:
+	mr = ibv_reg_mr(pd, (void *)buf, len, vrb_access);
+	if (!mr) {
+		if (saved_errno) {
+			FI_INFO(&vrb_prov, FI_LOG_MR,
+				"Failover failed: ibv_reg_mr(%p, %zd) error %d\n",
+				buf, len, errno);
+			errno = saved_errno;
+		}
+		return NULL;
+	}
+
+	if (failover_policy == TRY) {
+		failover_policy = ALWAYS;
+		FI_INFO(&vrb_prov, FI_LOG_MR,
+			"Failover on: ibv_reg_dmabuf_mr() ==> ibv_reg_mr()\n");
+	}
+	return mr;
 }
 #endif
 
@@ -99,7 +132,7 @@ int vrb_mr_reg_common(struct vrb_mem_desc *md, int vrb_access, const void *buf,
 		vrb_access |= VRB_ACCESS_ON_DEMAND;
 
 #if VERBS_HAVE_DMABUF_MR
-	if (iface == FI_HMEM_ZE)
+	if (iface == FI_HMEM_ZE && vrb_gl_data.dmabuf_support)
 		md->mr = vrb_mr_ibv_reg_dmabuf_mr(md->domain->pd, buf, len,
 					          vrb_access);
 	else
@@ -151,9 +184,6 @@ vrb_mr_ofi2ibv_access(uint64_t ofi_access, struct vrb_domain *domain)
 			ibv_access |= IBV_ACCESS_REMOTE_WRITE;
 	}
 
-	if (ofi_access & FI_WRITE)
-		ibv_access |= IBV_ACCESS_LOCAL_WRITE;
-
 	if (ofi_access & FI_REMOTE_READ)
 		ibv_access |= IBV_ACCESS_REMOTE_READ;
 
@@ -174,9 +204,6 @@ vrb_mr_nocache_reg(struct vrb_domain *domain, const void *buf, size_t len,
 {
 	struct vrb_mem_desc *md;
 	int ret;
-
-	if (OFI_UNLIKELY(flags & ~OFI_MR_NOCACHE))
-		return -FI_EBADFLAGS;
 
 	md = calloc(1, sizeof(*md));
 	if (OFI_UNLIKELY(!md))
@@ -248,9 +275,6 @@ vrb_mr_cache_reg(struct vrb_domain *domain, const void *buf, size_t len,
 	struct fi_mr_attr attr;
 	struct iovec iov;
 	int ret;
-
-	if (flags & ~OFI_MR_NOCACHE)
-		return -FI_EBADFLAGS;
 
 	attr.access = access;
 	attr.context = context;
@@ -342,6 +366,9 @@ static int vrb_mr_regattr(struct fid *fid, const struct fi_mr_attr *attr,
 	ofi_mr_update_attr(domain->util_domain.fabric->fabric_fid.api_version,
 			   domain->util_domain.info_domain_caps, attr,
 			   &cur_abi_attr);
+
+	if ((flags & FI_HMEM_HOST_ALLOC) && (cur_abi_attr.iface == FI_HMEM_ZE))
+		cur_abi_attr.device.ze = -1;
 
 	return vrb_mr_regv_iface(fid, cur_abi_attr.mr_iov,
 				 cur_abi_attr.iov_count, cur_abi_attr.access,

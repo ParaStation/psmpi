@@ -159,6 +159,10 @@ void MPIDI_OFI_init_hints(struct fi_info *hints)
             hints->domain_attr->mr_mode |= FI_MR_PROV_KEY;
         }
 #endif
+
+#ifdef FI_MR_ENDPOINT
+        hints->domain_attr->mr_mode |= FI_MR_ENDPOINT;
+#endif
     } else {
         /* In old versions FI_MR_BASIC is equivallent to set
          * FI_MR_VIRT_ADDR, FI_MR_PROV_KEY, and FI_MR_ALLOCATED on.
@@ -226,6 +230,7 @@ void MPIDI_OFI_init_settings(MPIDI_OFI_capabilities_t * p_settings, const char *
     UPDATE_SETTING_BY_CAP(enable_mr_virt_address, MPIR_CVAR_CH4_OFI_ENABLE_MR_VIRT_ADDRESS);
     UPDATE_SETTING_BY_CAP(enable_mr_prov_key, MPIR_CVAR_CH4_OFI_ENABLE_MR_PROV_KEY);
     UPDATE_SETTING_BY_CAP(enable_mr_allocated, MPIR_CVAR_CH4_OFI_ENABLE_MR_ALLOCATED);
+    UPDATE_SETTING_BY_CAP(enable_mr_register_null, MPIR_CVAR_CH4_OFI_ENABLE_MR_REGISTER_NULL);
 
     UPDATE_SETTING_BY_CAP(enable_tagged, MPIR_CVAR_CH4_OFI_ENABLE_TAGGED);
     UPDATE_SETTING_BY_CAP(enable_am, MPIR_CVAR_CH4_OFI_ENABLE_AM);
@@ -256,6 +261,9 @@ void MPIDI_OFI_init_settings(MPIDI_OFI_capabilities_t * p_settings, const char *
 
     /* Always required settings */
     MPIDI_OFI_global.settings.require_rdm = 1;
+    UPDATE_SETTING_BY_CAP(num_optimized_memory_regions,
+                          MPIR_CVAR_CH4_OFI_NUM_OPTIMIZED_MEMORY_REGIONS);
+    UPDATE_SETTING_BY_CAP(enable_hmem, MPIR_CVAR_CH4_OFI_ENABLE_HMEM);
 }
 
 #define CHECK_CAP(setting, cond_bad) \
@@ -275,13 +283,6 @@ int MPIDI_OFI_match_provider(struct fi_info *prov,
                              MPIDI_OFI_capabilities_t * optimal, MPIDI_OFI_capabilities_t * minimal)
 {
     int score = 0;
-
-    MPL_DBG_MSG_FMT(MPIDI_CH4_DBG_GENERAL, VERBOSE, (MPL_DBG_FDEST, "Provider name: %s",
-                                                     prov->fabric_attr->prov_name));
-
-    CHECK_CAP(enable_scalable_endpoints,
-              prov->domain_attr->max_ep_tx_ctx <= 1 ||
-              (prov->caps & FI_NAMED_RX_CTX) != FI_NAMED_RX_CTX);
 
     /* From the fi_getinfo manpage: "FI_TAGGED implies the ability to send and receive
      * tagged messages." Therefore no need to specify FI_SEND|FI_RECV.  Moreover FI_SEND

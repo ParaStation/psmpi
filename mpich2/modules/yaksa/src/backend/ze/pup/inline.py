@@ -6,7 +6,7 @@
 
 import sys, os
 
-# inline.py [infile] [outfile] [topdir] [native: 0|1]
+# inline.py [infile] [outfile] [topdir] [native: 0|1|2]
 
 infile = sys.argv[1]
 outfile = sys.argv[2]
@@ -22,7 +22,9 @@ import yutils
 yutils.copyright_c(outfile)
 OUTFILE = open(outfile, 'a')
 
-if native == "1":
+if native == "2":
+    OUTFILE.write("/* native format with multiple devices */\n\n")
+elif native == "1":
     OUTFILE.write("/* native format */\n\n")
 else:
     OUTFILE.write("/* SPIR-V format */\n\n")

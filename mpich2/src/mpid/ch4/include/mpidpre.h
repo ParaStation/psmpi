@@ -22,12 +22,16 @@
 #endif
 #include "uthash.h"
 #include "ch4_csel_container.h"
-#include "ch4i_workq_types.h"
+
+enum {
+    MPIDI_CH4_MT_DIRECT,
+    MPIDI_CH4_MT_LOCKLESS,
+
+    MPIDI_CH4_NUM_MT_MODELS,
+};
 
 #ifdef MPIDI_CH4_USE_MT_DIRECT
 #define MPIDI_CH4_MT_MODEL MPIDI_CH4_MT_DIRECT
-#elif defined MPIDI_CH4_USE_MT_HANDOFF
-#define MPIDI_CH4_MT_MODEL MPIDI_CH4_MT_HANDOFF
 #elif defined MPIDI_CH4_USE_MT_LOCKLESS
 #define MPIDI_CH4_MT_MODEL MPIDI_CH4_MT_LOCKLESS
 #elif defined MPIDI_CH4_USE_MT_RUNTIME
@@ -107,19 +111,19 @@ typedef struct MPIDIG_acc_req_t {
     MPIR_Request *req_ptr;
     MPI_Datatype origin_datatype;
     MPI_Datatype target_datatype;
-    int origin_count;
-    int target_count;
+    MPI_Aint origin_count;
+    MPI_Aint target_count;
     void *target_addr;
     void *flattened_dt;
     void *data;                 /* for origin_data received and result_data being sent (in GET_ACC).
                                  * Not to be confused with result_addr below which saves the
                                  * result_addr parameter. */
     MPI_Aint result_data_sz;    /* only used in GET_ACC */
-    MPI_Op op;
     void *result_addr;
-    int result_count;
+    MPI_Aint result_count;
     void *origin_addr;
     MPI_Datatype result_datatype;
+    MPI_Op op;
 } MPIDIG_acc_req_t;
 
 typedef int (*MPIDIG_req_cmpl_cb) (MPIR_Request * req);
@@ -268,15 +272,28 @@ typedef struct {
     MPIR_Request *match_req;    /* for mrecv */
 } MPIDI_self_request_t;
 
+typedef enum {
+    MPIDI_REQ_TYPE_NONE = 0,
+    MPIDI_REQ_TYPE_AM,
+} MPIDI_REQ_TYPE;
+
 typedef struct MPIDI_Devreq_t {
+    /* completion notification counter: this must be decremented by
+     * the request completion routine, when the completion count hits
+     * zero.  this counter allows us to keep track of the completion
+     * of multiple requests in a single place. */
+    MPIR_cc_t *completion_notification;
+
 #ifndef MPIDI_CH4_DIRECT_NETMOD
     int is_local;
     /* Anysource handling. Netmod and shm specific requests are cross
      * referenced. This must be present all of the time to avoid lots of extra
      * ifdefs in the code. */
-    struct MPIR_Request *anysource_partner_request;
+    struct MPIR_Request *anysrc_partner;
 #endif
 
+    /* initialized to MPIDI_REQ_TYPE_NONE, set when one of the union field is set */
+    MPIDI_REQ_TYPE type;
     union {
         /* The first fields are used by the MPIDIG apis */
         MPIDIG_req_t am;
@@ -297,12 +314,9 @@ typedef struct MPIDI_Devreq_t {
         union {
         MPIDI_SHM_REQUEST_DECL} shm;
 #endif
-
-#ifdef MPIDI_CH4_USE_WORK_QUEUES
-        MPIDI_workq_elemt_t command;
-#endif
     } ch4;
 } MPIDI_Devreq_t;
+
 #define MPIDI_REQUEST_HDR_SIZE              offsetof(struct MPIR_Request, dev.ch4.netmod)
 #define MPIDI_REQUEST(req,field)       (((req)->dev).field)
 #define MPIDIG_REQUEST(req,field)       (((req)->dev.ch4.am).field)
@@ -311,23 +325,15 @@ typedef struct MPIDI_Devreq_t {
 #define MPIDIG_PART_REQUEST(req, field)   (((req)->dev.ch4.part_req).am.field)
 #define MPIDI_SELF_REQUEST(req, field)  (((req)->dev.ch4.self).field)
 
-#ifdef MPIDI_CH4_USE_WORK_QUEUES
-/* `(r)->dev.ch4.am.req` might not be allocated right after SHM_mpi_recv when
- * the operations are enqueued with the handoff model. */
-#define MPIDIG_REQUEST_IN_PROGRESS(r)   ((r)->dev.ch4.am.req && ((r)->dev.ch4.am.req->status & MPIDIG_REQ_IN_PROGRESS))
-#else
 #define MPIDIG_REQUEST_IN_PROGRESS(r)   ((r)->dev.ch4.am.req->status & MPIDIG_REQ_IN_PROGRESS)
-#endif /* #ifdef MPIDI_CH4_USE_WORK_QUEUES */
 
 #ifndef MPIDI_CH4_DIRECT_NETMOD
-#define MPIDI_REQUEST_ANYSOURCE_PARTNER(req)  (((req)->dev).anysource_partner_request)
 #define MPIDI_REQUEST_SET_LOCAL(req, is_local_, partner_) \
     do { \
         (req)->dev.is_local = is_local_; \
-        (req)->dev.anysource_partner_request = partner_; \
+        (req)->dev.anysrc_partner = partner_; \
     } while (0)
 #else
-#define MPIDI_REQUEST_ANYSOURCE_PARTNER(req)  NULL
 #define MPIDI_REQUEST_SET_LOCAL(req, is_local_, partner_)  do { } while (0)
 #endif
 
@@ -388,6 +394,7 @@ typedef struct MPIDIG_win_info_args_t {
      * and it means the user window buffer is allocated over shared memory,
      * thus RMA operation can use shm routines. */
     int alloc_shm;
+    bool optimized_mr;          /* false by default. */
 } MPIDIG_win_info_args_t;
 
 struct MPIDIG_win_lock {
@@ -507,6 +514,7 @@ typedef struct {
     MPIDIG_win_t am;
     int am_vci;                 /* both netmod and shm have to use the same vci for am operations or
                                  * we won't be able to effectively progress at synchronization */
+    int *vci_table;
     union {
     MPIDI_NM_WIN_DECL} netmod;
 #ifndef MPIDI_CH4_DIRECT_NETMOD
@@ -608,21 +616,45 @@ typedef struct MPIDI_Devcomm_t {
 
         MPIDI_rank_map_t map;
         MPIDI_rank_map_t local_map;
+        struct MPIR_Comm *multi_leads_comm;
+        /* sub communicators related for multi-leaders based implementation */
+        struct MPIR_Comm *inter_node_leads_comm, *sub_node_comm, *intra_node_leads_comm;
+        int spanned_num_nodes;  /* comm spans over these number of nodes */
+        /* Pointers to store info of multi-leaders based compositions */
+        struct MPIDI_Multileads_comp_info_t *alltoall_comp_info, *allgather_comp_info,
+            *allreduce_comp_info;
+        int shm_size_per_lead;
+
         void *csel_comm;        /* collective selection handle */
     } ch4;
 } MPIDI_Devcomm_t;
+
+typedef struct MPIDI_Multileads_comp_info_t {
+    int use_multi_leads;        /* if multi-leaders based composition can be used for comm */
+    void *shm_addr;
+} MPIDI_Multileads_comp_info_t;
+
 #define MPIDIG_COMM(comm,field) ((comm)->dev.ch4.am).field
 #define MPIDI_COMM(comm,field) ((comm)->dev.ch4).field
+#define MPIDI_COMM_ALLTOALL(comm,field) ((comm)->dev.ch4.alltoall_comp_info)->field
+#define MPIDI_COMM_ALLGATHER(comm,field) ((comm)->dev.ch4.allgather_comp_info)->field
+#define MPIDI_COMM_ALLREDUCE(comm,field) ((comm)->dev.ch4.allreduce_comp_info)->field
+
 
 typedef struct {
     union {
     MPIDI_NM_OP_DECL} netmod;
 } MPIDI_Devop_t;
 
+typedef struct {
+    struct MPIDU_stream_workq *workq;
+} MPIDI_Devstream_t;
+
 #define MPID_DEV_REQUEST_DECL    MPIDI_Devreq_t  dev;
 #define MPID_DEV_WIN_DECL        MPIDI_Devwin_t  dev;
 #define MPID_DEV_COMM_DECL       MPIDI_Devcomm_t dev;
 #define MPID_DEV_OP_DECL         MPIDI_Devop_t   dev;
+#define MPID_DEV_STREAM_DECL     MPIDI_Devstream_t dev;
 
 typedef struct MPIDI_av_entry {
     union {

@@ -15,26 +15,12 @@ MPIDI_NM_funcs_t *MPIDI_NM_func;
 MPIDI_NM_native_funcs_t *MPIDI_NM_native_func;
 
 MPID_Thread_mutex_t MPIR_THREAD_VCI_HANDLE_POOL_MUTEXES[MPIR_REQUEST_NUM_POOLS];
-#if defined(MPIDI_CH4_USE_WORK_QUEUES)
-struct MPIDI_workq_elemt MPIDI_workq_elemt_direct[MPIDI_WORKQ_ELEMT_PREALLOC];
-
-MPIR_Object_alloc_t MPIDI_workq_elemt_mem = {
-    0, 0, 0, 0, MPIR_INTERNAL, sizeof(struct MPIDI_workq_elemt), MPIDI_workq_elemt_direct,
-    MPIDI_WORKQ_ELEMT_PREALLOC, NULL
-};
-#endif /* #if defined(MPIDI_CH4_USE_WORK_QUEUES) */
 
 /* progress */
 
-#ifdef MPL_TLS
+/* NOTE: MPL_TLS may be empty if it is unavailable. Since we just need ensure global
+ * progress happen, so some race condition or even corruption can be tolerated.  */
 MPL_TLS int global_vci_poll_count = 0;
-#elif defined(MPL_COMPILER_TLS)
-MPL_COMPILER_TLS int global_vci_poll_count;
-#else
-/* We just need ensure global progress happen, so some race condition or even corruption
- * can be tolerated.  */
-int global_vci_poll_count = 0;
-#endif
 
 /* ** HACK **
  * Hack to workaround an Intel compiler bug on macOS. Touching

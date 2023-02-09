@@ -87,6 +87,16 @@ cvars:
         for OFI versions 1.5+. It is equivalent to using FI_MR_BASIC in versions of
         OFI older than 1.5.
 
+    - name        : MPIR_CVAR_CH4_OFI_ENABLE_MR_REGISTER_NULL
+      category    : CH4_OFI
+      type        : int
+      default     : -1
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        If true, memory registration call supports registering with NULL addresses.
+
     - name        : MPIR_CVAR_CH4_OFI_ENABLE_MR_PROV_KEY
       category    : CH4_OFI
       type        : int
@@ -182,6 +192,16 @@ cvars:
       description : >-
         If true, enable iovec for pt2pt.
 
+    - name        : MPIR_CVAR_CH4_OFI_ENABLE_HMEM
+      category    : CH4_OFI
+      type        : int
+      default     : -1
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        If true, enable OFI HMEM support.
+
     - name        : MPIR_CVAR_CH4_OFI_CONTEXT_ID_BITS
       category    : CH4_OFI
       type        : int
@@ -242,18 +262,6 @@ cvars:
         minor version of the OFI library used with MPICH. If using this CVAR,
         it is recommended that the user also specifies a specific OFI provider.
 
-    - name        : MPIR_CVAR_CH4_OFI_MAX_VNIS
-      category    : CH4_OFI
-      type        : int
-      default     : 0
-      class       : none
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_LOCAL
-      description : >-
-        If set to positive, this CVAR specifies the maximum number of CH4 VNIs
-        that OFI netmod exposes. If set to 0 (the default) or bigger than
-        MPIR_CVAR_CH4_NUM_VCIS, the number of exposed VNIs is set to MPIR_CVAR_CH4_NUM_VCIS.
-
     - name        : MPIR_CVAR_CH4_OFI_MAX_RMA_SEP_CTX
       category    : CH4_OFI
       type        : int
@@ -290,6 +298,19 @@ cvars:
       description : >-
         Specifies the number of buffers for receiving active messages.
 
+    - name        : MPIR_CVAR_CH4_OFI_NUM_OPTIMIZED_MEMORY_REGIONS
+      category    : CH4_OFI
+      type        : int
+      default     : 0
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        Specifies the number of optimized memory regions supported by the provider. An optimized
+        memory region is used for lower-overhead, unordered RMA operations. It uses a low-overhead
+        RX path and additionally, a low-overhead packet format may be used to target an optimized
+        memory region.
+
     - name        : MPIR_CVAR_CH4_OFI_RMA_PROGRESS_INTERVAL
       category    : CH4_OFI
       type        : int
@@ -312,28 +333,6 @@ cvars:
       description : >-
         Specifies the maximum number of iovecs to allocate for RMA operations
         to/from noncontiguous buffers.
-
-    - name        : MPIR_CVAR_CH4_OFI_NUM_PACK_BUFFERS_PER_CHUNK
-      category    : CH4_OFI
-      type        : int
-      default     : 16
-      class       : none
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_LOCAL
-      description : >-
-        Specifies the number of buffers for packing/unpacking messages in
-        each block of the pool.
-
-    - name        : MPIR_CVAR_CH4_OFI_MAX_NUM_PACK_BUFFERS
-      category    : CH4_OFI
-      type        : int
-      default     : 0
-      class       : none
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_LOCAL
-      description : >-
-        Specifies the max number of buffers for packing/unpacking messages
-        in the pool. Use 0 for unlimited.
 
     - name        : MPIR_CVAR_CH4_OFI_EAGER_MAX_MSG_SIZE
       category    : CH4_OFI
@@ -422,9 +421,7 @@ static int ofi_am_init(void);
 static int ofi_am_post_recv(int vni, int nic);
 
 static void *host_alloc(uintptr_t size);
-static void *host_alloc_registered(uintptr_t size);
 static void host_free(void *ptr);
-static void host_free_registered(void *ptr);
 
 static int ofi_pvar_init(void)
 {
@@ -490,22 +487,8 @@ static void *host_alloc(uintptr_t size)
     return MPL_malloc(size, MPL_MEM_BUFFER);
 }
 
-static void *host_alloc_registered(uintptr_t size)
-{
-    void *ptr = MPL_malloc(size, MPL_MEM_BUFFER);
-    MPIR_Assert(ptr);
-    MPIR_gpu_register_host(ptr, size);
-    return ptr;
-}
-
 static void host_free(void *ptr)
 {
-    MPL_free(ptr);
-}
-
-static void host_free_registered(void *ptr)
-{
-    MPIR_gpu_unregister_host(ptr);
     MPL_free(ptr);
 }
 
@@ -600,31 +583,14 @@ int MPIDI_OFI_init_local(int *tag_bits)
     /* Create transport level communication contexts.                           */
     /* ------------------------------------------------------------------------ */
 
-    int num_vnis = 1;
-    if (MPIR_CVAR_CH4_OFI_MAX_VNIS == 0 || MPIR_CVAR_CH4_OFI_MAX_VNIS > MPIDI_global.n_vcis) {
-        num_vnis = MPIDI_global.n_vcis;
-    } else {
-        num_vnis = MPIR_CVAR_CH4_OFI_MAX_VNIS;
-    }
-
-    /* TODO: update num_vnis according to provider capabilities, such as
-     * prov_use->domain_attr->{tx,rx}_ctx_cnt
+    /* TODO: check provider capabilities, such as prov_use->domain_attr->{tx,rx}_ctx_cnt,
+     *       abort if we can't support the requested number of vnis.
      */
-    if (num_vnis > MPIDI_OFI_MAX_VNIS) {
-        num_vnis = MPIDI_OFI_MAX_VNIS;
-    }
-    /* for best performance, we ensure 1-to-1 vci/vni mapping. ref: MPIDI_OFI_vci_to_vni */
-    /* TODO: allow less num_vnis. Option 1. runtime MOD; 2. override MPIDI_global.n_vcis */
-    MPIR_Assert(num_vnis == MPIDI_global.n_vcis);
+    int num_vnis = MPIDI_global.n_total_vcis;
 
     /* Multiple vni without using domain require MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS */
 #ifndef MPIDI_OFI_VNI_USE_DOMAIN
     MPIR_Assert(num_vnis == 1 || MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS);
-#endif
-
-    /* WorkQ only works with single vni for now */
-#ifdef MPIDI_CH4_USE_WORK_QUEUES
-    MPIR_Assert(num_vnis == 1);
 #endif
 
     MPIDI_OFI_global.num_vnis = num_vnis;
@@ -640,17 +606,8 @@ int MPIDI_OFI_init_local(int *tag_bits)
     /* index datatypes for RMA atomics. */
     MPIDI_OFI_index_datatypes(MPIDI_OFI_global.ctx[0].tx);
 
-    /* Create pack buffer pool */
-    for (int vni = 0; vni < MPIDI_OFI_global.num_vnis; vni++) {
-        mpi_errno =
-            MPIDU_genq_private_pool_create_unsafe(MPIDI_OFI_DEFAULT_SHORT_SEND_SIZE,
-                                                  MPIR_CVAR_CH4_OFI_NUM_PACK_BUFFERS_PER_CHUNK,
-                                                  MPIR_CVAR_CH4_OFI_MAX_NUM_PACK_BUFFERS,
-                                                  host_alloc_registered,
-                                                  host_free_registered,
-                                                  &MPIDI_OFI_global.per_vni[vni].pack_buf_pool);
-        MPIR_ERR_CHECK(mpi_errno);
-    }
+    /* make sure ch4 pack buffer pool has sufficient cell size */
+    MPIR_Assert(MPIDI_OFI_DEFAULT_SHORT_SEND_SIZE <= MPIR_CVAR_CH4_PACK_BUFFER_SIZE);
 
     ofi_am_init();
     ofi_am_post_recv(0, 0);
@@ -872,7 +829,10 @@ int MPIDI_OFI_mpi_finalize_hook(void)
             mpi_errno = flush_send_queue();
             MPIR_ERR_CHECK(mpi_errno);
         }
+    } else if (MPIR_CVAR_NO_COLLECTIVE_FINALIZE) {
+        /* skip collective work arounds */
     } else if (strcmp("verbs;ofi_rxm", MPIDI_OFI_global.prov_use[0]->fabric_attr->prov_name) == 0
+               || strcmp("psm2", MPIDI_OFI_global.prov_use[0]->fabric_attr->prov_name) == 0
                || strcmp("psm3", MPIDI_OFI_global.prov_use[0]->fabric_attr->prov_name) == 0) {
         /* verbs;ofi_rxm provider need barrier to prevent message loss */
         mpi_errno = MPIR_pmi_barrier();
@@ -920,16 +880,12 @@ int MPIDI_OFI_mpi_finalize_hook(void)
             for (i = 0; i < MPIDI_OFI_NUM_AM_BUFFERS; i++)
                 MPIR_gpu_free_host(MPIDI_OFI_global.per_vni[vni].am_bufs[i]);
 
-            MPIDU_genq_private_pool_destroy_unsafe(MPIDI_OFI_global.per_vni[vni].am_hdr_buf_pool);
+            MPIDU_genq_private_pool_destroy(MPIDI_OFI_global.per_vni[vni].am_hdr_buf_pool);
 
             MPIR_Assert(MPIDI_OFI_global.per_vni[vni].cq_buffered_static_head ==
                         MPIDI_OFI_global.per_vni[vni].cq_buffered_static_tail);
             MPIR_Assert(NULL == MPIDI_OFI_global.per_vni[vni].cq_buffered_dynamic_head);
         }
-    }
-
-    for (int vni = 0; vni < MPIDI_OFI_global.num_vnis; vni++) {
-        MPIDU_genq_private_pool_destroy_unsafe(MPIDI_OFI_global.per_vni[vni].pack_buf_pool);
     }
 
     int err;
@@ -1214,7 +1170,11 @@ static int create_vni_domain(struct fid_domain **p_domain, struct fid_av **p_av,
     struct fi_cntr_attr cntr_attr;
     memset(&cntr_attr, 0, sizeof(cntr_attr));
     cntr_attr.events = FI_CNTR_EVENTS_COMP;
-    cntr_attr.wait_obj = FI_WAIT_UNSPEC;
+    if (MPIDI_OFI_COUNTER_WAIT_OBJECTS) {
+        cntr_attr.wait_obj = FI_WAIT_UNSPEC;
+    } else {
+        cntr_attr.wait_obj = FI_WAIT_NONE;
+    }
     MPIDI_OFI_CALL(fi_cntr_open(domain, &cntr_attr, p_cntr, NULL), openct);
 
   fn_exit:
@@ -1432,6 +1392,7 @@ static void dump_global_settings(void)
     fprintf(stdout, "MPIDI_OFI_ENABLE_SHARED_CONTEXTS: %d\n", MPIDI_OFI_ENABLE_SHARED_CONTEXTS);
     fprintf(stdout, "MPIDI_OFI_ENABLE_MR_VIRT_ADDRESS: %d\n", MPIDI_OFI_ENABLE_MR_VIRT_ADDRESS);
     fprintf(stdout, "MPIDI_OFI_ENABLE_MR_ALLOCATED: %d\n", MPIDI_OFI_ENABLE_MR_ALLOCATED);
+    fprintf(stdout, "MPIDI_OFI_ENABLE_MR_REGISTER_NULL: %d\n", MPIDI_OFI_ENABLE_MR_REGISTER_NULL);
     fprintf(stdout, "MPIDI_OFI_ENABLE_MR_PROV_KEY: %d\n", MPIDI_OFI_ENABLE_MR_PROV_KEY);
     fprintf(stdout, "MPIDI_OFI_ENABLE_TAGGED: %d\n", MPIDI_OFI_ENABLE_TAGGED);
     fprintf(stdout, "MPIDI_OFI_ENABLE_AM: %d\n", MPIDI_OFI_ENABLE_AM);
@@ -1445,6 +1406,8 @@ static void dump_global_settings(void)
     fprintf(stdout, "MPIDI_OFI_ENABLE_PT2PT_NOPACK: %d\n", MPIDI_OFI_ENABLE_PT2PT_NOPACK);
     fprintf(stdout, "MPIDI_OFI_ENABLE_HMEM: %d\n", MPIDI_OFI_ENABLE_HMEM);
     fprintf(stdout, "MPIDI_OFI_NUM_AM_BUFFERS: %d\n", MPIDI_OFI_NUM_AM_BUFFERS);
+    fprintf(stdout, "MPIDI_OFI_NUM_OPTIMIZED_MEMORY_REGIONS: %d\n",
+            MPIDI_OFI_NUM_OPTIMIZED_MEMORY_REGIONS);
     fprintf(stdout, "MPIDI_OFI_CONTEXT_BITS: %d\n", MPIDI_OFI_CONTEXT_BITS);
     fprintf(stdout, "MPIDI_OFI_SOURCE_BITS: %d\n", MPIDI_OFI_SOURCE_BITS);
     fprintf(stdout, "MPIDI_OFI_TAG_BITS: %d\n", MPIDI_OFI_TAG_BITS);
@@ -1509,12 +1472,12 @@ int ofi_am_init(void)
         MPL_COMPILE_TIME_ASSERT(MPIDI_OFI_AM_HDR_POOL_CELL_SIZE
                                 >= sizeof(MPIDI_OFI_am_send_pipeline_request_t));
         for (int vni = 0; vni < MPIDI_OFI_global.num_vnis; vni++) {
-            mpi_errno = MPIDU_genq_private_pool_create_unsafe(MPIDI_OFI_AM_HDR_POOL_CELL_SIZE,
-                                                              MPIDI_OFI_AM_HDR_POOL_NUM_CELLS_PER_CHUNK,
-                                                              0 /* unlimited */ ,
-                                                              host_alloc, host_free,
-                                                              &MPIDI_OFI_global.
-                                                              per_vni[vni].am_hdr_buf_pool);
+            mpi_errno = MPIDU_genq_private_pool_create(MPIDI_OFI_AM_HDR_POOL_CELL_SIZE,
+                                                       MPIDI_OFI_AM_HDR_POOL_NUM_CELLS_PER_CHUNK,
+                                                       0 /* unlimited */ ,
+                                                       host_alloc, host_free,
+                                                       &MPIDI_OFI_global.
+                                                       per_vni[vni].am_hdr_buf_pool);
             MPIR_ERR_CHECK(mpi_errno);
 
             MPIDI_OFI_global.per_vni[vni].cq_buffered_dynamic_head = NULL;

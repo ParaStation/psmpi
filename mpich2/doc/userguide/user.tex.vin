@@ -46,9 +46,10 @@ Mathematics and Computer Science Division\\
 Argonne National Laboratory}
 
 \author{
-Pavan Balaji \and Sudheer Chunduri \and William Gropp \and Yanfei Guo
-\and Shintaro Iwasaki \and Travis Koehring \and Rob Latham \and Ken
-Raffenetti \and Min Si \and Rajeev Thakur \and Hui Zhou
+Abdelhalim Amer \and Pavan Balaji \and Wesley Bland \and William Gropp \and
+Yanfei Guo \and Rob Latham \and Huiwei Lu \and Lena Oden \and Antonio J. Pe\~na
+\and Ken Raffenetti \and Sangmin Seo \and Min Si \and Rajeev Thakur \and
+Junchao Zhang \and Xin Zhao
 }
 
 \maketitle
@@ -582,8 +583,16 @@ specified.
 \label{sec:other-tools}
 MPICH also includes a test suite for MPI functionality; this suite may
 be found in the \texttt{mpich/test/mpi} source directory and can be
-run with the command \texttt{make testing}.  This test suite should
-work with any MPI implementation, not just MPICH.
+run with the command \texttt{make testing} after \texttt{make install}.
+This test suite should work with any MPI implementation, not just MPICH.
+To test a pre-installed MPI implementation:
+\begin{small}
+\begin{verbatim}
+    shell$ cd mpich/test/mpi
+    shell$ ./configure --with-mpi=/path/to/mpi
+    shell$ make testing
+\end{verbatim}
+\end{small}
 
 \clearpage
 \appendix

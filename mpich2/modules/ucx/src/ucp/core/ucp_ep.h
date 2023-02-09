@@ -51,6 +51,37 @@ typedef uint16_t                   ucp_ep_flags_t;
 #endif
 
 
+#define ucp_ep_refcount_add(_ep, _type) \
+({ \
+    ucs_assertv((_ep)->refcount < UINT8_MAX, "ep=%p", _ep); \
+    ++(_ep)->refcount; \
+    UCP_EP_ASSERT_COUNTER_INC(&(_ep)->refcounts._type); \
+})
+
+/* Return 1 if the endpoint was destroyed, 0 if not */
+#define ucp_ep_refcount_remove(_ep, _type) \
+({ \
+    int __ret = 0; \
+    \
+    UCP_EP_ASSERT_COUNTER_DEC(&(_ep)->refcounts._type); \
+    ucs_assertv((_ep)->refcount > 0, "ep=%p", _ep); \
+    if (--(_ep)->refcount == 0) { \
+        ucp_ep_destroy_base(_ep); \
+        __ret = 1; \
+    } \
+    \
+    (__ret); \
+})
+
+#define ucp_ep_refcount_field_assert(_ep, _refcount_field, _cmp, _val) \
+    ucs_assertv((_ep)->_refcount_field _cmp (_val), "ep=%p: %s=%u vs %u", \
+                (_ep), UCS_PP_MAKE_STRING(_refcount_field), \
+                (_ep)->_refcount_field, _val);
+
+#define ucp_ep_refcount_assert(_ep, _type_refcount, _cmp, _val) \
+    ucp_ep_refcount_field_assert(_ep, refcounts._type_refcount, _cmp, _val)
+
+
 #define UCP_SA_DATA_HEADER_VERSION_SHIFT 5
 
 
@@ -72,8 +103,7 @@ enum {
     UCP_EP_FLAG_REMOTE_ID              = UCS_BIT(7), /* remote ID is valid */
     UCP_EP_FLAG_CONNECT_PRE_REQ_QUEUED = UCS_BIT(9), /* Pre-Connection request was queued */
     UCP_EP_FLAG_CLOSED                 = UCS_BIT(10),/* EP was closed */
-    UCP_EP_FLAG_CLOSE_REQ_VALID        = UCS_BIT(11),/* close protocol is started and
-                                                        close_req is valid */
+    /* 11 bit is vacant for a flag */
     UCP_EP_FLAG_ERR_HANDLER_INVOKED    = UCS_BIT(12),/* error handler was called */
     UCP_EP_FLAG_INTERNAL               = UCS_BIT(13),/* the internal EP which holds
                                                         temporary wireup configuration or
@@ -93,7 +123,9 @@ enum {
                                                         @uct_ep_disconnect was called for CM EP */
     UCP_EP_FLAG_CLIENT_CONNECT_CB      = UCS_BIT(23),/* DEBUG: Client connect callback invoked */
     UCP_EP_FLAG_SERVER_NOTIFY_CB       = UCS_BIT(24),/* DEBUG: Server notify callback invoked */
-    UCP_EP_FLAG_DISCONNECT_CB_CALLED   = UCS_BIT(25) /* DEBUG: Got disconnect notification */
+    UCP_EP_FLAG_DISCONNECT_CB_CALLED   = UCS_BIT(25),/* DEBUG: Got disconnect notification */
+    UCP_EP_FLAG_CONNECT_WAIT_PRE_REQ   = UCS_BIT(26) /* DEBUG: Connection pre-request needs to be
+                                                        received from a peer */
 };
 
 
@@ -127,7 +159,11 @@ enum {
     UCP_EP_INIT_CONNECT_TO_IFACE_ONLY  = UCS_BIT(7),  /**< Select transports which
                                                            support CONNECT_TO_IFACE
                                                            mode only */
-    UCP_EP_INIT_CREATE_AM_LANE_ONLY    = UCS_BIT(8)   /**< Endpoint requires an AM lane only */
+    UCP_EP_INIT_CREATE_AM_LANE_ONLY    = UCS_BIT(8),  /**< Endpoint requires an AM lane only */
+    UCP_EP_INIT_KA_FROM_EXIST_LANES    = UCS_BIT(9),  /**< Use only existing lanes to create
+                                                           keepalive lane */
+    UCP_EP_INIT_ALLOW_AM_AUX_TL        = UCS_BIT(10)  /**< Endpoint allows selecting of auxiliary
+                                                           transports for AM lane */
 };
 
 
@@ -161,6 +197,7 @@ struct ucp_ep_config_key {
     ucp_lane_index_t         tag_lane;        /* Lane for tag matching offload (can be NULL) */
     ucp_lane_index_t         wireup_msg_lane; /* Lane for wireup messages (can be NULL) */
     ucp_lane_index_t         cm_lane;         /* Lane for holding a CM connection (can be NULL) */
+    ucp_lane_index_t         keepalive_lane;  /* Lane for checking a connection state (can be NULL) */
 
     /* Lanes for remote memory access, sorted by priority, highest first */
     ucp_lane_index_t         rma_lanes[UCP_MAX_LANES];
@@ -191,9 +228,6 @@ struct ucp_ep_config_key {
      * component index to be used for unpacking remote key from each set bit in
      * reachable_md_map */
     ucp_rsc_index_t          *dst_md_cmpts;
-
-    /* Bitmap of lanes to ep_check keepalive operations. */
-    ucp_lane_map_t           ep_check_map;
 
     /* Error handling mode */
     ucp_err_handling_mode_t  err_mode;
@@ -277,6 +311,30 @@ typedef struct ucp_rndv_zcopy {
 } ucp_ep_rndv_zcopy_config_t;
 
 
+/*
+ * Element in ep peer memory hash. The element represents remote peer shared
+ * memory segement. Having it hashed helps to avoid expensive rkey unpacking
+ * and md registration procedures. Unpacking is expensive, because for shared
+ * memory segments it assumes attach/mmap calls. Registration is needed for
+ * better performance of CPU<->GPU memory transfers and is typically quite
+ * expensive on memtype ep mds, such as cuda copy.
+ */
+typedef struct {
+    /* Unpacked rkey with the only MD supporting RKEY_PTR */
+    ucp_rkey_h       rkey;
+    /* Size of the buffer corresponding to the unpacked rkey */
+    size_t           size;
+    /* MD index corresponding to memtype ep */
+    ucp_md_index_t   md_index;
+    /* Memory handle holding registration of the remote buffer on memtype
+     * ep MD */
+    uct_mem_h        uct_memh;
+} ucp_ep_peer_mem_data_t;
+
+
+KHASH_DECLARE(ucp_ep_peer_mem_hash, uint64_t, ucp_ep_peer_mem_data_t);
+
+
 struct ucp_ep_config {
 
     /* A key which uniquely defines the configuration, and all other fields of
@@ -288,6 +346,9 @@ struct ucp_ep_config {
      * establishment protocols.
      */
     ucp_lane_map_t          p2p_lanes;
+
+    /* Flags which has to be used @ref uct_md_mkey_pack_v2 */
+    unsigned                uct_rkey_pack_flags;
 
     /* Configuration for each lane that provides RMA */
     ucp_ep_rma_config_t     rma[UCP_MAX_LANES];
@@ -371,6 +432,9 @@ struct ucp_ep_config {
 
     /* Protocol selection data */
     ucp_proto_select_t            proto_select;
+
+    /* Bitmap of preregistration for am_bw lanes */
+    ucp_md_map_t                  am_bw_prereg_md_map;
 };
 
 
@@ -397,12 +461,16 @@ typedef struct ucp_ep {
 #endif
 
 #if UCS_ENABLE_ASSERT
-    /* How many Worker flush operations are in-progress where the EP is the next
-     * EP for flushing */
-    unsigned                      flush_iter_refcount;
-    /* How many UCT EP discarding operations are in-progress scheduled for the
-     * EP */
-    unsigned                      discard_refcount;
+    struct {
+        /* How many times the EP create was done */
+        unsigned                      create;
+        /* How many Worker flush operations are in-progress where the EP is the
+         * next EP for flushing */
+        unsigned                      flush;
+        /* How many UCT EP discarding operations are in-progress scheduled for
+         * the EP */
+        unsigned                      discard;
+    } refcounts;
 #endif
 
     UCS_STATS_NODE_DECLARE(stats)
@@ -422,26 +490,20 @@ typedef struct {
 
 
 /**
- * Status of protocol-level remote completions
- */
-typedef struct {
-    ucp_request_t             *req;             /* Flush request which is
-                                                   used in close protocol */
-} ucp_ep_close_proto_req_t;
-
-
-/**
  * Endpoint extension for control data path
  */
 typedef struct {
-    ucp_rsc_index_t          cm_idx; /* CM index */
-    ucs_ptr_map_key_t        local_ep_id; /* Local EP ID */
-    ucs_ptr_map_key_t        remote_ep_id; /* Remote EP ID */
-    ucp_err_handler_cb_t     err_cb; /* Error handler */
-    ucp_ep_close_proto_req_t close_req; /* Close protocol request */
+    ucp_rsc_index_t               cm_idx; /* CM index */
+    ucs_ptr_map_key_t             local_ep_id; /* Local EP ID */
+    ucs_ptr_map_key_t             remote_ep_id; /* Remote EP ID */
+    ucp_err_handler_cb_t          err_cb; /* Error handler */
+    ucp_request_t                 *close_req; /* Close protocol request */
 #if UCS_ENABLE_ASSERT
-    ucs_time_t               ka_last_round; /* Time of last KA round done */
+    ucs_time_t                    ka_last_round; /* Time of last KA round done */
 #endif
+    khash_t(ucp_ep_peer_mem_hash) *peer_mem; /* Hash of remote memory segments
+                                                used by 2-stage ppln rndv proto */
+
 } ucp_ep_ext_control_t;
 
 
@@ -553,19 +615,6 @@ typedef struct ucp_conn_request {
 } ucp_conn_request_t;
 
 
-/**
- * Argument for discarding UCP endpoint's lanes
- */
-typedef struct ucp_ep_discard_lanes_arg {
-    unsigned     counter; /* How many discarding operations on UCT lanes are
-                           * in-progress if purging of the UCP endpoint is
-                           * required */
-    ucs_status_t status; /* Completion status of operations after discarding is
-                          * done */
-    ucp_ep_h     ucp_ep; /* UCP endpoint which should be discarded */
-} ucp_ep_discard_lanes_arg_t;
-
-
 int ucp_is_uct_ep_failed(uct_ep_h uct_ep);
 
 void ucp_ep_config_key_reset(ucp_ep_config_key_t *key);
@@ -583,20 +632,23 @@ void ucp_ep_config_lane_info_str(ucp_worker_h worker,
                                  ucp_rsc_index_t aux_rsc_index,
                                  ucs_string_buffer_t *buf);
 
-ucs_status_t ucp_ep_create_base(ucp_worker_h worker, const char *peer_name,
-                                const char *message, ucp_ep_h *ep_p);
+ucs_status_t ucp_ep_create_base(ucp_worker_h worker, unsigned ep_init_flags,
+                                const char *peer_name, const char *message,
+                                ucp_ep_h *ep_p);
 
-void ucp_ep_add_ref(ucp_ep_h ep);
-
-int ucp_ep_remove_ref(ucp_ep_h ep);
-
-ucs_status_t ucp_worker_create_ep(ucp_worker_h worker, unsigned ep_init_flags,
-                                  const char *peer_name, const char *message,
-                                  ucp_ep_h *ep_p);
+void ucp_ep_destroy_base(ucp_ep_h ep);
 
 void ucp_ep_delete(ucp_ep_h ep);
 
+void ucp_ep_flush_state_reset(ucp_ep_h ep);
+
+void ucp_ep_flush_state_invalidate(ucp_ep_h ep);
+
 void ucp_ep_release_id(ucp_ep_h ep);
+
+ucs_status_t
+ucp_ep_config_err_mode_check_mismatch(ucp_ep_h ep,
+                                      ucp_err_handling_mode_t err_mode);
 
 ucs_status_t ucp_ep_init_create_wireup(ucp_ep_h ep, unsigned ep_init_flags,
                                        ucp_wireup_ep_t **wireup_ep);
@@ -618,11 +670,6 @@ ucs_status_ptr_t ucp_ep_flush_internal(ucp_ep_h ep, unsigned req_flags,
                                        ucp_request_callback_t flushed_cb,
                                        const char *debug_name);
 
-ucs_status_t
-ucp_ep_create_sockaddr_aux(ucp_worker_h worker, unsigned ep_init_flags,
-                           const ucp_unpacked_address_t *remote_address,
-                           ucp_ep_h *ep_p);
-
 void ucp_ep_config_key_set_err_mode(ucp_ep_config_key_t *key,
                                     unsigned ep_init_flags);
 
@@ -639,6 +686,9 @@ ucp_ep_set_failed(ucp_ep_h ucp_ep, ucp_lane_index_t lane, ucs_status_t status);
 
 void ucp_ep_set_failed_schedule(ucp_ep_h ucp_ep, ucp_lane_index_t lane,
                                 ucs_status_t status);
+
+void ucp_ep_unprogress_uct_ep(ucp_ep_h ep, uct_ep_h uct_ep,
+                              ucp_rsc_index_t rsc_index);
 
 void ucp_ep_cleanup_lanes(ucp_ep_h ep);
 
@@ -711,38 +761,40 @@ void
 ucp_ep_purge_lanes(ucp_ep_h ep, uct_pending_purge_callback_t purge_cb,
                    void *purge_arg);
 
-unsigned ucp_ep_discard_lanes(ucp_ep_h ep, ucs_status_t discard_status,
-                              ucp_send_nbx_callback_t discard_cb,
-                              ucp_ep_discard_lanes_arg_t *discard_arg);
-
 void ucp_ep_register_disconnect_progress(ucp_request_t *req);
 
 ucp_lane_index_t ucp_ep_lookup_lane(ucp_ep_h ucp_ep, uct_ep_h uct_ep);
 
+void ucp_ep_peer_mem_destroy(ucp_context_h context,
+                             ucp_ep_peer_mem_data_t *data);
+
+ucp_ep_peer_mem_data_t*
+ucp_ep_peer_mem_get(ucp_context_h context, ucp_ep_h ep, uint64_t address,
+                    size_t size, void *rkey_buf, ucp_md_index_t md_index);
+
 /**
- * @brief Do keepalive operation for a specific UCT EP.
+ * @brief Indicates AM-based keepalive necessity.
+ * 
+ * @param [in] ep      UCP endpoint to check.
+ * @param [in] rsc_idx Resource index to check.
+ * @param [in] is_p2p  Flag that indicates whether UCT EP was created as p2p
+ *                     (i.e. CONNECT_TO_EP) or not.
+ *
+ * @return Whether AM-based keepalive is required or not.
+ */
+int ucp_ep_is_am_keepalive(ucp_ep_h ep, ucp_rsc_index_t rsc_idx, int is_p2p);
+
+/**
+ * @brief Do AM-based keepalive operation for a specific UCT EP.
  *
  * @param [in] ucp_ep  UCP Endpoint object to operate keepalive.
  * @param [in] uct_ep  UCT Endpoint object to do keepalive on.
  * @param [in] rsc_idx Resource index to check.
- * @param [in] flags   Flags for keepalive operation.
- * @param [in] comp    Pointer to keepalive completion object.
  *
  * @return Status of keepalive operation.
  */
-ucs_status_t ucp_ep_do_uct_ep_keepalive(ucp_ep_h ucp_ep, uct_ep_h uct_ep,
-                                        ucp_rsc_index_t rsc_idx, unsigned flags,
-                                        uct_completion_t *comp);
-
-/**
- * @brief Do keepalive operation.
- *
- * @param [in] ep    UCP Endpoint object to operate keepalive.
- * @param [in] now   Current time when keepalive started.
- *
- * @return Indication whether keepalive was fully done for UCP Endpoint or not.
- */
-int ucp_ep_do_keepalive(ucp_ep_h ep, ucs_time_t now);
+ucs_status_t ucp_ep_do_uct_ep_am_keepalive(ucp_ep_h ucp_ep, uct_ep_h uct_ep,
+                                           ucp_rsc_index_t rsc_idx);
 
 
 /**
@@ -770,10 +822,14 @@ void ucp_ep_reqs_purge(ucp_ep_h ucp_ep, ucs_status_t status);
 
 
 /**
- * @brief Create objects in VFS to represent endpoint and its features.
+ * @brief Query local and/or remote socket address of endpoint @a ucp_ep.
  *
- * @param [in] ep Endpoint object to be described.
+ * @param [in]     ucp_ep           Endpoint object to query.
+ * @param [inout]  attr             Filled with attributes containing socket
+ *                                  address of the endpoint.
+ *
+ * @return Error code as defined by @ref ucs_status_t
  */
-void ucp_ep_vfs_init(ucp_ep_h ep);
+ucs_status_t ucp_ep_query_sockaddr(ucp_ep_h ucp_ep, ucp_ep_attr_t *attr);
 
 #endif

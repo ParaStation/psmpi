@@ -14,34 +14,49 @@ extern "C" {
 
 #define MPL_DIV_ROUNDUP(total, chunk)  ((total + (chunk - 1)) / chunk)
 
+/* Returns int(log2(number)) */
+static inline int MPL_log2(int number)
+{
+#ifndef MPL_HAVE_BUILTIN_CLZ
+    int p = 0;
+
+    while (number > 0) {
+        number >>= 1;
+        p++;
+    }
+    return p - 1;
+#else
+    /* NOTE: if number < 0, the result is undefined. Add assertion if necessary. */
+    return sizeof(unsigned int) * 8 - __builtin_clz((unsigned int) number) - 1;
+#endif
+}
+
 /* Returns the nearest (smaller than or equal to) power of two of a number*/
 static inline int MPL_pof2(int number)
 {
-    int pof2 = 1;
-
-    while (pof2 <= number)
-        pof2 <<= 1;
-    pof2 >>= 1;
-
-    return pof2;
+    if (number > 0) {
+        return 1 << MPL_log2(number);
+    } else {
+        return 0;
+    }
 }
 
-/* Returns non-zero if val is a power of two.  If ceil_pof2 is non-NULL, it sets
-   *ceil_pof2 to the power of two that is just larger than or equal to val.
-   That is, it rounds up to the nearest power of two. */
-static inline int MPL_is_pof2(int val, int *ceil_pof2)
+/* Returns non-zero if val is a power of two. */
+static inline int MPL_is_pof2(int val)
 {
+#ifndef MPL_HAVE_BUILTIN_POPCOUNT
     int pof2 = 1;
 
     while (pof2 < val)
         pof2 *= 2;
-    if (ceil_pof2)
-        *ceil_pof2 = pof2;
 
     if (pof2 == val)
         return 1;
     else
         return 0;
+#else
+    return __builtin_popcount((unsigned int) val) == 1;
+#endif
 }
 
 /* Routing to calculate base^exp for integers */
@@ -96,6 +111,35 @@ static inline int MPL_mirror_permutation(unsigned int x, int bits)
 
     return retval;
 }
+
+/* Round denominator to the closest integer to divide numerator completely. Rounded value lies
+ * within +/- range of denominator*/
+static inline int MPL_round_closest_multiple(int numerator, int denominator, int range)
+{
+    /* increase and decrease denominator until it divides numerator completely. Break if it takes
+     * more than range iterations and return numerator */
+    int iter = 1;
+    int increased_val = denominator, decreased_val = denominator;
+
+    if (numerator % denominator == 0)
+        return denominator;
+
+    while (true) {
+        increased_val += 1;
+        if (decreased_val > 1)
+            decreased_val -= 1;
+
+        if (numerator % decreased_val == 0)
+            return decreased_val;
+        else if (numerator % increased_val == 0)
+            return increased_val;
+        else if (iter >= range)
+            return numerator;
+
+        iter += 1;
+    }
+}
+
 
 /* *INDENT-ON* */
 #if defined(__cplusplus)

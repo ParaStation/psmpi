@@ -38,14 +38,13 @@
 #include <infiniband/efadv.h>
 #define EFA_CQ_PROGRESS_ENTRIES 500
 
-static int efa_generate_qkey()
+static int efa_generate_rdm_connid()
 {
 	struct timeval tv;
-	struct timezone tz;
 	uint32_t val;
 	int err;
 
-	err = gettimeofday(&tv, &tz);
+	err = gettimeofday(&tv, NULL);
 	if (err) {
 		EFA_WARN(FI_LOG_EP_CTRL, "Cannot gettimeofday, err=%d.\n", err);
 		return 0;
@@ -80,10 +79,10 @@ static int efa_ep_destroy_qp(struct efa_qp *qp)
 	return err;
 }
 
-static int efa_ep_modify_qp_state(struct efa_qp *qp, enum ibv_qp_state qp_state,
-				  int attr_mask)
+static int efa_ep_modify_qp_state(struct efa_ep *ep, struct efa_qp *qp,
+				  enum ibv_qp_state qp_state, int attr_mask)
 {
-	struct ibv_qp_attr attr = {};
+	struct ibv_qp_attr attr = { 0 };
 
 	attr.qp_state = qp_state;
 
@@ -94,7 +93,7 @@ static int efa_ep_modify_qp_state(struct efa_qp *qp, enum ibv_qp_state qp_state,
 		attr.qkey = qp->qkey;
 
 	if (attr_mask & IBV_QP_RNR_RETRY)
-		attr.rnr_retry = rxr_env.rnr_retry;
+		attr.rnr_retry = ep->rnr_retry;
 
 	return -ibv_modify_qp(qp->ibv_qp, &attr, attr_mask);
 
@@ -104,22 +103,22 @@ static int efa_ep_modify_qp_rst2rts(struct efa_ep *ep, struct efa_qp *qp)
 {
 	int err;
 
-	err = efa_ep_modify_qp_state(qp, IBV_QPS_INIT,
+	err = efa_ep_modify_qp_state(ep, qp, IBV_QPS_INIT,
 				     IBV_QP_STATE | IBV_QP_PKEY_INDEX |
 				     IBV_QP_PORT | IBV_QP_QKEY);
 	if (err)
 		return err;
 
-	err = efa_ep_modify_qp_state(qp, IBV_QPS_RTR, IBV_QP_STATE);
+	err = efa_ep_modify_qp_state(ep, qp, IBV_QPS_RTR, IBV_QP_STATE);
 	if (err)
 		return err;
 
 	if (ep->util_ep.type != FI_EP_DGRAM &&
 	    efa_ep_support_rnr_retry_modify(&ep->util_ep.ep_fid))
-		return efa_ep_modify_qp_state(qp, IBV_QPS_RTS,
+		return efa_ep_modify_qp_state(ep, qp, IBV_QPS_RTS,
 			IBV_QP_STATE | IBV_QP_SQ_PSN | IBV_QP_RNR_RETRY);
 
-	return efa_ep_modify_qp_state(qp, IBV_QPS_RTS,
+	return efa_ep_modify_qp_state(ep, qp, IBV_QPS_RTS,
 				      IBV_QP_STATE | IBV_QP_SQ_PSN);
 }
 
@@ -129,7 +128,7 @@ static int efa_ep_create_qp_ex(struct efa_ep *ep,
 {
 	struct efa_domain *domain;
 	struct efa_qp *qp;
-	struct efadv_qp_init_attr efa_attr = {};
+	struct efadv_qp_init_attr efa_attr = { 0 };
 	int err;
 
 	domain = ep->domain;
@@ -153,7 +152,7 @@ static int efa_ep_create_qp_ex(struct efa_ep *ep,
 	}
 
 	qp->ibv_qp_ex = ibv_qp_to_qp_ex(qp->ibv_qp);
-	qp->qkey = efa_generate_qkey();
+	qp->qkey = (init_attr_ex->qp_type == IBV_QPT_UD) ? EFA_DGRAM_CONNID: efa_generate_rdm_connid();
 	err = efa_ep_modify_qp_rst2rts(ep, qp);
 	if (err)
 		goto err_destroy_qp;
@@ -594,7 +593,7 @@ void efa_ep_progress(struct util_ep *ep)
 	rcq = efa_ep->rcq;
 	scq = efa_ep->scq;
 
-	fastlock_acquire(&ep->lock);
+	ofi_mutex_lock(&ep->lock);
 
 	if (rcq)
 		efa_ep_progress_internal(efa_ep, rcq);
@@ -602,7 +601,7 @@ void efa_ep_progress(struct util_ep *ep)
 	if (scq && scq != rcq)
 		efa_ep_progress_internal(efa_ep, scq);
 
-	fastlock_release(&ep->lock);
+	ofi_mutex_unlock(&ep->lock);
 }
 
 static struct fi_ops_atomic efa_ep_atomic_ops = {
@@ -691,6 +690,7 @@ int efa_ep_open(struct fid_domain *domain_fid, struct fi_info *info,
 	ep->domain = domain;
 	ep->xmit_more_wr_tail = &ep->xmit_more_wr_head;
 	ep->recv_more_wr_tail = &ep->recv_more_wr_head;
+	ep->rnr_retry = rxr_env.rnr_retry;
 
 	if (info->src_addr) {
 		ep->src_addr = (void *)calloc(1, EFA_EP_ADDR_LEN);
@@ -699,6 +699,21 @@ int efa_ep_open(struct fid_domain *domain_fid, struct fi_info *info,
 			goto err_recv_wr_destroy;
 		}
 		memcpy(ep->src_addr, info->src_addr, info->src_addrlen);
+	}
+
+	if (ep->domain->hmem_info[FI_HMEM_CUDA].initialized) {
+		/*
+		 * Set the default to required. NCCL plugin requires p2p, but
+		 * does not call setopt for this option in older NCCL plugin
+		 * versions.
+		 */
+		ep->hmem_p2p_opt = FI_HMEM_P2P_REQUIRED;
+	} else if (ep->domain->hmem_info[FI_HMEM_NEURON].initialized) {
+		/* Neuron requires p2p and supports no other modes. */
+		ep->hmem_p2p_opt = FI_HMEM_P2P_REQUIRED;
+	} else {
+		/* no hmem devices, disable p2p */
+		ep->hmem_p2p_opt = FI_HMEM_P2P_DISABLED;
 	}
 
 	*ep_fid = &ep->util_ep.ep_fid;

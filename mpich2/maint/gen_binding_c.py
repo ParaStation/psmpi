@@ -7,9 +7,13 @@ from local_python import MPI_API_Global as G
 from local_python.mpi_api import *
 from local_python.binding_c import *
 from local_python import RE
+from local_python.info_hints import collect_info_hint_blocks
 import glob
 
 def main():
+    # currently support: -single-source
+    G.parse_cmdline()
+
     binding_dir = G.get_srcdir_path("src/binding")
     c_dir = "src/binding/c"
     func_list = load_C_func_list(binding_dir)
@@ -30,28 +34,52 @@ def main():
         mapping = G.MAPS['SMALL_C_KIND_MAP']
         G.mpi_declares.append(get_declare_function(func, False, "proto"))
 
+    if 'output-mansrc' in G.opts:
+        G.check_write_path(c_dir + '/mansrc/')
+        G.hints = collect_info_hint_blocks("src")
+    else:
+        G.hints = None
+
     # -- Generating code --
-    for func in func_list:
+    G.out = []
+    G.doc3_src_txt = []
+    # internal function to dump G.out into filepath
+    def dump_out(file_path):
+        G.check_write_path(file_path)
+        dump_c_file(file_path, G.out)
+        # add to mpi_sources for dump_Makefile_mk()
+        G.mpi_sources.append(file_path)
         G.out = []
+
+    # ----
+    for func in func_list:
         G.err_codes = {}
+        manpage_out = []
 
         # dumps the code to G.out array
         # Note: set func['_has_poly'] = False to skip embiggenning
         func['_has_poly'] = function_has_POLY_parameters(func)
+        dump_mpi_c(func, False)
         if func['_has_poly']:
-            dump_mpi_c(func, False)
             dump_mpi_c(func, True)
-        else:
-            dump_mpi_c(func, False)
 
-        file_path = get_func_file_path(func, c_dir)
-        G.check_write_path(file_path)
-        dump_c_file(file_path, G.out)
+        dump_manpage(func, manpage_out)
 
-        # add to mpi_sources for dump_Makefile_mk()
-        G.mpi_sources.append(file_path)
+        if 'output-mansrc' in G.opts:
+            f = get_mansrc_file_path(func, c_dir + '/mansrc')
+            with open(f, "w") as Out:
+                for l in manpage_out:
+                    print(l.rstrip(), file=Out)
+            G.doc3_src_txt.append(f)
 
-    G.check_write_path(c_dir)
+        if 'single-source' not in G.opts:
+            # dump individual functions in separate source files
+            dump_out(get_func_file_path(func, c_dir))
+    if 'single-source' in G.opts:
+        # otherwise, dump all functions in binding.c
+        dump_out(c_dir + "/c_binding.c")
+
+    # -- Dump other files --
     G.check_write_path("src/include")
     G.check_write_path("src/mpi_t")
     G.check_write_path("src/include/mpi_proto.h")

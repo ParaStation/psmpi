@@ -239,7 +239,10 @@ RSTREAM_INI ;
 #  define RSTREAM_INIT NULL
 #endif
 
-#if(HAVE_PERF)
+#if (HAVE_PERF) && (HAVE_PERF_DL)
+#  define HOOK_PERF_INI FI_EXT_INI
+#  define HOOK_PERF_INIT NULL
+#elif (HAVE_PERF)
 #  define HOOK_PERF_INI INI_SIG(fi_hook_perf_ini)
 #  define HOOK_PERF_INIT fi_hook_perf_ini()
 HOOK_PERF_INI ;
@@ -247,7 +250,10 @@ HOOK_PERF_INI ;
 #  define HOOK_PERF_INIT NULL
 #endif
 
-#if(HAVE_HOOK_DEBUG)
+#if (HAVE_HOOK_DEBUG) && (HAVE_HOOK_DEBUG_DL)
+#  define HOOK_DEBUG_INI FI_EXT_INI
+#  define HOOK_DEBUG_INIT NULL
+#elif (HAVE_HOOK_DEBUG)
 #  define HOOK_DEBUG_INI INI_SIG(fi_debug_hook_ini)
 #  define HOOK_DEBUG_INIT fi_debug_hook_ini()
 HOOK_DEBUG_INI ;
@@ -255,8 +261,41 @@ HOOK_DEBUG_INI ;
 #  define HOOK_DEBUG_INIT NULL
 #endif
 
+#if (HAVE_HOOK_HMEM) && (HAVE_HOOK_HMEM_DL)
+#  define HOOK_HMEM_INI FI_EXT_INI
+#  define HOOK_HMEM_INIT NULL
+#elif (HAVE_HOOK_HMEM)
+#  define HOOK_HMEM_INI INI_SIG(fi_hook_hmem_ini)
+#  define HOOK_HMEM_INIT fi_hook_hmem_ini()
+HOOK_HMEM_INI ;
+#else
+#  define HOOK_HMEM_INIT NULL
+#endif
+
+#if (HAVE_DMABUF_PEER_MEM) && (HAVE_DMABUF_PEER_MEM_DL)
+#  define HOOK_DMABUF_PEER_MEM_INI FI_EXT_INI
+#  define HOOK_DMABUF_PEER_MEM_INIT NULL
+#elif (HAVE_DMABUF_PEER_MEM)
+#  define HOOK_DMABUF_PEER_MEM_INI INI_SIG(fi_dmabuf_peer_mem_hook_ini)
+#  define HOOK_DMABUF_PEER_MEM_INIT fi_dmabuf_peer_mem_hook_ini()
+HOOK_DMABUF_PEER_MEM_INI ;
+#else
+#  define HOOK_DMABUF_PEER_MEM_INIT NULL
+#endif
+
 #  define HOOK_NOOP_INI INI_SIG(fi_hook_noop_ini)
 #  define HOOK_NOOP_INIT fi_hook_noop_ini()
 HOOK_NOOP_INI ;
+
+#if (HAVE_OPX) && (HAVE_OPX_DL)
+#  define OPX_INI FI_EXT_INI
+#  define OPX_INIT NULL
+#elif (HAVE_OPX)
+#  define OPX_INI INI_SIG(fi_opx_ini)
+#  define OPX_INIT fi_opx_ini()
+OPX_INI ;
+#else
+#  define OPX_INIT NULL
+#endif
 
 #endif /* _OFI_PROV_H_ */

@@ -6,12 +6,12 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.67)
 dnl
-dnl aclocal_cache.m4, included by sowing/confdb/aclocal.m4, fixes 
+dnl aclocal_cache.m4, included by sowing/confdb/aclocal.m4, fixes
 dnl bugs in autoconf caching.
 dnl
 dnl
 dnl Environment variables that affect behavior of the test configure
-dnl MPICH_FAST 
+dnl MPICH_FAST
 dnl
 dnl The file name here refers to a file in the source being configured
 dnl FIXME this is the old style, needs updating to new style
@@ -40,15 +40,18 @@ AC_CONFIG_MACRO_DIR([confdb])
 dnl
 echo "RUNNING CONFIGURE FOR MPI TESTS"
 
-AM_INIT_AUTOMAKE([-Wall -Werror -Wno-portability-recursive foreign 1.12.3 silent-rules subdir-objects])
+AM_INIT_AUTOMAKE([-Wall -Werror -Wno-portability-recursive foreign 1.12.3 silent-rules subdir-objects no-dist])
 AM_MAINTAINER_MODE([enable])
 
 # Non-verbose make by default
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
-if test -z "$mpich_top_srcdir" ; then 
+# save CXX before we overwrite it. We need it for NVCC's -ccbin
+save_CXX="$CXX"
+
+if test -z "$mpich_top_srcdir" ; then
     if test -z "$top_srcdir" ; then
-       use_top_srcdir=$srcdir   
+       use_top_srcdir=$srcdir
     else
        use_top_srcdir=$top_srcdir
     fi
@@ -56,9 +59,9 @@ if test -z "$mpich_top_srcdir" ; then
     /*) ;;
     *)
         use_top_srcdir=`(cd $use_top_srcdir && pwd)`
-        ;;        
+        ;;
     esac
-    if test -f $use_top_srcdir/../../maint/version.m4 ; then 
+    if test -f $use_top_srcdir/../../maint/version.m4 ; then
         mpich_top_srcdir=`cd $use_top_srcdir && cd ../.. && pwd`
     fi
 fi
@@ -73,7 +76,7 @@ AC_ARG_VAR([main_top_srcdir],[path to the MPICH top-level source directory (if p
 # since some of the Makefile targets require it.
 if test "X$main_top_srcdir" = "X" -a "$USE_MAINTAINER_MODE" = "yes" ; then
     if test -z "$top_srcdir" ; then
-       use_top_srcdir=$srcdir   
+       use_top_srcdir=$srcdir
     else
        use_top_srcdir=$top_srcdir
     fi
@@ -82,28 +85,25 @@ if test "X$main_top_srcdir" = "X" -a "$USE_MAINTAINER_MODE" = "yes" ; then
     /*) ;;
     *)
         use_top_srcdir=`(cd $use_top_srcdir && pwd)`
-        ;;        
+        ;;
     esac
     # Now, see if we can find the f77tof90 routine
     if test -x $use_top_srcdir/maint/f77tof90 ; then
         main_top_srcdir=$use_top_srcdir
-    else 
+    else
         AC_MSG_ERROR([Unable to find main source file - reconfigure using --disable-maintainer_mode])
     fi
 fi
 
 AC_ARG_ENABLE(echo,
-	[AS_HELP_STRING([--enable-echo],[Turn on strong echoing. The default is enable=no.])],
-	[set -x])
+        [AC_HELP_STRING([--enable-echo],[Turn on strong echoing. The default is enable=no.])],
+        [set -x])
 
 AC_ARG_ENABLE(fortran,
 [  --enable-fortran=option - Control the level of Fortran support in the MPICH implementation.
         yes|all   - Enable all available Fortran implementations (F77, F90, F08)
-        f77       - Enable Fortran 77 support
-        f90       - Enable Fortran 90 support
-        f08       - Enable Fortran 2008 support
         no|none   - No Fortran support
-],,[enable_fortran=f77,f90])
+],,[enable_fortran=all])
 
 save_IFS="$IFS"
 IFS=","
@@ -122,15 +122,6 @@ for option in $enable_fortran ; do
                 enable_fc=no
                 enable_f08=no
                 ;;
-        f77)
-                enable_f77=yes
-                ;;
-        f90)
-                enable_fc=yes
-                ;;
-        f08)
-                enable_f08=yes
-                ;;
         *)
                 IFS="$save_IFS"
                 AC_MSG_WARN([Unknown value $option for --enable-fortran])
@@ -145,114 +136,102 @@ AC_ARG_ENABLE([dtpools],
               [AS_HELP_STRING([--disable-dtpools],[Disable dtpools tests])],,
               [enable_dtpools=yes])
 
-if test "x${enable_dtpools}" = "xyes"; then
-    DTP_SWITCH="ON"
-else
-    DTP_SWITCH="OFF"
-fi
-
-AC_SUBST(DTP_SWITCH)
+# runtests options
+RUNTESTS_OPTS=
+AC_SUBST(RUNTESTS_OPTS)
 
 AC_ARG_ENABLE(cxx,
-	[AS_HELP_STRING([--enable-cxx],[Turn on C++ tests (default)])],,[enable_cxx=yes])
+        [AC_HELP_STRING([--enable-cxx],[Turn on C++ tests (default)])],,[enable_cxx=yes])
 
 AC_ARG_ENABLE(romio,
-	[AS_HELP_STRING([--enable-romio],[Enable ROMIO MPI I/O implementation])],,
-	[enable_romio=yes])
+        [AC_HELP_STRING([--enable-romio],[Enable MPI I/O tests])])
+
+AC_ARG_ENABLE(namepub,
+        [AC_HELP_STRING([--enable-namepub],
+                [Enable tests of the dynamic process parts of MPI-2 (default)])],,
+        [enable_namepub=yes])
 
 AC_ARG_ENABLE(spawn,
-	[AS_HELP_STRING([--enable-spawn],
-		[Enable tests of the dynamic process parts of MPI-2 (default)])],,
-	[enable_spawn=yes])
+        [AC_HELP_STRING([--enable-spawn],
+                [Enable tests of the dynamic process parts of MPI-2 (default)])],,
+        [enable_spawn=yes])
 
 AC_ARG_ENABLE(rma,
-	[AS_HELP_STRING([--enable-rma],[Enable tests of the one sided parts of MPI-2 (default)])],,
-	[enable_rma=yes])
+        [AC_HELP_STRING([--enable-rma],[Enable tests of the one sided parts of MPI-2 (default)])],,
+        [enable_rma=yes])
 
 AC_ARG_ENABLE(part,
-	[AS_HELP_STRING([--enable-part],[Enable tests of partitioned communication of MPI-4 (default)])],,
-	[enable_part=yes])
+        [AS_HELP_STRING([--enable-part],[Enable tests of partitioned communication of MPI-4 (default)])],,
+        [enable_part=yes])
 
 AC_ARG_ENABLE(long-double-complex,
-	[AS_HELP_STRING([--enable-long-double-complex],
-		[Enable tests involving MPI_LONG_DOUBLE_COMPLEX (default)])],,
-	[enable_long_double_complex=yes])
+        [AS_HELP_STRING([--enable-long-double-complex],
+                [Enable tests involving MPI_LONG_DOUBLE_COMPLEX (default)])],,
+        [enable_long_double_complex=yes])
 AC_ARG_ENABLE(long-double,
-	[AS_HELP_STRING([--enable-long-double-complex],
-		[Enable tests involving MPI_LONG_DOUBLE and related types (default)])],,
-	[enable_long_double=yes])
+        [AS_HELP_STRING([--enable-long-double-complex],
+                [Enable tests involving MPI_LONG_DOUBLE and related types (default)])],,
+        [enable_long_double=yes])
 
 AC_ARG_ENABLE(checkerrors,
-	[AS_HELP_STRING([--enable-checkerrors],
-		[Add some tests for checking for errors in user programs])],,
-	[enable_checkerrors=yes])
+        [AS_HELP_STRING([--enable-checkerrors],
+                [Add some tests for checking for errors in user programs])],,
+        [enable_checkerrors=yes])
 
 AC_ARG_ENABLE(perftest,
-	[AS_HELP_STRING([--enable-perftest],
-		[Include tests for basic performance consistency (default)])],,
-	[enable_perftest=yes])
+        [AS_HELP_STRING([--enable-perftest],
+                [Include tests for basic performance consistency (default)])],,
+        [enable_perftest=yes])
 
 AC_ARG_ENABLE(large-tests,
-	[AS_HELP_STRING([--enable-large-tests],
-		[Enable tests which require large (>2GB per proc) amount of memory])],,
-	[enable_large_tests=no])
+        [AS_HELP_STRING([--enable-large-tests],
+                [Enable tests which require large (>2GB per proc) amount of memory])],,
+        [enable_large_tests=no])
 
 AC_ARG_ENABLE(ft-tests,
-	[AS_HELP_STRING([--enable-ft-tests],
-		[Include tests for fault tolerance (default no)])],,
-	[enable_ft_tests=no])
+        [AS_HELP_STRING([--enable-ft-tests],
+                [Include tests for fault tolerance (default no)])],,
+        [enable_ft_tests=no])
 
 AC_ARG_ENABLE(comm-overlap-tests,
-	[AS_HELP_STRING([--enable-comm-overlap-tests],
-		[Include tests for communicator overlap (default)])],,
-	[enable_comm_overlap_tests=yes])
+        [AS_HELP_STRING([--enable-comm-overlap-tests],
+                [Include tests for communicator overlap (default)])],,
+        [enable_comm_overlap_tests=yes])
 
 AC_ARG_ENABLE(checkfaults,
-	[AS_HELP_STRING([--enable-checkfaults],
-		[Add some tests for checking on handling of faults in user programs])],,
-	[enable_checkfaults=no])
+        [AS_HELP_STRING([--enable-checkfaults],
+                [Add some tests for checking on handling of faults in user programs])],,
+        [enable_checkfaults=no])
 
 AC_ARG_ENABLE(checkpointing,
-	[AS_HELP_STRING([--enable-checkpointing],
-		[Add some tests for checkpointing])],,
-	[enable_checkpointing=no])
+        [AS_HELP_STRING([--enable-checkpointing],
+                [Add some tests for checkpointing])],,
+        [enable_checkpointing=no])
 
 AC_ARG_ENABLE(fast,
-	[AS_HELP_STRING([--enable-fast],
-		[Indicates that the MPI implementation may have been
-		built for fastest operation, such as building without
-		error checking.  Has the effect of
-		--enable-checkerrors=no])],,)
+        [AS_HELP_STRING([--enable-fast],
+                [Indicates that the MPI implementation may have been
+                built for fastest operation, such as building without
+                error checking.  Has the effect of
+                --enable-checkerrors=no])],,)
 
 AC_ARG_ENABLE(strictmpi,
-	[AS_HELP_STRING([--enable-strictmpi],
-		[Only test for operations specifically defined by the
-		MPI standard.  This turns off tests for some common
-		extensions, including for combinations of predefined
-		datatypes and predefined MPI_Op s.])],,
-	[enable_strictmpi=no])
+        [AS_HELP_STRING([--enable-strictmpi],
+                [Only test for operations specifically defined by the
+                MPI standard.  This turns off tests for some common
+                extensions, including for combinations of predefined
+                datatypes and predefined MPI_Op s.])],,
+        [enable_strictmpi=no])
 
 AC_ARG_ENABLE(threads,
-	[--enable-threads=level - Specify the level of thread support expected from the
-				MPI implementation.  The following levels are supported.
-
-	single - No threads (MPI_THREAD_SINGLE)
-	funneled - Only the main thread calls MPI (MPI_THREAD_FUNNELED)
-	serialized - User serializes calls to MPI (MPI_THREAD_SERIALIZED)
-	multiple - Fully multi-threaded (MPI_THREAD_MULTIPLE)
-
-	The default is funneled.  If enabled and no level is
-	specified, the level is set to multiple.  If disabled, the
-	level is set to single.  If the environment variable
-	MPICH_THREAD_LEVEL is set, that thread level is used (this is
-	to let MPICH build for the correct thread support without
-	requiring a specific --enable-threads argument.],,
-	[enable_threads=default])
+        [AS_HELP_STRING([--enable-threads],
+                [Whether to enable multi-thread tests])],,
+        [enable_threads=yes])
 
 AC_ARG_ENABLE(xfail,
-	[AS_HELP_STRING([--enable-xfail],
-		[Run tests marked for expected failure])],,
-	[enable_xfail=no])
+        [AC_HELP_STRING([--enable-xfail],
+                [Run tests marked for expected failure])],,
+        [enable_xfail=no])
 
 AC_ARG_ENABLE(collalgo-tests,
         [AS_HELP_STRING([--enable-collalgo-tests],
@@ -276,21 +255,14 @@ AC_ARG_WITH(dtpools-datatypes,
 dtp_args="--with-dtpools-datatypes=${with_dtpools_datatypes}"
 AC_CONFIG_COMMANDS([gentests],[$srcdir/maint/gentests_dtp.sh $dtp_args],[dtp_args="$dtp_args"])
 
-if test $enable_collalgo_tests = "yes" ; then
-    PAC_CHECK_PYTHON
-    #Test collectives algorithms with CVARs
-    cmd="$PYTHON $srcdir/maint/gen_coll_cvar.py"
-    AC_CONFIG_COMMANDS([collcvartests],[$cmd_gen_coll],[cmd_gen_coll="$cmd"])
-fi
-
 AC_ARG_WITH(mpi,
-	[AS_HELP_STRING([--with-mpi=dir],
-		[Use the selected MPI; compilation scripts for mpicc,
-		mpifort and mpicxx should be in dir/bin])],,)
+        [AC_HELP_STRING([--with-mpi=dir],
+                [Use the selected MPI; compilation scripts for mpicc,
+                mpifort and mpicxx should be in dir/bin])],,)
 
 AC_ARG_WITH(pm,
-	AS_HELP_STRING([--with-pm=name],
-		[Specify the process manager for MPICH.  "no" or "none" are
+        AC_HELP_STRING([--with-pm=name],
+                [Specify the process manager for MPICH.  "no" or "none" are
                  valid values.  Multiple process managers may be specified as
                  long as they all use the same pmi interface by separating them
                  with colons.  The mpiexec for the first named process manager
@@ -333,17 +305,17 @@ else
 fi
 
 AC_ARG_WITH(config-args,
-	[AS_HELP_STRING([--with-config-args=filename],
-		[Specify configure argument file that contains the
-		values of variables that configure reads,
-		e.g. CC,CFLAGS,F77,FFLAGS,FC,FCFLAGS....  If the
-		filename does not begin with / (absolute path), . or
-		.. (relative path), the filename will be assumed to be
-		$top_srcdir/configargs/<filename>.cfg.])],,
-	[with_config_args=no])
+        [AC_HELP_STRING([--with-config-args=filename],
+                [Specify configure argument file that contains the
+                values of variables that configure reads,
+                e.g. CC,CFLAGS,F77,FFLAGS,FC,FCFLAGS....  If the
+                filename does not begin with / (absolute path), . or
+                .. (relative path), the filename will be assumed to be
+                $top_srcdir/configargs/<filename>.cfg.])],,
+        [with_config_args=no])
 
 if test "$with_config_args" != "no" ; then
-    case "$with_config_args" in 
+    case "$with_config_args" in
         /*|../*|./*)
             config_args_file="$with_config_args"
             ;;
@@ -367,6 +339,138 @@ if test "$with_config_args" != "no" ; then
     fi
 fi
 
+# Attach program prefix and suffix to executable names
+PAC_GET_EXENAME("mpicc", MPICC_NAME)
+PAC_GET_EXENAME("mpif77", MPIF77_NAME)
+PAC_GET_EXENAME("mpifort", MPIFORT_NAME)
+PAC_GET_EXENAME("mpicxx", MPICXX_NAME)
+PAC_GET_EXENAME("mpiexec", MPIEXEC_NAME)
+
+if test -n "$with_mpi" ; then
+    if test -z "$MPICC" ; then
+        CC=$with_mpi/bin/$MPICC_NAME
+    else
+        CC=$MPICC
+    fi
+    if test -z "$MPIF77" ; then
+        F77=$with_mpi/bin/$MPIF77_NAME
+    else
+        F77=$MPIF77
+    fi
+    if test -z "$MPIFC" ; then
+        FC=$with_mpi/bin/$MPIFORT_NAME
+    else
+        FC=$MPIFC
+    fi
+    if test -z "$MPICXX" ; then
+        CXX=$with_mpi/bin/$MPICXX_NAME
+    else
+        CXX=$MPICXX
+    fi
+    if test -z "$MPIEXEC" ; then
+        MPIEXEC=$with_mpi/bin/$MPIEXEC_NAME
+    fi
+else
+    # Try to use mpicc etc names
+    if test -z "$MPICC" ; then
+        AC_PATH_PROG(MPICC,$MPICC_NAME mpcc)
+    fi
+    if test "x$MPICC" != "x" ; then
+        CC=$MPICC
+    fi
+    if test -z "$MPIF77" ; then
+        AC_PATH_PROG(MPIF77,$MPIF77_NAME mpf77)
+    fi
+    if test "x$MPIF77" != "x" ; then
+        F77=$MPIF77
+    fi
+    if test -z "$MPIFC" ; then
+        AC_PATH_PROG(MPIFC,$MPIFORT_NAME mpftn)
+    fi
+    if test "x$MPIFC" != "x" ; then
+        FC=$MPIFC
+    fi
+    if test -z "$MPICXX" ; then
+        # We left mpiCC off of this list because mpicc and mpiCC are the
+        # same on Mac OSX systems.
+        AC_PATH_PROG(MPICXX,$MPICXX_NAME mpCC)
+    fi
+    if test "x$MPICXX" != "x" ; then
+        CXX=$MPICXX
+    fi
+    if test -z "$MPIEXEC" ; then
+        AC_PATH_PROG(MPIEXEC,$MPIEXEC_NAME mpiexec)
+    fi
+fi
+dnl MPIEXEC is used in the Makefile testing target.
+AC_SUBST([MPIEXEC])
+
+# Make sure we export CC before configuring DTPools, since MPI is
+# needed to build the library.
+export CC
+PAC_CONFIG_SUBDIR_ARGS([dtpools])
+
+# Running C compiler tests
+AC_PROG_CC
+AC_PROG_CC_C99
+AM_PROG_CC_C_O
+
+AC_USE_SYSTEM_EXTENSIONS
+
+# Ensure that we can compile an MPI program before we go any further
+# We don't use a cached value here because this is a sanity check
+AC_MSG_CHECKING([whether we can compile and link MPI programs in C])
+AC_LINK_IFELSE([
+        AC_LANG_PROGRAM([#include "mpi.h"],[MPI_Init(0,0);MPI_Finalize();])
+    ],[mpi_compile_works=yes],[mpi_compile_works=no])
+AC_MSG_RESULT($mpi_compile_works)
+
+if test "$mpi_compile_works" != "yes" ; then
+    AC_MSG_ERROR([Unable to compile and/or link an MPI program!  Check config.log])
+fi
+
+# Check whether we are testing MPI derived from MPICH
+MPI_IS_MPICH=no
+AC_MSG_CHECKING([Is the MPI derived from MPICH])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include "mpi.h"],[return 1 + MPICH;])],
+    [MPI_IS_MPICH=yes],[MPI_IS_MPICH=no])
+AC_MSG_RESULT($MPI_IS_MPICH)
+
+if test "$MPI_IS_MPICH" = "yes" ; then
+    # try mpichversion
+    AC_PATH_PROG(MPICHVERSION, mpichversion, [], [$PATH:$with_mpi/bin])
+    if test -n "$MPICHVERSION" ; then
+        $MPICHVERSION > conftest.output
+        # netmod
+        if [grep 'MPICH Device:[[:blank:]]*ch4:ofi' conftest.output > /dev/null] ; then
+            AC_MSG_NOTICE([Detected MPICH with ch4:ofi netmod])
+            AC_DEFINE(MPICH_CH4_OFI, 1, [define if it is mpich with ch4:ofi])
+        elif [grep 'MPICH Device:[[:blank:]]*ch4:ucx' conftest.output > /dev/null] ; then
+            AC_MSG_NOTICE([Detected MPICH with ch4:ucx netmod])
+            AC_DEFINE(MPICH_CH4_UCX, 1, [define if it is mpich with ch4:ucx])
+            enable_spawn=no
+        elif [grep 'MPICH Device:[[:blank:]]*ch3' conftest.output > /dev/null] ; then
+            enable_part=no
+        fi
+
+        # enable_checkerrors
+        if test "$enable_checkerrors" != "no" ; then
+            if grep 'disable-error-checking\|enable-error-checking=no' conftest.output > /dev/null ; then
+                enable_checkerrors=no
+            fi
+        fi
+
+        #enable_spawn
+        if test "$enable_spawn" != "no" ; then
+            if grep 'enable-ch4-am-only' conftest.output > /dev/null ; then
+                enable_spawn=no
+            fi
+        fi
+
+        rm conftest.output
+    fi
+fi
+
 # First, determine whether we are/can support the language bindings
 #
 # Since F90/F90FLAGS are replaced by FC/FCFLAGS, rather than silently
@@ -375,39 +479,6 @@ fi
 # Fortran90 compilers.
 if test -n "$F90" -o -n "$F90FLAGS" ; then
     AC_MSG_ERROR([F90 and F90FLAGS are replaced by FC and FCFLAGS respectively in this configure, please unset F90/F90FLAGS and set FC/FCFLAGS instead and rerun configure again.])
-fi
-
-# ------------------------------------------------------------------------
-dnl use AC_ARG_VAR to mark FROM_MPICH as "precious" to autoconf so that
-dnl automatic re-runs of config.status preserve its value correctly
-AC_ARG_VAR([FROM_MPICH],[should be set to "yes" if this configure script is being invoked by the main MPICH configure])
-AC_ARG_VAR([MPICH_THREAD_LEVEL],
-           [the MPI thread level supported by the enclosing MPICH build (when built within MPICH)])
-# ------------------------------------------------------------------------
-
-if test "$enable_threads" = "yes" ; then 
-    enable_threads=multiple
-elif test "$enable_threads" = "no" ; then
-    enable_threads=single
-elif test "$enable_threads" = default ; then
-    if test -n "$MPICH_THREAD_LEVEL" ; then
-        case $MPICH_THREAD_LEVEL in 
-            MPI_THREAD_MULTIPLE)
-            enable_threads=multiple
-            ;;
-            MPI_THREAD_SERIALIZED)
-            enable_threads=serialized
-            ;;
-            MPI_THREAD_FUNNELED)
-            enable_threads=funneled
-            ;;
-            MPI_THREAD_SINGLE)
-            enable_threads=single
-            ;;
-        esac
-    else
-        enable_threads=funneled
-    fi
 fi
 
 # errordir is substituted into the testlist file as errors when the
@@ -441,12 +512,27 @@ else
 fi
 AC_SUBST(comm_overlap)
 
-# 
-# Only run the threads tests if multiple is specified
-if test "$enable_threads" = "multiple" -o "$enable_threads" = "runtime" ; then
-    threadsdir="threads"
+# The multi-thread tests can be disabled by --disable-threads
+threadsdir="threads"
+if test "$enable_threads" != "no" ; then
+    AC_MSG_CHECKING([whether MPI_THREAD_MULTIPLE is supported])
+    AC_RUN_IFELSE([
+            AC_LANG_PROGRAM([#include "mpi.h"],[
+                int provided;
+                MPI_Init_thread(0,0, MPI_THREAD_MULTIPLE, &provided);
+                MPI_Finalize();
+                if (provided != MPI_THREAD_MULTIPLE) {
+                    return 1;
+                }
+            ])
+        ],[enable_threads=yes],[enable_threads=no])
+    AC_MSG_RESULT($enable_threads)
 fi
-# 
+
+if test "$enable_threads" = "no"; then
+    threadsdir=""
+fi
+#
 # Only run the checkpointing tests if enabled
 ckpointdir="#ckpoint"
 if test "$enable_checkpointing" = "yes" ; then
@@ -456,11 +542,9 @@ AC_SUBST(ckpointdir)
 
 #
 # Only run xfail tests if enabled
-RUN_XFAIL=false
 if test "$enable_xfail" = "yes" ; then
-    RUN_XFAIL=true
+    RUNTESTS_OPTS="$RUNTESTS_OPTS -runxfail"
 fi
-AC_SUBST(RUN_XFAIL)
 
 PAC_LOAD_BASE_CACHE
 PAC_VPATH_CHECK()
@@ -469,30 +553,15 @@ PAC_PROG_MAKE
 MPILIBLOC=""
 AC_SUBST(MPILIBLOC)
 
-# more variables that must be marked precious for proper re-configure operation
-AC_ARG_VAR([MPICH_ENABLE_FC],["yes" if the enclosing MPICH build supports modern Fortran])
-AC_ARG_VAR([MPICH_ENABLE_CXX],["yes" if the enclosing MPICH build supports C++])
-
-# If we're building from MPICH, check the MPICH_ENABLE_xxx environment
-# variables for enable defaults
-if test "$FROM_MPICH" = yes ; then
-    if test -n "$MPICH_ENABLE_FC" ; then
-        enable_f77=$MPICH_ENABLE_FC
-        enable_fc=$MPICH_ENABLE_FC
-    fi
-    if test -n "$MPICH_ENABLE_CXX" ; then
-        enable_cxx=$MPICH_ENABLE_CXX
-    fi
-    namepub_tests="#"
-    if test -n "$nameserv_name" ; then
-        namepub_tests=""
-    fi
-    AC_SUBST(namepub_tests)
+namepub_tests="#"
+if test "$enable_namepub" = "yes" ; then
+    namepub_tests=""
 fi
+AC_SUBST(namepub_tests)
 
 # Some MPI-2 implementations (including some of the MPICH shared-memory
 # channels and BG/L) leave out the dynamic process routines.  This
-# allows tests to avoid reporting failure for these routines.  
+# allows tests to avoid reporting failure for these routines.
 # This can be controlled by either a --disable-spawn argument or by
 # setting the environment variable MPI_NO_SPAWN to yes.
 AC_ARG_VAR([MPI_NO_SPAWN],[set to "yes" to disable dynamic process tests])
@@ -528,10 +597,8 @@ if test "$enable_checkfaults" = "yes" ; then
 fi
 AC_SUBST(faultsdir)
 #
-MPI_IS_STRICT=false
-AC_SUBST(MPI_IS_STRICT)
 if test "$enable_strictmpi" = "yes" ; then
-    MPI_IS_STRICT=true
+    RUNTESTS_OPTS="$RUNTESTS_OPTS -strict"
     AC_DEFINE(USE_STRICT_MPI,1,[Define if only operations defined in MPI should be tested])
 fi
 #
@@ -541,8 +608,8 @@ fi
 # based on earlier versions of MPICH.
 MPI_HAS_MPIX=no
 #
-# Hack to detect build from within MPICH.  Ensure strictmpi not selected.
-if test "$FROM_MPICH" = "yes" -a "$enable_strictmpi" = "no" ; then
+# If MPI is derived from MPICH and strictmpi not selected, let's test mpix extensions.
+if test "$MPI_IS_MPICH" = "yes" -a "$enable_strictmpi" = "no" ; then
    MPI_HAS_MPIX=yes
 fi
 AC_SUBST(MPI_HAS_MPIX)
@@ -559,131 +626,13 @@ AC_SUBST(mpix)
 # to noninst_PROGRAMS to skip building the tests when we do strict MPI test
 AM_CONDITIONAL([BUILD_MPIX_TESTS], [test "$enable_strictmpi" = "no"])
 
-# preserve these values across a reconfigure
-AC_ARG_VAR([WRAPPER_CFLAGS],[])
-AC_ARG_VAR([WRAPPER_CPPFLAGS],[])
-AC_ARG_VAR([WRAPPER_LDFLAGS],[])
-AC_ARG_VAR([WRAPPER_LIBS],[])
-AC_ARG_VAR([WRAPPER_FFLAGS],[])
-AC_ARG_VAR([WRAPPER_FCFLAGS],[])
-AC_ARG_VAR([WRAPPER_CXXFLAGS],[])
-
-# Attach program prefix and suffix to executable names
-PAC_GET_EXENAME("mpicc", MPICC_NAME)
-PAC_GET_EXENAME("mpif77", MPIF77_NAME)
-PAC_GET_EXENAME("mpifort", MPIFORT_NAME)
-PAC_GET_EXENAME("mpicxx", MPICXX_NAME)
-PAC_GET_EXENAME("mpiexec", MPIEXEC_NAME)
-
-if test "$FROM_MPICH" = "yes" ; then
-    # perform configure tests with the normal compilers ($CC/$F77/etc), but use
-    # the WRAPPER_xFLAGS computed by MPICH as our flags instead.  Then at the
-    # end of configure we will empty out these flags and set our compilers to
-    # the installed compiler wrappers
-    CFLAGS="$WRAPPER_CFLAGS"
-    CPPFLAGS="$WRAPPER_CPPFLAGS"
-    LDFLAGS="$WRAPPER_LDFLAGS"
-    FFLAGS="$WRAPPER_FFLAGS"
-    FCFLAGS="$WRAPPER_FCFLAGS"
-    CXXFLAGS="$WRAPPER_CXXFLAGS"
-
-    # WRAPPER_LIBS contains currently non-existent libs like "-lopa" and "-lmpl"
-    # right now, so set LIBS to the user-specified libs for now.
-    # FIXME Does this need to be an AC_ARG_VAR?
-    LIBS="$MPICH_LIBS"
-
-elif test -n "$with_mpi" ; then
-    if test -z "$MPICC" ; then
-        CC=$with_mpi/bin/$MPICC_NAME
-    else
-        CC=$MPICC
-    fi
-    if test -z "$MPIF77" ; then
-        F77=$with_mpi/bin/$MPIF77_NAME
-    else
-        F77=$MPIF77
-    fi
-    if test -z "$MPIFC" ; then
-        FC=$with_mpi/bin/$MPIFORT_NAME
-    else
-        FC=$MPIFC
-    fi
-    if test -z "$MPICXX" ; then
-        CXX=$with_mpi/bin/$MPICXX_NAME
-    else
-        CXX=$MPICXX
-    fi
-    if test -z "$MPIEXEC" ; then
-        MPIEXEC=$with_mpi/bin/$MPIEXEC_NAME
-    fi
-else
-    # Try to use mpicc etc names
-    if test -z "$MPICC" ; then
-        AC_PATH_PROG(MPICC,$MPICC_NAME mpcc)
-    fi
-    if test "x$MPICC" != "x" ; then
-        CC=$MPICC
-    fi 
-    if test -z "$MPIF77" ; then
-        AC_PATH_PROG(MPIF77,$MPIF77_NAME mpf77)
-    fi
-    if test "x$MPIF77" != "x" ; then 
-        F77=$MPIF77
-    fi
-    if test -z "$MPIFC" ; then
-        AC_PATH_PROG(MPIFC,$MPIFORT_NAME mpftn)
-    fi
-    if test "x$MPIFC" != "x" ; then
-        FC=$MPIFC
-    fi
-    if test -z "$MPICXX" ; then
-        # We left mpiCC off of this list because mpicc and mpiCC are the 
-        # same on Mac OSX systems.
-        AC_PATH_PROG(MPICXX,$MPICXX_NAME mpCC)
-    fi
-    if test "x$MPICXX" != "x" ; then
-        CXX=$MPICXX
-    fi 
-    if test -z "$MPIEXEC" ; then
-        AC_PATH_PROG(MPIEXEC,$MPIEXEC_NAME)
-    fi
-fi
-# Make sure we export CC before configuring DTPools, since MPI is
-# needed to build the library.
-export CC
-AC_CONFIG_SUBDIRS([dtpools])
-
-# Running C compiler tests
-AC_PROG_CC
-AC_PROG_CC_C99
-AM_PROG_CC_C_O
-
-# Note that some versions of autoconf will insist that the compiler
-# produce executables at this point, which is why we must do something
-# special for building within MPICH
-
-# Ensure that we can compile an MPI program before we go any further
-# We don't use a cached value here because this is a sanity check
-# The exception is if we are executing this configure from within the 
-# MPICH configure - in that case, the 
-if test "$FROM_MPICH" != "yes" ; then
-    AC_MSG_CHECKING([whether we can compile and link MPI programs in C])
-    AC_LINK_IFELSE([
-AC_LANG_PROGRAM([#include "mpi.h"],[MPI_Init(0,0);MPI_Finalize();])
-    ],[mpi_compile_works=yes],[mpi_compile_works=no])
-AC_MSG_RESULT($mpi_compile_works)
-
-    if test "$mpi_compile_works" != "yes" ; then
-       AC_MSG_ERROR([Unable to compile and/or link an MPI program!  Check config.log])
-    fi
-fi
 dnl We cannot use AC_C_LONG_DOUBLE
 dnl because it does not support cross-compilation.  Instead, we use the
 dnl same test in the MPICH configure.
 # Check on support for long double and long long types.  Do this before the
 # structure alignment test because it will test for including those
 # types as well
-# 
+#
 # If --disable-long-double is selected, then bypass this test.
 # Some MPI implementations may choose to not support long double because
 # their C compilers are inconsistent on the length of long double (this
@@ -704,7 +653,7 @@ AC_CACHE_CHECK([whether long long is supported],pac_cv_have_long_long,[
         AC_LANG_PROGRAM([],[long long a;])
     ],[pac_cv_have_long_long=yes],[pac_cv_have_long_long=no])
 ])
-if test "$pac_cv_have_long_long" = yes ; then 
+if test "$pac_cv_have_long_long" = yes ; then
     AC_DEFINE(HAVE_LONG_LONG,1,[Define if compiler supports long long])
 fi
 #
@@ -712,9 +661,8 @@ fi
 AC_C_CONST
 AC_C_RESTRICT
 
-# not using libtool for the test suite, so no LT_INIT.  Instead, test here
-# for Library programs
-AC_PROG_RANLIB
+
+# Archiver for building utility libraries
 AM_PROG_AR
 
 # Check for --enable-strict
@@ -763,6 +711,9 @@ PAC_CHECK_HEADER_LIB_OPTIONAL([cuda],[cuda_runtime_api.h],[cudart],[cudaStreamSy
 cuda_CPPFLAGS=""
 cuda_LDFLAGS=""
 cuda_LIBS=""
+cudadir=
+AC_SUBST(cudadir)
+AC_ARG_VAR([NVCC], [nvcc compiler to use])
 if test "X${pac_have_cuda}" = "Xyes" ; then
     AC_DEFINE([HAVE_CUDA],[1],[Define if CUDA is available])
     have_gpu="yes"
@@ -774,7 +725,20 @@ if test "X${pac_have_cuda}" = "Xyes" ; then
             cuda_LDFLAGS="-L${with_cuda}/lib"
         fi
     fi
+
+    if test -z "$NVCC" ; then
+        if test -n "${with_cuda}" -a "$with_cuda" != "no" ; then
+            AC_PATH_PROG([NVCC], [nvcc], [nvcc_not_found], [$with_cuda/bin:$PATH])
+        else
+            AC_PATH_PROG([NVCC], [nvcc], [nvcc_not_found])
+        fi
+        if test "$NVCC" != "nvcc_not_found" -a -n "$save_CXX" ; then
+            NVCC="$NVCC -ccbin $save_CXX"
+        fi
+    fi
     cuda_LIBS="-lcudart"
+
+    cudadir="cuda"
 fi
 AM_CONDITIONAL([HAVE_CUDA],[test "X${pac_have_cuda}" = "Xyes"])
 AC_SUBST([cuda_CPPFLAGS])
@@ -807,6 +771,9 @@ fi
 AM_CONDITIONAL([HAVE_ZE],[test "X${pac_have_ze}" = "Xyes"])
 
 # Check HIP availability
+hipdir=
+AC_SUBST(hipdir)
+AC_ARG_VAR([HIPCC], [hipcc compiler to use])
 if test "$have_gpu" = "no" ; then
     AC_DEFINE([__HIP_PLATFORM_AMD__],[1],[AMD GPU HIP available])
     PAC_CHECK_HEADER_LIB_OPTIONAL([hip],[hip/hip_runtime_api.h],[amdhip64],[hipStreamSynchronize])
@@ -825,6 +792,16 @@ if test "$have_gpu" = "no" ; then
           fi
        fi
        hip_LIBS="-lamdhip64"
+
+       if test -z "$HIPCC" ; then
+           if test -n "${with_hip}" -a "$with_hip" != "no" ; then
+               AC_PATH_PROG([HIPCC], [hipcc], [hipcc_not_found], [$with_hip/bin:$PATH])
+           else
+               AC_PATH_PROG([HIPCC], [hipcc], [hipcc_not_found])
+           fi
+       fi
+
+       hipdir="hip"
     fi
     AC_SUBST([hip_CPPFLAGS])
     AC_SUBST([hip_LDFLAGS])
@@ -836,13 +813,27 @@ PAC_POP_FLAG([CPPFLAGS])
 PAC_POP_FLAG([LDFLAGS])
 PAC_POP_FLAG([LIBS])
 
-AM_CONDITIONAL([HAVE_GPU], [test $have_gpu = "yes"])
-# GPU only tests
+# setup which tests "make testing" will run
+default_testlist=testlist
+default_testdirs=
+if test $have_gpu = "yes" ; then
+    default_testlist="${default_testlist},testlist.gpu"
+fi
+if test $enable_dtpools = "yes" ; then
+    default_testlist="${default_testlist},testlist.dtp"
+fi
+if test $enable_collalgo_tests = "yes" ; then
+    default_testlist="${default_testlist},testlist.collalgo"
+fi
+# handle --enable-gpu-tests-only
 if test $have_gpu = "no" -a $enable_gpu_tests_only = "yes" ; then
     AC_MSG_ERROR([GPU only test configuration requires GPU library (CUDA or LevelZero)])
+elif test $enable_gpu_tests_only = "yes" ; then
+    default_testdirs=coll,pt2pt,rma
+    default_testlist=testlist.gpu
 fi
-AM_CONDITIONAL([GPU_ONLY], [test $enable_gpu_tests_only = "yes"])
-# End of GPU libs Check
+AC_SUBST([default_testdirs])
+AC_SUBST([default_testlist])
 
 # for tests that require large mem
 largetest="#"
@@ -922,7 +913,7 @@ case $with_thread_package in
         THREAD_PACKAGE_NAME=THREAD_PACKAGE_NONE
         ;;
     *)
-	AC_MSG_ERROR([The specified thread package, $with_thread_package, is not supported.])
+        AC_MSG_ERROR([The specified thread package, $with_thread_package, is not supported.])
         ;;
 esac
 
@@ -953,45 +944,39 @@ AC_CHECK_FUNCS(getrusage)
 # Check for the MPI Version.  This test assumes at least MPI 2.0.  For
 # some tests, we need to know if we are MPI 2.1 or MPI 2.2,
 # particularly for new routines in Fortran
-if test "$FROM_MPICH" != "yes" ; then
-    AC_CACHE_CHECK([that MPI program can be compiled],pac_cv_mpi_compile_ok,[
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include "mpi.h"],[MPI_Init(0,0);MPI_Finalize();])],pac_cv_mpi_compile_ok=yes,pac_cv_mpi_compile_ok=no)])
-    if test "$pac_cv_mpi_compile_ok" != yes ; then
-        AC_MSG_ERROR([Unable to compile an MPI program containing mpi.h!])
-    fi
-    AC_CACHE_CHECK([for major version of MPI],pac_cv_mpi_major_version,[
-for pac_cv_mpi_major_version in 3 2 1 unknown ; do
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include "mpi.h"],[
-#if MPI_VERSION == $pac_cv_mpi_major_version 
+AC_CACHE_CHECK([for major version of MPI],pac_cv_mpi_major_version,[
+    for pac_cv_mpi_major_version in 4 3 2 1 unknown ; do
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include "mpi.h"],[
+#if MPI_VERSION == $pac_cv_mpi_major_version
     ''' force failure '''
 #endif])],,break)
-done
+    done
 ])
 
-    AC_CACHE_CHECK([for minor version of MPI],pac_cv_mpi_minor_version,[
-for pac_cv_mpi_minor_version in 4 3 2 1 0 unknown ; do
-    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include "mpi.h"],[
-#if MPI_SUBVERSION == $pac_cv_mpi_minor_version 
+AC_CACHE_CHECK([for minor version of MPI],pac_cv_mpi_minor_version,[
+    for pac_cv_mpi_minor_version in 4 3 2 1 0 unknown ; do
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include "mpi.h"],[
+#if MPI_SUBVERSION == $pac_cv_mpi_minor_version
     ''' force failure '''
 #endif])],,break)
-done
+    done
 ])
 MPI_VERSION=$pac_cv_mpi_major_version
 MPI_SUBVERSION=$pac_cv_mpi_minor_version
-else
-    # We are within the MPICH build.  Extract the MPI versions from 
-    # mpi.h.in	
-    if test ! -f $mpich_top_srcdir/src/include/mpi.h.in ; then
-        AC_MSG_ERROR([Could not find the required mpi.h.in file!])
-    fi
-    MPI_VERSION=`grep MPI_VERSION $mpich_top_srcdir/src/include/mpi.h.in | \
-    		      sed -e 's/#define *MPI_VERSION *\([0-4]\).*/\1/g'`
-    MPI_SUBVERSION=`grep MPI_SUBVERSION $mpich_top_srcdir/src/include/mpi.h.in | \
-    		      sed -e 's/#define *MPI_SUBVERSION *\([0-9]\).*/\1/g'`
-fi
 
 AC_SUBST(MPI_VERSION)
 AC_SUBST(MPI_SUBVERSION)
+
+AC_MSG_CHECKING([whether MPI-IO is available])
+AC_LINK_IFELSE([
+        AC_LANG_PROGRAM([#include "mpi.h"],[
+            MPI_File fh;
+            MPI_Init(0,0);
+            MPI_File_open(MPI_COMM_WORLD,"/dev/null",MPI_MODE_WRONLY,MPI_INFO_NULL,&fh);
+            MPI_File_close(&fh);
+            MPI_Finalize();])
+    ],[mpi_io_works=yes],[mpi_io_works=no])
+AC_MSG_RESULT($mpi_io_works)
 
 # Running Fortran 77 compiler tests
 AC_PROG_F77
@@ -999,21 +984,14 @@ if test "$enable_f77" = yes ; then
     # If there is no working F77, then set enable_f77 to no
     if test -z "$F77" ; then
         enable_f77=no
-    fi    
+    fi
 fi
-# Simple tests for which other languages we can handle.  
+# Simple tests for which other languages we can handle.
 # Use these only when configuring separate from an MPICH build
 f77dir="#"
 AC_SUBST(f77dir)
 buildingF77=no
-if test "$FROM_MPICH" = yes ; then
-    if test "$enable_f77" = yes ; then
-       # Assume success
-        otherlangs="$otherlangs f77"
-        f77dir=f77
-        buildingF77=yes
-    fi
-elif test "$enable_f77" = yes ; then
+if test "$enable_f77" = yes ; then
     AC_MSG_CHECKING([that we can build MPI programs with Fortran 77])
     AC_LANG_PUSH([Fortran 77])
     AC_LINK_IFELSE([
@@ -1036,7 +1014,7 @@ elif test "$enable_f77" = yes ; then
     AC_LANG_POP([Fortran 77])
 fi
 #
-# At least one test (C++ test of C and Fortran datatypes) needs to 
+# At least one test (C++ test of C and Fortran datatypes) needs to
 # know if Fortran is supported
 if test "$f77dir" = "f77" ; then
     AC_DEFINE(HAVE_FORTRAN_BINDING,1,[Define if Fortran is supported])
@@ -1059,63 +1037,12 @@ if test "$buildingF77" = "yes" ; then
         # Aint should be an address-sized integer, the same as void*
         # We use a test on the size of void * to avoid any complications
         # in dealing with running programs containing MPI headers (e.g.,
-        # the IBM MPI changes the main entry point so that MPI 
+        # the IBM MPI changes the main entry point so that MPI
         # programs cannot be run on the host node)
         AC_CHECK_SIZEOF(void *)
         MPI_SIZEOF_AINT=$ac_cv_sizeof_void_p
     fi
     if test -z "$MPI_SIZEOF_OFFSET" ; then
-        # We have to try and get the size of offset anyway, since 
-        # it is not the same as void * (it depends on the available
-        # file systems).  Since we want to avoid using the MPI linker,
-        # we could do the following:
-        #    Use the mpi compiler to compile the file, using the mpi 
-        #    header but no MPI calls
-        #    Use the regular C linker to link the program
-        # However, we do this only if the environment variable BASECC
-        # has been provided.  Else we can try the following:
-        # use
-        #    sed -n 's/typedef \(.*\) MPI_Offset *;/\1/p' mpi.h
-        # to extract the type corresponding to MPI_Offset and then
-        # just use that.
-dnl         AC_CACHE_CHECK([the sizeof MPI_Offset],ac_cv_sizeof_MPI_Offset,[
-dnl              ac_cv_sizeof_MPI_Offset=unknown
-dnl              rm -f conftest*
-dnl              cat >>conftest.c <<EOF
-dnl #include "mpi.h"
-dnl #include <stdio.h>
-dnl int main( int argc, char **argv )
-dnl {
-dnl     MPI_Offset a;
-dnl     FILE *f = fopen("conftestval", "w" );
-dnl     if (! f) exit(1);
-dnl     fprintf( f, "%ld\n", (long)sizeof(MPI_Offset) );
-dnl     fclose(f);
-dnl     return 0;
-dnl }
-dnl EOF
-dnl             # FIXME.  Check for BASECC
-dnl             # Note: This assumes that CC has been set to the C compiler for
-dnl             # MPI Programs, and that either any necessary include paths are 
-dnl             # already set or they are in CPPFLAGS (preferred) or CFLAGS.
-dnl             if AC_TRY_EVAL(ac_link) && test -s conftest$ac_exeext ; then
-dnl                 if ./conftest$ac_exeext ; then
-dnl                     #success
-dnl                     ac_cv_sizeof_MPI_Offset=`cat conftestval`
-dnl                 else
-dnl                     # failure
-dnl                     AC_MSG_WARN([Unable to run the program to determine the size of MPI_Offset])
-dnl                     echo "configure: failed program was:" >&AS_MESSAGE_LOG_FD
-dnl                     cat conftest.c >&AS_MESSAGE_LOG_FD
-dnl                 fi
-dnl             else
-dnl                 # failure
-dnl                 AC_MSG_WARN([Unable to build the program to determine the size of MPI_Offset])
-dnl                 echo "configure: failed program was:" >&AS_MESSAGE_LOG_FD
-dnl                 cat conftest.c >&AS_MESSAGE_LOG_FD
-dnl             fi
-dnl             rm -f conftest*
-dnl         ])
         AC_CHECK_SIZEOF([MPI_Offset],[],[#include "mpi.h"])
         if test "$ac_cv_sizeof_MPI_Offset" = "unknown" \
              -o "$ac_cv_sizeof_MPI_Offset" -eq 0 ; then
@@ -1125,7 +1052,7 @@ dnl         ])
              MPI_SIZEOF_OFFSET=$ac_cv_sizeof_MPI_Offset
         fi
     fi
-    
+
     AC_LANG_PUSH([Fortran 77])
     AC_CACHE_CHECK([whether integer*4 is supported],pac_cv_fort_integer4,[
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*4 i])],
@@ -1167,20 +1094,20 @@ dnl         ])
     cat > f77/init/checksizes.c <<EOF
 #include "mpi.h"
 #include <stdio.h>
-int main( int argc, char **argv ) 
+int main( int argc, char **argv )
 {
   int fsizeof_aint   = $MPI_SIZEOF_AINT;
   int fsizeof_offset = $MPI_SIZEOF_OFFSET;
   int err = 0, rc = 0;
-  
+
   MPI_Init( &argc, &argv );
   if (sizeof(MPI_Aint) != fsizeof_aint) {
-     printf( "Sizeof MPI_Aint is %d but Fortran thinks it is %d\n", 
+     printf( "Sizeof MPI_Aint is %d but Fortran thinks it is %d\n",
              (int)sizeof(MPI_Aint), fsizeof_aint );
      err++;
   }
   if (sizeof(MPI_Offset) != fsizeof_offset) {
-     printf( "Sizeof MPI_Offset is %d but Fortran thinks it is %d\n", 
+     printf( "Sizeof MPI_Offset is %d but Fortran thinks it is %d\n",
              (int)sizeof(MPI_Offset), fsizeof_offset );
      err++;
   }
@@ -1195,32 +1122,12 @@ EOF
     AC_LANG_FORTRAN77
     PAC_PROG_F77_NAME_MANGLE
 
-    # Check that the Fortran compiler will allow us to pass arguments
-    # of different types (e.g., for MPI_Send)
-    # Any strict Fortran compiler will require that the arguments be 
-    # the same type - currently, the NAG Fortran compiler (nagfor) is known
-    # to enforce this.
-    # We could set the FFLAGS/FCFLAGS values with the option that disables
-    # this check (if we found one), but because that may affect other tests,
-    # instead we tell the user and exit.
-    PAC_PROG_F77_MISMATCHED_ARGS(addarg,yes)
-    if test "X$addarg" != "X" ; then
-        # We could add the names of all of the MPI routines that 
-        # accept different types.  Instead, we fail cleanly.  
-        # Some Fortran compilers allow you to turn off checking for 
-        # mismatched arguments for *all* routines.  Adding an argument
-	# that turns off checking for *everything* is not something that 
-	# configure should do - if the user wants this, they can follow
-	# the instructions in the following error message.
-	AC_MSG_ERROR([The Fortran compiler $F77 does not accept programs that call the same routine with arguments of different types without the option $addarg.  Rerun configure with FFLAGS=$addarg])
-    fi
-
-    # Check whether we need -lU77 to get iargc and getarg, which 
+    # Check whether we need -lU77 to get iargc and getarg, which
     # are used for a few of the tests in spawn (U77 was needed with
-    # the native compilers on HPUX.  See the aclocal_f77(old).m4 file, 
+    # the native compilers on HPUX.  See the aclocal_f77(old).m4 file,
     # which has a much more complete set of tests.
     #
-    # FIXME: if we can't figure out how to get iargc/getarg, then 
+    # FIXME: if we can't figure out how to get iargc/getarg, then
     # we should really turn off those spawn tests
     # Even better is to limit this to the F200x version, where there is
     # an interface to the command line.
@@ -1257,10 +1164,10 @@ EOF
     if test -n "$F77_GETARG_LIBS" ; then
         AC_MSG_RESULT($F77_GETARG_LIBS)
     else
-        if test "$pac_cv_getarg_needs_u77" = "unavailable" ; then 
+        if test "$pac_cv_getarg_needs_u77" = "unavailable" ; then
             AC_MSG_RESULT([getarg and/or iargc are not available.  Some spawn tests will fail to link])
-	    F77SPAWNARGTEST="#"
-        else 
+            F77SPAWNARGTEST="#"
+        else
             AC_MSG_RESULT([none needed])
         fi
     fi
@@ -1268,8 +1175,8 @@ EOF
     # FIXME: Currently, we hope that FC accepts the same library
     FC_GETARG_LIBS="$F77_GETARG_LIBS"
     AC_SUBST(FC_GETARG_LIBS)
-    # F77SPAWNARGTEST is set to "#" to comment out tests in 
-    # f77/spawn/testlist.in that require non-standard extensions to 
+    # F77SPAWNARGTEST is set to "#" to comment out tests in
+    # f77/spawn/testlist.in that require non-standard extensions to
     # access the commandline
     AC_SUBST(F77SPAWNARGTEST)
 
@@ -1323,16 +1230,10 @@ fi
 dnl If enable_fc=yes up to this point then enable_f77=yes also
 dnl PAC_PROG_FC and PAC_PROG_FC_WORKS return OK
 if test "$enable_fc" = yes ; then
-    # Make sure that the compilers are compatible.  This 
+    # Make sure that the compilers are compatible.  This
     # will also make sure that the program named in FC is
     # a working Fortran 90 compiler
-    # Only check if we're *not* building within MPICH 
-    # (MPICH will have made the test)
-    # FIXME: Do we want to check only simple routine names 
-    # (those without an underscore?)
-    if test "$FROM_MPICH" != yes ; then
-        PAC_FC_AND_F77_COMPATIBLE(enable_fc=yes,enable_fc=no)
-    fi
+    PAC_FC_AND_F77_COMPATIBLE(enable_fc=yes,enable_fc=no)
 fi
 
 if test "$enable_fc" = yes ; then
@@ -1351,7 +1252,7 @@ if test "$enable_fc" = yes ; then
     # The Fortran90 tests rely on free-form input which needs to be tested
     # before any test that may modify FCFLAGS, e.g. the cray-pointer test.
     # The order of the tests is important in compiler like g95.
-    # Recent experience showed that the IBM xlf compiler, at least on 
+    # Recent experience showed that the IBM xlf compiler, at least on
     # some systems, requires -qfree=f90 instead of -qfree .  At this
     # writing (11/27/12), this Autoconf macro still uses -qfree and has
     # no mechanism for extension.  This test may fail in that case; if
@@ -1380,9 +1281,9 @@ if test "$enable_fc" = yes ; then
     AC_MSG_RESULT($pac_cv_fc_has_args)
     if test "$pac_cv_fc_has_args" != "yes" ; then
         F03SPAWNARGTEST="#"
-    fi      
-    # F03SPAWNARGTEST is set to "#" to comment out tests in 
-    # f90/spawn/testlist.in that require Fortran 2003 features to 
+    fi
+    # F03SPAWNARGTEST is set to "#" to comment out tests in
+    # f90/spawn/testlist.in that require Fortran 2003 features to
     # access the commandline
     AC_SUBST(F03SPAWNARGTEST)
     AC_LANG_POP([Fortran])
@@ -1400,12 +1301,7 @@ if test "$enable_fc" = yes ; then
     PAC_FC_MODULE
 fi
 #
-if test "$FROM_MPICH" = yes ; then
-    if test "$enable_fc" = yes ; then
-        otherlangs="$otherlangs f90"
-        f90dir=f90
-    fi
-elif test "$enable_fc" = yes ; then
+if test "$enable_fc" = yes ; then
     AC_MSG_CHECKING([that we can build MPI programs with Fortran 90])
     AC_LANG_PUSH([Fortran])
     AC_LINK_IFELSE([
@@ -1427,23 +1323,108 @@ elif test "$enable_fc" = yes ; then
     AC_LANG_POP([Fortran])
 fi
 
-if test "$enable_f08" = "yes" ; then
-    PAC_FC_2008_SUPPORT([enable_f08=yes],[enable_f08=no])
+# The f77/profile tests will failed to link if we are doing static linking and using
+# libmpi+libpmpi. The compiler will complain of multiple definition of the profiled
+# profiled routines. It still can be built if we pass the -Wl,--allow-multiple-definition
+# flag. For simplicity, we disable the test for this case.
+#
+f77profile=
+AC_SUBST(f77profile)
+if test "$f77dir" = "f77" ; then
+    AC_MSG_CHECKING([that f77/profile tests can be built])
+    AC_LANG_PUSH([Fortran])
+    AC_LINK_IFELSE([
+        AC_LANG_SOURCE([
+            program main
+            integer ierr
+            integer msg(1)
+            call mpi_init(ierr)
+            call mpi_send(msg, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, ierr)
+            call mpi_finalize(ierr)
+            end
+
+            subroutine mpi_send(msg, count, dtype, dest, tag, comm, ierr)
+            include "mpif.h"
+            integer count, dtype, dest, tag, comm, ierr
+            integer msg(count)
+            call pmpi_send(msg, count, dtype, dest, tag, comm, ierr)
+            return
+            end
+        ])
+    ],[
+        AC_MSG_RESULT(yes)
+        f77profile="profile"
+    ],[
+        AC_MSG_RESULT(no)
+    ])
+    AC_LANG_POP([Fortran])
+fi
+
+# The f90/profile tests uses the mechanism of e.g. "use mpi, skip_mpi_send => mpi_send".
+# If mpi.mod doesn't contain the routine interface, for example, when ignore TKR isn't
+# available, it need use the f77 mechanism of direct linking. For simplicity, here we
+# disable the profile test if that's the case.
+#
+f90profile=
+AC_SUBST(f90profile)
+if test "$f90dir" = "f90" ; then
+    AC_MSG_CHECKING([that mpi module contains choice buffer routines])
+    AC_LANG_PUSH([Fortran])
+    AC_COMPILE_IFELSE([
+        AC_LANG_SOURCE([
+            program main
+            use mpi, skip_mpi_send => mpi_send
+            end
+        ])
+    ],[
+        AC_MSG_RESULT(yes)
+        f90profile="profile"
+    ],[
+        AC_MSG_RESULT(no)
+    ])
+    AC_LANG_POP([Fortran])
 fi
 
 f08dir="#"
 AC_SUBST(f08dir)
-# FIXME if $FROM_MPICH is no, we should test build an MPI F08 program
-if test "$enable_f08" = "yes" -a "$FROM_MPICH" = "yes" ; then
-   f08dir=f08
+if test "$enable_f08" = "yes" ; then
+    AC_MSG_CHECKING([that we can build MPI programs with use mpi_f08])
+    AC_LANG_PUSH([Fortran])
+    AC_LINK_IFELSE([
+        AC_LANG_SOURCE([
+            program main
+            use mpi_f08
+            integer ierr
+            call mpi_init(ierr)
+            call mpi_finalize(ierr)
+            end
+        ])
+    ],[
+        AC_MSG_RESULT(yes)
+        f08dir=f08
+    ],[
+        AC_MSG_RESULT(no)
+    ])
+    AC_LANG_POP([Fortran])
 fi
 
 # Running C++ compiler tests
 AC_PROG_CXX
 if test "$enable_cxx" = yes ; then
-    if test -z "$CXX" ; then
+    AC_MSG_CHECKING([that we can build MPI programs with CXX binding])
+    AC_LANG_PUSH([C++])
+    AC_LINK_IFELSE([
+        AC_LANG_PROGRAM([#include "mpi.h"], [
+            MPI::Init(NULL, NULL);
+            MPI::Finalize();
+        ])
+    ],[
+        AC_MSG_RESULT(yes)
+    ],[
         enable_cxx=no
-    fi
+        AC_MSG_RESULT(no)
+    ])
+    AC_LANG_POP([C++])
 fi
 # Simple tests for which other languages we can handle
 cxxdir="#"
@@ -1452,15 +1433,7 @@ cxxdir="#"
 # us to detect that and to skip the test when it is not supported.
 nocxxdistgraph="#"
 AC_SUBST(cxxdir)
-if test "$FROM_MPICH" = yes ; then
-    if test "$enable_cxx" = yes ; then
-        otherlangs="$otherlangs cxx"
-        cxxdir=cxx
-        # MPICH ABI removed support for MPI::Distgraphcomm, so
-	# nocxxdistgraph is left as #, which comments out the test
-	# in cxx/topol/testlist.in
-    fi
-elif test "$enable_cxx" = yes ; then
+if test "$enable_cxx" = yes ; then
     AC_MSG_CHECKING([that we can build MPI programs with C++])
     AC_LANG_PUSH([C++])
     AC_LINK_IFELSE([
@@ -1518,7 +1491,7 @@ if test "$enable_cxx" = yes ; then
         fi
         # Warning: the autoconf macros will fall back onto /lib/cpp for
         # C and C++ preprocessing *without* checking that /lib/cpp even
-        # exists.  
+        # exists.
         if test "$CXXCPP" = "/lib/cpp" ; then
             if test ! -x "/lib/cpp" ; then
                 AC_MSG_WARN([Warning: Autoconf error, could not find a C++ Preprocessor.  Using false for the preprocessor so that tests will continue.])
@@ -1528,11 +1501,16 @@ if test "$enable_cxx" = yes ; then
     fi
 
     AX_CXX_NAMESPACE_STD
-   
-    if test "$ac_cv_cxx_namespaces" != yes ; then 
+
+    if test "$ac_cv_cxx_namespaces" != yes ; then
         AC_MSG_WARN([The compiler $CXX does not support C++ namespaces.  This may cause problems for the tests])
     fi
     AC_LANG_POP([C++])
+
+    dnl for util/mtest_cxx.cxx
+    if test "$mpi_io_works" = "yes" ; then
+        AC_DEFINE(HAVE_MPI_IO,1,[Define if MPI-IO (really ROMIO) is included])
+    fi
 fi
 
 AC_LANG_C
@@ -1541,68 +1519,93 @@ LT_INIT()
 
 # IO
 iodir="#"
-if test "$enable_romio" != no ; then
+if test "$enable_romio" != no -a "$mpi_io_works" = yes ; then
     iodir=io
-    AC_DEFINE(HAVE_MPI_IO,1,[Define if MPI-IO (really ROMIO) is included])
-    if test "$FROM_MPICH" = yes ; then
-        # MPICH no longer uses and MPIO_Request
-        pac_cv_have_mpio_request=no
-    else 
-        AC_CACHE_CHECK([whether MPIO_Request is defined for MPI IO],
-        pac_cv_have_mpio_request,[
-            AC_COMPILE_IFELSE([
-                AC_LANG_PROGRAM([#include "mpi.h"],[MPIO_Request r;])
-            ],[pac_cv_have_mpio_request=yes],[pac_cv_have_mpio_request=no])
-        ])
-    fi
+
+    dnl for io/async.c
+    AC_CACHE_CHECK([whether MPIO_Request is defined for MPI IO],
+    pac_cv_have_mpio_request,[
+        AC_COMPILE_IFELSE([
+            AC_LANG_PROGRAM([#include "mpi.h"],[MPIO_Request r;])
+        ],[pac_cv_have_mpio_request=yes],[pac_cv_have_mpio_request=no])
+    ])
     if test "$pac_cv_have_mpio_request" = no ; then
         AC_DEFINE(MPIO_USES_MPI_REQUEST,,[Define if MPI IO uses MPI_Request])
     fi
 fi
 AC_SUBST(iodir)
 
-impldir="#"
+impldir=""
 #
 # Check for implementation to enable implementation-specific options
 if test $enable_strictmpi != "yes" ; then
-   # Is this MPICH?
-   if test "$FROM_MPICH" = yes ; then
-      impldir="mpich"
-   else
-       AC_CACHE_CHECK([Is the MPI derived from MPICH],
-       pac_cv_ismpich,[
-           AC_COMPILE_IFELSE([
-               AC_LANG_PROGRAM([#include "mpi.h"],[return 1 + MPICH;])
-           ],[pac_cv_ismpich=yes],[pac_cv_ismpich=no])
-       ])
-       if test "$pac_cv_ismpich" = "yes" ; then
-           impldir="mpich"
-       fi
-   fi
+    if test "$MPI_IS_MPICH" = "yes" ; then
+        impldir="mpich"
+    fi
 fi
 AC_SUBST(impldir)
+
+pmidir=""
+PAC_PUSH_FLAG([LIBS])
+LIBS="$LIBS -lpmi"
+AC_MSG_CHECKING([that we have pmi library])
+AC_LINK_IFELSE([
+    AC_LANG_PROGRAM([#include "pmi.h"], [
+        int has_parent;
+        PMI_Init(&has_parent);
+        PMI_Finalize();
+    ])
+],[
+    AC_MSG_RESULT(yes)
+    pmidir=pmi
+],[
+    AC_MSG_RESULT(no)
+])
+PAC_POP_FLAG([LIBS])
+AC_SUBST(pmidir)
+
 #
 # MPI_INTEGER16 is mentioned in only one place in MPI 2.1, and some
-# implementations may have missed it.  Check to see if it is available in 
+# implementations may have missed it.  Check to see if it is available in
 # C.
-if test "$FROM_MPICH" = yes ; then
-   # MPICH correctly includes this type.
-   pac_cv_have_mpi_integer16=yes
-else
-    AC_CACHE_CHECK([whether MPI_INTEGER16 is available],
-    pac_cv_have_mpi_integer16,[
-        AC_COMPILE_IFELSE([
-            AC_LANG_PROGRAM([#include "mpi.h"],[
-                MPI_Datatype t = MPI_INTEGER16;
-            ])
-        ],[pac_cv_have_mpi_integer16=yes],[pac_cv_have_mpi_integer16=no])
-    ])
-fi
-if test "$pac_cv_have_mpi_integer16" = yes ; then 
+AC_CACHE_CHECK([whether MPI_INTEGER16 is available],
+pac_cv_have_mpi_integer16,[
+    AC_COMPILE_IFELSE([
+        AC_LANG_PROGRAM([#include "mpi.h"],[
+            MPI_Datatype t = MPI_INTEGER16;
+        ])
+    ],[pac_cv_have_mpi_integer16=yes],[pac_cv_have_mpi_integer16=no])
+])
+if test "$pac_cv_have_mpi_integer16" = yes ; then
     AC_DEFINE(HAVE_MPI_INTEGER16,1,[Define if MPI_INTEGER16 is available])
 fi
 
-# MPI_Aint was intended as an address-sized int.  However, MPI didn't 
+# Check if MPI_REAL16 and MPI_COMPLEX32 are defined. Tests handle the case
+# where they are defined, but the value is the same as MPI_DATATYPE_NULL.
+AC_CACHE_CHECK([whether MPI_REAL16 is available],
+pac_cv_have_mpi_real16,[
+    AC_COMPILE_IFELSE([
+        AC_LANG_PROGRAM([#include "mpi.h"],[
+            MPI_Datatype t = MPI_REAL16;
+        ])
+    ],[pac_cv_have_mpi_real16=yes],[pac_cv_have_mpi_real16=no])
+])
+if test "$pac_cv_have_mpi_real16" = yes ; then
+    AC_DEFINE(HAVE_MPI_REAL16,1,[Define if MPI_REAL16 is available])
+fi
+AC_CACHE_CHECK([whether MPI_COMPLEX32 is available],
+pac_cv_have_mpi_complex32,[
+    AC_COMPILE_IFELSE([
+        AC_LANG_PROGRAM([#include "mpi.h"],[
+            MPI_Datatype t = MPI_COMPLEX32;
+        ])
+    ],[pac_cv_have_mpi_complex32=yes],[pac_cv_have_mpi_complex32=no])
+])
+if test "$pac_cv_have_mpi_complex32" = yes ; then
+    AC_DEFINE(HAVE_MPI_COMPLEX32,1,[Define if MPI_COMPLEX32 is available])
+fi
+
+# MPI_Aint was intended as an address-sized int.  However, MPI didn't
 # specify this - MPI_Aint must be large enough to hold an address-sized
 # integer, but it can be larger.  To get clean compilation in some places,
 # we need a pointer-sized integer.  The following code looks for one.
@@ -1627,76 +1630,15 @@ done
 AC_MSG_RESULT($POINTERINT)
 AC_DEFINE_UNQUOTED(POINTERINT_t,$POINTERINT,[POINTERINT_t is a pointer-sized integer])
 
-# Find perl; used to create some of the tests from template and 
+# Find perl; used to create some of the tests from template and
 # definition files
 AC_PATH_PROG(PERL,perl)
 AC_SUBST(PERL)
 AC_SUBST(otherlangs)
 AC_SUBST(threadsdir)
-AC_SUBST(MPIEXEC)
 AC_SUBST(MAKE)
 if test -z "$MPILIBNAME" ; then MPILIBNAME=mpich ; fi
 AC_SUBST(MPILIBNAME)
-dnl MPI_SOURCE may be set as an environment variable giving the location
-dnl of the MPI implementation.  This is used only in runtests to include
-dnl the location of the source of the MPI implementation into the XML
-dnl summary file
-AC_SUBST(MPI_SOURCE)
-
-if test "$FROM_MPICH" = yes ; then
-    # Set compilers/flags to be substituted in output files, e.g. Makefiles.
-    LDFLAGS="$saveLDFLAGS"
-    # note that the default definition of bindir is 
-    #    '${exec_prefix}/bin'
-    # so even if prefix is set, exec prefix is not until
-    # the very last moment (i.e., not here). 
-    if test "X$exec_prefix" = "XNONE" ; then
-        saveExec_prefix=$exec_prefix
-        if test "X$prefix" = "XNONE" ; then
-            # Use the default
-            exec_prefix=$ac_default_prefix
-        else
-            exec_prefix=$prefix
-        fi
-        # Evaluate with the current setting of exec_prefix
-        eval mpibindir=${bindir}
-        exec_prefix=$saveExec_prefix
-    else
-        eval mpibindir=${bindir}
-    fi
-
-    # we did our tests with the base compilers, now point the make system at the
-    # installed compiler wrappers for actually building the tests
-    CC=$mpibindir/$MPICC_NAME
-    F77=$mpibindir/$MPIF77_NAME
-    FC=$mpibindir/$MPIFORT_NAME
-    CXX=$mpibindir/$MPICXX_NAME
-    if test -z "$MPIEXEC" ; then
-        MPIEXEC=$mpibindir/$MPIEXEC_NAME
-    fi
-
-    # Zero out the flags, since they are already contained in the compiler
-    # wrapper scripts.  Note that this will kill any flags that have been added
-    # to the xFLAGS only in this script.
-    #
-    # The only real flags we seem to add in this script relate to cray
-    # pointer support in Fortran, so we include that var here where
-    # appropriate.
-    #
-    # The other case are the performance tests - for datatype performance,
-    # compiling with optimization is important.
-    CFLAGS=""
-    CPPFLAGS=""
-    LDFLAGS=""
-    LIBS=""
-    FFLAGS="$CRAYPTR_FFLAGS"
-    FCFLAGS="$CRAYPTR_FCFLAGS"
-    CXXFLAGS=""
-else
-    # We need either mpiexec or mpirun.  If we don't find them,
-    # the user will need to determine how to run a program
-    AC_PATH_PROG(MPIEXEC,$MPIEXEC_NAME)
-fi
 
 # TODO: use variables such as has_f77 etc. instead of double use $f77dir etc.
 AM_CONDITIONAL([HAS_F77], [test $f77dir = f77])
@@ -1713,7 +1655,6 @@ AC_CONFIG_COMMANDS([chmod],[
 dnl Note that this format for AC_OUTPUT can cause problems for autoconf
 dnl run under cygwin
 AC_OUTPUT(maint/testmerge \
-          runtests \
           checktests \
           Makefile \
           basic/Makefile \
@@ -1721,7 +1662,7 @@ AC_OUTPUT(maint/testmerge \
           attr/testlist \
           util/Makefile \
           coll/Makefile \
-	  coll/testlist \
+          coll/testlist \
           comm/Makefile \
           comm/testlist \
           datatype/Makefile \
@@ -1756,7 +1697,7 @@ AC_OUTPUT(maint/testmerge \
           f77/pt2pt/Makefile \
           f77/info/Makefile \
           f77/spawn/Makefile \
-	  f77/spawn/testlist \
+          f77/spawn/testlist \
           f77/spawn/type1aint.h \
           f77/rma/Makefile \
           f77/ext/Makefile \
@@ -1766,7 +1707,7 @@ AC_OUTPUT(maint/testmerge \
           f77/io/iodisp.h \
           f77/io/ioaint.h \
           f77/io/testlist \
-	  f77/profile/Makefile \
+          f77/profile/Makefile \
           f90/Makefile \
           f90/attr/Makefile \
           f90/datatype/Makefile \
@@ -1779,25 +1720,25 @@ AC_OUTPUT(maint/testmerge \
           f90/rma/Makefile \
           f90/info/Makefile \
           f90/spawn/Makefile \
-	  f90/spawn/testlist \
+          f90/spawn/testlist \
           f90/timer/Makefile \
           f90/ext/Makefile \
           f90/ext/testlist \
           f90/io/Makefile \
           f90/io/testlist \
           f90/misc/Makefile \
-	      f90/profile/Makefile \
-	  f08/Makefile \
-	      f08/attr/Makefile \
-	      f08/datatype/Makefile \
-	      f08/coll/Makefile \
-	      f08/comm/Makefile \
-	      f08/pt2pt/Makefile \
-	      f08/rma/Makefile \
-	      f08/subarray/Makefile \
-	      f08/topo/Makefile \
-	      f08/io/Makefile \
-	      f08/io/testlist \
+              f90/profile/Makefile \
+          f08/Makefile \
+              f08/attr/Makefile \
+              f08/datatype/Makefile \
+              f08/coll/Makefile \
+              f08/comm/Makefile \
+              f08/pt2pt/Makefile \
+              f08/rma/Makefile \
+              f08/subarray/Makefile \
+              f08/topo/Makefile \
+              f08/io/Makefile \
+              f08/io/testlist \
           f08/init/Makefile \
           f08/info/Makefile \
           f08/spawn/Makefile \
@@ -1812,7 +1753,7 @@ AC_OUTPUT(maint/testmerge \
           cxx/pt2pt/Makefile \
           cxx/comm/Makefile \
           cxx/coll/Makefile \
-	  cxx/errhan/Makefile \
+          cxx/errhan/Makefile \
           cxx/info/Makefile \
           cxx/datatype/Makefile \
           cxx/datatype/testlist \
@@ -1821,7 +1762,7 @@ AC_OUTPUT(maint/testmerge \
           cxx/rma/Makefile \
           cxx/spawn/Makefile \
           cxx/spawn/testlist \
-	  cxx/topo/Makefile \
+          cxx/topo/Makefile \
           threads/Makefile \
           threads/pt2pt/Makefile \
           threads/comm/Makefile \
@@ -1856,18 +1797,18 @@ AC_OUTPUT(maint/testmerge \
           errors/f77/io/addsize.h \
           errors/f77/io/iooffset.h \
           errors/f90/Makefile \
-	  errors/f90/io/Makefile \
+          errors/f90/io/Makefile \
           errors/f08/Makefile \
-	  errors/f08/io/Makefile \
-	  ckpoint/Makefile \
-	  ft/Makefile \
+          errors/f08/io/Makefile \
+          ckpoint/Makefile \
+          ft/Makefile \
           manual/Makefile \
           manual/manyconnect \
           manual/mpi_t/Makefile \
           perf/Makefile \
           testlist \
           cxx/testlist \
-	  cxx/topo/testlist \
+          cxx/topo/testlist \
           f77/testlist \
           f90/testlist \
           f08/testlist \
@@ -1883,6 +1824,7 @@ AC_OUTPUT(maint/testmerge \
           impls/Makefile \
           impls/hydra/Makefile \
           impls/hydra/proc_binding.sh \
+          impls/pmi/Makefile \
           impls/mpich/Makefile \
           impls/mpich/testlist \
           impls/mpich/mpi_t/Makefile \
@@ -1890,5 +1832,9 @@ AC_OUTPUT(maint/testmerge \
           impls/mpich/comm/testlist \
           impls/mpich/threads/Makefile \
           impls/mpich/threads/pt2pt/Makefile \
+          impls/mpich/cuda/Makefile \
+          impls/mpich/hip/Makefile \
+          impls/mpich/misc/Makefile \
+          impls/mpich/ulfm/Makefile \
           )
 

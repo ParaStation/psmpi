@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013-2017 Intel Corporation.  All rights reserved.
  * Copyright (c) 2014-2017, Cisco Systems, Inc. All rights reserved.
+ * Copyright (c) 2021 Amazon.com, Inc. or its affiliates. All rights reserved.
  *
  * This software is available to you under the BSD license below:
  *
@@ -39,6 +40,8 @@
 #include <netinet/tcp.h>
 #include <sys/uio.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <getopt.h>
 
 #include <rdma/fabric.h>
 #include <rdma/fi_rma.h>
@@ -76,11 +79,11 @@ struct test_size_param {
 	int enable_flags;
 };
 
-extern struct test_size_param test_size[];
-extern const unsigned int test_cnt;
+extern struct test_size_param *test_size;
+extern unsigned int test_cnt;
 #define TEST_CNT test_cnt
 
-#define FT_ENABLE_ALL		(~0)
+#define FT_ENABLE_SIZES		(~0)
 #define FT_DEFAULT_SIZE		(1 << 0)
 
 enum precision {
@@ -119,6 +122,8 @@ enum {
 	FT_OPT_USE_DEVICE	= 1 << 18,
 	FT_OPT_DOMAIN_EQ	= 1 << 19,
 	FT_OPT_FORK_CHILD	= 1 << 20,
+	FT_OPT_SRX		= 1 << 21,
+	FT_OPT_STX		= 1 << 22,
 	FT_OPT_OOB_CTRL		= FT_OPT_OOB_SYNC | FT_OPT_OOB_ADDR_EXCH,
 };
 
@@ -139,6 +144,10 @@ enum ft_atomic_opcodes {
 enum op_state {
 	OP_DONE = 0,
 	OP_PENDING
+};
+
+enum {
+	LONG_OPT_PIN_CORE = 1,
 };
 
 struct ft_context {
@@ -191,6 +200,8 @@ extern struct fid_pep *pep;
 extern struct fid_ep *ep, *alias_ep;
 extern struct fid_cq *txcq, *rxcq;
 extern struct fid_cntr *txcntr, *rxcntr;
+extern struct fid_ep *srx;
+extern struct fid_stx *stx;
 extern struct fid_mr *mr, no_mr;
 extern void *mr_desc;
 extern struct fid_av *av;
@@ -223,15 +234,16 @@ extern struct ft_opts opts;
 void ft_parseinfo(int op, char *optarg, struct fi_info *hints,
 		  struct ft_opts *opts);
 void ft_parse_addr_opts(int op, char *optarg, struct ft_opts *opts);
+void ft_parse_hmem_opts(int op, char *optarg, struct ft_opts *opts);
 void ft_parsecsopts(int op, char *optarg, struct ft_opts *opts);
-int ft_parse_rma_opts(int op, char *optarg, struct fi_info *hints,
+int ft_parse_api_opts(int op, char *optarg, struct fi_info *hints,
 		      struct ft_opts *opts);
 void ft_addr_usage();
 void ft_usage(char *name, char *desc);
 void ft_mcusage(char *name, char *desc);
 void ft_csusage(char *name, char *desc);
 
-void ft_fill_buf(void *buf, size_t size);
+int ft_fill_buf(void *buf, size_t size);
 int ft_check_buf(void *buf, size_t size);
 int ft_check_opts(uint64_t flags);
 uint64_t ft_init_cq_data(struct fi_info *info);
@@ -249,9 +261,11 @@ extern int ft_socket_pair[2];
 extern int sock;
 extern int listen_sock;
 #define ADDR_OPTS "B:P:s:a:b::E::C:F:"
-#define FAB_OPTS "f:d:p:D:i:HK"
-#define INFO_OPTS FAB_OPTS "e:M:"
+#define FAB_OPTS "f:d:p:K"
+#define HMEM_OPTS "D:i:H"
+#define INFO_OPTS FAB_OPTS HMEM_OPTS "e:M:"
 #define CS_OPTS ADDR_OPTS "I:QS:mc:t:w:l"
+#define API_OPTS "o:"
 #define NO_CQ_DATA 0
 
 extern char default_port[8];
@@ -260,6 +274,7 @@ extern char default_port[8];
 	{	.options = FT_OPT_RX_CQ | FT_OPT_TX_CQ, \
 		.iterations = 1000, \
 		.warmup_iterations = 10, \
+		.num_connections = 1, \
 		.transfer_size = 1024, \
 		.window_size = 64, \
 		.av_size = 1, \
@@ -284,6 +299,9 @@ extern char default_port[8];
 #define FT_MSG_MR_ACCESS (FI_SEND | FI_RECV)
 #define FT_RMA_MR_ACCESS (FI_READ | FI_WRITE | FI_REMOTE_READ | FI_REMOTE_WRITE)
 
+extern int lopt_idx;
+extern struct option long_opts[];
+
 int ft_getsrcaddr(char *node, char *service, struct fi_info *hints);
 int ft_read_addr_opts(char **node, char **service, struct fi_info *hints,
 		uint64_t *flags, struct ft_opts *opts);
@@ -295,7 +313,7 @@ size_t datatype_to_size(enum fi_datatype datatype);
 static inline int ft_use_size(int index, int enable_flags)
 {
 	return test_size[index].size <= fi->ep_attr->max_msg_size &&
-		((enable_flags == FT_ENABLE_ALL) ||
+		((enable_flags == FT_ENABLE_SIZES) ||
 		(enable_flags & test_size[index].enable_flags));
 }
 
@@ -316,14 +334,16 @@ static inline int ft_use_size(int index, int enable_flags)
 #define FT_DEBUG(fmt, ...)
 #endif
 
-#define FT_EQ_ERR(eq, entry, buf, len)				\
-	FT_ERR("eq_readerr (Provider errno: %d) : %s",			\
+#define FT_EQ_ERR(eq, entry, buf, len)					\
+	FT_ERR("eq_readerr %d (%s), provider errno: %d (%s)",		\
+		entry.err, fi_strerror(entry.err),			\
 		entry.prov_errno, fi_eq_strerror(eq, entry.prov_errno,	\
 						 entry.err_data,	\
 						 buf, len))		\
 
-#define FT_CQ_ERR(cq, entry, buf, len)				\
-	FT_ERR("cq_readerr (Provider errno: %d) : %s",			\
+#define FT_CQ_ERR(cq, entry, buf, len)					\
+	FT_ERR("cq_readerr %d (%s), provider errno: %d (%s)",		\
+		entry.err, fi_strerror(entry.err),			\
 		entry.prov_errno, fi_cq_strerror(cq, entry.prov_errno,	\
 						 entry.err_data,	\
 						 buf, len))		\
@@ -364,11 +384,15 @@ static inline int ft_use_size(int index, int enable_flags)
 		}							\
 	} while (0)
 
+int ft_init();
 int ft_alloc_bufs();
 int ft_open_fabric_res();
+int ft_open_domain_res();
 int ft_getinfo(struct fi_info *hints, struct fi_info **info);
 int ft_init_fabric();
 int ft_init_oob();
+int ft_close_oob();
+int ft_reset_oob();
 int ft_start_server();
 int ft_server_connect();
 int ft_client_connect();
@@ -378,12 +402,15 @@ int ft_retrieve_conn_req(struct fid_eq *eq, struct fi_info **fi);
 int ft_accept_connection(struct fid_ep *ep, struct fid_eq *eq);
 int ft_connect_ep(struct fid_ep *ep,
 		struct fid_eq *eq, fi_addr_t *remote_addr);
-int ft_alloc_ep_res(struct fi_info *fi);
+int ft_alloc_ep_res(struct fi_info *fi, struct fid_cq **new_txcq,
+		    struct fid_cq **new_rxcq, struct fid_cntr **new_txcntr,
+		    struct fid_cntr **new_rxcntr);
 int ft_alloc_active_res(struct fi_info *fi);
 int ft_enable_ep_recv(void);
-int ft_enable_ep(struct fid_ep *ep, struct fid_eq *eq, struct fid_av *av,
-		 struct fid_cq *txcq, struct fid_cq *rxcq,
-		 struct fid_cntr *txcntr, struct fid_cntr *rxcntr);
+int ft_enable_ep(struct fid_ep *bind_ep, struct fid_eq *bind_eq, struct fid_av *bind_av,
+		 struct fid_cq *bind_txcq, struct fid_cq *bind_rxcq,
+		 struct fid_cntr *bind_txcntr, struct fid_cntr *bind_rxcntr);
+
 int ft_init_alias_ep(uint64_t flags);
 int ft_av_insert(struct fid_av *av, void *addr, size_t count, fi_addr_t *fi_addr,
 		uint64_t flags, void *context);
@@ -394,6 +421,8 @@ int ft_init_av_dst_addr(struct fid_av *av_ptr, struct fid_ep *ep_ptr,
 int ft_init_av_addr(struct fid_av *av, struct fid_ep *ep,
 		fi_addr_t *addr);
 int ft_exchange_keys(struct fi_rma_iov *peer_iov);
+int ft_reg_mr(struct fi_info *info, void *buf, size_t size, uint64_t access,
+	      uint64_t key, struct fid_mr **mr, void **desc);
 void ft_free_res();
 void init_test(struct ft_opts *opts, char *test_name, size_t test_name_len);
 
@@ -443,6 +472,7 @@ int ft_finalize_ep(struct fid_ep *ep);
 
 size_t ft_rx_prefix_size(void);
 size_t ft_tx_prefix_size(void);
+int ft_progress(struct fid_cq *cq, uint64_t total, uint64_t *cq_cntr);
 ssize_t ft_post_rx(struct fid_ep *ep, size_t size, void *ctx);
 ssize_t ft_post_rx_buf(struct fid_ep *ep, size_t size, void *ctx,
 		       void *op_buf, void *op_mr_desc, uint64_t op_tag);
@@ -477,6 +507,7 @@ int check_compare_atomic_op(struct fid_ep *endpoint, enum fi_op op,
 int ft_cq_readerr(struct fid_cq *cq);
 int ft_get_rx_comp(uint64_t total);
 int ft_get_tx_comp(uint64_t total);
+int ft_get_cq_comp(struct fid_cq *cq, uint64_t *cur, uint64_t total, int timeout);
 int ft_recvmsg(struct fid_ep *ep, fi_addr_t fi_addr,
 		size_t size, void *ctx, int flags);
 int ft_sendmsg(struct fid_ep *ep, fi_addr_t fi_addr,
@@ -491,7 +522,7 @@ void show_perf(char *name, size_t tsize, int iters, struct timespec *start,
 		struct timespec *end, int xfers_per_iter);
 void show_perf_mr(size_t tsize, int iters, struct timespec *start,
 		struct timespec *end, int xfers_per_iter, int argc, char *argv[]);
-
+void ft_parse_opts_range(char *optarg);
 int ft_send_recv_greeting(struct fid_ep *ep);
 int ft_send_greeting(struct fid_ep *ep);
 int ft_recv_greeting(struct fid_ep *ep);
@@ -507,6 +538,8 @@ const char *ft_util_name(const char *str, size_t *len);
 const char *ft_core_name(const char *str, size_t *len);
 char **ft_split_and_alloc(const char *s, const char *delim, size_t *count);
 void ft_free_string_array(char **s);
+int ft_parse_long_opts(int op, char *optarg);
+void ft_longopts_usage();
 
 #define FT_PROCESS_QUEUE_ERR(readerr, rd, queue, fn, str)	\
 	do {							\

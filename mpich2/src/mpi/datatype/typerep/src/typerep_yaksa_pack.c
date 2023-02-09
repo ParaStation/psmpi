@@ -60,7 +60,7 @@ cvars:
 /* When a returned typerep_req is expected, using the nonblocking yaksa routine and
  * return the request; otherwise use the blocking yaksa routine. */
 static int typerep_do_copy(void *outbuf, const void *inbuf, MPI_Aint num_bytes,
-                           MPIR_Typerep_req * typerep_req)
+                           MPIR_Typerep_req * typerep_req, uint32_t flags)
 {
     MPIR_FUNC_ENTER;
 
@@ -111,7 +111,8 @@ static int typerep_do_copy(void *outbuf, const void *inbuf, MPI_Aint num_bytes,
  * return the request; otherwise use the blocking yaksa routine. */
 static int typerep_do_pack(const void *inbuf, MPI_Aint incount, MPI_Datatype datatype,
                            MPI_Aint inoffset, void *outbuf, MPI_Aint max_pack_bytes,
-                           MPI_Aint * actual_pack_bytes, MPIR_Typerep_req * typerep_req)
+                           MPI_Aint * actual_pack_bytes, MPIR_Typerep_req * typerep_req,
+                           uint32_t flags)
 {
     MPIR_FUNC_ENTER;
 
@@ -142,29 +143,35 @@ static int typerep_do_pack(const void *inbuf, MPI_Aint incount, MPI_Datatype dat
         MPIR_Datatype *dtp;
         MPIR_Datatype_get_ptr(datatype, dtp);
         is_contig = dtp->is_contig;
-        /* NOTE: dtp->element_size may not be set if dtp is from a flattened type */
-        if (dtp->basic_type != MPI_DATATYPE_NULL) {
-            element_size = MPIR_Datatype_get_basic_size(datatype);
-        }
+        element_size = dtp->builtin_element_size;
         inbuf_ptr = MPIR_get_contig_ptr(inbuf, dtp->true_lb);
         total_size = incount * dtp->size;
     }
 
     MPL_pointer_attr_t inattr, outattr;
-    MPIR_GPU_query_pointer_attr(inbuf_ptr, &inattr);
-    MPIR_GPU_query_pointer_attr(outbuf, &outattr);
 
-    if (is_contig && element_size > 0 && IS_HOST(inattr) && IS_HOST(outattr)) {
+    /* only query the pointer attributes in case of relative addressing */
+    bool rel_addressing = (inbuf != MPI_BOTTOM);
+    if (rel_addressing) {
+        MPIR_GPU_query_pointer_attr(inbuf_ptr, &inattr);
+        MPIR_GPU_query_pointer_attr(outbuf, &outattr);
+    }
+
+    if (rel_addressing && is_contig && element_size > 0 && IS_HOST(inattr) && IS_HOST(outattr)) {
         MPI_Aint real_bytes = MPL_MIN(total_size - inoffset, max_pack_bytes);
         /* Make sure we never pack partial element */
         real_bytes -= real_bytes % element_size;
-        MPIR_Memcpy(outbuf, MPIR_get_contig_ptr(inbuf_ptr, inoffset), real_bytes);
+        if (flags & MPIR_TYPEREP_FLAG_STREAM) {
+            MPIR_Memcpy_stream(outbuf, MPIR_get_contig_ptr(inbuf_ptr, inoffset), real_bytes);
+        } else {
+            MPIR_Memcpy(outbuf, MPIR_get_contig_ptr(inbuf_ptr, inoffset), real_bytes);
+        }
         *actual_pack_bytes = real_bytes;
         goto fn_exit;
     }
 
     yaksa_type_t type = MPII_Typerep_get_yaksa_type(datatype);
-    yaksa_info_t info = MPII_yaksa_get_info(&inattr, &outattr);
+    yaksa_info_t info = (rel_addressing) ? MPII_yaksa_get_info(&inattr, &outattr) : NULL;
 
     uintptr_t real_pack_bytes;
     if (typerep_req) {
@@ -177,8 +184,10 @@ static int typerep_do_pack(const void *inbuf, MPI_Aint incount, MPI_Datatype dat
     }
     MPIR_ERR_CHKANDJUMP(rc, mpi_errno, MPI_ERR_INTERN, "**yaksa");
 
-    rc = MPII_yaksa_free_info(info);
-    MPIR_ERR_CHKANDJUMP(rc, mpi_errno, MPI_ERR_INTERN, "**yaksa");
+    if (info) {
+        rc = MPII_yaksa_free_info(info);
+        MPIR_ERR_CHKANDJUMP(rc, mpi_errno, MPI_ERR_INTERN, "**yaksa");
+    }
 
     *actual_pack_bytes = (MPI_Aint) real_pack_bytes;
 
@@ -253,7 +262,8 @@ int MPIR_Typerep_reduce_is_supported(MPI_Op op, MPI_Datatype datatype)
  * return the request; otherwise use the blocking yaksa routine. */
 static int typerep_do_unpack(const void *inbuf, MPI_Aint insize, void *outbuf, MPI_Aint outcount,
                              MPI_Datatype datatype, MPI_Aint outoffset,
-                             MPI_Aint * actual_unpack_bytes, MPIR_Typerep_req * typerep_req)
+                             MPI_Aint * actual_unpack_bytes, MPIR_Typerep_req * typerep_req,
+                             uint32_t flags)
 {
     MPIR_FUNC_ENTER;
 
@@ -290,10 +300,15 @@ static int typerep_do_unpack(const void *inbuf, MPI_Aint insize, void *outbuf, M
     }
 
     MPL_pointer_attr_t inattr, outattr;
-    MPIR_GPU_query_pointer_attr(inbuf, &inattr);
-    MPIR_GPU_query_pointer_attr(outbuf_ptr, &outattr);
 
-    if (is_contig && IS_HOST(inattr) && IS_HOST(outattr)) {
+    /* only query the pointer attributes in case of relative addressing */
+    bool rel_addressing = (outbuf != MPI_BOTTOM);
+    if (rel_addressing) {
+        MPIR_GPU_query_pointer_attr(inbuf, &inattr);
+        MPIR_GPU_query_pointer_attr(outbuf_ptr, &outattr);
+    }
+
+    if (rel_addressing && is_contig && IS_HOST(inattr) && IS_HOST(outattr)) {
         *actual_unpack_bytes = MPL_MIN(total_size - outoffset, insize);
         /* We assume the amount we unpack is multiple of element_size */
         MPIR_Assert(element_size < 0 || *actual_unpack_bytes % element_size == 0);
@@ -302,7 +317,7 @@ static int typerep_do_unpack(const void *inbuf, MPI_Aint insize, void *outbuf, M
     }
 
     yaksa_type_t type = MPII_Typerep_get_yaksa_type(datatype);
-    yaksa_info_t info = MPII_yaksa_get_info(&inattr, &outattr);
+    yaksa_info_t info = (rel_addressing) ? MPII_yaksa_get_info(&inattr, &outattr) : NULL;
 
     uintptr_t real_insize = MPL_MIN(total_size - outoffset, insize);
 
@@ -317,8 +332,10 @@ static int typerep_do_unpack(const void *inbuf, MPI_Aint insize, void *outbuf, M
     }
     MPIR_ERR_CHKANDJUMP(rc, mpi_errno, MPI_ERR_INTERN, "**yaksa");
 
-    rc = MPII_yaksa_free_info(info);
-    MPIR_ERR_CHKANDJUMP(rc, mpi_errno, MPI_ERR_INTERN, "**yaksa");
+    if (info) {
+        rc = MPII_yaksa_free_info(info);
+        MPIR_ERR_CHKANDJUMP(rc, mpi_errno, MPI_ERR_INTERN, "**yaksa");
+    }
 
     *actual_unpack_bytes = (MPI_Aint) real_unpack_bytes;
 
@@ -330,23 +347,23 @@ static int typerep_do_unpack(const void *inbuf, MPI_Aint insize, void *outbuf, M
 }
 
 int MPIR_Typerep_icopy(void *outbuf, const void *inbuf, MPI_Aint num_bytes,
-                       MPIR_Typerep_req * typerep_req)
+                       MPIR_Typerep_req * typerep_req, uint32_t flags)
 {
     MPIR_FUNC_ENTER;
 
     int mpi_errno = MPI_SUCCESS;
-    mpi_errno = typerep_do_copy(outbuf, inbuf, num_bytes, typerep_req);
+    mpi_errno = typerep_do_copy(outbuf, inbuf, num_bytes, typerep_req, flags);
 
     MPIR_FUNC_EXIT;
     return mpi_errno;
 }
 
-int MPIR_Typerep_copy(void *outbuf, const void *inbuf, MPI_Aint num_bytes)
+int MPIR_Typerep_copy(void *outbuf, const void *inbuf, MPI_Aint num_bytes, uint32_t flags)
 {
     MPIR_FUNC_ENTER;
 
     int mpi_errno = MPI_SUCCESS;
-    mpi_errno = typerep_do_copy(outbuf, inbuf, num_bytes, NULL);
+    mpi_errno = typerep_do_copy(outbuf, inbuf, num_bytes, NULL, flags);
 
     MPIR_FUNC_EXIT;
     return mpi_errno;
@@ -354,13 +371,13 @@ int MPIR_Typerep_copy(void *outbuf, const void *inbuf, MPI_Aint num_bytes)
 
 int MPIR_Typerep_ipack(const void *inbuf, MPI_Aint incount, MPI_Datatype datatype,
                        MPI_Aint inoffset, void *outbuf, MPI_Aint max_pack_bytes,
-                       MPI_Aint * actual_pack_bytes, MPIR_Typerep_req * typerep_req)
+                       MPI_Aint * actual_pack_bytes, MPIR_Typerep_req * typerep_req, uint32_t flags)
 {
     MPIR_FUNC_ENTER;
 
     int mpi_errno = MPI_SUCCESS;
     mpi_errno = typerep_do_pack(inbuf, incount, datatype, inoffset, outbuf, max_pack_bytes,
-                                actual_pack_bytes, typerep_req);
+                                actual_pack_bytes, typerep_req, flags);
 
     MPIR_FUNC_EXIT;
     return mpi_errno;
@@ -368,13 +385,13 @@ int MPIR_Typerep_ipack(const void *inbuf, MPI_Aint incount, MPI_Datatype datatyp
 
 int MPIR_Typerep_pack(const void *inbuf, MPI_Aint incount, MPI_Datatype datatype,
                       MPI_Aint inoffset, void *outbuf, MPI_Aint max_pack_bytes,
-                      MPI_Aint * actual_pack_bytes)
+                      MPI_Aint * actual_pack_bytes, uint32_t flags)
 {
     MPIR_FUNC_ENTER;
 
     int mpi_errno = MPI_SUCCESS;
     mpi_errno = typerep_do_pack(inbuf, incount, datatype, inoffset, outbuf, max_pack_bytes,
-                                actual_pack_bytes, NULL);
+                                actual_pack_bytes, NULL, flags);
 
     MPIR_FUNC_EXIT;
     return mpi_errno;
@@ -382,26 +399,27 @@ int MPIR_Typerep_pack(const void *inbuf, MPI_Aint incount, MPI_Datatype datatype
 
 int MPIR_Typerep_iunpack(const void *inbuf, MPI_Aint insize, void *outbuf, MPI_Aint outcount,
                          MPI_Datatype datatype, MPI_Aint outoffset, MPI_Aint * actual_unpack_bytes,
-                         MPIR_Typerep_req * typerep_req)
+                         MPIR_Typerep_req * typerep_req, uint32_t flags)
 {
     MPIR_FUNC_ENTER;
 
     int mpi_errno = MPI_SUCCESS;
     mpi_errno = typerep_do_unpack(inbuf, insize, outbuf, outcount, datatype, outoffset,
-                                  actual_unpack_bytes, typerep_req);
+                                  actual_unpack_bytes, typerep_req, flags);
 
     MPIR_FUNC_EXIT;
     return mpi_errno;
 }
 
 int MPIR_Typerep_unpack(const void *inbuf, MPI_Aint insize, void *outbuf, MPI_Aint outcount,
-                        MPI_Datatype datatype, MPI_Aint outoffset, MPI_Aint * actual_unpack_bytes)
+                        MPI_Datatype datatype, MPI_Aint outoffset, MPI_Aint * actual_unpack_bytes,
+                        uint32_t flags)
 {
     MPIR_FUNC_ENTER;
 
     int mpi_errno = MPI_SUCCESS;
     mpi_errno = typerep_do_unpack(inbuf, insize, outbuf, outcount, datatype, outoffset,
-                                  actual_unpack_bytes, NULL);
+                                  actual_unpack_bytes, NULL, flags);
 
     MPIR_FUNC_EXIT;
     return mpi_errno;
@@ -499,7 +517,7 @@ int MPIR_Typerep_op(void *source_buf, MPI_Aint source_count, MPI_Datatype source
             void *src_ptr = MPL_malloc(data_sz, MPL_MEM_OTHER);
             MPI_Aint pack_size;
             MPIR_Typerep_pack(source_buf, source_count, source_dtp, 0, src_ptr, data_sz,
-                              &pack_size);
+                              &pack_size, MPIR_TYPEREP_REQ_NULL);
             MPIR_Assert(pack_size == data_sz);
             mpi_errno = typerep_op_unpack(src_ptr, target_buf, target_count, target_dtp,
                                           op, mapped_device);
@@ -582,6 +600,52 @@ static int typerep_op_pack(void *source_buf, void *target_buf, MPI_Aint count,
     MPIR_Assert(actual_pack_bytes == data_sz);
 
   fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+int MPIR_Typerep_pack_stream(const void *inbuf, MPI_Aint incount, MPI_Datatype datatype,
+                             MPI_Aint inoffset, void *outbuf, MPI_Aint max_pack_bytes,
+                             MPI_Aint * actual_pack_bytes, void *stream)
+{
+    MPIR_FUNC_ENTER;
+
+    int mpi_errno = MPI_SUCCESS;
+    int rc;
+
+    yaksa_type_t type = MPII_Typerep_get_yaksa_type(datatype);
+    uintptr_t packed_bytes;;
+    rc = yaksa_pack_stream(inbuf, incount, type, inoffset, outbuf, max_pack_bytes,
+                           &packed_bytes, NULL, YAKSA_OP__REPLACE, stream);
+    MPIR_ERR_CHKANDJUMP(rc, mpi_errno, MPI_ERR_INTERN, "**yaksa");
+    *actual_pack_bytes = packed_bytes;
+
+  fn_exit:
+    MPIR_FUNC_EXIT;
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+int MPIR_Typerep_unpack_stream(const void *inbuf, MPI_Aint insize, void *outbuf,
+                               MPI_Aint outcount, MPI_Datatype datatype, MPI_Aint outoffset,
+                               MPI_Aint * actual_unpack_bytes, void *stream)
+{
+    MPIR_FUNC_ENTER;
+
+    int mpi_errno = MPI_SUCCESS;
+    int rc;
+
+    yaksa_type_t type = MPII_Typerep_get_yaksa_type(datatype);
+    uintptr_t unpacked_bytes;;
+    rc = yaksa_unpack_stream(inbuf, insize, outbuf, outcount, type, outoffset,
+                             &unpacked_bytes, NULL, YAKSA_OP__REPLACE, stream);
+    MPIR_ERR_CHKANDJUMP(rc, mpi_errno, MPI_ERR_INTERN, "**yaksa");
+    *actual_unpack_bytes = unpacked_bytes;
+
+  fn_exit:
+    MPIR_FUNC_EXIT;
     return mpi_errno;
   fn_fail:
     goto fn_exit;

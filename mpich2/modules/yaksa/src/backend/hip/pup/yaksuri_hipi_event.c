@@ -111,3 +111,34 @@ int yaksuri_hipi_add_dependency(int device1, int device2)
   fn_fail:
     goto fn_exit;
 }
+
+/* ---- */
+struct stream_callback_wrapper {
+    yaksur_hostfn_t fn;
+    void *userData;
+};
+
+static void stream_callback(hipStream_t stream, hipError_t status, void *wrapper_data)
+{
+    struct stream_callback_wrapper *p = wrapper_data;
+    p->fn(p->userData);
+    free(p);
+}
+
+int yaksuri_hipi_launch_hostfn(void *stream, yaksur_hostfn_t fn, void *userData)
+{
+    int rc = YAKSA_SUCCESS;
+    hipError_t cerr;
+
+    struct stream_callback_wrapper *p = malloc(sizeof(struct stream_callback_wrapper));
+    p->fn = fn;
+    p->userData = userData;
+
+    cerr = hipStreamAddCallback(*(hipStream_t *) stream, stream_callback, p, 0);
+    YAKSURI_HIPI_HIP_ERR_CHKANDJUMP(cerr, rc, fn_fail);
+
+  fn_exit:
+    return rc;
+  fn_fail:
+    goto fn_exit;
+}

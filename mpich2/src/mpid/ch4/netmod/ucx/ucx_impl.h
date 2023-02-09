@@ -23,6 +23,20 @@
 #define MPIDI_UCX_WIN(win) ((win)->dev.netmod.ucx)
 #define MPIDI_UCX_WIN_INFO(win, rank) MPIDI_UCX_WIN(win).info_table[rank]
 
+#define MPIDI_UCX_THREAD_CS_ENTER_VCI(vci) \
+    do { \
+        if (!MPIDI_VCI_IS_EXPLICIT(vci)) { \
+            MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock); \
+        } \
+    } while (0)
+
+#define MPIDI_UCX_THREAD_CS_EXIT_VCI(vci) \
+    do { \
+        if (!MPIDI_VCI_IS_EXPLICIT(vci)) { \
+            MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock); \
+        } \
+    } while (0)
+
 MPL_STATIC_INLINE_PREFIX uint64_t MPIDI_UCX_init_tag(MPIR_Context_id_t contextid, int source,
                                                      uint64_t tag)
 {
@@ -114,30 +128,12 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_UCX_vci_to_vni(int vci)
     return vci < MPIDI_UCX_global.num_vnis ? vci : -1;
 }
 
-/* vni mapping */
-/* NOTE: concerned by the modulo? If we restrict num_vnis to power of 2,
- * we may get away with bit mask */
-MPL_STATIC_INLINE_PREFIX int MPIDI_UCX_get_vni(int flag, MPIR_Comm * comm_ptr,
-                                               int src_rank, int dst_rank, int tag)
-{
-    return MPIDI_get_vci(flag, comm_ptr, src_rank, dst_rank, tag) % MPIDI_UCX_global.num_vnis;
-}
-
-/* for rma, we need ensure rkey is consistent with the per-vni ep,
- * which essentially means we only need consistent vni per-window */
-MPL_STATIC_INLINE_PREFIX int MPIDI_UCX_get_win_vni(MPIR_Win * win)
-{
-    int win_idx = 0;
-    return MPIDI_get_vci(SRC_VCI_FROM_SENDER, win->comm_ptr, 0, 0, win_idx) %
-        MPIDI_UCX_global.num_vnis;
-}
-
 /* Need both local and remote vni to be the same, or the synchronization call
  * may blocked at flushing the remote ep (due to missing remote progress) */
-#define MPIDI_UCX_WIN_TO_EP(win,rank,vni) \
-    MPIDI_UCX_AV(MPIDIU_comm_rank_to_av(win->comm_ptr, rank)).dest[vni][vni]
+#define MPIDI_UCX_WIN_TO_EP(win,rank,vni,vni_target) \
+    MPIDI_UCX_AV(MPIDIU_comm_rank_to_av(win->comm_ptr, rank)).dest[vni][vni_target]
 
-#define MPIDI_UCX_WIN_AV_TO_EP(av, vni) MPIDI_UCX_AV((av)).dest[vni][vni]
+#define MPIDI_UCX_WIN_AV_TO_EP(av, vni, vni_target) MPIDI_UCX_AV((av)).dest[vni][vni_target]
 
 ucs_status_t MPIDI_UCX_am_handler(void *arg, void *data, size_t length, ucp_ep_h reply_ep,
                                   unsigned flags);

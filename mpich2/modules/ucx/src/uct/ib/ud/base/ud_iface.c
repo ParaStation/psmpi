@@ -315,8 +315,8 @@ uct_ud_iface_conn_match_purge_cb(ucs_conn_match_ctx_t *conn_match_ctx,
                                              conn_match);
 
     ep->flags &= ~UCT_UD_EP_FLAG_ON_CEP;
-    return uct_iface_invoke_ops_func(&iface->super, uct_ud_iface_ops_t,
-                                     ep_free, &ep->super.super);
+    uct_iface_invoke_ops_func(&iface->super, uct_ud_iface_ops_t, ep_free,
+                              &ep->super.super);
 }
 
 ucs_status_t uct_ud_iface_complete_init(uct_ud_iface_t *iface)
@@ -486,18 +486,19 @@ UCS_CLASS_INIT_FUNC(uct_ud_iface_t, uct_ud_iface_ops_t *ops,
         return UCS_ERR_INVALID_PARAM;
     }
 
-    self->tx.unsignaled          = 0;
-    self->tx.available           = config->super.tx.queue_len;
-    self->tx.timer_sweep_count   = 0;
-    self->async.disable          = 0;
+    self->tx.unsignaled         = 0;
+    self->tx.available          = config->super.tx.queue_len;
+    self->tx.timer_sweep_count  = 0;
+    self->async.disable         = 0;
 
-    self->rx.available           = config->super.rx.queue_len;
-    self->rx.quota               = 0;
-    self->config.tx_qp_len       = config->super.tx.queue_len;
-    self->config.peer_timeout    = ucs_time_from_sec(config->peer_timeout);
-    self->config.min_poke_time   = ucs_time_from_sec(config->min_poke_time);
-    self->config.check_grh_dgid  = config->dgid_check &&
-                                   uct_ib_iface_is_roce(&self->super);
+    self->rx.available          = config->super.rx.queue_len;
+    self->rx.quota              = 0;
+    self->config.tx_qp_len      = config->super.tx.queue_len;
+    self->config.min_poke_time  = ucs_time_from_sec(config->min_poke_time);
+    self->config.check_grh_dgid = config->dgid_check &&
+                                  uct_ib_iface_is_roce(&self->super);
+    self->config.linger_timeout = ucs_time_from_sec(config->linger_timeout);
+    self->config.peer_timeout   = ucs_time_from_sec(config->peer_timeout);
 
     if ((config->max_window < UCT_UD_CA_MIN_WINDOW) ||
         (config->max_window > UCT_UD_CA_MAX_WINDOW)) {
@@ -587,7 +588,7 @@ UCS_CLASS_INIT_FUNC(uct_ud_iface_t, uct_ud_iface_ops_t *ops,
     ucs_queue_head_init(&self->rx.pending_q);
 
     status = UCS_STATS_NODE_ALLOC(&self->stats, &uct_ud_iface_stats_class,
-                                  self->super.super.stats, "-%p", self);
+                                  self->super.stats, "-%p", self);
     if (status != UCS_OK) {
         goto err_tx_mpool;
     }
@@ -660,7 +661,13 @@ ucs_config_field_t uct_ud_iface_config_table[] = {
      ucs_offsetof(uct_ud_iface_config_t, ud_common),
      UCS_CONFIG_TYPE_TABLE(uct_ud_iface_common_config_table)},
 
-    {"TIMEOUT", "5.0m", "Transport timeout",
+    {"LINGER_TIMEOUT", "5.0m",
+     "Keep the connection open internally for this amount of time after closing it",
+     ucs_offsetof(uct_ud_iface_config_t, linger_timeout), UCS_CONFIG_TYPE_TIME},
+
+    {"TIMEOUT", "30s",
+     "Consider the remote peer as unreachable if an acknowledgment was not received\n"
+     "after this amount of time",
      ucs_offsetof(uct_ud_iface_config_t, peer_timeout), UCS_CONFIG_TYPE_TIME},
 
     {"TIMER_TICK", "10ms", "Initial timeout for retransmissions",
@@ -678,7 +685,7 @@ ucs_config_field_t uct_ud_iface_config_table[] = {
     {"MIN_POKE_TIME", "250ms",
      "Minimal interval to send ACK request with solicited flag, to wake up\n"
      "the remote peer in case it is not actively calling progress.\n"
-     "Smaller values may incur performance overhead, while extermely large\n"
+     "Smaller values may incur performance overhead, while extremely large\n"
      "values can cause delays in presence of packet drops.",
      ucs_offsetof(uct_ud_iface_config_t, min_poke_time), UCS_CONFIG_TYPE_TIME},
 
@@ -792,7 +799,7 @@ ucs_status_t uct_ud_iface_flush(uct_iface_h tl_iface, unsigned flags,
     count = 0;
     ucs_ptr_array_for_each(ep, i, &iface->eps) {
         /* ud ep flush returns either ok or in progress */
-        status = uct_ud_ep_flush_nolock(iface, ep, NULL);
+        status = uct_ud_ep_flush_nolock(iface, ep, flags, NULL);
         if ((status == UCS_INPROGRESS) || (status == UCS_ERR_NO_RESOURCE)) {
             ++count;
         }
@@ -852,19 +859,23 @@ unsigned
 uct_ud_iface_dispatch_async_comps_do(uct_ud_iface_t *iface, uct_ud_ep_t *ep)
 {
     unsigned count = 0;
-    uct_ud_send_skb_t *skb;
     uct_ud_comp_desc_t *cdesc;
+    uct_ud_send_skb_t *skb;
+    ucs_queue_iter_t iter;
 
-    ucs_queue_for_each_extract(skb, &iface->tx.async_comp_q, queue, 1) {
+    ucs_trace_func("ep=%p", ep);
+
+    ucs_queue_for_each_safe(skb, iter, &iface->tx.async_comp_q, queue) {
         ucs_assert(!(skb->flags & UCT_UD_SEND_SKB_FLAG_RESENDING));
         cdesc = uct_ud_comp_desc(skb);
         ucs_assert(cdesc->ep != NULL);
-
         if ((ep == NULL) || (ep == cdesc->ep)) {
+            ucs_trace("ep %p: dispatch async comp %p", ep, cdesc->comp);
+            ucs_queue_del_iter(&iface->tx.async_comp_q, iter);
             uct_ud_iface_dispatch_comp(iface, cdesc->comp);
             uct_ud_skb_release(skb, 0);
+            ++count;
         }
-        ++count;
     }
 
     return count;
@@ -1059,12 +1070,11 @@ void uct_ud_iface_ctl_skb_complete(uct_ud_iface_t *iface,
 
         resent_skb->flags &= ~UCT_UD_SEND_SKB_FLAG_RESENDING;
         --cdesc->ep->tx.resend_count;
-
-        uct_ud_ep_window_release_completed(cdesc->ep, is_async);
     } else {
         ucs_assert(skb->flags & UCT_UD_SEND_SKB_FLAG_CTL_ACK);
     }
 
+    uct_ud_ep_window_release_completed(cdesc->ep, is_async);
     uct_ud_skb_release(skb, 0);
 
 }

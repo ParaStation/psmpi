@@ -63,8 +63,10 @@ static ucs_status_t uct_cuda_copy_md_query(uct_md_h md, uct_md_attr_t *md_attr)
     return UCS_OK;
 }
 
-static ucs_status_t uct_cuda_copy_mkey_pack(uct_md_h md, uct_mem_h memh,
-                                            void *rkey_buffer)
+static ucs_status_t
+uct_cuda_copy_mkey_pack(uct_md_h md, uct_mem_h memh,
+                        const uct_md_mkey_pack_params_t *params,
+                        void *rkey_buffer)
 {
     return UCS_OK;
 }
@@ -155,15 +157,14 @@ static ucs_status_t uct_cuda_copy_mem_alloc(uct_md_h md, size_t *length_p,
                                             uct_mem_h *memh_p)
 {
     ucs_status_t status;
-    int active;
 
     if ((mem_type != UCS_MEMORY_TYPE_CUDA_MANAGED) &&
         (mem_type != UCS_MEMORY_TYPE_CUDA)) {
         return UCS_ERR_UNSUPPORTED;
     }
 
-    UCT_CUDADRV_CTX_ACTIVE(active);
-    if (!active) {
+    if (!uct_cuda_base_is_context_active()) {
+        ucs_error("attempt to allocate cuda memory without active context");
         return UCS_ERR_NO_DEVICE;
     }
 

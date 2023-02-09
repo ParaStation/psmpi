@@ -18,7 +18,9 @@ dnl TODO as written, this macro cannot handle a "with_option" arg that has "-"
 dnl characters in it.  Use AS_TR_SH (and possibly AS_VAR_* macros) to handle
 dnl this case if it ever arises.
 AC_DEFUN([PAC_SET_HEADER_LIB_PATH],[
-    AC_ARG_WITH([$1], [AS_HELP_STRING([--with-$1=[[PATH]]],PAC_WITH_LIB_HELP_STRING($1))])
+    m4_ifdef([skip_ac_arg_with_$1], [], [
+        AC_ARG_WITH([$1], [AS_HELP_STRING([--with-$1=[[PATH]]],PAC_WITH_LIB_HELP_STRING($1))])
+    ])
 
     AC_ARG_WITH([$1-include],
                 [AS_HELP_STRING([--with-$1-include=PATH],
@@ -113,6 +115,10 @@ AC_DEFUN([PAC_CHECK_HEADER_LIB_OPTIONAL],[
         pac_have_$1=no
     else
         dnl Other than "embedded" or "no", we check ...
+        m4_if($6, [], [], [
+            PAC_PUSH_FLAG([CPPFLAGS])
+            PAC_APPEND_FLAG($6, [CPPFLAGS])
+        ])
         for a in $3 ; do
             PAC_CHECK_HEADER_LIB($2,$a,$4,pac_have_$1=yes,pac_have_$1=no,$5)
             if test "$pac_have_$1" = "yes"; then
@@ -120,6 +126,9 @@ AC_DEFUN([PAC_CHECK_HEADER_LIB_OPTIONAL],[
                 break
             fi
         done
+        m4_if($6, [], [], [
+            PAC_POP_FLAG([CPPFLAGS])
+        ])
         if test "${pac_have_$1}" = "no" -a -n "${with_$1}" ; then
             dnl user asks for it, so missing is an error
             AC_MSG_ERROR([--with-$1 is given but not found])

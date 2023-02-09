@@ -4,11 +4,26 @@
  */
 
 #include "mpl.h"
+#include <assert.h>
 
 int MPL_gpu_get_dev_count(int *dev_cnt, int *dev_id)
 {
     *dev_cnt = *dev_id = -1;
     return MPL_SUCCESS;
+}
+
+int MPL_gpu_get_dev_list(int *dev_count, char ***dev_list, bool is_subdev)
+{
+    int ret = MPL_SUCCESS;
+    *dev_list = NULL;
+    return ret;
+}
+
+int MPL_gpu_dev_affinity_to_env(int dev_count, char **dev_list, char **env)
+{
+    int ret = MPL_SUCCESS;
+    *env = NULL;
+    return ret;
 }
 
 int MPL_gpu_ipc_handle_create(const void *ptr, MPL_gpu_ipc_mem_handle_t * ipc_handle)
@@ -96,4 +111,39 @@ int MPL_gpu_get_buffer_bounds(const void *ptr, void **pbase, uintptr_t * len)
 int MPL_gpu_free_hook_register(void (*free_hook) (void *dptr))
 {
     return MPL_SUCCESS;
+}
+
+int MPL_gpu_launch_hostfn(int stream, MPL_gpu_hostfn fn, void *data)
+{
+    return -1;
+}
+
+bool MPL_gpu_stream_is_valid(MPL_gpu_stream_t stream)
+{
+    return false;
+}
+
+void MPL_gpu_enqueue_trigger(MPL_gpu_event_t * var, MPL_gpu_stream_t stream)
+{
+    assert(0);
+}
+
+void MPL_gpu_enqueue_wait(MPL_gpu_event_t * var, MPL_gpu_stream_t stream)
+{
+    assert(0);
+}
+
+void MPL_gpu_event_init_count(MPL_gpu_event_t * var, int count)
+{
+    *var = count;
+}
+
+void MPL_gpu_event_complete(MPL_gpu_event_t * var)
+{
+    *var -= 1;
+}
+
+bool MPL_gpu_event_is_complete(MPL_gpu_event_t * var)
+{
+    return (*var) <= 0;
 }

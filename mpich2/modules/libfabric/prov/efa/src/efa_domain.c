@@ -37,7 +37,7 @@
 #include "efa.h"
 #include "rxr_cntr.h"
 
-fastlock_t pd_list_lock;
+ofi_spin_t pd_list_lock;
 struct efa_pd *pd_list = NULL;
 
 enum efa_fork_support_status efa_fork_status = EFA_FORK_SUPPORT_OFF;
@@ -58,12 +58,12 @@ static int efa_domain_close(fid_t fid)
 	}
 
 	if (domain->ibv_pd) {
-		fastlock_acquire(&pd_list_lock);
+		ofi_spin_lock(&pd_list_lock);
 		efa_pd = &pd_list[domain->ctx->dev_idx];
 		if (efa_pd->use_cnt == 1) {
 			ret = -ibv_dealloc_pd(domain->ibv_pd);
 			if (ret) {
-				fastlock_release(&pd_list_lock);
+				ofi_spin_unlock(&pd_list_lock);
 				EFA_INFO_ERRNO(FI_LOG_DOMAIN, "ibv_dealloc_pd",
 				               ret);
 				return ret;
@@ -72,7 +72,7 @@ static int efa_domain_close(fid_t fid)
 		}
 		efa_pd->use_cnt--;
 		domain->ibv_pd = NULL;
-		fastlock_release(&pd_list_lock);
+		ofi_spin_unlock(&pd_list_lock);
 	}
 
 	ret = ofi_domain_close(&domain->util_domain);
@@ -122,7 +122,7 @@ static int efa_open_device_by_name(struct efa_domain *domain, const char *name)
 	 * Check if a PD has already been allocated for this device and reuse
 	 * it if this is the case.
 	 */
-	fastlock_acquire(&pd_list_lock);
+	ofi_spin_lock(&pd_list_lock);
 	if (pd_list[i].ibv_pd) {
 		domain->ibv_pd = pd_list[i].ibv_pd;
 		pd_list[i].use_cnt++;
@@ -135,7 +135,7 @@ static int efa_open_device_by_name(struct efa_domain *domain, const char *name)
 			pd_list[i].use_cnt++;
 		}
 	}
-	fastlock_release(&pd_list_lock);
+	ofi_spin_unlock(&pd_list_lock);
 
 	efa_device_free_context_list(ctx_list);
 	return ret;
@@ -158,6 +158,7 @@ static int efa_check_fork_enabled(struct fid_domain *domain_fid)
 	struct fid_mr *mr;
 	char *buf;
 	int ret;
+	long page_size;
 
 	/* If ibv_is_fork_initialized is availble, check if the function
 	 * can exit early.
@@ -171,11 +172,18 @@ static int efa_check_fork_enabled(struct fid_domain *domain_fid)
 
 #endif /* HAVE_IBV_IS_FORK_INITIALIZED */
 
-	buf = malloc(ofi_get_page_size());
+	page_size = ofi_get_page_size();
+	if (page_size <= 0) {
+		EFA_WARN(FI_LOG_DOMAIN, "Unable to determine page size %ld\n",
+			 page_size);
+		return -FI_EINVAL;
+	}
+
+	buf = malloc(page_size);
 	if (!buf)
 		return -FI_ENOMEM;
 
-	ret = fi_mr_reg(domain_fid, buf, ofi_get_page_size(),
+	ret = fi_mr_reg(domain_fid, buf, page_size,
 			FI_SEND, 0, 0, 0, &mr, NULL);
 	if (ret) {
 		free(buf);
@@ -270,6 +278,99 @@ void efa_atfork_callback()
 	abort();
 }
 
+#ifndef _WIN32
+
+/* @brief Check when fork is requested and abort in unsupported cases
+ *
+ * We check if user or another library asked or enabled fork support and
+ * return failure if HUGEPAGES are also enabled as EFA provider does not support this case.
+ *
+ * In addition, we install a fork handler to ensure that we abort if another
+ * library or process initiates a fork and we determined from previous logic
+ * that we cannot support that.
+ *
+ * @param domain_fid domain fid so we can check register memory during initialization.
+ * @return error number if we failed to initialize, 0 otherwise
+ */
+static
+int efa_initialize_fork_support(struct fid_domain* domain_fid)
+{
+	static int fork_handler_installed = 0;
+	int ret;
+
+	/*
+	 * Call ibv_fork_init if the user asked for fork support.
+	 */
+	if (efa_fork_status == EFA_FORK_SUPPORT_ON) {
+		ret = -ibv_fork_init();
+		if (ret) {
+			EFA_WARN(FI_LOG_DOMAIN,
+				 "Fork support requested but ibv_fork_init failed: %s\n",
+				 strerror(-ret));
+			return ret;
+		}
+	}
+
+	/*
+	 * Run check to see if fork support was enabled by another library. If
+	 * one of the environment variables was set to enable fork support,
+	 * this variable was set to ON during provider init.  Huge pages for
+	 * bounce buffers will not be used if fork support is on.
+	 */
+	if (efa_fork_status == EFA_FORK_SUPPORT_OFF &&
+		efa_check_fork_enabled(domain_fid))
+		efa_fork_status = EFA_FORK_SUPPORT_ON;
+
+	if (efa_fork_status == EFA_FORK_SUPPORT_ON &&
+		getenv("RDMAV_HUGEPAGES_SAFE")) {
+			EFA_WARN(FI_LOG_DOMAIN,
+				 "Using libibverbs fork support and huge pages is not"
+				 " supported by the EFA provider.\n");
+		return -FI_EINVAL;
+	}
+
+	/*
+	 * It'd be better to install this during provider init (since that's
+	 * only invoked once) but we need to do a memory registration for the
+	 * fork check above. This can move to the provider init once that check
+	 * is gone.
+	 */
+	if (!fork_handler_installed && efa_fork_status == EFA_FORK_SUPPORT_OFF) {
+		ret = pthread_atfork(efa_atfork_callback, NULL, NULL);
+		if (ret) {
+			EFA_WARN(FI_LOG_DOMAIN,
+				 "Unable to register atfork callback: %s\n",
+				 strerror(-ret));
+			return ret;
+		}
+		fork_handler_installed = 1;
+	}
+
+	return 0;
+}
+
+#else
+
+/* @brief Check when fork is requested and return failure on Windows
+ *
+ * We check if fork is requested and return failure as fork is not supported on Windows
+ *
+ * @param domain_fid domain unused
+ * @return error number if fork is requested, 0 otherwise
+ */
+static
+int efa_initialize_fork_support(struct fid_domain* domain_fid)
+{
+	if (efa_fork_status == EFA_FORK_SUPPORT_ON) {
+		EFA_WARN(FI_LOG_DOMAIN,
+			 "Using fork support is not supported by the EFA provider on Windows\n");
+		return -FI_EINVAL;
+	}
+	return 0;
+}
+
+#endif
+
 /* @brief Setup the MR cache.
  *
  * This function enables the MR cache using the util MR cache code. Note that
@@ -282,17 +383,73 @@ void efa_atfork_callback()
 static int efa_mr_cache_init(struct efa_domain *domain, struct fi_info *info)
 {
 	struct ofi_mem_monitor *memory_monitors[OFI_HMEM_MAX] = {
-		[FI_HMEM_SYSTEM] = uffd_monitor,
+		[FI_HMEM_SYSTEM] = default_monitor,
 		[FI_HMEM_CUDA] = cuda_monitor,
 	};
 	int ret;
 
-	/* If FI_MR_CACHE_MONITOR env is set, this check will override our
-	 * default monitor with the user specified monitor which is stored
-	 * as default_monitor
+	/* Both Open MPI (and possibly other MPI implementations) and
+	 * Libfabric use the same live binary patching to enable memory
+	 * monitoring, but the patching technique only allows a single
+	 * "winning" patch.  The Libfabric memhooks monitor will not
+	 * overwrite a previous patch, but instead return
+	 * -FI_EALREADY.  There are three cases of concern, and in all
+	 * but one of them, we can avoid changing the default monitor.
+	 *
+	 * (1) Upper layer does not patch, such as Open MPI 4.0 and
+	 * earlier.  In this case, the default monitor will be used,
+	 * as the default monitor is either not the memhooks monitor
+	 * (because the user specified a different monitor) or the
+	 * default monitor is the memhooks monitor, but we were able
+	 * to install the patches.  We will use the default monitor in
+	 * this case.
+	 *
+	 * (2) Upper layer does patch, but does not export a memory
+	 * monitor, such as Open MPI 4.1.0 and 4.1.1.  In this case,
+	 * if the default memory monitor is not memhooks, we will use
+	 * the default monitor.  If the default monitor is memhooks,
+	 * the patch will fail to apply, and we will change the
+	 * requested monitor to UFFD to avoid a broken configuration.
+	 * If the user explicitly requested memhooks, we will return
+	 * an error, as we can not satisfy that request.
+	 *
+	 * (3) Upper layer does patch and exports a memory monitor,
+	 * such as Open MPI 4.1.2 and later.  In this case, the
+	 * default monitor will have been changed from the memhooks
+	 * monitor to the imported monitor, so we will use the
+	 * imported monitor.
+	 *
+	 * The only known cases in which we will not use the default
+	 * monitor are Open MPI 4.1.0/4.1.1.
+	 *
+	 * It is possible that this could be better handled at the
+	 * mem_monitor level in Libfabric, but so far we have not
+	 * reached agreement on how that would work.
 	 */
-	if (cache_params.monitor) {
-		memory_monitors[FI_HMEM_SYSTEM] = default_monitor;
+	if (default_monitor == memhooks_monitor) {
+		ret = memhooks_monitor->start(memhooks_monitor);
+		if (ret == -FI_EALREADY) {
+			if (cache_params.monitor) {
+				EFA_WARN(FI_LOG_DOMAIN,
+					 "Memhooks monitor requested via FI_MR_CACHE_MONITOR, but memhooks failed to\n"
+					 "install.  No working monitor availale.\n");
+				return -FI_ENOSYS;
+			}
+			EFA_INFO(FI_LOG_DOMAIN,
+				 "Detected potential memhooks monitor conflict. Switching to UFFD.\n");
+			memory_monitors[FI_HMEM_SYSTEM] = uffd_monitor;
+		}
+	} else if (default_monitor == NULL) {
+		/* TODO: Fail if we don't find a system monitor.  This
+		 * is a debatable decision, as the VERBS provider
+		 * falls back to a no-cache mode in this case.  We
+		 * fail the domain creation because the rest of the MR
+		 * code hasn't been audited to deal with a NULL
+		 * monitor.
+		 */
+		EFA_WARN(FI_LOG_DOMAIN,
+			 "No default SYSTEM monitor available.\n");
+		return -FI_ENOSYS;
 	}
 
 	domain->cache = (struct ofi_mr_cache *)calloc(1, sizeof(struct ofi_mr_cache));
@@ -330,6 +487,135 @@ static int efa_mr_cache_init(struct efa_domain *domain, struct fi_info *info)
 	return 0;
 }
 
+static int efa_set_domain_hmem_info_cuda(struct efa_domain *domain)
+{
+#if HAVE_CUDA
+	cudaError_t cuda_ret;
+	void *ptr = NULL;
+	struct ibv_mr *ibv_mr;
+	int ibv_access = IBV_ACCESS_LOCAL_WRITE;
+	size_t len = ofi_get_page_size() * 2;
+	int ret;
+
+	if (!ofi_hmem_is_initialized(FI_HMEM_CUDA)) {
+		EFA_INFO(FI_LOG_DOMAIN,
+		         "FI_HMEM_CUDA is not initialized\n");
+		return 0;
+	}
+
+	if (domain->ctx->device_caps & EFADV_DEVICE_ATTR_CAPS_RDMA_READ)
+		ibv_access |= IBV_ACCESS_REMOTE_READ;
+
+	domain->hmem_info[FI_HMEM_CUDA].initialized = true;
+
+	cuda_ret = ofi_cudaMalloc(&ptr, len);
+	if (cuda_ret != cudaSuccess) {
+		EFA_WARN(FI_LOG_DOMAIN,
+			 "Failed to allocate CUDA buffer: %s\n",
+			 ofi_cudaGetErrorString(cuda_ret));
+		return -FI_ENOMEM;
+	}
+
+	ibv_mr = ibv_reg_mr(domain->ibv_pd, ptr, len, ibv_access);
+	if (!ibv_mr) {
+		EFA_WARN(FI_LOG_DOMAIN,
+			 "Failed to register CUDA buffer with the EFA device, FI_HMEM transfers that require peer to peer support will fail.\n");
+		ofi_cudaFree(ptr);
+		return 0;
+	}
+
+	ret = ibv_dereg_mr(ibv_mr);
+	ofi_cudaFree(ptr);
+	if (ret) {
+		EFA_WARN(FI_LOG_DOMAIN,
+			 "Failed to deregister CUDA buffer: %s\n",
+			 fi_strerror(-ret));
+		return ret;
+	}
+
+	domain->hmem_info[FI_HMEM_CUDA].p2p_supported = true;
+#endif
+	return 0;
+}
+
+static int efa_set_domain_hmem_info_neuron(struct efa_domain *domain)
+{
+#if HAVE_NEURON
+	struct ibv_mr *ibv_mr;
+	int ibv_access = IBV_ACCESS_LOCAL_WRITE;
+	void *handle;
+	void *ptr = NULL;
+	size_t len = ofi_get_page_size() * 2;
+	int ret;
+
+	if (!ofi_hmem_is_initialized(FI_HMEM_NEURON)) {
+		EFA_INFO(FI_LOG_DOMAIN,
+		         "FI_HMEM_NEURON is not initialized\n");
+		return 0;
+	}
+
+	if (domain->ctx->device_caps & EFADV_DEVICE_ATTR_CAPS_RDMA_READ) {
+		ibv_access |= IBV_ACCESS_REMOTE_READ;
+	} else {
+		EFA_WARN(FI_LOG_DOMAIN,
+			 "No EFA RDMA read support, transfers using AWS Neuron will fail.\n");
+		return 0;
+	}
+
+	domain->hmem_info[FI_HMEM_NEURON].initialized = true;
+
+	ptr = neuron_alloc(&handle, len);
+	if (!ptr)
+		return -FI_ENOMEM;
+
+	ibv_mr = ibv_reg_mr(domain->ibv_pd, ptr, len, ibv_access);
+	if (!ibv_mr) {
+		EFA_WARN(FI_LOG_DOMAIN,
+			 "Failed to register Neuron buffer with the EFA device, FI_HMEM transfers that require peer to peer support will fail.\n");
+		neuron_free(&handle);
+		return 0;
+	}
+
+	ret = ibv_dereg_mr(ibv_mr);
+	neuron_free(&handle);
+	if (ret) {
+		EFA_WARN(FI_LOG_DOMAIN,
+			 "Failed to deregister Neuron buffer: %s\n",
+			 fi_strerror(-ret));
+		return ret;
+	}
+
+	domain->hmem_info[FI_HMEM_NEURON].p2p_supported = true;
+#endif
+	return 0;
+}
+
+/*
+ * Determine whether an HMEM device is initialized, and whether the provider
+ * may support p2p transfers for that device. This state is used later when
+ * determining how to initiate an HMEM transfer.
+ *
+ * @param domain efa_domain to run the check/store state
+ * @return 0 on success, negative value on an unexpected error
+ */
+static int efa_set_domain_hmem_info(struct efa_domain *domain)
+{
+	int ret;
+
+	if (!(domain->info->caps & FI_HMEM))
+		return 0;
+
+	ret = efa_set_domain_hmem_info_cuda(domain);
+	if (ret)
+		return ret;
+
+	ret = efa_set_domain_hmem_info_neuron(domain);
+	if (ret)
+		return ret;
+
+	return 0;
+}
+
 /* @brief Allocate a domain, open the device, and set it up based on the hints.
  *
  * This function creates a domain and uses the info struct to configure the
@@ -351,13 +637,12 @@ static int efa_mr_cache_init(struct efa_domain *domain, struct fi_info *info)
 int efa_domain_open(struct fid_fabric *fabric_fid, struct fi_info *info,
 		    struct fid_domain **domain_fid, void *context)
 {
-	static int fork_handler_installed = 0;
 	struct efa_domain *domain;
 	struct efa_fabric *fabric;
 	const struct fi_info *fi;
 	size_t qp_table_size;
 	bool app_mr_local;
-	int ret;
+	int ret, err;
 
 	fi = efa_get_efa_info(info->domain_attr->name);
 	if (!fi)
@@ -383,7 +668,7 @@ int efa_domain_open(struct fid_fabric *fabric_fid, struct fi_info *info,
 	}
 
 	ret = ofi_domain_init(fabric_fid, info, &domain->util_domain,
-			      context);
+			      context, 0);
 	if (ret)
 		goto err_free_qp_table;
 
@@ -430,53 +715,23 @@ int efa_domain_open(struct fid_fabric *fabric_fid, struct fi_info *info,
 
 	domain->cache = NULL;
 
-	/*
-	 * Call ibv_fork_init if the user asked for fork support.
-	 */
-	if (efa_fork_status == EFA_FORK_SUPPORT_ON) {
-		ret = -ibv_fork_init();
-		if (ret) {
-			EFA_WARN(FI_LOG_DOMAIN,
-			         "Fork support requested but ibv_fork_init failed: %s\n",
-			         strerror(-ret));
-			goto err_free_info;
-		}
-	}
+	ret = efa_initialize_fork_support(*domain_fid);
 
-	/*
-	 * Run check to see if fork support was enabled by another library. If
-	 * one of the environment variables was set to enable fork support,
-	 * this variable was set to ON during provider init.  Huge pages for
-	 * bounce buffers will not be used if fork support is on.
-	 */
-	if (efa_fork_status == EFA_FORK_SUPPORT_OFF &&
-	    efa_check_fork_enabled(*domain_fid))
-		efa_fork_status = EFA_FORK_SUPPORT_ON;
-
-	if (efa_fork_status == EFA_FORK_SUPPORT_ON &&
-	    getenv("RDMAV_HUGEPAGES_SAFE")) {
-		EFA_WARN(FI_LOG_DOMAIN,
-			 "Using libibverbs fork support and huge pages is not supported by the EFA provider.\n");
-		ret = -FI_EINVAL;
+	if (ret) {
+		EFA_WARN(FI_LOG_DOMAIN, "Failed to initialize fork support %d", ret);
 		goto err_free_info;
 	}
 
-	/*
-	 * It'd be better to install this during provider init (since that's
-	 * only invoked once) but we need to do a memory registration for the
-	 * fork check above. This can move to the provider init once that check
-	 * is gone.
-	 */
-	if (!fork_handler_installed && efa_fork_status == EFA_FORK_SUPPORT_OFF) {
-		ret = pthread_atfork(efa_atfork_callback, NULL, NULL);
+	if (EFA_EP_TYPE_IS_RDM(info)) {
+		ret = efa_set_domain_hmem_info(domain);
 		if (ret) {
 			EFA_WARN(FI_LOG_DOMAIN,
-				 "Unable to register atfork callback: %s\n",
-				 strerror(-ret));
+				 "efa_check_hmem_support failed: %s\n",
+				 fi_strerror(-ret));
 			goto err_free_info;
 		}
-		fork_handler_installed = 1;
 	}
+
 	/*
 	 * If FI_MR_LOCAL is set, we do not want to use the MR cache.
 	 */
@@ -490,7 +745,11 @@ int efa_domain_open(struct fid_fabric *fabric_fid, struct fi_info *info,
 err_free_info:
 	fi_freeinfo(domain->info);
 err_close_domain:
-	ofi_domain_close(&domain->util_domain);
+	err = ofi_domain_close(&domain->util_domain);
+	if (err) {
+		EFA_WARN(FI_LOG_DOMAIN,
+			   "ofi_domain_close fails: %d", err);
+	}
 err_free_qp_table:
 	free(domain->qp_table);
 err_free_domain:

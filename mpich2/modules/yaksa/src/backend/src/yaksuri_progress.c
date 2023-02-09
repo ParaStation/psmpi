@@ -14,6 +14,17 @@
 #include "yaksuri.h"
 #include "yutlist.h"
 
+/* When there is wait kernel, treat unregistered host buffer the same as
+ * registered host buffer to avoid potential deadlock */
+#define AVOID_UNREGISTERED_HOST(ptr_type_, gpudriver_id_) \
+    do { \
+        if (yaksuri_global.has_wait_kernel && gpudriver_id_ == YAKSURI_GPUDRIVER_ID__CUDA) { \
+            if (ptr_type_ == YAKSUR_PTR_TYPE__UNREGISTERED_HOST) { \
+                ptr_type_ = YAKSUR_PTR_TYPE__REGISTERED_HOST; \
+            } \
+        } \
+    } while (0)
+
 static yaksuri_request_s *pending_reqs = NULL;
 static pthread_mutex_t progress_mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -2313,6 +2324,37 @@ static int singlechunk_unpack(yaksuri_gpudriver_id_e id, int device, const void 
     goto fn_exit;
 }
 
+/* determine if this is a device-to-device fastpath case */
+static bool is_d2d_fastpath(yaksi_info_s * info, yaksa_op_t op,
+                            yaksi_request_s * request, yaksuri_request_s * reqpriv, int *use_dev)
+{
+    /* all reduction operations on the same device */
+    if (request->backend.inattr.device == request->backend.outattr.device) {
+        *use_dev = reqpriv->request->backend.inattr.device;
+        return true;
+    } else if (op == YAKSA_OP__REPLACE) {
+        int sdev = reqpriv->request->backend.inattr.device;
+        int ddev = reqpriv->request->backend.outattr.device;
+
+        if (info) {
+            yaksuri_info_s *infopriv = (yaksuri_info_s *) info->backend.priv;
+            if (infopriv->mapped_device >= 0 &&
+                infopriv->mapped_device != reqpriv->request->backend.inattr.device) {
+                sdev = infopriv->mapped_device;
+                ddev = reqpriv->request->backend.inattr.device;
+            }
+        }
+
+        /* REPLACE operations on devices with peer access enabled */
+        if (check_p2p_comm(reqpriv->gpudriver_id, sdev, ddev)) {
+            *use_dev = sdev;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 /* Subroutines to setup subreq for pack with different buffer types
  *   set_subreq_pack_d2d
  *   set_subreq_pack_d2m
@@ -2330,31 +2372,15 @@ static int set_subreq_pack_d2d(const void *inbuf, void *outbuf, uintptr_t count,
     yaksuri_gpudriver_id_e id = reqpriv->gpudriver_id;
     bool aligned = buf_is_aligned(outbuf, type);
 
-    /* Fast path for REPLACE with aligned outbuf on the same device or different
-     * devices with P2P support. Note that IPC mapping requires P2P support, thus
-     * we don't handle the IPC case explicitly. */
-    if (op == YAKSA_OP__REPLACE &&
-        (request->backend.inattr.device == request->backend.outattr.device ||
-         check_p2p_comm(id, reqpriv->request->backend.inattr.device,
-                        reqpriv->request->backend.outattr.device)) && aligned) {
-        int use_device = reqpriv->request->backend.inattr.device;
-        if (info) {
-            yaksuri_info_s *infopriv = (yaksuri_info_s *) info->backend.priv;
-            if (infopriv->mapped_device >= 0) {
-                use_device = infopriv->mapped_device;
-            }
-        }
-        rc = singlechunk_pack(id, use_device, inbuf, outbuf, count,
+    int use_dev;
+    if (aligned && is_d2d_fastpath(info, op, request, reqpriv, &use_dev)) {
+        rc = singlechunk_pack(id, use_dev, inbuf, outbuf, count,
                               type, info, op, request, subreq_ptr, stream);
+        goto fn_exit;
     }
-    /* Fast path for other reduce operations with aligned buffer on the same device */
-    else if (request->backend.inattr.device == request->backend.outattr.device && aligned) {
-        rc = singlechunk_pack(id, request->backend.inattr.device, inbuf, outbuf, count,
-                              type, info, op, request, subreq_ptr, stream);
-        YAKSU_ERR_CHECK(rc, fn_fail);
-    }
+
     /* Slow paths */
-    else if (request->backend.inattr.device == request->backend.outattr.device) {
+    if (request->backend.inattr.device == request->backend.outattr.device) {
         if (stream) {
             rc = pack_d2d_unaligned_stream(reqpriv, inbuf, outbuf, count, type, op, stream);
             YAKSU_ERR_CHECK(rc, fn_fail);
@@ -2482,7 +2508,9 @@ static int set_subreq_pack_from_device(const void *inbuf, void *outbuf, uintptr_
 {
     int rc = YAKSA_SUCCESS;
 
-    switch (request->backend.outattr.type) {
+    int ptr_type = request->backend.outattr.type;
+    AVOID_UNREGISTERED_HOST(ptr_type, reqpriv->gpudriver_id);
+    switch (ptr_type) {
         case YAKSUR_PTR_TYPE__GPU:
             rc = set_subreq_pack_d2d(inbuf, outbuf, count, type, info, op, request, reqpriv,
                                      subreq_ptr, stream);
@@ -2601,30 +2629,15 @@ static int set_subreq_unpack_d2d(const void *inbuf, void *outbuf, uintptr_t coun
     yaksuri_gpudriver_id_e id = reqpriv->gpudriver_id;
     bool aligned = buf_is_aligned(inbuf, type);
 
-    /* Fast path for REPLACE with aligned inbuf on the same device or different
-     * devices with P2P support. Note that IPC mapping requires P2P support, thus
-     * we don't handle the IPC case explicitly. */
-    if (op == YAKSA_OP__REPLACE &&
-        (request->backend.inattr.device == request->backend.outattr.device ||
-         check_p2p_comm(id, reqpriv->request->backend.inattr.device,
-                        reqpriv->request->backend.outattr.device)) && aligned) {
-        int use_device = reqpriv->request->backend.inattr.device;
-        if (info) {
-            yaksuri_info_s *infopriv = (yaksuri_info_s *) info->backend.priv;
-            if (infopriv->mapped_device >= 0) {
-                use_device = infopriv->mapped_device;
-            }
-        }
-        rc = singlechunk_unpack(id, use_device, inbuf, outbuf, count,
+    int use_dev;
+    if (aligned && is_d2d_fastpath(info, op, request, reqpriv, &use_dev)) {
+        rc = singlechunk_unpack(id, use_dev, inbuf, outbuf, count,
                                 type, info, op, request, subreq_ptr, stream);
+        goto fn_exit;
     }
-    /* Fast path for other reduce operations with aligned buffer on the same device */
-    else if (request->backend.inattr.device == request->backend.outattr.device && aligned) {
-        rc = singlechunk_unpack(id, request->backend.inattr.device, inbuf, outbuf, count,
-                                type, info, op, request, subreq_ptr, stream);
-    }
+
     /* Slow paths */
-    else if (request->backend.inattr.device == request->backend.outattr.device) {
+    if (request->backend.inattr.device == request->backend.outattr.device) {
         if (stream) {
             rc = unpack_d2d_unaligned_stream(reqpriv, inbuf, outbuf, count, type, op, stream);
             YAKSU_ERR_CHECK(rc, fn_fail);
@@ -2740,7 +2753,9 @@ static int set_subreq_unpack_from_device(const void *inbuf, void *outbuf, uintpt
 {
     int rc = YAKSA_SUCCESS;
 
-    switch (request->backend.outattr.type) {
+    int ptr_type = request->backend.outattr.type;
+    AVOID_UNREGISTERED_HOST(ptr_type, reqpriv->gpudriver_id);
+    switch (ptr_type) {
         case YAKSUR_PTR_TYPE__GPU:
             rc = set_subreq_unpack_d2d(inbuf, outbuf, count, type, info, op, request, reqpriv,
                                        subreq_ptr, stream);
@@ -2869,16 +2884,19 @@ int yaksuri_progress_enqueue(const void *inbuf, void *outbuf, uintptr_t count, y
     }
 
     void *stream;
-    if (request->kind == YAKSI_REQUEST_KIND__CUDA_STREAM) {
-        assert(id == YAKSURI_GPUDRIVER_ID__CUDA);
+    if (request->kind == YAKSI_REQUEST_KIND__GPU_STREAM) {
+        assert(id == YAKSURI_GPUDRIVER_ID__CUDA || id == YAKSURI_GPUDRIVER_ID__HIP);
         assert(request->stream != NULL);
         stream = request->stream;
     } else {
         stream = NULL;
     }
 
+    int ptr_type;
+    ptr_type = request->backend.inattr.type;
+    AVOID_UNREGISTERED_HOST(ptr_type, reqpriv->gpudriver_id);
     if (reqpriv->optype == YAKSURI_OPTYPE__PACK) {
-        switch (request->backend.inattr.type) {
+        switch (ptr_type) {
             case YAKSUR_PTR_TYPE__GPU:
                 rc = set_subreq_pack_from_device(inbuf, outbuf, count, type, info, op, request,
                                                  reqpriv, &subreq, stream);
@@ -2909,7 +2927,7 @@ int yaksuri_progress_enqueue(const void *inbuf, void *outbuf, uintptr_t count, y
                 break;
         }
     } else {
-        switch (request->backend.inattr.type) {
+        switch (ptr_type) {
             case YAKSUR_PTR_TYPE__GPU:
                 rc = set_subreq_unpack_from_device(inbuf, outbuf, count, type, info, op, request,
                                                    reqpriv, &subreq, stream);
@@ -2945,6 +2963,9 @@ int yaksuri_progress_enqueue(const void *inbuf, void *outbuf, uintptr_t count, y
     if (!subreq) {
         goto fn_exit;
     }
+
+    /* id (i.e., reqpriv->gpudriver_id) may differ between differen calls to yaksuri_progress_enqueue() */
+    subreq->gpudriver_id = id;
 
     pthread_mutex_lock(&progress_mutex);
     DL_APPEND(reqpriv->subreqs, subreq);
@@ -2989,11 +3010,11 @@ int yaksuri_progress_poke(void)
     /**********************************************************************/
     yaksuri_request_s *reqpriv, *tmp;
     HASH_ITER(hh, pending_reqs, reqpriv, tmp) {
-        id = reqpriv->gpudriver_id;
         assert(reqpriv->subreqs);
 
         yaksuri_subreq_s *subreq, *tmp2;
         DL_FOREACH_SAFE(reqpriv->subreqs, subreq, tmp2) {
+            id = subreq->gpudriver_id;
             if (subreq->kind == YAKSURI_SUBREQ_KIND__SINGLE_CHUNK) {
                 int completed;
                 rc = event_query(id, subreq->u.single.event, &completed);
@@ -3029,11 +3050,11 @@ int yaksuri_progress_poke(void)
     /* Step 2: Issue new operations */
     /**********************************************************************/
     HASH_ITER(hh, pending_reqs, reqpriv, tmp) {
-        id = reqpriv->gpudriver_id;
         assert(reqpriv->subreqs);
 
         yaksuri_subreq_s *subreq, *tmp2;
         DL_FOREACH_SAFE(reqpriv->subreqs, subreq, tmp2) {
+            id = subreq->gpudriver_id;
             if (subreq->kind == YAKSURI_SUBREQ_KIND__SINGLE_CHUNK)
                 continue;
 

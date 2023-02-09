@@ -123,7 +123,7 @@ static inline int ofi_sendall_socket(SOCKET sock, const void *buf, size_t len)
 	return (size_t) sent != len;
 }
 
-int ofi_discard_socket(SOCKET sock, size_t len);
+ssize_t ofi_discard_socket(SOCKET sock, size_t len);
 
 /*
  * Byte queue - streaming socket staging buffer
@@ -177,7 +177,7 @@ ofi_byteq_read(struct ofi_byteq *byteq, void *buf, size_t len)
 
 	if (len < avail) {
 		memcpy(buf, &byteq->data[byteq->head], len);
-		byteq->head += len;
+		byteq->head += (unsigned)len;
 		return len;
 	}
 
@@ -192,7 +192,7 @@ ofi_byteq_write(struct ofi_byteq *byteq, const void *buf, size_t len)
 {
 	assert(len <= ofi_byteq_writeable(byteq));
 	memcpy(&byteq->data[byteq->tail], buf, len);
-	byteq->tail += len;
+	byteq->tail += (unsigned)len;
 }
 
 void ofi_byteq_writev(struct ofi_byteq *byteq, const struct iovec *iov,
@@ -208,7 +208,7 @@ static inline ssize_t ofi_byteq_recv(struct ofi_byteq *byteq, SOCKET sock)
 	ret = ofi_recv_socket(sock, &byteq->data[byteq->tail], avail,
 			      MSG_NOSIGNAL);
 	if (ret > 0)
-		byteq->tail += ret;
+		byteq->tail += (unsigned)ret;
 	return ret;
 }
 
@@ -224,11 +224,11 @@ static inline ssize_t ofi_byteq_send(struct ofi_byteq *byteq, SOCKET sock)
 	assert(avail);
 	ret = ofi_send_socket(sock, &byteq->data[byteq->head], avail,
 			      MSG_NOSIGNAL);
-	if (ret == avail) {
+	if ((size_t) ret == avail) {
 		byteq->head = 0;
 		byteq->tail = 0;
 	} else if (ret > 0) {
-		byteq->head += ret;
+		byteq->head += (unsigned)ret;
 	}
 	return ret;
 }
@@ -401,6 +401,23 @@ static inline int ofi_translate_addr_format(int family)
 	}
 }
 
+static inline size_t ofi_sizeof_addr_format(int format)
+{
+	switch (format) {
+	case FI_SOCKADDR:
+		return sizeof(union ofi_sock_ip);
+	case FI_SOCKADDR_IN:
+		return sizeof(struct sockaddr_in);
+	case FI_SOCKADDR_IN6:
+		return sizeof(struct sockaddr_in6);
+	case FI_SOCKADDR_IB:
+		return sizeof(struct ofi_sockaddr_ib);
+	default:
+		FI_WARN(&core_prov, FI_LOG_CORE, "Unsupported address format\n");
+		return 0;
+	}
+}
+
 uint16_t ofi_get_sa_family(const struct fi_info *info);
 
 static inline bool ofi_sin_is_any_addr(const struct sockaddr *sa)
@@ -510,7 +527,12 @@ static inline void * ofi_get_ipaddr(const struct sockaddr *addr)
 
 static inline bool ofi_valid_dest_ipaddr(const struct sockaddr *addr)
 {
-	return ofi_addr_get_port(addr) && !ofi_is_any_addr(addr);
+	char sin_zero[8] = {0};
+
+	return ofi_addr_get_port(addr) && !ofi_is_any_addr(addr) &&
+	       (addr->sa_family != AF_INET ||
+	         !memcmp(((const struct sockaddr_in *) addr)->sin_zero,
+			 sin_zero, sizeof sin_zero));
 }
 
 static inline bool ofi_equals_ipaddr(const struct sockaddr *addr1,

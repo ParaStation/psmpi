@@ -49,6 +49,7 @@
 #include <rdma/fi_rma.h>
 #include <rdma/fi_tagged.h>
 #include <rdma/fi_trigger.h>
+#include <rdma/fi_ext.h>
 
 #include <ofi.h>
 #include <ofi_iov.h>
@@ -65,15 +66,6 @@
 
 #include "rxr_pkt_entry.h"
 #include "rxr_pkt_type.h"
-
-/*
- * EFA support interoperability between protocol version 4 and above,
- * and version 4 is considered the base version.
- */
-#define RXR_BASE_PROTOCOL_VERSION	(4)
-#define RXR_CUR_PROTOCOL_VERSION	(4)
-#define RXR_NUM_PROTOCOL_VERSION	(RXR_CUR_PROTOCOL_VERSION - RXR_BASE_PROTOCOL_VERSION + 1)
-#define RXR_MAX_PROTOCOL_VERSION	(100)
 
 #define RXR_FI_VERSION		OFI_VERSION_LATEST
 
@@ -210,7 +202,6 @@ static inline void rxr_poison_mem_region(uint32_t *ptr, size_t size)
 
 extern struct fi_info *shm_info;
 
-extern struct fi_provider *lower_efa_prov;
 extern struct fi_provider rxr_prov;
 extern struct fi_info rxr_info;
 extern struct rxr_env rxr_env;
@@ -248,6 +239,7 @@ struct rxr_env {
 	size_t efa_cq_read_size;
 	size_t shm_cq_read_size;
 	size_t efa_max_medium_msg_size;
+	size_t efa_max_gdrcopy_msg_size;
 	size_t efa_min_read_msg_size;
 	size_t efa_min_read_write_size;
 	size_t efa_read_segment_size;
@@ -306,16 +298,6 @@ enum rxr_rx_comm_type {
  * Progress engine will retry sending handshake.
  */
 #define RXR_PEER_HANDSHAKE_QUEUED      BIT_ULL(5)
-
-struct rxr_fabric {
-	struct util_fabric util_fabric;
-	struct fid_fabric *lower_fabric;
-	struct fid_fabric *shm_fabric;
-#ifdef RXR_PERF_ENABLED
-	struct ofi_perfset perf_set;
-#endif
-};
-
 #define RXR_MAX_NUM_PROTOCOLS (RXR_MAX_PROTOCOL_VERSION - RXR_BASE_PROTOCOL_VERSION + 1)
 
 struct rdm_peer {
@@ -327,8 +309,8 @@ struct rdm_peer {
 	uint32_t prev_qkey;		/* each peer has unique gid+qpn. the qkey can change */
 	uint32_t next_msg_id;		/* sender's view of msg_id */
 	uint32_t flags;
-	uint32_t maxproto;		/* maximum supported protocol version by this peer */
-	uint64_t features[RXR_MAX_NUM_PROTOCOLS]; /* the feature flag for each version */
+	uint32_t nextra_p3;		/* number of members in extra_info plus 3 */
+	uint64_t extra_info[RXR_MAX_NUM_EXINFO]; /* the feature/request flag for each version */
 	size_t efa_outstanding_tx_ops;	/* tracks outstanding tx ops to this peer on EFA device */
 	size_t shm_outstanding_tx_ops;  /* tracks outstanding tx ops to this peer on SHM */
 	struct dlist_entry outstanding_tx_pkts; /* a list of outstanding tx pkts to the peer */
@@ -397,6 +379,7 @@ struct rxr_rx_entry {
 
 	uint64_t bytes_received;
 	uint64_t bytes_copied;
+	uint64_t bytes_queued;
 	int64_t window;
 	uint16_t credit_request;
 	int credit_cts;
@@ -493,7 +476,6 @@ struct rxr_tx_entry {
 	uint64_t fi_flags;
 	uint64_t rxr_flags;
 
-	uint64_t send_flags;
 	size_t iov_count;
 	size_t iov_index;
 	size_t iov_offset;
@@ -534,11 +516,29 @@ struct rxr_tx_entry {
 
 	/* linked with tx_entry_list in rxr_ep */
 	struct dlist_entry ep_entry;
+
+	size_t efa_outstanding_tx_ops;
+	size_t shm_outstanding_tx_ops;
 };
 
 #define RXR_GET_X_ENTRY_TYPE(pkt_entry)	\
 	(*((enum rxr_x_entry_type *)	\
 	 ((unsigned char *)((pkt_entry)->x_entry))))
+
+static inline
+struct rxr_tx_entry *rxr_tx_entry_of_pkt_entry(struct rxr_pkt_entry *pkt_entry)
+{
+       enum rxr_x_entry_type x_entry_type;
+       /*
+        * pkt_entry->x_entry can be NULL when the packet is a HANDSHAKE packet
+        */
+       if (!pkt_entry->x_entry)
+               return NULL;
+
+       x_entry_type = RXR_GET_X_ENTRY_TYPE(pkt_entry);
+       return (x_entry_type == RXR_TX_ENTRY) ? pkt_entry->x_entry : NULL;
+}
+
 
 enum efa_domain_type {
 	EFA_DOMAIN_DGRAM = 0,
@@ -557,14 +557,30 @@ struct rxr_domain {
 	size_t cq_size;
 };
 
+/** @brief Information of a queued copy.
+ *
+ * This struct is used when receiving buffer is on device.
+ * Under such circumstance, batching a series copies to
+ * do them at the same time can avoid memory barriers between
+ * copies, and improve performance.
+ */
+struct rxr_queued_copy {
+	struct rxr_pkt_entry *pkt_entry;
+	char *data;
+	size_t data_size;
+	size_t data_offset;
+};
+
+#define RXR_EP_MAX_QUEUED_COPY (8)
+
 struct rxr_ep {
 	struct util_ep util_ep;
 
 	uint8_t core_addr[RXR_MAX_NAME_LENGTH];
 	size_t core_addrlen;
 
-	/* per-version feature flag */
-	uint64_t features[RXR_NUM_PROTOCOL_VERSION];
+	/* per-version extra feature/request flag */
+	uint64_t extra_info[RXR_MAX_NUM_EXINFO];
 
 	/* core provider fid */
 	struct fid_ep *rdm_ep;
@@ -723,13 +739,24 @@ struct rxr_ep {
 	struct dlist_entry rx_entry_list;
 	struct dlist_entry tx_entry_list;
 
-	/* number of posted buffer for shm */
-	size_t posted_bufs_shm;
-	size_t rx_bufs_shm_to_post;
-
-	/* number of posted buffers */
-	size_t posted_bufs_efa;
-	size_t rx_bufs_efa_to_post;
+	/*
+	 * number of posted RX packets for shm
+	 */
+	size_t shm_rx_pkts_posted;
+	/*
+	 * number of RX packets to be posted by progress engine for shm.
+	 * It exists because posting RX packets by bulk is more efficient.
+	 */
+	size_t shm_rx_pkts_to_post;
+	/*
+	 * number of posted RX packets for EFA device
+	 */
+	size_t efa_rx_pkts_posted;
+	/*
+	 * Number of RX packets to be posted by progress engine for EFA device.
+	 * It exists because posting RX packets by bulk is more efficient.
+	 */
+	size_t efa_rx_pkts_to_post;
 	/* number of buffers available for large messages */
 	size_t available_data_bufs;
 	/* Timestamp of when available_data_bufs was exhausted. */
@@ -739,6 +766,9 @@ struct rxr_ep {
 	size_t efa_outstanding_tx_ops;
 	/* number of outstanding tx ops on shm */
 	size_t shm_outstanding_tx_ops;
+
+	struct rxr_queued_copy queued_copy_vec[RXR_EP_MAX_QUEUED_COPY];
+	int queued_copy_num;
 };
 
 #define rxr_rx_flags(rxr_ep) ((rxr_ep)->util_ep.rx_op_flags)
@@ -887,8 +917,6 @@ int rxr_get_lower_rdm_info(uint32_t version, const char *node, const char *servi
 			   uint64_t flags, const struct util_prov *util_prov,
 			   const struct fi_info *util_hints,
 			   struct fi_info **core_info);
-int rxr_fabric(struct fi_fabric_attr *attr,
-	       struct fid_fabric **fabric, void *context);
 int rxr_domain_open(struct fid_fabric *fabric, struct fi_info *info,
 		    struct fid_domain **dom, void *context);
 int rxr_cq_open(struct fid_domain *domain, struct fi_cq_attr *attr,
@@ -900,11 +928,14 @@ int rxr_endpoint(struct fid_domain *domain, struct fi_info *info,
 void rxr_ep_progress(struct util_ep *util_ep);
 void rxr_ep_progress_internal(struct rxr_ep *rxr_ep);
 
-int rxr_ep_post_user_buf(struct rxr_ep *ep, struct rxr_rx_entry *rx_entry,
-			 uint64_t flags);
+int rxr_ep_post_user_recv_buf(struct rxr_ep *ep, struct rxr_rx_entry *rx_entry,
+			      uint64_t flags);
 
 int rxr_ep_set_tx_credit_request(struct rxr_ep *rxr_ep,
 				 struct rxr_tx_entry *tx_entry);
+
+int rxr_ep_determine_rdma_support(struct rxr_ep *ep, fi_addr_t addr,
+				  struct rdm_peer *peer);
 
 int rxr_ep_tx_init_mr_desc(struct rxr_domain *rxr_domain,
 			   struct rxr_tx_entry *tx_entry,
@@ -932,7 +963,8 @@ struct rxr_rx_entry *rxr_ep_split_rx_entry(struct rxr_ep *ep,
 					   struct rxr_rx_entry *posted_entry,
 					   struct rxr_rx_entry *consumer_entry,
 					   struct rxr_pkt_entry *pkt_entry);
-int rxr_raw_addr_to_smr_name(void *addr, char *smr_name);
+
+int rxr_raw_addr_to_smr_name(void *addr, char *smr_name, size_t *smr_name_len);
 
 /* CQ sub-functions */
 void rxr_cq_write_rx_error(struct rxr_ep *ep, struct rxr_rx_entry *rx_entry,
@@ -949,7 +981,6 @@ void rxr_cq_write_rx_completion(struct rxr_ep *ep,
 				struct rxr_rx_entry *rx_entry);
 
 void rxr_cq_handle_rx_completion(struct rxr_ep *ep,
-				 struct rxr_pkt_entry *pkt_entry,
 				 struct rxr_rx_entry *rx_entry);
 
 void rxr_cq_write_tx_completion(struct rxr_ep *ep,
@@ -1026,56 +1057,22 @@ static inline uint64_t is_rx_res_full(struct rxr_ep *ep)
 
 static inline void rxr_rm_rx_cq_check(struct rxr_ep *ep, struct util_cq *rx_cq)
 {
-	fastlock_acquire(&rx_cq->cq_lock);
+	ofi_genlock_lock(&rx_cq->cq_lock);
 	if (ofi_cirque_isfull(rx_cq->cirq))
 		ep->rm_full |= RXR_RM_RX_CQ_FULL;
 	else
 		ep->rm_full &= ~RXR_RM_RX_CQ_FULL;
-	fastlock_release(&rx_cq->cq_lock);
+	ofi_genlock_unlock(&rx_cq->cq_lock);
 }
 
 static inline void rxr_rm_tx_cq_check(struct rxr_ep *ep, struct util_cq *tx_cq)
 {
-	fastlock_acquire(&tx_cq->cq_lock);
+	ofi_genlock_lock(&tx_cq->cq_lock);
 	if (ofi_cirque_isfull(tx_cq->cirq))
 		ep->rm_full |= RXR_RM_TX_CQ_FULL;
 	else
 		ep->rm_full &= ~RXR_RM_TX_CQ_FULL;
-	fastlock_release(&tx_cq->cq_lock);
+	ofi_genlock_unlock(&tx_cq->cq_lock);
 }
 
-/* Performance counter declarations */
-#ifdef RXR_PERF_ENABLED
-#define RXR_PERF_FOREACH(DECL)	\
-	DECL(perf_rxr_tx),	\
-	DECL(perf_rxr_recv),	\
-	DECL(rxr_perf_size)	\
-
-enum rxr_perf_counters {
-	RXR_PERF_FOREACH(OFI_ENUM_VAL)
-};
-
-extern const char *rxr_perf_counters_str[];
-
-static inline void rxr_perfset_start(struct rxr_ep *ep, size_t index)
-{
-	struct rxr_domain *domain = rxr_ep_domain(ep);
-	struct rxr_fabric *fabric = container_of(domain->util_domain.fabric,
-						 struct rxr_fabric,
-						 util_fabric);
-	ofi_perfset_start(&fabric->perf_set, index);
-}
-
-static inline void rxr_perfset_end(struct rxr_ep *ep, size_t index)
-{
-	struct rxr_domain *domain = rxr_ep_domain(ep);
-	struct rxr_fabric *fabric = container_of(domain->util_domain.fabric,
-						 struct rxr_fabric,
-						 util_fabric);
-	ofi_perfset_end(&fabric->perf_set, index);
-}
-#else
-#define rxr_perfset_start(ep, index) do {} while (0)
-#define rxr_perfset_end(ep, index) do {} while (0)
-#endif
 #endif

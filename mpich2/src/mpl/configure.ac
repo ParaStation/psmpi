@@ -57,6 +57,8 @@ AC_C_INLINE
 
 PAC_C_MACRO_VA_ARGS
 PAC_C_BUILTIN_EXPECT
+PAC_C_BUILTIN_CLZ
+PAC_C_BUILTIN_POPCOUNT
 PAC_C_STATIC_ASSERT
 
 AC_ARG_ENABLE(embedded,
@@ -1004,6 +1006,8 @@ fi
 AC_CHECK_FUNCS(mkstemp)
 if test "$ac_cv_func_mkstemp" = "yes" ; then
     PAC_FUNC_NEEDS_DECL([#include <stdlib.h>],mkstemp)
+else
+    AC_MSG_WARN([The mkstemp function is not provided in the standard library. Using a possibly insecure replacement function.])
 fi
 # fdopen() converts from an fd to a FILE*
 AC_CHECK_FUNCS(fdopen)
@@ -1051,10 +1055,61 @@ AC_SUBST(GPU_SUPPORT)
 have_gpu="no"
 
 # Check CUDA availability
+AC_ARG_VAR([NVCC], [nvcc compiler to use])
 PAC_CHECK_HEADER_LIB_OPTIONAL([cuda],[cuda_runtime_api.h],[cudart],[cudaStreamSynchronize])
 if test "$pac_have_cuda" = "yes" ; then
     # also require -lcuda (in addition to -lcudart)
     PAC_CHECK_HEADER_LIB([cuda.h],[cuda],[cuMemGetAddressRange], pac_have_cuda=yes, pac_have_cuda=no)
+    AC_CHECK_LIB(dl, dlopen, [], AC_MSG_ERROR([dlopen not found.  MPL CUDA support requires libdl.]))
+fi
+if test "$pac_have_cuda" = "yes" ; then
+    if test -z "$NVCC"; then
+        if test -n "$with_cuda" ; then
+            AC_PATH_PROG([NVCC], [nvcc], [nvcc_not_found], [$with_cuda/bin:$PATH])
+        else
+            AC_PATH_PROG([NVCC], [nvcc], [nvcc_not_found])
+        fi
+        if test -n "$CC" ; then
+            # - pgcc/nvc doesn't work, use pgc++/nvc++ instead
+            # - Extra optins such as `gcc -std=gnu99` doesn't work, strip the option
+            NVCC_CCBIN=$(echo "$CC" | sed -e 's/nvc/nvc++/g' -e 's/pgcc/pgc++/g' -e's/ -std=.*//g')
+            NVCC="$NVCC -ccbin $NVCC_CCBIN"
+        fi
+    fi
+
+    # save language settings, customize ac_ext and ac_compile to support CUDA
+    AC_MSG_CHECKING([whether nvcc works])
+    AC_LANG_PUSH([C])
+    ac_ext=cu
+    ac_compile='$NVCC -c conftest.$ac_ext >&5'
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([__global__ void foo(int x) {}],[])],[
+          AC_MSG_RESULT([yes])
+        ],[
+          pac_have_cuda=no
+          AC_MSG_RESULT([no])
+        ])
+    # done with CUDA, back to C
+    AC_LANG_POP([C])
+fi
+
+if test "$pac_have_cuda" = "yes" ; then
+    # nvcc compiled applications need libstdc++ to be able to link
+    # with a C compiler
+    AC_MSG_CHECKING([if $CC can link libstdc++])
+    PAC_PUSH_FLAG([LIBS])
+    PAC_APPEND_FLAG([-lstdc++],[LIBS])
+    AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([int x = 5;],[x++;])],
+        [libstdcpp_works=yes],
+        [libstdcpp_works=no])
+    PAC_POP_FLAG([LIBS])
+    if test "${libstdcpp_works}" = "yes" ; then
+        PAC_APPEND_FLAG([-lstdc++],[LIBS])
+        AC_MSG_RESULT([yes])
+    else
+        pac_have_cuda=no
+        AC_MSG_RESULT([no])
+    fi
 fi
 if test "X${pac_have_cuda}" = "Xyes" ; then
     PAC_LIBS_ADD(-lcuda)
@@ -1078,10 +1133,8 @@ AM_CONDITIONAL([MPL_HAVE_ZE],[test "X${pac_have_ze}" = "Xyes"])
 
 # Check HIP availability
 if test "$have_gpu" = "no" ; then
-    PAC_PUSH_FLAG(CPPFLAGS)
-    PAC_APPEND_FLAG([-D__HIP_PLATFORM_AMD__], [CPPFLAGS])
-    PAC_CHECK_HEADER_LIB_OPTIONAL([hip],[hip/hip_runtime_api.h],[amdhip64],[hipStreamSynchronize])
-    PAC_POP_FLAG(CPPFLAGS)
+    PAC_CHECK_HEADER_LIB_OPTIONAL([hip],[hip/hip_runtime_api.h],[amdhip64],[hipStreamSynchronize],,
+                                  [-D__HIP_PLATFORM_AMD__])
 fi
 
 if test "X${pac_have_hip}" = "Xyes" ; then

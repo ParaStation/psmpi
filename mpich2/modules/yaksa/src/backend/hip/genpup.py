@@ -204,7 +204,7 @@ def generate_host_function(b, darray):
             funcprefix = funcprefix + "%s_" % d
         funcprefix = funcprefix + b.replace(" ", "_")
 
-        yutils.display(OUTFILE, "void yaksuri_hipi_%s(const void *inbuf, void *outbuf, uintptr_t count, yaksa_op_t op, yaksuri_hipi_md_s *md, int n_threads, int n_blocks_x, int n_blocks_y, int n_blocks_z, int device)\n" % funcprefix)
+        yutils.display(OUTFILE, "void yaksuri_hipi_%s(const void *inbuf, void *outbuf, uintptr_t count, yaksa_op_t op, yaksuri_hipi_md_s *md, int n_threads, int n_blocks_x, int n_blocks_y, int n_blocks_z, hipStream_t stream)\n" % funcprefix)
         yutils.display(OUTFILE, "{\n")
         yutils.display(OUTFILE, "void *args[] = { &inbuf, &outbuf, &count, &md };\n")
 
@@ -217,7 +217,7 @@ def generate_host_function(b, darray):
             funcprefix = funcprefix + b.replace(" ", "_")
             yutils.display(OUTFILE, "case YAKSA_OP__%s:\n" % op)
             yutils.display(OUTFILE, "cerr = hipLaunchKernel((const void *) yaksuri_hipi_kernel_%s,\n" % funcprefix)
-            yutils.display(OUTFILE, "    dim3(n_blocks_x, n_blocks_y, n_blocks_z), dim3(n_threads), args, 0, yaksuri_hipi_global.stream[device]);\n")
+            yutils.display(OUTFILE, "    dim3(n_blocks_x, n_blocks_y, n_blocks_z), dim3(n_threads), args, 0, stream);\n")
             yutils.display(OUTFILE, "YAKSURI_HIPI_HIP_ERR_CHECK(cerr);\n")
             yutils.display(OUTFILE, "break;\n\n")
         yutils.display(OUTFILE, "}\n")
@@ -261,37 +261,10 @@ if __name__ == '__main__':
         OUTFILE.close()
 
     ##### generate the core pack/unpack kernels (single level)
-    for b in builtin_types:
-        for d in gencomm.derived_types:
-            filename = "src/backend/hip/pup/yaksuri_hipi_pup_%s_%s.hip" % (d, b.replace(" ","_"))
-            yutils.copyright_c(filename)
-            OUTFILE = open(filename, "a")
-            yutils.display(OUTFILE, "#include <string.h>\n")
-            yutils.display(OUTFILE, "#include <stdint.h>\n")
-            yutils.display(OUTFILE, "#include <wchar.h>\n")
-            yutils.display(OUTFILE, "#include <assert.h>\n")
-            yutils.display(OUTFILE, "#include <hip/hip_runtime_api.h>\n")
-            yutils.display(OUTFILE, "#include <hip/hip_runtime.h>\n")
-            yutils.display(OUTFILE, "#include \"yaksuri_hipi_base.h\"\n")
-            yutils.display(OUTFILE, "#include \"yaksuri_hipi_pup.h\"\n")
-            yutils.display(OUTFILE, "\n")
-
-            emptylist = [ ]
-            emptylist.append(d)
-            for op in gencomm.type_ops[b]:
-                generate_kernels(b, emptylist, op)
-            generate_host_function(b, emptylist)
-            emptylist.pop()
-
-            OUTFILE.close()
-
-    ##### generate the core pack/unpack kernels (more than one level)
-    darraylist = [ ]
-    yutils.generate_darrays(gencomm.derived_types, darraylist, args.pup_max_nesting - 2)
-    for b in builtin_types:
-        for d1 in gencomm.derived_types:
-            for d2 in gencomm.derived_types:
-                filename = "src/backend/hip/pup/yaksuri_hipi_pup_%s_%s_%s.hip" % (d1, d2, b.replace(" ","_"))
+    if args.pup_max_nesting > 0:
+        for b in builtin_types:
+            for d in gencomm.derived_types:
+                filename = "src/backend/hip/pup/yaksuri_hipi_pup_%s_%s.hip" % (d, b.replace(" ","_"))
                 yutils.copyright_c(filename)
                 OUTFILE = open(filename, "a")
                 yutils.display(OUTFILE, "#include <string.h>\n")
@@ -304,16 +277,45 @@ if __name__ == '__main__':
                 yutils.display(OUTFILE, "#include \"yaksuri_hipi_pup.h\"\n")
                 yutils.display(OUTFILE, "\n")
 
-                for darray in darraylist:
-                    darray.append(d1)
-                    darray.append(d2)
-                    for op in gencomm.type_ops[b]:
-                        generate_kernels(b, darray, op)
-                    generate_host_function(b, darray)
-                    darray.pop()
-                    darray.pop()
+                emptylist = [ ]
+                emptylist.append(d)
+                for op in gencomm.type_ops[b]:
+                    generate_kernels(b, emptylist, op)
+                generate_host_function(b, emptylist)
+                emptylist.pop()
 
                 OUTFILE.close()
+
+    ##### generate the core pack/unpack kernels (more than one level)
+    if args.pup_max_nesting > 1:
+        darraylist = [ ]
+        yutils.generate_darrays(gencomm.derived_types, darraylist, args.pup_max_nesting - 2)
+        for b in builtin_types:
+            for d1 in gencomm.derived_types:
+                for d2 in gencomm.derived_types:
+                    filename = "src/backend/hip/pup/yaksuri_hipi_pup_%s_%s_%s.hip" % (d1, d2, b.replace(" ","_"))
+                    yutils.copyright_c(filename)
+                    OUTFILE = open(filename, "a")
+                    yutils.display(OUTFILE, "#include <string.h>\n")
+                    yutils.display(OUTFILE, "#include <stdint.h>\n")
+                    yutils.display(OUTFILE, "#include <wchar.h>\n")
+                    yutils.display(OUTFILE, "#include <assert.h>\n")
+                    yutils.display(OUTFILE, "#include <hip/hip_runtime_api.h>\n")
+                    yutils.display(OUTFILE, "#include <hip/hip_runtime.h>\n")
+                    yutils.display(OUTFILE, "#include \"yaksuri_hipi_base.h\"\n")
+                    yutils.display(OUTFILE, "#include \"yaksuri_hipi_pup.h\"\n")
+                    yutils.display(OUTFILE, "\n")
+
+                    for darray in darraylist:
+                        darray.append(d1)
+                        darray.append(d2)
+                        for op in gencomm.type_ops[b]:
+                            generate_kernels(b, darray, op)
+                        generate_host_function(b, darray)
+                        darray.pop()
+                        darray.pop()
+
+                    OUTFILE.close()
 
     ##### generate the core pack/unpack kernel declarations
     filename = "src/backend/hip/pup/yaksuri_hipi_pup.h"
@@ -373,7 +375,7 @@ if __name__ == '__main__':
             OUTFILE.write("int n_blocks_x, ")
             OUTFILE.write("int n_blocks_y, ")
             OUTFILE.write("int n_blocks_z, ")
-            OUTFILE.write("int device);\n")
+            OUTFILE.write("hipStream_t stream);\n")
         for darray in darraylist:
             # we don't need pup kernels for basic types
             if (len(darray) == 0):
@@ -395,7 +397,7 @@ if __name__ == '__main__':
                 OUTFILE.write("int n_blocks_x, ")
                 OUTFILE.write("int n_blocks_y, ")
                 OUTFILE.write("int n_blocks_z, ")
-                OUTFILE.write("int device);\n")
+                OUTFILE.write("hipStream_t stream);\n")
 
     yutils.display(OUTFILE, "\n")
     yutils.display(OUTFILE, "#ifdef __cplusplus\n")
@@ -412,12 +414,14 @@ if __name__ == '__main__':
     yutils.display(OUTFILE, "libyaksa_la_SOURCES += \\\n")
     for b in builtin_types:
         yutils.display(OUTFILE, "\tsrc/backend/hip/pup/yaksuri_hipi_pup_%s.hip \\\n" % b.replace(" ","_"))
-        for d1 in gencomm.derived_types:
-            yutils.display(OUTFILE, "\tsrc/backend/hip/pup/yaksuri_hipi_pup_%s_%s.hip \\\n" % \
-                           (d1, b.replace(" ","_")))
-            for d2 in gencomm.derived_types:
-                yutils.display(OUTFILE, "\tsrc/backend/hip/pup/yaksuri_hipi_pup_%s_%s_%s.hip \\\n" % \
-                               (d1, d2, b.replace(" ","_")))
+        if args.pup_max_nesting > 0:
+            for d1 in gencomm.derived_types:
+                yutils.display(OUTFILE, "\tsrc/backend/hip/pup/yaksuri_hipi_pup_%s_%s.hip \\\n" % \
+                               (d1, b.replace(" ","_")))
+                if args.pup_max_nesting > 1:
+                    for d2 in gencomm.derived_types:
+                        yutils.display(OUTFILE, "\tsrc/backend/hip/pup/yaksuri_hipi_pup_%s_%s_%s.hip \\\n" % \
+                                       (d1, d2, b.replace(" ","_")))
     yutils.display(OUTFILE, "\tsrc/backend/hip/pup/yaksuri_hipi_pup.c\n")
     yutils.display(OUTFILE, "\n")
     yutils.display(OUTFILE, "noinst_HEADERS += \\\n")

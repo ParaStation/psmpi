@@ -27,6 +27,13 @@ int MPI_File_open(MPI_Comm comm, const char *filename, int amode, MPI_Info info,
 /* for user-definde reduce operator */
 #include "adio_extern.h"
 
+/* */
+#if !defined(HAVE_WEAK_SYMBOLS) && !defined(MPIO_BUILD_PROFILING)
+void *dummy_refs_MPI_File_open[] = {
+    (void *) ADIO_ImmediateOpen,
+    (void *) MPIU_datatype_full_size,
+};
+#endif
 
 extern int ADIO_Init_keyval;
 
@@ -48,6 +55,7 @@ int MPI_File_open(MPI_Comm comm, ROMIO_CONST char *filename, int amode,
                   MPI_Info info, MPI_File * fh)
 {
     int error_code = MPI_SUCCESS, file_system, flag, tmp_amode = 0, rank;
+    int known_fstype;
     char *tmp;
     MPI_Comm dupcomm = MPI_COMM_NULL;
     ADIOI_Fns *fsops;
@@ -117,7 +125,7 @@ int MPI_File_open(MPI_Comm comm, ROMIO_CONST char *filename, int amode,
     file_system = -1;
 
     /* resolve file system type from file name; this is a collective call */
-    ADIO_ResolveFileType(dupcomm, filename, &file_system, &fsops, &error_code);
+    known_fstype = ADIO_ResolveFileType(dupcomm, filename, &file_system, &fsops, &error_code);
     /* --BEGIN ERROR HANDLING-- */
     if (error_code != MPI_SUCCESS) {
         /* ADIO_ResolveFileType() will print as informative a message as it
@@ -126,18 +134,19 @@ int MPI_File_open(MPI_Comm comm, ROMIO_CONST char *filename, int amode,
          */
         goto fn_fail;
     }
-
     /* --END ERROR HANDLING-- */
 
-    /* strip off prefix if there is one, but only skip prefixes
-     * if they are greater than length one to allow for windows
-     * drive specifications (e.g. c:\...) */
-
-    tmp = strchr(filename, ':');
-    if (tmp > filename + 1) {
-        filename = tmp + 1;
+    if (known_fstype) {
+        /* filename contains a known file system type prefix, such as "ufs:".
+         * strip off prefix if there is one, but only skip prefixes
+         * if they are greater than length one to allow for windows
+         * drive specifications (e.g. c:\...)
+         */
+        tmp = strchr(filename, ':');
+        if (tmp > filename + 1) {
+            filename = tmp + 1;
+        }
     }
-
 /* use default values for disp, etype, filetype */
 
     *fh = ADIO_Open(comm, dupcomm, filename, file_system, fsops, amode, 0,

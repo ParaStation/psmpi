@@ -122,57 +122,57 @@ static bool mpi_type_is_bool(MPI_Datatype mpi_type)
 
 static const void *get_in_buffer(struct dt dt)
 {
-    switch (dt.mpi_type) {
-        case MPI_INT:
-            return int_data;
-        case MPI_LONG:
-            return long_data;
-        case MPI_LONG_LONG_INT:
-            return long_long_data;
-        case MPI_FLOAT:
-            return float_data;
+    if (dt.mpi_type == MPI_INT) {
+        return int_data;
+    } else if (dt.mpi_type == MPI_LONG) {
+        return long_data;
+    } else if (dt.mpi_type == MPI_LONG_LONG_INT) {
+        return long_long_data;
+    } else if (dt.mpi_type == MPI_FLOAT) {
+        return float_data;
+    }
 #ifdef TEST_LONG_DOUBLE
-        case MPI_LONG_DOUBLE:
-            return long_double_data;
+    else if (dt.mpi_type == MPI_LONG_DOUBLE) {
+        return long_double_data;
+    }
 #endif
 #ifdef TEST_COMPLEX
-        case MPI_C_COMPLEX:
-            return complex_data;
-#endif
-        case MPI_C_BOOL:
-            return bool_data;
-        default:
-            /* TODO: add more datatypes */
-            return NULL;
+    else if (dt.mpi_type == MPI_C_COMPLEX) {
+        return complex_data;
     }
+#endif
+    else if (dt.mpi_type == MPI_C_BOOL) {
+        return bool_data;
+    }
+    /* TODO: add more datatypes */
     return NULL;
 }
 
 static const void *get_pack_buffer(struct dt dt)
 {
-    switch (dt.mpi_type) {
-        case MPI_INT:
-            return int_pack;
-        case MPI_LONG:
-            return long_pack;;
-        case MPI_LONG_LONG_INT:
-            return long_long_pack;
-        case MPI_FLOAT:
-            return float_pack;
+    if (dt.mpi_type == MPI_INT) {
+        return int_pack;
+    } else if (dt.mpi_type == MPI_LONG) {
+        return long_pack;
+    } else if (dt.mpi_type == MPI_LONG_LONG_INT) {
+        return long_long_pack;
+    } else if (dt.mpi_type == MPI_FLOAT) {
+        return float_pack;
+    }
 #ifdef TEST_LONG_DOUBLE
-        case MPI_LONG_DOUBLE:
-            return long_double_pack;
+    else if (dt.mpi_type == MPI_LONG_DOUBLE) {
+        return long_double_pack;
+    }
 #endif
 #ifdef TEST_COMPLEX
-        case MPI_C_COMPLEX:
-            return complex_pack;
-#endif
-        case MPI_C_BOOL:
-            return bool_pack;
-        default:
-            /* TODO: add more datatypes */
-            return NULL;
+    else if (dt.mpi_type == MPI_C_COMPLEX) {
+        return complex_pack;
     }
+#endif
+    else if (dt.mpi_type == MPI_C_BOOL) {
+        return bool_pack;
+    }
+    /* TODO: add more packtypes */
     return NULL;
 }
 
@@ -234,7 +234,7 @@ int main(int argc, char **argv)
 
         const char *ref = get_pack_buffer(dt_list[i]);
         if (mpi_type_is_bool(dt_list[i].mpi_type)) {
-            /* Many C compilers will covert boolean values on assignment, e.g. 2->1,
+            /* Many C compilers will convert boolean values on assignment, e.g. 2->1,
              * but some compilers does not, e.g. Solaris suncc.
              * Current MPICH relies on compiler conversion. For other compilers, it is
              * probably not critical as long as the rount trip check (below) passes.
@@ -244,10 +244,10 @@ int main(int argc, char **argv)
                    get_mpi_type_name(dt_list[i].mpi_type));
             errs++;
             const char *p = pack_buf + OFFSET;
-            for (int i = 0; i < size; i++) {
-                if (ref[i] != p[i]) {
-                    printf("    pack_buf[%d] is 0x%02x, expect 0x%02x\n", i, p[i] & 0xff,
-                           ref[i] & 0xff);
+            for (int j = 0; j < size; j++) {
+                if (ref[j] != p[j]) {
+                    printf("    pack_buf[%d] is 0x%02x, expect 0x%02x\n", j, p[j] & 0xff,
+                           ref[j] & 0xff);
                 }
             }
         }

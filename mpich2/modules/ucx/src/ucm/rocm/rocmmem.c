@@ -14,8 +14,11 @@
 #include <ucm/util/reloc.h>
 #include <ucm/util/replace.h>
 #include <ucs/debug/assert.h>
+#include <ucm/util/sys.h>
 #include <ucs/sys/compiler.h>
 #include <ucs/sys/preprocessor.h>
+
+#include <sys/mman.h>
 
 #include <unistd.h>
 #include <pthread.h>
@@ -108,24 +111,14 @@ hsa_status_t ucm_hsa_amd_memory_pool_allocate(
     hsa_amd_memory_pool_t memory_pool, size_t size,
     uint32_t flags, void** ptr)
 {
-    ucs_memory_type_t type = UCS_MEMORY_TYPE_ROCM;
-    uint32_t pool_flags    = 0;
     hsa_status_t status;
-
-    status = hsa_amd_memory_pool_get_info(memory_pool,
-                                          HSA_AMD_MEMORY_POOL_INFO_GLOBAL_FLAGS,
-                                          &pool_flags);
-    if (status == HSA_STATUS_SUCCESS &&
-        !(pool_flags & HSA_AMD_MEMORY_POOL_GLOBAL_FLAG_COARSE_GRAINED)) {
-        type = UCS_MEMORY_TYPE_ROCM_MANAGED;
-    }
 
     ucm_event_enter();
 
     status = ucm_orig_hsa_amd_memory_pool_allocate(memory_pool, size, flags, ptr);
     if (status == HSA_STATUS_SUCCESS) {
         ucm_trace("ucm_hsa_amd_memory_pool_allocate(ptr=%p size:%lu)", *ptr, size);
-        ucm_dispatch_mem_type_alloc(*ptr, size, type);
+        ucm_dispatch_mem_type_alloc(*ptr, size, UCS_MEMORY_TYPE_UNKNOWN);
     }
 
     ucm_event_leave();
@@ -176,8 +169,36 @@ out:
     return status;
 }
 
+static int ucm_rocm_scan_regions_cb(void *arg, void *addr, size_t length,
+                                    int prot, const char *path)
+{
+    static const char *rocm_path_pattern = "/dev/dri";
+    ucm_event_handler_t *handler = arg;
+    ucm_event_t event;
+
+    if ((prot & (PROT_READ | PROT_WRITE | PROT_EXEC)) &&
+        strncmp(path, rocm_path_pattern, strlen(rocm_path_pattern))) {
+        return 0;
+    }
+    ucm_debug("dispatching initial memtype allocation for %p..%p %s", addr,
+              UCS_PTR_BYTE_OFFSET(addr, length), path);
+
+    event.mem_type.address  = addr;
+    event.mem_type.size     = length;
+    event.mem_type.mem_type = UCS_MEMORY_TYPE_LAST; /* unknown memory type */
+
+    ucm_event_enter();
+    handler->cb(UCM_EVENT_MEM_TYPE_ALLOC, &event, handler->arg);
+    ucm_event_leave();
+
+    return 0;
+}
+
 static void ucm_rocmmem_get_existing_alloc(ucm_event_handler_t *handler)
 {
+    if (handler->events & UCM_EVENT_MEM_TYPE_ALLOC) {
+        ucm_parse_proc_self_maps(ucm_rocm_scan_regions_cb, handler);
+    }
 }
 
 static ucm_event_installer_t ucm_rocm_initializer = {

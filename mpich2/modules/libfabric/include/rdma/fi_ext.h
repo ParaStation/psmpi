@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Intel Corporation. All rights reserved.
+ * Copyright (c) 2021 Amazon.com, Inc. or its affiliates. All rights reserved.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -33,6 +34,7 @@
 #ifndef FI_EXT_H
 #define FI_EXT_H
 
+#include <stdbool.h>
 #include <rdma/fabric.h>
 
 
@@ -40,6 +42,30 @@
 extern "C" {
 #endif
 
+/*
+ * Each provider needs to define an unique 12-bit provider
+ * specific code to avoid overlapping with other providers,
+ * then bit left shift the code 16 bits. Note that the
+ * highest 4 bits are not touched, so they are still left
+ * to 0. The lowest 16 bits can be used to define provider
+ * specific values. E.g.,
+ *
+ * define FI_PROV_SPECIFIC_XXX    (0xabc << 16)
+ *
+ * enum {
+ *        FI_PROV_XXX_FOO = -(FI_PROV_SPECIFIC_XXX),
+ *        FI_PROV_XXX_BAR,
+ * }
+ */
+
+#define FI_PROV_SPECIFIC_EFA   (0xefa << 16)
+#define FI_PROV_SPECIFIC_TCP   (0x7cb << 16)
+
+
+/* negative options are provider specific */
+enum {
+       FI_OPT_EFA_RNR_RETRY = -FI_PROV_SPECIFIC_EFA,
+};
 
 struct fi_fid_export {
 	struct fid **fid;

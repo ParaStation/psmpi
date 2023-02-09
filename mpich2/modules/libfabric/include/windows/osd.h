@@ -682,6 +682,16 @@ static inline char* strsep(char **stringp, const char *delim)
 
 #define __attribute__(x)
 
+static inline int ofi_mmap_anon_pages(void **memptr, size_t size, int flags)
+{
+	return -FI_ENOSYS;
+}
+
+static inline int ofi_unmap_anon_pages(void *memptr, size_t size)
+{
+	return -FI_ENOSYS;
+}
+
 static inline int ofi_memalign(void **memptr, size_t alignment, size_t size)
 {
 	*memptr = _aligned_malloc(size, alignment);
@@ -774,7 +784,7 @@ ofi_sendmsg_udp(SOCKET fd, const struct msghdr *msg, int flags)
 	DWORD bytes;
 	int ret;
 
-	ret = WSASendMsg(fd, msg, flags, &bytes, NULL, NULL);
+	ret = WSASendMsg(fd, (LPWSAMSG)msg, flags, &bytes, NULL, NULL);
 	return ret ? ret : bytes;
 }
 
@@ -824,7 +834,7 @@ static inline int ofi_syserr(void)
 	return winerr2bsderr(GetLastError());
 }
 
-static inline int fi_wait_cond(pthread_cond_t *cond, pthread_mutex_t *mut, int timeout_ms)
+static inline int ofi_wait_cond(pthread_cond_t *cond, pthread_mutex_t *mut, int timeout_ms)
 {
 	return !SleepConditionVariableCS(cond, mut, (DWORD)timeout_ms);
 }
@@ -881,7 +891,7 @@ static inline long ofi_sysconf(int name)
 		return si.dwNumberOfProcessors;
 	case _SC_PHYS_PAGES:
 		GetPhysicallyInstalledSystemMemory(&mem_size);
-		return mem_size / si.dwPageSize;
+		return (long)(mem_size / si.dwPageSize);
 	default:
 		errno = EINVAL;
 		return -1;
@@ -896,11 +906,6 @@ static inline ssize_t ofi_get_hugepage_size(void)
 }
 
 static inline int ofi_alloc_hugepage_buf(void **memptr, size_t size)
-{
-	return -FI_ENOSYS;
-}
-
-static inline int ofi_free_hugepage_buf(void *memptr, size_t size)
 {
 	return -FI_ENOSYS;
 }
@@ -1015,10 +1020,10 @@ OFI_DEF_COMPLEX(long_double)
 typedef LONG ofi_atomic_int_32_t;
 typedef LONGLONG ofi_atomic_int_64_t;
 
-#define ofi_atomic_add_and_fetch(radix, ptr, val) InterlockedAdd##radix((ofi_atomic_int_##radix##_t *)(ptr), (ofi_atomic_int_##radix##_t)(val))
-#define ofi_atomic_sub_and_fetch(radix, ptr, val) InterlockedAdd##radix((ofi_atomic_int_##radix##_t *)(ptr), -(ofi_atomic_int_##radix##_t)(val))
+#define ofi_atomic_add_and_fetch(radix, ptr, val) InterlockedAdd##radix((ofi_atomic_int_##radix##_t volatile *)(ptr), (ofi_atomic_int_##radix##_t)(val))
+#define ofi_atomic_sub_and_fetch(radix, ptr, val) InterlockedAdd##radix((ofi_atomic_int_##radix##_t volatile *)(ptr), -(ofi_atomic_int_##radix##_t)(val))
 #define ofi_atomic_cas_bool(radix, ptr, expected, desired)					\
-	(InterlockedCompareExchange##radix(ptr, desired, expected) == expected)
+	(InterlockedCompareExchange##radix((ofi_atomic_int_##radix##_t volatile *)ptr, desired, expected) == expected)
 
 #endif /* HAVE_BUILTIN_ATOMICS */
 
@@ -1036,12 +1041,12 @@ static inline int ofi_set_thread_affinity(const char *s)
 static inline void
 ofi_cpuid(unsigned func, unsigned subfunc, unsigned cpuinfo[4])
 {
-	__cpuidex(cpuinfo, func, subfunc);
+	__cpuidex((int *)cpuinfo, func, subfunc);
 }
 
-#define ofi_clwb(addr) do { _mm_clflush(addr); _mm_sfence(); } while (0)
-#define ofi_clflushopt(addr) do { _mm_clflush(addr); _mm_sfence(); } while (0)
-#define ofi_clflush(addr) _mm_clflush(addr)
+#define ofi_clwb(addr) do { _mm_clflush((void const *)addr); _mm_sfence(); } while (0)
+#define ofi_clflushopt(addr) do { _mm_clflush((void const *)addr); _mm_sfence(); } while (0)
+#define ofi_clflush(addr) _mm_clflush((void const *)addr)
 #define ofi_sfence() _mm_sfence()
 
 #else /* defined(_M_X64) || defined(_M_AMD64) */

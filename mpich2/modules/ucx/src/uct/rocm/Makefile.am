@@ -45,6 +45,10 @@ libuct_rocm_la_SOURCES += \
     ipc/rocm_ipc_ep.c \
     ipc/rocm_ipc_cache.c
 
+PKG_CONFIG_NAME=rocm
+
 include $(top_srcdir)/config/module.am
+# TODO: enable pkg-config processing when module static build is enabled
+# include $(top_srcdir)/config/module-pkg-config.am
 
 endif

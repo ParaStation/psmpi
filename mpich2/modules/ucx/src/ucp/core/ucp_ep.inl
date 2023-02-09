@@ -156,7 +156,6 @@ static UCS_F_ALWAYS_INLINE ucp_ep_flush_state_t* ucp_ep_flush_state(ucp_ep_h ep)
 {
     ucs_assert(ep->flags & UCP_EP_FLAG_FLUSH_STATE_VALID);
     ucs_assert(!(ep->flags & UCP_EP_FLAG_ON_MATCH_CTX));
-    ucs_assert(!(ep->flags & UCP_EP_FLAG_CLOSE_REQ_VALID));
     return &ucp_ep_ext_gen(ep)->flush_state;
 }
 
@@ -214,8 +213,9 @@ static inline void ucp_ep_update_remote_id(ucp_ep_h ep,
 {
     if (ep->flags & UCP_EP_FLAG_REMOTE_ID) {
         ucs_assertv(remote_id == ucp_ep_ext_control(ep)->remote_ep_id,
-                    "ep=%p rkey=0x%" PRIxPTR " ep->remote_id=0x%" PRIxPTR,
-                    ep, remote_id, ucp_ep_ext_control(ep)->remote_ep_id);
+                    "ep=%p flags=0x%" PRIx32 " rkey=0x%" PRIxPTR
+                    " ep->remote_id=0x%" PRIxPTR, ep, ep->flags, remote_id,
+                    ucp_ep_ext_control(ep)->remote_ep_id);
     }
 
     ucs_assert(remote_id != UCS_PTR_MAP_KEY_INVALID);
@@ -231,28 +231,6 @@ static inline const char* ucp_ep_peer_name(ucp_ep_h ep)
 #else
     return UCP_WIREUP_EMPTY_PEER_NAME;
 #endif
-}
-
-static inline void ucp_ep_flush_state_reset(ucp_ep_h ep)
-{
-    ucp_ep_flush_state_t *flush_state = &ucp_ep_ext_gen(ep)->flush_state;
-
-    ucs_assert(!(ep->flags & UCP_EP_FLAG_ON_MATCH_CTX));
-    ucs_assert(!(ep->flags & UCP_EP_FLAG_FLUSH_STATE_VALID) ||
-               ((flush_state->send_sn == 0) &&
-                (flush_state->cmpl_sn == 0) &&
-                ucs_hlist_is_empty(&flush_state->reqs)));
-
-    flush_state->send_sn = 0;
-    flush_state->cmpl_sn = 0;
-    ucs_hlist_head_init(&flush_state->reqs);
-    ucp_ep_update_flags(ep, UCP_EP_FLAG_FLUSH_STATE_VALID, 0);
-}
-
-static inline void ucp_ep_flush_state_invalidate(ucp_ep_h ep)
-{
-    ucs_assert(ucs_hlist_is_empty(&ucp_ep_flush_state(ep)->reqs));
-    ucp_ep_update_flags(ep, 0, UCP_EP_FLAG_FLUSH_STATE_VALID);
 }
 
 /* get index of the local component which can reach a remote memory domain */

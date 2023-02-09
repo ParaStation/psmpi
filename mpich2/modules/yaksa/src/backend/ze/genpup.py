@@ -369,37 +369,39 @@ if __name__ == '__main__':
 
         OUTFILE.close()
 
-    for b in builtin_types:
-        for d1 in gencomm.derived_types:
-            ##### generate the core pack/unpack kernels (single level)
-            filename = "src/backend/ze/pup/yaksuri_zei_pup_%s_%s.cl" % (d1, b.replace(" ","_"))
-            yutils.copyright_c(filename)
-            OUTFILE = open(filename, "a")
-            write_headers()
-
-            emptylist = [ ]
-            emptylist.append(d1)
-            for op in gencomm.type_ops[b]:
-                generate_kernels(b, emptylist, op)
-            emptylist.pop()
-            OUTFILE.close()
-
-            ##### generate the core pack/unpack kernels (more than one level)
-            for d2 in gencomm.derived_types:
-                filename = "src/backend/ze/pup/yaksuri_zei_pup_%s_%s_%s.cl" % (d1, d2, b.replace(" ","_"))
+    if args.pup_max_nesting > 0:
+        for b in builtin_types:
+            for d1 in gencomm.derived_types:
+                ##### generate the core pack/unpack kernels (single level)
+                filename = "src/backend/ze/pup/yaksuri_zei_pup_%s_%s.cl" % (d1, b.replace(" ","_"))
                 yutils.copyright_c(filename)
                 OUTFILE = open(filename, "a")
                 write_headers()
 
-                for darray in darraylist:
-                    darray.append(d1)
-                    darray.append(d2)
-                    for op in gencomm.type_ops[b]:
-                        generate_kernels(b, darray, op)
-                    darray.pop()
-                    darray.pop()
-
+                emptylist = [ ]
+                emptylist.append(d1)
+                for op in gencomm.type_ops[b]:
+                    generate_kernels(b, emptylist, op)
+                emptylist.pop()
                 OUTFILE.close()
+
+                ##### generate the core pack/unpack kernels (more than one level)
+                if args.pup_max_nesting > 1:
+                    for d2 in gencomm.derived_types:
+                        filename = "src/backend/ze/pup/yaksuri_zei_pup_%s_%s_%s.cl" % (d1, d2, b.replace(" ","_"))
+                        yutils.copyright_c(filename)
+                        OUTFILE = open(filename, "a")
+                        write_headers()
+
+                        for darray in darraylist:
+                            darray.append(d1)
+                            darray.append(d2)
+                            for op in gencomm.type_ops[b]:
+                                generate_kernels(b, darray, op)
+                            darray.pop()
+                            darray.pop()
+
+                        OUTFILE.close()
 
     ##### generate code to load modules/kernels used by init_hook
     filename = "src/backend/ze/hooks/yaksuri_zei_init_kernels.c"
@@ -433,15 +435,17 @@ if __name__ == '__main__':
     for b in builtin_types:
         for op in gencomm.type_ops[b]:
             num_kernels += 2
-        for d1 in gencomm.derived_types:
-            for op in gencomm.type_ops[b]:
-                num_kernels += 2
+        if args.pup_max_nesting > 0:
+            for d1 in gencomm.derived_types:
+                for op in gencomm.type_ops[b]:
+                    num_kernels += 2
 
-            ##### generate the core pack/unpack kernels (more than one level)
-            for d2 in gencomm.derived_types:
-                for darray in darraylist:
-                    for op in gencomm.type_ops[b]:
-                        num_kernels += 2
+                ##### generate the core pack/unpack kernels (more than one level)
+                if args.pup_max_nesting > 1:
+                    for d2 in gencomm.derived_types:
+                        for darray in darraylist:
+                            for op in gencomm.type_ops[b]:
+                                num_kernels += 2
     OUTFILE.write("ze_kernel_handle_t *yaksuri_ze_kernels[%d];\n\n" % num_kernels)
     OUTFILE.write("const unsigned char * yaksuri_zei_pup_str[%d];\n" % num_modules)
     OUTFILE.write("unsigned long yaksuri_zei_pup_size[%d];\n\n" % num_modules)
@@ -456,28 +460,30 @@ if __name__ == '__main__':
                 OUTFILE.write("    \"yaksuri_zei_kernel_%s_%s_%s\",\t/* %d */\n" % (func, op, b.replace(" ", "_"), i))
                 i += 1
         m += 1
-        for d1 in gencomm.derived_types:
-            for op in gencomm.type_ops[b]:
-                for func in "pack", "unpack":
-                    OUTFILE.write("    \"yaksuri_zei_kernel_%s_%s_%s_%s\",\t/* %d */\n" % (func, op, d1, b.replace(" ", "_"), i))
-                    i += 1
-            m += 1
-            ##### generate the core pack/unpack kernels (more than one level)
-            for d2 in gencomm.derived_types:
-                for darray in darraylist:
-                    darray.append(d1)
-                    darray.append(d2)
-                    for op in gencomm.type_ops[b]:
-                        for func in "pack","unpack":
-                            func_name = "yaksuri_zei_kernel_%s_%s_" % (func, op)
-                            for d in darray:
-                                func_name = func_name + "%s_" % d
-                            func_name = func_name + b.replace(" ", "_")
-                            OUTFILE.write("    \"%s\",\t/* %d */\n" % (func_name, i))
-                            i += 1
-                    darray.pop()
-                    darray.pop()
+        if args.pup_max_nesting > 0:
+            for d1 in gencomm.derived_types:
+                for op in gencomm.type_ops[b]:
+                    for func in "pack", "unpack":
+                        OUTFILE.write("    \"yaksuri_zei_kernel_%s_%s_%s_%s\",\t/* %d */\n" % (func, op, d1, b.replace(" ", "_"), i))
+                        i += 1
                 m += 1
+                ##### generate the core pack/unpack kernels (more than one level)
+                if args.pup_max_nesting > 1:
+                    for d2 in gencomm.derived_types:
+                        for darray in darraylist:
+                            darray.append(d1)
+                            darray.append(d2)
+                            for op in gencomm.type_ops[b]:
+                                for func in "pack","unpack":
+                                    func_name = "yaksuri_zei_kernel_%s_%s_" % (func, op)
+                                    for d in darray:
+                                        func_name = func_name + "%s_" % d
+                                    func_name = func_name + b.replace(" ", "_")
+                                    OUTFILE.write("    \"%s\",\t/* %d */\n" % (func_name, i))
+                                    i += 1
+                            darray.pop()
+                            darray.pop()
+                        m += 1
     OUTFILE.write("};\n\n")
 
     # create modules using level zero API
@@ -489,15 +495,17 @@ if __name__ == '__main__':
         OUTFILE.write("    yaksuri_zei_pup_str[%d] = yaksuri_zei_pup_%s_str;\n" % (i, b.replace(" ", "_")))
         OUTFILE.write("    yaksuri_zei_pup_size[%d] = yaksuri_zei_pup_%s_size;\n" % (i, b.replace(" ", "_")))
         i += 1
-        for d1 in gencomm.derived_types:
-            OUTFILE.write("    yaksuri_zei_pup_str[%d] = yaksuri_zei_pup_%s_%s_str;\n" % (i, d1, b.replace(" ", "_")))
-            OUTFILE.write("    yaksuri_zei_pup_size[%d] = yaksuri_zei_pup_%s_%s_size;\n" % (i, d1, b.replace(" ", "_")))
-            i += 1
-            ##### generate the core pack/unpack kernels (more than one level)
-            for d2 in gencomm.derived_types:
-                OUTFILE.write("    yaksuri_zei_pup_str[%d] = yaksuri_zei_pup_%s_%s_%s_str;\n" % (i, d1, d2, b.replace(" ", "_")))
-                OUTFILE.write("    yaksuri_zei_pup_size[%d] = yaksuri_zei_pup_%s_%s_%s_size;\n" % (i, d1, d2, b.replace(" ", "_")))
+        if args.pup_max_nesting > 0:
+            for d1 in gencomm.derived_types:
+                OUTFILE.write("    yaksuri_zei_pup_str[%d] = yaksuri_zei_pup_%s_%s_str;\n" % (i, d1, b.replace(" ", "_")))
+                OUTFILE.write("    yaksuri_zei_pup_size[%d] = yaksuri_zei_pup_%s_%s_size;\n" % (i, d1, b.replace(" ", "_")))
                 i += 1
+                ##### generate the core pack/unpack kernels (more than one level)
+                if args.pup_max_nesting > 1:
+                    for d2 in gencomm.derived_types:
+                        OUTFILE.write("    yaksuri_zei_pup_str[%d] = yaksuri_zei_pup_%s_%s_%s_str;\n" % (i, d1, d2, b.replace(" ", "_")))
+                        OUTFILE.write("    yaksuri_zei_pup_size[%d] = yaksuri_zei_pup_%s_%s_%s_size;\n" % (i, d1, d2, b.replace(" ", "_")))
+                        i += 1
     OUTFILE.write("\n")
 
     i = 0
@@ -508,28 +516,30 @@ if __name__ == '__main__':
                 OUTFILE.write("    yaksuri_zei_kernel_module_map[%d] = %d;\n" % (i, m))    
                 i += 1
         m += 1
-        for d1 in gencomm.derived_types:
-            for op in gencomm.type_ops[b]:
-                for func in "pack", "unpack":
-                    OUTFILE.write("    yaksuri_zei_kernel_module_map[%d] = %d;\n" % (i, m))
-                    i += 1
-            m += 1
-            ##### generate the core pack/unpack kernels (more than one level)
-            for d2 in gencomm.derived_types:
-                for darray in darraylist:
-                    darray.append(d1)
-                    darray.append(d2)
-                    for op in gencomm.type_ops[b]:
-                        for func in "pack","unpack":
-                            func_name = "yaksuri_zei_kernel_%s_%s_" % (func, op)
-                            for d in darray:
-                                func_name = func_name + "%s_" % d
-                            func_name = func_name + b.replace(" ", "_")
-                            OUTFILE.write("    yaksuri_zei_kernel_module_map[%d] = %d;\n" % (i, m))
-                            i += 1
-                    darray.pop()
-                    darray.pop()
+        if args.pup_max_nesting > 0:
+            for d1 in gencomm.derived_types:
+                for op in gencomm.type_ops[b]:
+                    for func in "pack", "unpack":
+                        OUTFILE.write("    yaksuri_zei_kernel_module_map[%d] = %d;\n" % (i, m))
+                        i += 1
                 m += 1
+                ##### generate the core pack/unpack kernels (more than one level)
+                if args.pup_max_nesting > 1:
+                    for d2 in gencomm.derived_types:
+                        for darray in darraylist:
+                            darray.append(d1)
+                            darray.append(d2)
+                            for op in gencomm.type_ops[b]:
+                                for func in "pack","unpack":
+                                    func_name = "yaksuri_zei_kernel_%s_%s_" % (func, op)
+                                    for d in darray:
+                                        func_name = func_name + "%s_" % d
+                                    func_name = func_name + b.replace(" ", "_")
+                                    OUTFILE.write("    yaksuri_zei_kernel_module_map[%d] = %d;\n" % (i, m))
+                                    i += 1
+                            darray.pop()
+                            darray.pop()
+                        m += 1
     OUTFILE.write("\n")
     OUTFILE.write("    return zerr; \n")
     yutils.display(OUTFILE, "}\n\n")
@@ -614,10 +624,12 @@ if __name__ == '__main__':
     yutils.display(OUTFILE, "libyaksa_la_SOURCES += \\\n")
     for b in builtin_types:
         yutils.display(OUTFILE, "\tsrc/backend/ze/pup/yaksuri_zei_pup_%s.c \\\n" % b.replace(" ","_"))
-        for d1 in gencomm.derived_types:
-            yutils.display(OUTFILE, "\tsrc/backend/ze/pup/yaksuri_zei_pup_%s_%s.c \\\n" % (d1, b.replace(" ","_")))
-            for d2 in gencomm.derived_types:
-                yutils.display(OUTFILE, "\tsrc/backend/ze/pup/yaksuri_zei_pup_%s_%s_%s.c \\\n" % (d1, d2, b.replace(" ","_")))
+        if args.pup_max_nesting > 0:
+            for d1 in gencomm.derived_types:
+                yutils.display(OUTFILE, "\tsrc/backend/ze/pup/yaksuri_zei_pup_%s_%s.c \\\n" % (d1, b.replace(" ","_")))
+                if args.pup_max_nesting > 1:
+                    for d2 in gencomm.derived_types:
+                        yutils.display(OUTFILE, "\tsrc/backend/ze/pup/yaksuri_zei_pup_%s_%s_%s.c \\\n" % (d1, d2, b.replace(" ","_")))
     yutils.display(OUTFILE, "\tsrc/backend/ze/pup/yaksuri_zei_pup.c\n")
     yutils.display(OUTFILE, "\n")
     yutils.display(OUTFILE, "noinst_HEADERS += \\\n")

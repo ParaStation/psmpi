@@ -64,13 +64,7 @@ typedef struct {
     int ev_lb, ev_ub;           /* [lb,ub] defines the events being used */
     ze_event_handle_t *events;
     int last_event_idx;         /* immed. cmd lists are serialized */
-    ze_command_list_handle_t *cl;       /* immed. cmd lists being used */
-    int num_cl;                 /* number of immed. cmd lists */
-    int cl_cap;
-    ze_command_list_handle_t *cl_pool;  /* command list pool, one per device */
-    int cl_pool_size;
-    int cl_pool_cnt;
-    pthread_mutex_t cl_mutex;
+    ze_command_list_handle_t cmdlist;   /* immed. cmd lists being used */
     ze_command_queue_group_properties_t *queueProperties;
     uint32_t numQueueGroups;
     pthread_mutex_t mutex;
@@ -92,7 +86,6 @@ extern yaksuri_zei_global_s yaksuri_zei_global;
 /* Define abstraction for ze event and buffer command list with this */
 typedef struct {
     ze_event_handle_t ze_event;
-    ze_command_list_handle_t cl;
     int dev_id;
     int idx;
 } yaksuri_zei_event_s;

@@ -200,9 +200,9 @@ int ofi_mr_close(struct fid *fid)
 
 	mr = container_of(fid, struct ofi_mr, mr_fid.fid);
 
-	fastlock_acquire(&mr->domain->lock);
+	ofi_genlock_lock(&mr->domain->lock);
 	ret = ofi_mr_map_remove(&mr->domain->mr_map, mr->key);
-	fastlock_release(&mr->domain->lock);
+	ofi_genlock_unlock(&mr->domain->lock);
 	if (ret)
 		return ret;
 
@@ -266,6 +266,10 @@ int ofi_mr_regattr(struct fid *fid, const struct fi_mr_attr *attr,
 
 	ofi_mr_update_attr(domain->fabric->fabric_fid.api_version,
 			   domain->info_domain_caps, attr, &cur_abi_attr);
+
+	if ((flags & FI_HMEM_HOST_ALLOC) && (attr->iface == FI_HMEM_ZE))
+		cur_abi_attr.device.ze = -1;
+
 	if (!hmem_ops[cur_abi_attr.iface].initialized) {
 		FI_WARN(domain->mr_map.prov, FI_LOG_MR,
 			"MR registration failed - hmem iface not initialized\n");
@@ -273,7 +277,7 @@ int ofi_mr_regattr(struct fid *fid, const struct fi_mr_attr *attr,
 		return -FI_ENOSYS;
 	}
 
-	fastlock_acquire(&domain->lock);
+	ofi_genlock_lock(&domain->lock);
 
 	mr->mr_fid.fid.fclass = FI_CLASS_MR;
 	mr->mr_fid.fid.context = attr->context;
@@ -296,7 +300,7 @@ int ofi_mr_regattr(struct fid *fid, const struct fi_mr_attr *attr,
 	ofi_atomic_inc32(&domain->ref);
 
 out:
-	fastlock_release(&domain->lock);
+	ofi_genlock_unlock(&domain->lock);
 	return ret;
 }
 
@@ -338,9 +342,9 @@ int ofi_mr_verify(struct ofi_mr_map *map, ssize_t len,
 	int ret;
 
 	domain = container_of(map, struct util_domain, mr_map);
-	fastlock_acquire(&domain->lock);
+	ofi_genlock_lock(&domain->lock);
 	ret = ofi_mr_map_verify(&domain->mr_map, addr, len,
 				key, access, NULL);
-	fastlock_release(&domain->lock);
+	ofi_genlock_unlock(&domain->lock);
 	return ret;
 }

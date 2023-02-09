@@ -59,7 +59,7 @@ int MPIR_Ibcast_intra_sched_auto(void *buffer, MPI_Aint count, MPI_Datatype data
         MPIR_ERR_CHECK(mpi_errno);
     } else {    /* (nbytes >= MPIR_CVAR_BCAST_SHORT_MSG_SIZE) && (comm_size >= MPIR_CVAR_BCAST_MIN_PROCS) */
 
-        if ((nbytes < MPIR_CVAR_BCAST_LONG_MSG_SIZE) && (MPL_is_pof2(comm_size, NULL))) {
+        if ((nbytes < MPIR_CVAR_BCAST_LONG_MSG_SIZE) && (MPL_is_pof2(comm_size))) {
             mpi_errno =
                 MPIR_Ibcast_intra_sched_scatter_recursive_doubling_allgather(buffer, count,
                                                                              datatype, root,
@@ -208,7 +208,8 @@ int MPIR_Iscatter_inter_sched_auto(const void *sendbuf, MPI_Aint sendcount, MPI_
                                    void *recvbuf, MPI_Aint recvcount, MPI_Datatype recvtype,
                                    int root, MPIR_Comm * comm_ptr, MPIR_Sched_t s)
 {
-    int local_size, remote_size, sendtype_size, recvtype_size, nbytes;
+    int local_size, remote_size;
+    MPI_Aint sendtype_size, recvtype_size, nbytes;
     int mpi_errno = MPI_SUCCESS;
 
     remote_size = comm_ptr->remote_size;
@@ -284,8 +285,8 @@ int MPIR_Iallgather_intra_sched_auto(const void *sendbuf, MPI_Aint sendcount, MP
                                      MPIR_Comm * comm_ptr, MPIR_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
-    int comm_size, recvtype_size;
-    int tot_bytes;
+    int comm_size;
+    MPI_Aint recvtype_size, tot_bytes;
 
     comm_size = comm_ptr->local_size;
 
@@ -332,7 +333,8 @@ int MPIR_Iallgatherv_intra_sched_auto(const void *sendbuf, MPI_Aint sendcount,
                                       MPI_Datatype recvtype, MPIR_Comm * comm_ptr, MPIR_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
-    int i, comm_size, total_count, recvtype_size;
+    int i, comm_size;
+    MPI_Aint total_count, recvtype_size;
 
     comm_size = comm_ptr->local_size;
     MPIR_Datatype_get_size_macro(recvtype, recvtype_size);
@@ -395,7 +397,8 @@ int MPIR_Ialltoall_intra_sched_auto(const void *sendbuf, MPI_Aint sendcount, MPI
                                     MPIR_Comm * comm_ptr, MPIR_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
-    int nbytes, comm_size, sendtype_size;
+    int comm_size;
+    MPI_Aint nbytes, sendtype_size;
 
     comm_size = comm_ptr->local_size;
 
@@ -518,7 +521,8 @@ int MPIR_Ireduce_intra_sched_auto(const void *sendbuf, void *recvbuf, MPI_Aint c
                                   MPIR_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
-    int pof2, type_size;
+    int pof2;
+    MPI_Aint type_size;
 
     MPIR_Assert(comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM);
 
@@ -574,7 +578,7 @@ int MPIR_Iallreduce_intra_sched_auto(const void *sendbuf, void *recvbuf, MPI_Ain
                                      MPIR_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
-    int pof2, type_size;
+    int pof2;
 
     MPIR_Assert(comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM);
 
@@ -587,6 +591,7 @@ int MPIR_Iallreduce_intra_sched_auto(const void *sendbuf, void *recvbuf, MPI_Ain
         goto fn_exit;
     }
 
+    MPI_Aint type_size;
     MPIR_Datatype_get_size_macro(datatype, type_size);
 
     /* get nearest power-of-two less than or equal to number of ranks in the communicator */
@@ -641,7 +646,7 @@ int MPIR_Ireduce_scatter_intra_sched_auto(const void *sendbuf, void *recvbuf,
     int mpi_errno = MPI_SUCCESS;
     int i;
     int is_commutative;
-    int total_count, type_size, nbytes;
+    MPI_Aint total_count, type_size, nbytes;
     int comm_size;
 
     is_commutative = MPIR_Op_is_commutative(op);
@@ -678,7 +683,7 @@ int MPIR_Ireduce_scatter_intra_sched_auto(const void *sendbuf, void *recvbuf,
             }
         }
 
-        if (MPL_is_pof2(comm_size, NULL) && is_block_regular) {
+        if (MPL_is_pof2(comm_size) && is_block_regular) {
             /* noncommutative, pof2 size, and block regular */
             mpi_errno =
                 MPIR_Ireduce_scatter_intra_sched_noncommutative(sendbuf, recvbuf, recvcounts,
@@ -718,7 +723,7 @@ int MPIR_Ireduce_scatter_block_intra_sched_auto(const void *sendbuf, void *recvb
 {
     int mpi_errno = MPI_SUCCESS;
     int is_commutative;
-    int total_count, type_size, nbytes;
+    MPI_Aint total_count, type_size, nbytes;
     int comm_size;
 
     is_commutative = MPIR_Op_is_commutative(op);
@@ -744,7 +749,7 @@ int MPIR_Ireduce_scatter_block_intra_sched_auto(const void *sendbuf, void *recvb
         MPIR_ERR_CHECK(mpi_errno);
     } else {    /* (!is_commutative) */
 
-        if (MPL_is_pof2(comm_size, NULL)) {
+        if (MPL_is_pof2(comm_size)) {
             /* noncommutative, pof2 size */
             mpi_errno =
                 MPIR_Ireduce_scatter_block_intra_sched_noncommutative(sendbuf, recvbuf, recvcount,
