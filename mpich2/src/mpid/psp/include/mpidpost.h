@@ -234,12 +234,12 @@ MPL_STATIC_INLINE_PREFIX int MPID_Imrecv(void *buf, int count, MPI_Datatype data
 */
 MPL_STATIC_INLINE_PREFIX int MPID_Init_async_thread(void)
 {
-    return MPIR_Init_async_thread();
+    return MPIR_Start_progress_thread_impl(NULL);
 }
 
 MPL_STATIC_INLINE_PREFIX int MPID_Finalize_async_thread(void)
 {
-    return MPIR_Finalize_async_thread();
+    return MPIR_Stop_progress_thread_impl(NULL);
 }
 
 MPL_STATIC_INLINE_PREFIX int MPID_Test(MPIR_Request * request_ptr, int *flag, MPI_Status * status)
