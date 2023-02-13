@@ -303,6 +303,13 @@ const char *mpid_msgtype_str(enum MPID_PSP_MSGTYPE msg_type);
 
 #endif
 
+static inline
+int MPIDI_PSP_env_get_int(const char *env_name, int _default)
+{
+	char *val = getenv(env_name);
+	return val ? atoi(val) : _default;
+}
+
 #ifndef MPICH_IS_THREADED
 #define MPID_PSP_LOCKFREE_CALL(code) code;
 #else

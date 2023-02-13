@@ -13,14 +13,6 @@
 #include <signal.h>
 #include "mpidimpl.h"
 
-static
-int _getenv_i(const char *env_name, int _default)
-{
-	char *val = getenv(env_name);
-	return val ? atoi(val) : _default;
-}
-
-
 int MPIDI_PSP_finalize_print_stats_cb(void *param ATTRIBUTE((unused)))
 {
 #ifdef MPID_PSP_HISTOGRAM
@@ -86,7 +78,7 @@ int MPIDI_PSP_finalize_print_stats_cb(void *param ATTRIBUTE((unused)))
 static
 void sig_finalize_timeout(int signo ATTRIBUTE((unused)))
 {
-	if (_getenv_i("PSP_DEBUG", 0) > 0) {
+	if (MPIDI_PSP_env_get_int("PSP_DEBUG", 0) > 0) {
 		fprintf(stderr, "Warning: PSP_FINALIZE_TIMEOUT\n");
 	}
 	_exit(0);
@@ -108,8 +100,8 @@ int MPIDI_PSP_finalize_add_barrier_cb(void *param ATTRIBUTE((unused)))
 	 * barrier call is aborted via a timeout signal.
 	 * If set to 0, then no timeout and no second barrier are used.
 	 */
-	int env_finalize_barrier = _getenv_i("PSP_FINALIZE_BARRIER", 0);
-	int env_finalize_timeout  = _getenv_i("PSP_FINALIZE_TIMEOUT", 30);
+	int env_finalize_barrier = MPIDI_PSP_env_get_int("PSP_FINALIZE_BARRIER", 0);
+	int env_finalize_timeout = MPIDI_PSP_env_get_int("PSP_FINALIZE_TIMEOUT", 30);
 
 	if (env_finalize_barrier == 1) {
 
@@ -157,8 +149,8 @@ int MPID_Finalize(void)
 	 * If set to 1, then exit() is called at the very end of MPI_Finalize().
 	 * If set to 2, then it is _exit().
 	 */
-	env_finalize_shutdown = _getenv_i("PSP_FINALIZE_SHUTDOWN", 0);
-	env_finalize_exit     = _getenv_i("PSP_FINALIZE_EXIT", 0);
+	env_finalize_shutdown = MPIDI_PSP_env_get_int("PSP_FINALIZE_SHUTDOWN", 0);
+	env_finalize_exit     = MPIDI_PSP_env_get_int("PSP_FINALIZE_EXIT", 0);
 
 /*	fprintf(stderr, "%d cleanup queue\n", MPIDI_Process.my_pg_rank); */
 //	MPID_req_queue_cleanup();
