@@ -546,10 +546,6 @@ int MPID_Init(int requested, int *provided)
 
 	MPIR_FUNC_ENTER;
 
-	// PMI or PMIx init
-	mpi_errno = MPIR_pmi_init();
-	MPIR_ERR_CHECK(mpi_errno);
-
 	pg_rank = MPIR_Process.rank;
 	pg_size = MPIR_Process.size;
 
