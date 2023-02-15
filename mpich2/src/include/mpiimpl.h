@@ -157,6 +157,12 @@ typedef struct MPIR_Pset_array MPIR_Pset_array;
 struct MPIR_Stream;
 typedef struct MPIR_Stream MPIR_Stream;
 
+struct MPIR_Pset;
+typedef struct MPIR_Pset MPIR_Pset;
+
+struct MPIR_Pset_array;
+typedef struct MPIR_Pset_array MPIR_Pset_array;
+
 /*****************************************************************************/
 /******************* PART 3: DEVICE INDEPENDENT HEADERS **********************/
 /*****************************************************************************/
