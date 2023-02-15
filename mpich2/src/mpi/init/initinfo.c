@@ -28,6 +28,9 @@ int MPIR_Get_library_version_impl(char *version, int *resultlen)
 {
     int printed_len;
     printed_len = snprintf(version, MPI_MAX_LIBRARY_VERSION_STRING,
+#if defined(MPID_DEV_VERSION_STRING)
+                           MPID_DEV_VERSION_STRING
+#endif
                            "MPICH Version:      %s\n"
                            "MPICH Release date: %s\n"
                            "MPICH ABI:          %s\n"
@@ -36,8 +39,10 @@ int MPIR_Get_library_version_impl(char *version, int *resultlen)
                            "MPICH CC:           %s\n"
                            "MPICH CXX:          %s\n"
                            "MPICH F77:          %s\n"
-                           "MPICH FC:           %s\n"
-                           "MPICH features:     %s\n",
+                           "MPICH FC:           %s\n" "MPICH features:     %s\n",
+#if defined(MPID_DEV_VERSION_STRING) && defined(MPID_DEV_VERSION_STRING_ARGS)
+                           MPID_DEV_VERSION_STRING_ARGS,
+#endif
                            MPII_Version_string, MPII_Version_date, MPII_Version_ABI,
                            MPII_Version_device, MPII_Version_configure, MPII_Version_CC,
                            MPII_Version_CXX, MPII_Version_F77, MPII_Version_FC, get_feature_list());
