@@ -146,6 +146,7 @@ static inline int MPID_Progress_test(MPID_Progress_state * state) /* state is un
     return MPIDI_PSP_Progress_test();
 }
 #define MPID_Progress_poke()		     MPIDI_PSP_Progress_poke()
+#define MPID_Stream_progress(stream)         MPIDI_PSP_Progress_poke()
 
 struct MPIR_Comm;
 int MPIDI_GPID_GetAllInComm(MPIR_Comm *comm_ptr, int local_size,

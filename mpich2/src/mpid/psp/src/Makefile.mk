@@ -29,6 +29,7 @@ mpi_core_sources +=               src/mpid/psp/src/mpid_abort.c			\
                                   src/mpid/psp/src/mpid_rma_sync.c		\
                                   src/mpid/psp/src/mpid_send.c			\
                                   src/mpid/psp/src/mpid_start.c			\
+                                  src/mpid/psp/src/mpid_stream_enqueue.c	\
                                   src/mpid/psp/src/mpid_unresolved.c		\
                                   src/mpid/psp/src/mpid_vc.c
 
