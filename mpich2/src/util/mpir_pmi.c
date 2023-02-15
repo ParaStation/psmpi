@@ -4,6 +4,7 @@
  */
 
 #include <mpir_pmi.h>
+#include <mpir_pset.h>
 #include <mpiimpl.h>
 #include "mpir_nodemap.h"
 
@@ -69,6 +70,25 @@ cvars:
 
 static int build_nodemap(int *nodemap, int sz, int *p_max_node_id);
 static int build_locality(void);
+
+#ifdef USE_PMIX_API
+#if PMIX_VERSION_MAJOR >= 4
+static void pset_define_callback(size_t refid, pmix_status_t status, const pmix_proc_t * source,
+                                 pmix_info_t * info, size_t ninfo, pmix_info_t * results,
+                                 size_t nresults, pmix_event_notification_cbfunc_fn_t cbfunc,
+                                 void *cbdata);
+static void pset_delete_callback(size_t refid, pmix_status_t status, const pmix_proc_t * source,
+                                 pmix_info_t * info, size_t ninfo, pmix_info_t * results,
+                                 size_t nresults, pmix_event_notification_cbfunc_fn_t cbfunc,
+                                 void *cbdata);
+
+/* Identifier of pset define event handler */
+static int rc_pset_define_handler;
+
+/* Idetifier of pset delete event handler */
+static int rc_pset_delete_handler;
+#endif /*PMIX_VERSION_MAJOR >= 4 */
+#endif /*PMIX API */
 
 static int pmi_version = 1;
 static int pmi_subversion = 1;
@@ -151,7 +171,10 @@ int MPIR_pmi_init(void)
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
                          "**pmix_init", "**pmix_init %d", pmi_errno);
 
-    rank = pmix_proc.rank;
+    /*check overflow because of type mismatch between pmix_proc_t.rank (uint32_t) and MPIR_Process_t.rank (int) */
+    MPIR_Assert(pmix_proc.rank <= INT_MAX);
+
+    rank = (int) pmix_proc.rank;
     PMIX_PROC_CONSTRUCT(&pmix_wcproc);
     MPL_strncpy(pmix_wcproc.nspace, pmix_proc.nspace, PMIX_MAX_NSLEN);
     pmix_wcproc.rank = PMIX_RANK_WILDCARD;
@@ -1318,3 +1341,300 @@ static void free_pmi_keyvals(PMI_keyval_t ** kv, int size, int *counts)
     MPIR_FUNC_EXIT;
 }
 #endif /* USE_PMI1_API or USE_PMI2_API */
+
+
+/**
+ * @brief   Register a process for PMIx process set events
+ *
+ * @return  int MPI_SUCCESS or MPI_ERR_OTHER
+ */
+int MPIR_pmi_register_process_set_event_handlers(void)
+{
+
+    int mpi_errno = MPI_SUCCESS;
+#ifdef USE_PMIX_API
+#if PMIX_VERSION_MAJOR >= 4
+    /* Set the PMIX codes of the events for which handlers shall be registered */
+    pmix_status_t code_pset_define[1] = { PMIX_PROCESS_SET_DEFINE };
+    pmix_status_t code_pset_delete[1] = { PMIX_PROCESS_SET_DELETE };
+
+    /* Give handlers a name so we can identify them more easily */
+    pmix_info_t info_pset_define[1];
+    pmix_info_t info_pset_delete[1];
+
+    PMIX_INFO_LOAD(&info_pset_define[0], PMIX_EVENT_HDLR_NAME, "Process-Set-Define", PMIX_STRING);
+    PMIX_INFO_LOAD(&info_pset_delete[0], PMIX_EVENT_HDLR_NAME, "Process-Set-Delete", PMIX_STRING);
+
+    /* Register event handlers for PMIx process set define and delete events
+     * in a blocking way (last two parameters are NULL) and treat errors */
+    rc_pset_define_handler =
+        (int) PMIx_Register_event_handler(code_pset_define, 1, info_pset_define, 1,
+                                          pset_define_callback, NULL, NULL);
+    if (rc_pset_define_handler < 0) {
+        MPIR_ERR_CHKANDJUMP1(rc_pset_define_handler != PMIX_SUCCESS, mpi_errno,
+                             MPI_ERR_OTHER, "**pmix_register_event_handler",
+                             "**pmix_register_event_handler %d", rc_pset_define_handler);
+    }
+    rc_pset_delete_handler =
+        (int) PMIx_Register_event_handler(code_pset_delete, 1, info_pset_delete, 1,
+                                          pset_delete_callback, NULL, NULL);
+    if (rc_pset_delete_handler < 0) {
+        MPIR_ERR_CHKANDJUMP1(rc_pset_delete_handler != PMIX_SUCCESS, mpi_errno,
+                             MPI_ERR_OTHER, "**pmix_register_event_handler",
+                             "**pmix_register_event_handler %d", rc_pset_delete_handler);
+    }
+
+    /* Release PMIx info objects */
+    PMIX_INFO_DESTRUCT(&info_pset_define[0]);
+    PMIX_INFO_DESTRUCT(&info_pset_delete[0]);
+#endif /* PMIX_VERSION_MAJOR >= 4 */
+#endif /* PMIX API */
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+
+}
+
+
+/**
+ * @brief   Deregister a process from PMIx process set events
+ *
+ * @return  int MPI_SUCCESS or MPI_ERR_OTHER
+ */
+int MPIR_pmi_deregister_process_set_event_handlers(void)
+{
+    int mpi_errno = MPI_SUCCESS;
+#ifdef USE_PMIX_API
+#if PMIX_VERSION_MAJOR >= 4
+    /* Deregister PMIx event handler for pset define and delete events
+     * in a blocking way (last two parameters are NULL) and treat errors */
+    pmix_status_t rc;
+    rc = PMIx_Deregister_event_handler((size_t) rc_pset_define_handler, NULL, NULL);
+    MPIR_ERR_CHKANDJUMP1(rc != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                         "**pmix_deregister_event_handler", "**pmix_deregister_event_handler %d",
+                         rc);
+    rc_pset_define_handler = 0;
+
+    rc = PMIx_Deregister_event_handler((size_t) rc_pset_delete_handler, NULL, NULL);
+    MPIR_ERR_CHKANDJUMP1(rc != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                         "**pmix_deregister_event_handler", "**pmix_deregister_event_handler %d",
+                         rc);
+    rc_pset_delete_handler = 0;
+#endif /* PMIX_VERSION_MAJOR >= 4 */
+#endif /* PMIX API */
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+#ifdef USE_PMIX_API
+#if PMIX_VERSION_MAJOR >= 4
+/**
+ * @brief   Compare two integers. Helper function for qsort algorithm.
+ *
+ * @param   a   Integer to compare
+ * @param   b   Integer to compate
+ * @return  int Result of comparison; 0: equal, <0: b>a, >0: a>b
+ */
+static
+int compareint(void const *a, void const *b)
+{
+    return *(const int *) a - *(const int *) b;
+}
+
+/**
+ * @brief Callback for PMIx process set define event handler (for function prototype see also PMIx standard document)
+ *
+ * @param refid     Registration number of the handler being called.
+ * @param status    Status associated with the operation.
+ * @param source    Identifier of the process that generated the event. If the source if the SMS, then the namespace will be empty and the rank will be PMIX_RANK_UNDEF.
+ * @param info      Information describing the event. This argument will be NULL if no additional information was provided by the event generator.
+ * @param ninfo     Number of elements in the info array.
+ * @param results   Aggregated results from prior event handlers servicing this event. This agrument will be NULL if this is the first handler servicing the event or if no prior handlers provided results.
+ * @param nresults  Number of elements in the results array.
+ * @param cbfunc    Callback function to be executed upon completion of the handler's operation and prior to handler return (function reference).
+ * @param cbdata    Callback data to be passed to cbfunc (memory reference).
+ */
+static
+void pset_define_callback(size_t refid, pmix_status_t status, const pmix_proc_t * source,
+                          pmix_info_t * info, size_t ninfo, pmix_info_t * results, size_t nresults,
+                          pmix_event_notification_cbfunc_fn_t cbfunc, void *cbdata)
+{
+
+    pmix_value_t *pset_name_val = NULL;
+    char *pset_name = NULL;
+    pmix_value_t *membership_val = NULL;
+    pmix_proc_t *membership = NULL;
+    int *members = NULL;
+    int size = 0;
+    bool name_key_found = false;
+    bool membership_key_found = false;
+    bool process_in_pset = false;
+    MPIR_Pset *new_pset = NULL;
+    pmix_status_t cb_status = PMIX_EVENT_ACTION_COMPLETE;
+
+    /* Extract pset name and membership from the info object */
+    for (size_t i = 0; i < ninfo; i++) {
+        if (strncasecmp((char *) info[i].key, PMIX_PSET_NAME, strlen(PMIX_PSET_NAME)) == 0) {
+            name_key_found = true;
+            pset_name_val = PMIx_Value_create(1);
+            PMIx_Value_xfer(pset_name_val, &(info[i].value));
+            pset_name = pset_name_val->data.string;
+        } else if (strncasecmp((char *) info[i].key, PMIX_PSET_MEMBERS, strlen(PMIX_PSET_MEMBERS))
+                   == 0) {
+            membership_key_found = true;
+            membership_val = PMIx_Value_create(1);
+            PMIx_Value_xfer(membership_val, &(info[i].value));
+            membership = (pmix_proc_t *) membership_val->data.darray->array;
+
+            /* Overflow check */
+            MPIR_Assert(membership_val->data.darray->size <= INT_MAX);
+            size = (int) membership_val->data.darray->size;
+        }
+
+        if (name_key_found && membership_key_found) {
+            break;
+        }
+    }
+
+    if (!name_key_found || !membership_key_found || pset_name == NULL || membership == NULL) {
+        cb_status = PMIX_EVENT_NO_ACTION_TAKEN;
+        goto fn_exit;
+    }
+
+    if (size == 0) {
+        /* Prevent adding empty psets (no error) */
+        MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
+                                                 "PMIx pset define callback: pset '%s' has size 0 and is not added.",
+                                                 pset_name));
+        goto fn_exit;
+    }
+
+    /* Create sorted membership array for new pset (required for group creation from pset) */
+    members = MPL_malloc(size * sizeof(int), MPL_MEM_OTHER);
+    if (members == NULL) {
+        cb_status = PMIX_EVENT_NO_ACTION_TAKEN;
+        goto fn_exit;
+    }
+    for (int k = 0; k < size; k++) {
+        /* TODO is it ok to ignore the PMIx namespace here? */
+        pmix_proc_t proc = membership[k];
+
+        /* Check overflow because of type mismatch between pmix_proc_t.rank (uint32_t) and MPIR_Process_t.rank (int) */
+        MPIR_Assert(proc.rank <= INT_MAX);
+
+        if ((int) proc.rank == MPIR_Process.rank) {
+            process_in_pset = true;
+        }
+        members[k] = (int) proc.rank;
+    }
+
+    if (!process_in_pset) {
+        /* Prevent adding a pset in which the process is not a member (no error) */
+        MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
+                                                 "PMIx pset define callback: not a member of pset '%s', pset not added.",
+                                                 pset_name));
+        goto fn_exit;
+    }
+    qsort(members, (size_t) size, sizeof(int), compareint);
+
+    /* Create the new pset and add it to the global pmix pset array */
+    new_pset = MPL_malloc(sizeof(MPIR_Pset), MPL_MEM_OTHER);
+    new_pset->uri = pset_name;
+    new_pset->size = size;
+    new_pset->is_valid = true;
+    new_pset->members = members;
+
+    int add_status = MPIR_Pset_array_add(MPIR_Process.pm_pset_array, new_pset);
+    if (add_status == MPI_ERR_OTHER) {
+        cb_status = PMIX_EVENT_NO_ACTION_TAKEN;
+        MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
+                                                 "PMIx pset define callback: pset '%s' already exists, not added again.",
+                                                 pset_name));
+        goto fn_exit;
+    }
+
+  fn_exit:
+    if (pset_name_val != NULL)
+        PMIx_Value_destruct(pset_name_val);
+    if (membership_val != NULL)
+        PMIx_Value_destruct(membership_val);
+    if (members != NULL)
+        MPL_free(members);
+    if (new_pset != NULL)
+        MPL_free(new_pset);
+
+    /* If a callback function is provided, we have to call it.
+     * We cannot treat errors here, but we can give a hint via cbfunc status that something went wrong */
+    if (NULL != cbfunc) {
+        cbfunc(cb_status, NULL, 0, NULL, NULL, cbdata);
+    }
+
+    return;
+}
+
+/**
+ * @brief Callback for PMIx process set delete event handler (for function prototype see also PMIx standard document)
+ *
+ * @param refid     Registration number of the handler being called.
+ * @param status    Status associated with the operation.
+ * @param source    Identifier of the process that generated the event. If the source if the SMS, then the namespace will be empty and the rank will be PMIX_RANK_UNDEF.
+ * @param info      Information describing the event. This argument will be NULL if no additional information was provided by the event generator.
+ * @param ninfo     Number of elements in the info array.
+ * @param results   Aggregated results from prior event handlers servicing this event. This agrument will be NULL if this is the first handler servicing the event or if no prior handlers provided results.
+ * @param nresults  Number of elements in the results array.
+ * @param cbfunc    Callback function to be executed upon completion of the handler's operation and prior to handler return (function reference).
+ * @param cbdata    Callback data to be passed to cbfunc (memory reference).
+ */
+static
+void pset_delete_callback(size_t refid, pmix_status_t status, const pmix_proc_t * source,
+                          pmix_info_t * info, size_t ninfo, pmix_info_t * results, size_t nresults,
+                          pmix_event_notification_cbfunc_fn_t cbfunc, void *cbdata)
+{
+
+    pmix_value_t *pset_name_val = NULL;
+    char *pset_name = NULL;
+    bool key_found = false;
+    pmix_status_t cb_status = PMIX_EVENT_ACTION_COMPLETE;
+
+    /* Extract pset name from the info object */
+    for (size_t i = 0; i < ninfo; i++) {
+        if (strncasecmp((char *) info[i].key, PMIX_PSET_NAME, strlen(PMIX_PSET_NAME)) == 0) {
+            key_found = true;
+            pset_name_val = PMIx_Value_create(1);
+            PMIx_Value_xfer(pset_name_val, &(info[i].value));
+            pset_name = pset_name_val->data.string;
+            break;
+        }
+    }
+
+    if (!key_found) {
+        cb_status = PMIX_EVENT_NO_ACTION_TAKEN;
+        goto fn_exit;
+    }
+
+    /* Search in known PMIx psets for pset_name and invalidate the pset */
+    int ret = MPIR_Pset_array_invalidate(MPIR_Process.pm_pset_array, pset_name);
+    if (ret == MPI_ERR_OTHER) {
+        /* Pset not found in this process (not an error!) */
+        MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
+                                                 "PMIx pset delete callback: pset '%s' not found.",
+                                                 pset_name));
+    }
+
+  fn_exit:
+    if (pset_name_val)
+        PMIx_Value_destruct(pset_name_val);
+
+    if (NULL != cbfunc) {
+        /* If a callback function is provided, we have to call it
+         * We cannot treat an error here, but we can give a hint via cbfunc status that something went wrong */
+        cbfunc(cb_status, NULL, 0, NULL, NULL, cbdata);
+    }
+}
+
+#endif /* PMIX_VERSION_MAJOR >= 4 */
+#endif /* PMIX API */

@@ -4144,6 +4144,7 @@ mpich2/src/include/mpir_pmi.h \
 mpich2/src/include/mpir_pointers.h \
 mpich2/src/include/mpir_process.h \
 mpich2/src/include/mpir_progress_hook.h \
+mpich2/src/include/mpir_pset.h \
 mpich2/src/include/mpir_pt2pt.h \
 mpich2/src/include/mpir_refcount.h \
 mpich2/src/include/mpir_refcount_global.h \
@@ -6144,6 +6145,7 @@ mpich2/src/util/mpir_nettopo.c \
 mpich2/src/util/mpir_nodemap.h \
 mpich2/src/util/mpir_pmi.c \
 mpich2/src/util/mpir_progress_hook.c \
+mpich2/src/util/mpir_pset.c \
 mpich2/src/util/mpir_strerror.c \
 mpich2/test/.codingcheck \
 mpich2/test/Makefile.am \
