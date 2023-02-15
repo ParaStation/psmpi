@@ -136,6 +136,12 @@ AC_ARG_ENABLE([dtpools],
               [AS_HELP_STRING([--disable-dtpools],[Disable dtpools tests])],,
               [enable_dtpools=yes])
 
+AC_ARG_ENABLE(cuda,
+        [AC_HELP_STRING([--enable-cuda],[Add some tests for CUDA-awareness])],,[enable_cuda=no])
+
+AC_ARG_ENABLE(cuda,
+    [AC_HELP_STRING([--enable-cuda],[Add some tests for CUDA awareness])],,[enable_cuda=no])
+
 # runtests options
 RUNTESTS_OPTS=
 AC_SUBST(RUNTESTS_OPTS)
@@ -550,6 +556,14 @@ AC_SUBST(ckpointdir)
 if test "$enable_xfail" = "yes" ; then
     RUNTESTS_OPTS="$RUNTESTS_OPTS -runxfail"
 fi
+
+#
+# Only run CUDA tests if enabled
+cudadir="#cuda"
+if test "$enable_cuda" = "yes" ; then
+    cudadir="cuda"
+fi
+AC_SUBST(cudadir)
 
 PAC_LOAD_BASE_CACHE
 PAC_VPATH_CHECK()
@@ -1680,6 +1694,9 @@ AC_OUTPUT(maint/testmerge \
           pt2pt/testlist \
           part/Makefile  \
           mpi_t/Makefile \
+          parastation/Makefile \
+          parastation/testlist \
+          cuda/Makefile \
           rma/Makefile \
           rma/testlist \
           spawn/Makefile \
@@ -1812,6 +1829,7 @@ AC_OUTPUT(maint/testmerge \
           manual/mpi_t/Makefile \
           perf/Makefile \
           testlist \
+          ps-test-minimal \
           cxx/testlist \
           cxx/topo/testlist \
           f77/testlist \
