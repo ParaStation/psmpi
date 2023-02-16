@@ -66,12 +66,26 @@ int MPIR_Session_init_impl(MPIR_Info * info_ptr, MPIR_Errhandler * errhandler_pt
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Session *session_ptr = NULL;
-
     int provided;
-    /* Let's try ask for MPI_THREAD_MULTIPLE, but it probably still works with
+
+    session_ptr = (MPIR_Session *) MPIR_Handle_obj_alloc(&MPIR_Session_mem);
+    MPIR_ERR_CHKHANDLEMEM(session_ptr);
+
+    session_ptr->errhandler = NULL;
+    /* Request mt support as default */
+    session_ptr->thread_level = MPI_THREAD_MULTIPLE;
+
+    {
+        int thr_err;
+        MPID_Thread_mutex_create(&(session_ptr->mutex), &thr_err);
+        MPIR_Assert(thr_err == 0);
+    }
+
+    /* Session's requested thread level defaults to MPI_THREAD_MULTIPLE.
+     * Currently only MPI_THREAD_MULTIPLE is supported but it probably still works with
      * MPI_THREAD_SINGLE since we use MPL_Initlock_lock for cross-session locks.
      */
-    mpi_errno = MPII_Init_thread(NULL, NULL, MPI_THREAD_MULTIPLE, &provided, &session_ptr);
+    mpi_errno = MPII_Init_thread(NULL, NULL, session_ptr->thread_level, &provided, &session_ptr);
     MPIR_ERR_CHECK(mpi_errno);
 
     session_ptr->thread_level = provided;
