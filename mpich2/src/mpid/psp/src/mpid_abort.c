@@ -14,12 +14,11 @@
 int MPID_Abort(MPIR_Comm * comm_ptr, int mpi_errno, int exit_code,
 	       const char *error_msg)
 {
-	int termination_call;
 	MPIR_Comm *comm_self_ptr;
 
 	MPIR_Comm_get_ptr (MPI_COMM_SELF, comm_self_ptr);
 
-	if( (comm_ptr == comm_self_ptr) && (!MPIDI_PSP_env_get_int("PSP_FINALIZE_BARRIER", 1)) ) {
+	if ((comm_ptr == comm_self_ptr) && (!MPIDI_Process.env.finalize.barrier)) {
 
 		/* Experimental extension:
 		   Properly deregister from PMI in the COMM_SELF case
@@ -30,9 +29,7 @@ int MPID_Abort(MPIR_Comm * comm_ptr, int mpi_errno, int exit_code,
 
 	MPL_error_printf("%s\n", error_msg);
 
-	termination_call = MPIDI_PSP_env_get_int("PSP_HARD_ABORT", 0);
-
-	switch (termination_call) {
+	switch (MPIDI_Process.env.hard_abort) {
 	case 0:
 		exit(exit_code);
 	case 1:

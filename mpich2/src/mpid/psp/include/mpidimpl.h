@@ -151,6 +151,13 @@ typedef struct MPIDI_Process
 			int enable_rma_accumulate_ordering;
 			int enable_explicit_wait_on_passive_side;
 		} rma;
+		int hard_abort;
+		struct {
+			int barrier;
+			int timeout;
+			int shutdown;
+			int exit;
+		} finalize;
 	} env;
 
 #ifdef MPIDI_PSP_WITH_SESSION_STATISTICS
