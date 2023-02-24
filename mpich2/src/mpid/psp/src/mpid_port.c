@@ -194,6 +194,8 @@ void init_intercomm(MPIR_Comm *comm, MPIR_Context_id_t remote_context_id, unsign
 	intercomm->comm_kind = MPIR_COMM_KIND__INTERCOMM;
 	intercomm->local_comm   = NULL;
 
+	MPIR_Comm_set_session_ptr(intercomm, comm->session_ptr);
+
 	/* Point local vcr at those of incoming intracommunicator */
 	vcrt = MPIDI_VCRT_Dup(comm->vcrt);
 	assert(vcrt);
@@ -509,6 +511,8 @@ MPIR_Comm *create_intercomm(MPIR_Comm * comm)
 
 	intercomm->context_id     = MPIR_INVALID_CONTEXT_ID; /* finally set in init_intercomm() to recvcontext_id of the remote */
 	intercomm->recvcontext_id = recvcontext_id;
+
+	MPIR_Comm_set_session_ptr(intercomm, comm->session_ptr);
 
 	return intercomm;
 }
