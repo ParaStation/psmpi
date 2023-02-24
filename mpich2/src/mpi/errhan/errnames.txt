@@ -16,6 +16,8 @@
 **sessionnull: NULL MPI_Session
 **sessioninit: Session initialization failed
 **sessioninit %s: Session initialization failed with error msg: %s
+**sessioninuse:MPI_Session is referenced and cannot be released
+**sessioninuse %d:MPI_Session is referenced by %d other objects and cannot be released
 **nomem:Out of memory
 **nomem %s %d:Out of memory (unable to allocate a '%s' of size %d)
 **nomem %s:Out of memory (unable to allocate a '%s')
