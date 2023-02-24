@@ -263,6 +263,7 @@ struct MPIR_Comm {
 #ifdef MPID_DEV_COMM_DECL
      MPID_DEV_COMM_DECL
 #endif
+     MPIR_Session * session_ptr;        /*Pointer to MPI session to which the communicator belongs */
 };
 extern MPIR_Object_alloc_t MPIR_Comm_mem;
 
@@ -459,4 +460,12 @@ int MPIR_init_comm_world(void);
 int MPIR_init_icomm_world(void);
 #endif
 int MPIR_finalize_builtin_comms(void);
+
+/**
+ * @brief Set the session pointer of a communicator and increase ref counter of session
+ *
+ * @param comm_ptr      Pointer to communicator
+ * @param session_ptr   Pointer to session
+ */
+void MPIR_Comm_set_session_ptr(MPIR_Comm * comm_ptr, MPIR_Session * session_ptr);
 #endif /* MPIR_COMM_H_INCLUDED */
