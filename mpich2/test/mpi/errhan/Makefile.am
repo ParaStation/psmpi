@@ -16,6 +16,7 @@ noinst_PROGRAMS =   \
     adderr          \
     commcall        \
     commcall_oldapi \
+    sessioncall     \
     errfatal        \
     predef_eh       \
     errstring2      \
