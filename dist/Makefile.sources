@@ -6588,6 +6588,7 @@ mpich2/test/mpi/errhan/Makefile.am \
 mpich2/test/mpi/errhan/adderr.c \
 mpich2/test/mpi/errhan/commcall.c \
 mpich2/test/mpi/errhan/commcall_oldapi.c \
+mpich2/test/mpi/errhan/sessioncall.c \
 mpich2/test/mpi/errhan/dynamic_errcode_predefined_errclass.c \
 mpich2/test/mpi/errhan/errfatal.c \
 mpich2/test/mpi/errhan/errmsg.c \
@@ -6729,6 +6730,11 @@ mpich2/test/mpi/errors/rma/win_sync_op.c \
 mpich2/test/mpi/errors/rma/win_sync_unlock.c \
 mpich2/test/mpi/errors/rma/winerr.c \
 mpich2/test/mpi/errors/rma/winerr2.c \
+mpich2/test/mpi/errors/session/sessioninit.c \
+mpich2/test/mpi/errors/session/getpsetinfo.c \
+mpich2/test/mpi/errors/session/getnthpset.c \
+mpich2/test/mpi/errors/session/Makefile.am \
+mpich2/test/mpi/errors/session/testlist \
 mpich2/test/mpi/errors/spawn/Makefile.am \
 mpich2/test/mpi/errors/spawn/badport.c \
 mpich2/test/mpi/errors/spawn/connect_timeout.c \
