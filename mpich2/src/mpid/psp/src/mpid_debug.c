@@ -136,10 +136,6 @@ char* MPIDI_PSP_get_psmpi_version_string(void)
 
 void mpid_debug_init(void)
 {
-	/* evaluate environment variables */
-	pscom_env_get_uint(&MPIDI_Process.env.debug_level, "PSP_DEBUG");
-	pscom_env_get_uint(&MPIDI_Process.env.debug_version, "PSP_DEBUG_VERSION");
-
 	/* initialize the signal handler for backtracing */
 	mpid_debug_init_gnuc(MPIDI_Process.env.debug_level);
 

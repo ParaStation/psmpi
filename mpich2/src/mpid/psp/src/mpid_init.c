@@ -71,6 +71,17 @@ MPIDI_Process_t MPIDI_Process = {
 		dinit(enable_hcoll_stats)       0,
 #endif
 		dinit(enable_lazy_disconnect)	1,
+		dinit(rma)                      {
+			dinit(enable_rma_accumulate_ordering)       -1,
+			dinit(enable_explicit_wait_on_passive_side) -1,
+		},
+		dinit(hard_abort)               0,
+		dinit(finalize)                 {
+			dinit(barrier)          0,
+			dinit(timeout)         30,
+			dinit(shutdown)         0,
+			dinit(exit)             0,
+		},
 	},
 #ifdef MPIDI_PSP_WITH_SESSION_STATISTICS
 	dinit(stats)            {
@@ -571,6 +582,10 @@ int MPID_Init(int requested, int *provided)
 		}
 	}
 
+	/* evaluate environment variables */
+	pscom_env_get_uint(&MPIDI_Process.env.debug_level, "PSP_DEBUG");
+	pscom_env_get_uint(&MPIDI_Process.env.debug_version, "PSP_DEBUG_VERSION");
+
 	/* Initialize the switches */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_collectives, "PSP_COLLECTIVES");
 
@@ -654,6 +669,49 @@ int MPID_Init(int requested, int *provided)
 #endif
 
 	pscom_env_get_uint(&MPIDI_Process.env.enable_lazy_disconnect, "PSP_LAZY_DISCONNECT");
+
+	pscom_env_get_int(&MPIDI_Process.env.rma.enable_rma_accumulate_ordering, "PSP_ACCUMULATE_ORDERING");
+	pscom_env_get_int(&MPIDI_Process.env.rma.enable_explicit_wait_on_passive_side, "PSP_RMA_EXPLICIT_WAIT");
+
+	pscom_env_get_int(&MPIDI_Process.env.hard_abort, "PSP_HARD_ABORT");
+
+	/* PSP_FINALIZE_BARRIER (default=0)
+	 * With setting this environment variable, an additional barrier call can be activated
+	 * via a hook within MPI_Finalize for explicitly synchronizing all processes at the end.
+	 * 0: Use _no_ additional (psp-related) barrier within MPI_Finalize()
+	 * 1: Use MPIR_Barrier() twice (with a timeout for the second, see PSP_FINALIZE_TIMEOUT)
+	 * 2: Use the barrier method of PMI/PMIx (Warning: without pscom progress within!)
+	 * others: N/A (i.e., no barrier)
+	 * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
+	 * instead of pscom_env_get_int() here so that there is no logging about it.)
+	 */
+	MPIDI_Process.env.finalize.barrier = MPIDI_PSP_env_get_int("PSP_FINALIZE_BARRIER", 0);
+
+	 /* PSP_FINALIZE_TIMEOUT (default=30)
+	 * Set the number of seconds that are allowed to elapse in MPI_Finalize() after leaving
+	 * the first MPIR_Barrier() call (PSP_FINALIZE_BARRIER=1, see above) until the second
+	 * barrier call is aborted via a timeout signal.
+	 * If set to 0, then no timeout and no second barrier are used.
+	 * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
+	 * instead of pscom_env_get_int() here so that there is no logging about it.)
+	 */
+	MPIDI_Process.env.finalize.timeout = MPIDI_PSP_env_get_int("PSP_FINALIZE_TIMEOUT", 30);
+
+	/* PSP_FINALIZE_SHUTDOWN (default=0)
+	 * If set to >=1, all pscom sockets are already shut down (synchronized)
+	 * within MPI_Finalize().
+	 * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
+	 * instead of pscom_env_get_int() here so that there is no logging about it.)
+	 */
+	MPIDI_Process.env.finalize.shutdown = MPIDI_PSP_env_get_int("PSP_FINALIZE_SHUTDOWN", 0);
+
+	/* PSP_FINALIZE_EXIT (default=0)
+	 * If set to 1, then exit() is called at the very end of MPI_Finalize().
+	 * If set to 2, then it is _exit().
+	 * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
+	 * instead of pscom_env_get_int() here so that there is no logging about it.)
+	 */
+	MPIDI_Process.env.finalize.exit = MPIDI_PSP_env_get_int("PSP_FINALIZE_EXIT", 0);
 
 	/*
 	pscom_env_get_uint(&mpir_allgather_short_msg,	"PSP_ALLGATHER_SHORT_MSG");

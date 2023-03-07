@@ -147,6 +147,17 @@ typedef struct MPIDI_Process
 		unsigned enable_hcoll_stats;
 #endif
 		unsigned enable_lazy_disconnect;
+		struct {
+			int enable_rma_accumulate_ordering;
+			int enable_explicit_wait_on_passive_side;
+		} rma;
+		int hard_abort;
+		struct {
+			int barrier;
+			int timeout;
+			int shutdown;
+			int exit;
+		} finalize;
 	} env;
 
 #ifdef MPIDI_PSP_WITH_SESSION_STATISTICS
@@ -298,6 +309,13 @@ const char *mpid_msgtype_str(enum MPID_PSP_MSGTYPE msg_type);
 } while (0)
 
 #endif
+
+static inline
+int MPIDI_PSP_env_get_int(const char *env_name, int _default)
+{
+	char *val = getenv(env_name);
+	return val ? atoi(val) : _default;
+}
 
 #ifndef MPICH_IS_THREADED
 #define MPID_PSP_LOCKFREE_CALL(code) code;

@@ -302,8 +302,8 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info *info_pt
 	win_ptr->lock_internal = 0;
 	win_ptr->epoch_state = MPID_PSP_EPOCH_NONE;
 	win_ptr->epoch_lock_count = 0;
-	win_ptr->rma_accumulate_ordering = 1; /* default since MPI-3 */
-	win_ptr->explicit_wait_on_passive_side = 1; /* be conservative by default here */
+	win_ptr->enable_rma_accumulate_ordering = 1; /* default since MPI-3 */
+	win_ptr->enable_explicit_wait_on_passive_side = 1; /* be conservative by default here */
 
 	if (info_ptr) {
 		char* value;
@@ -315,12 +315,14 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info *info_pt
 			MPIR_Info_get_impl(info_ptr, key, value_len, value, &flag);
 			assert(flag);
 			if (strncmp(value, "none", value_len+1) == 0) {
-				win_ptr->rma_accumulate_ordering = 0;
+				win_ptr->enable_rma_accumulate_ordering = 0;
 			}
 			MPL_free(value);
 		}
 	}
-	pscom_env_get_int(&win_ptr->rma_accumulate_ordering, "PSP_ACCUMULATE_ORDERING");
+	if (MPIDI_Process.env.rma.enable_rma_accumulate_ordering > -1) {
+		win_ptr->enable_rma_accumulate_ordering = MPIDI_Process.env.rma.enable_rma_accumulate_ordering;
+	}
 
 	if (info_ptr) {
 		char* value;
@@ -332,14 +334,16 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info *info_pt
 			MPIR_Info_get_impl(info_ptr, key, value_len, value, &flag);
 			assert(flag);
 			if (strncmp(value, "none", value_len+1) == 0) {
-				win_ptr->explicit_wait_on_passive_side = 0;
+				win_ptr->enable_explicit_wait_on_passive_side = 0;
 			} if (strncmp(value, "explicit", value_len+1) == 0) {
-				win_ptr->explicit_wait_on_passive_side = 1;
+				win_ptr->enable_explicit_wait_on_passive_side = 1;
 			}
 			MPL_free(value);
 		}
 	}
-	pscom_env_get_int(&win_ptr->explicit_wait_on_passive_side, "PSP_RMA_EXPLICIT_WAIT");
+	if (MPIDI_Process.env.rma.enable_explicit_wait_on_passive_side > -1) {
+		win_ptr->enable_explicit_wait_on_passive_side = MPIDI_Process.env.rma.enable_explicit_wait_on_passive_side;
+	}
 
 	/*
 	 * Ensure all counters (especially regarding the passive side) are
