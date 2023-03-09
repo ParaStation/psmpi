@@ -41,7 +41,7 @@ CMD="${@} -o $NPIC_FILEPATH"
 if test "$verbose" ; then echo "$CMD" ; fi
 eval "$CMD"
 
-LIBTOOL_VERSION=$(libtool --version | head -n 1)
+LIBTOOL_VERSION=$(./libtool --version | head -n 1)
 
 cat > $LO_FILEPATH <<EOF
 # $LO_FILEPATH - a libtool object file
