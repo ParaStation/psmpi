@@ -536,6 +536,10 @@ int MPID_Init(int requested, int *provided)
 	pscom_socket_t *socket;
 	pscom_err_t rc;
 
+	/* evaluate environment variables related to debugging */
+	pscom_env_get_uint(&MPIDI_Process.env.debug_level, "PSP_DEBUG");
+	pscom_env_get_uint(&MPIDI_Process.env.debug_version, "PSP_DEBUG_VERSION");
+
 	mpid_debug_init();
 
 	assert(PSCOM_ANYPORT == -1); /* all codeplaces which depends on it are marked with: "assert(PSP_ANYPORT == -1);"  */
@@ -581,10 +585,6 @@ int MPID_Init(int requested, int *provided)
 			exit(1);
 		}
 	}
-
-	/* evaluate environment variables */
-	pscom_env_get_uint(&MPIDI_Process.env.debug_level, "PSP_DEBUG");
-	pscom_env_get_uint(&MPIDI_Process.env.debug_version, "PSP_DEBUG_VERSION");
 
 	/* Initialize the switches */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_collectives, "PSP_COLLECTIVES");
