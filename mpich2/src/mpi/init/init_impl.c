@@ -59,14 +59,6 @@ MPIR_Object_alloc_t MPIR_Session_mem = { 0, 0, 0, 0, 0, 0,
 
 #define MPIR_SESSION_INFO_ITEM_LEN 20
 
-/**
- * @brief   Convert a thread level string into an int representation
- *
- * @param   value_str   Thread level string (input)
- * @param   value_i     Thread level int (output)
- *
- * @return  int         MPI_SUCCESS or MPI_ERR_OTHER on error (NULL pointers, unknown thread level)
- */
 static
 int thread_level_to_int(char *value_str, int *value_i)
 {
@@ -95,15 +87,6 @@ int thread_level_to_int(char *value_str, int *value_i)
     goto fn_exit;
 }
 
-/**
- * @brief   Convert thread level integer to a string representation
- *
- * @remark  This function needs to be revisited for MPICH 4.1, see new threadlevel_name() function.
- *
- * @param   value       Thread level integer (input)
- *
- * @return  int         String representation of thread level
- */
 static
 const char *thread_level_to_string(int value)
 {
@@ -121,19 +104,8 @@ const char *thread_level_to_string(int value)
     }
 }
 
-/**
- * @brief   Set the requested thread level of a session based on an info object
- *
- *          If the provided info_ptr is a nullptr or the thread_level key is not
- *          found in the info object, the session_ptr remains untouched.
- *
- * @param   session_ptr     Session pointer for which thread level shall be set
- * @param   info_ptr        Info object pointer to be parsed for thread_level key
- *
- * @return  int             MPI_SUCCESS or error code.
- */
 static
-int set_thread_level_from_info(MPIR_Session * session_ptr, MPIR_Info * info_ptr)
+int get_thread_level_from_info(MPIR_Info * info_ptr, int *threadlevel)
 {
     int mpi_errno = MPI_SUCCESS;
     int buflen = 0;
@@ -162,8 +134,8 @@ int set_thread_level_from_info(MPIR_Session * session_ptr, MPIR_Info * info_ptr)
     mpi_errno = MPIR_Info_get_impl(info_ptr, key, buflen, thread_level_s, &flag);
     MPIR_ERR_CHECK(mpi_errno);
 
-    /* Set requested thread level value in session_ptr. */
-    mpi_errno = thread_level_to_int(thread_level_s, &(session_ptr->thread_level));
+    /* Set requested thread level value as output */
+    mpi_errno = thread_level_to_int(thread_level_s, threadlevel);
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
@@ -180,35 +152,29 @@ int MPIR_Session_init_impl(MPIR_Info * info_ptr, MPIR_Errhandler * errhandler_pt
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Session *session_ptr = NULL;
+
     int provided;
-
-    session_ptr = (MPIR_Session *) MPIR_Handle_obj_alloc(&MPIR_Session_mem);
-    MPIR_ERR_CHKHANDLEMEM(session_ptr);
-
-    session_ptr->errhandler = NULL;
-    session_ptr->thread_level = MPI_THREAD_MULTIPLE;
-
-    {
-        int thr_err;
-        MPID_Thread_mutex_create(&(session_ptr->mutex), &thr_err);
-        MPIR_Assert(thr_err == 0);
-    }
-
-    /* Set the thread level requested by the user via info object (if any) */
-    mpi_errno = set_thread_level_from_info(session_ptr, info_ptr);
-    MPIR_ERR_CHECK(mpi_errno);
 
     /* Remark on MPI_THREAD_SINGLE: Multiple sessions may run in threads
      * concurrently, so significant work is needed to support per-session MPI_THREAD_SINGLE.
      * For now, it probably still works with MPI_THREAD_SINGLE since we use MPL_Initlock_lock
      * for cross-session locks in MPII_Init_thread.
      *
-     * TODO: support per-session MPI_THREAD_SINGLE and optimize
+     * The MPI4 standard recommends users to _not_ request MPI_THREAD_SINGLE thread
+     * support level for sessions "because this will conflict with other components of an
+     * application requesting higher levels of thread support" (Sec. 11.3.1).
+     *
+     * TODO: support per-session MPI_THREAD_SINGLE, use user-requested thread level here
+     * instead of MPI_THREAD_MULTIPLE, and optimize
      */
-    mpi_errno = MPII_Init_thread(NULL, NULL, session_ptr->thread_level, &provided, &session_ptr);
+    mpi_errno = MPII_Init_thread(NULL, NULL, MPI_THREAD_MULTIPLE, &provided, &session_ptr);
     MPIR_ERR_CHECK(mpi_errno);
 
     session_ptr->thread_level = provided;
+
+    /* Get the thread level requested by the user via info object (if any) */
+    mpi_errno = get_thread_level_from_info(info_ptr, &(session_ptr->thread_level));
+    MPIR_ERR_CHECK(mpi_errno);
 
     mpi_errno = MPIR_Session_psets_init(session_ptr);
     MPIR_ERR_CHECK(mpi_errno);
