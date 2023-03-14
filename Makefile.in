@@ -74,7 +74,7 @@ endif
 endif
 
 TESTSUMMARY := mpich2/test/mpi/summary
-TESTSETS    := testlist testlist.dtp testlist.cvar testlist.gpu ps-test-minimal
+TESTSETFILES:= testlist testlist.dtp testlist.cvar testlist.gpu ps-test-minimal
 ifdef TESTDIR
 TESTDIR_    := $(TESTDIR)_
 TESTFOLDERS := $(shell cd $(SRCDIR)/mpich2/test/mpi && find . -maxdepth 2 -mindepth 2 -type f -name "testlist" -o -name "testlist.in" | cut -d"/" -f2)
@@ -84,14 +84,8 @@ TESTDIRLIST :=
 endif
 ifdef TESTSET
 TESTSET_    := $(TESTSET)_
-TESTSETLIST := "TESTLIST=$(TESTSET)"
 else
 TESTSET     := testlist
-ifndef TESTLIST
-TESTSETLIST := "TESTLIST=testlist"
-else
-TESTSETLIST :=
-endif
 endif
 TESTCONFDIR := $(SRCDIR)/mpich2/test/mpi/parastation/testconf
 TESTCONFSUFF:= .testconf
@@ -103,11 +97,11 @@ endif
 largetest largetests largetesting: LARGE_TESTS="--enable-large-tests"
 
 test tests testing largetest largetests largetesting:
-ifeq ($(filter $(TESTSET),$(TESTSETS)),)
+ifeq ($(filter $(TESTSET),$(TESTSETFILES)),)
 	@echo "ERROR: The test set '$(TESTSET)' does not exist!"
 	@echo "Please provide a valid test set to be used."
 	@echo "The following testsets are available:"
-	@$(foreach set,$(TESTSETS), echo "* " $(set) ;)
+	@$(foreach set,$(TESTSETFILES), echo "* " $(set) ;)
 else
 ifneq ($(filter $(TESTDIR),$(TESTFOLDERS)),$(TESTDIR))
 	@echo "ERROR: The test directory '$(TESTDIR)' does not exist!"
@@ -130,7 +124,8 @@ else
 	@if [ "${CUDA_SUPPORT}" != "true" -a "${CUDA_TESTS}" == "${ENABLE_CUDA_SWITCH}" ] ; \
 	then echo "WARNING: CUDA tests enabled, but psmpi is not configured with CUDA awareness!" ; \
 	sleep 2 ; fi
-	export TESTSET=$(TESTSET); \
+	export TESTSETLIST=$(TESTSET); \
+	if [ -n "${TESTSETS}" ] ; then export TESTSETLIST="${TESTSETS}"; fi; \
 	export MPIEXEC=$(MPIEXEC); \
 	export PSI_OVERBOOK=1; \
 	export PSI_LOG_SILENT=1; \
@@ -146,7 +141,7 @@ else
 	( mkdir -p mpich2/test/mpi ; cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) $(CUDA_TESTS) $(LARGE_TESTS)); \
 	( hostname; rpm -qi pscom; rpm -qi psmgmt; $(SRCDIR)/scripts/vcversion -r $(SRCDIR); \
 	  echo $(MPIEXEC); \
-	  $(MAKE) -C mpich2/test/mpi testing $(TESTSETLIST) $(TESTDIRLIST) && \
+	  $(MAKE) -C mpich2/test/mpi testing "TESTLIST=$${TESTSETLIST}" $(TESTDIRLIST) && \
 	  cp $(TESTSUMMARY).xml $${_LOGNAME}.xml && \
 	  cp $(TESTSUMMARY).tap $${_LOGNAME}.tap && \
 	  $(SRCDIR)/scripts/test-summary.sh $${_LOGNAME}.xml; \
