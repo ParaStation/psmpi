@@ -127,23 +127,6 @@ int thread_level_to_int(char *value_str, int *value_i)
 }
 
 static
-const char *thread_level_to_string(int value)
-{
-    switch (value) {
-        case MPI_THREAD_MULTIPLE:
-            return "MPI_THREAD_MULTIPLE";
-        case MPI_THREAD_SINGLE:
-            return "MPI_THREAD_SINGLE";
-        case MPI_THREAD_FUNNELED:
-            return "MPI_THREAD_FUNNELED";
-        case MPI_THREAD_SERIALIZED:
-            return "MPI_THREAD_SERIALIZED";
-        default:
-            return "unknown";
-    }
-}
-
-static
 int get_thread_level_from_info(MPIR_Info * info_ptr, int *threadlevel)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -347,7 +330,7 @@ int MPIR_Session_get_nth_pset_impl(MPIR_Session * session_ptr, MPIR_Info * info_
 int MPIR_Session_get_info_impl(MPIR_Session * session_ptr, MPIR_Info ** info_p_p)
 {
     int mpi_errno = MPI_SUCCESS;
-    const char *buf_thread_level = thread_level_to_string(session_ptr->thread_level);
+    const char *buf_thread_level = MPII_threadlevel_name(session_ptr->thread_level);
 
     mpi_errno = MPIR_Info_alloc(info_p_p);
     MPIR_ERR_CHECK(mpi_errno);
