@@ -231,6 +231,8 @@ topo
 part
 ```
 
+### Selecting Test Directories and Test Sets
+
 However, you can also have only tests of a certain subdirectory to be executed by specifying a `TESTDIR`, for example:
 ```console
 $ make test TESTDIR=pt2pt
@@ -248,3 +250,49 @@ And if, for example, the test set `ps-test-minimal` should only be executed for 
 ```console
 $ make test TESTSET=ps-test-minimal TESTDIR=pt2pt
 ```
+
+In the case that several directories and/or several test sets should be used for a run, one can do this by using comma-separated lists and the variables `TESTDIRS` and `TESTSETS`.
+(Please note the additional "S" at the end of the variable names!)
+However, in this case no explicit check for validity of the passed test sets or folder names is performed.
+Example:
+```console
+$ make test TESTDIRS=pt2pt,coll,info
+```
+
+Furthermore, there is a "meta" set of tests that are specifically intended for large numbers of processes and/or large messages and data sets.
+This additional (and somehow orthogonal) set can be chosen via `largetest` as the
+`make` target:
+```console
+$ make largetest
+```
+...which can also be used in combination with the `TESTSET`/`TESTSETS` and the `TESTDIR`/`TESTDIRS` options.
+
+### Using Test Configurations
+
+When running the tests, some settings like the `mpiexec` command to be used are pre-configured and depend on the configuration chosen for psmpi during its top-level configure call.
+However, there is still the possibility to overwrite some of such configurations by explicitly setting the following environment variables:
+
+* `MPIEXEC`: choose the path and the executable to be used for process start
+* `MPIEXECARG`: additional arguments to be passed to the `mpiexec` command
+
+For example:
+```
+$ make test MPIEXEC=/opt/parastation/bin/mpiexec MPIEXECARG="-e MPIEXEC_UNIVERSE_SIZE=128"
+```
+
+Furthermore, there is a small set of such overriding configurations that can also be chosen via the `TESTCONF` option.
+The following configurations are available:
+
+* `hydra`: Force the use of MPICH's Hydra `mpiexec`
+* `psmgmt`: Force the use of psmgmt's `mpiexec` in `/opt/parastation/bin`
+* `verbose`: Switch on verbose mode for `runtests` script
+* `psmgmt/memcheck`: Call psmgmt's `mpiexec` with `--memcheck`
+* `psmgmt/valgrind`: Call psmgmt's `mpiexec` with `--valgrind`
+* `psmgmt/pmix`: Call psmgmt's `mpiexec` with `--pmix`
+
+If multiple of such configurations are to be selected at the same time, then the `TESTCONFS` (mind the additional `S` at the end!) can be used.
+Example:
+```
+$ make test TESTCONFS=hydra,verbose
+```
+
