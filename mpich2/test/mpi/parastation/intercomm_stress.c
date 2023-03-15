@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
 				MPI_Irecv(rbuf, 128, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, split_comm, &requests[msg_count++]);
 			}
 
-			for(i=1; i<split_remote_size; i++) {
+			for(i=0; i<split_remote_size; i++) {
 
 				comm_type[msg_count] = inter_comm_type;
 				MPI_Irecv(rbuf, 128, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, inter_comm,&requests[msg_count++]);
