@@ -147,6 +147,64 @@ int get_thread_level_from_info(MPIR_Info * info_ptr, int *threadlevel)
     goto fn_exit;
 }
 
+int MPIR_Session_create(MPIR_Session ** p_session_ptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    *p_session_ptr = (MPIR_Session *) MPIR_Handle_obj_alloc(&MPIR_Session_mem);
+    /* --BEGIN ERROR HANDLING-- */
+    MPIR_ERR_CHKHANDLEMEM(*p_session_ptr);
+    /* --END ERROR HANDLING-- */
+    MPIR_Object_set_ref(*p_session_ptr, 1);
+
+    (*p_session_ptr)->errhandler = NULL;
+    (*p_session_ptr)->thread_level = MPI_THREAD_MULTIPLE;
+
+    {
+        int thr_err;
+        MPID_Thread_mutex_create(&(*p_session_ptr)->mutex, &thr_err);
+        MPIR_Assert(thr_err == 0);
+    }
+
+    /* Pset variables are initialized with MPIR_Session_psets_init
+     * after PM interface is initialized. */
+    (*p_session_ptr)->psets = NULL;
+    (*p_session_ptr)->default_pset_array = NULL;
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+int MPIR_Session_release(MPIR_Session * session_ptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int inuse;
+
+    MPIR_Session_release_ref(session_ptr, &inuse);
+    if (!inuse) {
+        /* Only if refcount is 0 do we actually free. */
+
+        /* Handle any clean up on session */
+
+        MPIR_Session_psets_destroy(session_ptr);
+
+        int thr_err;
+        MPID_Thread_mutex_destroy(&session_ptr->mutex, &thr_err);
+        MPIR_Assert(thr_err == 0);
+
+        /* Free the error handler */
+        if (session_ptr->errhandler) {
+            MPIR_Errhandler_free_impl(session_ptr->errhandler);
+        }
+
+        MPIR_Handle_obj_free(&MPIR_Session_mem, session_ptr);
+    }
+
+    return mpi_errno;
+}
+
 int MPIR_Session_init_impl(MPIR_Info * info_ptr, MPIR_Errhandler * errhandler_ptr,
                            MPIR_Session ** p_session_ptr)
 {
@@ -186,7 +244,7 @@ int MPIR_Session_init_impl(MPIR_Info * info_ptr, MPIR_Errhandler * errhandler_pt
 
   fn_fail:
     if (session_ptr) {
-        MPIR_Handle_obj_free(&MPIR_Session_mem, session_ptr);
+        MPIR_Session_release(session_ptr);
     }
     goto fn_exit;
 }
@@ -194,10 +252,6 @@ int MPIR_Session_init_impl(MPIR_Info * info_ptr, MPIR_Errhandler * errhandler_pt
 int MPIR_Session_finalize_impl(MPIR_Session * session_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
-
-    /* Finalize pset array of the session */
-    mpi_errno = MPIR_Session_psets_destroy(session_ptr);
-    MPIR_ERR_CHECK(mpi_errno);
 
     /* MPII_Finalize will free the session_ptr */
     mpi_errno = MPII_Finalize(session_ptr);
