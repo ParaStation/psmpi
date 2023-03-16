@@ -799,21 +799,12 @@ sub AddMPIProgram {
 
     my $wrapper = get_mpiexec_wrapper($np, $test_opt);
     my $progArgs = join(' ', @{$test_opt->{args}});
-    my $cmd = "$wrapper ./$programname $progArgs";
     my $progEnv = join(' ', @{$test_opt->{envs}});
+    $progEnv =~ s/"env="/""/g;
+    my $cmd = "$wrapper env $progEnv ./$programname $progArgs";
     print STDOUT "Env includes $progEnv\n" if $g_opt{verbose};
     print STDOUT "$cmd\n" if $g_opt{verbose};
     print STDOUT "." if $g_opt{showprogress};
-    # Save and restore the environment if necessary before running mpiexec.
-    if ($progEnv ne "") {
-        # Need to fix: 
-        # save_NAME_is_set=is old name set
-        # save_NAME=oldValue
-        # export NAME=newvalue
-        # (run) 
-        # export NAME=oldValue (if set!)
-        print STDERR "Batch output does not permit changes to environment\n";
-    }
     # The approach here is to move the test codes to a single directory from
     # which they can be run; this avoids complex code to change directories
     # and ensure that the output goes "into the right place".
