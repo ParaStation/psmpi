@@ -7,5 +7,5 @@ include $(top_srcdir)/Makefile_single.mtest
 
 EXTRA_DIST = testlist.in
 
-static_subdirs = mpi_t comm misc ulfm
+static_subdirs = mpi_t comm misc ulfm init
 SUBDIRS      = $(static_subdirs) $(threadsdir) $(cudadir) $(hipdir)
