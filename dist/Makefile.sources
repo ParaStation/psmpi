@@ -7696,6 +7696,9 @@ mpich2/test/mpi/impls/mpich/misc/Makefile.am \
 mpich2/test/mpi/impls/mpich/misc/gpu_query.c \
 mpich2/test/mpi/impls/mpich/misc/testlist \
 mpich2/test/mpi/impls/mpich/misc/type_iov.c \
+mpich2/test/mpi/impls/mpich/init/Makefile.am \
+mpich2/test/mpi/impls/mpich/init/session_strict_finalize.c \
+mpich2/test/mpi/impls/mpich/init/testlist \
 mpich2/test/mpi/impls/mpich/mpi_t/Makefile.am \
 mpich2/test/mpi/impls/mpich/mpi_t/collparmt.c \
 mpich2/test/mpi/impls/mpich/mpi_t/recvq_events.c \
