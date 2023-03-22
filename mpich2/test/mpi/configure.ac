@@ -1667,7 +1667,7 @@ AM_CONDITIONAL([HAS_CXX], [test $cxxdir = cxx])
 
 AC_CONFIG_COMMANDS([chmod],[
     chmod a+x maint/testmerge
-    chmod a+x runtests checktests
+    chmod a+x checktests
     chmod a+x manual/manyconnect
     chmod a+x impls/hydra/proc_binding.sh
 ])
