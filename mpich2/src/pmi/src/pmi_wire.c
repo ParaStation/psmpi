@@ -1118,12 +1118,10 @@ void PMIU_msg_set_query_spawn(struct PMIU_cmd *pmi_query, int version, bool is_s
                 PMIU_cmd_add_substr(pmi_query, "arg%d", i + 1, argvs[spawncnt][i]);
             }
 
-            if (spawncnt == 0) {
-                PMIU_cmd_add_int(pmi_query, "preput_num", preput_keyval_size);
-                for (int i = 0; i < preput_keyval_size; i++) {
-                    PMIU_cmd_add_substr(pmi_query, "preput_key_%d", i, preput_keyval_vector[i].key);
-                    PMIU_cmd_add_substr(pmi_query, "preput_val_%d", i, preput_keyval_vector[i].val);
-                }
+            PMIU_cmd_add_int(pmi_query, "preput_num", preput_keyval_size);
+            for (int i = 0; i < preput_keyval_size; i++) {
+                PMIU_cmd_add_substr(pmi_query, "preput_key_%d", i, preput_keyval_vector[i].key);
+                PMIU_cmd_add_substr(pmi_query, "preput_val_%d", i, preput_keyval_vector[i].val);
             }
 
             PMIU_cmd_add_int(pmi_query, "info_num", info_keyval_sizes[spawncnt]);
