@@ -227,6 +227,7 @@ typedef struct MPIR_Pset_array MPIR_Pset_array;
 #include "mpir_nbc.h"
 #include "mpir_bsend.h"
 #include "mpir_process.h"
+#include "mpir_session.h"
 #include "mpir_typerep.h"
 #include "mpir_datatype.h"
 #include "mpir_cvars.h"

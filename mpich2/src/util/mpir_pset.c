@@ -9,6 +9,7 @@
  */
 
 #include "mpir_pset.h"
+#include "mpir_session.h"
 
 
 /* Protect ciritial sections in session and process set management
@@ -19,7 +20,7 @@
    MPID_THREAD_CS_ENTER and MPID_THREAD_CS_EXIT cannot be used here.*/
 
 /**
- * @brief Enter crititcal section with mutex (multi-threading support not requried)
+ * @brief Enter crititcal section with mutex (multi-threading support not required)
  */
 #define PSET_CS_ENTER(mutex_ptr)                     \
     if (mutex_ptr) {                                    \
@@ -29,7 +30,7 @@
     }                                                   \
 
 /**
- * @brief Exit crititcal section with mutex (multi-threading support not requried)
+ * @brief Exit crititcal section with mutex (multi-threading support not required)
  */
 #define PSET_CS_EXIT(mutex_ptr)                      \
     if (mutex_ptr) {                                    \
@@ -39,7 +40,7 @@
     }                                                   \
 
 /**
- * @brief Create a mutex (multi-threading support not requried)
+ * @brief Create a mutex (multi-threading support not required)
  */
 #define PSET_MUTEX_CREATE(mutex_ptr)                 \
         int thr_err;                                    \
@@ -47,7 +48,7 @@
         MPIR_Assert(thr_err == MPI_SUCCESS);            \
 
 /**
- * @brief Destroy a mutex (multi-threading support not requried)
+ * @brief Destroy a mutex (multi-threading support not required)
  */
 #define PSET_MUTEX_DESTROY(mutex_ptr)                \
         int thr_err;                                    \
@@ -381,7 +382,8 @@ int MPIR_Session_psets_destroy(MPIR_Session * session_ptr)
 {
     if (session_ptr->psets != NULL) {
         for (unsigned i = 0; i < utarray_len(session_ptr->psets); i++) {
-            MPIR_Pset_array **pset_array = (MPIR_Pset_array **) utarray_eltptr(session_ptr->psets, i);
+            MPIR_Pset_array **pset_array =
+                (MPIR_Pset_array **) utarray_eltptr(session_ptr->psets, i);
             MPIR_Pset_array_destroy(*pset_array);
         }
 

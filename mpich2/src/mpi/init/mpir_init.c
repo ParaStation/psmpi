@@ -7,8 +7,9 @@
 #include "mpir_info.h"
 #include "datatype.h"
 #include "mpi_init.h"
-#include "mpir_pset.h"
 #include <strings.h>
+#include "mpir_session.h"
+#include "mpir_pset.h"
 
 /*
 === BEGIN_MPI_T_CVAR_INFO_BLOCK ===
@@ -121,7 +122,7 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
     MPL_initlock_lock(&MPIR_init_lock);
 
     if (!is_world_model) {
-        mpi_errno = MPIR_Session_create(p_session_ptr);
+        mpi_errno = MPIR_Session_create(p_session_ptr, user_required);
         MPIR_ERR_CHECK(mpi_errno);
     }
 
@@ -245,7 +246,7 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
     mpi_errno = MPIR_pmi_barrier();
     MPIR_ERR_CHECK(mpi_errno);
 
-    /* Intialize global array of PM psets and the corresponding mutex */
+    /* Initialize global array of PM psets and the corresponding mutex */
     MPIR_Pset_array_init(&(MPIR_Process.pm_pset_array), &(MPIR_mutex_pm_pset_array));
 
     /* Add finalize callback for global PM pset array, has to be called before MPID_Finalize */
