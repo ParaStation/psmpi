@@ -4661,6 +4661,7 @@ mpich2/src/include/mpir_refcount_global.h \
 mpich2/src/include/mpir_refcount_pobj.h \
 mpich2/src/include/mpir_refcount_single.h \
 mpich2/src/include/mpir_request.h \
+mpich2/src/include/mpir_session.h \
 mpich2/src/include/mpir_status.h \
 mpich2/src/include/mpir_stream.h \
 mpich2/src/include/mpir_strerror.h \
@@ -5591,6 +5592,10 @@ mpich2/src/mpi/stream/Makefile.mk \
 mpich2/src/mpi/stream/stream_enqueue.c \
 mpich2/src/mpi/stream/stream_impl.c \
 mpich2/src/mpi/stream/stream_util.c \
+mpich2/src/mpi/session/Makefile.mk \
+mpich2/src/mpi/session/session_impl.c \
+mpich2/src/mpi/session/session_util.c \
+mpich2/src/mpi/session/mpir_pset.c \
 mpich2/src/mpi/topo/Makefile.mk \
 mpich2/src/mpi/topo/dims_create.c \
 mpich2/src/mpi/topo/dist_graph_create.c \
@@ -6517,7 +6522,6 @@ mpich2/src/util/mpir_nettopo.c \
 mpich2/src/util/mpir_nodemap.h \
 mpich2/src/util/mpir_pmi.c \
 mpich2/src/util/mpir_progress_hook.c \
-mpich2/src/util/mpir_pset.c \
 mpich2/src/util/mpir_strerror.c \
 mpich2/test/.codingcheck \
 mpich2/test/Makefile.am \
@@ -7926,9 +7930,9 @@ mpich2/test/mpi/impls/mpich/hip/saxpy.hip \
 mpich2/test/mpi/impls/mpich/hip/stream.hip \
 mpich2/test/mpi/impls/mpich/hip/stream_allred.hip \
 mpich2/test/mpi/impls/mpich/hip/testlist \
-mpich2/test/mpi/impls/mpich/init/Makefile.am \
-mpich2/test/mpi/impls/mpich/init/session_strict_finalize.c \
-mpich2/test/mpi/impls/mpich/init/testlist \
+mpich2/test/mpi/impls/mpich/session/Makefile.am \
+mpich2/test/mpi/impls/mpich/session/session_strict_finalize.c \
+mpich2/test/mpi/impls/mpich/session/testlist \
 mpich2/test/mpi/impls/mpich/misc/Makefile.am \
 mpich2/test/mpi/impls/mpich/misc/gpu_query.c \
 mpich2/test/mpi/impls/mpich/misc/testlist \
@@ -7986,9 +7990,6 @@ mpich2/test/mpi/init/finalized.c \
 mpich2/test/mpi/init/initstat.c \
 mpich2/test/mpi/init/library_version.c \
 mpich2/test/mpi/init/ps-test-minimal \
-mpich2/test/mpi/init/session.c \
-mpich2/test/mpi/init/session_psets.c \
-mpich2/test/mpi/init/session_self.c \
 mpich2/test/mpi/init/testlist \
 mpich2/test/mpi/init/timeout.c \
 mpich2/test/mpi/init/version.c \
@@ -8355,6 +8356,12 @@ mpich2/test/mpi/rma/winname.c \
 mpich2/test/mpi/rma/wintest.c \
 mpich2/test/mpi/rma/wrma_flush_get.c \
 mpich2/test/mpi/runtests \
+mpich2/test/mpi/session/Makefile.am \
+mpich2/test/mpi/session/session.c \
+mpich2/test/mpi/session/session_psets.c \
+mpich2/test/mpi/session/session_self.c \
+mpich2/test/mpi/session/ps-test-minimal \
+mpich2/test/mpi/session/testlist \
 mpich2/test/mpi/spawn/Makefile.am \
 mpich2/test/mpi/spawn/concurrent_spawns.c \
 mpich2/test/mpi/spawn/disconnect.c \
