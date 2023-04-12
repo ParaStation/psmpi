@@ -93,14 +93,12 @@ int library_foo_test(void)
         rank = -1;
         goto fn_exit;
     }
-
 #ifdef MOD_GROUP
     if (lib_comm == MPI_COMM_NULL) {
         /* Skip the reduce operation for rank that is not in smaller group/ comm */
         goto fn_exit;
     }
 #endif
-
     int sum;
     rc = MPI_Reduce(&rank, &sum, 1, MPI_INT, MPI_SUM, 0, lib_comm);
     if (rc != MPI_SUCCESS) {
@@ -164,7 +162,6 @@ void library_foo_init(int *rank, int *size)
         errs++;
         goto fn_exit;
     }
-
 #ifdef MOD_GROUP
     int grp_size, grp_rank, newgrp_size, newgrp_rank, comm_size = 0;
     MPI_Group newgroup = MPI_GROUP_NULL;
@@ -186,17 +183,18 @@ void library_foo_init(int *rank, int *size)
 
         MPI_Group_size(newgroup, &newgrp_size);
         MPI_Group_rank(newgroup, &newgrp_rank);
-        if (newgrp_size != grp_size - 1 ) {
+        if (newgrp_size != grp_size - 1) {
             errs++;
             goto fn_exit;
         }
         /* Use the new smaller group to create the lib_comm */
         if (newgrp_rank == MPI_UNDEFINED) {
-            rc = MPI_Comm_create_from_group(MPI_GROUP_EMPTY, "org.mpi-forum.mpi-v4_0.example-ex10_8",
-                                        MPI_INFO_NULL, MPI_ERRORS_RETURN, &lib_comm);
+            rc = MPI_Comm_create_from_group(MPI_GROUP_EMPTY,
+                                            "org.mpi-forum.mpi-v4_0.example-ex10_8", MPI_INFO_NULL,
+                                            MPI_ERRORS_RETURN, &lib_comm);
         } else {
             rc = MPI_Comm_create_from_group(newgroup, "org.mpi-forum.mpi-v4_0.example-ex10_8",
-                                        MPI_INFO_NULL, MPI_ERRORS_RETURN, &lib_comm);
+                                            MPI_INFO_NULL, MPI_ERRORS_RETURN, &lib_comm);
         }
         if (rc != MPI_SUCCESS) {
             errs++;
@@ -205,7 +203,8 @@ void library_foo_init(int *rank, int *size)
         if (lib_comm != MPI_COMM_NULL) {
             MPI_Comm_size(lib_comm, &comm_size);
             if (comm_size != newgrp_size) {
-                printf("Error: communicator for smaller group has size %d (expected %d)\n", comm_size, newgrp_size);
+                printf("Error: communicator for smaller group has size %d (expected %d)\n",
+                       comm_size, newgrp_size);
                 errs++;
                 goto fn_exit;
             }
@@ -238,11 +237,11 @@ void library_foo_init(int *rank, int *size)
 
     /* free group, library doesn’t need it. */
   fn_exit:
-    if (wgroup != MPI_GROUP_NULL){
+    if (wgroup != MPI_GROUP_NULL) {
         MPI_Group_free(&wgroup);
     }
 #ifdef MOD_GROUP
-    if (newgroup != MPI_GROUP_NULL){
+    if (newgroup != MPI_GROUP_NULL) {
         MPI_Group_free(&newgroup);
     }
 #endif

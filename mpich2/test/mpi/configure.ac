@@ -1699,6 +1699,7 @@ AC_OUTPUT(maint/testmerge \
           cuda/Makefile \
           rma/Makefile \
           rma/testlist \
+          session/Makefile \
           spawn/Makefile \
           spawn/testlist \
           topo/Makefile \
