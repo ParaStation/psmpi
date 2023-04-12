@@ -229,6 +229,7 @@ spawn
 threads
 topo
 part
+session
 ```
 
 ### Selecting Test Directories and Test Sets
