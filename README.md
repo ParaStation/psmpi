@@ -62,6 +62,7 @@ intel      : Use Intel compiler (icc)
 icc        : Like 'intel'
 pgi        : Portland group compiler (pgcc)
 nvhpc      : Nvidia HPC compiler (nvc)
+llvm       : llvm-based toolchains (e.g., AOCC)
 
 devel      : With error checking and debug info (gcc)
 debug      : Like 'devel' but without any optimizations

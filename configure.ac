@@ -99,6 +99,7 @@ AC_ARG_WITH([confset], [
 	   icc        : Like 'intel'
 	   pgi	      : Portland Group compiler (pgcc)
 	   nvhpc      : Nvidia HPC compiler (nvc)
+	   llvm       : LLVM-based toolchains (e.g., AOCC)
 
 	   devel      : With error checking and debug info (gcc)
 	   debug      : Like 'devel' but without any optimizations
@@ -290,6 +291,14 @@ case $CONFSET in
 	CXX=nvc++
 	FC=nvfortran
 	;;
+"llvm")
+	CONF_OPS="--with-device=psp"
+	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
+
+	CC=clang
+	CXX=clang++
+	FC=flang
+	;;
 "none")
 	# No build
 	;;
@@ -424,7 +433,7 @@ AS_IF([test "x$with_pscom_allin" != "xno"],[
 		fi
 	fi
 	case $CONFSET in
-		"default"|"gcc"|"intel"|"nvhpc"|"icc"|"devel"|"debug") ;;
+		"default"|"gcc"|"intel"|"nvhpc"|"icc"|"llvm"|"devel"|"debug") ;;
 		*) confset_and_allin_does_not_match="yes" ;;
 	esac
 	if test "$confset_and_allin_does_not_match" = "yes" ; then
