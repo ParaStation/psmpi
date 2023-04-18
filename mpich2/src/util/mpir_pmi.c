@@ -72,7 +72,7 @@ static int build_nodemap(int *nodemap, int sz, int *p_max_node_id);
 static int build_locality(void);
 
 #ifdef USE_PMIX_API
-#if PMIX_VERSION_MAJOR >= 4
+#if PMIX_NUMERIC_VERSION >= 0x00040203
 static void pset_define_callback(size_t refid, pmix_status_t status, const pmix_proc_t * source,
                                  pmix_info_t * info, size_t ninfo, pmix_info_t * results,
                                  size_t nresults, pmix_event_notification_cbfunc_fn_t cbfunc,
@@ -87,7 +87,7 @@ static int rc_pset_define_handler;
 
 /* Idetifier of pset delete event handler */
 static int rc_pset_delete_handler;
-#endif /*PMIX_VERSION_MAJOR >= 4 */
+#endif /* PMIx min version 4.2.3 */
 #endif /*PMIX API */
 
 static int pmi_version = 1;
@@ -1353,7 +1353,7 @@ int MPIR_pmi_register_process_set_event_handlers(void)
 
     int mpi_errno = MPI_SUCCESS;
 #ifdef USE_PMIX_API
-#if PMIX_VERSION_MAJOR >= 4
+#if PMIX_NUMERIC_VERSION >= 0x00040203
     /* Set the PMIX codes of the events for which handlers shall be registered */
     pmix_status_t code_pset_define[1] = { PMIX_PROCESS_SET_DEFINE };
     pmix_status_t code_pset_delete[1] = { PMIX_PROCESS_SET_DELETE };
@@ -1387,7 +1387,7 @@ int MPIR_pmi_register_process_set_event_handlers(void)
     /* Release PMIx info objects */
     PMIX_INFO_DESTRUCT(&info_pset_define[0]);
     PMIX_INFO_DESTRUCT(&info_pset_delete[0]);
-#endif /* PMIX_VERSION_MAJOR >= 4 */
+#endif /* PMIx min version 4.2.3 */
 #endif /* PMIX API */
 
   fn_exit:
@@ -1407,7 +1407,7 @@ int MPIR_pmi_deregister_process_set_event_handlers(void)
 {
     int mpi_errno = MPI_SUCCESS;
 #ifdef USE_PMIX_API
-#if PMIX_VERSION_MAJOR >= 4
+#if PMIX_NUMERIC_VERSION >= 0x00040203
     /* Deregister PMIx event handler for pset define and delete events
      * in a blocking way (last two parameters are NULL) and treat errors */
     pmix_status_t rc;
@@ -1422,7 +1422,7 @@ int MPIR_pmi_deregister_process_set_event_handlers(void)
                          "**pmix_deregister_event_handler", "**pmix_deregister_event_handler %d",
                          rc);
     rc_pset_delete_handler = 0;
-#endif /* PMIX_VERSION_MAJOR >= 4 */
+#endif /* PMIx min version 4.2.3 */
 #endif /* PMIX API */
   fn_exit:
     return mpi_errno;
@@ -1431,7 +1431,7 @@ int MPIR_pmi_deregister_process_set_event_handlers(void)
 }
 
 #ifdef USE_PMIX_API
-#if PMIX_VERSION_MAJOR >= 4
+#if PMIX_NUMERIC_VERSION >= 0x00040203
 /**
  * @brief   Compare two integers. Helper function for qsort algorithm.
  *
@@ -1636,5 +1636,5 @@ void pset_delete_callback(size_t refid, pmix_status_t status, const pmix_proc_t 
     }
 }
 
-#endif /* PMIX_VERSION_MAJOR >= 4 */
+#endif /* PMIx min version 4.2.3 */
 #endif /* PMIX API */
