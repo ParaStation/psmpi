@@ -66,7 +66,7 @@ static int ipup(const void *inbuf, void *outbuf, uintptr_t count, yaksi_type_s *
         rc = yaksuri_seq_pup_is_supported(type, op, &is_supported);
         YAKSU_ERR_CHECK(rc, fn_fail);
 
-        /* FIXME: check request-kind == YAKSI_REQUEST_KIND__CUDA_STREAM
+        /* FIXME: check request-kind == YAKSI_REQUEST_KIND__GPU_STREAM
          *        if stream, we need enqueue seq_ipack/iunpack */
         if (!is_supported) {
             rc = YAKSA_ERR__NOT_SUPPORTED;

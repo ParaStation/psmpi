@@ -42,13 +42,13 @@
 
 /* pkt_entry_alloc_type indicate where the packet entry is allocated from */
 enum rxr_pkt_entry_alloc_type {
-	RXR_PKT_FROM_EFA_TX_POOL = 1, /* packet is allcoated from ep->efa_tx_pkt_pool */
+	RXR_PKT_FROM_EFA_TX_POOL = 1, /* packet is allocated from ep->efa_tx_pkt_pool */
 	RXR_PKT_FROM_EFA_RX_POOL,     /* packet is allocated from ep->efa_rx_pkt_pool */
 	RXR_PKT_FROM_SHM_TX_POOL,     /* packet is allocated from ep->shm_tx_pkt_pool */
 	RXR_PKT_FROM_SHM_RX_POOL,     /* packet is allocated from ep->shm_rx_pkt_pool */
 	RXR_PKT_FROM_UNEXP_POOL,      /* packet is allocated from ep->rx_unexp_pkt_pool */
 	RXR_PKT_FROM_OOO_POOL,	      /* packet is allocated from ep->rx_ooo_pkt_pool */
-	RXR_PKT_FROM_USER_BUFFER,     /* packet is from user proivded buffer */
+	RXR_PKT_FROM_USER_BUFFER,     /* packet is from user provided buffer */
 	RXR_PKT_FROM_READ_COPY_POOL,  /* packet is allocated from ep->rx_readcopy_pkt_pool */
 };
 
@@ -136,7 +136,7 @@ OFI_DECLARE_FREESTACK(struct rxr_robuf, rxr_robuf_fs);
 
 struct rxr_ep;
 
-struct rxr_tx_entry;
+struct rxr_rx_entry;
 
 struct rxr_pkt_entry *rxr_pkt_entry_init_prefix(struct rxr_ep *ep,
 						const struct fi_msg *posted_buf,
@@ -174,6 +174,8 @@ struct rxr_pkt_rx_key {
 	uint64_t msg_id;
 	fi_addr_t addr;
 };
+
+struct rxr_rx_entry;
 
 struct rxr_pkt_rx_map {
 	struct rxr_pkt_rx_key key;

@@ -8,6 +8,24 @@
 
 #include "ofi_impl.h"
 
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+cvars:
+    - name        : MPIR_CVAR_CH4_OFI_DISABLE_INJECT_WRITE
+      category    : CH4_OFI
+      type        : boolean
+      default     : false
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        Avoid use fi_inject_write. For some provider, e.g. tcp;ofi_rxm,
+        inject write may break the synchronization.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
+
 #define MPIDI_OFI_QUERY_ATOMIC_COUNT         0
 #define MPIDI_OFI_QUERY_FETCH_ATOMIC_COUNT   1
 #define MPIDI_OFI_QUERY_COMPARE_ATOMIC_COUNT 2
@@ -23,34 +41,6 @@
             b = dt_ptr->basic_type;             \
         }                                       \
     } while (0)
-
-/* _count: count of data elements of certain datatype
- * _datatype: the datatype
- * _bytes: total byte size
- * Note: _bytes is calculated based on _count & _datatype and passed in here for reusing. */
-MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_count_iovecs(int origin_count,
-                                                    int target_count,
-                                                    int result_count,
-                                                    MPI_Datatype origin_datatype,
-                                                    MPI_Datatype target_datatype,
-                                                    MPI_Datatype result_datatype,
-                                                    size_t origin_bytes,
-                                                    size_t target_bytes,
-                                                    size_t result_bytes,
-                                                    size_t max_pipe, size_t * countp)
-{
-    /* Count the max number of iovecs that will be generated, given the iovs    */
-    /* and maximum data size.  The code adds the iovecs from all three lists    */
-    /* which is an upper bound for all three lists.  This is a tradeoff because */
-    /* it will be very fast to calculate the estimate;  count_iov() only        */
-    /* scans two elements of the datatype to make the estimate                  */
-    MPIR_FUNC_ENTER;
-    *countp = MPIDI_OFI_count_iov(origin_count, origin_datatype, origin_bytes, max_pipe);
-    *countp += MPIDI_OFI_count_iov(target_count, target_datatype, target_bytes, max_pipe);
-    *countp += MPIDI_OFI_count_iov(result_count, result_datatype, result_bytes, max_pipe);
-    MPIR_FUNC_EXIT;
-    return MPI_SUCCESS;
-}
 
 MPL_STATIC_INLINE_PREFIX void MPIDI_OFI_query_acc_atomic_support(MPI_Datatype dt, int query_type,
                                                                  MPI_Op op,
@@ -169,11 +159,11 @@ MPL_STATIC_INLINE_PREFIX bool MPIDI_OFI_prepare_target_mr(int target_rank,
 }
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_put(const void *origin_addr,
-                                              int origin_count,
+                                              MPI_Aint origin_count,
                                               MPI_Datatype origin_datatype,
                                               int target_rank,
                                               MPI_Aint target_disp,
-                                              int target_count,
+                                              MPI_Aint target_count,
                                               MPI_Datatype target_datatype,
                                               MPIR_Win * win, MPIDI_av_entry_t * addr,
                                               MPIDI_winattr_t winattr, MPIR_Request ** sigreq)
@@ -197,7 +187,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_put(const void *origin_addr,
     MPIDI_Datatype_check_contig_size_extent_lb(target_datatype, target_count, target_contig,
                                                target_bytes, target_extent, target_true_lb);
 
-    int vni = MPIDI_OFI_WIN(win).vni;
+    int vni = MPIDI_WIN(win, am_vci);
+    int vni_target = MPIDI_WIN_TARGET_VCI(win, target_rank);
 
     /* zero-byte messages */
     if (unlikely(origin_bytes == 0))
@@ -228,13 +219,14 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_put(const void *origin_addr,
         goto am_fallback;
 
     /* small contiguous messages */
-    if (origin_contig && target_contig && (origin_bytes <= MPIDI_OFI_global.max_buffered_write)) {
+    if (origin_contig && target_contig && (origin_bytes <= MPIDI_OFI_global.max_buffered_write) &&
+        !MPIR_CVAR_CH4_OFI_DISABLE_INJECT_WRITE) {
         MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vni).lock);
         MPIDI_OFI_win_cntr_incr(win);
         MPIDI_OFI_CALL_RETRY(fi_inject_write(MPIDI_OFI_WIN(win).ep,
                                              MPIR_get_contig_ptr(origin_addr, origin_true_lb),
                                              target_bytes,
-                                             MPIDI_OFI_av_to_phys(addr, nic, vni, vni),
+                                             MPIDI_OFI_av_to_phys(addr, nic, vni, vni_target),
                                              target_mr.addr + target_true_lb,
                                              target_mr.mr_key), vni, rdma_inject_write, FALSE);
         MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vni).lock);
@@ -245,20 +237,13 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_put(const void *origin_addr,
     if (origin_contig && target_contig) {
         MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vni).lock);
         if (sigreq) {
-#ifdef MPIDI_CH4_USE_WORK_QUEUES
-            if (*sigreq) {
-                MPIR_Request_add_ref(*sigreq);
-            } else
-#endif
-            {
-                MPIDI_OFI_REQUEST_CREATE(*sigreq, MPIR_REQUEST_KIND__RMA, 0);
-            }
+            MPIDI_OFI_REQUEST_CREATE(*sigreq, MPIR_REQUEST_KIND__RMA, 0);
             flags = FI_COMPLETION | FI_DELIVERY_COMPLETE;
         } else {
             flags = FI_DELIVERY_COMPLETE;
         }
         msg.desc = NULL;
-        msg.addr = MPIDI_OFI_av_to_phys(addr, nic, vni, vni);
+        msg.addr = MPIDI_OFI_av_to_phys(addr, nic, vni, vni_target);
         msg.context = NULL;
         msg.data = 0;
         msg.msg_iov = &iov;
@@ -329,11 +314,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_put(const void *origin_addr,
 
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_put(const void *origin_addr,
-                                              int origin_count,
+                                              MPI_Aint origin_count,
                                               MPI_Datatype origin_datatype,
                                               int target_rank,
                                               MPI_Aint target_disp,
-                                              int target_count, MPI_Datatype target_datatype,
+                                              MPI_Aint target_count, MPI_Datatype target_datatype,
                                               MPIR_Win * win, MPIDI_av_entry_t * av,
                                               MPIDI_winattr_t winattr)
 {
@@ -360,11 +345,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_put(const void *origin_addr,
 }
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get(void *origin_addr,
-                                              int origin_count,
+                                              MPI_Aint origin_count,
                                               MPI_Datatype origin_datatype,
                                               int target_rank,
                                               MPI_Aint target_disp,
-                                              int target_count,
+                                              MPI_Aint target_count,
                                               MPI_Datatype target_datatype,
                                               MPIR_Win * win, MPIDI_av_entry_t * addr,
                                               MPIDI_winattr_t winattr, MPIR_Request ** sigreq)
@@ -387,7 +372,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get(void *origin_addr,
     MPIDI_Datatype_check_contig_size_extent_lb(target_datatype, target_count, target_contig,
                                                target_bytes, target_extent, target_true_lb);
 
-    int vni = MPIDI_OFI_WIN(win).vni;
+    int vni = MPIDI_WIN(win, am_vci);
+    int vni_target = MPIDI_WIN_TARGET_VCI(win, target_rank);
 
     /* zero-byte messages */
     if (unlikely(target_bytes == 0))
@@ -420,14 +406,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get(void *origin_addr,
     if (origin_contig && target_contig) {
         MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vni).lock);
         if (sigreq) {
-#ifdef MPIDI_CH4_USE_WORK_QUEUES
-            if (*sigreq) {
-                MPIR_Request_add_ref(*sigreq);
-            } else
-#endif
-            {
-                MPIDI_OFI_REQUEST_CREATE(*sigreq, MPIR_REQUEST_KIND__RMA, 0);
-            }
+            MPIDI_OFI_REQUEST_CREATE(*sigreq, MPIR_REQUEST_KIND__RMA, 0);
             flags = FI_COMPLETION | FI_DELIVERY_COMPLETE;
         } else {
             flags = 0;
@@ -435,7 +414,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get(void *origin_addr,
         msg.desc = NULL;
         msg.msg_iov = &iov;
         msg.iov_count = 1;
-        msg.addr = MPIDI_OFI_av_to_phys(addr, nic, vni, vni);
+        msg.addr = MPIDI_OFI_av_to_phys(addr, nic, vni, vni_target);
         msg.rma_iov = &riov;
         msg.rma_iov_count = 1;
         msg.context = NULL;
@@ -503,11 +482,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get(void *origin_addr,
 }
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_get(void *origin_addr,
-                                              int origin_count,
+                                              MPI_Aint origin_count,
                                               MPI_Datatype origin_datatype,
                                               int target_rank,
                                               MPI_Aint target_disp,
-                                              int target_count, MPI_Datatype target_datatype,
+                                              MPI_Aint target_count, MPI_Datatype target_datatype,
                                               MPIR_Win * win, MPIDI_av_entry_t * av,
                                               MPIDI_winattr_t winattr)
 {
@@ -535,11 +514,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_get(void *origin_addr,
 }
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_rput(const void *origin_addr,
-                                               int origin_count,
+                                               MPI_Aint origin_count,
                                                MPI_Datatype origin_datatype,
                                                int target_rank,
                                                MPI_Aint target_disp,
-                                               int target_count,
+                                               MPI_Aint target_count,
                                                MPI_Datatype target_datatype,
                                                MPIR_Win * win, MPIDI_av_entry_t * av,
                                                MPIDI_winattr_t winattr, MPIR_Request ** request)
@@ -588,7 +567,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_compare_and_swap(const void *origin_ad
     struct fi_msg_atomic msg;
     int nic = 0;
 
-    int vni = MPIDI_OFI_WIN(win).vni;
+    int vni = MPIDI_WIN(win, am_vci);
+    int vni_target = MPIDI_WIN_TARGET_VCI(win, target_rank);
 
     if (
 #ifndef MPIDI_CH4_DIRECT_NETMOD
@@ -656,7 +636,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_compare_and_swap(const void *origin_ad
     msg.msg_iov = &originv;
     msg.desc = NULL;
     msg.iov_count = 1;
-    msg.addr = MPIDI_OFI_av_to_phys(av, nic, vni, vni);
+    msg.addr = MPIDI_OFI_av_to_phys(av, nic, vni, vni_target);
     msg.rma_iov = &targetv;
     msg.rma_iov_count = 1;
     msg.datatype = fi_dt;
@@ -686,11 +666,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_compare_and_swap(const void *origin_ad
 }
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_accumulate(const void *origin_addr,
-                                                     int origin_count,
+                                                     MPI_Aint origin_count,
                                                      MPI_Datatype origin_datatype,
                                                      int target_rank,
                                                      MPI_Aint target_disp,
-                                                     int target_count,
+                                                     MPI_Aint target_count,
                                                      MPI_Datatype target_datatype,
                                                      MPI_Op op, MPIR_Win * win,
                                                      MPIDI_av_entry_t * addr,
@@ -714,7 +694,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_accumulate(const void *origin_addr,
     if (origin_bytes == 0)
         goto null_op_exit;
 
-    int vni = MPIDI_OFI_WIN(win).vni;
+    int vni = MPIDI_WIN(win, am_vci);
+    int vni_target = MPIDI_WIN_TARGET_VCI(win, target_rank);
 
     /* prepare remote addr and mr key.
      * Continue native path only when all segments are in the same registered memory region */
@@ -758,14 +739,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_accumulate(const void *origin_addr,
         MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vni).lock);
         uint64_t flags;
         if (sigreq) {
-#ifdef MPIDI_CH4_USE_WORK_QUEUES
-            if (*sigreq) {
-                MPIR_Request_add_ref(*sigreq);
-            } else
-#endif
-            {
-                MPIDI_OFI_REQUEST_CREATE(*sigreq, MPIR_REQUEST_KIND__RMA, 0);
-            }
+            MPIDI_OFI_REQUEST_CREATE(*sigreq, MPIR_REQUEST_KIND__RMA, 0);
             flags = FI_COMPLETION | FI_DELIVERY_COMPLETE;
         } else {
             flags = FI_DELIVERY_COMPLETE;
@@ -784,7 +758,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_accumulate(const void *origin_addr,
         msg.msg_iov = &originv;
         msg.desc = NULL;
         msg.iov_count = 1;
-        msg.addr = MPIDI_OFI_av_to_phys(addr, nic, vni, vni);
+        msg.addr = MPIDI_OFI_av_to_phys(addr, nic, vni, vni_target);
         msg.rma_iov = &targetv;
         msg.rma_iov_count = 1;
         msg.datatype = fi_dt;
@@ -827,14 +801,14 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_accumulate(const void *origin_addr,
 }
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get_accumulate(const void *origin_addr,
-                                                         int origin_count,
+                                                         MPI_Aint origin_count,
                                                          MPI_Datatype origin_datatype,
                                                          void *result_addr,
-                                                         int result_count,
+                                                         MPI_Aint result_count,
                                                          MPI_Datatype result_datatype,
                                                          int target_rank,
                                                          MPI_Aint target_disp,
-                                                         int target_count,
+                                                         MPI_Aint target_count,
                                                          MPI_Datatype target_datatype,
                                                          MPI_Op op, MPIR_Win * win,
                                                          MPIDI_av_entry_t * addr,
@@ -858,7 +832,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get_accumulate(const void *origin_addr
     if (target_bytes == 0)
         goto null_op_exit;
 
-    int vni = MPIDI_OFI_WIN(win).vni;
+    int vni = MPIDI_WIN(win, am_vci);
+    int vni_target = MPIDI_WIN_TARGET_VCI(win, target_rank);
 
     /* contiguous messages */
     if (origin_contig && target_contig && result_contig) {
@@ -902,14 +877,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get_accumulate(const void *origin_addr
         MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vni).lock);
         uint64_t flags;
         if (sigreq) {
-#ifdef MPIDI_CH4_USE_WORK_QUEUES
-            if (*sigreq) {
-                MPIR_Request_add_ref(*sigreq);
-            } else
-#endif
-            {
-                MPIDI_OFI_REQUEST_CREATE(*sigreq, MPIR_REQUEST_KIND__RMA, 0);
-            }
+            MPIDI_OFI_REQUEST_CREATE(*sigreq, MPIR_REQUEST_KIND__RMA, 0);
             flags = FI_COMPLETION | FI_DELIVERY_COMPLETE;
         } else {
             flags = FI_DELIVERY_COMPLETE;
@@ -930,7 +898,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get_accumulate(const void *origin_addr
         msg.msg_iov = &originv;
         msg.desc = NULL;
         msg.iov_count = 1;
-        msg.addr = MPIDI_OFI_av_to_phys(addr, nic, vni, vni);
+        msg.addr = MPIDI_OFI_av_to_phys(addr, nic, vni, vni_target);
         msg.rma_iov = &targetv;
         msg.rma_iov_count = 1;
         msg.datatype = fi_dt;
@@ -971,22 +939,18 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get_accumulate(const void *origin_addr
   null_op_exit:
     mpi_errno = MPI_SUCCESS;
     if (sigreq) {
-        /* FIXME: shouldn't this be a lightweight completed request? */
-        MPIDI_CH4_REQUEST_CREATE(*sigreq, MPIR_REQUEST_KIND__RMA, 0, 2);
-        MPIR_ERR_CHKANDSTMT((*sigreq) == NULL, mpi_errno, MPIX_ERR_NOREQ, goto fn_fail,
-                            "**nomemreq");
-        MPIDI_Request_complete_fast(*sigreq);
+        *sigreq = MPIR_Request_create_complete(MPIR_REQUEST_KIND__RMA);
     }
     goto fn_exit;
 }
 
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_raccumulate(const void *origin_addr,
-                                                      int origin_count,
+                                                      MPI_Aint origin_count,
                                                       MPI_Datatype origin_datatype,
                                                       int target_rank,
                                                       MPI_Aint target_disp,
-                                                      int target_count,
+                                                      MPI_Aint target_count,
                                                       MPI_Datatype target_datatype,
                                                       MPI_Op op, MPIR_Win * win,
                                                       MPIDI_av_entry_t * av,
@@ -1027,14 +991,14 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_raccumulate(const void *origin_addr,
 }
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_rget_accumulate(const void *origin_addr,
-                                                          int origin_count,
+                                                          MPI_Aint origin_count,
                                                           MPI_Datatype origin_datatype,
                                                           void *result_addr,
-                                                          int result_count,
+                                                          MPI_Aint result_count,
                                                           MPI_Datatype result_datatype,
                                                           int target_rank,
                                                           MPI_Aint target_disp,
-                                                          int target_count,
+                                                          MPI_Aint target_count,
                                                           MPI_Datatype target_datatype,
                                                           MPI_Op op, MPIR_Win * win,
                                                           MPIDI_av_entry_t * av,
@@ -1094,7 +1058,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_fetch_and_op(const void *origin_addr,
     struct fi_msg_atomic msg;
     MPIR_FUNC_ENTER;
 
-    int vni = MPIDI_OFI_WIN(win).vni;
+    int vni = MPIDI_WIN(win, am_vci);
+    int vni_target = MPIDI_WIN_TARGET_VCI(win, target_rank);
     int nic = 0;
 
     if (
@@ -1158,7 +1123,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_fetch_and_op(const void *origin_addr,
     msg.msg_iov = &originv;
     msg.desc = NULL;
     msg.iov_count = 1;
-    msg.addr = MPIDI_OFI_av_to_phys(av, nic, vni, vni);
+    msg.addr = MPIDI_OFI_av_to_phys(av, nic, vni, vni_target);
     msg.rma_iov = &targetv;
     msg.rma_iov_count = 1;
     msg.datatype = fi_dt;
@@ -1188,11 +1153,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_fetch_and_op(const void *origin_addr,
 }
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_rget(void *origin_addr,
-                                               int origin_count,
+                                               MPI_Aint origin_count,
                                                MPI_Datatype origin_datatype,
                                                int target_rank,
                                                MPI_Aint target_disp,
-                                               int target_count,
+                                               MPI_Aint target_count,
                                                MPI_Datatype target_datatype,
                                                MPIR_Win * win, MPIDI_av_entry_t * av,
                                                MPIDI_winattr_t winattr, MPIR_Request ** request)
@@ -1221,14 +1186,14 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_rget(void *origin_addr,
 
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_get_accumulate(const void *origin_addr,
-                                                         int origin_count,
+                                                         MPI_Aint origin_count,
                                                          MPI_Datatype origin_datatype,
                                                          void *result_addr,
-                                                         int result_count,
+                                                         MPI_Aint result_count,
                                                          MPI_Datatype result_datatype,
                                                          int target_rank,
                                                          MPI_Aint target_disp,
-                                                         int target_count,
+                                                         MPI_Aint target_count,
                                                          MPI_Datatype target_datatype, MPI_Op op,
                                                          MPIR_Win * win, MPIDI_av_entry_t * av,
                                                          MPIDI_winattr_t winattr)
@@ -1266,11 +1231,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_get_accumulate(const void *origin_addr
 }
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_accumulate(const void *origin_addr,
-                                                     int origin_count,
+                                                     MPI_Aint origin_count,
                                                      MPI_Datatype origin_datatype,
                                                      int target_rank,
                                                      MPI_Aint target_disp,
-                                                     int target_count,
+                                                     MPI_Aint target_count,
                                                      MPI_Datatype target_datatype, MPI_Op op,
                                                      MPIR_Win * win, MPIDI_av_entry_t * av,
                                                      MPIDI_winattr_t winattr)

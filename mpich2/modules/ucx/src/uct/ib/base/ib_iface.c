@@ -179,7 +179,15 @@ ucs_config_field_t uct_ib_iface_config_table[] = {
    "Use the local IP address and subnet mask of each network device to route RoCEv2 packets.\n"
    "If set to 'y', only addresses within the interface's subnet will be assumed as reachable.\n"
    "If set to 'n', every remote RoCEv2 IP address is assumed to be reachable from any port.",
-   ucs_offsetof(uct_ib_iface_config_t, rocev2_use_netmask), UCS_CONFIG_TYPE_BOOL},
+   ucs_offsetof(uct_ib_iface_config_t, rocev2_local_subnet), UCS_CONFIG_TYPE_BOOL},
+
+  {"ROCE_SUBNET_PREFIX_LEN", "auto",
+   "Length, in bits, of the subnet prefix to be used for reachability check\n"
+   "when UCX_IB_ROCE_LOCAL_SUBNET is enabled.\n"
+   " - auto  - Detect the subnet prefix length automatically from device address\n"
+   " - inf   - Allow connections only within the same machine and same device\n"
+   " - <num> - Specify a numeric bit-length value for the subnet prefix",
+   ucs_offsetof(uct_ib_iface_config_t, rocev2_subnet_pfx_len), UCS_CONFIG_TYPE_ULUNITS},
 
   {"ROCE_PATH_FACTOR", "1",
    "Multiplier for RoCE LAG UDP source port calculation. The UDP source port\n"
@@ -210,6 +218,20 @@ ucs_config_field_t uct_ib_iface_config_table[] = {
 
   {NULL}
 };
+
+#ifdef ENABLE_STATS
+static ucs_stats_class_t uct_ib_iface_stats_class = {
+    .name          = "ib_iface",
+    .num_counters  = UCT_IB_IFACE_STAT_LAST,
+    .class_id      = UCS_STATS_CLASS_ID_INVALID,
+    .counter_names = {
+        [UCT_IB_IFACE_STAT_RX_COMPLETION]        = "rx_completion",
+        [UCT_IB_IFACE_STAT_TX_COMPLETION]        = "tx_completion",
+        [UCT_IB_IFACE_STAT_RX_COMPLETION_ZIPPED] = "rx_completion_zipped",
+        [UCT_IB_IFACE_STAT_TX_COMPLETION_ZIPPED] = "tx_completion_zipped"
+    }
+};
+#endif /* ENABLE_STATS */
 
 int uct_ib_iface_is_roce(uct_ib_iface_t *iface)
 {
@@ -1011,12 +1033,15 @@ ucs_status_t uct_ib_iface_create_qp(uct_ib_iface_t *iface,
 }
 
 ucs_status_t uct_ib_verbs_create_cq(uct_ib_iface_t *iface, uct_ib_dir_t dir,
+                                    const uct_ib_iface_config_t *config,
                                     const uct_ib_iface_init_attr_t *init_attr,
                                     int preferred_cpu, size_t inl)
 {
     uct_ib_device_t *dev = uct_ib_iface_device(iface);
     unsigned cq_size     = uct_ib_cq_size(iface, init_attr, dir);
     struct ibv_cq *cq;
+    char message[128];
+    int cq_errno;
 #if HAVE_DECL_IBV_CREATE_CQ_EX
     struct ibv_cq_init_attr_ex cq_attr = {};
 
@@ -1031,8 +1056,11 @@ ucs_status_t uct_ib_verbs_create_cq(uct_ib_iface_t *iface, uct_ib_dir_t dir,
                            preferred_cpu);
     }
 
-    if (!cq) {
-        ucs_error("ibv_create_cq(cqe=%d) failed: %m", cq_size);
+    if (cq == NULL) {
+        cq_errno = errno;
+        ucs_snprintf_safe(message, sizeof(message), "ibv_create_cq(cqe=%d)",
+                          cq_size);
+        uct_ib_mem_lock_limit_msg(message, cq_errno, UCS_LOG_LEVEL_ERROR);
         return UCS_ERR_IO_ERROR;
     }
 
@@ -1084,7 +1112,8 @@ uct_ib_iface_create_cq(uct_ib_iface_t *iface, uct_ib_dir_t dir,
         env_var_added = 1;
     }
 #endif
-    status = iface->ops->create_cq(iface, dir, init_attr, preferred_cpu, inl);
+    status = iface->ops->create_cq(iface, dir, config, init_attr, preferred_cpu,
+                                   inl);
     if (status != UCS_OK) {
         goto out_unsetenv;
     }
@@ -1166,108 +1195,138 @@ static void uct_ib_iface_set_num_paths(uct_ib_iface_t *iface,
             ucs_assert(iface->path_bits_count > 0);
             iface->num_paths = iface->path_bits_count;
         }
+
+        if ((iface->num_paths == 1) &&
+            (uct_ib_iface_port_attr(iface)->active_speed == UCT_IB_SPEED_NDR)) {
+            iface->num_paths = 2;
+        }
     } else {
         iface->num_paths = config->num_paths;
     }
 }
 
-int uct_ib_iface_is_roce_v2(uct_ib_iface_t *iface, uct_ib_device_t *dev)
+int uct_ib_iface_is_roce_v2(uct_ib_iface_t *iface)
 {
     return uct_ib_iface_is_roce(iface) &&
            (iface->gid_info.roce_info.ver == UCT_IB_DEVICE_ROCE_V2);
 }
 
 ucs_status_t uct_ib_iface_init_roce_gid_info(uct_ib_iface_t *iface,
-                                             size_t md_config_index)
+                                             unsigned long cfg_gid_index)
 {
     uct_ib_device_t *dev = uct_ib_iface_device(iface);
     uint8_t port_num     = iface->config.port_num;
 
     ucs_assert(uct_ib_iface_is_roce(iface));
 
-    if (md_config_index == UCS_ULUNITS_AUTO) {
+    if (cfg_gid_index == UCS_ULUNITS_AUTO) {
         return uct_ib_device_select_gid(dev, port_num, &iface->gid_info);
     }
 
-    return uct_ib_device_query_gid_info(dev->ibv_context, uct_ib_device_name(dev),
-                                        port_num, md_config_index,
-                                        &iface->gid_info);
+    return uct_ib_device_query_gid_info(dev->ibv_context,
+                                        uct_ib_device_name(dev), port_num,
+                                        cfg_gid_index, &iface->gid_info);
 }
 
-ucs_status_t
-uct_ib_iface_init_roce_mask_info(uct_ib_iface_t *iface, size_t md_config_index)
+static ucs_status_t
+uct_ib_iface_init_roce_addr_prefix(uct_ib_iface_t *iface,
+                                   const uct_ib_iface_config_t *config)
 {
-    uct_ib_device_t *dev = uct_ib_iface_device(iface);
-    uint8_t port_num     = iface->config.port_num;
-
+    uct_ib_device_t *dev               = uct_ib_iface_device(iface);
+    uint8_t port_num                   = iface->config.port_num;
+    uct_ib_device_gid_info_t *gid_info = &iface->gid_info;
+    size_t addr_size, max_prefix_bits;
     struct sockaddr_storage mask;
     char ndev_name[IFNAMSIZ];
-    ucs_status_t status;
-    size_t addr_size;
     const void *mask_addr;
+    ucs_status_t status;
 
     ucs_assert(uct_ib_iface_is_roce(iface));
+
+    if ((gid_info->roce_info.ver != UCT_IB_DEVICE_ROCE_V2) ||
+        !config->rocev2_local_subnet) {
+        iface->addr_prefix_bits = 0;
+        return UCS_OK;
+    }
+
+    status = ucs_sockaddr_inet_addr_size(gid_info->roce_info.addr_family,
+                                         &addr_size);
+    if (status != UCS_OK) {
+        return status;
+    }
+
+    max_prefix_bits = 8 * addr_size;
+    ucs_assertv(max_prefix_bits <= UINT8_MAX, "max_prefix_bits=%zu",
+                max_prefix_bits);
+
+    if (config->rocev2_subnet_pfx_len == UCS_ULUNITS_INF) {
+        /* Maximal prefix length value */
+        iface->addr_prefix_bits = max_prefix_bits;
+        return UCS_OK;
+    } else if (config->rocev2_subnet_pfx_len != UCS_ULUNITS_AUTO) {
+        /* Configured prefix length value */
+        if (config->rocev2_subnet_pfx_len > max_prefix_bits) {
+            ucs_error("invalid parameter for ROCE_SUBNET_PREFIX_LEN: "
+                      "actual %zu, expected <= %zu",
+                      config->rocev2_subnet_pfx_len, max_prefix_bits);
+            return UCS_ERR_INVALID_PARAM;
+        }
+
+        iface->addr_prefix_bits = config->rocev2_subnet_pfx_len;
+        return UCS_OK;
+    }
 
     status = uct_ib_device_get_roce_ndev_name(dev, port_num,
                                               iface->gid_info.gid_index,
                                               ndev_name, sizeof(ndev_name));
     if (status != UCS_OK) {
-        goto mask_info_failed;
+        goto out_mask_info_failed;
     }
 
     status = ucs_netif_get_addr(ndev_name, AF_UNSPEC, NULL,
                                 (struct sockaddr*)&mask);
     if (status != UCS_OK) {
-        goto mask_info_failed;
-    }
-
-    status = ucs_sockaddr_inet_addr_sizeof((struct sockaddr*)&mask, &addr_size);
-    if (status != UCS_OK) {
-        goto mask_info_failed;
+        goto out_mask_info_failed;
     }
 
     mask_addr               = ucs_sockaddr_get_inet_addr((struct sockaddr*)&mask);
-    iface->addr_prefix_bits = (addr_size * 8) -
+    iface->addr_prefix_bits = max_prefix_bits -
                               ucs_count_ptr_trailing_zero_bits(mask_addr,
-                                                               addr_size * 8);
-
+                                                               max_prefix_bits);
     return UCS_OK;
 
-mask_info_failed:
+out_mask_info_failed:
     ucs_debug("failed to detect RoCE subnet mask prefix on "UCT_IB_IFACE_FMT
               " - ignoring mask", UCT_IB_IFACE_ARG(iface));
     iface->addr_prefix_bits = 0;
-    return status;
+    return UCS_OK;
 }
 
-static ucs_status_t uct_ib_iface_init_gid_info(uct_ib_iface_t *iface,
-                                               size_t md_config_index,
-                                               int rocev2_use_netmask)
+static ucs_status_t
+uct_ib_iface_init_gid_info(uct_ib_iface_t *iface,
+                           const uct_ib_iface_config_t *config)
 {
+    uct_ib_md_t *md                    = uct_ib_iface_md(iface);
+    unsigned long cfg_gid_index        = md->config.gid_index;
     uct_ib_device_gid_info_t *gid_info = &iface->gid_info;
     ucs_status_t status;
 
     /* Fill the gid index and the RoCE version */
     if (uct_ib_iface_is_roce(iface)) {
-        status = uct_ib_iface_init_roce_gid_info(iface, md_config_index);
+        status = uct_ib_iface_init_roce_gid_info(iface, cfg_gid_index);
         if (status != UCS_OK) {
             goto out;
         }
 
-        if ((gid_info->roce_info.ver == UCT_IB_DEVICE_ROCE_V2) &&
-            rocev2_use_netmask) {
-            status = uct_ib_iface_init_roce_mask_info(iface, md_config_index);
-            if (status != UCS_OK) {
-                goto out;
-            }
-        } else {
-            iface->addr_prefix_bits = 0;
+        status = uct_ib_iface_init_roce_addr_prefix(iface, config);
+        if (status != UCS_OK) {
+            goto out;
         }
     } else {
-        gid_info->gid_index             = (md_config_index ==
+        gid_info->gid_index             = (cfg_gid_index ==
                                            UCS_ULUNITS_AUTO) ?
                                           UCT_IB_MD_DEFAULT_GID_INDEX :
-                                          md_config_index;
+                                          cfg_gid_index;
         gid_info->roce_info.ver         = UCT_IB_DEVICE_ROCE_ANY;
         gid_info->roce_info.addr_family = 0;
     }
@@ -1397,14 +1456,13 @@ UCS_CLASS_INIT_FUNC(uct_ib_iface_t, uct_iface_ops_t *tl_ops,
         goto err;
     }
 
-    status = uct_ib_iface_init_gid_info(self, ib_md->config.gid_index,
-                                        config->rocev2_use_netmask);
+    status = uct_ib_iface_init_gid_info(self, config);
     if (status != UCS_OK) {
         goto err;
     }
 
     if (config->traffic_class == UCS_ULUNITS_AUTO) {
-        self->config.traffic_class = uct_ib_iface_is_roce_v2(self, dev) ?
+        self->config.traffic_class = uct_ib_iface_is_roce_v2(self) ?
                                      UCT_IB_DEFAULT_ROCEV2_DSCP : 0;
     } else {
         self->config.traffic_class = config->traffic_class;
@@ -1429,10 +1487,16 @@ UCS_CLASS_INIT_FUNC(uct_ib_iface_t, uct_iface_ops_t *tl_ops,
         goto err_destroy_comp_channel;
     }
 
+    status = UCS_STATS_NODE_ALLOC(&self->stats, &uct_ib_iface_stats_class,
+                                  self->super.stats, "-%p", self);
+    if (status != UCS_OK) {
+        goto err_destroy_comp_channel;
+    }
+
     status = uct_ib_iface_create_cq(self, UCT_IB_DIR_TX, init_attr,
                                     config, preferred_cpu);
     if (status != UCS_OK) {
-        goto err_destroy_comp_channel;
+        goto err_destroy_stats;
     }
 
     status = uct_ib_iface_set_moderation(self->cq[UCT_IB_DIR_TX],
@@ -1478,6 +1542,8 @@ err_destroy_recv_cq:
     ibv_destroy_cq(self->cq[UCT_IB_DIR_RX]);
 err_destroy_send_cq:
     ibv_destroy_cq(self->cq[UCT_IB_DIR_TX]);
+err_destroy_stats:
+    UCS_STATS_NODE_FREE(self->stats);
 err_destroy_comp_channel:
     ibv_destroy_comp_channel(self->comp_channel);
 err_cleanup:
@@ -1499,6 +1565,8 @@ static UCS_CLASS_CLEANUP_FUNC(uct_ib_iface_t)
     if (ret != 0) {
         ucs_warn("ibv_destroy_cq(send_cq) returned %d: %m", ret);
     }
+
+    UCS_STATS_NODE_FREE(self->stats);
 
     ret = ibv_destroy_comp_channel(self->comp_channel);
     if (ret != 0) {
@@ -1629,17 +1697,21 @@ ucs_status_t uct_ib_iface_query(uct_ib_iface_t *iface, size_t xport_hdr_len,
     iface_attr->dev_num_paths   = iface->num_paths;
 
     switch (active_speed) {
-    case 1: /* SDR */
+    default:
+        ucs_diag("unknown active_speed on " UCT_IB_IFACE_FMT ": %d, fallback to SDR",
+                 UCT_IB_IFACE_ARG(iface), active_speed);
+        /* Fall through */
+    case UCT_IB_SPEED_SDR:
         iface_attr->latency.c = 5000e-9;
         signal_rate           = 2.5e9;
         encoding              = 8.0/10.0;
         break;
-    case 2: /* DDR */
+    case UCT_IB_SPEED_DDR:
         iface_attr->latency.c = 2500e-9;
         signal_rate           = 5.0e9;
         encoding              = 8.0/10.0;
         break;
-    case 4:
+    case UCT_IB_SPEED_QDR:
         iface_attr->latency.c = 1300e-9;
         if (uct_ib_iface_is_roce(iface)) {
             /* 10/40g Eth  */
@@ -1651,30 +1723,31 @@ ucs_status_t uct_ib_iface_query(uct_ib_iface_t *iface, size_t xport_hdr_len,
             encoding          = 8.0/10.0;
         }
         break;
-    case 8: /* FDR10 */
+    case UCT_IB_SPEED_FDR10:
         iface_attr->latency.c = 700e-9;
         signal_rate           = 10.3125e9;
         encoding              = 64.0/66.0;
         break;
-    case 16: /* FDR */
+    case UCT_IB_SPEED_FDR:
         iface_attr->latency.c = 700e-9;
         signal_rate           = 14.0625e9;
         encoding              = 64.0/66.0;
         break;
-    case 32: /* EDR / 100g Eth */
+    case UCT_IB_SPEED_EDR:
         iface_attr->latency.c = 600e-9;
         signal_rate           = 25.78125e9;
         encoding              = 64.0/66.0;
         break;
-    case 64: /* HDR / HDR100 / 50g Eth */
+    case UCT_IB_SPEED_HDR:
         iface_attr->latency.c = 600e-9;
         signal_rate           = 25.78125e9 * 2;
         encoding              = 64.0/66.0;
         break;
-    default:
-        ucs_error("Invalid active_speed on " UCT_IB_IFACE_FMT ": %d",
-                  UCT_IB_IFACE_ARG(iface), active_speed);
-        return UCS_ERR_IO_ERROR;
+    case UCT_IB_SPEED_NDR:
+        iface_attr->latency.c = 600e-9;
+        signal_rate           = 100e9;
+        encoding              = 64.0/66.0;
+        break;
     }
 
     status = uct_ib_iface_get_numa_latency(iface, &numa_latency);
@@ -1760,6 +1833,10 @@ uct_ib_iface_estimate_perf(uct_iface_h iface, uct_perf_attr_t *perf_attr)
         perf_attr->latency = iface_attr.latency;
     }
 
+    if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_MAX_INFLIGHT_EPS) {
+        perf_attr->max_inflight_eps = SIZE_MAX;
+    }
+
     return UCS_OK;
 }
 
@@ -1806,8 +1883,8 @@ ucs_status_t uct_ib_iface_pre_arm(uct_ib_iface_t *iface)
 
     /* avoid re-arming the interface if any events exists */
     if ((send_cq_count > 0) || (recv_cq_count > 0)) {
-        ucs_trace("arm_cq: got %d send and %d recv events, returning BUSY",
-                  send_cq_count, recv_cq_count);
+        ucs_trace_data("arm_cq: got %d send and %d recv events, returning BUSY",
+                       send_cq_count, recv_cq_count);
         return UCS_ERR_BUSY;
     }
 

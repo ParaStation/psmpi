@@ -85,6 +85,37 @@ extern "C" {
 #define OFI_ORDER_WAW_SET	(FI_ORDER_WAW | FI_ORDER_RMA_WAW | \
 				 FI_ORDER_ATOMIC_WAW)
 
+#define OFI_PRIMARY_TX_CAPS \
+	(FI_MSG | FI_RMA | FI_TAGGED | FI_ATOMIC | FI_MULTICAST | \
+	 FI_READ | FI_WRITE | FI_SEND | \
+	 FI_COLLECTIVE | FI_NAMED_RX_CTX | FI_HMEM)
+
+#define OFI_SECONDARY_TX_CAPS \
+	(FI_TRIGGER | FI_FENCE | FI_RMA_PMEM)
+
+#define OFI_PRIMARY_RX_CAPS \
+	(FI_MSG | FI_RMA | FI_TAGGED | FI_ATOMIC | \
+	 FI_REMOTE_READ | FI_REMOTE_WRITE | FI_RECV | \
+	 FI_DIRECTED_RECV | FI_VARIABLE_MSG | \
+	 FI_COLLECTIVE | FI_HMEM)
+
+#define OFI_SECONDARY_RX_CAPS \
+	(FI_MULTI_RECV | FI_TRIGGER | FI_RMA_PMEM | FI_SOURCE | \
+	 FI_RMA_EVENT | FI_SOURCE_ERR)
+
+#define OFI_PRIMARY_CAPS \
+	(OFI_PRIMARY_TX_CAPS | OFI_PRIMARY_RX_CAPS | \
+	 FI_REMOTE_COMM | FI_LOCAL_COMM)
+
+#define OFI_SECONDARY_CAPS \
+	(OFI_SECONDARY_TX_CAPS | OFI_SECONDARY_RX_CAPS | \
+	 FI_SHARED_AV)
+
+#define OFI_TX_MSG_CAPS (FI_MSG | FI_SEND)
+#define OFI_RX_MSG_CAPS (FI_MSG | FI_RECV)
+#define OFI_TX_RMA_CAPS (FI_RMA | FI_READ | FI_WRITE)
+#define OFI_RX_RMA_CAPS (FI_RMA | FI_REMOTE_READ | FI_REMOTE_WRITE)
+
 #define OFI_IGNORED_TX_CAPS /* older Rx caps not applicable to Tx */ \
 	(FI_REMOTE_READ | FI_REMOTE_WRITE | FI_RECV | FI_DIRECTED_RECV | \
 	 FI_VARIABLE_MSG | FI_MULTI_RECV | FI_SOURCE | FI_RMA_EVENT | \
@@ -92,6 +123,13 @@ extern "C" {
 #define OFI_IGNORED_RX_CAPS /* Older Tx caps not applicable to Rx */ \
 	(FI_READ | FI_WRITE | FI_SEND | FI_FENCE | FI_MULTICAST | \
 	 FI_NAMED_RX_CTX)
+
+#define OFI_TX_OP_FLAGS \
+	(FI_COMMIT_COMPLETE | FI_COMPLETION | FI_DELIVERY_COMPLETE | \
+	 FI_INJECT | FI_INJECT_COMPLETE | FI_MULTICAST | FI_TRANSMIT_COMPLETE)
+
+#define OFI_RX_OP_FLAGS \
+	(FI_COMPLETION | FI_MULTI_RECV)
 
 
 #define sizeof_field(type, field) sizeof(((type *)0)->field)
@@ -198,6 +236,7 @@ struct fi_filter {
 
 extern struct fi_filter prov_log_filter;
 extern struct fi_provider core_prov;
+extern const char *log_prefix;
 
 void ofi_create_filter(struct fi_filter *filter, const char *env_name);
 void ofi_free_filter(struct fi_filter *filter);
@@ -207,17 +246,11 @@ int ofi_nic_close(struct fid *fid);
 struct fid_nic *ofi_nic_dup(const struct fid_nic *nic);
 int ofi_nic_tostr(const struct fid *fid_nic, char *buf, size_t len);
 
-struct fi_provider *ofi_get_hook(const char *name);
-
 void fi_log_init(void);
 void fi_log_fini(void);
 void fi_param_init(void);
 void fi_param_fini(void);
 void fi_param_undefine(const struct fi_provider *provider);
-void ofi_hook_init(void);
-void ofi_hook_fini(void);
-void ofi_hook_install(struct fid_fabric *hfabric, struct fid_fabric **fabric,
-		      struct fi_provider *prov);
 void ofi_remove_comma(char *buffer);
 void ofi_strncatf(char *dest, size_t n, const char *fmt, ...);
 
@@ -264,7 +297,7 @@ static inline void *ofi_get_page_end(const void *addr, size_t page_size)
 static inline size_t
 ofi_get_page_bytes(const void *addr, size_t len, size_t page_size)
 {
-	char *start = ofi_get_page_start(addr, page_size);
+	char *start = (char *)ofi_get_page_start(addr, page_size);
 	char *end = (char *)ofi_get_page_start((const char*)addr + len - 1, page_size)
 		    + page_size;
 	size_t result = end - start;

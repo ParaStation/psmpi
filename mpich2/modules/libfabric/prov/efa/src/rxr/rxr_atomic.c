@@ -75,11 +75,16 @@ rxr_atomic_alloc_tx_entry(struct rxr_ep *rxr_ep,
 	struct rxr_tx_entry *tx_entry;
 	struct fi_msg msg;
 	struct iovec iov[RXR_IOV_LIMIT];
-	size_t datatype_size = ofi_datatype_size(msg_atomic->datatype);
+	size_t datatype_size;
+
+	datatype_size = ofi_datatype_size(msg_atomic->datatype);
+	if (OFI_UNLIKELY(!datatype_size)) {
+		return NULL;
+	}
 
 	tx_entry = ofi_buf_alloc(rxr_ep->tx_entry_pool);
 	if (OFI_UNLIKELY(!tx_entry)) {
-		FI_WARN(&rxr_prov, FI_LOG_EP_CTRL, "TX entries exhausted.\n");
+		FI_DBG(&rxr_prov, FI_LOG_EP_CTRL, "TX entries exhausted.\n");
 		return NULL;
 	}
 
@@ -130,8 +135,12 @@ ssize_t rxr_atomic_generic_efa(struct rxr_ep *rxr_ep,
 	};
 
 	assert(msg->iov_count <= rxr_ep->tx_iov_limit);
-	rxr_perfset_start(rxr_ep, perf_rxr_tx);
-	fastlock_acquire(&rxr_ep->util_ep.lock);
+	efa_perfset_start(rxr_ep, perf_efa_tx);
+
+	if (efa_ep_is_cuda_mr(msg->desc[0]))
+		return -FI_ENOSYS;
+
+	ofi_mutex_lock(&rxr_ep->util_ep.lock);
 
 	if (OFI_UNLIKELY(is_tx_res_full(rxr_ep))) {
 		err = -FI_EAGAIN;
@@ -172,13 +181,17 @@ ssize_t rxr_atomic_generic_efa(struct rxr_ep *rxr_ep,
 		 * support it or not.
 		 */
 		err = rxr_pkt_trigger_handshake(rxr_ep, tx_entry->addr, peer);
-		if (OFI_UNLIKELY(err))
+		if (OFI_UNLIKELY(err)) {
+			rxr_release_tx_entry(rxr_ep, tx_entry);
 			goto out;
+		}
 
 		if (!(peer->flags & RXR_PEER_HANDSHAKE_RECEIVED)) {
+			rxr_release_tx_entry(rxr_ep, tx_entry);
 			err = -FI_EAGAIN;
 			goto out;
 		} else if (!rxr_peer_support_delivery_complete(peer)) {
+			rxr_release_tx_entry(rxr_ep, tx_entry);
 			err = -FI_EOPNOTSUPP;
 			goto out;
 		}
@@ -191,6 +204,7 @@ ssize_t rxr_atomic_generic_efa(struct rxr_ep *rxr_ep,
 		err = rxr_pkt_post_ctrl(rxr_ep, RXR_TX_ENTRY,
 					tx_entry,
 					RXR_DC_WRITE_RTA_PKT,
+					0,
 					0);
 	} else {
 		/*
@@ -201,6 +215,7 @@ ssize_t rxr_atomic_generic_efa(struct rxr_ep *rxr_ep,
 		err = rxr_pkt_post_ctrl(rxr_ep, RXR_TX_ENTRY,
 					tx_entry,
 					req_pkt_type_list[op],
+					0,
 					0);
 	}
 
@@ -210,8 +225,8 @@ ssize_t rxr_atomic_generic_efa(struct rxr_ep *rxr_ep,
 	}
 
 out:
-	fastlock_release(&rxr_ep->util_ep.lock);
-	rxr_perfset_end(rxr_ep, perf_rxr_tx);
+	ofi_mutex_unlock(&rxr_ep->util_ep.lock);
+	efa_perfset_end(rxr_ep, perf_efa_tx);
 	return err;
 }
 
@@ -347,7 +362,12 @@ rxr_atomic_readwritemsg(struct fid_ep *ep,
 	struct fi_rma_ioc shm_rma_iov[RXR_IOV_LIMIT];
 	void *shm_desc[RXR_IOV_LIMIT];
 	struct rxr_atomic_ex atomic_ex;
-	size_t datatype_size = ofi_datatype_size(msg->datatype);
+	size_t datatype_size;
+
+	datatype_size = ofi_datatype_size(msg->datatype);
+	if (OFI_UNLIKELY(!datatype_size)) {
+		return -errno;
+	}
 
 	FI_DBG(&rxr_prov, FI_LOG_EP_DATA, "%s total_len=%ld atomic_op=%d\n", __func__,
 	       ofi_total_ioc_cnt(msg->msg_iov, msg->iov_count), msg->op);
@@ -430,7 +450,12 @@ rxr_atomic_compwritemsg(struct fid_ep *ep,
 	struct fi_rma_ioc shm_rma_iov[RXR_IOV_LIMIT];
 	void *shm_desc[RXR_IOV_LIMIT];
 	struct rxr_atomic_ex atomic_ex;
-	size_t datatype_size = ofi_datatype_size(msg->datatype);
+	size_t datatype_size;
+
+	datatype_size = ofi_datatype_size(msg->datatype);
+	if (OFI_UNLIKELY(!datatype_size)) {
+		return -errno;
+	}
 
 	FI_DBG(&rxr_prov, FI_LOG_EP_DATA,
 	       "%s: iov_len: %lu flags: %lx\n",
@@ -474,7 +499,7 @@ rxr_atomic_compwritev(struct fid_ep *ep,
 	rma_ioc.key = rma_key;
 
 	msg.msg_iov = iov;
-	msg.iov_count = count; 
+	msg.iov_count = count;
 	msg.desc = desc;
 	msg.addr = dest_addr;
 	msg.rma_iov = &rma_ioc;
@@ -528,6 +553,12 @@ int rxr_query_atomic(struct fid_domain *domain,
 		return -FI_EINVAL;
 	}
 
+	if ((datatype == FI_INT128) || (datatype == FI_UINT128)) {
+		FI_WARN(&rxr_prov, FI_LOG_EP_CTRL,
+			"128-bit atomic integers not supported\n");
+		return -FI_EOPNOTSUPP;
+	}
+
 	ret = ofi_atomic_valid(&rxr_prov, datatype, op, flags);
 	if (ret || !attr)
 		return ret;
@@ -543,6 +574,9 @@ int rxr_query_atomic(struct fid_domain *domain,
 		max_atomic_size /= 2;
 
 	attr->size = ofi_datatype_size(datatype);
+	if (OFI_UNLIKELY(!attr->size)) {
+		return -errno;
+	}
 	attr->count = max_atomic_size / attr->size;
 	return 0;
 }

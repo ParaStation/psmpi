@@ -241,7 +241,7 @@ const char* ucs_flags_str(char *str, size_t max,
 
 
 /**
- * Find the number of occurences of a char in the given string.
+ * Find the number of occurrences of a char in the given string.
  *
  * @param  str String buffer to search.
  * @param  c   Character to search in the string.
@@ -338,6 +338,18 @@ char* ucs_string_split(char *str, const char *delim, int count, ...);
 /** Quantifier suffixes for memory units ("K", "M", "G", etc) */
 extern const char *ucs_memunits_suffixes[];
 
+
+/**
+ * Checks if a string is empty.
+ *
+ * @param str String to check.
+ *
+ * @return Whether @str is an empty string.
+ */
+static inline int ucs_string_is_empty(const char *str)
+{
+    return *str == '\0';
+}
 
 END_C_DECLS
 

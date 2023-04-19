@@ -82,7 +82,7 @@ static int multi_setup_fabric(int argc, char **argv)
 	char my_name[FT_MAX_CTRL_MSG];
 	size_t len;
 	int i, ret;
-	struct fi_rma_iov *remote = malloc(sizeof(*remote));
+	struct fi_rma_iov remote;
 
 	hints->ep_attr->type = FI_EP_RDM;
 	hints->mode = FI_CONTEXT;
@@ -176,14 +176,14 @@ static int multi_setup_fabric(int argc, char **argv)
 	}
 
 	if (fi->domain_attr->mr_mode & FI_MR_VIRT_ADDR)
-		remote->addr = (uintptr_t) rx_buf;
+		remote.addr = (uintptr_t) rx_buf;
 	else
-		remote->addr = 0;
+		remote.addr = 0;
 
-	remote->key = fi_mr_key(mr);
-	remote->len = rx_size;
+	remote.key = fi_mr_key(mr);
+	remote.len = rx_size;
 
-	ret = pm_allgather(remote, pm_job.multi_iovs, sizeof(*remote));
+	ret = pm_allgather(&remote, pm_job.multi_iovs, sizeof(remote));
 	if (ret) {
 		FT_ERR("error exchanging rma_iovs\n");
 		goto err;
@@ -196,27 +196,6 @@ static int multi_setup_fabric(int argc, char **argv)
 err:
 	ft_free_res();
 	return ft_exit_code(ret);
-}
-
-static int ft_progress(struct fid_cq *cq, uint64_t total, uint64_t *cq_cntr)
-{
-	struct fi_cq_err_entry comp;
-	int ret;
-
-	ret = fi_cq_read(cq, &comp, 1);
-	if (ret > 0)
-		(*cq_cntr)++;
-
-	if (ret >= 0 || ret == -FI_EAGAIN)
-		return 0;
-
-	if (ret == -FI_EAVAIL) {
-		ret = ft_cq_readerr(cq);
-		(*cq_cntr)++;
-	} else {
-		FT_PRINTERR("fi_cq_read/sread", ret);
-	}
-	return ret;
 }
 
 int multi_msg_recv()

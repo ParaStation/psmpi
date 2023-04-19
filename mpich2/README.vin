@@ -35,6 +35,11 @@ information on bug fixes and new releases.
 1. Getting Started
 ==================
 
+Note: this guide assumes you are building MPICH from one of the MPICH
+release tarballs. If you are starting from a git checkout, you will need
+a few additional steps. Please refer to the wiki page --
+https://wiki.mpich.org. 
+
 The following instructions take you through a sequence of steps to get
 the default configuration (ch3 device, nemesis channel (with TCP and
 shared memory), Hydra process management) of MPICH up and running.
@@ -267,7 +272,6 @@ exist.
     mpich-%VERSION%/config.log (generated in step 1(d) above)
     mpich-%VERSION%/src/mpl/config.log (generated in step 1(d) above)
     mpich-%VERSION%/src/pm/hydra/config.log (generated in step 1(d) above)
-    mpich-%VERSION%/src/pm/hydra/tools/topo/hwloc/hwloc/config.log (generated in step 1(d) above)
 
     DID WE MENTION? DO NOT FORGET TO COMPRESS THESE FILES!
 
@@ -599,11 +603,18 @@ configuration options can be found using:
 ==================================
 
 To test MPICH, we package the MPICH test suite in the MPICH
-distribution. You can run the test suite using:
+distribution. You can run the test suite after "make install" using:
 
      make testing
 
-The results summary will be placed in test/summary.xml
+The results summary will be placed in test/summary.xml.
+
+The test suite can be used independently to test any installed MPI
+implementations:
+
+     cd test/mpi
+     ./configure --with-mpi=/path/to/mpi
+     make testing
 
 -------------------------------------------------------------------------
 

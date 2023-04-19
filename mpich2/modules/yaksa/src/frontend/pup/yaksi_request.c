@@ -75,6 +75,8 @@ void yaksi_request_set_blocking(yaksi_request_s * request)
 
 void yaksi_request_set_stream(yaksi_request_s * request, void *stream)
 {
-    request->kind = YAKSI_REQUEST_KIND__CUDA_STREAM;
+    /* We assume the stream pointer points to cudaStream_t or hipStream_t, i.e.
+     * the stream type dictated by the corresponding gpu driver id */
+    request->kind = YAKSI_REQUEST_KIND__GPU_STREAM;
     request->stream = stream;
 }

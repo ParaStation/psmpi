@@ -35,16 +35,15 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_IPCI_send_lmt(const void *buf, MPI_Aint count
                                                  int rank, int tag, MPIR_Comm * comm,
                                                  int context_offset, MPIDI_av_entry_t * addr,
                                                  MPIDI_IPCI_ipc_attr_t ipc_attr,
-                                                 int vsi_src, int vsi_dst, MPIR_Request ** request)
+                                                 int vsi_src, int vsi_dst, MPIR_Request ** request,
+                                                 bool syncflag, MPIR_Errflag_t errflag)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Request *sreq = NULL;
     MPIDI_IPC_rts_t am_hdr;
     MPIR_CHKLMEM_DECL(1);       /* we may need allocate hdr for non-contig case */
 
-    int flags = 0;
-    int error_bits = 0;
-
+    int flags = syncflag ? MPIDIG_AM_SEND_FLAGS_SYNC : MPIDIG_AM_SEND_FLAGS_NONE;
     MPIR_FUNC_ENTER;
 
     /* Create send request */
@@ -70,7 +69,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_IPCI_send_lmt(const void *buf, MPI_Aint count
     am_hdr.hdr.data_sz = data_sz;
     am_hdr.hdr.rndv_hdr_sz = sizeof(MPIDI_IPC_hdr);
     am_hdr.hdr.sreq_ptr = sreq;
-    am_hdr.hdr.error_bits = error_bits;
+    am_hdr.hdr.error_bits = errflag;
     am_hdr.hdr.flags = flags;
     MPIDIG_AM_SEND_SET_RNDV(am_hdr.hdr.flags, MPIDIG_RNDV_IPC);
 
@@ -133,7 +132,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_IPCI_copy_data(MPIDI_IPC_hdr * ipc_hdr, MPIR_
         mpi_errno = MPIR_Typerep_unpack(src_buf, src_data_sz,
                                         MPIDIG_REQUEST(rreq, buffer), MPIDIG_REQUEST(rreq,
                                                                                      count),
-                                        MPIDIG_REQUEST(rreq, datatype), 0, &actual_unpack_bytes);
+                                        MPIDIG_REQUEST(rreq, datatype), 0, &actual_unpack_bytes,
+                                        MPIR_TYPEREP_FLAG_NONE);
         MPIR_ERR_CHECK(mpi_errno);
         MPIR_Assert(actual_unpack_bytes == src_data_sz);
     } else {
@@ -225,8 +225,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_IPCI_handle_lmt_recv(MPIDI_IPC_hdr * ipc_hdr,
                          &am_hdr, sizeof(am_hdr), local_vci, remote_vci), 1, mpi_errno);
     MPIR_ERR_CHECK(mpi_errno);
 
-    MPIR_Datatype_release_if_not_builtin(MPIDIG_REQUEST(rreq, datatype));
-    MPID_Request_complete(rreq);
+    MPIDIG_REQUEST(rreq, req->target_cmpl_cb) (rreq);
 
   fn_exit:
     MPIR_FUNC_EXIT;

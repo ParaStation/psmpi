@@ -84,17 +84,22 @@ int main(int argc, char **argv)
 	if (!hints)
 		return EXIT_FAILURE;
 
-	while ((op = getopt(argc, argv, "h" CS_OPTS INFO_OPTS BENCHMARK_OPTS)) != -1) {
+	while ((op = getopt_long(argc, argv, "h" CS_OPTS INFO_OPTS API_OPTS
+				 BENCHMARK_OPTS, long_opts, &lopt_idx)) != -1) {
 		switch (op) {
 		default:
+			if (!ft_parse_long_opts(op, optarg))
+				continue;
 			ft_parse_benchmark_opts(op, optarg);
 			ft_parseinfo(op, optarg, hints, &opts);
 			ft_parsecsopts(op, optarg, &opts);
+			ft_parse_api_opts(op, optarg, hints, &opts);
 			break;
 		case '?':
 		case 'h':
 			ft_csusage(argv[0], "Bandwidth test for MSG endpoints.");
 			ft_benchmark_usage();
+			ft_longopts_usage();
 			return EXIT_FAILURE;
 		}
 	}
@@ -103,7 +108,12 @@ int main(int argc, char **argv)
 		opts.dst_addr = argv[optind];
 
 	hints->ep_attr->type = FI_EP_MSG;
-	hints->caps = FI_MSG;
+	if (hints->caps & FI_TAGGED) {
+		opts.options |= FT_OPT_SRX;
+		hints->ep_attr->rx_ctx_cnt = FI_SHARED_CONTEXT;
+	} else {
+		hints->caps |= FI_MSG;
+	}
 	hints->domain_attr->resource_mgmt = FI_RM_ENABLED;
 	hints->domain_attr->mr_mode = opts.mr_mode;
 	hints->domain_attr->threading = FI_THREAD_DOMAIN;

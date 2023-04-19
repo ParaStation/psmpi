@@ -51,6 +51,7 @@ static ssize_t ofi_nd_cq_sread(struct fid_cq *cq, void *buf, size_t count,
 static ssize_t ofi_nd_cq_sreadfrom(struct fid_cq *cq, void *buf, size_t count,
 				   fi_addr_t *src_addr, const void *cond,
 				   int timeout);
+static int ofi_nd_cq_signal(struct fid_cq* fid_cq);
 static const char *ofi_nd_cq_strerror(struct fid_cq *cq, int prov_errno,
 				      const void *err_data, char *buf,
 				      size_t len);
@@ -78,7 +79,7 @@ static struct fi_ops_cq ofi_nd_cq_ops = {
 	.readerr = ofi_nd_cq_readerr,
 	.sread = ofi_nd_cq_sread,
 	.sreadfrom = ofi_nd_cq_sreadfrom,
-	.signal = fi_no_cq_signal,
+	.signal = ofi_nd_cq_signal,
 	.strerror = ofi_nd_cq_strerror
 };
 
@@ -197,6 +198,7 @@ int ofi_nd_cq_open(struct fid_domain *pdomain, struct fi_cq_attr *attr,
 	struct nd_domain *domain = container_of(pdomain, struct nd_domain, fid);
 	assert(domain->adapter);
 	assert(domain->adapter_file);
+	OFI_UNUSED(domain);
 
 	cq->iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 	if (!cq->iocp || cq->iocp == INVALID_HANDLE_VALUE) {
@@ -439,7 +441,7 @@ static ssize_t ofi_nd_cq_sread(struct fid_cq *pcq, void *buf, size_t count,
 			}
 		} while (!cq->count && !OFI_ND_TIMEDOUT());
 
-		if (!cq->count) {
+		if (cq->count <= 0) {
 			res = -FI_EAGAIN;
 			goto fn_complete;
 		}
@@ -479,6 +481,22 @@ static ssize_t ofi_nd_cq_sreadfrom(struct fid_cq *cq, void *buf, size_t count,
 	for (i = 0; i < count; i++)
 		src_addr[i] = FI_ADDR_NOTAVAIL;
 	return ofi_nd_cq_sread(cq, buf, count, cond, timeout);
+}
+
+static int ofi_nd_cq_signal(struct fid_cq* fid_cq)
+{
+	assert(fid_cq);
+	assert(fid_cq->fid.fclass == FI_CLASS_CQ);
+
+	if (fid_cq->fid.fclass != FI_CLASS_CQ)
+		return -FI_EINVAL;
+
+	struct nd_cq* cq = container_of(fid_cq, struct nd_cq, fid);
+
+	InterlockedDecrement(&cq->count);
+	WakeByAddressAll(&cq->count);
+
+	return FI_SUCCESS;
 }
 
 static const char *ofi_nd_cq_strerror(struct fid_cq *cq, int prov_errno,
@@ -643,7 +661,7 @@ void ofi_nd_unexp_2_read(nd_cq_entry *entry, void *unexpected)
 	size_t location_cnt = unexp->buf->header.location_cnt;
 	struct nd_msg_location *locations = unexp->buf->received_buf.locations;
 	struct nd_ep *ep = unexp->ep;
-	HRESULT hr;
+	HRESULT hr = 0;
 	size_t i;
 
 	ofi_nd_release_unexp_entry(unexp);

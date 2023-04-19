@@ -92,6 +92,8 @@ int MPIR_T_pvar_handle_alloc_impl(MPI_T_pvar_session session, int pvar_index,
         hnd->accum = (char *) (hnd) + sizeof(*hnd);
         hnd->offset = (char *) (hnd) + sizeof(*hnd) + bytes * cnt;
         hnd->current = (char *) (hnd) + sizeof(*hnd) + bytes * cnt * 2;
+        /* Initialize the SUM counters, i.e., accum, with zero. */
+        memset(hnd->accum, 0, hnd->bytes * hnd->count);
     }
 
     if (MPIR_T_pvar_is_continuous(hnd))
@@ -100,7 +102,7 @@ int MPIR_T_pvar_handle_alloc_impl(MPI_T_pvar_session session, int pvar_index,
     /* Set starting value of a continuous SUM */
     if (MPIR_T_pvar_is_continuous(hnd) && MPIR_T_pvar_is_sum(hnd)) {
         /* Cache current value of a SUM in offset.
-         * accum is zero since we called CALLOC before.
+         * accum is zero since we initialized it above.
          */
         if (hnd->get_value == NULL)
             MPIR_Memcpy(hnd->offset, hnd->addr, bytes * cnt);
@@ -238,7 +240,6 @@ int MPIR_T_pvar_read_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle, 
                     /* Code should never come here */
                     mpi_errno = MPI_ERR_INTERN;
                     goto fn_fail;
-                    break;
             }
         } else {
             /* A running SUM with callback. Read its current value into handle */
@@ -277,7 +278,6 @@ int MPIR_T_pvar_read_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle, 
                     /* Code should never come here */
                     mpi_errno = MPI_ERR_INTERN;
                     goto fn_fail;
-                    break;
             }
         }
     } else if (MPIR_T_pvar_is_sum(handle) && !MPIR_T_pvar_is_started(handle)) {
@@ -312,7 +312,6 @@ int MPIR_T_pvar_read_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle, 
                     /* Code should never come here */
                     mpi_errno = MPI_ERR_INTERN;
                     goto fn_fail;
-                    break;
             }
         } else {
             /* For remaining handles, their current value are in the handle */
@@ -333,7 +332,6 @@ int MPIR_T_pvar_read_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle, 
                     /* Code should never come here */
                     mpi_errno = MPI_ERR_INTERN;
                     goto fn_fail;
-                    break;
             }
         }
     } else {
@@ -536,7 +534,6 @@ int MPIR_T_pvar_stop_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle)
                 /* Code should never come here */
                 mpi_errno = MPI_ERR_INTERN;
                 goto fn_fail;
-                break;
         }
 
     } else if (MPIR_T_pvar_is_watermark(handle)) {

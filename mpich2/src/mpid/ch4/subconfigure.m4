@@ -4,6 +4,7 @@ dnl MPICH_SUBCFG_BEFORE=src/mpid/common/datatype
 dnl MPICH_SUBCFG_BEFORE=src/mpid/common/thread
 dnl MPICH_SUBCFG_BEFORE=src/mpid/common/bc
 dnl MPICH_SUBCFG_BEFORE=src/mpid/common/genq
+dnl MPICH_SUBCFG_BEFORE=src/mpid/common/stream_workq
 
 dnl _PREREQ handles the former role of mpichprereq, setup_device, etc
 [#] expansion is: PAC_SUBCFG_PREREQ_[]PAC_SUBCFG_AUTO_SUFFIX
@@ -25,6 +26,7 @@ build_mpid_common_datatype=yes
 build_mpid_common_thread=yes
 build_mpid_common_bc=yes
 build_mpid_common_genq=yes
+build_mpid_common_stream_workq=yes
 
 MPID_MAX_THREAD_LEVEL=MPI_THREAD_MULTIPLE
 MPID_MAX_PROCESSOR_NAME=128
@@ -309,20 +311,8 @@ dnl Note: the maximum of 64 is due to the fact that we use 6 bits in the
 dnl request handle to encode pool index
 AC_ARG_WITH(ch4-max-vcis,
     [--with-ch4-max-vcis=<N>
-       Select max number of VCIs to configure (default is 1; minimum is 1; maximum is 64)],
-    [], [with_ch4_max_vcis=default])
-
-if test "$with_ch4_max_vcis" = "default" ; then
-    if test $thread_granularity = MPICH_THREAD_GRANULARITY__VCI ; then
-        with_ch4_max_vcis=64
-    else
-        with_ch4_max_vcis=1
-    fi
-else
-    if test $thread_granularity != MPICH_THREAD_GRANULARITY__VCI ; then
-        AC_MSG_ERROR(Option --with-ch4-max-vcis requires --enable-thread-cs=per-vci)
-    fi
-fi
+       Select max number of VCIs to configure (default is 64; minimum is 1; maximum is 64)],
+    [], [with_ch4_max_vcis=64])
 
 if test $with_ch4_max_vcis -lt 1 -o $with_ch4_max_vcis -gt 64; then
    AC_MSG_ERROR(Number of VCIs must be between 1 and 64)
@@ -374,7 +364,6 @@ AC_ARG_ENABLE(ch4-mt,
     [--enable-ch4-mt=model
        Select model for multi-threading
          direct    - Each thread directly accesses lower-level fabric (default)
-         handoff   - Use the hand-off model (spawns progress thread)
          lockless  - Use the thread safe serialization model supported by the provider
          runtime   - Determine the model at runtime through a CVAR
     ],,enable_ch4_mt=direct)
@@ -383,10 +372,6 @@ case $enable_ch4_mt in
      direct)
          AC_DEFINE([MPIDI_CH4_USE_MT_DIRECT], [1],
             [Define to enable direct multi-threading model])
-        ;;
-     handoff)
-         AC_DEFINE([MPIDI_CH4_USE_MT_HANDOFF], [1],
-            [Define to enable hand-off multi-threading model])
         ;;
      lockless)
          AC_DEFINE([MPIDI_CH4_USE_MT_LOCKLESS], [1],
@@ -400,20 +385,6 @@ case $enable_ch4_mt in
         AC_MSG_ERROR([Multi-threading model ${enable_ch4_mt} is unknown])
         ;;
 esac
-
-#
-# Dependency checks for CH4 MT modes
-# Currently, "handoff" and "runtime" require the following:
-# - izem linked in (--with-zm-prefix)
-# - enable-thread-cs=per-vci
-#
-if test "$enable_ch4_mt" != "direct" -a "$enable_ch4_mt" != "lockless"; then
-    if test "${with_zm_prefix}" == "no" -o "${with_zm_prefix}" == "none" -o "${enable_izem_queue}" != "yes" ; then
-        AC_MSG_ERROR([Multi-threading model `${enable_ch4_mt}` requires izem queue. Set `--enable-izem={queue|all} --with-zm-prefix` and retry.])
-    elif test "${enable_thread_cs}" != "per-vci" -a "${enable_thread_cs}" != "per_vci"; then
-        AC_MSG_ERROR([Multi-threading model `${enable_ch4_mt}` requires `--enable-thread-cs=per-vci`.])
-    fi
-fi
 
 AC_CHECK_HEADERS(sys/mman.h sys/stat.h fcntl.h)
 AC_CHECK_FUNC(mmap, [], [AC_MSG_ERROR(mmap is required to build CH4)])

@@ -52,6 +52,7 @@ enum {
 typedef struct uct_ud_iface_config {
     uct_ib_iface_config_t         super;
     uct_ud_iface_common_config_t  ud_common;
+    double                        linger_timeout;
     double                        peer_timeout;
     double                        min_poke_time;
     double                        timer_tick;
@@ -105,6 +106,8 @@ typedef struct uct_ud_iface_ops {
     uint16_t                  (*send_ctl)(uct_ud_ep_t *ud_ep, uct_ud_send_skb_t *skb,
                                           const uct_ud_iov_t *iov, uint16_t iovcnt,
                                           int flags, int max_log_sge);
+    ucs_status_t              (*ep_new)(const uct_ep_params_t* params,
+                                        uct_ep_h *ep_p);
     void                      (*ep_free)(uct_ep_h ep);
     ucs_status_t              (*create_qp)(uct_ib_iface_t *iface, uct_ib_qp_attr_t *attr,
                                            struct ibv_qp **qp_p);
@@ -180,6 +183,7 @@ struct uct_ud_iface {
         unsigned               timer_sweep_count;
     } tx;
     struct {
+        ucs_time_t           linger_timeout;
         ucs_time_t           peer_timeout;
         ucs_time_t           min_poke_time;
         unsigned             tx_qp_len;
@@ -287,13 +291,13 @@ and connection id.
 Connection id is essentially a counter of endpoints that are created by
 ep_create_connected(). The counter is per destination interface. Purpose of
 conn_sn is to ensure order between multiple CREQ packets and to handle
-simultanuous connection establishment. The case when both sides call
+simultaneous connection establishment. The case when both sides call
 ep_create_connected(). The rule is that connected endpoints must have
 same conn_sn.
 
 2: CREP (dest_ep_id)
 
-Connection reply. It includes id of destination endpoint and optinally ACK
+Connection reply. It includes id of destination endpoint and optionally ACK
 request flag. From this point reliability is handled by UD protocol as
 source and destination endpoint ids are known.
 

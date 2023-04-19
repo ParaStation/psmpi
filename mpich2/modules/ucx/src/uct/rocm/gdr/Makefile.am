@@ -23,7 +23,11 @@ libuct_rocm_gdr_la_SOURCES = \
 	rocm_gdr_iface.c \
 	rocm_gdr_ep.c
 
+PKG_CONFIG_NAME=rocm-gdr
+
 include $(top_srcdir)/config/module.am
+# TODO: enable pkg-config processing when module static build is enabled
+# include $(top_srcdir)/config/module-pkg-config.am
 
 endif
 endif

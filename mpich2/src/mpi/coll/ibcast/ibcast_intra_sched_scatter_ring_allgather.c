@@ -31,9 +31,6 @@ int MPIR_Ibcast_intra_sched_scatter_ring_allgather(void *buffer, MPI_Aint count,
     int mpi_errno = MPI_SUCCESS;
     int comm_size, rank;
     int is_contig;
-    MPI_Aint type_size;
-    MPI_Aint nbytes;
-    MPI_Aint scatter_size, curr_size;
     int i, j, jnext, left, right;
     MPI_Aint true_extent, true_lb;
     void *tmp_buf = NULL;
@@ -49,6 +46,7 @@ int MPIR_Ibcast_intra_sched_scatter_ring_allgather(void *buffer, MPI_Aint count,
         MPIR_Datatype_is_contig(datatype, &is_contig);
     }
 
+    MPI_Aint type_size, nbytes;
     MPIR_Datatype_get_size_macro(datatype, type_size);
     nbytes = type_size * count;
 
@@ -83,6 +81,7 @@ int MPIR_Ibcast_intra_sched_scatter_ring_allgather(void *buffer, MPI_Aint count,
     mpi_errno = MPII_Iscatter_for_bcast_sched(tmp_buf, root, comm_ptr, nbytes, s);
     MPIR_ERR_CHECK(mpi_errno);
 
+    MPI_Aint scatter_size, curr_size;
     /* this is the block size used for the scatter operation */
     scatter_size = (nbytes + comm_size - 1) / comm_size;        /* ceiling division */
 

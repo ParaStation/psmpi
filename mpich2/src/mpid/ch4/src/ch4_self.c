@@ -118,7 +118,7 @@ int MPIDI_Self_finalize(void)
     } while (0)
 
 int MPIDI_Self_isend(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-                     MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
+                     MPIR_Comm * comm, int attr, MPIR_Request ** request)
 {
     MPIR_Request *sreq = NULL;
     MPIR_Request *rreq = NULL;
@@ -149,7 +149,7 @@ int MPIDI_Self_isend(const void *buf, MPI_Aint count, MPI_Datatype datatype, int
 }
 
 int MPIDI_Self_irecv(void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-                     MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
+                     MPIR_Comm * comm, int attr, MPIR_Request ** request)
 {
     MPIR_Request *sreq = NULL;
     MPIR_Request *rreq = NULL;
@@ -182,8 +182,7 @@ int MPIDI_Self_irecv(void *buf, MPI_Aint count, MPI_Datatype datatype, int rank,
     return MPI_SUCCESS;
 }
 
-int MPIDI_Self_iprobe(int rank, int tag, MPIR_Comm * comm, int context_offset,
-                      int *flag, MPI_Status * status)
+int MPIDI_Self_iprobe(int rank, int tag, MPIR_Comm * comm, int attr, int *flag, MPI_Status * status)
 {
     MPIR_Request *sreq = NULL;
     MPIR_FUNC_ENTER;
@@ -209,7 +208,7 @@ int MPIDI_Self_iprobe(int rank, int tag, MPIR_Comm * comm, int context_offset,
     return MPI_SUCCESS;
 }
 
-int MPIDI_Self_improbe(int rank, int tag, MPIR_Comm * comm, int context_offset,
+int MPIDI_Self_improbe(int rank, int tag, MPIR_Comm * comm, int attr,
                        int *flag, MPIR_Request ** message, MPI_Status * status)
 {
     MPIR_Request *sreq = NULL;

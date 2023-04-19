@@ -1073,11 +1073,11 @@ run_test_set()
 	return failed;
 }
 
-static void usage(void)
+static void usage(char *name)
 {
-	ft_unit_usage("av_test", "Unit test for Address Vector (AV)");
+	ft_unit_usage(name, "Unit test for Address Vector (AV)");
 	FT_PRINT_OPTS_USAGE("-g <good_address>", "");
-	FT_PRINT_OPTS_USAGE("-G <bad_address>]", "");
+	FT_PRINT_OPTS_USAGE("-G <bad_address>", "");
 	fprintf(stderr, FT_OPTS_USAGE_FORMAT " (max=%d)\n", "-n <num_good_addr>",
 			"Number of good addresses", MAX_ADDR - 1);
 	FT_PRINT_OPTS_USAGE("-s <source_address>", "");
@@ -1095,7 +1095,8 @@ int main(int argc, char **argv)
 	if (!hints)
 		return EXIT_FAILURE;
 
-	while ((op = getopt(argc, argv, FAB_OPTS "g:G:n:s:h")) != -1) {
+	hints->ep_attr->type = FI_EP_RDM;
+	while ((op = getopt(argc, argv, INFO_OPTS "g:G:n:s:h")) != -1) {
 		switch (op) {
 		case 'g':
 			good_address = optarg;
@@ -1114,7 +1115,7 @@ int main(int argc, char **argv)
 			break;
 		case '?':
 		case 'h':
-			usage();
+			usage(argv[0]);
 			return EXIT_FAILURE;
 
 		}
@@ -1122,6 +1123,12 @@ int main(int argc, char **argv)
 
 	if (good_address == NULL ||  num_good_addr == 0) {
 		printf("Test requires -g and -n\n");
+		return EXIT_FAILURE;
+	}
+
+	if (hints->ep_attr->type != FI_EP_RDM &&
+	    hints->ep_attr->type != FI_EP_DGRAM) {
+		printf("Test only supports FI_EP_RDM and FI_EP_DGRAM\n");
 		return EXIT_FAILURE;
 	}
 
@@ -1136,22 +1143,10 @@ int main(int argc, char **argv)
 	hints->domain_attr->mr_mode = ~(FI_MR_BASIC | FI_MR_SCALABLE);
 	hints->addr_format = FI_SOCKADDR;
 
-	// TODO make this test accept endpoint type argument
-	hints->ep_attr->type = FI_EP_RDM;
 	ret = fi_getinfo(FT_FIVERSION, opts.src_addr, 0, FI_SOURCE, hints, &fi);
-
-	if (ret && ret != -FI_ENODATA) {
+	if (ret) {
 		FT_PRINTERR("fi_getinfo", ret);
 		goto err;
-	}
-
-	if (ret == -FI_ENODATA) {
-		hints->ep_attr->type = FI_EP_DGRAM;
-		ret = fi_getinfo(FT_FIVERSION, opts.src_addr, 0, FI_SOURCE, hints, &fi);
-		if (ret) {
-			FT_PRINTERR("fi_getinfo", ret);
-			goto err;
-		}
 	}
 
 	ret = ft_open_fabric_res();

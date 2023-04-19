@@ -1,14 +1,7 @@
-/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2022 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- *
- *  This code was written by ParTec AG.
- *  Copyright (C) 2022-2023 ParTec AG.  ParTec provides this material
- *  Argonne National Laboratory subject to MPICH Corporate Contributor
- *  License Agreement dated September 30, 2019.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
-
 
 #include <mpi.h>
 #include "mpitest.h"

@@ -112,28 +112,28 @@ void ADIOI_DAOS_Close(ADIO_File fd, int *error_code);
 void ADIOI_DAOS_Delete(const char *filename, int *error_code);
 void ADIOI_DAOS_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t * fcntl_struct, int *error_code);
 void ADIOI_DAOS_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
-void ADIOI_DAOS_ReadContig(ADIO_File fd, void *buf, int count,
+void ADIOI_DAOS_ReadContig(ADIO_File fd, void *buf, MPI_Aint count,
                            MPI_Datatype datatype, int file_ptr_type,
                            ADIO_Offset offset, ADIO_Status * status, int *error_code);
-void ADIOI_DAOS_WriteContig(ADIO_File fd, const void *buf, int count,
+void ADIOI_DAOS_WriteContig(ADIO_File fd, const void *buf, MPI_Aint count,
                             MPI_Datatype datatype, int file_ptr_type,
                             ADIO_Offset offset, ADIO_Status * status, int *error_code);
-void ADIOI_DAOS_IReadContig(ADIO_File fd, void *buf, int count,
+void ADIOI_DAOS_IReadContig(ADIO_File fd, void *buf, MPI_Aint count,
                             MPI_Datatype datatype, int file_ptr_type,
                             ADIO_Offset offset, MPI_Request * request, int *error_code);
-void ADIOI_DAOS_IWriteContig(ADIO_File fd, const void *buf, int count,
+void ADIOI_DAOS_IWriteContig(ADIO_File fd, const void *buf, MPI_Aint count,
                              MPI_Datatype datatype, int file_ptr_type,
                              ADIO_Offset offset, MPI_Request * request, int *error_code);
-void ADIOI_DAOS_ReadStrided(ADIO_File fd, void *buf, int count,
+void ADIOI_DAOS_ReadStrided(ADIO_File fd, void *buf, MPI_Aint count,
                             MPI_Datatype datatype, int file_ptr_type,
                             ADIO_Offset offset, ADIO_Status * status, int *error_code);
-void ADIOI_DAOS_WriteStrided(ADIO_File fd, const void *buf, int count,
+void ADIOI_DAOS_WriteStrided(ADIO_File fd, const void *buf, MPI_Aint count,
                              MPI_Datatype datatype, int file_ptr_type,
                              ADIO_Offset offset, ADIO_Status * status, int *error_code);
-void ADIOI_DAOS_IreadStrided(ADIO_File fd, void *buf, int count,
+void ADIOI_DAOS_IreadStrided(ADIO_File fd, void *buf, MPI_Aint count,
                              MPI_Datatype datatype, int file_ptr_type,
                              ADIO_Offset offset, ADIO_Request * request, int *error_code);
-void ADIOI_DAOS_IwriteStrided(ADIO_File fd, const void *buf, int count,
+void ADIOI_DAOS_IwriteStrided(ADIO_File fd, const void *buf, MPI_Aint count,
                               MPI_Datatype datatype, int file_ptr_type,
                               ADIO_Offset offset, MPI_Request * request, int *error_code);
 #endif /* AD_DAOS_H_INCLUDED */

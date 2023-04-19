@@ -18,7 +18,7 @@ int MPIR_Reduce_intra_binomial(const void *sendbuf,
     int mpi_errno = MPI_SUCCESS;
     int mpi_errno_ret = MPI_SUCCESS;
     MPI_Status status;
-    int comm_size, rank, is_commutative, type_size ATTRIBUTE((unused));
+    int comm_size, rank, is_commutative;
     int mask, relrank, source, lroot;
     MPI_Aint true_lb, true_extent, extent;
     void *tmp_buf;
@@ -53,8 +53,6 @@ int MPIR_Reduce_intra_binomial(const void *sendbuf,
         MPIR_ERR_CHECK(mpi_errno);
     }
 
-    MPIR_Datatype_get_size_macro(datatype, type_size);
-
     /* This code is from MPICH-1. */
 
     /* Here's the algorithm.  Relative to the root, look at the bit pattern in
@@ -69,8 +67,8 @@ int MPIR_Reduce_intra_binomial(const void *sendbuf,
      * results (roundoff error, over/underflows in some cases, etc).
      *
      * Because of the way these are ordered, if root is 0, then this is correct
-     * for both commutative and non-commutitive operations.  If root is not
-     * 0, then for non-commutitive, we use a root of zero and then send
+     * for both commutative and non-commutative operations.  If root is not
+     * 0, then for non-commutative, we use a root of zero and then send
      * the result to the root.  To see this, note that the ordering is
      * mask = 1: (ab)(cd)(ef)(gh)            (odds send to evens)
      * mask = 2: ((ab)(cd))((ef)(gh))        (3,6 send to 0,4)

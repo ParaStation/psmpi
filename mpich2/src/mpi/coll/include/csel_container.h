@@ -12,6 +12,7 @@ void *MPII_Create_container(struct json_object *obj);
 
 typedef enum {
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allgather_intra_brucks,
+    MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allgather_intra_k_brucks,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allgather_intra_recursive_doubling,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allgather_intra_ring,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allgather_inter_local_gather_remote_bcast,
@@ -24,9 +25,14 @@ typedef enum {
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_intra_recursive_doubling,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_intra_reduce_scatter_allgather,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_intra_smp,
+    MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_intra_tree,
+    MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_intra_recexch,
+    MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_intra_ring,
+    MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_intra_k_reduce_scatter_allgather,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_inter_reduce_exchange_bcast,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_allcomm_nb,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Alltoall_intra_brucks,
+    MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Alltoall_intra_k_brucks,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Alltoall_intra_pairwise,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Alltoall_intra_pairwise_sendrecv_replace,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Alltoall_intra_scattered,
@@ -40,7 +46,8 @@ typedef enum {
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Alltoallw_intra_scattered,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Alltoallw_inter_pairwise_exchange,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Alltoallw_allcomm_nb,
-    MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Barrier_intra_dissemination,
+    MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Barrier_intra_k_dissemination,
+    MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Barrier_intra_recexch,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Barrier_intra_smp,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Barrier_inter_bcast,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Barrier_allcomm_nb,
@@ -48,6 +55,8 @@ typedef enum {
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Bcast_intra_scatter_recursive_doubling_allgather,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Bcast_intra_scatter_ring_allgather,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Bcast_intra_smp,
+    MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Bcast_intra_tree,
+    MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Bcast_intra_pipelined_tree,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Bcast_inter_remote_send_local_bcast,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Bcast_allcomm_nb,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Exscan_intra_recursive_doubling,
@@ -105,9 +114,11 @@ typedef enum {
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Ialltoallw_inter_sched_pairwise_exchange,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Ibarrier_intra_sched_recursive_doubling,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Ibarrier_intra_tsp_recexch,
+    MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Ibarrier_intra_tsp_k_dissemination,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Ibarrier_inter_sched_bcast,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Ibcast_intra_tsp_tree,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Ibcast_intra_tsp_scatterv_recexch_allgatherv,
+    MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Ibcast_intra_tsp_scatterv_ring_allgatherv,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Ibcast_intra_tsp_ring,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Ibcast_intra_sched_binomial,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Ibcast_intra_sched_scatter_recursive_doubling_allgather,
@@ -262,7 +273,19 @@ typedef struct {
         struct {
             struct {
                 int k;
+            } intra_k_dissemination;
+            struct {
+                int k;
+                bool single_phase_recv;
+            } intra_recexch;
+        } barrier;
+        struct {
+            struct {
+                int k;
             } intra_tsp_recexch;
+            struct {
+                int k;
+            } intra_tsp_k_dissemination;
         } ibarrier;
         struct {
             struct {
@@ -277,7 +300,34 @@ typedef struct {
                 int scatterv_k;
                 int allgatherv_k;
             } intra_tsp_scatterv_recexch_allgatherv;
+            struct {
+                int scatterv_k;
+            } intra_tsp_scatterv_ring_allgatherv;
         } ibcast;
+        struct {
+            struct {
+                int tree_type;
+                int k;
+                int is_non_blocking;
+            } intra_tree;
+            struct {
+                int tree_type;
+                int k;
+                int is_non_blocking;
+                int chunk_size;
+                int recv_pre_posted;
+            } intra_pipelined_tree;
+        } bcast;
+        struct {
+            struct {
+                int k;
+            } intra_k_brucks;
+        } allgather;
+        struct {
+            struct {
+                int k;
+            } intra_k_brucks;
+        } alltoall;
         struct {
             struct {
                 int k;
@@ -305,6 +355,22 @@ typedef struct {
                 int k;
             } intra_tsp_recexch;
         } ireduce_scatter_block;
+        struct {
+            struct {
+                int tree_type;
+                int k;
+                int chunk_size;
+                int buffer_per_child;
+            } intra_tree;
+            struct {
+                int k;
+                bool single_phase_recv;
+            } intra_recexch;
+            struct {
+                int k;
+                bool single_phase_recv;
+            } intra_k_reduce_scatter_allgather;
+        } allreduce;
         struct {
             struct {
                 int k;

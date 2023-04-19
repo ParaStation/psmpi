@@ -8,10 +8,19 @@
 
 #include "ucx_impl.h"
 
+#define MPIDI_UCX_PROBE_VNIS(vni_dst_) \
+    do { \
+        int vni_src_tmp; \
+        MPIDI_EXPLICIT_VCIS(comm, attr, source, comm->rank, vni_src_tmp, vni_dst_); \
+        if (vni_src_tmp == 0 && vni_dst_ == 0) { \
+            vni_dst_ = MPIDI_get_vci(DST_VCI_FROM_RECVER, comm, source, comm->rank, tag); \
+        } \
+    } while (0)
+
 MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_improbe(int source,
                                                   int tag,
                                                   MPIR_Comm * comm,
-                                                  int context_offset,
+                                                  int attr,
                                                   MPIDI_av_entry_t * addr,
                                                   int *flag, MPIR_Request ** message,
                                                   MPI_Status * status)
@@ -23,8 +32,12 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_improbe(int source,
     ucp_tag_message_h message_h;
     MPIR_Request *req = NULL;
 
-    int vni_dst = MPIDI_UCX_get_vni(DST_VCI_FROM_RECVER, comm, source, comm->rank, tag);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vni_dst).lock);
+    int context_offset = MPIR_PT2PT_ATTR_CONTEXT_OFFSET(attr);
+
+    int vni_dst;
+    MPIDI_UCX_PROBE_VNIS(vni_dst);
+
+    MPIDI_UCX_THREAD_CS_ENTER_VCI(vni_dst);
 
     tag_mask = MPIDI_UCX_tag_mask(tag, source);
     ucp_tag = MPIDI_UCX_recv_tag(tag, source, comm->recvcontext_id + context_offset);
@@ -51,7 +64,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_improbe(int source,
     *message = req;
 
   fn_exit:
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vni_dst).lock);
+    MPIDI_UCX_THREAD_CS_EXIT_VCI(vni_dst);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -61,7 +74,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_improbe(int source,
 MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_iprobe(int source,
                                                  int tag,
                                                  MPIR_Comm * comm,
-                                                 int context_offset,
+                                                 int attr,
                                                  MPIDI_av_entry_t * addr, int *flag,
                                                  MPI_Status * status)
 {
@@ -71,8 +84,12 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_iprobe(int source,
     ucp_tag_recv_info_t info;
     ucp_tag_message_h message_h;
 
-    int vni_dst = MPIDI_UCX_get_vni(DST_VCI_FROM_RECVER, comm, source, comm->rank, tag);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vni_dst).lock);
+    int context_offset = MPIR_PT2PT_ATTR_CONTEXT_OFFSET(attr);
+
+    int vni_dst;
+    MPIDI_UCX_PROBE_VNIS(vni_dst);
+
+    MPIDI_UCX_THREAD_CS_ENTER_VCI(vni_dst);
 
     tag_mask = MPIDI_UCX_tag_mask(tag, source);
     ucp_tag = MPIDI_UCX_recv_tag(tag, source, comm->recvcontext_id + context_offset);
@@ -93,7 +110,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_iprobe(int source,
         *flag = 0;
     }
 
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vni_dst).lock);
+    MPIDI_UCX_THREAD_CS_EXIT_VCI(vni_dst);
 
     return mpi_errno;
 }

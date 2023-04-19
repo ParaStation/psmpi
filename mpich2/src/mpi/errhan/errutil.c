@@ -102,6 +102,11 @@ cvars:
  * their sizes, and masks and shifts that may be used to extract them.
  */
 
+/* whether an errcode is a generic error class */
+#define is_valid_error_class(errcode) \
+    ((errcode >= 0 && errcode <= MPICH_ERR_LAST_CLASS) || \
+     (errcode > MPICH_ERR_FIRST_MPIX && errcode <= MPICH_ERR_LAST_MPIX))
+
 static int did_err_init = FALSE;        /* helps us solve a bootstrapping problem */
 
 /* A few prototypes.  These routines are called from the MPIR_Err_return
@@ -130,10 +135,6 @@ static int checkForUserErrcode(int);
  * Error handlers.  These are handled just like the other opaque objects
  * in MPICH
  */
-
-#ifndef MPIR_ERRHANDLER_PREALLOC
-#define MPIR_ERRHANDLER_PREALLOC 8
-#endif
 
 /* Preallocated errorhandler objects */
 MPIR_Errhandler MPIR_Errhandler_builtin[MPIR_ERRHANDLER_N_BUILTIN];
@@ -855,7 +856,7 @@ static void CombineSpecificCodes(int error1_code, int error2_code, int error2_cl
 
 static const char *get_class_msg(int error_class)
 {
-    if (error_class >= 0 && error_class < MPIR_MAX_ERROR_CLASS_INDEX) {
+    if (is_valid_error_class(error_class)) {
         return classToMsg[error_class];
     } else {
         /* --BEGIN ERROR HANDLING-- */
@@ -912,7 +913,7 @@ static void CombineSpecificCodes(int error1_code, int error2_code, int error2_cl
 
 static const char *get_class_msg(int error_class)
 {
-    if (error_class >= 0 && error_class < MPIR_MAX_ERROR_CLASS_INDEX) {
+    if (is_valid_error_class(error_class)) {
         return generic_err_msgs[class_to_index[error_class]].long_name;
     } else {
         /* --BEGIN ERROR HANDLING-- */
@@ -1411,7 +1412,7 @@ static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen)
 
 static const char *get_class_msg(int error_class)
 {
-    if (error_class >= 0 && error_class < MPIR_MAX_ERROR_CLASS_INDEX) {
+    if (is_valid_error_class(error_class)) {
         return generic_err_msgs[class_to_index[error_class]].long_name;
     } else {
         /* --BEGIN ERROR HANDLING-- */
@@ -1918,6 +1919,7 @@ static void MPIR_Err_stack_init(void)
     int mpi_errno = MPI_SUCCESS;
 
     error_ring_mutex_create(&mpi_errno);
+    MPIR_Assertp(mpi_errno == MPI_SUCCESS);
 
     if (MPIR_CVAR_CHOP_ERROR_STACK < 0) {
         MPIR_CVAR_CHOP_ERROR_STACK = 80;
@@ -1981,8 +1983,9 @@ static int checkErrcodeIsValid(int errcode)
     int ring_id, generic_idx, ring_idx;
 
     /* If the errcode is a class, then it is valid */
-    if (errcode <= MPIR_MAX_ERROR_CLASS_INDEX && errcode >= 0)
+    if (is_valid_error_class(errcode)) {
         return 0;
+    }
 
     if (convertErrcodeToIndexes(errcode, &ring_idx, &ring_id, &generic_idx) != 0) {
         /* --BEGIN ERROR HANDLING-- */

@@ -157,17 +157,18 @@ typedef struct yaksi_type_s {
 
 #define YAKSI_REQUEST_KIND__NONBLOCKING 0
 #define YAKSI_REQUEST_KIND__BLOCKING    1
-#define YAKSI_REQUEST_KIND__CUDA_STREAM 2
+#define YAKSI_REQUEST_KIND__GPU_STREAM  2
 
 typedef struct yaksi_request_s {
     yaksu_handle_t id;
     yaksu_atomic_int cc;        /* completion counter */
-    /* kind takes value of YAKSI_REQUEST_KIND__{NONBLOCKING, BLOCKING, CUDA_STREAM}
+    /* kind takes value of YAKSI_REQUEST_KIND__{NONBLOCKING, BLOCKING, GPU_STREAM}
      * ipack/iunpack are nonblocking; pack/unpack are blocking;
      * pack_stream/unpack_stream sets stream */
     int kind;
     bool always_query_ptr_attr;
-    void *stream;               /* for CUDA, it's pointer to cudaStream_t */
+    void *stream;               /* for CUDA, it's pointer to cudaStream_t
+                                 * for HIP, it's pointer to hipStream_t */
     /* give some private space for the backend to store content */
     yaksur_request_s backend;
 

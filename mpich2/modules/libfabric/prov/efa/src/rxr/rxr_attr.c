@@ -37,7 +37,7 @@
 const uint32_t rxr_poison_value = 0xdeadbeef;
 #endif
 
-#if HAVE_LIBCUDA
+#if HAVE_CUDA || HAVE_NEURON
 #define EFA_HMEM_CAP FI_HMEM
 #else
 #define EFA_HMEM_CAP 0
@@ -82,7 +82,7 @@ struct fi_ep_attr rxr_ep_attr = {
 	.type = FI_EP_RDM,
 	.protocol = FI_PROTO_EFA,
 	.mem_tag_format = FI_TAG_GENERIC,
-	.protocol_version = RXR_CUR_PROTOCOL_VERSION,
+	.protocol_version = RXR_PROTOCOL_VERSION,
 	.max_msg_size = UINT64_MAX,
 	.msg_prefix_size = 0,
 	.tx_ctx_cnt = 1,

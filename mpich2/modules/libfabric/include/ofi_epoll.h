@@ -57,6 +57,8 @@ struct ofi_epollfds_event {
 };
 #endif
 
+extern int ofi_poll_fairness;
+
 enum ofi_pollfds_ctl {
 	POLLFDS_CTL_ADD,
 	POLLFDS_CTL_DEL,
@@ -71,14 +73,26 @@ struct ofi_pollfds_work_item {
 	struct slist_entry entry;
 };
 
+struct ofi_pollfds_ctx {
+	void		*context;
+	int		index;
+	int		hit_cnt;
+	int		hot_index;
+};
+
 struct ofi_pollfds {
 	int		size;
 	int		nfds;
 	struct pollfd	*fds;
-	void		**context;
+	struct ofi_pollfds_ctx *ctx;
 	struct fd_signal signal;
 	struct slist	work_item_list;
-	fastlock_t	lock;
+	ofi_mutex_t	lock;
+
+	int		fairness_cntr;
+	int		hot_size;
+	int		hot_nfds;
+	struct pollfd	*hot_fds;
 };
 
 int ofi_pollfds_create(struct ofi_pollfds **pfds);
@@ -93,13 +107,12 @@ int ofi_pollfds_wait(struct ofi_pollfds *pfds,
 		     int maxevents, int timeout);
 void ofi_pollfds_close(struct ofi_pollfds *pfds);
 
+void ofi_pollfds_coolfd(struct ofi_pollfds *pfds, int fd);
+void ofi_pollfds_heatfd(struct ofi_pollfds *pfds, int fd);
+
 /* OS specific */
-void ofi_pollfds_do_add(struct ofi_pollfds *pfds,
-			struct ofi_pollfds_work_item *item);
-int ofi_pollfds_do_mod(struct ofi_pollfds *pfds, int fd, uint32_t events,
-		       void *context);
-void ofi_pollfds_do_del(struct ofi_pollfds *pfds,
-			struct ofi_pollfds_work_item *item);
+struct ofi_pollfds_ctx *ofi_pollfds_get_ctx(struct ofi_pollfds *pfds, int fd);
+struct ofi_pollfds_ctx *ofi_pollfds_alloc_ctx(struct ofi_pollfds *pfds, int fd);
 
 
 #ifdef HAVE_EPOLL

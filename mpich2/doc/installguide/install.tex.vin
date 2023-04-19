@@ -48,9 +48,10 @@
   Argonne National Laboratory}
 
 \author{
-Pavan Balaji \and Sudheer Chunduri \and William Gropp \and Yanfei Guo
-\and Shintaro Iwasaki \and Travis Koehring \and Rob Latham \and Ken
-Raffenetti \and Min Si \and Rajeev Thakur \and Hui Zhou
+Abdelhalim Amer \and Pavan Balaji \and Wesley Bland \and William Gropp \and
+Yanfei Guo \and Rob Latham \and Huiwei Lu \and Lena Oden \and Antonio J. Pe\~na
+\and Ken Raffenetti \and Sangmin Seo \and Min Si \and Rajeev Thakur \and
+Junchao Zhang \and Xin Zhao
 }
 
 \maketitle
@@ -666,6 +667,15 @@ standard output, along with an XML version of the test results in
 \texttt{mpich/test/mpi}. In addition, running \texttt{make testing} from the
 top-level (\texttt{mpich}) directory will run tests of the commands, such as
 \texttt{mpicc} and \texttt{mpiexec}, that are included with MPICH.
+
+The MPICH test suite can be used to test any MPI implementations, not just MPICH.
+To test a pre-installed MPI implementation, there is no need to configure and
+build MPICH. Go to \texttt{test/mpi}` directory and
+
+\begin{verbatim}
+    ./configure --with-mpi=/path/to/mpi
+    make testing
+\end{verbatim}
 
 Other MPI test suites are available from
 \url{http://www.mcs.anl.gov/mpi/mpi-test/tsuite.html}.  As part of the MPICH

@@ -112,7 +112,8 @@ int fi_mr_enable(struct fid_mr *mr);
   This parameter is reserved for future use and must be 0.
 
 *requested_key*
-: Optional requested remote key associated with registered buffers.
+: Requested remote key associated with registered buffers.  Parameter
+  is ignored if FI_MR_PROV_KEY flag is set in the domain mr_mode bits.
 
 *attr*
 : Memory region attributes
@@ -291,6 +292,13 @@ The following apply to memory registration.
   Similarly, if FI_MR_LOCAL is set, but FI_MR_HMEM is not, the desc
   parameter must either be valid or NULL.
 
+*FI_MR_COLLECTIVE*
+: This bit is associated with the FI_COLLECTIVE capability.  When set,
+  the provider requires that memory regions used in collection operations
+  must explicitly be registered for use with collective calls.  This
+  requires registering regions passed to collective calls using the
+  FI_COLLECTIVE flag.
+
 *Basic Memory Registration*
 : Basic memory registration was deprecated in libfabric version 1.5, but
   is supported for backwards compatibility.  Basic memory registration
@@ -342,7 +350,8 @@ region must provide the key associated with the registration.
 Because MR keys must be provided by a remote process, an application
 can use the requested_key parameter to indicate that a specific key
 value be returned.  Support for user requested keys is provider
-specific and is determined by the mr_mode domain attribute.
+specific and is determined by the FI_MR_PROV_KEY flag value in the
+mr_mode domain attribute.
 
 Remote RMA and atomic operations indicate the location within a
 registered memory region by specifying an address.  The location
@@ -528,11 +537,13 @@ bitwise OR of the following flags:
 
 *FI_SEND*
 : The memory buffer may be used in outgoing message data transfers.  This
-  includes fi_msg and fi_tagged send operations.
+  includes fi_msg and fi_tagged send operations, as well as fi_collective
+  operations.
 
 *FI_RECV*
 : The memory buffer may be used to receive inbound message transfers.
-  This includes fi_msg and fi_tagged receive operations.
+  This includes fi_msg and fi_tagged receive operations, as well as
+  fi_collective operations.
 
 *FI_READ*
 : The memory buffer may be used as the result buffer for RMA read
@@ -556,6 +567,12 @@ bitwise OR of the following flags:
   or atomic operation.  The contents of the memory buffer may be
   modified as a result of such operations.
 
+*FI_COLLECTIVE*
+: This flag provides an explicit indication that the memory buffer may
+  be used with collective operations.  Use of this flag is required if
+  the FI_MR_COLLECTIVE mr_mode bit has been set on the domain.  This flag
+  should be paired with FI_SEND and/or FI_RECV
+
 Note that some providers may not enforce fine grained access permissions.
 For example, a memory region registered for FI_WRITE access may also
 behave as if FI_SEND were specified as well.  Relaxed enforcement of
@@ -575,7 +592,7 @@ can use the requested_key field to indicate that a specific key be
 used by the provider.  This allows applications to use well known key
 values, which can avoid applications needing to exchange and store keys.
 Support for user requested keys is provider specific and is determined
-by the mr_mode domain attribute.
+by the the FI_MR_PROV_KEY flag in the mr_mode domain attribute field.
 
 ## context
 
@@ -616,8 +633,11 @@ requested the FI_HMEM capability.
 : Uses AMD ROCR interfaces such as hsa_memory_allocate and hsa_memory_free.
 
 *FI_HMEM_ZE*
-: Uses Intel L0 ZE interfaces such as zeDriverAllocSharedMem,
+: Uses oneAPI Level Zero interfaces such as zeDriverAllocSharedMem,
   zeDriverFreeMem.
+
+*FI_HMEM_NEURON*
+: Uses the AWS Neuron SDK to support AWS Trainium devices.
 
 ## device
 Reserved 64 bits for device identifier if using non-standard HMEM interface.
@@ -628,6 +648,9 @@ This field is ignore unless the iface field is valid.
 
 *ze*
 : For FI_HMEM_ZE, this is equivalent to the ze_device_handle_t index (int).
+
+*neuron*
+: For FI_HMEM_NEURON, the device identifier for AWS Trainium devices.
 
 # NOTES
 
@@ -652,6 +675,13 @@ portable applications target using those interfaces; however, their use
 does carry extra message and memory footprint overhead, making it less
 desirable for highly scalable apps.
 
+There may be cases where device peer to peer support should not be used or
+cannot be used, such as when the PCIe ACS configuration does not permit the
+transfer. The FI_HMEM_DISABLE_P2P environment variable can be set to notify
+Libfabric that peer to peer transactions should not be used. The provider may
+choose to perform a copy instead, or will fail support for FI_HMEM if the
+provider is unable to do that.
+
 # FLAGS
 
 The follow flag may be specified to any memory registration call.
@@ -672,6 +702,14 @@ The follow flag may be specified to any memory registration call.
   device is specified by the fi_mr_attr fields iface and device. This refers
   to memory regions that were allocated using a device API AllocDevice call
   (as opposed to using the host allocation or unified/shared memory allocation).
+
+*FI_HMEM_HOST_ALLOC*
+: This flag indicates that the memory is owned by the host only. Whether it
+  can be accessed by the device is implementation dependent. The fi_mr_attr
+  field iface is still used to identify the device API, but the field device
+  is ignored. This refers to memory regions that were allocated using a device
+  API AllocHost call (as opposed to using malloc-like host allocation,
+  unified/shared memory allocation, or AllocDevice).
 
 # MEMORY DOMAINS
 
@@ -801,9 +839,9 @@ configure registration caches.
   unified virtual addressing enabled.
 
 *FI_MR_ZE_CACHE_MONITOR_ENABLED*
-: The ZE cache monitor is responsible for detecting ZE device memory
-  (FI_HMEM_ZE) changes made between the device virtual addresses used by an
-  application and the underlying device physical pages. Valid monitor options
+: The ZE cache monitor is responsible for detecting oneAPI Level Zero device
+  memory (FI_HMEM_ZE) changes made between the device virtual addresses used by
+  an application and the underlying device physical pages. Valid monitor options
   are: 0 or 1.
 
 More direct access to the internal registration cache is possible through the

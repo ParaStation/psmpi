@@ -305,11 +305,13 @@ static void uct_cuda_copy_event_desc_init(ucs_mpool_t *mp, void *obj, void *chun
 static void uct_cuda_copy_event_desc_cleanup(ucs_mpool_t *mp, void *obj)
 {
     uct_cuda_copy_event_desc_t *base = (uct_cuda_copy_event_desc_t *) obj;
-    int active;
+    uct_cuda_copy_iface_t *iface     = ucs_container_of(mp,
+                                                        uct_cuda_copy_iface_t,
+                                                        cuda_event_desc);
+    CUcontext cuda_context;
 
-    UCT_CUDADRV_CTX_ACTIVE(active);
-
-    if (active) {
+    UCT_CUDADRV_FUNC_LOG_ERR(cuCtxGetCurrent(&cuda_context));
+    if (uct_cuda_base_context_match(cuda_context, iface->cuda_context)) {
         UCT_CUDA_FUNC_LOG_ERR(cudaEventDestroy(base->event));
     }
 }
@@ -360,6 +362,10 @@ uct_cuda_copy_estimate_perf(uct_iface_h tl_iface, uct_perf_attr_t *perf_attr)
         perf_attr->latency = UCT_CUDA_COPY_IFACE_LATENCY;
     }
 
+    if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_MAX_INFLIGHT_EPS) {
+        perf_attr->max_inflight_eps = SIZE_MAX;
+    }
+
     return UCS_OK;
 }
 
@@ -374,7 +380,8 @@ static ucs_mpool_ops_t uct_cuda_copy_event_desc_mpool_ops = {
 static uct_iface_internal_ops_t uct_cuda_copy_iface_internal_ops = {
     .iface_estimate_perf = uct_cuda_copy_estimate_perf,
     .iface_vfs_refresh   = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
-    .ep_query            = (uct_ep_query_func_t)ucs_empty_function_return_unsupported
+    .ep_query            = (uct_ep_query_func_t)ucs_empty_function_return_unsupported,
+    .ep_invalidate       = (uct_ep_invalidate_func_t)ucs_empty_function_return_unsupported
 };
 
 static UCS_CLASS_INIT_FUNC(uct_cuda_copy_iface_t, uct_md_h md, uct_worker_h worker,
@@ -431,22 +438,23 @@ static UCS_CLASS_INIT_FUNC(uct_cuda_copy_iface_t, uct_md_h md, uct_worker_h work
     }
 
     self->short_stream = 0;
+    self->cuda_context = 0;
 
     return UCS_OK;
 }
 
 static UCS_CLASS_CLEANUP_FUNC(uct_cuda_copy_iface_t)
 {
-    int active;
     cudaStream_t *stream;
+    CUcontext cuda_context;
     ucs_queue_head_t *event_q;
     ucs_memory_type_t src, dst;
 
-    UCT_CUDADRV_CTX_ACTIVE(active);
-
     uct_base_iface_progress_disable(&self->super.super,
                                     UCT_PROGRESS_SEND | UCT_PROGRESS_RECV);
-    if (active) {
+
+    UCT_CUDADRV_FUNC_LOG_ERR(cuCtxGetCurrent(&cuda_context));
+    if (uct_cuda_base_context_match(cuda_context, self->cuda_context)) {
 
         for (src = 0; src < UCS_MEMORY_TYPE_LAST; ++src) {
             for (dst = 0; dst < UCS_MEMORY_TYPE_LAST; ++dst) {

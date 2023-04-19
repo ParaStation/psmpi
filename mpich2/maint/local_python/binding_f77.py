@@ -9,12 +9,8 @@ from local_python import RE
 
 import re
 
-def get_f77_name(func):
-    name = func['name']
-    return name
-
 def dump_f77_c_func(func):
-    name = get_f77_name(func).lower()
+    func_name = get_function_name(func)
     f_mapping = get_kind_map('F90')
     c_mapping = get_kind_map('C')
 
@@ -442,7 +438,11 @@ def dump_f77_c_func(func):
         c_arg_list_B.append("&%s_i" % v)
         code_list_common.append("int %s_i;" % v)
         end_list_common.append("if (*ierr == MPI_SUCCESS) {")
-        end_list_common.append("    *%s = %s_i + 1;" % (v, v))
+        end_list_common.append("    if (%s_i == MPI_UNDEFINED) {" % v)
+        end_list_common.append("        *%s = %s_i;" % (v, v))
+        end_list_common.append("    } else {")
+        end_list_common.append("        *%s = %s_i + 1;" % (v, v))
+        end_list_common.append("    }")
         end_list_common.append("}")
 
     def dump_string_len_inout(v):
@@ -621,9 +621,9 @@ def dump_f77_c_func(func):
                 if p['param_direction'] == 'out':
                     if p['length'] is None:
                         dump_status(p['name'], False, True)
-                    elif RE.match(r'mpi_(wait|test)all', func['name'], re.IGNORECASE):
+                    elif RE.match(r'mpix?_(wait|test)all', func['name'], re.IGNORECASE):
                         dump_statuses(p['name'], "(*count)", "(*count)", False, True)
-                    elif RE.match(r'mpi_(wait|test)some', func['name'], re.IGNORECASE):
+                    elif RE.match(r'mpix?_(wait|test)some', func['name'], re.IGNORECASE):
                         dump_statuses(p['name'], "(*incount)", "(*outcount)", False, True)
                     else:
                         raise Exception("Unhandled: %s - %s" % (func['name'], p['name']))
@@ -828,7 +828,7 @@ def dump_f77_c_func(func):
 
     process_func_parameters()
 
-    c_func_name = func['name']
+    c_func_name = func_name
     if need_ATTR_AINT:
         if RE.match(r'MPI_Attr_(get|put)', func['name'], re.IGNORECASE):
             if RE.m.group(1) == 'put':
@@ -868,7 +868,7 @@ def dump_f77_c_func(func):
     if c_param_list_end:
         param_str += ' ' + ' '.join(c_param_list_end)
 
-    use_name = dump_profiling(name, param_str, return_type)
+    use_name = dump_profiling(func_name, param_str, return_type)
     G.out.append("")
     dump_mpi_decl_begin(use_name, param_str, return_type)
 
@@ -1122,9 +1122,7 @@ def dump_fortran_line(s):
 def check_func_directives(func):
     if 'dir' in func and func['dir'] == "mpit":
         func['_skip_fortran'] = 1
-    elif 'mpix' in func:
-        func['_skip_fortran'] = 1
-    elif RE.match(r'mpix_grequest_', func['name'], re.IGNORECASE):
+    elif RE.match(r'mpix_(grequest_|type_iov)', func['name'], re.IGNORECASE):
         func['_skip_fortran'] = 1
     elif RE.match(r'mpi_\w+_(f|f08|c)2(f|f08|c)$', func['name'], re.IGNORECASE):
         # implemented in mpi_f08_types.f90

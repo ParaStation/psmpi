@@ -20,18 +20,13 @@ AM_FFLAGS = -I.
 LDADD = $(top_builddir)/util/libmtest_f77.la
 mtest_c_objects = $(top_builddir)/util/libmtest_single.la
 
-## FIXME "DEPADD" is a simplemake concept, which we can handle on a per-target
-## prog_DEPENDENCIES variable, but it would be better to figure out the right
-## way to do this
-##DEPADD = @MPILIBLOC@ ../util/mtest.$(OBJEXT)
-
 $(top_builddir)/util/libmtest_f77.la:
 	(cd $(top_builddir)/util && $(MAKE) libmtest_f77.la)
 $(top_builddir)/util/libmtest_single.la:
 	(cd $(top_builddir)/util && $(MAKE) libmtest_single.la)
 
 testing:
-	$(top_builddir)/runtests -srcdir=$(srcdir) -tests=testlist \
+	$(top_srcdir)/runtests -srcdir=$(srcdir) -tests=testlist \
 		-mpiexec=${MPIEXEC} -xmlfile=summary.xml -tapfile=summary.tap -junitfile=summary.junit.xml
 
 CLEANFILES = summary.xml summary.tap summary.junit.xml

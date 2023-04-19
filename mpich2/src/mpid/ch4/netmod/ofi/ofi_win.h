@@ -48,7 +48,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_win_do_progress(MPIR_Win * win, int vni)
             donecount = fi_cntr_read(MPIDI_OFI_WIN(win).cmpl_cntr);
             itercount++;
 
-            if (itercount == 1000) {
+            if (itercount == 1000 && MPIDI_OFI_COUNTER_WAIT_OBJECTS) {
                 ret = fi_cntr_wait(MPIDI_OFI_WIN(win).cmpl_cntr, tcount, 0);
                 MPIDI_OFI_ERR(ret < 0 && ret != -FI_ETIMEDOUT,
                               mpi_errno,
@@ -310,7 +310,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_rma_win_cmpl_hook(MPIR_Win * win)
     MPIR_FUNC_ENTER;
     if (MPIDI_OFI_ENABLE_RMA) {
         /* network completion */
-        int vni = MPIDI_OFI_WIN(win).vni;
+        int vni = MPIDI_WIN(win, am_vci);
         MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vni).lock);
         mpi_errno = MPIDI_OFI_win_do_progress(win, vni);
         MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vni).lock);
@@ -330,7 +330,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_rma_win_local_cmpl_hook(MPIR_Win * win)
     MPIR_FUNC_ENTER;
     if (MPIDI_OFI_ENABLE_RMA) {
         /* network completion */
-        int vni = MPIDI_OFI_WIN(win).vni;
+        int vni = MPIDI_WIN(win, am_vci);
         MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vni).lock);
         mpi_errno = MPIDI_OFI_win_do_progress(win, vni);
         MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vni).lock);
@@ -351,7 +351,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_rma_target_cmpl_hook(int rank ATTRIBUTE((u
     MPIR_FUNC_ENTER;
     if (MPIDI_OFI_ENABLE_RMA) {
         /* network completion */
-        int vni = MPIDI_OFI_WIN(win).vni;
+        int vni = MPIDI_WIN(win, am_vci);
         MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vni).lock);
         mpi_errno = MPIDI_OFI_win_do_progress(win, vni);
         MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vni).lock);
@@ -372,7 +372,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_rma_target_local_cmpl_hook(int rank ATTRIB
     MPIR_FUNC_ENTER;
     if (MPIDI_OFI_ENABLE_RMA) {
         /* network completion */
-        int vni = MPIDI_OFI_WIN(win).vni;
+        int vni = MPIDI_WIN(win, am_vci);
         MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vni).lock);
         mpi_errno = MPIDI_OFI_win_do_progress(win, vni);
         MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vni).lock);

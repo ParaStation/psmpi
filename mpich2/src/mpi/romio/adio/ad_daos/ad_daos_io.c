@@ -18,7 +18,7 @@ enum {
 
 static MPIX_Grequest_class ADIOI_DAOS_greq_class = 0;
 
-static void DAOS_IOContig(ADIO_File fd, void *buf, int count,
+static void DAOS_IOContig(ADIO_File fd, void *buf, MPI_Aint count,
                           MPI_Datatype datatype, int file_ptr_type,
                           ADIO_Offset offset, ADIO_Status * status,
                           MPI_Request * request, int flag, int *error_code)
@@ -116,7 +116,7 @@ static void DAOS_IOContig(ADIO_File fd, void *buf, int count,
     *error_code = MPI_SUCCESS;
 }
 
-void ADIOI_DAOS_ReadContig(ADIO_File fd, void *buf, int count,
+void ADIOI_DAOS_ReadContig(ADIO_File fd, void *buf, MPI_Aint count,
                            MPI_Datatype datatype, int file_ptr_type,
                            ADIO_Offset offset, ADIO_Status * status, int *error_code)
 {
@@ -124,7 +124,7 @@ void ADIOI_DAOS_ReadContig(ADIO_File fd, void *buf, int count,
                   offset, status, NULL, DAOS_READ, error_code);
 }
 
-void ADIOI_DAOS_WriteContig(ADIO_File fd, const void *buf, int count,
+void ADIOI_DAOS_WriteContig(ADIO_File fd, const void *buf, MPI_Aint count,
                             MPI_Datatype datatype, int file_ptr_type,
                             ADIO_Offset offset, ADIO_Status * status, int *error_code)
 {
@@ -132,7 +132,7 @@ void ADIOI_DAOS_WriteContig(ADIO_File fd, const void *buf, int count,
                   offset, status, NULL, DAOS_WRITE, error_code);
 }
 
-void ADIOI_DAOS_IReadContig(ADIO_File fd, void *buf, int count,
+void ADIOI_DAOS_IReadContig(ADIO_File fd, void *buf, MPI_Aint count,
                             MPI_Datatype datatype, int file_ptr_type,
                             ADIO_Offset offset, MPI_Request * request, int *error_code)
 {
@@ -140,7 +140,7 @@ void ADIOI_DAOS_IReadContig(ADIO_File fd, void *buf, int count,
                   offset, NULL, request, DAOS_READ, error_code);
 }
 
-void ADIOI_DAOS_IWriteContig(ADIO_File fd, const void *buf, int count,
+void ADIOI_DAOS_IWriteContig(ADIO_File fd, const void *buf, MPI_Aint count,
                              MPI_Datatype datatype, int file_ptr_type,
                              ADIO_Offset offset, MPI_Request * request, int *error_code)
 {

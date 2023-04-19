@@ -38,11 +38,13 @@ bin_PROGRAMS = \
 	functional/fi_recv_cancel \
 	functional/fi_unexpected_msg \
 	functional/fi_unmap_mem \
-	functional/fi_inj_complete \
+	functional/fi_msg_inject \
 	functional/fi_resmgmt_test \
 	functional/fi_rdm_atomic \
 	functional/fi_multi_recv \
 	functional/fi_bw \
+	functional/fi_rdm_multi_client \
+	functional/fi_loopback \
 	benchmarks/fi_msg_pingpong \
 	benchmarks/fi_msg_bw \
 	benchmarks/fi_rma_bw \
@@ -65,6 +67,7 @@ bin_PROGRAMS = \
 
 dist_bin_SCRIPTS = \
 	scripts/runfabtests.sh \
+	scripts/runfabtests.py \
 	scripts/rft_yaml_to_junit_xml
 
 dist_noinst_SCRIPTS = \
@@ -78,6 +81,7 @@ nobase_dist_config_DATA = \
         test_configs/sockets/quick.test \
 	test_configs/sockets/complete.test \
 	test_configs/sockets/verify.test \
+	test_configs/sockets/sockets.exclude \
         test_configs/udp/all.test \
         test_configs/udp/lat_bw.test \
         test_configs/udp/quick.test \
@@ -107,18 +111,54 @@ nobase_dist_config_DATA = \
 	test_configs/shm/shm.exclude \
 	test_configs/shm/quick.test \
 	test_configs/shm/verify.test \
-	test_configs/efa/efa.exclude
+	test_configs/efa/efa-neuron.exclude \
+	test_configs/efa/efa.exclude \
+	pytest/pytest.ini \
+	pytest/options.yaml \
+	pytest/conftest.py \
+	pytest/common.py \
+	pytest/default/test_av.py \
+	pytest/default/test_cm.py \
+	pytest/default/test_cntr.py \
+	pytest/default/test_cq.py \
+	pytest/default/test_dgram.py \
+	pytest/default/test_dom.py \
+	pytest/default/test_eq.py \
+	pytest/default/test_getinfo.py \
+	pytest/default/test_mr.py \
+	pytest/default/test_msg_inject.py \
+	pytest/default/test_msg.py \
+	pytest/default/test_multinode.py \
+	pytest/default/test_multi_recv.py \
+	pytest/default/test_poll.py \
+	pytest/default/test_rdm.py \
+	pytest/default/test_recv_cancel.py \
+	pytest/default/test_rma_bw.py \
+	pytest/default/test_scalable_ep.py \
+	pytest/default/test_shared_ctx.py \
+	pytest/default/test_ubertest.py \
+	pytest/default/test_unexpected_msg.py \
+	pytest/efa/conftest.py \
+	pytest/efa/test_from_default.py \
+	pytest/efa/test_dgram.py \
+	pytest/efa/test_rdm.py \
+	pytest/efa/test_rma_bw.py \
+	pytest/efa/test_unexpected_msg.py \
+	pytest/efa/test_multi_recv.py \
+	pytest/efa/test_rnr.py \
+	pytest/efa/test_efa_info.py
 
 noinst_LTLIBRARIES = libfabtests.la
 
 libfabtests_la_SOURCES = \
 	common/shared.c \
-	common/jsmn.c \
 	common/hmem.c \
 	common/hmem_cuda.c \
 	common/hmem_rocr.c \
 	common/hmem_ze.c \
+	common/hmem_neuron.c \
 	include/shared.h \
+	include/ft_list.h \
 	include/hmem.h \
 	include/jsmn.h \
 	include/unix/osd.h \
@@ -238,9 +278,9 @@ functional_fi_recv_cancel_SOURCES = \
 	functional/recv_cancel.c
 functional_fi_recv_cancel_LDADD = libfabtests.la
 
-functional_fi_inj_complete_SOURCES = \
-	functional/inj_complete.c
-functional_fi_inj_complete_LDADD = libfabtests.la
+functional_fi_msg_inject_SOURCES = \
+	functional/msg_inject.c
+functional_fi_msg_inject_LDADD = libfabtests.la
 
 functional_fi_resmgmt_test_SOURCES = \
 	functional/resmgmt_test.c
@@ -257,6 +297,14 @@ functional_fi_multi_recv_LDADD = libfabtests.la
 functional_fi_bw_SOURCES = \
 	functional/bw.c
 functional_fi_bw_LDADD = libfabtests.la
+
+functional_fi_rdm_multi_client_SOURCES = \
+	functional/rdm_multi_client.c
+functional_fi_rdm_multi_client_LDADD = libfabtests.la
+
+functional_fi_loopback_SOURCES = \
+	functional/loopback.c
+functional_fi_loopback_LDADD = libfabtests.la
 
 benchmarks_fi_msg_pingpong_SOURCES = \
 	benchmarks/msg_pingpong.c \
@@ -427,7 +475,9 @@ dummy_man_pages = \
 	man/man1/fi_getinfo_test.1 \
 	man/man1/fi_mr_test.1 \
 	man/man1/fi_bw.1 \
-	man/man1/fi_ubertest.1
+	man/man1/fi_rdm_multi_client.1 \
+	man/man1/fi_ubertest.1 \
+	man/man1/fi_efa_ep_rnr_retry.1
 
 nroff:
 	@for file in $(real_man_pages); do \
@@ -435,6 +485,7 @@ nroff:
             perl $(top_srcdir)/config/md2nroff.pl --source=$(top_srcdir)/$$source.md; \
         done
 
+include prov/efa/Makefile.include
 
 man_MANS = $(real_man_pages) $(dummy_man_pages)
 

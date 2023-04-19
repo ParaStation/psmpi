@@ -13,7 +13,7 @@ AC_DEFUN([PAC_CONFIG_MPL_EMBEDDED],[
 
 AC_DEFUN([PAC_CONFIG_MPL],[
     dnl NOTE: we only support embedded mpl
-    m4_if(mpl_embedded_dir, [src/mpl], [
+    m4_ifdef([MPICH_CONFIGURE], [
         dnl ---- the main MPICH configure ----
         PAC_CONFIG_MPL_EMBEDDED
         PAC_APPEND_FLAG([-I${main_top_builddir}/src/mpl/include], [CPPFLAGS])
@@ -24,13 +24,26 @@ AC_DEFUN([PAC_CONFIG_MPL],[
         dnl ---- sub-configure (e.g. hydra, romio) ----
         if test "$FROM_MPICH" = "yes"; then
             dnl skip ROMIO since mpich already links libmpl.la
-            m4_if(AC_PACKAGE_NAME, [ROMIO], [], [
+            if test "$pac_skip_mpl_lib" != "yes" ; then
                 mpl_lib="$main_top_builddir/src/mpl/libmpl.la"
-            ])
+            fi
             mpl_includedir="-I$main_top_builddir/src/mpl/include -I$main_top_srcdir/src/mpl/include"
             # source variables that are configured by MPL
-            AC_MSG_NOTICE([sourcing $main_top_srcdir/src/mpl/localdefs])
+            AC_MSG_NOTICE([sourcing $main_top_builddir/src/mpl/localdefs])
             . $main_top_builddir/src/mpl/localdefs
+        elif test "$FROM_HYDRA" = "yes"; then
+            m4_ifdef([HYDRA_CONFIGURE], [
+                PAC_CONFIG_MPL_EMBEDDED
+                mpl_srcdir="mpl_embedded_dir"
+                mpl_dist_srcdir="mpl_embedded_dir"
+                mpl_lib="mpl_embedded_dir/libmpl.la"
+                mpl_includedir='-I$(top_builddir)/mpl_embedded_dir/include -I$(top_srcdir)/mpl_embedded_dir/include'
+            ], [
+                dnl both mpl and pmi are in modules/
+                mpl_includedir="-I$srcdir/../mpl/include -I../mpl/include"
+                AC_MSG_NOTICE([sourcing ../mpl/localdefs])
+                . ../mpl/localdefs
+            ])
         else
             PAC_CONFIG_MPL_EMBEDDED
             mpl_srcdir="mpl_embedded_dir"
@@ -60,7 +73,7 @@ AC_DEFUN([PAC_CONFIG_HWLOC_EMBEDDED],[
 ])
 
 AC_DEFUN([PAC_CONFIG_HWLOC],[
-    dnl minor difference from e.g. mpl and zm -- we'll prioritize system hwloc by default
+    dnl minor difference from e.g. mpl -- we'll prioritize system hwloc by default
     PAC_CHECK_HEADER_LIB_OPTIONAL([hwloc],[hwloc.h],[hwloc],[hwloc_topology_set_pid])
     if test "$pac_have_hwloc" = "yes" -a "$with_hwloc" != "embedded"; then
         AC_MSG_CHECKING([if hwloc meets minimum version requirement])
@@ -79,24 +92,22 @@ AC_DEFUN([PAC_CONFIG_HWLOC],[
     if test "$pac_have_hwloc" = "no" -a "$with_hwloc" != "no"; then
         with_hwloc=embedded
         pac_have_hwloc=yes
+        # make sure subsystems such as hydra will use embedded hwloc consistently
+        subsys_config_args="$subsys_config_args --with-hwloc=embedded"
     fi
 
     if test "$with_hwloc" = "embedded" ; then
-        m4_if(hwloc_embedded_dir, [modules/hwloc], [
+        m4_ifdef([MPICH_CONFIGURE], [
             dnl ---- the main MPICH configure ----
-            PAC_CONFIG_HWLOC_EMBEDDED([$VISIBILITY_CFLAGS])
-            hwlocsrcdir="${main_top_builddir}/modules/hwloc"
-            hwloclib="${main_top_builddir}/modules/hwloc/hwloc/libhwloc_embedded.la"
+            hwloclib="modules/hwloc/hwloc/libhwloc_embedded.la"
+            if test -e "${use_top_srcdir}/modules/PREBUILT" -a -e "$hwloclib"; then
+                hwlocsrcdir=""
+            else
+                hwlocsrcdir="${main_top_builddir}/modules/hwloc"
+                PAC_CONFIG_HWLOC_EMBEDDED([$VISIBILITY_CFLAGS])
+            fi
             PAC_APPEND_FLAG([-I${use_top_srcdir}/modules/hwloc/include],[CPPFLAGS])
             PAC_APPEND_FLAG([-I${main_top_builddir}/modules/hwloc/include],[CPPFLAGS])
-
-            # capture the line -- S["HWLOC_EMBEDDED_LIBS"]="-lm "
-            hwloc_embedded_libs=$(awk -F'"' '/^S."HWLOC_EMBEDDED_LIBS"/ {print $[]4}' modules/hwloc/config.status)
-            echo "hwloc_embedded_libs = $hwloc_embedded_libs"
-            if test -n "$hwloc_embedded_libs" ; then
-                dnl TODO: split and add individual lib
-                PAC_LIBS_ADD([$hwloc_embedded_libs])
-            fi
         ], [
             dnl ---- sub-configure (hydra) ----
             if test "$FROM_MPICH" = "yes"; then

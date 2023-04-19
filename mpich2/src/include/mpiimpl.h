@@ -6,8 +6,52 @@
 #ifndef MPIIMPL_H_INCLUDED
 #define MPIIMPL_H_INCLUDED
 
+/*****************************************************************************
+ * We use the following ordering of information in this file:
+ *
+ *   1. Start with independent headers that do not have any
+ *      dependencies on the rest of the MPICH implementation (e.g.,
+ *      mpl, opa, mpi.h).
+ *
+ *   2. Next is forward declarations of MPIR structures (MPIR_Comm,
+ *      MPIR_Win, etc.).
+ *
+ *   3. After that we have device-independent headers (MPIR
+ *      functionality that does not have any dependency on MPID).
+ *
+ *   4. Next is the device "pre" header that defines device-level
+ *      initial objects that would be used by the MPIR structures.
+ *
+ *   5. Then comes the device-dependent MPIR functionality, with the
+ *      actual definitions of structures, function prototypes, etc.
+ *      This functionality can only rely on the device "pre"
+ *      functionality.
+ *
+ *   6. Finally, we'll add the device "post" header that is allowed to
+ *      use anything from the MPIR layer.
+ *****************************************************************************/
+
+
+/*****************************************************************************/
+/*********************** PART 1: INDEPENDENT HEADERS *************************/
+/*****************************************************************************/
+
 #include "mpichconfconst.h"
 #include "mpichconf.h"
+
+/* pmix.h contains inline functions that calls malloc, calloc, and free,
+   and it will break with MPL's memory tracing when enabled.
+   Make sure it is included *before* mpl.h.
+*/
+#include "mpir_pmi.h"
+
+/* if we are defining this, we must define it before including mpl.h */
+#if defined(MPICH_DEBUG_MEMINIT)
+#define MPL_VG_ENABLED 1
+#endif
+
+#include "mpl.h"
+#include "mpi.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,50 +119,6 @@ int usleep(useconds_t usec);
 int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 #endif
 
-/* pmix.h contains inline functions that calls malloc, calloc, and free,
-   and it will break with MPL's memory tracing when enabled.
-   Make sure it is included *before* mpl.h.
-*/
-#include "mpir_pmi.h"
-
-/*****************************************************************************
- * We use the following ordering of information in this file:
- *
- *   1. Start with independent headers that do not have any
- *      dependencies on the rest of the MPICH implementation (e.g.,
- *      mpl, opa, mpi.h).
- *
- *   2. Next is forward declarations of MPIR structures (MPIR_Comm,
- *      MPIR_Win, etc.).
- *
- *   3. After that we have device-independent headers (MPIR
- *      functionality that does not have any dependency on MPID).
- *
- *   4. Next is the device "pre" header that defines device-level
- *      initial objects that would be used by the MPIR structures.
- *
- *   5. Then comes the device-dependent MPIR functionality, with the
- *      actual definitions of structures, function prototypes, etc.
- *      This functionality can only rely on the device "pre"
- *      functionality.
- *
- *   6. Finally, we'll add the device "post" header that is allowed to
- *      use anything from the MPIR layer.
- *****************************************************************************/
-
-
-/*****************************************************************************/
-/*********************** PART 1: INDEPENDENT HEADERS *************************/
-/*****************************************************************************/
-
-/* if we are defining this, we must define it before including mpl.h */
-#if defined(MPICH_DEBUG_MEMINIT)
-#define MPL_VG_ENABLED 1
-#endif
-
-#include "mpl.h"
-#include "mpi.h"
-
 
 /*****************************************************************************/
 /*********************** PART 2: FORWARD DECLARATION *************************/
@@ -153,6 +153,9 @@ typedef struct MPIR_Pset MPIR_Pset;
 
 struct MPIR_Pset_array;
 typedef struct MPIR_Pset_array MPIR_Pset_array;
+
+struct MPIR_Stream;
+typedef struct MPIR_Stream MPIR_Stream;
 
 /*****************************************************************************/
 /******************* PART 3: DEVICE INDEPENDENT HEADERS **********************/
@@ -204,6 +207,8 @@ typedef struct MPIR_Pset_array MPIR_Pset_array;
 /*****************************************************************************/
 
 #include "mpir_thread.h"        /* come first as mutexes are often depended on, e.g. request */
+#include "mpir_stream.h"
+#include "mpir_err.h"
 #include "mpir_attr.h"
 #include "mpir_group.h"
 #include "mpir_comm.h"
@@ -213,7 +218,6 @@ typedef struct MPIR_Pset_array MPIR_Pset_array;
 #include "mpir_coll.h"
 #include "mpir_csel.h"
 #include "mpir_func.h"
-#include "mpir_err.h"
 #include "mpir_nbc.h"
 #include "mpir_bsend.h"
 #include "mpir_process.h"

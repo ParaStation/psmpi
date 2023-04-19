@@ -65,6 +65,8 @@ static ssize_t ofi_nd_no_injectdata(struct fid_ep *ep, const void *buf, size_t l
 				    uint64_t data, fi_addr_t dest_addr);
 static int ofi_nd_srx_close(struct fid *fid);
 static ssize_t ofi_nd_srx_cancel(fid_t fid, void *context);
+extern int ofi_nd_ep_getopt(struct fid* ep, int level, int optname,
+	void* optval, size_t* optlen);
 
 struct fi_ops_msg ofi_nd_srx_msg = {
 	.size = sizeof(ofi_nd_srx_msg),
@@ -96,7 +98,7 @@ static struct fid ofi_nd_fid = {
 static struct fi_ops_ep ofi_nd_ep_ops = {
 	.size = sizeof(ofi_nd_ep_ops),
 	.cancel = ofi_nd_srx_cancel,
-	.getopt = fi_no_getopt,
+	.getopt = ofi_nd_ep_getopt,
 	.setopt = fi_no_setopt,
 	.tx_ctx = fi_no_tx_ctx,
 	.rx_ctx = fi_no_rx_ctx,
@@ -188,7 +190,7 @@ static ssize_t ofi_nd_srx_recvmsg(struct fid_ep *pep, const struct fi_msg *msg,
 		entry->iov[i] = msg->msg_iov[i];
 	}
 
-	/* store allocated entry in 1st byte of internal data of context */
+	/* store allocated entry in 1st pointer of internal data of context */
 	if (msg->context)
 		ND_FI_CONTEXT(msg->context) = entry;
 

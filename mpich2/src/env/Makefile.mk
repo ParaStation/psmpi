@@ -23,9 +23,9 @@ if BUILD_FC_BINDING
 bin_SCRIPTS += src/env/mpifort
 endif BUILD_FC_BINDING
 
-if BUILD_CXX_BINDING
+if INSTALL_MPICXX
 bin_SCRIPTS += src/env/mpicxx
-endif BUILD_CXX_BINDING
+endif INSTALL_MPICXX
 
 # create a local copy of the compiler wrapper that will actually be installed
 if BUILD_BASH_SCRIPTS
@@ -58,7 +58,6 @@ DISTCLEANFILES += $(top_builddir)/src/env/cc_shlib.conf  \
 
 wrapper_doc_src = src/env/mpicc.txt \
                   src/env/mpicxx.txt \
-                  src/env/mpifort.txt \
-                  src/env/mpiexec.txt
+                  src/env/mpifort.txt
 doc1_src_txt += $(wrapper_doc_src)
 EXTRA_DIST += $(wrapper_doc_src)

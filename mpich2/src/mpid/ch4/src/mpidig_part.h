@@ -13,7 +13,7 @@ void MPIDIG_precv_matched(MPIR_Request * part_req);
 int MPIDIG_mpi_psend_init(const void *buf, int partitions, MPI_Aint count,
                           MPI_Datatype datatype, int dest, int tag,
                           MPIR_Comm * comm, MPIR_Info * info, MPIR_Request ** request);
-int MPIDIG_mpi_precv_init(void *buf, int partitions, int count,
+int MPIDIG_mpi_precv_init(void *buf, int partitions, MPI_Aint count,
                           MPI_Datatype datatype, int source, int tag,
                           MPIR_Comm * comm, MPIR_Info * info, MPIR_Request ** request);
 
@@ -35,6 +35,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_part_start(MPIR_Request * request)
     if (request->kind == MPIR_REQUEST_KIND__PART_RECV && MPIDIG_PART_REQUEST(request, peer_req_ptr)) {
         mpi_errno = MPIDIG_part_issue_cts(request);
     }
+
+    MPIR_Part_request_activate(request);
 
     MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(0).lock);
     MPIR_FUNC_EXIT;

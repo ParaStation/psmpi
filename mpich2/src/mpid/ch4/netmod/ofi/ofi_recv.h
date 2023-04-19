@@ -41,8 +41,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_recv_iov(void *buf, MPI_Aint count, size_
 
     /* if we cannot fit the entire data into a single IOV array,
      * fallback to pack */
-    MPIR_Typerep_iov_len(count, MPIDI_OFI_REQUEST(rreq, datatype), dt_ptr->size * count,
-                         &num_contig);
+    MPIR_Typerep_get_iov_len(count, MPIDI_OFI_REQUEST(rreq, datatype), &num_contig);
     if (num_contig > MPIDI_OFI_global.rx_iov_limit)
         goto unpack;
 
@@ -65,10 +64,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_recv_iov(void *buf, MPI_Aint count, size_
     MPIDI_OFI_REQUEST(rreq, noncontig.nopack) = MPL_malloc(size, MPL_MEM_BUFFER);
     memset(MPIDI_OFI_REQUEST(rreq, noncontig.nopack), 0, size);
 
-    MPI_Aint actual_iov_len, actual_iov_bytes;
-    MPIR_Typerep_to_iov(buf, count, MPIDI_OFI_REQUEST(rreq, datatype), 0,
-                        MPIDI_OFI_REQUEST(rreq, noncontig.nopack), num_contig, dt_ptr->size * count,
-                        &actual_iov_len, &actual_iov_bytes);
+    MPI_Aint actual_iov_len;
+    MPIR_Typerep_to_iov_offset(buf, count, MPIDI_OFI_REQUEST(rreq, datatype), 0,
+                               MPIDI_OFI_REQUEST(rreq, noncontig.nopack), num_contig,
+                               &actual_iov_len);
     assert(num_contig == actual_iov_len);
 
     originv = &(MPIDI_OFI_REQUEST(rreq, noncontig.nopack[0]));
@@ -137,15 +136,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_irecv(void *buf,
     MPIR_FUNC_ENTER;
 
     if (mode == MPIDI_OFI_ON_HEAP) {    /* Branch should compile out */
-#ifdef MPIDI_CH4_USE_WORK_QUEUES
-        /* TODO: what cases when *request is NULL under workq? */
-        if (*request) {
-            MPIR_Request_add_ref(*request);
-        } else
-#endif
-        {
-            MPIDI_OFI_REQUEST_CREATE(*request, MPIR_REQUEST_KIND__RECV, vni_dst);
-        }
+        MPIDI_OFI_REQUEST_CREATE(*request, MPIR_REQUEST_KIND__RECV, vni_dst);
         rreq = *request;
 
         /* Need to set the source to UNDEFINED for anysource matching */
@@ -282,11 +273,13 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_irecv(void *buf,
             vni_dst_ = 0; \
         } else { \
             /* NOTE: hashing is based on target rank */ \
-            vni_src_ = MPIDI_OFI_get_vni(SRC_VCI_FROM_RECVER, comm, rank, comm->rank, tag); \
-            vni_dst_ = MPIDI_OFI_get_vni(DST_VCI_FROM_RECVER, comm, rank, comm->rank, tag); \
+            MPIDI_EXPLICIT_VCIS(comm, attr, rank, comm->rank, vni_src_, vni_dst_); \
+            if (vni_src_ == 0 && vni_dst_ == 0) { \
+                vni_src_ = MPIDI_get_vci(SRC_VCI_FROM_RECVER, comm, rank, comm->rank, tag); \
+                vni_dst_ = MPIDI_get_vci(DST_VCI_FROM_RECVER, comm, rank, comm->rank, tag); \
+            } \
         } \
     } while (0)
-
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_imrecv(void *buf,
                                                  MPI_Aint count,
@@ -297,19 +290,19 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_imrecv(void *buf,
     MPIDI_av_entry_t *av;
     MPIR_FUNC_ENTER;
 
+    int vci = MPIDI_Request_get_vci(message);
+    MPIDI_OFI_THREAD_CS_ENTER_VCI_OPTIONAL(vci);
     if (!MPIDI_OFI_ENABLE_TAGGED) {
         mpi_errno = MPIDIG_mpi_imrecv(buf, count, datatype, message);
     } else {
         rreq = message;
-        int vci = MPIDI_Request_get_vci(rreq);
-        MPIDI_OFI_THREAD_CS_ENTER_VCI_OPTIONAL(vci);
         av = MPIDIU_comm_rank_to_av(rreq->comm, message->status.MPI_SOURCE);
         /* FIXME: need get vni_src in the request */
         mpi_errno = MPIDI_OFI_do_irecv(buf, count, datatype, message->status.MPI_SOURCE,
                                        message->status.MPI_TAG, rreq->comm, 0, av, 0, vci,
                                        &rreq, MPIDI_OFI_USE_EXISTING, FI_CLAIM | FI_COMPLETION);
-        MPIDI_OFI_THREAD_CS_EXIT_VCI_OPTIONAL(vci);
     }
+    MPIDI_OFI_THREAD_CS_EXIT_VCI_OPTIONAL(vci);
 
     MPIR_FUNC_EXIT;
     return mpi_errno;
@@ -320,28 +313,30 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_irecv(void *buf,
                                                 MPI_Datatype datatype,
                                                 int rank,
                                                 int tag,
-                                                MPIR_Comm * comm, int context_offset,
+                                                MPIR_Comm * comm, int attr,
                                                 MPIDI_av_entry_t * addr, MPIR_Request ** request,
                                                 MPIR_Request * partner)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_FUNC_ENTER;
 
+    int context_offset = MPIR_PT2PT_ATTR_CONTEXT_OFFSET(attr);
     int vni_src, vni_dst;
     MPIDI_OFI_RECV_VNIS(vni_src, vni_dst);
+
     /* For anysource recv, we may be called while holding the vci lock of shm request (to
      * prevent shm progress). Therefore, recursive locking is allowed here */
+    MPIDI_OFI_THREAD_CS_ENTER_REC_VCI_OPTIONAL(vni_dst);
     if (!MPIDI_OFI_ENABLE_TAGGED) {
         mpi_errno = MPIDIG_mpi_irecv(buf, count, datatype, rank, tag, comm, context_offset,
                                      vni_dst, request, 0, partner);
     } else {
-        MPIDI_OFI_THREAD_CS_ENTER_REC_VCI_OPTIONAL(vni_dst);
         mpi_errno = MPIDI_OFI_do_irecv(buf, count, datatype, rank, tag, comm,
                                        context_offset, addr, vni_src, vni_dst, request,
                                        MPIDI_OFI_ON_HEAP, 0ULL);
         MPIDI_REQUEST_SET_LOCAL(*request, 0, partner);
-        MPIDI_OFI_THREAD_CS_EXIT_VCI_OPTIONAL(vni_dst);
     }
+    MPIDI_OFI_THREAD_CS_EXIT_VCI_OPTIONAL(vni_dst);
 
     MPIR_FUNC_EXIT;
     return mpi_errno;
@@ -351,7 +346,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_cancel_recv(MPIR_Request * rreq, bool 
 {
 
     int mpi_errno = MPI_SUCCESS;
-    ssize_t ret;
     MPIR_FUNC_ENTER;
 
     int vni = MPIDI_Request_get_vci(rreq);
@@ -362,28 +356,22 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_cancel_recv(MPIR_Request * rreq, bool 
         goto fn_exit;
     }
 
-    /* Not using the OFI_CALL macro because there are error cases here that we want to catch */
-    ret = fi_cancel((fid_t) MPIDI_OFI_global.ctx[ctx_idx].rx, &(MPIDI_OFI_REQUEST(rreq, context)));
-    if (ret == -FI_ENOENT) {
-        /* The context was not found inside libfabric which means it was matched previously and has
-         * already been handled. Note that it is impossible to tell the difference in this case
-         * between a request that was previously matched and one that never existed. So this will
-         * probably never return an error if the user tries to cancel a request that was not
-         * previously started. */
-        MPL_DBG_MSG_FMT(MPIR_DBG_PT2PT, VERBOSE,
-                        (MPL_DBG_FDEST, "Request not found. Assuming already cancelled"));
-        goto fn_exit;
-    } else if (ret < 0) {
-        MPIR_ERR_CHKANDJUMP4(ret < 0, mpi_errno, MPI_ERR_OTHER, "**ofid_cancel",
-                             "**ofid_cancel %s %d %s %s", __SHORT_FILE__, __LINE__, __func__,
-                             fi_strerror(-ret));
-    }
+    /* We can't rely on the return code of fi_cancel, assume always successful.
+     * ref: https://github.com/ofiwg/libfabric/issues/7795
+     */
+    fi_cancel((fid_t) MPIDI_OFI_global.ctx[ctx_idx].rx, &(MPIDI_OFI_REQUEST(rreq, context)));
 
     if (is_blocking) {
+        /* progress until the rreq complets, either with cancel-bit set,
+         * or with message received */
         while (!MPIR_cc_is_complete(&rreq->cc)) {
             mpi_errno = MPIDI_OFI_progress_uninlined(vni);
             MPIR_ERR_CHECK(mpi_errno);
         }
+    } else {
+        /* run progress once to prevent accumulating cq errors. */
+        mpi_errno = MPIDI_OFI_progress_uninlined(vni);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
   fn_exit:

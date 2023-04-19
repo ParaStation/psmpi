@@ -584,6 +584,18 @@ int yaksa_unpack_stream(const void *inbuf, uintptr_t insize, void *outbuf, uintp
 int yaksa_iov_len(uintptr_t count, yaksa_type_t type, uintptr_t * iov_len);
 
 /*!
+ * \brief gets the number of contiguous segments in the (count, type) tuple
+ *
+ * \param[in]  count             Number of elements of the datatype representing the layout
+ * \param[in]  type              Datatype representing the layout
+ * \param[in]  max_iov_bytes     Maximum number of bytes in the segments
+ * \param[out] iov_len           Number of contiguous segments in the (count, type) tuple
+ * \param[out] actual_iov_bytes  Actual number of bytes in the segments
+ */
+int yaksa_iov_len_max(uintptr_t count, yaksa_type_t type, uintptr_t max_iov_bytes,
+                      uintptr_t * iov_len, uintptr_t * actual_iov_bytes);
+
+/*!
  * \brief converts the (count, type) tuple into an I/O vector (array of base pointer/length structures)
  *
  * \param[in]  buf               Input buffer being used to create the iov

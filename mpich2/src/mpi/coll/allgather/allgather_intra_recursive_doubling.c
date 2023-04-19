@@ -33,20 +33,14 @@ int MPIR_Allgather_intra_recursive_doubling(const void *sendbuf,
     MPI_Aint curr_cnt, last_recv_cnt = 0;
     int dst;
     MPI_Status status;
-    int mask, dst_tree_root, my_tree_root;
-    MPI_Aint send_offset, recv_offset, offset;
-    int nprocs_completed, k, tmp_mask, tree_root;
+    int mask, dst_tree_root, my_tree_root, nprocs_completed, k, tmp_mask, tree_root;
 
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
 
-    if(comm_size & (comm_size - 1)) {
-        /* Currently this algorithm can only handle power-of-2 comm_size. */
-        return MPIR_Allgather_intra_ring(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype,
-                                         comm_ptr, errflag);
-    }
 #ifdef HAVE_ERROR_CHECKING
-    /* Non power-of-2 comm_size is still experimental */
+    /* Currently this algorithm can only handle power-of-2 comm_size.
+     * Non power-of-2 comm_size is still experimental */
     MPIR_Assert(!(comm_size & (comm_size - 1)));
 #endif /* HAVE_ERROR_CHECKING */
 
@@ -77,7 +71,7 @@ int MPIR_Allgather_intra_recursive_doubling(const void *sendbuf,
         my_tree_root = rank >> i;
         my_tree_root <<= i;
 
-        /* FIXME: saving an MPI_Aint into an int */
+        MPI_Aint send_offset, recv_offset;
         send_offset = my_tree_root * recvcount * recvtype_extent;
         recv_offset = dst_tree_root * recvcount * recvtype_extent;
 
@@ -134,7 +128,7 @@ int MPIR_Allgather_intra_recursive_doubling(const void *sendbuf,
             }
             k--;
 
-            /* FIXME: saving an MPI_Aint into an int */
+            MPI_Aint offset;
             offset = recvcount * (my_tree_root + mask) * recvtype_extent;
             tmp_mask = mask >> 1;
 

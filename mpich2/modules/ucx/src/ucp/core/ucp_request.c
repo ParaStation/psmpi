@@ -14,7 +14,7 @@
 #include "ucp_request.inl"
 
 #include <ucp/proto/proto_am.h>
-#include <ucp/proto/proto_select.h>
+#include <ucp/proto/proto_debug.h>
 #include <ucp/tag/tag_rndv.h>
 
 #include <ucs/datastruct/mpool.inl>
@@ -51,9 +51,8 @@ ucp_request_str(ucp_request_t *req, ucs_string_buffer_t *strb, int recurse)
     ucs_string_buffer_appendf(strb, "flags:0x%x ", req->flags);
 
     if (req->flags & UCP_REQUEST_FLAG_PROTO_SEND) {
-        ucp_proto_select_config_str(req->send.ep->worker,
-                                    req->send.proto_config,
-                                    req->send.state.dt_iter.length, strb);
+        ucp_proto_config_info_str(req->send.ep->worker, req->send.proto_config,
+                                  req->send.state.dt_iter.length, strb);
         return;
     }
 
@@ -80,9 +79,9 @@ ucp_request_str(ucp_request_t *req, ucs_string_buffer_t *strb, int recurse)
 #if ENABLE_DEBUG_DATA
         if (req->recv.proto_rndv_config != NULL) {
             /* Print the send protocol of the rendezvous request */
-            ucp_proto_select_config_str(req->recv.worker,
-                                        req->recv.proto_rndv_config,
-                                        req->recv.length, strb);
+            ucp_proto_config_info_str(req->recv.worker,
+                                      req->recv.proto_rndv_config,
+                                      req->recv.length, strb);
             return;
         }
 #endif
@@ -328,7 +327,7 @@ static void ucp_request_mem_invalidate_completion(uct_completion_t *comp)
                                                   send.state.uct_comp);
     uct_worker_cb_id_t prog_id = UCS_CALLBACKQ_ID_NULL;
 
-    uct_worker_progress_register_safe(req->send.ep->worker->uct,
+    uct_worker_progress_register_safe(req->send.invalidate.worker->uct,
                                       ucp_request_dt_invalidate_progress,
                                       req, UCS_CALLBACKQ_FLAG_ONESHOT,
                                       &prog_id);
@@ -367,8 +366,9 @@ void ucp_request_dt_invalidate(ucp_request_t *req, ucs_status_t status)
         .flags      = UCT_MD_MEM_DEREG_FLAG_INVALIDATE,
         .comp       = &req->send.state.uct_comp
     };
-    ucp_context_t *context = req->send.ep->worker->context;
-    uct_mem_h *uct_memh    = req->send.state.dt.dt.contig.memh;
+    ucp_worker_h worker   = req->send.ep->worker;
+    ucp_context_h context = worker->context;
+    uct_mem_h *uct_memh   = req->send.state.dt.dt.contig.memh;
     ucp_md_map_t invalidate_map;
     unsigned md_index;
     unsigned memh_index;
@@ -378,11 +378,13 @@ void ucp_request_dt_invalidate(ucp_request_t *req, ucs_status_t status)
                UCP_ERR_HANDLING_MODE_NONE);
     ucs_assert(UCP_DT_IS_CONTIG(req->send.datatype));
 
+    invalidate_map                  = ucp_request_get_invalidation_map(req);
+    req->send.ep                    = NULL;
     req->send.state.uct_comp.count  = 1;
     req->send.state.uct_comp.func   = ucp_request_mem_invalidate_completion;
     req->send.state.uct_comp.status = UCS_OK;
+    req->send.invalidate.worker     = worker;
     req->status                     = status;
-    invalidate_map                  = ucp_request_get_invalidation_map(req);
 
     ucp_trace_req(req, "mem dereg buffer md_map 0x%"PRIx64, invalidate_map);
     /* dereg all lanes except for 'invalidate_map' */
@@ -430,10 +432,12 @@ static void ucp_request_dt_dereg(ucp_context_t *context, ucp_dt_reg_t *dt_reg,
 }
 
 UCS_PROFILE_FUNC(ucs_status_t, ucp_request_memory_reg,
-                 (context, md_map, buffer, length, datatype, state, mem_type, req_dbg, uct_flags),
+                 (context, md_map, buffer, length, datatype, state, mem_type,
+                  req, uct_flags),
                  ucp_context_t *context, ucp_md_map_t md_map, void *buffer,
                  size_t length, ucp_datatype_t datatype, ucp_dt_state_t *state,
-                 ucs_memory_type_t mem_type, ucp_request_t *req_dbg, unsigned uct_flags)
+                 ucs_memory_type_t mem_type, ucp_request_t *req,
+                 unsigned uct_flags)
 {
     size_t iov_it, iovcnt;
     const ucp_dt_iov_t *iov;
@@ -446,6 +450,25 @@ UCS_PROFILE_FUNC(ucs_status_t, ucp_request_memory_reg,
                    "datatype=0x%"PRIx64" state=%p", context, md_map, buffer,
                    length, datatype, state);
 
+    if (req->flags & UCP_REQUEST_FLAG_USER_MEMH) {
+        ucs_assert(UCP_DT_IS_CONTIG(datatype));
+
+        /* All memory domains that we need were provided by user memh */
+        if (ucs_likely(ucs_test_all_flags(state->dt.contig.md_map, md_map))) {
+            ucp_trace_req(req, "memh already registered");
+            return UCS_OK;
+        }
+
+        /* We can't mix user-provided memh with internal registrations, since
+         * would need to track which ones to release.
+         * Forget about what user provided and register what we need.
+         */
+        ucp_trace_req(req, "mds 0x%" PRIx64 " not registered - drop user memh",
+                      md_map & ~state->dt.contig.md_map);
+        req->flags             &= ~UCP_REQUEST_FLAG_USER_MEMH;
+        state->dt.contig.md_map = 0;
+    }
+
     status = UCS_OK;
     flags  = UCT_MD_MEM_ACCESS_RMA | uct_flags;
     switch (datatype & UCP_DATATYPE_CLASS_MASK) {
@@ -454,7 +477,7 @@ UCS_PROFILE_FUNC(ucs_status_t, ucp_request_memory_reg,
         status = ucp_mem_rereg_mds(context, md_map, buffer, length, flags,
                                    NULL, mem_type, NULL, state->dt.contig.memh,
                                    &state->dt.contig.md_map);
-        ucp_trace_req(req_dbg, "mem reg md_map 0x%"PRIx64"/0x%"PRIx64,
+        ucp_trace_req(req, "mem reg md_map 0x%" PRIx64 "/0x%" PRIx64,
                       state->dt.contig.md_map, md_map);
         break;
     case UCP_DATATYPE_IOV:
@@ -475,12 +498,13 @@ UCS_PROFILE_FUNC(ucs_status_t, ucp_request_memory_reg,
                                            &dt_reg[iov_it].md_map);
                 if (status != UCS_OK) {
                     /* unregister previously registered memory */
-                    ucp_request_dt_dereg(context, dt_reg, iov_it, req_dbg);
+                    ucp_request_dt_dereg(context, dt_reg, iov_it, req);
                     ucs_free(dt_reg);
                     goto err;
                 }
-                ucp_trace_req(req_dbg,
-                              "mem reg iov %ld/%ld md_map 0x%"PRIx64"/0x%"PRIx64,
+                ucp_trace_req(req,
+                              "mem reg iov %ld/%ld md_map 0x%" PRIx64
+                              "/0x%" PRIx64,
                               iov_it, iovcnt, dt_reg[iov_it].md_map, md_map);
             }
         }
@@ -503,21 +527,25 @@ err:
     return status;
 }
 
-UCS_PROFILE_FUNC_VOID(ucp_request_memory_dereg, (context, datatype, state, req_dbg),
+UCS_PROFILE_FUNC_VOID(ucp_request_memory_dereg, (context, datatype, state, req),
                       ucp_context_t *context, ucp_datatype_t datatype,
-                      ucp_dt_state_t *state, ucp_request_t *req_dbg)
+                      ucp_dt_state_t *state, ucp_request_t *req)
 {
     ucs_trace_func("context=%p datatype=0x%"PRIx64" state=%p", context,
                    datatype, state);
 
+    if (req->flags & UCP_REQUEST_FLAG_USER_MEMH) {
+        return;
+    }
+
     switch (datatype & UCP_DATATYPE_CLASS_MASK) {
     case UCP_DATATYPE_CONTIG:
-        ucp_request_dt_dereg(context, &state->dt.contig, 1, req_dbg);
+        ucp_request_dt_dereg(context, &state->dt.contig, 1, req);
         break;
     case UCP_DATATYPE_IOV:
         if (state->dt.iov.dt_reg != NULL) {
             ucp_request_dt_dereg(context, state->dt.iov.dt_reg,
-                                 state->dt.iov.iovcnt, req_dbg);
+                                 state->dt.iov.iovcnt, req);
             ucs_free(state->dt.iov.dt_reg);
             state->dt.iov.dt_reg = NULL;
         }
@@ -559,12 +587,13 @@ void ucp_request_init_multi_proto(ucp_request_t *req,
     UCS_PROFILE_REQUEST_EVENT(req, multi_func_str, req->send.length);
 }
 
-ucs_status_t
-ucp_request_send_start(ucp_request_t *req, ssize_t max_short,
-                       size_t zcopy_thresh, size_t zcopy_max,
-                       size_t dt_count, size_t priv_iov_count,
-                       size_t length, const ucp_ep_msg_config_t* msg_config,
-                       const ucp_request_send_proto_t *proto)
+ucs_status_t ucp_request_send_start(ucp_request_t *req, ssize_t max_short,
+                                    size_t zcopy_thresh, size_t zcopy_max,
+                                    size_t dt_count, size_t priv_iov_count,
+                                    size_t length,
+                                    const ucp_ep_msg_config_t *msg_config,
+                                    const ucp_request_send_proto_t *proto,
+                                    const ucp_request_param_t *param)
 {
     ucs_status_t status;
     int          multi;
@@ -593,6 +622,12 @@ ucp_request_send_start(ucp_request_t *req, ssize_t max_short,
         /* zcopy */
         ucp_request_send_state_reset(req, proto->zcopy_completion,
                                      UCP_REQUEST_SEND_PROTO_ZCOPY_AM);
+        status = ucp_send_request_set_user_memh(
+                req, ucp_ep_config(req->send.ep)->am_bw_prereg_md_map, param);
+        if (status != UCS_OK) {
+            return status;
+        }
+
         status = ucp_request_send_buffer_reg_lane(req, req->send.lane, 0);
         if (status != UCS_OK) {
             return status;
@@ -630,6 +665,9 @@ void ucp_request_send_state_ff(ucp_request_t *req, ucs_status_t status)
     ucp_trace_req(req, "fast-forward with status %s",
                   ucs_status_string(status));
 
+    ucs_assertv(UCS_STATUS_IS_ERR(status), "status=%s",
+                ucs_status_string(status));
+
     /* Set REMOTE_COMPLETED flag to make sure that TAG/Sync operations will be
      * fully completed here */
     req->flags |= UCP_REQUEST_FLAG_SYNC_REMOTE_COMPLETED;
@@ -652,8 +690,12 @@ void ucp_request_send_state_ff(ucp_request_t *req, ucs_status_t status)
         ucp_request_mem_free(req);
     } else if (req->send.state.uct_comp.func == ucp_ep_flush_completion) {
         ucp_ep_flush_request_ff(req, status);
-    } else if (req->send.state.uct_comp.func ==
-               ucp_worker_discard_uct_ep_flush_comp) {
+    } else if (req->send.uct.func == ucp_worker_discard_uct_ep_pending_cb) {
+        /* Discard operations with flush(LOCAL) could be started (e.g. closing
+         * unneeded UCT EPs from intersection procedure), convert them to
+         * flush(CANCEL) to avoid flushing failed UCT EPs
+         */
+        req->send.discard_uct_ep.ep_flush_flags |= UCT_FLUSH_FLAG_CANCEL;
         ucp_worker_discard_uct_ep_progress(req);
     } else if (req->send.state.uct_comp.func != NULL) {
         /* Fast-forward the sending state to complete the operation when last

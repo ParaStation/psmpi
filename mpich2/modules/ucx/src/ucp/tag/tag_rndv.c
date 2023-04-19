@@ -13,6 +13,7 @@
 
 #include <ucp/proto/proto_single.inl>
 #include <ucp/rndv/proto_rndv.inl>
+#include <ucp/rndv/rndv.inl>
 
 
 void ucp_tag_rndv_matched(ucp_worker_h worker, ucp_request_t *rreq,
@@ -23,12 +24,8 @@ void ucp_tag_rndv_matched(ucp_worker_h worker, ucp_request_t *rreq,
     rreq->recv.tag.info.sender_tag = ucp_tag_hdr_from_rts(rts_hdr)->tag;
     rreq->recv.tag.info.length     = rts_hdr->size;
 
-    if (worker->context->config.ext.proto_enable) {
-        ucp_proto_rndv_receive_start(worker, rreq, rts_hdr, rts_hdr + 1,
-                                     hdr_length - sizeof(*rts_hdr));
-    } else {
-        ucp_rndv_receive(worker, rreq, rts_hdr, rts_hdr + 1);
-    }
+    ucp_rndv_receive_start(worker, rreq, rts_hdr, rts_hdr + 1,
+                           hdr_length - sizeof(*rts_hdr));
 }
 
 ucs_status_t ucp_tag_rndv_process_rts(ucp_worker_h worker,
@@ -86,7 +83,8 @@ UCS_PROFILE_FUNC(ucs_status_t, ucp_proto_progress_tag_rndv_rts, (self),
                              sizeof(ucp_rndv_rts_hdr_t));
 }
 
-ucs_status_t ucp_tag_send_start_rndv(ucp_request_t *sreq)
+ucs_status_t
+ucp_tag_send_start_rndv(ucp_request_t *sreq, const ucp_request_param_t *param)
 {
     ucp_ep_h ep = sreq->send.ep;
     ucs_status_t status;
@@ -104,11 +102,11 @@ ucs_status_t ucp_tag_send_start_rndv(ucp_request_t *sreq)
     ucp_send_request_id_alloc(sreq);
 
     if (ucp_ep_config_key_has_tag_lane(&ucp_ep_config(ep)->key)) {
-        status = ucp_tag_offload_start_rndv(sreq);
+        status = ucp_tag_offload_start_rndv(sreq, param);
     } else {
         ucs_assert(sreq->send.lane == ucp_ep_get_am_lane(ep));
         sreq->send.uct.func = ucp_proto_progress_tag_rndv_rts;
-        status              = ucp_rndv_reg_send_buffer(sreq);
+        status              = ucp_rndv_reg_send_buffer(sreq, param);
     }
 
     return status;
@@ -148,11 +146,22 @@ UCS_PROFILE_FUNC(ucs_status_t, ucp_tag_rndv_rts_progress, (self),
                             NULL);
 }
 
-static ucp_proto_t ucp_tag_rndv_proto = {
-    .name       = "tag/rndv",
-    .flags      = 0,
-    .init       = ucp_proto_rndv_rts_init,
-    .config_str = ucp_proto_rndv_ctrl_config_str,
-    .progress   = {ucp_tag_rndv_rts_progress}
+ucs_status_t ucp_tag_rndv_rts_init(const ucp_proto_init_params_t *init_params)
+{
+    UCP_RMA_PROTO_INIT_CHECK(init_params, UCP_OP_ID_TAG_SEND);
+    if (init_params->select_param->dt_class != UCP_DATATYPE_CONTIG) {
+        return UCS_ERR_UNSUPPORTED;
+    }
+
+    return ucp_proto_rndv_rts_init(init_params);
+}
+
+ucp_proto_t ucp_tag_rndv_proto = {
+    .name     = "tag/rndv",
+    .desc     = NULL,
+    .flags    = 0,
+    .init     = ucp_tag_rndv_rts_init,
+    .query    = ucp_proto_rndv_rts_query,
+    .progress = {ucp_tag_rndv_rts_progress},
+    .abort    = ucp_proto_rndv_rts_abort
 };
-UCP_PROTO_REGISTER(&ucp_tag_rndv_proto);

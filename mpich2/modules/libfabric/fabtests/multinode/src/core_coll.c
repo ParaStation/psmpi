@@ -59,6 +59,20 @@ fi_addr_t world_addr;
 fi_addr_t coll_addr;
 struct fid_mc *coll_mc;
 
+// For the verification
+struct fi_av_set_attr av_set_attr;
+
+static bool is_my_rank_participating()
+{
+	size_t rank = pm_job.my_rank;
+	if (rank < av_set_attr.start_addr)
+		return false;
+	if (rank > av_set_attr.end_addr)
+		return false;
+	if ((rank - av_set_attr.start_addr) % av_set_attr.stride != 0)
+		return false;
+	return true;
+}
 
 static int wait_for_event(uint32_t event)
 {
@@ -119,15 +133,17 @@ static int wait_for_comp(void *ctx)
 	return err;
 }
 
-static int coll_setup()
+static int coll_setup_w_start_addr_stride(int start_addr, int stride)
 {
 	int err;
-	struct fi_av_set_attr av_set_attr;
 
-	av_set_attr.count = pm_job.num_ranks;
-	av_set_attr.start_addr = 0;
+	av_set_attr.count = 0;
+	av_set_attr.start_addr = start_addr;
 	av_set_attr.end_addr = pm_job.num_ranks - 1;
-	av_set_attr.stride = 1;
+	av_set_attr.stride = stride;
+
+	if (!is_my_rank_participating())
+		return FI_SUCCESS;
 
 	err = fi_av_set(av, &av_set_attr, &av_set, NULL);
 	if (err) {
@@ -150,8 +166,20 @@ static int coll_setup()
 	return wait_for_event(FI_JOIN_COMPLETE);
 }
 
+static int coll_setup()
+{
+	return coll_setup_w_start_addr_stride(/*start_addr=*/0, /*stride=*/1);
+}
+
+static int coll_setup_w_stride()
+{
+	return coll_setup_w_start_addr_stride(/*start_addr=*/1, /*stride=*/2);
+}
+
 static void coll_teardown()
 {
+	if (!is_my_rank_participating())
+		return;
 	fi_close(&coll_mc->fid);
 	fi_close(&av_set->fid);
 }
@@ -193,10 +221,18 @@ static int sum_all_reduce_test_run()
 	uint64_t done_flag;
 	uint64_t result = 0;
 	uint64_t expect_result = 0;
-	uint64_t data = pm_job.my_rank;
+	uint64_t data;
+	const uint64_t base_data_value = 1234; /* any arbitrary value != 0 */
 	size_t count = 1;
 	uint64_t i;
 	struct fi_collective_attr attr;
+
+	if (!is_my_rank_participating())
+		return FI_SUCCESS;
+
+	// Set to rank + base_data_value to make the participation of rank 0
+	// verifiable
+	data = base_data_value + pm_job.my_rank;
 
 	attr.op = FI_SUM;
 	attr.datatype = FI_UINT64;
@@ -208,8 +244,10 @@ static int sum_all_reduce_test_run()
 		return err;
 	}
 
-	for (i = 0; i < pm_job.num_ranks; i++) {
-		expect_result += i;
+	for (i = av_set_attr.start_addr;
+	     i <= av_set_attr.end_addr;
+	     i += av_set_attr.stride) {
+		expect_result += base_data_value + i;
 	}
 
 	coll_addr = fi_mc_addr(coll_mc);
@@ -233,7 +271,7 @@ static int sum_all_reduce_test_run()
 
 static int all_gather_test_run()
 {
-	int err;
+	int ret;
 	uint64_t done_flag;
 	uint64_t *result;
 	uint64_t *expect_result;
@@ -245,50 +283,58 @@ static int all_gather_test_run()
 	attr.op = FI_NOOP;
 	attr.datatype = FI_UINT64;
 	attr.mode = 0;
-	err = fi_query_collective(domain, FI_ALLGATHER, &attr, 0);
-	if (err) {
-		FT_DEBUG("SUM AllReduce collective not supported: %d (%s)\n", err,
-			 fi_strerror(err));
-		return err;
+	ret = fi_query_collective(domain, FI_ALLGATHER, &attr, 0);
+	if (ret) {
+		FT_DEBUG("SUM AllReduce collective not supported: %d (%s)\n", ret,
+			 fi_strerror(ret));
+		return ret;
 	}
 
 	result = malloc(pm_job.num_ranks * sizeof(*expect_result));
+	if (!result)
+		return -FI_ENOMEM;
 	expect_result = malloc(pm_job.num_ranks * sizeof(*expect_result));
+	if (!expect_result) {
+		free(result);
+		return -FI_ENOMEM;
+	}
+
 	for (i = 0; i < pm_job.num_ranks; i++) {
 		expect_result[i] = i;
 	}
 
 	coll_addr = fi_mc_addr(coll_mc);
-	err = fi_allgather(ep, &data, count, NULL, result, NULL, coll_addr, FI_UINT64, 0,
+	ret = fi_allgather(ep, &data, count, NULL, result, NULL, coll_addr, FI_UINT64, 0,
 			   &done_flag);
-	if (err) {
-		FT_DEBUG("collective allreduce failed: %d (%s)\n", err, fi_strerror(err));
-		goto errout;
+	if (ret) {
+		FT_DEBUG("collective allreduce failed: %d (%s)\n", ret, fi_strerror(ret));
+		goto out;
 	}
 
-	err = wait_for_comp(&done_flag);
-	if (err)
-		goto errout;
+	ret = wait_for_comp(&done_flag);
+	if (ret)
+		goto out;
 
 	for (i = 0; i < pm_job.num_ranks; i++) {
 		if ((expect_result[i]) != result[i]) {
 			FT_DEBUG("allgather failed; expect[%ld]: %ld, actual[%ld]: %ld\n",
 				 i, expect_result[i], i, result[i]);
-			err = -1;
-			goto errout;
+			ret = -1;
+			goto out;
 		}
 	}
-	return FI_SUCCESS;
 
-errout:
+	ret = FI_SUCCESS;
+
+out:
 	free(expect_result);
 	free(result);
-	return err;
+	return ret;
 }
 
 static int scatter_test_run()
 {
-	int err;
+	int ret;
 	uint64_t done_flag;
 	uint64_t result;
 	uint64_t *data;
@@ -300,11 +346,11 @@ static int scatter_test_run()
 	attr.op = FI_NOOP;
 	attr.datatype = FI_UINT64;
 	attr.mode = 0;
-	err = fi_query_collective(domain, FI_SCATTER, &attr, 0);
-	if (err) {
-		FT_DEBUG("Scatter collective not supported: %d (%s)\n", err,
-			 fi_strerror(err));
-		return err;
+	ret = fi_query_collective(domain, FI_SCATTER, &attr, 0);
+	if (ret) {
+		FT_DEBUG("Scatter collective not supported: %d (%s)\n", ret,
+			 fi_strerror(ret));
+		return ret;
 	}
 
 	data = malloc(data_size);
@@ -317,32 +363,33 @@ static int scatter_test_run()
 
 	coll_addr = fi_mc_addr(coll_mc);
 	if (pm_job.my_rank == root)
-		err = fi_scatter(ep, data, 1, NULL, &result, NULL, coll_addr, root,
+		ret = fi_scatter(ep, data, 1, NULL, &result, NULL, coll_addr, root,
 				 FI_UINT64, 0, &done_flag);
 	else
-		err = fi_scatter(ep, NULL, 1, NULL, &result, NULL, coll_addr, root,
+		ret = fi_scatter(ep, NULL, 1, NULL, &result, NULL, coll_addr, root,
 				 FI_UINT64, 0, &done_flag);
 
-	if (err) {
-		FT_DEBUG("collective scatter failed: %d (%s)\n", err, fi_strerror(err));
-		goto errout;
+	if (ret) {
+		FT_DEBUG("collective scatter failed: %d (%s)\n", ret, fi_strerror(ret));
+		goto out;
 	}
 
-	err = wait_for_comp(&done_flag);
-	if (err)
-		goto errout;
+	ret = wait_for_comp(&done_flag);
+	if (ret)
+		goto out;
 
 	if (data[pm_job.my_rank] != result) {
 		FT_DEBUG("scatter failed; expect: %ld, actual: %ld\n",
 			 data[pm_job.my_rank], result);
-		err = -1;
-		goto errout;
+		ret = -1;
+		goto out;
 	}
-	return FI_SUCCESS;
 
-errout:
+	ret = FI_SUCCESS;
+
+out:
 	free(data);
-	return err;
+	return ret;
 }
 
 static int broadcast_test_run()
@@ -370,8 +417,10 @@ static int broadcast_test_run()
 		return -FI_ENOMEM;
 
 	data = malloc(data_cnt * sizeof(*data));
-	if (!data)
+	if (!data) {
+		free(result);
 		return -FI_ENOMEM;
+	}
 
 	for (i = 0; i < pm_job.num_ranks; ++i) {
 		data[i] = pm_job.num_ranks - 1 - i;
@@ -431,6 +480,12 @@ struct coll_test tests[] = {
 	{
 		.name = "sum_all_reduce_test",
 		.setup = coll_setup,
+		.run = sum_all_reduce_test_run,
+		.teardown = coll_teardown
+	},
+	{
+		.name = "sum_all_reduce_w_stride_test",
+		.setup = coll_setup_w_stride,
 		.run = sum_all_reduce_test_run,
 		.teardown = coll_teardown
 	},

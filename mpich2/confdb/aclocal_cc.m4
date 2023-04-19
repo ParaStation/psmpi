@@ -464,12 +464,7 @@ dnl had trouble with gcc 2.95.3 accepting -std=c89 but then trying to
 dnl compile program with a invalid set of options 
 dnl (-D __STRICT_ANSI__-trigraphs)
 AC_DEFUN([PAC_CC_STRICT],[
-PAC_CC_VENDOR()
-export enable_strict_done
-if test "$enable_strict_done" != "yes" ; then
-    # make sure we don't add the below flags multiple times
-    enable_strict_done=yes
-
+    PAC_CC_VENDOR()
     # Some comments on strict warning options.
     # These were added to improve portability
     #   -Wstack-usage=262144 -- 32 bit FreeBSD did not like the mprobe test
@@ -557,21 +552,6 @@ if test "$enable_strict_done" != "yes" ; then
         -Wstack-usage=262144
         -fno-var-tracking
     "
-
-    case "$pac_cv_cc_vendor" in
-        gnu)
-            pac_common_strict_flags="${pac_common_strict_flags}
-                -Wno-unused-label
-            "
-            ;;
-        icx)
-            pac_common_strict_flags="${pac_common_strict_flags}
-                -Wno-unused-label
-            "
-            ;;
-        *)
-            ;;
-    esac
 
     if test -z "$1"; then
         flags=no
@@ -690,7 +670,6 @@ if test "$enable_strict_done" != "yes" ; then
         PAC_POP_FLAG([CFLAGS])
     done
     pac_cc_strict_flags=$accepted_flags
-fi
 ])
 
 dnl/*D
@@ -1518,6 +1497,36 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([],[[
 if test x$have_builtin_expect = xyes ; then
     AC_DEFINE([HAVE_BUILTIN_EXPECT], [1], [Define to 1 if the compiler supports __builtin_expect.])
 fi
+])
+
+dnl
+dnl Will AC_DEFINE([HAVE_BUILTIN_CLZ]) if the compiler supports __builtin_clz.
+dnl
+AC_DEFUN([PAC_C_BUILTIN_CLZ],[
+    AC_MSG_CHECKING([if C compiler supports __builtin_clz])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([],[[
+        return __builtin_clz(0)
+    ]])], [
+        AC_DEFINE([HAVE_BUILTIN_CLZ], [1], [Define to 1 if the compiler supports __builtin_clz.])
+        AC_MSG_RESULT([yes])
+    ], [
+        AC_MSG_RESULT([no])
+    ])
+])
+
+dnl
+dnl Will AC_DEFINE([HAVE_BUILTIN_POPCOUNT]) if the compiler supports __builtin_clz.
+dnl
+AC_DEFUN([PAC_C_BUILTIN_POPCOUNT],[
+    AC_MSG_CHECKING([if C compiler supports __builtin_popcount])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([],[[
+        return __builtin_popcount(0)
+    ]])], [
+        AC_DEFINE([HAVE_BUILTIN_POPCOUNT], [1], [Define to 1 if the compiler supports __builtin_popcount.])
+        AC_MSG_RESULT([yes])
+    ], [
+        AC_MSG_RESULT([no])
+    ])
 ])
 
 dnl

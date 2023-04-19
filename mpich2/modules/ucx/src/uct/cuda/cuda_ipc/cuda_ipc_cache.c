@@ -79,11 +79,9 @@ uct_cuda_ipc_cache_region_collect_callback(const ucs_pgtable_t *pgtable,
 
 static void uct_cuda_ipc_cache_purge(uct_cuda_ipc_cache_t *cache)
 {
+    int active = uct_cuda_base_is_context_active();
     uct_cuda_ipc_cache_region_t *region, *tmp;
     ucs_list_link_t region_list;
-    int active;
-
-    UCT_CUDADRV_CTX_ACTIVE(active);
 
     ucs_list_head_init(&region_list);
     ucs_pgtable_purge(&cache->pgtable, uct_cuda_ipc_cache_region_collect_callback,
@@ -128,7 +126,7 @@ static void uct_cuda_ipc_cache_invalidate_regions(uct_cuda_ipc_cache_t *cache,
 
     ucs_list_head_init(&region_list);
     ucs_pgtable_search_range(&cache->pgtable, (ucs_pgt_addr_t)from,
-                             (ucs_pgt_addr_t)to,
+                             (ucs_pgt_addr_t)to - 1,
                              uct_cuda_ipc_cache_region_collect_callback,
                              &region_list);
     ucs_list_for_each_safe(region, tmp, &region_list, list) {

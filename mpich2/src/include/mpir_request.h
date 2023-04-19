@@ -65,6 +65,7 @@ typedef enum MPIR_Request_kind_t {
     MPIR_REQUEST_KIND__PART_SEND,       /* Partitioned send req returned to user */
     MPIR_REQUEST_KIND__PART_RECV,       /* Partitioned recv req returned to user */
     MPIR_REQUEST_KIND__PART,    /* Partitioned pt2pt internal reqs */
+    MPIR_REQUEST_KIND__ENQUEUE, /* enqueued (to gpu stream) request */
     MPIR_REQUEST_KIND__GREQUEST,
     MPIR_REQUEST_KIND__COLL,
     MPIR_REQUEST_KIND__MPROBE,  /* see NOTE-R1 */
@@ -85,8 +86,6 @@ typedef enum MPIR_Request_kind_t {
 #define MPIR_REQUEST_COMPLETE_RMA  (MPI_Request)0x6c000008
 
 #define MPIR_REQUEST_NULL_RECV     (MPI_Request)0x6c000010
-
-#define MPIR_REQUEST_BUILTIN_COUNT      0x11
 
 /* This currently defines a single structure type for all requests.
    Eventually, we may want a union type, as used in MPICH-1 */
@@ -185,12 +184,6 @@ struct MPIR_Request {
      * 32 bytes and 32-bit integers */
     MPIR_cc_t cc;
 
-    /* completion notification counter: this must be decremented by
-     * the request completion routine, when the completion count hits
-     * zero.  this counter allows us to keep track of the completion
-     * of multiple requests in a single place. */
-    MPIR_cc_t *completion_notification;
-
     /* A comm is needed to find the proper error handler */
     MPIR_Comm *comm;
     /* Status is needed for wait/test/recv */
@@ -220,6 +213,12 @@ struct MPIR_Request {
             MPL_atomic_int_t active_flag;       /* flag indicating whether in a start-complete active period.
                                                  * Value is 0 or 1. */
         } part;                 /* kind : MPIR_REQUEST_KIND__PART_SEND or MPIR_REQUEST_KIND__PART_RECV */
+        struct {
+            MPIR_Stream *stream_ptr;
+            struct MPIR_Request *real_request;
+            bool is_send;
+            void *data;
+        } enqueue;
         struct {
             MPIR_Win *win;
         } rma;                  /* kind : MPIR_REQUEST_KIND__RMA */
@@ -266,11 +265,10 @@ void MPIR_Persist_coll_free_cb(MPIR_Request * request);
 #define REQUEST_NUM_INDICES  1024
 
 #define MPIR_REQUEST_NUM_POOLS REQUEST_POOL_MAX
-#define MPIR_REQUEST_PREALLOC 8
 
 #define MPIR_REQUEST_POOL(req_) (((req_)->handle & REQUEST_POOL_MASK) >> REQUEST_POOL_SHIFT)
 
-extern MPIR_Request MPIR_Request_builtins[MPIR_REQUEST_BUILTIN_COUNT];
+extern MPIR_Request MPIR_Request_builtin[MPIR_REQUEST_N_BUILTIN];
 extern MPIR_Object_alloc_t MPIR_Request_mem[MPIR_REQUEST_NUM_POOLS];
 extern MPIR_Request MPIR_Request_direct[MPIR_REQUEST_PREALLOC];
 
@@ -283,8 +281,8 @@ extern MPIR_Request MPIR_Request_direct[MPIR_REQUEST_PREALLOC];
             if (a == MPI_MESSAGE_NO_PROC) { \
                 ptr = NULL; \
             } else { \
-                MPIR_Assert(HANDLE_INDEX(a) < MPIR_REQUEST_BUILTIN_COUNT); \
-                ptr = MPIR_Request_builtins + HANDLE_INDEX(a); \
+                MPIR_Assert(HANDLE_INDEX(a) < MPIR_REQUEST_N_BUILTIN); \
+                ptr = MPIR_Request_builtin + HANDLE_INDEX(a); \
             } \
             break; \
         case HANDLE_KIND_DIRECT: \
@@ -411,8 +409,6 @@ static inline MPIR_Request *MPIR_Request_create_from_pool(MPIR_Request_kind_t ki
     MPIR_cc_set(&req->cc, 1);
     req->cc_ptr = &req->cc;
 
-    req->completion_notification = NULL;
-
     req->status.MPI_ERROR = MPI_SUCCESS;
     MPIR_STATUS_SET_CANCEL_BIT(req->status, FALSE);
 
@@ -469,6 +465,8 @@ static inline MPIR_Request *MPIR_Request_create(MPIR_Request_kind_t kind)
     return req;
 }
 
+int MPIR_allocate_enqueue_request(MPIR_Comm * comm_ptr, MPIR_Request ** req);
+
 #define MPIR_Request_add_ref(req_p_) \
     do { MPIR_Object_add_ref(req_p_); } while (0)
 
@@ -477,7 +475,7 @@ static inline MPIR_Request *MPIR_Request_create(MPIR_Request_kind_t kind)
 
 MPL_STATIC_INLINE_PREFIX MPIR_Request *get_builtin_req(int idx, MPIR_Request_kind_t kind)
 {
-    return MPIR_Request_builtins + (idx);
+    return MPIR_Request_builtin + (idx);
 }
 
 MPL_STATIC_INLINE_PREFIX MPIR_Request *MPIR_Request_create_complete(MPIR_Request_kind_t kind)

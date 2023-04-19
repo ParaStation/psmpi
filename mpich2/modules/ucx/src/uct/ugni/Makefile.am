@@ -38,6 +38,10 @@ libuct_ugni_la_SOURCES = \
 	smsg/ugni_smsg_iface.c	\
 	smsg/ugni_smsg_ep.c
 
+PKG_CONFIG_NAME=ugni
+
 include $(top_srcdir)/config/module.am
+# TODO: enable pkg-config processing when module static build is enabled
+# include $(top_srcdir)/config/module-pkg-config.am
 
 endif

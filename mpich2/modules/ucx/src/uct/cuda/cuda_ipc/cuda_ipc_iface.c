@@ -56,18 +56,10 @@ static ucs_config_field_t uct_cuda_ipc_iface_config_table[] = {
 static void UCS_CLASS_DELETE_FUNC_NAME(uct_cuda_ipc_iface_t)(uct_iface_t*);
 
 
-static uint64_t uct_cuda_ipc_iface_node_guid(uct_base_iface_t *iface)
-{
-    return ucs_machine_guid() *
-           ucs_string_to_id(iface->md->component->name);
-}
-
 ucs_status_t uct_cuda_ipc_iface_get_device_address(uct_iface_t *tl_iface,
                                                    uct_device_addr_t *addr)
 {
-    uct_base_iface_t *iface = ucs_derived_of(tl_iface, uct_base_iface_t);
-
-    *(uint64_t*)addr = uct_cuda_ipc_iface_node_guid(iface);
+    *(uint64_t*)addr = ucs_get_system_id();
     return UCS_OK;
 }
 
@@ -82,10 +74,8 @@ static int uct_cuda_ipc_iface_is_reachable(const uct_iface_h tl_iface,
                                            const uct_device_addr_t *dev_addr,
                                            const uct_iface_addr_t *iface_addr)
 {
-    uct_cuda_ipc_iface_t  *iface = ucs_derived_of(tl_iface, uct_cuda_ipc_iface_t);
-
-    return ((uct_cuda_ipc_iface_node_guid(&iface->super) ==
-             *((const uint64_t *)dev_addr)) && ((getpid() != *(pid_t *)iface_addr)));
+    return (ucs_get_system_id() == *((const uint64_t*)dev_addr)) &&
+           (getpid() != *(pid_t*)iface_addr);
 }
 
 static double uct_cuda_ipc_iface_get_bw()
@@ -447,12 +437,14 @@ static void uct_cuda_ipc_event_desc_init(ucs_mpool_t *mp, void *obj, void *chunk
 static void uct_cuda_ipc_event_desc_cleanup(ucs_mpool_t *mp, void *obj)
 {
     uct_cuda_ipc_event_desc_t *base = (uct_cuda_ipc_event_desc_t *) obj;
-    int active;
+    uct_cuda_ipc_iface_t *iface     = ucs_container_of(mp,
+                                                       uct_cuda_ipc_iface_t,
+                                                       event_desc);
+    CUcontext cuda_context;
 
-    UCT_CUDADRV_CTX_ACTIVE(active);
-
-    if (active) {
-        UCT_CUDADRV_FUNC_LOG_ERR(cuEventDestroy(base->event));
+    UCT_CUDADRV_FUNC_LOG_ERR(cuCtxGetCurrent(&cuda_context));
+    if (uct_cuda_base_context_match(cuda_context, iface->cuda_context)) {
+        UCT_CUDA_FUNC_LOG_ERR(cudaEventDestroy(base->event));
     }
 }
 
@@ -523,8 +515,9 @@ static UCS_CLASS_INIT_FUNC(uct_cuda_ipc_iface_t, uct_md_h md, uct_worker_h worke
         return UCS_ERR_IO_ERROR;
     }
 
-    self->eventfd = -1;
+    self->eventfd             = -1;
     self->streams_initialized = 0;
+    self->cuda_context        = 0;
     ucs_queue_head_init(&self->outstanding_d2d_event_q);
 
     return UCS_OK;
@@ -534,11 +527,12 @@ static UCS_CLASS_CLEANUP_FUNC(uct_cuda_ipc_iface_t)
 {
     ucs_status_t status;
     int i;
-    int active;
+    CUcontext cuda_context;
 
-    UCT_CUDADRV_CTX_ACTIVE(active);
+    UCT_CUDADRV_FUNC_LOG_ERR(cuCtxGetCurrent(&cuda_context));
 
-    if (self->streams_initialized && active) {
+    if (self->streams_initialized &&
+        uct_cuda_base_context_match(cuda_context, self->cuda_context)) {
         for (i = 0; i < self->config.max_streams; i++) {
             status = UCT_CUDADRV_FUNC_LOG_ERR(cuStreamDestroy(self->stream_d2d[i]));
             if (UCS_OK != status) {

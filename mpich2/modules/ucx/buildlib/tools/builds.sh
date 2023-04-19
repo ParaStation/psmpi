@@ -87,16 +87,22 @@ build_release_pkg() {
 		echo "==== Build RPM ===="
 		echo "$PWD"
 		${WORKSPACE}/contrib/buildrpm.sh -s -b --nodeps --define "_topdir $PWD"
-		if rpm -qp ${PWD}/ls ucx-[0-9]*.rpm --requires | grep cuda; then
+		if rpm -qp ${PWD}/rpm-dist/ucx-[0-9]*.rpm --requires | grep cuda; then
 			azure_log_error "Release build depends on CUDA while it should not"
 			exit 1
 		fi
+		echo "==== Build debug RPM ===="
+		${WORKSPACE}/contrib/buildrpm.sh -s -b -d --nodeps --define "_topdir $PWD/debug"
 	fi
 
 	# check that UCX version is present in spec file
 	cd ${WORKSPACE}
-	# extract version from configure.ac and convert to MAJOR.MINOR.PATCH representation
-	version=$(grep -P "define\S+ucx_ver" configure.ac | awk '{print $2}' | sed 's,),,' | xargs echo | tr ' ' '.')
+	# extract version from configure.ac and convert to (MAJOR).(MINOR).(PATCH)(EXTRA) representation
+	major_ver=$(grep -P "define\S+ucx_ver_major" configure.ac | awk '{print $2}' | sed 's/)//')
+	minor_ver=$(grep -P "define\S+ucx_ver_minor" configure.ac | awk '{print $2}' | sed 's/)//')
+	patch_ver=$(grep -P "define\S+ucx_ver_patch" configure.ac | awk '{print $2}' | sed 's/)//')
+	extra_ver=$(grep -P "define\S+ucx_ver_extra" configure.ac | awk '{print $2}' | sed 's/)//')
+	version=${major_ver}.${minor_ver}.${patch_ver}${extra_ver}
 	if ! grep -q "$version" ucx.spec.in; then
 		azure_log_error "Current UCX version ($version) is not present in ucx.spec.in changelog"
 		exit 1
@@ -242,6 +248,8 @@ build_clang() {
 # Build with gcc-latest module
 #
 build_gcc() {
+	cflags=$1
+
 	#If the glibc version on the host is older than 2.14, don't run
 	#check the glibc version with the ldd version since it comes with glibc
 	#see https://www.linuxquestions.org/questions/linux-software-2/how-to-check-glibc-version-263103/
@@ -258,7 +266,7 @@ build_gcc() {
 		if az_module_load $GCC_MODULE
 		then
 			echo "==== Build with GCC compiler ($(gcc --version|head -1)) ===="
-			${WORKSPACE}/contrib/configure-devel --prefix=$ucx_inst
+			${WORKSPACE}/contrib/configure-devel CFLAGS="$cflags" CXXFLAGS="$cflags" --prefix=$ucx_inst
 			$MAKEP
 			$MAKEP install
 			az_module_unload $GCC_MODULE
@@ -266,6 +274,10 @@ build_gcc() {
 	else
 		azure_log_warning "Not building with gcc compiler, glibc version is too old ($ldd_ver)"
 	fi
+}
+
+build_gcc_debug_opt() {
+	build_gcc "-Og"
 }
 
 #
@@ -349,6 +361,79 @@ build_cmake_examples() {
 }
 
 #
+# Build with FUSE
+#
+build_fuse() {
+	if az_module_load $FUSE3_MODULE
+	then
+		echo "==== Build with FUSE (dynamic link) ===="
+		${WORKSPACE}/contrib/configure-devel --prefix=$ucx_inst --with-fuse3
+		$MAKEP
+		make_clean distclean
+
+		echo "==== Build with FUSE (static link) ===="
+		${WORKSPACE}/contrib/configure-devel --prefix=$ucx_inst --with-fuse3-static
+		$MAKEP
+
+		az_module_unload $FUSE3_MODULE
+	else
+		azure_log_warning "cannot load FUSE module, skipping build with FUSE"
+	fi
+}
+
+#
+# Build with static library
+#
+build_static() {
+	az_module_load dev/libnl
+	az_module_load dev/numactl
+
+	${WORKSPACE}/contrib/configure-devel --prefix=$ucx_inst
+	$MAKEP
+	$MAKEP install
+
+	# Build test applications
+	SAVE_PKG_CONFIG_PATH=$PKG_CONFIG_PATH
+	export PKG_CONFIG_PATH=$ucx_inst/lib/pkgconfig:$PKG_CONFIG_PATH
+
+	$MAKE -C test/apps/uct_info
+
+	export PKG_CONFIG_PATH=$SAVE_PKG_CONFIG_PATH
+
+	# Run test applications and check script
+	SAVE_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+	export LD_LIBRARY_PATH=$ucx_inst/lib:$LD_LIBRARY_PATH
+
+	cd ./test/apps/uct_info
+
+	./uct_info
+	./uct_info_static
+
+	${WORKSPACE}/buildlib/tools/check_tls.sh $EXTRA_TLS
+
+	# Set port number for hello_world applications
+	server_port=$((10000 + (1000 * EXECUTOR_NUMBER)))
+	server_port_arg="-p $server_port"
+
+	for tls in tcp $RUN_TLS; do
+		echo UCX_TLS=$tls
+		UCX_TLS=$tls ./ucp_hello_world_static ${server_port_arg} &
+		# allow server to start
+		sleep 3
+		UCX_TLS=$tls ./ucp_hello_world_static ${server_port_arg} -n localhost
+	done
+
+	cd -
+
+	export LD_LIBRARY_PATH=$SAVE_LD_LIBRARY_PATH
+
+	$MAKEP uninstall
+
+	az_module_unload dev/numactl
+	az_module_unload dev/libnl
+}
+
+#
 # Do a given task and update progress indicator
 #
 do_task() {
@@ -378,6 +463,7 @@ do_task "${prog}" build_cuda
 do_task "${prog}" build_no_verbs
 do_task "${prog}" build_release_pkg
 do_task "${prog}" build_cmake_examples
+do_task "${prog}" build_fuse
 
 if [ "${long_test}" = "yes" ]
 then
@@ -386,6 +472,15 @@ then
 	do_task 10 build_icc
 	do_task 10 build_pgi
 	do_task 10 build_gcc
+	do_task 10 build_gcc_debug_opt
 	do_task 10 build_clang
 	do_task 10 build_armclang
+fi
+
+if [ "${test_static}" = "yes" ]
+then
+	# Don't cross-connect RoCE devices
+	export UCX_IB_ROCE_LOCAL_SUBNET=y
+	export UCX_IB_ROCE_SUBNET_PREFIX_LEN=inf
+	do_task "${prog}" build_static
 fi

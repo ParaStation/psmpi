@@ -17,14 +17,6 @@
 char *MPIDI_DBG_parent_str = "?";
 #endif
 
-/* FIXME: the PMI init function should ONLY do the PMI operations, not the 
-   process group or bc operations.  These should be in a separate routine */
-#ifdef USE_PMI2_API
-#include "pmi2.h"
-#else
-#include "pmi.h"
-#endif
-
 #include "datatype.h"
 
 static int init_pg(int *has_parent, int *pg_rank_p, MPIDI_PG_t **pg_p);
@@ -88,7 +80,6 @@ int init_local(int requested, int *provided)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_FUNC_ENTER;
-    int pmi_errno;
 
     if (MPICH_THREAD_LEVEL >= requested)
         *provided = requested;
@@ -105,19 +96,9 @@ int init_local(int requested, int *provided)
 
     /* Create the string that will cache the last group of failed processes
      * we received from PMI */
-#ifdef USE_PMI2_API
-    MPIDI_failed_procs_string = MPL_malloc(sizeof(char) * PMI2_MAX_VALLEN, MPL_MEM_STRINGS);
-#else
-    int val;
-    pmi_errno = PMI_KVS_Get_value_length_max(&val);
-    if (pmi_errno != PMI_SUCCESS)
-    {
-        MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER,
-                             "**pmi_kvs_get_value_length_max",
-                             "**pmi_kvs_get_value_length_max %d", pmi_errno);
-    }
-    MPIDI_failed_procs_string = MPL_malloc(sizeof(char) * (val+1), MPL_MEM_STRINGS);
-#endif
+    int max_vallen;
+    max_vallen = MPIR_pmi_max_val_size() + 1;
+    MPIDI_failed_procs_string = MPL_malloc(sizeof(char) * max_vallen, MPL_MEM_STRINGS);
 
     /*
      * Set global process attributes.  These can be overridden by the channel 
@@ -284,6 +265,19 @@ int MPID_InitCompleted( void )
     /* --END ERROR HANDLING-- */
 }
 
+int MPID_Allocate_vci(int *vci)
+{
+    int mpi_errno = MPI_SUCCESS;
+    *vci = 0;
+    MPIR_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**ch3nostream");
+    return mpi_errno;
+}
+
+int MPID_Deallocate_vci(int vci)
+{
+    MPIR_Assert(0);
+    return MPI_SUCCESS;
+}
 /*
  * Initialize the process group structure by using PMI calls.
  * This routine initializes PMI and uses PMI calls to setup the 
@@ -297,6 +291,8 @@ static int init_pg(int *has_parent, int *pg_rank_p, MPIDI_PG_t **pg_p)
     int usePMI=1;
     char *pg_id;
     MPIDI_PG_t *pg = 0;
+
+    *pg_rank_p = -1;
 
     /* See if the channel will provide the PMI values.  The channel
      is responsible for defining HAVE_CH3_PRE_INIT and providing 
@@ -324,13 +320,8 @@ static int init_pg(int *has_parent, int *pg_rank_p, MPIDI_PG_t **pg_p)
        return errors if the routines are in fact used */
     if (usePMI) {
 	/*
-	 * Initialize the process management interface (PMI), 
-	 * and get rank and size information about our process group
+	 * rank and size information about our process group
 	 */
-
-        mpi_errno = MPIR_pmi_init();
-        MPIR_ERR_CHECK(mpi_errno);
-
         *has_parent = MPIR_Process.has_parent;
         pg_rank = MPIR_Process.rank;
         pg_size = MPIR_Process.size;
@@ -403,19 +394,10 @@ static int init_pg(int *has_parent, int *pg_rank_p, MPIDI_PG_t **pg_p)
  */
 int MPIDI_CH3I_BCInit( char **bc_val_p, int *val_max_sz_p )
 {
-    int pmi_errno;
     int mpi_errno = MPI_SUCCESS;
-#ifdef USE_PMI2_API
-    *val_max_sz_p = PMI2_MAX_VALLEN;
-#else
-    pmi_errno = PMI_KVS_Get_value_length_max(val_max_sz_p);
-    if (pmi_errno != PMI_SUCCESS)
-    {
-        MPIR_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,
-                             "**pmi_kvs_get_value_length_max",
-                             "**pmi_kvs_get_value_length_max %d", pmi_errno);
-    }
-#endif
+
+    *val_max_sz_p = MPIR_pmi_max_val_size();
+
     /* This memory is returned by this routine */
     *bc_val_p = MPL_malloc(*val_max_sz_p, MPL_MEM_ADDRESS);
     if (*bc_val_p == NULL) {

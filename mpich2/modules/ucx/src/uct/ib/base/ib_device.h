@@ -46,7 +46,7 @@
 #define UCT_IB_PKEY_DEFAULT               0xffff /* Default PKEY */
 #define UCT_IB_DEV_MAX_PORTS              2
 #define UCT_IB_FABRIC_TIME_MAX            32
-#define UCT_IB_INVALID_RKEY               0xffffffffu
+#define UCT_IB_INVALID_MKEY               0xffffffffu
 #define UCT_IB_KEY                        0x1ee7a330
 #define UCT_IB_LINK_LOCAL_PREFIX          be64toh(0xfe80000000000000ul) /* IBTA 4.1.1 12a */
 #define UCT_IB_SITE_LOCAL_PREFIX          be64toh(0xfec0000000000000ul) /* IBTA 4.1.1 12b */
@@ -214,7 +214,9 @@ typedef struct uct_ib_device {
     int                         max_zcopy_log_sge; /* Maximum sges log for zcopy am */
     UCS_STATS_NODE_DECLARE(stats)
     struct ibv_port_attr        port_attr[UCT_IB_DEV_MAX_PORTS]; /* Cached port attributes */
-    uct_ib_pci_id_t             pci_id;
+    uct_ib_pci_id_t             pci_id;          /* PCI identifiers */
+    ucs_sys_device_t            sys_dev;         /* System device id */
+    double                      pci_bw;          /* Supported PCI bandwidth */
     unsigned                    flags;
     uint8_t                     atomic_arg_sizes;
     uint8_t                     atomic_arg_sizes_be;

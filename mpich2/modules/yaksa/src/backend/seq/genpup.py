@@ -242,32 +242,10 @@ if __name__ == '__main__':
         OUTFILE.close()
 
     ##### generate the core pack/unpack kernels (single level)
-    for b in builtin_types:
-        for d in gencomm.derived_types:
-            filename = "src/backend/seq/pup/yaksuri_seqi_pup_%s_%s.c" % (d, b.replace(" ","_"))
-            yutils.copyright_c(filename)
-            OUTFILE = open(filename, "a")
-            yutils.display(OUTFILE, "#include <string.h>\n")
-            yutils.display(OUTFILE, "#include <stdint.h>\n")
-            yutils.display(OUTFILE, "#include <wchar.h>\n")
-            yutils.display(OUTFILE, "#include \"yaksuri_seqi_pup.h\"\n")
-            yutils.display(OUTFILE, "\n")
-
-            emptylist = [ ]
-            emptylist.append(d)
-            for blklen in blklens:
-                generate_kernels(b, emptylist, blklen)
-            emptylist.pop()
-
-            OUTFILE.close()
-
-    ##### generate the core pack/unpack kernels (more than one level)
-    darraylist = [ ]
-    yutils.generate_darrays(gencomm.derived_types, darraylist, args.pup_max_nesting - 2)
-    for b in builtin_types:
-        for d1 in gencomm.derived_types:
-            for d2 in gencomm.derived_types:
-                filename = "src/backend/seq/pup/yaksuri_seqi_pup_%s_%s_%s.c" % (d1, d2, b.replace(" ","_"))
+    if args.pup_max_nesting > 0:
+        for b in builtin_types:
+            for d in gencomm.derived_types:
+                filename = "src/backend/seq/pup/yaksuri_seqi_pup_%s_%s.c" % (d, b.replace(" ","_"))
                 yutils.copyright_c(filename)
                 OUTFILE = open(filename, "a")
                 yutils.display(OUTFILE, "#include <string.h>\n")
@@ -276,15 +254,39 @@ if __name__ == '__main__':
                 yutils.display(OUTFILE, "#include \"yaksuri_seqi_pup.h\"\n")
                 yutils.display(OUTFILE, "\n")
 
-                for darray in darraylist:
-                    darray.append(d1)
-                    darray.append(d2)
-                    for blklen in blklens:
-                        generate_kernels(b, darray, blklen)
-                    darray.pop()
-                    darray.pop()
+                emptylist = [ ]
+                emptylist.append(d)
+                for blklen in blklens:
+                    generate_kernels(b, emptylist, blklen)
+                emptylist.pop()
 
                 OUTFILE.close()
+
+    ##### generate the core pack/unpack kernels (more than one level)
+    if args.pup_max_nesting > 1:
+        darraylist = [ ]
+        yutils.generate_darrays(gencomm.derived_types, darraylist, args.pup_max_nesting - 2)
+        for b in builtin_types:
+            for d1 in gencomm.derived_types:
+                for d2 in gencomm.derived_types:
+                    filename = "src/backend/seq/pup/yaksuri_seqi_pup_%s_%s_%s.c" % (d1, d2, b.replace(" ","_"))
+                    yutils.copyright_c(filename)
+                    OUTFILE = open(filename, "a")
+                    yutils.display(OUTFILE, "#include <string.h>\n")
+                    yutils.display(OUTFILE, "#include <stdint.h>\n")
+                    yutils.display(OUTFILE, "#include <wchar.h>\n")
+                    yutils.display(OUTFILE, "#include \"yaksuri_seqi_pup.h\"\n")
+                    yutils.display(OUTFILE, "\n")
+
+                    for darray in darraylist:
+                        darray.append(d1)
+                        darray.append(d2)
+                        for blklen in blklens:
+                            generate_kernels(b, darray, blklen)
+                        darray.pop()
+                        darray.pop()
+
+                    OUTFILE.close()
 
     ##### generate the core pack/unpack kernel declarations
     filename = "src/backend/seq/pup/yaksuri_seqi_pup.h"
@@ -366,12 +368,14 @@ if __name__ == '__main__':
     for b in builtin_types:
         yutils.display(OUTFILE, "\tsrc/backend/seq/pup/yaksuri_seqi_pup_%s.c \\\n" % \
                        b.replace(" ","_"))
-        for d1 in gencomm.derived_types:
-            yutils.display(OUTFILE, "\tsrc/backend/seq/pup/yaksuri_seqi_pup_%s_%s.c \\\n" % \
-                           (d1, b.replace(" ","_")))
-            for d2 in gencomm.derived_types:
-                yutils.display(OUTFILE, "\tsrc/backend/seq/pup/yaksuri_seqi_pup_%s_%s_%s.c \\\n" % \
-                               (d1, d2, b.replace(" ","_")))
+        if args.pup_max_nesting > 0:
+            for d1 in gencomm.derived_types:
+                yutils.display(OUTFILE, "\tsrc/backend/seq/pup/yaksuri_seqi_pup_%s_%s.c \\\n" % \
+                               (d1, b.replace(" ","_")))
+                if args.pup_max_nesting > 1:
+                    for d2 in gencomm.derived_types:
+                        yutils.display(OUTFILE, "\tsrc/backend/seq/pup/yaksuri_seqi_pup_%s_%s_%s.c \\\n" % \
+                                       (d1, d2, b.replace(" ","_")))
     yutils.display(OUTFILE, "\tsrc/backend/seq/pup/yaksuri_seq_pup.c\n")
     yutils.display(OUTFILE, "\n")
     yutils.display(OUTFILE, "noinst_HEADERS += \\\n")

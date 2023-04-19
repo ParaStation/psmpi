@@ -108,6 +108,8 @@
  * Specific flags and attributes for shm provider
  */
 #define EFA_SHM_MAX_AV_COUNT       (256)
+/* maximum name length for shm endpoint */
+#define EFA_SHM_NAME_MAX	   (256)
 
 extern int efa_mr_cache_enable;
 extern size_t efa_mr_max_cached_count;
@@ -118,19 +120,12 @@ extern struct util_prov efa_util_prov;
 
 struct efa_fabric {
 	struct util_fabric	util_fabric;
+	struct fid_fabric *shm_fabric;
+#ifdef EFA_PERF_ENABLED
+	struct ofi_perfset perf_set;
+#endif
 };
 
-#define EFA_GID_LEN	16
-
-struct efa_ep_addr {
-	uint8_t			raw[EFA_GID_LEN];
-	uint16_t		qpn;
-	uint16_t		pad;
-	uint32_t		qkey;
-	struct efa_ep_addr	*next;
-};
-
-#define EFA_EP_ADDR_LEN sizeof(struct efa_ep_addr)
 
 struct efa_ah {
 	uint8_t		gid[EFA_GID_LEN]; /* efa device GID */
@@ -160,6 +155,11 @@ struct efa_domain_base {
 	enum efa_domain_type	type;
 };
 
+struct efa_hmem_info {
+	bool initialized; 	/* do we support it at all */
+	bool p2p_supported;	/* do we support p2p with this device */
+};
+
 struct efa_domain {
 	struct util_domain	util_domain;
 	enum efa_domain_type	type;
@@ -171,6 +171,7 @@ struct efa_domain {
 	struct ofi_mr_cache	*cache;
 	struct efa_qp		**qp_table;
 	size_t			qp_table_sz_m1;
+	struct efa_hmem_info	hmem_info[OFI_HMEM_MAX];
 };
 
 /**
@@ -258,7 +259,7 @@ struct efa_cq {
 	size_t			entry_size;
 	efa_cq_read_entry	read_entry;
 	struct slist		wcq;
-	fastlock_t		lock;
+	ofi_spin_t		lock;
 	struct ofi_bufpool	*wce_pool;
 
 	struct ibv_cq		*ibv_cq;
@@ -294,7 +295,11 @@ struct efa_mr_peer {
 	enum fi_hmem_iface      iface;
 	union {
 		uint64_t        reserved;
-		int             cuda;
+		/* this field is gdrcopy handle when gdrcopy is enabled,
+		 * otherwise it is cuda device id.
+		 */
+		uint64_t        cuda;
+		int             neuron;
 	} device;
 };
 
@@ -317,6 +322,7 @@ struct efa_ep {
 	struct efa_cq		*scq;
 	struct efa_av		*av;
 	struct fi_info		*info;
+	size_t			rnr_retry;
 	void			*src_addr;
 	struct ibv_send_wr	xmit_more_wr_head;
 	struct ibv_send_wr	*xmit_more_wr_tail;
@@ -325,6 +331,7 @@ struct efa_ep {
 	struct ofi_bufpool	*send_wr_pool;
 	struct ofi_bufpool	*recv_wr_pool;
 	struct ibv_ah		*self_ah;
+	int			hmem_p2p_opt; /* what to do for hmem transfers */
 };
 
 struct efa_send_wr {
@@ -345,7 +352,12 @@ struct efa_av {
 	size_t			used;
 	size_t			shm_used;
 	enum fi_av_type		type;
-	struct efa_reverse_av	*reverse_av;
+	/* cur_reverse_av is a map from (ahn + qpn) to current (latest) efa_conn.
+	 * prv_reverse_av is a map from (ahn + qpn + connid) to all previous efa_conns.
+	 * cur_revsere_av is faster to search because its key's size is smaller
+	 */
+	struct efa_cur_reverse_av *cur_reverse_av;
+	struct efa_prv_reverse_av *prv_reverse_av;
 	struct efa_ah		*ah_map;
 	struct util_av		util_av;
 	enum fi_ep_type         ep_type;
@@ -356,16 +368,30 @@ struct efa_av_entry {
 	struct efa_conn		conn;
 };
 
-struct efa_ah_qpn {
+struct efa_cur_reverse_av_key {
 	uint16_t ahn;
 	uint16_t qpn;
 };
 
-struct efa_reverse_av {
-	struct efa_ah_qpn key;
+struct efa_cur_reverse_av {
+	struct efa_cur_reverse_av_key key;
 	struct efa_conn *conn;
 	UT_hash_handle hh;
 };
+
+struct efa_prv_reverse_av_key {
+	uint16_t ahn;
+	uint16_t qpn;
+	uint32_t connid;
+};
+
+struct efa_prv_reverse_av {
+	struct efa_prv_reverse_av_key key;
+	struct efa_conn *conn;
+	UT_hash_handle hh;
+};
+
+#define EFA_DGRAM_CONNID (0x0)
 
 struct efa_ep_domain {
 	char		*suffix;
@@ -387,14 +413,6 @@ static inline struct efa_av *rxr_ep_av(struct rxr_ep *ep)
 	return container_of(ep->util_ep.av, struct efa_av, util_av);
 }
 
-#define align_down_to_power_of_2(x)		\
-	({					\
-		__typeof__(x) n = (x);		\
-		while (n & (n - 1))		\
-			n = n & (n - 1);	\
-		n;				\
-	})
-
 extern const struct efa_ep_domain efa_rdm_domain;
 extern const struct efa_ep_domain efa_dgrm_domain;
 
@@ -405,7 +423,7 @@ extern struct fi_ops_rma efa_ep_rma_ops;
 ssize_t efa_rma_post_read(struct efa_ep *ep, const struct fi_msg_rma *msg,
 			  uint64_t flags, bool self_comm);
 
-extern fastlock_t pd_list_lock;
+extern ofi_spin_t pd_list_lock;
 // This list has the same indicies as ctx_list.
 extern struct efa_pd *pd_list;
 
@@ -424,6 +442,11 @@ int efa_av_open(struct fid_domain *domain_fid, struct fi_av_attr *attr,
 		struct fid_av **av_fid, void *context);
 int efa_cq_open(struct fid_domain *domain_fid, struct fi_cq_attr *attr,
 		struct fid_cq **cq_fid, void *context);
+int efa_fabric(struct fi_fabric_attr *attr, struct fid_fabric **fabric_fid,
+	       void *context);
+int efa_getinfo(uint32_t version, const char *node, const char *service,
+		uint64_t flags, const struct fi_info *hints, struct fi_info **info);
+void efa_finalize_prov(void);
 
 /* AV sub-functions */
 int efa_av_insert_one(struct efa_av *av, struct efa_ep_addr *addr,
@@ -436,11 +459,11 @@ void efa_cq_inc_ref_cnt(struct efa_cq *cq, uint8_t sub_cq_idx);
 /* Caller must hold cq->inner_lock. */
 void efa_cq_dec_ref_cnt(struct efa_cq *cq, uint8_t sub_cq_idx);
 
-fi_addr_t efa_ahn_qpn_to_addr(struct efa_av *av, uint16_t ahn, uint16_t qpn);
+fi_addr_t efa_av_reverse_lookup_rdm(struct efa_av *av, uint16_t ahn, uint16_t qpn, struct rxr_pkt_entry *pkt_entry);
 
-struct rdm_peer *efa_ahn_qpn_to_peer(struct efa_av *av, uint16_t ahn, uint16_t qpn);
+fi_addr_t efa_av_reverse_lookup_dgram(struct efa_av *av, uint16_t ahn, uint16_t qpn);
 
-struct fi_provider *init_lower_efa_prov();
+int efa_init_prov(void);
 
 ssize_t efa_post_flush(struct efa_ep *ep, struct ibv_send_wr **bad_wr);
 
@@ -512,7 +535,7 @@ bool efa_peer_support_rdma_read(struct rdm_peer *peer)
 	 * it before a handshake packet was received.
 	 */
 	return (peer->flags & RXR_PEER_HANDSHAKE_RECEIVED) &&
-	       (peer->features[0] & RXR_REQ_FEATURE_RDMA_READ);
+	       (peer->extra_info[0] & RXR_EXTRA_FEATURE_RDMA_READ);
 }
 
 static inline
@@ -525,7 +548,7 @@ bool rxr_peer_support_delivery_complete(struct rdm_peer *peer)
 	 * it before a handshake packet was received.
 	 */
 	return (peer->flags & RXR_PEER_HANDSHAKE_RECEIVED) &&
-	       (peer->features[0] & RXR_REQ_FEATURE_DELIVERY_COMPLETE);
+	       (peer->extra_info[0] & RXR_EXTRA_FEATURE_DELIVERY_COMPLETE);
 }
 
 static inline
@@ -550,9 +573,11 @@ bool efa_both_support_rdma_read(struct rxr_ep *ep, struct rdm_peer *peer)
  * an endpoint received a hanshake packet from a peer, it can stop
  * including raw address in packet header.
  *
- * 2. If the peer is in zero copy receive mode, endpoint will include the
- * raw address in the header even afer received handshake from a header. This
- * is because zero copy receive requires the packet header size to remain
+ * 2. If the peer requested to keep the header length constant through
+ * out the communiciton, endpoint will include the raw address in the
+ * header even afer received handshake from a header to conform to the
+ * request. Usually, peer has this request because they are in zero
+ * copy receive mode, which requires the packet header size to remain
  * the same.
  *
  * @params[in]	peer	pointer to rdm_peer
@@ -564,7 +589,30 @@ bool rxr_peer_need_raw_addr_hdr(struct rdm_peer *peer)
 	if (OFI_UNLIKELY(!(peer->flags & RXR_PEER_HANDSHAKE_RECEIVED)))
 		return true;
 
-	return peer->features[0] & RXR_REQ_FEATURE_ZERO_COPY_RECEIVE;
+	return peer->extra_info[0] & RXR_EXTRA_REQUEST_CONSTANT_HEADER_LENGTH;
+}
+
+
+/**
+ * @brief determines whether a peer needs the endpoint to include
+ * connection ID (connid) in packet header.
+ *
+ * Connection ID is a 4 bytes random integer identifies an endpoint.
+ * Including connection ID in a packet's header allows peer to
+ * identify sender of the packet. It is necessary because device
+ * only report GID+QPN of a received packet, while QPN may be reused
+ * accross device endpoint teardown and initialization.
+ *
+ * EFA uses qkey as connection ID.
+ *
+ * @params[in]	peer	pointer to rdm_peer
+ * @return	a boolean indicating whether the peer needs connection ID
+ */
+static inline
+bool rxr_peer_need_connid(struct rdm_peer *peer)
+{
+	return (peer->flags & RXR_PEER_HANDSHAKE_RECEIVED) &&
+	       (peer->extra_info[0] & RXR_EXTRA_REQUEST_CONNID_HEADER);
 }
 
 static inline
@@ -591,9 +639,52 @@ struct rdm_peer *rxr_ep_get_peer(struct rxr_ep *ep, fi_addr_t addr)
 	return av_entry->conn.ep_addr ? &av_entry->conn.rdm_peer : NULL;
 }
 
+static inline bool efa_ep_is_hmem_mr(struct efa_mr *efa_mr)
+{
+	return efa_mr ? (efa_mr->peer.iface == FI_HMEM_CUDA ||
+			 efa_mr->peer.iface == FI_HMEM_NEURON): false;
+}
+
 static inline bool efa_ep_is_cuda_mr(struct efa_mr *efa_mr)
 {
-	return efa_mr ? (efa_mr->peer.iface == FI_HMEM_CUDA): false;
+	return efa_mr ? (efa_mr->peer.iface == FI_HMEM_CUDA) : false;
+}
+
+static inline bool efa_ep_is_neuron_mr(struct efa_mr *efa_mr)
+{
+	return efa_mr ? (efa_mr->peer.iface == FI_HMEM_NEURON) : false;
+}
+
+/*
+ * @brief: check whether we should use p2p for this transaction
+ *
+ * @param[in]	ep	efa_ep
+ * @param[in]	efa_mr	memory registration struct
+ *
+ * @return: 0 if p2p should not be used, 1 if it should, and negative FI code
+ * if the transfer should fail.
+ */
+static inline int efa_ep_use_p2p(struct efa_ep *ep, struct efa_mr *efa_mr)
+{
+	if (!efa_mr)
+		return 0;
+
+	/*
+	 * always send from host buffers if we have a descriptor
+	 */
+	if (efa_mr->peer.iface == FI_HMEM_SYSTEM)
+		return 1;
+
+	if (ep->domain->hmem_info[efa_mr->peer.iface].p2p_supported)
+		return (ep->hmem_p2p_opt != FI_HMEM_P2P_DISABLED);
+
+	if (ep->hmem_p2p_opt == FI_HMEM_P2P_REQUIRED) {
+		EFA_WARN(FI_LOG_EP_CTRL,
+			 "Peer to peer support is currently required, but not available.");
+		return -FI_ENOSYS;
+	}
+
+	return 0;
 }
 
 /*
@@ -619,6 +710,41 @@ static inline bool efa_is_cache_available(struct efa_domain *efa_domain)
 
 #if defined(static_assert) && defined(__x86_64__)
 static_assert(RXR_MSG_PREFIX_SIZE % 8 == 0, "message prefix size alignment check");
+#endif
+
+/* Performance counter declarations */
+#ifdef EFA_PERF_ENABLED
+#define EFA_PERF_FOREACH(DECL)	\
+	DECL(perf_efa_tx),	\
+	DECL(perf_efa_recv),	\
+	DECL(efa_perf_size)	\
+
+enum efa_perf_counters {
+	EFA_PERF_FOREACH(OFI_ENUM_VAL)
+};
+
+extern const char *efa_perf_counters_str[];
+
+static inline void efa_perfset_start(struct rxr_ep *ep, size_t index)
+{
+	struct rxr_domain *domain = rxr_ep_domain(ep);
+	struct efa_fabric *fabric = container_of(domain->util_domain.fabric,
+						 struct efa_fabric,
+						 util_fabric);
+	ofi_perfset_start(&fabric->perf_set, index);
+}
+
+static inline void efa_perfset_end(struct rxr_ep *ep, size_t index)
+{
+	struct rxr_domain *domain = rxr_ep_domain(ep);
+	struct efa_fabric *fabric = container_of(domain->util_domain.fabric,
+						 struct efa_fabric,
+						 util_fabric);
+	ofi_perfset_end(&fabric->perf_set, index);
+}
+#else
+#define efa_perfset_start(ep, index) do {} while (0)
+#define efa_perfset_end(ep, index) do {} while (0)
 #endif
 
 #endif /* EFA_H */

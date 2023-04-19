@@ -79,6 +79,7 @@ int yaksur_init_hook(yaksi_info_s * info)
             /* gpu disabled */
             goto fn_exit;
         }
+        yaksuri_global.has_wait_kernel = infopriv->has_wait_kernel;
     }
 
     /* CUDA hooks */
@@ -253,6 +254,7 @@ int yaksur_info_create_hook(yaksi_info_s * info)
     infopriv = (yaksuri_info_s *) info->backend.priv;
     infopriv->gpudriver_id = YAKSURI_GPUDRIVER_ID__UNSET;
     infopriv->mapped_device = -1;
+    infopriv->has_wait_kernel = false;
 
     rc = yaksuri_seq_info_create_hook(info);
     YAKSU_ERR_CHECK(rc, fn_fail);
@@ -327,6 +329,15 @@ int yaksur_info_keyval_append(yaksi_info_s * info, const char *key, const void *
         yaksuri_info_s *infopriv = info->backend.priv;
         assert(vallen == sizeof(int));
         infopriv->mapped_device = *((const int *) val);
+        goto fn_exit;
+    } else if (strcmp(key, "yaksa_has_wait_kernel") == 0) {
+        /* only for yaksa_init, to avoid allocating registered staging buffer pool,
+         * due to potential deadlocks with "wait" kernels. */
+        yaksuri_info_s *infopriv = info->backend.priv;
+        if (strcmp((char *) val, "true") == 0 ||
+            strcmp((char *) val, "yes") == 0 || strcmp((char *) val, "1") == 0) {
+            infopriv->has_wait_kernel = true;
+        }
         goto fn_exit;
     }
 

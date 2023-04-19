@@ -37,12 +37,12 @@ void MPIDI_OFI_complete_chunks(MPIDI_OFI_win_request_t * winreq)
                                 chunk->unpack_size, winreq->noncontig.get.origin.addr,
                                 winreq->noncontig.get.origin.count,
                                 winreq->noncontig.get.origin.datatype, chunk->unpack_offset,
-                                &actual_unpack_bytes);
+                                &actual_unpack_bytes, MPIR_TYPEREP_FLAG_NONE);
             MPIR_Assert(chunk->unpack_size == actual_unpack_bytes);
         }
 
         MPIDI_OFI_pack_chunk *next = chunk->next;
-        MPIDU_genq_private_pool_free_cell(MPIDI_OFI_global.per_vni[vni].pack_buf_pool,
+        MPIDU_genq_private_pool_free_cell(MPIDI_global.per_vci[vni].pack_buf_pool,
                                           chunk->pack_buffer);
         MPL_free(chunk);
         chunk = next;
@@ -51,9 +51,9 @@ void MPIDI_OFI_complete_chunks(MPIDI_OFI_win_request_t * winreq)
     winreq->chunks = NULL;
 }
 
-int MPIDI_OFI_nopack_putget(const void *origin_addr, int origin_count,
+int MPIDI_OFI_nopack_putget(const void *origin_addr, MPI_Aint origin_count,
                             MPI_Datatype origin_datatype, int target_rank,
-                            int target_count, MPI_Datatype target_datatype,
+                            MPI_Aint target_count, MPI_Datatype target_datatype,
                             MPIDI_OFI_target_mr_t target_mr, MPIR_Win * win,
                             MPIDI_av_entry_t * addr, int rma_type, MPIR_Request ** sigreq)
 {
@@ -62,17 +62,11 @@ int MPIDI_OFI_nopack_putget(const void *origin_addr, int origin_count,
     struct fi_msg_rma msg;
     struct fi_rma_iov riov;
     struct iovec iov;
-    size_t target_bytes, origin_bytes;
-
-    MPIR_Datatype_get_size_macro(origin_datatype, origin_bytes);
-    origin_bytes *= origin_count;
-    MPIR_Datatype_get_size_macro(target_datatype, target_bytes);
-    target_bytes *= target_count;
 
     /* allocate request */
     MPIDI_OFI_win_request_t *req = MPIDI_OFI_win_request_create();
     MPIR_ERR_CHKANDSTMT((req) == NULL, mpi_errno, MPIX_ERR_NOREQ, goto fn_fail, "**nomemreq");
-    req->vni = MPIDI_OFI_WIN(win).vni;
+    req->vni = MPIDI_WIN(win, am_vci);
     req->next = MPIDI_OFI_WIN(win).syncQ;
     MPIDI_OFI_WIN(win).syncQ = req;
     req->sigreq = sigreq;
@@ -90,7 +84,7 @@ int MPIDI_OFI_nopack_putget(const void *origin_addr, int origin_count,
     MPI_Aint total_target_iov_len;
     MPI_Aint target_len;
     MPI_Aint target_iov_offset = 0;
-    MPIR_Typerep_iov_len(target_count, target_datatype, target_bytes, &total_target_iov_len);
+    MPIR_Typerep_get_iov_len(target_count, target_datatype, &total_target_iov_len);
     target_len = MPL_MIN(total_target_iov_len, MPIR_CVAR_CH4_OFI_RMA_IOVEC_MAX);
     target_iov = MPL_malloc(sizeof(struct iovec) * target_len, MPL_MEM_RMA);
 
@@ -99,19 +93,12 @@ int MPIDI_OFI_nopack_putget(const void *origin_addr, int origin_count,
     MPI_Aint total_origin_iov_len;
     MPI_Aint origin_len;
     MPI_Aint origin_iov_offset = 0;
-    MPIR_Typerep_iov_len(origin_count, origin_datatype, origin_bytes, &total_origin_iov_len);
+    MPIR_Typerep_get_iov_len(origin_count, origin_datatype, &total_origin_iov_len);
     origin_len = MPL_MIN(total_origin_iov_len, MPIR_CVAR_CH4_OFI_RMA_IOVEC_MAX);
     origin_iov = MPL_malloc(sizeof(struct iovec) * origin_len, MPL_MEM_RMA);
 
     if (sigreq) {
-#ifdef MPIDI_CH4_USE_WORK_QUEUES
-        if (*sigreq) {
-            MPIR_Request_add_ref(*sigreq);
-        } else
-#endif
-        {
-            MPIDI_OFI_REQUEST_CREATE(*sigreq, MPIR_REQUEST_KIND__RMA, 0);
-        }
+        MPIDI_OFI_REQUEST_CREATE(*sigreq, MPIR_REQUEST_KIND__RMA, 0);
         flags = FI_COMPLETION | FI_DELIVERY_COMPLETE;
     } else {
         flags = FI_DELIVERY_COMPLETE;
@@ -131,7 +118,7 @@ int MPIDI_OFI_nopack_putget(const void *origin_addr, int origin_count,
 
         msg_len = MPL_MIN(origin_iov[origin_cur].iov_len, target_iov[target_cur].iov_len);
 
-        int vni = MPIDI_OFI_WIN(win).vni;
+        int vni = MPIDI_WIN(win, am_vci);
         int nic = 0;
         msg.desc = NULL;
         msg.addr = MPIDI_OFI_av_to_phys(addr, nic, vni, vni);
@@ -202,8 +189,7 @@ static int issue_packed_put(MPIR_Win * win, MPIDI_OFI_win_request_t * req)
     int j = req->noncontig.put.target.iov_cur;
     size_t msg_len;
     while (req->noncontig.put.origin.pack_offset < req->noncontig.put.origin.total_bytes) {
-        MPIDU_genq_private_pool_alloc_cell(MPIDI_OFI_global.per_vni[vni].pack_buf_pool,
-                                           &pack_buffer);
+        MPIDU_genq_private_pool_alloc_cell(MPIDI_global.per_vci[vni].pack_buf_pool, &pack_buffer);
         if (pack_buffer == NULL)
             break;
 
@@ -223,7 +209,7 @@ static int issue_packed_put(MPIR_Win * win, MPIDI_OFI_win_request_t * req)
         MPIR_Typerep_pack(req->noncontig.put.origin.addr, req->noncontig.put.origin.count,
                           req->noncontig.put.origin.datatype,
                           req->noncontig.put.origin.pack_offset, pack_buffer,
-                          msg_len, &actual_pack_bytes);
+                          msg_len, &actual_pack_bytes, MPIR_TYPEREP_FLAG_NONE);
         MPIR_Assert(msg_len == actual_pack_bytes);
 
         MPIDI_OFI_pack_chunk *chunk = create_chunk(pack_buffer, 0, 0, req);
@@ -293,8 +279,7 @@ static int issue_packed_get(MPIR_Win * win, MPIDI_OFI_win_request_t * req)
     int j = req->noncontig.get.target.iov_cur;
     size_t msg_len;
     while (req->noncontig.get.origin.pack_offset < req->noncontig.get.origin.total_bytes) {
-        MPIDU_genq_private_pool_alloc_cell(MPIDI_OFI_global.per_vni[vni].pack_buf_pool,
-                                           &pack_buffer);
+        MPIDU_genq_private_pool_alloc_cell(MPIDI_global.per_vci[vni].pack_buf_pool, &pack_buffer);
         if (pack_buffer == NULL)
             break;
 
@@ -360,31 +345,29 @@ static int issue_packed_get(MPIR_Win * win, MPIDI_OFI_win_request_t * req)
     goto fn_exit;
 }
 
-int MPIDI_OFI_pack_put(const void *origin_addr, int origin_count,
+int MPIDI_OFI_pack_put(const void *origin_addr, MPI_Aint origin_count,
                        MPI_Datatype origin_datatype, int target_rank,
-                       int target_count, MPI_Datatype target_datatype,
+                       MPI_Aint target_count, MPI_Datatype target_datatype,
                        MPIDI_OFI_target_mr_t target_mr, MPIR_Win * win,
                        MPIDI_av_entry_t * addr, MPIR_Request ** sigreq)
 {
     int mpi_errno = MPI_SUCCESS;
-    size_t target_bytes, origin_bytes;
+    size_t origin_bytes;
 
     MPIR_Datatype_get_size_macro(origin_datatype, origin_bytes);
     origin_bytes *= origin_count;
-    MPIR_Datatype_get_size_macro(target_datatype, target_bytes);
-    target_bytes *= target_count;
 
     /* allocate request */
     MPIDI_OFI_win_request_t *req = MPIDI_OFI_win_request_create();
     MPIR_ERR_CHKANDSTMT((req) == NULL, mpi_errno, MPIX_ERR_NOREQ, goto fn_fail, "**nomemreq");
-    req->vni = MPIDI_OFI_WIN(win).vni;
+    req->vni = MPIDI_WIN(win, am_vci);
     req->sigreq = sigreq;
 
     /* allocate target iovecs */
     struct iovec *target_iov;
     MPI_Aint total_target_iov_len;
     MPI_Aint target_len;
-    MPIR_Typerep_iov_len(target_count, target_datatype, target_bytes, &total_target_iov_len);
+    MPIR_Typerep_get_iov_len(target_count, target_datatype, &total_target_iov_len);
     target_len = MPL_MIN(total_target_iov_len, MPIR_CVAR_CH4_OFI_RMA_IOVEC_MAX);
     target_iov = MPL_malloc(sizeof(struct iovec) * target_len, MPL_MEM_RMA);
 
@@ -421,31 +404,29 @@ int MPIDI_OFI_pack_put(const void *origin_addr, int origin_count,
     goto fn_exit;
 }
 
-int MPIDI_OFI_pack_get(void *origin_addr, int origin_count,
+int MPIDI_OFI_pack_get(void *origin_addr, MPI_Aint origin_count,
                        MPI_Datatype origin_datatype, int target_rank,
-                       int target_count, MPI_Datatype target_datatype,
+                       MPI_Aint target_count, MPI_Datatype target_datatype,
                        MPIDI_OFI_target_mr_t target_mr, MPIR_Win * win,
                        MPIDI_av_entry_t * addr, MPIR_Request ** sigreq)
 {
     int mpi_errno = MPI_SUCCESS;
-    size_t target_bytes, origin_bytes;
+    size_t origin_bytes;
 
     MPIR_Datatype_get_size_macro(origin_datatype, origin_bytes);
     origin_bytes *= origin_count;
-    MPIR_Datatype_get_size_macro(target_datatype, target_bytes);
-    target_bytes *= target_count;
 
     /* allocate request */
     MPIDI_OFI_win_request_t *req = MPIDI_OFI_win_request_create();
     MPIR_ERR_CHKANDSTMT((req) == NULL, mpi_errno, MPIX_ERR_NOREQ, goto fn_fail, "**nomemreq");
-    req->vni = MPIDI_OFI_WIN(win).vni;
+    req->vni = MPIDI_WIN(win, am_vci);
     req->sigreq = sigreq;
 
     /* allocate target iovecs */
     struct iovec *target_iov;
     MPI_Aint total_target_iov_len;
     MPI_Aint target_len;
-    MPIR_Typerep_iov_len(target_count, target_datatype, target_bytes, &total_target_iov_len);
+    MPIR_Typerep_get_iov_len(target_count, target_datatype, &total_target_iov_len);
     target_len = MPL_MIN(total_target_iov_len, MPIR_CVAR_CH4_OFI_RMA_IOVEC_MAX);
     target_iov = MPL_malloc(sizeof(struct iovec) * target_len, MPL_MEM_RMA);
 
