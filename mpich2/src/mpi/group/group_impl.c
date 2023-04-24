@@ -4,7 +4,7 @@
  */
 
 #include "mpiimpl.h"
-#include "mpir_process.h"
+#include "mpir_session.h"
 #include "mpir_pset.h"
 #include "group.h"
 
@@ -128,11 +128,10 @@ int MPIR_Group_difference_impl(MPIR_Group * group_ptr1, MPIR_Group * group_ptr2,
                 k++;
             }
         }
-
-        MPIR_Group_set_session_ptr(*new_group_ptr, group_ptr1->session_ptr);
-
         /* TODO calculate is_local_dense_monotonic */
     }
+
+    MPIR_Group_set_session_ptr(*new_group_ptr, group_ptr1->session_ptr);
 
   fn_exit:
     MPL_free(flags);
@@ -178,10 +177,9 @@ int MPIR_Group_excl_impl(MPIR_Group * group_ptr, int n, const int ranks[],
 
     (*new_group_ptr)->size = size - n;
     (*new_group_ptr)->idx_of_first_lpid = -1;
+    /* TODO calculate is_local_dense_monotonic */
 
     MPIR_Group_set_session_ptr(*new_group_ptr, group_ptr->session_ptr);
-
-    /* TODO calculate is_local_dense_monotonic */
 
   fn_exit:
     MPL_free(flags);
@@ -233,10 +231,9 @@ int MPIR_Group_incl_impl(MPIR_Group * group_ptr, int n, const int ranks[],
     }
     (*new_group_ptr)->size = n;
     (*new_group_ptr)->idx_of_first_lpid = -1;
+    /* TODO calculate is_local_dense_monotonic */
 
     MPIR_Group_set_session_ptr(*new_group_ptr, group_ptr->session_ptr);
-
-    /* TODO calculate is_local_dense_monotonic */
 
 
   fn_exit:
@@ -389,9 +386,9 @@ int MPIR_Group_range_excl_impl(MPIR_Group * group_ptr, int n, int ranges[][3],
         }
     }
 
-    MPIR_Group_set_session_ptr(*new_group_ptr, group_ptr->session_ptr);
-
     /* TODO calculate is_local_dense_monotonic */
+
+    MPIR_Group_set_session_ptr(*new_group_ptr, group_ptr->session_ptr);
 
   fn_exit:
     MPL_free(flags);
@@ -456,9 +453,9 @@ int MPIR_Group_range_incl_impl(MPIR_Group * group_ptr, int n, int ranges[][3],
         }
     }
 
-    MPIR_Group_set_session_ptr(*new_group_ptr, group_ptr->session_ptr);
-
     /* TODO calculate is_local_dense_monotonic */
+
+    MPIR_Group_set_session_ptr(*new_group_ptr, group_ptr->session_ptr);
 
   fn_exit:
     MPIR_FUNC_EXIT;
@@ -634,9 +631,9 @@ int MPIR_Group_union_impl(MPIR_Group * group_ptr1, MPIR_Group * group_ptr2,
         }
     }
 
-    MPIR_Group_set_session_ptr(*new_group_ptr, group_ptr1->session_ptr);
-
     /* TODO calculate is_local_dense_monotonic */
+
+    MPIR_Group_set_session_ptr(*new_group_ptr, group_ptr1->session_ptr);
 
   fn_exit:
     MPL_free(flags);
@@ -652,47 +649,72 @@ int MPIR_Group_from_session_pset_impl(MPIR_Session * session_ptr, const char *ps
     int mpi_errno = MPI_SUCCESS;
     MPIR_Group *group_ptr;
 
-    MPIR_Pset *pset = NULL;
+    if (MPL_stricmp(pset_name, MPIR_SESSION_WORLD_PSET_NAME) == 0) {
+        mpi_errno = MPIR_Group_create(MPIR_Process.size, &group_ptr);
+        MPIR_ERR_CHECK(mpi_errno);
 
-    mpi_errno = MPIR_Session_pset_by_name(session_ptr, pset_name, &pset);
-
-    if (mpi_errno == MPI_ERR_OTHER || pset == NULL) {
-        /*  MPI-4 standard, Section 7.3.2, p.324: "If the pset_name does not exist,
-         * MPI_GROUP_NULL will be returned in the newgroup argument."
-         */
-        *new_group_ptr = NULL;
-        MPIR_ERR_SETANDSTMT(mpi_errno, MPI_ERR_ARG, goto fn_fail, "**psetinvalidname");
-    }
-
-    /* Remark: We do not check the pset for validity here. Creating a Process Group
-     * from an invalid pset should be possible as a local operation. However, creating
-     * an MPI communicator from a Process Group that is based on an invalid pset
-     * should raise an error. */
-
-    mpi_errno = MPIR_Group_create(pset->size, &group_ptr);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    /* Remark: The following logic assumes that pset->members is sorted in ascending order of ranks */
-    for (int i = 0; i < pset->size; i++) {
-        /*group rank is index of global rank in sorted array */
-        if (pset->members[i] == MPIR_Process.rank) {
-            group_ptr->rank = i;
-            break;
-        }
-    }
-
-    group_ptr->is_local_dense_monotonic = TRUE;
-    if (MPL_stricmp(pset_name, "mpi://SELF") == 0) {
-        group_ptr->lrank_to_lpid[0].lpid = MPIR_Process.rank;
-        group_ptr->lrank_to_lpid[0].next_lpid = -1;
-    } else {
+        group_ptr->size = MPIR_Process.size;
+        group_ptr->rank = MPIR_Process.rank;
+        group_ptr->is_local_dense_monotonic = TRUE;
         for (int i = 0; i < group_ptr->size; i++) {
             group_ptr->lrank_to_lpid[i].lpid = i;
             group_ptr->lrank_to_lpid[i].next_lpid = i + 1;
         }
         group_ptr->lrank_to_lpid[group_ptr->size - 1].next_lpid = -1;
+        group_ptr->idx_of_first_lpid = 0;
+
+    } else if (MPL_stricmp(pset_name, MPIR_SESSION_SELF_PSET_NAME) == 0) {
+        mpi_errno = MPIR_Group_create(1, &group_ptr);
+        MPIR_ERR_CHECK(mpi_errno);
+
+        group_ptr->size = 1;
+        group_ptr->rank = 0;
+        group_ptr->is_local_dense_monotonic = TRUE;
+        group_ptr->lrank_to_lpid[0].lpid = MPIR_Process.rank;
+        group_ptr->lrank_to_lpid[0].next_lpid = -1;
+        group_ptr->idx_of_first_lpid = 0;
+    } else {
+        MPIR_Pset *pset = NULL;
+        mpi_errno = MPIR_Pset_by_name(pset_name, &pset);
+
+        if (mpi_errno == MPI_ERR_OTHER || pset == NULL) {
+            *new_group_ptr = NULL;
+            MPIR_ERR_SETANDSTMT(mpi_errno, MPI_ERR_ARG, goto fn_fail, "**psetinvalidname");
+        }
+
+        /* Remark: We do not check the pset for validity here. Creating a Process Group
+         * from an invalid pset should be possible as a local operation. However, creating
+         * an MPI communicator from a Process Group that is based on an invalid pset
+         * should raise an error. */
+
+        mpi_errno = MPIR_Group_create(pset->size, &group_ptr);
+        MPIR_ERR_CHECK(mpi_errno);
+
+        /* Remark: The following logic assumes that pset->members is sorted in ascending order of ranks */
+        for (int i = 0; i < pset->size; i++) {
+            /*group rank is index of global rank in sorted array */
+            if (pset->members[i] == MPIR_Process.rank) {
+                group_ptr->rank = i;
+                break;
+            }
+        }
+
+        group_ptr->is_local_dense_monotonic = TRUE;
+        for (int i = 0; i < group_ptr->size; i++) {
+            group_ptr->lrank_to_lpid[i].lpid = pset->members[i];
+            /* Check if members of the pset have dense monotonic order */
+            if (i > 0 &&
+                (group_ptr->lrank_to_lpid[i - 1].lpid != (group_ptr->lrank_to_lpid[i].lpid - 1))) {
+                group_ptr->is_local_dense_monotonic = FALSE;
+            }
+            /* Set next_lpid to the following member of the pset (if any) */
+            if (i < (group_ptr->size - 1)) {
+                group_ptr->lrank_to_lpid[i].next_lpid = pset->members[i + 1];
+            }
+        }
+        group_ptr->lrank_to_lpid[group_ptr->size - 1].next_lpid = -1;
+        group_ptr->idx_of_first_lpid = 0;
     }
-    group_ptr->idx_of_first_lpid = 0;
 
     MPIR_Group_set_session_ptr(group_ptr, session_ptr);
 

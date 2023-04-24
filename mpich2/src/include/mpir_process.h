@@ -68,9 +68,6 @@ typedef struct MPIR_Process_t {
      * to specify the kind (comm,file,win) */
     void (*cxx_call_errfn) (int, int *, int *, void (*)(void));
 #endif                          /* HAVE_CXX_BINDING */
-
-    /* Global array of known psets managed by the process manager */
-    MPIR_Pset_array *pm_pset_array;
 } MPIR_Process_t;
 extern MPIR_Process_t MPIR_Process;
 

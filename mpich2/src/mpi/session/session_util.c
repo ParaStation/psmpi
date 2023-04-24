@@ -41,11 +41,6 @@ int MPIR_Session_create(MPIR_Session ** p_session_ptr, int thread_level)
         MPIR_Assert(thr_err == 0);
     }
 
-    /* Pset variables are initialized with MPIR_Session_psets_init
-     * after PM interface is initialized. */
-    (*p_session_ptr)->psets = NULL;
-    (*p_session_ptr)->default_pset_array = NULL;
-
   fn_exit:
     return mpi_errno;
   fn_fail:
@@ -62,8 +57,6 @@ int MPIR_Session_release(MPIR_Session * session_ptr)
         /* Only if refcount is 0 do we actually free. */
 
         /* Handle any clean up on session */
-
-        MPIR_Session_psets_destroy(session_ptr);
 
         int thr_err;
         MPID_Thread_mutex_destroy(&session_ptr->mutex, &thr_err);
