@@ -19,7 +19,8 @@ cvars:
         auto - Internal algorithm selection (can be overridden with MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE)
         nb            - Force nonblocking algorithm
         smp           - Force smp algorithm
-        dissemination - Force dissemination algorithm
+        k_dissemination - Force high radix dissemination algorithm
+        recexch       - Force recursive exchange algorithm
 
     - name        : MPIR_CVAR_BARRIER_INTER_ALGORITHM
       category    : COLLECTIVE
@@ -34,6 +35,37 @@ cvars:
         bcast - Force bcast algorithm
         nb    - Force nonblocking algorithm
 
+    - name        : MPIR_CVAR_BARRIER_DISSEM_KVAL
+      category    : COLLECTIVE
+      type        : int
+      default     : 2
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        k value for dissemination exchange based barrier algorithm
+
+    - name        : MPIR_CVAR_BARRIER_RECEXCH_KVAL
+      category    : COLLECTIVE
+      type        : int
+      default     : 2
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        k value for recursive exchange based allreduce based barrier
+
+    - name        : MPIR_CVAR_BARRIER_RECEXCH_SINGLE_PHASE_RECV
+      category    : COLLECTIVE
+      type        : boolean
+      default     : false
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        This CVAR controls whether the recv is posted for one phase or two phases
+        in recexch algos. By default, we post the recvs for 2 phases.
+
     - name        : MPIR_CVAR_IBARRIER_RECEXCH_KVAL
       category    : COLLECTIVE
       type        : int
@@ -43,6 +75,16 @@ cvars:
       scope       : MPI_T_SCOPE_ALL_EQ
       description : >-
         k value for recursive exchange based ibarrier
+
+    - name        : MPIR_CVAR_IBARRIER_DISSEM_KVAL
+      category    : COLLECTIVE
+      type        : int
+      default     : 2
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        k value for dissemination exchange based ibarrier
 
     - name        : MPIR_CVAR_IBARRIER_INTRA_ALGORITHM
       category    : COLLECTIVE
@@ -56,6 +98,8 @@ cvars:
         auto - Internal algorithm selection (can be overridden with MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE)
         sched_auto - Internal algorithm selection for sched-based algorithms
         sched_recursive_doubling - Force recursive doubling algorithm
+        tsp_recexch - Force generic transport based recursive exchange algorithm
+        tsp_k_dissemination - Force generic transport based high-radix dissemination algorithm
 
     - name        : MPIR_CVAR_IBARRIER_INTER_ALGORITHM
       category    : COLLECTIVE
@@ -156,6 +200,61 @@ cvars:
         smp                                     - Force smp algorithm
         scatter_recursive_doubling_allgather    - Force Scatter Recursive-Doubling Allgather
         scatter_ring_allgather                  - Force Scatter Ring
+        pipelined_tree                          - Force tree-based pipelined algorithm
+        tree                                    - Force tree-based algorithm
+	
+    - name        : MPIR_CVAR_BCAST_TREE_KVAL
+      category    : COLLECTIVE
+      type        : int
+      default     : 2
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        k value for tree (kary, knomial, etc.) based bcast
+
+    - name        : MPIR_CVAR_BCAST_TREE_TYPE
+      category    : COLLECTIVE
+      type        : string
+      default     : kary
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        Tree type for tree based ibcast
+        kary      - kary tree type
+        knomial_1 - knomial_1 tree type
+        knomial_2 - knomial_2 tree type
+
+    - name        : MPIR_CVAR_BCAST_IS_NON_BLOCKING
+      category    : COLLECTIVE
+      type        : boolean
+      default     : true
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If set to true, MPI_Bcast will use non-blocking send.
+
+    - name        : MPIR_CVAR_BCAST_TREE_PIPELINE_CHUNK_SIZE
+      category    : COLLECTIVE
+      type        : int
+      default     : 8192
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        Indicates the chunk size for pipelined bcast.
+
+    - name        : MPIR_CVAR_BCAST_RECV_PRE_POST
+      category    : COLLECTIVE
+      type        : boolean
+      default     : false
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If set to true, MPI_Bcast will pre-post all the receives.
 
     - name        : MPIR_CVAR_BCAST_INTER_ALGORITHM
       category    : COLLECTIVE
@@ -232,6 +331,7 @@ cvars:
         sched_scatter_ring_allgather               - Force Scatter Ring Allgather algorithm
         tsp_tree                               - Force Generic Transport Tree algorithm
         tsp_scatterv_recexch_allgatherv        - Force Generic Transport Scatterv followed by Recursive Exchange Allgatherv algorithm
+        tsp_scatterv_ring_allgatherv           - Force Generic Transport Scatterv followed by Ring Allgatherv algorithm
         tsp_ring                               - Force Generic Transport Ring algorithm
 
     - name        : MPIR_CVAR_IBCAST_SCATTERV_KVAL
@@ -563,9 +663,20 @@ cvars:
         Variable to select allgather algorithm
         auto - Internal algorithm selection (can be overridden with MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE)
         brucks             - Force brucks algorithm
+        k_brucks           - Force brucks algorithm
         nb                 - Force nonblocking algorithm
         recursive_doubling - Force recursive doubling algorithm
         ring               - Force ring algorithm
+
+    - name        : MPIR_CVAR_ALLGATHER_BRUCKS_KVAL
+      category    : COLLECTIVE
+      type        : int
+      default     : 2
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        radix (k) value for generic transport brucks based allgather
 
     - name        : MPIR_CVAR_ALLGATHER_INTER_ALGORITHM
       category    : COLLECTIVE
@@ -771,10 +882,21 @@ cvars:
         Variable to select alltoall algorithm
         auto - Internal algorithm selection (can be overridden with MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE)
         brucks                    - Force brucks algorithm
+        k_brucks                  - Force Force radix k brucks algorithm
         nb                        - Force nonblocking algorithm
         pairwise                  - Force pairwise algorithm
         pairwise_sendrecv_replace - Force pairwise sendrecv replace algorithm
         scattered                 - Force scattered algorithm
+
+    - name        : MPIR_CVAR_ALLTOALL_BRUCKS_KVAL
+      category    : COLLECTIVE
+      type        : int
+      default     : 2
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        radix (k) value for generic transport brucks based alltoall
 
     - name        : MPIR_CVAR_ALLTOALL_INTER_ALGORITHM
       category    : COLLECTIVE
@@ -1131,6 +1253,81 @@ cvars:
         smp                      - Force smp algorithm
         recursive_doubling       - Force recursive doubling algorithm
         reduce_scatter_allgather - Force reduce scatter allgather algorithm
+        tree                     - Force pipelined tree algorithm
+        recexch                  - Force generic transport recursive exchange algorithm
+        ring                     - Force ring algorithm
+        k_reduce_scatter_allgather - Force reduce scatter allgather algorithm
+
+    - name        : MPIR_CVAR_ALLREDUCE_TREE_TYPE
+      category    : COLLECTIVE
+      type        : string
+      default     : knomial_1
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        Tree type for tree based allreduce
+        knomial_1 is default as it supports both commutative and non-commutative reduce operations
+        kary      - kary tree type
+        knomial_1 - knomial_1 tree type (tree grows starting from the left of the root)
+        knomial_2 - knomial_2 tree type (tree grows starting from the right of the root)
+
+    - name        : MPIR_CVAR_ALLREDUCE_TREE_KVAL
+      category    : COLLECTIVE
+      type        : int
+      default     : 2
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        Indicates the branching factor for kary or knomial trees.
+
+    - name        : MPIR_CVAR_ALLREDUCE_TREE_PIPELINE_CHUNK_SIZE
+      category    : COLLECTIVE
+      type        : int
+      default     : 0
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        Maximum chunk size (in bytes) for pipelining in tree based
+        allreduce. Default value is 0, that is, no pipelining by default
+
+    - name        : MPIR_CVAR_ALLREDUCE_TREE_BUFFER_PER_CHILD
+      category    : COLLECTIVE
+      type        : boolean
+      default     : 0
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If set to true, a rank in tree_kary and tree_knomial algorithms will allocate
+        a dedicated buffer for every child it receives data from. This would mean more
+        memory consumption but it would allow preposting of the receives and hence reduce
+        the number of unexpected messages. If set to false, there is only one buffer that is
+        used to receive the data from all the children. The receives are therefore serialized,
+        that is, only one receive can be posted at a time.
+
+    - name        : MPIR_CVAR_ALLREDUCE_RECEXCH_KVAL
+      category    : COLLECTIVE
+      type        : int
+      default     : 2
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        k value for recursive exchange based allreduce
+
+    - name        : MPIR_CVAR_ALLREDUCE_RECEXCH_SINGLE_PHASE_RECV
+      category    : COLLECTIVE
+      type        : boolean
+      default     : false
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        This CVAR controls whether the recv is posted for one phase or two phases
+        in recexch algos. By default, we post the recvs for 2 phases.
 
     - name        : MPIR_CVAR_ALLREDUCE_INTER_ALGORITHM
       category    : COLLECTIVE

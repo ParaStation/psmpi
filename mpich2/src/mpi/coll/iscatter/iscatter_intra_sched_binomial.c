@@ -7,7 +7,7 @@
 
 /* helper callbacks and associated state structures */
 struct shared_state {
-    int sendcount;
+    MPI_Aint sendcount;
     MPI_Aint curr_count;
     MPI_Aint send_subtree_count;
     MPI_Aint nbytes;
@@ -71,10 +71,8 @@ int MPIR_Iscatter_intra_sched_binomial(const void *sendbuf, MPI_Aint sendcount,
     int mpi_errno = MPI_SUCCESS;
     MPI_Aint extent = 0;
     int rank, comm_size;
-    MPI_Aint sendtype_size;
     int relative_rank;
     int mask, src, dst;
-    MPI_Aint recvtype_size = 0;
     MPI_Aint tmp_buf_size = 0;
     void *tmp_buf = NULL;
     struct shared_state *ss = NULL;
@@ -95,9 +93,11 @@ int MPIR_Iscatter_intra_sched_binomial(const void *sendbuf, MPI_Aint sendcount,
         /* We separate the two cases (root and non-root) because
          * in the event of recvbuf=MPI_IN_PLACE on the root,
          * recvcount and recvtype are not valid */
+        MPI_Aint sendtype_size;
         MPIR_Datatype_get_size_macro(sendtype, sendtype_size);
         ss->nbytes = sendtype_size * sendcount;
     } else {
+        MPI_Aint recvtype_size;
         MPIR_Datatype_get_size_macro(recvtype, recvtype_size);
         ss->nbytes = recvtype_size * recvcount;
     }

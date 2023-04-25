@@ -94,6 +94,7 @@ extern "C" {
 #define MPI_ERRHANDLER_NULL ((MPI_Errhandler)0x14000000)
 #define MPI_MESSAGE_NULL   ((MPI_Message)0x2c000000)
 #define MPI_MESSAGE_NO_PROC ((MPI_Message)0x6c000000)
+#define MPIX_STREAM_NULL   ((MPIX_Stream)0x3c000000)
 
 /* Results of the compare operations. */
 #define MPI_IDENT     0
@@ -456,6 +457,9 @@ typedef int MPI_Message;
 /* Generalized requests extensions */
 typedef int MPIX_Grequest_class;
 
+/* MPI stream objects */
+typedef int MPIX_Stream;
+
 /* MPI Attribute copy and delete functions */
 typedef int (MPI_Copy_function) ( MPI_Comm, int, void *, void *, void *, int * );
 typedef int (MPI_Delete_function) ( MPI_Comm, int, void *, void * );
@@ -795,14 +799,9 @@ typedef struct {
 #define MPI_F_TAG 3
 #define MPI_F_ERROR 4
 
-extern MPI_F08_status MPIR_F08_MPI_STATUS_IGNORE_OBJ MPICH_API_PUBLIC;
-extern MPI_F08_status MPIR_F08_MPI_STATUSES_IGNORE_OBJ[1] MPICH_API_PUBLIC;
-extern int MPIR_F08_MPI_IN_PLACE MPICH_API_PUBLIC;
-extern int MPIR_F08_MPI_BOTTOM MPICH_API_PUBLIC;
-
-/* Pointers to above objects */
-extern MPI_F08_status *MPI_F08_STATUS_IGNORE MPICH_API_PUBLIC;
-extern MPI_F08_status *MPI_F08_STATUSES_IGNORE MPICH_API_PUBLIC;
+/* Provided in libmpifort.so */
+extern MPI_F08_status *MPI_F08_STATUS_IGNORE;
+extern MPI_F08_status *MPI_F08_STATUSES_IGNORE;
 
 /* For supported thread levels */
 #define MPI_THREAD_SINGLE 0
@@ -924,10 +923,11 @@ typedef int (MPIX_Grequest_wait_function)(int, void **, double, MPI_Status *);
 #define MPI_ERR_VALUE_TOO_LARGE    77  /* Value is too large to store */
 
 #define MPI_T_ERR_NOT_SUPPORTED    78  /* Requested functionality not supported */
+#define MPI_T_ERR_NOT_ACCESSIBLE   79  /* Requested functionality not accessible */
 
 #define MPI_ERR_LASTCODE    0x3fffffff  /* Last valid error code for a 
 					   predefined error class */
-#define MPICH_ERR_LAST_CLASS 78     /* It is also helpful to know the
+#define MPICH_ERR_LAST_CLASS 79     /* It is also helpful to know the
 				       last valid class */
 
 #define MPICH_ERR_FIRST_MPIX 100 /* Define a gap here because sock is
@@ -941,8 +941,10 @@ typedef int (MPIX_Grequest_wait_function)(int, void **, double, MPI_Status *);
 #define MPIX_ERR_REVOKED              MPICH_ERR_FIRST_MPIX+3 /* The communication object has been revoked */
 #define MPIX_ERR_EAGAIN               MPICH_ERR_FIRST_MPIX+4 /* Operation could not be issued */
 #define MPIX_ERR_NOREQ                MPICH_ERR_FIRST_MPIX+5 /* Cannot allocate request */
+#define MPIX_ERR_STREAM               MPICH_ERR_FIRST_MPIX+6 /* Invalid stream */
+#define MPIX_ERR_TIMEOUT              MPICH_ERR_FIRST_MPIX+7 /* Operation timed out */
 
-#define MPICH_ERR_LAST_MPIX           MPICH_ERR_FIRST_MPIX+5
+#define MPICH_ERR_LAST_MPIX           MPICH_ERR_FIRST_MPIX+7
 
 
 /* End of MPI's error classes */
@@ -970,6 +972,12 @@ typedef struct {
    conventions or DLL import/export controls).  
 */
 /* --Insert Additional Definitions Here-- */
+
+/* same as struct iovec, provided to avoid header dependency */
+typedef struct MPIX_Iov {
+    void *iov_base;
+    MPI_Aint iov_len;
+} MPIX_Iov;
 
 /*
  * Normally, we provide prototypes for all MPI routines.  In a few weird

@@ -9,18 +9,13 @@
 #include "ch4_types.h"
 #include "mpidu_genq.h"
 
-MPL_STATIC_INLINE_PREFIX MPIR_Request *MPIDIG_request_create(MPIR_Request_kind_t kind,
-                                                             int ref_count,
-                                                             int local_vci, int remote_vci)
+MPL_STATIC_INLINE_PREFIX int MPIDIG_request_init_internal(MPIR_Request * req,
+                                                          int local_vci, int remote_vci)
 {
-    MPIR_Request *req;
-
+    int mpi_errno = MPI_SUCCESS;
     MPIR_FUNC_ENTER;
 
-    MPIDI_CH4_REQUEST_CREATE(req, kind, local_vci, ref_count);
-    if (req == NULL)
-        goto fn_fail;
-
+    req->dev.type = MPIDI_REQ_TYPE_AM;
     MPIDI_NM_am_request_init(req);
 #ifndef MPIDI_CH4_DIRECT_NETMOD
     MPIDI_SHM_am_request_init(req);
@@ -36,6 +31,23 @@ MPL_STATIC_INLINE_PREFIX MPIR_Request *MPIDIG_request_create(MPIR_Request_kind_t
     MPIDIG_REQUEST(req, req->recv_async).data_copy_cb = NULL;
     MPIDIG_REQUEST(req, req->recv_async).recv_type = MPIDIG_RECV_NONE;
 
+    return mpi_errno;
+}
+
+MPL_STATIC_INLINE_PREFIX MPIR_Request *MPIDIG_request_create(MPIR_Request_kind_t kind,
+                                                             int ref_count,
+                                                             int local_vci, int remote_vci)
+{
+    MPIR_Request *req;
+
+    MPIR_FUNC_ENTER;
+
+    MPIDI_CH4_REQUEST_CREATE(req, kind, local_vci, ref_count);
+    if (req == NULL)
+        goto fn_fail;
+
+    MPIDIG_request_init_internal(req, local_vci, remote_vci);
+
   fn_exit:
     MPIR_FUNC_EXIT;
     return req;
@@ -43,31 +55,19 @@ MPL_STATIC_INLINE_PREFIX MPIR_Request *MPIDIG_request_create(MPIR_Request_kind_t
     goto fn_exit;
 }
 
-MPL_STATIC_INLINE_PREFIX MPIR_Request *MPIDIG_request_init(MPIR_Request * req,
-                                                           MPIR_Request_kind_t kind)
+MPL_STATIC_INLINE_PREFIX int MPIDIG_request_init(MPIR_Request * req, int local_vci, int remote_vci)
 {
+    int mpi_errno = MPI_SUCCESS;
     MPIR_FUNC_ENTER;
 
     MPIR_Assert(req != NULL);
     /* Increment the refcount by one to account for the MPIDIG layer */
     MPIR_Request_add_ref(req);
 
-    MPIDI_NM_am_request_init(req);
-#ifndef MPIDI_CH4_DIRECT_NETMOD
-    MPIDI_SHM_am_request_init(req);
-#endif
-
-    MPL_COMPILE_TIME_ASSERT(sizeof(MPIDIG_req_ext_t) <= MPIDIU_REQUEST_POOL_CELL_SIZE);
-    int vci = MPIDI_Request_get_vci(req);
-    MPIDU_genq_private_pool_alloc_cell(MPIDI_global.per_vci[vci].request_pool,
-                                       (void **) &MPIDIG_REQUEST(req, req));
-    MPIR_Assert(MPIDIG_REQUEST(req, req));
-    MPIDIG_REQUEST(req, req->status) = 0;
-    MPIDIG_REQUEST(req, req->recv_async).data_copy_cb = NULL;
-    MPIDIG_REQUEST(req, req->recv_async).recv_type = MPIDIG_RECV_NONE;
+    mpi_errno = MPIDIG_request_init_internal(req, local_vci, remote_vci);
 
     MPIR_FUNC_EXIT;
-    return req;
+    return mpi_errno;
 }
 
 #ifndef MPIDI_CH4_DIRECT_NETMOD
@@ -89,7 +89,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_anysrc_try_cancel_partner(MPIR_Request * rreq
 
     *is_cancelled = 1;  /* overwrite if cancel fails */
 
-    MPIR_Request *anysrc_partner = MPIDI_REQUEST_ANYSOURCE_PARTNER(rreq);
+    MPIR_Request *anysrc_partner = rreq->dev.anysrc_partner;
     if (unlikely(anysrc_partner)) {
         if (!MPIR_STATUS_GET_CANCEL_BIT(anysrc_partner->status)) {
             if (MPIDI_REQUEST(rreq, is_local)) {
@@ -117,8 +117,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_anysrc_try_cancel_partner(MPIR_Request * rreq
                     /* NM partner is not user-visible, free it now, which means
                      * explicit SHM code can skip MPIDI_anysrc_free_partner
                      */
-                    MPIDI_REQUEST_ANYSOURCE_PARTNER(rreq) = NULL;
-                    MPIDI_REQUEST_ANYSOURCE_PARTNER(anysrc_partner) = NULL;
+                    rreq->dev.anysrc_partner = NULL;
+                    anysrc_partner->dev.anysrc_partner = NULL;
                     /* cancel freed it once, freed once more on behalf of mpi-layer */
                     MPIDI_CH4_REQUEST_FREE(anysrc_partner);
                 }
@@ -146,12 +146,12 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_anysrc_try_cancel_partner(MPIR_Request * rreq
 
 MPL_STATIC_INLINE_PREFIX void MPIDI_anysrc_free_partner(MPIR_Request * rreq)
 {
-    MPIR_Request *anysrc_partner = MPIDI_REQUEST_ANYSOURCE_PARTNER(rreq);
+    MPIR_Request *anysrc_partner = rreq->dev.anysrc_partner;
     if (unlikely(anysrc_partner)) {
         if (!MPIDI_REQUEST(rreq, is_local)) {
             /* NM, complete and free SHM partner */
-            MPIDI_REQUEST_ANYSOURCE_PARTNER(rreq) = NULL;
-            MPIDI_REQUEST_ANYSOURCE_PARTNER(anysrc_partner) = NULL;
+            rreq->dev.anysrc_partner = NULL;
+            anysrc_partner->dev.anysrc_partner = NULL;
             /* copy status to SHM partner */
             anysrc_partner->status = rreq->status;
             MPID_Request_complete(anysrc_partner);

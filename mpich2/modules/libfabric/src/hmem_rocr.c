@@ -37,7 +37,7 @@
 #include "ofi_hmem.h"
 #include "ofi.h"
 
-#ifdef HAVE_ROCR
+#if HAVE_ROCR
 
 #include <hsa/hsa_ext_amd.h>
 
@@ -67,7 +67,7 @@ struct rocr_ops {
 					   void *value);
 };
 
-#ifdef ENABLE_ROCR_DLOPEN
+#if ENABLE_ROCR_DLOPEN
 
 #include <dlfcn.h>
 
@@ -240,7 +240,7 @@ int rocr_copy_to_dev(uint64_t device, void *dest, const void *src,
 	return ret;
 }
 
-bool rocr_is_addr_valid(const void *addr)
+bool rocr_is_addr_valid(const void *addr, uint64_t *device, uint64_t *flags)
 {
 	hsa_amd_pointer_info_t hsa_info = {
 		.size = sizeof(hsa_info),
@@ -255,8 +255,12 @@ bool rocr_is_addr_valid(const void *addr)
 						 HSA_AGENT_INFO_DEVICE,
 						 (void *) &hsa_dev_type);
 		if (hsa_ret == HSA_STATUS_SUCCESS) {
-			if (hsa_dev_type == HSA_DEVICE_TYPE_GPU)
+			if (hsa_dev_type == HSA_DEVICE_TYPE_GPU) {
+				//TODO get device pointer/id
+				if (flags)
+					*flags = FI_HMEM_DEVICE_ONLY;
 				return true;
+			}
 		} else {
 			FI_WARN(&core_prov, FI_LOG_CORE,
 				"Failed to perform hsa_agent_get_info: %s\n",
@@ -273,7 +277,7 @@ bool rocr_is_addr_valid(const void *addr)
 
 static int rocr_hmem_dl_init(void)
 {
-#ifdef ENABLE_ROCR_DLOPEN
+#if ENABLE_ROCR_DLOPEN
 	/* Assume if dlopen fails, the ROCR library could not be found. Do not
 	 * treat this as an error.
 	 */
@@ -371,7 +375,7 @@ err:
 
 static void rocr_hmem_dl_cleanup(void)
 {
-#ifdef ENABLE_ROCR_DLOPEN
+#if ENABLE_ROCR_DLOPEN
 	dlclose(rocr_handle);
 #endif
 }
@@ -483,7 +487,7 @@ int rocr_hmem_cleanup(void)
 	return -FI_ENOSYS;
 }
 
-bool rocr_is_addr_valid(const void *addr)
+bool rocr_is_addr_valid(const void *addr, uint64_t *device, uint64_t *flags)
 {
 	return false;
 }

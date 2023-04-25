@@ -4,6 +4,7 @@
  */
 
 #include "mpl.h"
+#include "mpl_str.h"
 #include <dlfcn.h>
 #include <assert.h>
 
@@ -18,6 +19,9 @@ typedef struct gpu_free_hook {
 static int gpu_initialized = 0;
 static int device_count = -1;
 static int max_dev_id = -1;
+static char **device_list = NULL;
+#define MAX_GPU_STR_LEN 256
+static char affinity_env[MAX_GPU_STR_LEN] = { 0 };
 
 static int *local_to_global_map;        /* [device_count] */
 static int *global_to_local_map;        /* [max_dev_id + 1]   */
@@ -38,6 +42,48 @@ int MPL_gpu_get_dev_count(int *dev_cnt, int *dev_id)
 
     *dev_cnt = device_count;
     *dev_id = max_dev_id;
+    return ret;
+}
+
+int MPL_gpu_get_dev_list(int *dev_count, char ***dev_list, bool is_subdev)
+{
+    int ret = MPL_SUCCESS;
+    if (!gpu_initialized) {
+        ret = MPL_gpu_init(0);
+    }
+
+    device_list = (char **) MPL_malloc(device_count * sizeof(char *), MPL_MEM_OTHER);
+    assert(device_list != NULL);
+
+    for (int i = 0; i < device_count; ++i) {
+        int str_len = snprintf(NULL, 0, "%d", i);
+        device_list[i] = (char *) MPL_malloc((str_len + 1) * sizeof(char *), MPL_MEM_OTHER);
+        sprintf(device_list[i], "%d", i);
+    }
+
+    *dev_count = device_count;
+    *dev_list = device_list;
+    return ret;
+}
+
+int MPL_gpu_dev_affinity_to_env(int dev_count, char **dev_list, char **env)
+{
+    int ret = MPL_SUCCESS;
+    memset(affinity_env, 0, MAX_GPU_STR_LEN);
+    if (dev_count == 0) {
+        MPL_snprintf(affinity_env, 3, "-1");
+    } else {
+        int str_offset = 0;
+        for (int i = 0; i < dev_count; ++i) {
+            if (i) {
+                MPL_strncpy(affinity_env + str_offset, ",", MAX_GPU_STR_LEN - str_offset);
+                str_offset++;
+            }
+            MPL_strncpy(affinity_env + str_offset, dev_list[i], MAX_GPU_STR_LEN - str_offset);
+            str_offset += strlen(dev_list[i]);
+        }
+    }
+    *env = affinity_env;
     return ret;
 }
 
@@ -234,10 +280,8 @@ int MPL_gpu_init(int debug_summary)
     if (visible_devices) {
         local_to_global_map = MPL_malloc(device_count * sizeof(int), MPL_MEM_OTHER);
 
-        uintptr_t len = strlen(visible_devices);
-        char *devices = MPL_malloc(len + 1, MPL_MEM_OTHER);
+        char *devices = MPL_strdup(visible_devices);
         char *free_ptr = devices;
-        memcpy(devices, visible_devices, len + 1);
         for (int i = 0; i < device_count; i++) {
             char *tmp = strtok(devices, ",");
             assert(tmp);
@@ -312,7 +356,10 @@ int MPL_gpu_finalize(void)
 
 int MPL_gpu_global_to_local_dev_id(int global_dev_id)
 {
-    assert(global_dev_id <= max_dev_id);
+    if (global_dev_id > max_dev_id) {
+        return -1;
+    }
+
     return global_to_local_map[global_dev_id];
 }
 
@@ -332,8 +379,23 @@ int MPL_gpu_get_buffer_bounds(const void *ptr, void **pbase, uintptr_t * len)
     int mpl_err = MPL_SUCCESS;
     CUresult curet;
 
+    /* get the device where the pointer is located */
+    int device;
+    struct cudaPointerAttributes attr;
+    cudaPointerGetAttributes(&attr, ptr);
+    device = attr.device;
+
+    /* set the device to query the address range, otherwise the driver
+     * might return CUDA_ERROR_NOT_FOUND */
+    int device_save;
+    cudaGetDevice(&device_save);
+    cudaSetDevice(device);
+
     curet = cuMemGetAddressRange((CUdeviceptr *) pbase, (size_t *) len, (CUdeviceptr) ptr);
     CU_ERR_CHECK(curet);
+
+    /* set device back to saved value */
+    cudaSetDevice(device_save);
 
   fn_exit:
     return mpl_err;
@@ -402,4 +464,21 @@ cudaError_t CUDARTAPI cudaFree(void *dptr)
     gpu_free_hooks_cb(dptr);
     result = sys_cudaFree(dptr);
     return result;
+}
+
+int MPL_gpu_launch_hostfn(cudaStream_t stream, MPL_gpu_hostfn fn, void *data)
+{
+    cudaError_t result;
+    result = cudaLaunchHostFunc(stream, fn, data);
+    return result;
+}
+
+bool MPL_gpu_stream_is_valid(MPL_gpu_stream_t stream)
+{
+    cudaError_t result;
+    /* CUDA may blindly dereference the stream as pointer, which may segfault
+     * if the wrong value is passed in. This is still better than segfault later
+     * upon using the stream. */
+    result = cudaStreamQuery(stream);
+    return (result != cudaErrorInvalidResourceHandle);
 }

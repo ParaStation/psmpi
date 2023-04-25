@@ -35,9 +35,11 @@ int MPID_PSP_Subrequest_completed(MPIR_Request *req)
 
 	int completed = (*(req->cc_ptr)) == 0;
 
-	if(completed && req->completion_notification) {
+	struct MPID_DEV_Request_common *dev_req = &req->dev.kind.common;
+	if(completed && dev_req->completion_notification) {
 		/* decrement the completion notification counter*/
-		MPIR_cc_dec(req->completion_notification);
+		MPIR_cc_dec(dev_req->completion_notification);
+
 		/*release reference of subrequest*/
 		MPIR_Request_free(req);
 	}

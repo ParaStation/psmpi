@@ -38,14 +38,15 @@
 # Exclude cq_data test until fi_pool/fi_wait is supported
 cq_data
 
-# Exclude all rdm prefix tests
-rdm.* -k
-
 multi_mr
 rdm_rma_trigger
 
-# Exclude all MSG tests
-msg
+# fi_msg_inject test does not work with
+# EFA provider on certain instance types. Temporarily exclude
+# this test while we investigate the root cause
+msg_inject
+
+msg_sockets
 rc_pingpong
 
 # Exclude all polling tests
@@ -60,9 +61,6 @@ trigger
 
 #rdm_cntr_pingpong
 
-
-# This test requires ENA IPs for the OOB sync
-av_xfer
 
 # Connection manager isn't supported
 cm_data
@@ -96,3 +94,4 @@ dgram_bw
 
 # Multinode tests failing with an unsupported address format
 multinode
+

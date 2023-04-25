@@ -4,6 +4,7 @@
  */
 
 #include "yaksi.h"
+#include "yaksuri.h"
 #include "yaksuri_cudai.h"
 #include <assert.h>
 #include <string.h>
@@ -14,8 +15,12 @@ static void *cuda_host_malloc(uintptr_t size)
 {
     void *ptr = NULL;
 
-    cudaError_t cerr = cudaMallocHost(&ptr, size);
-    YAKSURI_CUDAI_CUDA_ERR_CHECK(cerr);
+    if (yaksuri_global.has_wait_kernel) {
+        ptr = malloc(size);
+    } else {
+        cudaError_t cerr = cudaMallocHost(&ptr, size);
+        YAKSURI_CUDAI_CUDA_ERR_CHECK(cerr);
+    }
 
     return ptr;
 }
@@ -47,8 +52,12 @@ static void *cuda_gpu_malloc(uintptr_t size, int device)
 
 static void cuda_host_free(void *ptr)
 {
-    cudaError_t cerr = cudaFreeHost(ptr);
-    YAKSURI_CUDAI_CUDA_ERR_CHECK(cerr);
+    if (yaksuri_global.has_wait_kernel) {
+        free(ptr);
+    } else {
+        cudaError_t cerr = cudaFreeHost(ptr);
+        YAKSURI_CUDAI_CUDA_ERR_CHECK(cerr);
+    }
 }
 
 static void cuda_gpu_free(void *ptr)
@@ -65,15 +74,17 @@ static int finalize_hook(void)
     cudaError_t cerr;
 
     for (int i = 0; i < yaksuri_cudai_global.ndevices; i++) {
-        cerr = cudaSetDevice(i);
-        YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
+        if (yaksuri_cudai_global.streams[i].created) {
+            cerr = cudaSetDevice(i);
+            YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
 
-        cerr = cudaStreamDestroy(yaksuri_cudai_global.stream[i]);
-        YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
+            cerr = cudaStreamDestroy(yaksuri_cudai_global.streams[i].stream);
+            YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
+        }
 
         free(yaksuri_cudai_global.p2p[i]);
     }
-    free(yaksuri_cudai_global.stream);
+    free(yaksuri_cudai_global.streams);
     free(yaksuri_cudai_global.p2p);
 
   fn_exit:
@@ -89,15 +100,66 @@ static int get_num_devices(int *ndevices)
     return YAKSA_SUCCESS;
 }
 
+/* query_p2p_comm actually queries device for accessibility.
+ * check_p2p_comm will check cache first.
+ */
+static int query_p2p_comm(int sdev, int ddev)
+{
+    int rc = YAKSA_SUCCESS;
+    cudaError_t cerr;
+
+    int cur_device;
+    cerr = cudaGetDevice(&cur_device);
+    YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
+
+    cerr = cudaSetDevice(sdev);
+    assert(cerr == 0);
+
+    int val;
+    cerr = cudaDeviceCanAccessPeer(&val, sdev, ddev);
+    YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
+
+    if (val) {
+        cerr = cudaDeviceEnablePeerAccess(ddev, 0);
+        if (cerr != cudaErrorPeerAccessAlreadyEnabled) {
+            YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
+        }
+        yaksuri_cudai_global.p2p[sdev][ddev] = 1;
+    } else {
+        yaksuri_cudai_global.p2p[sdev][ddev] = 0;
+    }
+
+    cerr = cudaSetDevice(cur_device);
+    YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
+
+  fn_exit:
+    return rc;
+  fn_fail:
+    yaksuri_cudai_global.p2p[sdev][ddev] = 0;
+    goto fn_exit;
+}
+
 static bool check_p2p_comm(int sdev, int ddev)
 {
     bool is_enabled = 0;
+
+    bool do_check = false;
 #if CUDA_P2P == CUDA_P2P_ENABLED
-    is_enabled = yaksuri_cudai_global.p2p[sdev][ddev];
+    do_check = true;
 #elif CUDA_P2P == CUDA_P2P_CLIQUES
-    if ((sdev + ddev) % 2 == 0)
-        is_enabled = yaksuri_cudai_global.p2p[sdev][ddev];
+    if ((sdev + ddev) % 2 == 0) {
+        do_check = true;
+    }
 #endif
+
+    if (do_check) {
+        if (yaksuri_cudai_global.p2p[sdev][ddev] == -1) {
+            int rc = query_p2p_comm(sdev, ddev);
+            assert(rc == 0);
+        }
+
+        is_enabled = yaksuri_cudai_global.p2p[sdev][ddev];
+    }
 
     return is_enabled;
 }
@@ -139,48 +201,25 @@ int yaksuri_cuda_init_hook(yaksur_gpudriver_hooks_s ** hooks)
         }
     }
 
-    yaksuri_cudai_global.stream = (cudaStream_t *)
-        malloc(yaksuri_cudai_global.ndevices * sizeof(cudaStream_t));
+    yaksuri_cudai_global.streams = calloc(yaksuri_cudai_global.ndevices, sizeof(cudai_stream));
 
-    yaksuri_cudai_global.p2p = (bool **) malloc(yaksuri_cudai_global.ndevices * sizeof(bool *));
+    yaksuri_cudai_global.p2p = (int **) malloc(yaksuri_cudai_global.ndevices * sizeof(int *));
     for (int i = 0; i < yaksuri_cudai_global.ndevices; i++) {
-        yaksuri_cudai_global.p2p[i] = (bool *) malloc(yaksuri_cudai_global.ndevices * sizeof(bool));
-    }
-
-    int cur_device;
-    cerr = cudaGetDevice(&cur_device);
-    YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
-
-    for (int i = 0; i < yaksuri_cudai_global.ndevices; i++) {
-        cerr = cudaSetDevice(i);
-        YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
-
-        cerr = cudaStreamCreateWithFlags(&yaksuri_cudai_global.stream[i], cudaStreamNonBlocking);
-        YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
-
+        if (yaksuri_global.has_wait_kernel) {
+            /* The stream creation will deadlock with wait kernel. Create them now. */
+            yaksuri_cudai_get_stream(i);
+        }
+        yaksuri_cudai_global.p2p[i] = (int *) malloc(yaksuri_cudai_global.ndevices * sizeof(int));
+        /* mark as unchecked with -1. We will check access and cache the value
+         * in check_p2p_comm */
         for (int j = 0; j < yaksuri_cudai_global.ndevices; j++) {
-            if (i == j) {
-                yaksuri_cudai_global.p2p[i][j] = 1;
-            } else {
-                int val;
-                cerr = cudaDeviceCanAccessPeer(&val, i, j);
-                YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
-
-                if (val) {
-                    cerr = cudaDeviceEnablePeerAccess(j, 0);
-                    if (cerr != cudaErrorPeerAccessAlreadyEnabled) {
-                        YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
-                    }
-                    yaksuri_cudai_global.p2p[i][j] = 1;
-                } else {
-                    yaksuri_cudai_global.p2p[i][j] = 0;
-                }
-            }
+            yaksuri_cudai_global.p2p[i][j] = -1;
         }
     }
-
-    cerr = cudaSetDevice(cur_device);
-    YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
+    /* mark self entries */
+    for (int i = 0; i < yaksuri_cudai_global.ndevices; i++) {
+        yaksuri_cudai_global.p2p[i][i] = 1;
+    }
 
     *hooks = (yaksur_gpudriver_hooks_s *) malloc(sizeof(yaksur_gpudriver_hooks_s));
     (*hooks)->get_num_devices = get_num_devices;

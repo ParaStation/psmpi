@@ -89,16 +89,15 @@ dnl 4. Determine MPI features
 dnl
 dnl
 dnl Special environment variables
-dnl To let other scripts and in particular the configure in test/mpi
+dnl To let other scripts, e.g. configure in hydra and romio, 
 dnl know that they are being invoked from within the MPICH configure,
 dnl the following environment variables are set and exported:
 dnl    FROM_MPICH
-dnl    MPICH_ENABLE_FC
-dnl    MPICH_ENABLE_CXX
 dnl
 dnl Note that no executable statements are allowed (and any are silently
 dnl dropped) before AC_INIT.
 
+m4_define([MPICH_CONFIGURE], 1)
 m4_include([maint/version.m4])
 dnl 2nd arg is intentionally underquoted
 AC_INIT([MPICH],
@@ -438,13 +437,16 @@ AC_ARG_ENABLE(check-compiler-flags,
                        options, xxxFLAGS, MPICH_xxxFLAGS. Default is on.]),,
 		       enable_check_compiler_flags=yes)
 
-dnl We enable f77 and fc if we can find compilers for them.
-dnl In addition, we check whether f77 and fc can work together.
+dnl Whether to disable the Fortran bindings. By default, we'll probe and build all supported
+dnl interfaces including mpif.h, use mpi, and use_mpi_f08.
 AC_ARG_ENABLE(fortran,
-[  --enable-fortran=option - Control the level of Fortran support in the MPICH implementation.
-	yes|all   - Enable all available Fortran implementations (F77, F90+)
-	no|none   - No Fortran support
-],,[enable_fortran=all])
+        AS_HELP_STRING([--disable-fortran], [Whether to disable Fortran bindings]),,[enable_fortran=yes])
+
+AC_ARG_ENABLE(f77,
+        AS_HELP_STRING([--disable-f77], [Whether to disable "include 'mpif.h'" interface]),,[enable_f77=yes])
+
+AC_ARG_ENABLE(f90,
+        AS_HELP_STRING([--disable-f90], [Whether to disable "use mpi" interface]),,[enable_f90=yes])
 
 AC_ARG_ENABLE(f08,
         AS_HELP_STRING([--disable-f08], [Whether to disable "use mpi_f08" interface]),,[enable_f08=yes])
@@ -485,21 +487,6 @@ AC_ARG_WITH(device,
 	AS_HELP_STRING([--with-device=name], [Specify the communication device for MPICH]),,
 	with_device=ch4)
 
-AC_ARG_WITH(pmi,
-	AS_HELP_STRING([--with-pmi=name], [Specify the pmi interface for MPICH]),,
-	with_pmi=default)
-
-AC_ARG_WITH(pm,
-	AS_HELP_STRING([--with-pm=name],
-		[Specify the process manager for MPICH.  "no" or "none" are
-                 valid values.  Multiple process managers may be specified as
-                 long as they all use the same pmi interface by separating them
-                 with colons.  The mpiexec for the first named process manager
-                 will be installed.  Example: "--with-pm=hydra:gforker"
-                 builds the two process managers hydra, and gforker;
-                 only the mpiexec from hydra is installed into the bin
-                 directory.]),,with_pm=default)
-
 AC_ARG_ENABLE(threads,
 [  --enable-threads=level - Control the level of thread support in the
                            MPICH implementation.  The following levels
@@ -519,7 +506,7 @@ AC_ARG_ENABLE(thread-cs,
 			[Choose the method used for critical sections
                          and other atomic updates when multiple
                          threads are present.  Values may be default, global,
-                         per-object, per-vci, lock-free. Default is global.
+                         per-vci, lock-free. Default is global for ch3 and per-vci for ch4.
                         ]),,enable_thread_cs=default)
 
 AC_ARG_ENABLE(refcount,
@@ -529,7 +516,7 @@ AC_ARG_ENABLE(refcount,
                          Values may be lock-free or none.  The
                          default depends on the thread-cs choice; for
                          global it is none (because none is required),
-                         for per-object, per-vci, and lock-free, lock-free]),,
+                         for per-vci, and lock-free, lock-free]),,
                          enable_refcount=default)
 
 AC_ARG_ENABLE(mutex-timing,
@@ -652,7 +639,7 @@ dnl We would like to pass -Werror, but we are cheating in the "examples/"
 dnl directory and overriding the user-flags like CFLAGS, which automake-1.12
 dnl warns about.  Long-term we may need to use a hand-written Makefile.in or
 dnl something else in this special dir.
-AM_INIT_AUTOMAKE([-Wall -Wno-portability-recursive foreign 1.12.3 silent-rules subdir-objects])
+AM_INIT_AUTOMAKE([-Wall -Wno-portability-recursive foreign 1.12.3 silent-rules subdir-objects no-dist])
 AM_MAINTAINER_MODE([enable])
 
 AM_PROG_AR
@@ -692,8 +679,6 @@ dnl lead to weird AM_CONDITIONAL errors and potentially other problems.
 #
 # NOTE: we are skipping overriding CXX as some modules (e.g. ucx) may depend on CXX
 #
-AS_IF([test "x$enable_f77" = "xno"],[F77=no])
-AS_IF([test "x$enable_fc"  = "xno"],[FC=no])
 
 # suppress default "-g -O2" from AC_PROG_CXX
 : ${CXXFLAGS=""}
@@ -717,43 +702,28 @@ if test "$pac_cv_cxx_builds_exe" = "no" ; then
     CXX=
 fi
 
-enable_f77=no
-enable_fc=no
-case "$enable_fortran" in
-    yes|all)
-            enable_f77=yes
-            enable_fc=yes
-            ;;
-    no|none)
-            ;;
-    *)
-            AC_MSG_WARN([Unknown value $option for --enable-fortran])
-            ;;
-esac
+if test "$enable_fortran" = "no" ; then
+    enable_f77=no
+    enable_f90=no
+    enable_f08=no
+fi
+
+# Python 3 is needed to generate Fortran bindings
+PAC_CHECK_PYTHON
 
 if test "$enable_fortran" != "no" ; then
     # suppress default "-g -O2" from AC_PROG_FC
     : ${FCFLAGS=""}
     AC_PROG_FC
 
-    # HACK, use $FC as F77. We should remove all the F77 usages.
-    if test "$enable_fc" = "yes" ; then
-        F77=$FC
-        if test ! -z "$FCFLAGS" ; then
-            FFLAGS=$FCFLAGS
-        fi
-    fi
+    F77=$FC
 
-    # This needs to come after we've potentially set F77=$FC. Otherwise, we could
-    # override the user's Fortran compiler selection when only specifying FC at configure
-    # time, as is allowed.
-    # suppress default "-g -O2" from AC_PROG_F77
-    : ${FFLAGS=""}
+    FFLAGS=$FCFLAGS
     AC_PROG_F77
 
 fi
 
-AM_CONDITIONAL([INSTALL_MPIF77],[test "$enable_fc" = "yes" -a "$F77" != "$FC" -a "$FFLAGS" != "$FCFLAGS"])
+AM_CONDITIONAL([INSTALL_MPIF77],[false])
 
 # compute canonical system types
 AC_CANONICAL_BUILD
@@ -766,6 +736,9 @@ PAC_ARG_CACHING
 # Set CFLAGS for enable strict if necessary.  Do this *first* because
 # it may influence the output of the other tests
 PAC_ARG_STRICT
+
+# To link C objects with Fortran main program may require -fPIE option
+PAC_C_CHECK_fPIE_OK
 
 # -----------------------------------------------------------------------------
 # First check that we have a clean build if we are doing a VPATH build
@@ -909,6 +882,9 @@ for option in $enable_fast ; do
         ;;
         alwaysinline) # No op in MPICH. See mpl/configure.ac
         ;;
+        avx)
+        enable_fast_avx_instr=yes
+        ;;
         all|yes)
         enable_fast_ndebug=yes
         enable_fast_opts=O2
@@ -916,6 +892,7 @@ for option in $enable_fast ; do
         none|no)
         enable_fast_ndebug=no
         enable_fast_opts=O0
+        enable_fast_avx_instr=no
         ;;
         *)
 	IFS="$save_IFS"
@@ -950,6 +927,37 @@ fi
 if test -z "$enable_fast_no_strict_alignment" ; then
     # we need observe strict alignment to pass ubsan check
     AC_DEFINE(NEEDS_STRICT_ALIGNMENT,1,[Define if strict alignment memory access is required])
+fi
+
+if test "$enable_fast_avx_instr" = "yes" ; then
+    AC_CACHE_CHECK([whether -mavx is supported], pac_cv_found_avx,
+                   [PAC_C_CHECK_COMPILER_OPTION([-mavx],pac_cv_found_avx=yes,pac_cv_found_avx=no)],
+                   pac_cv_found_avx=no,pac_cv_found_avx=yes)
+    if test "$pac_cv_found_avx" = "yes" ; then
+        PAC_APPEND_FLAG([-mavx],[CFLAGS])
+
+        AC_CACHE_CHECK([whether _mm256_stream_si256 is supported], pac_cv_found__mm256_stream_si256,[
+                        AC_RUN_IFELSE([AC_LANG_SOURCE([[
+                                       #include <immintrin.h>
+
+                                       int main(int argc, char **argv) {
+                                           char source[1024], dest[1024];
+                                           for (int i = 0; i < 1024; i++) source[i] = 'a';
+
+                                           __m256i ymm0 = _mm256_loadu_si256((__m256i const *) source);
+                                           _mm256_stream_si256((__m256i *) dest, ymm0);
+
+                                           if (dest[0] == source[0]) return 0;
+                                           else return 1;
+                                       }
+                                       ]])], pac_cv_found__mm256_stream_si256="yes",
+                                       pac_cv_found__mm256_stream_si256="no",
+                                       pac_cv_found__mm256_stream_si256="unknown")
+                        ])
+    fi
+    if test "$pac_cv_found__mm256_stream_si256" = "yes" ; then
+        AC_DEFINE(HAVE_MM256_STREAM_SI256,1,[Define if 256 bit streaming memcpy is available])
+    fi
 fi
 
 # error-checking
@@ -1045,42 +1053,6 @@ AC_SUBST([mpllib])
 m4_define([mpl_embedded_dir],[src/mpl])
 PAC_CONFIG_MPL
 
-# Izem
-
-AC_ARG_ENABLE([izem-queue],[  --enable-izem-queue],,[enable_izem_queue=no])
-if test "${enable_izem_queue}" = "yes" ; then
-    AC_DEFINE(ENABLE_IZEM_QUEUE,1,[Define to enable using Izem queues])
-fi
-
-AC_ARG_VAR([ZMLIBNAME],[can be used to override the name of the Izem library (default: "zm")])
-ZMLIBNAME=${ZMLIBNAME:-"zm"}
-export ZMLIBNAME
-AC_SUBST(ZMLIBNAME)
-zmsrcdir=""
-AC_SUBST([zmsrcdir])
-zmlibdir=""
-AC_SUBST([zmlibdir])
-zmlib=""
-AC_SUBST([zmlib])
-
-m4_define([zm_embedded_dir],[modules/izem])
-PAC_CHECK_HEADER_LIB_EXPLICIT([zm],[lock/zm_ticket.h],[$ZMLIBNAME],[zm_ticket_init])
-if test "$enable_izem_queue" != "no" && test "$enable_izem_queue" != "none"; then
-    if test "$with_zm" = "embedded" ; then
-        if test -e "${use_top_srcdir}/modules/izem" ; then
-            zm_subdir_args="--enable-embedded"
-            PAC_CONFIG_SUBDIR_ARGS([modules/izem],[$zm_subdir_args],[],[AC_MSG_ERROR(Izem configure failed)])
-            zmsrcdir="${main_top_builddir}/modules/izem"
-            zmlib="${main_top_builddir}/modules/izem/src/lib${ZMLIBNAME}.la"
-            PAC_APPEND_FLAG([-I${use_top_srcdir}/modules/izem/src/include],[CPPFLAGS])
-            PAC_APPEND_FLAG([-I${main_top_builddir}/modules/izem/src/include],[CPPFLAGS])
-        else
-            AC_MSG_WARN([Attempted to use the embedded Izem source tree in "modules/izem", but it is missing.  Configuration or compilation may fail later.])
-        fi
-    fi
-fi
-
-
 # json-c
 
 jsonsrcdir=""
@@ -1088,12 +1060,16 @@ AC_SUBST([jsonsrcdir])
 jsonlib=""
 AC_SUBST([jsonlib])
 
-PAC_PUSH_ALL_FLAGS()
-PAC_RESET_ALL_FLAGS()
-PAC_CONFIG_SUBDIR_ARGS([modules/json-c],[--enable-embedded --disable-werror],[],[AC_MSG_ERROR(json-c configure failed)])
-PAC_POP_ALL_FLAGS()
-jsonsrcdir="${main_top_builddir}/modules/json-c"
-jsonlib="${main_top_builddir}/modules/json-c/libjson-c.la"
+jsonlib="modules/json-c/libjson-c.la"
+if test -e "${use_top_srcdir}/modules/PREBUILT" -a -e "$jsonlib"; then
+    jsonsrcdir=""
+else
+    PAC_PUSH_ALL_FLAGS()
+    PAC_RESET_ALL_FLAGS()
+    PAC_CONFIG_SUBDIR_ARGS([modules/json-c],[--enable-embedded --disable-werror],[],[AC_MSG_ERROR(json-c configure failed)])
+    PAC_POP_ALL_FLAGS()
+    jsonsrcdir="${main_top_builddir}/modules/json-c"
+fi
 PAC_APPEND_FLAG([-I${use_top_srcdir}/modules/json-c],[CPPFLAGS])
 PAC_APPEND_FLAG([-I${main_top_builddir}/modules/json-c],[CPPFLAGS])
 
@@ -1228,17 +1204,17 @@ thread_refcount=MPICH_REFCOUNT__NONE
 if test "$enable_threads" = "multiple" ; then
     # default depends on ch3 or ch4
     if test "$enable_thread_cs" = "default" ; then
-        enable_thread_cs="global"
+        if test "$device_name" = "ch4" ; then
+            enable_thread_cs="per-vci"
+        else
+            enable_thread_cs="global"
+        fi
     fi
 
     case $enable_thread_cs in
     global)
     thread_granularity=MPICH_THREAD_GRANULARITY__GLOBAL
     if test "$enable_refcount" = "default" ; then enable_refcount=none ; fi
-    ;;
-    per-object|per_object)
-    thread_granularity=MPICH_THREAD_GRANULARITY__POBJ
-    if test "$enable_refcount" = "default" ; then enable_refcount=lock-free ; fi
     ;;
     per-vci|per_vci)
     thread_granularity=MPICH_THREAD_GRANULARITY__VCI
@@ -1268,10 +1244,6 @@ if test "$enable_threads" = "multiple" ; then
     esac
 fi
 AC_DEFINE_UNQUOTED([MPICH_THREAD_GRANULARITY],$thread_granularity,[Method used to implement atomic updates and access])
-
-if test "$thread_granularity" = "MPICH_THREAD_GRANULARITY__POBJ" -a "$device_name" == "ch4" ; then
-    AC_MSG_ERROR([the ch4 device does not support the per-object critical section])
-fi
 
 if test "$thread_granularity" = "MPICH_THREAD_GRANULARITY__VCI" -a "$device_name" != "ch4" ; then
     AC_MSG_ERROR([per-vci critical section granularity is only supported for the ch4 device])
@@ -1467,18 +1439,116 @@ else
     # Make device_name available to subdirs
 fi
 
+# ---------------------------------------------------------------------------
+# Configuring pmi, pmilib, and pm
+#
+
+AC_ARG_WITH(pmi,
+	AS_HELP_STRING([--with-pmi=name], [Specify the pmi interface for MPICH]),,
+	with_pmi=pmi1)
+
+AC_ARG_WITH(pmilib,
+	AS_HELP_STRING([--with-pmilib=name],
+                [Specify the PMI library. Accepted options are:
+                   mpich - use MPICH PMI library (default).
+                   slurm - use Slurm PMI library. Use --with-slurm=path to configure
+                           Slurm library path.
+                   cray  - use Cray PMI library. Use --with-craypmi=path to configure
+                           Cray PMI library path.
+                   pmix  - use PMIx library. Use --with-pmix=path to configure
+                           PMIx library path.
+                ]),,
+	with_pmilib=mpich)
+
+AC_ARG_WITH(pm,
+	AS_HELP_STRING([--with-pm=name],
+		[Specify the process manager for MPICH.  "no" or "none" are
+                 valid values.  Multiple process managers may be specified as
+                 long as they all use the same pmi interface by separating them
+                 with colons.  The mpiexec for the first named process manager
+                 will be installed.  Example: "--with-pm=hydra:gforker"
+                 builds the two process managers hydra, and gforker;
+                 only the mpiexec from hydra is installed into the bin
+                 directory.]),,with_pm=default)
+
+# --- check and normalize the options ----
+
+case "$with_pmi" in
+  slurm)
+    with_pmi=pmi1
+    with_pmilib=slurm
+    with_pm=no
+    ;;
+  cray)
+    with_pmi=pmi2
+    with_pmilib=cray
+    with_pm=no
+    ;;
+  pmix)
+    with_pmi=pmix
+    with_pmilib=pmix
+    with_pm=no
+    ;;
+  bgq)
+    with_pmi=pmi1
+    with_pmilib=no
+    ;;
+  simple)
+    with_pmi=pmi1
+    with_pmilib=mpich
+    ;;
+  pmi2/simple)
+    with_pmi=pmi2
+    with_pmilib=mpich
+    ;;
+  pmi1|pmi2)
+    ;;
+  *)
+    # allow user to specify an external libpmi
+    m4_define([skip_ac_arg_with_pmi], 1)
+    PAC_CHECK_HEADER_LIB_FATAL([pmi], [pmi.h], [pmi], [PMI_Init])
+    # assume using PMI-1
+    with_pmi=pmi1
+    with_pmilib=no
+    ;;
+esac
+
+case "$with_pmilib" in
+  slurm)
+    with_pm=no
+    ;;
+  cray)
+    if test "$with_pmi" = "pmi1" ; then
+        AC_MSG_ERROR([Cray PMI only support PMI-2. Please reconfigure with --with-pmi=pmi2 --with-pmilib=cray])
+    fi
+    with_pm=no
+    ;;
+  pmix)
+    with_pmi=pmix
+    with_pm=no
+    ;;
+esac
+
 PAC_CHECK_HEADER_LIB_EXPLICIT(pmix, pmix.h, pmix, PMIx_Init)
 if test "$pac_have_pmix" = "yes" ; then
-    # disable built-in PMI and process managers
-    with_pmi="no"
-    with_pm="no"
-    if test "${device_name}" != "ch4" -a "${device_name}" != "psp"; then
-        AC_MSG_ERROR([$device_name does not support PMIx])
-    fi
-    AC_DEFINE(USE_PMIX_API, 1, [Define if PMIx API must be used])
+    with_pmi=pmix
+    with_pmilib=pmix
+    with_pm=no
 fi
 
-# with-pm
+# --- $with_pmi ----
+
+case "$with_pmi" in
+  pmi2)  
+    AC_DEFINE(USE_PMI2_API, 1, [Define if PMI2 API must be used])
+    ;;
+  pmix)  
+    AC_DEFINE(USE_PMIX_API, 1, [Define if PMIx API must be used])
+    ;;
+esac
+
+# --- $with_pm ----
+
 if test "$with_pm" = "none" ; then
     # add "none" as synonym for "no" to agree with older erroneous docs
     with_pm="no"
@@ -1490,12 +1560,6 @@ if test "$MPID_NO_PM" = yes ; then
     # This is used to change with_pm=default to with_pm=no in the case
     # where the device does not want a PM
     with_pm=no
-fi
-if test -z "$with_pm" ; then
-    with_pm="no"
-fi
-if test "$with_pmi" = "uni" -a "$with_pm" = "default" ; then
-    with_pm="no"
 fi
 if test "$with_pm" = "default" -o "$with_pm" = "yes" ; then
    if test ! -z "$MPID_DEFAULT_PM" ; then
@@ -1513,55 +1577,39 @@ else
 fi
 #
 hasError=no
-# We need to be careful about PM's that have either conflicting
-# requirements (e.g., different PMI implementations) or different
-# optional features (e.g., MPID_PM_NAMESERVER).
-# In addition, we need to interleave the setup of the PMI and PM
-# modules.  The order is as follows:
-#
-# For each PM, execute the mpichprereq script for that pm (if present).
-# This script provides information about the PM, including which PMI
-# implementations are supported.
-#
-# Then, for the selected PMI, the setup script (if any) is run.  This is
-# necessary because the setup of the PM may require information discovered
-# or provided duing the PMI setup step.
-#
-# Finally, for each PM, the setup script is executed.
-#
-# Step 1: invoke the mpichprereq for each PM
+
 for pm_name in $pm_names ; do
     if test -z "$first_pm_name" ; then
        first_pm_name=$pm_name
        export first_pm_name
     fi
-    if test ! -d $use_top_srcdir/src/pm/$pm_name ; then
-        AC_MSG_WARN([$use_top_srcdir/src/pm/$pm_name does not exist. PM is unknown])
-	hasError=yes
-    elif test ! -x $use_top_srcdir/src/pm/$pm_name/configure -a \
-              ! -f $use_top_srcdir/src/pm/$pm_name/subconfigure.m4 ; then
-        if test -s $use_top_srcdir/src/pm/$pm_name/configure ; then
-	    AC_MSG_WARN([The configure in $use_top_srcdir/src/pm/$pm_name exists but is not executable])
-        else
-            AC_MSG_WARN([pm $pm_name has no configure or subconfigure.m4])
+
+    case "$pm_name" in
+      gforker)
+        build_gforker=yes
+        if test "$with_pmi" != "pmi1" ; then
+            AC_MSG_ERROR([$pm_name requires PMI-v1, but $with_pmi was chosen.])
         fi
-        pm_name=""
+        ;;
+      remshell)
+        build_refshell=yes
+        if test "$with_pmi" != "pmi1" ; then
+            AC_MSG_ERROR([$pm_name requires PMI-v1, but $with_pmi was chosen.])
+        fi
+        ;;
+      hydra)
+        if test "$with_pmi" = "pmix" ; then
+            AC_MSG_ERROR([$pm_name does not support $with_pmi.])
+        fi
+        subsystems="$subsystems src/pm/hydra"
+        ;;
+      *)
+        AC_MSG_WARN([PM $pm_name is unknown])
 	hasError=yes
-    else
-	nameserver=$MPID_PM_NAMESERVER
-        if test -f $use_top_srcdir/src/pm/$pm_name/mpichprereq ; then
-	    echo sourcing $use_top_srcdir/src/pm/$pm_name/mpichprereq
-	    . $use_top_srcdir/src/pm/$pm_name/mpichprereq
-	fi
-	# Check for a change; if found, we'll take the default
-	if test "$MPID_PM_NAMESERVER" != "$nameserver" ; then
-            if test "$first_pm_name" != "$pm_name" ; then
-	        # Reject suggestion (use the default, common mode)
-		MPID_PM_NAMESERVER=""
-	    fi
-	fi
-    fi
+        ;;
+    esac
 done
+
 if test "$hasError" != no ; then
     AC_MSG_ERROR([Aborting configure because an error was seen in the selection of process managers])
 fi
@@ -1570,55 +1618,97 @@ fi
 pm_name=$first_pm_name
 AC_SUBST(pm_name)
 
-# Step 2:
-# Once we've selected the process manager (or managers), we can
-# check that we have a compatible PMI implementation.
-# with-pmi
-if test "$with_pmi" != "no" ; then
-    if test "$with_pmi" = "default" -o "$with_pmi" = "yes" ; then
-        if test -n "$PM_REQUIRES_PMI" ; then
-	    with_pmi=$PM_REQUIRES_PMI
-        else
-            with_pmi=simple
-        fi
-    elif test -n "$PM_REQUIRES_PMI" ; then
-        # Test for compatibility between pm and pmi choices
-        if test "$PM_REQUIRES_PMI" != "$with_pmi" ; then
-	    AC_MSG_ERROR([The PM chosen ($with_pm) requires the PMI implementation $PM_REQUIRES_PMI but $with_pmi was selected as the PMI implementation.])
-        fi
-    fi
-    pmi_name=$with_pmi
+dnl
+dnl gforker and remshell does not use separate configure. 
+dnl
+AM_CONDITIONAL([BUILD_PM_GFORKER],[test "X$build_gforker" = "Xyes"])
+AM_CONDITIONAL([BUILD_PM_REMSHELL],[test "X$build_refshell" = "Xyes"])
+AM_CONDITIONAL([PRIMARY_PM_GFORKER],[test "X$first_pm_name" = "Xgforker"])
+AM_CONDITIONAL([PRIMARY_PM_REMSHELL],[test "X$first_pm_name" = "Xremshell"])
 
-    if test ! -d $use_top_srcdir/src/pmi/$pmi_name ; then
-        AC_MSG_WARN([$use_top_srcdir/src/pmi/$pmi_name does not exist. PMI is unknown])
-    elif test ! -x $use_top_srcdir/src/pmi/$pmi_name/configure ; then
-        if test ! -f $use_top_srcdir/src/pmi/$pmi_name/subconfigure.m4 ; then
-            AC_MSG_WARN([pmi $pmi_name has no configure or subconfigure.m4])
-            pmi_name=""
-        fi
+# ---- $with_pmilib ----
+
+pmisrcdir=""
+AC_SUBST([pmisrcdir])
+pmilib=""
+AC_SUBST([pmilib])
+
+case "$with_pmilib" in
+  mpich|install)
+    if test "$with_pmi" != "pmi1" -a "$with_pmi" != "pmi2" ; then
+        AC_MSG_ERROR([pmilib=$with_pmilib is incompatible with $with_pmi]);
+    fi
+    pmisrcdir="src/pmi"
+    pmilib="src/pmi/libpmi.la"
+
+    pmi_subdir_args=""
+    if test "$with_pmilib" != "install" ; then
+        pmi_subdir_args="--enable-embedded"
+    fi
+    PAC_CONFIG_SUBDIR_ARGS([src/pmi], [$pmi_subdir_args])
+
+    PAC_APPEND_FLAG([-I${use_top_srcdir}/src/pmi/include], [CPPFLAGS])
+    PAC_APPEND_FLAG([-I${main_top_builddir}/src/pmi/include], [CPPFLAGS])
+    ;;
+  slurm)
+    PAC_SET_HEADER_LIB_PATH([slurm])
+    if test "$with_pmi" = "pmi1" ; then
+        AC_CHECK_HEADER([slurm/pmi.h], [], [AC_MSG_ERROR([could not find slurm/pmi.h.  Configure aborted])])
+        AC_CHECK_LIB([pmi], [PMI_Init],
+                    [PAC_PREPEND_FLAG([-lpmi],[LIBS])
+                     PAC_PREPEND_FLAG([-lpmi], [WRAPPER_LIBS])],
+                    [AC_MSG_ERROR([could not find the Slurm libpmi.  Configure aborted])])
+        AC_DEFINE([USE_PMI1_SLURM], 1, [Define if using Slurm PMI 1])
+    elif test "$with_pmi" = "pmi2" ; then
+        AC_CHECK_HEADER([slurm/pmi2.h], [], [AC_MSG_ERROR([could not find slurm/pmi2.h.  Configure aborted])])
+        AC_CHECK_LIB([pmi2], [PMI2_Init],
+                    [PAC_PREPEND_FLAG([-lpmi2],[LIBS])
+                     PAC_PREPEND_FLAG([-lpmi2], [WRAPPER_LIBS])],
+                    [AC_MSG_ERROR([could not find the Slurm libpmi2.  Configure aborted])])
+        AC_DEFINE([USE_PMI2_SLURM], 1, [Define if using Slurm PMI 2])
+    fi
+    ;;
+  cray)  
+    # set CPPFLAGS and LDFLAGS
+    PAC_PREPEND_FLAG([$CRAY_PMI_INCLUDE_OPTS], [CPPFLAGS])
+    PAC_PREPEND_FLAG([$CRAY_PMI_POST_LINK_OPTS], [LDFLAGS])
+
+    AC_CHECK_HEADER([pmi.h], [], [AC_MSG_ERROR([could not find pmi.h.  Configure aborted])])
+    AC_CHECK_LIB([pmi], [PMI_Init], [craypmi_libpmi=yes], [craypmi_libpmi=no])
+
+    if test "X$craypmi_libpmi" = "Xyes"; then
+        PAC_APPEND_FLAG([-lpmi], [WRAPPER_LIBS])
     else
-        # only add to subsystems if a full configure is present
-        subsystems="$subsystems src/pmi/$pmi_name"
+        AC_CHECK_LIB([pmi2], [PMI_Init], [craypmi_libpmi2=yes], [craypmi_libpmi2=no])
+        if test "X$craypmi_libpmi2" = "Xyes"; then
+            PAC_APPEND_FLAG([-lpmi2], [WRAPPER_LIBS])
+        else
+            AC_MSG_ERROR([could not find the cray libpmi.  Configure aborted])
+        fi
     fi
-fi
 
-# Step 3: complete pm setup.
-# Note that checks for errors have already been performed, so this
-# loop does not need to perform any extra error checks.
-# Note that this uses this_pm_name because pm_name must be the *first*
-# of the PM names
-for this_pm_name in $pm_names ; do
-    # only add the PM to the subsystems if it has a full configure to be
-    # executed
-    if test -f $use_top_srcdir/src/pm/$this_pm_name/configure ; then
-        subsystems="$subsystems src/pm/$this_pm_name"
+    if test "$with_pmi" = "pmi2" ; then
+        AC_DEFINE([USE_PMI2_CRAY], 1, [Define if using CRAY PMI 2])
     fi
-    if test -f $use_top_srcdir/src/pm/$this_pm_name/setup_pm ; then
-	echo sourcing $use_top_srcdir/src/pm/$this_pm_name/setup_pm
-	. $use_top_srcdir/src/pm/$this_pm_name/setup_pm
-    fi
-done
+    ;;
+  bgq)
+    # This is a hack to include the pmi.h header. The OFI/BGQ provider
+    # includes PMI functions, but no header file.
+    PAC_PREPEND_FLAG([-I${use_top_srcdir}/src/pmi/include], [CPPFLAGS])
+    AC_DEFINE([NO_PMI_SPAWN_MULTIPLE], 1, [The PMI library does not have PMI_Spawn_multiple.])
+    ;;
+  pmix)
+    # taken care of by PAC_CHECK_HEADER_LIB_EXPLICIT
+    ;;
+  no)
+    # taken care of by --with-pmi=path
+    ;;
+  *)
+    AC_MSG_ERROR([pmilib $with_pmilib not supported.])
+    ;;
+esac
 
+# ---------------------------------------------------------------------------
 # Check for whether the compiler defines a symbol that contains the
 # function name. The MPICH code uses this for debugging purposes.
 
@@ -1759,7 +1849,7 @@ AC_DEFINE_UNQUOTED(ENABLE_PVAR_MULTINIC,$status_multinic_pvars,
 # Handle default choices for the Fortran compilers
 # Note that these have already been set above
 
-if test "$enable_fc" = "yes"; then
+if test "$enable_f90" = "yes" -o "$enable_f08" = "yes"; then
     if test "$FC" = "" -o "$FC" = "no"; then
         # No Fortran compiler found; abort
         AC_MSG_ERROR([No Fortran compiler found. If you don't need to
@@ -1907,52 +1997,7 @@ information to configure with the FCFLAGS environment variable.])
 
 fi
 
-# FC requires F77 as well.  If the user disabled f77, do not run the
-# next test; instead, drop into the warning message
-# Set a default value for fc works with f77.  This value is
-# set to no *only* if fc was selected but was not compatible with f77
-fc_with_f77=yes
-if test "$enable_fc" = "yes" -a "$enable_f77" = yes ; then
-    enable_fc=no
-    if test "$FC" != "no" ; then
-	# If we allow multiple weak symbols, we should test a name
-	# that does not contain an underscore.  The Fortran binding uses
-	# this rule for enabling multiple weak symbols:
-	# if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) &&
-	#    defined(HAVE_MULTIPLE_PRAGMA_WEAK) &&
-	#    defined(F77_NAME_LOWER_2USCORE)
-	#
-	testRoutine="t1_2"
-	if test "$pac_cv_prog_c_multiple_weak_symbols" = "yes" -a \
-               "$enable_weak_symbols" = "yes" -a \
-	       "$pac_cv_prog_f77_name_mangle" = "lower doubleunderscore" ; then
-	    testRoutine="t12"
-        fi
-        PAC_FC_AND_F77_COMPATIBLE(fc_with_f77=yes,fc_with_f77=no,$testRoutine)
-        if test "$fc_with_f77" != yes ; then
-	    enable_fc=no
-	    AC_MSG_ERROR([The selected Fortran 90 compiler $FC does not work with the selected Fortran 77 compiler $F77.  Use the environment variables FC and F77 respectively to select compatible Fortran compilers.  The check here tests to see if a main program compiled with the Fortran 90 compiler can link with a subroutine compiled with the Fortran 77 compiler.])
-        elif test "$fc_with_f77" = "yes" ; then
-            # If we got here, there is a Fortran 90 compiler that we can use
-            enable_fc=yes
-        fi
-    elif test "$pac_cv_prog_fc_works" = no; then
-        AC_MSG_WARN([Use --disable-fc to keep configure from searching for a Fortran 90 compiler])
-    fi
-
-    if test "$enable_fc" = "yes"; then
-        if test "$FC" = "no" -o "$FC" = ""; then
-            # No Fortran 90 compiler found; abort
-            AC_MSG_ERROR([No Fortran 90 compiler found. If you don't need
-            to build any Fortran 90 programs, you can disable Fortran 90
-            support using --disable-fc. If you do want to build Fortran 90
-            programs, you need to install a Fortran 90 compiler such as
-            gfortran or ifort before you can proceed.])
-        fi
-    fi
-fi
-
-if test "$enable_fc" = "yes" -a "$enable_f77" != "yes" ; then
+if test "$enable_f90" = "yes" -a "$enable_f77" != "yes" ; then
    # Fortran 90 support requires compatible Fortran 77 support
    AC_MSG_ERROR([
 Fortran 90 support requires compatible Fortran 77 support.
@@ -1961,8 +2006,6 @@ do not use configure option --disable-fortran, and set the environment
 variable F77 to the name of the Fortran 90 compiler, or \$FC.
 If you do not want any Fortran support, use configure options
 --disable-fortran.])
-   # We should probably do the compatibility test as well
-   enable_f77=yes
 fi
 
 # ----------------------------------------------------------------------------
@@ -2042,21 +2085,15 @@ fi
 fi],
 main_top_srcdir=$main_top_srcdir
 enable_f77=$enable_f77
-enable_fc=$enable_fc
 has_exclaim=$has_exclaim
 has_fort_real8=$pac_cv_fort_real8
 includebuild_dir=$includebuild_dir
 libbuild_dir=$libbuild_dir
 bashWorks=$bashWorks)
 
-if test "$enable_fc" = "yes" ; then
-    if test "$enable_f77" != "yes" ; then
-        AC_MSG_WARN([Fortran 90 requires Fortran 77])
-        enable_fc=no
-    else
-        bindingsubsystems="$bindingsubsystems src/binding/fortran/use_mpi"
-        bindings="$bindings f90"
-    fi
+if test "$enable_f90" = "yes" ; then
+    bindingsubsystems="$bindingsubsystems src/binding/fortran/use_mpi"
+    bindings="$bindings f90"
 fi
 
 if test "$enable_f08" = "yes" ; then
@@ -2090,7 +2127,7 @@ MPI_F08_NAME=mpi_f08
 MPI_C_INTERFACE_TYPES_NAME=mpi_c_interface_types
 MPI_C_INTERFACE_CDESC_NAME=mpi_c_interface_cdesc
 
-if test "$enable_fc" = "yes" ; then
+if test "$enable_f90" = "yes" -o "$enable_f08" = "yes"; then
     # determine shared library flags for FC
     fc_shlib_conf=src/env/fc_shlib.conf
     PAC_COMPILER_SHLIB_FLAGS([FC],[$fc_shlib_conf])
@@ -2209,7 +2246,6 @@ if test "$enable_fc" = "yes" ; then
     # Check whether additional libraries are needed when linking with C
     PAC_PROG_FC_AND_C_STDIO_LIBS
     AC_SUBST(FC_OTHER_LIBS)
-    # ------------------------------------------------
 fi
 
 if test "X$modincdir" = "X" ; then
@@ -2346,12 +2382,21 @@ if test "$enable_cxx" = "yes" ; then
     # so that it may be used in #if statements without adding to
     # the CPP name space
     AC_SUBST(FORTRAN_BINDING)
+fi
 
+# we install mpicxx as long as CXX is defined. In the case of enable_cxx=no,
+# it is essentially the same as mpicc with CXX compiler.
+if test -n "$CXX" ; then
     # determine shared library flags for CXX
     cxx_shlib_conf=src/env/cxx_shlib.conf
     PAC_COMPILER_SHLIB_FLAGS([CXX],[$cxx_shlib_conf])
     AC_SUBST_FILE([cxx_shlib_conf])
+
+    if test "$enable_cxx" != yes; then
+        MPICXXLIBNAME="$MPILIBNAME"
+    fi
 fi
+AM_CONDITIONAL([INSTALL_MPICXX],[test -n "$CXX"])
 
 if test "$enable_cxx" = yes; then
     # Check if $MPI_DEFAULT_CXXOPTS is valid with $CXX
@@ -2729,6 +2774,14 @@ AC_CHECK_SIZEOF(double)
 AC_CHECK_SIZEOF(long double)
 AC_CHECK_SIZEOF(void *)
 
+# Let's not continue if we cannot detect these basic types
+for type in char int void_p ; do
+    eval len=\$ac_cv_sizeof_$type
+    if test "$len" = "0" ; then
+        AC_MSG_ERROR([Could not get size of "$type".])
+    fi
+done
+
 AC_CHECK_HEADERS([stddef.h])
 AC_CHECK_SIZEOF(wchar_t, 0, [
 #ifdef HAVE_STDDEF_H
@@ -2851,11 +2904,12 @@ for type in short int long float double \
     eval len=\$ac_cv_sizeof_$type
     if test -z "$len" ; then
         AC_MSG_ERROR([Configure was unable to determine the size of $type ; if cross compiling,
-use the environment variables CROSS_SIZEOF_typename, e.g., CROSS_SIZEOF_SHORT,
-or use the --with-cross=file configure option to specify a file containing
-Bourne (sh) shell assignments to CROSS_SIZEOF_typename for all datatype
-types.  The program maint/getcross.c can be compiled and run on the target
-system; this program outputs an appropriate file for the --with-cross option])
+use the --with-cross=file configure option to specify a file containing
+Bourne (sh) shell assignments to sizeof values for all datatype types.
+The Perl script maint/gen_cross.pl can be run on the target
+system to generate an appropriate file for the --with-cross option. You
+may also run the script on local system and use the generated file as
+template and manually set the correct values.])
     fi
 done
 
@@ -2891,9 +2945,11 @@ if test "$enable_f77" = yes ; then
     CROSS_F77_SIZEOF_INTEGER=${CROSS_F77_SIZEOF_INTEGER:-0}
     CROSS_F77_SIZEOF_REAL=${CROSS_F77_SIZEOF_REAL:-0}
     CROSS_F77_SIZEOF_DOUBLE_PRECISION=${CROSS_F77_SIZEOF_DOUBLE_PRECISION:-0}
+    CROSS_F77_SIZEOF_LOGICAL=${CROSS_F77_SIZEOF_LOGICAL:-0}
     PAC_PROG_F77_CHECK_SIZEOF_EXT(integer,$CROSS_F77_SIZEOF_INTEGER)
     PAC_PROG_F77_CHECK_SIZEOF_EXT(real,$CROSS_F77_SIZEOF_REAL)
     PAC_PROG_F77_CHECK_SIZEOF_EXT(double precision,$CROSS_F77_SIZEOF_DOUBLE_PRECISION)
+    PAC_PROG_F77_CHECK_SIZEOF_EXT(logical,$CROSS_F77_SIZEOF_LOGICAL)
     AC_LANG([Fortran 77])
     # If we have sizes for real and double, we do not need to call
     # mpir_get_fsize at run time.
@@ -3073,8 +3129,7 @@ if test "$enable_f77" = yes ; then
         ])
 	AC_LANG_POP([Fortran])
 	WTIME_DOUBLE_TYPE="DOUBLE PRECISION"
-	# Save a copy of the original mpi_base.f90 file
-	if test "$enable_fc" = "yes" -a "$pac_cv_fort90_real8" = "yes" ; then
+	if test "$pac_cv_fort90_real8" = "yes" ; then
 	    WTIME_DOUBLE_TYPE="REAL*8"
         fi
 	# WTIME_DOUBLE_TYPE is substituted into mpi_base.f90
@@ -3090,12 +3145,9 @@ if test "$enable_f77" = yes ; then
     # Note, however, that zero value are (in all practical case) invalid
     # for Fortran 90, and indicate a failure.  Test and fail if Fortran 90
     # enabled.
-    if test "$enable_fc" = "yes" ; then
+    if test "$enable_f90" = "yes" ; then
         if test "$ADDRESS_KIND" -le 0 -o "$OFFSET_KIND" -le 0 ; then
 	    AC_MSG_ERROR([Unable to determine Fortran 90 integer kinds for MPI types.  If you do not need Fortran 90, add --disable-fc to the configure options.])
-	    # If the above is converted to a warning, you need to change
-	    # enable_fc and remote f90 from the bindings
-	    enable_fc=no
         fi
     fi
     AC_SUBST(ADDRESS_KIND)
@@ -3122,71 +3174,6 @@ if test "$enable_f77" = yes ; then
     DLLIMPORT=""
     AC_SUBST(DLLIMPORT)
 
-    # FIXME:
-    # We also need to include
-    # SIZEOF_FC_MPI_OFFSET
-    # SIZEOF_FC_MPI_AINT
-    #
-    # If other "kinds" are supported, MPI_SIZEOF needs to identify
-    # those as well.  This is very difficult to do in a general way.
-
-    # To start with, we use the sizes determined for the Fortran 77 values.
-    # These must be the same as for the Fortran 90 values.
-    CROSS_F90_SIZEOF_INTEGER=${CROSS_F90_SIZEOF_INTEGER:-0}
-    CROSS_F90_SIZEOF_REAL=${CROSS_F90_SIZEOF_REAL:-0}
-    CROSS_F90_SIZEOF_DOUBLE_PRECISION=${CROSS_F90_SIZEOF_DOUBLE_PRECISION:-0}
-    SIZEOF_FC_INTEGER=$CROSS_F90_SIZEOF_INTEGER
-    SIZEOF_FC_REAL=$CROSS_F90_SIZEOF_REAL
-    SIZEOF_FC_CHARACTER=1
-    SIZEOF_FC_DOUBLE_PRECISION=$CROSS_F90_SIZEOF_DOUBLE_PRECISION
-    if test "$pac_cv_f77_sizeof_integer" -gt 0 -a \
-	    "$SIZEOF_FC_INTEGER" = "0" ; then
-        SIZEOF_FC_INTEGER=$pac_cv_f77_sizeof_integer
-    fi
-    if test "$pac_cv_f77_sizeof_real" -gt 0 -a "$SIZEOF_FC_REAL" = "0" ; then
-        SIZEOF_FC_REAL=$pac_cv_f77_sizeof_real
-    fi
-    if test "$pac_cv_f77_sizeof_double_precision" -gt 0 -a \
-       "$SIZEOF_FC_DOUBLE_PRECISION" = "0" ; then
-        SIZEOF_FC_DOUBLE_PRECISION=$pac_cv_f77_sizeof_double_precision
-    fi
-    AC_SUBST(SIZEOF_FC_INTEGER)
-    AC_SUBST(SIZEOF_FC_REAL)
-    AC_SUBST(SIZEOF_FC_DOUBLE_PRECISION)
-    AC_SUBST(SIZEOF_FC_CHARACTER)
-
-    # REQD is short for "real equal double precision" and is set to the
-    # Fortran 90 comment character if true.  This is necessary to
-    # allow the mpi_sizeofs module to be built, since if this part of the
-    # Fortran standard is violated by the compiler (unfortunately common,
-    # as some applications are written to require this non-standard
-    # version), the double precision versions of the MPI_SIZEOF routine
-    # must be commented out of the module (!).
-    REQD=
-    if test "$SIZEOF_FC_REAL" = "$SIZEOF_FC_DOUBLE_PRECISION" ; then
-        REQD="!"
-    fi
-    AC_SUBST(REQD)
-    # Is integer*1 supported, and is it a different size than integer?
-    REQI1="!"
-    if test "$pac_cv_fort_integer1" = yes -a "$SIZEOF_FC_INTEGER" != 1 ; then
-        REQI1=
-    fi
-    AC_SUBST(REQI1)
-    # Is integer*2 supported, and is it a different size than integer?
-    REQI2="!"
-    if test "$pac_cv_fort_integer2" = yes -a "$SIZEOF_FC_INTEGER" != 2 ; then
-        REQI2=
-    fi
-    AC_SUBST(REQI2)
-    # Is integer*8 supported, and is it a different size than integer?
-    REQI8="!"
-    if test "$pac_cv_fort_integer8" = yes -a "$SIZEOF_FC_INTEGER" != 8 ; then
-        REQI8=
-    fi
-    AC_SUBST(REQI8)
-    #
-
     AC_LANG([C])
 else
     MPI_FINT=int
@@ -3196,6 +3183,7 @@ else
     pac_cv_f77_sizeof_integer=0
     pac_cv_f77_sizeof_real=0
     pac_cv_f77_sizeof_double_precision=0
+    pac_cv_f77_sizeof_logical=0
     pac_cv_f77_sizeof_integer1=0
     pac_cv_f77_sizeof_integer2=0
     pac_cv_f77_sizeof_integer4=0
@@ -3299,11 +3287,13 @@ case $MPI_AINT in
         MPI_AINT_FMT_DEC_SPEC="%d"
         MPI_AINT_FMT_HEX_SPEC="%x"
         MPIR_AINT_MAX="INT_MAX"
+        MPIR_AINT_MIN="INT_MIN"
         ;;
     long)
         MPI_AINT_FMT_DEC_SPEC="%ld"
         MPI_AINT_FMT_HEX_SPEC="%lx"
         MPIR_AINT_MAX="LONG_MAX"
+        MPIR_AINT_MIN="LONG_MIN"
         ;;
     long_long)
         MPI_AINT_FMT_DEC_SPEC="%lld"
@@ -3311,17 +3301,20 @@ case $MPI_AINT in
         # tt#1776: if LLONG_MAX is missing, we fix it up in C, b/c it's
         # easier there.  See mpiiimpl.h.
         MPIR_AINT_MAX="LLONG_MAX"
+        MPIR_AINT_MIN="LLONG_MIN"
         ;;
     short)
         MPI_AINT_FMT_DEC_SPEC="%hd"
         MPI_AINT_FMT_HEX_SPEC="%hx"
         MPIR_AINT_MAX="SHRT_MAX"
+        MPIR_AINT_MIN="SHRT_MIN"
         ;;
     *)
         AC_MSG_WARN([unable to determine format specifiers for MPI_Aint, defaulting to int])
         MPI_AINT_FMT_DEC_SPEC="%d"
         MPI_AINT_FMT_HEX_SPEC="%x"
         MPIR_AINT_MAX="INT_MAX"
+        MPIR_AINT_MIN="INT_MIN"
     ;;
 esac
 export MPI_AINT_FMT_DEC_SPEC MPI_AINT_FMT_HEX_SPEC
@@ -3330,6 +3323,7 @@ AC_SUBST(MPI_AINT)
 AC_SUBST(MPI_AINT_FMT_DEC_SPEC)
 AC_SUBST(MPI_AINT_FMT_HEX_SPEC)
 AC_DEFINE_UNQUOTED([MPIR_AINT_MAX],[$MPIR_AINT_MAX],[limits.h _MAX constant for MPI_Aint])
+AC_DEFINE_UNQUOTED([MPIR_AINT_MIN],[$MPIR_AINT_MIN],[limits.h _MIN constant for MPI_Aint])
 
 # ------------
 # MPI_OFFSET
@@ -3402,7 +3396,7 @@ AC_SUBST(MPI_OFFSET_TYPEDEF)
 if test -z "$FORTRAN_MPI_OFFSET" ; then
     FORTRAN_MPI_OFFSET=INTEGER
 fi
-if test "$enable_f77" = yes -a "$enable_fc" = yes ; then
+if test "$enable_f77" = yes -a "$enable_f90" = yes ; then
     AC_LANG_PUSH([Fortran 77])
     AC_MSG_CHECKING([whether the Fortran Offset type works with Fortran 77])
     AC_COMPILE_IFELSE([
@@ -3484,7 +3478,7 @@ PAC_SET_MPI_TYPE(19, MPI_UNSIGNED_LONG_LONG, $ac_cv_sizeof_long_long)
 PAC_SET_MPI_TYPE(1a, MPI_CHARACTER, $pac_cv_f77_sizeof_character)
 PAC_SET_MPI_TYPE(1b, MPI_INTEGER, $pac_cv_f77_sizeof_integer)
 PAC_SET_MPI_TYPE(1c, MPI_REAL, $pac_cv_f77_sizeof_real)
-PAC_SET_MPI_TYPE(1d, MPI_LOGICAL, $pac_cv_f77_sizeof_integer)
+PAC_SET_MPI_TYPE(1d, MPI_LOGICAL, $pac_cv_f77_sizeof_logical)
 PAC_SET_MPI_TYPE(1e, MPI_COMPLEX, $pac_cv_f77_sizeof_real, 2)
 PAC_SET_MPI_TYPE(1f, MPI_DOUBLE_PRECISION, $pac_cv_f77_sizeof_double_precision)
 PAC_SET_MPI_TYPE(20, MPI_2INTEGER, $pac_cv_f77_sizeof_integer, 2)
@@ -3708,11 +3702,6 @@ fi
 # ----------------------------------------------------------------------------
 # Look for some non-posix, but commonly provided functions
 # ----------------------------------------------------------------------------
-# mkstemp() is a better replacement for mktemp()
-AC_CHECK_FUNCS(mkstemp)
-if test "$ac_cv_func_mkstemp" = "yes" ; then
-    PAC_FUNC_NEEDS_DECL([#include <stdlib.h>],mkstemp)
-fi
 # putenv() sets environment variable
 AC_CHECK_FUNCS(putenv)
 if test "$ac_cv_func_putenv" = "yes" ; then
@@ -3865,12 +3854,9 @@ m4_map([PAC_SUBCFG_CONFIGURE_SUBSYS], [PAC_SUBCFG_MODULE_LIST])
 
 # now configure any actual recursively configures subsystems, such as ROMIO and
 # hydra, or older components that haven't been updated to a subconfigure.m4 yet
-PAC_PUSH_ALL_FLAGS()
-PAC_RESET_ALL_FLAGS()
 for subsys in $devsubsystems $subsystems ; do
-    PAC_CONFIG_SUBDIR([$subsys],[],[AC_MSG_ERROR([$subsys configure failed])])
+    PAC_CONFIG_SUBDIR_ARGS([$subsys],[$subsys_config_args],[],[AC_MSG_ERROR([$subsys configure failed])])
 done
-PAC_POP_ALL_FLAGS()
 if test "$DEBUG_SUBDIR_CACHE" = yes -a "$enable_echo" != yes ; then
     set +x
 fi
@@ -3948,19 +3934,10 @@ AC_SUBST(MPI_MAX_ERROR_STRING)
 MPIU_DLL_SPEC_DEF="#define MPIU_DLL_SPEC"
 AC_SUBST(MPIU_DLL_SPEC_DEF)
 
-dnl We can configure the test directory after the rest of the configure
-dnl steps because it does not depend on them.
-# set and export values that the test/mpi configure will reference to ensure
-# that the correct decisions are made since this configure happens before the
-# MPICH library is built.
-MPICH_ENABLE_CXX=$enable_cxx
-MPICH_ENABLE_FC=$enable_fc
-export MPICH_ENABLE_CXX
-export MPICH_ENABLE_FC
 AM_CONDITIONAL([BUILD_CXX_BINDING],[test "$enable_cxx" = "yes"])
 AM_CONDITIONAL([BUILD_F77_BINDING],[test "$enable_f77" = "yes"])
 dnl FIXME DJG this has been moved to the f90 bindings subconfigure.m4 for now
-dnl AM_CONDITIONAL([BUILD_FC_BINDING],[test "$enable_fc" = "yes"])
+dnl AM_CONDITIONAL([BUILD_FC_BINDING],[test "$enable_f90" = "yes"])
 # MPI_SRCDIR gives the test/mpi configure the location of the source
 # files for an MPI implementation
 if test -n "$ac_abs_srcdir" ; then
@@ -3986,7 +3963,6 @@ PAC_GET_EXENAME("mpifort", MPIFORT_NAME)
 PAC_GET_EXENAME("mpif90", MPIF90_NAME)
 PAC_GET_EXENAME("mpif77", MPIF77_NAME)
 
-AC_CONFIG_SUBDIRS([test/mpi])
 dnl
 dnl Generate the Makefiles from Makefile.in
 dnl Also generate mpi.h from mpi.h.in so that we can eliminate all ifdefs
@@ -4043,10 +4019,6 @@ AC_CONFIG_COMMANDS([chmod],[chmod a+x test/commands/cmdtests])
 
 
 AC_DEFINE(HAVE_MPICHCONF,1,[Define so that we can test whether the mpichconf.h file has been included])
-
-if test "$USE_PMI2_API" = "yes" ; then
-   AC_DEFINE(USE_PMI2_API, 1, [Define if PMI2 API must be used])
-fi
 
 ########################################################################
 
@@ -4191,18 +4163,44 @@ fi
 AC_SUBST(pkgconfigdir)
 export pkgconfigdir
 
+if test "$enable_f90" = "yes" ; then
+    PAC_FC_CHECK_IGNORE_TKR
+    if test -z "$PYTHON" ; then
+        if test -f src/binding/fortran/use_mpi/mpi_base.f90 ; then
+            AC_MSG_NOTICE([Use pre-generated Fortran mpi binding. To prevent issues, install Python 3 and re-run configure.])
+        else
+            AC_MSG_ERROR([Python 3 is required to generate F90 bindings but not found!])
+        fi
+    else
+        cmd_f90="$PYTHON $srcdir/maint/gen_binding_f90.py"
+        # pass in type sizes for MPI_SIZEOF
+        cmd_f90="$cmd_f90 -f-logical-size=$pac_cv_f77_sizeof_logical"
+        if test "$pac_fc_ignore_tkr" != "no" ; then
+            cmd_f90="$cmd_f90 -ignore-tkr=$pac_fc_ignore_tkr"
+        fi
+        AC_CONFIG_COMMANDS([gen_binding_f90], [$cmd_gen_binding_f90], [cmd_gen_binding_f90="$cmd_f90"])
+    fi
+fi
+
 if test "$enable_f08" = "yes" ; then
-    PAC_CHECK_PYTHON
     PAC_FC_CHECK_REAL128
-    cmd="$PYTHON $srcdir/maint/gen_binding_f08.py"
-    if test "$pac_fc_has_real128" = "no" ; then
-        cmd="$cmd -no-real128"
+    if test -z "$PYTHON" ; then
+        if test -f src/binding/fortran/use_mpi_f08/mpi_f08.f90 ; then
+            AC_MSG_NOTICE([Using pre-generated Fortran mpi_f08 binding source. To prevent issues, install Python 3 and rerun configure.])
+        else
+            AC_MSG_ERROR([Python 3 is required to generate F08 bindings but not found!])
+        fi
+    else
+        cmd_f08="$PYTHON $srcdir/maint/gen_binding_f08.py"
+        if test "$pac_fc_has_real128" = "no" ; then
+            cmd_f08="$cmd_f08 -no-real128"
+        fi
+        if test "$enable_romio" = "no" ; then
+            cmd_f08="$cmd_f08 -no-mpiio"
+        fi
+        cmd_f08="$cmd_f08 -fint-size=$pac_cv_f77_sizeof_integer -aint-size=$MPI_SIZEOF_AINT -count-size=$MPI_SIZEOF_COUNT -cint-size=$ac_cv_sizeof_int"
+        AC_CONFIG_COMMANDS([gen_binding_f08], [$cmd_gen_binding_f08], [cmd_gen_binding_f08="$cmd_f08"])
     fi
-    if test "$enable_romio" = "no" ; then
-        cmd="$cmd -no-mpiio"
-    fi
-    cmd="$cmd -fint-size=$pac_cv_f77_sizeof_integer -aint-size=$MPI_SIZEOF_AINT -count-size=$MPI_SIZEOF_COUNT -cint-size=$ac_cv_sizeof_int"
-    AC_CONFIG_COMMANDS([gen_binding_f08], [$cmd_gen_binding_f08], [cmd_gen_binding_f08="$cmd"])
 fi
 
 case "$host_os" in
@@ -4224,9 +4222,6 @@ AC_CONFIG_FILES([Makefile \
 	  src/binding/fortran/mpif_h/mpif.h \
 	  src/binding/fortran/mpif_h/setbotf.f \
 	  src/binding/fortran/mpif_h/setbot.c \
-	  src/binding/fortran/use_mpi/mpi_sizeofs.f90 \
-	  src/binding/fortran/use_mpi/mpi_base.f90 \
-	  src/binding/fortran/use_mpi/mpi_constants.f90 \
 	  src/binding/fortran/use_mpi_f08/mpi_f08_compile_constants.f90 \
 	  src/binding/fortran/use_mpi_f08/mpi_c_interface_types.f90 \
 	  src/packaging/pkgconfig/mpich.pc \
@@ -4240,7 +4235,6 @@ AC_CONFIG_FILES([Makefile \
 	  src/env/mpifort.bash \
           src/env/parkill \
           src/include/mpi.h \
-          doc/design/Makefile \
           doc/installguide/Makefile \
           doc/refman/Makefile \
           doc/userguide/Makefile \

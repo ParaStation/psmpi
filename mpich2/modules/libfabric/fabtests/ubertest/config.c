@@ -32,7 +32,6 @@
 #include "fabtest.h"
 #include "jsmn.h"
 
-
 #define FT_CAP_MSG	FI_MSG | FI_SEND | FI_RECV
 #define FT_CAP_TAGGED	FI_TAGGED | FI_SEND | FI_RECV
 #define FT_CAP_RMA	FI_RMA | FI_READ | FI_WRITE | FI_REMOTE_READ | FI_REMOTE_WRITE
@@ -173,7 +172,7 @@ static struct key_t keys[] = {
 		.str = "datatype",
 		.offset = offsetof(struct ft_set, datatype),
 		.val_type = VAL_NUM,
-		.val_size = sizeof(((struct ft_set *)0)->datatype) / FI_DATATYPE_LAST,
+		.val_size = sizeof(((struct ft_set *)0)->datatype) / OFI_DATATYPE_CNT,
 	},
 	{
 		.str = "mode",
@@ -246,6 +245,12 @@ static struct key_t keys[] = {
 		.offset = offsetof(struct ft_set, threading),
 		.val_type = VAL_NUM,
 		.val_size = sizeof(((struct ft_set *)0)->threading) / FT_MAX_THREADING,
+	},
+	{
+		.str = "cq_format",
+		.offset = offsetof(struct ft_set, cq_format),
+		.val_type = VAL_NUM,
+		.val_size = sizeof(((struct ft_set *)0)->cq_format) / FT_MAX_CQ_FORMAT,
 	},
 };
 
@@ -340,6 +345,8 @@ static int ft_parse_num(char *str, int len, struct key_t *key, void *buf)
 		TEST_ENUM_SET_N_RETURN(str, len, FI_UINT32, enum fi_datatype, buf);
 		TEST_ENUM_SET_N_RETURN(str, len, FI_INT64, enum fi_datatype, buf);
 		TEST_ENUM_SET_N_RETURN(str, len, FI_UINT64, enum fi_datatype, buf);
+		TEST_ENUM_SET_N_RETURN(str, len, FI_INT128, enum fi_datatype, buf);
+		TEST_ENUM_SET_N_RETURN(str, len, FI_UINT128, enum fi_datatype, buf);
 		TEST_ENUM_SET_N_RETURN(str, len, FI_FLOAT, enum fi_datatype, buf);
 		TEST_ENUM_SET_N_RETURN(str, len, FI_DOUBLE, enum fi_datatype, buf);
 		TEST_ENUM_SET_N_RETURN(str, len, FI_FLOAT_COMPLEX, enum fi_datatype, buf);
@@ -405,6 +412,11 @@ static int ft_parse_num(char *str, int len, struct key_t *key, void *buf)
 		FT_ERR("Unsupported mode bit");
 	} else if (!strncmp(key->str, "test_flags", strlen("test_flags"))) {
 		TEST_SET_N_RETURN(str, len, "FT_FLAG_QUICKTEST", FT_FLAG_QUICKTEST, uint64_t, buf);
+	} else if (!strncmp(key->str, "cq_format", strlen("cq_format"))) {
+		TEST_ENUM_SET_N_RETURN(str, len, FI_CQ_FORMAT_CONTEXT, uint64_t, buf);
+		TEST_ENUM_SET_N_RETURN(str, len, FI_CQ_FORMAT_MSG, uint64_t, buf);
+		TEST_ENUM_SET_N_RETURN(str, len, FI_CQ_FORMAT_DATA, uint64_t, buf);
+		TEST_ENUM_SET_N_RETURN(str, len, FI_CQ_FORMAT_TAGGED, uint64_t, buf);
 	} else {
 		FT_ERR("Unknown test configuration key");
 	}
@@ -661,6 +673,7 @@ void fts_start(struct ft_series *series, int index)
 	series->cur_class = 0;
 	series->cur_progress = 0;
 	series->cur_threading = 0;
+	series->cur_cq_format = 0;
 
 	series->test_index = 1;
 	if (index > 1) {
@@ -686,13 +699,27 @@ int fts_info_is_valid(void)
 		if (!ft_use_comp_cntr(test_info.comp_type))
 			return 0;
 	}
-
+	if (test_info.test_class & FI_TAGGED) {
+		if (test_info.cq_format != FI_CQ_FORMAT_TAGGED)
+			return 0;
+	} else if (test_info.cq_format == FI_CQ_FORMAT_TAGGED) {
+		return 0;
+	}
+	if (test_info.msg_flags & FI_REMOTE_CQ_DATA ||
+	    is_data_func(test_info.class_function)) {
+		if (test_info.cq_format < FI_CQ_FORMAT_DATA)
+			return 0;
+	}
 	if (test_info.test_class & (FI_MSG | FI_TAGGED) &&
 	    !ft_check_rx_completion(test_info) &&
 	    !ft_use_comp_cntr(test_info.comp_type))
 		return 0;
 	if (test_info.test_type == FT_TEST_UNIT &&
 	    test_info.ep_type == FI_EP_DGRAM)
+		return 0;
+	if ((test_info.test_type == FT_TEST_UNIT) &&
+	    (opts.options & FT_OPT_ENABLE_HMEM) &&
+	    (test_info.test_class == (FT_CAP_ATOMIC)))
 		return 0;
 
 	return 1;
@@ -767,6 +794,10 @@ void fts_next(struct ft_series *series)
 		return;
 	series->cur_threading = 0;
 
+	if (set->cq_format[++series->cur_cq_format])
+		return;
+	series->cur_cq_format = 0;
+
 	series->cur_set++;
 }
 
@@ -837,6 +868,23 @@ void fts_cur_info(struct ft_series *series, struct ft_info *info)
 		i = 0;
 		while (set->mode[i])
 			info->mode |= set->mode[i++];
+	}
+	if (opts.options & FT_OPT_ENABLE_HMEM) {
+		info->caps |= FI_HMEM;
+		info->mr_mode |= FI_MR_HMEM;
+	}
+	if (set->cq_format[0]) {
+		info->cq_format = set->cq_format[series->cur_cq_format];
+	} else {
+		if (info->test_class & FI_TAGGED)
+			info->cq_format = FI_CQ_FORMAT_TAGGED;
+		else if (info->msg_flags & FI_REMOTE_CQ_DATA ||
+		    is_data_func(info->class_function))
+			info->cq_format = FI_CQ_FORMAT_DATA;
+		else if (info->test_class & FI_MSG)
+			info->cq_format = FI_CQ_FORMAT_MSG;
+		else
+			info->cq_format = FI_CQ_FORMAT_CONTEXT;
 	}
 
 	info->ep_type = set->ep_type[series->cur_ep];

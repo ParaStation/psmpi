@@ -67,7 +67,7 @@ static int ft_init_rx_control(void)
 	if (ret)
 		return ret;
 
-	ft_rx_ctrl.cq_format = FI_CQ_FORMAT_DATA;
+	ft_rx_ctrl.cq_format = test_info.cq_format;
 	ft_rx_ctrl.addr = FI_ADDR_UNSPEC;
 
 	ft_rx_ctrl.msg_size = ft_ctrl.size_array[ft_ctrl.size_cnt - 1];
@@ -137,7 +137,7 @@ static int ft_init_control(void)
 
 static void ft_cleanup_xcontrol(struct ft_xcontrol *ctrl)
 {
-	free(ctrl->buf);
+	ft_hmem_free(opts.iface, ctrl->buf);
 	free(ctrl->iov);
 	free(ctrl->iov_desc);
 	free(ctrl->ctx);
@@ -418,8 +418,7 @@ static int ft_sync_msg_needed(void)
 
 static int ft_check_verify_cnt()
 {
-	if (test_info.msg_flags == FI_REMOTE_CQ_DATA &&
-	    ft_ctrl.verify_cnt != ft_ctrl.xfer_iter)
+	if (ft_generates_rx_comp() && ft_ctrl.verify_cnt != ft_ctrl.xfer_iter)
 		return -FI_EIO;
 	return 0;
 }
@@ -862,8 +861,12 @@ static int ft_unit_atomic(void)
 			return ret;
 
 		ret = ft_verify_bufs();
-		if (ret)
-			fail = -FI_EIO;
+		if (ret) {
+			if (ret < 0)
+				fail = -FI_EIO;
+			else
+				fail = 1;
+		}
 	}
 
 	ret = ft_check_verify_cnt();
@@ -947,12 +950,19 @@ static int ft_run_unit(void)
 
 		ret = ft_unit();
 		if (ret) {
-			if (ret != -FI_EIO)
-				return ret;
-			fail = -FI_EIO;
+			if (ret < 0) {
+				if (ret != -FI_EIO)
+					return ret;
+				fail = -FI_EIO;
+			} else if (!fail)
+				fail = ret;
 		}
 	}
-	if (fail)
+	if (fail > 0) {
+		printf("unit test UNVERIFIED\n");
+		/* Allow testing to continue. */
+		fail = 0;
+	} else if (fail < 0)
 		printf("unit test FAILED\n");
 	else
 		printf("unit test PASSED\n");
@@ -967,11 +977,11 @@ void ft_cleanup(void)
 	FT_CLOSE_FID(ft_mr_ctrl.mr);
 	FT_CLOSE_FID(ft_atom_ctrl.res_mr);
 	FT_CLOSE_FID(ft_atom_ctrl.comp_mr);
-	ft_free_res();
 	ft_cleanup_xcontrol(&ft_rx_ctrl);
 	ft_cleanup_xcontrol(&ft_tx_ctrl);
 	ft_cleanup_mr_control(&ft_mr_ctrl);
 	ft_cleanup_atomic_control(&ft_atom_ctrl);
+	ft_free_res();
 	memset(&ft_ctrl, 0, sizeof ft_ctrl);
 }
 

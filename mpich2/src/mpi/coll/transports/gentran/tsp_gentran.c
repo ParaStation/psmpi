@@ -430,24 +430,24 @@ int MPIR_TSP_sched_localcopy(const void *sendbuf, MPI_Aint sendcount, MPI_Dataty
 
 /* Transport function that adds a callback type vertex in the graph */
 int MPIR_TSP_sched_cb(MPIR_TSP_cb_t cb_p, void *cb_data, MPIR_TSP_sched_t sched,
-                      int n_in_vtcs, int *in_vtcs)
+                      int n_in_vtcs, int *in_vtcs, int *vtx_id)
 {
     vtx_t *vtxp;
-    int vtx_id;
+    int mpi_errno = MPI_SUCCESS;
 
     /* assign a new vertex */
-    vtx_id = MPII_Genutil_vtx_create(sched, &vtxp);
+    *vtx_id = MPII_Genutil_vtx_create(sched, &vtxp);
 
     vtxp->vtx_kind = MPII_GENUTIL_VTX_KIND__CB;
-    MPII_Genutil_vtx_add_dependencies(sched, vtx_id, n_in_vtcs, in_vtcs);
+    MPII_Genutil_vtx_add_dependencies(sched, *vtx_id, n_in_vtcs, in_vtcs);
 
     /* record the arguments */
     vtxp->u.cb.cb_p = cb_p;
     vtxp->u.cb.cb_data = cb_data;
 
-    MPL_DBG_MSG_FMT(MPIR_DBG_COLL, VERBOSE, (MPL_DBG_FDEST, "Gentran: schedule [%d] cb", vtx_id));
+    MPL_DBG_MSG_FMT(MPIR_DBG_COLL, VERBOSE, (MPL_DBG_FDEST, "Gentran: schedule [%d] cb", *vtx_id));
 
-    return vtx_id;
+    return mpi_errno;
 }
 
 /* Transport function that adds a no op vertex in the graph that has
@@ -581,6 +581,16 @@ int MPIR_TSP_sched_start(MPIR_TSP_sched_t s, MPIR_Comm * comm, MPIR_Request ** r
 
     MPIR_FUNC_ENTER;
 
+    if (unlikely(sched->total_vtcs == 0)) {
+        if (!sched->is_persistent) {
+            mpi_errno = MPIR_TSP_sched_free(sched);
+            MPIR_ERR_CHECK(mpi_errno);
+        }
+        *req = MPIR_Request_create_complete(MPIR_REQUEST_KIND__COLL);
+        MPIR_ERR_CHKANDSTMT(*req == NULL, mpi_errno, MPIX_ERR_NOREQ, goto fn_fail, "**nomemreq");
+        goto fn_exit;
+    }
+
     /* Create a request */
     reqp = MPIR_Request_create(MPIR_REQUEST_KIND__COLL);
     if (!reqp)
@@ -589,14 +599,6 @@ int MPIR_TSP_sched_start(MPIR_TSP_sched_t s, MPIR_Comm * comm, MPIR_Request ** r
     MPIR_Request_add_ref(reqp);
     sched->req = reqp;
 
-    if (unlikely(sched->total_vtcs == 0)) {
-        if (!sched->is_persistent) {
-            mpi_errno = MPIR_TSP_sched_free(sched);
-            MPIR_ERR_CHECK(mpi_errno);
-        }
-        MPID_Request_complete(reqp);
-        goto fn_exit;
-    }
     MPIR_Assert(sched->completed_vtcs == 0);
     /* Kick start progress on this collective's schedule */
     mpi_errno = MPII_Genutil_sched_poke(sched, &is_complete, &made_progress);

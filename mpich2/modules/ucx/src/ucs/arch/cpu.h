@@ -31,6 +31,7 @@ typedef enum ucs_cpu_model {
     UCS_CPU_MODEL_ARM_AARCH64,
     UCS_CPU_MODEL_AMD_NAPLES,
     UCS_CPU_MODEL_AMD_ROME,
+    UCS_CPU_MODEL_AMD_MILAN,
     UCS_CPU_MODEL_ZHAOXIN_ZHANGJIANG,
     UCS_CPU_MODEL_ZHAOXIN_WUDAOKOU,
     UCS_CPU_MODEL_ZHAOXIN_LUJIAZUI,
@@ -152,7 +153,14 @@ double ucs_cpu_get_memcpy_bw();
 
 static inline int ucs_cpu_prefer_relaxed_order()
 {
-    return ucs_arch_get_cpu_vendor() == UCS_CPU_VENDOR_FUJITSU_ARM;
+    ucs_cpu_vendor_t cpu_vendor = ucs_arch_get_cpu_vendor();
+    ucs_cpu_model_t cpu_model   = ucs_arch_get_cpu_model();
+
+    return (cpu_vendor == UCS_CPU_VENDOR_FUJITSU_ARM) ||
+           ((cpu_vendor == UCS_CPU_VENDOR_AMD) &&
+            ((cpu_model == UCS_CPU_MODEL_AMD_NAPLES) ||
+             (cpu_model == UCS_CPU_MODEL_AMD_ROME) ||
+             (cpu_model == UCS_CPU_MODEL_AMD_MILAN)));
 }
 
 

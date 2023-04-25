@@ -6,6 +6,452 @@ bug fixes (and other actions) for each version of Libfabric since
 version 1.0.  New major releases include all fixes from minor
 releases with earlier release dates.
 
+v1.15.2, Mon Aug 22, 2022
+=========================
+
+## Core
+
+- Fix incorrect cleanup on gdrcopy initialization success
+- Change the neuron library file name
+- Use neuron's memcpy API to copy from host to device.
+- Fix signaling race in pollfds abstraction
+- Check correct number of events in pollfds abstraction
+- Fix locking in pollfds reading event contexts
+- Reserve CXI provider constants to avoid future conflicts
+- Initialize genlock lock_type to fix always picking mutex
+- Prioritize psm2 over opx provider
+
+## EFA
+
+- Release tx_entry on error in rxr_atomic_generic_efa()
+- Avoid iteration of iov array to address coverity report
+- Add locks around MR map
+- Fix RNR error reporting and handling
+
+## Hooks
+
+- Close dmabuf fd when no longer in use
+
+## RxM
+
+- Read multiple completions at once to limit progress looping
+- Fix windows compiler errors
+- Use sparse logging for common EQ errors
+- Fix a memory leak in AV remove path
+- Reject simultaneous connections with correct error code
+
+## SHM
+
+- Fix incorrect use of peer_id with id in SAR path
+
+## TCP
+
+- Verify endpoint state prior to progressing socket data
+- Acquire ep lock prior to flushing socket in shutdown
+- Fix incorrect signaling of the CQ for threads waiting in sread
+
+## OPX
+
+- Disable OPX provider if not supported by platform
+
+## PSM3
+
+- Add missing reference to neuron_init
+- Remove bashisms from configure script
+
+## Util
+
+- Fix non-error CQ auxillary queue entry memory leak
+- Check for duplicate address insertion in util AV code
+- Fix locking around removing an address from an AV
+
+## Verbs
+
+- Fix incorrect length for Ze HMEM memory registration
+- Fix memory leak when closing a device
+
+v1.15.1, Fri May 13, 2022
+=========================
+
+## Core
+
+- Fix windows implementation to remove fd from poll set
+
+## PSM3
+
+- Add missing files to release tarball
+
+## Util
+
+- Handle NULL address insertion to fi_av_insert
+
+v1.15.0, Fri Apr 29, 2022
+=========================
+
+## Core
+
+- Fix fi_info indentation error in fi_tostr
+- hmem_ze: Add runtime option to choose specific copy engine
+- Cleanup of configure HMEM checks
+- Fixed stringop-truncation in ofi_ifaddr_get_speed
+- Add utility provider log suffix to make logs easier to read
+- Fix truncation of ipv6 addressing
+- hmem: add support for AWS Trainium devices
+- Fix potential sscanf overflows
+- hmem: pass through device and flags when querying memory interface
+- Rework locking in several areas to convert spinlocks to mutexes
+- Add new locking abstractions to select lock types at runtime
+- Add new FI_PROTO_RXM_TCP for optimized rxm over tcp path
+
+## EFA
+
+- Added windows support through efawin (https://github.com/aws/efawin)
+- Added support of AWS neuron.
+- Added support of using gdrcopy to copy data from host to device.
+- Fixed a bug that cause 0 byte read to fail.
+- Fixed a memory corruption issue that can caused forked process to crash.
+- Extended testing coverage through new pytest based testing framework.
+
+## HOOKS
+
+- Add new hooking provider dmabuf_peer_mem
+- Enable DL build of hooking providers
+- Add HMEM memory registration hook
+
+## OPX
+
+- New provider supporting Cornelis Networks Omni-path hardware
+
+## PSM3
+
+- Updated psm3 to match IEFS 11.2.0.0 release
+- Added support for sockets (TCP/UDP) via a runtime selectable Hardware
+  Abstraction Layer (HAL)
+- Added support for IPv6 addressing in RoCE and sockets
+- Added various NIC selection filtering options (wildcarded NIC name,
+  address format, wildcarded IP subnet, link speed)
+- Performance tuning in conjunction with OneAPI and OneCCL
+- Tested with aws-nccl-plugin using NVIDIA NCCL over OFI over PSM3
+- Improved PSM3_IDENTIFY output
+- Rename most internal symbols to psm3_
+- Corrected vulnerabilities found during Coverity scans
+- configure options refined and help text improved
+- PSM3_MULTI_EP has been deprecated (recommend always enabled, default
+  is enabled [same default as previous releases])
+- Various bug fixes
+
+## RxM
+
+- Add check that atomic size is valid
+- Add support to passthru calls to tcp provider in specific cases
+
+## TCP
+
+- Add assert to verify RMA source/target msg sizes match
+- Wake-up threads blocked on CQ to update their poll events
+- Fix use of incorrect events in progress handler
+- Fixes for various compile warnings, mostly on Windows
+- Add support for FI_RMA_EVENT capability
+- Add support for completion counters
+- Fix check for CQ data in tagged messages
+- Add cancel support to shared rx context
+- Add src_addr receive buffer matching
+- Add provider control to assign a src_addr with an ep
+- Handle trecv with FI_PEEK flag
+- Allow binding a CQ with an SRX
+- Restructuring of code in source files
+- Handle EWOULDBLOCK returned by send call
+- Add hot (active) pollfd list
+
+## SHM
+
+- Properly chain the original signal handlers
+- Avoid uninitialized variable with invalid atomic parameters
+- Fix 0 byte SAR read
+- Initialize len parameter to accept
+- Refactor and simplify protocol code
+- Remove broken support for 128-bit atomics
+- Fix FI_INJECT flag support
+- Add assert to verify RMA source/target msg sizes match
+- Set domain threading to thread safe
+- Fix possible use of uninitiated var in av_insert
+
+## Util
+
+- Fix sign warning in ofi_bufpool_region_alloc
+- Remove unused variable from ofi_bufpool_destroy
+- Fix check for valid datatype in ofi_atomic_valid
+- Return with error if util_coll_sched_copy fails
+- Fix use of uninitialized variable in ofi_ep_allreduce
+- Fix memory access in ip_av_insertsym
+- Track ep per collective operation not with multicast
+- Restructure collective av set creation/destruction
+- Change most locks from spin locks to mutexes
+- Allow selection of spinlocks for CQ and domain objects
+- Fix AV default addrlen
+- Update fi_getinfo checks to include hints->addr_format
+
+## Verbs
+
+- Initial changes for compiling on Windows (via NetworkDirect)
+- Add a failover path to dma-buf based memory registration
+- Replace use of spin locks with mutexes
+- Check for valid qp prior to cleanup
+- Set and check for address format correct in fi_getinfo
+
+## Fabtests
+
+- hmem_cuda: used device allocated host buff to fill device buf
+- Add python scripts to control test execution
+- test_configs: include util provider in core config file
+- Add option "--pin-core"
+- Only call nrt_init once
+- Fix a bug in ft_neuron_cleanup
+- Correct help for unit test programs
+- Remove duplicate help prints from fi_mcast
+- configure.ac: fix --enable-debug=no not properly detected
+- msg_inject: handle the case ft_tsendmsg return -FI_EAGAIN
+- Add AWS Trainium device support
+- fi_inj_complete: Add FI_INJECT to fabtests
+- inj_complete.c: Make arguments align with the other tests
+- dgram_pingpong: handle the error return of fi_recv
+- recv_cancel: Remove requirement for unexpected msg handling
+- poll: Fix crash if unable to allocate pollset
+- ubertest: Add GPU testing and validation support
+- Add HMEM options parsing support
+- Update and re-enable fi_multi_ep test
+
+v1.14.1, Fri Apr 15, 2022
+=========================
+
+## Core
+
+- Use non-shared memory allocations to use MADV_DONTFORK safely
+- Various fixes for compiler warnings
+- Fix incorrect use of gdr_copy_from_mapping
+- Ensure proper timeout time for pollfds to avoid early exit
+
+## EFA
+
+- Use non-shared buffer pool allocations to use MADV_DONTFORK safely
+- Handle read completion properly for multi_recv
+- Use shm's inject write when possible
+- Support 0 byte read
+
+## RxD
+
+- Verify valid atomic size
+
+## RxM
+
+- Ensure signaling the CQ fd after writing completion
+- Fix inject path for sending tagged messages with cq data
+- Negotiate credit based flow control support over CM
+- Add PID to CM messages to detect stale vs duplicate connections
+- Fix race handling unexpected messages from unknown peers
+- Fix possible leak of stack data in cm_accept
+- Restrict reported caps based on core provider
+- Delay starting listen until endpoint fully initialized
+- Verify valid atomic size
+
+## Sockets
+
+- Fix coverity reports on uninitialized data
+- Check for NULL pointers passed to memcpy
+- Minor cleanups
+- Add missing error return code from sock_ep_enable
+
+## TCP
+
+- Fix performance regression resulting from sparse pollfd sets
+- Fix assertion failure in CQ progress function
+- Do not generate error completions for inject msgs
+- Fix use of incorrect event names in progress handler
+- Fix check for CQ data in tagged messages
+- Make start_op array a static to reduce memory
+- Wake-up threads blocked on CQ to update their poll events
+
+## Verbs
+
+- Generate error completions for all failed transmits
+- Set all fields in the fi_fabric_attr for FI_CONNREQ events
+- Set proper completion flags for all failed transfer
+- Minor updates to silence coverity warnings on NULL pointers
+- Ensure that all attributes are provided when opening an endpoint
+- Fix error handling in vrb_eq_read
+- Fix memory leak in error case in vrb_get_sib
+- Work-around bug in verbs HW not reported correct send opcodes
+- Only call ibv_reg_dmabuf_mr when kernel support exists
+- Add a failover path to dma-buf based memory registration
+- Negotiate credit based flow control support over CM
+- Add OS portable detection of loopback devices
+
+## Fabtests
+
+- Disable inject when FI_HMEM is enabled
+- Increase the number of supported ZE devices
+- Change cq format if remote cq data is received
+- Fix ubertest config exclude file check
+- Fix ubertest checks for expected completions
+
+v1.14.0, Fri Nov 19, 2021
+=========================
+
+## Core
+
+- Add time stamps to log messages
+- Fix gdrcopy calculation of memory region size when aligned
+- Allow user to disable use of p2p transfers
+- Update fi_tostr print FI_SHARED_CONTEXT text instead of value
+- Update fi_tostr to output field names matching header file names
+- Fix narrow race condition in ofi_init
+- Minor optimization to pollfds to handle timeout of 0
+- Add new fi_log_sparse API to rate limit repeated log output
+- Define memory registration for buffers used for collective operations
+
+## EFA
+- Provide better support for long lived applications utilizing the RDM
+  endpoint, that may reuse an EFA queue pair after an application restarts.
+- Fixes for RNR support (enabled in v1.13.1), to allow Libfabric to manage
+  backoff when a receiver's queue is exhausted. A setopt parameter was added to
+  allow applications to set the number of re-transmissions done by the device
+  before a packet is queued by Libfabric, or if Libfabric is configured to not
+  handle resource errors, write an error entry to the application.
+- Potentially reduce memory utilization by waiting until first CQ read to
+  allocate pools
+- Deprecate the FI_EFA_SHM_MAX_MEDIUM_SIZE environment variable
+- Fix a bug in the send path which caused a performance regression for large
+  messages
+- Fix issue in MR registration path when cache is used with CUDA buffers
+- Print a clearer warning message when the reorder buffer is too small
+- Various bugfixes in send path causing unneeded copies
+- Various bugfixes caught by inspection and coverity
+- Add documentation describing version 4 of the RDM protocol
+
+## SHM
+
+- Separate HMEM caps and disable FI_ATOMIC when requested
+- Fix casting ints to pointers of different sizes
+- Add error checking in smr_setname
+- Distinguish between max shm name and max path name
+- Move allocation of sar_msg into smr_format_sar()
+
+## TCP
+
+- Use IP_BIND_ADDRESS_NO_PORT socket option to improve scaling
+- Fix situation where we can leave socket in blocking mode
+- Add specific fi_info output to fi_getinfo for srx case
+- Code restructuring and renames to improve maintenance
+- Initial implementation to support tagged messages at tcp layer
+- Optimize RMA handling at receiver
+- Remove non-defined CQ flags when reporting completions
+
+## RXM
+
+- Reset connection state if we receive a new connection request
+- Increase and update debug log messages to be more consistent
+- Force CM progress if msg ep's are actively connecting
+- Optimize handling for cm_progress_interval = 0
+
+## Util
+
+- Fix fi_getinfo check if provider requires the use of shared contexts
+- Replace deprecated pthread_yield with sched_yield
+- Fix compiler warning mixing u64 with size_t fields
+- Fix memory leak in util_av_set_close
+- Fix ofi_av_set to use passed in start_addr and end_addr values
+- Add logic to detect if another library is intercepting memory calls
+- Update 128-bit atomic support
+- Fix possible deadlock if multiple memory monitors are enabled for the
+  same memory type
+
+## Verbs
+
+- Fix setting MR access to handle read-only buffers
+- Expand debug output
+- Fail FI_HMEM support if p2p is disabled
+- Handle FI_HMEM_HOST_ALLOC flag for FI_HMEM_ZE
+
+## Fabtests
+
+- Fix rdm_rma_trigger support for hmem
+- Add key exchanges to common code to support device memory
+- Remove need for OOB address exchange when hmem is enabled
+- Always use command line provided inject size when given
+- Add ability to test tagged messages over msg ep's
+- Add support for shared rx contexts to common code
+- Update scripts to allow provider specific fabtests
+- Add an EFA RDM RNR fabtest
+
+v1.13.2, Fri Oct 15, 2021
+========================
+
+## Core
+
+- Provide work-around for segfault in Ze destructor using DL provider
+- Minor code fixes supporting Ze
+- Use copy only engine when accessing GPUs through Ze
+- Sort DL providers to ensure consistent load ordering
+- Update hooking providers to handle fi_open_ops calls to avoid crashes
+- Replace cassert with assert.h to avoid C++ headers in C code
+- Enhance serialization for memory monitors to handle external monitors
+
+## EFA
+
+- Limit memcpy in packet processing to only copy valid data
+- Removed maximum wait time sending packet to avoid silent drops
+- Fix unconditionally growing buffer pools that should not grow
+- Handle possible large backlog of unexpected messages via SHM
+- Update Tx counter for inject operations
+- Allow in flight sends to finish when closing endpoint
+- Fix handing of prefix size when receiving data
+- Removed unnecessary data copy
+
+## SHM
+
+- Fix possible sigbus error
+- Handle errors if peer is not yet initialized
+
+## TCP
+
+- Fix reporting RMA write CQ data
+- Fix RMA read request error completion handling
+- Avoid possible use after free in reject path
+- Remove restriction where EQs and CQs may not share wait sets
+- Increase max supported rx size
+- Fix possible memory leak of CM context structure in error cases
+- Set source address for active EPs to ensure correct address is used
+- Fix memory leak of dest address in CM requests
+
+## RxM
+
+- Improve connection handling responsiveness to fix application stalls
+- Add missing locks around AV data structures
+- Add missing hmem initialization for DL builds
+- Do not ignore user specified rx/tx sizes
+- Fix source address reported to peer
+- Fix possible use of uninitialized memory handling CQ errors
+- Fix address comparison to remove duplicate connections
+- Reworked CM code to fix several possible crash scenarios
+- Fix setting the conn_id when generated 'fake' tagged headers
+
+## Util
+
+- Fix AV set to use non-zero starting address
+- Fix setting of CQ completion flags
+
+## Verbs
+
+- Work-around compilation error with Intel compiler 2018.3.222
+- Avoid possible user after free issue accessing rdma cm id in error cases
+
+## Fabtests
+
+- Add missing prints to fi_av_xfer to report failures
+- Fix memory leak in fi_multinode test
+- Add device validation for hmem tests
+- Update fi_info hints mode field based on user options
+- Fix use of incorrect message prefix sized in fi_pingpong test
 
 v1.13.1, Tue Aug 24, 2021
 =========================

@@ -148,6 +148,10 @@ features of libfabric.
   A sleep time on the receiving side can be enabled in order to allow
   the sender to get ahead of the receiver.
 
+*fi_rdm_multi_client*
+: Tests a persistent server communicating with multiple clients, one at a
+  time, in sequence.
+
 # Benchmarks
 
 The client and the server exchange messages in either a ping-pong manner,
@@ -241,6 +245,23 @@ provider.  Example test configurations are at test_configs.
   For example, if there are 8 test variables, with 6 having 2 possible
   values and 2 having 3 possible values, ubertest will execute 576 total
   iterations of each test.
+
+# EFA provider specific tests
+
+Beyond libfabric defined functionalities, EFA provider defines its
+specific features/functionalities. These EFA provider specific fabtests
+show users how to correctly use them.
+
+*fi_efa_rnr_read_cq_error*
+  This test modifies the RNR retry count (rnr_retry) to 0 via
+  fi_setopt, and then runs a simple program to test if the error cq entry
+  (with error FI_ENORX) can be read by the application, if RNR happens.
+
+*fi_efa_rnr_queue_resend*
+  This test modifies the RNR retry count (rnr_retry) to 0 via fi_setopt,
+  and then tests RNR queue/re-send logic for different packet types.
+  To run the test, one needs to use `-c` option to specify the category
+  of packet types.
 
 ### Config file options
 
@@ -438,9 +459,11 @@ the list available for that test.
   select() to block until the fd has been signaled, prior to checking for
   completions.
 
-*-o <rma_op>*
+*-o <op>*
 : For RMA based tests, specify the type of RMA operation to perform.  Valid
   values are read, write, and writedata.  Write operations are the default.
+  For message based, tests, specify whether msg (default) or tagged transfers
+  will be used.
 
 *-M <mcast_addr>*
 : For multicast tests, specifies the address of the multicast group to join.

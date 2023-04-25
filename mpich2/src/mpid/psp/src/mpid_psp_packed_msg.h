@@ -85,7 +85,8 @@ void MPID_PSP_packed_msg_pack(const void *src_addr, int src_count, MPI_Datatype 
 		MPI_Aint actual_pack_bytes;
 
 		res = MPIR_Typerep_pack(src_addr, src_count, src_datatype, 0,
-					msg->msg, msg->msg_sz, &actual_pack_bytes);
+					msg->msg, msg->msg_sz, &actual_pack_bytes,
+					MPIR_TYPEREP_FLAG_NONE);
 
 		assert(actual_pack_bytes == msg->msg_sz);
 		assert(res == MPI_SUCCESS);
@@ -114,7 +115,8 @@ int MPID_PSP_packed_msg_unpack(void *addr, MPI_Aint count, MPI_Datatype datatype
 
 		res = MPIR_Typerep_unpack(msg->tmp_buf,
 				pscom_min(msg->msg_sz, data_len),
-				addr, count, datatype, 0, &actual_unpack_bytes);
+				addr, count, datatype, 0, &actual_unpack_bytes,
+				MPIR_TYPEREP_FLAG_NONE);
 		/* From ch3u_handle_recv_pkt.c:
                    "If the data can't be unpacked, the we have a
                     mismatch between the datatype and the amount of

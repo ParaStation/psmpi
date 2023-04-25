@@ -5,6 +5,7 @@
 
 AC_PREREQ(2.62)
 
+m4_define([HYDRA_CONFIGURE], 1)
 m4_include([version.m4])
 AC_INIT([Hydra], MPICH_VERSION_m4)
 
@@ -28,11 +29,11 @@ AM_PROG_CC_C_O
 AC_USE_SYSTEM_EXTENSIONS
 PAC_C_NO_COMMON
 
-AM_INIT_AUTOMAKE([-Wall -Wno-portability-recursive -Werror foreign 1.12.3 subdir-objects])
+AM_INIT_AUTOMAKE([-Wall -Wno-portability-recursive -Werror foreign 1.12.3 subdir-objects no-dist])
 
 AM_PROG_AR
 
-AC_CONFIG_HEADERS([include/hydra_config.h])
+AC_CONFIG_HEADERS([hydra_config.h])
 
 # Non-verbose make
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -45,8 +46,6 @@ AC_SUBST(WRAPPER_LIBS)
 
 # let confdb macro know that we are using WRAPPER FLAGS
 m4_define([use_wrapper_flags], [1])
-
-PAC_ARG_STRICT
 
 # Look for perl.  The absolute path of perl is required in hydra-doxygen.cfg.
 AC_PATH_PROG(PERL,perl)
@@ -114,6 +113,11 @@ PAC_POP_ALL_FLAGS
 
 AC_DEFINE_UNQUOTED(HYDRA_CONFIGURE_ARGS_CLEAN,"`echo $ac_configure_args`",[Configure arguments])
 
+if test -z "$FROM_MPICH" ; then
+    FROM_HYDRA=yes
+    export FROM_HYDRA
+fi
+
 # MPL
 mpl_srcdir=""
 AC_SUBST([mpl_srcdir])
@@ -125,8 +129,30 @@ mpl_includedir=""
 AC_SUBST([mpl_includedir])
 mpl_lib=""
 AC_SUBST([mpl_lib])
-m4_define([mpl_embedded_dir],[mpl])
+m4_define([mpl_embedded_dir],[modules/mpl])
 PAC_CONFIG_MPL
+
+# PMI
+pmi_srcdir=""
+pmi_includedir=""
+pmi_lib=""
+AC_SUBST([pmi_srcdir])
+AC_SUBST([pmi_includedir])
+AC_SUBST([pmi_lib])
+m4_define([pmi_embedded_dir],[modules/pmi])
+# NOTE: we do not need the public pmi include dir (where pmi.h and pmi2.h are contained)
+#       we need the "pmi/src" path for accessing internal headers such as pmi_wire.h
+if test "$FROM_MPICH" = "yes"; then
+    pmi_includedir="-I$main_top_srcdir/src/pmi/src"
+    pmi_lib="$main_top_builddir/src/pmi/libpmi.la"
+else
+    # TODO: option for --with-pmilib=xxx
+    pmi_srcdir=pmi_embedded_dir
+    pmi_includedir='-I$(top_srcdir)/pmi_embedded_dir/src'
+    pmi_subdir_args="--enable-embedded"
+    PAC_CONFIG_SUBDIR_ARGS(pmi_embedded_dir, [$pmi_subdir_args])
+    pmi_lib='$(top_builddir)/pmi_embedded_dir/libpmi.la'
+fi
 
 # Documentation
 AC_PATH_PROG([DOXYGEN],[doxygen],,$PATH)
@@ -356,17 +382,6 @@ AM_CONDITIONAL([hydra_pm_pmiserv], [test $hydra_pm = "pmiserv"])
 
 
 #########################################################################
-# Check what UI we should use
-#########################################################################
-AC_ARG_WITH(hydra-ui, [  --with-hydra-ui=name - User Interface (mpich)],
-		[ hydra_ui=$withval ],
-		[ hydra_ui=mpich ])
-AC_MSG_CHECKING(user interface)
-AC_MSG_RESULT($hydra_ui)
-AC_SUBST(hydra_ui)
-AM_CONDITIONAL([hydra_ui_mpich], [test $hydra_ui = "mpich"])
-
-#########################################################################
 # Processor Topology
 #########################################################################
 AC_ARG_WITH(hydra-topolib, [  --with-hydra-topolib=name - Processor Topology Library (hwloc)],
@@ -387,7 +402,7 @@ AC_SUBST([hwloc_lib])
 for hydra_topolib in ${hydra_topolibs}; do
     case "$hydra_topolib" in
 	hwloc)
-                m4_define([hwloc_embedded_dir],[tools/topo/hwloc/hwloc])
+                m4_define([hwloc_embedded_dir],[modules/hwloc])
                 PAC_CONFIG_HWLOC
 
 		if test "$pac_have_hwloc" = "yes" ; then
@@ -520,7 +535,7 @@ for option in $enable_g ; do
         mem)
 		AC_DEFINE(USE_MEMORY_TRACING,1,[Define if memory tracing is enabled])
 		;;
-        all)
+        yes|all)
 		PAC_APPEND_FLAG(-g, CFLAGS)
 		AC_DEFINE(USE_MEMORY_TRACING,1,[Define if memory tracing is enabled])
 		AC_DEFINE(PMI_KEY_CHECK,1,[Define if we should check for PMI key collisions])
@@ -631,7 +646,7 @@ fi
 
 # Final output
 AC_CONFIG_FILES([Makefile
-	tools/bootstrap/src/bsci_init.c
+	lib/tools/bootstrap/src/bsci_init.c
 	hydra-doxygen.cfg
 ])
 AC_OUTPUT

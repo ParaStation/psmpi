@@ -239,26 +239,27 @@ if __name__ == '__main__':
         sys.exit(1)
 
     ##### generate the core pack/unpack kernels (zero levels)
-    for b in builtin_types:
-        filename = "src/backend/cuda/pup/yaksuri_cudai_pup_%s.cu" % b.replace(" ","_")
-        yutils.copyright_c(filename)
-        OUTFILE = open(filename, "a")
-        yutils.display(OUTFILE, "#include <string.h>\n")
-        yutils.display(OUTFILE, "#include <stdint.h>\n")
-        yutils.display(OUTFILE, "#include <wchar.h>\n")
-        yutils.display(OUTFILE, "#include <assert.h>\n")
-        yutils.display(OUTFILE, "#include <cuda.h>\n")
-        yutils.display(OUTFILE, "#include <cuda_runtime.h>\n")
-        yutils.display(OUTFILE, "#include \"yaksuri_cudai_base.h\"\n")
-        yutils.display(OUTFILE, "#include \"yaksuri_cudai_pup.h\"\n")
-        yutils.display(OUTFILE, "\n")
+    if args.pup_max_nesting > 0:
+        for b in builtin_types:
+            filename = "src/backend/cuda/pup/yaksuri_cudai_pup_%s.cu" % b.replace(" ","_")
+            yutils.copyright_c(filename)
+            OUTFILE = open(filename, "a")
+            yutils.display(OUTFILE, "#include <string.h>\n")
+            yutils.display(OUTFILE, "#include <stdint.h>\n")
+            yutils.display(OUTFILE, "#include <wchar.h>\n")
+            yutils.display(OUTFILE, "#include <assert.h>\n")
+            yutils.display(OUTFILE, "#include <cuda.h>\n")
+            yutils.display(OUTFILE, "#include <cuda_runtime.h>\n")
+            yutils.display(OUTFILE, "#include \"yaksuri_cudai_base.h\"\n")
+            yutils.display(OUTFILE, "#include \"yaksuri_cudai_pup.h\"\n")
+            yutils.display(OUTFILE, "\n")
 
-        emptylist = [ ]
-        for op in gencomm.type_ops[b]:
-            generate_kernels(b, emptylist, op)
-        generate_host_function(b, emptylist)
+            emptylist = [ ]
+            for op in gencomm.type_ops[b]:
+                generate_kernels(b, emptylist, op)
+            generate_host_function(b, emptylist)
 
-        OUTFILE.close()
+            OUTFILE.close()
 
     ##### generate the core pack/unpack kernels (single level)
     for b in builtin_types:
@@ -286,34 +287,35 @@ if __name__ == '__main__':
             OUTFILE.close()
 
     ##### generate the core pack/unpack kernels (more than one level)
-    darraylist = [ ]
-    yutils.generate_darrays(gencomm.derived_types, darraylist, args.pup_max_nesting - 2)
-    for b in builtin_types:
-        for d1 in gencomm.derived_types:
-            for d2 in gencomm.derived_types:
-                filename = "src/backend/cuda/pup/yaksuri_cudai_pup_%s_%s_%s.cu" % (d1, d2, b.replace(" ","_"))
-                yutils.copyright_c(filename)
-                OUTFILE = open(filename, "a")
-                yutils.display(OUTFILE, "#include <string.h>\n")
-                yutils.display(OUTFILE, "#include <stdint.h>\n")
-                yutils.display(OUTFILE, "#include <wchar.h>\n")
-                yutils.display(OUTFILE, "#include <assert.h>\n")
-                yutils.display(OUTFILE, "#include <cuda.h>\n")
-                yutils.display(OUTFILE, "#include <cuda_runtime.h>\n")
-                yutils.display(OUTFILE, "#include \"yaksuri_cudai_base.h\"\n")
-                yutils.display(OUTFILE, "#include \"yaksuri_cudai_pup.h\"\n")
-                yutils.display(OUTFILE, "\n")
+    if args.pup_max_nesting > 1:
+        darraylist = [ ]
+        yutils.generate_darrays(gencomm.derived_types, darraylist, args.pup_max_nesting - 2)
+        for b in builtin_types:
+            for d1 in gencomm.derived_types:
+                for d2 in gencomm.derived_types:
+                    filename = "src/backend/cuda/pup/yaksuri_cudai_pup_%s_%s_%s.cu" % (d1, d2, b.replace(" ","_"))
+                    yutils.copyright_c(filename)
+                    OUTFILE = open(filename, "a")
+                    yutils.display(OUTFILE, "#include <string.h>\n")
+                    yutils.display(OUTFILE, "#include <stdint.h>\n")
+                    yutils.display(OUTFILE, "#include <wchar.h>\n")
+                    yutils.display(OUTFILE, "#include <assert.h>\n")
+                    yutils.display(OUTFILE, "#include <cuda.h>\n")
+                    yutils.display(OUTFILE, "#include <cuda_runtime.h>\n")
+                    yutils.display(OUTFILE, "#include \"yaksuri_cudai_base.h\"\n")
+                    yutils.display(OUTFILE, "#include \"yaksuri_cudai_pup.h\"\n")
+                    yutils.display(OUTFILE, "\n")
 
-                for darray in darraylist:
-                    darray.append(d1)
-                    darray.append(d2)
-                    for op in gencomm.type_ops[b]:
-                        generate_kernels(b, darray, op)
-                    generate_host_function(b, darray)
-                    darray.pop()
-                    darray.pop()
+                    for darray in darraylist:
+                        darray.append(d1)
+                        darray.append(d2)
+                        for op in gencomm.type_ops[b]:
+                            generate_kernels(b, darray, op)
+                        generate_host_function(b, darray)
+                        darray.pop()
+                        darray.pop()
 
-                OUTFILE.close()
+                    OUTFILE.close()
 
     ##### generate the core pack/unpack kernel declarations
     filename = "src/backend/cuda/pup/yaksuri_cudai_pup.h"
@@ -412,12 +414,14 @@ if __name__ == '__main__':
     yutils.display(OUTFILE, "libyaksa_la_SOURCES += \\\n")
     for b in builtin_types:
         yutils.display(OUTFILE, "\tsrc/backend/cuda/pup/yaksuri_cudai_pup_%s.cu \\\n" % b.replace(" ","_"))
-        for d1 in gencomm.derived_types:
-            yutils.display(OUTFILE, "\tsrc/backend/cuda/pup/yaksuri_cudai_pup_%s_%s.cu \\\n" % \
-                           (d1, b.replace(" ","_")))
-            for d2 in gencomm.derived_types:
-                yutils.display(OUTFILE, "\tsrc/backend/cuda/pup/yaksuri_cudai_pup_%s_%s_%s.cu \\\n" % \
-                               (d1, d2, b.replace(" ","_")))
+        if args.pup_max_nesting > 0:
+            for d1 in gencomm.derived_types:
+                yutils.display(OUTFILE, "\tsrc/backend/cuda/pup/yaksuri_cudai_pup_%s_%s.cu \\\n" % \
+                               (d1, b.replace(" ","_")))
+                if args.pup_max_nesting > 1:
+                    for d2 in gencomm.derived_types:
+                        yutils.display(OUTFILE, "\tsrc/backend/cuda/pup/yaksuri_cudai_pup_%s_%s_%s.cu \\\n" % \
+                                       (d1, d2, b.replace(" ","_")))
     yutils.display(OUTFILE, "\tsrc/backend/cuda/pup/yaksuri_cudai_pup.c\n")
     yutils.display(OUTFILE, "\n")
     yutils.display(OUTFILE, "noinst_HEADERS += \\\n")

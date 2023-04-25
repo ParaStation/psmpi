@@ -140,7 +140,6 @@ static int recv_target_cmpl_cb(MPIR_Request * rreq)
          * that came from CH4 (e.g. MPIDI_recv_safe) */
         MPIR_Request *sigreq = MPIDIG_REQUEST(rreq, req->rreq.match_req);
         sigreq->status = rreq->status;
-        MPIR_Request_add_ref(sigreq);
         MPID_Request_complete(sigreq);
         /* Free the unexpected request on behalf of the user */
         MPIDI_CH4_REQUEST_FREE(rreq);
@@ -260,10 +259,9 @@ static int allocate_unexp_req_pack_buf(MPIR_Request * rreq, MPI_Aint data_sz)
     int vci = MPIDI_Request_get_vci(rreq);
     if (data_sz > 0) {
         void *pack_buf;
-        MPIR_Assert(data_sz <= MPIR_CVAR_CH4_AM_PACK_BUFFER_SIZE);
-        mpi_errno =
-            MPIDU_genq_private_pool_alloc_cell(MPIDI_global.per_vci[vci].unexp_pack_buf_pool,
-                                               &pack_buf);
+        MPIR_Assert(data_sz <= MPIR_CVAR_CH4_PACK_BUFFER_SIZE);
+        mpi_errno = MPIDU_genq_private_pool_alloc_cell(MPIDI_global.per_vci[vci].pack_buf_pool,
+                                                       &pack_buf);
         MPIR_Assert(pack_buf);
         MPIDIG_REQUEST(rreq, buffer) = pack_buf;
     }

@@ -34,14 +34,12 @@
 #include <rdma/fi_errno.h>
 
 #include <ofi_prov.h>
-#include <ofi_shm.h>
 #include "rxr.h"
 #include "efa.h"
 #include "ofi_hmem.h"
 
 struct fi_info *shm_info;
 
-struct fi_provider *lower_efa_prov;
 struct efa_ep_addr *local_efa_addr;
 
 
@@ -76,6 +74,7 @@ struct rxr_env rxr_env = {
 	.shm_cq_read_size = 50,
 	.efa_max_medium_msg_size = 65536,
 	.efa_min_read_msg_size = 1048576,
+	.efa_max_gdrcopy_msg_size = 32768,
 	.efa_min_read_write_size = 65536,
 	.efa_read_segment_size = 1073741824,
 	.rnr_retry = 3, /* Setting this value to EFA_RNR_INFINITE_RETRY makes the firmware retry indefinitey */
@@ -87,6 +86,12 @@ static void rxr_init_env(void)
 {
 	int fork_safe = 0;
 
+	if (getenv("FI_EFA_SHM_MAX_MEDIUM_SIZE")) {
+		fprintf(stderr,
+			"FI_EFA_SHM_MAX_MEDIUM_SIZE env variable detected! The use of this variable has been deprecated and as such execution cannot proceed.\n");
+		abort();
+	};
+
 	fi_param_get_int(&rxr_prov, "rx_window_size", &rxr_env.rx_window_size);
 	fi_param_get_int(&rxr_prov, "tx_max_credits", &rxr_env.tx_max_credits);
 	fi_param_get_int(&rxr_prov, "tx_min_credits", &rxr_env.tx_min_credits);
@@ -96,7 +101,6 @@ static void rxr_init_env(void)
 	fi_param_get_int(&rxr_prov, "use_zcpy_rx", &rxr_env.use_zcpy_rx);
 	fi_param_get_int(&rxr_prov, "zcpy_rx_seed", &rxr_env.zcpy_rx_seed);
 	fi_param_get_int(&rxr_prov, "shm_av_size", &rxr_env.shm_av_size);
-	fi_param_get_int(&rxr_prov, "shm_max_medium_size", &rxr_env.shm_max_medium_size);
 	fi_param_get_int(&rxr_prov, "recvwin_size", &rxr_env.recvwin_size);
 	fi_param_get_int(&rxr_prov, "readcopy_pool_size", &rxr_env.readcopy_pool_size);
 	fi_param_get_int(&rxr_prov, "cq_size", &rxr_env.cq_size);
@@ -137,6 +141,8 @@ static void rxr_init_env(void)
 			    &rxr_env.efa_min_read_write_size);
 	fi_param_get_size_t(&rxr_prov, "inter_read_segment_size",
 			    &rxr_env.efa_read_segment_size);
+	fi_param_get_size_t(&rxr_prov, "inter_max_gdrcopy_message_size",
+			    &rxr_env.efa_max_gdrcopy_msg_size);
 
 	/* Initialize EFA's fork support flag based on the environment and
 	 * system support. */
@@ -179,12 +185,15 @@ static void rxr_init_env(void)
  *
  *    fe80::4a5:28ff:fe98:e500_0001_12918366_03e8
  *
- * @param[in]	ptr		pointer to raw address (struct efa_ep_addr)
- * @param[out]	smr_name	an unique name for shm ep
+ * @param[in]		ptr		pointer to raw address (struct efa_ep_addr)
+ * @param[out]		smr_name	an unique name for shm ep
+ * @param[in,out]	smr_name_len    As input, specify size of the "smr_name" buffer.
+ *					As output, specify number of bytes written to the buffer.
+ *
  * @return	0 on success.
  * 		negative error code on failure.
  */
-int rxr_raw_addr_to_smr_name(void *ptr, char *smr_name)
+int rxr_raw_addr_to_smr_name(void *ptr, char *smr_name, size_t *smr_name_len)
 {
 	struct efa_ep_addr *raw_addr;
 	char gidstr[INET6_ADDRSTRLEN] = { 0 };
@@ -196,9 +205,19 @@ int rxr_raw_addr_to_smr_name(void *ptr, char *smr_name)
 		return -errno;
 	}
 
-	ret = snprintf(smr_name, SMR_NAME_MAX, "%s_%04x_%08x_%04x",
+	ret = snprintf(smr_name, *smr_name_len, "%s_%04x_%08x_%04x",
 		       gidstr, raw_addr->qpn, raw_addr->qkey, getuid());
-	return (ret <= 0) ? ret : FI_SUCCESS;
+	if (ret < 0)
+		return ret;
+
+	if (ret == 0 || ret >= *smr_name_len)
+		return -FI_EINVAL;
+
+	/* plus 1 here for the ending '\0' character, which was not
+	 * included in ret of snprintf
+	 */
+	*smr_name_len = ret + 1;
+	return FI_SUCCESS;
 }
 
 void rxr_info_to_core_mr_modes(uint32_t version,
@@ -223,7 +242,7 @@ void rxr_info_to_core_mr_modes(uint32_t version,
 					hints->domain_attr->mr_mode & OFI_MR_BASIC_MAP;
 			core_info->addr_format = hints->addr_format;
 		}
-#if HAVE_LIBCUDA
+#if HAVE_CUDA || HAVE_NEURON
 		core_info->domain_attr->mr_mode |= FI_MR_HMEM;
 #endif
 	}
@@ -383,6 +402,10 @@ static int rxr_info_to_rxr(uint32_t version, const struct fi_info *core_info,
 	uint64_t max_atomic_size;
 	uint64_t min_pkt_size;
 
+	if (!core_info) {
+		return -FI_EINVAL;
+	}
+
 	info->caps = rxr_info.caps;
 	info->mode = rxr_info.mode;
 
@@ -403,7 +426,12 @@ static int rxr_info_to_rxr(uint32_t version, const struct fi_info *core_info,
 	else
 		min_pkt_size = core_info->ep_attr->max_msg_size;
 
-	info->tx_attr->inject_size = min_pkt_size - rxr_pkt_max_header_size();
+	if (min_pkt_size < rxr_pkt_max_header_size()) {
+		info->tx_attr->inject_size = 0;
+	} else {
+		info->tx_attr->inject_size = min_pkt_size - rxr_pkt_max_header_size();
+	}
+
 	rxr_info.tx_attr->inject_size = info->tx_attr->inject_size;
 
 	info->addr_format = core_info->addr_format;
@@ -417,7 +445,7 @@ static int rxr_info_to_rxr(uint32_t version, const struct fi_info *core_info,
 	 * cap). The logic for device-specific checks pertaining to HMEM comes
 	 * further along this path.
 	 */
-	if ((core_info && !(core_info->caps & FI_HMEM)) || !hints) {
+	if (!(core_info->caps & FI_HMEM) || !hints) {
 		info->caps &= ~FI_HMEM;
 	}
 
@@ -459,19 +487,26 @@ static int rxr_info_to_rxr(uint32_t version, const struct fi_info *core_info,
 			info->domain_attr->data_progress = FI_PROGRESS_MANUAL;
 		}
 
-#if HAVE_LIBCUDA
-		/* If the application requires HMEM support, we will add FI_MR_HMEM
-		 * to mr_mode, because we need application to provide descriptor
-		 * for cuda buffer.
-		 * Note we did not add FI_MR_LOCAL here because according
-		 * to FI_MR man page:
+
+#if HAVE_CUDA || HAVE_NEURON
+		/* If the application requires HMEM support, we will add
+		 * FI_MR_HMEM to mr_mode, because we need application to
+		 * provide descriptor for cuda or neuron buffer. Note we did
+		 * not add FI_MR_LOCAL here because according to FI_MR man
+		 * page:
 		 *
 		 *     "If FI_MR_HMEM is set, but FI_MR_LOCAL is unset,
 		 *      only device buffers must be registered when used locally.
 		 *      "
-		 * which means FI_MR_HMEM implies FI_MR_LOCAL for cuda buffer
+		 * which means FI_MR_HMEM implies FI_MR_LOCAL for cuda or neuron buffer.
 		 */
 		if (hints->caps & FI_HMEM) {
+			if (ofi_hmem_p2p_disabled()) {
+				FI_WARN(&rxr_prov, FI_LOG_CORE,
+					"FI_HMEM capability currently requires peer to peer support, which is disabled.\n");
+				return -FI_ENODATA;
+			}
+			//TODO: remove the rdma checks once FI_HMEM w/o p2p is supported
 
 			if (!efa_device_support_rdma_read()) {
 				FI_WARN(&rxr_prov, FI_LOG_CORE,
@@ -569,17 +604,16 @@ int rxr_get_lower_rdm_info(uint32_t version, const char *node,
 	if (ret)
 		return ret;
 
-	ret = lower_efa_prov->getinfo(version, node, service, flags,
-				      core_hints, core_info);
+	ret = efa_getinfo(version, node, service, flags, core_hints, core_info);
 	fi_freeinfo(core_hints);
 	return ret;
 }
 
 /*
- * Call getinfo on lower efa provider to get all locally qualified fi_info
+ * Call efa_getinfo() to get all locally qualified fi_info
  * structure, then store the corresponding efa nic GIDs
  */
-int rxr_get_local_gids(struct fi_provider *lower_efa_prov)
+int rxr_get_local_gids(void)
 {
 	struct fi_info *core_info, *cur;
 	struct efa_ep_addr *cur_efa_addr;
@@ -588,7 +622,7 @@ int rxr_get_local_gids(struct fi_provider *lower_efa_prov)
 	cur_efa_addr = local_efa_addr = NULL;
 	core_info = cur = NULL;
 
-	ret = lower_efa_prov->getinfo(rxr_prov.fi_version, NULL, NULL, 0, NULL, &core_info);
+	ret = efa_getinfo(rxr_prov.fi_version, NULL, NULL, 0, NULL, &core_info);
 	if (ret)
 		return ret;
 
@@ -628,8 +662,7 @@ static int rxr_dgram_getinfo(uint32_t version, const char *node,
 
 	core_info = NULL;
 
-	ret = lower_efa_prov->getinfo(version, node, service,
-				      flags, hints, &core_info);
+	ret = efa_getinfo(version, node, service, flags, hints, &core_info);
 
 	if (ret)
 		return ret;
@@ -759,8 +792,7 @@ static void rxr_fini(void)
 {
 	struct efa_ep_addr *cur;
 
-	if (lower_efa_prov)
-		lower_efa_prov->cleanup();
+	efa_finalize_prov();
 
 	if (rxr_env.enable_shm_transfer) {
 		/* Cleanup all local efa nic GIDs */
@@ -785,7 +817,7 @@ struct fi_provider rxr_prov = {
 	.version = OFI_VERSION_DEF_PROV,
 	.fi_version = OFI_VERSION_LATEST,
 	.getinfo = rxr_getinfo,
-	.fabric = rxr_fabric,
+	.fabric = efa_fabric,
 	.cleanup = rxr_fini
 };
 
@@ -809,8 +841,6 @@ EFA_INI
 			"Defines the number of bounce-buffers the provider will prepost during EP initialization.  (Default: 0)");
 	fi_param_define(&rxr_prov, "shm_av_size", FI_PARAM_INT,
 			"Defines the maximum number of entries in SHM provider's address vector (Default 128).");
-	fi_param_define(&rxr_prov, "shm_max_medium_size", FI_PARAM_INT,
-			"Defines the switch point between small/medium message and large message. The message larger than this switch point will be transferred with large message protocol (Default 4096).");
 	fi_param_define(&rxr_prov, "recvwin_size", FI_PARAM_INT,
 			"Defines the size of sliding receive window. (Default: 16384)");
 	fi_param_define(&rxr_prov, "readcopy_pool_size", FI_PARAM_INT,
@@ -851,14 +881,14 @@ EFA_INI
 			"The maximum message size for inter EFA medium message protocol (Default 65536).");
 	fi_param_define(&rxr_prov, "inter_min_read_message_size", FI_PARAM_INT,
 			"The minimum message size for inter EFA read message protocol. If instance support RDMA read, messages whose size is larger than this value will be sent by read message protocol (Default 1048576).");
-
+	fi_param_define(&rxr_prov, "inter_max_gdrcopy_message_size", FI_PARAM_INT,
+			"The maximum message size to use gdrcopy. If instance support gdrcopy, messages whose size is smaller than this value will be sent by eager/longcts protocol (Default 32768).");
 	fi_param_define(&rxr_prov, "inter_min_read_write_size", FI_PARAM_INT,
 			"The mimimum message size for inter EFA write to use read write protocol. If firmware support RDMA read, and FI_EFA_USE_DEVICE_RDMA is 1, write requests whose size is larger than this value will use the read write protocol (Default 65536).");
 	fi_param_define(&rxr_prov, "inter_read_segment_size", FI_PARAM_INT,
 			"Calls to RDMA read is segmented using this value.");
 	fi_param_define(&rxr_prov, "fork_safe", FI_PARAM_BOOL,
 			"Enables fork support and disables internal usage of huge pages. Has no effect on kernels which set copy-on-fork for registered pages, generally 5.13 and later. (Default: false)");
-
 	rxr_init_env();
 
 #if HAVE_EFA_DL
@@ -867,11 +897,10 @@ EFA_INI
 	ofi_monitors_init();
 #endif
 
-	lower_efa_prov = init_lower_efa_prov();
-	if (!lower_efa_prov)
+	if (efa_init_prov())
 		return NULL;
 
-	if (rxr_env.enable_shm_transfer && rxr_get_local_gids(lower_efa_prov))
+	if (rxr_env.enable_shm_transfer && rxr_get_local_gids())
 		return NULL;
 
 	return &rxr_prov;

@@ -43,6 +43,7 @@
 #include <rdma/fi_tagged.h>
 #include <shared.h>
 #include <assert.h>
+#include <hmem.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,12 +87,14 @@ struct ft_xcontrol {
 	size_t			max_credits;
 	fi_addr_t		addr;
 	uint64_t		tag;
+	uint64_t		check_tag;
 	uint8_t			seqno;
 	uint64_t		total_comp;
 	enum fi_cq_format	cq_format;
 	uint64_t		remote_cq_data;
 	struct fi_context	*ctx;
 	int			curr_ctx;
+	int			check_ctx;
 };
 
 struct ft_atomic_control {
@@ -149,6 +152,7 @@ enum {
 	FT_MAX_FLAGS		= 64,
 	FT_MAX_PROGRESS		= 3,
 	FT_MAX_THREADING	= 6,
+	FT_MAX_CQ_FORMAT	= 4,
 };
 
 enum ft_comp_type {
@@ -237,7 +241,7 @@ struct ft_set {
 	enum ft_class_function	class_function[FT_MAX_FUNCTIONS];
 	uint64_t		msg_flags;
 	enum fi_op		op[FI_ATOMIC_OP_LAST];
-	enum fi_datatype	datatype[FI_DATATYPE_LAST];
+	enum fi_datatype	datatype[OFI_DATATYPE_CNT];
 	enum fi_ep_type		ep_type[FT_MAX_EP_TYPES];
 	enum fi_av_type		av_type[FT_MAX_AV_TYPES];
 	enum ft_comp_type	comp_type[FT_MAX_COMP];
@@ -255,6 +259,7 @@ struct ft_set {
 	uint64_t 		tx_cq_bind_flags[FT_MAX_FLAGS];
 	uint64_t 		rx_op_flags[FT_MAX_FLAGS];
 	uint64_t 		tx_op_flags[FT_MAX_FLAGS];
+	enum fi_cq_format	cq_format[FT_MAX_CQ_FORMAT];
 };
 
 struct ft_series {
@@ -277,6 +282,7 @@ struct ft_series {
 	int			cur_class;
 	int			cur_progress;
 	int			cur_threading;
+	int			cur_cq_format;
 };
 
 struct ft_info {
@@ -310,6 +316,7 @@ struct ft_info {
 	uint64_t 		tx_cq_bind_flags;
 	uint64_t 		rx_op_flags;
 	uint64_t 		tx_op_flags;
+	enum fi_cq_format	cq_format;
 };
 
 
@@ -345,8 +352,8 @@ void ft_format_iov(struct iovec *iov, size_t cnt, char *buf, size_t len);
 void ft_format_iocs(struct iovec *iov, size_t *iov_count);
 void ft_next_iov_cnt(struct ft_xcontrol *ctrl, size_t max_iov_cnt);
 int ft_get_ctx(struct ft_xcontrol *ctrl, struct fi_context **ctx);
-int ft_generates_rx_comp();
-int ft_generates_tx_comp();
+bool ft_generates_rx_comp();
+bool ft_generates_tx_comp();
 int ft_check_rx_completion();
 int ft_check_tx_completion();
 

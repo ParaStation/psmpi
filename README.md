@@ -3,7 +3,7 @@
 
 ## Introduction
 ParaStation MPI is an implementation of the Message-Passing Interface (MPI)
-Standard. Being an [MPICH](https://www.mpich.org)-derivate it bases on the MPICH-4.0.3 implementation.
+Standard. Being an [MPICH](https://www.mpich.org)-derivate it bases on the MPICH-4.1.1 implementation.
 
 ![Overview diagram of psmpi](./doc/img/psmpi_overview.svg)
 

@@ -14,12 +14,20 @@
 #include "posix_eager_impl.h"
 #include "posix_progress.h"
 
-void MPIDI_POSIX_delay_shm_mutex_destroy(int rank, MPL_proc_mutex_t * shm_mutex_ptr);
+#define MPIDI_POSIX_THREAD_CS_ENTER_VCI(vci) \
+    do { \
+        if (!MPIDI_VCI_IS_EXPLICIT(vci)) { \
+            MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock); \
+        } \
+    } while (0)
 
-MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_get_vsi(int flag, MPIR_Comm * comm_ptr,
-                                                 int src_rank, int dst_rank, int tag)
-{
-    return MPIDI_get_vci(flag, comm_ptr, src_rank, dst_rank, tag) % MPIDI_POSIX_global.num_vsis;
-}
+#define MPIDI_POSIX_THREAD_CS_EXIT_VCI(vci) \
+    do { \
+        if (!MPIDI_VCI_IS_EXPLICIT(vci)) { \
+            MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock); \
+        } \
+    } while (0)
+
+void MPIDI_POSIX_delay_shm_mutex_destroy(int rank, MPL_proc_mutex_t * shm_mutex_ptr);
 
 #endif /* POSIX_IMPL_H_INCLUDED */

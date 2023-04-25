@@ -199,7 +199,7 @@ static int am_isend_event(int vni, struct fi_cq_tagged_entry *wc, MPIR_Request *
     msg_hdr = &MPIDI_OFI_AM_SREQ_HDR(sreq, msg_hdr);
     MPID_Request_complete(sreq);
 
-    MPIDU_genq_private_pool_free_cell(MPIDI_OFI_global.per_vni[vni].pack_buf_pool,
+    MPIDU_genq_private_pool_free_cell(MPIDI_global.per_vci[vni].pack_buf_pool,
                                       MPIDI_OFI_AM_SREQ_HDR(sreq, pack_buffer));
     MPIDI_OFI_AM_SREQ_HDR(sreq, pack_buffer) = NULL;
     mpi_errno = MPIDIG_global.origin_cbs[msg_hdr->handler_id] (sreq);
@@ -230,18 +230,17 @@ static int am_isend_pipeline_event(int vni, struct fi_cq_tagged_entry *wc,
                                    MPIR_Request * dont_use_me)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_OFI_am_header_t *msg_hdr;
     MPIDI_OFI_am_send_pipeline_request_t *ofi_req;
     MPIR_Request *sreq = NULL;
 
     MPIR_FUNC_ENTER;
 
     ofi_req = MPL_container_of(wc->op_context, MPIDI_OFI_am_send_pipeline_request_t, context);
-    msg_hdr = ofi_req->msg_hdr;
+    int handler_id = ((MPIDI_OFI_am_header_t *) ofi_req->msg_hdr)->handler_id;
     sreq = ofi_req->sreq;
     MPID_Request_complete(sreq);        /* FIXME: Should not call MPIDI in NM ? */
 
-    MPIDU_genq_private_pool_free_cell(MPIDI_OFI_global.per_vni[vni].pack_buf_pool,
+    MPIDU_genq_private_pool_free_cell(MPIDI_global.per_vci[vni].pack_buf_pool,
                                       ofi_req->pack_buffer);
 
     MPIDU_genq_private_pool_free_cell(MPIDI_OFI_global.per_vni[vni].am_hdr_buf_pool, ofi_req);
@@ -249,7 +248,7 @@ static int am_isend_pipeline_event(int vni, struct fi_cq_tagged_entry *wc,
     int is_done = MPIDIG_am_send_async_finish_seg(sreq);
 
     if (is_done) {
-        mpi_errno = MPIDIG_global.origin_cbs[msg_hdr->handler_id] (sreq);
+        mpi_errno = MPIDIG_global.origin_cbs[handler_id] (sreq);
     }
 
     MPIR_ERR_CHECK(mpi_errno);
@@ -593,21 +592,28 @@ int MPIDI_OFI_handle_cq_error(int vni, int nic, ssize_t ret)
 
                 case FI_ECANCELED:
                     req = MPIDI_OFI_context_to_request(e.op_context);
-                    MPIR_Datatype_release_if_not_builtin(MPIDI_OFI_REQUEST(req, datatype));
-                    MPIR_STATUS_SET_CANCEL_BIT(req->status, TRUE);
-                    MPIR_STATUS_SET_COUNT(req->status, 0);
-                    /* NOTE: assuming only the receive request can be cancelled and reach here */
+                    /* Clean up the request. Reference MPIDI_OFI_recv_event.
+                     * NOTE: assuming only the receive request can be cancelled and reach here
+                     */
                     int event_id = MPIDI_OFI_REQUEST(req, event_id);
-                    if ((event_id == MPIDI_OFI_EVENT_RECV_PACK ||
-                         event_id == MPIDI_OFI_EVENT_GET_HUGE) &&
-                        MPIDI_OFI_REQUEST(req, noncontig.pack.pack_buffer)) {
-                        MPL_free(MPIDI_OFI_REQUEST(req, noncontig.pack.pack_buffer));
-                    } else if (MPIDI_OFI_ENABLE_PT2PT_NOPACK &&
-                               event_id == MPIDI_OFI_EVENT_RECV_NOPACK &&
-                               MPIDI_OFI_REQUEST(req, noncontig.nopack)) {
-                        MPL_free(MPIDI_OFI_REQUEST(req, noncontig.nopack));
+                    if (event_id == MPIDI_OFI_EVENT_DYNPROC_DONE) {
+                        dynproc_done_event(vni, e.op_context, req);
+                    } else {
+                        /* assume it is a pending recv */
+                        MPIR_STATUS_SET_CANCEL_BIT(req->status, TRUE);
+                        MPIR_STATUS_SET_COUNT(req->status, 0);
+                        if ((event_id == MPIDI_OFI_EVENT_RECV_PACK ||
+                             event_id == MPIDI_OFI_EVENT_GET_HUGE) &&
+                            MPIDI_OFI_REQUEST(req, noncontig.pack.pack_buffer)) {
+                            MPL_free(MPIDI_OFI_REQUEST(req, noncontig.pack.pack_buffer));
+                        } else if (MPIDI_OFI_ENABLE_PT2PT_NOPACK &&
+                                   event_id == MPIDI_OFI_EVENT_RECV_NOPACK &&
+                                   MPIDI_OFI_REQUEST(req, noncontig.nopack)) {
+                            MPL_free(MPIDI_OFI_REQUEST(req, noncontig.nopack));
+                        }
+                        MPIR_Datatype_release_if_not_builtin(MPIDI_OFI_REQUEST(req, datatype));
+                        MPIDI_Request_complete_fast(req);
                     }
-                    MPIDI_Request_complete_fast(req);
                     break;
 
                 case FI_ENOMSG:
@@ -619,7 +625,6 @@ int MPIDI_OFI_handle_cq_error(int vni, int nic, ssize_t ret)
                     MPIR_ERR_SETFATALANDJUMP4(mpi_errno, MPI_ERR_OTHER, "**ofid_poll",
                                               "**ofid_poll %s %d %s %s", __SHORT_FILE__,
                                               __LINE__, __func__, fi_strerror(e.err));
-                    break;
             }
 
             break;
@@ -628,7 +633,6 @@ int MPIDI_OFI_handle_cq_error(int vni, int nic, ssize_t ret)
             MPIR_ERR_SETFATALANDJUMP4(mpi_errno, MPI_ERR_OTHER, "**ofid_poll",
                                       "**ofid_poll %s %d %s %s", __SHORT_FILE__, __LINE__,
                                       __func__, fi_strerror(errno));
-            break;
     }
 
   fn_exit:

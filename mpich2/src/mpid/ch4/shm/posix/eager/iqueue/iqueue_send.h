@@ -53,7 +53,11 @@ MPIDI_POSIX_eager_send(int grank, MPIDI_POSIX_am_header_t * msg_hdr, const void 
     transport = MPIDI_POSIX_eager_iqueue_get_transport(src_vsi, dst_vsi);
 
     /* Try to get a new cell to hold the message */
-    MPIDU_genq_shmem_pool_cell_alloc(transport->cell_pool, (void **) &cell);
+    /* Select the appropriate pool depending on whether we are using sender-side or receiver-side
+     * queuing. */
+    MPIDU_genq_shmem_pool_cell_alloc(transport->cell_pool, (void **) &cell,
+                                     MPIR_CVAR_GENQ_SHMEM_POOL_FREE_QUEUE_SENDER_SIDE ?
+                                     MPIR_Process.local_rank : grank);
 
     /* If a cell wasn't available, let the caller know that we weren't able to send the message
      * immediately. */
@@ -83,7 +87,7 @@ MPIDI_POSIX_eager_send(int grank, MPIDI_POSIX_am_header_t * msg_hdr, const void 
         cell->am_header = *msg_hdr;
         cell->type = MPIDI_POSIX_EAGER_IQUEUE_CELL_TYPE_HDR;
         /* send am_hdr if this is the first segment */
-        MPIR_Typerep_copy(payload, am_hdr, am_hdr_sz);
+        MPIR_Typerep_copy(payload, am_hdr, am_hdr_sz, MPIR_TYPEREP_FLAG_STREAM);
         /* make sure the data region starts at the boundary of MAX_ALIGNMENT */
         payload = payload + resized_am_hdr_sz;
         cell->payload_size += resized_am_hdr_sz;
@@ -93,21 +97,19 @@ MPIDI_POSIX_eager_send(int grank, MPIDI_POSIX_am_header_t * msg_hdr, const void 
         cell->type = MPIDI_POSIX_EAGER_IQUEUE_CELL_TYPE_DATA;
     }
 
-    /* We want to skip packing of send buffer is there is no data to be sent . buf == NULL is
+    /* We want to skip packing of send buffer if there is no data to be sent . buf == NULL is
      * not a correct check here because derived datatype can use absolute address for displacement
      * which requires buffer address passed as MPI_BOTTOM which is usually NULL. count == 0 is also
      * not reliable because the derived datatype could have zero block size which contains no
      * data. */
     if (bytes_sent) {
-        MPIR_Typerep_pack(buf, count, datatype, offset, payload, available, &packed_size);
+        MPIR_Typerep_pack(buf, count, datatype, offset, payload, available, &packed_size,
+                          MPIR_TYPEREP_FLAG_STREAM);
         cell->payload_size += packed_size;
+        *bytes_sent = packed_size;
     }
 
     MPIDU_genq_shmem_queue_enqueue(transport->cell_pool, terminal, (void *) cell);
-
-    if (bytes_sent) {
-        *bytes_sent = packed_size;
-    }
 
   fn_exit:
     MPIR_FUNC_EXIT;

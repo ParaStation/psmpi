@@ -36,7 +36,8 @@ static pthread_spinlock_t ucm_kh_lock;
 #define ucm_ptr_hash(_ptr)  kh_int64_hash_func((uintptr_t)(_ptr))
 KHASH_INIT(ucm_ptr_size, const void*, size_t, 1, ucm_ptr_hash, kh_int64_hash_equal)
 
-static pthread_rwlock_t ucm_event_lock = PTHREAD_RWLOCK_INITIALIZER;
+static pthread_rwlock_t ucm_event_lock       = PTHREAD_RWLOCK_INITIALIZER;
+static ucs_init_once_t ucm_library_init_once = UCS_INIT_ONCE_INITIALIZER;
 static ucs_list_link_t ucm_event_handlers;
 static int ucm_external_events = 0;
 static khash_t(ucm_ptr_size) ucm_shmat_ptrs;
@@ -468,16 +469,19 @@ int ucm_madvise(void *addr, size_t length, int advice)
     return event.madvise.result;
 }
 
-void ucm_library_init(const ucm_global_config_t *ucm_opts)
+void ucm_library_init()
 {
-    static ucs_init_once_t init_once = UCS_INIT_ONCE_INITIALIZER;
-
-    UCS_INIT_ONCE(&init_once) {
-        if (ucm_opts != NULL) {
-            ucm_global_opts = *ucm_opts;
-        }
+    UCS_INIT_ONCE(&ucm_library_init_once) {
+        pthread_spin_init(&ucm_kh_lock, PTHREAD_PROCESS_PRIVATE);
+        kh_init_inplace(ucm_ptr_size, &ucm_shmat_ptrs);
         ucm_mmap_init();
     }
+}
+
+void ucm_set_global_opts(const ucm_global_config_t *ucm_opts)
+{
+    ucm_global_opts = *ucm_opts;
+    ucm_library_init();
 }
 
 void ucm_event_handler_add(ucm_event_handler_t *handler)
@@ -570,7 +574,7 @@ ucs_status_t ucm_set_event_handler(int events, int priority,
         return UCS_ERR_UNSUPPORTED;
     }
 
-    ucm_library_init(NULL);
+    ucm_library_init();
 
     /* separate event flags from real events */
     flags   = events & (UCM_EVENT_FLAG_NO_INSTALL |
@@ -648,22 +652,19 @@ void ucm_unset_event_handler(int events, ucm_event_callback_t cb, void *arg)
 
 ucs_status_t ucm_test_events(int events)
 {
-    ucm_library_init(NULL);
+    ucm_library_init();
     return ucm_mmap_test_installed_events(events);
 }
 
 ucs_status_t ucm_test_external_events(int events)
 {
-    ucm_library_init(NULL);
+    ucm_library_init();
     return ucm_mmap_test_events(events & ucm_external_events, "external");
 }
 
-UCS_STATIC_INIT {
-    pthread_spin_init(&ucm_kh_lock, PTHREAD_PROCESS_PRIVATE);
-    kh_init_inplace(ucm_ptr_size, &ucm_shmat_ptrs);
-}
-
 UCS_STATIC_CLEANUP {
-    kh_destroy_inplace(ucm_ptr_size, &ucm_shmat_ptrs);
-    pthread_spin_destroy(&ucm_kh_lock);
+    UCS_CLEANUP_ONCE(&ucm_library_init_once) {
+        kh_destroy_inplace(ucm_ptr_size, &ucm_shmat_ptrs);
+        pthread_spin_destroy(&ucm_kh_lock);
+    }
 }

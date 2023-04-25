@@ -82,10 +82,12 @@ uintptr_t yaksuri_hipi_get_iov_unpack_threshold(yaksi_info_s * info)
     return iov_unpack_threshold;
 }
 
-int yaksuri_hipi_ipack(const void *inbuf, void *outbuf, uintptr_t count, yaksi_type_s * type,
-                       yaksi_info_s * info, yaksa_op_t op, int target)
+int yaksuri_hipi_ipack_with_stream(const void *inbuf, void *outbuf, uintptr_t count,
+                                   yaksi_type_s * type, yaksi_info_s * info, yaksa_op_t op,
+                                   int target, void *stream_p)
 {
     int rc = YAKSA_SUCCESS;
+    hipStream_t stream = *(hipStream_t *) stream_p;
     yaksuri_hipi_type_s *hip_type = (yaksuri_hipi_type_s *) type->backend.hip.priv;
     hipError_t cerr;
 
@@ -95,9 +97,8 @@ int yaksuri_hipi_ipack(const void *inbuf, void *outbuf, uintptr_t count, yaksi_t
     if (op == YAKSA_OP__REPLACE && type->is_contig) {
         /* hip performance is optimized when we synchronize on the
          * source buffer's GPU */
-        cerr =
-            hipMemcpyAsync(outbuf, (const char *) inbuf + type->true_lb, count * type->size,
-                           hipMemcpyDefault, yaksuri_hipi_global.stream[target]);
+        cerr = hipMemcpyAsync(outbuf, (const char *) inbuf + type->true_lb, count * type->size,
+                              hipMemcpyDefault, stream);
         YAKSURI_HIPI_HIP_ERR_CHKANDJUMP(cerr, rc, fn_fail);
     } else if (op == YAKSA_OP__REPLACE && type->size / type->num_contig >= iov_pack_threshold) {
         struct iovec iov[MAX_IOV_LENGTH];
@@ -110,8 +111,7 @@ int yaksuri_hipi_ipack(const void *inbuf, void *outbuf, uintptr_t count, yaksi_t
             YAKSU_ERR_CHECK(rc, fn_fail);
 
             for (uintptr_t i = 0; i < actual_iov_len; i++) {
-                hipMemcpyAsync(dbuf, iov[i].iov_base, iov[i].iov_len, hipMemcpyDefault,
-                               yaksuri_hipi_global.stream[target]);
+                hipMemcpyAsync(dbuf, iov[i].iov_base, iov[i].iov_len, hipMemcpyDefault, stream);
                 dbuf += iov[i].iov_len;
             }
 
@@ -134,7 +134,7 @@ int yaksuri_hipi_ipack(const void *inbuf, void *outbuf, uintptr_t count, yaksi_t
         YAKSURI_HIPI_HIP_ERR_CHKANDJUMP(cerr, rc, fn_fail);
 
         hip_type->pack(inbuf, outbuf, count, op, hip_type->md, n_threads, n_blocks_x, n_blocks_y,
-                       n_blocks_z, target);
+                       n_blocks_z, stream);
 
         cerr = hipSetDevice(cur_device);
         YAKSURI_HIPI_HIP_ERR_CHKANDJUMP(cerr, rc, fn_fail);
@@ -146,10 +146,12 @@ int yaksuri_hipi_ipack(const void *inbuf, void *outbuf, uintptr_t count, yaksi_t
     goto fn_exit;
 }
 
-int yaksuri_hipi_iunpack(const void *inbuf, void *outbuf, uintptr_t count, yaksi_type_s * type,
-                         yaksi_info_s * info, yaksa_op_t op, int target)
+int yaksuri_hipi_iunpack_with_stream(const void *inbuf, void *outbuf, uintptr_t count,
+                                     yaksi_type_s * type, yaksi_info_s * info, yaksa_op_t op,
+                                     int target, void *stream_p)
 {
     int rc = YAKSA_SUCCESS;
+    hipStream_t stream = *(hipStream_t *) stream_p;
     yaksuri_hipi_type_s *hip_type = (yaksuri_hipi_type_s *) type->backend.hip.priv;
     hipError_t cerr;
 
@@ -159,9 +161,8 @@ int yaksuri_hipi_iunpack(const void *inbuf, void *outbuf, uintptr_t count, yaksi
     if (op == YAKSA_OP__REPLACE && type->is_contig) {
         /* hip performance is optimized when we synchronize on the
          * source buffer's GPU */
-        cerr =
-            hipMemcpyAsync((char *) outbuf + type->true_lb, inbuf, count * type->size,
-                           hipMemcpyDefault, yaksuri_hipi_global.stream[target]);
+        cerr = hipMemcpyAsync((char *) outbuf + type->true_lb, inbuf, count * type->size,
+                              hipMemcpyDefault, stream);
         YAKSURI_HIPI_HIP_ERR_CHKANDJUMP(cerr, rc, fn_fail);
     } else if (op == YAKSA_OP__REPLACE && type->size / type->num_contig >= iov_unpack_threshold) {
         struct iovec iov[MAX_IOV_LENGTH];
@@ -174,8 +175,7 @@ int yaksuri_hipi_iunpack(const void *inbuf, void *outbuf, uintptr_t count, yaksi
             YAKSU_ERR_CHECK(rc, fn_fail);
 
             for (uintptr_t i = 0; i < actual_iov_len; i++) {
-                hipMemcpyAsync(iov[i].iov_base, sbuf, iov[i].iov_len, hipMemcpyDefault,
-                               yaksuri_hipi_global.stream[target]);
+                hipMemcpyAsync(iov[i].iov_base, sbuf, iov[i].iov_len, hipMemcpyDefault, stream);
                 sbuf += iov[i].iov_len;
             }
 
@@ -198,7 +198,7 @@ int yaksuri_hipi_iunpack(const void *inbuf, void *outbuf, uintptr_t count, yaksi
         YAKSURI_HIPI_HIP_ERR_CHKANDJUMP(cerr, rc, fn_fail);
 
         hip_type->unpack(inbuf, outbuf, count, op, hip_type->md, n_threads, n_blocks_x,
-                         n_blocks_y, n_blocks_z, target);
+                         n_blocks_y, n_blocks_z, stream);
 
         cerr = hipSetDevice(cur_device);
         YAKSURI_HIPI_HIP_ERR_CHKANDJUMP(cerr, rc, fn_fail);
@@ -208,6 +208,20 @@ int yaksuri_hipi_iunpack(const void *inbuf, void *outbuf, uintptr_t count, yaksi
     return rc;
   fn_fail:
     goto fn_exit;
+}
+
+int yaksuri_hipi_ipack(const void *inbuf, void *outbuf, uintptr_t count, yaksi_type_s * type,
+                       yaksi_info_s * info, yaksa_op_t op, int target)
+{
+    return yaksuri_hipi_ipack_with_stream(inbuf, outbuf, count, type, info, op, target,
+                                          &yaksuri_hipi_global.stream[target]);
+}
+
+int yaksuri_hipi_iunpack(const void *inbuf, void *outbuf, uintptr_t count, yaksi_type_s * type,
+                         yaksi_info_s * info, yaksa_op_t op, int target)
+{
+    return yaksuri_hipi_iunpack_with_stream(inbuf, outbuf, count, type, info, op, target,
+                                            &yaksuri_hipi_global.stream[target]);
 }
 
 int yaksuri_hipi_synchronize(int target)

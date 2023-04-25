@@ -30,7 +30,7 @@ int yaksuri_cudai_event_record(int device, void **event_)
     cerr = cudaEventCreate(&event->event);
     YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
 
-    cerr = cudaEventRecord(event->event, yaksuri_cudai_global.stream[device]);
+    cerr = cudaEventRecord(event->event, *yaksuri_cudai_get_stream(device));
     YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
 
     if (cur_device != device) {
@@ -90,7 +90,7 @@ int yaksuri_cudai_add_dependency(int device1, int device2)
     cerr = cudaEventCreate(&event);
     YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
 
-    cerr = cudaEventRecord(event, yaksuri_cudai_global.stream[device1]);
+    cerr = cudaEventRecord(event, *yaksuri_cudai_get_stream(device1));
     YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
 
     if (cur_device != device1) {
@@ -99,7 +99,7 @@ int yaksuri_cudai_add_dependency(int device1, int device2)
     }
 
     /* add a dependency on that event for the second device */
-    cerr = cudaStreamWaitEvent(yaksuri_cudai_global.stream[device2], event, 0);
+    cerr = cudaStreamWaitEvent(*yaksuri_cudai_get_stream(device2), event, 0);
     YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
 
     /* destroy the temporary event */

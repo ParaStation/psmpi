@@ -11,30 +11,34 @@
 #ifndef MPIDI_CH4_DIRECT_NETMOD
 MPL_STATIC_INLINE_PREFIX int anysource_irecv(void *buf, MPI_Aint count, MPI_Datatype datatype,
                                              int rank, int tag, MPIR_Comm * comm,
-                                             int context_offset, MPIDI_av_entry_t * av,
+                                             int attr, MPIDI_av_entry_t * av,
                                              MPIR_Request ** request)
 {
     int mpi_errno = MPI_SUCCESS;
-    int need_unlock = 0;
 
-    mpi_errno = MPIDI_SHM_mpi_irecv(buf, count, datatype, rank, tag, comm, context_offset, request);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    MPIR_Assert(*request);
-    /* 1. hold shm vci lock to prevent shm progress while we establish netmod request.
-     * 2. MPIDI_NM_mpi_irecv need use recursive locking in case it share the shm vci lock
+    /* Need critical section to prevent shmmem progress in-between
+     * 1. Enter VCI lock and pre-allocate request for shm receive.
+     * 2. MPIDI_SHM_mpi_irecv with pre-allocated request
+     * 3. MPIDI_NM_mpi_irecv need use recursive locking in case it share the shm vci lock
      */
 #if MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY__VCI
-    int shm_vci = MPIDI_Request_get_vci(*request);
+    int vsi;
+    MPIDI_POSIX_RECV_VSI(vsi);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vsi).lock);
+
+    MPIDI_CH4_REQUEST_CREATE(*request, MPIR_REQUEST_KIND__RECV, vsi, 1);
+    MPIR_Assert(*request);
 #endif
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(shm_vci).lock);
-    need_unlock = 1;
+
+    mpi_errno = MPIDI_SHM_mpi_irecv(buf, count, datatype, rank, tag, comm, attr, request);
+    MPIR_ERR_CHECK(mpi_errno);
+
     if (!MPIR_Request_is_complete(*request) && !MPIDIG_REQUEST_IN_PROGRESS(*request)) {
         MPIR_Request *nm_rreq = NULL;
-        mpi_errno = MPIDI_NM_mpi_irecv(buf, count, datatype, rank, tag, comm, context_offset,
+        mpi_errno = MPIDI_NM_mpi_irecv(buf, count, datatype, rank, tag, comm, attr,
                                        av, &nm_rreq, *request);
         MPIR_ERR_CHECK(mpi_errno);
-        MPIDI_REQUEST_ANYSOURCE_PARTNER(*request) = nm_rreq;
+        (*request)->dev.anysrc_partner = nm_rreq;
 
         /* cancel the shm request if netmod/am handles the request from unexpected queue. */
         if (MPIR_Request_is_complete(nm_rreq)) {
@@ -49,9 +53,9 @@ MPL_STATIC_INLINE_PREFIX int anysource_irecv(void *buf, MPI_Aint count, MPI_Data
         }
     }
   fn_exit:
-    if (need_unlock) {
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(shm_vci).lock);
-    }
+#if MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY__VCI
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vsi).lock);
+#endif
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -67,7 +71,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_cancel_recv_unsafe(MPIR_Request * rreq)
     mpi_errno = MPIDI_NM_mpi_cancel_recv(rreq, false);
 #else
     if (MPIDI_REQUEST(rreq, is_local)) {
-        MPIR_Request *partner_rreq = MPIDI_REQUEST_ANYSOURCE_PARTNER(rreq);
+        MPIR_Request *partner_rreq = rreq->dev.anysrc_partner;
         if (unlikely(partner_rreq)) {
             /* Canceling MPI_ANY_SOURCE receive -- first cancel NM recv, then SHM */
             mpi_errno = MPIDI_NM_mpi_cancel_recv(partner_rreq, false);
@@ -94,43 +98,27 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_irecv(void *buf,
                                          int rank,
                                          int tag,
                                          MPIR_Comm * comm,
-                                         int context_offset, MPIDI_av_entry_t * av,
-                                         MPIR_Request ** req)
+                                         int attr, MPIDI_av_entry_t * av, MPIR_Request ** req)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_FUNC_ENTER;
 
-#ifdef MPIDI_CH4_USE_WORK_QUEUES
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(0).lock);
-    *(req) = MPIR_Request_create_from_pool(MPIR_REQUEST_KIND__RECV, 0, 1);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(0).lock);
-    MPIR_ERR_CHKANDSTMT((*req) == NULL, mpi_errno, MPIX_ERR_NOREQ, goto fn_fail, "**nomemreq");
-    MPIR_Datatype_add_ref_if_not_builtin(datatype);
-    MPIDI_workq_pt2pt_enqueue(IRECV, NULL /*send_buf */ , buf, count, datatype,
-                              rank, tag, comm, context_offset, av,
-                              NULL /*status */ , *req, NULL /*flag */ , NULL /*message */ ,
-                              NULL /*processed */);
-#else
     *(req) = NULL;
 #ifdef MPIDI_CH4_DIRECT_NETMOD
-    mpi_errno = MPIDI_NM_mpi_irecv(buf, count, datatype, rank, tag, comm, context_offset, av,
-                                   req, NULL);
+    mpi_errno = MPIDI_NM_mpi_irecv(buf, count, datatype, rank, tag, comm, attr, av, req, NULL);
 #else
     if (unlikely(rank == MPI_ANY_SOURCE)) {
-        mpi_errno = anysource_irecv(buf, count, datatype, rank, tag, comm, context_offset, av, req);
+        mpi_errno = anysource_irecv(buf, count, datatype, rank, tag, comm, attr, av, req);
 
     } else {
         if (MPIDI_av_is_local(av))
-            mpi_errno =
-                MPIDI_SHM_mpi_irecv(buf, count, datatype, rank, tag, comm, context_offset, req);
+            mpi_errno = MPIDI_SHM_mpi_irecv(buf, count, datatype, rank, tag, comm, attr, req);
         else
             mpi_errno =
-                MPIDI_NM_mpi_irecv(buf, count, datatype, rank, tag, comm, context_offset, av,
-                                   req, NULL);
+                MPIDI_NM_mpi_irecv(buf, count, datatype, rank, tag, comm, attr, av, req, NULL);
     }
 #endif
     MPIR_ERR_CHECK(mpi_errno);
-#endif
 
   fn_exit:
     MPIR_FUNC_EXIT;
@@ -147,18 +135,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_imrecv(void *buf,
     int mpi_errno = MPI_SUCCESS;
     MPIR_FUNC_ENTER;
 
-#ifdef MPIDI_CH4_USE_WORK_QUEUES
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(0).lock);
-    MPIR_Request *request = MPIR_Request_create_from_pool(MPIR_REQUEST_KIND__RECV, 0, 1);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(0).lock);
-    MPIR_ERR_CHKANDSTMT(request == NULL, mpi_errno, MPIX_ERR_NOREQ, goto fn_fail, "**nomemreq");
-    MPIR_Datatype_add_ref_if_not_builtin(datatype);
-    MPIDI_workq_pt2pt_enqueue(IMRECV, NULL /*send_buf */ , buf, count, datatype,
-                              0 /*rank */ , 0 /*tag */ , NULL /*comm */ ,
-                              0 /*context_offset */ , NULL /*av */ ,
-                              NULL /*status */ , request, NULL /*flag */ ,
-                              &message, NULL /*processed */);
-#else
 #ifdef MPIDI_CH4_DIRECT_NETMOD
     mpi_errno = MPIDI_NM_mpi_imrecv(buf, count, datatype, message);
 #else
@@ -168,7 +144,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_imrecv(void *buf,
         mpi_errno = MPIDI_NM_mpi_imrecv(buf, count, datatype, message);
 #endif
     MPIR_ERR_CHECK(mpi_errno);
-#endif
 
   fn_exit:
     MPIR_FUNC_EXIT;
@@ -210,10 +185,9 @@ MPL_STATIC_INLINE_PREFIX int MPID_Recv(void *buf,
                                        int rank,
                                        int tag,
                                        MPIR_Comm * comm,
-                                       int context_offset, MPI_Status * status,
-                                       MPIR_Request ** request)
+                                       int attr, MPI_Status * status, MPIR_Request ** request)
 {
-    return MPID_Irecv(buf, count, datatype, rank, tag, comm, context_offset, request);
+    return MPID_Irecv(buf, count, datatype, rank, tag, comm, attr, request);
 }
 
 MPL_STATIC_INLINE_PREFIX int MPID_Recv_init(void *buf,
@@ -221,12 +195,13 @@ MPL_STATIC_INLINE_PREFIX int MPID_Recv_init(void *buf,
                                             MPI_Datatype datatype,
                                             int rank,
                                             int tag,
-                                            MPIR_Comm * comm, int context_offset,
-                                            MPIR_Request ** request)
+                                            MPIR_Comm * comm, int attr, MPIR_Request ** request)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Request *rreq;
     MPIR_FUNC_ENTER;
+
+    int context_offset = MPIR_PT2PT_ATTR_CONTEXT_OFFSET(attr);
 
     MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(0).lock);
     MPIDI_CH4_REQUEST_CREATE(rreq, MPIR_REQUEST_KIND__PREQUEST_RECV, 0, 1);
@@ -299,18 +274,16 @@ MPL_STATIC_INLINE_PREFIX int MPID_Irecv(void *buf,
                                         MPI_Datatype datatype,
                                         int rank,
                                         int tag,
-                                        MPIR_Comm * comm, int context_offset,
-                                        MPIR_Request ** request)
+                                        MPIR_Comm * comm, int attr, MPIR_Request ** request)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_FUNC_ENTER;
 
     if (MPIDI_is_self_comm(comm)) {
-        mpi_errno =
-            MPIDI_Self_irecv(buf, count, datatype, rank, tag, comm, context_offset, request);
+        mpi_errno = MPIDI_Self_irecv(buf, count, datatype, rank, tag, comm, attr, request);
     } else {
         MPIDI_av_entry_t *av = (rank == MPI_ANY_SOURCE ? NULL : MPIDIU_comm_rank_to_av(comm, rank));
-        mpi_errno = MPIDI_irecv(buf, count, datatype, rank, tag, comm, context_offset, av, request);
+        mpi_errno = MPIDI_irecv(buf, count, datatype, rank, tag, comm, attr, av, request);
     }
 
     MPIR_ERR_CHECK(mpi_errno);

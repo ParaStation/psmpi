@@ -92,11 +92,14 @@
 
 #define VERBS_PROV_NAME "verbs"
 
-#define VERBS_DBG(subsys, ...) FI_DBG(&vrb_prov, subsys, __VA_ARGS__)
-#define VERBS_INFO(subsys, ...) FI_INFO(&vrb_prov, subsys, __VA_ARGS__)
-#define VERBS_INFO_ERRNO(subsys, fn, errno) VERBS_INFO(subsys, fn ": %s(%d)\n",	\
-		strerror(errno), errno)
-#define VERBS_WARN(subsys, ...) FI_WARN(&vrb_prov, subsys, __VA_ARGS__)
+#define VRB_DBG(subsys, ...) FI_DBG(&vrb_prov, subsys, __VA_ARGS__)
+#define VRB_INFO(subsys, ...) FI_INFO(&vrb_prov, subsys, __VA_ARGS__)
+#define VRB_WARN(subsys, ...) FI_WARN(&vrb_prov, subsys, __VA_ARGS__)
+
+#define VRB_WARN_ERRNO(subsys, fn) \
+	VRB_WARN(subsys, fn ": %s (%d)\n", strerror(errno), errno)
+#define VRB_WARN_ERR(subsys, fn, err) \
+	VRB_WARN(subsys, fn ": %s (%d)\n", fi_strerror((int) -(err)), (int) err)
 
 
 #define VERBS_INJECT_FLAGS(ep, len, flags, desc) \
@@ -281,7 +284,7 @@ typedef int (*vrb_trywait_func)(struct fid *fid);
 struct vrb_eq {
 	struct fid_eq		eq_fid;
 	struct vrb_fabric	*fab;
-	fastlock_t		lock;
+	ofi_mutex_t		lock;
 	struct dlistfd_head	list_head;
 	struct rdma_event_channel *channel;
 	uint64_t		flags;
@@ -378,9 +381,9 @@ struct vrb_domain {
 		 * physical XRC INI connection to the associated node. The
 		 * map and XRC INI connection object state information are
 		 * protected via the ini_lock. */
-		fastlock_t		ini_lock;
-		ofi_fastlock_acquire_t	lock_acquire;
-		ofi_fastlock_release_t	lock_release;
+		ofi_mutex_t		ini_lock;
+		ofi_mutex_lock_t	lock_acquire;
+		ofi_mutex_unlock_t	lock_release;
 		struct ofi_rbmap	*ini_conn_rbmap;
 	} xrc;
 
@@ -406,7 +409,7 @@ struct vrb_cq {
 	enum fi_wait_obj	wait_obj;
 	enum fi_cq_wait_cond	wait_cond;
 	struct ibv_wc		wc;
-	int			signal_fd[2];
+	struct fd_signal	signal;
 	vrb_cq_read_entry	read_entry;
 	struct slist		saved_wc_list;
 	ofi_atomic32_t		nevents;
@@ -414,7 +417,7 @@ struct vrb_cq {
 
 	struct {
 		/* The list of XRC SRQ contexts associated with this CQ */
-		fastlock_t		srq_list_lock;
+		ofi_mutex_t		srq_list_lock;
 		struct dlist_entry	srq_list;
 	} xrc;
 
@@ -465,12 +468,12 @@ struct vrb_srq_ep {
 	struct ibv_srq		*srq;
 	struct vrb_domain	*domain;
 	struct ofi_bufpool	*ctx_pool;
-	fastlock_t		ctx_lock;
+	ofi_mutex_t		ctx_lock;
 
 	/* For XRC SRQ only */
 	struct {
 		/* XRC SRQ is not created until endpoint enable */
-		fastlock_t		prepost_lock;
+		ofi_mutex_t		prepost_lock;
 		struct slist		prepost_list;
 		uint32_t		max_recv_wr;
 		uint32_t		max_sge;
@@ -574,6 +577,8 @@ struct vrb_ep {
 	/* Protected by send CQ lock */
 	uint64_t			sq_credits;
 	uint64_t			peer_rq_credits;
+	uint64_t			saved_peer_rq_credits;
+	struct slist			sq_list;
 	/* Protected by recv CQ lock */
 	int64_t				rq_credits_avail;
 	int64_t				threshold;
@@ -616,14 +621,24 @@ struct vrb_ep {
 };
 
 
-/* Must be cast-able to struct fi_context */
-struct vrb_context {
-	struct vrb_ep			*ep;
-	struct vrb_srq_ep		*srx;
-	void				*user_ctx;
-	uint32_t			flags;
+enum vrb_op_queue {
+	VRB_OP_SQ,
+	VRB_OP_RQ,
+	VRB_OP_SRQ,
 };
 
+struct vrb_context {
+	struct slist_entry		entry;
+	union {
+		struct vrb_ep		*ep;
+		struct vrb_srq_ep	*srx;
+	};
+	void				*user_ctx;
+	enum vrb_op_queue		op_queue;
+	enum ibv_wr_opcode		sq_opcode;
+};
+
+enum ibv_wc_opcode vrb_wr2wc_opcode(enum ibv_wr_opcode wr);
 
 #define VERBS_XRC_EP_MAGIC		0x1F3D5B79
 struct vrb_xrc_ep {

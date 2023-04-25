@@ -149,6 +149,8 @@ int main(int argc, char **argv)
     }
 
     if (rank < nproc/2) {
+        count = 0;
+
         do {
             count++;
             MPI_Recv(&flag, 1, MPI_INT, rank + nproc/2, 42, MPI_COMM_WORLD, MPI_STATUS_IGNORE);

@@ -137,9 +137,9 @@ void rxr_pkt_entry_release_rx(struct rxr_ep *ep,
 		return;
 
 	if (pkt_entry->alloc_type == RXR_PKT_FROM_EFA_RX_POOL) {
-		ep->rx_bufs_efa_to_post++;
+		ep->efa_rx_pkts_to_post++;
 	} else if (pkt_entry->alloc_type == RXR_PKT_FROM_SHM_RX_POOL) {
-		ep->rx_bufs_shm_to_post++;
+		ep->shm_rx_pkts_to_post++;
 	} else if (pkt_entry->alloc_type == RXR_PKT_FROM_READ_COPY_POOL) {
 		assert(ep->rx_readcopy_pkt_pool_used > 0);
 		ep->rx_readcopy_pkt_pool_used--;
@@ -176,20 +176,38 @@ void rxr_pkt_entry_copy(struct rxr_ep *ep,
 	dest->addr = src->addr;
 	dest->flags = RXR_PKT_ENTRY_IN_USE;
 	dest->next = NULL;
-	memcpy(dest->pkt, src->pkt, ep->mtu_size);
+	assert(src->pkt_size > 0);
+	memcpy(dest->pkt, src->pkt, src->pkt_size);
 }
 
 /*
- * Create a new rx_entry for an unexpected message. Store the packet for later
- * processing and put the rx_entry on the appropriate unexpected list.
+ * Handle copying or updating the metadata for an unexpected packet.
+ *
+ * Packets from the EFA RX pool will be copied into a separate buffer not
+ * registered with the device (if this option is enabled) so that we can repost
+ * the registered buffer again to keep the EFA RX queue full. Packets from the
+ * SHM RX pool will also be copied to reuse the unexpected message pool.
+ *
+ * @param[in]     ep  the end point
+ * @param[in,out] pkt_entry_ptr unexpected packet, if this packet is copied to
+ *                a new memory region this pointer will be updated.
+ *
+ * @return	  struct rxr_pkt_entry of the updated or copied packet, NULL on
+ * 		  allocation failure.
  */
 struct rxr_pkt_entry *rxr_pkt_get_unexp(struct rxr_ep *ep,
 					struct rxr_pkt_entry **pkt_entry_ptr)
 {
 	struct rxr_pkt_entry *unexp_pkt_entry;
+	enum rxr_pkt_entry_alloc_type type;
 
-	if (rxr_env.rx_copy_unexp && (*pkt_entry_ptr)->alloc_type == RXR_PKT_FROM_EFA_RX_POOL) {
-		unexp_pkt_entry = rxr_pkt_entry_clone(ep, ep->rx_unexp_pkt_pool, RXR_PKT_FROM_UNEXP_POOL, *pkt_entry_ptr);
+	type = (*pkt_entry_ptr)->alloc_type;
+
+	if (rxr_env.rx_copy_unexp && (type == RXR_PKT_FROM_EFA_RX_POOL ||
+				      type == RXR_PKT_FROM_SHM_RX_POOL)) {
+		unexp_pkt_entry = rxr_pkt_entry_clone(ep, ep->rx_unexp_pkt_pool,
+						      RXR_PKT_FROM_UNEXP_POOL,
+						      *pkt_entry_ptr);
 		if (OFI_UNLIKELY(!unexp_pkt_entry)) {
 			FI_WARN(&rxr_prov, FI_LOG_EP_CTRL,
 				"Unable to allocate rx_pkt_entry for unexp msg\n");
@@ -290,7 +308,7 @@ ssize_t rxr_pkt_entry_sendmsg(struct rxr_ep *ep, struct rxr_pkt_entry *pkt_entry
 			      const struct fi_msg *msg, uint64_t flags)
 {
 	struct rdm_peer *peer;
-	size_t ret;
+	ssize_t ret;
 
 	if (pkt_entry->alloc_type == RXR_PKT_FROM_EFA_TX_POOL &&
 	    ep->efa_outstanding_tx_ops == ep->efa_max_outstanding_tx_ops)
@@ -374,14 +392,21 @@ ssize_t rxr_pkt_entry_inject(struct rxr_ep *ep,
 			     fi_addr_t addr)
 {
 	struct rdm_peer *peer;
+	ssize_t ret;
 
 	/* currently only EOR packet is injected using shm ep */
 	peer = rxr_ep_get_peer(ep, addr);
 	assert(peer);
 
 	assert(ep->use_shm && peer->is_local);
-	return fi_inject(ep->shm_ep, rxr_pkt_start(pkt_entry), pkt_entry->pkt_size,
+	ret = fi_inject(ep->shm_ep, rxr_pkt_start(pkt_entry), pkt_entry->pkt_size,
 			 peer->shm_fiaddr);
+
+	if (OFI_UNLIKELY(ret))
+		return ret;
+
+	rxr_ep_record_tx_op_submitted(ep, pkt_entry);
+	return 0;
 }
 
 /*

@@ -20,7 +20,6 @@ static MPI_T_pvar_handle nsc_handle, nrc_handle, snsc_handle, snrc_handle;
 static MPI_T_pvar_session session;
 static int elems = 1000000;
 static MPI_Request *reqs;
-static int num_nics = 1;
 static int enable_striping = 1;
 static int enable_hashing = 0;
 static int num_nodes = 0;
@@ -118,23 +117,24 @@ static int compare_vars(int rank, int target, int num_nics)
         if (rank < num_pairs) {
             if (expected_mapping[0].nic_sent_bytes_count[idx] != nic_sent_bytes_count[idx]) {
                 printf
-                    ("rank=%d --> target=%d: Actual sent byte count=%ld through NIC %d does not match with the "
-                     "expected sent byte count=%ld\n", rank, target, nic_sent_bytes_count[idx], idx,
-                     expected_mapping[0].nic_sent_bytes_count[idx]);
+                    ("rank=%d --> target=%d: Actual sent byte count=%llu through NIC %d does not match with the "
+                     "expected sent byte count=%llu\n", rank, target, nic_sent_bytes_count[idx],
+                     idx, expected_mapping[0].nic_sent_bytes_count[idx]);
                 errs++;
             }
             if (expected_mapping[0].nic_recvd_bytes_count[idx] != nic_recvd_bytes_count[idx]) {
                 printf
-                    ("rank=%d --> target=%d: Actual received byte count=%ld through NIC %d does not match with the "
-                     "expected received byte count=%ld\n", rank, target, nic_recvd_bytes_count[idx],
-                     idx, expected_mapping[0].nic_recvd_bytes_count[idx]);
+                    ("rank=%d --> target=%d: Actual received byte count=%llu through NIC %d does not match with the "
+                     "expected received byte count=%llu\n", rank, target,
+                     nic_recvd_bytes_count[idx], idx,
+                     expected_mapping[0].nic_recvd_bytes_count[idx]);
                 errs++;
             }
             if (expected_mapping[0].striped_nic_sent_bytes_count[idx] !=
                 striped_nic_sent_bytes_count[idx]) {
                 printf
-                    ("rank=%d --> target=%d: Actual striped sent byte count=%ld through NIC %d does not match with the "
-                     "expected striped sent byte count=%ld\n", rank, target,
+                    ("rank=%d --> target=%d: Actual striped sent byte count=%llu through NIC %d does not match with the "
+                     "expected striped sent byte count=%llu\n", rank, target,
                      striped_nic_sent_bytes_count[idx], idx,
                      expected_mapping[0].striped_nic_sent_bytes_count[idx]);
                 return -1;
@@ -142,8 +142,8 @@ static int compare_vars(int rank, int target, int num_nics)
             if (expected_mapping[0].striped_nic_recvd_bytes_count[idx] !=
                 striped_nic_recvd_bytes_count[idx]) {
                 printf
-                    ("rank=%d --> target=%d: Actual striped received byte count=%ld through NIC %d does not match with the "
-                     "expected striped received byte count=%ld\n", rank, target,
+                    ("rank=%d --> target=%d: Actual striped received byte count=%llu through NIC %d does not match with the "
+                     "expected striped received byte count=%llu\n", rank, target,
                      striped_nic_recvd_bytes_count[idx], idx,
                      expected_mapping[0].striped_nic_recvd_bytes_count[idx]);
                 return -1;
@@ -151,23 +151,24 @@ static int compare_vars(int rank, int target, int num_nics)
         } else if (rank < num_pairs * 2) {
             if (expected_mapping[1].nic_sent_bytes_count[idx] != nic_sent_bytes_count[idx]) {
                 printf
-                    ("rank=%d --> target=%d: Actual sent byte count=%ld through NIC %d does not match with the "
-                     "expected sent byte count=%ld\n", rank, target, nic_sent_bytes_count[idx], idx,
-                     expected_mapping[1].nic_sent_bytes_count[idx]);
+                    ("rank=%d --> target=%d: Actual sent byte count=%llu through NIC %d does not match with the "
+                     "expected sent byte count=%llu\n", rank, target, nic_sent_bytes_count[idx],
+                     idx, expected_mapping[1].nic_sent_bytes_count[idx]);
                 errs++;
             }
             if (expected_mapping[1].nic_recvd_bytes_count[idx] != nic_recvd_bytes_count[idx]) {
                 printf
-                    ("rank=%d --> target=%d: Actual received byte count=%ld through NIC %d does not match with the "
-                     "expected received byte count=%ld\n", rank, target, nic_recvd_bytes_count[idx],
-                     idx, expected_mapping[1].nic_recvd_bytes_count[idx]);
+                    ("rank=%d --> target=%d: Actual received byte count=%llu through NIC %d does not match with the "
+                     "expected received byte count=%llu\n", rank, target,
+                     nic_recvd_bytes_count[idx], idx,
+                     expected_mapping[1].nic_recvd_bytes_count[idx]);
                 errs++;
             }
             if (expected_mapping[1].striped_nic_sent_bytes_count[idx] !=
                 striped_nic_sent_bytes_count[idx]) {
                 printf
-                    ("rank=%d --> target=%d: Actual striped sent byte count=%ld through NIC %d does not match with the "
-                     "expected striped sent byte count=%ld\n", rank, target,
+                    ("rank=%d --> target=%d: Actual striped sent byte count=%llu through NIC %d does not match with the "
+                     "expected striped sent byte count=%llu\n", rank, target,
                      striped_nic_sent_bytes_count[idx], idx,
                      expected_mapping[1].striped_nic_sent_bytes_count[idx]);
                 return -1;
@@ -175,8 +176,8 @@ static int compare_vars(int rank, int target, int num_nics)
             if (expected_mapping[1].striped_nic_recvd_bytes_count[idx] !=
                 striped_nic_recvd_bytes_count[idx]) {
                 printf
-                    ("rank=%d --> target=%d: Actual striped received byte count=%ld through NIC %d does not match with the "
-                     "expected striped received byte count=%ld\n", rank, target,
+                    ("rank=%d --> target=%d: Actual striped received byte count=%llu through NIC %d does not match with the "
+                     "expected striped received byte count=%llu\n", rank, target,
                      striped_nic_recvd_bytes_count[idx], idx,
                      expected_mapping[1].striped_nic_recvd_bytes_count[idx]);
                 return -1;
@@ -201,7 +202,9 @@ int main(int argc, char *argv[])
     int varclass;
     int readonly, continuous, atomic;
     MPI_T_enum enumtype;
+    int nsc_continuous, nrc_continuous, snsc_continuous, snrc_continuous;
     int nsc_idx = -1, nrc_idx = -1, snsc_idx = -1, snrc_idx = -1;
+    int num_nics = 1;
 
     int required, provided;
     int errs = 0;
@@ -275,15 +278,19 @@ int main(int argc, char *argv[])
 
         if (0 == strcmp(name, "nic_sent_bytes_count")) {
             nsc_idx = i;
+            nsc_continuous = continuous;
         }
         if (0 == strcmp(name, "nic_recvd_bytes_count")) {
             nrc_idx = i;
+            nrc_continuous = continuous;
         }
         if (0 == strcmp(name, "striped_nic_sent_bytes_count")) {
             snsc_idx = i;
+            snsc_continuous = continuous;
         }
         if (0 == strcmp(name, "striped_nic_recvd_bytes_count")) {
             snrc_idx = i;
+            snrc_continuous = continuous;
         }
     }
 
@@ -314,10 +321,16 @@ int main(int argc, char *argv[])
         assert(count = 1);
         assert(snrc_handle != MPI_T_PVAR_HANDLE_NULL);
 
-        if (!continuous) {
+        if (!nsc_continuous) {
             MPI_T_pvar_start(session, nsc_handle);
+        }
+        if (!nrc_continuous) {
             MPI_T_pvar_start(session, nrc_handle);
+        }
+        if (!snsc_continuous) {
             MPI_T_pvar_start(session, snsc_handle);
+        }
+        if (!snrc_continuous) {
             MPI_T_pvar_start(session, snrc_handle);
         }
     }
@@ -348,10 +361,16 @@ int main(int argc, char *argv[])
 
     /* execute only when PVARs are enabled */
     if (nsc_idx != -1 && nrc_idx != -1 && snsc_idx != -1 && snrc_idx != -1) {
-        if (!continuous) {
+        if (!nrc_continuous) {
             MPI_T_pvar_stop(session, nrc_handle);
+        }
+        if (!nsc_continuous) {
             MPI_T_pvar_stop(session, nsc_handle);
+        }
+        if (!snrc_continuous) {
             MPI_T_pvar_stop(session, snrc_handle);
+        }
+        if (!snsc_continuous) {
             MPI_T_pvar_stop(session, snsc_handle);
         }
 

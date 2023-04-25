@@ -149,7 +149,8 @@ int MPID_part_issue_data_recv(MPIR_Request * req)
          * the overall partitioned request once the subrequest completes, the completion
          * counter of the partitioned request req gets decremented.
          */
-        new_req->completion_notification = &(req->cc);
+        struct MPID_DEV_Request_common *new_dev_req = &new_req->dev.kind.common;
+        new_dev_req->completion_notification = &(req->cc);
 
         /* TODO: Keep track of sub requests to enable checks per partition in parrived */
     }
@@ -238,7 +239,8 @@ int MPID_part_issue_data_send(MPIR_Request * req, int req_idx)
      * overall partitioned request once the subrequest completes, the completion counter of
      * the partitioned request req gets decremented.
      */
-    new_req->completion_notification = &(req->cc);
+    struct MPID_DEV_Request_common *new_dev_req = &new_req->dev.kind.common;
+    new_dev_req->completion_notification = &(req->cc);
 
   fn_exit:
     return mpi_errno;

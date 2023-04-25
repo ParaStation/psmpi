@@ -12,14 +12,11 @@
 
 /* This is the utility file for comm that contains the basic comm items
    and storage management */
-#ifndef MPID_COMM_PREALLOC
-#define MPID_COMM_PREALLOC 8
-#endif
 
 /* Preallocated comm objects */
 /* initialized in initthread.c */
 MPIR_Comm MPIR_Comm_builtin[MPIR_COMM_N_BUILTIN];
-MPIR_Comm MPIR_Comm_direct[MPID_COMM_PREALLOC];
+MPIR_Comm MPIR_Comm_direct[MPIR_COMM_PREALLOC];
 
 MPIR_Object_alloc_t MPIR_Comm_mem = {
     0,
@@ -31,7 +28,7 @@ MPIR_Object_alloc_t MPIR_Comm_mem = {
     MPIR_COMM,
     sizeof(MPIR_Comm),
     MPIR_Comm_direct,
-    MPID_COMM_PREALLOC,
+    MPIR_COMM_PREALLOC,
     NULL, {0}
 };
 
@@ -110,21 +107,21 @@ int MPII_Comm_set_hints(MPIR_Comm * comm_ptr, MPIR_Info * info, bool in_comm_cre
 {
     int mpi_errno = MPI_SUCCESS;
 
-    MPIR_Info *curr_info;
-    LL_FOREACH(info, curr_info) {
-        if (curr_info->key == NULL)
+    for (int i = 0; i < next_comm_hint_index; i++) {
+        if (!MPIR_comm_hint_list[i].key) {
             continue;
-        for (int i = 0; i < next_comm_hint_index; i++) {
-            if (MPIR_comm_hint_list[i].key &&
-                strcmp(curr_info->key, MPIR_comm_hint_list[i].key) == 0) {
-                int val;
-                int ret = parse_string_value(curr_info->value, MPIR_comm_hint_list[i].type, &val);
-                if (ret == 0) {
-                    if (MPIR_comm_hint_list[i].fn) {
-                        MPIR_comm_hint_list[i].fn(comm_ptr, i, val);
-                    } else {
-                        comm_ptr->hints[i] = val;
-                    }
+        }
+
+        const char *str_val;
+        str_val = MPIR_Info_lookup(info, MPIR_comm_hint_list[i].key);
+        if (str_val) {
+            int val;
+            int rc = parse_string_value(str_val, MPIR_comm_hint_list[i].type, &val);
+            if (rc == 0) {
+                if (MPIR_comm_hint_list[i].fn) {
+                    MPIR_comm_hint_list[i].fn(comm_ptr, i, val);
+                } else {
+                    comm_ptr->hints[i] = val;
                 }
             }
         }
@@ -169,6 +166,52 @@ int MPII_Comm_check_hints(MPIR_Comm * comm)
     /* TODO */
     return MPI_SUCCESS;
 }
+
+/*
+=== BEGIN_INFO_HINT_BLOCK ===
+hints:
+    - name        : mpi_assert_no_any_tag
+      functions   : MPI_Comm_dup_with_info, MPI_Comm_idup_with_info, MPI_Comm_set_info
+      type        : boolean
+      default     : false
+      description : >-
+        If set to true, user promises that MPI_ANY_TAG will not be used with
+        the communicator. This potentially allows MPICH to treat messages with
+        different tags independent and seek to improve performance, e.g. by
+        employ multiple network context.
+
+    - name        : mpi_assert_no_any_source
+      functions   : MPI_Comm_dup_with_info, MPI_Comm_idup_with_info, MPI_Comm_set_info
+      type        : boolean
+      default     : false
+      description : >-
+        If set to true, user promises that MPI_ANY_SOURCE will not be used with
+        the communicator. This potentially allows MPICH to treat messages send
+        to different ranks or receive from different ranks independent and
+        seek to improve performance, e.g. by employ multiple network context.
+
+    - name        : mpi_assert_exact_length
+      functions   : MPI_Comm_dup_with_info, MPI_Comm_idup_with_info, MPI_Comm_set_info
+      type        : boolean
+      default     : false
+      description : >-
+        If set to true, user promises that the lengths of messages received
+        by the process will always equal to the size of the corresponding
+        receive buffers.
+
+    - name        : mpi_assert_allow_overtaking
+      functions   : MPI_Comm_dup_with_info, MPI_Comm_idup_with_info, MPI_Comm_set_info
+      type        : boolean
+      default     : false
+      description : >-
+        If set to true, user asserts that send operations are not required
+        to be matched at the receiver in the order in which the send operations
+        were performed by the sender, and receive operations are not required
+        to be matched in the order in which they were performed by the
+        receivers.
+
+=== END_INFO_HINT_BLOCK ===
+*/
 
 void MPIR_Comm_hint_init(void)
 {
@@ -255,6 +298,8 @@ int MPII_Comm_init(MPIR_Comm * comm_p)
     comm_p->revoked = 0;
     comm_p->mapper_head = NULL;
     comm_p->mapper_tail = NULL;
+
+    MPIR_stream_comm_init(comm_p);
 
     /* mutex is only used in POBJ or VCI granularity. But the overhead of
      * creation is low, so we always create it. */
@@ -798,6 +843,41 @@ int MPII_Comm_is_node_consecutive(MPIR_Comm * comm)
     return 1;
 }
 
+/* Duplicate a communicator without copying the streams. This is the common
+ * part called by both MPIR_Comm_dup_with_info_impl and MPIR_Stream_comm_create_impl.
+ */
+int MPII_Comm_dup(MPIR_Comm * comm_ptr, MPIR_Info * info, MPIR_Comm ** newcomm_ptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_Attribute *new_attributes = 0;
+
+    /* Copy attributes, executing the attribute copy functions */
+    /* This accesses the attribute dup function through the perprocess
+     * structure to prevent comm_dup from forcing the linking of the
+     * attribute functions.  The actual function is (by default)
+     * MPIR_Attr_dup_list
+     */
+    if (MPIR_Process.attr_dup) {
+        mpi_errno = MPIR_Process.attr_dup(comm_ptr->handle, comm_ptr->attributes, &new_attributes);
+        MPIR_ERR_CHECK(mpi_errno);
+    }
+
+
+    /* Generate a new context value and a new communicator structure */
+    /* We must use the local size, because this is compared to the
+     * rank of the process in the communicator.  For intercomms,
+     * this must be the local size */
+    mpi_errno = MPII_Comm_copy(comm_ptr, comm_ptr->local_size, info, newcomm_ptr);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    (*newcomm_ptr)->attributes = new_attributes;
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
 /*
  * Copy a communicator, including creating a new context and copying the
  * virtual connection tables and clearing the various fields.
@@ -1006,6 +1086,8 @@ int MPIR_Comm_delete_internal(MPIR_Comm * comm_ptr)
 {
     int in_use;
     int mpi_errno = MPI_SUCCESS;
+    int unmatched_messages = 0;
+    MPI_Comm comm_handle ATTRIBUTE((unused)) = comm_ptr->handle;
 
     MPIR_FUNC_ENTER;
 
@@ -1023,12 +1105,47 @@ int MPIR_Comm_delete_internal(MPIR_Comm * comm_ptr)
         /* Release the temporary reference added before the call to
          * attr_free */
         MPIR_Object_release_ref(comm_ptr, &in_use);
+        MPIR_Assertp(in_use == 0);
     }
 
     /* If the attribute delete functions return failure, the
      * communicator must not be freed.  That is the reason for the
      * test on mpi_errno here. */
     if (mpi_errno == MPI_SUCCESS) {
+        bool do_message_check = false;
+#if defined(HAVE_ERROR_CHECKING)
+        do_message_check = true;
+#endif
+#if defined(MPICH_IS_THREADED) && MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY__VCI
+        /* anysrc/anytag probe is extremely messy with pervci thread-cs. Avoid for for now. */
+        if (MPIR_ThreadInfo.isThreaded) {
+            do_message_check = false;
+        }
+#endif
+        if (do_message_check) {
+            /* receive any unmatched messages to clear the queue and avoid context_id
+             * reuse issues. unmatched messages could be the result of user error,
+             * or send operations that were unable to be canceled by the device layer */
+            MPIR_Object_add_ref(comm_ptr);
+            int flag;
+            MPI_Status status;
+            do {
+                mpi_errno = MPID_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, comm_ptr, 0, &flag, &status);
+                MPIR_ERR_CHECK(mpi_errno);
+                if (flag) {
+                    /* receive the message, ignore truncation errors */
+                    MPIR_Request *request;
+                    MPID_Recv(NULL, 0, MPI_DATATYPE_NULL, status.MPI_SOURCE, status.MPI_TAG,
+                              comm_ptr, 0, MPI_STATUS_IGNORE, &request);
+                    if (request != NULL) {
+                        MPIR_Wait(&request->handle, MPI_STATUS_IGNORE);
+                    }
+                    unmatched_messages++;
+                }
+            } while (flag);
+            MPIR_Object_release_ref(comm_ptr, &in_use);
+        }
+
         /* If this communicator is our parent, and we're disconnecting
          * from the parent, mark that fact */
         if (MPIR_Process.comm_parent == comm_ptr)
@@ -1059,6 +1176,8 @@ int MPIR_Comm_delete_internal(MPIR_Comm * comm_ptr)
             MPIR_Comm_release(comm_ptr->node_roots_comm);
         MPL_free(comm_ptr->intranode_table);
         MPL_free(comm_ptr->internode_table);
+
+        MPIR_stream_comm_free(comm_ptr);
 
         /* Free the context value.  This should come after freeing the
          * intra/inter-node communicators since those free calls won't
@@ -1101,6 +1220,11 @@ int MPIR_Comm_delete_internal(MPIR_Comm * comm_ptr)
     }
 
   fn_exit:
+    if (unmatched_messages > 0) {
+        MPIR_ERR_SET2(mpi_errno, MPI_ERR_OTHER, "**commhasunmatched", "**commhasunmatched %x %d",
+                      comm_handle, unmatched_messages);
+    }
+
     MPIR_FUNC_EXIT;
     return mpi_errno;
   fn_fail:
@@ -1153,13 +1277,13 @@ int MPII_compare_info_hint(const char *hint_str, MPIR_Comm * comm_ptr, int *info
      * its hint_str size to the global max, and makes sure that this
      * comparison is successful on all processes. */
     mpi_errno =
-        MPID_Allreduce(&hint_str_size, &hint_str_size_max, 1, MPI_INT, MPI_MAX, comm_ptr, &errflag);
+        MPIR_Allreduce(&hint_str_size, &hint_str_size_max, 1, MPI_INT, MPI_MAX, comm_ptr, &errflag);
     MPIR_ERR_CHECK(mpi_errno);
 
     hint_str_equal = (hint_str_size == hint_str_size_max);
 
     mpi_errno =
-        MPID_Allreduce(&hint_str_equal, &hint_str_equal_global, 1, MPI_INT, MPI_LAND,
+        MPIR_Allreduce(&hint_str_equal, &hint_str_equal_global, 1, MPI_INT, MPI_LAND,
                        comm_ptr, &errflag);
     MPIR_ERR_CHECK(mpi_errno);
 
@@ -1172,14 +1296,14 @@ int MPII_compare_info_hint(const char *hint_str, MPIR_Comm * comm_ptr, int *info
     hint_str_global = (char *) MPL_malloc(strlen(hint_str), MPL_MEM_OTHER);
 
     mpi_errno =
-        MPID_Allreduce(hint_str, hint_str_global, strlen(hint_str), MPI_CHAR,
+        MPIR_Allreduce(hint_str, hint_str_global, strlen(hint_str), MPI_CHAR,
                        MPI_MAX, comm_ptr, &errflag);
     MPIR_ERR_CHECK(mpi_errno);
 
     hint_str_equal = !memcmp(hint_str, hint_str_global, strlen(hint_str));
 
     mpi_errno =
-        MPID_Allreduce(&hint_str_equal, &hint_str_equal_global, 1, MPI_INT, MPI_LAND,
+        MPIR_Allreduce(&hint_str_equal, &hint_str_equal_global, 1, MPI_INT, MPI_LAND,
                        comm_ptr, &errflag);
     MPIR_ERR_CHECK(mpi_errno);
 
@@ -1189,6 +1313,53 @@ int MPII_compare_info_hint(const char *hint_str, MPIR_Comm * comm_ptr, int *info
     *info_args_are_equal = hint_str_equal_global;
     return mpi_errno;
 
+  fn_fail:
+    goto fn_exit;
+}
+
+/* Returns true if the communicator is node-aware and the number of processes in all the nodes are
+ * same */
+int MPII_Comm_is_node_balanced(MPIR_Comm * comm, int *num_nodes, bool * node_balanced)
+{
+    int i = 0;
+    int mpi_errno = MPI_SUCCESS;
+    int *ranks_per_node;
+    *num_nodes = 0;
+
+    MPIR_CHKPMEM_DECL(1);
+
+    if (!MPIR_Comm_is_parent_comm(comm)) {
+        *node_balanced = false;
+        goto fn_exit;
+    }
+
+    /* Find maximum value in the internode_table */
+    for (i = 0; i < comm->local_size; i++) {
+        if (comm->internode_table[i] > *num_nodes) {
+            *num_nodes = comm->internode_table[i];
+        }
+    }
+    /* number of nodes is max_node_id + 1 */
+    (*num_nodes)++;
+
+    MPIR_CHKPMEM_CALLOC(ranks_per_node, int *,
+                        *num_nodes * sizeof(int), mpi_errno, "ranks per node", MPL_MEM_OTHER);
+
+    for (i = 0; i < comm->local_size; i++) {
+        ranks_per_node[comm->internode_table[i]]++;
+    }
+
+    for (i = 1; i < *num_nodes; i++) {
+        if (ranks_per_node[i - 1] != ranks_per_node[i]) {
+            *node_balanced = false;
+            goto fn_exit;
+        }
+    }
+
+    *node_balanced = true;
+  fn_exit:
+    MPIR_CHKPMEM_REAP();
+    return mpi_errno;
   fn_fail:
     goto fn_exit;
 }

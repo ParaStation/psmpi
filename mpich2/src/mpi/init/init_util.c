@@ -69,11 +69,60 @@ void MPII_Call_finalize_callbacks(int min_prio, int max_prio)
     }
 }
 
+/**
+ * @brief   Convert thread level integer to a string representation
+ *
+ * @param   threadlevel Thread level integer (input)
+ *
+ * @return  char*       String representation of thread level
+ */
+const char *MPII_threadlevel_name(int threadlevel)
+{
+    if (threadlevel == MPI_THREAD_SINGLE) {
+        return "MPI_THREAD_SINGLE";
+    } else if (threadlevel == MPI_THREAD_FUNNELED) {
+        return "MPI_THREAD_FUNNELED";
+    } else if (threadlevel == MPI_THREAD_SERIALIZED) {
+        return "MPI_THREAD_SERIALIZED";
+    } else if (threadlevel == MPI_THREAD_MULTIPLE) {
+        return "MPI_THREAD_MULTIPLE";
+    } else {
+        return "UNKNOWN";
+    }
+}
+
+static void print_setting(const char *label, const char *value)
+{
+    printf("%-18s: %s\n", label, value);
+}
+
 void MPII_dump_debug_summary(void)
 {
+#ifdef HAVE_ERROR_CHECKING
+    print_setting("error checking", "enabled");
+#else
+    print_setting("error checking", "disabled");
+#endif
+#ifdef ENABLE_QMPI
+    print_setting("QMPI", "enabled");
+#else
+    print_setting("QMPI", "disabled");
+#endif
+#ifdef HAVE_DEBUGGER_SUPPORT
+    print_setting("debugger support", "enabled");
+#else
+    print_setting("debugger support", "disabled");
+#endif
+    print_setting("thread level", MPII_threadlevel_name(MPIR_ThreadInfo.thread_provided));
+#if MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY__GLOBAL
+    print_setting("thread CS", "global");
+#elif MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY__VCI
+    print_setting("thread CS", "per-vci");
+#endif
+
     printf("==== data structure summary ====\n");
-    printf("sizeof(MPIR_Comm): %ld\n", sizeof(MPIR_Comm));
-    printf("sizeof(MPIR_Request): %ld\n", sizeof(MPIR_Request));
-    printf("sizeof(MPIR_Datatype): %ld\n", sizeof(MPIR_Datatype));
+    printf("sizeof(MPIR_Comm): %zd\n", sizeof(MPIR_Comm));
+    printf("sizeof(MPIR_Request): %zd\n", sizeof(MPIR_Request));
+    printf("sizeof(MPIR_Datatype): %zd\n", sizeof(MPIR_Datatype));
     printf("================================\n");
 }

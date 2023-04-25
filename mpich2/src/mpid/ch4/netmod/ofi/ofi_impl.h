@@ -41,27 +41,6 @@ ATTRIBUTE((unused));
 int MPIDI_OFI_progress_uninlined(int vni);
 int MPIDI_OFI_handle_cq_error(int vni, int nic, ssize_t ret);
 
-/* vni mapping */
-/* NOTE: concerned by the modulo? If we restrict num_vnis to power of 2,
- * we may get away with bit mask */
-MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_get_vni(int flag, MPIR_Comm * comm_ptr,
-                                               int src_rank, int dst_rank, int tag)
-{
-#if MPIDI_CH4_MAX_VCIS == 1
-    return 0;
-#else
-    return MPIDI_get_vci(flag, comm_ptr, src_rank, dst_rank, tag) % MPIDI_OFI_global.num_vnis;
-#endif
-}
-
-/* for RMA, vni need be persistent with window */
-MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_get_win_vni(MPIR_Win * win)
-{
-    int win_idx = 0;
-    return MPIDI_get_vci(SRC_VCI_FROM_SENDER, win->comm_ptr, 0, 0, win_idx) %
-        MPIDI_OFI_global.num_vnis;
-}
-
 /*
  * Helper routines and macros for request completion
  */
@@ -193,21 +172,21 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_get_win_vni(MPIR_Win * win)
 
 #define MPIDI_OFI_THREAD_CS_ENTER_VCI_OPTIONAL(vci_)            \
     do {                                                        \
-        if (MPIDI_CH4_MT_MODEL != MPIDI_CH4_MT_LOCKLESS) {      \
+        if (!MPIDI_VCI_IS_EXPLICIT(vci_) && MPIDI_CH4_MT_MODEL != MPIDI_CH4_MT_LOCKLESS) {      \
             MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci_).lock);    \
         }                                                       \
     } while (0)
 
 #define MPIDI_OFI_THREAD_CS_ENTER_REC_VCI_OPTIONAL(vci_)        \
     do {                                                        \
-        if (MPIDI_CH4_MT_MODEL != MPIDI_CH4_MT_LOCKLESS) {      \
+        if (!MPIDI_VCI_IS_EXPLICIT(vci_) && MPIDI_CH4_MT_MODEL != MPIDI_CH4_MT_LOCKLESS) {      \
             MPID_THREAD_CS_ENTER_REC_VCI(MPIDI_VCI(vci_).lock);     \
         }                                                       \
     } while (0)
 
 #define MPIDI_OFI_THREAD_CS_EXIT_VCI_OPTIONAL(vci_)         \
     do {                                                    \
-        if (MPIDI_CH4_MT_MODEL != MPIDI_CH4_MT_LOCKLESS) {  \
+        if (!MPIDI_VCI_IS_EXPLICIT(vci_) && MPIDI_CH4_MT_MODEL != MPIDI_CH4_MT_LOCKLESS) {  \
             MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci_).lock); \
         }                                                   \
     } while (0)
@@ -302,6 +281,23 @@ MPL_STATIC_INLINE_PREFIX void MPIDI_OFI_cntr_set(int ctx_idx, int val)
 #endif
 }
 
+MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_mr_bind(struct fi_info *prov, struct fid_mr *mr,
+                                               struct fid_ep *ep, struct fid_cntr *cntr)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    if (prov->domain_attr->mr_mode & FI_MR_ENDPOINT) {
+        /* Bind the memory region to the endpoint */
+        MPIDI_OFI_CALL(fi_mr_bind(mr, &ep->fid, 0ULL), mr_bind);
+        MPIDI_OFI_CALL(fi_mr_enable(mr), mr_enable);
+    }
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
 /* Externs:  see util.c for definition */
 #define MPIDI_OFI_LOCAL_MR_KEY 0
 #define MPIDI_OFI_COLL_MR_KEY 1
@@ -378,19 +374,19 @@ MPL_STATIC_INLINE_PREFIX void MPIDI_OFI_load_iov(const void *buffer, int count,
 
 int MPIDI_OFI_issue_deferred_rma(MPIR_Win * win);
 void MPIDI_OFI_complete_chunks(MPIDI_OFI_win_request_t * winreq);
-int MPIDI_OFI_nopack_putget(const void *origin_addr, int origin_count,
+int MPIDI_OFI_nopack_putget(const void *origin_addr, MPI_Aint origin_count,
                             MPI_Datatype origin_datatype, int target_rank,
-                            int target_count, MPI_Datatype target_datatype,
+                            MPI_Aint target_count, MPI_Datatype target_datatype,
                             MPIDI_OFI_target_mr_t target_mr, MPIR_Win * win,
                             MPIDI_av_entry_t * addr, int rma_type, MPIR_Request ** sigreq);
-int MPIDI_OFI_pack_put(const void *origin_addr, int origin_count,
+int MPIDI_OFI_pack_put(const void *origin_addr, MPI_Aint origin_count,
                        MPI_Datatype origin_datatype, int target_rank,
-                       int target_count, MPI_Datatype target_datatype,
+                       MPI_Aint target_count, MPI_Datatype target_datatype,
                        MPIDI_OFI_target_mr_t target_mr, MPIR_Win * win,
                        MPIDI_av_entry_t * addr, MPIR_Request ** sigreq);
-int MPIDI_OFI_pack_get(void *origin_addr, int origin_count,
+int MPIDI_OFI_pack_get(void *origin_addr, MPI_Aint origin_count,
                        MPI_Datatype origin_datatype, int target_rank,
-                       int target_count, MPI_Datatype target_datatype,
+                       MPI_Aint target_count, MPI_Datatype target_datatype,
                        MPIDI_OFI_target_mr_t target_mr, MPIR_Win * win,
                        MPIDI_av_entry_t * addr, MPIR_Request ** sigreq);
 
@@ -545,32 +541,6 @@ struct MPIDI_OFI_contig_blocks_params {
     size_t last_chunk;
 };
 
-MPL_STATIC_INLINE_PREFIX size_t MPIDI_OFI_count_iov(int dt_count,       /* number of data elements in dt_datatype */
-                                                    MPI_Datatype dt_datatype, size_t total_bytes,       /* total byte size, passed in here for reusing */
-                                                    size_t max_pipe)
-{
-    ssize_t rem_size = total_bytes;
-    MPI_Aint num_iov, total_iov = 0;
-
-    MPIR_FUNC_ENTER;
-
-    if (dt_datatype == MPI_DATATYPE_NULL)
-        goto fn_exit;
-
-    do {
-        MPI_Aint tmp_size = (rem_size > max_pipe) ? max_pipe : rem_size;
-
-        MPIR_Typerep_iov_len(dt_count, dt_datatype, tmp_size, &num_iov);
-        total_iov += num_iov;
-
-        rem_size -= tmp_size;
-    } while (rem_size);
-
-  fn_exit:
-    MPIR_FUNC_EXIT;
-    return total_iov;
-}
-
 /* Calculate the index of the NIC used to send a message from sender_rank to receiver_rank
  *
  * comm - The communicator used to send the message.
@@ -689,26 +659,28 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_progress_do_queue(int vni)
 
 MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_get_buffered(int vni, struct fi_cq_tagged_entry *wc)
 {
-    int rc = 0;
+    int num = 0;
 
-    if (1) {
+    while (num < MPIDI_OFI_NUM_CQ_ENTRIES) {
         /* If the static list isn't empty, do so first */
         if (CQ_S_HEAD != CQ_S_TAIL) {
-            wc[0] = CQ_S_LIST[CQ_S_TAIL];
+            wc[num] = CQ_S_LIST[CQ_S_TAIL];
             CQ_S_TAIL = (CQ_S_TAIL + 1) % MPIDI_OFI_NUM_CQ_BUFFERED;
         }
         /* If there's anything in the dynamic list, it goes second. */
         else if (CQ_D_HEAD != NULL) {
             MPIDI_OFI_cq_list_t *cq_list_entry = CQ_D_HEAD;
             LL_DELETE(CQ_D_HEAD, CQ_D_TAIL, cq_list_entry);
-            wc[0] = cq_list_entry->cq_entry;
+            wc[num] = cq_list_entry->cq_entry;
             MPL_free(cq_list_entry);
+        } else {
+            break;
         }
 
-        rc = 1;
+        num++;
     }
 
-    return rc;
+    return num;
 }
 
 #undef CQ_S_LIST

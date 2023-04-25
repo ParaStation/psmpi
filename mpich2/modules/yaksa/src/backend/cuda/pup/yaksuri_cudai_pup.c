@@ -216,14 +216,14 @@ int yaksuri_cudai_ipack(const void *inbuf, void *outbuf, uintptr_t count, yaksi_
                         yaksi_info_s * info, yaksa_op_t op, int target)
 {
     return yaksuri_cudai_ipack_with_stream(inbuf, outbuf, count, type, info, op, target,
-                                           &yaksuri_cudai_global.stream[target]);
+                                           yaksuri_cudai_get_stream(target));
 }
 
 int yaksuri_cudai_iunpack(const void *inbuf, void *outbuf, uintptr_t count, yaksi_type_s * type,
                           yaksi_info_s * info, yaksa_op_t op, int target)
 {
     return yaksuri_cudai_iunpack_with_stream(inbuf, outbuf, count, type, info, op, target,
-                                             &yaksuri_cudai_global.stream[target]);
+                                             yaksuri_cudai_get_stream(target));
 }
 
 int yaksuri_cudai_synchronize(int target)
@@ -231,7 +231,7 @@ int yaksuri_cudai_synchronize(int target)
     int rc = YAKSA_SUCCESS;
     cudaError_t cerr;
 
-    cerr = cudaStreamSynchronize(yaksuri_cudai_global.stream[target]);
+    cerr = cudaStreamSynchronize(*yaksuri_cudai_get_stream(target));
     YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
 
   fn_exit:

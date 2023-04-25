@@ -59,11 +59,12 @@ int ofi_cq_write_overflow(struct util_cq *cq, void *context, uint64_t flags,
 {
 	struct util_cq_aux_entry *entry;
 
-	assert(fastlock_held(&cq->cq_lock));
+	assert(ofi_genlock_held(&cq->cq_lock));
 	FI_DBG(cq->domain->prov, FI_LOG_CQ, "writing to CQ overflow list\n");
 	assert(ofi_cirque_freecnt(cq->cirq) <= 1);
 
-	if (!(entry = calloc(1, sizeof(*entry))))
+	entry = calloc(1, sizeof(*entry));
+	if (!entry)
 		return -FI_ENOMEM;
 
 	entry->comp.op_context = context;
@@ -84,9 +85,10 @@ int ofi_cq_insert_error(struct util_cq *cq,
 {
 	struct util_cq_aux_entry *entry;
 
-	assert(fastlock_held(&cq->cq_lock));
+	assert(ofi_genlock_held(&cq->cq_lock));
 	assert(err_entry->err);
-	if (!(entry = calloc(1, sizeof(*entry))))
+	entry = calloc(1, sizeof(*entry));
+	if (!entry)
 		return -FI_ENOMEM;
 
 	entry->comp = *err_entry;
@@ -97,9 +99,9 @@ int ofi_cq_insert_error(struct util_cq *cq,
 int ofi_cq_write_error(struct util_cq *cq,
 		       const struct fi_cq_err_entry *err_entry)
 {
-	cq->cq_fastlock_acquire(&cq->cq_lock);
+	ofi_genlock_lock(&cq->cq_lock);
 	ofi_cq_insert_error(cq, err_entry);
-	cq->cq_fastlock_release(&cq->cq_lock);
+	ofi_genlock_unlock(&cq->cq_lock);
 
 	if (cq->wait)
 		cq->wait->signal(cq->wait);
@@ -224,11 +226,11 @@ ssize_t ofi_cq_readfrom(struct fid_cq *cq_fid, void *buf, size_t count,
 
 	cq = container_of(cq_fid, struct util_cq, cq_fid);
 
-	cq->cq_fastlock_acquire(&cq->cq_lock);
+	ofi_genlock_lock(&cq->cq_lock);
 	if (ofi_cirque_isempty(cq->cirq) || !count) {
-		cq->cq_fastlock_release(&cq->cq_lock);
+		ofi_genlock_unlock(&cq->cq_lock);
 		cq->progress(cq);
-		cq->cq_fastlock_acquire(&cq->cq_lock);
+		ofi_genlock_lock(&cq->cq_lock);
 		if (ofi_cirque_isempty(cq->cirq)) {
 			i = -FI_EAGAIN;
 			goto out;
@@ -261,6 +263,7 @@ ssize_t ofi_cq_readfrom(struct fid_cq *cq_fid, void *buf, size_t count,
 				src_addr[i] = aux_entry->src;
 			cq->read_entry(&buf, &aux_entry->comp);
 			slist_remove_head(&cq->aux_queue);
+			free(aux_entry);
 
 			if (slist_empty(&cq->aux_queue)) {
 				ofi_cirque_discard(cq->cirq);
@@ -274,7 +277,7 @@ ssize_t ofi_cq_readfrom(struct fid_cq *cq_fid, void *buf, size_t count,
 		}
 	}
 out:
-	cq->cq_fastlock_release(&cq->cq_lock);
+	ofi_genlock_unlock(&cq->cq_lock);
 	return i;
 }
 
@@ -296,7 +299,7 @@ ssize_t ofi_cq_readerr(struct fid_cq *cq_fid, struct fi_cq_err_entry *buf,
 	cq = container_of(cq_fid, struct util_cq, cq_fid);
 	api_version = cq->domain->fabric->fabric_fid.api_version;
 
-	cq->cq_fastlock_acquire(&cq->cq_lock);
+	ofi_genlock_lock(&cq->cq_lock);
 	if (ofi_cirque_isempty(cq->cirq) ||
 	    !(ofi_cirque_head(cq->cirq)->flags & UTIL_FLAG_AUX)) {
 		ret = -FI_EAGAIN;
@@ -341,7 +344,7 @@ ssize_t ofi_cq_readerr(struct fid_cq *cq_fid, struct fi_cq_err_entry *buf,
 
 	ret = 1;
 unlock:
-	cq->cq_fastlock_release(&cq->cq_lock);
+	ofi_genlock_unlock(&cq->cq_lock);
 	return ret;
 }
 
@@ -350,7 +353,7 @@ ssize_t ofi_cq_sreadfrom(struct fid_cq *cq_fid, void *buf, size_t count,
 {
 	struct util_cq *cq;
 	uint64_t endtime;
-	int ret;
+	ssize_t ret;
 
 	cq = container_of(cq_fid, struct util_cq, cq_fid);
 	assert(cq->wait && cq->internal_wait);
@@ -429,8 +432,8 @@ int ofi_cq_cleanup(struct util_cq *cq)
 
 	ofi_atomic_dec32(&cq->domain->ref);
 	util_comp_cirq_free(cq->cirq);
-	fastlock_destroy(&cq->cq_lock);
-	fastlock_destroy(&cq->ep_list_lock);
+	ofi_genlock_destroy(&cq->cq_lock);
+	ofi_mutex_destroy(&cq->ep_list_lock);
 	free(cq->src);
 	return 0;
 }
@@ -485,19 +488,21 @@ static int fi_cq_init(struct fid_domain *domain, struct fi_cq_attr *attr,
 	ofi_atomic_initialize32(&cq->ref, 0);
 	ofi_atomic_initialize32(&cq->signaled, 0);
 	dlist_init(&cq->ep_list);
-	fastlock_init(&cq->ep_list_lock);
-	fastlock_init(&cq->cq_lock);
-	if (cq->domain->threading == FI_THREAD_COMPLETION ||
-	    (cq->domain->threading == FI_THREAD_DOMAIN)) {
-		cq->cq_fastlock_acquire = ofi_fastlock_acquire_noop;
-		cq->cq_fastlock_release = ofi_fastlock_release_noop;
+	ofi_mutex_init(&cq->ep_list_lock);
+	if (cq->domain->lock.lock_type == OFI_LOCK_NONE ||
+	    cq->domain->threading == FI_THREAD_COMPLETION ||
+	    cq->domain->threading == FI_THREAD_DOMAIN) {
+		ret = ofi_genlock_init(&cq->cq_lock, OFI_LOCK_NONE);
+	} else if (cq->domain->lock.lock_type == OFI_LOCK_SPINLOCK) {
+		ret = ofi_genlock_init(&cq->cq_lock, OFI_LOCK_SPINLOCK);
 	} else {
-		cq->cq_fastlock_acquire = ofi_fastlock_acquire;
-		cq->cq_fastlock_release = ofi_fastlock_release;
+		ret = ofi_genlock_init(&cq->cq_lock, OFI_LOCK_MUTEX);
 	}
 	slist_init(&cq->aux_queue);
-	cq->read_entry = read_entry;
+	if (ret)
+		return ret;
 
+	cq->read_entry = read_entry;
 	cq->cq_fid.fid.fclass = FI_CLASS_CQ;
 	cq->cq_fid.fid.context = context;
 
@@ -560,14 +565,14 @@ void ofi_cq_progress(struct util_cq *cq)
 	struct fid_list_entry *fid_entry;
 	struct dlist_entry *item;
 
-	cq->cq_fastlock_acquire(&cq->ep_list_lock);
+	ofi_mutex_lock(&cq->ep_list_lock);
 	dlist_foreach(&cq->ep_list, item) {
 		fid_entry = container_of(item, struct fid_list_entry, entry);
 		ep = container_of(fid_entry->fid, struct util_ep, ep_fid.fid);
 		ep->progress(ep);
 
 	}
-	cq->cq_fastlock_release(&cq->ep_list_lock);
+	ofi_mutex_unlock(&cq->ep_list_lock);
 }
 
 int ofi_cq_init(const struct fi_provider *prov, struct fid_domain *domain,
@@ -638,7 +643,7 @@ cleanup:
 }
 
 uint64_t ofi_rx_flags[] = {
-	[ofi_op_msg] = FI_RECV,
+	[ofi_op_msg] = FI_MSG | FI_RECV,
 	[ofi_op_tagged] = FI_RECV | FI_TAGGED,
 	[ofi_op_read_req] = FI_RMA | FI_REMOTE_READ,
 	[ofi_op_read_rsp] = FI_RMA | FI_REMOTE_READ,
@@ -647,7 +652,7 @@ uint64_t ofi_rx_flags[] = {
 	[ofi_op_atomic] = FI_ATOMIC | FI_REMOTE_WRITE,
 	[ofi_op_atomic_fetch] = FI_ATOMIC | FI_REMOTE_READ,
 	[ofi_op_atomic_compare] = FI_ATOMIC | FI_REMOTE_READ,
-	[ofi_op_read_async] = FI_RMA | FI_READ,
+	[ofi_op_read_async] = FI_RMA | FI_REMOTE_READ,
 };
 
 uint64_t ofi_tx_flags[] = {
@@ -660,6 +665,6 @@ uint64_t ofi_tx_flags[] = {
 	[ofi_op_atomic] = FI_ATOMIC | FI_WRITE,
 	[ofi_op_atomic_fetch] = FI_ATOMIC | FI_READ,
 	[ofi_op_atomic_compare] = FI_ATOMIC | FI_READ,
-	[ofi_op_read_async] = FI_RMA | FI_RMA,
+	[ofi_op_read_async] = FI_RMA | FI_READ,
 };
 

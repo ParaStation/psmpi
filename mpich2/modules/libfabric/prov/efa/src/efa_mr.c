@@ -57,6 +57,73 @@ static struct fi_ops efa_mr_cache_ops = {
 	.ops_open = fi_no_ops_open,
 };
 
+/*
+ * @brief Validate HMEM attributes and populate efa_mr struct
+ *
+ * Check if FI_HMEM is enabled for the domain, validate whether the specific
+ * device type requested is currently supported by the provider, and update the
+ * efa_mr structure based on the attributes requested by the user.
+ *
+ * @params[in]	efa_mr	efa_mr structure to be updated
+ * @params[in]	attr	fi_mr_attr from the user's registration call
+ *
+ * @return FI_SUCCESS or negative FI error code
+ */
+static int efa_mr_hmem_setup(struct efa_mr *efa_mr,
+                             const struct fi_mr_attr *attr)
+{
+	int err;
+
+	if (attr->iface == FI_HMEM_SYSTEM) {
+		efa_mr->peer.iface = FI_HMEM_SYSTEM;
+		return FI_SUCCESS;
+	}
+
+	if (efa_mr->domain->util_domain.info_domain_caps & FI_HMEM) {
+		/*
+		 * Skipping the domain type check above is okay here since
+		 * util_domain is at the beginning of both efa_domain and
+		 * rxr_domain.
+		 */
+		if (efa_mr->domain->hmem_info[attr->iface].initialized) {
+			efa_mr->peer.iface = attr->iface;
+		} else {
+			EFA_WARN(FI_LOG_MR,
+				 "FI_HMEM is not initialized for device type %d\n",
+				 attr->iface);
+			return -FI_ENOSYS;
+		}
+	} else {
+		/*
+		 * It's possible that attr->iface is not initialized when
+		 * FI_HMEM is off, so this can't be a fatal error. Print a
+		 * warning in case this value is not FI_HMEM_SYSTEM for
+		 * whatever reason.
+		 */
+		FI_WARN_ONCE(&efa_prov, FI_LOG_MR,
+		             "FI_HMEM support is disabled, assuming FI_HMEM_SYSTEM not type: %d.\n",
+		             attr->iface);
+		efa_mr->peer.iface = FI_HMEM_SYSTEM;
+	}
+
+	/* efa_mr->peer.device is an union. Setting reserved to 0 cleared everything in it (cuda, neuron etc) */
+	efa_mr->peer.device.reserved = 0;
+	if (efa_mr->peer.iface == FI_HMEM_CUDA) {
+		err = cuda_dev_register((struct fi_mr_attr *)attr, &efa_mr->peer.device.cuda);
+		if (err) {
+			EFA_WARN(FI_LOG_MR,
+				 "Unable to register handle for GPU memory. err: %d buf: %p len: %zu\n",
+				 err, attr->mr_iov->iov_base, attr->mr_iov->iov_len);
+			return err;
+		}
+	} else if (attr->iface == FI_HMEM_NEURON) {
+		efa_mr->peer.device.neuron = attr->device.neuron;
+	}
+
+	return FI_SUCCESS;
+}
+
+
 int efa_mr_cache_entry_reg(struct ofi_mr_cache *cache,
 			   struct ofi_mr_entry *entry)
 {
@@ -79,12 +146,18 @@ int efa_mr_cache_entry_reg(struct ofi_mr_cache *cache,
 	efa_mr->mr_fid.fid.context = NULL;
 
 	attr.mr_iov = &entry->info.iov;
+	/* ofi_mr_info only stores one iov */
 	attr.iov_count = 1;
 	attr.access = access;
 	attr.offset = 0;
 	attr.requested_key = 0;
 	attr.context = NULL;
-	attr.iface = FI_HMEM_SYSTEM;
+	attr.iface = entry->info.iface;
+
+	if (attr.iface == FI_HMEM_CUDA)
+		attr.device.cuda = entry->info.device;
+	else if (attr.iface == FI_HMEM_NEURON)
+		attr.device.neuron = entry->info.device;
 
 	ret = efa_mr_reg_impl(efa_mr, 0, (void *)&attr);
 	return ret;
@@ -173,12 +246,9 @@ static int efa_mr_cache_regattr(struct fid *fid, const struct fi_mr_attr *attr,
 	efa_mr = (struct efa_mr *)entry->data;
 	efa_mr->entry = entry;
 
-	if (domain->util_domain.info_domain_caps & FI_HMEM)
-		efa_mr->peer.iface = attr->iface;
-	else
-		efa_mr->peer.iface = FI_HMEM_SYSTEM;
-	if (efa_mr->peer.iface == FI_HMEM_CUDA)
-		efa_mr->peer.device.cuda = attr->device.cuda;
+	ret = efa_mr_hmem_setup(efa_mr, attr);
+	if (ret)
+		return ret;
 
 	*mr_fid = &efa_mr->mr_fid;
 	return 0;
@@ -235,15 +305,20 @@ static int efa_mr_dereg_impl(struct efa_mr *efa_mr)
 			"Unable to deregister memory registration\n");
 		ret = err;
 	}
+
+	ofi_genlock_lock(&efa_domain->util_domain.lock);
 	err = ofi_mr_map_remove(&efa_domain->util_domain.mr_map,
 				efa_mr->mr_fid.key);
+	ofi_genlock_unlock(&efa_domain->util_domain.lock);
+
 	if (err) {
 		EFA_WARN(FI_LOG_MR,
 			"Unable to remove MR entry from util map (%s)\n",
 			fi_strerror(-ret));
 		ret = err;
 	}
-	if (rxr_env.enable_shm_transfer && efa_mr->shm_mr) {
+	if (efa_mr->shm_mr) {
+		assert(rxr_env.enable_shm_transfer);
 		err = fi_close(&efa_mr->shm_mr->fid);
 		if (err) {
 			EFA_WARN(FI_LOG_MR,
@@ -251,11 +326,19 @@ static int efa_mr_dereg_impl(struct efa_mr *efa_mr)
 			ret = err;
 		}
 	}
+
+	if (efa_mr->peer.iface == FI_HMEM_CUDA) {
+		err = cuda_dev_unregister(efa_mr->peer.device.cuda);
+		if (err) {
+			EFA_WARN(FI_LOG_MR,
+				"Unable to de-register cuda handle\n");
+			ret = err;
+		}
+	}
 	return ret;
 }
 
 static int efa_mr_close(fid_t fid)
-
 {
 	struct efa_mr *efa_mr;
 	int ret;
@@ -288,6 +371,10 @@ static int efa_mr_reg_impl(struct efa_mr *efa_mr, uint64_t flags, void *attr)
 	int fi_ibv_access = 0;
 	int ret = 0;
 
+	ret = efa_mr_hmem_setup(efa_mr, mr_attr);
+	if (ret)
+		return ret;
+
 	/* To support Emulated RMA path, if the access is not supported
 	 * by EFA, modify it to FI_SEND | FI_RECV
 	 */
@@ -311,27 +398,23 @@ static int efa_mr_reg_impl(struct efa_mr *efa_mr, uint64_t flags, void *attr)
 	if (!efa_mr->ibv_mr) {
 		EFA_WARN(FI_LOG_MR, "Unable to register MR: %s\n",
 				fi_strerror(-errno));
+		if (efa_mr->peer.iface == FI_HMEM_CUDA)
+			cuda_dev_unregister(efa_mr->peer.device.cuda);
+
 		return -errno;
 	}
 
 	efa_mr->mr_fid.mem_desc = efa_mr;
 	efa_mr->mr_fid.key = efa_mr->ibv_mr->rkey;
-	/*
-	 * Skipping the domain type check is okay here since util_domain is at
-	 * the beginning of efa_domain and rxr_domain.
-	 */
-	if (efa_mr->domain->util_domain.info_domain_caps & FI_HMEM)
-		efa_mr->peer.iface = mr_attr->iface;
-	else
-		efa_mr->peer.iface = FI_HMEM_SYSTEM;
-	if (efa_mr->peer.iface == FI_HMEM_CUDA)
-		efa_mr->peer.device.cuda = mr_attr->device.cuda;
 	assert(efa_mr->mr_fid.key != FI_KEY_NOTAVAIL);
 
 	mr_attr->requested_key = efa_mr->mr_fid.key;
 
+	ofi_genlock_lock(&efa_mr->domain->util_domain.lock);
 	ret = ofi_mr_map_insert(&efa_mr->domain->util_domain.mr_map, attr,
 				&efa_mr->mr_fid.key, &efa_mr->mr_fid);
+	ofi_genlock_unlock(&efa_mr->domain->util_domain.lock);
+
 	if (ret) {
 		EFA_WARN(FI_LOG_MR,
 			"Unable to add MR to map buf (%s): %p len: %zu\n",
@@ -339,10 +422,11 @@ static int efa_mr_reg_impl(struct efa_mr *efa_mr, uint64_t flags, void *attr)
 			mr_attr->mr_iov->iov_len);
 		return ret;
 	}
-	if (efa_mr->domain->shm_domain && rxr_env.enable_shm_transfer) {
+	if (efa_mr->domain->shm_domain) {
 		/* We need to add FI_REMOTE_READ to allow for Read implemented
 		* message protocols.
 		*/
+		assert(rxr_env.enable_shm_transfer);
 		original_access = mr_attr->access;
 		mr_attr->access |= FI_REMOTE_READ;
 		ret = fi_mr_regattr(efa_mr->domain->shm_domain, attr,
@@ -354,8 +438,6 @@ static int efa_mr_reg_impl(struct efa_mr *efa_mr, uint64_t flags, void *attr)
 				fi_strerror(-ret), mr_attr->mr_iov->iov_base,
 				mr_attr->mr_iov->iov_len);
 			fi_close(&efa_mr->mr_fid.fid);
-			ofi_mr_map_remove(&efa_mr->domain->util_domain.mr_map,
-						efa_mr->mr_fid.key);
 			return ret;
 		}
 	}
@@ -367,12 +449,32 @@ static int efa_mr_regattr(struct fid *fid, const struct fi_mr_attr *attr,
 {
 	struct fid_domain *domain_fid;
 	struct efa_mr *efa_mr = NULL;
+	uint64_t supported_flags;
 	int ret = 0;
 
-	if (flags && flags != OFI_MR_NOCACHE) {
+	/*
+	 * Notes supported memory registration flags:
+	 *
+	 * OFI_MR_NOCACHE:
+	 * when MR cache is enabled, application's call to fi_mr_regattr
+	 * was directed to efa_mr_cache_regattr(). If OFI_MR_NOCACHE
+	 * was specified, efa_mr_cache_regattr() will call this
+	 * function directly (bypassing MR cache), therefore
+	 * this function does not do anything special for this flag
+	 * other than allow it.
+	 *
+	 * FI_HMEM_DEVICE_ONLY:
+	 * This flag is used by some provider that need to distinguish
+	 * whether a device memory can be accessed from device only, or
+	 * can be access from host. EFA provider considers all device memory
+	 * to be accessed by device only. Therefore, this function claim
+	 * support of this flag, but do not save it in efa_mr.
+	 */
+	supported_flags = OFI_MR_NOCACHE | FI_HMEM_DEVICE_ONLY;
+	if (flags & (~supported_flags)) {
 		EFA_WARN(FI_LOG_MR, "Unsupported flag type. requested"
 			 "[0x%" PRIx64 "] supported[0x%" PRIx64 "]\n",
-			 flags, (uint64_t) OFI_MR_NOCACHE);
+			 flags, supported_flags);
 		return -FI_EBADFLAGS;
 	}
 

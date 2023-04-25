@@ -72,7 +72,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_copy_from_unexp_req(MPIR_Request * req, void
         if (!dt_contig) {
             MPI_Aint actual_unpack_bytes;
             MPIR_Typerep_unpack(MPIDIG_REQUEST(req, buffer), nbytes, user_buf, user_count,
-                                user_datatype, 0, &actual_unpack_bytes);
+                                user_datatype, 0, &actual_unpack_bytes, MPIR_TYPEREP_FLAG_NONE);
             if (actual_unpack_bytes != nbytes) {
                 mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
                                                  __FUNCTION__, __LINE__,
@@ -85,12 +85,12 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_copy_from_unexp_req(MPIR_Request * req, void
              * the absolute address of the buffer (e.g. buf == MPI_BOTTOM).
              */
             char *addr = MPIR_get_contig_ptr(user_buf, dt_true_lb);
-            MPIR_Typerep_copy(addr, MPIDIG_REQUEST(req, buffer), nbytes);
+            MPIR_Typerep_copy(addr, MPIDIG_REQUEST(req, buffer), nbytes, MPIR_TYPEREP_FLAG_NONE);
         }
     }
 
     int vci = MPIDI_Request_get_vci(req);
-    MPIDU_genq_private_pool_free_cell(MPIDI_global.per_vci[vci].unexp_pack_buf_pool,
+    MPIDU_genq_private_pool_free_cell(MPIDI_global.per_vci[vci].pack_buf_pool,
                                       MPIDIG_REQUEST(req, buffer));
 
     return mpi_errno;
@@ -192,12 +192,21 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_handle_unexp_mrecv(MPIR_Request * rreq)
 MPL_STATIC_INLINE_PREFIX int MPIDIG_do_irecv(void *buf, MPI_Aint count, MPI_Datatype datatype,
                                              int rank, int tag, MPIR_Comm * comm,
                                              int context_offset, int vci, MPIR_Request ** request,
-                                             int alloc_req, uint64_t flags)
+                                             uint64_t flags)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Request *rreq = NULL, *unexp_req = NULL;
     MPIR_Context_id_t context_id = comm->recvcontext_id + context_offset;
     MPIR_FUNC_ENTER;
+
+    if (*request) {
+        /* ch4-layer pass down a pre-allocated request, let's initialize the mpidig part */
+        MPIDIG_request_init(*request, vci, -1);
+        if (!(*request)->comm) {
+            (*request)->comm = comm;
+            MPIR_Comm_add_ref(comm);
+        }
+    }
 
     unexp_req =
         MPIDIG_rreq_dequeue(rank, tag, context_id, &MPIDI_global.per_vci[vci].unexp_list,
@@ -207,8 +216,28 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_do_irecv(void *buf, MPI_Aint count, MPI_Data
         MPII_UNEXPQ_FORGET(unexp_req);
         unexp_req->comm = comm;
         MPIR_Comm_add_ref(comm);
+
+        bool has_request = (*request != NULL);
+        if (!has_request) {
+            /* Regular (non-enqueuing) path: MPIDIG is responsbile for allocating
+             * a request. Here we simply return `unexp_req` */
+            *request = unexp_req;
+            /* Mark `match_req` as NULL so that we know nothing else to complete when
+             * `unexp_req` finally completes. (See below) */
+            MPIDIG_REQUEST(unexp_req, req->rreq.match_req) = NULL;
+        } else {
+            /* Enqueuing path: CH4 already allocated a request.
+             * Record the passed `*request` to `match_req` so that we can complete it
+             * later when `unexp_req` completes.
+             * See MPIDI_recv_target_cmpl_cb for actual completion handler. */
+            MPIDIG_REQUEST(unexp_req, req->rreq.match_req) = *request;
+            MPIDIG_REQUEST(*request, req->remote_vci) = MPIDIG_REQUEST(unexp_req, req->remote_vci);
+        }
+        MPIDIG_REQUEST(unexp_req, req->status) |= MPIDIG_REQ_MATCHED;
+        MPIDIG_REQUEST(*request, req->status) |= MPIDIG_REQ_IN_PROGRESS;
+
         if (MPIDIG_REQUEST(unexp_req, req->status) & MPIDIG_REQ_BUSY) {
-            MPIDIG_REQUEST(unexp_req, req->status) |= MPIDIG_REQ_MATCHED;
+            /* Nothing to do here. MPIDIG_handle_unexpected etc. in mpidig_pt2pt_callbacks.c */
         } else if (MPIDIG_REQUEST(unexp_req, req->status) & MPIDIG_REQ_RTS) {
             /* the count for unexpected long message is the data size */
             MPI_Aint data_sz = MPIDIG_REQUEST(unexp_req, count);
@@ -217,70 +246,38 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_do_irecv(void *buf, MPI_Aint count, MPI_Data
             MPIDIG_REQUEST(unexp_req, datatype) = datatype;
             MPIDIG_REQUEST(unexp_req, buffer) = buf;
             MPIDIG_REQUEST(unexp_req, count) = count;
-            if (*request == NULL) {
-                /* Regular (non-enqueuing) path: MPIDIG is responsbile for allocating
-                 * a request. Here we simply return `unexp_req` */
-                *request = unexp_req;
-                /* Mark `match_req` as NULL so that we know nothing else to complete when
-                 * `unexp_req` finally completes. (See below) */
-                MPIDIG_REQUEST(unexp_req, req->rreq.match_req) = NULL;
-            } else {
-                /* Enqueuing path: CH4 already allocated a request.
-                 * Record the passed `*request` to `match_req` so that we can complete it
-                 * later when `unexp_req` completes.
-                 * See MPIDI_recv_target_cmpl_cb for actual completion handler. */
-                MPIDIG_REQUEST(unexp_req, req->rreq.match_req) = *request;
-            }
             MPIDIG_REQUEST(unexp_req, req->status) &= ~MPIDIG_REQ_UNEXPECTED;
             /* MPIDIG_recv_type_init will call the callback to finish the rndv protocol */
             mpi_errno = MPIDIG_recv_type_init(data_sz, unexp_req);
-            goto fn_exit;
         } else {
             mpi_errno = MPIDIG_handle_unexpected(buf, count, datatype, unexp_req);
             MPIR_ERR_CHECK(mpi_errno);
-            if (*request == NULL) {
-                /* Regular (non-enqueuing) path: MPIDIG is responsbile for allocating
-                 * a request. Here we simply return `unexp_req`, which is already completed. */
-                *request = unexp_req;
-            } else {
-                /* Enqueuing path: CH4 already allocated request as `*request`.
-                 * Since the real operations has completed in `unexp_req`, here we
-                 * simply copy the status to `*request` and complete it. */
+
+            if (has_request) {
                 (*request)->status = unexp_req->status;
-                MPIR_Request_add_ref(*request);
                 MPID_Request_complete(*request);
                 /* Need to free here because we don't return this to user */
                 MPIDI_CH4_REQUEST_FREE(unexp_req);
             }
-            goto fn_exit;
         }
-    }
-
-    if (*request != NULL) {
-        rreq = *request;
-        MPIDIG_request_init(rreq, MPIR_REQUEST_KIND__RECV);
-    } else if (alloc_req) {
-        rreq = MPIDIG_request_create(MPIR_REQUEST_KIND__RECV, 2, vci, -1);
-        MPIR_ERR_CHKANDSTMT(rreq == NULL, mpi_errno, MPIX_ERR_NOREQ, goto fn_fail, "**nomemreq");
-        rreq->comm = comm;
-        MPIR_Comm_add_ref(comm);
     } else {
-        rreq = *request;
-        MPIR_Assert(0);
-    }
+        if (*request == NULL) {
+            rreq = MPIDIG_request_create(MPIR_REQUEST_KIND__RECV, 2, vci, -1);
+            MPIR_ERR_CHKANDSTMT(rreq == NULL, mpi_errno, MPIX_ERR_NOREQ, goto fn_fail,
+                                "**nomemreq");
+            rreq->comm = comm;
+            MPIR_Comm_add_ref(comm);
+        } else {
+            rreq = *request;
+        }
 
-    *request = rreq;
+        *request = rreq;
 
-    MPIR_Datatype_add_ref_if_not_builtin(datatype);
-    MPIDIG_prepare_recv_req(rank, tag, context_id, buf, count, datatype, rreq);
-
-    if (!unexp_req) {
+        MPIR_Datatype_add_ref_if_not_builtin(datatype);
+        MPIDIG_prepare_recv_req(rank, tag, context_id, buf, count, datatype, rreq);
         MPIDIG_enqueue_request(rreq, &MPIDI_global.per_vci[vci].posted_list, MPIDIG_PT2PT_POSTED);
-    } else {
-        MPIDIG_REQUEST(rreq, req->remote_vci) = MPIDIG_REQUEST(unexp_req, req->remote_vci);
-        MPIDIG_REQUEST(unexp_req, req->rreq.match_req) = rreq;
-        MPIDIG_REQUEST(rreq, req->status) |= MPIDIG_REQ_IN_PROGRESS;
     }
+
   fn_exit:
     MPIR_FUNC_EXIT;
     return mpi_errno;
@@ -294,10 +291,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_imrecv(void *buf,
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_FUNC_ENTER;
-#if MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY__VCI
-    int vci = MPIDI_Request_get_vci(message);
-#endif
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
 
     MPIDIG_REQUEST(message, req->rreq.mrcv_buffer) = buf;
     MPIDIG_REQUEST(message, req->rreq.mrcv_count) = count;
@@ -321,7 +314,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_imrecv(void *buf,
     }
 
   fn_exit:
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
     MPIR_FUNC_EXIT;
     return mpi_errno;
   fn_fail:
@@ -339,16 +331,12 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_irecv(void *buf,
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_FUNC_ENTER;
-    /* For anysource recv, we may be called while holding the vci lock of shm request (to
-     * prevent shm progress). Therefore, recursive locking is allowed here */
-    MPID_THREAD_CS_ENTER_REC_VCI(MPIDI_VCI(vci).lock);
 
     mpi_errno = MPIDIG_do_irecv(buf, count, datatype, rank, tag, comm, context_offset, vci,
-                                request, 1, 0ULL);
+                                request, 0ULL);
     MPIR_ERR_CHECK(mpi_errno);
   fn_exit:
     MPIDI_REQUEST_SET_LOCAL(*request, is_local, partner);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
     MPIR_FUNC_EXIT;
     return mpi_errno;
   fn_fail:

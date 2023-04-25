@@ -46,12 +46,21 @@ cvars:
         in order to allow the process to continue (e.g., in gdb, "set
         hold=0").
 
+    - name        : MPIR_CVAR_NO_COLLECTIVE_FINALIZE
+      category    : COLLECTIVE
+      type        : boolean
+      default     : false
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If true, prevent MPI_Finalize to invoke collective behavior such as
+        barrier or communicating to other processes. Consequently, it may result
+        in leaking memory or losing messages due to pre-mature exiting. The
+        default is false, which may invoke collective behaviors at finalize.
+
 === END_MPI_T_CVAR_INFO_BLOCK ===
 */
-
-/* This will help force the load of initinfo.o, which contains data about
-   how MPICH was configured. */
-extern const char MPII_Version_device[];
 
 /* MPIR_world_model_state tracks so we only init and finalize once in world model */
 MPL_atomic_int_t MPIR_world_model_state = MPL_ATOMIC_INT_T_INITIALIZER(0);
@@ -151,13 +160,17 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
     MPIR_Typerep_init();
     MPII_thread_mutex_create();
     MPII_init_request();
+    mpi_errno = MPIR_pmi_init();
+    MPIR_ERR_CHECK(mpi_errno);
     MPII_hwtopo_init();
     MPII_nettopo_init();
     MPII_init_windows();
     MPII_init_binding_cxx();
-    MPII_init_binding_f08();
 
     mpi_errno = MPII_init_local_proc_attrs(&required);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    mpi_errno = MPII_init_builtin_infos();
     MPIR_ERR_CHECK(mpi_errno);
 
     mpi_errno = MPII_Coll_init();
@@ -321,13 +334,14 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
         }
 
         MPII_world_set_initilized();
-
-        mpi_errno = MPII_init_async();
-        MPIR_ERR_CHECK(mpi_errno);
     }
     if (provided) {
         *provided = MPIR_ThreadInfo.thread_provided;
     }
+
+    mpi_errno = MPII_init_async();
+    MPIR_ERR_CHECK(mpi_errno);
+
     MPL_initlock_unlock(&MPIR_init_lock);
     return mpi_errno;
 
@@ -395,6 +409,9 @@ int MPII_Finalize(MPIR_Session * session_ptr)
 
     MPII_hwtopo_finalize();
     MPII_nettopo_finalize();
+
+    mpi_errno = MPII_finalize_builtin_infos();
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* Users did not call MPI_T_init_thread(), so we free memories allocated to
      * MPIR_T during MPI_Init here. Otherwise, free them in MPI_T_finalize() */

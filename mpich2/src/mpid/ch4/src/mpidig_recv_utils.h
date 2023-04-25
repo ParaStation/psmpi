@@ -33,6 +33,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_recv_check_rndv_cb(MPIR_Request * rreq)
     int mpi_errno = MPI_SUCCESS;
 
     if (MPIDIG_REQUEST(rreq, req->recv_async).data_copy_cb) {
+        /* the callback may complete the request. Increment the ref to prevent
+         * rreq from being freed */
+        MPIR_Request_add_ref(rreq);
+
         mpi_errno = MPIDIG_REQUEST(rreq, req->recv_async).data_copy_cb(rreq);
         MPIR_ERR_CHECK(mpi_errno);
 
@@ -46,6 +50,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_recv_check_rndv_cb(MPIR_Request * rreq)
         if (MPIDIG_REQUEST(rreq, req)) {
             MPIDIG_REQUEST(rreq, req->recv_async).data_copy_cb = NULL;
         }
+        MPIR_Request_free_unsafe(rreq);
     }
 
   fn_exit:
@@ -148,8 +153,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_get_recv_iov_count(MPIR_Request * rreq)
     MPIDIG_rreq_async_t *p = &(MPIDIG_REQUEST(rreq, req->recv_async));
     if (p->recv_type == MPIDIG_RECV_DATATYPE) {
         MPI_Aint num_iov;
-        MPIR_Typerep_iov_len(MPIDIG_REQUEST(rreq, count),
-                             MPIDIG_REQUEST(rreq, datatype), p->in_data_sz, &num_iov);
+        MPIR_Typerep_get_iov_len(MPIDIG_REQUEST(rreq, count),
+                                 MPIDIG_REQUEST(rreq, datatype), &num_iov);
         return num_iov;
     } else if (p->recv_type == MPIDIG_RECV_CONTIG) {
         return 1;
@@ -172,7 +177,8 @@ MPL_STATIC_INLINE_PREFIX void MPIDIG_recv_copy(void *in_data, MPIR_Request * rre
         MPIR_Typerep_unpack(in_data, in_data_sz,
                             MPIDIG_REQUEST(rreq, buffer),
                             MPIDIG_REQUEST(rreq, count),
-                            MPIDIG_REQUEST(rreq, datatype), 0, &actual_unpack_bytes);
+                            MPIDIG_REQUEST(rreq, datatype),
+                            0, &actual_unpack_bytes, MPIR_TYPEREP_FLAG_NONE);
         if (!rreq->status.MPI_ERROR && in_data_sz > actual_unpack_bytes) {
             /* Truncation error has been checked at MPIDIG_recv_type_init.
              * If the receive buffer had enough space, but we still
@@ -195,7 +201,7 @@ MPL_STATIC_INLINE_PREFIX void MPIDIG_recv_copy(void *in_data, MPIR_Request * rre
         }
 
         data_sz = MPL_MIN(data_sz, in_data_sz);
-        MPIR_Typerep_copy(data, in_data, data_sz);
+        MPIR_Typerep_copy(data, in_data, data_sz, MPIR_TYPEREP_FLAG_NONE);
         MPIR_STATUS_SET_COUNT(rreq->status, data_sz);
     } else {
         /* noncontig case */
@@ -206,7 +212,8 @@ MPL_STATIC_INLINE_PREFIX void MPIDIG_recv_copy(void *in_data, MPIR_Request * rre
         int rem = in_data_sz;
         for (int i = 0; i < iov_len && rem > 0; i++) {
             int curr_len = MPL_MIN(rem, iov[i].iov_len);
-            MPIR_Typerep_copy(iov[i].iov_base, (char *) in_data + done, curr_len);
+            MPIR_Typerep_copy(iov[i].iov_base, (char *) in_data + done, curr_len,
+                              MPIR_TYPEREP_FLAG_NONE);
             rem -= curr_len;
             done += curr_len;
         }
@@ -272,7 +279,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_recv_copy_seg(void *payload, MPI_Aint payloa
         MPIR_Typerep_unpack(payload, payload_sz,
                             MPIDIG_REQUEST(rreq, buffer),
                             MPIDIG_REQUEST(rreq, count),
-                            MPIDIG_REQUEST(rreq, datatype), p->offset, &actual_unpack_bytes);
+                            MPIDIG_REQUEST(rreq, datatype),
+                            p->offset, &actual_unpack_bytes, MPIR_TYPEREP_FLAG_NONE);
         p->offset += payload_sz;
         if (payload_sz > actual_unpack_bytes) {
             /* basic element size mismatch */
@@ -294,14 +302,16 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_recv_copy_seg(void *payload, MPI_Aint payloa
         int iov_done = 0;
         for (int i = 0; i < p->iov_num; i++) {
             if (payload_sz < p->iov_ptr[i].iov_len) {
-                MPIR_Typerep_copy(p->iov_ptr[i].iov_base, payload, payload_sz);
+                MPIR_Typerep_copy(p->iov_ptr[i].iov_base, payload, payload_sz,
+                                  MPIR_TYPEREP_FLAG_NONE);
                 p->iov_ptr[i].iov_base = (char *) p->iov_ptr[i].iov_base + payload_sz;
                 p->iov_ptr[i].iov_len -= payload_sz;
                 /* not done */
                 break;
             } else {
                 /* fill one iov */
-                MPIR_Typerep_copy(p->iov_ptr[i].iov_base, payload, p->iov_ptr[i].iov_len);
+                MPIR_Typerep_copy(p->iov_ptr[i].iov_base, payload, p->iov_ptr[i].iov_len,
+                                  MPIR_TYPEREP_FLAG_NONE);
                 payload = (char *) payload + p->iov_ptr[i].iov_len;
                 payload_sz -= p->iov_ptr[i].iov_len;
                 iov_done++;
@@ -354,8 +364,8 @@ MPL_STATIC_INLINE_PREFIX void MPIDIG_convert_datatype(MPIR_Request * rreq)
     } else {
         struct iovec *iov;
         MPI_Aint num_iov;
-        MPIR_Typerep_iov_len(MPIDIG_REQUEST(rreq, count),
-                             MPIDIG_REQUEST(rreq, datatype), data_sz, &num_iov);
+        MPIR_Typerep_get_iov_len(MPIDIG_REQUEST(rreq, count),
+                                 MPIDIG_REQUEST(rreq, datatype), &num_iov);
         MPIR_Assert(num_iov > 0);
 
         iov = MPL_malloc(num_iov * sizeof(struct iovec), MPL_MEM_OTHER);
@@ -365,14 +375,9 @@ MPL_STATIC_INLINE_PREFIX void MPIDIG_convert_datatype(MPIR_Request * rreq)
         MPIDIG_REQUEST(rreq, req->status) |= MPIDIG_REQ_RCV_NON_CONTIG;
 
         MPI_Aint actual_iov_len;
-        MPI_Aint actual_iov_bytes;
-        MPIR_Typerep_to_iov(MPIDIG_REQUEST(rreq, buffer), MPIDIG_REQUEST(rreq, count),
-                            MPIDIG_REQUEST(rreq, datatype), 0, iov, num_iov,
-                            p->in_data_sz, &actual_iov_len, &actual_iov_bytes);
-
-        if (actual_iov_bytes != p->in_data_sz) {
-            rreq->status.MPI_ERROR = MPI_ERR_TYPE;
-        }
+        MPIR_Typerep_to_iov_offset(MPIDIG_REQUEST(rreq, buffer), MPIDIG_REQUEST(rreq, count),
+                                   MPIDIG_REQUEST(rreq, datatype), 0, iov, num_iov,
+                                   &actual_iov_len);
 
         p->recv_type = MPIDIG_RECV_IOV;
         p->iov_ptr = iov;

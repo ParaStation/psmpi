@@ -152,8 +152,8 @@ be in the range 0 to %d
  buffer size is %d
 **inttoosmall:An address does not fit into a Fortran INTEGER.  Use \
  MPI_Get_address instead
-**namepubnotpub:Lookup failed for service name 
-**namepubnotpub %s:Lookup failed for service name %s
+**namepubnotpub:Publish failed for service name
+**namepubnotpub %s:Publish failed for service name %s
 **nonamepub:No name publishing service available
 **namepubfile:Unable to publish service name
 **namepubfile %s %s %s:Unable to publish service name %s using file %s for \
@@ -231,6 +231,7 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 **invalidcollid: Invalid collective ID used.
 **sockaddrfailed: MPL_get_sockaddr failed
 
+**nosupport: Algorithm selected is not supported. Please choose another algorithm
 **nomembind: hwloc_set_area_membind() is not available
 **invalidmembind: Invalid bind object identifier.
 **invalidmembind %d: cannot bind memory to object (%d). \
@@ -382,6 +383,7 @@ be in the range 0 to %d
 **infonkey %d %d:Requested key %d but this MPI_Info only has %d keys
 **infonoteq:MPI_Info key value are not consistent for all processes
 **infonoteq %s:MPI_Info value with key %s is not consistent for all processes
+**infohexinvalid:MPI_Info key value is invalid
 **io:Other I/O error 
 **io %s:Other I/O error %s
 **iobadoverlap: write voilates monotonically non-decreasing
@@ -486,10 +488,13 @@ unexpected messages queued.
 **failure_pending:Request pending due to failure
 **revoked:Communication object revoked
 **eagain:Operation could not be issued (EAGAIN)
+**commhasunmatched:Communicator being freed has unmatched message(s)
+**commhasunmatched %x %d:Communicator (handle=%x) being freed has %d unmatched message(s)
 # Duplicates?
 #**argnull:Invalid null parameter
 #**argnull %s:Invalid null parameter %s
 **commstack:Internal overflow in stack used for MPI_Comm_split
+**timeout:Operation timed out
 
 **cond_create:MPID_Thread_cond_create failed
 **cond_create %s:MPID_Thread_cond_create failed: %s
@@ -950,6 +955,20 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **parse_thread_affinity %s:Failed to parse async thread affinity string [%s]
 **set_thread_affinity:Failed to set the async thread affinity
 **set_thread_affinity %d:Failed to set the async thread affinity to the logical processor [%d]
+
+## MPIX_Stream
+**pspnostream:Stream is not supported in psp.
+**ch3nostream:Stream is not supported in ch3.
+**ch4nostream:No streams available. Configure --enable-thread-cs=per-vci and --with-ch4-max-vcis=# to enable streams.
+**outofstream:No streams available. Use MPIR_CVAR_CH4_RESERVE_VCIS to reserve the number of streams can be allocated.
+**cannotfreestream:The stream is still in use, cannot be freed.
+**missinggpustream:Info hint 'type' is set, but info hint 'value' is missing.
+**invalidgpustream:Info hint 'type' is set, but info hint 'value' is invalid.
+**notgpustream:The communicator does not have a local gpu stream attached.
+**streamcomm_notmult:The communicator is not a multiplex stream communicator.
+**streamcomm_srcidx:The source stream index exceeds the number of streams.
+**streamcomm_dstidx:The destination stream index exceeds the number of streams.
+**gpu_enqueue_noncontig:Non-contig datatype not supported due to missing TLS.
 
 # -----------------------------------------------------------------------------
 # The following names are defined but not used (see the -careful option 

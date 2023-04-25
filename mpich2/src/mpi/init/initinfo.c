@@ -21,3 +21,34 @@ const char MPII_Version_CXX[] = MPICH_COMPILER_CXX;
 const char MPII_Version_F77[] = MPICH_COMPILER_F77;
 const char MPII_Version_FC[] = MPICH_COMPILER_FC;
 const char MPII_Version_custom[] = MPICH_CUSTOM_STRING;
+
+int MPIR_Get_library_version_impl(char *version, int *resultlen)
+{
+    int printed_len;
+    printed_len = MPL_snprintf(version, MPI_MAX_LIBRARY_VERSION_STRING,
+#if defined(MPID_DEV_VERSION_STRING)
+                               MPID_DEV_VERSION_STRING
+#endif
+                               "MPICH Version:      %s\n"
+                               "MPICH Release date: %s\n"
+                               "MPICH ABI:          %s\n"
+                               "MPICH Device:       %s\n"
+                               "MPICH configure:    %s\n"
+                               "MPICH CC:           %s\n"
+                               "MPICH CXX:          %s\n"
+                               "MPICH F77:          %s\n"
+                               "MPICH FC:           %s\n",
+#if defined(MPID_DEV_VERSION_STRING) && defined(MPID_DEV_VERSION_STRING_ARGS)
+                               MPID_DEV_VERSION_STRING_ARGS,
+#endif
+                               MPII_Version_string, MPII_Version_date, MPII_Version_ABI,
+                               MPII_Version_device, MPII_Version_configure, MPII_Version_CC,
+                               MPII_Version_CXX, MPII_Version_F77, MPII_Version_FC);
+    if (strlen(MPII_Version_custom) > 0)
+        MPL_snprintf(version + printed_len, MPI_MAX_LIBRARY_VERSION_STRING - printed_len,
+                     "MPICH Custom Information:\t%s\n", MPII_Version_custom);
+
+    *resultlen = (int) strlen(version);
+
+    return MPI_SUCCESS;
+}

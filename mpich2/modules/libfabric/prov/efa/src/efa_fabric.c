@@ -57,7 +57,7 @@
 #endif
 
 #define EFA_FABRIC_PREFIX "EFA-"
-
+#define EFA_FABRIC_NAME "efa"
 #define EFA_DOMAIN_CAPS (FI_LOCAL_COMM | FI_REMOTE_COMM)
 
 #define EFA_RDM_TX_CAPS (OFI_TX_MSG_CAPS)
@@ -79,6 +79,12 @@
 #define EFA_NO_DEFAULT -1
 
 #define EFA_DEF_MR_CACHE_ENABLE 1
+
+#ifdef EFA_PERF_ENABLED
+const char *efa_perf_counters_str[] = {
+	EFA_PERF_FOREACH(OFI_STR)
+};
+#endif
 
 int efa_mr_cache_enable		= EFA_DEF_MR_CACHE_ENABLE;
 size_t efa_mr_max_cached_count;
@@ -181,7 +187,7 @@ static int efa_check_hints(uint32_t version, const struct fi_info *hints,
 
 	if (hints->caps & ~(info->caps)) {
 		EFA_INFO(FI_LOG_CORE, "Unsupported capabilities\n");
-		FI_INFO_CHECK(&efa_prov, info, hints, caps, FI_TYPE_CAPS);
+		OFI_INFO_CHECK(&efa_prov, info, hints, caps, FI_TYPE_CAPS);
 		return -FI_ENODATA;
 	}
 
@@ -189,7 +195,7 @@ static int efa_check_hints(uint32_t version, const struct fi_info *hints,
 
 	if ((hints->mode & prov_mode) != prov_mode) {
 		EFA_INFO(FI_LOG_CORE, "Required hints mode bits not set\n");
-		FI_INFO_MODE(&efa_prov, prov_mode, hints->mode);
+		OFI_INFO_MODE(&efa_prov, prov_mode, hints->mode);
 		return -FI_ENODATA;
 	}
 
@@ -267,29 +273,191 @@ static char *get_sysfs_path(void)
 			sysfs_path[len] = '\0';
 		}
 	} else {
-		sysfs_path = strndup("/sys", IBV_SYSFS_PATH_MAX);
+		sysfs_path = strdup("/sys");
 	}
 
 	return sysfs_path;
 }
+
+#ifndef _WIN32
+
+static int efa_get_driver(struct efa_context *ctx,
+			     char **efa_driver)
+{
+	int ret;
+	char *driver_sym_path;
+	char driver_real_path[PATH_MAX];
+	char *driver;
+	ret = asprintf(&driver_sym_path, "%s%s",
+		       ctx->ibv_ctx->device->ibdev_path, "/device/driver");
+	if (ret < 0) {
+		return -FI_ENOMEM;
+	}
+
+	if (!realpath(driver_sym_path, driver_real_path)) {
+		ret = -errno;
+		goto err_free_driver_sym;
+	}
+
+	driver = strrchr(driver_real_path, '/');
+	if (!driver) {
+		ret = -FI_EINVAL;
+		goto err_free_driver_sym;
+	}
+	driver++;
+	*efa_driver = strdup(driver);
+	if (!*efa_driver) {
+		ret = -FI_ENOMEM;
+		goto err_free_driver_sym;
+	}
+
+	free(driver_sym_path);
+	return 0;
+
+err_free_driver_sym:
+	free(driver_sym_path);
+	return ret;
+}
+
+#else // _WIN32
+
+static int efa_get_driver(struct efa_context *ctx,
+			     char **efa_driver)
+{
+	int ret;
+	/*
+	 * On windows efa device is not exposed as infiniband device.
+	 * The driver for efa device can be queried using Windows Setup API.
+	 * The code required to do that is more complex than necessary in this context.
+	 * We will return a hardcoded string as driver.
+	 */
+	ret = asprintf(efa_driver, "%s", "efa.sys");
+	if (ret < 0) {
+		return -FI_ENOMEM;
+	}
+	return 0;
+}
+
+#endif // _WIN32
+
+#ifndef _WIN32
+
+static int efa_get_device_version(struct efa_device_attr *efa_device_attr, 
+			     char **device_version)
+{
+	char *sysfs_path;
+	int ret;
+
+	*device_version = calloc(1, EFA_ABI_VER_MAX_LEN + 1);
+	if (!*device_version) {
+		return -FI_ENOMEM;
+	}
+
+	sysfs_path = get_sysfs_path();
+	if (!sysfs_path) {
+		return -FI_ENOMEM;
+	}
+
+	ret = fi_read_file(sysfs_path, "class/infiniband_verbs/abi_version",
+			   *device_version,
+			   EFA_ABI_VER_MAX_LEN);
+	if (ret < 0) {
+		goto free_sysfs_path;
+	}
+
+	free(sysfs_path);
+	return 0;
+
+free_sysfs_path:
+	free(sysfs_path);
+	return ret;
+}
+
+#else // _WIN32
+
+static int efa_get_device_version(struct efa_device_attr *efa_device_attr, 
+			     char **device_version)
+{
+	int ret;
+	/*
+	 * On Windows, there is no sysfs. We use hw_ver field of ibv_attr to obtain it
+	 */
+	ret = asprintf(device_version, "%u", efa_device_attr->ibv_attr.hw_ver);
+	if (ret < 0) {
+		return -FI_ENOMEM;
+	}
+	return 0;
+}
+
+#endif // _WIN32
+
+#ifndef _WIN32
+
+static int efa_get_pci_attr(struct efa_context *ctx,
+			     struct fi_pci_attr *pci_attr)
+{
+	char *dbdf_sym_path;
+	char *dbdf;
+	char dbdf_real_path[PATH_MAX];
+	int ret;
+	ret = asprintf(&dbdf_sym_path, "%s%s",
+	       ctx->ibv_ctx->device->ibdev_path, "/device");
+	if (ret < 0) {
+		return -FI_ENOMEM;
+	}
+
+	if (!realpath(dbdf_sym_path, dbdf_real_path)) {
+		ret = -errno;
+		goto err_free_dbdf_sym;
+	}
+
+	dbdf = strrchr(dbdf_real_path, '/');
+	if (!dbdf) {
+		ret = -FI_EINVAL;
+		goto err_free_dbdf_sym;
+	}
+	dbdf++;
+
+	ret = sscanf(dbdf, "%hx:%hhx:%hhx.%hhx", &pci_attr->domain_id,
+		     &pci_attr->bus_id, &pci_attr->device_id,
+		     &pci_attr->function_id);
+	if (ret != 4) {
+		ret = -FI_EINVAL;
+		goto err_free_dbdf_sym;
+	}
+
+	free(dbdf_sym_path);
+	return 0;
+
+err_free_dbdf_sym:
+	free(dbdf_sym_path);
+	return ret;
+}
+
+#else // _WIN32
+
+static int efa_get_pci_attr(struct efa_context *ctx,
+			     struct fi_pci_attr *pci_attr)
+{
+	/*
+	 * pci_attr is currently not supported on Windows. We return success
+	 * to let applications continue without failures.
+	 */
+	return 0;
+}
+
+#endif // _WIN32
 
 static int efa_alloc_fid_nic(struct fi_info *fi, struct efa_context *ctx,
 			     struct efa_device_attr *efa_device_attr,
 			     struct ibv_port_attr *port_attr)
 {
 	struct fi_device_attr *device_attr;
-	char driver_real_path[PATH_MAX];
 	struct fi_link_attr *link_attr;
-	char dbdf_real_path[PATH_MAX];
 	struct fi_bus_attr *bus_attr;
 	struct fi_pci_attr *pci_attr;
-	char *driver_sym_path;
-	char *dbdf_sym_path;
-	char *sysfs_path;
 	void *src_addr;
-	char *driver;
 	int name_len;
-	char *dbdf;
 	int ret;
 
 	/* Sets nic ops and allocates basic structure */
@@ -317,97 +485,42 @@ static int efa_alloc_fid_nic(struct fi_info *fi, struct efa_context *ctx,
 		goto err_free_nic;
 	}
 
-	device_attr->device_version = calloc(1, EFA_ABI_VER_MAX_LEN + 1);
-	if (!device_attr->device_version) {
-		ret = -FI_ENOMEM;
+	ret = efa_get_device_version(efa_device_attr, &device_attr->device_version);
+	if (ret != 0){
 		goto err_free_nic;
 	}
-
-	sysfs_path = get_sysfs_path();
-	if (!sysfs_path) {
-		ret = -FI_ENOMEM;
-		goto err_free_nic;
-	}
-
-	ret = fi_read_file(sysfs_path, "class/infiniband_verbs/abi_version",
-			   device_attr->device_version,
-			   sizeof(device_attr->device_version));
-	if (ret < 0)
-		goto err_free_sysfs;
 
 	ret = asprintf(&device_attr->vendor_id, "0x%x",
 		       efa_device_attr->ibv_attr.vendor_id);
 	if (ret < 0) {
 		ret = -FI_ENOMEM;
-		goto err_free_sysfs;
+		goto err_free_nic;
 	}
 
-	ret = asprintf(&driver_sym_path, "%s%s",
-		       ctx->ibv_ctx->device->ibdev_path, "/device/driver");
-	if (ret < 0) {
-		ret = -FI_ENOMEM;
-		goto err_free_sysfs;
-	}
-
-	if (!realpath(driver_sym_path, driver_real_path)) {
-		ret = -errno;
-		goto err_free_driver_sym;
-	}
-
-	driver = strrchr(driver_real_path, '/');
-	if (!driver) {
-		ret = -FI_EINVAL;
-		goto err_free_driver_sym;
-	}
-	driver++;
-	device_attr->driver = strdup(driver);
-	if (!device_attr->driver) {
-		ret = -FI_ENOMEM;
-		goto err_free_driver_sym;
+	ret = efa_get_driver(ctx, &device_attr->driver);
+	if (ret != 0) {
+		goto err_free_nic;
 	}
 
 	device_attr->firmware = strdup(efa_device_attr->ibv_attr.fw_ver);
 	if (!device_attr->firmware) {
 		ret = -FI_ENOMEM;
-		goto err_free_driver_sym;
+		goto err_free_nic;
 	}
 
 	/* fi_bus_attr */
 	bus_attr->bus_type = FI_BUS_PCI;
 
 	/* fi_pci_attr */
-	ret = asprintf(&dbdf_sym_path, "%s%s",
-		       ctx->ibv_ctx->device->ibdev_path, "/device");
-	if (ret < 0) {
-		ret = -FI_ENOMEM;
-		goto err_free_driver_sym;
+	ret = efa_get_pci_attr(ctx, pci_attr);
+	if (ret != 0) {
+		goto err_free_nic;
 	}
-
-	if (!realpath(dbdf_sym_path, dbdf_real_path)) {
-		ret = -errno;
-		goto err_free_dbdf_sym;
-	}
-
-	dbdf = strrchr(dbdf_real_path, '/');
-	if (!dbdf) {
-		ret = -FI_EINVAL;
-		goto err_free_dbdf_sym;
-	}
-	dbdf++;
-
-	ret = sscanf(dbdf, "%hx:%hhx:%hhx.%hhx", &pci_attr->domain_id,
-		     &pci_attr->bus_id, &pci_attr->device_id,
-		     &pci_attr->function_id);
-	if (ret != 4) {
-		ret = -FI_EINVAL;
-		goto err_free_dbdf_sym;
-	}
-
 	/* fi_link_attr */
 	src_addr = calloc(1, EFA_EP_ADDR_LEN);
 	if (!src_addr) {
 		ret = -FI_ENOMEM;
-		goto err_free_dbdf_sym;
+		goto err_free_nic;
 	}
 
 	ret = efa_get_addr(ctx, src_addr);
@@ -446,73 +559,15 @@ static int efa_alloc_fid_nic(struct fi_info *fi, struct efa_context *ctx,
 	}
 
 	free(src_addr);
-	free(dbdf_sym_path);
-	free(driver_sym_path);
-	free(sysfs_path);
 	return FI_SUCCESS;
 
 err_free_src_addr:
 	free(src_addr);
-err_free_dbdf_sym:
-	free(dbdf_sym_path);
-err_free_driver_sym:
-	free(driver_sym_path);
-err_free_sysfs:
-	free(sysfs_path);
 err_free_nic:
 	fi_close(&fi->nic->fid);
 	fi->nic = NULL;
 	return ret;
 }
-
-#if HAVE_LIBCUDA
-/*
- * efa_get_gdr_support() check if GPUDirect RDMA is supported by
- * reading from sysfs file "class/infiniband/<device_name>/gdr"
- * and set content of gdr_support accordingly.
- *
- * Return value:
- *   return 1 if sysfs file exist and has 1 in it.
- *   return 0 if sysfs file does not exist or has 0 in it.
- *   return a negatie value if error happened.
- */
-static int efa_get_gdr_support(char *device_name)
-{
-	static const int MAX_GDR_SUPPORT_STRLEN = 8;
-	char *gdr_path = NULL;
-	char gdr_support_str[MAX_GDR_SUPPORT_STRLEN];
-	int ret, read_len;
-
-	ret = asprintf(&gdr_path, "class/infiniband/%s/device/gdr", device_name);
-	if (ret < 0) {
-		EFA_INFO_ERRNO(FI_LOG_FABRIC, "asprintf to build sysfs file name failed", ret);
-		goto out;
-	}
-
-	ret = fi_read_file(get_sysfs_path(), gdr_path,
-			   gdr_support_str, MAX_GDR_SUPPORT_STRLEN);
-	if (ret < 0) {
-		if (errno == ENOENT) {
-			/* sysfs file does not exist, gdr is not supported */
-			ret = 0;
-		}
-
-		goto out;
-	}
-
-	if (ret == 0) {
-		EFA_WARN(FI_LOG_FABRIC, "Sysfs file %s is empty\n", gdr_path);
-		ret = -FI_EINVAL;
-		goto out;
-	}
-
-	read_len = MIN(ret, MAX_GDR_SUPPORT_STRLEN);
-	ret = (0 == strncmp(gdr_support_str, "1", read_len));
-out:
-	free(gdr_path);
-	return ret;
-}
-#endif
 
 static int efa_get_device_attrs(struct efa_context *ctx, struct fi_info *info)
 {
@@ -560,20 +615,14 @@ static int efa_get_device_attrs(struct efa_context *ctx, struct fi_info *info)
 	info->domain_attr->resource_mgmt	= FI_RM_DISABLED;
 	info->domain_attr->mr_cnt		= base_attr->max_mr;
 
-#if HAVE_LIBCUDA
-	if (info->ep_attr->type == FI_EP_RDM) {
-		ret = efa_get_gdr_support(ctx->ibv_ctx->device->name);
-		if (ret < 0) {
-			EFA_WARN(FI_LOG_FABRIC, "get gdr support failed!\n");
-			return ret;
-		}
-
-		if (ret == 1) {
-			info->caps			|= FI_HMEM;
-			info->tx_attr->caps		|= FI_HMEM;
-			info->rx_attr->caps		|= FI_HMEM;
-			info->domain_attr->mr_mode	|= FI_MR_HMEM;
-		}
+#if HAVE_CUDA || HAVE_NEURON
+	if (info->ep_attr->type == FI_EP_RDM &&
+	    (ofi_hmem_is_initialized(FI_HMEM_CUDA) ||
+	     ofi_hmem_is_initialized(FI_HMEM_NEURON))) {
+		info->caps			|= FI_HMEM;
+		info->tx_attr->caps		|= FI_HMEM;
+		info->rx_attr->caps		|= FI_HMEM;
+		info->domain_attr->mr_mode	|= FI_MR_HMEM;
 	}
 #endif
 
@@ -592,7 +641,7 @@ static int efa_get_device_attrs(struct efa_context *ctx, struct fi_info *info)
 				info->domain_attr->max_ep_rx_ctx);
 
 	info->tx_attr->iov_limit = efadv_attr.max_sq_sge;
-	info->tx_attr->size = align_down_to_power_of_2(efadv_attr.max_sq_wr);
+	info->tx_attr->size = rounddown_power_of_two(efadv_attr.max_sq_wr);
 	if (info->ep_attr->type == FI_EP_RDM) {
 		info->tx_attr->inject_size = efadv_attr.inline_buf_size;
 	} else if (info->ep_attr->type == FI_EP_DGRAM) {
@@ -607,7 +656,7 @@ static int efa_get_device_attrs(struct efa_context *ctx, struct fi_info *info)
 		info->tx_attr->inject_size = 0;
 	}
 	info->rx_attr->iov_limit = efadv_attr.max_rq_sge;
-	info->rx_attr->size = align_down_to_power_of_2(efadv_attr.max_rq_wr / info->rx_attr->iov_limit);
+	info->rx_attr->size = rounddown_power_of_two(efadv_attr.max_rq_wr / info->rx_attr->iov_limit);
 
 	EFA_DBG(FI_LOG_DOMAIN, "Tx/Rx attribute :\n"
 				"\t info->tx_attr->iov_limit		= %zu\n"
@@ -645,7 +694,7 @@ static int efa_get_device_attrs(struct efa_context *ctx, struct fi_info *info)
 static void efa_addr_to_str(const uint8_t *raw_addr, char *str)
 {
 	size_t name_len = strlen(EFA_FABRIC_PREFIX) + INET6_ADDRSTRLEN;
-	char straddr[INET6_ADDRSTRLEN] = {};
+	char straddr[INET6_ADDRSTRLEN] = { 0 };
 
 	if (!inet_ntop(AF_INET6, raw_addr, straddr, INET6_ADDRSTRLEN))
 		return;
@@ -727,20 +776,21 @@ static int efa_alloc_info(struct efa_context *ctx, struct fi_info **info,
 		goto err_free_info;
 	}
 
-	name_len = strlen(EFA_FABRIC_PREFIX) + INET6_ADDRSTRLEN;
+	name_len = strlen(EFA_FABRIC_NAME);
 
 	fi->fabric_attr->name = calloc(1, name_len + 1);
 	if (!fi->fabric_attr->name) {
 		ret = -FI_ENOMEM;
 		goto err_free_info;
 	}
-	efa_addr_to_str(gid.raw, fi->fabric_attr->name);
+
+	strcpy(fi->fabric_attr->name, EFA_FABRIC_NAME);
 
 	name_len = strlen(ctx->ibv_ctx->device->name) + strlen(ep_dom->suffix);
 	fi->domain_attr->name = malloc(name_len + 1);
 	if (!fi->domain_attr->name) {
 		ret = -FI_ENOMEM;
-		goto err_free_fab_name;
+		goto err_free_info;
 	}
 
 	snprintf(fi->domain_attr->name, name_len + 1, "%s%s",
@@ -751,24 +801,18 @@ static int efa_alloc_info(struct efa_context *ctx, struct fi_info **info,
 	fi->src_addr = calloc(1, EFA_EP_ADDR_LEN);
 	if (!fi->src_addr) {
 		ret = -FI_ENOMEM;
-		goto err_free_dom_name;
+		goto err_free_info;
 	}
 	fi->src_addrlen = EFA_EP_ADDR_LEN;
 	ret = efa_get_addr(ctx, fi->src_addr);
 	if (ret)
-		goto err_free_src;
+		goto err_free_info;
 
 	fi->domain_attr->av_type = FI_AV_TABLE;
 
 	*info = fi;
 	return 0;
 
-err_free_src:
-	free(fi->src_addr);
-err_free_dom_name:
-	free(fi->domain_attr->name);
-err_free_fab_name:
-	free(fi->fabric_attr->name);
 err_free_info:
 	fi_freeinfo(fi);
 	return ret;
@@ -920,14 +964,33 @@ out:
 
 static int efa_fabric_close(fid_t fid)
 {
-	struct efa_fabric *fab;
+	struct efa_fabric *efa_fabric;
 	int ret;
 
-	fab = container_of(fid, struct efa_fabric, util_fabric.fabric_fid.fid);
-	ret = ofi_fabric_close(&fab->util_fabric);
-	if (ret)
+	efa_fabric = container_of(fid, struct efa_fabric, util_fabric.fabric_fid.fid);
+	ret = ofi_fabric_close(&efa_fabric->util_fabric);
+	if (ret) {
+		FI_WARN(&rxr_prov, FI_LOG_FABRIC,
+			"Unable to close fabric: %s\n",
+			fi_strerror(-ret));
 		return ret;
-	free(fab);
+	}
+
+	if (efa_fabric->shm_fabric) {
+		ret = fi_close(&efa_fabric->shm_fabric->fid);
+		if (ret) {
+			FI_WARN(&rxr_prov, FI_LOG_FABRIC,
+				"Unable to close fabric: %s\n",
+				fi_strerror(-ret));
+			return ret;
+		}
+	}
+
+#ifdef EFA_PERF_ENABLED
+	ofi_perfset_log(&efa_fabric->perf_set, efa_perf_counters_str);
+	ofi_perfset_close(&efa_fabric->perf_set);
+#endif
+	free(efa_fabric);
 
 	return 0;
 }
@@ -942,7 +1005,11 @@ static struct fi_ops efa_fi_ops = {
 
 static struct fi_ops_fabric efa_ops_fabric = {
 	.size = sizeof(struct fi_ops_fabric),
-	.domain = efa_domain_open,
+	/*
+	 * The reason we use rxr_domain_open() here is because it actually handles
+	 * both RDM and DGRAM.
+	 */
+	.domain = rxr_domain_open,
 	.passive_ep = fi_no_passive_ep,
 	.eq_open = ofi_eq_create,
 	.wait_open = ofi_wait_fd_open,
@@ -953,34 +1020,68 @@ int efa_fabric(struct fi_fabric_attr *attr, struct fid_fabric **fabric_fid,
 	       void *context)
 {
 	const struct fi_info *info;
-	struct efa_fabric *fab;
-	int ret = 0;
+	struct efa_fabric *efa_fabric;
+	int ret = 0, retv;
 
-	fab = calloc(1, sizeof(*fab));
-	if (!fab)
+	efa_fabric = calloc(1, sizeof(*efa_fabric));
+	if (!efa_fabric)
 		return -FI_ENOMEM;
 
 	for (info = efa_util_prov.info; info; info = info->next) {
 		ret = ofi_fabric_init(&efa_prov, info->fabric_attr, attr,
-				      &fab->util_fabric, context);
+				      &efa_fabric->util_fabric, context);
 		if (ret != -FI_ENODATA)
 			break;
 	}
-	if (ret) {
-		free(fab);
-		return ret;
+
+	if (ret)
+		goto err_free_fabric;
+
+	/* Open shm provider's fabric domain */
+	if (rxr_env.enable_shm_transfer) {
+		assert(!strcmp(shm_info->fabric_attr->name, "shm"));
+		ret = fi_fabric(shm_info->fabric_attr,
+				    &efa_fabric->shm_fabric, context);
+		if (ret)
+			goto err_close_util_fabric;
+	} else {
+		efa_fabric->shm_fabric = NULL;
 	}
 
-	*fabric_fid = &fab->util_fabric.fabric_fid;
+
+#ifdef EFA_PERF_ENABLED
+	ret = ofi_perfset_create(&rxr_prov, &efa_fabric->perf_set,
+				 efa_perf_size, perf_domain, perf_cntr,
+				 perf_flags);
+
+	if (ret)
+		FI_WARN(&rxr_prov, FI_LOG_FABRIC,
+			"Error initializing EFA perfset: %s\n",
+			fi_strerror(-ret));
+#endif
+
+
+	*fabric_fid = &efa_fabric->util_fabric.fabric_fid;
 	(*fabric_fid)->fid.fclass = FI_CLASS_FABRIC;
 	(*fabric_fid)->fid.ops = &efa_fi_ops;
 	(*fabric_fid)->ops = &efa_ops_fabric;
 	(*fabric_fid)->api_version = attr->api_version;
 
 	return 0;
+
+err_close_util_fabric:
+	retv = ofi_fabric_close(&efa_fabric->util_fabric);
+	if (retv)
+		FI_WARN(&rxr_prov, FI_LOG_FABRIC,
+			"Unable to close fabric: %s\n",
+			fi_strerror(-retv));
+err_free_fabric:
+	free(efa_fabric);
+
+	return ret;
 }
 
-static void fi_efa_fini(void)
+void efa_finalize_prov(void)
 {
 	struct efa_context **ctx_list;
 	int num_devices;
@@ -1002,7 +1103,7 @@ struct fi_provider efa_prov = {
 	.fi_version = OFI_VERSION_LATEST,
 	.getinfo = efa_getinfo,
 	.fabric = efa_fabric,
-	.cleanup = fi_efa_fini
+	.cleanup = efa_finalize_prov
 };
 
 struct util_prov efa_util_prov = {
@@ -1023,17 +1124,23 @@ static int efa_init_info(const struct fi_info **all_infos)
 		return ret;
 
 	ctx_list = efa_device_get_context_list(&num_devices);
-	if (!num_devices)
+	if (!num_devices) {
+		if (ctx_list) {
+			free(ctx_list);
+		}
 		return -FI_ENODEV;
+	}
 
 	*all_infos = NULL;
 	for (i = 0; i < num_devices; i++) {
 		ret = efa_alloc_info(ctx_list[i], &fi, &efa_rdm_domain);
 		if (!ret) {
-			if (!*all_infos)
+			if (!*all_infos) {
 				*all_infos = fi;
-			else
+			} else {
+				assert(tail);
 				tail->next = fi;
+			}
 			tail = fi;
 			ret = efa_alloc_info(ctx_list[i], &fi, &efa_dgrm_domain);
 			if (!ret) {
@@ -1053,10 +1160,7 @@ static int efa_init_info(const struct fi_info **all_infos)
 	return retv;
 }
 
-struct fi_provider *init_lower_efa_prov()
+int efa_init_prov(void)
 {
-	if (efa_init_info(&efa_util_prov.info))
-		return NULL;
-
-	return &efa_prov;
+	return efa_init_info(&efa_util_prov.info);
 }

@@ -34,7 +34,6 @@ static void sum_fn(void *invec, void *inoutvec, int *len, MPI_Datatype * datatyp
     int i;
     int *in = invec;
     int *inout = inoutvec;
-    int stride;
 
     if (*datatype == MPI_INT) {
         for (i = 0; i < *len; ++i) {
@@ -59,8 +58,8 @@ int *sendcounts = NULL;
 int *recvcounts = NULL;
 int *sdispls = NULL;
 int *rdispls = NULL;
-int *sendtypes = NULL;
-int *recvtypes = NULL;
+MPI_Datatype *sendtypes = NULL;
+MPI_Datatype *recvtypes = NULL;
 signed char *buf_alias = NULL;
 MPI_Request req;
 

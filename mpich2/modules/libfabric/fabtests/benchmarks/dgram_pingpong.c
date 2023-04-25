@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013-2015 Intel Corporation.  All rights reserved.
  * Copyright (c) 2014-2017 Cisco Systems, Inc.  All rights reserved.
+ * Copyright (c) 2020-2021 Amazon.com, Inc. or its affiliates. All rights reserved.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -54,6 +55,8 @@ static int run(void)
 	 */
 	ret = fi_recv(ep, rx_buf, rx_size + ft_rx_prefix_size(), mr_desc,
 			0, &rx_ctx);
+	if (ret)
+		return ret;
 
 	if (!(opts.options & FT_OPT_SIZE)) {
 		for (i = 0; i < TEST_CNT; i++) {
@@ -87,13 +90,15 @@ int main(int argc, char **argv)
 	if (!hints)
 		return EXIT_FAILURE;
 
-	while ((op = getopt(argc, argv, "hT:" CS_OPTS INFO_OPTS BENCHMARK_OPTS)) !=
-			-1) {
+	while ((op = getopt_long(argc, argv, "hT:" CS_OPTS INFO_OPTS BENCHMARK_OPTS,
+				 long_opts, &lopt_idx)) != -1) {
 		switch (op) {
 		case 'T':
 			timeout = atoi(optarg);
 			break;
 		default:
+			if (!ft_parse_long_opts(op, optarg))
+				continue;
 			ft_parse_benchmark_opts(op, optarg);
 			ft_parseinfo(op, optarg, hints, &opts);
 			ft_parsecsopts(op, optarg, &opts);
@@ -104,6 +109,7 @@ int main(int argc, char **argv)
 			ft_benchmark_usage();
 			FT_PRINT_OPTS_USAGE("-T <timeout>",
 					"seconds before timeout on receive");
+			ft_longopts_usage();
 			return EXIT_FAILURE;
 		}
 	}

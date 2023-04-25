@@ -9,7 +9,6 @@
 
 #include <ucp/core/ucp_types.h>
 #include <ucp/proto/proto_am.h>
-#include <ucp/core/ucp_mm.h>
 #include <ucs/datastruct/ptr_map.h>
 
 
@@ -91,7 +90,8 @@ size_t ucp_rndv_rts_pack(ucp_request_t *sreq, ucp_rndv_rts_hdr_t *rndv_rts_hdr,
 
 ucs_status_t ucp_proto_progress_rndv_rtr(uct_pending_req_t *self);
 
-ucs_status_t ucp_rndv_reg_send_buffer(ucp_request_t *sreq);
+ucs_status_t
+ucp_rndv_reg_send_buffer(ucp_request_t *sreq, const ucp_request_param_t *param);
 
 ucp_mem_desc_t *
 ucp_rndv_mpool_get(ucp_worker_h worker, ucs_memory_type_t mem_type,
@@ -103,17 +103,5 @@ void ucp_rndv_receive(ucp_worker_h worker, ucp_request_t *rreq,
 
 ucs_status_t ucp_rndv_send_handle_status_from_pending(ucp_request_t *sreq,
                                                       ucs_status_t status);
-
-static UCS_F_ALWAYS_INLINE int
-ucp_rndv_rts_is_am(const ucp_rndv_rts_hdr_t *rts_hdr)
-{
-    return rts_hdr->opcode == UCP_RNDV_RTS_AM;
-}
-
-static UCS_F_ALWAYS_INLINE int
-ucp_rndv_rts_is_tag(const ucp_rndv_rts_hdr_t *rts_hdr)
-{
-    return rts_hdr->opcode == UCP_RNDV_RTS_TAG_OK;
-}
 
 #endif

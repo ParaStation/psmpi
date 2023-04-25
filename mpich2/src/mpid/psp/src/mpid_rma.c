@@ -777,12 +777,11 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info *info,
 	}
 
 	/* check whether the memory to be allocated should be contigous: */
-	while(info) {
-		if( info->key && (strcmp(info->key, "alloc_shared_noncontig") == 0) && (strcmp(info->value, "true") == 0) ) {
-			contig = 0;
-			break;
-		}
-		info = info->next;
+	const char *alloc_shared_noncontig_val = MPIR_Info_lookup(info, "alloc_shared_noncontig");
+	if (alloc_shared_noncontig_val) {
+		contig = (strcmp(alloc_shared_noncontig_val, "true") == 0) ? 0 : 1;
+	} else {
+		contig = 1;
 	}
 
 	if(contig) { /* In this case, the shared memory must be contigous across all procs.

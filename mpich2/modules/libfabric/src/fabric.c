@@ -174,7 +174,8 @@ static int ofi_find_name(char **names, const char *name)
 /* matches if names[i] == "xxx;yyy" and name == "xxx" */
 static int ofi_find_layered_name(char **names, const char *name)
 {
-	int i, len;
+	int i;	
+	size_t len;
 
 	len = strlen(name);
 	for (i = 0; names[i]; i++) {
@@ -187,7 +188,8 @@ static int ofi_find_layered_name(char **names, const char *name)
 /* matches if names[i] == "xxx" and name == "xxx;yyy" */
 static int ofi_find_core_name(char **names, const char *name)
 {
-	int i, len;
+	int i;
+	size_t len;
 
 	for (i = 0; names[i]; i++) {
 		len = strlen(names[i]);
@@ -370,7 +372,7 @@ static struct ofi_prov *ofi_getprov(const char *prov_name, size_t len)
 	return NULL;
 }
 
-struct fi_provider *ofi_get_hook(const char *name)
+static struct fi_provider *ofi_get_hook(const char *name)
 {
 	struct ofi_prov *prov;
 	struct fi_provider *provider = NULL;
@@ -409,7 +411,7 @@ struct fi_provider *ofi_get_hook(const char *name)
 static void ofi_ordered_provs_init(void)
 {
 	char *ordered_prov_names[] = {
-		"efa", "psm2", "psm", "usnic", "gni", "bgq", "verbs",
+		"efa", "psm2", "opx", "psm", "usnic", "gni", "bgq", "verbs",
 		"netdir", "psm3", "ofi_rxm", "ofi_rxd", "shm",
 		/* Initialize the socket based providers last of the
 		 * standard providers.  This will result in them being
@@ -423,7 +425,8 @@ static void ofi_ordered_provs_init(void)
 		/* These are hooking providers only.  Their order
 		 * doesn't matter
 		 */
-		"ofi_hook_perf", "ofi_hook_debug", "ofi_hook_noop",
+		"ofi_hook_perf", "ofi_hook_debug", "ofi_hook_noop", "ofi_hook_hmem",
+		"ofi_hook_dmabuf_peer_mem",
 	};
 	struct ofi_prov *prov;
 	int num_provs, i;
@@ -624,7 +627,7 @@ static void ofi_ini_dir(const char *dir)
 	char *lib;
 	struct dirent **liblist = NULL;
 
-	n = scandir(dir, &liblist, lib_filter, NULL);
+	n = scandir(dir, &liblist, lib_filter, alphasort);
 	if (n < 0)
 		goto libdl_done;
 
@@ -728,6 +731,64 @@ static void ofi_load_dl_prov(void)
 
 #endif
 
+static char **hooks;
+static size_t hook_cnt;
+
+/*
+ * Call the fabric() interface of the hooking provider.  We pass in the
+ * fabric being hooked via the fabric attributes and the corresponding
+ * fi_provider structure as the context.
+ */
+static void ofi_hook_install(struct fid_fabric *hfabric,
+			     struct fid_fabric **fabric,
+			     struct fi_provider *prov)
+{
+	struct fi_provider *hook_prov;
+	struct fi_fabric_attr attr;
+	int i, ret;
+
+	*fabric = hfabric;
+	if (!hook_cnt || !hooks)
+		return;
+
+	memset(&attr, 0, sizeof attr);
+
+	for (i = 0; i < hook_cnt; i++) {
+		hook_prov = ofi_get_hook(hooks[i]);
+		if (!hook_prov)
+			continue;
+
+		attr.fabric = hfabric;
+		ret = hook_prov->fabric(&attr, fabric, prov);
+		if (ret)
+			continue;
+
+		hfabric = *fabric;
+	}
+}
+
+static void ofi_hook_init(void)
+{
+	char *param_val = NULL;
+
+	fi_param_define(NULL, "hook", FI_PARAM_STRING,
+			"Intercept calls to underlying provider and apply "
+			"the specified functionality to them.  Hook option: "
+			"perf (gather performance data)");
+	fi_param_get_str(NULL, "hook", &param_val);
+
+	if (!param_val)
+		return;
+
+	hooks = ofi_split_and_alloc(param_val, ";", &hook_cnt);
+}
+
+static void ofi_hook_fini(void)
+{
+	if (hooks)
+		ofi_free_string_array(hooks);
+}
+
 void fi_ini(void)
 {
 	char *param_val = NULL;
@@ -750,19 +811,32 @@ void fi_ini(void)
 
 	fi_param_define(NULL, "provider", FI_PARAM_STRING,
 			"Only use specified provider (default: all available)");
-	fi_param_define(NULL, "fork_unsafe", FI_PARAM_BOOL,
-			"Whether use of fork() may be unsafe for some providers"
-			" (default: no). Setting this to yes could improve"
-			" performance at the expense of making fork() potentially"
-			" unsafe");
-	fi_param_define(NULL, "universe_size", FI_PARAM_SIZE_T,
-			"Defines the maximum number of processes that will be"
-			" used by distribute OFI application. The provider uses"
-			" this to optimize resource allocations"
-			" (default: provider specific)");
-	fi_param_get_size_t(NULL, "universe_size", &ofi_universe_size);
 	fi_param_get_str(NULL, "provider", &param_val);
 	ofi_create_filter(&prov_filter, param_val);
+
+	fi_param_define(NULL, "fork_unsafe", FI_PARAM_BOOL,
+			"Whether use of fork() may be unsafe for some providers "
+			"(default: no). Setting this to yes could improve "
+			"performance at the expense of making fork() potentially "
+			"unsafe");
+	fi_param_define(NULL, "universe_size", FI_PARAM_SIZE_T,
+			"Defines the maximum number of processes that will be "
+			"used by distribute OFI application. The provider uses "
+			"this to optimize resource allocations "
+			"(default: provider specific)");
+	fi_param_get_size_t(NULL, "universe_size", &ofi_universe_size);
+
+	fi_param_define(NULL, "poll_fairness", FI_PARAM_INT,
+			"This counter value controls calling poll() on a list "
+			"of sockets and file descriptors and is most relevant "
+			"when using the tcp provider with the pollfd wait "
+			"object.  The pollfd abstraction maintains a list of "
+			"active or hot fd's that it monitors.  This variable "
+			"controls the number of times that the active fd's "
+			"list is checked relative to the full set of fd's "
+			"being monitored.  A value of 0 disables the active "
+			"list.  Default (%d)", ofi_poll_fairness);
+	fi_param_get_int(NULL, "poll_fairness", &ofi_poll_fairness);
 
 	ofi_load_dl_prov();
 
@@ -780,12 +854,15 @@ void fi_ini(void)
 	ofi_register_provider(MRAIL_INIT, NULL);
 	ofi_register_provider(RXD_INIT, NULL);
 	ofi_register_provider(EFA_INIT, NULL);
+	ofi_register_provider(OPX_INIT, NULL);
 	ofi_register_provider(UDP_INIT, NULL);
 	ofi_register_provider(SOCKETS_INIT, NULL);
 	ofi_register_provider(TCP_INIT, NULL);
 
 	ofi_register_provider(HOOK_PERF_INIT, NULL);
 	ofi_register_provider(HOOK_DEBUG_INIT, NULL);
+	ofi_register_provider(HOOK_HMEM_INIT, NULL);
+	ofi_register_provider(HOOK_DMABUF_PEER_MEM_INIT, NULL);
 	ofi_register_provider(HOOK_NOOP_INIT, NULL);
 
 	ofi_init = 1;
@@ -798,8 +875,10 @@ FI_DESTRUCTOR(fi_fini(void))
 {
 	struct ofi_prov *prov;
 
+	pthread_mutex_lock(&common_locks.ini_lock);
+
 	if (!ofi_init)
-		return;
+		goto unlock;
 
 	while (prov_head) {
 		prov = prov_head;
@@ -810,10 +889,16 @@ FI_DESTRUCTOR(fi_fini(void))
 	ofi_free_filter(&prov_filter);
 	ofi_monitors_cleanup();
 	ofi_hmem_cleanup();
+	ofi_hook_fini();
 	ofi_mem_fini();
 	fi_log_fini();
 	fi_param_fini();
 	ofi_osd_fini();
+
+	ofi_init = 0;
+
+unlock:
+	pthread_mutex_unlock(&common_locks.ini_lock);
 }
 
 void fi_freeinfo(struct fi_info *info)
@@ -937,7 +1022,7 @@ static int ofi_layering_ok(const struct fi_provider *provider,
 {
 	char *prov_name;
 	struct ofi_prov *core_ofi_prov;
-	int i;
+	ssize_t i;
 
 	/* Excluded providers must be at the end */
 	for (i = count - 1; i >= 0; i--) {
@@ -1006,8 +1091,7 @@ int fi_getinfo(uint32_t version, const char *node,
 	enum fi_log_level level;
 	int ret;
 
-	if (!ofi_init)
-		fi_ini();
+	fi_ini();
 
 	if (FI_VERSION_LT(fi_version(), version)) {
 		FI_WARN(&core_prov, FI_LOG_CORE,
@@ -1233,8 +1317,7 @@ int fi_fabric(struct fi_fabric_attr *attr,
 	if (!attr || !attr->prov_name || !attr->name)
 		return -FI_EINVAL;
 
-	if (!ofi_init)
-		fi_ini();
+	fi_ini();
 
 	top_name = strrchr(attr->prov_name, OFI_NAME_DELIM);
 	if (top_name)
@@ -1292,10 +1375,14 @@ static const char *const errstr[] = {
 	[FI_ENOKEY - FI_ERRNO_OFFSET] = "Required key not available",
 	[FI_ENOAV - FI_ERRNO_OFFSET] = "Missing or unavailable address vector",
 	[FI_EOVERRUN - FI_ERRNO_OFFSET] = "Queue has been overrun",
+	[FI_ENORX - FI_ERRNO_OFFSET] = "Receiver not ready, no receive buffers available",
 };
 
 const char *fi_strerror(int errnum)
 {
+	if (errnum < 0)
+		errnum = -errnum;
+
 	if (errnum < FI_ERRNO_OFFSET)
 		return strerror(errnum);
 	else if (errnum < FI_ERRNO_MAX)

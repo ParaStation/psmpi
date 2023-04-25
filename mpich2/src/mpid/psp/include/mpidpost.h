@@ -146,6 +146,7 @@ static inline int MPID_Progress_test(MPID_Progress_state * state) /* state is un
     return MPIDI_PSP_Progress_test();
 }
 #define MPID_Progress_poke()		     MPIDI_PSP_Progress_poke()
+#define MPID_Stream_progress(stream)         MPIDI_PSP_Progress_poke()
 
 struct MPIR_Comm;
 int MPIDI_GPID_GetAllInComm(MPIR_Comm *comm_ptr, int local_size,
@@ -234,12 +235,12 @@ MPL_STATIC_INLINE_PREFIX int MPID_Imrecv(void *buf, int count, MPI_Datatype data
 */
 MPL_STATIC_INLINE_PREFIX int MPID_Init_async_thread(void)
 {
-    return MPIR_Init_async_thread();
+    return MPIR_Start_progress_thread_impl(NULL);
 }
 
 MPL_STATIC_INLINE_PREFIX int MPID_Finalize_async_thread(void)
 {
-    return MPIR_Finalize_async_thread();
+    return MPIR_Stop_progress_thread_impl(NULL);
 }
 
 MPL_STATIC_INLINE_PREFIX int MPID_Test(MPIR_Request * request_ptr, int *flag, MPI_Status * status)

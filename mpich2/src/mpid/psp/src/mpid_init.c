@@ -546,10 +546,6 @@ int MPID_Init(int requested, int *provided)
 
 	MPIR_FUNC_ENTER;
 
-	// PMI or PMIx init
-	mpi_errno = MPIR_pmi_init();
-	MPIR_ERR_CHECK(mpi_errno);
-
 	pg_rank = MPIR_Process.rank;
 	pg_size = MPIR_Process.size;
 
@@ -864,7 +860,19 @@ fn_exit:
 	return mpi_errno;
 }
 
+int MPID_Allocate_vci(int *vci)
+{
+    int mpi_errno = MPI_SUCCESS;
+    *vci = 0;
+    MPIR_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**pspnostream");
+    return mpi_errno;
+}
 
+int MPID_Deallocate_vci(int vci)
+{
+    MPIR_Assert(0);
+    return MPI_SUCCESS;
+}
 
 
 /* return connection_t for rank, NULL on error */

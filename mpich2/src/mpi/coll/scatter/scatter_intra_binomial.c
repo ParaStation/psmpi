@@ -33,12 +33,9 @@ int MPIR_Scatter_intra_binomial(const void *sendbuf, MPI_Aint sendcount, MPI_Dat
     MPI_Status status;
     MPI_Aint extent = 0;
     int rank, comm_size;
-    MPI_Aint sendtype_size;
     int relative_rank;
-    MPI_Aint nbytes;
     MPI_Aint curr_cnt, send_subtree_cnt;
     int mask, src, dst;
-    MPI_Aint recvtype_size = 0;
     MPI_Aint tmp_buf_size = 0;
     void *tmp_buf = NULL;
     int mpi_errno = MPI_SUCCESS;
@@ -53,14 +50,16 @@ int MPIR_Scatter_intra_binomial(const void *sendbuf, MPI_Aint sendcount, MPI_Dat
 
     relative_rank = (rank >= root) ? rank - root : rank - root + comm_size;
 
-
+    MPI_Aint nbytes;
     if (rank == root) {
         /* We separate the two cases (root and non-root) because
          * in the event of recvbuf=MPI_IN_PLACE on the root,
          * recvcount and recvtype are not valid */
+        MPI_Aint sendtype_size;
         MPIR_Datatype_get_size_macro(sendtype, sendtype_size);
         nbytes = sendtype_size * sendcount;
     } else {
+        MPI_Aint recvtype_size;
         MPIR_Datatype_get_size_macro(recvtype, recvtype_size);
         nbytes = recvtype_size * recvcount;
     }

@@ -49,6 +49,7 @@ common_srcs =				\
 	src/hmem_cuda.c			\
 	src/hmem_cuda_gdrcopy.c		\
 	src/hmem_ze.c			\
+	src/hmem_neuron.c		\
 	src/common.c			\
 	src/enosys.c			\
 	src/rbtree.c			\
@@ -107,6 +108,18 @@ common_srcs += include/linux/rdpmc.h
 common_srcs += include/linux/osd.h
 common_srcs += include/unix/osd.h
 endif
+
+common_hook_srcs =				\
+	prov/hook/src/hook.c			\
+	prov/hook/src/hook_av.c			\
+	prov/hook/src/hook_cm.c			\
+	prov/hook/src/hook_cntr.c		\
+	prov/hook/src/hook_cq.c			\
+	prov/hook/src/hook_domain.c		\
+	prov/hook/src/hook_ep.c			\
+	prov/hook/src/hook_eq.c			\
+	prov/hook/src/hook_wait.c		\
+	prov/hook/src/hook_xfer.c
 
 # ensure dl-built providers link back to libfabric
 linkback = src/libfabric.la
@@ -179,16 +192,7 @@ src_libfabric_la_SOURCES =			\
 	src/log.c				\
 	src/var.c				\
 	src/abi_1_0.c				\
-	prov/hook/src/hook.c			\
-	prov/hook/src/hook_av.c			\
-	prov/hook/src/hook_cm.c			\
-	prov/hook/src/hook_cntr.c		\
-	prov/hook/src/hook_cq.c			\
-	prov/hook/src/hook_domain.c		\
-	prov/hook/src/hook_ep.c			\
-	prov/hook/src/hook_eq.c			\
-	prov/hook/src/hook_wait.c		\
-	prov/hook/src/hook_xfer.c		\
+	$(common_hook_srcs)			\
 	$(common_srcs)
 
 src_libfabric_la_CPPFLAGS = $(AM_CPPFLAGS)
@@ -197,7 +201,7 @@ src_libfabric_la_LIBADD =
 src_libfabric_la_DEPENDENCIES = libfabric.map
 
 if !EMBEDDED
-src_libfabric_la_LDFLAGS += -version-info 17:1:16
+src_libfabric_la_LDFLAGS += -version-info 19:2:18
 endif
 src_libfabric_la_LDFLAGS += -export-dynamic \
 			   $(libfabric_version_script)
@@ -418,6 +422,7 @@ rpm: dist
 
 prov_install_man_pages=
 prov_dist_man_pages=
+prov_extra_dist=
 EXTRA_DIST=
 
 include prov/sockets/Makefile.include
@@ -433,12 +438,15 @@ include prov/rxm/Makefile.include
 include prov/mrail/Makefile.include
 include prov/rxd/Makefile.include
 include prov/bgq/Makefile.include
+include prov/opx/Makefile.include
 include prov/shm/Makefile.include
 include prov/tcp/Makefile.include
 include prov/rstream/Makefile.include
 include prov/hook/Makefile.include
 include prov/hook/perf/Makefile.include
 include prov/hook/hook_debug/Makefile.include
+include prov/hook/hook_hmem/Makefile.include
+include prov/hook/dmabuf_peer_mem/Makefile.include
 
 man_MANS = $(real_man_pages) $(prov_install_man_pages) $(dummy_man_pages)
 
@@ -447,4 +455,5 @@ EXTRA_DIST += \
         NEWS.md \
         libfabric.spec.in \
         config/distscript.pl \
-        $(real_man_pages) $(prov_dist_man_pages) $(dummy_man_pages)
+        $(real_man_pages) $(prov_dist_man_pages) $(dummy_man_pages) \
+        $(prov_extra_dist)

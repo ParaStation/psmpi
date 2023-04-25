@@ -47,6 +47,12 @@
   'MPI_Info_free' on any particular 'MPI_Info' value.
 
   T*/
+
+struct info_entry {
+    char *key;
+    char *value;
+};
+
 /*S
   MPIR_Info - Structure of an MPIR info
 
@@ -81,17 +87,23 @@
   S*/
 struct MPIR_Info {
     MPIR_OBJECT_HEADER;         /* adds handle and ref_count fields */
-    struct MPIR_Info *next;
-    char *key;
-    char *value;
+    /* a dynamic array */
+    struct info_entry *entries;
+    int capacity;
+    int size;
 };
+
 extern MPIR_Object_alloc_t MPIR_Info_mem;
 /* Preallocated info objects */
-#define MPIR_INFO_N_BUILTIN 2
 extern MPIR_Info MPIR_Info_builtin[MPIR_INFO_N_BUILTIN];
 extern MPIR_Info MPIR_Info_direct[];
 
 int MPIR_Info_alloc(MPIR_Info ** info_p_p);
 void MPIR_Info_setup_env(MPIR_Info * info_ptr);
+int MPIR_Info_push(MPIR_Info * info_ptr, const char *key, const char *val);
+const char *MPIR_Info_lookup(MPIR_Info * info_ptr, const char *key);
+
+/* utility to decode hex info value */
+int MPIR_Info_decode_hex(const char *str, void *buf, int len);
 
 #endif /* MPIR_INFO_H_INCLUDED */

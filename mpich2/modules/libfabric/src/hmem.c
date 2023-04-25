@@ -1,6 +1,7 @@
 /*
  * (C) Copyright 2020 Hewlett Packard Enterprise Development LP
  * (C) Copyright 2020-2021 Intel Corporation. All rights reserved.
+ * (C) Copyright 2021 Amazon.com, Inc. or its affiliates.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -39,6 +40,8 @@
 #include "ofi.h"
 #include "ofi_iov.h"
 
+bool ofi_hmem_disable_p2p = false;
+
 struct ofi_hmem_ops hmem_ops[] = {
 	[FI_HMEM_SYSTEM] = {
 		.initialized = true,
@@ -52,6 +55,7 @@ struct ofi_hmem_ops hmem_ops[] = {
 		.host_register = ofi_hmem_register_noop,
 		.host_unregister = ofi_hmem_host_unregister_noop,
 		.get_base_addr = ofi_hmem_no_base_addr,
+		.is_ipc_enabled = ofi_hmem_no_is_ipc_enabled,
 	},
 	[FI_HMEM_CUDA] = {
 		.initialized = false,
@@ -60,12 +64,13 @@ struct ofi_hmem_ops hmem_ops[] = {
 		.copy_to_hmem = cuda_copy_to_dev,
 		.copy_from_hmem = cuda_copy_from_dev,
 		.is_addr_valid = cuda_is_addr_valid,
-		.get_handle = ofi_hmem_no_get_handle,
-		.open_handle = ofi_hmem_no_open_handle,
-		.close_handle = ofi_hmem_no_close_handle,
+		.get_handle = cuda_get_handle,
+		.open_handle = cuda_open_handle,
+		.close_handle = cuda_close_handle,
 		.host_register = cuda_host_register,
 		.host_unregister = cuda_host_unregister,
 		.get_base_addr = ofi_hmem_no_base_addr,
+		.is_ipc_enabled = cuda_is_ipc_enabled,
 	},
 	[FI_HMEM_ROCR] = {
 		.initialized = false,
@@ -80,6 +85,7 @@ struct ofi_hmem_ops hmem_ops[] = {
 		.host_register = rocr_host_register,
 		.host_unregister = rocr_host_unregister,
 		.get_base_addr = ofi_hmem_no_base_addr,
+		.is_ipc_enabled = ofi_hmem_no_is_ipc_enabled,
 	},
 	[FI_HMEM_ZE] = {
 		.initialized = false,
@@ -94,6 +100,14 @@ struct ofi_hmem_ops hmem_ops[] = {
 		.host_register = ofi_hmem_register_noop,
 		.host_unregister = ofi_hmem_host_unregister_noop,
 		.get_base_addr = ze_hmem_get_base_addr,
+		.is_ipc_enabled = ze_hmem_p2p_enabled,
+	},
+	[FI_HMEM_NEURON] = {
+		.initialized = false,
+		.init = neuron_hmem_init,
+		.cleanup = neuron_hmem_cleanup,
+		.copy_to_hmem = neuron_copy_to_dev,
+		.copy_from_hmem = neuron_copy_from_dev,
 	},
 };
 
@@ -191,14 +205,20 @@ int ofi_hmem_close_handle(enum fi_hmem_iface iface, void *ipc_ptr)
 }
 
 int ofi_hmem_get_base_addr(enum fi_hmem_iface iface, const void *ptr,
-			   void **base)
+			   void **base, size_t *size)
 {
-	return hmem_ops[iface].get_base_addr(ptr, base);
+	return hmem_ops[iface].get_base_addr(ptr, base, size);
+}
+
+bool ofi_hmem_is_initialized(enum fi_hmem_iface iface)
+{
+	return hmem_ops[iface].initialized;
 }
 
 void ofi_hmem_init(void)
 {
 	int iface, ret;
+	int disable_p2p = 0;
 
 	for (iface = 0; iface < ARRAY_SIZE(hmem_ops); iface++) {
 		ret = hmem_ops[iface].init();
@@ -216,6 +236,15 @@ void ofi_hmem_init(void)
 			hmem_ops[iface].initialized = true;
 		}
 	}
+
+	fi_param_define(NULL, "hmem_disable_p2p", FI_PARAM_BOOL,
+			"Disable peer to peer support between device memory and"
+			" network devices. (default: no).");
+
+	if (!fi_param_get_bool(NULL, "hmem_disable_p2p", &disable_p2p)) {
+		if (disable_p2p == 1)
+			ofi_hmem_disable_p2p = true;
+	}
 }
 
 void ofi_hmem_cleanup(void)
@@ -223,12 +252,13 @@ void ofi_hmem_cleanup(void)
 	enum fi_hmem_iface iface;
 
 	for (iface = 0; iface < ARRAY_SIZE(hmem_ops); iface++) {
-		if (hmem_ops[iface].initialized)
+		if (ofi_hmem_is_initialized(iface))
 			hmem_ops[iface].cleanup();
 	}
 }
 
-enum fi_hmem_iface ofi_get_hmem_iface(const void *addr)
+enum fi_hmem_iface ofi_get_hmem_iface(const void *addr, uint64_t *device,
+				      uint64_t *flags)
 {
 	int iface;
 
@@ -238,8 +268,8 @@ enum fi_hmem_iface ofi_get_hmem_iface(const void *addr)
 	 */
 	for (iface = ARRAY_SIZE(hmem_ops) - 1; iface > FI_HMEM_SYSTEM;
 	     iface--) {
-		if (hmem_ops[iface].initialized &&
-		    hmem_ops[iface].is_addr_valid(addr))
+		if (ofi_hmem_is_initialized(iface) &&
+		    hmem_ops[iface].is_addr_valid(addr, device, flags))
 			return iface;
 	}
 
@@ -251,7 +281,7 @@ int ofi_hmem_host_register(void *ptr, size_t size)
 	int iface, ret;
 
 	for (iface = 0; iface < ARRAY_SIZE(hmem_ops); iface++) {
-		if (!hmem_ops[iface].initialized)
+		if (!ofi_hmem_is_initialized(iface))
 			continue;
 
 		ret = hmem_ops[iface].host_register(ptr, size);
@@ -268,7 +298,7 @@ err:
 		fi_strerror(-ret));
 
 	for (iface--; iface >= 0; iface--) {
-		if (!hmem_ops[iface].initialized)
+		if (!ofi_hmem_is_initialized(iface))
 			continue;
 
 		hmem_ops[iface].host_unregister(ptr);
@@ -282,7 +312,7 @@ int ofi_hmem_host_unregister(void *ptr)
 	int iface, ret;
 
 	for (iface = 0; iface < ARRAY_SIZE(hmem_ops); iface++) {
-		if (!hmem_ops[iface].initialized)
+		if (!ofi_hmem_is_initialized(iface))
 			continue;
 
 		ret = hmem_ops[iface].host_unregister(ptr);
@@ -299,4 +329,9 @@ err:
 		fi_strerror(-ret));
 
 	return ret;
+}
+
+bool ofi_hmem_is_ipc_enabled(enum fi_hmem_iface iface)
+{
+	return hmem_ops[iface].is_ipc_enabled();
 }

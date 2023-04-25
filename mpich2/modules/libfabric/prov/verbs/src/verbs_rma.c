@@ -92,6 +92,9 @@ vrb_msg_ep_rma_writemsg(struct fid_ep *ep_fid, const struct fi_msg_rma *msg,
 		.wr.rdma.rkey = (uint32_t)msg->rma_iov->key,
 	};
 
+	assert(ofi_total_iov_len(msg->msg_iov, msg->iov_count) ==
+	       ofi_total_rma_iov_len(msg->rma_iov, msg->rma_iov_count));
+
 	if (flags & FI_REMOTE_CQ_DATA) {
 		wr.opcode = IBV_WR_RDMA_WRITE_WITH_IMM;
 		wr.imm_data = htonl((uint32_t)msg->data);
@@ -153,6 +156,9 @@ vrb_msg_ep_rma_readmsg(struct fid_ep *ep_fid, const struct fi_msg_rma *msg,
 		.num_sge = msg->iov_count,
 	};
 
+	assert(ofi_total_iov_len(msg->msg_iov, msg->iov_count) ==
+	       ofi_total_rma_iov_len(msg->rma_iov, msg->rma_iov_count));
+
 	vrb_iov_dupa(wr.sg_list, msg->msg_iov, msg->desc, msg->iov_count);
 	return vrb_post_send(ep, &wr, 0);
 }
@@ -167,11 +173,12 @@ vrb_msg_ep_rma_writedata(struct fid_ep *ep_fid, const void *buf, size_t len,
 	struct ibv_send_wr wr = {
 		.wr_id = VERBS_COMP(ep, (uintptr_t)context),
 		.opcode = IBV_WR_RDMA_WRITE_WITH_IMM,
-		.imm_data = htonl((uint32_t)data),
 		.wr.rdma.remote_addr = addr,
 		.wr.rdma.rkey = (uint32_t)key,
 		.send_flags = VERBS_INJECT(ep, len, desc),
 	};
+
+	wr.imm_data = htonl((uint32_t)data);
 
 	return vrb_send_buf(ep, &wr, buf, len, desc);
 }
@@ -220,11 +227,12 @@ vrb_msg_ep_rma_inject_writedata(struct fid_ep *ep_fid, const void *buf, size_t l
 	struct ibv_send_wr wr = {
 		.wr_id = VERBS_NO_COMP_FLAG,
 		.opcode = IBV_WR_RDMA_WRITE_WITH_IMM,
-		.imm_data = htonl((uint32_t)data),
 		.wr.rdma.remote_addr = addr,
 		.wr.rdma.rkey = (uint32_t)key,
 		.send_flags = IBV_SEND_INLINE,
 	};
+
+	wr.imm_data = htonl((uint32_t)data);
 
 	return vrb_send_buf(ep, &wr, buf, len, NULL);
 }
@@ -413,11 +421,12 @@ vrb_msg_xrc_ep_rma_writedata(struct fid_ep *ep_fid, const void *buf,
 	struct ibv_send_wr wr = {
 		.wr_id = VERBS_COMP(&ep->base_ep, (uintptr_t)context),
 		.opcode = IBV_WR_RDMA_WRITE_WITH_IMM,
-		.imm_data = htonl((uint32_t)data),
 		.wr.rdma.remote_addr = addr,
 		.wr.rdma.rkey = (uint32_t)key,
 		.send_flags = VERBS_INJECT(&ep->base_ep, len, desc),
 	};
+
+	wr.imm_data = htonl((uint32_t)data);
 
 	VRB_SET_REMOTE_SRQN(wr, ep->peer_srqn);
 
@@ -471,11 +480,12 @@ vrb_msg_xrc_ep_rma_inject_writedata(struct fid_ep *ep_fid,
 	struct ibv_send_wr wr = {
 		.wr_id = VERBS_NO_COMP_FLAG,
 		.opcode = IBV_WR_RDMA_WRITE_WITH_IMM,
-		.imm_data = htonl((uint32_t)data),
 		.wr.rdma.remote_addr = addr,
 		.wr.rdma.rkey = (uint32_t)key,
 		.send_flags = IBV_SEND_INLINE,
 	};
+
+	wr.imm_data = htonl((uint32_t)data);
 
 	VRB_SET_REMOTE_SRQN(wr, ep->peer_srqn);
 

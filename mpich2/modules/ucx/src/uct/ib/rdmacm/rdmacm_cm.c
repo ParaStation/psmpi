@@ -84,7 +84,11 @@ uct_rdmacm_cm_device_context_init(uct_rdmacm_cm_device_context_t *ctx,
     ucs_status_t status;
     void *cap;
     int ret;
+#endif
 
+    ctx->num_dummy_qps = 0;
+
+#if HAVE_DECL_MLX5DV_IS_SUPPORTED
     if (cm->config.reserved_qpn == UCS_NO) {
         goto dummy_qp_ctx_init;
     }
@@ -155,6 +159,7 @@ dummy_qp_ctx_init:
     }
 
     ctx->use_reserved_qpn = 0;
+
     /* Create a dummy completion queue */
     ctx->cq = ibv_create_cq(verbs, 1, NULL, NULL, 0);
     if (ctx->cq == NULL) {
@@ -184,6 +189,11 @@ uct_rdmacm_cm_device_context_cleanup(uct_rdmacm_cm_device_context_t *ctx)
         ret = ibv_destroy_cq(ctx->cq);
         if (ret != 0) {
             ucs_warn("ibv_destroy_cq() returned %d: %m", ret);
+        }
+
+        if (ctx->num_dummy_qps != 0) {
+            ucs_warn("ctx %p: %u dummy qps were not destroyed", ctx,
+                     ctx->num_dummy_qps);
         }
     }
 }
@@ -664,7 +674,7 @@ static void uct_rdmacm_cm_handle_error_event(struct rdma_cm_event *event)
                 ucs_assert(event->param.conn.private_data_len >= sizeof(*hdr));
                 status = UCS_ERR_REJECTED;
             } else {
-                status = UCS_ERR_UNREACHABLE;
+                status = UCS_ERR_CONNECTION_RESET;
             }
         }
 
@@ -852,6 +862,7 @@ static uct_iface_internal_ops_t uct_rdmacm_cm_iface_internal_ops = {
     .iface_estimate_perf = (uct_iface_estimate_perf_func_t)ucs_empty_function_return_unsupported,
     .iface_vfs_refresh   = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
     .ep_query            = uct_rdmacm_ep_query,
+    .ep_invalidate       = (uct_ep_invalidate_func_t)ucs_empty_function_return_unsupported
 };
 
 static ucs_status_t

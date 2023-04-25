@@ -9,7 +9,6 @@
 #include <mpidimpl.h>
 #include <stdio.h>
 #include "mpir_cvars.h"
-#include "ch4i_workq_types.h"
 #include "mpidu_genq.h"
 
 /* Macros and inlines */
@@ -248,12 +247,13 @@ typedef struct MPIDI_per_vci {
     MPIR_Request *posted_list;
     MPIR_Request *unexp_list;
     MPIDU_genq_private_pool_t request_pool;
-    MPIDU_genq_private_pool_t unexp_pack_buf_pool;
+    MPIDU_genq_private_pool_t pack_buf_pool;
 
     MPIDIG_req_ext_t *cmpl_list;
     MPL_atomic_uint64_t exp_seq_no;
     MPL_atomic_uint64_t nxt_seq_no;
 
+    bool allocated;
     char pad MPL_ATTR_ALIGNED(MPL_CACHELINE_SIZE);
 } MPIDI_per_vci_t;
 
@@ -279,13 +279,11 @@ typedef struct MPIDI_CH4_Global_t {
     int my_sigusr1_count;
 #endif
 
-    int n_vcis;
+    int n_vcis;                 /* num of vcis used for implicit hashing */
+    int n_reserved_vcis;        /* num of reserved vcis */
+    int n_total_vcis;           /* total num of vcis, must > n_vcis + n_reserved_vcis */
     MPIDI_per_vci_t per_vci[MPIDI_CH4_MAX_VCIS];
 
-#if defined(MPIDI_CH4_USE_WORK_QUEUES)
-    /* TODO: move into MPIDI_vci to have per-vci workqueue */
-    MPIDI_workq_t workqueue;
-#endif
     MPIDI_CH4_configurations_t settings;
     void *csel_root;
 

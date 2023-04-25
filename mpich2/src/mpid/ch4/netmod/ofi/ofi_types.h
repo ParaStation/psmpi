@@ -231,7 +231,6 @@ typedef struct {
     MPIDI_OFI_am_repost_request_t am_reqs[MPIDI_OFI_MAX_NUM_AM_BUFFERS];
 
     MPIDU_genq_private_pool_t am_hdr_buf_pool;
-    MPIDU_genq_private_pool_t pack_buf_pool;
 
     /* Queue to store defferend am send */
     MPIDI_OFI_deferred_am_isend_req_t *deferred_am_isend_q;
@@ -298,6 +297,7 @@ typedef struct {
     unsigned enable_tagged:1;
     unsigned enable_am:1;
     unsigned enable_rma:1;
+    unsigned enable_mr_register_null:1;
     unsigned enable_atomics:1;
     unsigned enable_pt2pt_nopack:1;
     unsigned enable_hmem:1;
@@ -313,9 +313,11 @@ typedef struct {
     int context_bits;
     int source_bits;
     int tag_bits;
+    int counter_wait_objects;
     int major_version;
     int minor_version;
     int num_am_buffers;
+    int num_optimized_memory_regions;
 } MPIDI_OFI_capabilities_t;
 
 typedef struct {
@@ -374,6 +376,11 @@ typedef struct {
     /* OFI atomics limitation of each pair of <dtype, op> returned by the
      * OFI provider at MPI initialization.*/
     MPIDI_OFI_atomic_valid_t win_op_table[MPIR_DATATYPE_N_PREDEFINED][MPIDIG_ACCU_NUM_OP];
+
+    /* stores the maximum of last recently used optimized memory region key */
+    uint64_t global_max_optimized_mr_key;
+    /* stores the maximum of last recently used regular memory region key */
+    uint64_t global_max_regular_mr_key;
 
     /* Process management and PMI globals */
     int pname_set;

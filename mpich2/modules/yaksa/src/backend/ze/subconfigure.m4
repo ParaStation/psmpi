@@ -67,31 +67,49 @@ if test "${have_ze}" = "yes" ; then
     fi
 fi
 
-# --ze-native=[skl|dg1|ats]
+extra_ocloc_options=
+
+# --ze-revision-id=[integer]
+# PVC native compilation requires revision_id
+AC_ARG_ENABLE([ze-revision-id],AS_HELP_STRING([--enable-ze-revision-id=int],[specify revision id]),,
+              [enable_ze_revision_id=-1])
+if test $enable_ze_revision_id != -1; then
+    extra_ocloc_options="-revision_id $enable_ze_revision_id"
+fi
+
+# --ze-native=[skl|dg1|ats|pvc]
+enable_multi_native=no
 AC_ARG_ENABLE([ze-native],AS_HELP_STRING([--enable-ze-native=device],[compile GPU kernel to native binary]),,
-              [enable_ze_native=])
-if test "${have_ze}" = "yes" -a x"${enable_ze_native}" != x; then
-    AC_MSG_CHECKING([whether ocloc works])
+              [enable_ze_native=no])
+if test "${have_ze}" = "yes" -a x"${enable_ze_native}" != xno; then
+    AC_MSG_CHECKING([whether ocloc works with target device])
     cat>conftest.cl<<EOF
     __kernel void foo(int x) {}
 EOF
-    ocloc compile -file conftest.cl -device ${enable_ze_native} -options "-cl-std=CL2.0" > /dev/null 2>&1
+    rm -f conftest.ar
+    ocloc compile -file conftest.cl -device ${enable_ze_native} ${extra_ocloc_options} -options "-cl-std=CL2.0" > /dev/null 2>&1
     if test "$?" = "0" ; then
         AC_MSG_RESULT([yes])
+        if test -f conftest.ar; then
+            enable_multi_native=yes
+        fi
     else
         AC_MSG_RESULT([no])
-        enable_ze_native=
+        enable_ze_native=no
         AC_MSG_ERROR([ocloc compiler is not compatible with ze_native])
     fi
     rm -f conftest.*
 fi
-if test x"${enable_ze_native}" != x; then
+if test x"${enable_ze_native}" != xno; then
     AC_DEFINE(ZE_NATIVE, 1, [Compile kernels to binary])
 else
     AC_DEFINE(ZE_NATIVE, 0, [No native format])
 fi
 AC_SUBST(enable_ze_native)
-AM_CONDITIONAL([BUILD_ZE_NATIVE],[test x"$enable_ze_native" != x])
+AC_SUBST(extra_ocloc_options)
+AM_CONDITIONAL([BUILD_ZE_NATIVE],[test x"$enable_ze_native" != xno -a x"$enable_multi_native" != xyes])
+AM_CONDITIONAL([BUILD_ZE_NATIVE_MULTIPLE],[test x"$enable_multi_native" != xno])
+
 
 ##########################################################################
 ##### analyze the user arguments and setup internal infrastructure
@@ -99,4 +117,7 @@ AM_CONDITIONAL([BUILD_ZE_NATIVE],[test x"$enable_ze_native" != x])
 
 if test "${have_ze}" = "yes" ; then
     supported_backends="${supported_backends},ze"
+    if test x${enable_ze_native} != xno; then
+        supported_backends="$supported_backends($enable_ze_native)"
+    fi
 fi

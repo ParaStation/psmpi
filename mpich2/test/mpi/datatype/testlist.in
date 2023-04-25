@@ -12,8 +12,8 @@ transpose_pack_oldapi 1 strict=FALSE
 slice_pack 1
 struct_pack 1
 structpack2 1
-struct_pack_mpi_bottom 1
-struct_unpack_mpi_bottom 1
+struct_pack_mpi_bottom 1 gpu=yes
+struct_unpack_mpi_bottom 1 gpu=yes
 typecommit 1
 typename 1
 typename_oldapi 1 strict=FALSE
@@ -38,7 +38,7 @@ subarray_pack 1
 subarray 2
 darray_pack 1
 darray_pack 9
-@largetest@darray_pack 72
+@largetest@darray_pack 72 lock=manyproc
 darray_cyclic 12
 pairtype_size_extent 1
 simple_commit 1

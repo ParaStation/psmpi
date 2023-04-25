@@ -59,10 +59,12 @@ The following features are supported:
   application. The *FI_EP_DGRAM* endpoint only supports *FI_MR_LOCAL*.
 
 *Progress*
-: The RDM endpoint supports both *FI_PROGRESS_AUTO* and *FI_PROGRESS_MANUAL*,
-  with the default set to auto. However, receive side data buffers are not
-  modified outside of completion processing routines. The DGRAM endpoint only
-  supports *FI_PROGRESS_MANUAL*.
+: RDM and DGRAM endpoints support *FI_PROGRESS_MANUAL*.
+  EFA erroneously claims the support for *FI_PROGRESS_AUTO*, despite not properly
+  supporting automatic progress. Unfortunately, some Libfabric consumers also ask
+  for *FI_PROGRESS_AUTO* when they only require *FI_PROGRESS_MANUAL*, and fixing
+  this bug would break those applications. This will be fixed in a future version
+  of the EFA provider by adding proper support for *FI_PROGRESS_AUTO*.
 
 *Threading*
 : The RDM endpoint supports *FI_THREAD_SAFE*, the DGRAM endpoint supports
@@ -81,6 +83,19 @@ No support for selective completions.
 No support for counters for the DGRAM endpoint.
 
 No support for inject.
+
+When using FI_HMEM for either CUDA and Neuron buffers, the provider requires
+peer to peer transaction support between the EFA and the FI_HMEM device.
+Therefore, the FI_HMEM_P2P_DISABLED option is not supported by the EFA
+provider.
+
+# PROVIDER SPECIFIC ENDPOINT LEVEL OPTION
+
+*FI_OPT_EFA_RNR_RETRY*
+: Defines the number of RNR retry. The application can use it to reset RNR retry
+  counter via the call to fi_setopt. Note that this option must be set before
+  the endpoint is enabled. Otherwise, the call will fail. Also note that this
+  option only applies to RDM endpoint.
 
 # RUNTIME PARAMETERS
 
@@ -165,6 +180,7 @@ These OFI runtime parameters apply only to the RDM endpoint.
 *FI_EFA_SHM_MAX_MEDIUM_SIZE*
 : Defines the switch point between small/medium message and large message. The message
   larger than this switch point will be transferred with large message protocol.
+  NOTE: This parameter is now deprecated.
 
 *FI_EFA_INTER_MAX_MEDIUM_MESSAGE_SIZE*
 : The maximum size for inter EFA messages to be sent by using medium message protocol. Messages which can fit in one packet will be sent as eager message. Messages whose sizes are smaller than this value will be sent using medium message protocol. Other messages will be sent using CTS based long message protocol.

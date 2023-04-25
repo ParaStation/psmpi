@@ -62,30 +62,6 @@ int create_ze_event(int dev_id, ze_event_handle_t * ze_event, int *idx)
     goto fn_exit;
 }
 
-static void free_to_marker(yaksuri_zei_device_state_s * device_state, ze_command_list_handle_t cl)
-{
-    int i;
-    /* find cl marker */
-    for (i = 0; i < device_state->num_cl; i++) {
-        if (device_state->cl[i] == cl)
-            break;
-    }
-    int marker = i;
-    if (marker == device_state->num_cl)
-        return;
-    /* don't free the last one */
-    for (i = 0; i < marker; i++) {
-        if (device_state->cl[i] == NULL)
-            continue;
-        recycle_command_list(device_state->cl[i], device_state->dev_id);
-        device_state->cl[i] = NULL;
-    }
-    if (marker == device_state->num_cl - 1) {
-        device_state->num_cl = 1;
-        device_state->cl[0] = cl;
-    }
-}
-
 /* return NULL event if there is no task left, this could happen
  * in multi-threading programs
  */
@@ -108,15 +84,7 @@ int yaksuri_zei_event_record(int device, void **event_)
     event = (yaksuri_zei_event_s *) malloc(sizeof(yaksuri_zei_event_s));
     event->dev_id = device;
     event->ze_event = ze_event;
-    event->cl = NULL;
     event->idx = idx;
-
-    if (device_state->num_cl) {
-        ze_command_list_handle_t cl = device_state->cl[device_state->num_cl - 1];
-        assert(cl);
-        event->cl = cl;
-    }
-    assert(event->cl);
 
     *event_ = event;
 
@@ -141,14 +109,12 @@ int yaksuri_zei_event_query(void *event_, int *completed)
         YAKSURI_ZEI_ZE_ERR_CHKANDJUMP(zerr, rc, fn_fail);
         yaksuri_zei_device_state_s *device_state = yaksuri_zei_global.device_states + event->dev_id;
         pthread_mutex_lock(&device_state->mutex);
-        assert(event->cl);
         if (event->idx == device_state->last_event_idx) {
             device_state->last_event_idx = -1;
         }
         /* update event bracket [ev_lb, ev_ub] */
         /* freeing event->idx means all events below this index are done */
         update_event_usage(device_state, event->idx);
-        free_to_marker(device_state, event->cl);
         pthread_mutex_unlock(&device_state->mutex);
         free(event);
     }
@@ -164,15 +130,12 @@ int yaksuri_zei_add_dependency(int device1, int device2)
     ze_result_t zerr;
     int rc = YAKSA_SUCCESS;
     ze_event_handle_t last_event;
-    ze_command_list_handle_t cl;
 
     /* wait for the last event on device1 to finish */
     yaksuri_zei_device_state_s *device_state = yaksuri_zei_global.device_states + device1;
     pthread_mutex_lock(&device_state->mutex);
     assert(device_state->last_event_idx >= 0);
     last_event = device_state->events[ZE_EVENT_POOL_INDEX(device_state->last_event_idx)];
-    assert(device_state->num_cl > 0);
-    cl = device_state->cl[device_state->num_cl - 1];
     if (last_event) {
         int completed = 0;
         while (!completed) {
@@ -185,7 +148,6 @@ int yaksuri_zei_add_dependency(int device1, int device2)
         }
         /* update event bracket [ev_lb, ev_ub] */
         update_event_usage(device_state, device_state->last_event_idx);
-        free_to_marker(device_state, cl);
     }
 
   fn_exit:
