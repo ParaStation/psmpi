@@ -2937,6 +2937,7 @@ mpich2/modules/libfabric/util/pingpong.c \
 mpich2/modules/libfabric/util/strerror.c \
 mpich2/modules/libfabric/util/windows/getopt/getopt.cpp \
 mpich2/modules/libfabric/util/windows/getopt/getopt.h \
+mpich2/modules/ucx/.gitignore \
 mpich2/modules/ucx/.clang-format \
 mpich2/modules/ucx/.ctags \
 mpich2/modules/ucx/.readthedocs.yaml \
