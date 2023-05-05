@@ -1,0 +1,4 @@
+# This test configuration can be used to run the tests with Hydra,
+# even if it was not activated during the configuration of psmpi.
+export MPIEXEC=${TOP_BUILDDIR}/mpich2/src/pm/hydra/mpiexec.hydra
+
