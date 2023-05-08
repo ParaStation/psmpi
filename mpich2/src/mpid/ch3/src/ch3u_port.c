@@ -1361,6 +1361,8 @@ static int SetupNewIntercomm( MPIR_Comm *comm_ptr, int remote_comm_size,
     intercomm->comm_kind    = MPIR_COMM_KIND__INTERCOMM;
     intercomm->local_comm   = NULL;
 
+    MPIR_Comm_set_session_ptr(intercomm, comm_ptr->session_ptr);
+
     /* Point local vcrt at those of incoming intracommunicator */
     intercomm->dev.local_vcrt = comm_ptr->dev.vcrt;
     MPIDI_VCRT_Add_ref(comm_ptr->dev.vcrt);

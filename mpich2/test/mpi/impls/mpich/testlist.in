@@ -1,6 +1,7 @@
 mpi_t
 comm
 misc
+init
 @threadsdir@
 @cudadir@
 @hipdir@

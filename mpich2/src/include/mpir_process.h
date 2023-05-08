@@ -24,6 +24,7 @@ struct MPIR_Session {
     int thread_level;
     MPIR_Pset_array *default_pset_array;        /* Default MPI process sets of the session */
     UT_array *psets;            /* Array of process set arrays */
+    bool strict_finalize;
 };
 
 extern MPIR_Session MPIR_Session_direct[];
