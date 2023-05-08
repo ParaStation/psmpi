@@ -461,6 +461,8 @@ int MPIR_init_icomm_world(void);
 #endif
 int MPIR_finalize_builtin_comms(void);
 
+#define MPIR_COMM_TMP_SESSION_CTXID (3 << MPIR_CONTEXT_PREFIX_SHIFT)
+
 /**
  * @brief Set the session pointer of a communicator and increase ref counter of session
  *
@@ -468,4 +470,16 @@ int MPIR_finalize_builtin_comms(void);
  * @param session_ptr   Pointer to session
  */
 void MPIR_Comm_set_session_ptr(MPIR_Comm * comm_ptr, MPIR_Session * session_ptr);
+
+/**
+ * @brief   Create a communicator from a group from scratch (do not use a base communicator)
+ *
+ *          Must be called within a lock to avoid races for the reserved temp. session context ID.
+ *
+ * @param group_ptr Group for which new communicator shall be created
+ * @param tag tag of the new communicator
+ * @param newcomm_ptr output: new communicator
+ * @return int MPI_SUCCESS or error code
+ */
+int MPIR_Comm_create_group_session(MPIR_Group * group_ptr, int tag, MPIR_Comm ** newcomm_ptr);
 #endif /* MPIR_COMM_H_INCLUDED */
