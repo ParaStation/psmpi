@@ -1807,6 +1807,7 @@ AC_OUTPUT(maint/testmerge \
           errors/group/Makefile \
           errors/pt2pt/Makefile \
           errors/rma/Makefile \
+          errors/session/Makefile \
           errors/spawn/Makefile \
           errors/spawn/testlist \
           errors/topo/Makefile \
