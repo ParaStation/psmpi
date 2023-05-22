@@ -715,11 +715,8 @@ int MPID_Comm_disconnect(MPIR_Comm * comm_ptr)
     return mpi_errno;
 }
 
-
-
 #define PARENT_PORT_KVSKEY "PARENT_ROOT_PORT_NAME"
 #define MPIDI_MAX_KVS_VALUE_LEN    4096
-
 
 /* Name of parent port if this process was spawned (and is root of comm world) or null */
 static char parent_port_name[MPIDI_MAX_KVS_VALUE_LEN] = { 0 };
@@ -786,40 +783,34 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
                              MPIR_Info * array_of_info_ptrs[], int root,
                              MPIR_Comm * comm_ptr, MPIR_Comm ** intercomm, int array_of_errcodes[])
 {
-    int rc;
-
-    char port_name[MPI_MAX_PORT_NAME];
-
     int mpi_errno = MPI_SUCCESS;
-#ifdef USE_PMIX_API
-    MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_SPAWN, "**pmix_spawn_not_supported");
-#endif
+    int *pmi_errcodes = NULL;
+    char port_name[MPI_MAX_PORT_NAME];
     /*
      * printf("%s:%u:%s Spawn from context_id: %u\n", __FILE__, __LINE__, __func__, comm_ptr->context_id);
      */
-
-    rc = MPID_Open_port(NULL, port_name);
-    assert(rc == MPI_SUCCESS);
+    mpi_errno = MPID_Open_port(NULL, port_name);
+    MPIR_ERR_CHECK(mpi_errno);
 
     if (comm_ptr->rank == root) {
 
-        int ret, i;
+        int i;
         int total_num_processes = count_total_processes(count, array_of_maxprocs);
-        int *pmi_errcodes;
         struct MPIR_PMI_KEYVAL preput_keyval_vector;
         preput_keyval_vector.key = PARENT_PORT_KVSKEY;
         preput_keyval_vector.val = port_name;
 
         /* create an array for the pmi error codes */
         pmi_errcodes = (int *) MPL_malloc(sizeof(int) * total_num_processes, MPL_MEM_OTHER);
-        assert(pmi_errcodes);
+        MPIR_ERR_CHKANDJUMP(!pmi_errcodes, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
-        ret = MPIR_pmi_spawn_multiple(count,
-                                      array_of_commands,
-                                      array_of_argv,
-                                      array_of_maxprocs,
-                                      array_of_info_ptrs, 1, &preput_keyval_vector, pmi_errcodes);
-        assert(ret == MPI_SUCCESS);
+        mpi_errno = MPIR_pmi_spawn_multiple(count,
+                                            array_of_commands,
+                                            array_of_argv,
+                                            array_of_maxprocs,
+                                            array_of_info_ptrs, 1, &preput_keyval_vector,
+                                            pmi_errcodes);
+        MPIR_ERR_CHECK(mpi_errno);
 
         if (array_of_errcodes != MPI_ERRCODES_IGNORE) {
             for (i = 0; i < total_num_processes; i++) {
@@ -833,21 +824,29 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
             }
             /* should_accept = !should_accept; *//* the `N' in NAND */
         }
-        MPL_free(pmi_errcodes);
 
         /*
          * printf("%s:%u:%s Spawn done\n", __FILE__, __LINE__, __func__);
          */
     }
     /* root */
-    rc = MPID_Comm_accept(port_name, NULL, root, comm_ptr, intercomm);
-    assert(rc == MPI_SUCCESS);
 
-    rc = MPID_Close_port(port_name);
-    assert(rc == MPI_SUCCESS);
+    mpi_errno = MPID_Comm_accept(port_name, NULL, root, comm_ptr, intercomm);
+    MPIR_ERR_CHECK(mpi_errno);
+    MPIR_Assert(*intercomm != NULL);
 
-    return 0;
+    mpi_errno = MPID_Close_port(port_name);
+    MPIR_ERR_CHECK(mpi_errno);
+
+  fn_exit:
+    if (pmi_errcodes) {
+        MPL_free(pmi_errcodes);
+    }
+    return mpi_errno;
 
   fn_fail:
-    return mpi_errno;
+    if (*intercomm != NULL) {
+        MPIR_Comm_free_impl(*intercomm);
+    }
+    goto fn_exit;
 }
