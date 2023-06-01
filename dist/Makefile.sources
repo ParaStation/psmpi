@@ -6878,6 +6878,7 @@ mpich2/test/mpi/errors/rma/winerr2.c \
 mpich2/test/mpi/errors/session/sessioninit.c \
 mpich2/test/mpi/errors/session/getpsetinfo.c \
 mpich2/test/mpi/errors/session/getnthpset.c \
+mpich2/test/mpi/errors/session/comm_create_from_group.c \
 mpich2/test/mpi/errors/session/Makefile.am \
 mpich2/test/mpi/errors/session/testlist \
 mpich2/test/mpi/errors/spawn/Makefile.am \
