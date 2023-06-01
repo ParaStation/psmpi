@@ -1,3 +1,10 @@
+2023-06-01  Simon Pickartz <pickartz@par-tec.com>     -     5.7.1-0rc1
+
+2023-05-16  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Avoid integer overflows in ROMIO for GPFS and Alltoallv in case
+	of large displacements.
+
 2022-11-09  Simon Pickartz <pickartz@par-tec.com>     -     5.7.0-1
 
 2022-11-08  Simon Pickartz <pickartz@par-tec.com>     -     5.7.0-0rc2
