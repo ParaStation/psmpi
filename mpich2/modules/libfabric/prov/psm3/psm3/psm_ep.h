@@ -114,7 +114,8 @@ struct psm2_ep {
 
 	/* unit_id and portnum are set to 0 when ptl_ips not enabled */
 	int unit_id;
-	uint16_t portnum;
+	uint8_t portnum;
+	uint8_t addr_index;
 	uint16_t out_sl;
 	// mtu is PSM payload allowed by local HW,
 	// mtu may be further reduced via PSM3_MTU by ips_proto_init
@@ -137,7 +138,7 @@ struct psm2_ep {
 #ifdef PSM_HAVE_RNDV_MOD
 	psm3_rv_t rv;   // rendezvous module open handle
 	uint32_t rv_mr_cache_size; /** PSM3_RV_MR_CACHE_SIZE */
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 	uint32_t rv_gpu_cache_size; /** PSM3_RV_GPU_CACHE_SIZE */
 #endif
 #endif /* PSM_HAVE_RNDV_MOD */
@@ -145,6 +146,12 @@ struct psm2_ep {
 	uint32_t hfi_num_descriptors;/** Number of allocated scb descriptors*/
 #ifdef PSM_HAVE_REG_MR
 	uint32_t hfi_num_send_rdma;/** Number of concurrent RDMA*/
+#endif
+#ifdef PSM_ONEAPI
+	// TBD - move to ptl_am
+	int ze_ipc_socket;	// AF_UNIX listener sock to recv GPU Dev FDs
+	char *listen_sockname;	// /dev/shm filename for ze_ipc_socket
+	int need_dev_fds_poll;	// are there outstanding dev_fds to be polled
 #endif
 	uint8_t wiremode; /* EPID protocol specific basic modes
 			   * For RoCE/IB reflects
@@ -156,6 +163,7 @@ struct psm2_ep {
 #ifdef PSM_HAVE_REG_MR
 	/* per EP information needed to create verbs MR cache */
 	uint8_t mr_cache_mode; /** PSM3_MR_CACHE_MODE */
+	uint8_t mr_access; /** PSM3_MR_ACCESS */
 #ifdef PSM_HAVE_RNDV_MOD
 	int cmd_fd;
 #endif
@@ -245,7 +253,7 @@ struct psm2_epaddr {
 	int spin_cnt = 0;						\
 	PSMI_PROFILE_BLOCK();						\
 	while (!(cond)) {						\
-		err = psm3_poll_internal(ep, 1);			\
+		err = psm3_poll_internal(ep, 1, 0);			\
 		if (err == PSM2_OK_NO_PROGRESS) {			\
 			PSMI_PROFILE_REBLOCK(1);			\
 			if (++spin_cnt == (ep)->yield_spin_cnt) {	\
@@ -263,11 +271,11 @@ struct psm2_epaddr {
 	PSMI_PROFILE_UNBLOCK();						\
 } while (0)
 
-psm2_error_t psmi_parse_devices(int devices[PTL_MAX_INIT]);
-int psmi_device_is_enabled(const int devices[PTL_MAX_INIT], int devid);
+psm2_error_t psm3_parse_devices(int devices[PTL_MAX_INIT]);
+int psm3_device_is_enabled(const int devices[PTL_MAX_INIT], int devid);
 
 #ifdef PSM_HAVE_RNDV_MOD
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 extern int64_t psm3_gpu_evict_some(psm2_ep_t ep, uint64_t length, int access);
 #endif
 #endif

@@ -36,6 +36,7 @@
 
 #include "fi_verbs.h"
 #include "ofi_hmem.h"
+#include "verbs_osd.h"
 
 static void vrb_fini(void);
 
@@ -704,6 +705,17 @@ static int vrb_read_params(void)
 		return -FI_EINVAL;
 	}
 
+	if (vrb_gl_data.dmabuf_support) {
+		if (vrb_get_param_bool("use_dmabuf", "Enable dmabuf based memory "
+				       "registrations, if supported. Yes by default.",
+				       (int *)&vrb_gl_data.dmabuf_support)) {
+			VRB_WARN(FI_LOG_CORE, "Invalid value of use_dmabuf\n");
+			return -FI_EINVAL;
+		}
+	}
+	VRB_INFO(FI_LOG_CORE, "dmabuf support is %s\n",
+		 vrb_gl_data.dmabuf_support ? "enabled" : "disabled");
+
 	/* MSG-specific parameter */
 	if (vrb_get_param_str("iface", "The prefix or the full name of the "
 			      "network interface associated with the verbs "
@@ -805,6 +817,7 @@ static void vrb_fini(void)
 #endif
 	fi_freeinfo((void *)vrb_util_prov.info);
 	verbs_devs_free();
+	vrb_os_fini();
 	vrb_util_prov.info = NULL;
 }
 
@@ -815,10 +828,11 @@ VERBS_INI
 	ofi_hmem_init();
 	ofi_monitors_init();
 #endif
-	vrb_set_peer_mem_support();
-	vrb_set_dmabuf_support();
 
-	if (vrb_read_params()|| vrb_init_info(&vrb_util_prov.info))
+	vrb_os_mem_support();
+
+	if (vrb_read_params() || vrb_os_ini() ||
+	    vrb_init_info(&vrb_util_prov.info))
 		return NULL;
 	return &vrb_prov;
 }

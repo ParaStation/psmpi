@@ -321,7 +321,7 @@ enum psm2_error {
 	PSM2_EP_WAS_CLOSED = 20,
 	/*! PSM2 Could not find an OPA Unit */
 	PSM2_EP_NO_DEVICE = 21,
-	/*! User passed a bad unit or port number */
+	/*! User passed a bad unit or port number or address index */
 	PSM2_EP_UNIT_NOT_FOUND = 22,
 	/*! Failure in initializing endpoint */
 	PSM2_EP_DEVICE_FAILURE = 23,
@@ -675,32 +675,32 @@ uint64_t psm3_epid_context(psm2_epid_t epid);
 uint64_t psm3_epid_port(psm2_epid_t epid);
 
 /** @brief Compare Endpoint identifiers */
-int psm2_epid_cmp(psm2_epid_t a, psm2_epid_t b);
+int psm3_epid_cmp(psm2_epid_t a, psm2_epid_t b);
 
 /** @brief Simple hex format of Endpoint identifier, bufno = 0 or 1 */
-const char *psm2_epid_fmt(psm2_epid_t epid, int bufno);
+const char *psm3_epid_fmt(psm2_epid_t epid, int bufno);
 
 /** @brief Compare Endpoint identifier to zero/empty */
-int psm2_epid_zero(psm2_epid_t a);
+int psm3_epid_zero(psm2_epid_t a);
 
 /** @brief Zero out Endpoint identifier */
-psm2_epid_t psm2_epid_zeroed(void);
+psm2_epid_t psm3_epid_zeroed(void);
 
 /** @brief Compare Network identifiers */
-int psm2_nid_cmp(psm2_nid_t a, psm2_nid_t b);
+int psm3_nid_cmp(psm2_nid_t a, psm2_nid_t b);
 
 /** @brief Format of Network identifier, bufno = 0 or 1 */
 const char *psm2_nid_fmt(psm2_nid_t nid, int bufno);
 
 /** @brief Compare Network identifier to zero/empty */
-int psm2_nid_zero(psm2_nid_t a);
+int psm3_nid_zero(psm2_nid_t a);
 
 /** @brief Zero out Network identifier */
-psm2_nid_t psm2_nid_zeroed(void);
+psm2_nid_t psm3_nid_zeroed(void);
 
-/** @brief List the number of available OPA units
+/** @brief List the number of available units (NIC devices)
  *
- * Function used to determine the number of locally available OPA units.
+ * Function used to determine the number of locally available units (NICs).
  * For @c N units, valid unit numbers in @ref psm3_ep_open are @c 0 to @c N-1.
  *
  * @returns PSM2_OK unless the user has not called @ref psm2_init
@@ -735,6 +735,7 @@ struct psm3_ep_open_opts {
 	int sendbufs_num;	/**< Preallocated send buffers */
 	uint64_t network_pkey;	/**< Network Protection Key (v1.01) */
 	int port;		/**< IB port to use (1 to N) */
+	int addr_index;		/**< address index within port to use (0 to N) */
 	int outsl;		/**< IB SL to use when sending pkts */
 	uint64_t service_id;	/* IB Service ID to use for endpoint */
 	psm2_path_res_t path_res_type;	/* Path resolution type */
@@ -841,6 +842,8 @@ struct psm3_ep_open_opts {
     	                             // choose the unit for us.
     	   epopts.port = port;	// We want a specific unit, <= 0 would let PSM
     	                             // choose the port for us.
+    	   epopts.addr_index = index;	// We want a specific address, <= 0 would let PSM
+    	                             // choose the address for us.
     	   // We've already set affinity, don't let PSM2 do so if it wants to.
     	   if (epopts.affinity == PSM2_EP_OPEN_AFFINITY_SET)
     	      epopts.affinity = PSM2_EP_OPEN_AFFINITY_SKIP;
@@ -1523,6 +1526,13 @@ psm2_error_t psm3_ep_query(int *num_of_epinfo, psm2_epinfo_t *array_of_epinfo);
  */
 psm2_error_t psm3_ep_epid_lookup(psm2_epid_t epid, psm2_epconn_t *epconn);
 
+/** @brief return psm3 process label
+ *
+ * Function to report process label for use in log messages.
+ * The process label consists of the hostname and rank.
+ */
+char *psm3_get_mylabel();
+
 /** @brief Query given PSM2 end-point for its connections.
  *
  * The need for this function comes with 'multi-ep' feature.
@@ -1653,10 +1663,14 @@ typedef enum psm2_info_query_et
        with PCI Domain: { Domain, Bus, Device, Function } */
 	PSM2_INFO_QUERY_UNIT_PCI_BUS,
 
-/*! Required input arguments 2
+/*! Required input arguments 4
    1.  type: uint32_t, description: the unit # of the device you want to
        identify.
-   2.  type: size_t, description: the length of the output buffer that will
+   2.  type: uint32_t, description: the port for which name is
+       desired (use: psm2_info_query_arg_t.port).
+   3.  type: uint32_t, description: the address index for which name is
+       desired (use: psm2_info_query_arg_t.addr_index).
+   4.  type: size_t, description: the length of the output buffer that will
        receive the subnet name.
        Output parameter: char*, description: name of the subnet for the device. */
 	PSM2_INFO_QUERY_UNIT_SUBNET_NAME,
@@ -1685,6 +1699,22 @@ typedef enum psm2_info_query_et
    Output parameter: uint64_t, description: port speed in bits per sec (bps) */
 	PSM2_INFO_QUERY_PORT_SPEED,
 
+/*! Required input arguments 0
+   Output parameter: uint32_t*, description: the number of addresses per port */
+	PSM2_INFO_QUERY_NUM_ADDR_PER_UNIT,
+
+/*! Required input arguments 4
+   1.  type: uint32_t, description: the unit # of the device you want to
+       identify (use: psm2_info_query_arg_t.unit).
+   2.  type: uint32_t, description: the port for which name is
+       desired (use: psm2_info_query_arg_t.port).
+   3.  type: uint32_t, description: the address index for which name is
+       desired (use: psm2_info_query_arg_t.addr_index).
+   4.  type: size_t, description: the length of the output buffer that will
+       receive the device name.
+       Output parameter: char*, description: name of the device's address. */
+	PSM2_INFO_QUERY_UNIT_ADDR_NAME,
+
 	PSM2_INFO_QUERY_LAST, /* must appear last, and the info query
 				 constants are used as an index. */
 } psm2_info_query_t;
@@ -1696,6 +1726,8 @@ enum psm2_info_query_feature_mask
 	    the PSM2_INFO_QUERY_FEATURE_CUDA bit is not present, then cuda
             is not supported. */
 	PSM2_INFO_QUERY_FEATURE_CUDA      = (1 << 0),
+	/* Intel ONEAPI Level-zero support for Intel GPU */
+	PSM2_INFO_QUERY_FEATURE_ONEAPI    = (1 << 1),
 };
 
 /** @brief Union for info query arg type
@@ -1704,9 +1736,11 @@ typedef union psm2_info_query_arg
 {
 	uint32_t                       unit;
 	uint32_t                       port;
+	uint32_t                       addr_index;
 	size_t                         length;
 	psm2_mq_t                      mq;
 	psm2_epaddr_t                  epaddr;
+	const char *                   name;
 } psm2_info_query_arg_t;
 
 /** @brief PSM2 info query
@@ -1729,6 +1763,86 @@ typedef union psm2_info_query_arg
  */
 psm2_error_t psm3_info_query(psm2_info_query_t, void *out,
 			     size_t nargs, psm2_info_query_arg_t []);
+
+/** @brief PSM2 env initialization
+ *
+ * Function that parses /etc/psm3.conf, must be called before any
+ * psm3_getenv_* calls
+ */
+int psm3_env_initialize(void);
+
+/** @brief PSM2 env fetch
+ *
+ * Function that fetches parameters from /etc/psm3.conf or env
+ *
+ * @param[in] const char *name parameter name
+ * @retval The parameter fetched
+ * NULL The parameter was not exported
+ */
+char* psm3_env_get(const char *name);
+
+/** @brief PSM2 int parameter parsing
+ *
+ * Function that Parses int parameters
+ *
+ * @param[in] const char *str parameter value
+ * @retval 0 The string was valid, *val has value
+ * -1 The string was empty or NULL
+ * -2 The string had invalid syntax
+ */
+int psm3_parse_str_int(const char *string, int *val);
+
+/** @brief PSM2 unsigned int parameter parsing
+ *
+ * Function that Parses unsigned int parameters
+ *
+ * @param[in] const char *str parameter value
+ * @retval 0 The string was valid, *val has value
+ * -1 The string was empty or NULL
+ * -2 The string had invalid syntax
+ */
+int psm3_parse_str_uint(const char *string, unsigned int *val);
+
+/** @brief PSM2 yesno parameter parsing
+ *
+ * Function that parses a string yesno parameter
+ *
+ * @param[in] const char *str parameter value
+ * @retval -1 The string was empty or NULL
+ * -2 The string had invalid syntax
+ * 0  The string was No, False, Off or 0
+ * 1  The string was Yes, True, On or 1
+ */
+int psm3_parse_str_yesno(const char *str);
+
+/** @brief PSM2 env finalize
+ *
+ * Function that frees memory from psm3_env_initialize
+ * Only need to call if don't call psm3_finalize
+ */
+void psm3_env_finalize(void);
+
+/** @brief PSM2 env query
+ *
+ * Function that allows the wrapper provider to get PSM env variables
+ * including checks of the /etc/psm3.conf file.  Purposely structured
+ * similar to fi_param_get_* for easier use in psmx3 wrapper
+ *
+ * @param[in] const char *name parameter name
+ * @param[in] const char *descr parameter description (help text)
+ * @param[in] int visible  is parameter user visible (1) or hidden (0)
+ * @param[out] value  where to put value, also holds default value on input
+ *
+ * @retval 0 The value buffer has successfully been written with the
+ * value for the parameter
+ * 		   1 The default value was used, *value was unchanged
+ */
+int psm3_getenv_int(const char *name, const char *descr, int visible,
+				int *value);
+int psm3_getenv_bool(const char *name, const char *descr, int visible,
+				int *value);
+int psm3_getenv_str(const char *name, const char *descr, int visible,
+				char **value);
 
 /*! @} */
 

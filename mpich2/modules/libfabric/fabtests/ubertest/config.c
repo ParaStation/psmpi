@@ -363,6 +363,7 @@ static int ft_parse_num(char *str, int len, struct key_t *key, void *buf)
 		TEST_ENUM_SET_N_RETURN(str, len, FI_MR_VIRT_ADDR, uint64_t, buf);
 		TEST_ENUM_SET_N_RETURN(str, len, FI_MR_ALLOCATED, uint64_t, buf);
 		TEST_ENUM_SET_N_RETURN(str, len, FI_MR_PROV_KEY, uint64_t, buf);
+		TEST_ENUM_SET_N_RETURN(str, len, FI_MR_RAW, uint64_t, buf);
 		FT_ERR("Unknown MR mode");
 	} else if (!strncmp(key->str, "progress", strlen("progress"))) {
 		TEST_ENUM_SET_N_RETURN(str, len, FI_PROGRESS_MANUAL, int, buf);
@@ -438,7 +439,9 @@ static int ft_parse_key_val(char *config, jsmntok_t *token, char *test_set)
 	}
 
 	for (i = 0; i < sizeof(keys) / sizeof(keys[0]); i++) {
-		if (!strncmp(config + key_token->start, keys[i].str, strlen(keys[i].str))) {
+		if (FT_TOKEN_CHECK(config + key_token->start,
+				   key_token->end - key_token->start,
+				   keys[i].str)) {
 			key = &keys[i];
 			parsed++;
 			break;

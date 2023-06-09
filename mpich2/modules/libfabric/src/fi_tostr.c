@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2014-2017 Intel Corp., Inc.  All rights reserved.
  * Copyright (c) 2016 Cisco Systems, Inc.  All rights reserved.
+ * Copyright (c) 2022 DataDirect Networks, Inc. All rights reserved.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -118,6 +119,7 @@ static void ofi_tostr_addr_format(char *buf, size_t len, uint32_t addr_format)
 	CASEENUMSTRN(FI_ADDR_GNI, len);
 	CASEENUMSTRN(FI_ADDR_BGQ, len);
 	CASEENUMSTRN(FI_ADDR_MLX, len);
+	CASEENUMSTRN(FI_ADDR_UCX, len);
 	CASEENUMSTRN(FI_ADDR_STR, len);
 	CASEENUMSTRN(FI_ADDR_IB_UD, len);
 	CASEENUMSTRN(FI_ADDR_EFA, len);
@@ -265,6 +267,7 @@ static void ofi_tostr_protocol(char *buf, size_t len, uint32_t protocol)
 	CASEENUMSTRN(FI_PROTO_RXM, len);
 	CASEENUMSTRN(FI_PROTO_RXD, len);
 	CASEENUMSTRN(FI_PROTO_MLX, len);
+	CASEENUMSTRN(FI_PROTO_UCX, len);
 	CASEENUMSTRN(FI_PROTO_NETWORKDIRECT, len);
 	CASEENUMSTRN(FI_PROTO_SHM, len);
 	CASEENUMSTRN(FI_PROTO_RSTREAM, len);
@@ -274,6 +277,7 @@ static void ofi_tostr_protocol(char *buf, size_t len, uint32_t protocol)
 	CASEENUMSTRN(FI_PROTO_RXM_TCP, len);
 	CASEENUMSTRN(FI_PROTO_OPX, len);
 	CASEENUMSTRN(FI_PROTO_CXI, len);
+	CASEENUMSTRN(FI_PROTO_XNET, len);
 	default:
 		if (protocol & FI_PROV_SPECIFIC)
 			ofi_strncatf(buf, len, "Provider specific");
@@ -750,6 +754,7 @@ ofi_tostr_hmem_iface(char *buf, size_t len, enum fi_hmem_iface iface)
 	CASEENUMSTRN(FI_HMEM_ROCR, len);
 	CASEENUMSTRN(FI_HMEM_ZE, len);
 	CASEENUMSTRN(FI_HMEM_NEURON, len);
+	CASEENUMSTRN(FI_HMEM_SYNAPSEAI, len);
 	default:
 		ofi_strncatf(buf, len, "Unknown");
 		break;
@@ -868,6 +873,12 @@ char *fi_tostr_r(char *buf, size_t len, const void *data, enum fi_type datatype)
 		break;
 	case FI_TYPE_CQ_FORMAT:
 		ofi_tostr_cq_format(buf, len, *enumval);
+		break;
+	case FI_TYPE_LOG_LEVEL:
+		ofi_tostr_log_level(buf, len, *enumval);
+		break;
+	case FI_TYPE_LOG_SUBSYS:
+		ofi_tostr_log_subsys(buf, len, *enumval);
 		break;
 	default:
 		ofi_strncatf(buf, len, "Unknown type");

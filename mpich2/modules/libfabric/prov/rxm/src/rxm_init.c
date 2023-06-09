@@ -38,7 +38,6 @@
 
 #include <ofi_prov.h>
 #include "rxm.h"
-#include "ofi_coll.h"
 
 #define RXM_ATOMIC_UNSUPPORTED_MSG_ORDER (FI_ORDER_RAW | FI_ORDER_RAR |  \
 					  FI_ORDER_WAW | FI_ORDER_WAR |  \
@@ -461,10 +460,6 @@ static void rxm_alter_info(const struct fi_info *hints, struct fi_info *info)
 				cur->caps &= ~FI_DIRECTED_RECV;
 				cur->rx_attr->caps &= ~FI_DIRECTED_RECV;
 			}
-			if (!(hints->caps & FI_SOURCE)) {
-				cur->caps &= ~FI_SOURCE;
-				cur->rx_attr->caps &= ~FI_SOURCE;
-			}
 
 			if (hints->mode & FI_BUFFERED_RECV)
 				cur->mode |= FI_BUFFERED_RECV;
@@ -723,6 +718,7 @@ RXM_INI
 			"related overhead.  Pass thru is an optimized path "
 			"to the tcp provider, depending on the capabilities "
 			"requested by the application.");
+
 	/* passthru supported disabled - to re-enable would need to fix call to
 	 * fi_cq_read to pass in the correct data structure.  However, passthru
 	 * will not be needed at all with in-work tcp changes.

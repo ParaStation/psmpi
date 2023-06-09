@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2016 by Argonne National Laboratory.
- * Copyright (C) 2021 Cornelis Networks.
+ * Copyright (C) 2021-2023 Cornelis Networks.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -39,6 +39,7 @@
 
 #include "rdma/opx/fi_opx_hfi1.h"
 #include <ofi_list.h>
+#include <rdma/hfi/hfi1_user.h>
 
 /*
  * ==== NOTE_COMPLETION_TYPES ====
@@ -69,11 +70,8 @@
  * FI_INJECT_COMPLETE when possible.
  */
 
-// Function for performing FI_DELIVERY_COMPLETIONs.
-void fi_opx_delivery_complete(struct fi_opx_completion_counter *cc);
-
 // Function for performing FI_INJECT_COMPLETIONs.
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 void fi_opx_ep_tx_cq_inject_completion(struct fid_ep *ep,
 				void *context,
 				const size_t len,
@@ -95,12 +93,13 @@ void fi_opx_ep_tx_cq_inject_completion(struct fid_ep *ep,
 	union fi_opx_context * opx_context = (union fi_opx_context *)context;
 	opx_context->flags =  FI_SEND | (caps & (FI_TAGGED | FI_MSG));
 	opx_context->len = len;
-	opx_context->buf = NULL;
+	opx_context->buf = NULL;		/* receive data buffer */
 	opx_context->byte_counter = 0;
 	opx_context->tag = tag;
 	opx_context->next = NULL;
 
 	if (lock_required) { fprintf(stderr, "%s:%s():%d\n", __FILE__, __func__, __LINE__); abort(); }
+	FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "=================== TX CQ COMPLETION QUEUED\n");
 	fi_opx_context_slist_insert_tail(opx_context, opx_ep->tx->cq_completed_ptr);
 }
 
@@ -316,28 +315,35 @@ static inline void fi_opx_set_scb_special2(volatile uint64_t scb[8], uint64_t lo
 }
 
 void fi_opx_hfi1_rx_rzv_rts (struct fi_opx_ep *opx_ep,
-		const void * const hdr, const void * const payload,
-		const uint8_t u8_rx, const uint64_t niov,
-		uintptr_t origin_byte_counter_vaddr,
-		uintptr_t target_byte_counter_vaddr,
-		const uintptr_t dst_vaddr,
-		const struct iovec* src_iov,
-		uint8_t opcode,
-		const unsigned is_intranode,
-		const enum ofi_reliability_kind reliability);
+			     const void * const hdr, const void * const payload,
+			     const uint8_t u8_rx, const uint64_t niov,
+			     uintptr_t origin_byte_counter_vaddr,
+			     uintptr_t target_byte_counter_vaddr,
+			     const uintptr_t dst_vaddr,
+			     const uint64_t immediate_data,
+			     const uint64_t immediate_end_block_count,
+			     const struct iovec* src_iov,
+			     uint8_t opcode,
+			     const unsigned is_intranode,
+			     const enum ofi_reliability_kind reliability,
+				 const uint32_t u32_extended_rx);
 
 union fi_opx_hfi1_deferred_work* fi_opx_hfi1_rx_rzv_cts  (struct fi_opx_ep * opx_ep,
 		struct fi_opx_mr * opx_mr,
 		const void * const hdr, const void * const payload,
 		size_t payload_bytes_to_copy,
-		const uint8_t u8_rx, const uint32_t niov,
+		const uint8_t u8_rx, const uint8_t origin_rs,
+		const uint32_t niov,
 		const struct fi_opx_hfi1_dput_iov * const dput_iov,
+		const uint8_t op,
+		const uint8_t dt,
 		const uintptr_t target_byte_counter_vaddr,
 		uint64_t * origin_byte_counter,
 		uint32_t op_kind,
 		void (*completion_action)(union fi_opx_hfi1_deferred_work * work_state),
 		const unsigned is_intranode,
-		const enum ofi_reliability_kind reliability
+		const enum ofi_reliability_kind reliability,
+		const uint32_t u32_extended_rx
 );
 
 union fi_opx_hfi1_deferred_work;
@@ -345,6 +351,9 @@ struct fi_opx_work_elem {
 	struct slist_entry slist_entry;
 	int (*work_fn)(union fi_opx_hfi1_deferred_work * work_state);
 	void (*completion_action)(union fi_opx_hfi1_deferred_work * work_state);
+	uint8_t unused[6];
+	bool complete;
+	bool low_priority;
 	union fi_opx_hfi1_packet_payload *payload_copy;
 };
 
@@ -355,23 +364,48 @@ struct fi_opx_hfi1_dput_params {
 	struct fi_opx_mr * opx_mr;
 	uint64_t lrh_dlid;
 	uint64_t slid;
-	uint16_t origin_rs;
-	uint8_t u8_rx;
-	uint8_t dt;
-	uint8_t op;
-	uint32_t niov;
-	struct fi_opx_hfi1_dput_iov * dput_iov;
+	struct fi_opx_hfi1_dput_iov *dput_iov;
+	void *fetch_vaddr;
+	void *compare_vaddr;
+	struct fi_opx_completion_counter *cc;
+	struct fi_opx_completion_counter *user_cc;
+	struct fi_opx_hfi1_sdma_work_entry *sdma_we;
+	struct slist sdma_reqs;
+	struct iovec tid_iov;
 	uintptr_t target_byte_counter_vaddr;
 	uint64_t *origin_byte_counter;
-	uint32_t opcode;
 	uint64_t key;
-	struct fi_opx_completion_counter *cc;
-	unsigned is_intranode;
-	enum ofi_reliability_kind reliability;
-	uint32_t cur_iov;
 	uint64_t bytes_sent;
+	uint32_t niov;
+	uint32_t cur_iov;
+	uint32_t opcode;
+	uint32_t payload_bytes_for_iovec;
+	uint32_t ntidpairs;
+	uint32_t tidoffset;
+	uint32_t tididx;
+	uint32_t tidlen_consumed;
+	uint32_t tidlen_remaining;
+	enum ofi_reliability_kind reliability;
+	uint16_t origin_rs;
+	uint16_t sdma_reqs_used;
+	bool is_intranode;
+	bool delivery_completion;
+	bool use_expected_opcode;
+	uint8_t u8_rx;
+	uint32_t u32_extended_rx;
+	uint8_t dt;
+	uint8_t op;
+	uint8_t	target_hfi_unit;
 	uint8_t inject_data[FI_OPX_HFI1_PACKET_IMM];
-	struct fi_opx_hfi1_dput_iov iov[FI_OPX_MAX_DPUT_IOV];
+	/* Either FI_OPX_MAX_DPUT_IOV iov's or
+	   1 iov and FI_OPX_MAX_DPUT_TIDPAIRS tidpairs */
+	union {
+		struct fi_opx_hfi1_dput_iov iov[FI_OPX_MAX_DPUT_IOV];
+		struct {
+			struct fi_opx_hfi1_dput_iov reserved;/* skip 1 iov */
+			uint32_t tidpairs[FI_OPX_MAX_DPUT_TIDPAIRS];
+		};
+	};
 };
 
 struct fi_opx_hfi1_rx_rzv_rts_params {
@@ -382,25 +416,81 @@ struct fi_opx_hfi1_rx_rzv_rts_params {
 	uint16_t origin_rs;
 	uint16_t origin_rx;
 	uint8_t u8_rx;
+	uint32_t u32_extended_rx;
 	uint64_t niov;
 	uintptr_t origin_byte_counter_vaddr;
 	uintptr_t target_byte_counter_vaddr;
-	uintptr_t dst_vaddr;
+	uintptr_t dst_vaddr; /* bumped past immediate data */
+	uint64_t immediate_data;
+	uint64_t immediate_end_block_count;
+	uint32_t ntidpairs;
+	uint32_t tid_offset;
 	uint8_t opcode;
+	uint8_t fallback_opcode;
 	unsigned is_intranode;
 	enum ofi_reliability_kind reliability;
-	struct iovec src_iov[FI_OPX_MAX_DPUT_IOV];
+	uint8_t	target_hfi_unit;
+	/* Either FI_OPX_MAX_DPUT_IOV iov's or
+	   1 iov and FI_OPX_MAX_DPUT_TIDPAIRS tidpairs */
+	union {
+		struct iovec src_iov[FI_OPX_MAX_DPUT_IOV];
+		struct {
+			struct iovec reserved;/* skip 1 iov */
+			uint32_t tidpairs[FI_OPX_MAX_DPUT_TIDPAIRS];
+		};
+	};
 };
 
+struct fi_opx_hfi1_rx_dput_fence_params {
+	struct fi_opx_work_elem work_elem;
+	struct fi_opx_ep *opx_ep;
+	struct fi_opx_completion_counter *cc;
+	uint64_t lrh_dlid;
+	uint64_t bth_rx;
+	uint64_t bytes_to_fence;
+	uint8_t u8_rx;
+	uint32_t u32_extended_rx;
+	uint8_t	target_hfi_unit;
+};
+
+struct fi_opx_hfi1_rx_readv_params {
+	struct fi_opx_work_elem work_elem;
+	struct fi_opx_ep *opx_ep;
+	struct iovec iov;
+	size_t niov;
+	union fi_opx_addr opx_target_addr;
+	struct fi_opx_completion_counter *cc;
+	uint64_t addr_offset;
+	uint64_t key;
+	uint64_t dest_rx;
+	uint32_t u32_extended_rx;
+	uint64_t lrh_dlid;
+	uint64_t bth_rx;
+	uint64_t pbc_dws;
+	uint64_t lrh_dws;
+	uint64_t op;
+	uint64_t dt;
+	uint32_t opcode;
+	enum ofi_reliability_kind reliability;
+	bool is_intranode;
+};
 
 union fi_opx_hfi1_deferred_work {
 	struct fi_opx_work_elem work_elem;
 	struct fi_opx_hfi1_dput_params dput;
 	struct fi_opx_hfi1_rx_rzv_rts_params rx_rzv_rts;
+	struct fi_opx_hfi1_rx_dput_fence_params fence;
+	struct fi_opx_hfi1_rx_readv_params readv;
 };
 
-int fi_opx_hfi1_do_dput (union fi_opx_hfi1_deferred_work *work);
+int opx_hfi1_do_dput_fence(union fi_opx_hfi1_deferred_work *work);
+void opx_hfi1_dput_fence(struct fi_opx_ep *opx_ep,
+			const union fi_opx_hfi1_packet_hdr *const hdr,
+			const uint8_t u8_rx,
+			const uint32_t u32_extended_rx);
 
+int fi_opx_hfi1_do_dput (union fi_opx_hfi1_deferred_work *work);
+int fi_opx_hfi1_do_dput_sdma (union fi_opx_hfi1_deferred_work *work);
 
 __OPX_FORCE_INLINE__
 void fi_opx_hfi1_memcpy8(void *restrict dest, const void *restrict src, size_t n) {
@@ -440,7 +530,7 @@ void fi_opx_hfi1_memcpy8(void *restrict dest, const void *restrict src, size_t n
  *  in practice, in order to return this credit, all pending credits
  *  must also be returned.
  */
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 void fi_opx_force_credit_return(struct fid_ep *ep,
 				fi_addr_t dest_addr,
 				const uint64_t dest_rx,
@@ -501,7 +591,7 @@ void fi_opx_force_credit_return(struct fid_ep *ep,
 	FI_OPX_HFI1_CHECK_CREDITS_FOR_ERROR(opx_ep->tx->pio_credits_addr);
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_hfi1_tx_inject (struct fid_ep *ep,
 		const void *buf, size_t len, fi_addr_t dest_addr, uint64_t tag,
 		const uint32_t data, int lock_required,
@@ -520,10 +610,13 @@ ssize_t fi_opx_hfi1_tx_inject (struct fid_ep *ep,
 			(opx_ep->tx->inject.hdr.stl.lrh.slid == addr.uid.lid))) {
 
 		uint64_t pos;
+		ssize_t rc;
 		union fi_opx_hfi1_packet_hdr * const hdr =
-			opx_shm_tx_next(&opx_ep->tx->shm, dest_rx, &pos);
+			opx_shm_tx_next(&opx_ep->tx->shm, dest_rx, &pos,
+				opx_ep->daos_info.hfi_rank_enabled, opx_ep->daos_info.rank,
+				opx_ep->daos_info.rank_inst, &rc);
 
-		if (!hdr) return -FI_EAGAIN;
+		if (!hdr) return rc;
 
 		hdr->qw[0] = opx_ep->tx->inject.hdr.qw[0] | lrh_dlid;
 
@@ -565,13 +658,14 @@ ssize_t fi_opx_hfi1_tx_inject (struct fid_ep *ep,
 	struct fi_opx_reliability_tx_replay * replay = (reliability != OFI_RELIABILITY_KIND_NONE)?
 	fi_opx_reliability_client_replay_allocate(&opx_ep->reliability->state, false) : NULL;
 	if(replay == NULL) {
+		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "FI_EAGAIN\n");
 		return -FI_EAGAIN;
 	}
 
 	union fi_opx_reliability_tx_psn *psn_ptr;
 	const int64_t psn = (reliability != OFI_RELIABILITY_KIND_NONE) ?	/* compile-time constant expression */
 		fi_opx_reliability_tx_next_psn(ep, &opx_ep->reliability->state, addr.uid.lid,
-						dest_rx, addr.reliability_rx, &psn_ptr) :
+						dest_rx, addr.reliability_rx, &psn_ptr, 1) :
 		0;
 	if(OFI_UNLIKELY(psn == -1)) {
 		fi_opx_reliability_client_replay_deallocate(&opx_ep->reliability->state, replay);
@@ -690,7 +784,7 @@ bool fi_opx_hfi1_fill_from_iov8(const struct iovec *iov,   /* In:  iovec array *
 
 static inline void fi_opx_shm_poll_many(struct fid_ep *ep, const int lock_required);
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_hfi1_tx_sendv_egr(struct fid_ep *ep, const struct iovec *iov, size_t niov,
 				 size_t total_len, void *desc, fi_addr_t dest_addr, uint64_t tag,
 				 void *context, const uint32_t data, int lock_required,
@@ -728,10 +822,12 @@ ssize_t fi_opx_hfi1_tx_sendv_egr(struct fid_ep *ep, const struct iovec *iov, siz
 	    (((caps & (FI_LOCAL_COMM | FI_REMOTE_COMM)) == (FI_LOCAL_COMM | FI_REMOTE_COMM)) &&
 	     (opx_ep->tx->send.hdr.stl.lrh.slid == addr.uid.lid))) {
 		uint64_t pos;
+		ssize_t rc;
 		union fi_opx_hfi1_packet_hdr *const hdr = opx_shm_tx_next(
-			&opx_ep->tx->shm, dest_rx, &pos);
+			&opx_ep->tx->shm, dest_rx, &pos, opx_ep->daos_info.hfi_rank_enabled,
+			opx_ep->daos_info.rank, opx_ep->daos_info.rank_inst, &rc);
 
-		if (!hdr) return -FI_EAGAIN;
+		if (!hdr) return rc;
 
 		hdr->qw[0] = opx_ep->tx->send.hdr.qw[0] | lrh_dlid | ((uint64_t)lrh_dws << 32);
 		hdr->qw[1] = opx_ep->tx->send.hdr.qw[1] | bth_rx | (xfer_bytes_tail << 48) |
@@ -819,7 +915,7 @@ ssize_t fi_opx_hfi1_tx_sendv_egr(struct fid_ep *ep, const struct iovec *iov, siz
 	const int64_t psn = (reliability != OFI_RELIABILITY_KIND_NONE) ?
 				fi_opx_reliability_tx_next_psn(ep, &opx_ep->reliability->state,
 								addr.uid.lid, dest_rx,
-								addr.reliability_rx, &psn_ptr) :
+								addr.reliability_rx, &psn_ptr, 1) :
 				0;
 	if(OFI_UNLIKELY(psn == -1)) {
 		fi_opx_reliability_client_replay_deallocate(&opx_ep->reliability->state, replay);
@@ -866,34 +962,13 @@ ssize_t fi_opx_hfi1_tx_sendv_egr(struct fid_ep *ep, const struct iovec *iov, siz
 		// copy until done;
 	}
 
-	if (OFI_UNLIKELY(!do_cq_completion)) {
-		fi_opx_reliability_client_replay_register_no_update(
-			&opx_ep->reliability->state, addr.uid.lid, addr.reliability_rx,
-			dest_rx, psn_ptr, replay, reliability);
-	} else if (total_len < opx_ep->reliability->service.tx.dcomp_threshold) {
-		fi_opx_reliability_client_replay_register_no_update(
-			&opx_ep->reliability->state, addr.uid.lid, addr.reliability_rx,
-			dest_rx, psn_ptr, replay, reliability);
+	fi_opx_reliability_client_replay_register_no_update(
+		&opx_ep->reliability->state, addr.uid.lid, addr.reliability_rx,
+		dest_rx, psn_ptr, replay, reliability);
 
+	if (OFI_LIKELY(do_cq_completion)) {
 		fi_opx_ep_tx_cq_inject_completion(ep, context, total_len,
 			lock_required, tag, caps);
-	} else {
-		struct fi_opx_completion_counter *cc = ofi_buf_alloc(opx_ep->rma_counter_pool);
-		cc->byte_counter = total_len;
-		cc->cntr = NULL;
-		cc->cq = opx_ep->tx->cq;
-		cc->context = context;
-		cc->tag = tag;
-		cc->hit_zero = fi_opx_delivery_complete;
-
-		union fi_opx_context * opx_context = (union fi_opx_context *)cc->context;
-		if(opx_context && cc->cq) {
-			opx_context->flags = FI_SEND | (caps & (FI_TAGGED | FI_MSG));
-		}
-
-		fi_opx_reliability_client_replay_register_with_update(
-			&opx_ep->reliability->state, addr.uid.lid, addr.reliability_rx,
-			dest_rx, psn_ptr, replay, cc, total_len, reliability);
 	}
 
 	fi_opx_reliability_service_do_replay(&opx_ep->reliability->service, replay);
@@ -907,7 +982,7 @@ ssize_t fi_opx_hfi1_tx_sendv_egr(struct fid_ep *ep, const struct iovec *iov, siz
 	return FI_SUCCESS;
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_hfi1_tx_check_credits(struct fi_opx_ep *opx_ep,
 				union fi_opx_hfi1_pio_state *pio_state,
 				uint16_t credits_needed)
@@ -930,19 +1005,21 @@ ssize_t fi_opx_hfi1_tx_check_credits(struct fi_opx_ep *opx_ep,
 	return (ssize_t) total_credits_available;
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 uint64_t fi_opx_hfi1_tx_is_intranode(struct fid_ep *ep, const fi_addr_t dest_addr, const uint64_t caps)
 {
 	struct fi_opx_ep * opx_ep = container_of(ep, struct fi_opx_ep, ep_fid);
 
 	const union fi_opx_addr addr = { .fi = dest_addr };
 
-	return ((caps & (FI_LOCAL_COMM | FI_REMOTE_COMM)) == FI_LOCAL_COMM) ||	/* compile-time constant expression */
+	/* Intranode if (exclusively FI_LOCAL_COMM) OR (FI_LOCAL_COMM is on AND
+	   the source lid is the same as the destination lid) */
+	return  ((caps & (FI_LOCAL_COMM | FI_REMOTE_COMM)) == FI_LOCAL_COMM) ||
 		(((caps & (FI_LOCAL_COMM | FI_REMOTE_COMM)) == (FI_LOCAL_COMM | FI_REMOTE_COMM)) &&
 			(opx_ep->tx->send.hdr.stl.lrh.slid == addr.uid.lid));
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_hfi1_tx_send_egr_intranode(struct fid_ep *ep,
 					const void *buf,
 					size_t len,
@@ -972,11 +1049,20 @@ ssize_t fi_opx_hfi1_tx_send_egr_intranode(struct fid_ep *ep,
 
 	const uint16_t lrh_dws = htons(pbc_dws-1);	/* does not include pbc (8 bytes), but does include icrc (4 bytes) */
 
+	FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
+		"===================================== SEND, SHM -- EAGER (begin)\n");
 	uint64_t pos;
+	ssize_t rc;
 	union fi_opx_hfi1_packet_hdr * const hdr =
-		opx_shm_tx_next(&opx_ep->tx->shm, dest_rx, &pos);
+		opx_shm_tx_next(&opx_ep->tx->shm, dest_rx, &pos,
+			opx_ep->daos_info.hfi_rank_enabled, opx_ep->daos_info.rank,
+			opx_ep->daos_info.rank_inst, &rc);
 
-	if (!hdr) return -FI_EAGAIN;
+	if (!hdr) {
+		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
+			"===================================== SEND, SHM -- EAGER (end) - No packet available.\n");
+		return rc;
+	}
 
 	hdr->qw[0] = opx_ep->tx->send.hdr.qw[0] | lrh_dlid | ((uint64_t)lrh_dws << 32);
 
@@ -1002,7 +1088,6 @@ ssize_t fi_opx_hfi1_tx_send_egr_intranode(struct fid_ep *ep,
 
 	hdr->qw[6] = tag;
 
-
 	union fi_opx_hfi1_packet_payload * const payload =
 		(union fi_opx_hfi1_packet_payload *)(hdr+1);
 
@@ -1017,12 +1102,14 @@ ssize_t fi_opx_hfi1_tx_send_egr_intranode(struct fid_ep *ep,
 		fi_opx_ep_tx_cq_inject_completion(ep, context, len, lock_required,
 			tag, caps);
 	}
+	FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
+		"===================================== SEND, SHM -- EAGER (end)\n");
 
 	return FI_SUCCESS;
 
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_hfi1_tx_egr_write_packet_header(struct fi_opx_ep *opx_ep,
 					union fi_opx_hfi1_pio_state *pio_state,
 					uint64_t local_target[8],
@@ -1084,7 +1171,7 @@ ssize_t fi_opx_hfi1_tx_egr_write_packet_header(struct fi_opx_ep *opx_ep,
 	return 1; // Consumed 1 credit
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_hfi1_tx_egr_write_full_payload_blocks(struct fi_opx_ep *opx_ep,
 					union fi_opx_hfi1_pio_state *pio_state,
 					uint64_t *buf_qws,
@@ -1157,7 +1244,7 @@ ssize_t fi_opx_hfi1_tx_egr_write_full_payload_blocks(struct fi_opx_ep *opx_ep,
 	return credits_consumed;
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_hfi1_tx_egr_write_payload_tail(struct fi_opx_ep *opx_ep,
 					union fi_opx_hfi1_pio_state *pio_state,
 					uint64_t *buf_qws,
@@ -1178,7 +1265,7 @@ ssize_t fi_opx_hfi1_tx_egr_write_payload_tail(struct fi_opx_ep *opx_ep,
 	return 1;	/* Consumed 1 credit */
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 void fi_opx_hfi1_tx_send_egr_write_replay_data(struct fi_opx_ep *opx_ep,
 			const union fi_opx_addr addr,
 			struct fi_opx_reliability_tx_replay *replay,
@@ -1212,7 +1299,7 @@ void fi_opx_hfi1_tx_send_egr_write_replay_data(struct fi_opx_ep *opx_ep,
 	}
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_ep_tx_get_replay(struct fi_opx_ep *opx_ep,
 				const union fi_opx_addr addr,
 				struct fi_opx_reliability_tx_replay **replay,
@@ -1230,14 +1317,14 @@ ssize_t fi_opx_ep_tx_get_replay(struct fi_opx_ep *opx_ep,
 	*replay = fi_opx_reliability_client_replay_allocate(&opx_ep->reliability->state, false);
 	if(*replay == NULL) {
 		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
-			"===================================== SEND, HFI -- EAGER (null_reply_buffer)\n");
+			"===================================== SEND, FI_EAGAIN HFI -- EAGER (null_reply_buffer)\n");
 		return -FI_EAGAIN;
 	}
 
 	*psn = fi_opx_reliability_tx_next_psn(&opx_ep->ep_fid,
 					&opx_ep->reliability->state,
 					addr.uid.lid, addr.hfi1_rx,
-					addr.reliability_rx, psn_ptr);
+					addr.reliability_rx, psn_ptr, 1);
 
 	if(OFI_UNLIKELY(*psn == -1)) {
 		fi_opx_reliability_client_replay_deallocate(&opx_ep->reliability->state, *replay);
@@ -1247,7 +1334,7 @@ ssize_t fi_opx_ep_tx_get_replay(struct fi_opx_ep *opx_ep,
 	return FI_SUCCESS;
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_hfi1_tx_send_egr(struct fid_ep *ep,
 		const void *buf, size_t len, void *desc,
 		fi_addr_t dest_addr, uint64_t tag, void* context,
@@ -1353,32 +1440,8 @@ ssize_t fi_opx_hfi1_tx_send_egr(struct fid_ep *ep,
 					xfer_bytes_tail, tmp, buf, payload_qws_total, reliability);
 
 	if (OFI_LIKELY(do_cq_completion)) {
-		if (len < opx_ep->reliability->service.tx.dcomp_threshold) {
-			/* MHEINZ: Use inject completions. */
-			fi_opx_ep_tx_cq_inject_completion(ep, context, len,
+		fi_opx_ep_tx_cq_inject_completion(ep, context, len,
 			lock_required, tag, caps);
-		} else {
-			/* fi_opx_hfi1_tx_send_egr_write_replay_data erases any pointers to a
-			 * completion counter, so we add it now. This is safe because we are
-			 * single-threaded. If we move to an "offload" completion model this won't
-			 * be safe at all.
-			 */
-			struct fi_opx_completion_counter *cc = ofi_buf_alloc(opx_ep->rma_counter_pool);
-			cc->byte_counter = len;
-			cc->cntr = NULL;
-			cc->cq = opx_ep->tx->cq;
-			cc->context = context;
-			cc->tag = tag;
-			cc->hit_zero = fi_opx_delivery_complete;
-
-			union fi_opx_context * opx_context = (union fi_opx_context *)cc->context;
-			if(opx_context && cc->cq) {
-				opx_context->flags = FI_SEND | (caps & (FI_TAGGED | FI_MSG));
-			}
-
-			replay->cc_ptr = cc;
-			replay->cc_dec = len;
-		}
 	}
 
 	FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
@@ -1387,42 +1450,11 @@ ssize_t fi_opx_hfi1_tx_send_egr(struct fid_ep *ep,
 	return FI_SUCCESS;
 }
 
-/* Max payload size for using Multi-packet Eager */
-#ifndef FI_OPX_MP_EGR_MAX_PAYLOAD_BYTES
-#define FI_OPX_MP_EGR_MAX_PAYLOAD_BYTES 16384
-#endif
-
-/* The total size for a single packet used in a multi-packet eager send.
-   This is packet payload plus 64 bytes for the PBC and packet header.
-   All packets in a multi-packet eager send will be this size, except
-   possibly the last one, which may be smaller.
-   
-   NOTE: This value MUST be a multiple of 64!
-   */
-#ifndef FI_OPX_MP_EGR_CHUNK_SIZE
-#define FI_OPX_MP_EGR_CHUNK_SIZE 4160
-#endif
-
-OPX_COMPILE_TIME_ASSERT(!(FI_OPX_MP_EGR_CHUNK_SIZE & 0x3F), "FI_OPX_MP_EGR_CHUNK_SIZE Must be a multiple of 64!");
-OPX_COMPILE_TIME_ASSERT(FI_OPX_MP_EGR_MAX_PAYLOAD_BYTES > FI_OPX_MP_EGR_CHUNK_SIZE, "FI_OPX_MP_EGR_MAX_PAYLOAD_BYTES must be greater than FI_OPX_MP_EGR_CHUNK_SIZE!");
-
-/* For full MP-Eager chunks, we pack 16 bytes of payload data in the
-   packet header. So the actual payload size for a full chunk is the
-   total chunk size minus 64 bytes for PBC and packet header, plus 16
-   bytes for the space we use for payload data in the packet header.
-   Or, more simply, 48 bytes less than the total chunk size. */
-#define FI_OPX_MP_EGR_CHUNK_PAYLOAD_SIZE (FI_OPX_MP_EGR_CHUNK_SIZE - 48)
-#define FI_OPX_MP_EGR_CHUNK_CREDITS (FI_OPX_MP_EGR_CHUNK_SIZE >> 6)
-#define FI_OPX_MP_EGR_CHUNK_DWS (FI_OPX_MP_EGR_CHUNK_SIZE >> 2)
-#define FI_OPX_MP_EGR_CHUNK_PAYLOAD_QWS (FI_OPX_MP_EGR_CHUNK_PAYLOAD_SIZE >> 3)
-#define FI_OPX_MP_EGR_CHUNK_PAYLOAD_TAIL 16
-#define FI_OPX_MP_EGR_XFER_BYTES_TAIL 0x0010000000000000ull
-
 /*
  * Write the initial packet header of a multi-packet eager send. This will include the size of
  * the entire multi-packet eager payload.
  */
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_hfi1_tx_mp_egr_write_initial_packet_header(struct fi_opx_ep *opx_ep,
 					union fi_opx_hfi1_pio_state *pio_state,
 					uint64_t local_target[8],
@@ -1469,7 +1501,7 @@ ssize_t fi_opx_hfi1_tx_mp_egr_write_initial_packet_header(struct fi_opx_ep *opx_
  * more than 16 bytes. This means we'll use all 16 bytes of tail space in the packet header, and
  * there will be at least some payload data.
  */
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_hfi1_tx_mp_egr_write_nth_packet_header(struct fi_opx_ep *opx_ep,
 					union fi_opx_hfi1_pio_state *pio_state,
 					uint64_t local_target[8],
@@ -1505,7 +1537,7 @@ ssize_t fi_opx_hfi1_tx_mp_egr_write_nth_packet_header(struct fi_opx_ep *opx_ep,
  * Write the nth packet header of a multi-packet eager send where the remaining payload data is <= 16 bytes.
  * This means we won't need to write a payload packet as the entire payload fits in the packet header.
  */
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_hfi1_tx_mp_egr_write_nth_packet_header_no_payload(struct fi_opx_ep *opx_ep,
 					union fi_opx_hfi1_pio_state *pio_state,
 					uint64_t local_target[8],
@@ -1536,7 +1568,7 @@ ssize_t fi_opx_hfi1_tx_mp_egr_write_nth_packet_header_no_payload(struct fi_opx_e
 	return 1; /* Consumed 1 credit */
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_hfi1_tx_send_mp_egr_first (struct fi_opx_ep *opx_ep,
 					const void *buf,
 					const uint64_t payload_bytes_total,
@@ -1616,7 +1648,7 @@ ssize_t fi_opx_hfi1_tx_send_mp_egr_first (struct fi_opx_ep *opx_ep,
 	return FI_SUCCESS;
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_hfi1_tx_send_mp_egr_nth (struct fi_opx_ep *opx_ep,
 					const void *buf,
 					const uint32_t payload_offset,
@@ -1688,7 +1720,7 @@ ssize_t fi_opx_hfi1_tx_send_mp_egr_nth (struct fi_opx_ep *opx_ep,
 	return FI_SUCCESS;
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_hfi1_tx_send_mp_egr_last (struct fi_opx_ep *opx_ep,
 					const void *buf,
 					const uint32_t payload_offset,
@@ -1810,7 +1842,8 @@ ssize_t fi_opx_hfi1_tx_send_mp_egr_last (struct fi_opx_ep *opx_ep,
 static inline void fi_opx_shm_write_fence(struct fi_opx_ep *opx_ep, const uint64_t dest_rx,
 					  const uint64_t lrh_dlid,
 					  struct fi_opx_completion_counter *cc,
-					  const uint64_t bytes_to_sync)
+					  const uint64_t bytes_to_sync,
+					  const uint32_t dest_extended_rx)
 {
 	const uint64_t pbc_dws = 2 + /* pbc */
 				 2 + /* lrh */
@@ -1820,12 +1853,16 @@ static inline void fi_opx_shm_write_fence(struct fi_opx_ep *opx_ep, const uint64
 	const uint16_t lrh_dws = htons(pbc_dws - 1);
 	const uint64_t bth_rx = dest_rx << 56;
 	uint64_t pos;
+	ssize_t rc;
 	union fi_opx_hfi1_packet_hdr * tx_hdr = opx_shm_tx_next(
-		&opx_ep->tx->shm, dest_rx, &pos);
+		&opx_ep->tx->shm, dest_rx, &pos, opx_ep->daos_info.hfi_rank_enabled,
+		opx_ep->daos_info.rank, opx_ep->daos_info.rank_inst, &rc);
+	/* Potential infinite loop, unable to return result to application */
 	while(OFI_UNLIKELY(tx_hdr == NULL)) {  //TODO: Verify that all callers of this function can tolderate a NULL rc
-		fi_opx_shm_poll_many(&opx_ep->ep_fid, 0);
+		fi_opx_shm_poll_many(&opx_ep->ep_fid, FI_OPX_LOCK_NOT_REQUIRED);
 		tx_hdr = opx_shm_tx_next(
-			&opx_ep->tx->shm, dest_rx, &pos);
+			&opx_ep->tx->shm, dest_rx, &pos, opx_ep->daos_info.hfi_rank_enabled,
+			dest_extended_rx, opx_ep->daos_info.rank_inst, &rc);
 	}
 
 	tx_hdr->qw[0] = opx_ep->rx->tx.cts.hdr.qw[0] | lrh_dlid | ((uint64_t)lrh_dws << 32);
@@ -1854,5 +1891,6 @@ ssize_t fi_opx_hfi1_tx_send_rzv(struct fid_ep *ep, const void *buf, size_t len, 
 				const uint64_t dest_rx, const uintptr_t origin_byte_counter_vaddr,
 				uint64_t *origin_byte_counter_value, const uint64_t caps,
 				const enum ofi_reliability_kind reliability);
+
 
 #endif /* _FI_PROV_OPX_HFI1_TRANSPORT_H_ */

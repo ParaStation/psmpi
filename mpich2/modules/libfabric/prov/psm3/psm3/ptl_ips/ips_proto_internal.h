@@ -62,6 +62,24 @@
 
 #define INC_TIME_SPEND(timer)
 
+// return 1 if seq is between first and last inclusive.  Accounts for possible
+// wraparound where numerically first >= last
+PSMI_INLINE(
+int
+between(int first_seq, int last_seq, int seq))
+{
+	if (last_seq >= first_seq) {
+		if (seq < first_seq || seq > last_seq) {
+			return 0;
+		}
+	} else {
+		if (seq > last_seq && seq < first_seq) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 /*
  * Connect protocol.
  *

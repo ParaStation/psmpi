@@ -63,13 +63,14 @@ static int psm3_verno_major = PSM2_VERNO_MAJOR;
 static int psm3_verno_minor = PSM2_VERNO_MINOR;
 static int psm3_verno = PSMI_VERNO_MAKE(PSM2_VERNO_MAJOR, PSM2_VERNO_MINOR);
 static int psm3_verno_client_val;
-uint8_t  psmi_addr_fmt;	// PSM3_ADDR_FMT
-int psmi_allow_routers;	// PSM3_ALLOW_ROUTERS
+uint8_t  psm3_addr_fmt;	// PSM3_ADDR_FMT
+int psm3_allow_routers;	// PSM3_ALLOW_ROUTERS
 
-char *psmi_allow_subnets[PSMI_MAX_SUBNETS];	// PSM3_SUBNETS
-int psmi_num_allow_subnets;
+char *psm3_allow_subnets[PSMI_MAX_SUBNETS];	// PSM3_SUBNETS
+int psm3_num_allow_subnets;
+unsigned int psm3_addr_per_nic = 1;
 
-const char *psmi_nic_wildcard = NULL;
+const char *psm3_nic_wildcard = NULL;
 
 const char *psm3_nic_speed_wildcard = NULL;
 uint64_t psm3_nic_speed_max_found = 0;
@@ -99,22 +100,42 @@ uint64_t *psm3_shared_affinity_ptr;
 
 uint32_t psm3_cpu_model;
 
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+int is_gdr_copy_enabled;
+uint32_t gdr_copy_limit_send;
+uint32_t gdr_copy_limit_recv;
+int is_gpudirect_enabled = 0;
+int _device_support_gpudirect = -1; // -1 indicates "unset". See device_support_gpudirect().
+int is_driver_gpudirect_enabled;
+uint32_t cuda_thresh_rndv = CUDA_THRESH_RNDV;
+uint64_t psm3_gpu_cache_evict;	// in bytes
+#endif
+
 #ifdef PSM_CUDA
 int is_cuda_enabled;
-int is_gdr_copy_enabled;
-int is_gpudirect_enabled = 0;
 int _device_support_unified_addr = -1; // -1 indicates "unchecked". See verify_device_support_unified_addr().
-int _device_support_gpudirect = -1; // -1 indicates "unset". See device_support_gpudirect().
 int _gpu_p2p_supported = -1; // -1 indicates "unset". see gpu_p2p_supported().
 int my_gpu_device = 0;
 int cuda_lib_version;
-int is_driver_gpudirect_enabled;
-uint32_t cuda_thresh_rndv;
-uint32_t gdr_copy_limit_send;
-uint32_t gdr_copy_limit_recv;
-uint64_t psm3_gpu_cache_evict;	// in bytes
 
 void *psmi_cuda_lib;
+#endif
+
+#ifdef PSM_ONEAPI
+int is_oneapi_ze_enabled;
+int my_gpu_device = 0;
+int _gpu_p2p_supported = -1; // -1 indicates "unset". see gpu_p2p_supported().
+
+ze_context_handle_t ze_context = NULL;
+ze_driver_handle_t ze_driver = NULL;
+struct ze_dev_ctxt ze_devices[MAX_ZE_DEVICES];
+int num_ze_devices = 0;
+struct ze_dev_ctxt *cur_ze_dev = NULL;
+
+void *psmi_oneapi_ze_lib;
+#endif // PSM_ONEAPI
+
+#ifdef PSM_CUDA
 CUresult (*psmi_cuInit)(unsigned int  Flags );
 CUresult (*psmi_cuCtxDetach)(CUcontext c);
 CUresult (*psmi_cuCtxGetCurrent)(CUcontext *c);
@@ -188,44 +209,7 @@ uint64_t psmi_count_cuDevicePrimaryCtxRetain;
 uint64_t psmi_count_cuCtxGetDevice;
 uint64_t psmi_count_cuDevicePrimaryCtxRelease;
 uint64_t psmi_count_cuGetErrorString;
-#endif
 
-/*
- * Bit field that contains capability set.
- * Each bit represents different capability.
- * It is supposed to be filled with logical OR
- * on conditional compilation basis
- * along with future features/capabilities.
- */
-uint64_t psm3_capabilities_bitset = PSM2_MULTI_EP_CAP | PSM2_LIB_REFCOUNT_CAP;
-
-int psm3_verno_client()
-{
-	return psm3_verno_client_val;
-}
-
-/* This function is used to determine whether the current library build can
- * successfully communicate with another library that claims to be version
- * 'verno'.
- *
- * PSM 2.x is always ABI compatible, but this checks to see if two different
- * versions of the library can coexist.
- */
-int psm3_verno_isinteroperable(uint16_t verno)
-{
-	if (PSMI_VERNO_GET_MAJOR(verno) != PSM2_VERNO_MAJOR)
-		return 0;
-
-	return 1;
-}
-
-int MOCKABLE(psm3_isinitialized)()
-{
-	return (psmi_refcount > 0);
-}
-MOCK_DEF_EPILOGUE(psm3_isinitialized);
-
-#ifdef PSM_CUDA
 int psmi_cuda_lib_load()
 {
 	psm2_error_t err = PSM2_OK;
@@ -304,7 +288,7 @@ fail:
 static void psmi_cuda_stats_register()
 {
 #define PSMI_CUDA_COUNT_DECLU64(func) \
-	PSMI_STATS_DECLU64(#func, &psmi_count_##func)
+	PSMI_STATS_DECLU64(#func, NULL, &psmi_count_##func)
 
 	struct psmi_stats_entry entries[] = {
 		PSMI_CUDA_COUNT_DECLU64(cuInit),
@@ -347,30 +331,232 @@ static void psmi_cuda_stats_register()
 #undef PSMI_CUDA_COUNT_DECLU64
 
 	psm3_stats_register_type("PSM_Cuda_call_statistics",
-			PSMI_STATSTYPE_CUDA,
+		"Count of CUDA calls per API entry point for the whole process.\n"
+		"When using an NVIDIA GPU, PSM3 may call lower level CUDA "
+		"APIs to access or transfer application buffers in GPU memory.",
+			PSMI_STATSTYPE_GPU,
 			entries, PSMI_HOWMANY(entries), NULL,
-			&is_cuda_enabled, NULL); /* context must != NULL */
+			&psmi_count_cuInit, NULL); /* context must != NULL */
 }
+#endif // PSM_CUDA
 
-int psmi_cuda_initialize()
+#ifdef PSM_ONEAPI
+ze_result_t (*psmi_zeInit)(ze_init_flags_t flags);
+ze_result_t (*psmi_zeDriverGet)(uint32_t *pCount, ze_driver_handle_t *phDrivers);
+ze_result_t (*psmi_zeDeviceGet)(ze_driver_handle_t hDriver, uint32_t *pCount, ze_device_handle_t *phDevices);
+ze_result_t (*psmi_zeContextCreate)(ze_driver_handle_t hDriver, const ze_context_desc_t *desc, ze_context_handle_t *phContext);
+ze_result_t (*psmi_zeContextDestroy)(ze_context_handle_t hContext);
+ze_result_t (*psmi_zeCommandQueueCreate)(ze_context_handle_t hContext, ze_device_handle_t hDevice,const ze_command_queue_desc_t *desc, ze_command_queue_handle_t *phCommandQueue);
+ze_result_t (*psmi_zeCommandQueueDestroy)(ze_command_queue_handle_t hCommandQueue);
+ze_result_t (*psmi_zeCommandQueueExecuteCommandLists)(ze_command_queue_handle_t hCommandQueue, uint32_t numCommandLists, ze_command_list_handle_t *phCommandLists, ze_fence_handle_t hFence);
+ze_result_t (*psmi_zeCommandQueueSynchronize)(ze_command_queue_handle_t hCommandQueue, uint64_t timeout);
+ze_result_t (*psmi_zeCommandListCreate)(ze_context_handle_t hContext, ze_device_handle_t hDevice, const ze_command_list_desc_t *desc, ze_command_list_handle_t *phCommandList);
+ze_result_t (*psmi_zeCommandListDestroy)(ze_command_list_handle_t hCommandList);
+ze_result_t (*psmi_zeCommandListClose)(ze_command_list_handle_t hCommandList);
+ze_result_t (*psmi_zeCommandListReset)(ze_command_list_handle_t hCommandList);
+ze_result_t (*psmi_zeCommandListCreateImmediate)(ze_device_handle_t hDevice, const ze_command_queue_desc_t * altdesc, ze_command_list_handle_t * phCommandList);
+ze_result_t (*psmi_zeCommandListAppendMemoryCopy)(ze_command_list_handle_t hCommandList, void *dstptr, const void *srcptr, size_t size, ze_event_handle_t hSignalEvent, uint32_t numWaitEvents, ze_event_handle_t *phWaitEvents);
+ze_result_t (*psmi_zeCommandListAppendSignalEvent)(ze_command_list_handle_t hCommandList, ze_event_handle_t hEvent);
+ze_result_t (*psmi_zeDeviceCanAccessPeer)(ze_device_handle_t hDevice, ze_device_handle_t hPeerDevice, ze_bool_t *value);
+ze_result_t (*psmi_zeDeviceGetCommandQueueGroupProperties)(ze_device_handle_t hDevice, uint32_t *pCount, ze_command_queue_group_properties_t *pCommandQueueGroupProperties);
+ze_result_t (*psmi_zeMemAllocHost)(ze_context_handle_t hContext, const ze_host_mem_alloc_desc_t *host_desc, size_t size, size_t alignment, void **pptr);
+ze_result_t (*psmi_zeMemFree)(ze_context_handle_t hContext, void *ptr);
+ze_result_t (*psmi_zeMemGetIpcHandle)(ze_context_handle_t hContext, const void *ptr, ze_ipc_mem_handle_t *pIpcHandle);
+ze_result_t (*psmi_zeMemOpenIpcHandle)(ze_context_handle_t hContext,ze_device_handle_t hDevice, ze_ipc_mem_handle_t handle, ze_ipc_memory_flags_t flags, void **pptr);
+ze_result_t (*psmi_zeMemCloseIpcHandle)(ze_context_handle_t hContext, const void *ptr);
+ze_result_t (*psmi_zeMemGetAddressRange)(ze_context_handle_t hContext, const void *ptr, void **pBase, size_t *pSize);
+ze_result_t (*psmi_zeMemGetAllocProperties)(ze_context_handle_t hContext, const void *ptr, ze_memory_allocation_properties_t *pMemAllocProperties, ze_device_handle_t *phDevice);
+ze_result_t (*psmi_zeEventPoolCreate)(ze_context_handle_t hContext, const ze_event_pool_desc_t *desc, uint32_t numDevices, ze_device_handle_t *phDevices, ze_event_pool_handle_t *phEventPool);
+ze_result_t (*psmi_zeEventPoolDestroy)(ze_event_pool_handle_t hEventPool);
+ze_result_t (*psmi_zeEventCreate)(ze_event_pool_handle_t hEventPool, const ze_event_desc_t *desc, ze_event_handle_t *phEvent);
+ze_result_t (*psmi_zeEventDestroy)(ze_event_handle_t hEvent);
+ze_result_t (*psmi_zeEventQueryStatus)(ze_event_handle_t hEvent);
+ze_result_t (*psmi_zeEventHostSynchronize)(ze_event_handle_t hEvent, uint64_t timeout);
+ze_result_t (*psmi_zeEventHostReset)(ze_event_handle_t hEvent);
+
+uint64_t psmi_count_zeInit;
+uint64_t psmi_count_zeDriverGet;
+uint64_t psmi_count_zeDeviceGet;
+uint64_t psmi_count_zeContextCreate;
+uint64_t psmi_count_zeContextDestroy;
+uint64_t psmi_count_zeCommandQueueCreate;
+uint64_t psmi_count_zeCommandQueueDestroy;
+uint64_t psmi_count_zeCommandQueueExecuteCommandLists;
+uint64_t psmi_count_zeCommandQueueSynchronize;
+uint64_t psmi_count_zeCommandListCreate;
+uint64_t psmi_count_zeCommandListDestroy;
+uint64_t psmi_count_zeCommandListClose;
+uint64_t psmi_count_zeCommandListReset;
+uint64_t psmi_count_zeCommandListCreateImmediate;
+uint64_t psmi_count_zeCommandListAppendMemoryCopy;
+uint64_t psmi_count_zeCommandListAppendSignalEvent;
+uint64_t psmi_count_zeDeviceCanAccessPeer;
+uint64_t psmi_count_zeDeviceGetCommandQueueGroupProperties;
+uint64_t psmi_count_zeMemAllocHost;
+uint64_t psmi_count_zeMemFree;
+uint64_t psmi_count_zeMemGetIpcHandle;
+uint64_t psmi_count_zeMemOpenIpcHandle;
+uint64_t psmi_count_zeMemCloseIpcHandle;
+uint64_t psmi_count_zeMemGetAddressRange;
+uint64_t psmi_count_zeMemGetAllocProperties;
+uint64_t psmi_count_zeEventPoolCreate;
+uint64_t psmi_count_zeEventPoolDestroy;
+uint64_t psmi_count_zeEventCreate;
+uint64_t psmi_count_zeEventDestroy;
+uint64_t psmi_count_zeEventQueryStatus;
+uint64_t psmi_count_zeEventHostSynchronize;
+uint64_t psmi_count_zeEventHostReset;
+
+int psmi_oneapi_ze_load()
 {
 	psm2_error_t err = PSM2_OK;
+	char *dlerr;
 
 	PSM2_LOG_MSG("entering");
-	_HFI_VDBG("Enabling CUDA support.\n");
+	_HFI_VDBG("Loading OneAPI Level Zero library.\n");
 
-	psmi_cuda_stats_register();
-
-	err = psmi_cuda_lib_load();
-	if (err != PSM2_OK)
+	psmi_oneapi_ze_lib = dlopen("libze_loader.so", RTLD_LAZY);
+	if (!psmi_oneapi_ze_lib) {
+		dlerr = dlerror();
+		_HFI_ERROR(
+			"Unable to open libze_loader.so.  Error %s\n",
+			dlerr ? dlerr : "no dlerror()");
 		goto fail;
+	}
 
-	PSMI_CUDA_CALL(cuInit, 0);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeInit);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeDriverGet);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeDeviceGet);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeContextCreate);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeContextDestroy);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeCommandQueueCreate);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeCommandQueueDestroy);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeCommandQueueExecuteCommandLists);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeCommandQueueSynchronize);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeCommandListCreate);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeCommandListDestroy);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeCommandListClose);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeCommandListReset);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeCommandListCreateImmediate);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeCommandListAppendMemoryCopy);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeCommandListAppendSignalEvent);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeDeviceCanAccessPeer);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeDeviceGetCommandQueueGroupProperties);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeMemAllocHost);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeMemFree);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeMemGetIpcHandle);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeMemOpenIpcHandle);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeMemCloseIpcHandle);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeMemGetAddressRange);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeMemGetAllocProperties);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeEventPoolCreate);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeEventPoolDestroy);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeEventCreate);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeEventDestroy);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeEventQueryStatus);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeEventHostSynchronize);
+	PSMI_ONEAPI_ZE_DLSYM(psmi_oneapi_ze_lib, zeEventHostReset);
 
-#ifdef PSM_HAVE_RNDV_MOD
-	psm2_get_gpu_bars();
-#endif
+	PSM2_LOG_MSG("leaving");
+	return err;
+fail:
+	if (psmi_oneapi_ze_lib)
+		dlclose(psmi_oneapi_ze_lib);
+	err = psm3_handle_error(PSMI_EP_NORETURN,
+		PSM2_INTERNAL_ERR,
+		"Unable to load OneAPI Level Zero library.\n");
+	return err;
+}
 
+static void psmi_oneapi_ze_stats_register()
+{
+#define PSMI_ONEAPI_ZE_COUNT_DECLU64(func) \
+	PSMI_STATS_DECLU64(#func, NULL, &psmi_count_##func)
+
+	struct psmi_stats_entry ze_entries[] = {
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeInit),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeDriverGet),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeDeviceGet),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeContextCreate),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeContextDestroy),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeCommandQueueCreate),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeCommandQueueDestroy),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeCommandQueueExecuteCommandLists),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeCommandQueueSynchronize),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeCommandListCreate),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeCommandListDestroy),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeCommandListClose),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeCommandListReset),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeCommandListCreateImmediate),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeCommandListAppendMemoryCopy),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeCommandListAppendSignalEvent),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeDeviceCanAccessPeer),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeDeviceGetCommandQueueGroupProperties),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeMemAllocHost),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeMemFree),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeMemGetIpcHandle),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeMemOpenIpcHandle),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeMemCloseIpcHandle),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeMemGetAddressRange),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeMemGetAllocProperties),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeEventPoolCreate),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeEventPoolDestroy),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeEventCreate),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeEventDestroy),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeEventQueryStatus),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeEventHostSynchronize),
+		PSMI_ONEAPI_ZE_COUNT_DECLU64(zeEventHostReset)
+	};
+#undef PSMI_ONEAPI_ZE_COUNT_DECLU64
+
+	psm3_stats_register_type("PSM_OneAPI_ZE_call_statistics",
+		"Count of OneAPI Level Zero calls per API entry point for the whole process.\n"
+		"When using an Intel(r) GPU, PSM3 may call Level Zero "
+		"APIs to access or transfer application buffers in GPU memory.",
+		PSMI_STATSTYPE_GPU,
+		ze_entries, PSMI_HOWMANY(ze_entries), NULL,
+		&psmi_count_zeInit, NULL); /* context must != NULL */
+}
+#endif // PSM_ONEAPI
+
+/*
+ * Bit field that contains capability set.
+ * Each bit represents different capability.
+ * It is supposed to be filled with logical OR
+ * on conditional compilation basis
+ * along with future features/capabilities.
+ */
+uint64_t psm3_capabilities_bitset = PSM2_MULTI_EP_CAP | PSM2_LIB_REFCOUNT_CAP;
+
+int psm3_verno_client()
+{
+	return psm3_verno_client_val;
+}
+
+/* This function is used to determine whether the current library build can
+ * successfully communicate with another library that claims to be version
+ * 'verno'.
+ *
+ * PSM 2.x is always ABI compatible, but this checks to see if two different
+ * versions of the library can coexist.
+ */
+int psm3_verno_isinteroperable(uint16_t verno)
+{
+	if (PSMI_VERNO_GET_MAJOR(verno) != PSM2_VERNO_MAJOR)
+		return 0;
+
+	return 1;
+}
+
+int MOCKABLE(psm3_isinitialized)()
+{
+	return (psmi_refcount > 0);
+}
+MOCK_DEF_EPILOGUE(psm3_isinitialized);
+
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+static void psmi_gpu_init(void)
+{
 	union psmi_envvar_val env_enable_gdr_copy;
 	psm3_getenv("PSM3_GDRCOPY",
 				"Enable (set envvar to 1) for gdr copy support in PSM (Enabled by default)",
@@ -381,9 +567,9 @@ int psmi_cuda_initialize()
 	union psmi_envvar_val env_cuda_thresh_rndv;
 	psm3_getenv("PSM3_CUDA_THRESH_RNDV",
 				"RNDV protocol is used for GPU send message sizes greater than the threshold",
-				PSMI_ENVVAR_LEVEL_USER, PSMI_ENVVAR_TYPE_INT,
-				(union psmi_envvar_val)CUDA_THRESH_RNDV, &env_cuda_thresh_rndv);
-	cuda_thresh_rndv = env_cuda_thresh_rndv.e_int;
+				PSMI_ENVVAR_LEVEL_USER, PSMI_ENVVAR_TYPE_UINT,
+				(union psmi_envvar_val)cuda_thresh_rndv, &env_cuda_thresh_rndv);
+	cuda_thresh_rndv = env_cuda_thresh_rndv.e_uint;
 
 
 	union psmi_envvar_val env_gdr_copy_limit_send;
@@ -415,6 +601,30 @@ int psmi_cuda_initialize()
 
 	if (!is_gdr_copy_enabled)
 		gdr_copy_limit_send = gdr_copy_limit_recv = 0;
+}
+#endif /* PSM_CUDA || PSM_ONEAPI */
+
+#ifdef PSM_CUDA
+int psmi_cuda_initialize()
+{
+	psm2_error_t err = PSM2_OK;
+
+	PSM2_LOG_MSG("entering");
+	_HFI_VDBG("Enabling CUDA support.\n");
+
+	psmi_cuda_stats_register();
+
+	err = psmi_cuda_lib_load();
+	if (err != PSM2_OK)
+		goto fail;
+
+	PSMI_CUDA_CALL(cuInit, 0);
+
+#ifdef PSM_HAVE_RNDV_MOD
+	psm2_get_gpu_bars();
+#endif
+
+	psmi_gpu_init();
 
 	PSM2_LOG_MSG("leaving");
 	return err;
@@ -422,7 +632,165 @@ fail:
 	err = psm3_handle_error(PSMI_EP_NORETURN, PSM2_INTERNAL_ERR, "Unable to initialize PSM3 CUDA support.\n");
 	return err;
 }
-#endif
+#endif // PSM_CUDA
+
+#ifdef PSM_ONEAPI
+
+static void psmi_oneapi_find_copy_only_engine(ze_device_handle_t dev,
+					      struct ze_dev_ctxt *ctxt)
+{
+	uint32_t count = 0;
+	ze_command_queue_group_properties_t *props = NULL;
+	int i;
+
+	/* Set the default */
+	ctxt->ordinal = 0;
+	ctxt->index = 0;
+	ctxt->num_queues = 1;
+	PSMI_ONEAPI_ZE_CALL(zeDeviceGetCommandQueueGroupProperties, dev,
+			    &count, NULL);
+	props = psmi_calloc(PSMI_EP_NONE, UNDEFINED, count, sizeof(*props));
+	if (!props) {
+		_HFI_ERROR("Failed to allocate mem for CmdQ Grp\n");
+		return;
+	}
+	PSMI_ONEAPI_ZE_CALL(zeDeviceGetCommandQueueGroupProperties, dev,
+			    &count, props);
+
+	/* Select the first copy-only engine group if possible */
+	for (i = count - 1; i >= 0; i--) {
+		if ((props[i].flags &
+		    ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COPY) &&
+		    !(props[i].flags &
+		      ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE)) {
+			ctxt->ordinal = i;
+			ctxt->num_queues = props[i].numQueues;
+			break;
+		}
+	}
+	psmi_free(props);
+}
+
+static void psmi_oneapi_cmd_create(ze_device_handle_t dev, struct ze_dev_ctxt *ctxt)
+{
+	ze_command_queue_desc_t ze_cq_desc = {
+		.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC,
+		.flags = 0,
+		.mode = ZE_COMMAND_QUEUE_MODE_DEFAULT,
+		.priority = ZE_COMMAND_QUEUE_PRIORITY_NORMAL
+	};
+	ze_command_list_desc_t ze_cl_desc = {
+		.stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC,
+		.flags = 0
+	};
+
+	psmi_oneapi_find_copy_only_engine(dev, ctxt);
+	ze_cq_desc.ordinal = ctxt->ordinal;
+	ze_cq_desc.index = ctxt->index;
+	PSMI_ONEAPI_ZE_CALL(zeCommandQueueCreate, ze_context, dev,
+			    &ze_cq_desc, &ctxt->cq);
+
+	ze_cl_desc.commandQueueGroupOrdinal = ctxt->ordinal;
+	PSMI_ONEAPI_ZE_CALL(zeCommandListCreate, ze_context, dev, &ze_cl_desc,
+			    &ctxt->cl);
+	ctxt->dev = dev;
+}
+
+void psmi_oneapi_cmd_create_all(void)
+{
+	int i;
+	struct ze_dev_ctxt *ctxt;
+	ze_context_desc_t ctxtDesc = { ZE_STRUCTURE_TYPE_CONTEXT_DESC, NULL, 0 };
+
+	if (!ze_context)
+		PSMI_ONEAPI_ZE_CALL(zeContextCreate, ze_driver, &ctxtDesc,
+				    &ze_context);
+
+	for (i = 0; i < num_ze_devices; i++) {
+		ctxt = &ze_devices[i];
+
+		if (!ctxt->cq || !ctxt->cl)
+			psmi_oneapi_cmd_create(ctxt->dev, ctxt);
+	}
+	if (num_ze_devices > 0)
+		cur_ze_dev = &ze_devices[0];
+}
+
+void psmi_oneapi_cmd_destroy_all(void)
+{
+	int i;
+	struct ze_dev_ctxt *ctxt;
+
+	for (i = 0; i < num_ze_devices; i++) {
+		ctxt = &ze_devices[i];
+
+		if (ctxt->cl) {
+			PSMI_ONEAPI_ZE_CALL(zeCommandListDestroy, ctxt->cl);
+			ctxt->cl = NULL;
+		}
+		if (ctxt->cq) {
+			PSMI_ONEAPI_ZE_CALL(zeCommandQueueDestroy, ctxt->cq);
+			ctxt->cq = NULL;
+		}
+	}
+	cur_ze_dev = NULL;
+
+	/* Also destroy ze_context */
+	if (ze_context) {
+		PSMI_ONEAPI_ZE_CALL(zeContextDestroy, ze_context);
+		ze_context = NULL;
+	}
+}
+
+int psmi_oneapi_ze_initialize()
+{
+	psm2_error_t err = PSM2_OK;
+	uint32_t ze_driver_count = 1;
+	uint32_t  ze_device_count = 0;
+	ze_device_handle_t devices[MAX_ZE_DEVICES];
+	int i;
+
+	PSM2_LOG_MSG("entering");
+	_HFI_VDBG("Init Level Zero library.\n");
+
+	psmi_oneapi_ze_stats_register();
+	err = psmi_oneapi_ze_load();
+	if (err != PSM2_OK)
+		goto fail;
+
+	PSMI_ONEAPI_ZE_CALL(zeInit, ZE_INIT_FLAG_GPU_ONLY);
+
+	PSMI_ONEAPI_ZE_CALL(zeDriverGet, &ze_driver_count, &ze_driver);
+	PSMI_ONEAPI_ZE_CALL(zeDeviceGet, ze_driver, &ze_device_count, NULL);
+	if (ze_device_count > MAX_ZE_DEVICES)
+		ze_device_count = MAX_ZE_DEVICES;
+	PSMI_ONEAPI_ZE_CALL(zeDeviceGet, ze_driver, &ze_device_count, devices);
+
+	ze_context_desc_t ctxtDesc = { ZE_STRUCTURE_TYPE_CONTEXT_DESC, NULL, 0 };
+	PSMI_ONEAPI_ZE_CALL(zeContextCreate, ze_driver, &ctxtDesc, &ze_context);
+	_HFI_VDBG("ze_driver %p first device %p ze_context %p\n",
+		   ze_driver, &devices[0], ze_context);
+
+	for (i = 0; i < ze_device_count; i++)
+		psmi_oneapi_cmd_create(devices[i], &ze_devices[i]);
+
+	num_ze_devices = ze_device_count;
+	if (num_ze_devices > 0)
+		cur_ze_dev = &ze_devices[0];
+
+	psmi_gpu_init();
+
+	psm3_num_ze_dev_fds = 0;
+
+	PSM2_LOG_MSG("leaving");
+	return err;
+fail:
+	err = psm3_handle_error(PSMI_EP_NORETURN,
+		PSM2_INTERNAL_ERR,
+		"Unable to initialize PSM3 OneAPI Level Zero support.\n");
+	return err;
+}
+#endif // PSM_ONEAPI
 
 /* parse PSM3_SUBNETS to get a list of subnets we'll consider */
 static
@@ -457,20 +825,20 @@ psmi_parse_subnets(const char *subnets)
 		for (p = e-1; p >= b && isspace(*p); p--)
 			*p = '\0';
 		if (*b) {
-			psmi_allow_subnets[i] = psmi_strdup(PSMI_EP_NONE, b);
-			if (! psmi_allow_subnets[i]) {
+			psm3_allow_subnets[i] = psmi_strdup(PSMI_EP_NONE, b);
+			if (! psm3_allow_subnets[i]) {
 				err = PSM2_NO_MEMORY;
 				goto fail;
 			}
 			_HFI_DBG("PSM3_SUBNETS Entry %d = '%s'\n",
-					i, psmi_allow_subnets[i]);
+					i, psm3_allow_subnets[i]);
 			i++;
 		}
 	}
 	if ( e < ee && *e)
 		_HFI_INFO("More than %d entries in PSM3_SUBNETS, ignoring extra entries\n", PSMI_MAX_SUBNETS);
-	psmi_num_allow_subnets = i;
-	_HFI_DBG("PSM3_SUBNETS Num subnets = %d\n", psmi_num_allow_subnets);
+	psm3_num_allow_subnets = i;
+	_HFI_DBG("PSM3_SUBNETS Num subnets = %d\n", psm3_num_allow_subnets);
 fail:
 	if (tempstr != NULL)
 		psmi_free(tempstr);
@@ -489,7 +857,7 @@ void psmi_parse_nic_var()
 	//autodetect
 	if (0 == strcasecmp(env_nic.e_str, "any")) {
 		//so this disables filtering
-		psmi_nic_wildcard = NULL;
+		psm3_nic_wildcard = NULL;
 		return;
 	}
 	char *endptr = NULL;
@@ -498,7 +866,7 @@ void psmi_parse_nic_var()
 	if ((env_nic.e_str != endptr)&&(*endptr == '\0'))
 	{
 		//filter equals device name
-		psmi_nic_wildcard = psm3_sysfs_unit_dev_name(unit);
+		psm3_nic_wildcard = psm3_sysfs_unit_dev_name(unit);
 		return;
 	}
 	unit = strtol(env_nic.e_str, &endptr, 16);
@@ -506,11 +874,11 @@ void psmi_parse_nic_var()
 	if ((env_nic.e_str != endptr)&&(*endptr == '\0'))
 	{
 		//filter equals device name
-		psmi_nic_wildcard = psm3_sysfs_unit_dev_name(unit);
+		psm3_nic_wildcard = psm3_sysfs_unit_dev_name(unit);
 		return;
 	}
 	//Unit name or wildcard
-	psmi_nic_wildcard = env_nic.e_str;
+	psm3_nic_wildcard = env_nic.e_str;
 }
 
 psm2_error_t psm3_init(int *major, int *minor)
@@ -519,9 +887,12 @@ psm2_error_t psm3_init(int *major, int *minor)
 	union psmi_envvar_val env_tmask;
 	int devid_enabled[PTL_MAX_INIT];
 
-	psmi_stats_initialize();
+	if (psm3_env_initialize())
+		goto fail;
 
-	psmi_mem_stats_register();
+	psm3_stats_initialize();
+
+	psm3_mem_stats_register();
 
 	psmi_log_initialize();
 
@@ -552,7 +923,7 @@ psm2_error_t psm3_init(int *major, int *minor)
 	psmi_init_lock(&psm3_creation_lock);
 
 #ifdef PSM_DEBUG
-	if (!getenv("PSM3_NO_WARN")) {
+	if (!psm3_env_get("PSM3_NO_WARN")) {
 		_HFI_ERROR(
 			"!!! WARNING !!! YOU ARE RUNNING AN INTERNAL-ONLY PSM *DEBUG* BUILD.\n");
 		fprintf(stderr,
@@ -561,7 +932,7 @@ psm2_error_t psm3_init(int *major, int *minor)
 #endif
 
 #ifdef PSM_PROFILE
-	if (!getenv("PSM3_NO_WARN")) {
+	if (!psm3_env_get("PSM3_NO_WARN")) {
 		_HFI_ERROR(
 			"!!! WARNING !!! YOU ARE RUNNING AN INTERNAL-ONLY PSM *PROFILE* BUILD.\n");
 		fprintf(stderr,
@@ -571,7 +942,7 @@ psm2_error_t psm3_init(int *major, int *minor)
 
 #ifdef PSM_FI
 	/* Make sure we complain if fault injection is enabled */
-	if (getenv("PSM3_FI") && !getenv("PSM3_NO_WARN"))
+	if (psm3_env_get("PSM3_FI") && !psm3_env_get("PSM3_NO_WARN"))
 		fprintf(stderr,
 			"!!! WARNING !!! YOU ARE RUNNING WITH FAULT INJECTION ENABLED!\n");
 #endif /* #ifdef PSM_FI */
@@ -626,18 +997,20 @@ psm2_error_t psm3_init(int *major, int *minor)
 	psm3_getenv("PSM3_TRACEMASK",
 		    "Mask flags for tracing",
 		    PSMI_ENVVAR_LEVEL_USER,
-		    PSMI_ENVVAR_TYPE_STR,
+		    PSMI_ENVVAR_TYPE_STR_VAL_PAT,
 		    (union psmi_envvar_val)__HFI_DEBUG_DEFAULT_STR, &env_tmask);
-	psm3_dbgmask = psmi_parse_val_pattern(env_tmask.e_str, __HFI_DEBUG_DEFAULT,
-			__HFI_DEBUG_DEFAULT);
+	(void)psm3_parse_val_pattern(env_tmask.e_str, __HFI_DEBUG_DEFAULT,
+			&psm3_dbgmask);
 
 	/* The "real thing" is done in hfi_proto.c as a constructor function, but
 	 * we getenv it here to report what we're doing with the setting */
 	{
 		extern int psm3_malloc_no_mmap;
 		union psmi_envvar_val env_mmap;
+		// real parsing was in a constructor so can't use psm3_env_get
 		char *env = getenv("PSM3_DISABLE_MMAP_MALLOC");
 		int broken = (env && *env && !psm3_malloc_no_mmap);
+		// this is just for logging
 		psm3_getenv("PSM3_DISABLE_MMAP_MALLOC",
 			    broken ? "Skipping mmap disable for malloc()" :
 			    "Disable mmap for malloc()",
@@ -661,16 +1034,30 @@ psm2_error_t psm3_init(int *major, int *minor)
 					  " The max epid version supported in this version of PSM3 is %u \n"
 					  "Please upgrade PSM3 \n",
 					  PSMI_MAX_ADDR_FMT_SUPPORTED);
-			goto fail;
+			goto fail_unref;
 		} else if ( env_addr_fmt.e_int != PSMI_ADDR_FMT_DEFAULT
 			&& (env_addr_fmt.e_int < PSMI_MIN_ADDR_FMT_SUPPORTED
 				|| ! PSMI_IPS_ADDR_FMT_IS_VALID(env_addr_fmt.e_int))
 			) {
 			psm3_handle_error(PSMI_EP_NORETURN, PSM2_INTERNAL_ERR,
 					  " Invalid value provided through PSM3_ADDR_FMT %d\n", env_addr_fmt.e_int);
+			goto fail_unref;
+		}
+		psm3_addr_fmt = env_addr_fmt.e_int;
+	}
+	{
+		union psmi_envvar_val env_addr_per_nic;
+		psm3_getenv("PSM3_ADDR_PER_NIC",
+					"Number of addresses per NIC to present",
+					PSMI_ENVVAR_LEVEL_USER, PSMI_ENVVAR_TYPE_INT,
+					(union psmi_envvar_val)1, &env_addr_per_nic);
+		if (env_addr_per_nic.e_uint > PSMI_MAX_RAILS) {
+			psm3_handle_error(PSMI_EP_NORETURN, PSM2_INTERNAL_ERR,
+					  "PSM3_ADDR_PER_NIC exceeds %u\n",
+					  PSMI_MAX_RAILS);
 			goto fail;
 		}
-		psmi_addr_fmt = env_addr_fmt.e_int;
+		psm3_addr_per_nic = env_addr_per_nic.e_uint;
 	}
 	{
 		union psmi_envvar_val env_allow_routers;
@@ -679,7 +1066,7 @@ psm2_error_t psm3_init(int *major, int *minor)
 					" allows routers between nodes and assumes single network plane for multi-rail\n",
 					PSMI_ENVVAR_LEVEL_USER, PSMI_ENVVAR_TYPE_INT,
 					(union psmi_envvar_val)0, &env_allow_routers);
-		psmi_allow_routers = env_allow_routers.e_int;
+		psm3_allow_routers = env_allow_routers.e_int;
 	}
 	{
 		union psmi_envvar_val env_subnets;
@@ -690,7 +1077,7 @@ psm2_error_t psm3_init(int *major, int *minor)
 			(union psmi_envvar_val)PSMI_SUBNETS_DEFAULT, &env_subnets);
 
 		if ((err = psmi_parse_subnets(env_subnets.e_str)))
-			goto fail;
+			goto fail_unref;
 	}
 	psmi_parse_nic_var();
 
@@ -713,11 +1100,11 @@ psm2_error_t psm3_init(int *major, int *minor)
 		psm3_nic_speed_wildcard = env_speed.e_str;
 	}
 
-	if (getenv("PSM3_DIAGS")) {
+	if (psm3_env_get("PSM3_DIAGS")) {
 		_HFI_INFO("Running diags...\n");
 		if (psm3_diags()) {
 			psm3_handle_error(PSMI_EP_NORETURN, PSM2_INTERNAL_ERR, " diags failure \n");
-			goto fail;
+			goto fail_unref;
 		}
 	}
 
@@ -729,16 +1116,25 @@ psm2_error_t psm3_init(int *major, int *minor)
 
 	psm3_epid_init();
 
-	if ((err = psmi_parse_devices(devid_enabled)))
-		goto fail;
+	if ((err = psm3_parse_devices(devid_enabled)))
+		goto fail_unref;
 
 	int rc = psm3_hal_initialize(devid_enabled);
 
 	if (rc)
 	{
 		err = PSM2_INTERNAL_ERR;
-		goto fail;
+		goto fail_unref;
 	}
+
+#ifdef PSM_DSA
+	if (psm3_device_is_enabled(devid_enabled, PTL_DEVID_AMSH)) {
+		if (psm3_dsa_init()) {
+			err = PSM2_INTERNAL_ERR;
+			goto fail_unref;
+		}
+	}
+#endif
 
 #ifdef PSM_CUDA
 	union psmi_envvar_val env_enable_cuda;
@@ -749,12 +1145,73 @@ psm2_error_t psm3_init(int *major, int *minor)
 	// order important, always parse gpudirect
 	is_cuda_enabled = psmi_parse_gpudirect() || env_enable_cuda.e_int;
 
-	if (PSMI_IS_CUDA_ENABLED) {
+	if (PSMI_IS_GPU_ENABLED) {
 		err = psmi_cuda_initialize();
 		if (err != PSM2_OK)
-			goto fail;
-	}
+#ifdef PSM_DSA
+			goto fail_undsa;
+#else
+			goto fail_unref;
 #endif
+	}
+#else /* PSM_CUDA */
+	/* PSM3_CUDA is not allowed for this build, so we check it's
+	 * presence but don't want to use psm3_getenv since we don't
+	 * want it to appear in PSM3_VERBOSE_ENV help text
+	 */
+	int enable_cuda = 0;
+	if (psm3_parse_str_int(psm3_env_get("PSM3_CUDA"), &enable_cuda) == -2
+		|| enable_cuda) {
+		_HFI_INFO("WARNING: PSM built without CUDA enabled, PSM3_CUDA unavailable\n");
+	}
+#endif /* PSM_CUDA */
+
+#ifdef PSM_ONEAPI
+	union psmi_envvar_val env_enable_oneapi;
+	psm3_getenv("PSM3_ONEAPI_ZE",
+			"Enable (set envvar to 1) for OneAPI Level Zero (ZE) support in PSM (Disabled by default)",
+			PSMI_ENVVAR_LEVEL_USER, PSMI_ENVVAR_TYPE_INT,
+			(union psmi_envvar_val)0, &env_enable_oneapi);
+	is_oneapi_ze_enabled = psmi_parse_gpudirect() || env_enable_oneapi.e_int;
+
+	if (PSMI_IS_GPU_ENABLED) {
+		err = psmi_oneapi_ze_initialize();
+		if (err != PSM2_OK) {
+#ifdef PSM_DSA
+			goto fail_undsa;
+#else
+			goto fail_unref;
+#endif
+		}
+	}
+#else /* PSM_ONEAPI */
+	/* PSM3_ONEAPI_ZE is not allowed for this build, so we check it's
+	 * presence but don't want to use psm3_getenv since we don't
+	 * want it to appear in PSM3_VERBOSE_ENV help text
+	 */
+	int enable_oneapi = 0;
+	if (psm3_parse_str_int(psm3_env_get("PSM3_ONEAPI_ZE"), &enable_oneapi) == -2
+		|| enable_oneapi) {
+		_HFI_INFO("WARNING: PSM built without ONEAPI_ZE enabled, PSM3_ONEAPI_ZE unavailable\n");
+	}
+#endif /* PSM_ONEAPI */
+
+#if !defined(PSM_CUDA) && ! defined(PSM_ONEAPI)
+	/* PSM3_GPUDIRECT is not allowed for this build, so we check it's
+	 * presence but don't want to use psm3_getenv since we don't
+	 * want it to appear in PSM3_VERBOSE_ENV help text
+	 * Note we check here, rather than in ips_proto_init, because
+	 * PSM3_GPUDIERECT can enable GPU for ptl_am (shm) as well as ips,
+	 * so if a user attempted a non-GPU build single node run with
+	 * PSM3_GPUDIRECT=1 and expected GPU handling in shm, they would not
+	 * get the behavior they expected
+	 */
+	unsigned int gpudirect = 0;
+	if (psm3_parse_str_uint(psm3_env_get("PSM3_GPUDIRECT"), &gpudirect) == -2
+		|| gpudirect) {
+		_HFI_INFO("WARNING: PSM built with neither ONEAPI_ZE nor CUDA enabled, PSM3_GPUDIRECT unavailable\n");
+	}
+#endif /* !defined(PSM_CUDA) && ! defined(PSM_ONEAPI) */
 
 update:
 	*major = (int)psm3_verno_major;
@@ -764,6 +1221,13 @@ fail:
 
 	PSM2_LOG_MSG("leaving");
 	return err;
+#if defined(PSM_DSA) && (defined(PSM_CUDA) || defined(PSM_ONEAPI))
+fail_undsa:
+	psm3_dsa_fini();
+#endif
+fail_unref:
+	psmi_refcount--;
+	goto fail;
 }
 
 /* convert return value for various device queries into
@@ -806,12 +1270,14 @@ psm2_error_t psm3_info_query(psm2_info_query_t q, void *out,
 		2, /* PSM2_INFO_QUERY_UNIT_NAME         */
 		0, /* was PSM2_INFO_QUERY_UNIT_SYS_PATH */
 		2, /* PSM2_INFO_QUERY_UNIT_PCI_BUS      */
-		2, /* PSM2_INFO_QUERY_UNIT_SUBNET_NAME  */
+		4, /* PSM2_INFO_QUERY_UNIT_SUBNET_NAME  */
 		2, /* PSM2_INFO_QUERY_UNIT_DEVICE_ID    */
 		2, /* PSM2_INFO_QUERY_UNIT_DEVICE_VERSION */
 		2, /* PSM2_INFO_QUERY_UNIT_VENDOR_ID    */
 		2, /* PSM2_INFO_QUERY_UNIT_DRIVER       */
 		2, /* PSM2_INFO_QUERY_PORT_SPEED        */
+		0, /* PSM2_INFO_QUERY_NUM_ADDR_PER_UNIT */
+		4, /* PSM2_INFO_QUERY_UNIT_ADDR_NAME    */
 	};
 	psm2_error_t rv = PSM2_INTERNAL_ERR;
 
@@ -849,9 +1315,11 @@ psm2_error_t psm3_info_query(psm2_info_query_t q, void *out,
 		{
 #ifdef PSM_CUDA
 		*((uint32_t*)out) = PSM2_INFO_QUERY_FEATURE_CUDA;
+#elif defined(PSM_ONEAPI)
+		*((uint32_t*)out) = PSM2_INFO_QUERY_FEATURE_ONEAPI;
 #else
 		*((uint32_t*)out) = 0;
-#endif /* #ifdef PSM_CUDA */
+#endif /* PSM_CUDA */
 		}
 		rv = PSM2_OK;
 		break;
@@ -880,11 +1348,13 @@ psm2_error_t psm3_info_query(psm2_info_query_t q, void *out,
 		{
 			char         *subnetName       = (char*)out;
 			uint32_t      unit          = args[0].unit;
-			size_t        subnetNameLength = args[1].length;
+			uint32_t      port          = args[1].port;
+			uint32_t      addr_index    = args[2].addr_index;
+			size_t        subnetNameLength = args[3].length;
 
 			if (psmi_hal_get_unit_active(unit) <= 0) break;
 
-			if (psmi_hal_get_port_subnet_name(unit, 1 /* VERBS_PORT*/,
+			if (psmi_hal_get_port_subnet_name(unit, port, addr_index,
 						subnetName, subnetNameLength))
 				break;
 			rv = PSM2_OK;
@@ -939,7 +1409,7 @@ psm2_error_t psm3_info_query(psm2_info_query_t q, void *out,
 				*speed = 0;
 				for (unit = 0; unit < psmi_hal_get_num_units_(); unit++) {
 					uint64_t unit_speed;
-					if (psmi_hal_get_port_lid(unit, port) <= 0)
+					if (psmi_hal_get_port_lid(unit, port, 0/*addr_index*/) <= 0)
 						continue;
 					if (0 <= psmi_hal_get_port_speed(unit, port, &unit_speed))
 						*speed = max(*speed, unit_speed);
@@ -952,11 +1422,74 @@ psm2_error_t psm3_info_query(psm2_info_query_t q, void *out,
 			}
 		}
 		break;
+	case PSM2_INFO_QUERY_NUM_ADDR_PER_UNIT:
+		*((uint32_t*)out) = psm3_addr_per_nic;
+		rv = PSM2_OK;
+		break;
+	case PSM2_INFO_QUERY_UNIT_ADDR_NAME:
+		{
+			char         *addrName       = (char*)out;
+			uint32_t      unit          = args[0].unit;
+			//uint32_t      port          = args[1].port;	/* ignored, should be VERBS_PORT */
+			uint32_t      addr_index    = args[2].addr_index;
+			size_t        addrNameLength = args[3].length;
+
+			if (psm3_addr_per_nic > 1)
+				snprintf(addrName, addrNameLength, "%s-%u", psmi_hal_get_unit_name(unit), addr_index);
+			else
+				snprintf(addrName, addrNameLength, "%s", psmi_hal_get_unit_name(unit));
+			rv = PSM2_OK;
+		}
+		break;
 	default:
 		return 	PSM2_IQ_INVALID_QUERY;
 	}
 
 	return rv;
+}
+
+/*
+ * Function that allows the wrapper provider to get PSM env variables
+ * including checks of the /etc/psm3.conf file.  Purposely structured
+ * similar to fi_param_get_* for easier use in psmx3 wrapper
+ */
+int psm3_getenv_int(const char *name, const char *descr, int visible,
+				int *value)
+{
+	union psmi_envvar_val env_val;
+
+	int ret = psm3_getenv(name, descr,
+			visible?PSMI_ENVVAR_LEVEL_USER:PSMI_ENVVAR_LEVEL_HIDDEN,
+			PSMI_ENVVAR_TYPE_INT, (union psmi_envvar_val)*value,
+			&env_val);
+	*value = env_val.e_int;
+	return ret;
+}
+
+int psm3_getenv_bool(const char *name, const char *descr, int visible,
+				int *value)
+{
+	union psmi_envvar_val env_val;
+
+	int ret = psm3_getenv(name, descr,
+			visible?PSMI_ENVVAR_LEVEL_USER:PSMI_ENVVAR_LEVEL_HIDDEN,
+			PSMI_ENVVAR_TYPE_YESNO, (union psmi_envvar_val)*value,
+			&env_val);
+	*value = env_val.e_int;
+	return ret;
+}
+
+int psm3_getenv_str(const char *name, const char *descr, int visible,
+				char **value)
+{
+	union psmi_envvar_val env_val;
+
+	int ret = psm3_getenv(name, descr,
+			visible?PSMI_ENVVAR_LEVEL_USER:PSMI_ENVVAR_LEVEL_HIDDEN,
+			PSMI_ENVVAR_TYPE_STR, (union psmi_envvar_val)*value,
+			&env_val);
+	*value = env_val.e_str;
+	return ret;
 }
 
 uint64_t psm3_get_capability_mask(uint64_t req_cap_mask)
@@ -992,6 +1525,10 @@ psm2_error_t psm3_finalize(void)
 			     2 * PSMI_MIN_EP_CLOSE_TIMEOUT);
 		psm3_opened_endpoint = ep = saved_ep;
 	}
+
+#ifdef PSM_DSA
+	psm3_dsa_fini();	// noop if didn't successfully psm3_dsa_init
+#endif
 
 #ifdef PSM_FI
 	psm3_faultinj_fini();
@@ -1046,15 +1583,30 @@ psm2_error_t psm3_finalize(void)
 
 	psm3_hal_finalize();
 #ifdef PSM_CUDA
-	if (PSMI_IS_CUDA_ENABLED)
-		psmi_stats_deregister_type(PSMI_STATSTYPE_CUDA, &is_cuda_enabled);
-#endif
+	if (PSMI_IS_GPU_ENABLED)
+		psm3_stats_deregister_type(PSMI_STATSTYPE_GPU, &psmi_count_cuInit);
+#elif defined(PSM_ONEAPI)
+	if (PSMI_IS_GPU_ENABLED) {
+		psm3_stats_deregister_type(PSMI_STATSTYPE_GPU, &psmi_count_zeInit);
+		/*
+		 * Trying to destroy command list, queue, and context will result in
+		 *  segfaults here.
+		 */
+		/*psmi_oneapi_cmd_destroy();
+		if (ze_context) {
+			PSMI_ONEAPI_ZE_CALL(zeContextDestroy, ze_context);
+			ze_context = NULL;
+		} */
+	}
+#endif // PSM_CUDA
 
 	psmi_refcount = PSMI_FINALIZED;
 	PSM2_LOG_MSG("leaving");
 	psmi_log_fini();
 
-	psmi_stats_finalize();
+	psm3_stats_finalize();
+
+	psm3_env_finalize();
 
 	psmi_heapdebug_finalize();
 
@@ -1206,7 +1758,7 @@ psm3_getopt(psm2_component_t component, const void *component_obj,
 	return rv;
 }
 
-psm2_error_t psm3_poll_noop(ptl_t *ptl, int replyonly)
+psm2_error_t psm3_poll_noop(ptl_t *ptl, int replyonly, bool force)
 {
 	PSM2_LOG_MSG("entering");
 	PSM2_LOG_MSG("leaving");
@@ -1226,14 +1778,14 @@ psm2_error_t psm3_poll(psm2_ep_t ep)
 
 	tmp = ep;
 	do {
-		err1 = ep->ptl_amsh.ep_poll(ep->ptl_amsh.ptl, 0);	/* poll reqs & reps */
+		err1 = ep->ptl_amsh.ep_poll(ep->ptl_amsh.ptl, 0, 0);	/* poll reqs & reps */
 		if (err1 > PSM2_OK_NO_PROGRESS) {	/* some error unrelated to polling */
 			PSMI_UNLOCK(ep->mq->progress_lock);
 			PSM2_LOG_MSG("leaving");
 			return err1;
 		}
 
-		err2 = ep->ptl_ips.ep_poll(ep->ptl_ips.ptl, 0);	/* get into ips_do_work */
+		err2 = ep->ptl_ips.ep_poll(ep->ptl_ips.ptl, 0, 0);	/* get into ips_do_work */
 		if (err2 > PSM2_OK_NO_PROGRESS) {	/* some error unrelated to polling */
 			PSMI_UNLOCK(ep->mq->progress_lock);
 			PSM2_LOG_MSG("leaving");
@@ -1252,7 +1804,7 @@ psm2_error_t psm3_poll(psm2_ep_t ep)
 	return (err1 & err2);
 }
 
-psm2_error_t psm3_poll_internal(psm2_ep_t ep, int poll_amsh)
+psm2_error_t psm3_poll_internal(psm2_ep_t ep, int poll_amsh, bool force)
 {
 	psm2_error_t err1 = PSM2_OK_NO_PROGRESS;
 	psm2_error_t err2;
@@ -1264,14 +1816,14 @@ psm2_error_t psm3_poll_internal(psm2_ep_t ep, int poll_amsh)
 	tmp = ep;
 	do {
 		if (poll_amsh) {
-			err1 = ep->ptl_amsh.ep_poll(ep->ptl_amsh.ptl, 0);	/* poll reqs & reps */
+			err1 = ep->ptl_amsh.ep_poll(ep->ptl_amsh.ptl, 0, force);	/* poll reqs & reps */
 			if (err1 > PSM2_OK_NO_PROGRESS) { /* some error unrelated to polling */
 				PSM2_LOG_MSG("leaving");
 				return err1;
 			}
 		}
 
-		err2 = ep->ptl_ips.ep_poll(ep->ptl_ips.ptl, 0);	/* get into ips_do_work */
+		err2 = ep->ptl_ips.ep_poll(ep->ptl_ips.ptl, 0, force);	/* get into ips_do_work */
 		if (err2 > PSM2_OK_NO_PROGRESS) { /* some error unrelated to polling */
 			PSM2_LOG_MSG("leaving");
 			return err2;

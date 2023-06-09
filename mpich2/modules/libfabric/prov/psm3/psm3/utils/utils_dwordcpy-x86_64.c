@@ -169,10 +169,9 @@ void psm3_qwordcpy(volatile uint64_t *dest, const uint64_t *src, uint32_t nqword
 void MOCKABLE(psm3_mq_mtucpy)(void *vdest, const void *vsrc, uint32_t nchars)
 {
 
-#ifdef PSM_CUDA
-	if (nchars && PSMI_IS_CUDA_ENABLED && (PSMI_IS_CUDA_MEM(vdest) || PSMI_IS_CUDA_MEM((void *) vsrc))) {
-		PSMI_CUDA_CALL(cuMemcpy,
-			       (CUdeviceptr)vdest, (CUdeviceptr)vsrc, nchars);
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+	if (nchars && PSMI_IS_GPU_ENABLED && (PSMI_IS_GPU_MEM(vdest) || PSMI_IS_GPU_MEM((void *) vsrc))) {
+		PSM3_GPU_MEMCPY(vdest, vsrc, nchars);
 		return;
 	}
 #endif

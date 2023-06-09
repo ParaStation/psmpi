@@ -37,6 +37,7 @@
 
 #include "ofi_tree.h"
 #include "ofi_iov.h"
+#include "ofi_hmem.h"
 
 #include <hsa/hsa_ext_amd.h>
 
@@ -57,8 +58,9 @@ static int rocr_mm_subscribe(struct ofi_mem_monitor *monitor, const void *addr,
 static void rocr_mm_unsubscribe(struct ofi_mem_monitor *monitor,
 				const void *addr, size_t len,
 				union ofi_mr_hmem_info *hmem_info);
-static bool rocr_mm_valid(struct ofi_mem_monitor *monitor, const void *addr,
-			  size_t len, union ofi_mr_hmem_info *hmem_info);
+static bool rocr_mm_valid(struct ofi_mem_monitor *monitor,
+			   const struct ofi_mr_info *info,
+			   struct ofi_mr_entry *entry);
 
 static struct rocr_mm rocr_mm = {
 	.mm = {
@@ -353,8 +355,9 @@ static int rocr_mm_subscribe(struct ofi_mem_monitor *monitor, const void *addr,
 	return ret;
 }
 
-static bool rocr_mm_valid(struct ofi_mem_monitor *monitor, const void *addr,
-			  size_t len, union ofi_mr_hmem_info *hmem_info)
+static bool rocr_mm_valid(struct ofi_mem_monitor *monitor,
+			  const struct ofi_mr_info *info,
+			  struct ofi_mr_entry *entry)
 {
 	/* no-op */
 	return true;
@@ -383,8 +386,9 @@ static void rocr_mm_unsubscribe(struct ofi_mem_monitor *monitor,
 {
 }
 
-static bool rocr_mm_valid(struct ofi_mem_monitor *monitor, const void *addr,
-			  size_t len, union ofi_mr_hmem_info *hmem_info)
+static bool rocr_mm_valid(struct ofi_mem_monitor *monitor,
+			  const struct ofi_mr_info *info,
+			  struct ofi_mr_entry *entry)
 {
 	return false;
 }

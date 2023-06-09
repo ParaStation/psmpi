@@ -1,13 +1,14 @@
 dnl
 dnl Copyright (c) 2016 Cisco Systems, Inc.  All rights reserved.
-dnl Copyright (c) 2019-2022 Intel, Inc.  All rights reserved.
+dnl Copyright (c) 2019-2023 Intel, Inc.  All rights reserved.
 dnl Copyright (c) 2019-2020 Amazon.com, Inc. or its affiliates. All rights reserved.
 dnl (C) Copyright 2020 Hewlett Packard Enterprise Development LP
+dnl Copyright (c) 2022 DataDirect Networks, Inc. All rights reserved.
 dnl
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.60])
-AC_INIT([libfabric], [1.15.2], [ofiwg@lists.openfabrics.org])
+AC_INIT([libfabric], [1.18.0], [ofiwg@lists.openfabrics.org])
 AC_CONFIG_SRCDIR([src/fabric.c])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
@@ -521,6 +522,37 @@ AC_DEFINE_UNQUOTED(HAVE_CLOCK_GETTIME, [$have_clock_gettime],
        [Define to 1 if clock_gettime is available.])
 AM_CONDITIONAL(HAVE_CLOCK_GETTIME, [test $have_clock_gettime -eq 1])
 
+dnl Check for io_uring runtime libraries
+AC_ARG_WITH([uring],
+	    [AS_HELP_STRING([--with-uring@<:@=DIR@:>@],
+			    [Enable uring support @<:@default=yes@:>@.
+			     Optional=<Path to where liburing is installed.>])])
+
+have_liburing=0
+AS_IF([test x"$with_uring" != x"no"],
+      [FI_CHECK_PACKAGE([uring],
+			[liburing.h],
+			[uring],
+			[io_uring_queue_init],
+			[-luring],
+			[$with_uring],
+			[],
+			[have_liburing=1
+			AC_DEFINE_UNQUOTED([HAVE_LIBURING], [1], [io_uring support])]
+			[],
+			[])],
+      [])
+
+AS_IF([test x"$with_uring" != x"no" && test -n "$with_uring" && test $have_liburing -eq 0],
+	[AC_MSG_ERROR([io_uring support requested but liburing not available.])],
+	[])
+AM_CONDITIONAL([HAVE_LIBURING], test "$have_liburing" -eq 1)
+
+AS_IF([test x"$with_uring" != x"yes" && test x"$with_uring" != x"no"],
+	[CPPFLAGS="$CPPFLAGS $uring_CPPFLAGS"
+	 LDFLAGS="$LDFLAGS $uring_LDFLAGS"])
+LIBS="$LIBS $uring_LIBS"
+
 dnl Check for CUDA runtime libraries
 AC_ARG_WITH([cuda],
 	[AS_HELP_STRING([--with-cuda=DIR],
@@ -535,9 +567,9 @@ AC_ARG_ENABLE([cuda-dlopen],
         [Enable dlopen of CUDA libraries @<:@default=no@:>@])
     ],
     [
-        AS_IF([test x"$with_dlopen" = "no"],
+        AS_IF([test "$with_dlopen" = "no"],
               [AC_MSG_ERROR([dlopen not found.  libfabric requires libdl.])])
-	cuda_dlopen=1
+	AS_IF([test "$enable_cuda_dlopen" != "no"], [cuda_dlopen=1])
     ])
 
 AS_IF([test x"$with_cuda" != x"no"],
@@ -586,9 +618,9 @@ AC_ARG_ENABLE([ze-dlopen],
         [Enable dlopen of ZE libraries @<:@default=no@:>@])
     ],
     [
-        AS_IF([test x"$with_dlopen" = "no"],
+        AS_IF([test "$with_dlopen" = "no"],
               [AC_MSG_ERROR([dlopen not found.  libfabric requires libdl.])])
-	ze_dlopen=1
+	AS_IF([test "$enable_ze_dlopen" != "no"], [ze_dlopen=1])
     ])
 
 AS_IF([test x"$with_ze" != x"no"],
@@ -645,7 +677,7 @@ AC_ARG_WITH([neuron],
 
 _FI_CHECK_PACKAGE_HEADER([neuron], [nrt/nrt.h], [$with_neuron],
 	[
-		AS_IF([test x"$with_dlopen" = "no"],
+		AS_IF([test "$with_dlopen" = "no"],
 			[AC_MSG_ERROR([dlopen not found.  libfabric requires libdl.])])
 		have_neuron=1
 	],
@@ -656,15 +688,68 @@ AS_IF([test x"$with_neuron" != x"no" && test -n "$with_neuron" && test "$have_ne
 
 AC_DEFINE_UNQUOTED([HAVE_NEURON], [$have_neuron], [Build with Neuron support])
 
+dnl Check for SynapseAI runtime libraries
+AC_ARG_WITH([synapseai],
+	[AS_HELP_STRING([--with-synapseai=DIR],
+			[Enable SynapseAI build and fail if not found.
+			 Optional=<Path to where the SynapseAI libraries
+			 and headers are installed.>])])
+
+have_synapseai=0
+AS_IF([test x"$with_synapseai" != x"no"],
+      [
+		_FI_CHECK_PACKAGE_HEADER([synapseai], [habanalabs/synapse_api.h], [$with_synapseai],
+		[
+			AS_IF([test "$with_dlopen" = "no"],
+				[AC_MSG_ERROR([dlopen not found.  libfabric requires libdl.])])
+			have_synapseai=1
+		],)
+	  ]
+)
+
+AS_IF([test x"$with_synapseai" != x"no" && test -n "$with_synapseai" && test "$have_synapseai" = "0" ],
+	[AC_MSG_ERROR([SynapseAI support requested but SynapseAI runtime not available.])])
+
+AC_DEFINE_UNQUOTED([HAVE_SYNAPSEAI], [$have_synapseai], [SynapseAI support])
+
+AS_IF([test "$have_synapseai" = "1" && test x"$with_synaposeai" != x"yes"],
+      [CPPFLAGS="$CPPFLAGS $synapseai_CPPFLAGS"
+       LDFLAGS="$LDFLAGS $synapseai_LDFLAGS"])
+
 enable_memhooks=1
 AC_ARG_ENABLE([memhooks-monitor],
               [AS_HELP_STRING([--disable-memhooks-monitor],
                               [Determine whether memhooks memory monitor is disabled.])],
-              [enable_memhooks=0],
+              [AS_IF([test "$enable_memhooks_monitor" = "no"],[enable_memhooks=0])],
               [])
 
 AC_DEFINE_UNQUOTED(ENABLE_MEMHOOKS_MONITOR, [$enable_memhooks],
 	[Define to 1 to enable memhooks memory monitor])
+
+dnl Check for LTTNG tracking capability
+have_lttng=0
+AC_ARG_WITH([lttng],
+    AS_HELP_STRING([--with-lttng=DIR],
+           [Enable tracing capability with LTTNG @<:@default=no@:>@]))
+
+AS_IF([test -n "$with_lttng" && test x"$with_lttng" != x"no"],
+      [FI_CHECK_PACKAGE([lttng],
+                        [lttng/tracepoint.h],
+                        [lttng-ust],
+                        [lttng_ust_init_thread],
+                        [],
+                        [$with_lttng],
+                        [],
+                        [have_lttng=1],
+                        [AC_MSG_ERROR([LTTNG is requested but no found. Please check your prefix])])
+      ])
+
+AS_IF([test "$have_lttng" = "1"],
+      [CPPFLAGS="$CPPFLAGS $lttng_CPPFLAGS"
+       LDFLAGS="$LDFLAGS $lttng_LDFLAGS"])
+
+AM_CONDITIONAL([HAVE_LTTNG], test "$have_lttng" -eq 1)
+AC_DEFINE_UNQUOTED([HAVE_LTTNG], [$have_lttng], [Build with LTTNG tracing])
 
 AS_IF([test "$enable_memhooks" = "1"], [
 	AC_CHECK_FUNCS([__curbrk __clear_cache])
@@ -677,7 +762,7 @@ enable_uffd=1
 AC_ARG_ENABLE([uffd-monitor],
               [AS_HELP_STRING([--disable-uffd-monitor],
                               [Determine whether uffd memory monitor is disabled.])],
-              [enable_uffd=0],
+              [AS_IF([test "$enable_uffd_monitor" = "no"], [enable_uffd=0])],
               [])
 
 AC_DEFINE_UNQUOTED(ENABLE_UFFD_MONITOR, [$enable_uffd],
@@ -711,9 +796,9 @@ AC_ARG_ENABLE([gdrcopy-dlopen],
         [Enable dlopen of gdrcopy libraries @<:@default=no@:>@])
     ],
     [
-        AS_IF([test x"$with_dlopen" = "no"],
+        AS_IF([test "$with_dlopen" = "no"],
               [AC_MSG_ERROR([dlopen not found.  libfabric requires libdl.])])
-	gdrcopy_dlopen=1
+	AS_IF([test "$enable_gdrcopy_dlopen" != "no"], [gdrcopy_dlopen=1])
     ])
 
 AS_IF([test "$have_cuda" = 1 && test x"$with_gdrcopy" != x"no"],
@@ -764,9 +849,9 @@ AC_ARG_ENABLE([rocr-dlopen],
         [Enable dlopen of ROCR libraries @<:@default=no@:>@])
     ],
     [
-        AS_IF([test x"$with_dlopen" = "no"],
+        AS_IF([test "$with_dlopen" = "no"],
               [AC_MSG_ERROR([dlopen not found.  libfabric requires libdl.])])
-	rocr_dlopen=1
+	AS_IF([test "$enable_rocr_dlopen" != "no"], [rocr_dlopen=1])
     ])
 
 AS_IF([test x"$with_rocr" != x"no"],
@@ -833,8 +918,11 @@ FI_PROVIDER_SETUP([mrail])
 FI_PROVIDER_SETUP([rxd])
 FI_PROVIDER_SETUP([bgq])
 FI_PROVIDER_SETUP([shm])
+FI_PROVIDER_SETUP([sm2])
 FI_PROVIDER_SETUP([rstream])
+FI_PROVIDER_SETUP([ucx])
 FI_PROVIDER_SETUP([perf])
+FI_PROVIDER_SETUP([trace])
 FI_PROVIDER_SETUP([hook_debug])
 FI_PROVIDER_SETUP([hook_hmem])
 FI_PROVIDER_SETUP([dmabuf_peer_mem])

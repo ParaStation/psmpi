@@ -1,5 +1,6 @@
 # Regex patterns of tests to exclude in runfabtests.sh
 
+inject_test
 ^fi_msg
 -e msg
 ^fi_dgram
@@ -9,7 +10,6 @@
 -S
 rdm_cntr_pingpong
 poll
-cq_data
 
 # Exclude tests with unsupported capabilities
 -k
@@ -21,3 +21,5 @@ scalable_ep
 shared_av
 multi_mr
 av_test
+
+multinode

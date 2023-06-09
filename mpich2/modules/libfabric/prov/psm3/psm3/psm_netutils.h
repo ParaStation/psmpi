@@ -65,6 +65,16 @@
 // network function subset of psm_utils.c so that HAL can use this without
 // needing psm_ep_t, psm_epid_t, and psm2_nid_t from psm_user.h
 
+#ifdef PSM_TCP_IPV4
+typedef struct sockaddr_in psm3_sockaddr_in_t;
+#define psm3_socket_port(in) (in)->sin_port
+#define psm3_socket_domain AF_INET
+#else
+typedef struct sockaddr_in6 psm3_sockaddr_in_t;
+#define psm3_socket_port(in) (in)->sin6_port
+#define psm3_socket_domain AF_INET6
+#endif
+
 /* a bare 128 bit network address, such as a verbs GID or IPv6 address
  * stored in host byte order.  Mainly for use internal to low level utils.
  * Instead use psmi_gid128_t, psmi_naddr128_t or psmi_subnet128_t where
@@ -137,14 +147,20 @@ static inline uint32_t psmi_ipv4_from_gid(psmi_gid128_t gid)
 // The GID may contain an IPv4 ::ffff:addr or an IPv6 address
 // sockaddr in big endian.
 static inline int
-	psmi_ipv6_equal_gid(const struct sockaddr_in6 *s, psmi_gid128_t gid)
+	psmi_ip_equal_gid(const psm3_sockaddr_in_t *s, psmi_gid128_t gid)
 {
+#ifdef PSM_TCP_IPV4
+	return (s->sin_family == AF_INET
+	  && __be32_to_cpu(s->sin_addr.s_addr) == psmi_ipv4_from_gid(gid));
+#else
 	return (s->sin6_family == AF_INET6
 	  && __be32_to_cpu(s->sin6_addr.s6_addr32[0]) == (gid.hi >> 32)
 	  && __be32_to_cpu(s->sin6_addr.s6_addr32[1]) == (gid.hi & 0xffffffff)
 	  && __be32_to_cpu(s->sin6_addr.s6_addr32[2]) == (gid.lo >> 32)
 	  && __be32_to_cpu(s->sin6_addr.s6_addr32[3]) == (gid.lo & 0xffffffff));
+#endif
 }
+
 
 
 // PSM3_ADDR_FMT sets this value, default of PSMI_ADDR_FMT_DEFAULT
@@ -153,7 +169,10 @@ static inline int
 // 	Ethernet prefers 1st IPv4 address, 2nd choice is 1st IPv6 address
 // FMT_IB, FMT_IPV4 or FMT_IPV6 forces all NIC/rail to select only ports
 //	with the specified address (OPA/IB, IPv4 or IPv6)
-extern uint8_t psmi_addr_fmt;	// PSM3_ADDR_FMT
+extern uint8_t psm3_addr_fmt;	// PSM3_ADDR_FMT
+
+// PSM3_ADDR_PER_NIC sets this value, default of 1
+extern unsigned int psm3_addr_per_nic;
 
 #define PSMI_ADDR_FMT_SHM 		0	// shm-only or self-only
 #define PSMI_ADDR_FMT_IB		3	// IB/OPA UD Verbs
@@ -234,8 +253,8 @@ psmi_naddr128_t psm3_build_ipv6_naddr128(psmi_bare_netaddr128_t ip_addr,
 // The filtering is applied after PSM3_ADDR_FMT has potentially filtered out
 // which types of addresses should be considered.
 #define PSMI_MAX_SUBNETS 64
-extern char *psmi_allow_subnets[PSMI_MAX_SUBNETS];     // PSM3_SUBNETS
-extern int psmi_num_allow_subnets;
+extern char *psm3_allow_subnets[PSMI_MAX_SUBNETS];     // PSM3_SUBNETS
+extern int psm3_num_allow_subnets;
 #define PSMI_SUBNETS_DEFAULT "^fe[89ab]?:*/*,*"
 
 // return 1 is subnet is allowed, 0 if subnet should be ignored
@@ -244,7 +263,7 @@ int psm3_allow_ipv4_subnet(uint32_t subnet, uint8_t prefix_len);
 int psm3_allow_ipv6_subnet(psmi_bare_netaddr128_t subnet, uint8_t prefix_len);
 
 // variable to store NIC name wildcard if specified (def. psm.c)
-extern const char *psmi_nic_wildcard;
+extern const char *psm3_nic_wildcard;
 
 /*
  * returns 1 if the unit name matches the glob pattern
@@ -267,42 +286,42 @@ int psm3_is_speed_allowed(int unit, uint64_t speed);
 /*
  * network address manipulation
  */
-const char *psmi_sockaddr_fmt(struct sockaddr* addr, int bufno);
-const char *psmi_sockaddr_fmt_addr(struct sockaddr* addr, int bufno);
-const char *psmi_ipv4_fmt(uint32_t addr, uint8_t prefix_len, int bufno);
-const char *psmi_ipv6_fmt(psmi_bare_netaddr128_t ipv6_addr, uint8_t prefix_len,
+const char *psm3_sockaddr_fmt(struct sockaddr* addr, int bufno);
+const char *psm3_sockaddr_fmt_addr(struct sockaddr* addr, int bufno);
+const char *psm3_ipv4_fmt(uint32_t addr, uint8_t prefix_len, int bufno);
+const char *psm3_ipv6_fmt(psmi_bare_netaddr128_t ipv6_addr, uint8_t prefix_len,
 				int bufno);
-const char *psmi_gid128_fmt(psmi_gid128_t gid, int bufno);
-const char *psmi_subnet128_fmt(psmi_subnet128_t subnet, int bufno);
-void psmi_subnet128_fmt_name(psmi_eth_proto_t protocol, psmi_subnet128_t subnet,
+const char *psm3_gid128_fmt(psmi_gid128_t gid, int bufno);
+const char *psm3_subnet128_fmt(psmi_subnet128_t subnet, int bufno);
+void psm3_subnet128_fmt_name(psmi_eth_proto_t protocol, psmi_subnet128_t subnet,
 				char *buf, int buflen);
-const char *psmi_naddr128_fmt(psmi_naddr128_t addr, int bufno);
+const char *psm3_naddr128_fmt(psmi_naddr128_t addr, int bufno);
 
 // used for IPv4 netmask processing.  A valid netmask has a sequence of 1s
 // and then all other bits are 0.
 // This counts how many 1s are in the high end of the netmask and confirms
 // the remaining low bits are 0.
 // returns 0 if netmask is invalid
-uint8_t psmi_compute_ipv4_prefix_len(uint32_t netmask);
+uint8_t psm3_compute_ipv4_prefix_len(uint32_t netmask);
 
 // used for IPv6 netmask processing.  A valid netmask has a sequence of 1s
 // and then all other bits are 0.
 // This counts how many 1s are in the high end of the netmask and confirms
 // the remaining low bits are 0.
 // returns 0 if netmask is invalid
-int psmi_compute_ipv6_prefix_len(psmi_bare_netaddr128_t netmask);
+int psm3_compute_ipv6_prefix_len(psmi_bare_netaddr128_t netmask);
 
 #ifdef PSM_VERBS
 // search ifconfig for the given IPv4 ip_addr and return it's netmask
-int psmi_get_eth_ipv4_netmask(uint32_t ip_addr, uint32_t *netmask);
+int psm3_get_eth_ipv4_netmask(uint32_t ip_addr, uint32_t *netmask);
 
 // search ifconfig for the given IPv6 ipv6_addr and return it's netmask
-int psmi_get_eth_ipv6_netmask(psmi_bare_netaddr128_t ipv6_addr,
+int psm3_get_eth_ipv6_netmask(psmi_bare_netaddr128_t ipv6_addr,
 				psmi_bare_netaddr128_t *netmask);
 #endif
 #if 0
 // search ifconfig for the given ifname and return it's first IPv6 address
-int psmi_get_eth_ipv6(const char *ifname, psmi_bare_netaddr128_t *ipv6_addr);
+int psm3_get_eth_ipv6(const char *ifname, psmi_bare_netaddr128_t *ipv6_addr);
 #endif
 
 #endif /* _PSMI_NETUTILS_H */

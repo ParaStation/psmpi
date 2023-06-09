@@ -2,6 +2,7 @@
  * Copyright (c) 2013-2017 Intel Corporation. All rights reserved.
  * Copyright (c) 2016 Cisco Systems, Inc. All rights reserved.
  * (C) Copyright 2020 Hewlett Packard Enterprise Development LP
+ * Copyright (c) 2022 DataDirect Networks, Inc. All rights reserved.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -44,12 +45,16 @@
 #ifdef __GNUC__
 #define FI_DEPRECATED_FUNC __attribute__((deprecated))
 #define FI_DEPRECATED_FIELD __attribute__((deprecated))
+#define FI_FORMAT_PRINTF(string, first) \
+	__attribute__ ((__format__ (__printf__, (string), (first))))
 #elif defined(_MSC_VER)
 #define FI_DEPRECATED_FUNC __declspec(deprecated)
 #define FI_DEPRECATED_FIELD
+#define FI_FORMAT_PRINTF(string, first)
 #else
 #define FI_DEPRECATED_FUNC
 #define FI_DEPRECATED_FIELD
+#define FI_FORMAT_PRINTF(string, first)
 #endif
 
 #if defined(__GNUC__) && !defined(__clang__)
@@ -79,8 +84,8 @@ extern "C" {
 #endif
 
 #define FI_MAJOR_VERSION 1
-#define FI_MINOR_VERSION 15
-#define FI_REVISION_VERSION 2
+#define FI_MINOR_VERSION 18
+#define FI_REVISION_VERSION 0
 
 enum {
 	FI_PATH_MAX		= 256,
@@ -160,6 +165,9 @@ typedef struct fid *fid_t;
 #define FI_COMMIT_COMPLETE	(1ULL << 30)
 #define FI_MATCH_COMPLETE	(1ULL << 31)
 
+#define FI_PEER_TRANSFER	(1ULL << 36)
+#define FI_AV_USER_ID		(1ULL << 41)
+#define FI_PEER			(1ULL << 43)
 #define FI_XPU_TRIGGER		(1ULL << 44)
 #define FI_HMEM_HOST_ALLOC	(1ULL << 45)
 #define FI_HMEM_DEVICE_ONLY	(1ULL << 46)
@@ -208,6 +216,7 @@ enum {
 	FI_ADDR_PSMX3,		/* uint64_t[4] */
 	FI_ADDR_OPX,
 	FI_ADDR_CXI,
+	FI_ADDR_UCX,
 };
 
 #define FI_ADDR_UNSPEC		((uint64_t) -1)
@@ -325,6 +334,9 @@ enum {
 	FI_PROTO_RXM_TCP,
 	FI_PROTO_OPX,
 	FI_PROTO_CXI,
+	FI_PROTO_XNET,
+	FI_PROTO_COLL,
+	FI_PROTO_UCX,
 };
 
 enum {
@@ -359,6 +371,7 @@ static inline uint8_t fi_tc_dscp_get(uint32_t tclass)
 #define FI_RESTRICTED_COMP	(1ULL << 53)
 #define FI_CONTEXT2		(1ULL << 52)
 #define FI_BUFFERED_RECV	(1ULL << 51)
+/* #define FI_PEER_TRANSFER	(1ULL << 36) */
 
 struct fi_tx_attr {
 	uint64_t		caps;
@@ -524,6 +537,11 @@ enum {
 	FI_CLASS_AV_SET,
 	FI_CLASS_MR_CACHE,
 	FI_CLASS_MEM_MONITOR,
+	FI_CLASS_PEER_CQ,
+	FI_CLASS_PEER_SRX,
+	FI_CLASS_LOG,
+	FI_CLASS_PEER_AV,
+	FI_CLASS_PEER_AV_SET,
 };
 
 struct fi_eq_attr;
@@ -574,6 +592,8 @@ struct fi_ops_fabric {
 			struct fid_wait **waitset);
 	int	(*trywait)(struct fid_fabric *fabric, struct fid **fids,
 			int count);
+	int	(*domain2)(struct fid_fabric *fabric, struct fi_info *info,
+			struct fid_domain **dom, uint64_t flags, void *context);
 };
 
 struct fid_fabric {
@@ -730,6 +750,8 @@ enum fi_type {
 	FI_TYPE_COLLECTIVE_OP,
 	FI_TYPE_HMEM_IFACE,
 	FI_TYPE_CQ_FORMAT,
+	FI_TYPE_LOG_LEVEL,
+	FI_TYPE_LOG_SUBSYS,
 };
 
 char *fi_tostr(const void *data, enum fi_type datatype);

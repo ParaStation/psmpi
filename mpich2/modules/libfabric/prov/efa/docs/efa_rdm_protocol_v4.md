@@ -56,13 +56,17 @@ Chapter 3 "Baseline features" describes the baseline features of protocol v4.
 
 Chapter 4 "extra features/requests" describes the extra features/requests defined in version 4.
 
- *  Section 4.1 describes the extra feature: RDMA read based message transfer.
+ *  Section 4.1 describes the extra feature: RDMA-Read based message transfer.
 
  *  Section 4.2 describes the extra feature: delivery complete.
 
  *  Section 4.3 describes the extra request: constant header length.
 
  *  Section 4.4 describe the extra request: connid (connection ID) header.
+
+ *  Section 4.5 describe the extra feature: runting read message subprotocol.
+
+ *  Section 4.6 describe the extra feature: RDMA-Write based message transfer.
 
 Chapter 5 "What's not covered?" describes the contents that are intentionally left out of
 this document because they are considered "implementation details".
@@ -104,7 +108,7 @@ as listed in table 1.1:
 Table: 1.1 A list of subprotocols
 
 | Sub Protocol Name             | Used For  | Defined in |
-|-|-|-|
+|---|---|---|
 | Eager message                 | Two sided | Section 3.2   |
 | Medium message                | Two sided | Section 3.2   |
 | Long-CTS message              | Two sided | Section 3.2   |
@@ -120,6 +124,7 @@ Table: 1.1 A list of subprotocols
 | Emulated short read           | One sided | Section 3.3   |
 | Emulated long-CTS read        | One sided | Section 3.3   |
 | Direct read                   | One sided | Section 4.1   |
+| Direct write                  | One sided | Section 4.6   |
 | Emulated atomic               | One sided | Section 3.3   |
 | Emulated fetch atomic         | One sided | Section 3.3   |
 | Emulated compare atomic       | One sided | Section 3.3   |
@@ -150,44 +155,44 @@ all the packet types in protocol v4 and subprotocol(s) that use it:
 Table: 1.2 A list of packet type IDs
 
 | Packet Type ID  | Nickname          | Full Name                 | Category | Used by                       |
-|-|-|-|-|-|
-| 1               | RTS               | Request To Send           | non-REQ  | Deprecated                    |
-| 2               | CONNACK           | CONNection ACKnowlegement | non-REQ  | Deprecated                    |
-| 3               | CTS               | Clear To Send             | non-REQ  | long-CTS message/read/write |
-| 4               | DATA              | Data                      | non-REQ  | long-CTS message/read/write |
-| 5               | READRSP           | READ ReSPonse             | non-REQ  | emulated short/long-read      |
-| 6               | reserved          | N/A                       | non-REQ  | reserved for internal use      |
-| 7               | EOR               | End Of Read               | non-REQ  | long-read message/write     |
-| 8               | ATOMRSP           | ATOMic ResSPonse          | non-REQ  | emulated write/fetch/compare atomic |
-| 9               | HANDSHAKE         | Handshake                 | non-REQ  | handshake                     |
-| 10              | RECEIPT           | Receipt                   | non-REQ  | delivery complete (DC)         |
-| 64              | EAGER_MSGRTM      | Eager non-tagged Request To Message       | REQ  | eager message |
-| 65              | EAGER_TAGRTM      | Eager tagged Request To Message           | REQ  | eager message |
-| 66              | MEDIUM_MSGRTM     | Medium non-tagged Request To Message      | REQ  | medium message |
-| 67              | MEDIUM_TAGRTM     | Medium tagged Request To Message          | REQ  | medium message |
-| 68              | LONGCTS_MSGRTM    | Long-CTS non-tagged Request To Message    | REQ  | long-CTS message |
-| 69              | LONGCTS_TAGRTM    | Long-CTS tagged Request To Message        | REQ  | long-CTS message |
-| 70              | EAGER_RTW         | Eager Request To Write                    | REQ  | emulated eager write |
-| 71              | LONGCTS_RTW       | Long-CTS Request To Write                 | REQ  | emulated long-CTS write |
-| 72              | SHORT_RTR         | Eager Request To Read                     | REQ  | emulated short read |
-| 73              | LONGCTS_RTR       | Long-CTS Request To Read                  | REQ  | emulated long-CTS read |
-| 74              | WRITE_RTA         | Write Request To Atomic                   | REQ  | emulated write atomic |
-| 75              | FETCH_RTA         | Fetch Request To Atomic                   | REQ  | emulated fetch atomic |
-| 76              | COMPARE_RTA       | Compare Request To Atomic                 | REQ  | emulated compare atomic |
-| 128             | LONGREAD_MSGRTM   | Long-read non-tagged Request To Message   | REQ  | Long-read message |
-| 129             | LONGREAD_TAGRTM   | Long-read tagged Request To Message       | REQ  | Long-read message |
-| 130             | LONGREAD_RTW      | Long-read Request To Write                | REQ  | Long-read message |
-| 131             | reserved          | N/A                                       | N/A  | N/A               |
-| 132             | reserved          | N/A                                       | N/A  | N/A               |
-| 133             | DC_EAGER_MSGRTM   | DC Eager non-tagged Request To Message    | REQ  | DC eager message |
-| 134             | DC_EAGER_TAGRTM   | DC Eager tagged Request To Message        | REQ  | DC eager message |
-| 135             | DC_MEDIUM_MSGRTM  | DC Medium non-tagged Request To Message   | REQ  | DC medium message |
-| 136             | DC_MEDIUM_TAGRTM  | DC Medium tagged Request To Message       | REQ  | DC medium message |
-| 137             | DC_LONGCTS_MSGRTM | DC long-CTS non-tagged Request To Message | REQ  | DC long-CTS message |
-| 138             | DC_LONTCTS_TAGRTM | DC long-CTS tagged Request To Message     | REQ  | DC long-CTS message |
-| 139             | DC_EAGER_RTW      | DC Eager Request To Write                 | REQ  | DC emulated eager write |
-| 140             | DC_LONGCTS_RTW    | DC long-CTS Request To Write              | REQ  | DC emulated long-CTS write |
-| 141             | DC_WRITE_RTA      | DC Write Request To Atomic                | REQ  | DC emulated write atomic |
+|---|---|---|---|---|
+| 1               | `RTS`               | Request To Send           | non-REQ  | Deprecated                    |
+| 2               | `CONNACK`           | CONNection ACKnowlegement | non-REQ  | Deprecated                    |
+| 3               | `CTS`               | Clear To Send             | non-REQ  | long-CTS message/read/write |
+| 4               | `DATA`              | Data                      | non-REQ  | long-CTS message/read/write |
+| 5               | `READRSP`           | READ ReSPonse             | non-REQ  | emulated short/long-read      |
+| 6               | _reserved_          | N/A                       | non-REQ  | reserved for internal use      |
+| 7               | `EOR`               | End Of Read               | non-REQ  | long-read message/write     |
+| 8               | `ATOMRSP`           | ATOMic ResSPonse          | non-REQ  | emulated write/fetch/compare atomic |
+| 9               | `HANDSHAKE`         | Handshake                 | non-REQ  | handshake                     |
+| 10              | `RECEIPT`           | Receipt                   | non-REQ  | delivery complete (DC)         |
+| 64              | `EAGER_MSGRTM`      | Eager non-tagged Request To Message       | REQ  | eager message |
+| 65              | `EAGER_TAGRTM`      | Eager tagged Request To Message           | REQ  | eager message |
+| 66              | `MEDIUM_MSGRTM`     | Medium non-tagged Request To Message      | REQ  | medium message |
+| 67              | `MEDIUM_TAGRTM`     | Medium tagged Request To Message          | REQ  | medium message |
+| 68              | `LONGCTS_MSGRTM`    | Long-CTS non-tagged Request To Message    | REQ  | long-CTS message |
+| 69              | `LONGCTS_TAGRTM`    | Long-CTS tagged Request To Message        | REQ  | long-CTS message |
+| 70              | `EAGER_RTW`         | Eager Request To Write                    | REQ  | emulated eager write |
+| 71              | `LONGCTS_RTW`       | Long-CTS Request To Write                 | REQ  | emulated long-CTS write |
+| 72              | `SHORT_RTR`         | Eager Request To Read                     | REQ  | emulated short read |
+| 73              | `LONGCTS_RTR`       | Long-CTS Request To Read                  | REQ  | emulated long-CTS read |
+| 74              | `WRITE_RTA`         | Write Request To Atomic                   | REQ  | emulated write atomic |
+| 75              | `FETCH_RTA`         | Fetch Request To Atomic                   | REQ  | emulated fetch atomic |
+| 76              | `COMPARE_RTA`       | Compare Request To Atomic                 | REQ  | emulated compare atomic |
+| 128             | `LONGREAD_MSGRTM`   | Long-read non-tagged Request To Message   | REQ  | Long-read message |
+| 129             | `LONGREAD_TAGRTM`   | Long-read tagged Request To Message       | REQ  | Long-read message |
+| 130             | `LONGREAD_RTW`      | Long-read Request To Write                | REQ  | Long-read message |
+| 131             | _reserved_          | N/A                                       | N/A  | N/A               |
+| 132             | _reserved_          | N/A                                       | N/A  | N/A               |
+| 133             | `DC_EAGER_MSGRTM`   | DC Eager non-tagged Request To Message    | REQ  | DC eager message |
+| 134             | `DC_EAGER_TAGRTM`   | DC Eager tagged Request To Message        | REQ  | DC eager message |
+| 135             | `DC_MEDIUM_MSGRTM`  | DC Medium non-tagged Request To Message   | REQ  | DC medium message |
+| 136             | `DC_MEDIUM_TAGRTM`  | DC Medium tagged Request To Message       | REQ  | DC medium message |
+| 137             | `DC_LONGCTS_MSGRTM` | DC long-CTS non-tagged Request To Message | REQ  | DC long-CTS message |
+| 138             | `DC_LONTCTS_TAGRTM` | DC long-CTS tagged Request To Message     | REQ  | DC long-CTS message |
+| 139             | `DC_EAGER_RTW`      | DC Eager Request To Write                 | REQ  | DC emulated eager write |
+| 140             | `DC_LONGCTS_RTW`    | DC long-CTS Request To Write              | REQ  | DC emulated long-CTS write |
+| 141             | `DC_WRITE_RTA`      | DC Write Request To Atomic                | REQ  | DC emulated write atomic |
 
 The packet type ID is included in the 4 byte EFA RDM base header, which every packet must start
 with. The format of the EFA RDM base header is listed in table 1.3:
@@ -195,7 +200,7 @@ with. The format of the EFA RDM base header is listed in table 1.3:
 Table: 1.3 Format of the EFA RDM base header
 
 | Name | Length (bytes) | Type | C language type |
-|-|-|-|-|
+|---|---|---|---|
 | `type`    | 1 | integer | `uint8_t` |
 | `version` | 1 | integer | `uint8_t` |
 | `flags`   | 2 | integer | `uint16_t` |
@@ -212,7 +217,7 @@ Protocol v4 define the following universal flag, which every packet type should 
 Table: 1.4 A list of universal flags
 
 | Bit ID | Value | Name | Description | Used by |
-|-|-|-|-|
+|---|---|---|---|---|
 | 15     | 0x8000 | CONNID_HDR | This packet has "connid" in header | extra request "connid header" (section 4.4) |
 
 Note, the flag `CONNID_HDR` only indicate the presence of connid in the header. The exact location of connid
@@ -240,7 +245,7 @@ format described in the following table 1.5.
 Table: 1.5 Binary format of the EFA RDM raw address
 
 | Name | Lengths (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `gid`  | 16 | array   | `uint8_t[16]` | ipv6 format |
 | `qpn`  |  2 | integer | `uint16_t`    | queue pair number |
 | `pad`  |  2 | integer | `uint16_t`    | pad to 4 bytes |
@@ -303,16 +308,18 @@ The ID starts from 0, and increases by 1 for each extra feature/request. Typical
 new extra feature/request is introduced with libfaric minor releases, and will NOT be
 back ported.
 
-Currently there are 4 such extra features/requests, as listed in table 2.1:
+Currently there are 5 such extra features/requests, as listed in table 2.1:
 
 Table: 2.1 a list of extra features/requests
 
 | ID | Name              |  Type    | Introduced since | Described in |
-|-|-|-|-|-|
-| 0  | RDMA read based data transfer    | extra feature | libfabric 1.10.0 | Section 4.1 |
+|---|---|---|---|---|
+| 0  | RDMA-Read based data transfer    | extra feature | libfabric 1.10.0 | Section 4.1 |
 | 1  | delivery complete                | extra feature | libfabric 1.12.0 | Section 4.2 |
 | 2  | keep packet header length constant | extra request | libfabric 1.13.0 | Section 4.3 |
 | 3  | sender connection id in packet header  | extra request | libfabric 1.14.0 | Section 4.4 |
+| 4  | runting read message protocol    | extra feature | libfabric 1.16.0 | Section 4.5 |
+| 5  | RDMA-Write based data transfer   | extra feature | libfabric 1.18.0 | Section 4.6 |
 
 How does protocol v4 maintain backward compatibility when extra features/requests are introduced?
 
@@ -336,7 +343,7 @@ the endpoint can start using the extra feature. Otherwise, one of the following 
 
 - a. the communication continues without using the extra feature/request, though
    the performance may be sub-optimal. For example, if the peer does not support
-   the extra feature "RDMA read based data transfer", the endpoint can choose to
+   the extra feature "RDMA-Read based data transfer", the endpoint can choose to
    use baseline features to carry on the communication, though the performance will
    be sub-optimal (section 4.1).
 
@@ -368,7 +375,7 @@ The binary format of a HANDSHAKE packet is listed in table 2.2.
 Table: 2.2 binary format of the HANDSHAKE packet
 
 | Name      | Length (bytes) | Type | C language type |
-|-|-|-|-|
+|---|---|---|---|
 | `type`    | 1 | integer | `uint8_t`  |
 | `version` | 1 | integer | `uint8_t`  |
 | `flags`   | 2 | integer | `uint16_t` |
@@ -376,6 +383,7 @@ Table: 2.2 binary format of the HANDSHAKE packet
 | `extra_info`  | `8 * (nextra_p3 - 3)` | integer array | `uint64_t[]` |
 | `connid`  | 4 | integer | sender connection ID, optional, present when the CONNID_HDR flag is on `flags` |
 | `padding` | 4 | integer | padding for `connid`, optional, present when the CONNID_HDR flag is on `flags` |
+| `host_id` | 8 | integer | sender host id, optional, present when the HANDSHAKE_HOST_ID_HDR flag is on `flags` (table 2.3) |
 
 The first 4 bytes (3 fields: `type`, `version`, `flags`) is the EFA RDM base header (section 1.3).
 
@@ -389,7 +397,7 @@ an endpoint need to toggle on a corresponding bit in the `extra_info` array. Spe
 the extra feature with ID `i` (or want to impose extra request with ID `i`), it needs to toggle on the
 No. `i%64` bit of the No. `i/64` member of the `extra_info` array.
 
-For example, if an endpoint supports the extra feature "RDMA read based data transfer" (ID 0), it needs to
+For example, if an endpoint supports the extra feature "RDMA-Read based data transfer" (ID 0), it needs to
 toggle on the No. 0 (the first) bit of `extra_info[0]`. (section 4.1)
 
 If an endpoint wants to impose the "constant header length" extra request it need to toggle on bit No 2.
@@ -422,6 +430,15 @@ to 8 bytes boundary.
 These two fields were introduced with the extra request "connid in header". They are optional,
 therefore an implemenation is not required to set them. (section 4.4 for more details) If an implementation
 does set the connid, the implementation needs to toggle on the CONNID_HDR flag in `flags` (table 1.4).
+
+`connid` and `padding` fields are followed by an optional `host_id` (8 bytes) which is the sender's host id.
+If `connid` and `padding` are not present, `host_id` will follow `extra_info`.
+
+Table: 2.3 A list of handshake packet flags
+
+| Bit Id | Value | Name | Meaning |
+|---|---|---|---|
+|  0     | 0x1    | `HANDSHAKE_HOST_ID_HDR` | This packet has the optional sender host id header |
 
 ### 2.2 Handshake subprotocol and raw address exchange
 
@@ -519,14 +536,14 @@ the same set of flags, which is listed in table 3.1:
 Table: 3.1 A list of REQ packet flags
 
 | Bit Id | Value | Name | Meaning |
-|-|-|-|-|
-|  0     | 0x1    | REQ_OPT_RAW_ADDR_HDR | This REQ packet has the optional raw address header |
-|  1     | 0x2    | REQ_OPT_CQ_DATA_HDR  | This REQ packet has the optional CQ data header |
-|  2     | 0x4    | REQ_MSG              | This REQ packet is used by two-sided communication |
-|  3     | 0x8    | REQ_TAGGED           | This REQ packet is used by tagged two-sided communication |
-|  4     | 0x10   | REQ_RMA              | This REQ packet is used by an emulated RMA (read or write) communication |
-|  5     | 0x20   | REQ_ATOMIC           | This REQ packet is used by an emulated atomic (write,fetch or compare) communication |
-| 15     | 0x8000 | CONNID_HDR           | This REQ packet has the optional connid header |
+|---|---|---|---|
+|  0     | 0x1    | `REQ_OPT_RAW_ADDR_HDR` | This REQ packet has the optional raw address header |
+|  1     | 0x2    | `REQ_OPT_CQ_DATA_HDR`  | This REQ packet has the optional CQ data header |
+|  2     | 0x4    | `REQ_MSG`              | This REQ packet is used by two-sided communication |
+|  3     | 0x8    | `REQ_TAGGED`           | This REQ packet is used by tagged two-sided communication |
+|  4     | 0x10   | `REQ_RMA`              | This REQ packet is used by an emulated RMA (read or write) communication |
+|  5     | 0x20   | `REQ_ATOMIC`           | This REQ packet is used by an emulated atomic (write,fetch or compare) communication |
+| 15     | 0x8000 | `CONNID_HDR`           | This REQ packet has the optional connid header |
 
 Note, the CONNID_HDR flag is an universal flag (table 1.4), and is listed here for completeness.
 
@@ -539,7 +556,7 @@ field of the base header. There are currently 3 REQ optional headers defined:
 Table: 3.2 Format of the REQ optional raw address header
 
 | Field | Type    | Length | C language type |
-|-|-|-|-|
+|---|---|---|---|
 | `size`  | integer | 4      | `uint32` |
 | `addr`  | array   | `size` | `uint8[]` |
 
@@ -591,7 +608,7 @@ The mandatory header of an EAGER_RTM packet is described in table 3.3:
 Table: 3.3 Format of the EAGER_RTM packet
 
 | Name | Length (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `type`      | 1 | integer | `uint8_t`  | part of base header |
 | `version`   | 1 | integer | `uint8_t`  | part of base header|
 | `flags`     | 2 | integer | `uint16_t` | part of base header |
@@ -647,14 +664,14 @@ The following diagram illustrates its workflow:
 Table: 3.4 Format of the MEDIUM_RTM packet's mandatory header
 
 | Name | Length (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `type`        | 1 | integer | `uint8_t`  | part of base header |
 | `version`     | 1 | integer | `uint8_t`  | part of base header|
 | `flags`       | 2 | integer | `uint16_t` | part of base header |
 | `msg_id`      | 4 | integer | `uint32_t` | message ID |
 | `seg_length` | 8 | integer | `uint64_t` | application data length |
 | `seg_offset` | 8 | integer | `uint64_t` | application data offset |
-| `tag`         | 8 | integer | `uint64_t  | for medium TAGRTM only |
+| `tag`         | 8 | integer | `uint64_t`  | for medium TAGRTM only |
 
 Most of the fields have been introduced and have the same function. The two
 new fields are `seg_length` and `seg_offset`. (`seg` means segment, which
@@ -721,7 +738,7 @@ The format of the LONGCTS_RTM mandatory header is listed in table 3.5:
 Table: 3.5 Format of the LONGCTS_RTM packet's mandatory header
 
 | Name | Length (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `type`           | 1 | integer | `uint8_t`  | part of base header |
 | `version`        | 1 | integer | `uint8_t`  | part of base header|
 | `flags`          | 2 | integer | `uint16_t` | part of base header |
@@ -767,7 +784,7 @@ The binary format of a CTS (Clear to Send) packet is listed in table 3.6:
 Table: 3.6 Format a CTS packet
 
 | Name | Length (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `type`           | 1 | integer | `uint8_t`  | part of base header |
 | `version`        | 1 | integer | `uint8_t`  | part of base header|
 | `flags`          | 2 | integer | `uint16_t` | part of base header |
@@ -810,7 +827,7 @@ Table 3.7 shows the binary format of DATA packet header:
 Table: 3.7 Format of the DATA packet header
 
 | Name | Length (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `type`           | 1 | integer | `uint8_t`  | part of base header |
 | `version`        | 1 | integer | `uint8_t`  | part of base header|
 | `flags`          | 2 | integer | `uint16_t` | part of base header |
@@ -889,7 +906,7 @@ of the EAGER_RTW mandatory header is listed in table 3.8:
 Table: 3.8 Format of the EAGER_RTW packet's mandatory header
 
 | Name | Length (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `type`           | 1 | integer | `uint8_t`  | part of base header |
 | `version`        | 1 | integer | `uint8_t`  | part of base header|
 | `flags`          | 2 | integer | `uint16_t` | part of base header |
@@ -914,7 +931,7 @@ LONGCTS_RTM packet. The binary format of the LONGCTS_RTW packet's mandatory head
 Table: 3.9 Format of the LONGCTS_RTW packet's mandatory header
 
 | Name | Length (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `type`           | 1 | integer | `uint8_t`  | part of base header |
 | `version`        | 1 | integer | `uint8_t`  | part of base header|
 | `flags`          | 2 | integer | `uint16_t` | part of base header |
@@ -947,7 +964,7 @@ The binary format of a SHORT_RTR mandatory header is listed in the table 3.10:
 Table: 3.10 Format of the SHORT_RTR packet's mandatory header
 
 | Name | Length (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `type`           | 1 | integer | `uint8_t`  | part of base header |
 | `version`        | 1 | integer | `uint8_t`  | part of base header|
 | `flags`          | 2 | integer | `uint16_t` | part of base header |
@@ -967,7 +984,7 @@ of the READRSP header is in table 3.11:
 Table: 3.11 Format of the READRSP packet's header
 
 | Name | Length (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `type`           | 1 | integer | `uint8_t`  | part of base header |
 | `version`        | 1 | integer | `uint8_t`  | part of base header|
 | `flags`          | 2 | integer | `uint16_t` | part of base header |
@@ -993,14 +1010,14 @@ The mandatory header of LONGCTS_RTR packet is listed in table 3.12:
 Table: 3.12 Format of the LONGCTS_RTR packet's mandatory header
 
 | Name | Length (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `type`           | 1 | integer | `uint8_t`  | part of base header |
 | `version`        | 1 | integer | `uint8_t`  | part of base header|
 | `flags`          | 2 | integer | `uint16_t` | part of base header |
 | `rma_iov_count`  | 4 | integer | `uint32_t` | number of RMA iov structures |
 | `msg_length`     | 8 | integer | `uint64_t` | total length of the application buffer |
 | `recv_id`        | 4 | integer | `uint32_t` | ID of the receive operation, to be included in READRSP packet |
-| `recv_length`	   | 4 | integer | `uint32_t` | Number of bytes the responder is ready to receive |
+| `recv_length`	   | 4 | integer | `uint32_t` | Number of bytes the requester is ready to receive |
 | `rma_iov`        | `rma_iov_count` * 24 | array of `efa_rma_iov` | `efa_rma_iov[]` | remote buffer information |
 
 The only difference between LONGCTS_RTR and SHORT_RTR is the field `padding` in SHORT_RTR is replaced by the field `recv_length`.
@@ -1027,7 +1044,7 @@ header:
 Table: 3.13 Format of the WRITE_RTA packet's mandatory header
 
 | Name | Length (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `type`           | 1 | integer | `uint8_t`  | part of base header |
 | `version`        | 1 | integer | `uint8_t`  | part of base header|
 | `flags`          | 2 | integer | `uint16_t` | part of base header |
@@ -1059,7 +1076,7 @@ Table 3.14 shows the binary format of the mandatory header of a FETCH_RTA/COMPAR
 Table: 3.14 Format of the FETCH_RTA/COMPARE_RTA packet's mandatory header
 
 | Name | Length (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `type`           | 1 | integer | `uint8_t`  | part of base header |
 | `version`        | 1 | integer | `uint8_t`  | part of base header|
 | `flags`          | 2 | integer | `uint16_t` | part of base header |
@@ -1087,7 +1104,7 @@ An ATOMRSP packet consists of two parts: header and application data. Table 3.15
 Table: 3.15 Format of the ATOMRSP packet's header.
 
 | Name | Length (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `type`           | 1 | integer | `uint8_t`  | part of base header |
 | `version`        | 1 | integer | `uint8_t`  | part of base header|
 | `flags`          | 2 | integer | `uint16_t` | part of base header |
@@ -1105,9 +1122,9 @@ for more information about the field `connid`.
 
 This chapter describes the extra features and requests of protocol v4.
 
-### 4.1 RDMA read based data transfer (RDMA read)
+### 4.1 RDMA-Read based data transfer (RDMA Read)
 
-The extra feature "RDMA read based data transfer" (RDMA read) was introduced together
+The extra feature "RDMA-Read based data transfer" (RDMA read) was introduced together
 with protocol v4, when libfabric 1.10 was released. It was assigned ID 0.
 
 It is defined as an extra feature because there is a set of requirements (firmware,
@@ -1144,7 +1161,7 @@ The binary format of a LONGREAD_RTM packet's mandatory header is listed in table
 Table: 4.1 Format of the LONGREAD_RTM packet's mandatory header
 
 | Name | Length (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `type`           | 1 | integer | `uint8_t`  | part of base header |
 | `version`        | 1 | integer | `uint8_t`  | part of base header|
 | `flags`          | 2 | integer | `uint16_t` | part of base header |
@@ -1182,7 +1199,7 @@ The binary format of the EOR packet is listed in table 4.2
 Table: 4.2 Format of the EOR packet
 
 | Name | Length (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `type`           | 1 | integer | `uint8_t`  | part of base header |
 | `version`        | 1 | integer | `uint8_t`  | part of base header|
 | `flags`          | 2 | integer | `uint16_t` | part of base header |
@@ -1211,7 +1228,7 @@ in table 4.3.
 Table: 4.3 Format of the LONGREAD_RTW packet's mandatory header
 
 | Name | Length (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `type`           | 1 | integer | `uint8_t`  | part of base header |
 | `version`        | 1 | integer | `uint8_t`  | part of base header|
 | `flags`          | 2 | integer | `uint16_t` | part of base header |
@@ -1236,7 +1253,7 @@ application data, which is located right after the REQ optional header.
 
 #### Direct read subprotocol
 
-The direct read subprotocol is the simplest subprotocol in protocol v4. It does not involve a REQ packet.
+The direct read subprotocol is the simplest read subprotocol in protocol v4. It does not involve a REQ packet.
 The workflow is just for the read requester keep using RDMA read on the responder. For this protocol, it is
 not necessary for the responder to keep the progress engine running.
 
@@ -1291,7 +1308,7 @@ Third, the sender/responder will not write a completion until it receives the RE
 The binary format of a RECEIPT packet is as follows:
 
 | Name | Length (bytes) | Type | C language type | Notes |
-|-|-|-|-|-|
+|---|---|---|---|---|
 | `type`           | 1 | integer | `uint8_t`  | part of base header |
 | `version`        | 1 | integer | `uint8_t`  | part of base header|
 | `flags`          | 2 | integer | `uint16_t` | part of base header |
@@ -1400,6 +1417,66 @@ A universal flag, CONNID_HDR (Table 1.4), was designated for CONNID in the packe
 not required to set connid. However, when it does include connid in the packet header, it needs to toggle on
 the CONNID_HDR flag in the `flags` field of the base header. The exact location of connid is different for
 each packet type.
+
+### 4.5 Runting read message subprotocol
+
+The "runting read message protocol support" extra feature was introduced with the libfabric 1.16.0 release (together with the runting read message subprotocol) and was assigned the ID 4.
+
+The runting read message subprotocol is introduced in 1.16.0 to as an alternative to
+long read message subprotocol (section 4.1). Runting read message protocol may provide better performance when there are low number of inflight messages.
+
+The workflow of runting read message subprotocol is illustrated in the following
+diagram:
+
+![runt-read message](message_runtread.png)
+
+As can be seen, the main difference between runting read message subprotocol and
+long read message subprotocol is the `LONGREAD_RTM` packet was replaced by multiple
+`RUNTREAD_RTM` packets, with each `RUNTREAD_RTM` carry some application data.
+
+Like all REQ packets, a RUNTREAD_RTM packet consists of 3 parts: the mandatory header,
+the REQ optional header, and the application data.
+
+Application data part consists of two parts:
+
+First part is `read_iov`, which is an array of `efa_rma_iov` of the application's send buffer.
+
+Second part is application data, whose offset and length is saved in the
+in the mandatory header.
+
+The binary format of a RUNTREAD_RTM packet's mandatory header is listed in table 4.4
+
+| Name | Length (bytes) | Type | C language type | Notes |
+|---|---|---|---|---|
+| `type`           | 1 | integer | `uint8_t`  | part of base header |
+| `version`        | 1 | integer | `uint8_t`  | part of base header|
+| `flags`          | 2 | integer | `uint16_t` | part of base header |
+| `msg_id`         | 4 | integer | `uint32_t` | message ID |
+| `msg_length`     | 8 | integer | `uint64_t` | total length of the message |
+| `send_id`        | 4 | integer | `uint32_t` | ID of the receive operation  |
+| `read_iov_count` | 4 | integer | `uint32_t` | number of iov to read |
+| `seg_offset`     | 8 | integer | `uint32_t` | offset of the application data |
+| `runt_length`    | 8 | integer | `uint64_t` | length of the application data |
+| `tag`            | 8 | integer | `uint64_t` | tag for RUNTREAD_TAGRTM only |
+
+### 4.6 RDMA-Write based data transfer (RDMA Write)
+
+The "RDMA-Write based data transfer" (RDMA write) is an extra feature that was
+introduced with the libfabric 1.18.0 release and was assigned the ID 5.  It is
+defined as an extra feature because there is a set of requirements (firmware,
+EFA kernel module and rdma-core) to be met before an endpoint can use the RDMA
+write capability, therefore an endpoint cannot assume the other party supports
+RDMA write.
+
+#### Direct write subprotocol
+
+The direct write subprotocol is the simplest write subprotocol in protocol v4.
+It does not involve a REQ packet.  The workflow is just for the writer to keep
+using RDMA write on the responder. Although the write itself is accomplished
+by the NIC hardware, the responder must still keep the progress engine running
+in order to support CQ entry generation in case the sender uses
+`FI_REMOTE_CQ_DATA`.
+
 
 ## 5. What's not covered?
 

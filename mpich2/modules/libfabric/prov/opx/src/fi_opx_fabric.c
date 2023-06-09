@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2016 by Argonne National Laboratory.
- * Copyright (C) 2021 Cornelis Networks.
+ * Copyright (C) 2021-2023 Cornelis Networks.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -48,7 +48,6 @@
 static int fi_opx_close_fabric(struct fid *fid)
 {
 	FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_FABRIC, "close fabric\n");
-
 	int ret;
 	struct fi_opx_fabric *opx_fabric =
 		container_of(fid, struct fi_opx_fabric, fabric_fid);
@@ -61,7 +60,11 @@ static int fi_opx_close_fabric(struct fid *fid)
 	if (ret)
 		return ret;
 
+	fi_opx_close_tid_fabric(opx_fabric->tid_fabric);
+
 	free(opx_fabric);
+	opx_fabric = NULL;
+	//opx_fabric (the object passed in as fid) is now unusable
 
 	FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_FABRIC, "fabric closed\n");
 	return 0;
@@ -112,14 +115,14 @@ int fi_opx_fabric(struct fi_fabric_attr *attr,
 	FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_FABRIC, "open fabric\n");
 
 	int ret;
-	struct fi_opx_fabric *opx_fabric;
+	struct fi_opx_fabric *opx_fabric = NULL;
 
 	if (attr) {
 		if (attr->fabric) {
 			FI_WARN(fi_opx_global.prov, FI_LOG_FABRIC,
 				"attr->fabric only valid on getinfo\n");
 			errno = FI_EINVAL;
-			return -errno;
+			goto err;
 		}
 
 		ret = fi_opx_check_fabric_attr(attr);
@@ -128,14 +131,25 @@ int fi_opx_fabric(struct fi_fabric_attr *attr,
 	}
 
 	opx_fabric = calloc(1, sizeof(*opx_fabric));
-	if (!opx_fabric)
+	if (!opx_fabric) {
+		errno = FI_ENOMEM;
 		goto err;
+	}
 
 	opx_fabric->fabric_fid.fid.fclass = FI_CLASS_FABRIC;
 	opx_fabric->fabric_fid.fid.context = context;
 	opx_fabric->fabric_fid.fid.ops = &fi_opx_fi_ops;
 	opx_fabric->fabric_fid.ops = &fi_opx_ops_fabric;
+	opx_fabric->fabric_fid.api_version = attr->api_version;
 
+	struct fi_opx_tid_fabric * opx_tid_fabric;
+	if(fi_opx_tid_fabric(&opx_tid_fabric)) {
+		FI_WARN(fi_opx_global.prov, FI_LOG_FABRIC,
+			"Couldn't create tid fabric\n");
+		errno = FI_EINVAL;
+		goto err;
+	}
+	opx_fabric->tid_fabric = opx_tid_fabric;
 
 	*fabric = &opx_fabric->fabric_fid;
 
@@ -149,6 +163,7 @@ int fi_opx_fabric(struct fi_fabric_attr *attr,
 	FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_FABRIC, "fabric opened\n");
 	return 0;
 err:
-	errno = FI_ENOMEM;
+	free(opx_fabric);
+	opx_fabric = NULL;
 	return -errno;
 }

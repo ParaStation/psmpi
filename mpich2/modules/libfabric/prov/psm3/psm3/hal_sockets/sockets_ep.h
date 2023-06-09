@@ -65,11 +65,11 @@
 #include <netinet/in.h>
 
 #ifdef RNDV_MOD
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 #include <infiniband/verbs.h>
 #include <psm_rndv_mod.h>
 #endif
-#endif
+#endif /* RNDV_MOD */
 
 #ifndef SOL_UDP
 #define SOL_UDP 17
@@ -101,6 +101,8 @@
 
 #define MAX_PSM_HEADER 64			// sizeof(ips_lrh) == 56, round up to 64
 
+#define TCP_MAX_PSM_HEADER 56			// sizeof(ips_lrh) == 56
+
 #define NETDEV_PORT 1			// default port if not specified
 
 #define BUFFER_HEADROOM 0		// how much extra to allocate in buffers
@@ -112,6 +114,9 @@
 								// cache size
 #define CPU_PAGE_ALIGN	PSMI_PAGESIZE	// boundary to align buffer pools for
 
+#ifndef PSM_TCP_POLL
+#include <sys/epoll.h>
+#endif
 #include <sys/poll.h>
 
 #define TCP_PORT_AUTODETECT 0			// default is to allow system to use any port
@@ -122,10 +127,29 @@
 #define TCP_INC_CONN	128			// fds array grow size
 #define TCP_POLL_TO	1000			// timeout for continuous poll in ms. used when no more data in
 						// the middle of draining a packet.
+#ifndef PSM_TCP_POLL
+#define TCP_MAX_EVENTS	1024			// max events to get from epoll
+#endif
 #define TCP_MAX_PKTLEN	((64*1024-1)*4)	// pktlen in LRH is 16 bits, so the
-										// max pktlen is (64k-1)*4 = 256k-4
-#define TCP_MAX_MTU (TCP_MAX_PKTLEN - MAX_PSM_HEADER)
+                                        // max pktlen is (64k-1)*4 = 256k-4
+#define TCP_MAX_MTU (TCP_MAX_PKTLEN - TCP_MAX_PSM_HEADER)
 #define TCP_DEFAULT_MTU (64*1024)
+#define TCP_IOV_SIZE	1024
+#define TCP_INACT_SKIP_POLLS	20
+#define TCP_ACT_SKIP_POLLS	10
+#define TCP_SHRT_BUF_SIZE	512
+#define TCP_CONN_MSG_BUF_BLOCK	512
+// Direct user buffer doesn't work with multi-rail. The current code intends
+// to exclusively use user buffer on direct write. But with short buffer,
+// which avoids HOL blocking on small msgs, what may happen is that in one
+// socket read we intend to directly write into user buffer, and in another
+// socket read, the msg to get fits into short buffer, so we get the whole
+// msg and will copy it into user buffer during msg processing. A conflict then
+// happens if both happen write the same user buffer. To resolve this issue, we
+// will need to lock/sync user buffer at deeper level. Given that so far we do
+// not see benefit on direct user buffer on real apps, we turn off this feature
+// for now.
+#define TCP_DIRECT_USR_BUF	0 // set to ZERO to turn off direct user buffer feature
 
 // this structure can be part of psm2_ep
 // one instance of this per local end point (NIC)
@@ -141,10 +165,25 @@ struct psm3_sockets_ep {
 	/* fields specific to TCP */
 	int listener_fd; // listening socket
 	int tcp_incoming_fd; // latest incoming socket
+#ifdef PSM_TCP_POLL
 	struct pollfd *fds; // one extra for listening socket
+#else
+	int efd; // epoll fd
+	struct epoll_event event; // epoll event
+	struct epoll_event *events; // epoll events
+	int *fds;
+#endif
 	int nfds;
 	int max_fds;
+        struct fd_ctx **map_fds; // map  fd -> fd_ctx
+        int map_nfds; // map size
+  
 	uint32_t snd_pace_thresh; // send pace threshold
+	uint32_t shrt_buf_size; // shrt_buf size
+	int poll_count; // current poll count
+	int inactive_skip_polls; // polls to skip under inactive connections
+	int active_skip_polls_offset; // tailored for internal use. it's inactive_skip_polls - active_skip_polls
+	struct msghdr snd_msg; // struct used for sendmsg
 	/* fields specific to UDP */
 	int udp_gso;	// is GSO enabled for UDP
 	uint8_t *sbuf_udp_gso;	// buffer to compose UDP GSO packet sequence
@@ -164,26 +203,17 @@ struct psm3_sockets_ep {
 	uint8_t *revisit_buf;
 	int revisit_fd;
 	uint32_t revisit_payload_size;
+	int* rfds; // array of fds that need to revisit
+	int nrfd; // number of fds need to revisit
+	int max_rfds; // array capacity
 
 	/* remaining fields are for TCP only */
 	// read in partial pkt in rbuf
 	int rbuf_cur_fd; // socket to continue read
-	uint32_t rbuf_cur_offset; // position in rbuf to continue read
-	uint32_t rbuf_cur_payload; // expected cur pkt payload size
-
-	// multiple pkts in rbuf, i.e. has extra data in rbuf
-	int rbuf_next_fd; // socket to continue read if last pkt is partial
-	uint32_t rbuf_next_offset; // position in rbuf for the next pkt
-	uint32_t rbuf_next_len; // total length of the extra data
-
-	// send out partial pkt from sbuf
-	struct ips_flow *sbuf_flow; // the flow where we will continue sending data
-	uint32_t sbuf_offset; // position in sbuf to continue pkt send
-	uint32_t sbuf_remainder; // length of remainder data to send out
 };
 
 extern psm2_error_t psm3_ep_open_sockets(psm2_ep_t ep, int unit, int port,
-			psm2_uuid_t const job_key);
+			int addr_index, psm2_uuid_t const job_key);
 extern void psm3_hfp_sockets_context_initstats(psm2_ep_t ep);
 extern void psm3_ep_free_sockets(psm2_ep_t ep);
 extern psm2_error_t psm3_sockets_ips_proto_init(struct ips_proto *proto,

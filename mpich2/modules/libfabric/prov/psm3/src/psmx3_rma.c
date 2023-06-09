@@ -364,7 +364,7 @@ int psmx3_am_rma_handler(psm2_am_token_t token, psm2_amarg_t *args,
 		}
 		if (eom || req->read.len == req->read.len_read) {
 			if (!eom)
-				FI_INFO(&psmx3_prov, FI_LOG_EP_DATA,
+				PSMX3_INFO(&psmx3_prov, FI_LOG_EP_DATA,
 					"readv: short protocol finishes after long protocol.\n");
 			if (req->ep->send_cq && (!req->no_event || req->error)) {
 				event = psmx3_cq_create_event(
@@ -570,7 +570,7 @@ void psmx3_am_ack_rma(struct psmx3_am_request *req)
 				    PSMX3_AM_RMA_HANDLER, args, 2, NULL, 0,
 				    PSM2_AM_FLAG_NOREPLY, NULL, NULL);
 	if (err)
-		FI_INFO(&psmx3_prov, FI_LOG_EP_DATA,
+		PSMX3_INFO(&psmx3_prov, FI_LOG_EP_DATA,
 			"failed to send am_ack: err %d.\n", err);
 }
 
@@ -606,7 +606,7 @@ ssize_t psmx3_read_generic(struct fid_ep *ep, void *buf, size_t len,
 	psm2_epaddr = psmx3_av_translate_addr(av, ep_priv->tx, src_addr, av->type);
 	psm3_epaddr_to_epid(psm2_epaddr, &psm2_epid);
 
-	if (!psm2_epid_cmp(psm2_epid, ep_priv->tx->psm2_epid))
+	if (!psm3_epid_cmp(psm2_epid, ep_priv->tx->psm2_epid))
 		return psmx3_rma_self(PSMX3_AM_REQ_READ, ep_priv,
 				      buf, len, desc, addr, key,
 				      context, flags, 0);
@@ -731,7 +731,7 @@ ssize_t psmx3_readv_generic(struct fid_ep *ep, const struct iovec *iov,
 	psm2_epaddr = psmx3_av_translate_addr(av, ep_priv->tx, src_addr, av->type);
 	psm3_epaddr_to_epid(psm2_epaddr, &psm2_epid);
 
-	if (!psm2_epid_cmp(psm2_epid, ep_priv->tx->psm2_epid))
+	if (!psm3_epid_cmp(psm2_epid, ep_priv->tx->psm2_epid))
 		return psmx3_rma_self(PSMX3_AM_REQ_READV, ep_priv,
 				      (void *)iov, count, desc, addr,
 				      key, context, flags, 0);
@@ -960,7 +960,7 @@ ssize_t psmx3_write_generic(struct fid_ep *ep, const void *buf, size_t len,
 	psm2_epaddr = psmx3_av_translate_addr(av, ep_priv->tx, dest_addr, av->type);
 	psm3_epaddr_to_epid(psm2_epaddr, &psm2_epid);
 
-	if (!psm2_epid_cmp(psm2_epid, ep_priv->tx->psm2_epid))
+	if (!psm3_epid_cmp(psm2_epid, ep_priv->tx->psm2_epid))
 		return psmx3_rma_self(PSMX3_AM_REQ_WRITE, ep_priv,
 				      (void *)buf, len, desc, addr,
 				      key, context, flags, data);
@@ -1134,7 +1134,7 @@ ssize_t psmx3_writev_generic(struct fid_ep *ep, const struct iovec *iov,
 	psm2_epaddr = psmx3_av_translate_addr(av, ep_priv->tx, dest_addr, av->type);
 	psm3_epaddr_to_epid(psm2_epaddr, &psm2_epid);
 
-	if (!psm2_epid_cmp(psm2_epid, ep_priv->tx->psm2_epid))
+	if (!psm3_epid_cmp(psm2_epid, ep_priv->tx->psm2_epid))
 		return psmx3_rma_self(PSMX3_AM_REQ_WRITEV, ep_priv,
 				      (void *)iov, count, desc, addr,
 				      key, context, flags, data);

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013-2017 Intel Corporation. All rights reserved.
+ * Copyright (c) 2022 DataDirect Networks, Inc. All rights reserved.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -29,6 +30,8 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
+#include "config.h"
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -503,7 +506,7 @@ void freeifaddrs(struct ifaddrs *ifa)
 	}
 }
 
-static ssize_t
+ssize_t
 ofi_sendv_socket(SOCKET fd, const struct iovec *iovec, size_t iov_cnt, int flags)
 {
 	ssize_t size = 0, ret;
@@ -528,7 +531,7 @@ ofi_sendv_socket(SOCKET fd, const struct iovec *iovec, size_t iov_cnt, int flags
 	return size;
 }
 
-static ssize_t
+ssize_t
 ofi_recvv_socket(SOCKET fd, const struct iovec *iovec, size_t iov_cnt, int flags)
 {
 	ssize_t size = 0, ret;
@@ -607,7 +610,7 @@ struct ofi_pollfds_ctx *ofi_pollfds_get_ctx(struct ofi_pollfds *pfds, int fd)
 	struct ofi_pollfds_ctx *ctx = NULL;
 	int i;
 
-	assert(ofi_mutex_held(&pfds->lock));
+	assert(ofi_genlock_held(&pfds->lock));
 
 	/* 0 is signaling fd */
 	for (i = 1; i < pfds->size; i++) {
@@ -625,7 +628,7 @@ struct ofi_pollfds_ctx *ofi_pollfds_alloc_ctx(struct ofi_pollfds *pfds, int fd)
 	struct ofi_pollfds_ctx *ctx;
 	int i;
 
-	assert(ofi_mutex_held(&pfds->lock));
+	assert(ofi_genlock_held(&pfds->lock));
 	assert(!ofi_pollfds_get_ctx(pfds, fd));
 	/* 0 is signaling fd */
 	for (i = 1; i < pfds->size; i++) {

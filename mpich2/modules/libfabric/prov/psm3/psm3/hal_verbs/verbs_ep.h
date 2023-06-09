@@ -299,8 +299,6 @@ struct psm3_verbs_ep {
 	uint32_t qkey;
 	//uint8_t link_layer;         // IBV_LINK_LAYER_ETHERNET or other
 	uint8_t active_rate;
-#if defined(USE_RC)
-#endif // USE_RC
 	struct psm3_verbs_send_pool send_pool;
 	struct psm3_verbs_send_allocator send_allocator;
 	uint32_t send_rdma_outstanding;	// number of outstanding RDMAs
@@ -349,7 +347,7 @@ struct psm3_verbs_ep {
 #define recv_buffer_index(pool, buf) (((buf)-(pool)->recv_buffers)/(pool)->recv_buffer_size)
 
 extern psm2_error_t psm3_ep_open_verbs(psm2_ep_t ep, int unit, int port,
-			psm2_uuid_t const job_key);
+			int addr_index, psm2_uuid_t const job_key);
 extern void psm3_hfp_verbs_context_initstats(psm2_ep_t ep);
 extern void psm3_ep_free_verbs(psm2_ep_t ep);
 extern psm2_error_t psm3_verbs_ips_proto_init(struct ips_proto *proto,

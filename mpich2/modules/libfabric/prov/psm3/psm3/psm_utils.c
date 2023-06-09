@@ -80,7 +80,7 @@
  *
  * A valid EPID must be non-zero.  A few places in PSM3 make use of
  * psm3_epid_zero to identify uninitialized epid's in tables (such as ashm)
- * and use psm3_epid_zeroed() to create an empty epid (equivalent to calloc or
+ * and use psm3_epid_zeroed_internal() to create an empty epid (equivalent to calloc or
  * memset to 0 of an epid).
  */
 
@@ -290,7 +290,7 @@ psm3_epid_lookup_inner(psm2_ep_t ep, psm2_epid_t epid, int remove))
 		 * but really we match on epid *and* on endpoint */
 		e = &psm3_epid_table.table[idx];
 		if (e->entry != EPADDR_DELETED && e->key == key
-			&& e->ep == ep && !psm3_epid_cmp(e->epid, epid)) {
+			&& e->ep == ep && !psm3_epid_cmp_internal(e->epid, epid)) {
 			entry = e->entry;
 			if (remove)
 				psm3_epid_table.table[idx].entry =
@@ -309,7 +309,7 @@ void *psm3_epid_lookup(psm2_ep_t ep, psm2_epid_t epid)
 {
 	void *entry = psm3_epid_lookup_inner(ep, epid, 0);
 	if_pf (_HFI_VDBG_ON && PSMI_EP_HOSTNAME != ep)
-		_HFI_VDBG("lookup of (%p,%s) returns %p\n", ep, psm3_epid_fmt(epid, 0),
+		_HFI_VDBG("lookup of (%p,%s) returns %p\n", ep, psm3_epid_fmt_internal(epid, 0),
 			  entry);
 	return entry;
 }
@@ -317,7 +317,7 @@ void *psm3_epid_lookup(psm2_ep_t ep, psm2_epid_t epid)
 void *psm3_epid_remove(psm2_ep_t ep, psm2_epid_t epid)
 {
 	if_pf (_HFI_VDBG_ON && PSMI_EP_HOSTNAME != ep)
-		_HFI_VDBG("remove of (%p,%s)\n", ep, psm3_epid_fmt(epid, 0));
+		_HFI_VDBG("remove of (%p,%s)\n", ep, psm3_epid_fmt_internal(epid, 0));
 	return psm3_epid_lookup_inner(ep, epid, 1);
 }
 
@@ -353,7 +353,7 @@ psm2_error_t psm3_epid_add(psm2_ep_t ep, psm2_epid_t epid, void *entry)
 	psm2_error_t err = PSM2_OK;
 
 	if_pf (_HFI_VDBG_ON && PSMI_EP_HOSTNAME != ep)
-		_HFI_VDBG("add of (%p,%s) with entry %p\n", ep, psm3_epid_fmt(epid, 0),
+		_HFI_VDBG("add of (%p,%s) with entry %p\n", ep, psm3_epid_fmt_internal(epid, 0),
 			  entry);
 	pthread_mutex_lock(&psm3_epid_table.tablock);
 	/* Leave this here, mostly for sanity and for the fact that the epid
@@ -637,7 +637,7 @@ static void psmi_get_shm_nid(uint64_t *gid_hi, uint64_t *gid_lo)
 				*gid_hi = PSMI_IPV4_GID_HI(ip_addr);
 				*gid_lo = PSMI_IPV4_GID_LO(ip_addr);
 				_HFI_DBG("Using ifaddr[%s]: %s as NID\n",
-						ifa->ifa_name, psmi_ipv4_fmt(ip_addr, 0, 0));
+						ifa->ifa_name, psm3_ipv4_fmt(ip_addr, 0, 0));
 				break;
 			}
 			if (ifa->ifa_addr->sa_family == AF_INET6) {
@@ -873,8 +873,9 @@ uint64_t psm3_epid_context(psm2_epid_t epid)
 			psmi_assert(e.v4.sockets.pri_sock != 0);
 			return e.v4.sockets.pri_sock;
 		default:
-			psmi_assert_always(0);	// unexpected protocol
-			return 0; // keep compiler happy, never reached
+			// might be called in psm3_handle_error, so output something
+			// instead of asserting
+			return 0;
 		}
 		break;
 	case PSMI_ADDR_FMT_IPV6:
@@ -886,8 +887,9 @@ uint64_t psm3_epid_context(psm2_epid_t epid)
 			psmi_assert(e.v6.sockets.pri_sock != 0);
 			return e.v6.sockets.pri_sock;
 		default:
-			psmi_assert_always(0);	// unexpected protocol
-			return 0; // keep compiler happy, never reached
+			// might be called in psm3_handle_error, so output something
+			// instead of asserting
+			return 0;
 		}
 		break;
 	default:
@@ -916,8 +918,9 @@ uint16_t psm3_epid_aux_socket(psm2_epid_t epid)
 			return e.v4.sockets.aux_sock;
 		case PSMI_EPID_ETH_PROTO_ROCE:
 		default:
-			psmi_assert_always(0);	// unexpected protocol
-			return 0; // keep compiler happy, never reached
+			// might be called in psm3_handle_error, so output something
+			// instead of asserting
+			return 0;
 		}
 		break;
 	case PSMI_ADDR_FMT_IPV6:
@@ -927,8 +930,9 @@ uint16_t psm3_epid_aux_socket(psm2_epid_t epid)
 			return e.v6.sockets.aux_sock;
 		case PSMI_EPID_ETH_PROTO_ROCE:
 		default:
-			psmi_assert_always(0);	// unexpected protocol
-			return 0; // keep compiler happy, never reached
+			// might be called in psm3_handle_error, so output something
+			// instead of asserting
+			return 0;
 		}
 		break;
 	default:
@@ -1046,24 +1050,24 @@ uint64_t psm3_epid_hash(psm2_epid_t epid)
  */
 int psm3_is_nic_allowed(int unit)
 {
-	if (NULL == psmi_nic_wildcard) {
+	if (NULL == psm3_nic_wildcard) {
 		_HFI_DBG("PSM3_NIC is not specified. Unit %i is allowed\n", unit);
 		return 1;
 	}
 
 	const char* dev_name = psm3_sysfs_unit_dev_name(unit);
 	if (dev_name && *dev_name &&
-		(0 == fnmatch(psmi_nic_wildcard, dev_name, 0
+		(0 == fnmatch(psm3_nic_wildcard, dev_name, 0
 #ifdef FNM_EXTMATCH
 		                                           | FNM_EXTMATCH
 #endif
 	))) {
 		_HFI_DBG("Unit %d: '%s' matches PSM3_NIC '%s'\n",
-			unit, dev_name, psmi_nic_wildcard);
+			unit, dev_name, psm3_nic_wildcard);
 		return 1;
 	}
 	_HFI_DBG("Skipping Unit %d: '%s' doesn't match PSM3_NIC '%s'\n",
-		unit, dev_name ? dev_name : "Unknown", psmi_nic_wildcard);
+		unit, dev_name ? dev_name : "Unknown", psm3_nic_wildcard);
 	return 0;
 }
 
@@ -1118,9 +1122,9 @@ int psm3_is_speed_allowed(int unit, uint64_t speed)
 static int psm3_allow_subnet(const char *subnet, const char *subnet_type)
 {
 	int i;
-	for (i=0;  i < psmi_num_allow_subnets; i++) {
+	for (i=0;  i < psm3_num_allow_subnets; i++) {
 		int ret_on_match = 1;
-		char *pattern = psmi_allow_subnets[i];
+		char *pattern = psm3_allow_subnets[i];
 		if (*pattern == '^') {
 			ret_on_match = 0;
 			pattern++;
@@ -1276,7 +1280,7 @@ psm2_nid_t psm3_build_nid(uint8_t unit, psmi_naddr128_t addr, unsigned lid)
 
 // impose the addr_fmt specific rules for when we allow
 // diferent subnets to still be able to connect
-int psmi_subnets_match(psmi_subnet128_t a, psmi_subnet128_t b)
+int psm3_subnets_match(psmi_subnet128_t a, psmi_subnet128_t b)
 {
 	int is_eth = PSMI_ADDR_FMT_IS_ETH(a.fmt);
 	// note psm3_ep_connect enforces that addr_fmt must match
@@ -1290,23 +1294,29 @@ int psmi_subnets_match(psmi_subnet128_t a, psmi_subnet128_t b)
 	//	between different subnets
 	return ((a.prefix_len == b.prefix_len
 			&& a.bare.hi == b.bare.hi && a.bare.lo == b.bare.lo)
-		|| (is_eth && psmi_allow_routers));
+		|| (is_eth && psm3_allow_routers));
 }
 
 // compare our local subnet to a remote epids's subnet
 // For IPATH/OPA, the epid only holds a subset of the subnet bits so
 // we must compare with a subset of bits in our local subnet
-int psmi_subnets_match_epid(psmi_subnet128_t subnet, psm2_epid_t epid)
+int psm3_subnets_match_epid(psmi_subnet128_t subnet, psm2_epid_t epid)
 {
-	return psmi_subnets_match(psmi_subnet_epid_subset(subnet),
+	return psm3_subnets_match(psmi_subnet_epid_subset(subnet),
                                  psm3_epid_subnet(epid));
 }
 
 #ifdef PSM_SOCKETS
 // for now just report 0 -> equal, 1 -> not equal, don't worry about < and >
 // we don't worry about flowinfo or scope_id
-int psmi_sockaddr_cmp(struct sockaddr_in6 *a, struct sockaddr_in6 *b)
+int psm3_sockaddr_cmp(psm3_sockaddr_in_t *a, psm3_sockaddr_in_t *b)
 {
+#ifdef PSM_TCP_IPV4
+	psmi_assert(a->sin_family == AF_INET);
+	if (a->sin_family != b->sin_family) return 1;
+	if (a->sin_port != b->sin_port) return 1;
+	if (a->sin_addr.s_addr!= b->sin_addr.s_addr) return 1;
+#else
 	psmi_assert(a->sin6_family == AF_INET6);
 	if (a->sin6_family != b->sin6_family) return 1;
 	if (a->sin6_port != b->sin6_port) return 1;
@@ -1316,23 +1326,30 @@ int psmi_sockaddr_cmp(struct sockaddr_in6 *a, struct sockaddr_in6 *b)
 	if (a->sin6_addr.s6_addr32[2] != b->sin6_addr.s6_addr32[2]) return 1;
 	if (a->sin6_addr.s6_addr32[3] != b->sin6_addr.s6_addr32[3]) return 1;
 	//if (a->sin6_scope_id != b->sin6_scope_id) return 1;
+#endif
 	return 0;
 }
 
-void psm3_build_sockaddr(struct sockaddr_in6 *in6, uint16_t port,
+void psm3_build_sockaddr(psm3_sockaddr_in_t *in, uint16_t port,
 			uint64_t gid_hi, uint64_t gid_lo, uint32_t scope_id)
 {
-	in6->sin6_family = AF_INET6;
-	in6->sin6_port = __cpu_to_be16(port);
-	in6->sin6_flowinfo = 0;     // TBD
-	in6->sin6_addr.s6_addr32[0] = __cpu_to_be32(gid_hi >> 32);
-	in6->sin6_addr.s6_addr32[1] = __cpu_to_be32(gid_hi & 0xffffffff);
-	in6->sin6_addr.s6_addr32[2] = __cpu_to_be32(gid_lo >> 32);
-	in6->sin6_addr.s6_addr32[3] = __cpu_to_be32(gid_lo & 0xffffffff);
-	in6->sin6_scope_id = scope_id;
+#ifdef PSM_TCP_IPV4
+	in->sin_family = AF_INET;
+	in->sin_port = __cpu_to_be16(port);
+	in->sin_addr.s_addr = __cpu_to_be32(gid_lo & 0xffffffff);
+#else
+	in->sin6_family = AF_INET6;
+	in->sin6_port = __cpu_to_be16(port);
+	in->sin6_flowinfo = 0;     // TBD
+	in->sin6_addr.s6_addr32[0] = __cpu_to_be32(gid_hi >> 32);
+	in->sin6_addr.s6_addr32[1] = __cpu_to_be32(gid_hi & 0xffffffff);
+	in->sin6_addr.s6_addr32[2] = __cpu_to_be32(gid_lo >> 32);
+	in->sin6_addr.s6_addr32[3] = __cpu_to_be32(gid_lo & 0xffffffff);
+	in->sin6_scope_id = scope_id;
+#endif
 }
 
-void psm3_epid_build_sockaddr(struct sockaddr_in6 *in6, psm2_epid_t epid,
+void psm3_epid_build_sockaddr(psm3_sockaddr_in_t *in, psm2_epid_t epid,
 				uint32_t scope_id)
 {
 	psmi_epid_t e = { .psm2_epid = epid };
@@ -1341,14 +1358,14 @@ void psm3_epid_build_sockaddr(struct sockaddr_in6 *in6, psm2_epid_t epid,
 	case PSMI_ADDR_FMT_IPV4:
 		psmi_assert(e.v4.protocol == PSMI_EPID_ETH_PROTO_INET);
 		psmi_assert(e.v4.sockets.pri_sock != 0);
-		psm3_build_sockaddr(in6, e.v4.sockets.pri_sock,
+		psm3_build_sockaddr(in, e.v4.sockets.pri_sock,
 				PSMI_IPV4_GID_HI(e.v4.ipv4_addr),
 				PSMI_IPV4_GID_LO(e.v4.ipv4_addr), 0);
 		break;
 	case PSMI_ADDR_FMT_IPV6:
 		psmi_assert(e.v6.protocol == PSMI_EPID_ETH_PROTO_INET);
 		psmi_assert(e.v6.sockets.pri_sock != 0);
-		psm3_build_sockaddr(in6, e.v6.sockets.pri_sock, e.v6.gid_hi, e.v6.gid_lo,
+		psm3_build_sockaddr(in, e.v6.sockets.pri_sock, e.v6.gid_hi, e.v6.gid_lo,
 					scope_id);
 		break;
 	default:
@@ -1357,7 +1374,7 @@ void psm3_epid_build_sockaddr(struct sockaddr_in6 *in6, psm2_epid_t epid,
 	}
 }
 
-void psm3_epid_build_aux_sockaddr(struct sockaddr_in6 *in6, psm2_epid_t epid,
+void psm3_epid_build_aux_sockaddr(psm3_sockaddr_in_t *in, psm2_epid_t epid,
 				uint32_t scope_id)
 {
 	psmi_epid_t e = { .psm2_epid = epid };
@@ -1366,14 +1383,14 @@ void psm3_epid_build_aux_sockaddr(struct sockaddr_in6 *in6, psm2_epid_t epid,
 	case PSMI_ADDR_FMT_IPV4:
 		psmi_assert(e.v4.protocol == PSMI_EPID_ETH_PROTO_INET);
 		psmi_assert(e.v4.sockets.aux_sock != 0);
-		psm3_build_sockaddr(in6, e.v4.sockets.aux_sock,
+		psm3_build_sockaddr(in, e.v4.sockets.aux_sock,
 				PSMI_IPV4_GID_HI(e.v4.ipv4_addr),
 				PSMI_IPV4_GID_LO(e.v4.ipv4_addr), 0);
 		break;
 	case PSMI_ADDR_FMT_IPV6:
 		psmi_assert(e.v6.protocol == PSMI_EPID_ETH_PROTO_INET);
 		psmi_assert(e.v6.sockets.aux_sock != 0);
-		psm3_build_sockaddr(in6, e.v6.sockets.aux_sock, e.v6.gid_hi, e.v6.gid_lo,
+		psm3_build_sockaddr(in, e.v6.sockets.aux_sock, e.v6.gid_hi, e.v6.gid_lo,
 					scope_id);
 		break;
 	default:
@@ -1381,6 +1398,7 @@ void psm3_epid_build_aux_sockaddr(struct sockaddr_in6 *in6, psm2_epid_t epid,
 		break;
 	}
 }
+
 #endif /* PSM_SOCKETS */
 
 /* this is used to form a psm2_epid_t from individual words found in packets */
@@ -1435,18 +1453,18 @@ uint64_t psm3_epid_w2(psm2_epid_t epid)
 	return e.w[2];
 }
 
-psm2_epid_t psm3_epid_zeroed(void)
+psm2_epid_t psm3_epid_zeroed_internal(void)
 {
 	psmi_epid_t e = { };
 	return e.psm2_epid;
 }
 
-psm2_epid_t psm2_epid_zeroed(void)
+psm2_epid_t psm3_epid_zeroed(void)
 {
 	psm2_epid_t rv;
 
 	PSM2_LOG_MSG("entering");
-	rv = psm3_epid_zeroed();
+	rv = psm3_epid_zeroed_internal();
 	PSM2_LOG_MSG("leaving");
 	return rv;
 }
@@ -1488,21 +1506,26 @@ psm2_epid_t psm2_epid_zeroed(void)
 // PSMI_EP_ADDR_LEN is 72
 // ibv_gid is 48 including \0
 #define PSM_ADDRSTRLEN (max(INET6_ADDRSTRLEN+19+7, PSMI_EP_ADDR_LEN))
-static __thread char outstrbufs[6][PSM_ADDRSTRLEN+4];
+#define PSM_MAX_BUFNO 5	// bufno 0 to 5 available for generic use
+// We allocate 1 extra buffer so psm3_syslog can have an internal buffer
+// independent from callers who may supply strings using their own bufno.
+// A little paranoid since formatting occurs prior to psm3_syslog call
+// but makes it safe if psm3_syslog is called more directly in future
+static __thread char outstrbufs[PSM_MAX_BUFNO+2][PSM_ADDRSTRLEN+4];
 
 // output portion of ep->subnet (eg. a subnet returned by get_port_subnet)
 // which can be compared to psm3_epid_subnet().
 // This accounts for the fact that some epid addr_fmt's (IB/OPA) only contain a
 // subset of the subnet.
 // Only valid for subnet used in remote IPS connections
-// see psmi_subnet_epid_subset and psmi_subnets_match_epid
-const char *psmi_subnet_epid_subset_fmt(psmi_subnet128_t subnet, int bufno)
+// see psmi_subnet_epid_subset and psm3_subnets_match_epid
+const char *psm3_subnet_epid_subset_fmt(psmi_subnet128_t subnet, int bufno)
 {
-	return psmi_subnet128_fmt(psmi_subnet_epid_subset(subnet), bufno);
+	return psm3_subnet128_fmt(psmi_subnet_epid_subset(subnet), bufno);
 }
 
 /* this returns just the epid in hex */
-const char *psm3_epid_fmt(psm2_epid_t epid, int bufno)
+const char *psm3_epid_fmt_internal(psm2_epid_t epid, int bufno)
 {
 	char *outstr = outstrbufs[bufno];
 	psmi_epid_t e = { .psm2_epid = epid };
@@ -1512,10 +1535,10 @@ const char *psm3_epid_fmt(psm2_epid_t epid, int bufno)
 	return outstr;
 }
 
-const char *psm2_epid_fmt(psm2_epid_t epid, int bufno)
+const char *psm3_epid_fmt(psm2_epid_t epid, int bufno)
 {
 	// no logging since can be used inside app logging
-	return psm3_epid_fmt(epid, bufno);
+	return psm3_epid_fmt_internal(epid, bufno);
 }
 
 const char *psm3_epid_str_addr_fmt(psm2_epid_t epid)
@@ -1540,8 +1563,8 @@ const char *psm3_epid_str_addr_fmt(psm2_epid_t epid)
 	}
 }
 
-// for error messages and psmi_subnet128_fmt_name
-// note that psmi_subnet128_fmt_name sets the OFI fi_info
+// for error messages and psm3_subnet128_fmt_name
+// note that psm3_subnet128_fmt_name sets the OFI fi_info
 // fabric name
 static const char *psm3_protocol_str(psmi_eth_proto_t protocol)
 {
@@ -1579,7 +1602,8 @@ static const char *psm3_protocol_context_str(psmi_eth_proto_t protocol)
 		return "TCP";
 		break;
 	default:
-		psmi_assert_always(0);	// unexpected protocol
+		// might be called in psm3_handle_error, so output something
+		// instead of asserting
 		return "Unknown";	// keep compiler happy
 		break;
 	}
@@ -1602,13 +1626,13 @@ const char *psm3_epid_fmt_context(psm2_epid_t epid, int bufno)
 }
 
 /* output network address in a more human readable format
- * for IPv4 we just show IP address
- * for IPv6 we show subnet and address
+ * for IPv4 we show IP address/prefix_len
+ * for IPv6 we show full 128b address/prefix_len
  * for IB/OPA we show LID and GID
  * for intra-node we show PID or Rank
  * resulting string <= INET6_ADDRSTRLEN+4
  */
-const char *psmi_nid_fmt(psm2_nid_t nid, int bufno)
+const char *psm3_nid_fmt(psm2_nid_t nid, int bufno)
 {
 	char *outstr = outstrbufs[bufno];
 	psmi_epid_t e = { .psm2_epid = nid };
@@ -1645,23 +1669,26 @@ const char *psmi_nid_fmt(psm2_nid_t nid, int bufno)
 }
 
 /* this returns just the network address from decoding the epid
- * for IPv4 we just show IP address/prefix_len
+ * for IPv4 we show IP address/prefix_len
  * for IPv6 we show full 128b address/prefix_len
  * for IB/OPA we show LID and GID
+ * for intra-node we show PID or Rank
+ * resulting string <= INET6_ADDRSTRLEN+4
  */
 const char *psm3_epid_fmt_nid(psm2_epid_t epid, int bufno)
 {
-	return psmi_nid_fmt(psm3_epid_nid(epid),  bufno);
+	return psm3_nid_fmt(psm3_epid_nid(epid),  bufno);
 }
 
-/* this returns just the addressing from decoding the epid
+/* this returns the addressing from decoding the epid
  * output has context and nid in a more human readable format
- * for IPv4 nid we just show IP address
- * for IPv6 nid we show subnet and address
- * for IB/OPA nid we show LID
+ * for IPv4 we show IP address/prefix_len
+ * for IPv6 we show full 128b address/prefix_len
+ * for IB/OPA we show LID and GID
  * for intra-node we show PID or Rank
  * resulting string <= PSMI_EP_ADDR_LEN (INET6_ADDRSTRLEN+17+spare)
- * This should not be used for psm2_nid_t, instead use psmi_nid_fmt
+ *
+ * This should not be used for psm2_nid_t, instead use psm3_nid_fmt
  */
 const char *psm3_epid_fmt_addr(psm2_epid_t epid, int bufno)
 {
@@ -1720,16 +1747,18 @@ const char *psm3_epid_fmt_addr(psm2_epid_t epid, int bufno)
 		}
 		break;
 	default:
-		psmi_assert_always(0);	// unexpected addr_fmt
+		// might be called in psm3_handle_error, so output something instead of
+		// asserting
+		snprintf(outstr, sizeof(outstrbufs[0]), "Invalid Fmt");
 		break;
 	}
 	return outstr;
 }
 
 // format a 128b GID.  We use the same style for all GIDs
-// beware this is called in psmi_naddr128_fmt so avoid duplicate
+// beware this is called in psm3_naddr128_fmt so avoid duplicate
 // bufno in prints which call both
-const char *psmi_gid128_fmt(psmi_gid128_t gid, int bufno)
+const char *psm3_gid128_fmt(psmi_gid128_t gid, int bufno)
 {
 	char *outstr = outstrbufs[bufno];
 
@@ -1740,7 +1769,7 @@ const char *psmi_gid128_fmt(psmi_gid128_t gid, int bufno)
 // format a subnet or netmask appropriately for the given addr_fmt
 // prefix_len is optional (0 to omit) and only used for
 // IPv4 and IPv6 addresses for the optional /prefix_len suffix
-const char *psmi_subnet128_fmt(psmi_subnet128_t subnet, int bufno)
+const char *psm3_subnet128_fmt(psmi_subnet128_t subnet, int bufno)
 {
 	char *outstr = outstrbufs[bufno];
 
@@ -1754,29 +1783,29 @@ const char *psmi_subnet128_fmt(psmi_subnet128_t subnet, int bufno)
 	return outstr;
 }
 
-void psmi_subnet128_fmt_name(psmi_eth_proto_t protocol, psmi_subnet128_t subnet,
+void psm3_subnet128_fmt_name(psmi_eth_proto_t protocol, psmi_subnet128_t subnet,
 				char *buf, int buflen)
 {
 	const char *prefix = psm3_protocol_str(protocol);
 
 	switch (subnet.fmt) {
 	case PSMI_ADDR_FMT_IB:
-		snprintf(buf, buflen, "IB/OPA-%s", psmi_subnet128_fmt(subnet, 0));
+		snprintf(buf, buflen, "IB/OPA-%s", psm3_subnet128_fmt(subnet, 0));
 		break;
 	case PSMI_ADDR_FMT_IPV4:
-		if (psmi_allow_routers) {
+		if (psm3_allow_routers) {
 			snprintf(buf, buflen, "%s-IPv4", prefix);
 		} else {
 			snprintf(buf, buflen, "%s-%s", prefix,
- 				psmi_subnet128_fmt(subnet, 0));
+ 				psm3_subnet128_fmt(subnet, 0));
 		}
 		break;
 	case PSMI_ADDR_FMT_IPV6:
-		if (psmi_allow_routers) {
+		if (psm3_allow_routers) {
 			snprintf(buf, buflen, "%s-IPv6", prefix);
 		} else {
 			snprintf(buf, buflen, "%s-%s", prefix,
- 				psmi_subnet128_fmt(subnet, 0));
+ 				psm3_subnet128_fmt(subnet, 0));
 		}
 		break;
 	default:
@@ -1791,7 +1820,7 @@ void psmi_subnet128_fmt_name(psmi_eth_proto_t protocol, psmi_subnet128_t subnet,
  */
 const char *psm3_epid_fmt_subnet(psm2_epid_t epid, int bufno)
 {
-	return psmi_subnet128_fmt(psm3_epid_subnet(epid), bufno);
+	return psm3_subnet128_fmt(psm3_epid_subnet(epid), bufno);
 }
 
 // format an address (as returned by get_port_subnet addr argument)
@@ -1799,7 +1828,7 @@ const char *psm3_epid_fmt_subnet(psm2_epid_t epid, int bufno)
 // prefix_len is optional (0 to omit) and only used for
 // IPv4 and IPv6 addresses for the optional /prefix_len suffix
 // IB/OPA addresses shown as a full 128b GID
-const char *psmi_naddr128_fmt(psmi_naddr128_t addr, int bufno)
+const char *psm3_naddr128_fmt(psmi_naddr128_t addr, int bufno)
 {
 	char *outstr = outstrbufs[bufno];
 
@@ -1808,12 +1837,12 @@ const char *psmi_naddr128_fmt(psmi_naddr128_t addr, int bufno)
 	else if (addr.fmt == PSMI_ADDR_FMT_IPV6)
 		return psmi_ipv6_ntop(addr.bare, addr.prefix_len, outstr, sizeof(outstrbufs[0]));
 	else
-		return psmi_gid128_fmt(addr.bare, bufno);
+		return psm3_gid128_fmt(addr.bare, bufno);
 }
 
 #ifdef PSM_VERBS
 // format an ibv_gid
-const char *psmi_ibv_gid_fmt(union ibv_gid gid, int bufno)
+const char *psm3_ibv_gid_fmt(union ibv_gid gid, int bufno)
 {
 	char *outstr = outstrbufs[bufno];
 
@@ -1829,7 +1858,7 @@ const char *psmi_ibv_gid_fmt(union ibv_gid gid, int bufno)
 	return outstr;
 }
 
-int psmi_nonzero_gid(const union ibv_gid *gid)
+int psm3_nonzero_gid(const union ibv_gid *gid)
 {
 	static union ibv_gid zero_gid = { };
 
@@ -1886,7 +1915,7 @@ static int psm3_epid_cmp_word(uint64_t a, uint64_t b)
  *	-1 - a < b
  *	1 - a > b
  */
-int psm3_epid_cmp(psm2_epid_t a, psm2_epid_t b)
+int psm3_epid_cmp_internal(psm2_epid_t a, psm2_epid_t b)
 {
 	int ret;
 
@@ -1901,12 +1930,12 @@ int psm3_epid_cmp(psm2_epid_t a, psm2_epid_t b)
 	return psm3_epid_cmp_word(a.w[2], b.w[2]);
 }
 
-int psm2_epid_cmp(psm2_epid_t a, psm2_epid_t b)
+int psm3_epid_cmp(psm2_epid_t a, psm2_epid_t b)
 {
 	int rv;
 
 	PSM2_LOG_MSG("entering");
-	rv = psm3_epid_cmp(a, b);
+	rv = psm3_epid_cmp_internal(a, b);
 	PSM2_LOG_MSG("leaving");
 	return rv;
 }
@@ -1914,18 +1943,18 @@ int psm2_epid_cmp(psm2_epid_t a, psm2_epid_t b)
 /* an EPID is 0 when it is undefined/empty
  * returns 0: EPID is non-zero, 1: EPID is zero
  */
-int psm3_epid_zero(psm2_epid_t a)
+int psm3_epid_zero_internal(psm2_epid_t a)
 {
 	psmi_epid_t ae = { .psm2_epid = a };
 	return (ae.w[0] == 0 && ae.w[1] == 0 && ae.w[2] == 0);
 }
 
-int psm2_epid_zero(psm2_epid_t a)
+int psm3_epid_zero(psm2_epid_t a)
 {
 	int rv;
 
 	PSM2_LOG_MSG("entering");
-	rv = psm3_epid_zero(a);
+	rv = psm3_epid_zero_internal(a);
 	PSM2_LOG_MSG("leaving");
 	return rv;
 }
@@ -1936,12 +1965,12 @@ int psm2_epid_zero(psm2_epid_t a)
  *	-1 - a < b
  *	1 - a > b
  */
-int psm2_nid_cmp(psm2_nid_t a, psm2_nid_t b)
+int psm3_nid_cmp(psm2_nid_t a, psm2_nid_t b)
 {
 	int rv;
 
 	PSM2_LOG_MSG("entering");
-	rv = psm3_epid_cmp(a, b);
+	rv = psm3_epid_cmp_internal(a, b);
 	PSM2_LOG_MSG("leaving");
 	return rv;
 }
@@ -1949,22 +1978,22 @@ int psm2_nid_cmp(psm2_nid_t a, psm2_nid_t b)
 /* an NID is 0 when it is undefined/empty
  * returns 0: NID is non-zero, 1: NID is zero
  */
-int psm2_nid_zero(psm2_nid_t a)
+int psm3_nid_zero(psm2_nid_t a)
 {
 	int rv;
 
 	PSM2_LOG_MSG("entering");
-	rv = psmi_nid_zero(a);
+	rv = psm3_nid_zero_internal(a);
 	PSM2_LOG_MSG("leaving");
 	return rv;
 }
 
-psm2_nid_t psm2_nid_zeroed(void)
+psm2_nid_t psm3_nid_zeroed(void)
 {
 	psm2_nid_t rv;
 
 	PSM2_LOG_MSG("entering");
-	rv = psmi_nid_zeroed();
+	rv = psm3_nid_zeroed_internal();
 	PSM2_LOG_MSG("leaving");
 	return rv;
 }
@@ -2008,7 +2037,7 @@ const char *psm3_epaddr_get_name(psm2_epid_t epid, int bufno)
 
 // superset of inet_ntop.  For AF_INET and AF_INET6 outputs address and port
 // AF_IB is unsupported.
-// caller of psmi_sockaddr_fmt has prefix_len in the epddr->epid in some cases
+// caller of psm3_sockaddr_fmt has prefix_len in the epddr->epid in some cases
 // but in other cases (inbound packets) we do not.  So chose to
 // not enable this function with prefix_len argument
 static const char *psmi_sockaddr_ntop(struct sockaddr* addr, char *dst,
@@ -2049,10 +2078,10 @@ static const char *psmi_sockaddr_ntop(struct sockaddr* addr, char *dst,
 	}
 }
 
-// caller of psmi_sockaddr_fmt has prefix_len in the epddr->epid in some cases
+// caller of psm3_sockaddr_fmt has prefix_len in the epddr->epid in some cases
 // but in other cases (inbound packets) we do not.  So chose to
 // not enable this function with prefix_len argument
-const char *psmi_sockaddr_fmt(struct sockaddr* addr, int bufno)
+const char *psm3_sockaddr_fmt(struct sockaddr* addr, int bufno)
 {
 	char *outstr = outstrbufs[bufno];
 
@@ -2060,7 +2089,7 @@ const char *psmi_sockaddr_fmt(struct sockaddr* addr, int bufno)
 }
 
 // subset of inet_ntop.  Outputs just address
-// caller of psmi_sockaddr_fmt_addr may not yet have prefix_len, so chose to
+// caller of psm3_sockaddr_fmt_addr may not yet have prefix_len, so chose to
 // not enable this function with prefix_len argument
 static const char *psmi_sockaddr_ntop_addr(struct sockaddr* addr, char *dst,
 						socklen_t size)
@@ -2093,9 +2122,9 @@ static const char *psmi_sockaddr_ntop_addr(struct sockaddr* addr, char *dst,
 	}
 }
 
-// caller of psmi_sockaddr_fmt_addr may not yet have prefix_len, so chose to
+// caller of psm3_sockaddr_fmt_addr may not yet have prefix_len, so chose to
 // not enable this function with prefix_len argument
-const char *psmi_sockaddr_fmt_addr(struct sockaddr* addr, int bufno)
+const char *psm3_sockaddr_fmt_addr(struct sockaddr* addr, int bufno)
 {
 	char *outstr = outstrbufs[bufno];
 
@@ -2137,7 +2166,7 @@ static const char *psmi_ipv4_ntop(uint32_t ip_addr, uint8_t prefix_len,
 	return dst;
 }
 
-const char *psmi_ipv4_fmt(uint32_t ip_addr, uint8_t prefix_len, int bufno)
+const char *psm3_ipv4_fmt(uint32_t ip_addr, uint8_t prefix_len, int bufno)
 {
 	char *outstr = outstrbufs[bufno];
 
@@ -2183,7 +2212,7 @@ static const char *psmi_ipv6_ntop(psmi_bare_netaddr128_t ipv6_addr,
 	return dst;
 }
 
-const char *psmi_ipv6_fmt(psmi_bare_netaddr128_t ipv6_addr, uint8_t prefix_len,
+const char *psm3_ipv6_fmt(psmi_bare_netaddr128_t ipv6_addr, uint8_t prefix_len,
 				int bufno)
 {
 	char *outstr = outstrbufs[bufno];
@@ -2209,7 +2238,7 @@ socklen_t psmi_sockaddr_len(struct sockaddr* addr)
 #ifdef PSM_VERBS
 // given an IPv4 address, figure out which ifconfig entry matches and
 // return the netmask
-int psmi_get_eth_ipv4_netmask(uint32_t ip_addr, uint32_t *netmask)
+int psm3_get_eth_ipv4_netmask(uint32_t ip_addr, uint32_t *netmask)
 {
 	struct ifaddrs *ifap, *ifa;
 
@@ -2227,8 +2256,8 @@ int psmi_get_eth_ipv4_netmask(uint32_t ip_addr, uint32_t *netmask)
 
 			_HFI_DBG("Related ifaddr[%s]: %s netmask %s\n",
 					ifa->ifa_name,
-					psmi_ipv4_fmt(ip_addr, 0, 0),
-					psmi_ipv4_fmt(nm, 0, 1));
+					psm3_ipv4_fmt(ip_addr, 0, 0),
+					psm3_ipv4_fmt(nm, 0, 1));
 			*netmask = nm;
 			break;
 		}
@@ -2245,7 +2274,7 @@ int psmi_get_eth_ipv4_netmask(uint32_t ip_addr, uint32_t *netmask)
 // This counts how many 1s are in the high end of the netmask and confirms
 // the remaining low bits are 0.
 // returns 0 if netmask is invalid
-uint8_t psmi_compute_ipv4_prefix_len(uint32_t netmask)
+uint8_t psm3_compute_ipv4_prefix_len(uint32_t netmask)
 {
 	int i=0;
 	uint32_t mask = 0x80000000;
@@ -2268,7 +2297,7 @@ static inline uint64_t psmi_bit_count_to_mask64(int count)
 // This counts how many 1s are in the high end of the netmask and confirms
 // the remaining low bits are 0.
 // returns 0 if netmask is invalid
-int psmi_compute_ipv6_prefix_len(psmi_bare_netaddr128_t netmask)
+int psm3_compute_ipv6_prefix_len(psmi_bare_netaddr128_t netmask)
 {
 	int i=0;
 	uint64_t mask = 0x8000000000000000;
@@ -2298,7 +2327,7 @@ int psmi_compute_ipv6_prefix_len(psmi_bare_netaddr128_t netmask)
 // return the netmask
 // returns 0 if a matching address was found
 // returns -1 if can't query addresses or no matching address was found
-int psmi_get_eth_ipv6_netmask(psmi_bare_netaddr128_t ipv6_addr,
+int psm3_get_eth_ipv6_netmask(psmi_bare_netaddr128_t ipv6_addr,
 				psmi_bare_netaddr128_t *netmask)
 {
 	struct ifaddrs *ifap, *ifa;
@@ -2324,8 +2353,8 @@ int psmi_get_eth_ipv6_netmask(psmi_bare_netaddr128_t ipv6_addr,
 
 			_HFI_DBG("Related ifaddr[%s]: %s netmask %s\n",
 					ifa->ifa_name,
-					psmi_ipv6_fmt(ipv6_addr, 0, 0),
-					psmi_ipv6_fmt(*netmask, 0, 1));
+					psm3_ipv6_fmt(ipv6_addr, 0, 0),
+					psm3_ipv6_fmt(*netmask, 0, 1));
 			break;	// found, ifa != NULL
 		}
 		(void)freeifaddrs(ifap);
@@ -2340,7 +2369,7 @@ int psmi_get_eth_ipv6_netmask(psmi_bare_netaddr128_t ipv6_addr,
 // Find the 1st IPv6 address for a given netdev interface
 // returns 0 if an address was found
 // returns -1 if can't query addresses or no address was found
-int psmi_get_eth_ipv6(const char *ifname, psmi_bare_netaddr128_t *ipv6_addr)
+int psm3_get_eth_ipv6(const char *ifname, psmi_bare_netaddr128_t *ipv6_addr)
 {
 	struct ifaddrs *ifap, *ifa;
 
@@ -2359,7 +2388,7 @@ int psmi_get_eth_ipv6(const char *ifname, psmi_bare_netaddr128_t *ipv6_addr)
 
 			_HFI_DBG("Found ifaddr[%s]: IPv6 %s\n",
 					ifa->ifa_name,
-					psmi_ipv6_fmt(*ipv6_addr, 0, 0));
+					psm3_ipv6_fmt(*ipv6_addr, 0, 0));
 			break;	// found, ifa != NULL
 		}
 		(void)freeifaddrs(ifap);
@@ -2373,7 +2402,7 @@ int psmi_get_eth_ipv6(const char *ifname, psmi_bare_netaddr128_t *ipv6_addr)
 /* use for single rand num pick */
 // if want to pick a series of rand numbers, please use/write different
 // function that only init drand48_data once
-long int psmi_rand(long int seed)
+long int psm3_rand(long int seed)
 {
 	struct drand48_data drand48_data;
 	long int ret = 0;
@@ -2403,327 +2432,6 @@ uintptr_t psm3_getpagesize(void)
 	return pagesz;
 }
 
-/* _CONSUMED_ALL() is a macro which indicates if strtol() consumed all
-   of the input passed to it. */
-#define _CONSUMED_ALL(CHAR_PTR) (((CHAR_PTR) != NULL) && (*(CHAR_PTR) == 0))
-
-/* parse env of the form 'val' or 'val:' or 'val:pattern'
- * for PSM3_VERBOSE_ENV and PSM3_IDENITFY
- * if nothing provided or doesn't match current process, def is returned
- * if syntax error, def_syntax is returned
- */
-int psmi_parse_val_pattern(const char *env, int def, int def_syntax)
-{
-	int ret = def;
-
-	if (env && *env) {
-		char *e = psmi_strdup(NULL, env);
-		char *ep;
-		char *p;
-
-		psmi_assert_always(e != NULL);
-		if (e == NULL)	// for klocwork
-			goto done;
-		p = strchr(e, ':');
-		if (p)
-			*p = '\0';
-		int val = (int)strtol(e, &ep, 0);
-		if (! _CONSUMED_ALL(ep))
-			ret = def_syntax;
-		else
-			ret = val;
-		if (val && p) {
-			if (! *(p+1)) { // val: -> val:*:rank0
-				if (psm3_get_myrank() != 0)
-					ret = def;
-			} else if (0 != fnmatch(p+1, psm3_get_mylabel(),  0
-#ifdef FNM_EXTMATCH
-										| FNM_EXTMATCH
-#endif
-					))
-					ret = def;
-		}
-		psmi_free(e);
-	}
-done:
-	return ret;
-}
-
-/* If PSM3_VERBOSE_ENV is set in the environment, we determine
- * what its verbose level is and print the environment at "INFO"
- * level if the environment's level matches the desired printlevel.
- */
-static int psmi_getenv_verblevel = -1;
-static int psmi_getenv_is_verblevel(int printlevel)
-{
-	if (psmi_getenv_verblevel == -1) {
-		char *env = getenv("PSM3_VERBOSE_ENV");
-		int nlevel = PSMI_ENVVAR_LEVEL_USER;
-		psmi_getenv_verblevel = psmi_parse_val_pattern(env, 0, 2);
-		if (psmi_getenv_verblevel < 0 || psmi_getenv_verblevel > 3)
-			psmi_getenv_verblevel = 2;
-		if (psmi_getenv_verblevel > 0)
-			nlevel = 0; /* output at INFO level */
-		if (psmi_getenv_verblevel == 1)
-			_HFI_ENVDBG(0, " %-25s => '%s' (default was '%s')\n",
-				"PSM3_VERBOSE_ENV", env?env:"", "0");
-		else if (env && *env)
-			_HFI_ENVDBG(nlevel, " %-25s %-40s => '%s' (default was '%s')\n",
-				"PSM3_VERBOSE_ENV",
-				"Enable verbose output of environment variables. "
-				"(0 - none, 1 - changed w/o help, 2 - user help, "
-				"#: - limit output to rank 0, #:pattern - limit output "
-				"to processes whose label matches "
-#ifdef FNM_EXTMATCH
-				"extended "
-#endif
-				"glob pattern)",
-// don't document that 3 and 3: and 3:pattern can output hidden params
-				env, "0");
-		else	/* defaulted */
-			_HFI_ENVDBG(nlevel,
-				" %-25s %-40s => '%s'\n",
-				"PSM3_VERBOSE_ENV",
-				"Enable verbose output of environment variables. "
-				"(0 - none, 1 - changed w/o help, 2 - user help, "
-				"#: - limit output to rank 0, #:pattern - limit output "
-				"to processes whose label matches "
-#ifdef FNM_EXTMATCH
-				"extended "
-#endif
-				"glob pattern)",
-// don't document that 3 and 3: and 3:pattern can output hidden params
-				"0");
-	}
-	return ((printlevel <= psmi_getenv_verblevel
-			&& psmi_getenv_verblevel == 1)
-		|| printlevel <= psmi_getenv_verblevel-1);
-}
-
-#define GETENV_PRINTF(_level, _fmt, ...)				\
-	do {								\
-		if ((_level & PSMI_ENVVAR_LEVEL_NEVER_PRINT) == 0)	\
-		{							\
-			int nlevel = _level;				\
-			if (psmi_getenv_is_verblevel(nlevel))		\
-				nlevel = 0; /* output at INFO level */	\
-			_HFI_ENVDBG(nlevel, _fmt, ##__VA_ARGS__);	\
-		}							\
-	} while (0)
-
-int
-MOCKABLE(psm3_getenv)(const char *name, const char *descr, int level,
-	    int type, union psmi_envvar_val defval,
-	    union psmi_envvar_val *newval)
-{
-	int used_default = 0;
-	union psmi_envvar_val tval;
-	char *env = getenv(name);
-#if _HFI_DEBUGGING
-	int ishex = (type == PSMI_ENVVAR_TYPE_ULONG_FLAGS ||
-		     type == PSMI_ENVVAR_TYPE_UINT_FLAGS);
-#endif
-
-	/* for verblevel 1 we only output non-default values with no help
-	 * for verblevel>1 we promote to info (verblevel=2 promotes USER,
-	 *		verblevel=3 promotes HIDDEN) and show help.
-	 * for verblevel< 1 we don't promote anything and show help
-	 */
-#define _GETENV_PRINT(used_default, fmt, val, defval) \
-	do {	\
-		(void)psmi_getenv_is_verblevel(level);			\
-		if (used_default && psmi_getenv_verblevel != 1)		\
-			GETENV_PRINTF(level, "%s%-25s %-40s =>%s" fmt	\
-				"\n", level > 1 ? "*" : " ", name,	\
-				descr, ishex ? "0x" : " ", val);	\
-		else if (! used_default && psmi_getenv_verblevel == 1)	\
-			GETENV_PRINTF(1, "%s%-25s =>%s"			\
-				fmt " (default was%s" fmt ")\n",	\
-				level > 1 ? "*" : " ", name,		\
-				ishex ? " 0x" : " ", val,		\
-				ishex ? " 0x" : " ", defval);		\
-		else if (! used_default && psmi_getenv_verblevel != 1)	\
-			GETENV_PRINTF(1, "%s%-25s %-40s =>%s"		\
-				fmt " (default was%s" fmt ")\n",	\
-				level > 1 ? "*" : " ", name, descr,	\
-				ishex ? " 0x" : " ", val,		\
-				ishex ? " 0x" : " ", defval);		\
-	} while (0)
-
-#define _CONVERT_TO_NUM(DEST,TYPE,STRTOL)						\
-	do {										\
-		char *ep;								\
-		/* Avoid base 8 (octal) on purpose, so don't pass in 0 for radix */	\
-		DEST = (TYPE)STRTOL(env, &ep, 10);					\
-		if (! _CONSUMED_ALL(ep)) {						\
-			DEST = (TYPE)STRTOL(env, &ep, 16);				\
-			if (! _CONSUMED_ALL(ep)) {					\
-				used_default = 1;					\
-				tval = defval;						\
-			}								\
-		}									\
-	} while (0)
-
-	switch (type) {
-	case PSMI_ENVVAR_TYPE_YESNO:
-		if (!env || *env == '\0') {
-			tval = defval;
-			used_default = 1;
-		} else if (env[0] == 'Y' || env[0] == 'y')
-			tval.e_int = 1;
-		else if (env[0] == 'N' || env[0] == 'n')
-			tval.e_int = 0;
-		else {
-			char *ep;
-			tval.e_ulong = strtoul(env, &ep, 0);
-			if (ep == env) {
-				used_default = 1;
-				tval = defval;
-			} else if (tval.e_ulong != 0)
-				tval.e_ulong = 1;
-		}
-		_GETENV_PRINT(used_default, "%s", tval.e_long ? "YES" : "NO",
-			      defval.e_int ? "YES" : "NO");
-		break;
-
-	case PSMI_ENVVAR_TYPE_STR:
-		if (!env || *env == '\0') {
-			tval = defval;
-			used_default = 1;
-		} else
-			tval.e_str = env;
-		_GETENV_PRINT(used_default, "'%s'", tval.e_str, defval.e_str);
-		break;
-
-	case PSMI_ENVVAR_TYPE_INT:
-		if (!env || *env == '\0') {
-			tval = defval;
-			used_default = 1;
-		} else {
-			_CONVERT_TO_NUM(tval.e_int,int,strtol);
-		}
-		_GETENV_PRINT(used_default, "%d", tval.e_int, defval.e_int);
-		break;
-
-	case PSMI_ENVVAR_TYPE_UINT:
-	case PSMI_ENVVAR_TYPE_UINT_FLAGS:
-		if (!env || *env == '\0') {
-			tval = defval;
-			used_default = 1;
-		} else {
-			_CONVERT_TO_NUM(tval.e_int,unsigned int,strtoul);
-		}
-		if (type == PSMI_ENVVAR_TYPE_UINT_FLAGS)
-			_GETENV_PRINT(used_default, "%x", tval.e_uint,
-				      defval.e_uint);
-		else
-			_GETENV_PRINT(used_default, "%u", tval.e_uint,
-				      defval.e_uint);
-		break;
-
-	case PSMI_ENVVAR_TYPE_LONG:
-		if (!env || *env == '\0') {
-			tval = defval;
-			used_default = 1;
-		} else {
-			_CONVERT_TO_NUM(tval.e_long,long,strtol);
-		}
-		_GETENV_PRINT(used_default, "%ld", tval.e_long, defval.e_long);
-		break;
-	case PSMI_ENVVAR_TYPE_ULONG_ULONG:
-		if (!env || *env == '\0') {
-			tval = defval;
-			used_default = 1;
-		} else {
-			_CONVERT_TO_NUM(tval.e_ulonglong,unsigned long long,strtoull);
-		}
-		_GETENV_PRINT(used_default, "%llu",
-			      tval.e_ulonglong, defval.e_ulonglong);
-		break;
-	case PSMI_ENVVAR_TYPE_ULONG:
-	case PSMI_ENVVAR_TYPE_ULONG_FLAGS:
-	default:
-		if (!env || *env == '\0') {
-			tval = defval;
-			used_default = 1;
-		} else {
-			_CONVERT_TO_NUM(tval.e_ulong,unsigned long,strtoul);
-		}
-		if (type == PSMI_ENVVAR_TYPE_ULONG_FLAGS)
-			_GETENV_PRINT(used_default, "%lx", tval.e_ulong,
-				      defval.e_ulong);
-		else
-			_GETENV_PRINT(used_default, "%lu", tval.e_ulong,
-				      defval.e_ulong);
-		break;
-	}
-#undef _GETENV_PRINT
-	*newval = tval;
-
-	return used_default;
-}
-MOCK_DEF_EPILOGUE(psm3_getenv);
-
-/*
- * Parsing long parameters
- * -1 -> parse error
- */
-long psmi_parse_str_long(const char *string)
-{
-	char *ep;                               \
-	long ret;
-
-	if (! string || ! *string)
-		return -1;
-	/* Avoid base 8 (octal) on purpose, so don't pass in 0 for radix */
-	ret = strtol(string, &ep, 10);
-	if (! _CONSUMED_ALL(ep)) {
-		ret = strtol(string, &ep, 16);
-		if (! _CONSUMED_ALL(ep))
-			return -1;
-	}
-	return ret;
-}
-
-/*
- * Parsing int parameters set in string tuples.
- * Output array int *vals should be able to store 'ntup' elements.
- * Values are only overwritten if they are parsed.
- * Tuples are always separated by colons ':'
- */
-int psm3_parse_str_tuples(const char *string, int ntup, int *vals)
-{
-	char *b = (char *)string;
-	char *e = b;
-	int tup_i = 0;
-	int n_parsed = 0;
-	char *buf = psmi_strdup(NULL, string);
-	psmi_assert_always(buf != NULL);
-
-	while (*e && tup_i < ntup) {
-		b = e;
-		while (*e && *e != ':')
-			e++;
-		if (e > b) {	/* something to parse */
-			char *ep;
-			int len = e - b;
-			long int l;
-			strncpy(buf, b, len);
-			buf[len] = '\0';
-			l = strtol(buf, &ep, 0);
-			if (ep != buf) {	/* successful conversion */
-				vals[tup_i] = (int)l;
-				n_parsed++;
-			}
-		}
-		if (*e == ':')
-			e++;	/* skip delimiter */
-		tup_i++;
-	}
-	psmi_free(buf);
-	return n_parsed;
-}
-
 /*
  * Memory footprint/usage mode.
  *
@@ -2735,8 +2443,9 @@ int psm3_parse_str_tuples(const char *string, int ntup, int *vals)
 int psm3_parse_memmode(void)
 {
 	union psmi_envvar_val env_mmode;
+	const char *PSM3_MEMORY_HELP = "Memory usage mode (min, normal or large)";
 	int used_default =
-	    psm3_getenv("PSM3_MEMORY", "Memory usage mode (min, normal or large)",
+	    psm3_getenv("PSM3_MEMORY", PSM3_MEMORY_HELP,
 			PSMI_ENVVAR_LEVEL_USER, PSMI_ENVVAR_TYPE_STR,
 			(union psmi_envvar_val)"normal", &env_mmode);
 	if (used_default || !strcasecmp(env_mmode.e_str, "normal"))
@@ -2747,14 +2456,13 @@ int psm3_parse_memmode(void)
 		 !strcasecmp(env_mmode.e_str, "big"))
 		return PSMI_MEMMODE_LARGE;
 	else {
-		_HFI_PRDBG("PSM3_MEMORY env value %s unrecognized, "
-			   "using 'normal' memory mode instead\n",
-			   env_mmode.e_str);
+		_HFI_INFO("Invalid value for PSM3_MEMORY ('%s') %-40s Using: normal\n",
+			   env_mmode.e_str, PSM3_MEMORY_HELP);
 		return PSMI_MEMMODE_NORMAL;
 	}
 }
 
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 // we need PSM3_GPUDIRECT config early to influence rdmamode defaults,
 // MR Cache mode and whether we need to open RV.
 // As such we don't check PSMI_HAL_CAP_GPUDIRECT flag here, but
@@ -2806,11 +2514,12 @@ unsigned psmi_parse_gpudirect_rdma_send_limit(int force)
 	if (have_value)
 		return saved;
 
-	/* Default Send threshold for Gpu-direct set to 30000 */
+	/* Default send threshold for Gpu-direct set to UINT_MAX
+ 	 * (always use GPUDIRECT) */
 	psm3_getenv("PSM3_GPUDIRECT_RDMA_SEND_LIMIT",
 		    "GPUDirect RDMA feature on send side will be switched off for messages larger than limit.",
 		    PSMI_ENVVAR_LEVEL_USER, PSMI_ENVVAR_TYPE_UINT,
-		    (union psmi_envvar_val)30000, &envval);
+		    (union psmi_envvar_val)UINT_MAX, &envval);
 
 	saved = envval.e_uint;
 done:
@@ -2835,7 +2544,8 @@ unsigned psmi_parse_gpudirect_rdma_recv_limit(int force)
 	if (have_value)
 		return saved;
 
-	/* Default Send threshold for Gpu-direct set to 30000 */
+	/* Default receive threshold for Gpu-direct set to UINT_MAX
+ 	 * (always use GPUDIRECT) */
 	psm3_getenv("PSM3_GPUDIRECT_RDMA_RECV_LIMIT",
 		    "GPUDirect RDMA feature on receive side will be switched off for messages larger than limit.",
 		    PSMI_ENVVAR_LEVEL_USER, PSMI_ENVVAR_TYPE_UINT,
@@ -2846,7 +2556,9 @@ done:
 	have_value = 1;
 	return saved;
 }
+#endif // PSM_CUDA || PSM_ONEAPI
 
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 /* Size of RV GPU Cache - only used for PSM3_GPUDIRECT=1
  * otherwise returns 0
  */
@@ -2865,7 +2577,7 @@ unsigned psmi_parse_gpudirect_rv_gpu_cache_size(int reload)
 	// psm3_verbs_alloc_mr_cache will verify cache size is sufficient.
 	// min size is (HFI_TF_NFLOWS + ep->hfi_num_send_rdma) *
 	// chunk size (mq->hfi_base_window_rv after psmi_mq_initialize_params)
-	if (PSMI_IS_CUDA_ENABLED && psmi_parse_gpudirect() ) {
+	if (PSMI_IS_GPU_ENABLED && psmi_parse_gpudirect() ) {
 		psm3_getenv("PSM3_RV_GPU_CACHE_SIZE",
 				"kernel space GPU cache size"
 				" (MBs, 0 lets rv module decide) [0]",
@@ -2880,11 +2592,11 @@ unsigned psmi_parse_gpudirect_rv_gpu_cache_size(int reload)
 	return saved;
 }
 
-#endif	// PSM_CUDA
+#endif	// PSM_CUDA || PSM_ONEAPI
 
 #ifdef PSM_HAVE_REG_MR
 /* Send DMA Enable */
-unsigned psmi_parse_senddma(void)
+unsigned psm3_parse_senddma(void)
 {
 	union psmi_envvar_val envval;
 	static int have_value = 0;
@@ -2911,11 +2623,11 @@ done:
 
 /* PSM3_IDENTIFY */
 // we need in multiple places
-int psmi_parse_identify(void)
+int psm3_parse_identify(void)
 {
 	union psmi_envvar_val myenv;
 	static int have_value;
-	static int saved_identify;
+	static unsigned saved_identify;
 
 	// only parse once so doesn't appear in PSM3_VERBOSE_ENV multiple times
 	if (have_value)
@@ -2929,9 +2641,9 @@ int psmi_parse_identify(void)
 				"extended "
 #endif
 				"glob pattern)",
-		    	PSMI_ENVVAR_LEVEL_USER, PSMI_ENVVAR_TYPE_STR,
-		    	(union psmi_envvar_val)"0", &myenv);
-	saved_identify = psmi_parse_val_pattern(myenv.e_str, 0, 0);
+				PSMI_ENVVAR_LEVEL_USER, PSMI_ENVVAR_TYPE_STR_VAL_PAT,
+				(union psmi_envvar_val)"0", &myenv);
+	(void)psm3_parse_val_pattern(myenv.e_str, 0, &saved_identify);
 	have_value = 1;
 
 	return saved_identify;
@@ -2992,7 +2704,29 @@ fail:
 	return err;
 }
 
-void psmi_print_rank_identify(void)
+#ifdef PSM_SOCKETS
+int psm3_parse_tcp_src_bind(void)
+{
+	union psmi_envvar_val myenv;
+	static int have_value;
+	static unsigned saved;
+
+	// only parse once so doesn't appear in PSM3_VERBOSE_ENV multiple times
+	if (have_value)
+		return saved;
+
+	psm3_getenv("PSM3_TCP_BIND_SRC",
+		"Bind to source address before connect",
+		PSMI_ENVVAR_LEVEL_USER, PSMI_ENVVAR_TYPE_INT,
+		(union psmi_envvar_val) 0, &myenv);
+	saved = myenv.e_uint;
+	have_value = 1;
+
+	return saved;
+}
+#endif
+
+void psm3_print_rank_identify(void)
 {
 	Dl_info info_psm;
 	char ofed_delta[100] = "";
@@ -3000,7 +2734,7 @@ void psmi_print_rank_identify(void)
 
 	if (identify_shown)
 		return;
-	if (! psmi_parse_identify())
+	if (! psm3_parse_identify())
 		return;
 
 	identify_shown = 1;
@@ -3012,11 +2746,13 @@ void psmi_print_rank_identify(void)
 		"%s %s git checksum %s\n"
 		"%s %s %s\n"
 		"%s %s Global Rank %d (%d total) Local Rank %d (%d total)\n"
-		"%s %s CPU Core %d NUMA %d\n",
+		"%s %s CPU Core %d NUMA %d PID %d\n",
 		psm3_get_mylabel(), psm3_ident_tag,
 			PSM2_VERNO_MAJOR,PSM2_VERNO_MINOR,
 #ifdef PSM_CUDA
 			"-cuda",
+#elif defined(PSM_ONEAPI)
+			"-oneapi-ze",
 #else
 			"",
 #endif
@@ -3035,16 +2771,19 @@ void psmi_print_rank_identify(void)
 			psm3_get_mylocalrank(),
 			psm3_get_mylocalrank_count(),
 		psm3_get_mylabel(), psm3_ident_tag,
-			sched_getcpu(), psm3_get_current_proc_location()
+			sched_getcpu(), psm3_get_current_proc_location(), (int)getpid()
 		);
+#ifdef PSM_DSA
+	psm3_dsa_identify();
+#endif
 }
 
-void psmi_print_ep_identify(psm2_ep_t ep)
+void psm3_print_ep_identify(psm2_ep_t ep)
 {
 	int node_id;
 	uint64_t link_speed=0;
 
-	if (! psmi_parse_identify())
+	if (! psm3_parse_identify())
 		return;
 
 	if (! psm3_ep_device_is_enabled(ep, PTL_DEVID_IPS)) {
@@ -3094,16 +2833,17 @@ psm3_syslog(psm2_ep_t ep, int to_console, int level, const char *format, ...)
 	 * sure we log context information */
 	if (PSMI_EP_IS_PTR(ep) && !ep->did_syslog) {
 		char uuid_str[64];
-		ep->did_syslog = 1;
+
+		if (! psm3_epid_zero_internal(ep->epid))
+			ep->did_syslog = 1;
 
 		memset(&uuid_str, 0, sizeof(uuid_str));
 		uuid_unparse(ep->uuid, uuid_str);
 		psm3_syslog_internal("PSM", 0, LOG_WARNING,
-			   "uuid_key=%s,unit=%d:%u"
-			   ,
-			   uuid_str,
-			   ep->unit_id, ep->portnum
-			   );
+				"%s: uuid_key=%s,unit=%d:%u,addr=%s",
+				psm3_get_mylabel(), uuid_str, ep->unit_id, ep->portnum,
+				psm3_epid_zero_internal(ep->epid)?"Unknown":
+					psm3_epid_fmt_addr(ep->epid, PSM_MAX_BUFNO+1));
 	}
 
 	va_start(ap, format);
@@ -3170,12 +2910,12 @@ void psm3_multi_ep_init()
 		    PSMI_ENVVAR_LEVEL_HIDDEN, PSMI_ENVVAR_TYPE_YESNO,
 		    PSMI_ENVVAR_VAL_YES, &env_fi);
 
-	psm3_multi_ep_enabled = env_fi.e_uint;
+	psm3_multi_ep_enabled = env_fi.e_int;
 }
 
 #ifdef PSM_FI
 
-int psm3_faultinj_enabled = 0;
+unsigned psm3_faultinj_enabled = 0;
 int psm3_faultinj_verbose = 0;
 char *psm3_faultinj_outfile = NULL;
 int psm3_faultinj_sec_rail = 0;
@@ -3190,16 +2930,20 @@ void psm3_faultinj_init()
 	union psmi_envvar_val env_fi;
 
 	psm3_getenv("PSM3_FI", "PSM Fault Injection "
-				"(0 - disable, 1 - enable, 1: - limit to rank 0, "
-				"1:pattern - limit "
+				"(0 - disable, 1 - enable, "
+				"2 - enable but default each injector to 0 rate "
+				"#: - limit to rank 0, "
+				"#:pattern - limit "
 				"to processes whose label matches "
 #ifdef FNM_EXTMATCH
 				"extended "
 #endif
-				"glob pattern)",
-		    PSMI_ENVVAR_LEVEL_HIDDEN, PSMI_ENVVAR_TYPE_STR,
+				"glob pattern) "
+				"mode 2 can be useful to generate full stats help "
+				"when PSM3_PRINT_STATS_HELP enabled",
+		    PSMI_ENVVAR_LEVEL_HIDDEN, PSMI_ENVVAR_TYPE_STR_VAL_PAT,
 		    (union psmi_envvar_val)"0", &env_fi);
-	psm3_faultinj_enabled = psmi_parse_val_pattern(env_fi.e_str, 0, 0);
+	(void)psm3_parse_val_pattern(env_fi.e_str, 0, &psm3_faultinj_enabled);
 
 	if (psm3_faultinj_enabled) {
 		char *def = NULL;
@@ -3240,11 +2984,15 @@ static void psm3_faultinj_reregister_stats()
 		return;
 	e = entries;
 	STAILQ_FOREACH(fi, &psm3_faultinj_head, next) {
-		psmi_stats_init_u64(e, fi->spec_name, &fi->num_faults);
+		psmi_stats_init_u64(e, fi->spec_name, fi->help, &fi->num_faults);
 		e++; num_entries++;
 	}
 
-	psmi_stats_reregister_type("Fault_Injection", PSMI_STATSTYPE_FAULTINJ,
+	psm3_stats_reregister_type("Fault_Injection",
+		"Counts of Software Injection of Simulated Faults for the whole process.\n"
+		"PSM3 can be built with internal fault injection.  In which "
+		"case PSM3 will tabulate each simulated fault it injects.",
+		PSMI_STATSTYPE_FAULTINJ,
 		entries, num_entries, NULL, &psm3_faultinj_head, NULL);
 	psmi_free(entries);
 }
@@ -3257,7 +3005,7 @@ void psm3_faultinj_fini()
 
 	if (!psm3_faultinj_enabled)
 		return;
-	psmi_stats_deregister_type(PSMI_STATSTYPE_FAULTINJ, &psm3_faultinj_head);
+	psm3_stats_deregister_type(PSMI_STATSTYPE_FAULTINJ, &psm3_faultinj_head);
 
 	if (psm3_faultinj_outfile == NULL)
 		return;
@@ -3281,14 +3029,14 @@ void psm3_faultinj_fini()
 	if (fp != NULL) {
 		STAILQ_FOREACH(fi, &psm3_faultinj_head, next) {
 			fprintf(fp, "%s:%s PSM3_FI_%-13s %2.3f%% => "
-				"%2.3f%% %10"PRIu64" faults/%10"PRIu64" events seed %10ld\n",
+				"%2.3f%% %10"PRIu64" faults/%10"PRIu64" events seed %10d\n    %s\n",
 				__progname, psm3_get_mylabel(), fi->spec_name,
 				(double)fi->num * 100.0 / fi->denom,
 				(fi->num_calls ?
 				(double)fi->num_faults * 100.0 / fi->num_calls
 				:(double)0.0),
 				fi->num_faults, fi->num_calls,
-				fi->initial_seed);
+				fi->initial_seed, fi->help);
 		}
 		fflush(fp);
 		if (do_fclose)
@@ -3322,9 +3070,11 @@ struct psm3_faultinj_spec *psm3_faultinj_getspec(const char *spec_name,
 	psmi_assert_always(fi != NULL);
 	strncpy(fi->spec_name, spec_name, PSM3_FAULTINJ_SPEC_NAMELEN - 1);
 	fi->spec_name[PSM3_FAULTINJ_SPEC_NAMELEN - 1] = '\0';
+	strncpy(fi->help, help, PSM3_FAULTINJ_HELPLEN - 1);
+	fi->help[PSM3_FAULTINJ_HELPLEN - 1] = '\0';
 	fi->num = num;
 	fi->denom = denom;
-	fi->initial_seed = getpid();
+	fi->initial_seed = (int)getpid();
 	fi->num_faults = 0;
 	fi->num_calls = 0;
 
@@ -3348,27 +3098,26 @@ struct psm3_faultinj_spec *psm3_faultinj_getspec(const char *spec_name,
 		char fname[128];
 		char fdesc[300];
 
-		snprintf(fvals_str, sizeof(fvals_str), "%d:%d:1", num,
-			 denom);
+		snprintf(fvals_str, sizeof(fvals_str), "%d:%d:%d",
+				fi->num, fi->denom, fi->initial_seed);
 		snprintf(fname, sizeof(fname), "PSM3_FI_%s", spec_name);
 		snprintf(fdesc, sizeof(fdesc), "Fault Injection - %s <%s>",
 			 help, fvals_str);
 
 		if (!psm3_getenv(fname, fdesc, PSMI_ENVVAR_LEVEL_HIDDEN,
-				 PSMI_ENVVAR_TYPE_STR,
+				 PSMI_ENVVAR_TYPE_STR_TUPLES,
 				 (union psmi_envvar_val)fvals_str, &env_fi)) {
 			/* not using default values */
-			int n_parsed =
-			    psm3_parse_str_tuples(env_fi.e_str, 3, fvals);
-			if (n_parsed >= 1)
-				fi->num = fvals[0];
-			if (n_parsed >= 2)
-				fi->denom = fvals[1];
-			if (n_parsed >= 3)
-				fi->initial_seed = (long int)fvals[2];
+			(void)psm3_parse_str_tuples(env_fi.e_str, 3, fvals);
+			fi->num = fvals[0];
+			fi->denom = fvals[1];
+			fi->initial_seed = fvals[2];
+		} else if (psm3_faultinj_enabled == 2) {
+			// default unspecified injectors to off
+			fi->num = 0;
 		}
 	}
-	srand48_r(fi->initial_seed, &fi->drand48_data);
+	srand48_r((long int)fi->initial_seed, &fi->drand48_data);
 
 	psm3_faultinj_num_entries++;
 	STAILQ_INSERT_TAIL(&psm3_faultinj_head, fi, next);
@@ -3406,9 +3155,9 @@ int psm3_faultinj_is_fault(struct psm3_faultinj_spec *fi, psm2_ep_t ep)
  */
 struct psmi_memtype_hdr {
 	struct {
-		uint64_t size:48;
-		uint64_t magic:8;
-		uint64_t type:8;
+		uint64_t size:48;	// includes any preamble and this hdr
+		uint64_t magic:8;	// 0x8c
+		uint64_t type:8;	// psmi_memtype_t
 	};
 	void *original_allocation;
 };
@@ -3423,47 +3172,67 @@ struct psmi_memtype_hdr {
 
 struct psmi_stats_malloc psm3_stats_memory;
 
-void psmi_mem_stats_register(void)
+void psm3_mem_stats_register(void)
 {
 	struct psmi_stats_entry entries[] = {
 		PSMI_STATS_DECLU64("Total_(current)",
+				"Total memory currently allocated by PSM3",
 				(uint64_t*)&psm3_stats_memory.m_all_total),
 		PSMI_STATS_DECLU64("Total_(max)",
+				"Max memory allocated by PSM3",
 				(uint64_t*)&psm3_stats_memory.m_all_max),
 		PSMI_STATS_DECLU64("All_Peers_(current)",
+				"Total memory used for peer endpoint addresses",
 				(uint64_t*)&psm3_stats_memory.m_perpeer_total),
 		PSMI_STATS_DECLU64("All_Peers_(max)",
+				"Max memory used for peer endpoint addresses",
 				(uint64_t*)&psm3_stats_memory.m_perpeer_max),
 		PSMI_STATS_DECLU64("Network_Buffers_(current)",
+				"Total memory used for network buffers",
 				(uint64_t*)&psm3_stats_memory.m_netbufs_total),
 		PSMI_STATS_DECLU64("Network_Buffers_(max)",
+				"Max memory used for network buffers",
 				(uint64_t*)&psm3_stats_memory.m_netbufs_max),
 		PSMI_STATS_DECLU64("PSM_desctors_(current)",
+				"Total memory used for send and receive message descriptors",
 				(uint64_t*)&psm3_stats_memory.m_descriptors_total),
 		PSMI_STATS_DECLU64("PSM_desctors_(max)",
+				"Max memory used for send and receive message descriptors",
 				(uint64_t*)&psm3_stats_memory.m_descriptors_max),
 		PSMI_STATS_DECLU64("Unexp._buffers_(current)",
+				"Total memory used for receive bounce buffers",
 				(uint64_t*)&psm3_stats_memory.m_unexpbufs_total),
 		PSMI_STATS_DECLU64("Unexp._Buffers_(max)",
+				"Max memory used for receive bounce buffers",
 				(uint64_t*)&psm3_stats_memory.m_unexpbufs_max),
 #ifdef PSM_HAVE_RNDV_MOD
 		PSMI_STATS_DECLU64("Peer_Rndv_(current)",
+				"Total memory for user space RV resources (connections, MR handles, etc)",
 				(uint64_t*)&psm3_stats_memory.m_peerrndv_total),
 		PSMI_STATS_DECLU64("Peer_Rndv_(max)",
+				"Max memory for user space RV resources (connections, MR handles, etc)",
 				(uint64_t*)&psm3_stats_memory.m_peerrndv_max),
 #endif
 		PSMI_STATS_DECLU64("statistics_(current)",
+				"Total memory for tracking PSM3 performance statistics",
 				(uint64_t*)&psm3_stats_memory.m_stats_total),
 		PSMI_STATS_DECLU64("statistics_(max)",
+				"Max memory for tracking PSM3 performance statistics",
 				(uint64_t*)&psm3_stats_memory.m_stats_max),
 		PSMI_STATS_DECLU64("Other_(current)",
+				"Total memory for other purposes",
 				(uint64_t*)&psm3_stats_memory.m_undefined_total),
 		PSMI_STATS_DECLU64("Other_(max)",
+				"Max memory for other purposes",
 				(uint64_t*)&psm3_stats_memory.m_undefined_max),
 	};
 
 	if_pf(psmi_stats_mask & PSMI_STATSTYPE_MEMORY) {
 		psm3_stats_register_type("PSM_memory_allocation_statistics",
+		    "User space memory allocated by PSM3 for the process.\n"
+		    "PSM3 tabulates memory it directly allocates itself. "
+		    "However it cannot track memory allocated by middleware, "
+			"libfabric, verbs, sockets, RV or other OS APIs which PSM3 uses.",
                     PSMI_STATSTYPE_MEMORY,
                     entries,
                     PSMI_HOWMANY(entries), NULL, &psm3_stats_memory, NULL);
@@ -4015,7 +3784,7 @@ void *psm3_strdup_internal(psm2_ep_t ep, const char *string, const char *curloc)
 
 void MOCKABLE(psm3_free_internal)(void *ptr,const char *curloc)
 {
-	if_pf(psmi_stats_mask & PSMI_STATSTYPE_MEMORY) {
+	if_pf(ptr && (psmi_stats_mask & PSMI_STATSTYPE_MEMORY)) {
 		struct psmi_memtype_hdr *hdr =
 		    (struct psmi_memtype_hdr *)ptr - 1;
 		/* _HFI_INFO("hdr is %p, ptr is %p\n", hdr, ptr); */
@@ -4036,7 +3805,15 @@ MOCK_DEF_EPILOGUE(psm3_free_internal);
 
 size_t psm3_malloc_usable_size_internal(void *ptr, const char *curLoc)
 {
-	return my_malloc_usable_size(ptr,curLoc);
+	if_pf(psmi_stats_mask & PSMI_STATSTYPE_MEMORY) {
+		struct psmi_memtype_hdr *hdr = (struct psmi_memtype_hdr *)ptr - 1;
+		psmi_assert_always((int)hdr->magic == 0x8c);
+		/* _HFI_INFO("hdr is %p, ptr is %p\n", hdr, ptr); */
+		// must play it strict so realloc memory stats properly maintained
+		return hdr->size - ((uintptr_t)ptr-(uintptr_t)hdr->original_allocation);
+	} else {
+		return my_malloc_usable_size(ptr,curLoc);
+	}
 }
 
 PSMI_ALWAYS_INLINE(
@@ -4289,8 +4066,8 @@ static int compareEpmNode(epmTreeNode *node,int opcode,int txrx,psm2_epid_t from
 #define COMPARE_ONE(X) if (node->X != X) return node->X < X ? -1 : 1
 	COMPARE_ONE(opcode);
 	COMPARE_ONE(txrx);
-	ret = psm3_epid_cmp(node->fromepid, fromepid); if (ret) return ret;
-	ret = psm3_epid_cmp(node->toepid, toepid); if (ret) return ret;
+	ret = psm3_epid_cmp_internal(node->fromepid, fromepid); if (ret) return ret;
+	ret = psm3_epid_cmp_internal(node->toepid, toepid); if (ret) return ret;
 	return 0;
 }
 
@@ -4514,22 +4291,22 @@ static inline void psmi_initialize(const char **plmf_fileName_kernel,
 		if (!plmf_initialized)
 		{
 			/* initializing psmi log message facility here. */
-			const char *env = getenv("PSM3_LOG_FILENAME");
+			const char *env = psm3_env_get("PSM3_LOG_FILENAME");
 			if (env)
 				*plmf_fileName_kernel = env;
-			env = getenv("PSM3_LOG_SRCH_FORMAT_STRING");
+			env = psm3_env_get("PSM3_LOG_SRCH_FORMAT_STRING");
 			if (env)
 			{
 				*plmf_search_format_string = env;
 			}
 			else
 			{
-				env = getenv("PSM3_LOG_INC_FUNCTION_NAMES");
+				env = psm3_env_get("PSM3_LOG_INC_FUNCTION_NAMES");
 				if (env)
 				{
 					parseAndInsertInTree(env,includeFunctionNamesTreeRoot);
 				}
-				env = getenv("PSM3_LOG_EXC_FUNCTION_NAMES");
+				env = psm3_env_get("PSM3_LOG_EXC_FUNCTION_NAMES");
 				if (env)
 				{
 					parseAndInsertInTree(env,excludeFunctionNamesTreeRoot);
@@ -4548,7 +4325,7 @@ static inline void psmi_initialize(const char **plmf_fileName_kernel,
 }
 
 /* Utility function to map the integer txrx value to the given strings for emitting to the log file. */
-static const char * const TxRxString(int txrx)
+static const char * TxRxString(int txrx)
 {
 	switch(txrx)
 	{
@@ -4560,7 +4337,7 @@ static const char * const TxRxString(int txrx)
 }
 
 /* Utility function to map an integer opcode value to the given strings for emitting to the log file. */
-static const char * const OpcodeString(int opcode)
+static const char * OpcodeString(int opcode)
 {
 	switch(opcode)
 	{
@@ -4876,8 +4653,8 @@ void psmi_log_message(const char *fileName,
 		const char      *newFormat   = format;
 		int              opcode      = 0;
 		psmi_log_tx_rx_t txrx        = 0;
-		psm2_epid_t         fromepid    = psm3_epid_zeroed();
-		psm2_epid_t         toepid      = psm3_epid_zeroed();
+		psm2_epid_t         fromepid    = psm3_epid_zeroed_internal();
+		psm2_epid_t         toepid      = psm3_epid_zeroed_internal();
 		void            *dumpAddr[2] = {0};
 		size_t           dumpSize[2] = {0};
 
@@ -5031,7 +4808,7 @@ void psmi_log_message(const char *fileName,
 			MY_FPRINTF(IO_PORT,"%s %s from: %s"
 				   ", to: %s, count: %d, ",
 				   TxRxString(txrx),OpcodeString(opcode),
-				   psm3_epid_fmt(fromepid,0),psm3_epid_fmt(toepid,1),*pcount);
+				   psm3_epid_fmt_internal(fromepid,0),psm3_epid_fmt_internal(toepid,1),*pcount);
 			MY_VFPRINTF(IO_PORT,newFormat,ap);
 			MY_FPUTC('\n',IO_PORT);
 		}
@@ -5080,3 +4857,20 @@ void psmi_log_message(const char *fileName,
 	va_end(ap);
 }
 #endif /* #ifdef PSM_LOG */
+
+/* touch the pages, with a 32 bit read */
+void psm3_touch_mmap(void *m, size_t bytes)
+{
+	volatile uint32_t *b = (volatile uint32_t *)m, c;
+	size_t i;		/* m is always page aligned, so pgcnt exact */
+	int pg_sz;
+
+	/* First get the page size */
+	pg_sz = sysconf(_SC_PAGESIZE);
+
+	_HFI_VDBG("Touch %lu mmap'ed pages starting at %p\n",
+		  (unsigned long)bytes / pg_sz, m);
+	bytes /= sizeof(c);
+	for (i = 0; i < bytes; i += pg_sz / sizeof(c))
+		c = b[i];
+}

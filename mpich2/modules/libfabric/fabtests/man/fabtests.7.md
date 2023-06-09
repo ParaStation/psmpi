@@ -32,7 +32,7 @@ restricted to verifying a single endpoint type.  These tests typically
 include the endpoint type as part of the test name, such as dgram, msg, or
 rdm.
 
-# Functional
+## Functional
 
 These tests are a mix of very basic functionality tests that show major
 features of libfabric.
@@ -113,6 +113,10 @@ features of libfabric.
 : Spawns child processes to verify basic functionality of using a shared
   address vector with RDM endpoints.
 
+*fi_rdm_stress*
+: A multi-process, multi-threaded stress test of RDM endpoints handling
+  transfer errors.
+
 *fi_rdm_tagged_peek*
 : Basic test of using the FI_PEEK operation flag with tagged messages.
   Works with RDM endpoints.
@@ -152,7 +156,7 @@ features of libfabric.
 : Tests a persistent server communicating with multiple clients, one at a
   time, in sequence.
 
-# Benchmarks
+## Benchmarks
 
 The client and the server exchange messages in either a ping-pong manner,
 for pingpong named tests, or transfer messages one-way, for bw named tests.
@@ -187,7 +191,7 @@ given provider or system may achieve.
 *fi_rma_bw*
 : An RMA read and write bandwidth test for reliable (MSG and RDM) endpoints.
 
-# Unit
+## Unit
 
 These are simple one-sided unit tests that validate basic behavior of the API.
 Because these are single system tests that do not perform data transfers their
@@ -217,7 +221,7 @@ testing scope is limited.
 *fi_mr_cache_evict*
 : Tests provider MR cache eviction capabilities.
 
-# Multinode
+## Multinode
 
 This test runs a series of tests over multiple formats and patterns to help
 validate at scale. The patterns are an all to all, one to all, all to one and
@@ -226,7 +230,7 @@ atomics, and tagged messages. Currently, there is no option to run these
 capabilities and patterns independently, however the test is short enough to be
 all run at once.
 
-# Ubertest
+## Ubertest
 
 This is a comprehensive latency, bandwidth, and functionality test that can
 handle a variety of test configurations.  The test is able to run a large
@@ -253,23 +257,64 @@ specific features/functionalities. These EFA provider specific fabtests
 show users how to correctly use them.
 
 *fi_efa_rnr_read_cq_error*
-  This test modifies the RNR retry count (rnr_retry) to 0 via
+: This test modifies the RNR retry count (rnr_retry) to 0 via
   fi_setopt, and then runs a simple program to test if the error cq entry
   (with error FI_ENORX) can be read by the application, if RNR happens.
 
 *fi_efa_rnr_queue_resend*
-  This test modifies the RNR retry count (rnr_retry) to 0 via fi_setopt,
+: This test modifies the RNR retry count (rnr_retry) to 0 via fi_setopt,
   and then tests RNR queue/re-send logic for different packet types.
   To run the test, one needs to use `-c` option to specify the category
   of packet types.
 
-### Config file options
+## Component tests
+
+These stand-alone tests don't test libfabric functionalities. Instead,
+they test some components that libfabric depend on. They are not called
+by runfabtests.sh, either, and don't follow the fabtests coventions for
+naming, config file, and command line options.
+
+### Dmabuf RDMA tests
+
+These tests check the functionality or performance of dmabuf based GPU
+RDMA mechanism. They use oneAPI level-zero API to allocate buffer from
+device memory, get dmabuf handle, and perform some device memory related
+operations. Run with the *-h* option to see all available options for
+each of the tests.
+
+*rdmabw-xe*
+: This Verbs test measures the bandwidth of RDMA operations. It runs in
+  client-server mode. It has options to choose buffer location, test type
+  (write, read, send/recv), device unit(s), NIC unit(s), message size, and
+  the number of iterations per message size.
+
+*fi-rdmabw-xe*
+: This test is similar to *rdmabw-xe*, but uses libfabric instead of Verbs.
+
+*mr-reg-xe*
+: This Verbs test tries to register a buffer with the RDMA NIC.
+
+*fi-mr-reg-xe*
+: This test is similar to *mr-reg-xe*, but uses libfabric instead of Verbs.
+
+*memcopy-xe*
+: This test measures the performance of memory copy operations between
+  buffers. It has options for buffer locations, as well as memory copying
+  methods to use (memcpy, mmap + memcpy, copy with device command queue, etc).
+
+### Other component tests
+
+*sock_test*
+: This client-server test establishes socket connections and tests the
+  functionality of select/poll/epoll with different set sizes.
+
+## Config file options
 
 The following keys and respective key values may be used in the config file.
 
 *prov_name*
 : Identify the provider(s) to test.  E.g. udp, tcp, verbs,
-  ofi_rxm;verbs; ofi_rxd;udp.
+  ofi_rxm;verbs, ofi_rxd;udp.
 
 *test_type*
 : FT_TEST_LATENCY, FT_TEST_BANDWIDTH, FT_TEST_UNIT
@@ -399,6 +444,10 @@ the list available for that test.
 *-B <src_port>*
 : Specifies the port number of the local endpoint, overriding the default.
 
+*-C <num_connections>*
+: Specifies the number of simultaneous connections or communication
+  endpoints to the server.
+
 *-P <dst_port>*
 : Specifies the port number of the peer endpoint, overriding the default.
 
@@ -468,6 +517,11 @@ the list available for that test.
 *-M <mcast_addr>*
 : For multicast tests, specifies the address of the multicast group to join.
 
+*-u <test_config_file>*
+: Specify the input file to use for test control.  This is specified at the
+  client for fi_ubertest and fi_rdm_stress and controls the behavior of the
+  testing.
+
 *-v*
 : Add data verification check to data transfers.
 
@@ -501,19 +555,23 @@ This will run "fi_rdm_atomic" for all atomic operations with
 	succesfully. -C lists the mode that the tests will run in. Currently the options are
   for rma and msg. If not provided, the test will default to msg.
 
+## Run fi_rdm_stress
+
+  run server: fi_rdm_stress
+  run client: fi_rdm_stress -u fabtests/test_configs/rdm_stress/stress.json 127.0.0.1
+
 ## Run fi_ubertest
 
 	run server: fi_ubertest
-	run client: fi_ubertest -u /usr/share/fabtests/test_configs/sockets/quick.test 192.168.0.123
+	run client: fi_ubertest -u fabtests/test_configs/tcp/all.test 127.0.0.1
 
 This will run "fi_ubertest" with
 
-	- sockets provider
-	- configurations defined in /usr/share/fabtests/test_configs/sockets/quick.test
-	- server node as 192.168.0.123
+	- tcp provider
+	- configurations defined in fabtests/test_configs/tcp/all.test
+	- server running on the same node
 
-The config files are provided in /test_configs for sockets, verbs, udp,
-and usnic providers and distributed with fabtests installation.
+Usable config files are provided in fabtests/test_configs/<provider_name>.
 
 For more usage options: fi_ubertest -h
 

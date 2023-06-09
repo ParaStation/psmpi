@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2016 by Argonne National Laboratory.
- * Copyright (C) 2021 Cornelis Networks.
+ * Copyright (C) 2021-2023 Cornelis Networks.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -38,112 +38,162 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include <arpa/inet.h>
 
 #include "rdma/fi_errno.h"	// only for FI_* errno return codes
 #include "rdma/fabric.h" // only for 'fi_addr_t' ... which is a typedef to uint64_t
+#include <rdma/hfi/hfi1_user.h>
 #include <uuid/uuid.h>
 
 // #define FI_OPX_TRACE 1
 
 
-/*
- * For incoming packets:
- * Normally, we can simply add the high 40 bits of the receiver's 64-bit PSN
- * to the 24-bit PSN of an incoming packet to get the 64-bit PSN. However,
- * we have to deal with the case where the Sender's PSN has rolled over but
- * the receiver's hasn't. The difficulty is determining when this is the case.
- *
- * In the ideal case, the Sender's PSN will always be greater than or equal to
- * the PSN the receiver expects to see (the expected PSN). However, this is
- * not the case when the packet is a duplicate of one that was already
- * received. This can happen when a packet gets NACK'ed twice for some reason,
- * resulting in the sender sending two new copies. This is futher complicated
- * by the fact that the sender's replay list has a fixed size but does not
- * have to contain a continuous range of PSNs - there can be gaps. Thus it
- * is hard to recognize packets that are "too old" to be legitimate.
- *
- * Definitions:
- * R-PSN-64 = The next expected PSN.
- * R-PSN-24 = (R-PSN-64 & 0xFFFFFF)
- * S-PSN-24 = 24-bit OPA PSN from the incoming packet.
- * S-PSN-64 = 64-bit "scaled up" PSN of incoming packet.
- *
- * (Note: I'm deliberately not defining "Low", "High", or "Middle" yet.)
- *
- * S-PSN-24		R-PSN-24
- * Middle		Middle		S-PSN-64 = S-PSN-24 + (high 40 bits of R-PSN-64)
- *
- * Low			High		Sender has rolled over. Add an extra 2^24.
- * 							S-PSN-64 = S-PSN-24 + (high 40 bits of R-PSN-64) +
- * 							2^24
- *
- * High			Low			Packet is old and should be discarded. (The only
- * 							way for this to occur is if the R-PSN-24 has rolled
- * 							over but the incoming S-PSN-24 has not. Since
- * 							R-PSN-64 represents the highest PSN successfully
- * 							received, we must have already received this packet.
- *
- * The risks in defining "High" and "Low" is that if they are too generous we
- * might scale up S-PSN-24 incorrectly, causing us to discard a valid packet,
- * or assign a packet an invalid PSN (causing it to be processed in the wrong
- * order).
- *
- * First we will assume we will never have to deal with PSNs that are correctly
- * close to 2^24 apart because that would indicate much more fundamental
- * problems with the protocol - how did we manage to drop ~2^24 packets?
- *
- * This assumption allows us to be generous in how we define "Low" and "High"
- * for the Low/High case. If we define "Low" as < 4k and "High" as > "2^24-4k"
- * that should be adequate.
- *
- * In the "High/Low" case, if we say S-PSN-64 = S-PSN-24 + (high 40 bits of
- * R-PSN-64) then S-PSN-64 will be much, much, higher than R-PSN-64. Presumably
- * close to 2^24 apart but it is hard to say "how close". Let's assume anything
- * greater than 2^23 is enough to reject a packet as "too old".
- *
- * Ping/Ack/Nack Handling:
- * Ping/Ack/Nack packets can hold 64-bit PSNs but the replay queue stores
- * packets it uses 24 bit PSNs. Therefore, a ping will contain a 24-bit PSN
- * and a count. To prevent rollover issues, code sending pings
- * will truncate the count in the case where the replay queue contains a
- * rollover. Because of this limitation the Ack and Nack replies are similarly
- * constrained.
- *
- */
-#define MAX_PSN			0x0000000000FFFFFFull
-#define PSN_WINDOW_SIZE 0x0000000001000000ull
-#define MAX_PSN_MASK	0xFFFFFFFFFF000000ull
-#define PSN_LOW_WINDOW 	0x0000000000001000ull
-#define PSN_HIGH_WINDOW 0x0000000000FFEFFFull
-#define PSN_AGE_LIMIT	0x0000000000F00000ull
-
 #define FI_OPX_HFI1_RHF_EGRBFR_INDEX_SHIFT	(16)		/* a.k.a. "HFI_RHF_EGRBFR_INDEX_SHIFT" */
 #define FI_OPX_HFI1_RHF_EGRBFR_INDEX_MASK	(0x7FF)		/* a.k.a. "HFI_RHF_EGRBFR_INDEX_MASK" */
-#define FI_OPX_HFI1_PBC_VL_MASK		(0xf)		/* a.k.a. "HFI_PBC_VL_MASK" */
+#define FI_OPX_HFI1_PBC_VL_MASK			(0xf)		/* a.k.a. "HFI_PBC_VL_MASK" */
 #define FI_OPX_HFI1_PBC_VL_SHIFT		(12)		/* a.k.a. "HFI_PBC_VL_SHIFT" */
-#define FI_OPX_HFI1_PBC_CR_MASK		(0x1)		/* Force Credit return */
-#define FI_OPX_HFI1_PBC_CR_SHIFT		(25)    /* Force Credit return */
+#define FI_OPX_HFI1_PBC_CR_MASK			(0x1)		/* Force Credit return */
+#define FI_OPX_HFI1_PBC_CR_SHIFT		(25)		/* Force Credit return */
 #define FI_OPX_HFI1_PBC_SC4_SHIFT		(4)		/* a.k.a. "HFI_PBC_SC4_SHIFT" */
 #define FI_OPX_HFI1_PBC_SC4_MASK		(0x1)		/* a.k.a. "HFI_PBC_SC4_MASK" */
 #define FI_OPX_HFI1_PBC_DCINFO_SHIFT		(30)		/* a.k.a. "HFI_PBC_DCINFO_SHIFT" */
 #define FI_OPX_HFI1_LRH_BTH			(0x0002)	/* a.k.a. "HFI_LRH_BTH" */
-#define FI_OPX_HFI1_LRH_SL_MASK		(0xf)		/* a.k.a. "HFI_LRH_SL_MASK" */
+#define FI_OPX_HFI1_LRH_SL_MASK			(0xf)		/* a.k.a. "HFI_LRH_SL_MASK" */
 #define FI_OPX_HFI1_LRH_SL_SHIFT		(4)		/* a.k.a. "HFI_LRH_SL_SHIFT" */
-#define FI_OPX_HFI1_LRH_SC_MASK		(0xf)		/* a.k.a. "HFI_LRH_SC_MASK" */
+#define FI_OPX_HFI1_LRH_SC_MASK			(0xf)		/* a.k.a. "HFI_LRH_SC_MASK" */
 #define FI_OPX_HFI1_LRH_SC_SHIFT		(12)		/* a.k.a. "HFI_LRH_SC_SHIFT" */
 #define FI_OPX_HFI1_DEFAULT_P_KEY		(0x8001)	/* a.k.a. "HFI_DEFAULT_P_KEY" */
 
-#define FI_OPX_HFI1_TX_SEND_RZV_CREDIT_MAX_WAIT	0x7fffffff
+#define FI_OPX_HFI1_TX_SEND_RZV_CREDIT_MAX_WAIT		0x7fffffff
 #define FI_OPX_HFI1_TX_DO_REPLAY_CREDIT_MAX_WAIT	0x0000ffff
-#define FI_OPX_HFI1_TX_MIN_RZV_PAYLOAD_BYTES (64) /* The Minimum size of a data payload Rendezvous can send an RTS for. */
-                                                  /* Normally, the payload should be larger than 8K */
+#define FI_OPX_HFI1_TX_MIN_RZV_PAYLOAD_BYTES (64) /* The Minimum size of a data payload Rendezvous can send an RTS for.
+						     Normally, the payload should be larger than 8K */
 
-#define FI_OPX_HFI1_TX_RELIABILITY_RESERVED_CREDITS (1)  //Todo not actually reserving a credit
+#define FI_OPX_HFI1_TX_RELIABILITY_RESERVED_CREDITS	(1)  //Todo not actually reserving a credit
 #define FI_OPX_HFI1_TX_CREDIT_DELTA_THRESHOLD 		(63)  // If the incomming request asks for more credits than this, force a return.  Lower number here is more agressive 
-#define FI_OPX_HFI1_TX_CREDIT_MIN_FORCE_CR			(130) // We won't force a credit return for FI_OPX_HFI1_TX_CREDIT_DELTA_THRESHOLD if the number 
-                                                          // of avalible credits is above this number
+#define FI_OPX_HFI1_TX_CREDIT_MIN_FORCE_CR		(130) // We won't force a credit return for FI_OPX_HFI1_TX_CREDIT_DELTA_THRESHOLD if the number 
+							      // of avalible credits is above this number
+														  
+#define FI_OPX_MP_EGR_MAX_PAYLOAD_BYTES			(16384) /* Max payload size for using Multi-packet Eager */
+
+/* The total size for a single packet used in a multi-packet eager send.
+   This is packet payload plus 64 bytes for the PBC and packet header.
+   All packets in a multi-packet eager send will be this size, except
+   possibly the last one, which may be smaller.
+   
+   NOTE: This value MUST be a multiple of 64!
+   */
+#define FI_OPX_MP_EGR_CHUNK_SIZE 			(4160)
+
+/* For full MP-Eager chunks, we pack 16 bytes of payload data in the
+   packet header. So the actual payload size for a full chunk is the
+   total chunk size minus 64 bytes for PBC and packet header, plus 16
+   bytes for the space we use for payload data in the packet header.
+   Or, more simply, 48 bytes less than the total chunk size. */
+#define FI_OPX_MP_EGR_CHUNK_PAYLOAD_SIZE (FI_OPX_MP_EGR_CHUNK_SIZE - 48)
+#define FI_OPX_MP_EGR_CHUNK_CREDITS (FI_OPX_MP_EGR_CHUNK_SIZE >> 6)
+#define FI_OPX_MP_EGR_CHUNK_DWS (FI_OPX_MP_EGR_CHUNK_SIZE >> 2)
+#define FI_OPX_MP_EGR_CHUNK_PAYLOAD_QWS (FI_OPX_MP_EGR_CHUNK_PAYLOAD_SIZE >> 3)
+#define FI_OPX_MP_EGR_CHUNK_PAYLOAD_TAIL 16
+#define FI_OPX_MP_EGR_XFER_BYTES_TAIL 0x0010000000000000ull
+
+static_assert(!(FI_OPX_MP_EGR_CHUNK_SIZE & 0x3F), "FI_OPX_MP_EGR_CHUNK_SIZE Must be a multiple of 64!");
+static_assert(FI_OPX_MP_EGR_MAX_PAYLOAD_BYTES > FI_OPX_MP_EGR_CHUNK_SIZE, "FI_OPX_MP_EGR_MAX_PAYLOAD_BYTES must be greater than FI_OPX_MP_EGR_CHUNK_SIZE!");
+
+/* SDMA tuning constants */
+
+/*
+ * The maximum number of packets to send for a single SDMA call to writev.
+ */
+#ifndef FI_OPX_HFI1_SDMA_MAX_PACKETS
+#define FI_OPX_HFI1_SDMA_MAX_PACKETS			(32)
+#endif
+
+/*
+ * The number of SDMA requests (SDMA work entries) available.
+ * Each of these will use a single comp index entry in the SDMA ring buffer
+ * queue when writev is called. There should be at least as many of these as
+ * there are queue entries (FI_OPX_HFI1_SDMA_MAX_COMP_INDEX), but ideally more
+ * so that new requests can be built while others are in flight.
+ *
+ * Note: We never want this limit to be the source of throttling progress in
+ *       an SDMA request. If we are hitting this limit (as represented by
+ *       debug_counters.sdma.eagain_sdma_we_none_free), we should increase it.
+ *       The hfi->info.sdma.available_counter will take care of throttling us
+ *       on too much SDMA work at once.
+ */
+#ifndef FI_OPX_HFI1_SDMA_MAX_WE
+#define FI_OPX_HFI1_SDMA_MAX_WE				(256)
+#endif
+
+/*
+ * The maximum number of SDMA work entries that a single DPUT operation can use.
+ *
+ * Note: We never want this limit to be the source of throttling progress in
+ *       an SDMA request. If we are hitting this limit (as represented by
+ *       debug_counters.sdma.eagain_sdma_we_max_used), we should increase it.
+ *       The hfi->info.sdma.available_counter will take care of throttling us
+ *       on too much SDMA work at once.
+ */
+#ifndef FI_OPX_HFI1_SDMA_MAX_WE_PER_REQ
+#define FI_OPX_HFI1_SDMA_MAX_WE_PER_REQ			(8)
+#endif
+
+/*
+ * The number of iovecs in a single SDMA Work Entry.
+ * 1 header vec, 1 payload data vec, 1 TID mapping.
+ */
+#define FI_OPX_HFI1_SDMA_WE_IOVS			(3)
+
+/*
+ * The number of iovecs for SDMA replay - 2 iovec per packet
+ * (with no AHG support)
+ */
+#define FI_OPX_HFI1_SDMA_REPLAY_WE_IOVS			(FI_OPX_HFI1_SDMA_MAX_PACKETS*2)
+
+/*
+ * Length of bounce buffer in a single SDMA Work Entry.
+ */
+#define FI_OPX_HFI1_SDMA_WE_BUF_LEN			(FI_OPX_HFI1_SDMA_MAX_PACKETS * FI_OPX_HFI1_PACKET_MTU)
+
+#define FI_OPX_HFI1_SDMA_MAX_COMP_INDEX			(128) // This should what opx_ep->hfi->info.sdma.queue_size is set to.
+
+#ifndef FI_OPX_SDMA_MIN_LENGTH
+#define FI_OPX_SDMA_MIN_LENGTH				(FI_OPX_MP_EGR_MAX_PAYLOAD_BYTES + 1)
+#endif
+
+/*
+ * The minimum payload size threshold for which we will use delivery completion
+ * instead of copying the payload for reliability.
+ */
+#define FI_OPX_SDMA_DC_MIN				FI_OPX_SDMA_MIN_LENGTH
+
+static_assert(!(FI_OPX_HFI1_SDMA_MAX_COMP_INDEX & (FI_OPX_HFI1_SDMA_MAX_COMP_INDEX - 1)), "FI_OPX_HFI1_SDMA_MAX_COMP_INDEX must be power of 2!\n");
+static_assert(FI_OPX_SDMA_DC_MIN >= FI_OPX_SDMA_MIN_LENGTH, "FI_OPX_SDMA_DC_MIN Must be >= FI_OPX_SDMA_MIN_LENGHT!\n");
+static_assert(FI_OPX_HFI1_SDMA_MAX_WE >= FI_OPX_HFI1_SDMA_MAX_COMP_INDEX, "FI_OPX_HFI1_SDMA_MAX_WE must be >= FI_OPX_HFI1_SDMA_MAX_COMP_INDEX!\n");
+
+/*
+ * SDMA includes 8B sdma hdr, 8B PBC, and message header.
+ * If we are using GPU workloads, we need to set a new
+ * "flags" member which takes another 2 bytes in the
+ * sdma hdr. We let the driver know of this 2 extra bytes
+ * at runtime when we set the length for the iovecs.
+ * See HFI_SDMA_HDR_SIZE for historical info
+ */
+#define FI_OPX_HFI1_SDMA_HDR_SIZE      (8+8+56)  //TODO, Will change if using GPU (header gets 2 bytes bigger)
+
+
+//Version 1, EAGER opcode (1)(byte 0), 0 iovectors (byte 1, set at runtime)
+#define FI_OPX_HFI1_SDMA_REQ_HEADER_EAGER_FIXEDBITS	(0x0011)
+
+//Version 1, EXPECTED TID opcode (0)(byte 0), 0 iovectors (byte 1, set at runtime)
+#define FI_OPX_HFI1_SDMA_REQ_HEADER_EXPECTED_FIXEDBITS	(0x0001)
+
+//Version 1, SDMA replays - EAGER opcode (1)(byte 0), 2 iovectors (byte 1)
+#define FI_OPX_HFI1_SDMA_REQ_HEADER_REPLAY_EAGER_FIXEDBITS	(0x0211)
+
 
 static inline
 uint32_t fi_opx_addr_calculate_base_rx (const uint32_t process_id, const uint32_t processes_per_node) {
@@ -260,11 +310,12 @@ union fi_opx_hfi1_sdma_state {
 /* This 'static' information will not change after it is set by the driver
  * and can be safely copied into other structures to improve cache layout */
 struct fi_opx_hfi1_sdma_static {
-	uint16_t			available_counter;
-	uint16_t			fill_index;
-	uint16_t			done_index;
-	uint16_t			queue_size;
-	struct hfi1_sdma_comp_entry *	completion_queue;
+	uint16_t				available_counter;
+	uint16_t				fill_index;
+	uint16_t				done_index;
+	uint16_t				queue_size;
+	volatile struct hfi1_sdma_comp_entry *	completion_queue;
+	struct hfi1_sdma_comp_entry *		queued_entries[FI_OPX_HFI1_SDMA_MAX_COMP_INDEX];
 };
 
 
@@ -317,9 +368,6 @@ struct fi_opx_hfi1_rxe_static {
 	uint8_t				id;		/* hfi receive context id [0..159] */
 };
 
-
-
-
 struct fi_opx_hfi1_context {
 
 	struct {
@@ -337,7 +385,7 @@ struct fi_opx_hfi1_context {
 
 	int				fd;
 	uint16_t			lid;
-	//struct _hfi_ctrl *		ctrl;
+	struct _hfi_ctrl *		ctrl;
 	//struct hfi1_user_info_dep	user_info;
 	uint32_t			hfi_unit;
 	uint32_t			hfi_port;
@@ -355,6 +403,11 @@ struct fi_opx_hfi1_context {
 	uint64_t			vl;
 
 	uint64_t			runtime_flags;
+
+	struct {
+		int				rank;
+		int				rank_inst;
+	} daos_info;
 
 };
 
@@ -385,7 +438,7 @@ uint16_t fi_opx_credits_in_use(union fi_opx_hfi1_pio_state *pio_state) {
 	return ((pio_state->fill_counter - pio_state->free_counter_shadow) & 0x07FFu);
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 uint16_t fi_opx_credits_avail(union fi_opx_hfi1_pio_state *pio_state, uint8_t *force_credit_return, uint16_t credits_needed) {
 	const uint16_t return_value =  pio_state->credits_total - fi_opx_credits_in_use(pio_state);
 	if ((return_value < FI_OPX_HFI1_TX_CREDIT_MIN_FORCE_CR) && (credits_needed > FI_OPX_HFI1_TX_CREDIT_DELTA_THRESHOLD)) {
@@ -394,7 +447,7 @@ uint16_t fi_opx_credits_avail(union fi_opx_hfi1_pio_state *pio_state, uint8_t *f
 	return return_value;
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 uint16_t fi_opx_reliability_credits_avail(union fi_opx_hfi1_pio_state *pio_state) {
 	return pio_state->credits_total - fi_opx_credits_in_use(pio_state);
 }
@@ -438,5 +491,15 @@ int init_hfi1_rxe_state (struct fi_opx_hfi1_context * context,
 #define FI_OPX_SHM_FIFO_SIZE		(1024)
 #define FI_OPX_SHM_BUFFER_MASK		(FI_OPX_SHM_FIFO_SIZE-1)
 #define FI_OPX_SHM_PACKET_SIZE	(FI_OPX_HFI1_PACKET_MTU + sizeof(struct fi_opx_hfi1_stl_packet_hdr))
+
+#ifndef NDEBUG
+#define OPX_BUF_FREE(x)				\
+	do {					\
+		memset(x, 0xAA, sizeof(*x));	\
+		ofi_buf_free(x);		\
+	} while(0)
+#else
+#define OPX_BUF_FREE(x) ofi_buf_free(x)
+#endif
 
 #endif /* _FI_PROV_OPX_HFI1_H_ */

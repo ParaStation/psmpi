@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2016 by Argonne National Laboratory.
- * Copyright (C) 2021 by Cornelis Networks.
+ * Copyright (C) 2021-2023 by Cornelis Networks.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -69,6 +69,8 @@ static int fi_opx_close_domain(fid_t fid)
 	if (ret)
 		return ret;
 
+	fi_opx_close_tid_domain(opx_domain->tid_domain);
+
 	ret = fi_opx_ref_finalize(&opx_domain->ref_cnt, "domain");
 	if (ret)
 		return ret;
@@ -79,6 +81,8 @@ static int fi_opx_close_domain(fid_t fid)
 
 
 	free(opx_domain);
+	opx_domain = NULL;
+	//opx_domain (the object passed in as fid) is now unusable
 
 	FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_DOMAIN, "domain closed\n");
 	return 0;
@@ -121,8 +125,8 @@ int fi_opx_alloc_default_domain_attr(struct fi_domain_attr **domain_attr)
 	attr->name  		= strdup(FI_OPX_DOMAIN_NAME);
 
 	attr->threading		= OPX_THREAD;
-	attr->control_progress 	= OPX_PROGRESS == FI_PROGRESS_UNSPEC ? FI_PROGRESS_MANUAL : OPX_PROGRESS;
-	attr->data_progress	= OPX_PROGRESS == FI_PROGRESS_UNSPEC ? FI_PROGRESS_MANUAL : OPX_PROGRESS;
+	attr->control_progress 	= FI_PROGRESS_MANUAL;
+	attr->data_progress	= FI_PROGRESS_MANUAL;
 	attr->resource_mgmt	= FI_RM_DISABLED;
 	attr->av_type		= OPX_AV;
 	attr->mr_mode		= OPX_MR;
@@ -150,7 +154,7 @@ err:
 	return -1;
 }
 
-int fi_opx_choose_domain(uint64_t caps, struct fi_domain_attr *domain_attr, struct fi_domain_attr *hints)
+int fi_opx_choose_domain(uint64_t caps, struct fi_domain_attr *domain_attr, struct fi_domain_attr *hints, enum fi_progress progress)
 {
 	if (!domain_attr) {
 		FI_DBG(fi_opx_global.prov, FI_LOG_DOMAIN, "missing domain attribute structure\n");
@@ -158,12 +162,12 @@ int fi_opx_choose_domain(uint64_t caps, struct fi_domain_attr *domain_attr, stru
 	}
 
 	*domain_attr = *fi_opx_global.default_domain_attr;
+	domain_attr->data_progress = progress;
 
 #ifdef OPX_ENABLED
 	/* Set the data progress mode to the option used in the configure.
  	 * Ignore any setting by the application.
  	 */
-	domain_attr->data_progress = OPX_PROGRESS == FI_PROGRESS_UNSPEC ? FI_PROGRESS_MANUAL : OPX_PROGRESS;
 
 	/* Set the mr_mode to the option used in the configure.
  	 * Ignore any setting by the application - the checkinfo should have verified
@@ -174,7 +178,7 @@ int fi_opx_choose_domain(uint64_t caps, struct fi_domain_attr *domain_attr, stru
 
 	if (hints) {
 		if (hints->domain) {
-			struct fi_opx_domain *opx_domain = opx_domain = container_of(hints->domain, struct fi_opx_domain, domain_fid);
+			struct fi_opx_domain *opx_domain = container_of(hints->domain, struct fi_opx_domain, domain_fid);
 
 			domain_attr->threading		= opx_domain->threading;
 			domain_attr->resource_mgmt	= opx_domain->resource_mgmt;
@@ -226,28 +230,7 @@ int fi_opx_check_domain_attr(struct fi_domain_attr *attr)
 		FI_DBG(fi_opx_global.prov, FI_LOG_DOMAIN, "incorrect threading level\n");
 		goto err;
 	}
-	if (attr->control_progress &&
-			attr->control_progress != FI_PROGRESS_MANUAL) {
-		FI_WARN(fi_opx_global.prov, FI_LOG_DOMAIN, "FI_PROGRESS_AUTO not supported\n");
-		goto err;
-	}
-
-	if (attr->data_progress == FI_PROGRESS_UNSPEC) {
-		attr->data_progress = OPX_PROGRESS == FI_PROGRESS_UNSPEC ? FI_PROGRESS_MANUAL : OPX_PROGRESS;
-	}
-
-	if (OPX_PROGRESS == FI_PROGRESS_AUTO) {
-		if (attr->data_progress &&
-				attr->data_progress == FI_PROGRESS_MANUAL) {
-			FI_WARN(fi_opx_global.prov, FI_LOG_DOMAIN, "provider configured with data progress mode of FI_PROGRESS_AUTO but application specified FI_PROGRESS_MANUAL\n"); goto err;
-		}
-	} else if (OPX_PROGRESS == FI_PROGRESS_MANUAL) {
-		if (attr->data_progress &&
-				attr->data_progress == FI_PROGRESS_AUTO) {
-			FI_WARN(fi_opx_global.prov, FI_LOG_DOMAIN, "provider configured with data progress mode of FI_PROGRESS_MANUAL but application specified FI_PROGRESS_AUTO\n"); goto err;
-		}
-	}
-
+	
 	if (attr->mr_mode == FI_MR_UNSPEC) {
 		attr->mr_mode = OPX_MR == FI_MR_UNSPEC ? FI_MR_BASIC : OPX_MR;
 	}
@@ -281,7 +264,8 @@ int fi_opx_domain(struct fid_fabric *fabric,
 {
 	FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_DOMAIN, "open domain\n");
 
-	int ret;
+	int ret = 0;
+	int get_param_check = 0;
 	struct fi_opx_domain 	*opx_domain = NULL;
 	struct fi_opx_fabric 	*opx_fabric =
 		container_of(fabric, struct fi_opx_fabric, fabric_fid);
@@ -303,11 +287,40 @@ int fi_opx_domain(struct fid_fabric *fabric,
 		goto err;
 	}
 
+	if (fi_opx_global.default_domain_attr == NULL) {
+		if (fi_opx_alloc_default_domain_attr(&fi_opx_global.default_domain_attr)) {
+			FI_DBG(fi_opx_global.prov, FI_LOG_DOMAIN, "alloc function could not allocate block of memory\n");
+			errno = FI_ENOMEM; 
+			goto err;
+		}
+	}
+  
+	struct fi_opx_tid_domain *opx_tid_domain;
+	struct fi_opx_tid_fabric *opx_tid_fabric = opx_fabric->tid_fabric;
+
+	if(fi_opx_tid_domain(opx_tid_fabric, info, &opx_tid_domain)){
+		errno = FI_ENOMEM;
+		goto err;
+	}
+	opx_domain->tid_domain = opx_tid_domain;
 
 	/* fill in default domain attributes */
 	opx_domain->threading		= fi_opx_global.default_domain_attr->threading;
 	opx_domain->resource_mgmt	= fi_opx_global.default_domain_attr->resource_mgmt;
 	opx_domain->data_progress	= fi_opx_global.default_domain_attr->data_progress;
+
+	int env_var_progress_interval = 0;
+	get_param_check = fi_param_get_int(fi_opx_global.prov, "auto_progress_interval_usec", &env_var_progress_interval);
+	if (get_param_check == FI_SUCCESS) {
+		if (env_var_progress_interval < 0) {
+			FI_WARN(fi_opx_global.prov, FI_LOG_DOMAIN,
+				"FI_OPX_AUTO_PROGRESS_INTERVAL_USEC must be an integer >= 0 using default value\n");
+			env_var_progress_interval = 0;
+		}
+	} else {
+		env_var_progress_interval = 0;
+	}
+	opx_domain->auto_progress_interval = env_var_progress_interval;
 
 	if (info->domain_attr) {
 		if (info->domain_attr->domain) {
@@ -320,7 +333,7 @@ int fi_opx_domain(struct fid_fabric *fabric,
 			goto err;
 		opx_domain->threading = info->domain_attr->threading;
 		opx_domain->resource_mgmt = info->domain_attr->resource_mgmt;
-		if (OPX_PROGRESS == FI_PROGRESS_UNSPEC) {
+		if (fi_opx_global.progress == FI_PROGRESS_UNSPEC) {
 			opx_domain->data_progress = info->domain_attr->data_progress;
 		}
 	}
@@ -333,30 +346,95 @@ int fi_opx_domain(struct fid_fabric *fabric,
 	opx_domain->domain_fid.fid.context = context;
 	opx_domain->domain_fid.fid.ops     = &fi_opx_fi_ops;
 	opx_domain->domain_fid.ops	   = &fi_opx_domain_ops;
+	
+	char * env_var_prog_affinity = OPX_DEFAULT_PROG_AFFINITY_STR;
+	get_param_check = fi_param_get_str(fi_opx_global.prov, "prog_affinity", &env_var_prog_affinity);
+	if (get_param_check == FI_SUCCESS) {
+		if (strlen(env_var_prog_affinity) >= OPX_JOB_KEY_STR_SIZE) {
+                	env_var_prog_affinity[OPX_JOB_KEY_STR_SIZE-1] = 0;
+                	FI_WARN(fi_opx_global.prov, FI_LOG_DOMAIN,
+                        	"Progress Affinity too long. Must be no more than 32 characters total, using default.\n");
+			env_var_prog_affinity = OPX_DEFAULT_PROG_AFFINITY_STR;
+        	}
+	} else {
+		env_var_prog_affinity = OPX_DEFAULT_PROG_AFFINITY_STR;
+	}
+	
+
+	if (strncmp(env_var_prog_affinity, OPX_DEFAULT_PROG_AFFINITY_STR, OPX_JOB_KEY_STR_SIZE)){
+		goto skip;
+	}
+
+	int cols = 0;
+	bool recentCol = true;
+	int iter;
+	for (iter=0; iter < OPX_JOB_KEY_STR_SIZE && env_var_prog_affinity[iter] != 0; iter++) {
+		if (!isdigit(env_var_prog_affinity[iter]) && env_var_prog_affinity[iter] != ':'){
+			FI_WARN(fi_opx_global.prov, FI_LOG_DOMAIN,
+				"Invalid program affinity. Progress affinity must be a digit or colon.\n");
+			errno=FI_EINVAL;
+			goto err;
+		}
+		if (env_var_prog_affinity[iter] == ':'){
+			if (recentCol){
+				FI_WARN(fi_opx_global.prov, FI_LOG_DOMAIN,
+					"Progress Affinity improperly formatted. Must be a : separated triplet.\n");
+				errno=FI_EINVAL;
+				goto err;
+			}
+			else{
+				cols += 1;
+				recentCol = true;
+			}
+		}
+		else
+			recentCol = false;
+	}
+
+	if (cols != 2){
+		FI_WARN(fi_opx_global.prov, FI_LOG_DOMAIN,
+			"Progress Affinity improperly formatted. Must be a : separated triplet.\n");
+		errno=FI_EINVAL;
+		goto err;
+	}
+
+skip:
+	strncpy(opx_domain->progress_affinity_str, env_var_prog_affinity, OPX_JOB_KEY_STR_SIZE-1);
+        opx_domain->progress_affinity_str[OPX_JOB_KEY_STR_SIZE-1] = '\0';
 
 	// Max UUID consists of 32 hex digits.
 	char * env_var_uuid = OPX_DEFAULT_JOB_KEY_STR;
-	fi_param_get_str(fi_opx_global.prov, "uuid", &env_var_uuid);
+	get_param_check = fi_param_get_str(fi_opx_global.prov, "uuid", &env_var_uuid);
+	char * impi_uuid = getenv("I_MPI_HYDRA_UUID");
+	char * slurm_job_id = getenv("SLURM_JOB_ID");
+
+	if (get_param_check == FI_SUCCESS) {
+		FI_INFO(fi_opx_global.prov, FI_LOG_DOMAIN, "Detected user specified FI_OPX_UUID\n");
+	} else if (slurm_job_id) {
+		env_var_uuid = slurm_job_id;
+		FI_INFO(fi_opx_global.prov, FI_LOG_DOMAIN, "Found SLURM_JOB_ID.  Using it for FI_OPX_UUID\n");
+	} else if (impi_uuid) {
+		env_var_uuid = impi_uuid;
+		FI_INFO(fi_opx_global.prov, FI_LOG_DOMAIN, "Found I_MPI_HYDRA_UUID.  Using it for FI_OPX_UUID\n");
+	} else {
+		env_var_uuid = OPX_DEFAULT_JOB_KEY_STR;
+	}
 
 	if (strlen(env_var_uuid) >= OPX_JOB_KEY_STR_SIZE) {
-		env_var_uuid[OPX_JOB_KEY_STR_SIZE-1] = 0;
 		FI_WARN(fi_opx_global.prov, FI_LOG_DOMAIN,
-			"UUID too long. UUID must consist of 1-32 hexadecimal digits.\n");
-		errno=FI_EINVAL;
-		goto err;
+			"UUID too long. UUID must consist of 1-32 hexadecimal digits.  Using default OPX uuid instead\n");
+		env_var_uuid = OPX_DEFAULT_JOB_KEY_STR;
 	} 
 
 	int i;
 	for (i=0; i < OPX_JOB_KEY_STR_SIZE && env_var_uuid[i] != 0; i++) {
 		if (!isxdigit(env_var_uuid[i])) {
 			FI_WARN(fi_opx_global.prov, FI_LOG_DOMAIN,
-				"Invalid UUID. UUID must consist solely of hexadecimal digits.\n");
-			errno=FI_EINVAL;
-			goto err;
+				"Invalid UUID. UUID must consist solely of hexadecimal digits.  Using default OPX uuid instead\n");
+			env_var_uuid = OPX_DEFAULT_JOB_KEY_STR;
 		}
 	}
 	
-
 	// Copy the job key and guarantee null termination.
 	strncpy(opx_domain->unique_job_key_str, env_var_uuid, OPX_JOB_KEY_STR_SIZE-1);
 	opx_domain->unique_job_key_str[OPX_JOB_KEY_STR_SIZE-1] = '\0';
@@ -379,6 +457,9 @@ int fi_opx_domain(struct fid_fabric *fabric,
 		&opx_domain->unique_job_key[14],
 		&opx_domain->unique_job_key[15]);
 
+	FI_INFO(fi_opx_global.prov, FI_LOG_DOMAIN, "Domain unique job key set to %s\n", opx_domain->unique_job_key_str);
+	//TODO: Print out a summary of all domain settings wtih FI_INFO
+
 	opx_domain->rx_count = 0;
 	opx_domain->tx_count = 0;
 	opx_domain->ep_count = 0;
@@ -398,7 +479,18 @@ int fi_opx_domain(struct fid_fabric *fabric,
 
 err:
 	fi_opx_finalize_mr_ops(&opx_domain->domain_fid);
-	if (opx_domain)
+	if (opx_domain) {
 		free(opx_domain);
+		opx_domain = NULL;
+	}
+
+	if (fi_opx_global.default_domain_attr != NULL) {
+		if (fi_opx_global.default_domain_attr->name != NULL) {
+			free(fi_opx_global.default_domain_attr->name);
+			fi_opx_global.default_domain_attr->name = NULL;
+		}
+		free(fi_opx_global.default_domain_attr);
+		fi_opx_global.default_domain_attr = NULL;
+	}
 	return -errno;
 }

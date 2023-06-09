@@ -62,7 +62,7 @@
 /* functions which are inline unless > 1 HAL or debug build */
 static PSMI_HAL_INLINE int PSMI_HAL_CAT_INL_SYM(context_open)
 				(int unit,
-				 int port,
+				 int port, int addr_index,
 				 uint64_t open_timeout,
 				 psm2_ep_t ep,
 				 psm2_uuid_t const job_key,
@@ -125,13 +125,13 @@ static PSMI_HAL_INLINE psm2_error_t PSMI_HAL_CAT_INL_SYM(ips_ptl_pollintr)
 				(psm2_ep_t ep, struct ips_recvhdrq *recvq,
 					int fd_pipe, int next_timeout,
 					uint64_t *pollok, uint64_t *pollcyc);
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 static PSMI_HAL_INLINE void PSMI_HAL_CAT_INL_SYM(gdr_close)
 				(void);
 static PSMI_HAL_INLINE void* PSMI_HAL_CAT_INL_SYM(gdr_convert_gpu_to_host_addr)
 				(unsigned long buf,
 					size_t size, int flags, psm2_ep_t ep);
-#endif /* PSM_CUDA */
+#endif /* PSM_CUDA || PSM_ONEAPI */
 static PSMI_HAL_INLINE int PSMI_HAL_CAT_INL_SYM(get_port_index2pkey)
 				(psm2_ep_t ep, int index);
 static PSMI_HAL_INLINE int PSMI_HAL_CAT_INL_SYM(poll_type)
@@ -143,12 +143,20 @@ static PSMI_HAL_INLINE psm2_error_t PSMI_HAL_CAT_INL_SYM(spio_transfer_frame)
 				 uint32_t *payload, uint32_t length,
 				 uint32_t isCtrlMsg, uint32_t cksum_valid,
 				 uint32_t cksum
-#ifdef PSM_CUDA
-				 , uint32_t is_cuda_payload
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+				 , uint32_t is_gpu_payload
 #endif
 					);
-static PSMI_HAL_INLINE psm2_error_t PSMI_HAL_CAT_INL_SYM(spio_process_events)
-				(const struct ptl *ptl);
+static PSMI_HAL_INLINE psm2_error_t PSMI_HAL_CAT_INL_SYM(transfer_frame)
+				(struct ips_proto *proto,
+				 struct ips_flow *flow, struct ips_scb *scb,
+				 uint32_t *payload, uint32_t length,
+				 uint32_t isCtrlMsg, uint32_t cksum_valid,
+				 uint32_t cksum
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+				 , uint32_t is_gpu_payload
+#endif
+					);
 static PSMI_HAL_INLINE psm2_error_t PSMI_HAL_CAT_INL_SYM(drain_sdma_completions)
 				(struct ips_proto *proto);
 static PSMI_HAL_INLINE int PSMI_HAL_CAT_INL_SYM(get_node_id)

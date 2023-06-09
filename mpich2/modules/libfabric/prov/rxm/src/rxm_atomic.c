@@ -186,7 +186,7 @@ rxm_ep_atomic_common(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 
 	ret = rxm_ep_send_atomic_req(rxm_ep, rxm_conn, tx_buf, tot_len);
 	if (ret)
-		rxm_free_rx_buf(rxm_ep, tx_buf);
+		rxm_free_tx_buf(rxm_ep, tx_buf);
 
 	return ret;
 }
@@ -507,6 +507,12 @@ int rxm_ep_query_atomic(struct fid_domain *domain, enum fi_datatype datatype,
 		FI_WARN(&rxm_prov, FI_LOG_EP_DATA,
 			"tagged atomic op not supported\n");
 		return -FI_EINVAL;
+	}
+
+	if ((datatype == FI_INT128) || (datatype == FI_UINT128)) {
+		FI_WARN(&rxm_prov, FI_LOG_EP_CTRL,
+			"128-bit integers not supported\n");
+		return -FI_EOPNOTSUPP;
 	}
 
 	ret = ofi_atomic_valid(&rxm_prov, datatype, op, flags);

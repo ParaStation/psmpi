@@ -127,6 +127,8 @@ extern size_t rxm_packet_size;
 
 #define RXM_IOV_LIMIT 4
 
+#define RXM_PEER_XFER_TAG_FLAG	(1ULL << 63)
+
 #define RXM_MR_MODES	(OFI_MR_BASIC_MAP | FI_MR_LOCAL)
 
 #define RXM_PASSTHRU_TX_OP_FLAGS (FI_TRANSMIT_COMPLETE)
@@ -220,30 +222,13 @@ enum {
 	RXM_CONN_INDEXED = BIT(0),
 };
 
-/* There will be at most 1 peer address per AV entry.  There
- * may be addresses that have not been inserted into the local
- * AV, and have no matching entry.  This can occur if we are
- * only receiving data from the remote rxm ep.
- */
-struct rxm_peer_addr {
-	struct rxm_av *av;
-	fi_addr_t fi_addr;
-	struct ofi_rbnode *node;
-	int index;
-	int refcnt;
-	union ofi_sock_ip addr;
-};
-
-struct rxm_peer_addr *rxm_get_peer(struct rxm_av *av, const void *addr);
-void rxm_put_peer(struct rxm_peer_addr *peer);
-
 /* Each local rxm ep will have at most 1 connection to a single
  * remote rxm ep.  A local rxm ep may not be connected to all
  * remote rxm ep's.
  */
 struct rxm_conn {
 	enum rxm_cm_state state;
-	struct rxm_peer_addr *peer;
+	struct util_peer_addr *peer;
 	struct fid_ep *msg_ep;
 	struct rxm_ep *ep;
 
@@ -270,6 +255,10 @@ void rxm_freeall_conns(struct rxm_ep *ep);
 struct rxm_fabric {
 	struct util_fabric util_fabric;
 	struct fid_fabric *msg_fabric;
+	struct fi_info *util_coll_info;
+	struct fi_info *offload_coll_info;
+	struct fid_fabric *util_coll_fabric;
+	struct fid_fabric *offload_coll_fabric;
 };
 
 struct rxm_domain {
@@ -283,8 +272,23 @@ struct rxm_domain {
 	struct ofi_ops_flow_ctrl *flow_ctrl_ops;
 	struct ofi_bufpool *amo_bufpool;
 	ofi_mutex_t amo_bufpool_lock;
+	struct fid_domain *util_coll_domain;
+	struct fid_domain *offload_coll_domain;
+	uint64_t offload_coll_mask;
 };
 
+struct rxm_cq {
+	struct util_cq util_cq;
+	struct fid_peer_cq peer_cq;
+	struct fid_cq *util_coll_cq;
+	struct fid_cq *offload_coll_cq;
+};
+
+struct rxm_eq {
+	struct util_eq util_eq;
+	struct fid_eq *util_coll_eq;
+	struct fid_eq *offload_coll_eq;
+};
 
 struct rxm_cntr {
 	struct util_cntr util_cntr;
@@ -293,33 +297,6 @@ struct rxm_cntr {
 	struct fid_cntr *msg_cntr;
 };
 
-/* All peer addresses, whether they've been inserted into the AV
- * or an endpoint has an active connection to it, are stored in
- * the addr_map.  Peers are allocated from a buffer pool and
- * assigned a local index using the pool.  All rxm endpoints
- * maintain a connection array which is aligned with the peer_pool.
- *
- * We technically only need to store the index of each peer in
- * the AV itself.  The 'util_av' could basically be replaced by
- * an ofi_index_map.  However, too much of the existing code
- * relies on the util_av existing and storing the AV addresses.
- *
- * A future cleanup would be to remove using the util_av and have the
- * rxm_av implementation be independent.
- */
- struct rxm_av {
-	struct util_av util_av;
-	struct ofi_rbmap addr_map;
-	struct ofi_bufpool *peer_pool;
-	struct ofi_bufpool *conn_pool;
-};
-
-int rxm_av_open(struct fid_domain *domain_fid, struct fi_av_attr *attr,
-		struct fid_av **fid_av, void *context);
-size_t rxm_av_max_peers(struct rxm_av *av);
-void rxm_ref_peer(struct rxm_peer_addr *peer);
-struct rxm_conn *rxm_av_alloc_conn(struct rxm_av *av);
-void rxm_av_free_conn(struct rxm_conn *conn);
 
 struct rxm_mr {
 	struct fid_mr mr_fid;
@@ -536,9 +513,22 @@ struct rxm_tx_buf {
 	struct rxm_pkt pkt;
 };
 
+struct rxm_coll_buf {
+	/* Must stay at top */
+	struct rxm_buf hdr;
+
+	struct rxm_ep *ep;
+	void *app_context;
+	uint64_t flags;
+};
+
 /* Used for application transmits, provides credit check */
 struct rxm_tx_buf *rxm_get_tx_buf(struct rxm_ep *ep);
-void rxm_free_rx_buf(struct rxm_ep *ep, struct rxm_tx_buf *buf);
+void rxm_free_tx_buf(struct rxm_ep *ep, struct rxm_tx_buf *buf);
+
+/* Context for collective operations */
+struct rxm_coll_buf *rxm_get_coll_buf(struct rxm_ep *ep);
+void rxm_free_coll_buf(struct rxm_ep *ep, struct rxm_coll_buf *buf);
 
 enum rxm_deferred_tx_entry_type {
 	RXM_DEFERRED_TX_RNDV_ACK,
@@ -683,7 +673,12 @@ struct rxm_ep {
 	pthread_t		cm_thread;
 	struct fid_pep 		*msg_pep;
 	struct fid_eq 		*msg_eq;
-	struct fid_ep 		*srx_ctx;
+	struct fid_ep 		*msg_srx;
+	struct fid_ep		*util_coll_ep;
+	struct fid_ep		*offload_coll_ep;
+	struct fi_ops_transfer_peer *util_coll_peer_xfer_ops;
+	struct fi_ops_transfer_peer *offload_coll_peer_xfer_ops;
+	uint64_t		offload_coll_mask;
 
 	struct fid_cq 		*msg_cq;
 	uint64_t		msg_cq_last_poll;
@@ -709,6 +704,7 @@ struct rxm_ep {
 
 	struct ofi_bufpool	*rx_pool;
 	struct ofi_bufpool	*tx_pool;
+	struct ofi_bufpool	*coll_pool;
 	struct rxm_pkt		*inject_pkt;
 
 	struct dlist_entry	deferred_queue;
@@ -741,6 +737,9 @@ int rxm_info_to_core(uint32_t version, const struct fi_info *rxm_info,
 int rxm_info_to_rxm(uint32_t version, const struct fi_info *core_info,
 		     const struct fi_info *base_info, struct fi_info *info);
 bool rxm_passthru_info(const struct fi_info *info);
+
+int rxm_eq_open(struct fid_fabric *fabric_fid, struct fi_eq_attr *attr,
+		struct fid_eq **eq_fid, void *context);
 
 int rxm_domain_open(struct fid_fabric *fabric, struct fi_info *info,
 			     struct fid_domain **dom, void *context);
@@ -866,14 +865,13 @@ rxm_cq_write(struct util_cq *cq, void *context, uint64_t flags, size_t len,
 	FI_DBG(&rxm_prov, FI_LOG_CQ, "Reporting %s completion\n",
 	       fi_tostr((void *) &flags, FI_TYPE_CQ_EVENT_FLAGS));
 
-	ret = ofi_cq_write(cq, context, flags, len, buf, data, tag);
+	ret = ofi_peer_cq_write(cq, context, flags, len, buf, data, tag,
+				FI_ADDR_NOTAVAIL);
 	if (ret) {
 		FI_WARN(&rxm_prov, FI_LOG_CQ,
 			"Unable to report completion\n");
 		assert(0);
 	}
-	if (cq->wait)
-		cq->wait->signal(cq->wait);
 }
 
 static inline void
@@ -885,14 +883,12 @@ rxm_cq_write_src(struct util_cq *cq, void *context, uint64_t flags, size_t len,
 	FI_DBG(&rxm_prov, FI_LOG_CQ, "Reporting %s completion\n",
 	       fi_tostr((void *) &flags, FI_TYPE_CQ_EVENT_FLAGS));
 
-	ret = ofi_cq_write_src(cq, context, flags, len, buf, data, tag, addr);
+	ret = ofi_peer_cq_write(cq, context, flags, len, buf, data, tag, addr);
 	if (ret) {
 		FI_WARN(&rxm_prov, FI_LOG_CQ,
 			"Unable to report completion\n");
 		assert(0);
 	}
-	if (cq->wait)
-		cq->wait->signal(cq->wait);
 }
 
 ssize_t rxm_get_conn(struct rxm_ep *rxm_ep, fi_addr_t addr,
@@ -941,9 +937,11 @@ ssize_t rxm_handle_unexp_sar(struct rxm_recv_queue *recv_queue,
 			     struct rxm_recv_entry *recv_entry,
 			     struct rxm_rx_buf *rx_buf);
 int rxm_post_recv(struct rxm_rx_buf *rx_buf);
+void rxm_av_remove_handler(struct util_ep *util_ep,
+			   struct util_peer_addr *peer);
 
 static inline void
-rxm_rx_buf_free(struct rxm_rx_buf *rx_buf)
+rxm_free_rx_buf(struct rxm_rx_buf *rx_buf)
 {
 	if (rx_buf->data != rx_buf->pkt.data) {
 		free(rx_buf->data);
@@ -951,7 +949,7 @@ rxm_rx_buf_free(struct rxm_rx_buf *rx_buf)
 	}
 
 	/* Discard rx buffer if its msg_ep was closed */
-	if (rx_buf->repost && (rx_buf->ep->srx_ctx || rx_buf->conn->msg_ep)) {
+	if (rx_buf->repost && (rx_buf->ep->msg_srx || rx_buf->conn->msg_ep)) {
 		rxm_post_recv(rx_buf);
 	} else {
 		ofi_buf_free(rx_buf);
@@ -971,6 +969,17 @@ static inline void
 rxm_cq_write_recv_comp(struct rxm_rx_buf *rx_buf, void *context, uint64_t flags,
 		       size_t len, char *buf)
 {
+	if (rx_buf->ep->util_coll_peer_xfer_ops &&
+	    rx_buf->pkt.hdr.tag & RXM_PEER_XFER_TAG_FLAG) {
+		struct fi_cq_tagged_entry cqe = {
+			.tag = rx_buf->pkt.hdr.tag,
+			.op_context = rx_buf->recv_entry->context,
+		};
+		rx_buf->ep->util_coll_peer_xfer_ops->
+			complete(rx_buf->ep->util_coll_ep, &cqe, 0);
+		return;
+	}
+
 	if (rx_buf->ep->rxm_info->caps & FI_SOURCE)
 		rxm_cq_write_src(rx_buf->ep->util_ep.rx_cq, context,
 				 flags, len, buf, rx_buf->pkt.hdr.data,

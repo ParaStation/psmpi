@@ -52,7 +52,7 @@ extern "C" {
 #endif
 
 #ifndef FT_FIVERSION
-#define FT_FIVERSION FI_VERSION(1,9)
+#define FT_FIVERSION FI_VERSION(1,18)
 #endif
 
 #include "ft_osd.h"
@@ -101,30 +101,33 @@ enum ft_comp_method {
 };
 
 enum {
-	FT_OPT_ACTIVE		= 1 << 0,
-	FT_OPT_ITER		= 1 << 1,
-	FT_OPT_SIZE		= 1 << 2,
-	FT_OPT_RX_CQ		= 1 << 3,
-	FT_OPT_TX_CQ		= 1 << 4,
-	FT_OPT_RX_CNTR		= 1 << 5,
-	FT_OPT_TX_CNTR		= 1 << 6,
-	FT_OPT_VERIFY_DATA	= 1 << 7,
-	FT_OPT_ALIGN		= 1 << 8,
-	FT_OPT_BW		= 1 << 9,
-	FT_OPT_CQ_SHARED	= 1 << 10,
-	FT_OPT_OOB_SYNC		= 1 << 11,
-	FT_OPT_SKIP_MSG_ALLOC	= 1 << 12,
-	FT_OPT_SKIP_REG_MR	= 1 << 13,
-	FT_OPT_OOB_ADDR_EXCH	= 1 << 14,
-	FT_OPT_ALLOC_MULT_MR	= 1 << 15,
-	FT_OPT_SERVER_PERSIST	= 1 << 16,
-	FT_OPT_ENABLE_HMEM	= 1 << 17,
-	FT_OPT_USE_DEVICE	= 1 << 18,
-	FT_OPT_DOMAIN_EQ	= 1 << 19,
-	FT_OPT_FORK_CHILD	= 1 << 20,
-	FT_OPT_SRX		= 1 << 21,
-	FT_OPT_STX		= 1 << 22,
-	FT_OPT_OOB_CTRL		= FT_OPT_OOB_SYNC | FT_OPT_OOB_ADDR_EXCH,
+	FT_OPT_ACTIVE			= 1 << 0,
+	FT_OPT_ITER			= 1 << 1,
+	FT_OPT_SIZE			= 1 << 2,
+	FT_OPT_RX_CQ			= 1 << 3,
+	FT_OPT_TX_CQ			= 1 << 4,
+	FT_OPT_RX_CNTR			= 1 << 5,
+	FT_OPT_TX_CNTR			= 1 << 6,
+	FT_OPT_VERIFY_DATA		= 1 << 7,
+	FT_OPT_ALIGN			= 1 << 8,
+	FT_OPT_BW			= 1 << 9,
+	FT_OPT_CQ_SHARED		= 1 << 10,
+	FT_OPT_OOB_SYNC			= 1 << 11,
+	FT_OPT_SKIP_MSG_ALLOC		= 1 << 12,
+	FT_OPT_SKIP_REG_MR		= 1 << 13,
+	FT_OPT_OOB_ADDR_EXCH		= 1 << 14,
+	FT_OPT_ALLOC_MULT_MR		= 1 << 15,
+	FT_OPT_SERVER_PERSIST		= 1 << 16,
+	FT_OPT_ENABLE_HMEM		= 1 << 17,
+	FT_OPT_USE_DEVICE		= 1 << 18,
+	FT_OPT_DOMAIN_EQ		= 1 << 19,
+	FT_OPT_FORK_CHILD		= 1 << 20,
+	FT_OPT_SRX			= 1 << 21,
+	FT_OPT_STX			= 1 << 22,
+	FT_OPT_SKIP_ADDR_EXCH		= 1 << 23,
+	FT_OPT_PERF			= 1 << 24,
+	FT_OPT_DISABLE_TAG_VALIDATION	= 1 << 25,
+	FT_OPT_OOB_CTRL			= FT_OPT_OOB_SYNC | FT_OPT_OOB_ADDR_EXCH,
 };
 
 /* for RMA tests --- we want to be able to select fi_writedata, but there is no
@@ -133,6 +136,12 @@ enum ft_rma_opcodes {
 	FT_RMA_READ = 1,
 	FT_RMA_WRITE,
 	FT_RMA_WRITEDATA,
+};
+
+/* for CQ data test, */
+enum ft_cqdata_opcodes {
+	FT_CQDATA_SENDDATA = 1, /* testing fi_senddata */
+	FT_CQDATA_WRITEDATA /* testing fi_writedata */
 };
 
 enum ft_atomic_opcodes {
@@ -144,10 +153,6 @@ enum ft_atomic_opcodes {
 enum op_state {
 	OP_DONE = 0,
 	OP_PENDING
-};
-
-enum {
-	LONG_OPT_PIN_CORE = 1,
 };
 
 struct ft_context {
@@ -177,6 +182,7 @@ struct ft_opts {
 	enum ft_comp_method comp_method;
 	int machr;
 	enum ft_rma_opcodes rma_op;
+	enum ft_cqdata_opcodes cqdata_op;
 	char *oob_port;
 	int argc;
 	int num_connections;
@@ -239,6 +245,7 @@ void ft_parsecsopts(int op, char *optarg, struct ft_opts *opts);
 int ft_parse_api_opts(int op, char *optarg, struct fi_info *hints,
 		      struct ft_opts *opts);
 void ft_addr_usage();
+void ft_hmem_usage();
 void ft_usage(char *name, char *desc);
 void ft_mcusage(char *name, char *desc);
 void ft_csusage(char *name, char *desc);
@@ -283,8 +290,9 @@ extern char default_port[8];
 		.verbose = 0, \
 		.sizes_enabled = FT_DEFAULT_SIZE, \
 		.rma_op = FT_RMA_WRITE, \
+		.cqdata_op = FT_CQDATA_SENDDATA, \
 		.oob_port = NULL, \
-		.mr_mode = FI_MR_LOCAL | OFI_MR_BASIC_MAP, \
+		.mr_mode = FI_MR_LOCAL | FI_MR_ENDPOINT | OFI_MR_BASIC_MAP | FI_MR_RAW, \
 		.iface = FI_HMEM_SYSTEM, \
 		.device = 0, \
 		.argc = argc, .argv = argv, \
@@ -292,15 +300,12 @@ extern char default_port[8];
 	}
 
 #define FT_STR_LEN 32
-#define FT_MAX_CTRL_MSG 256
+#define FT_MAX_CTRL_MSG 1024
 #define FT_MR_KEY 0xC0DE
 #define FT_TX_MR_KEY (FT_MR_KEY + 1)
 #define FT_RX_MR_KEY 0xFFFF
 #define FT_MSG_MR_ACCESS (FI_SEND | FI_RECV)
 #define FT_RMA_MR_ACCESS (FI_READ | FI_WRITE | FI_REMOTE_READ | FI_REMOTE_WRITE)
-
-extern int lopt_idx;
-extern struct option long_opts[];
 
 int ft_getsrcaddr(char *node, char *service, struct fi_info *hints);
 int ft_read_addr_opts(char **node, char **service, struct fi_info *hints,
@@ -317,13 +322,22 @@ static inline int ft_use_size(int index, int enable_flags)
 		(enable_flags & test_size[index].enable_flags));
 }
 
-#define FT_PRINTERR(call, retv) \
-	do { fprintf(stderr, call "(): %s:%d, ret=%d (%s)\n", __FILE__, __LINE__, \
-			(int) (retv), fi_strerror((int) -(retv))); } while (0)
+#define FT_PRINTERR(call, retv)						\
+	do {								\
+		int saved_errno = errno;				\
+		fprintf(stderr, call "(): %s:%d, ret=%d (%s)\n",	\
+			__FILE__, __LINE__, (int) (retv),		\
+			fi_strerror((int) -(retv)));			\
+		errno = saved_errno;					\
+	} while (0)
 
-#define FT_LOG(level, fmt, ...) \
-	do { fprintf(stderr, "[%s] fabtests:%s:%d: " fmt "\n", level, __FILE__, \
-			__LINE__, ##__VA_ARGS__); } while (0)
+#define FT_LOG(level, fmt, ...)						\
+	do {								\
+		int saved_errno = errno;				\
+		fprintf(stderr, "[%s] fabtests:%s:%d: " fmt "\n",	\
+			level, __FILE__, __LINE__, ##__VA_ARGS__);	\
+		errno = saved_errno;					\
+	} while (0)
 
 #define FT_ERR(fmt, ...) FT_LOG("error", fmt, ##__VA_ARGS__)
 #define FT_WARN(fmt, ...) FT_LOG("warn", fmt, ##__VA_ARGS__)
@@ -392,6 +406,7 @@ int ft_getinfo(struct fi_info *hints, struct fi_info **info);
 int ft_init_fabric();
 int ft_init_oob();
 int ft_close_oob();
+void ft_close_fids();
 int ft_reset_oob();
 int ft_start_server();
 int ft_server_connect();
@@ -405,6 +420,9 @@ int ft_connect_ep(struct fid_ep *ep,
 int ft_alloc_ep_res(struct fi_info *fi, struct fid_cq **new_txcq,
 		    struct fid_cq **new_rxcq, struct fid_cntr **new_txcntr,
 		    struct fid_cntr **new_rxcntr);
+int ft_alloc_msgs(void);
+int ft_alloc_host_tx_buf(size_t size);
+void ft_free_host_tx_buf(void);
 int ft_alloc_active_res(struct fi_info *fi);
 int ft_enable_ep_recv(void);
 int ft_enable_ep(struct fid_ep *bind_ep, struct fid_eq *bind_eq, struct fid_av *bind_av,
@@ -421,10 +439,33 @@ int ft_init_av_dst_addr(struct fid_av *av_ptr, struct fid_ep *ep_ptr,
 int ft_init_av_addr(struct fid_av *av, struct fid_ep *ep,
 		fi_addr_t *addr);
 int ft_exchange_keys(struct fi_rma_iov *peer_iov);
+void ft_fill_mr_attr(struct iovec *iov, int iov_count, uint64_t access,
+		     uint64_t key, enum fi_hmem_iface iface, uint64_t device,
+		     struct fi_mr_attr *attr);
 int ft_reg_mr(struct fi_info *info, void *buf, size_t size, uint64_t access,
-	      uint64_t key, struct fid_mr **mr, void **desc);
+	      uint64_t key, enum fi_hmem_iface iface, uint64_t device,
+	      struct fid_mr **mr, void **desc);
+void ft_freehints(struct fi_info *hints);
 void ft_free_res();
 void init_test(struct ft_opts *opts, char *test_name, size_t test_name_len);
+
+static inline uint64_t ft_gettime_ns(void)
+{
+	struct timespec now;
+
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	return now.tv_sec * 1000000000 + now.tv_nsec;
+}
+
+static inline uint64_t ft_gettime_us(void)
+{
+	return ft_gettime_ns() / 1000;
+}
+
+static inline uint64_t ft_gettime_ms(void)
+{
+	return ft_gettime_ns() / 1000000;
+}
 
 static inline void ft_start(void)
 {
@@ -515,6 +556,7 @@ int ft_sendmsg(struct fid_ep *ep, fi_addr_t fi_addr,
 int ft_cq_read_verify(struct fid_cq *cq, void *op_context);
 
 void eq_readerr(struct fid_eq *eq, const char *eq_str);
+int ft_poll_fd(int fd, int timeout);
 
 int64_t get_elapsed(const struct timespec *b, const struct timespec *a,
 		enum precision p);
@@ -538,8 +580,32 @@ const char *ft_util_name(const char *str, size_t *len);
 const char *ft_core_name(const char *str, size_t *len);
 char **ft_split_and_alloc(const char *s, const char *delim, size_t *count);
 void ft_free_string_array(char **s);
+
+
+enum {
+	LONG_OPT_PIN_CORE = 1,
+	LONG_OPT_TIMEOUT,
+	LONG_OPT_DEBUG_ASSERT,
+};
+
+extern int debug_assert;
+
+extern int lopt_idx;
+extern struct option long_opts[];
 int ft_parse_long_opts(int op, char *optarg);
 void ft_longopts_usage();
+
+#define ft_assert(expr)					\
+	do {						\
+		if (!debug_assert) {			\
+			assert(expr);			\
+		} else {				\
+			if (!(expr))			\
+				FT_WARN("assert (pid %d)", getpid()); \
+			while (!(expr))			\
+				;			\
+		}					\
+	} while (0)
 
 #define FT_PROCESS_QUEUE_ERR(readerr, rd, queue, fn, str)	\
 	do {							\
@@ -565,11 +631,23 @@ void ft_longopts_usage();
 
 #define TEST_SET_N_RETURN(str, len, val_str, val, type, data)	\
 	do {							\
-		if (!strncmp(str, val_str, len)) {	\
+		if (len == strlen(val_str) &&			\
+		    !strncmp(str, val_str, len)) {		\
 			*(type *)(data) = val;			\
 			return 0;				\
 		}						\
 	} while (0)
+
+/* FT_TOKEN_CHECK - compare a token character array (may not be
+ * NULL terminated) against keyword (NULL terminated).  Expression
+ * is true if they are the same length and characters.
+ * token - character array that may not be NULL termianted
+ * len - number of characters to compare from token
+ * keyword - NULL terminated string to be compared against token
+ */
+
+#define FT_TOKEN_CHECK(token, len, keyword) \
+		(len == strlen(keyword) && !strncmp(token, keyword, len))
 
 #ifdef __cplusplus
 }

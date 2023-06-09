@@ -67,20 +67,25 @@ static int get_dupinfo(void)
 {
 	struct fi_info *hints_dup;
 	int ret;
+	char *src_addr;
+	char *dest_addr;
 
-       /* Get a fi_info corresponding to a wild card port. The first endpoint
-	* should use default/given port since that is what is known to both
-	* client and server. For other endpoints we should use addresses with
-	* random ports to avoid collision. fi_getinfo should return a random
-	* port if we don't specify it in the service arg or the hints. This
-	* is used only for non-MSG endpoints. */
+	/* Get a fi_info corresponding to a wild card port. The first endpoint
+	 * should use default/given port since that is what is known to both
+	 * client and server. For other endpoints we should use addresses with
+	 * random ports to avoid collision. fi_getinfo should return a random
+	 * port if we don't specify it in the service arg or the hints. This
+	 * is used only for non-MSG endpoints. */
 
 	hints_dup = fi_dupinfo(hints);
 	if (!hints_dup)
 		return -FI_ENOMEM;
 
-	free(hints_dup->src_addr);
-	free(hints_dup->dest_addr);
+	/* After calling fi_dupinfo, libfabric owns all the memory for hints_dup,
+	 * so we don't want to free it here. Instead we'll save the pointers,
+	 * set them to NULL, then restore them just before calling fi_freeinfo. */
+	src_addr = hints_dup->src_addr;
+	dest_addr = hints_dup->dest_addr;
 	hints_dup->src_addr = NULL;
 	hints_dup->dest_addr = NULL;
 	hints_dup->src_addrlen = 0;
@@ -95,6 +100,8 @@ static int get_dupinfo(void)
 	}
 	if (ret)
 		FT_PRINTERR("fi_getinfo", ret);
+	hints_dup->src_addr = src_addr;
+	hints_dup->dest_addr = dest_addr;
 	fi_freeinfo(hints_dup);
 	return ret;
 }
@@ -265,6 +272,14 @@ static int init_fabric(void)
 {
 	int ret;
 
+	ret = ft_init();
+	if (ret)
+		return ret;
+
+	ret = ft_init_oob();
+	if (ret)
+		return ret;
+
 	ret = ft_getinfo(hints, &fi);
 	if (ret)
 		return ret;
@@ -291,6 +306,10 @@ static int init_fabric(void)
 	if (ret)
 		return ret;
 
+	ret = ft_alloc_msgs();
+	if (ret)
+		return ret;
+
 	/* Post recv */
 	if (srx)
 		ret = ft_post_rx(srx, MAX(rx_size, FT_MAX_CTRL_MSG), &rx_ctx);
@@ -309,6 +328,14 @@ static int client_connect(void)
 	uint32_t event;
 	ssize_t rd;
 	int i, ret;
+
+	ret = ft_init();
+	if (ret)
+		return ret;
+
+	ret = ft_init_oob();
+	if (ret)
+		return ret;
 
 	ret = ft_getinfo(hints, &fi);
 	if (ret)

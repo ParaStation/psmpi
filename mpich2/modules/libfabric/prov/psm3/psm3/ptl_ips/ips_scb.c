@@ -276,7 +276,7 @@ ips_scb_t *MOCKABLE(psm3_ips_scbctrl_alloc)(struct ips_scbctrl *scbc, int scbnum
 		scb->nfrag = 1;
 		scb->frag_size = 0;
 		scb->chunk_size = 0;
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 		scb->mq_req = NULL;
 #endif
 #ifdef PSM_HAVE_REG_MR
@@ -346,7 +346,7 @@ ips_scb_t *MOCKABLE(psm3_ips_scbctrl_alloc_tiny)(struct ips_scbctrl *scbc)
 	scb->nfrag = 1;
 	scb->frag_size = 0;
 	scb->chunk_size = 0;
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 	scb->mq_req = NULL;
 #endif
 #ifdef PSM_HAVE_REG_MR

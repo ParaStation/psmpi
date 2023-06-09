@@ -62,7 +62,7 @@
 
 
 psm2_error_t
-psm3_context_open(const psm2_ep_t ep, long unit_id, long port,
+psm3_context_open(const psm2_ep_t ep, long unit_id, long port, long addr_index,
 		  psm2_uuid_t const job_key, uint16_t network_pkey,
 		  int64_t timeout_ns);
 
@@ -71,10 +71,7 @@ psm2_error_t psm3_context_close(psm2_ep_t ep);
 // for use by HAL context_open to set CPU affinity consistent with
 // NIC NUMA location
 int
-psm3_context_set_affinity(psm2_ep_t ep, cpu_set_t nic_cpuset);
-
-/* Check status of context */
-psm2_error_t psm3_context_check_status(psm2_ep_t ep);
+psm3_context_set_affinity(psm2_ep_t ep, int unit);
 
 psm2_error_t psm3_context_interrupt_set(psm2_ep_t ep, int enable);
 int psm3_context_interrupt_isenabled(psm2_ep_t ep);

@@ -61,15 +61,11 @@
 
 #ifdef PSM_HAVE_RNDV_MOD
 #include <rdma/rdma_verbs.h>
-#ifndef HAVE_OLD_RV_HEADER
 #include <rdma/rv_user_ioctls.h>
-#else
-#include <rv/rv_user_ioctls.h>
-#endif
 
 struct local_info {
 	uint32_t mr_cache_size;	// in MBs
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 	uint32_t gpu_cache_size;	// in MBs
 #endif
 	uint8_t rdma_mode;	// RV_RDMA_MODE_*
@@ -97,7 +93,7 @@ struct local_info {
 	// output from RNDV driver
 	uint16_t major_rev;		// driver ABI rev
 	uint16_t minor_rev;		// driver ABI rev
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 	uint16_t gpu_major_rev;		// driver GPU ABI rev
 	uint16_t gpu_minor_rev;		// driver GPU ABI rev
 #endif
@@ -113,6 +109,10 @@ struct rv_event_ring {
 
 struct psm2_rv {
 	int fd; /* file handle used to issue ioctls to rv driver */
+#if defined(NVIDIA_GPU_DIRECT) || defined(INTEL_GPU_DIRECT)
+	unsigned int ioctl_gpu_pin_mmap;
+#endif
+	unsigned int ioctl_reg_mem;
 	struct rv_event_ring events;
 };
 typedef struct psm2_rv *psm3_rv_t;
@@ -144,7 +144,7 @@ typedef struct psm3_rv_mr *psm3_rv_mr_t;
 
 #define psm3_rv_cache_stats rv_cache_stats_params_out
 
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 #define psm3_rv_gpu_cache_stats rv_gpu_cache_stats_params_out
 #endif
 
@@ -162,7 +162,7 @@ static inline uint16_t psm3_rv_get_user_minor_bldtime_version(void)
 	return RV_ABI_VER_MINOR;
 }
 
-#ifdef NVIDIA_GPU_DIRECT
+#if defined(NVIDIA_GPU_DIRECT) || defined(INTEL_GPU_DIRECT)
 static inline uint16_t psm3_rv_get_gpu_user_major_bldtime_version(void)
 {
 	return RV_GPU_ABI_VER_MAJOR;
@@ -183,7 +183,7 @@ extern int psm3_rv_close(psm3_rv_t rv);
 extern int psm3_rv_get_cache_stats(psm3_rv_t rv,
 									struct psm3_rv_cache_stats *stats);
 
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 extern int psm3_rv_gpu_get_cache_stats(psm3_rv_t rv,
 									struct psm3_rv_gpu_cache_stats *stats);
 #endif
@@ -211,12 +211,21 @@ extern int psm3_rv_disconnect(psm3_rv_conn_t conn);
 extern void psm3_rv_destroy_conn(psm3_rv_conn_t conn);
 
 extern psm3_rv_mr_t psm3_rv_reg_mem(psm3_rv_t rv, int cmd_fd, struct ibv_pd *pd, void *addr,
-				uint64_t length, int access);
+				uint64_t length, int access
+#ifdef PSM_ONEAPI
+				, uint64_t alloc_id
+#endif
+				);
 
 extern int psm3_rv_dereg_mem(psm3_rv_t rv, psm3_rv_mr_t mr);
 
 extern void * psm3_rv_pin_and_mmap(psm3_rv_t rv, uintptr_t pageaddr,
 			uint64_t pagelen, int access);
+
+#ifdef PSM_ONEAPI
+int psm3_rv_munmap_unpin(psm3_rv_t rv, uintptr_t pageaddr, uint64_t pagelen,
+			 int access);
+#endif
 
 extern int64_t psm3_rv_evict_exact(psm3_rv_t rv, void *addr,
 			uint64_t length, int access);
@@ -225,7 +234,7 @@ extern int64_t psm3_rv_evict_range(psm3_rv_t rv, void *addr, uint64_t length);
 
 extern int64_t psm3_rv_evict_amount(psm3_rv_t rv, uint64_t bytes, uint32_t count);
 
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 extern int64_t psm3_rv_evict_gpu_range(psm3_rv_t rv, uintptr_t addr,
 			uint64_t length);
 
