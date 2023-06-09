@@ -88,7 +88,7 @@
 #define MTU_SIZE(mtu_ind) (((uint64_t)1 << (MTU_FIX + mtu_ind)))
 
 static void psm3_verbs_parse_params(psm2_ep_t ep);
-static psm2_error_t verbs_open_dev(psm2_ep_t ep, int unit, int port, psm2_uuid_t const job_key);
+static psm2_error_t verbs_open_dev(psm2_ep_t ep, int unit, int port, int addr_index, psm2_uuid_t const job_key);
 static psm2_error_t
 check_port_state(psm2_ep_t ep);
 static struct ibv_qp* ud_qp_create(psm2_ep_t ep);
@@ -106,7 +106,7 @@ static void deregister_rv_event_stats(psm2_ep_t ep);
 
 // initialize the ep->verbs_ep portion of the ep
 psm2_error_t
-psm3_ep_open_verbs(psm2_ep_t ep, int unit, int port, psm2_uuid_t const job_key)
+psm3_ep_open_verbs(psm2_ep_t ep, int unit, int port, int addr_index, psm2_uuid_t const job_key)
 {
 	int flags;
 
@@ -124,7 +124,7 @@ psm3_ep_open_verbs(psm2_ep_t ep, int unit, int port, psm2_uuid_t const job_key)
 
 	psm3_verbs_parse_params(ep);
 
-	if (PSM2_OK != verbs_open_dev(ep, unit, port, job_key)) {
+	if (PSM2_OK != verbs_open_dev(ep, unit, port, addr_index, job_key)) {
 		// verbs_open_dev already posted error.
 		goto fail;
 	}
@@ -226,16 +226,16 @@ psm3_ep_open_verbs(psm2_ep_t ep, int unit, int port, psm2_uuid_t const job_key)
 						PSMI_ETH_PROTO_ROCE,
 						ep->verbs_ep.qp->qp_num, 0);
 		_HFI_VDBG("construct epid ipv4: %s: ip %s qp %d mtu %d\n",
-						psm3_epid_fmt(ep->epid, 0),
-						psmi_naddr128_fmt(ep->addr, 1),
+						psm3_epid_fmt_internal(ep->epid, 0),
+						psm3_naddr128_fmt(ep->addr, 1),
 						ep->verbs_ep.qp->qp_num, ep->mtu);
 	} else if (ep->addr.fmt == PSMI_ADDR_FMT_IPV6) {
 		ep->epid = psm3_epid_pack_ipv6(ep->addr,
 						PSMI_ETH_PROTO_ROCE,
 						ep->verbs_ep.qp->qp_num, 0);
 		_HFI_VDBG("construct epid ipv6: %s: ip %s qp %d mtu %d\n",
-						psm3_epid_fmt(ep->epid, 0),
-						psmi_naddr128_fmt(ep->addr, 1),
+						psm3_epid_fmt_internal(ep->epid, 0),
+						psm3_naddr128_fmt(ep->addr, 1),
 						ep->verbs_ep.qp->qp_num, ep->mtu);
 	} else {
 		psmi_assert(ep->addr.fmt == PSMI_ADDR_FMT_IB);
@@ -243,9 +243,9 @@ psm3_ep_open_verbs(psm2_ep_t ep, int unit, int port, psm2_uuid_t const job_key)
 							ep->verbs_ep.qp->qp_num,
 							ep->addr);
 		_HFI_VDBG("construct epid ib: %s: lid %d qp %d addr %s mtu %d\n",
-						psm3_epid_fmt(ep->epid, 0), ep->verbs_ep.port_attr.lid,
+						psm3_epid_fmt_internal(ep->epid, 0), ep->verbs_ep.port_attr.lid,
 						ep->verbs_ep.qp->qp_num,
-						psmi_naddr128_fmt(ep->addr, 1),
+						psm3_naddr128_fmt(ep->addr, 1),
 						ep->mtu);
 	}
 	ep->wiremode = ep->rdmamode & IPS_PROTOEXP_FLAG_RDMA_MASK;
@@ -267,6 +267,14 @@ psm3_verbs_parse_params(psm2_ep_t ep)
 
 	ep->rdmamode = psm3_verbs_parse_rdmamode(0);
 	ep->mr_cache_mode = psm3_verbs_parse_mr_cache_mode(ep->rdmamode, 0);
+
+	// when enabled this can improve MR cache hit rate
+	psm3_getenv("PSM3_MR_ACCESS",
+			"When register MR for send, should inbound recv access be allowed (1=yes, 0=no) [1]",
+			PSMI_ENVVAR_LEVEL_HIDDEN,
+			PSMI_ENVVAR_TYPE_UINT,
+			(union psmi_envvar_val)1, &envvar_val);
+	ep->mr_access = envvar_val.e_uint;
 
 	/* Get number of send WQEs
 	 */
@@ -352,7 +360,7 @@ psm3_verbs_parse_params(psm2_ep_t ep)
 	// TBD - we could check cache_size >= minimum based on:
 	// 		(HFI_TF_NFLOWS + ep->hfi_num_send_rdma) * mq->hfi_base_window_rv 
 	// and automatically increase with warning if not?
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 	ep->rv_gpu_cache_size = psmi_parse_gpudirect_rv_gpu_cache_size(0);
 	// TBD - we could check gpu_cache_size >= minimum based on:
 	// 		(HFI_TF_NFLOWS + ep->hfi_num_send_rdma) * mq->hfi_base_window_rv 
@@ -401,7 +409,7 @@ psm3_verbs_ips_proto_init(struct ips_proto *proto, uint32_t cksum_sz)
 	// PSM3_* env for SDMA are parsed later in psm3_ips_proto_init.
 	proto->iovec_thresh_eager = 8192;
 	proto->iovec_thresh_eager_blocking = 8192;
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 	proto->iovec_gpu_thresh_eager = 128;
 	proto->iovec_gpu_thresh_eager_blocking = 128;
 #endif
@@ -573,7 +581,7 @@ psm2_error_t psm3_verbs_ips_path_rec_to_ah_attr(psm2_ep_t ep,
 		ah_attr->grh.hop_limit = 0xFF;
 		ah_attr->grh.traffic_class = 0;
 		_HFI_CONNDBG("creating AH with DLID %u DGID: %s\n",
-			ah_attr->dlid, psmi_ibv_gid_fmt(ah_attr->grh.dgid, 0));
+			ah_attr->dlid, psm3_ibv_gid_fmt(ah_attr->grh.dgid, 0));
 	}
 	return PSM2_OK;
 }
@@ -1622,84 +1630,244 @@ static void register_rv_conn_stats(psm2_ep_t ep)
 	struct psm3_rv_conn_stats *ep_rv_conn_stats = &ep->verbs_ep.rv_conn_stats;
 
 	struct psmi_stats_entry entries[] = {
-		PSMI_STATS_DECL("rv_q_depth", MPSPAWN_STATS_REDUCTION_ALL,
+		PSMI_STATS_DECL_HELP("RV Configuration Settings:"),
+		PSMI_STATS_DECL("rv_q_depth",
+				"Size of QPs and CQs per RV QP",
+				MPSPAWN_STATS_REDUCTION_ALL,
 				rv_q_depth, NULL),
-		PSMI_STATS_DECL("rv_reconnect_timeout", MPSPAWN_STATS_REDUCTION_ALL,
+		PSMI_STATS_DECL("rv_reconnect_timeout",
+				"RV End-point minimum re-connection timeout in seconds",
+				 MPSPAWN_STATS_REDUCTION_ALL,
 				rv_reconnect_timeout, NULL),
-		PSMI_STATS_DECL("rv_hb_interval", MPSPAWN_STATS_REDUCTION_ALL,
+		PSMI_STATS_DECL("rv_hb_interval",
+				"RV End-point heartbeat interval in milliseconds",
+				MPSPAWN_STATS_REDUCTION_ALL,
 				rv_hb_interval, NULL),
-		PSMI_STATS_DECL("rv_index", MPSPAWN_STATS_REDUCTION_ALL,
+		// ------------------------------------------------------------
+		PSMI_STATS_DECL_HELP("RV Connection Statistics:"),
+		PSMI_STATS_DECL("rv_index",
+				"RV unique end point index within job on given NIC",
+				MPSPAWN_STATS_REDUCTION_ALL,
 				rv_index, NULL),
-
-		PSMI_STATS_DECL("rv_conn_flags", MPSPAWN_STATS_REDUCTION_ALL,
+		PSMI_STATS_DECL("rv_conn_flags",
+				"RV_CONN_STAT flags (1=server, 2=client, 4=was connected)",
+				MPSPAWN_STATS_REDUCTION_ALL,
 				rv_conn_flags, NULL),
-
-		PSMI_STATS_DECL_FUNC("num_conn", rv_conn_num_conn),
-		PSMI_STATS_DECL_FUNC("req_error", rv_conn_req_error),
-		PSMI_STATS_DECL_FUNC("req_recv", rv_conn_req_recv),
-		PSMI_STATS_DECL_FUNC("rep_error", rv_conn_rep_error),
-		PSMI_STATS_DECL_FUNC("rep_recv", rv_conn_rep_recv),
-		PSMI_STATS_DECL_FUNC("rtu_recv", rv_conn_rtu_recv),
-		PSMI_STATS_DECL_FUNC("established", rv_conn_established),
-		PSMI_STATS_DECL_FUNC("dreq_error", rv_conn_dreq_error),
-		PSMI_STATS_DECL_FUNC("dreq_recv", rv_conn_dreq_recv),
-		PSMI_STATS_DECL_FUNC("drep_recv", rv_conn_drep_recv),
-		PSMI_STATS_DECL_FUNC("timewait", rv_conn_timewait),
-		PSMI_STATS_DECL_FUNC("mra_recv", rv_conn_mra_recv),
-		PSMI_STATS_DECL_FUNC("rej_recv", rv_conn_rej_recv),
-		PSMI_STATS_DECL_FUNC("lap_error", rv_conn_lap_error),
-		PSMI_STATS_DECL_FUNC("lap_recv", rv_conn_lap_recv),
-		PSMI_STATS_DECL_FUNC("apr_recv", rv_conn_apr_recv),
-		PSMI_STATS_DECL_FUNC("unexp_event", rv_conn_unexp_event),
-		PSMI_STATS_DECL_FUNC("req_sent", rv_conn_req_sent),
-		PSMI_STATS_DECL_FUNC("rep_sent", rv_conn_rep_sent),
-		PSMI_STATS_DECL_FUNC("rtu_sent", rv_conn_rtu_sent),
-		PSMI_STATS_DECL_FUNC("rej_sent", rv_conn_rej_sent),
-		PSMI_STATS_DECL_FUNC("dreq_sent", rv_conn_dreq_sent),
-		PSMI_STATS_DECL_FUNC("drep_sent", rv_conn_drep_sent),
-		PSMI_STATS_DECLU64("wait_time", (uint64_t*)&ep_rv_conn_stats->wait_time),
-		PSMI_STATS_DECLU64("resolve_time", (uint64_t*)&ep_rv_conn_stats->resolve_time),
-		PSMI_STATS_DECLU64("connect_time", (uint64_t*)&ep_rv_conn_stats->connect_time),
-		PSMI_STATS_DECLU64("connected_time", (uint64_t*)&ep_rv_conn_stats->connected_time),
-		PSMI_STATS_DECL_FUNC("resolve", rv_conn_resolve),
-		PSMI_STATS_DECL_FUNC("resolve_fail", rv_conn_resolve_fail),
-		PSMI_STATS_DECL_FUNC("conn_recovery", rv_conn_conn_recovery),
-		PSMI_STATS_DECLU64("rewait_time", (uint64_t*)&ep_rv_conn_stats->rewait_time),
-		PSMI_STATS_DECLU64("reresolve_time", (uint64_t*)&ep_rv_conn_stats->reresolve_time),
-		PSMI_STATS_DECLU64("reconnect_time", (uint64_t*)&ep_rv_conn_stats->reconnect_time),
-		PSMI_STATS_DECLU64("max_rewait_time", (uint64_t*)&ep_rv_conn_stats->max_rewait_time),
-		PSMI_STATS_DECLU64("max_reresolve_time", (uint64_t*)&ep_rv_conn_stats->max_reresolve_time),
-		PSMI_STATS_DECLU64("max_reconnect_time", (uint64_t*)&ep_rv_conn_stats->max_reconnect_time),
-		PSMI_STATS_DECL_FUNC("reresolve", rv_conn_reresolve),
-		PSMI_STATS_DECL_FUNC("reresolve_fail", rv_conn_reresolve_fail),
-		PSMI_STATS_DECLU64("post_write", (uint64_t*)&ep_rv_conn_stats->post_write),
-		PSMI_STATS_DECLU64("post_write_fail", (uint64_t*)&ep_rv_conn_stats->post_write_fail),
-		PSMI_STATS_DECLU64("post_write_bytes", (uint64_t*)&ep_rv_conn_stats->post_write_bytes),
-		PSMI_STATS_DECL_FUNC("send_write_out", rv_conn_outstand_send_write),
-		PSMI_STATS_DECLU64("send_write_cqe", (uint64_t*)&ep_rv_conn_stats->send_write_cqe),
-		PSMI_STATS_DECLU64("send_write_cqe_fail", (uint64_t*)&ep_rv_conn_stats->send_write_cqe_fail),
-
-		PSMI_STATS_DECLU64("recv_write_cqe", (uint64_t*)&ep_rv_conn_stats->recv_write_cqe),
-		PSMI_STATS_DECLU64("recv_write_bytes", (uint64_t*)&ep_rv_conn_stats->recv_write_bytes),
-		PSMI_STATS_DECLU64("recv_cqe_fail", (uint64_t*)&ep_rv_conn_stats->recv_cqe_fail),
-
-		PSMI_STATS_DECLU64("post_hb", (uint64_t*)&ep_rv_conn_stats->post_hb),
-		PSMI_STATS_DECLU64("post_hb_fail", (uint64_t*)&ep_rv_conn_stats->post_hb_fail),
-		PSMI_STATS_DECLU64("send_hb_cqe", (uint64_t*)&ep_rv_conn_stats->send_hb_cqe),
-		PSMI_STATS_DECLU64("send_hb_cqe_fail", (uint64_t*)&ep_rv_conn_stats->send_hb_cqe_fail),
-		PSMI_STATS_DECLU64("recv_hb_cqe", (uint64_t*)&ep_rv_conn_stats->recv_hb_cqe),
+		PSMI_STATS_DECL_FUNC("num_conn",
+				"RV Total QPs shared with this process",
+				rv_conn_num_conn),
+		// ------------------------------------------------------------
+		PSMI_STATS_DECL_HELP("RV CM Total Event Counts:\n"
+			"The CM connection protocol uses a Request (REQ), "
+			"Reply (REP) and Ready-to-Use (RTU).  If data arrives "
+			"prior to the RTU, ib_cm_notify can report connection "
+			"established.\n"
+			"Connection attempts may be Rejected (REJ).\n"
+			"The CM disconnect protocol uses a Request (DREQ) "
+			"and Reply (DREP).\n"
+			"After a disconnect, a timewait occurs before the QP "
+			"can be reused, however RV avoids this delay by using a fresh QP.\n"
+			"A Message Request Ack (MRA) may be used to ack any "
+			"message if the recipient anticipates a slow response.\n"
+			"A connection can change it's path via Load "
+			"Alternate Path (LAP) and Alternate Path Response (APR)."),
+		PSMI_STATS_DECL_FUNC("req_error",
+				"Connection REQ errors",
+				rv_conn_req_error),
+		PSMI_STATS_DECL_FUNC("req_recv",
+				"Connection REQ received",
+				rv_conn_req_recv),
+		PSMI_STATS_DECL_FUNC("rep_error",
+				"Connection REP errors",
+				rv_conn_rep_error),
+		PSMI_STATS_DECL_FUNC("rep_recv",
+				"Connection REP received",
+				rv_conn_rep_recv),
+		PSMI_STATS_DECL_FUNC("rtu_recv",
+				"Connection RTU received",
+				rv_conn_rtu_recv),
+		PSMI_STATS_DECL_FUNC("established",
+				"Connection established reported via ib_cm_notify",
+				rv_conn_established),
+		PSMI_STATS_DECL_FUNC("dreq_error",
+				"Disconnect DREQ errors",
+				rv_conn_dreq_error),
+		PSMI_STATS_DECL_FUNC("dreq_recv",
+				"Disconnect DREQ received",
+				rv_conn_dreq_recv),
+		PSMI_STATS_DECL_FUNC("drep_recv",
+				"Disconnect DREP received",
+				rv_conn_drep_recv),
+		PSMI_STATS_DECL_FUNC("timewait",
+				"Timewait exit events",
+				rv_conn_timewait),
+		PSMI_STATS_DECL_FUNC("mra_recv",
+				"MRA received (Message Receipt Ack)",
+				rv_conn_mra_recv),
+		PSMI_STATS_DECL_FUNC("rej_recv",
+				"Connection REJ received",
+				rv_conn_rej_recv),
+		PSMI_STATS_DECL_FUNC("lap_error",
+				"LAP errors (Load Alternate Path)",
+				rv_conn_lap_error),
+		PSMI_STATS_DECL_FUNC("lap_recv",
+				"LAP received (Load Alternate Path)",
+				rv_conn_lap_recv),
+		PSMI_STATS_DECL_FUNC("apr_recv",
+				"APR received (Alternate Path Response)",
+				rv_conn_apr_recv),
+		PSMI_STATS_DECL_FUNC("unexp_event",
+				"Unexpected events from CM",
+				rv_conn_unexp_event),
+		// ------------------------------------------------------------
+		PSMI_STATS_DECL_HELP("RV Total outbound CM Message Counts:"),
+		PSMI_STATS_DECL_FUNC("req_sent",
+				"Connection REQ sent",
+				rv_conn_req_sent),
+		PSMI_STATS_DECL_FUNC("rep_sent",
+				"Connection REP sent",
+				rv_conn_rep_sent),
+		PSMI_STATS_DECL_FUNC("rtu_sent",
+				"Connection RTU sent",
+				rv_conn_rtu_sent),
+		PSMI_STATS_DECL_FUNC("rej_sent",
+				"Connection REJ sent",
+				rv_conn_rej_sent),
+		PSMI_STATS_DECL_FUNC("dreq_sent",
+				"Disconnect DREQ sent",
+				rv_conn_dreq_sent),
+		PSMI_STATS_DECL_FUNC("drep_sent",
+				"Disconnect DREP sent",
+				rv_conn_drep_sent),
+		// ------------------------------------------------------------
+		PSMI_STATS_DECL_HELP("RV CM Initial Connection Performance:\n"
+			"The listener (server side) of a connection must wait "
+			"for inbound connections from clients.\n"
+			"A client begins by resolving the address of the "
+			"server and then performing the connection protocol "
+			"starting with the REQ.\n"
+			"Once established, the connection remains connected "
+			"until job end or a connection loss due to comms "
+			"or QP errors.\n"),
+		PSMI_STATS_DECLU64("wait_time",
+				"Maximum microseconds listening for initial connection",
+				(uint64_t*)&ep_rv_conn_stats->wait_time),
+		PSMI_STATS_DECLU64("resolve_time",
+				"Maximum microseconds for initial connection address resolution",
+				(uint64_t*)&ep_rv_conn_stats->resolve_time),
+		PSMI_STATS_DECLU64("connect_time",
+				"Maximum microseconds for initial connection establishment",
+				(uint64_t*)&ep_rv_conn_stats->connect_time),
+		PSMI_STATS_DECLU64("connected_time",
+				"Maximum total microseconds connection was established",
+				(uint64_t*)&ep_rv_conn_stats->connected_time),
+		PSMI_STATS_DECL_FUNC("resolve",
+				"Total address resolution attempts",
+				rv_conn_resolve),
+		PSMI_STATS_DECL_FUNC("resolve_fail",
+				"Total address resolution failures",
+				rv_conn_resolve_fail),
+		// ------------------------------------------------------------
+		PSMI_STATS_DECL_HELP("RV CM Connection Recovery Performance:\n"
+			"When a connection is lost before job end, RV attempts "
+			"to reestablish it by doing a time wait followed by "
+			"repeatng the address resolution and connection "
+			"protocol."),
+		PSMI_STATS_DECL_FUNC("conn_recovery",
+				"Total successful connection recovery",
+				rv_conn_conn_recovery),
+		PSMI_STATS_DECLU64("rewait_time",
+				"Maximum total microseconds listening for reconnection",
+				(uint64_t*)&ep_rv_conn_stats->rewait_time),
+		PSMI_STATS_DECLU64("reresolve_time",
+				"Maximum total microseconds for reconnection addr resolution",
+				(uint64_t*)&ep_rv_conn_stats->reresolve_time),
+		PSMI_STATS_DECLU64("reconnect_time",
+				"Maximum total microseconds for reconnection establishment",
+				(uint64_t*)&ep_rv_conn_stats->reconnect_time),
+		PSMI_STATS_DECLU64("max_rewait_time",
+				"Maximum microseconds listening for reconnection",
+				(uint64_t*)&ep_rv_conn_stats->max_rewait_time),
+		PSMI_STATS_DECLU64("max_reresolve_time",
+				"Maximum microseconds for reconnection addr resolution",
+				(uint64_t*)&ep_rv_conn_stats->max_reresolve_time),
+		PSMI_STATS_DECLU64("max_reconnect_time",
+				"Maximum microseconds for reconnection establishment",
+				(uint64_t*)&ep_rv_conn_stats->max_reconnect_time),
+		PSMI_STATS_DECL_FUNC("reresolve",
+				"Total address re-resolution attempts",
+				rv_conn_reresolve),
+		PSMI_STATS_DECL_FUNC("reresolve_fail",
+				"Total address re-resolution failures",
+				rv_conn_reresolve_fail),
+		// ------------------------------------------------------------
+		PSMI_STATS_DECL_HELP("RV outbound RDMA Statistics:\n"
+			"PSM3 transfers rendezvous messages by issuing "
+			"RDMA writes via RV for window size chunks of the message."),
+		PSMI_STATS_DECLU64("post_write",
+				"Total RDMA writes successfully posted",
+				(uint64_t*)&ep_rv_conn_stats->post_write),
+		PSMI_STATS_DECLU64("post_write_fail",
+				"Total RDMA writes failed at time of posting",
+				(uint64_t*)&ep_rv_conn_stats->post_write_fail),
+		PSMI_STATS_DECLU64("post_write_bytes",
+				"Total RDMA write bytes successfully posted",
+				(uint64_t*)&ep_rv_conn_stats->post_write_bytes),
+		PSMI_STATS_DECL_FUNC("send_write_out",
+				"Current RDMA Writes Outstanding",
+				rv_conn_outstand_send_write),
+		PSMI_STATS_DECLU64("send_write_cqe",
+				"Total RDMA write successful completions",
+				(uint64_t*)&ep_rv_conn_stats->send_write_cqe),
+		PSMI_STATS_DECLU64("send_write_cqe_fail",
+				"Total RDMA write failed completions",
+				(uint64_t*)&ep_rv_conn_stats->send_write_cqe_fail),
+		// ------------------------------------------------------------
+		PSMI_STATS_DECL_HELP("RV inbound RDMA Statistics:"),
+		PSMI_STATS_DECLU64("recv_write_cqe",
+				"Total inbound RDMA write successful completions",
+				(uint64_t*)&ep_rv_conn_stats->recv_write_cqe),
+		PSMI_STATS_DECLU64("recv_write_bytes",
+				"Total inbound RDMA write bytes successfully received",
+				(uint64_t*)&ep_rv_conn_stats->recv_write_bytes),
+		PSMI_STATS_DECLU64("recv_cqe_fail",
+				"Total inbound RDMA write failed completions",
+				(uint64_t*)&ep_rv_conn_stats->recv_cqe_fail),
+		// ------------------------------------------------------------
+		PSMI_STATS_DECL_HELP("RV outbound Heartbeat Statistics:\n"
+			"In order to detect network disruptions or abnormal "
+			"termination of remote processes in a job, a "
+			"periodic heartbeat is used."),
+		PSMI_STATS_DECLU64("post_hb",
+				"Total heartbeat sends successfully posted",
+				(uint64_t*)&ep_rv_conn_stats->post_hb),
+		PSMI_STATS_DECLU64("post_hb_fail",
+				"Total heartbeat sends failed at time of posting",
+				(uint64_t*)&ep_rv_conn_stats->post_hb_fail),
+		PSMI_STATS_DECLU64("send_hb_cqe",
+				"Total heartbeat send successful completions",
+				(uint64_t*)&ep_rv_conn_stats->send_hb_cqe),
+		PSMI_STATS_DECLU64("send_hb_cqe_fail",
+				"Total heartbeat send failed completions",
+				(uint64_t*)&ep_rv_conn_stats->send_hb_cqe_fail),
+		// ------------------------------------------------------------
+		PSMI_STATS_DECL_HELP("RV inbound Heartbeat Statistics:"),
+		PSMI_STATS_DECLU64("recv_hb_cqe",
+				"Total heartbeat recv successful completions",
+				(uint64_t*)&ep_rv_conn_stats->recv_hb_cqe),
 	};
 
 	psm3_stats_register_type("RV_Shared_Conn_RDMA_Statistics",
+	    "Kernel RV Stats for all connections/QPs shared with an endpoint in the process",
 					PSMI_STATSTYPE_RV_RDMA,
 					entries,
 					PSMI_HOWMANY(entries),
-					psm3_epid_fmt(ep->epid, 0), ep, ep->dev_name);
+					psm3_epid_fmt_internal(ep->epid, 0), ep, ep->dev_name);
 }
 
 static void deregister_rv_conn_stats(psm2_ep_t ep)
 {
-	psmi_stats_deregister_type(PSMI_STATSTYPE_RV_RDMA, ep);
+	psm3_stats_deregister_type(PSMI_STATSTYPE_RV_RDMA, ep);
 }
 
 // accessor functions for event statistics
@@ -1740,25 +1908,42 @@ static void register_rv_event_stats(psm2_ep_t ep)
 	struct psm3_rv_event_stats *ep_rv_event_stats = &ep->verbs_ep.rv_event_stats;
 
 	struct psmi_stats_entry entries[] = {
-		PSMI_STATS_DECL_FUNC("send_write_cqe", rv_send_write_cqe),
-		PSMI_STATS_DECLU64("send_write_cqe_fail", (uint64_t*)&ep_rv_event_stats->send_write_cqe_fail),
-		PSMI_STATS_DECLU64("send_write_bytes", (uint64_t*)&ep_rv_event_stats->send_write_bytes),
-
-		PSMI_STATS_DECLU64("recv_write_cqe", (uint64_t*)&ep_rv_event_stats->recv_write_cqe),
-		PSMI_STATS_DECLU64("recv_write_cqe_fail", (uint64_t*)&ep_rv_event_stats->recv_write_cqe_fail),
-		PSMI_STATS_DECLU64("recv_write_bytes", (uint64_t*)&ep_rv_event_stats->recv_write_bytes),
+		PSMI_STATS_DECL_HELP("RV outbound RDMA Events:"),
+		PSMI_STATS_DECL_FUNC("send_write_cqe",
+				"Total successful RDMA Write completions",
+				rv_send_write_cqe),
+		PSMI_STATS_DECLU64("send_write_cqe_fail",
+				"Total failed RDMA Write completions",
+				(uint64_t*)&ep_rv_event_stats->send_write_cqe_fail),
+		PSMI_STATS_DECLU64("send_write_bytes",
+				"Total RDMA Write bytes successfully sent",
+				(uint64_t*)&ep_rv_event_stats->send_write_bytes),
+		// ------------------------------------------------------------
+		PSMI_STATS_DECL_HELP("RV inbound RDMA Events:"),
+		PSMI_STATS_DECLU64("recv_write_cqe",
+				"Total successful inbound RDMA Write completions",
+				(uint64_t*)&ep_rv_event_stats->recv_write_cqe),
+		PSMI_STATS_DECLU64("recv_write_cqe_fail",
+				"Total failed inbound RDMA Write completions",
+				(uint64_t*)&ep_rv_event_stats->recv_write_cqe_fail),
+		PSMI_STATS_DECLU64("recv_write_bytes",
+				"Total inbound RDMA Write bytes successfully received",
+				(uint64_t*)&ep_rv_event_stats->recv_write_bytes),
 	};
 
 	psm3_stats_register_type("RV_User_Event_Statistics",
+		"Kernel RV Events delivered to user space for an end point in the process.\n"
+		"The RV kernel module reports events to PSM3 for outbound and "
+		"inbound RDMA completions.",
 					PSMI_STATSTYPE_RV_EVENT,
 					entries,
 					PSMI_HOWMANY(entries),
-					psm3_epid_fmt(ep->epid, 0), ep, ep->dev_name);
+					psm3_epid_fmt_internal(ep->epid, 0), ep, ep->dev_name);
 }
 
 static void deregister_rv_event_stats(psm2_ep_t ep)
 {
-	psmi_stats_deregister_type(PSMI_STATSTYPE_RV_EVENT, ep);
+	psm3_stats_deregister_type(PSMI_STATSTYPE_RV_EVENT, ep);
 }
 
 static psm2_error_t open_rv(psm2_ep_t ep, psm2_uuid_t const job_key)
@@ -1768,14 +1953,14 @@ static psm2_error_t open_rv(psm2_ep_t ep, psm2_uuid_t const job_key)
 	// we always fill in everything we might need in loc_info
 	// in some modes, some of the fields are not used by RV
 	loc_info.mr_cache_size = ep->rv_mr_cache_size;
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 	/* gpu_cache_size ignored unless RV_RDMA_MODE_GPU */
 	loc_info.gpu_cache_size = ep->rv_gpu_cache_size;
 #endif
 	loc_info.rdma_mode = IPS_PROTOEXP_FLAG_KERNEL_QP(ep->rdmamode)?
 					RV_RDMA_MODE_KERNEL: RV_RDMA_MODE_USER;
-#ifdef PSM_CUDA
-	if (PSMI_IS_CUDA_ENABLED) {
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+	if (PSMI_IS_GPU_ENABLED) {
 		// when Cuda is enabled we will have larger window_sz and
 		// need to upsize the caches we will use for priority MRs
 		if (ep->rdmamode & IPS_PROTOEXP_FLAG_ENABLED) {
@@ -1835,8 +2020,8 @@ static psm2_error_t open_rv(psm2_ep_t ep, psm2_uuid_t const job_key)
 	}
 	// parallel hal_gen1/gen1_hal_inline_i.h handling HFI1_CAP_GPUDIRECT_OT
 #ifndef RV_CAP_GPU_DIRECT
-#ifdef PSM_CUDA
-#error "Inconsistent build.  RV_CAP_GPU_DIRECT must be defined for CUDA builds. Must use CUDA enabled rv headers"
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+#error "Inconsistent build.  RV_CAP_GPU_DIRECT must be defined for GPU builds. Must use GPU enabled rv headers"
 #else
 // lifted from rv_user_ioctls.h
 #define RV_CAP_GPU_DIRECT (1UL << 63)
@@ -1849,9 +2034,15 @@ static psm2_error_t open_rv(psm2_ep_t ep, psm2_uuid_t const job_key)
 		psmi_hal_add_cap(PSM_HAL_CAP_GPUDIRECT_SDMA);
 		psmi_hal_add_cap(PSM_HAL_CAP_GPUDIRECT_RDMA);
 	}
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+	if (loc_info.capability & RV_CAP_NVIDIA_GPU)
+		psmi_hal_add_cap(PSM_HAL_CAP_NVIDIA_GPU);
+	if (loc_info.capability & RV_CAP_INTEL_GPU)
+		psmi_hal_add_cap(PSM_HAL_CAP_INTEL_GPU);
+#endif
 	ep->verbs_ep.rv_index = loc_info.rv_index;
 	ep->rv_mr_cache_size = loc_info.mr_cache_size;
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 	ep->rv_gpu_cache_size = loc_info.gpu_cache_size;
 #endif
 	ep->verbs_ep.rv_q_depth = loc_info.q_depth;
@@ -1876,7 +2067,7 @@ psm3_hfp_verbs_context_initstats(psm2_ep_t ep)
 #endif
 }
 
-static psm2_error_t verbs_open_dev(psm2_ep_t ep, int unit, int port, psm2_uuid_t const job_key)
+static psm2_error_t verbs_open_dev(psm2_ep_t ep, int unit, int port, int addr_index, psm2_uuid_t const job_key)
 {
 	// similar to code in ifs-all/Topology, enumerates devices and picks one
 	int i, num_of_devices;
@@ -1963,25 +2154,26 @@ static psm2_error_t verbs_open_dev(psm2_ep_t ep, int unit, int port, psm2_uuid_t
 	}
 	// When IPv4 or IPv6 is requested, must be an Ethernet port (RoCE)
 	// when OPA/IB is requested, must be IB/OPA port
-	if (! psmi_addr_fmt) {
+	if (! psm3_addr_fmt) {
 		// all port types ok
-	} else if (PSMI_ADDR_FMT_IS_ETH(psmi_addr_fmt)
+	} else if (PSMI_ADDR_FMT_IS_ETH(psm3_addr_fmt)
 		&& ep->verbs_ep.port_attr.link_layer != IBV_LINK_LAYER_ETHERNET) {
 		_HFI_ERROR("PSM3_ADDR_FMT=%u specified, but selected port is not Ethernet: port %u of %s\n",
-				psmi_addr_fmt, ep->portnum,
+				psm3_addr_fmt, ep->portnum,
 				ep->dev_name);
 		err = PSM2_INTERNAL_ERR;
 		goto fail;
-	} else if (! PSMI_ADDR_FMT_IS_ETH(psmi_addr_fmt)
+	} else if (! PSMI_ADDR_FMT_IS_ETH(psm3_addr_fmt)
 		&& ep->verbs_ep.port_attr.link_layer == IBV_LINK_LAYER_ETHERNET) {
 		_HFI_ERROR("PSM3_ADDR_FMT=%u specified, but selected port is Ethernet: port %u of %s\n",
-				psmi_addr_fmt, ep->portnum,
+				psm3_addr_fmt, ep->portnum,
 				ep->dev_name);
 		err = PSM2_INTERNAL_ERR;
 		goto fail;
 	}
 
-	if (0 != psmi_hal_get_port_subnet(ep->unit_id, ep->portnum,
+	ep->addr_index = addr_index;
+	if (0 != psmi_hal_get_port_subnet(ep->unit_id, ep->portnum, ep->addr_index,
 			&ep->subnet, &ep->addr,
 			&ep->verbs_ep.lgid_index, &ep->gid)) {
 		_HFI_ERROR( "Unable to get subnet for port %u of %s: %s\n",
@@ -1993,13 +2185,11 @@ static psm2_error_t verbs_open_dev(psm2_ep_t ep, int unit, int port, psm2_uuid_t
 		ep->verbs_ep.lgid.global.interface_id = __cpu_to_be64(ep->gid.lo);
 		_HFI_PRDBG("Subnet for port %u of %s: %s addr %s gid %s\n",
 				ep->portnum, ep->dev_name,
-				psmi_subnet128_fmt(ep->subnet, 0),
-				psmi_naddr128_fmt(ep->addr, 1),
-				psmi_gid128_fmt(ep->gid, 2));
+				psm3_subnet128_fmt(ep->subnet, 0),
+				psm3_naddr128_fmt(ep->addr, 1),
+				psm3_gid128_fmt(ep->gid, 2));
 	}
 
-#if defined(USE_RC)
-#endif // USE_RC
 #ifdef UMR_CACHE
 	if (ep->mr_cache_mode == MR_CACHE_MODE_USER) {
 		ep->verbs_ep.umrc.ep = ep;
@@ -2438,10 +2628,10 @@ unsigned psm3_verbs_parse_rdmamode(int reload)
 	// IPS_PROTOEXP_FLAGS_INTERLEAVE are N/A when RDMA not enabled
 
 	default_value = 0;
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 #ifdef RNDV_MOD
 	// GPUDIRECT causes default_value of RDMA=1
-	if (PSMI_IS_CUDA_ENABLED && psmi_parse_gpudirect())
+	if (PSMI_IS_GPU_ENABLED && psmi_parse_gpudirect())
 		default_value = IPS_PROTOEXP_FLAG_RDMA_KERNEL;
 #endif
 #endif
@@ -2503,21 +2693,21 @@ unsigned psm3_verbs_parse_mr_cache_mode(unsigned rdmamode, int reload)
 	// PSM_HAL_CAP_GPUDIRECT_* flags not known until after HAL device open,
 	// so we test SDMA and RDMA here as prereqs for GPUDIRECT_SDMA and RDMA.
 	if (! (rdmamode & IPS_PROTOEXP_FLAG_ENABLED)
-#ifdef PSM_CUDA
-		&& (PSMI_IS_CUDA_DISABLED || ! psmi_parse_gpudirect()
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+		&& (PSMI_IS_GPU_DISABLED || ! psmi_parse_gpudirect()
 			//verbs always has these HAL capabilities set
 			//|| (!psmi_hal_has_cap(PSM_HAL_CAP_SDMA)
 			//	&& !psmi_hal_has_cap(PSM_HAL_CAP_RDMA)))
 			)
 #endif
-		&& ! psmi_parse_senddma()) {
+		&& ! psm3_parse_senddma()) {
 		envval.e_uint = MR_CACHE_MODE_NONE;
 	} else if (IPS_PROTOEXP_FLAG_KERNEL_QP(rdmamode)) {
 		// RDMA enabled in kernel mode.  Must use rv MR cache
 		envval.e_uint = MR_CACHE_MODE_RV;
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 #ifdef PSM_HAVE_RNDV_MOD
-	} else if (PSMI_IS_CUDA_ENABLED && psmi_parse_gpudirect()) {
+	} else if (PSMI_IS_GPU_ENABLED && psmi_parse_gpudirect()) {
 		// GPU Direct (RDMA, send DMA and/or gdrcopy) must
 		// use kernel MR cache in RV
 		envval.e_uint = MR_CACHE_MODE_KERNEL;
@@ -2599,7 +2789,7 @@ psm3_dump_verbs_ep(psm2_ep_t ep, unsigned igid)
 	printf("qp_num     = %u\n", vep->qp->qp_num);
 	printf("GID        = ");
 	if (0 == ibv_query_gid(vep->context, ep->portnum, igid, &gid))
-		printf("%s\n", psmi_ibv_gid_fmt(gid, 0));
+		printf("%s\n", psm3_ibv_gid_fmt(gid, 0));
 	else
 		printf("unavailable.\n");
 }
@@ -2654,7 +2844,7 @@ psm3_dump_verbs_qp(struct ibv_qp *qp)
 			attr.ah_attr.is_global);
 		if (attr.ah_attr.is_global) {
 			printf("           dgid: %s\n",
-				psmi_ibv_gid_fmt(attr.ah_attr.grh.dgid, 0));
+				psm3_ibv_gid_fmt(attr.ah_attr.grh.dgid, 0));
 			printf("           flow %u sgid_idx %u hop %u tc %u\n",
 				attr.ah_attr.grh.flow_label, attr.ah_attr.grh.sgid_index,
 				attr.ah_attr.grh.hop_limit, attr.ah_attr.grh.traffic_class);
@@ -2666,7 +2856,7 @@ psm3_dump_verbs_qp(struct ibv_qp *qp)
 			attr.alt_ah_attr.is_global);
 		if (attr.alt_ah_attr.is_global) {
 			printf("              dgid: %s\n",
-				psmi_ibv_gid_fmt(attr.alt_ah_attr.grh.dgid, 0));
+				psm3_ibv_gid_fmt(attr.alt_ah_attr.grh.dgid, 0));
 			printf("              flow %u sgid_idx %u hop %u tc %u\n",
 				attr.alt_ah_attr.grh.flow_label, attr.alt_ah_attr.grh.sgid_index,
 				attr.alt_ah_attr.grh.hop_limit, attr.alt_ah_attr.grh.traffic_class);

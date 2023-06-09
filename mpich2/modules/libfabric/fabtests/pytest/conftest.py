@@ -1,4 +1,12 @@
+import builtins
+import os
+import re
+import shlex
+
+import yaml
+
 import pytest
+
 
 def get_option_longform(option_name, option_params):
     '''
@@ -7,8 +15,6 @@ def get_option_longform(option_name, option_params):
     return option_params.get("longform", "--" + option_name.replace("_", "-"))
 
 def pytest_addoption(parser):
-    import yaml, builtins
-
     parser.addoption("--provider", dest="provider", help="libfabric provider")
     parser.addoption("--client-id", dest="client_id", help="client IP address or hostname")
     parser.addoption("--server-id", dest="server_id", help="server IP address or hostname")
@@ -32,13 +38,11 @@ def pytest_addoption(parser):
                              help=option_helpmsg, default=option_default)
 
 # base ssh command
-bssh = "ssh -n -o StrictHostKeyChecking=no -o ConnectTimeout=2 -o BatchMode=yes"
+bssh = "ssh -n -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o BatchMode=yes"
 
 class CmdlineArgs:
 
     def __init__(self, request):
-        import yaml
-
         self.provider = request.config.getoption("--provider")
         if self.provider is None:
             raise RuntimeError("Error: libfabric provider is not specified")
@@ -70,10 +74,18 @@ class CmdlineArgs:
         if self.server_interface is None:
             self.server_interface = self.server_id
 
+    def append_environ(self, environ):
+        if self.environments:
+            self.environments += " " + environ
+        else:
+            self.environments = environ[:]
+
     def populate_command(self, base_command, host_type, timeout=None):
         '''
             populate base command with informations in command line: provider, environments, etc
         '''
+        assert host_type in ("host", "server", "client")
+
         command = base_command
         # use binpath if specified
         if not (self.binpath is None):
@@ -81,8 +93,6 @@ class CmdlineArgs:
 
         if timeout is None:
             timeout = self.timeout
-
-        command = "timeout " + str(timeout) + " " + command
 
         # set environment variables if specified
         if not (self.environments is None):
@@ -95,11 +105,10 @@ class CmdlineArgs:
         else:
             command = self._populate_normal_command(command, host_type)
 
-        if host_type == "host" or host_type == "server":
-            command = bssh + " " + self.server_id + " " + command
-        else:
-            assert host_type == "client"
-            command = bssh + " " + self.client_id + " " + command
+        host_id = self.client_id if host_type == "client" else self.server_id
+
+        command = f"timeout {timeout} /bin/bash --login -c {shlex.quote(command)}"
+        command = f"{bssh} {host_id} {shlex.quote(command)}"
 
         return command
 
@@ -114,13 +123,11 @@ class CmdlineArgs:
         return False
 
     def _add_exclusion_patterns_from_list(self, exclusion_list):
-        import re
         pattern_strs = exclusion_list.split(",")
         for pattern_str in pattern_strs:
             self._exclusion_patterns.append(re.compile(pattern_str))
 
     def _add_exclusion_patterns_from_file(self, exclusion_file):
-        import re
         
         ifs = open(exclusion_file)
         line = ifs.readline()
@@ -138,9 +145,15 @@ class CmdlineArgs:
         if host_type == "host":
             return command
 
+        if self.oob_address_exchange:
+            oob_argument = "-E"
+            if "PYTEST_XDIST_WORKER" in os.environ:
+                oob_port = 9228 + int(os.environ["PYTEST_XDIST_WORKER"].replace("gw", ""))
+                oob_argument += "={}".format(oob_port)
+
         if host_type == "server":
             if self.oob_address_exchange:
-                command += " -E"
+                command += " " + oob_argument
             else:
                 command += " -s " + self.server_interface
 
@@ -151,7 +164,7 @@ class CmdlineArgs:
 
         assert host_type == "client"
         if self.oob_address_exchange:
-            command += " -E " + self.server_id
+            command += " " + oob_argument + " " + self.server_id
         else:
             command += " -s " + self.client_interface + " " + self.server_interface
 
@@ -188,7 +201,6 @@ def cmdline_args(request):
 
 @pytest.fixture
 def good_address(cmdline_args):
-    import os
 
     if cmdline_args.good_address:
         return cmdline_args.good_address

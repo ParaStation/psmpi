@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2016 by Argonne National Laboratory.
- * Copyright (C) 2021 Cornelis Networks.
+ * Copyright (C) 2021-2023 Cornelis Networks.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -89,184 +89,25 @@ static inline int fi_opx_check_atomic(struct fi_opx_ep *opx_ep, enum fi_datatype
 	return 0;
 }
 
-__OPX_FORCE_INLINE__
-void fi_opx_atomic_fetch_internal(struct fi_opx_ep *opx_ep,
-				  const void *buf,
-				  const size_t len, const union fi_opx_addr opx_dst_addr,
-				  const uint64_t addr_offset,
-				  const uint64_t key,
-				  const void *fetch_vaddr,
-				  union fi_opx_context *opx_context, const uint64_t tx_op_flags,
-				  const struct fi_opx_cq *opx_cq,
-				  const struct fi_opx_cntr *opx_cntr,
-				  struct fi_opx_completion_counter *cc,
-				  enum fi_datatype dt, enum fi_op op,
-				  const int lock_required, const uint64_t caps,
-				  const enum ofi_reliability_kind reliability)
+void fi_opx_atomic_completion_action(union fi_opx_hfi1_deferred_work * work_state)
 {
-	fi_opx_ep_rx_poll(&opx_ep->ep_fid, 0, OPX_RELIABILITY, FI_OPX_HDRQ_MASK_RUNTIME);
-
-	const unsigned is_intranode = fi_opx_rma_dput_is_intranode(caps, opx_dst_addr, opx_ep);
-	const uint64_t dest_rx = opx_dst_addr.hfi1_rx;
-	const uint64_t lrh_dlid = FI_OPX_ADDR_TO_HFI1_LRH_DLID(opx_dst_addr.fi);
-	const uint64_t bth_rx = dest_rx << 56;
-
-	uint8_t *sbuf = (uint8_t *)buf;
-	uintptr_t rbuf = addr_offset;
-	uint64_t bytes_to_send = len;
-
-	if (tx_op_flags & FI_INJECT) {
-		assert((tx_op_flags & (FI_COMPLETION | FI_TRANSMIT_COMPLETE)) !=
-		       (FI_COMPLETION | FI_TRANSMIT_COMPLETE));
-		assert((tx_op_flags & (FI_COMPLETION | FI_DELIVERY_COMPLETE)) !=
-		       (FI_COMPLETION | FI_DELIVERY_COMPLETE));
-		fprintf(stderr, "FI_INJECT flag unimplemented with rma_write internal\n");
-		abort();
-	}
-	uint64_t max_blocks_per_packet, max_bytes_per_packet;
-	if (is_intranode) {
-		max_blocks_per_packet = FI_OPX_SHM_FIFO_SIZE >> 6;
-		max_bytes_per_packet = FI_OPX_SHM_FIFO_SIZE;
-	} else {
-		max_blocks_per_packet = opx_ep->tx->pio_max_eager_tx_bytes >> 6;
-		max_bytes_per_packet = opx_ep->tx->pio_max_eager_tx_bytes;
-	}
-
-	uint64_t bytes_sent = 0;
-	while (bytes_to_send > 0) {
-		bytes_to_send += (sizeof(struct fi_opx_hfi1_dput_iov));
-		uint64_t totbytes = (bytes_to_send < max_bytes_per_packet) ? bytes_to_send : max_bytes_per_packet;
-		uint64_t blocks_to_send_in_this_packet =
-			bytes_to_send < max_bytes_per_packet ? bytes_to_send >> 6 : max_blocks_per_packet;
-		uint64_t bytes_to_send_in_this_packet = blocks_to_send_in_this_packet << 6;
-		uint64_t bytes_remain = totbytes - bytes_to_send_in_this_packet;
-		// Handle the remainder case
-		if (bytes_remain && blocks_to_send_in_this_packet < 128) {
-			bytes_to_send_in_this_packet = bytes_to_send;
-			blocks_to_send_in_this_packet += 1;
-		}
-		const uint64_t pbc_dws = 2 + /* pbc */
-					 2 + /* lrh */
-					 3 + /* bth */
-					 9 + /* kdeth; from "RcvHdrSize[i].HdrSize" CSR */
-					 (blocks_to_send_in_this_packet << 4);
-
-		const uint16_t lrh_dws = htons(pbc_dws - 1);
-		struct fi_opx_hfi1_dput_iov dput_iov =
-			{
-				(uint64_t)fetch_vaddr + bytes_sent,
-				addr_offset + bytes_sent,
-				bytes_to_send_in_this_packet - sizeof(struct fi_opx_hfi1_dput_iov)
-			};
-		uint64_t op64 = (op == FI_NOOP) ? FI_NOOP-1 : op;
-		uint64_t dt64 = (dt == FI_VOID) ? FI_VOID-1 : dt;
-
-
-		if (is_intranode) { /* compile-time constant expression */
-			uint64_t pos;
-			union fi_opx_hfi1_packet_hdr *tx_hdr =
-				opx_shm_tx_next(&opx_ep->tx->shm, dest_rx, &pos);
-			while(OFI_UNLIKELY(tx_hdr == NULL)) {
-				fi_opx_shm_poll_many(&opx_ep->ep_fid, 0);
-				tx_hdr = opx_shm_tx_next(
-					&opx_ep->tx->shm, dest_rx, &pos);
-			}
-			tx_hdr->qw[0] = opx_ep->rx->tx.dput.hdr.qw[0] | lrh_dlid |
-					((uint64_t)lrh_dws << 32);
-			tx_hdr->qw[1] = opx_ep->rx->tx.dput.hdr.qw[1] | bth_rx;
-			tx_hdr->qw[2] = opx_ep->rx->tx.dput.hdr.qw[2];
-			tx_hdr->qw[3] = opx_ep->rx->tx.dput.hdr.qw[3];
-			tx_hdr->qw[4] = opx_ep->rx->tx.dput.hdr.qw[4] | (FI_OPX_HFI_DPUT_OPCODE_ATOMIC_FETCH) | (dt64 <<32) | (op64 << 40) | (bytes_to_send_in_this_packet << 48);
-			tx_hdr->qw[5] = key;
-			tx_hdr->qw[6] = (uintptr_t)cc;
-
-			union fi_opx_hfi1_packet_payload *const tx_payload =
-				(union fi_opx_hfi1_packet_payload *)(tx_hdr + 1);
-
-			memcpy((void *)tx_payload->byte, (const void *)&dput_iov,
-			       sizeof(dput_iov));
-
-			memcpy((void *)&tx_payload->byte[sizeof(dput_iov)], (const void *)sbuf,
-			       bytes_to_send_in_this_packet-sizeof(dput_iov));
-
-			opx_shm_tx_advance(&opx_ep->tx->shm, (void *)tx_hdr, pos);
-
-		} else {
-			/* compile-time constant expression */
-			struct fi_opx_reliability_tx_replay *replay = NULL;
-			if (reliability != OFI_RELIABILITY_KIND_NONE) {
-				replay = fi_opx_reliability_client_replay_allocate(&opx_ep->reliability->state,
-					true);
-			}
-
-			union fi_opx_reliability_tx_psn *psn_ptr = NULL;
-			const int64_t psn =
-				(reliability != OFI_RELIABILITY_KIND_NONE) ?
-					fi_opx_reliability_tx_next_psn(&opx_ep->ep_fid,
-									&opx_ep->reliability->state,
-									opx_dst_addr.uid.lid,
-									dest_rx,
-									opx_dst_addr.reliability_rx,
-									&psn_ptr) :
-					0;
-			if(OFI_UNLIKELY(psn == -1)) {
-				fi_opx_reliability_client_replay_deallocate(&opx_ep->reliability->state, replay);
-				// Handle eagain
-				abort();
-				//return -FI_EAGAIN;
-			}
-
-			/* BLOCK until enough credits become available */
-			union fi_opx_hfi1_pio_state pio_state = *opx_ep->tx->pio_state;
-			uint16_t total_credits_needed = blocks_to_send_in_this_packet + 1;
-			uint16_t total_credits_available = FI_OPX_HFI1_AVAILABLE_CREDITS(pio_state, &opx_ep->tx->force_credit_return, total_credits_needed);
-			if (OFI_UNLIKELY(total_credits_available < total_credits_needed)) {
-				do {
-					fi_opx_compiler_msync_writes(); // credit return
-					FI_OPX_HFI1_UPDATE_CREDITS(pio_state, opx_ep->tx->pio_credits_addr);
-					total_credits_available = FI_OPX_HFI1_AVAILABLE_CREDITS(pio_state, &opx_ep->tx->force_credit_return, total_credits_needed);
-				} while (total_credits_available < total_credits_needed);
-				opx_ep->tx->pio_state->qw0 = pio_state.qw0;
-			}
-
-			replay->scb.qw0 = opx_ep->rx->tx.dput.qw0 | pbc_dws | ((opx_ep->tx->force_credit_return & FI_OPX_HFI1_PBC_CR_MASK) << FI_OPX_HFI1_PBC_CR_SHIFT);
-			replay->scb.hdr.qw[0] = opx_ep->rx->tx.dput.hdr.qw[0] | lrh_dlid | ((uint64_t)lrh_dws << 32);
-			replay->scb.hdr.qw[1] = opx_ep->rx->tx.dput.hdr.qw[1] | bth_rx;
-			replay->scb.hdr.qw[2] = opx_ep->rx->tx.dput.hdr.qw[2] | psn;
-			replay->scb.hdr.qw[3] = opx_ep->rx->tx.dput.hdr.qw[3];
-			replay->scb.hdr.qw[4] = opx_ep->rx->tx.dput.hdr.qw[4] | (FI_OPX_HFI_DPUT_OPCODE_ATOMIC_FETCH) | (dt64 <<32) | (op64 << 40) | (bytes_to_send_in_this_packet << 48);
-			replay->scb.hdr.qw[5] = key;
-			replay->scb.hdr.qw[6] = (uintptr_t)cc;
-
-			uint8_t *replay_payload = (uint8_t*)replay->payload;
-			memcpy((void *)replay->payload, (const void *)&dput_iov, sizeof(dput_iov));
-			memcpy((void *)(replay_payload + sizeof(dput_iov)),
-				   (const void *)sbuf,
-			       bytes_to_send_in_this_packet-sizeof(dput_iov));
-
-			FI_OPX_HFI1_CLEAR_CREDIT_RETURN(opx_ep);
-			fi_opx_reliability_service_do_replay(&opx_ep->reliability->service, replay);
-			fi_opx_reliability_client_replay_register_no_update(
-				&opx_ep->reliability->state, opx_dst_addr.uid.lid,
-				opx_dst_addr.reliability_rx, dest_rx, psn_ptr, replay,
-				reliability);
-		} /* if !is_intranode */
-		// actual payload bytes
-		bytes_sent += dput_iov.bytes;
-		rbuf += dput_iov.bytes;
-		sbuf += dput_iov.bytes;
-		// payload and metadata bytes in the packet
-		bytes_to_send -= bytes_to_send_in_this_packet;
-	} /* while bytes_to_send */
-
-	return;
+	struct fi_opx_hfi1_dput_params *params = &work_state->dput;
+	uint64_t* rbuf_qws = (uint64_t *)((char*)params->opx_mr->buf + params->dput_iov->sbuf);
+	const uint64_t *sbuf_qws = (uint64_t*)&work_state->work_elem.payload_copy->byte[sizeof(struct fi_opx_hfi1_dput_fetch)];
+	assert(params->op != (FI_NOOP-1));
+	assert(params->dt != (FI_VOID-1));
+	fi_opx_rx_atomic_dispatch(sbuf_qws, rbuf_qws,
+				params->dput_iov->bytes,
+				params->dt,
+				params->op);
 }
 
-
 __OPX_FORCE_INLINE__
-void fi_opx_atomic_cas_internal(struct fi_opx_ep *opx_ep,
+void fi_opx_atomic_op_internal(struct fi_opx_ep *opx_ep,
+				const uint32_t opcode,
 				const void *buf,
-				const size_t len, const union fi_opx_addr opx_dst_addr,
+				const size_t len,
+				const union fi_opx_addr opx_dst_addr,
 				const uint64_t addr_offset,
 				const uint64_t key,
 				const void *fetch_vaddr,
@@ -279,173 +120,90 @@ void fi_opx_atomic_cas_internal(struct fi_opx_ep *opx_ep,
 				const int lock_required, const uint64_t caps,
 				const enum ofi_reliability_kind reliability)
 {
-	fi_opx_ep_rx_poll(&opx_ep->ep_fid, 0, OPX_RELIABILITY, FI_OPX_HDRQ_MASK_RUNTIME);
-
-	const unsigned is_intranode = fi_opx_rma_dput_is_intranode(caps, opx_dst_addr, opx_ep);
-	const uint64_t dest_rx = opx_dst_addr.hfi1_rx;
-	const uint64_t lrh_dlid = FI_OPX_ADDR_TO_HFI1_LRH_DLID(opx_dst_addr.fi);
-	const uint64_t bth_rx = dest_rx << 56;
-
-	uint8_t *sbuf = (uint8_t *)buf;
-	uint8_t *cbuf = (uint8_t *)compare_vaddr;
-	uintptr_t rbuf = addr_offset;
-	uint64_t bytes_to_send = len * 2;
-
 	if (tx_op_flags & FI_INJECT) {
 		assert((tx_op_flags & (FI_COMPLETION | FI_TRANSMIT_COMPLETE)) !=
 		       (FI_COMPLETION | FI_TRANSMIT_COMPLETE));
 		assert((tx_op_flags & (FI_COMPLETION | FI_DELIVERY_COMPLETE)) !=
 		       (FI_COMPLETION | FI_DELIVERY_COMPLETE));
-		fprintf(stderr, "FI_INJECT flag unimplemented with rma_write internal\n");
-		abort();
-	}
-	uint64_t max_blocks_per_packet, max_bytes_per_packet;
-	if (is_intranode) {
-		max_blocks_per_packet = FI_OPX_SHM_FIFO_SIZE >> 6;
-		max_bytes_per_packet = FI_OPX_SHM_FIFO_SIZE;
-	} else {
-		max_blocks_per_packet = opx_ep->tx->pio_max_eager_tx_bytes >> 6;
-		max_bytes_per_packet = opx_ep->tx->pio_max_eager_tx_bytes;
 	}
 
-    uint64_t bytes_sent = 0;
-	while (bytes_to_send > 0) {
-		bytes_to_send += (sizeof(struct fi_opx_hfi1_dput_iov));
-		uint64_t totbytes = (bytes_to_send < max_bytes_per_packet) ? bytes_to_send : max_bytes_per_packet;
-		uint64_t blocks_to_send_in_this_packet =
-			bytes_to_send < max_bytes_per_packet ? bytes_to_send >> 6 : max_blocks_per_packet;
-		uint64_t bytes_to_send_in_this_packet = blocks_to_send_in_this_packet << 6;
-		uint64_t bytes_remain = totbytes - bytes_to_send_in_this_packet;
-        // Handle the remainder case
-		if (bytes_remain && blocks_to_send_in_this_packet < 128) {
-			bytes_to_send_in_this_packet = bytes_to_send;
-			blocks_to_send_in_this_packet += 1;
-		}
-		const uint64_t pbc_dws = 2 + /* pbc */
-					 2 + /* lrh */
-					 3 + /* bth */
-					 9 + /* kdeth; from "RcvHdrSize[i].HdrSize" CSR */
-					 (blocks_to_send_in_this_packet << 4);
+	assert(dt == FI_VOID || dt < FI_DATATYPE_LAST);
+	union fi_opx_hfi1_deferred_work *work = ofi_buf_alloc(opx_ep->tx->work_pending_pool);
+	assert(work);
+	struct fi_opx_hfi1_dput_params *params = &work->dput;
 
-		const uint16_t lrh_dws = htons(pbc_dws - 1);
-		struct fi_opx_hfi1_dput_iov dput_iov =
-			{
-				(uint64_t)fetch_vaddr + bytes_sent,
-				addr_offset + bytes_sent,
-				(bytes_to_send_in_this_packet - sizeof(struct fi_opx_hfi1_dput_iov))
-			};
-		uint64_t op64 = (op == FI_NOOP) ? FI_NOOP-1 : op;
-		uint64_t dt64 = (dt == FI_VOID) ? FI_VOID-1 : dt;
+	params->work_elem.slist_entry.next = NULL;
+	params->work_elem.work_fn = fi_opx_hfi1_do_dput;
+	params->work_elem.completion_action = NULL;
+	params->work_elem.payload_copy = NULL;
+	params->work_elem.complete = false;
+	params->work_elem.low_priority = false;
+	params->opx_ep = opx_ep;
+	params->lrh_dlid = FI_OPX_ADDR_TO_HFI1_LRH_DLID(opx_dst_addr.fi);
+	params->slid = opx_dst_addr.uid.lid;
+	params->origin_rs = opx_dst_addr.reliability_rx;
+	params->dt = dt == FI_VOID ? FI_VOID-1 : dt;
+	params->op = op == FI_NOOP ? FI_NOOP-1 : op;
+	params->u8_rx = opx_dst_addr.hfi1_rx; //dest_rx, also used for bth_rx
+	params->key = key;
+	params->niov = 1;
+	params->iov[0].bytes = len;
+	params->iov[0].rbuf = addr_offset;
+	params->iov[0].sbuf = (uintptr_t) buf;
+	params->dput_iov = &params->iov[0];
+	params->opcode = opcode;
+	params->is_intranode = fi_opx_rma_dput_is_intranode(caps, opx_dst_addr, opx_ep);
+	params->reliability = reliability;
+	params->cur_iov = 0;
+	params->bytes_sent = 0;
+	params->cc = NULL;
+	params->user_cc = NULL;
+	params->opx_mr = NULL;
+	params->origin_byte_counter = NULL;
+	params->payload_bytes_for_iovec = sizeof(struct fi_opx_hfi1_dput_fetch);
+	params->fetch_vaddr = (void *) fetch_vaddr;
+	params->compare_vaddr = (void *) compare_vaddr;
+	params->target_byte_counter_vaddr = (const uintptr_t) cc;
+	params->target_hfi_unit = opx_dst_addr.hfi1_unit;
+	params->u32_extended_rx = fi_opx_ep_get_u32_extended_rx(opx_ep, params->is_intranode, opx_dst_addr.hfi1_rx);
 
-		if (is_intranode) { /* compile-time constant expression */
-			uint64_t pos;
-			union fi_opx_hfi1_packet_hdr *tx_hdr =
-				opx_shm_tx_next(&opx_ep->tx->shm, dest_rx, &pos);
+	fi_opx_ep_rx_poll(&opx_ep->ep_fid, 0, OPX_RELIABILITY, FI_OPX_HDRQ_MASK_RUNTIME);
 
-			while(OFI_UNLIKELY(tx_hdr == NULL)) {
-				fi_opx_shm_poll_many(&opx_ep->ep_fid, 0);
-				tx_hdr = opx_shm_tx_next(
-					&opx_ep->tx->shm, dest_rx, &pos);
-			}
-			tx_hdr->qw[0] = opx_ep->rx->tx.dput.hdr.qw[0] | lrh_dlid |
-					((uint64_t)lrh_dws << 32);
-			tx_hdr->qw[1] = opx_ep->rx->tx.dput.hdr.qw[1] | bth_rx;
-			tx_hdr->qw[2] = opx_ep->rx->tx.dput.hdr.qw[2];
-			tx_hdr->qw[3] = opx_ep->rx->tx.dput.hdr.qw[3];
+	fi_opx_hfi1_dput_sdma_init(opx_ep, params, len, 0, 0, NULL);
 
-			tx_hdr->qw[4] = opx_ep->rx->tx.dput.hdr.qw[4] | (FI_OPX_HFI_DPUT_OPCODE_ATOMIC_COMPARE_FETCH) | (dt64 <<32) | (op64 << 40) | (bytes_to_send_in_this_packet << 48);
-			tx_hdr->qw[5] = key;
-			tx_hdr->qw[6] = (uintptr_t)cc;
+	int rc = params->work_elem.work_fn(work);
+	if(rc == FI_SUCCESS) {
+		assert(params->work_elem.complete);
+		OPX_BUF_FREE(work);
+		return;
+	}
+	assert(rc == -FI_EAGAIN);
+	if (params->work_elem.low_priority) {
+		slist_insert_tail(&work->work_elem.slist_entry, &opx_ep->tx->work_pending_completion);
+		return;
+	}
 
-			union fi_opx_hfi1_packet_payload *const tx_payload =
-				(union fi_opx_hfi1_packet_payload *)(tx_hdr + 1);
-			memcpy((void *)tx_payload->byte, (const void *)&dput_iov,
-			       sizeof(dput_iov));
-
-
-			uint64_t bytes_to_memcpy = (bytes_to_send_in_this_packet-sizeof(dput_iov))/2;
-			memcpy((void *)&tx_payload->byte[sizeof(dput_iov)], (const void *)sbuf, bytes_to_memcpy);
-			memcpy((void *)&tx_payload->byte[sizeof(dput_iov) + bytes_to_memcpy],
-				   (const void *)cbuf,
-				   bytes_to_memcpy);
-
-			opx_shm_tx_advance(&opx_ep->tx->shm, (void *)tx_hdr, pos);
-
+	/* We weren't able to complete the write on the first try. If this was an inject,
+	   the outbound buffer(s) may be re-used as soon as we return to the caller, even when
+	   this operation will be completed asynchronously. So copy the payload/compare bytes into
+	   our own copy of the buffer, and set iov.sbuf/compare addr to point to it. */
+	if (tx_op_flags & FI_INJECT) {
+		assert(len <= FI_OPX_HFI1_PACKET_IMM);
+		if (compare_vaddr) {
+			size_t buf_len = len >> 1;
+			memcpy(params->inject_data, buf, buf_len);
+			memcpy(params->inject_data + buf_len, compare_vaddr, buf_len);
+			params->compare_vaddr = (void *) (&params->inject_data[buf_len]);
 		} else {
-			/* compile-time constant expression */
-			struct fi_opx_reliability_tx_replay *replay = NULL;
-			if (reliability != OFI_RELIABILITY_KIND_NONE) {
-				replay = fi_opx_reliability_client_replay_allocate(&opx_ep->reliability->state,
-					true);
-			}
-			union fi_opx_reliability_tx_psn *psn_ptr = NULL;
-			const int64_t psn =
-				(reliability != OFI_RELIABILITY_KIND_NONE) ?
-					fi_opx_reliability_tx_next_psn(&opx_ep->ep_fid,
-									&opx_ep->reliability->state,
-									opx_dst_addr.uid.lid,
-									dest_rx,
-									opx_dst_addr.reliability_rx,
-									&psn_ptr) :
-					0;
-			if(OFI_UNLIKELY(psn == -1)) {
-				fi_opx_reliability_client_replay_deallocate(&opx_ep->reliability->state, replay);
-				//TODO Handle eagain
-				abort();
-				// return -FI_EAGAIN;
-			}
+			memcpy(params->inject_data, buf, len);
+		}
+		params->iov[0].sbuf = (uintptr_t) params->inject_data;
+	}
 
-			/* BLOCK until enough credits become available */
-			union fi_opx_hfi1_pio_state pio_state = *opx_ep->tx->pio_state;
-			uint16_t total_credits_needed = blocks_to_send_in_this_packet + 1;
-			uint16_t total_credits_available = FI_OPX_HFI1_AVAILABLE_CREDITS(pio_state, &opx_ep->tx->force_credit_return, total_credits_needed);
-			if (OFI_UNLIKELY(total_credits_available < total_credits_needed)) {
-				do {
-					fi_opx_compiler_msync_writes(); // credit return
-					FI_OPX_HFI1_UPDATE_CREDITS(pio_state, opx_ep->tx->pio_credits_addr);
-					total_credits_available = FI_OPX_HFI1_AVAILABLE_CREDITS(pio_state, &opx_ep->tx->force_credit_return, total_credits_needed);
-				} while (total_credits_available < total_credits_needed);
-				opx_ep->tx->pio_state->qw0 = pio_state.qw0;
-			}
-
-			replay->scb.qw0 = opx_ep->rx->tx.dput.qw0 | pbc_dws | ((opx_ep->tx->force_credit_return & FI_OPX_HFI1_PBC_CR_MASK) << FI_OPX_HFI1_PBC_CR_SHIFT);
-			replay->scb.hdr.qw[0] = opx_ep->rx->tx.dput.hdr.qw[0] | lrh_dlid | ((uint64_t)lrh_dws << 32);
-			replay->scb.hdr.qw[1] = opx_ep->rx->tx.dput.hdr.qw[1] | bth_rx;
-			replay->scb.hdr.qw[2] = opx_ep->rx->tx.dput.hdr.qw[2] | psn;
-			replay->scb.hdr.qw[3] = opx_ep->rx->tx.dput.hdr.qw[3],
-			replay->scb.hdr.qw[4] = opx_ep->rx->tx.dput.hdr.qw[4] | (FI_OPX_HFI_DPUT_OPCODE_ATOMIC_COMPARE_FETCH) | (dt64 <<32) | (op64 << 40) | (bytes_to_send_in_this_packet << 48);
-			replay->scb.hdr.qw[5] = key;
-			replay->scb.hdr.qw[6] = (uintptr_t)cc;
-
-			uint8_t *replay_payload = (uint8_t*)replay->payload;
-			uint64_t bytes_to_memcpy = (bytes_to_send_in_this_packet-sizeof(dput_iov))/2;
-			memcpy(replay_payload, (const void *)&dput_iov, sizeof(dput_iov));
-			memcpy(replay_payload + sizeof(dput_iov), (const void *)sbuf, bytes_to_memcpy);
-			memcpy(replay_payload + sizeof(dput_iov) + bytes_to_memcpy,
-				   (const void *)cbuf, bytes_to_memcpy);
-
-			FI_OPX_HFI1_CLEAR_CREDIT_RETURN(opx_ep);
-
-			fi_opx_reliability_service_do_replay(&opx_ep->reliability->service, replay);
-			fi_opx_reliability_client_replay_register_no_update(
-				&opx_ep->reliability->state, opx_dst_addr.uid.lid,
-				opx_dst_addr.reliability_rx, dest_rx, psn_ptr, replay,
-				reliability);
-
-		} /* if !is_intranode */
-		// actual payload bytes
-		bytes_sent += dput_iov.bytes;
-		rbuf += dput_iov.bytes;
-		sbuf += dput_iov.bytes;
-		cbuf += dput_iov.bytes;
-		// payload and metadata bytes in the packet
-		bytes_to_send -= bytes_to_send_in_this_packet;
-	} /* while bytes_to_send */
-	return;
+	/* Try again later*/
+	assert(work->work_elem.slist_entry.next == NULL);
+	slist_insert_tail(&work->work_elem.slist_entry, &opx_ep->tx->work_pending);
 }
-
-
-
 
 __OPX_FORCE_INLINE__
 size_t fi_opx_atomic_internal(struct fi_opx_ep *opx_ep,
@@ -463,10 +221,13 @@ size_t fi_opx_atomic_internal(struct fi_opx_ep *opx_ep,
 	assert((is_fetch == 0) || (is_fetch == 1));
 	assert((is_compare == 0) || (is_compare == 1));
 
+	size_t buf_len = count * sizeofdt(datatype);
 	if(op == FI_ATOMIC_READ) {
+		assert(!is_compare);
+		assert(datatype < FI_DATATYPE_LAST);
 		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
 					 "===================================== ATOMIC READ (begin)\n");
-		struct iovec iov = { (void*)fetch_vaddr, count * sizeofdt(datatype) };
+		struct iovec iov = { (void*)fetch_vaddr, buf_len };
 		cc->cntr = opx_ep->read_cntr;
 		fi_opx_readv_internal(opx_ep, &iov, 1, opx_dst_addr, &addr, &key,
 							  (union fi_opx_context *)context, opx_ep->tx->op_flags,
@@ -483,13 +244,11 @@ size_t fi_opx_atomic_internal(struct fi_opx_ep *opx_ep,
 		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
 					 "===================================== ATOMIC FETCH (begin)\n");
 		cc->cntr = opx_ep->read_cntr;
-		fi_opx_atomic_fetch_internal(opx_ep, buf,  count * sizeofdt(datatype), opx_dst_addr,
-									 addr, key,
-									 fetch_vaddr,
-									 (union fi_opx_context *)context, opx_ep->tx->op_flags,
-									 opx_ep->rx->cq, opx_ep->read_cntr, cc,
-									 datatype, op,
-									 lock_required, caps, reliability);
+		fi_opx_atomic_op_internal(opx_ep, FI_OPX_HFI_DPUT_OPCODE_ATOMIC_FETCH, buf,
+					buf_len, opx_dst_addr, addr, key,
+					fetch_vaddr, NULL, (union fi_opx_context *)context,
+					opx_ep->tx->op_flags, opx_ep->rx->cq, opx_ep->read_cntr,
+					cc, datatype, op, lock_required, caps, reliability);
 		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
 					 "===================================== ATOMIC FETCH (end)\n");
 
@@ -497,14 +256,11 @@ size_t fi_opx_atomic_internal(struct fi_opx_ep *opx_ep,
 		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
 					 "===================================== ATOMIC CAS (begin)\n");
 		cc->cntr = opx_ep->read_cntr;
-		fi_opx_atomic_cas_internal(opx_ep, buf,  count * sizeofdt(datatype), opx_dst_addr,
-								   addr, key,
-								   fetch_vaddr,
-								   compare_vaddr,
-								   (union fi_opx_context *)context, opx_ep->tx->op_flags,
-								   opx_ep->rx->cq, opx_ep->read_cntr, cc,
-								   datatype, op,
-								   lock_required, caps, reliability);
+		fi_opx_atomic_op_internal(opx_ep, FI_OPX_HFI_DPUT_OPCODE_ATOMIC_COMPARE_FETCH, buf,
+					buf_len << 1, opx_dst_addr, addr, key,
+					fetch_vaddr, compare_vaddr, (union fi_opx_context *)context,
+					opx_ep->tx->op_flags, opx_ep->rx->cq, opx_ep->read_cntr,
+					cc, datatype, op, lock_required, caps, reliability);
 		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
 					 "===================================== ATOMIC CAS (end)\n");
 
@@ -515,9 +271,9 @@ size_t fi_opx_atomic_internal(struct fi_opx_ep *opx_ep,
 		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
 					 "===================================== ATOMIC WRITE (begin)\n");
 		cc->cntr = opx_ep->write_cntr;
-		fi_opx_write_internal(opx_ep, buf, count*sizeofdt(datatype), opx_dst_addr, addr, key,
-							  (union fi_opx_context *)NULL, cc, datatype, op, opx_ep->tx->op_flags,
-							  lock_required, caps, reliability);
+		fi_opx_write_internal(opx_ep, buf, buf_len, opx_dst_addr, addr, key,
+					(union fi_opx_context *)NULL, cc, datatype, op, opx_ep->tx->op_flags,
+					lock_required, caps, reliability);
 		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
 					 "===================================== ATOMIC WRITE (end)\n");
 	}
@@ -540,10 +296,8 @@ ssize_t fi_opx_atomic_generic(struct fid_ep *ep, const void *buf, size_t count, 
 		abort();
 	}
 
-	union fi_opx_addr opx_addr = { .fi = dst_addr };
-	if (av_type == FI_AV_TABLE) {
-		opx_addr = opx_ep->tx->av_addr[dst_addr];
-	}
+	assert((FI_AV_TABLE == opx_ep->av_type) || (FI_AV_MAP == opx_ep->av_type));
+	const union fi_opx_addr opx_addr = FI_OPX_EP_AV_ADDR(av_type,opx_ep,dst_addr);
 
 	if (OFI_UNLIKELY(!opx_reliability_ready(ep,
 			&opx_ep->reliability->state,
@@ -556,7 +310,9 @@ ssize_t fi_opx_atomic_generic(struct fid_ep *ep, const void *buf, size_t count, 
 	}
 
 	struct fi_opx_completion_counter *cc = ofi_buf_alloc(opx_ep->rma_counter_pool);
+	cc->next = NULL;
 	cc->byte_counter = sizeofdt(datatype) * count;
+	cc->initial_byte_count = cc->byte_counter;
 	cc->cq = (((opx_ep->tx->op_flags & FI_COMPLETION) == FI_COMPLETION) ||
 		  ((opx_ep->tx->op_flags & FI_DELIVERY_COMPLETE) == FI_DELIVERY_COMPLETE)) ?
 			 opx_ep->rx->cq :
@@ -600,9 +356,11 @@ ssize_t fi_opx_atomic_writemsg_generic(struct fid_ep *ep,
 		abort();
 	}
 
-	const union fi_opx_addr opx_dst_addr = { .fi = (av_type == FI_AV_TABLE) ?
-							       opx_ep->tx->av_addr[msg->addr].fi :
-							       msg->addr };
+	assert(msg->addr != FI_ADDR_UNSPEC);
+	/* This function is NOT called with build constants.  It's called
+	   with constant FI_AV_MAP or FI_AV_TABLE based on the endpoint */
+	assert((FI_AV_TABLE == av_type) || (FI_AV_MAP == av_type));
+	const union fi_opx_addr opx_dst_addr = FI_OPX_EP_AV_ADDR(av_type,opx_ep,msg->addr);
 
 	if (OFI_UNLIKELY(!opx_reliability_ready(ep,
 			&opx_ep->reliability->state,
@@ -616,10 +374,12 @@ ssize_t fi_opx_atomic_writemsg_generic(struct fid_ep *ep,
 
 	struct fi_opx_completion_counter *cc = ofi_buf_alloc(opx_ep->rma_counter_pool);
 	size_t index;
+	cc->next = NULL;
 	cc->byte_counter = 0;
 	for (index = 0; index < msg->iov_count; index++) {
 		cc->byte_counter += sizeofdt(datatype) * msg->msg_iov[index].count;
 	}
+	cc->initial_byte_count = cc->byte_counter;
 
 	cc->cq = ((flags & FI_COMPLETION) == FI_COMPLETION) ? opx_ep->rx->cq : NULL;
 	cc->context = msg->context;
@@ -701,9 +461,11 @@ ssize_t fi_opx_atomic_readwritemsg_generic(struct fid_ep *ep,
 		abort();
 	}
 
-	const union fi_opx_addr opx_dst_addr = { .fi = (av_type == FI_AV_TABLE) ?
-							       opx_ep->tx->av_addr[msg->addr].fi :
-							       msg->addr };
+	assert(msg->addr != FI_ADDR_UNSPEC);
+	/* This function is NOT called with build constants.  It's called
+	   with constant FI_AV_MAP or FI_AV_TABLE based on the endpoint */
+	assert((FI_AV_TABLE == av_type) || (FI_AV_MAP == av_type));
+	const union fi_opx_addr opx_dst_addr = FI_OPX_EP_AV_ADDR(av_type,opx_ep,msg->addr);
 
 	if (OFI_UNLIKELY(!opx_reliability_ready(ep,
 			&opx_ep->reliability->state,
@@ -729,11 +491,13 @@ ssize_t fi_opx_atomic_readwritemsg_generic(struct fid_ep *ep,
 	uintptr_t rst_iov_vaddr = (uintptr_t)resultv[rst_iov_index].addr;
 
 	struct fi_opx_completion_counter *cc = ofi_buf_alloc(opx_ep->rma_counter_pool);
+	cc->next = NULL;
 	cc->byte_counter = 0;
 	ssize_t index = 0;
 	for (index = 0; index < msg->iov_count; index++) {
 		cc->byte_counter += sizeofdt(datatype) * msg->msg_iov[index].count;
 	}
+	cc->initial_byte_count = cc->byte_counter;
 	cc->cq = ((flags & FI_COMPLETION) == FI_COMPLETION) ? opx_ep->rx->cq : NULL;
 	cc->context = msg->context;
 	union fi_opx_context *opx_context = (union fi_opx_context *)cc->context;
@@ -857,9 +621,11 @@ ssize_t fi_opx_atomic_compwritemsg_generic(struct fid_ep *ep,
 		abort();
 	}
 
-	const union fi_opx_addr opx_dst_addr = { .fi = (av_type == FI_AV_TABLE) ?
-							       opx_ep->tx->av_addr[msg->addr].fi :
-							       msg->addr };
+	assert(msg->addr != FI_ADDR_UNSPEC);
+	/* This function is NOT called with build constants.  It's called
+	   with constant FI_AV_MAP or FI_AV_TABLE based on the endpoint */
+	assert((FI_AV_TABLE == av_type) || (FI_AV_MAP == av_type));
+	const union fi_opx_addr opx_dst_addr = FI_OPX_EP_AV_ADDR(av_type,opx_ep,msg->addr);
 
 	if (OFI_UNLIKELY(!opx_reliability_ready(ep,
 			&opx_ep->reliability->state,
@@ -895,11 +661,13 @@ ssize_t fi_opx_atomic_compwritemsg_generic(struct fid_ep *ep,
 	uintptr_t cmp_iov_vaddr = (uintptr_t)comparev[cmp_iov_index].addr;
 
 	struct fi_opx_completion_counter *cc = ofi_buf_alloc(opx_ep->rma_counter_pool);
+	cc->next = NULL;
 	cc->byte_counter = 0;
 	ssize_t index;
 	for (index = 0; index < msg->iov_count; index++) {
 		cc->byte_counter += sizeofdt(datatype)* msg->msg_iov[index].count;
 	}
+	cc->initial_byte_count = cc->byte_counter;
 	cc->cq = ((flags & FI_COMPLETION) == FI_COMPLETION) ? opx_ep->rx->cq : NULL;
 	cc->context = msg->context;
 	union fi_opx_context *opx_context = (union fi_opx_context *)cc->context;
@@ -984,10 +752,8 @@ ssize_t fi_opx_fetch_compare_atomic_generic(
 		abort();
 	}
 
-	union fi_opx_addr opx_addr = { .fi = dest_addr };
-	if (av_type == FI_AV_TABLE) {
-		opx_addr = opx_ep->tx->av_addr[dest_addr];
-	}
+	assert((FI_AV_TABLE == opx_ep->av_type) || (FI_AV_MAP == opx_ep->av_type));
+	const union fi_opx_addr opx_addr = FI_OPX_EP_AV_ADDR(av_type,opx_ep,dest_addr);
 
 	if (OFI_UNLIKELY(!opx_reliability_ready(ep,
 			&opx_ep->reliability->state,
@@ -1000,7 +766,9 @@ ssize_t fi_opx_fetch_compare_atomic_generic(
 	}
 
 	struct fi_opx_completion_counter *cc = ofi_buf_alloc(opx_ep->rma_counter_pool);
+	cc->next = NULL;
 	cc->byte_counter = sizeofdt(datatype) * count;
+	cc->initial_byte_count = cc->byte_counter;
 	cc->cq = (((opx_ep->tx->op_flags & FI_COMPLETION) == FI_COMPLETION) ||
 		  ((opx_ep->tx->op_flags & FI_DELIVERY_COMPLETE) == FI_DELIVERY_COMPLETE)) ?
 			 opx_ep->rx->cq :
@@ -1064,9 +832,8 @@ ssize_t fi_opx_inject_atomic_generic(struct fid_ep *ep, const void *buf, size_t 
 		abort();
 	}
 	assert(dest_addr != FI_ADDR_UNSPEC);
-	const union fi_opx_addr opx_dst_addr = { .fi = (av_type == FI_AV_TABLE) ?
-							       opx_ep->tx->av_addr[dest_addr].fi :
-							       dest_addr };
+	assert((FI_AV_TABLE == opx_ep->av_type) || (FI_AV_MAP == opx_ep->av_type));
+	const union fi_opx_addr opx_dst_addr = FI_OPX_EP_AV_ADDR(av_type,opx_ep,dest_addr);
 
 	if (OFI_UNLIKELY(!opx_reliability_ready(ep,
 			&opx_ep->reliability->state,
@@ -1079,7 +846,9 @@ ssize_t fi_opx_inject_atomic_generic(struct fid_ep *ep, const void *buf, size_t 
 	}
 
 	struct fi_opx_completion_counter *cc = ofi_buf_alloc(opx_ep->rma_counter_pool);
+	cc->next = NULL;
 	cc->byte_counter = sizeofdt(datatype) * count;
+	cc->initial_byte_count = cc->byte_counter;
 	cc->cq = NULL;
 	cc->context = NULL;
 	cc->hit_zero = fi_opx_hit_zero;
@@ -1109,7 +878,7 @@ ssize_t fi_opx_atomic(struct fid_ep *ep, const void *buf, size_t count, void *de
 		return -FI_EINVAL;
 	}
 
-	const int lock_required = fi_opx_threading_lock_required(threading);
+	const int lock_required = fi_opx_threading_lock_required(threading, fi_opx_global.progress);
 
 	ssize_t rc;
 	fi_opx_lock_if_required(&opx_ep->lock, lock_required);
@@ -1135,11 +904,12 @@ ssize_t fi_opx_fetch_atomic(struct fid_ep *ep, const void *buf, size_t count, vo
 		return -FI_EINVAL;
 	}
 
-	const int lock_required = fi_opx_threading_lock_required(threading);
+	const int lock_required = fi_opx_threading_lock_required(threading, fi_opx_global.progress);
 
 	ssize_t rc;
 	fi_opx_lock_if_required(&opx_ep->lock, lock_required);
 
+	assert((FI_AV_TABLE == opx_ep->av_type) || (FI_AV_MAP == opx_ep->av_type));
 	if (opx_ep->av_type == FI_AV_MAP) {
 		rc = fi_opx_fetch_atomic_generic(
 			ep, buf, count, desc, result, result_desc, dest_addr, addr, key,
@@ -1169,11 +939,12 @@ ssize_t fi_opx_compare_atomic(struct fid_ep *ep, const void *buf, size_t count, 
 		return -FI_EINVAL;
 	}
 
-	const int lock_required = fi_opx_threading_lock_required(threading);
+	const int lock_required = fi_opx_threading_lock_required(threading, fi_opx_global.progress);
 
 	ssize_t rc;
 	fi_opx_lock_if_required(&opx_ep->lock, lock_required);
 
+	assert((FI_AV_TABLE == opx_ep->av_type) || (FI_AV_MAP == opx_ep->av_type));
 	if (opx_ep->av_type == FI_AV_MAP) {
 		rc = fi_opx_compare_atomic_generic(
 			ep, buf, count, desc, compare, compare_desc, result, result_desc,
@@ -1201,11 +972,12 @@ ssize_t fi_opx_inject_atomic(struct fid_ep *ep, const void *buf, size_t count, f
 		return -FI_EINVAL;
 	}
 
-	const int lock_required = fi_opx_threading_lock_required(threading);
+	const int lock_required = fi_opx_threading_lock_required(threading, fi_opx_global.progress);
 
 	ssize_t rc;
 	fi_opx_lock_if_required(&opx_ep->lock, lock_required);
 
+	assert((FI_AV_TABLE == opx_ep->av_type) || (FI_AV_MAP == opx_ep->av_type));
 	if (opx_ep->av_type == FI_AV_MAP) {
 		rc = fi_opx_inject_atomic_generic(ep, buf, count, dest_addr, addr, key,
 						  datatype, op, FI_OPX_LOCK_NOT_REQUIRED,
@@ -1217,7 +989,6 @@ ssize_t fi_opx_inject_atomic(struct fid_ep *ep, const void *buf, size_t count, f
 						  FI_AV_TABLE, 0x0018000000000000ull,
 						  OPX_RELIABILITY);
 	}
-
 	fi_opx_unlock_if_required(&opx_ep->lock, lock_required);
 	return rc;
 }
@@ -1239,11 +1010,12 @@ ssize_t fi_opx_atomic_writemsg(struct fid_ep *ep, const struct fi_msg_atomic *ms
 		return -FI_EINVAL;
 	}
 
-	const int lock_required = fi_opx_threading_lock_required(threading);
+	const int lock_required = fi_opx_threading_lock_required(threading, fi_opx_global.progress);
 
 	ssize_t rc;
 	fi_opx_lock_if_required(&opx_ep->lock, lock_required);
 
+	assert((FI_AV_TABLE == opx_ep->av_type) || (FI_AV_MAP == opx_ep->av_type));
 	if (opx_ep->av_type == FI_AV_MAP) {
 		rc = fi_opx_atomic_writemsg_generic(ep, msg, flags, FI_OPX_LOCK_NOT_REQUIRED,
 						    FI_AV_MAP,
@@ -1271,11 +1043,12 @@ ssize_t fi_opx_atomic_readwritemsg(struct fid_ep *ep, const struct fi_msg_atomic
 		return -FI_EINVAL;
 	}
 
-	const int lock_required = fi_opx_threading_lock_required(threading);
+	const int lock_required = fi_opx_threading_lock_required(threading, fi_opx_global.progress);
 
 	ssize_t rc;
 	fi_opx_lock_if_required(&opx_ep->lock, lock_required);
 
+	assert((FI_AV_TABLE == opx_ep->av_type) || (FI_AV_MAP == opx_ep->av_type));
 	if (opx_ep->av_type == FI_AV_MAP) {
 		rc = fi_opx_atomic_readwritemsg_generic(ep, msg, resultv, result_count,
 							flags, FI_OPX_LOCK_NOT_REQUIRED,
@@ -1306,11 +1079,12 @@ ssize_t fi_opx_atomic_compwritemsg(struct fid_ep *ep, const struct fi_msg_atomic
 		return -FI_EINVAL;
 	}
 
-	const int lock_required = fi_opx_threading_lock_required(threading);
+	const int lock_required = fi_opx_threading_lock_required(threading, fi_opx_global.progress);
 
 	ssize_t rc;
 	fi_opx_lock_if_required(&opx_ep->lock, lock_required);
 
+	assert((FI_AV_TABLE == opx_ep->av_type) || (FI_AV_MAP == opx_ep->av_type));
 	if (opx_ep->av_type == FI_AV_MAP) {
 		rc = fi_opx_atomic_compwritemsg_generic(ep, msg, comparev, compare_count,
 							resultv, result_count, flags,

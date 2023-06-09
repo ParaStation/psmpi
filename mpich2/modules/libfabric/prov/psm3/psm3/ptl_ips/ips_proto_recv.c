@@ -199,24 +199,6 @@ psm3_ips_proto_timer_pendq_callback(struct psmi_timer *timer, uint64_t current)
 	return err;
 }
 
-// return 1 if seq is between first and last inclusive.  Accounts for possible
-// wraparound where numerically first >= last
-PSMI_INLINE(
-int
-between(int first_seq, int last_seq, int seq))
-{
-	if (last_seq >= first_seq) {
-		if (seq < first_seq || seq > last_seq) {
-			return 0;
-		}
-	} else {
-		if (seq > last_seq && seq < first_seq) {
-			return 0;
-		}
-	}
-	return 1;
-}
-
 // return 1 if this ack_seq_num is potentially for a packet on unackedq
 PSMI_INLINE(
 int
@@ -406,7 +388,14 @@ psm3_ips_proto_process_ack(struct ips_recvhdrq_event *rcv_ev)
 			ips_proto_dma_wait_until(proto, scb);
 		}
 #endif /* PSM_HAVE_SDMA */
-
+#ifdef PSM_ONEAPI
+		if (scb->scb_flags & IPS_SEND_FLAG_USE_GDRCOPY) {
+			psmi_hal_gdr_munmap_gpu_to_host_addr(
+					scb->gdr_addr, scb->gdr_size,
+					0, proto->ep);
+			scb->scb_flags &= ~IPS_SEND_FLAG_USE_GDRCOPY;
+		}
+#endif
 		if (scb->callback)
 			(*scb->callback) (scb->cb_param, scb->nfrag > 1 ?
 					  scb->chunk_size : scb->payload_size);
@@ -591,6 +580,14 @@ int psm3_ips_proto_process_nak(struct ips_recvhdrq_event *rcv_ev)
 		}
 #endif /* PSM_HAVE_SDMA */
 
+#ifdef PSM_ONEAPI
+		if (scb->scb_flags & IPS_SEND_FLAG_USE_GDRCOPY) {
+			psmi_hal_gdr_munmap_gpu_to_host_addr(
+					scb->gdr_addr, scb->gdr_size,
+					0, proto->ep);
+			scb->scb_flags &= ~IPS_SEND_FLAG_USE_GDRCOPY;
+		}
+#endif
 		if (scb->callback)
 			(*scb->callback) (scb->cb_param, scb->nfrag > 1 ?
 					  scb->chunk_size : scb->payload_size);

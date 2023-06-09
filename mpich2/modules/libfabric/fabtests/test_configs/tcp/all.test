@@ -1,4 +1,4 @@
-#: "Suite of tests for the tcp provider"
+#: "Suite of tests for the  provider"
 {
 	prov_name: tcp,
 	test_type: [
@@ -184,7 +184,7 @@
 	],
 }
 {
-	prov_name: tcp;ofi_rxm,
+	prov_name: tcp,
 	test_type: [
 		FT_TEST_UNIT,
 		FT_TEST_LATENCY,
@@ -219,7 +219,7 @@
 	],
 },
 {
-	prov_name: tcp;ofi_rxm,
+	prov_name: tcp,
 	test_type: [
 		FT_TEST_UNIT,
 		FT_TEST_LATENCY,
@@ -255,7 +255,7 @@
 	],
 },
 {
-	prov_name: tcp;ofi_rxm,
+	prov_name: tcp,
 	test_type: [
 		FT_TEST_UNIT,
 		FT_TEST_LATENCY,
@@ -292,7 +292,7 @@
 	],
 },
 {
-	prov_name: tcp;ofi_rxm,
+	prov_name: tcp,
 	test_type: [
 		FT_TEST_LATENCY,
 	],
@@ -319,7 +319,7 @@
 	],
 },
 {
-	prov_name: tcp;ofi_rxm,
+	prov_name: tcp,
 	test_type: [
 		FT_TEST_LATENCY,
 	],
@@ -346,7 +346,7 @@
 	],
 },
 {
-	prov_name: tcp;ofi_rxm,
+	prov_name: tcp,
 	test_type: [
 		FT_TEST_LATENCY,
 	],

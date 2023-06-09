@@ -41,13 +41,31 @@ static int run_test()
 {
 	int ret;
 	size_t size = 1000;
-	struct fi_cq_data_entry comp;
+	struct fi_cq_data_entry comp = {0};
+	struct fi_rma_iov remote;
+
+	if (opts.cqdata_op == FT_CQDATA_WRITEDATA) {
+		ret = ft_exchange_keys(&remote);
+		if (ret)
+			return ret;
+	}
 
 	if (opts.dst_addr) {
-		fprintf(stdout,
-			"Posting send with CQ data: 0x%" PRIx64 "\n",
-			remote_cq_data);
-		ret = ft_post_tx(ep, remote_fi_addr, size, remote_cq_data, &tx_ctx);
+		if (opts.cqdata_op == FT_CQDATA_SENDDATA) {
+			fprintf(stdout,
+				"Posting send with CQ data: 0x%" PRIx64 "\n",
+				remote_cq_data);
+			ret = ft_post_tx(ep, remote_fi_addr, size, remote_cq_data, &tx_ctx);
+		} else  if (opts.cqdata_op == FT_CQDATA_WRITEDATA) {
+			fprintf(stdout,
+				"Posting write with CQ data: 0x%" PRIx64 "\n",
+				ft_init_cq_data(fi));
+
+			ret = ft_post_rma(FT_RMA_WRITEDATA, ep, size, &remote, &tx_ctx);
+		} else {
+			fprintf(stdout, "invalid cqdata_op: %d\n", opts.cqdata_op);
+			ret = -FI_EINVAL;
+		}
 		if (ret)
 			return ret;
 
@@ -55,7 +73,10 @@ static int run_test()
 		fprintf(stdout, "Done\n");
 	} else {
 		fprintf(stdout, "Waiting for CQ data from client\n");
-		ret = fi_cq_sread(rxcq, &comp, 1, NULL, -1);
+		ret = fi_cq_read(rxcq, &comp, 1);
+		while (ret == 0 || ret == -FI_EAGAIN)
+			ret = fi_cq_read(rxcq, &comp, 1);
+
 		if (ret < 0) {
 			if (ret == -FI_EAVAIL) {
 				ret = ft_cq_readerr(rxcq);
@@ -73,6 +94,15 @@ static int run_test()
 				fprintf(stdout, "error, Expected data:0x%" PRIx64
 					", Received data:0x%" PRIx64 "\n",
 					remote_cq_data, comp.data);
+				ret = -FI_EIO;
+			}
+
+			if (comp.len == size) {
+				fprintf(stdout, "fi_cq_data_entry.len verify: success\n");
+				ret = 0;
+			} else {
+				fprintf(stdout, "error, Expected len:%zu, Received len:%zu\n",
+					size, comp.len);
 				ret = -FI_EIO;
 			}
 		} else {
@@ -107,16 +137,16 @@ int main(int argc, char **argv)
 
 	opts = INIT_OPTS;
 	opts.options |= FT_OPT_SIZE;
-	opts.comp_method = FT_COMP_SREAD;
 
 	hints = fi_allocinfo();
 	if (!hints)
 		return EXIT_FAILURE;
 
-	while ((op = getopt(argc, argv, "h" ADDR_OPTS INFO_OPTS)) != -1) {
+	while ((op = getopt(argc, argv, "h" ADDR_OPTS API_OPTS INFO_OPTS)) != -1) {
 		switch (op) {
 		default:
 			ft_parse_addr_opts(op, optarg, &opts);
+			ft_parse_api_opts(op, optarg, hints, &opts);
 			ft_parseinfo(op, optarg, hints, &opts);
 			break;
 		case '?':
@@ -133,6 +163,9 @@ int main(int argc, char **argv)
 	hints->mode |= FI_CONTEXT | FI_RX_CQ_DATA;
 
 	hints->caps = FI_MSG;
+	if (opts.cqdata_op == FT_CQDATA_WRITEDATA)
+		hints->caps |= FI_RMA;
+
 	hints->domain_attr->mr_mode = opts.mr_mode;
 
 	cq_attr.format = FI_CQ_FORMAT_DATA;

@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2016 by Argonne National Laboratory.
- * Copyright (C) 2022 Cornelis Networks.
+ * Copyright (C) 2021-2023 Cornelis Networks.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -31,6 +31,7 @@
  * SOFTWARE.
  */
 #include <ofi.h>
+#include <ofi_mem.h>
 
 #include "rdma/opx/fi_opx.h"
 #include "rdma/opx/fi_opx_internal.h"
@@ -129,7 +130,7 @@ err:
 
 static int fi_opx_fillinfo(struct fi_info *fi, const char *node,
 		const char* service, const struct fi_info *hints,
-	        uint64_t flags)
+	        uint64_t flags, enum fi_progress progress)
 {
 	int ret;
 	uint64_t caps;
@@ -266,6 +267,14 @@ static int fi_opx_fillinfo(struct fi_info *fi, const char *node,
 
 	fi->fabric_attr->prov_version = FI_OPX_PROVIDER_VERSION;
 
+	if (fi_opx_global.default_tx_attr == NULL) {
+		if (fi_opx_alloc_default_tx_attr(&fi_opx_global.default_tx_attr)) {
+			FI_DBG(fi_opx_global.prov, FI_LOG_DOMAIN, "alloc function could not allocate block of memory\n");
+			errno = FI_ENOMEM;
+			goto err;
+		}
+	}
+
 	memcpy(fi->tx_attr, fi_opx_global.default_tx_attr, sizeof(*fi->tx_attr));
 	if (hints && hints->tx_attr) {
 
@@ -287,6 +296,13 @@ static int fi_opx_fillinfo(struct fi_info *fi, const char *node,
 		fi->tx_attr->caps = hints->caps;
 	}
 
+	if (fi_opx_global.default_rx_attr == NULL) {
+		if (fi_opx_alloc_default_rx_attr(&fi_opx_global.default_rx_attr)) {
+			FI_DBG(fi_opx_global.prov, FI_LOG_DOMAIN, "alloc function could not allocate block of memory\n");
+			errno = FI_ENOMEM;
+			goto err;
+		}
+	}
 	memcpy(fi->rx_attr, fi_opx_global.default_rx_attr, sizeof(*fi->rx_attr));
 	if (hints && hints->rx_attr) {
 
@@ -324,12 +340,28 @@ static int fi_opx_fillinfo(struct fi_info *fi, const char *node,
 	 * opened, this field will be NULL.
 	 */
 
+	if (fi_opx_global.default_domain_attr == NULL) {
+		if (fi_opx_alloc_default_domain_attr(&fi_opx_global.default_domain_attr)) {
+			FI_DBG(fi_opx_global.prov, FI_LOG_DOMAIN, "alloc function could not allocate block of memory\n");
+			errno = FI_ENOMEM;
+			goto err;
+		}
+	}
+
 	ret = fi_opx_choose_domain(caps, fi->domain_attr,
-		(hints)?(hints->domain_attr):NULL);
+		(hints)?(hints->domain_attr):NULL, progress);
 	if (ret) {
 		FI_LOG(fi_opx_global.prov, FI_LOG_DEBUG, FI_LOG_FABRIC,
 				"cannot find appropriate domain\n");
 		goto err;
+	}
+
+	if (fi_opx_global.default_ep_attr == NULL) {
+		if (fi_opx_alloc_default_ep_attr(&fi_opx_global.default_ep_attr)) {
+			FI_DBG(fi_opx_global.prov, FI_LOG_DOMAIN, "alloc function could not allocate block of memory\n");
+			errno = FI_ENOMEM;
+			goto err;
+		}
 	}
 
 	memcpy(fi->ep_attr, fi_opx_global.default_ep_attr, sizeof(*fi->ep_attr));
@@ -350,67 +382,165 @@ static int fi_opx_fillinfo(struct fi_info *fi, const char *node,
 	return 0;
 
 err:
-	free(fi->domain_attr->name); fi->domain_attr->name = NULL;
-	free(fi->fabric_attr->name); fi->fabric_attr->name = NULL;
-	free(fi->fabric_attr->prov_name); fi->fabric_attr->prov_name = NULL;
-	free(fi->src_addr); fi->src_addr = NULL; fi->src_addrlen=0;
-	free(fi->dest_addr); fi->dest_addr = NULL; fi->dest_addrlen=0;
+	if(fi){
+		free(fi->domain_attr->name); fi->domain_attr->name = NULL;
+		free(fi->fabric_attr->name); fi->fabric_attr->name = NULL;
+		free(fi->fabric_attr->prov_name); fi->fabric_attr->prov_name = NULL;
+		free(fi->src_addr); fi->src_addr = NULL; fi->src_addrlen=0;
+		free(fi->dest_addr); fi->dest_addr = NULL; fi->dest_addrlen=0;
+	}
+
+	if (fi_opx_global.default_ep_attr != NULL) {
+		free(fi_opx_global.default_ep_attr);
+		fi_opx_global.default_ep_attr = NULL;
+	}
+
+	if (fi_opx_global.default_tx_attr != NULL) {
+		free(fi_opx_global.default_tx_attr);
+		fi_opx_global.default_tx_attr = NULL;
+	}
+
+	if (fi_opx_global.default_rx_attr != NULL) {
+		free(fi_opx_global.default_rx_attr);
+		fi_opx_global.default_rx_attr = NULL;
+	}
+
+	if (fi_opx_global.default_domain_attr != NULL) {
+		if (fi_opx_global.default_domain_attr->name != NULL) {
+			free(fi_opx_global.default_domain_attr->name);
+			fi_opx_global.default_domain_attr->name = NULL;
+		}
+		free(fi_opx_global.default_domain_attr);
+		fi_opx_global.default_domain_attr = NULL;
+	}
+
 	return -errno;
 }
 
 struct fi_opx_global_data fi_opx_global;
 
-static int fi_opx_getinfo(uint32_t version, const char *node,
+static int fi_opx_getinfo_hfi(int hfi, uint32_t version, const char *node,
 		const char *service, uint64_t flags,
-		const struct fi_info *hints, struct fi_info **info)
+		const struct fi_info *hints,
+		struct fi_info **info, struct fi_info **info_tail)
 {
-	int ret;
+	int ret, ret_auto;
 	struct fi_info *fi = NULL;
+	struct fi_info *fi_auto = NULL;
 
 	*info = NULL;
-	fi_opx_count = opx_hfi_get_hfi1_count();
-	FI_LOG(fi_opx_global.prov, FI_LOG_DEBUG, FI_LOG_FABRIC,
-			"Detected %d hfi1(s) in the system\n", fi_opx_count);	
-
-	if (!fi_opx_count) {
-		return -FI_ENODATA;
-	}
+	*info_tail = NULL;
 
 	if (hints) {
 		ret = fi_opx_check_info(hints);
 		if (ret) {
 			return ret;
 		}
-		if (!(fi = fi_allocinfo())) {
-			return -FI_ENOMEM;
+		if (!(fi = fi_allocinfo()) || !(fi_auto = fi_allocinfo())) {
+			ret = -FI_ENOMEM;
+			goto err;
 		}
-
 		ret = fi_opx_fillinfo(fi, node, service,
-					hints, flags);
-		if (ret) {
-			if (fi) fi_freeinfo(fi);
-			return ret;
+					hints, flags, FI_PROGRESS_MANUAL);
+		ret_auto = fi_opx_fillinfo(fi_auto, node, service,
+					hints, flags, FI_PROGRESS_AUTO);
+		if (hints->domain_attr->data_progress != FI_PROGRESS_UNSPEC) {
+			fi_opx_global.progress = hints->domain_attr->data_progress;
+			if (hints->domain_attr->data_progress == FI_PROGRESS_AUTO) {
+				FI_INFO(fi_opx_global.prov, FI_LOG_FABRIC, "Locking is forced in FI_PROGRESS_AUTO\n");
+			}
+		}
+		if (ret || ret_auto) {
+			ret = ret?ret:ret_auto;
+			goto err;
 		}
 
 	} else if (node || service) {
-		if (!(fi = fi_allocinfo())) {
-			return -FI_ENOMEM;
+		if (!(fi = fi_allocinfo()) || !(fi_auto = fi_allocinfo())) {
+			ret = -FI_ENOMEM;
+			goto err;
 		}
 
 		ret = fi_opx_fillinfo(fi, node, service,
-					hints, flags);
-		if (ret) {
-			if (fi) fi_freeinfo(fi);
-			return ret;
+					hints, flags, FI_PROGRESS_MANUAL);
+		ret_auto = fi_opx_fillinfo(fi_auto, node, service,
+					hints, flags, FI_PROGRESS_AUTO);
+		if (ret || ret_auto) {
+			ret = ret?ret:ret_auto;
+			goto err;
 		}
 
 	} else {
-		if (!(fi = fi_dupinfo(fi_opx_global.info))) {
-			return -FI_ENOMEM;
+		if (!(fi = fi_dupinfo(fi_opx_global.info)) || !(fi_opx_global.info->next != NULL && (fi_auto = fi_dupinfo(fi_opx_global.info->next)))) {
+			ret = -FI_ENOMEM;
+			goto err;
 		}
 	}
 
+	/* Set the appropriate domain name associated with the HFI */
+	char domain_name[128];
+
+	sprintf(domain_name, "%s%d", FI_OPX_DOMAIN_NAME_PREFIX, hfi);
+	free(fi->domain_attr->name);
+	fi->domain_attr->name = strdup(domain_name);
+
+	if (fi_auto) {
+		free(fi_auto->domain_attr->name);
+		fi_auto->domain_attr->name = strdup(fi->domain_attr->name);
+	}
+
+	fi->next = fi_auto;
+
 	*info = fi;
+	*info_tail = (fi->next) ? fi->next : fi;
+
+	return 0;
+
+err:
+	if (fi) fi_freeinfo(fi);
+	if (fi_auto) fi_freeinfo(fi_auto);
+	return ret;
+
+}
+
+static int fi_opx_getinfo(uint32_t version, const char *node,
+		const char *service, uint64_t flags,
+		const struct fi_info *hints, struct fi_info **info)
+{
+	int ret, i;
+	struct fi_info *cur, *cur_tail;
+	struct fi_info *tail = NULL;
+
+	*info = NULL;
+	fi_opx_count = opx_hfi_get_hfi1_count();
+	FI_LOG(fi_opx_global.prov, FI_LOG_TRACE, FI_LOG_FABRIC,
+			"Detected %d hfi1(s) in the system\n", fi_opx_count);	
+
+	if (!fi_opx_count) {
+		return -FI_ENODATA;
+	}
+
+	for (i = 0; i < fi_opx_count; i++) {
+		ret = fi_opx_getinfo_hfi(i, version, node, service, flags, hints, &cur, &cur_tail);
+		if (ret) {
+			continue;
+		}
+		if (!cur) {
+			continue;
+		}
+
+		FI_LOG(fi_opx_global.prov, FI_LOG_TRACE, FI_LOG_FABRIC,
+				"Successfully got getinfo for HFI %d\n", i);	
+
+		if (!*info) {
+			*info = cur;
+		} else {
+			tail->next = cur;
+		}
+
+		tail = cur_tail;
+	}
+
 	return 0;
 }
 
@@ -419,6 +549,19 @@ static void fi_opx_fini()
 	always_assert(fi_opx_init == 1,
 		"OPX provider finalize called before initialize\n");
 	fi_freeinfo(fi_opx_global.info);
+
+	if (fi_opx_global.daos_hfi_rank_hashmap) {
+		struct fi_opx_daos_hfi_rank *cur_hfi_rank = NULL;
+		struct fi_opx_daos_hfi_rank *tmp_hfi_rank = NULL;
+
+		HASH_ITER(hh, fi_opx_global.daos_hfi_rank_hashmap, cur_hfi_rank, tmp_hfi_rank) {
+			if (cur_hfi_rank) {
+				HASH_DEL(fi_opx_global.daos_hfi_rank_hashmap, cur_hfi_rank);
+				free(cur_hfi_rank);
+				cur_hfi_rank = NULL;
+			}
+		}
+	}
 }
 
 struct fi_provider fi_opx_provider = {
@@ -444,13 +587,10 @@ static void do_static_assert_tests()
 	OPX_COMPILE_TIME_ASSERT((sizeof(union fi_opx_hfi1_pio_state*) == 8),
 		"fi_opx_hfi1_pio_state pointer size error.");
 
-	OPX_COMPILE_TIME_ASSERT(sizeof(struct fi_opx_mr_atomic) == 24,
-							"Memory region Packet size error");
-
-	OPX_COMPILE_TIME_ASSERT(sizeof(struct fi_opx_mr_atomic) == sizeof(union fi_opx_mr_atomic_qw),
-							"Memory region Packet QW size error");
-
 	union fi_opx_hfi1_packet_payload *payload = NULL;
+	OPX_COMPILE_TIME_ASSERT(sizeof(*payload) == sizeof(payload->tid_cts),
+							"Expected TID rendezvous CTS payload size error");
+
 	OPX_COMPILE_TIME_ASSERT(sizeof(*payload) == sizeof(payload->rendezvous.contiguous),
 							"Contiguous rendezvous payload size error");
 
@@ -462,36 +602,44 @@ static void do_static_assert_tests()
 OPX_INI
 {
 	fi_opx_count = 1;
+	fi_opx_global.progress = FI_PROGRESS_MANUAL;
 	fi_opx_set_default_info(); // TODO: fold into fi_opx_set_defaults
 
-	if (fi_opx_alloc_default_domain_attr(&fi_opx_global.default_domain_attr)) {
-		return NULL;
-	}
+	/* Refrain from allocating memory dynamically in this INI function. 
+	   That sort of behavior will results in memory leaks for the fi_info
+	   executable. */
 
-	if (fi_opx_alloc_default_ep_attr(&fi_opx_global.default_ep_attr)) {
-		return NULL;
-	}
-
-	if (fi_opx_alloc_default_tx_attr(&fi_opx_global.default_tx_attr)) {
-		return NULL;
-	}
-	if (fi_opx_alloc_default_rx_attr(&fi_opx_global.default_rx_attr)) {
-		return NULL;
-	}
+	fi_opx_global.default_domain_attr = NULL;
+	fi_opx_global.default_ep_attr = NULL;
+	fi_opx_global.default_tx_attr = NULL;
+	fi_opx_global.default_rx_attr = NULL;
 
 	fi_opx_global.prov = &fi_opx_provider;
+	fi_opx_global.daos_hfi_rank_hashmap = NULL;
 
 	fi_opx_init = 1;
 
 	fi_param_define(&fi_opx_provider, "uuid", FI_PARAM_STRING, "Globally unique ID for preventing OPX jobs from conflicting either in shared memory or over the OPX fabric. Defaults to \"%s\"",
 		OPX_DEFAULT_JOB_KEY_STR);
 	fi_param_define(&fi_opx_provider, "force_cpuaffinity", FI_PARAM_BOOL, "Causes the thread to bind itself to the cpu core it is running on. Defaults to \"No\"");
-	fi_param_define(&fi_opx_provider, "reliability_service_usec_max", FI_PARAM_INT, "The number of microseconds between pings for un-acknowledged packets. Defaults to 100 usec.");
-	fi_param_define(&fi_opx_provider, "reliability_service_pre_ack_rate", FI_PARAM_INT, "The number of packets to receive from a particular sender before preemptively acknowledging them without waiting for a ping. Valid values are powers of 2 in the range of 0-32,768, where 0 indicates no preemptive acking. Defaults to 0.");
+	fi_param_define(&fi_opx_provider, "reliability_service_usec_max", FI_PARAM_INT, "The number of microseconds between pings for un-acknowledged packets. Defaults to 500 usec.");
+	fi_param_define(&fi_opx_provider, "reliability_service_pre_ack_rate", FI_PARAM_INT, "The number of packets to receive from a particular sender before preemptively acknowledging them without waiting for a ping. Valid values are powers of 2 in the range of 0-32,768, where 0 indicates no preemptive acking. Defaults to 64.");
 	fi_param_define(&fi_opx_provider, "selinux", FI_PARAM_BOOL, "Set to true if you're running a security-enhanced Linux. This enables updating the Jkey used based on system settings. Defaults to \"No\"");
 	fi_param_define(&fi_opx_provider, "hfi_select", FI_PARAM_STRING, "Overrides the normal algorithm used to choose which HFI a process will use. See the documentation for more information.");
-	fi_param_define(&fi_opx_provider, "delivery_completion_threshold", FI_PARAM_INT, "The minimum size message for doing full delivery completions. Smaller messages will provide injection completions.Value must be between %d and %d. Defaults to %d.", OPX_MIN_DCOMP_THRESHOLD, OPX_MAX_DCOMP_THRESHOLD, OPX_DEFAULT_DCOMP_THRESHOLD);
-	// fi_param_define(&fi_opx_provider, "varname", FI_PARAM_*, "help");
+	fi_param_define(&fi_opx_provider, "delivery_completion_threshold", FI_PARAM_INT, "The minimum message length in bytes to force delivery completion.  Value must be between %d and %d. Defaults to %d.", OPX_MIN_DCOMP_THRESHOLD, OPX_MAX_DCOMP_THRESHOLD, OPX_DEFAULT_DCOMP_THRESHOLD);
+ 	fi_param_define(&fi_opx_provider, "sdma_disable", FI_PARAM_INT, "Disables SDMA offload hardware. Default is 0");
+ 	fi_param_define(&fi_opx_provider, "reliability_service_nack_threshold", FI_PARAM_INT, "The number of NACKs needed to be seen before a replay is initiated. Valid values are 1-32767. Default is 1");
+	fi_param_define(&fi_opx_provider, "expected_receive_enable", FI_PARAM_BOOL, "Enables expected receive rendezvous using Token ID (TID). Defaults to \"No\"");
+	fi_param_define(&fi_opx_provider, "immediate_blocks", FI_PARAM_INT, "The number of immediate blocks to send on rzv rts. Valid values are 0-64. Note that '0' is only supported with page aligned buffers and could cause a performance degradation if used with unaligned buffers. Defaults to 1.");
+	fi_param_define(&fi_opx_provider, "replay_use_sdma", FI_PARAM_BOOL, "Enable SDMA replays. Defaults to \"No\"");
+	fi_param_define(&fi_opx_provider, "tid_reuse_enable", FI_PARAM_BOOL, "Enables the reuse cache for Token ID (TID) and pinned rendezvous receive buffers. Defaults to \"No\"");
+	fi_param_define(&fi_opx_provider, "prog_affinity", FI_PARAM_STRING,
+                        "When set, specify the set of CPU cores to set the progress "
+                        "thread affinity to. The format is "
+                        "<start>:<end>:<stride>"
+                        "where each triplet <start>:<end>:<stride> defines a block "
+                        "Both <start> and <end> is a core_id.");
+	fi_param_define(&fi_opx_provider, "auto_progress_interval_usec", FI_PARAM_INT, "Number of usec that the progress thread waits between polling, the value of 0 is default where the interval is 1 if progress affinity is set, or 1000 otherwise.");
 	// fi_param_define(&fi_opx_provider, "varname", FI_PARAM_*, "help");
 	return (&fi_opx_provider);
 }

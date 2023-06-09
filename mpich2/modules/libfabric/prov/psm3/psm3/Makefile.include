@@ -23,6 +23,8 @@ psm3_libptl_am_la_SOURCES = \
 	psm3/ptl_am/am_config.h \
 	psm3/ptl_am/am_cuda_memhandle_cache.c \
 	psm3/ptl_am/am_cuda_memhandle_cache.h \
+	psm3/ptl_am/am_oneapi_memhandle_cache.c \
+	psm3/ptl_am/am_oneapi_memhandle_cache.h \
 	psm3/ptl_am/am_reqrep.c \
 	psm3/ptl_am/am_reqrep_shmem.c \
 	psm3/ptl_am/cmarw.h \
@@ -93,13 +95,17 @@ psm3_libptl_self_la_CFLAGS = \
 
 psm3_libutils_la_SOURCES = \
 	psm3/utils/utils_debug.c \
+	psm3/utils/utils_dsa.c \
 	psm3/utils/utils_dwordcpy-x86_64.c \
+	psm3/utils/utils_env.c \
 	psm3/utils/utils_sysfs.c \
 	psm3/utils/utils_syslog.c \
 	psm3/utils/utils_time.c \
 	psm3/utils/utils_mallopt.c \
 	psm3/include/utils_byteorder.h \
 	psm3/include/utils_debug.h \
+	psm3/include/utils_dsa.h \
+	psm3/include/utils_env.h \
 	psm3/include/utils_macros.h \
 	psm3/include/utils_queue.h \
 	psm3/include/psm_revision.h \
@@ -144,6 +150,7 @@ psm3_libhal_sockets_la_SOURCES = \
 	psm3/hal_sockets/sockets_hal.c \
 	psm3/hal_sockets/sockets_hal.h \
 	psm3/hal_sockets/sockets_hal_inline_i.h \
+	psm3/hal_sockets/sockets_proto.c \
 	psm3/hal_sockets/sockets_ptl_ips.c \
 	psm3/hal_sockets/sockets_rcvthread.c \
 	psm3/hal_sockets/sockets_recvhdrq.c
@@ -178,6 +185,7 @@ psm3_libpsm3i_la_SOURCES = \
 	psm3/psm_mq_recv.c \
 	psm3/psm_mq_utils.c \
 	psm3/psm_netutils.h \
+	psm3/psm_oneapi_ze.c \
 	psm3/psm_perf.c \
 	psm3/psm_perf.h \
 	psm3/psm_rndv_mod.c \

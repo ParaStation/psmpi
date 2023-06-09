@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2016 by Argonne National Laboratory.
- * Copyright (C) 2021 Cornelis Networks.
+ * Copyright (C) 2021-2023 Cornelis Networks.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -35,15 +35,19 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <arpa/inet.h>		/* only for fi_opx_addr_dump ... */
+#include <sys/user.h>
 
+#include "ofi_mem.h"
 #include "rdma/fabric.h"	/* only for 'fi_addr_t' ... which is a typedef to uint64_t */
 #include "rdma/opx/fi_opx_addr.h"
 
 
 
-#define FI_OPX_ADDR_SEP_RX_MAX    (4)
+#define FI_OPX_ADDR_SEP_RX_MAX			(4)
 #define FI_OPX_HFI1_PACKET_MTU			(8192)
+#define FI_OPX_HFI1_TID_SIZE			(PAGE_SIZE) /* assume 4K, no hugepages*/
 #define FI_OPX_HFI1_PACKET_IMM			(16)
 
 /* opcodes (0x00..0xBF) are reserved */
@@ -69,43 +73,59 @@
 #define FI_OPX_HFI1_PACKET_SLID(packet_hdr)				\
 	(((packet_hdr).qw[0] & 0xFFFF000000000000ul) >> 48)
 
+#define FI_OPX_HFI1_PACKET_PSN(packet_hdr)					\
+	(((packet_hdr)->stl.bth.opcode == FI_OPX_HFI_BTH_OPCODE_RZV_DATA)	\
+		? ntohl((packet_hdr)->stl.bth.psn) & 0x00FFFFFF			\
+		: (packet_hdr)->reliability.psn)
+
+#define FI_OPX_HFI1_PACKET_ORIGIN_TX(packet_hdr)				\
+	(((packet_hdr)->stl.bth.opcode == FI_OPX_HFI_BTH_OPCODE_RZV_DATA)	\
+		? (packet_hdr)->dput.target.origin_tx				\
+		: (packet_hdr)->reliability.origin_tx)
+
 #define FI_OPX_HFI_UD_OPCODE_RELIABILITY_PING			(0x01)
 #define FI_OPX_HFI_UD_OPCODE_RELIABILITY_ACK			(0x02)
 #define FI_OPX_HFI_UD_OPCODE_RELIABILITY_NACK			(0x03)
 #define FI_OPX_HFI_UD_OPCODE_RELIABILITY_INIT			(0x04)
 #define FI_OPX_HFI_UD_OPCODE_RELIABILITY_INIT_ACK		(0x05)
 #define FI_OPX_HFI_UD_OPCODE_RELIABILITY_RESYNCH		(0x06)
-#define FI_OPX_HFI_UD_OPCODE_RELIABILITY_RESYNCH_ACK	(0x07)
+#define FI_OPX_HFI_UD_OPCODE_RELIABILITY_RESYNCH_ACK		(0x07)
 #define FI_OPX_HFI_UD_OPCODE_RELIABILITY_NOOP			(0x08)
 
-#define FI_OPX_HFI_DPUT_OPCODE_RZV                  (0x00)
-#define FI_OPX_HFI_DPUT_OPCODE_PUT                  (0x01)
-#define FI_OPX_HFI_DPUT_OPCODE_GET                  (0x02)
-#define FI_OPX_HFI_DPUT_OPCODE_FENCE                (0x03)
-#define FI_OPX_HFI_DPUT_OPCODE_ATOMIC_FETCH         (0x04)
-#define FI_OPX_HFI_DPUT_OPCODE_ATOMIC_COMPARE_FETCH (0x05)
-#define FI_OPX_HFI_DPUT_OPCODE_RZV_NONCONTIG        (0x06)
-#define FI_OPX_HFI_DPUT_OPCODE_RZV_ETRUNC           (0x07)
+#define FI_OPX_HFI_DPUT_OPCODE_RZV				(0x00)
+#define FI_OPX_HFI_DPUT_OPCODE_PUT				(0x01)
+#define FI_OPX_HFI_DPUT_OPCODE_GET				(0x02)
+#define FI_OPX_HFI_DPUT_OPCODE_FENCE				(0x03)
+#define FI_OPX_HFI_DPUT_OPCODE_ATOMIC_FETCH			(0x04)
+#define FI_OPX_HFI_DPUT_OPCODE_ATOMIC_COMPARE_FETCH		(0x05)
+#define FI_OPX_HFI_DPUT_OPCODE_RZV_NONCONTIG			(0x06)
+#define FI_OPX_HFI_DPUT_OPCODE_RZV_ETRUNC			(0x07)
+#define FI_OPX_HFI_DPUT_OPCODE_RZV_TID				(0x08)
+
+/* KDETH header consts */
 
 #define FI_OPX_HFI1_KDETH_VERSION		(0x1)
 #define FI_OPX_HFI1_KDETH_VERSION_SHIFT		(30)		/* a.k.a. "HFI_KHDR_KVER_SHIFT" */
 #define FI_OPX_HFI1_KDETH_VERSION_OFF_MASK	((FI_OPX_HFI1_KDETH_VERSION << FI_OPX_HFI1_KDETH_VERSION_SHIFT) - 1)
 
-struct fi_opx_mr_atomic {
-	uint8_t opcode;
-	uint8_t unused;
-	uint16_t origin_rs;
-	uint8_t dt;
-	uint8_t op;
-	uint16_t bytes;
-	uint64_t key;
-	uint64_t target_counter_vaddr;
-} __attribute__((packed));
+#define FI_OPX_HFI1_KDETH_TIDCTRL		(0x3)
+#define FI_OPX_HFI1_KDETH_TIDCTRL_SHIFT 	(26)
+#define FI_OPX_HFI1_KDETH_TIDCTL_MASK		(FI_OPX_HFI1_KDETH_TIDCTRL << FI_OPX_HFI1_KDETH_TIDCTRL_SHIFT)
 
-union fi_opx_mr_atomic_qw {
-	uint64_t qw[3];
-	struct fi_opx_mr_atomic mr;
-} __attribute__((packed));
+#define FI_OPX_HFI1_KDETH_TID			(0x3ff)
+#define FI_OPX_HFI1_KDETH_TID_SHIFT		(16)
+#define FI_OPX_HFI1_KDETH_TID_MASK		(FI_OPX_HFI1_KDETH_TID << FI_OPX_HFI1_KDETH_TID_SHIFT)
+
+#define HFI_KHDR_OFFSET_MASK 0x7fff
+#define HFI_KHDR_OM_SHIFT 15
+#define HFI_KHDR_TID_SHIFT 16
+#define HFI_KHDR_TID_MASK 0x3ff
+#define HFI_KHDR_TIDCTRL_SHIFT 26
+#define HFI_KHDR_TIDCTRL_MASK 0x3
+#define HFI_KHDR_INTR_SHIFT 28
+#define HFI_KHDR_SH_SHIFT 29
+#define HFI_KHDR_KVER_SHIFT 30
+#define HFI_KHDR_KVER_MASK 0x3
 
 struct fi_opx_hfi1_stl_packet_hdr {
 
@@ -159,6 +179,72 @@ struct fi_opx_hfi1_stl_packet_hdr {
 	uint64_t			unused[3];
 
 } __attribute__((__packed__));
+
+
+/*
+ * Define fields in the KDETH header so we can update the header
+ * template.
+ */
+#define KDETH_OFFSET_SHIFT        0
+#define KDETH_OFFSET_MASK         0x7fff
+#define KDETH_OM_SHIFT            15
+#define KDETH_OM_MASK             0x1
+#define KDETH_TID_SHIFT           16
+#define KDETH_TID_MASK            0x3ff
+#define KDETH_TIDCTRL_SHIFT       26
+#define KDETH_TIDCTRL_MASK        0x3
+#define KDETH_INTR_SHIFT          28
+#define KDETH_INTR_MASK           0x1
+#define KDETH_SH_SHIFT            29
+#define KDETH_SH_MASK             0x1
+#define KDETH_KVER_SHIFT          30
+#define KDETH_KVER_MASK           0x3
+#define KDETH_JKEY_SHIFT          0x0
+#define KDETH_JKEY_MASK           0xff
+#define KDETH_HCRC_UPPER_SHIFT    16
+#define KDETH_HCRC_UPPER_MASK     0xff
+#define KDETH_HCRC_LOWER_SHIFT    24
+#define KDETH_HCRC_LOWER_MASK     0xff
+
+#include "opa_byteorder.h"
+
+#define KDETH_GET(val, field)						\
+	(((__le32_to_cpu((val))) >> KDETH_##field##_SHIFT) & KDETH_##field##_MASK)
+#define KDETH_SET(dw, field, val) do {					\
+		u32 dwval = __le32_to_cpu(dw);				\
+		dwval &= ~(KDETH_##field##_MASK << KDETH_##field##_SHIFT); \
+		dwval |= (((val) & KDETH_##field##_MASK) << \
+			  KDETH_##field##_SHIFT);			\
+		dw = __cpu_to_le32(dwval);				\
+	} while (0)
+
+#define KDETH_RESET(dw, field, val) ({ dw = 0; KDETH_SET(dw, field, val); })
+
+/* KDETH OM multipliers and switch over point */
+#define KDETH_OM_SMALL     4
+#define KDETH_OM_SMALL_SHIFT     2
+#define KDETH_OM_LARGE     64
+#define KDETH_OM_LARGE_SHIFT     6
+#define KDETH_OM_MAX_SIZE  (1 << ((KDETH_OM_LARGE / KDETH_OM_SMALL) + 1))
+
+#define FI_OPX_EXP_TID_TIDLEN_MASK   0x7FFULL
+#define FI_OPX_EXP_TID_TIDLEN_SHIFT  0
+#define FI_OPX_EXP_TID_TIDCTRL_MASK  0x3ULL
+#define FI_OPX_EXP_TID_TIDCTRL_SHIFT 20
+#define FI_OPX_EXP_TID_TIDIDX_MASK   0x3FFULL
+#define FI_OPX_EXP_TID_TIDIDX_SHIFT  22
+#define FI_OPX_EXP_TID_GET(tid, field) (((tid) >> FI_OPX_EXP_TID_TID##field##_SHIFT) & FI_OPX_EXP_TID_TID##field##_MASK)
+#define FI_OPX_EXP_TID_SET(field, value)			\
+	(((value) & FI_OPX_EXP_TID_TID##field##_MASK) <<	\
+	 FI_OPX_EXP_TID_TID##field##_SHIFT)
+#define FI_OPX_EXP_TID_CLEAR(tid, field) ({					\
+		(tid) &= ~(FI_OPX_EXP_TID_TID##field##_MASK <<			\
+			   FI_OPX_EXP_TID_TID##field##_SHIFT);			\
+		})
+#define FI_OPX_EXP_TID_RESET(tid, field, value) do {				\
+		FI_OPX_EXP_TID_CLEAR(tid, field);				\
+		(tid) |= FI_OPX_EXP_TID_SET(field, (value));			\
+	} while (0)
 
 
 #ifndef NDEBUG
@@ -416,41 +502,44 @@ union fi_opx_hfi1_packet_hdr {
 
 		union {
 			uint8_t	opcode;
-            struct {
-                /* == quadword 4 == */
-				uint8_t	    opcode;
-				uint8_t     unused;
-                uint16_t	origin_rs;
-                uint32_t    niov;           /* number of non-contiguous buffers described in the packet payload */
-                /* == quadword 5,6 == */
-                uintptr_t	origin_byte_counter_vaddr;
-                uintptr_t	target_byte_counter_vaddr;
-            } vaddr;
-            struct {
-                /* == quadword 4 == */
-				uint8_t	    opcode;
-				uint8_t     unused;
-                uint16_t	origin_rs;
-                uint8_t     dt;
-                uint8_t     op;
-                uint16_t    niov;           /* number of non-contiguous buffers described in the packet payload */
-                /* == quadword 5,6 == */
-                uintptr_t	target_completion_counter_vaddr;
-                uint64_t	key;
-            } mr;
-            struct {
-                /* == quadword 4 == */
-                uint8_t     opcode;
-				uint8_t     unused;
-                uint16_t    origin_rs;
-                uint8_t     unused0;
-                uint8_t     unused1;
-                uint16_t    unused2;         /* number of non-contiguous buffers described in the packet payload */
+			struct {
+				/* == quadword 4 == */
+				uint8_t		opcode;
+				uint8_t		unused0;
+				uint16_t	unused1;
+				uint16_t	ntidpairs;	/* number of tidpairs described in the packet payload */
+				uint16_t	niov;		/* number of non-contiguous buffers described in the packet payload */
 
-                /* == quadword 5,6 == */
-                uintptr_t   completion_counter;
-                uint64_t    bytes_to_fence;
-            } fence;
+				/* == quadword 5,6 == */
+				uintptr_t	origin_byte_counter_vaddr;
+				uintptr_t	target_byte_counter_vaddr;
+			} vaddr;
+			struct {
+				/* == quadword 4 == */
+				uint8_t		opcode;
+				uint8_t		unused0;
+				uint16_t	unused1;
+				uint8_t		dt;
+				uint8_t		op;
+				uint16_t	niov;		/* number of non-contiguous buffers described in the packet payload */
+
+				/* == quadword 5,6 == */
+				uintptr_t	target_completion_counter_vaddr;
+				uint64_t	key;
+			} mr;
+			struct {
+				/* == quadword 4 == */
+				uint8_t		opcode;
+				uint8_t		unused0;
+				uint16_t	unused1;
+				uint8_t		unused2;
+				uint8_t		unused3;
+				uint16_t	unused4;	/* number of non-contiguous buffers described in the packet payload */
+
+				/* == quadword 5,6 == */
+				uintptr_t	completion_counter;
+				uint64_t	bytes_to_fence;
+			} fence;
 		} target;
 
 	} __attribute__((__packed__)) cts;
@@ -472,44 +561,43 @@ union fi_opx_hfi1_packet_hdr {
 
 		union {
 			/* == quadword 4 == */
-			uint8_t	opcode;
+			/*  Common fields   */
+			struct {
+				uint8_t		opcode;
+				uint8_t		origin_tx;
+				uint8_t		dt;
+				uint8_t		op;
+				uint16_t	last_bytes;
+				uint16_t	bytes;
+
+				uint64_t	reserved[2]; /* op-specific */
+			};
+
 			struct {
 				/* == quadword 4 == */
-				uint8_t     opcode;
-				uint8_t     unused0;
-				uint8_t	    unused1;
-				uint8_t	    unused2;
-				uint32_t	bytes;
+				uint64_t	reserved; /* Common fields */
 
 				/* == quadword 5,6 == */
-				uintptr_t	rbuf;
 				uintptr_t	target_byte_counter_vaddr;
+				uintptr_t	rbuf;
 			} vaddr;
 			struct {
 				/* == quadword 4 == */
-				uint8_t opcode;
-				uint8_t unused;
-				uint16_t origin_rs;
-				/* == quadword 5,6 == */
-				uint8_t dt;
-				uint8_t op;
-				uint16_t bytes;
-				uintptr_t	offset;
-				uintptr_t	key;
-			} mr;
-			struct fi_opx_mr_atomic mr_atomic;
-            struct {
-                /* == quadword 4 == */
-                uint8_t     opcode;
-                uint8_t     unused0;
-                uint8_t     unused1;
-                uint8_t     unused2;
-                uint32_t    unused3;
+				uint64_t	reserved; /* Common fields */
 
-                /* == quadword 5,6 == */
-                uintptr_t   completion_counter;
-                uint64_t    bytes_to_fence;
-            } fence;
+				/* == quadword 5,6 == */
+				uintptr_t	key;
+				uintptr_t	offset;
+			} mr;
+
+			struct {
+				/* == quadword 4 == */
+				uint64_t	reserved; /* Common fields */
+
+				/* == quadword 5,6 == */
+				uintptr_t	completion_counter;
+				uint64_t	bytes_to_fence;
+			} fence;
 		} target;
 
 	} __attribute__((__packed__)) dput;
@@ -604,38 +692,39 @@ void fi_opx_hfi1_dump_packet_hdr (const union fi_opx_hfi1_packet_hdr * const hdr
 		const char * fn, const unsigned ln) {
 
 	const uint64_t * const qw = (uint64_t *)hdr;
+	const pid_t pid = getpid();
 
-	fprintf(stderr, "%s():%u ==== dump packet header @ %p [%016lx %016lx %016lx %016lx]\n", fn, ln, hdr, qw[0], qw[1], qw[2], qw[3]);
-	fprintf(stderr, "%s():%u .stl.lrh.flags ...........     0x%04hx\n", fn, ln, hdr->stl.lrh.flags);
-	fprintf(stderr, "%s():%u .stl.lrh.dlid ............     0x%04hx (be: %5hu, le: %5hu)\n", fn, ln, hdr->stl.lrh.dlid, hdr->stl.lrh.dlid, ntohs(hdr->stl.lrh.dlid));
-	fprintf(stderr, "%s():%u .stl.lrh.pktlen ..........     0x%04hx (be: %5hu, le: %5hu)\n", fn, ln, hdr->stl.lrh.pktlen, hdr->stl.lrh.pktlen, ntohs(hdr->stl.lrh.pktlen));
-	fprintf(stderr, "%s():%u .stl.lrh.slid ............     0x%04hx (be: %5hu, le: %5hu)\n", fn, ln, hdr->stl.lrh.slid, hdr->stl.lrh.slid, ntohs(hdr->stl.lrh.slid));
-	fprintf(stderr, "%s():%u\n", fn, ln);
-	fprintf(stderr, "%s():%u .stl.bth.opcode ..........     0x%02x \n", fn, ln, hdr->stl.bth.opcode);
+	fprintf(stderr, "(%d) %s():%u ==== dump packet header @ %p [%016lx %016lx %016lx %016lx]\n", pid, fn, ln, hdr, qw[0], qw[1], qw[2], qw[3]);
+	fprintf(stderr, "(%d) %s():%u .stl.lrh.flags ...........     0x%04hx\n", pid, fn, ln, hdr->stl.lrh.flags);
+	fprintf(stderr, "(%d) %s():%u .stl.lrh.dlid ............     0x%04hx (be: %5hu, le: %5hu)\n", pid, fn, ln, hdr->stl.lrh.dlid, hdr->stl.lrh.dlid, ntohs(hdr->stl.lrh.dlid));
+	fprintf(stderr, "(%d) %s():%u .stl.lrh.pktlen ..........     0x%04hx (be: %5hu, le: %5hu)\n", pid, fn, ln, hdr->stl.lrh.pktlen, hdr->stl.lrh.pktlen, ntohs(hdr->stl.lrh.pktlen));
+	fprintf(stderr, "(%d) %s():%u .stl.lrh.slid ............     0x%04hx (be: %5hu, le: %5hu)\n", pid, fn, ln, hdr->stl.lrh.slid, hdr->stl.lrh.slid, ntohs(hdr->stl.lrh.slid));
+	fprintf(stderr, "(%d) %s():%u\n", pid, fn, ln);
+	fprintf(stderr, "(%d) %s():%u .stl.bth.opcode ..........     0x%02x \n", pid, fn, ln, hdr->stl.bth.opcode);
 
-	fprintf(stderr, "%s():%u .match.slid ..............     0x%04x \n", fn, ln, hdr->match.slid);
-	fprintf(stderr, "%s():%u .match.origin_tx .........     0x%02x \n", fn, ln, hdr->match.origin_tx);
-	fprintf(stderr, "%s():%u .match.ofi_data ..........     0x%08x \n", fn, ln, hdr->match.ofi_data);
-	fprintf(stderr, "%s():%u .match.ofi_tag ...........     0x%016lx \n", fn, ln, hdr->match.ofi_tag);
+	fprintf(stderr, "(%d) %s():%u .match.slid ..............     0x%04x \n", pid, fn, ln, hdr->match.slid);
+	fprintf(stderr, "(%d) %s():%u .match.origin_tx .........     0x%02x \n", pid, fn, ln, hdr->match.origin_tx);
+	fprintf(stderr, "(%d) %s():%u .match.ofi_data ..........     0x%08x \n", pid, fn, ln, hdr->match.ofi_data);
+	fprintf(stderr, "(%d) %s():%u .match.ofi_tag ...........     0x%016lx \n", pid, fn, ln, hdr->match.ofi_tag);
 
 	switch (hdr->stl.bth.opcode) {
 		case FI_OPX_HFI_BTH_OPCODE_MSG_INJECT:
 		case FI_OPX_HFI_BTH_OPCODE_TAG_INJECT:
-			fprintf(stderr, "%s():%u .inject.message_length ...     0x%02x \n", fn, ln, hdr->inject.message_length);
-			fprintf(stderr, "%s():%u .inject.app_data_u64[0] ..     0x%016lx \n", fn, ln, hdr->inject.app_data_u64[0]);
-			fprintf(stderr, "%s():%u .inject.app_data_u64[1] ..     0x%016lx \n", fn, ln, hdr->inject.app_data_u64[1]);
+			fprintf(stderr, "(%d) %s():%u .inject.message_length ...     0x%02x \n", pid, fn, ln, hdr->inject.message_length);
+			fprintf(stderr, "(%d) %s():%u .inject.app_data_u64[0] ..     0x%016lx \n", pid, fn, ln, hdr->inject.app_data_u64[0]);
+			fprintf(stderr, "(%d) %s():%u .inject.app_data_u64[1] ..     0x%016lx \n", pid, fn, ln, hdr->inject.app_data_u64[1]);
 			break;
 		case FI_OPX_HFI_BTH_OPCODE_MSG_EAGER:
 		case FI_OPX_HFI_BTH_OPCODE_TAG_EAGER:
-			fprintf(stderr, "%s():%u .send.xfer_bytes_tail ....     0x%02x \n", fn, ln, hdr->send.xfer_bytes_tail);
-			fprintf(stderr, "%s():%u .send.payload_qws_total ..     0x%04x \n", fn, ln, hdr->send.payload_qws_total);
-			fprintf(stderr, "%s():%u .send.xfer_tail ..........     0x%016lx \n", fn, ln, hdr->send.xfer_tail);
+			fprintf(stderr, "(%d) %s():%u .send.xfer_bytes_tail ....     0x%02x \n", pid, fn, ln, hdr->send.xfer_bytes_tail);
+			fprintf(stderr, "(%d) %s():%u .send.payload_qws_total ..     0x%04x \n", pid, fn, ln, hdr->send.payload_qws_total);
+			fprintf(stderr, "(%d) %s():%u .send.xfer_tail ..........     0x%016lx \n", pid, fn, ln, hdr->send.xfer_tail);
 			break;
 		case FI_OPX_HFI_BTH_OPCODE_MSG_RZV_RTS:
 		case FI_OPX_HFI_BTH_OPCODE_TAG_RZV_RTS:	/* calculate (?) total bytes to be transfered */
-			break;
+			//break;
 		default:
-			fprintf(stderr, "%s():%u ==== QWs 4-7 : [%016lx %016lx %016lx %016lx]\n", fn, ln, qw[4], qw[5], qw[6], qw[7]);
+			fprintf(stderr, "(%d) %s():%u ==== QWs 4-7 : [%016lx %016lx %016lx %016lx]\n", pid, fn, ln, qw[4], qw[5], qw[6], qw[7]);
 			break;
 	}
 
@@ -661,8 +750,20 @@ struct fi_opx_hfi1_dput_iov {
 	uint64_t			bytes;
 };
 
+struct fi_opx_hfi1_dput_fetch {
+	uintptr_t			fetch_rbuf;
+	uintptr_t			fetch_counter_vaddr;
+};
 
-#define FI_OPX_MAX_DPUT_IOV ((FI_OPX_HFI1_PACKET_MTU/sizeof(struct iovec) - 4) + 3)
+union fi_opx_hfi1_dput_rbuf {
+	uintptr_t ptr;
+	uint32_t dw[2];
+};
+
+#define FI_OPX_MAX_DPUT_IOV ((FI_OPX_HFI1_PACKET_MTU/sizeof(struct fi_opx_hfi1_dput_iov) - 4) + 3)
+
+#define FI_OPX_MAX_DPUT_TIDPAIRS ((FI_OPX_HFI1_PACKET_MTU - sizeof(struct fi_opx_hfi1_dput_iov) - (2 * sizeof(uint32_t)))/sizeof(uint32_t))
+
 union fi_opx_hfi1_packet_payload {
 	uint8_t				byte[FI_OPX_HFI1_PACKET_MTU];
 	union {
@@ -675,7 +776,8 @@ union fi_opx_hfi1_packet_payload {
 			uint64_t	immediate_qw_count;	/* only need 3 bits (0..7 quadwords) */
 			uint64_t	immediate_block_count;	/* only need 8 bits (0..158 64B blocks) */
 			uintptr_t	origin_byte_counter_vaddr;
-			uint64_t	unused[2];
+			uint64_t        immediate_end_block_count;
+			uint64_t	unused[1];
 
 			/* ==== CACHE LINE 1 ==== */
 
@@ -705,6 +807,14 @@ union fi_opx_hfi1_packet_payload {
 		struct fi_opx_hfi1_dput_iov	iov[0];
 	} cts;
 
+	/* tid_cts extends cts*/
+	struct {
+		struct fi_opx_hfi1_dput_iov	iov[1];
+		uint32_t  tid_offset;
+		uint32_t  ntidpairs;
+		uint32_t  tidpairs[FI_OPX_MAX_DPUT_TIDPAIRS];
+	} tid_cts;
+
 	struct {
 		struct fi_opx_hfi1_fetch_metadata	metadata;
 		uint8_t				data[FI_OPX_HFI1_PACKET_MTU-sizeof(struct fi_opx_hfi1_fetch_metadata)];
@@ -714,21 +824,54 @@ union fi_opx_hfi1_packet_payload {
 
 
 
-
+struct fi_opx_hfi1_ue_packet_slist;
 struct fi_opx_hfi1_ue_packet {
-	struct fi_opx_hfi1_ue_packet *	next;
+	/* == CACHE LINE 0 == */
+	struct fi_opx_hfi1_ue_packet			*next;
+	struct fi_opx_hfi1_ue_packet			*prev;
+
+	struct {
+		struct fi_opx_hfi1_ue_packet		*next;
+		struct fi_opx_hfi1_ue_packet		*prev;
+		struct fi_opx_hfi1_ue_packet_slist 	*ht;
+	} tag_ht;
+
+	struct {
+		uint32_t				rank;
+		uint32_t				rank_inst;
+	} daos_info;
+
+	/* Copies of tag and origin_uid_fi so that
+	 * packet can be matched only accessing the
+	 * first cacheline */
+	uint64_t					tag;
+	fi_opx_uid_t					origin_uid_fi;
+
+	uint32_t					unused_cacheline0;
+
+	/* == CACHE LINE 1 == */
+	uint64_t					unused_cacheline1;
 	union fi_opx_hfi1_packet_hdr		hdr;
+
+	/* == CACHE LINE 2 == */
 	union fi_opx_hfi1_packet_payload	payload;
 } __attribute__((__packed__)) __attribute__((aligned(64)));
+
+static_assert(offsetof(struct fi_opx_hfi1_ue_packet, unused_cacheline1) == 64,
+		"struct fi_opx_hfi1_ue_packet->unused_cacheline1 should be aligned on cache boundary!");
+static_assert(offsetof(struct fi_opx_hfi1_ue_packet, payload) == 128,
+		"struct fi_opx_hfi1_ue_packet->payload should be aligned on cache boundary!");
 
 struct fi_opx_hfi1_ue_packet_slist {
 	struct fi_opx_hfi1_ue_packet *	head;
 	struct fi_opx_hfi1_ue_packet *	tail;
+	uint64_t			length;
 };
 
 static inline void fi_opx_hfi1_ue_packet_slist_init (struct fi_opx_hfi1_ue_packet_slist* list)
 {
 	list->head = list->tail = NULL;
+	list->length = 0;
 }
 
 static inline int fi_opx_hfi1_ue_packet_slist_empty (struct fi_opx_hfi1_ue_packet_slist* list)
@@ -736,28 +879,20 @@ static inline int fi_opx_hfi1_ue_packet_slist_empty (struct fi_opx_hfi1_ue_packe
 	return !list->head;
 }
 
-static inline void fi_opx_hfi1_ue_packet_slist_insert_head (struct fi_opx_hfi1_ue_packet *item,
-		struct fi_opx_hfi1_ue_packet_slist* list)
-{
-	assert(item->next == NULL);
-	if (fi_opx_hfi1_ue_packet_slist_empty(list)) {
-		list->tail = item;
-	} else {
-		item->next = list->head;
-	}
-
-	list->head = item;
-}
-
 static inline void fi_opx_hfi1_ue_packet_slist_insert_tail (struct fi_opx_hfi1_ue_packet *item,
 		struct fi_opx_hfi1_ue_packet_slist* list)
 {
 	assert(item->next == NULL);
 	if (fi_opx_hfi1_ue_packet_slist_empty(list)) {
+		assert(list->length == 0);
+		item->prev = NULL;
 		list->head = item;
 	} else {
+		assert(list->length > 0);
+		item->prev = list->tail;
 		list->tail->next = item;
 	}
+	++list->length;
 
 	list->tail = item;
 }
@@ -768,18 +903,25 @@ static inline void fi_opx_hfi1_ue_packet_slist_insert_tail (struct fi_opx_hfi1_u
  */
 static inline
 struct fi_opx_hfi1_ue_packet *fi_opx_hfi1_ue_packet_slist_pop_item (struct fi_opx_hfi1_ue_packet *item,
-								struct fi_opx_hfi1_ue_packet *prev,
-								struct fi_opx_hfi1_ue_packet_slist *list)
+								    struct fi_opx_hfi1_ue_packet_slist *list)
 {
+	struct fi_opx_hfi1_ue_packet *prev = item->prev;
 	if (prev == NULL) {
 		list->head = item->next;
 	} else {
+		item->prev = NULL;
 		prev->next = item->next;
 	}
 
-	if (!item->next) list->tail = prev;
-
+	if (!item->next) {
+		list->tail = prev;
+	} else {
+		item->next->prev = prev;
+	}
 	item->next = NULL;
+
+	assert(list->length > 0);
+	--list->length;
 
 	return item;
 }
@@ -790,21 +932,27 @@ struct fi_opx_hfi1_ue_packet *fi_opx_hfi1_ue_packet_slist_pop_item (struct fi_op
  */
 static inline
 struct fi_opx_hfi1_ue_packet *fi_opx_hfi1_ue_packet_slist_remove_item (struct fi_opx_hfi1_ue_packet *item,
-									struct fi_opx_hfi1_ue_packet *prev,
-									struct fi_opx_hfi1_ue_packet_slist *list,
-									struct fi_opx_hfi1_ue_packet_slist *free_pool)
+								       struct fi_opx_hfi1_ue_packet_slist *list)
 {
 	struct fi_opx_hfi1_ue_packet *next_item = item->next;
-
+	struct fi_opx_hfi1_ue_packet *prev = item->prev;
 	if (prev == NULL) {
 		list->head = next_item;
 	} else {
+		item->prev = NULL;
 		prev->next = next_item;
 	}
 
-	if (!next_item) list->tail = prev;
+	if (!next_item) {
+		list->tail = prev;
+	} else {
+		next_item->prev = prev;
+	}
 
 	item->next = NULL;
+
+	assert(list->length > 0);
+	--list->length;
 
 #ifndef NDEBUG
 	/* Clobber the contents of the packet header and payload before
@@ -815,7 +963,7 @@ struct fi_opx_hfi1_ue_packet *fi_opx_hfi1_ue_packet_slist_remove_item (struct fi
 	memset(&item->payload, 0xAA, sizeof(item->payload));
 #endif
 	/* add uepkt to ue free pool */
-	fi_opx_hfi1_ue_packet_slist_insert_head(item, free_pool);
+	ofi_buf_free(item);
 
 	return next_item;
 }

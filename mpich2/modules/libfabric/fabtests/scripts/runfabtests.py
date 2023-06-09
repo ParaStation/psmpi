@@ -31,6 +31,16 @@
 # SOFTWARE.
 #
 
+import argparse
+import builtins
+import os
+import sys
+
+import yaml
+
+import pytest
+
+
 def get_option_longform(option_name, option_params):
     '''
         get the long form command line option name of an option
@@ -52,7 +62,10 @@ def get_ubertest_test_type(fabtests_testsets):
 
     return None
 
-def fabtests_testsets_to_pytest_markers(fabtests_testsets):
+def fabtests_testsets_to_pytest_markers(fabtests_testsets, run_mode=None):
+    if run_mode:
+        assert run_mode in ["serial", "parallel"]
+
     test_set = set()
     test_list = fabtests_testsets.split(",")
 
@@ -83,10 +96,16 @@ def fabtests_testsets_to_pytest_markers(fabtests_testsets):
         else:
             markers += " or " + test
 
+    if run_mode:
+        if run_mode == "serial":
+            markers = "(" + markers + ") and (serial)"
+        else:
+            assert run_mode == "parallel"
+            markers = "(" + markers + ") and (not serial)"
+
     return markers
 
 def get_default_exclusion_file(fabtests_args):
-    import os
     test_configs_dir = os.path.abspath(os.path.join(get_pytest_root_dir(), "..", "test_configs"))
     exclusion_file = os.path.join(test_configs_dir, fabtests_args.provider,
                                   fabtests_args.provider + ".exclude")
@@ -96,8 +115,6 @@ def get_default_exclusion_file(fabtests_args):
     return exclusion_file
 
 def get_default_ubertest_config_file(fabtests_args):
-    import os
- 
     test_configs_dir = os.path.abspath(os.path.join(get_pytest_root_dir(), "..", "test_configs"))
     provider = fabtests_args.provider
     if provider.find(";") != -1:
@@ -117,8 +134,6 @@ def get_default_ubertest_config_file(fabtests_args):
     return cfg_file
 
 def add_common_arguments(parser, shared_options):
-    import builtins
-
     for option_name in shared_options.keys():
         option_params = shared_options[option_name]
         option_longform = get_option_longform(option_name, option_params)
@@ -144,10 +159,12 @@ def add_common_arguments(parser, shared_options):
                                 dest=option_name, type=getattr(builtins, option_type),
                                 help=option_helpmsg, default=option_default)
 
-def fabtests_args_to_pytest_args(fabtests_args, shared_options):
-    import os
-
+def fabtests_args_to_pytest_args(fabtests_args, shared_options, run_mode):
     pytest_args = []
+
+    if run_mode == "parallel":
+        pytest_args.append("-n")
+        pytest_args.append(str(fabtests_args.nworkers))
 
     pytest_args.append("--provider=" + fabtests_args.provider)
     pytest_args.append("--server-id=" + fabtests_args.server_id)
@@ -172,7 +189,7 @@ def fabtests_args_to_pytest_args(fabtests_args, shared_options):
     else:
         pytest_args.append("--tb=no")
 
-    markers = fabtests_testsets_to_pytest_markers(fabtests_args.testsets)
+    markers = fabtests_testsets_to_pytest_markers(fabtests_args.testsets, run_mode)
     pytest_args.append("-m")
     pytest_args.append(markers)
 
@@ -187,8 +204,13 @@ def fabtests_args_to_pytest_args(fabtests_args, shared_options):
 
     if fabtests_args.junit_xml:
         pytest_args.append("--junit-xml")
-        pytest_args.append(os.path.abspath(fabtests_args.junit_xml))
-        pytest_args.append("--self-contained-html")
+        file_name = os.path.abspath(fabtests_args.junit_xml)
+        if run_mode:
+            file_name += "." + run_mode
+        pytest_args.append(file_name)
+        if fabtests_args.junit_logging:
+            pytest_args.append("-o")
+            pytest_args.append("junit_logging=" + fabtests_args.junit_logging)
 
     # add options shared between runfabtests.py and libfabric pytest
     for option_name in shared_options.keys():
@@ -205,10 +227,10 @@ def fabtests_args_to_pytest_args(fabtests_args, shared_options):
 
         if option_type == "bool" or option_type == "boolean":
             assert option_value
-            pytest_args.append(get_option_longform(option_name, option_params))
+            pytest_args.append(option_longform)
         else:
             assert option_type == "str" or option_type == "int"
-            pytest_args.append(get_option_longform(option_name, option_params) + "=" + str(option_value))
+            pytest_args.append(option_longform + "=" + str(option_value))
 
     if not hasattr(fabtests_args, "exclusion_file") or not fabtests_args.exclusion_file:
         default_exclusion_file = get_default_exclusion_file(fabtests_args)
@@ -226,8 +248,6 @@ def get_pytest_root_dir():
     '''
         find the pytest root directory according the location of runfabtests.py
     '''
-    import os
-    import sys
     script_path = os.path.abspath(sys.argv[0])
     script_dir = os.path.dirname(script_path)
     if os.path.basename(script_dir) == "bin":
@@ -250,8 +270,6 @@ def get_pytest_relative_case_dir(fabtests_args, pytest_root_dir):
     '''
         the directory that contains test cases, relative to pytest_root_dir
     '''
-    import os
-
     # provider's own test directory (if exists) overrides default
     pytest_case_dir = os.path.join(pytest_root_dir, fabtests_args.provider)
     if os.path.exists(pytest_case_dir):
@@ -260,13 +278,30 @@ def get_pytest_relative_case_dir(fabtests_args, pytest_root_dir):
     assert os.path.exists(os.path.join(pytest_root_dir, "default"))
     return "default"
 
-def main():
-    import os
-    import sys
-    import yaml
-    import pytest
-    import argparse
 
+def run(fabtests_args, shared_options, run_mode):
+    prev_cwd = os.getcwd()
+    pytest_root_dir = get_pytest_root_dir()
+
+    pytest_args = fabtests_args_to_pytest_args(fabtests_args, shared_options, run_mode)
+    pytest_args.append(get_pytest_relative_case_dir(fabtests_args, pytest_root_dir))
+
+    pytest_command = "cd " + pytest_root_dir + "; pytest"
+    for arg in pytest_args:
+        if arg.find(' ') != -1:
+            arg = "'" + arg + "'"
+        pytest_command += " " + arg
+    print(pytest_command)
+
+    # actually running tests
+
+    os.chdir(pytest_root_dir)
+    status = pytest.main(pytest_args)
+    os.chdir(prev_cwd)
+    return status
+
+
+def main():
     pytest_root_dir = get_pytest_root_dir()
 
     # pytest/options.yaml contains the definition of a list of options that are
@@ -284,7 +319,7 @@ def main():
     parser.add_argument("server_id", type=str, help="server ip or hostname")
     parser.add_argument("client_id", type=str, help="client ip or hostname")
     parser.add_argument("-t", dest="testsets", type=str, default="quick",
-                        help="test set(s): all,quick,unit,functional,standard,short,ubertest (default quick)")
+                        help="test set(s): all,quick,unit,functional,standard,short,ubertest,cuda_memory,neuron_memory (default quick)")
     parser.add_argument("-v", dest="verbose", action="count", default=0,
                         help="verbosity level"
                              "-v: print extra info for failed test(s)"
@@ -294,24 +329,45 @@ def main():
                         help="only run tests which match the given substring expression.")
     parser.add_argument("--html", type=str, help="path to generated html report")
     parser.add_argument("--junit-xml", type=str, help="path to generated junit xml report")
+    parser.add_argument("--junit-logging", choices=['no', 'log', 'system-out', 'system-err', 'out-err', 'all'], type=str,
+                        help="Write captured log messages to JUnit report")
+    parser.add_argument("--nworkers", type=int, default=8, help="Number of parallel test workers. Defaut is 8.")
 
     add_common_arguments(parser, shared_options)
 
     fabtests_args = parser.parse_args()
-    pytest_args = fabtests_args_to_pytest_args(fabtests_args, shared_options)
+    if fabtests_args.provider != "efa" and fabtests_args.nworkers > 1:
+        print("only efa provider support parallelized tests. Setting nworkers to 1 ....")
+        fabtests_args.nworkers = 1
 
-    os.chdir(pytest_root_dir)
+    if fabtests_args.html:
+        print("html cannot be generated under parallel mode. Setting nworkers to 1 ....")
+        fabtests_args.nworkers = 1
 
-    pytest_args.append(get_pytest_relative_case_dir(fabtests_args, pytest_root_dir))
+    if fabtests_args.nworkers == 1:
+        exit(run(fabtests_args, shared_options, None))
+    else:
+        print("Running parallelable tests in parallel mode")
+        parallel_status = run(fabtests_args, shared_options, "parallel")
 
-    pytest_command = "cd " + pytest_root_dir + "; pytest"
-    for arg in pytest_args:
-        if arg.find(' ') != -1:
-            arg = "'" + arg + "'"
-        pytest_command += " " + arg
-    print(pytest_command)
+        print("Running other tests in serial mode")
+        serial_status = run(fabtests_args, shared_options, "serial")
 
-    # actually running tests
-    exit(pytest.main(pytest_args))
+        if fabtests_args.junit_xml:
+            os.system("junitparser merge {}.parallel {}.serial {}".format(
+                    fabtests_args.junit_xml,
+                    fabtests_args.junit_xml,
+                    fabtests_args.junit_xml)
+                )
+            os.unlink(fabtests_args.junit_xml + ".parallel")
+            os.unlink(fabtests_args.junit_xml + ".serial")
+
+        if parallel_status != 0:
+            exit(parallel_status)
+
+        if serial_status !=0:
+            exit(serial_status)
+
+        exit(0)
 
 main()

@@ -3,6 +3,7 @@
  * Copyright (c) 2006-2016 Cisco Systems, Inc.  All rights reserved.
  * Copyright (c) 2013-2017 Intel Corp., Inc.  All rights reserved.
  * (C) Copyright 2020 Hewlett Packard Enterprise Development LP
+ * Copyright (c) 2022 Intel Corporation. All rights reserved.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -49,7 +50,7 @@
 #include "ofi_prov.h"
 #include "ofi_perf.h"
 #include "ofi_hmem.h"
-#include "rdma/fi_ext.h"
+#include <rdma/fi_ext.h>
 
 #ifdef HAVE_LIBDL
 #include <dlfcn.h>
@@ -69,12 +70,17 @@ enum ofi_prov_order {
 	OFI_PROV_ORDER_REGISTER,
 };
 
+struct ofi_info_match {
+	const char *prov_name;
+	enum fi_ep_type ep_type;
+};
+
 static struct ofi_prov *prov_head, *prov_tail;
 static enum ofi_prov_order prov_order = OFI_PROV_ORDER_VERSION;
 int ofi_init = 0;
 extern struct ofi_common_locks common_locks;
 
-static struct fi_filter prov_filter;
+static struct ofi_filter prov_filter;
 
 
 static struct ofi_prov *
@@ -174,7 +180,7 @@ static int ofi_find_name(char **names, const char *name)
 /* matches if names[i] == "xxx;yyy" and name == "xxx" */
 static int ofi_find_layered_name(char **names, const char *name)
 {
-	int i;	
+	int i;
 	size_t len;
 
 	len = strlen(name);
@@ -225,44 +231,30 @@ static void ofi_suggest_prov_names(char *name_to_match)
 	}
 }
 
-static enum ofi_prov_type ofi_prov_type(const struct fi_provider *provider)
-{
-	const struct fi_prov_context *ctx;
-	ctx = (const struct fi_prov_context *) &provider->context;
-	return ctx->type;
-}
-
-static int ofi_disable_util_layering(const struct fi_provider *provider) {
-	const struct fi_prov_context *ctx;
-
-	ctx = (const struct fi_prov_context *) &provider->context;
-	return ctx->disable_layering;
-}
-
 static int ofi_is_util_prov(const struct fi_provider *provider)
 {
-	return ofi_prov_type(provider) == OFI_PROV_UTIL;
+	return ofi_prov_ctx(provider)->type == OFI_PROV_UTIL;
 }
 
 static int ofi_is_core_prov(const struct fi_provider *provider)
 {
-	return ofi_prov_type(provider) == OFI_PROV_CORE;
+	return ofi_prov_ctx(provider)->type == OFI_PROV_CORE;
 }
 
 static int ofi_is_hook_prov(const struct fi_provider *provider)
 {
-	return ofi_prov_type(provider) == OFI_PROV_HOOK;
+	return ofi_prov_ctx(provider)->type == OFI_PROV_HOOK;
 }
 
-int ofi_apply_filter(struct fi_filter *filter, const char *name)
+int ofi_apply_filter(struct ofi_filter *filter, const char *name)
 {
 	if (!filter->names)
 		return 0;
 
 	if (ofi_find_name(filter->names, name) >= 0)
-		return filter->negated ? 1 : 0;
+		return filter->negated;
 
-	return filter->negated ? 0 : 1;
+	return !filter->negated;
 }
 
 /*
@@ -278,21 +270,22 @@ int ofi_apply_filter(struct fi_filter *filter, const char *name)
  * input "xxx" otherwise the core provider "xxx" may be incorrectly filtered
  * out.
  */
-int ofi_apply_prov_init_filter(struct fi_filter *filter, const char *name)
+static bool
+ofi_apply_prov_init_filter(struct ofi_filter *filter, const char *name)
 {
 	if (!filter->names)
-		return 0;
+		return false;
 
 	if (ofi_find_name(filter->names, name) >= 0)
-		return filter->negated ? 1 : 0;
+		return filter->negated;
 
 	if (filter->negated)
-		return 0;
+		return false;
 
 	if (ofi_find_layered_name(filter->names, name) >= 0)
-		return 0;
+		return false;
 
-	return 1;
+	return true;
 }
 
 /*
@@ -305,19 +298,20 @@ int ofi_apply_prov_init_filter(struct fi_filter *filter, const char *name)
  * In addition, a name "xxx" in the filter should be able to match an input
  * "xxx;yyy" to allow extra layering on top of what is requested by the user.
  */
-int ofi_apply_prov_post_filter(struct fi_filter *filter, const char *name)
+static bool
+ofi_apply_prov_post_filter(struct ofi_filter *filter, const char *name)
 {
 	if (!filter->names)
-		return 0;
+		return false;
 
 	if (ofi_find_name(filter->names, name) >= 0 ||
 	    ofi_find_core_name(filter->names, name) >= 0)
-		return filter->negated ? 1 : 0;
+		return filter->negated;
 
-	return filter->negated ? 0 : 1;
+	return !filter->negated;
 }
 
-static int ofi_getinfo_filter(const struct fi_provider *provider)
+static bool ofi_getinfo_filter(const struct fi_provider *provider)
 {
 	/* Positive filters only apply to core providers.  They must be
 	 * explicitly enabled by the filter.  Other providers (i.e. utility)
@@ -326,7 +320,7 @@ static int ofi_getinfo_filter(const struct fi_provider *provider)
 	 * to disable any provider.
 	 */
 	if (!prov_filter.negated && !ofi_is_core_prov(provider))
-		return 0;
+		return false;
 
 	return ofi_apply_prov_init_filter(&prov_filter, provider->name);
 }
@@ -343,7 +337,8 @@ static void ofi_filter_info(struct fi_info **info)
 	while (cur) {
 		assert(cur->fabric_attr && cur->fabric_attr->prov_name);
 
-		if (ofi_apply_prov_post_filter(&prov_filter, cur->fabric_attr->prov_name)) {
+		if (ofi_apply_prov_post_filter(&prov_filter,
+					       cur->fabric_attr->prov_name)) {
 			tmp = cur;
 			cur = cur->next;
 			if (prev)
@@ -404,29 +399,34 @@ static struct fi_provider *ofi_get_hook(const char *name)
 	return provider;
 }
 
-/* This is the default order that providers will be reported when a provider
- * is available.  Initialize the socket(s) provider last.  This will result in
- * it being the least preferred provider.
+/* This is the default order that providers will be accessed when available.
+ * This, in turn, sets the default ordering of fi_info's reported to the user.
+ * However, ofi_reorder_info() may re-arrange the list based on hard-coded
+ * criteria.
  */
 static void ofi_ordered_provs_init(void)
 {
 	char *ordered_prov_names[] = {
 		"efa", "psm2", "opx", "psm", "usnic", "gni", "bgq", "verbs",
-		"netdir", "psm3", "ofi_rxm", "ofi_rxd", "shm",
+		"netdir", "psm3", "ucx", "ofi_rxm", "ofi_rxd", "shm",
+
 		/* Initialize the socket based providers last of the
 		 * standard providers.  This will result in them being
 		 * the least preferred providers.
 		 */
 
 		/* Before you add ANYTHING here, read the comment above!!! */
-		"udp", "tcp", "sockets", /* NOTHING GOES HERE! */
+		"udp", "tcp", "sockets", "net", /* NOTHING GOES HERE! */
 		/* Seriously, read it! */
 
 		/* These are hooking providers only.  Their order
 		 * doesn't matter
 		 */
-		"ofi_hook_perf", "ofi_hook_debug", "ofi_hook_noop", "ofi_hook_hmem",
-		"ofi_hook_dmabuf_peer_mem",
+		"ofi_hook_perf", "ofi_hook_trace", "ofi_hook_debug",
+		"ofi_hook_noop", "ofi_hook_hmem", "ofi_hook_dmabuf_peer_mem",
+
+		/* So do the offload providers. */
+		"off_coll",
 	};
 	struct ofi_prov *prov;
 	int num_provs, i;
@@ -440,20 +440,20 @@ static void ofi_ordered_provs_init(void)
 	}
 }
 
-static void ofi_set_prov_type(struct fi_prov_context *ctx,
-			      struct fi_provider *provider)
+static void ofi_set_prov_type(struct fi_provider *provider)
 {
 	if (!provider->getinfo)
-		ctx->type = OFI_PROV_HOOK;
+		ofi_prov_ctx(provider)->type = OFI_PROV_HOOK;
 	else if (ofi_has_util_prefix(provider->name))
-		ctx->type = OFI_PROV_UTIL;
+		ofi_prov_ctx(provider)->type = OFI_PROV_UTIL;
+	else if (ofi_has_offload_prefix(provider->name))
+		ofi_prov_ctx(provider)->type = OFI_PROV_OFFLOAD;
 	else
-		ctx->type = OFI_PROV_CORE;
+		ofi_prov_ctx(provider)->type = OFI_PROV_CORE;
 }
 
 static void ofi_register_provider(struct fi_provider *provider, void *dlhandle)
 {
-	struct fi_prov_context *ctx;
 	struct ofi_prov *prov = NULL;
 	bool hidden = false;
 
@@ -487,8 +487,7 @@ static void ofi_register_provider(struct fi_provider *provider, void *dlhandle)
 		goto cleanup;
 	}
 
-	ctx = (struct fi_prov_context *) &provider->context;
-	ofi_set_prov_type(ctx, provider);
+	ofi_set_prov_type(provider);
 
 	if (ofi_getinfo_filter(provider)) {
 		FI_INFO(&core_prov, FI_LOG_CORE,
@@ -498,17 +497,18 @@ static void ofi_register_provider(struct fi_provider *provider, void *dlhandle)
 	}
 
 	if (ofi_apply_filter(&prov_log_filter, provider->name))
-		ctx->disable_logging = 1;
+		ofi_prov_ctx(provider)->disable_logging = true;
 
-	/*
-	 * Prevent utility providers from layering on these core providers
+	/* Prevent utility providers from layering on these core providers
 	 * unless explicitly requested.
 	 */
 	if (!strcasecmp(provider->name, "sockets") ||
 	    !strcasecmp(provider->name, "shm") ||
 	    !strcasecmp(provider->name, "efa") ||
-	    !strcasecmp(provider->name, "psm3") || ofi_is_util_prov(provider))
-		ctx->disable_layering = 1;
+	    !strcasecmp(provider->name, "psm3") ||
+	    !strcasecmp(provider->name, "ucx") ||
+	    ofi_is_util_prov(provider))
+		ofi_prov_ctx(provider)->disable_layering = true;
 
 	prov = ofi_getprov(provider->name, strlen(provider->name));
 	if (prov && !prov->provider) {
@@ -569,19 +569,19 @@ static int verify_filter_names(char **names)
 	return FI_SUCCESS;
 }
 
-void ofi_free_filter(struct fi_filter *filter)
+void ofi_free_filter(struct ofi_filter *filter)
 {
 	ofi_free_string_array(filter->names);
 }
 
-void ofi_create_filter(struct fi_filter *filter, const char *raw_filter)
+void ofi_create_filter(struct ofi_filter *filter, const char *raw_filter)
 {
 	memset(filter, 0, sizeof *filter);
 	if (raw_filter == NULL)
 		return;
 
 	if (*raw_filter == '^') {
-		filter->negated = 1;
+		filter->negated = true;
 		++raw_filter;
 	}
 
@@ -665,6 +665,8 @@ static void ofi_find_prov_libs(void)
 
 		if (ofi_has_util_prefix(prov->prov_name)) {
 			short_prov_name = prov->prov_name + strlen(OFI_UTIL_PREFIX);
+		} else if (ofi_has_offload_prefix(prov->prov_name)) {
+			short_prov_name = prov->prov_name + strlen(OFI_OFFLOAD_PREFIX);
 		} else {
 			short_prov_name = prov->prov_name;
 		}
@@ -801,6 +803,7 @@ void fi_ini(void)
 	ofi_ordered_provs_init();
 	fi_param_init();
 	fi_log_init();
+	ofi_dump_sysconfig();
 	ofi_osd_init();
 	ofi_mem_init();
 	ofi_pmem_init();
@@ -826,17 +829,22 @@ void fi_ini(void)
 			"(default: provider specific)");
 	fi_param_get_size_t(NULL, "universe_size", &ofi_universe_size);
 
-	fi_param_define(NULL, "poll_fairness", FI_PARAM_INT,
-			"This counter value controls calling poll() on a list "
-			"of sockets and file descriptors and is most relevant "
-			"when using the tcp provider with the pollfd wait "
-			"object.  The pollfd abstraction maintains a list of "
-			"active or hot fd's that it monitors.  This variable "
-			"controls the number of times that the active fd's "
-			"list is checked relative to the full set of fd's "
-			"being monitored.  A value of 0 disables the active "
-			"list.  Default (%d)", ofi_poll_fairness);
-	fi_param_get_int(NULL, "poll_fairness", &ofi_poll_fairness);
+	fi_param_define(NULL, "av_remove_cleanup", FI_PARAM_BOOL,
+			"When true, release any underlying resources, such as "
+			"hidden connections when removing an entry from an "
+			"AV.  This can help save resources on AV entries "
+			"that reference a peer which is no longer active.  "
+			"However, it may abruptly terminate data transfers "
+			"from peers that are active at the time their "
+			"address is removed from the local AV.  "
+			"(default: false)");
+	fi_param_get_bool(NULL, "av_remove_cleanup", &ofi_av_remove_cleanup);
+
+	fi_param_define(NULL, "offload_coll_provider", FI_PARAM_STRING,
+			"The name of a colective offload provider (default: \
+			empty - no provider)");
+	fi_param_get_str(NULL, "offload_coll_provider",
+			    &ofi_offload_coll_prov_name);
 
 	ofi_load_dl_prov();
 
@@ -848,6 +856,8 @@ void fi_ini(void)
 	ofi_register_provider(BGQ_INIT, NULL);
 	ofi_register_provider(NETDIR_INIT, NULL);
 	ofi_register_provider(SHM_INIT, NULL);
+	/* ofi_register_provider(SM2_INIT, NULL); disable for v1.18 release */
+
 	ofi_register_provider(RXM_INIT, NULL);
 	ofi_register_provider(VERBS_INIT, NULL);
 	/* ofi_register_provider(RSTREAM_INIT, NULL); - no support */
@@ -855,15 +865,19 @@ void fi_ini(void)
 	ofi_register_provider(RXD_INIT, NULL);
 	ofi_register_provider(EFA_INIT, NULL);
 	ofi_register_provider(OPX_INIT, NULL);
+	ofi_register_provider(UCX_INIT, NULL);
 	ofi_register_provider(UDP_INIT, NULL);
 	ofi_register_provider(SOCKETS_INIT, NULL);
 	ofi_register_provider(TCP_INIT, NULL);
 
 	ofi_register_provider(HOOK_PERF_INIT, NULL);
+	ofi_register_provider(HOOK_TRACE_INIT, NULL);
 	ofi_register_provider(HOOK_DEBUG_INIT, NULL);
 	ofi_register_provider(HOOK_HMEM_INIT, NULL);
 	ofi_register_provider(HOOK_DMABUF_PEER_MEM_INIT, NULL);
 	ofi_register_provider(HOOK_NOOP_INIT, NULL);
+
+	ofi_register_provider(COLL_INIT, NULL);
 
 	ofi_init = 1;
 
@@ -934,6 +948,88 @@ void fi_freeinfo(struct fi_info *info)
 	}
 }
 
+static bool
+ofi_info_match_prov(struct fi_info *info, struct ofi_info_match *match)
+{
+	assert(match && match->prov_name);
+	assert(info && info->fabric_attr && info->ep_attr);
+	return !strcasecmp(info->fabric_attr->prov_name, match->prov_name) &&
+		(info->ep_attr->type == match->ep_type);
+}
+
+static bool
+ofi_info_split(struct fi_info **info, struct fi_info **new_list,
+	       struct fi_info **new_tail, struct ofi_info_match *match)
+{
+	struct fi_info *cur, *prev, *next;
+
+	*new_list = NULL;
+	*new_tail = NULL;
+
+	prev = NULL;
+	for (cur = *info; cur; cur = next) {
+		next = cur->next;
+
+		if (!ofi_info_match_prov(cur, match)) {
+			prev = cur;
+			continue;
+		}
+
+		if (prev)
+			prev->next = next;
+		else
+			*info = next;
+
+		if (*new_list)
+			(*new_tail)->next = cur;
+		else
+			*new_list = cur;
+
+		*new_tail = cur;
+		(*new_tail)->next = NULL;
+	}
+
+	return *new_list != NULL;
+}
+
+static void
+ofi_info_insert(struct fi_info **info, struct fi_info *head,
+		struct fi_info *tail, struct ofi_info_match *match)
+{
+	struct fi_info *cur, *prev;
+
+	for (prev = NULL, cur = *info; cur; prev = cur, cur = cur->next) {
+		if (ofi_info_match_prov(cur, match))
+			break;
+	}
+
+	if (prev) {
+		prev->next = head;
+		tail->next = cur;
+	} else {
+		tail->next = *info;
+		*info = head;
+	}
+}
+
+static void
+ofi_reorder_info(struct fi_info **info)
+{
+	struct fi_info *head, *tail;
+	struct ofi_info_match match;
+
+	/*
+	 * Prioritize net over net;rxm for rdm ep's
+	 */
+	match.ep_type = FI_EP_RDM;
+	match.prov_name = "tcp";
+	if (!ofi_info_split(info, &head, &tail, &match))
+		return;
+
+	match.prov_name = "tcp;ofi_rxm";
+	ofi_info_insert(info, head, tail, &match);
+}
+
 /*
  * Make a dummy info object for each provider, and copy in the
  * provider name and version.  We report utility providers directly
@@ -991,7 +1087,6 @@ static void ofi_set_prov_attr(struct fi_fabric_attr *attr,
 		attr->prov_name = ofi_strdup_append(core_name, prov->name);
 		free(core_name);
 	} else {
-		assert(ofi_is_core_prov(prov));
 		attr->prov_name = strdup(prov->name);
 	}
 	attr->prov_version = prov->version;
@@ -1029,8 +1124,12 @@ static int ofi_layering_ok(const struct fi_provider *provider,
 		if (prov_vec[i][0] != '^')
 		    break;
 
-		if (!strcasecmp(&prov_vec[i][1], provider->name))
+		if (!strcasecmp(&prov_vec[i][1], provider->name)) {
+			FI_INFO(&core_prov, FI_LOG_CORE,
+				"Provider %s is excluded\n",
+				provider->name);
 			return 0;
+		}
 	}
 	count = i + 1;
 
@@ -1043,7 +1142,7 @@ static int ofi_layering_ok(const struct fi_provider *provider,
 			return 0;
 		}
 
-		if ((count == 0) && ofi_disable_util_layering(provider)) {
+		if ((count == 0) && ofi_prov_ctx(provider)->disable_layering) {
 			FI_INFO(&core_prov, FI_LOG_CORE,
 				"Skipping util;%s layering\n", provider->name);
 			return 0;
@@ -1062,7 +1161,7 @@ static int ofi_layering_ok(const struct fi_provider *provider,
 	    !ofi_has_util_prefix(prov_vec[0])) {
 		core_ofi_prov = ofi_getprov(prov_vec[0], strlen(prov_vec[0]));
 		if (core_ofi_prov && core_ofi_prov->provider &&
-		    ofi_disable_util_layering(core_ofi_prov->provider)) {
+		    ofi_prov_ctx(core_ofi_prov->provider)->disable_layering) {
 			FI_INFO(&core_prov, FI_LOG_CORE,
 				"Skipping %s;%s layering\n", prov_vec[0],
 				provider->name);
@@ -1120,6 +1219,10 @@ int fi_getinfo(uint32_t version, const char *node,
 		if (prov->hidden && !(flags & OFI_GETINFO_HIDDEN))
 			continue;
 
+		if ((ofi_prov_ctx(prov->provider)->type == OFI_PROV_OFFLOAD) &&
+		    !(flags & OFI_OFFLOAD_PROV_ONLY))
+			continue;
+
 		if (!ofi_layering_ok(prov->provider, prov_vec, count, flags))
 			continue;
 
@@ -1138,7 +1241,8 @@ int fi_getinfo(uint32_t version, const char *node,
 					      hints, &cur);
 		if (ret) {
 			level = ((hints && hints->fabric_attr &&
-				  hints->fabric_attr->prov_name) ?
+				  hints->fabric_attr->prov_name &&
+				  !strcmp(hints->fabric_attr->prov_name, prov->provider->name)) ?
 				 FI_LOG_WARN : FI_LOG_INFO);
 
 			FI_LOG(&core_prov, level, FI_LOG_CORE,
@@ -1171,9 +1275,11 @@ int fi_getinfo(uint32_t version, const char *node,
 	}
 	ofi_free_string_array(prov_vec);
 
-	if (!(flags & (OFI_CORE_PROV_ONLY | OFI_GETINFO_INTERNAL |
-	               OFI_GETINFO_HIDDEN)))
+	if (*info && !(flags & (OFI_CORE_PROV_ONLY | OFI_GETINFO_INTERNAL |
+				OFI_GETINFO_HIDDEN))) {
 		ofi_filter_info(info);
+		ofi_reorder_info(info);
+	}
 
 	return *info ? 0 : -FI_ENODATA;
 }
@@ -1357,6 +1463,9 @@ int fi_open(uint32_t version, const char *name,
 	if (!strcasecmp("mr_cache", name))
 		return ofi_open_mr_cache(version, attr, attr_len,
 					 flags, fid, context);
+	if (!strcasecmp("logging", name))
+		return ofi_open_log(version, attr, attr_len,
+				    flags, fid, context);
 
 	return -FI_ENOSYS;
 }

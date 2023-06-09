@@ -2,6 +2,7 @@
  * Copyright (c) 2016 Intel Corporation.  All rights reserved.
  * Copyright (c) 2016 Cisco Systems, Inc.  All rights reserved.
  * Copyright (c) 2018 Amazon.com, Inc. or its affiliates. All rights reserved.
+ * Copyright (c) 2022 DataDirect Networks, Inc. All rights reserved.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
@@ -277,6 +278,7 @@ do						\
 
 #define htonll _byteswap_uint64
 #define ntohll _byteswap_uint64
+#define be64toh ntohll
 #define strncasecmp _strnicmp
 
 typedef int pid_t;
@@ -773,6 +775,10 @@ ofi_sendto_socket(SOCKET fd, const void *buf, size_t count, int flags,
 	return sendto(fd, (const char*) buf, len, flags, to, (int) tolen);
 }
 
+ssize_t ofi_sendv_socket(SOCKET fd, const struct iovec *iovec, size_t iov_cnt,
+			 int flags);
+ssize_t ofi_recvv_socket(SOCKET fd, const struct iovec *iovec, size_t iov_cnt,
+			 int flags);
 ssize_t ofi_writev_socket(SOCKET fd, const struct iovec *iovec, size_t iov_cnt);
 ssize_t ofi_readv_socket(SOCKET fd, const struct iovec *iovec, size_t iov_cnt);
 ssize_t ofi_sendmsg_tcp(SOCKET fd, const struct msghdr *msg, int flags);
@@ -1025,6 +1031,13 @@ typedef LONGLONG ofi_atomic_int_64_t;
 #define ofi_atomic_cas_bool(radix, ptr, expected, desired)					\
 	(InterlockedCompareExchange##radix((ofi_atomic_int_##radix##_t volatile *)ptr, desired, expected) == expected)
 
+#define ofi_atomic_compare_exchange_weak(radix, ptr, expected, desired, \
+					 succ_memmodel, fail_memmodel) \
+	InterlockedCompareExchange((ofi_atomic_int_##radix##_t volatile *)ptr, desired, expected)
+#define ofi_atomic_store_explicit(radix, ptr, value, memmodel) \
+	InterlockedExchange((ofi_atomic_int_##radix##_t volatile *)ptr, value)
+#define ofi_atomic_load_explicit(radix, ptr, memmodel) \
+	InterlockedAdd((ofi_atomic_int_##radix##_t volatile *)ptr, 0)
 #endif /* HAVE_BUILTIN_ATOMICS */
 
 static inline int ofi_set_thread_affinity(const char *s)

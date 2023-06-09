@@ -191,7 +191,7 @@ psm2_epid_t psm3_epid_pack_diag(int val);
 uint8_t psm3_epid_addr_fmt(psm2_epid_t epid);
 psmi_eth_proto_t psm3_epid_protocol(psm2_epid_t epid);
 psm2_nid_t psm3_epid_nid(psm2_epid_t epid);
-const char *psmi_subnet_epid_subset_fmt(psmi_subnet128_t subnet, int bufno);
+const char *psm3_subnet_epid_subset_fmt(psmi_subnet128_t subnet, int bufno);
 psmi_subnet128_t psm3_epid_subnet(psm2_epid_t epid);
 uint8_t psm3_epid_prefix_len(psm2_epid_t epid);
 uint64_t psm3_epid_port(psm2_epid_t epid);
@@ -208,44 +208,45 @@ psm2_nid_t psm3_build_nid(uint8_t unit, psmi_naddr128_t addr, unsigned lid);
 
 // compare subnets based on comparison rules for given addr_fmt
 // This considers whether routing is possible and PSM3_ALLOW_ROUTERS is set
-int psmi_subnets_match(psmi_subnet128_t a, psmi_subnet128_t b);
+int psm3_subnets_match(psmi_subnet128_t a, psmi_subnet128_t b);
 
 // for some formats the epid only has a subset of the subnet, compare
 // just the subset available in epid
-int psmi_subnets_match_epid(psmi_subnet128_t subnet, psm2_epid_t epid);
+int psm3_subnets_match_epid(psmi_subnet128_t subnet, psm2_epid_t epid);
 
 #ifdef PSM_SOCKETS
 // manage sockaddr fundamentals
-int psmi_sockaddr_cmp(struct sockaddr_in6 *a, struct sockaddr_in6 *b);
+int psm3_sockaddr_cmp(psm3_sockaddr_in_t *a, psm3_sockaddr_in_t *b);
 // build an AF_INET6 sockaddr
 // can be for a IPv4 (GID ::ffff:<ipaddr>) or IPv6 style GID
-void psm3_build_sockaddr(struct sockaddr_in6 *in6, uint16_t port,
+void psm3_build_sockaddr(psm3_sockaddr_in_t *in, uint16_t port,
 				uint64_t gid_hi, uint64_t gid_lo,
 				uint32_t scope_id);
-void psm3_epid_build_sockaddr(struct sockaddr_in6 *in6, psm2_epid_t epid,
+void psm3_epid_build_sockaddr(psm3_sockaddr_in_t *in, psm2_epid_t epid,
 				uint32_t scope_id);
-void psm3_epid_build_aux_sockaddr(struct sockaddr_in6 *in6, psm2_epid_t epid,
+void psm3_epid_build_aux_sockaddr(psm3_sockaddr_in_t *in, psm2_epid_t epid,
 				uint32_t scope_id);
+int psm3_parse_tcp_src_bind(void);
 #endif
-int psm3_epid_cmp(psm2_epid_t a, psm2_epid_t b);
-int psm3_epid_zero(psm2_epid_t a);
-psm2_epid_t psm3_epid_zeroed(void);
+int psm3_epid_cmp_internal(psm2_epid_t a, psm2_epid_t b);
+int psm3_epid_zero_internal(psm2_epid_t a);
+psm2_epid_t psm3_epid_zeroed_internal(void);
 
 // NID is just a special subset of epid values where context/subctxt/qp_num == 0
 // so we can use the epid function to cmp and clear a psm2_nid_t
-PSMI_ALWAYS_INLINE(int psmi_nid_cmp(psm2_nid_t a, psm2_nid_t b))
+PSMI_ALWAYS_INLINE(int psm3_nid_cmp_internal(psm2_nid_t a, psm2_nid_t b))
 {
-	return psm3_epid_cmp(a, b);
+	return psm3_epid_cmp_internal(a, b);
 }
 
-PSMI_ALWAYS_INLINE(int psmi_nid_zero(psm2_nid_t a))
+PSMI_ALWAYS_INLINE(int psm3_nid_zero_internal(psm2_nid_t a))
 {
-	return psm3_epid_zero(a);
+	return psm3_epid_zero_internal(a);
 }
 
-PSMI_ALWAYS_INLINE(psm2_nid_t psmi_nid_zeroed(void))
+PSMI_ALWAYS_INLINE(psm2_nid_t psm3_nid_zeroed_internal(void))
 {
-	return psm3_epid_zeroed();
+	return psm3_epid_zeroed_internal();
 }
 
 #define PSMI_EPID_LEN (sizeof(uint64_t)*3) // in bytes
@@ -259,7 +260,7 @@ uint64_t psm3_epid_w2(psm2_epid_t epid);
  * Hostname manipulation
  */
 char *psm3_gethostname(void);
-const char *psm3_epid_fmt(psm2_epid_t epid, int bufno);
+const char *psm3_epid_fmt_internal(psm2_epid_t epid, int bufno);
 const char *psm3_epid_fmt_context(psm2_epid_t epid, int bufno);
 const char *psm3_epid_fmt_nid(psm2_epid_t epid, int bufno);
 const char *psm3_epid_fmt_addr(psm2_epid_t epid, int bufno);
@@ -270,17 +271,17 @@ const char *psm3_epaddr_get_hostname(psm2_epid_t epid, int bufno);
 const char *psm3_epaddr_get_name(psm2_epid_t epid, int bufno);
 psm2_error_t psm3_epid_set_hostname(psm2_nid_t nid, const char *hostname,
 				   int overwrite);
-const char *psmi_nid_fmt(psm2_nid_t nid, int bufno);
+const char *psm3_nid_fmt(psm2_nid_t nid, int bufno);
 
 #ifdef PSM_VERBS
-const char *psmi_ibv_gid_fmt(union ibv_gid gid, int bufno);
-int psmi_nonzero_gid(const union ibv_gid *gid);
+const char *psm3_ibv_gid_fmt(union ibv_gid gid, int bufno);
+int psm3_nonzero_gid(const union ibv_gid *gid);
 #endif
 
 /* PSM3_IDENTIFY output */
 
-void psmi_print_rank_identify(void);
-void psmi_print_ep_identify(psm2_ep_t ep);
+void psm3_print_rank_identify(void);
+void psm3_print_ep_identify(psm2_ep_t ep);
 
 
 /*
@@ -343,7 +344,7 @@ struct psmi_stats_malloc {
 
 extern struct psmi_stats_malloc psm3_stats_memory;
 
-void psmi_mem_stats_register(void);
+void psm3_mem_stats_register(void);
 
 void *psm3_malloc_internal(psm2_ep_t ep, psmi_memtype_t mt, size_t sz,
 			   const char *curloc);
@@ -407,17 +408,6 @@ void psmi_heapdebug_finalize(void);
 void psm3_log_memstats(psmi_memtype_t type, int64_t nbytes);
 
 /*
- * Parse int parameters
- * -1 -> parse error
- */
-long psmi_parse_str_long(const char *str);
-
-/*
- * Parsing int parameters set in string tuples.
- */
-int psm3_parse_str_tuples(const char *str, int ntup, int *vals);
-
-/*
  * Resource Limiting based on PSM memory mode.
  */
 #define PSMI_MEMMODE_NORMAL  0
@@ -440,11 +430,11 @@ psm2_error_t psm3_parse_mpool_env(const psm2_mq_t mq, int level,
 				 const struct psmi_rlimit_mpool *rlim,
 				 uint32_t *valo, uint32_t *chunkszo);
 int psm3_parse_memmode(void);
-int psmi_parse_identify(void);
+int psm3_parse_identify(void);
 #ifdef PSM_HAVE_REG_MR
-unsigned psmi_parse_senddma(void);
+unsigned psm3_parse_senddma(void);
 #endif
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 unsigned psmi_parse_gpudirect(void);
 unsigned psmi_parse_gpudirect_rdma_send_limit(int force);
 unsigned psmi_parse_gpudirect_rdma_recv_limit(int force);
@@ -452,46 +442,9 @@ unsigned psmi_parse_gpudirect_rv_gpu_cache_size(int reload);
 #endif
 
 /*
- * Parsing environment variables
- */
-
-union psmi_envvar_val {
-	void *e_void;
-	char *e_str;
-	int e_int;
-	unsigned int e_uint;
-	long e_long;
-	unsigned long e_ulong;
-	unsigned long long e_ulonglong;
-};
-
-#define PSMI_ENVVAR_LEVEL_USER	         1
-#define PSMI_ENVVAR_LEVEL_HIDDEN         2
-#define PSMI_ENVVAR_LEVEL_NEVER_PRINT    4
-
-#define PSMI_ENVVAR_TYPE_YESNO		0
-#define PSMI_ENVVAR_TYPE_STR		1
-#define PSMI_ENVVAR_TYPE_INT		2
-#define PSMI_ENVVAR_TYPE_UINT		3
-#define PSMI_ENVVAR_TYPE_UINT_FLAGS	4
-#define PSMI_ENVVAR_TYPE_LONG		5
-#define PSMI_ENVVAR_TYPE_ULONG		6
-#define PSMI_ENVVAR_TYPE_ULONG_FLAGS	7
-#define PSMI_ENVVAR_TYPE_ULONG_ULONG    8
-
-#define PSMI_ENVVAR_VAL_YES ((union psmi_envvar_val) 1)
-#define PSMI_ENVVAR_VAL_NO  ((union psmi_envvar_val) 0)
-
-int
-MOCKABLE(psm3_getenv)(const char *name, const char *descr, int level,
-		int type, union psmi_envvar_val defval,
-		union psmi_envvar_val *newval);
-MOCK_DCL_EPILOGUE(psm3_getenv);
-int psmi_parse_val_pattern(const char *env, int def, int def_syntax);
-/*
  * Misc functionality
  */
-long int psmi_rand(long int seed);
+long int psm3_rand(long int seed);
 uintptr_t psm3_getpagesize(void);
 uint64_t psm3_cycles_left(uint64_t start_cycles, int64_t timeout_ns);
 void psm3_syslog(psm2_ep_t ep, int to_console, int level,
@@ -566,14 +519,15 @@ void psm3_multi_ep_init();
  *		sendfull - report no resources on send (pio_flush)
  *		sendfullctrl - report no resources on send ctrl message
  *		sendfullcb - report no resources ctrl msg retry timer callback
+ *		connunkn - unknown connection in TCP
  *		reg_mr - register MR failure (ENOMEM)
  *		nonpri_reg_mr - non-priority register MR failure (ENOMEM)
  *		pri_reg_mr - priority register MR failure (ENOMEM)
  *		gdrmmap - GPU gdrcopy pin and mmap failure
  */
-int psm3_faultinj_enabled;	/* use macro to test */
-int psm3_faultinj_verbose;	/* use IS_FAULT macro to test */
-int psm3_faultinj_sec_rail;	/* faults only on secondary rails or EPs */
+extern unsigned psm3_faultinj_enabled; /* use macro to test */
+extern int psm3_faultinj_verbose; /* use IS_FAULT macro to test */
+extern int psm3_faultinj_sec_rail;/* faults only on secondary rails or EPs */
 
 struct psm3_faultinj_spec {
 	STAILQ_ENTRY(psm3_faultinj_spec) next;
@@ -585,7 +539,9 @@ struct psm3_faultinj_spec {
 	struct drand48_data drand48_data;
 	int num;
 	int denom;
-	long int initial_seed;
+	int initial_seed;
+	// put last so better CPU cache hit rate in performance paths
+	char help[PSM3_FAULTINJ_HELPLEN];
 };
 
 #define PSM3_FAULTINJ_ENABLED()	(!!psm3_faultinj_enabled)
@@ -635,4 +591,6 @@ psm2_error_t psm3_am_setopt(const void *am_obj, int optname,
 psm2_error_t psm3_am_getopt(const void *am_obj, int optname,
 			   void *optval, uint64_t *optlen);
 
+/* touch the pages, with a 32 bit read */
+void psm3_touch_mmap(void *m, size_t bytes);
 #endif /* _PSMI_UTILS_H */

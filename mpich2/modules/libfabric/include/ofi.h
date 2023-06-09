@@ -2,6 +2,7 @@
  * Copyright (c) 2013-2018 Intel Corporation. All rights reserved.
  * Copyright (c) 2016-2018 Cisco Systems, Inc. All rights reserved.
  * Copyright (c) 2019 Amazon.com, Inc. or its affiliates. All rights reserved.
+ * Copyright (c) 2022 DataDirect Networks, Inc. All rights reserved.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -35,7 +36,7 @@
 #ifndef _OFI_H_
 #define _OFI_H_
 
-#include "config.h"
+#include <config.h>
 
 #include <assert.h>
 #include <pthread.h>
@@ -50,7 +51,6 @@
 #include <ofi_file.h>
 #include <ofi_lock.h>
 #include <ofi_atom.h>
-#include <ofi_mem.h>
 #include <ofi_net.h>
 #include <rdma/providers/fi_prov.h>
 #include <rdma/providers/fi_log.h>
@@ -75,6 +75,7 @@ extern "C" {
 #define OFI_GETINFO_INTERNAL	(1ULL << 58)
 #define OFI_CORE_PROV_ONLY	(1ULL << 59)
 #define OFI_GETINFO_HIDDEN	(1ULL << 60)
+#define OFI_OFFLOAD_PROV_ONLY	(1ULL << 61)
 
 #define OFI_ORDER_RAR_SET	(FI_ORDER_RAR | FI_ORDER_RMA_RAR | \
 				 FI_ORDER_ATOMIC_RAR)
@@ -191,6 +192,11 @@ static inline int ofi_val32_ge(uint32_t x, uint32_t y) {
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 #endif
 
+#ifndef STRINGIFY
+#define __STRINGIFY(expr) #expr
+#define STRINGIFY(expr) __STRINGIFY(expr)
+#endif
+
 #define TAB "    "
 
 #define CASEENUMSTRN(SYM, N) \
@@ -220,27 +226,34 @@ enum ofi_prov_type {
 	OFI_PROV_CORE,
 	OFI_PROV_UTIL,
 	OFI_PROV_HOOK,
+	OFI_PROV_OFFLOAD,
 };
 
 /* Restrict to size of struct fi_provider::context (struct fi_context) */
-struct fi_prov_context {
+struct ofi_prov_context {
 	enum ofi_prov_type type;
-	int disable_logging;
-	int disable_layering;
+	bool disable_logging;
+	bool disable_layering;	/* applies to core providers only */
 };
 
-struct fi_filter {
+static inline struct ofi_prov_context *
+ofi_prov_ctx(const struct fi_provider *prov)
+{
+	return (struct ofi_prov_context *) &prov->context;
+}
+
+struct ofi_filter {
 	char **names;
-	int negated;
+	bool negated;
 };
 
-extern struct fi_filter prov_log_filter;
+extern struct ofi_filter prov_log_filter;
 extern struct fi_provider core_prov;
 extern const char *log_prefix;
 
-void ofi_create_filter(struct fi_filter *filter, const char *env_name);
-void ofi_free_filter(struct fi_filter *filter);
-int ofi_apply_filter(struct fi_filter *filter, const char *name);
+void ofi_create_filter(struct ofi_filter *filter, const char *env_name);
+void ofi_free_filter(struct ofi_filter *filter);
+int ofi_apply_filter(struct ofi_filter *filter, const char *name);
 
 int ofi_nic_close(struct fid *fid);
 struct fid_nic *ofi_nic_dup(const struct fid_nic *nic);
@@ -253,8 +266,29 @@ void fi_param_fini(void);
 void fi_param_undefine(const struct fi_provider *provider);
 void ofi_remove_comma(char *buffer);
 void ofi_strncatf(char *dest, size_t n, const char *fmt, ...);
+void ofi_dump_sysconfig(void);
 
 const char *ofi_hex_str(const uint8_t *data, size_t len);
+
+#define MAX_IPC_HANDLE_SIZE	64
+
+/*
+ * This structure is part of the
+ * the shm communication protocol
+ * defined in ofi_shm.h.
+ * Please make sure the SMR_VERSION are
+ * bumped and SMR_CMD_SIZE are large
+ * enough, for any changes in this
+ * structure.
+ */
+struct ipc_info {
+	uint64_t	iface;
+	uint64_t	base_addr;
+	uint64_t	base_length;
+	uint64_t	device;
+	uint64_t	offset;
+	uint8_t		ipc_handle[MAX_IPC_HANDLE_SIZE];
+};
 
 static inline uint64_t roundup_power_of_two(uint64_t n)
 {
@@ -315,6 +349,9 @@ uint8_t ofi_msb(uint64_t num);
 uint8_t ofi_lsb(uint64_t num);
 
 extern size_t ofi_universe_size;
+extern int ofi_av_remove_cleanup;
+extern char *ofi_offload_coll_prov_name;
+extern int ofi_prefer_sysconfig;
 
 bool ofi_send_allowed(uint64_t caps);
 bool ofi_recv_allowed(uint64_t caps);
@@ -411,6 +448,11 @@ static inline uint32_t ofi_xorshift_random_r(uint32_t *seed)
 uint32_t ofi_generate_seed(void);
 
 size_t ofi_vrb_speed(uint8_t speed, uint8_t width);
+
+int ofi_open_log(uint32_t version, void *attr, size_t attr_len,
+		 uint64_t flags, struct fid **fid, void *context);
+void ofi_tostr_log_level(char *buf, size_t len, enum fi_log_level level);
+void ofi_tostr_log_subsys(char *buf, size_t len, enum fi_log_subsys subsys);
 
 #ifdef __cplusplus
 }

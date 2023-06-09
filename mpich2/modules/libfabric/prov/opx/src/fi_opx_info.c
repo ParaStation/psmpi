@@ -32,23 +32,15 @@
  */
 
 #include <ofi.h>
+#include <ofi_mem.h>
 #include "rdma/opx/fi_opx.h"
 #include "rdma/opx/fi_opx_internal.h"
 #include "rdma/opx/fi_opx_hfi1.h"
 
 #include "rdma/opx/fi_opx_addr.h"
 
-int fi_opx_set_default_info()
+void fi_opx_set_info(struct fi_info *fi, enum fi_progress progress)
 {
-	struct fi_info *fi;
-	fi = fi_dupinfo(NULL);
-	if (!fi) {
-		errno = FI_ENOMEM;
-		return -errno;
-	}
-
-	fi_opx_global.info = fi;
-
 	*fi->tx_attr = (struct fi_tx_attr) {
 		.caps		= FI_OPX_DEFAULT_TX_CAPS,
 		.mode		= FI_OPX_DEFAULT_MODE,
@@ -88,12 +80,13 @@ int fi_opx_set_default_info()
 		.auth_key		= NULL
 	};
 
+
 	*fi->domain_attr = (struct fi_domain_attr) {
 		.domain		= NULL,
 		.name		= strdup(FI_OPX_DOMAIN_NAME), /* TODO: runtime query for name? */
 		.threading	= OPX_THREAD,
-		.control_progress = OPX_PROGRESS,
-		.data_progress	= OPX_PROGRESS == FI_PROGRESS_UNSPEC ? FI_PROGRESS_MANUAL : OPX_PROGRESS,
+		.control_progress = progress,
+		.data_progress	= progress,
 		.resource_mgmt	= FI_RM_ENABLED,
 		.av_type	= OPX_AV,
 		.mr_mode	= OPX_MR,
@@ -110,7 +103,7 @@ int fi_opx_set_default_info()
 		.max_ep_srx_ctx	= SIZE_MAX,
 		.cntr_cnt	= 0,
 		.mr_iov_limit	= 1,
-		.caps		= OPX_LOCAL_COMM_CAP | FI_REMOTE_COMM,	/* TODO: FI_SHARED_AV */
+		.caps		= FI_LOCAL_COMM | FI_REMOTE_COMM,	/* TODO: FI_SHARED_AV */
 		.mode		= 0,
 		.auth_key	= NULL,
 		.auth_key_size	= 0,
@@ -134,6 +127,32 @@ int fi_opx_set_default_info()
 	fi->dest_addr = NULL;
 	fi->src_addr = mem_dup(&opx_default_addr, sizeof(opx_default_addr));
 	fi->next = NULL;
+}
 
+int fi_opx_set_default_info()
+{
+	struct fi_info *fi;
+	struct fi_info *fi_auto;
+	fi = fi_dupinfo(NULL);
+	fi_auto = fi_dupinfo(NULL);
+	if (!fi || !fi_auto) {
+		errno = FI_ENOMEM;
+		goto err;
+	}
+
+	fi_opx_global.info = fi;
+	fi_opx_set_info(fi, FI_PROGRESS_MANUAL);
+	fi_opx_set_info(fi_auto, FI_PROGRESS_AUTO);
+	fi->next = fi_auto;
+	
 	return 0;
+
+err:
+	if (fi) {
+		fi_freeinfo(fi);
+	}
+	if (fi_auto) {
+		fi_freeinfo(fi_auto);
+	}
+	return -errno;
 }

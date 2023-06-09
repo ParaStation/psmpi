@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 by Cornelis Networks.
+ * Copyright (C) 2021-2023 by Cornelis Networks.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -46,9 +46,7 @@
 /* Number of types in enum fi_cq_format */
 #define FI_CQ_FORMAT_COUNT 5
 
-#define FI_OPX_HDRQ_MASK_COUNT 3
-
-typedef struct fi_ops_cq op_matrix_t[FI_CQ_FORMAT_COUNT][OFI_RELIABILITY_KIND_COUNT][FI_OPX_HDRQ_MASK_COUNT][FI_OPX_COMMS_COUNT];
+typedef struct fi_ops_cq op_matrix_t[FI_CQ_FORMAT_COUNT][OFI_RELIABILITY_KIND_COUNT][FI_OPX_COMMS_COUNT];
 
 static ssize_t
 fi_opx_cq_readerr(struct fid_cq *cq, struct fi_cq_err_entry *buf, uint64_t flags)
@@ -71,12 +69,13 @@ fi_opx_cq_readerr(struct fid_cq *cq, struct fi_cq_err_entry *buf, uint64_t flags
 		assert(ext->opx_context.flags & FI_OPX_CQ_CONTEXT_EXT);	/* DEBUG */
 
 		const enum fi_threading threading = opx_cq->domain->threading;
-		const int lock_required = fi_opx_threading_lock_required(threading);
+		const int lock_required = fi_opx_threading_lock_required(threading, fi_opx_global.progress);
 
 		fi_opx_lock_if_required(&opx_cq->lock, lock_required);
 		*buf = ext->err_entry;
 		slist_remove_head((struct slist *)&opx_cq->err);
 		free(ext);
+		ext = NULL;
 		fi_opx_unlock_if_required(&opx_cq->lock, lock_required);
 
 	} else {
@@ -118,14 +117,14 @@ fi_opx_cq_strerror(struct fid_cq *cq, int prov_errno, const void *err_data,
 	return NULL;
 }
 
-#define FI_OPX_CQ_OPS_STRUCT_NAME(FORMAT, LOCK, RELIABILITY, MASK, CAPS, PROGRESS)			\
-  fi_opx_ops_cq_ ## FORMAT ## _ ## LOCK ## _ ## RELIABILITY ## _ ## MASK ## _ ## CAPS ## _ ## PROGRESS			\
+#define FI_OPX_CQ_OPS_STRUCT_NAME(FORMAT, LOCK, RELIABILITY, MASK, CAPS)			\
+  fi_opx_ops_cq_ ## FORMAT ## _ ## LOCK ## _ ## RELIABILITY ## _ ## MASK ## _ ## CAPS			\
 
 #define FI_OPX_CQ_OPS_STRUCT_INIT(FORMAT, LOCK, RELIABILITY, MASK, CAPS)			\
   {										\
     .size    = sizeof(struct fi_ops_cq),					\
-    .read      = FI_OPX_CQ_SPECIALIZED_FUNC_NAME(cq_read, FORMAT, LOCK, RELIABILITY, MASK, CAPS, FI_PROGRESS_MANUAL),		\
-    .readfrom  = FI_OPX_CQ_SPECIALIZED_FUNC_NAME(cq_readfrom, FORMAT, LOCK, RELIABILITY, MASK, CAPS, FI_PROGRESS_MANUAL),	\
+    .read      = FI_OPX_CQ_SPECIALIZED_FUNC_NAME(cq_read, FORMAT, LOCK, RELIABILITY, MASK, CAPS),		\
+    .readfrom  = FI_OPX_CQ_SPECIALIZED_FUNC_NAME(cq_readfrom, FORMAT, LOCK, RELIABILITY, MASK, CAPS),	\
     .readerr   = fi_opx_cq_readerr,						\
     .sread     = fi_opx_cq_sread,						\
     .sreadfrom = fi_opx_cq_sreadfrom,						\
@@ -133,10 +132,9 @@ fi_opx_cq_strerror(struct fid_cq *cq, int prov_errno, const void *err_data,
     .strerror  = fi_opx_cq_strerror,						\
   }
 
-#define FI_OPX_CQ_OPS_STRUCT(FORMAT, LOCK, RELIABILITY, MASK, CAPS, PROGRESS)				\
+#define FI_OPX_CQ_OPS_STRUCT(FORMAT, LOCK, RELIABILITY, MASK, CAPS)				\
 static struct fi_ops_cq								\
-	FI_OPX_CQ_OPS_STRUCT_NAME(FORMAT, LOCK, RELIABILITY, MASK, CAPS, PROGRESS) = 			\
-		FI_OPX_CQ_OPS_STRUCT_INIT(FORMAT, LOCK, RELIABILITY, MASK, CAPS, PROGRESS)
-
+	FI_OPX_CQ_OPS_STRUCT_NAME(FORMAT, LOCK, RELIABILITY, MASK, CAPS) = 			\
+		FI_OPX_CQ_OPS_STRUCT_INIT(FORMAT, LOCK, RELIABILITY, MASK, CAPS)
 
 #endif

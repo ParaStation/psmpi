@@ -1,6 +1,6 @@
 dnl
 dnl Copyright (C) 2016 by Argonne National Laboratory.
-dnl Copyright (C) 2021 by Cornelis Networks.
+dnl Copyright (C) 2022 by Cornelis Networks.
 dnl
 dnl This software is available to you under a choice of one of two
 dnl licenses.  You may choose to be licensed under the terms of the GNU
@@ -60,8 +60,7 @@ AC_DEFUN([FI_OPX_CONFIGURE],[
 		dnl	[xruntime], [OPX_PROGRESS_MODE=FI_PROGRESS_UNSPEC],
 		dnl	[OPX_PROGRESS_MODE=FI_PROGRESS_MANUAL])
 
-		dnl Only FI_PROGRESS_MANUAL is supported by the opx provider
-		OPX_PROGRESS_MODE=FI_PROGRESS_MANUAL
+		OPX_PROGRESS_MODE=FI_PROGRESS_UNSPEC
 		AC_SUBST(opx_progress, [$OPX_PROGRESS_MODE])
 		AC_DEFINE_UNQUOTED(OPX_PROGRESS, [$OPX_PROGRESS_MODE], [fabric direct progress])
 
@@ -69,7 +68,7 @@ AC_DEFUN([FI_OPX_CONFIGURE],[
 			[xmap], [OPX_AV_MODE=FI_AV_MAP],
 			[xtable], [OPX_AV_MODE=FI_AV_TABLE],
 			[xruntime], [OPX_AV_MODE=FI_AV_UNSPEC],
-			[OPX_AV_MODE=FI_AV_MAP])
+			[OPX_AV_MODE=FI_AV_UNSPEC])
 
 		AC_SUBST(opx_av, [$OPX_AV_MODE])
 		AC_DEFINE_UNQUOTED(OPX_AV, [$OPX_AV_MODE], [fabric direct address vector])
@@ -105,18 +104,37 @@ AC_DEFUN([FI_OPX_CONFIGURE],[
 		   	[],
 		   	[],
 		   	[],
-			[],
-			[opx_happy=0])
+		   	[],
+		   	[opx_happy=0])
 		FI_CHECK_PACKAGE([opx_numa],
 			[numa.h],
-			[numa],
-			[numa_node_of_cpu],
-			[],
-			[],
-			[],
-			[],
+		   	[numa],
+		   	[numa_node_of_cpu],
+		   	[],
+		   	[],
+		   	[],
+		   	[],
 		   	[opx_happy=0])
+		_FI_CHECK_PACKAGE_HEADER([opx_hfi1],
+		    [rdma/hfi/hfi1_user.h],
+		    [],
+		    [],
+		    [opx_happy=0])
 
+		AS_IF([test $opx_happy -eq 1],[
+			AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+				[[#include <rdma/hfi/hfi1_user.h>]],
+				[[
+					#ifndef HFI1_CAP_TID_RDMA
+					#error "incorrect version of hfi1_user.h"
+					#endif
+				]])],
+				[AC_MSG_NOTICE([hfi1_user.h HFI1_CAP_TID_RDMA defined... yes])],
+				[
+				AC_MSG_NOTICE([hfi1_user.h HFI1_CAP_TID_RDMA defined... no])
+				opx_happy=0
+				])
+		])
 		AC_CHECK_DECL([HAVE_ATOMICS],
                              [],
                              [cc_version=`$CC --version | head -n1`

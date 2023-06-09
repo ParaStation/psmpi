@@ -40,7 +40,7 @@
 
 
 static void vrb_set_credit_handler(struct fid_domain *domain_fid,
-		ssize_t (*credit_handler)(struct fid_ep *ep, size_t credits))
+		ssize_t (*credit_handler)(struct fid_ep *ep, uint64_t credits))
 {
 	struct vrb_domain *domain;
 
@@ -336,7 +336,8 @@ vrb_domain(struct fid_fabric *fabric, struct fi_info *info,
 	if (!_domain)
 		return -FI_ENOMEM;
 
-	ret = ofi_domain_init(fabric, info, &_domain->util_domain, context, 0);
+	ret = ofi_domain_init(fabric, info, &_domain->util_domain, context,
+			      OFI_LOCK_MUTEX);
 	if (ret)
 		goto err1;
 

@@ -72,6 +72,10 @@ void ofi_eq_handle_err_entry(uint32_t api_version, uint64_t flags,
  * fi_eq_read and fi_eq_readerr share this common code path.
  * If flags contains UTIL_FLAG_ERROR, then we are processing
  * fi_eq_readerr.
+ *
+ * when processing fi_eq_readerr, we need to store the error
+ * data until the app has a chance to read it, so it is freed
+ * by the util_eq.  error writers should not free this data
  */
 ssize_t ofi_eq_read(struct fid_eq *eq_fid, uint32_t *event,
 		    void *buf, size_t len, uint64_t flags)
@@ -386,12 +390,7 @@ static int util_verify_eq_attr(const struct fi_provider *prov,
 		return -FI_EINVAL;
 	}
 
-	if (attr->flags & ~(FI_WRITE)) {
-		FI_WARN(prov, FI_LOG_EQ, "invalid flags\n");
-		return -FI_EINVAL;
-	}
-
-	if (attr->flags & ~(FI_AFFINITY | FI_WRITE)) {
+	if (attr->flags & ~(FI_AFFINITY | FI_WRITE | FI_PEER)) {
 		FI_WARN(prov, FI_LOG_EQ, "invalid flags\n");
 		return -FI_EINVAL;
 	}

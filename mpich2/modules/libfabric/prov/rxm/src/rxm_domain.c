@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Intel Corporation, Inc.  All rights reserved.
+ * Copyright (c) 2016, 2022 Intel Corporation, Inc.  All rights reserved.
  * (C) Copyright 2020 Hewlett Packard Enterprise Development LP
  *
  * This software is available to you under a choice of one of two
@@ -36,7 +36,6 @@
 #include <unistd.h>
 
 #include <ofi_util.h>
-#include <ofi_coll.h>
 #include "rxm.h"
 
 
@@ -165,6 +164,112 @@ static struct fi_ops rxm_passthru_cntr_fi_ops = {
 	.ops_open = fi_no_ops_open,
 };
 
+static struct fi_ops rxm_peer_av_fi_ops = {
+	.size = sizeof(struct fi_ops),
+	.close = fi_no_close,
+	.bind = fi_no_bind,
+	.control = fi_no_control,
+	.ops_open = fi_no_ops_open,
+};
+
+int rxm_peer_av_query(struct fid_peer_av *av, struct fi_av_attr *attr)
+{
+	struct rxm_av *rxm_av = container_of(av, struct rxm_av, peer_av);
+
+	memset(attr, 0, sizeof(*attr));
+
+	/* Only count is useful at this moment */
+	attr->count = ofi_av_size(&rxm_av->util_av);
+
+	return 0;
+}
+
+fi_addr_t rxm_peer_av_ep_addr(struct fid_peer_av *av, struct fid_ep *ep)
+{
+	struct rxm_av *rxm_av = container_of(av, struct rxm_av, peer_av);
+	size_t addrlen;
+	char *addr;
+	fi_addr_t addr_ret;
+	int ret;
+
+	addrlen = 0;
+	ret = fi_getname(&ep->fid, NULL, &addrlen);
+	if (ret != FI_SUCCESS && addrlen == 0)
+		goto err1;
+
+	addr = calloc(1, addrlen);
+	if (!addr)
+		goto err1;
+
+	ret = fi_getname(&ep->fid, addr, &addrlen);
+	if (ret)
+		goto err2;
+
+	addr_ret = ofi_av_lookup_fi_addr(&rxm_av->util_av, addr);
+	free(addr);
+	return addr_ret;
+
+err2:
+	free(addr);
+err1:
+	return FI_ADDR_NOTAVAIL;
+}
+
+static struct fi_ops_av_owner rxm_av_owner_ops = {
+	.size = sizeof(struct fi_ops_av_owner),
+	.query = rxm_peer_av_query,
+	.ep_addr = rxm_peer_av_ep_addr,
+};
+
+static int
+rxm_av_open(struct fid_domain *domain_fid, struct fi_av_attr *attr,
+	    struct fid_av **fid_av, void *context)
+{
+	struct rxm_domain *rxm_domain;
+	struct rxm_av *rxm_av;
+	struct fid_av *fid_av_new;
+	struct fi_peer_av_context peer_context;
+	struct fi_av_attr peer_attr = {
+		.flags = FI_PEER,
+	};
+	int ret;
+
+	ret = rxm_util_av_open(domain_fid, attr, &fid_av_new,
+			context, sizeof(struct rxm_conn),
+			ofi_av_remove_cleanup ? rxm_av_remove_handler : NULL);
+	if (ret)
+		return ret;
+
+	rxm_av = container_of(fid_av_new, struct rxm_av, util_av.av_fid);
+	rxm_domain = container_of(domain_fid, struct rxm_domain,
+				  util_domain.domain_fid);
+
+	rxm_av->peer_av.fid.fclass = FI_CLASS_PEER_AV;
+        rxm_av->peer_av.fid.ops = &rxm_peer_av_fi_ops;
+        rxm_av->peer_av.owner_ops = &rxm_av_owner_ops;
+        peer_context.size = sizeof(peer_context);
+        peer_context.av = &rxm_av->peer_av;
+
+	if (rxm_domain->util_coll_domain) {
+		ret = fi_av_open(rxm_domain->util_coll_domain, &peer_attr,
+				 &rxm_av->util_coll_av, &peer_context);
+		if (ret)
+			goto err1;
+	}
+	if (rxm_domain->offload_coll_domain) {
+		ret = fi_av_open(rxm_domain->offload_coll_domain, &peer_attr,
+				 &rxm_av->offload_coll_av, &peer_context);
+		if (ret)
+			goto err1;
+	}
+	*fid_av = fid_av_new;
+	return 0;
+
+err1:
+	fi_close(&fid_av_new->fid);
+	return ret;
+}
+
 static int
 rxm_cntr_open(struct fid_domain *fid_domain, struct fi_cntr_attr *attr,
 	      struct fid_cntr **cntr_fid, void *context)
@@ -205,6 +310,33 @@ free:
 	return ret;
 }
 
+static int rxm_query_collective(struct fid_domain *domain,
+				enum fi_collective_op coll,
+				struct fi_collective_attr *attr,
+				uint64_t flags)
+{
+	struct rxm_domain *rxm_domain;
+	int ret;
+
+	rxm_domain = container_of(domain, struct rxm_domain,
+				  util_domain.domain_fid);
+
+	if (!rxm_domain->util_coll_domain)
+		return -FI_ENOSYS;
+
+	if (rxm_domain->offload_coll_domain)
+		ret = fi_query_collective(rxm_domain->offload_coll_domain,
+					  coll, attr, flags);
+	else
+		ret = -FI_ENOSYS;
+
+	if (ret == FI_SUCCESS || flags & OFI_OFFLOAD_PROV_ONLY)
+		return ret;
+
+	return fi_query_collective(rxm_domain->util_coll_domain,
+				   coll, attr, flags);
+}
+
 static struct fi_ops_domain rxm_domain_ops = {
 	.size = sizeof(struct fi_ops_domain),
 	.av_open = rxm_av_open,
@@ -216,7 +348,7 @@ static struct fi_ops_domain rxm_domain_ops = {
 	.stx_ctx = fi_no_stx_context,
 	.srx_ctx = fi_no_srx_context,
 	.query_atomic = rxm_ep_query_atomic,
-	.query_collective = ofi_query_collective,
+	.query_collective = rxm_query_collective,
 };
 
 static void rxm_mr_remove_map_entry(struct rxm_mr *mr)
@@ -274,6 +406,20 @@ static int rxm_domain_close(fid_t fid)
 	ret = fi_close(&rxm_domain->msg_domain->fid);
 	if (ret)
 		return ret;
+
+	if (rxm_domain->offload_coll_domain) {
+		ret = fi_close(&rxm_domain->offload_coll_domain->fid);
+		if (ret)
+			return ret;
+		rxm_domain->offload_coll_domain = NULL;
+	}
+
+	if (rxm_domain->util_coll_domain) {
+		ret = fi_close(&rxm_domain->util_coll_domain->fid);
+		if (ret)
+			return ret;
+		rxm_domain->util_coll_domain = NULL;
+	}
 
 	ret = ofi_domain_close(&rxm_domain->util_domain);
 	if (ret)
@@ -411,6 +557,12 @@ static int rxm_mr_regattr(struct fid *fid, const struct fi_mr_attr *attr,
 
 	rxm_domain = container_of(fid, struct rxm_domain,
 				  util_domain.domain_fid.fid);
+
+	if (!ofi_hmem_is_initialized(attr->iface)) {
+		FI_WARN(&rxm_prov, FI_LOG_MR,
+			"Cannot register memory for uninitialized iface\n");
+		return -FI_ENOSYS;
+	}
 
 	rxm_mr = calloc(1, sizeof(*rxm_mr));
 	if (!rxm_mr)
@@ -567,7 +719,7 @@ static struct fi_ops_mr rxm_domain_mr_thru_ops = {
 	.regattr = rxm_mr_regattr_thru,
 };
 
-static ssize_t rxm_send_credits(struct fid_ep *ep, size_t credits)
+static ssize_t rxm_send_credits(struct fid_ep *ep, uint64_t credits)
 {
 	struct rxm_conn *rxm_conn = ep->fid.context;
 	struct rxm_ep *rxm_ep = rxm_conn->ep;
@@ -620,12 +772,14 @@ defer:
 	return FI_SUCCESS;
 }
 
-static void rxm_no_add_credits(struct fid_ep *ep_fid, size_t credits)
-{ }
+static void rxm_no_add_credits(struct fid_ep *ep_fid, uint64_t credits)
+{
+}
 
 static void rxm_no_credit_handler(struct fid_domain *domain_fid,
-		ssize_t (*credit_handler)(struct fid_ep *ep, size_t credits))
-{ }
+		ssize_t (*credit_handler)(struct fid_ep *ep, uint64_t credits))
+{
+}
 
 static int rxm_no_enable_flow_ctrl(struct fid_ep *ep_fid, uint64_t threshold)
 {
@@ -702,12 +856,30 @@ static void rxm_config_dyn_rbuf(struct rxm_domain *domain, struct fi_info *info,
 	}
 }
 
+static uint64_t rxm_get_coll_caps(struct fid_domain *domain)
+{
+	struct fi_collective_attr attr;
+	uint64_t mask = 0;
+
+	attr.datatype = FI_INT8;
+	attr.datatype_attr.count = 1;
+	attr.datatype_attr.size = sizeof(int8_t);
+	attr.mode = 0;
+	for (int i = FI_BARRIER; i <= FI_GATHER; i++) {
+		attr.op = (i == FI_BARRIER)? FI_NOOP : FI_MIN;
+		if (fi_query_collective(domain, i, &attr, 0) == FI_SUCCESS )
+			mask |= BIT(i);
+	}
+	return mask;
+}
+
 int rxm_domain_open(struct fid_fabric *fabric, struct fi_info *info,
-		struct fid_domain **domain, void *context)
+		    struct fid_domain **domain, void *context)
 {
 	struct rxm_domain *rxm_domain;
 	struct rxm_fabric *rxm_fabric;
 	struct fi_info *msg_info, *base_info;
+	struct fi_peer_domain_context peer_context;
 	int ret;
 
 	rxm_domain = calloc(1, sizeof(*rxm_domain));
@@ -727,9 +899,40 @@ int rxm_domain_open(struct fid_fabric *fabric, struct fi_info *info,
 	if (ret)
 		goto err2;
 
-	ret = ofi_domain_init(fabric, info, &rxm_domain->util_domain, context, 0);
+	ret = ofi_domain_init(fabric, info, &rxm_domain->util_domain, context,
+			      OFI_LOCK_MUTEX);
 	if (ret) {
 		goto err3;
+	}
+
+	if (info->caps & FI_COLLECTIVE) {
+		if (!rxm_fabric->util_coll_fabric) {
+			FI_WARN(&rxm_prov, FI_LOG_DOMAIN,
+				"Util collective provider unavailable\n");
+			goto err4;
+		}
+
+		peer_context.size = sizeof(peer_context);
+		peer_context.domain = &rxm_domain->util_domain.domain_fid;
+
+		ret = fi_domain2(rxm_fabric->util_coll_fabric,
+				 rxm_fabric->util_coll_info,
+				 &rxm_domain->util_coll_domain,
+				 FI_PEER, &peer_context);
+		if (ret)
+			goto err4;
+
+		if (rxm_fabric->offload_coll_fabric) {
+			ret = fi_domain2(rxm_fabric->offload_coll_fabric,
+					 rxm_fabric->offload_coll_info,
+					 &rxm_domain->offload_coll_domain,
+					 FI_PEER, &peer_context);
+			if (ret)
+				goto err5;
+
+			rxm_domain->offload_coll_mask |=
+			    rxm_get_coll_caps(rxm_domain->offload_coll_domain);
+		}
 	}
 
 	/* We turn off the mr map mode bit FI_MR_PROV_KEY.  We always use the
@@ -748,7 +951,7 @@ int rxm_domain_open(struct fid_fabric *fabric, struct fi_info *info,
 	ret = ofi_bufpool_create(&rxm_domain->amo_bufpool,
 				 rxm_domain->max_atomic_size, 64, 0, 0, 0);
 	if (ret)
-		goto err3;
+		goto err5;
 
 	ofi_mutex_init(&rxm_domain->amo_bufpool_lock);
 
@@ -760,15 +963,23 @@ int rxm_domain_open(struct fid_fabric *fabric, struct fi_info *info,
 
 	ret = rxm_config_flow_ctrl(rxm_domain);
 	if (ret)
-		goto err4;
+		goto err6;
 
 	rxm_config_dyn_rbuf(rxm_domain, info, msg_info);
 
 	fi_freeinfo(msg_info);
 	return 0;
-err4:
+
+err6:
 	ofi_mutex_destroy(&rxm_domain->amo_bufpool_lock);
 	ofi_bufpool_destroy(rxm_domain->amo_bufpool);
+err5:
+	if (rxm_domain->offload_coll_domain)
+		fi_close(&rxm_domain->offload_coll_domain->fid);
+	if (rxm_domain->util_coll_domain)
+		fi_close(&rxm_domain->util_coll_domain->fid);
+err4:
+	(void) ofi_domain_close(&rxm_domain->util_domain);
 err3:
 	fi_close(&rxm_domain->msg_domain->fid);
 err2:

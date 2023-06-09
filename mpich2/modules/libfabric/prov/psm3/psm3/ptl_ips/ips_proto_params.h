@@ -142,7 +142,7 @@
 #define IPS_SEND_FLAG_PKTCKSUM          0x02	/* Has packet checksum */
 #define IPS_SEND_FLAG_AMISTINY		0x04	/* AM is tiny, exclusive */
 
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 /* This flag is used to indicate to the reciever when
  * the send is issued on a device buffer. This helps in
  * selecting TID path on the recieve side regardless of
@@ -160,7 +160,7 @@
 #define IPS_SEND_FLAG_PERSISTENT	0x0200
 #define IPS_SEND_FLAG_NO_LMC		0x0400
 
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 /* This flag is used to indicate if the send is on
  * a GPU buffer. This helps PIO/SDMA paths to detect
  * if payload is GPU buffer without having to call
@@ -175,6 +175,10 @@
 
 #ifdef PSM_SOCKETS
 #define IPS_SEND_FLAG_TCP_REMAINDER	0x2000	/* TCP data was partially sent out */
+#endif
+
+#ifdef PSM_ONEAPI
+#define IPS_SEND_FLAG_USE_GDRCOPY	0x4000
 #endif
 
 /* 0x10000000, interrupt when done */
@@ -220,7 +224,7 @@
 #define IPS_PROTO_FLAG_PPOLICY_STATIC 0x1c00
 
 
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 /* Use RNDV (TID) for all message sizes */
 //#define IPS_PROTO_FLAG_ALWAYS_RNDV		0x10000	// unused
 /* Use GPUDirect RDMA for SDMA */

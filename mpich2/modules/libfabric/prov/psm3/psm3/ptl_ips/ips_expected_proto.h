@@ -126,14 +126,18 @@ struct ips_protoexp {
 	/* services pend_getreqsq and pend_err_chk_rdma_resp */
 	struct psmi_timer timer_getreqs;
 
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 	STAILQ_HEAD(ips_tid_get_cudapend, /* pending cuda transfers */
 		    ips_tid_get_request) cudapend_getreqsq;
-	struct ips_cuda_hostbuf_mpool_cb_context cuda_hostbuf_recv_cfg;
-	struct ips_cuda_hostbuf_mpool_cb_context cuda_hostbuf_small_recv_cfg;
+	struct ips_gpu_hostbuf_mpool_cb_context cuda_hostbuf_recv_cfg;
+	struct ips_gpu_hostbuf_mpool_cb_context cuda_hostbuf_small_recv_cfg;
 	mpool_t cuda_hostbuf_pool_recv;
 	mpool_t cuda_hostbuf_pool_small_recv;
+#endif
+#ifdef PSM_CUDA
 	CUstream cudastream_recv;
+#elif defined(PSM_ONEAPI)
+	ze_command_queue_handle_t cq_recv;
 #endif
 };
 
@@ -191,12 +195,12 @@ struct ips_tid_send_desc {
 	uint8_t reserved:7;
 #endif
 
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 	/* As size of cuda_hostbuf is less than equal to window size,
 	 * there is a guarantee that the maximum number of host bufs we
 	 * would need to attach to a tidsendc would be 2
 	 */
-	struct ips_cuda_hostbuf *cuda_hostbuf[2];
+	struct ips_gpu_hostbuf *cuda_hostbuf[2];
 	/* Number of hostbufs attached */
 	uint8_t cuda_num_buf;
 #endif
@@ -235,8 +239,8 @@ struct ips_tid_recv_desc {
 	uint32_t tidflow_nswap_gen;
 	psmi_seqnum_t tidflow_genseq;
 
-#ifdef PSM_CUDA
-	struct ips_cuda_hostbuf *cuda_hostbuf;
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+	struct ips_gpu_hostbuf *cuda_hostbuf;
 	uint8_t is_ptr_gpu_backed;
 #endif
 
@@ -278,11 +282,11 @@ struct ips_tid_get_request {
 	uint32_t tidgr_bytesdone;
 	uint32_t tidgr_flags;
 
-#ifdef PSM_CUDA
-	int cuda_hostbuf_used;
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+	int gpu_hostbuf_used;
 	uint32_t tidgr_cuda_bytesdone;
 	STAILQ_HEAD(ips_tid_getreq_cuda_hostbuf_pend,	/* pending exp. sends */
-		    ips_cuda_hostbuf) pend_cudabuf;
+		    ips_gpu_hostbuf) pend_cudabuf;
 #endif
 };
 

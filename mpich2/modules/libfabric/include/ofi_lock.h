@@ -279,6 +279,13 @@ static inline void ofi_mutex_unlock_noop(ofi_mutex_t *lock)
 	lock->in_use = 0;
 }
 
+static inline int
+ofi_pthread_wait_cond(pthread_cond_t *cond, ofi_mutex_t *lock, int timeout_ms)
+{
+	assert(lock->is_initialized);
+	return ofi_wait_cond(cond, &lock->impl, timeout_ms);
+}
+
 #else /* !ENABLE_DEBUG */
 
 #  define ofi_mutex_t ofi_mutex_t_
@@ -298,6 +305,9 @@ static inline void ofi_mutex_unlock_noop(ofi_mutex_t *lock)
 {
 	(void) lock;
 }
+
+#define ofi_pthread_wait_cond(cond, mut, timeout_ms) \
+	ofi_wait_cond(cond, mut, timeout_ms)
 
 #endif
 
@@ -319,6 +329,24 @@ static inline int ofi_mutex_held_op(ofi_mutex_t *lock)
 	return ofi_mutex_held(lock);
 }
 
+static inline void ofi_nolock_lock_op(void *nolock)
+{
+	(void) nolock;
+}
+
+static inline void ofi_nolock_unlock_op(void *nolock)
+{
+	(void) nolock;
+}
+
+/* No way to verify, so return true to pass all asserts.
+ * User should provide their own checks higher-up.
+ */
+static inline int ofi_nolock_held_op(void *nolock)
+{
+	return 1;
+}
+
 
 /*
  * Generic lock abstraction
@@ -327,6 +355,7 @@ static inline int ofi_mutex_held_op(ofi_mutex_t *lock)
 enum ofi_lock_type {
 	OFI_LOCK_MUTEX,		/* default */
 	OFI_LOCK_SPINLOCK,
+	OFI_LOCK_NOOP,
 	OFI_LOCK_NONE,
 };
 
@@ -338,6 +367,7 @@ struct ofi_genlock {
 	union {
 		ofi_mutex_t	mutex;
 		ofi_spin_t	spinlock;
+		void		*nolock;
 	} base;
 
 	ofi_genlock_lockheld_t	held;

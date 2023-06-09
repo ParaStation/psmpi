@@ -41,7 +41,6 @@
 #include "ofi.h"
 #include "ofi_iov.h"
 #include "ofi_atomic.h"
-#include <ofi_coll.h>
 
 #include "rxm.h"
 
@@ -77,7 +76,7 @@ rxm_rx_buf_alloc(struct rxm_ep *rxm_ep, struct fid_ep *rx_ep)
 	rx_buf->rx_ep = rx_ep;
 	rx_buf->repost = true;
 
-	if (!rxm_ep->srx_ctx)
+	if (!rxm_ep->msg_srx)
 		rx_buf->conn = rx_ep->fid.context;
 
 	return rx_buf;
@@ -142,14 +141,14 @@ static void rxm_cq_write_error_trunc(struct rxm_rx_buf *rx_buf, size_t done_len)
 	FI_WARN(&rxm_prov, FI_LOG_CQ, "Message truncated: "
 		"recv buf length: %zu message length: %" PRIu64 "\n",
 		done_len, rx_buf->pkt.hdr.size);
-	ret = ofi_cq_write_error_trunc(rx_buf->ep->util_ep.rx_cq,
-				       rx_buf->recv_entry->context,
-				       rx_buf->recv_entry->comp_flags |
-				       rx_buf->pkt.hdr.flags,
-				       rx_buf->pkt.hdr.size,
-				       rx_buf->recv_entry->rxm_iov.iov[0].iov_base,
-				       rx_buf->pkt.hdr.data, rx_buf->pkt.hdr.tag,
-				       rx_buf->pkt.hdr.size - done_len);
+	ret = ofi_peer_cq_write_error_trunc(rx_buf->ep->util_ep.rx_cq,
+				rx_buf->recv_entry->context,
+				rx_buf->recv_entry->comp_flags |
+				rx_buf->pkt.hdr.flags,
+				rx_buf->pkt.hdr.size,
+				rx_buf->recv_entry->rxm_iov.iov[0].iov_base,
+				rx_buf->pkt.hdr.data, rx_buf->pkt.hdr.tag,
+				rx_buf->pkt.hdr.size - done_len);
 	if (ret) {
 		FI_WARN(&rxm_prov, FI_LOG_CQ, "Unable to write recv error CQ\n");
 		assert(0);
@@ -179,7 +178,7 @@ static void rxm_finish_recv(struct rxm_rx_buf *rx_buf, size_t done_len)
 
 release:
 	rxm_recv_entry_release(recv_entry);
-	rxm_rx_buf_free(rx_buf);
+	rxm_free_rx_buf(rx_buf);
 }
 
 static void
@@ -211,7 +210,7 @@ static void rxm_finish_rma(struct rxm_ep *rxm_ep, struct rxm_tx_buf *rma_buf,
 		rxm_msg_mr_closev(rma_buf->rma.mr, rma_buf->rma.count);
 	}
 
-	rxm_free_rx_buf(rxm_ep, rma_buf);
+	rxm_free_tx_buf(rxm_ep, rma_buf);
 }
 
 void rxm_finish_eager_send(struct rxm_ep *rxm_ep, struct rxm_tx_buf *tx_buf)
@@ -233,13 +232,13 @@ static bool rxm_complete_sar(struct rxm_ep *rxm_ep,
 	case RXM_SAR_SEG_FIRST:
 		break;
 	case RXM_SAR_SEG_MIDDLE:
-		rxm_free_rx_buf(rxm_ep, tx_buf);
+		rxm_free_tx_buf(rxm_ep, tx_buf);
 		break;
 	case RXM_SAR_SEG_LAST:
 		first_tx_buf = ofi_bufpool_get_ibuf(rxm_ep->tx_pool,
 						tx_buf->pkt.ctrl_hdr.msg_id);
-		rxm_free_rx_buf(rxm_ep, first_tx_buf);
-		rxm_free_rx_buf(rxm_ep, tx_buf);
+		rxm_free_tx_buf(rxm_ep, first_tx_buf);
+		rxm_free_tx_buf(rxm_ep, tx_buf);
 		return true;
 	}
 
@@ -297,7 +296,7 @@ static void rxm_rndv_tx_finish(struct rxm_ep *rxm_ep,
 		tx_buf->write_rndv.done_buf = NULL;
 	}
 	ofi_ep_tx_cntr_inc(&rxm_ep->util_ep);
-	rxm_free_rx_buf(rxm_ep, tx_buf);
+	rxm_free_tx_buf(rxm_ep, tx_buf);
 }
 
 static void rxm_rndv_handle_rd_done(struct rxm_ep *rxm_ep,
@@ -312,7 +311,7 @@ static void rxm_rndv_handle_rd_done(struct rxm_ep *rxm_ep,
 				      rx_buf->pkt.ctrl_hdr.msg_id);
 	assert(tx_buf->pkt.ctrl_hdr.msg_id == rx_buf->pkt.ctrl_hdr.msg_id);
 
-	rxm_rx_buf_free(rx_buf);
+	rxm_free_rx_buf(rx_buf);
 
 	if (tx_buf->hdr.state == RXM_RNDV_READ_DONE_WAIT) {
 		rxm_rndv_tx_finish(rxm_ep, tx_buf);
@@ -360,7 +359,7 @@ static int rxm_rndv_handle_wr_done(struct rxm_ep *rxm_ep, struct rxm_rx_buf *rx_
 		RXM_UPDATE_STATE(FI_LOG_CQ, rndv_rx_buf, RXM_RNDV_WRITE_DONE_RECVD);
 	}
 out:
-	rxm_rx_buf_free(rx_buf);
+	rxm_free_rx_buf(rx_buf);
 	return ret;
 }
 
@@ -422,7 +421,7 @@ static void rxm_process_seg_data(struct rxm_rx_buf *rx_buf, int *done)
 
 		/* The RX buffer can be reposted for further re-use */
 		rx_buf->recv_entry = NULL;
-		rxm_rx_buf_free(rx_buf);
+		rxm_free_rx_buf(rx_buf);
 
 		*done = 0;
 	}
@@ -564,7 +563,7 @@ static ssize_t rxm_rndv_handle_wr_data(struct rxm_rx_buf *rx_buf)
 		rxm_cq_write_error(rx_buf->ep->util_ep.rx_cq,
 				   rx_buf->ep->util_ep.rx_cntr,
 				   tx_buf, (int) ret);
-	rxm_rx_buf_free(rx_buf);
+	rxm_free_rx_buf(rx_buf);
 	return ret;
 }
 
@@ -576,7 +575,7 @@ static ssize_t rxm_handle_rndv(struct rxm_rx_buf *rx_buf)
 	rxm_replace_rx_buf(rx_buf);
 
 	if (!rx_buf->conn) {
-		assert(rx_buf->ep->srx_ctx);
+		assert(rx_buf->ep->msg_srx);
 		rx_buf->conn = ofi_idm_at(&rx_buf->ep->conn_idx_map,
 					  (int) rx_buf->pkt.ctrl_hdr.conn_id);
 		if (!rx_buf->conn)
@@ -658,11 +657,16 @@ void rxm_handle_coll_eager(struct rxm_rx_buf *rx_buf)
 					rx_buf->data, rx_buf->pkt.hdr.size);
 	assert((size_t) done_len == rx_buf->pkt.hdr.size);
 
-	if (rx_buf->pkt.hdr.tag & OFI_COLL_TAG_FLAG) {
-		ofi_coll_handle_xfer_comp(rx_buf->pkt.hdr.tag,
-				rx_buf->recv_entry->context);
+	if (rx_buf->ep->util_coll_peer_xfer_ops &&
+	    rx_buf->pkt.hdr.tag & RXM_PEER_XFER_TAG_FLAG) {
+		struct fi_cq_tagged_entry cqe = {
+			.tag = rx_buf->pkt.hdr.tag,
+			.op_context = rx_buf->recv_entry->context,
+		};
+		rx_buf->ep->util_coll_peer_xfer_ops->
+			complete(rx_buf->ep->util_coll_ep, &cqe, 0);
 		rxm_recv_entry_release(rx_buf->recv_entry);
-		rxm_rx_buf_free(rx_buf);
+		rxm_free_rx_buf(rx_buf);
 	} else {
 		rxm_finish_recv(rx_buf, done_len);
 	}
@@ -767,7 +771,7 @@ static ssize_t rxm_handle_recv_comp(struct rxm_rx_buf *rx_buf)
 	};
 
 	if (rx_buf->ep->rxm_info->caps & (FI_SOURCE | FI_DIRECTED_RECV)) {
-		if (rx_buf->ep->srx_ctx)
+		if (rx_buf->ep->msg_srx)
 			rx_buf->conn = ofi_idm_at(&rx_buf->ep->conn_idx_map,
 					(int) rx_buf->pkt.ctrl_hdr.conn_id);
 		if (!rx_buf->conn)
@@ -998,11 +1002,11 @@ err:
 static void rxm_handle_remote_write(struct rxm_ep *rxm_ep,
 				   struct fi_cq_data_entry *comp)
 {
-	rxm_cq_write(rxm_ep->util_ep.rx_cq, NULL, comp->flags, 0, NULL,
+	rxm_cq_write(rxm_ep->util_ep.rx_cq, NULL, comp->flags, comp->len, NULL,
 		     comp->data, 0);
 	ofi_ep_rem_wr_cntr_inc(&rxm_ep->util_ep);
 	if (comp->op_context)
-		rxm_rx_buf_free(comp->op_context);
+		rxm_free_rx_buf(comp->op_context);
 }
 
 static void rxm_format_atomic_resp_pkt_hdr(struct rxm_conn *rxm_conn,
@@ -1073,7 +1077,7 @@ static ssize_t rxm_atomic_send_resp(struct rxm_ep *rxm_ep,
 			ret = 0;
 		}
 	}
-	rxm_rx_buf_free(rx_buf);
+	rxm_free_rx_buf(rx_buf);
 
 	return ret;
 }
@@ -1169,7 +1173,7 @@ static ssize_t rxm_handle_atomic_req(struct rxm_ep *rxm_ep,
 	assert(op == ofi_op_atomic || op == ofi_op_atomic_fetch ||
 	       op == ofi_op_atomic_compare);
 
-	if (rx_buf->ep->srx_ctx)
+	if (rx_buf->ep->msg_srx)
 		rx_buf->conn = ofi_idm_at(&rx_buf->ep->conn_idx_map,
 					  (int) rx_buf->pkt.ctrl_hdr.conn_id);
 	if (!rx_buf->conn)
@@ -1307,8 +1311,8 @@ static ssize_t rxm_handle_atomic_resp(struct rxm_ep *rxm_ep,
 		goto write_err;
 	}
 free:
-	rxm_rx_buf_free(rx_buf);
-	rxm_free_rx_buf(rxm_ep, tx_buf);
+	rxm_free_rx_buf(rx_buf);
+	rxm_free_tx_buf(rxm_ep, tx_buf);
 	return ret;
 
 write_err:
@@ -1336,16 +1340,21 @@ static ssize_t rxm_handle_credit(struct rxm_ep *rxm_ep, struct rxm_rx_buf *rx_bu
 			      util_domain);
 	domain->flow_ctrl_ops->add_credits(rx_buf->rx_ep,
 					   rx_buf->pkt.ctrl_hdr.ctrl_data);
-	rxm_rx_buf_free(rx_buf);
+	rxm_free_rx_buf(rx_buf);
 	return FI_SUCCESS;
 }
 
 void rxm_finish_coll_eager_send(struct rxm_ep *rxm_ep,
 			        struct rxm_tx_buf *tx_eager_buf)
 {
-	if (tx_eager_buf->pkt.hdr.tag & OFI_COLL_TAG_FLAG) {
-		ofi_coll_handle_xfer_comp(tx_eager_buf->pkt.hdr.tag,
-				tx_eager_buf->app_context);
+	if (rxm_ep->util_coll_ep &&
+	    (tx_eager_buf->pkt.hdr.tag & RXM_PEER_XFER_TAG_FLAG)) {
+		struct fi_cq_tagged_entry cqe = {
+			.tag = tx_eager_buf->pkt.hdr.tag,
+			.op_context = tx_eager_buf->app_context,
+		};
+		rxm_ep->util_coll_peer_xfer_ops->
+			complete(rxm_ep->util_coll_ep, &cqe, 0);
 	} else {
 		rxm_finish_eager_send(rxm_ep, tx_eager_buf);
 	}
@@ -1368,7 +1377,7 @@ ssize_t rxm_handle_comp(struct rxm_ep *rxm_ep, struct fi_cq_data_entry *comp)
 	case RXM_INJECT_TX:
 		tx_buf = comp->op_context;
 		rxm_ep->eager_ops->comp_tx(rxm_ep, tx_buf);
-		rxm_free_rx_buf(rxm_ep, tx_buf);
+		rxm_free_tx_buf(rxm_ep, tx_buf);
 		return 0;
 	case RXM_CREDIT_TX:
 		tx_buf = comp->op_context;
@@ -1662,8 +1671,8 @@ void rxm_cq_write_error(struct util_cq *cq, struct util_cntr *cntr,
 	if (cntr)
 		rxm_cntr_incerr(cntr);
 
-	if (ofi_cq_write_error(cq, &err_entry)) {
-		FI_WARN(&rxm_prov, FI_LOG_CQ, "Unable to ofi_cq_write_error\n");
+	if (ofi_peer_cq_write_error(cq, &err_entry)) {
+		FI_WARN(&rxm_prov, FI_LOG_CQ, "Unable to write error\n");
 		assert(0);
 	}
 }
@@ -1676,18 +1685,20 @@ void rxm_cq_write_error_all(struct rxm_ep *rxm_ep, int err)
 	err_entry.prov_errno = err;
 	err_entry.err = -err;
 	if (rxm_ep->util_ep.tx_cq) {
-		ret = ofi_cq_write_error(rxm_ep->util_ep.tx_cq, &err_entry);
+		ret = ofi_peer_cq_write_error(rxm_ep->util_ep.tx_cq,
+					      &err_entry);
 		if (ret) {
 			FI_WARN(&rxm_prov, FI_LOG_CQ,
-				"Unable to ofi_cq_write_error\n");
+				"Unable to write error\n");
 			assert(0);
 		}
 	}
 	if (rxm_ep->util_ep.rx_cq) {
-		ret = ofi_cq_write_error(rxm_ep->util_ep.rx_cq, &err_entry);
+		ret = ofi_peer_cq_write_error(rxm_ep->util_ep.rx_cq,
+					      &err_entry);
 		if (ret) {
 			FI_WARN(&rxm_prov, FI_LOG_CQ,
-				"Unable to ofi_cq_write_error\n");
+				"Unable to write error\n");
 			assert(0);
 		}
 	}
@@ -1741,7 +1752,7 @@ void rxm_handle_comp_error(struct rxm_ep *rxm_ep)
 		tx_buf = err_entry.op_context;
 		err_entry.op_context = tx_buf->app_context;
 		err_entry.flags = ofi_tx_cq_flags(tx_buf->pkt.hdr.op);
-		rxm_free_rx_buf(rxm_ep, tx_buf);
+		rxm_free_tx_buf(rxm_ep, tx_buf);
 		break;
 	case RXM_RNDV_READ_DONE_RECVD:
 		/* We received the response, so ignore the send error */
@@ -1752,7 +1763,7 @@ void rxm_handle_comp_error(struct rxm_ep *rxm_ep)
 		rxm_rndv_rx_finish(err_entry.op_context);
 		return;
 	case RXM_INJECT_TX:
-		rxm_free_rx_buf(rxm_ep, err_entry.op_context);
+		rxm_free_tx_buf(rxm_ep, err_entry.op_context);
 		if (cntr)
 			rxm_cntr_incerr(cntr);
 		return;
@@ -1769,7 +1780,7 @@ void rxm_handle_comp_error(struct rxm_ep *rxm_ep)
 		    rxm_ep->msg_mr_local) {
 			rxm_msg_mr_closev(tx_buf->rma.mr, tx_buf->rma.count);
 		}
-		rxm_free_rx_buf(rxm_ep, tx_buf);
+		rxm_free_tx_buf(rxm_ep, tx_buf);
 		break;
 	case RXM_SAR_TX:
 		tx_buf = err_entry.op_context;
@@ -1821,9 +1832,9 @@ void rxm_handle_comp_error(struct rxm_ep *rxm_ep)
 		rxm_cntr_incerr(cntr);
 
 	assert(cq);
-	ret = ofi_cq_write_error(cq, &err_entry);
+	ret = ofi_peer_cq_write_error(cq, &err_entry);
 	if (ret) {
-		FI_WARN(&rxm_prov, FI_LOG_CQ, "Unable to ofi_cq_write_error\n");
+		FI_WARN(&rxm_prov, FI_LOG_CQ, "Unable to write error\n");
 		assert(0);
 	}
 }
@@ -1836,14 +1847,12 @@ ssize_t rxm_thru_comp(struct rxm_ep *ep, struct fi_cq_data_entry *comp)
 	cq = (comp->flags & (FI_RECV | FI_REMOTE_WRITE | FI_REMOTE_READ)) ?
 	     ep->util_ep.rx_cq : ep->util_ep.tx_cq;
 
-	ret = ofi_cq_write(cq, comp->op_context, comp->flags, comp->len,
-			   comp->buf, comp->data, 0);
+	ret = ofi_peer_cq_write(cq, comp->op_context, comp->flags, comp->len,
+				comp->buf, comp->data, 0, FI_ADDR_NOTAVAIL);
 	if (ret) {
 		FI_WARN(&rxm_prov, FI_LOG_CQ, "Unable to report completion\n");
 		assert(0);
 	}
-	if (cq->wait)
-		cq->wait->signal(cq->wait);
 
 	return ret;
 }
@@ -1863,11 +1872,66 @@ void rxm_thru_comp_error(struct rxm_ep *ep)
 	}
 
 	cq = (err_entry.flags & FI_RECV) ? ep->util_ep.rx_cq : ep->util_ep.tx_cq;
-	ret = ofi_cq_write_error(cq, &err_entry);
+	ret = ofi_peer_cq_write_error(cq, &err_entry);
 	if (ret) {
-		FI_WARN(&rxm_prov, FI_LOG_CQ, "Unable to ofi_cq_write_error\n");
+		FI_WARN(&rxm_prov, FI_LOG_CQ, "Unable to write error\n");
 		assert(0);
 	}
+}
+
+/*
+ * Right now the peer CQ is only used for collectives. There are two cases:
+ * (1) collective operations initiated by application and completed by
+ *     util_coll or offload_coll, should write the completion to the real
+ *     CQ;
+ * (2) collective operations initiated by offload_coll and completed by
+ *     util_coll (with FI_PEER_TRANSFER flag), should call the callback
+ *     set by offload_coll.
+ */
+ssize_t rxm_cq_owner_write(struct fid_peer_cq *peer_cq, void *context,
+			   uint64_t flags, size_t len, void *buf, uint64_t data,
+			   uint64_t tag, fi_addr_t src)
+{
+	struct rxm_coll_buf *req = context;
+	struct rxm_ep *rxm_ep = req->ep;
+	struct rxm_cq *rxm_cq;
+
+	if (req->flags & FI_PEER_TRANSFER) {
+		struct fi_cq_tagged_entry entry = {
+			.op_context = req->app_context,
+			.flags = req->flags,
+			.len = len,
+			.buf = buf,
+			.data = data,
+			.tag = tag,
+		};
+		return rxm_ep->offload_coll_peer_xfer_ops->
+				complete(rxm_ep->offload_coll_ep, &entry, src);
+	}
+
+	rxm_cq = container_of(peer_cq, struct rxm_cq, peer_cq);
+	return ofi_cq_write(&rxm_cq->util_cq, req->app_context, req->flags, len,
+			    buf, data, tag);
+}
+
+ssize_t rxm_cq_owner_writeerr(struct fid_peer_cq *peer_cq,
+			      const struct fi_cq_err_entry *err_entry)
+{
+	struct rxm_coll_buf *req = err_entry->op_context;
+	struct rxm_ep *rxm_ep = req->ep;
+	struct rxm_cq *rxm_cq;
+	struct fi_cq_err_entry cqe_err = *err_entry;
+
+	cqe_err.op_context = req->app_context;
+	cqe_err.flags = req->flags;
+
+	if (req->flags & FI_PEER_TRANSFER) {
+		return rxm_ep->offload_coll_peer_xfer_ops->
+				comperr(rxm_ep->offload_coll_ep, &cqe_err);
+	}
+
+	rxm_cq = container_of(peer_cq, struct rxm_cq, peer_cq);
+	return ofi_cq_write_error(&rxm_cq->util_cq, &cqe_err);
 }
 
 int rxm_post_recv(struct rxm_rx_buf *rx_buf)
@@ -1875,7 +1939,7 @@ int rxm_post_recv(struct rxm_rx_buf *rx_buf)
 	struct rxm_domain *domain;
 	int ret;
 
-	if (rx_buf->ep->srx_ctx)
+	if (rx_buf->ep->msg_srx)
 		rx_buf->conn = NULL;
 	rx_buf->hdr.state = RXM_RX;
 	rx_buf->recv_entry = NULL;
@@ -1979,25 +2043,42 @@ void rxm_ep_progress(struct util_ep *util_ep)
 
 void rxm_ep_progress_coll(struct util_ep *util_ep)
 {
-	ofi_ep_lock_acquire(util_ep);
-	rxm_ep_do_progress(util_ep);
-	ofi_ep_lock_release(util_ep);
+	struct rxm_ep *rxm_ep = container_of(util_ep, struct rxm_ep, util_ep);
+	struct util_ep *coll_ep;
 
-	ofi_coll_ep_progress(&util_ep->ep_fid);
+	rxm_ep_progress(util_ep);
+
+	if (rxm_ep->util_coll_ep) {
+		coll_ep = container_of(rxm_ep->util_coll_ep, struct util_ep,
+				       ep_fid);
+		coll_ep->progress(coll_ep);
+	}
+
+	if (rxm_ep->offload_coll_ep) {
+		coll_ep = container_of(rxm_ep->offload_coll_ep, struct util_ep,
+				       ep_fid);
+		coll_ep->progress(coll_ep);
+	}
 }
 
 static int rxm_cq_close(struct fid *fid)
 {
-	struct util_cq *util_cq;
+	struct rxm_cq *rxm_cq;
 	int ret, retv = 0;
 
-	util_cq = container_of(fid, struct util_cq, cq_fid.fid);
+	rxm_cq = container_of(fid, struct rxm_cq, util_cq.cq_fid.fid);
 
-	ret = ofi_cq_cleanup(util_cq);
+	if (rxm_cq->offload_coll_cq)
+		fi_close(&rxm_cq->offload_coll_cq->fid);
+
+	if (rxm_cq->util_coll_cq)
+		fi_close(&rxm_cq->util_coll_cq->fid);
+
+	ret = ofi_cq_cleanup(&rxm_cq->util_cq);
 	if (ret)
 		retv = ret;
 
-	free(util_cq);
+	free(rxm_cq);
 	return retv;
 }
 
@@ -2006,6 +2087,14 @@ static struct fi_ops rxm_cq_fi_ops = {
 	.close = rxm_cq_close,
 	.bind = fi_no_bind,
 	.control = ofi_cq_control,
+	.ops_open = fi_no_ops_open,
+};
+
+static struct fi_ops rxm_peer_cq_fi_ops = {
+	.size = sizeof(struct fi_ops),
+	.close = fi_no_close,
+	.bind = fi_no_bind,
+	.control = fi_no_control,
 	.ops_open = fi_no_ops_open,
 };
 
@@ -2020,27 +2109,67 @@ static struct fi_ops_cq rxm_cq_ops = {
 	.strerror = rxm_cq_strerror,
 };
 
+static struct fi_ops_cq_owner rxm_cq_owner_ops = {
+	.size = sizeof(struct fi_ops_cq_owner),
+	.write = rxm_cq_owner_write,
+	.writeerr = rxm_cq_owner_writeerr,
+};
+
 int rxm_cq_open(struct fid_domain *domain, struct fi_cq_attr *attr,
-		 struct fid_cq **cq_fid, void *context)
+		struct fid_cq **cq_fid, void *context)
 {
-	struct util_cq *util_cq;
+	struct rxm_cq *rxm_cq;
+	struct rxm_domain *rxm_domain;
+	struct fi_cq_attr peer_cq_attr = {
+		.flags = FI_PEER,
+	};
+	struct fi_peer_cq_context peer_cq_context = {
+		.size = sizeof(struct fi_peer_cq_context),
+	};
 	int ret;
 
-	util_cq = calloc(1, sizeof(*util_cq));
-	if (!util_cq)
+	rxm_cq = calloc(1, sizeof(*rxm_cq));
+	if (!rxm_cq)
 		return -FI_ENOMEM;
 
-	ret = ofi_cq_init(&rxm_prov, domain, attr, util_cq, &ofi_cq_progress,
-			  context);
+	ret = ofi_cq_init(&rxm_prov, domain, attr, &rxm_cq->util_cq,
+			  &ofi_cq_progress, context);
 	if (ret)
 		goto err1;
 
-	*cq_fid = &util_cq->cq_fid;
+	rxm_domain = container_of(domain, struct rxm_domain,
+				  util_domain.domain_fid);
+
+	rxm_cq->peer_cq.fid.fclass = FI_CLASS_PEER_CQ;
+	rxm_cq->peer_cq.fid.ops = &rxm_peer_cq_fi_ops;
+	rxm_cq->peer_cq.owner_ops = &rxm_cq_owner_ops;
+	peer_cq_context.cq = &rxm_cq->peer_cq;
+
+	if (rxm_domain->util_coll_domain) {
+		ret = fi_cq_open(rxm_domain->util_coll_domain, &peer_cq_attr,
+				 &rxm_cq->util_coll_cq, &peer_cq_context);
+		if (ret)
+			goto err2;
+	}
+
+	if (rxm_domain->offload_coll_domain) {
+		ret = fi_cq_open(rxm_domain->offload_coll_domain, &peer_cq_attr,
+				 &rxm_cq->offload_coll_cq, &peer_cq_context);
+		if (ret)
+			goto err2;
+	}
+
+	*cq_fid = &rxm_cq->util_cq.cq_fid;
 	/* Override util_cq_fi_ops */
 	(*cq_fid)->fid.ops = &rxm_cq_fi_ops;
 	(*cq_fid)->ops = &rxm_cq_ops;
 	return 0;
+
+err2:
+	if (rxm_cq->util_coll_cq)
+		fi_close(&rxm_cq->util_coll_cq->fid);
+	ofi_cq_cleanup(&rxm_cq->util_cq);
 err1:
-	free(util_cq);
+	free(rxm_cq);
 	return ret;
 }

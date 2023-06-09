@@ -76,7 +76,7 @@ static void rxm_close_conn(struct rxm_conn *conn)
 		buf = container_of(conn->deferred_sar_segments.next,
 				   struct rxm_rx_buf, unexp_msg.entry);
 		dlist_remove(&buf->unexp_msg.entry);
-		rxm_rx_buf_free(buf);
+		rxm_free_rx_buf(buf);
 	}
 
 	while (!dlist_empty(&conn->deferred_sar_msgs)) {
@@ -199,7 +199,7 @@ static int rxm_open_conn(struct rxm_conn *conn, struct fi_info *msg_info)
 		goto err;
 	}
 
-	if (ep->srx_ctx) {
+	if (ep->msg_srx) {
 		if (!strcasestr(msg_info->fabric_attr->prov_name, "tcp")) {
 			src_addr = (unsigned) conn->peer->index;
 			(void) fi_setopt(&msg_ep->fid, FI_OPT_ENDPOINT,
@@ -207,7 +207,7 @@ static int rxm_open_conn(struct rxm_conn *conn, struct fi_info *msg_info)
 					 sizeof(src_addr));
 		}
 
-		ret = fi_ep_bind(msg_ep, &ep->srx_ctx->fid, 0);
+		ret = fi_ep_bind(msg_ep, &ep->msg_srx->fid, 0);
 		if (ret) {
 			RXM_WARN_ERR(FI_LOG_EP_CTRL, "fi_ep_bind", ret);
 			goto err;
@@ -226,7 +226,7 @@ static int rxm_open_conn(struct rxm_conn *conn, struct fi_info *msg_info)
 
 	conn->flow_ctrl = domain->flow_ctrl_ops->available(msg_ep);
 
-	if (!ep->srx_ctx) {
+	if (!ep->msg_srx) {
 		ret = rxm_prepost_recv(ep, msg_ep);
 		if (ret)
 			goto err;
@@ -346,14 +346,17 @@ static int rxm_connect(struct rxm_conn *conn)
 
 static void rxm_free_conn(struct rxm_conn *conn)
 {
+	struct rxm_av *av;
+
 	FI_DBG(&rxm_prov, FI_LOG_EP_CTRL, "free conn %p\n", conn);
 	assert(ofi_ep_lock_held(&conn->ep->util_ep));
 
 	if (conn->flags & RXM_CONN_INDEXED)
 		ofi_idm_clear(&conn->ep->conn_idx_map, conn->peer->index);
 
-	rxm_put_peer(conn->peer);
-	rxm_av_free_conn(conn);
+	util_put_peer(conn->peer);
+	av = container_of(conn->ep->util_ep.av, struct rxm_av, util_av);
+	rxm_av_free_conn(av, conn);
 }
 
 void rxm_freeall_conns(struct rxm_ep *ep)
@@ -362,6 +365,9 @@ void rxm_freeall_conns(struct rxm_ep *ep)
 	struct dlist_entry *tmp;
 	struct rxm_av *av;
 	int i, cnt;
+
+	if (!ep->util_ep.av)
+		return;
 
 	av = container_of(ep->util_ep.av, struct rxm_av, util_av);
 	ofi_ep_lock_acquire(&ep->util_ep);
@@ -390,7 +396,7 @@ void rxm_freeall_conns(struct rxm_ep *ep)
 }
 
 static struct rxm_conn *
-rxm_alloc_conn(struct rxm_ep *ep, struct rxm_peer_addr *peer)
+rxm_alloc_conn(struct rxm_ep *ep, struct util_peer_addr *peer)
 {
 	struct rxm_conn *conn;
 	struct rxm_av *av;
@@ -421,7 +427,7 @@ rxm_alloc_conn(struct rxm_ep *ep, struct rxm_peer_addr *peer)
 }
 
 static struct rxm_conn *
-rxm_add_conn(struct rxm_ep *ep, struct rxm_peer_addr *peer)
+rxm_add_conn(struct rxm_ep *ep, struct util_peer_addr *peer)
 {
 	struct rxm_conn *conn;
 
@@ -447,7 +453,7 @@ rxm_add_conn(struct rxm_ep *ep, struct rxm_peer_addr *peer)
 /* The returned conn is only valid if the function returns success. */
 ssize_t rxm_get_conn(struct rxm_ep *ep, fi_addr_t addr, struct rxm_conn **conn)
 {
-	struct rxm_peer_addr **peer;
+	struct util_peer_addr **peer;
 	ssize_t ret;
 
 	assert(ofi_ep_lock_held(&ep->util_ep));
@@ -647,7 +653,7 @@ static void
 rxm_process_connreq(struct rxm_ep *ep, struct rxm_eq_cm_entry *cm_entry)
 {
 	union ofi_sock_ip peer_addr;
-	struct rxm_peer_addr *peer;
+	struct util_peer_addr *peer;
 	struct rxm_conn *conn;
 	struct rxm_av *av;
 	ssize_t ret;
@@ -662,9 +668,9 @@ rxm_process_connreq(struct rxm_ep *ep, struct rxm_eq_cm_entry *cm_entry)
 	ofi_addr_set_port(&peer_addr.sa, cm_entry->data.connect.port);
 
 	av = container_of(ep->util_ep.av, struct rxm_av, util_av);
-	peer = rxm_get_peer(av, &peer_addr);
+	peer = util_get_peer(av, &peer_addr);
 	if (!peer) {
-		RXM_WARN_ERR(FI_LOG_EP_CTRL, "rxm_get_peer", -FI_ENOMEM);
+		RXM_WARN_ERR(FI_LOG_EP_CTRL, "util_get_peer", -FI_ENOMEM);
 		goto reject;
 	}
 
@@ -739,7 +745,7 @@ rxm_process_connreq(struct rxm_ep *ep, struct rxm_eq_cm_entry *cm_entry)
 	conn->state = RXM_CM_ACCEPTING;
 	conn->ep->connecting_cnt++;
 put:
-	rxm_put_peer(peer);
+	util_put_peer(peer);
 	fi_freeinfo(cm_entry->info);
 	return;
 
@@ -748,7 +754,7 @@ close:
 free:
 	rxm_free_conn(conn);
 remove:
-	rxm_put_peer(peer);
+	util_put_peer(peer);
 reject:
 	rxm_reject_connreq(ep, cm_entry, RXM_REJECT_ECONNREFUSED);
 	fi_freeinfo(cm_entry->info);
@@ -1052,4 +1058,19 @@ int rxm_start_listen(struct rxm_ep *ep)
 		}
 	}
 	return 0;
+}
+
+void rxm_av_remove_handler(struct util_ep *util_ep, struct util_peer_addr *peer)
+{
+	struct rxm_ep *ep;
+	struct rxm_conn *conn;
+
+	ep = container_of(util_ep, struct rxm_ep, util_ep);
+	ofi_ep_lock_acquire(&ep->util_ep);
+	conn = ofi_idm_lookup(&ep->conn_idx_map, peer->index);
+	if (conn) {
+		rxm_close_conn(conn);
+		rxm_free_conn(conn);
+	}
+	ofi_ep_lock_release(&ep->util_ep);
 }

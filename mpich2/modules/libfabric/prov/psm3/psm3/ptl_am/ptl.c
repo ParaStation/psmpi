@@ -61,6 +61,9 @@
 #ifdef PSM_CUDA
 #include "am_cuda_memhandle_cache.h"
 #endif
+#ifdef PSM_ONEAPI
+#include "am_oneapi_memhandle_cache.h"
+#endif
 
 /* not reported yet, so just track in a global so can pass a pointer to
  * psm3_mq_handle_envelope and psm3_mq_handle_rts
@@ -80,7 +83,7 @@ ptl_handle_rtsmatch_request(psm2_mq_req_t req, int was_posted,
 	psm2_epaddr_t epaddr = req->rts_peer;
 	struct ptl_am *ptl = (struct ptl_am *)(epaddr->ptlctl->ptl);
 	int cma_succeed = 0;
-	int pid = 0, cuda_ipc_send_completion = 0;
+	int pid = 0, gpu_ipc_send_completion = 0;
 
 	PSM2_LOG_MSG("entering.");
 	psmi_assert((tok != NULL && was_posted)
@@ -99,15 +102,40 @@ ptl_handle_rtsmatch_request(psm2_mq_req_t req, int was_posted,
 		/* cuMemcpy into the receive side buffer
 		 * based on its location */
 		if (req->is_buf_gpu_mem) {
-			PSMI_CUDA_CALL(cuMemcpyDtoD, (CUdeviceptr)req->req_data.buf, cuda_ipc_dev_ptr,
+			PSM3_GPU_MEMCPY_DTOD(req->req_data.buf, cuda_ipc_dev_ptr,
 				       req->req_data.recv_msglen);
-			PSMI_CUDA_CALL(cuStreamSynchronize, 0);
-		} else
-			PSMI_CUDA_CALL(cuMemcpyDtoH, req->req_data.buf, cuda_ipc_dev_ptr,
-				       req->req_data.recv_msglen);
-		cuda_ipc_send_completion = 1;
+			PSM3_GPU_SYNCHRONIZE_MEMCPY();
+		} else {
+			PSM3_GPU_MEMCPY_DTOH(req->req_data.buf, cuda_ipc_dev_ptr,
+				req->req_data.recv_msglen);
+		}
+		gpu_ipc_send_completion = 1;
 		am_cuda_memhandle_release(cuda_ipc_dev_ptr - req->cuda_ipc_offset);
 		req->cuda_ipc_handle_attached = 0;
+		goto send_cts;
+	}
+#endif
+#ifdef PSM_ONEAPI
+	if (req->ze_ipc_handle_attached) {
+
+		ze_device_handle_t *ze_ipc_dev_ptr = am_ze_memhandle_acquire(ptl,
+						  req->rts_sbuf - req->ze_ipc_offset, &req->ze_ipc_handle,
+						  req->req_data.recv_msglen, req->rts_peer,
+						  req->ze_device_index);
+		ze_ipc_dev_ptr = ze_ipc_dev_ptr + req->ze_ipc_offset;
+		/* zeMemcpy into the receive side buffer
+		 * based on its location */
+		if (req->is_buf_gpu_mem) {
+			PSM3_GPU_MEMCPY_DTOD(req->req_data.buf, ze_ipc_dev_ptr,
+				       req->req_data.recv_msglen);
+			PSM3_GPU_SYNCHRONIZE_MEMCPY();
+		} else {
+			PSM3_GPU_MEMCPY_DTOH(req->req_data.buf, ze_ipc_dev_ptr,
+				req->req_data.recv_msglen);
+		}
+		gpu_ipc_send_completion = 1;
+		am_ze_memhandle_release(ze_ipc_dev_ptr - req->ze_ipc_offset);
+		req->ze_ipc_handle_attached = 0;
 		goto send_cts;
 	}
 #endif
@@ -115,7 +143,7 @@ ptl_handle_rtsmatch_request(psm2_mq_req_t req, int was_posted,
 	if ((ptl->psmi_kassist_mode & PSMI_KASSIST_GET)
 	    && req->req_data.recv_msglen > 0
 	    && (pid = psm3_epaddr_pid(epaddr))) {
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 		/* If the buffer on the send side is on the host,
 		 * we alloc a bounce buffer, use kassist and then
 		 * do a cuMemcpy if the buffer on the recv side
@@ -126,14 +154,14 @@ ptl_handle_rtsmatch_request(psm2_mq_req_t req, int was_posted,
 			size_t nbytes = psm3_cma_get(pid, (void *)req->rts_sbuf,
 					cuda_ipc_bounce_buf, req->req_data.recv_msglen);
 			psmi_assert_always(nbytes == req->req_data.recv_msglen);
-			PSMI_CUDA_CALL(cuMemcpyHtoD, (CUdeviceptr)req->req_data.buf, cuda_ipc_bounce_buf,
-				       req->req_data.recv_msglen);
+			PSM3_GPU_MEMCPY_HTOD(req->req_data.buf, cuda_ipc_bounce_buf,
+				req->req_data.recv_msglen);
 			/* Cuda library has recent optimizations where they do
 			 * not guarantee synchronus nature for Host to Device
 			 * copies for msg sizes less than 64k. The event record
 			 * and synchronize calls are to guarentee completion.
 			 */
-			PSMI_CUDA_CALL(cuStreamSynchronize, 0);
+			PSM3_GPU_SYNCHRONIZE_MEMCPY();
 			psmi_free(cuda_ipc_bounce_buf);
 		} else {
 			/* cma can be done in handler context or not. */
@@ -157,7 +185,7 @@ ptl_handle_rtsmatch_request(psm2_mq_req_t req, int was_posted,
 #endif
 	}
 
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 send_cts:
 #endif
 	args[0].u64w0 = (uint64_t) (uintptr_t) req->ptl_req_ptr;
@@ -182,7 +210,7 @@ send_cts:
 
 	/* 0-byte completion or we used kassist */
 	if (pid || cma_succeed ||
-		req->req_data.recv_msglen == 0 || cuda_ipc_send_completion == 1) {
+		req->req_data.recv_msglen == 0 || gpu_ipc_send_completion == 1) {
 		psm3_mq_handle_rts_complete(req);
 	}
 	PSM2_LOG_MSG("leaving.");
@@ -236,7 +264,11 @@ psm3_am_mq_handler(void *toki, psm2_amarg_t *args, int narg, void *buf,
 	default:{
 			void *sreq = (void *)(uintptr_t) args[3].u64w0;
 			uintptr_t sbuf = (uintptr_t) args[4].u64w0;
+#ifdef PSM_ONEAPI
+			psmi_assert(narg == 5 || narg == 6);
+#else
 			psmi_assert(narg == 5);
+#endif
 			psmi_assert_always(opcode == MQ_MSG_LONGRTS);
 			rc = psm3_mq_handle_rts(tok->mq, tok->tok.epaddr_incoming,
 						tag, &strat_stats, msglen, NULL, 0, 1,
@@ -254,6 +286,20 @@ psm3_am_mq_handler(void *toki, psm2_amarg_t *args, int narg, void *buf,
 				req->cuda_ipc_handle = *((CUipcMemHandle*)buf);
 				req->cuda_ipc_handle_attached = 1;
 				req->cuda_ipc_offset = args[2].u32w0;
+			}
+#endif
+#ifdef PSM_ONEAPI
+			/* Payload in RTS would mean an IPC handle has been
+			 * sent. This would also mean the sender has to
+			 * send from a GPU buffer
+			 */
+			if (buf && len > 0) {
+				psmi_assert(narg == 6);
+				req->ze_ipc_handle = *((ze_ipc_mem_handle_t*)buf);
+				req->ze_ipc_handle_attached = 1;
+				req->ze_ipc_offset = args[2].u32w0;
+				req->ze_device_index = args[5].u32w0;
+
 			}
 #endif
 
@@ -277,7 +323,7 @@ psm3_am_mq_handler_data(void *toki, psm2_amarg_t *args, int narg, void *buf,
 	psm2_epaddr_t epaddr = (psm2_epaddr_t) tok->tok.epaddr_incoming;
 	psm2_mq_req_t req = mq_eager_match(tok->mq, epaddr, 0);	/* using seqnum 0 */
 	psmi_assert_always(req != NULL);
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 	psm3_mq_handle_data(tok->mq, req, args[2].u32w0, buf, len, 0, NULL);
 #else
 	psm3_mq_handle_data(tok->mq, req, args[2].u32w0, buf, len);
@@ -305,6 +351,18 @@ psm3_am_mq_handler_rtsmatch(void *toki, psm2_amarg_t *args, int narg, void *buf,
 	 */
 	if (sreq->cuda_ipc_handle_attached) {
 		sreq->cuda_ipc_handle_attached = 0;
+		sreq->mq->stats.tx_shm_bytes += sreq->req_data.send_msglen;
+		sreq->mq->stats.tx_rndv_bytes += sreq->req_data.send_msglen;
+		psm3_mq_handle_rts_complete(sreq);
+		return;
+	}
+#endif
+#ifdef PSM_ONEAPI
+	/* If send side req has a ze ipc handle attached then we can
+	 * assume the data has been copied as soon as we get a CTS
+	 */
+	if (sreq->ze_ipc_handle_attached) {
+		sreq->ze_ipc_handle_attached = 0;
 		sreq->mq->stats.tx_shm_bytes += sreq->req_data.send_msglen;
 		sreq->mq->stats.tx_rndv_bytes += sreq->req_data.send_msglen;
 		psm3_mq_handle_rts_complete(sreq);

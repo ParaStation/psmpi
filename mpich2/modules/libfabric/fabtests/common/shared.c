@@ -51,8 +51,8 @@
 #include <rdma/fi_atomic.h>
 #include <rdma/fi_collective.h>
 
-#include <shared.h>
-#include <hmem.h>
+#include "shared.h"
+#include "hmem.h"
 
 struct fi_info *fi_pep, *fi, *hints;
 struct fid_fabric *fabric;
@@ -159,17 +159,11 @@ struct test_size_param *test_size = def_test_sizes;
 /* range of messages is dynamically allocated */
 struct test_size_param *range_test_size;
 
-int lopt_idx = 0;
-struct option long_opts[] = {
-	{"pin-core", required_argument, NULL, LONG_OPT_PIN_CORE},
-	{0, 0, 0, 0}
-};
-
 static const char integ_alphabet[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 static const int integ_alphabet_length = (sizeof(integ_alphabet)/sizeof(*integ_alphabet)) - 1;
 
 
-static int ft_poll_fd(int fd, int timeout)
+int ft_poll_fd(int fd, int timeout)
 {
 	struct pollfd fds;
 	int ret;
@@ -379,8 +373,36 @@ void ft_free_bit_combo(uint64_t *combo)
 	free(combo);
 }
 
+void ft_fill_mr_attr(struct iovec *iov, int iov_count, uint64_t access,
+		     uint64_t key, enum fi_hmem_iface iface, uint64_t device,
+		     struct fi_mr_attr *attr)
+{
+	attr->mr_iov = iov;
+	attr->iov_count = iov_count;
+	attr->access = access;
+	attr->offset = 0;
+	attr->requested_key = key;
+	attr->context = NULL;
+	attr->iface = iface;
+
+	switch (iface) {
+	case FI_HMEM_NEURON:
+		attr->device.neuron = device;
+		break;
+	case FI_HMEM_ZE:
+		attr->device.ze = fi_hmem_ze_device(0, device);
+		break;
+	case FI_HMEM_CUDA:
+		attr->device.cuda = device;
+		break;
+	default:
+		break;
+	}
+}
+
 int ft_reg_mr(struct fi_info *fi, void *buf, size_t size, uint64_t access,
-	      uint64_t key, struct fid_mr **mr, void **desc)
+	      uint64_t key, enum fi_hmem_iface iface, uint64_t device,
+	      struct fid_mr **mr, void **desc)
 {
 	struct fi_mr_attr attr = {0};
 	struct iovec iov = {0};
@@ -396,32 +418,25 @@ int ft_reg_mr(struct fi_info *fi, void *buf, size_t size, uint64_t access,
 
 	iov.iov_base = buf;
 	iov.iov_len = size;
-	attr.mr_iov = &iov;
-	attr.iov_count = 1;
-	attr.access = access;
-	attr.offset = 0;
-	attr.requested_key = key;
-	attr.context = NULL;
-	attr.iface = opts.iface;
+	ft_fill_mr_attr(&iov, 1, access, key, iface, device, &attr);
 
-	switch (opts.iface) {
-	case FI_HMEM_NEURON:
-		attr.device.neuron = opts.device;
-		break;
-	case FI_HMEM_ZE:
-		attr.device.ze = opts.device;
-		break;
-	default:
-		break;
-	}
-
-	flags = (opts.iface) ? FI_HMEM_DEVICE_ONLY : 0;
+	flags = (iface) ? FI_HMEM_DEVICE_ONLY : 0;
 	ret = fi_mr_regattr(domain, &attr, flags, mr);
 	if (ret)
 		return ret;
 
 	if (desc)
 		*desc = fi_mr_desc(*mr);
+
+        if (fi->domain_attr->mr_mode & FI_MR_ENDPOINT) {
+		ret = fi_mr_bind(*mr, &ep->fid, 0);
+		if (ret)
+			return ret;
+
+		ret = fi_mr_enable(*mr);
+		if (ret)
+			return ret;
+	}
 
 	return FI_SUCCESS;
 }
@@ -460,8 +475,8 @@ static int ft_alloc_ctx_array(struct ft_context **mr_array, char ***mr_bufs,
 		context->buf = (*mr_bufs)[i];
 
 		ret = ft_reg_mr(fi, context->buf, mr_size, access,
-				start_key + i, &context->mr,
-				&context->desc);
+				start_key + i, opts.iface, opts.device,
+				&context->mr, &context->desc);
 		if (ret)
 			return ret;
 	}
@@ -479,12 +494,27 @@ static void ft_set_tx_rx_sizes(size_t *set_tx, size_t *set_rx)
 	*set_tx += ft_tx_prefix_size();
 }
 
+int ft_alloc_host_tx_buf(size_t size)
+{
+	return ft_hmem_alloc_host(opts.iface, &tx_msg_buf, size);
+}
+
+void ft_free_host_tx_buf(void)
+{
+	int ret;
+
+	ret = ft_hmem_free_host(opts.iface, tx_msg_buf);
+	if (ret)
+		FT_PRINTERR("ft_hmem_free_host", ret);
+	tx_msg_buf = NULL;
+}
+
 /*
  * Include FI_MSG_PREFIX space in the allocated buffer, and ensure that the
  * buffer is large enough for a control message used to exchange addressing
  * data.
  */
-static int ft_alloc_msgs(void)
+int ft_alloc_msgs(void)
 {
 	int ret;
 	long alignment = 1;
@@ -525,7 +555,7 @@ static int ft_alloc_msgs(void)
 		if (ret)
 			return ret;
 
-		ret = ft_hmem_alloc_host(opts.iface, &tx_msg_buf, MAX(tx_size, FT_MAX_CTRL_MSG));
+		ret = ft_alloc_host_tx_buf(MAX(tx_size, FT_MAX_CTRL_MSG));
 		if (ret)
 			return ret;
 	}
@@ -544,7 +574,8 @@ static int ft_alloc_msgs(void)
 	mr = &no_mr;
 	if (!ft_mr_alloc_func && !ft_check_opts(FT_OPT_SKIP_REG_MR)) {
 		ret = ft_reg_mr(fi, buf, buf_size, ft_info_to_mr_access(fi),
-				FT_MR_KEY, &mr, &mr_desc);
+				FT_MR_KEY, opts.iface, opts.device, &mr,
+				&mr_desc);
 		if (ret)
 			return ret;
 	} else {
@@ -629,10 +660,6 @@ int ft_alloc_ep_res(struct fi_info *fi, struct fid_cq **new_txcq,
 		    struct fid_cntr **new_rxcntr)
 {
 	int ret;
-
-	ret = ft_alloc_msgs();
-	if (ret)
-		return ret;
 
 	if (cq_attr.format == FI_CQ_FORMAT_UNSPEC) {
 		if (fi->caps & FI_TAGGED)
@@ -742,10 +769,18 @@ int ft_alloc_active_res(struct fi_info *fi)
 
 int ft_init(void)
 {
+	int ret;
+
 	tx_seq = 0;
 	rx_seq = 0;
 	tx_cq_cntr = 0;
 	rx_cq_cntr = 0;
+
+	ret = ft_startup();
+	if (ret) {
+		FT_ERR("ft_startup: %d", ret);
+		return ret;
+	}
 
 	return ft_hmem_init(opts.iface);
 }
@@ -790,7 +825,7 @@ int ft_init_oob(void)
 			return ret;
 		}
 
-		close(listen_sock);
+		ft_close_fd(listen_sock);
 	} else {
 		ret = getaddrinfo(opts.dst_addr, opts.oob_port, NULL, &ai);
 		if (ret) {
@@ -808,7 +843,7 @@ int ft_init_oob(void)
 		ret = connect(oob_sock, ai->ai_addr, ai->ai_addrlen);
 		if (ret) {
 			perror("connect");
-			close(oob_sock);
+			ft_close_fd(oob_sock);
 			goto free;
 		}
 		sleep(1);
@@ -869,9 +904,9 @@ int ft_close_oob()
 	int ret;
 	if (oob_sock == -1)
 		return 0;
-	ret = close(oob_sock);
+	ret = ft_close_fd(oob_sock);
 	if (ret) {
-		FT_PRINTERR("close", errno);
+		FT_PRINTERR("ft_close_fd", errno);
 		return ret;
 	}
 	oob_sock = -1;
@@ -1261,6 +1296,10 @@ int ft_enable_ep_recv(void)
 	if (ret)
 		return ret;
 
+	ret = ft_alloc_msgs();
+	if (ret)
+		return ret;
+
 	if (!ft_check_opts(FT_OPT_SKIP_MSG_ALLOC) &&
 	    (fi->caps & (FI_MSG | FI_TAGGED))) {
 		/* Initial receive will get remote address for unconnected EPs */
@@ -1361,6 +1400,9 @@ int ft_init_av_dst_addr(struct fid_av *av_ptr, struct fid_ep *ep_ptr,
 	size_t addrlen;
 	int ret;
 
+	if (opts.options & FT_OPT_SKIP_ADDR_EXCH)
+		return 0;
+
 	if (opts.options & FT_OPT_OOB_ADDR_EXCH) {
 		ret = ft_exchange_addresses_oob(av_ptr, ep_ptr, remote_addr);
 		if (ret)
@@ -1444,6 +1486,9 @@ int ft_init_av_addr(struct fid_av *av_ptr, struct fid_ep *ep_ptr,
 {
 	size_t addrlen;
 	int ret;
+
+	if (opts.options & FT_OPT_SKIP_ADDR_EXCH)
+		return 0;
 
 	if (opts.options & FT_OPT_OOB_ADDR_EXCH)
 		return ft_exchange_addresses_oob(av_ptr, ep_ptr, remote_addr);
@@ -1586,10 +1631,16 @@ static void ft_cleanup_mr_array(struct ft_context *ctx_arr, char **mr_bufs)
 	}
 }
 
-static void ft_close_fids(void)
+void ft_close_fids(void)
 {
 	FT_CLOSE_FID(mc);
 	FT_CLOSE_FID(alias_ep);
+	if (fi && fi->domain_attr->mr_mode & FI_MR_ENDPOINT) {
+		if (mr != &no_mr) {
+			FT_CLOSE_FID(mr);
+			mr = &no_mr;
+		}
+	}
 	FT_CLOSE_FID(ep);
 	FT_CLOSE_FID(pep);
 	if (opts.options & FT_OPT_CQ_SHARED) {
@@ -1610,6 +1661,41 @@ static void ft_close_fids(void)
 	FT_CLOSE_FID(eq);
 	FT_CLOSE_FID(waitset);
 	FT_CLOSE_FID(fabric);
+}
+
+/* We need to free any data that we allocated before freeing the
+ * hints.  Windows doesn't like it when a library frees memory that
+ * was allocated by the application.
+ */
+void ft_freehints(struct fi_info *hints)
+{
+	if (!hints)
+		return;
+
+	if (hints->domain_attr->name) {
+		free(hints->domain_attr->name);
+		hints->domain_attr->name = NULL;
+	}
+	if (hints->fabric_attr->name) {
+		free(hints->fabric_attr->name);
+		hints->fabric_attr->name = NULL;
+	}
+	if (hints->fabric_attr->prov_name) {
+		free(hints->fabric_attr->prov_name);
+		hints->fabric_attr->prov_name = NULL;
+	}
+	if (hints->src_addr) {
+		free(hints->src_addr);
+		hints->src_addr = NULL;
+		hints->src_addrlen = 0;
+	}
+	if (hints->dest_addr) {
+		free(hints->dest_addr);
+		hints->dest_addr = NULL;
+		hints->dest_addrlen = 0;
+	}
+
+	fi_freeinfo(hints);
 }
 
 void ft_free_res(void)
@@ -1633,12 +1719,9 @@ void ft_free_res(void)
 		buf = rx_buf = tx_buf = NULL;
 		buf_size = rx_size = tx_size = tx_mr_size = rx_mr_size = 0;
 	}
-	if (tx_msg_buf) {
-		ret = ft_hmem_free_host(opts.iface, tx_msg_buf);
-		if (ret)
-			FT_PRINTERR("ft_hmem_free_host", ret);
-		tx_msg_buf = NULL;
-	}
+	if (tx_msg_buf)
+		ft_free_host_tx_buf();
+
 	if (fi_pep) {
 		fi_freeinfo(fi_pep);
 		fi_pep = NULL;
@@ -1648,7 +1731,7 @@ void ft_free_res(void)
 		fi = NULL;
 	}
 	if (hints) {
-		fi_freeinfo(hints);
+		ft_freehints(hints);
 		hints = NULL;
 	}
 
@@ -1983,18 +2066,18 @@ ssize_t ft_post_rma(enum ft_rma_opcodes op, struct fid_ep *ep, size_t size,
 	switch (op) {
 	case FT_RMA_WRITE:
 		FT_POST(fi_write, ft_progress, txcq, tx_seq, &tx_cq_cntr,
-			"fi_write", ep, tx_buf, opts.transfer_size, mr_desc,
+			"fi_write", ep, tx_buf, size, mr_desc,
 			remote_fi_addr, remote->addr, remote->key, context);
 		break;
 	case FT_RMA_WRITEDATA:
 		FT_POST(fi_writedata, ft_progress, txcq, tx_seq, &tx_cq_cntr,
-			"fi_writedata", ep, tx_buf, opts.transfer_size, mr_desc,
+			"fi_writedata", ep, tx_buf, size, mr_desc,
 			remote_cq_data, remote_fi_addr,	remote->addr,
 			remote->key, context);
 		break;
 	case FT_RMA_READ:
 		FT_POST(fi_read, ft_progress, txcq, tx_seq, &tx_cq_cntr,
-			"fi_read", ep, rx_buf, opts.transfer_size, mr_desc,
+			"fi_read", ep, rx_buf, size, mr_desc,
 			remote_fi_addr, remote->addr,remote->key, context);
 		break;
 	default:
@@ -2168,7 +2251,7 @@ ssize_t ft_post_rx_buf(struct fid_ep *ep, size_t size, void *ctx,
 			remote_fi_addr, op_tag, 0, ctx);
 	} else {
 		FT_POST(fi_recv, ft_progress, rxcq, rx_seq, &rx_cq_cntr,
-			"receive", ep, op_buf, size, op_mr_desc, 0, ctx);
+			"receive", ep, op_buf, size, op_mr_desc, remote_fi_addr, ctx);
 	}
 	return 0;
 }
@@ -2209,6 +2292,9 @@ static inline int
 ft_tag_is_valid(struct fid_cq * cq, struct fi_cq_err_entry *comp, uint64_t tag)
 {
 	int valid = 1;
+
+	if (opts.options & FT_OPT_DISABLE_TAG_VALIDATION)
+		return valid;
 
 	if ((hints->caps & FI_TAGGED) && (cq == rxcq)) {
 		if (opts.options & FT_OPT_BW) {
@@ -2322,7 +2408,6 @@ static int ft_fdwait_for_comp(struct fid_cq *cq, uint64_t *cur,
 int ft_get_cq_comp(struct fid_cq *cq, uint64_t *cur, uint64_t total, int timeout)
 {
 	int ret;
-
 	switch (opts.comp_method) {
 	case FT_COMP_SREAD:
 	case FT_COMP_YIELD:
@@ -2702,14 +2787,14 @@ int ft_wait_child(void)
 {
 	int ret;
 
-	ret = close(ft_socket_pair[0]);
+	ret = ft_close_fd(ft_socket_pair[0]);
 	if (ret) {
-		FT_PRINTERR("close", errno);
+		FT_PRINTERR("ft_close_fd", errno);
 		return ret;
 	}
-	ret = close(ft_socket_pair[1]);
+	ret = ft_close_fd(ft_socket_pair[1]);
 	if (ret) {
-		FT_PRINTERR("close", errno);
+		FT_PRINTERR("ft_close_fd", errno);
 		return ret;
 	}
 	if (ft_parent_proc) {
@@ -2878,8 +2963,7 @@ void ft_addr_usage()
 			"synchronization over the, optional, port");
 	FT_PRINT_OPTS_USAGE("-E[=<oob_port>]", "enable out-of-band address exchange only "
 			"over the, optional, port");
-	FT_PRINT_OPTS_USAGE("-C <number>", "number of connections to accept before "
-			"cleaning up a server");
+	FT_PRINT_OPTS_USAGE("-C <number>", "simultaneous connections to server");
 	FT_PRINT_OPTS_USAGE("-F <addr_format>", "Address format (default:FI_FORMAT_UNSPEC)");
 }
 
@@ -2925,6 +3009,15 @@ void ft_usage(char *name, char *desc)
 	return;
 }
 
+void ft_hmem_usage()
+{
+	FT_PRINT_OPTS_USAGE("-D <device_iface>", "Specify device interface: "
+			    "e.g. cuda, ze, neuron (default: None). "
+			    "Automatically enables FI_HMEM (-H)");
+	FT_PRINT_OPTS_USAGE("-i <device_id>", "Specify which device to use (default: 0)");
+	FT_PRINT_OPTS_USAGE("-H", "Enable provider FI_HMEM support");
+}
+
 void ft_mcusage(char *name, char *desc)
 {
 	fprintf(stderr, "Usage:\n");
@@ -2939,11 +3032,7 @@ void ft_mcusage(char *name, char *desc)
 	FT_PRINT_OPTS_USAGE("-f <fabric>", "fabric name");
 	FT_PRINT_OPTS_USAGE("-d <domain>", "domain name");
 	FT_PRINT_OPTS_USAGE("-p <provider>", "specific provider name eg sockets, verbs");
-	FT_PRINT_OPTS_USAGE("-D <device_iface>", "Specify device interface: "
-			    "e.g. cuda, ze, neuron (default: None). "
-			    "Automatically enables FI_HMEM (-H)");
-	FT_PRINT_OPTS_USAGE("-i <device_id>", "Specify which device to use (default: 0)");
-	FT_PRINT_OPTS_USAGE("-H", "Enable provider FI_HMEM support");
+	ft_hmem_usage();
 	FT_PRINT_OPTS_USAGE("-h", "display this help output");
 
 	return;
@@ -2959,22 +3048,11 @@ void ft_csusage(char *name, char *desc)
 			    " a range of sizes (syntax r:start,inc,end) or 'all'");
 	FT_PRINT_OPTS_USAGE("-l", "align transmit and receive buffers to page size");
 	FT_PRINT_OPTS_USAGE("-m", "machine readable output");
-	FT_PRINT_OPTS_USAGE("-D <device_iface>", "Specify device interface: "
-			    "e.g. cuda, ze, neuron (default: None). "
-			    "Automatically enables FI_HMEM (-H)");
-	FT_PRINT_OPTS_USAGE("-i <device_index>", "Index of the device to use");
+	ft_hmem_usage();
 	FT_PRINT_OPTS_USAGE("-t <type>", "completion type [queue, counter]");
 	FT_PRINT_OPTS_USAGE("-c <method>", "completion method [spin, sread, fd, yield]");
 	FT_PRINT_OPTS_USAGE("-h", "display this help output");
 
-	return;
-}
-
-void ft_longopts_usage()
-{
-	FT_PRINT_OPTS_USAGE("--pin-core <core_list>", "specify which cores to pin");
-	FT_PRINT_OPTS_USAGE("", "disabled by default. <core_list> format uses");
-	FT_PRINT_OPTS_USAGE("", "a comma-separated list, like 0,2-4");
 	return;
 }
 
@@ -3103,26 +3181,26 @@ void ft_parse_hmem_opts(int op, char *optarg, struct ft_opts *opts)
 
 void ft_parse_opts_range(char* optarg)
 {
-       size_t start, inc, end;
-       int i, ret;
+	size_t start, inc, end;
+	int i, ret;
 
-       ret = sscanf(optarg, "r:%ld,%ld,%ld", &start, &inc, &end);
-       if (ret != 3) {
-	      perror("sscanf");
-	      exit(EXIT_FAILURE);
-       }
-       assert(end >= start && inc > 0);
-       test_cnt = (end - start) / inc + 1;
-       range_test_size = calloc(test_cnt, sizeof(*range_test_size));
-       if (!range_test_size) {
-	       perror("calloc");
-	       exit(EXIT_FAILURE);
-       }
-       for (i = 0; i < test_cnt && i < end; i++) {
-	       range_test_size[i].size = start + (i * inc);
-	       range_test_size[i].enable_flags = 0;
-       }
-       test_size = range_test_size;
+	ret = sscanf(optarg, "r:%ld,%ld,%ld", &start, &inc, &end);
+	if (ret != 3) {
+		perror("sscanf");
+		exit(EXIT_FAILURE);
+	}
+	assert(end >= start && inc > 0);
+	test_cnt = (end - start) / inc + 1;
+	range_test_size = calloc(test_cnt, sizeof(*range_test_size));
+	if (!range_test_size) {
+		perror("calloc");
+		exit(EXIT_FAILURE);
+	}
+	for (i = 0; i < test_cnt && i < end; i++) {
+		range_test_size[i].size = start + (i * inc);
+		range_test_size[i].enable_flags = 0;
+	}
+	test_size = range_test_size;
 }
 
 void ft_parsecsopts(int op, char *optarg, struct ft_opts *opts)
@@ -3193,6 +3271,12 @@ int ft_parse_api_opts(int op, char *optarg, struct fi_info *hints,
 			hints->mode |= FI_RX_CQ_DATA;
 			hints->domain_attr->cq_data_size = 4;
 			opts->rma_op = FT_RMA_WRITEDATA;
+			opts->cqdata_op = FT_CQDATA_WRITEDATA;
+			cq_attr.format = FI_CQ_FORMAT_DATA;
+		} else if (!strcasecmp(optarg, "senddata")) {
+			hints->mode |= FI_RX_CQ_DATA;
+			hints->domain_attr->cq_data_size = 4;
+			opts->cqdata_op = FT_CQDATA_SENDDATA;
 			cq_attr.format = FI_CQ_FORMAT_DATA;
 		} else if (!strcasecmp(optarg, "write")) {
 			hints->caps |= FI_WRITE | FI_REMOTE_WRITE;
@@ -3396,7 +3480,7 @@ int ft_sock_listen(char *node, char *service)
 
 out:
 	if (ret && listen_sock >= 0)
-		close(listen_sock);
+		ft_close_fd(listen_sock);
 	freeaddrinfo(ai);
 	return ret;
 }
@@ -3422,7 +3506,7 @@ int ft_sock_connect(char *node, char *service)
 	ret = connect(sock, ai->ai_addr, ai->ai_addrlen);
 	if (ret) {
 		perror("connect");
-		close(sock);
+		ft_close_fd(sock);
 		goto free;
 	}
 
@@ -3437,7 +3521,7 @@ int ft_sock_accept()
 	int ret;
 
 	sock = accept(listen_sock, NULL, 0);
-        if (sock < 0) {
+	if (sock < 0) {
 		ret = sock;
 		perror("accept");
 		return ret;
@@ -3453,13 +3537,13 @@ int ft_sock_send(int fd, void *msg, size_t len)
 	ssize_t ret, err = 0;
 
 	for (sent = 0; sent < len; ) {
-		ret = send(fd, ((char *) msg) + sent, len - sent, 0);
+		ret = ofi_send_socket(fd, ((char *) msg) + sent, len - sent, 0);
 		if (ret > 0) {
 			sent += ret;
-		} else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+		} else if (ofi_sockerr() == EAGAIN || ofi_sockerr() == EWOULDBLOCK) {
 			ft_force_progress();
 		} else {
-			err = -errno;
+			err = -ofi_sockerr();
 			break;
 		}
 	}
@@ -3473,16 +3557,16 @@ int ft_sock_recv(int fd, void *msg, size_t len)
 	ssize_t ret, err = 0;
 
 	for (rcvd = 0; rcvd < len; ) {
-		ret = recv(fd, ((char *) msg) + rcvd, len - rcvd, 0);
+		ret = ofi_recv_socket(fd, ((char *) msg) + rcvd, len - rcvd, 0);
 		if (ret > 0) {
 			rcvd += ret;
 		} else if (ret == 0) {
 			err = -FI_ENOTCONN;
 			break;
-		} else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+		} else if (ofi_sockerr() == EAGAIN || ofi_sockerr() == EWOULDBLOCK) {
 			ft_force_progress();
 		} else {
-			err = -errno;
+			err = -ofi_sockerr();
 			break;
 		}
 	}
@@ -3508,7 +3592,7 @@ int ft_sock_sync(int value)
 void ft_sock_shutdown(int fd)
 {
 	shutdown(fd, SHUT_RDWR);
-	close(fd);
+	ft_close_fd(fd);
 }
 
 static int ft_has_util_prefix(const char *str)
@@ -3686,11 +3770,39 @@ static int ft_parse_pin_core_opt(char *optarg)
 	return 0;
 }
 
+void ft_longopts_usage()
+{
+	FT_PRINT_OPTS_USAGE("--pin-core <core_list>",
+		"Specify which cores to pin process to using a\n"
+		"a comma-separated list format, e.g.: 0,2-4.\n"
+		"Disabled by default.");
+	FT_PRINT_OPTS_USAGE("--timeout <seconds>",
+		"Overrides default timeout for test specific transfers.");
+	FT_PRINT_OPTS_USAGE("--debug-assert",
+		"Replace asserts with while loops to force process to\n"
+		"spin until a debugger can be attached.");
+}
+
+int debug_assert;
+
+int lopt_idx = 0;
+struct option long_opts[] = {
+	{"pin-core", required_argument, NULL, LONG_OPT_PIN_CORE},
+	{"timeout", required_argument, NULL, LONG_OPT_TIMEOUT},
+	{"debug-assert", no_argument, &debug_assert, LONG_OPT_DEBUG_ASSERT},
+	{NULL, 0, NULL, 0},
+};
+
 int ft_parse_long_opts(int op, char *optarg)
 {
 	switch (op) {
 	case LONG_OPT_PIN_CORE:
 		return ft_parse_pin_core_opt(optarg);
+	case LONG_OPT_TIMEOUT:
+		timeout = atoi(optarg);
+		return 0;
+	case LONG_OPT_DEBUG_ASSERT:
+		return 0;
 	default:
 		return EXIT_FAILURE;
 	}

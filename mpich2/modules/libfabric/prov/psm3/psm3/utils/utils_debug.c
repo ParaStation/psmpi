@@ -125,7 +125,7 @@ static void hfi_brake_debug(void)
 {
 	struct stat buff;
 	char hostname[80];
-	const char *hfi_brake_file_name = getenv("PSM3_BRAKE_FILE_NAME");
+	const char *hfi_brake_file_name = psm3_env_get("PSM3_BRAKE_FILE_NAME");
 	gethostname(hostname, 80);
 	hostname[sizeof(hostname) - 1] = '\0';
 
@@ -332,7 +332,7 @@ static void psm3_init_backtrace(void)
 	act.sa_sigaction = hfi_sighdlr;
 	act.sa_flags = SA_SIGINFO;
 
-	if (getenv("PSM3_BACKTRACE")) {
+	if (psm3_env_get("PSM3_BACKTRACE")) {
 		/* permanent, although probably
 		   undocumented way to disable backtraces. */
 		(void)sigaction(SIGSEGV, &act, &SIGSEGV_old_act);
@@ -359,8 +359,9 @@ static char *check_dbgfile_env(char *env) {
    %h is expanded to the hostname, and %p to the pid, if present. */
 static void psm3_init_dbgfile(void)
 {
-	char *fname = getenv("PSM3_DEBUG_FILENAME");
-	char *rname, *exph, *expp, tbuf[1024], rbuf[PATH_MAX];
+	char *fname = psm3_env_get("PSM3_DEBUG_FILENAME");
+	char *fname1, *fname2; /* for dups */
+	char *dname, *bname, *exph, *expp, tbuf[1024], rbuf[PATH_MAX], fnbuf[PATH_MAX];
 	FILE *newf;
 
 	if (!fname) {
@@ -411,24 +412,33 @@ static void psm3_init_dbgfile(void)
 		}
 		fname = tbuf;
 	}
-	rname = realpath(fname, rbuf);
-	if (!rname) {
+	fname1 = psmi_strdup(NULL, fname);
+	fname2 = psmi_strdup(NULL, fname);
+	bname = basename(fname1);
+	dname = realpath(dirname(fname2), rbuf);
+	if (!dname) {
 		_HFI_ERROR
-		    ("Unable to resolve \"%s\" for debug output, using stdout: %s\n",
-		     fname, strerror(errno));
+		    ("Unable to resolve directory \"%s\" for debug output, using stdout: %s\n",
+		     dirname(fname), strerror(errno));
 		psm3_dbgout = stdout;
+		psmi_free(fname1);
+		psmi_free(fname2);
 		return;
 	}
-	newf = fopen(rname, "a");
+	snprintf(fnbuf, sizeof(fnbuf), "%s/%s",
+		dname, bname);
+	newf = fopen(fnbuf, "a");
 	if (!newf) {
 		_HFI_ERROR
 		    ("Unable to open \"%s\" for debug output, using stdout: %s\n",
-		     rname, strerror(errno));
+		     fnbuf, strerror(errno));
 		psm3_dbgout = stdout;
 	} else {
 		psm3_dbgout = newf;
 		setlinebuf(psm3_dbgout);
 	}
+	psmi_free(fname1);
+	psmi_free(fname2);
 }
 
 void psm3_set_mylabel(char *label)
@@ -464,7 +474,7 @@ int psm3_get_mylocalrank_count()
 
 static void psm3_fini_backtrace(void)
 {
-  if (getenv("PSM3_BACKTRACE")) {
+  if (psm3_env_get("PSM3_BACKTRACE")) {
     (void)sigaction(SIGSEGV, &SIGSEGV_old_act, NULL);
     (void)sigaction(SIGBUS,  &SIGBUS_old_act, NULL);
     (void)sigaction(SIGILL,  &SIGILL_old_act, NULL);
@@ -476,29 +486,33 @@ static void psm3_fini_backtrace(void)
 
 void psm3_dump_buf(uint8_t *buf, uint32_t len)
 {
-	int i, j;
+	int i, j, print_len;
+	char tmp[1080] = {}; // max length is 1024 + 7 + 16*3 = 1078
 	for (i=0; i<len; i += 16 ) {
-		fprintf(psm3_dbgout, "%s: 0x%04x:", psm3_mylabel, i);
-		for (j=0; j<16 && i+j < len; j++)
-			fprintf(psm3_dbgout, " %02x", (unsigned)buf[i+j]);
-		fprintf(psm3_dbgout, "\n");
+		print_len = snprintf(tmp, sizeof(tmp), "%s: 0x%04x:", psm3_mylabel, i);
+		for (j=0; j<16 && i+j < len && print_len < sizeof(tmp) - 1; j++)
+			print_len += snprintf(tmp + print_len, sizeof(tmp) - print_len, " %02x", (unsigned)buf[i+j]);
+
+		fprintf(psm3_dbgout, "%s\n", tmp);
+		fflush(psm3_dbgout);
 	}
 }
 
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 void psm3_dump_gpu_buf(uint8_t *buf, uint32_t len)
 {
-	int i, j;
+	int i, j, print_len;
 	uint8_t hbuf[1024];
-
+	char tmp[1080] = {};
 	for (i=0; i<len; i += 16 ) {
-		fprintf(psm3_dbgout, "%s: 0x%04x:", psm3_mylabel, i);
+		print_len = snprintf(tmp, sizeof(tmp), "%s: 0x%04x:", psm3_mylabel, i);
 		if (0 == i % 1024)
-			PSMI_CUDA_CALL(cuMemcpyDtoH, hbuf, (CUdeviceptr)buf,
+			PSM3_GPU_MEMCPY_DTOH(hbuf, buf,
                                                 min(len-i, 1024));
-		for (j=0; j<16 && i+j < len; j++)
-			fprintf(psm3_dbgout, " %02x", (unsigned)hbuf[i%1024+j]);
-		fprintf(psm3_dbgout, "\n");
+		for (j=0; j<16 && i+j < len && print_len < sizeof(tmp) - 1; j++)
+			print_len += snprintf(tmp + print_len, sizeof(tmp) - print_len, " %02x", (unsigned)hbuf[i%1024+j]);
+		fprintf(psm3_dbgout, "%s\n", tmp);
+		fflush(psm3_dbgout);
 	}
 }
 #endif

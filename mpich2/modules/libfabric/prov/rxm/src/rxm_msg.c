@@ -36,7 +36,7 @@
 #include <math.h>
 
 #include <rdma/fabric.h>
-#include "ofi.h"
+#include <ofi.h>
 
 #include "rxm.h"
 
@@ -173,7 +173,7 @@ rxm_recv_common(struct rxm_ep *rxm_ep, const struct iovec *iov,
 		goto release;
 	}
 
-	rx_buf = rxm_get_unexp_msg(&rxm_ep->recv_queue, recv_entry->addr, 0,  0);
+	rx_buf = rxm_get_unexp_msg(&rxm_ep->recv_queue, recv_entry->addr, 0, 0);
 	if (!rx_buf) {
 		dlist_insert_tail(&recv_entry->entry,
 				  &rxm_ep->recv_queue.recv_list);
@@ -227,7 +227,7 @@ rxm_buf_recv(struct rxm_ep *rxm_ep, const struct iovec *iov,
 		assert(flags & FI_DISCARD);
 		FI_DBG(&rxm_prov, FI_LOG_EP_DATA,
 		       "Discarding buffered receive\n");
-		rxm_rx_buf_free(rx_buf);
+		rxm_free_rx_buf(rx_buf);
 	}
 unlock:
 	ofi_ep_lock_release(&rxm_ep->util_ep);
@@ -341,7 +341,7 @@ rxm_alloc_rndv_buf(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 	return len;
 
 err:
-	rxm_free_rx_buf(rxm_ep, *rndv_buf);
+	rxm_free_tx_buf(rxm_ep, *rndv_buf);
 	return ret;
 }
 
@@ -376,7 +376,7 @@ err:
 	       "Transmit for MSG provider failed\n");
 	if (!rxm_ep->rdm_mr_local)
 		rxm_msg_mr_closev(tx_buf->rma.mr, tx_buf->rma.count);
-	rxm_free_rx_buf(rxm_ep, tx_buf);
+	rxm_free_tx_buf(rxm_ep, tx_buf);
 	return ret;
 }
 
@@ -494,7 +494,7 @@ rxm_send_sar(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 	if (ret) {
 		if (ret == -FI_EAGAIN)
 			rxm_ep_do_progress(&rxm_ep->util_ep);
-		rxm_free_rx_buf(rxm_ep, first_tx_buf);
+		rxm_free_tx_buf(rxm_ep, first_tx_buf);
 		return ret;
 	}
 
@@ -517,14 +517,14 @@ rxm_send_sar(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 	return 0;
 
 free:
-	rxm_free_rx_buf(rxm_ep, first_tx_buf);
+	rxm_free_tx_buf(rxm_ep, first_tx_buf);
 	return ret;
 defer:
 	def_tx = rxm_ep_alloc_deferred_tx_entry(rxm_ep,
 			rxm_conn, RXM_DEFERRED_TX_SAR_SEG);
 	if (!def_tx) {
 		if (tx_buf)
-			rxm_free_rx_buf(rxm_ep, tx_buf);
+			rxm_free_tx_buf(rxm_ep, tx_buf);
 		return -FI_ENOMEM;
 	}
 	memcpy(def_tx->sar_seg.payload.iov,
@@ -573,7 +573,7 @@ rxm_emulate_inject(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 	if (ret) {
 		if (ret == -FI_EAGAIN)
 			rxm_ep_do_progress(&rxm_ep->util_ep);
-		rxm_free_rx_buf(rxm_ep, tx_buf);
+		rxm_free_tx_buf(rxm_ep, tx_buf);
 	}
 	return ret;
 }
@@ -766,7 +766,6 @@ rxm_send_eager(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 					     eager_buf->pkt.hdr.size,
 					     iface, device, iov, count, 0);
 		assert((size_t) ret == eager_buf->pkt.hdr.size);
-
 		ret = fi_send(rxm_conn->msg_ep, &eager_buf->pkt, total_len,
 			      eager_buf->hdr.desc, 0, eager_buf);
 	}
@@ -774,7 +773,7 @@ rxm_send_eager(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 	if (ret) {
 		if (ret == -FI_EAGAIN)
 			rxm_ep_do_progress(&rxm_ep->util_ep);
-		rxm_free_rx_buf(rxm_ep, eager_buf);
+		rxm_free_tx_buf(rxm_ep, eager_buf);
 	}
 	return ret;
 }
@@ -791,6 +790,9 @@ rxm_send_common(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 	uint64_t device;
 	ssize_t ret;
 
+	if (flags & FI_PEER_TRANSFER)
+		tag |= RXM_PEER_XFER_TAG_FLAG;
+
 	data_len = ofi_total_iov_len(iov, count);
 	total_len = sizeof(struct rxm_pkt) + data_len;
 
@@ -798,6 +800,10 @@ rxm_send_common(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 	assert((!(flags & FI_INJECT) &&
 		(data_len > rxm_ep->rxm_info->tx_attr->inject_size)) ||
 	       (data_len <= rxm_ep->rxm_info->tx_attr->inject_size));
+
+	iface = rxm_mr_desc_to_hmem_iface_dev(desc, count, &device);
+	if (iface == FI_HMEM_ZE)
+		goto rndv_send;
 
 	if (data_len <= rxm_ep->eager_limit) {
 		ret = rxm_send_eager(rxm_ep, rxm_conn, iov, desc, count,
@@ -808,8 +814,7 @@ rxm_send_common(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 				   context, data, flags, tag, op, data_len,
 				   rxm_ep_sar_calc_segs_cnt(rxm_ep, data_len));
 	} else {
-		iface = rxm_mr_desc_to_hmem_iface_dev(desc, count, &device);
-
+rndv_send:
 		ret = rxm_alloc_rndv_buf(rxm_ep, rxm_conn, context,
 					 (uint8_t) count, iov, desc,
 					 data_len, data, flags, tag, op,
@@ -986,10 +991,10 @@ rxm_recv_thru(struct fid_ep *ep_fid, void *buf, size_t len,
 	ssize_t ret;
 
 	ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
-	assert(ep->srx_ctx);
+	assert(ep->msg_srx);
 
 	ofi_ep_lock_acquire(&ep->util_ep);
-	ret = fi_recv(ep->srx_ctx, buf, len, desc, src_addr, context);
+	ret = fi_recv(ep->msg_srx, buf, len, desc, src_addr, context);
 	ofi_ep_lock_release(&ep->util_ep);
 	return ret;
 }
@@ -1002,10 +1007,10 @@ rxm_recvv_thru(struct fid_ep *ep_fid, const struct iovec *iov,
 	ssize_t ret;
 
 	ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
-	assert(ep->srx_ctx);
+	assert(ep->msg_srx);
 
 	ofi_ep_lock_acquire(&ep->util_ep);
-	ret = fi_recvv(ep->srx_ctx, iov, desc, count, src_addr, context);
+	ret = fi_recvv(ep->msg_srx, iov, desc, count, src_addr, context);
 	ofi_ep_lock_release(&ep->util_ep);
 	return ret;
 }
@@ -1018,10 +1023,10 @@ rxm_recvmsg_thru(struct fid_ep *ep_fid, const struct fi_msg *msg,
 	ssize_t ret;
 
 	ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
-	assert(ep->srx_ctx);
+	assert(ep->msg_srx);
 
 	ofi_ep_lock_acquire(&ep->util_ep);
-	ret = fi_recvmsg(ep->srx_ctx, msg, flags);
+	ret = fi_recvmsg(ep->msg_srx, msg, flags);
 	ofi_ep_lock_release(&ep->util_ep);
 	return ret;
 }

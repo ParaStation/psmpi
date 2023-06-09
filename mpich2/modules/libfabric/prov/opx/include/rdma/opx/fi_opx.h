@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2016 by Argonne National Laboratory.
- * Copyright (C) 2021 by Cornelis Networks.
+ * Copyright (C) 2021-2023 by Cornelis Networks.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -47,9 +47,11 @@
 #include <rdma/fi_eq.h>
 #include <rdma/fi_errno.h>
 #include <ofi_lock.h>
-
+#include <uthash.h>
 
 // #define FI_OPX_TRACE 1
+
+#define FI_OPX_IOV_LIMIT (1)
 
 /* --- Will be exposed by fabric.h */
 #define FI_OPX_PROTOCOL		0x0008
@@ -63,28 +65,14 @@
 #define FI_OPX_PROVIDER_VERSION	(OFI_VERSION_DEF_PROV)
 #define FI_OPX_DEVICE_MAX_PATH_NAME	(32)
 #define FI_OPX_FABRIC_NAME		"OPX-100"
-#define FI_OPX_DOMAIN_NAME		"hfi1"
+#define FI_OPX_DOMAIN_NAME		"ib0"
+#define FI_OPX_DOMAIN_NAME_PREFIX	"ib"
 
 #define FI_OPX_CACHE_LINE_SIZE	(64)
 
 #define FI_OPX_MAX_STRLEN		(64)
 
 #define EXIT_FAILURE 1
-
-#define LOCAL_COMM_ENABLED
-#define REMOTE_COMM_ENABLED
-
-#ifdef LOCAL_COMM_ENABLED
-#define OPX_LOCAL_COMM_CAP	(FI_LOCAL_COMM)
-#else
-#define OPX_LOCAL_COMM_CAP	(0)
-#endif
-
-#ifdef REMOTE_COMM_ENABLED
-#define OPX_REMOTE_COMM_CAP	(FI_REMOTE_COMM)
-#else
-#define OPX_REMOTE_COMM_CAP	(0)
-#endif
 
 // TODO: This is needed until we complete the locking model. 
 #define OPX_LOCK				0
@@ -97,7 +85,20 @@
 #define OPX_EP_CAPS			0x0018000000000000ull
 #define OPX_TAGGED_CAPS		0x0018000000000000ull
 
+// Uncomment to enabled Opx flight recorder
+//#define FLIGHT_RECORDER_ENABLE		(1)
+
 extern struct fi_provider fi_opx_provider;
+struct fi_opx_daos_hfi_rank_key {
+	uint8_t		hfi_unit_number;
+	uint32_t	rank;
+};
+
+struct fi_opx_daos_hfi_rank {
+	struct fi_opx_daos_hfi_rank_key key;
+	uint32_t instance;
+	UT_hash_handle 	hh;         /* makes this structure hashable */
+};
 
 struct fi_opx_global_data {
 	struct fi_info		*info;
@@ -106,6 +107,8 @@ struct fi_opx_global_data {
 	struct fi_tx_attr	*default_tx_attr;
 	struct fi_rx_attr	*default_rx_attr;
 	struct fi_provider 	*prov;
+	struct fi_opx_daos_hfi_rank	*daos_hfi_rank_hashmap;
+	enum fi_progress	progress;
 };
 
 extern struct fi_opx_global_data fi_opx_global;
@@ -147,7 +150,7 @@ static const uint64_t FI_OPX_HDRQ_MASK_8192		= 0X000000000003FFE0UL;
 	( FI_RECV | FI_DIRECTED_RECV | FI_MULTI_RECV | FI_REMOTE_READ )
 
 #define FI_OPX_BASE_CAPS							\
-	( FI_MSG | FI_TAGGED | OPX_LOCAL_COMM_CAP | OPX_REMOTE_COMM_CAP	\
+	( FI_MSG | FI_TAGGED | FI_LOCAL_COMM | FI_REMOTE_COMM	\
 	| FI_SOURCE | FI_NAMED_RX_CTX | FI_RMA | FI_ATOMIC )
 
 #define FI_OPX_DEFAULT_CAPS							\
@@ -184,7 +187,7 @@ static const uint64_t FI_OPX_HDRQ_MASK_8192		= 0X000000000003FFE0UL;
 #else
 
 #ifndef OPX_PROGRESS
-#define OPX_PROGRESS FI_PROGRESS_MANUAL
+#define OPX_PROGRESS FI_PROGRESS_UNSPEC
 #endif
 
 #define IS_PROGRESS_MANUAL(domain_ptr)	(1)
@@ -287,7 +290,8 @@ int fi_opx_domain(struct fid_fabric *fabric,
 int fi_opx_check_domain_attr(struct fi_domain_attr *attr);
 int fi_opx_choose_domain(uint64_t caps,
 		struct fi_domain_attr *domain_attr,
-		struct fi_domain_attr *hints);
+		struct fi_domain_attr *hints,
+		enum fi_progress progress);
 
 int fi_opx_alloc_default_domain_attr(struct fi_domain_attr **domain_attr);
 
