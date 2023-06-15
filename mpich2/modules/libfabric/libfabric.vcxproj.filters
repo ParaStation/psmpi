@@ -89,13 +89,13 @@
       <UniqueIdentifier>{b3471da7-1f83-4d3f-b31c-89b197aa6327}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\prov\tcp">
-      <UniqueIdentifier>{aed54cba-a4cd-4598-8bfc-1ece52f387ee}</UniqueIdentifier>
+      <UniqueIdentifier>{5547753c-42f5-4cb6-a311-07911724f5cf}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\prov\tcp\include">
-      <UniqueIdentifier>{fbbd77cd-55de-4bf7-903e-89c3019b69d0}</UniqueIdentifier>
+      <UniqueIdentifier>{00fbcfe1-a2f8-4ca2-af0a-803ae78a25d9}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\prov\tcp\src">
-      <UniqueIdentifier>{8c151366-dd08-48d5-aa21-50a500cbde73}</UniqueIdentifier>
+      <UniqueIdentifier>{f23f596f-673f-4158-b648-3f17c7f162a1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\prov\hook">
       <UniqueIdentifier>{b85ecf6c-fb76-4d65-a7f0-cba470a0adee}</UniqueIdentifier>
@@ -108,6 +108,30 @@
     </Filter>
     <Filter Include="Source Files\prov\hook\perf\src">
       <UniqueIdentifier>{be316a01-6bff-4203-b070-ffaa66bb398e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\prov\verbs">
+      <UniqueIdentifier>{c211160d-dd28-45ee-bb7d-b3f76da2bb05}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\prov\verbs\include">
+      <UniqueIdentifier>{c8ccb98f-974c-4e6d-a9c0-6d85445ebcb1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\prov\verbs\src">
+      <UniqueIdentifier>{1ccf86f3-dbf1-44ee-8344-80b4e81c5b8c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\windows\asm">
+      <UniqueIdentifier>{3c879c0c-ec8e-4821-a98d-40e37383bd6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\prov\verbs\src\windows">
+      <UniqueIdentifier>{738e5c36-f8f0-49d5-a612-16ca37c61e62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\prov\verbs\include\windows">
+      <UniqueIdentifier>{834b7cd2-0aa9-4bb0-b670-01b2ad332f90}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\prov\verbs\include\windows\infiniband">
+      <UniqueIdentifier>{7418d8c7-3fcd-4acc-9f92-629d456acbd8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\prov\verbs\include\windows\rdma">
+      <UniqueIdentifier>{70e59847-274c-4040-9fd5-914fd75b8eae}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -148,6 +172,9 @@
       <Filter>Source Files\src</Filter>
     </ClCompile>
     <ClCompile Include="src\hmem_neuron.c">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hmem_synapseai.c">
       <Filter>Source Files\src</Filter>
     </ClCompile>
     <ClCompile Include="src\rbtree.c">
@@ -206,6 +233,36 @@
     </ClCompile>
     <ClCompile Include="prov\util\src\ze_mem_monitor.c">
       <Filter>Source Files\prov\util</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\coll\src\coll_attr.c">
+      <Filter>Source Files\prov\coll</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\coll\src\coll_av.c">
+      <Filter>Source Files\prov\coll</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\coll\src\coll_av_set.c">
+      <Filter>Source Files\prov\coll</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\coll\src\coll_coll.c">
+      <Filter>Source Files\prov\coll</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\coll\src\coll_cq.c">
+      <Filter>Source Files\prov\coll</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\coll\src\coll_domain.c">
+      <Filter>Source Files\prov\coll</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\coll\src\coll_ep.c">
+      <Filter>Source Files\prov\coll</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\coll\src\coll_eq.c">
+      <Filter>Source Files\prov\coll</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\coll\src\coll_fabric.c">
+      <Filter>Source Files\prov\coll</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\coll\src\coll_init.c">
+      <Filter>Source Files\prov\coll</Filter>
     </ClCompile>
     <ClCompile Include="src\windows\osd.c">
       <Filter>Source Files\src\windows</Filter>
@@ -342,13 +399,16 @@
     <ClCompile Include="prov\rxm\src\rxm_cq.c">
       <Filter>Source Files\prov\rxm\src</Filter>
     </ClCompile>
-    <ClCompile Include="prov\rxm\src\rxm_av.c">
+    <ClCompile Include="prov\util\src\rxm_av.c">
       <Filter>Source Files\prov\rxm\src</Filter>
     </ClCompile>
     <ClCompile Include="prov\rxm\src\rxm_domain.c">
       <Filter>Source Files\prov\rxm\src</Filter>
     </ClCompile>
     <ClCompile Include="prov\rxm\src\rxm_ep.c">
+      <Filter>Source Files\prov\rxm\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\rxm\src\rxm_eq.c">
       <Filter>Source Files\prov\rxm\src</Filter>
     </ClCompile>
     <ClCompile Include="prov\rxm\src\rxm_fabric.c">
@@ -429,49 +489,55 @@
     <ClCompile Include="prov\util\src\util_cntr.c">
       <Filter>Source Files\prov\util</Filter>
     </ClCompile>
-    <ClCompile Include="prov\util\src\util_coll.c">
-      <Filter>Source Files\prov\util</Filter>
-    </ClCompile>
     <ClCompile Include="prov\util\src\util_atomic.c">
       <Filter>Source Files\prov\util</Filter>
     </ClCompile>
     <ClCompile Include="prov\util\src\util_mr_map.c">
       <Filter>Source Files\prov\util</Filter>
     </ClCompile>
-    <ClCompile Include="prov\tcp\src\tcpx_attr.c">
+    <ClCompile Include="prov\tcp\src\xnet_attr.c">
       <Filter>Source Files\prov\tcp\src</Filter>
     </ClCompile>
-    <ClCompile Include="prov\tcp\src\tcpx_conn_mgr.c">
+    <ClCompile Include="prov\tcp\src\xnet_cm.c">
       <Filter>Source Files\prov\tcp\src</Filter>
     </ClCompile>
-    <ClCompile Include="prov\tcp\src\tcpx_shared_ctx.c">
+    <ClCompile Include="prov\tcp\src\xnet_rdm_cm.c">
       <Filter>Source Files\prov\tcp\src</Filter>
     </ClCompile>
-    <ClCompile Include="prov\tcp\src\tcpx_cq.c">
+    <ClCompile Include="prov\tcp\src\xnet_srx.c">
       <Filter>Source Files\prov\tcp\src</Filter>
     </ClCompile>
-    <ClCompile Include="prov\tcp\src\tcpx_domain.c">
+    <ClCompile Include="prov\tcp\src\xnet_cq.c">
       <Filter>Source Files\prov\tcp\src</Filter>
     </ClCompile>
-    <ClCompile Include="prov\tcp\src\tcpx_rma.c">
+    <ClCompile Include="prov\tcp\src\xnet_domain.c">
       <Filter>Source Files\prov\tcp\src</Filter>
     </ClCompile>
-    <ClCompile Include="prov\tcp\src\tcpx_msg.c">
+    <ClCompile Include="prov\tcp\src\xnet_rma.c">
       <Filter>Source Files\prov\tcp\src</Filter>
     </ClCompile>
-    <ClCompile Include="prov\tcp\src\tcpx_ep.c">
+    <ClCompile Include="prov\tcp\src\xnet_msg.c">
       <Filter>Source Files\prov\tcp\src</Filter>
     </ClCompile>
-    <ClCompile Include="prov\tcp\src\tcpx_fabric.c">
+    <ClCompile Include="prov\tcp\src\xnet_ep.c">
       <Filter>Source Files\prov\tcp\src</Filter>
     </ClCompile>
-    <ClCompile Include="prov\tcp\src\tcpx_eq.c">
+    <ClCompile Include="prov\tcp\src\xnet_rdm.c">
       <Filter>Source Files\prov\tcp\src</Filter>
     </ClCompile>
-    <ClCompile Include="prov\tcp\src\tcpx_init.c">
+    <ClCompile Include="prov\tcp\src\xnet_pep.c">
       <Filter>Source Files\prov\tcp\src</Filter>
     </ClCompile>
-    <ClCompile Include="prov\tcp\src\tcpx_progress.c">
+    <ClCompile Include="prov\tcp\src\xnet_fabric.c">
+      <Filter>Source Files\prov\tcp\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\tcp\src\xnet_eq.c">
+      <Filter>Source Files\prov\tcp\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\tcp\src\xnet_init.c">
+      <Filter>Source Files\prov\tcp\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\tcp\src\xnet_progress.c">
       <Filter>Source Files\prov\tcp\src</Filter>
     </ClCompile>
     <ClCompile Include="prov\util\src\util_pep.c">
@@ -512,6 +578,69 @@
     </ClCompile>
     <ClCompile Include="src\shared\ofi_str.c">
       <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\sockets\src\sock_attr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\hmem_ze.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\fi_verbs.c">
+      <Filter>Source Files\prov\verbs\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\verbs_cm.c">
+      <Filter>Source Files\prov\verbs\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\verbs_cm_xrc.c">
+      <Filter>Source Files\prov\verbs\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\verbs_cq.c">
+      <Filter>Source Files\prov\verbs\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\verbs_dgram_av.c">
+      <Filter>Source Files\prov\verbs\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\verbs_dgram_ep_msg.c">
+      <Filter>Source Files\prov\verbs\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\verbs_domain.c">
+      <Filter>Source Files\prov\verbs\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\verbs_domain_xrc.c">
+      <Filter>Source Files\prov\verbs\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\verbs_ep.c">
+      <Filter>Source Files\prov\verbs\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\verbs_eq.c">
+      <Filter>Source Files\prov\verbs\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\verbs_info.c">
+      <Filter>Source Files\prov\verbs\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\verbs_mr.c">
+      <Filter>Source Files\prov\verbs\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\verbs_msg.c">
+      <Filter>Source Files\prov\verbs\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\verbs_rma.c">
+      <Filter>Source Files\prov\verbs\src</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\windows\addrinfo.c">
+      <Filter>Source Files\prov\verbs\src\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\windows\verbs_nd_ibv.c">
+      <Filter>Source Files\prov\verbs\src\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\windows\verbs_nd_rdma.c">
+      <Filter>Source Files\prov\verbs\src\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\windows\verbs_nd_ov.c">
+      <Filter>Source Files\prov\verbs\src\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="prov\verbs\src\windows\verbs_nd_init.c">
+      <Filter>Source Files\prov\verbs\src\windows</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -680,8 +809,14 @@
     <ClInclude Include="include\rdma\providers\fi_log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\rdma\providers\fi_peer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\rdma\providers\fi_prov.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="prov\coll\src\coll.h">
+      <Filter>Source Files\prov\coll\include</Filter>
     </ClInclude>
     <ClInclude Include="prov\udp\src\udpx.h">
       <Filter>Source Files\prov\udp\include</Filter>
@@ -740,7 +875,10 @@
     <ClInclude Include="include\uthash.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="prov\tcp\src\tcpx.h">
+    <ClInclude Include="prov\tcp\src\xnet.h">
+      <Filter>Source Files\prov\tcp\include</Filter>
+    </ClInclude>
+    <ClInclude Include="prov\tcp\src\xnet_proto.h">
       <Filter>Source Files\prov\tcp\include</Filter>
     </ClInclude>
     <ClInclude Include="include\windows\sys\uio.h">
@@ -756,6 +894,39 @@
       <Filter>Source Files\prov\hook\src</Filter>
     </ClInclude>
     <ClInclude Include="include\ofi_hook.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="prov\verbs\include\ofi_verbs_priv.h">
+      <Filter>Source Files\prov\verbs\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\windows\asm\types.h">
+      <Filter>Header Files\windows\asm</Filter>
+    </ClInclude>
+    <ClInclude Include="prov\verbs\include\windows\infiniband\ib.h">
+      <Filter>Source Files\prov\verbs\include\windows\infiniband</Filter>
+    </ClInclude>
+    <ClInclude Include="prov\verbs\include\windows\infiniband\ib_user_ioctl_verbs.h">
+      <Filter>Source Files\prov\verbs\include\windows\infiniband</Filter>
+    </ClInclude>
+    <ClInclude Include="prov\verbs\include\windows\infiniband\verbs.h">
+      <Filter>Source Files\prov\verbs\include\windows\infiniband</Filter>
+    </ClInclude>
+    <ClInclude Include="prov\verbs\include\windows\infiniband\verbs_api.h">
+      <Filter>Source Files\prov\verbs\include\windows\infiniband</Filter>
+    </ClInclude>
+    <ClInclude Include="prov\verbs\include\windows\rdma\rdma_cma.h">
+      <Filter>Source Files\prov\verbs\include\windows\rdma</Filter>
+    </ClInclude>
+    <ClInclude Include="prov\verbs\include\fi_verbs.h">
+      <Filter>Source Files\prov\verbs\include</Filter>
+    </ClInclude>
+    <ClInclude Include="prov\verbs\include\windows\verbs_osd.h">
+      <Filter>Source Files\prov\verbs\include\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="prov\verbs\include\windows\verbs_nd.h">
+      <Filter>Source Files\prov\verbs\include\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ofi_epoll.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

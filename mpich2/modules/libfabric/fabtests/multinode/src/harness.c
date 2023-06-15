@@ -45,7 +45,7 @@
 #include <core.h>
 struct pm_job_info pm_job;
 
-static int parse_caps(char* caps)
+static enum multi_xfer parse_caps(char *caps)
 {
 	if (strcmp(caps, "msg") == 0) {
 		return multi_msg;
@@ -57,7 +57,23 @@ static int parse_caps(char* caps)
 	}
 }
 
-static inline ssize_t socket_send(int sock, void *buf, size_t len, int flags)
+static enum multi_pattern parse_pattern(char *pattern)
+{
+	if (strcmp(pattern, "full_mesh") == 0) {
+		return PATTERN_MESH;
+	} else if (strcmp(pattern, "ring") == 0) {
+		return PATTERN_RING;
+	} else if (strcmp(pattern, "gather") == 0) {
+		return PATTERN_GATHER;
+	} else if (strcmp(pattern, "broadcast") == 0) {
+		return PATTERN_BROADCAST;
+	} else {
+		printf("Warn: Invalid pattern, defaulting to full_mesh\n");
+		return PATTERN_MESH;
+	} 
+}
+
+ssize_t socket_send(int sock, void *buf, size_t len, int flags)
 {
 	ssize_t ret;
 	size_t m = 0;
@@ -74,7 +90,7 @@ static inline ssize_t socket_send(int sock, void *buf, size_t len, int flags)
 	return len;
 }
 
-static inline int socket_recv(int sock, void *buf, size_t len, int flags)
+int socket_recv(int sock, void *buf, size_t len, int flags)
 {
 	ssize_t ret;
 	size_t m = 0;
@@ -134,7 +150,7 @@ int pm_allgather(void *my_item, void *items, int item_size)
 void pm_barrier()
 {
 	char ch;
-	char chs[pm_job.num_ranks];
+	char *chs = alloca(pm_job.num_ranks);
 
 	pm_allgather(&ch, chs, 1);
 }
@@ -146,14 +162,16 @@ static int pm_init_ranks()
 	size_t send_rank;
 
 	if (pm_job.clients) {
-		for(i = 0; i < pm_job.num_ranks-1; i++) {
+		for (i = 0; i < pm_job.num_ranks-1; i++) {
 			send_rank = i + 1;
-			ret = socket_send(pm_job.clients[i], &send_rank, sizeof(send_rank), 0);
+			ret = socket_send(pm_job.clients[i], &send_rank,
+					  sizeof(send_rank), 0);
 			if (ret < 0)
-				return ret;
+				break;
 		}
 	} else {
-		ret = socket_recv(pm_job.sock, &(pm_job.my_rank), sizeof(pm_job.my_rank), 0);
+		ret = socket_recv(pm_job.sock, &(pm_job.my_rank),
+				  sizeof(pm_job.my_rank), 0);
 	}
 
 	return ret;
@@ -181,11 +199,13 @@ static int server_connect()
 		pm_job.clients[i] = new_sock;
 		FT_DEBUG("connection established\n");
 	}
-	close(pm_job.sock);
+
+	ft_close_fd(pm_job.sock);
 	return 0;
+
 err:
 	while (i--) {
-		close(pm_job.clients[i]);
+		ft_close_fd(pm_job.clients[i]);
 	}
 	free(pm_job.clients);
 	return new_sock;
@@ -202,12 +222,17 @@ static int pm_conn_setup()
 
 	pm_job.sock = sock;
 
+/* If all instances of this test are running on the same host, then making the
+ * setsockopt call on a windows host will result in all the instances binding
+ * and listening on the same port. */
+#ifndef _WIN32
 	ret = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &optval,
 			 sizeof(optval));
 	if (ret) {
 		FT_ERR("error setting socket options\n");
 		return ret;
 	}
+#endif
 
 	ret = bind(sock, (struct sockaddr *)&pm_job.oob_server_addr,
 		  pm_job.server_addr_len);
@@ -218,15 +243,15 @@ static int pm_conn_setup()
 		opts.dst_port = opts.src_port;
 		opts.src_addr = NULL;
 		opts.src_port = 0;
-		ret = connect(pm_job.sock, (struct sockaddr *)&pm_job.oob_server_addr,
+		ret = connect(pm_job.sock,
+			      (struct sockaddr *) &pm_job.oob_server_addr,
 			      pm_job.server_addr_len);
 	}
-	if (ret) {
-		FT_ERR("OOB conn failed - %s\n", strerror(errno));
-		return ret;
-	}
 
-	return 0;
+	if (ret)
+		FT_ERR("OOB conn failed - %s\n", strerror(errno));
+
+	return ret;
 }
 
 static void pm_finalize()
@@ -234,13 +259,13 @@ static void pm_finalize()
 	int i;
 
 	if (!pm_job.clients) {
-		close(pm_job.sock);
+		ft_close_fd(pm_job.sock);
 		return;
 	}
 
-	for (i = 0; i < pm_job.num_ranks-1; i++) {
-		close(pm_job.clients[i]);
-	}
+	for (i = 0; i < pm_job.num_ranks-1; i++)
+		ft_close_fd(pm_job.clients[i]);
+
 	free(pm_job.clients);
 }
 
@@ -286,15 +311,17 @@ int main(int argc, char **argv)
 	int c, ret;
 
 	opts = INIT_OPTS;
-	opts.options |= FT_OPT_SIZE;
+	opts.options |= FT_OPT_SIZE | FT_OPT_OOB_ADDR_EXCH |
+			FT_OPT_DISABLE_TAG_VALIDATION;
 
 	pm_job.clients = NULL;
+	pm_job.pattern = -1;
 
 	hints = fi_allocinfo();
 	if (!hints)
 		return EXIT_FAILURE;
 
-	while ((c = getopt(argc, argv, "n:C:h" CS_OPTS INFO_OPTS)) != -1) {
+	while ((c = getopt(argc, argv, "n:C:z:Th" CS_OPTS INFO_OPTS)) != -1) {
 		switch (c) {
 		default:
 			ft_parse_addr_opts(c, optarg, &opts);
@@ -307,12 +334,22 @@ int main(int argc, char **argv)
 		case 'C':
 			pm_job.transfer_method = parse_caps(optarg);
 			break;
+		case 'T':
+			opts.options |= FT_OPT_PERF;
+			break;
+		case 'z':
+			pm_job.pattern = parse_pattern(optarg);
+			break;
 		case '?':
 		case 'h':
 			ft_usage(argv[0], "A simple multinode test");
 			return EXIT_FAILURE;
 		}
 	}
+
+	ret = ft_startup();
+	if (ret)
+		goto err1;
 
 	ret = pm_get_oob_server_addr();
 	if (ret)
@@ -323,7 +360,7 @@ int main(int argc, char **argv)
 		FT_ERR("connection setup failed\n");
 		goto err1;
 	}
-	
+
 	ret = pm_init_ranks();
 	if (ret < 0) {
 		FT_ERR("rank initialization failed\n");

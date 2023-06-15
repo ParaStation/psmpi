@@ -191,7 +191,7 @@ int ofi_ep_bind(struct util_ep *util_ep, struct fid *fid, uint64_t flags)
 	return -FI_EINVAL;
 }
 
-static inline int util_coll_init_cid_mask(struct bitmask *mask)
+static inline int util_coll_init_cid_mask(struct ofi_bitmask *mask)
 {
 	int err = ofi_bitmask_create(mask, OFI_MAX_GROUP_ID);
 	if (err)
@@ -338,8 +338,11 @@ int ofi_endpoint_close(struct util_ep *util_ep)
 		free(util_ep->coll_cid_mask);
 	}
 
-	if (util_ep->eq)
+	if (util_ep->eq) {
+		ofi_eq_remove_fid_events(util_ep->eq,
+					 &util_ep->ep_fid.fid);
 		ofi_atomic_dec32(&util_ep->eq->ref);
+	}
 	ofi_atomic_dec32(&util_ep->domain->ref);
 	ofi_mutex_destroy(&util_ep->lock);
 	return 0;

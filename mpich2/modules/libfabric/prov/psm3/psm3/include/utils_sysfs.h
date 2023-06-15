@@ -75,6 +75,9 @@
 #define PSM3_NIC_ANY ((long)-1)
 /* any port num to match. */
 #define PSM3_NIC_PORT_ANY ((long)0)
+/* any addr_index to match. */
+#define PSM3_ADDR_INDEX_ANY ((long)-1)
+#define PSM3_ADDR_INDEX_ALL ((long)-2)	// only for use inside parser
 
 
 /* format args: char *unitpath, uint32_t port, char *attr */
@@ -103,10 +106,12 @@ int psm3_sysfs_unit_read(uint32_t unit, const char *attr, char **datap);
 int psm3_sysfs_port_read(uint32_t unit, uint32_t port, const char *attr,
 			char **datap);
 
+#if 0
 /* read a string value into buff, no more than size bytes.
    returns the number of bytes read */
 size_t psm3_sysfs_unit_port_read(uint32_t unit, uint32_t port, const char *attr,
 			char *buff, size_t size);
+#endif
 
 /* read a signed 64-bit quantity, in some arbitrary base */
 int psm3_sysfs_unit_read_s64(uint32_t unit, const char *attr,

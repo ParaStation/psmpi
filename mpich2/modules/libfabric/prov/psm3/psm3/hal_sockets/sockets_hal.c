@@ -63,9 +63,18 @@
 #include "sockets_hal_inline_i.h"
 #endif
 
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+#define SOCKET_CUDA_THRESH_RNDV (~(uint32_t)0)
+#endif
+
 static int psm3_hfp_sockets_initialize(psmi_hal_instance_t *phi,
-											int devid_enabled[PTL_MAX_INIT])
+	int devid_enabled[PTL_MAX_INIT])
 {
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+	// testing on HED-2629 suggests turning off RNDV can help
+	// latency for messages in size 8-256 KB
+	cuda_thresh_rndv = SOCKET_CUDA_THRESH_RNDV;
+#endif
 	/* we initialize a few HAL software specific capabilities which
 	 * are known before context_open can open RV or parse HAL specific
 	 * env variables.  Additional flags may be added to cap_mask by
@@ -91,36 +100,40 @@ static const char* psm3_hfp_sockets_identify(void)
 {
 	static char buf[100];
 
-#ifdef PSM_CUDA /* rv module only applicable to sockets for CUDA builds */
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)  /* rv module only applicable to sockets for CUDA builds */
 #ifdef RNDV_MOD
 /* we test NVIDIA_GPU_DIRECT since that define
  * controls the rv module ioctl header file interface
  */
+#if defined(NVIDIA_GPU_DIRECT) || defined(INTEL_GPU_DIRECT)
 #ifdef NVIDIA_GPU_DIRECT
 	snprintf(buf, sizeof(buf), "HAL: %s (%s) built against rv interface v%d.%d gpu v%d.%d cuda",
+#else
+	snprintf(buf, sizeof(buf), "HAL: %s (%s) built against rv interface v%d.%d gpu v%d.%d oneapi-ze",
+#endif
 			psmi_hal_get_hal_instance_name(),
 			psmi_hal_get_hal_instance_description(),
 			psm3_rv_get_user_major_bldtime_version(),
 			psm3_rv_get_user_minor_bldtime_version(),
 			psm3_rv_get_gpu_user_major_bldtime_version(),
 			psm3_rv_get_gpu_user_minor_bldtime_version());
-#else
+#else /* NVIDIA_GPU_DIRECT || INTEL_GPU_DIRECT */
 	snprintf(buf, sizeof(buf), "HAL: %s (%s) built against rv interface v%d.%d",
 			psmi_hal_get_hal_instance_name(),
 			psmi_hal_get_hal_instance_description(),
 			psm3_rv_get_user_major_bldtime_version(),
 			psm3_rv_get_user_minor_bldtime_version());
-#endif
+#endif /* NVIDIA_GPU_DIRECT  || INTEL_GPU_DIRECT */
 #else /* RNDV_MOD */
 	snprintf(buf, sizeof(buf), "HAL: %s (%s)",
 			psmi_hal_get_hal_instance_name(),
 			psmi_hal_get_hal_instance_description());
 #endif /* RNDV_MOD */
-#else /* PSM_CUDA */
+#else /* PSM_CUDA || PSM_ONEAPI */
 	snprintf(buf, sizeof(buf), "HAL: %s (%s)",
 			psmi_hal_get_hal_instance_name(),
 			psmi_hal_get_hal_instance_description());
-#endif /* PSM_CUDA */
+#endif /* PSM_CUDA || PSM_ONEAPI */
 
 	return buf;
 }
@@ -132,25 +145,25 @@ static const char *psm3_hfp_sockets_get_unit_name(int unit)
 }
 
 // used as fabric.name for fi_info
-static int psm3_hfp_sockets_get_port_subnet_name(int unit, int port, char *buf, size_t bufsize)
+static int psm3_hfp_sockets_get_port_subnet_name(int unit, int port, int addr_index, char *buf, size_t bufsize)
 {
 	psmi_subnet128_t subnet;
 
-	if (psm3_hfp_sockets_get_port_subnet(unit, 1, &subnet, NULL, NULL, NULL))
+	if (psm3_hfp_sockets_get_port_subnet(unit, 1, addr_index, &subnet, NULL, NULL, NULL))
 		return -1;
 
 	if (psm3_sockets_parse_inet(0) == PSM3_SOCKETS_TCP)
-		psmi_subnet128_fmt_name(PSMI_ETH_PROTO_TCP, subnet,
+		psm3_subnet128_fmt_name(PSMI_ETH_PROTO_TCP, subnet,
 					buf, bufsize);
 	else
-		psmi_subnet128_fmt_name(PSMI_ETH_PROTO_UDP, subnet,
+		psm3_subnet128_fmt_name(PSMI_ETH_PROTO_UDP, subnet,
 					buf, bufsize);
 	return 0;
 }
 
-static int psm3_hfp_sockets_get_port_lid(int unit, int port)
+static int psm3_hfp_sockets_get_port_lid(int unit, int port, int addr_index)
 {
-	return psm3_sockets_get_port_lid(unit, port, SIMS_FILTER);
+	return psm3_sockets_get_port_lid(unit, port, addr_index, SIMS_FILTER);
 }
 
 // initialize default MQ thresholds
@@ -168,15 +181,15 @@ static void psm3_hfp_sockets_mq_init_defaults(struct psm2_mq *mq)
 	// even without RDMA, the receiver controlled pacing helps scalability
 	mq->hfi_thresh_rv = (~(uint32_t)0); // disable rendezvous
 	mq->hfi_thresh_tiny = PSM_MQ_NIC_MAX_TINY;
-#ifdef PSM_CUDA
-	if (PSMI_IS_CUDA_ENABLED)
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+	if (PSMI_IS_GPU_ENABLED)
 		mq->hfi_base_window_rv = 2097152;
 #endif
 	// we parse inet and rv_gpu_cache_size here so we can cache it
 	// once per EP open, even if multi-rail or multi-QP
 	(void) psm3_sockets_parse_inet(1);
 #ifdef RNDV_MOD
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 	(void)psmi_parse_gpudirect_rv_gpu_cache_size(1);
 #endif
 #endif
@@ -190,7 +203,7 @@ static void psm3_hfp_sockets_ep_open_opts_get_defaults(struct psm3_ep_open_opts 
 	opts->imm_size = 128;
 }
 
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 static void psm3_hfp_sockets_gdr_open(void)
 {
 }
@@ -260,6 +273,8 @@ static hfp_sockets_t psm3_sockets_hi = {
 #endif
 #ifdef PSM_CUDA
 								" (cuda)"
+#elif defined(PSM_ONEAPI)
+								" (oneapi-ze)"
 #endif
 									,
 		.nic_sys_class_path			  = "/sys/class/net",
@@ -281,7 +296,7 @@ static hfp_sockets_t psm3_sockets_hi = {
 		.hfp_mq_init_defaults			  = psm3_hfp_sockets_mq_init_defaults,
 		.hfp_ep_open_opts_get_defaults		  = psm3_hfp_sockets_ep_open_opts_get_defaults,
 		.hfp_context_initstats			  = psm3_hfp_sockets_context_initstats,
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 		.hfp_gdr_open				  = psm3_hfp_sockets_gdr_open,
 #endif
 
@@ -304,6 +319,7 @@ static hfp_sockets_t psm3_sockets_hi = {
 #if PSMI_HAL_INST_CNT > 1 || defined(PSM_DEBUG)
 		.hfp_context_open			  = psm3_hfp_sockets_context_open,
 		.hfp_close_context			  = psm3_hfp_sockets_close_context,
+		.hfp_context_check_status		  = psm3_hfp_sockets_context_check_status,
 #ifdef PSM_FI
 		.hfp_faultinj_allowed			  = psm3_hfp_sockets_faultinj_allowed,
 #endif
@@ -324,14 +340,17 @@ static hfp_sockets_t psm3_sockets_hi = {
 		.hfp_ips_ibta_init			  = psm3_hfp_sockets_ips_ibta_init,
 		.hfp_ips_path_rec_init			  = psm3_hfp_sockets_ips_path_rec_init,
 		.hfp_ips_ptl_pollintr			  = psm3_hfp_sockets_ips_ptl_pollintr,
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 		.hfp_gdr_close				  = psm3_hfp_sockets_gdr_close,
 		.hfp_gdr_convert_gpu_to_host_addr	  = psm3_hfp_sockets_gdr_convert_gpu_to_host_addr,
-#endif /* PSM_CUDA */
+#ifdef PSM_ONEAPI
+		.hfp_gdr_munmap_gpu_to_host_addr	  = psm3_hfp_sockets_gdr_munmap_gpu_to_host_addr,
+#endif
+#endif /* PSM_CUDA || PSM_ONEAPI */
 		.hfp_get_port_index2pkey		  = psm3_hfp_sockets_get_port_index2pkey,
 		.hfp_poll_type				  = psm3_hfp_sockets_poll_type,
 		.hfp_spio_transfer_frame		  = psm3_hfp_sockets_spio_transfer_frame,
-		.hfp_spio_process_events		  = psm3_hfp_sockets_spio_process_events,
+		.hfp_transfer_frame			  = psm3_hfp_sockets_transfer_frame,
 		.hfp_drain_sdma_completions		  = psm3_hfp_sockets_drain_sdma_completions,
 		.hfp_get_node_id			  = psm3_hfp_sockets_get_node_id,
 #endif /* PSMI_HAL_INST_CNT > 1 || defined(PSM_DEBUG) */

@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2016 by Argonne National Laboratory.
- * Copyright (C) 2021 Cornelis Networks.
+ * Copyright (C) 2021-2023 Cornelis Networks.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -86,6 +86,11 @@ union fi_opx_context {
 	};
 };
 
+struct fi_opx_extended_context {
+	union fi_opx_context context;
+	void *src_addr;
+};
+
 struct fi_opx_context_slist {
 	union fi_opx_context *	head;
 	union fi_opx_context *	tail;
@@ -151,6 +156,9 @@ struct fi_opx_context_ext {
 	} msg;
 };
 
+#ifndef MAX
+#define MAX(a,b) ((a)^(((a)^(b))&-((a)<(b))))
+#endif
 #ifndef MIN
 #define MIN(a,b) ((b)^(((a)^(b))&-((a)<(b))))
 #endif
@@ -159,9 +167,6 @@ struct fi_opx_context_ext {
 #endif
 #ifndef MIN4
 #define MIN4(a,b,c,d) (MIN(MIN(a,b),MIN(c,d)))
-#endif
-#ifndef MAX
-#define MAX(a,b) (((a)>(b))?(a):(b))
 #endif
 
 #define FI_OPX_LOCK_REQUIRED 1
@@ -177,11 +182,12 @@ static inline int fi_opx_threading_unknown(const enum fi_threading threading)
 		threading != FI_THREAD_UNSPEC;		// Least likely
 }
 
-static inline int fi_opx_threading_lock_required(const enum fi_threading threading)
+static inline int fi_opx_threading_lock_required(const enum fi_threading threading, enum fi_progress progress)
 {
 	return !(threading == FI_THREAD_DOMAIN ||
 		 threading == FI_THREAD_ENDPOINT ||
-		 threading == FI_THREAD_COMPLETION);
+		 threading == FI_THREAD_COMPLETION) ||
+		 progress == FI_PROGRESS_AUTO;
 }
 
 static inline void fi_opx_lock_if_required (ofi_spin_t *lock, const int required)

@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2016 by Argonne National Laboratory.
- * Copyright (C) 2021 Cornelis Networks.
+ * Copyright (C) 2021-2022 Cornelis Networks.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -43,6 +43,8 @@
 
 #include "rdma/opx/fi_opx_reliability.h"
 
+#include "rdma/opx/fi_opx_tid_domain.h"
+
 //#define OFI_RELIABILITY_CONFIG_STATIC_NONE
 //#define OFI_RELIABILITY_CONFIG_STATIC_OFFLOAD
 //#define OFI_RELIABILITY_CONFIG_STATIC_ONLOAD
@@ -74,10 +76,12 @@ extern "C" {
 struct fi_opx_ep;	/* forward declaration */
 
 
+struct fi_opx_tid_fabric;
 struct fi_opx_fabric {
 	struct fid_fabric	fabric_fid;
 
 	int64_t		ref_cnt;
+	struct fi_opx_tid_fabric* tid_fabric;
 };
 
 
@@ -88,9 +92,11 @@ struct fi_opx_node {
 #define OPX_JOB_KEY_STR_SIZE 33
 #define OPX_DEFAULT_JOB_KEY_STR "00112233445566778899aabbccddeeff"
 
-#define OPX_MIN_DCOMP_THRESHOLD     2048
-#define OPX_DEFAULT_DCOMP_THRESHOLD INT_MAX
-#define OPX_MAX_DCOMP_THRESHOLD 16384
+#define OPX_DEFAULT_PROG_AFFINITY_STR "0:3:1"
+
+#define OPX_MIN_DCOMP_THRESHOLD FI_OPX_SDMA_MIN_LENGTH
+#define OPX_DEFAULT_DCOMP_THRESHOLD FI_OPX_SDMA_DC_MIN
+#define OPX_MAX_DCOMP_THRESHOLD (INT_MAX - 1)
 
 struct fi_opx_domain {
 	struct fid_domain	domain_fid;
@@ -104,16 +110,22 @@ struct fi_opx_domain {
 	uuid_t			unique_job_key;
 	char			unique_job_key_str[OPX_JOB_KEY_STR_SIZE];
 
+	char			progress_affinity_str[OPX_JOB_KEY_STR_SIZE];
+
+	int			auto_progress_interval;
+
 	uint32_t		rx_count;
 	uint32_t		tx_count;
 	uint8_t			ep_count;
 
 	uint64_t		num_mr_keys;
-	struct fi_opx_mr *mr_hashmap;
+	struct fi_opx_mr        *mr_hashmap;
 
 	struct fi_opx_reliability_service	reliability_service_offload;	/* OFFLOAD only */
 	uint8_t					reliability_rx_offload;		/* OFFLOAD only */
 	enum ofi_reliability_kind		reliability_kind;
+
+	struct fi_opx_tid_domain *tid_domain;
 
 	int64_t		ref_cnt;
 };
@@ -136,8 +148,9 @@ struct fi_opx_av {
 
 	/* == ALL OTHER CACHE LINES == */
 
-	union fi_opx_addr *	table_addr;
+	union fi_opx_addr *	table_addr; /* allocated buffer to free */
 	uint64_t		rx_ctx_bits;
+	uint32_t		table_count;/* table, not av, count */
 };
 
 struct fi_opx_mr {

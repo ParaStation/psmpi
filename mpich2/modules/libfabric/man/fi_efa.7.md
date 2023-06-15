@@ -84,10 +84,10 @@ No support for counters for the DGRAM endpoint.
 
 No support for inject.
 
-When using FI_HMEM for either CUDA and Neuron buffers, the provider requires
-peer to peer transaction support between the EFA and the FI_HMEM device.
-Therefore, the FI_HMEM_P2P_DISABLED option is not supported by the EFA
-provider.
+When using FI_HMEM for AWS Neuron or Habana SynapseAI buffers, the provider
+requires peer to peer transaction support between the EFA and the FI_HMEM
+device. Therefore, the FI_HMEM_P2P_DISABLED option is not supported by the EFA
+provider for AWS Neuron or Habana SynapseAI.
 
 # PROVIDER SPECIFIC ENDPOINT LEVEL OPTION
 
@@ -96,6 +96,43 @@ provider.
   counter via the call to fi_setopt. Note that this option must be set before
   the endpoint is enabled. Otherwise, the call will fail. Also note that this
   option only applies to RDM endpoint.
+
+*FI_OPT_EFA_EMULATED_READ, FI_OPT_EFA_EMULATED_WRITE, FI_OPT_EFA_EMULATED_ATOMICS - bool*
+: These options only apply to the fi_getopt() call.
+  They are used to query the EFA provider to determine if the endpoint is
+  emulating Read, Write, and Atomic operations (return value is true), or if
+  these operations are assisted by hardware support (return value is false).
+
+*FI_OPT_EFA_USE_DEVICE_RDMA - bool*
+: Only available if the application selects a libfabric API version >= 1.18.
+  This option allows an application to change libfabric's behavior
+  with respect to RDMA transfers.  Note that there is also an environment
+  variable FI_EFA_USE_DEVICE_RDMA which the user may set as well.  If the
+  environment variable and the argument provided with this variable are in
+  conflict, then fi_setopt will return -FI_EINVAL, and the environment variable
+  will be respected.  If the hardware does not support RDMA and the argument
+  is true, then fi_setopt will return -FI_EOPNOTSUPP.  If the application uses
+  API version < 1.18, the argument is ignored and fi_setopt returns
+  -FI_ENOPROTOOPT.
+  The default behavior for RDMA transfers depends on API version.  For
+  API >= 1.18 RDMA is enabled by default on any hardware which supports it.
+  For API<1.18, RDMA is enabled by default only on certain newer hardware
+  revisions.
+
+*FI_OPT_EFA_SENDRECV_IN_ORDER_ALIGNED_128_BYTES - bool*
+: It is used to force the endpoint to use in-order send/recv operation for each 128 bytes
+  aligned block. Enabling the option will guarantee data inside each 128 bytes
+  aligned block being sent and received in order, it will also guarantee data
+  to be delivered to the receive buffer only once. If endpoint is not able to
+  support this feature, it will return -FI_EOPNOTSUPP for the call to fi_setopt().
+
+
+*FI_OPT_EFA_WRITE_IN_ORDER_ALIGNED_128_BYTES - bool*
+: It is used to set the endpoint to use in-order RDMA write operation for each 128 bytes
+  aligned block. Enabling the option will guarantee data inside each 128 bytes
+  aligned block being written in order, it will also guarantee data to be
+  delivered to the target buffer only once. If endpoint is not able to support
+  this feature, it will return -FI_EOPNOTSUPP for the call to fi_setopt().
 
 # RUNTIME PARAMETERS
 
@@ -187,6 +224,24 @@ These OFI runtime parameters apply only to the RDM endpoint.
 
 *FI_EFA_FORK_SAFE*
 : Enable fork() support. This may have a small performance impact and should only be set when required. Applications that require to register regions backed by huge pages and also require fork support are not supported.
+
+*FI_EFA_RUNT_SIZE*
+: The maximum number of bytes that will be eagerly sent by inflight messages uses runting read message protocol (Default 307200).
+
+*FI_EFA_SET_CUDA_SYNC_MEMOPS*
+: Set CU_POINTER_ATTRIBUTE_SYNC_MEMOPS for cuda ptr. (Default: 1)
+
+*FI_EFA_INTER_MIN_READ_MESSAGE_SIZE*
+: The minimum message size in bytes for inter EFA read message protocol. If instance support RDMA read, messages whose size is larger than this value will be sent by read message protocol. (Default 1048576).
+
+*FI_EFA_INTER_MIN_READ_WRITE_SIZE*
+: The mimimum message size for inter EFA write to use read write protocol. If firmware support RDMA read, and FI_EFA_USE_DEVICE_RDMA is 1, write requests whose size is larger than this value will use the read write protocol (Default 65536).
+
+*FI_EFA_USE_DEVICE_RDMA*
+: Specify whether to require or ignore RDMA features of the EFA device.
+- When set to 1/true/yes/on, all RDMA features of the EFA device are used. But if EFA device does not support RDMA and FI_EFA_USE_DEVICE_RDMA is set to 1/true/yes/on, user's application is aborted and a warning message is printed.
+- When set to 0/false/no/off, libfabric will emulate all fi_rma operations instead of offloading them to the EFA network device. Libfabric will not use device RDMA to implement send/receive operations.
+- If not set, RDMA operations will occur when available based on RDMA device ID/version.
 
 # SEE ALSO
 

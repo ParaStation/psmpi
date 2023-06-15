@@ -50,8 +50,16 @@ struct fi_info *fi_dupinfo(const struct fi_info *info);
 
 # DESCRIPTION
 
+The fi_getinfo() call is used to discover what communication features are
+available in the system, as well as how they might best be used by an
+application.  The call is loosely modeled on getaddrinfo().  fi_getinfo()
+permits an application to exchange information between an application and
+the libfabric providers regarding its required set of communication.
+It provides the ability to access complex network details, balanced between
+being expressive but also simple to use.
+
 fi_getinfo returns information about available fabric services for reaching
-specified node or service, subject to any provided hints.  Callers
+a specified node or service, subject to any provided hints.  Callers
 may specify NULL for node, service, and hints in order to retrieve
 information about what providers are available and their optimal usage
 models.  If no matching fabric information is available, info will
@@ -262,6 +270,12 @@ additional optimizations.
   remote atomic reads and writes.  Applications can use the FI_READ,
   FI_WRITE, FI_REMOTE_READ, and FI_REMOTE_WRITE flags to restrict the
   types of atomic operations supported by an endpoint.
+
+*FI_AV_USER_ID*
+: Requests that the provider support the association of a user specified
+  identifier with each address vector (AV) address.  User identifiers are
+  returned with completion data in place of the AV address.  See [`fi_av`(3)]
+  (fi_av.3.html) for more details.
 
 *FI_COLLECTIVE*
 : Requests support for collective operations.  Endpoints that support
@@ -730,6 +744,9 @@ via fi_freeinfo().
 
 *FI_ENOMEM*
 : Indicates that there was insufficient memory to complete the operation.
+
+*F_ENOSYS*
+: Indicates that requested version is newer than the library being used.
 
 # NOTES
 

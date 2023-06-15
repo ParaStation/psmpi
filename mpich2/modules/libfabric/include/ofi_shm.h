@@ -44,6 +44,8 @@
 #include <ofi_mem.h>
 #include <ofi_rbuf.h>
 #include <ofi_tree.h>
+#include <ofi_hmem.h>
+#include <ofi_atomic_queue.h>
 
 #include <rdma/providers/fi_prov.h>
 
@@ -52,23 +54,14 @@ extern "C" {
 #endif
 
 
-#define SMR_VERSION	2
+#define SMR_VERSION	4
 
-#ifdef HAVE_ATOMICS
 #define SMR_FLAG_ATOMIC	(1 << 0)
-#else
-#define SMR_FLAG_ATOMIC	(0 << 0)
-#endif
-
-#if ENABLE_DEBUG
 #define SMR_FLAG_DEBUG	(1 << 1)
-#else
-#define SMR_FLAG_DEBUG	(0 << 1)
-#endif
-
 #define SMR_FLAG_IPC_SOCK (1 << 2)
+#define SMR_FLAG_HMEM_ENABLED (1 << 3)
 
-#define SMR_CMD_SIZE		128	/* align with 64-byte cache line */
+#define SMR_CMD_SIZE		256	/* align with 64-byte cache line */
 
 /* SMR op_src: Specifies data source location */
 enum {
@@ -126,20 +119,8 @@ struct smr_msg_hdr {
 	};
 } __attribute__ ((aligned(16)));
 
+#define SMR_BUF_BATCH_MAX	64
 #define SMR_MSG_DATA_LEN	(SMR_CMD_SIZE - sizeof(struct smr_msg_hdr))
-
-#define IPC_HANDLE_SIZE		64
-struct smr_ipc_info {
-	uint64_t	iface;
-	union {
-		uint8_t		ipc_handle[IPC_HANDLE_SIZE];
-		struct {
-			uint64_t	device;
-			uint64_t	offset;
-			uint64_t	fd_handle;
-		};
-	};
-};
 
 union smr_cmd_data {
 	uint8_t			msg[SMR_MSG_DATA_LEN];
@@ -149,9 +130,10 @@ union smr_cmd_data {
 				    sizeof(struct iovec)];
 	};
 	struct {
-		uint64_t	sar;
+		uint32_t	buf_batch_size;
+		int16_t		sar[SMR_BUF_BATCH_MAX];
 	};
-	struct smr_ipc_info	ipc_info;
+	struct ipc_info		ipc_info;
 };
 
 struct smr_cmd_msg {
@@ -179,7 +161,7 @@ struct smr_cmd {
 
 #define SMR_INJECT_SIZE		4096
 #define SMR_COMP_INJECT_SIZE	(SMR_INJECT_SIZE / 2)
-#define SMR_SAR_SIZE		16384
+#define SMR_SAR_SIZE		32768
 
 #define SMR_DIR "/dev/shm/"
 #define SMR_NAME_MAX	256
@@ -199,6 +181,8 @@ struct smr_peer_data {
 
 extern struct dlist_entry ep_name_list;
 extern pthread_mutex_t ep_list_lock;
+extern struct dlist_entry sock_name_list;
+extern pthread_mutex_t sock_list_lock;
 
 struct smr_region;
 
@@ -226,6 +210,8 @@ struct smr_peer {
 struct smr_map {
 	ofi_spin_t		lock;
 	int64_t			cur_id;
+	int 			num_peers;
+	uint16_t		flags;
 	struct ofi_rbmap	rbmap;
 	struct smr_peer		peers[SMR_MAX_PEERS];
 };
@@ -237,22 +223,17 @@ struct smr_region {
 	int		pid;
 	uint8_t		cma_cap_peer;
 	uint8_t		cma_cap_self;
+	uint32_t	max_sar_buf_per_peer;
 	void		*base_addr;
 	pthread_spinlock_t	lock; /* lock for shm access
-				 Must hold smr->lock before tx/rx cq locks
-				 in order to progress or post recv */
+				 if both ep->tx_lock and this lock need to
+				 held, then ep->tx_lock needs to be held
+				 first */
 	ofi_atomic32_t	signal;
 
 	struct smr_map	*map;
 
 	size_t		total_size;
-	size_t		cmd_cnt; /* Doubles as a tracker for number of cmds AND
-				    number of inject buffers available for use,
-				    to ensure 1:1 ratio of cmds to inject bufs.
-				    Might not always be paired consistently with
-				    cmd alloc/free depending on protocol
-				    (Ex. unexpected messages, RMA requests) */
-	size_t		sar_cnt;
 
 	/* offsets from start of smr_region */
 	size_t		cmd_queue_offset;
@@ -279,24 +260,34 @@ struct smr_inject_buf {
 	};
 };
 
-enum {
-	SMR_SAR_FREE = 0, /* buffer can be used */
-	SMR_SAR_READY, /* buffer has data in it */
+enum smr_status {
+	SMR_STATUS_SUCCESS = 0, 	/* success*/
+	SMR_STATUS_BUSY = FI_EBUSY, 	/* busy */
+
+	SMR_STATUS_OFFSET = 1024, 	/* Beginning of shm-specific codes */
+	SMR_STATUS_SAR_FREE, 		/* buffer can be used */
+	SMR_STATUS_SAR_READY, 		/* buffer has data in it */
 };
 
 struct smr_sar_buf {
-	uint64_t	status;
 	uint8_t		buf[SMR_SAR_SIZE];
 };
 
-struct smr_sar_msg {
-	struct smr_sar_buf	sar[2];
+/* TODO it is expected that a future patch will expand the smr_cmd
+ * structure to also include the rma information, thereby removing the
+ * need to have two commands in the cmd_entry. We can also remove the
+ * command entry completely and just use the smr_cmd
+ */
+struct smr_cmd_entry {
+	struct smr_cmd cmd;
+	struct smr_cmd rma_cmd;
 };
 
-OFI_DECLARE_CIRQUE(struct smr_cmd, smr_cmd_queue);
+/* Queue of offsets of the command blocks obtained from the command pool
+ * freestack
+ */
 OFI_DECLARE_CIRQUE(struct smr_resp, smr_resp_queue);
-SMR_DECLARE_FREESTACK(struct smr_inject_buf, smr_inject_pool);
-SMR_DECLARE_FREESTACK(struct smr_sar_msg, smr_sar_pool);
+OFI_DECLARE_ATOMIC_Q(struct smr_cmd_entry, smr_cmd_queue);
 
 static inline struct smr_region *smr_peer_region(struct smr_region *smr, int i)
 {
@@ -310,17 +301,17 @@ static inline struct smr_resp_queue *smr_resp_queue(struct smr_region *smr)
 {
 	return (struct smr_resp_queue *) ((char *) smr + smr->resp_queue_offset);
 }
-static inline struct smr_inject_pool *smr_inject_pool(struct smr_region *smr)
+static inline struct smr_freestack *smr_inject_pool(struct smr_region *smr)
 {
-	return (struct smr_inject_pool *) ((char *) smr + smr->inject_pool_offset);
+	return (struct smr_freestack *) ((char *) smr + smr->inject_pool_offset);
 }
 static inline struct smr_peer_data *smr_peer_data(struct smr_region *smr)
 {
 	return (struct smr_peer_data *) ((char *) smr + smr->peer_data_offset);
 }
-static inline struct smr_sar_pool *smr_sar_pool(struct smr_region *smr)
+static inline struct smr_freestack *smr_sar_pool(struct smr_region *smr)
 {
-	return (struct smr_sar_pool *) ((char *) smr + smr->sar_pool_offset);
+	return (struct smr_freestack *) ((char *) smr + smr->sar_pool_offset);
 }
 static inline const char *smr_name(struct smr_region *smr)
 {
@@ -341,6 +332,7 @@ struct smr_attr {
 	const char	*name;
 	size_t		rx_count;
 	size_t		tx_count;
+	uint16_t	flags;
 };
 
 size_t smr_calculate_size_offsets(size_t tx_count, size_t rx_count,
@@ -351,9 +343,9 @@ size_t smr_calculate_size_offsets(size_t tx_count, size_t rx_count,
 void	smr_cma_check(struct smr_region *region, struct smr_region *peer_region);
 void	smr_cleanup(void);
 int	smr_map_create(const struct fi_provider *prov, int peer_count,
-		       struct smr_map **map);
-int	smr_map_to_region(const struct fi_provider *prov,
-			  struct smr_peer *peer_buf);
+		       uint16_t caps, struct smr_map **map);
+int	smr_map_to_region(const struct fi_provider *prov, struct smr_map *map,
+			  int64_t id);
 void	smr_map_to_endpoint(struct smr_region *region, int64_t id);
 void	smr_unmap_from_endpoint(struct smr_region *region, int64_t id);
 void	smr_exchange_all_peers(struct smr_region *region);

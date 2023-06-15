@@ -15,11 +15,11 @@ fi_param_define / fi_param_get
 fi_log_enabled / fi_log_ready / fi_log
 : Control and output debug logging information.
 
-fi_open / fi_close
-: Open a named library object
+fi_open / fi_import / fi_close
+: Open and import a named library object
 
-fi_export_fid / fi_import_fid
-: Share a fabric object between different providers or resources
+fi_import_log
+: Import new logging callbacks
 
 # SYNOPSIS
 
@@ -67,6 +67,10 @@ void fi_log(const struct fi_provider *prov, enum fi_log_level level,
 int fi_open(uint32_t version, const char *name, void *attr,
 	size_t attr_len, uint64_t flags, struct fid **fid, void *context);
 
+static inline int fi_import(uint32_t version, const char *name, void *attr,
+			    size_t attr_len, uint64_t flags, struct fid *fid,
+			    void *context);
+
 int fi_close(struct fid *fid);
 ```
 
@@ -74,10 +78,8 @@ int fi_close(struct fid *fid);
 #include <rdma/fabric.h>
 #include <rdma/fi_ext.h>
 
-int fi_export_fid(struct fid *fid, uint64_t flags,
-	struct fid **expfid, void *context);
-
-int fi_import_fid(struct fid *fid, struct fid *expfid, uint64_t flags);
+static inline int fi_import_log(uint32_t version, uint64_t flags,
+				struct fid_logging *log_fid);
 ```
 
 # ARGUMENTS
@@ -184,24 +186,41 @@ of the service or resource to which they correspond.
   used by the different providers.  Additional information on the cache
   is available in the `fi_mr(3)` man page.
 
-## fi_export_fid / fi_import_fid
+*logging*
+: The logging object references the internal logging subsystem used by
+  the different providers.  Once opened, custom logging callbacks may
+  be installed.  Can be opened only once and only the last import is
+  used if imported multiple times.
 
-Generally, fabric objects are allocated and managed entirely by a single
-provider.  Typically only the application facing software interfaces of
-a fabric object are defined, for example, the message or tagged operations
-of an endpoint.  The fi_export_fid and fi_import_fid calls provide a
-a mechanism by which provider facing APIs may be accessed.  This allows
-the creation of fid objects that are shareable between providers, or
-for library plug-in services.  The ability to export a shareable object
-is object and provider implementation dependent.
+## fi_import
 
-Shareable fids typically contain at least 3 main components: a
-base fid, a set of exporter defined ops, and a set of importer defined
-ops.
+This helper function is a combination of `fi_open` and `fi_import_fid`.
+It may be used to import a fabric object created and owned by the
+libfabric user.  This allows the upper level libraries or the application
+to override or define low\-level libfabric behavior.
 
-# NOTES
+## fi_import_log
 
-TODO
+Helper function to override the low\-level libfabric's logging system with
+new callback functions.
+
+```c
+struct fi_ops_log {
+	size_t size;
+	int (*enabled)(const struct fi_provider *prov, enum fi_log_level level,
+		       enum fi_log_subsys subsys, uint64_t flags);
+	int (*ready)(const struct fi_provider *prov, enum fi_log_level level,
+		     enum fi_log_subsys subsys, uint64_t flags, uint64_t *showtime);
+	void (*log)(const struct fi_provider *prov, enum fi_log_level level,
+		    enum fi_log_subsys subsys, const char *func, int line,
+		    const char *msg);
+};
+
+struct fid_logging {
+	struct fid          fid;
+	struct fi_ops_log   *ops;
+};
+```
 
 # PROVIDER INTERFACE
 
@@ -237,16 +256,11 @@ requested api version for the application to use the provider.  It is a
 provider's responsibility to support older versions of the api if it
 wishes to supports legacy applications.  For integrated providers
 
-## TODO
-
 # RETURN VALUE
 
 Returns FI_SUCCESS on success. On error, a negative value corresponding to
 fabric errno is returned. Fabric errno values are defined in
 `rdma/fi_errno.h`.
-
-# ERRORS
-
 
 # SEE ALSO
 

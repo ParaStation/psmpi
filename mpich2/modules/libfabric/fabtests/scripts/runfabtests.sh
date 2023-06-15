@@ -63,6 +63,7 @@ declare C_ARGS=""
 declare S_ARGS=""
 declare PIN_CORE=""
 declare PROVIDER_TESTS=0
+declare gdb_cmd=""
 
 declare cur_excludes=""
 declare file_excludes=""
@@ -100,9 +101,12 @@ functional_tests=(
 	"fi_av_xfer -e rdm"
 	"fi_av_xfer -e dgram"
 	"fi_cm_data"
-	"fi_cq_data -e msg"
-	"fi_cq_data -e rdm"
-	"fi_cq_data -e dgram"
+	"fi_cq_data -e msg -o senddata"
+	"fi_cq_data -e rdm -o senddata"
+	"fi_cq_data -e dgram -o senddata"
+	"fi_cq_data -e msg -o writedata"
+	"fi_cq_data -e rdm -o writedata"
+	"fi_cq_data -e dgram -o writedata"
 	"fi_dgram"
 	"fi_dgram_waitset"
 	"fi_msg"
@@ -128,13 +132,15 @@ functional_tests=(
 	"fi_rdm_shared_av"
 	"fi_multi_mr -e msg -V"
 	"fi_multi_mr -e rdm -V"
+	"fi_multi_ep -e msg -v"
+	"fi_multi_ep -e rdm -v"
 	"fi_recv_cancel -e rdm -V"
 	"fi_unexpected_msg -e msg -I 10"
 	"fi_unexpected_msg -e rdm -I 10"
-	"fi_msg_inject -A inject -v"
-	"fi_msg_inject -N -A inject -v"
-	"fi_msg_inject -A inj_complete -v"
-	"fi_msg_inject -N -A inj_complete -v"
+	"fi_inject_test -A inject -v"
+	"fi_inject_test -N -A inject -v"
+	"fi_inject_test -A inj_complete -v"
+	"fi_inject_test -N -A inj_complete -v"
 	"fi_bw -e rdm -v -T 1"
 	"fi_bw -e rdm -v -T 1 -U"
 	"fi_bw -e msg -v -T 1"
@@ -226,6 +232,11 @@ unit_tests=(
 	"fi_cq_test"
 	"fi_mr_test"
 	"fi_cntr_test"
+	"fi_setopt_test"
+)
+
+regression_tests=(
+	"sighandler_test"
 )
 
 complex_tests=(
@@ -308,6 +319,7 @@ function print_results {
 		esac
 
 		printf -- "- name:   %s\n" "$test_exe"
+		printf -- "  timestamp: %s\n" "$(date -u +'%Y%m%d-%H%M%S%z')"
 		printf -- "  result: %s\n" "$test_result"
 		printf -- "  time:   %s\n" "$test_time"
 		if [ $emit_stdout -eq 1 -a "$server_out_file" != "" ] ; then
@@ -442,7 +454,7 @@ function unit_test {
 
 	start_time=$(date '+%s')
 
-	cmd="${BIN_PATH}${test_exe}"
+	cmd="${gdb_cmd} ${BIN_PATH}${test_exe}"
 	${SERVER_CMD} "${EXPORT_ENV} $cmd" &> $s_outp &
 	p1=$!
 
@@ -497,7 +509,7 @@ function cs_test {
 	else
 		s_arg="-s $S_INTERFACE"
 	fi
-	s_cmd="${BIN_PATH}${test_exe} ${S_ARGS} ${pin_core} $s_arg"
+	s_cmd="${gdb_cmd} ${BIN_PATH}${test_exe} ${S_ARGS} ${pin_core} $s_arg"
 	${SERVER_CMD} "${EXPORT_ENV} $s_cmd" &> $s_outp &
 	s_pid=$!
 	sleep 1
@@ -507,7 +519,7 @@ function cs_test {
 	else
 		c_arg="-s $C_INTERFACE $S_INTERFACE"
 	fi
-	c_cmd="${BIN_PATH}${test_exe} ${C_ARGS} ${pin_core} $c_arg"
+	c_cmd="${gdb_cmd} ${BIN_PATH}${test_exe} ${C_ARGS} ${pin_core} $c_arg"
 	${CLIENT_CMD} "${EXPORT_ENV} $c_cmd" &> $c_outp &
 	c_pid=$!
 
@@ -598,12 +610,12 @@ function complex_test {
 		opts+=" -E"
 	fi
 
-	s_cmd="${BIN_PATH}${test_exe} ${S_ARGS} -x $opts"
+	s_cmd="${gdb_cmd} ${BIN_PATH}${test_exe} ${S_ARGS} -x $opts"
 	FI_LOG_LEVEL=error ${SERVER_CMD} "${EXPORT_ENV} $s_cmd" &> $s_outp &
 	s_pid=$!
 	sleep 1
 
-	c_cmd="${BIN_PATH}${test_exe} ${C_ARGS} -u "${COMPLEX_CFG}" $S_INTERFACE $opts"
+	c_cmd="${gdb_cmd} ${BIN_PATH}${test_exe} ${C_ARGS} -u "${COMPLEX_CFG}" $S_INTERFACE $opts"
 	FI_LOG_LEVEL=error ${CLIENT_CMD} "${EXPORT_ENV} $c_cmd" &> $c_outp &
 	c_pid=$!
 
@@ -661,7 +673,7 @@ function multinode_test {
 
 	start_time=$(date '+%s')
 
-	s_cmd="${BIN_PATH}${test_exe} ${S_ARGS} -s ${S_INTERFACE}"
+	s_cmd="${gdb_cmd} ${BIN_PATH}${test_exe} ${S_ARGS} -s ${S_INTERFACE}"
 	${SERVER_CMD} "${EXPORT_ENV} $s_cmd" &> $s_outp &
 	s_pid=$!
 	sleep 1
@@ -670,7 +682,7 @@ function multinode_test {
 	for ((i=1; i<num_procs; i++))
 	do
 		local c_out=$(mktemp fabtests.c_outp${i}.XXXXXX)
-		c_cmd="${BIN_PATH}${test_exe} ${S_ARGS} -s ${S_INTERFACE}"
+		c_cmd="${gdb_cmd} ${BIN_PATH}${test_exe} ${S_ARGS} -s ${S_INTERFACE}"
 		${CLIENT_CMD} "${EXPORT_ENV} $c_cmd" &> $c_out &
 		c_pid_arr+=($!)
 		c_out_arr+=($c_out)
@@ -767,7 +779,7 @@ function main {
 		local -r tests="complex"
 		complex_type=$1
 	else
-		local -r tests=$(echo $1 | sed 's/all/unit,functional,standard,complex,multinode/g' | tr ',' ' ')
+		local -r tests=$(echo $1 | sed 's/all/unit,regression,functional,standard,complex,multinode/g' | tr ',' ' ')
 		if [[ $1 == "all" || $1 == "complex" ]]; then
 			complex_type="all"
 		fi
@@ -790,6 +802,11 @@ function main {
 					unit_test "$test" "1"
 				done
 			fi
+		;;
+		regression)
+			for test in "${regression_tests[@]}"; do
+				unit_test "$test" "0"
+			done
 		;;
 		functional)
 			for test in "${functional_tests[@]}"; do
@@ -881,10 +898,11 @@ function usage {
 	errcho -e " -b\tenable out-of-band address exchange over the default port"
 	errcho -e " -P\tRun provider specific tests"
 	errcho -e " --pin-core\tSpecify cores to pin when running standard tests. Cores can specified via a comma-delimited list, e.g. 0,2-4"
+	errcho -e " -G\tRun with gdb and print backtraces"
 	exit 1
 }
 
-Options=$(getopt --options v,t:,p:,g:,e:,f:,c:,s:,u:,T:,C:,L:,N,R,S,b,k,P,E:h \
+Options=$(getopt --options v,t:,p:,g:,e:,f:,c:,s:,u:,T:,C:,L:,N,R,S,b,k,P,E:,G,h \
 		 --longoptions pin-core:,help \
 		 --quiet \
 		 -- "$@")
@@ -942,6 +960,9 @@ while true; do
 			EXPORT_ENV="$EXPORT_ENV $EXPORT_STRING ;"
 		    fi
 		    shift 2 ;;
+		-G)
+		    gdb_cmd="gdb -batch -ex run -ex bt -ex quit --args";
+		    shift ;;
 		--pin-core)
 		    PIN_CORE=$2; shift 2 ;;
 		-h | --help)
@@ -955,7 +976,7 @@ while true; do
 done
 
 # base ssh command
-declare bssh="ssh -n -o StrictHostKeyChecking=no -o ConnectTimeout=2 -o BatchMode=yes"
+declare bssh="ssh -n -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o BatchMode=yes"
 if [ -z "$(which timeout 2> /dev/null)" ]; then
 	# forego timeout
 	declare SERVER_CMD="eval"

@@ -116,6 +116,7 @@ also the value at index %d
  deferred because of resource limits is not implemented
 **notgenreq:Attempt to complete a request with MPI_GREQUEST_COMPLETE that \
 was not started with MPI_GREQUEST_START
+**cancelinactive:Attempt to cancel an inactive persistent request
 **cancelunknown:Attempt to cancel an unknown type of request
 **permop:Cannot free permanent MPI_Op 
 **attrsentinal:Internal fields in an attribute have been overwritten; \
@@ -242,6 +243,9 @@ A memory object id was expected but a non-memory object id was passed instead
 **partitioninvalid: Invalid partition
 **partitioninvalid %d: Invalid partition, value is %d 
 **partitioninvalid %d %d: Invalid partition range, values are %d %d
+
+**opencolltuningfile: Unable to open collective tuning file
+**opencolltuningfile %s: Unable to open collective tuning file %s.\nCheck the file or unset MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE to use the default settings.
 
 # -- FIXME: Some (but not all) of the messages below this line have been used
 #---- The messages below this line haven't been used yet.

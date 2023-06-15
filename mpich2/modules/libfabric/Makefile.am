@@ -38,8 +38,10 @@ endif !HAVE_LD_VERSION_SCRIPT
 
 if !EMBEDDED
 rdmaincludedir = $(includedir)/rdma
+providersincludedir = $(rdmaincludedir)/providers
 
 rdmainclude_HEADERS =
+providersinclude_HEADERS =
 endif
 
 # internal utility functions shared by in-tree providers:
@@ -50,6 +52,8 @@ common_srcs =				\
 	src/hmem_cuda_gdrcopy.c		\
 	src/hmem_ze.c			\
 	src/hmem_neuron.c		\
+	src/hmem_synapseai.c		\
+	src/hmem_ipc_cache.c	        \
 	src/common.c			\
 	src/enosys.c			\
 	src/rbtree.c			\
@@ -62,6 +66,7 @@ common_srcs =				\
 	prov/util/src/util_atomic.c	\
 	prov/util/src/util_attr.c	\
 	prov/util/src/util_av.c		\
+	prov/util/src/rxm_av.c		\
 	prov/util/src/util_cq.c		\
 	prov/util/src/util_cntr.c	\
 	prov/util/src/util_domain.c	\
@@ -82,8 +87,19 @@ common_srcs =				\
 	prov/util/src/cuda_mem_monitor.c \
 	prov/util/src/rocr_mem_monitor.c \
 	prov/util/src/ze_mem_monitor.c \
-	prov/util/src/util_coll.c
-
+	prov/util/src/cuda_ipc_monitor.c \
+	prov/util/src/rocr_ipc_monitor.c \
+	prov/coll/src/coll_attr.c	\
+	prov/coll/src/coll_av.c		\
+	prov/coll/src/coll_av_set.c	\
+	prov/coll/src/coll_coll.c	\
+	prov/coll/src/coll_cq.c		\
+	prov/coll/src/coll_domain.c	\
+	prov/coll/src/coll_ep.c		\
+	prov/coll/src/coll_eq.c		\
+	prov/coll/src/coll_fabric.c	\
+	prov/coll/src/coll_init.c	\
+	prov/coll/src/coll.h
 
 if MACOS
 common_srcs += src/osx/osd.c
@@ -107,6 +123,10 @@ endif
 common_srcs += include/linux/rdpmc.h
 common_srcs += include/linux/osd.h
 common_srcs += include/unix/osd.h
+endif
+
+if HAVE_LIBURING
+common_srcs += src/iouring.c
 endif
 
 common_hook_srcs =				\
@@ -163,6 +183,7 @@ src_libfabric_la_SOURCES =			\
 	include/ofi_iov.h			\
 	include/ofi_list.h			\
 	include/ofi_bitmask.h			\
+	include/ofi_atomic_queue.h		\
 	include/shared/ofi_str.h		\
 	include/ofi_lock.h			\
 	include/ofi_mem.h			\
@@ -201,7 +222,7 @@ src_libfabric_la_LIBADD =
 src_libfabric_la_DEPENDENCIES = libfabric.map
 
 if !EMBEDDED
-src_libfabric_la_LDFLAGS += -version-info 19:2:18
+src_libfabric_la_LDFLAGS += -version-info 22:0:21
 endif
 src_libfabric_la_LDFLAGS += -export-dynamic \
 			   $(libfabric_version_script)
@@ -219,6 +240,10 @@ rdmainclude_HEADERS += \
 	$(top_srcdir)/include/rdma/fi_errno.h \
 	$(top_srcdir)/include/rdma/fi_tagged.h \
 	$(top_srcdir)/include/rdma/fi_trigger.h
+providersinclude_HEADERS += \
+	$(top_srcdir)/include/rdma/providers/fi_log.h \
+	$(top_srcdir)/include/rdma/providers/fi_peer.h \
+	$(top_srcdir)/include/rdma/providers/fi_prov.h
 
 if HAVE_DIRECT
 nodist_rdmainclude_HEADERS = \
@@ -256,6 +281,7 @@ real_man_pages = \
         man/man3/fi_errno.3 \
         man/man3/fi_eq.3 \
         man/man3/fi_fabric.3 \
+        man/man3/fi_peer.3 \
         man/man3/fi_provider.3 \
         man/man3/fi_getinfo.3 \
         man/man3/fi_mr.3 \
@@ -267,9 +293,14 @@ real_man_pages = \
         man/man3/fi_trigger.3 \
         man/man3/fi_version.3 \
         man/man7/fabric.7 \
+        man/man7/fi_arch.7 \
+        man/man7/fi_direct.7 \
+        man/man7/fi_guide.7 \
 	man/man7/fi_hook.7 \
+        man/man7/fi_intro.7 \
         man/man7/fi_provider.7 \
-        man/man7/fi_direct.7
+        man/man7/fi_setup.7
+
 
 dummy_man_pages = \
         man/man3/fi_accept.3 \
@@ -440,10 +471,13 @@ include prov/rxd/Makefile.include
 include prov/bgq/Makefile.include
 include prov/opx/Makefile.include
 include prov/shm/Makefile.include
+include prov/sm2/Makefile.include
 include prov/tcp/Makefile.include
 include prov/rstream/Makefile.include
+include prov/ucx/Makefile.include
 include prov/hook/Makefile.include
 include prov/hook/perf/Makefile.include
+include prov/hook/trace/Makefile.include
 include prov/hook/hook_debug/Makefile.include
 include prov/hook/hook_hmem/Makefile.include
 include prov/hook/dmabuf_peer_mem/Makefile.include

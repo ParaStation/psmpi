@@ -64,4 +64,9 @@ typedef struct ips_msgctl ips_msgctl_t;
 extern struct ptl_ctl_init psm3_ptl_ips;
 
 extern struct ptl_ctl_rcvthread psm3_ptl_ips_rcvthread;
+#ifdef PSM_DSA
+// we only create one per process, can save here for read/compare only
+extern pthread_t psm3_rcv_threadid;
+#endif
+
 #endif /* _PTL_FWD_IPS_H */

@@ -12,13 +12,12 @@ import common
 import re
 import shutil
 
-
-def build_libfabric(libfab_install_path, mode):
+def build_libfabric(libfab_install_path, mode, cluster=None):
 
     if (os.path.exists(libfab_install_path) != True):
         os.makedirs(libfab_install_path)
 
-    config_cmd = ['./configure', '--prefix={}'.format(libfab_install_path)]
+    config_cmd = ['./configure', f'--prefix={libfab_install_path}']
     enable_prov_val = 'yes'
 
     if (mode == 'dbg'):
@@ -26,15 +25,22 @@ def build_libfabric(libfab_install_path, mode):
     elif (mode == 'dl'):
         enable_prov_val='dl'
 
-    for prov in common.enabled_prov_list:
-        config_cmd.append('--enable-{}={}'.format(prov, enable_prov_val))
-    for prov in common.disabled_prov_list:
-         config_cmd.append('--enable-{}=no'.format(prov))
+    if (cluster == 'daos'):
+        prov_list = common.daos_prov_list
+    elif (cluster == 'dsa'):
+        prov_list = common.dsa_prov_list
+    else:
+        prov_list = common.default_prov_list
 
-    config_cmd.append('--disable-opx') # we do not test opx in intel jenkins ci
-    config_cmd.append('--disable-efa') # we do not test efa in intel jenkins ci
+    for prov in prov_list:
+       config_cmd.append(f'--enable-{prov}={enable_prov_val}')
 
-    config_cmd.append('--enable-ze-dlopen')
+    for op in common.common_disable_list:
+         config_cmd.append(f'--enable-{op}=no')
+
+    if (cluster == 'default'):
+        for op in common.default_enable_list:
+            config_cmd.append(f'--enable-{op}')
 
     common.run_command(['./autogen.sh'])
     common.run_command(shlex.split(" ".join(config_cmd)))
@@ -45,14 +51,14 @@ def build_libfabric(libfab_install_path, mode):
 
 def build_fabtests(libfab_install_path, mode):
 
-    os.chdir('{}/fabtests'.format(workspace))
+    os.chdir(f'{workspace}/fabtests')
     if (mode == 'dbg'):
-        config_cmd = ['./configure', '--enable-debug', '--prefix={}' \
-                      .format(libfab_install_path),'--with-libfabric={}' \
-                      .format(libfab_install_path)]
+        config_cmd = ['./configure', '--enable-debug',
+                      f'--prefix={libfab_install_path}',
+                      f'--with-libfabric={libfab_install_path}']
     else:
-        config_cmd = ['./configure', '--prefix={}'.format(libfab_install_path),
-                      '--with-libfabric={}'.format(libfab_install_path)]
+        config_cmd = ['./configure', f'--prefix={libfab_install_path}',
+                      f'--with-libfabric={libfab_install_path}']
 
     common.run_command(['./autogen.sh'])
     common.run_command(config_cmd)
@@ -62,20 +68,20 @@ def build_fabtests(libfab_install_path, mode):
 
 def copy_build_dir(install_path):
     shutil.copytree(ci_site_config.build_dir,
-                    '{}/ci_middlewares'.format(install_path))
+                    f'{install_path}/ci_middlewares')
 
-def skip(install_path):
-    if os.getenv('CHANGE_TARGET') is not None:
-        change_target = os.environ['CHANGE_TARGET']
-    else:
-        change_target = 'main'
+def copy_file(file_name):
+    if (os.path.exists(f'{workspace}/{file_name}')):
+            shutil.copyfile(f'{workspace}/{file_name}',
+                            f'{install_path}/log_dir/{file_name}')
 
-    command = [
-                  '{}/skip.sh'.format(ci_site_config.testpath),
-                  '{}'.format(os.environ['WORKSPACE']),
-                  '{}'.format(change_target)
-              ]
-    common.run_command(command)
+def log_dir(install_path, release=False):
+    if (os.path.exists(f'{install_path}/log_dir') != True):
+         os.makedirs(f'{install_path}/log_dir')
+    if (release):
+        copy_file('Makefile.am.diff')
+        copy_file('configure.ac.diff')
+        copy_file('release_num.txt')
 
 if __name__ == "__main__":
 #read Jenkins environment variables
@@ -88,36 +94,40 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--build_item', help="build libfabric or fabtests",
-                         choices=['libfabric', 'fabtests', 'builddir', 'skip'])
+                        choices=['libfabric', 'fabtests', 'builddir', 'logdir'])
+
     parser.add_argument('--ofi_build_mode', help="select buildmode debug or dl", \
                         choices=['dbg', 'dl'])
 
+    parser.add_argument('--build_cluster', help="build libfabric on specified cluster", \
+                        choices=['daos', 'dsa'], default='default')
+    parser.add_argument('--release', help="This job is likely testing a "\
+                        "release and will be checked into a git tree.",
+                        action='store_true')
+
     args = parser.parse_args()
     build_item = args.build_item
+    cluster = args.build_cluster
+    release = args.release
 
     if (args.ofi_build_mode):
         ofi_build_mode = args.ofi_build_mode
     else:
         ofi_build_mode = 'reg'
 
-    ci_middlewares_install_path = '{installdir}/{jbname}/{bno}' \
-                                .format(installdir=ci_site_config.install_dir, \
-                                jbname=jobname, bno=buildno)
-    install_path = '{installdir}/{jbname}/{bno}/{bmode}' \
-                   .format(installdir=ci_site_config.install_dir,
-                   jbname=jobname, bno=buildno,bmode=ofi_build_mode)
+    install_path = f'{ci_site_config.install_dir}/{jobname}/{buildno}'
+    libfab_install_path = f'{ci_site_config.install_dir}/{jobname}/{buildno}/{ofi_build_mode}'
 
     p = re.compile('mpi*')
 
     if (build_item == 'libfabric'):
-        build_libfabric(install_path, ofi_build_mode)
+        build_libfabric(libfab_install_path, ofi_build_mode, cluster)
 
     elif (build_item == 'fabtests'):
-        build_fabtests(install_path, ofi_build_mode)
+        build_fabtests(libfab_install_path, ofi_build_mode)
 
     elif (build_item == 'builddir'):
-        copy_build_dir(ci_middlewares_install_path)
+        copy_build_dir(install_path)
 
-    elif (build_item == 'skip'):
-        skip(ci_middlewares_install_path)
-
+    elif (build_item == 'logdir'):
+        log_dir(install_path, release)

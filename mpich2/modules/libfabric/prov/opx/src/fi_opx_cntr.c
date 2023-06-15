@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2016 by Argonne National Laboratory.
- * Copyright (C) 2022 by Cornelis Networks.
+ * Copyright (C) 2021-2023 by Cornelis Networks.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -55,7 +55,10 @@ static int fi_opx_close_cntr(struct fid *fid)
 		return ret;
 
 	free(opx_cntr->attr);
+	opx_cntr->attr = NULL;
 	free(opx_cntr);
+	opx_cntr = NULL;
+	//opx_cntr (the object passed in as fid) is now unusable
 	return 0;
 }
 
@@ -269,7 +272,7 @@ int fi_opx_cntr_open(struct fid_domain *domain,
 	opx_cntr->domain = (struct fi_opx_domain *) domain;
 
 	opx_cntr->threading = opx_cntr->domain->threading;
-	opx_cntr->lock_required = fi_opx_threading_lock_required(opx_cntr->threading);
+	opx_cntr->lock_required = fi_opx_threading_lock_required(opx_cntr->threading, fi_opx_global.progress);
 
 	/* ---- allocate and initialize the "std" and "err" counters ---- */
 	ofi_atomic_initialize64(&opx_cntr->std, 0);
@@ -288,7 +291,5 @@ int fi_opx_cntr_open(struct fid_domain *domain,
 	*cntr = &opx_cntr->cntr_fid;
 	return 0;
 err:
-	if (opx_cntr)
-		free(opx_cntr);
 	return -errno;
 }

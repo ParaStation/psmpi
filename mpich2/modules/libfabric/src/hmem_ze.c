@@ -35,6 +35,7 @@
 #endif
 
 #include "ofi_hmem.h"
+#include "ofi_mem.h"
 #include "ofi.h"
 
 #if HAVE_ZE
@@ -43,6 +44,7 @@
 #include <dirent.h>
 #include <level_zero/ze_api.h>
 
+static ze_driver_handle_t driver;
 static ze_context_handle_t context;
 static ze_device_handle_t devices[ZE_MAX_DEVICES];
 static ze_command_queue_handle_t cmd_queue[ZE_MAX_DEVICES];
@@ -52,6 +54,9 @@ static int indices[ZE_MAX_DEVICES];
 static int dev_fds[ZE_MAX_DEVICES];
 static ze_device_uuid_t dev_uuids[ZE_MAX_DEVICES];
 static bool p2p_enabled = false;
+static bool host_reg_enabled = true;
+static struct ofi_bufpool *cl_pool[ZE_MAX_DEVICES];
+ofi_spin_t cl_lock;
 
 static ze_command_queue_desc_t cq_desc = {
 	.stype		= ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC,
@@ -103,6 +108,7 @@ struct libze_ops {
 					   ze_command_list_handle_t *phCommandList);
 	ze_result_t (*zeCommandListDestroy)(ze_command_list_handle_t hCommandList);
 	ze_result_t (*zeCommandListClose)(ze_command_list_handle_t hCommandList);
+	ze_result_t (*zeCommandListReset)(ze_command_list_handle_t hCommandList);
 	ze_result_t (*zeCommandListAppendMemoryCopy)(
 				ze_command_list_handle_t hCommandList,
 				void *dstptr, const void *srcptr, size_t size,
@@ -128,7 +134,26 @@ struct libze_ops {
 					   const void *ptr);
 	ze_result_t (*zeDeviceGetProperties)(ze_device_handle_t hDevice,
 					     ze_device_properties_t *pDeviceProperties);
+	ze_result_t (*zeDriverGetExtensionFunctionAddress)(
+				ze_driver_handle_t hDriver, const char *name,
+				void **ppFunctionAddress);
+	ze_result_t (*zexDriverImportExternalPointer)(ze_driver_handle_t hDriver,
+						      void *ptr, size_t len);
+	ze_result_t (*zexDriverReleaseImportedPointer)(ze_driver_handle_t hDriver,
+						       void *ptr);
 };
+
+#define DEVICE_MASK  ((1 << 16) - 1)
+
+static inline int ze_get_device_idx(uint64_t device)
+{
+	return device & DEVICE_MASK;
+}
+
+static inline int ze_get_driver_idx(uint64_t device)
+{
+	return device >> 16;
+}
 
 #if ENABLE_ZE_DLOPEN
 
@@ -153,6 +178,7 @@ static struct libze_ops libze_ops = {
 	.zeCommandListCreate = zeCommandListCreate,
 	.zeCommandListDestroy = zeCommandListDestroy,
 	.zeCommandListClose = zeCommandListClose,
+	.zeCommandListReset = zeCommandListReset,
 	.zeCommandListAppendMemoryCopy = zeCommandListAppendMemoryCopy,
 	.zeMemGetAllocProperties = zeMemGetAllocProperties,
 	.zeMemGetAddressRange = zeMemGetAddressRange,
@@ -160,6 +186,7 @@ static struct libze_ops libze_ops = {
 	.zeMemOpenIpcHandle = zeMemOpenIpcHandle,
 	.zeMemCloseIpcHandle = zeMemCloseIpcHandle,
 	.zeDeviceGetProperties = zeDeviceGetProperties,
+	.zeDriverGetExtensionFunctionAddress = zeDriverGetExtensionFunctionAddress,
 };
 
 #endif /* ENABLE_ZE_DLOPEN */
@@ -251,6 +278,11 @@ ze_result_t ofi_zeCommandListClose(ze_command_list_handle_t hCommandList)
 	return (*libze_ops.zeCommandListClose)(hCommandList);
 }
 
+ze_result_t ofi_zeCommandListReset(ze_command_list_handle_t hCommandList)
+{
+	return (*libze_ops.zeCommandListReset)(hCommandList);
+}
+
 ze_result_t ofi_zeCommandListAppendMemoryCopy(
 				ze_command_list_handle_t hCommandList,
 				void *dstptr, const void *srcptr, size_t size,
@@ -309,6 +341,26 @@ ze_result_t ofi_zeDeviceGetProperties(ze_device_handle_t hDevice,
 	return (*libze_ops.zeDeviceGetProperties)(hDevice, pDeviceProperties);
 }
 
+ze_result_t ofi_zeDriverGetExtensionFunctionAddress(ze_driver_handle_t hDriver,
+						    const char *name,
+						    void **ppFuncAddress)
+{
+	return (*libze_ops.zeDriverGetExtensionFunctionAddress)(hDriver, name,
+							        ppFuncAddress);
+}
+
+ze_result_t ofi_zexDriverImportExternalPointer(ze_driver_handle_t hDriver,
+					       void *ptr, size_t len)
+{
+	return (*libze_ops.zexDriverImportExternalPointer)(hDriver, ptr, len);
+}
+
+ze_result_t ofi_zexDriverReleaseImportedPointer(ze_driver_handle_t hDriver,
+						void *ptr)
+{
+	return (*libze_ops.zexDriverReleaseImportedPointer)(hDriver, ptr);
+}
+
 #if HAVE_DRM || HAVE_LIBDRM
 
 #if HAVE_DRM
@@ -365,7 +417,8 @@ int ze_hmem_get_shared_handle(int dev_fd, void *dev_buf, int *ze_fd,
 	ze_ipc_mem_handle_t ze_handle;
 	int ret;
 
-	ret = ze_hmem_get_handle(dev_buf, (void **) &ze_handle);
+	assert(dev_fd != -1);
+	ret = ze_hmem_get_handle(dev_buf, 0, (void **) &ze_handle);
 	if (ret)
 		return ret;
 
@@ -402,7 +455,7 @@ int ze_hmem_open_shared_handle(int dev_fd, void **handle, int *ze_fd,
 	*ze_fd = open_fd.fd;
 	memset(&ze_handle, 0, sizeof(ze_handle));
 	memcpy(&ze_handle, &open_fd.fd, sizeof(open_fd.fd));
-	return ze_hmem_open_handle((void **) &ze_handle, device, ipc_ptr);
+	return ze_hmem_open_handle((void **) &ze_handle, 0, device, ipc_ptr);
 }
 
 bool ze_hmem_p2p_enabled(void)
@@ -525,6 +578,12 @@ static int ze_hmem_dl_init(void)
 		goto err_dlclose;
 	}
 
+	libze_ops.zeCommandListReset = dlsym(libze_handle, "zeCommandListReset");
+	if (!libze_ops.zeCommandListReset) {
+		FI_WARN(&core_prov, FI_LOG_CORE, "Failed to find zeCommandListReset\n");
+		goto err_dlclose;
+	}
+
 	libze_ops.zeCommandListAppendMemoryCopy = dlsym(libze_handle, "zeCommandListAppendMemoryCopy");
 	if (!libze_ops.zeCommandListAppendMemoryCopy) {
 		FI_WARN(&core_prov, FI_LOG_CORE, "Failed to find zeCommandListAppendMemoryCopy\n");
@@ -564,6 +623,14 @@ static int ze_hmem_dl_init(void)
 	libze_ops.zeDeviceGetProperties = dlsym(libze_handle, "zeDeviceGetProperties");
 	if (!libze_ops.zeDeviceGetProperties) {
 		FI_WARN(&core_prov, FI_LOG_CORE, "Failed to find zeDeviceGetProperties\n");
+		goto err_dlclose;
+	}
+
+	libze_ops.zeDriverGetExtensionFunctionAddress =
+		dlsym(libze_handle, "zeDriverGetExtensionFunctionAddress");
+	if (!libze_ops.zeDriverGetExtensionFunctionAddress) {
+		FI_WARN(&core_prov, FI_LOG_CORE,
+			"Failed to find zeDriverGetExtensionFunctionAddress\n");
 		goto err_dlclose;
 	}
 
@@ -628,7 +695,7 @@ static int ze_hmem_find_copy_only_engine(int device_num, int *ordinal, int *inde
 
 	/* Auto select the first copy-only engine group if possible */
 	j = 0;
-	for (i = cq_grp_count - 1; i >= 0; i--) {
+	for (i = 0; i < cq_grp_count; i++) {
 		if (cq_grp_props[i].flags &
 		    ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COPY &&
 		    !(cq_grp_props[i].flags &
@@ -639,7 +706,7 @@ static int ze_hmem_find_copy_only_engine(int device_num, int *ordinal, int *inde
 
 out:
 	free(cq_grp_props);
-	*ordinal = (i < 0) ? 0 : i;
+	*ordinal = i == cq_grp_count ? 0 : i;
 	*index = j;
 	return ze_ret;
 }
@@ -663,6 +730,8 @@ static int ze_hmem_cleanup_internal(int fini_workaround)
 				ret = -FI_EINVAL;
 			}
 		}
+		if (cl_pool[i])
+			ofi_bufpool_destroy(cl_pool[i]);
 		if (dev_fds[i] != -1) {
 			close(dev_fds[i]);
 			dev_fds[i] = -1;
@@ -674,6 +743,7 @@ static int ze_hmem_cleanup_internal(int fini_workaround)
 			ret = -FI_EINVAL;
 	}
 
+	ofi_spin_destroy(&cl_lock);
 	ze_hmem_dl_cleanup();
 	return ret;
 }
@@ -685,7 +755,6 @@ int ze_hmem_cleanup(void)
 
 int ze_hmem_init(void)
 {
-	ze_driver_handle_t driver;
 	ze_context_desc_t context_desc = {0};
 	ze_device_properties_t dev_prop = {0};
 	ze_result_t ze_ret;
@@ -717,6 +786,22 @@ int ze_hmem_init(void)
 	if (ze_ret)
 		return -FI_EIO;
 
+	ret = ofi_spin_init(&cl_lock);
+	if (ret)
+		return ret;
+
+	ze_ret = ofi_zeDriverGetExtensionFunctionAddress(
+			driver, "zexDriverImportExternalPointer",
+			(void *)&libze_ops.zexDriverImportExternalPointer);
+	if (ze_ret)
+		host_reg_enabled = false;
+
+	ze_ret = ofi_zeDriverGetExtensionFunctionAddress(
+			driver, "zexDriverReleaseImportedPointer",
+			(void *)&libze_ops.zexDriverReleaseImportedPointer);
+	if (ze_ret)
+		host_reg_enabled = false;
+
 	ze_ret = ofi_zeContextCreate(driver, &context_desc, &context);
 	if (ze_ret)
 		return -FI_EIO;
@@ -738,6 +823,7 @@ int ze_hmem_init(void)
 		goto err;
 
 	for (num_devices = 0; num_devices < count; num_devices++) {
+		cl_pool[num_devices] = NULL;
 		ze_ret = ofi_zeDeviceGetProperties(devices[num_devices],
 						   &dev_prop);
 		if (ze_ret)
@@ -772,11 +858,58 @@ err:
 	return -FI_EIO;
 }
 
+static int ze_cl_alloc_fn(struct ofi_bufpool_region *region)
+{
+	uint64_t dev_id = (uint64_t) region->pool->attr.context;
+	ze_result_t ze_ret;
+
+	cl_desc.commandQueueGroupOrdinal = ordinals[dev_id];
+	ze_ret = ofi_zeCommandListCreate(context, devices[dev_id], &cl_desc,
+			(ze_command_list_handle_t *) region->mem_region);
+	return ze_ret ? -FI_EINVAL : FI_SUCCESS;
+}
+
+static void ze_cl_free_fn(struct ofi_bufpool_region *region)
+{
+	(void) ofi_zeCommandListDestroy(
+			*(ze_command_list_handle_t *) region->mem_region);
+}
+
+static ze_result_t ze_init_res(int dev_id)
+{
+	uint64_t device = dev_id;
+	ze_result_t ze_ret;
+	struct ofi_bufpool_attr attr = {
+		.size		= sizeof(ze_command_list_handle_t),
+		.alignment	= 0,
+		.max_cnt	= 0,
+		.chunk_cnt	= 1,
+		.alloc_fn	= ze_cl_alloc_fn,
+		.free_fn	= ze_cl_free_fn,
+		.init_fn	= NULL,
+		.context	= (void *) device,
+		.flags		= 0,
+	};
+
+	cq_desc.ordinal = ordinals[dev_id];
+	cq_desc.index = indices[dev_id];
+	ze_ret = ofi_zeCommandQueueCreate(context,
+					  devices[dev_id],
+					  &cq_desc,
+					  &cmd_queue[dev_id]);
+	if (ze_ret)
+		return ze_ret;
+
+	return ofi_bufpool_create_attr(&attr, &cl_pool[dev_id]);
+}
+
 int ze_hmem_copy(uint64_t device, void *dst, const void *src, size_t size)
 {
-	ze_command_list_handle_t cmd_list;
+	ze_command_list_handle_t *cmd_list;
 	ze_result_t ze_ret;
-	int dev_id = (int) device;
+	int dev_id = ze_get_device_idx(device);
+
+	assert(!ze_get_driver_idx(device));
 
 	/* Host memory allocated via ZE */
 	if (dev_id < 0) {
@@ -784,46 +917,50 @@ int ze_hmem_copy(uint64_t device, void *dst, const void *src, size_t size)
 		return 0;
 	}
 
+	ofi_spin_lock(&cl_lock);
 	if (!cmd_queue[device]) {
-		cq_desc.ordinal = ordinals[device];
-		cq_desc.index = indices[device];
-		ze_ret = ofi_zeCommandQueueCreate(context,
-						  devices[device],
-						  &cq_desc,
-						  &cmd_queue[device]);
-		if (ze_ret)
-			goto err;
+		ze_ret = ze_init_res(dev_id);
+		if (ze_ret) {
+			ofi_spin_unlock(&cl_lock);
+			goto out;
+		}
 	}
 
-	cl_desc.commandQueueGroupOrdinal = ordinals[dev_id];
-	ze_ret = ofi_zeCommandListCreate(context, devices[dev_id], &cl_desc,
-					 &cmd_list);
-	if (ze_ret)
-		goto err;
+	cmd_list = ofi_buf_alloc(cl_pool[dev_id]);
+	ofi_spin_unlock(&cl_lock);
+	if (!cmd_list)
+		goto out;
 
-	ze_ret = ofi_zeCommandListAppendMemoryCopy(cmd_list, dst, src, size,
+	ze_ret = ofi_zeCommandListReset(*cmd_list);
+	if (ze_ret)
+		goto free;
+
+	ze_ret = ofi_zeCommandListAppendMemoryCopy(*cmd_list, dst, src, size,
 						   NULL, 0, NULL);
 	if (ze_ret)
 		goto free;
 
-	ze_ret = ofi_zeCommandListClose(cmd_list);
+	ze_ret = ofi_zeCommandListClose(*cmd_list);
 	if (ze_ret)
 		goto free;
 
 	ze_ret = ofi_zeCommandQueueExecuteCommandLists(cmd_queue[dev_id], 1,
-						       &cmd_list, NULL);
+						       cmd_list, NULL);
 
 free:
-	if (!ofi_zeCommandListDestroy(cmd_list) && !ze_ret)
-		return FI_SUCCESS;
-err:
-	FI_WARN(&core_prov, FI_LOG_CORE,
-		"Failed to perform ze copy (%d)\n", ze_ret);
-
-	return -FI_EIO;
+	ofi_spin_lock(&cl_lock);
+	ofi_buf_free(cmd_list);
+	ofi_spin_unlock(&cl_lock);
+out:
+	if (ze_ret) {
+		FI_WARN(&core_prov, FI_LOG_CORE,
+			"Failed to perform ze copy (%d)\n", ze_ret);
+		return -FI_EIO;
+	}
+	return FI_SUCCESS;
 }
 
-bool ze_is_addr_valid(const void *addr, uint64_t *device, uint64_t *flags)
+bool ze_hmem_is_addr_valid(const void *addr, uint64_t *device, uint64_t *flags)
 {
 	ze_result_t ze_ret;
 	ze_memory_allocation_properties_t mem_props = {0};
@@ -833,7 +970,7 @@ bool ze_is_addr_valid(const void *addr, uint64_t *device, uint64_t *flags)
 
 	ze_ret = ofi_zeMemGetAllocProperties(context, addr, &mem_props,
 					     &device_ptr);
-	if (ze_ret)
+	if (ze_ret || mem_props.type == ZE_MEMORY_TYPE_UNKNOWN)
 		return false;
 
 	if (flags)
@@ -859,7 +996,7 @@ bool ze_is_addr_valid(const void *addr, uint64_t *device, uint64_t *flags)
 	return true;
 }
 
-int ze_hmem_get_handle(void *dev_buf, void **handle)
+int ze_hmem_get_handle(void *dev_buf, size_t size, void **handle)
 {
 	ze_result_t ze_ret;
 
@@ -873,13 +1010,14 @@ int ze_hmem_get_handle(void *dev_buf, void **handle)
 	return FI_SUCCESS;
 }
 
-int ze_hmem_open_handle(void **handle, uint64_t device, void **ipc_ptr)
+int ze_hmem_open_handle(void **handle, size_t size, uint64_t device,
+			void **ipc_ptr)
 {
 	ze_result_t ze_ret;
-	int dev_id = (int) device;
+	int dev_id = ze_get_device_idx(device);
 
 	/* only device memory is supported */
-	assert(dev_id >= 0);
+	assert(!ze_get_driver_idx(device) && dev_id >= 0);
 
 	ze_ret = ofi_zeMemOpenIpcHandle(context, devices[dev_id],
 					*((ze_ipc_mem_handle_t *) handle),
@@ -904,6 +1042,12 @@ int ze_hmem_close_handle(void *ipc_ptr)
 		return -FI_EINVAL;
 	}
 
+	return FI_SUCCESS;
+}
+
+int ze_hmem_get_ipc_handle_size(size_t *size)
+{
+	*size = sizeof(ze_ipc_mem_handle_t);
 	return FI_SUCCESS;
 }
 
@@ -945,6 +1089,35 @@ int *ze_hmem_get_dev_fds(int *nfds)
 	return dev_fds;
 }
 
+int ze_hmem_host_register(void *ptr, size_t size)
+{
+	ze_result_t ze_ret;
+
+	if (host_reg_enabled) {
+		ze_ret = ofi_zexDriverImportExternalPointer(driver, ptr, size);
+		if (ze_ret) {
+			FI_WARN(&core_prov, FI_LOG_CORE,
+				"Failed to import host memory: ptr %p size %zd",
+				ptr, size);
+		}
+	}
+	return FI_SUCCESS;
+}
+
+int ze_hmem_host_unregister(void *ptr)
+{
+	ze_result_t ze_ret;
+
+	if (host_reg_enabled) {
+		ze_ret = ofi_zexDriverReleaseImportedPointer(driver, ptr);
+		if (ze_ret) {
+			FI_WARN(&core_prov, FI_LOG_CORE,
+				"Failed to release imported memory: ptr %p", ptr);
+		}
+	}
+	return FI_SUCCESS;
+}
+
 #else
 
 int ze_hmem_init(void)
@@ -962,17 +1135,18 @@ int ze_hmem_copy(uint64_t device, void *dst, const void *src, size_t size)
 	return -FI_ENOSYS;
 }
 
-bool ze_is_addr_valid(const void *addr, uint64_t *device, uint64_t *flags)
+bool ze_hmem_is_addr_valid(const void *addr, uint64_t *device, uint64_t *flags)
 {
 	return false;
 }
 
-int ze_hmem_get_handle(void *dev_buf, void **handle)
+int ze_hmem_get_handle(void *dev_buf, size_t size, void **handle)
 {
 	return -FI_ENOSYS;
 }
 
-int ze_hmem_open_handle(void **handle, uint64_t device, void **ipc_ptr)
+int ze_hmem_open_handle(void **handle, size_t size, uint64_t device,
+			void **ipc_ptr)
 {
 	return -FI_ENOSYS;
 }
@@ -999,6 +1173,11 @@ bool ze_hmem_p2p_enabled(void)
 	return false;
 }
 
+int ze_hmem_get_ipc_handle_size(size_t *size)
+{
+	return -FI_ENOSYS;
+}
+
 int ze_hmem_get_base_addr(const void *ptr, void **base, size_t *size)
 {
 	return -FI_ENOSYS;
@@ -1013,6 +1192,16 @@ int *ze_hmem_get_dev_fds(int *nfds)
 {
 	*nfds = 0;
 	return NULL;
+}
+
+int ze_hmem_host_register(void *ptr, size_t size)
+{
+	return FI_SUCCESS;
+}
+
+int ze_hmem_host_unregister(void *ptr)
+{
+	return FI_SUCCESS;
 }
 
 #endif /* HAVE_ZE */

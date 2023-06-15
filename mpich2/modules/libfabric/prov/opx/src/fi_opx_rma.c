@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2016 by Argonne National Laboratory.
- * Copyright (C) 2021 Cornelis Networks.
+ * Copyright (C) 2021-2023 Cornelis Networks.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -42,32 +42,6 @@
 #include <ofi_enosys.h>
 #include <errno.h>
 
-/* Delivery completion callback for simple sends.
- * This is only used for simple sends but it is included here
- * due to the complex dependencies of all the inlined code.
- *
- * This differs from the other completion callback in that it adds
- * the message tag from the original message to the completion item.
- */
-void fi_opx_delivery_complete(struct fi_opx_completion_counter *cc)
-{
-	if (cc->cntr) {
-		ofi_atomic_inc64(&cc->cntr->std);
-	}
-	if (cc->cq && cc->context) {
-		assert(cc->context);
-		union fi_opx_context * opx_context = (union fi_opx_context *)cc->context;
-		opx_context->next = NULL;
-		opx_context->len = 0;
-		opx_context->buf = NULL;
-		opx_context->byte_counter = 0;
-		opx_context->tag = cc->tag;
-
-		fi_opx_cq_enqueue_completed(cc->cq, cc->context, 0);
-	}
-	ofi_buf_free(cc);
-}
-
 /* Delivery completion callback for atomics, RMA operations.
  *
  * This differs from the other completion callback in that it ignores
@@ -76,10 +50,12 @@ void fi_opx_delivery_complete(struct fi_opx_completion_counter *cc)
 void fi_opx_hit_zero(struct fi_opx_completion_counter *cc)
 {
 	if (cc->cntr) {
+		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "=================== COUNTER INCREMENT\n");
 		ofi_atomic_inc64(&cc->cntr->std);
+	} else {
+		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "=================== NO COUNTER INCREMENT\n");
 	}
 	if (cc->cq && cc->context) {
-		assert(cc->context);
 		union fi_opx_context * opx_context = (union fi_opx_context *)cc->context;
 		opx_context->next = NULL;
 		opx_context->len = 0;
@@ -87,9 +63,12 @@ void fi_opx_hit_zero(struct fi_opx_completion_counter *cc)
 		opx_context->byte_counter = 0;
 		opx_context->tag = 0;
 
+		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "=================== CQ ENQUEUE COMPLETION\n");
 		fi_opx_cq_enqueue_completed(cc->cq, cc->context, 0);
+	} else {
+		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "=================== NO CQ COMPLETION\n");
 	}
-	ofi_buf_free(cc);
+	OPX_BUF_FREE(cc);
 }
 
 inline int fi_opx_check_rma(struct fi_opx_ep *opx_ep)
@@ -111,7 +90,158 @@ inline int fi_opx_check_rma(struct fi_opx_ep *opx_ep)
 	return 0;
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
+int fi_opx_readv_internal_intranode(struct fi_opx_hfi1_rx_readv_params *params)
+{
+	struct fi_opx_ep *opx_ep = params->opx_ep;
+	ssize_t rc;
+	// This clears any shm conditions
+	fi_opx_ep_rx_poll(&opx_ep->ep_fid, 0, OPX_RELIABILITY, FI_OPX_HDRQ_MASK_RUNTIME);
+
+	/* Possible SHM connections required for certain applications (i.e., DAOS)
+	 * exceeds the max value of the legacy u8_rx field.  Use the dest_rx field
+	 * which can support the larger values.
+	 */
+	rc = fi_opx_shm_dynamic_tx_connect(1, opx_ep, params->u32_extended_rx, params->opx_target_addr.hfi1_unit);
+	if (OFI_UNLIKELY(rc)) {
+		return -FI_EAGAIN;
+	}
+
+	uint64_t pos;
+	union fi_opx_hfi1_packet_hdr * tx_hdr = opx_shm_tx_next(&opx_ep->tx->shm,
+		params->dest_rx, &pos, opx_ep->daos_info.hfi_rank_enabled, params->u32_extended_rx,
+		opx_ep->daos_info.rank_inst, &rc);
+	if (OFI_UNLIKELY(tx_hdr == NULL)) {
+		return rc;
+	}
+	uint64_t niov = params->niov << 48;
+	uint64_t op64 = params->op << 40;
+	uint64_t dt64 = params->dt << 32;
+	assert(FI_OPX_HFI_DPUT_OPCODE_GET == params->opcode); // double check packet type
+	assert(params->dt == (FI_VOID - 1) || params->dt < FI_DATATYPE_LAST);
+	tx_hdr->qw[0] = opx_ep->rx->tx.cts.hdr.qw[0] | params->lrh_dlid | (params->lrh_dws << 32);
+	tx_hdr->qw[1] = opx_ep->rx->tx.cts.hdr.qw[1] | params->bth_rx;
+	tx_hdr->qw[2] = opx_ep->rx->tx.cts.hdr.qw[2];
+	tx_hdr->qw[3] = opx_ep->rx->tx.cts.hdr.qw[3];
+	tx_hdr->qw[4] = opx_ep->rx->tx.cts.hdr.qw[4] | params->opcode | dt64 | op64 | niov;
+	tx_hdr->qw[5] = (uintptr_t)params->cc;
+	tx_hdr->qw[6] = params->key;
+
+	union fi_opx_hfi1_packet_payload *const tx_payload =
+		(union fi_opx_hfi1_packet_payload *)(tx_hdr + 1);
+
+	tx_payload->cts.iov[0].rbuf = (uintptr_t)params->iov.iov_base; /* receive buffer virtual address */
+	tx_payload->cts.iov[0].sbuf = params->addr_offset; /* send buffer virtual address */
+	tx_payload->cts.iov[0].bytes = params->iov.iov_len; /* number of bytes to transfer */
+
+	opx_shm_tx_advance(&opx_ep->tx->shm, (void *)tx_hdr, pos);
+
+	return FI_SUCCESS;
+}
+
+int fi_opx_do_readv_internal(union fi_opx_hfi1_deferred_work *work)
+{
+	struct fi_opx_hfi1_rx_readv_params *params = &work->readv;
+	assert(params->niov <= 1); // TODO, support something ... bigger
+	assert(params->dt == (FI_VOID - 1) || params->dt < FI_DATATYPE_LAST);
+
+	if (params->is_intranode) {	/* compile-time constant expression */
+		return fi_opx_readv_internal_intranode(params);
+	}
+
+	struct fi_opx_ep *opx_ep = params->opx_ep;
+
+	union fi_opx_hfi1_pio_state pio_state = *opx_ep->tx->pio_state;
+	uint16_t total_credits_available = FI_OPX_HFI1_AVAILABLE_CREDITS(pio_state, &opx_ep->tx->force_credit_return, 2);
+	if (OFI_UNLIKELY(total_credits_available < 2)) {
+		fi_opx_compiler_msync_writes(); // credit return
+		FI_OPX_HFI1_UPDATE_CREDITS(pio_state, opx_ep->tx->pio_credits_addr);
+		total_credits_available = FI_OPX_HFI1_AVAILABLE_CREDITS(pio_state, &opx_ep->tx->force_credit_return, 2);
+		if (total_credits_available < 2) {
+			return -FI_EAGAIN;
+		}
+	}
+
+	struct fi_opx_reliability_tx_replay *replay;
+	union fi_opx_reliability_tx_psn *psn_ptr;
+	int32_t psn;
+
+	ssize_t rc = fi_opx_ep_tx_get_replay(opx_ep, params->opx_target_addr,
+					     &replay, &psn_ptr, &psn,
+					     params->reliability);
+
+	if (OFI_UNLIKELY(rc != FI_SUCCESS)) {
+		return -FI_EAGAIN;
+	}
+
+	volatile uint64_t * const scb = FI_OPX_HFI1_PIO_SCB_HEAD(opx_ep->tx->pio_scb_sop_first, pio_state);
+
+	uint64_t tmp[8];
+	uint64_t niov = params->niov << 48;
+	uint64_t op64 = params->op << 40;
+	uint64_t dt64 = params->dt << 32;
+	uint64_t credit_return = (opx_ep->tx->force_credit_return & FI_OPX_HFI1_PBC_CR_MASK)
+				 << FI_OPX_HFI1_PBC_CR_SHIFT;
+	assert(FI_OPX_HFI_DPUT_OPCODE_GET == params->opcode); // double check packet type
+	fi_opx_set_scb(scb, tmp,
+			opx_ep->rx->tx.cts.qw0 | params->pbc_dws | credit_return,
+			opx_ep->rx->tx.cts.hdr.qw[0] | params->lrh_dlid | (params->lrh_dws << 32),
+			opx_ep->rx->tx.cts.hdr.qw[1] | params->bth_rx,
+			opx_ep->rx->tx.cts.hdr.qw[2] | psn,
+			opx_ep->rx->tx.cts.hdr.qw[3],
+			opx_ep->rx->tx.cts.hdr.qw[4] | params->opcode | dt64 | op64 | niov,
+			(uintptr_t)params->cc, // target_completion_counter_vaddr
+			params->key); // key
+
+	/* consume one credit for the packet header */
+	FI_OPX_HFI1_CONSUME_SINGLE_CREDIT(pio_state);
+
+	FI_OPX_HFI1_CLEAR_CREDIT_RETURN(opx_ep);
+
+	if (OFI_LIKELY(params->reliability != OFI_RELIABILITY_KIND_NONE)) {
+		replay->scb.qw0 = tmp[0];
+		replay->scb.hdr.qw[0] = tmp[1];
+		replay->scb.hdr.qw[1] = tmp[2];
+		replay->scb.hdr.qw[2] = tmp[3];
+		replay->scb.hdr.qw[3] = tmp[4];
+		replay->scb.hdr.qw[4] = tmp[5];
+		replay->scb.hdr.qw[5] = tmp[6];
+		replay->scb.hdr.qw[6] = tmp[7];
+	}
+
+	/* write the CTS payload "send control block"  */
+	volatile uint64_t * scb_payload = FI_OPX_HFI1_PIO_SCB_HEAD(opx_ep->tx->pio_scb_first, pio_state);
+
+	fi_opx_set_scb(scb_payload, tmp,
+			(uintptr_t)params->iov.iov_base, /* receive buffer virtual address */
+			params->addr_offset, /* send buffer virtual address */
+			params->iov.iov_len, /* number of bytes to transfer */
+			0, 0, 0, 0, 0);
+
+	FI_OPX_HFI1_CONSUME_SINGLE_CREDIT(pio_state);
+	if (OFI_LIKELY(params->reliability != OFI_RELIABILITY_KIND_NONE)) {
+		replay->payload[0] = tmp[0];
+		replay->payload[1] = tmp[1];
+		replay->payload[2] = tmp[2];
+		replay->payload[3] = tmp[3];
+		replay->payload[4] = tmp[4];
+		replay->payload[5] = tmp[5];
+		replay->payload[6] = tmp[6];
+		replay->payload[7] = tmp[7];
+
+		fi_opx_reliability_client_replay_register_no_update(
+			&opx_ep->reliability->state,
+			params->opx_target_addr.uid.lid,
+			params->opx_target_addr.reliability_rx,
+			params->dest_rx, psn_ptr, replay, params->reliability);
+	}
+	FI_OPX_HFI1_CHECK_CREDITS_FOR_ERROR(opx_ep->tx->pio_credits_addr);
+	opx_ep->tx->pio_state->qw0 = pio_state.qw0;
+
+	return FI_SUCCESS;
+}
+
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_inject_write_internal(struct fid_ep *ep, const void *buf, size_t len,
 				     fi_addr_t dst_addr, uint64_t addr_offset, uint64_t key,
 				     int lock_required, const enum fi_av_type av_type,
@@ -131,11 +261,10 @@ ssize_t fi_opx_inject_write_internal(struct fid_ep *ep, const void *buf, size_t 
 		fprintf(stderr, "%s:%s():%d\n", __FILE__, __func__, __LINE__);
 		abort();
 	}
-	const union fi_opx_addr opx_dst_addr = { .fi = (av_type == FI_AV_TABLE) ?
-							       opx_ep->tx->av_addr[dst_addr].fi :
-							       dst_addr };
 
 	assert(dst_addr != FI_ADDR_UNSPEC);
+	assert((FI_AV_TABLE == opx_ep->av_type) || (FI_AV_MAP == opx_ep->av_type));
+	const union fi_opx_addr opx_dst_addr = FI_OPX_EP_AV_ADDR(av_type,opx_ep,dst_addr);
 
 	if (OFI_UNLIKELY(!opx_reliability_ready(ep,
 			&opx_ep->reliability->state,
@@ -148,6 +277,8 @@ ssize_t fi_opx_inject_write_internal(struct fid_ep *ep, const void *buf, size_t 
 	}
 
 	struct fi_opx_completion_counter *cc = ofi_buf_alloc(opx_ep->rma_counter_pool);
+	cc->next = NULL;
+	cc->initial_byte_count = len;
 	cc->byte_counter = len;
 	cc->cntr = opx_ep->write_cntr;
 	cc->cq = NULL;
@@ -178,7 +309,7 @@ inline ssize_t fi_opx_inject_write_generic(struct fid_ep *ep, const void *buf, s
 	return rc;
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_write(struct fid_ep *ep, const void *buf, size_t len, void *desc,
 		     fi_addr_t dst_addr, uint64_t addr_offset, uint64_t key,
 		     void *context, int lock_required, const enum fi_av_type av_type,
@@ -198,12 +329,14 @@ ssize_t fi_opx_write(struct fid_ep *ep, const void *buf, size_t len, void *desc,
 		fprintf(stderr, "%s:%s():%d\n", __FILE__, __func__, __LINE__);
 		abort();
 	}
-	const union fi_opx_addr opx_dst_addr = { .fi = (av_type == FI_AV_TABLE) ?
-							       opx_ep->tx->av_addr[dst_addr].fi :
-							       dst_addr };
 
 	assert(dst_addr != FI_ADDR_UNSPEC);
+	assert((FI_AV_TABLE == opx_ep->av_type) || (FI_AV_MAP == opx_ep->av_type));
+	const union fi_opx_addr opx_dst_addr = FI_OPX_EP_AV_ADDR(av_type,opx_ep,dst_addr);
+
 	struct fi_opx_completion_counter *cc = ofi_buf_alloc(opx_ep->rma_counter_pool);
+	cc->next = NULL;
+	cc->initial_byte_count = len;
 	cc->byte_counter = len;
 	cc->cntr = opx_ep->write_cntr;
 	cc->cq = (((opx_ep->tx->op_flags & FI_COMPLETION) == FI_COMPLETION) || ((opx_ep->tx->op_flags & FI_DELIVERY_COMPLETE)  == FI_DELIVERY_COMPLETE)) ? opx_ep->rx->cq : NULL;
@@ -235,7 +368,7 @@ inline ssize_t fi_opx_write_generic(struct fid_ep *ep, const void *buf, size_t l
 	return rc;
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_writev_internal(struct fid_ep *ep, const struct iovec *iov, void **desc,
 			       size_t count, fi_addr_t dst_addr, uint64_t addr_offset,
 			       uint64_t key, void *context, int lock_required,
@@ -258,16 +391,17 @@ ssize_t fi_opx_writev_internal(struct fid_ep *ep, const struct iovec *iov, void 
 	}
 
 	assert(dst_addr != FI_ADDR_UNSPEC);
-	const union fi_opx_addr opx_dst_addr = { .fi = (av_type == FI_AV_TABLE) ?
-							       opx_ep->tx->av_addr[dst_addr].fi :
-							       dst_addr };
+	assert((FI_AV_TABLE == opx_ep->av_type) || (FI_AV_MAP == opx_ep->av_type));
+	const union fi_opx_addr opx_dst_addr = FI_OPX_EP_AV_ADDR(av_type,opx_ep,dst_addr);
 
 	struct fi_opx_completion_counter *cc = ofi_buf_alloc(opx_ep->rma_counter_pool);
 	size_t index;
+	cc->next = NULL;
 	cc->byte_counter = 0;
 	for (index = 0; index < count; ++index) {
 		cc->byte_counter += iov[index].iov_len;
 	}
+	cc->initial_byte_count = cc->byte_counter;
 	cc->cntr = opx_ep->write_cntr;
 	cc->cq = (((opx_ep->tx->op_flags & FI_COMPLETION) == FI_COMPLETION) || ((opx_ep->tx->op_flags & FI_DELIVERY_COMPLETE)  == FI_DELIVERY_COMPLETE)) ? opx_ep->rx->cq : NULL;
 	cc->context = context;
@@ -304,7 +438,25 @@ inline ssize_t fi_opx_writev_generic(struct fid_ep *ep, const struct iovec *iov,
 	return rc;
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
+void fi_opx_get_daos_av_addr_rank(struct fi_opx_ep *opx_ep,
+	const union fi_opx_addr dst_addr)
+{
+	if (opx_ep->daos_info.av_rank_hashmap) {
+		struct fi_opx_daos_av_rank *cur_av_rank = NULL;
+		struct fi_opx_daos_av_rank *tmp_av_rank = NULL;
+
+		HASH_ITER(hh, opx_ep->daos_info.av_rank_hashmap, cur_av_rank, tmp_av_rank) {
+			if (cur_av_rank) {
+				opx_ep->daos_info.rank = cur_av_rank->key.rank;
+				opx_ep->daos_info.rank_inst = cur_av_rank->key.rank_inst;
+				break;
+			}
+		}
+	}
+}
+
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_writemsg_internal(struct fid_ep *ep, const struct fi_msg_rma *msg,
 			         uint64_t flags, int lock_required,
 			         const enum fi_av_type av_type, const uint64_t caps,
@@ -326,17 +478,18 @@ ssize_t fi_opx_writemsg_internal(struct fid_ep *ep, const struct fi_msg_rma *msg
 	}
 
 	assert(msg->addr != FI_ADDR_UNSPEC);
-	/* constant compile-time expression */
-	const union fi_opx_addr opx_dst_addr = { .fi = (av_type == FI_AV_TABLE) ?
-							       opx_ep->tx->av_addr[msg->addr].fi :
-							       msg->addr };
+	assert((FI_AV_TABLE == opx_ep->av_type) || (FI_AV_MAP == opx_ep->av_type));
+	const union fi_opx_addr opx_dst_addr = FI_OPX_EP_AV_ADDR(av_type,opx_ep,msg->addr);
+	fi_opx_get_daos_av_addr_rank(opx_ep, opx_dst_addr);
 
 	struct fi_opx_completion_counter *cc = ofi_buf_alloc(opx_ep->rma_counter_pool);
 	size_t index;
+	cc->next = NULL;
 	cc->byte_counter = 0;
 	for(index=0; index < msg->iov_count; index++) {
 		cc->byte_counter += msg->msg_iov[index].iov_len;
 	}
+	cc->initial_byte_count = cc->byte_counter;
 
 	cc->cntr = opx_ep->write_cntr;
 	cc->cq = ((flags & FI_COMPLETION) == FI_COMPLETION) ? opx_ep->rx->cq : NULL;
@@ -400,7 +553,7 @@ inline ssize_t fi_opx_writemsg_generic(struct fid_ep *ep, const struct fi_msg_rm
 	return rc;
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_read_internal(struct fid_ep *ep, void *buf, size_t len, void *desc,
 			     fi_addr_t src_addr, uint64_t addr_offset, uint64_t key,
 			     void *context, int lock_required, const enum fi_av_type av_type,
@@ -424,13 +577,16 @@ ssize_t fi_opx_read_internal(struct fid_ep *ep, void *buf, size_t len, void *des
 	iov.iov_base = buf;
 	iov.iov_len = len;
 
+
 	assert(src_addr != FI_ADDR_UNSPEC);
-	const union fi_opx_addr opx_addr = { .fi = (av_type == FI_AV_TABLE) ?
-							   opx_ep->tx->av_addr[src_addr].fi :
-							   src_addr };
+	assert((FI_AV_TABLE == opx_ep->av_type) || (FI_AV_MAP == opx_ep->av_type));
+	const union fi_opx_addr opx_addr = FI_OPX_EP_AV_ADDR(av_type,opx_ep,src_addr);
+	fi_opx_get_daos_av_addr_rank(opx_ep, opx_addr);
 
 	struct fi_opx_completion_counter *cc = ofi_buf_alloc(opx_ep->rma_counter_pool);
+	cc->next = NULL;
 	cc->byte_counter = len;
+	cc->initial_byte_count = len;
 	cc->cntr = opx_ep->read_cntr;
 	cc->cq = (((opx_ep->tx->op_flags & FI_COMPLETION) == FI_COMPLETION) || ((opx_ep->tx->op_flags & FI_DELIVERY_COMPLETE)  == FI_DELIVERY_COMPLETE)) ? opx_ep->rx->cq : NULL;
 	cc->context = context;
@@ -440,8 +596,10 @@ ssize_t fi_opx_read_internal(struct fid_ep *ep, void *buf, size_t len, void *des
 	cc->hit_zero = fi_opx_hit_zero;
 
 	fi_opx_readv_internal(opx_ep, &iov, 1, opx_addr, &addr_offset, &key,
-			      (union fi_opx_context *)context, opx_ep->tx->op_flags, opx_ep->rx->cq,
-						  opx_ep->read_cntr, cc, FI_VOID, FI_NOOP, FI_OPX_HFI_DPUT_OPCODE_GET, lock_required,
+			      (union fi_opx_context *)context,
+			      opx_ep->tx->op_flags, opx_ep->rx->cq,
+			      opx_ep->read_cntr, cc, FI_VOID, FI_NOOP,
+			      FI_OPX_HFI_DPUT_OPCODE_GET, lock_required,
 			      caps, reliability);
 
 	return 0;
@@ -461,7 +619,7 @@ inline ssize_t fi_opx_read_generic(struct fid_ep *ep, void *buf, size_t len, voi
 	return rc;
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_readv(struct fid_ep *ep, const struct iovec *iov, void **desc,
 		     size_t count, fi_addr_t src_addr, uint64_t addr_offset,
 		     uint64_t key, void *context, int lock_required,
@@ -483,9 +641,8 @@ ssize_t fi_opx_readv(struct fid_ep *ep, const struct iovec *iov, void **desc,
 	}
 
 	assert(src_addr != FI_ADDR_UNSPEC);
-	const union fi_opx_addr opx_addr = { .fi = (av_type == FI_AV_TABLE) ?
-							   opx_ep->tx->av_addr[src_addr].fi :
-							   src_addr };
+	assert((FI_AV_TABLE == opx_ep->av_type) || (FI_AV_MAP == opx_ep->av_type));
+	const union fi_opx_addr opx_addr = FI_OPX_EP_AV_ADDR(av_type,opx_ep,src_addr);
 
 	union fi_opx_context *opx_context = (union fi_opx_context *)context;
 	const uint64_t tx_op_flags = opx_ep->tx->op_flags;
@@ -496,10 +653,12 @@ ssize_t fi_opx_readv(struct fid_ep *ep, const struct iovec *iov, void **desc,
 
 	struct fi_opx_completion_counter *cc = ofi_buf_alloc(opx_ep->rma_counter_pool);
 	size_t index;
+	cc->next = NULL;
 	cc->byte_counter = 0;
 	for(index=0; index < count; index++) {
 		cc->byte_counter += iov[index].iov_len;
 	}
+	cc->initial_byte_count = cc->byte_counter;
 	cc->cntr = opx_ep->read_cntr;
 	cc->cq = (((opx_ep->tx->op_flags & FI_COMPLETION) == FI_COMPLETION) || ((opx_ep->tx->op_flags & FI_DELIVERY_COMPLETE)  == FI_DELIVERY_COMPLETE)) ? opx_ep->rx->cq : NULL;
 	cc->context = context;
@@ -539,7 +698,7 @@ inline ssize_t fi_opx_readv_generic(struct fid_ep *ep, const struct iovec *iov, 
 	return rc;
 }
 
-__OPX_FORCE_INLINE_AND_FLATTEN__
+__OPX_FORCE_INLINE__
 ssize_t fi_opx_readmsg_internal(struct fid_ep *ep, const struct fi_msg_rma *msg,
 			        uint64_t flags, int lock_required,
 			        const enum fi_av_type av_type, const uint64_t caps,
@@ -567,9 +726,10 @@ ssize_t fi_opx_readmsg_internal(struct fid_ep *ep, const struct fi_msg_rma *msg,
 	}
 
 	union fi_opx_context *opx_context = (union fi_opx_context *)msg->context;
-	const union fi_opx_addr opx_src_addr = { .fi = (av_type == FI_AV_TABLE) ?
-							       opx_ep->tx->av_addr[msg->addr].fi :
-							       msg->addr };
+
+	assert(msg->addr != FI_ADDR_UNSPEC);
+	assert((FI_AV_TABLE == opx_ep->av_type) || (FI_AV_MAP == opx_ep->av_type));
+	const union fi_opx_addr opx_src_addr = FI_OPX_EP_AV_ADDR(av_type,opx_ep,msg->addr);
 
 	/* for fi_read*(), the 'src' is the remote data */
 	size_t src_iov_index = 0;
@@ -596,6 +756,7 @@ ssize_t fi_opx_readmsg_internal(struct fid_ep *ep, const struct fi_msg_rma *msg,
 	for(index=0; index < msg->iov_count; index++) {
 		cc->byte_counter += msg->msg_iov[index].iov_len;
 	}
+	cc->initial_byte_count = cc->byte_counter;
 #ifndef NDEBUG
 	size_t totsize = 0;
 	size_t totsize_issued = 0;
@@ -721,7 +882,7 @@ static inline ssize_t fi_opx_rma_read(struct fid_ep *ep, void *buf, size_t len, 
 				      void *context)
 {
 	struct fi_opx_ep *opx_ep = container_of(ep, struct fi_opx_ep, ep_fid);
-	const int lock_required = fi_opx_threading_lock_required(opx_ep->threading);
+	const int lock_required = fi_opx_threading_lock_required(opx_ep->threading, fi_opx_global.progress);
 	const uint64_t caps = opx_ep->tx->caps & (FI_LOCAL_COMM | FI_REMOTE_COMM);
 
 	fi_opx_lock_if_required(&opx_ep->lock, lock_required);
@@ -735,7 +896,7 @@ static inline ssize_t fi_opx_rma_readmsg(struct fid_ep *ep, const struct fi_msg_
 					 uint64_t flags)
 {
 	struct fi_opx_ep *opx_ep = container_of(ep, struct fi_opx_ep, ep_fid);
-	const int lock_required = fi_opx_threading_lock_required(opx_ep->threading);
+	const int lock_required = fi_opx_threading_lock_required(opx_ep->threading, fi_opx_global.progress);
 	const uint64_t caps = opx_ep->tx->caps & (FI_LOCAL_COMM | FI_REMOTE_COMM);
 
 	fi_opx_lock_if_required(&opx_ep->lock, lock_required);
@@ -749,7 +910,7 @@ static inline ssize_t fi_opx_rma_inject_write(struct fid_ep *ep, const void *buf
 					      uint64_t key)
 {
 	struct fi_opx_ep *opx_ep = container_of(ep, struct fi_opx_ep, ep_fid);
-	const int lock_required = fi_opx_threading_lock_required(opx_ep->threading);
+	const int lock_required = fi_opx_threading_lock_required(opx_ep->threading, fi_opx_global.progress);
 	const uint64_t caps = opx_ep->tx->caps & (FI_LOCAL_COMM | FI_REMOTE_COMM);
 
 	fi_opx_lock_if_required(&opx_ep->lock, lock_required);
@@ -764,7 +925,7 @@ static inline ssize_t fi_opx_rma_write(struct fid_ep *ep, const void *buf, size_
 				       void *context)
 {
 	struct fi_opx_ep *opx_ep = container_of(ep, struct fi_opx_ep, ep_fid);
-	const int lock_required = fi_opx_threading_lock_required(opx_ep->threading);
+	const int lock_required = fi_opx_threading_lock_required(opx_ep->threading, fi_opx_global.progress);
 	const uint64_t caps = opx_ep->tx->caps & (FI_LOCAL_COMM | FI_REMOTE_COMM);
 
 	fi_opx_lock_if_required(&opx_ep->lock, lock_required);
@@ -779,7 +940,7 @@ static inline ssize_t fi_opx_rma_writev(struct fid_ep *ep, const struct iovec *i
 					uint64_t key, void *context)
 {
 	struct fi_opx_ep *opx_ep = container_of(ep, struct fi_opx_ep, ep_fid);
-	const int lock_required = fi_opx_threading_lock_required(opx_ep->threading);
+	const int lock_required = fi_opx_threading_lock_required(opx_ep->threading, fi_opx_global.progress);
 	const uint64_t caps = opx_ep->tx->caps & (FI_LOCAL_COMM | FI_REMOTE_COMM);
 
 	fi_opx_lock_if_required(&opx_ep->lock, lock_required);
@@ -793,7 +954,7 @@ static inline ssize_t fi_opx_rma_writemsg(struct fid_ep *ep, const struct fi_msg
 					  uint64_t flags)
 {
 	struct fi_opx_ep *opx_ep = container_of(ep, struct fi_opx_ep, ep_fid);
-	const int lock_required = fi_opx_threading_lock_required(opx_ep->threading);
+	const int lock_required = fi_opx_threading_lock_required(opx_ep->threading, fi_opx_global.progress);
 	const uint64_t caps = opx_ep->tx->caps & (FI_LOCAL_COMM | FI_REMOTE_COMM);
 
 	fi_opx_lock_if_required(&opx_ep->lock, lock_required);
@@ -880,7 +1041,7 @@ int fi_opx_enable_rma_ops(struct fid_ep *ep)
 		goto err;
 	}
 
-	const int lock_required = fi_opx_threading_lock_required(threading);
+	const int lock_required = fi_opx_threading_lock_required(threading, fi_opx_global.progress);
 	if (!lock_required) {
 		opx_ep->ep_fid.rma = &FI_OPX_RMA_OPS_STRUCT_NAME(FI_OPX_LOCK_NOT_REQUIRED,
 								OPX_AV, 0x0018000000000000ull,

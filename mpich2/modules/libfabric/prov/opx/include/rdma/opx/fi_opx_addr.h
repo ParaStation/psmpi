@@ -84,6 +84,12 @@ union fi_opx_addr {
 	} __attribute__((__packed__));
 } __attribute__((__packed__));
 
+struct fi_opx_extended_addr {
+	union fi_opx_addr	addr;
+	uint32_t			rank;
+	uint32_t			rank_inst;
+} __attribute__((__packed__));
+
 extern union fi_opx_addr opx_default_addr;
 
 static inline void

@@ -59,6 +59,7 @@
 enum ofi_hook_class {
 	HOOK_NOOP,
 	HOOK_PERF,
+	HOOK_TRACE,
 	HOOK_DEBUG,
 	HOOK_HMEM,
 	HOOK_DMABUF_PEER_MEM,
@@ -87,8 +88,8 @@ struct fid_wait *hook_to_hwait(const struct fid_wait *wait);
  * TODO
  * comment from GitHub PR #5052:
  * "another option would be to store the ini/fini calls in a separate structure
- * that we reference from struct fi_prov_context. We could even extend the
- * definition of fi_prov_context with a union that is accessed based on the
+ * that we reference from struct ofi_prov_context. We could even extend the
+ * definition of ofi_prov_context with a union that is accessed based on the
  * prov_type. That might work better if we want to support external hooks,
  * without the external hook provider needing to implement everything"
  */
@@ -163,7 +164,7 @@ struct hook_domain {
 	struct fid_domain *hdomain;
 	struct hook_fabric *fabric;
 	struct ofi_ops_flow_ctrl *base_ops_flow_ctrl;
-	ssize_t (*base_credit_handler)(struct fid_ep *ep_fid, size_t credits);
+	ssize_t (*base_credit_handler)(struct fid_ep *ep_fid, uint64_t credits);
 };
 
 int hook_domain_init(struct fid_fabric *fabric, struct fi_info *info,

@@ -1,11 +1,11 @@
 dnl
 dnl Copyright (c) 2016-2017 Cisco Systems, Inc.  All rights reserved.
-dnl Copyright (c) 2018-2021 Intel Corporation, Inc.  All rights reserved.
+dnl Copyright (c) 2018-2023 Intel Corporation, Inc.  All rights reserved.
 dnl
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.57)
-AC_INIT([fabtests], [1.15.2], [ofiwg@lists.openfabrics.org])
+AC_INIT([fabtests], [1.18.0], [ofiwg@lists.openfabrics.org])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
 AC_CONFIG_HEADERS(config.h)
@@ -102,6 +102,9 @@ AC_DEFINE_UNQUOTED(HAVE_CLOCK_GETTIME, [$have_clock_gettime],
 		   [Define to 1 if clock_gettime is available.])
 AM_CONDITIONAL(HAVE_CLOCK_GETTIME, [test $have_clock_gettime -eq 1])
 
+AC_CHECK_LIB(pthread, pthread_create, [],
+    AC_MSG_ERROR([pthread_create() not found.  fabtests requires libpthread.]))
+
 AC_ARG_WITH([libfabric],
             AS_HELP_STRING([--with-libfabric=DIR], [Provide a path to the libfabric installation directory,
                                                     or defaults to the library search path]),
@@ -180,6 +183,23 @@ AS_IF([test x"$with_ze" != x"no" && test -n "$with_ze" && test "$have_ze" = "0" 
 	[])
 
 AC_DEFINE_UNQUOTED([HAVE_LIBZE], [$have_ze], [ZE support])
+
+dnl Checks for presence of ZE library. Needed for building dmabuf rdma component tests.
+have_ze_devel=0
+AS_IF([test "$have_ze" = "1"],
+      [AC_CHECK_LIB(ze_loader, zeInit,
+                    [have_ze_devel=1
+                     LIBS="-lze_loader $LIBS"])],
+      [])
+AM_CONDITIONAL([HAVE_LIBZE_DEVEL], [test $have_ze_devel -eq 1])
+
+dnl Checks for presence of Verbs. Needed for building dmabuf rdma component tests.
+have_verbs_devel=0
+AC_CHECK_HEADER([infiniband/verbs.h],
+		[AC_CHECK_LIB(ibverbs, ibv_reg_dmabuf_mr,
+                          [have_verbs_devel=1
+                           LIBS="-libverbs $LIBS"])])
+AM_CONDITIONAL([HAVE_VERBS_DEVEL], [test $have_verbs_devel -eq 1])
 
 AC_MSG_CHECKING([for fi_trywait support])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <rdma/fi_eq.h>]],

@@ -87,8 +87,10 @@ int main(int argc, char **argv)
 	if (!hints)
 		return EXIT_FAILURE;
 
-	hints->caps |= FI_LOCAL_COMM;
+	opts.src_addr = "127.0.0.1";
+	hints->caps = FI_LOCAL_COMM | FI_MSG | FI_TAGGED;
 	hints->ep_attr->type = FI_EP_RDM;
+	hints->mode = FI_CONTEXT;
 
 	while ((op = getopt(argc, argv, "h" INFO_OPTS)) != -1) {
 		switch (op) {
@@ -102,10 +104,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	hints->caps = FI_MSG;
-	hints->mode = FI_CONTEXT;
 	hints->domain_attr->mr_mode = opts.mr_mode;
-
 	ret = run();
 
 	ft_free_res();

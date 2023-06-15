@@ -109,7 +109,7 @@ static int run_server(void)
 
 static int run_client(int client_id, bool address_reuse)
 {
-	static char name[256];
+	static char name[1024];
 	static size_t size = sizeof(name);
 	int ret;
 
@@ -221,13 +221,17 @@ int main(int argc, char **argv)
 
 	if (opts.dst_addr) {
 		for (i = 0; i < opts.num_connections; i++) {
-			save = fi_dupinfo(hints);
 			printf("Starting client: %d\n", i);
 			ret = run_client(i, address_reuse);
 			if (ret) {
 				FT_PRINTERR("run_client", -ret);
 				goto out;
 			}
+			// Reuse hints for each iteration without using fi_dupinfo
+			// because that would complicate memory ownership between the
+			// application and the library, which Windows doesn't like.
+			save = hints;
+			hints = NULL;
 			ft_free_res();
 			hints = save;
 		}

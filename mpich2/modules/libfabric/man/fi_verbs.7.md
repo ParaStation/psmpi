@@ -152,7 +152,7 @@ The support for fork in the provider has the following limitations:
 
 ### XRC Transport
 The XRC transport is intended to be used when layered with the RXM provider and
-requires the use of shared receive contexts. See [`fi_rxm`(7)](fi_rxm.7.thml).
+requires the use of shared receive contexts. See [`fi_rxm`(7)](fi_rxm.7.html).
 To enable XRC, the following environment variables must usually be set:
 FI_VERBS_PREFER_XRC and FI_OFI_RXM_USE_SRX.
 
@@ -196,6 +196,12 @@ The verbs provider checks for the following environment variables.
 
 *FI_VERBS_DEVICE_NAME*
 : Specify a specific verbs device to use by name
+
+*FI_VERBS_USE_DMABUF*
+: If supported, try to use ibv_reg_dmabuf_mr first to register dmabuf-based
+  buffers. Set it to "no" to always use ibv_reg_mr which can be helpful for
+  testing the functionality of the dmabuf_peer_mem hooking provider and the
+  corresponding kernel driver. (default: yes)
 
 ### Variables specific to MSG endpoints
 

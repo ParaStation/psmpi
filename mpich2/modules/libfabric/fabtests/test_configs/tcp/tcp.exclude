@@ -1,21 +1,40 @@
 # Regex patterns of tests to exclude in runfabtests.sh
 
-^fi_dgram
--e dgram
-
-rdm_rma_event
-rdm_rma_trigger
-shared_ctx
-scalable_ep
-shared_av
-multi_mr
+# atomic ops not supported
 atomic
-inj_complete -e msg
-unexpected_msg -e msg
-multi_recv
+
+# dgram endpoints not supported
+dgram
+
+multi_ep
+
+# tests use counters, but counters not supported
+multi_mr
+rma_event
+
+# scalable endpoints not supported
+scalable_ep
+
+# shared av not supported
+shared_av
+
+# triggered ops not supported
+trigger
+
+# tests assume an unexpected msg queue
+# provider does not queue unexpected msgs
+unexpected_msg
+
+
+# prefix mode not supported
 -k
 
-# TODO. Following fails with macOS. will fix them later
-cq_data -e rdm
-rdm_tagged_peek
-unexpected_msg -e rdm
+# shared context tests need to be evaluated for support
+# some subset may be supported, but do not currently work
+shared_ctx
+
+# multi_recv not supported by standard msg endpoints
+multi_recv -e msg
+
+# collective offload not supported
+fi_multinode_coll

@@ -375,7 +375,7 @@ ips_ipsaddr_set_req_params(struct ips_proto *proto,
 
 			// match rails by address format and full subnet
 			// and associate with matching local ep
-			if (psmi_subnets_match(ep->subnet, rail_subnet)) {
+			if (psm3_subnets_match(ep->subnet, rail_subnet)) {
 				/* gid (subnet) match, create the epaddr */
 				epaddr =
 					ips_alloc_epaddr(&((struct ptl_ips *)(ep->ptl_ips.ptl))->proto, 0,
@@ -440,7 +440,7 @@ ips_proto_send_ctrl_message_request(struct ips_proto *proto,
 		if (err == PSM2_OK) {
 			break;
 		}
-		if ((err = psmi_err_only(psm3_poll_internal(proto->ep, 1)))) {
+		if ((err = psmi_err_only(psm3_poll_internal(proto->ep, 1, 1)))) {
 			break;
 		}
 	} while (get_cycles() < timeout);
@@ -669,7 +669,7 @@ ips_alloc_epaddr(struct ips_proto *proto, int master, psm2_epid_t epid,
 		epaddr = (psm2_epaddr_t) ipsaddr;
 
 		_HFI_CONNDBG("ips_alloc_epaddr %p for EPID= %s %s\n",
-				epaddr, psm3_epid_fmt(epid, 0), hostname?hostname:"unknown");
+				epaddr, psm3_epid_fmt_internal(epid, 0), hostname?hostname:"unknown");
 		ipsaddr->msgctl = msgctl;
 
 		/* initialize items in ips_msgctl_t */
@@ -767,7 +767,7 @@ void ips_free_epaddr(psm2_epaddr_t epaddr, struct ips_proto *proto)
 	ips_flow_fini(ipsaddr, proto);
 
 	_HFI_CONNDBG("epaddr=%p connidx_incoming=%d epid=%s\n",
-			epaddr, ipsaddr->connidx_incoming, psm3_epid_fmt(epaddr->epid, 0));
+			epaddr, ipsaddr->connidx_incoming, psm3_epid_fmt_internal(epaddr->epid, 0));
 	IPS_MCTXT_REMOVE(ipsaddr);
 	psmi_hal_ips_ipsaddr_free(ipsaddr, proto);
 	psm3_epid_remove(epaddr->proto->ep, epaddr->epid);
@@ -798,7 +798,7 @@ psm3_ips_proto_process_connect(struct ips_proto *proto, uint8_t opcode,
 		// we can't parse header, so we can't get an epid
 		// we are stuck, must discard packet.  error already output
 		_HFI_CONNDBG("Conn Pkt Rcv'd: op=0x%02x from:  Unknown to: %s: Unable to process, mismatched connect_verno\n",
-			opcode, psm3_epid_fmt(proto->ep->epid, 0));
+			opcode, psm3_epid_fmt_internal(proto->ep->epid, 0));
 		return PSM2_OK;
 	}
 
@@ -806,7 +806,7 @@ psm3_ips_proto_process_connect(struct ips_proto *proto, uint8_t opcode,
 	ipsaddr = epaddr ? (ips_epaddr_t *) epaddr : NULL;
 
 	_HFI_CONNDBG("Conn Pkt Rcv'd: op=0x%02x from: %s to: %s\n",
-			opcode, psm3_epid_fmt(epid, 0), psm3_epid_fmt(proto->ep->epid, 1));
+			opcode, psm3_epid_fmt_internal(epid, 0), psm3_epid_fmt_internal(proto->ep->epid, 1));
 	switch (opcode) {
 	case OPCODE_CONNECT_REQUEST:
 		PSM2_LOG_MSG("Got a connect from %s", psm3_epaddr_get_name(epid, 0));
@@ -824,7 +824,7 @@ psm3_ips_proto_process_connect(struct ips_proto *proto, uint8_t opcode,
 			if (!ipsaddr || req->runid_key != proto->runid_key) {
 				_HFI_PRDBG("Unknown connectrep (ipsaddr=%p, %d, %d) from epid %s: %s\n",
 					     ipsaddr, req->runid_key, proto->runid_key,
-					     psm3_epid_fmt(epid, 0), psm3_epid_fmt_addr(epid, 1));
+					     psm3_epid_fmt_internal(epid, 0), psm3_epid_fmt_addr(epid, 1));
 			} else if (ipsaddr->cstate_outgoing != CSTATE_OUTGOING_WAITING) {
 				/* possible dupe */
 				_HFI_CONNDBG("connect dupe, expected %d got %d\n",
@@ -934,7 +934,7 @@ psm3_ips_proto_process_connect(struct ips_proto *proto, uint8_t opcode,
 		proto->epaddr_stats.disconnect_rep_recv++;
 		if (!ipsaddr) {
 			_HFI_CONNDBG("Unknown disconnect reply from epid %s: %s\n",
-				     psm3_epid_fmt(epid, 0), psm3_epid_fmt_addr(epid, 1));
+				     psm3_epid_fmt_internal(epid, 0), psm3_epid_fmt_addr(epid, 1));
 			break;
 		} else if (ipsaddr->cstate_outgoing == CSTATE_OUTGOING_WAITING_DISC) {
 			ipsaddr->cstate_outgoing = CSTATE_OUTGOING_DISCONNECTED;
@@ -963,7 +963,7 @@ ptl_handle_connect_req(struct ips_proto *proto, psm2_epaddr_t epaddr,
 	uint16_t connect_result;
 	int newconnect = 0;
 
-	if (!psm3_epid_cmp(epid, proto->ep->epid)) {
+	if (!psm3_epid_cmp_internal(epid, proto->ep->epid)) {
 		psm3_handle_error(PSMI_EP_NORETURN, PSM2_EPID_NETWORK_ERROR,
 				  "Network connectivity problem: Locally detected duplicate "
 				  "address %s on hosts %s and %s (%s port %u). (Exiting)",
@@ -1078,8 +1078,8 @@ ptl_handle_connect_req(struct ips_proto *proto, psm2_epaddr_t epaddr,
 
 do_reply:
 	_HFI_CONNDBG("Conn Pkt Sent: op=0x%02x from: 0x%s to: 0x%s\n",
-			OPCODE_CONNECT_REPLY, psm3_epid_fmt(proto->ep->epid, 0),
-			psm3_epid_fmt(ipsaddr->epaddr.epid, 1));
+			OPCODE_CONNECT_REPLY, psm3_epid_fmt_internal(proto->ep->epid, 0),
+			psm3_epid_fmt_internal(ipsaddr->epaddr.epid, 1));
 	psmi_assert_always(proto->msgflowid < EP_FLOW_LAST);
 	ips_proto_send_ctrl_message_reply(proto,
 					  &ipsaddr->flows[proto->msgflowid],
@@ -1106,11 +1106,14 @@ psm3_ips_proto_connect(struct ips_proto *proto, int numep,
 	int connect_credits;
 
 	psm3_getenv("PSM3_CONNECT_CREDITS",
-		    "End-point connect request credits.",
-		    PSMI_ENVVAR_LEVEL_HIDDEN, PSMI_ENVVAR_TYPE_UINT,
-		    (union psmi_envvar_val)100, &credits_intval);
-
-	connect_credits = credits_intval.e_uint;
+		    "End-point connect request credits. (<=0 uses default), default is " STRINGIFY(PSM_CONN_CREDITS),
+		    PSMI_ENVVAR_LEVEL_HIDDEN, PSMI_ENVVAR_TYPE_INT,
+		    (union psmi_envvar_val)PSM_CONN_CREDITS, &credits_intval);
+	if (credits_intval.e_int > 0) {
+		connect_credits = credits_intval.e_int;
+	} else {
+		connect_credits = PSM_CONN_CREDITS;
+	}
 
 	PSMI_LOCK_ASSERT(proto->mq->progress_lock);
 
@@ -1138,7 +1141,7 @@ psm3_ips_proto_connect(struct ips_proto *proto, int numep,
 	for (i = 0; i < numep; i++) {
 		_HFI_CONNDBG("epid-connect=%s connect to epid %s: %s\n",
 				  array_of_epid_mask[i] ? "YES" : " NO",
-				  psm3_epid_fmt(array_of_epid[i], 0),
+				  psm3_epid_fmt_internal(array_of_epid[i], 0),
 				  psm3_epid_fmt_addr(array_of_epid[i], 1));
 		if (array_of_epid_mask[i]) {
 			array_of_errors[i] = PSM2_EPID_UNKNOWN;
@@ -1153,20 +1156,20 @@ psm3_ips_proto_connect(struct ips_proto *proto, int numep,
 
 		/* Can't send to epid on same NIC (eg. nid) if not loopback */
 		/* never attempt to connect to self even if loopback */
-		if (((0 == psmi_nid_cmp(psm3_epid_nid(proto->ep->epid),
+		if (((0 == psm3_nid_cmp_internal(psm3_epid_nid(proto->ep->epid),
 					psm3_epid_nid(array_of_epid[i])))
 				&& !(proto->flags & IPS_PROTO_FLAG_LOOPBACK))
-		    || !psm3_epid_cmp(proto->ep->epid, array_of_epid[i])) {
+		    || !psm3_epid_cmp_internal(proto->ep->epid, array_of_epid[i])) {
 			array_of_errors[i] = PSM2_EPID_UNREACHABLE;
 			continue;
 		}
 
-		if (! psmi_subnets_match_epid(proto->ep->subnet, array_of_epid[i])) {
+		if (! psm3_subnets_match_epid(proto->ep->subnet, array_of_epid[i])) {
 			psm3_handle_error(PSMI_EP_NORETURN, PSM2_INTERNAL_ERR,
 				  " Trying to connect from %s port %u (subnet %s) to a node (%s) on a"
 				  " different subnet %s\n",
 				  proto->ep->dev_name, proto->ep->portnum,
-				  psmi_subnet_epid_subset_fmt(proto->ep->subnet, 0),
+				  psm3_subnet_epid_subset_fmt(proto->ep->subnet, 0),
 				  psm3_epid_fmt_addr(array_of_epid[i], 1),
 				  psm3_epid_fmt_subnet(array_of_epid[i], 2));
 		}
@@ -1332,7 +1335,7 @@ psm3_ips_proto_connect(struct ips_proto *proto, int numep,
 				}
 				if (ipsaddr->cstate_outgoing == CSTATE_ESTABLISHED) {
 					// just waiting for rv to be connected
-					if ((err = psmi_err_only(psm3_poll_internal(proto->ep, 1))))
+					if ((err = psmi_err_only(psm3_poll_internal(proto->ep, 1, 1))))
 						goto fail;
 					break;	// let outer loop start another REQ
 				}
@@ -1345,12 +1348,12 @@ psm3_ips_proto_connect(struct ips_proto *proto, int numep,
 					if (ipsaddr->credit) {
 						_HFI_CONNDBG("Conn Pkt Sent: op=0x%02x from: 0x%s to: 0x%s\n",
 								OPCODE_CONNECT_REQUEST,
-								psm3_epid_fmt(proto->ep->epid, 0),
-								psm3_epid_fmt(ipsaddr->epaddr.epid, 1));
+								psm3_epid_fmt_internal(proto->ep->epid, 0),
+								psm3_epid_fmt_internal(ipsaddr->epaddr.epid, 1));
 						PSM2_LOG_MSG("Conn Pkt Sent: op=0x%02x from: 0x%s to: 0x%s",
 								OPCODE_CONNECT_REQUEST,
-								psm3_epid_fmt(proto->ep->epid, 0),
-								psm3_epid_fmt(ipsaddr->epaddr.epid, 1));
+								psm3_epid_fmt_internal(proto->ep->epid, 0),
+								psm3_epid_fmt_internal(ipsaddr->epaddr.epid, 1));
 					    psmi_assert_always(proto->msgflowid < EP_FLOW_LAST);
 					    if (
 					    ips_proto_send_ctrl_message_request
@@ -1378,7 +1381,7 @@ psm3_ips_proto_connect(struct ips_proto *proto, int numep,
 					}
 				}
 
-				if ((err = psmi_err_only(psm3_poll_internal(proto->ep, 1))))
+				if ((err = psmi_err_only(psm3_poll_internal(proto->ep, 1, 1))))
 					goto fail;
 
 				if (ipsaddr->cstate_outgoing == CSTATE_ESTABLISHED) {
@@ -1533,7 +1536,7 @@ psm3_ips_proto_disconnect(struct ips_proto *proto, int force, int numep,
 					   CSTATE_ESTABLISHED);
 		}
 		_HFI_CONNDBG("disconnecting %p force=%d EPID= %s %s\n",
-					ipsaddr, force, psm3_epid_fmt(((psm2_epaddr_t)ipsaddr)->epid, 0),
+					ipsaddr, force, psm3_epid_fmt_internal(((psm2_epaddr_t)ipsaddr)->epid, 0),
 					psm3_epaddr_get_hostname(((psm2_epaddr_t)ipsaddr)->epid, 1));
 		array_of_errors[i] = PSM2_EPID_UNKNOWN;
 		numep_todisc++;
@@ -1628,7 +1631,7 @@ psm3_ips_proto_disconnect(struct ips_proto *proto, int force, int numep,
 				break;
 
 			if ((err =
-			     psmi_err_only(psm3_poll_internal(proto->ep, 1))))
+			     psmi_err_only(psm3_poll_internal(proto->ep, 1, 1))))
 				goto fail;
 
 			if (warning_secs && get_cycles() > t_warning) {

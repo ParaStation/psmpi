@@ -68,51 +68,259 @@
 #include "ips_proto_internal.h"
 #include "ips_proto_params.h"
 
-/*
- * Check and process events
- * return value:
- *  PSM2_OK: normal events processing;
- *  PSM2_OK_NO_PROGRESS: no event is processed;
- */
-static inline psm2_error_t
-psm3_sockets_spio_process_events(const struct ptl *ptl_gen)
-{
-	// TODD - TBD - check link status events for UD/UDP
-	return PSM2_OK;
-}
-
 /*---------------------------------------------------------------------------*/
 /* TCP specific code */
 
-static __inline__ ssize_t
-psm3_sockets_tcp_aggressive_send(int fd, uint8_t *buf, size_t len)
-{
-	size_t remainder = len;
-	uint8_t *rbuf = buf;
-	ssize_t ret;
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+// set iov for remaining GPU payload data. It copies device memory to sockets_ep.sbuf
+// in word boundary and then set iov to use the sockets_ep.sbuf with proper offset.
+#define PAYLOAD_IOV(iov, payload, payload_len, remaining, buf, is_gpu_payload)                      \
+	if (is_gpu_payload) {                                                                       \
+		uint8_t adjust = remaining & 0x3;                                                    \
+		if (adjust) {                                                                        \
+			adjust = 4 - adjust;                                                         \
+			_HFI_VDBG("Copy GPU remaining device memory: remaining=%d adjustment=%d\n",  \
+				remaining, adjust);                                                  \
+		}                                                                                    \
+		PSM3_GPU_MEMCPY_DTOH(buf,                                                            \
+			(uint8_t*)payload + payload_len - remaining - adjust,                        \
+			remaining + adjust);                                                         \
+		iov.iov_base = buf + adjust;                                                         \
+		buf += adjust + remaining;                                                           \
+		iov.iov_len = remaining;                                                             \
+	} else {                                                                                     \
+		iov.iov_base = (uint8_t*)payload + payload_len - remaining;                          \
+		iov.iov_len = remaining;                                                             \
+	}
+#else
+// set iov for remaining payload data
+#define PAYLOAD_IOV(iov, payload, payload_len, remaining) do {                     \
+		iov.iov_base = (uint8_t*)payload + payload_len - remaining;        \
+		iov.iov_len = remaining;                                           \
+	} while(0)
+#endif
 
-	while (remainder) {
-		ret = send(fd, rbuf, remainder, MSG_DONTWAIT);
-		if (ret > 0) {
-			remainder -= ret;
-			rbuf += ret;
-		} else if (remainder < len) {
-			return len - remainder;
-		} else {
-			return ret;
+// prepare msghdr for a message
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+#define MSG_IOV(msg, header, payload, payload_len, remaining, buf, is_gpu_payload)                  \
+	if (likely(remaining > payload_len)) {                                                       \
+		msg.msg_iov[msg.msg_iovlen].iov_len = remaining - payload_len;                       \
+		msg.msg_iov[msg.msg_iovlen].iov_base =                                               \
+			(uint8_t*)header + sizeof(*header) - msg.msg_iov[msg.msg_iovlen].iov_len;    \
+		msg.msg_iovlen += 1;                                                                 \
+		if (likely(payload_len > 0)) {                                                       \
+			PAYLOAD_IOV(msg.msg_iov[msg.msg_iovlen],                                     \
+				payload, payload_len, payload_len,                                   \
+				buf, is_gpu_payload);                                               \
+			msg.msg_iovlen += 1;                                                         \
+		}                                                                                    \
+	} else {                                                                                     \
+		PAYLOAD_IOV(msg.msg_iov[msg.msg_iovlen], payload, payload_len,                       \
+			remaining, buf, is_gpu_payload);                                            \
+		msg.msg_iovlen += 1;                                                                 \
+	}
+#else
+#define MSG_IOV(msg, header, payload, payload_len, remaining)                                        \
+	if (likely(remaining > payload_len)) {                                                       \
+		msg.msg_iov[msg.msg_iovlen].iov_len = remaining - payload_len;                       \
+		msg.msg_iov[msg.msg_iovlen].iov_base =                                               \
+			(uint8_t*)header + sizeof(*header) - msg.msg_iov[msg.msg_iovlen].iov_len;    \
+		msg.msg_iovlen += 1;                                                                 \
+		if (likely(payload_len > 0)) {                                                       \
+			PAYLOAD_IOV(msg.msg_iov[msg.msg_iovlen],                                     \
+				payload, payload_len, payload_len);                                  \
+			msg.msg_iovlen += 1;                                                         \
+		}                                                                                    \
+	} else {                                                                                     \
+		PAYLOAD_IOV(msg.msg_iov[msg.msg_iovlen], payload, payload_len, remaining);           \
+		msg.msg_iovlen += 1;                                                                 \
+	}
+#endif
+
+#ifdef PSM_FI
+static __inline__ void
+psm3_unknown_connection(struct ips_proto *proto, struct ips_flow * flow)
+{
+	int fd;
+	uint8_t size, idx;
+	uint8_t *buf;
+
+	ips_epaddr_t *ipsaddr = flow->ipsaddr;
+	fd = socket(psm3_socket_domain, SOCK_STREAM, 0);
+	if (fd <= 0) {
+		return;
+	}
+	struct linger lg;
+	lg.l_onoff = 1;		/* non-zero value enables linger option in kernel */
+        lg.l_linger = 0;	/* timeout interval in seconds */
+        setsockopt( fd, SOL_SOCKET, SO_LINGER, (void *)&lg, sizeof(lg));
+
+	if (psm3_parse_tcp_src_bind()) {
+		psm3_sockaddr_in_t loc_addr;
+		psm3_build_sockaddr(&loc_addr, 0, proto->ep->gid.hi, proto->ep->gid.lo,
+					proto->ep->sockets_ep.if_index);
+		bind(fd, (struct sockaddr *)&loc_addr, sizeof(loc_addr));
+	}
+
+	if (0 == connect(fd, &ipsaddr->sockets.remote_pri_addr, sizeof(ipsaddr->sockets.remote_pri_addr))) {
+		size = random() % 100;
+		if (size) {
+			buf = psmi_malloc(proto->ep, UNDEFINED, size);
+			if (buf) {
+				if (size < 56) {
+					// intentionally dirty data with one byte initialized
+					idx = (size == 1) ? 0 : psm3_rand((long int) getpid()) % (size - 1);
+					buf[idx] = idx;
+				} else {
+					// simulate the rare case that can pass check
+					memcpy(buf, EXP_HDR, sizeof(EXP_HDR));
+					if (size % 2) {
+						buf[4] = 0xee;
+						buf[5] = 0xee;
+					} else {
+						buf[4] = 0x00;
+						buf[5] = 0x01;
+					}
+				}
+				send(fd, buf, size, 0);
+				psmi_free(buf);
+			}
 		}
 	}
-	return len;
+
+	close(fd);
 }
-static __inline__ bool
-psm3_sockets_ips_msg_hdr_equal(struct ips_message_header* msg1,
-	struct ips_message_header* msg2)
+#endif
+
+static __inline__ psm2_error_t
+psm3_sockets_tcp_connect(struct ips_proto *proto, struct ips_flow * flow)
 {
-	return 0 == memcmp(msg1, msg2, sizeof(*msg1));
+	psm2_error_t err = PSM2_OK;
+	psm3_sockaddr_in_t loc_addr;
+	ips_epaddr_t *ipsaddr = flow->ipsaddr;
+
+	if (ipsaddr->sockets.tcp_fd == -1) {
+		ipsaddr->sockets.tcp_fd = socket(psm3_socket_domain, SOCK_STREAM | SOCK_NONBLOCK, 0);
+		// 0 is a valid fd, but we treat 0 as an uninitialized value, so make
+		// sure we didn't end up with 0 (stdin should have 0)
+		if (ipsaddr->sockets.tcp_fd == 0) {
+			// create a copy of the file descriptor using the unused one
+			ipsaddr->sockets.tcp_fd = dup(ipsaddr->sockets.tcp_fd);
+			close(0);
+		}
+		if (ipsaddr->sockets.tcp_fd == -1) {
+			_HFI_ERROR( "Unable to create TCP tx socket for %s: %s\n", proto->ep->dev_name, strerror(errno));
+			err = PSM2_INTERNAL_ERR;
+			goto fail;
+		}
+
+		if (psm3_tune_tcp_socket("socket", proto->ep, ipsaddr->sockets.tcp_fd)) {
+			_HFI_ERROR("unable to tune socket for connection to %s for %s: %s\n",
+				psm3_sockaddr_fmt((struct sockaddr *)&ipsaddr->sockets.remote_pri_addr, 0),
+				proto->ep->dev_name, strerror(errno));
+			err = PSM2_INTERNAL_ERR;
+			goto fail;
+		}
+		// new socket, reset partial send info just in case we are "reuse" a flow
+		flow->send_remaining = 0;
+		flow->conn_msg_remainder = 0;
+	}
+
+	if (psm3_parse_tcp_src_bind()) {
+		psm3_build_sockaddr(&loc_addr, 0, proto->ep->gid.hi, proto->ep->gid.lo,
+					proto->ep->sockets_ep.if_index);
+		if (-1 == bind(ipsaddr->sockets.tcp_fd, (struct sockaddr *)&loc_addr, sizeof(loc_addr))) {
+			// TBD - should this be fatal and goto fail?
+			if (errno == EADDRINUSE) {
+				// continue and hopefully the issue will be gone
+				err = PSM2_EP_NO_RESOURCES;
+				return err;
+			}
+			_HFI_ERROR("unable bind (fd=%d) to addr %s: %s\n",
+				ipsaddr->sockets.tcp_fd, psm3_sockaddr_fmt((struct sockaddr *)&loc_addr, 0),
+				strerror(errno));
+			err = PSM2_INTERNAL_ERR;
+			goto fail;
+		} else {
+			_HFI_PRDBG("PSM TCP bind (fd=%d) to addr %s\n", ipsaddr->sockets.tcp_fd,
+				psm3_sockaddr_fmt((struct sockaddr *)&loc_addr, 0));
+		}
+	}
+
+	if (-1 == connect(ipsaddr->sockets.tcp_fd, &ipsaddr->sockets.remote_pri_addr, sizeof(ipsaddr->sockets.remote_pri_addr))) {
+		if ( errno == EALREADY || errno == EINPROGRESS || errno == EISCONN) {
+			// connection already established or will be established in nearest future
+			_HFI_PRDBG("PSM TCP connection to %s started for %s, fd=%d errno=%d\n",
+				psm3_sockaddr_fmt((struct sockaddr *)&ipsaddr->sockets.remote_pri_addr, 0),
+				proto->ep->dev_name, ipsaddr->sockets.tcp_fd, errno);
+		} else {
+			_HFI_ERROR("unable to establish connection to %s for %s: %s\n",
+				psm3_sockaddr_fmt((struct sockaddr *)&ipsaddr->sockets.remote_pri_addr, 0),
+				proto->ep->dev_name, strerror(errno));
+			err = PSM2_INTERNAL_ERR;
+			goto fail;
+		}
+	}
+	ipsaddr->sockets.connected = 1;
+
+#ifndef PSM_LOG
+	if_pf (_HFI_VDBG_ON)
+#endif
+	{
+		socklen_t addr_len = sizeof(loc_addr);
+		if ( -1 == getsockname(ipsaddr->sockets.tcp_fd, (struct sockaddr *)&loc_addr, &addr_len)
+			|| addr_len > sizeof(loc_addr)) {
+			_HFI_ERROR("Failed to query TCP socket address for %s: %s\n", proto->ep->dev_name, strerror(errno));
+			goto fail;
+		}
+		_HFI_VDBG("fd=%d Loc Addr:%s\n", ipsaddr->sockets.tcp_fd, psm3_sockaddr_fmt((struct sockaddr *)&loc_addr, 0));
+#ifdef PSM_LOG
+		PSM2_LOG_MSG("fd=%d Loc Addr:%s", ipsaddr->sockets.tcp_fd, psm3_sockaddr_fmt((struct sockaddr *)&loc_addr, 0));
+#endif
+	}
+
+	_HFI_PRDBG("PSM TCP connected to %s fd=%d\n",
+		psm3_sockaddr_fmt((struct sockaddr *)&ipsaddr->sockets.remote_pri_addr, 0), ipsaddr->sockets.tcp_fd);
+	PSM2_LOG_MSG("connected to %s fd=%d",
+		psm3_sockaddr_fmt((struct sockaddr *)&ipsaddr->sockets.remote_pri_addr, 0), ipsaddr->sockets.tcp_fd);
+	return err;
+fail:
+	if (ipsaddr->sockets.tcp_fd > 0) {
+		close(ipsaddr->sockets.tcp_fd);
+		// will re-connect
+		ipsaddr->sockets.tcp_fd = -1;
+		ipsaddr->sockets.connected = 0;
+	}
+	return err;
 }
 
 static __inline__ psm2_error_t
-psm3_sockets_tcp_aux_send(psm2_ep_t ep, struct ips_flow *flow, uint8_t *sbuf, unsigned len)
+psm3_sockets_tcp_sendpacing(struct ips_proto *proto, struct ips_flow *flow)
+{
+	uint32_t used;
+	if (ioctl(flow->ipsaddr->sockets.tcp_fd, SIOCOUTQ, &used) == 0) {
+		if (flow->used_snd_buff && used > proto->ep->sockets_ep.snd_pace_thresh
+			&& used >= flow->used_snd_buff) {
+			_HFI_VDBG("Pre=%d Cur=%d Delta=%d fd=%d\n",
+					flow->used_snd_buff, used,
+					used - flow->used_snd_buff,
+					flow->ipsaddr->sockets.tcp_fd);
+			return PSMI_TRUE;
+		}
+		flow->used_snd_buff = used;
+	} else {
+		_HFI_DBG("ERR: %s\n", strerror(errno));
+	}
+	return PSMI_FALSE;
+}
+
+static __inline__ psm2_error_t
+psm3_sockets_tcp_aux_send(psm2_ep_t ep, struct ips_flow *flow,
+	struct ips_message_header *header, uint32_t *payload, uint32_t payload_len
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+	, uint32_t is_gpu_payload
+#endif
+	)
 {
 	psm2_error_t ret = PSM2_OK;
 #ifdef PSM_FI
@@ -124,9 +332,23 @@ psm3_sockets_tcp_aux_send(psm2_ep_t ep, struct ips_flow *flow, uint8_t *sbuf, un
 			return ret;
 	}
 #endif // PSM_FI
-	if_pf (sendto(ep->sockets_ep.udp_tx_fd, sbuf, len, 0,
-		&flow->ipsaddr->sockets.remote_aux_addr,
-		sizeof(flow->ipsaddr->sockets.remote_aux_addr)) == -1) {
+	// receiver expects a whole pkt in one datagram
+	struct msghdr msg = ep->sockets_ep.snd_msg;
+	msg.msg_iov[0].iov_base = (uint8_t*)header;
+	msg.msg_iov[0].iov_len = sizeof(*header);
+	if (payload_len) {
+		PAYLOAD_IOV(msg.msg_iov[1], payload, payload_len, payload_len
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+			, ep->sockets_ep.sbuf, is_gpu_payload
+#endif
+			);
+		msg.msg_iovlen = 2;
+	} else {
+		msg.msg_iovlen = 1;
+	}
+	msg.msg_name = &flow->ipsaddr->sockets.remote_aux_addr;
+	msg.msg_namelen = sizeof(psm3_sockaddr_in_t);
+	if_pf (sendmsg(ep->sockets_ep.udp_tx_fd, &msg, 0) == -1) {
 		PSM2_LOG_MSG("sendto fd=%d ret=-1 errno=%d", ep->sockets_ep.udp_tx_fd, errno);
 		if (errno != EAGAIN && errno != EWOULDBLOCK) {
 			_HFI_ERROR("UDP send failed on %s: %s\n", ep->dev_name, strerror(errno));
@@ -137,9 +359,12 @@ psm3_sockets_tcp_aux_send(psm2_ep_t ep, struct ips_flow *flow, uint8_t *sbuf, un
 		PSM2_LOG_MSG("sendto fd=%d ret=%d", ep->sockets_ep.udp_tx_fd, ret);
 #endif
 	}
+
 	return ret;
 }
 
+//TODO: If we choose to use bulk message send for data messages, we
+// can simplify this function to work for ctr msg only.
 // when called:
 //		scb->ips_lrh has fixed size PSM header including OPA LRH
 //		payload, length is data after header
@@ -152,72 +377,118 @@ psm3_sockets_tcp_spio_transfer_frame(struct ips_proto *proto, struct ips_flow *f
 			struct ips_scb *scb, uint32_t *payload,
 			uint32_t length, uint32_t isCtrlMsg,
 			uint32_t cksum_valid, uint32_t cksum
-#ifdef PSM_CUDA
-			, uint32_t is_cuda_payload
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+			, uint32_t is_gpu_payload
 #endif
 			)
 {
 	psm2_error_t ret = PSM2_OK;
 	psm2_ep_t ep = proto->ep;
-	uint8_t *sbuf = ep->sockets_ep.sbuf;
-	unsigned len;
 	struct ips_message_header *ips_lrh = &scb->ips_lrh;
 	uint8_t opcode = _get_proto_hfi_opcode(ips_lrh);
-	static struct ips_message_header last_sent; // implicit zero init for static
-	PSM2_LOG_MSG("entering with fd=%d len=%d opcode=%x",
+	uint32_t len;
+	struct msghdr msg = ep->sockets_ep.snd_msg;
+
+	psmi_assert(flow->transfer == PSM_TRANSFER_PIO);
+	// shall be called for ctr msg only. will cleanup isCtrlMsg in HED-4082
+	psmi_assert(isCtrlMsg);
+	PSMI_LOCK_ASSERT(proto->mq->progress_lock);
+	PSM2_LOG_MSG("entering with fd=%d pay_len=%d opcode=%x",
 		flow->ipsaddr->sockets.tcp_fd, length, opcode);
-	if (ep->sockets_ep.sbuf_flow) {
-		// have remaining data
-		if (flow != ep->sockets_ep.sbuf_flow) {
-			// new pkt, but we need to finish remaining data first
-			_HFI_VDBG("Reject fd=%d because of remaining data. Continue fd=%d offset=%d remainder=%d\n",
-					flow->ipsaddr->sockets.tcp_fd, ep->sockets_ep.sbuf_flow->ipsaddr->sockets.tcp_fd,
-					ep->sockets_ep.sbuf_offset, ep->sockets_ep.sbuf_remainder);
-			PSM2_LOG_MSG("coming fd=%d, send remainder fd=%d",
-				flow->ipsaddr->sockets.tcp_fd,
-				ep->sockets_ep.sbuf_flow->ipsaddr->sockets.tcp_fd);
-			// set flow so we will send out remaining data
-			flow = ep->sockets_ep.sbuf_flow;
-			// set ret to PSM2_EP_NO_RESOURCES so the caller will retry this new pkt later
-			ret = PSM2_EP_NO_RESOURCES;
-		} else if (!psm3_sockets_ips_msg_hdr_equal((struct ips_message_header*)sbuf, ips_lrh)) {
-			// new data on the same flow. send out remainder first, then return PSM2_EP_NO_RESOURCES
-			// to resend the new data
-			ret = PSM2_EP_NO_RESOURCES;
+
+	if_pf(flow->ipsaddr->cstate_outgoing == CSTATE_OUTGOING_WAITING) {
+		if (flow->ipsaddr->sockets.tcp_fd == 0) {
+			// closed because of connection fatal error
+			return PSM2_INTERNAL_ERR;
 		}
-		// continue send remainder data
-		len = ep->sockets_ep.sbuf_remainder;
-		goto send;
-	}
-	// we reach here when no remaining data. i.e. new packet
-	// For packets eligible to being retried immediately via the control queue,
-	// we catch duplicate sends (matching last_sent) and avoid the unnecessary
-	// duplicate send by simply returning PSM2_OK. This can avoid an infinite
-	// sequence of partial sends followed by a retry via control queue.
-	if (proto->ctrl_msg_queue_enqueue & proto->message_type_to_mask[opcode]) {
-		psmi_assert(isCtrlMsg);
-		psmi_assert(length == 0);
-		if (psm3_sockets_ips_msg_hdr_equal(&last_sent, ips_lrh)) {
-			// this is resending of ctrl message, and we already
-			// queued one, just say it's fine
-			_HFI_VDBG("Duplicate Control Message sending skipped: opcode=%x fd=%d\n",
-				opcode, flow->ipsaddr->sockets.tcp_fd);
-			PSM2_LOG_MSG("fd=%d ctr msg already sent out", flow->ipsaddr->sockets.tcp_fd);
-			return PSM2_OK;
+		if (!flow->ipsaddr->sockets.connected) {
+			ret = psm3_sockets_tcp_connect(proto, flow);
+			if (ret != PSM2_OK) {
+				return ret;
+			}
+		}
+		struct fd_ctx *ctx = psm3_sockets_get_fd_ctx(ep, flow->ipsaddr->sockets.tcp_fd);
+		if (opcode == OPCODE_CONNECT_REQUEST && (!ctx || ctx->state == FD_STATE_NONE)) {
+			// we are in connecting state, check whether the connection is established
+			struct pollfd pfd = {
+				.fd = flow->ipsaddr->sockets.tcp_fd,
+				.events = POLLOUT};
+			if (poll(&pfd, 1, 0) == 1 && (pfd.revents & POLLOUT)) {
+				int error;
+				socklen_t n = sizeof(error);
+				if (getsockopt(flow->ipsaddr->sockets.tcp_fd, SOL_SOCKET, SO_ERROR, &error, &n) < 0 ||
+					error) {
+					_HFI_DBG("non-blocking connect failed - error=%d fd=%d\n",
+						error, flow->ipsaddr->sockets.tcp_fd);
+					int id = psm3_sockets_get_index_by_fd(ep, flow->ipsaddr->sockets.tcp_fd);
+					if (id >= 0) {
+						psm3_sockets_tcp_close_fd(ep, flow->ipsaddr->sockets.tcp_fd, id, flow);
+					} else {
+						close(flow->ipsaddr->sockets.tcp_fd);
+					}
+					// will re-connect
+					flow->ipsaddr->sockets.tcp_fd = -1;
+					flow->ipsaddr->sockets.connected = 0;
+					return PSM2_INTERNAL_ERR;
+				}
+				// connection successfully established
+				_HFI_VDBG("Connection established fd=%d\n", flow->ipsaddr->sockets.tcp_fd);
+				if (ctx == NULL) {
+					psm3_sockets_tcp_add_fd(ep, flow->ipsaddr->sockets.tcp_fd, 1);
+					ctx = psm3_sockets_get_fd_ctx(ep, flow->ipsaddr->sockets.tcp_fd);
+					if (ctx) {
+						ctx->ipsaddr = flow->ipsaddr;
+						ctx->state = FD_STATE_VALID;
+					} else {
+						// shouldn't happen
+						close(flow->ipsaddr->sockets.tcp_fd);
+						flow->ipsaddr->sockets.tcp_fd = -1;
+						flow->ipsaddr->sockets.connected = 0;
+						// return PSM2_OK to retry in next loop rather than retry immediately
+						return PSM2_OK;
+					}
+				}
+			} else {
+				_HFI_VDBG("non-blocking connecting revents=%d fd=%d\n", pfd.revents, flow->ipsaddr->sockets.tcp_fd);
+				return PSM2_EP_NO_RESOURCES;
+			}
 		}
 	}
-	if (scb->scb_flags & IPS_SEND_FLAG_TCP_REMAINDER) {
-		// revisit the scb that has partial data sending, and all data already out
-		// so return PSM2_OK
-		_HFI_VDBG("Data already sent out fd=%d\n", flow->ipsaddr->sockets.tcp_fd);
-		PSM2_LOG_MSG("fd=%d data msg already sent out", flow->ipsaddr->sockets.tcp_fd);
-#ifdef PSM_TCP_ACK
-		return PSM2_OK;
-#else
-		return isCtrlMsg ? PSM2_OK : PSM2_TCP_DATA_SENT;
+
+	if_pf (flow->conn_msg_remainder) {
+		psmi_assert(flow->partial_conn_msg);
+		len = flow->conn_msg_remainder;
+		msg.msg_iov[0].iov_base = flow->partial_conn_msg;
+		msg.msg_iov[0].iov_len = len;
+		msg.msg_iovlen = 1;
+	} else if_pf (flow->send_remaining && !(scb->scb_flags & IPS_SEND_FLAG_TCP_REMAINDER)) {
+		// this flow has partial send, but the scb is not the one we want to continue
+		// this likely will not happen, but we have ctr and data msg retry in different
+		// timers. So we check here to play safe.
+		if_pf (opcode == OPCODE_DISCONNECT_REQUEST || opcode == OPCODE_DISCONNECT_REPLY) {
+			// send DISCONN msg via aux socket
+			PSMI_LOCK_ASSERT(proto->mq->progress_lock);
+			_HFI_VDBG("Send DISCONN msg opcode=%x via aux_socket\n", opcode);
+			flow->send_remaining = 0;
+			return psm3_sockets_tcp_aux_send(ep, flow, ips_lrh, payload, length
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+				, is_gpu_payload
 #endif
+			);
+		} else {
+			// retry later
+			_HFI_VDBG("skip because of undesired scb\n");
+			return PSM2_EP_NO_RESOURCES;
+		}
+	} else {
+		len = flow->send_remaining ? flow->send_remaining : sizeof(*ips_lrh) + length;
+		msg.msg_iovlen = 0;
+		MSG_IOV(msg, ips_lrh, payload, length, len
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+			, ep->sockets_ep.sbuf, is_gpu_payload
+#endif
+			);
 	}
-	len = sizeof(*ips_lrh) + length;
 
 #ifdef PSM_FI
 	// This is a bit of a high stress cheat.  While TCP is loss-less
@@ -245,124 +516,172 @@ psm3_sockets_tcp_spio_transfer_frame(struct ips_proto *proto, struct ips_flow *f
 			return PSM2_OK;
 	}
 #endif // PSM_FI
-	PSMI_LOCK_ASSERT(proto->mq->progress_lock);
-	psmi_assert_always(! cksum_valid);	// no software checksum yet
 
-	if (!isCtrlMsg && proto->ep->sockets_ep.snd_pace_thresh) {
-		uint32_t used;
-		if (ioctl(flow->ipsaddr->sockets.tcp_fd, SIOCOUTQ, &used) == 0) {
-			if (flow->used_snd_buff && used > proto->ep->sockets_ep.snd_pace_thresh
-				&& used >= flow->used_snd_buff) {
-				_HFI_VDBG("Pre=%d Cur=%d Delta=%d len=%d opcode=%x fd=%d\n",
-						flow->used_snd_buff, used,
-						used - flow->used_snd_buff,
-						len, opcode, flow->ipsaddr->sockets.tcp_fd);
-				return PSM2_EP_NO_RESOURCES;
+	if (!isCtrlMsg && proto->ep->sockets_ep.snd_pace_thresh &&
+		psm3_sockets_tcp_sendpacing(proto, flow) == PSMI_TRUE) {
+		return PSM2_EP_NO_RESOURCES;
+	}
+
+	if (likely(flow->send_remaining == 0 && flow->conn_msg_remainder == 0)) {
+		psmi_assert_always(! cksum_valid);	// no software checksum yet
+		psmi_assert((len & 3) == 0);	// must be DWORD mult
+#ifndef PSM_TCP_ACK
+		// clear IPS_SEND_FLAG_ACKREQ in bth[2] because TCP doesn't need ack
+		if (!isCtrlMsg) {
+			ips_lrh->bth[2] &= __cpu_to_be32(~IPS_SEND_FLAG_ACKREQ);
+		}
+#endif
+		_HFI_VDBG("TCP send - opcode %x len %u fd=%d\n", opcode, len, flow->ipsaddr->sockets.tcp_fd);
+		// we don't support software checksum
+		psmi_assert_always(! (proto->flags & IPS_PROTO_FLAG_CKSUM));
+
+		if_pf (ips_lrh->khdr.kdeth0 & __cpu_to_le32(IPS_SEND_FLAG_INTR)) {
+			_HFI_VDBG("send solicted event\n");
+			// TBD - how to send so wake up rcvthread?  Separate socket?
+		}
+
+		if_pf (_HFI_PDBG_ON) {
+			_HFI_PDBG_ALWAYS("len %u, remote IP %s payload %u\n",
+				len,
+				psm3_sockaddr_fmt((struct sockaddr *)&flow->ipsaddr->sockets.remote_pri_addr, 0),
+				length);
+			_HFI_PDBG_DUMP_ALWAYS((uint8_t*)ips_lrh, sizeof(*ips_lrh));
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+			if (is_gpu_payload) {
+				PSM3_GPU_MEMCPY_DTOH(ep->sockets_ep.sbuf,
+					payload, length);
+				_HFI_PDBG_DUMP_ALWAYS(ep->sockets_ep.sbuf, length);
+			} else {
+				_HFI_PDBG_DUMP_ALWAYS((uint8_t*)payload, length);
 			}
-			flow->used_snd_buff = used;
-		} else {
-			_HFI_DBG("ERR: %s\n", strerror(errno));
+#else
+			_HFI_PDBG_DUMP_ALWAYS((uint8_t*)payload, length);
+#endif
+		}
+		if_pf (opcode == OPCODE_DISCONNECT_REPLY) {
+			return psm3_sockets_tcp_aux_send(ep, flow, ips_lrh, payload, length
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+				, is_gpu_payload
+#endif
+			);
 		}
 	}
 
 	// TBD - we should be able to skip sending some headers such as OPA lrh and
 	// perhaps bth (does PSM use bth to hold PSNs? - yes)
-	// copy scb->ips_lrh to send buffer
-	_HFI_VDBG("copy lrh %p\n", ips_lrh);
-	memcpy(sbuf, ips_lrh, sizeof(*ips_lrh));
-#ifndef PSM_TCP_ACK
-	// clear IPS_SEND_FLAG_ACKREQ in bth[2] because TCP doesn't need ack
-	if (!isCtrlMsg) {
-		((struct ips_message_header *)sbuf)->bth[2] &= __cpu_to_be32(~IPS_SEND_FLAG_ACKREQ);
-	}
-#endif
-	// copy payload to send buffer, length could be zero, be safe
-	_HFI_VDBG("copy payload %p %u\n",  payload, length);
-#ifdef PSM_CUDA
-	if (is_cuda_payload) {
-		PSMI_CUDA_CALL(cuMemcpyDtoH, sbuf+sizeof(*ips_lrh),
-				(CUdeviceptr)payload, length);
-	} else
-#endif
-	{
-		memcpy(sbuf+sizeof(*ips_lrh), payload, length);
-	}
-	_HFI_VDBG("TCP send - opcode %x len %u fd=%d\n", opcode, len, flow->ipsaddr->sockets.tcp_fd);
-	// we don't support software checksum
-	psmi_assert_always(! (proto->flags & IPS_PROTO_FLAG_CKSUM));
-
-	if_pf (ips_lrh->khdr.kdeth0 & __cpu_to_le32(IPS_SEND_FLAG_INTR)) {
-		_HFI_VDBG("send solicted event\n");
-		// TBD - how to send so wake up rcvthread?  Separate socket?
-	}
-
-	if_pf (_HFI_PDBG_ON) {
-		_HFI_PDBG_ALWAYS("sockets_tcp_spio_transfer_frame: len %u, remote IP %s payload %u\n",
-			len,
-			psmi_sockaddr_fmt((struct sockaddr *)&flow->ipsaddr->sockets.remote_pri_addr, 0),
-			length);
-		_HFI_PDBG_DUMP_ALWAYS(sbuf, len);
-	}
-send:
-	// opcode of the data will go out. The data can be the previous data with partial sending
-	// that is different from scb data
-	opcode = _get_proto_hfi_opcode((struct  ips_message_header*)sbuf);
-	if_pf (opcode == OPCODE_DISCONNECT_REPLY) {
-		return psm3_sockets_tcp_aux_send(ep, flow, sbuf, len);
-	}
-	if (flow->ipsaddr->sockets.tcp_fd > 0) {
-		psmi_assert((len & 3) == 0);	// must be DWORD mult
+	if (likely(flow->ipsaddr->sockets.tcp_fd > 0)) {
 #ifdef PSM_FI
-	size_t part_len = len;
-	if_pf(PSM3_FAULTINJ_ENABLED_EP(ep)) {
-		PSM3_FAULTINJ_STATIC_DECL(fi_sendpart, "sendpart",
-				"partial TCP send",
-				1, IPS_FAULTINJ_SENDPART);
-		if_pf(PSM3_FAULTINJ_IS_FAULT(fi_sendpart, ep, ""))
-			part_len = min(len, 32);	// purposely less than min pkt size
-	}
-#endif // PSM_FI
-//		ssize_t res = psm3_sockets_tcp_aggressive_send(flow->ipsaddr->sockets.tcp_fd, sbuf + ep->sockets_ep.sbuf_offset, len);
-		ssize_t res = send(flow->ipsaddr->sockets.tcp_fd, sbuf + ep->sockets_ep.sbuf_offset,
-#ifdef PSM_FI
-							part_len,
-#else
-							len,
-#endif
-							MSG_DONTWAIT);
-		PSM2_LOG_MSG("send fd=%d len=%d opcode=%x ret=%d", flow->ipsaddr->sockets.tcp_fd, len, opcode, res);
-		if (res == len) {
-			// send out full pkt (or last chunk)
-			ep->sockets_ep.sbuf_offset = 0;
-			ep->sockets_ep.sbuf_remainder = 0;
-			ep->sockets_ep.sbuf_flow = NULL;
-			if (proto->ctrl_msg_queue_enqueue & proto->message_type_to_mask[opcode]) {
-				memcpy(&last_sent, sbuf, sizeof(last_sent));
+		int org_len = 0;
+		if_pf(PSM3_FAULTINJ_ENABLED_EP(ep)) {
+			PSM3_FAULTINJ_STATIC_DECL(fi_sendpart, "sendpart",
+					"partial TCP send",
+					1, IPS_FAULTINJ_SENDPART);
+			if_pf(PSM3_FAULTINJ_IS_FAULT(fi_sendpart, ep, "")) {
+				org_len = msg.msg_iov[0].iov_len;
+				msg.msg_iov[0].iov_len = min(msg.msg_iov[0].iov_len, 32); // purposely less than min pkt size
+				msg.msg_iovlen = 1;
 			}
+			PSM3_FAULTINJ_STATIC_DECL(fi_connunkn, "connunkn",
+					"unknown connection",
+					1, IPS_FAULTINJ_CONNUNKN);
+			if_pf(PSM3_FAULTINJ_IS_FAULT(fi_connunkn, ep, "")) {
+				psm3_unknown_connection(proto, flow);
+			}
+		}
+#endif // PSM_FI
+		int flags = MSG_DONTWAIT;
+		if (flow->ipsaddr->cstate_outgoing == CSTATE_OUTGOING_WAITING_DISC) {
+			// during disconnecting, SIGPIPE may happen on send because
+			// we intend to close it from another side. Set MSG_NOSIGNAL
+			// to ignore it, otherwise this can cause IMPI termination
+			flags |= MSG_NOSIGNAL;
+		}
+		ssize_t res = sendmsg(flow->ipsaddr->sockets.tcp_fd, &msg, flags);
+#ifdef PSM_FI
+		if_pf(org_len) {
+			// restore iov_len because below code needs it
+			msg.msg_iov[0].iov_len = org_len;
+		}
+#endif
+		if (res == len) {
+			// sent out full pkt (or last chunk)
+			// if we just sent a partial conn msg, we need return PSM2_EP_NO_RESOURCES
+			// to trigger a retry of the callers intended send message
+			ret = flow->conn_msg_remainder ? PSM2_EP_NO_RESOURCES : PSM2_OK;
+			flow->send_remaining = 0;
+			flow->conn_msg_remainder = 0;
 			_HFI_VDBG("Sent successfully. opcode=%x fd=%d\n", opcode, flow->ipsaddr->sockets.tcp_fd);
 		} else if (res > 0) {
-			// send out partial pkt
-			if (ep->sockets_ep.sbuf_flow == NULL) {
-				ep->sockets_ep.sbuf_offset = res;
-				ep->sockets_ep.sbuf_remainder = len - res;
-				ep->sockets_ep.sbuf_flow = flow;
-				scb->scb_flags |= IPS_SEND_FLAG_TCP_REMAINDER;
+			if_pf (flow->conn_msg_remainder) {
+				// partial conn msg already copied to flow->partial_conn_msg
+				flow->conn_msg_remainder = len - res;
+				// we can avoid memmove by using offset. But this is a very very rare case
+				// that multiple partial sends on a short conn msg. So no need to introduce
+				// a new field for offset.
+				memmove(flow->partial_conn_msg, flow->partial_conn_msg + res,
+					flow->conn_msg_remainder);
+				_HFI_VDBG("Partial conn msg send: opcode=%x send=%ld remainder=%d fd=%d\n",
+					opcode, res, flow->conn_msg_remainder, flow->ipsaddr->sockets.tcp_fd);
+			} else if (opcode == OPCODE_CONNECT_REQUEST ||
+				opcode == OPCODE_CONNECT_REPLY ||
+				opcode == OPCODE_DISCONNECT_REQUEST) {
+			    	// first time partial send on conn msg
+				flow->conn_msg_remainder = len - res;
+			    	if (flow->conn_msg_remainder > flow->partial_conn_msg_size) {
+			    		flow->partial_conn_msg_size = TCP_CONN_MSG_BUF_BLOCK *
+			    			(1 + flow->conn_msg_remainder/TCP_CONN_MSG_BUF_BLOCK);
+			    		// when we grow the buff, we do not need to retain the data
+			    		// below is faster than psmi_realloc that will do memcpy
+			    		if (flow->partial_conn_msg) {
+						psmi_free(flow->partial_conn_msg);
+			    		}
+					flow->partial_conn_msg = (uint8_t *) psmi_calloc(ep,
+						NETWORK_BUFFERS, flow->partial_conn_msg_size, 1);
+					if (!flow->partial_conn_msg) {
+						_HFI_ERROR("Unable to allocate buffer for partial connection message\n");
+						return PSM2_INTERNAL_ERR;
+					}
+			    	}
+			    	// we can potentially use ep->sbuf to store partial conn msg. But the buffer
+			    	// is at EP level. When one flow blocks on partial conn msg, all other flows
+			    	// have to wait for it. It's more efficient to use flow->partial_conn_msg
+			    	// that is at flow level. Below memecpy uses msg.msg_iov that already has data
+			    	// copied from device for GPU.
+				if (res < msg.msg_iov[0].iov_len) {
+					memcpy(flow->partial_conn_msg, msg.msg_iov[0].iov_base + res,
+						msg.msg_iov[0].iov_len - res);
+					memcpy(flow->partial_conn_msg + msg.msg_iov[0].iov_len - res,
+						msg.msg_iov[1].iov_base, msg.msg_iov[1].iov_len);
+				} else {
+					memcpy(flow->partial_conn_msg,
+						msg.msg_iov[1].iov_base + msg.msg_iov[1].iov_len - flow->conn_msg_remainder,
+						flow->conn_msg_remainder);
+				}
+				_HFI_VDBG("New partial conn msg send: opcode=%x send=%ld remainder=%d fd=%d\n",
+                                          opcode, res, flow->conn_msg_remainder, flow->ipsaddr->sockets.tcp_fd);
+				proto->stats.partial_ctr_write_cnt++;
 			} else {
-				ep->sockets_ep.sbuf_offset += res;
-				ep->sockets_ep.sbuf_remainder -= res;
+				// this shall not happen since we are doing local ack
+				// send out partial pkt
+				flow->send_remaining = len - res;
+				scb->scb_flags |= IPS_SEND_FLAG_TCP_REMAINDER;
+				if (isCtrlMsg) {
+					proto->stats.partial_ctr_write_cnt++;
+				} else {
+					proto->stats.partial_data_write_cnt++;
+				}
 			}
-			proto->stats.partial_write_cnt++;
-			_HFI_VDBG("Partial sending. res=%ld len=%d offset=%d remainder=%d fd=%d\n",
-					res, len, ep->sockets_ep.sbuf_offset, ep->sockets_ep.sbuf_remainder,
-					flow->ipsaddr->sockets.tcp_fd);
+			_HFI_VDBG("Partial sending. opcode=%x fd=%d res=%ld len=%d remainder=%d conn_msg_remainder=%d\n",
+					opcode, flow->ipsaddr->sockets.tcp_fd, res, len,
+					flow->send_remaining, flow->conn_msg_remainder);
 			ret = PSM2_EP_NO_RESOURCES;
 		} else if (errno == EAGAIN || errno == EWOULDBLOCK || errno == ENOTCONN) {
 			// socket is not ready. Either of outgoing buffer is full or not yet connected.
-			_HFI_VDBG("Partial or empty sending. errno=%d offset=%d remainder=%d fd=%d\n",
-				errno, ep->sockets_ep.sbuf_offset, ep->sockets_ep.sbuf_remainder,
-				flow->ipsaddr->sockets.tcp_fd);
+			_HFI_VDBG("Partial or empty sending. errno=%d remainder=%d\n",
+				errno, flow->send_remaining);
 			ret = PSM2_EP_NO_RESOURCES;
 		} else {
+			psmi_assert(errno != EMSGSIZE); // shouldn't happen on TCP
 			if (flow->ipsaddr->cstate_outgoing == CSTATE_ESTABLISHED) {
 				// error
 				_HFI_INFO("TCP send fd=%d opcode=%x failed on %s: %s\n",
@@ -375,11 +694,18 @@ send:
 					opcode, strerror(errno));
 			}
 			if (isCtrlMsg && opcode!=OPCODE_CONNECT_REQUEST && opcode!=OPCODE_CONNECT_REPLY) {
-				// send non-conn control message via aux socket (UDP)
-				// it doesn't make sense to continue CONN msg with aux socket because
-				// we do not support sending data msg via aux socket (UDP)
-				ret = psm3_sockets_tcp_aux_send(ep, flow, sbuf + ep->sockets_ep.sbuf_offset, len);
-				if (ret != PSM2_OK && ep->sockets_ep.sbuf_flow) {
+				// send the whole non-conn control message via aux socket (UDP). Note:
+				// 1) it doesn't make sense to continue CONN msg with aux socket because
+				//    we do not support sending data msg via aux socket (UDP)
+				// 2) we resend the whole pkt because when receiver gets data via aux socket
+				//    (UDP), it will fill receiver buffer from beginning
+				flow->send_remaining = 0;
+				ret = psm3_sockets_tcp_aux_send(ep, flow, ips_lrh, payload, length
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+					, is_gpu_payload
+#endif
+				);
+				if (ret != PSM2_OK && flow->send_remaining) {
 					// hopefully this will not happen. TBD - how we handle this case
 					_HFI_ERROR("TCP send failed in the middle of msg transition.\n");
 				}
@@ -405,7 +731,12 @@ send:
 		if (isCtrlMsg && opcode!=OPCODE_CONNECT_REQUEST && opcode!=OPCODE_CONNECT_REPLY) {
 			// send control message via aux socket (UDP)
 			_HFI_VDBG("Invalid tcp_fd on %s! Try to use aux socket.\n", ep->dev_name);
-			ret = psm3_sockets_tcp_aux_send(ep, flow, sbuf + ep->sockets_ep.sbuf_offset, len);
+			flow->send_remaining = 0;
+			ret = psm3_sockets_tcp_aux_send(ep, flow, ips_lrh, payload, length
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+				, is_gpu_payload
+#endif
+			);
 		} else {
 			// unable to switch to UDP for data packets, see discussion above
 			_HFI_VDBG("Invalid tcp_fd on %s!\n", ep->dev_name);
@@ -422,6 +753,219 @@ send:
 	return ret;
 }
 
+// send a bulk of messages. used for data messages only.
+static __inline__ psm2_error_t
+psm3_sockets_tcp_spio_transfer_frames(struct ips_proto *proto, struct ips_flow *flow,
+			struct ips_scb_pendlist *scb_queue, int *send_count)
+{
+	psm2_error_t ret = PSM2_OK;
+	psm2_ep_t ep = proto->ep;
+	*send_count = 0;
+
+	PSMI_LOCK_ASSERT(proto->mq->progress_lock);
+	psmi_assert(!SLIST_EMPTY(scb_queue));
+	ips_scb_t *scb = SLIST_FIRST(scb_queue);
+
+	struct msghdr msg = ep->sockets_ep.snd_msg;
+	msg.msg_iovlen = 0;
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+	// this is used for GPU support. It maintains the position in sbuf
+	// to which we copy data from device
+	uint8_t *buf = ep->sockets_ep.sbuf;
+#endif
+	// we put messages in iovs until the total length > buffer_size, or
+	// number of messages in the array > TCP_IOV_SIZE
+	struct iovec *iovs = ep->sockets_ep.snd_msg.msg_iov;
+	// number of messages we plan to send out. This number shall >= 1 because
+	// we will always put the first scb in iovs array given each pkt len <= buffer_size
+	int pend_msgs = 1;
+	// total length of the data we plan to send out
+	uint32_t len;
+	int i;
+
+	PSM2_LOG_MSG("entering with fd=%d", flow->ipsaddr->sockets.tcp_fd);
+
+	if_pf (flow->conn_msg_remainder) {
+		// continue partial conn msg, the passed in scb is used as a dumy scb
+		ret = psm3_sockets_tcp_spio_transfer_frame(proto, flow, scb, ips_scb_buffer(scb),
+			scb->payload_size, PSMI_TRUE, scb->ips_lrh.flags & IPS_SEND_FLAG_PKTCKSUM,
+			scb->cksum[0]
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+			, IS_TRANSFER_BUF_GPU_MEM(scb)
+#endif
+		);
+		if (ret != PSM2_OK) {
+			return ret;
+		}
+	}
+
+	if_pf (flow->send_remaining && !(scb->scb_flags & IPS_SEND_FLAG_TCP_REMAINDER)) {
+		// this flow has partial send, but the scb is not the one we want to continue
+		// this likely will not happen, but we have ctr and data msg retry in different
+		// timers. So we check here to play safe.
+		_HFI_VDBG("skip because of undesired scb\n");
+		return PSM2_EP_NO_RESOURCES;
+	}
+
+	if (proto->ep->sockets_ep.snd_pace_thresh &&
+		psm3_sockets_tcp_sendpacing(proto, flow) == PSMI_TRUE) {
+		return PSM2_EP_NO_RESOURCES;
+	}
+
+	if_pf (flow->ipsaddr->sockets.tcp_fd <= 0) {
+		_HFI_VDBG("Invalid tcp_fd on %s!\n", ep->dev_name);
+		return PSM2_EP_NO_NETWORK;
+	}
+
+	struct ips_message_header *ips_lrh = &scb->ips_lrh;
+	psmi_assert(_get_proto_hfi_opcode(ips_lrh) >= OPCODE_TINY &&
+		_get_proto_hfi_opcode(ips_lrh) <= OPCODE_LONG_DATA);
+
+	// need to consider partial send for the first msg
+	if (flow->send_remaining) {
+		len = flow->send_remaining;
+	} else {
+		psmi_assert((scb->payload_size & 3) == 0);	// must be DWORD mult
+#ifndef PSM_TCP_ACK
+		// clear IPS_SEND_FLAG_ACKREQ in bth[2] because TCP doesn't need ack
+		ips_lrh->bth[2] &= __cpu_to_be32(~IPS_SEND_FLAG_ACKREQ);
+#endif
+		len = sizeof(*ips_lrh) + scb->payload_size;
+	}
+	MSG_IOV(msg, ips_lrh, ips_scb_buffer(scb), scb->payload_size, len
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+			, buf, IS_TRANSFER_BUF_GPU_MEM(scb)
+#endif
+		);
+
+	while ((scb = SLIST_NEXT(scb, next)) != NULL) {
+		ips_lrh = &scb->ips_lrh;
+		psmi_assert(_get_proto_hfi_opcode(ips_lrh) >= OPCODE_TINY &&
+			_get_proto_hfi_opcode(ips_lrh) <= OPCODE_LONG_DATA);
+		if (len + sizeof(*ips_lrh) + scb->payload_size > ep->sockets_ep.buf_size ||
+			msg.msg_iovlen + 2 > TCP_IOV_SIZE) {
+			break;
+		}
+
+		psmi_assert((scb->payload_size & 3) == 0);	// must be DWORD mult
+#ifndef PSM_TCP_ACK
+		// clear IPS_SEND_FLAG_ACKREQ in bth[2] because TCP doesn't need ack
+		ips_lrh->bth[2] &= __cpu_to_be32(~IPS_SEND_FLAG_ACKREQ);
+#endif
+		iovs[msg.msg_iovlen].iov_base = (uint8_t*)ips_lrh;
+		iovs[msg.msg_iovlen].iov_len = sizeof(*ips_lrh);
+		msg.msg_iovlen += 1;
+		if (likely(scb->payload_size > 0)) {
+			PAYLOAD_IOV(iovs[msg.msg_iovlen], ips_scb_buffer(scb),
+				scb->payload_size, scb->payload_size
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+				, buf, IS_TRANSFER_BUF_GPU_MEM(scb)
+#endif
+				);
+			msg.msg_iovlen += 1;
+		}
+		len += sizeof(*ips_lrh) + scb->payload_size;
+		pend_msgs += 1;
+	}
+
+	_HFI_VDBG("TCP send - iov_count=%ld total_len=%d num_messages=%d fd=%d\n",
+		msg.msg_iovlen, len, pend_msgs, flow->ipsaddr->sockets.tcp_fd);
+	if_pf (_HFI_PDBG_ON) {
+		_HFI_PDBG_ALWAYS("remote IP %s iov_count=%ld total_len %d\n",
+			psm3_sockaddr_fmt((struct sockaddr *)&flow->ipsaddr->sockets.remote_pri_addr, 0),
+			msg.msg_iovlen, len);
+		for (i = 0; i < msg.msg_iovlen; i++) {
+			_HFI_PDBG_DUMP_ALWAYS((uint8_t*)iovs[i].iov_base, iovs[i].iov_len);
+		}
+	}
+#ifdef PSM_FI
+	if_pf(PSM3_FAULTINJ_ENABLED_EP(ep)) {
+		PSM3_FAULTINJ_STATIC_DECL(fi_sendfull, "sendfull",
+			"no more send resources pio flush",
+			1, IPS_FAULTINJ_SENDFULL);
+		if_pf(PSM3_FAULTINJ_IS_FAULT(fi_sendfull, proto->ep, "")) {
+			msg.msg_iovlen = psm3_rand((long int) getpid()) % msg.msg_iovlen + 1;
+		}
+		PSM3_FAULTINJ_STATIC_DECL(fi_sendpart, "sendpart",
+				"partial TCP send",
+				1, IPS_FAULTINJ_SENDPART);
+		if_pf(PSM3_FAULTINJ_IS_FAULT(fi_sendpart, ep, "")) {
+			iovs[msg.msg_iovlen - 1].iov_len = min(32, iovs[msg.msg_iovlen - 1].iov_len); // purposely less than min pkt size
+		}
+		PSM3_FAULTINJ_STATIC_DECL(fi_connunkn, "connunkn",
+				"unknown connection",
+				1, IPS_FAULTINJ_CONNUNKN);
+		if_pf(PSM3_FAULTINJ_IS_FAULT(fi_connunkn, ep, "")) {
+			psm3_unknown_connection(proto, flow);
+		}
+	}
+#endif // PSM_FI
+
+	ssize_t res = sendmsg(flow->ipsaddr->sockets.tcp_fd, &msg, MSG_DONTWAIT);
+	if (res == len) {
+		// send out all pkts (include last chunk if has partial send)
+		flow->send_remaining = 0;
+		*send_count = pend_msgs;
+		_HFI_VDBG("Sent successfully. message_sent=%d fd=%d\n", *send_count,
+			flow->ipsaddr->sockets.tcp_fd);
+	} else if (res > 0) {
+		// find the partial pkt
+		uint32_t sum = 0;
+		int msg_count = 0;
+		SLIST_FOREACH(scb, scb_queue, next) {
+			if (sum == 0 && flow->send_remaining) {
+				sum = flow->send_remaining;
+			} else {
+				sum += sizeof(struct ips_message_header);
+				sum += scb->payload_size;
+			}
+			msg_count += 1;
+			if (sum == res) {
+				flow->send_remaining = 0;
+				*send_count = msg_count;
+				break;
+			} else if (sum > res) {
+				flow->send_remaining = sum - res;
+				scb->scb_flags |= IPS_SEND_FLAG_TCP_REMAINDER;
+				proto->stats.partial_data_write_cnt++;
+				*send_count = msg_count - 1;
+				_HFI_VDBG("Partial sending. fd=%d num_msg_sent=%d partial_msg_len=%ld partial_msg_remainder=%d\n",
+					flow->ipsaddr->sockets.tcp_fd, *send_count,
+					sizeof(struct ips_message_header) + scb->payload_size,
+					flow->send_remaining);
+				ret = PSM2_EP_NO_RESOURCES;
+				break;
+			}
+		}
+	} else if (errno == EAGAIN || errno == EWOULDBLOCK || errno == ENOTCONN) {
+		// socket is not ready. Either of outgoing buffer is full or not yet connected.
+		_HFI_VDBG("Partial or empty sending. errno=%d remainder=%d\n",
+			errno, flow->send_remaining);
+		ret = PSM2_EP_NO_RESOURCES;
+	} else {
+		psmi_assert(errno != EMSGSIZE); // shouldn't happen on TCP
+		scb = SLIST_FIRST(scb_queue);
+		if (flow->ipsaddr->cstate_outgoing == CSTATE_ESTABLISHED) {
+			// error
+			_HFI_INFO("TCP send fd=%d opcode=%x failed on %s: %s\n",
+				flow->ipsaddr->sockets.tcp_fd,
+				_get_proto_hfi_opcode(&scb->ips_lrh),
+				ep->dev_name, strerror(errno));
+		} else {
+			// sending data under undesired state, such as WAITING, WAITING_DISC, DISCONNECTED
+			_HFI_DBG("TCP send fd=%d failed on %s. cstate_outgoing=%d opcode=%x error: %s\n",
+				flow->ipsaddr->sockets.tcp_fd, ep->dev_name, flow->ipsaddr->cstate_outgoing,
+				_get_proto_hfi_opcode(&scb->ips_lrh), strerror(errno));
+		}
+		ret = PSM2_EP_NO_NETWORK;
+		// close the TCP fd, and we will switch to use aux socket that is UDP
+		psm3_sockets_tcp_close_fd(ep, flow->ipsaddr->sockets.tcp_fd, -1, flow);
+		flow->ipsaddr->sockets.tcp_fd = 0;
+	}
+
+	return ret;
+}
+
 /*---------------------------------------------------------------------------*/
 /* UDP specific code */
 
@@ -429,11 +973,12 @@ send:
 // caller will wait for ack before freeing scb, so we could potentially
 // send directly from the payload in future and avoid some copies
 static __inline__ int
-psm3_sockets_udp_gso_send(int fd, struct ips_proto *proto, struct sockaddr_in6 *addr, 
+psm3_sockets_udp_gso_send(int fd, struct ips_proto *proto,
+		psm3_sockaddr_in_t *addr,
 		struct ips_scb *scb, uint8_t *payload, uint32_t length,
 		uint32_t frag_size
-#ifdef PSM_CUDA
-		, uint32_t is_cuda_payload
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+		, uint32_t is_gpu_payload
 #endif
 		)
 {
@@ -476,10 +1021,10 @@ psm3_sockets_udp_gso_send(int fd, struct ips_proto *proto, struct sockaddr_in6 *
                                 len + sizeof(*ips_lrh) + HFI_CRC_SIZE_IN_BYTES);
 
 		_HFI_VDBG("copy payload %p %u\n", payload, len);
-#ifdef PSM_CUDA
-		if (is_cuda_payload) {
-			PSMI_CUDA_CALL(cuMemcpyDtoH, sbuf_gso+sizeof(*ips_lrh),
-					(CUdeviceptr)payload, len);
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+		if (is_gpu_payload) {
+			PSM3_GPU_MEMCPY_DTOH(sbuf_gso + sizeof(*ips_lrh),
+					payload, len);
 		} else
 #endif
 		{
@@ -487,9 +1032,9 @@ psm3_sockets_udp_gso_send(int fd, struct ips_proto *proto, struct sockaddr_in6 *
 		}
 
 		if_pf (_HFI_PDBG_ON) {
-			_HFI_PDBG_ALWAYS("udp_transfer_frame: len %u, remote IP %s, payload %u\n",
+			_HFI_PDBG_ALWAYS("len %u, remote IP %s, payload %u\n",
 				(unsigned)(len+sizeof(*ips_lrh)),
-				psmi_sockaddr_fmt((struct sockaddr *)addr, 0),
+				psm3_sockaddr_fmt((struct sockaddr *)addr, 0),
 				len);
 			_HFI_PDBG_DUMP_ALWAYS(sbuf_gso, sizeof(*ips_lrh)+ len);
 		}
@@ -513,8 +1058,7 @@ psm3_sockets_udp_gso_send(int fd, struct ips_proto *proto, struct sockaddr_in6 *
 	msg.msg_control = control;
 	msg.msg_controllen = sizeof(control);
 	msg.msg_name = addr;
-	msg.msg_namelen = sizeof(struct sockaddr_in6);
-
+	msg.msg_namelen = sizeof(psm3_sockaddr_in_t);
 	// specify how to segment (segment size)
 	struct cmsghdr* cm = CMSG_FIRSTHDR(&msg);
 	cm->cmsg_level = SOL_UDP;
@@ -549,8 +1093,8 @@ psm3_sockets_udp_spio_transfer_frame(struct ips_proto *proto, struct ips_flow *f
 			struct ips_scb *scb, uint32_t *payload,
 			uint32_t length, uint32_t isCtrlMsg,
 			uint32_t cksum_valid, uint32_t cksum
-#ifdef PSM_CUDA
-			, uint32_t is_cuda_payload
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+			, uint32_t is_gpu_payload
 #endif
 			)
 {
@@ -561,6 +1105,7 @@ psm3_sockets_udp_spio_transfer_frame(struct ips_proto *proto, struct ips_flow *f
 	struct ips_message_header *ips_lrh = &scb->ips_lrh;
 	len = sizeof(*ips_lrh) + length;
 
+	psmi_assert(flow->transfer == PSM_TRANSFER_PIO);
 #ifdef PSM_FI
 	if_pf(PSM3_FAULTINJ_ENABLED_EP(ep)) {
 		PSM3_FAULTINJ_STATIC_DECL(fi_sendlost, "sendlost",
@@ -592,13 +1137,13 @@ psm3_sockets_udp_spio_transfer_frame(struct ips_proto *proto, struct ips_flow *f
 					&flow->ipsaddr->sockets.remote_pri_addr,
 					scb, (uint8_t*)payload, scb->chunk_size_remaining,
 					scb->frag_size
-#ifdef PSM_CUDA
-					,is_cuda_payload
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+					,is_gpu_payload
 #endif
 					)) {
 			if (errno != EAGAIN && errno != EWOULDBLOCK) {
 				_HFI_ERROR("UDP GSO send failed on %s: %s\n", ep->dev_name, strerror(errno));
-				ret = PSM2_EP_NO_RESOURCES;
+				ret = PSM2_INTERNAL_ERR;
 			}
 		}
 		return ret;
@@ -608,10 +1153,10 @@ psm3_sockets_udp_spio_transfer_frame(struct ips_proto *proto, struct ips_flow *f
 	memcpy(sbuf, ips_lrh, sizeof(*ips_lrh));
 	// copy payload to send buffer, length could be zero, be safe
 	_HFI_VDBG("copy payload %p %u\n",  payload, length);
-#ifdef PSM_CUDA
-	if (is_cuda_payload) {
-		PSMI_CUDA_CALL(cuMemcpyDtoH, sbuf+sizeof(*ips_lrh),
-				(CUdeviceptr)payload, length);
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
+	if (is_gpu_payload) {
+		PSM3_GPU_MEMCPY_DTOH(sbuf + sizeof(*ips_lrh),
+			payload, length);
 	} else
 #endif
 	{
@@ -628,9 +1173,9 @@ psm3_sockets_udp_spio_transfer_frame(struct ips_proto *proto, struct ips_flow *f
 	}
 
 	if_pf (_HFI_PDBG_ON) {
-		_HFI_PDBG_ALWAYS("udp_transfer_frame: len %u, remote IP %s payload %u\n",
+		_HFI_PDBG_ALWAYS("len %u, remote IP %s payload %u\n",
 			len,
-			psmi_sockaddr_fmt((struct sockaddr *)&flow->ipsaddr->sockets.remote_pri_addr, 0),
+			psm3_sockaddr_fmt((struct sockaddr *)&flow->ipsaddr->sockets.remote_pri_addr, 0),
 			length);
 		_HFI_PDBG_DUMP_ALWAYS(sbuf, len);
 	}

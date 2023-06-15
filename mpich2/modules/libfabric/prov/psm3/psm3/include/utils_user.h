@@ -80,7 +80,11 @@
 #include "utils_macros.h"
 #include "utils_byteorder.h"
 #include "utils_debug.h"
+#include "utils_env.h"
 #include "utils_sysfs.h"
+#ifdef PSM_DSA
+#include "utils_dsa.h"
+#endif
 
 #ifndef PACK_SUFFIX
 /* XXX gcc only */
@@ -145,7 +149,7 @@
 #define HFI_KHDR_TINYLEN_SHIFT 16
 
 
-#ifdef PSM_CUDA
+#if defined(PSM_CUDA) || defined(PSM_ONEAPI)
 extern int is_driver_gpudirect_enabled;
 
 #define PSMI_IS_DRIVER_GPUDIRECT_ENABLED  likely(is_driver_gpudirect_enabled)

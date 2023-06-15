@@ -49,6 +49,13 @@ enum multi_xfer{
 	multi_rma,
 };
 
+enum multi_pattern {
+	PATTERN_MESH,
+	PATTERN_RING,
+	PATTERN_GATHER,
+	PATTERN_BROADCAST,
+};
+
 struct multi_xfer_method {
 	char* name;
 	int (*send)();
@@ -69,10 +76,11 @@ struct pm_job_info {
 	size_t		name_len;
 	fi_addr_t	*fi_addrs;
 	enum multi_xfer transfer_method;
+	enum multi_pattern pattern;
 };
 
 struct multinode_xfer_state {
-	int 			iteration;
+	int 			iter;
 	size_t			recvs_posted;
 	size_t			sends_posted;
 
@@ -92,8 +100,16 @@ struct multinode_xfer_state {
 };
 
 extern struct pm_job_info pm_job;
+
+static inline int timer_index(int iter, int dest_rank)
+{
+    return iter * pm_job.num_ranks + dest_rank;
+}
+
 int multinode_run_tests(int argc, char **argv);
 int pm_allgather(void *my_item, void *items, int item_size);
+ssize_t socket_send(int sock, void *buf, size_t len, int flags);
+int socket_recv(int sock, void *buf, size_t len, int flags);
 void pm_barrier();
 int multi_msg_send();
 int multi_msg_recv();
