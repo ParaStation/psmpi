@@ -148,6 +148,7 @@ int MPIR_pmi_init(void)
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
     static bool pmi_connected = false;
+    bool singleton = false;
 
     /* See if the user wants to override our default values */
     MPL_env2int("PMI_VERSION", &pmi_version);
@@ -155,124 +156,130 @@ int MPIR_pmi_init(void)
 
     int has_parent, rank, size, appnum;
 #ifdef USE_PMI1_API
-    pmi_errno = PMI_Init(&has_parent);
-    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                         "**pmi_init", "**pmi_init %d", pmi_errno);
-    pmi_errno = PMI_Get_rank(&rank);
-    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                         "**pmi_get_rank", "**pmi_get_rank %d", pmi_errno);
-    pmi_errno = PMI_Get_size(&size);
-    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                         "**pmi_get_size", "**pmi_get_size %d", pmi_errno);
-    pmi_errno = PMI_Get_appnum(&appnum);
-    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                         "**pmi_get_appnum", "**pmi_get_appnum %d", pmi_errno);
+    if (!pmi_connected) {
+        pmi_errno = PMI_Init(&has_parent);
+        MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                             "**pmi_init", "**pmi_init %d", pmi_errno);
+        pmi_errno = PMI_Get_rank(&rank);
+        MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                             "**pmi_get_rank", "**pmi_get_rank %d", pmi_errno);
+        pmi_errno = PMI_Get_size(&size);
+        MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                             "**pmi_get_size", "**pmi_get_size %d", pmi_errno);
+        pmi_errno = PMI_Get_appnum(&appnum);
+        MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                             "**pmi_get_appnum", "**pmi_get_appnum %d", pmi_errno);
+        pmi_errno = PMI_KVS_Get_name_length_max(&pmi_max_kvs_name_length);
+        MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                             "**pmi_kvs_get_name_length_max",
+                             "**pmi_kvs_get_name_length_max %d", pmi_errno);
+        pmi_errno = PMI_KVS_Get_key_length_max(&pmi_max_key_size);
+        MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                             "**pmi_kvs_get_key_length_max",
+                             "**pmi_kvs_get_key_length_max %d", pmi_errno);
+        pmi_errno = PMI_KVS_Get_value_length_max(&pmi_max_val_size);
+        MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                             "**pmi_kvs_get_value_length_max",
+                             "**pmi_kvs_get_value_length_max %d", pmi_errno);
+    }
 
-    pmi_errno = PMI_KVS_Get_name_length_max(&pmi_max_kvs_name_length);
-    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                         "**pmi_kvs_get_name_length_max",
-                         "**pmi_kvs_get_name_length_max %d", pmi_errno);
     pmi_kvs_name = (char *) MPL_malloc(pmi_max_kvs_name_length, MPL_MEM_OTHER);
     pmi_errno = PMI_KVS_Get_my_name(pmi_kvs_name, pmi_max_kvs_name_length);
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
                          "**pmi_kvs_get_my_name", "**pmi_kvs_get_my_name %d", pmi_errno);
-
-    pmi_errno = PMI_KVS_Get_key_length_max(&pmi_max_key_size);
-    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                         "**pmi_kvs_get_key_length_max",
-                         "**pmi_kvs_get_key_length_max %d", pmi_errno);
-    pmi_errno = PMI_KVS_Get_value_length_max(&pmi_max_val_size);
-    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                         "**pmi_kvs_get_value_length_max",
-                         "**pmi_kvs_get_value_length_max %d", pmi_errno);
-
 #elif defined USE_PMI2_API
-    pmi_max_key_size = PMI2_MAX_KEYLEN;
-    pmi_max_val_size = PMI2_MAX_VALLEN;
+    if (!pmi_connected) {
+        pmi_max_key_size = PMI2_MAX_KEYLEN;
+        pmi_max_val_size = PMI2_MAX_VALLEN;
 
-    pmi_errno = PMI2_Init(&has_parent, &size, &rank, &appnum);
-    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI2_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                         "**pmi_init", "**pmi_init %d", pmi_errno);
+        pmi_errno = PMI2_Init(&has_parent, &size, &rank, &appnum);
+        MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI2_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                             "**pmi_init", "**pmi_init %d", pmi_errno);
+    }
 
     pmi_jobid = (char *) MPL_malloc(PMI2_MAX_VALLEN, MPL_MEM_OTHER);
     pmi_errno = PMI2_Job_GetId(pmi_jobid, PMI2_MAX_VALLEN);
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI2_SUCCESS, mpi_errno, MPI_ERR_OTHER,
                          "**pmi_job_getid", "**pmi_job_getid %d", pmi_errno);
-
 #elif defined USE_PMIX_API
-    pmi_max_key_size = PMIX_MAX_KEYLEN;
-    pmi_max_val_size = 1024;    /* this is what PMI2_MAX_VALLEN currently set to */
+    if (!pmi_connected) {
+        pmi_max_key_size = PMIX_MAX_KEYLEN;
+        pmi_max_val_size = 1024;        /* this is what PMI2_MAX_VALLEN currently set to */
 
-    pmix_value_t *pvalue = NULL;
+        pmix_value_t *pvalue = NULL;
 
-    pmi_errno = PMIx_Init(&pmix_proc, NULL, 0);
-    if (pmi_errno == PMIX_ERR_UNREACH) {
-        /* no pmi server, assume we are a singleton */
-        rank = 0;
-        size = 1;
-        appnum = 0;
-        has_parent = 0;
-        goto singleton_out;
-    }
-    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                         "**pmix_init", "**pmix_init %d", pmi_errno);
+        pmi_errno = PMIx_Init(&pmix_proc, NULL, 0);
+        if (pmi_errno == PMIX_ERR_UNREACH) {
+            /* no pmi server, assume we are a singleton */
+            rank = 0;
+            size = 1;
+            appnum = 0;
+            has_parent = 0;
+            singleton = true;
+            goto singleton_out;
+        }
+        MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                             "**pmix_init", "**pmix_init %d", pmi_errno);
 
-    /*check overflow because of type mismatch between pmix_proc_t.rank (uint32_t) and MPIR_Process_t.rank (int) */
-    MPIR_Assert(pmix_proc.rank <= INT_MAX);
+        /*check overflow because of type mismatch between pmix_proc_t.rank (uint32_t) and MPIR_Process_t.rank (int) */
+        MPIR_Assert(pmix_proc.rank <= INT_MAX);
 
-    rank = (int) pmix_proc.rank;
-    PMIX_PROC_CONSTRUCT(&pmix_wcproc);
-    MPL_strncpy(pmix_wcproc.nspace, pmix_proc.nspace, PMIX_MAX_NSLEN);
-    pmix_wcproc.rank = PMIX_RANK_WILDCARD;
+        rank = (int) pmix_proc.rank;
+        PMIX_PROC_CONSTRUCT(&pmix_wcproc);
+        MPL_strncpy(pmix_wcproc.nspace, pmix_proc.nspace, PMIX_MAX_NSLEN);
+        pmix_wcproc.rank = PMIX_RANK_WILDCARD;
 
-    pmi_errno = PMIx_Get(&pmix_wcproc, PMIX_JOB_SIZE, NULL, 0, &pvalue);
-    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                         "**pmix_get", "**pmix_get %d", pmi_errno);
-    size = pvalue->data.uint32;
-    PMIX_VALUE_RELEASE(pvalue);
-
-    PMIX_PROC_CONSTRUCT(&pmix_parent);
-    pmi_errno = PMIx_Get(&pmix_proc, PMIX_PARENT_ID, NULL, 0, &pvalue);
-    if (pmi_errno == PMIX_ERR_NOT_FOUND) {
-        has_parent = 0; /* process not spawned */
-    } else if (pmi_errno == PMIX_SUCCESS) {
-        has_parent = 1; /* spawned process */
-        PMIX_PROC_LOAD(&pmix_parent, pvalue->data.proc->nspace, pvalue->data.proc->rank);
+        pmi_errno = PMIx_Get(&pmix_wcproc, PMIX_JOB_SIZE, NULL, 0, &pvalue);
+        MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                             "**pmix_get", "**pmix_get %d", pmi_errno);
+        size = pvalue->data.uint32;
         PMIX_VALUE_RELEASE(pvalue);
-    } else {
-        MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**pmix_get", "**pmix_get %s",
-                             PMIx_Error_string(pmi_errno));
+
+        PMIX_PROC_CONSTRUCT(&pmix_parent);
+        pmi_errno = PMIx_Get(&pmix_proc, PMIX_PARENT_ID, NULL, 0, &pvalue);
+        if (pmi_errno == PMIX_ERR_NOT_FOUND) {
+            has_parent = 0;     /* process not spawned */
+        } else if (pmi_errno == PMIX_SUCCESS) {
+            has_parent = 1;     /* spawned process */
+            PMIX_PROC_LOAD(&pmix_parent, pvalue->data.proc->nspace, pvalue->data.proc->rank);
+            PMIX_VALUE_RELEASE(pvalue);
+        } else {
+            MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**pmix_get", "**pmix_get %s",
+                                 PMIx_Error_string(pmi_errno));
+        }
+
+        /* Get the appnum */
+        pmi_errno = PMIx_Get(&pmix_proc, PMIX_APPNUM, NULL, 0, &pvalue);
+        MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                             "**pmix_get", "**pmix_get %s", PMIx_Error_string(pmi_errno));
+        MPIR_Assert(pvalue->data.uint32 <= INT_MAX);    /* overflow check */
+        appnum = (int) pvalue->data.uint32;
+        PMIX_VALUE_RELEASE(pvalue);
     }
-
-    /* Get the appnum */
-    pmi_errno = PMIx_Get(&pmix_proc, PMIX_APPNUM, NULL, 0, &pvalue);
-    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                         "**pmix_get", "**pmix_get %s", PMIx_Error_string(pmi_errno));
-    MPIR_Assert(pvalue->data.uint32 <= INT_MAX);        /* overflow check */
-    appnum = (int) pvalue->data.uint32;
-    PMIX_VALUE_RELEASE(pvalue);
-
   singleton_out:
-
 #endif
-
     if (!pmi_connected) {
         /* Register finalization of PM connection in exit handler */
-        mpi_errno = atexit(MPIR_pmi_finalize_on_exit);
-        MPIR_ERR_CHKANDJUMP1(mpi_errno != 0, mpi_errno, MPI_ERR_OTHER,
-                             "**atexit_pmi_finalize", "**atexit_pmi_finalize %d", mpi_errno);
+        if (!singleton) {
+            mpi_errno = atexit(MPIR_pmi_finalize_on_exit);
+            MPIR_ERR_CHKANDJUMP1(mpi_errno != 0, mpi_errno, MPI_ERR_OTHER,
+                                 "**atexit_pmi_finalize", "**atexit_pmi_finalize %d", mpi_errno);
 
-        pmi_connected = true;
+            /* Set connected state here to allow singleton processes to try
+             * to connect again on re-init */
+            pmi_connected = true;
+        }
+
+        /* Set global values only when we obtain them on first init */
+        MPIR_Process.has_parent = has_parent;
+        MPIR_Process.rank = rank;
+        MPIR_Process.size = size;
+        MPIR_Process.appnum = appnum;
     }
 
-    MPIR_Process.has_parent = has_parent;
-    MPIR_Process.rank = rank;
-    MPIR_Process.size = size;
-    MPIR_Process.appnum = appnum;
+    MPIR_Process.node_map = (int *) MPL_malloc(MPIR_Process.size * sizeof(int), MPL_MEM_ADDRESS);
 
-    MPIR_Process.node_map = (int *) MPL_malloc(size * sizeof(int), MPL_MEM_ADDRESS);
-
-    mpi_errno = build_nodemap(MPIR_Process.node_map, size, &MPIR_Process.num_nodes);
+    mpi_errno = build_nodemap(MPIR_Process.node_map, MPIR_Process.size, &MPIR_Process.num_nodes);
     MPIR_ERR_CHECK(mpi_errno);
 
     /* allocate and populate MPIR_Process.node_local_map and MPIR_Process.node_root_map */
