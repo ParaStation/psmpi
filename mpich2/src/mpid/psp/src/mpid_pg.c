@@ -1097,3 +1097,32 @@ void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num)
 	/* restrict to 31 bits */
 	*pg_id_num = (pgid & 0x7fffffff);
 }
+
+int MPIDI_PSP_PG_init(void)
+{
+	int pg_size = MPIDI_Process.my_pg_size;
+	int mpi_errno = MPI_SUCCESS;
+	int grank, pg_id_num;
+	MPIDI_PG_t * pg_ptr;
+
+	/* Create and set MPIDI_Process.my_pg including all processes */
+	MPIDI_PG_Convert_id(MPIDI_Process.pg_id_name, &pg_id_num);
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+	mpi_errno = MPIDI_PG_Create(pg_size, pg_id_num, MPIDI_Process.topo_levels, &pg_ptr);
+#else
+	mpi_errno = MPIDI_PG_Create(pg_size, pg_id_num, NULL, &pg_ptr);
+#endif
+	MPIR_ERR_CHECK(mpi_errno);
+
+	MPIR_Assert(pg_ptr == MPIDI_Process.my_pg);
+
+	for (grank = 0; grank < pg_size; grank++) {
+		pscom_connection_t *con = MPIDI_Process.grank2con[grank];
+		pg_ptr->vcr[grank] = MPIDI_VC_Create(pg_ptr, grank, con, grank);
+	}
+
+  fn_exit:
+	return mpi_errno;
+  fn_fail:
+	goto fn_exit;
+}

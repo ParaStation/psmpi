@@ -568,11 +568,6 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 	pscom_connection_t *con1st;
 	int mpi_errno = MPI_SUCCESS;
 	int i, grank;
-	int pg_id_num;
-	int pg_rank = MPIDI_Process.my_pg_rank;
-	int pg_size = MPIDI_Process.my_pg_size;
-	char* pg_id_name = MPIDI_Process.pg_id_name;
-	MPIDI_PG_t * pg_ptr;
 	MPIDI_VCRT_t * vcrt;
 
 	MPIR_FUNC_ENTER;
@@ -581,49 +576,20 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 		MPID_PSP_comm_create_mapper(comm);
 	}
 
-	if (comm == MPIR_Process.comm_world) {
-		/*
-		 * Initialize the MPI_COMM_WORLD object
-		 */
-		comm->rank        = pg_rank;
-		comm->remote_size = pg_size;
-		comm->local_size  = pg_size;
+	if (comm == MPIR_Process.comm_world || comm == MPIR_Process.comm_self) {
+		/* comm->remote_size should be set before the pre commit hook is executed */
 
 		vcrt = MPIDI_VCRT_Create(comm->remote_size);
 		assert(vcrt);
 		MPID_PSP_comm_set_vcrt(comm, vcrt);
 
-		/* Create my home PG for MPI_COMM_WORLD: */
-		MPIDI_PG_Convert_id(pg_id_name, &pg_id_num);
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-		MPIDI_PG_Create(pg_size, pg_id_num, MPIDI_Process.topo_levels, &pg_ptr);
-#else
-		MPIDI_PG_Create(pg_size, pg_id_num, NULL, &pg_ptr);
-#endif
-		assert(pg_ptr == MPIDI_Process.my_pg);
-
-		for (grank = 0; grank < pg_size; grank++) {
-
-			pscom_connection_t *con = MPIDI_Process.grank2con[grank];
-
-			pg_ptr->vcr[grank] = MPIDI_VC_Create(pg_ptr, grank, con, grank);
-			comm->vcr[grank] = MPIDI_VC_Dup(pg_ptr->vcr[grank]);
+		if (comm == MPIR_Process.comm_world) {
+			for (grank = 0; grank < comm->remote_size; grank++) {
+				comm->vcr[grank] = MPIDI_VC_Dup(MPIDI_Process.my_pg->vcr[grank]);
+			}
+		} else if (comm == MPIR_Process.comm_self) {
+			comm->vcr[0] = MPIDI_VC_Dup(MPIDI_Process.my_pg->vcr[MPIDI_Process.my_pg_rank]);
 		}
-
-	} else if (comm == MPIR_Process.comm_self) {
-		/*
-		 * Initialize the MPI_COMM_SELF object
-		 */
-		comm = MPIR_Process.comm_self;
-		comm->rank        = 0;
-		comm->remote_size = 1;
-		comm->local_size  = 1;
-
-		vcrt = MPIDI_VCRT_Create(comm->remote_size);
-		assert(vcrt);
-		MPID_PSP_comm_set_vcrt(comm, vcrt);
-
-		comm->vcr[0] = MPIDI_VC_Dup(MPIR_Process.comm_world->vcr[pg_rank]);
 	}
 
 	comm->is_disconnected = 0;
