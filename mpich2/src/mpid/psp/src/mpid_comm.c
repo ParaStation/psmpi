@@ -580,7 +580,7 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 		/* comm->remote_size should be set before the pre commit hook is executed */
 
 		vcrt = MPIDI_VCRT_Create(comm->remote_size);
-		assert(vcrt);
+		MPIR_Assert(vcrt);
 		MPID_PSP_comm_set_vcrt(comm, vcrt);
 
 		if (comm == MPIR_Process.comm_world) {
@@ -589,6 +589,16 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 			}
 		} else if (comm == MPIR_Process.comm_self) {
 			comm->vcr[0] = MPIDI_VC_Dup(MPIDI_Process.my_pg->vcr[MPIDI_Process.my_pg_rank]);
+		}
+	} else if (comm->context_id == MPIR_COMM_TMP_SESSION_CTXID) {
+		/* initialize communicator within MPI session, need to look into comm->remote_group */
+		
+		vcrt = MPIDI_VCRT_Create(comm->remote_group->size);
+		MPIR_Assert(vcrt);
+		MPID_PSP_comm_set_vcrt(comm, vcrt);
+		
+		for (i = 0; i < comm->remote_group->size; i++) {
+			comm->vcr[i] = MPIDI_VC_Dup(MPIDI_Process.my_pg->vcr[comm->remote_group->lrank_to_lpid[i].lpid]);
 		}
 	}
 

@@ -682,11 +682,16 @@ int MPIR_Group_from_session_pset_impl(MPIR_Session * session_ptr, const char *ps
     }
 
     group_ptr->is_local_dense_monotonic = TRUE;
-    for (int i = 0; i < group_ptr->size; i++) {
-        group_ptr->lrank_to_lpid[i].lpid = i;
-        group_ptr->lrank_to_lpid[i].next_lpid = i + 1;
+    if (MPL_stricmp(pset_name, "mpi://SELF") == 0) {
+        group_ptr->lrank_to_lpid[0].lpid = MPIR_Process.rank;
+        group_ptr->lrank_to_lpid[0].next_lpid = -1;
+    } else {
+        for (int i = 0; i < group_ptr->size; i++) {
+            group_ptr->lrank_to_lpid[i].lpid = i;
+            group_ptr->lrank_to_lpid[i].next_lpid = i + 1;
+        }
+        group_ptr->lrank_to_lpid[group_ptr->size - 1].next_lpid = -1;
     }
-    group_ptr->lrank_to_lpid[group_ptr->size - 1].next_lpid = -1;
     group_ptr->idx_of_first_lpid = 0;
 
     MPIR_Group_set_session_ptr(group_ptr, session_ptr);
