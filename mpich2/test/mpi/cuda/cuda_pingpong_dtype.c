@@ -39,12 +39,12 @@
 #define CUDA_FREE(x)       cudaFree(x)
 #define CUDA_CHECK(call)					\
 do {								\
-	 if((call) != cudaSuccess) {				\
+	 if ((call) != cudaSuccess) {				\
 		 cudaError_t err = cudaGetLastError();		\
 		 fprintf(stderr, "CUDA error calling \""#call"\", code is %d\n", err); \
 		 MPI_Abort(MPI_COMM_WORLD, err);		\
 	 }							\
-} while(0);
+} while (0);
 
 
 int rank;
@@ -52,145 +52,163 @@ int size;
 
 double PingPong(int ping, int pong, int len, int reps, int mode)
 {
-	int iter;
-	void *sbuf, *_sbuf, *csbuf;
-	void *rbuf, *_rbuf, *crbuf;
+    int iter;
+    void *sbuf, *_sbuf, *csbuf;
+    void *rbuf, *_rbuf, *crbuf;
 
-	int count, size;
-	MPI_Datatype dtype;
+    int count, size;
+    MPI_Datatype dtype;
 
-	double stop_time;
-	double start_time;
+    double stop_time;
+    double start_time;
 
-	int _len = len;
+    int _len = len;
 
-	if(mode == 2) len *= 2;
+    if (mode == 2)
+        len *= 2;
 
-	sbuf = MALLOC(len); _sbuf = sbuf;
-	rbuf = MALLOC(len); _rbuf = rbuf;
+    sbuf = MALLOC(len);
+    _sbuf = sbuf;
+    rbuf = MALLOC(len);
+    _rbuf = rbuf;
 
-	memset(sbuf, 0, len);
-	memset(rbuf, 0, len);
+    memset(sbuf, 0, len);
+    memset(rbuf, 0, len);
 
 #ifdef INTEGRITY_CHECK
-	{
-		int i;
-		for(i=0; i<len; i++) {
-			((unsigned char*)sbuf)[i] = i % 256;
-		}
-	}
+    {
+        int i;
+        for (i = 0; i < len; i++) {
+            ((unsigned char *) sbuf)[i] = i % 256;
+        }
+    }
 #endif
 
-	CUDA_CHECK(CUDA_MALLOC(&csbuf, len));
-	CUDA_CHECK(CUDA_MALLOC(&crbuf, len));
+    CUDA_CHECK(CUDA_MALLOC(&csbuf, len));
+    CUDA_CHECK(CUDA_MALLOC(&crbuf, len));
 
-	CUDA_CHECK(cudaMemcpy(csbuf, sbuf, len, cudaMemcpyHostToDevice));
-	CUDA_CHECK(cudaMemcpy(crbuf, rbuf, len, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(csbuf, sbuf, len, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(crbuf, rbuf, len, cudaMemcpyHostToDevice));
 
-	sbuf = csbuf;
-	rbuf = crbuf;
+    sbuf = csbuf;
+    rbuf = crbuf;
 
-	switch(mode) {
-	default:
-	case 0: dtype = MPI_BYTE; count = len; break;
-	case 1: MPI_Type_contiguous(_len, MPI_BYTE, &dtype); count = 1; break;
-	case 2: MPI_Type_vector(1, 1, 2, MPI_BYTE, &dtype); count = _len; break;
-	}
+    switch (mode) {
+        default:
+        case 0:
+            dtype = MPI_BYTE;
+            count = len;
+            break;
+        case 1:
+            MPI_Type_contiguous(_len, MPI_BYTE, &dtype);
+            count = 1;
+            break;
+        case 2:
+            MPI_Type_vector(1, 1, 2, MPI_BYTE, &dtype);
+            count = _len;
+            break;
+    }
 
-	MPI_Type_size(dtype, &size);
-	assert(_len== size*count);
+    MPI_Type_size(dtype, &size);
+    assert(_len == size * count);
 
-	if(mode > 0) MPI_Type_commit(&dtype);
+    if (mode > 0)
+        MPI_Type_commit(&dtype);
 
-	if( rank == ping ) {
+    if (rank == ping) {
 
-		for(iter=0; iter < reps + WARM_UP; iter++) {
+        for (iter = 0; iter < reps + WARM_UP; iter++) {
 
-			if( iter == WARM_UP ) {
+            if (iter == WARM_UP) {
 
-				start_time = MPI_Wtime();
-			}
+                start_time = MPI_Wtime();
+            }
 
-			MPI_Send(sbuf, count, dtype, pong, PING_TAG, MPI_COMM_WORLD);
-			MPI_Recv(rbuf, count, dtype, pong, PONG_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		}
+            MPI_Send(sbuf, count, dtype, pong, PING_TAG, MPI_COMM_WORLD);
+            MPI_Recv(rbuf, count, dtype, pong, PONG_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
 
-		stop_time = MPI_Wtime();
-	}
+        stop_time = MPI_Wtime();
+    }
 
-	if( rank == pong ) {
+    if (rank == pong) {
 
-		for(iter=0; iter < reps + WARM_UP; iter++) {
+        for (iter = 0; iter < reps + WARM_UP; iter++) {
 
-			if( iter == WARM_UP ) {
+            if (iter == WARM_UP) {
 
-				start_time = MPI_Wtime();
-			}
+                start_time = MPI_Wtime();
+            }
 
-			MPI_Recv(rbuf, count, dtype, ping, PING_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-			MPI_Send(sbuf, count, dtype, ping, PONG_TAG, MPI_COMM_WORLD);
-		}
+            MPI_Recv(rbuf, count, dtype, ping, PING_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Send(sbuf, count, dtype, ping, PONG_TAG, MPI_COMM_WORLD);
+        }
 
-		stop_time = MPI_Wtime();
-	}
+        stop_time = MPI_Wtime();
+    }
 
-	FREE(_sbuf);
-	FREE(_rbuf);
+    FREE(_sbuf);
+    FREE(_rbuf);
 
-	CUDA_CHECK(CUDA_FREE(csbuf));
-	CUDA_CHECK(CUDA_FREE(crbuf));
+    CUDA_CHECK(CUDA_FREE(csbuf));
+    CUDA_CHECK(CUDA_FREE(crbuf));
 
-	if(mode>0) MPI_Type_free(&dtype);
+    if (mode > 0)
+        MPI_Type_free(&dtype);
 
-	return (stop_time - start_time);
+    return (stop_time - start_time);
 }
 
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
-	int current_size;
-	int msgs_start = DEFAULT_MSGS_START;
-	int msgs_stop  = DEFAULT_MSGS_STOP;
-	int msgs_reps  = DEFAULT_MSGS_REPS;
+    int current_size;
+    int msgs_start = DEFAULT_MSGS_START;
+    int msgs_stop = DEFAULT_MSGS_STOP;
+    int msgs_reps = DEFAULT_MSGS_REPS;
 
-	int errs = 0;
+    int errs = 0;
 
-	MTest_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
 
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-	fflush(stdout);
+    fflush(stdout);
 
-	MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 
-	if(size < 2) {
-		fprintf(stderr, "##### ERROR: Too few MPI ranks since %s needs at least two processes! Abort!\n", argv[0]);
-		fflush(stderr);
-		MPI_Abort(MPI_COMM_WORLD, -1);
-	}
+    if (size < 2) {
+        fprintf(stderr,
+                "##### ERROR: Too few MPI ranks since %s needs at least two processes! Abort!\n",
+                argv[0]);
+        fflush(stderr);
+        MPI_Abort(MPI_COMM_WORLD, -1);
+    }
 
-	if(rank == 0) {
-		if(size > 2) {
-			printf("# *** WARNING: Too many MPI ranks since %s only needs 2 procs! --> The %d additional procs are now going to wait in MPI_Barrier...\n", argv[0], size-2);
-			fflush(stdout);
-		}
-	}
+    if (rank == 0) {
+        if (size > 2) {
+            printf
+                ("# *** WARNING: Too many MPI ranks since %s only needs 2 procs! --> The %d additional procs are now going to wait in MPI_Barrier...\n",
+                 argv[0], size - 2);
+            fflush(stdout);
+        }
+    }
 
-	MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 
-	for(current_size = msgs_start; current_size <= msgs_stop; current_size *= 2) {
+    for (current_size = msgs_start; current_size <= msgs_stop; current_size *= 2) {
 
-		PingPong(0, 1, current_size, msgs_reps, 0);
+        PingPong(0, 1, current_size, msgs_reps, 0);
 
-		PingPong(0, 1, current_size, msgs_reps, 1);
+        PingPong(0, 1, current_size, msgs_reps, 1);
 
-		PingPong(0, 1, current_size, msgs_reps, 2);
-	}
+        PingPong(0, 1, current_size, msgs_reps, 2);
+    }
 
-	MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 
-	MTest_Finalize(errs);
+    MTest_Finalize(errs);
 
-	return MTestReturnValue(errs);
+    return MTestReturnValue(errs);
 }

@@ -30,102 +30,102 @@
 #define CUDA_FREE(x)       cudaFree(x)
 #define CUDA_CHECK(call)					\
 do {								\
-	 if((call) != cudaSuccess) {				\
+	 if ((call) != cudaSuccess) {				\
 		 cudaError_t err = cudaGetLastError();		\
 		 fprintf(stderr, "CUDA error calling \""#call"\", code is %d\n", err); \
 		 MPI_Abort(MPI_COMM_WORLD, err);		\
 	 }							\
-} while(0);
+} while (0);
 
 int rank;
 int size;
 
 static
-void init_buffers(int* sbuf, int* rbuf, int* csbuf, int* crbuf, int len)
+void init_buffers(int *sbuf, int *rbuf, int *csbuf, int *crbuf, int len)
 {
-	int i;
+    int i;
 
-	for(i=0; i<NUM_ELEMENTS-1; i++) {
-		rbuf[i] = 0;
-		sbuf[i] = i + rank;
-	}
+    for (i = 0; i < NUM_ELEMENTS - 1; i++) {
+        rbuf[i] = 0;
+        sbuf[i] = i + rank;
+    }
 
-	rbuf[NUM_ELEMENTS-1] = 0;
-	sbuf[NUM_ELEMENTS-1] = rank;
+    rbuf[NUM_ELEMENTS - 1] = 0;
+    sbuf[NUM_ELEMENTS - 1] = rank;
 
-	CUDA_CHECK(cudaMemcpy(csbuf, sbuf, len, cudaMemcpyHostToDevice));
-	CUDA_CHECK(cudaMemcpy(crbuf, rbuf, len, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(csbuf, sbuf, len, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(crbuf, rbuf, len, cudaMemcpyHostToDevice));
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
-	int i;
-	int len;
-	int *sbuf;
-	int *csbuf;
-	int *rbuf;
-	int *crbuf;
-	int *recvcounts;
+    int i;
+    int len;
+    int *sbuf;
+    int *csbuf;
+    int *rbuf;
+    int *crbuf;
+    int *recvcounts;
 
-	int errs = 0;
-	MTest_Init(&argc, &argv);
+    int errs = 0;
+    MTest_Init(&argc, &argv);
 
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-	len = NUM_ELEMENTS * sizeof(int);
+    len = NUM_ELEMENTS * sizeof(int);
 
-	sbuf = (int*)MALLOC(len);
-	rbuf = (int*)MALLOC(len);
+    sbuf = (int *) MALLOC(len);
+    rbuf = (int *) MALLOC(len);
 
-	CUDA_CHECK(CUDA_MALLOC((void**)&csbuf, len));
-	CUDA_CHECK(CUDA_MALLOC((void**)&crbuf, len));
+    CUDA_CHECK(CUDA_MALLOC((void **) &csbuf, len));
+    CUDA_CHECK(CUDA_MALLOC((void **) &crbuf, len));
 
-	MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 
-	// Scan //////////////////////////////////////////////////////////////////////////
+    // Scan //////////////////////////////////////////////////////////////////////////
 
-	init_buffers(sbuf, rbuf, csbuf, crbuf, len);
-	MPI_Scan(sbuf, crbuf, NUM_ELEMENTS, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-	CUDA_CHECK(cudaMemcpy(rbuf, crbuf, len, cudaMemcpyDeviceToHost));
+    init_buffers(sbuf, rbuf, csbuf, crbuf, len);
+    MPI_Scan(sbuf, crbuf, NUM_ELEMENTS, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    CUDA_CHECK(cudaMemcpy(rbuf, crbuf, len, cudaMemcpyDeviceToHost));
 
-	MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 
-	// Exscan ////////////////////////////////////////////////////////////////////////
+    // Exscan ////////////////////////////////////////////////////////////////////////
 
-	init_buffers(sbuf, rbuf, csbuf, crbuf, len);
-	MPI_Exscan(sbuf, crbuf, NUM_ELEMENTS, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-	CUDA_CHECK(cudaMemcpy(rbuf, crbuf, len, cudaMemcpyDeviceToHost));
+    init_buffers(sbuf, rbuf, csbuf, crbuf, len);
+    MPI_Exscan(sbuf, crbuf, NUM_ELEMENTS, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    CUDA_CHECK(cudaMemcpy(rbuf, crbuf, len, cudaMemcpyDeviceToHost));
 
-	MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 
-	// Scan IN_PLACE ////////////////////////////////////////////////////////////////
+    // Scan IN_PLACE ////////////////////////////////////////////////////////////////
 
-	init_buffers(sbuf, rbuf, csbuf, crbuf, len);
-	MPI_Scan(MPI_IN_PLACE, crbuf, NUM_ELEMENTS, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-	CUDA_CHECK(cudaMemcpy(rbuf, crbuf, len, cudaMemcpyDeviceToHost));
+    init_buffers(sbuf, rbuf, csbuf, crbuf, len);
+    MPI_Scan(MPI_IN_PLACE, crbuf, NUM_ELEMENTS, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    CUDA_CHECK(cudaMemcpy(rbuf, crbuf, len, cudaMemcpyDeviceToHost));
 
-	MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 
-	// Exscan IN_PLACE ///////////////////////////////////////////////////////////////
+    // Exscan IN_PLACE ///////////////////////////////////////////////////////////////
 
-	init_buffers(sbuf, rbuf, csbuf, crbuf, len);
-	MPI_Exscan(MPI_IN_PLACE, crbuf, NUM_ELEMENTS, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-	CUDA_CHECK(cudaMemcpy(rbuf, crbuf, len, cudaMemcpyDeviceToHost));
+    init_buffers(sbuf, rbuf, csbuf, crbuf, len);
+    MPI_Exscan(MPI_IN_PLACE, crbuf, NUM_ELEMENTS, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    CUDA_CHECK(cudaMemcpy(rbuf, crbuf, len, cudaMemcpyDeviceToHost));
 
-	MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 
-	//////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////
 
-	CUDA_CHECK(CUDA_FREE(csbuf));
-	CUDA_CHECK(CUDA_FREE(crbuf));
+    CUDA_CHECK(CUDA_FREE(csbuf));
+    CUDA_CHECK(CUDA_FREE(crbuf));
 
-	FREE(sbuf);
-	FREE(rbuf);
+    FREE(sbuf);
+    FREE(rbuf);
 
-	MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 
-	MTest_Finalize(errs);
+    MTest_Finalize(errs);
 
-	return MTestReturnValue(errs);
+    return MTestReturnValue(errs);
 }
