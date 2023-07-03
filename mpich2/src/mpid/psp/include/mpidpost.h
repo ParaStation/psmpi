@@ -45,7 +45,7 @@
 
           MPIDI_PSP_Progress_start(&state);
           {
-              while(*req->cc_ptr != 0)
+              while (*req->cc_ptr != 0)
               {
                   MPIDI_PSP_Progress_wait(&state);
               }
@@ -130,8 +130,8 @@ int MPIDI_PSP_Progress_poke(void);
  * Device level request management macros
  */
 
-#define MPID_Prequest_free_hook(req_) do {} while(0)
-#define MPID_Part_request_free_hook(req_) do {} while(0)
+#define MPID_Prequest_free_hook(req_) do {} while (0)
+#define MPID_Part_request_free_hook(req_) do {} while (0)
 
 /*
  * Device level progress engine macros
@@ -141,29 +141,29 @@ int MPIDI_PSP_Progress_poke(void);
 #define MPID_Progress_end(progress_state_)   MPIDI_PSP_Progress_end(progress_state_)
 /* This is static inline instead of macro because otherwise MPID_Progress_test will
  * be a chain of macros and therefore can not be used as a callback function */
-static inline int MPID_Progress_test(MPID_Progress_state * state) /* state is unused */
-{
+static inline int MPID_Progress_test(MPID_Progress_state * state)
+{       /* state is unused */
     return MPIDI_PSP_Progress_test();
 }
+
 #define MPID_Progress_poke()		     MPIDI_PSP_Progress_poke()
 #define MPID_Stream_progress(stream)         MPIDI_PSP_Progress_poke()
 
 struct MPIR_Comm;
-int MPIDI_GPID_GetAllInComm(MPIR_Comm *comm_ptr, int local_size,
-			   MPIDI_Gpid local_gpids[], int *singlePG);
+int MPIDI_GPID_GetAllInComm(MPIR_Comm * comm_ptr, int local_size,
+                            MPIDI_Gpid local_gpids[], int *singlePG);
 int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], uint64_t lpid[]);
-int MPID_Create_intercomm_from_lpids(MPIR_Comm *newcomm_ptr,
-			   int size, const uint64_t lpids[]);
-int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_ptr, MPIR_Comm *comm_ptr,
-			   int nPGids, const MPIDI_Gpid gpids[],
-			   int root, int remote_leader, int cts_tag,
-			   pscom_connection_t *con, char *all_ports, pscom_socket_t *pscom_socket );
-int MPID_Intercomm_exchange_map( MPIR_Comm *local_comm_ptr, int local_leader,
-                                 MPIR_Comm *peer_comm_ptr, int remote_leader,
-                                 int *remote_size, uint64_t **remote_lpids,
-                                 int *is_low_group);
+int MPID_Create_intercomm_from_lpids(MPIR_Comm * newcomm_ptr, int size, const uint64_t lpids[]);
+int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_ptr, MPIR_Comm * comm_ptr,
+                           int nPGids, const MPIDI_Gpid gpids[],
+                           int root, int remote_leader, int cts_tag,
+                           pscom_connection_t * con, char *all_ports,
+                           pscom_socket_t * pscom_socket);
+int MPID_Intercomm_exchange_map(MPIR_Comm * local_comm_ptr, int local_leader,
+                                MPIR_Comm * peer_comm_ptr, int remote_leader, int *remote_size,
+                                uint64_t ** remote_lpids, int *is_low_group);
 
-int MPIDI_GPID_Get(MPIR_Comm *comm_ptr, int rank, MPIDI_Gpid gpid[]);
+int MPIDI_GPID_Get(MPIR_Comm * comm_ptr, int rank, MPIDI_Gpid gpid[]);
 
 #define MPID_ICCREATE_REMOTECOMM_HOOK(peer_comm_ptr, local_comm_ptr, remote_size, remote_gpids, local_leader) \
   MPIDI_PG_ForwardPGInfo(peer_comm_ptr, local_comm_ptr, remote_size, remote_gpids, local_leader, remote_leader, cts_tag, NULL, NULL, NULL)
@@ -172,62 +172,62 @@ int MPIDI_GPID_Get(MPIR_Comm *comm_ptr, int rank, MPIDI_Gpid gpid[]);
 /* ULFM support */
 MPL_STATIC_INLINE_PREFIX int MPID_Comm_AS_enabled(MPIR_Comm * comm_ptr)
 {
-	/* This function must return 1 in the default case and should not be ignored
-	 * by the implementation. */
-	return 1;
+    /* This function must return 1 in the default case and should not be ignored
+     * by the implementation. */
+    return 1;
 }
 
 
 MPL_STATIC_INLINE_PREFIX int MPID_Request_is_anysource(MPIR_Request * request_ptr)
 {
-	int ret = 0;
+    int ret = 0;
 
-	if (request_ptr->kind == MPIR_REQUEST_KIND__RECV &&
-	    request_ptr->dev.kind.recv.common.pscom_req) {
-		ret = request_ptr->dev.kind.recv.common.pscom_req->connection == NULL;
-	}
+    if (request_ptr->kind == MPIR_REQUEST_KIND__RECV && request_ptr->dev.kind.recv.common.pscom_req) {
+        ret = request_ptr->dev.kind.recv.common.pscom_req->connection == NULL;
+    }
 
-	return ret;
+    return ret;
 }
 
 int MPIDI_PSP_Isend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-		    int dest, int tag, MPIR_Comm *comm, int context_offset,
-		    MPIR_Request **request);
+                    int dest, int tag, MPIR_Comm * comm, int context_offset,
+                    MPIR_Request ** request);
 MPL_STATIC_INLINE_PREFIX int MPID_Isend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-					int dest, int tag, MPIR_Comm *comm, int context_offset,
-					MPIR_Request **request)
+                                        int dest, int tag, MPIR_Comm * comm, int context_offset,
+                                        MPIR_Request ** request)
 {
-	*request = NULL;
-	return MPIDI_PSP_Isend(buf, count, datatype, dest, tag, comm, context_offset, request);
+    *request = NULL;
+    return MPIDI_PSP_Isend(buf, count, datatype, dest, tag, comm, context_offset, request);
 }
 
-int MPIDI_PSP_Issend(const void * buf, MPI_Aint count, MPI_Datatype datatype,
-		     int rank, int tag, MPIR_Comm * comm, int context_offset,
-		     MPIR_Request ** request);
+int MPIDI_PSP_Issend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
+                     int rank, int tag, MPIR_Comm * comm, int context_offset,
+                     MPIR_Request ** request);
 MPL_STATIC_INLINE_PREFIX int MPID_Issend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-					 int dest, int tag, MPIR_Comm *comm, int context_offset,
-					 MPIR_Request **request)
+                                         int dest, int tag, MPIR_Comm * comm, int context_offset,
+                                         MPIR_Request ** request)
 {
-	*request = NULL;
-	return MPIDI_PSP_Issend(buf, count, datatype, dest, tag, comm, context_offset, request);
+    *request = NULL;
+    return MPIDI_PSP_Issend(buf, count, datatype, dest, tag, comm, context_offset, request);
 }
 
-int MPIDI_PSP_Irecv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-		    MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
-MPL_STATIC_INLINE_PREFIX int MPID_Irecv(void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-					MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
+int MPIDI_PSP_Irecv(void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
+                    MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
+MPL_STATIC_INLINE_PREFIX int MPID_Irecv(void *buf, MPI_Aint count, MPI_Datatype datatype, int rank,
+                                        int tag, MPIR_Comm * comm, int context_offset,
+                                        MPIR_Request ** request)
 {
-	*request = NULL;
-	return MPIDI_PSP_Irecv(buf, count, datatype, rank, tag, comm, context_offset, request);
+    *request = NULL;
+    return MPIDI_PSP_Irecv(buf, count, datatype, rank, tag, comm, context_offset, request);
 }
 
-int MPIDI_PSP_Imrecv(void *buf, int count, MPI_Datatype datatype, MPIR_Request *message,
-		     MPIR_Request **request);
-MPL_STATIC_INLINE_PREFIX int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype, MPIR_Request *message,
-					 MPIR_Request **request)
+int MPIDI_PSP_Imrecv(void *buf, int count, MPI_Datatype datatype, MPIR_Request * message,
+                     MPIR_Request ** request);
+MPL_STATIC_INLINE_PREFIX int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype,
+                                         MPIR_Request * message, MPIR_Request ** request)
 {
-	*request = NULL;
-	return MPIDI_PSP_Imrecv(buf, count, datatype, message, request);
+    *request = NULL;
+    return MPIDI_PSP_Imrecv(buf, count, datatype, message, request);
 }
 
 /*

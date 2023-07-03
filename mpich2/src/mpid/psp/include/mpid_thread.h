@@ -13,9 +13,9 @@
  * our own */
 
 typedef MPIDU_Thread_mutex_t MPID_Thread_mutex_t;
-typedef MPIDU_Thread_cond_t  MPID_Thread_cond_t;
-typedef MPIDU_Thread_id_t    MPID_Thread_id_t;
-typedef MPIDU_Thread_func_t  MPID_Thread_func_t;
+typedef MPIDU_Thread_cond_t MPID_Thread_cond_t;
+typedef MPIDU_Thread_id_t MPID_Thread_id_t;
+typedef MPIDU_Thread_func_t MPID_Thread_func_t;
 
 #define MPID_THREAD_CS_ENTER       MPIDU_THREAD_CS_ENTER
 #define MPID_THREAD_CS_EXIT        MPIDU_THREAD_CS_EXIT

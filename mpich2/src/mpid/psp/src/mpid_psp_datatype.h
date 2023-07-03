@@ -14,11 +14,10 @@
 
 #include "mpidimpl.h"
 
-typedef struct MPIDI_PSP_Datatype_packed
-{
-	MPI_Aint    datatype;
-	int         datatype_sz;
-	void        *datatype_encoded;
+typedef struct MPIDI_PSP_Datatype_packed {
+    MPI_Aint datatype;
+    int datatype_sz;
+    void *datatype_encoded;
 } MPIDI_PSP_Datatype_packed_t;
 
 #define MPIDI_PSP_Datatype_get_size_dt_ptr(count_, datatype_,   \
@@ -50,16 +49,15 @@ typedef struct MPIDI_PSP_Datatype_packed
 
 
 static inline
-void MPIDI_PSP_Datatype_map_to_basic_type(MPI_Datatype in_datatype,
-                                          int in_count,
-                                          MPI_Datatype *out_datatype,
-                                          int *out_count)
+    void MPIDI_PSP_Datatype_map_to_basic_type(MPI_Datatype in_datatype,
+                                              int in_count,
+                                              MPI_Datatype * out_datatype, int *out_count)
 {
     MPIR_Datatype *dt_ptr;
-	uint64_t data_sz;
-	size_t basic_type_size;
+    uint64_t data_sz;
+    size_t basic_type_size;
 
-	MPIDI_PSP_Datatype_get_size_dt_ptr(in_count, in_datatype, data_sz, dt_ptr);
+    MPIDI_PSP_Datatype_get_size_dt_ptr(in_count, in_datatype, data_sz, dt_ptr);
 
     if (HANDLE_IS_BUILTIN(in_datatype)) {
         *out_datatype = in_datatype;
@@ -77,8 +75,7 @@ void MPIDI_PSP_Datatype_map_to_basic_type(MPI_Datatype in_datatype,
  * encode = malloc(MPID_PSP_Datatype_get_size(info));
  * MPID_PSP_Datatype_encode(info, encode);
  */
-static inline
-unsigned int MPID_PSP_Datatype_get_size(MPI_Datatype datatype)
+static inline unsigned int MPID_PSP_Datatype_get_size(MPI_Datatype datatype)
 {
     MPIR_Datatype *dtp;
     int flattened_size = 0;

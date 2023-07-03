@@ -13,14 +13,15 @@
 #include "mpid_psp_request.h"
 #include "mpid_psp_datatype.h"
 
-int MPID_PSP_persistent_init(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-			     MPIR_Comm *comm, int context_offset, MPIR_Request **request,
-			     int (*call)(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank,
-					 int tag, struct MPIR_Comm * comm, int context_offset, MPIR_Request ** request),
-			     MPIR_Request_kind_t type)
+int MPID_PSP_persistent_init(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank,
+                             int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request,
+                             int (*call) (const void *buf, MPI_Aint count, MPI_Datatype datatype,
+                                          int rank, int tag, struct MPIR_Comm * comm,
+                                          int context_offset, MPIR_Request ** request),
+                             MPIR_Request_kind_t type)
 {
-	MPIR_Request *req;
-	struct MPID_DEV_Request_persistent *preq;
+    MPIR_Request *req;
+    struct MPID_DEV_Request_persistent *preq;
 /*
 	printf("#%d ps--- %s() called\n", MPIDI_Process.my_pg_rank, __func__);
 	printf("#%d buf %p, count %d, datatype 0x%0x, rank %d, tag %d, comm %p, off %d\n",
@@ -28,139 +29,144 @@ int MPID_PSP_persistent_init(const void *buf, MPI_Aint count, MPI_Datatype datat
 	printf("#%d ctx.id %d ctx.rank %d, ctx.name %s\n",
 	       MPIDI_Process.my_pg_rank, comm->context_id, comm->rank, comm->name);
 */
-	req = MPIR_Request_create(type);
-	if (unlikely(!req)) goto err_request_recv_create;
-	req->comm = comm;
-	MPIR_Comm_add_ref(comm);
+    req = MPIR_Request_create(type);
+    if (unlikely(!req))
+        goto err_request_recv_create;
+    req->comm = comm;
+    MPIR_Comm_add_ref(comm);
 
-	req->u.persist.real_request = NULL;
-	MPIDI_PSP_Request_set_completed(req); /* an inactive persistent request is a completed request. */
+    req->u.persist.real_request = NULL;
+    MPIDI_PSP_Request_set_completed(req);       /* an inactive persistent request is a completed request. */
 
-	preq = &req->dev.kind.persistent;
+    preq = &req->dev.kind.persistent;
 
-	preq->buf = (void *)buf;
-	preq->count = count;
-	preq->datatype = datatype;
-	MPID_PSP_Datatype_add_ref(preq->datatype);
+    preq->buf = (void *) buf;
+    preq->count = count;
+    preq->datatype = datatype;
+    MPID_PSP_Datatype_add_ref(preq->datatype);
 
-	preq->rank = rank;
-	preq->tag = tag;
-	preq->comm = comm;
-//	MPIR_Comm_add_ref(comm);
+    preq->rank = rank;
+    preq->tag = tag;
+    preq->comm = comm;
+//      MPIR_Comm_add_ref(comm);
 
-	preq->context_offset = context_offset;
+    preq->context_offset = context_offset;
 
-	preq->call = call;
+    preq->call = call;
 
-	*request = req;
+    *request = req;
 
-	return MPI_SUCCESS;
-	/* --- */
-err_request_recv_create:
-	return MPI_ERR_NO_MEM;
+    return MPI_SUCCESS;
+    /* --- */
+  err_request_recv_create:
+    return MPI_ERR_NO_MEM;
 }
 
 
-int MPID_PSP_persistent_start(MPIR_Request *req)
+int MPID_PSP_persistent_start(MPIR_Request * req)
 {
-	int mpi_errno = MPI_SUCCESS;
-	struct MPID_DEV_Request_persistent * preq;
-	preq = &req->dev.kind.persistent;
+    int mpi_errno = MPI_SUCCESS;
+    struct MPID_DEV_Request_persistent *preq;
+    preq = &req->dev.kind.persistent;
 /*
 	printf("#%d ps--- %s() called\n", MPIDI_Process.my_pg_rank, __func__);
 */
-	assert(req->u.persist.real_request == NULL); /* assure inactive persistent request! */
+    assert(req->u.persist.real_request == NULL);        /* assure inactive persistent request! */
 
-	mpi_errno = preq->call(preq->buf, preq->count, preq->datatype, preq->rank,
-			       preq->tag, preq->comm, preq->context_offset,
-			       &req->u.persist.real_request);
+    mpi_errno = preq->call(preq->buf, preq->count, preq->datatype, preq->rank,
+                           preq->tag, preq->comm, preq->context_offset,
+                           &req->u.persist.real_request);
 
-	if (req->u.persist.real_request) {
-		/* Use cc_ptr from partner request.
-		   MPIR_Request_complete() in pt2pt/mpir_request.c will reset it to
-		   req->cc = 0;
-		   req->cc_ptr = &req->cc;
-		   req->u.persist.real_request = NULL;
-		   when done.
-		 */
-		req->cc_ptr = req->u.persist.real_request->cc_ptr;
-	}
-	return mpi_errno;
+    if (req->u.persist.real_request) {
+        /* Use cc_ptr from partner request.
+         * MPIR_Request_complete() in pt2pt/mpir_request.c will reset it to
+         * req->cc = 0;
+         * req->cc_ptr = &req->cc;
+         * req->u.persist.real_request = NULL;
+         * when done.
+         */
+        req->cc_ptr = req->u.persist.real_request->cc_ptr;
+    }
+    return mpi_errno;
 }
 
 
 static
-int MPID_PSP_Bsend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-		   MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
+int MPID_PSP_Bsend(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
+                   MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
 {
-	/* See src/mpid/ch3/src/mpid_startall.c:105   "MPID_Startall(): case MPIDI_REQUEST_TYPE_BSEND:"*/
-	MPI_Request sreq_handle;
-	int mpi_errno = MPI_SUCCESS;
+    /* See src/mpid/ch3/src/mpid_startall.c:105   "MPID_Startall(): case MPIDI_REQUEST_TYPE_BSEND:" */
+    MPI_Request sreq_handle;
+    int mpi_errno = MPI_SUCCESS;
 
-	// TODO: check THREADPRIV API!
+    // TODO: check THREADPRIV API!
 
-	mpi_errno = MPIR_Bsend_isend((void *)buf, count, datatype, rank, tag,
-				     comm, NULL);
-	if (mpi_errno)
-		goto fn_fail;
+    mpi_errno = MPIR_Bsend_isend((void *) buf, count, datatype, rank, tag, comm, NULL);
+    if (mpi_errno)
+        goto fn_fail;
 
-	/* Ibsend is local-complete */
-	MPIR_Request *request_ptr = MPIR_Request_create_complete(MPIR_REQUEST_KIND__SEND);
-	MPIR_Request *r;
-	MPIR_Request_get_ptr(sreq_handle, r);
-	*request = r;
+    /* Ibsend is local-complete */
+    MPIR_Request *request_ptr = MPIR_Request_create_complete(MPIR_REQUEST_KIND__SEND);
+    MPIR_Request *r;
+    MPIR_Request_get_ptr(sreq_handle, r);
+    *request = r;
 
   fn_exit:
-	return mpi_errno;
+    return mpi_errno;
 
   fn_fail:
-	*request = NULL;
-	mpi_errno = MPIR_Err_return_comm(comm, __func__, mpi_errno);
-	goto fn_exit;
+    *request = NULL;
+    mpi_errno = MPIR_Err_return_comm(comm, __func__, mpi_errno);
+    goto fn_exit;
 }
 
 
 int MPID_Recv_init(void *buf, int count, MPI_Datatype datatype, int rank, int tag,
-		   MPIR_Comm *comm, int context_offset, MPIR_Request **request)
+                   MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
 {
-	return MPID_PSP_persistent_init(buf, count, datatype, rank, tag, comm,
-					context_offset, request,
-					(int (*)(const void *, MPI_Aint, MPI_Datatype, int, int, struct MPIR_Comm *, int, MPIR_Request **))MPID_Irecv,
-					MPIR_REQUEST_KIND__PREQUEST_RECV);
+    return MPID_PSP_persistent_init(buf, count, datatype, rank, tag, comm,
+                                    context_offset, request, (int (*)
+                                                              (const void *, MPI_Aint, MPI_Datatype,
+                                                               int, int, struct MPIR_Comm *, int,
+                                                               MPIR_Request **)) MPID_Irecv,
+                                    MPIR_REQUEST_KIND__PREQUEST_RECV);
 }
 
 
-int MPID_Rsend_init(const void * buf, int count, MPI_Datatype datatype,
-		    int rank, int tag, MPIR_Comm * comm, int context_offset,
-		    MPIR_Request ** request)
+int MPID_Rsend_init(const void *buf, int count, MPI_Datatype datatype,
+                    int rank, int tag, MPIR_Comm * comm, int context_offset,
+                    MPIR_Request ** request)
 {
-	return MPID_PSP_persistent_init(buf, count, datatype, rank, tag, comm,
-					context_offset, request, MPID_Irsend, MPIR_REQUEST_KIND__PREQUEST_SEND);
+    return MPID_PSP_persistent_init(buf, count, datatype, rank, tag, comm,
+                                    context_offset, request, MPID_Irsend,
+                                    MPIR_REQUEST_KIND__PREQUEST_SEND);
 }
 
 
-int MPID_Bsend_init(const void * buf, int count, MPI_Datatype datatype,
-		    int rank, int tag, MPIR_Comm * comm, int context_offset,
-		    MPIR_Request ** request)
+int MPID_Bsend_init(const void *buf, int count, MPI_Datatype datatype,
+                    int rank, int tag, MPIR_Comm * comm, int context_offset,
+                    MPIR_Request ** request)
 {
-	return MPID_PSP_persistent_init(buf, count, datatype, rank, tag, comm,
-					context_offset, request, MPID_PSP_Bsend, MPIR_REQUEST_KIND__PREQUEST_SEND);
+    return MPID_PSP_persistent_init(buf, count, datatype, rank, tag, comm,
+                                    context_offset, request, MPID_PSP_Bsend,
+                                    MPIR_REQUEST_KIND__PREQUEST_SEND);
 }
 
 
-int MPID_Send_init(const void * buf, int count, MPI_Datatype datatype,
-		   int rank, int tag, MPIR_Comm * comm, int context_offset,
-		   MPIR_Request ** request)
+int MPID_Send_init(const void *buf, int count, MPI_Datatype datatype,
+                   int rank, int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
 {
-	return MPID_PSP_persistent_init(buf, count, datatype, rank, tag, comm,
-					context_offset, request, MPIDI_PSP_Isend, MPIR_REQUEST_KIND__PREQUEST_SEND);
+    return MPID_PSP_persistent_init(buf, count, datatype, rank, tag, comm,
+                                    context_offset, request, MPIDI_PSP_Isend,
+                                    MPIR_REQUEST_KIND__PREQUEST_SEND);
 }
 
 
-int MPID_Ssend_init(const void * buf, int count, MPI_Datatype datatype,
-		    int rank, int tag, MPIR_Comm * comm, int context_offset,
-		    MPIR_Request ** request)
+int MPID_Ssend_init(const void *buf, int count, MPI_Datatype datatype,
+                    int rank, int tag, MPIR_Comm * comm, int context_offset,
+                    MPIR_Request ** request)
 {
-	return MPID_PSP_persistent_init(buf, count, datatype, rank, tag, comm,
-					context_offset, request, MPIDI_PSP_Issend, MPIR_REQUEST_KIND__PREQUEST_SEND);
+    return MPID_PSP_persistent_init(buf, count, datatype, rank, tag, comm,
+                                    context_offset, request, MPIDI_PSP_Issend,
+                                    MPIR_REQUEST_KIND__PREQUEST_SEND);
 }

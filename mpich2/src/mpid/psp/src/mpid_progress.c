@@ -15,30 +15,32 @@
 
 #define PSP_NBC_PROGRESS_DELAY 100
 
-int MPIDI_PSP_Wait(MPIR_Request *request)
+int MPIDI_PSP_Wait(MPIR_Request * request)
 {
-	static unsigned int counter_to_nbc_progress = 0;
-	int made_progress;
-	pscom_request_t *preq = request->dev.kind.common.pscom_req;
+    static unsigned int counter_to_nbc_progress = 0;
+    int made_progress;
+    pscom_request_t *preq = request->dev.kind.common.pscom_req;
 
-	assert(request->kind != MPIR_REQUEST_KIND__UNDEFINED);
-	assert(request->kind != MPIR_REQUEST_KIND__GREQUEST);
-	assert(request->kind != MPIR_REQUEST_KIND__COLL);
-	assert(request->kind != MPIR_REQUEST_KIND__MPROBE);
-	assert(request->kind != MPIR_REQUEST_KIND__LAST);
+    assert(request->kind != MPIR_REQUEST_KIND__UNDEFINED);
+    assert(request->kind != MPIR_REQUEST_KIND__GREQUEST);
+    assert(request->kind != MPIR_REQUEST_KIND__COLL);
+    assert(request->kind != MPIR_REQUEST_KIND__MPROBE);
+    assert(request->kind != MPIR_REQUEST_KIND__LAST);
 
-	MPID_PSP_LOCKFREE_CALL(pscom_wait(preq));
+    MPID_PSP_LOCKFREE_CALL(pscom_wait(preq));
 
-	/* The progress counting here is just for reducing the scheduling impact onto pt2pt
-	    latencies if a lot of non-blocking collectives are pending without progress: */
-	counter_to_nbc_progress++;
-	if(counter_to_nbc_progress == PSP_NBC_PROGRESS_DELAY) {
-		MPIDU_Sched_progress(&made_progress);
-		if(made_progress) counter_to_nbc_progress--;
-		else counter_to_nbc_progress = 0;
-	}
+    /* The progress counting here is just for reducing the scheduling impact onto pt2pt
+     * latencies if a lot of non-blocking collectives are pending without progress: */
+    counter_to_nbc_progress++;
+    if (counter_to_nbc_progress == PSP_NBC_PROGRESS_DELAY) {
+        MPIDU_Sched_progress(&made_progress);
+        if (made_progress)
+            counter_to_nbc_progress--;
+        else
+            counter_to_nbc_progress = 0;
+    }
 
-	return MPI_SUCCESS;
+    return MPI_SUCCESS;
 }
 
 
@@ -61,18 +63,18 @@ void MPIDI_PSP_Progress_start(MPID_Progress_state * state)
 /*  Wait for some communication since 'MPID_Progress_start'  */
 int MPIDI_PSP_Progress_wait(MPID_Progress_state * state)
 {
-	int made_progress = 0;
-	int mpi_errno;
+    int made_progress = 0;
+    int mpi_errno;
 
-	/* Make progress on nonblocking collectives */
-	mpi_errno = MPIDU_Sched_progress(&made_progress);
-	assert(mpi_errno == MPI_SUCCESS);
+    /* Make progress on nonblocking collectives */
+    mpi_errno = MPIDU_Sched_progress(&made_progress);
+    assert(mpi_errno == MPI_SUCCESS);
 
-	if (!made_progress) {
-		/* Make progress on pscom requests */
-		MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
-	}
-	return MPI_SUCCESS;
+    if (!made_progress) {
+        /* Make progress on pscom requests */
+        MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
+    }
+    return MPI_SUCCESS;
 }
 
 
@@ -93,15 +95,15 @@ void MPIDI_PSP_Progress_end(MPID_Progress_state * state)
 */
 int MPIDI_PSP_Progress_test(void)
 {
-	int made_progress = 0;
-	int mpi_errno;
+    int made_progress = 0;
+    int mpi_errno;
 
-	/* Make progress on nonblocking collectives */
-	mpi_errno = MPIDU_Sched_progress(&made_progress);
-	assert(mpi_errno == MPI_SUCCESS);
+    /* Make progress on nonblocking collectives */
+    mpi_errno = MPIDU_Sched_progress(&made_progress);
+    assert(mpi_errno == MPI_SUCCESS);
 
-	pscom_test_any();
-	return MPI_SUCCESS;
+    pscom_test_any();
+    return MPI_SUCCESS;
 }
 
 /*
@@ -121,6 +123,6 @@ int MPIDI_PSP_Progress_test(void)
 */
 int MPIDI_PSP_Progress_poke(void)
 {
-	MPID_Progress_test(NULL);
-	return MPI_SUCCESS;
+    MPID_Progress_test(NULL);
+    return MPI_SUCCESS;
 }
