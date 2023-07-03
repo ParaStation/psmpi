@@ -30,106 +30,105 @@
 	} while (0)
 
 
-void* thread_func(void* args)
+void *thread_func(void *args)
 {
-	int errs = 0;
-	int* _errs;
-	int i, count, tag;
-	MPI_Message msg;
-	MPI_Status status;
-	int recvbuf;
-	int flag;
+    int errs = 0;
+    int *_errs;
+    int i, count, tag;
+    MPI_Message msg;
+    MPI_Status status;
+    int recvbuf;
+    int flag;
 
-	for (i = 0; i < NUM_ITER; i++) {
+    for (i = 0; i < NUM_ITER; i++) {
 
-		if (rand() % 2) {
-			MPI_Mprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &msg, &status);
-		} else {
-			do {
-				MPI_Improbe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &msg, &status);
-			} while (!flag);
-		}
+        if (rand() % 2) {
+            MPI_Mprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &msg, &status);
+        } else {
+            do {
+                MPI_Improbe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &msg, &status);
+            } while (!flag);
+        }
 
-		check(status.MPI_SOURCE == 0);
-		check(msg != MPI_MESSAGE_NULL);
+        check(status.MPI_SOURCE == 0);
+        check(msg != MPI_MESSAGE_NULL);
 
-		tag = status.MPI_TAG;
-		check(tag >= 19 || tag <= 42);
+        tag = status.MPI_TAG;
+        check(tag >= 19 || tag <= 42);
 
-		count = -1;
-		MPI_Get_count(&status, MPI_INT, &count);
-		check(count == 1);
+        count = -1;
+        MPI_Get_count(&status, MPI_INT, &count);
+        check(count == 1);
 
-		MPI_Mrecv(&recvbuf, 1, MPI_INT, &msg, &status);
-		check(tag == status.MPI_TAG);
+        MPI_Mrecv(&recvbuf, 1, MPI_INT, &msg, &status);
+        check(tag == status.MPI_TAG);
 
-		if (!(tag % 2)) {
-			check(recvbuf == 0xdeadbeef);
-		} else {
-			check(recvbuf == 0xfeedface);
-		}
+        if (!(tag % 2)) {
+            check(recvbuf == 0xdeadbeef);
+        } else {
+            check(recvbuf == 0xfeedface);
+        }
 
-		count = -1;
-		MPI_Get_count(&status, MPI_INT, &count);
-		check(count == 1);
-	}
+        count = -1;
+        MPI_Get_count(&status, MPI_INT, &count);
+        check(count == 1);
+    }
 
-	_errs = malloc(sizeof(int));
-	*_errs = errs;
-	return (void*)_errs;
+    _errs = malloc(sizeof(int));
+    *_errs = errs;
+    return (void *) _errs;
 }
 
 int main(int argc, char **argv)
 {
-	int errs = 0;
-	int rank, size;
-	int provided;
-	int i, tag;
-	int sendbuf[2];
-	void* retval;
-	pthread_t handles[NUM_THREADS];
+    int errs = 0;
+    int rank, size;
+    int provided;
+    int i, tag;
+    int sendbuf[2];
+    void *retval;
+    pthread_t handles[NUM_THREADS];
 
-	MTest_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+    MTest_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
 
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-	if (size < 2) {
-		printf("this test requires at least 2 processes\n");
-		MPI_Abort(MPI_COMM_WORLD, 1);
-	}
+    if (size < 2) {
+        printf("this test requires at least 2 processes\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
 
-	/* all processes besides ranks 0 & 1 aren't used by this test */
-	if (rank >= 2) {
-		goto epilogue;
-	}
+    /* all processes besides ranks 0 & 1 aren't used by this test */
+    if (rank >= 2) {
+        goto epilogue;
+    }
 
-	if (provided == MPI_THREAD_MULTIPLE)
-	{
-		if (rank == 0) {
-			sendbuf[0] = 0xdeadbeef;
-			sendbuf[1] = 0xfeedface;
+    if (provided == MPI_THREAD_MULTIPLE) {
+        if (rank == 0) {
+            sendbuf[0] = 0xdeadbeef;
+            sendbuf[1] = 0xfeedface;
 
-			for(i = 0; i < NUM_ITER * NUM_THREADS; i++) {
-				tag = 19 + rand() % (42 - 19);
-				MPI_Send(&sendbuf[tag % 2], 1, MPI_INT, 1, tag, MPI_COMM_WORLD);
-			}
-		} else {
-			for (i = 0; i < NUM_THREADS; ++i) {
-				pthread_create(&handles[i], NULL, thread_func, NULL);
-			}
-			for (i = 0; i < NUM_THREADS; ++i) {
-				pthread_join(handles[i], &retval);
-				if (retval != PTHREAD_CANCELED) {
-					errs += *(int*)retval;
-					free(retval);
-				}
-			}
-		}
-	}
+            for (i = 0; i < NUM_ITER * NUM_THREADS; i++) {
+                tag = 19 + rand() % (42 - 19);
+                MPI_Send(&sendbuf[tag % 2], 1, MPI_INT, 1, tag, MPI_COMM_WORLD);
+            }
+        } else {
+            for (i = 0; i < NUM_THREADS; ++i) {
+                pthread_create(&handles[i], NULL, thread_func, NULL);
+            }
+            for (i = 0; i < NUM_THREADS; ++i) {
+                pthread_join(handles[i], &retval);
+                if (retval != PTHREAD_CANCELED) {
+                    errs += *(int *) retval;
+                    free(retval);
+                }
+            }
+        }
+    }
 
-epilogue:
-	MTest_Finalize(errs);
+  epilogue:
+    MTest_Finalize(errs);
 
-	return MTestReturnValue(errs);
+    return MTestReturnValue(errs);
 }

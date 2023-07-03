@@ -16,7 +16,7 @@
 
 #define ITER 100
 
-int main( int argc, char *argv[] )
+int main(int argc, char *argv[])
 {
     int rank, nproc, i;
     int errors = 0, all_errors = 0;
@@ -28,19 +28,20 @@ int main( int argc, char *argv[] )
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
     if (nproc < 2) {
-        if (rank == 0) printf("Error: must be run with two or more processes\n");
+        if (rank == 0)
+            printf("Error: must be run with two or more processes\n");
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     /** Create using MPI_Win_create() **/
 
     if (rank == 0) {
-      MPI_Alloc_mem(4*sizeof(int), MPI_INFO_NULL, &buf);
-      *buf = nproc-1;
+        MPI_Alloc_mem(4 * sizeof(int), MPI_INFO_NULL, &buf);
+        *buf = nproc - 1;
     } else
-      buf = NULL;
+        buf = NULL;
 
-    MPI_Win_create(buf, 4*sizeof(int)*(rank == 0), 1, MPI_INFO_NULL, MPI_COMM_WORLD, &window);
+    MPI_Win_create(buf, 4 * sizeof(int) * (rank == 0), 1, MPI_INFO_NULL, MPI_COMM_WORLD, &window);
 
     /* PROC_NULL Communication */
     {
@@ -49,10 +50,12 @@ int main( int argc, char *argv[] )
 
         MPI_Win_lock_all(0, window);
 
-        MPI_Rget_accumulate(&val[0], 1, MPI_INT, &res, 1, MPI_INT, MPI_PROC_NULL, 0, 1, MPI_INT, MPI_REPLACE, window, &pn_req[0]);
+        MPI_Rget_accumulate(&val[0], 1, MPI_INT, &res, 1, MPI_INT, MPI_PROC_NULL, 0, 1, MPI_INT,
+                            MPI_REPLACE, window, &pn_req[0]);
         MPI_Rget(&val[1], 1, MPI_INT, MPI_PROC_NULL, 1, 1, MPI_INT, window, &pn_req[1]);
         MPI_Rput(&val[2], 1, MPI_INT, MPI_PROC_NULL, 2, 1, MPI_INT, window, &pn_req[2]);
-        MPI_Raccumulate(&val[3], 1, MPI_INT, MPI_PROC_NULL, 3, 1, MPI_INT, MPI_REPLACE, window, &pn_req[3]);
+        MPI_Raccumulate(&val[3], 1, MPI_INT, MPI_PROC_NULL, 3, 1, MPI_INT, MPI_REPLACE, window,
+                        &pn_req[3]);
 
         assert(pn_req[0] != MPI_REQUEST_NULL);
         assert(pn_req[1] != MPI_REQUEST_NULL);
@@ -77,24 +80,25 @@ int main( int argc, char *argv[] )
          * to the right.  Each process, in turn, performs third-party
          * communication via process 0's window. */
         if (rank > 0) {
-            MPI_Recv(NULL, 0, MPI_BYTE, rank-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(NULL, 0, MPI_BYTE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
 
-        MPI_Rget_accumulate(&rank, 1, MPI_INT, &val, 1, MPI_INT, 0, 0, 1, MPI_INT, MPI_REPLACE, window, &gacc_req);
+        MPI_Rget_accumulate(&rank, 1, MPI_INT, &val, 1, MPI_INT, 0, 0, 1, MPI_INT, MPI_REPLACE,
+                            window, &gacc_req);
         assert(gacc_req != MPI_REQUEST_NULL);
         MPI_Wait(&gacc_req, MPI_STATUS_IGNORE);
 
         MPI_Win_flush(0, window);
 
-        exp = (rank + nproc-1) % nproc;
+        exp = (rank + nproc - 1) % nproc;
 
         if (val != exp) {
             printf("%d - Got %d, expected %d\n", rank, val, exp);
             errors++;
         }
 
-        if (rank < nproc-1) {
-            MPI_Send(NULL, 0, MPI_BYTE, rank+1, 0, MPI_COMM_WORLD);
+        if (rank < nproc - 1) {
+            MPI_Send(NULL, 0, MPI_BYTE, rank + 1, 0, MPI_COMM_WORLD);
         }
 
         MPI_Barrier(MPI_COMM_WORLD);
@@ -102,7 +106,8 @@ int main( int argc, char *argv[] )
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    if (rank == 0) *buf = nproc-1;
+    if (rank == 0)
+        *buf = nproc - 1;
     MPI_Win_sync(window);
 
     /* GET+PUT: Test third-party communication, through rank 0. */
@@ -114,7 +119,7 @@ int main( int argc, char *argv[] )
          * to the right.  Each process, in turn, performs third-party
          * communication via process 0's window. */
         if (rank > 0) {
-            MPI_Recv(NULL, 0, MPI_BYTE, rank-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(NULL, 0, MPI_BYTE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
 
         MPI_Rget(&val, 1, MPI_INT, 0, 0, 1, MPI_INT, window, &req);
@@ -127,15 +132,15 @@ int main( int argc, char *argv[] )
 
         MPI_Win_flush(0, window);
 
-        exp = (rank + nproc-1) % nproc;
+        exp = (rank + nproc - 1) % nproc;
 
         if (val != exp) {
             printf("%d - Got %d, expected %d\n", rank, val, exp);
             errors++;
         }
 
-        if (rank < nproc-1) {
-            MPI_Send(NULL, 0, MPI_BYTE, rank+1, 0, MPI_COMM_WORLD);
+        if (rank < nproc - 1) {
+            MPI_Send(NULL, 0, MPI_BYTE, rank + 1, 0, MPI_COMM_WORLD);
         }
 
         MPI_Barrier(MPI_COMM_WORLD);
@@ -143,7 +148,8 @@ int main( int argc, char *argv[] )
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    if (rank == 0) *buf = nproc-1;
+    if (rank == 0)
+        *buf = nproc - 1;
     MPI_Win_sync(window);
 
     /* GET+ACC: Test third-party communication, through rank 0. */
@@ -155,7 +161,7 @@ int main( int argc, char *argv[] )
          * to the right.  Each process, in turn, performs third-party
          * communication via process 0's window. */
         if (rank > 0) {
-            MPI_Recv(NULL, 0, MPI_BYTE, rank-1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(NULL, 0, MPI_BYTE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
 
         MPI_Rget(&val, 1, MPI_INT, 0, 0, 1, MPI_INT, window, &req);
@@ -168,15 +174,15 @@ int main( int argc, char *argv[] )
 
         MPI_Win_flush(0, window);
 
-        exp = (rank + nproc-1) % nproc;
+        exp = (rank + nproc - 1) % nproc;
 
         if (val != exp) {
             printf("%d - Got %d, expected %d\n", rank, val, exp);
             errors++;
         }
 
-        if (rank < nproc-1) {
-            MPI_Send(NULL, 0, MPI_BYTE, rank+1, 0, MPI_COMM_WORLD);
+        if (rank < nproc - 1) {
+            MPI_Send(NULL, 0, MPI_BYTE, rank + 1, 0, MPI_COMM_WORLD);
         }
 
         MPI_Barrier(MPI_COMM_WORLD);
@@ -193,10 +199,12 @@ int main( int argc, char *argv[] )
 
         MPI_Win_lock_all(0, window);
 
-        MPI_Rget_accumulate(&val[0], 1, MPI_INT, &res, 1, MPI_INT, target, 0, 1, MPI_INT, MPI_REPLACE, window, &pn_req[0]);
+        MPI_Rget_accumulate(&val[0], 1, MPI_INT, &res, 1, MPI_INT, target, 0, 1, MPI_INT,
+                            MPI_REPLACE, window, &pn_req[0]);
         MPI_Rget(&val[1], 1, MPI_INT, target, 1, 1, MPI_INT, window, &pn_req[1]);
         MPI_Rput(&val[2], 1, MPI_INT, target, 2, 1, MPI_INT, window, &pn_req[2]);
-        MPI_Raccumulate(&val[3], 1, MPI_INT, target, 3, 1, MPI_INT, MPI_REPLACE, window, &pn_req[3]);
+        MPI_Raccumulate(&val[3], 1, MPI_INT, target, 3, 1, MPI_INT, MPI_REPLACE, window,
+                        &pn_req[3]);
 
         assert(pn_req[0] != MPI_REQUEST_NULL);
         assert(pn_req[1] != MPI_REQUEST_NULL);
@@ -218,10 +226,12 @@ int main( int argc, char *argv[] )
 
         MPI_Win_lock_all(0, window);
 
-        MPI_Rget_accumulate(&val[0], 1, MPI_INT, &res, 1, MPI_INT, target, 0, 1, MPI_INT, MPI_REPLACE, window, &pn_req[0]);
+        MPI_Rget_accumulate(&val[0], 1, MPI_INT, &res, 1, MPI_INT, target, 0, 1, MPI_INT,
+                            MPI_REPLACE, window, &pn_req[0]);
         MPI_Rget(&val[1], 1, MPI_INT, target, 1, 1, MPI_INT, window, &pn_req[1]);
         MPI_Rput(&val[2], 1, MPI_INT, target, 2, 1, MPI_INT, window, &pn_req[2]);
-        MPI_Raccumulate(&val[3], 1, MPI_INT, target, 3, 1, MPI_INT, MPI_REPLACE, window, &pn_req[3]);
+        MPI_Raccumulate(&val[3], 1, MPI_INT, target, 3, 1, MPI_INT, MPI_REPLACE, window,
+                        &pn_req[3]);
 
         assert(pn_req[0] != MPI_REQUEST_NULL);
         assert(pn_req[1] != MPI_REQUEST_NULL);
@@ -241,10 +251,12 @@ int main( int argc, char *argv[] )
 
         MPI_Win_lock_all(0, window);
 
-        MPI_Rget_accumulate(&val[0], 1, MPI_INT, &res, 1, MPI_INT, target, 0, 1, MPI_INT, MPI_REPLACE, window, &pn_req[0]);
+        MPI_Rget_accumulate(&val[0], 1, MPI_INT, &res, 1, MPI_INT, target, 0, 1, MPI_INT,
+                            MPI_REPLACE, window, &pn_req[0]);
         MPI_Rget(&val[1], 1, MPI_INT, target, 1, 1, MPI_INT, window, &pn_req[1]);
         MPI_Rput(&val[2], 1, MPI_INT, target, 2, 1, MPI_INT, window, &pn_req[2]);
-        MPI_Raccumulate(&val[3], 1, MPI_INT, target, 3, 1, MPI_INT, MPI_REPLACE, window, &pn_req[3]);
+        MPI_Raccumulate(&val[3], 1, MPI_INT, target, 3, 1, MPI_INT, MPI_REPLACE, window,
+                        &pn_req[3]);
 
         assert(pn_req[0] != MPI_REQUEST_NULL);
         assert(pn_req[1] != MPI_REQUEST_NULL);
@@ -266,10 +278,12 @@ int main( int argc, char *argv[] )
 
         MPI_Win_lock_all(0, window);
 
-        MPI_Rget_accumulate(&val[0], 1, MPI_INT, &res, 1, MPI_INT, target, 0, 1, MPI_INT, MPI_REPLACE, window, &pn_req[0]);
+        MPI_Rget_accumulate(&val[0], 1, MPI_INT, &res, 1, MPI_INT, target, 0, 1, MPI_INT,
+                            MPI_REPLACE, window, &pn_req[0]);
         MPI_Rget(&val[1], 1, MPI_INT, target, 1, 1, MPI_INT, window, &pn_req[1]);
         MPI_Rput(&val[2], 1, MPI_INT, target, 2, 1, MPI_INT, window, &pn_req[2]);
-        MPI_Raccumulate(&val[3], 1, MPI_INT, target, 3, 1, MPI_INT, MPI_REPLACE, window, &pn_req[3]);
+        MPI_Raccumulate(&val[3], 1, MPI_INT, target, 3, 1, MPI_INT, MPI_REPLACE, window,
+                        &pn_req[3]);
 
         assert(pn_req[0] != MPI_REQUEST_NULL);
         assert(pn_req[1] != MPI_REQUEST_NULL);
@@ -284,7 +298,8 @@ int main( int argc, char *argv[] )
     }
 
     MPI_Win_free(&window);
-    if (buf) MPI_Free_mem(buf);
+    if (buf)
+        MPI_Free_mem(buf);
 
     MPI_Reduce(&errors, &all_errors, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 

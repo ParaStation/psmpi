@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define CHECK_ERR( stmt )                                                               \
+#define CHECK_ERR(stmt)                                                               \
     do {                                                                                \
         int err_class, err, rank;                                                       \
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);                                           \
@@ -22,7 +22,7 @@
             printf("%d: Operation succeeded, when it should have failed\n", rank);      \
             errors++;                                                                   \
         } else {                                                                        \
-            MPI_Error_class( err, &err_class );                                         \
+            MPI_Error_class(err, &err_class);                                         \
             if (err_class != MPI_ERR_RMA_FLAVOR)  {                                    \
                 char str[MPI_MAX_ERROR_STRING];                                         \
                 int  len;                                                               \
@@ -36,18 +36,17 @@
 
 int main(int argc, char *argv[])
 {
-    int          rank;
-    int          errors = 0, all_errors = 0;
-    int          buf;
-    MPI_Win      win;
-    MPI_Aint     size;
-    void*        base;
+    int rank;
+    int errors = 0, all_errors = 0;
+    int buf;
+    MPI_Win win;
+    MPI_Aint size;
+    void *base;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    MPI_Win_create(&buf, sizeof(int), sizeof(int),
-                    MPI_INFO_NULL, MPI_COMM_WORLD, &win);
+    MPI_Win_create(&buf, sizeof(int), sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
 
     MPI_Win_set_errhandler(win, MPI_ERRORS_RETURN);
 
@@ -63,7 +62,8 @@ int main(int argc, char *argv[])
 
     MPI_Reduce(&errors, &all_errors, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
-    if (rank == 0 && all_errors == 0) printf(" No Errors\n");
+    if (rank == 0 && all_errors == 0)
+        printf(" No Errors\n");
     MPI_Finalize();
 
     return 0;

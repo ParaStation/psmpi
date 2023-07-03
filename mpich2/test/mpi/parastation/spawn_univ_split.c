@@ -15,123 +15,124 @@
 #include <unistd.h>
 #include "mpitest.h"
 
-int main( int argc, char *argv[] )
+int main(int argc, char *argv[])
 {
-	int i;
-	int high;
-	int color;
-	int leader;
-	int buffer[3];
-	int errcodes[2];
-	int errs = 0;
-	int world_rank;
-	int world_size;
-	int merge_rank;
-	int merge_size;
-	int inter_rank;
-	int inter_rem_size;
-	int inter_loc_size;
-	int univ_rank;
-	int univ_size;
-	int split_rank;
-	int split_size;
-	MPI_Comm parent_comm = MPI_COMM_NULL;
-	MPI_Comm spawn_comm  = MPI_COMM_NULL;
-	MPI_Comm merge_comm  = MPI_COMM_NULL;
-	MPI_Comm peer_comm   = MPI_COMM_NULL;
-	MPI_Comm inter_comm  = MPI_COMM_NULL;
-	MPI_Comm univ_comm   = MPI_COMM_NULL;
-	MPI_Comm split_comm  = MPI_COMM_NULL;
+    int i;
+    int high;
+    int color;
+    int leader;
+    int buffer[3];
+    int errcodes[2];
+    int errs = 0;
+    int world_rank;
+    int world_size;
+    int merge_rank;
+    int merge_size;
+    int inter_rank;
+    int inter_rem_size;
+    int inter_loc_size;
+    int univ_rank;
+    int univ_size;
+    int split_rank;
+    int split_size;
+    MPI_Comm parent_comm = MPI_COMM_NULL;
+    MPI_Comm spawn_comm = MPI_COMM_NULL;
+    MPI_Comm merge_comm = MPI_COMM_NULL;
+    MPI_Comm peer_comm = MPI_COMM_NULL;
+    MPI_Comm inter_comm = MPI_COMM_NULL;
+    MPI_Comm univ_comm = MPI_COMM_NULL;
+    MPI_Comm split_comm = MPI_COMM_NULL;
 
-	MTest_Init( &argc, &argv );
+    MTest_Init(&argc, &argv);
 
-	MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-	if(world_size != 2) {
-		printf("This program needs exactly np = 2 processes! Calling MPI_Abort()...\n");
-		MPI_Abort(MPI_COMM_WORLD, -1);
-	}
+    if (world_size != 2) {
+        printf("This program needs exactly np = 2 processes! Calling MPI_Abort()...\n");
+        MPI_Abort(MPI_COMM_WORLD, -1);
+    }
 
-	MPI_Comm_get_parent( &parent_comm );
+    MPI_Comm_get_parent(&parent_comm);
 
-	if(parent_comm == MPI_COMM_NULL) {
-		MPI_Comm_spawn((char*)"./spawn_univ_split", MPI_ARGV_NULL, 2, MPI_INFO_NULL, 0, MPI_COMM_SELF, &spawn_comm, errcodes);
+    if (parent_comm == MPI_COMM_NULL) {
+        MPI_Comm_spawn((char *) "./spawn_univ_split", MPI_ARGV_NULL, 2, MPI_INFO_NULL, 0,
+                       MPI_COMM_SELF, &spawn_comm, errcodes);
 
-	} else {
-		spawn_comm = parent_comm;
-	}
+    } else {
+        spawn_comm = parent_comm;
+    }
 
-	if(parent_comm == MPI_COMM_NULL) {
-		high = 1;
-	} else {
-		high = 0;
-	}
+    if (parent_comm == MPI_COMM_NULL) {
+        high = 1;
+    } else {
+        high = 0;
+    }
 
-	/* Merge each intercomm between the spawned groups into an intracomm: */
-	MPI_Intercomm_merge(spawn_comm, high, &merge_comm);
+    /* Merge each intercomm between the spawned groups into an intracomm: */
+    MPI_Intercomm_merge(spawn_comm, high, &merge_comm);
 
-	MPI_Comm_rank(merge_comm, &merge_rank);
-	MPI_Comm_size(merge_comm, &merge_size);
+    MPI_Comm_rank(merge_comm, &merge_rank);
+    MPI_Comm_size(merge_comm, &merge_size);
 
-	/* Determine the leader (rank 0 & 1 of the origin world): */
-	if(parent_comm == MPI_COMM_NULL) {
-		leader = merge_rank;
-	} else {
-		leader = -1;
-	}
+    /* Determine the leader (rank 0 & 1 of the origin world): */
+    if (parent_comm == MPI_COMM_NULL) {
+        leader = merge_rank;
+    } else {
+        leader = -1;
+    }
 
-	MPI_Allgather(&leader, 1, MPI_INT, buffer, 1, MPI_INT, merge_comm);
-	for(i=0; i<merge_size; i++) {
-		if(buffer[i] != -1) {
-			leader = i;
-			break;
-		}
-	}
+    MPI_Allgather(&leader, 1, MPI_INT, buffer, 1, MPI_INT, merge_comm);
+    for (i = 0; i < merge_size; i++) {
+        if (buffer[i] != -1) {
+            leader = i;
+            break;
+        }
+    }
 
-	/* Create an intercomm between the two merged intracomms (and use the origin world as bridge/peer communicator): */
-	peer_comm = MPI_COMM_WORLD;
-	MPI_Intercomm_create(merge_comm, leader, peer_comm, (world_rank+1)%2, 123, &inter_comm);
+    /* Create an intercomm between the two merged intracomms (and use the origin world as bridge/peer communicator): */
+    peer_comm = MPI_COMM_WORLD;
+    MPI_Intercomm_create(merge_comm, leader, peer_comm, (world_rank + 1) % 2, 123, &inter_comm);
 
-	MPI_Comm_rank(inter_comm, &inter_rank);
-	MPI_Comm_size(inter_comm, &inter_loc_size);
-	MPI_Comm_remote_size(inter_comm, &inter_rem_size);
+    MPI_Comm_rank(inter_comm, &inter_rank);
+    MPI_Comm_size(inter_comm, &inter_loc_size);
+    MPI_Comm_remote_size(inter_comm, &inter_rem_size);
 
-	/* Merge the new intercomm into one single univeser: */
-	MPI_Intercomm_merge(inter_comm, 0, &univ_comm);
+    /* Merge the new intercomm into one single univeser: */
+    MPI_Intercomm_merge(inter_comm, 0, &univ_comm);
 
-	MPI_Comm_rank(univ_comm, &univ_rank);
-	MPI_Comm_size(univ_comm, &univ_size);
+    MPI_Comm_rank(univ_comm, &univ_rank);
+    MPI_Comm_size(univ_comm, &univ_size);
 
-	sleep(1);
+    sleep(1);
 
-	/* The following disconnects() will only decrement the VCR reference counters: */
-	/* (and could thus also be replaced by MPI_Comm_free()...) */
-	MPI_Comm_disconnect(&inter_comm);
-	MPI_Comm_disconnect(&merge_comm);
-	MPI_Comm_disconnect(&spawn_comm);
+    /* The following disconnects() will only decrement the VCR reference counters: */
+    /* (and could thus also be replaced by MPI_Comm_free()...) */
+    MPI_Comm_disconnect(&inter_comm);
+    MPI_Comm_disconnect(&merge_comm);
+    MPI_Comm_disconnect(&spawn_comm);
 
-	/* Now, the MPI universe is almost flat: just three worlds forming one universe! */
+    /* Now, the MPI universe is almost flat: just three worlds forming one universe! */
 
-	color = world_rank;
-	/* This splits the universe across the process groups! */
-	MPI_Comm_split(univ_comm, color, world_rank, &split_comm);
+    color = world_rank;
+    /* This splits the universe across the process groups! */
+    MPI_Comm_split(univ_comm, color, world_rank, &split_comm);
 
-	MPI_Comm_rank(split_comm, &split_rank);
-	MPI_Comm_size(split_comm, &split_size);
+    MPI_Comm_rank(split_comm, &split_rank);
+    MPI_Comm_size(split_comm, &split_size);
 
-	/* The following disconnect() might already shutdown certain pscom connections */
-	/* (depending on the setting of ENABLE_LAZY_DISCONNECT in mpid_vc.c ...*/
-	MPI_Comm_disconnect(&univ_comm);
+    /* The following disconnect() might already shutdown certain pscom connections */
+    /* (depending on the setting of ENABLE_LAZY_DISCONNECT in mpid_vc.c ... */
+    MPI_Comm_disconnect(&univ_comm);
 
-	/* Finally, this disconnect will tear down all still open connections between the PGs: */
-	MPI_Comm_disconnect(&split_comm);
+    /* Finally, this disconnect will tear down all still open connections between the PGs: */
+    MPI_Comm_disconnect(&split_comm);
 
-	if (parent_comm == MPI_COMM_NULL) {
-		MTest_Finalize(errs);
-	} else {
-		MPI_Finalize();
-	}
+    if (parent_comm == MPI_COMM_NULL) {
+        MTest_Finalize(errs);
+    } else {
+        MPI_Finalize();
+    }
 
-	return MTestReturnValue(errs);
+    return MTestReturnValue(errs);
 }
