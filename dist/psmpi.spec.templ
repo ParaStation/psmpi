@@ -11,13 +11,14 @@
 
 %{?_with_threading: %define threading yes}
 %{?_with_cuda: %define cuda 1}
+%{?_with_pmix: %define pmix 1}
 
 %{!?subname: %{?confset: %define subname %{confset}}}
 %{expand:%define buildForSuSE %(if [ -e /etc/SuSE-release ]; then echo 1; else echo 0; fi)}
 
 Summary:   ParaStation MPI
 Vendor:    ParTec AG, Munich, Germany
-Name:      psmpi%{?subname:-%{subname}}%{?threading:-mt}%{?cuda:-cuda}
+Name:      psmpi%{?subname:-%{subname}}%{?threading:-mt}%{?cuda:-cuda}%{?pmix:-pmix}
 Version:   @VERSION_psmpi@
 Release:   @RELEASE_psmpi@
 License:   QPL and mpich2/COPYRIGHT
@@ -33,6 +34,10 @@ BuildRequires:	pscom-cuda
 BuildRequires:	pscom
 %endif
 %endif
+%if 0%{?pmix}
+BuildRequires:	pmix-devel
+%endif
+
 BuildRequires:	automake autoconf libtool
 
 # Dont use internal find_requires, because we dont want dependencies
@@ -53,6 +58,7 @@ Prefix: %{prefix}
 ParaStation MPI. Based on MPICH using the ParaStation communication library pscom.
 %{?threading: Threading support: MPI_THREAD_MULTIPLE}
 %{?cuda: CUDA awareness   : YES}%{!?cuda: CUDA awareness   : NO}
+%{?pmix: PMIx support     : YES}%{!?pmix: PMIx support     : NO}
 MPICH is a freely available, portable implementation of MPI, the Standard for message-passing libraries.
 http://www-unix.mcs.anl.gov/mpi/mpich/
 
@@ -78,11 +84,12 @@ Build options (confset):
 additive options:
 "rpmbuild --with threading" Support for MPI_THREAD_MULTIPLE
 "rpmbuild --with cuda"      Enable CUDA awareness
+"rpmbuild --with pmix"      Enable PMIx support
 
 Optional overwrite subname (default to compiler confset):
 "rpmbuild --define='subname _any_subname_'"
 
-Now using --with %{?confset:%{confset}}%{!?confset:default} %{?threading:--with-threading} %{?cuda:--with-cuda}
+Now using --with %{?confset:%{confset}}%{!?confset:default} %{?threading:--with-threading} %{?cuda:--with-cuda} %{?pmix:--with-pmix}
 subname: %{?subname:%{subname}}%{!?subname:<none>}
 =========================================================
 DOK
@@ -92,7 +99,8 @@ sleep 1
 
 %build
 ./autogen.sh
-%configure --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--with-threading} %{?cuda:--with-cuda}
+%configure --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--with-threading} %{?cuda:--with-cuda} %{?pmix:--with-pmix}
+
 %make_build
 
 %install
